@@ -1,0 +1,106 @@
+# Hidden files
+.directory
+.fuse-*
+.*.kate-swp
+.kdev4/
+
+# Temp files
+*~
+*.bak
+
+# Binary files
+*.a
+*.o
+*.dll
+*.dll.def
+*.exe
+*.so
+
+# Project files
+*.carxp
+*.carxs
+*.pro.user
+
+# C++ files
+*.moc
+moc_*.cpp
+ui_*.h
+
+# Python files
+*.pyc
+ui_*.py
+
+# Resource files
+src/resources_rc.py
+qrc_resources*.cpp
+
+# Binaries
+carla-bridge-qtcreator
+carla-bridge-native
+carla-bridge-posix32
+carla-bridge-posix64
+carla-bridge-lv2-cocoa
+carla-bridge-lv2-gtk2
+carla-bridge-lv2-gtk3
+carla-bridge-lv2-qt4
+carla-bridge-lv2-qt5
+carla-bridge-lv2-x11
+carla-bridge-vst-cocoa
+carla-bridge-vst-x11
+
+carla-discovery-qtcreator
+carla-discovery-native
+carla-discovery-posix32
+carla-discovery-posix64
+
+# VST SDK
+c++/carla-includes/vst/
+
+# Docs
+doc/carla-backend/
+doc/carla-bridge/
+doc/carla-engine/
+doc/carla-native/
+doc/carla-plugin/
+doc/distrho/
+
+# CX-Freeze builds
+src/dist/
+
+# QtCreator builds
+*-build-*Debug/
+*-build-*Release/
+
+# ZynAddSubFX UI
+c++/carla-native/zynaddsubfx/UI/ADnoteUI.cc
+c++/carla-native/zynaddsubfx/UI/ADnoteUI.h
+c++/carla-native/zynaddsubfx/UI/BankUI.cc
+c++/carla-native/zynaddsubfx/UI/BankUI.h
+c++/carla-native/zynaddsubfx/UI/ConfigUI.cc
+c++/carla-native/zynaddsubfx/UI/ConfigUI.h
+c++/carla-native/zynaddsubfx/UI/EffUI.cc
+c++/carla-native/zynaddsubfx/UI/EffUI.h
+c++/carla-native/zynaddsubfx/UI/EnvelopeUI.cc
+c++/carla-native/zynaddsubfx/UI/EnvelopeUI.h
+c++/carla-native/zynaddsubfx/UI/FilterUI.cc
+c++/carla-native/zynaddsubfx/UI/FilterUI.h
+c++/carla-native/zynaddsubfx/UI/LFOUI.cc
+c++/carla-native/zynaddsubfx/UI/LFOUI.h
+c++/carla-native/zynaddsubfx/UI/MasterUI.cc
+c++/carla-native/zynaddsubfx/UI/MasterUI.h
+c++/carla-native/zynaddsubfx/UI/MicrotonalUI.cc
+c++/carla-native/zynaddsubfx/UI/MicrotonalUI.h
+c++/carla-native/zynaddsubfx/UI/OscilGenUI.cc
+c++/carla-native/zynaddsubfx/UI/OscilGenUI.h
+c++/carla-native/zynaddsubfx/UI/PADnoteUI.cc
+c++/carla-native/zynaddsubfx/UI/PADnoteUI.h
+c++/carla-native/zynaddsubfx/UI/PartUI.cc
+c++/carla-native/zynaddsubfx/UI/PartUI.h
+c++/carla-native/zynaddsubfx/UI/PresetsUI.cc
+c++/carla-native/zynaddsubfx/UI/PresetsUI.h
+c++/carla-native/zynaddsubfx/UI/ResonanceUI.cc
+c++/carla-native/zynaddsubfx/UI/ResonanceUI.h
+c++/carla-native/zynaddsubfx/UI/SUBnoteUI.cc
+c++/carla-native/zynaddsubfx/UI/SUBnoteUI.h
+c++/carla-native/zynaddsubfx/UI/VirKeyboard.cc
+c++/carla-native/zynaddsubfx/UI/VirKeyboard.h
