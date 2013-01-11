@@ -1,0 +1,137 @@
+diff -U 3 -H -d -r -N -- lilv-0.14.4.old/lilv/lilv.h lilv-0.14.4/lilv/lilv.h
+--- lilv-0.14.4.old/lilv/lilv.h	2012-09-07 19:00:48.464571333 +0100
++++ lilv-0.14.4/lilv/lilv.h	2012-09-07 18:54:00.626548936 +0100
+@@ -1693,6 +1693,25 @@
+ lilv_ui_get_binary_uri(const LilvUI* ui);
+ 
+ /**
++  Custom calls
++*/
++LILV_API
++LilvNodes*
++lilv_ui_get_supported_features(const LilvUI* ui);
++
++LILV_API
++LilvNodes*
++lilv_ui_get_required_features(const LilvUI* ui);
++
++LILV_API
++LilvNodes*
++lilv_ui_get_optional_features(const LilvUI* ui);
++
++LILV_API
++LilvNodes*
++lilv_ui_get_extension_data(const LilvUI* ui);
++
++/**
+    @}
+    @}
+ */
+diff -U 3 -H -d -r -N -- lilv-0.14.4.old/lilv/lilvmm.hpp lilv-0.14.4/lilv/lilvmm.hpp
+--- lilv-0.14.4.old/lilv/lilvmm.hpp	2012-07-18 02:42:43.000000000 +0100
++++ lilv-0.14.4/lilv/lilvmm.hpp	2012-09-07 18:53:14.134318379 +0100
+@@ -136,6 +136,7 @@
+ struct Nodes {
+ 	LILV_WRAP_COLL(Nodes, Node, nodes);
+ 	LILV_WRAP1(bool, nodes, contains, const Node, node);
++        LILV_WRAP0(Node, nodes, get_first);
+ };
+ 
+ struct Port {
+@@ -167,6 +168,26 @@
+ 	const LilvPort*   me;
+ };
+ 
++struct UI {
++    inline UI(const LilvUI* c_obj) : me(c_obj) {}
++    LILV_WRAP_CONVERSION(const LilvUI);
++
++    LILV_WRAP0(Node, ui, get_uri);
++    LILV_WRAP1(bool, ui, is_a, LilvNode*, ui_class);
++    LILV_WRAP0(Node, ui, get_bundle_uri);
++    LILV_WRAP0(Node, ui, get_binary_uri);
++    LILV_WRAP0(Nodes, ui, get_supported_features);
++    LILV_WRAP0(Nodes, ui, get_required_features);
++    LILV_WRAP0(Nodes, ui, get_optional_features);
++    LILV_WRAP0(Nodes, ui, get_extension_data);
++
++    const LilvUI* me;
++};
++
++struct UIs {
++    LILV_WRAP_COLL(UIs, UI, uis);
++};
++
+ struct Plugin {
+ 	inline Plugin(const LilvPlugin* c_obj) : me(c_obj) {}
+ 	LILV_WRAP_CONVERSION(const LilvPlugin);
+@@ -190,6 +211,8 @@
+ 	LILV_WRAP0(Node,        plugin, get_author_email);
+ 	LILV_WRAP0(Node,        plugin, get_author_homepage);
+ 	LILV_WRAP0(bool,        plugin, is_replaced);
++        LILV_WRAP0(Nodes,       plugin, get_extension_data);
++        LILV_WRAP0(UIs,         plugin, get_uis);
+ 
+ 	inline Port get_port_by_index(unsigned index) {
+ 		return Port(me, lilv_plugin_get_port_by_index(me, index));
+diff -U 3 -H -d -r -N -- lilv-0.14.4.old/src/ui.c lilv-0.14.4/src/ui.c
+--- lilv-0.14.4.old/src/ui.c	2012-09-07 19:00:48.464571333 +0100
++++ lilv-0.14.4/src/ui.c	2012-09-07 18:59:51.652289664 +0100
+@@ -128,3 +128,57 @@
+ 	assert(ui->binary_uri);
+ 	return ui->binary_uri;
+ }
++
++static LilvNodes*
++lilv_ui_get_value_internal(const LilvUI* ui,
++                           const SordNode*   predicate)
++{
++    return lilv_world_query_values_internal(
++        ui->world, ui->uri->node, predicate, NULL);
++}
++
++LILV_API
++LilvNodes*
++lilv_ui_get_supported_features(const LilvUI* ui)
++{
++    LilvNodes* optional = lilv_ui_get_optional_features(ui);
++    LilvNodes* required = lilv_ui_get_required_features(ui);
++    LilvNodes* result   = lilv_nodes_new();
++
++    LILV_FOREACH(nodes, i, optional)
++        zix_tree_insert((ZixTree*)result,
++                        lilv_node_duplicate(lilv_nodes_get(optional, i)),
++                        NULL);
++    LILV_FOREACH(nodes, i, required)
++        zix_tree_insert((ZixTree*)result,
++                        lilv_node_duplicate(lilv_nodes_get(required, i)),
++                        NULL);
++
++    lilv_nodes_free(optional);
++    lilv_nodes_free(required);
++
++    return result;
++}
++
++LILV_API
++LilvNodes*
++lilv_ui_get_required_features(const LilvUI* ui)
++{
++    return lilv_ui_get_value_internal(
++        ui, ui->world->uris.lv2_requiredFeature);
++}
++
++LILV_API
++LilvNodes*
++lilv_ui_get_optional_features(const LilvUI* ui)
++{
++    return lilv_ui_get_value_internal(
++        ui, ui->world->uris.lv2_optionalFeature);
++}
++
++LILV_API
++LilvNodes*
++lilv_ui_get_extension_data(const LilvUI* ui)
++{
++    return lilv_ui_get_value_internal(ui, ui->world->uris.lv2_extensionData);
++}

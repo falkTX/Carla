@@ -7,5 +7,5 @@ else
 fi
 
 INSTALL_PREFIX="X-PREFIX-X"
-export PATH="$INSTALL_PREFIX"/lib/cadence:$PATH
-exec $PYTHON $INSTALL_PREFIX/share/cadence/src/carla.py --with-libprefix="$INSTALL_PREFIX" "$@"
+export PATH="$INSTALL_PREFIX"/lib/carla:$PATH
+exec $PYTHON $INSTALL_PREFIX/share/carla/carla.py --with-libprefix="$INSTALL_PREFIX" "$@"

@@ -2,7 +2,7 @@
 # Script to start Carla bridges
 
 INSTALL_PREFIX="X-PREFIX-X"
-CADENCE_PREFIX="$INSTALL_PREFIX"/lib/cadence
+CARLA_PREFIX="$INSTALL_PREFIX"/lib/carla
 
 # ----------------------------------------------------------------------
 # Check for enough arguments
@@ -58,17 +58,17 @@ if [ $RUN_ARCH == "win64" ]; then
 fi
 
 # ----------------------------------------------------------------------
-# Check for existing cadence folder
+# Check for existing carla folder
 
-if [ ! -d $CADENCE_PREFIX ]; then
-  echo "$0: Cadence folder non-existing, is it installed?"
+if [ ! -d $CARLA_PREFIX ]; then
+  echo "$0: Carla folder does not exist, is it installed?"
   exit
 fi
 
 # ----------------------------------------------------------------------
 # Check for existing arch binary
 
-CARLA_EXEC="$CADENCE_PREFIX/carla-bridge-$RUN_ARCH"
+CARLA_EXEC="$CARLA_PREFIX/carla-bridge-$RUN_ARCH"
 
 if [ ! -f $CARLA_EXEC ]; then
   echo "$0: Invalid arch (may not be installed)"

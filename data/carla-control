@@ -7,4 +7,4 @@ else
 fi
 
 INSTALL_PREFIX="X-PREFIX-X"
-exec $PYTHON $INSTALL_PREFIX/share/cadence/src/carla_control.py "$@"
+exec $PYTHON $INSTALL_PREFIX/share/carla/carla_control.py "$@"

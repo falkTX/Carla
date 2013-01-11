@@ -104,3 +104,6 @@ c++/carla-native/zynaddsubfx/UI/SUBnoteUI.cc
 c++/carla-native/zynaddsubfx/UI/SUBnoteUI.h
 c++/carla-native/zynaddsubfx/UI/VirKeyboard.cc
 c++/carla-native/zynaddsubfx/UI/VirKeyboard.h
+
+# Other
+libs/jackbridge/jack/
