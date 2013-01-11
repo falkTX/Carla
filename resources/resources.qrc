@@ -1,0 +1,111 @@
+<RCC version="1.0">
+    <qresource prefix="/">
+        <file>16x16/cadence.png</file>
+        <file>16x16/catarina.png</file>
+        <file>16x16/catia.png</file>
+        <file>16x16/claudia.png</file>
+        <file>16x16/claudia-launcher.png</file>
+        <file>16x16/carla.png</file>
+        <file>16x16/carla-control.png</file>
+
+        <file>16x16/application-exit.png</file>
+        <file>16x16/arrow-right.png</file>
+        <file>16x16/configure.png</file>
+        <file>16x16/dialog-cancel.png</file>
+        <file>16x16/dialog-error.png</file>
+        <file>16x16/dialog-information.png</file>
+        <file>16x16/dialog-ok-apply.png</file>
+        <file>16x16/document-new.png</file>
+        <file>16x16/document-open.png</file>
+        <file>16x16/document-print.png</file>
+        <file>16x16/document-save.png</file>
+        <file>16x16/document-save-as.png</file>
+        <file>16x16/edit-clear.png</file>
+        <file>16x16/edit-delete.png</file>
+        <file>16x16/edit-rename.png</file>
+        <file>16x16/list-add.png</file>
+        <file>16x16/list-remove.png</file>
+        <file>16x16/media-playback-pause.png</file>
+        <file>16x16/media-playback-start.png</file>
+        <file>16x16/media-playback-stop.png</file>
+        <file>16x16/media-record.png</file>
+        <file>16x16/media-seek-backward.png</file>
+        <file>16x16/media-seek-forward.png</file>
+        <file>16x16/network-connect.png</file>
+        <file>16x16/network-disconnect.png</file>
+        <file>16x16/system-run.png</file>
+        <file>16x16/user-trash.png</file>
+        <file>16x16/view-refresh.png</file>
+        <file>16x16/view-sort-ascending.png</file>
+        <file>16x16/window-close.png</file>
+        <file>16x16/zoom-fit-best.png</file>
+        <file>16x16/zoom-in.png</file>
+        <file>16x16/zoom-original.png</file>
+        <file>16x16/zoom-out.png</file>
+
+        <file>48x48/cadence.png</file>
+        <file>48x48/catarina.png</file>
+        <file>48x48/catia.png</file>
+        <file>48x48/claudia.png</file>
+        <file>48x48/claudia-launcher.png</file>
+        <file>48x48/carla.png</file>
+        <file>48x48/carla-control.png</file>
+
+        <file>48x48/canvas.png</file>
+        <file>48x48/exec.png</file>
+        <file>48x48/folder.png</file>
+        <file>48x48/jack.png</file>
+        <file>48x48/ladish.png</file>
+        <file>48x48/media-record.png</file>
+
+        <file>scalable/cadence.svg</file>
+        <file>scalable/catarina.svg</file>
+        <file>scalable/catia.svg</file>
+        <file>scalable/claudia.svg</file>
+        <file>scalable/claudia-launcher.svg</file>
+        <file>scalable/carla.svg</file>
+        <file>scalable/carla-control.svg</file>
+        <file>scalable/jack.svg</file>
+
+        <file>scalable/pb_generic.svg</file>
+        <file>scalable/pb_hardware.svg</file>
+        <file>scalable/pb_audacious.svg</file>
+        <file>scalable/pb_clementine.svg</file>
+        <file>scalable/pb_jamin.svg</file>
+        <file>scalable/pb_mplayer.svg</file>
+        <file>scalable/pb_vlc.svg</file>
+
+        <file>bitmaps/dial_01.png</file>
+        <file>bitmaps/dial_01d.png</file>
+        <file>bitmaps/dial_02.png</file>
+        <file>bitmaps/dial_02d.png</file>
+        <file>bitmaps/dial_03.png</file>
+        <file>bitmaps/dial_03d.png</file>
+        <file>bitmaps/dial_04.png</file>
+        <file>bitmaps/dial_04d.png</file>
+        <file>bitmaps/kbd_h_classic.png</file>
+        <file>bitmaps/kbd_h_orange.png</file>
+        <file>bitmaps/kbd_v_classic.png</file>
+        <file>bitmaps/kbd_v_orange.png</file>
+        <file>bitmaps/led_off.png</file>
+        <file>bitmaps/led_blue.png</file>
+        <file>bitmaps/led_green.png</file>
+        <file>bitmaps/led_red.png</file>
+        <file>bitmaps/led_yellow.png</file>
+        <file>bitmaps/led-big_on.png</file>
+        <file>bitmaps/led-big_off.png</file>
+        <file>bitmaps/carla_about.png</file>
+        <file>bitmaps/carla_knobs1.png</file>
+
+        <file>bitmaps/canvas/frame_node_header.png</file>
+        <file>bitmaps/canvas/frame_port_bg.png</file>
+        <file>bitmaps/textures/metal_9-512px.jpg</file>
+
+        <file>screens/cadence-logs.png</file>
+        <file>screens/cadence-render.png</file>
+        <file>screens/cadence-xycontroller.png</file>
+        <file>screens/catia.png</file>
+        <file>screens/claudia.png</file>
+        <file>screens/carla.png</file>
+    </qresource>
+</RCC>

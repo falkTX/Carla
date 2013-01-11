@@ -1,0 +1,49 @@
+# Carla TODO
+
+CODE CLEANUP:
+ - Create PluginGUI class in C++ code, remove python one (need to handle parent somehow)
+ - Smarter audio/midi port names (count == 1: "audio-in" else: "audio-in-x")
+
+GENERAL:
+ - add direct program access on ui-dialogs (needed for standalone bridges), maybe add extra buttons too (reset plugin, fix ui size)
+ - implement osc-based uis in bridge mode
+ - implement midi-learn (new dialog)
+ - implement midi-cc automation special rules (invert, half, logarithmic, etc)
+ - allow to change position of plugins (up/down)
+ - allow to set m_ctrlInChannel from GUI (needs GUI widget)
+ - add macro to get midi channel (status & 0x0F)
+
+ENGINE:
+ - complete RtAudio+RtMidi support
+ - implement Haiku Media support (based from JACK?)
+ - implement latency in continuous-rack mode
+ - DSSI/LV2/VST version (needs add-new support on control side)
+ - Handle sample-rate changes in JACK (made possible by switch-master)
+
+LADSPA:
+ - on reload() only set def,min,max after all changes, apply to dssi and lv2
+
+DSSI:
+
+LV2:
+ - implement lv2-preset support
+ - implement lv2-time messages support
+ - complete lv2-atom messages support
+ - complete lv2-worker support
+
+VST:
+ - add support for old X11 UIs
+ - implement cockos extensions
+ - compare with dssi-vst code
+
+LinuxSampler:
+ - implement midi-program changes
+
+FluidSynth:
+
+Native:
+ - Cleanup API
+ - Document API
+
+Carla:
+ - auto-tab height fix

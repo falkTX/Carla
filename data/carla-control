@@ -1,0 +1,10 @@
+#!/bin/bash
+
+if [ -f /usr/bin/python3 ]; then
+  PYTHON=/usr/bin/python3
+else
+  PYTHON=python
+fi
+
+INSTALL_PREFIX="X-PREFIX-X"
+exec $PYTHON $INSTALL_PREFIX/share/cadence/src/carla_control.py "$@"

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Carla Control
+GenericName=Carla Control
+Comment=Multi-Plugin Audio Host (OSC Control)
+Exec=carla-control
+Icon=carla-control
+Terminal=false
+Type=Application
+Categories=AudioVideo;AudioEditing;Qt;

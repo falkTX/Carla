@@ -1,0 +1,140 @@
+# This document describes manual test cases for Carla.
+
+----------------------------------------------------------------------------------------
+----Section 1. -----------------------------------------------------------------------
+
+REFRESH PLUGINS
+
+Native plugins:
+-N- LADSPA
+-N- DSSI
+-N- LV2
+-N- VST
+-N- GIG
+-N- SF2
+-N- SFZ
+-N- Native
+
+Non-native, posix plugins:
+-N- LADSPA
+-N- DSSI
+-N- LV2
+-N- VST
+
+Non-native, win32 plugins:
+-N- LADSPA
+-N- DSSI [*]
+-N- LV2
+-N- VST
+
+Non-native, win64 plugins:
+-N- LADSPA [*]
+-N- DSSI [*]
+-N- LV2
+-N- VST
+
+----------------------------------------------------------------------------------------
+----Section 2. -----------------------------------------------------------------------
+
+LOADING PLUGINS (load and safely remove)
+
+Native plugins:
+-N- LADSPA
+-N- DSSI
+-N- LV2
+-N- VST
+-N- GIG
+-N- SF2
+-N- SFZ
+-N- Native
+
+Non-native, posix plugins:
+-N- LADSPA
+-N- DSSI
+-N- LV2
+-N- VST
+
+Non-native, win32 plugins:
+-N- LADSPA
+-N- DSSI [*]
+-N- LV2
+-N- VST
+
+Non-native, win64 plugins:
+-N- LADSPA [*]
+-N- DSSI [*]
+-N- LV2
+-N- VST
+
+----------------------------------------------------------------------------------------
+----Section 3. -----------------------------------------------------------------------
+
+SAVE & RESTORE PLUGIN STATE (Manual and In-Project, verify data)
+
+Native plugins:
+-N- LADSPA
+-N- DSSI
+-N- LV2
+-N- VST
+-N- SF2
+
+Non-native, posix plugins:
+-N- LADSPA
+-N- DSSI
+-N- LV2
+-N- VST
+
+Non-native, win32 plugins:
+-N- LADSPA
+-N- DSSI [*]
+-N- LV2
+-N- VST
+
+Non-native, win64 plugins:
+-N- LADSPA [*]
+-N- DSSI [*]
+-N- LV2
+-N- VST
+
+----------------------------------------------------------------------------------------
+----Section 4. -----------------------------------------------------------------------
+
+LOADING PLUGIN'S GUI (load, show/hide, close/reopen)
+
+Native plugins:
+-N- DSSI (OSC based)
+-N- LV2 (External-UI, internal)
+-N- LV2 (Qt4-UI, internal)
+-N- LV2 (X11-UI, internal)
+-N- LV2 (Suil-UI, internal)
+-N- LV2 (Gtk2-UI, OSC bridged)
+-N- LV2 (Gtk3-UI, OSC bridged) [*]
+-N- LV2 (Qt4-UI, OSC bridged)
+-N- LV2 (X11-UI, OSC bridged)
+-N- VST (internal)
+-N- VST (OSC bridged)
+
+Non-native, posix plugins:
+-N- LV2 (External-UI, internal)
+-N- LV2 (Qt4-UI, internal)
+-N- LV2 (X11-UI, internal)
+-N- VST (internal)
+
+Non-native, win32 plugins:
+-N- LV2 (External-UI, internal)
+-N- LV2 (Qt4-UI, internal) [*]
+-N- LV2 (Windows-UI, internal) [*]
+-N- VST (internal)
+
+Non-native, win64 plugins:
+-N- LV2 (External-UI, internal)
+-N- LV2 (Qt4-UI, internal) [*]
+-N- LV2 (Windows-UI, internal) [*]
+-N- VST (internal)
+
+
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+
+[*] Cannot test, no such plugins yet
