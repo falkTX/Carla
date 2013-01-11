@@ -53,9 +53,6 @@ carla-discovery-native
 carla-discovery-posix32
 carla-discovery-posix64
 
-# VST SDK
-c++/carla-includes/vst/
-
 # Docs
 doc/carla-backend/
 doc/carla-bridge/
@@ -106,4 +103,5 @@ c++/carla-native/zynaddsubfx/UI/VirKeyboard.cc
 c++/carla-native/zynaddsubfx/UI/VirKeyboard.h
 
 # Other
-libs/jackbridge/jack/
+source/includes/vst/
+source/libs/jackbridge/jack
