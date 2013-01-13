@@ -43,9 +43,13 @@
 #define LV2_PATCH__add         LV2_PATCH_PREFIX "add"
 #define LV2_PATCH__body        LV2_PATCH_PREFIX "body"
 #define LV2_PATCH__destination LV2_PATCH_PREFIX "destination"
+#define LV2_PATCH__property    LV2_PATCH_PREFIX "property"
+#define LV2_PATCH__readable    LV2_PATCH_PREFIX "readable"
 #define LV2_PATCH__remove      LV2_PATCH_PREFIX "remove"
 #define LV2_PATCH__request     LV2_PATCH_PREFIX "request"
 #define LV2_PATCH__subject     LV2_PATCH_PREFIX "subject"
+#define LV2_PATCH__value       LV2_PATCH_PREFIX "value"
 #define LV2_PATCH__wildcard    LV2_PATCH_PREFIX "wildcard"
+#define LV2_PATCH__writable    LV2_PATCH_PREFIX "writable"
 
 #endif  /* LV2_PATCH_H */

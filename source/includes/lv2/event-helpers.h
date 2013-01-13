@@ -148,7 +148,7 @@ lv2_event_get(LV2_Event_Iterator* iter,
               uint8_t**           data)
 {
 	if (!lv2_event_is_valid(iter)) {
-		return nullptr;
+		return NULL;
 	}
 
 	LV2_Event* const ev = (LV2_Event*)(

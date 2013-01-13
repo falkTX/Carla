@@ -244,6 +244,7 @@ public:
           class_distortion   (new_uri(LV2_CORE__DistortionPlugin)),
           class_dynamics     (new_uri(LV2_CORE__DynamicsPlugin)),
           class_eq           (new_uri(LV2_CORE__EQPlugin)),
+          class_envelope     (new_uri(LV2_CORE__EnvelopePlugin)),
           class_expander     (new_uri(LV2_CORE__ExpanderPlugin)),
           class_filter       (new_uri(LV2_CORE__FilterPlugin)),
           class_flanger      (new_uri(LV2_CORE__FlangerPlugin)),
