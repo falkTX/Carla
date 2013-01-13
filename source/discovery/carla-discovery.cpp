@@ -1,6 +1,6 @@
 /*
  * Carla Plugin discovery code
- * Copyright (C) 2011-2012 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -46,6 +46,8 @@
 
 #define DISCOVERY_OUT(x, y) std::cout << "\ncarla-discovery::" << x << "::" << y << std::endl;
 
+CARLA_BACKEND_USE_NAMESPACE
+
 #ifdef WANT_LV2
 // --------------------------------------------------------------------------
 // Our LV2 World class object
@@ -54,13 +56,13 @@ Lv2WorldClass lv2World;
 #endif
 
 // --------------------------------------------------------------------------
-// Fake values to test plugins with
+// Dummy values to test plugins with
 
 const uint32_t bufferSize = 512;
 const double   sampleRate = 44100.0;
 
 // --------------------------------------------------------------------------
-// Since discovery can find multi-architecture binaries, don't print ELF/EXE related errors
+// Don't print ELF/EXE related errors since discovery can find multi-architecture binaries
 
 void print_lib_error(const char* const filename)
 {
@@ -68,8 +70,6 @@ void print_lib_error(const char* const filename)
     if (error && strstr(error, "wrong ELF class") == nullptr && strstr(error, "Bad EXE format") == nullptr)
         DISCOVERY_OUT("error", error);
 }
-
-using namespace CarlaBackend;
 
 // --------------------------------------------------------------------------
 // VST stuff
@@ -848,7 +848,7 @@ void do_vst_check(void* const libHandle, const bool init)
         return;
     }
 
-    char strBuf[255] = { 0 };
+    char strBuf[STR_MAX] = { 0 };
     CarlaString cName;
     CarlaString cProduct;
     CarlaString cVendor;
@@ -870,7 +870,7 @@ void do_vst_check(void* const libHandle, const bool init)
             cName = strBuf;
     }
 
-    memset(strBuf, 0, sizeof(char)*255);
+    memset(strBuf, 0, sizeof(char)*STR_MAX);
     if (effect->dispatcher(effect, effGetVendorString, 0, 0, strBuf, 0.0f) == 1)
         cVendor = strBuf;
 
@@ -886,7 +886,7 @@ void do_vst_check(void* const libHandle, const bool init)
 
     while (vstCurrentUniqueId != 0)
     {
-        memset(strBuf, 0, sizeof(char)*255);
+        memset(strBuf, 0, sizeof(char)*STR_MAX);
         if (effect->dispatcher(effect, effGetProductString, 0, 0, strBuf, 0.0f) == 1)
             cProduct = strBuf;
         else
@@ -1052,7 +1052,7 @@ void do_vst_check(void* const libHandle, const bool init)
         // FIXME: Waves sometimes return the same ID
         while (nextUniqueId == vstCurrentUniqueId)
         {
-            memset(strBuf, 0, sizeof(char)*255);
+            memset(strBuf, 0, sizeof(char)*STR_MAX);
             if ((vstCurrentUniqueId = effect->dispatcher(effect, effShellGetNextPlugin, 0, 0, strBuf, 0.0f)) != 0)
                 cName = strBuf;
         }

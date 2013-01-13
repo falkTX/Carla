@@ -20,8 +20,6 @@
 
 #include "carla_utils.hpp"
 
-// TODO - presets handling
-
 #include "lv2/lv2.h"
 #include "lv2/atom.h"
 #include "lv2/atom-forge.h"
@@ -94,6 +92,7 @@ struct LV2_Atom_Worker_Body {
     const void* data;
 };
 
+// FIXME ?
 struct LV2_Atom_Worker {
     LV2_Atom atom;
     LV2_Atom_Worker_Body body;
@@ -126,6 +125,7 @@ public:
     Lilv::Node class_distortion;
     Lilv::Node class_dynamics;
     Lilv::Node class_eq;
+    Lilv::Node class_envelope;
     Lilv::Node class_expander;
     Lilv::Node class_filter;
     Lilv::Node class_flanger;

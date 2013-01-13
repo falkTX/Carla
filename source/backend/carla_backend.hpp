@@ -1,6 +1,6 @@
 /*
- * Carla Backend
- * Copyright (C) 2011-2012 Filipe Coelho <falktx@falktx.com>
+ * Carla Backend API
+ * Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,20 +15,21 @@
  * For a full copy of the GNU General Public License see the COPYING file
  */
 
-#ifndef CARLA_BACKEND_HPP
-#define CARLA_BACKEND_HPP
+#ifndef __CARLA_BACKEND_HPP__
+#define __CARLA_BACKEND_HPP__
 
 #include "carla_defines.hpp"
 
 #include <cstdint>
+#include <cstdlib>
 
 #define CARLA_BACKEND_START_NAMESPACE namespace CarlaBackend {
 #define CARLA_BACKEND_END_NAMESPACE }
 #define CARLA_BACKEND_USE_NAMESPACE using namespace CarlaBackend;
 
-CARLA_BACKEND_START_NAMESPACE
-
 #define STR_MAX 0xFF
+
+CARLA_BACKEND_START_NAMESPACE
 
 /*!
  * @defgroup CarlaBackendAPI Carla Backend API
@@ -58,7 +59,7 @@ const unsigned int PLUGIN_IS_BRIDGE          = 0x001; //!< Plugin is a bridge (i
 const unsigned int PLUGIN_IS_SYNTH           = 0x002; //!< Plugin is a synthesizer (produces sound).
 const unsigned int PLUGIN_HAS_GUI            = 0x004; //!< Plugin has its own custom GUI.
 const unsigned int PLUGIN_USES_CHUNKS        = 0x008; //!< Plugin uses chunks to save internal data.\see CarlaPlugin::chunkData()
-const unsigned int PLUGIN_USES_SINGLE_THREAD = 0x010; //!< Plugin needs a single thread for both DSP processing and UI events.
+const unsigned int PLUGIN_USES_SINGLE_THREAD = 0x010; //!< Plugin needs a single thread for both DSP and UI events.
 const unsigned int PLUGIN_CAN_DRYWET         = 0x020; //!< Plugin can make use of Dry/Wet controls.
 const unsigned int PLUGIN_CAN_VOLUME         = 0x040; //!< Plugin can make use of Volume controls.
 const unsigned int PLUGIN_CAN_BALANCE        = 0x080; //!< Plugin can make use of Left & Right Balance controls.
@@ -88,7 +89,7 @@ const unsigned int PARAMETER_USES_CUSTOM_TEXT = 0x80; //!< Parameter uses custom
  * The type defines how the \param value in CustomData is stored.
  *
  * Types are valid URIs.\n
- * Any non-string type is saved in a base64 encoded format.
+ * Any non-string, non-simple type is saved in a base64 encoded format.
  */
 const char* const CUSTOM_DATA_INVALID = nullptr;                                  //!< Null/Invalid data.
 const char* const CUSTOM_DATA_CHUNK   = "http://kxstudio.sf.net/ns/carla/chunk";  //!< Carla Chunk
@@ -100,6 +101,8 @@ const char* const CUSTOM_DATA_STRING  = "http://kxstudio.sf.net/ns/carla/string"
  *
  * Various bridge related messages, used as configure(<message>, value).
  * \note This is for internal use only.
+ *
+ * TODO: Review these, may not be needed anymore
  * @{
  */
 const char* const CARLA_BRIDGE_MSG_HIDE_GUI   = "CarlaBridgeHideGUI";   //!< Plugin -> Host call, tells host GUI is now hidden
@@ -162,8 +165,10 @@ enum ParameterType {
     PARAMETER_OUTPUT        = 2, //!< Ouput parameter.
     PARAMETER_LATENCY       = 3, //!< Special latency parameter, used in LADSPA, DSSI and LV2 plugins.
     PARAMETER_SAMPLE_RATE   = 4, //!< Special sample-rate parameter, used in LADSPA, DSSI and LV2 plugins.
+#ifdef WANT_LV2
     PARAMETER_LV2_FREEWHEEL = 5, //!< Special LV2 Plugin parameter used to report freewheel (offline) mode.
     PARAMETER_LV2_TIME      = 6  //!< Special LV2 Plugin parameter used to report time information.
+#endif
 };
 
 /*!
@@ -182,6 +187,8 @@ enum InternalParametersIndex {
 /*!
  * Plugin custom GUI type.
  * \see OPTION_PREFER_UI_BRIDGES
+ *
+ * TODO: these need to be handled all internally, only via showGui() backend-side
  */
 enum GuiType {
     GUI_NONE           = 0, //!< Null type, plugin has no custom GUI.
@@ -207,7 +214,7 @@ enum OptionsType {
 
     /*!
      * Set the engine processing mode.\n
-     * Default is PROCESS_MODE_MULTIPLE_CLIENTS.
+     * Default is PROCESS_MODE_CONTINUOUS_RACK.
      * \see ProcessMode
      */
     OPTION_PROCESS_MODE = 1,
@@ -216,7 +223,7 @@ enum OptionsType {
      * High-Precision processing mode.\n
      * When enabled, audio will be processed by blocks of 8 samples at a time, indenpendently of the buffer size.\n
      * Default is off.\n
-     * EXPERIMENTAL!
+     * EXPERIMENTAL AND INCOMPLETE!
      */
     OPTION_PROCESS_HIGH_PRECISION = 2,
 
@@ -227,32 +234,31 @@ enum OptionsType {
     OPTION_MAX_PARAMETERS = 3,
 
     /*!
-     * Prefered buffer size, currently unused.
+     * Prefered buffer size.
      */
     OPTION_PREFERRED_BUFFER_SIZE = 4,
 
     /*!
-     * Prefered sample rate, currently unused.
+     * Prefered sample rate.
      */
     OPTION_PREFERRED_SAMPLE_RATE = 5,
 
     /*!
      * Force mono plugins as stereo, by running 2 instances at the same time.\n
-     * Not supported in VST plugins.
+     * Not supported by all plugins.
      */
     OPTION_FORCE_STEREO = 6,
 
     /*!
      * Use (unofficial) dssi-vst chunks feature.\n
-     * Default is no.\n
-     * EXPERIMENTAL!
+     * Default is no.
      */
     OPTION_USE_DSSI_VST_CHUNKS = 7,
 
     /*!
      * Use plugin bridges whenever possible.\n
      * Default is no, and not recommended at this point!.
-     * EXPERIMENTAL!
+     * EXPERIMENTAL AND INCOMPLETE!
      */
     OPTION_PREFER_PLUGIN_BRIDGES = 8,
 
@@ -263,94 +269,100 @@ enum OptionsType {
     OPTION_PREFER_UI_BRIDGES = 9,
 
     /*!
-     * Timeout value in ms for how much to wait for OSC-UIs to respond.\n
+     * Timeout value in ms for how much to wait for OSC-Bridges to respond.\n
      * Default is 4000 ms (4 secs).
      */
     OPTION_OSC_UI_TIMEOUT = 10,
 
     /*!
+     * Set path to the native plugin bridge executable.\n
+     * Default unset.
+     */
+    OPTION_PATH_BRIDGE_NATIVE = 11,
+
+    /*!
      * Set path to the POSIX 32bit plugin bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_POSIX32 = 11,
+    OPTION_PATH_BRIDGE_POSIX32 = 12,
 
     /*!
      * Set path to the POSIX 64bit plugin bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_POSIX64 = 12,
+    OPTION_PATH_BRIDGE_POSIX64 = 13,
 
     /*!
      * Set path to the Windows 32bit plugin bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_WIN32 = 13,
+    OPTION_PATH_BRIDGE_WIN32 = 14,
 
     /*!
      * Set path to the Windows 64bit plugin bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_WIN64 = 14,
+    OPTION_PATH_BRIDGE_WIN64 = 15,
 
     /*!
      * Set path to the LV2 Gtk2 UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_GTK2 = 15,
+    OPTION_PATH_BRIDGE_LV2_GTK2 = 16,
 
     /*!
      * Set path to the LV2 Gtk3 UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_GTK3 = 16,
+    OPTION_PATH_BRIDGE_LV2_GTK3 = 17,
 
     /*!
      * Set path to the LV2 Qt4 UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_QT4 = 17,
+    OPTION_PATH_BRIDGE_LV2_QT4 = 18,
 
     /*!
      * Set path to the LV2 Qt5 UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_QT5 = 18,
+    OPTION_PATH_BRIDGE_LV2_QT5 = 19,
 
     /*!
      * Set path to the LV2 Cocoa UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_COCOA = 19,
+    OPTION_PATH_BRIDGE_LV2_COCOA = 20,
 
     /*!
      * Set path to the LV2 Windows UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_WINDOWS = 20,
+    OPTION_PATH_BRIDGE_LV2_WINDOWS = 21,
 
     /*!
      * Set path to the LV2 X11 UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_X11 = 21,
+    OPTION_PATH_BRIDGE_LV2_X11 = 22,
 
     /*!
      * Set path to the VST Cocoa UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_VST_COCOA = 22,
+    OPTION_PATH_BRIDGE_VST_COCOA = 23,
 
     /*!
      * Set path to the VST HWND UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_VST_HWND = 23,
+    OPTION_PATH_BRIDGE_VST_HWND = 24,
 
     /*!
      * Set path to the VST X11 UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_VST_X11 = 24
+    OPTION_PATH_BRIDGE_VST_X11 = 25
 };
 
 /*!
@@ -510,10 +522,13 @@ enum ProcessMode {
 /*!
  * Callback function the backend will call when something interesting happens.
  *
- * \see set_callback_function()
+ * \see set_callback_function() and CallbackType
  */
 typedef void (*CallbackFunc)(void* ptr, CallbackType action, unsigned short pluginId, int value1, int value2, double value3, const char* valueStr);
 
+/*!
+ * Parameter data
+ */
 struct ParameterData {
     ParameterType type;
     int32_t index;
@@ -531,23 +546,29 @@ struct ParameterData {
           midiCC(-1) {}
 };
 
+/*!
+ * Parameter ranges
+ */
 struct ParameterRanges {
-    double def;
-    double min;
-    double max;
-    double step;
-    double stepSmall;
-    double stepLarge;
+    float def;
+    float min;
+    float max;
+    float step;
+    float stepSmall;
+    float stepLarge;
 
     ParameterRanges()
-        : def(0.0),
-          min(0.0),
-          max(1.0),
-          step(0.01),
-          stepSmall(0.0001),
-          stepLarge(0.1) {}
+        : def(0.0f),
+          min(0.0f),
+          max(1.0f),
+          step(0.01f),
+          stepSmall(0.0001f),
+          stepLarge(0.1f) {}
 };
 
+/*!
+ * MIDI Program data
+ */
 struct MidiProgramData {
     uint32_t bank;
     uint32_t program;
@@ -557,8 +578,20 @@ struct MidiProgramData {
         : bank(0),
           program(0),
           name(nullptr) {}
+
+    ~MidiProgramData()
+    {
+        if (name)
+            free((void*)name);
+    }
 };
 
+/*!
+ * Custom data, saving key:value 'dictionaries'.
+ * \a type is an URI.
+ *
+ * \see CustomDataTypes
+ */
 struct CustomData {
     const char* type;
     const char* key;
@@ -568,6 +601,18 @@ struct CustomData {
         : type(nullptr),
           key(nullptr),
           value(nullptr) {}
+
+    ~CustomData()
+    {
+        if (type)
+            free((void*)type);
+
+        if (key)
+            free((void*)key);
+
+        if (value)
+            free((void*)value);
+    }
 };
 
 /**@}*/
@@ -578,4 +623,4 @@ class CarlaPlugin;
 
 CARLA_BACKEND_END_NAMESPACE
 
-#endif // CARLA_BACKEND_HPP
+#endif // __CARLA_BACKEND_HPP__
