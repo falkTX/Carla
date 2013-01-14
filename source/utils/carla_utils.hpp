@@ -50,7 +50,7 @@ void carla_assert_int(const char* const assertion, const char* const file, const
 // carla_*sleep (carla_usleep not possible in Windows)
 
 static inline
-void carla_sleep(const int secs)
+void carla_sleep(const unsigned int secs)
 {
     CARLA_ASSERT(secs > 0);
 
@@ -62,7 +62,7 @@ void carla_sleep(const int secs)
 }
 
 static inline
-void carla_msleep(const int msecs)
+void carla_msleep(const unsigned int msecs)
 {
     CARLA_ASSERT(msecs > 0);
 
@@ -74,7 +74,7 @@ void carla_msleep(const int msecs)
 }
 
 static inline
-void carla_usleep(const int usecs)
+void carla_usleep(const unsigned int usecs)
 {
     CARLA_ASSERT(usecs > 0);
 

@@ -678,10 +678,10 @@ void do_lv2_check(const char* const bundle, const bool init)
     // Get & check every plugin-instance
     for (int i=0; i < URIs.count(); i++)
     {
-        const LV2_RDF_Descriptor* const rdf_descriptor = lv2_rdf_new(URIs.at(i).toUtf8().constData());
-        CARLA_ASSERT(rdf_descriptor && rdf_descriptor->URI);
+        const LV2_RDF_Descriptor* const rdfDescriptor = lv2_rdf_new(URIs.at(i).toUtf8().constData());
+        CARLA_ASSERT(rdfDescriptor && rdfDescriptor->URI);
 
-        if (! (rdf_descriptor && rdf_descriptor->URI))
+        if (! (rdfDescriptor && rdfDescriptor->URI))
         {
             DISCOVERY_OUT("error", "Failed to find LV2 plugin '" << URIs.at(i).toUtf8().constData() << "'");
             continue;
@@ -690,51 +690,78 @@ void do_lv2_check(const char* const bundle, const bool init)
         if (init)
         {
             // test if DLL is loadable
-            void* const libHandle = lib_open(rdf_descriptor->Binary);
-
-            if (! libHandle)
             {
-                print_lib_error(rdf_descriptor->Binary);
-                delete rdf_descriptor;
-                continue;
-            }
+                void* const libHandle = lib_open(rdfDescriptor->Binary);
 
-            lib_close(libHandle);
+                if (! libHandle)
+                {
+                    print_lib_error(rdfDescriptor->Binary);
+                    delete rdfDescriptor;
+                    continue;
+                }
+
+                lib_close(libHandle);
+            }
 
             // test if we support all required ports and features
-            bool supported = true;
-
-            for (uint32_t j=0; j < rdf_descriptor->PortCount; j++)
             {
-#if 0
-                const LV2_RDF_Port* const port = &rdf_descriptor->Ports[j];
-                bool validPort = (LV2_IS_PORT_CONTROL(port->Type) || LV2_IS_PORT_AUDIO(port->Type) || LV2_IS_PORT_ATOM_SEQUENCE(port->Type) /*|| LV2_IS_PORT_CV(port->Type)*/ || LV2_IS_PORT_EVENT(port->Type) || LV2_IS_PORT_LL(port->Type));
+                bool supported = true;
 
-                if (! (validPort || LV2_IS_PORT_OPTIONAL(port->Properties)))
+                for (uint32_t j=0; j < rdfDescriptor->PortCount; j++)
                 {
-                    DISCOVERY_OUT("error", "plugin requires a non-supported port type, port-name: " << port->Name);
-                    supported = false;
-                    break;
+                    const LV2_RDF_Port* const rdfPort = &rdfDescriptor->Ports[j];
+
+                    if (LV2_IS_PORT_CONTROL(rdfPort->Types))
+                    {
+                        pass();
+                    }
+                    else if (LV2_IS_PORT_AUDIO(rdfPort->Types))
+                    {
+                        pass();
+                    }
+                    else if (LV2_IS_PORT_ATOM_SEQUENCE(rdfPort->Types))
+                    {
+                        pass();
+                    }
+                    //else if (LV2_IS_PORT_CV(rdfPort->Types))
+                    //    pass();
+                    else if (LV2_IS_PORT_EVENT(rdfPort->Types))
+                    {
+                        pass();
+                    }
+                    else if (LV2_IS_PORT_MIDI_LL(rdfPort->Types))
+                    {
+                        pass();
+                    }
+                    else if (! LV2_IS_PORT_OPTIONAL(rdfPort->Properties))
+                    {
+                        DISCOVERY_OUT("error", "plugin requires a non-supported port type, port-name: " << rdfPort->Name);
+                        supported = false;
+                        break;
+                    }
                 }
-#endif
-            }
 
-            for (uint32_t j=0; j < rdf_descriptor->FeatureCount && supported; j++)
-            {
-                const LV2_RDF_Feature* const feature = &rdf_descriptor->Features[j];
-
-                if (LV2_IS_FEATURE_REQUIRED(feature->Type) && ! is_lv2_feature_supported(feature->URI))
+                for (uint32_t j=0; j < rdfDescriptor->FeatureCount && supported; j++)
                 {
-                    DISCOVERY_OUT("error", "plugin requires a non-supported feature " << feature->URI);
-                    supported = false;
-                    break;
-                }
-            }
+                    const LV2_RDF_Feature* const rdfFeature = &rdfDescriptor->Features[j];
 
-            if (! supported)
-            {
-                delete rdf_descriptor;
-                continue;
+                    if (is_lv2_feature_supported(rdfFeature->URI))
+                    {
+                        pass();
+                    }
+                    else if (LV2_IS_FEATURE_REQUIRED(rdfFeature->Type))
+                    {
+                        DISCOVERY_OUT("error", "plugin requires a non-supported feature " << rdfFeature->URI);
+                        supported = false;
+                        break;
+                    }
+                }
+
+                if (! supported)
+                {
+                    delete rdfDescriptor;
+                    continue;
+                }
             }
         }
 
@@ -748,62 +775,72 @@ void do_lv2_check(const char* const bundle, const bool init)
         int parametersIns = 0;
         int parametersOuts = 0;
         int parametersTotal = 0;
+        int programsTotal = rdfDescriptor->PresetCount;
 
-#if 0
-        for (uint32_t j=0; j < rdf_descriptor->PortCount; j++)
+        for (uint32_t j=0; j < rdfDescriptor->PortCount; j++)
         {
-            const LV2_RDF_Port* const port = &rdf_descriptor->Ports[j];
+            const LV2_RDF_Port* const rdfPort = &rdfDescriptor->Ports[j];
 
-            if (LV2_IS_PORT_AUDIO(port->Type))
+            if (LV2_IS_PORT_AUDIO(rdfPort->Types))
             {
-                if (LV2_IS_PORT_INPUT(port->Type))
+                if (LV2_IS_PORT_INPUT(rdfPort->Types))
                     audioIns += 1;
-                else if (LV2_IS_PORT_OUTPUT(port->Type))
+                else if (LV2_IS_PORT_OUTPUT(rdfPort->Types))
                     audioOuts += 1;
                 audioTotal += 1;
             }
-            else if (LV2_IS_PORT_CONTROL(port->Type))
+            else if (LV2_IS_PORT_CONTROL(rdfPort->Types))
             {
-                if (LV2_IS_PORT_DESIGNATION_LATENCY(port->Designation) || LV2_IS_PORT_DESIGNATION_SAMPLE_RATE(port->Designation) ||
-                    LV2_IS_PORT_DESIGNATION_FREEWHEELING(port->Designation) || LV2_IS_PORT_DESIGNATION_TIME(port->Designation))
+                if (LV2_IS_PORT_DESIGNATION_LATENCY(rdfPort->Designation))
+                {
+                    pass();
+                }
+                else if (LV2_IS_PORT_DESIGNATION_SAMPLE_RATE(rdfPort->Designation))
+                {
+                    pass();
+                }
+                else if (LV2_IS_PORT_DESIGNATION_FREEWHEELING(rdfPort->Designation))
+                {
+                    pass();
+                }
+                else if (LV2_IS_PORT_DESIGNATION_TIME(rdfPort->Designation))
                 {
                     pass();
                 }
                 else
                 {
-                    if (LV2_IS_PORT_INPUT(port->Type))
+                    if (LV2_IS_PORT_INPUT(rdfPort->Types))
                         parametersIns += 1;
-                    else if (LV2_IS_PORT_OUTPUT(port->Type))
+                    else if (LV2_IS_PORT_OUTPUT(rdfPort->Types))
                         parametersOuts += 1;
                     parametersTotal += 1;
                 }
             }
-            else if (port->Type & LV2_PORT_SUPPORTS_MIDI_EVENT)
+            else if (LV2_PORT_SUPPORTS_MIDI_EVENT(rdfPort->Types))
             {
-                if (LV2_IS_PORT_INPUT(port->Type))
+                if (LV2_IS_PORT_INPUT(rdfPort->Types))
                     midiIns += 1;
-                else if (LV2_IS_PORT_OUTPUT(port->Type))
+                else if (LV2_IS_PORT_OUTPUT(rdfPort->Types))
                     midiOuts += 1;
                 midiTotal += 1;
             }
         }
 
-        if (rdf_descriptor->Type & LV2_CLASS_INSTRUMENT)
+        if (rdfDescriptor->Type[1] & LV2_PLUGIN_INSTRUMENT)
             hints |= PLUGIN_IS_SYNTH;
-#endif
 
-        if (rdf_descriptor->UICount > 0)
+        if (rdfDescriptor->UICount > 0)
             hints |= PLUGIN_HAS_GUI;
 
         DISCOVERY_OUT("init", "-----------");
-        DISCOVERY_OUT("label", rdf_descriptor->URI);
-        if (rdf_descriptor->Name)
-            DISCOVERY_OUT("name", rdf_descriptor->Name);
-        if (rdf_descriptor->Author)
-            DISCOVERY_OUT("maker", rdf_descriptor->Author);
-        if (rdf_descriptor->License)
-            DISCOVERY_OUT("copyright", rdf_descriptor->License);
-        DISCOVERY_OUT("unique_id", rdf_descriptor->UniqueID);
+        DISCOVERY_OUT("label", rdfDescriptor->URI);
+        if (rdfDescriptor->Name)
+            DISCOVERY_OUT("name", rdfDescriptor->Name);
+        if (rdfDescriptor->Author)
+            DISCOVERY_OUT("maker", rdfDescriptor->Author);
+        if (rdfDescriptor->License)
+            DISCOVERY_OUT("copyright", rdfDescriptor->License);
+        DISCOVERY_OUT("unique_id", rdfDescriptor->UniqueID);
         DISCOVERY_OUT("hints", hints);
         DISCOVERY_OUT("audio.ins", audioIns);
         DISCOVERY_OUT("audio.outs", audioOuts);
@@ -814,10 +851,11 @@ void do_lv2_check(const char* const bundle, const bool init)
         DISCOVERY_OUT("parameters.ins", parametersIns);
         DISCOVERY_OUT("parameters.outs", parametersOuts);
         DISCOVERY_OUT("parameters.total", parametersTotal);
+        DISCOVERY_OUT("programs.total", programsTotal);
         DISCOVERY_OUT("build", BINARY_NATIVE);
         DISCOVERY_OUT("end", "------------");
 
-        delete rdf_descriptor;
+        delete rdfDescriptor;
     }
 #else
     DISCOVERY_OUT("error", "LV2 support not available");

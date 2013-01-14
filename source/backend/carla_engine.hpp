@@ -1,6 +1,6 @@
 /*
  * Carla Engine
- * Copyright (C) 2012 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,13 +15,14 @@
  * For a full copy of the GNU General Public License see the COPYING file
  */
 
-#ifndef CARLA_ENGINE_HPP
-#define CARLA_ENGINE_HPP
+#ifndef __CARLA_ENGINE_HPP__
+#define __CARLA_ENGINE_HPP__
 
-#include "carla_engine_osc.hpp"
-#include "carla_engine_thread.hpp"
+//#include "carla_engine_osc.hpp"
+//#include "carla_engine_thread.hpp"
 
-#include <QtCore/QProcessEnvironment>
+//#include <QtCore/QProcessEnvironment>
+class QProcessEnvironment;
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -500,6 +501,8 @@ private:
 
 // -----------------------------------------------------------------------
 
+class CarlaEnginePrivateData;
+
 /*!
  * Carla Engine.
  * \note This is a virtual class for all available engine types available in Carla.
@@ -645,10 +648,10 @@ public:
 
     // bridge, internal use only
     // TODO - find a better way for this
-    void __bridgePluginRegister(const unsigned short id, CarlaPlugin* const plugin)
-    {
-        m_carlaPlugins[id] = plugin;
-    }
+    void __bridgePluginRegister(const unsigned short id, CarlaPlugin* const plugin);
+    //{
+    //    m_carlaPlugins[id] = plugin;
+    //}
 
     // -------------------------------------------------------------------
     // Information (base)
@@ -656,22 +659,34 @@ public:
     /*!
      * Get engine name.
      */
-    const char* getName() const;
+    const char* getName() const
+    {
+        return (const char*)name;
+    }
 
     /*!
      * Get current sample rate.
      */
-    double getSampleRate() const;
+    double getSampleRate() const
+    {
+        return sampleRate;
+    }
 
     /*!
      * Get current buffer size.
      */
-    uint32_t getBufferSize() const;
+    uint32_t getBufferSize() const
+    {
+        return bufferSize;
+    }
 
     /*!
-     * Get current Time information.
+     * Get current Time information (read-only).
      */
-    const CarlaEngineTimeInfo* getTimeInfo() const;
+    const CarlaEngineTimeInfo& getTimeInfo() const
+    {
+        return timeInfo;
+    }
 
     /*!
      * Tell the engine it's about to close.\n
@@ -721,10 +736,10 @@ public:
     /*!
      * Get the engine options as process environment.
      */
-    const QProcessEnvironment& getOptionsAsProcessEnvironment() const
-    {
-        return m_procEnv;
-    }
+    const QProcessEnvironment& getOptionsAsProcessEnvironment() const;
+    //{
+    //    return m_procEnv;
+    //}
 
     /*!
      * Set the engine option \a option.
@@ -885,19 +900,19 @@ public:
          * \param engine The engine to lock
          * \param lock Wherever to lock the engine or not, true by default
          */
-        ScopedLocker(CarlaEngine* const engine, bool lock = true)
-            : mutex(&engine->m_procLock),
-              m_lock(lock)
-        {
-            if (m_lock)
-                mutex->lock();
-        }
+        ScopedLocker(CarlaEngine* const engine, bool lock = true);
+        //    : mutex(&engine->m_procLock),
+        //      m_lock(lock)
+        //{
+        //    if (m_lock)
+        //        mutex->lock();
+        //}
 
         ~ScopedLocker()
-        {
-            if (m_lock)
-                mutex->unlock();
-        }
+        //{
+        //    if (m_lock)
+        //        mutex->unlock();
+        //}
 
     private:
         QMutex* const mutex;
@@ -930,6 +945,30 @@ protected:
     void bufferSizeChanged(const uint32_t newBufferSize);
 
 private:
+#ifdef CARLA_ENGINE_JACK
+    static CarlaEngine* newJack();
+#endif
+#ifdef CARLA_ENGINE_RTAUDIO
+    enum RtAudioApi {
+        RTAUDIO_DUMMY        = 0,
+        RTAUDIO_LINUX_ALSA   = 1,
+        RTAUDIO_LINUX_PULSE  = 2,
+        RTAUDIO_LINUX_OSS    = 3,
+        RTAUDIO_UNIX_JACK    = 4,
+        RTAUDIO_MACOSX_CORE  = 5,
+        RTAUDIO_WINDOWS_ASIO = 6,
+        RTAUDIO_WINDOWS_DS   = 7
+    };
+
+    static CarlaEngine* newRtAudio(RtAudioApi api);
+    static unsigned int getRtAudioApiCount();
+    static const char* getRtAudioApiName(unsigned int index);
+#endif
+
+    CarlaEnginePrivateData* const data;
+    friend class CarlaEngineInternal;
+#if 0
+private:
     CarlaEngineOsc m_osc;
     CarlaEngineThread m_thread;
 
@@ -954,25 +993,6 @@ private:
 
     bool m_aboutToClose;
     unsigned short m_maxPluginNumber;
-
-#ifdef CARLA_ENGINE_JACK
-    static CarlaEngine* newJack();
-#endif
-#ifdef CARLA_ENGINE_RTAUDIO
-    enum RtAudioApi {
-        RTAUDIO_DUMMY        = 0,
-        RTAUDIO_LINUX_ALSA   = 1,
-        RTAUDIO_LINUX_PULSE  = 2,
-        RTAUDIO_LINUX_OSS    = 3,
-        RTAUDIO_UNIX_JACK    = 4,
-        RTAUDIO_MACOSX_CORE  = 5,
-        RTAUDIO_WINDOWS_ASIO = 6,
-        RTAUDIO_WINDOWS_DS   = 7
-    };
-
-    static CarlaEngine* newRtAudio(RtAudioApi api);
-    static unsigned int getRtAudioApiCount();
-    static const char* getRtAudioApiName(unsigned int index);
 #endif
 };
 
@@ -982,4 +1002,4 @@ private:
 
 CARLA_BACKEND_END_NAMESPACE
 
-#endif // CARLA_ENGINE_HPP
+#endif // __CARLA_ENGINE_HPP__

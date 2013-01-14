@@ -18,28 +18,28 @@
 #ifndef CARLA_PLUGIN_HPP
 #define CARLA_PLUGIN_HPP
 
-#include "carla_midi.h"
-#include "carla_engine.hpp"
-#include "carla_osc_utils.hpp"
-#include "carla_plugin_thread.hpp"
+//#include "carla_midi.h"
+//#include "carla_engine.hpp"
+//#include "carla_osc_utils.hpp"
+//#include "carla_plugin_thread.hpp"
 
-#ifdef BUILD_BRIDGE
-# include "carla_bridge_osc.hpp"
-#endif
+//#ifdef BUILD_BRIDGE
+//# include "carla_bridge_osc.hpp"
+//#endif
 
 // common includes
-#include <cmath>
-#include <vector>
-#include <QtCore/QMutex>
-#include <QtGui/QMainWindow>
+//#include <cmath>
+//#include <vector>
+//#include <QtCore/QMutex>
+//#include <QtGui/QMainWindow>
 
-#ifdef Q_WS_X11
-# include <QtGui/QX11EmbedContainer>
-typedef QX11EmbedContainer GuiContainer;
-#else
-# include <QtGui/QWidget>
-typedef QWidget GuiContainer;
-#endif
+//#ifdef Q_WS_X11
+//# include <QtGui/QX11EmbedContainer>
+//typedef QX11EmbedContainer GuiContainer;
+//#else
+//# include <QtGui/QWidget>
+//typedef QWidget GuiContainer;
+//#endif
 
 typedef struct _PluginDescriptor PluginDescriptor;
 
@@ -175,6 +175,8 @@ struct ExternalMidiNote {
           note(0),
           velo(0) {}
 };
+
+class CarlaPluginPrivateData;
 
 /*!
  * \class CarlaPlugin
@@ -905,6 +907,10 @@ public:
     // -------------------------------------------------------------------
 
 protected:
+    CarlaPluginPrivateData* const data;
+    friend class CarlaPluginInternal;
+
+#if 0
     unsigned short m_id;
     CarlaEngine* const x_engine;
     CarlaEngineClient* x_client;
@@ -980,8 +986,10 @@ protected:
 
     friend class CarlaEngine; // FIXME
     friend class CarlaEngineJack;
+#endif
 };
 
+#if 0
 /*!
  * \class CarlaPluginGUI
  *
@@ -1065,6 +1073,7 @@ private:
     void hideEvent(QHideEvent* const event);
     void closeEvent(QCloseEvent* const event);
 };
+#endif
 
 /**@}*/
 
