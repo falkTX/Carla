@@ -214,6 +214,7 @@ struct Plugin {
 	LILV_WRAP0(bool,        plugin, is_replaced);
         LILV_WRAP0(Nodes,       plugin, get_extension_data);
         LILV_WRAP0(UIs,         plugin, get_uis);
+        LILV_WRAP1(Nodes,       plugin, get_related, Node, type);
 
 	inline Port get_port_by_index(unsigned index) {
 		return Port(me, lilv_plugin_get_port_by_index(me, index));
@@ -323,6 +324,7 @@ struct World {
 	LILV_WRAP0(const LilvPluginClass*, world, get_plugin_class);
 	LILV_WRAP0(const LilvPluginClasses*, world, get_plugin_classes);
 	LILV_WRAP0(const Plugins, world, get_all_plugins);
+    LILV_WRAP1(int, world, load_resource, const LilvNode*, resource);
 
 	LilvWorld* me;
 };

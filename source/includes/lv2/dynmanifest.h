@@ -27,7 +27,7 @@
 
 #include <stdio.h>
 
-#include "lv2/lv2plug.in/ns/lv2core/lv2.h"
+#include "lv2.h"
 
 #define LV2_DYN_MANIFEST_URI "http://lv2plug.in/ns/ext/dynmanifest"
 

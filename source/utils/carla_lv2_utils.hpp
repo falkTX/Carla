@@ -31,7 +31,9 @@
 #include "lv2/event-helpers.h"
 #include "lv2/instance-access.h"
 #include "lv2/log.h"
+// logger
 #include "lv2/midi.h"
+// morph
 #include "lv2/options.h"
 #include "lv2/parameters.h"
 #include "lv2/patch.h"
@@ -344,6 +346,33 @@ public:
         Lilv::World::load_all();
     }
 
+    const LilvPlugin* getPlugin(const LV2_URI uri)
+    {
+        CARLA_ASSERT(uri);
+
+        static const Lilv::Plugins lilvPlugins(Lilv::World::get_all_plugins());
+
+        LilvNode* const uriNode = Lilv::World::new_uri(uri);
+
+        if (! uriNode)
+        {
+            qWarning("Lv2WorldClass::getPlugin(\"%s\") - Failed to get node from uri", uri);
+            return nullptr;
+        }
+
+        if (const LilvPlugin* const cPlugin = lilv_plugins_get_by_uri(lilvPlugins.me, uriNode))
+        {
+            lilv_node_free(uriNode);
+            return cPlugin;
+        }
+        else
+        {
+            qWarning("Lv2WorldClass::getPlugin(\"%s\") - Failed to get plugin", uri);
+            lilv_node_free(uriNode);
+            return nullptr;
+        }
+    }
+
 private:
     bool needInit;
 };
@@ -362,742 +391,743 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
     CARLA_ASSERT(uri);
 
     if (! uri)
-        return nullptr;
-
-    Lilv::Plugins lilvPlugins = lv2World.get_all_plugins();
-
-    LILV_FOREACH(plugins, i, lilvPlugins)
     {
-        Lilv::Plugin lilvPlugin(lilvPlugins.get(i));
+        qWarning("lv2_rdf_new() - Invalid uri");
+        return nullptr;
+    }
 
-        if (strcmp(lilvPlugin.get_uri().as_string(), uri))
-            continue;
+    const LilvPlugin* const cPlugin(lv2World.getPlugin(uri));
 
-        LV2_RDF_Descriptor* const rdfDescriptor = new LV2_RDF_Descriptor;
+    if (! cPlugin)
+    {
+        // Error already set in getPlugin()
+        return nullptr;
+    }
 
-        // --------------------------------------------------
-        // Set Plugin Type
+    LV2_RDF_Descriptor* const rdfDescriptor = new LV2_RDF_Descriptor;
+
+    Lilv::Plugin lilvPlugin(lv2World.getPlugin(uri));
+
+    // --------------------------------------------------
+    // Set Plugin Type
+    {
+        Lilv::Nodes typeNodes(lilvPlugin.get_value(lv2World.rdf_type));
+
+        if (typeNodes.size() > 0)
         {
-            Lilv::Nodes typeNodes(lilvPlugin.get_value(lv2World.rdf_type));
+            if (typeNodes.contains(lv2World.class_allpass))
+                rdfDescriptor->Type[0] |= LV2_PLUGIN_ALLPASS;
+            if (typeNodes.contains(lv2World.class_amplifier))
+                rdfDescriptor->Type[0] |= LV2_PLUGIN_AMPLIFIER;
+            if (typeNodes.contains(lv2World.class_analyzer))
+                rdfDescriptor->Type[1] |= LV2_PLUGIN_ANALYSER;
+            if (typeNodes.contains(lv2World.class_bandpass))
+                rdfDescriptor->Type[0] |= LV2_PLUGIN_BANDPASS;
+            if (typeNodes.contains(lv2World.class_chorus))
+                rdfDescriptor->Type[1] |= LV2_PLUGIN_CHORUS;
+            if (typeNodes.contains(lv2World.class_comb))
+                rdfDescriptor->Type[1] |= LV2_PLUGIN_COMB;
+            if (typeNodes.contains(lv2World.class_compressor))
+                rdfDescriptor->Type[0] |= LV2_PLUGIN_COMPRESSOR;
+            if (typeNodes.contains(lv2World.class_constant))
+                rdfDescriptor->Type[1] |= LV2_PLUGIN_CONSTANT;
+            if (typeNodes.contains(lv2World.class_converter))
+                rdfDescriptor->Type[1] |= LV2_PLUGIN_CONVERTER;
+            if (typeNodes.contains(lv2World.class_delay))
+                rdfDescriptor->Type[0] |= LV2_PLUGIN_DELAY;
+            if (typeNodes.contains(lv2World.class_distortion))
+                rdfDescriptor->Type[0] |= LV2_PLUGIN_DISTORTION;
+            if (typeNodes.contains(lv2World.class_dynamics))
+                rdfDescriptor->Type[0] |= LV2_PLUGIN_DYNAMICS;
+            if (typeNodes.contains(lv2World.class_eq))
+                rdfDescriptor->Type[0] |= LV2_PLUGIN_EQ;
+            if (typeNodes.contains(lv2World.class_envelope))
+                rdfDescriptor->Type[0] |= LV2_PLUGIN_ENVELOPE;
+            if (typeNodes.contains(lv2World.class_expander))
+                rdfDescriptor->Type[0] |= LV2_PLUGIN_EXPANDER;
+            if (typeNodes.contains(lv2World.class_filter))
+                rdfDescriptor->Type[0] |= LV2_PLUGIN_FILTER;
+            if (typeNodes.contains(lv2World.class_flanger))
+                rdfDescriptor->Type[1] |= LV2_PLUGIN_FLANGER;
+            if (typeNodes.contains(lv2World.class_function))
+                rdfDescriptor->Type[1] |= LV2_PLUGIN_FUNCTION;
+            if (typeNodes.contains(lv2World.class_gate))
+                rdfDescriptor->Type[0] |= LV2_PLUGIN_GATE;
+            if (typeNodes.contains(lv2World.class_generator))
+                rdfDescriptor->Type[1] |= LV2_PLUGIN_GENERATOR;
+            if (typeNodes.contains(lv2World.class_highpass))
+                rdfDescriptor->Type[0] |= LV2_PLUGIN_HIGHPASS;
+            if (typeNodes.contains(lv2World.class_instrument))
+                rdfDescriptor->Type[1] |= LV2_PLUGIN_INSTRUMENT;
+            if (typeNodes.contains(lv2World.class_limiter))
+                rdfDescriptor->Type[0] |= LV2_PLUGIN_LIMITER;
+            if (typeNodes.contains(lv2World.class_lowpass))
+                rdfDescriptor->Type[0] |= LV2_PLUGIN_LOWPASS;
+            if (typeNodes.contains(lv2World.class_mixer))
+                rdfDescriptor->Type[1] |= LV2_PLUGIN_MIXER;
+            if (typeNodes.contains(lv2World.class_modulator))
+                rdfDescriptor->Type[1] |= LV2_PLUGIN_MODULATOR;
+            if (typeNodes.contains(lv2World.class_multiEQ))
+                rdfDescriptor->Type[0] |= LV2_PLUGIN_MULTI_EQ;
+            if (typeNodes.contains(lv2World.class_oscillator))
+                rdfDescriptor->Type[1] |= LV2_PLUGIN_OSCILLATOR;
+            if (typeNodes.contains(lv2World.class_paraEQ))
+                rdfDescriptor->Type[0] |= LV2_PLUGIN_PARA_EQ;
+            if (typeNodes.contains(lv2World.class_phaser))
+                rdfDescriptor->Type[1] |= LV2_PLUGIN_PHASER;
+            if (typeNodes.contains(lv2World.class_pitch))
+                rdfDescriptor->Type[1] |= LV2_PLUGIN_PITCH;
+            if (typeNodes.contains(lv2World.class_reverb))
+                rdfDescriptor->Type[0] |= LV2_PLUGIN_REVERB;
+            if (typeNodes.contains(lv2World.class_simulator))
+                rdfDescriptor->Type[0] |= LV2_PLUGIN_SIMULATOR;
+            if (typeNodes.contains(lv2World.class_spatial))
+                rdfDescriptor->Type[1] |= LV2_PLUGIN_SPATIAL;
+            if (typeNodes.contains(lv2World.class_spectral))
+                rdfDescriptor->Type[1] |= LV2_PLUGIN_SPECTRAL;
+            if (typeNodes.contains(lv2World.class_utility))
+                rdfDescriptor->Type[1] |= LV2_PLUGIN_UTILITY;
+            if (typeNodes.contains(lv2World.class_waveshaper))
+                rdfDescriptor->Type[0] |= LV2_PLUGIN_WAVESHAPER;
+        }
+    }
 
-            if (typeNodes.size() > 0)
+    // --------------------------------------------------
+    // Set Plugin Information
+    {
+        rdfDescriptor->URI = strdup(uri);
+
+        if (const char* const name = lilvPlugin.get_name().as_string())
+            rdfDescriptor->Name = strdup(name);
+
+        if (const char* const author = lilvPlugin.get_author_name().as_string())
+            rdfDescriptor->Author = strdup(author);
+
+        if (const char* const binary = lilvPlugin.get_library_uri().as_string())
+            rdfDescriptor->Binary = strdup(lilv_uri_to_path(binary));
+
+        if (const char* const bundle = lilvPlugin.get_bundle_uri().as_string())
+            rdfDescriptor->Bundle = strdup(lilv_uri_to_path(bundle));
+
+        Lilv::Nodes licenseNodes(lilvPlugin.get_value(lv2World.doap_license));
+
+        if (licenseNodes.size() > 0)
+        {
+            if (const char* const license = licenseNodes.get_first().as_string())
+                rdfDescriptor->License = strdup(license);
+        }
+    }
+
+    // --------------------------------------------------
+    // Set Plugin UniqueID
+    {
+        Lilv::Nodes replaceNodes(lilvPlugin.get_value(lv2World.dct_replaces));
+
+        if (replaceNodes.size() > 0)
+        {
+            Lilv::Node replaceNode(replaceNodes.get_first());
+
+            if (replaceNode.is_uri())
             {
-#if 0
-                if (typeNodes.contains(lv2World.class_allpass))
-                    rdfDescriptor->Type |= LV2_PLUGIN_ALLPASS;
-                if (typeNodes.contains(lv2World.class_amplifier))
-                    rdfDescriptor->Type |= LV2_PLUGIN_AMPLIFIER;
-                if (typeNodes.contains(lv2World.class_analyzer))
-                    rdfDescriptor->Type |= LV2_PLUGIN_ANALYSER;
-                if (typeNodes.contains(lv2World.class_bandpass))
-                    rdfDescriptor->Type |= LV2_PLUGIN_BANDPASS;
-                if (typeNodes.contains(lv2World.class_chorus))
-                    rdfDescriptor->Type |= LV2_PLUGIN_CHORUS;
-                if (typeNodes.contains(lv2World.class_comb))
-                    rdfDescriptor->Type |= LV2_PLUGIN_COMB;
-                if (typeNodes.contains(lv2World.class_compressor))
-                    rdfDescriptor->Type |= LV2_PLUGIN_COMPRESSOR;
-                if (typeNodes.contains(lv2World.class_constant))
-                    rdfDescriptor->Type |= LV2_PLUGIN_CONSTANT;
-                if (typeNodes.contains(lv2World.class_converter))
-                    rdfDescriptor->Type |= LV2_PLUGIN_CONVERTER;
-                if (typeNodes.contains(lv2World.class_delay))
-                    rdfDescriptor->Type |= LV2_PLUGIN_DELAY;
-                if (typeNodes.contains(lv2World.class_distortion))
-                    rdfDescriptor->Type |= LV2_PLUGIN_DISTORTION;
-                if (typeNodes.contains(lv2World.class_dynamics))
-                    rdfDescriptor->Type |= LV2_PLUGIN_DYNAMICS;
-                if (typeNodes.contains(lv2World.class_eq))
-                    rdfDescriptor->Type |= LV2_PLUGIN_EQ;
-                if (typeNodes.contains(lv2World.class_expander))
-                    rdfDescriptor->Type |= LV2_PLUGIN_EXPANDER;
-                if (typeNodes.contains(lv2World.class_filter))
-                    rdfDescriptor->Type |= LV2_PLUGIN_FILTER;
-                if (typeNodes.contains(lv2World.class_flanger))
-                    rdfDescriptor->Type |= LV2_PLUGIN_FLANGER;
-                if (typeNodes.contains(lv2World.class_function))
-                    rdfDescriptor->Type |= LV2_PLUGIN_FUNCTION;
-                if (typeNodes.contains(lv2World.class_gate))
-                    rdfDescriptor->Type |= LV2_PLUGIN_GATE;
-                if (typeNodes.contains(lv2World.class_generator))
-                    rdfDescriptor->Type |= LV2_PLUGIN_GENERATOR;
-                if (typeNodes.contains(lv2World.class_highpass))
-                    rdfDescriptor->Type |= LV2_PLUGIN_HIGHPASS;
-                if (typeNodes.contains(lv2World.class_instrument))
-                    rdfDescriptor->Type |= LV2_PLUGIN_INSTRUMENT;
-                if (typeNodes.contains(lv2World.class_limiter))
-                    rdfDescriptor->Type |= LV2_PLUGIN_LIMITER;
-                if (typeNodes.contains(lv2World.class_lowpass))
-                    rdfDescriptor->Type |= LV2_PLUGIN_LOWPASS;
-                if (typeNodes.contains(lv2World.class_mixer))
-                    rdfDescriptor->Type |= LV2_PLUGIN_MIXER;
-                if (typeNodes.contains(lv2World.class_modulator))
-                    rdfDescriptor->Type |= LV2_PLUGIN_MODULATOR;
-                if (typeNodes.contains(lv2World.class_multiEQ))
-                    rdfDescriptor->Type |= LV2_PLUGIN_MULTI_EQ;
-                if (typeNodes.contains(lv2World.class_oscillator))
-                    rdfDescriptor->Type |= LV2_PLUGIN_OSCILLATOR;
-                if (typeNodes.contains(lv2World.class_paraEQ))
-                    rdfDescriptor->Type |= LV2_PLUGIN_PARA_EQ;
-                if (typeNodes.contains(lv2World.class_phaser))
-                    rdfDescriptor->Type |= LV2_PLUGIN_PHASER;
-                if (typeNodes.contains(lv2World.class_pitch))
-                    rdfDescriptor->Type |= LV2_PLUGIN_PITCH;
-                if (typeNodes.contains(lv2World.class_reverb))
-                    rdfDescriptor->Type |= LV2_PLUGIN_REVERB;
-                if (typeNodes.contains(lv2World.class_simulator))
-                    rdfDescriptor->Type |= LV2_PLUGIN_SIMULATOR;
-                if (typeNodes.contains(lv2World.class_spatial))
-                    rdfDescriptor->Type |= LV2_PLUGIN_SPATIAL;
-                if (typeNodes.contains(lv2World.class_spectral))
-                    rdfDescriptor->Type |= LV2_PLUGIN_SPECTRAL;
-                if (typeNodes.contains(lv2World.class_utility))
-                    rdfDescriptor->Type |= LV2_PLUGIN_UTILITY;
-                if (typeNodes.contains(lv2World.class_waveshaper))
-                    rdfDescriptor->Type |= LV2_PLUGIN_WAVESHAPER;
-#endif
+                const QString replaceURI(replaceNode.as_uri());
+
+                if (replaceURI.startsWith("urn:"))
+                {
+                    const QString replaceId(replaceURI.split(":").last());
+
+                    bool ok;
+                    ulong uniqueId = replaceId.toULong(&ok);
+
+                    if (ok && uniqueId != 0)
+                        rdfDescriptor->UniqueID = uniqueId;
+                }
             }
         }
+    }
 
-        // --------------------------------------------------
-        // Set Plugin Information
+    // --------------------------------------------------
+    // Set Plugin Ports
+
+    if (lilvPlugin.get_num_ports() > 0)
+    {
+        rdfDescriptor->PortCount = lilvPlugin.get_num_ports();
+        rdfDescriptor->Ports = new LV2_RDF_Port[rdfDescriptor->PortCount];
+
+        for (uint32_t j = 0; j < rdfDescriptor->PortCount; j++)
         {
-            rdfDescriptor->URI    = strdup(uri);
-            rdfDescriptor->Binary = strdup(lilv_uri_to_path(lilvPlugin.get_library_uri().as_string()));
-            rdfDescriptor->Bundle = strdup(lilv_uri_to_path(lilvPlugin.get_bundle_uri().as_string()));
+            Lilv::Port lilvPort(lilvPlugin.get_port_by_index(j));
+            LV2_RDF_Port* const rdfPort = &rdfDescriptor->Ports[j];
 
-            if (lilvPlugin.get_name())
-                rdfDescriptor->Name = strdup(lilvPlugin.get_name().as_string());
-
-            if (lilvPlugin.get_author_name())
-                rdfDescriptor->Author = strdup(lilvPlugin.get_author_name().as_string());
-
-            Lilv::Nodes licenseNodes(lilvPlugin.get_value(lv2World.doap_license));
-
-            if (licenseNodes.size() > 0)
-                rdfDescriptor->License = strdup(licenseNodes.get_first().as_string());
-        }
-
-        // --------------------------------------------------
-        // Set Plugin UniqueID
-        {
-            Lilv::Nodes replaceNodes(lilvPlugin.get_value(lv2World.dct_replaces));
-
-            if (replaceNodes.size() > 0)
+            // --------------------------------------
+            // Set Port Information
             {
-                Lilv::Node replaceNode(replaceNodes.get_first());
+                if (const char* const name = Lilv::Node(lilvPort.get_name()).as_string())
+                    rdfPort->Name = strdup(name);
 
-                if (replaceNode.is_uri())
-                {
-                    const QString replaceURI(replaceNode.as_uri());
-
-                    if (replaceURI.startsWith("urn:"))
-                    {
-                        const QString replaceId(replaceURI.split(":").last());
-
-                        bool ok;
-                        long uniqueId = replaceId.toLong(&ok);
-
-                        if (ok && uniqueId > 0)
-                            rdfDescriptor->UniqueID = uniqueId;
-                    }
-                }
+                if (const char* const symbol = Lilv::Node(lilvPort.get_symbol()).as_string())
+                    rdfPort->Symbol = strdup(symbol);
             }
-        }
 
-        // --------------------------------------------------
-        // Set Plugin Ports
-
-        if (lilvPlugin.get_num_ports() > 0)
-        {
-            rdfDescriptor->PortCount = lilvPlugin.get_num_ports();
-            rdfDescriptor->Ports = new LV2_RDF_Port[rdfDescriptor->PortCount];
-
-            for (uint32_t j = 0; j < rdfDescriptor->PortCount; j++)
+            // --------------------------------------
+            // Set Port Mode and Type
             {
-                Lilv::Port lilvPort(lilvPlugin.get_port_by_index(j));
-                LV2_RDF_Port* const rdf_port = &rdfDescriptor->Ports[j];
+                // Input or Output
+                if (lilvPort.is_a(lv2World.port_input))
+                    rdfPort->Types |= LV2_PORT_INPUT;
 
-                // --------------------------------------
-                // Set Port Information (first)
+                else if (lilvPort.is_a(lv2World.port_output))
+                    rdfPort->Types |= LV2_PORT_OUTPUT;
+
+                else
+                    qWarning("lv2_rdf_new(\"%s\") - port '%s' is not input or output", uri, rdfPort->Name);
+
+                // Data Type
+                if (lilvPort.is_a(lv2World.port_control))
+                    rdfPort->Types |= LV2_PORT_CONTROL;
+
+                else if (lilvPort.is_a(lv2World.port_audio))
+                    rdfPort->Types |= LV2_PORT_AUDIO;
+
+                else if (lilvPort.is_a(lv2World.port_cv))
+                    rdfPort->Types |= LV2_PORT_CV;
+
+                else if (lilvPort.is_a(lv2World.port_atom))
                 {
-                    rdf_port->Name   = strdup(Lilv::Node(lilvPort.get_name()).as_string());
-                    rdf_port->Symbol = strdup(Lilv::Node(lilvPort.get_symbol()).as_string());
-                }
+                    rdfPort->Types |= LV2_PORT_ATOM;
 
-                // --------------------------------------
-                // Set Port Mode and Type
-                {
-#if 0
-                    // Mode
-                    if (lilvPort.is_a(lv2World.port_input))
-                        rdf_port->Type |= LV2_PORT_INPUT;
+                    Lilv::Nodes bufferTypeNodes(lilvPort.get_value(lv2World.atom_bufferType));
 
-                    else if (lilvPort.is_a(lv2World.port_output))
-                        rdf_port->Type |= LV2_PORT_OUTPUT;
-
+                    if (bufferTypeNodes.contains(lv2World.atom_sequence))
+                        rdfPort->Types |= LV2_PORT_ATOM_SEQUENCE;
                     else
-                        qWarning("lv2_rdf_new(\"%s\") - port '%s' is not input or output", uri, rdf_port->Name);
+                        qWarning("lv2_rdf_new(\"%s\") - port '%s' uses an unknown atom buffer type", uri, rdfPort->Name);
 
-                    // Type
-                    if (lilvPort.is_a(lv2World.port_control))
-                        rdf_port->Type |= LV2_PORT_CONTROL;
+                    Lilv::Nodes supportNodes(lilvPort.get_value(lv2World.atom_supports));
 
-                    else if (lilvPort.is_a(lv2World.port_audio))
-                        rdf_port->Type |= LV2_PORT_AUDIO;
+                    if (supportNodes.contains(lv2World.midi_event))
+                        rdfPort->Types |= LV2_PORT_DATA_MIDI_EVENT;
+                    if (supportNodes.contains(lv2World.patch_message))
+                        rdfPort->Types |= LV2_PORT_DATA_PATCH_MESSAGE;
 
-                    else if (lilvPort.is_a(lv2World.port_cv))
-                        rdf_port->Type |= LV2_PORT_CV;
+                    if (! (supportNodes.contains(lv2World.midi_event) || supportNodes.contains(lv2World.patch_message)))
+                        qWarning("lv2_rdf_new(\"%s\") - port '%s' is of atom type but doesn't support MIDI or messages", uri, rdfPort->Name);
+                }
 
-                    else if (lilvPort.is_a(lv2World.port_atom))
-                    {
-                        rdf_port->Type |= LV2_PORT_ATOM;
+                else if (lilvPort.is_a(lv2World.port_event))
+                {
+                    rdfPort->Types |= LV2_PORT_EVENT;
 
-                        Lilv::Nodes bufferTypeNodes(lilvPort.get_value(lv2World.atom_bufferType));
-
-                        if (bufferTypeNodes.contains(lv2World.atom_Sequence))
-                            rdf_port->Type |= LV2_PORT_ATOM_SEQUENCE;
-
-                        Lilv::Nodes supportNodes(lilvPort.get_value(lv2World.atom_supports));
-
-                        if (supportNodes.contains(lv2World.midi_event))
-                            rdf_port->Type |= LV2_PORT_DATA_MIDI_EVENT;
-                        if (supportNodes.contains(lv2World.patch_message))
-                            rdf_port->Type |= LV2_PORT_DATA_PATCH_MESSAGE;
-                    }
-
-                    else if (lilvPort.is_a(lv2World.port_event))
-                    {
-                        rdf_port->Type |= LV2_PORT_EVENT;
-
-                        if (lilvPort.supports_event(lv2World.midi_event))
-                            rdf_port->Type |= LV2_PORT_SUPPORTS_MIDI_EVENT;
-                    }
-
-                    else if (lilvPort.is_a(lv2World.port_midi))
-                    {
-                        rdf_port->Type |= LV2_PORT_MIDI_LL;
-                        rdf_port->Type |= LV2_PORT_SUPPORTS_MIDI_EVENT;
-                    }
-
+                    if (lilvPort.supports_event(lv2World.midi_event))
+                        rdfPort->Types |= LV2_PORT_DATA_MIDI_EVENT;
                     else
-#endif
-                        qWarning("lv2_rdf_new(\"%s\") - port '%s' is of unkown type", uri, rdf_port->Name);
+                        qWarning("lv2_rdf_new(\"%s\") - port '%s' is of event type but doesn't support MIDI", uri, rdfPort->Name);
                 }
 
-                // --------------------------------------
-                // Set Port Properties
+                else if (lilvPort.is_a(lv2World.port_midi))
                 {
-                    if (lilvPort.has_property(lv2World.pprop_optional))
-                        rdf_port->Properties = LV2_PORT_OPTIONAL;
-                    if (lilvPort.has_property(lv2World.pprop_enumeration))
-                        rdf_port->Properties = LV2_PORT_ENUMERATION;
-                    if (lilvPort.has_property(lv2World.pprop_integer))
-                        rdf_port->Properties = LV2_PORT_INTEGER;
-                    if (lilvPort.has_property(lv2World.pprop_sampleRate))
-                        rdf_port->Properties = LV2_PORT_SAMPLE_RATE;
-                    if (lilvPort.has_property(lv2World.pprop_toggled))
-                        rdf_port->Properties = LV2_PORT_TOGGLED;
-
-                    if (lilvPort.has_property(lv2World.pprop_artifacts))
-                        rdf_port->Properties = LV2_PORT_CAUSES_ARTIFACTS;
-                    if (lilvPort.has_property(lv2World.pprop_continuousCV))
-                        rdf_port->Properties = LV2_PORT_CONTINUOUS_CV;
-                    if (lilvPort.has_property(lv2World.pprop_discreteCV))
-                        rdf_port->Properties = LV2_PORT_DISCRETE_CV;
-                    if (lilvPort.has_property(lv2World.pprop_expensive))
-                        rdf_port->Properties = LV2_PORT_EXPENSIVE;
-                    if (lilvPort.has_property(lv2World.pprop_strictBounds))
-                        rdf_port->Properties = LV2_PORT_STRICT_BOUNDS;
-                    if (lilvPort.has_property(lv2World.pprop_logarithmic))
-                        rdf_port->Properties = LV2_PORT_LOGARITHMIC;
-                    if (lilvPort.has_property(lv2World.pprop_notAutomatic))
-                        rdf_port->Properties = LV2_PORT_NOT_AUTOMATIC;
-                    if (lilvPort.has_property(lv2World.pprop_notOnGUI))
-                        rdf_port->Properties = LV2_PORT_NOT_ON_GUI;
-                    if (lilvPort.has_property(lv2World.pprop_trigger))
-                        rdf_port->Properties = LV2_PORT_TRIGGER;
-
-                    if (lilvPort.has_property(lv2World.reportsLatency))
-                        rdf_port->Designation = LV2_PORT_DESIGNATION_LATENCY;
+                    rdfPort->Types |= LV2_PORT_MIDI_LL;
+                    rdfPort->Types |= LV2_PORT_DATA_MIDI_EVENT;
                 }
 
-                // --------------------------------------
-                // Set Port Designation
-                {
-                    Lilv::Nodes designationNodes(lilvPort.get_value(lv2World.designation));
+                else
+                    qWarning("lv2_rdf_new(\"%s\") - port '%s' is of unkown data type", uri, rdfPort->Name);
+            }
 
-                    if (designationNodes.size() > 0)
+            // --------------------------------------
+            // Set Port Properties
+            {
+                if (lilvPort.has_property(lv2World.pprop_optional))
+                    rdfPort->Properties |= LV2_PORT_OPTIONAL;
+                if (lilvPort.has_property(lv2World.pprop_enumeration))
+                    rdfPort->Properties |= LV2_PORT_ENUMERATION;
+                if (lilvPort.has_property(lv2World.pprop_integer))
+                    rdfPort->Properties |= LV2_PORT_INTEGER;
+                if (lilvPort.has_property(lv2World.pprop_sampleRate))
+                    rdfPort->Properties |= LV2_PORT_SAMPLE_RATE;
+                if (lilvPort.has_property(lv2World.pprop_toggled))
+                    rdfPort->Properties |= LV2_PORT_TOGGLED;
+
+                if (lilvPort.has_property(lv2World.pprop_artifacts))
+                    rdfPort->Properties |= LV2_PORT_CAUSES_ARTIFACTS;
+                if (lilvPort.has_property(lv2World.pprop_continuousCV))
+                    rdfPort->Properties |= LV2_PORT_CONTINUOUS_CV;
+                if (lilvPort.has_property(lv2World.pprop_discreteCV))
+                    rdfPort->Properties |= LV2_PORT_DISCRETE_CV;
+                if (lilvPort.has_property(lv2World.pprop_expensive))
+                    rdfPort->Properties |= LV2_PORT_EXPENSIVE;
+                if (lilvPort.has_property(lv2World.pprop_strictBounds))
+                    rdfPort->Properties |= LV2_PORT_STRICT_BOUNDS;
+                if (lilvPort.has_property(lv2World.pprop_logarithmic))
+                    rdfPort->Properties |= LV2_PORT_LOGARITHMIC;
+                if (lilvPort.has_property(lv2World.pprop_notAutomatic))
+                    rdfPort->Properties |= LV2_PORT_NOT_AUTOMATIC;
+                if (lilvPort.has_property(lv2World.pprop_notOnGUI))
+                    rdfPort->Properties |= LV2_PORT_NOT_ON_GUI;
+                if (lilvPort.has_property(lv2World.pprop_trigger))
+                    rdfPort->Properties |= LV2_PORT_TRIGGER;
+
+                if (lilvPort.has_property(lv2World.reportsLatency))
+                    rdfPort->Designation = LV2_PORT_DESIGNATION_LATENCY;
+            }
+
+            // --------------------------------------
+            // Set Port Designation
+            {
+                Lilv::Nodes designationNodes(lilvPort.get_value(lv2World.designation));
+
+                if (designationNodes.size() > 0)
+                {
+                    if (const char* const designation = designationNodes.get_first().as_string())
                     {
-                        const char* const designation = designationNodes.get_first().as_string();
-
                         if (strcmp(designation, LV2_CORE__freeWheeling) == 0)
-                            rdf_port->Designation = LV2_PORT_DESIGNATION_FREEWHEELING;
+                            rdfPort->Designation = LV2_PORT_DESIGNATION_FREEWHEELING;
                         else if (strcmp(designation, LV2_CORE__latency) == 0)
-                            rdf_port->Designation = LV2_PORT_DESIGNATION_LATENCY;
+                            rdfPort->Designation = LV2_PORT_DESIGNATION_LATENCY;
                         else if (strcmp(designation, LV2_PARAMETERS__sampleRate) == 0)
-                            rdf_port->Designation = LV2_PORT_DESIGNATION_SAMPLE_RATE;
+                            rdfPort->Designation = LV2_PORT_DESIGNATION_SAMPLE_RATE;
                         else if (strcmp(designation, LV2_TIME__bar) == 0)
-                            rdf_port->Designation = LV2_PORT_DESIGNATION_TIME_BAR;
+                            rdfPort->Designation = LV2_PORT_DESIGNATION_TIME_BAR;
                         else if (strcmp(designation, LV2_TIME__barBeat) == 0)
-                            rdf_port->Designation = LV2_PORT_DESIGNATION_TIME_BAR_BEAT;
+                            rdfPort->Designation = LV2_PORT_DESIGNATION_TIME_BAR_BEAT;
                         else if (strcmp(designation, LV2_TIME__beat) == 0)
-                            rdf_port->Designation = LV2_PORT_DESIGNATION_TIME_BEAT;
+                            rdfPort->Designation = LV2_PORT_DESIGNATION_TIME_BEAT;
                         else if (strcmp(designation, LV2_TIME__beatUnit) == 0)
-                            rdf_port->Designation = LV2_PORT_DESIGNATION_TIME_BEAT_UNIT;
+                            rdfPort->Designation = LV2_PORT_DESIGNATION_TIME_BEAT_UNIT;
                         else if (strcmp(designation, LV2_TIME__beatsPerBar) == 0)
-                            rdf_port->Designation = LV2_PORT_DESIGNATION_TIME_BEATS_PER_BAR;
+                            rdfPort->Designation = LV2_PORT_DESIGNATION_TIME_BEATS_PER_BAR;
                         else if (strcmp(designation, LV2_TIME__beatsPerMinute) == 0)
-                            rdf_port->Designation = LV2_PORT_DESIGNATION_TIME_BEATS_PER_MINUTE;
+                            rdfPort->Designation = LV2_PORT_DESIGNATION_TIME_BEATS_PER_MINUTE;
                         else if (strcmp(designation, LV2_TIME__frame) == 0)
-                            rdf_port->Designation = LV2_PORT_DESIGNATION_TIME_FRAME;
+                            rdfPort->Designation = LV2_PORT_DESIGNATION_TIME_FRAME;
                         else if (strcmp(designation, LV2_TIME__framesPerSecond) == 0)
-                            rdf_port->Designation = LV2_PORT_DESIGNATION_TIME_FRAMES_PER_SECOND;
+                            rdfPort->Designation = LV2_PORT_DESIGNATION_TIME_FRAMES_PER_SECOND;
                         else if (strcmp(designation, LV2_TIME__position) == 0)
-                            rdf_port->Designation = LV2_PORT_DESIGNATION_TIME_POSITION;
+                            rdfPort->Designation = LV2_PORT_DESIGNATION_TIME_POSITION;
                         else if (strcmp(designation, LV2_TIME__speed) == 0)
-                            rdf_port->Designation = LV2_PORT_DESIGNATION_TIME_SPEED;
+                            rdfPort->Designation = LV2_PORT_DESIGNATION_TIME_SPEED;
                         else if (strncmp(designation, LV2_PARAMETERS_PREFIX, strlen(LV2_PARAMETERS_PREFIX)) == 0)
                             pass();
                         else if (strncmp(designation, LV2_PORT_GROUPS_PREFIX, strlen(LV2_PORT_GROUPS_PREFIX)) == 0)
                             pass();
                         else
-                            qWarning("lv2_rdf_new(\"%s\") - got unknown Port Designation '%s'", uri, designation);
+                            qWarning("lv2_rdf_new(\"%s\") - got unknown port designation '%s'", uri, designation);
                     }
                 }
+            }
 
-                // --------------------------------------
-                // Set Port MIDI Map
+            // --------------------------------------
+            // Set Port MIDI Map
+            {
+                Lilv::Nodes midiMapNodes(lilvPort.get_value(lv2World.mm_defaultControl));
+
+                if (midiMapNodes.size() > 0)
                 {
-                    Lilv::Nodes midiMapNodes(lilvPort.get_value(lv2World.mm_defaultControl));
+                    Lilv::Node midiMapNode(midiMapNodes.get_first());
 
-                    if (midiMapNodes.size() > 0)
+                    if (midiMapNode.is_blank())
                     {
-                        Lilv::Node midiMapNode(midiMapNodes.get_first());
+                        Lilv::Nodes midiMapTypeNodes(lv2World.find_nodes(midiMapNode, lv2World.mm_controlType, nullptr));
+                        Lilv::Nodes midiMapNumberNodes(lv2World.find_nodes(midiMapNode, lv2World.mm_controlNumber, nullptr));
 
-                        if (midiMapNode.is_blank())
+                        if (midiMapTypeNodes.size() == 1 && midiMapNumberNodes.size() == 1)
                         {
-                            Lilv::Nodes midiMapTypeNodes(lv2World.find_nodes(midiMapNode, lv2World.mm_controlType, nullptr));
-                            Lilv::Nodes midiMapNumberNodes(lv2World.find_nodes(midiMapNode, lv2World.mm_controlNumber, nullptr));
-
-                            if (midiMapTypeNodes.size() == 1 && midiMapNumberNodes.size() == 1)
+                            if (const char* const midiMapType = midiMapTypeNodes.get_first().as_string())
                             {
-                                const char* const midiMapType = midiMapTypeNodes.get_first().as_string();
-
                                 if (strcmp(midiMapType, LV2_MIDI_Map__CC) == 0)
-                                    rdf_port->MidiMap.Type = LV2_PORT_MIDI_MAP_CC;
+                                    rdfPort->MidiMap.Type = LV2_PORT_MIDI_MAP_CC;
                                 else if (strcmp(midiMapType, LV2_MIDI_Map__NRPN) == 0)
-                                    rdf_port->MidiMap.Type = LV2_PORT_MIDI_MAP_NRPN;
+                                    rdfPort->MidiMap.Type = LV2_PORT_MIDI_MAP_NRPN;
                                 else
-                                    qWarning("lv2_rdf_new(\"%s\") - got unknown Port Midi Map type '%s'", uri, midiMapType);
+                                    qWarning("lv2_rdf_new(\"%s\") - got unknown port Midi-Map type '%s'", uri, midiMapType);
 
-                                rdf_port->MidiMap.Number = midiMapNumberNodes.get_first().as_int();
+                                rdfPort->MidiMap.Number = midiMapNumberNodes.get_first().as_int();
                             }
                         }
                     }
                 }
 
-                // --------------------------------------
-                // Set Port Points
+                // TODO - check using new official MIDI API too
+            }
+
+            // --------------------------------------
+            // Set Port Points
+            {
+                Lilv::Nodes valueNodes(lilvPort.get_value(lv2World.value_default));
+
+                if (valueNodes.size() > 0)
                 {
-                    Lilv::Nodes valueNodes(lilvPort.get_value(lv2World.value_default));
-
-                    if (valueNodes.size() > 0)
-                    {
-                        rdf_port->Points.Hints  |= LV2_PORT_POINT_DEFAULT;
-                        rdf_port->Points.Default = valueNodes.get_first().as_float();
-                    }
-
-                    valueNodes = lilvPort.get_value(lv2World.value_minimum);
-
-                    if (valueNodes.size() > 0)
-                    {
-                        rdf_port->Points.Hints  |= LV2_PORT_POINT_MINIMUM;
-                        rdf_port->Points.Minimum = valueNodes.get_first().as_float();
-                    }
-
-                    valueNodes = lilvPort.get_value(lv2World.value_maximum);
-
-                    if (valueNodes.size() > 0)
-                    {
-                        rdf_port->Points.Hints  |= LV2_PORT_POINT_MAXIMUM;
-                        rdf_port->Points.Maximum = valueNodes.get_first().as_float();
-                    }
+                    rdfPort->Points.Hints  |= LV2_PORT_POINT_DEFAULT;
+                    rdfPort->Points.Default = valueNodes.get_first().as_float();
                 }
 
-                // --------------------------------------
-                // Set Port Unit
+                valueNodes = lilvPort.get_value(lv2World.value_minimum);
+
+                if (valueNodes.size() > 0)
                 {
-                    Lilv::Nodes unitTypeNodes(lilvPort.get_value(lv2World.unit_unit));
+                    rdfPort->Points.Hints  |= LV2_PORT_POINT_MINIMUM;
+                    rdfPort->Points.Minimum = valueNodes.get_first().as_float();
+                }
 
-                    if (unitTypeNodes.size() > 0)
+                valueNodes = lilvPort.get_value(lv2World.value_maximum);
+
+                if (valueNodes.size() > 0)
+                {
+                    rdfPort->Points.Hints  |= LV2_PORT_POINT_MAXIMUM;
+                    rdfPort->Points.Maximum = valueNodes.get_first().as_float();
+                }
+            }
+
+            // --------------------------------------
+            // Set Port Unit
+            {
+                Lilv::Nodes unitUnitNodes(lilvPort.get_value(lv2World.unit_unit));
+
+                if (unitUnitNodes.size() > 0)
+                {
+                    if (const char* const unitUnit = unitUnitNodes.get_first().as_uri())
                     {
-                        rdf_port->Unit.Hints |= LV2_PORT_UNIT_UNIT;
+                        rdfPort->Unit.Hints |= LV2_PORT_UNIT_UNIT;
 
-                        const char* const unitType = unitTypeNodes.get_first().as_uri();
-
-                        if (strcmp(unitType, LV2_UNITS__bar) == 0)
-                            rdf_port->Unit.Unit = LV2_PORT_UNIT_BAR;
-                        else if (strcmp(unitType, LV2_UNITS__beat) == 0)
-                            rdf_port->Unit.Unit = LV2_PORT_UNIT_BEAT;
-                        else if (strcmp(unitType, LV2_UNITS__bpm) == 0)
-                            rdf_port->Unit.Unit = LV2_PORT_UNIT_BPM;
-                        else if (strcmp(unitType, LV2_UNITS__cent) == 0)
-                            rdf_port->Unit.Unit = LV2_PORT_UNIT_CENT;
-                        else if (strcmp(unitType, LV2_UNITS__cm) == 0)
-                            rdf_port->Unit.Unit = LV2_PORT_UNIT_CM;
-                        else if (strcmp(unitType, LV2_UNITS__coef) == 0)
-                            rdf_port->Unit.Unit = LV2_PORT_UNIT_COEF;
-                        else if (strcmp(unitType, LV2_UNITS__db) == 0)
-                            rdf_port->Unit.Unit = LV2_PORT_UNIT_DB;
-                        else if (strcmp(unitType, LV2_UNITS__degree) == 0)
-                            rdf_port->Unit.Unit = LV2_PORT_UNIT_DEGREE;
-                        else if (strcmp(unitType, LV2_UNITS__frame) == 0)
-                            rdf_port->Unit.Unit = LV2_PORT_UNIT_FRAME;
-                        else if (strcmp(unitType, LV2_UNITS__hz) == 0)
-                            rdf_port->Unit.Unit = LV2_PORT_UNIT_HZ;
-                        else if (strcmp(unitType, LV2_UNITS__inch) == 0)
-                            rdf_port->Unit.Unit = LV2_PORT_UNIT_INCH;
-                        else if (strcmp(unitType, LV2_UNITS__khz) == 0)
-                            rdf_port->Unit.Unit = LV2_PORT_UNIT_KHZ;
-                        else if (strcmp(unitType, LV2_UNITS__km) == 0)
-                            rdf_port->Unit.Unit = LV2_PORT_UNIT_KM;
-                        else if (strcmp(unitType, LV2_UNITS__m) == 0)
-                            rdf_port->Unit.Unit = LV2_PORT_UNIT_M;
-                        else if (strcmp(unitType, LV2_UNITS__mhz) == 0)
-                            rdf_port->Unit.Unit = LV2_PORT_UNIT_MHZ;
-                        else if (strcmp(unitType, LV2_UNITS__midiNote) == 0)
-                            rdf_port->Unit.Unit = LV2_PORT_UNIT_MIDINOTE;
-                        else if (strcmp(unitType, LV2_UNITS__mile) == 0)
-                            rdf_port->Unit.Unit = LV2_PORT_UNIT_MILE;
-                        else if (strcmp(unitType, LV2_UNITS__min) == 0)
-                            rdf_port->Unit.Unit = LV2_PORT_UNIT_MIN;
-                        else if (strcmp(unitType, LV2_UNITS__mm) == 0)
-                            rdf_port->Unit.Unit = LV2_PORT_UNIT_MM;
-                        else if (strcmp(unitType, LV2_UNITS__ms) == 0)
-                            rdf_port->Unit.Unit = LV2_PORT_UNIT_MS;
-                        else if (strcmp(unitType, LV2_UNITS__oct) == 0)
-                            rdf_port->Unit.Unit = LV2_PORT_UNIT_OCT;
-                        else if (strcmp(unitType, LV2_UNITS__pc) == 0)
-                            rdf_port->Unit.Unit = LV2_PORT_UNIT_PC;
-                        else if (strcmp(unitType, LV2_UNITS__s) == 0)
-                            rdf_port->Unit.Unit = LV2_PORT_UNIT_S;
-                        else if (strcmp(unitType, LV2_UNITS__semitone12TET) == 0)
-                            rdf_port->Unit.Unit = LV2_PORT_UNIT_SEMITONE;
+                        if (strcmp(unitUnit, LV2_UNITS__bar) == 0)
+                            rdfPort->Unit.Unit = LV2_PORT_UNIT_BAR;
+                        else if (strcmp(unitUnit, LV2_UNITS__beat) == 0)
+                            rdfPort->Unit.Unit = LV2_PORT_UNIT_BEAT;
+                        else if (strcmp(unitUnit, LV2_UNITS__bpm) == 0)
+                            rdfPort->Unit.Unit = LV2_PORT_UNIT_BPM;
+                        else if (strcmp(unitUnit, LV2_UNITS__cent) == 0)
+                            rdfPort->Unit.Unit = LV2_PORT_UNIT_CENT;
+                        else if (strcmp(unitUnit, LV2_UNITS__cm) == 0)
+                            rdfPort->Unit.Unit = LV2_PORT_UNIT_CM;
+                        else if (strcmp(unitUnit, LV2_UNITS__coef) == 0)
+                            rdfPort->Unit.Unit = LV2_PORT_UNIT_COEF;
+                        else if (strcmp(unitUnit, LV2_UNITS__db) == 0)
+                            rdfPort->Unit.Unit = LV2_PORT_UNIT_DB;
+                        else if (strcmp(unitUnit, LV2_UNITS__degree) == 0)
+                            rdfPort->Unit.Unit = LV2_PORT_UNIT_DEGREE;
+                        else if (strcmp(unitUnit, LV2_UNITS__frame) == 0)
+                            rdfPort->Unit.Unit = LV2_PORT_UNIT_FRAME;
+                        else if (strcmp(unitUnit, LV2_UNITS__hz) == 0)
+                            rdfPort->Unit.Unit = LV2_PORT_UNIT_HZ;
+                        else if (strcmp(unitUnit, LV2_UNITS__inch) == 0)
+                            rdfPort->Unit.Unit = LV2_PORT_UNIT_INCH;
+                        else if (strcmp(unitUnit, LV2_UNITS__khz) == 0)
+                            rdfPort->Unit.Unit = LV2_PORT_UNIT_KHZ;
+                        else if (strcmp(unitUnit, LV2_UNITS__km) == 0)
+                            rdfPort->Unit.Unit = LV2_PORT_UNIT_KM;
+                        else if (strcmp(unitUnit, LV2_UNITS__m) == 0)
+                            rdfPort->Unit.Unit = LV2_PORT_UNIT_M;
+                        else if (strcmp(unitUnit, LV2_UNITS__mhz) == 0)
+                            rdfPort->Unit.Unit = LV2_PORT_UNIT_MHZ;
+                        else if (strcmp(unitUnit, LV2_UNITS__midiNote) == 0)
+                            rdfPort->Unit.Unit = LV2_PORT_UNIT_MIDINOTE;
+                        else if (strcmp(unitUnit, LV2_UNITS__mile) == 0)
+                            rdfPort->Unit.Unit = LV2_PORT_UNIT_MILE;
+                        else if (strcmp(unitUnit, LV2_UNITS__min) == 0)
+                            rdfPort->Unit.Unit = LV2_PORT_UNIT_MIN;
+                        else if (strcmp(unitUnit, LV2_UNITS__mm) == 0)
+                            rdfPort->Unit.Unit = LV2_PORT_UNIT_MM;
+                        else if (strcmp(unitUnit, LV2_UNITS__ms) == 0)
+                            rdfPort->Unit.Unit = LV2_PORT_UNIT_MS;
+                        else if (strcmp(unitUnit, LV2_UNITS__oct) == 0)
+                            rdfPort->Unit.Unit = LV2_PORT_UNIT_OCT;
+                        else if (strcmp(unitUnit, LV2_UNITS__pc) == 0)
+                            rdfPort->Unit.Unit = LV2_PORT_UNIT_PC;
+                        else if (strcmp(unitUnit, LV2_UNITS__s) == 0)
+                            rdfPort->Unit.Unit = LV2_PORT_UNIT_S;
+                        else if (strcmp(unitUnit, LV2_UNITS__semitone12TET) == 0)
+                            rdfPort->Unit.Unit = LV2_PORT_UNIT_SEMITONE;
                         else
-                            qWarning("lv2_rdf_new(\"%s\") - got unknown Unit type '%s'", uri, unitType);
-                    }
-
-                    Lilv::Nodes unitNameNodes(lilvPort.get_value(lv2World.unit_name));
-
-                    if (unitNameNodes.size() > 0)
-                    {
-                        rdf_port->Unit.Hints |= LV2_PORT_UNIT_NAME;
-                        rdf_port->Unit.Name   = strdup(unitNameNodes.get_first().as_string());
-                    }
-
-                    Lilv::Nodes unitRenderNodes(lilvPort.get_value(lv2World.unit_render));
-
-                    if (unitRenderNodes.size() > 0)
-                    {
-                        rdf_port->Unit.Hints |= LV2_PORT_UNIT_RENDER;
-                        rdf_port->Unit.Render = strdup(unitRenderNodes.get_first().as_string());
-                    }
-
-                    Lilv::Nodes unitSymbolNodes(lilvPort.get_value(lv2World.unit_symbol));
-
-                    if (unitSymbolNodes.size() > 0)
-                    {
-                        rdf_port->Unit.Hints |= LV2_PORT_UNIT_SYMBOL;
-                        rdf_port->Unit.Symbol = strdup(unitSymbolNodes.get_first().as_string());
+                            qWarning("lv2_rdf_new(\"%s\") - got unknown unit type '%s'", uri, unitUnit);
                     }
                 }
 
-                // --------------------------------------
-                // Set Port Scale Points
+                Lilv::Nodes unitNameNodes(lilvPort.get_value(lv2World.unit_name));
 
-                Lilv::ScalePoints lilvScalePoints(lilvPort.get_scale_points());
-
-                if (lilvScalePoints.size() > 0)
+                if (unitNameNodes.size() > 0)
                 {
-                    rdf_port->ScalePointCount = lilvScalePoints.size();
-                    rdf_port->ScalePoints = new LV2_RDF_PortScalePoint[rdf_port->ScalePointCount];
-
-                    uint32_t h = 0;
-                    LILV_FOREACH(scale_points, j, lilvScalePoints)
+                    if (const char* const unitName = unitNameNodes.get_first().as_string())
                     {
-                        Lilv::ScalePoint lilvScalePoint(lilvScalePoints.get(j));
-                        LV2_RDF_PortScalePoint* const rdf_scalePoint = &rdf_port->ScalePoints[h++];
+                        rdfPort->Unit.Hints |= LV2_PORT_UNIT_NAME;
+                        rdfPort->Unit.Name   = strdup(unitName);
+                    }
+                }
 
-                        rdf_scalePoint->Label = strdup(Lilv::Node(lilvScalePoint.get_label()).as_string());
-                        rdf_scalePoint->Value = Lilv::Node(lilvScalePoint.get_value()).as_float();
+                Lilv::Nodes unitRenderNodes(lilvPort.get_value(lv2World.unit_render));
+
+                if (unitRenderNodes.size() > 0)
+                {
+                    if (const char* const unitRender = unitRenderNodes.get_first().as_string())
+                    {
+                        rdfPort->Unit.Hints |= LV2_PORT_UNIT_RENDER;
+                        rdfPort->Unit.Render = strdup(unitRender);
+                    }
+                }
+
+                Lilv::Nodes unitSymbolNodes(lilvPort.get_value(lv2World.unit_symbol));
+
+                if (unitSymbolNodes.size() > 0)
+                {
+                    if (const char* const unitSymbol = unitSymbolNodes.get_first().as_string())
+                    {
+                        rdfPort->Unit.Hints |= LV2_PORT_UNIT_SYMBOL;
+                        rdfPort->Unit.Symbol = strdup(unitSymbol);
                     }
                 }
             }
-        }
 
-#if 0
-        // --------------------------------------------------
-        // Set Plugin Presets (TODO)
-        {
-            Lilv::Nodes presetNodes(lilvPlugin.get_related(lv2World.preset_preset));
+            // --------------------------------------
+            // Set Port Scale Points
 
-            if (presetNodes.size() > 0)
+            Lilv::ScalePoints lilvScalePoints(lilvPort.get_scale_points());
+
+            if (lilvScalePoints.size() > 0)
             {
-                // create a list of preset URIs (for checking appliesTo, sorting and uniqueness)
-                QStringList presetListURIs;
+                rdfPort->ScalePointCount = lilvScalePoints.size();
+                rdfPort->ScalePoints = new LV2_RDF_PortScalePoint[rdfPort->ScalePointCount];
 
-                LILV_FOREACH(nodes, j, presetNodes)
+                uint32_t h = 0;
+                LILV_FOREACH(scale_points, j, lilvScalePoints)
                 {
-                    Lilv::Node presetNode(presetNodes.get(j));
-                    // FIXME - check appliesTo
+                    Lilv::ScalePoint lilvScalePoint(lilvScalePoints.get(j));
+                    LV2_RDF_PortScalePoint* const rdfScalePoint = &rdfPort->ScalePoints[h++];
 
-                    QString presetURI(presetNode.as_uri());
+                    if (const char* const label = Lilv::Node(lilvScalePoint.get_label()).as_string())
+                        rdfScalePoint->Label = strdup(label);
 
-                    if (! presetListURIs.contains(presetURI))
-                        presetListURIs.append(presetURI);
+                    rdfScalePoint->Value = Lilv::Node(lilvScalePoint.get_value()).as_float();
                 }
+            }
+        }
+    }
 
-                presetListURIs.sort();
+    // --------------------------------------------------
+    // Set Plugin Presets
+    {
+        Lilv::Nodes presetNodes(lilvPlugin.get_related(lv2World.preset_preset));
 
-                // create presets with unique URIs
-                rdfDescriptor->PresetCount = presetListURIs.count();
-                rdfDescriptor->Presets = new LV2_RDF_Preset[rdfDescriptor->PresetCount];
+        if (presetNodes.size() > 0)
+        {
+            // create a list of preset URIs (for checking appliesTo, sorting and unique-ness)
+            QStringList presetListURIs;
 
-                // set preset data
-                LILV_FOREACH(nodes, j, presetNodes)
+            LILV_FOREACH(nodes, j, presetNodes)
+            {
+                Lilv::Node presetNode(presetNodes.get(j));
+                // FIXME - check appliesTo
+
+                QString presetURI(presetNode.as_uri());
+
+                if (! presetListURIs.contains(presetURI))
+                    presetListURIs.append(presetURI);
+            }
+
+            presetListURIs.sort();
+
+            // create presets with unique URIs
+            rdfDescriptor->PresetCount = presetListURIs.count();
+            rdfDescriptor->Presets = new LV2_RDF_Preset[rdfDescriptor->PresetCount];
+
+            // set preset data
+            LILV_FOREACH(nodes, j, presetNodes)
+            {
+                Lilv::Node presetNode(presetNodes.get(j));
+
+                if (lv2World.load_resource(presetNode) == -1)
+                    continue;
+
+                if (const char* const presetURI = presetNode.as_uri())
                 {
-                    Lilv::Node presetNode(presetNodes.get(j));
-                    lv2World.load_resource(presetNode);
-
-                    LV2_URI presetURI = presetNode.as_uri();
                     int32_t index = presetListURIs.indexOf(QString(presetURI));
 
                     if (index < 0)
                         continue;
 
-                    LV2_RDF_Preset* const rdf_preset = &rdfDescriptor->Presets[index];
+                    LV2_RDF_Preset* const rdfPreset = &rdfDescriptor->Presets[index];
 
                     // --------------------------------------
                     // Set Preset Information
                     {
-                        rdf_preset->URI = strdup(presetURI);
+                        rdfPreset->URI = strdup(presetURI);
 
                         Lilv::Nodes presetLabelNodes(lv2World.find_nodes(presetNode, lv2World.rdfs_label, nullptr));
 
                         if (presetLabelNodes.size() > 0)
-                            rdf_preset->Label = strdup(presetLabelNodes.get_first().as_string());
-                    }
-
-                    // --------------------------------------
-                    // Set Preset Ports
-                    {
-                        Lilv::Nodes presetPortNodes(lv2World.find_nodes(presetNode, lv2World.port, nullptr));
-
-                        if (presetPortNodes.size() > 0)
                         {
-                            rdf_preset->PortCount = presetPortNodes.size();
-                            rdf_preset->Ports = new LV2_RDF_PresetPort[rdf_preset->PortCount];
-
-                            uint32_t h = 0;
-                            LILV_FOREACH(nodes, k, presetPortNodes)
-                            {
-                                Lilv::Node presetPortNode(presetPortNodes.get(k));
-
-                                Lilv::Nodes presetPortSymbolNodes(lv2World.find_nodes(presetPortNode, lv2World.symbol, nullptr));
-                                Lilv::Nodes presetPortValueNodes(lv2World.find_nodes(presetPortNode, lv2World.preset_value, nullptr));
-
-                                if (presetPortSymbolNodes.size() == 1 && presetPortValueNodes.size() == 1)
-                                {
-                                    LV2_RDF_PresetPort* const rdf_presetPort = &rdf_preset->Ports[h++];
-                                    rdf_presetPort->Symbol = strdup(presetPortSymbolNodes.get_first().as_string());
-                                    rdf_presetPort->Value  = presetPortValueNodes.get_first().as_float();
-                                }
-                            }
-                        }
-                    }
-
-                    // --------------------------------------
-                    // Set Preset States
-                    {
-                        Lilv::Nodes presetStateNodes(lv2World.find_nodes(presetNode, lv2World.state_state, nullptr));
-
-                        if (presetStateNodes.size() > 0)
-                        {
-                            rdf_preset->StateCount = presetStateNodes.size();
-                            rdf_preset->States = new LV2_RDF_PresetState[rdf_preset->StateCount];
-
-                            uint32_t h = 0;
-                            LILV_FOREACH(nodes, k, presetStateNodes)
-                            {
-                                Lilv::Node presetStateNode(presetStateNodes.get(k));
-
-                                if (presetStateNode.is_blank())
-                                {
-                                    // TODO
-                                    LV2_RDF_PresetState* const rdf_presetState = &rdf_preset->States[h++];
-                                    rdf_presetState->Type = LV2_PRESET_STATE_NULL;
-                                    rdf_presetState->Key  = nullptr;
-                                }
-                            }
+                            if (const char* const label = presetLabelNodes.get_first().as_string())
+                                rdfPreset->Label = strdup(label);
                         }
                     }
                 }
             }
         }
-#endif
-
-        // --------------------------------------------------
-        // Set Plugin Features
-        {
-            Lilv::Nodes lilvFeatureNodes(lilvPlugin.get_supported_features());
-
-            if (lilvFeatureNodes.size() > 0)
-            {
-                Lilv::Nodes lilvFeatureNodesR(lilvPlugin.get_required_features());
-
-                rdfDescriptor->FeatureCount = lilvFeatureNodes.size();
-                rdfDescriptor->Features = new LV2_RDF_Feature[rdfDescriptor->FeatureCount];
-
-                uint32_t h = 0;
-                LILV_FOREACH(nodes, j, lilvFeatureNodes)
-                {
-                    Lilv::Node lilvFeatureNode(lilvFeatureNodes.get(j));
-
-                    LV2_RDF_Feature* const rdf_feature = &rdfDescriptor->Features[h++];
-                    rdf_feature->Type = lilvFeatureNodesR.contains(lilvFeatureNode) ? LV2_FEATURE_REQUIRED : LV2_FEATURE_OPTIONAL;
-                    rdf_feature->URI  = strdup(lilvFeatureNode.as_uri());
-                }
-            }
-        }
-
-        // --------------------------------------------------
-        // Set Plugin Extensions
-        {
-            Lilv::Nodes lilvExtensionDataNodes(lilvPlugin.get_extension_data());
-
-            if (lilvExtensionDataNodes.size() > 0)
-            {
-                rdfDescriptor->ExtensionCount = lilvExtensionDataNodes.size();
-                rdfDescriptor->Extensions = new LV2_URI[rdfDescriptor->ExtensionCount];
-
-                uint32_t h = 0;
-                LILV_FOREACH(nodes, j, lilvExtensionDataNodes)
-                {
-                    Lilv::Node lilvExtensionDataNode(lilvExtensionDataNodes.get(j));
-
-                    LV2_URI* const rdf_extension = &rdfDescriptor->Extensions[h++];
-                    *rdf_extension = strdup(lilvExtensionDataNode.as_uri());
-                }
-            }
-        }
-
-        // --------------------------------------------------
-        // Set Plugin UIs
-        {
-            Lilv::UIs lilvUIs(lilvPlugin.get_uis());
-
-            if (lilvUIs.size() > 0)
-            {
-                rdfDescriptor->UICount = lilvUIs.size();
-                rdfDescriptor->UIs = new LV2_RDF_UI[rdfDescriptor->UICount];
-
-                uint32_t h = 0;
-                LILV_FOREACH(uis, j, lilvUIs)
-                {
-                    Lilv::UI lilvUI(lilvUIs.get(j));
-                    LV2_RDF_UI* const rdf_ui = &rdfDescriptor->UIs[h++];
-
-                    // --------------------------------------
-                    // Set UI Type
-                    {
-#if 0
-                        if (lilvUI.is_a(lv2World.ui_gtk2))
-                            rdf_ui->Type = LV2_UI_GTK2;
-                        else if (lilvUI.is_a(lv2World.ui_gtk3))
-                            rdf_ui->Type = LV2_UI_GTK3;
-                        else if (lilvUI.is_a(lv2World.ui_qt4))
-                            rdf_ui->Type = LV2_UI_QT4;
-                        else if (lilvUI.is_a(lv2World.ui_cocoa))
-                            rdf_ui->Type = LV2_UI_COCOA;
-                        else if (lilvUI.is_a(lv2World.ui_windows))
-                            rdf_ui->Type = LV2_UI_WINDOWS;
-                        else if (lilvUI.is_a(lv2World.ui_x11))
-                            rdf_ui->Type = LV2_UI_X11;
-                        else if (lilvUI.is_a(lv2World.ui_external))
-                            rdf_ui->Type = LV2_UI_EXTERNAL;
-                        else if (lilvUI.is_a(lv2World.ui_externalOld))
-                            rdf_ui->Type = LV2_UI_OLD_EXTERNAL;
-                        else
-#endif
-                            qWarning("lv2_rdf_new(\"%s\") - got unknown UI type for '%s'", uri, lilvUI.get_uri().as_uri());
-                    }
-
-                    // --------------------------------------
-                    // Set UI Information
-                    {
-                        rdf_ui->URI    = strdup(lilvUI.get_uri().as_uri());
-                        rdf_ui->Binary = strdup(lilv_uri_to_path(lilvUI.get_binary_uri().as_string()));
-                        rdf_ui->Bundle = strdup(lilv_uri_to_path(lilvUI.get_bundle_uri().as_string()));
-                    }
-
-                    // --------------------------------------
-                    // Set UI Features
-                    {
-                        Lilv::Nodes lilvFeatureNodes(lilvUI.get_supported_features());
-
-                        if (lilvFeatureNodes.size() > 0)
-                        {
-                            Lilv::Nodes lilvFeatureNodesR(lilvUI.get_required_features());
-
-                            rdf_ui->FeatureCount = lilvFeatureNodes.size();
-                            rdf_ui->Features = new LV2_RDF_Feature[rdf_ui->FeatureCount];
-
-                            uint32_t x = 0;
-                            LILV_FOREACH(nodes, k, lilvFeatureNodes)
-                            {
-                                Lilv::Node lilvFeatureNode(lilvFeatureNodes.get(k));
-
-                                LV2_RDF_Feature* const rdf_feature = &rdf_ui->Features[x++];
-                                rdf_feature->Type = lilvFeatureNodesR.contains(lilvFeatureNode) ? LV2_FEATURE_REQUIRED : LV2_FEATURE_OPTIONAL;
-                                rdf_feature->URI  = strdup(lilvFeatureNode.as_uri());
-                            }
-                        }
-                    }
-
-                    // --------------------------------------
-                    // Set UI Extensions
-                    {
-                        Lilv::Nodes lilvExtensionDataNodes(lilvUI.get_extension_data());
-
-                        if (lilvExtensionDataNodes.size() > 0)
-                        {
-                            rdf_ui->ExtensionCount = lilvExtensionDataNodes.size();
-                            rdf_ui->Extensions = new LV2_URI[rdf_ui->ExtensionCount];
-
-                            uint32_t x = 0;
-                            LILV_FOREACH(nodes, k, lilvExtensionDataNodes)
-                            {
-                                Lilv::Node lilvExtensionDataNode(lilvExtensionDataNodes.get(k));
-
-                                LV2_URI* const rdf_extension = &rdf_ui->Extensions[x++];
-                                *rdf_extension = strdup(lilvExtensionDataNode.as_uri());
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        return rdfDescriptor;
     }
 
-    return nullptr;
+    // --------------------------------------------------
+    // Set Plugin Features
+    {
+        Lilv::Nodes lilvFeatureNodes(lilvPlugin.get_supported_features());
+
+        if (lilvFeatureNodes.size() > 0)
+        {
+            Lilv::Nodes lilvFeatureNodesR(lilvPlugin.get_required_features());
+
+            rdfDescriptor->FeatureCount = lilvFeatureNodes.size();
+            rdfDescriptor->Features = new LV2_RDF_Feature[rdfDescriptor->FeatureCount];
+
+            uint32_t h = 0;
+            LILV_FOREACH(nodes, j, lilvFeatureNodes)
+            {
+                Lilv::Node lilvFeatureNode(lilvFeatureNodes.get(j));
+
+                LV2_RDF_Feature* const rdfFeature = &rdfDescriptor->Features[h++];
+                rdfFeature->Type = lilvFeatureNodesR.contains(lilvFeatureNode) ? LV2_FEATURE_REQUIRED : LV2_FEATURE_OPTIONAL;
+
+                if (const char* const featureURI = lilvFeatureNode.as_uri())
+                    rdfFeature->URI = strdup(featureURI);
+            }
+        }
+    }
+
+    // --------------------------------------------------
+    // Set Plugin Extensions
+    {
+        Lilv::Nodes lilvExtensionDataNodes(lilvPlugin.get_extension_data());
+
+        if (lilvExtensionDataNodes.size() > 0)
+        {
+            rdfDescriptor->ExtensionCount = lilvExtensionDataNodes.size();
+            rdfDescriptor->Extensions = new LV2_URI[rdfDescriptor->ExtensionCount];
+
+            uint32_t h = 0;
+            LILV_FOREACH(nodes, j, lilvExtensionDataNodes)
+            {
+                Lilv::Node lilvExtensionDataNode(lilvExtensionDataNodes.get(j));
+
+                LV2_URI* const rdfExtension = &rdfDescriptor->Extensions[h++];
+
+                if (const char* const extURI = lilvExtensionDataNode.as_uri())
+                    *rdfExtension = strdup(extURI);
+            }
+        }
+    }
+
+    // --------------------------------------------------
+    // Set Plugin UIs
+    {
+        Lilv::UIs lilvUIs(lilvPlugin.get_uis());
+
+        if (lilvUIs.size() > 0)
+        {
+            rdfDescriptor->UICount = lilvUIs.size();
+            rdfDescriptor->UIs = new LV2_RDF_UI[rdfDescriptor->UICount];
+
+            uint32_t h = 0;
+            LILV_FOREACH(uis, j, lilvUIs)
+            {
+                Lilv::UI lilvUI(lilvUIs.get(j));
+                LV2_RDF_UI* const rdfUI = &rdfDescriptor->UIs[h++];
+
+                // --------------------------------------
+                // Set UI Type
+
+                if (const char* const uiType = lilvUI.get_uri().as_uri())
+                {
+                    // FIXME - uiType is probably wrong
+
+                    rdfUI->Type.URI = strdup(uiType);
+
+                    if (lilvUI.is_a(lv2World.ui_gtk2))
+                        rdfUI->Type.Value = LV2_UI_GTK2;
+                    else if (lilvUI.is_a(lv2World.ui_gtk3))
+                        rdfUI->Type.Value = LV2_UI_GTK3;
+                    else if (lilvUI.is_a(lv2World.ui_qt4))
+                        rdfUI->Type.Value = LV2_UI_QT4;
+                    else if (lilvUI.is_a(lv2World.ui_qt5))
+                        rdfUI->Type.Value = LV2_UI_QT5;
+                    else if (lilvUI.is_a(lv2World.ui_cocoa))
+                        rdfUI->Type.Value = LV2_UI_COCOA;
+                    else if (lilvUI.is_a(lv2World.ui_windows))
+                        rdfUI->Type.Value = LV2_UI_WINDOWS;
+                    else if (lilvUI.is_a(lv2World.ui_x11))
+                        rdfUI->Type.Value = LV2_UI_X11;
+                    else if (lilvUI.is_a(lv2World.ui_external))
+                        rdfUI->Type.Value = LV2_UI_EXTERNAL;
+                    else if (lilvUI.is_a(lv2World.ui_externalOld))
+                        rdfUI->Type.Value = LV2_UI_OLD_EXTERNAL;
+                    else
+                        qWarning("lv2_rdf_new(\"%s\") - got unknown UI type '%s'", uri, uiType);
+                }
+
+                // --------------------------------------
+                // Set UI Information
+                {
+                    if (const char* const uiURI = lilvUI.get_uri().as_uri())
+                        rdfUI->URI = strdup(uiURI);
+
+                    if (const char* const uiBinary = lilvUI.get_binary_uri().as_string())
+                        rdfUI->Binary = strdup(lilv_uri_to_path(uiBinary));
+
+                    if (const char* const uiBundle = lilvUI.get_bundle_uri().as_string())
+                        rdfUI->Bundle = strdup(lilv_uri_to_path(uiBundle));
+                }
+
+                // --------------------------------------
+                // Set UI Features
+                {
+                    Lilv::Nodes lilvFeatureNodes(lilvUI.get_supported_features());
+
+                    if (lilvFeatureNodes.size() > 0)
+                    {
+                        Lilv::Nodes lilvFeatureNodesR(lilvUI.get_required_features());
+
+                        rdfUI->FeatureCount = lilvFeatureNodes.size();
+                        rdfUI->Features = new LV2_RDF_Feature[rdfUI->FeatureCount];
+
+                        uint32_t x = 0;
+                        LILV_FOREACH(nodes, k, lilvFeatureNodes)
+                        {
+                            Lilv::Node lilvFeatureNode(lilvFeatureNodes.get(k));
+
+                            LV2_RDF_Feature* const rdfFeature = &rdfUI->Features[x++];
+                            rdfFeature->Type = lilvFeatureNodesR.contains(lilvFeatureNode) ? LV2_FEATURE_REQUIRED : LV2_FEATURE_OPTIONAL;
+                            rdfFeature->URI  = strdup(lilvFeatureNode.as_uri());
+                            // TODO: char check
+                        }
+                    }
+                }
+
+                // --------------------------------------
+                // Set UI Extensions
+                {
+                    Lilv::Nodes lilvExtensionDataNodes(lilvUI.get_extension_data());
+
+                    if (lilvExtensionDataNodes.size() > 0)
+                    {
+                        rdfUI->ExtensionCount = lilvExtensionDataNodes.size();
+                        rdfUI->Extensions = new LV2_URI[rdfUI->ExtensionCount];
+
+                        uint32_t x = 0;
+                        LILV_FOREACH(nodes, k, lilvExtensionDataNodes)
+                        {
+                            Lilv::Node lilvExtensionDataNode(lilvExtensionDataNodes.get(k));
+
+                            LV2_URI* const rdfExtension = &rdfUI->Extensions[x++];
+                            *rdfExtension = strdup(lilvExtensionDataNode.as_uri());
+                            // TODO: char check
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return rdfDescriptor;
 }
 
 // -------------------------------------------------
 // Check if we support a plugin feature
 
+// TODO - review these
 static inline
 bool is_lv2_feature_supported(const LV2_URI uri)
 {
@@ -1137,6 +1167,7 @@ bool is_lv2_feature_supported(const LV2_URI uri)
 // -------------------------------------------------
 // Check if we support a plugin or UI feature
 
+// TODO - review these
 static inline
 bool is_lv2_ui_feature_supported(const LV2_URI uri)
 {
