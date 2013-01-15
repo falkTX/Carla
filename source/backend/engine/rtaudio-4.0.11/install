@@ -1,0 +1,37 @@
+RtAudio - a set of C++ classes which provide a common API for realtime audio input/output across Linux (native ALSA, JACK, PulseAudio, and OSS), Macintosh OS X (CoreAudio and JACK), and Windows (DirectSound and ASIO) operating systems.
+
+By Gary P. Scavone, 2001-2012.
+
+To configure and compile (on Unix systems and MinGW):
+
+1. Unpack the RtAudio distribution (tar -xzf rtaudio-x.x.tar.gz).
+2. From within the directory containing this file, run configure:
+
+   ./configure
+
+3. Typing "make" will compile static and shared libraries.
+
+4. From within the "tests" directory, type "make" to compile the example programs.
+
+A few options can be passed to configure, including:
+
+  --enable-debug = enable various debug output
+  --with-alsa = choose native ALSA API support (linux only)
+  --with-pulse = choose native PulseAudio API support (linux only)
+  --with-oss = choose OSS API support (linux only)
+  --with-jack = choose JACK server support (linux or Macintosh OS-X)
+  --with-core = choose CoreAudio API support (Macintosh OS-X only)
+  --with-asio = choose ASIO API support (windows only)
+  --with-ds = choose DirectSound API support (windows only)
+
+Typing "./configure --help" will display all the available options.  Note that you can provide more than one "--with-" flag to the configure script to enable multiple API support.
+
+If you wish to use a different compiler than that selected by configure, specify that compiler in the command line (ex. to use CC):
+
+  ./configure CXX=CC
+
+For Windows Users:
+
+RtAudio compiles with the MinGW compiler or MS Visual Studio.
+
+Visual C++ 6.0 project files are included for the test programs in the /tests/Windows/ directory.  These projects compile API support for both ASIO and DirectSound.  Version 4.0 of RtAudio was tested with the .net compiler and it will not compile in Visual C++ 6.0 because of its non-conformance to modern C++ standards.

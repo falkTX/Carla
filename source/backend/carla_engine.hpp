@@ -18,10 +18,9 @@
 #ifndef __CARLA_ENGINE_HPP__
 #define __CARLA_ENGINE_HPP__
 
-//#include "carla_engine_osc.hpp"
-//#include "carla_engine_thread.hpp"
+#include "carla_backend.hpp"
+#include "carla_utils.hpp"
 
-//#include <QtCore/QProcessEnvironment>
 class QProcessEnvironment;
 
 CARLA_BACKEND_START_NAMESPACE
@@ -34,15 +33,6 @@ CARLA_BACKEND_START_NAMESPACE
  */
 
 /*!
- * @defgroup TimeInfoValidHints TimeInfo Valid Hints
- *
- * Various hints used for CarlaTimeInfo::valid.
- * @{
- */
-const uint32_t CarlaEngineTimeBBT = 0x1;
-/**@}*/
-
-/*!
  * The type of an engine.
  */
 enum CarlaEngineType {
@@ -52,13 +42,13 @@ enum CarlaEngineType {
     CarlaEngineTypeNull = 0,
 
     /*!
-    * Jack engine type.\n
+    * JACK engine type.\n
     * Provides single, multi-client, and rack processing modes.
     */
     CarlaEngineTypeJack = 1,
 
     /*!
-    * RtAudio engine type, used to provide ALSA, PulseAudio, DirectSound, ASIO and CoreAudio/Midi support.\n
+    * RtAudio engine type, used to provide Native Audio and Midi support.\n
     * Provides rack mode processing only.
     */
     CarlaEngineTypeRtAudio = 2,
@@ -137,10 +127,10 @@ enum CarlaEngineControlEventType {
  */
 struct CarlaEngineControlEvent {
     CarlaEngineControlEventType type;
-    uint32_t time;
-    uint8_t  channel;
-    uint16_t parameter;
-    double   value;
+    uint32_t time;      //!< frame offset
+    uint8_t  channel;   //!< channel, used for MIDI-related events and ports
+    uint16_t parameter; //!< parameter, used for parameter changes only
+    double   value;     //!< value
 
     CarlaEngineControlEvent()
         : type(CarlaEngineNullEvent),
@@ -168,30 +158,34 @@ struct CarlaEngineMidiEvent {
  * Engine BBT Time information.
  */
 struct CarlaEngineTimeInfoBBT {
-    int32_t bar;
-    int32_t beat;
-    int32_t tick;
-    double bar_start_tick;
-    float  beats_per_bar;
-    float  beat_type;
-    double ticks_per_beat;
-    double beats_per_minute;
+    int32_t bar;  //!< current bar
+    int32_t beat; //!< current beat-within-bar
+    int32_t tick; //!< current tick-within-beat
+    double barStartTick;
+
+    float beatsPerBar; //!< time signature "numerator"
+    float beatType;    //!< time signature "denominator"
+
+    double ticksPerBeat;
+    double beatsPerMinute;
 
     CarlaEngineTimeInfoBBT()
         : bar(0),
           beat(0),
           tick(0),
-          bar_start_tick(0.0),
-          beats_per_bar(0.0f),
-          beat_type(0.0f),
-          ticks_per_beat(0.0),
-          beats_per_minute(0.0) {}
+          barStartTick(0.0),
+          beatsPerBar(0.0f),
+          beatType(0.0f),
+          ticksPerBeat(0.0),
+          beatsPerMinute(0.0) {}
 };
 
 /*!
  * Engine Time information.
  */
 struct CarlaEngineTimeInfo {
+    static const uint32_t ValidBBT = 0x1;
+
     bool playing;
     uint32_t frame;
     uint32_t time;
@@ -212,21 +206,24 @@ struct CarlaEngineOptions {
     ProcessMode processMode;
     bool processHighPrecision;
 
+    bool forceStereo;
+    bool preferPluginBridges;
+    bool preferUiBridges;
+#ifdef WANT_DSSI
+    bool useDssiVstChunks;
+#endif
+
     uint maxParameters;
+    uint oscUiTimeout;
     uint preferredBufferSize;
     uint preferredSampleRate;
 
-    bool forceStereo;
-    bool useDssiVstChunks;
-
-    bool preferPluginBridges;
-    bool preferUiBridges;
-    uint oscUiTimeout;
-
+    CarlaString bridge_native;
     CarlaString bridge_posix32;
     CarlaString bridge_posix64;
     CarlaString bridge_win32;
     CarlaString bridge_win64;
+#ifdef WANT_LV2
     CarlaString bridge_lv2gtk2;
     CarlaString bridge_lv2gtk3;
     CarlaString bridge_lv2qt4;
@@ -234,43 +231,48 @@ struct CarlaEngineOptions {
     CarlaString bridge_lv2cocoa;
     CarlaString bridge_lv2win;
     CarlaString bridge_lv2x11;
+#endif
+#ifdef WANT_VST
     CarlaString bridge_vstcocoa;
     CarlaString bridge_vsthwnd;
     CarlaString bridge_vstx11;
+#endif
 
     CarlaEngineOptions()
-        : processMode(PROCESS_MODE_CONTINUOUS_RACK),
+        : processMode(PROCESS_MODE_PATCHBAY),
           processHighPrecision(false),
-          maxParameters(MAX_PARAMETERS),
-          preferredBufferSize(512),
-          preferredSampleRate(44100),
           forceStereo(false),
-          useDssiVstChunks(false),
           preferPluginBridges(false),
           preferUiBridges(true),
-          oscUiTimeout(4000/100) {}
+#ifdef WANT_DSSI
+          useDssiVstChunks(false),
+#endif
+          maxParameters(MAX_PARAMETERS),
+          oscUiTimeout(4000/100),
+          preferredBufferSize(512),
+          preferredSampleRate(44100) {}
 };
 
 // -----------------------------------------------------------------------
 
 /*!
- * Engine port (Base).\n
- * This is the base class for all Carla engine ports.
+ * Engine port (Abstract).\n
+ * This is the base class for all Carla Engine ports.
  */
-class CarlaEngineBasePort
+class CarlaEnginePort
 {
 public:
     /*!
      * The contructor.\n
      * Param \a isInput defines wherever this is an input port or not (output otherwise).\n
-     * Input/output state is constant for the lifetime of the port.
+     * Input/output state and process mode is constant for the lifetime of the port.
      */
-    CarlaEngineBasePort(const bool isInput, const ProcessMode processMode);
+    CarlaEnginePort(const bool isInput, const ProcessMode processMode);
 
     /*!
      * The decontructor.
      */
-    virtual ~CarlaEngineBasePort();
+    virtual ~CarlaEnginePort();
 
     /*!
      * Get the type of the port, as provided by the respective subclasses.
@@ -291,15 +293,14 @@ protected:
 // -----------------------------------------------------------------------
 
 /*!
- * Engine port (Audio).
+ * Engine Audio port.
  */
-class CarlaEngineAudioPort : public CarlaEngineBasePort
+class CarlaEngineAudioPort : public CarlaEnginePort
 {
 public:
     /*!
      * The contructor.\n
-     * Param \a isInput defines wherever this is an input port or not (output otherwise).\n
-     * Input/output state is constant for the lifetime of the port.
+     * All constructor parameters are constant and will never change in the lifetime of the port.
      */
     CarlaEngineAudioPort(const bool isInput, const ProcessMode processMode);
 
@@ -325,15 +326,14 @@ public:
 // -----------------------------------------------------------------------
 
 /*!
- * Engine port (Control).
+ * Engine Control port.
  */
-class CarlaEngineControlPort : public CarlaEngineBasePort
+class CarlaEngineControlPort : public CarlaEnginePort
 {
 public:
     /*!
      * The contructor.\n
-     * Param \a isInput defines wherever this is an input port or not (output otherwise).\n
-     * Input/output state is constant for the lifetime of the port.
+     * All constructor parameters are constant and will never change in the lifetime of the port.
      */
     CarlaEngineControlPort(const bool isInput, const ProcessMode processMode);
 
@@ -373,20 +373,22 @@ public:
      ** \note You must only call this for output ports.
      */
     virtual void writeEvent(const CarlaEngineControlEventType type, const uint32_t time, const uint8_t channel, const uint16_t parameter, const double value);
+
+private:
+    const uint32_t m_maxEventCount;
 };
 
 // -----------------------------------------------------------------------
 
 /*!
- * Engine port (MIDI).
+ * Engine MIDI port.
  */
-class CarlaEngineMidiPort : public CarlaEngineBasePort
+class CarlaEngineMidiPort : public CarlaEnginePort
 {
 public:
     /*!
      * The contructor.\n
-     * Param \a isInput defines wherever this is an input port or not (output otherwise).\n
-     * Input/output state is constant for the lifetime of the port.
+     * All constructor parameters are constant and will never change in the lifetime of the port.
      */
     CarlaEngineMidiPort(const bool isInput, const ProcessMode processMode);
 
@@ -426,39 +428,43 @@ public:
      ** \note You must only call this for output ports.
      */
     virtual void writeEvent(const uint32_t time, const uint8_t* const data, const uint8_t size);
+
+private:
+    const uint32_t m_maxEventCount;
 };
 
 // -----------------------------------------------------------------------
 
 /*!
- * Engine client.\n
+ * Engine client (Abstract).\n
  * Each plugin requires one client from the engine (created via CarlaEngine::addPort()).\n
  * \note This is a virtual class, each engine type provides its own funtionality.
  */
 class CarlaEngineClient
 {
-public:
+protected:
     /*!
-     * The contructor.\n
+     * The constructor, protected.\n
      * All constructor parameters are constant and will never change in the lifetime of the client.\n
      * Client starts in deactivated state.
      */
     CarlaEngineClient(const CarlaEngineType engineType, const ProcessMode processMode);
 
+public:
     /*!
-     * The decontructor.
+     * The destructor.
      */
     virtual ~CarlaEngineClient();
 
     /*!
      * Activate this client.\n
-     * \note Client must be deactivated before calling this function.
+     * Client must be deactivated before calling this function.
      */
     virtual void activate();
 
     /*!
      * Deactivate this client.\n
-     * \note Client must be activated before calling this function.
+     * Client must be activated before calling this function.
      */
     virtual void deactivate();
 
@@ -486,9 +492,9 @@ public:
 
     /*!
      * Add a new port of type \a portType.
-     * \note This function does nothing in rack processing mode since its ports are static (2 audio, 1 midi and 1 control for both input and output).
+     * \note This function does nothing in rack processing mode since ports are static there (2 audio, 1 control and 1 midi for both input and output).
      */
-    virtual const CarlaEngineBasePort* addPort(const CarlaEnginePortType portType, const char* const name, const bool isInput) = 0;
+    virtual const CarlaEnginePort* addPort(const CarlaEnginePortType portType, const char* const name, const bool isInput) = 0;
 
 protected:
     const CarlaEngineType engineType;
@@ -501,7 +507,7 @@ private:
 
 // -----------------------------------------------------------------------
 
-class CarlaEnginePrivateData;
+struct CarlaEnginePrivateData;
 
 /*!
  * Carla Engine.
@@ -509,6 +515,13 @@ class CarlaEnginePrivateData;
  */
 class CarlaEngine
 {
+protected:
+    /*!
+     * The constructor, protected.\n
+     * \note This only initializes engine data, it doesn't initialize the engine itself.
+     */
+    CarlaEngine();
+
 public:
     /*!
      * The decontructor.
@@ -518,12 +531,6 @@ public:
 
     // -------------------------------------------------------------------
     // Static values and calls
-
-    /*!
-     * Maximum number of peaks per plugin.\n
-     * \note There are both input and output peaks.
-     */
-    static const unsigned short MAX_PEAKS = 2;
 
     /*!
      * Get the number of available engine drivers.
@@ -629,7 +636,10 @@ public:
      * Add new plugin, using native binary type.\n
      * Returns the id of the plugin, or -1 if the operation failed.
      */
-    short addPlugin(const PluginType ptype, const char* const filename, const char* const name, const char* const label, void* const extra = nullptr);
+    short addPlugin(const PluginType ptype, const char* const filename, const char* const name, const char* const label, void* const extra = nullptr)
+    {
+        return addPlugin(BINARY_NATIVE, ptype, filename, name, label, extra);
+    }
 
     /*!
      * Remove plugin with id \a id.
@@ -737,9 +747,6 @@ public:
      * Get the engine options as process environment.
      */
     const QProcessEnvironment& getOptionsAsProcessEnvironment() const;
-    //{
-    //    return m_procEnv;
-    //}
 
     /*!
      * Set the engine option \a option.
@@ -869,20 +876,9 @@ public:
     void osc_send_control_exit();
 #endif
 
-#ifndef BUILD_BRIDGE
-    // -------------------------------------------------------------------
-    // Rack mode
-
-    static const unsigned short MAX_CONTROL_EVENTS = 512;
-    static const unsigned short MAX_MIDI_EVENTS    = 512;
-    CarlaEngineControlEvent rackControlEventsIn[MAX_CONTROL_EVENTS];
-    CarlaEngineControlEvent rackControlEventsOut[MAX_CONTROL_EVENTS];
-    CarlaEngineMidiEvent rackMidiEventsIn[MAX_MIDI_EVENTS];
-    CarlaEngineMidiEvent rackMidiEventsOut[MAX_MIDI_EVENTS];
-#endif
-
     // -------------------------------------
 
+#if 0
     /*!
      * \class ScopedLocker
      *
@@ -908,7 +904,7 @@ public:
         //        mutex->lock();
         //}
 
-        ~ScopedLocker()
+        ~ScopedLocker() {}
         //{
         //    if (m_lock)
         //        mutex->unlock();
@@ -918,31 +914,49 @@ public:
         QMutex* const mutex;
         const bool m_lock;
     };
+#endif
 
     // -------------------------------------
 
 protected:
-    /*!
-     * The contructor, protected.\n
-     * \note This only initializes engine data, it doesn't initialize the engine itself.
-     */
-    CarlaEngine();
-
-#ifndef BUILD_BRIDGE
-    /*!
-     * Proccess audio buffer in rack mode, protected.
-     */
-    void processRack(float* inBuf[2], float* outBuf[2], const uint32_t frames);
-#endif
-
-    CarlaEngineOptions options;
-
     CarlaString name;
     uint32_t bufferSize;
     double   sampleRate;
+
+    CarlaEngineOptions  options;
     CarlaEngineTimeInfo timeInfo;
 
+#ifndef BUILD_BRIDGE
+    // Rack mode data
+    static const unsigned short MAX_CONTROL_EVENTS = 512;
+    static const unsigned short MAX_MIDI_EVENTS    = 512;
+    CarlaEngineControlEvent rackControlEventsIn[MAX_CONTROL_EVENTS];
+    CarlaEngineControlEvent rackControlEventsOut[MAX_CONTROL_EVENTS];
+    CarlaEngineMidiEvent rackMidiEventsIn[MAX_MIDI_EVENTS];
+    CarlaEngineMidiEvent rackMidiEventsOut[MAX_MIDI_EVENTS];
+
+    /*!
+     * Proccess audio buffer in rack mode.
+     */
+    void processRack(float* inBuf[2], float* outBuf[2], const uint32_t frames);
+
+    /*!
+     * Proccess audio buffer in patchbay mode.
+     * In \a bufCount, [0]=inBufCount and [1]=outBufCount
+     */
+    void processPatchbay(float** inBuf, float** outBuf, const uint32_t bufCount[2], const uint32_t frames);
+#endif
+
+    /*!
+     * Report to all plugins about buffer size change.
+     */
     void bufferSizeChanged(const uint32_t newBufferSize);
+
+    /*!
+     * Report to all plugins about sample rate change.
+     * This is not supported on all plugin types, on which case they will be re-initiated.
+     */
+    void sampleRateChanged(const double newSampleRate);
 
 private:
 #ifdef CARLA_ENGINE_JACK
@@ -962,38 +976,13 @@ private:
 
     static CarlaEngine* newRtAudio(RtAudioApi api);
     static unsigned int getRtAudioApiCount();
-    static const char* getRtAudioApiName(unsigned int index);
+    static const char*  getRtAudioApiName(unsigned int index);
 #endif
 
     CarlaEnginePrivateData* const data;
-    friend class CarlaEngineInternal;
-#if 0
-private:
-    CarlaEngineOsc m_osc;
-    CarlaEngineThread m_thread;
 
-    const CarlaOscData* m_oscData;
-
-    CallbackFunc m_callback;
-    void*        m_callbackPtr;
-    CarlaString  m_lastError;
-
-#ifndef BUILD_BRIDGE
-    QProcessEnvironment m_procEnv;
-#endif
-
-    QMutex m_procLock;
-    QMutex m_midiLock;
-
-    CarlaPlugin* m_carlaPlugins[MAX_PLUGINS];
-    const char*  m_uniqueNames[MAX_PLUGINS];
-
-    double m_insPeak[MAX_PLUGINS * MAX_PEAKS];
-    double m_outsPeak[MAX_PLUGINS * MAX_PEAKS];
-
-    bool m_aboutToClose;
-    unsigned short m_maxPluginNumber;
-#endif
+    friend class CarlaEngineControlPort;
+    friend class CarlaEngineMidiPort;
 };
 
 // -----------------------------------------------------------------------

@@ -20,12 +20,16 @@
 
 //#include "carla_midi.h"
 //#include "carla_engine.hpp"
-//#include "carla_osc_utils.hpp"
+
 //#include "carla_plugin_thread.hpp"
 
-//#ifdef BUILD_BRIDGE
-//# include "carla_bridge_osc.hpp"
-//#endif
+# include "carla_backend.hpp"
+
+#ifdef BUILD_BRIDGE
+# include "carla_bridge_osc.hpp"
+#else
+# include "carla_osc_utils.hpp"
+#endif
 
 // common includes
 //#include <cmath>
@@ -457,7 +461,7 @@ public:
     /*!
      * Get information about the plugin's custom GUI, if provided.
      */
-    virtual void getGuiInfo(GuiType* const type, bool* const resizable);
+    //virtual void getGuiInfo(GuiType* const type, bool* const resizable);
 
     // -------------------------------------------------------------------
     // Set data (internal stuff)
@@ -636,7 +640,7 @@ public:
      *
      * \note This function must be always called from the main thread.
      */
-    virtual void setGuiContainer(GuiContainer* const container);
+    //virtual void setGuiContainer(GuiContainer* const container);
 
     /*!
      * Show (or hide) the plugin's custom GUI according to \a yesNo.
@@ -827,26 +831,26 @@ public:
     // -------------------------------------------------------------------
     // Plugin initializers
 
-    struct initializer {
+    struct Initializer {
         CarlaEngine* const engine;
         const char* const filename;
         const char* const name;
         const char* const label;
     };
 
-//#ifndef BUILD_BRIDGE
-    static CarlaPlugin* newNative(const initializer& init);
-//#endif
-    static CarlaPlugin* newLADSPA(const initializer& init, const void* const extra);
-    static CarlaPlugin* newDSSI(const initializer& init, const void* const extra);
-    static CarlaPlugin* newLV2(const initializer& init);
-    static CarlaPlugin* newVST(const initializer& init);
-//#ifndef BUILD_BRIDGE
-    static CarlaPlugin* newGIG(const initializer& init);
-    static CarlaPlugin* newSF2(const initializer& init);
-    static CarlaPlugin* newSFZ(const initializer& init);
-    static CarlaPlugin* newBridge(const initializer& init, const BinaryType btype, const PluginType ptype, const void* const extra);
-//#endif
+#ifndef BUILD_BRIDGE
+    static CarlaPlugin* newNative(const Initializer& init);
+#endif
+    static CarlaPlugin* newLADSPA(const Initializer& init, const void* const extra);
+    static CarlaPlugin* newDSSI(const Initializer& init, const void* const extra);
+    static CarlaPlugin* newLV2(const Initializer& init);
+    static CarlaPlugin* newVST(const Initializer& init);
+#ifndef BUILD_BRIDGE
+    static CarlaPlugin* newGIG(const Initializer& init);
+    static CarlaPlugin* newSF2(const Initializer& init);
+    static CarlaPlugin* newSFZ(const Initializer& init);
+    static CarlaPlugin* newBridge(const Initializer& init, const BinaryType btype, const PluginType ptype, const void* const extra);
+#endif
 
     static size_t getNativePluginCount();
     static const PluginDescriptor* getNativePluginDescriptor(const size_t index);

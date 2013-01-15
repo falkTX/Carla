@@ -1,0 +1,54 @@
+/*! \mainpage The RtAudio Home Page
+
+RtAudio is a set of C++ classes that provide a common API (Application Programming Interface) for realtime audio input/output across Linux, Macintosh OS-X and Windows operating systems.  RtAudio significantly simplifies the process of interacting with computer audio hardware.  It was designed with the following objectives:
+
+<UL>
+  <LI>object-oriented C++ design</LI>
+  <LI>simple, common API across all supported platforms</LI>
+  <LI>only one source and two header files for easy inclusion in programming projects</LI>
+  <LI>allow simultaneous multi-api support</LI>
+  <LI>support dynamic connection of devices</LI>
+  <LI>provide extensive audio device parameter control</LI>
+  <LI>allow audio device capability probing</LI>
+  <LI>automatic internal conversion for data format, channel number compensation, (de)interleaving, and byte-swapping</LI>
+</UL>
+
+RtAudio incorporates the concept of audio streams, which represent audio output (playback) and/or input (recording).  Available audio devices and their capabilities can be enumerated and then specified when opening a stream.  Where applicable, multiple API support can be compiled and a particular API specified when creating an RtAudio instance.  See the \ref apinotes section for information specific to each of the supported audio APIs.
+
+\section whatsnew What's New (Version 4.0)
+
+RtAudio V4 represents a significant rewrite of the code and includes a number of API and functionality changes from previous versions. A partial list of the changes includes:
+- new support for non-interleaved user data
+- additional input/output parameter specifications, including channel offset
+- new support for dynamic connection of devices
+- new support for stream time
+- revised callback arguments, including separate input and output buffer arguments
+- revised C++ exception handling
+- updated support for OSS version 4.0
+- discontinued support of blocking functionality
+- discontinued support of SGI
+
+Devices are now re-enumerated every time the RtAudio::getDeviceCount(), RtAudio::getDeviceInfo(), and RtAudio::openStream() functions are called.  This allows for the proper identification of hot-pluggable (USB, Firewire, ...) devices that are connected after an RtAudio instance is created.
+
+\section download Download
+
+Latest Release (14 June 2012): <A href="http://www.music.mcgill.ca/~gary/rtaudio/release/rtaudio-4.0.11.tar.gz">Version 4.0.11</A>
+
+\section documentation Documentation Links
+
+-# \ref errors
+-# \ref probe
+-# \ref settings
+-# \ref playback
+-# \ref recording
+-# \ref duplex
+-# \ref multi
+-# \ref compiling
+-# \ref apinotes
+-# \ref acknowledge
+-# \ref license
+-# <A href="bugs.html">Bug Tracker</A>
+-# <A href="updates.html">Possible Updates</A>
+-# <A href="http://sourceforge.net/projects/rtaudio">RtAudio at SourceForge</A>
+
+*/

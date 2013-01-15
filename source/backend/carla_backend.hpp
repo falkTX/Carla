@@ -89,7 +89,7 @@ const unsigned int PARAMETER_USES_CUSTOM_TEXT = 0x80; //!< Parameter uses custom
  * The type defines how the \param value in CustomData is stored.
  *
  * Types are valid URIs.\n
- * Any non-string, non-simple type is saved in a base64 encoded format.
+ * Any non-string, non-simple type (not integral) is saved in a base64 encoded format.
  */
 const char* const CUSTOM_DATA_INVALID = nullptr;                                  //!< Null/Invalid data.
 const char* const CUSTOM_DATA_CHUNK   = "http://kxstudio.sf.net/ns/carla/chunk";  //!< Carla Chunk
@@ -105,11 +105,11 @@ const char* const CUSTOM_DATA_STRING  = "http://kxstudio.sf.net/ns/carla/string"
  * TODO: Review these, may not be needed anymore
  * @{
  */
-const char* const CARLA_BRIDGE_MSG_HIDE_GUI   = "CarlaBridgeHideGUI";   //!< Plugin -> Host call, tells host GUI is now hidden
-const char* const CARLA_BRIDGE_MSG_SAVED      = "CarlaBridgeSaved";     //!< Plugin -> Host call, tells host state is saved
-const char* const CARLA_BRIDGE_MSG_SAVE_NOW   = "CarlaBridgeSaveNow";   //!< Host -> Plugin call, tells plugin to save state now
-const char* const CARLA_BRIDGE_MSG_SET_CHUNK  = "CarlaBridgeSetChunk";  //!< Host -> Plugin call, tells plugin to set chunk in file \a value
-const char* const CARLA_BRIDGE_MSG_SET_CUSTOM = "CarlaBridgeSetCustom"; //!< Host -> Plugin call, tells plugin to set a custom data set using \a value ("type·key·rvalue").\n If \a type is 'chunk' or 'binary' \a rvalue refers to chunk file.
+//const char* const CARLA_BRIDGE_MSG_HIDE_GUI   = "CarlaBridgeHideGUI";   //!< Plugin -> Host call, tells host GUI is now hidden
+//const char* const CARLA_BRIDGE_MSG_SAVED      = "CarlaBridgeSaved";     //!< Plugin -> Host call, tells host state is saved
+//const char* const CARLA_BRIDGE_MSG_SAVE_NOW   = "CarlaBridgeSaveNow";   //!< Host -> Plugin call, tells plugin to save state now
+//const char* const CARLA_BRIDGE_MSG_SET_CHUNK  = "CarlaBridgeSetChunk";  //!< Host -> Plugin call, tells plugin to set chunk in file \a value
+//const char* const CARLA_BRIDGE_MSG_SET_CUSTOM = "CarlaBridgeSetCustom"; //!< Host -> Plugin call, tells plugin to set a custom data set using \a value ("type·key·rvalue").\n If \a type is 'chunk' or 'binary' \a rvalue refers to chunk file.
 /**@}*/
 
 /*!
@@ -130,14 +130,18 @@ enum BinaryType {
  */
 enum PluginType {
     PLUGIN_NONE     = 0, //!< Null plugin type.
+#ifndef BUILD_BRIDGE
     PLUGIN_INTERNAL = 1, //!< Internal plugin.\see NativePlugin
+#endif
     PLUGIN_LADSPA   = 2, //!< LADSPA plugin.\see LadspaPlugin
     PLUGIN_DSSI     = 3, //!< DSSI plugin.\see DssiPlugin
     PLUGIN_LV2      = 4, //!< LV2 plugin.\see Lv2Plugin
     PLUGIN_VST      = 5, //!< VST plugin.\see VstPlugin
+#ifndef BUILD_BRIDGE
     PLUGIN_GIG      = 6, //!< GIG sound kit, implemented via LinuxSampler.\see LinuxSamplerPlugin
     PLUGIN_SF2      = 7, //!< SF2 sound kit (aka SoundFont), implemented via FluidSynth.\see FluidSynthPlugin
     PLUGIN_SFZ      = 8  //!< SFZ sound kit, implemented via LinuxSampler.\see LinuxSamplerPlugin
+#endif
 };
 
 /*!
@@ -190,16 +194,16 @@ enum InternalParametersIndex {
  *
  * TODO: these need to be handled all internally, only via showGui() backend-side
  */
-enum GuiType {
-    GUI_NONE           = 0, //!< Null type, plugin has no custom GUI.
-    GUI_INTERNAL_QT4   = 1, //!< Qt4 type, handled internally.
-    GUI_INTERNAL_COCOA = 2, //!< Reparented MacOS native type, handled internally.
-    GUI_INTERNAL_HWND  = 3, //!< Reparented Windows native type, handled internally.
-    GUI_INTERNAL_X11   = 4, //!< Reparented X11 native type, handled internally.
-    GUI_EXTERNAL_LV2   = 5, //!< External LV2-UI type, handled internally.
-    GUI_EXTERNAL_SUIL  = 6, //!< SUIL type, currently used only for lv2 gtk2 direct-access UIs.\note This type will be removed in the future!
-    GUI_EXTERNAL_OSC   = 7  //!< External, osc-bridge controlled, UI.
-};
+//enum GuiType {
+//    GUI_NONE           = 0, //!< Null type, plugin has no custom GUI.
+//    GUI_INTERNAL_QT4   = 1, //!< Qt4 type, handled internally.
+//    GUI_INTERNAL_COCOA = 2, //!< Reparented MacOS native type, handled internally.
+//    GUI_INTERNAL_HWND  = 3, //!< Reparented Windows native type, handled internally.
+//    GUI_INTERNAL_X11   = 4, //!< Reparented X11 native type, handled internally.
+//    GUI_EXTERNAL_LV2   = 5, //!< External LV2-UI type, handled internally.
+//    GUI_EXTERNAL_SUIL  = 6, //!< SUIL type, currently used only for lv2 gtk2 direct-access UIs.\note This type will be removed in the future!
+//    GUI_EXTERNAL_OSC   = 7  //!< External, osc-bridge controlled, UI.
+//};
 
 /*!
  * Options used in the set_option() call.\n
@@ -249,11 +253,13 @@ enum OptionsType {
      */
     OPTION_FORCE_STEREO = 6,
 
+#ifdef WANT_DSSI
     /*!
      * Use (unofficial) dssi-vst chunks feature.\n
      * Default is no.
      */
     OPTION_USE_DSSI_VST_CHUNKS = 7,
+#endif
 
     /*!
      * Use plugin bridges whenever possible.\n
@@ -304,6 +310,7 @@ enum OptionsType {
      */
     OPTION_PATH_BRIDGE_WIN64 = 15,
 
+#ifdef WANT_LV2
     /*!
      * Set path to the LV2 Gtk2 UI bridge executable.\n
      * Default unset.
@@ -345,7 +352,9 @@ enum OptionsType {
      * Default unset.
      */
     OPTION_PATH_BRIDGE_LV2_X11 = 22,
+#endif
 
+#ifdef WANT_VST
     /*!
      * Set path to the VST Cocoa UI bridge executable.\n
      * Default unset.
@@ -363,6 +372,7 @@ enum OptionsType {
      * Default unset.
      */
     OPTION_PATH_BRIDGE_VST_X11 = 25
+#endif
 };
 
 /*!
@@ -508,7 +518,7 @@ enum CallbackType {
 };
 
 /*!
- * Engine process mode, changed using set_option().
+ * Engine process mode.
  *
  * \see OPTION_PROCESS_MODE
  */

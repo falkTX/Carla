@@ -1,0 +1,57 @@
+<html>
+<head>
+<title>RtAudio Bugs</title>
+</head>
+<body bgcolor="#FFFFFF">
+
+<center><h1>RtAudio Bug Tracker</h1></center>
+
+"Bugs" are considered to be problems that cause program crashes or unpredictable results.  Incomplete or unavailable features are tracked as <a href="updates.html">updates</a>.
+
+<h2>Reported (Unconfirmed) Bugs:</h2>
+
+<table border=1 cellpadding=10 cellspacing=0>
+<tr bgcolor="#C7CAFF"><td><b>#</b></td><td><b>Version</b></td><td><b>API</b></td><td><b>Description</b></td><td><b>Status</b></td></b></tr>
+
+</table>
+
+<h2>Confirmed Bugs (Unfixed):</h2>
+
+<table border=1 cellpadding=10 cellspacing=0>
+<tr bgcolor="#C7CAFF"><td><b>#</b></td><td><b>Version</b></td><td><b>API</b></td><td><b>Description</b></td></tr>
+
+</table>
+
+<h2>Fixed Bugs:</h2>
+
+<table border=1 cellpadding=10 cellspacing=0>
+<tr bgcolor="#C7CAFF"><td><b>#</b></td><td><b>Version</b></td><td><b>API</b></td><td><b>Description</b></td></tr>
+<tr><td>24</td><td>4.0.8</td><td>All</td><td>Various updates to most APIs to improve stopping efficiency and avoid lockup issues</td></tr>
+<tr><td>23</td><td>4.0.8</td><td>All</td><td>New python binding in "contrib" directory (beta, thanks to Antoine Lefebvre)</td></tr>
+<tr><td>22</td><td>4.0.8</td><td>OS-X</td><td>Fixed problem handling device names in some languages (CFString conversion, Vincent B&eacute;nony)</td></tr>
+<tr><td>21</td><td>4.0.8</td><td>ASIO</td><td>Fixed problem using gcc4.4 (MinGW) to set and query supported sample rates</td></tr>
+<tr><td>20</td><td>4.0.6</td><td>OS-X</td><td>Fixed OS-X for OS < 10.5 ... need preprocessor definition around new variable type (thanks to Tristan Matthews)</td></tr>
+<tr><td>19</td><td>4.0.6</td><td>ALSA</td><td>Fixed ALSA code to set period size to power of two (thanks to Joakim Karrstrom)</td></tr>
+<tr><td>18</td><td>4.0.5</td><td>ASIO</td><td>Fixed ASIO sample rate selection bug (thanks to Sasha Zheligovsky)</td></tr>
+<tr><td>17</td><td>4.0.5</td><td>ALSA</td><td>64-bit fixes in ALSA API (thanks to Stefan Muller Arisona)</td></tr>
+<tr><td>16</td><td>4.0.5</td><td>All</td><td>Fixed bug in rtaudio-config script</td></tr>
+<tr><td>15</td><td>4.0.5</td><td>OS-X</td><td>Fixed a few gcc 4.4 errors in OS-X</td></tr>
+<tr><td>14</td><td>4.0.5</td><td>All</td><td>Bug fix in byteSwapBuffer() (thanks to Stefan Muller Arisona and Theo Veenker)</td></tr>
+<tr><td>13</td><td>4.0.5</td><td>All</td><td>Fix to int<->float conversion in convertBuffer() (thanks to Theo Veenker)</td></tr>
+<tr><td>12</td><td>4.0.5</td><td>All</td><td>Fix to the way the stream state is changed to avoid infinite loop problem</td></tr>
+<tr><td>11</td><td>4.0.4</td><td>All</td><td>Fixes in configure script</td></tr>
+<tr><td>10</td><td>4.0.4</td><td>All</td><td>Fixed clearing of error message stream in error()</td></tr>
+<tr><td>9</td><td>4.0.4</td><td>All</td><td>Fixed RtAudio::DeviceInfo description in "probing" documentation</td></tr>
+<tr><td>8</td><td>4.0.4</td><td>ALSA/OSS</td><td>Memory leak fixes in ALSA and OSS</td></tr>
+<tr><td>7</td><td>4.0.4</td><td>Jack</td><td>Jack in/out port flag fix</td></tr>
+<tr><td>6</td><td>4.0.2</td><td>All</td><td>Fix to RtError::WARNING typo in RtAudio.h (RtApiDummy)</td></tr>
+<tr><td>5</td><td>4.0.1</td><td>All</td><td>Fix to RtError::WARNING typo in RtAudio.cpp</td></tr>
+<tr><td>4</td><td>4.0</td><td>CoreAudio</td><td>RtAudio checks a device's <i>internal</i> data format and sets it to the highest allowable bit rate.  For some stupid devices, like the Griffin iMic, the default format is 8-bit mono when the requested format and number of channels does not exist.  So, we need to query the device's capabilities using the kAudioStreamPropertyPhysicalFormats selector - i.e. ask a device for all of the channels/format/rate combination that it supports - and then enumerate through them to pick the best one.</td></tr>
+<tr><td>3</td><td>4.0</td><td>ALSA</td><td>Changed sample rate setting to use <tt>snd_pcm_hw_params_set_rate_near()</tt> function</td></tr>
+<tr><td>2</td><td>4.0</td><td>All unices</td><td>Default pthread scheduling priority changed to SCHED_RR when defined</td></tr>
+<tr><td>1</td><td>4.0</td><td>Windows DS</td><td>Memory allocation bug in device querying</td></tr>
+</table>
+
+
+</body>
+</html>

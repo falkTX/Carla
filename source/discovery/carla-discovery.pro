@@ -19,8 +19,7 @@ TEMPLATE = app
 VERSION  = 0.5.0
 
 SOURCES = \
-    carla-discovery.cpp \
-    ../utils/carla_lv2_utils.hpp
+    carla-discovery.cpp
 
 HEADERS = \
     ../includes/carla_defines.hpp \
@@ -49,5 +48,4 @@ mingw {
 LIBS += -static -mwindows
 }
 
-QMAKE_CFLAGS *= -std=c++0x
 QMAKE_CXXFLAGS *= -std=c++0x

@@ -140,11 +140,13 @@ void carla_fill(T* data, const unsigned int size, const T v)
         *data++ = v;
 }
 
+static inline
 void carla_zeroDouble(double* data, const unsigned size)
 {
     carla_fill<double>(data, size, 0.0);
 }
 
+static inline
 void carla_zeroFloat(float* data, const unsigned size)
 {
     carla_fill<float>(data, size, 0.0f);

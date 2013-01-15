@@ -1,0 +1,88 @@
+<html>
+<head>
+<title>RtAudio Updates</title>
+</head>
+<body bgcolor="#FFFFFF">
+
+<center><h1>RtAudio Update Tracker</h1></center>
+
+<h2>Needed Updates & Possible New Features:</h2>
+
+<table border=1 cellpadding=10 cellspacing=0>
+<tr bgcolor="#C7CAFF"><td><b>#</b></td><td><b>Description</b></td><td><b>Status</b></td></b></tr>
+
+<tr><td>1</td><td>Check implementation of various stream options (RTAUDIO_HOG_DEVICE, ...) to verify proper implementation.</td><td>UC</td></tr>
+<tr><td>2</td><td>Do API-specific implementations of stream time where possible.</td><td>UC</td></tr>
+<tr><td>3</td><td>Better support for multichannel (>2) audio devices in Windows DirectSound API.</td><td>UC</td></tr>
+<tr><td>4</td><td>Mixer support to set the input volume, output volume, and select the input source (e.g., "Mic" vs "Line In") via following new methods:
+<ul>
+<li><tt>double getStreamOutputVolume()</tt>:   // returns value between 0.0 and 1.0</li>
+<li><tt>void setStreamOutputVolume( double volume )</tt>:  // volume should be value between 0.0 and 1.0</li>
+<li><tt>double getStreamInputVolume()</tt>:   // returns value between 0.0 and 1.0</li>
+<li><tt>void setStreamInputVolume( double volume )</tt>:  // volume should be value between 0.0 and 1.0</li>
+<li><tt>void getStreamInputSources( std::vector&lt;std::string&gt;& sources )</tt>:  // returns a vector of strings with source names</li>
+<li><tt>void setStreamInputSource( unsigned int index )</tt>: // source index is value between 0 and sources.size()-1, as determined from function above</li>
+</ul></td><td>UC<a href="#4"><sup>4</sup></a></td></tr>
+<tr><td>5</td><td>Robust support for full-duplex with different devices.  Provide well-defined behavior if the devices get out of sync, with input taking precedence, so no incoming samples are lost (if possible).</td><td>UC</td></tr>
+<tr><td>6</td><td>More sophisticated querying of device capabilities - for example, it'd be nice to figure out that a device supports either 4 channels of 16-bit or 2 channels of 24-bit audio.</td><td>UC</td></tr>
+<tr><td>7</td><td>A faster device querying capability in DirectSound API - the current approach can take an extremely long time, especially for devices with many channels (like an RME Fireface 800).</td><td>UC</td></tr>
+<tr><td>8</td><td>A way to specify a desired device name, instead of a device index, when opening a stream?</td><td>UC</td></tr>
+
+</table>
+
+<p>
+<b>Status Codes:</b>
+<p>
+<table border=1 cellpadding=10 cellspacing=0>
+<tr><td>UC</td><td>Under Consideration</td></tr>
+<tr><td>API?</td><td>Approved but need to determine API change</td></tr>
+</table>
+
+
+<h2>Recently Added Features:</h2>
+
+<table border=1 cellpadding=10 cellspacing=0>
+<tr bgcolor="#C7CAFF"><td><b>#</b></td><td><b>Description</b></td><td width="20%"><b>Solution</b></td><td><b>Version</b></td></tr>
+
+<tr><td>1</td><td>Stream time support - ability to query the stream and find out the exact time since the stream was started, according to that device's clock.  For APIs where this is not supported, this is estimated based on a count of the bytes that have been sent and the known latency.</td><td><a href="#1"><sup>1</sup></a>New <tt>getStreamTime()</tt> function (DM)</td><td>4.0</td></tr>
+
+<tr><td>2</td><td>Ability to determine whether stream is currently running.</td><td>New <tt>bool isStreamRunning()</tt> function (DM)</td><td>4.0</td></tr>
+
+<tr><td>3</td><td>NetBSD support added to Linux OSS API.</td><td>__NetBSD__ must be defined (Emmanuel Dreyfus)</td><td>4.0</td></tr>
+
+<tr><td>4</td><td>Added function to return available compiled APIs</td><td>New <tt>getCompiledApi()</tt> function (GS)</td><td>4.0</td></tr>
+
+<tr><td>5</td><td>Changed <tt>isDefault</tt> member of RtAudioDeviceInfo structure to <tt>isDefaultOutput</tt> and <tt>isDefaultInput</tt> to be able to distinguish between default input and output devices.</td><td>Modified <tt>RtAudioDeviceInfo</tt> structure (GS)</td><td>4.0</td></tr>
+
+<tr><td>6</td><td>Added function to return current API for RtAudio instance</td><td>New <tt>getCurrentApi()</tt> function (GS)</td><td>4.0</td></tr>
+
+<tr><td>7</td><td>Added function to return current stream device(s) index</td><td>New <tt>getStreamDevice()</tt> function (GS)</td><td>4.0</td></tr>
+
+<tr><td>8</td><td>Dummy version that compiles without API compiler flag but does nothing</td><td>New <tt>RtApiDummy</tt> class (GS)</td><td>4.0</td></tr>
+
+<tr><td>9</td><td>Ability to query device latency.</td><td><a href="#2"><sup>2</sup></a>New <tt>getStreamLatency()</tt> function (GS)</td><td>4.0</td></tr>
+
+<tr><td>10</td><td>Choice of opening a device in exclusive or non-exclusive mode.  If opening in non-exclusive mode, try to use the device as-is without changing its sample rate, etc - this is good when users want to use two audio devices at once.</td><td><a href="#3"><sup>3</sup></a>New RtAudio::StreamOptions structure and parameters</td><td>4.0</td></tr>
+
+<tr><td>11</td><td>Previous CoreAudio support included only a single stream with multiple channels or multiple one-channel streams.</td><td>Added support for arbitrary stream channel configurations (GS)</td><td>4.0.5</td></tr>
+
+<tr><td>12</td><td>Added function to return actual sample rate used by a stream because sometimes it varies slightly from the specified one.</td><td>New <tt>getStreamSampleRate()</tt> function (Theo Veenker)</td><td>4.0.5</td></tr>
+
+<tr><td>13</td><td>Added way to specify realtime scheduling for unices.</td><td>New StreamOptions flag "RTAUDIO_SCHEDULE_REALTIME" and attribute "priority" to StreamOptions (Theo Veenker)</td><td>4.0.5</td></tr>
+
+</table>
+
+<h2>Details:</h2>
+
+<a name="1"><sup>1</sup></a>Currently implemented by incrementing a counter every time the tickStream() or callback function is called.  If the gettimeofday() function is available (right now it is enabled for all Unix-like systems but not Windows), it also records the time of each tickStream() call.  Then, when you call getStreamTime(), it adds the elapsed time since the last tickStream also.  This makes the playback counter pretty smooth, but accurate.  The intent is that now we could implement something more accurate on platforms that support it - but this is a reasonable baseline.  One thing to watch out for: asking OSS for the stream time is problematic; on some devices the counter is only 16-bit and wraps around frequently, and on some devices it will sometimes return bogus values.
+<P>
+<P>
+<a name="2"><sup>2</sup></a>This function could not be implemented for all APIs.  If the function returns a value of zero, it should be assumed to be invalid.
+<P>
+<P>
+<a name="3"><sup>3</sup></a>This implementation does not attempt to leave a device as-is.  However, the flag <tt>RTAUDIO_HOG_DEVICE</tt> is provided to attempt to grab exclusive use of a device.
+<P>
+<P>
+<a name="4"><sup>4</sup></a>I actually coded this up for OS-X Core Audio.  However, I found it bloated the code and presented a number of interface problems that did more harm than good.  Thus, it is currently not being considered further (GS).
+</body>
+</html>

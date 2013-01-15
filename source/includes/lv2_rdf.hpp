@@ -508,7 +508,7 @@ struct LV2_RDF_Descriptor {
     LV2_RDF_UI* UIs;
 
     LV2_RDF_Descriptor()
-        : Type{0x0, 0x0}, // FIXME ?
+        : Type{0x0},
           URI(nullptr),
           Name(nullptr),
           Author(nullptr),

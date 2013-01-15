@@ -31,6 +31,8 @@ CARLA_BACKEND_START_NAMESPACE
  * @{
  */
 
+// -------------------------------------------------------------------------------------------------------------------
+
 static inline
 const char* BinaryType2Str(const BinaryType& type)
 {
@@ -160,6 +162,7 @@ const char* InternalParametersIndex2Str(const InternalParametersIndex& index)
     return nullptr;
 }
 
+#if 0
 static inline
 const char* GuiType2Str(const GuiType& type)
 {
@@ -186,6 +189,7 @@ const char* GuiType2Str(const GuiType& type)
     qWarning("CarlaBackend::GuiType2Str(%i) - invalid type", type);
     return nullptr;
 }
+#endif
 
 static inline
 const char* OptionsType2Str(const OptionsType& type)
@@ -206,14 +210,18 @@ const char* OptionsType2Str(const OptionsType& type)
         return "OPTION_PREFERRED_SAMPLE_RATE";
     case OPTION_FORCE_STEREO:
         return "OPTION_FORCE_STEREO";
+#ifdef WANT_DSSI
     case OPTION_USE_DSSI_VST_CHUNKS:
         return "OPTION_USE_DSSI_VST_CHUNKS";
+#endif
     case OPTION_PREFER_PLUGIN_BRIDGES:
         return "OPTION_PREFER_PLUGIN_BRIDGES";
     case OPTION_PREFER_UI_BRIDGES:
         return "OPTION_PREFER_UI_BRIDGES";
     case OPTION_OSC_UI_TIMEOUT:
         return "OPTION_OSC_UI_TIMEOUT";
+    case OPTION_PATH_BRIDGE_NATIVE:
+        return "OPTION_PATH_BRIDGE_NATIVE";
     case OPTION_PATH_BRIDGE_POSIX32:
         return "OPTION_PATH_BRIDGE_POSIX32";
     case OPTION_PATH_BRIDGE_POSIX64:
@@ -222,6 +230,7 @@ const char* OptionsType2Str(const OptionsType& type)
         return "OPTION_PATH_BRIDGE_WIN32";
     case OPTION_PATH_BRIDGE_WIN64:
         return "OPTION_PATH_BRIDGE_WIN64";
+#ifdef WANT_LV2
     case OPTION_PATH_BRIDGE_LV2_GTK2:
         return "OPTION_PATH_BRIDGE_LV2_GTK2";
     case OPTION_PATH_BRIDGE_LV2_GTK3:
@@ -236,12 +245,15 @@ const char* OptionsType2Str(const OptionsType& type)
         return "OPTION_PATH_BRIDGE_LV2_WINDOWS";
     case OPTION_PATH_BRIDGE_LV2_X11:
         return "OPTION_PATH_BRIDGE_LV2_X11";
+#endif
+#ifdef WANT_VST
     case OPTION_PATH_BRIDGE_VST_COCOA:
         return "OPTION_PATH_BRIDGE_VST_COCOA";
     case OPTION_PATH_BRIDGE_VST_HWND:
         return "OPTION_PATH_BRIDGE_VST_HWND";
     case OPTION_PATH_BRIDGE_VST_X11:
         return "OPTION_PATH_BRIDGE_VST_X11";
+#endif
     }
 
     qWarning("CarlaBackend::OptionsType2Str(%i) - invalid type", type);
@@ -372,6 +384,8 @@ void* getPointerFromAddress(const uintptr_t& addr)
     uintptr_t** const ptr = (uintptr_t**)&addr;
     return *ptr;
 }
+
+// -------------------------------------------------------------------------------------------------------------------
 
 static inline
 PluginCategory getPluginCategoryFromName(const char* const name)
