@@ -221,7 +221,7 @@ intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t opcode
     case audioMasterGetVendorString:
         if (ptr)
         {
-            strcpy((char*)ptr, "Cadence");
+            strcpy((char*)ptr, "falkTX");
             ret = 1;
         }
         break;
@@ -274,7 +274,25 @@ void do_ladspa_check(void* const libHandle, const bool init)
 
     while ((descriptor = descFn(i++)))
     {
-        CARLA_ASSERT(descriptor->run);
+        if (! descriptor->instantiate)
+        {
+            DISCOVERY_OUT("error", "Plugin '" << descriptor->Name << "' has no instantiate()");
+            continue;
+        }
+        if (! descriptor->cleanup)
+        {
+            DISCOVERY_OUT("error", "Plugin '" << descriptor->Name << "' has no cleanup()");
+            continue;
+        }
+        if (! descriptor->run)
+        {
+            DISCOVERY_OUT("error", "Plugin '" << descriptor->Name << "' has no run()");
+            continue;
+        }
+        if (! LADSPA_IS_HARD_RT_CAPABLE(descriptor->Properties))
+        {
+            DISCOVERY_OUT("warning", "Plugin '" << descriptor->Name << "' is not hard real-time capable");
+        }
 
         int hints = 0;
         int audioIns = 0;
@@ -283,6 +301,9 @@ void do_ladspa_check(void* const libHandle, const bool init)
         int parametersIns = 0;
         int parametersOuts = 0;
         int parametersTotal = 0;
+
+        if (LADSPA_IS_HARD_RT_CAPABLE(descriptor->Properties))
+            hints |= PLUGIN_IS_RTSAFE;
 
         for (unsigned long j=0; j < descriptor->PortCount; j++)
         {
@@ -294,14 +315,16 @@ void do_ladspa_check(void* const libHandle, const bool init)
                     audioIns += 1;
                 else if (LADSPA_IS_PORT_OUTPUT(portDescriptor))
                     audioOuts += 1;
+
                 audioTotal += 1;
             }
             else if (LADSPA_IS_PORT_CONTROL(portDescriptor))
             {
                 if (LADSPA_IS_PORT_INPUT(portDescriptor))
                     parametersIns += 1;
-                else if (LADSPA_IS_PORT_OUTPUT(portDescriptor) && strcmp(descriptor->PortNames[j], "latency") && strcmp(descriptor->PortNames[j], "_latency") && strcmp(descriptor->PortNames[j], "_sample-rate"))
+                else if (LADSPA_IS_PORT_OUTPUT(portDescriptor) && strcmp(descriptor->PortNames[j], "latency") && strcmp(descriptor->PortNames[j], "_latency"))
                     parametersOuts += 1;
+
                 parametersTotal += 1;
             }
         }
@@ -323,81 +346,79 @@ void do_ladspa_check(void* const libHandle, const bool init)
             LADSPA_Data bufferParams[parametersTotal];
             LADSPA_Data min, max, def;
 
-            for (unsigned long j=0, iA=0, iP=0; j < descriptor->PortCount; j++)
+            for (unsigned long j=0, iA=0, iC=0; j < descriptor->PortCount; j++)
             {
-                const LADSPA_PortDescriptor portType  = descriptor->PortDescriptors[j];
-                const LADSPA_PortRangeHint  portHints = descriptor->PortRangeHints[j];
+                const LADSPA_PortDescriptor portDescriptor = descriptor->PortDescriptors[j];
+                const LADSPA_PortRangeHint  portRangeHints = descriptor->PortRangeHints[j];
+                const char* const portName = descriptor->PortNames[j];
 
-                if (LADSPA_IS_PORT_AUDIO(portType))
+                if (LADSPA_IS_PORT_AUDIO(portDescriptor))
                 {
                     carla_zeroFloat(bufferAudio[iA], bufferSize);
                     descriptor->connect_port(handle, j, bufferAudio[iA++]);
                 }
-                else if (LADSPA_IS_PORT_CONTROL(portType))
+                else if (LADSPA_IS_PORT_CONTROL(portDescriptor))
                 {
                     // min value
-                    if (LADSPA_IS_HINT_BOUNDED_BELOW(portHints.HintDescriptor))
-                        min = portHints.LowerBound;
+                    if (LADSPA_IS_HINT_BOUNDED_BELOW(portRangeHints.HintDescriptor))
+                        min = portRangeHints.LowerBound;
                     else
                         min = 0.0f;
 
                     // max value
-                    if (LADSPA_IS_HINT_BOUNDED_ABOVE(portHints.HintDescriptor))
-                        max = portHints.UpperBound;
+                    if (LADSPA_IS_HINT_BOUNDED_ABOVE(portRangeHints.HintDescriptor))
+                        max = portRangeHints.UpperBound;
                     else
                         max = 1.0f;
 
                     if (min > max)
-                        max = min;
-                    else if (max < min)
-                        min = max;
-
-                    if (max - min == 0.0f)
                     {
-                        DISCOVERY_OUT("error", "Broken parameter '" << descriptor->PortNames[j] << "': max - min == 0");
+                        DISCOVERY_OUT("warning", "Parameter '" << portName << "' is broken: min > max");
+                        max = min + 0.1f;
+                    }
+                    else if (max - min == 0.0f)
+                    {
+                        DISCOVERY_OUT("warning", "Parameter '" << portName << "' is broken: max - min == 0");
                         max = min + 0.1f;
                     }
 
                     // default value
-                    def = get_default_ladspa_port_value(portHints.HintDescriptor, min, max);
+                    def = get_default_ladspa_port_value(portRangeHints.HintDescriptor, min, max);
 
-                    if (LADSPA_IS_HINT_SAMPLE_RATE(portHints.HintDescriptor))
+                    if (LADSPA_IS_HINT_SAMPLE_RATE(portRangeHints.HintDescriptor))
                     {
                         min *= sampleRate;
                         max *= sampleRate;
                         def *= sampleRate;
                     }
 
-                    if (LADSPA_IS_PORT_OUTPUT(portType) && (strcmp(descriptor->PortNames[j], "latency") == 0 || strcmp(descriptor->PortNames[j], "_latency") == 0))
+                    if (LADSPA_IS_PORT_OUTPUT(portDescriptor) && (strcmp(portName, "latency") == 0 || strcmp(portName, "_latency") == 0))
                     {
                         // latency parameter
-                        min = 0.0f;
-                        max = sampleRate;
                         def = 0.0f;
                     }
+                    else
+                    {
+                        if (def < min)
+                            def = min;
+                        else if (def > max)
+                            def = max;
+                    }
 
-                    if (def < min)
-                        def = min;
-                    else if (def > max)
-                        def = max;
-
-                    bufferParams[iP] = def;
-
-                    descriptor->connect_port(handle, j, &bufferParams[iP++]);
+                    bufferParams[iC] = def;
+                    descriptor->connect_port(handle, j, &bufferParams[iC++]);
                 }
             }
 
             if (descriptor->activate)
                 descriptor->activate(handle);
 
-            if (descriptor->run)
-                descriptor->run(handle, bufferSize);
+            descriptor->run(handle, bufferSize);
 
             if (descriptor->deactivate)
                 descriptor->deactivate(handle);
 
-            if (descriptor->cleanup)
-                descriptor->cleanup(handle);
+            descriptor->cleanup(handle);
 
             // end crash-free plugin test
             // -----------------------------------------------------------------------
@@ -408,7 +429,7 @@ void do_ladspa_check(void* const libHandle, const bool init)
         DISCOVERY_OUT("label", descriptor->Label);
         DISCOVERY_OUT("maker", descriptor->Maker);
         DISCOVERY_OUT("copyright", descriptor->Copyright);
-        DISCOVERY_OUT("unique_id", descriptor->UniqueID);
+        DISCOVERY_OUT("uniqueId", descriptor->UniqueID);
         DISCOVERY_OUT("hints", hints);
         DISCOVERY_OUT("audio.ins", audioIns);
         DISCOVERY_OUT("audio.outs", audioOuts);
@@ -443,8 +464,31 @@ void do_dssi_check(void* const libHandle, const bool init)
     while ((descriptor = descFn(i++)))
     {
         const LADSPA_Descriptor* const ldescriptor = descriptor->LADSPA_Plugin;
-        CARLA_ASSERT(ldescriptor);
-        CARLA_ASSERT(ldescriptor->run || descriptor->run_synth || descriptor->run_multiple_synths);
+
+        if (! ldescriptor)
+        {
+            DISCOVERY_OUT("error", "Plugin '" << ldescriptor->Name << "' has no LADSPA interface");
+            continue;
+        }
+        if (! ldescriptor->instantiate)
+        {
+            DISCOVERY_OUT("error", "Plugin '" << ldescriptor->Name << "' has no instantiate()");
+            continue;
+        }
+        if (! ldescriptor->cleanup)
+        {
+            DISCOVERY_OUT("error", "Plugin '" << ldescriptor->Name << "' has no cleanup()");
+            continue;
+        }
+        if (! (ldescriptor->run || descriptor->run_synth || descriptor->run_multiple_synths))
+        {
+            DISCOVERY_OUT("error", "Plugin '" << ldescriptor->Name << "' has no run(), run_synth() or run_multiple_synths()");
+            continue;
+        }
+        if (! LADSPA_IS_HARD_RT_CAPABLE(ldescriptor->Properties))
+        {
+            DISCOVERY_OUT("warning", "Plugin '" << ldescriptor->Name << "' is not hard real-time capable");
+        }
 
         int hints = 0;
         int audioIns = 0;
@@ -457,6 +501,9 @@ void do_dssi_check(void* const libHandle, const bool init)
         int parametersTotal = 0;
         int programsTotal = 0;
 
+        if (LADSPA_IS_HARD_RT_CAPABLE(ldescriptor->Properties))
+            hints |= PLUGIN_IS_RTSAFE;
+
         for (unsigned long j=0; j < ldescriptor->PortCount; j++)
         {
             const LADSPA_PortDescriptor portDescriptor = ldescriptor->PortDescriptors[j];
@@ -467,14 +514,16 @@ void do_dssi_check(void* const libHandle, const bool init)
                     audioIns += 1;
                 else if (LADSPA_IS_PORT_OUTPUT(portDescriptor))
                     audioOuts += 1;
+
                 audioTotal += 1;
             }
             else if (LADSPA_IS_PORT_CONTROL(portDescriptor))
             {
                 if (LADSPA_IS_PORT_INPUT(portDescriptor))
                     parametersIns += 1;
-                else if (LADSPA_IS_PORT_OUTPUT(portDescriptor) && strcmp(ldescriptor->PortNames[j], "latency") && strcmp(ldescriptor->PortNames[j], "_latency") && strcmp(ldescriptor->PortNames[j], "_sample-rate"))
+                else if (LADSPA_IS_PORT_OUTPUT(portDescriptor) && strcmp(ldescriptor->PortNames[j], "latency") && strcmp(ldescriptor->PortNames[j], "_latency"))
                     parametersOuts += 1;
+
                 parametersTotal += 1;
             }
         }
@@ -482,7 +531,7 @@ void do_dssi_check(void* const libHandle, const bool init)
         if (descriptor->run_synth || descriptor->run_multiple_synths)
             midiIns = midiTotal = 1;
 
-        if (midiIns > 0 && audioOuts > 0)
+        if (midiIns > 0 && audioIns == 0 && audioOuts > 0)
             hints |= PLUGIN_IS_SYNTH;
 
         if (init)
@@ -498,10 +547,9 @@ void do_dssi_check(void* const libHandle, const bool init)
                 continue;
             }
 
-            // we can only get program info per-handle
             if (descriptor->get_program && descriptor->select_program)
             {
-                while ((descriptor->get_program(handle, programsTotal++)))
+                while (descriptor->get_program(handle, programsTotal++))
                     continue;
             }
 
@@ -509,77 +557,74 @@ void do_dssi_check(void* const libHandle, const bool init)
             LADSPA_Data bufferParams[parametersTotal];
             LADSPA_Data min, max, def;
 
-            for (unsigned long j=0, iA=0, iP=0; j < ldescriptor->PortCount; j++)
+            for (unsigned long j=0, iA=0, iC=0; j < ldescriptor->PortCount; j++)
             {
-                const LADSPA_PortDescriptor portType  = ldescriptor->PortDescriptors[j];
-                const LADSPA_PortRangeHint  portHints = ldescriptor->PortRangeHints[j];
+                const LADSPA_PortDescriptor portDescriptor = ldescriptor->PortDescriptors[j];
+                const LADSPA_PortRangeHint  portRangeHints = ldescriptor->PortRangeHints[j];
+                const char* const portName = ldescriptor->PortNames[j];
 
-                if (LADSPA_IS_PORT_AUDIO(portType))
+                if (LADSPA_IS_PORT_AUDIO(portDescriptor))
                 {
                     carla_zeroFloat(bufferAudio[iA], bufferSize);
                     ldescriptor->connect_port(handle, j, bufferAudio[iA++]);
                 }
-                else if (LADSPA_IS_PORT_CONTROL(portType))
+                else if (LADSPA_IS_PORT_CONTROL(portDescriptor))
                 {
                     // min value
-                    if (LADSPA_IS_HINT_BOUNDED_BELOW(portHints.HintDescriptor))
-                        min = portHints.LowerBound;
+                    if (LADSPA_IS_HINT_BOUNDED_BELOW(portRangeHints.HintDescriptor))
+                        min = portRangeHints.LowerBound;
                     else
                         min = 0.0f;
 
                     // max value
-                    if (LADSPA_IS_HINT_BOUNDED_ABOVE(portHints.HintDescriptor))
-                        max = portHints.UpperBound;
+                    if (LADSPA_IS_HINT_BOUNDED_ABOVE(portRangeHints.HintDescriptor))
+                        max = portRangeHints.UpperBound;
                     else
                         max = 1.0f;
 
                     if (min > max)
-                        max = min;
-                    else if (max < min)
-                        min = max;
-
-                    if (max - min == 0.0f)
                     {
-                        DISCOVERY_OUT("error", "Broken parameter '" << ldescriptor->PortNames[j] << "': max - min == 0");
+                        DISCOVERY_OUT("warning", "Parameter '" << portName << "' is broken: min > max");
+                        max = min + 0.1f;
+                    }
+                    else if (max - min == 0.0f)
+                    {
+                        DISCOVERY_OUT("warning", "Parameter '" << portName << "' is broken: max - min == 0");
                         max = min + 0.1f;
                     }
 
                     // default value
-                    def = get_default_ladspa_port_value(portHints.HintDescriptor, min, max);
+                    def = get_default_ladspa_port_value(portRangeHints.HintDescriptor, min, max);
 
-                    if (LADSPA_IS_HINT_SAMPLE_RATE(portHints.HintDescriptor))
+                    if (LADSPA_IS_HINT_SAMPLE_RATE(portRangeHints.HintDescriptor))
                     {
                         min *= sampleRate;
                         max *= sampleRate;
                         def *= sampleRate;
                     }
 
-                    if (LADSPA_IS_PORT_OUTPUT(portType) && (strcmp(ldescriptor->PortNames[j], "latency") == 0 || strcmp(ldescriptor->PortNames[j], "_latency") == 0))
+                    if (LADSPA_IS_PORT_OUTPUT(portDescriptor) && (strcmp(portName, "latency") == 0 || strcmp(portName, "_latency") == 0))
                     {
                         // latency parameter
-                        min = 0.0f;
-                        max = sampleRate;
                         def = 0.0f;
                     }
+                    else
+                    {
+                        if (def < min)
+                            def = min;
+                        else if (def > max)
+                            def = max;
+                    }
 
-                    if (def < min)
-                        def = min;
-                    else if (def > max)
-                        def = max;
-
-                    bufferParams[iP] = def;
-
-                    ldescriptor->connect_port(handle, j, &bufferParams[iP++]);
+                    bufferParams[iC] = def;
+                    ldescriptor->connect_port(handle, j, &bufferParams[iC++]);
                 }
             }
 
             // select first midi-program if available
             if (programsTotal > 0)
             {
-                const DSSI_Program_Descriptor* pDesc = descriptor->get_program(handle, 0);
-                CARLA_ASSERT(pDesc);
-
-                if (pDesc)
+                if (const DSSI_Program_Descriptor* const pDesc = descriptor->get_program(handle, 0))
                     descriptor->select_program(handle, pDesc->Bank, pDesc->Program);
             }
 
@@ -612,14 +657,13 @@ void do_dssi_check(void* const libHandle, const bool init)
                 else
                     descriptor->run_synth(handle, bufferSize, midiEvents, midiEventCount);
             }
-            else if (ldescriptor->run)
+            else
                 ldescriptor->run(handle, bufferSize);
 
             if (ldescriptor->deactivate)
                 ldescriptor->deactivate(handle);
 
-            if (ldescriptor->cleanup)
-                ldescriptor->cleanup(handle);
+            ldescriptor->cleanup(handle);
 
             // end crash-free plugin test
             // -----------------------------------------------------------------------
@@ -672,7 +716,9 @@ void do_lv2_check(const char* const bundle, const bool init)
     LILV_FOREACH(plugins, i, lilvPlugins)
     {
         Lilv::Plugin lilvPlugin(lilv_plugins_get(lilvPlugins, i));
-        URIs.append(QString(lilvPlugin.get_uri().as_string()));
+
+        if (const char* const uri = lilvPlugin.get_uri().as_string())
+            URIs.append(QString(uri));
     }
 
     // Get & check every plugin-instance
@@ -689,79 +735,68 @@ void do_lv2_check(const char* const bundle, const bool init)
 
         if (init)
         {
-            // test if DLL is loadable
+            // test if DLL is loadable, twice
+            bool isLoadable = true;
+
+            for (int j=0; j < 2; j++)
             {
                 void* const libHandle = lib_open(rdfDescriptor->Binary);
 
                 if (! libHandle)
                 {
+                    isLoadable = false;
                     print_lib_error(rdfDescriptor->Binary);
                     delete rdfDescriptor;
-                    continue;
+                    break;
                 }
 
                 lib_close(libHandle);
             }
 
-            // test if we support all required ports and features
+            if (! isLoadable)
+                continue;
+        }
+
+        // test if we support all required ports and features
+        {
+            bool supported = true;
+
+            for (uint32_t j=0; j < rdfDescriptor->PortCount && supported; j++)
             {
-                bool supported = true;
+                const LV2_RDF_Port* const rdfPort = &rdfDescriptor->Ports[j];
 
-                for (uint32_t j=0; j < rdfDescriptor->PortCount; j++)
+                if (is_lv2_port_supported(rdfPort->Types))
                 {
-                    const LV2_RDF_Port* const rdfPort = &rdfDescriptor->Ports[j];
-
-                    if (LV2_IS_PORT_CONTROL(rdfPort->Types))
-                    {
-                        pass();
-                    }
-                    else if (LV2_IS_PORT_AUDIO(rdfPort->Types))
-                    {
-                        pass();
-                    }
-                    else if (LV2_IS_PORT_ATOM_SEQUENCE(rdfPort->Types))
-                    {
-                        pass();
-                    }
-                    //else if (LV2_IS_PORT_CV(rdfPort->Types))
-                    //    pass();
-                    else if (LV2_IS_PORT_EVENT(rdfPort->Types))
-                    {
-                        pass();
-                    }
-                    else if (LV2_IS_PORT_MIDI_LL(rdfPort->Types))
-                    {
-                        pass();
-                    }
-                    else if (! LV2_IS_PORT_OPTIONAL(rdfPort->Properties))
-                    {
-                        DISCOVERY_OUT("error", "plugin requires a non-supported port type, port-name: " << rdfPort->Name);
-                        supported = false;
-                        break;
-                    }
+                    pass();
                 }
-
-                for (uint32_t j=0; j < rdfDescriptor->FeatureCount && supported; j++)
+                else if (! LV2_IS_PORT_OPTIONAL(rdfPort->Properties))
                 {
-                    const LV2_RDF_Feature* const rdfFeature = &rdfDescriptor->Features[j];
-
-                    if (is_lv2_feature_supported(rdfFeature->URI))
-                    {
-                        pass();
-                    }
-                    else if (LV2_IS_FEATURE_REQUIRED(rdfFeature->Type))
-                    {
-                        DISCOVERY_OUT("error", "plugin requires a non-supported feature " << rdfFeature->URI);
-                        supported = false;
-                        break;
-                    }
+                    DISCOVERY_OUT("error", "Plugin '" << rdfDescriptor->URI << "' requires a non-supported port type (portName: '" << rdfPort->Name << "')");
+                    supported = false;
+                    break;
                 }
+            }
 
-                if (! supported)
+            for (uint32_t j=0; j < rdfDescriptor->FeatureCount && supported; j++)
+            {
+                const LV2_RDF_Feature* const rdfFeature = &rdfDescriptor->Features[j];
+
+                if (is_lv2_feature_supported(rdfFeature->URI))
                 {
-                    delete rdfDescriptor;
-                    continue;
+                    pass();
                 }
+                else if (LV2_IS_FEATURE_REQUIRED(rdfFeature->Type))
+                {
+                    DISCOVERY_OUT("error", "Plugin '" << rdfDescriptor->URI << "' requires a non-supported feature '" << rdfFeature->URI << "'");
+                    supported = false;
+                    break;
+                }
+            }
+
+            if (! supported)
+            {
+                delete rdfDescriptor;
+                continue;
             }
         }
 
@@ -777,6 +812,14 @@ void do_lv2_check(const char* const bundle, const bool init)
         int parametersTotal = 0;
         int programsTotal = rdfDescriptor->PresetCount;
 
+        for (uint32_t j=0; j < rdfDescriptor->FeatureCount; j++)
+        {
+            const LV2_RDF_Feature* const rdfFeature = &rdfDescriptor->Features[j];
+
+            if (strcmp(rdfFeature->URI, LV2_CORE__hardRTCapable) == 0)
+                hints |= PLUGIN_IS_RTSAFE;
+        }
+
         for (uint32_t j=0; j < rdfDescriptor->PortCount; j++)
         {
             const LV2_RDF_Port* const rdfPort = &rdfDescriptor->Ports[j];
@@ -787,6 +830,7 @@ void do_lv2_check(const char* const bundle, const bool init)
                     audioIns += 1;
                 else if (LV2_IS_PORT_OUTPUT(rdfPort->Types))
                     audioOuts += 1;
+
                 audioTotal += 1;
             }
             else if (LV2_IS_PORT_CONTROL(rdfPort->Types))
@@ -813,6 +857,7 @@ void do_lv2_check(const char* const bundle, const bool init)
                         parametersIns += 1;
                     else if (LV2_IS_PORT_OUTPUT(rdfPort->Types))
                         parametersOuts += 1;
+
                     parametersTotal += 1;
                 }
             }
@@ -822,6 +867,7 @@ void do_lv2_check(const char* const bundle, const bool init)
                     midiIns += 1;
                 else if (LV2_IS_PORT_OUTPUT(rdfPort->Types))
                     midiOuts += 1;
+
                 midiTotal += 1;
             }
         }
@@ -870,12 +916,14 @@ void do_vst_check(void* const libHandle, const bool init)
     VST_Function vstFn = (VST_Function)lib_symbol(libHandle, "VSTPluginMain");
 
     if (! vstFn)
+    {
         vstFn = (VST_Function)lib_symbol(libHandle, "main");
 
-    if (! vstFn)
-    {
-        DISCOVERY_OUT("error", "Not a VST plugin");
-        return;
+        if (! vstFn)
+        {
+            DISCOVERY_OUT("error", "Not a VST plugin");
+            return;
+        }
     }
 
     AEffect* const effect = vstFn(vstHostCallback);
@@ -895,7 +943,7 @@ void do_vst_check(void* const libHandle, const bool init)
 
     intptr_t vstCategory = effect->dispatcher(effect, effGetPlugCategory, 0, 0, nullptr, 0.0f);
 
-    if (vstCategory == kPlugCategShell)
+    if (vstCategory == kPlugCategShell && effect->uniqueID == 0)
     {
         if ((vstCurrentUniqueId = effect->dispatcher(effect, effShellGetNextPlugin, 0, 0, strBuf, 0.0f)) != 0)
             cName = strBuf;
@@ -1409,6 +1457,25 @@ int main(int argc, char* argv[])
     if (doInit && getenv("CARLA_DISCOVERY_NO_PROCESSING_CHECKS"))
         doInit = false;
 
+    if (doInit && handle)
+    {
+        // test fast loading & unloading DLL without initializing the plugin(s)
+
+        if (! lib_close(handle))
+        {
+            print_lib_error(filename);
+            return 1;
+        }
+
+        handle = lib_open(filename);
+
+        if (! handle)
+        {
+            print_lib_error(filename);
+            return 1;
+        }
+    }
+
     switch (type)
     {
     case PLUGIN_LADSPA:
@@ -1436,7 +1503,7 @@ int main(int argc, char* argv[])
         break;
     }
 
-    if (openLib)
+    if (openLib && handle)
         lib_close(handle);
 
     return 0;

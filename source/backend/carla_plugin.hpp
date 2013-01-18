@@ -93,8 +93,7 @@ enum PluginPostEventType {
     PluginPostEventProgramChange,     // index
     PluginPostEventMidiProgramChange, // index
     PluginPostEventNoteOn,            // channel, note, velo
-    PluginPostEventNoteOff,           // channel, note
-    PluginPostEventCustom
+    PluginPostEventNoteOff            // channel, note
 };
 
 struct PluginAudioData {
@@ -159,14 +158,12 @@ struct PluginPostEvent {
     int32_t value1;
     int32_t value2;
     double  value3;
-    const void* cdata;
 
     PluginPostEvent()
         : type(PluginPostEventNull),
           value1(-1),
           value2(-1),
-          value3(0.0),
-          cdata(nullptr) {}
+          value3(0.0) {}
 };
 
 struct ExternalMidiNote {
@@ -180,7 +177,7 @@ struct ExternalMidiNote {
           velo(0) {}
 };
 
-class CarlaPluginPrivateData;
+struct CarlaPluginPrivateData;
 
 /*!
  * \class CarlaPlugin

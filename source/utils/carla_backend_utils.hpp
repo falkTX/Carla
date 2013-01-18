@@ -1,5 +1,5 @@
 /*
- * Carla Backend
+ * Carla Backend utils
  * Copyright (C) 2011-2012 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -9,29 +9,21 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * For a full copy of the GNU General Public License see the COPYING file
  */
 
-#ifndef CARLA_BACKEND_UTILS_HPP
-#define CARLA_BACKEND_UTILS_HPP
+#ifndef __CARLA_BACKEND_UTILS_HPP__
+#define __CARLA_BACKEND_UTILS_HPP__
 
 #include "carla_backend.hpp"
 #include "carla_utils.hpp"
 
 CARLA_BACKEND_START_NAMESPACE
 
-/*!
- * @defgroup CarlaBackendUtils Carla Backend Utils
- *
- * Carla Backend Utils
- *
- * @{
- */
-
-// -------------------------------------------------------------------------------------------------------------------
+// -------------------------------------------------
 
 static inline
 const char* BinaryType2Str(const BinaryType& type)
@@ -156,40 +148,13 @@ const char* InternalParametersIndex2Str(const InternalParametersIndex& index)
         return "PARAMETER_BALANCE_LEFT";
     case PARAMETER_BALANCE_RIGHT:
         return "PARAMETER_BALANCE_RIGHT";
+    case PARAMETER_PANNING:
+        return "PARAMETER_PANNING";
     }
 
     qWarning("CarlaBackend::InternalParametersIndex2Str(%i) - invalid index", index);
     return nullptr;
 }
-
-#if 0
-static inline
-const char* GuiType2Str(const GuiType& type)
-{
-    switch (type)
-    {
-    case GUI_NONE:
-        return "GUI_NONE";
-    case GUI_INTERNAL_QT4:
-        return "GUI_INTERNAL_QT4";
-    case GUI_INTERNAL_COCOA:
-        return "GUI_INTERNAL_COCOA";
-    case GUI_INTERNAL_HWND:
-        return "GUI_INTERNAL_HWND";
-    case GUI_INTERNAL_X11:
-        return "GUI_INTERNAL_X11";
-    case GUI_EXTERNAL_LV2:
-        return "GUI_EXTERNAL_LV2";
-    case GUI_EXTERNAL_SUIL:
-        return "GUI_EXTERNAL_SUIL";
-    case GUI_EXTERNAL_OSC:
-        return "GUI_EXTERNAL_OSC";
-    }
-
-    qWarning("CarlaBackend::GuiType2Str(%i) - invalid type", type);
-    return nullptr;
-}
-#endif
 
 static inline
 const char* OptionsType2Str(const OptionsType& type)
@@ -202,24 +167,25 @@ const char* OptionsType2Str(const OptionsType& type)
         return "OPTION_PROCESS_MODE";
     case OPTION_PROCESS_HIGH_PRECISION:
         return "OPTION_PROCESS_HIGH_PRECISION";
-    case OPTION_MAX_PARAMETERS:
-        return "OPTION_MAX_PARAMETERS";
-    case OPTION_PREFERRED_BUFFER_SIZE:
-        return "OPTION_PREFERRED_BUFFER_SIZE";
-    case OPTION_PREFERRED_SAMPLE_RATE:
-        return "OPTION_PREFERRED_SAMPLE_RATE";
     case OPTION_FORCE_STEREO:
         return "OPTION_FORCE_STEREO";
-#ifdef WANT_DSSI
-    case OPTION_USE_DSSI_VST_CHUNKS:
-        return "OPTION_USE_DSSI_VST_CHUNKS";
-#endif
     case OPTION_PREFER_PLUGIN_BRIDGES:
         return "OPTION_PREFER_PLUGIN_BRIDGES";
     case OPTION_PREFER_UI_BRIDGES:
         return "OPTION_PREFER_UI_BRIDGES";
+#ifdef WANT_DSSI
+    case OPTION_USE_DSSI_VST_CHUNKS:
+        return "OPTION_USE_DSSI_VST_CHUNKS";
+#endif
+    case OPTION_MAX_PARAMETERS:
+        return "OPTION_MAX_PARAMETERS";
     case OPTION_OSC_UI_TIMEOUT:
         return "OPTION_OSC_UI_TIMEOUT";
+    case OPTION_PREFERRED_BUFFER_SIZE:
+        return "OPTION_PREFERRED_BUFFER_SIZE";
+    case OPTION_PREFERRED_SAMPLE_RATE:
+        return "OPTION_PREFERRED_SAMPLE_RATE";
+#ifndef BUILD_BRIDGE
     case OPTION_PATH_BRIDGE_NATIVE:
         return "OPTION_PATH_BRIDGE_NATIVE";
     case OPTION_PATH_BRIDGE_POSIX32:
@@ -230,6 +196,7 @@ const char* OptionsType2Str(const OptionsType& type)
         return "OPTION_PATH_BRIDGE_WIN32";
     case OPTION_PATH_BRIDGE_WIN64:
         return "OPTION_PATH_BRIDGE_WIN64";
+#endif
 #ifdef WANT_LV2
     case OPTION_PATH_BRIDGE_LV2_GTK2:
         return "OPTION_PATH_BRIDGE_LV2_GTK2";
@@ -283,8 +250,6 @@ const char* CallbackType2Str(const CallbackType& type)
         return "CALLBACK_NOTE_OFF";
     case CALLBACK_SHOW_GUI:
         return "CALLBACK_SHOW_GUI";
-    case CALLBACK_RESIZE_GUI:
-        return "CALLBACK_RESIZE_GUI";
     case CALLBACK_UPDATE:
         return "CALLBACK_UPDATE";
     case CALLBACK_RELOAD_INFO:
@@ -332,39 +297,7 @@ const char* ProcessMode2Str(const ProcessMode& mode)
     return nullptr;
 }
 
-// -------------------------------------------------------------------------------------------------------------------
-
-static inline
-const char* getPluginTypeString(const PluginType& type)
-{
-    qDebug("CarlaBackend::getPluginTypeString(%s)", PluginType2Str(type));
-
-    switch (type)
-    {
-    case PLUGIN_NONE:
-        return "NONE";
-    case PLUGIN_INTERNAL:
-        return "INTERNAL";
-    case PLUGIN_LADSPA:
-        return "LADSPA";
-    case PLUGIN_DSSI:
-        return "DSSI";
-    case PLUGIN_LV2:
-        return "LV2";
-    case PLUGIN_VST:
-        return "VST";
-    case PLUGIN_GIG:
-        return "GIG";
-    case PLUGIN_SF2:
-        return "SF2";
-    case PLUGIN_SFZ:
-        return "SFZ";
-    }
-
-    return "NONE";
-}
-
-// -------------------------------------------------------------------------------------------------------------------
+// -------------------------------------------------
 
 static inline
 uintptr_t getAddressFromPointer(void* const ptr)
@@ -385,7 +318,43 @@ void* getPointerFromAddress(const uintptr_t& addr)
     return *ptr;
 }
 
-// -------------------------------------------------------------------------------------------------------------------
+// -------------------------------------------------
+
+static inline
+const char* getPluginTypeString(const PluginType& type)
+{
+    qDebug("CarlaBackend::getPluginTypeString(%s)", PluginType2Str(type));
+
+    switch (type)
+    {
+    case PLUGIN_NONE:
+        return "NONE";
+#ifndef BUILD_BRIDGE
+    case PLUGIN_INTERNAL:
+        return "INTERNAL";
+#endif
+    case PLUGIN_LADSPA:
+        return "LADSPA";
+    case PLUGIN_DSSI:
+        return "DSSI";
+    case PLUGIN_LV2:
+        return "LV2";
+    case PLUGIN_VST:
+        return "VST";
+#ifndef BUILD_BRIDGE
+    case PLUGIN_GIG:
+        return "GIG";
+    case PLUGIN_SF2:
+        return "SF2";
+    case PLUGIN_SFZ:
+        return "SFZ";
+#endif
+    }
+
+    return "NONE";
+}
+
+// -------------------------------------------------
 
 static inline
 PluginCategory getPluginCategoryFromName(const char* const name)
@@ -466,8 +435,6 @@ PluginCategory getPluginCategoryFromName(const char* const name)
     return PLUGIN_CATEGORY_NONE;
 }
 
-/**@}*/
-
 CARLA_BACKEND_END_NAMESPACE
 
-#endif // CARLA_BACKEND_UTILS_HPP
+#endif // __CARLA_BACKEND_UTILS_HPP__

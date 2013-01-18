@@ -1125,9 +1125,29 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
 }
 
 // -------------------------------------------------
+// Check if we support a plugin port
+
+static inline
+bool is_lv2_port_supported(const LV2_Property types)
+{
+    if (LV2_IS_PORT_CONTROL(types))
+        return true;
+    if (LV2_IS_PORT_AUDIO(types))
+        return true;
+    if (LV2_IS_PORT_ATOM_SEQUENCE(types))
+        return true;
+    if (LV2_IS_PORT_CV(types))
+        return true; // TODO
+    if (LV2_IS_PORT_EVENT(types))
+        return true;
+    if (LV2_IS_PORT_MIDI_LL(types))
+        return true;
+    return false;
+}
+
+// -------------------------------------------------
 // Check if we support a plugin feature
 
-// TODO - review these
 static inline
 bool is_lv2_feature_supported(const LV2_URI uri)
 {
@@ -1136,6 +1156,12 @@ bool is_lv2_feature_supported(const LV2_URI uri)
     if (strcmp(uri, LV2_CORE__inPlaceBroken) == 0)
         return true;
     if (strcmp(uri, LV2_CORE__isLive) == 0)
+        return true;
+    if (strcmp(uri, LV2_BUF_SIZE__boundedBlockLength) == 0)
+        return true;
+    if (strcmp(uri, LV2_BUF_SIZE__fixedBlockLength) == 0)
+        return true;
+    if (strcmp(uri, LV2_BUF_SIZE__powerOf2BlockLength) == 0)
         return true;
     if (strcmp(uri, LV2_EVENT_URI) == 0)
         return true;
@@ -1167,7 +1193,6 @@ bool is_lv2_feature_supported(const LV2_URI uri)
 // -------------------------------------------------
 // Check if we support a plugin or UI feature
 
-// TODO - review these
 static inline
 bool is_lv2_ui_feature_supported(const LV2_URI uri)
 {

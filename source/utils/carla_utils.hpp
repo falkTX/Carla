@@ -9,7 +9,7 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * For a full copy of the GNU General Public License see the COPYING file
@@ -47,8 +47,14 @@ void carla_assert_int(const char* const assertion, const char* const file, const
     qCritical("Carla assertion failure: \"%s\" in file %s, line %i, value %i", assertion, file, line, value);
 }
 
+static inline
+void carla_assert_int2(const char* const assertion, const char* const file, const int line, const int v1, const int v2)
+{
+    qCritical("Carla assertion failure: \"%s\" in file %s, line %i, v1 %i, v2 %i", assertion, file, line, v1, v2);
+}
+
 // -------------------------------------------------
-// carla_*sleep (carla_usleep not possible in Windows)
+// carla_*sleep
 
 static inline
 void carla_sleep(const unsigned int secs)

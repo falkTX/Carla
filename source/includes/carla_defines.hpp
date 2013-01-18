@@ -9,7 +9,7 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * For a full copy of the GNU General Public License see the COPYING file
@@ -81,9 +81,11 @@
 #ifdef NDEBUG
 # define CARLA_ASSERT(cond) ((!(cond)) ? carla_assert(#cond, __FILE__, __LINE__) : qt_noop())
 # define CARLA_ASSERT_INT(cond, value) ((!(cond)) ? carla_assert_int(#cond, __FILE__, __LINE__, value) : qt_noop())
+# define CARLA_ASSERT_INT2(cond, v1, v2) ((!(cond)) ? carla_assert_int2(#cond, __FILE__, __LINE__, v1, v2) : qt_noop())
 #else
-# define CARLA_ASSERT Q_ASSERT
+# define CARLA_ASSERT(cond) Q_ASSERT(cond)
 # define CARLA_ASSERT_INT(cond, value) Q_ASSERT(cond)
+# define CARLA_ASSERT_INT2(cond, v1, v2) Q_ASSERT(cond)
 #endif
 
 // Define CARLA_EXPORT

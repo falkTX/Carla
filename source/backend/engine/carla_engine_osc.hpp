@@ -1,6 +1,6 @@
 /*
  * Carla Engine OSC
- * Copyright (C) 2012 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -9,14 +9,14 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * For a full copy of the GNU General Public License see the COPYING file
  */
 
-#ifndef CARLA_ENGINE_OSC_HPP
-#define CARLA_ENGINE_OSC_HPP
+#ifndef __CARLA_ENGINE_OSC_HPP__
+#define __CARLA_ENGINE_OSC_HPP__
 
 #include "carla_backend.hpp"
 #include "carla_osc_utils.hpp"
@@ -166,4 +166,4 @@ private:
 
 CARLA_BACKEND_END_NAMESPACE
 
-#endif // CARLA_ENGINE_OSC_HPP
+#endif // __CARLA_ENGINE_OSC_HPP__

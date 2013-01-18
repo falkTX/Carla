@@ -9,7 +9,7 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * For a full copy of the GNU General Public License see the COPYING file
@@ -17,6 +17,8 @@
 
 #ifndef __CARLA_BACKEND_HPP__
 #define __CARLA_BACKEND_HPP__
+
+// TODO - remove ifdef's when Carla stabilizes
 
 #include "carla_defines.hpp"
 
@@ -39,12 +41,10 @@ CARLA_BACKEND_START_NAMESPACE
  * @{
  */
 
-#ifdef BUILD_BRIDGE
-const unsigned short MAX_PLUGINS  = 1;
-#else
-const unsigned short MAX_PLUGINS  = 99;  //!< Maximum number of loadable plugins
-#endif
-const unsigned int MAX_PARAMETERS = 200; //!< Default value for the maximum number of parameters allowed.\see OPTION_MAX_PARAMETERS
+const unsigned int MAX_DEFAULT_PLUGINS    = 99;  //!< Maximum default number of loadable plugins
+const unsigned int MAX_RACK_PLUGINS       = 16;  //!< Maximum number of loadable plugins in rack mode
+const unsigned int MAX_PATCHBAY_PLUGINS   = 999; //!< Maximum number of loadable plugins in patchbay mode
+const unsigned int MAX_DEFAULT_PARAMETERS = 200; //!< Maximum default number of parameters allowed.\see OPTION_MAX_PARAMETERS
 
 /*!
  * @defgroup PluginHints Plugin Hints
@@ -56,14 +56,17 @@ const unsigned int MAX_PARAMETERS = 200; //!< Default value for the maximum numb
 #ifndef BUILD_BRIDGE
 const unsigned int PLUGIN_IS_BRIDGE          = 0x001; //!< Plugin is a bridge (ie, BridgePlugin). This hint is required because "bridge" itself is not a plugin type.
 #endif
-const unsigned int PLUGIN_IS_SYNTH           = 0x002; //!< Plugin is a synthesizer (produces sound).
-const unsigned int PLUGIN_HAS_GUI            = 0x004; //!< Plugin has its own custom GUI.
-const unsigned int PLUGIN_USES_CHUNKS        = 0x008; //!< Plugin uses chunks to save internal data.\see CarlaPlugin::chunkData()
-const unsigned int PLUGIN_USES_SINGLE_THREAD = 0x010; //!< Plugin needs a single thread for both DSP and UI events.
-const unsigned int PLUGIN_CAN_DRYWET         = 0x020; //!< Plugin can make use of Dry/Wet controls.
-const unsigned int PLUGIN_CAN_VOLUME         = 0x040; //!< Plugin can make use of Volume controls.
-const unsigned int PLUGIN_CAN_BALANCE        = 0x080; //!< Plugin can make use of Left & Right Balance controls.
-const unsigned int PLUGIN_CAN_FORCE_STEREO   = 0x100; //!< Plugin can be used in forced-stereo mode.
+const unsigned int PLUGIN_IS_RTSAFE          = 0x002; //!< Plugin is hard real-time safe.
+const unsigned int PLUGIN_IS_SYNTH           = 0x004; //!< Plugin is a synthesizer (produces sound).
+const unsigned int PLUGIN_HAS_GUI            = 0x010; //!< Plugin has its own custom GUI.
+const unsigned int PLUGIN_USES_CHUNKS        = 0x020; //!< Plugin uses chunks to save internal data.\see CarlaPlugin::chunkData()
+#ifndef BUILD_BRIDGE
+const unsigned int PLUGIN_USES_SINGLE_THREAD = 0x040; //!< Plugin needs a single thread for both DSP and UI events.
+#endif
+const unsigned int PLUGIN_CAN_DRYWET         = 0x100; //!< Plugin can make use of Dry/Wet controls.
+const unsigned int PLUGIN_CAN_VOLUME         = 0x200; //!< Plugin can make use of Volume controls.
+const unsigned int PLUGIN_CAN_BALANCE        = 0x400; //!< Plugin can make use of Left & Right Balance controls.
+const unsigned int PLUGIN_CAN_FORCE_STEREO   = 0x800; //!< Plugin can be used in forced-stereo mode.
 /**@}*/
 
 /*!
@@ -73,16 +76,17 @@ const unsigned int PLUGIN_CAN_FORCE_STEREO   = 0x100; //!< Plugin can be used in
  * \see CarlaPlugin::parameterData()
  * @{
  */
-const unsigned int PARAMETER_IS_BOOLEAN       = 0x01; //!< Parameter value is of boolean type (always at minimum or maximum).
-const unsigned int PARAMETER_IS_INTEGER       = 0x02; //!< Parameter values are always integer.
-const unsigned int PARAMETER_IS_LOGARITHMIC   = 0x04; //!< Parameter is logarithmic (informative only, not really implemented).
+const unsigned int PARAMETER_IS_BOOLEAN       = 0x01; //!< Parameter value is always a boolean (always at minimum or maximum range).
+const unsigned int PARAMETER_IS_INTEGER       = 0x02; //!< Parameter value is always an integer.
+const unsigned int PARAMETER_IS_LOGARITHMIC   = 0x04; //!< Parameter is logarithmic.
 const unsigned int PARAMETER_IS_ENABLED       = 0x08; //!< Parameter is enabled and will be shown in the host built-in editor.
 const unsigned int PARAMETER_IS_AUTOMABLE     = 0x10; //!< Parameter is automable (realtime safe)
-const unsigned int PARAMETER_USES_SAMPLERATE  = 0x20; //!< Parameter needs sample rate to work (value and ranges are multiplied by SR, and divided by SR on save).
+const unsigned int PARAMETER_USES_SAMPLERATE  = 0x20; //!< Parameter needs sample rate to work (value and ranges are multiplied by SR, and must be divided by SR on save).
 const unsigned int PARAMETER_USES_SCALEPOINTS = 0x40; //!< Parameter uses scalepoints to define internal values in a meaninful way.
 const unsigned int PARAMETER_USES_CUSTOM_TEXT = 0x80; //!< Parameter uses custom text for displaying its value.\see CarlaPlugin::getParameterText()
 /**@}*/
 
+#if 0
 /*!
  * @defgroup CustomDataTypes Custom Data types
  *
@@ -95,7 +99,9 @@ const char* const CUSTOM_DATA_INVALID = nullptr;                                
 const char* const CUSTOM_DATA_CHUNK   = "http://kxstudio.sf.net/ns/carla/chunk";  //!< Carla Chunk
 const char* const CUSTOM_DATA_STRING  = "http://kxstudio.sf.net/ns/carla/string"; //!< Carla String
 /**@}*/
+#endif
 
+#if 0
 /*!
  * @defgroup BridgeMessages Bridge Messages
  *
@@ -105,12 +111,13 @@ const char* const CUSTOM_DATA_STRING  = "http://kxstudio.sf.net/ns/carla/string"
  * TODO: Review these, may not be needed anymore
  * @{
  */
-//const char* const CARLA_BRIDGE_MSG_HIDE_GUI   = "CarlaBridgeHideGUI";   //!< Plugin -> Host call, tells host GUI is now hidden
-//const char* const CARLA_BRIDGE_MSG_SAVED      = "CarlaBridgeSaved";     //!< Plugin -> Host call, tells host state is saved
-//const char* const CARLA_BRIDGE_MSG_SAVE_NOW   = "CarlaBridgeSaveNow";   //!< Host -> Plugin call, tells plugin to save state now
-//const char* const CARLA_BRIDGE_MSG_SET_CHUNK  = "CarlaBridgeSetChunk";  //!< Host -> Plugin call, tells plugin to set chunk in file \a value
-//const char* const CARLA_BRIDGE_MSG_SET_CUSTOM = "CarlaBridgeSetCustom"; //!< Host -> Plugin call, tells plugin to set a custom data set using \a value ("type·key·rvalue").\n If \a type is 'chunk' or 'binary' \a rvalue refers to chunk file.
+const char* const CARLA_BRIDGE_MSG_HIDE_GUI   = "CarlaBridgeHideGUI";   //!< Plugin -> Host call, tells host GUI is now hidden
+const char* const CARLA_BRIDGE_MSG_SAVED      = "CarlaBridgeSaved";     //!< Plugin -> Host call, tells host state is saved
+const char* const CARLA_BRIDGE_MSG_SAVE_NOW   = "CarlaBridgeSaveNow";   //!< Host -> Plugin call, tells plugin to save state now
+const char* const CARLA_BRIDGE_MSG_SET_CHUNK  = "CarlaBridgeSetChunk";  //!< Host -> Plugin call, tells plugin to set chunk in file \a value
+const char* const CARLA_BRIDGE_MSG_SET_CUSTOM = "CarlaBridgeSetCustom"; //!< Host -> Plugin call, tells plugin to set a custom data set using \a value ("type·key·rvalue").\n If \a type is 'chunk' or 'binary' \a rvalue refers to chunk file.
 /**@}*/
+#endif
 
 /*!
  * The binary type of a plugin.
@@ -126,7 +133,7 @@ enum BinaryType {
 
 /*!
  * All the available plugin types, as provided by subclasses of CarlaPlugin.\n
- * \note Some plugin classes might provide more than 1 plugin type.
+ * Some plugin classes might provide more than 1 plugin type.
  */
 enum PluginType {
     PLUGIN_NONE     = 0, //!< Null plugin type.
@@ -184,34 +191,18 @@ enum InternalParametersIndex {
     PARAMETER_ACTIVE        = -2, //!< Active parameter, can only be 'true' or 'false'; default is 'false'.
     PARAMETER_DRYWET        = -3, //!< Dry/Wet parameter, range 0.0...1.0; default is 1.0.
     PARAMETER_VOLUME        = -4, //!< Volume parameter, range 0.0...1.27; default is 1.0.
-    PARAMETER_BALANCE_LEFT  = -5, //!< Balance-Left parameter, range -1.0...1.0; default is -1.0.
-    PARAMETER_BALANCE_RIGHT = -6  //!< Balance-Right parameter, range -1.0...1.0; default is 1.0.
+    PARAMETER_BALANCE_LEFT  = -5, //!< Stereo Balance-Left parameter, range -1.0...1.0; default is -1.0.
+    PARAMETER_BALANCE_RIGHT = -6, //!< Stereo Balance-Right parameter, range -1.0...1.0; default is 1.0.
+    PARAMETER_PANNING       = -7  //!< Mono Panning parameter, range -1.0...1.0; default is 0.0.
 };
 
 /*!
- * Plugin custom GUI type.
- * \see OPTION_PREFER_UI_BRIDGES
- *
- * TODO: these need to be handled all internally, only via showGui() backend-side
- */
-//enum GuiType {
-//    GUI_NONE           = 0, //!< Null type, plugin has no custom GUI.
-//    GUI_INTERNAL_QT4   = 1, //!< Qt4 type, handled internally.
-//    GUI_INTERNAL_COCOA = 2, //!< Reparented MacOS native type, handled internally.
-//    GUI_INTERNAL_HWND  = 3, //!< Reparented Windows native type, handled internally.
-//    GUI_INTERNAL_X11   = 4, //!< Reparented X11 native type, handled internally.
-//    GUI_EXTERNAL_LV2   = 5, //!< External LV2-UI type, handled internally.
-//    GUI_EXTERNAL_SUIL  = 6, //!< SUIL type, currently used only for lv2 gtk2 direct-access UIs.\note This type will be removed in the future!
-//    GUI_EXTERNAL_OSC   = 7  //!< External, osc-bridge controlled, UI.
-//};
-
-/*!
- * Options used in the set_option() call.\n
- * These options must be set before calling engine_init() or after engine_close().
+ * Options used in the CarlaEngine::setOption() and set_option() calls.\n
+ * These options must be set before initiliazing or after closing the engine.
  */
 enum OptionsType {
     /*!
-     * Try to set the current process name.\n
+     * Try to set the current process name.
      * \note Not available on all platforms.
      */
     OPTION_PROCESS_NAME = 0,
@@ -232,54 +223,55 @@ enum OptionsType {
     OPTION_PROCESS_HIGH_PRECISION = 2,
 
     /*!
-     * Maximum number of parameters allowed.\n
-     * Default is MAX_PARAMETERS.
+     * Force mono plugins as stereo, by running 2 instances at the same time.
+     * \note Not supported by all plugins.
      */
-    OPTION_MAX_PARAMETERS = 3,
-
-    /*!
-     * Prefered buffer size.
-     */
-    OPTION_PREFERRED_BUFFER_SIZE = 4,
-
-    /*!
-     * Prefered sample rate.
-     */
-    OPTION_PREFERRED_SAMPLE_RATE = 5,
-
-    /*!
-     * Force mono plugins as stereo, by running 2 instances at the same time.\n
-     * Not supported by all plugins.
-     */
-    OPTION_FORCE_STEREO = 6,
-
-#ifdef WANT_DSSI
-    /*!
-     * Use (unofficial) dssi-vst chunks feature.\n
-     * Default is no.
-     */
-    OPTION_USE_DSSI_VST_CHUNKS = 7,
-#endif
+    OPTION_FORCE_STEREO = 3,
 
     /*!
      * Use plugin bridges whenever possible.\n
      * Default is no, and not recommended at this point!.
      * EXPERIMENTAL AND INCOMPLETE!
      */
-    OPTION_PREFER_PLUGIN_BRIDGES = 8,
+    OPTION_PREFER_PLUGIN_BRIDGES = 4,
 
     /*!
      * Use OSC-UI bridges whenever possible, otherwise UIs will be handled in the main thread.\n
      * Default is yes.
      */
-    OPTION_PREFER_UI_BRIDGES = 9,
+    OPTION_PREFER_UI_BRIDGES = 5,
+
+#ifdef WANT_DSSI
+    /*!
+     * Use (unofficial) dssi-vst chunks feature.\n
+     * Default is no.
+     */
+    OPTION_USE_DSSI_VST_CHUNKS = 6,
+#endif
+
+    /*!
+     * Maximum number of parameters allowed.\n
+     * Default is MAX_DEFAULT_PARAMETERS.
+     */
+    OPTION_MAX_PARAMETERS = 7,
 
     /*!
      * Timeout value in ms for how much to wait for OSC-Bridges to respond.\n
-     * Default is 4000 ms (4 secs).
+     * Default is 4000 (4 secs).
      */
-    OPTION_OSC_UI_TIMEOUT = 10,
+    OPTION_OSC_UI_TIMEOUT = 8,
 
+    /*!
+     * Prefered buffer size.
+     */
+    OPTION_PREFERRED_BUFFER_SIZE = 9,
+
+    /*!
+     * Prefered sample rate.
+     */
+    OPTION_PREFERRED_SAMPLE_RATE = 10,
+
+#ifndef BUILD_BRIDGE
     /*!
      * Set path to the native plugin bridge executable.\n
      * Default unset.
@@ -309,6 +301,7 @@ enum OptionsType {
      * Default unset.
      */
     OPTION_PATH_BRIDGE_WIN64 = 15,
+#endif
 
 #ifdef WANT_LV2
     /*!
@@ -376,8 +369,9 @@ enum OptionsType {
 };
 
 /*!
- * Opcodes sent from the engine callback, as defined by CallbackFunc.
+ * Opcodes sent from the engine callback to the GUI, as defined by CallbackFunc.
  *
+ * \see CarlaEngine::setCallback()
  * \see set_callback_function()
  */
 enum CallbackType {
@@ -449,72 +443,64 @@ enum CallbackType {
      * \param value1 State, as follows:.\n
      *                0: GUI has been closed or hidden\n
      *                1: GUI has been shown\n
-     *               -1: GUI has crashed and should not be shown again\n
+     *               -1: GUI has crashed and should not be shown again
      */
     CALLBACK_SHOW_GUI = 8,
 
     /*!
-     * The plugin's custom GUI has been resized.
-     *
-     * \param value1 Width
-     * \param value2 Height
-     */
-    CALLBACK_RESIZE_GUI = 9,
-
-    /*!
      * The plugin needs update.
      */
-    CALLBACK_UPDATE = 10,
+    CALLBACK_UPDATE = 9,
 
     /*!
      * The plugin's data/information has changed.
      */
-    CALLBACK_RELOAD_INFO = 11,
+    CALLBACK_RELOAD_INFO = 10,
 
     /*!
      * The plugin's parameters have changed.
      */
-    CALLBACK_RELOAD_PARAMETERS = 12,
+    CALLBACK_RELOAD_PARAMETERS = 11,
 
     /*!
      * The plugin's programs have changed.
      */
-    CALLBACK_RELOAD_PROGRAMS = 13,
+    CALLBACK_RELOAD_PROGRAMS = 12,
 
     /*!
      * The plugin's state has changed.
      */
-    CALLBACK_RELOAD_ALL = 14,
+    CALLBACK_RELOAD_ALL = 13,
 
     /*!
      * Non-Session-Manager Announce message.
      */
-    CALLBACK_NSM_ANNOUNCE = 15,
+    CALLBACK_NSM_ANNOUNCE = 14,
 
     /*!
      * Non-Session-Manager Open message #1.
      */
-    CALLBACK_NSM_OPEN1 = 16,
+    CALLBACK_NSM_OPEN1 = 15,
 
     /*!
      * Non-Session-Manager Open message #2.
      */
-    CALLBACK_NSM_OPEN2 = 17,
+    CALLBACK_NSM_OPEN2 = 16,
 
     /*!
      * Non-Session-Manager Save message.
      */
-    CALLBACK_NSM_SAVE = 18,
+    CALLBACK_NSM_SAVE = 17,
 
     /*!
      * An error occurred, show last error to user.
      */
-    CALLBACK_ERROR = 19,
+    CALLBACK_ERROR = 18,
 
     /*!
      * The engine has crashed or malfunctioned and will no longer work.
      */
-    CALLBACK_QUIT = 20
+    CALLBACK_QUIT = 19
 };
 
 /*!
@@ -598,7 +584,7 @@ struct MidiProgramData {
 
 /*!
  * Custom data, saving key:value 'dictionaries'.
- * \a type is an URI.
+ * \a type is an URI which defines the \a value type.
  *
  * \see CustomDataTypes
  */

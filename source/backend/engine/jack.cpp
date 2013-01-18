@@ -65,7 +65,7 @@ public:
         if (! m_port)
             return CarlaEngineAudioPort::initBuffer(engine);
 
-        buffer = jackbridge_port_get_buffer(m_port, engine->getBufferSize());
+        //buffer = jackbridge_port_get_buffer(m_port, engine->getBufferSize());
     }
 
     float* getBuffer() const
@@ -118,7 +118,7 @@ public:
         if (! m_port)
             return CarlaEngineControlPort::initBuffer(engine);
 
-        buffer = jackbridge_port_get_buffer(m_port, engine->getBufferSize());
+        //buffer = jackbridge_port_get_buffer(m_port, engine->getBufferSize());
 
         if (! isInput)
             jackbridge_midi_clear_buffer(buffer);
@@ -317,7 +317,7 @@ public:
         if (! m_port)
             return CarlaEngineMidiPort::initBuffer(engine);
 
-        buffer = jackbridge_port_get_buffer(m_port, engine->getBufferSize());
+        //buffer = jackbridge_port_get_buffer(m_port, engine->getBufferSize());
 
         if (! isInput)
             jackbridge_midi_clear_buffer(buffer);
@@ -515,9 +515,7 @@ public:
     CarlaEngineJack()
         : CarlaEngine()
 #ifndef BUILD_BRIDGE
-# ifdef Q_COMPILER_INITIALIZER_LISTS
         , m_rackPorts{nullptr}
-# endif
 #endif
     {
         qDebug("CarlaEngineJack::CarlaEngineJack()");
@@ -530,11 +528,6 @@ public:
 
 #ifdef BUILD_BRIDGE
         hasQuit = false;
-#else
-# ifndef Q_COMPILER_INITIALIZER_LISTS
-        for (int i=0; i < rackPortCount; i++)
-            m_rackPorts[i] = nullptr;
-# endif
 #endif
     }
 
@@ -740,6 +733,8 @@ public:
         return new CarlaEngineJackClient(client, CarlaEngineTypeJack, options.processMode);
 #endif
     }
+
+#if 0
 
     // -------------------------------------
 
@@ -1025,6 +1020,7 @@ protected:
     }
 
     // -------------------------------------
+#endif
 
 private:
     jack_client_t* m_client;
@@ -1052,6 +1048,7 @@ private:
     jack_port_t* m_rackPorts[rackPortCount];
 #endif
 
+#if 0
     // -------------------------------------
 
     static void processPlugin(CarlaPlugin* const p, const uint32_t nframes)
@@ -1192,6 +1189,7 @@ private:
         if (plugin && plugin->enabled())
             latencyPlugin(plugin, mode);
     }
+#endif
 };
 
 // -----------------------------------------

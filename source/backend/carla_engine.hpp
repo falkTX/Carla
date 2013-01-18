@@ -9,7 +9,7 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * For a full copy of the GNU General Public License see the COPYING file
@@ -172,6 +172,64 @@ struct CarlaEngineMidiEvent {
     }
 };
 
+// LATER - CarlaEngineExtendedMidiEvent
+
+/*!
+ * Engine options.
+ */
+struct CarlaEngineOptions {
+    ProcessMode processMode;
+    bool processHighPrecision;
+
+    bool forceStereo;
+    bool preferPluginBridges;
+    bool preferUiBridges;
+#ifdef WANT_DSSI
+    bool useDssiVstChunks;
+#endif
+
+    uint maxParameters;
+    uint oscUiTimeout;
+    uint preferredBufferSize;
+    uint preferredSampleRate;
+
+#ifndef BUILD_BRIDGE
+    CarlaString bridge_native;
+    CarlaString bridge_posix32;
+    CarlaString bridge_posix64;
+    CarlaString bridge_win32;
+    CarlaString bridge_win64;
+#endif
+#ifdef WANT_LV2
+    CarlaString bridge_lv2gtk2;
+    CarlaString bridge_lv2gtk3;
+    CarlaString bridge_lv2qt4;
+    CarlaString bridge_lv2qt5;
+    CarlaString bridge_lv2cocoa;
+    CarlaString bridge_lv2win;
+    CarlaString bridge_lv2x11;
+#endif
+#ifdef WANT_VST
+    CarlaString bridge_vstcocoa;
+    CarlaString bridge_vsthwnd;
+    CarlaString bridge_vstx11;
+#endif
+
+    CarlaEngineOptions()
+        : processMode(PROCESS_MODE_CONTINUOUS_RACK),
+          processHighPrecision(false),
+          forceStereo(false),
+          preferPluginBridges(false),
+          preferUiBridges(true),
+#ifdef WANT_DSSI
+          useDssiVstChunks(false),
+#endif
+          maxParameters(MAX_DEFAULT_PARAMETERS),
+          oscUiTimeout(4000),
+          preferredBufferSize(512),
+          preferredSampleRate(44100) {}
+};
+
 /*!
  * Engine BBT Time information.
  */
@@ -214,61 +272,7 @@ struct CarlaEngineTimeInfo {
         : playing(false),
           frame(0),
           time(0),
-          valid(0) {}
-};
-
-/*!
- * Engine options.
- */
-struct CarlaEngineOptions {
-    ProcessMode processMode;
-    bool processHighPrecision;
-
-    bool forceStereo;
-    bool preferPluginBridges;
-    bool preferUiBridges;
-#ifdef WANT_DSSI
-    bool useDssiVstChunks;
-#endif
-
-    uint maxParameters;
-    uint oscUiTimeout;
-    uint preferredBufferSize;
-    uint preferredSampleRate;
-
-    CarlaString bridge_native;
-    CarlaString bridge_posix32;
-    CarlaString bridge_posix64;
-    CarlaString bridge_win32;
-    CarlaString bridge_win64;
-#ifdef WANT_LV2
-    CarlaString bridge_lv2gtk2;
-    CarlaString bridge_lv2gtk3;
-    CarlaString bridge_lv2qt4;
-    CarlaString bridge_lv2qt5;
-    CarlaString bridge_lv2cocoa;
-    CarlaString bridge_lv2win;
-    CarlaString bridge_lv2x11;
-#endif
-#ifdef WANT_VST
-    CarlaString bridge_vstcocoa;
-    CarlaString bridge_vsthwnd;
-    CarlaString bridge_vstx11;
-#endif
-
-    CarlaEngineOptions()
-        : processMode(PROCESS_MODE_PATCHBAY),
-          processHighPrecision(false),
-          forceStereo(false),
-          preferPluginBridges(false),
-          preferUiBridges(true),
-#ifdef WANT_DSSI
-          useDssiVstChunks(false),
-#endif
-          maxParameters(MAX_PARAMETERS),
-          oscUiTimeout(4000/100),
-          preferredBufferSize(512),
-          preferredSampleRate(44100) {}
+          valid(0x0) {}
 };
 
 // -----------------------------------------------------------------------
@@ -566,6 +570,7 @@ public:
      */
     static CarlaEngine* newDriverByName(const char* const driverName);
 
+
     // -------------------------------------------------------------------
     // Maximum values
 
@@ -583,7 +588,7 @@ public:
      * Maximum number of loadable plugins.
      * \note This function returns 0 if engine is not started.
      */
-    unsigned short maxPluginNumber() const;
+    unsigned int maxPluginNumber() const;
 
     // -------------------------------------------------------------------
     // Virtual, per-engine type calls
@@ -626,8 +631,10 @@ public:
      * Get next available plugin id.\n
      * Returns -1 if no more plugins can be loaded.
      */
-    short getNewPluginId() const;
+    int getNewPluginId() const;
 
+#if 0
+#if 0
     /*!
      * Get plugin with id \a id.
      */
@@ -637,6 +644,7 @@ public:
      * Get plugin with id \a id, faster unchecked version.
      */
     CarlaPlugin* getPluginUnchecked(const unsigned short id) const;
+#endif
 
     /*!
      * Get a unique plugin name within the engine.\n
@@ -693,6 +701,14 @@ public:
     }
 
     /*!
+     * Get current buffer size.
+     */
+    uint32_t getBufferSize() const
+    {
+        return bufferSize;
+    }
+
+    /*!
      * Get current sample rate.
      */
     double getSampleRate() const
@@ -701,11 +717,11 @@ public:
     }
 
     /*!
-     * Get current buffer size.
+     * Get the engine options (read-only).
      */
-    uint32_t getBufferSize() const
+    const CarlaEngineOptions& getOptions() const
     {
-        return bufferSize;
+        return options;
     }
 
     /*!
@@ -751,14 +767,6 @@ public:
 
     // -------------------------------------------------------------------
     // Options
-
-    /*!
-     * Get the engine options (read-only).
-     */
-    const CarlaEngineOptions& getOptions() const
-    {
-        return options;
-    }
 
 #ifndef BUILD_BRIDGE
     /*!
@@ -840,6 +848,8 @@ public:
      * Set OSC bridge data.
      */
     void setOscBridgeData(const CarlaOscData* const oscData);
+#endif
+
 #endif
 
 #ifdef BUILD_BRIDGE

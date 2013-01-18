@@ -31,8 +31,8 @@ VERSION  = 0.5.0
 
 SOURCES  = \
     carla_engine.cpp \
-    carla_engine_osc.cpp \
-    carla_engine_thread.cpp \
+#    carla_engine_osc.cpp \
+#    carla_engine_thread.cpp \
     jack.cpp \
     plugin.cpp \
     rtaudio.cpp

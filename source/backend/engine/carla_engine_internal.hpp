@@ -1,6 +1,6 @@
 /*
  * Carla Engine
- * Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -9,7 +9,7 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * For a full copy of the GNU General Public License see the COPYING file
@@ -23,6 +23,8 @@
 #include "carla_engine_thread.hpp"
 
 #include "carla_plugin.hpp"
+
+#include "rt_list.hpp"
 
 #ifndef BUILD_BRIDGE
 # include <QtCore/QProcessEnvironment>
@@ -104,6 +106,37 @@ const char* CarlaEngineControlEventType2Str(const CarlaEngineControlEventType ty
 const uint32_t       PATCHBAY_BUFFER_SIZE = 128;
 const unsigned short PATCHBAY_EVENT_COUNT = 256;
 
+enum EnginePostEventType {
+    EnginePostEventNull,
+    EnginePostEventDebug,
+    PluginPostEventAddPlugin,   // id, ptr
+    PluginPostEventRemovePlugin // id
+};
+
+struct EnginePostEvent {
+    EnginePostEventType type;
+    int32_t value1;
+    void*   valuePtr;
+
+    EnginePostEvent()
+        : type(EnginePostEventNull),
+          value1(-1),
+          valuePtr(nullptr) {}
+};
+
+struct EnginePluginData {
+    CarlaPlugin* const plugin;
+    double insPeak[MAX_PEAKS];
+    double outsPeak[MAX_PEAKS];
+
+    EnginePluginData(CarlaPlugin* const plugin_)
+        : plugin(plugin_),
+          insPeak{0},
+          outsPeak{0} {}
+
+    EnginePluginData() = delete;
+};
+
 struct CarlaEnginePrivateData {
     CarlaEngineOsc    osc;
     CarlaEngineThread thread;
@@ -112,24 +145,25 @@ struct CarlaEnginePrivateData {
 
     CallbackFunc callback;
     void*        callbackPtr;
+
     CarlaString  lastError;
 
 #ifndef BUILD_BRIDGE
     QProcessEnvironment procEnv;
 #endif
 
-    CarlaMutex procLock;
+    // for postEvents
+    CarlaMutex eventLock;
+
+    // for external midi input (GUI and OSC)
     CarlaMutex midiLock;
 
-    // TODO - use ListHead for pointers, remove maximum static value
-    CarlaPlugin* carlaPlugins[MAX_PLUGINS];
-    const char*  uniqueNames[MAX_PLUGINS];
-
-    double insPeak[MAX_PLUGINS * MAX_PEAKS];
-    double outsPeak[MAX_PLUGINS * MAX_PEAKS];
+    RtList<EnginePostEvent> postEvents;
+    RtList<EnginePluginData> plugins;
 
     bool aboutToClose;
-    unsigned short maxPluginNumber;
+    unsigned int maxPluginNumber;
+    unsigned int nextPluginId;
 
     CarlaEnginePrivateData(CarlaEngine* const engine)
         : osc(engine),
@@ -137,12 +171,11 @@ struct CarlaEnginePrivateData {
           oscData(nullptr),
           callback(nullptr),
           callbackPtr(nullptr),
-          carlaPlugins{nullptr},
-          uniqueNames{nullptr},
-          insPeak{0.0},
-          outsPeak{0.0},
+          postEvents(1, 1),
+          plugins(1, 1),
           aboutToClose(false),
-          maxPluginNumber(0) {}
+          maxPluginNumber(0),
+          nextPluginId(0) {}
 };
 
 CARLA_BACKEND_END_NAMESPACE

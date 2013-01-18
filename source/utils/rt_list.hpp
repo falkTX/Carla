@@ -36,7 +36,7 @@ public:
         qcount = 0;
         INIT_LIST_HEAD(&queue);
 
-        rtsafe_memory_pool_create(&mempool, nullptr, sizeof(ListHeadData), minPreallocated, maxPreallocated);
+        rtsafe_memory_pool_create(&mempool, nullptr, sizeof(RtListData), minPreallocated, maxPreallocated);
 
         assert(mempool);
     }
@@ -53,7 +53,7 @@ public:
         clear();
 
         rtsafe_memory_pool_destroy(mempool);
-        rtsafe_memory_pool_create(&mempool, nullptr, sizeof(ListHeadData), minPreallocated, maxPreallocated);
+        rtsafe_memory_pool_create(&mempool, nullptr, sizeof(RtListData), minPreallocated, maxPreallocated);
 
         assert(mempool);
     }
@@ -62,12 +62,12 @@ public:
     {
         if (! isEmpty())
         {
-            ListHeadData* data;
+            RtListData* data;
             k_list_head* entry;
 
             list_for_each(entry, &queue)
             {
-                data = list_entry(entry, ListHeadData, siblings);
+                data = list_entry(entry, RtListData, siblings);
                 rtsafe_memory_pool_deallocate(mempool, data);
             }
         }
@@ -83,17 +83,18 @@ public:
 
     bool isEmpty() const
     {
-        return (list_empty(&queue) != 0);
+        return (qcount == 0);
+        //return (list_empty(&queue) != 0);
     }
 
     void append(const T& value, const bool sleepy = false)
     {
-        ListHeadData* data;
+        RtListData* data;
 
         if (sleepy)
-            data = (ListHeadData*)rtsafe_memory_pool_allocate_sleepy(mempool);
+            data = (RtListData*)rtsafe_memory_pool_allocate_sleepy(mempool);
         else
-            data = (ListHeadData*)rtsafe_memory_pool_allocate_atomic(mempool);
+            data = (RtListData*)rtsafe_memory_pool_allocate_atomic(mempool);
 
         if (data)
         {
@@ -126,12 +127,12 @@ public:
 
     bool removeOne(const T& value)
     {
-        ListHeadData* data;
+        RtListData* data;
         k_list_head* entry;
 
         list_for_each(entry, &queue)
         {
-            data = list_entry(entry, ListHeadData, siblings);
+            data = list_entry(entry, RtListData, siblings);
 
             if (data->value == value)
             {
@@ -147,13 +148,13 @@ public:
 
     void removeAll(const T& value)
     {
-        ListHeadData* data;
+        RtListData* data;
         k_list_head* entry;
         k_list_head* tmp;
 
         list_for_each_safe(entry, tmp, &queue)
         {
-            data = list_entry(entry, ListHeadData, siblings);
+            data = list_entry(entry, RtListData, siblings);
 
             if (data->value == value)
             {
@@ -169,7 +170,7 @@ private:
     k_list_head queue;
     RtMemPool_Handle mempool;
 
-    struct ListHeadData {
+    struct RtListData {
         T value;
         k_list_head siblings;
     };
@@ -192,7 +193,7 @@ private:
         }
 
         k_list_head* entry = first ? queue.next : queue.prev;
-        ListHeadData* data = list_entry(entry, ListHeadData, siblings);
+        RtListData* data = list_entry(entry, RtListData, siblings);
 
         T& ret = data->value;
 

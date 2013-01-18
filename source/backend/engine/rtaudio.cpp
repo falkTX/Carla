@@ -65,6 +65,8 @@ public:
 // -------------------------------------------------------------------------------------------------------------------
 // RtAudio Engine
 
+#if 0
+
 class CarlaEngineRtAudio : public CarlaEngine
 {
 public:
@@ -433,6 +435,7 @@ const char* CarlaEngine::getRtAudioApiName(unsigned int index)
 
     return nullptr;
 }
+#endif
 
 CARLA_BACKEND_END_NAMESPACE
 

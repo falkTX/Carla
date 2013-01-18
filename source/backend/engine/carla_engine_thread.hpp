@@ -1,6 +1,6 @@
 /*
  * Carla Engine Thread
- * Copyright (C) 2012 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -9,18 +9,18 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * For a full copy of the GNU General Public License see the COPYING file
  */
 
-#ifndef CARLA_ENGINE_THREAD_HPP
-#define CARLA_ENGINE_THREAD_HPP
+#ifndef __CARLA_ENGINE_THREAD_HPP__
+#define __CARLA_ENGINE_THREAD_HPP__
 
 #include "carla_backend.hpp"
+#include "carla_utils.hpp"
 
-#include <QtCore/QMutex>
 #include <QtCore/QThread>
 
 CARLA_BACKEND_START_NAMESPACE
@@ -48,11 +48,12 @@ protected:
 private:
     CarlaEngine* const engine;
 
-    QMutex m_mutex;
-    bool   m_stopNow;
+    CarlaMutex m_mutex;
+    bool       m_stopNow;
 
     // ----------------------------------------------
 
+#if 0
     class ScopedLocker
     {
     public:
@@ -68,10 +69,11 @@ private:
         }
 
     private:
-        QMutex* const mutex;
+        CarlaMutex* const mutex;
     };
+#endif
 };
 
 CARLA_BACKEND_END_NAMESPACE
 
-#endif // CARLA_ENGINE_THREAD_HPP
+#endif // __CARLA_ENGINE_THREAD_HPP__
