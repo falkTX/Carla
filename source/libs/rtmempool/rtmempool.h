@@ -1,41 +1,108 @@
-/* -*- Mode: C ; c-basic-offset: 2 -*- */
-/*****************************************************************************
+/*
+ * RealTime Memory Pool, heavily based on work by Nedko Arnaudov
+ * Copyright (C) 2006-2009 Nedko Arnaudov <nedko@arnaudov.name>
+ * Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
  *
- *   This file is part of zynjacku
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * any later version.
  *
- *   Copyright (C) 2006,2007,2008,2009 Nedko Arnaudov <nedko@arnaudov.name>
- *   Copyright (C) 2012 Filipe Coelho <falktx@falktx.com>
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- *   This program is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; version 2 of the License
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program; if not, write to the Free Software
- *   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- *****************************************************************************/
+ * For a full copy of the GNU General Public License see the COPYING file
+ */
 
-#ifndef RTMEMPOOL_H__1FA54215_11CF_4659_9CF3_C17A10A67A1F__INCLUDED
-#define RTMEMPOOL_H__1FA54215_11CF_4659_9CF3_C17A10A67A1F__INCLUDED
-
-#include "lv2/lv2_rtmempool.h"
+#ifndef __RTMEMPOOL_H__
+#define __RTMEMPOOL_H__
 
 #ifdef __cplusplus
-extern "C" {
+# include <cstddef>
+#else
+# include <stdbool.h>
+# include <stddef.h>
 #endif
 
-void
-rtmempool_allocator_init(
-  struct _LV2_RtMemPool_Pool * allocator_ptr);
+/** max size of memory pool name, in chars, including terminating zero char */
+#define RTSAFE_MEMORY_POOL_NAME_MAX 128
 
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
+/**
+ * Opaque data for RtMemPool_Pool.
+ */
+typedef void* RtMemPool_Handle;
 
-#endif /* #ifndef RTMEMPOOL_H__1FA54215_11CF_4659_9CF3_C17A10A67A1F__INCLUDED */
+/**
+ * Create new memory pool
+ *
+ * <b>may/will sleep</b>
+ *
+ * @param poolName pool name, for debug purposes, max RTSAFE_MEMORY_POOL_NAME_MAX chars, including terminating zero char. May be NULL.
+ * @param dataSize memory chunk size
+ * @param minPreallocated min chunks preallocated
+ * @param maxPreallocated max chunks preallocated
+ *
+ * @return Success status, true if successful
+ */
+bool rtsafe_memory_pool_create(RtMemPool_Handle* handlePtr,
+                               const char* poolName,
+                               size_t dataSize,
+                               size_t minPreallocated,
+                               size_t maxPreallocated);
+
+/**
+ * Create new memory pool, thread-safe version
+ *
+ * <b>may/will sleep</b>
+ *
+ * @param poolName pool name, for debug purposes, max RTSAFE_MEMORY_POOL_NAME_MAX chars, including terminating zero char. May be NULL.
+ * @param dataSize memory chunk size
+ * @param minPreallocated min chunks preallocated
+ * @param maxPreallocated max chunks preallocated
+ *
+ * @return Success status, true if successful
+ */
+bool rtsafe_memory_pool_create_safe(RtMemPool_Handle* handlePtr,
+                                    const char* poolName,
+                                    size_t dataSize,
+                                    size_t minPreallocated,
+                                    size_t maxPreallocated);
+
+/**
+ * Destroy previously created memory pool
+ *
+ * <b>may/will sleep</b>
+ */
+void rtsafe_memory_pool_destroy(RtMemPool_Handle handle);
+
+/**
+ * Allocate memory in context where sleeping is not allowed
+ *
+ * <b>will not sleep</b>
+ *
+ * @return Pointer to allocated memory or NULL if memory no memory is available
+ */
+void* rtsafe_memory_pool_allocate_atomic(RtMemPool_Handle handle);
+
+/**
+ * Allocate memory in context where sleeping is allowed
+ *
+ * <b>may/will sleep</b>
+ *
+ * @return Pointer to allocated memory or NULL if memory no memory is available (should not happen under normal conditions)
+ */
+void* rtsafe_memory_pool_allocate_sleepy(RtMemPool_Handle handle);
+
+/**
+ * Deallocate previously allocated memory
+ *
+ * <b>will not sleep</b>
+ *
+ * @param memoryPtr pointer to previously allocated memory chunk
+ */
+void rtsafe_memory_pool_deallocate(RtMemPool_Handle handle,
+                                   void* memoryPtr);
+
+#endif // __RTMEMPOOL_H__

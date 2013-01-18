@@ -180,6 +180,7 @@ void CarlaEngineControlPort::writeEvent(const CarlaEngineControlEventType type, 
 
     CARLA_ASSERT(buffer);
     CARLA_ASSERT(type != CarlaEngineNullEvent);
+    CARLA_ASSERT(channel < 16);
 
     if (! buffer)
         return;
@@ -187,6 +188,8 @@ void CarlaEngineControlPort::writeEvent(const CarlaEngineControlEventType type, 
         return;
     if (type == CarlaEngineParameterChangeEvent)
         CARLA_ASSERT(! MIDI_IS_CONTROL_BANK_SELECT(parameter));
+    if (channel >= 16)
+        return;
 
 #ifndef BUILD_BRIDGE
     if (processMode == PROCESS_MODE_CONTINUOUS_RACK || processMode == PROCESS_MODE_PATCHBAY)
@@ -323,11 +326,7 @@ void CarlaEngineMidiPort::writeEvent(const uint32_t time, const uint8_t* const d
     CARLA_ASSERT(data);
     CARLA_ASSERT(size > 0);
 
-    if (! buffer)
-        return;
-    if (! data)
-        return;
-    if (size == 0)
+    if (! (buffer && data && size > 0))
         return;
 
 #ifndef BUILD_BRIDGE

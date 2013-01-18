@@ -55,6 +55,7 @@ BUILD_CXX_FLAGS += -DVESTIGE_HEADER
 # --------------------------------------------------------------
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
+BUILD_C_FLAGS    += -DWANT_LV2
 BUILD_CXX_FLAGS  += -DWANT_LADSPA -DWANT_DSSI -DWANT_LV2 -DWANT_VST
 HAVE_SUIL         = $(shell pkg-config --exists suil-0 && echo true)
 endif

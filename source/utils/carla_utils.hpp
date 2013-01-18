@@ -23,6 +23,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <pthread.h>
 
 #if defined(Q_OS_HAIKU)
 # include <kernel/OS.h>
@@ -163,6 +164,60 @@ const char* bool2str(const bool yesNo)
 
 static inline
 void pass() {}
+
+// -------------------------------------------------
+// CarlaMutex class
+
+class CarlaMutex
+{
+public:
+    CarlaMutex()
+        : pmutex(PTHREAD_MUTEX_INITIALIZER)
+    {
+        pthread_mutex_init(&pmutex, nullptr);
+    }
+
+    ~CarlaMutex()
+    {
+        pthread_mutex_destroy(&pmutex);
+    }
+
+    bool lock()
+    {
+        return (pthread_mutex_lock(&pmutex) == 0);
+    }
+
+    bool tryLock()
+    {
+        return (pthread_mutex_trylock(&pmutex) == 0);
+    }
+
+    bool unlock()
+    {
+        return (pthread_mutex_unlock(&pmutex) == 0);
+    }
+
+    class ScopedLocker
+    {
+    public:
+        ScopedLocker(CarlaMutex* const mutex_)
+            : mutex(mutex_)
+        {
+            mutex->lock();
+        }
+
+        ~ScopedLocker()
+        {
+            mutex->unlock();
+        }
+
+    private:
+        CarlaMutex* const mutex;
+    };
+
+private:
+    pthread_mutex_t pmutex;
+};
 
 // -------------------------------------------------
 // CarlaString class

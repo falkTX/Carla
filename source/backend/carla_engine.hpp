@@ -21,7 +21,9 @@
 #include "carla_backend.hpp"
 #include "carla_utils.hpp"
 
+#ifndef BUILD_BRIDGE
 class QProcessEnvironment;
+#endif
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -138,6 +140,15 @@ struct CarlaEngineControlEvent {
           channel(0),
           parameter(0),
           value(0.0) {}
+
+    void clear()
+    {
+        type = CarlaEngineNullEvent;
+        time = 0;
+        channel = 0;
+        parameter = 0;
+        value = 0.0;
+    }
 };
 
 /*!
@@ -152,6 +163,13 @@ struct CarlaEngineMidiEvent {
         : time(0),
           size(0),
           data{0} {}
+
+    void clear()
+    {
+        time = 0;
+        size = 0;
+        data[0] = data[1] = data[2] = 0;
+    }
 };
 
 /*!

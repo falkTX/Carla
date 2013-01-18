@@ -28,16 +28,6 @@
 # include <QtCore/QProcessEnvironment>
 #endif
 
-#ifdef CARLA_ENGINE_RTAUDIO
-# if defined(Q_OS_MAC) && ! defined(__MACOSX_CORE__)
-#  define __MACOSX_CORE__
-# endif
-# if defined(Q_OS_WIN) && ! (defined(__WINDOWS_ASIO__) || defined(__WINDOWS_DS__))
-#  define __WINDOWS_ASIO__
-#  define __WINDOWS_DS__
-# endif
-#endif
-
 CARLA_BACKEND_START_NAMESPACE
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -128,9 +118,10 @@ struct CarlaEnginePrivateData {
     QProcessEnvironment procEnv;
 #endif
 
-    QMutex procLock;
-    QMutex midiLock;
+    CarlaMutex procLock;
+    CarlaMutex midiLock;
 
+    // TODO - use ListHead for pointers, remove maximum static value
     CarlaPlugin* carlaPlugins[MAX_PLUGINS];
     const char*  uniqueNames[MAX_PLUGINS];
 

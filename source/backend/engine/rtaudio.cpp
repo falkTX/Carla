@@ -17,16 +17,9 @@
 
 #ifdef CARLA_ENGINE_RTAUDIO
 
-#if defined(Q_OS_MAC)
-# define __MACOSX_CORE__
-#elif defined(Q_OS_WIN)
-# define __WINDOWS_DS__
-# define __WINDOWS_ASIO__
-# define __WINDOWS_MM__
-#endif
-
-#include "carla_engine.hpp"
-#include "carla_plugin.hpp"
+#include "carla_engine_internal.hpp"
+#include "carla_backend_utils.hpp"
+#include "carla_midi.h"
 
 #include "RtAudio.h"
 #include "RtMidi.h"
@@ -48,9 +41,9 @@ public:
     {
     }
 
-    const CarlaEngineBasePort* addPort(const CarlaEnginePortType portType, const char* const name, const bool isInput)
+    const CarlaEnginePort* addPort(const CarlaEnginePortType portType, const char* const name, const bool isInput)
     {
-        qDebug("CarlaEngineRtAudioClient::addPort(%i, \"%s\", %s)", portType, name, bool2str(isInput));
+        qDebug("CarlaEngineRtAudioClient::addPort(%s, \"%s\", %s)", CarlaEnginePortType2Str(portType), name, bool2str(isInput));
 
         switch (portType)
         {
