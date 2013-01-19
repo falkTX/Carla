@@ -36,16 +36,6 @@ except:
     haveLRDF = False
 
 # ------------------------------------------------------------------------------------------------------------
-# Convert a ctypes c_char_p into a python string
-
-def cString(value):
-    if not value:
-        return ""
-    if isinstance(value, str):
-        return value
-    return value.decode("utf-8", errors="ignore")
-
-# ------------------------------------------------------------------------------------------------------------
 # Convert a ctypes struct into a python dict
 
 def structToDict(struct):

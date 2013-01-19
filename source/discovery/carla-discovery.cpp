@@ -721,6 +721,12 @@ void do_lv2_check(const char* const bundle, const bool init)
             URIs.append(QString(uri));
     }
 
+    if (URIs.count() == 0)
+    {
+        DISCOVERY_OUT("warning", "LV2 Bundle doesn't provide any plugins");
+        return;
+    }
+
     // Get & check every plugin-instance
     for (int i=0; i < URIs.count(); i++)
     {

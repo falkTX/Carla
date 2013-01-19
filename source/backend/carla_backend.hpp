@@ -601,13 +601,13 @@ struct CustomData {
     ~CustomData()
     {
         if (type)
-            free((void*)type);
+            ::free((void*)type);
 
         if (key)
-            free((void*)key);
+            ::free((void*)key);
 
         if (value)
-            free((void*)value);
+            ::free((void*)value);
     }
 };
 

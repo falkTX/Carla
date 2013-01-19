@@ -25,17 +25,18 @@ import sys
 from codecs import open as codecopen
 from copy import deepcopy
 #from decimal import Decimal
-from PyQt4.QtCore import qWarning
+from PyQt4.QtCore import pyqtSlot, qWarning, SIGNAL, SLOT
 #pyqtSlot, qFatal, Qt, QSettings, QTimer
-#from PyQt4.QtGui import QColor, QCursor, QDialog, QFontMetrics, QFrame, QGraphicsScene, QInputDialog, QLinearGradient, QMenu, QPainter, QPainterPath, QVBoxLayout, QWidget
+from PyQt4.QtGui import QDialog, QWidget
+#from PyQt4.QtGui import QColor, QCursor, QFontMetrics, QFrame, QGraphicsScene, QInputDialog, QLinearGradient, QMenu, QPainter, QPainterPath, QVBoxLayout
 #from PyQt4.QtXml import QDomDocument
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
 
-#import ui_carla_about
+import ui_carla_about
 #import ui_carla_edit
-#import ui_carla_parameter
+import ui_carla_parameter
 #import ui_carla_plugin
 
 # ------------------------------------------------------------------------------------------------------------
@@ -133,6 +134,16 @@ else:
 # 64bit check
 
 is64bit = False #bool(platform.architecture()[0] == "64bit" and sys.maxsize > 2**32)
+
+# ------------------------------------------------------------------------------------------------------------
+# Convert a ctypes c_char_p into a python string
+
+def cString(value):
+    if not value:
+        return ""
+    if isinstance(value, str):
+        return value
+    return value.decode("utf-8", errors="ignore")
 
 # ------------------------------------------------------------------------------------------------------------
 # Check if a value is a number (float support)
@@ -372,6 +383,102 @@ CarlaSaveState = {
 }
 
 # ------------------------------------------------------------------------------------------------------------
+# Static MIDI CC list
+
+MIDI_CC_LIST = (
+    #"0x00 Bank Select",
+    "0x01 Modulation",
+    "0x02 Breath",
+    "0x03 (Undefined)",
+    "0x04 Foot",
+    "0x05 Portamento",
+    #"0x06 (Data Entry MSB)",
+    "0x07 Volume",
+    "0x08 Balance",
+    "0x09 (Undefined)",
+    "0x0A Pan",
+    "0x0B Expression",
+    "0x0C FX Control 1",
+    "0x0D FX Control 2",
+    "0x0E (Undefined)",
+    "0x0F (Undefined)",
+    "0x10 General Purpose 1",
+    "0x11 General Purpose 2",
+    "0x12 General Purpose 3",
+    "0x13 General Purpose 4",
+    "0x14 (Undefined)",
+    "0x15 (Undefined)",
+    "0x16 (Undefined)",
+    "0x17 (Undefined)",
+    "0x18 (Undefined)",
+    "0x19 (Undefined)",
+    "0x1A (Undefined)",
+    "0x1B (Undefined)",
+    "0x1C (Undefined)",
+    "0x1D (Undefined)",
+    "0x1E (Undefined)",
+    "0x1F (Undefined)",
+    #"0x20 *Bank Select",
+    #"0x21 *Modulation",
+    #"0x22 *Breath",
+    #"0x23 *(Undefined)",
+    #"0x24 *Foot",
+    #"0x25 *Portamento",
+    #"0x26 *(Data Entry MSB)",
+    #"0x27 *Volume",
+    #"0x28 *Balance",
+    #"0x29 *(Undefined)",
+    #"0x2A *Pan",
+    #"0x2B *Expression",
+    #"0x2C *FX *Control 1",
+    #"0x2D *FX *Control 2",
+    #"0x2E *(Undefined)",
+    #"0x2F *(Undefined)",
+    #"0x30 *General Purpose 1",
+    #"0x31 *General Purpose 2",
+    #"0x32 *General Purpose 3",
+    #"0x33 *General Purpose 4",
+    #"0x34 *(Undefined)",
+    #"0x35 *(Undefined)",
+    #"0x36 *(Undefined)",
+    #"0x37 *(Undefined)",
+    #"0x38 *(Undefined)",
+    #"0x39 *(Undefined)",
+    #"0x3A *(Undefined)",
+    #"0x3B *(Undefined)",
+    #"0x3C *(Undefined)",
+    #"0x3D *(Undefined)",
+    #"0x3E *(Undefined)",
+    #"0x3F *(Undefined)",
+    #"0x40 Damper On/Off", # <63 off, >64 on
+    #"0x41 Portamento On/Off", # <63 off, >64 on
+    #"0x42 Sostenuto On/Off", # <63 off, >64 on
+    #"0x43 Soft Pedal On/Off", # <63 off, >64 on
+    #"0x44 Legato Footswitch", # <63 Normal, >64 Legato
+    #"0x45 Hold 2", # <63 off, >64 on
+    "0x46 Control 1 [Variation]",
+    "0x47 Control 2 [Timbre]",
+    "0x48 Control 3 [Release]",
+    "0x49 Control 4 [Attack]",
+    "0x4A Control 5 [Brightness]",
+    "0x4B Control 6 [Decay]",
+    "0x4C Control 7 [Vib Rate]",
+    "0x4D Control 8 [Vib Depth]",
+    "0x4E Control 9 [Vib Delay]",
+    "0x4F Control 10 [Undefined]",
+    "0x50 General Purpose 5",
+    "0x51 General Purpose 6",
+    "0x52 General Purpose 7",
+    "0x53 General Purpose 8",
+    "0x54 Portamento Control",
+    "0x5B FX 1 Depth [Reverb]",
+    "0x5C FX 2 Depth [Tremolo]",
+    "0x5D FX 3 Depth [Chorus]",
+    "0x5E FX 4 Depth [Detune]",
+    "0x5F FX 5 Depth [Phaser]"
+  )
+
+# ------------------------------------------------------------------------------------------------------------
 # Carla XML helpers
 
 def getSaveStateDictFromXML(xmlNode):
@@ -518,3 +625,213 @@ def xmlSafeString(string, toXml):
         return string.replace("&", "&amp;").replace("<","&lt;").replace(">","&gt;").replace("'","&apos;").replace("\"","&quot;")
     else:
         return string.replace("&amp;", "&").replace("&lt;","<").replace("&gt;",">").replace("&apos;","'").replace("&quot;","\"")
+
+# ------------------------------------------------------------------------------------------------------------
+# Carla About dialog
+
+class CarlaAboutW(QDialog, ui_carla_about.Ui_CarlaAboutW):
+    def __init__(self, parent):
+        QDialog.__init__(self, parent)
+        self.setupUi(self)
+
+        oscTxt = self.tr(" - <b>OSC Bridge Version</b>") if Carla.isControl else ""
+
+        self.l_about.setText(self.tr(""
+                                     "<br>Version %s"
+                                     "<br>Carla is a Multi-Plugin Host for JACK%s.<br>"
+                                     "<br>Copyright (C) 2011-2012 falkTX<br>"
+                                     "" % (VERSION, oscTxt)))
+
+        if Carla.isControl:
+            self.l_extended.setVisible(False) # TODO - write about this special OSC version
+            self.tabWidget.removeTab(1)
+            self.tabWidget.removeTab(1)
+
+        else:
+            self.l_extended.setText(cString(Carla.host.get_extended_license_text()))
+            self.le_osc_url.setText(cString(Carla.host.get_host_osc_url()) if Carla.host.is_engine_running() else self.tr("(Engine not running)"))
+
+            self.l_osc_cmds.setText(
+                                    " /set_active                 <i-value>\n"
+                                    " /set_drywet                 <f-value>\n"
+                                    " /set_volume                 <f-value>\n"
+                                    " /set_balance_left           <f-value>\n"
+                                    " /set_balance_right          <f-value>\n"
+                                    " /set_panning                <f-value>\n"
+                                    " /set_parameter_value        <i-index> <f-value>\n"
+                                    " /set_parameter_midi_cc      <i-index> <i-cc>\n"
+                                    " /set_parameter_midi_channel <i-index> <i-channel>\n"
+                                    " /set_program                <i-index>\n"
+                                    " /set_midi_program           <i-index>\n"
+                                    " /note_on                    <i-note> <i-velo>\n"
+                                    " /note_off                   <i-note>\n"
+                                  )
+
+            self.l_example.setText("/Carla/2/set_parameter_value 5 1.0")
+            self.l_example_help.setText("<i>(as in this example, \"2\" is the plugin number and \"5\" the parameter)</i>")
+
+            self.l_ladspa.setText(self.tr("Everything! (Including LRDF)"))
+            self.l_dssi.setText(self.tr("Everything! (Including CustomData/Chunks)"))
+            self.l_lv2.setText(self.tr("About 95&#37; complete (using custom extensions).<br/>"
+                                      "Implemented Feature/Extensions:"
+                                      "<ul>"
+                                      "<li>http://lv2plug.in/ns/ext/atom</li>"
+                                      "<li>http://lv2plug.in/ns/ext/buf-size</li>"
+                                      "<li>http://lv2plug.in/ns/ext/data-access</li>"
+                                      #"<li>http://lv2plug.in/ns/ext/dynmanifest</li>"
+                                      "<li>http://lv2plug.in/ns/ext/event</li>"
+                                      "<li>http://lv2plug.in/ns/ext/instance-access</li>"
+                                      "<li>http://lv2plug.in/ns/ext/log</li>"
+                                      "<li>http://lv2plug.in/ns/ext/midi</li>"
+                                      "<li>http://lv2plug.in/ns/ext/options</li>"
+                                      #"<li>http://lv2plug.in/ns/ext/parameters</li>"
+                                      "<li>http://lv2plug.in/ns/ext/patch</li>"
+                                      #"<li>http://lv2plug.in/ns/ext/port-groups</li>"
+                                      "<li>http://lv2plug.in/ns/ext/port-props</li>"
+                                      #"<li>http://lv2plug.in/ns/ext/presets</li>"
+                                      "<li>http://lv2plug.in/ns/ext/state</li>"
+                                      "<li>http://lv2plug.in/ns/ext/time</li>"
+                                      "<li>http://lv2plug.in/ns/ext/uri-map</li>"
+                                      "<li>http://lv2plug.in/ns/ext/urid</li>"
+                                      "<li>http://lv2plug.in/ns/ext/worker</li>"
+                                      "<li>http://lv2plug.in/ns/extensions/ui</li>"
+                                      "<li>http://lv2plug.in/ns/extensions/units</li>"
+                                      "<li>http://kxstudio.sf.net/ns/lv2ext/external-ui</li>"
+                                      "<li>http://kxstudio.sf.net/ns/lv2ext/programs</li>"
+                                      "<li>http://kxstudio.sf.net/ns/lv2ext/rtmempool</li>"
+                                      "<li>http://ll-plugins.nongnu.org/lv2/ext/midimap</li>"
+                                      "<li>http://ll-plugins.nongnu.org/lv2/ext/miditype</li>"
+                                      "</ul>"))
+            self.l_vst.setText(self.tr("<p>About 85&#37; complete (missing vst bank/presets and some minor stuff)</p>"))
+
+    def done(self, r):
+        QDialog.done(self, r)
+        self.close()
+
+# ------------------------------------------------------------------------------------------------------------
+# Plugin Parameter
+
+class PluginParameter(QWidget, ui_carla_parameter.Ui_PluginParameter):
+    def __init__(self, parent, pInfo, pluginId, tabIndex):
+        QWidget.__init__(self, parent)
+        self.setupUi(self)
+
+        pType  = pInfo['type']
+        pHints = pInfo['hints']
+
+        self.m_midiCC      = -1
+        self.m_midiChannel = 1
+        self.m_pluginId    = pluginId
+        self.m_parameterId = pInfo['index']
+        self.m_tabIndex    = tabIndex
+
+        self.label.setText(pInfo['name'])
+
+        for MIDI_CC in MIDI_CC_LIST:
+            self.combo.addItem(MIDI_CC)
+
+        if pType == PARAMETER_INPUT:
+            self.widget.set_minimum(pInfo['minimum'])
+            self.widget.set_maximum(pInfo['maximum'])
+            self.widget.set_default(pInfo['default'])
+            self.widget.set_value(pInfo['current'], False)
+            self.widget.set_label(pInfo['unit'])
+            self.widget.set_step(pInfo['step'])
+            self.widget.set_step_small(pInfo['stepSmall'])
+            self.widget.set_step_large(pInfo['stepLarge'])
+            self.widget.set_scalepoints(pInfo['scalepoints'], bool(pHints & PARAMETER_USES_SCALEPOINTS))
+
+            if not pHints & PARAMETER_IS_ENABLED:
+                self.widget.set_read_only(True)
+                self.combo.setEnabled(False)
+                self.sb_channel.setEnabled(False)
+
+            elif not pHints & PARAMETER_IS_AUTOMABLE:
+                self.combo.setEnabled(False)
+                self.sb_channel.setEnabled(False)
+
+        elif pType == PARAMETER_OUTPUT:
+            self.widget.set_minimum(pInfo['minimum'])
+            self.widget.set_maximum(pInfo['maximum'])
+            self.widget.set_value(pInfo['current'], False)
+            self.widget.set_label(pInfo['unit'])
+            self.widget.set_read_only(True)
+
+            if not pHints & PARAMETER_IS_AUTOMABLE:
+                self.combo.setEnabled(False)
+                self.sb_channel.setEnabled(False)
+
+        else:
+            self.widget.setVisible(False)
+            self.combo.setVisible(False)
+            self.sb_channel.setVisible(False)
+
+        self.set_parameter_midi_cc(pInfo['midiCC'])
+        self.set_parameter_midi_channel(pInfo['midiChannel'])
+
+        self.connect(self.widget, SIGNAL("valueChanged(double)"), SLOT("slot_valueChanged(double)"))
+        self.connect(self.sb_channel, SIGNAL("valueChanged(int)"), SLOT("slot_midiChannelChanged(int)"))
+        self.connect(self.combo, SIGNAL("currentIndexChanged(int)"), SLOT("slot_midiCcChanged(int)"))
+
+        #if force_parameters_style:
+        #self.widget.force_plastique_style()
+
+        if pHints & PARAMETER_USES_CUSTOM_TEXT:
+            self.widget.set_text_call(self.textCallBack)
+
+        self.widget.updateAll()
+
+    def setDefaultValue(self, value):
+        self.widget.set_default(value)
+
+    def set_parameter_value(self, value, send=True):
+        self.widget.set_value(value, send)
+
+    def set_parameter_midi_cc(self, cc):
+        self.m_midiCC = cc
+        self.set_MIDI_CC_in_ComboBox(cc)
+
+    def set_parameter_midi_channel(self, channel):
+        self.m_midiChannel = channel+1
+        self.sb_channel.setValue(channel+1)
+
+    def set_MIDI_CC_in_ComboBox(self, cc):
+        for i in range(len(MIDI_CC_LIST)):
+            ccText = MIDI_CC_LIST[i].split(" ")[0]
+            if int(ccText, 16) == cc:
+                ccIndex = i
+                break
+        else:
+            ccIndex = -1
+
+        self.combo.setCurrentIndex(ccIndex+1)
+
+    def tabIndex(self):
+        return self.m_tabIndex
+
+    def textCallBack(self):
+        return cString(Carla.host.get_parameter_text(self.m_pluginId, self.m_parameterId))
+
+    @pyqtSlot(float)
+    def slot_valueChanged(self, value):
+        self.emit(SIGNAL("valueChanged(int, double)"), self.m_parameterId, value)
+
+    @pyqtSlot(int)
+    def slot_midiCcChanged(self, ccIndex):
+        if ccIndex <= 0:
+            cc = -1
+        else:
+            ccText = MIDI_CC_LIST[ccIndex - 1].split(" ")[0]
+            cc = int(ccText, 16)
+
+        if self.m_midiCC != cc:
+            self.emit(SIGNAL("midiCcChanged(int, int)"), self.m_parameterId, cc)
+
+        self.m_midiCC = cc
+
+    @pyqtSlot(int)
+    def slot_midiChannelChanged(self, channel):
+        if self.m_midiChannel != channel:
+            self.emit(SIGNAL("midiChannelChanged(int, int)"), self.m_parameterId, channel)
+
+        self.m_midiChannel = channel

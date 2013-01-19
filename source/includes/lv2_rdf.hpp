@@ -119,19 +119,22 @@ struct LV2_Type {
 #define LV2_IS_PORT_UNIT_SEMITONE(x)     ((x) == LV2_PORT_UNIT_SEMITONE)
 
 // Port Types
-#define LV2_PORT_INPUT                   0x01
-#define LV2_PORT_OUTPUT                  0x02
-#define LV2_PORT_CONTROL                 0x04
-#define LV2_PORT_AUDIO                   0x08
-#define LV2_PORT_CV                      0x10
-#define LV2_PORT_ATOM                    0x20
-#define LV2_PORT_ATOM_SEQUENCE          (0x40 | LV2_PORT_ATOM)
-#define LV2_PORT_EVENT                   0x80
-#define LV2_PORT_MIDI_LL                 0x100
+#define LV2_PORT_INPUT                   0x001
+#define LV2_PORT_OUTPUT                  0x002
+#define LV2_PORT_CONTROL                 0x004
+#define LV2_PORT_AUDIO                   0x008
+#define LV2_PORT_CV                      0x010
+#define LV2_PORT_ATOM                    0x020
+#define LV2_PORT_ATOM_SEQUENCE          (0x040 | LV2_PORT_ATOM)
+#define LV2_PORT_ATOM_URID              (0x080 | LV2_PORT_ATOM)
+#define LV2_PORT_EVENT                   0x100
+#define LV2_PORT_MIDI_LL                 0x200
 
 // Port Data Types
 #define LV2_PORT_DATA_MIDI_EVENT         0x1000
-#define LV2_PORT_DATA_PATCH_MESSAGE      0x2000
+#define LV2_PORT_DATA_OBJECT             0x2000
+#define LV2_PORT_DATA_PATCH_MESSAGE      0x4000
+#define LV2_PORT_DATA_TIME               0x8000
 
 #define LV2_IS_PORT_INPUT(x)             ((x) & LV2_PORT_INPUT)
 #define LV2_IS_PORT_OUTPUT(x)            ((x) & LV2_PORT_OUTPUT)

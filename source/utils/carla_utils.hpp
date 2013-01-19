@@ -178,7 +178,7 @@ class CarlaMutex
 {
 public:
     CarlaMutex()
-        : pmutex(PTHREAD_MUTEX_INITIALIZER)
+        //: pmutex PTHREAD_MUTEX_INITIALIZER
     {
         pthread_mutex_init(&pmutex, nullptr);
     }
