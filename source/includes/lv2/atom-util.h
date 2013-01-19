@@ -83,7 +83,7 @@ lv2_atom_sequence_begin(const LV2_Atom_Sequence_Body* body)
 static inline LV2_Atom_Event*
 lv2_atom_sequence_end(const LV2_Atom_Sequence_Body* body, uint32_t size)
 {
-	return (LV2_Atom_Event*)(body + lv2_atom_pad_size(size));
+	return (LV2_Atom_Event*)((uint8_t*)body + lv2_atom_pad_size(size));
 }
 
 /** Return true iff @p i has reached the end of @p body. */
