@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Pixmap Keyboard, a custom Qt4 widget
-# Copyright (C) 2011-2012 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -11,14 +11,18 @@
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # For a full copy of the GNU General Public License see the COPYING file
 
+# ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
+
 from PyQt4.QtCore import pyqtSlot, qCritical, Qt, QPointF, QRectF, QTimer, SIGNAL, SLOT
 from PyQt4.QtGui import QFont, QPainter, QPixmap, QWidget
+
+# ------------------------------------------------------------------------------------------------------------
 
 midi_key2rect_map_horizontal = {
     '0':  QRectF(0,   0, 18, 64), # C
@@ -79,7 +83,9 @@ midi_keyboard2key_map = {
     '%i' % Qt.Key_U: 71,
     }
 
+# ------------------------------------------------------------------------------------------------------------
 # MIDI Keyboard, using a pixmap for painting
+
 class PixmapKeyboard(QWidget):
     # enum Color
     COLOR_CLASSIC = 0
@@ -146,15 +152,15 @@ class PixmapKeyboard(QWidget):
             return self.setMode(mode)
 
         if mode == self.HORIZONTAL:
-            self.m_midi_map = midi_key2rect_map_horizontal
+            self.m_midiMap = midi_key2rect_map_horizontal
             self.m_pixmap.load(":/bitmaps/kbd_h_%s.png" % self.m_colorStr)
-            self.m_pixmap_mode = self.HORIZONTAL
+            self.m_pixmapMode = self.HORIZONTAL
             self.p_width  = self.m_pixmap.width()
             self.p_height = self.m_pixmap.height() / 2
         elif mode == self.VERTICAL:
-            self.m_midi_map = midi_key2rect_map_vertical
+            self.m_midiMap = midi_key2rect_map_vertical
             self.m_pixmap.load(":/bitmaps/kbd_v_%s.png" % self.m_colorStr)
-            self.m_pixmap_mode = self.VERTICAL
+            self.m_pixmapMode = self.VERTICAL
             self.p_width  = self.m_pixmap.width() / 2
             self.p_height = self.m_pixmap.height()
         else:
@@ -170,23 +176,23 @@ class PixmapKeyboard(QWidget):
             octaves = 8
         self.m_octaves = octaves
 
-        if self.m_pixmap_mode == self.HORIZONTAL:
+        if self.m_pixmapMode == self.HORIZONTAL:
             self.setMinimumSize(self.p_width * self.m_octaves, self.p_height)
             self.setMaximumSize(self.p_width * self.m_octaves, self.p_height)
-        elif self.m_pixmap_mode == self.VERTICAL:
+        elif self.m_pixmapMode == self.VERTICAL:
             self.setMinimumSize(self.p_width, self.p_height * self.m_octaves)
             self.setMaximumSize(self.p_width, self.p_height * self.m_octaves)
 
         self.update()
 
     def handleMousePos(self, pos):
-        if self.m_pixmap_mode == self.HORIZONTAL:
+        if self.m_pixmapMode == self.HORIZONTAL:
             if pos.x() < 0 or pos.x() > self.m_octaves * 144:
                 return
             posX = pos.x() - 1
             octave = int(posX / self.p_width)
             n_pos  = QPointF(posX % self.p_width, pos.y())
-        elif self.m_pixmap_mode == self.VERTICAL:
+        elif self.m_pixmapMode == self.VERTICAL:
             if pos.y() < 0 or pos.y() > self.m_octaves * 144:
                 return
             posY = pos.y() - 1
@@ -197,29 +203,29 @@ class PixmapKeyboard(QWidget):
 
         octave += 3
 
-        if self.m_midi_map['1'].contains(n_pos):   # C#
+        if self.m_midiMap['1'].contains(n_pos):   # C#
             note = 1
-        elif self.m_midi_map['3'].contains(n_pos): # D#
+        elif self.m_midiMap['3'].contains(n_pos): # D#
             note = 3
-        elif self.m_midi_map['6'].contains(n_pos): # F#
+        elif self.m_midiMap['6'].contains(n_pos): # F#
             note = 6
-        elif self.m_midi_map['8'].contains(n_pos): # G#
+        elif self.m_midiMap['8'].contains(n_pos): # G#
             note = 8
-        elif self.m_midi_map['10'].contains(n_pos):# A#
+        elif self.m_midiMap['10'].contains(n_pos):# A#
             note = 10
-        elif self.m_midi_map['0'].contains(n_pos): # C
+        elif self.m_midiMap['0'].contains(n_pos): # C
             note = 0
-        elif self.m_midi_map['2'].contains(n_pos): # D
+        elif self.m_midiMap['2'].contains(n_pos): # D
             note = 2
-        elif self.m_midi_map['4'].contains(n_pos): # E
+        elif self.m_midiMap['4'].contains(n_pos): # E
             note = 4
-        elif self.m_midi_map['5'].contains(n_pos): # F
+        elif self.m_midiMap['5'].contains(n_pos): # F
             note = 5
-        elif self.m_midi_map['7'].contains(n_pos): # G
+        elif self.m_midiMap['7'].contains(n_pos): # G
             note = 7
-        elif self.m_midi_map['9'].contains(n_pos): # A
+        elif self.m_midiMap['9'].contains(n_pos): # A
             note = 9
-        elif self.m_midi_map['11'].contains(n_pos):# B
+        elif self.m_midiMap['11'].contains(n_pos):# B
             note = 11
         else:
             note = -1
@@ -271,9 +277,9 @@ class PixmapKeyboard(QWidget):
         # Paint clean keys (as background)
 
         for octave in range(self.m_octaves):
-            if self.m_pixmap_mode == self.HORIZONTAL:
+            if self.m_pixmapMode == self.HORIZONTAL:
                 target = QRectF(self.p_width * octave, 0, self.p_width, self.p_height)
-            elif self.m_pixmap_mode == self.VERTICAL:
+            elif self.m_pixmapMode == self.VERTICAL:
                 target = QRectF(0, self.p_height * octave, self.p_width, self.p_height)
             else:
                 return
@@ -316,13 +322,13 @@ class PixmapKeyboard(QWidget):
                 # cannot paint this note either
                 continue
 
-            if self.m_pixmap_mode == self.VERTICAL:
+            if self.m_pixmapMode == self.VERTICAL:
                 octave = self.m_octaves - octave - 1
 
-            if self.m_pixmap_mode == self.HORIZONTAL:
+            if self.m_pixmapMode == self.HORIZONTAL:
                 target = QRectF(pos.x() + (self.p_width * octave), 0, pos.width(), pos.height())
                 source = QRectF(pos.x(), self.p_height, pos.width(), pos.height())
-            elif self.m_pixmap_mode == self.VERTICAL:
+            elif self.m_pixmapMode == self.VERTICAL:
                 target = QRectF(pos.x(), pos.y() + (self.p_height * octave), pos.width(), pos.height())
                 source = QRectF(self.p_width, pos.y(), pos.width(), pos.height())
             else:
@@ -338,10 +344,10 @@ class PixmapKeyboard(QWidget):
             for octave in range(self.m_octaves):
                 for note in (1, 3, 6, 8, 10):
                     pos = self._getRectFromMidiNote(note)
-                    if self.m_pixmap_mode == self.HORIZONTAL:
+                    if self.m_pixmapMode == self.HORIZONTAL:
                         target = QRectF(pos.x() + (self.p_width * octave), 0, pos.width(), pos.height())
                         source = QRectF(pos.x(), 0, pos.width(), pos.height())
-                    elif self.m_pixmap_mode == self.VERTICAL:
+                    elif self.m_pixmapMode == self.VERTICAL:
                         target = QRectF(pos.x(), pos.y() + (self.p_height * octave), pos.width(), pos.height())
                         source = QRectF(0, pos.y(), pos.width(), pos.height())
                     else:
@@ -382,13 +388,13 @@ class PixmapKeyboard(QWidget):
                 # cannot paint this note either
                 continue
 
-            if self.m_pixmap_mode == self.VERTICAL:
+            if self.m_pixmapMode == self.VERTICAL:
                 octave = self.m_octaves - octave - 1
 
-            if self.m_pixmap_mode == self.HORIZONTAL:
+            if self.m_pixmapMode == self.HORIZONTAL:
                 target = QRectF(pos.x() + (self.p_width * octave), 0, pos.width(), pos.height())
                 source = QRectF(pos.x(), self.p_height, pos.width(), pos.height())
-            elif self.m_pixmap_mode == self.VERTICAL:
+            elif self.m_pixmapMode == self.VERTICAL:
                 target = QRectF(pos.x(), pos.y() + (self.p_height * octave), pos.width(), pos.height())
                 source = QRectF(self.p_width, pos.y(), pos.width(), pos.height())
             else:
@@ -401,10 +407,12 @@ class PixmapKeyboard(QWidget):
         painter.setPen(Qt.black)
 
         for i in range(self.m_octaves):
-            if self.m_pixmap_mode == self.HORIZONTAL:
+            if self.m_pixmapMode == self.HORIZONTAL:
                 painter.drawText(i * 144, 48, 18, 18, Qt.AlignCenter, "C%i" % int(i + 2))
-            elif self.m_pixmap_mode == self.VERTICAL:
+            elif self.m_pixmapMode == self.VERTICAL:
                 painter.drawText(45, (self.m_octaves * 144) - (i * 144) - 16, 18, 18, Qt.AlignCenter, "C%i" % int(i + 2))
+
+        event.accept()
 
     @pyqtSlot()
     def slot_updateOnce(self):
@@ -417,4 +425,4 @@ class PixmapKeyboard(QWidget):
         return bool(baseNote in (1, 3, 6, 8, 10))
 
     def _getRectFromMidiNote(self, note):
-        return self.m_midi_map.get(str(note % 12))
+        return self.m_midiMap.get(str(note % 12))

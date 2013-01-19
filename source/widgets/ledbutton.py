@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Pixmap Button, a custom Qt4 widget
-# Copyright (C) 2011-2012 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -11,16 +11,20 @@
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # For a full copy of the GNU General Public License see the COPYING file
 
+# ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
+
 from PyQt4.QtCore import qCritical, QRectF
 from PyQt4.QtGui import QPainter, QPixmap, QPushButton
 
+# ------------------------------------------------------------------------------------------------------------
 # Widget Class
+
 class LEDButton(QPushButton):
     BLUE    = 1
     GREEN   = 2
@@ -32,7 +36,7 @@ class LEDButton(QPushButton):
         QPushButton.__init__(self, parent)
 
         self.m_pixmap = QPixmap()
-        self.m_pixmap_rect = QRectF(0, 0, 0, 0)
+        self.m_pixmapRect = QRectF(0, 0, 0, 0)
 
         self.setCheckable(True)
         self.setText("")
@@ -52,7 +56,7 @@ class LEDButton(QPushButton):
         self.setPixmapSize(size)
 
     def setPixmapSize(self, size):
-        self.m_pixmap_rect = QRectF(0, 0, size, size)
+        self.m_pixmapRect = QRectF(0, 0, size, size)
 
         self.setMinimumWidth(size)
         self.setMaximumWidth(size)
@@ -83,4 +87,6 @@ class LEDButton(QPushButton):
             else:
                 return
 
-        painter.drawPixmap(self.m_pixmap_rect, self.m_pixmap, self.m_pixmap_rect)
+        painter.drawPixmap(self.m_pixmapRect, self.m_pixmap, self.m_pixmapRect)
+
+        event.accept()

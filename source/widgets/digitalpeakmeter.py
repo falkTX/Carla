@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Digital Peak Meter, a custom Qt4 widget
-# Copyright (C) 2011-2012 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -11,16 +11,20 @@
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # For a full copy of the GNU General Public License see the COPYING file
 
+# ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
+
 from PyQt4.QtCore import qCritical, Qt, QTimer, QSize
 from PyQt4.QtGui import QColor, QLinearGradient, QPainter, QWidget
 
+# ------------------------------------------------------------------------------------------------------------
 # Widget Class
+
 class DigitalPeakMeter(QWidget):
     # enum Orientation
     HORIZONTAL = 1
@@ -60,7 +64,7 @@ class DigitalPeakMeter(QWidget):
         self.m_channelsData[meter-1] = level
 
     def setChannels(self, channels):
-        if (channels < 0):
+        if channels < 0:
             return qCritical("DigitalPeakMeter::setChannels(%i) - 'channels' must be a positive integer" % channels)
 
         self.m_channels = channels
@@ -227,6 +231,8 @@ class DigitalPeakMeter(QWidget):
             # Red
             painter.setPen(QColor(110, 15, 15, 100))
             painter.drawLine(2, lsmall - (lsmall * 0.96), lfull-2, lsmall - (lsmall * 0.96))
+
+        event.accept()
 
     def resizeEvent(self, event):
         self.updateSizes()

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Pixmap Dial, a custom Qt4 widget
-# Copyright (C) 2011-2012 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -11,17 +11,21 @@
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # For a full copy of the GNU General Public License see the COPYING file
 
+# ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
+
 from math import floor
 from PyQt4.QtCore import Qt, QPointF, QRectF, QTimer, QSize, SLOT
 from PyQt4.QtGui import QColor, QConicalGradient, QDial, QFontMetrics, QLinearGradient, QPainter, QPainterPath, QPen, QPixmap
 
+# ------------------------------------------------------------------------------------------------------------
 # Widget Class
+
 class PixmapDial(QDial):
     # enum Orientation
     HORIZONTAL = 0
@@ -41,11 +45,11 @@ class PixmapDial(QDial):
         QDial.__init__(self, parent)
 
         self.m_pixmap = QPixmap(":/bitmaps/dial_01d.png")
-        self.m_pixmap_n_str = "01"
-        self.m_custom_paint = self.CUSTOM_PAINT_NULL
+        self.m_pixmapNum   = "01"
+        self.m_customPaint = self.CUSTOM_PAINT_NULL
 
-        self.m_hovered    = False
-        self.m_hover_step = self.HOVER_MIN
+        self.m_hovered   = False
+        self.m_hoverStep = self.HOVER_MIN
 
         if self.m_pixmap.width() > self.m_pixmap.height():
             self.m_orientation = self.HORIZONTAL
@@ -53,10 +57,10 @@ class PixmapDial(QDial):
             self.m_orientation = self.VERTICAL
 
         self.m_label = ""
-        self.m_label_pos = QPointF(0.0, 0.0)
-        self.m_label_width = 0
-        self.m_label_height = 0
-        self.m_label_gradient = QLinearGradient(0, 0, 0, 1)
+        self.m_labelPos = QPointF(0.0, 0.0)
+        self.m_labelWidth  = 0
+        self.m_labelHeight = 0
+        self.m_labelGradient = QLinearGradient(0, 0, 0, 1)
 
         if self.palette().window().color().lightness() > 100:
             # Light background
@@ -76,12 +80,12 @@ class PixmapDial(QDial):
         return self.p_size
 
     def setCustomPaint(self, paint):
-        self.m_custom_paint = paint
+        self.m_customPaint = paint
         self.update()
 
     def setEnabled(self, enabled):
         if self.isEnabled() != enabled:
-            self.m_pixmap.load(":/bitmaps/dial_%s%s.png" % (self.m_pixmap_n_str, "" if enabled else "d"))
+            self.m_pixmap.load(":/bitmaps/dial_%s%s.png" % (self.m_pixmapNum, "" if enabled else "d"))
             self.updateSizes()
             self.update()
         QDial.setEnabled(self, enabled)
@@ -89,25 +93,25 @@ class PixmapDial(QDial):
     def setLabel(self, label):
         self.m_label = label
 
-        self.m_label_width  = QFontMetrics(self.font()).width(label)
-        self.m_label_height = QFontMetrics(self.font()).height()
+        self.m_labelWidth  = QFontMetrics(self.font()).width(label)
+        self.m_labelHeight = QFontMetrics(self.font()).height()
 
-        self.m_label_pos.setX(float(self.p_size)/2 - float(self.m_label_width)/2)
-        self.m_label_pos.setY(self.p_size + self.m_label_height)
+        self.m_labelPos.setX(float(self.p_size)/2 - float(self.m_labelWidth)/2)
+        self.m_labelPos.setY(self.p_size + self.m_labelHeight)
 
-        self.m_label_gradient.setColorAt(0.0, self.m_color1)
-        self.m_label_gradient.setColorAt(0.6, self.m_color1)
-        self.m_label_gradient.setColorAt(1.0, self.m_color2)
+        self.m_labelGradient.setColorAt(0.0, self.m_color1)
+        self.m_labelGradient.setColorAt(0.6, self.m_color1)
+        self.m_labelGradient.setColorAt(1.0, self.m_color2)
 
-        self.m_label_gradient.setStart(0, float(self.p_size)/2)
-        self.m_label_gradient.setFinalStop(0, self.p_size + self.m_label_height + 5)
+        self.m_labelGradient.setStart(0, float(self.p_size)/2)
+        self.m_labelGradient.setFinalStop(0, self.p_size + self.m_labelHeight + 5)
 
-        self.m_label_gradient_rect = QRectF(float(self.p_size)/8, float(self.p_size)/2, float(self.p_size)*6/8, self.p_size+self.m_label_height+5)
+        self.m_labelGradient_rect = QRectF(float(self.p_size)/8, float(self.p_size)/2, float(self.p_size)*6/8, self.p_size+self.m_labelHeight+5)
         self.update()
 
     def setPixmap(self, pixmapId):
-        self.m_pixmap_n_str = "%02i" % pixmapId
-        self.m_pixmap.load(":/bitmaps/dial_%s%s.png" % (self.m_pixmap_n_str, "" if self.isEnabled() else "d"))
+        self.m_pixmapNum = "%02i" % pixmapId
+        self.m_pixmap.load(":/bitmaps/dial_%s%s.png" % (self.m_pixmapNum, "" if self.isEnabled() else "d"))
 
         if self.m_pixmap.width() > self.m_pixmap.height():
             self.m_orientation = self.HORIZONTAL
@@ -140,19 +144,19 @@ class PixmapDial(QDial):
             self.p_size  = self.p_width
             self.p_count = self.p_height / self.p_width
 
-        self.setMinimumSize(self.p_size, self.p_size + self.m_label_height + 5)
-        self.setMaximumSize(self.p_size, self.p_size + self.m_label_height + 5)
+        self.setMinimumSize(self.p_size, self.p_size + self.m_labelHeight + 5)
+        self.setMaximumSize(self.p_size, self.p_size + self.m_labelHeight + 5)
 
     def enterEvent(self, event):
         self.m_hovered = True
-        if self.m_hover_step  == self.HOVER_MIN:
-            self.m_hover_step += 1
+        if self.m_hoverStep  == self.HOVER_MIN:
+            self.m_hoverStep += 1
         QDial.enterEvent(self, event)
 
     def leaveEvent(self, event):
         self.m_hovered = False
-        if self.m_hover_step  == self.HOVER_MAX:
-            self.m_hover_step -= 1
+        if self.m_hoverStep  == self.HOVER_MAX:
+            self.m_hoverStep -= 1
         QDial.leaveEvent(self, event)
 
     def paintEvent(self, event):
@@ -161,11 +165,11 @@ class PixmapDial(QDial):
 
         if self.m_label:
             painter.setPen(self.m_color2)
-            painter.setBrush(self.m_label_gradient)
-            painter.drawRect(self.m_label_gradient_rect)
+            painter.setBrush(self.m_labelGradient)
+            painter.drawRect(self.m_labelGradient_rect)
 
             painter.setPen(self.m_colorT[0 if self.isEnabled() else 1])
-            painter.drawText(self.m_label_pos, self.m_label)
+            painter.drawText(self.m_labelPos, self.m_label)
 
         if self.isEnabled():
             current = float(self.value() - self.minimum())
@@ -190,10 +194,10 @@ class PixmapDial(QDial):
             painter.drawPixmap(target, self.m_pixmap, source)
 
             # Custom knobs (Dry/Wet and Volume)
-            if self.m_custom_paint in (self.CUSTOM_PAINT_CARLA_WET, self.CUSTOM_PAINT_CARLA_VOL):
+            if self.m_customPaint in (self.CUSTOM_PAINT_CARLA_WET, self.CUSTOM_PAINT_CARLA_VOL):
                 # knob color
-                colorGreen = QColor(0x5D, 0xE7, 0x3D, 191 + self.m_hover_step*7)
-                colorBlue  = QColor(0x3E, 0xB8, 0xBE, 191 + self.m_hover_step*7)
+                colorGreen = QColor(0x5D, 0xE7, 0x3D, 191 + self.m_hoverStep*7)
+                colorBlue  = QColor(0x3E, 0xB8, 0xBE, 191 + self.m_hoverStep*7)
 
                 # draw small circle
                 ballRect = QRectF(8.0, 8.0, 15.0, 15.0)
@@ -208,7 +212,7 @@ class PixmapDial(QDial):
                 startAngle = 216*16
                 spanAngle  = -252*16*value
 
-                if self.m_custom_paint == self.CUSTOM_PAINT_CARLA_WET:
+                if self.m_customPaint == self.CUSTOM_PAINT_CARLA_WET:
                     painter.setBrush(colorBlue)
                     painter.setPen(QPen(colorBlue, 0))
                     painter.drawEllipse(QRectF(ballPoint.x(), ballPoint.y(), 2.2, 2.2))
@@ -234,9 +238,9 @@ class PixmapDial(QDial):
                 painter.drawArc(4.0, 4.0, 26.0, 26.0, startAngle, spanAngle)
 
             # Custom knobs (L and R)
-            elif self.m_custom_paint in (self.CUSTOM_PAINT_CARLA_L, self.CUSTOM_PAINT_CARLA_R):
+            elif self.m_customPaint in (self.CUSTOM_PAINT_CARLA_L, self.CUSTOM_PAINT_CARLA_R):
                 # knob color
-                color = QColor(0xAD + self.m_hover_step*5, 0xD5 + self.m_hover_step*4, 0x4B + self.m_hover_step*5)
+                color = QColor(0xAD + self.m_hoverStep*5, 0xD5 + self.m_hoverStep*4, 0x4B + self.m_hoverStep*5)
 
                 # draw small circle
                 ballRect = QRectF(7.0, 8.0, 11.0, 12.0)
@@ -252,10 +256,10 @@ class PixmapDial(QDial):
                 painter.drawEllipse(QRectF(ballPoint.x(), ballPoint.y(), 2.0, 2.0))
 
                 # draw arc
-                if self.m_custom_paint == self.CUSTOM_PAINT_CARLA_L:
+                if self.m_customPaint == self.CUSTOM_PAINT_CARLA_L:
                     startAngle = 216*16
                     spanAngle  = -252.0*16*value
-                elif self.m_custom_paint == self.CUSTOM_PAINT_CARLA_R:
+                elif self.m_customPaint == self.CUSTOM_PAINT_CARLA_R:
                     startAngle = 324.0*16
                     spanAngle  = 252.0*16*(1.0-value)
                 else:
@@ -264,13 +268,15 @@ class PixmapDial(QDial):
                 painter.setPen(QPen(color, 2))
                 painter.drawArc(3.5, 4.5, 22.0, 22.0, startAngle, spanAngle)
 
-            if self.HOVER_MIN < self.m_hover_step < self.HOVER_MAX:
-                self.m_hover_step += 1 if self.m_hovered else -1
+            if self.HOVER_MIN < self.m_hoverStep < self.HOVER_MAX:
+                self.m_hoverStep += 1 if self.m_hovered else -1
                 QTimer.singleShot(20, self, SLOT("update()"))
 
         else:
             target = QRectF(0.0, 0.0, self.p_size, self.p_size)
             painter.drawPixmap(target, self.m_pixmap, target)
+
+        event.accept()
 
     def resizeEvent(self, event):
         self.updateSizes()

@@ -188,7 +188,7 @@ intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t opcode
         break;
 
     case audioMasterGetNumAutomatableParameters:
-        ret = carla_min<int32_t>(effect->numParams, MAX_PARAMETERS, 0);
+        ret = carla_min<int32_t>(effect->numParams, MAX_DEFAULT_PARAMETERS, 0);
         break;
 
     case audioMasterGetParameterQuantization:

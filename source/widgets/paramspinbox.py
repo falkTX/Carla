@@ -1,13 +1,32 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+# Parameter SpinBox, a custom Qt4 widget
+# Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# For a full copy of the GNU General Public License see the COPYING file
+
+# ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
+
 from PyQt4.QtCore import pyqtSlot, Qt, QTimer, SIGNAL, SLOT
 from PyQt4.QtGui import QAbstractSpinBox, QComboBox, QCursor, QDialog, QInputDialog, QMenu, QPainter, QProgressBar, QValidator
 from PyQt4.QtGui import QStyleFactory
 from math import isnan
 
+# ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
+
 import ui_inputdialog_value
 
 def fix_value(value, minimum, maximum):
@@ -25,7 +44,9 @@ def fix_value(value, minimum, maximum):
 
 #QPlastiqueStyle = QStyleFactory.create("Plastique")
 
+# ------------------------------------------------------------------------------------------------------------
 # Custom InputDialog with Scale Points support
+
 class CustomInputDialog(QDialog, ui_inputdialog_value.Ui_Dialog):
     def __init__(self, parent, label, current, minimum, maximum, step, scalePoints):
         QDialog.__init__(self, parent)
@@ -59,7 +80,9 @@ class CustomInputDialog(QDialog, ui_inputdialog_value.Ui_Dialog):
         QDialog.done(self, r)
         self.close()
 
+# ------------------------------------------------------------------------------------------------------------
 # Progress-Bar used for ParamSpinBox
+
 class ParamProgressBar(QProgressBar):
     def __init__(self, parent):
         QProgressBar.__init__(self, parent)
@@ -138,7 +161,9 @@ class ParamProgressBar(QProgressBar):
 
         QProgressBar.paintEvent(self, event)
 
+# ------------------------------------------------------------------------------------------------------------
 # Special SpinBox used for parameters
+
 class ParamSpinBox(QAbstractSpinBox):
     def __init__(self, parent):
         QAbstractSpinBox.__init__(self, parent)
@@ -205,7 +230,7 @@ class ParamSpinBox(QAbstractSpinBox):
             self._step = 0.001
         else:
             self._step = value
-        
+
         if self._step_small > value:
             self._step_small = value
         if self._step_large < value:
