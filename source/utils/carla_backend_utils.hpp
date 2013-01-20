@@ -1,6 +1,6 @@
 /*
  * Carla Backend utils
- * Copyright (C) 2011-2012 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -121,10 +121,12 @@ const char* ParameterType2Str(const ParameterType& type)
         return "PARAMETER_LATENCY";
     case PARAMETER_SAMPLE_RATE:
         return "PARAMETER_SAMPLE_RATE";
+#ifdef WANT_LV2
     case PARAMETER_LV2_FREEWHEEL:
         return "PARAMETER_LV2_FREEWHEEL";
     case PARAMETER_LV2_TIME:
         return "PARAMETER_LV2_TIME";
+#endif
     }
 
     qWarning("CarlaBackend::ParameterType2Str(%i) - invalid type", type);

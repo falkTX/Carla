@@ -23,7 +23,12 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <pthread.h>
+
+#ifdef DONT_USE_PTHREAD
+# include <mutex>
+#else
+# include <pthread.h>
+#endif
 
 #if defined(Q_OS_HAIKU)
 # include <kernel/OS.h>
@@ -178,29 +183,46 @@ class CarlaMutex
 {
 public:
     CarlaMutex()
-        //: pmutex PTHREAD_MUTEX_INITIALIZER
     {
+#ifndef DONT_USE_PTHREAD
         pthread_mutex_init(&pmutex, nullptr);
+#endif
     }
 
     ~CarlaMutex()
     {
+#ifndef DONT_USE_PTHREAD
         pthread_mutex_destroy(&pmutex);
+#endif
     }
 
     bool lock()
     {
+#ifdef DONT_USE_PTHREAD
+        cmutex.lock();
+        return true;
+#else
         return (pthread_mutex_lock(&pmutex) == 0);
+#endif
     }
 
     bool tryLock()
     {
+#ifdef DONT_USE_PTHREAD
+        return cmutex.try_lock();
+#else
         return (pthread_mutex_trylock(&pmutex) == 0);
+#endif
     }
 
     bool unlock()
     {
+#ifdef DONT_USE_PTHREAD
+        cmutex.unlock();
+        return true;
+#else
         return (pthread_mutex_unlock(&pmutex) == 0);
+#endif
     }
 
     class ScopedLocker
@@ -222,7 +244,11 @@ public:
     };
 
 private:
+#ifdef DONT_USE_PTHREAD
+    std::mutex cmutex;
+#else
     pthread_mutex_t pmutex;
+#endif
 };
 
 // -------------------------------------------------
@@ -342,6 +368,8 @@ public:
             return false;
         if (*strBuf == 0)
             return false;
+
+        // FIXME - use strstr
 
         size_t thisLen = ::strlen(buffer);
         size_t thatLen = ::strlen(strBuf)-1;

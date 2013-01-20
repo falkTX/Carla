@@ -9,7 +9,7 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * For a full copy of the GNU General Public License see the COPYING file
@@ -33,7 +33,7 @@ void* lib_open(const char* const filename)
     CARLA_ASSERT(filename);
 
 #ifdef Q_OS_WIN
-    return LoadLibraryA(filename);
+    return (void*)LoadLibraryA(filename);
 #else
     return dlopen(filename, RTLD_NOW|RTLD_LOCAL);
 #endif

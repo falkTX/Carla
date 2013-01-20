@@ -9,7 +9,7 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * For a full copy of the GNU General Public License see the COPYING file
@@ -55,27 +55,31 @@ const LADSPA_RDF_Descriptor* ladspa_rdf_dup(const LADSPA_RDF_Descriptor* const o
 
         for (unsigned long i=0; i < newDescriptor->PortCount; i++)
         {
+            LADSPA_RDF_Port* const oldPort = &oldDescriptor->Ports[i];
             LADSPA_RDF_Port* const newPort = &newDescriptor->Ports[i];
-            newPort->Type    = oldDescriptor->Ports[i].Type;
-            newPort->Hints   = oldDescriptor->Ports[i].Hints;
-            newPort->Default = oldDescriptor->Ports[i].Default;
-            newPort->Unit    = oldDescriptor->Ports[i].Unit;
-            newPort->ScalePointCount = oldDescriptor->Ports[i].ScalePointCount;
 
-            if (oldDescriptor->Ports[i].Label)
-                newPort->Label = strdup(oldDescriptor->Ports[i].Label);
+            newPort->Type    = oldPort->Type;
+            newPort->Hints   = oldPort->Hints;
+            newPort->Default = oldPort->Default;
+            newPort->Unit    = oldPort->Unit;
+            newPort->ScalePointCount = oldPort->ScalePointCount;
 
-            if (newPort->ScalePointCount > 0)
+            if (oldPort->Label)
+                newPort->Label = strdup(oldPort->Label);
+
+            if (oldPort->ScalePointCount > 0)
             {
-                newPort->ScalePoints = new LADSPA_RDF_ScalePoint[newPort->ScalePointCount];
+                newPort->ScalePoints = new LADSPA_RDF_ScalePoint[oldPort->ScalePointCount];
 
-                for (unsigned long j=0; j < newPort->ScalePointCount; j++)
+                for (unsigned long j=0; j < oldPort->ScalePointCount; j++)
                 {
+                    LADSPA_RDF_ScalePoint* const oldScalePoint = &oldPort->ScalePoints[j];
                     LADSPA_RDF_ScalePoint* const newScalePoint = &newPort->ScalePoints[j];
-                    newScalePoint->Value = oldDescriptor->Ports[i].ScalePoints[j].Value;
 
-                    if (oldDescriptor->Ports[i].ScalePoints[j].Label)
-                        newScalePoint->Label = strdup(oldDescriptor->Ports[i].ScalePoints[j].Label);
+                    newScalePoint->Value = oldScalePoint->Value;
+
+                    if (oldScalePoint->Label)
+                        newScalePoint->Label = strdup(oldScalePoint->Label);
                 }
             }
         }
@@ -110,9 +114,7 @@ bool is_ladspa_rdf_descriptor_valid(const LADSPA_RDF_Descriptor* const rdfDescri
     CARLA_ASSERT(rdfDescriptor);
     CARLA_ASSERT(descriptor);
 
-    if (! rdfDescriptor)
-        return false;
-    if (! descriptor)
+    if (! (rdfDescriptor && descriptor))
         return false;
 
     if (rdfDescriptor->UniqueID != descriptor->UniqueID)

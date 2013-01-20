@@ -9,7 +9,7 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * For a full copy of the GNU General Public License see the COPYING file
@@ -18,15 +18,15 @@
 #ifndef __CARLA_VST_UTILS_HPP__
 #define __CARLA_VST_UTILS_HPP__
 
-// Disable deprecated VST features (NOT)
-#define VST_FORCE_DEPRECATED 0
-
 #include "carla_utils.hpp"
 
 #include <cstdint>
 
 // -------------------------------------------------
 // Include fixes
+
+// Disable deprecated VST features (NOT)
+#define VST_FORCE_DEPRECATED 0
 
 #if VESTIGE_HEADER
 #include "vestige/aeffectx.h"

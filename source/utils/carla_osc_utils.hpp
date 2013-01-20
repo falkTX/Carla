@@ -1,6 +1,6 @@
 /*
  * Carla OSC utils
- * Copyright (C) 2012 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -9,21 +9,21 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * For a full copy of the GNU General Public License see the COPYING file
  */
 
-#ifndef CARLA_OSC_UTILS_HPP
-#define CARLA_OSC_UTILS_HPP
+#ifndef __CARLA_OSC_UTILS_HPP__
+#define __CARLA_OSC_UTILS_HPP__
 
 #include "carla_utils.hpp"
 
 #include <cstdint>
 #include <lo/lo.h>
 
-// ------------------------------------------------------------------------------------------------
+// -------------------------------------------------
 
 struct CarlaOscData {
     const char* path;
@@ -57,7 +57,7 @@ struct CarlaOscData {
     }
 };
 
-// ------------------------------------------------------------------------------------------------
+// -------------------------------------------------
 
 static inline
 void osc_send_configure(const CarlaOscData* const oscData, const char* const key, const char* const value)
@@ -269,7 +269,7 @@ void osc_send_quit(const CarlaOscData* const oscData)
     }
 }
 
-// ------------------------------------------------------------------------------------------------
+// -------------------------------------------------
 
 #ifdef BUILD_BRIDGE_PLUGIN
 static inline
@@ -343,6 +343,6 @@ void osc_send_lv2_transfer_event(const CarlaOscData* const oscData, const int32_
 }
 #endif
 
-// ------------------------------------------------------------------------------------------------
+// -------------------------------------------------
 
-#endif // CARLA_OSC_UTILS_HPP
+#endif // __CARLA_OSC_UTILS_HPP__
