@@ -18,7 +18,7 @@
 #ifndef __CARLA_UTILS_HPP__
 #define __CARLA_UTILS_HPP__
 
-#include "carla_defines.hpp"
+#include "carla_juce_utils.hpp"
 
 #include <cstdio>
 #include <cstdlib>
@@ -165,6 +165,24 @@ void carla_zeroFloat(float* data, const unsigned size)
 }
 
 // -------------------------------------------------
+// memory functions
+
+static inline
+void carla_zeroMem(void* const memory, const size_t numBytes)
+{
+    CARLA_ASSERT(memory);
+
+    memset(memory, 0, numBytes);
+}
+
+template <typename T>
+static inline
+void carla_zeroStruct(T& structure)
+{
+    memset(&structure, 0, sizeof(T));
+}
+
+// -------------------------------------------------
 // other misc functions
 
 static inline
@@ -241,6 +259,9 @@ public:
 
     private:
         CarlaMutex* const mutex;
+
+        CARLA_PREVENT_HEAP_ALLOCATION
+        CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ScopedLocker)
     };
 
 private:
@@ -249,10 +270,15 @@ private:
 #else
     pthread_mutex_t pmutex;
 #endif
+
+    CARLA_PREVENT_HEAP_ALLOCATION
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaMutex)
 };
 
 // -------------------------------------------------
 // CarlaString class
+
+// TODO - use "size_t bufferLen"
 
 class CarlaString
 {
@@ -263,16 +289,35 @@ public:
     explicit CarlaString()
     {
         buffer = ::strdup("");
+        bufferLen = 0;
     }
 
     explicit CarlaString(char* const strBuf)
     {
-        buffer = ::strdup(strBuf ? strBuf : "");
+        if (strBuf)
+        {
+            buffer = ::strdup(strBuf);
+            bufferLen = ::strlen(buffer);
+        }
+        else
+        {
+            buffer = ::strdup("");
+            bufferLen = 0;
+        }
     }
 
     explicit CarlaString(const char* const strBuf)
     {
-        buffer = ::strdup(strBuf ? strBuf : "");
+        if (strBuf)
+        {
+            buffer = ::strdup(strBuf);
+            bufferLen = ::strlen(buffer);
+        }
+        else
+        {
+            buffer = ::strdup("");
+            bufferLen = 0;
+        }
     }
 
     explicit CarlaString(const int value)
@@ -282,6 +327,7 @@ public:
         ::snprintf(strBuf, strBufSize, "%d", value);
 
         buffer = ::strdup(strBuf);
+        bufferLen = ::strlen(buffer);
     }
 
     explicit CarlaString(const unsigned int value, const bool hexadecimal = false)
@@ -291,6 +337,7 @@ public:
         ::snprintf(strBuf, strBufSize, hexadecimal ? "%u" : "0x%x", value);
 
         buffer = ::strdup(strBuf);
+        bufferLen = ::strlen(buffer);
     }
 
     explicit CarlaString(const long int value)
@@ -300,6 +347,7 @@ public:
         ::snprintf(strBuf, strBufSize, "%ld", value);
 
         buffer = ::strdup(strBuf);
+        bufferLen = ::strlen(buffer);
     }
 
     explicit CarlaString(const unsigned long int value, const bool hexadecimal = false)
@@ -309,6 +357,7 @@ public:
         ::snprintf(strBuf, strBufSize, hexadecimal ? "%lu" : "0x%lx", value);
 
         buffer = ::strdup(strBuf);
+        bufferLen = ::strlen(buffer);
     }
 
     explicit CarlaString(const float value)
@@ -317,6 +366,7 @@ public:
         ::snprintf(strBuf, 0xff, "%f", value);
 
         buffer = ::strdup(strBuf);
+        bufferLen = ::strlen(buffer);
     }
 
     explicit CarlaString(const double value)
@@ -325,6 +375,7 @@ public:
         ::snprintf(strBuf, 0xff, "%g", value);
 
         buffer = ::strdup(strBuf);
+        bufferLen = ::strlen(buffer);
     }
 
     // ---------------------------------------------
@@ -333,6 +384,7 @@ public:
     CarlaString(const CarlaString& str)
     {
         buffer = ::strdup(str.buffer);
+        bufferLen = ::strlen(buffer);
     }
 
     // ---------------------------------------------
@@ -349,53 +401,53 @@ public:
 
     size_t length() const
     {
-        return ::strlen(buffer);
+        return bufferLen;
     }
 
     bool isEmpty() const
     {
-        return (*buffer == 0);
+        return (bufferLen == 0);
     }
 
     bool isNotEmpty() const
     {
-        return (*buffer != 0);
+        return (bufferLen != 0);
     }
 
+#ifdef __USE_GNU
+    bool contains(const char* const strBuf, const bool ignoreCase = false) const
+#else
     bool contains(const char* const strBuf) const
+#endif
     {
         if (! strBuf)
             return false;
-        if (*strBuf == 0)
+        if (bufferLen == 0)
             return false;
 
-        // FIXME - use strstr
-
-        size_t thisLen = ::strlen(buffer);
-        size_t thatLen = ::strlen(strBuf)-1;
-
-        for (size_t i=0, j=0; i < thisLen; i++)
-        {
-            if (buffer[i] == strBuf[j])
-                j++;
-            else
-                j = 0;
-
-            if (j == thatLen)
-                return true;
-        }
-
-        return false;
+#ifdef __USE_GNU
+        if (ignoreCase)
+            return (::strcasestr(buffer, strBuf) != nullptr);
+        else
+#endif
+            return (::strstr(buffer, strBuf) != nullptr);
     }
 
+#ifdef __USE_GNU
+    bool contains(const CarlaString& str, const bool ignoreCase = false) const
+    {
+        return contains(str.buffer, ignoreCase);
+    }
+#else
     bool contains(const CarlaString& str) const
     {
         return contains(str.buffer);
     }
+#endif
 
     bool isDigit(const size_t pos) const
     {
-        if (pos >= length())
+        if (pos >= bufferLen)
             return false;
 
         return (buffer[pos] >= '0' && buffer[pos] <= '9');
@@ -408,22 +460,27 @@ public:
 
     void replace(const char before, const char after)
     {
-        for (size_t i=0, len = ::strlen(buffer); i < len; i++)
+        if (after == 0)
+            return;
+
+        for (size_t i=0; i < bufferLen; i++)
         {
             if (buffer[i] == before)
                 buffer[i] = after;
+            else if (buffer[i] == 0)
+                break;
         }
     }
 
-    void truncate(const unsigned int n)
+    void truncate(const size_t n)
     {
-        for (size_t i=n, len = ::strlen(buffer); i < len; i++)
+        for (size_t i=n; i < bufferLen; i++)
             buffer[i] = 0;
     }
 
     void toBasic()
     {
-        for (size_t i=0, len = ::strlen(buffer); i < len; i++)
+        for (size_t i=0; i < bufferLen; i++)
         {
             if (buffer[i] >= '0' && buffer[i] <= '9')
                 continue;
@@ -440,7 +497,7 @@ public:
 
     void toLower()
     {
-        for (size_t i=0, len = ::strlen(buffer); i < len; i++)
+        for (size_t i=0; i < bufferLen; i++)
         {
             if (buffer[i] >= 'A' && buffer[i] <= 'Z')
                 buffer[i] += 32;
@@ -449,7 +506,7 @@ public:
 
     void toUpper()
     {
-        for (size_t i=0, len = ::strlen(buffer); i < len; i++)
+        for (size_t i=0; i < bufferLen; i++)
         {
             if (buffer[i] >= 'a' && buffer[i] <= 'z')
                 buffer[i] -= 32;
@@ -464,7 +521,7 @@ public:
         return buffer;
     }
 
-    char& operator[](const unsigned int pos)
+    char& operator[](const size_t pos)
     {
         return buffer[pos];
     }
@@ -493,7 +550,16 @@ public:
     {
         ::free(buffer);
 
-        buffer = ::strdup(strBuf ? strBuf : "");
+        if (strBuf)
+        {
+            buffer = ::strdup(strBuf);
+            bufferLen = ::strlen(buffer);
+        }
+        else
+        {
+            buffer = ::strdup("");
+            bufferLen = 0;
+        }
 
         return *this;
     }
@@ -513,6 +579,7 @@ public:
         ::free(buffer);
 
         buffer = ::strdup(newBuf);
+        bufferLen = ::strlen(buffer);
 
         return *this;
     }
@@ -541,7 +608,16 @@ public:
     // ---------------------------------------------
 
 private:
-    char* buffer;
+    char*  buffer;
+    size_t bufferLen;
+
+    void _recalcLen()
+    {
+        bufferLen = ::strlen(buffer);
+    }
+
+    CARLA_LEAK_DETECTOR(CarlaString)
+    CARLA_PREVENT_HEAP_ALLOCATION
 };
 
 static inline

@@ -19,7 +19,7 @@
 #define __CARLA_ENGINE_THREAD_HPP__
 
 #include "carla_backend.hpp"
-#include "carla_utils.hpp"
+#include "carla_juce_utils.hpp"
 
 #include <QtCore/QThread>
 
@@ -72,6 +72,8 @@ private:
         CarlaMutex* const mutex;
     };
 #endif
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineThread)
 };
 
 CARLA_BACKEND_END_NAMESPACE

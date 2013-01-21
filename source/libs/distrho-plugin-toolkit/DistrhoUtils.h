@@ -18,7 +18,7 @@
 #ifndef __DISTRHO_UTILS_H__
 #define __DISTRHO_UTILS_H__
 
-#include "src/DistrhoDefines.h"
+#include "src/DistrhoMacros.h"
 
 #if DISTRHO_OS_WINDOWS
 # include <windows.h>

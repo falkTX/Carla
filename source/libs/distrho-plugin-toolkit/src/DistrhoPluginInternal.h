@@ -213,7 +213,7 @@ public:
     const ParameterRanges& parameterRanges(uint32_t index) const
     {
         assert(data && index < data->parameterCount);
-        return (data && index < data->parameterCount) ? &data->parameters[index].ranges : fallbackRanges;
+        return (data && index < data->parameterCount) ? data->parameters[index].ranges : fallbackRanges;
     }
 
     float parameterValue(uint32_t index)

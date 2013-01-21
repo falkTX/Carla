@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugin API
- * Copyright (C) 2012 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -9,23 +9,24 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * For a full copy of the GNU General Public License see the COPYING file
  */
 
-#ifndef CARLA_NATIVE_H
-#define CARLA_NATIVE_H
+#ifndef __CARLA_NATIVE_H__
+#define __CARLA_NATIVE_H__
 
 #ifdef __cplusplus
+# include <cstddef>
+# include <cstdint>
 extern "C" {
 #else
 # include <stdbool.h>
+# include <stddef.h>
+# include <stdint.h>
 #endif
-
-#include <stddef.h>
-#include <stdint.h>
 
 /*!
  * @defgroup CarlaNativeAPI Carla Native API
@@ -38,9 +39,10 @@ extern "C" {
 typedef void* HostHandle;
 typedef void* PluginHandle;
 
-const uint32_t PLUGIN_IS_SYNTH            = 1 << 0;
-const uint32_t PLUGIN_HAS_GUI             = 1 << 1;
-const uint32_t PLUGIN_USES_SINGLE_THREAD  = 1 << 2;
+const uint32_t PLUGIN_IS_RTSAFE           = 1 << 0;
+const uint32_t PLUGIN_IS_SYNTH            = 1 << 1;
+const uint32_t PLUGIN_HAS_GUI             = 1 << 2;
+const uint32_t PLUGIN_USES_SINGLE_THREAD  = 1 << 3;
 
 const uint32_t PARAMETER_IS_OUTPUT        = 1 << 0;
 const uint32_t PARAMETER_IS_ENABLED       = 1 << 1;
@@ -106,14 +108,17 @@ typedef struct _MidiProgram {
 
 typedef struct _TimeInfoBBT {
     bool valid;
-    int32_t bar;
-    int32_t beat;
-    int32_t tick;
-    double bar_start_tick;
-    float  beats_per_bar;
-    float  beat_type;
-    double ticks_per_beat;
-    double beats_per_minute;
+
+    int32_t bar;  //!< current bar
+    int32_t beat; //!< current beat-within-bar
+    int32_t tick; //!< current tick-within-beat
+    double barStartTick;
+
+    float beatsPerBar; //!< time signature "numerator"
+    float beatType;    //!< time signature "denominator"
+
+    double ticksPerBeat;
+    double beatsPerMinute;
 } TimeInfoBBT;
 
 typedef struct _TimeInfo {
@@ -129,12 +134,13 @@ typedef struct _HostDescriptor {
     uint32_t        (*get_buffer_size)(HostHandle handle);
     double          (*get_sample_rate)(HostHandle handle);
     const TimeInfo* (*get_time_info)(HostHandle handle);
-    bool            (*write_midi_event)(HostHandle handle, MidiEvent* event);
+    bool            (*write_midi_event)(HostHandle handle, const MidiEvent* event);
 
     void (*ui_parameter_changed)(HostHandle handle, uint32_t index, float value);
     void (*ui_midi_program_changed)(HostHandle handle, uint32_t bank, uint32_t program);
     void (*ui_custom_data_changed)(HostHandle handle, const char* key, const char* value);
     void (*ui_closed)(HostHandle handle);
+
 } HostDescriptor;
 
 typedef struct _PluginDescriptor {
@@ -152,6 +158,7 @@ typedef struct _PluginDescriptor {
     const char* const copyright;
 
     PluginHandle (*instantiate)(const struct _PluginDescriptor* _this_, HostDescriptor* host);
+    void         (*cleanup)(PluginHandle handle);
 
     uint32_t         (*get_parameter_count)(PluginHandle handle);
     const Parameter* (*get_parameter_info)(PluginHandle handle, uint32_t index);
@@ -174,7 +181,6 @@ typedef struct _PluginDescriptor {
 
     void (*activate)(PluginHandle handle);
     void (*deactivate)(PluginHandle handle);
-    void (*cleanup)(PluginHandle handle);
     void (*process)(PluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, uint32_t midiEventCount, const MidiEvent* midiEvents);
 
 } PluginDescriptor;
@@ -206,4 +212,4 @@ void carla_register_native_plugin_zynaddsubfx();
 } // extern "C"
 #endif
 
-#endif // CARLA_NATIVE_H
+#endif // __CARLA_NATIVE_H__

@@ -19,13 +19,17 @@
 #define __CARLA_ENGINE_HPP__
 
 #include "carla_backend.hpp"
-#include "carla_utils.hpp"
+#include "carla_juce_utils.hpp"
 
 #ifndef BUILD_BRIDGE
 class QProcessEnvironment;
 #endif
 
 CARLA_BACKEND_START_NAMESPACE
+
+#if 0
+} // Fix editor indentation
+#endif
 
 /*!
  * @defgroup CarlaBackendEngine Carla Backend Engine
@@ -45,19 +49,17 @@ enum CarlaEngineType {
 
     /*!
     * JACK engine type.\n
-    * Provides single, multi-client, and rack processing modes.
+    * Provides all processing modes.
     */
     CarlaEngineTypeJack = 1,
 
     /*!
-    * RtAudio engine type, used to provide Native Audio and Midi support.\n
-    * Provides rack mode processing only.
+    * RtAudio engine type, used to provide Native Audio and MIDI support.
     */
     CarlaEngineTypeRtAudio = 2,
 
     /*!
-    * Plugin engine type, used to export the engine as a plugin (DSSI, LV2 and VST) via the DISTRHO Plugin Toolkit.\n
-    * Works in rack mode only.
+    * Plugin engine type, used to export the engine as a plugin (DSSI, LV2 and VST) via the DISTRHO Plugin Toolkit.
     */
     CarlaEngineTypePlugin = 3
 };
@@ -89,39 +91,39 @@ enum CarlaEnginePortType {
 };
 
 /*!
- * The type of a control event.
+ * The type of an engine control event.
  */
 enum CarlaEngineControlEventType {
     /*!
-    * Null event type.
+    * Null control event type.
     */
-    CarlaEngineNullEvent = 0,
+    CarlaEngineControlEventTypeNull = 0,
 
     /*!
     * Parameter change event.\n
     * \note Value uses a range of 0.0<->1.0.
     */
-    CarlaEngineParameterChangeEvent = 1,
+    CarlaEngineControlEventTypeParameterChange = 1,
 
     /*!
     * MIDI Bank change event.
     */
-    CarlaEngineMidiBankChangeEvent = 2,
+    CarlaEngineControlEventTypeMidiBankChange = 2,
 
     /*!
     * MIDI Program change event.
     */
-    CarlaEngineMidiProgramChangeEvent = 3,
+    CarlaEngineControlEventTypeMidiProgramChange = 3,
 
     /*!
     * All sound off event.
     */
-    CarlaEngineAllSoundOffEvent = 4,
+    CarlaEngineControlEventTypeAllSoundOff = 4,
 
     /*!
     * All notes off event.
     */
-    CarlaEngineAllNotesOffEvent = 5
+    CarlaEngineControlEventTypeAllNotesOff = 5
 };
 
 /*!
@@ -132,18 +134,16 @@ struct CarlaEngineControlEvent {
     uint32_t time;      //!< frame offset
     uint8_t  channel;   //!< channel, used for MIDI-related events and ports
     uint16_t parameter; //!< parameter, used for parameter changes only
-    double   value;     //!< value
+    double   value;
 
     CarlaEngineControlEvent()
-        : type(CarlaEngineNullEvent),
-          time(0),
-          channel(0),
-          parameter(0),
-          value(0.0) {}
+    {
+        clear();
+    }
 
     void clear()
     {
-        type = CarlaEngineNullEvent;
+        type = CarlaEngineControlEventTypeNull;
         time = 0;
         channel = 0;
         parameter = 0;
@@ -160,9 +160,9 @@ struct CarlaEngineMidiEvent {
     uint8_t  data[3];
 
     CarlaEngineMidiEvent()
-        : time(0),
-          size(0),
-          data{0} {}
+    {
+        clear();
+    }
 
     void clear()
     {
@@ -171,8 +171,6 @@ struct CarlaEngineMidiEvent {
         data[0] = data[1] = data[2] = 0;
     }
 };
-
-// LATER - CarlaEngineExtendedMidiEvent
 
 /*!
  * Engine options.
@@ -221,9 +219,9 @@ struct CarlaEngineOptions {
           forceStereo(false),
           preferPluginBridges(false),
           preferUiBridges(true),
-#ifdef WANT_DSSI
+      #ifdef WANT_DSSI
           useDssiVstChunks(false),
-#endif
+      #endif
           maxParameters(MAX_DEFAULT_PARAMETERS),
           oscUiTimeout(4000),
           preferredBufferSize(512),
@@ -287,7 +285,7 @@ public:
     /*!
      * The contructor.\n
      * Param \a isInput defines wherever this is an input port or not (output otherwise).\n
-     * Input/output state and process mode is constant for the lifetime of the port.
+     * Input/output state and process mode are constant for the lifetime of the port.
      */
     CarlaEnginePort(const bool isInput, const ProcessMode processMode);
 
@@ -310,6 +308,9 @@ protected:
     const bool isInput;
     const ProcessMode processMode;
     void* buffer;
+
+private:
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEnginePort)
 };
 
 // -----------------------------------------------------------------------
@@ -343,6 +344,9 @@ public:
      * Initialize the port's internal buffer for \a engine.
      */
     virtual void initBuffer(CarlaEngine* const engine);
+
+private:
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineAudioPort)
 };
 
 // -----------------------------------------------------------------------
@@ -398,6 +402,8 @@ public:
 
 private:
     const uint32_t m_maxEventCount;
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineControlPort)
 };
 
 // -----------------------------------------------------------------------
@@ -453,6 +459,8 @@ public:
 
 private:
     const uint32_t m_maxEventCount;
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineMidiPort)
 };
 
 // -----------------------------------------------------------------------
@@ -525,6 +533,8 @@ protected:
 private:
     bool     m_active;
     uint32_t m_latency;
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineClient)
 };
 
 // -----------------------------------------------------------------------
@@ -1007,10 +1017,13 @@ private:
     static const char*  getRtAudioApiName(unsigned int index);
 #endif
 
-    CarlaEnginePrivateData* const data;
+    ScopedPointer<CarlaEnginePrivateData> const data;
 
     friend class CarlaEngineControlPort;
     friend class CarlaEngineMidiPort;
+
+private:
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngine)
 };
 
 // -----------------------------------------------------------------------

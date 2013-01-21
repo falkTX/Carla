@@ -25,6 +25,10 @@
 
 CARLA_BACKEND_START_NAMESPACE
 
+#if 0
+} // Fix editor indentation
+#endif
+
 // -------------------------------------------------------------------------------------------------------------------
 // Engine port (JackAudio)
 
@@ -76,6 +80,8 @@ public:
 private:
     jack_client_t* const m_client;
     jack_port_t* const m_port;
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineJackAudioPort)
 };
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -173,22 +179,22 @@ public:
             {
                 const uint8_t midiBank = jackEvent.buffer[2];
 
-                m_retEvent.type  = CarlaEngineMidiBankChangeEvent;
+                m_retEvent.type  = CarlaEngineControlEventTypeMidiBankChange;
                 m_retEvent.value = midiBank;
             }
             else if (midiControl == MIDI_CONTROL_ALL_SOUND_OFF)
             {
-                m_retEvent.type = CarlaEngineAllSoundOffEvent;
+                m_retEvent.type = CarlaEngineControlEventTypeAllSoundOff;
             }
             else if (midiControl == MIDI_CONTROL_ALL_NOTES_OFF)
             {
-                m_retEvent.type = CarlaEngineAllNotesOffEvent;
+                m_retEvent.type = CarlaEngineControlEventTypeAllNotesOff;
             }
             else
             {
                 const uint8_t midiValue = jackEvent.buffer[2];
 
-                m_retEvent.type      = CarlaEngineParameterChangeEvent;
+                m_retEvent.type      = CarlaEngineControlEventTypeParameterChange;
                 m_retEvent.parameter = midiControl;
                 m_retEvent.value     = double(midiValue)/127;
             }
@@ -200,7 +206,7 @@ public:
         {
             const uint8_t midiProgram = jackEvent.buffer[1];
 
-            m_retEvent.type  = CarlaEngineMidiProgramChangeEvent;
+            m_retEvent.type  = CarlaEngineControlEventTypeMidiProgramChange;
             m_retEvent.value = midiProgram;
 
             return &m_retEvent;
@@ -218,14 +224,14 @@ public:
             return;
 
         CARLA_ASSERT(buffer);
-        CARLA_ASSERT(type != CarlaEngineNullEvent);
+        CARLA_ASSERT(type != CarlaEngineControlEventTypeNull);
         CARLA_ASSERT(channel < 16);
 
         if (! buffer)
             return;
-        if (type == CarlaEngineNullEvent)
+        if (type == CarlaEngineControlEventTypeNull)
             return;
-        if (type == CarlaEngineParameterChangeEvent)
+        if (type == CarlaEngineControlEventTypeParameterChange)
             CARLA_ASSERT(! MIDI_IS_CONTROL_BANK_SELECT(parameter));
         if (channel >= 16)
             return;
@@ -235,31 +241,31 @@ public:
 
         switch (type)
         {
-        case CarlaEngineNullEvent:
+        case CarlaEngineControlEventTypeNull:
             break;
-        case CarlaEngineParameterChangeEvent:
+        case CarlaEngineControlEventTypeParameterChange:
             data[0] = MIDI_STATUS_CONTROL_CHANGE + channel;
             data[1] = parameter;
             data[2] = value * 127;
             size = 3;
             break;
-        case CarlaEngineMidiBankChangeEvent:
+        case CarlaEngineControlEventTypeMidiBankChange:
             data[0] = MIDI_STATUS_CONTROL_CHANGE + channel;
             data[1] = MIDI_CONTROL_BANK_SELECT;
             data[2] = value;
             size = 3;
             break;
-        case CarlaEngineMidiProgramChangeEvent:
+        case CarlaEngineControlEventTypeMidiProgramChange:
             data[0] = MIDI_STATUS_PROGRAM_CHANGE + channel;
             data[1] = value;
             size = 2;
             break;
-        case CarlaEngineAllSoundOffEvent:
+        case CarlaEngineControlEventTypeAllSoundOff:
             data[0] = MIDI_STATUS_CONTROL_CHANGE + channel;
             data[1] = MIDI_CONTROL_ALL_SOUND_OFF;
             size = 2;
             break;
-        case CarlaEngineAllNotesOffEvent:
+        case CarlaEngineControlEventTypeAllNotesOff:
             data[0] = MIDI_STATUS_CONTROL_CHANGE + channel;
             data[1] = MIDI_CONTROL_ALL_NOTES_OFF;
             size = 2;
@@ -275,6 +281,8 @@ private:
     jack_port_t* const m_port;
 
     CarlaEngineControlEvent m_retEvent;
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineJackControlPort)
 };
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -385,6 +393,8 @@ private:
     jack_port_t* const m_port;
 
     CarlaEngineMidiEvent m_retEvent;
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineJackMidiPort)
 };
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -504,6 +514,8 @@ public:
 private:
     jack_client_t* const m_client;
     const bool m_usesClient;
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineJackClient)
 };
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -567,6 +579,7 @@ public:
     {
         qDebug("CarlaEngineJack::init(\"%s\")", clientName);
 
+#if 0
         m_state     = JackTransportStopped;
         m_freewheel = false;
 
@@ -637,6 +650,8 @@ public:
         CarlaEngine::init(name);
         return true;
 #endif
+#endif
+        return false;
     }
 
     bool close()
@@ -644,6 +659,7 @@ public:
         qDebug("CarlaEngineJack::close()");
         CarlaEngine::close();
 
+#if 0
 #ifdef BUILD_BRIDGE
         hasQuit = true;
         m_client = nullptr;
@@ -676,6 +692,7 @@ public:
 
         m_client = nullptr;
 #endif
+#endif
         return false;
     }
 
@@ -702,6 +719,7 @@ public:
     {
         jack_client_t* client = nullptr;
 
+#if 0
 #ifdef BUILD_BRIDGE
         client = m_client = jackbridge_client_open(plugin->name(), JackNullOption, nullptr);
 
@@ -726,11 +744,12 @@ public:
             jackbridge_set_latency_callback(client, carla_jack_latency_callback_plugin, plugin);
         }
 #endif
+#endif
 
 #ifdef BUILD_BRIDGE
-        return new CarlaEngineJackClient(client, CarlaEngineTypeJack, PROCESS_MODE_MULTIPLE_CLIENTS);
+        return new CarlaEngineJackClient(CarlaEngineTypeJack, PROCESS_MODE_MULTIPLE_CLIENTS, client);
 #else
-        return new CarlaEngineJackClient(client, CarlaEngineTypeJack, options.processMode);
+        return new CarlaEngineJackClient(CarlaEngineTypeJack, options.processMode, client);
 #endif
     }
 
@@ -1190,6 +1209,8 @@ private:
             latencyPlugin(plugin, mode);
     }
 #endif
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineJack)
 };
 
 // -----------------------------------------

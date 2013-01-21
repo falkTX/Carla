@@ -24,6 +24,7 @@ extern "C" {
 }
 
 #include <cassert>
+#include <cstring>
 
 typedef struct list_head k_list_head;
 
@@ -34,9 +35,9 @@ public:
     RtList(const size_t minPreallocated, const size_t maxPreallocated)
     {
         qcount = 0;
-        INIT_LIST_HEAD(&queue);
+        ::INIT_LIST_HEAD(&queue);
 
-        rtsafe_memory_pool_create(&mempool, nullptr, sizeof(RtListData), minPreallocated, maxPreallocated);
+        ::rtsafe_memory_pool_create(&mempool, nullptr, sizeof(RtListData), minPreallocated, maxPreallocated);
 
         assert(mempool);
     }
@@ -45,15 +46,15 @@ public:
     {
         clear();
 
-        rtsafe_memory_pool_destroy(mempool);
+        ::rtsafe_memory_pool_destroy(mempool);
     }
 
     void resize(const size_t minPreallocated, const size_t maxPreallocated)
     {
         clear();
 
-        rtsafe_memory_pool_destroy(mempool);
-        rtsafe_memory_pool_create(&mempool, nullptr, sizeof(RtListData), minPreallocated, maxPreallocated);
+        ::rtsafe_memory_pool_destroy(mempool);
+        ::rtsafe_memory_pool_create(&mempool, nullptr, sizeof(RtListData), minPreallocated, maxPreallocated);
 
         assert(mempool);
     }
@@ -68,12 +69,12 @@ public:
             list_for_each(entry, &queue)
             {
                 data = list_entry(entry, RtListData, siblings);
-                rtsafe_memory_pool_deallocate(mempool, data);
+                ::rtsafe_memory_pool_deallocate(mempool, data);
             }
         }
 
         qcount = 0;
-        INIT_LIST_HEAD(&queue);
+        ::INIT_LIST_HEAD(&queue);
     }
 
     size_t count() const
@@ -92,14 +93,14 @@ public:
         RtListData* data;
 
         if (sleepy)
-            data = (RtListData*)rtsafe_memory_pool_allocate_sleepy(mempool);
+            data = (RtListData*)::rtsafe_memory_pool_allocate_sleepy(mempool);
         else
-            data = (RtListData*)rtsafe_memory_pool_allocate_atomic(mempool);
+            data = (RtListData*)::rtsafe_memory_pool_allocate_atomic(mempool);
 
         if (data)
         {
-            memcpy(&data->value, &value, sizeof(T));
-            list_add_tail(&data->siblings, &queue);
+            ::memcpy(&data->value, &value, sizeof(T));
+            ::list_add_tail(&data->siblings, &queue);
 
             qcount++;
         }
@@ -137,8 +138,8 @@ public:
             if (data->value == value)
             {
                 qcount--;
-                list_del(entry);
-                rtsafe_memory_pool_deallocate(mempool, data);
+                ::list_del(entry);
+                ::rtsafe_memory_pool_deallocate(mempool, data);
                 return true;
             }
         }
@@ -159,8 +160,8 @@ public:
             if (data->value == value)
             {
                 qcount--;
-                list_del(entry);
-                rtsafe_memory_pool_deallocate(mempool, data);
+                ::list_del(entry);
+                ::rtsafe_memory_pool_deallocate(mempool, data);
             }
         }
     }
@@ -186,7 +187,7 @@ private:
             if (reset)
             {
                 reset = false;
-                memset(&value, 0, sizeof(T));
+                ::memset(&value, 0, sizeof(T));
             }
 
             return value;
@@ -200,8 +201,8 @@ private:
         if (data && doDelete)
         {
             qcount--;
-            list_del(entry);
-            rtsafe_memory_pool_deallocate(mempool, data);
+            ::list_del(entry);
+            ::rtsafe_memory_pool_deallocate(mempool, data);
         }
 
         return ret;
@@ -210,6 +211,10 @@ private:
     // Non-copyable
     RtList(const RtList&);
     RtList& operator= (const RtList&);
+
+    // Prevent heap allocation
+    static void* operator new (size_t);
+    static void operator delete (void*);
 };
 
 #endif // __RT_LIST_HPP__

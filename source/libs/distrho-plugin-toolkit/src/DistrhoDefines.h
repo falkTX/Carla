@@ -9,48 +9,14 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * For a full copy of the license see the GPL.txt file
  */
 
-#ifndef __DISTRHO_DEFINES_H__
-#define __DISTRHO_DEFINES_H__
-
-#include "DistrhoPluginInfo.h"
-
-#ifndef DISTRHO_PLUGIN_NAME
-# error DISTRHO_PLUGIN_NAME undefined!
-#endif
-
-#ifndef DISTRHO_PLUGIN_HAS_UI
-# error DISTRHO_PLUGIN_HAS_UI undefined!
-#endif
-
-#ifndef DISTRHO_PLUGIN_IS_SYNTH
-# error DISTRHO_PLUGIN_IS_SYNTH undefined!
-#endif
-
-#ifndef DISTRHO_PLUGIN_NUM_INPUTS
-# error DISTRHO_PLUGIN_NUM_INPUTS undefined!
-#endif
-
-#ifndef DISTRHO_PLUGIN_NUM_OUTPUTS
-# error DISTRHO_PLUGIN_NUM_OUTPUTS undefined!
-#endif
-
-#ifndef DISTRHO_PLUGIN_WANT_LATENCY
-# error DISTRHO_PLUGIN_WANT_LATENCY undefined!
-#endif
-
-#ifndef DISTRHO_PLUGIN_WANT_PROGRAMS
-# error DISTRHO_PLUGIN_WANT_PROGRAMS undefined!
-#endif
-
-#ifndef DISTRHO_PLUGIN_WANT_STATE
-# error DISTRHO_PLUGIN_WANT_STATE undefined!
-#endif
+#ifndef __DISTRHO_DEFINES_HPP__
+#define __DISTRHO_DEFINES_HPP__
 
 #if defined(__WIN32__) || defined(__WIN64__)
 # define DISTRHO_PLUGIN_EXPORT extern "C" __declspec (dllexport)
@@ -87,10 +53,4 @@
 # define USE_NAMESPACE_DISTRHO
 #endif
 
-#ifndef DISTRHO_UI_QT4
-# define DISTRHO_UI_OPENGL
-#endif
-
-#define DISTRHO_UI_URI DISTRHO_PLUGIN_URI "#UI"
-
-#endif // __DISTRHO_DEFINES_H__
+#endif // __DISTRHO_DEFINES_HPP__

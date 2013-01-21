@@ -26,6 +26,10 @@
 
 CARLA_BACKEND_START_NAMESPACE
 
+#if 0
+} // Fix editor indentation
+#endif
+
 // -------------------------------------------------------------------------------------------------------------------
 // RtAudio Engine client
 
@@ -60,6 +64,9 @@ public:
         qCritical("CarlaEngineRtAudioClient::addPort(%i, \"%s\", %s) - invalid type", portType, name, bool2str(isInput));
         return nullptr;
     }
+
+private:
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineRtAudioClient)
 };
 
 // -------------------------------------------------------------------------------------------------------------------

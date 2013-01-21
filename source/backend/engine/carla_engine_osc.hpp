@@ -19,6 +19,7 @@
 #define __CARLA_ENGINE_OSC_HPP__
 
 #include "carla_backend.hpp"
+#include "carla_juce_utils.hpp"
 #include "carla_osc_utils.hpp"
 
 #define CARLA_ENGINE_OSC_HANDLE_ARGS1 CarlaPlugin* const plugin
@@ -162,6 +163,8 @@ private:
             return _this_->handleMessage(path, argc, argv, types, msg);
         return 1;
     }
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineOsc)
 };
 
 CARLA_BACKEND_END_NAMESPACE

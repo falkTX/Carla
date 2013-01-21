@@ -135,7 +135,7 @@ uint32_t CarlaEngineControlPort::getEventCount()
 
         for (unsigned short i=0; i < m_maxEventCount; i++, count++)
         {
-            if (events[i].type == CarlaEngineNullEvent)
+            if (events[i].type == CarlaEngineControlEventTypeNull)
                 break;
         }
 
@@ -179,14 +179,14 @@ void CarlaEngineControlPort::writeEvent(const CarlaEngineControlEventType type, 
         return;
 
     CARLA_ASSERT(buffer);
-    CARLA_ASSERT(type != CarlaEngineNullEvent);
+    CARLA_ASSERT(type != CarlaEngineControlEventTypeNull);
     CARLA_ASSERT(channel < 16);
 
     if (! buffer)
         return;
-    if (type == CarlaEngineNullEvent)
+    if (type == CarlaEngineControlEventTypeNull)
         return;
-    if (type == CarlaEngineParameterChangeEvent)
+    if (type == CarlaEngineControlEventTypeParameterChange)
         CARLA_ASSERT(! MIDI_IS_CONTROL_BANK_SELECT(parameter));
     if (channel >= 16)
         return;
@@ -198,7 +198,7 @@ void CarlaEngineControlPort::writeEvent(const CarlaEngineControlEventType type, 
 
         for (unsigned short i=0; i < m_maxEventCount; i++)
         {
-            if (events[i].type != CarlaEngineNullEvent)
+            if (events[i].type != CarlaEngineControlEventTypeNull)
                 continue;
 
             events[i].type  = type;

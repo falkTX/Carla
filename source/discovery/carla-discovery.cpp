@@ -9,13 +9,14 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * For a full copy of the GNU General Public License see the COPYING file
  */
 
 #include "carla_backend.hpp"
+#include "carla_juce_utils.hpp"
 #include "carla_lib_utils.hpp"
 #include "carla_midi.h"
 
@@ -1242,7 +1243,8 @@ void do_linuxsampler_check(const char* const filename, const char* const stype, 
 
     using namespace LinuxSampler;
 
-    class LinuxSamplerScopedEngine {
+    class LinuxSamplerScopedEngine
+    {
     public:
         LinuxSamplerScopedEngine(const char* const filename, const char* const stype)
         {
@@ -1325,6 +1327,8 @@ void do_linuxsampler_check(const char* const filename, const char* const stype, 
     private:
         Engine* engine;
         InstrumentManager* ins;
+
+        CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LinuxSamplerScopedEngine)
     };
 
     if (init)

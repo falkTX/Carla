@@ -28,6 +28,7 @@ HEADERS = \
     ../includes/lv2_rdf.hpp \
     ../backend/carla_backend.hpp \
     ../utils/carla_utils.hpp \
+    ../utils/carla_juce_utils.hpp \
     ../utils/carla_lib_utils.hpp \
     ../utils/carla_ladspa_utils.hpp \
     ../utils/carla_lv2_utils.hpp \

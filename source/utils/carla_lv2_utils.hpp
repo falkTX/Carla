@@ -18,7 +18,7 @@
 #ifndef __CARLA_LV2_UTILS_HPP__
 #define __CARLA_LV2_UTILS_HPP__
 
-#include "carla_utils.hpp"
+#include "carla_juce_utils.hpp"
 
 #include "lv2/lv2.h"
 #include "lv2/atom.h"
@@ -375,6 +375,8 @@ public:
 
 private:
     bool needInit;
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Lv2WorldClass)
 };
 
 // -----------------------------------------------------

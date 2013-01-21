@@ -49,7 +49,8 @@ HEADERS += \
 
 HEADERS += \
     ../../utils/carla_utils.hpp \
-    ../../utils/carla_backend_utils.hpp
+    ../../utils/carla_backend_utils.hpp \
+    ../../utils/carla_juce_utils.hpp
 
 # HEADERS += \
 #     plugin/DistrhoPluginInfo.h

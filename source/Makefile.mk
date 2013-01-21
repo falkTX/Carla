@@ -55,8 +55,6 @@ BUILD_CXX_FLAGS += -DVESTIGE_HEADER
 # --------------------------------------------------------------
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-BUILD_C_FLAGS    += -DWANT_LV2
-BUILD_CXX_FLAGS  += -DWANT_LADSPA -DWANT_DSSI -DWANT_LV2 -DWANT_VST
 HAVE_SUIL         = $(shell pkg-config --exists suil-0 && echo true)
 endif
 
@@ -71,3 +69,14 @@ HAVE_PULSEAUDIO   = $(shell pkg-config --exists libpulse-simple && echo true)
 endif
 
 HAVE_ZYN_DEPS     = $(shell pkg-config --exists fftw3 mxml && echo true)
+
+# --------------------------------------------------------------
+
+ifeq ($(CARLA_PLUGIN_SUPPORT),true)
+BUILD_C_FLAGS    += -DWANT_LV2
+BUILD_CXX_FLAGS  += -DWANT_LADSPA -DWANT_DSSI -DWANT_LV2 -DWANT_VST
+endif
+
+ifeq ($(HAVE_ZYN_DEPS),true)
+BUILD_CXX_FLAGS  += -DWANT_ZYNADDSUBFX
+endif

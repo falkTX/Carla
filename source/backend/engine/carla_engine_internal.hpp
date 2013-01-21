@@ -77,18 +77,18 @@ const char* CarlaEngineControlEventType2Str(const CarlaEngineControlEventType ty
 {
     switch (type)
     {
-    case CarlaEngineNullEvent:
+    case CarlaEngineControlEventTypeNull:
         return "CarlaEngineNullEvent";
-    case CarlaEngineParameterChangeEvent:
-        return "CarlaEngineParameterChangeEvent";
-    case CarlaEngineMidiBankChangeEvent:
-        return "CarlaEngineMidiBankChangeEvent";
-    case CarlaEngineMidiProgramChangeEvent:
-        return "CarlaEngineMidiProgramChangeEvent";
-    case CarlaEngineAllSoundOffEvent:
-        return "CarlaEngineAllSoundOffEvent";
-    case CarlaEngineAllNotesOffEvent:
-        return "CarlaEngineAllNotesOffEvent";
+    case CarlaEngineControlEventTypeParameterChange:
+        return "CarlaEngineControlEventTypeParameterChange";
+    case CarlaEngineControlEventTypeMidiBankChange:
+        return "CarlaEngineControlEventTypeMidiBankChange";
+    case CarlaEngineControlEventTypeMidiProgramChange:
+        return "CarlaEngineControlEventTypeMidiProgramChange";
+    case CarlaEngineControlEventTypeAllSoundOff:
+        return "CarlaEngineControlEventTypeAllSoundOff";
+    case CarlaEngineControlEventTypeAllNotesOff:
+        return "CarlaEngineControlEventTypeAllNotesOff";
     }
 
     qWarning("CarlaBackend::CarlaEngineControlEventType2Str(%i) - invalid type", type);
@@ -141,7 +141,7 @@ struct CarlaEnginePrivateData {
     CarlaEngineOsc    osc;
     CarlaEngineThread thread;
 
-    const CarlaOscData* oscData;
+    ScopedPointer<const CarlaOscData> oscData;
 
     CallbackFunc callback;
     void*        callbackPtr;

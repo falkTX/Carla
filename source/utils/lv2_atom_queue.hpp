@@ -22,13 +22,11 @@
 #include "lv2/atom.h"
 
 #include <cstring> // memcpy, memset
-#include <pthread.h>
 
 class Lv2AtomQueue
 {
 public:
     Lv2AtomQueue()
-        : mutex(PTHREAD_MUTEX_INITIALIZER)
     {
         index = indexPool = 0;
         empty = true;
@@ -77,17 +75,17 @@ public:
 
     bool lock()
     {
-        return (pthread_mutex_lock(&mutex) == 0);
+        return mutex.lock();
     }
 
     bool tryLock()
     {
-        return (pthread_mutex_trylock(&mutex) == 0);
+        return mutex.tryLock();
     }
 
     bool unlock()
     {
-        return (pthread_mutex_unlock(&mutex) == 0);
+        return mutex.unlock();
     }
 
     void put(const uint32_t portIndex, const LV2_Atom* const atom)
@@ -186,7 +184,7 @@ private:
     unsigned short index, indexPool;
     bool empty, full;
 
-    pthread_mutex_t mutex;
+    CarlaMutex mutex;
 };
 
 #endif // __LV2_ATOM_QUEUE_HPP__
