@@ -15,8 +15,8 @@
  * For a full copy of the license see the GPL.txt file
  */
 
-#ifndef __DISTRHO_DEFINES_HPP__
-#define __DISTRHO_DEFINES_HPP__
+#ifndef __DISTRHO_DEFINES_H__
+#define __DISTRHO_DEFINES_H__
 
 #if defined(__WIN32__) || defined(__WIN64__)
 # define DISTRHO_PLUGIN_EXPORT extern "C" __declspec (dllexport)
@@ -53,4 +53,4 @@
 # define USE_NAMESPACE_DISTRHO
 #endif
 
-#endif // __DISTRHO_DEFINES_HPP__
+#endif // __DISTRHO_DEFINES_H__

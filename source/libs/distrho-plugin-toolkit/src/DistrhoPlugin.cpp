@@ -9,7 +9,7 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * For a full copy of the license see the GPL.txt file
@@ -41,14 +41,14 @@ Plugin::Plugin(uint32_t parameterCount, uint32_t programCount, uint32_t stateCou
     if (parameterCount > 0)
     {
         data->parameterCount = parameterCount;
-        data->parameters = new Parameter [parameterCount];
+        data->parameters = new Parameter[parameterCount];
     }
 
     if (programCount > 0)
     {
 #if DISTRHO_PLUGIN_WANT_PROGRAMS
         data->programCount = programCount;
-        data->programNames = new d_string [programCount];
+        data->programNames = new d_string[programCount];
 #endif
     }
 
@@ -56,7 +56,7 @@ Plugin::Plugin(uint32_t parameterCount, uint32_t programCount, uint32_t stateCou
     {
 #if DISTRHO_PLUGIN_WANT_STATE
         data->stateCount = stateCount;
-        data->stateKeys  = new d_string [stateCount];
+        data->stateKeys  = new d_string[stateCount];
 #endif
     }
 }

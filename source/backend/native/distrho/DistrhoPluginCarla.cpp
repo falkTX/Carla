@@ -1,6 +1,6 @@
 /*
  * DISTHRO Plugin Toolkit (DPT)
- * Copyright (C) 2012 Filipe Coelho <falktx@gmail.com>
+ * Copyright (C) 2012-2013 Filipe Coelho <falktx@gmail.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -9,7 +9,7 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * For a full copy of the license see the GPL.txt file
@@ -40,24 +40,14 @@ public:
         : QDialog(nullptr),
           m_host(host),
           m_plugin(plugin),
-          ui(this, realWinId(), setParameterCallback, setStateCallback, uiEditParameterCallback, uiSendNoteCallback, uiResizeCallback)
+          ui(this, (intptr_t)winId(), setParameterCallback, setStateCallback, uiEditParameterCallback, uiSendNoteCallback, uiResizeCallback)
     {
         setFixedSize(ui.getWidth(), ui.getHeight());
-        setWindowTitle("TEST GUI");
+        setWindowTitle(DISTRHO_PLUGIN_NAME);
     }
 
     ~UICarla()
     {
-    }
-
-    intptr_t realWinId() const
-    {
-        WId wId = winId();
-#if DISTRHO_OS_WINDOWS
-        return (intptr_t)static_cast<HWND>(wId);
-#else
-        return wId;
-#endif
     }
 
     // ---------------------------------------------
@@ -142,20 +132,19 @@ private:
 
     static void setParameterCallback(void* ptr, uint32_t rindex, float value)
     {
-        UICarla* _this_ = (UICarla*)ptr;
-        CARLA_ASSERT(_this_);
-
-        _this_->setParameterValue(rindex, value);
+        if (UICarla* _this_ = (UICarla*)ptr)
+            _this_->setParameterValue(rindex, value);
     }
 
     static void setStateCallback(void* ptr, const char* key, const char* value)
     {
 # if DISTRHO_PLUGIN_WANT_STATE
-        UICarla* _this_ = (UICarla*)ptr;
-        CARLA_ASSERT(_this_);
-
-        _this_->setState(key, value);
+        if (UICarla* _this_ = (UICarla*)ptr)
+            _this_->setState(key, value);
 # else
+        return;
+
+        // unused
         Q_UNUSED(ptr);
         Q_UNUSED(key);
         Q_UNUSED(value);
@@ -164,20 +153,19 @@ private:
 
     static void uiEditParameterCallback(void* ptr, uint32_t index, bool started)
     {
-        UICarla* _this_ = (UICarla*)ptr;
-        CARLA_ASSERT(_this_);
-
-        _this_->uiEditParameter(index, started);
+        if (UICarla* _this_ = (UICarla*)ptr)
+            _this_->uiEditParameter(index, started);
     }
 
     static void uiSendNoteCallback(void* ptr, bool onOff, uint8_t channel, uint8_t note, uint8_t velocity)
     {
 # if DISTRHO_PLUGIN_IS_SYNTH
-        UICarla* _this_ = (UICarla*)ptr;
-        CARLA_ASSERT(_this_);
-
-        _this_->uiSendNote(onOff, channel, note, velocity);
+        if (UICarla* _this_ = (UICarla*)ptr)
+            _this_->uiSendNote(onOff, channel, note, velocity);
 # else
+        return;
+
+        // unused
         Q_UNUSED(ptr);
         Q_UNUSED(onOff);
         Q_UNUSED(channel);
@@ -188,10 +176,8 @@ private:
 
     static void uiResizeCallback(void* ptr, unsigned int width, unsigned int height)
     {
-        UICarla* _this_ = (UICarla*)ptr;
-        CARLA_ASSERT(_this_);
-
-        _this_->uiResize(width, height);
+        if (UICarla* _this_ = (UICarla*)ptr)
+            _this_->uiResize(width, height);
     }
 };
 #endif
@@ -236,21 +222,24 @@ protected:
 
         {
             const uint32_t paramHints = plugin.parameterHints(index);
+            int nativeparamHints = 0;
 
             if (paramHints & PARAMETER_IS_AUTOMABLE)
-                param.hints |= ::PARAMETER_IS_AUTOMABLE;
+                nativeparamHints |= ::PARAMETER_IS_AUTOMABLE;
             if (paramHints & PARAMETER_IS_BOOLEAN)
-                param.hints |= ::PARAMETER_IS_BOOLEAN;
+                nativeparamHints |= ::PARAMETER_IS_BOOLEAN;
             if (paramHints & PARAMETER_IS_INTEGER)
-                param.hints |= ::PARAMETER_IS_INTEGER;
+                nativeparamHints |= ::PARAMETER_IS_INTEGER;
             if (paramHints & PARAMETER_IS_LOGARITHMIC)
-                param.hints |= ::PARAMETER_IS_LOGARITHMIC;
+                nativeparamHints |= ::PARAMETER_IS_LOGARITHMIC;
             if (paramHints & PARAMETER_IS_OUTPUT)
-                param.hints |= ::PARAMETER_IS_OUTPUT;
+                nativeparamHints |= ::PARAMETER_IS_OUTPUT;
+
+            param.hints = static_cast<ParameterHints>(nativeparamHints);
         }
 
-        param.name  = plugin.parameterName(index);
-        param.unit  = plugin.parameterUnit(index);
+        param.name = plugin.parameterName(index);
+        param.unit = plugin.parameterUnit(index);
 
         {
             const ParameterRanges& ranges(plugin.parameterRanges(index));

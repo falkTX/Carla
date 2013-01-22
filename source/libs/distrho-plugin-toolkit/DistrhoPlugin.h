@@ -9,7 +9,7 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * For a full copy of the license see the GPL.txt file
@@ -90,10 +90,7 @@ struct Parameter {
     ParameterRanges ranges;
 
     Parameter()
-        : hints(0x0),
-          name(nullptr),
-          symbol(nullptr),
-          unit(nullptr) {}
+        : hints(0x0) {}
 };
 
 // -------------------------------------------------
@@ -104,8 +101,9 @@ struct MidiEvent {
     uint8_t  buffer[3];
 
     MidiEvent()
-        : frame(0),
-          buffer{0} {}
+    {
+        clear();
+    }
 
     void clear()
     {

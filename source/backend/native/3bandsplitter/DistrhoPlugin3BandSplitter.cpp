@@ -9,7 +9,7 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * For a full copy of the license see the LGPL.txt file
@@ -209,11 +209,11 @@ void DistrhoPlugin3BandSplitter::d_setProgram(uint32_t index)
 
 void DistrhoPlugin3BandSplitter::d_activate()
 {
-    xLP  = exp(-2.0 * cfPI * freqLP / d_sampleRate());
+    xLP  = std::exp(-2.0 * cfPI * freqLP / d_sampleRate());
     a0LP = 1.0f - xLP;
     b1LP = -xLP;
 
-    xHP  = exp(-2.0 * cfPI * freqHP / d_sampleRate());
+    xHP  = std::exp(-2.0 * cfPI * freqHP / d_sampleRate());
     a0HP = 1.0f - xHP;
     b1HP = -xHP;
 }
@@ -226,8 +226,8 @@ void DistrhoPlugin3BandSplitter::d_deactivate()
 
 void DistrhoPlugin3BandSplitter::d_run(float** inputs, float** outputs, uint32_t frames, uint32_t, const MidiEvent*)
 {
-    const float* in1 = inputs[0];
-    const float* in2 = inputs[1];
+    float* in1  = inputs[0];
+    float* in2  = inputs[1];
     float* out1 = outputs[0];
     float* out2 = outputs[1];
     float* out3 = outputs[2];

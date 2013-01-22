@@ -9,7 +9,7 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * For a full copy of the license see the GPL.txt file
@@ -41,9 +41,9 @@ START_NAMESPACE_DISTRHO
 // -------------------------------------------------
 
 #ifdef DISTRHO_UI_OPENGL
-typedef PuglView* NativeWidget;
+typedef PuglView NativeWidget;
 #else
-typedef QWidget*  NativeWidget;
+typedef QWidget  NativeWidget;
 #endif
 
 typedef void (*setParamFunc)    (void* ptr, uint32_t index, float value);
@@ -80,8 +80,8 @@ struct UIPrivateData {
     uint32_t parameterOffset;
 
     // UI
-    void*        ptr;
-    NativeWidget widget;
+    void*         ptr;
+    NativeWidget* widget;
 
     // Callbacks
     setParamFunc    setParamCallbackFunc;
@@ -261,7 +261,12 @@ public:
     void createWindow(intptr_t parent)
     {
 #ifdef DISTRHO_UI_QT4
-        assert(ui && ! qt_widget);
+        assert(ui && data && ! qt_widget);
+
+        if (qt_widget || ! (ui && data))
+            return;
+
+        qt_mouseDown = false;
 
         // create embedable widget
         qt_widget = new QEmbedWidget;
@@ -293,9 +298,9 @@ public:
         // show it
         qt_widget->show();
 #else
-        assert(ui);
+        assert(ui && data && ! data->widget);
 
-        if ((data && data->widget) || ! ui)
+        if ((! data) || data->widget || ! ui)
             return;
 
         data->widget = puglCreate(parent, DISTRHO_PLUGIN_NAME, ui->d_width(), ui->d_height(), false);
@@ -331,9 +336,13 @@ public:
             qt_widget->close();
 
             if (qt_grip)
+            {
                 delete qt_grip;
+                qt_grip = nullptr;
+            }
 
             delete qt_widget;
+            qt_widget = nullptr;
         }
 #else
         ((OpenGLUI*)ui)->d_onClose();
@@ -351,46 +360,31 @@ public:
 #ifdef DISTRHO_UI_OPENGL
     void gl_onDisplay()
     {
-        OpenGLUI* uiGL = (OpenGLUI*)ui;
-        assert(uiGL);
-
-        if (uiGL)
+        if (OpenGLUI* uiGL = (OpenGLUI*)ui)
             uiGL->d_onDisplay();
     }
 
     void gl_onKeyboard(bool press, uint32_t key)
     {
-        OpenGLUI* uiGL = (OpenGLUI*)ui;
-        assert(uiGL);
-
-        if (uiGL)
+        if (OpenGLUI* uiGL = (OpenGLUI*)ui)
             uiGL->d_onKeyboard(press, key);
     }
 
     void gl_onMotion(int x, int y)
     {
-        OpenGLUI* uiGL = (OpenGLUI*)ui;
-        assert(uiGL);
-
-        if (uiGL)
+        if (OpenGLUI* uiGL = (OpenGLUI*)ui)
             uiGL->d_onMotion(x, y);
     }
 
     void gl_onMouse(int button, bool press, int x, int y)
     {
-        OpenGLUI* uiGL = (OpenGLUI*)ui;
-        assert(uiGL);
-
-        if (uiGL)
+        if (OpenGLUI* uiGL = (OpenGLUI*)ui)
             uiGL->d_onMouse(button, press, x, y);
     }
 
     void gl_onReshape(int width, int height)
     {
-        OpenGLUI* uiGL = (OpenGLUI*)ui;
-        assert(uiGL);
-
-        if (uiGL)
+        if (OpenGLUI* uiGL = (OpenGLUI*)ui)
         {
             if (! gl_initiated)
             {
@@ -404,32 +398,24 @@ public:
 
     void gl_onScroll(float dx, float dy)
     {
-        OpenGLUI* uiGL = (OpenGLUI*)ui;
-        assert(uiGL);
-
-        if (uiGL)
+        if (OpenGLUI* uiGL = (OpenGLUI*)ui)
             uiGL->d_onScroll(dx, dy);
     }
 
     void gl_onSpecial(bool press, Key key)
     {
-        OpenGLUI* uiGL = (OpenGLUI*)ui;
-        assert(uiGL);
-
-        if (uiGL)
+        if (OpenGLUI* uiGL = (OpenGLUI*)ui)
             uiGL->d_onSpecial(press, key);
     }
 
     void gl_onClose()
     {
-        OpenGLUI* uiGL = (OpenGLUI*)ui;
-        assert(uiGL);
-
-        if (uiGL)
+        if (OpenGLUI* uiGL = (OpenGLUI*)ui)
             uiGL->d_onClose();
     }
 
     // ---------------------------------------------
+private:
 
     static void gl_onDisplayCallback(PuglView* view)
     {

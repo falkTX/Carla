@@ -15,8 +15,8 @@
  * For a full copy of the license see the GPL.txt file
  */
 
-#ifndef __DISTRHO_MACROS_HPP__
-#define __DISTRHO_MACROS_HPP__
+#ifndef __DISTRHO_MACROS_H__
+#define __DISTRHO_MACROS_H__
 
 #include "DistrhoDefines.h"
 #include "DistrhoPluginInfo.h"
@@ -59,4 +59,4 @@
 
 #define DISTRHO_UI_URI DISTRHO_PLUGIN_URI "#UI"
 
-#endif // __DISTRHO_MACROS_HPP__
+#endif // __DISTRHO_MACROS_H__

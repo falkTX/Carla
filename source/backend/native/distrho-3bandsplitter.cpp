@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2012 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -9,7 +9,7 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * For a full copy of the GNU General Public License see the COPYING file
@@ -31,7 +31,7 @@ START_NAMESPACE_DISTRHO
 
 static PluginDescriptor tBandSplitterDesc = {
     /* category  */ ::PLUGIN_CATEGORY_EQ,
-    /* hints     */ ::PLUGIN_HAS_GUI,
+    /* hints     */ static_cast<PluginHints>(::PLUGIN_IS_RTSAFE | ::PLUGIN_HAS_GUI),
     /* audioIns  */ DISTRHO_PLUGIN_NUM_INPUTS,
     /* audioOuts */ DISTRHO_PLUGIN_NUM_OUTPUTS,
     /* midiIns   */ 0,

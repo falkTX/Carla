@@ -9,7 +9,7 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * For a full copy of the license see the GPL.txt file
@@ -42,12 +42,10 @@ struct PluginPrivateData {
     uint32_t  programCount;
     d_string* programNames;
 #endif
-
 #if DISTRHO_PLUGIN_WANT_STATE
     uint32_t  stateCount;
     d_string* stateKeys;
 #endif
-
 #if DISTRHO_PLUGIN_WANT_LATENCY
     uint32_t latency;
 #endif
@@ -308,10 +306,10 @@ public:
 
         if (data)
         {
-            data->bufferSize = bufferSize;
-
             if (callback && data->bufferSize == bufferSize)
                 callback = false;
+
+            data->bufferSize = bufferSize;
         }
 
         if (plugin && callback)
@@ -328,10 +326,10 @@ public:
 
         if (data)
         {
-            data->sampleRate = sampleRate;
-
             if (callback && data->sampleRate == sampleRate)
                 callback = false;
+
+            data->sampleRate = sampleRate;
         }
 
         if (plugin && callback)

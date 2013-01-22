@@ -136,8 +136,8 @@ void DistrhoPluginPingPongPan::d_deactivate()
 
 void DistrhoPluginPingPongPan::d_run(float** inputs, float** outputs, uint32_t frames, uint32_t, const MidiEvent*)
 {
-    const float* in1 = inputs[0];
-    const float* in2 = inputs[1];
+    float* in1  = inputs[0];
+    float* in2  = inputs[1];
     float* out1 = outputs[0];
     float* out2 = outputs[1];
 
