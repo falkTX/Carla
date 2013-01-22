@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2012 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -9,7 +9,7 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * For a full copy of the GNU General Public License see the COPYING file
@@ -34,7 +34,11 @@ static void bypass_process(PluginHandle handle, float** inBuffer, float** outBuf
     float* in  = inBuffer[0];
     float* out = outBuffer[0];
 
-    memcpy(out, in, sizeof(float)*frames);
+    for (uint32_t i=0; i < frames; i++)
+        *in++ = *out++;
+
+    //memcpy(out, in, sizeof(float)*frames);
+
     return;
 
     // unused
@@ -47,7 +51,7 @@ static void bypass_process(PluginHandle handle, float** inBuffer, float** outBuf
 
 static const PluginDescriptor bypassDesc = {
     .category  = PLUGIN_CATEGORY_NONE,
-    .hints     = 0x0,
+    .hints     = /*PLUGIN_IS_RTSAFE*/0,
     .audioIns  = 1,
     .audioOuts = 1,
     .midiIns   = 0,
