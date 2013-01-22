@@ -22,7 +22,9 @@
 
 #ifdef DISTRHO_UI_OPENGL
 # include "DistrhoUIOpenGL.h"
+START_NAMESPACE_DISTRHO
 # include "pugl/pugl.h"
+END_NAMESPACE_DISTRHO
 #else
 # include "DistrhoUIQt4.h"
 # include <QtGui/QApplication>
@@ -82,6 +84,13 @@ struct UIPrivateData {
     // UI
     void*         ptr;
     NativeWidget* widget;
+    /* ^this:
+     * Under Qt4 it points to the UI itself (in this case Qt4UI),
+     *  It's set right on the Qt4UI constructor.
+     *
+     * Under OpenGL it starts NULL and its created in createWindow().
+     *  It points to a puglView.
+     */
 
     // Callbacks
     setParamFunc    setParamCallbackFunc;

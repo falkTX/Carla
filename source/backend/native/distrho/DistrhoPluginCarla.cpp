@@ -16,8 +16,9 @@
  */
 
 #include "carla_native.hpp"
+#include "carla_utils.hpp"
 
-#include <QtGui/QDialog>
+#include <QtGui/QMainWindow>
 
 #include "DistrhoPluginMain.cpp"
 
@@ -33,17 +34,20 @@ START_NAMESPACE_DISTRHO
 // -----------------------------------------------------------------------
 // Carla UI
 
-class UICarla : public QDialog
+class UICarla : public QMainWindow
 {
 public:
-    UICarla(const HostDescriptor* const host, PluginInternal* const plugin)
-        : QDialog(nullptr),
-          m_host(host),
-          m_plugin(plugin),
-          ui(this, (intptr_t)winId(), setParameterCallback, setStateCallback, uiEditParameterCallback, uiSendNoteCallback, uiResizeCallback)
+    UICarla(const HostDescriptor* const host_, PluginInternal* const plugin_)
+        : QMainWindow(nullptr),
+          host(host_),
+          plugin(plugin_),
+          widget(this),
+          ui(this, (intptr_t)widget.winId(), setParameterCallback, setStateCallback, uiEditParameterCallback, uiSendNoteCallback, uiResizeCallback)
     {
+        setCentralWidget(&widget);
         setFixedSize(ui.getWidth(), ui.getHeight());
         setWindowTitle(DISTRHO_PLUGIN_NAME);
+
     }
 
     ~UICarla()
@@ -84,15 +88,15 @@ public:
     // ---------------------------------------------
 
 protected:
-    void setParameterValue(uint32_t index, float value)
+    void setParameterValue(uint32_t rindex, float value)
     {
-        m_host->ui_parameter_changed(m_host->handle, index, value);
+        host->ui_parameter_changed(host->handle, rindex, value);
     }
 
 # if DISTRHO_PLUGIN_WANT_STATE
     void setState(const char* key, const char* value)
     {
-        m_host->ui_custom_data_changed(m_host->handle, key, value);
+        host->ui_custom_data_changed(host->handle, key, value);
     }
 # endif
 
@@ -115,14 +119,19 @@ protected:
 
     void closeEvent(QCloseEvent* event)
     {
-        m_host->ui_closed(m_host->handle);
-        QDialog::closeEvent(event);
+        host->ui_closed(host->handle);
+
+        // FIXME - ignore event?
+        QMainWindow::closeEvent(event);
     }
 
 private:
     // Plugin stuff
-    const HostDescriptor* const m_host;
-    PluginInternal* const m_plugin;
+    const HostDescriptor* const host;
+    PluginInternal* const plugin;
+
+    // Qt4 stuff
+    QWidget widget;
 
     // UI
     UIInternal ui;
@@ -179,6 +188,8 @@ private:
         if (UICarla* _this_ = (UICarla*)ptr)
             _this_->uiResize(width, height);
     }
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(UICarla)
 };
 #endif
 
@@ -199,8 +210,7 @@ public:
     ~PluginCarla()
     {
 #if DISTRHO_PLUGIN_HAS_UI
-        if (uiPtr)
-            delete uiPtr;
+        uiPtr = nullptr;
 #endif
     }
 
@@ -215,14 +225,18 @@ protected:
 
     const ::Parameter* getParameterInfo(const uint32_t index)
     {
+        CARLA_ASSERT(index < getParameterCount());
+
         static ::Parameter param;
 
         // reset
         param.hints = ::PARAMETER_IS_ENABLED;
+        param.scalePointCount = 0;
+        param.scalePoints = nullptr;
 
         {
-            const uint32_t paramHints = plugin.parameterHints(index);
             int nativeparamHints = 0;
+            const uint32_t paramHints = plugin.parameterHints(index);
 
             if (paramHints & PARAMETER_IS_AUTOMABLE)
                 nativeparamHints |= ::PARAMETER_IS_AUTOMABLE;
@@ -252,16 +266,17 @@ protected:
             param.ranges.stepLarge = ranges.stepLarge;
         }
 
-        param.scalePointCount = 0;
-        param.scalePoints = nullptr;
-
         return &param;
     }
 
     float getParameterValue(const uint32_t index)
     {
+        CARLA_ASSERT(index < getParameterCount());
+
         return plugin.parameterValue(index);
     }
+
+    // getParameterText unused
 
     // -------------------------------------------------------------------
     // Plugin midi-program calls
@@ -274,10 +289,17 @@ protected:
 
     virtual const ::MidiProgram* getMidiProgramInfo(const uint32_t index)
     {
+        CARLA_ASSERT(index < getMidiProgramCount());
+
+        if (index >= plugin.programCount())
+            return nullptr;
+
         static ::MidiProgram midiProgram;
+
         midiProgram.bank    = index / 128;
         midiProgram.program = index % 128;
         midiProgram.name    = plugin.programName(index);
+
         return &midiProgram;
     }
 #endif
@@ -287,6 +309,8 @@ protected:
 
     void setParameterValue(const uint32_t index, const float value)
     {
+        CARLA_ASSERT(index < getParameterCount());
+
         plugin.setParameterValue(index, value);
     }
 
@@ -305,52 +329,11 @@ protected:
 #if DISTRHO_PLUGIN_WANT_STATE
     void setCustomData(const char* const key, const char* const value)
     {
+        CARLA_ASSERT(key);
+        CARLA_ASSERT(value);
+
         plugin.setState(key, value);
     }
-#endif
-
-    // -------------------------------------------------------------------
-    // Plugin UI calls
-
-#if DISTRHO_PLUGIN_HAS_UI
-    void uiShow(const bool show)
-    {
-        if (show)
-            createUiIfNeeded();
-
-        if (uiPtr)
-            uiPtr->carla_show(show);
-    }
-
-    void uiIdle()
-    {
-        if (uiPtr)
-            uiPtr->carla_idle();
-    }
-
-    void uiSetParameterValue(const uint32_t index, const float value)
-    {
-        if (uiPtr)
-            uiPtr->carla_setParameterValue(index, value);
-    }
-
-# if DISTRHO_PLUGIN_WANT_PROGRAMS
-    void uiSetMidiProgram(const uint32_t bank, const uint32_t program)
-    {
-        uint32_t realProgram = bank * 128 + program;
-
-        if (uiPtr)
-            uiPtr->carla_setMidiProgram(realProgram);
-    }
-# endif
-
-# if DISTRHO_PLUGIN_WANT_STATE
-    void uiSetCustomData(const char* const key, const char* const value)
-    {
-        if (uiPtr)
-            uiPtr->carla_setCustomData(key, value);
-    }
-# endif
 #endif
 
     // -------------------------------------------------------------------
@@ -369,24 +352,84 @@ protected:
 #if DISTRHO_PLUGIN_IS_SYNTH
     void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t midiEventCount, const ::MidiEvent* const midiEvents)
     {
-        for (uint32_t i=0; i < midiEventCount && i < MAX_MIDI_EVENTS; i++)
-        {
-            const ::MidiEvent* midiEvent = &midiEvents[i];
-            MidiEvent* realEvent = &realMidiEvents[i];
+        uint32_t i;
 
-            realEvent->buffer[0] = midiEvent->data[0];
-            realEvent->buffer[1] = midiEvent->data[1];
-            realEvent->buffer[2] = midiEvent->data[2];
-            realEvent->frame     = midiEvent->time;
+        for (i=0; i < midiEventCount && i < MAX_MIDI_EVENTS; i++)
+        {
+            const ::MidiEvent* const midiEvent = &midiEvents[i];
+            MidiEvent* const realMidiEvent = &realMidiEvents[i];
+
+            realMidiEvent->buffer[0] = midiEvent->data[0];
+            realMidiEvent->buffer[1] = midiEvent->data[1];
+            realMidiEvent->buffer[2] = midiEvent->data[2];
+            realMidiEvent->frame     = midiEvent->time;
         }
 
-        plugin.run(inBuffer, outBuffer, frames, midiEventCount, realMidiEvents);
+        plugin.run(inBuffer, outBuffer, frames, i, realMidiEvents);
     }
 #else
     void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t, const ::MidiEvent* const)
     {
         plugin.run(inBuffer, outBuffer, frames, 0, nullptr);
     }
+#endif
+
+    // -------------------------------------------------------------------
+    // Plugin UI calls
+
+#if DISTRHO_PLUGIN_HAS_UI
+    void uiShow(const bool show)
+    {
+        if (show)
+            createUiIfNeeded();
+
+        if (uiPtr != nullptr)
+            uiPtr->carla_show(show);
+    }
+
+    void uiIdle()
+    {
+        CARLA_ASSERT(uiPtr);
+
+        if (uiPtr != nullptr)
+            uiPtr->carla_idle();
+    }
+
+    void uiSetParameterValue(const uint32_t index, const float value)
+    {
+        CARLA_ASSERT(uiPtr);
+        CARLA_ASSERT(index < getParameterCount());
+
+        if (uiPtr != nullptr)
+            uiPtr->carla_setParameterValue(index, value);
+    }
+
+# if DISTRHO_PLUGIN_WANT_PROGRAMS
+    void uiSetMidiProgram(const uint32_t bank, const uint32_t program)
+    {
+        CARLA_ASSERT(uiPtr);
+
+        uint32_t realProgram = bank * 128 + program;
+
+        if (realProgram >= plugin.programCount())
+            return;
+
+        if (uiPtr != nullptr)
+            uiPtr->carla_setMidiProgram(realProgram);
+    }
+# endif
+
+# if DISTRHO_PLUGIN_WANT_STATE
+    void uiSetCustomData(const char* const key, const char* const value)
+    {
+        CARLA_ASSERT(uiPtr);
+        CARLA_ASSERT(key);
+        CARLA_ASSERT(value);
+
+        if (uiPtr != nullptr)
+            uiPtr->carla_setCustomData(key, value);
+    }
+# endif
 #endif
 
     // -------------------------------------------------------------------
@@ -400,17 +443,19 @@ private:
 
 #if DISTRHO_PLUGIN_HAS_UI
     // UI
-    UICarla* uiPtr;
+    ScopedPointer<UICarla> uiPtr;
 
     void createUiIfNeeded()
     {
-        if (! uiPtr)
+        if (uiPtr == nullptr)
         {
             d_lastUiSampleRate = getSampleRate();
             uiPtr = new UICarla(getHostHandle(), &plugin);
         }
     }
 #endif
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PluginCarla)
 
     // -------------------------------------------------------------------
 

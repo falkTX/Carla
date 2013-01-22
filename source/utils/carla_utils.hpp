@@ -172,14 +172,14 @@ void carla_zeroMem(void* const memory, const size_t numBytes)
 {
     CARLA_ASSERT(memory);
 
-    memset(memory, 0, numBytes);
+    std::memset(memory, 0, numBytes);
 }
 
 template <typename T>
 static inline
 void carla_zeroStruct(T& structure)
 {
-    memset(&structure, 0, sizeof(T));
+    std::memset(&structure, 0, sizeof(T));
 }
 
 // -------------------------------------------------

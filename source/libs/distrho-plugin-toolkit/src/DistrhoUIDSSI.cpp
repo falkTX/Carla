@@ -86,51 +86,36 @@ void osc_send_exiting(const OscData* oscData)
     lo_send(oscData->addr, targetPath, "");
 }
 
-// stuff that we might receive while waiting for sample-rate
-static bool globalShow = false;
-
 class UIDssi : public QMainWindow
 {
 public:
     UIDssi(const OscData* oscData_, const char* title)
         : QMainWindow(nullptr),
+          oscData(oscData_),
           widget(this),
-          settings("DISTRHO", DISTRHO_PLUGIN_NAME),
-          ui(this, widget.winId(), setParameterCallback, setStateCallback, nullptr, uiSendNoteCallback, uiResizeCallback),
-          oscData(oscData_)
+          ui(this, (intptr_t)widget.winId(), setParameterCallback, setStateCallback, nullptr, uiSendNoteCallback, uiResizeCallback)
     {
         setCentralWidget(&widget);
         setFixedSize(ui.getWidth(), ui.getHeight());
         setWindowTitle(title);
 
+        // idle timer
         uiTimer = startTimer(30);
 
         // load settings
+        QSettings settings("DISTRHO", DISTRHO_PLUGIN_NAME);
+
         restoreGeometry(settings.value("Global/Geometry", QByteArray()).toByteArray());
-
-#if DISTRHO_PLUGIN_WANT_STATE
-        for (size_t i=0; i < globalConfigures.size(); i++)
-            dssiui_configure(globalConfigures.at(i).key, globalConfigures.at(i).value);
-#endif
-
-#if DISTRHO_PLUGIN_WANT_PROGRAMS
-        if (globalProgram[0] >= 0 && globalProgram[1] >= 0)
-            dssiui_program(globalProgram[0], globalProgram[1]);
-#endif
-
-        for (size_t i=0; i < globalControls.size(); i++)
-            dssiui_control(i, globalControls.at(i));
-
-        if (globalShow)
-            show();
     }
 
     ~UIDssi()
     {
         // save settings
+        QSettings settings("DISTRHO", DISTRHO_PLUGIN_NAME);
+
         settings.setValue("Global/Geometry", saveGeometry());
 
-        if (uiTimer)
+        if (uiTimer != 0)
         {
             killTimer(uiTimer);
             osc_send_exiting(oscData);
@@ -154,8 +139,9 @@ public:
 #if DISTRHO_PLUGIN_WANT_PROGRAMS
     void dssiui_program(unsigned long bank, unsigned long program)
     {
-        unsigned long index = bank * 128 + program;
-        ui.programChanged(index);
+        unsigned long realProgram = bank * 128 + program;
+
+        ui.programChanged(realProgram);
     }
 #endif
 
@@ -183,13 +169,24 @@ public:
     }
 #endif
 
+    void dssiui_show()
+    {
+        show();
+    }
+
+    void dssiui_hide()
+    {
+        hide();
+    }
+
     void dssiui_quit()
     {
-        if (uiTimer)
+        if (uiTimer != 0)
         {
             killTimer(uiTimer);
             uiTimer = 0;
         }
+
         close();
         qApp->quit();
     }
@@ -238,35 +235,34 @@ protected:
     }
 
 private:
+    // OSC Stuff
+    const OscData* const oscData;
+
     // Qt4 stuff
     int uiTimer;
     QWidget widget;
-    QSettings settings;
 
     // Plugin UI
     UIInternal ui;
-
-    const OscData* const oscData;
 
     // ---------------------------------------------
     // Callbacks
 
     static void setParameterCallback(void* ptr, uint32_t rindex, float value)
     {
-        UIDssi* _this_ = (UIDssi*)ptr;
-        assert(_this_);
-
-        _this_->setParameterValue(rindex, value);
+        if (UIDssi* _this_ = (UIDssi*)ptr)
+            _this_->setParameterValue(rindex, value);
     }
 
     static void setStateCallback(void* ptr, const char* key, const char* value)
     {
 #if DISTRHO_PLUGIN_WANT_STATE
-        UIDssi* _this_ = (UIDssi*)ptr;
-        assert(_this_);
-
-        _this_->setState(key, value);
+        if (UIDssi* _this_ = (UIDssi*)ptr)
+            _this_->setState(key, value);
 #else
+        return;
+
+        // unused
         Q_UNUSED(ptr);
         Q_UNUSED(key);
         Q_UNUSED(value);
@@ -276,11 +272,12 @@ private:
     static void uiSendNoteCallback(void* ptr, bool onOff, uint8_t channel, uint8_t note, uint8_t velocity)
     {
 #if DISTRHO_PLUGIN_IS_SYNTH
-        UIDssi* _this_ = (UIDssi*)ptr;
-        assert(_this_);
-
-        _this_->uiSendNote(onOff, channel, note, velocity);
+        if (UIDssi* _this_ = (UIDssi*)ptr)
+            _this_->uiSendNote(onOff, channel, note, velocity);
 #else
+        return;
+
+        // unused
         Q_UNUSED(ptr);
         Q_UNUSED(onOff);
         Q_UNUSED(channel);
@@ -291,10 +288,8 @@ private:
 
     static void uiResizeCallback(void* ptr, unsigned int width, unsigned int height)
     {
-        UIDssi* _this_ = (UIDssi*)ptr;
-        assert(_this_);
-
-        _this_->uiResize(width, height);
+        if (UIDssi* _this_ = (UIDssi*)ptr)
+            _this_->uiResize(width, height);
     }
 };
 

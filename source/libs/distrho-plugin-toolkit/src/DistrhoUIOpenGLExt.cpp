@@ -25,11 +25,11 @@
 #include <cmath>
 #include <vector>
 
+START_NAMESPACE_DISTRHO
+
 #if DISTRHO_OS_LINUX
 # include "pugl/pugl_x11.h"
 #endif
-
-START_NAMESPACE_DISTRHO
 
 // -------------------------------------------------
 // Point

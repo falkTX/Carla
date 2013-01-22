@@ -67,16 +67,18 @@ void OpenGLUI::d_uiIdle()
 
 // -------------------------------------------------
 
-END_NAMESPACE_DISTRHO
-
-#ifndef DISTRHO_NAMESPACE
-# if DISTRHO_OS_WINDOWS
-#  include "pugl/pugl_win.cpp"
-# elif DISTRHO_OS_MAC
-#  include "pugl/pugl_osx.m"
-# else
-#  include "pugl/pugl_x11.c"
-# endif
+#if DISTRHO_OS_WINDOWS
+# include "pugl/pugl_win.cpp"
+#elif DISTRHO_OS_MAC
+# include "pugl/pugl_osx.m"
+#elif DISTRHO_OS_LINUX
+# include "pugl/pugl_x11.c"
+#else
+# error Unsupported platform!
 #endif
+
+// -------------------------------------------------
+
+END_NAMESPACE_DISTRHO
 
 #endif // DISTRHO_UI_OPENGL

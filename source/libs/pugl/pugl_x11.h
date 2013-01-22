@@ -19,6 +19,9 @@
    @file pugl_x11.h X11 Pugl Implementation (PuglInternalsImpl only).
 */
 
+#ifndef PUGL_X11_H_INCLUDED
+#define PUGL_X11_H_INCLUDED
+
 #include "pugl.h"
 
 #include <GL/gl.h>
@@ -39,3 +42,5 @@ typedef struct PuglInternalsImpl PuglInternals;
 
 PuglInternals*
 puglGetInternalsImpl(PuglView* view);
+
+#endif  /* PUGL_X11_H_INCLUDED */

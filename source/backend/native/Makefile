@@ -18,7 +18,7 @@ LINK_FLAGS      += $(shell pkg-config --libs QtCore QtGui)
 ifeq ($(HAVE_ZYN_DEPS),true)
 ZYN_CXX_FLAGS    = $(BUILD_CXX_FLAGS)
 ZYN_CXX_FLAGS   += $(shell pkg-config --cflags fftw3 mxml)
-LINK_FLAGS      += $(shell pkg-config --libs fftw3 mxml)
+LINK_FLAGS      += $(shell pkg-config --libs fftw3 mxml) -lpthread
 endif
 
 # --------------------------------------------------------------
@@ -72,9 +72,6 @@ distrho-3bandsplitter.cpp.o: distrho-3bandsplitter.cpp
 
 distrho-pingpongpan.cpp.o: distrho-pingpongpan.cpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) -Ipingpongpan -DDISTRHO_NAMESPACE=DISTRHO_PingPongPan -c -o $@
-
-# distrho-pugl.o: distrho-pugl.cpp
-# 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 zynaddsubfx.cpp.o: zynaddsubfx.cpp
 	$(CXX) $< $(ZYN_CXX_FLAGS) -c -o $@

@@ -44,9 +44,8 @@ START_NAMESPACE_DISTRHO
 class PluginLadspaDssi
 {
 public:
-    PluginLadspaDssi()
-        : lastBufferSize(d_lastBufferSize),
-          lastSampleRate(d_lastSampleRate),
+    PluginLadspaDssi(const double sampleRate)
+        : lastSampleRate(sampleRate),
           portAudioIns{nullptr},
           portAudioOuts{nullptr}
     {
@@ -143,9 +142,11 @@ public:
             return nullptr;
 
         static DSSI_Program_Descriptor desc;
+
         desc.Bank    = index / 128;
         desc.Program = index % 128;
         desc.Name    = plugin.programName(index);
+
         return &desc;
     }
 
@@ -292,9 +293,8 @@ private:
     PluginInternal plugin;
 
     // Temporary data
-    const unsigned long lastBufferSize;
-    const double        lastSampleRate;
-    LADSPA_DataVector   lastControlValues;
+    const double      lastSampleRate;
+    LADSPA_DataVector lastControlValues;
 
 #if DISTRHO_PLUGIN_IS_SYNTH
     MidiEvent midiEvents[MAX_MIDI_EVENTS];
@@ -346,7 +346,7 @@ static LADSPA_Handle ladspa_instantiate(const LADSPA_Descriptor*, unsigned long 
         d_lastBufferSize = 2048;
     d_lastSampleRate = sampleRate;
 
-    return new PluginLadspaDssi();
+    return new PluginLadspaDssi(sampleRate);
 }
 
 static void ladspa_connect_port(LADSPA_Handle instance, unsigned long port, LADSPA_Data* dataLocation)
