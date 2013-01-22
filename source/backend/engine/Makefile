@@ -34,11 +34,11 @@ WANT_RTAUDIO     = true
 endif
 
 OBJS = \
-     carla_engine.cpp.o \
-     carla_engine_osc.cpp.o \
-     carla_engine_thread.cpp.o \
-     jack.cpp.o \
-     rtaudio.cpp.o
+     carla_engine.cpp.o
+#      carla_engine_osc.cpp.o \
+#      carla_engine_thread.cpp.o \
+#      jack.cpp.o \
+#      rtaudio.cpp.o
 
 TARGET = ../carla_engine.so
 

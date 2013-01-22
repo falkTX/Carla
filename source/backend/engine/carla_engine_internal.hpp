@@ -35,63 +35,61 @@ CARLA_BACKEND_START_NAMESPACE
 // -------------------------------------------------------------------------------------------------------------------
 
 static inline
-const char* CarlaEngineType2Str(const CarlaEngineType type)
+const char* EngineType2Str(const EngineType type)
 {
     switch (type)
     {
-    case CarlaEngineTypeNull:
-        return "CarlaEngineTypeNull";
-    case CarlaEngineTypeJack:
-        return "CarlaEngineTypeJack";
-    case CarlaEngineTypeRtAudio:
-        return "CarlaEngineTypeRtAudio";
-    case CarlaEngineTypePlugin:
-        return "CarlaEngineTypePlugin";
+    case EngineTypeNull:
+        return "EngineTypeNull";
+    case EngineTypeJack:
+        return "EngineTypeJack";
+    case EngineTypeRtAudio:
+        return "EngineTypeRtAudio";
+    case EngineTypePlugin:
+        return "EngineTypePlugin";
     }
 
-    qWarning("CarlaBackend::CarlaEngineType2Str(%i) - invalid type", type);
+    qWarning("CarlaBackend::EngineType2Str(%i) - invalid type", type);
     return nullptr;
 }
 
 static inline
-const char* CarlaEnginePortType2Str(const CarlaEnginePortType type)
+const char* EnginePortType2Str(const EnginePortType type)
 {
     switch (type)
     {
-    case CarlaEnginePortTypeNull:
-        return "CarlaEnginePortTypeNull";
-    case CarlaEnginePortTypeAudio:
-        return "CarlaEnginePortTypeAudio";
-    case CarlaEnginePortTypeControl:
-        return "CarlaEnginePortTypeControl";
-    case CarlaEnginePortTypeMIDI:
-        return "CarlaEnginePortTypeMIDI";
+    case EnginePortTypeNull:
+        return "EnginePortTypeNull";
+    case EnginePortTypeAudio:
+        return "EnginePortTypeAudio";
+    case EnginePortTypeEvent:
+        return "EnginePortTypeEvent";
     }
 
-    qWarning("CarlaBackend::CarlaEnginePortType2Str(%i) - invalid type", type);
+    qWarning("CarlaBackend::EnginePortType2Str(%i) - invalid type", type);
     return nullptr;
 }
 
 static inline
-const char* CarlaEngineControlEventType2Str(const CarlaEngineControlEventType type)
+const char* EngineControlEventType2Str(const EngineControlEventType type)
 {
     switch (type)
     {
-    case CarlaEngineControlEventTypeNull:
-        return "CarlaEngineNullEvent";
-    case CarlaEngineControlEventTypeParameterChange:
-        return "CarlaEngineControlEventTypeParameterChange";
-    case CarlaEngineControlEventTypeMidiBankChange:
-        return "CarlaEngineControlEventTypeMidiBankChange";
-    case CarlaEngineControlEventTypeMidiProgramChange:
-        return "CarlaEngineControlEventTypeMidiProgramChange";
-    case CarlaEngineControlEventTypeAllSoundOff:
-        return "CarlaEngineControlEventTypeAllSoundOff";
-    case CarlaEngineControlEventTypeAllNotesOff:
-        return "CarlaEngineControlEventTypeAllNotesOff";
+    case EngineControlEventTypeNull:
+        return "EngineNullEvent";
+    case EngineControlEventTypeParameter:
+        return "EngineControlEventTypeParameter";
+    case EngineControlEventTypeMidiBank:
+        return "EngineControlEventTypeMidiBank";
+    case EngineControlEventTypeMidiProgram:
+        return "EngineControlEventTypeMidiProgram";
+    case EngineControlEventTypeAllSoundOff:
+        return "EngineControlEventTypeAllSoundOff";
+    case EngineControlEventTypeAllNotesOff:
+        return "EngineControlEventTypeAllNotesOff";
     }
 
-    qWarning("CarlaBackend::CarlaEngineControlEventType2Str(%i) - invalid type", type);
+    qWarning("CarlaBackend::EngineControlEventType2Str(%i) - invalid type", type);
     return nullptr;
 }
 
@@ -104,13 +102,14 @@ const char* CarlaEngineControlEventType2Str(const CarlaEngineControlEventType ty
 /*static*/ const unsigned short MAX_PEAKS = 2;
 
 const uint32_t       PATCHBAY_BUFFER_SIZE = 128;
-const unsigned short PATCHBAY_EVENT_COUNT = 256;
+const unsigned short PATCHBAY_EVENT_COUNT = 512;
 
+#if 0
 enum EnginePostEventType {
     EnginePostEventNull,
     EnginePostEventDebug,
-    PluginPostEventAddPlugin,   // id, ptr
-    PluginPostEventRemovePlugin // id
+    EnginePostEventAddPlugin,   // id, ptr
+    EnginePostEventRemovePlugin // id
 };
 
 struct EnginePostEvent {
@@ -123,6 +122,7 @@ struct EnginePostEvent {
           value1(-1),
           valuePtr(nullptr) {}
 };
+#endif
 
 struct EnginePluginData {
     CarlaPlugin* const plugin;
@@ -141,7 +141,7 @@ struct CarlaEnginePrivateData {
     CarlaEngineOsc    osc;
     CarlaEngineThread thread;
 
-    ScopedPointer<const CarlaOscData> oscData;
+    const CarlaOscData* oscData;
 
     CallbackFunc callback;
     void*        callbackPtr;
@@ -158,7 +158,7 @@ struct CarlaEnginePrivateData {
     // for external midi input (GUI and OSC)
     CarlaMutex midiLock;
 
-    RtList<EnginePostEvent> postEvents;
+    //RtList<EnginePostEvent> postEvents;
     RtList<EnginePluginData> plugins;
 
     bool aboutToClose;
@@ -171,11 +171,13 @@ struct CarlaEnginePrivateData {
           oscData(nullptr),
           callback(nullptr),
           callbackPtr(nullptr),
-          postEvents(1, 1),
+          //postEvents(1, 1),
           plugins(1, 1),
           aboutToClose(false),
           maxPluginNumber(0),
           nextPluginId(0) {}
+
+    CarlaEnginePrivateData() = delete;
 };
 
 CARLA_BACKEND_END_NAMESPACE

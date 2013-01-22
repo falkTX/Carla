@@ -1,6 +1,6 @@
 /*
- * Carla Plugin
- * Copyright (C) 2011-2012 Filipe Coelho <falktx@falktx.com>
+ * Carla Plugin API
+ * Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,8 +15,8 @@
  * For a full copy of the GNU General Public License see the COPYING file
  */
 
-#ifndef CARLA_PLUGIN_HPP
-#define CARLA_PLUGIN_HPP
+#ifndef __CARLA_PLUGIN_HPP__
+#define __CARLA_PLUGIN_HPP__
 
 //#include "carla_midi.h"
 //#include "carla_engine.hpp"
@@ -49,10 +49,17 @@ typedef struct _PluginDescriptor PluginDescriptor;
 
 CARLA_BACKEND_START_NAMESPACE
 
+#if 0
+} // Fix editor indentation
+#endif
+
+class CarlaEngineAudioPort;
+class CarlaEngineEventPort;
+
 /*!
- * @defgroup CarlaBackendPlugin Carla Backend Plugin
+ * @defgroup CarlaPluginAPI Carla Plugin API
  *
- * The Carla Backend Plugin.
+ * The Carla Plugin API.
  * @{
  */
 
@@ -107,28 +114,24 @@ struct PluginAudioData {
           ports(nullptr) {}
 };
 
-struct PluginMidiData {
-    CarlaEngineMidiPort* portMin;
-    CarlaEngineMidiPort* portMout;
+struct PluginEventData {
+    CarlaEngineEventPort* portIn;
+    CarlaEngineEventPort* portOut;
 
-    PluginMidiData()
-        : portMin(nullptr),
-          portMout(nullptr) {}
+    PluginEventData()
+        : portIn(nullptr),
+          portOut(nullptr) {}
 };
 
 struct PluginParameterData {
     uint32_t count;
     ParameterData* data;
     ParameterRanges* ranges;
-    CarlaEngineControlPort* portCin;
-    CarlaEngineControlPort* portCout;
 
     PluginParameterData()
         : count(0),
           data(nullptr),
-          ranges(nullptr),
-          portCin(nullptr),
-          portCout(nullptr) {}
+          ranges(nullptr) {}
 };
 
 struct PluginProgramData {
@@ -1080,4 +1083,4 @@ private:
 
 CARLA_BACKEND_END_NAMESPACE
 
-#endif // CARLA_PLUGIN_HPP
+#endif // __CARLA_PLUGIN_HPP__

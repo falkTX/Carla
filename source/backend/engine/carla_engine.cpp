@@ -22,7 +22,7 @@
 CARLA_BACKEND_START_NAMESPACE
 
 // -------------------------------------------------------------------------------------------------------------------
-// Engine port (Abstract)
+// Carla Engine port (Abstract)
 
 CarlaEnginePort::CarlaEnginePort(const bool isInput_, const ProcessMode processMode_)
     : isInput(isInput_),
@@ -39,7 +39,7 @@ CarlaEnginePort::~CarlaEnginePort()
 }
 
 // -------------------------------------------------------------------------------------------------------------------
-// Engine port (Audio)
+// Carla Engine Audio port
 
 CarlaEngineAudioPort::CarlaEngineAudioPort(const bool isInput, const ProcessMode processMode)
     : CarlaEnginePort(isInput, processMode)
@@ -72,27 +72,29 @@ void CarlaEngineAudioPort::initBuffer(CarlaEngine* const)
 #ifndef BUILD_BRIDGE
     if (processMode != PROCESS_MODE_PATCHBAY)
         buffer = nullptr;
+    else if (! isInput)
+        carla_zeroFloat((float*)buffer, PATCHBAY_BUFFER_SIZE);
 #endif
 }
 
 // -------------------------------------------------------------------------------------------------------------------
-// Engine port (Control)
+// Carla Engine Event port
 
-CarlaEngineControlPort::CarlaEngineControlPort(const bool isInput, const ProcessMode processMode)
+CarlaEngineEventPort::CarlaEngineEventPort(const bool isInput, const ProcessMode processMode)
     : CarlaEnginePort(isInput, processMode),
-      m_maxEventCount(/*processMode == PROCESS_MODE_CONTINUOUS_RACK ? CarlaEngine::MAX_CONTROL_EVENTS :*/ PATCHBAY_EVENT_COUNT)
+      m_maxEventCount(processMode == PROCESS_MODE_CONTINUOUS_RACK ? CarlaEngine::MAX_EVENTS : PATCHBAY_EVENT_COUNT)
 {
-    qDebug("CarlaEngineControlPort::CarlaEngineControlPort(%s, %s)", bool2str(isInput), ProcessMode2Str(processMode));
+    qDebug("CarlaEngineEventPort::CarlaEngineEventPort(%s, %s)", bool2str(isInput), ProcessMode2Str(processMode));
 
 #ifndef BUILD_BRIDGE
     if (processMode == PROCESS_MODE_PATCHBAY)
-        buffer = new CarlaEngineControlEvent[PATCHBAY_EVENT_COUNT];
+        buffer = new EngineEvent[PATCHBAY_EVENT_COUNT];
 #endif
 }
 
-CarlaEngineControlPort::~CarlaEngineControlPort()
+CarlaEngineEventPort::~CarlaEngineEventPort()
 {
-    qDebug("CarlaEngineControlPort::~CarlaEngineControlPort()");
+    qDebug("CarlaEngineEventPort::~CarlaEngineEventPort()");
 
 #ifndef BUILD_BRIDGE
     if (processMode == PROCESS_MODE_PATCHBAY)
@@ -100,24 +102,24 @@ CarlaEngineControlPort::~CarlaEngineControlPort()
         CARLA_ASSERT(buffer);
 
         if (buffer)
-            delete[] (CarlaEngineControlEvent*)buffer;
+            delete[] (EngineEvent*)buffer;
     }
 #endif
 }
 
-void CarlaEngineControlPort::initBuffer(CarlaEngine* const engine)
+void CarlaEngineEventPort::initBuffer(CarlaEngine* const engine)
 {
     CARLA_ASSERT(engine);
 
 #ifndef BUILD_BRIDGE
     if (processMode == PROCESS_MODE_CONTINUOUS_RACK)
-        buffer = isInput ? engine->rackControlEventsIn : engine->rackControlEventsOut;
+        buffer = isInput ? engine->rackEventsIn : engine->rackEventsOut;
     else if (processMode == PROCESS_MODE_PATCHBAY && ! isInput)
-        memset(buffer, 0, sizeof(CarlaEngineControlEvent)*PATCHBAY_EVENT_COUNT);
+        carla_zeroMem(buffer, sizeof(EngineEvent)*PATCHBAY_EVENT_COUNT);
 #endif
 }
 
-uint32_t CarlaEngineControlPort::getEventCount()
+uint32_t CarlaEngineEventPort::getEventCount()
 {
     if (! isInput)
         return 0;
@@ -131,11 +133,11 @@ uint32_t CarlaEngineControlPort::getEventCount()
     if (processMode == PROCESS_MODE_CONTINUOUS_RACK || processMode == PROCESS_MODE_PATCHBAY)
     {
         uint32_t count = 0;
-        const CarlaEngineControlEvent* const events = (CarlaEngineControlEvent*)buffer;
+        const EngineEvent* const events = (EngineEvent*)buffer;
 
         for (unsigned short i=0; i < m_maxEventCount; i++, count++)
         {
-            if (events[i].type == CarlaEngineControlEventTypeNull)
+            if (events[i].type == EngineEventTypeNull)
                 break;
         }
 
@@ -146,187 +148,96 @@ uint32_t CarlaEngineControlPort::getEventCount()
     return 0;
 }
 
-const CarlaEngineControlEvent* CarlaEngineControlPort::getEvent(const uint32_t index)
+const EngineEvent* CarlaEngineEventPort::getEvent(const uint32_t index)
 {
     if (! isInput)
         return nullptr;
 
     CARLA_ASSERT(buffer);
+    CARLA_ASSERT(index < m_maxEventCount);
 
     if (! buffer)
+        return nullptr;
+    if (index >= m_maxEventCount)
         return nullptr;
 
 #ifndef BUILD_BRIDGE
     if (processMode == PROCESS_MODE_CONTINUOUS_RACK || processMode == PROCESS_MODE_PATCHBAY)
     {
-        CARLA_ASSERT(index < m_maxEventCount);
+        const EngineEvent* const events = (EngineEvent*)buffer;
 
-        const CarlaEngineControlEvent* const events = (CarlaEngineControlEvent*)buffer;
-
-        if (index < m_maxEventCount)
-            return &events[index];
+        return &events[index];
     }
-#else
-    Q_UNUSED(index);
 #endif
 
     return nullptr;
 }
 
-void CarlaEngineControlPort::writeEvent(const CarlaEngineControlEventType type, const uint32_t time, const uint8_t channel, const uint16_t parameter, const double value)
+void CarlaEngineEventPort::writeControlEvent(const uint32_t time, const uint8_t channel, const EngineControlEventType type, const uint16_t parameter, const double value)
 {
     if (isInput)
         return;
 
     CARLA_ASSERT(buffer);
-    CARLA_ASSERT(type != CarlaEngineControlEventTypeNull);
-    CARLA_ASSERT(channel < 16);
+    CARLA_ASSERT(type != EngineControlEventTypeNull);
+    CARLA_ASSERT(channel < MAX_MIDI_CHANNELS);
 
     if (! buffer)
         return;
-    if (type == CarlaEngineControlEventTypeNull)
+    if (type == EngineControlEventTypeNull)
         return;
-    if (type == CarlaEngineControlEventTypeParameterChange)
+    if (channel >= MAX_MIDI_CHANNELS)
+        return;
+    if (type == EngineControlEventTypeParameter)
+    {
         CARLA_ASSERT(! MIDI_IS_CONTROL_BANK_SELECT(parameter));
-    if (channel >= 16)
-        return;
+    }
 
 #ifndef BUILD_BRIDGE
     if (processMode == PROCESS_MODE_CONTINUOUS_RACK || processMode == PROCESS_MODE_PATCHBAY)
     {
-        CarlaEngineControlEvent* const events = (CarlaEngineControlEvent*)buffer;
+        EngineEvent* const events = (EngineEvent*)buffer;
 
         for (unsigned short i=0; i < m_maxEventCount; i++)
         {
-            if (events[i].type != CarlaEngineControlEventTypeNull)
+            if (events[i].type != EngineEventTypeNull)
                 continue;
 
-            events[i].type  = type;
-            events[i].time  = time;
-            events[i].value = value;
-            events[i].channel   = channel;
-            events[i].parameter = parameter;
+            events[i].type    = EngineEventTypeControl;
+            events[i].time    = time;
+            events[i].channel = channel;
+
+            events[i].ctrl.type      = type;
+            events[i].ctrl.parameter = parameter;
+            events[i].ctrl.value     = value;
+
             return;
         }
 
-        qWarning("CarlaEngineControlPort::writeEvent() - buffer full");
+        qWarning("CarlaEngineEventPort::writeEvent() - buffer full");
     }
 #else
     Q_UNUSED(time);
-    Q_UNUSED(channel);
     Q_UNUSED(parameter);
     Q_UNUSED(value);
 #endif
 }
 
-// -------------------------------------------------------------------------------------------------------------------
-// Engine port (MIDI)
-
-CarlaEngineMidiPort::CarlaEngineMidiPort(const bool isInput, const ProcessMode processMode)
-    : CarlaEnginePort(isInput, processMode),
-      m_maxEventCount(/*processMode == PROCESS_MODE_CONTINUOUS_RACK ? CarlaEngine::MAX_MIDI_EVENTS :*/ PATCHBAY_EVENT_COUNT)
-{
-    qDebug("CarlaEngineMidiPort::CarlaEngineMidiPort(%s, %s)", bool2str(isInput), ProcessMode2Str(processMode));
-
-#ifndef BUILD_BRIDGE
-    if (processMode == PROCESS_MODE_PATCHBAY)
-        buffer = new CarlaEngineMidiEvent[PATCHBAY_EVENT_COUNT];
-#endif
-}
-
-CarlaEngineMidiPort::~CarlaEngineMidiPort()
-{
-    qDebug("CarlaEngineMidiPort::~CarlaEngineMidiPort()");
-
-#ifndef BUILD_BRIDGE
-    if (processMode == PROCESS_MODE_PATCHBAY)
-    {
-        CARLA_ASSERT(buffer);
-
-        if (buffer)
-            delete[] (CarlaEngineMidiEvent*)buffer;
-    }
-#endif
-}
-
-void CarlaEngineMidiPort::initBuffer(CarlaEngine* const engine)
-{
-    CARLA_ASSERT(engine);
-
-#ifndef BUILD_BRIDGE
-    if (processMode == PROCESS_MODE_CONTINUOUS_RACK)
-        buffer = isInput ? engine->rackMidiEventsIn : engine->rackMidiEventsOut;
-    else if (processMode == PROCESS_MODE_PATCHBAY && ! isInput)
-        memset(buffer, 0, sizeof(CarlaEngineMidiEvent)*PATCHBAY_EVENT_COUNT);
-#endif
-}
-
-uint32_t CarlaEngineMidiPort::getEventCount()
-{
-    if (! isInput)
-        return 0;
-
-    CARLA_ASSERT(buffer);
-
-    if (! buffer)
-        return 0;
-
-#ifndef BUILD_BRIDGE
-    if (processMode == PROCESS_MODE_CONTINUOUS_RACK || processMode == PROCESS_MODE_PATCHBAY)
-    {
-        uint32_t count = 0;
-        const CarlaEngineMidiEvent* const events = (CarlaEngineMidiEvent*)buffer;
-
-        for (unsigned short i=0; i < m_maxEventCount; i++, count++)
-        {
-            if (events[i].size == 0)
-                break;
-        }
-
-        return count;
-    }
-#endif
-
-    return 0;
-}
-
-const CarlaEngineMidiEvent* CarlaEngineMidiPort::getEvent(uint32_t index)
-{
-    if (! isInput)
-        return nullptr;
-
-    CARLA_ASSERT(buffer);
-
-    if (! buffer)
-        return nullptr;
-
-#ifndef BUILD_BRIDGE
-    if (processMode == PROCESS_MODE_CONTINUOUS_RACK || processMode == PROCESS_MODE_PATCHBAY)
-    {
-        CARLA_ASSERT(index < m_maxEventCount);
-
-        const CarlaEngineMidiEvent* const events = (CarlaEngineMidiEvent*)buffer;
-
-        if (index < m_maxEventCount)
-            return &events[index];
-    }
-#else
-    Q_UNUSED(index);
-#endif
-
-    return nullptr;
-}
-
-void CarlaEngineMidiPort::writeEvent(const uint32_t time, const uint8_t* const data, const uint8_t size)
+void CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t channel, const uint8_t* const data, const uint8_t size)
 {
     if (isInput)
         return;
 
     CARLA_ASSERT(buffer);
+    CARLA_ASSERT(channel < MAX_MIDI_CHANNELS);
     CARLA_ASSERT(data);
     CARLA_ASSERT(size > 0);
 
-    if (! (buffer && data && size > 0))
+    if (! buffer)
+        return;
+    if (channel >= MAX_MIDI_CHANNELS)
+        return;
+    if (! (data && size > 0))
         return;
 
 #ifndef BUILD_BRIDGE
@@ -335,20 +246,26 @@ void CarlaEngineMidiPort::writeEvent(const uint32_t time, const uint8_t* const d
         if (size > 3)
             return;
 
-        CarlaEngineMidiEvent* const events = (CarlaEngineMidiEvent*)buffer;
+        EngineEvent* const events = (EngineEvent*)buffer;
 
         for (unsigned short i=0; i < m_maxEventCount; i++)
         {
-            if (events[i].size != 0)
+            if (events[i].type != EngineEventTypeNull)
                 continue;
 
-            events[i].time = time;
-            events[i].size = size;
-            memcpy(events[i].data, data, size);
+            events[i].type    = EngineEventTypeMidi;
+            events[i].time    = time;
+            events[i].channel = channel;
+
+            events[i].midi.data[0] = data[0];
+            events[i].midi.data[1] = data[1];
+            events[i].midi.data[2] = data[2];
+            events[i].midi.size    = size;
+
             return;
         }
 
-        qWarning("CarlaEngineMidiPort::writeEvent() - buffer full");
+        qWarning("CarlaEngineEventPort::writeEvent() - buffer full");
     }
 #else
     Q_UNUSED(time);
@@ -356,14 +273,14 @@ void CarlaEngineMidiPort::writeEvent(const uint32_t time, const uint8_t* const d
 }
 
 // -------------------------------------------------------------------------------------------------------------------
-// Carla Engine Client
+// Carla Engine client (Abstract)
 
-CarlaEngineClient::CarlaEngineClient(const CarlaEngineType engineType_, const ProcessMode processMode_)
+CarlaEngineClient::CarlaEngineClient(const EngineType engineType_, const ProcessMode processMode_)
     : engineType(engineType_),
       processMode(processMode_)
 {
-    qDebug("CarlaEngineClient::CarlaEngineClient(%s, %s)", CarlaEngineType2Str(engineType), ProcessMode2Str(processMode));
-    CARLA_ASSERT(engineType != CarlaEngineTypeNull);
+    qDebug("CarlaEngineClient::CarlaEngineClient(%s, %s)", EngineType2Str(engineType), ProcessMode2Str(processMode));
+    CARLA_ASSERT(engineType != EngineTypeNull);
 
     m_active  = false;
     m_latency = 0;
@@ -431,8 +348,10 @@ CarlaEngine::~CarlaEngine()
 {
     qDebug("CarlaEngine::~CarlaEngine()");
 
-    delete data;
+    //data = nullptr;
 }
+
+#if 0
 
 // -----------------------------------------------------------------------
 // Static values and calls
@@ -597,8 +516,6 @@ int CarlaEngine::getNewPluginId() const
 
     return data->nextPluginId;
 }
-
-#if 0
 
 #if 0
 CarlaPlugin* CarlaEngine::getPlugin(const unsigned short id) const
@@ -1186,8 +1103,6 @@ void CarlaEngine::setOscBridgeData(const CarlaOscData* const oscData)
 }
 #endif
 
-#endif
-
 // -----------------------------------------------------------------------
 // protected calls
 
@@ -1680,7 +1595,6 @@ void CarlaEngine::osc_send_control_note_off(const int32_t pluginId, const int32_
     }
 }
 
-#if 0
 void CarlaEngine::osc_send_control_set_input_peak_value(const int32_t pluginId, const int32_t portId)
 {
     //qDebug("CarlaEngine::osc_send_control_set_input_peak_value(%i, %i)", pluginId, portId);
@@ -1712,7 +1626,6 @@ void CarlaEngine::osc_send_control_set_output_peak_value(const int32_t pluginId,
         lo_send(data->oscData->target, target_path, "iid", pluginId, portId, data->outsPeak[pluginId*MAX_PEAKS + portId-1]);
     }
 }
-#endif
 
 void CarlaEngine::osc_send_control_exit()
 {
@@ -2020,6 +1933,8 @@ void CarlaEngine::osc_send_bridge_set_outpeak(const int32_t portId)
         lo_send(data->oscData->target, target_path, "id", portId, data->insPeak[portId-1]);
     }
 }
+#endif
+
 #endif
 
 CARLA_BACKEND_END_NAMESPACE
