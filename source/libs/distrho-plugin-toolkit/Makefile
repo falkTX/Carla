@@ -1,6 +1,6 @@
 #!/usr/bin/make -f
-# Makefile for distrho (docs) #
-# ----------------------------------------- #
+# Makefile for DPT (docs) #
+# ------------------------------------- #
 # Created by falkTX
 #
 
