@@ -15,52 +15,69 @@
  * For a full copy of the GNU General Public License see the COPYING file
  */
 
+#include "carla_midi.h"
 #include "carla_native.h"
 
-static PluginHandle bypass_instantiate(const PluginDescriptor* _this_, HostDescriptor* host)
+#include <stdlib.h>
+
+typedef struct _MidiThroughHandle {
+    HostDescriptor* host;
+} MidiThroughHandle;
+
+static PluginHandle midiThrough_instantiate(const PluginDescriptor* _this_, HostDescriptor* host)
 {
-    // dummy, return non-NULL
-    return (PluginHandle)1;
+    MidiThroughHandle* const handle = (MidiThroughHandle*)malloc(sizeof(MidiThroughHandle));
+
+    if (handle)
+    {
+        handle->host = host;
+        return handle;
+    }
+
+    return NULL;
 
     // unused
     (void)_this_;
-    (void)host;
 }
 
-static void bypass_process(PluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, uint32_t midiEventCount, const MidiEvent* midiEvents)
+static void midiThrough_cleanup(PluginHandle handle)
 {
-    float* in  = inBuffer[0];
-    float* out = outBuffer[0];
+    free((MidiThroughHandle*)handle);
+}
 
-    for (uint32_t i=0; i < frames; i++)
-        *in++ = *out++;
+static void midiThrough_process(PluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, uint32_t midiEventCount, const MidiEvent* midiEvents)
+{
+    HostDescriptor* const host = ((MidiThroughHandle*)handle)->host;
+
+    for (uint32_t i=0; i < midiEventCount; i++)
+        host->write_midi_event(host, &midiEvents[i]);
 
     return;
 
     // unused
-    (void)handle;
-    (void)midiEventCount;
-    (void)midiEvents;
+    (void)inBuffer;
+    (void)outBuffer;
+    (void)frames;
 }
 
 // -----------------------------------------------------------------------
 
-static const PluginDescriptor bypassDesc = {
+static const PluginDescriptor midiThroughDesc = {
     .category  = PLUGIN_CATEGORY_NONE,
     .hints     = PLUGIN_IS_RTSAFE,
-    .audioIns  = 1,
-    .audioOuts = 1,
-    .midiIns   = 0,
-    .midiOuts  = 0,
+    .audioIns  = 0,
+    .audioOuts = 0,
+    .midiIns   = 1,
+    .midiOuts  = 1,
     .parameterIns  = 0,
     .parameterOuts = 0,
-    .name      = "ByPass",
-    .label     = "bypass",
+    .name      = "MIDI Through",
+    .label     = "midiThrough",
     .maker     = "falkTX",
     .copyright = "GNU GPL v2+",
 
-    .instantiate = bypass_instantiate,
-    .cleanup     = NULL,
+    .instantiate = midiThrough_instantiate,
+    .cleanup     = midiThrough_cleanup,
 
     .get_parameter_count = NULL,
     .get_parameter_info  = NULL,
@@ -83,14 +100,14 @@ static const PluginDescriptor bypassDesc = {
 
     .activate   = NULL,
     .deactivate = NULL,
-    .process    = bypass_process
+    .process    = midiThrough_process
 };
 
 // -----------------------------------------------------------------------
 
-void carla_register_native_plugin_bypass()
+void carla_register_native_plugin_midiThrough()
 {
-    carla_register_native_plugin(&bypassDesc);
+    carla_register_native_plugin(&midiThroughDesc);
 }
 
 // -----------------------------------------------------------------------

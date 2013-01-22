@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2012 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -9,7 +9,7 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * For a full copy of the GNU General Public License see the COPYING file
@@ -25,7 +25,9 @@
 #include "zynaddsubfx/Misc/Master.h"
 #include "zynaddsubfx/Misc/Util.h"
 
-//Dummy variables and functions for linking purposes
+#include <ctime>
+
+// Dummy variables and functions for linking purposes
 class WavFile;
 namespace Nio {
    bool start(void){return 1;}
@@ -46,10 +48,9 @@ public:
     };
 
     ZynAddSubFxPlugin(const HostDescriptor* const host)
-        : PluginDescriptorClass(host)
+        : PluginDescriptorClass(host),
+          m_master(new Master)
     {
-        m_master = new Master;
-
         // refresh banks
         m_master->bank.rescanforbanks();
 
@@ -67,7 +68,7 @@ public:
                 if (insName.empty() || insName[0] == '\0' || insName[0] == ' ')
                     continue;
 
-                ProgramInfo pInfo = { i, instrument, CarlaString(insName.c_str()) };
+                ProgramInfo pInfo(i, instrument, insName.c_str());
                 m_programs.push_back(pInfo);
             }
         }
@@ -127,6 +128,8 @@ protected:
 
     float getParameterValue(const uint32_t index)
     {
+        CARLA_ASSERT(index < getParameterCount());
+
         switch (index)
         {
 #if 0
@@ -168,9 +171,15 @@ protected:
 
     void setParameterValue(const uint32_t index, const float value)
     {
+        CARLA_ASSERT(index < getParameterCount());
+
         switch (index)
         {
         }
+
+        return;
+
+        // unused, TODO
         Q_UNUSED(value);
     }
 
@@ -181,7 +190,7 @@ protected:
         if (program >= BANK_SIZE)
             return;
 
-        const std::string bankdir = m_master->bank.banks[bank].dir;
+        const std::string bankdir(m_master->bank.banks[bank].dir);
 
         if (! bankdir.empty())
         {
@@ -204,11 +213,17 @@ protected:
 
     void process(float**, float** const outBuffer, const uint32_t frames, const uint32_t midiEventCount, const MidiEvent* const midiEvents)
     {
+        if (pthread_mutex_trylock(&m_master->mutex) != 0)
+        {
+            carla_zeroFloat(outBuffer[0], frames);
+            carla_zeroFloat(outBuffer[1], frames);
+            return;
+        }
+
         uint32_t fromFrame      = 0;
         uint32_t eventIndex     = 0;
         uint32_t nextEventFrame = 0;
         uint32_t toFrame = 0;
-        pthread_mutex_lock(&m_master->mutex);
 
         do {
             // Find the time of the next event, if any
@@ -237,26 +252,26 @@ protected:
             // Now process any event(s) at the current timing point
             while (eventIndex < midiEventCount && midiEvents[eventIndex].time == toFrame)
             {
-                uint8_t status  = midiEvents[eventIndex].data[0];
-                uint8_t channel = status & 0x0F;
+                const uint8_t status  = MIDI_GET_STATUS_FROM_DATA(midiEvents[eventIndex].data);
+                const uint8_t channel = MIDI_GET_CHANNEL_FROM_DATA(midiEvents[eventIndex].data);
 
                 if (MIDI_IS_STATUS_NOTE_OFF(status))
                 {
-                    uint8_t note = midiEvents[eventIndex].data[1];
+                    const uint8_t note = midiEvents[eventIndex].data[1];
 
                     m_master->noteOff(channel, note);
                 }
                 else if (MIDI_IS_STATUS_NOTE_ON(status))
                 {
-                    uint8_t note = midiEvents[eventIndex].data[1];
-                    uint8_t velo = midiEvents[eventIndex].data[2];
+                    const uint8_t note = midiEvents[eventIndex].data[1];
+                    const uint8_t velo = midiEvents[eventIndex].data[2];
 
                     m_master->noteOn(channel, note, velo);
                 }
                 else if (MIDI_IS_STATUS_POLYPHONIC_AFTERTOUCH(status))
                 {
-                    uint8_t note     = midiEvents[eventIndex].data[1];
-                    uint8_t pressure = midiEvents[eventIndex].data[2];
+                    const uint8_t note     = midiEvents[eventIndex].data[1];
+                    const uint8_t pressure = midiEvents[eventIndex].data[2];
 
                     m_master->polyphonicAftertouch(channel, note, pressure);
                 }
@@ -277,10 +292,18 @@ private:
         uint32_t bank;
         uint32_t prog;
         CarlaString name;
+
+        ProgramInfo(uint32_t bank_, uint32_t prog_, const char* name_)
+          : bank(bank_),
+            prog(prog_),
+            name(name_) {}
+
+        ProgramInfo() = delete;
     };
+
     std::vector<ProgramInfo> m_programs;
 
-    Master* m_master;
+    Master* const m_master;
 
 public:
     static int s_instanceCount;
@@ -299,8 +322,8 @@ public:
             config.cfg.SampleRate      = synth->samplerate;
             config.cfg.GzipCompression = 0;
 
-            sprng(time(NULL));
-            denormalkillbuf = new float [synth->buffersize];
+            sprng(std::time(nullptr));
+            denormalkillbuf = new float[synth->buffersize];
             for (int i=0; i < synth->buffersize; i++)
                 denormalkillbuf[i] = (RND - 0.5f) * 1e-16;
         }
@@ -321,6 +344,8 @@ public:
             synth = nullptr;
         }
     }
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ZynAddSubFxPlugin)
 };
 
 int ZynAddSubFxPlugin::s_instanceCount = 0;

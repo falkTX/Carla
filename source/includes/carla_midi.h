@@ -1,6 +1,6 @@
 /*
  * Carla common MIDI code
- * Copyright (C) 2012 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,6 +36,10 @@
 #define MIDI_IS_STATUS_PROGRAM_CHANGE(status)          (((status) & 0xF0) == MIDI_STATUS_PROGRAM_CHANGE)
 #define MIDI_IS_STATUS_AFTERTOUCH(status)              (((status) & 0xF0) == MIDI_STATUS_AFTERTOUCH)
 #define MIDI_IS_STATUS_PITCH_WHEEL_CONTROL(status)     (((status) & 0xF0) == MIDI_STATUS_PITCH_WHEEL_CONTROL)
+
+// MIDI Utils
+#define MIDI_GET_STATUS_FROM_DATA(data)                ((data[0]) & 0xF0)
+#define MIDI_GET_CHANNEL_FROM_DATA(data)               ((data[0]) & 0x0F)
 
 // Control Change Messages List
 #define MIDI_CONTROL_BANK_SELECT                       0x00 // 0-127, MSB

@@ -39,21 +39,6 @@ extern "C" {
 typedef void* HostHandle;
 typedef void* PluginHandle;
 
-const uint32_t PLUGIN_IS_RTSAFE           = 1 << 0;
-const uint32_t PLUGIN_IS_SYNTH            = 1 << 1;
-const uint32_t PLUGIN_HAS_GUI             = 1 << 2;
-const uint32_t PLUGIN_USES_SINGLE_THREAD  = 1 << 3;
-
-const uint32_t PARAMETER_IS_OUTPUT        = 1 << 0;
-const uint32_t PARAMETER_IS_ENABLED       = 1 << 1;
-const uint32_t PARAMETER_IS_AUTOMABLE     = 1 << 2;
-const uint32_t PARAMETER_IS_BOOLEAN       = 1 << 3;
-const uint32_t PARAMETER_IS_INTEGER       = 1 << 4;
-const uint32_t PARAMETER_IS_LOGARITHMIC   = 1 << 5;
-const uint32_t PARAMETER_USES_SAMPLE_RATE = 1 << 6;
-const uint32_t PARAMETER_USES_SCALEPOINTS = 1 << 7;
-const uint32_t PARAMETER_USES_CUSTOM_TEXT = 1 << 8;
-
 typedef enum _PluginCategory {
     PLUGIN_CATEGORY_NONE      = 0, //!< Null plugin category.
     PLUGIN_CATEGORY_SYNTH     = 1, //!< A synthesizer or generator.
@@ -65,6 +50,25 @@ typedef enum _PluginCategory {
     PLUGIN_CATEGORY_UTILITY   = 7, //!< An 'utility' plugin (analyzer, converter, mixer, etc).
     PLUGIN_CATEGORY_OTHER     = 8  //!< Misc plugin (used to check if the plugin has a category).
 } PluginCategory;
+
+typedef enum _PluginHints {
+    PLUGIN_IS_RTSAFE           = 1 << 0,
+    PLUGIN_IS_SYNTH            = 1 << 1,
+    PLUGIN_HAS_GUI             = 1 << 2,
+    PLUGIN_USES_SINGLE_THREAD  = 1 << 3
+} PluginHints;
+
+typedef enum _ParameterHints {
+    PARAMETER_IS_OUTPUT        = 1 << 0,
+    PARAMETER_IS_ENABLED       = 1 << 1,
+    PARAMETER_IS_AUTOMABLE     = 1 << 2,
+    PARAMETER_IS_BOOLEAN       = 1 << 3,
+    PARAMETER_IS_INTEGER       = 1 << 4,
+    PARAMETER_IS_LOGARITHMIC   = 1 << 5,
+    PARAMETER_USES_SAMPLE_RATE = 1 << 6,
+    PARAMETER_USES_SCALEPOINTS = 1 << 7,
+    PARAMETER_USES_CUSTOM_TEXT = 1 << 8
+} ParameterHints;
 
 typedef struct _ParameterScalePoint {
     const char* label;
@@ -85,7 +89,7 @@ typedef struct _ParameterRanges {
 #define PARAMETER_RANGES_DEFAULT_STEP_LARGE 0.1f
 
 typedef struct _Parameter {
-    uint32_t hints;
+    ParameterHints hints;
     const char* name;
     const char* unit;
     ParameterRanges ranges;
@@ -145,7 +149,7 @@ typedef struct _HostDescriptor {
 
 typedef struct _PluginDescriptor {
     const PluginCategory category;
-    const uint32_t hints;
+    const PluginHints hints;
     const uint32_t audioIns;
     const uint32_t audioOuts;
     const uint32_t midiIns;
