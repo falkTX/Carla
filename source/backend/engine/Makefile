@@ -9,7 +9,7 @@ include ../../Makefile.mk
 # --------------------------------------------------------------
 
 BUILD_CXX_FLAGS += -fvisibility=hidden -fPIC -I. -I.. -I../../includes -I../../libs -I../../utils
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo QtCore)
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtCore) # liblo -isystem /opt/kxstudio/include/
 
 LINK_FLAGS      += -shared
 LINK_FLAGS      += $(shell pkg-config --libs liblo QtCore)
@@ -49,16 +49,17 @@ endif
 # --------------------------------------------------------------
 
 OBJS  = \
-     carla_engine.cpp.o
+     carla_engine.cpp.o \
+     jack.cpp.o
+
 #      carla_engine_osc.cpp.o \
 #      carla_engine_thread.cpp.o \
-#      jack.cpp.o \
 #      rtaudio.cpp.o
 
 ifeq ($(WANT_RTAUDIO),true)
-OBJS += \
-	rtaudio-4.0.11/RtAudio.cpp.o \
-	rtmidi-2.0.1/RtMidi.cpp.o
+# OBJS += \
+# 	rtaudio-4.0.11/RtAudio.cpp.o \
+# 	rtmidi-2.0.1/RtMidi.cpp.o
 endif
 
 TARGET = ../carla_engine.so

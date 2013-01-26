@@ -51,7 +51,7 @@ typedef void (*setParamFunc)    (void* ptr, uint32_t index, float value);
 typedef void (*setStateFunc)    (void* ptr, const char* key, const char* value);
 typedef void (*uiEditParamFunc) (void* ptr, uint32_t index, bool started);
 typedef void (*uiSendNoteFunc)  (void* ptr, bool onOff, uint8_t channel, uint8_t note, uint8_t velo);
-typedef void (*uiResizeFunc)    (void* ptr, unsigned int width, unsigned int height);
+typedef void (*uiResizeFunc)    (void* ptr, int width, int height);
 
 extern double d_lastUiSampleRate;
 
@@ -140,7 +140,7 @@ struct UIPrivateData {
             uiSendNoteCallbackFunc(ptr, onOff, channel, note, velocity);
     }
 
-    void uiResizeCallback(unsigned int width, unsigned int height)
+    void uiResizeCallback(int width, int height)
     {
         if (uiResizeCallbackFunc)
             uiResizeCallbackFunc(ptr, width, height);
@@ -201,13 +201,13 @@ public:
             ui->d_uiIdle();
     }
 
-    unsigned int getWidth()
+    int getWidth()
     {
         assert(ui);
         return ui ? ui->d_width() : 0;
     }
 
-    unsigned int getHeight()
+    int getHeight()
     {
         assert(ui);
         return ui ? ui->d_height() : 0;

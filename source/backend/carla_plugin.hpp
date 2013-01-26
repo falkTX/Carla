@@ -22,11 +22,8 @@
 #include "carla_native.h"
 #include "carla_utils.hpp"
 
-#ifdef WANT_LADSPA
-# include "ladspa_rdf.hpp"
-#endif
-
-// Avoid including liblo here
+// Avoid including extra libs here
+struct LADSPA_RDF_Descriptor;
 typedef void* lo_address;
 
 CARLA_BACKEND_START_NAMESPACE
@@ -35,7 +32,7 @@ CARLA_BACKEND_START_NAMESPACE
 } // Fix editor indentation
 #endif
 
-#ifndef BUILD_BRIDGE
+#if 0 //ndef BUILD_BRIDGE
 enum PluginBridgeInfoType {
     kPluginBridgeAudioCount,
     kPluginBridgeMidiCount,
@@ -60,14 +57,14 @@ enum PluginBridgeInfoType {
 };
 #endif
 
-enum PluginPostEventType {
-    kPluginPostEventNull,
-    kPluginPostEventDebug,
-    kPluginPostEventParameterChange,   // param, N, value
-    kPluginPostEventProgramChange,     // index
-    kPluginPostEventMidiProgramChange, // index
-    kPluginPostEventNoteOn,            // channel, note, velo
-    kPluginPostEventNoteOff            // channel, note
+enum PluginPostRtEventType {
+    kPluginPostRtEventNull,
+    kPluginPostRtEventDebug,
+    kPluginPostRtEventParameterChange,   // param, N, value
+    kPluginPostRtEventProgramChange,     // index
+    kPluginPostRtEventMidiProgramChange, // index
+    kPluginPostRtEventNoteOn,            // channel, note, velo
+    kPluginPostRtEventNoteOff            // channel, note
 };
 
 // -----------------------------------------------------------------------
@@ -97,7 +94,7 @@ public:
      * \param engine The engine which this plugin belongs to, must not be null
      * \param id     The 'id' of this plugin, must be between 0 and CarlaEngine::maxPluginNumber()
      */
-    CarlaPlugin(CarlaEngine* const engine, const unsigned short id);
+    CarlaPlugin(CarlaEngine* const engine, const unsigned int id);
 
     /*!
      * This is the destructor of the base plugin class.
@@ -167,13 +164,19 @@ public:
     /*!
      * Get the plugin's category (delay, filter, synth, etc).
      */
-    virtual PluginCategory category();
+    virtual PluginCategory category()
+    {
+        return PLUGIN_CATEGORY_NONE;
+    }
 
     /*!
      * Get the plugin's native unique Id.\n
      * May return 0 on plugin types that don't support Ids.
      */
-    virtual long uniqueId();
+    virtual long uniqueId()
+    {
+        return 0;
+    }
 
     // -------------------------------------------------------------------
     // Information (count)
@@ -372,7 +375,7 @@ public:
      *
      * \see id()
      */
-    void setId(const unsigned short id);
+    void setId(const unsigned int id);
 
     /*!
      * Enable or disable the plugin according to \a yesNo.
@@ -416,6 +419,8 @@ public:
      *
      * \param sendOsc Send message change over OSC
      * \param sendCallback Send message change to registered callback
+     *
+     * \note Pure-Stereo plugins only!
      */
     void setBalanceLeft(double value, const bool sendOsc, const bool sendCallback);
 
@@ -425,14 +430,27 @@ public:
      *
      * \param sendOsc Send message change over OSC
      * \param sendCallback Send message change to registered callback
+     *
+     * \note Pure-Stereo plugins only!
      */
     void setBalanceRight(double value, const bool sendOsc, const bool sendCallback);
 
-#ifndef BUILD_BRIDGE
+    /*!
+     * Set the plugin's output panning value to \a value.\n
+     * \a value must be between -1.0 and 1.0.
+     *
+     * \param sendOsc Send message change over OSC
+     * \param sendCallback Send message change to registered callback
+     *
+     * \note Force-Stereo plugins only!
+     */
+    void setPanning(double value, const bool sendOsc, const bool sendCallback);
+
+#if 0 //ndef BUILD_BRIDGE
     /*!
      * BridgePlugin call used to set internal data.
      */
-    //virtual int setOscBridgeInfo(const PluginBridgeInfoType type, const int argc, const lo_arg* const* const argv, const char* const types);
+    virtual int setOscBridgeInfo(const PluginBridgeInfoType type, const int argc, const lo_arg* const* const argv, const char* const types);
 #endif
 
     // -------------------------------------------------------------------
@@ -537,13 +555,6 @@ public:
     // Set gui stuff
 
     /*!
-     * Set the plugin's custom GUI container.\n
-     *
-     * \note This function must be always called from the main thread.
-     */
-    //virtual void setGuiContainer(GuiContainer* const container);
-
-    /*!
      * Show (or hide) the plugin's custom GUI according to \a yesNo.
      *
      * \note This function must be always called from the main thread.
@@ -588,6 +599,11 @@ public:
      * Tell the plugin the current buffer size has changed.
      */
     virtual void bufferSizeChanged(const uint32_t newBufferSize);
+
+    /*!
+     * Tell the plugin the current sample rate has changed.
+     */
+    virtual void sampleRateChanged(const double newSampleRate);
 
     /*!
      * Recreate latency audio buffers.
@@ -641,19 +657,13 @@ public:
      * Post pone an event of type \a type.\n
      * The event will be processed later, but as soon as possible.
      */
-    void postponeEvent(const PluginPostEventType type, const int32_t value1, const int32_t value2, const double value3, const void* const cdata = nullptr);
+    void postponeEvent(const PluginPostRtEventType type, const int32_t value1, const int32_t value2, const double value3);
 
     /*!
      * Process all the post-poned events.
      * This function must be called from the main thread (ie, idleGui()) if PLUGIN_USES_SINGLE_THREAD is set.
      */
     void postEventsRun();
-
-    /*!
-     * Handle custom post event.\n
-     * Implementation depends on plugin type.
-     */
-    virtual void postEventHandleCustom(const int32_t value1, const int32_t value2, const double value3, const void* const cdata);
 
     /*!
      * Tell the UI a parameter has changed.
@@ -732,21 +742,31 @@ public:
     };
 
 #ifndef BUILD_BRIDGE
-    static CarlaPlugin* newNative(const Initializer& init);
-#endif
-    static CarlaPlugin* newLADSPA(const Initializer& init, const void* const extra);
-    static CarlaPlugin* newDSSI(const Initializer& init, const void* const extra);
-    static CarlaPlugin* newLV2(const Initializer& init);
-    static CarlaPlugin* newVST(const Initializer& init);
-#ifndef BUILD_BRIDGE
-    static CarlaPlugin* newGIG(const Initializer& init);
-    static CarlaPlugin* newSF2(const Initializer& init);
-    static CarlaPlugin* newSFZ(const Initializer& init);
-    static CarlaPlugin* newBridge(const Initializer& init, const BinaryType btype, const PluginType ptype, const void* const extra);
-#endif
-
     static size_t getNativePluginCount();
     static const PluginDescriptor* getNativePluginDescriptor(const size_t index);
+
+    static CarlaPlugin* newNative(const Initializer& init);
+    static CarlaPlugin* newBridge(const Initializer& init, const BinaryType btype, const PluginType ptype, const void* const extra);
+#endif
+#ifdef WANT_LADSPA
+    static CarlaPlugin* newLADSPA(const Initializer& init, const void* const extra);
+#endif
+#ifdef WANT_DSSI
+    static CarlaPlugin* newDSSI(const Initializer& init, const void* const extra);
+#endif
+#ifdef WANT_LV2
+    static CarlaPlugin* newLV2(const Initializer& init);
+#endif
+#ifdef WANT_VST
+    static CarlaPlugin* newVST(const Initializer& init);
+#endif
+#ifdef WANT_LINUXSAMPLER
+    static CarlaPlugin* newGIG(const Initializer& init);
+    static CarlaPlugin* newSFZ(const Initializer& init);
+#endif
+#ifdef WANT_FLUIDSYNTH
+    static CarlaPlugin* newSF2(const Initializer& init);
+#endif
 
     // -------------------------------------------------------------------
 

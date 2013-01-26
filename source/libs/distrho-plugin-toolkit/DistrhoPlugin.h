@@ -69,7 +69,7 @@ struct ParameterRanges {
         this->stepLarge = stepLarge;
     }
 
-    void fixRange(float& value) const
+    void fixValue(float& value) const
     {
         if (value < min)
             value = min;

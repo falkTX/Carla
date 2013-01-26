@@ -14,7 +14,7 @@
  * For a full copy of the license see the LGPL.txt file
  */
 
-#include "DistrhoDefines.h"
+#include "DistrhoMacros.h"
 
 #ifdef DISTRHO_UI_OPENGL
 

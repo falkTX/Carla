@@ -45,14 +45,14 @@ public:
 #if DISTRHO_PLUGIN_IS_SYNTH
     void d_uiSendNote(bool onOff, uint8_t channel, uint8_t note, uint8_t velocity);
 #endif
-    void d_uiResize(unsigned int width, unsigned int height);
+    void d_uiResize(int width, int height);
 
     // ---------------------------------------------
 
 protected:
     // Information
-    virtual unsigned int d_width() = 0;
-    virtual unsigned int d_height() = 0;
+    virtual int d_width() = 0;
+    virtual int d_height() = 0;
 
     // DSP Callbacks
     virtual void d_parameterChanged(uint32_t index, float value) = 0;

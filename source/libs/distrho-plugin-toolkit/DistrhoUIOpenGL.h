@@ -17,7 +17,7 @@
 #ifndef __DISTRHO_UI_OPENGL_H__
 #define __DISTRHO_UI_OPENGL_H__
 
-#include "src/DistrhoDefines.h"
+#include "src/DistrhoMacros.h"
 
 #ifdef DISTRHO_UI_OPENGL
 
@@ -101,8 +101,8 @@ public:
 
 protected:
     // Information
-    virtual unsigned int d_width() = 0;
-    virtual unsigned int d_height() = 0;
+    virtual int d_width() = 0;
+    virtual int d_height() = 0;
 
     // DSP Callbacks
     virtual void d_parameterChanged(uint32_t index, float value) = 0;

@@ -81,7 +81,7 @@ void UI::d_uiSendNote(bool onOff, uint8_t channel, uint8_t note, uint8_t velocit
 }
 #endif
 
-void UI::d_uiResize(unsigned int width, unsigned int height)
+void UI::d_uiResize(int width, int height)
 {
     data->uiResizeCallback(width, height);
 }

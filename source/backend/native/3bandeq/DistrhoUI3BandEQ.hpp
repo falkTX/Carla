@@ -36,14 +36,14 @@ public:
 protected:
 
     // Information
-    unsigned int d_width()
+    int d_width()
     {
-        return DistrhoArtwork3BandEQ::backgroundWidth;
+        return (int)DistrhoArtwork3BandEQ::backgroundWidth;
     }
 
-    unsigned int d_height()
+    int d_height()
     {
-        return DistrhoArtwork3BandEQ::backgroundHeight;
+        return (int)DistrhoArtwork3BandEQ::backgroundHeight;
     }
 
     // DSP Callbacks

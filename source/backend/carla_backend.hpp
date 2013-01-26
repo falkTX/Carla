@@ -217,7 +217,8 @@ enum InternalParametersIndex {
     PARAMETER_VOLUME        = -4, //!< Volume parameter, range 0.0...1.27; default is 1.0.
     PARAMETER_BALANCE_LEFT  = -5, //!< Stereo Balance-Left parameter, range -1.0...1.0; default is -1.0.
     PARAMETER_BALANCE_RIGHT = -6, //!< Stereo Balance-Right parameter, range -1.0...1.0; default is 1.0.
-    PARAMETER_PANNING       = -7  //!< Mono Panning parameter, range -1.0...1.0; default is 0.0.
+    PARAMETER_PANNING       = -7, //!< Mono Panning parameter, range -1.0...1.0; default is 0.0.
+    PARAMETER_MAX           = -8  //!< Max value, defined for convenience
 };
 
 /*!
@@ -576,6 +577,19 @@ struct ParameterRanges {
           step(0.01f),
           stepSmall(0.0001f),
           stepLarge(0.1f) {}
+
+    void fixDefault()
+    {
+        fixValue(def);
+    }
+
+    void fixValue(float& value) const
+    {
+        if (value < min)
+            value = min;
+        else if (value > max)
+            value = max;
+    }
 };
 
 /*!
@@ -593,8 +607,7 @@ struct MidiProgramData {
 
     ~MidiProgramData()
     {
-        if (name)
-            free((void*)name);
+        std::free((void*)name);
     }
 };
 
@@ -616,14 +629,9 @@ struct CustomData {
 
     ~CustomData()
     {
-        if (type)
-            ::free((void*)type);
-
-        if (key)
-            ::free((void*)key);
-
-        if (value)
-            ::free((void*)value);
+        std::free((void*)type);
+        std::free((void*)key);
+        std::free((void*)value);
     }
 };
 

@@ -2,17 +2,17 @@
  * Carla common utils
  * Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * any later version.
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the COPYING file
+ * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
 #ifndef __CARLA_UTILS_HPP__
@@ -103,8 +103,8 @@ void carla_usleep(const unsigned int usecs)
 static inline
 void carla_setenv(const char* const key, const char* const value)
 {
-    CARLA_ASSERT(key);
-    CARLA_ASSERT(value);
+    CARLA_ASSERT(key != nullptr);
+    CARLA_ASSERT(value != nullptr);
 
 #ifdef Q_OS_WIN
     SetEnvironmentVariableA(key, value);
@@ -119,7 +119,7 @@ void carla_setenv(const char* const key, const char* const value)
 static inline
 void carla_setprocname(const char* const name)
 {
-    CARLA_ASSERT(name);
+    CARLA_ASSERT(name != nullptr);
 
 #if defined(Q_OS_HAIKU)
     if ((thread_id this_thread = find_thread(nullptr)) != B_NAME_NOT_FOUND)
@@ -145,8 +145,11 @@ template<typename T>
 static inline
 void carla_fill(T* data, const unsigned int size, const T v)
 {
-    CARLA_ASSERT(data);
+    CARLA_ASSERT(data != nullptr);
     CARLA_ASSERT(size > 0);
+
+    if (data == nullptr)
+        return;
 
     for (unsigned int i=0; i < size; i++)
         *data++ = v;
@@ -170,7 +173,10 @@ void carla_zeroFloat(float* data, const unsigned size)
 static inline
 void carla_zeroMem(void* const memory, const size_t numBytes)
 {
-    CARLA_ASSERT(memory);
+    CARLA_ASSERT(memory != nullptr);
+
+    if (memory == nullptr)
+        return;
 
     std::memset(memory, 0, numBytes);
 }
@@ -278,8 +284,6 @@ private:
 // -------------------------------------------------
 // CarlaString class
 
-// TODO - use "size_t bufferLen"
-
 class CarlaString
 {
 public:
@@ -288,94 +292,77 @@ public:
 
     explicit CarlaString()
     {
-        buffer = ::strdup("");
-        bufferLen = 0;
+        _init();
+        _dup(nullptr);
     }
 
     explicit CarlaString(char* const strBuf)
     {
-        if (strBuf)
-        {
-            buffer = ::strdup(strBuf);
-            bufferLen = ::strlen(buffer);
-        }
-        else
-        {
-            buffer = ::strdup("");
-            bufferLen = 0;
-        }
+        _init();
+        _dup(strBuf);
     }
 
     explicit CarlaString(const char* const strBuf)
     {
-        if (strBuf)
-        {
-            buffer = ::strdup(strBuf);
-            bufferLen = ::strlen(buffer);
-        }
-        else
-        {
-            buffer = ::strdup("");
-            bufferLen = 0;
-        }
+        _init();
+        _dup(strBuf);
     }
 
     explicit CarlaString(const int value)
     {
-        const size_t strBufSize = ::abs(value/10) + 3;
+        const size_t strBufSize = (unsigned int)std::abs(value/10) + 3;
         char         strBuf[strBufSize];
-        ::snprintf(strBuf, strBufSize, "%d", value);
+        std::snprintf(strBuf, strBufSize, "%d", value);
 
-        buffer = ::strdup(strBuf);
-        bufferLen = ::strlen(buffer);
+        _init();
+        _dup(strBuf, strBufSize);
     }
 
     explicit CarlaString(const unsigned int value, const bool hexadecimal = false)
     {
         const size_t strBufSize = value/10 + 2 + (hexadecimal ? 2 : 0);
         char         strBuf[strBufSize];
-        ::snprintf(strBuf, strBufSize, hexadecimal ? "%u" : "0x%x", value);
+        std::snprintf(strBuf, strBufSize, hexadecimal ? "0x%x" : "%u", value);
 
-        buffer = ::strdup(strBuf);
-        bufferLen = ::strlen(buffer);
+        _init();
+        _dup(strBuf, strBufSize);
     }
 
     explicit CarlaString(const long int value)
     {
-        const size_t strBufSize = ::labs(value/10) + 3;
+        const size_t strBufSize = (unsigned long)std::abs(value/10) + 3;
         char         strBuf[strBufSize];
-        ::snprintf(strBuf, strBufSize, "%ld", value);
+        std::snprintf(strBuf, strBufSize, "%ld", value);
 
-        buffer = ::strdup(strBuf);
-        bufferLen = ::strlen(buffer);
+        _init();
+        _dup(strBuf, strBufSize);
     }
 
     explicit CarlaString(const unsigned long int value, const bool hexadecimal = false)
     {
         const size_t strBufSize = value/10 + 2 + (hexadecimal ? 2 : 0);
         char         strBuf[strBufSize];
-        ::snprintf(strBuf, strBufSize, hexadecimal ? "%lu" : "0x%lx", value);
+        std::snprintf(strBuf, strBufSize, hexadecimal ? "0x%lx" : "%lu", value);
 
-        buffer = ::strdup(strBuf);
-        bufferLen = ::strlen(buffer);
+        _init();
+        _dup(strBuf, strBufSize);
     }
 
     explicit CarlaString(const float value)
     {
         char strBuf[0xff];
-        ::snprintf(strBuf, 0xff, "%f", value);
+        std::snprintf(strBuf, 0xff, "%f", value);
 
-        buffer = ::strdup(strBuf);
-        bufferLen = ::strlen(buffer);
+        _dup(strBuf);
     }
 
     explicit CarlaString(const double value)
     {
         char strBuf[0xff];
-        ::snprintf(strBuf, 0xff, "%g", value);
+        std::snprintf(strBuf, 0xff, "%g", value);
 
-        buffer = ::strdup(strBuf);
-        bufferLen = ::strlen(buffer);
+        _init();
+        _dup(strBuf);
     }
 
     // ---------------------------------------------
@@ -383,8 +370,8 @@ public:
 
     CarlaString(const CarlaString& str)
     {
-        buffer = ::strdup(str.buffer);
-        bufferLen = ::strlen(buffer);
+        _init();
+        _dup(str.buffer);
     }
 
     // ---------------------------------------------
@@ -393,7 +380,8 @@ public:
     ~CarlaString()
     {
         CARLA_ASSERT(buffer);
-        ::free(buffer);
+
+        delete[] buffer;
     }
 
     // ---------------------------------------------
@@ -414,31 +402,35 @@ public:
         return (bufferLen != 0);
     }
 
-#ifdef __USE_GNU
+#if __USE_GNU && 0
     bool contains(const char* const strBuf, const bool ignoreCase = false) const
-#else
-    bool contains(const char* const strBuf) const
-#endif
     {
-        if (! strBuf)
+        if (strBuf == nullptr)
             return false;
         if (bufferLen == 0)
             return false;
 
-#ifdef __USE_GNU
         if (ignoreCase)
-            return (::strcasestr(buffer, strBuf) != nullptr);
+            return (std::strcasestr(buffer, strBuf) != nullptr);
         else
-#endif
-            return (::strstr(buffer, strBuf) != nullptr);
+            return (std::strstr(buffer, strBuf) != nullptr);
     }
 
-#ifdef __USE_GNU
     bool contains(const CarlaString& str, const bool ignoreCase = false) const
     {
         return contains(str.buffer, ignoreCase);
     }
 #else
+    bool contains(const char* const strBuf) const
+    {
+        if (strBuf == nullptr)
+            return false;
+        if (bufferLen == 0)
+            return false;
+
+        return (std::strstr(buffer, strBuf) != nullptr);
+    }
+
     bool contains(const CarlaString& str) const
     {
         return contains(str.buffer);
@@ -460,14 +452,14 @@ public:
 
     void replace(const char before, const char after)
     {
-        if (after == 0)
+        if (after == '\0')
             return;
 
         for (size_t i=0; i < bufferLen; i++)
         {
             if (buffer[i] == before)
                 buffer[i] = after;
-            else if (buffer[i] == 0)
+            else if (buffer[i] == '\0')
                 break;
         }
     }
@@ -475,7 +467,7 @@ public:
     void truncate(const size_t n)
     {
         for (size_t i=n; i < bufferLen; i++)
-            buffer[i] = 0;
+            buffer[i] = '\0';
     }
 
     void toBasic()
@@ -497,19 +489,23 @@ public:
 
     void toLower()
     {
+        static const char charDiff = 'a' - 'A';
+
         for (size_t i=0; i < bufferLen; i++)
         {
             if (buffer[i] >= 'A' && buffer[i] <= 'Z')
-                buffer[i] += 32;
+                buffer[i] += charDiff;
         }
     }
 
     void toUpper()
     {
+        static const char charDiff = 'a' - 'A';
+
         for (size_t i=0; i < bufferLen; i++)
         {
             if (buffer[i] >= 'a' && buffer[i] <= 'z')
-                buffer[i] -= 32;
+                buffer[i] -= charDiff;
         }
     }
 
@@ -528,7 +524,7 @@ public:
 
     bool operator==(const char* const strBuf) const
     {
-        return (strBuf && ::strcmp(buffer, strBuf) == 0);
+        return (strBuf != nullptr && std::strcmp(buffer, strBuf) == 0);
     }
 
     bool operator==(const CarlaString& str) const
@@ -548,18 +544,7 @@ public:
 
     CarlaString& operator=(const char* const strBuf)
     {
-        ::free(buffer);
-
-        if (strBuf)
-        {
-            buffer = ::strdup(strBuf);
-            bufferLen = ::strlen(buffer);
-        }
-        else
-        {
-            buffer = ::strdup("");
-            bufferLen = 0;
-        }
+        _dup(strBuf);
 
         return *this;
     }
@@ -571,15 +556,13 @@ public:
 
     CarlaString& operator+=(const char* const strBuf)
     {
-        const size_t newBufSize = ::strlen(buffer) + (strBuf ? ::strlen(strBuf) : 0) + 1;
+        const size_t newBufSize = std::strlen(buffer) + ((strBuf != nullptr) ? std::strlen(strBuf) : 0) + 1;
         char         newBuf[newBufSize];
 
-        ::strcpy(newBuf, buffer);
-        ::strcat(newBuf, strBuf);
-        ::free(buffer);
+        std::strcpy(newBuf, buffer);
+        std::strcat(newBuf, strBuf);
 
-        buffer = ::strdup(newBuf);
-        bufferLen = ::strlen(buffer);
+        _dup(newBuf, newBufSize);
 
         return *this;
     }
@@ -591,11 +574,11 @@ public:
 
     CarlaString operator+(const char* const strBuf)
     {
-        const size_t newBufSize = ::strlen(buffer) + (strBuf ? ::strlen(strBuf) : 0) + 1;
+        const size_t newBufSize = std::strlen(buffer) + ((strBuf != nullptr) ? std::strlen(strBuf) : 0) + 1;
         char         newBuf[newBufSize];
 
-        ::strcpy(newBuf, buffer);
-        ::strcat(newBuf, strBuf);
+        std::strcpy(newBuf, buffer);
+        std::strcat(newBuf, strBuf);
 
         return CarlaString(newBuf);
     }
@@ -610,10 +593,58 @@ public:
 private:
     char*  buffer;
     size_t bufferLen;
+    bool   firstInit;
 
-    void _recalcLen()
+    void _init()
     {
-        bufferLen = ::strlen(buffer);
+        buffer    = nullptr;
+        bufferLen = 0;
+        firstInit = true;
+    }
+
+    // allocate string strBuf if not null
+    // size > 0 only if strBuf is valid
+    void _dup(const char* const strBuf, const size_t size = 0)
+    {
+        if (strBuf != nullptr)
+        {
+            // don't recreate string if contents match
+            if (firstInit || std::strcmp(buffer, strBuf) != 0)
+            {
+                if (! firstInit)
+                {
+                    CARLA_ASSERT(buffer);
+                    delete[] buffer;
+                }
+
+                bufferLen = (size > 0) ? size : std::strlen(strBuf);
+                buffer    = new char[bufferLen];
+
+                std::strcpy(buffer, strBuf);
+
+                firstInit = false;
+            }
+        }
+        else
+        {
+            CARLA_ASSERT(size == 0);
+
+            // don't recreate null string
+            if (firstInit || bufferLen != 0)
+            {
+                if (! firstInit)
+                {
+                    CARLA_ASSERT(buffer);
+                    delete[] buffer;
+                }
+
+                bufferLen = 0;
+                buffer    = new char[1];
+                buffer[0] = 0;
+
+                firstInit = false;
+            }
+        }
     }
 
     CARLA_LEAK_DETECTOR(CarlaString)
@@ -624,11 +655,11 @@ static inline
 CarlaString operator+(const char* const strBufBefore, const CarlaString& strAfter)
 {
     const char* const strBufAfter = (const char*)strAfter;
-    const size_t newBufSize = (strBufBefore ? ::strlen(strBufBefore) : 0) + ::strlen(strBufAfter) + 1;
+    const size_t newBufSize = ((strBufBefore != nullptr) ? std::strlen(strBufBefore) : 0) + std::strlen(strBufAfter) + 1;
     char         newBuf[newBufSize];
 
-    ::strcpy(newBuf, strBufBefore);
-    ::strcat(newBuf, strBufAfter);
+    std::strcpy(newBuf, strBufBefore);
+    std::strcat(newBuf, strBufAfter);
 
     return CarlaString(newBuf);
 }

@@ -2,25 +2,25 @@
  * Carla Native Plugins
  * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * any later version.
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the COPYING file
+ * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
 // for UINT32_MAX
 #define __STDC_LIMIT_MACROS
 #include <cstdint>
 
-#include "carla_midi.h"
 #include "carla_native.hpp"
+#include "carla_midi.h"
 
 #include "zynaddsubfx/Misc/Master.h"
 #include "zynaddsubfx/Misc/Util.h"

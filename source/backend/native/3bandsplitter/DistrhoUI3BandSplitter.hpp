@@ -36,12 +36,12 @@ public:
 protected:
 
     // Information
-    unsigned int d_width()
+    int d_width()
     {
         return DistrhoArtwork3BandSplitter::backgroundWidth;
     }
 
-    unsigned int d_height()
+    int d_height()
     {
         return DistrhoArtwork3BandSplitter::backgroundHeight;
     }

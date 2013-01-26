@@ -56,7 +56,8 @@ HEADERS += \
     ../../includes/carla_midi.h \
     ../../utils/carla_utils.hpp \
     ../../utils/carla_backend_utils.hpp \
-    ../../utils/carla_juce_utils.hpp
+    ../../utils/carla_juce_utils.hpp \
+    ../../utils/carla_osc_utils.hpp
 
 HEADERS += \
     plugin/DistrhoPluginInfo.h

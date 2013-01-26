@@ -100,7 +100,7 @@ void DistrhoPluginPingPongPan::d_setParameterValue(uint32_t index, float value)
     {
     case paramFreq:
         fFreq = value;
-        waveSpeed = (cf2PI * fFreq / 100.0f)/d_sampleRate();
+        waveSpeed = (cf2PI * fFreq / 100.0f)/(float)d_sampleRate();
         break;
     case paramWidth:
         fWidth = value;
@@ -126,7 +126,7 @@ void DistrhoPluginPingPongPan::d_setProgram(uint32_t index)
 
 void DistrhoPluginPingPongPan::d_activate()
 {
-    waveSpeed = (cf2PI * fFreq / 100.0f)/d_sampleRate();
+    waveSpeed = (cf2PI * fFreq / 100.0f)/(float)d_sampleRate();
 }
 
 void DistrhoPluginPingPongPan::d_deactivate()
@@ -143,7 +143,7 @@ void DistrhoPluginPingPongPan::d_run(float** inputs, float** outputs, uint32_t f
 
     for (uint32_t i=0; i < frames; i++)
     {
-        pan = std::min<float>(std::max<float>(sin(wavePos) * (fWidth/100.0f), -1.0f), 1.0f);
+        pan = std::fmin(std::fmax(std::sin(wavePos) * (fWidth/100.0f), -1.0f), 1.0f);
 
         if ((wavePos += waveSpeed) >= cf2PI)
             wavePos -= cf2PI;

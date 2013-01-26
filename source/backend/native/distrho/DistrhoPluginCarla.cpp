@@ -46,7 +46,6 @@ public:
         setCentralWidget(&widget);
         setFixedSize(ui.getWidth(), ui.getHeight());
         setWindowTitle(DISTRHO_PLUGIN_NAME);
-
     }
 
     ~UICarla()
@@ -111,7 +110,7 @@ protected:
     }
 # endif
 
-    void uiResize(unsigned int width, unsigned int height)
+    void uiResize(int width, int height)
     {
         setFixedSize(width, height);
     }
@@ -182,7 +181,7 @@ private:
 # endif
     }
 
-    static void uiResizeCallback(void* ptr, unsigned int width, unsigned int height)
+    static void uiResizeCallback(void* ptr, int width, int height)
     {
         if (UICarla* _this_ = (UICarla*)ptr)
             _this_->uiResize(width, height);

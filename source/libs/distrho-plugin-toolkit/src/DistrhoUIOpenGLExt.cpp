@@ -14,7 +14,7 @@
  * For a full copy of the license see the LGPL.txt file
  */
 
-#include "DistrhoDefines.h"
+#include "DistrhoMacros.h"
 
 #ifdef DISTRHO_UI_OPENGL
 
@@ -168,15 +168,15 @@ Size& Size::operator/=(int d)
 
 Size& Size::operator*=(float m)
 {
-    _width  *= m;
-    _height *= m;
+    _width  = (int)((float)_width  * m);
+    _height = (int)((float)_height * m);
     return *this;
 }
 
 Size& Size::operator/=(float d)
 {
-    _width  /= d;
-    _height /= d;
+    _width  = (int)((float)_width  / d);
+    _height = (int)((float)_height / d);
     return *this;
 }
 
@@ -729,7 +729,7 @@ public:
         if (view)
         {
 #if DISTRHO_OS_LINUX
-	    PuglInternals* impl = puglGetInternalsImpl(view);
+        PuglInternals* impl = puglGetInternalsImpl(view);
             Display* display    = impl->display;
             Window   window     = impl->win;
             XRaiseWindow(display, window);
@@ -1073,7 +1073,7 @@ void OpenGLExtUI::d_onDisplay()
 
             int layerDataSize   = knob->_layerSize * knob->_layerSize * 4;
             int imageDataSize   = layerDataSize * knob->_layerCount;
-            int imageDataOffset = imageDataSize - layerDataSize - layerDataSize * rint(vper*(knob->_layerCount-1));
+            int imageDataOffset = imageDataSize - layerDataSize - layerDataSize * int(vper * float(knob->_layerCount-1));
 
             glRasterPos2i(knob->_pos.getX(), knob->_pos.getY()+knob->_area.getHeight());
             glDrawPixels(knob->_layerSize, knob->_layerSize, knob->_image.getFormat(), knob->_image.getType(), knob->_image.getData() + imageDataOffset);
@@ -1093,10 +1093,10 @@ void OpenGLExtUI::d_onDisplay()
 
             if (slider->_endPos.getX() > slider->_startPos.getX())
                 // horizontal
-                x +=  rint(vper * (slider->_area.getWidth()-slider->getWidth()));
+                x +=  int(vper * float(slider->_area.getWidth() - slider->getWidth()));
             else
                 // vertical
-                y += slider->_area.getHeight() - rint(vper * (slider->_area.getHeight()-slider->getHeight()));
+                y += slider->_area.getHeight() - int(vper * float(slider->_area.getHeight() - slider->getHeight()));
 
 #if 0 // DEBUG
             glColor3i(160, 90, 161);
@@ -1175,8 +1175,8 @@ void OpenGLExtUI::d_onMotion(int x, int y)
 
                 if (movX != 0)
                 {
-                    int d = (d_uiGetModifiers() & MODIFIER_SHIFT) ? 2000 : 200;
-                    float value = knob->_value + (knob->_max - knob->_min) / d * movX;
+                    float d = (d_uiGetModifiers() & MODIFIER_SHIFT) ? 2000 : 200;
+                    float value = knob->_value + float(knob->_max - knob->_min) / d * float(movX);
 
                     if (value < knob->_min)
                         value = knob->_min;
@@ -1198,8 +1198,8 @@ void OpenGLExtUI::d_onMotion(int x, int y)
 
                 if (movY != 0)
                 {
-                    int d = (d_uiGetModifiers() & MODIFIER_SHIFT) ? 2000 : 200;
-                    float value = knob->_value + (knob->_max - knob->_min) / d * movY;
+                    float d = (d_uiGetModifiers() & MODIFIER_SHIFT) ? 2000 : 200;
+                    float value = knob->_value + float(knob->_max - knob->_min) / d * float(movY);
 
                     if (value < knob->_min)
                         value = knob->_min;
@@ -1241,10 +1241,10 @@ void OpenGLExtUI::d_onMotion(int x, int y)
 
                 if (horizontal)
                     // horizontal
-                    vper  = float(x - slider->_area.getX()) / slider->_area.getWidth();
+                    vper = float(x - slider->_area.getX()) / float(slider->_area.getWidth());
                 else
                     // vertical
-                    vper  = float(y - slider->_area.getY()) / slider->_area.getHeight();
+                    vper = float(y - slider->_area.getY()) / float(slider->_area.getHeight());
 
                 float value = slider->_max - vper * (slider->_max - slider->_min);
 
@@ -1397,10 +1397,10 @@ void OpenGLExtUI::d_onMouse(int button, bool press, int x, int y)
 
                 if (slider->_endPos.getX() > slider->_startPos.getX())
                     // horizontal
-                    vper  = float(x - slider->_area.getX()) / slider->_area.getWidth();
+                    vper = float(x - slider->_area.getX()) / float(slider->_area.getWidth());
                 else
                     // vertical
-                    vper  = float(y - slider->_area.getY()) / slider->_area.getHeight();
+                    vper = float(y - slider->_area.getY()) / float(slider->_area.getHeight());
 
                 float value = slider->_max - vper * (slider->_max - slider->_min);
 

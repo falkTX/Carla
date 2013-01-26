@@ -70,11 +70,13 @@ enum EnginePortType {
 
     /*!
     * Audio port type.
+    * \see CarlaEngineAudioPort
     */
     kEnginePortTypeAudio = 1,
 
     /*!
     * Event port type.
+    ** \see CarlaEngineEventPort
     */
     kEnginePortTypeEvent = 2
 };
@@ -254,9 +256,9 @@ struct EngineOptions {
           forceStereo(false),
           preferPluginBridges(false),
           preferUiBridges(true),
-#ifdef WANT_DSSI
+      #ifdef WANT_DSSI
           useDssiVstChunks(false),
-#endif
+      #endif
           maxParameters(MAX_DEFAULT_PARAMETERS),
           oscUiTimeout(4000),
           preferredBufferSize(512),
@@ -340,9 +342,8 @@ public:
     virtual void initBuffer(CarlaEngine* const engine) = 0;
 
 protected:
-    const bool isInput;
-    const ProcessMode processMode;
-    void* buffer;
+    const bool kIsInput;
+    const ProcessMode kProcessMode;
 
 private:
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEnginePort)
@@ -379,6 +380,9 @@ public:
      * Initialize the port's internal buffer for \a engine.
      */
     virtual void initBuffer(CarlaEngine* const engine);
+
+protected:
+    float* fBuffer;
 
 private:
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineAudioPort)
@@ -443,7 +447,8 @@ public:
     virtual void writeMidiEvent(const uint32_t time, const uint8_t channel, const uint8_t* const data, const uint8_t size);
 
 private:
-    const uint32_t m_maxEventCount;
+    const uint32_t kMaxEventCount;
+    EngineEvent*   fBuffer;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineEventPort)
 };
@@ -512,12 +517,12 @@ public:
     virtual const CarlaEnginePort* addPort(const EnginePortType portType, const char* const name, const bool isInput) = 0;
 
 protected:
-    const EngineType engineType;
-    const ProcessMode processMode;
+    const EngineType  kEngineType;
+    const ProcessMode kProcessMode;
 
 private:
-    bool     m_active;
-    uint32_t m_latency;
+    bool     fActive;
+    uint32_t fLatency;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineClient)
 };
@@ -575,12 +580,12 @@ public:
     /*!
      * Maximum client name size.
      */
-    virtual int maxClientNameSize();
+    virtual unsigned int maxClientNameSize();
 
     /*!
      * Maximum port name size.
      */
-    virtual int maxPortNameSize();
+    virtual unsigned int maxPortNameSize();
 
     /*!
      * Current number of plugins loaded.
@@ -658,13 +663,13 @@ public:
      * Add new plugin.\n
      * Returns the id of the plugin, or -1 if the operation failed.
      */
-    short addPlugin(const BinaryType btype, const PluginType ptype, const char* const filename, const char* const name, const char* const label, void* const extra = nullptr);
+    int addPlugin(const BinaryType btype, const PluginType ptype, const char* const filename, const char* const name, const char* const label, void* const extra = nullptr);
 
     /*!
      * Add new plugin, using native binary type.\n
      * Returns the id of the plugin, or -1 if the operation failed.
      */
-    short addPlugin(const PluginType ptype, const char* const filename, const char* const name, const char* const label, void* const extra = nullptr)
+    int addPlugin(const PluginType ptype, const char* const filename, const char* const name, const char* const label, void* const extra = nullptr)
     {
         return addPlugin(BINARY_NATIVE, ptype, filename, name, label, extra);
     }
@@ -672,7 +677,7 @@ public:
     /*!
      * Remove plugin with id \a id.
      */
-    bool removePlugin(const unsigned short id);
+    bool removePlugin(const unsigned int id);
 
     /*!
      * Remove all plugins.
@@ -842,6 +847,8 @@ protected:
 
 #ifndef BUILD_BRIDGE
     // Rack mode data
+    EngineEvent* getRackEventBuffer(const bool isInput);
+
     //static const unsigned short MAX_EVENTS = 1024;
     //EngineEvent fRackEventsIn[MAX_EVENTS];
     //EngineEvent fRackEventsOut[MAX_EVENTS];
@@ -919,6 +926,7 @@ private:
     void osc_send_bridge_set_inpeak(const int32_t portId);
     void osc_send_bridge_set_outpeak(const int32_t portId);
 #else
+public:
     void osc_send_control_add_plugin_start(const int32_t pluginId, const char* const pluginName);
     void osc_send_control_add_plugin_end(const int32_t pluginId);
     void osc_send_control_remove_plugin(const int32_t pluginId);

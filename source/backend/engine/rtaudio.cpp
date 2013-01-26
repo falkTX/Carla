@@ -53,12 +53,12 @@ public:
 
         switch (portType)
         {
-        case EnginePortTypeNull:
+        case kEnginePortTypeNull:
             break;
-        case EnginePortTypeAudio:
-            return new CarlaEngineAudioPort(isInput, processMode);
-        case EnginePortTypeEvent:
-            return new CarlaEngineEventPort(isInput, processMode);
+        case kEnginePortTypeAudio:
+            return new CarlaEngineAudioPort(isInput, kProcessMode);
+        case kEnginePortTypeEvent:
+            return new CarlaEngineEventPort(isInput, kProcessMode);
         }
 
         qCritical("CarlaEngineRtAudioClient::addPort(%s, \"%s\", %s) - invalid type", EnginePortType2Str(portType), name, bool2str(isInput));
@@ -91,8 +91,8 @@ public:
         m_outBuf2 = nullptr;
 
         // just to make sure
-        options.forceStereo = true;
-        options.processMode = PROCESS_MODE_CONTINUOUS_RACK;
+        fOptions.forceStereo = true;
+        fOptions.processMode = PROCESS_MODE_CONTINUOUS_RACK;
     }
 
     ~CarlaEngineRtAudio()
@@ -112,8 +112,8 @@ public:
             return false;
         }
 
-        bufferSize = options.preferredBufferSize;
-        sampleRate = options.preferredSampleRate;
+        fBufferSize = fOptions.preferredBufferSize;
+        fSampleRate = fOptions.preferredSampleRate;
 
         RtAudio::StreamParameters iParams, oParams;
         iParams.deviceId = audio.getDefaultInputDevice();
@@ -139,7 +139,7 @@ public:
             m_audioInterleaved = true;
 
         try {
-            audio.openStream(&oParams, &iParams, RTAUDIO_FLOAT32, sampleRate, &bufferSize, carla_rtaudio_process_callback, this, &rtOptions);
+            audio.openStream(&oParams, &iParams, RTAUDIO_FLOAT32, fSampleRate, &fBufferSize, carla_rtaudio_process_callback, this, &rtOptions);
         }
         catch (RtError& e)
         {
@@ -156,12 +156,12 @@ public:
             return false;
         }
 
-        sampleRate = audio.getStreamSampleRate();
+        fSampleRate = audio.getStreamSampleRate();
 
-        m_inBuf1  = new float [bufferSize];
-        m_inBuf2  = new float [bufferSize];
-        m_outBuf1 = new float [bufferSize];
-        m_outBuf2 = new float [bufferSize];
+        m_inBuf1  = new float[fBufferSize];
+        m_inBuf2  = new float[fBufferSize];
+        m_outBuf1 = new float[fBufferSize];
+        m_outBuf2 = new float[fBufferSize];
 
         //midiIn = new MidiInAlsa(clientName, 512);
         //midiIn->openVirtualPort("control-in");
@@ -171,10 +171,10 @@ public:
         //midiOut->openVirtualPort("control-out");
         //midiOut->openVirtualPort("midi-out");
 
-        name = clientName;
-        name.toBasic();
+        fName = clientName;
+        fName.toBasic();
 
-        CarlaEngine::init(name);
+        CarlaEngine::init(fName);
         return true;
     }
 
@@ -245,12 +245,12 @@ public:
 
     EngineType type() const
     {
-        return EngineTypeRtAudio;
+        return kEngineTypeRtAudio;
     }
 
     CarlaEngineClient* addClient(CarlaPlugin* const)
     {
-        return new CarlaEngineRtAudioClient(EngineTypeRtAudio, options.processMode);
+        return new CarlaEngineRtAudioClient(kEngineTypeRtAudio, fOptions.processMode);
     }
 
     // -------------------------------------
@@ -294,7 +294,7 @@ protected:
         float* outBuf[2] = { m_outBuf1, m_outBuf2 };
 
         // initialize events input
-        memset(rackEventsIn, 0, sizeof(EngineEvent)*MAX_EVENTS);
+        //memset(rackEventsIn, 0, sizeof(EngineEvent)*MAX_EVENTS);
         {
             // TODO
         }

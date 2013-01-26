@@ -2,17 +2,17 @@
  * Carla Engine
  * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * any later version.
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the COPYING file
+ * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
 #ifndef __CARLA_ENGINE_INTERNAL_HPP__
@@ -39,14 +39,14 @@ const char* EngineType2Str(const EngineType type)
 {
     switch (type)
     {
-    case EngineTypeNull:
-        return "EngineTypeNull";
-    case EngineTypeJack:
-        return "EngineTypeJack";
-    case EngineTypeRtAudio:
-        return "EngineTypeRtAudio";
-    case EngineTypePlugin:
-        return "EngineTypePlugin";
+    case kEngineTypeNull:
+        return "kEngineTypeNull";
+    case kEngineTypeJack:
+        return "kEngineTypeJack";
+    case kEngineTypeRtAudio:
+        return "kEngineTypeRtAudio";
+    case kEngineTypePlugin:
+        return "kEngineTypePlugin";
     }
 
     qWarning("CarlaBackend::EngineType2Str(%i) - invalid type", type);
@@ -58,12 +58,12 @@ const char* EnginePortType2Str(const EnginePortType type)
 {
     switch (type)
     {
-    case EnginePortTypeNull:
-        return "EnginePortTypeNull";
-    case EnginePortTypeAudio:
-        return "EnginePortTypeAudio";
-    case EnginePortTypeEvent:
-        return "EnginePortTypeEvent";
+    case kEnginePortTypeNull:
+        return "kEnginePortTypeNull";
+    case kEnginePortTypeAudio:
+        return "kEnginePortTypeAudio";
+    case kEnginePortTypeEvent:
+        return "kEnginePortTypeEvent";
     }
 
     qWarning("CarlaBackend::EnginePortType2Str(%i) - invalid type", type);
@@ -75,18 +75,18 @@ const char* EngineControlEventType2Str(const EngineControlEventType type)
 {
     switch (type)
     {
-    case EngineControlEventTypeNull:
-        return "EngineNullEvent";
-    case EngineControlEventTypeParameter:
-        return "EngineControlEventTypeParameter";
-    case EngineControlEventTypeMidiBank:
-        return "EngineControlEventTypeMidiBank";
-    case EngineControlEventTypeMidiProgram:
-        return "EngineControlEventTypeMidiProgram";
-    case EngineControlEventTypeAllSoundOff:
-        return "EngineControlEventTypeAllSoundOff";
-    case EngineControlEventTypeAllNotesOff:
-        return "EngineControlEventTypeAllNotesOff";
+    case kEngineControlEventTypeNull:
+        return "kEngineNullEvent";
+    case kEngineControlEventTypeParameter:
+        return "kEngineControlEventTypeParameter";
+    case kEngineControlEventTypeMidiBank:
+        return "kEngineControlEventTypeMidiBank";
+    case kEngineControlEventTypeMidiProgram:
+        return "kEngineControlEventTypeMidiProgram";
+    case kEngineControlEventTypeAllSoundOff:
+        return "kEngineControlEventTypeAllSoundOff";
+    case kEngineControlEventTypeAllNotesOff:
+        return "kEngineControlEventTypeAllNotesOff";
     }
 
     qWarning("CarlaBackend::EngineControlEventType2Str(%i) - invalid type", type);
@@ -103,6 +103,7 @@ const char* EngineControlEventType2Str(const EngineControlEventType type)
 
 const uint32_t       PATCHBAY_BUFFER_SIZE = 128;
 const unsigned short PATCHBAY_EVENT_COUNT = 512;
+const unsigned short RACK_EVENT_COUNT     = 1024;
 
 #if 0
 enum EnginePostEventType {

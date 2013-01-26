@@ -152,6 +152,8 @@ const char* InternalParametersIndex2Str(const InternalParametersIndex& index)
         return "PARAMETER_BALANCE_RIGHT";
     case PARAMETER_PANNING:
         return "PARAMETER_PANNING";
+    case PARAMETER_MAX:
+        return "PARAMETER_MAX";
     }
 
     qWarning("CarlaBackend::InternalParametersIndex2Str(%i) - invalid index", index);
@@ -300,7 +302,7 @@ const char* ProcessMode2Str(const ProcessMode& mode)
 // -------------------------------------------------
 
 static inline
-uintptr_t getAddressFromPointer(void* const ptr)
+uintptr_t getAddressFromPointer(void* ptr)
 {
     qDebug("CarlaBackend::getAddressFromPointer(%p)", ptr);
     CARLA_ASSERT(ptr != nullptr);
@@ -310,7 +312,7 @@ uintptr_t getAddressFromPointer(void* const ptr)
 }
 
 static inline
-void* getPointerFromAddress(const uintptr_t& addr)
+void* getPointerFromAddress(uintptr_t& addr)
 {
     CARLA_ASSERT(addr != 0);
 

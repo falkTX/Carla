@@ -166,17 +166,17 @@ void DistrhoPlugin3BandEQ::d_setParameterValue(uint32_t index, float value)
         outVol  = std::exp( (fMaster/48.0f) * 48 / cfAMP_DB);
         break;
     case paramLowMidFreq:
-        fLowMidFreq = std::min<float>(value, fMidHighFreq);
+        fLowMidFreq = std::fmin(value, fMidHighFreq);
         freqLP = fLowMidFreq; //fLowMidFreq * (fLowMidFreq / 24000.0f) * (fLowMidFreq / 24000.0f);
-        xLP  = std::exp(-2.0 * cfPI * freqLP / d_sampleRate());
-        a0LP = 1.0 - xLP;
+        xLP  = std::exp(-2.0f * cfPI * freqLP / (float)d_sampleRate());
+        a0LP = 1.0f - xLP;
         b1LP = -xLP;
         break;
     case paramMidHighFreq:
-        fMidHighFreq = std::max<float>(value, fLowMidFreq);
+        fMidHighFreq = std::fmax(value, fLowMidFreq);
         freqHP = fMidHighFreq; //fMidHighFreq * (fMidHighFreq / 24000.0f) * (fMidHighFreq / 24000.0f);
-        xHP  = std::exp(-2.0 * cfPI * freqHP / d_sampleRate());
-        a0HP = 1.0 - xHP;
+        xHP  = std::exp(-2.0f * cfPI * freqHP / (float)d_sampleRate());
+        a0HP = 1.0f - xHP;
         b1HP = -xHP;
         break;
     }
@@ -209,11 +209,11 @@ void DistrhoPlugin3BandEQ::d_setProgram(uint32_t index)
 
 void DistrhoPlugin3BandEQ::d_activate()
 {
-    xLP  = std::exp(-2.0 * cfPI * freqLP / d_sampleRate());
+    xLP  = std::exp(-2.0f * cfPI * freqLP / (float)d_sampleRate());
     a0LP = 1.0f - xLP;
     b1LP = -xLP;
 
-    xHP  = std::exp(-2.0 * cfPI * freqHP / d_sampleRate());
+    xHP  = std::exp(-2.0f * cfPI * freqHP / (float)d_sampleRate());
     a0HP = 1.0f - xHP;
     b1HP = -xHP;
 }
