@@ -1,9 +1,7 @@
-[Project]
-Manager=KDevGenericManager
-Name=Carla
-
 [Filters]
 Excludes=*/.*,*/*~,*/*.pyc,*/ui_*.py,*/__pycache__/
 
 [Project]
+Manager=
+Name=source
 VersionControlSupport=kdevgit

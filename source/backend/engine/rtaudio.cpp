@@ -1,6 +1,6 @@
 /*
  * Carla RtAudio Engine
- * Copyright (C) 2012 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -9,7 +9,7 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * For a full copy of the GNU General Public License see the COPYING file
@@ -36,32 +36,32 @@ CARLA_BACKEND_START_NAMESPACE
 class CarlaEngineRtAudioClient : public CarlaEngineClient
 {
 public:
-    CarlaEngineRtAudioClient(const CarlaEngineType engineType, const ProcessMode processMode)
+    CarlaEngineRtAudioClient(const EngineType engineType, const ProcessMode processMode)
         : CarlaEngineClient(engineType, processMode)
     {
+        qDebug("CarlaEngineRtAudioClient::CarlaEngineRtAudioClient(%s, %s)", EngineType2Str(engineType), ProcessMode2Str(processMode));
     }
 
     ~CarlaEngineRtAudioClient()
     {
+        qDebug("CarlaEngineRtAudioClient::~CarlaEngineRtAudioClient()");
     }
 
-    const CarlaEnginePort* addPort(const CarlaEnginePortType portType, const char* const name, const bool isInput)
+    const CarlaEnginePort* addPort(const EnginePortType portType, const char* const name, const bool isInput)
     {
-        qDebug("CarlaEngineRtAudioClient::addPort(%s, \"%s\", %s)", CarlaEnginePortType2Str(portType), name, bool2str(isInput));
+        qDebug("CarlaEngineRtAudioClient::addPort(%s, \"%s\", %s)", EnginePortType2Str(portType), name, bool2str(isInput));
 
         switch (portType)
         {
-        case CarlaEnginePortTypeNull:
+        case EnginePortTypeNull:
             break;
-        case CarlaEnginePortTypeAudio:
+        case EnginePortTypeAudio:
             return new CarlaEngineAudioPort(isInput, processMode);
-        case CarlaEnginePortTypeControl:
-            return new CarlaEngineControlPort(isInput, processMode);
-        case CarlaEnginePortTypeMIDI:
-            return new CarlaEngineMidiPort(isInput, processMode);
+        case EnginePortTypeEvent:
+            return new CarlaEngineEventPort(isInput, processMode);
         }
 
-        qCritical("CarlaEngineRtAudioClient::addPort(%i, \"%s\", %s) - invalid type", portType, name, bool2str(isInput));
+        qCritical("CarlaEngineRtAudioClient::addPort(%s, \"%s\", %s) - invalid type", EnginePortType2Str(portType), name, bool2str(isInput));
         return nullptr;
     }
 
@@ -72,8 +72,6 @@ private:
 // -------------------------------------------------------------------------------------------------------------------
 // RtAudio Engine
 
-#if 0
-
 class CarlaEngineRtAudio : public CarlaEngine
 {
 public:
@@ -81,10 +79,10 @@ public:
         : CarlaEngine(),
           audio(api)
     {
-        qDebug("CarlaEngineRtAudio::CarlaEngineRtAudio()");
+        qDebug("CarlaEngineRtAudio::CarlaEngineRtAudio(%i)", api);
 
-        midiIn  = nullptr;
-        midiOut = nullptr;
+        evIn  = nullptr;
+        evOut = nullptr;
 
         m_audioInterleaved = false;
         m_inBuf1  = nullptr;
@@ -245,14 +243,14 @@ public:
         return false;
     }
 
-    CarlaEngineType type() const
+    EngineType type() const
     {
-        return CarlaEngineTypeRtAudio;
+        return EngineTypeRtAudio;
     }
 
     CarlaEngineClient* addClient(CarlaPlugin* const)
     {
-        return new CarlaEngineRtAudioClient(CarlaEngineTypeRtAudio, options.processMode);
+        return new CarlaEngineRtAudioClient(EngineTypeRtAudio, options.processMode);
     }
 
     // -------------------------------------
@@ -295,14 +293,8 @@ protected:
         float* inBuf[2]  = { m_inBuf1, m_inBuf2 };
         float* outBuf[2] = { m_outBuf1, m_outBuf2 };
 
-        // initialize control input
-        memset(rackControlEventsIn, 0, sizeof(CarlaEngineControlEvent)*MAX_CONTROL_EVENTS);
-        {
-            // TODO
-        }
-
-        // initialize midi input
-        memset(rackMidiEventsIn, 0, sizeof(CarlaEngineMidiEvent)*MAX_MIDI_EVENTS);
+        // initialize events input
+        memset(rackEventsIn, 0, sizeof(EngineEvent)*MAX_EVENTS);
         {
             // TODO
         }
@@ -347,8 +339,8 @@ protected:
 
 private:
     RtAudio audio;
-    MidiInApi*  midiIn;
-    MidiOutApi* midiOut;
+    ScopedPointer<MidiInApi>  evIn;
+    ScopedPointer<MidiOutApi> evOut;
 
     bool   m_audioInterleaved;
     float* m_inBuf1;
@@ -362,9 +354,25 @@ private:
         _this_->handleProcessCallback(outputBuffer, inputBuffer, nframes, streamTime, status);
         return 0;
     }
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineRtAudio)
 };
 
 // -----------------------------------------
+
+static std::vector<RtAudio::Api> rtApis;
+
+static void initRtApis()
+{
+    static bool initiated = false;
+
+    if (! initiated)
+    {
+        initiated = true;
+
+        RtAudio::getCompiledApi(rtApis);
+    }
+}
 
 CarlaEngine* CarlaEngine::newRtAudio(RtAudioApi api)
 {
@@ -403,19 +411,18 @@ CarlaEngine* CarlaEngine::newRtAudio(RtAudioApi api)
 
 unsigned int CarlaEngine::getRtAudioApiCount()
 {
-    std::vector<RtAudio::Api> apis;
-    RtAudio::getCompiledApi(apis);
-    return apis.size();
+    initRtApis();
+
+    return rtApis.size();
 }
 
 const char* CarlaEngine::getRtAudioApiName(unsigned int index)
 {
-    std::vector<RtAudio::Api> apis;
-    RtAudio::getCompiledApi(apis);
+    initRtApis();
 
-    if (index < apis.size())
+    if (index < rtApis.size())
     {
-        const RtAudio::Api& api(apis[index]);
+        const RtAudio::Api& api(rtApis[index]);
 
         switch (api)
         {
@@ -442,7 +449,8 @@ const char* CarlaEngine::getRtAudioApiName(unsigned int index)
 
     return nullptr;
 }
-#endif
+
+// -----------------------------------------
 
 CARLA_BACKEND_END_NAMESPACE
 

@@ -13,7 +13,7 @@ BUILD_CXX_FLAGS += -fvisibility=hidden -fPIC -I. -I.. -I../../includes -I../../u
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtCore QtGui)
 
 LINK_FLAGS      += -shared
-LINK_FLAGS      += $(shell pkg-config --libs QtCore QtGui)
+LINK_FLAGS      += $(shell pkg-config --libs QtCore QtGui) -lGL
 
 ifeq ($(HAVE_ZYN_DEPS),true)
 ZYN_CXX_FLAGS    = $(BUILD_CXX_FLAGS)

@@ -2,50 +2,32 @@
  * Carla Plugin API
  * Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * any later version.
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the COPYING file
+ * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
 #ifndef __CARLA_PLUGIN_HPP__
 #define __CARLA_PLUGIN_HPP__
 
-//#include "carla_midi.h"
-//#include "carla_engine.hpp"
+#include "carla_backend.hpp"
+#include "carla_native.h"
+#include "carla_utils.hpp"
 
-//#include "carla_plugin_thread.hpp"
-
-# include "carla_backend.hpp"
-
-#ifdef BUILD_BRIDGE
-# include "carla_bridge_osc.hpp"
-#else
-# include "carla_osc_utils.hpp"
+#ifdef WANT_LADSPA
+# include "ladspa_rdf.hpp"
 #endif
 
-// common includes
-//#include <cmath>
-//#include <vector>
-//#include <QtCore/QMutex>
-//#include <QtGui/QMainWindow>
-
-//#ifdef Q_WS_X11
-//# include <QtGui/QX11EmbedContainer>
-//typedef QX11EmbedContainer GuiContainer;
-//#else
-//# include <QtGui/QWidget>
-//typedef QWidget GuiContainer;
-//#endif
-
-typedef struct _PluginDescriptor PluginDescriptor;
+// Avoid including liblo here
+typedef void* lo_address;
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -53,134 +35,48 @@ CARLA_BACKEND_START_NAMESPACE
 } // Fix editor indentation
 #endif
 
-class CarlaEngineAudioPort;
-class CarlaEngineEventPort;
-
-/*!
- * @defgroup CarlaPluginAPI Carla Plugin API
- *
- * The Carla Plugin API.
- * @{
- */
-
-#define CARLA_PROCESS_CONTINUE_CHECK if (! m_enabled) { x_engine->callback(CALLBACK_DEBUG, m_id, m_enabled, 0, 0.0, nullptr); return; }
-
-const unsigned short MAX_MIDI_EVENTS = 512;
-const unsigned short MAX_POST_EVENTS = 152;
-
 #ifndef BUILD_BRIDGE
 enum PluginBridgeInfoType {
-    PluginBridgeAudioCount,
-    PluginBridgeMidiCount,
-    PluginBridgeParameterCount,
-    PluginBridgeProgramCount,
-    PluginBridgeMidiProgramCount,
-    PluginBridgePluginInfo,
-    PluginBridgeParameterInfo,
-    PluginBridgeParameterData,
-    PluginBridgeParameterRanges,
-    PluginBridgeProgramInfo,
-    PluginBridgeMidiProgramInfo,
-    PluginBridgeConfigure,
-    PluginBridgeSetParameterValue,
-    PluginBridgeSetDefaultValue,
-    PluginBridgeSetProgram,
-    PluginBridgeSetMidiProgram,
-    PluginBridgeSetCustomData,
-    PluginBridgeSetChunkData,
-    PluginBridgeUpdateNow,
-    PluginBridgeError
+    kPluginBridgeAudioCount,
+    kPluginBridgeMidiCount,
+    kPluginBridgeParameterCount,
+    kPluginBridgeProgramCount,
+    kPluginBridgeMidiProgramCount,
+    kPluginBridgePluginInfo,
+    kPluginBridgeParameterInfo,
+    kPluginBridgeParameterData,
+    kPluginBridgeParameterRanges,
+    kPluginBridgeProgramInfo,
+    kPluginBridgeMidiProgramInfo,
+    kPluginBridgeConfigure,
+    kPluginBridgeSetParameterValue,
+    kPluginBridgeSetDefaultValue,
+    kPluginBridgeSetProgram,
+    kPluginBridgeSetMidiProgram,
+    kPluginBridgeSetCustomData,
+    kPluginBridgeSetChunkData,
+    kPluginBridgeUpdateNow,
+    kPluginBridgeError
 };
 #endif
 
 enum PluginPostEventType {
-    PluginPostEventNull,
-    PluginPostEventDebug,
-    PluginPostEventParameterChange,   // param, N, value
-    PluginPostEventProgramChange,     // index
-    PluginPostEventMidiProgramChange, // index
-    PluginPostEventNoteOn,            // channel, note, velo
-    PluginPostEventNoteOff            // channel, note
+    kPluginPostEventNull,
+    kPluginPostEventDebug,
+    kPluginPostEventParameterChange,   // param, N, value
+    kPluginPostEventProgramChange,     // index
+    kPluginPostEventMidiProgramChange, // index
+    kPluginPostEventNoteOn,            // channel, note, velo
+    kPluginPostEventNoteOff            // channel, note
 };
 
-struct PluginAudioData {
-    uint32_t count;
-    uint32_t* rindexes;
-    CarlaEngineAudioPort** ports;
+// -----------------------------------------------------------------------
 
-    PluginAudioData()
-        : count(0),
-          rindexes(nullptr),
-          ports(nullptr) {}
-};
-
-struct PluginEventData {
-    CarlaEngineEventPort* portIn;
-    CarlaEngineEventPort* portOut;
-
-    PluginEventData()
-        : portIn(nullptr),
-          portOut(nullptr) {}
-};
-
-struct PluginParameterData {
-    uint32_t count;
-    ParameterData* data;
-    ParameterRanges* ranges;
-
-    PluginParameterData()
-        : count(0),
-          data(nullptr),
-          ranges(nullptr) {}
-};
-
-struct PluginProgramData {
-    uint32_t count;
-    int32_t current;
-    const char** names;
-
-    PluginProgramData()
-        : count(0),
-          current(-1),
-          names(nullptr) {}
-};
-
-struct PluginMidiProgramData {
-    uint32_t count;
-    int32_t current;
-    MidiProgramData* data;
-
-    PluginMidiProgramData()
-        : count(0),
-          current(-1),
-          data(nullptr) {}
-};
-
-struct PluginPostEvent {
-    PluginPostEventType type;
-    int32_t value1;
-    int32_t value2;
-    double  value3;
-
-    PluginPostEvent()
-        : type(PluginPostEventNull),
-          value1(-1),
-          value2(-1),
-          value3(0.0) {}
-};
-
-struct ExternalMidiNote {
-    int8_t channel; // invalid = -1
-    uint8_t note;
-    uint8_t velo;
-
-    ExternalMidiNote()
-        : channel(-1),
-          note(0),
-          velo(0) {}
-};
-
-struct CarlaPluginPrivateData;
+/*!
+ * Protected data used in CarlaPlugin and subclasses.\n
+ * Non-plugin code MUST NEVER have direct access to this.
+ */
+struct CarlaPluginProtectedData;
 
 /*!
  * \class CarlaPlugin
@@ -199,12 +95,12 @@ public:
      * This is the constructor of the base plugin class.
      *
      * \param engine The engine which this plugin belongs to, must not be null
-     * \param id     The 'id' of this plugin, must between 0 and CarlaEngine::maxPluginNumber()
+     * \param id     The 'id' of this plugin, must be between 0 and CarlaEngine::maxPluginNumber()
      */
     CarlaPlugin(CarlaEngine* const engine, const unsigned short id);
 
     /*!
-     * This is the de-constructor of the base plugin class.
+     * This is the destructor of the base plugin class.
      */
     virtual ~CarlaPlugin();
 
@@ -217,11 +113,14 @@ public:
      * \note Plugin bridges will return their respective plugin type, there is no plugin type such as "bridge".\n
      *       To check if a plugin is a bridge use:
      * \code
-     * if (m_hints & PLUGIN_IS_BRIDGE)
+     * if (hints() & PLUGIN_IS_BRIDGE)
      *     ...
      * \endcode
      */
-    PluginType type() const;
+    virtual PluginType type() const
+    {
+        return PLUGIN_NONE;
+    }
 
     /*!
      * Get the plugin's id (as passed in the constructor).
@@ -236,6 +135,13 @@ public:
      * \see PluginHints
      */
     unsigned int hints() const;
+
+    /*!
+     * Get the plugin's options.
+     *
+     * \see PluginOptions
+     */
+    unsigned int options() const;
 
     /*!
      * Check if the plugin is enabled.
@@ -339,12 +245,12 @@ public:
     /*!
      * Get the parameter data of \a parameterId.
      */
-    const ParameterData* parameterData(const uint32_t parameterId) const;
+    const ParameterData& parameterData(const uint32_t parameterId) const;
 
     /*!
      * Get the parameter ranges of \a parameterId.
      */
-    const ParameterRanges* parameterRanges(const uint32_t parameterId) const;
+    const ParameterRanges& parameterRanges(const uint32_t parameterId) const;
 
     /*!
      * Check if parameter \a parameterId is of output type.
@@ -356,14 +262,14 @@ public:
      *
      * \see getMidiProgramName()
      */
-    const MidiProgramData* midiProgramData(const uint32_t index) const;
+    const MidiProgramData& midiProgramData(const uint32_t index) const;
 
     /*!
      * Get the custom data set at \a index.
      *
      * \see setCustomData()
      */
-    const CustomData* customData(const size_t index) const;
+    const CustomData& customData(const size_t index) const;
 
     /*!
      * Get the complete plugin chunk data into \a dataPtr.
@@ -458,11 +364,6 @@ public:
      */
     void getParameterCountInfo(uint32_t* const ins, uint32_t* const outs, uint32_t* const total);
 
-    /*!
-     * Get information about the plugin's custom GUI, if provided.
-     */
-    //virtual void getGuiInfo(GuiType* const type, bool* const resizable);
-
     // -------------------------------------------------------------------
     // Set data (internal stuff)
 
@@ -531,7 +432,7 @@ public:
     /*!
      * BridgePlugin call used to set internal data.
      */
-    virtual int setOscBridgeInfo(const PluginBridgeInfoType type, const int argc, const lo_arg* const* const argv, const char* const types);
+    //virtual int setOscBridgeInfo(const PluginBridgeInfoType type, const int argc, const lo_arg* const* const argv, const char* const types);
 #endif
 
     // -------------------------------------------------------------------
@@ -705,7 +606,7 @@ public:
      * Update the plugin's internal OSC data according to \a source and \a url.\n
      * This is used for OSC-GUI bridges.
      */
-    void updateOscData(const lo_address source, const char* const url);
+    void updateOscData(const lo_address& source, const char* const url);
 
     /*!
      * Free the plugin's internal OSC memory data.
@@ -821,14 +722,6 @@ public:
     const char* libError(const char* const filename);
 
     // -------------------------------------------------------------------
-    // Locks
-
-    void engineProcessLock();
-    void engineProcessUnlock();
-    void engineMidiLock();
-    void engineMidiUnlock();
-
-    // -------------------------------------------------------------------
     // Plugin initializers
 
     struct Initializer {
@@ -857,227 +750,12 @@ public:
 
     // -------------------------------------------------------------------
 
-    /*!
-     * \class ScopedDisabler
-     *
-     * \brief Carla plugin scoped disabler
-     *
-     * This is a handy class that temporarily disables a plugin during a function scope.\n
-     * It should be used when the plugin needs reload or state change, something like this:
-     * \code
-     * {
-     *      const CarlaPlugin::ScopedDisabler m(plugin);
-     *      plugin->setChunkData(data);
-     * }
-     * \endcode
-     */
-    class ScopedDisabler
-    {
-    public:
-        /*!
-         * Disable plugin \a plugin if \a disable is true.
-         * The plugin is re-enabled in the deconstructor of this class if \a disable is true.
-         *
-         * \param plugin The plugin to disable
-         * \param disable Wherever to disable the plugin or not, true by default
-         */
-        ScopedDisabler(CarlaPlugin* const plugin, const bool disable = true)
-            : m_plugin(plugin),
-              m_disable(disable)
-        {
-            if (m_disable)
-            {
-                m_plugin->engineProcessLock();
-                m_plugin->setEnabled(false);
-                m_plugin->engineProcessUnlock();
-            }
-        }
-
-        ~ScopedDisabler()
-        {
-            if (m_disable)
-            {
-                m_plugin->engineProcessLock();
-                m_plugin->setEnabled(true);
-                m_plugin->engineProcessUnlock();
-            }
-        }
-
-    private:
-        CarlaPlugin* const m_plugin;
-        const bool m_disable;
-    };
-
-    // -------------------------------------------------------------------
-
 protected:
-    CarlaPluginPrivateData* const data;
-    friend class CarlaPluginInternal;
-
-#if 0
-    unsigned short m_id;
-    CarlaEngine* const x_engine;
-    CarlaEngineClient* x_client;
-    double x_dryWet, x_volume;
-    double x_balanceLeft, x_balanceRight;
-
-    PluginType m_type;
-    unsigned int m_hints;
-
-    bool m_active;
-    bool m_activeBefore;
-    bool m_enabled;
-
-    void* m_lib;
-    const char* m_name;
-    const char* m_filename;
-
-    // options
-    int8_t m_ctrlInChannel;
-    bool   m_fixedBufferSize;
-    bool   m_processHighPrecision;
-
-    // latency
-    uint32_t m_latency;
-    float**  m_latencyBuffers;
-
-    // -------------------------------------------------------------------
-    // Storage Data
-
-    PluginAudioData aIn;
-    PluginAudioData aOut;
-    PluginMidiData midi;
-    PluginParameterData param;
-    PluginProgramData prog;
-    PluginMidiProgramData midiprog;
-    std::vector<CustomData> custom;
-
-    // -------------------------------------------------------------------
-    // Extra
-
-    struct {
-        CarlaOscData data;
-        CarlaPluginThread* thread;
-    } osc;
-
-    struct {
-        QMutex mutex;
-        PluginPostEvent data[MAX_POST_EVENTS];
-    } postEvents;
-
-    ExternalMidiNote extMidiNotes[MAX_MIDI_EVENTS];
-
-    // -------------------------------------------------------------------
-    // Utilities
-
-    static double fixParameterValue(double& value, const ParameterRanges& ranges)
-    {
-        if (value < ranges.min)
-            value = ranges.min;
-        else if (value > ranges.max)
-            value = ranges.max;
-        return value;
-    }
-
-    static float fixParameterValue(float& value, const ParameterRanges& ranges)
-    {
-        if (value < ranges.min)
-            value = ranges.min;
-        else if (value > ranges.max)
-            value = ranges.max;
-        return value;
-    }
-
-    friend class CarlaEngine; // FIXME
-    friend class CarlaEngineJack;
-#endif
-};
-
-#if 0
-/*!
- * \class CarlaPluginGUI
- *
- * \brief Carla Backend gui plugin class
- *
- * \see CarlaPlugin
- */
-class CarlaPluginGUI : public QMainWindow
-{
-public:
-    /*!
-     * \class Callback
-     *
-     * \brief Carla plugin GUI callback
-     */
-    class Callback
-    {
-    public:
-        virtual ~Callback() {}
-        virtual void guiClosedCallback() = 0;
-    };
-
-    // -------------------------------------------------------------------
-    // Constructor and destructor
-
-    /*!
-     * TODO
-     */
-    CarlaPluginGUI(QWidget* const parent, Callback* const callback);
-
-    /*!
-     * TODO
-     */
-    ~CarlaPluginGUI();
-
-    // -------------------------------------------------------------------
-    // Get data
-
-    /*!
-     * TODO
-     */
-    GuiContainer* getContainer() const;
-
-    /*!
-     * TODO
-     */
-    WId getWinId() const;
-
-    // -------------------------------------------------------------------
-    // Set data
-
-    /*!
-     * TODO
-     */
-    void setNewSize(const int width, const int height);
-
-    /*!
-     * TODO
-     */
-    void setResizable(const bool resizable);
-
-    /*!
-     * TODO
-     */
-    void setTitle(const char* const title);
-
-    /*!
-     * TODO
-     */
-    void setVisible(const bool yesNo);
-
-    // -------------------------------------------------------------------
+    ScopedPointer<CarlaPluginProtectedData> const fData;
 
 private:
-    Callback* const m_callback;
-    GuiContainer*   m_container;
-
-    QByteArray m_geometry;
-    bool m_resizable;
-
-    void hideEvent(QHideEvent* const event);
-    void closeEvent(QCloseEvent* const event);
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPlugin)
 };
-#endif
 
 /**@}*/
 

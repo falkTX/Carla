@@ -2,17 +2,17 @@
  * Carla Backend utils
  * Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * any later version.
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the COPYING file
+ * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
 #ifndef __CARLA_BACKEND_UTILS_HPP__
@@ -167,8 +167,6 @@ const char* OptionsType2Str(const OptionsType& type)
         return "OPTION_PROCESS_NAME";
     case OPTION_PROCESS_MODE:
         return "OPTION_PROCESS_MODE";
-    case OPTION_PROCESS_HIGH_PRECISION:
-        return "OPTION_PROCESS_HIGH_PRECISION";
     case OPTION_FORCE_STEREO:
         return "OPTION_FORCE_STEREO";
     case OPTION_PREFER_PLUGIN_BRIDGES:

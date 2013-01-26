@@ -8,8 +8,7 @@ include ../../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += -fvisibility=hidden -fPIC
-BUILD_CXX_FLAGS += -I. -I.. -I../../includes -I../../libs -I../../utils
+BUILD_CXX_FLAGS += -fvisibility=hidden -fPIC -I. -I.. -I../../includes -I../../libs -I../../utils
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo QtCore)
 
 LINK_FLAGS      += -shared
@@ -33,17 +32,6 @@ LINK_FLAGS      += $(shell pkg-config --libs libpulse-simple)
 WANT_RTAUDIO     = true
 endif
 
-OBJS = \
-     carla_engine.cpp.o
-#      carla_engine_osc.cpp.o \
-#      carla_engine_thread.cpp.o \
-#      jack.cpp.o \
-#      rtaudio.cpp.o
-
-TARGET = ../carla_engine.so
-
-# --------------------------------------------------------------
-
 ifeq ($(WANT_JACK),true)
 BUILD_CXX_FLAGS += -DCARLA_ENGINE_JACK
 endif
@@ -56,9 +44,24 @@ BUILD_CXX_FLAGS += -D__RTAUDIO_DEBUG__ -D__RTMIDI_DEBUG__
 else
 BUILD_CXX_FLAGS += -D_FORTIFY_SOURCE=2
 endif
-OBJS += rtaudio-4.0.11/RtAudio.cpp.o
-OBJS += rtmidi-2.0.1/RtMidi.cpp.o
 endif
+
+# --------------------------------------------------------------
+
+OBJS  = \
+     carla_engine.cpp.o
+#      carla_engine_osc.cpp.o \
+#      carla_engine_thread.cpp.o \
+#      jack.cpp.o \
+#      rtaudio.cpp.o
+
+ifeq ($(WANT_RTAUDIO),true)
+OBJS += \
+	rtaudio-4.0.11/RtAudio.cpp.o \
+	rtmidi-2.0.1/RtMidi.cpp.o
+endif
+
+TARGET = ../carla_engine.so
 
 # --------------------------------------------------------------
 

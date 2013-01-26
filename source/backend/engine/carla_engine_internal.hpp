@@ -24,7 +24,7 @@
 
 #include "carla_plugin.hpp"
 
-#include "rt_list.hpp"
+//#include "rt_list.hpp"
 
 #ifndef BUILD_BRIDGE
 # include <QtCore/QProcessEnvironment>
@@ -125,19 +125,17 @@ struct EnginePostEvent {
 #endif
 
 struct EnginePluginData {
-    CarlaPlugin* const plugin;
+    CarlaPlugin* plugin;
     double insPeak[MAX_PEAKS];
     double outsPeak[MAX_PEAKS];
 
-    EnginePluginData(CarlaPlugin* const plugin_)
-        : plugin(plugin_),
+    EnginePluginData()
+        : plugin(nullptr),
           insPeak{0},
           outsPeak{0} {}
-
-    EnginePluginData() = delete;
 };
 
-struct CarlaEnginePrivateData {
+struct CarlaEngineProtectedData {
     CarlaEngineOsc    osc;
     CarlaEngineThread thread;
 
@@ -152,32 +150,26 @@ struct CarlaEnginePrivateData {
     QProcessEnvironment procEnv;
 #endif
 
-    // for postEvents
-    CarlaMutex eventLock;
+    bool aboutToClose;            // don't re-activate thread if true
+    unsigned int curPluginCount;  // number of plugins loaded (0...max)
+    unsigned int maxPluginNumber; // number of plugins allowed (0, 16, 99 or 999)
 
-    // for external midi input (GUI and OSC)
-    CarlaMutex midiLock;
+    EnginePluginData* plugins;
 
-    //RtList<EnginePostEvent> postEvents;
-    RtList<EnginePluginData> plugins;
-
-    bool aboutToClose;
-    unsigned int maxPluginNumber;
-    unsigned int nextPluginId;
-
-    CarlaEnginePrivateData(CarlaEngine* const engine)
+    CarlaEngineProtectedData(CarlaEngine* const engine)
         : osc(engine),
           thread(engine),
           oscData(nullptr),
           callback(nullptr),
           callbackPtr(nullptr),
-          //postEvents(1, 1),
-          plugins(1, 1),
           aboutToClose(false),
+          curPluginCount(0),
           maxPluginNumber(0),
-          nextPluginId(0) {}
+          plugins(nullptr) {}
 
-    CarlaEnginePrivateData() = delete;
+    CarlaEngineProtectedData() = delete;
+
+    CARLA_LEAK_DETECTOR(CarlaEngineProtectedData)
 };
 
 CARLA_BACKEND_END_NAMESPACE

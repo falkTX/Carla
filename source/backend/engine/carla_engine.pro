@@ -8,17 +8,21 @@ CONFIG   += link_pkgconfig qt shared warn_on
 DEFINES   = DEBUG
 DEFINES  += QTCREATOR_TEST
 
+# Misc
+DEFINES  += __LINUX_ALSA__ __LINUX_ALSASEQ__
+DEFINES  += __LINUX_PULSE__
+DEFINES  += __UNIX_JACK__
+
 # JACK
 DEFINES  += CARLA_ENGINE_JACK
 
 # RtAudio/RtMidi
 DEFINES  += CARLA_ENGINE_RTAUDIO HAVE_GETTIMEOFDAY
-DEFINES  += __LINUX_ALSA__ __LINUX_ALSASEQ__ __LINUX_PULSE__ __UNIX_JACK__
 DEFINES  += __RTAUDIO_DEBUG__ __RTMIDI_DEBUG__
 
 # DISTRHO Plugin
-# DEFINES  += CARLA_ENGINE_PLUGIN
-# DEFINES  += DISTRHO_PLUGIN_TARGET_STANDALONE
+DEFINES  += CARLA_ENGINE_PLUGIN
+DEFINES  += DISTRHO_PLUGIN_TARGET_STANDALONE
 
 # Misc
 DEFINES  += WANT_LADSPA WANT_DSSI WANT_LV2 WANT_VST
@@ -33,9 +37,9 @@ SOURCES  = \
     carla_engine.cpp \
 #    carla_engine_osc.cpp \
 #    carla_engine_thread.cpp \
-    jack.cpp \
-    plugin.cpp \
-    rtaudio.cpp
+     jack.cpp \
+#      plugin.cpp \
+     rtaudio.cpp
 
 HEADERS  = \
     carla_engine_internal.hpp \
@@ -48,12 +52,14 @@ HEADERS += \
     ../carla_plugin.hpp
 
 HEADERS += \
+    ../../includes/carla_defines.hpp \
+    ../../includes/carla_midi.h \
     ../../utils/carla_utils.hpp \
     ../../utils/carla_backend_utils.hpp \
     ../../utils/carla_juce_utils.hpp
 
-# HEADERS += \
-#     plugin/DistrhoPluginInfo.h
+HEADERS += \
+    plugin/DistrhoPluginInfo.h
 
 INCLUDEPATH = . .. \
     ../../includes \
@@ -70,6 +76,6 @@ SOURCES     += rtaudio-4.0.11/RtAudio.cpp
 SOURCES     += rtmidi-2.0.1/RtMidi.cpp
 
 # Plugin
-# INCLUDEPATH += ../distrho-plugin-toolkit
+INCLUDEPATH += ../../libs/distrho-plugin-toolkit
 
 QMAKE_CXXFLAGS *= -std=c++0x

@@ -2,17 +2,17 @@
  * Carla Backend API
  * Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * any later version.
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the COPYING file
+ * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
 #ifndef __CARLA_BACKEND_HPP__
@@ -67,6 +67,30 @@ const unsigned int PLUGIN_CAN_DRYWET         = 0x100; //!< Plugin can make use o
 const unsigned int PLUGIN_CAN_VOLUME         = 0x200; //!< Plugin can make use of Volume controls.
 const unsigned int PLUGIN_CAN_BALANCE        = 0x400; //!< Plugin can make use of Left & Right Balance controls.
 const unsigned int PLUGIN_CAN_FORCE_STEREO   = 0x800; //!< Plugin can be used in forced-stereo mode.
+/**@}*/
+
+/*!
+ * @defgroup PluginOptions Plugin Options
+ *
+ * Various plugin options.\n
+ * ON or OFF defines the default plugin value.
+ * \see CarlaPlugin::options()
+ * \note PitchBend is disabled by default on VST plugins
+ * @{
+ */
+const unsigned int PLUGIN_OPTION_FIXED_BUFFER         = 0x001; //!< OFF: Use a constant, fixed size audio buffer (128 or lower is used)
+const unsigned int PLUGIN_OPTION_FORCE_STEREO         = 0x002; //!< OFF: Force mono plugin as stereo
+const unsigned int PLUGIN_OPTION_SELF_AUTOMATION      = 0x004; //!< OFF: Let the plugin handle MIDI-CC automation, not the host
+const unsigned int PLUGIN_OPTION_USE_CHUNKS           = 0x008; //!< ON:  Use chunks to save data
+const unsigned int PLUGIN_OPTION_SEND_ALL_SOUND_OFF   = 0x010; //!< ON:  Send MIDI ALL_SOUND_OFF / ALL_NOTES_OFF events
+const unsigned int PLUGIN_OPTION_SEND_NOTE_OFF_VELO   = 0x020; //!< OFF: Send MIDI Note-Off events with a velocity value
+const unsigned int PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH = 0x040; //!< ON:  Send MIDI Note aftertouch events
+const unsigned int PLUGIN_OPTION_SEND_PITCHBEND       = 0x080; //!< ON:  Send MIDI Pitchbend events
+#ifdef WANT_VST
+const unsigned int PLUGIN_OPTION_VST_SUPPLY_IDLE      = 0x100; //!< ON: Idle Plugin's custom GUI (VST only)
+const unsigned int PLUGIN_OPTION_VST_UPDATE_DISPLAY   = 0x200; //!< ON: Recheck plugin properties on updateDisplay message (VST Only)
+#endif
+
 /**@}*/
 
 /*!
@@ -215,92 +239,84 @@ enum OptionsType {
     OPTION_PROCESS_MODE = 1,
 
     /*!
-     * High-Precision processing mode.\n
-     * When enabled, audio will be processed by blocks of 8 samples at a time, indenpendently of the buffer size.\n
-     * Default is off.\n
-     * EXPERIMENTAL AND INCOMPLETE!
-     */
-    OPTION_PROCESS_HIGH_PRECISION = 2,
-
-    /*!
      * Force mono plugins as stereo, by running 2 instances at the same time.
      * \note Not supported by all plugins.
      */
-    OPTION_FORCE_STEREO = 3,
+    OPTION_FORCE_STEREO = 2,
 
     /*!
      * Use plugin bridges whenever possible.\n
      * Default is no, and not recommended at this point!.
      * EXPERIMENTAL AND INCOMPLETE!
      */
-    OPTION_PREFER_PLUGIN_BRIDGES = 4,
+    OPTION_PREFER_PLUGIN_BRIDGES = 3,
 
     /*!
      * Use OSC-UI bridges whenever possible, otherwise UIs will be handled in the main thread.\n
      * Default is yes.
      */
-    OPTION_PREFER_UI_BRIDGES = 5,
+    OPTION_PREFER_UI_BRIDGES = 4,
 
 #ifdef WANT_DSSI
     /*!
      * Use (unofficial) dssi-vst chunks feature.\n
      * Default is no.
      */
-    OPTION_USE_DSSI_VST_CHUNKS = 6,
+    OPTION_USE_DSSI_VST_CHUNKS = 5,
 #endif
 
     /*!
      * Maximum number of parameters allowed.\n
      * Default is MAX_DEFAULT_PARAMETERS.
      */
-    OPTION_MAX_PARAMETERS = 7,
+    OPTION_MAX_PARAMETERS = 6,
 
     /*!
      * Timeout value in ms for how much to wait for OSC-Bridges to respond.\n
      * Default is 4000 (4 secs).
      */
-    OPTION_OSC_UI_TIMEOUT = 8,
+    OPTION_OSC_UI_TIMEOUT = 7,
 
     /*!
      * Prefered buffer size.
      */
-    OPTION_PREFERRED_BUFFER_SIZE = 9,
+    OPTION_PREFERRED_BUFFER_SIZE = 8,
 
     /*!
      * Prefered sample rate.
      */
-    OPTION_PREFERRED_SAMPLE_RATE = 10,
+    OPTION_PREFERRED_SAMPLE_RATE = 9,
 
 #ifndef BUILD_BRIDGE
     /*!
      * Set path to the native plugin bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_NATIVE = 11,
+    OPTION_PATH_BRIDGE_NATIVE = 10,
 
     /*!
      * Set path to the POSIX 32bit plugin bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_POSIX32 = 12,
+    OPTION_PATH_BRIDGE_POSIX32 = 11,
 
     /*!
      * Set path to the POSIX 64bit plugin bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_POSIX64 = 13,
+    OPTION_PATH_BRIDGE_POSIX64 = 12,
 
     /*!
      * Set path to the Windows 32bit plugin bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_WIN32 = 14,
+    OPTION_PATH_BRIDGE_WIN32 = 13,
 
     /*!
      * Set path to the Windows 64bit plugin bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_WIN64 = 15,
+    OPTION_PATH_BRIDGE_WIN64 = 14,
 #endif
 
 #ifdef WANT_LV2
@@ -308,43 +324,43 @@ enum OptionsType {
      * Set path to the LV2 Gtk2 UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_GTK2 = 16,
+    OPTION_PATH_BRIDGE_LV2_GTK2 = 15,
 
     /*!
      * Set path to the LV2 Gtk3 UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_GTK3 = 17,
+    OPTION_PATH_BRIDGE_LV2_GTK3 = 16,
 
     /*!
      * Set path to the LV2 Qt4 UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_QT4 = 18,
+    OPTION_PATH_BRIDGE_LV2_QT4 = 17,
 
     /*!
      * Set path to the LV2 Qt5 UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_QT5 = 19,
+    OPTION_PATH_BRIDGE_LV2_QT5 = 18,
 
     /*!
      * Set path to the LV2 Cocoa UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_COCOA = 20,
+    OPTION_PATH_BRIDGE_LV2_COCOA = 19,
 
     /*!
      * Set path to the LV2 Windows UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_WINDOWS = 21,
+    OPTION_PATH_BRIDGE_LV2_WINDOWS = 20,
 
     /*!
      * Set path to the LV2 X11 UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_X11 = 22,
+    OPTION_PATH_BRIDGE_LV2_X11 = 21,
 #endif
 
 #ifdef WANT_VST
@@ -352,19 +368,19 @@ enum OptionsType {
      * Set path to the VST Cocoa UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_VST_COCOA = 23,
+    OPTION_PATH_BRIDGE_VST_COCOA = 22,
 
     /*!
      * Set path to the VST HWND UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_VST_HWND = 24,
+    OPTION_PATH_BRIDGE_VST_HWND = 23,
 
     /*!
      * Set path to the VST X11 UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_VST_X11 = 25
+    OPTION_PATH_BRIDGE_VST_X11 = 24
 #endif
 };
 
