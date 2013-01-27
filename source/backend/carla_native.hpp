@@ -30,8 +30,9 @@ class PluginDescriptorClass
 {
 public:
     PluginDescriptorClass(const HostDescriptor* const host)
-        : m_host(host)
+        : fHost(host)
     {
+        CARLA_ASSERT(fHost);
     }
 
     virtual ~PluginDescriptorClass()
@@ -43,77 +44,77 @@ public:
 
     const HostDescriptor* getHostHandle() const
     {
-        return m_host;
+        return fHost;
     }
 
     uint32_t getBufferSize() const
     {
-        CARLA_ASSERT(m_host);
+        CARLA_ASSERT(fHost);
 
-        if (m_host)
-            return m_host->get_buffer_size(m_host->handle);
+        if (fHost)
+            return fHost->get_buffer_size(fHost->handle);
 
         return 0;
     }
 
     double getSampleRate() const
     {
-        CARLA_ASSERT(m_host);
+        CARLA_ASSERT(fHost);
 
-        if (m_host)
-            return m_host->get_sample_rate(m_host->handle);
+        if (fHost)
+            return fHost->get_sample_rate(fHost->handle);
 
         return 0.0;
     }
 
     const TimeInfo* getTimeInfo() const
     {
-        CARLA_ASSERT(m_host);
+        CARLA_ASSERT(fHost);
 
-        if (m_host)
-            return m_host->get_time_info(m_host->handle);
+        if (fHost)
+            return fHost->get_time_info(fHost->handle);
 
         return nullptr;
     }
 
     void writeMidiEvent(const MidiEvent* const event)
     {
-        CARLA_ASSERT(m_host);
+        CARLA_ASSERT(fHost);
 
-        if (m_host)
-            m_host->write_midi_event(m_host->handle, event);
+        if (fHost)
+            fHost->write_midi_event(fHost->handle, event);
     }
 
     void uiParameterChanged(const uint32_t index, const float value)
     {
-        CARLA_ASSERT(m_host);
+        CARLA_ASSERT(fHost);
 
-        if (m_host)
-            m_host->ui_parameter_changed(m_host->handle, index, value);
+        if (fHost)
+            fHost->ui_parameter_changed(fHost->handle, index, value);
     }
 
     void uiMidiProgramChanged(const uint32_t bank, const uint32_t program)
     {
-        CARLA_ASSERT(m_host);
+        CARLA_ASSERT(fHost);
 
-        if (m_host)
-            m_host->ui_midi_program_changed(m_host->handle, bank, program);
+        if (fHost)
+            fHost->ui_midi_program_changed(fHost->handle, bank, program);
     }
 
     void uiCustomDataChanged(const char* const key, const char* const value)
     {
-        CARLA_ASSERT(m_host);
+        CARLA_ASSERT(fHost);
 
-        if (m_host)
-            m_host->ui_custom_data_changed(m_host->handle, key, value);
+        if (fHost)
+            fHost->ui_custom_data_changed(fHost->handle, key, value);
     }
 
     void uiClosed()
     {
-        CARLA_ASSERT(m_host);
+        CARLA_ASSERT(fHost);
 
-        if (m_host)
-            m_host->ui_closed(m_host->handle);
+        if (fHost)
+            fHost->ui_closed(fHost->handle);
     }
 
 protected:
@@ -270,7 +271,7 @@ protected:
     // -------------------------------------------------------------------
 
 private:
-    const HostDescriptor* const m_host;
+    const HostDescriptor* const fHost;
 
     // -------------------------------------------------------------------
 

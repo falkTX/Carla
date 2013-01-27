@@ -20,7 +20,7 @@
 # Imports (Global)
 
 import os
-#import platform
+import platform
 import sys
 from codecs import open as codecopen
 from copy import deepcopy
@@ -133,7 +133,7 @@ else:
 # ------------------------------------------------------------------------------------------------------------
 # 64bit check
 
-is64bit = False #bool(platform.architecture()[0] == "64bit" and sys.maxsize > 2**32)
+kIs64bit = bool(platform.architecture()[0] == "64bit" and sys.maxsize > 2**32)
 
 # ------------------------------------------------------------------------------------------------------------
 # Convert a ctypes c_char_p into a python string
@@ -303,9 +303,9 @@ PROCESS_MODE_PATCHBAY         = 3
 
 # Set BINARY_NATIVE
 if HAIKU or LINUX or MACOS:
-    BINARY_NATIVE = BINARY_POSIX64 if is64bit else BINARY_POSIX32
+    BINARY_NATIVE = BINARY_POSIX64 if kIs64bit else BINARY_POSIX32
 elif WINDOWS:
-    BINARY_NATIVE = BINARY_WIN64 if is64bit else BINARY_WIN32
+    BINARY_NATIVE = BINARY_WIN64 if kIs64bit else BINARY_WIN32
 else:
     BINARY_NATIVE = BINARY_OTHER
 
@@ -629,29 +629,33 @@ def xmlSafeString(string, toXml):
 # ------------------------------------------------------------------------------------------------------------
 # Carla About dialog
 
-class CarlaAboutW(QDialog, ui_carla_about.Ui_CarlaAboutW):
+class CarlaAboutW(QDialog):
     def __init__(self, parent):
         QDialog.__init__(self, parent)
-        self.setupUi(self)
-
-        oscTxt = self.tr(" - <b>OSC Bridge Version</b>") if Carla.isControl else ""
-
-        self.l_about.setText(self.tr(""
-                                     "<br>Version %s"
-                                     "<br>Carla is a Multi-Plugin Host for JACK%s.<br>"
-                                     "<br>Copyright (C) 2011-2012 falkTX<br>"
-                                     "" % (VERSION, oscTxt)))
+        self.ui = ui_carla_about.Ui_CarlaAboutW()
+        self.ui.setupUi(self)
 
         if Carla.isControl:
-            self.l_extended.setVisible(False) # TODO - write about this special OSC version
-            self.tabWidget.removeTab(1)
-            self.tabWidget.removeTab(1)
+            extraInfo = " - <b>%s</b>" % self.tr("OSC Bridge Version")
+        else:
+            extraInfo = ""
+
+        self.ui.l_about.setText(self.tr(""
+                                     "<br>Version %s"
+                                     "<br>Carla is a Multi-Plugin Host for JACK%s.<br>"
+                                     "<br>Copyright (C) 2011-2013 falkTX<br>"
+                                     "" % (VERSION, extraInfo)))
+
+        if Carla.isControl:
+            self.ui.l_extended.hide()
+            self.ui.tabWidget.removeTab(1)
+            self.ui.tabWidget.removeTab(1)
 
         else:
-            self.l_extended.setText(cString(Carla.host.get_extended_license_text()))
-            self.le_osc_url.setText(cString(Carla.host.get_host_osc_url()) if Carla.host.is_engine_running() else self.tr("(Engine not running)"))
+            self.ui.l_extended.setText(cString(Carla.host.get_extended_license_text()))
+            self.ui.le_osc_url.setText(cString(Carla.host.get_host_osc_url()) if Carla.host.is_engine_running() else self.tr("(Engine not running)"))
 
-            self.l_osc_cmds.setText(
+            self.ui.l_osc_cmds.setText(
                                     " /set_active                 <i-value>\n"
                                     " /set_drywet                 <f-value>\n"
                                     " /set_volume                 <f-value>\n"
@@ -667,12 +671,12 @@ class CarlaAboutW(QDialog, ui_carla_about.Ui_CarlaAboutW):
                                     " /note_off                   <i-note>\n"
                                   )
 
-            self.l_example.setText("/Carla/2/set_parameter_value 5 1.0")
-            self.l_example_help.setText("<i>(as in this example, \"2\" is the plugin number and \"5\" the parameter)</i>")
+            self.ui.l_example.setText("/Carla/2/set_parameter_value 5 1.0")
+            self.ui.l_example_help.setText("<i>(as in this example, \"2\" is the plugin number and \"5\" the parameter)</i>")
 
-            self.l_ladspa.setText(self.tr("Everything! (Including LRDF)"))
-            self.l_dssi.setText(self.tr("Everything! (Including CustomData/Chunks)"))
-            self.l_lv2.setText(self.tr("About 95&#37; complete (using custom extensions).<br/>"
+            self.ui.l_ladspa.setText(self.tr("Everything! (Including LRDF)"))
+            self.ui.l_dssi.setText(self.tr("Everything! (Including CustomData/Chunks)"))
+            self.ui.l_lv2.setText(self.tr("About 95&#37; complete (using custom extensions).<br/>"
                                       "Implemented Feature/Extensions:"
                                       "<ul>"
                                       "<li>http://lv2plug.in/ns/ext/atom</li>"
@@ -702,7 +706,7 @@ class CarlaAboutW(QDialog, ui_carla_about.Ui_CarlaAboutW):
                                       "<li>http://ll-plugins.nongnu.org/lv2/ext/midimap</li>"
                                       "<li>http://ll-plugins.nongnu.org/lv2/ext/miditype</li>"
                                       "</ul>"))
-            self.l_vst.setText(self.tr("<p>About 85&#37; complete (missing vst bank/presets and some minor stuff)</p>"))
+            self.ui.l_vst.setText(self.tr("<p>About 85&#37; complete (missing vst bank/presets and some minor stuff)</p>"))
 
     def done(self, r):
         QDialog.done(self, r)
@@ -711,10 +715,11 @@ class CarlaAboutW(QDialog, ui_carla_about.Ui_CarlaAboutW):
 # ------------------------------------------------------------------------------------------------------------
 # Plugin Parameter
 
-class PluginParameter(QWidget, ui_carla_parameter.Ui_PluginParameter):
+class PluginParameter(QWidget):
     def __init__(self, parent, pInfo, pluginId, tabIndex):
         QWidget.__init__(self, parent)
-        self.setupUi(self)
+        self.ui = ui_carla_parameter.Ui_PluginParameter()
+        self.ui.setupUi(self)
 
         pType  = pInfo['type']
         pHints = pInfo['hints']
@@ -725,67 +730,67 @@ class PluginParameter(QWidget, ui_carla_parameter.Ui_PluginParameter):
         self.m_parameterId = pInfo['index']
         self.m_tabIndex    = tabIndex
 
-        self.label.setText(pInfo['name'])
+        self.ui.label.setText(pInfo['name'])
 
         for MIDI_CC in MIDI_CC_LIST:
-            self.combo.addItem(MIDI_CC)
+            self.ui.combo.addItem(MIDI_CC)
 
         if pType == PARAMETER_INPUT:
-            self.widget.set_minimum(pInfo['minimum'])
-            self.widget.set_maximum(pInfo['maximum'])
-            self.widget.set_default(pInfo['default'])
-            self.widget.set_value(pInfo['current'], False)
-            self.widget.set_label(pInfo['unit'])
-            self.widget.set_step(pInfo['step'])
-            self.widget.set_step_small(pInfo['stepSmall'])
-            self.widget.set_step_large(pInfo['stepLarge'])
-            self.widget.set_scalepoints(pInfo['scalepoints'], bool(pHints & PARAMETER_USES_SCALEPOINTS))
+            self.ui.widget.set_minimum(pInfo['minimum'])
+            self.ui.widget.set_maximum(pInfo['maximum'])
+            self.ui.widget.set_default(pInfo['default'])
+            self.ui.widget.set_value(pInfo['current'], False)
+            self.ui.widget.set_label(pInfo['unit'])
+            self.ui.widget.set_step(pInfo['step'])
+            self.ui.widget.set_step_small(pInfo['stepSmall'])
+            self.ui.widget.set_step_large(pInfo['stepLarge'])
+            self.ui.widget.set_scalepoints(pInfo['scalepoints'], bool(pHints & PARAMETER_USES_SCALEPOINTS))
 
             if not pHints & PARAMETER_IS_ENABLED:
-                self.widget.set_read_only(True)
-                self.combo.setEnabled(False)
-                self.sb_channel.setEnabled(False)
+                self.ui.widget.set_read_only(True)
+                self.ui.combo.setEnabled(False)
+                self.ui.sb_channel.setEnabled(False)
 
             elif not pHints & PARAMETER_IS_AUTOMABLE:
-                self.combo.setEnabled(False)
-                self.sb_channel.setEnabled(False)
+                self.ui.combo.setEnabled(False)
+                self.ui.sb_channel.setEnabled(False)
 
         elif pType == PARAMETER_OUTPUT:
-            self.widget.set_minimum(pInfo['minimum'])
-            self.widget.set_maximum(pInfo['maximum'])
-            self.widget.set_value(pInfo['current'], False)
-            self.widget.set_label(pInfo['unit'])
-            self.widget.set_read_only(True)
+            self.ui.widget.set_minimum(pInfo['minimum'])
+            self.ui.widget.set_maximum(pInfo['maximum'])
+            self.ui.widget.set_value(pInfo['current'], False)
+            self.ui.widget.set_label(pInfo['unit'])
+            self.ui.widget.set_read_only(True)
 
             if not pHints & PARAMETER_IS_AUTOMABLE:
-                self.combo.setEnabled(False)
-                self.sb_channel.setEnabled(False)
+                self.ui.combo.setEnabled(False)
+                self.ui.sb_channel.setEnabled(False)
 
         else:
-            self.widget.setVisible(False)
-            self.combo.setVisible(False)
-            self.sb_channel.setVisible(False)
+            self.ui.widget.setVisible(False)
+            self.ui.combo.setVisible(False)
+            self.ui.sb_channel.setVisible(False)
 
         self.set_parameter_midi_cc(pInfo['midiCC'])
         self.set_parameter_midi_channel(pInfo['midiChannel'])
 
-        self.connect(self.widget, SIGNAL("valueChanged(double)"), SLOT("slot_valueChanged(double)"))
-        self.connect(self.sb_channel, SIGNAL("valueChanged(int)"), SLOT("slot_midiChannelChanged(int)"))
-        self.connect(self.combo, SIGNAL("currentIndexChanged(int)"), SLOT("slot_midiCcChanged(int)"))
+        self.connect(self.ui.widget, SIGNAL("valueChanged(double)"), SLOT("slot_valueChanged(double)"))
+        self.connect(self.ui.sb_channel, SIGNAL("valueChanged(int)"), SLOT("slot_midiChannelChanged(int)"))
+        self.connect(self.ui.combo, SIGNAL("currentIndexChanged(int)"), SLOT("slot_midiCcChanged(int)"))
 
         #if force_parameters_style:
         #self.widget.force_plastique_style()
 
         if pHints & PARAMETER_USES_CUSTOM_TEXT:
-            self.widget.set_text_call(self.textCallBack)
+            self.ui.widget.set_text_call(self.textCallBack)
 
-        self.widget.updateAll()
+        self.ui.widget.updateAll()
 
     def setDefaultValue(self, value):
-        self.widget.set_default(value)
+        self.ui.widget.set_default(value)
 
     def set_parameter_value(self, value, send=True):
-        self.widget.set_value(value, send)
+        self.ui.widget.set_value(value, send)
 
     def set_parameter_midi_cc(self, cc):
         self.m_midiCC = cc
@@ -793,7 +798,7 @@ class PluginParameter(QWidget, ui_carla_parameter.Ui_PluginParameter):
 
     def set_parameter_midi_channel(self, channel):
         self.m_midiChannel = channel+1
-        self.sb_channel.setValue(channel+1)
+        self.ui.sb_channel.setValue(channel+1)
 
     def set_MIDI_CC_in_ComboBox(self, cc):
         for i in range(len(MIDI_CC_LIST)):
@@ -804,7 +809,7 @@ class PluginParameter(QWidget, ui_carla_parameter.Ui_PluginParameter):
         else:
             ccIndex = -1
 
-        self.combo.setCurrentIndex(ccIndex+1)
+        self.ui.combo.setCurrentIndex(ccIndex+1)
 
     def tabIndex(self):
         return self.m_tabIndex
@@ -835,3 +840,36 @@ class PluginParameter(QWidget, ui_carla_parameter.Ui_PluginParameter):
             self.emit(SIGNAL("midiChannelChanged(int, int)"), self.m_parameterId, channel)
 
         self.m_midiChannel = channel
+
+# ------------------------------------------------------------------------------------------------------------
+# TESTING
+
+from PyQt4.QtGui import QApplication
+
+Carla.isControl = True
+
+ptest = {
+    'index': 0,
+    'name': "",
+    'symbol': "",
+    'current': 0.1,
+    'default': 0.3,
+    'minimum': 0.0,
+    'maximum': 1.0,
+    'midiChannel': 1,
+    'midiCC': -1,
+    'type': PARAMETER_INPUT,
+    'hints': PARAMETER_IS_ENABLED | PARAMETER_IS_AUTOMABLE,
+    'scalepoints': [],
+    'step': 0.01,
+    'stepSmall': 0.001,
+    'stepLarge': 0.1,
+    'unit': "un",
+}
+
+app  = QApplication(sys.argv)
+gui1 = CarlaAboutW(None)
+gui2 = PluginParameter(None, ptest, 0, 0)
+gui1.show()
+gui2.show()
+app.exec_()
