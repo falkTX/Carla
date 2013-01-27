@@ -4,24 +4,24 @@
 # Parameter SpinBox, a custom Qt4 widget
 # Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
 #
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# any later version.
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 2 of
+# the License, or any later version.
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
-# For a full copy of the GNU General Public License see the COPYING file
+# For a full copy of the GNU General Public License see the GPL.txt file
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
 from PyQt4.QtCore import pyqtSlot, Qt, QTimer, SIGNAL, SLOT
 from PyQt4.QtGui import QAbstractSpinBox, QComboBox, QCursor, QDialog, QInputDialog, QMenu, QPainter, QProgressBar, QValidator
-from PyQt4.QtGui import QStyleFactory
+#from PyQt4.QtGui import QStyleFactory
 from math import isnan
 
 # ------------------------------------------------------------------------------------------------------------
@@ -29,135 +29,140 @@ from math import isnan
 
 import ui_inputdialog_value
 
-def fix_value(value, minimum, maximum):
+def fixValue(value, minimum, maximum):
     if isnan(value):
         print("Parameter is NaN! - %f" % value)
         return minimum
-    elif value < minimum:
+    if value < minimum:
         print("Parameter too low! - %f/%f" % (value, minimum))
         return minimum
-    elif value > maximum:
+    if value > maximum:
         print("Parameter too high! - %f/%f" % (value, maximum))
         return maximum
-    else:
-        return value
+    return value
 
 #QPlastiqueStyle = QStyleFactory.create("Plastique")
 
 # ------------------------------------------------------------------------------------------------------------
 # Custom InputDialog with Scale Points support
 
-class CustomInputDialog(QDialog, ui_inputdialog_value.Ui_Dialog):
+class CustomInputDialog(QDialog):
     def __init__(self, parent, label, current, minimum, maximum, step, scalePoints):
         QDialog.__init__(self, parent)
-        self.setupUi(self)
+        self.ui = ui_inputdialog_value.Ui_Dialog()
+        self.ui.setupUi(self)
 
-        self.label.setText(label)
-        self.doubleSpinBox.setMinimum(minimum)
-        self.doubleSpinBox.setMaximum(maximum)
-        self.doubleSpinBox.setValue(current)
-        self.doubleSpinBox.setSingleStep(step)
-
-        self.ret_value = current
+        self.ui.label.setText(label)
+        self.ui.doubleSpinBox.setMinimum(minimum)
+        self.ui.doubleSpinBox.setMaximum(maximum)
+        self.ui.doubleSpinBox.setValue(current)
+        self.ui.doubleSpinBox.setSingleStep(step)
 
         if not scalePoints:
-            self.groupBox.setVisible(False)
+            self.ui.groupBox.setVisible(False)
             self.resize(200, 0)
         else:
             text = "<table>"
             for scalePoint in scalePoints:
                 text += "<tr><td align='right'>%f</td><td align='left'> - %s</td></tr>" % (scalePoint['value'], scalePoint['label'])
             text += "</table>"
-            self.textBrowser.setText(text)
+            self.ui.textBrowser.setText(text)
             self.resize(200, 300)
+
+        self.fRetValue = current
 
         self.connect(self, SIGNAL("accepted()"), self.setReturnValue)
 
+    def returnValue(self):
+        return self.fRetValue
+
     def setReturnValue(self):
-        self.ret_value = self.doubleSpinBox.value()
+        self.fRetValue = self.ui.doubleSpinBox.value()
 
     def done(self, r):
         QDialog.done(self, r)
         self.close()
 
 # ------------------------------------------------------------------------------------------------------------
-# Progress-Bar used for ParamSpinBox
+# ProgressBar used for ParamSpinBox
 
 class ParamProgressBar(QProgressBar):
     def __init__(self, parent):
         QProgressBar.__init__(self, parent)
 
-        self.m_leftClickDown = False
+        self.fLeftClickDown = False
 
-        self.m_minimum = 0.0
-        self.m_maximum = 1.0
-        self.m_rvalue  = 0.0
+        self.fMinimum   = 0.0
+        self.fMaximum   = 1.0
+        self.fRealValue = 0.0
 
-        self.m_label = ""
-        self.m_preLabel = " "
-        self.m_textCall = None
+        self.fLabel = ""
+        self.fPreLabel = " "
+        self.fTextCall = None
 
-        self.setMinimum(0)
-        self.setMaximum(1000)
-        self.setValue(0)
         self.setFormat("(none)")
 
-    def set_minimum(self, value):
-        self.m_minimum = value
+        # Fake internal value, 10'000 precision
+        QProgressBar.setMinimum(self, 0)
+        QProgressBar.setMaximum(self, 10000)
+        QProgressBar.setValue(self, 0)
 
-    def set_maximum(self, value):
-        self.m_maximum = value
+    def setMinimum(self, value):
+        self.fMinimum = value
 
-    def set_value(self, value):
-        self.m_rvalue = value
-        vper = (value - self.m_minimum) / (self.m_maximum - self.m_minimum)
-        self.setValue(vper * 1000)
+    def setMaximum(self, value):
+        self.fMaximum = value
 
-    def set_label(self, label):
-        self.m_label = label.strip()
+    def setValue(self, value):
+        self.fRealValue = value
+        vper = float(value - self.fMinimum) / float(self.fMaximum - self.fMinimum)
+        QProgressBar.setValue(self, int(vper * 10000))
 
-        if self.m_label == "(coef)":
-            self.m_label = ""
-            self.m_preLabel = "*"
+    def setLabel(self, label):
+        self.fLabel = label.strip()
+
+        if self.fLabel == "(coef)":
+            self.fLabel = ""
+            self.fPreLabel = "*"
 
         self.update()
 
-    def set_text_call(self, textCall):
-        self.m_textCall = textCall
+    def setTextCall(self, textCall):
+        self.fTextCall = textCall
 
     def handleMouseEventPos(self, pos):
-        xper = float(pos.x()) / self.width()
-        value = xper * (self.m_maximum - self.m_minimum) + self.m_minimum
+        xper  = float(pos.x()) / float(self.width())
+        value = xper * (self.fMaximum - self.fMinimum) + self.fMinimum
 
-        if value < self.m_minimum:
-            value = self.m_minimum
-        elif value > self.m_maximum:
-            value = self.m_maximum
+        if value < self.fMinimum:
+            value = self.fMinimum
+        elif value > self.fMaximum:
+            value = self.fMaximum
 
-        self.emit(SIGNAL("valueChangedFromBar(double)"), value)
+        self.emit(SIGNAL("valueChanged(double)"), value)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
             self.handleMouseEventPos(event.pos())
-            self.m_leftClickDown = True
+            self.fLeftClickDown = True
         else:
-            self.m_leftClickDown = False
+            self.fLeftClickDown = False
         QProgressBar.mousePressEvent(self, event)
 
     def mouseMoveEvent(self, event):
-        if self.m_leftClickDown:
+        if self.fLeftClickDown:
             self.handleMouseEventPos(event.pos())
         QProgressBar.mouseMoveEvent(self, event)
 
     def mouseReleaseEvent(self, event):
-        self.m_leftClickDown = False
+        self.fLeftClickDown = False
         QProgressBar.mouseReleaseEvent(self, event)
 
     def paintEvent(self, event):
-        if self.m_textCall:
-            self.setFormat("%s %s %s" % (self.m_preLabel, self.m_textCall(), self.m_label))
+        if self.fTextCall is not None:
+            self.setFormat("%s %s %s" % (self.fPreLabel, self.fTextCall(), self.fLabel))
         else:
-            self.setFormat("%s %f %s" % (self.m_preLabel, self.m_rvalue, self.m_label))
+            self.setFormat("%s %f %s" % (self.fPreLabel, self.fRealValue, self.fLabel))
 
         QProgressBar.paintEvent(self, event)
 
@@ -168,241 +173,248 @@ class ParamSpinBox(QAbstractSpinBox):
     def __init__(self, parent):
         QAbstractSpinBox.__init__(self, parent)
 
-        self._minimum = 0.0
-        self._maximum = 1.0
-        self._default = 0.0
-        self._value = None
-        self._step = 0.0
-        self._step_small = 0.0
-        self._step_large = 0.0
+        self.fMinimum = 0.0
+        self.fMaximum = 1.0
+        self.fDefault = 0.0
+        self.fValue   = None
+        self.fStep    = 0.0
+        self.fStepSmall = 0.0
+        self.fStepLarge = 0.0
 
-        self._read_only = False
-        self._scalepoints = None
-        self._have_scalepoints = False
+        self.fReadOnly = False
+        self.fScalePoints = None
+        self.fHaveScalePoints = False
 
-        self.bar = ParamProgressBar(self)
-        self.bar.setContextMenuPolicy(Qt.NoContextMenu)
-        self.bar.show()
+        self.fBar = ParamProgressBar(self)
+        self.fBar.setContextMenuPolicy(Qt.NoContextMenu)
+        self.fBar.show()
 
         self.lineEdit().setVisible(False)
 
-        self.connect(self.bar, SIGNAL("valueChangedFromBar(double)"), self.handleValueChangedFromBar)
-        self.connect(self, SIGNAL("customContextMenuRequested(QPoint)"), self.showCustomMenu)
+        self.connect(self, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_showCustomMenu()"))
+        self.connect(self.fBar, SIGNAL("valueChanged(double)"), SLOT("slot_progressBarValueChanged(double)"))
 
-        QTimer.singleShot(0, self, SLOT("slot_updateBarGeometry()"))
+        QTimer.singleShot(0, self, SLOT("slot_updateProgressBarGeometry()"))
 
     #def force_plastique_style(self):
         #self.setStyle(QPlastiqueStyle)
 
-    def set_minimum(self, value):
-        self._minimum = value
-        self.bar.set_minimum(value)
+    def setDefault(self, value):
+        value = fixValue(value, self.fMinimum, self.fMaximum)
+        self.fDefault = value
 
-    def set_maximum(self, value):
-        self._maximum = value
-        self.bar.set_maximum(value)
+    def setMinimum(self, value):
+        self.fMinimum = value
+        self.fBar.setMinimum(value)
 
-    def set_default(self, value):
-        value = fix_value(value, self._minimum, self._maximum)
-        self._default = value
+    def setMaximum(self, value):
+        self.fMaximum = value
+        self.fBar.setMaximum(value)
 
-    def set_value(self, value, send=True):
-        value = fix_value(value, self._minimum, self._maximum)
-        if self._value != value:
-            self._value = value
-            self.bar.set_value(value)
+    def setValue(self, value, send=True):
+        value = fixValue(value, self.fMinimum, self.fMaximum)
 
-            if self._have_scalepoints:
-                self.set_scalepoint_value(value)
-
-            if send:
-                self.emit(SIGNAL("valueChanged(double)"), value)
-
-            self.update()
-
-            return True
-
-        else:
+        if self.fValue == value:
             return False
 
-    def set_step(self, value):
+        self.fValue = value
+        self.fBar.setValue(value)
+
+        if self.fHaveScalePoints:
+            self._setScalePointValue(value)
+
+        if send:
+            self.emit(SIGNAL("valueChanged(double)"), value)
+
+        self.update()
+
+        return True
+
+    def setStep(self, value):
         if value == 0.0:
-            self._step = 0.001
+            self.fStep = 0.001
         else:
-            self._step = value
+            self.fStep = value
 
-        if self._step_small > value:
-            self._step_small = value
-        if self._step_large < value:
-            self._step_large = value
+        if self.fStepSmall > value:
+            self.fStepSmall = value
+        if self.fStepLarge < value:
+            self.fStepLarge = value
 
-    def set_step_small(self, value):
+    def setStepSmall(self, value):
         if value == 0.0:
-            self._step_small = 0.0001
-        elif value > self._step:
-            self._step_small = self._step
+            self.fStepSmall = 0.0001
+        elif value > self.fStep:
+            self.fStepSmall = self.fStep
         else:
-            self._step_small = value
+            self.fStepSmall = value
 
-    def set_step_large(self, value):
+    def setStepLarge(self, value):
         if value == 0.0:
-            self._step_large = 0.1
-        elif value < self._step:
-            self._step_large = self._step
+            self.fStepLarge = 0.1
+        elif value < self.fStep:
+            self.fStepLarge = self.fStep
         else:
-            self._step_large = value
+            self.fStepLarge = value
 
-    def set_label(self, label):
-        self.bar.set_label(label)
+    def setLabel(self, label):
+        self.fBar.setLabel(label)
 
-    def set_text_call(self, textCall):
-        self.bar.set_text_call(textCall)
+    def setTextCallback(self, textCall):
+        self.fBar.setTextCall(textCall)
 
-    def set_read_only(self, yesno):
-        self.setButtonSymbols(QAbstractSpinBox.UpDownArrows if yesno else QAbstractSpinBox.NoButtons)
-        self._read_only = yesno
-        self.setReadOnly(yesno)
+    def setReadOnly(self, yesNo):
+        self.setButtonSymbols(QAbstractSpinBox.UpDownArrows if yesNo else QAbstractSpinBox.NoButtons)
+        self.fReadOnly = yesNo
+        ParamSpinBox.setReadOnly(self, yesNo)
 
-    def set_scalepoints(self, scalepoints, use_scalepoints):
-        if len(scalepoints) > 0:
-            self._scalepoints = scalepoints
-            self._have_scalepoints = use_scalepoints
-
-            if use_scalepoints:
-                # Hide ProgressBar and create a ComboBox
-                self.bar.close()
-                self.box = QComboBox(self)
-                self.box.setContextMenuPolicy(Qt.NoContextMenu)
-                self.box.show()
-                self.slot_updateBarGeometry()
-
-                for scalepoint in scalepoints:
-                    self.box.addItem("%f - %s" % (scalepoint['value'], scalepoint['label']))
-
-                if self._value != None:
-                    self.set_scalepoint_value(self._value)
-
-                self.connect(self.box, SIGNAL("currentIndexChanged(QString)"), self.handleValueChangedFromBox)
-
-        else:
-            self._scalepoints = None
-
-    def set_scalepoint_value(self, value):
-        value = self.get_nearest_scalepoint(value)
-        for i in range(self.box.count()):
-            if float(self.box.itemText(i).split(" - ", 1)[0] == value):
-                self.box.setCurrentIndex(i)
-                break
-
-    def get_nearest_scalepoint(self, real_value):
-        final_value = 0.0
-        for i in range(len(self._scalepoints)):
-            scale_value = self._scalepoints[i]['value']
-            if i == 0:
-                final_value = scale_value
-            else:
-                srange1 = abs(real_value - scale_value)
-                srange2 = abs(real_value - final_value)
-
-                if srange2 > srange1:
-                    final_value = scale_value
-
-        return final_value
-
-    def handleValueChangedFromBar(self, value):
-        if self._read_only:
+    def setScalePoints(self, scalePoints, useScalePoints):
+        if len(scalePoints) == 0:
+            self.fScalePoints     = None
+            self.fHaveScalePoints = False
             return
 
-        step = int(0.5 + ((value - self._minimum) / self._step))
-        real_value = self._minimum + (step * self._step)
+        self.fScalePoints     = scalePoints
+        self.fHaveScalePoints = useScalePoints
 
-        self.set_value(real_value)
+        if useScalePoints:
+            # Hide ProgressBar and create a ComboBox
+            self.fBar.close()
+            self.fBox = QComboBox(self)
+            self.fBox.setContextMenuPolicy(Qt.NoContextMenu)
+            self.fBox.show()
+            self.slot_updateProgressBarGeometry()
 
-    def handleValueChangedFromBox(self, box_text):
-        if self._read_only:
-            return
+            for scalePoint in scalePoints:
+                self.fBox.addItem("%f - %s" % (scalePoint['value'], scalePoint['label']))
 
-        value = float(box_text.split(" - ", 1)[0])
-        last_scale_value = self._scalepoints[len(self._scalepoints) - 1]['value']
+            if self.fValue != None:
+                self._setScalePointValue(self.fValue)
 
-        if value == last_scale_value:
-            value = self._maximum
-
-        self.set_value(value)
-
-    def showCustomMenu(self, pos):
-        menu = QMenu(self)
-        act_x_reset = menu.addAction(self.tr("Reset (%f)" % self._default))
-        menu.addSeparator()
-        act_x_copy = menu.addAction(self.tr("Copy (%f)" % self._value))
-        if False and not self._read_only:
-            act_x_paste = menu.addAction(self.tr("Paste (%s)" % "TODO"))
-        else:
-            act_x_paste = menu.addAction(self.tr("Paste"))
-            act_x_paste.setEnabled(False)
-        menu.addSeparator()
-        act_x_set = menu.addAction(self.tr("Set value..."))
-
-        if self._read_only:
-            act_x_reset.setEnabled(False)
-            act_x_paste.setEnabled(False)
-            act_x_set.setEnabled(False)
-
-        # TODO - NOT IMPLEMENTED YET
-        act_x_copy.setEnabled(False)
-
-        act_x_sel = menu.exec_(QCursor.pos())
-
-        if act_x_sel == act_x_set:
-            dialog = CustomInputDialog(self, self.parent().label.text(), self._value, self._minimum, self._maximum, self._step, self._scalepoints)
-            if dialog.exec_():
-                value = dialog.ret_value
-                self.set_value(value)
-
-        elif act_x_sel == act_x_copy:
-            pass
-
-        elif act_x_sel == act_x_paste:
-            pass
-
-        elif act_x_sel == act_x_reset:
-            self.set_value(self._default)
+            self.connect(self.fBox, SIGNAL("currentIndexChanged(QString)"), SLOT("slot_comboBoxIndexChanged(QString)"))
 
     def stepBy(self, steps):
-        if steps == 0 or self._value == None:
+        if steps == 0 or self.fValue is None:
             return
 
-        value = self._value + (steps * self._step)
+        value = self.fValue + (self.fStep * steps)
 
-        if value < self._minimum:
-            value = self._minimum
-        elif value > self._maximum:
-            value = self._maximum
+        if value < self.fMinimum:
+            value = self.fMinimum
+        elif value > self.fMaximum:
+            value = self.fMaximum
 
-        self.set_value(value)
+        self.setValue(value)
 
     def stepEnabled(self):
-        if self._read_only or self._value == None:
+        if self.fReadOnly or self.fValue is None:
             return QAbstractSpinBox.StepNone
-        elif self._value <= self._minimum:
+        if self.fValue <= self.fMinimum:
             return QAbstractSpinBox.StepUpEnabled
-        elif self._value >= self._maximum:
+        if self.fValue >= self.fMaximum:
             return QAbstractSpinBox.StepDownEnabled
-        else:
-            return QAbstractSpinBox.StepUpEnabled | QAbstractSpinBox.StepDownEnabled
+        return (QAbstractSpinBox.StepUpEnabled | QAbstractSpinBox.StepDownEnabled)
 
     def updateAll(self):
         self.update()
-        self.bar.update()
-        if self._have_scalepoints:
-            self.box.update()
-
-    @pyqtSlot()
-    def slot_updateBarGeometry(self):
-        self.bar.setGeometry(self.lineEdit().geometry())
-        if self._have_scalepoints:
-            self.box.setGeometry(self.lineEdit().geometry())
+        self.fBar.update()
+        if self.fHaveScalePoints:
+            self.fBox.update()
 
     def resizeEvent(self, event):
-        QTimer.singleShot(0, self, SLOT("slot_updateBarGeometry()"))
+        QTimer.singleShot(0, self, SLOT("slot_updateProgressBarGeometry()"))
         QAbstractSpinBox.resizeEvent(self, event)
+
+    @pyqtSlot(str)
+    def slot_comboBoxIndexChanged(self, boxText):
+        if self.fReadOnly:
+            return
+
+        value          = float(boxText.split(" - ", 1)[0])
+        lastScaleValue = self.fScalePoints[-1]["value"]
+
+        if value == lastScaleValue:
+            value = self.fMaximum
+
+        self.setValue(value)
+
+    @pyqtSlot(float)
+    def slot_progressBarValueChanged(self, value):
+        if self.fReadOnly:
+            return
+
+        step      = int((value - self.fMinimum) / self.fStep + 0.5)
+        realValue = self.fMinimum + (step * self.fStep)
+
+        self.setValue(realValue)
+
+    @pyqtSlot()
+    def slot_showCustomMenu(self):
+        menu     = QMenu(self)
+        actReset = menu.addAction(self.tr("Reset (%f)" % self.fDefault))
+        menu.addSeparator()
+        actCopy = menu.addAction(self.tr("Copy (%f)" % self.fValue))
+
+        if True or self.fReadOnly:
+            actPaste = menu.addAction(self.tr("Paste"))
+        else:
+            actPaste = menu.addAction(self.tr("Paste (%s)" % "TODO"))
+
+        menu.addSeparator()
+
+        actSet = menu.addAction(self.tr("Set value..."))
+
+        if self.fReadOnly:
+            actReset.setEnabled(False)
+            actPaste.setEnabled(False)
+            actSet.setEnabled(False)
+
+        # TODO - NOT IMPLEMENTED YET
+        actCopy.setEnabled(False)
+
+        actSel = menu.exec_(QCursor.pos())
+
+        if actSel == actSet:
+            dialog = CustomInputDialog(self, self.parent().label.text(), self.fValue, self.fMinimum, self.fMaximum, self.fStep, self.fScalePoints)
+            if dialog.exec_():
+                value = dialog.returnValue()
+                self.setValue(value)
+
+        elif actSel == actCopy:
+            pass
+
+        elif actSel == actPaste:
+            pass
+
+        elif actSel == actReset:
+            self.setValue(self.fDefault)
+
+    @pyqtSlot()
+    def slot_updateProgressBarGeometry(self):
+        self.fBar.setGeometry(self.lineEdit().geometry())
+        if self.fHaveScalePoints:
+            self.fBox.setGeometry(self.lineEdit().geometry())
+
+    def _getNearestScalePoint(self, realValue):
+        finalValue = 0.0
+
+        for i in range(len(self.fScalePoints)):
+            scaleValue = self.fScalePoints[i]["value"]
+            if i == 0:
+                finalValue = scaleValue
+            else:
+                srange1 = abs(realValue - scaleValue)
+                srange2 = abs(realValue - finalValue)
+
+                if srange2 > srange1:
+                    finalValue = scaleValue
+
+        return finalValue
+
+    def _setScalePointValue(self, value):
+        value = self._getNearestScalePoint(value)
+
+        for i in range(self.fBox.count()):
+            if float(self.fBox.itemText(i).split(" - ", 1)[0] == value):
+                self.fBox.setCurrentIndex(i)
+                break

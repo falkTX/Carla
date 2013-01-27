@@ -4,17 +4,17 @@
 # Common Carla code
 # Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
 #
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# any later version.
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 2 of
+# the License, or any later version.
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
-# For a full copy of the GNU General Public License see the COPYING file
+# For a full copy of the GNU General Public License see the GPL.txt file
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
@@ -724,11 +724,11 @@ class PluginParameter(QWidget):
         pType  = pInfo['type']
         pHints = pInfo['hints']
 
-        self.m_midiCC      = -1
-        self.m_midiChannel = 1
-        self.m_pluginId    = pluginId
-        self.m_parameterId = pInfo['index']
-        self.m_tabIndex    = tabIndex
+        self.fMidiCC      = -1
+        self.fMidiChannel = 1
+        self.fParameterId = pInfo['index']
+        self.fPluginId    = pluginId
+        self.fTabIndex    = tabIndex
 
         self.ui.label.setText(pInfo['name'])
 
@@ -736,18 +736,18 @@ class PluginParameter(QWidget):
             self.ui.combo.addItem(MIDI_CC)
 
         if pType == PARAMETER_INPUT:
-            self.ui.widget.set_minimum(pInfo['minimum'])
-            self.ui.widget.set_maximum(pInfo['maximum'])
-            self.ui.widget.set_default(pInfo['default'])
-            self.ui.widget.set_value(pInfo['current'], False)
-            self.ui.widget.set_label(pInfo['unit'])
-            self.ui.widget.set_step(pInfo['step'])
-            self.ui.widget.set_step_small(pInfo['stepSmall'])
-            self.ui.widget.set_step_large(pInfo['stepLarge'])
-            self.ui.widget.set_scalepoints(pInfo['scalepoints'], bool(pHints & PARAMETER_USES_SCALEPOINTS))
+            self.ui.widget.setMinimum(pInfo['minimum'])
+            self.ui.widget.setMaximum(pInfo['maximum'])
+            self.ui.widget.setDefault(pInfo['default'])
+            self.ui.widget.setValue(pInfo['current'], False)
+            self.ui.widget.setLabel(pInfo['unit'])
+            self.ui.widget.setStep(pInfo['step'])
+            self.ui.widget.setStepSmall(pInfo['stepSmall'])
+            self.ui.widget.setStepLarge(pInfo['stepLarge'])
+            self.ui.widget.setScalePoints(pInfo['scalepoints'], bool(pHints & PARAMETER_USES_SCALEPOINTS))
 
             if not pHints & PARAMETER_IS_ENABLED:
-                self.ui.widget.set_read_only(True)
+                self.ui.widget.setReadOnly(True)
                 self.ui.combo.setEnabled(False)
                 self.ui.sb_channel.setEnabled(False)
 
@@ -756,11 +756,11 @@ class PluginParameter(QWidget):
                 self.ui.sb_channel.setEnabled(False)
 
         elif pType == PARAMETER_OUTPUT:
-            self.ui.widget.set_minimum(pInfo['minimum'])
-            self.ui.widget.set_maximum(pInfo['maximum'])
-            self.ui.widget.set_value(pInfo['current'], False)
-            self.ui.widget.set_label(pInfo['unit'])
-            self.ui.widget.set_read_only(True)
+            self.ui.widget.setMinimum(pInfo['minimum'])
+            self.ui.widget.setMaximum(pInfo['maximum'])
+            self.ui.widget.setValue(pInfo['current'], False)
+            self.ui.widget.setLabel(pInfo['unit'])
+            self.ui.widget.setReadOnly(True)
 
             if not pHints & PARAMETER_IS_AUTOMABLE:
                 self.ui.combo.setEnabled(False)
@@ -771,8 +771,11 @@ class PluginParameter(QWidget):
             self.ui.combo.setVisible(False)
             self.ui.sb_channel.setVisible(False)
 
-        self.set_parameter_midi_cc(pInfo['midiCC'])
-        self.set_parameter_midi_channel(pInfo['midiChannel'])
+        if pHints & PARAMETER_USES_CUSTOM_TEXT:
+            self.ui.widget.setTextCallback(self._textCallBack)
+
+        self.setMidiCC(pInfo['midiCC'])
+        self.setMidiChannel(pInfo['midiChannel'])
 
         self.connect(self.ui.widget, SIGNAL("valueChanged(double)"), SLOT("slot_valueChanged(double)"))
         self.connect(self.ui.sb_channel, SIGNAL("valueChanged(int)"), SLOT("slot_midiChannelChanged(int)"))
@@ -781,65 +784,62 @@ class PluginParameter(QWidget):
         #if force_parameters_style:
         #self.widget.force_plastique_style()
 
-        if pHints & PARAMETER_USES_CUSTOM_TEXT:
-            self.ui.widget.set_text_call(self.textCallBack)
-
         self.ui.widget.updateAll()
 
-    def setDefaultValue(self, value):
-        self.ui.widget.set_default(value)
+    def setDefault(self, value):
+        self.ui.widget.setDefault(value)
 
-    def set_parameter_value(self, value, send=True):
-        self.ui.widget.set_value(value, send)
+    def setValue(self, value, send=True):
+        self.ui.widget.setValue(value, send)
 
-    def set_parameter_midi_cc(self, cc):
-        self.m_midiCC = cc
-        self.set_MIDI_CC_in_ComboBox(cc)
+    def setMidiCC(self, cc):
+        self.fMidiCC = cc
+        self._setMidiCcInComboBox(cc)
 
-    def set_parameter_midi_channel(self, channel):
-        self.m_midiChannel = channel+1
-        self.ui.sb_channel.setValue(channel+1)
-
-    def set_MIDI_CC_in_ComboBox(self, cc):
-        for i in range(len(MIDI_CC_LIST)):
-            ccText = MIDI_CC_LIST[i].split(" ")[0]
-            if int(ccText, 16) == cc:
-                ccIndex = i
-                break
-        else:
-            ccIndex = -1
-
-        self.ui.combo.setCurrentIndex(ccIndex+1)
+    def setMidiChannel(self, channel):
+        self.fMidiChannel = channel
+        self.ui.sb_channel.setValue(channel)
 
     def tabIndex(self):
-        return self.m_tabIndex
-
-    def textCallBack(self):
-        return cString(Carla.host.get_parameter_text(self.m_pluginId, self.m_parameterId))
+        return self.fTabIndex
 
     @pyqtSlot(float)
     def slot_valueChanged(self, value):
-        self.emit(SIGNAL("valueChanged(int, double)"), self.m_parameterId, value)
+        self.emit(SIGNAL("valueChanged(int, double)"), self.fParameterId, value)
 
     @pyqtSlot(int)
     def slot_midiCcChanged(self, ccIndex):
         if ccIndex <= 0:
             cc = -1
         else:
-            ccText = MIDI_CC_LIST[ccIndex - 1].split(" ")[0]
-            cc = int(ccText, 16)
+            ccStr = MIDI_CC_LIST[ccIndex - 1].split(" ")[0]
+            cc    = int(ccStr, 16)
 
-        if self.m_midiCC != cc:
-            self.emit(SIGNAL("midiCcChanged(int, int)"), self.m_parameterId, cc)
+        if self.fMidiCC != cc:
+            self.emit(SIGNAL("midiCcChanged(int, int)"), self.fParameterId, cc)
 
-        self.m_midiCC = cc
+        self.fMidiCC = cc
 
     @pyqtSlot(int)
     def slot_midiChannelChanged(self, channel):
-        if self.m_midiChannel != channel:
-            self.emit(SIGNAL("midiChannelChanged(int, int)"), self.m_parameterId, channel)
+        if self.fMidiChannel != channel:
+            self.emit(SIGNAL("midiChannelChanged(int, int)"), self.fParameterId, channel)
 
-        self.m_midiChannel = channel
+        self.fMidiChannel = channel
+
+    def _setMidiCcInComboBox(self, cc):
+        for i in range(len(MIDI_CC_LIST)):
+            ccStr = MIDI_CC_LIST[i].split(" ")[0]
+            if int(ccStr, 16) == cc:
+                ccIndex = i+1
+                break
+        else:
+            ccIndex = 0
+
+        self.ui.combo.setCurrentIndex(ccIndex)
+
+    def _textCallBack(self):
+        return cString(Carla.host.get_parameter_text(self.fPluginId, self.fParameterId))
 
 # ------------------------------------------------------------------------------------------------------------
 # TESTING
@@ -856,8 +856,8 @@ ptest = {
     'default': 0.3,
     'minimum': 0.0,
     'maximum': 1.0,
-    'midiChannel': 1,
-    'midiCC': -1,
+    'midiChannel': 7,
+    'midiCC': 2,
     'type': PARAMETER_INPUT,
     'hints': PARAMETER_IS_ENABLED | PARAMETER_IS_AUTOMABLE,
     'scalepoints': [],
@@ -868,8 +868,8 @@ ptest = {
 }
 
 app  = QApplication(sys.argv)
-gui1 = CarlaAboutW(None)
+#gui1 = CarlaAboutW(None)
 gui2 = PluginParameter(None, ptest, 0, 0)
-gui1.show()
+#gui1.show()
 gui2.show()
 app.exec_()
