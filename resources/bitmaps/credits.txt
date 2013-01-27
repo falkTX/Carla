@@ -1,0 +1,5 @@
+The pixmaps in this folder were taken from the following projects:
+
+dial_01  - TAL Plugins
+dial_02  - TAL Plugins
+kbd_*    - FL Studio
