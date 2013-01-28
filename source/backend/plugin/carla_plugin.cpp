@@ -34,7 +34,7 @@ static const CustomData       kCustomDataNull;
 // -------------------------------------------------------------------
 // Constructor and destructor
 
-CarlaPlugin::CarlaPlugin(CarlaEngine* const engine, const unsigned short id)
+CarlaPlugin::CarlaPlugin(CarlaEngine* const engine, const unsigned int id)
     : fData(new CarlaPluginProtectedData(engine, id))
 {
     CARLA_ASSERT(engine);
@@ -408,7 +408,7 @@ void CarlaPlugin::getParameterCountInfo(uint32_t* const ins, uint32_t* const out
 // -------------------------------------------------------------------
 // Set data (internal stuff)
 
-void CarlaPlugin::setId(const unsigned short id)
+void CarlaPlugin::setId(const unsigned int id)
 {
     fData->id = id;
 
@@ -746,7 +746,7 @@ void CarlaPlugin::setProgram(int32_t index, const bool sendGui, const bool sendO
         for (uint32_t i=0; i < fData->param.count; i++)
         {
             fData->param.ranges[i].def = getParameterValue(i);
-            fData->param.ranges[i].fixDefaultValue();
+            fData->param.ranges[i].fixDefault();
 
 #ifndef BUILD_BRIDGE
             if (sendOsc)
@@ -791,7 +791,7 @@ void CarlaPlugin::setMidiProgram(int32_t index, const bool sendGui, const bool s
         for (uint32_t i=0; i < fData->param.count; i++)
         {
             fData->param.ranges[i].def = getParameterValue(i);
-            fData->param.ranges[i].fixDefaultValue();
+            fData->param.ranges[i].fixDefault();
 
 #ifndef BUILD_BRIDGE
             if (sendOsc)

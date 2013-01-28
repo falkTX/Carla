@@ -27,8 +27,6 @@ int main(int argc, char* argv[])
     return 0;
 }
 
-CARLA_BACKEND_START_NAMESPACE
-
 // -------------------------------------------------------------------------------------------------------------------
 
 #if 0
@@ -50,6 +48,8 @@ struct CarlaBackendStandalone {
 #endif
 
 // -------------------------------------------------------------------------------------------------------------------
+
+//CARLA_BACKEND_START_NAMESPACE
 
 const char* carla_get_extended_license_text()
 {
@@ -108,17 +108,19 @@ unsigned int carla_get_engine_driver_count()
 {
     qDebug("carla_get_engine_driver_count()");
 
-    return CarlaEngine::getDriverCount();
+    return CarlaBackend::CarlaEngine::getDriverCount();
+    return 0;
 }
 
 const char* carla_get_engine_driver_name(unsigned int index)
 {
     qDebug("carla_get_engine_driver_name(%i)", index);
 
-    return CarlaEngine::getDriverName(index);
+    //return CarlaEngine::getDriverName(index);
+    return nullptr;
 }
 
-CARLA_BACKEND_END_NAMESPACE
+//CARLA_BACKEND_END_NAMESPACE
 
 #if 0
 // -------------------------------------------------------------------------------------------------------------------

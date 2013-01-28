@@ -41,6 +41,7 @@ OBJS += \
 	zynaddsubfx-src.cpp.o
 endif
 
+STATIC = ../libcarla_native.a
 TARGET = ../libcarla_native.so
 
 # --------------------------------------------------------------
@@ -48,7 +49,7 @@ TARGET = ../libcarla_native.so
 all: $(TARGET)
 
 clean:
-	rm -f $(OBJS) $(TARGET)
+	rm -f $(OBJS) $(STATIC) $(TARGET)
 
 # --------------------------------------------------------------
 
@@ -57,6 +58,9 @@ clean:
 
 %.cpp.o: %.cpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+
+$(STATIC): $(OBJS)
+	$(AR) rs $@ $^
 
 $(TARGET): $(OBJS)
 	$(CXX) $^ $(LINK_FLAGS) -o $@

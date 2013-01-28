@@ -42,6 +42,7 @@ OBJS = \
 # 	fluidsynth.cpp.o \
 # 	linuxsampler.cpp.o
 
+STATIC = ../libcarla_plugin.a
 TARGET = ../libcarla_plugin.so
 
 # --------------------------------------------------------------
@@ -49,12 +50,15 @@ TARGET = ../libcarla_plugin.so
 all: $(TARGET)
 
 clean:
-	rm -f $(OBJS) $(TARGET)
+	rm -f $(OBJS) $(STATIC) $(TARGET)
 
 # --------------------------------------------------------------
 
 %.cpp.o: %.cpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+
+$(STATIC): $(OBJS)
+	$(AR) rs $@ $^
 
 $(TARGET): $(OBJS)
 	$(CXX) $^ $(LINK_FLAGS) -o $@

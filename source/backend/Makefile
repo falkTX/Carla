@@ -4,12 +4,21 @@
 # Created by falkTX
 #
 
-all: carla_standalone
+all: libcarla_standalone.so
 
 # --------------------------------------------------------------
 
-carla_standalone:
-	$(MAKE) -C standalone
+libcarla_engine.%:
+	$(MAKE) -C engine ../$@
+
+libcarla_native.%:
+	$(MAKE) -C native ../$@
+
+libcarla_plugin.%:
+	$(MAKE) -C plugin ../$@
+
+libcarla_standalone.%:
+	$(MAKE) -C standalone ../$@
 
 # --------------------------------------------------------------
 

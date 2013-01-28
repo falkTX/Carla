@@ -867,9 +867,9 @@ ptest = {
     'unit': "un",
 }
 
-app  = QApplication(sys.argv)
+#app  = QApplication(sys.argv)
 #gui1 = CarlaAboutW(None)
-gui2 = PluginParameter(None, ptest, 0, 0)
+#gui2 = PluginParameter(None, ptest, 0, 0)
 #gui1.show()
-gui2.show()
-app.exec_()
+#gui2.show()
+#app.exec_()

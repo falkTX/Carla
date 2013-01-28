@@ -23,7 +23,7 @@
 // TODO - create struct for internal plugin info
 // TODO - dont strdup() on const-char* returns, use static char[STR_MAX]
 
-CARLA_BACKEND_START_NAMESPACE
+//CARLA_BACKEND_START_NAMESPACE
 
 /*!
  * @defgroup CarlaBackendStandalone Carla Backend Standalone
@@ -176,6 +176,6 @@ CARLA_EXPORT void nsm_reply_save();
 
 /**@}*/
 
-CARLA_BACKEND_END_NAMESPACE
+//CARLA_BACKEND_END_NAMESPACE
 
 #endif // __CARLA_STANDALONE_HPP__
