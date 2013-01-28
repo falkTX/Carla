@@ -1832,7 +1832,7 @@ struct JackHandle {
 };
 
 ThreadHandle threadId;
-void jackSilentError( const char * ) {};
+void jackSilentError( const char * ) {}
 
 RtApiJack :: RtApiJack()
 {

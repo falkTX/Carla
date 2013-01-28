@@ -454,4 +454,12 @@ const char* CarlaEngine::getRtAudioApiName(unsigned int index)
 
 CARLA_BACKEND_END_NAMESPACE
 
+#ifdef QTCREATOR_TEST
+int main()
+{
+    return 0;
+}
+
+#endif
+
 #endif // CARLA_ENGINE_RTAUDIO

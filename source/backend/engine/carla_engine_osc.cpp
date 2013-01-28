@@ -197,7 +197,7 @@ int CarlaEngineOsc::handleMessage(const char* const path, const int argc, const 
     if (std::isdigit(path[m_nameSize+3]))
         pluginId += (path[m_nameSize+3]-'0')*10;
 
-    if (pluginId < 0 || pluginId > engine->maxPluginNumber())
+    if (pluginId < 0 || pluginId > static_cast<int>(engine->currentPluginCount()))
     {
         qCritical("CarlaEngineOsc::handleMessage() - failed to get plugin, wrong id '%i'", pluginId);
         return 1;
@@ -206,11 +206,13 @@ int CarlaEngineOsc::handleMessage(const char* const path, const int argc, const 
     // Get plugin
     CarlaPlugin* const plugin = engine->getPluginUnchecked(pluginId);
 
+#if 0
     if (plugin == nullptr || plugin->id() != pluginId)
     {
         qWarning("CarlaEngineOsc::handleMessage() - invalid plugin id '%i', probably has been removed", pluginId);
         return 1;
     }
+#endif
 
     // Get method from path, "/Carla/i/method"
     const int offset = (pluginId >= 10) ? 5 : 4;
@@ -267,6 +269,7 @@ int CarlaEngineOsc::handleMessage(const char* const path, const int argc, const 
     if (strcmp(method, "note_off") == 0)
         return handleMsgNoteOff(plugin, argc, argv, types);
 
+#if 0
     // Plugin Bridges
     if ((plugin->hints() & PLUGIN_IS_BRIDGE) > 0 && strlen(method) > 11 && strncmp(method, "bridge_", 7) == 0)
     {
@@ -316,13 +319,16 @@ int CarlaEngineOsc::handleMessage(const char* const path, const int argc, const 
             return plugin->setOscBridgeInfo(PluginBridgeError, argc, argv, types);
     }
 #endif
+#endif
 
+#if 0
     // Plugin-specific methods
 #ifdef WANT_LV2
     if (strcmp(method, "lv2_atom_transfer") == 0)
         return handleMsgLv2AtomTransfer(plugin, argc, argv, types);
     if (strcmp(method, "lv2_event_transfer") == 0)
         return handleMsgLv2EventTransfer(plugin, argc, argv, types);
+#endif
 #endif
 
     qWarning("CarlaEngineOsc::handleMessage() - unsupported OSC method '%s'", method);
@@ -361,6 +367,7 @@ int CarlaEngineOsc::handleMsgRegister(const int argc, const lo_arg* const* const
     free((void*)host);
     free((void*)port);
 
+#if 0
     for (unsigned short i=0; i < engine->maxPluginNumber(); i++)
     {
         CarlaPlugin* const plugin = engine->getPluginUnchecked(i);
@@ -368,6 +375,7 @@ int CarlaEngineOsc::handleMsgRegister(const int argc, const lo_arg* const* const
         if (plugin && plugin->enabled())
             plugin->registerToOscClient();
     }
+#endif
 
     return 0;
 }
@@ -394,8 +402,10 @@ int CarlaEngineOsc::handleMsgUpdate(CARLA_ENGINE_OSC_HANDLE_ARGS2, const lo_addr
     qDebug("CarlaEngineOsc::handleMsgUpdate()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(1, "s");
 
+#if 0
     const char* const url = (const char*)&argv[0]->s;
     plugin->updateOscData(source, url);
+#endif
 
     return 0;
 }
@@ -412,7 +422,9 @@ int CarlaEngineOsc::handleMsgConfigure(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     qDebug("CarlaEngineOsc::handleMsgConfigure(\"%s\", \"%s\")", key, value);
 #endif
 
+#if 0
     plugin->setCustomData(CUSTOM_DATA_STRING, key, value, false);
+#endif
 
     return 0;
 }
@@ -422,9 +434,11 @@ int CarlaEngineOsc::handleMsgControl(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     qDebug("CarlaEngineOsc::handleMsgControl()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(2, "if");
 
+#if 0
     const int  rindex = argv[0]->i;
     const float value = argv[1]->f;
     plugin->setParameterValueByRIndex(rindex, value, false, true, true);
+#endif
 
     return 0;
 }
@@ -433,6 +447,7 @@ int CarlaEngineOsc::handleMsgProgram(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 {
     qDebug("CarlaEngineOsc::handleMsgProgram()");
 
+#if 0
     if (argc == 2)
     {
         CARLA_ENGINE_OSC_CHECK_OSC_TYPES(2, "ii");
@@ -457,6 +472,7 @@ int CarlaEngineOsc::handleMsgProgram(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 
         qCritical("CarlaEngineOsc::handleMsgProgram() - program_id '%i' out of bounds", program_id);
     }
+#endif
 
     return 1;
 }
@@ -466,6 +482,7 @@ int CarlaEngineOsc::handleMsgMidi(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     qDebug("CarlaEngineOsc::handleMsgMidi()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(1, "m");
 
+#if 0
     if (plugin->midiInCount() > 0)
     {
         const uint8_t* const data = argv[0]->m;
@@ -490,6 +507,7 @@ int CarlaEngineOsc::handleMsgMidi(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 
         return 0;
     }
+#endif
 
     qWarning("CarlaEngineOsc::handleMsgMidi() - recived midi when plugin has no midi inputs");
     return 1;
@@ -499,9 +517,11 @@ int CarlaEngineOsc::handleMsgExiting(CARLA_ENGINE_OSC_HANDLE_ARGS1)
 {
     qDebug("CarlaEngineOsc::handleMsgExiting()");
 
+#if 0
     // TODO - check for non-UIs (dssi-vst) and set to -1 instead
     engine->callback(CALLBACK_SHOW_GUI, plugin->id(), 0, 0, 0.0, nullptr);
     plugin->freeOscData();
+#endif
 
     return 0;
 }
@@ -514,8 +534,10 @@ int CarlaEngineOsc::handleMsgSetActive(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     qDebug("CarlaEngineOsc::handleMsgSetActive()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(1, "i");
 
+#if 0
     const bool active = (bool)argv[0]->i;
     plugin->setActive(active, false, true);
+#endif
 
     return 0;
 }
@@ -525,8 +547,10 @@ int CarlaEngineOsc::handleMsgSetDryWet(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     qDebug("CarlaEngineOsc::handleMsgSetDryWet()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(1, "f");
 
+#if 0
     const float value = argv[0]->f;
     plugin->setDryWet(value, false, true);
+#endif
 
     return 0;
 }
@@ -536,8 +560,10 @@ int CarlaEngineOsc::handleMsgSetVolume(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     qDebug("CarlaEngineOsc::handleMsgSetVolume()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(1, "f");
 
+#if 0
     const float value = argv[0]->f;
     plugin->setVolume(value, false, true);
+#endif
 
     return 0;
 }
@@ -547,8 +573,10 @@ int CarlaEngineOsc::handleMsgSetBalanceLeft(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     qDebug("CarlaEngineOsc::handleMsgSetBalanceLeft()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(1, "f");
 
+#if 0
     const float value = argv[0]->f;
     plugin->setBalanceLeft(value, false, true);
+#endif
 
     return 0;
 }
@@ -558,8 +586,10 @@ int CarlaEngineOsc::handleMsgSetBalanceRight(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     qDebug("CarlaEngineOsc::handleMsgSetBalanceRight()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(1, "f");
 
+#if 0
     const float value = argv[0]->f;
     plugin->setBalanceRight(value, false, true);
+#endif
 
     return 0;
 }
@@ -569,9 +599,11 @@ int CarlaEngineOsc::handleMsgSetParameterValue(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     qDebug("CarlaEngineOsc::handleMsgSetParameterValue()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(2, "if");
 
+#if 0
     const int32_t index = argv[0]->i;
     const float   value = argv[1]->f;
     plugin->setParameterValue(index, value, true, false, true);
+#endif
 
     return 0;
 }
@@ -581,9 +613,11 @@ int CarlaEngineOsc::handleMsgSetParameterMidiCC(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     qDebug("CarlaEngineOsc::handleMsgSetParameterMidiCC()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(2, "ii");
 
+#if 0
     const int32_t index = argv[0]->i;
     const int32_t cc    = argv[1]->i;
     plugin->setParameterMidiCC(index, cc, false, true);
+#endif
 
     return 0;
 }
@@ -593,9 +627,11 @@ int CarlaEngineOsc::handleMsgSetParameterMidiChannel(CARLA_ENGINE_OSC_HANDLE_ARG
     qDebug("CarlaEngineOsc::handleMsgSetParameterMidiChannel()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(2, "ii");
 
+#if 0
     const int32_t index   = argv[0]->i;
     const int32_t channel = argv[1]->i;
     plugin->setParameterMidiChannel(index, channel, false, true);
+#endif
 
     return 0;
 }
@@ -605,6 +641,7 @@ int CarlaEngineOsc::handleMsgSetProgram(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     qDebug("CarlaEngineOsc::handleMsgSetProgram()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(1, "i");
 
+#if 0
     const int32_t index = argv[0]->i;
     plugin->setProgram(index, true, false, true, true);
 
@@ -614,6 +651,7 @@ int CarlaEngineOsc::handleMsgSetProgram(CARLA_ENGINE_OSC_HANDLE_ARGS2)
         for (uint32_t i=0; i < plugin->parameterCount(); i++)
             engine->osc_send_control_set_parameter_value(plugin->id(), i, plugin->getParameterValue(i));
     }
+#endif
 
     return 0;
 }
@@ -623,6 +661,7 @@ int CarlaEngineOsc::handleMsgSetMidiProgram(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     qDebug("CarlaEngineOsc::handleMsgSetMidiProgram()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(1, "i");
 
+#if 0
     const int32_t index = argv[0]->i;
     plugin->setMidiProgram(index, true, false, true, true);
 
@@ -632,6 +671,7 @@ int CarlaEngineOsc::handleMsgSetMidiProgram(CARLA_ENGINE_OSC_HANDLE_ARGS2)
         for (uint32_t i=0; i < plugin->parameterCount(); i++)
             engine->osc_send_control_set_parameter_value(plugin->id(), i, plugin->getParameterValue(i));
     }
+#endif
 
     return 0;
 }
@@ -641,10 +681,12 @@ int CarlaEngineOsc::handleMsgNoteOn(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     qDebug("CarlaEngineOsc::handleMsgNoteOn()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(3, "iii");
 
+#if 0
     const int32_t channel = argv[0]->i;
     const int32_t note    = argv[1]->i;
     const int32_t velo    = argv[2]->i;
     plugin->sendMidiSingleNote(channel, note, velo, true, false, true);
+#endif
 
     return 0;
 }
@@ -654,13 +696,16 @@ int CarlaEngineOsc::handleMsgNoteOff(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     qDebug("CarlaEngineOsc::handleMsgNoteOff()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(2, "ii");
 
+#if 0
     const int32_t channel = argv[0]->i;
     const int32_t note    = argv[1]->i;
     plugin->sendMidiSingleNote(channel, note, 0, true, false, true);
+#endif
 
     return 0;
 }
 
+#if 0
 int CarlaEngineOsc::handleMsgBridgeSetInPeak(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 {
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(2, "id");
@@ -682,6 +727,7 @@ int CarlaEngineOsc::handleMsgBridgeSetOutPeak(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 
     return 0;
 }
+#endif
 #endif
 
 CARLA_BACKEND_END_NAMESPACE

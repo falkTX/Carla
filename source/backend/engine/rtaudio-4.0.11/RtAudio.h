@@ -540,7 +540,7 @@ struct CallbackInfo {
 
   // Default constructor.
   CallbackInfo()
-    :object(0), callback(0), userData(0), apiInfo(0), isRunning(false) {}
+    :object(nullptr), callback(nullptr), userData(nullptr), apiInfo(nullptr), isRunning(false) {}
 };
 
 // **************************************************************** //
@@ -652,7 +652,7 @@ protected:
 #endif
 
     RtApiStream()
-      :apiHandle(0), deviceBuffer(0) { device[0] = 11111; device[1] = 11111; }
+      :apiHandle(nullptr), deviceBuffer(nullptr) { device[0] = 11111; device[1] = 11111; }
   };
 
   typedef signed short Int16;
@@ -726,7 +726,7 @@ inline void RtAudio :: abortStream( void ) { return rtapi_->abortStream(); }
 inline bool RtAudio :: isStreamOpen( void ) const throw() { return rtapi_->isStreamOpen(); }
 inline bool RtAudio :: isStreamRunning( void ) const throw() { return rtapi_->isStreamRunning(); }
 inline long RtAudio :: getStreamLatency( void ) { return rtapi_->getStreamLatency(); }
-inline unsigned int RtAudio :: getStreamSampleRate( void ) { return rtapi_->getStreamSampleRate(); };
+inline unsigned int RtAudio :: getStreamSampleRate( void ) { return rtapi_->getStreamSampleRate(); }
 inline double RtAudio :: getStreamTime( void ) { return rtapi_->getStreamTime(); }
 inline void RtAudio :: showWarnings( bool value ) throw() { rtapi_->showWarnings( value ); }
 

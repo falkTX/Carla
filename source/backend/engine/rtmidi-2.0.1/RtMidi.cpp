@@ -3409,7 +3409,7 @@ int jackProcessIn( jack_nframes_t nframes, void *arg )
   JackMidiData *jData = (JackMidiData *) arg;
   MidiInApi :: RtMidiInData *rtData = jData->rtMidiIn;
   jack_midi_event_t event;
-  jack_time_t long long time;
+  jack_time_t time;
 
   // Is port created?
   if ( jData->port == NULL ) return 0;

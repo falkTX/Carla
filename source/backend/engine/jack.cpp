@@ -671,9 +671,11 @@ public:
         }
         else if (fOptions.processMode == PROCESS_MODE_MULTIPLE_CLIENTS)
         {
+#if 0
             client = jackbridge_client_open(plugin->name(), JackNullOption, nullptr);
             jackbridge_set_process_callback(client, carla_jack_process_callback_plugin, plugin);
             jackbridge_set_latency_callback(client, carla_jack_latency_callback_plugin, plugin);
+#endif
         }
 #endif
 
@@ -1119,6 +1121,7 @@ private:
     {
         CarlaPlugin* const plugin = (CarlaPlugin*)arg;
 
+#if 0
         if (plugin && plugin->enabled())
         {
             //plugin->engineProcessLock();
@@ -1126,16 +1129,19 @@ private:
             processPlugin(plugin, nframes);
             //plugin->engineProcessUnlock();
         }
+#endif
 
         return 0;
     }
 
     static void carla_jack_latency_callback_plugin(jack_latency_callback_mode_t mode, void* arg)
     {
+#if 0
         CarlaPlugin* const plugin = (CarlaPlugin*)arg;
 
         if (plugin && plugin->enabled())
             latencyPlugin(plugin, mode);
+#endif
     }
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineJack)

@@ -23,20 +23,20 @@ CARLA_BACKEND_START_NAMESPACE
 
 // -----------------------------------------------------------------------
 
-CarlaEngineThread::CarlaEngineThread(CarlaEngine* const engine_, QObject* const parent)
+CarlaEngineThread::CarlaEngineThread(CarlaEngine* const engine, QObject* const parent)
     : QThread(parent),
-      engine(engine_)
+      fEngine(engine)
 {
     qDebug("CarlaEngineThread::CarlaEngineThread(%p, %p)", engine, parent);
     CARLA_ASSERT(engine);
 
-    m_stopNow = true;
+    fStopNow = true;
 }
 
 CarlaEngineThread::~CarlaEngineThread()
 {
     qDebug("CarlaEngineThread::~CarlaEngineThread()");
-    CARLA_ASSERT(m_stopNow);
+    CARLA_ASSERT(fStopNow);
 }
 
 // -----------------------------------------------------------------------
@@ -44,9 +44,9 @@ CarlaEngineThread::~CarlaEngineThread()
 void CarlaEngineThread::startNow()
 {
     qDebug("CarlaEngineThread::startNow()");
-    CARLA_ASSERT(m_stopNow);
+    CARLA_ASSERT(fStopNow);
 
-    m_stopNow = false;
+    fStopNow = false;
 
     start(QThread::HighPriority);
 }
@@ -55,12 +55,12 @@ void CarlaEngineThread::stopNow()
 {
     qDebug("CarlaEngineThread::stopNow()");
 
-    if (m_stopNow)
+    if (fStopNow)
         return;
 
-    m_stopNow = true;
+    fStopNow = true;
 
-    const ScopedLocker m(this);
+    const CarlaMutex::ScopedLocker sl(&fMutex);
 
     if (isRunning() && ! wait(200))
     {
@@ -76,31 +76,32 @@ void CarlaEngineThread::stopNow()
 void CarlaEngineThread::run()
 {
     qDebug("CarlaEngineThread::run()");
-    CARLA_ASSERT(engine->isRunning());
+    CARLA_ASSERT(fEngine->isRunning());
 
     bool oscRegisted, usesSingleThread;
-    unsigned short i;
+    int i, count;
     double value;
 
-    while (engine->isRunning() && ! m_stopNow)
+    while (fEngine->isRunning() && ! fStopNow)
     {
-        const ScopedLocker m(this);
+        const CarlaMutex::ScopedLocker sl(&fMutex);
+
 #ifndef BUILD_BRIDGE
-        oscRegisted = engine->isOscControlRegistered();
+        oscRegisted = fEngine->isOscControlRegistered();
 #else
-        oscRegisted = engine->isOscBridgeRegistered();
+        oscRegisted = fEngine->isOscBridgeRegistered();
 #endif
 
-        for (i=0; i < engine->maxPluginNumber(); i++)
+        for (i=0, count = fEngine->currentPluginCount(); i < count; i++)
         {
-            CarlaPlugin* const plugin = engine->getPluginUnchecked(i);
+            CarlaPlugin* const plugin = fEngine->getPluginUnchecked(i);
 
+#if 0
             if (! (plugin && plugin->enabled()))
                 continue;
 
-#ifndef BUILD_BRIDGE
-            const unsigned short id = plugin->id();
-#endif
+            CARLA_ASSERT(i == plugin->id());
+
             usesSingleThread = (plugin->hints() & PLUGIN_USES_SINGLE_THREAD);
 
             // -------------------------------------------------------
@@ -129,9 +130,9 @@ void CarlaEngineThread::run()
                     if (oscRegisted)
                     {
 #ifdef BUILD_BRIDGE
-                        engine->osc_send_bridge_set_parameter_value(j, value);
+                        fEngine->osc_send_bridge_set_parameter_value(j, value);
 #else
-                        engine->osc_send_control_set_parameter_value(id, j, value);
+                        fEngine->osc_send_control_set_parameter_value(i, j, value);
 #endif
                     }
                 }
@@ -142,15 +143,16 @@ void CarlaEngineThread::run()
                 if (oscRegisted)
                 {
 #ifdef BUILD_BRIDGE
-                    engine->osc_send_peaks(plugin);
+                    fEngine->osc_send_peaks(plugin);
 #else
-                    engine->osc_send_peaks(plugin, id);
+                    fEngine->osc_send_peaks(plugin, i);
 #endif
                 }
             }
+#endif
         }
 
-        engine->idleOsc();
+        fEngine->idleOsc();
         msleep(oscRegisted ? 40 : 50);
     }
 }

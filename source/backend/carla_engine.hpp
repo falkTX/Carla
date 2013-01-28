@@ -580,12 +580,12 @@ public:
     /*!
      * Maximum client name size.
      */
-    virtual unsigned int maxClientNameSize();
+    virtual unsigned int maxClientNameSize() const;
 
     /*!
      * Maximum port name size.
      */
-    virtual unsigned int maxPortNameSize();
+    virtual unsigned int maxPortNameSize() const;
 
     /*!
      * Current number of plugins loaded.
@@ -646,12 +646,12 @@ public:
     /*!
      * Get plugin with id \a id.
      */
-    CarlaPlugin* getPlugin(const unsigned short id) const;
+    CarlaPlugin* getPlugin(const int id) const;
 
     /*!
      * Get plugin with id \a id, faster unchecked version.
      */
-    CarlaPlugin* getPluginUnchecked(const unsigned short id) const;
+    CarlaPlugin* getPluginUnchecked(const int id) const;
 
     /*!
      * Get a unique plugin name within the engine.\n
@@ -898,6 +898,7 @@ private:
     static const char*  getRtAudioApiName(unsigned int index);
 #endif
 
+public:
 #ifdef BUILD_BRIDGE
     void osc_send_peaks(CarlaPlugin* const plugin);
 #else
@@ -926,7 +927,6 @@ private:
     void osc_send_bridge_set_inpeak(const int32_t portId);
     void osc_send_bridge_set_outpeak(const int32_t portId);
 #else
-public:
     void osc_send_control_add_plugin_start(const int32_t pluginId, const char* const pluginName);
     void osc_send_control_add_plugin_end(const int32_t pluginId);
     void osc_send_control_remove_plugin(const int32_t pluginId);

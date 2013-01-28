@@ -19,7 +19,7 @@
 #define __CARLA_ENGINE_THREAD_HPP__
 
 #include "carla_backend.hpp"
-#include "carla_juce_utils.hpp"
+#include "carla_utils.hpp"
 
 #include <QtCore/QThread>
 
@@ -46,32 +46,10 @@ protected:
     // ----------------------------------------------
 
 private:
-    CarlaEngine* const engine;
+    CarlaEngine* const fEngine;
 
-    CarlaMutex m_mutex;
-    bool       m_stopNow;
-
-    // ----------------------------------------------
-
-#if 0
-    class ScopedLocker
-    {
-    public:
-        ScopedLocker(CarlaEngineThread* const thread)
-            : mutex(&thread->m_mutex)
-        {
-            mutex->lock();
-        }
-
-        ~ScopedLocker()
-        {
-            mutex->unlock();
-        }
-
-    private:
-        CarlaMutex* const mutex;
-    };
-#endif
+    CarlaMutex fMutex;
+    bool       fStopNow;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineThread)
 };

@@ -382,7 +382,7 @@ class MidiInApi
     // Default constructor.
   RtMidiInData()
   : ignoreFlags(7), doInput(false), firstMessage(true),
-      apiData(0), usingCallback(false), userCallback(0), userData(0),
+      apiData(nullptr), usingCallback(false), userCallback(nullptr), userData(nullptr),
       continueSysex(false) {}
   };
 

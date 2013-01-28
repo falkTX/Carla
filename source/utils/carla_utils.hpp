@@ -252,19 +252,19 @@ public:
     class ScopedLocker
     {
     public:
-        ScopedLocker(CarlaMutex* const mutex_)
-            : mutex(mutex_)
+        ScopedLocker(CarlaMutex* const mutex)
+            : fMutex(mutex)
         {
-            mutex->lock();
+            fMutex->lock();
         }
 
         ~ScopedLocker()
         {
-            mutex->unlock();
+            fMutex->unlock();
         }
 
     private:
-        CarlaMutex* const mutex;
+        CarlaMutex* const fMutex;
 
         CARLA_PREVENT_HEAP_ALLOCATION
         CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ScopedLocker)

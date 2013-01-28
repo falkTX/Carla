@@ -17,8 +17,9 @@
 
 #ifdef CARLA_ENGINE_PLUGIN
 
-#include "carla_engine.hpp"
-#include "carla_plugin.hpp"
+#include "carla_engine_internal.hpp"
+#include "carla_backend_utils.hpp"
+#include "carla_midi.h"
 
 #include "DistrhoPlugin.h"
 
@@ -47,7 +48,7 @@ static const unsigned int programCount = 128;
 class CarlaEnginePluginClient : public CarlaEngineClient
 {
 public:
-    CarlaEnginePluginClient(const CarlaEngineType engineType, const ProcessMode processMode)
+    CarlaEnginePluginClient(const EngineType engineType, const ProcessMode processMode)
         : CarlaEngineClient(engineType, processMode)
     {
     }
@@ -56,23 +57,21 @@ public:
     {
     }
 
-    const CarlaEngineBasePort* addPort(const CarlaEnginePortType portType, const char* const name, const bool isInput)
+    const CarlaEnginePort* addPort(const EnginePortType portType, const char* const name, const bool isInput)
     {
-        qDebug("CarlaEnginePluginClient::addPort(%i, \"%s\", %s)", portType, name, bool2str(isInput));
+        qDebug("CarlaEnginePluginClient::addPort(%s, \"%s\", %s)", EnginePortType2Str(portType), name, bool2str(isInput));
 
         switch (portType)
         {
-        case CarlaEnginePortTypeNull:
+        case kEnginePortTypeNull:
             break;
-        case CarlaEnginePortTypeAudio:
-            return new CarlaEngineAudioPort(isInput, processMode);
-        case CarlaEnginePortTypeControl:
-            return new CarlaEngineControlPort(isInput, processMode);
-        case CarlaEnginePortTypeMIDI:
-            return new CarlaEngineMidiPort(isInput, processMode);
+        case kEnginePortTypeAudio:
+            return new CarlaEngineAudioPort(isInput, kProcessMode);
+        case kEnginePortTypeEvent:
+            return new CarlaEngineEventPort(isInput, kProcessMode);
         }
 
-        qCritical("CarlaEnginePluginClient::addPort(%i, \"%s\", %s) - invalid type", portType, name, bool2str(isInput));
+        qCritical("CarlaEnginePluginClient::addPort(%s, \"%s\", %s) - invalid type", EnginePortType2Str(portType), name, bool2str(isInput));
         return nullptr;
     }
 };
@@ -102,10 +101,10 @@ public:
         memcpy(prevParamBuffers, paramBuffers, sizeof(float)*paramCount);
 
         // set-up engine
-        options.processMode = PROCESS_MODE_CONTINUOUS_RACK;
-        options.forceStereo = true;
-        options.preferPluginBridges = false;
-        options.preferUiBridges = false;
+        fOptions.processMode = PROCESS_MODE_CONTINUOUS_RACK;
+        fOptions.forceStereo = true;
+        fOptions.preferPluginBridges = false;
+        fOptions.preferUiBridges = false;
         init("Carla");
 
         // Force thread start so we get some OSC usage
@@ -131,13 +130,13 @@ public:
     {
         qDebug("CarlaEnginePlugin::init(\"%s\")", clientName);
 
-        bufferSize = d_bufferSize();
-        sampleRate = d_sampleRate();
+        fBufferSize = d_bufferSize();
+        fSampleRate = d_sampleRate();
 
-        name = clientName;
-        name.toBasic();
+        fName = clientName;
+        fName.toBasic();
 
-        CarlaEngine::init(name);
+        CarlaEngine::init(fName);
         return true;
     }
 
@@ -159,41 +158,41 @@ public:
         return false;
     }
 
-    CarlaEngineType type() const
+    EngineType type() const
     {
-        return CarlaEngineTypeRtAudio;
+        return kEngineTypeRtAudio;
     }
 
     CarlaEngineClient* addClient(CarlaPlugin* const)
     {
-        return new CarlaEnginePluginClient(CarlaEngineTypeRtAudio, options.processMode);
+        return new CarlaEnginePluginClient(kEngineTypePlugin, fOptions.processMode);
     }
 
 protected:
     // ---------------------------------------------
     // DISTRHO Plugin Information
 
-    const char* d_label()
+    const char* d_label() const
     {
         return "Carla";
     }
 
-    const char* d_maker()
+    const char* d_maker() const
     {
         return "falkTX";
     }
 
-    const char* d_license()
+    const char* d_license() const
     {
         return "GPL v2+";
     }
 
-    uint32_t d_version()
+    uint32_t d_version() const
     {
         return 0x0500;
     }
 
-    long d_uniqueId()
+    long d_uniqueId() const
     {
         return d_cconst('C', 'r', 'l', 'a');
     }
@@ -410,11 +409,13 @@ protected:
         if (maxPluginNumber() == 0)
             return;
 
+#if 0
         if (CarlaPlugin* const plugin = getPlugin(0))
         {
             if (index > plugin->programCount())
                 plugin->setProgram(index, true, true, false, true);
         }
+#endif
     }
 
     void  d_setState(const char* key, const char* value)
@@ -428,7 +429,7 @@ protected:
 
     void d_activate()
     {
-//#if 0
+#if 0
         for (unsigned short i=0, max=maxPluginNumber(); i < max; i++)
         {
             CarlaPlugin* const plugin = getPluginUnchecked(i);
@@ -436,14 +437,14 @@ protected:
             if (plugin && plugin->enabled())
                 plugin->setActive(true, true, false);
         }
-//#endif
+#endif
 
         memcpy(prevParamBuffers, paramBuffers, sizeof(float)*paramCount);
     }
 
     void d_deactivate()
     {
-//#if 0
+#if 0
         for (unsigned short i=0, max=maxPluginNumber(); i < max; i++)
         {
             CarlaPlugin* const plugin = getPluginUnchecked(i);
@@ -451,7 +452,7 @@ protected:
             if (plugin && plugin->enabled())
                 plugin->setActive(false, true, false);
         }
-//#endif
+#endif
     }
 
     void d_run(float** inputs, float** outputs, uint32_t frames, uint32_t midiEventCount, const DISTRHO::MidiEvent* midiEvents)
@@ -460,9 +461,10 @@ protected:
             return;
 
         // create audio buffers
-        float* inBuf[2]  = { (float*)inputs[0], (float*)inputs[1] };
+        float* inBuf[2]  = { inputs[0], inputs[1] };
         float* outBuf[2] = { outputs[0], outputs[1] };
 
+#if 0
         // initialize control input
         memset(rackControlEventsIn, 0, sizeof(CarlaEngineControlEvent)*CarlaEngine::MAX_CONTROL_EVENTS);
         {
@@ -500,6 +502,7 @@ protected:
                 i += 1;
             }
         }
+#endif
 
         processRack(inBuf, outBuf, frames);
     }

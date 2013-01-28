@@ -16,6 +16,17 @@ LINK_FLAGS      += $(shell pkg-config --libs QtCore)
 
 # --------------------------------------------------------------
 
+ifeq ($(CARLA_PLUGIN_SUPPORT),true)
+BUILD_C_FLAGS   += -DWANT_LV2
+BUILD_CXX_FLAGS += -DWANT_LADSPA -DWANT_DSSI -DWANT_LV2 -DWANT_VST
+endif
+
+ifeq ($(CARLA_RTAUDIO_SUPPORT),true)
+BUILD_CXX_FLAGS += -DWANT_RTAUDIO
+endif
+
+# --------------------------------------------------------------
+
 ifeq ($(HAVE_JACK),true)
 BUILD_CXX_FLAGS += -DWANT_JACK
 endif
@@ -34,15 +45,4 @@ endif
 
 ifeq ($(HAVE_ZYN_DEPS),true)
 BUILD_CXX_FLAGS += -DWANT_ZYNADDSUBFX
-endif
-
-# --------------------------------------------------------------
-
-ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-BUILD_C_FLAGS   += -DWANT_LV2
-BUILD_CXX_FLAGS += -DWANT_LADSPA -DWANT_DSSI -DWANT_LV2 -DWANT_VST
-endif
-
-ifeq ($(CARLA_RTAUDIO_SUPPORT),true)
-BUILD_CXX_FLAGS += -DWANT_RTAUDIO
 endif

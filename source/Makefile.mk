@@ -26,18 +26,12 @@ BASE_FLAGS  = -O2 -ffast-math -mtune=generic -msse -mfpmath=sse
 BASE_FLAGS += -DNDEBUG
 endif
 
-BASE_FLAGS += -ansi -pedantic -pedantic-errors -Wall -Wextra -Wformat=2 -Wunused-parameter -Wuninitialized
-BASE_FLAGS += -Wcast-qual -Wconversion -Wsign-conversion -Wlogical-op -Waggregate-return
-BASE_FLAGS += -fipa-pure-const -Wsuggest-attribute=noreturn #pure,const,noreturn
-BASE_FLAGS += -Wno-vla -isystem /usr/include/qt4/
 32BIT_FLAGS = -m32
 64BIT_FLAGS = -m64
 
-BUILD_C_FLAGS   = $(BASE_FLAGS) -std=c99 -Wc++-compat -Wunsuffixed-float-constants -Wwrite-strings $(CFLAGS)
+BUILD_C_FLAGS   = $(BASE_FLAGS) -std=c99 $(CFLAGS)
 BUILD_CXX_FLAGS = $(BASE_FLAGS) -std=c++0x $(CXXFLAGS)
 LINK_FLAGS      = $(LDFLAGS)
-
-BUILD_CXX_FLAGS += -Wzero-as-null-pointer-constant
 
 ifneq ($(DEBUG),true)
 BUILD_CXX_FLAGS += -DQT_NO_DEBUG -DQT_NO_DEBUG_STREAM -DQT_NO_DEBUG_OUTPUT
