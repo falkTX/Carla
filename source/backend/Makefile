@@ -1,32 +1,19 @@
 #!/usr/bin/make -f
-# Makefile for carla backend #
-# ----------------------------------------- #
+# Makefile for carla backend and standalone #
+# -------------------------------------------------------------- #
 # Created by falkTX
 #
 
-all:
+all: carla_standalone
 
 # --------------------------------------------------------------
 
-# carla_backend.so: carla_engine.so carla_native.so carla_plugin.so carla_standalone.so
-# 	$(CXX) $^
-
-carla_engine.so:
-	$(MAKE) -C engine
-
-carla_native.so:
-	$(MAKE) -C native
-
-carla_plugin.so:
-	$(MAKE) -C plugin
-
-carla_standalone.so:
+carla_standalone:
 	$(MAKE) -C standalone
 
 # --------------------------------------------------------------
 
 clean:
-	rm -f *.so
 	$(MAKE) clean -C engine
 	$(MAKE) clean -C native
 	$(MAKE) clean -C plugin

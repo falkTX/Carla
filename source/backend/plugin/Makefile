@@ -8,24 +8,23 @@ include ../../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += -fvisibility=hidden -fPIC -I. -I.. -I../../includes -I../../libs -I../../utils
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo QtCore QtGui)
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo QtGui)
 
 LINK_FLAGS      += -shared
-LINK_FLAGS      += $(shell pkg-config --libs liblo QtCore QtGui)
+LINK_FLAGS      += $(shell pkg-config --libs liblo QtGui)
 
 ifeq ($(HAVE_SUIL),true)
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags suil-0) -DWANT_SUIL
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags suil-0)
 LINK_FLAGS      += $(shell pkg-config --libs suil-0)
 endif
 
 ifeq ($(HAVE_FLUIDSYNTH),true)
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags fluidsynth) -DWANT_FLUIDSYNTH
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags fluidsynth)
 LINK_FLAGS      += $(shell pkg-config --libs fluidsynth)
 endif
 
 ifeq ($(HAVE_LINUXSAMPLER),true)
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags linuxsampler) -DWANT_LINUXSAMPLER
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags linuxsampler)
 LINK_FLAGS      += $(shell pkg-config --libs linuxsampler)
 endif
 
@@ -43,7 +42,7 @@ OBJS = \
 # 	fluidsynth.cpp.o \
 # 	linuxsampler.cpp.o
 
-TARGET = ../carla_plugin.so
+TARGET = ../libcarla_plugin.so
 
 # --------------------------------------------------------------
 

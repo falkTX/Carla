@@ -8,12 +8,11 @@ include ../../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_C_FLAGS   += -fvisibility=hidden -fPIC -I. -I.. -I../../includes
-BUILD_CXX_FLAGS += -fvisibility=hidden -fPIC -I. -I.. -I../../includes -I../../utils -I../../libs/distrho-plugin-toolkit
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtCore QtGui)
+BUILD_CXX_FLAGS += -I../../libs/distrho-plugin-toolkit
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtGui)
 
 LINK_FLAGS      += -shared
-LINK_FLAGS      += $(shell pkg-config --libs QtCore QtGui) -lGL
+LINK_FLAGS      += $(shell pkg-config --libs QtGui) -lGL
 
 ifeq ($(HAVE_ZYN_DEPS),true)
 ZYN_CXX_FLAGS    = $(BUILD_CXX_FLAGS)
@@ -42,7 +41,7 @@ OBJS += \
 	zynaddsubfx-src.cpp.o
 endif
 
-TARGET = ../carla_native.so
+TARGET = ../libcarla_native.so
 
 # --------------------------------------------------------------
 

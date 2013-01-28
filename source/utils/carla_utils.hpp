@@ -494,7 +494,7 @@ public:
         for (size_t i=0; i < bufferLen; i++)
         {
             if (buffer[i] >= 'A' && buffer[i] <= 'Z')
-                buffer[i] += charDiff;
+                buffer[i] = char(buffer[i] + charDiff);
         }
     }
 
@@ -505,7 +505,7 @@ public:
         for (size_t i=0; i < bufferLen; i++)
         {
             if (buffer[i] >= 'a' && buffer[i] <= 'z')
-                buffer[i] -= charDiff;
+                buffer[i] = char(buffer[i] + charDiff);
         }
     }
 

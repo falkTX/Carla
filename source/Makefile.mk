@@ -37,7 +37,7 @@ BUILD_C_FLAGS   = $(BASE_FLAGS) -std=c99 -Wc++-compat -Wunsuffixed-float-constan
 BUILD_CXX_FLAGS = $(BASE_FLAGS) -std=c++0x $(CXXFLAGS)
 LINK_FLAGS      = $(LDFLAGS)
 
-# BUILD_CXX_FLAGS += -Wzero-as-null-pointer-constant
+BUILD_CXX_FLAGS += -Wzero-as-null-pointer-constant
 
 ifneq ($(DEBUG),true)
 BUILD_CXX_FLAGS += -DQT_NO_DEBUG -DQT_NO_DEBUG_STREAM -DQT_NO_DEBUG_OUTPUT
@@ -60,6 +60,9 @@ BUILD_CXX_FLAGS += -DVESTIGE_HEADER
 
 # --------------------------------------------------------------
 
+HAVE_JACK         = $(shell pkg-config --exists jack && echo true)
+HAVE_ZYN_DEPS     = $(shell pkg-config --exists fftw3 mxml && echo true)
+
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
 HAVE_SUIL         = $(shell pkg-config --exists suil-0 && echo true)
 endif
@@ -72,17 +75,4 @@ endif
 ifeq ($(CARLA_RTAUDIO_SUPPORT),true)
 HAVE_ALSA         = $(shell pkg-config --exists alsa && echo true)
 HAVE_PULSEAUDIO   = $(shell pkg-config --exists libpulse-simple && echo true)
-endif
-
-HAVE_ZYN_DEPS     = $(shell pkg-config --exists fftw3 mxml && echo true)
-
-# --------------------------------------------------------------
-
-ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-BUILD_C_FLAGS    += -DWANT_LV2
-BUILD_CXX_FLAGS  += -DWANT_LADSPA -DWANT_DSSI -DWANT_LV2 -DWANT_VST
-endif
-
-ifeq ($(HAVE_ZYN_DEPS),true)
-BUILD_CXX_FLAGS  += -DWANT_ZYNADDSUBFX
 endif

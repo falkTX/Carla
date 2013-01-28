@@ -4,39 +4,23 @@
 # Created by falkTX
 #
 
-include ../../Makefile.mk
+include ../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += -fvisibility=hidden -fPIC -I. -I.. -I../../includes -I../../libs -I../../utils
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtCore) # liblo -isystem /opt/kxstudio/include/
+# BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo)
+BUILD_CXX_FLAGS += -isystem /opt/kxstudio/include/
 
 LINK_FLAGS      += -shared
-LINK_FLAGS      += $(shell pkg-config --libs liblo QtCore)
+LINK_FLAGS      += $(shell pkg-config --libs liblo)
 
 ifeq ($(HAVE_JACK),true)
+BUILD_CXX_FLAGS += -DCARLA_ENGINE_JACK
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags jack) -D__UNIX_JACK__
 LINK_FLAGS      += $(shell pkg-config --libs jack)
-WANT_JACK        = true
 endif
 
-ifeq ($(HAVE_ALSA),true)
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags alsa) -D__LINUX_ALSA__ -D__LINUX_ALSASEQ__
-LINK_FLAGS      += $(shell pkg-config --libs alsa)
-WANT_RTAUDIO     = true
-endif
-
-ifeq ($(HAVE_PULSEAUDIO),true)
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags libpulse-simple) -D__LINUX_PULSE__
-LINK_FLAGS      += $(shell pkg-config --libs libpulse-simple)
-WANT_RTAUDIO     = true
-endif
-
-ifeq ($(WANT_JACK),true)
-BUILD_CXX_FLAGS += -DCARLA_ENGINE_JACK
-endif
-
-ifeq ($(WANT_RTAUDIO),true)
+ifeq ($(CARLA_RTAUDIO_SUPPORT),true)
 BUILD_CXX_FLAGS += -DCARLA_ENGINE_RTAUDIO -DHAVE_GETTIMEOFDAY
 BUILD_CXX_FLAGS += -Irtaudio-4.0.11 -Irtmidi-2.0.1
 ifeq ($(DEBUG),true)
@@ -44,25 +28,35 @@ BUILD_CXX_FLAGS += -D__RTAUDIO_DEBUG__ -D__RTMIDI_DEBUG__
 else
 BUILD_CXX_FLAGS += -D_FORTIFY_SOURCE=2
 endif
+
+ifeq ($(HAVE_ALSA),true)
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags alsa) -D__LINUX_ALSA__ -D__LINUX_ALSASEQ__
+LINK_FLAGS      += $(shell pkg-config --libs alsa)
+endif
+
+ifeq ($(HAVE_PULSEAUDIO),true)
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags libpulse-simple) -D__LINUX_PULSE__
+LINK_FLAGS      += $(shell pkg-config --libs libpulse-simple)
+endif
 endif
 
 # --------------------------------------------------------------
 
 OBJS  = \
      carla_engine.cpp.o \
-     jack.cpp.o
+     jack.cpp.o \
+     rtaudio.cpp.o
 
 #      carla_engine_osc.cpp.o \
 #      carla_engine_thread.cpp.o \
-#      rtaudio.cpp.o
 
-ifeq ($(WANT_RTAUDIO),true)
-# OBJS += \
-# 	rtaudio-4.0.11/RtAudio.cpp.o \
-# 	rtmidi-2.0.1/RtMidi.cpp.o
+ifeq ($(CARLA_RTAUDIO_SUPPORT),true)
+OBJS += \
+	rtaudio-4.0.11/RtAudio.cpp.o \
+	rtmidi-2.0.1/RtMidi.cpp.o
 endif
 
-TARGET = ../carla_engine.so
+TARGET = ../libcarla_engine.so
 
 # --------------------------------------------------------------
 
