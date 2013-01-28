@@ -20,24 +20,28 @@
 #include "carla_plugin.hpp"
 #include "carla_native.h"
 
+#if 0
 int main(int argc, char* argv[])
 {
     CARLA_BACKEND_USE_NAMESPACE
     std::printf("%s\n", carla_get_extended_license_text());
     return 0;
 }
+#endif
+
+using CarlaBackend::CallbackFunc;
+using CarlaBackend::EngineOptions;
 
 // -------------------------------------------------------------------------------------------------------------------
 
-#if 0
 // Single, standalone engine
 struct CarlaBackendStandalone {
-    CarlaBackend::EngineOptions options;
-    CarlaBackend::CarlaEngine* engine;
-    CarlaBackend::CallbackFunc callback;
-    CarlaString lastError;
-    CarlaString procName;
-    bool started;
+    CarlaEngine*  engine;
+    CallbackFunc  callback;
+    EngineOptions options;
+    CarlaString   lastError;
+    CarlaString   procName;
+    bool          started;
 
     CarlaBackendStandalone()
         : engine(nullptr),
@@ -45,11 +49,8 @@ struct CarlaBackendStandalone {
           started(false) {}
 
 } standalone;
-#endif
 
 // -------------------------------------------------------------------------------------------------------------------
-
-//CARLA_BACKEND_START_NAMESPACE
 
 const char* carla_get_extended_license_text()
 {
@@ -108,19 +109,15 @@ unsigned int carla_get_engine_driver_count()
 {
     qDebug("carla_get_engine_driver_count()");
 
-    return CarlaBackend::CarlaEngine::getDriverCount();
-    return 0;
+    return CarlaEngine::getDriverCount();
 }
 
 const char* carla_get_engine_driver_name(unsigned int index)
 {
     qDebug("carla_get_engine_driver_name(%i)", index);
 
-    //return CarlaEngine::getDriverName(index);
-    return nullptr;
+    return CarlaEngine::getDriverName(index);
 }
-
-//CARLA_BACKEND_END_NAMESPACE
 
 #if 0
 // -------------------------------------------------------------------------------------------------------------------
@@ -163,17 +160,20 @@ const PluginInfo* get_internal_plugin_info(unsigned int pluginId)
 
     return &info;
 }
+#endif
 
 // -------------------------------------------------------------------------------------------------------------------
 
-bool engine_init(const char* driverName, const char* clientName)
+bool carla_engine_init(const char* driverName, const char* clientName)
 {
-    qDebug("CarlaBackendStandalone::engine_init(\"%s\", \"%s\")", driverName, clientName);
-    CARLA_ASSERT(! standalone.engine);
+    qDebug("carla_engine_init(\"%s\", \"%s\")", driverName, clientName);
+    CARLA_ASSERT(standalone.engine == nullptr);
+    CARLA_ASSERT(driverName != nullptr);
+    CARLA_ASSERT(clientName != nullptr);
 
-    standalone.engine = CarlaBackend::CarlaEngine::newDriverByName(driverName);
+    standalone.engine = CarlaEngine::newDriverByName(driverName);
 
-    if (! standalone.engine)
+    if (standalone.engine == nullptr)
     {
         standalone.lastError = "The seleted audio driver is not available!";
         return false;
@@ -181,7 +181,7 @@ bool engine_init(const char* driverName, const char* clientName)
 
 #ifndef Q_OS_WIN
     // TODO: make this an option, put somewhere else
-    if (! getenv("WINE_RT"))
+    if (getenv("WINE_RT") == nullptr)
     {
         carla_setenv("WINE_RT", "15");
         carla_setenv("WINE_SVR_RT", "10");
@@ -191,7 +191,6 @@ bool engine_init(const char* driverName, const char* clientName)
     standalone.engine->setCallback(standalone.callback, nullptr);
 
     standalone.engine->setOption(CarlaBackend::OPTION_PROCESS_MODE,            standalone.options.processMode,          nullptr);
-    standalone.engine->setOption(CarlaBackend::OPTION_PROCESS_HIGH_PRECISION,  standalone.options.processHighPrecision, nullptr);
     standalone.engine->setOption(CarlaBackend::OPTION_MAX_PARAMETERS,          standalone.options.maxParameters,        nullptr);
     standalone.engine->setOption(CarlaBackend::OPTION_PREFERRED_BUFFER_SIZE,   standalone.options.preferredBufferSize,  nullptr);
     standalone.engine->setOption(CarlaBackend::OPTION_PREFERRED_SAMPLE_RATE,   standalone.options.preferredSampleRate,  nullptr);
@@ -211,9 +210,9 @@ bool engine_init(const char* driverName, const char* clientName)
     standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_LV2_COCOA,   0, standalone.options.bridge_lv2cocoa);
     standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_LV2_WINDOWS, 0, standalone.options.bridge_lv2win);
     standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_LV2_X11,     0, standalone.options.bridge_lv2qt4);
-    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_VST_COCOA, 0, standalone.options.bridge_vstcocoa);
-    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_VST_HWND,  0, standalone.options.bridge_vsthwnd);
-    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_VST_X11,   0, standalone.options.bridge_vstx11);
+    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_VST_COCOA,   0, standalone.options.bridge_vstcocoa);
+    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_VST_HWND,    0, standalone.options.bridge_vsthwnd);
+    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_VST_X11,     0, standalone.options.bridge_vstx11);
 
     if (standalone.procName.isNotEmpty())
         standalone.engine->setOption(CarlaBackend::OPTION_PROCESS_NAME, 0, standalone.procName);
@@ -224,7 +223,7 @@ bool engine_init(const char* driverName, const char* clientName)
     {
         standalone.lastError = "no error";
     }
-    else if (standalone.engine)
+    else
     {
         delete standalone.engine;
         standalone.engine = nullptr;
@@ -233,31 +232,32 @@ bool engine_init(const char* driverName, const char* clientName)
     return standalone.started;
 }
 
-bool engine_close()
+bool carla_engine_close()
 {
-    qDebug("CarlaBackendStandalone::engine_close()");
-    CARLA_ASSERT(standalone.engine);
+    qDebug("carla_engine_close()");
+    CARLA_ASSERT(standalone.engine != nullptr);
 
-    if (! standalone.engine)
+    if (standalone.engine == nullptr)
     {
         standalone.lastError = "Engine is not started";
         return false;
     }
 
-    standalone.engine->aboutToClose();
+    standalone.engine->setAboutToClose();
     standalone.engine->removeAllPlugins();
-    bool closed = standalone.engine->close();
+
+    const bool closed = standalone.engine->close();
 
     standalone.started = false;
 
     // cleanup static data
-    get_plugin_info(0);
-    get_parameter_info(0, 0);
-    get_parameter_scalepoint_info(0, 0, 0);
-    get_chunk_data(0);
-    get_program_name(0, 0);
-    get_midi_program_name(0, 0);
-    get_real_plugin_name(0);
+    //get_plugin_info(0);
+    //get_parameter_info(0, 0);
+    //get_parameter_scalepoint_info(0, 0, 0);
+    //get_chunk_data(0);
+    //get_program_name(0, 0);
+    //get_midi_program_name(0, 0);
+    //get_real_plugin_name(0);
 
     delete standalone.engine;
     standalone.engine = nullptr;
@@ -265,13 +265,14 @@ bool engine_close()
     return closed;
 }
 
-bool is_engine_running()
+bool carla_is_engine_running()
 {
-    qDebug("CarlaBackendStandalone::is_engine_running()");
+    qDebug("carla_is_engine_running()");
 
     return standalone.engine && standalone.engine->isRunning();
 }
 
+#if 0
 // -------------------------------------------------------------------------------------------------------------------
 
 short add_plugin(CarlaBackend::BinaryType btype, CarlaBackend::PluginType ptype, const char* filename, const char* const name, const char* label, void* extraStuff)

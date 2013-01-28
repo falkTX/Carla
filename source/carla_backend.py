@@ -4,22 +4,21 @@
 # Carla Backend code
 # Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
 #
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# any later version.
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 2 of
+# the License, or any later version.
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
-# For a full copy of the GNU General Public License see the COPYING file
+# For a full copy of the GNU General Public License see the GPL.txt file
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-import os
 from ctypes import *
 from subprocess import Popen, PIPE
 
@@ -215,62 +214,19 @@ else:
 
 global LADSPA_PATH, DSSI_PATH, LV2_PATH, VST_PATH, GIG_PATH, SF2_PATH, SFZ_PATH
 
-LADSPA_PATH_env = os.getenv("LADSPA_PATH")
-DSSI_PATH_env = os.getenv("DSSI_PATH")
-LV2_PATH_env = os.getenv("LV2_PATH")
-VST_PATH_env = os.getenv("VST_PATH")
-GIG_PATH_env = os.getenv("GIG_PATH")
-SF2_PATH_env = os.getenv("SF2_PATH")
-SFZ_PATH_env = os.getenv("SFZ_PATH")
-
-if LADSPA_PATH_env:
-    LADSPA_PATH = LADSPA_PATH_env.split(splitter)
-else:
-    LADSPA_PATH = DEFAULT_LADSPA_PATH
-
-if DSSI_PATH_env:
-    DSSI_PATH = DSSI_PATH_env.split(splitter)
-else:
-    DSSI_PATH = DEFAULT_DSSI_PATH
-
-if LV2_PATH_env:
-    LV2_PATH = LV2_PATH_env.split(splitter)
-else:
-    LV2_PATH = DEFAULT_LV2_PATH
-
-if VST_PATH_env:
-    VST_PATH = VST_PATH_env.split(splitter)
-else:
-    VST_PATH = DEFAULT_VST_PATH
-
-if GIG_PATH_env:
-    GIG_PATH = GIG_PATH_env.split(splitter)
-else:
-    GIG_PATH = DEFAULT_GIG_PATH
-
-if SF2_PATH_env:
-    SF2_PATH = SF2_PATH_env.split(splitter)
-else:
-    SF2_PATH = DEFAULT_SF2_PATH
-
-if SFZ_PATH_env:
-    SFZ_PATH = SFZ_PATH_env.split(splitter)
-else:
-    SFZ_PATH = DEFAULT_SFZ_PATH
+LADSPA_PATH = os.getenv("LADSPA_PATH", DEFAULT_LADSPA_PATH)
+DSSI_PATH = os.getenv("DSSI_PATH", DEFAULT_DSSI_PATH)
+LV2_PATH = os.getenv("LV2_PATH", DEFAULT_LV2_PATH)
+VST_PATH = os.getenv("VST_PATH", DEFAULT_VST_PATH)
+GIG_PATH = os.getenv("GIG_PATH", DEFAULT_GIG_PATH)
+SF2_PATH = os.getenv("SF2_PATH", DEFAULT_SF2_PATH)
+SFZ_PATH = os.getenv("SFZ_PATH", DEFAULT_SFZ_PATH)
 
 if haveLRDF:
     LADSPA_RDF_PATH_env = os.getenv("LADSPA_RDF_PATH")
     if LADSPA_RDF_PATH_env:
         ladspa_rdf.set_rdf_path(LADSPA_RDF_PATH_env.split(splitter))
     del LADSPA_RDF_PATH_env
-
-del LADSPA_PATH_env
-del DSSI_PATH_env
-del LV2_PATH_env
-del VST_PATH_env
-del GIG_PATH_env
-del SF2_PATH_env
-del SFZ_PATH_env
 
 # ------------------------------------------------------------------------------------------------------------
 # Search for Carla library and tools
@@ -327,8 +283,8 @@ else:
         CARLA_PATH = ("/usr/local/lib/", "/usr/lib")
 
     for path in CARLA_PATH:
-        if os.path.exists(os.path.join(path, "cadence", carla_libname)):
-            carla_library_path = os.path.join(path, "cadence", carla_libname)
+        if os.path.exists(os.path.join(path, "carla", carla_libname)):
+            carla_library_path = os.path.join(path, "carla", carla_libname)
             break
 
 # find any tool
@@ -348,7 +304,7 @@ carla_discovery_win64 = findTool("carla-discovery", "carla-discovery-win64.exe")
 carla_bridge_win32    = findTool("carla-bridge", "carla-bridge-win32.exe")
 carla_bridge_win64    = findTool("carla-bridge", "carla-bridge-win64.exe")
 
-# find native and posix only tools
+# find native and posix tools
 if not WINDOWS:
     carla_discovery_native  = findTool("carla-discovery", "carla-discovery-native")
     carla_discovery_posix32 = findTool("carla-discovery", "carla-discovery-posix32")
@@ -398,6 +354,7 @@ def findBinaries(bPATH, OS):
 
     return binaries
 
+# FIXME - may use any extension, just needs to have manifest.ttl
 def findLV2Bundles(bPATH):
     bundles = []
     extensions = (".lv2", ".lV2", ".LV2", ".Lv2") if not WINDOWS else (".lv2",)
@@ -467,7 +424,7 @@ PyPluginInfo = {
     'label': "",
     'maker': "",
     'copyright': "",
-    'unique_id': 0,
+    'uniqueId': 0,
     'audio.ins': 0,
     'audio.outs': 0,
     'audio.totals': 0,
@@ -536,8 +493,8 @@ def runCarlaDiscovery(itype, stype, filename, tool, isWine=False):
                 pinfo['maker'] = value
             elif prop == "copyright":
                 pinfo['copyright'] = value
-            elif prop == "unique_id":
-                if value.isdigit(): pinfo['unique_id'] = int(value)
+            elif prop == "uniqueId":
+                if value.isdigit(): pinfo['uniqueId'] = int(value)
             elif prop == "hints":
                 if value.isdigit(): pinfo['hints'] = int(value)
             elif prop == "audio.ins":
@@ -584,6 +541,7 @@ def checkPluginInternal(desc):
     pinfo['build'] = BINARY_NATIVE
 
     plugins.append(pinfo)
+
     return plugins
 
 def checkPluginLADSPA(filename, tool, isWine=False):
@@ -686,13 +644,7 @@ class ScalePointInfo(Structure):
         ("label", c_char_p)
     ]
 
-class GuiInfo(Structure):
-    _fields_ = [
-        ("type", c_enum),
-        ("resizable", c_bool),
-    ]
-
-CallbackFunc = CFUNCTYPE(None, c_void_p, c_enum, c_ushort, c_int, c_int, c_double, c_char_p)
+CallbackFunc = CFUNCTYPE(None, c_void_p, c_enum, c_int, c_int, c_int, c_double, c_char_p)
 
 # ------------------------------------------------------------------------------------------------------------
 # Backend C++ -> Python object
@@ -727,14 +679,14 @@ class Host(object):
         #self.lib.get_internal_plugin_info.argtypes = [c_uint]
         #self.lib.get_internal_plugin_info.restype = POINTER(PluginInfo)
 
-        #self.lib.engine_init.argtypes = [c_char_p, c_char_p]
-        #self.lib.engine_init.restype = c_bool
+        self.lib.carla_engine_init.argtypes = [c_char_p, c_char_p]
+        self.lib.carla_engine_init.restype = c_bool
 
-        #self.lib.engine_close.argtypes = None
-        #self.lib.engine_close.restype = c_bool
+        self.lib.carla_engine_close.argtypes = None
+        self.lib.carla_engine_close.restype = c_bool
 
-        #self.lib.is_engine_running.argtypes = None
-        #self.lib.is_engine_running.restype = c_bool
+        self.lib.carla_is_engine_running.argtypes = None
+        self.lib.carla_is_engine_running.restype = c_bool
 
         #self.lib.add_plugin.argtypes = [c_enum, c_enum, c_char_p, c_char_p, c_char_p, c_void_p]
         #self.lib.add_plugin.restype = c_short
@@ -907,180 +859,182 @@ class Host(object):
     def get_engine_driver_name(self, index):
         return self.lib.carla_get_engine_driver_name(index)
 
-    def get_internal_plugin_count(self):
-        return self.lib.get_internal_plugin_count()
+    #def get_internal_plugin_count(self):
+        #return self.lib.get_internal_plugin_count()
 
-    def get_internal_plugin_info(self, index):
-        return structToDict(self.lib.get_internal_plugin_info(index).contents)
+    #def get_internal_plugin_info(self, index):
+        #return structToDict(self.lib.get_internal_plugin_info(index).contents)
 
     def engine_init(self, driverName, clientName):
-        return self.lib.engine_init(driverName.encode("utf-8"), clientName.encode("utf-8"))
+        return self.lib.carla_engine_init(driverName.encode("utf-8"), clientName.encode("utf-8"))
 
     def engine_close(self):
-        return self.lib.engine_close()
+        return self.lib.carla_engine_close()
 
     def is_engine_running(self):
-        return self.lib.is_engine_running()
+        return self.lib.carla_is_engine_running()
 
-    def add_plugin(self, btype, ptype, filename, name, label, extraStuff):
-        return self.lib.add_plugin(btype, ptype, filename.encode("utf-8"), name.encode("utf-8") if name else c_nullptr, label.encode("utf-8"), cast(extraStuff, c_void_p))
+    #def add_plugin(self, btype, ptype, filename, name, label, extraStuff):
+        #return self.lib.add_plugin(btype, ptype, filename.encode("utf-8"), name.encode("utf-8") if name else c_nullptr, label.encode("utf-8"), cast(extraStuff, c_void_p))
 
-    def remove_plugin(self, pluginId):
-        return self.lib.remove_plugin(pluginId)
+    #def remove_plugin(self, pluginId):
+        #return self.lib.remove_plugin(pluginId)
 
-    def get_plugin_info(self, pluginId):
-        return structToDict(self.lib.get_plugin_info(pluginId).contents)
+    #def get_plugin_info(self, pluginId):
+        #return structToDict(self.lib.get_plugin_info(pluginId).contents)
 
-    def get_audio_port_count_info(self, pluginId):
-        return structToDict(self.lib.get_audio_port_count_info(pluginId).contents)
+    #def get_audio_port_count_info(self, pluginId):
+        #return structToDict(self.lib.get_audio_port_count_info(pluginId).contents)
 
-    def get_midi_port_count_info(self, pluginId):
-        return structToDict(self.lib.get_midi_port_count_info(pluginId).contents)
+    #def get_midi_port_count_info(self, pluginId):
+        #return structToDict(self.lib.get_midi_port_count_info(pluginId).contents)
 
-    def get_parameter_count_info(self, pluginId):
-        return structToDict(self.lib.get_parameter_count_info(pluginId).contents)
+    #def get_parameter_count_info(self, pluginId):
+        #return structToDict(self.lib.get_parameter_count_info(pluginId).contents)
 
-    def get_parameter_info(self, pluginId, parameterId):
-        return structToDict(self.lib.get_parameter_info(pluginId, parameterId).contents)
+    #def get_parameter_info(self, pluginId, parameterId):
+        #return structToDict(self.lib.get_parameter_info(pluginId, parameterId).contents)
 
-    def get_parameter_scalepoint_info(self, pluginId, parameterId, scalePointId):
-        return structToDict(self.lib.get_parameter_scalepoint_info(pluginId, parameterId, scalePointId).contents)
+    #def get_parameter_scalepoint_info(self, pluginId, parameterId, scalePointId):
+        #return structToDict(self.lib.get_parameter_scalepoint_info(pluginId, parameterId, scalePointId).contents)
 
-    def get_parameter_data(self, pluginId, parameterId):
-        return structToDict(self.lib.get_parameter_data(pluginId, parameterId).contents)
+    #def get_parameter_data(self, pluginId, parameterId):
+        #return structToDict(self.lib.get_parameter_data(pluginId, parameterId).contents)
 
-    def get_parameter_ranges(self, pluginId, parameterId):
-        return structToDict(self.lib.get_parameter_ranges(pluginId, parameterId).contents)
+    #def get_parameter_ranges(self, pluginId, parameterId):
+        #return structToDict(self.lib.get_parameter_ranges(pluginId, parameterId).contents)
 
-    def get_midi_program_data(self, pluginId, midiProgramId):
-        return structToDict(self.lib.get_midi_program_data(pluginId, midiProgramId).contents)
+    #def get_midi_program_data(self, pluginId, midiProgramId):
+        #return structToDict(self.lib.get_midi_program_data(pluginId, midiProgramId).contents)
 
-    def get_custom_data(self, pluginId, customDataId):
-        return structToDict(self.lib.get_custom_data(pluginId, customDataId).contents)
+    #def get_custom_data(self, pluginId, customDataId):
+        #return structToDict(self.lib.get_custom_data(pluginId, customDataId).contents)
 
-    def get_chunk_data(self, pluginId):
-        return self.lib.get_chunk_data(pluginId)
+    #def get_chunk_data(self, pluginId):
+        #return self.lib.get_chunk_data(pluginId)
 
-    def get_gui_info(self, pluginId):
-        return structToDict(self.lib.get_gui_info(pluginId).contents)
+    #def get_gui_info(self, pluginId):
+        #return structToDict(self.lib.get_gui_info(pluginId).contents)
 
-    def get_parameter_count(self, pluginId):
-        return self.lib.get_parameter_count(pluginId)
+    #def get_parameter_count(self, pluginId):
+        #return self.lib.get_parameter_count(pluginId)
 
-    def get_program_count(self, pluginId):
-        return self.lib.get_program_count(pluginId)
+    #def get_program_count(self, pluginId):
+        #return self.lib.get_program_count(pluginId)
 
-    def get_midi_program_count(self, pluginId):
-        return self.lib.get_midi_program_count(pluginId)
+    #def get_midi_program_count(self, pluginId):
+        #return self.lib.get_midi_program_count(pluginId)
 
-    def get_custom_data_count(self, pluginId):
-        return self.lib.get_custom_data_count(pluginId)
+    #def get_custom_data_count(self, pluginId):
+        #return self.lib.get_custom_data_count(pluginId)
 
-    def get_parameter_text(self, pluginId, parameterId):
-        return self.lib.get_parameter_text(pluginId, parameterId)
+    #def get_parameter_text(self, pluginId, parameterId):
+        #return self.lib.get_parameter_text(pluginId, parameterId)
 
-    def get_program_name(self, pluginId, programId):
-        return self.lib.get_program_name(pluginId, programId)
+    #def get_program_name(self, pluginId, programId):
+        #return self.lib.get_program_name(pluginId, programId)
 
-    def get_midi_program_name(self, pluginId, midiProgramId):
-        return self.lib.get_midi_program_name(pluginId, midiProgramId)
+    #def get_midi_program_name(self, pluginId, midiProgramId):
+        #return self.lib.get_midi_program_name(pluginId, midiProgramId)
 
-    def get_real_plugin_name(self, pluginId):
-        return self.lib.get_real_plugin_name(pluginId)
+    #def get_real_plugin_name(self, pluginId):
+        #return self.lib.get_real_plugin_name(pluginId)
 
-    def get_current_program_index(self, pluginId):
-        return self.lib.get_current_program_index(pluginId)
+    #def get_current_program_index(self, pluginId):
+        #return self.lib.get_current_program_index(pluginId)
 
-    def get_current_midi_program_index(self, pluginId):
-        return self.lib.get_current_midi_program_index(pluginId)
+    #def get_current_midi_program_index(self, pluginId):
+        #return self.lib.get_current_midi_program_index(pluginId)
 
-    def get_default_parameter_value(self, pluginId, parameterId):
-        return self.lib.get_default_parameter_value(pluginId, parameterId)
+    #def get_default_parameter_value(self, pluginId, parameterId):
+        #return self.lib.get_default_parameter_value(pluginId, parameterId)
 
-    def get_current_parameter_value(self, pluginId, parameterId):
-        return self.lib.get_current_parameter_value(pluginId, parameterId)
+    #def get_current_parameter_value(self, pluginId, parameterId):
+        #return self.lib.get_current_parameter_value(pluginId, parameterId)
 
-    def get_input_peak_value(self, pluginId, portId):
-        return self.lib.get_input_peak_value(pluginId, portId)
+    #def get_input_peak_value(self, pluginId, portId):
+        #return self.lib.get_input_peak_value(pluginId, portId)
 
-    def get_output_peak_value(self, pluginId, portId):
-        return self.lib.get_output_peak_value(pluginId, portId)
+    #def get_output_peak_value(self, pluginId, portId):
+        #return self.lib.get_output_peak_value(pluginId, portId)
 
-    def set_active(self, pluginId, onOff):
-        self.lib.set_active(pluginId, onOff)
+    #def set_active(self, pluginId, onOff):
+        #self.lib.set_active(pluginId, onOff)
 
-    def set_drywet(self, pluginId, value):
-        self.lib.set_drywet(pluginId, value)
+    #def set_drywet(self, pluginId, value):
+        #self.lib.set_drywet(pluginId, value)
 
-    def set_volume(self, pluginId, value):
-        self.lib.set_volume(pluginId, value)
+    #def set_volume(self, pluginId, value):
+        #self.lib.set_volume(pluginId, value)
 
-    def set_balance_left(self, pluginId, value):
-        self.lib.set_balance_left(pluginId, value)
+    #def set_balance_left(self, pluginId, value):
+        #self.lib.set_balance_left(pluginId, value)
 
-    def set_balance_right(self, pluginId, value):
-        self.lib.set_balance_right(pluginId, value)
+    #def set_balance_right(self, pluginId, value):
+        #self.lib.set_balance_right(pluginId, value)
 
-    def set_parameter_value(self, pluginId, parameterId, value):
-        self.lib.set_parameter_value(pluginId, parameterId, value)
+    #def set_parameter_value(self, pluginId, parameterId, value):
+        #self.lib.set_parameter_value(pluginId, parameterId, value)
 
-    def set_parameter_midi_cc(self, pluginId, parameterId, cc):
-        self.lib.set_parameter_midi_cc(pluginId, parameterId, cc)
+    #def set_parameter_midi_cc(self, pluginId, parameterId, cc):
+        #self.lib.set_parameter_midi_cc(pluginId, parameterId, cc)
 
-    def set_parameter_midi_channel(self, pluginId, parameterId, channel):
-        self.lib.set_parameter_midi_channel(pluginId, parameterId, channel)
+    #def set_parameter_midi_channel(self, pluginId, parameterId, channel):
+        #self.lib.set_parameter_midi_channel(pluginId, parameterId, channel)
 
-    def set_program(self, pluginId, programId):
-        self.lib.set_program(pluginId, programId)
+    #def set_program(self, pluginId, programId):
+        #self.lib.set_program(pluginId, programId)
 
-    def set_midi_program(self, pluginId, midiProgramId):
-        self.lib.set_midi_program(pluginId, midiProgramId)
+    #def set_midi_program(self, pluginId, midiProgramId):
+        #self.lib.set_midi_program(pluginId, midiProgramId)
 
-    def set_custom_data(self, pluginId, type_, key, value):
-        self.lib.set_custom_data(pluginId, type_.encode("utf-8"), key.encode("utf-8"), value.encode("utf-8"))
+    #def set_custom_data(self, pluginId, type_, key, value):
+        #self.lib.set_custom_data(pluginId, type_.encode("utf-8"), key.encode("utf-8"), value.encode("utf-8"))
 
-    def set_chunk_data(self, pluginId, chunkData):
-        self.lib.set_chunk_data(pluginId, chunkData.encode("utf-8"))
+    #def set_chunk_data(self, pluginId, chunkData):
+        #self.lib.set_chunk_data(pluginId, chunkData.encode("utf-8"))
 
-    def set_gui_container(self, pluginId, guiAddr):
-        self.lib.set_gui_container(pluginId, guiAddr)
+    #def set_gui_container(self, pluginId, guiAddr):
+        #self.lib.set_gui_container(pluginId, guiAddr)
 
-    def show_gui(self, pluginId, yesNo):
-        self.lib.show_gui(pluginId, yesNo)
+    #def show_gui(self, pluginId, yesNo):
+        #self.lib.show_gui(pluginId, yesNo)
 
-    def idle_guis(self):
-        self.lib.idle_guis()
+    #def idle_guis(self):
+        #self.lib.idle_guis()
 
-    def send_midi_note(self, pluginId, channel, note, velocity):
-        self.lib.send_midi_note(pluginId, channel, note, velocity)
+    #def send_midi_note(self, pluginId, channel, note, velocity):
+        #self.lib.send_midi_note(pluginId, channel, note, velocity)
 
-    def prepare_for_save(self, pluginId):
-        self.lib.prepare_for_save(pluginId)
+    #def prepare_for_save(self, pluginId):
+        #self.lib.prepare_for_save(pluginId)
 
-    def set_callback_function(self, func):
-        self.callback = CallbackFunc(func)
-        self.lib.set_callback_function(self.callback)
+    #def set_callback_function(self, func):
+        #self.callback = CallbackFunc(func)
+        #self.lib.set_callback_function(self.callback)
 
-    def set_option(self, option, value, valueStr):
-        self.lib.set_option(option, value, valueStr.encode("utf-8"))
+    #def set_option(self, option, value, valueStr):
+        #self.lib.set_option(option, value, valueStr.encode("utf-8"))
 
-    def get_last_error(self):
-        return self.lib.get_last_error()
+    #def get_last_error(self):
+        #return self.lib.get_last_error()
 
-    def get_host_osc_url(self):
-        return self.lib.get_host_osc_url()
+    #def get_host_osc_url(self):
+        #return self.lib.get_host_osc_url()
 
-    def get_buffer_size(self):
-        return self.lib.get_buffer_size()
+    #def get_buffer_size(self):
+        #return self.lib.get_buffer_size()
 
-    def get_sample_rate(self):
-        return self.lib.get_sample_rate()
+    #def get_sample_rate(self):
+        #return self.lib.get_sample_rate()
 
-    def nsm_announce(self, url, pid):
-        self.lib.nsm_announce(url.encode("utf-8"), pid)
+    #def nsm_announce(self, url, pid):
+        #self.lib.nsm_announce(url.encode("utf-8"), pid)
 
-    def nsm_reply_open(self):
-        self.lib.nsm_reply_open()
+    #def nsm_reply_open(self):
+        #self.lib.nsm_reply_open()
 
-    def nsm_reply_save(self):
-        self.lib.nsm_reply_save()
+    #def nsm_reply_save(self):
+        #self.lib.nsm_reply_save()
+
+Carla.host = Host(None)

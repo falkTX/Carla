@@ -364,10 +364,10 @@ unsigned int CarlaEngine::getDriverCount()
     qDebug("CarlaEngine::getDriverCount()");
 
     unsigned int count = 0;
-#ifdef CARLA_ENGINE_JACK
+#ifdef WANT_JACK
     count += 1;
 #endif
-#ifdef CARLA_ENGINE_RTAUDIO
+#ifdef WANT_RTAUDIO
     count += getRtAudioApiCount();
 #endif
     return count;
@@ -377,14 +377,14 @@ const char* CarlaEngine::getDriverName(unsigned int index)
 {
     qDebug("CarlaEngine::getDriverName(%i)", index);
 
-#ifdef CARLA_ENGINE_JACK
+#ifdef WANT_JACK
     if (index == 0)
         return "JACK";
     else
         index -= 1;
 #endif
 
-#ifdef CARLA_ENGINE_RTAUDIO
+#ifdef WANT_RTAUDIO
     if (index < getRtAudioApiCount())
         return getRtAudioApiName(index);
 #endif
@@ -397,7 +397,7 @@ CarlaEngine* CarlaEngine::newDriverByName(const char* const driverName)
 {
     qDebug("CarlaEngine::newDriverByName(\"%s\")", driverName);
 
-#ifdef CARLA_ENGINE_JACK
+#ifdef WANT_JACK
     if (strcmp(driverName, "JACK") == 0)
         return newJack();
 #else
@@ -405,7 +405,7 @@ CarlaEngine* CarlaEngine::newDriverByName(const char* const driverName)
         pass();
 #endif
 
-#ifdef CARLA_ENGINE_RTAUDIO
+#ifdef WANT_RTAUDIO
 # ifdef __LINUX_ALSA__
     else if (strcmp(driverName, "ALSA") == 0)
         return newRtAudio(RTAUDIO_LINUX_ALSA);

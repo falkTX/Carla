@@ -24,7 +24,7 @@ from liblo import TCP as LO_TCP
 
 # Imports (Custom)
 import ui_carla_control
-from shared_carla import *
+from carla_shared import *
 
 global lo_target, lo_targetName
 lo_target     = None
@@ -93,11 +93,6 @@ ScalePointInfo = {
     'label': None
 }
 
-GuiInfo = {
-    'type': GUI_NONE,
-    'resizable': False
-}
-
 class ControlPluginInfo(object):
     __slots__ = [
         'pluginInfo',
@@ -126,7 +121,7 @@ class Host(object):
 
         self.pluginInfo = []
 
-        for i in range(MAX_PLUGINS):
+        for i in range(MAX_DEFAULT_PLUGINS):
             self.pluginInfo.append(ControlPluginInfo())
             self._clear(i)
 
@@ -537,7 +532,7 @@ class CarlaControlW(QMainWindow, ui_carla_control.Ui_CarlaControlW):
         self.m_lastPluginName = None
 
         self.m_plugin_list = []
-        for x in range(MAX_PLUGINS):
+        for x in range(MAX_DEFAULT_PLUGINS):
             self.m_plugin_list.append(None)
 
         # -------------------------------------------------------------
@@ -582,7 +577,7 @@ class CarlaControlW(QMainWindow, ui_carla_control.Ui_CarlaControlW):
         self.TIMER_GUI_STUFF2 = self.startTimer(50 * 2) # LEDs and edit dialog
 
     def remove_all(self):
-        for i in range(MAX_PLUGINS):
+        for i in range(MAX_DEFAULT_PLUGINS):
             if self.m_plugin_list[i]:
                 self.slot_handleRemovePlugin(i)
 
@@ -888,7 +883,7 @@ if __name__ == '__main__':
     Carla.gui = CarlaControlW()
 
     # Set-up custom signal handling
-    setUpSignals(Carla.gui)
+    #setUpSignals(Carla.gui)
 
     # Show GUI
     Carla.gui.show()

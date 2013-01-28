@@ -24,12 +24,12 @@ from PyQt4.QtGui import QApplication, QMainWindow, QTableWidgetItem
 # Imports (Custom Stuff)
 import ui_carla, ui_carla_database, ui_carla_refresh
 from carla_backend import *
-from shared_settings import *
+#from shared_settings import *
 
 # set defaults
 DEFAULT_PROJECT_FOLDER = HOME
-setDefaultProjectFolder(DEFAULT_PROJECT_FOLDER)
-setDefaultPluginsPaths(LADSPA_PATH, DSSI_PATH, LV2_PATH, VST_PATH, GIG_PATH, SF2_PATH, SFZ_PATH)
+#setDefaultProjectFolder(DEFAULT_PROJECT_FOLDER)
+#setDefaultPluginsPaths(LADSPA_PATH, DSSI_PATH, LV2_PATH, VST_PATH, GIG_PATH, SF2_PATH, SFZ_PATH)
 
 # Separate Thread for Plugin Search
 class SearchPluginsThread(QThread):
@@ -503,7 +503,7 @@ class PluginRefreshW(QDialog, ui_carla_refresh.Ui_PluginRefreshW):
         hasNonNative = False
 
         if WINDOWS:
-            if is64bit:
+            if kIs64bit:
                 hasNative = bool(carla_discovery_win64)
                 hasNonNative = bool(carla_discovery_win32)
                 self.pThread.setSearchToolNative(carla_discovery_win64)
@@ -520,7 +520,7 @@ class PluginRefreshW(QDialog, ui_carla_refresh.Ui_PluginRefreshW):
                 self.ico_win32.setVisible(False)
                 self.label_win32.setVisible(False)
         elif LINUX or MACOS:
-            if is64bit:
+            if kIs64bit:
                 hasNonNative = bool(carla_discovery_posix32 or carla_discovery_win32 or carla_discovery_win64)
                 self.ch_posix64.setChecked(False)
                 self.ch_posix64.setVisible(False)
@@ -716,18 +716,18 @@ class PluginDatabaseW(QDialog, ui_carla_database.Ui_PluginDatabaseW):
             for x in plugins:
                 count += 1
 
-        if count != Carla.host.get_internal_plugin_count():
-            internal_plugins = []
+        #if count != Carla.host.get_internal_plugin_count():
+            #internal_plugins = []
 
-            for i in range(Carla.host.get_internal_plugin_count()):
-                descInfo = Carla.host.get_internal_plugin_info(i)
-                plugins  = checkPluginInternal(descInfo)
+            #for i in range(Carla.host.get_internal_plugin_count()):
+                #descInfo = Carla.host.get_internal_plugin_info(i)
+                #plugins  = checkPluginInternal(descInfo)
 
-                if plugins:
-                    internal_plugins.append(plugins)
+                #if plugins:
+                    #internal_plugins.append(plugins)
 
-            self.settings_db.setValue("Plugins/Internal", internal_plugins)
-            self.settings_db.sync()
+            #self.settings_db.setValue("Plugins/Internal", internal_plugins)
+            #self.settings_db.sync()
 
     def reAddPlugins(self):
         row_count = self.tableWidget.rowCount()
@@ -1095,7 +1095,7 @@ class CarlaMainW(QMainWindow, ui_carla.Ui_CarlaMainW):
         self.nsm_url = None
 
         self.m_plugin_list = []
-        for x in range(MAX_PLUGINS):
+        for x in range(MAX_DEFAULT_PLUGINS):
             self.m_plugin_list.append(None)
 
         # -------------------------------------------------------------
@@ -1176,7 +1176,7 @@ class CarlaMainW(QMainWindow, ui_carla.Ui_CarlaMainW):
         # engine
 
         Carla.processMode    = self.settings.value("Engine/ProcessMode", PROCESS_MODE_MULTIPLE_CLIENTS, type=int)
-        Carla.maxParameters  = self.settings.value("Engine/MaxParameters", MAX_PARAMETERS, type=int)
+        Carla.maxParameters  = self.settings.value("Engine/MaxParameters", MAX_DEFAULT_PARAMETERS, type=int)
 
         processHighPrecision = self.settings.value("Engine/ProcessHighPrecision", False, type=bool)
         preferredBufferSize  = self.settings.value("Engine/PreferredBufferSize", 512, type=int)
@@ -1195,19 +1195,19 @@ class CarlaMainW(QMainWindow, ui_carla.Ui_CarlaMainW):
             print("LADISH detected but using multiple clients (not allowed), forcing single client now")
             Carla.processMode = PROCESS_MODE_SINGLE_CLIENT
 
-        Carla.host.set_option(OPTION_PROCESS_MODE, Carla.processMode, "")
-        Carla.host.set_option(OPTION_PROCESS_HIGH_PRECISION, processHighPrecision, "")
+        #Carla.host.set_option(OPTION_PROCESS_MODE, Carla.processMode, "")
+        #Carla.host.set_option(OPTION_PROCESS_HIGH_PRECISION, processHighPrecision, "")
 
-        Carla.host.set_option(OPTION_MAX_PARAMETERS, Carla.maxParameters, "")
-        Carla.host.set_option(OPTION_PREFERRED_BUFFER_SIZE, preferredBufferSize, "")
-        Carla.host.set_option(OPTION_PREFERRED_SAMPLE_RATE, preferredSampleRate, "")
+        #Carla.host.set_option(OPTION_MAX_PARAMETERS, Carla.maxParameters, "")
+        #Carla.host.set_option(OPTION_PREFERRED_BUFFER_SIZE, preferredBufferSize, "")
+        #Carla.host.set_option(OPTION_PREFERRED_SAMPLE_RATE, preferredSampleRate, "")
 
-        Carla.host.set_option(OPTION_FORCE_STEREO, forceStereo, "")
-        Carla.host.set_option(OPTION_USE_DSSI_VST_CHUNKS, useDssiVstChunks, "")
-        Carla.host.set_option(OPTION_PREFER_PLUGIN_BRIDGES, preferPluginBridges, "")
+        #Carla.host.set_option(OPTION_FORCE_STEREO, forceStereo, "")
+        #Carla.host.set_option(OPTION_USE_DSSI_VST_CHUNKS, useDssiVstChunks, "")
+        #Carla.host.set_option(OPTION_PREFER_PLUGIN_BRIDGES, preferPluginBridges, "")
 
-        Carla.host.set_option(OPTION_PREFER_UI_BRIDGES, preferUiBridges, "")
-        Carla.host.set_option(OPTION_OSC_UI_TIMEOUT, oscUiTimeout, "")
+        #Carla.host.set_option(OPTION_PREFER_UI_BRIDGES, preferUiBridges, "")
+        #Carla.host.set_option(OPTION_OSC_UI_TIMEOUT, oscUiTimeout, "")
 
         # ---------------------------------------------
         # start
@@ -1222,7 +1222,7 @@ class CarlaMainW(QMainWindow, ui_carla.Ui_CarlaMainW):
             self.act_engine_start.setEnabled(True)
             self.act_engine_stop.setEnabled(False)
 
-            audioError = cString(Carla.host.get_last_error())
+            audioError = "" #cString(Carla.host.get_last_error())
 
             if audioError:
                 QMessageBox.critical(self, self.tr("Error"), self.tr("Could not connect to Audio backend '%s', possible reasons: %s" % (audioDriver, audioError)))
@@ -1246,7 +1246,8 @@ class CarlaMainW(QMainWindow, ui_carla.Ui_CarlaMainW):
                 return
 
         if Carla.host.is_engine_running() and not Carla.host.engine_close():
-            print(cString(Carla.host.get_last_error()))
+            pass
+            #print(cString(Carla.host.get_last_error()))
 
         self.m_engine_started = False
 
@@ -1516,17 +1517,17 @@ class CarlaMainW(QMainWindow, ui_carla.Ui_CarlaMainW):
 
         # push all plugins 1 slot if rack mode
         if Carla.processMode == PROCESS_MODE_CONTINUOUS_RACK:
-            for i in range(MAX_PLUGINS-1):
+            for i in range(MAX_DEFAULT_PLUGINS-1):
                 if i < plugin_id: continue
                 self.m_plugin_list[i] = self.m_plugin_list[i+1]
 
                 if self.m_plugin_list[i]:
                     self.m_plugin_list[i].setId(i)
 
-            self.m_plugin_list[MAX_PLUGINS-1] = None
+            self.m_plugin_list[MAX_DEFAULT_PLUGINS-1] = None
 
         # check if there are still plugins
-        for i in range(MAX_PLUGINS):
+        for i in range(MAX_DEFAULT_PLUGINS):
             if self.m_plugin_list[i]: break
         else:
             self.act_plugin_remove_all.setEnabled(False)
@@ -1878,7 +1879,7 @@ class CarlaMainW(QMainWindow, ui_carla.Ui_CarlaMainW):
     @pyqtSlot()
     def slot_remove_all(self):
         h = 0
-        for i in range(MAX_PLUGINS):
+        for i in range(MAX_DEFAULT_PLUGINS):
             pwidget = self.m_plugin_list[i]
 
             if not pwidget:
@@ -1993,7 +1994,7 @@ class CarlaMainW(QMainWindow, ui_carla.Ui_CarlaMainW):
 # ------------------------------------------------------------------------------------------------
 
 def callback_function(ptr, action, pluginId, value1, value2, value3, valueStr):
-    if pluginId< 0 or pluginId >= MAX_PLUGINS or not Carla.gui:
+    if pluginId< 0 or pluginId >= MAX_DEFAULT_PLUGINS or not Carla.gui:
         return
 
     if action == CALLBACK_DEBUG:
@@ -2014,8 +2015,6 @@ def callback_function(ptr, action, pluginId, value1, value2, value3, valueStr):
         Carla.gui.emit(SIGNAL("NoteOffCallback(int, int, int)"), pluginId, value1, value2)
     elif action == CALLBACK_SHOW_GUI:
         Carla.gui.emit(SIGNAL("ShowGuiCallback(int, int)"), pluginId, value1)
-    elif action == CALLBACK_RESIZE_GUI:
-        Carla.gui.emit(SIGNAL("ResizeGuiCallback(int, int, int)"), pluginId, value1, value2)
     elif action == CALLBACK_UPDATE:
         Carla.gui.emit(SIGNAL("UpdateCallback(int)"), pluginId)
     elif action == CALLBACK_RELOAD_INFO:
@@ -2066,54 +2065,54 @@ if __name__ == '__main__':
 
     # Init backend
     Carla.host = Host(libPrefix)
-    Carla.host.set_callback_function(callback_function)
-    Carla.host.set_option(OPTION_PROCESS_NAME, 0, "carla")
+    #Carla.host.set_callback_function(callback_function)
+    #Carla.host.set_option(OPTION_PROCESS_NAME, 0, "carla")
 
     # Set bridge paths
-    if carla_bridge_posix32:
-        Carla.host.set_option(OPTION_PATH_BRIDGE_POSIX32, 0, carla_bridge_posix32)
+    #if carla_bridge_posix32:
+        #Carla.host.set_option(OPTION_PATH_BRIDGE_POSIX32, 0, carla_bridge_posix32)
 
-    if carla_bridge_posix64:
-        Carla.host.set_option(OPTION_PATH_BRIDGE_POSIX64, 0, carla_bridge_posix64)
+    #if carla_bridge_posix64:
+        #Carla.host.set_option(OPTION_PATH_BRIDGE_POSIX64, 0, carla_bridge_posix64)
 
-    if carla_bridge_win32:
-        Carla.host.set_option(OPTION_PATH_BRIDGE_WIN32, 0, carla_bridge_win32)
+    #if carla_bridge_win32:
+        #Carla.host.set_option(OPTION_PATH_BRIDGE_WIN32, 0, carla_bridge_win32)
 
-    if carla_bridge_win64:
-        Carla.host.set_option(OPTION_PATH_BRIDGE_WIN64, 0, carla_bridge_win64)
+    #if carla_bridge_win64:
+        #Carla.host.set_option(OPTION_PATH_BRIDGE_WIN64, 0, carla_bridge_win64)
 
-    if WINDOWS:
-        if carla_bridge_lv2_windows:
-            Carla.host.set_option(OPTION_PATH_BRIDGE_LV2_WINDOWS, 0, carla_bridge_lv2_windows)
+    #if WINDOWS:
+        #if carla_bridge_lv2_windows:
+            #Carla.host.set_option(OPTION_PATH_BRIDGE_LV2_WINDOWS, 0, carla_bridge_lv2_windows)
 
-        if carla_bridge_vst_hwnd:
-            Carla.host.set_option(OPTION_PATH_BRIDGE_VST_HWND, 0, carla_bridge_vst_hwnd)
+        #if carla_bridge_vst_hwnd:
+            #Carla.host.set_option(OPTION_PATH_BRIDGE_VST_HWND, 0, carla_bridge_vst_hwnd)
 
-    elif MACOS:
-        if carla_bridge_lv2_cocoa:
-            Carla.host.set_option(OPTION_PATH_BRIDGE_LV2_COCOA, 0, carla_bridge_lv2_cocoa)
+    #elif MACOS:
+        #if carla_bridge_lv2_cocoa:
+            #Carla.host.set_option(OPTION_PATH_BRIDGE_LV2_COCOA, 0, carla_bridge_lv2_cocoa)
 
-        if carla_bridge_vst_cocoa:
-            Carla.host.set_option(OPTION_PATH_BRIDGE_VST_COCOA, 0, carla_bridge_vst_cocoa)
+        #if carla_bridge_vst_cocoa:
+            #Carla.host.set_option(OPTION_PATH_BRIDGE_VST_COCOA, 0, carla_bridge_vst_cocoa)
 
-    else:
-        if carla_bridge_lv2_gtk2:
-            Carla.host.set_option(OPTION_PATH_BRIDGE_LV2_GTK2, 0, carla_bridge_lv2_gtk2)
+    #else:
+        #if carla_bridge_lv2_gtk2:
+            #Carla.host.set_option(OPTION_PATH_BRIDGE_LV2_GTK2, 0, carla_bridge_lv2_gtk2)
 
-        if carla_bridge_lv2_gtk3:
-            Carla.host.set_option(OPTION_PATH_BRIDGE_LV2_GTK3, 0, carla_bridge_lv2_gtk3)
+        #if carla_bridge_lv2_gtk3:
+            #Carla.host.set_option(OPTION_PATH_BRIDGE_LV2_GTK3, 0, carla_bridge_lv2_gtk3)
 
-        if carla_bridge_lv2_qt4:
-            Carla.host.set_option(OPTION_PATH_BRIDGE_LV2_QT4, 0, carla_bridge_lv2_qt4)
+        #if carla_bridge_lv2_qt4:
+            #Carla.host.set_option(OPTION_PATH_BRIDGE_LV2_QT4, 0, carla_bridge_lv2_qt4)
 
-        if carla_bridge_lv2_qt5:
-            Carla.host.set_option(OPTION_PATH_BRIDGE_LV2_QT5, 0, carla_bridge_lv2_qt5)
+        #if carla_bridge_lv2_qt5:
+            #Carla.host.set_option(OPTION_PATH_BRIDGE_LV2_QT5, 0, carla_bridge_lv2_qt5)
 
-        if carla_bridge_lv2_x11:
-            Carla.host.set_option(OPTION_PATH_BRIDGE_LV2_X11, 0, carla_bridge_lv2_x11)
+        #if carla_bridge_lv2_x11:
+            #Carla.host.set_option(OPTION_PATH_BRIDGE_LV2_X11, 0, carla_bridge_lv2_x11)
 
-        if carla_bridge_vst_x11:
-            Carla.host.set_option(OPTION_PATH_BRIDGE_VST_X11, 0, carla_bridge_vst_x11)
+        #if carla_bridge_vst_x11:
+            #Carla.host.set_option(OPTION_PATH_BRIDGE_VST_X11, 0, carla_bridge_vst_x11)
 
     # Set available drivers
     driverCount = Carla.host.get_engine_driver_count()
@@ -2122,13 +2121,13 @@ if __name__ == '__main__':
         driver = cString(Carla.host.get_engine_driver_name(i))
         if driver:
             driverList.append(driver)
-    setAvailableEngineDrivers(driverList)
+    #setAvailableEngineDrivers(driverList)
 
     # Create GUI and start engine
     Carla.gui = CarlaMainW()
 
     # Set-up custom signal handling
-    setUpSignals(Carla.gui)
+    #setUpSignals(Carla.gui)
 
     # Show GUI
     Carla.gui.show()

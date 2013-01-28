@@ -4,7 +4,10 @@
 # Created by falkTX
 #
 
-all: libcarla_standalone.so
+all: carla_standalone
+
+carla_standalone:
+	$(MAKE) -C standalone ../libcarla_standalone.so
 
 # --------------------------------------------------------------
 

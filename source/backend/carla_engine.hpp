@@ -878,10 +878,10 @@ protected:
     void sampleRateChanged(const double newSampleRate);
 
 private:
-#ifdef CARLA_ENGINE_JACK
+#ifdef WANT_JACK
     static CarlaEngine* newJack();
 #endif
-#ifdef CARLA_ENGINE_RTAUDIO
+#ifdef WANT_RTAUDIO
     enum RtAudioApi {
         RTAUDIO_DUMMY        = 0,
         RTAUDIO_LINUX_ALSA   = 1,

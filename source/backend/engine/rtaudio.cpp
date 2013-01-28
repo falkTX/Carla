@@ -15,7 +15,7 @@
  * For a full copy of the GNU General Public License see the COPYING file
  */
 
-#ifdef CARLA_ENGINE_RTAUDIO
+#ifdef WANT_RTAUDIO
 
 #include "carla_engine_internal.hpp"
 #include "carla_backend_utils.hpp"

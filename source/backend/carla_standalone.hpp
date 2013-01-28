@@ -20,10 +20,13 @@
 
 #include "carla_backend.hpp"
 
+using CarlaBackend::CarlaEngine;
+using CarlaBackend::CarlaPlugin;
+
 // TODO - create struct for internal plugin info
 // TODO - dont strdup() on const-char* returns, use static char[STR_MAX]
 
-//CARLA_BACKEND_START_NAMESPACE
+//CARLA_BACKEND_USE_NAMESPACE
 
 /*!
  * @defgroup CarlaBackendStandalone Carla Backend Standalone
@@ -99,11 +102,13 @@ CARLA_EXPORT const char*  carla_get_engine_driver_name(unsigned int index);
 #if 0
 CARLA_EXPORT unsigned int get_internal_plugin_count();
 CARLA_EXPORT const PluginInfo* get_internal_plugin_info(unsigned int pluginId);
+#endif
 
-CARLA_EXPORT bool engine_init(const char* driverName, const char* clientName);
-CARLA_EXPORT bool engine_close();
-CARLA_EXPORT bool is_engine_running();
+CARLA_EXPORT bool carla_engine_init(const char* driverName, const char* clientName);
+CARLA_EXPORT bool carla_engine_close();
+CARLA_EXPORT bool carla_is_engine_running();
 
+#if 0
 CARLA_EXPORT int  add_plugin(BinaryType btype, PluginType ptype, const char* filename, const char* name, const char* label, void* extraPtr);
 CARLA_EXPORT bool remove_plugin(unsigned int pluginId);
 

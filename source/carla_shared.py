@@ -25,9 +25,9 @@ import sys
 from codecs import open as codecopen
 from copy import deepcopy
 #from decimal import Decimal
-from PyQt4.QtCore import pyqtSlot, qWarning, SIGNAL, SLOT
-#pyqtSlot, qFatal, Qt, QSettings, QTimer
-from PyQt4.QtGui import QDialog, QWidget
+from PyQt4.QtCore import pyqtSlot, qWarning, Qt, QSettings, QTimer, SIGNAL, SLOT
+#pyqtSlot, qFatal,
+from PyQt4.QtGui import QDialog, QIcon, QMessageBox, QWidget
 #from PyQt4.QtGui import QColor, QCursor, QFontMetrics, QFrame, QGraphicsScene, QInputDialog, QLinearGradient, QMenu, QPainter, QPainterPath, QVBoxLayout
 #from PyQt4.QtXml import QDomDocument
 
@@ -156,10 +156,40 @@ def isNumber(value):
         return False
 
 # ------------------------------------------------------------------------------------------------------------
+# Convert a value to a list
+
+def toList(value):
+    if value is None:
+        return []
+    elif not isinstance(value, list):
+        return [value]
+    else:
+        return value
+
+# ------------------------------------------------------------------------------------------------------------
 # Unicode open
 
 def uopen(filename, mode="r"):
     return codecopen(filename, encoding="utf-8", mode=mode)
+
+# ------------------------------------------------------------------------------------------------------------
+# Get Icon from user theme, using our own as backup (Oxygen)
+
+def getIcon(icon, size=16):
+    return QIcon.fromTheme(icon, QIcon(":/%ix%i/%s.png" % (size, size, icon)))
+
+# ------------------------------------------------------------------------------------------------------------
+# Custom MessageBox
+
+def CustomMessageBox(self_, icon, title, text, extraText="", buttons=QMessageBox.Yes|QMessageBox.No, defButton=QMessageBox.No):
+    msgBox = QMessageBox(self_)
+    msgBox.setIcon(icon)
+    msgBox.setWindowTitle(title)
+    msgBox.setText(text)
+    msgBox.setInformativeText(extraText)
+    msgBox.setStandardButtons(buttons)
+    msgBox.setDefaultButton(defButton)
+    return msgBox.exec_()
 
 # ------------------------------------------------------------------------------------------------
 # Backend defines
@@ -653,7 +683,7 @@ class CarlaAboutW(QDialog):
 
         else:
             self.ui.l_extended.setText(cString(Carla.host.get_extended_license_text()))
-            self.ui.le_osc_url.setText(cString(Carla.host.get_host_osc_url()) if Carla.host.is_engine_running() else self.tr("(Engine not running)"))
+            #self.ui.le_osc_url.setText(cString(Carla.host.get_host_osc_url()) if Carla.host.is_engine_running() else self.tr("(Engine not running)"))
 
             self.ui.l_osc_cmds.setText(
                                     " /set_active                 <i-value>\n"
@@ -846,26 +876,26 @@ class PluginParameter(QWidget):
 
 from PyQt4.QtGui import QApplication
 
-Carla.isControl = True
+#Carla.isControl = True
 
-ptest = {
-    'index': 0,
-    'name': "",
-    'symbol': "",
-    'current': 0.1,
-    'default': 0.3,
-    'minimum': 0.0,
-    'maximum': 1.0,
-    'midiChannel': 7,
-    'midiCC': 2,
-    'type': PARAMETER_INPUT,
-    'hints': PARAMETER_IS_ENABLED | PARAMETER_IS_AUTOMABLE,
-    'scalepoints': [],
-    'step': 0.01,
-    'stepSmall': 0.001,
-    'stepLarge': 0.1,
-    'unit': "un",
-}
+#ptest = {
+    #'index': 0,
+    #'name': "",
+    #'symbol': "",
+    #'current': 0.1,
+    #'default': 0.3,
+    #'minimum': 0.0,
+    #'maximum': 1.0,
+    #'midiChannel': 7,
+    #'midiCC': 2,
+    #'type': PARAMETER_INPUT,
+    #'hints': PARAMETER_IS_ENABLED | PARAMETER_IS_AUTOMABLE,
+    #'scalepoints': [],
+    #'step': 0.01,
+    #'stepSmall': 0.001,
+    #'stepLarge': 0.1,
+    #'unit': "un",
+#}
 
 #app  = QApplication(sys.argv)
 #gui1 = CarlaAboutW(None)
