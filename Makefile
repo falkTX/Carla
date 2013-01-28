@@ -19,7 +19,10 @@ all: CPP RES UI WIDGETS
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------
 
-CPP: discovery
+CPP: backend discovery
+
+backend:
+	$(MAKE) -C source/backend
 
 discovery:
 	$(MAKE) -C source/discovery
