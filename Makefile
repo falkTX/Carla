@@ -9,62 +9,27 @@ DESTDIR =
 
 SED_PREFIX = $(shell echo $(PREFIX) | sed "s/\//\\\\\\\\\//g")
 
-LINK  = ln -s
+LINK  = ln -sf
 PYUIC = pyuic4
 PYRCC = pyrcc4 -py3
 
+# -----------------------------------------------------------------------------------------------------------------------------------------
 
 all: CPP RES UI WIDGETS
 
+# -----------------------------------------------------------------------------------------------------------------------------------------
+# C++ code
 
-# ------------------------------------------------------------------------------------------------------------------------------------------------------
-
-CPP: backend discovery
+CPP: backend bridges discovery
 
 backend:
 	$(MAKE) -C source/backend
 
+bridges:
+	$(MAKE) -C source/bridges
+
 discovery:
 	$(MAKE) -C source/discovery
-
-# ------------------------------------------------------------------------------------------------------------------------------------------------------
-
-RES = source/resources_rc.py
-
-RES: $(RES)
-
-source/resources_rc.py: resources/resources.qrc
-	$(PYRCC) $< -o $@
-
-# ------------------------------------------------------------------------------------------------------------------------------------------------------
-
-UIs = source/ui_carla.py source/ui_carla_control.py\
-	source/ui_carla_about.py source/ui_carla_database.py source/ui_carla_edit.py source/ui_carla_parameter.py source/ui_carla_plugin.py source/ui_carla_refresh.py \
-	source/ui_inputdialog_value.py
-
-UI: $(UIs)
-
-source/ui_%.py: resources/ui/%.ui
-	$(PYUIC) $< -o $@
-
-# ------------------------------------------------------------------------------------------------------------------------------------------------------
-
-WIDGETS = source/digitalpeakmeter.py source/ledbutton.py source/paramspinbox.py source/pixmapdial.py source/pixmapkeyboard.py
-
-WIDGETS: $(WIDGETS)
-
-source/%.py: source/widgets/%.py
-	$(LINK) widgets/$*.py $@
-
-# ------------------------------------------------------------------------------------------------------------------------------------------------------
-
-debug:
-	$(MAKE) DEBUG=true
-
-# doxygen:
-# 	$(MAKE) doxygen -C source/backend
-
-# ------------------------------------------------------------------------------------------------------------------------------------------------------
 
 posix32:
 	$(MAKE) -C source/bridge posix32
@@ -90,16 +55,55 @@ wine64:
 	$(MAKE) -C source/jackbridge wine64
 	$(LINK) source/libs/jackbridge/libcarla-jackbridge-win64.dll.so source/bridge/libcarla-jackbridge-win64.dll
 
-# ------------------------------------------------------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------------------------------------------------
+# Resources
+
+RES = source/resources_rc.py
+
+RES: $(RES)
+
+source/resources_rc.py: resources/resources.qrc
+	$(PYRCC) $< -o $@
+
+# -----------------------------------------------------------------------------------------------------------------------------------------
+# UI code
+
+UIs = source/ui_carla.py source/ui_carla_control.py\
+	source/ui_carla_about.py source/ui_carla_database.py source/ui_carla_edit.py source/ui_carla_parameter.py source/ui_carla_plugin.py source/ui_carla_refresh.py \
+	source/ui_inputdialog_value.py
+
+UI: $(UIs)
+
+source/ui_%.py: resources/ui/%.ui
+	$(PYUIC) $< -o $@
+
+# -----------------------------------------------------------------------------------------------------------------------------------------
+# Widgets
+
+WIDGETS = source/digitalpeakmeter.py source/ledbutton.py source/paramspinbox.py source/pixmapdial.py source/pixmapkeyboard.py
+
+WIDGETS: $(WIDGETS)
+
+source/%.py: source/widgets/%.py
+	$(LINK) widgets/$*.py $@
+
+# -----------------------------------------------------------------------------------------------------------------------------------------
 
 clean:
 	$(MAKE) clean -C source/backend
+	$(MAKE) clean -C source/bridges
 	$(MAKE) clean -C source/discovery
 	rm -f $(RES)
 	rm -f $(UIs)
 	rm -f $(WIDGETS)
-	rm -f *~ source/*~ source/*.pyc
-# 	rm -rf source/*/doxygen
+	rm -f *~ source/*~ source/*.pyc source/ui_*.py source/resources_rc.py
+
+# -----------------------------------------------------------------------------------------------------------------------------------------
+
+debug:
+	$(MAKE) DEBUG=true
+
+# -----------------------------------------------------------------------------------------------------------------------------------------
 
 install:
 	# Create directories
@@ -157,6 +161,8 @@ install:
 		$(DESTDIR)$(PREFIX)/bin/carla \
 		$(DESTDIR)$(PREFIX)/bin/carla-control \
 		$(DESTDIR)$(PREFIX)/bin/carla-standalone \
+
+# -----------------------------------------------------------------------------------------------------------------------------------------
 
 uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/bin/carla*
