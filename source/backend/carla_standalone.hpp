@@ -20,13 +20,8 @@
 
 #include "carla_backend.hpp"
 
-using CarlaBackend::CarlaEngine;
-using CarlaBackend::CarlaPlugin;
-
 // TODO - create struct for internal plugin info
 // TODO - dont strdup() on const-char* returns, use static char[STR_MAX]
-
-//CARLA_BACKEND_USE_NAMESPACE
 
 /*!
  * @defgroup CarlaBackendStandalone Carla Backend Standalone
@@ -36,10 +31,12 @@ using CarlaBackend::CarlaPlugin;
  * @{
  */
 
-#if 0
-struct PluginInfo {
-    PluginType type;
-    PluginCategory category;
+typedef CarlaBackend::PluginType CarlaPluginType;
+typedef CarlaBackend::PluginCategory CarlaPluginCategory;
+
+struct CarlaPluginInfo {
+    CarlaPluginType type;
+    CarlaPluginCategory category;
     unsigned int hints;
     const char* binary;
     const char* name;
@@ -48,9 +45,9 @@ struct PluginInfo {
     const char* copyright;
     long uniqueId;
 
-    PluginInfo()
-        : type(PLUGIN_NONE),
-          category(PLUGIN_CATEGORY_NONE),
+    CarlaPluginInfo()
+        : type(CarlaBackend::PLUGIN_NONE),
+          category(CarlaBackend::PLUGIN_CATEGORY_NONE),
           hints(0x0),
           binary(nullptr),
           name(nullptr),
@@ -60,56 +57,82 @@ struct PluginInfo {
           uniqueId(0) {}
 };
 
-struct PortCountInfo {
+struct CarlaNativePluginInfo {
+    CarlaPluginCategory category;
+    unsigned int hints;
+    uint32_t audioIns;
+    uint32_t audioOuts;
+    uint32_t midiIns;
+    uint32_t midiOuts;
+    uint32_t parameterIns;
+    uint32_t parameterOuts;
+    const char* name;
+    const char* label;
+    const char* maker;
+    const char* copyright;
+
+    CarlaNativePluginInfo()
+        : category(CarlaBackend::PLUGIN_CATEGORY_NONE),
+          hints(0x0),
+          audioIns(0),
+          audioOuts(0),
+          midiIns(0),
+          midiOuts(0),
+          parameterIns(0),
+          parameterOuts(0),
+          name(nullptr),
+          label(nullptr),
+          maker(nullptr),
+          copyright(nullptr) {}
+};
+
+struct CarlaPortCountInfo {
     uint32_t ins;
     uint32_t outs;
     uint32_t total;
 
-    PortCountInfo()
+    CarlaPortCountInfo()
         : ins(0),
           outs(0),
           total(0) {}
 };
 
-struct ParameterInfo {
+struct CarlaParameterInfo {
     const char* name;
     const char* symbol;
     const char* unit;
     uint32_t scalePointCount;
 
-    ParameterInfo()
+    CarlaParameterInfo()
         : name(nullptr),
           symbol(nullptr),
           unit(nullptr),
           scalePointCount(0) {}
 };
 
-struct ScalePointInfo {
+struct CarlaScalePointInfo {
     double value;
     const char* label;
 
-    ScalePointInfo()
+    CarlaScalePointInfo()
         : value(0.0),
           label(nullptr) {}
 };
-#endif
 
 CARLA_EXPORT const char* carla_get_extended_license_text();
 
 CARLA_EXPORT unsigned int carla_get_engine_driver_count();
-CARLA_EXPORT const char*  carla_get_engine_driver_name(unsigned int index);
+CARLA_EXPORT const char* carla_get_engine_driver_name(unsigned int index);
 
-#if 0
-CARLA_EXPORT unsigned int get_internal_plugin_count();
-CARLA_EXPORT const PluginInfo* get_internal_plugin_info(unsigned int pluginId);
-#endif
+CARLA_EXPORT unsigned int carla_get_internal_plugin_count();
+CARLA_EXPORT const CarlaNativePluginInfo* carla_get_internal_plugin_info(unsigned int internalPluginId);
 
 CARLA_EXPORT bool carla_engine_init(const char* driverName, const char* clientName);
 CARLA_EXPORT bool carla_engine_close();
 CARLA_EXPORT bool carla_is_engine_running();
 
 #if 0
-CARLA_EXPORT int  add_plugin(BinaryType btype, PluginType ptype, const char* filename, const char* name, const char* label, void* extraPtr);
+CARLA_EXPORT int add_plugin(BinaryType btype, PluginType ptype, const char* filename, const char* name, const char* label, void* extraPtr);
 CARLA_EXPORT bool remove_plugin(unsigned int pluginId);
 
 CARLA_EXPORT const PluginInfo* get_plugin_info(unsigned int pluginId);
@@ -180,7 +203,5 @@ CARLA_EXPORT void nsm_reply_save();
 #endif
 
 /**@}*/
-
-//CARLA_BACKEND_END_NAMESPACE
 
 #endif // __CARLA_STANDALONE_HPP__

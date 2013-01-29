@@ -20,34 +20,38 @@
 #include "carla_plugin.hpp"
 #include "carla_native.h"
 
+using CarlaBackend::CarlaEngine;
+using CarlaBackend::CarlaPlugin;
+
+using CarlaBackend::CallbackFunc;
+using CarlaBackend::EngineOptions;
+
 #if 0
 int main(int argc, char* argv[])
 {
     CARLA_BACKEND_USE_NAMESPACE
-    std::printf("%s\n", carla_get_extended_license_text());
+    //std::printf("%s\n", carla_get_extended_license_text());
+    //std::printf("%i\n", carla_get_engine_driver_count());
+    std::printf("%i\n", carla_get_internal_plugin_count());
     return 0;
 }
 #endif
-
-using CarlaBackend::CallbackFunc;
-using CarlaBackend::EngineOptions;
 
 // -------------------------------------------------------------------------------------------------------------------
 
 // Single, standalone engine
 struct CarlaBackendStandalone {
-    CarlaEngine*  engine;
     CallbackFunc  callback;
-    EngineOptions options;
+    CarlaEngine*  engine;
     CarlaString   lastError;
     CarlaString   procName;
+    EngineOptions options;
     bool          started;
 
     CarlaBackendStandalone()
-        : engine(nullptr),
-          callback(nullptr),
+        : callback(nullptr),
+          engine(nullptr),
           started(false) {}
-
 } standalone;
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -105,6 +109,8 @@ const char* carla_get_extended_license_text()
     return retText;
 }
 
+// -------------------------------------------------------------------------------------------------------------------
+
 unsigned int carla_get_engine_driver_count()
 {
     qDebug("carla_get_engine_driver_count()");
@@ -119,38 +125,34 @@ const char* carla_get_engine_driver_name(unsigned int index)
     return CarlaEngine::getDriverName(index);
 }
 
-#if 0
 // -------------------------------------------------------------------------------------------------------------------
 
-unsigned int get_internal_plugin_count()
+unsigned int carla_get_internal_plugin_count()
 {
-    qDebug("CarlaBackendStandalone::get_internal_plugin_count()");
+    qDebug("carla_get_internal_plugin_count()");
 
-    return CarlaBackend::CarlaPlugin::getNativePluginCount();
+    return CarlaPlugin::getNativePluginCount();
 }
 
-const PluginInfo* get_internal_plugin_info(unsigned int pluginId)
+const CarlaNativePluginInfo* carla_get_internal_plugin_info(unsigned int internalPluginId)
 {
-    qDebug("CarlaBackendStandalone::get_internal_plugin_info(%i)", pluginId);
+    qDebug("carla_get_internal_plugin_info(%i)", internalPluginId);
 
-    static PluginInfo info;
+    static CarlaNativePluginInfo info;
 
-    const PluginDescriptor* const nativePlugin = CarlaBackend::CarlaPlugin::getNativePluginDescriptor(pluginId);
-
-    CARLA_ASSERT(nativePlugin);
+    const PluginDescriptor* const nativePlugin = CarlaPlugin::getNativePluginDescriptor(internalPluginId);
 
     // as internal plugin, this must never fail
-    if (! nativePlugin)
+    CARLA_ASSERT(nativePlugin != nullptr);
+
+    if (nativePlugin == nullptr)
         return nullptr;
 
-     info.type      = CarlaBackend::PLUGIN_INTERNAL;
-     info.category  = static_cast<CarlaBackend::PluginCategory>(nativePlugin->category);
+     info.category  = static_cast<CarlaPluginCategory>(nativePlugin->category);
      info.hints     = 0x0;
-     info.name      = nativePlugin->name;
-     info.label     = nativePlugin->label;
-     info.maker     = nativePlugin->maker;
-     info.copyright = nativePlugin->copyright;
 
+    if (nativePlugin->hints & PLUGIN_IS_RTSAFE)
+         info.hints |= CarlaBackend::PLUGIN_IS_RTSAFE;
      if (nativePlugin->hints & PLUGIN_IS_SYNTH)
          info.hints |= CarlaBackend::PLUGIN_IS_SYNTH;
      if (nativePlugin->hints & PLUGIN_HAS_GUI)
@@ -158,9 +160,20 @@ const PluginInfo* get_internal_plugin_info(unsigned int pluginId)
      if (nativePlugin->hints & PLUGIN_USES_SINGLE_THREAD)
          info.hints |= CarlaBackend::PLUGIN_USES_SINGLE_THREAD;
 
+     info.audioIns  = nativePlugin->audioIns;
+     info.audioOuts = nativePlugin->audioOuts;
+     info.midiIns   = nativePlugin->midiIns;
+     info.midiOuts  = nativePlugin->midiOuts;
+     info.parameterIns  = nativePlugin->parameterIns;
+     info.parameterOuts = nativePlugin->parameterOuts;
+
+     info.name      = nativePlugin->name;
+     info.label     = nativePlugin->label;
+     info.maker     = nativePlugin->maker;
+     info.copyright = nativePlugin->copyright;
+
     return &info;
 }
-#endif
 
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -190,19 +203,20 @@ bool carla_engine_init(const char* driverName, const char* clientName)
 
     standalone.engine->setCallback(standalone.callback, nullptr);
 
-    standalone.engine->setOption(CarlaBackend::OPTION_PROCESS_MODE,            standalone.options.processMode,          nullptr);
-    standalone.engine->setOption(CarlaBackend::OPTION_MAX_PARAMETERS,          standalone.options.maxParameters,        nullptr);
-    standalone.engine->setOption(CarlaBackend::OPTION_PREFERRED_BUFFER_SIZE,   standalone.options.preferredBufferSize,  nullptr);
-    standalone.engine->setOption(CarlaBackend::OPTION_PREFERRED_SAMPLE_RATE,   standalone.options.preferredSampleRate,  nullptr);
-    standalone.engine->setOption(CarlaBackend::OPTION_FORCE_STEREO,            standalone.options.forceStereo,          nullptr);
-    standalone.engine->setOption(CarlaBackend::OPTION_USE_DSSI_VST_CHUNKS,     standalone.options.useDssiVstChunks,     nullptr);
-    standalone.engine->setOption(CarlaBackend::OPTION_PREFER_PLUGIN_BRIDGES,   standalone.options.preferPluginBridges,  nullptr);
-    standalone.engine->setOption(CarlaBackend::OPTION_PREFER_UI_BRIDGES,       standalone.options.preferUiBridges,      nullptr);
-    standalone.engine->setOption(CarlaBackend::OPTION_OSC_UI_TIMEOUT,          standalone.options.oscUiTimeout,         nullptr);
-    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_POSIX32,  0, standalone.options.bridge_posix32);
-    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_POSIX64,  0, standalone.options.bridge_posix64);
-    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_WIN32,    0, standalone.options.bridge_win32);
-    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_WIN64,    0, standalone.options.bridge_win64);
+    standalone.engine->setOption(CarlaBackend::OPTION_PROCESS_MODE,               standalone.options.processMode,          nullptr);
+    standalone.engine->setOption(CarlaBackend::OPTION_FORCE_STEREO,               standalone.options.forceStereo,          nullptr);
+    standalone.engine->setOption(CarlaBackend::OPTION_PREFER_PLUGIN_BRIDGES,      standalone.options.preferPluginBridges,  nullptr);
+    standalone.engine->setOption(CarlaBackend::OPTION_PREFER_UI_BRIDGES,          standalone.options.preferUiBridges,      nullptr);
+    standalone.engine->setOption(CarlaBackend::OPTION_USE_DSSI_VST_CHUNKS,        standalone.options.useDssiVstChunks,     nullptr);
+    standalone.engine->setOption(CarlaBackend::OPTION_MAX_PARAMETERS,             standalone.options.maxParameters,        nullptr);
+    standalone.engine->setOption(CarlaBackend::OPTION_PREFERRED_BUFFER_SIZE,      standalone.options.preferredBufferSize,  nullptr);
+    standalone.engine->setOption(CarlaBackend::OPTION_PREFERRED_SAMPLE_RATE,      standalone.options.preferredSampleRate,  nullptr);
+    standalone.engine->setOption(CarlaBackend::OPTION_OSC_UI_TIMEOUT,             standalone.options.oscUiTimeout,         nullptr);
+    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_NATIVE,      0, standalone.options.bridge_native);
+    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_POSIX32,     0, standalone.options.bridge_posix32);
+    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_POSIX64,     0, standalone.options.bridge_posix64);
+    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_WIN32,       0, standalone.options.bridge_win32);
+    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_WIN64,       0, standalone.options.bridge_win64);
     standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_LV2_GTK2,    0, standalone.options.bridge_lv2gtk2);
     standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_LV2_GTK3,    0, standalone.options.bridge_lv2gtk3);
     standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_LV2_QT4,     0, standalone.options.bridge_lv2qt4);

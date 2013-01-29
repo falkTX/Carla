@@ -571,10 +571,12 @@ def checkPluginSFZ(filename, tool):
 c_enum = c_int
 c_nullptr = None
 
-if kIs64bit:
-    c_uintptr = c_uint64
-else:
-    c_uintptr = c_uint32
+#if kIs64bit:
+    #c_uintptr = c_uint64
+#else:
+    #c_uintptr = c_uint32
+
+CallbackFunc = CFUNCTYPE(None, c_void_p, c_enum, c_int, c_int, c_int, c_double, c_char_p)
 
 class ParameterData(Structure):
     _fields_ = [
@@ -600,7 +602,7 @@ class MidiProgramData(Structure):
     _fields_ = [
         ("bank", c_uint32),
         ("program", c_uint32),
-        ("label", c_char_p)
+        ("name", c_char_p)
     ]
 
 class CustomData(Structure):
@@ -610,7 +612,10 @@ class CustomData(Structure):
         ("value", c_char_p)
     ]
 
-class PluginInfo(Structure):
+# ------------------------------------------------------------------------------------------------------------
+# Standalone C++ -> Python variables
+
+class CarlaPluginInfo(Structure):
     _fields_ = [
         ("type", c_enum),
         ("category", c_enum),
@@ -623,14 +628,31 @@ class PluginInfo(Structure):
         ("uniqueId", c_long)
     ]
 
-class PortCountInfo(Structure):
+class CarlaNativePluginInfo(Structure):
+    _fields_ = [
+        ("category", c_enum),
+        ("hints", c_uint),
+        ("audioIns", c_uint32),
+        ("audioOuts", c_uint32),
+        ("midiIns", c_uint32),
+        ("midiOuts", c_uint32),
+        ("parameterIns", c_uint32),
+        ("parameterOuts", c_uint32),
+        ("binary", c_char_p),
+        ("name", c_char_p),
+        ("label", c_char_p),
+        ("maker", c_char_p),
+        ("copyright", c_char_p)
+    ]
+
+class CarlaPortCountInfo(Structure):
     _fields_ = [
         ("ins", c_uint32),
         ("outs", c_uint32),
         ("total", c_uint32)
     ]
 
-class ParameterInfo(Structure):
+class CarlaParameterInfo(Structure):
     _fields_ = [
         ("name", c_char_p),
         ("symbol", c_char_p),
@@ -638,16 +660,14 @@ class ParameterInfo(Structure):
         ("scalePointCount", c_uint32)
     ]
 
-class ScalePointInfo(Structure):
+class CarlaScalePointInfo(Structure):
     _fields_ = [
         ("value", c_double),
         ("label", c_char_p)
     ]
 
-CallbackFunc = CFUNCTYPE(None, c_void_p, c_enum, c_int, c_int, c_int, c_double, c_char_p)
-
 # ------------------------------------------------------------------------------------------------------------
-# Backend C++ -> Python object
+# Standalone Python object
 
 class Host(object):
     def __init__(self, lib_prefix_arg):
@@ -673,11 +693,11 @@ class Host(object):
         self.lib.carla_get_engine_driver_name.argtypes = [c_uint]
         self.lib.carla_get_engine_driver_name.restype = c_char_p
 
-        #self.lib.get_internal_plugin_count.argtypes = None
-        #self.lib.get_internal_plugin_count.restype = c_uint
+        self.lib.carla_get_internal_plugin_count.argtypes = None
+        self.lib.carla_get_internal_plugin_count.restype = c_uint
 
-        #self.lib.get_internal_plugin_info.argtypes = [c_uint]
-        #self.lib.get_internal_plugin_info.restype = POINTER(PluginInfo)
+        self.lib.carla_get_internal_plugin_info.argtypes = [c_uint]
+        self.lib.carla_get_internal_plugin_info.restype = POINTER(CarlaNativePluginInfo)
 
         self.lib.carla_engine_init.argtypes = [c_char_p, c_char_p]
         self.lib.carla_engine_init.restype = c_bool
@@ -859,11 +879,11 @@ class Host(object):
     def get_engine_driver_name(self, index):
         return self.lib.carla_get_engine_driver_name(index)
 
-    #def get_internal_plugin_count(self):
-        #return self.lib.get_internal_plugin_count()
+    def get_internal_plugin_count(self):
+        return self.lib.carla_get_internal_plugin_count()
 
-    #def get_internal_plugin_info(self, index):
-        #return structToDict(self.lib.get_internal_plugin_info(index).contents)
+    def get_internal_plugin_info(self, internalPluginId):
+        return structToDict(self.lib.carla_get_internal_plugin_info(internalPluginId).contents)
 
     def engine_init(self, driverName, clientName):
         return self.lib.carla_engine_init(driverName.encode("utf-8"), clientName.encode("utf-8"))
@@ -1038,3 +1058,18 @@ class Host(object):
         #self.lib.nsm_reply_save()
 
 Carla.host = Host(None)
+
+# Test available drivers
+driverCount = Carla.host.get_engine_driver_count()
+driverList  = []
+for i in range(driverCount):
+    driver = cString(Carla.host.get_engine_driver_name(i))
+    if driver:
+        driverList.append(driver)
+        print(i, driver)
+
+# Test available internal plugins
+pluginCount = Carla.host.get_internal_plugin_count()
+for i in range(pluginCount):
+    plugin = Carla.host.get_internal_plugin_info(i)
+    print(plugin)

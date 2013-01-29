@@ -20,6 +20,7 @@
 
 CARLA_BACKEND_START_NAMESPACE
 
+#if 0
 struct NativePluginMidiData {
     uint32_t  count;
     uint32_t* indexes;
@@ -30,17 +31,17 @@ struct NativePluginMidiData {
           indexes(nullptr),
           ports(nullptr) {}
 };
+#endif
 
 class NativePlugin : public CarlaPlugin
 {
 public:
-    NativePlugin(CarlaEngine* const engine, const unsigned short id)
+    NativePlugin(CarlaEngine* const engine, const int id)
         : CarlaPlugin(engine, id)
     {
         qDebug("NativePlugin::NativePlugin()");
 
-        m_type = PLUGIN_INTERNAL;
-
+#if 0
         descriptor  = nullptr;
         handle = h2 = nullptr;
 
@@ -57,8 +58,10 @@ public:
 
         midiEventCount = 0;
         memset(midiEvents, 0, sizeof(::MidiEvent) * MAX_MIDI_EVENTS * 2);
+#endif
     }
 
+#if 0
     ~NativePlugin()
     {
         qDebug("NativePlugin::~NativePlugin()");
@@ -1532,6 +1535,7 @@ public:
     }
 
     // -------------------------------------------------------------------
+#endif
 
     static size_t getPluginCount()
     {
@@ -1541,6 +1545,7 @@ public:
 
     static const PluginDescriptor* getPlugin(const size_t index)
     {
+        maybeFirstInit();
         CARLA_ASSERT(index < pluginDescriptors.size());
 
         if (index < pluginDescriptors.size())
@@ -1563,6 +1568,7 @@ public:
 
         carla_register_native_plugin_bypass();
         carla_register_native_plugin_midiSplit();
+        carla_register_native_plugin_midiThrough();
 
         carla_register_native_plugin_3BandEQ();
         carla_register_native_plugin_3BandSplitter();
@@ -1573,6 +1579,7 @@ public:
 #endif
     }
 
+#if 0
     // -------------------------------------------------------------------
 
     bool init(const char* const name, const char* const label)
@@ -1635,8 +1642,10 @@ public:
 
         return true;
     }
+#endif
 
 private:
+#if 0
     const PluginDescriptor* descriptor;
     PluginHandle handle, h2;
     HostDescriptor host;
@@ -1648,6 +1657,7 @@ private:
 
     uint32_t    midiEventCount;
     ::MidiEvent midiEvents[MAX_MIDI_EVENTS*2];
+#endif
 
     static bool firstInit;
     static std::vector<const PluginDescriptor*> pluginDescriptors;
@@ -1658,6 +1668,7 @@ std::vector<const PluginDescriptor*> NativePlugin::pluginDescriptors;
 
 // -----------------------------------------------------------------------
 
+#if 0
 CarlaPlugin* CarlaPlugin::newNative(const initializer& init)
 {
     qDebug("CarlaPlugin::newNative(%p, \"%s\", \"%s\", \"%s\")", init.engine, init.filename, init.name, init.label);
@@ -1694,6 +1705,7 @@ CarlaPlugin* CarlaPlugin::newNative(const initializer& init)
 
     return plugin;
 }
+#endif
 
 // -----------------------------------------------------------------------
 
