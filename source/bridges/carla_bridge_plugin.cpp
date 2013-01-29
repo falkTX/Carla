@@ -19,8 +19,10 @@
 
 #include "carla_bridge_client.hpp"
 #include "carla_bridge_toolkit.hpp"
+#include "carla_backend_utils.hpp"
+#include "carla_engine.hpp"
 #include "carla_plugin.hpp"
-#include "../carla/Shared.hpp"
+#include "Shared.hpp"
 
 #include <set>
 #include <QtCore/QDir>
@@ -101,8 +103,8 @@ CARLA_BRIDGE_START_NAMESPACE
 
 // -------------------------------------------------------------------------
 
-class CarlaBridgeToolkitPlugin : public CarlaBridgeToolkit,
-                                 public CarlaBackend::CarlaPluginGUI::Callback
+class CarlaBridgeToolkitPlugin : public CarlaBridgeToolkit //,
+                                 //public CarlaBackend::CarlaPluginGUI::Callback
 {
 public:
     CarlaBridgeToolkitPlugin(CarlaBridgeClient* const client, const char* const uiTitle)
@@ -111,7 +113,7 @@ public:
         qDebug("CarlaBridgeToolkitPlugin::CarlaBridgeToolkitPlugin(%p, \"%s\")", client, uiTitle);
 
         app = nullptr;
-        gui = nullptr;
+        //gui = nullptr;
 
         m_hasUI  = false;
         m_uiQuit = false;
@@ -124,6 +126,7 @@ public:
     {
         qDebug("CarlaBridgeToolkitPlugin::~CarlaBridgeToolkitPlugin()");
 
+#if 0
         if (gui)
         {
             gui->close();
@@ -131,6 +134,7 @@ public:
             delete gui;
             gui = nullptr;
         }
+#endif
 
         if (app)
         {
@@ -146,18 +150,18 @@ public:
     {
         qDebug("CarlaBridgeToolkitPlugin::init()");
         CARLA_ASSERT(! app);
-        CARLA_ASSERT(! gui);
+        //CARLA_ASSERT(! gui);
 
         app = new QApplication(qargc, qargv);
 
-        gui = new CarlaBackend::CarlaPluginGUI(nullptr, this);
+        //gui = new CarlaBackend::CarlaPluginGUI(nullptr, this);
     }
 
     void exec(const bool showGui)
     {
         qDebug("CarlaBridgeToolkitPlugin::exec(%s)", bool2str(showGui));
         CARLA_ASSERT(app);
-        CARLA_ASSERT(gui);
+        //CARLA_ASSERT(gui);
         CARLA_ASSERT(client);
 
         if (showGui)
@@ -193,12 +197,15 @@ public:
     void resize(const int width, const int height)
     {
         qDebug("CarlaBridgeToolkitPlugin::resize(%i, %i)", width, height);
+#if 0
         CARLA_ASSERT(gui);
 
         if (gui)
             gui->setNewSize(width, height);
+#endif
     }
 
+#if 0
     GuiContainer* getContainer() const
     {
         CARLA_ASSERT(gui);
@@ -218,6 +225,7 @@ public:
 
         return nullptr;
     }
+#endif
 
     void setHasUI(const bool hasUI, const bool showUI)
     {
@@ -229,7 +237,7 @@ public:
 
 protected:
     QApplication* app;
-    CarlaBackend::CarlaPluginGUI* gui;
+    //CarlaBackend::CarlaPluginGUI* gui;
 
 private:
     bool m_hasUI;
@@ -284,6 +292,7 @@ public:
         if (! plugin)
             return;
 
+#if 0
         bool guiResizable;
         CarlaBackend::GuiType guiType;
         plugin->getGuiInfo(&guiType, &guiResizable);
@@ -299,6 +308,7 @@ public:
         {
             plugToolkit->setHasUI(guiType != CarlaBackend::GUI_NONE, false);
         }
+#endif
     }
 
     void quit()
@@ -383,6 +393,7 @@ public:
 
         qDebug("Loading plugin state now...");
 
+#if 0
         // ---------------------------------------------------------------------
         // Part 1 - set custom data (except chunks)
 
@@ -397,6 +408,7 @@ public:
                 plugin->setCustomData(type, key, value, true);
             }
         }
+#endif
 
         // ---------------------------------------------------------------------
         // Part 2 - set program
@@ -455,9 +467,9 @@ public:
 
             for (uint32_t i=0; i < midiProgramCount;  i++)
             {
-                const MidiProgramData* const midiProgramData = plugin->midiProgramData(i);
+                const MidiProgramData& midiProgramData = plugin->midiProgramData(i);
 
-                if ((int32_t)midiProgramData->bank == content->currentMidiBank && (int32_t)midiProgramData->program == content->currentMidiProgram)
+                if ((int32_t)midiProgramData.bank == content->currentMidiBank && (int32_t)midiProgramData.program == content->currentMidiProgram)
                 {
                     plugin->setMidiProgram(i, true, true, false, true);
                     break;
@@ -560,10 +572,10 @@ public:
             // Now set parameter
             if (index >= 0)
             {
-                const ParameterData* const paramData = plugin->parameterData(index);
+                const ParameterData& paramData = plugin->parameterData(index);
                 double value = parameter.value;
 
-                if (paramData->hints & PARAMETER_USES_SAMPLERATE)
+                if (paramData.hints & PARAMETER_USES_SAMPLERATE)
                     value *= sampleRate;
 
                 plugin->setParameterValue(index, value, true, true, false);
@@ -574,6 +586,7 @@ public:
                 qWarning("Could not set parameter data for '%s')", parameter.name.toUtf8().constData());
         }
 
+#if 0
         // ---------------------------------------------------------------------
         // Part 5 - set chunk data
 
@@ -588,6 +601,7 @@ public:
                 plugin->setCustomData(type, key, value, true);
             }
         }
+#endif
 
         if (! content->chunk.isEmpty())
             plugin->setChunkData(content->chunk.toUtf8().constData());
@@ -599,8 +613,8 @@ public:
     {
         CARLA_ASSERT(engine);
 
-        if (engine)
-            engine->osc_send_bridge_configure(CarlaBackend::CARLA_BRIDGE_MSG_HIDE_GUI, "");
+        //if (engine)
+        //    engine->osc_send_bridge_configure(CarlaBackend::CARLA_BRIDGE_MSG_HIDE_GUI, "");
     }
 
     void showPluginGui(const bool yesNo)
@@ -675,7 +689,7 @@ public:
         if (! plugin)
             return;
 
-        plugin->sendMidiSingleNote(channel, note, velo, true, true, false);
+        //plugin->sendMidiSingleNote(channel, note, velo, true, true, false);
     }
 
     void noteOff(const uint8_t channel, const uint8_t note)
@@ -686,7 +700,7 @@ public:
         if (! plugin)
             return;
 
-        plugin->sendMidiSingleNote(channel, note, 0, true, true, false);
+        //plugin->sendMidiSingleNote(channel, note, 0, true, true, false);
     }
 
     // ---------------------------------------------------------------------
@@ -705,8 +719,8 @@ public:
 
         for (uint32_t i=0; i < plugin->customDataCount(); i++)
         {
-            const CarlaBackend::CustomData* const cdata = plugin->customData(i);
-            engine->osc_send_bridge_set_custom_data(cdata->type, cdata->key, cdata->value);
+            const CarlaBackend::CustomData& cdata = plugin->customData(i);
+            engine->osc_send_bridge_set_custom_data(cdata.type, cdata.key, cdata.value);
         }
 
         if (plugin->hints() & CarlaBackend::PLUGIN_USES_CHUNKS)
@@ -737,7 +751,7 @@ public:
             }
         }
 
-        engine->osc_send_bridge_configure(CarlaBackend::CARLA_BRIDGE_MSG_SAVED, "");
+        //engine->osc_send_bridge_configure(CarlaBackend::CARLA_BRIDGE_MSG_SAVED, "");
     }
 
     void setCustomData(const char* const type, const char* const key, const char* const value)
@@ -785,7 +799,7 @@ public:
     // ---------------------------------------------------------------------
     // callback
 
-    static void callback(void* const ptr, CarlaBackend::CallbackType const action, const unsigned short, const int value1, const int value2, const double value3, const char* const valueStr)
+    static void callback(void* const ptr, CarlaBackend::CallbackType const action, const int, const int value1, const int value2, const double value3, const char* const valueStr)
     {
         CARLA_ASSERT(ptr);
 
@@ -857,12 +871,6 @@ protected:
             }
             break;
 
-        case CALLBACK_RESIZE_GUI:
-            nextWidth   = value1;
-            nextHeight  = value2;
-            needsResize = true;
-            break;
-
         case CALLBACK_UPDATE:
             // todo
             break;
@@ -929,6 +937,7 @@ protected:
 void CarlaBridgeToolkitPlugin::show()
 {
     qDebug("CarlaBridgeToolkitPlugin::show()");
+#if 0
     CARLA_ASSERT(gui);
 
     CarlaPluginClient* const plugClient = (CarlaPluginClient*)client;
@@ -937,11 +946,13 @@ void CarlaBridgeToolkitPlugin::show()
 
     if (gui && m_uiShow)
         gui->setVisible(true);
+#endif
 }
 
 void CarlaBridgeToolkitPlugin::hide()
 {
     qDebug("CarlaBridgeToolkitPlugin::hide()");
+#if 0
     CARLA_ASSERT(gui);
 
     CarlaPluginClient* const plugClient = (CarlaPluginClient*)client;
@@ -950,6 +961,7 @@ void CarlaBridgeToolkitPlugin::hide()
         gui->setVisible(false);
 
     plugClient->showPluginGui(false);
+#endif
 }
 
 void CarlaBridgeToolkitPlugin::guiClosedCallback()
@@ -1102,10 +1114,10 @@ int main(int argc, char* argv[])
         extraStuff = findDSSIGUI(filename, name, label);
 
     // Init plugin
-    short id = engine->addPlugin(itype, filename, name, label, extraStuff);
+    int id = engine->addPlugin(itype, filename, name, label, extraStuff);
     int ret;
 
-    if (id >= 0 && id < CarlaBackend::MAX_PLUGINS)
+    if (id >= 0 && id < CarlaBackend::MAX_DEFAULT_PLUGINS)
     {
         CarlaBackend::CarlaPlugin* const plugin = engine->getPlugin(id);
         client.setPlugin(plugin);
@@ -1133,7 +1145,7 @@ int main(int argc, char* argv[])
     if (extraStuff && itype == CarlaBackend::PLUGIN_DSSI)
         free((char*)extraStuff);
 
-    engine->aboutToClose();
+    engine->setAboutToClose();
     engine->removeAllPlugins();
     engine->close();
     delete engine;

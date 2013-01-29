@@ -21,7 +21,9 @@
 #include "carla_backend.hpp"
 #include "carla_utils.hpp"
 
-#ifndef BUILD_BRIDGE
+#ifdef BUILD_BRIDGE
+struct CarlaOscData;
+#else
 class QProcessEnvironment;
 #endif
 

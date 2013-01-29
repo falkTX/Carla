@@ -785,8 +785,12 @@ void CarlaPlugin::setMidiProgram(int32_t index, const bool sendGui, const bool s
     if (sendGui && index >= 0)
         uiMidiProgramChange(index);
 
+#ifndef BUILD_BRIDGE
     // Change default parameter values (sound banks never change defaults)
     if (index >= 0 && type() != PLUGIN_GIG && type() != PLUGIN_SF2 && type() != PLUGIN_SFZ)
+#else
+    if (index >= 0)
+#endif
     {
         for (uint32_t i=0; i < fData->param.count; i++)
         {
@@ -839,7 +843,7 @@ void CarlaPlugin::idleGui()
     if (fData->hints & PLUGIN_USES_SINGLE_THREAD)
     {
         // Process postponed events
-        postEventsRun();
+        //postEventsRun();
 
         // Update parameter outputs
         for (uint32_t i=0; i < fData->param.count; i++)
@@ -962,8 +966,8 @@ void CarlaPlugin::registerToOscClient()
 
 #ifdef BUILD_BRIDGE
             fData->engine->osc_send_bridge_parameter_info(i, bufName, bufUnit);
-            fData->engine->osc_send_bridge_parameter_data(i, param.data[i].type, param.data[i].rindex, param.data[i].hints, param.data[i].midiChannel, param.data[i].midiCC);
-            fData->engine->osc_send_bridge_parameter_ranges(i, param.ranges[i].def, param.ranges[i].min, param.ranges[i].max, param.ranges[i].step, param.ranges[i].stepSmall, param.ranges[i].stepLarge);
+            //fData->engine->osc_send_bridge_parameter_data(i, fData->param.data[i].type, fData->param.data[i].rindex, param.data[i].hints, param.data[i].midiChannel, param.data[i].midiCC);
+            //fData->engine->osc_send_bridge_parameter_ranges(i, fData->param.ranges[i].def, fData->param.ranges[i].min, param.ranges[i].max, param.ranges[i].step, param.ranges[i].stepSmall, param.ranges[i].stepLarge);
             fData->engine->osc_send_bridge_set_parameter_value(i, getParameterValue(i));
 #else
             fData->engine->osc_send_control_set_parameter_data(fData->id, i, fData->param.data[i].type, fData->param.data[i].hints, bufName, bufUnit, getParameterValue(i));
@@ -999,12 +1003,12 @@ void CarlaPlugin::registerToOscClient()
     if (fData->midiprog.count > 0)
     {
 #ifdef BUILD_BRIDGE
-        x_engine->osc_send_bridge_midi_program_count(midiprog.count);
+        fData->engine->osc_send_bridge_midi_program_count(fData->midiprog.count);
 
-        for (uint32_t i=0; i < midiprog.count; i++)
-            x_engine->osc_send_bridge_midi_program_info(i, midiprog.data[i].bank, midiprog.data[i].program, midiprog.data[i].name);
+        for (uint32_t i=0; i < fData->midiprog.count; i++)
+            fData->engine->osc_send_bridge_midi_program_info(i, fData->midiprog.data[i].bank, fData->midiprog.data[i].program, fData->midiprog.data[i].name);
 
-        x_engine->osc_send_bridge_set_midi_program(prog.current);
+        fData->engine->osc_send_bridge_set_midi_program(fData->midiprog.current);
 #else
         fData->engine->osc_send_control_set_midi_program_count(fData->id, fData->midiprog.count);
 

@@ -569,24 +569,24 @@ public:
         return false;
 #else
         // open temp client to get initial buffer-size and sample-rate values
-        if (bufferSize == 0 || sampleRate == 0.0)
+        if (fBufferSize == 0 || fSampleRate == 0.0)
         {
             m_client = jackbridge_client_open(clientName, JackNullOption, nullptr);
 
             if (m_client)
             {
-                bufferSize = jackbridge_get_buffer_size(m_client);
-                sampleRate = jackbridge_get_sample_rate(m_client);
+                fBufferSize = jackbridge_get_buffer_size(m_client);
+                fSampleRate = jackbridge_get_sample_rate(m_client);
 
                 jackbridge_client_close(m_client);
                 m_client = nullptr;
             }
         }
 
-        name = clientName;
-        name.toBasic();
+        fName = clientName;
+        fName.toBasic();
 
-        CarlaEngine::init(name);
+        CarlaEngine::init(fName);
         return true;
 #endif
     }
@@ -632,7 +632,7 @@ public:
     bool isRunning() const
     {
 #ifdef BUILD_BRIDGE
-        return bool(m_client || ! hasQuit);
+        return bool(m_client || ! m_hasQuit);
 #else
         return bool(m_client);
 #endif
@@ -655,8 +655,8 @@ public:
 #ifdef BUILD_BRIDGE
         client = m_client = jackbridge_client_open(plugin->name(), JackNullOption, nullptr);
 
-        bufferSize = jackbridge_get_buffer_size(client);
-        sampleRate = jackbridge_get_sample_rate(client);
+        fBufferSize = jackbridge_get_buffer_size(client);
+        fSampleRate = jackbridge_get_sample_rate(client);
 
         jackbridge_set_buffer_size_callback(client, carla_jack_bufsize_callback, this);
         jackbridge_set_sample_rate_callback(client, carla_jack_srate_callback, this);

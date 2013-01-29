@@ -1168,13 +1168,13 @@ void CarlaEngine::setOscBridgeData(const CarlaOscData* const oscData)
 // -----------------------------------------------------------------------
 // protected calls
 
+#ifndef BUILD_BRIDGE
 EngineEvent* CarlaEngine::getRackEventBuffer(const bool isInput)
 {
     // TODO
     return nullptr;
 }
 
-#ifndef BUILD_BRIDGE
 void CarlaEngine::processRack(float* inBuf[2], float* outBuf[2], const uint32_t frames)
 {
     // initialize outputs (zero)
@@ -1952,14 +1952,14 @@ void CarlaEngine::osc_send_bridge_set_midi_program(const int32_t index)
 void CarlaEngine::osc_send_bridge_set_custom_data(const char* const type, const char* const key, const char* const value)
 {
     qDebug("CarlaEngine::osc_send_bridge_set_custom_data(\"%s\", \"%s\", \"%s\")", type, key, value);
-    CARLA_ASSERT(m_oscData);
+    CARLA_ASSERT(fData->oscData);
 
     if (fData->oscData != nullptr && fData->oscData->target != nullptr)
     {
         char target_path[strlen(fData->oscData->path)+24];
         strcpy(target_path, fData->oscData->path);
         strcat(target_path, "/bridge_set_custom_data");
-        lo_send(m_oscData->target, target_path, "sss", type, key, value);
+        lo_send(fData->oscData->target, target_path, "sss", type, key, value);
     }
 }
 
@@ -1977,6 +1977,7 @@ void CarlaEngine::osc_send_bridge_set_chunk_data(const char* const chunkFile)
     }
 }
 
+#if 0
 void CarlaEngine::osc_send_bridge_set_inpeak(const int32_t portId)
 {
     CARLA_ASSERT(fData->oscData != nullptr);
@@ -1987,7 +1988,7 @@ void CarlaEngine::osc_send_bridge_set_inpeak(const int32_t portId)
         char target_path[strlen(fData->oscData->path)+28];
         strcpy(target_path, fData->oscData->path);
         strcat(target_path, "/bridge_set_inpeak");
-        lo_send(m_oscData->target, target_path, "id", portId, data->insPeak[portId-1]);
+        lo_send(fData->oscData->target, target_path, "id", portId, data->insPeak[portId-1]);
     }
 }
 
@@ -2004,6 +2005,7 @@ void CarlaEngine::osc_send_bridge_set_outpeak(const int32_t portId)
         lo_send(fData->oscData->target, target_path, "id", portId, data->insPeak[portId-1]);
     }
 }
+#endif
 #endif
 
 CARLA_BACKEND_END_NAMESPACE

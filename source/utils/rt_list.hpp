@@ -231,7 +231,7 @@ private:
         return value;
     }
 
-    LIST_DECLARATIONS(List)
+    //LIST_DECLARATIONS(List)
 };
 
 template<typename T>
@@ -292,7 +292,7 @@ private:
         rtsafe_memory_pool_deallocate(fMemPool, dataPtr);
     }
 
-    LIST_DECLARATIONS(RtList)
+    //LIST_DECLARATIONS(RtList)
 };
 
 template<typename T>
@@ -318,7 +318,7 @@ private:
         free(dataPtr);
     }
 
-    LIST_DECLARATIONS(NonRtList)
+    //LIST_DECLARATIONS(NonRtList)
 };
 
 template<typename T>
@@ -344,7 +344,7 @@ private:
         delete dataPtr;
     }
 
-    LIST_DECLARATIONS(NonRtListNew)
+    //LIST_DECLARATIONS(NonRtListNew)
 };
 
 // -----------------------------------------------------------------------

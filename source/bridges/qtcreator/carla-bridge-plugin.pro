@@ -25,76 +25,78 @@ HEADERS  = \
     ../carla_bridge_osc.hpp \
     ../carla_bridge_toolkit.hpp \
 
-# carla
-SOURCES += \
-    ../../carla/Shared.cpp
-
+# common
 HEADERS += \
-    ../../carla/Shared.hpp
+    ../../backend/carla_backend.hpp \
+    ../../backend/carla_engine.hpp \
+    ../../backend/carla_plugin.hpp
 
 # carla-engine
 SOURCES += \
-    ../../carla-engine/carla_engine.cpp \
-    ../../carla-engine/carla_engine_osc.cpp \
-    ../../carla-engine/carla_engine_thread.cpp \
-    ../../carla-engine/jack.cpp
+    ../../backend/engine/carla_engine.cpp \
+    ../../backend/engine/carla_engine_osc.cpp \
+    ../../backend/engine/carla_engine_thread.cpp \
+    ../../backend/engine/jack.cpp
 
 HEADERS += \
-    ../../carla-engine/carla_engine.hpp \
-    ../../carla-engine/carla_engine_osc.hpp \
-    ../../carla-engine/carla_engine_thread.hpp \
+    ../../backend/engine/carla_engine.hpp \
+    ../../backend/engine/carla_engine_osc.hpp \
+    ../../backend/engine/carla_engine_thread.hpp \
 
 # carla-plugin
 SOURCES += \
-    ../../carla-plugin/carla_plugin.cpp \
-    ../../carla-plugin/carla_plugin_thread.cpp \
-    ../../carla-plugin/ladspa.cpp \
-    ../../carla-plugin/dssi.cpp \
-    ../../carla-plugin/lv2.cpp \
-    ../../carla-plugin/vst.cpp
+    ../../backend/plugin/carla_plugin.cpp
+#    ../../backend/plugin/carla_plugin_thread.cpp \
+#    ../../backend/plugin/ladspa.cpp \
+#    ../../backend/plugin/dssi.cpp \
+#    ../../backend/plugin/lv2.cpp \
+#    ../../backend/plugin/vst.cpp
 
 HEADERS += \
-    ../../carla-plugin/carla_plugin.hpp \
-    ../../carla-plugin/carla_plugin_thread.hpp
-
-# carla-backend
-HEADERS += \
-    ../../carla-backend/carla_backend.hpp \
-    ../../carla-backend/carla_backend_utils.hpp
-
-# carla-includes
-HEADERS += \
-    ../../carla-includes/carla_defines.hpp \
-    ../../carla-includes/carla_midi.h \
-    ../../carla-includes/ladspa_rdf.hpp \
-    ../../carla-includes/lv2_rdf.hpp
+    ../../backend/plugin/carla_plugin_thread.hpp
 
 # carla-utils
+SOURCES += \
+    ../../backend/utils/Shared.cpp
+
 HEADERS += \
-    ../../carla-utils/carla_lib_utils.hpp \
-    ../../carla-utils/carla_osc_utils.hpp \
-    ../../carla-utils/carla_ladspa_utils.hpp \
-    ../../carla-utils/carla_lv2_utils.hpp \
-    ../../carla-utils/carla_vst_utils.hpp
+    ../../backend/utils/Shared.hpp
+
+# includes
+HEADERS += \
+    ../../includes/carla_defines.hpp \
+    ../../includes/carla_midi.h \
+    ../../includes/ladspa_rdf.hpp \
+    ../../includes/lv2_rdf.hpp
+
+# utils
+HEADERS += \
+    ../../utils/carla_lib_utils.hpp \
+    ../../utils/carla_osc_utils.hpp \
+    ../../utils/carla_ladspa_utils.hpp \
+    ../../utils/carla_lv2_utils.hpp \
+    ../../utils/carla_vst_utils.hpp \
+    ../../utils/carla_backend_utils.hpp
 
 INCLUDEPATH = .. \
-    ../../carla-backend \
-    ../../carla-engine \
-    ../../carla-includes \
-    ../../carla-jackbridge \
-    ../../carla-plugin \
-    ../../carla-utils
+    ../../backend \
+    ../../backend/engine \
+    ../../backend/plugin \
+    ../../backend/utils \
+    ../../includes \
+    ../../libs \
+    ../../utils
 
 DEFINES  = QTCREATOR_TEST
 DEFINES += DEBUG
 #DEFINES += VESTIGE_HEADER
 DEFINES += BUILD_BRIDGE BUILD_BRIDGE_PLUGIN BRIDGE_PLUGIN
 
-DEFINES += CARLA_ENGINE_JACK
+DEFINES += WANT_JACK
 DEFINES += WANT_LADSPA WANT_DSSI WANT_LV2 WANT_VST
 
 LIBS     = -ldl \
-    ../../carla-lilv/carla_lilv.a \
-    ../../carla-rtmempool/carla_rtmempool.a
+    ../../libs/lilv.a \
+    ../../libs/rtmempool.a
 
 QMAKE_CXXFLAGS *= -std=c++0x

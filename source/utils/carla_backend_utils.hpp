@@ -55,8 +55,10 @@ const char* PluginType2Str(const PluginType& type)
     {
     case PLUGIN_NONE:
         return "PLUGIN_NONE";
+#ifndef BUILD_BRIDGE
     case PLUGIN_INTERNAL:
         return "PLUGIN_INTERNAL";
+#endif
     case PLUGIN_LADSPA:
         return "PLUGIN_LADSPA";
     case PLUGIN_DSSI:
@@ -65,12 +67,14 @@ const char* PluginType2Str(const PluginType& type)
         return "PLUGIN_LV2";
     case PLUGIN_VST:
         return "PLUGIN_VST";
+#ifndef BUILD_BRIDGE
     case PLUGIN_GIG:
         return "PLUGIN_GIG";
     case PLUGIN_SF2:
         return "PLUGIN_SF2";
     case PLUGIN_SFZ:
         return "PLUGIN_SFZ";
+#endif
     }
 
     qWarning("CarlaBackend::PluginType2Str(%i) - invalid type", type);
