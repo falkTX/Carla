@@ -9,8 +9,6 @@ include ../Makefile.mk
 # --------------------------------------------------------------
 
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo)
-
-LINK_FLAGS      += -shared
 LINK_FLAGS      += $(shell pkg-config --libs liblo)
 
 # --------------------------------------------------------------
@@ -57,23 +55,26 @@ OBJS += \
 	rtmidi-2.0.1/RtMidi.cpp.o
 endif
 
+SHARED = ../libcarla_engine.so
 STATIC = ../libcarla_engine.a
-TARGET = ../libcarla_engine.so
 
 # --------------------------------------------------------------
 
-all: $(TARGET)
+all: $(STATIC)
 
 clean:
-	rm -f $(OBJS) $(STATIC) $(TARGET)
+	rm -f $(OBJS) $(SHARED) $(STATIC)
+
+debug:
+	$(MAKE) DEBUG=true
 
 # --------------------------------------------------------------
 
 %.cpp.o: %.cpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
-$(STATIC): $(OBJS)
-	$(AR) rs $@ $^
+$(SHARED): $(OBJS) $(LIBS)
+	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
 
-$(TARGET): $(OBJS)
-	$(CXX) $^ $(LINK_FLAGS) -o $@
+$(STATIC): $(OBJS) $(LIBS)
+	$(AR) rs $@ $^

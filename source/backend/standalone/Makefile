@@ -25,17 +25,7 @@ LINK_FLAGS      += $(shell pkg-config --libs libpulse-simple)
 endif
 
 # --------------------------------------------------------------
-# Native
-
-LINK_FLAGS      +=  -lGL
-
-ifeq ($(HAVE_ZYN_DEPS),true)
-LINK_FLAGS      += $(shell pkg-config --libs fftw3 mxml) -lpthread
-endif
-
-# --------------------------------------------------------------
 # Plugin
-
 
 ifeq ($(HAVE_SUIL),true)
 LINK_FLAGS      += $(shell pkg-config --libs suil-0)
@@ -48,7 +38,15 @@ LINK_FLAGS      += $(shell pkg-config --libs linuxsampler)
 endif
 
 # --------------------------------------------------------------
+# Native
 
+LINK_FLAGS      +=  -lGL
+
+ifeq ($(HAVE_ZYN_DEPS),true)
+LINK_FLAGS      += $(shell pkg-config --libs fftw3 mxml) -lpthread
+endif
+
+# --------------------------------------------------------------
 
 LIBS  = ../libcarla_engine.a
 LIBS += ../libcarla_plugin.a
@@ -57,15 +55,18 @@ LIBS += ../libcarla_native.a
 OBJS  = \
      carla_standalone.cpp.o
 
-STATIC = ../libcarla_standalone.a
 SHARED = ../libcarla_standalone.so
+STATIC = ../libcarla_standalone.a
 
 # --------------------------------------------------------------
 
-all:
+all: $(SHARED)
 
 clean:
 	rm -f $(OBJS) $(SHARED) $(STATIC)
+
+debug:
+	$(MAKE) DEBUG=true
 
 # --------------------------------------------------------------
 
@@ -83,8 +84,8 @@ $(STATIC): $(OBJS) $(LIBS)
 ../libcarla_engine.a:
 	$(MAKE) -C ../engine $@
 
-../libcarla_native.a:
-	$(MAKE) -C ../native $@
-
 ../libcarla_plugin.a:
 	$(MAKE) -C ../plugin $@
+
+../libcarla_native.a:
+	$(MAKE) -C ../native $@

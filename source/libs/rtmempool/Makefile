@@ -11,6 +11,10 @@ include ../../Makefile.mk
 BUILD_C_FLAGS += -fvisibility=hidden -fPIC
 BUILD_C_FLAGS += -I. -I../../includes
 
+ifeq ($(CARLA_PLUGIN_SUPPORT),true)
+BUILD_C_FLAGS += -DWANT_LV2
+endif
+
 OBJS         = rtmempool.o
 OBJS_posix32 = rtmempool_posix32.o
 OBJS_posix64 = rtmempool_posix64.o

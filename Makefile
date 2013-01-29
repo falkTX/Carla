@@ -147,14 +147,15 @@ install:
 	install -m 644 resources/scalable/carla.svg            $(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/
 	install -m 644 resources/scalable/carla-control.svg    $(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/
 
-	# Install main code
-	install -m 755 source/*.py $(DESTDIR)$(PREFIX)/share/carla/
-
+	# Install binary data
 	install -m 755 \
 		source/backend/*.so \
-		source/bridge/carla-bridge-* \
+		source/bridges/carla-bridge-* \
 		source/discovery/carla-discovery-* \
-		$(DESTDIR)$(PREFIX)/lib/cadence/
+		$(DESTDIR)$(PREFIX)/lib/carla/
+
+	# Install python code
+	install -m 755 source/*.py $(DESTDIR)$(PREFIX)/share/carla/
 
 	# Adjust PREFIX value in script files
 	sed -i "s/X-PREFIX-X/$(SED_PREFIX)/" \

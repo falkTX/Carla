@@ -4,24 +4,13 @@
 # Created by falkTX
 #
 
-all: carla_standalone
-
-carla_standalone:
-	$(MAKE) -C standalone ../libcarla_standalone.so
-
 # --------------------------------------------------------------
 
-libcarla_engine.%:
-	$(MAKE) -C engine ../$@
-
-libcarla_native.%:
-	$(MAKE) -C native ../$@
-
-libcarla_plugin.%:
-	$(MAKE) -C plugin ../$@
-
-libcarla_standalone.%:
-	$(MAKE) -C standalone ../$@
+all:
+	$(MAKE) -C engine
+	$(MAKE) -C native
+	$(MAKE) -C plugin
+	$(MAKE) -C standalone
 
 # --------------------------------------------------------------
 
@@ -30,3 +19,8 @@ clean:
 	$(MAKE) clean -C native
 	$(MAKE) clean -C plugin
 	$(MAKE) clean -C standalone
+
+# --------------------------------------------------------------
+
+debug:
+	$(MAKE) DEBUG=true

@@ -10,8 +10,6 @@ include ../Makefile.mk
 
 BUILD_CXX_FLAGS += -I../../libs/distrho-plugin-toolkit
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtGui)
-
-LINK_FLAGS      += -shared
 LINK_FLAGS      += $(shell pkg-config --libs QtGui) -lGL
 
 ifeq ($(HAVE_ZYN_DEPS),true)
@@ -41,15 +39,18 @@ OBJS += \
 	zynaddsubfx-src.cpp.o
 endif
 
+SHARED = ../libcarla_native.so
 STATIC = ../libcarla_native.a
-TARGET = ../libcarla_native.so
 
 # --------------------------------------------------------------
 
-all: $(TARGET)
+all: $(STATIC)
 
 clean:
-	rm -f $(OBJS) $(STATIC) $(TARGET)
+	rm -f $(OBJS) $(SHARED) $(STATIC)
+
+debug:
+	$(MAKE) DEBUG=true
 
 # --------------------------------------------------------------
 
@@ -59,11 +60,11 @@ clean:
 %.cpp.o: %.cpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
-$(STATIC): $(OBJS)
-	$(AR) rs $@ $^
+$(SHARED): $(OBJS) $(LIBS)
+	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
 
-$(TARGET): $(OBJS)
-	$(CXX) $^ $(LINK_FLAGS) -o $@
+$(STATIC): $(OBJS) $(LIBS)
+	$(AR) rs $@ $^
 
 # --------------------------------------------------------------
 

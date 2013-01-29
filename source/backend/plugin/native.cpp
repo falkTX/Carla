@@ -39,7 +39,7 @@ public:
     NativePlugin(CarlaEngine* const engine, const int id)
         : CarlaPlugin(engine, id)
     {
-        qDebug("NativePlugin::NativePlugin()");
+        qDebug("NativePlugin::NativePlugin(%p, %i)", engine, id);
 
 #if 0
         descriptor  = nullptr;

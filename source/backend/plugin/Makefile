@@ -9,8 +9,6 @@ include ../Makefile.mk
 # --------------------------------------------------------------
 
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo QtGui)
-
-LINK_FLAGS      += -shared
 LINK_FLAGS      += $(shell pkg-config --libs liblo QtGui)
 
 ifeq ($(HAVE_SUIL),true)
@@ -43,23 +41,26 @@ OBJS = \
 # 	fluidsynth.cpp.o \
 # 	linuxsampler.cpp.o
 
+SHARED = ../libcarla_plugin.so
 STATIC = ../libcarla_plugin.a
-TARGET = ../libcarla_plugin.so
 
 # --------------------------------------------------------------
 
-all: $(TARGET)
+all: $(STATIC)
 
 clean:
-	rm -f $(OBJS) $(STATIC) $(TARGET)
+	rm -f $(OBJS) $(SHARED) $(STATIC)
+
+debug:
+	$(MAKE) DEBUG=true
 
 # --------------------------------------------------------------
 
 %.cpp.o: %.cpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
-$(STATIC): $(OBJS)
-	$(AR) rs $@ $^
+$(SHARED): $(OBJS) $(LIBS)
+	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
 
-$(TARGET): $(OBJS)
-	$(CXX) $^ $(LINK_FLAGS) -o $@
+$(STATIC): $(OBJS) $(LIBS)
+	$(AR) rs $@ $^

@@ -20,10 +20,15 @@
 #include "carla_bridge_client.hpp"
 #include "carla_lv2_utils.hpp"
 #include "carla_midi.h"
-#include "rtmempool/rtmempool.h"
+
+extern "C" {
+#include "rtmempool/rtmempool-lv2.h"
+}
 
 #include <vector>
 #include <QtCore/QDir>
+
+Lv2WorldClass lv2World;
 
 CARLA_BRIDGE_START_NAMESPACE
 
@@ -174,7 +179,7 @@ public:
         programsFt->program_changed                = carla_lv2_program_changed;
 
         LV2_RtMemPool_Pool* const rtMemPoolFt      = new LV2_RtMemPool_Pool;
-        rtmempool_allocator_init(rtMemPoolFt);
+        lv2_rtmempool_init(rtMemPoolFt);
 
         LV2_State_Make_Path* const stateMakePathFt = new LV2_State_Make_Path;
         stateMakePathFt->handle                    = this;

@@ -6,13 +6,15 @@
 
 include ../Makefile.mk
 
+# --------------------------------------------------------------
+
 HAVE_GTK2        = $(shell pkg-config --exists gtk+-2.0 && echo true)
 HAVE_GTK3        = $(shell pkg-config --exists gtk+-3.0 && echo true)
 
 # --------------------------------------------------------------
 
 BUILD_CXX_FLAGS += -DBUILD_BRIDGE
-BUILD_CXX_FLAGS += -I. -I../carla-includes -I../carla-utils
+BUILD_CXX_FLAGS += -I. -I../backend -I../includes -I../utils
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo QtCore QtXml)
 LINK_FLAGS      += $(shell pkg-config --libs liblo QtCore QtXml)
 
@@ -84,7 +86,8 @@ LINK_UI_VST_X11_FLAGS   = $(LINK_UI_FLAGS) $(QT_UI_LIBS)
 # --------------------------------------------------------------
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-all: native ui_lv2-gtk2 ui_lv2-gtk3 ui_lv2-qt4 ui_lv2-qt5 ui_lv2-x11 ui_vst-x11
+all: ui_lv2-gtk2 ui_lv2-gtk3 ui_lv2-qt4 ui_lv2-qt5 ui_lv2-x11 ui_vst-x11
+# native
 
 ifeq ($(HAVE_GTK2),true)
 ui_lv2-gtk2: carla-bridge-lv2-gtk2
@@ -134,8 +137,8 @@ win64:   carla-bridge-win64.exe
 	$(CXX) $< $(BUILD_UI_VST_FLAGS) -c -o $@
 
 OBJS_UI_LV2_LIBS = \
-	../carla-lilv/carla_lilv.a \
-	../carla-rtmempool/carla_rtmempool.a
+	../libs/lilv.a \
+	../libs/rtmempool.a
 
 # --------------------------------------------------------------
 # ui_lv2-gtk2
@@ -428,35 +431,8 @@ carla-bridge-win64.exe: $(OBJS_WIN64) ../carla-jackbridge/libcarla-jackbridge-wi
 
 # --------------------------------------------------------------
 
-../carla-lilv/carla_lilv.a:
-	$(MAKE) -C ../carla-lilv
-
-../carla-lilv/carla_lilv_posix32.a:
-	$(MAKE) -C ../carla-lilv posix32
-
-../carla-lilv/carla_lilv_posix64.a:
-	$(MAKE) -C ../carla-lilv posix64
-
-../carla-lilv/carla_lilv_win32.a:
-	$(MAKE) -C ../carla-lilv win32
-
-../carla-lilv/carla_lilv_win64.a:
-	$(MAKE) -C ../carla-lilv win64
-
-../carla-rtmempool/carla_rtmempool.a:
-	$(MAKE) -C ../carla-rtmempool
-
-../carla-rtmempool/carla_rtmempool_posix32.a:
-	$(MAKE) -C ../carla-rtmempool posix32
-
-../carla-rtmempool/carla_rtmempool_posix64.a:
-	$(MAKE) -C ../carla-rtmempool posix64
-
-../carla-rtmempool/carla_rtmempool_win32.a:
-	$(MAKE) -C ../carla-rtmempool win32
-
-../carla-rtmempool/carla_rtmempool_win64.a:
-	$(MAKE) -C ../carla-rtmempool win64
+../libs/%:
+	$(MAKE) -C ../libs $*
 
 ../carla-jackbridge/libcarla-jackbridge-win32.dll:
 	$(MAKE) -C ../carla-jackbridge win32
