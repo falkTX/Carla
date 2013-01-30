@@ -79,7 +79,7 @@ void CarlaEngineThread::run()
     CARLA_ASSERT(kEngine->isRunning());
 
     bool oscRegisted, usesSingleThread;
-    int i, count;
+    unsigned int i, count;
     double value;
 
     while (kEngine->isRunning() && ! fStopNow)

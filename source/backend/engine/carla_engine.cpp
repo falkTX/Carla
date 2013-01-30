@@ -605,11 +605,12 @@ CarlaPlugin* CarlaEngine::getPluginUnchecked(const unsigned int id) const
 const char* CarlaEngine::getNewUniquePluginName(const char* const name)
 {
     qDebug("CarlaEngine::getNewUniquePluginName(\"%s\")", name);
-    CARLA_ASSERT(fData->curPluginCount > 0);
+    CARLA_ASSERT(fData->maxPluginNumber > 0);
     CARLA_ASSERT(fData->plugins != nullptr);
     CARLA_ASSERT(name != nullptr);
 
-    CarlaString sname(name);
+    static CarlaString sname;
+    sname = name;
 
     if (sname.isEmpty() || fData->plugins == nullptr)
         return strdup("(No name)");
@@ -675,7 +676,7 @@ const char* CarlaEngine::getNewUniquePluginName(const char* const name)
         sname += " (2)";
     }
 
-    return strdup(sname);
+    return (const char*)sname;
 }
 
 bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, const char* const filename, const char* const name, const char* const label, const void* const extra)
@@ -692,9 +693,11 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
         return false;
     }
 
+    const unsigned int id = fData->curPluginCount;
+
     CarlaPlugin::Initializer init = {
         this,
-        fData->curPluginCount,
+        id,
         filename,
         name,
         label
@@ -815,9 +818,16 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
     if (plugin == nullptr)
         return false;
 
+    fData->plugins[id].plugin      = plugin;
+    fData->plugins[id].insPeak[0]  = 0.0f;
+    fData->plugins[id].insPeak[1]  = 0.0f;
+    fData->plugins[id].outsPeak[0] = 0.0f;
+    fData->plugins[id].outsPeak[1] = 0.0f;
+
     fData->curPluginCount++;
 
-    callback(CALLBACK_PLUGIN_ADDED, init.id, 0, 0, 0.0f, nullptr);
+    // FIXME
+    //callback(CALLBACK_PLUGIN_ADDED, id, 0, 0, 0.0f, nullptr);
 
     return true;
 }
@@ -1326,6 +1336,8 @@ void CarlaEngine::proccessPendingEvents()
         doPluginRemove(fData, true);
         break;
     }
+
+    // TODO - peak values
 }
 
 void CarlaEngine::bufferSizeChanged(const uint32_t newBufferSize)

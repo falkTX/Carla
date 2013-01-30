@@ -608,6 +608,11 @@ struct ParameterRanges {
             return max;
         return value;
     }
+
+    float Value(const float& value) const
+    {
+        return (value - min) / (max - min);
+    }
 };
 
 /*!

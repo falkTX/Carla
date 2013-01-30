@@ -381,6 +381,14 @@ public:
      */
     virtual void initBuffer(CarlaEngine* const engine);
 
+    /*!
+     * Direct access to the port's audio buffer.
+     */
+    float* getBuffer() const
+    {
+        return fBuffer;
+    }
+
 protected:
     float* fBuffer;
 
@@ -655,7 +663,7 @@ public:
 
     /*!
      * Get a unique plugin name within the engine.\n
-     * Returned variable must be free'd when no longer needed.
+     * Returned variable must NOT be free'd.
      */
     const char* getNewUniquePluginName(const char* const name);
 

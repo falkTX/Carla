@@ -733,6 +733,12 @@ public:
     const char* libError(const char* const filename);
 
     // -------------------------------------------------------------------
+    // Engine helpers
+
+    float* getAudioInPortBuffer(uint32_t index);
+    float* getAudioOutPortBuffer(uint32_t index);
+
+    // -------------------------------------------------------------------
     // Plugin initializers
 
     struct Initializer {
@@ -774,6 +780,24 @@ public:
 
 protected:
     ScopedPointer<CarlaPluginProtectedData> const fData;
+
+    class ScopedDisabler
+    {
+    public:
+        ScopedDisabler(CarlaPlugin* const plugin)
+            : kPlugin(plugin)
+        {
+            plugin->setEnabled(false);
+        }
+
+        ~ScopedDisabler()
+        {
+            kPlugin->setEnabled(true);
+        }
+
+    private:
+        CarlaPlugin* const kPlugin;
+    };
 
 private:
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPlugin)

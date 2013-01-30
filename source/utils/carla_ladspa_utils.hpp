@@ -111,10 +111,7 @@ bool is_ladspa_port_good(const LADSPA_PortDescriptor port1, const LADSPA_PortDes
 static inline
 bool is_ladspa_rdf_descriptor_valid(const LADSPA_RDF_Descriptor* const rdfDescriptor, const LADSPA_Descriptor* const descriptor)
 {
-    CARLA_ASSERT(rdfDescriptor);
-    CARLA_ASSERT(descriptor);
-
-    if (! (rdfDescriptor && descriptor))
+    if (rdfDescriptor == nullptr || descriptor == nullptr)
         return false;
 
     if (rdfDescriptor->UniqueID != descriptor->UniqueID)

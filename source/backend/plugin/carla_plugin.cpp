@@ -41,7 +41,7 @@ CarlaPlugin::CarlaPlugin(CarlaEngine* const engine, const unsigned int id)
 {
     CARLA_ASSERT(fData != nullptr);
     CARLA_ASSERT(engine != nullptr);
-    CARLA_ASSERT(id < engine->currentPluginCount());
+    CARLA_ASSERT(id < engine->maxPluginNumber());
     qDebug("CarlaPlugin::CarlaPlugin(%p, %i)", engine, id);
 
     if (engine->getProccessMode() == PROCESS_MODE_CONTINUOUS_RACK)
@@ -1402,6 +1402,23 @@ void* CarlaPlugin::libSymbol(const char* const symbol)
 const char* CarlaPlugin::libError(const char* const filename)
 {
     return lib_error(filename);
+}
+
+// -------------------------------------------------------------------
+// Engine helpers
+
+float* CarlaPlugin::getAudioInPortBuffer(uint32_t index)
+{
+    CARLA_ASSERT(fData->audioIn.ports[index].port);
+
+    return fData->audioIn.ports[index].port->getBuffer();
+}
+
+float* CarlaPlugin::getAudioOutPortBuffer(uint32_t index)
+{
+    CARLA_ASSERT(fData->audioOut.ports[index].port);
+
+    return fData->audioOut.ports[index].port->getBuffer();
 }
 
 // -------------------------------------------------------------------

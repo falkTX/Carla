@@ -78,6 +78,8 @@ struct PluginAudioData {
 
         if (ports == nullptr)
             ports = new PluginAudioPort[count];
+
+        this->count = count;
     }
 
     void freePorts()

@@ -1100,7 +1100,7 @@ int main(int argc, char* argv[])
     engName.toBasic();
     engName.truncate(engine->maxClientNameSize());
 
-    if (! engine->init(engName))
+    if (! engine->init((const char*)engName))
     {
         if (const char* const lastError = engine->getLastError())
         {
@@ -1119,13 +1119,12 @@ int main(int argc, char* argv[])
     if (itype == CarlaBackend::PLUGIN_DSSI)
         extraStuff = findDSSIGUI(filename, name, label);
 
-    // Init plugin, FIXME
-    int id = engine->addPlugin(itype, filename, name, label, extraStuff);
+    // Init plugin
     int ret;
 
-    if (id >= 0 && id < CarlaBackend::MAX_DEFAULT_PLUGINS)
+    if (engine->addPlugin(itype, filename, name, label, extraStuff))
     {
-        CarlaBackend::CarlaPlugin* const plugin = engine->getPlugin(id);
+        CarlaBackend::CarlaPlugin* const plugin = engine->getPlugin(0);
         client.setPlugin(plugin);
 
         if (! useOsc)
