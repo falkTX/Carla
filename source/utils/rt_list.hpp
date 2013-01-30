@@ -80,14 +80,17 @@ public:
         return (fCount == 0);
     }
 
-    void append(const T& value)
+    bool append(const T& value)
     {
         if (Data* const data = _allocate())
         {
             std::memcpy(&data->value, &value, sizeof(T));
             list_add_tail(&data->siblings, &fQueue);
             fCount++;
+            return true;
         }
+
+        return false;
     }
 
     T& getAt(const size_t index, const bool remove = false)
@@ -171,6 +174,14 @@ public:
                 _deallocate(data);
             }
         }
+    }
+
+    void splice(List& list, const bool init = false)
+    {
+        if (init)
+            list_splice_init(&fQueue, &list.fQueue);
+        else
+            list_splice(&fQueue, &list.fQueue);
     }
 
 protected:

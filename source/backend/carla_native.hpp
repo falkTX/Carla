@@ -1,5 +1,5 @@
 /*
- * Carla Native Plugin API
+ * Carla Native Plugin API (C++)
  * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
@@ -30,9 +30,9 @@ class PluginDescriptorClass
 {
 public:
     PluginDescriptorClass(const HostDescriptor* const host)
-        : fHost(host)
+        : kHost(host)
     {
-        CARLA_ASSERT(fHost);
+        CARLA_ASSERT(host);
     }
 
     virtual ~PluginDescriptorClass()
@@ -44,77 +44,77 @@ public:
 
     const HostDescriptor* getHostHandle() const
     {
-        return fHost;
+        return kHost;
     }
 
     uint32_t getBufferSize() const
     {
-        CARLA_ASSERT(fHost);
+        CARLA_ASSERT(kHost);
 
-        if (fHost)
-            return fHost->get_buffer_size(fHost->handle);
+        if (kHost)
+            return kHost->get_buffer_size(kHost->handle);
 
         return 0;
     }
 
     double getSampleRate() const
     {
-        CARLA_ASSERT(fHost);
+        CARLA_ASSERT(kHost);
 
-        if (fHost)
-            return fHost->get_sample_rate(fHost->handle);
+        if (kHost)
+            return kHost->get_sample_rate(kHost->handle);
 
         return 0.0;
     }
 
     const TimeInfo* getTimeInfo() const
     {
-        CARLA_ASSERT(fHost);
+        CARLA_ASSERT(kHost);
 
-        if (fHost)
-            return fHost->get_time_info(fHost->handle);
+        if (kHost)
+            return kHost->get_time_info(kHost->handle);
 
         return nullptr;
     }
 
     void writeMidiEvent(const MidiEvent* const event)
     {
-        CARLA_ASSERT(fHost);
+        CARLA_ASSERT(kHost);
 
-        if (fHost)
-            fHost->write_midi_event(fHost->handle, event);
+        if (kHost)
+            kHost->write_midi_event(kHost->handle, event);
     }
 
     void uiParameterChanged(const uint32_t index, const float value)
     {
-        CARLA_ASSERT(fHost);
+        CARLA_ASSERT(kHost);
 
-        if (fHost)
-            fHost->ui_parameter_changed(fHost->handle, index, value);
+        if (kHost)
+            kHost->ui_parameter_changed(kHost->handle, index, value);
     }
 
     void uiMidiProgramChanged(const uint32_t bank, const uint32_t program)
     {
-        CARLA_ASSERT(fHost);
+        CARLA_ASSERT(kHost);
 
-        if (fHost)
-            fHost->ui_midi_program_changed(fHost->handle, bank, program);
+        if (kHost)
+            kHost->ui_midi_program_changed(kHost->handle, bank, program);
     }
 
     void uiCustomDataChanged(const char* const key, const char* const value)
     {
-        CARLA_ASSERT(fHost);
+        CARLA_ASSERT(kHost);
 
-        if (fHost)
-            fHost->ui_custom_data_changed(fHost->handle, key, value);
+        if (kHost)
+            kHost->ui_custom_data_changed(kHost->handle, key, value);
     }
 
     void uiClosed()
     {
-        CARLA_ASSERT(fHost);
+        CARLA_ASSERT(kHost);
 
-        if (fHost)
-            fHost->ui_closed(fHost->handle);
+        if (kHost)
+            kHost->ui_closed(kHost->handle);
     }
 
 protected:
@@ -271,7 +271,7 @@ protected:
     // -------------------------------------------------------------------
 
 private:
-    const HostDescriptor* const fHost;
+    const HostDescriptor* const kHost;
 
     // -------------------------------------------------------------------
 

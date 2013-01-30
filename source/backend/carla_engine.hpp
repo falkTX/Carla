@@ -577,7 +577,7 @@ public:
     static CarlaEngine* newDriverByName(const char* const driverName);
 
     // -------------------------------------------------------------------
-    // Maximum values
+    // Constant values
 
     /*!
      * Maximum client name size.
@@ -592,13 +592,13 @@ public:
     /*!
      * Current number of plugins loaded.
      */
-    unsigned int currentPluginCount() const;
+    int currentPluginCount() const;
 
     /*!
      * Maximum number of loadable plugins allowed.
      * \note This function returns 0 if engine is not started.
      */
-    unsigned int maxPluginNumber() const;
+    int maxPluginNumber() const;
 
     // -------------------------------------------------------------------
     // Virtual, per-engine type calls
@@ -679,7 +679,7 @@ public:
     /*!
      * Remove plugin with id \a id.
      */
-    bool removePlugin(const unsigned int id);
+    bool removePlugin(const int id);
 
     /*!
      * Remove all plugins.
@@ -838,9 +838,10 @@ public:
     // -------------------------------------
 
 protected:
+    uint32_t fBufferSize;
+    double   fSampleRate;
+
     CarlaString fName;
-    uint32_t    fBufferSize;
-    double      fSampleRate;
 
     EngineOptions  fOptions;
     EngineTimeInfo fTimeInfo;
@@ -953,6 +954,7 @@ public:
     void osc_send_control_exit();
 #endif
 
+private:
     friend class CarlaEngineEventPort;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngine)

@@ -34,7 +34,7 @@ static const CustomData       kCustomDataNull;
 // -------------------------------------------------------------------
 // Constructor and destructor
 
-CarlaPlugin::CarlaPlugin(CarlaEngine* const engine, const unsigned int id)
+CarlaPlugin::CarlaPlugin(CarlaEngine* const engine, const int id)
     : fData(new CarlaPluginProtectedData(engine, id))
 {
     CARLA_ASSERT(engine);
@@ -1216,7 +1216,7 @@ void CarlaPlugin::sendMidiAllNotesOff()
 // -------------------------------------------------------------------
 // Post-poned events
 
-void CarlaPlugin::postponeEvent(const PluginPostRtEventType type, const int32_t value1, const int32_t value2, const double value3)
+void CarlaPlugin::postponeRtEvent(const PluginPostRtEventType type, const int32_t value1, const int32_t value2, const double value3)
 {
     PluginPostRtEvent event;
     event.type   = type;
@@ -1224,36 +1224,40 @@ void CarlaPlugin::postponeEvent(const PluginPostRtEventType type, const int32_t 
     event.value2 = value2;
     event.value3 = value3;
 
-    fData->postRtEvents.append(event);
+    fData->postRtEvents.appendRT(event);
 }
 
-#if 0
-void CarlaPlugin::postEventsRun()
+void CarlaPlugin::postRtEventsRun()
 {
-    PluginPostEvent newPostEvents[MAX_POST_EVENTS];
+    int i = 0;
+    PluginPostRtEvent listData[512];
 
-    // Make a safe copy of events, and clear them
-    postEvents.mutex.lock();
-    memcpy(newPostEvents, postEvents.data, sizeof(PluginPostEvent)*MAX_POST_EVENTS);
-    for (unsigned short i=0; i < MAX_POST_EVENTS; i++)
-        postEvents.data[i].type = PluginPostEventNull;
-    postEvents.mutex.unlock();
+    // Make a safe copy of events while clearing them
+    fData->postRtEvents.mutex.lock();
+
+    while (! fData->postRtEvents.data.isEmpty())
+    {
+        PluginPostRtEvent& event = fData->postRtEvents.data.getFirst(true);
+        listData[i++] = event;
+    }
+
+    fData->postRtEvents.mutex.unlock();
 
     // Handle events now
-    for (uint32_t i=0; i < MAX_POST_EVENTS; i++)
+    for (i=0; i < 512; i++)
     {
-        const PluginPostEvent* const event = &newPostEvents[i];
+        const PluginPostRtEvent* const event = &listData[i];
 
         switch (event->type)
         {
-        case PluginPostEventNull:
+        case kPluginPostRtEventNull:
             break;
 
-        case PluginPostEventDebug:
-            x_engine->callback(CALLBACK_DEBUG, m_id, event->value1, event->value2, event->value3, nullptr);
+        case kPluginPostRtEventDebug:
+            fData->engine->callback(CALLBACK_DEBUG, fData->id, event->value1, event->value2, event->value3, nullptr);
             break;
 
-        case PluginPostEventParameterChange:
+        case kPluginPostRtEventParameterChange:
             // Update UI
             if (event->value1 >= 0)
                 uiParameterChange(event->value1, event->value3);
@@ -1261,89 +1265,83 @@ void CarlaPlugin::postEventsRun()
 #ifndef BUILD_BRIDGE
             // Update OSC control client
             if (x_engine->isOscControlRegistered())
-                x_engine->osc_send_control_set_parameter_value(m_id, event->value1, event->value3);
+                x_engine->osc_send_control_set_parameter_value(fData->id, event->value1, event->value3);
 #endif
 
             // Update Host
-            x_engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, m_id, event->value1, 0, event->value3, nullptr);
+            fData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fData->id, event->value1, 0, event->value3, nullptr);
             break;
 
-        case PluginPostEventProgramChange:
+        case kPluginPostRtEventProgramChange:
             // Update UI
             if (event->value1 >= 0)
                 uiProgramChange(event->value1);
 
 #ifndef BUILD_BRIDGE
             // Update OSC control client
-            if (x_engine->isOscControlRegistered())
+            if (fData->engine->isOscControlRegistered())
             {
-                x_engine->osc_send_control_set_program(m_id, event->value1);
+                fData->engine->osc_send_control_set_program(m_id, event->value1);
 
-                for (uint32_t j=0; j < param.count; j++)
-                    x_engine->osc_send_control_set_default_value(m_id, j, param.ranges[j].def);
+                for (uint32_t j=0; j < fData->param.count; j++)
+                    fData->engine->osc_send_control_set_default_value(fData->id, j, fData->param.ranges[j].def);
             }
 #endif
 
             // Update Host
-            x_engine->callback(CALLBACK_PROGRAM_CHANGED, m_id, event->value1, 0, 0.0, nullptr);
+            fData->engine->callback(CALLBACK_PROGRAM_CHANGED, fData->id, event->value1, 0, 0.0, nullptr);
             break;
 
-        case PluginPostEventMidiProgramChange:
+        case kPluginPostRtEventMidiProgramChange:
             // Update UI
             if (event->value1 >= 0)
                 uiMidiProgramChange(event->value1);
 
 #ifndef BUILD_BRIDGE
             // Update OSC control client
-            if (x_engine->isOscControlRegistered())
+            if (fData->engine->isOscControlRegistered())
             {
-                x_engine->osc_send_control_set_midi_program(m_id, event->value1);
+                fData->engine->osc_send_control_set_midi_program(fData->id, event->value1);
 
                 for (uint32_t j=0; j < param.count; j++)
-                    x_engine->osc_send_control_set_default_value(m_id, j, param.ranges[j].def);
+                    fData->engine->osc_send_control_set_default_value(fData->id, j, fData->param.ranges[j].def);
             }
 #endif
 
             // Update Host
-            x_engine->callback(CALLBACK_MIDI_PROGRAM_CHANGED, m_id, event->value1, 0, 0.0, nullptr);
+            fData->engine->callback(CALLBACK_MIDI_PROGRAM_CHANGED, fData->id, event->value1, 0, 0.0, nullptr);
             break;
 
-        case PluginPostEventNoteOn:
+        case kPluginPostRtEventNoteOn:
             // Update UI
-            uiNoteOn(event->value1, event->value2, rint(event->value3));
+            uiNoteOn(event->value1, event->value2, int(event->value3));
 
 #ifndef BUILD_BRIDGE
             // Update OSC control client
-            if (x_engine->isOscControlRegistered())
-                x_engine->osc_send_control_note_on(m_id, event->value1, event->value2, rint(event->value3));
+            if (fData->engine->isOscControlRegistered())
+                fData->engine->osc_send_control_note_on(fData->id, event->value1, event->value2, int(event->value3));
 #endif
 
             // Update Host
-            x_engine->callback(CALLBACK_NOTE_ON, m_id, event->value1, event->value2, rint(event->value3), nullptr);
+            fData->engine->callback(CALLBACK_NOTE_ON, fData->id, event->value1, event->value2, int(event->value3), nullptr);
             break;
 
-        case PluginPostEventNoteOff:
+        case kPluginPostRtEventNoteOff:
             // Update UI
             uiNoteOff(event->value1, event->value2);
 
 #ifndef BUILD_BRIDGE
             // Update OSC control client
-            if (x_engine->isOscControlRegistered())
-                x_engine->osc_send_control_note_off(m_id, event->value1, event->value2);
+            if (fData->engine->isOscControlRegistered())
+                fData->engine->osc_send_control_note_off(fData->id, event->value1, event->value2);
 #endif
 
             // Update Host
-            x_engine->callback(CALLBACK_NOTE_OFF, m_id, event->value1, event->value2, 0.0, nullptr);
-            break;
-
-        case PluginPostEventCustom:
-            // Handle custom event
-            postEventHandleCustom(event->value1, event->value2, event->value3, event->cdata);
+            fData->engine->callback(CALLBACK_NOTE_OFF, fData->id, event->value1, event->value2, 0.0, nullptr);
             break;
         }
     }
 }
-#endif
 
 void CarlaPlugin::uiParameterChange(const uint32_t index, const double value)
 {

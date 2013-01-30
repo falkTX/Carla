@@ -886,7 +886,7 @@ class PluginParameter(QWidget):
 # ------------------------------------------------------------------------------------------------------------
 # TESTING
 
-from PyQt4.QtGui import QApplication
+#from PyQt4.QtGui import QApplication
 
 #Carla.isControl = True
 

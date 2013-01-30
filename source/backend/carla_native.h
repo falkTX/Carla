@@ -19,7 +19,6 @@
 #define __CARLA_NATIVE_H__
 
 #ifdef __cplusplus
-# include <cstddef>
 # include <cstdint>
 extern "C" {
 #else

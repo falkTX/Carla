@@ -452,12 +452,12 @@ unsigned int CarlaEngine::maxPortNameSize() const
     return STR_MAX;
 }
 
-unsigned int CarlaEngine::currentPluginCount() const
+int CarlaEngine::currentPluginCount() const
 {
     return fData->curPluginCount;
 }
 
-unsigned int CarlaEngine::maxPluginNumber() const
+int CarlaEngine::maxPluginNumber() const
 {
     return fData->maxPluginNumber;
 }
@@ -769,16 +769,16 @@ int CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, const
     if (! plugin)
         return -1;
 
-    const unsigned int id = fData->curPluginCount++;
+    const int id = fData->curPluginCount++;
 
 #if 0
     plugin->setId(id);
 #endif
 
-    return static_cast<int>(id);
+    return id;
 }
 
-bool CarlaEngine::removePlugin(const unsigned int id)
+bool CarlaEngine::removePlugin(const int id)
 {
     qDebug("CarlaEngine::removePlugin(%i)", id);
     CARLA_ASSERT(fData->curPluginCount > 0);

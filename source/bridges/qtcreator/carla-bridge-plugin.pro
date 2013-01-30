@@ -25,23 +25,12 @@ HEADERS  = \
     ../carla_bridge_osc.hpp \
     ../carla_bridge_toolkit.hpp \
 
-# common
-HEADERS += \
-    ../../backend/carla_backend.hpp \
-    ../../backend/carla_engine.hpp \
-    ../../backend/carla_plugin.hpp
-
 # carla-engine
 SOURCES += \
     ../../backend/engine/carla_engine.cpp \
     ../../backend/engine/carla_engine_osc.cpp \
     ../../backend/engine/carla_engine_thread.cpp \
     ../../backend/engine/jack.cpp
-
-HEADERS += \
-    ../../backend/engine/carla_engine.hpp \
-    ../../backend/engine/carla_engine_osc.hpp \
-    ../../backend/engine/carla_engine_thread.hpp \
 
 # carla-plugin
 SOURCES += \
@@ -52,12 +41,27 @@ SOURCES += \
 #    ../../backend/plugin/lv2.cpp \
 #    ../../backend/plugin/vst.cpp
 
-HEADERS += \
-    ../../backend/plugin/carla_plugin_thread.hpp
-
 # carla-utils
 SOURCES += \
     ../../backend/utils/Shared.cpp
+
+# common
+HEADERS += \
+    ../../backend/carla_backend.hpp \
+    ../../backend/carla_engine.hpp \
+    ../../backend/carla_native.h \
+    ../../backend/carla_native.hpp \
+    ../../backend/carla_plugin.hpp \
+    ../../backend/carla_standalone.hpp
+
+HEADERS += \
+    ../../backend/engine/carla_engine_internal.hpp \
+    ../../backend/engine/carla_engine_osc.hpp \
+    ../../backend/engine/carla_engine_thread.hpp \
+
+HEADERS += \
+    ../../backend/plugin/carla_plugin_internal.hpp \
+    ../../backend/plugin/carla_plugin_thread.hpp
 
 HEADERS += \
     ../../backend/utils/Shared.hpp
@@ -71,12 +75,15 @@ HEADERS += \
 
 # utils
 HEADERS += \
-    ../../utils/carla_lib_utils.hpp \
-    ../../utils/carla_osc_utils.hpp \
+    ../../utils/carla_backend_utils.hpp\
+    ../../utils/carla_juce_utils.hpp \
     ../../utils/carla_ladspa_utils.hpp \
+    ../../utils/carla_lib_utils.hpp \
     ../../utils/carla_lv2_utils.hpp \
+    ../../utils/carla_osc_utils.hpp \
     ../../utils/carla_vst_utils.hpp \
-    ../../utils/carla_backend_utils.hpp
+    ../../utils/lv2_atom_queue.hpp \
+    ../../utils/rt_list.hpp
 
 INCLUDEPATH = .. \
     ../../backend \

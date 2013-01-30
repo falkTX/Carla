@@ -529,7 +529,8 @@ enum ProcessMode {
     PROCESS_MODE_SINGLE_CLIENT    = 0, //!< Single client mode (dynamic input/outputs as needed by plugins)
     PROCESS_MODE_MULTIPLE_CLIENTS = 1, //!< Multiple client mode (1 master client + 1 client per plugin)
     PROCESS_MODE_CONTINUOUS_RACK  = 2, //!< Single client, 'rack' mode. Processes plugins in order of id, with forced stereo.
-    PROCESS_MODE_PATCHBAY         = 3  //!< Single client, 'patchbay' mode.
+    PROCESS_MODE_PATCHBAY         = 3, //!< Single client, 'patchbay' mode.
+    PROCESS_MODE_BRIDGE           = 4  //!< Special mode, used in plugin-bridges only. RT buffers come from shared memory in a separate host app.
 };
 
 /*!

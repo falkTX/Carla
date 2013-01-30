@@ -46,7 +46,7 @@ protected:
     // ----------------------------------------------
 
 private:
-    CarlaEngine* const fEngine;
+    CarlaEngine* const kEngine;
 
     CarlaMutex fMutex;
     bool       fStopNow;

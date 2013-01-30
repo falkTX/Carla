@@ -94,7 +94,7 @@ public:
      * \param engine The engine which this plugin belongs to, must not be null
      * \param id     The 'id' of this plugin, must be between 0 and CarlaEngine::maxPluginNumber()
      */
-    CarlaPlugin(CarlaEngine* const engine, const unsigned int id);
+    CarlaPlugin(CarlaEngine* const engine, const int id);
 
     /*!
      * This is the destructor of the base plugin class.
@@ -657,13 +657,13 @@ public:
      * Post pone an event of type \a type.\n
      * The event will be processed later, but as soon as possible.
      */
-    void postponeEvent(const PluginPostRtEventType type, const int32_t value1, const int32_t value2, const double value3);
+    void postponeRtEvent(const PluginPostRtEventType type, const int32_t value1, const int32_t value2, const double value3);
 
     /*!
      * Process all the post-poned events.
      * This function must be called from the main thread (ie, idleGui()) if PLUGIN_USES_SINGLE_THREAD is set.
      */
-    void postEventsRun();
+    void postRtEventsRun();
 
     /*!
      * Tell the UI a parameter has changed.
@@ -746,13 +746,13 @@ public:
     static const PluginDescriptor* getNativePluginDescriptor(const size_t index);
 
     static CarlaPlugin* newNative(const Initializer& init);
-    static CarlaPlugin* newBridge(const Initializer& init, const BinaryType btype, const PluginType ptype, const void* const extra);
+    static CarlaPlugin* newBridge(const Initializer& init, const BinaryType btype, const PluginType ptype, const char* const bridgeFilename);
 #endif
 #ifdef WANT_LADSPA
-    static CarlaPlugin* newLADSPA(const Initializer& init, const void* const extra);
+    static CarlaPlugin* newLADSPA(const Initializer& init, const LADSPA_RDF_Descriptor* const rdfDescriptor);
 #endif
 #ifdef WANT_DSSI
-    static CarlaPlugin* newDSSI(const Initializer& init, const void* const extra);
+    static CarlaPlugin* newDSSI(const Initializer& init, const char* const guiFilename);
 #endif
 #ifdef WANT_LV2
     static CarlaPlugin* newLV2(const Initializer& init);

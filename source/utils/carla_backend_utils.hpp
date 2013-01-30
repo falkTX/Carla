@@ -297,6 +297,8 @@ const char* ProcessMode2Str(const ProcessMode& mode)
         return "PROCESS_MODE_CONTINUOUS_RACK";
     case PROCESS_MODE_PATCHBAY:
         return "PROCESS_MODE_PATCHBAY";
+    case PROCESS_MODE_BRIDGE:
+        return "PROCESS_MODE_BRIDGE";
     }
 
     qWarning("CarlaBackend::ProcessModeType2Str(%i) - invalid type", mode);

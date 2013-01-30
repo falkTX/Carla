@@ -24,8 +24,6 @@
 
 #include "carla_plugin.hpp"
 
-//#include "rt_list.hpp"
-
 #ifndef BUILD_BRIDGE
 # include <QtCore/QProcessEnvironment>
 #endif
@@ -99,7 +97,8 @@ const char* EngineControlEventType2Str(const EngineControlEventType type)
  * Maximum number of peaks per plugin.\n
  * \note There are both input and output peaks.
  */
-/*static*/ const unsigned short MAX_PEAKS = 2;
+/*static*/
+const unsigned short MAX_PEAKS = 2;
 
 const uint32_t       PATCHBAY_BUFFER_SIZE = 128;
 const unsigned short PATCHBAY_EVENT_COUNT = 512;
@@ -151,9 +150,9 @@ struct CarlaEngineProtectedData {
     QProcessEnvironment procEnv;
 #endif
 
-    bool aboutToClose;            // don't re-activate thread if true
-    unsigned int curPluginCount;  // number of plugins loaded (0...max)
-    unsigned int maxPluginNumber; // number of plugins allowed (0, 16, 99 or 999)
+    bool aboutToClose;    // don't re-activate thread if true
+    int  curPluginCount;  // number of plugins loaded (0...max)
+    int  maxPluginNumber; // number of plugins allowed (0, 16, 99 or 999)
 
     EnginePluginData* plugins;
 

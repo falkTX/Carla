@@ -66,43 +66,44 @@ public:
 
     // -------------------------------------------------------------------
 
-#ifndef BUILD_BRIDGE
-    bool isControlRegistered() const
-    {
-        return bool(m_controlData.target);
-    }
-
-    const CarlaOscData* getControlData() const
-    {
-        return &m_controlData;
-    }
-#endif
-
     const char* getServerPathTCP() const
     {
-        return (const char*)m_serverPathTCP;
+        return (const char*)fServerPathTCP;
     }
 
     const char* getServerPathUDP() const
     {
-        return (const char*)m_serverPathUDP;
+        return (const char*)fServerPathUDP;
     }
 
     // -------------------------------------------------------------------
 
+#ifndef BUILD_BRIDGE
+    bool isControlRegistered() const
+    {
+        return bool(fControlData.target);
+    }
+
+    const CarlaOscData* getControlData() const
+    {
+        return &fControlData;
+    }
+#endif
+
+    // -------------------------------------------------------------------
+
 private:
-    CarlaEngine* const engine;
+    CarlaEngine* const kEngine;
 
-    char*  m_name;
-    size_t m_nameSize;
+    CarlaString fName;
 
-    lo_server m_serverTCP;
-    lo_server m_serverUDP;
-    CarlaString m_serverPathTCP;
-    CarlaString m_serverPathUDP;
+    CarlaString fServerPathTCP;
+    CarlaString fServerPathUDP;
+    lo_server   fServerTCP;
+    lo_server   fServerUDP;
 
 #ifndef BUILD_BRIDGE
-    CarlaOscData m_controlData; // for carla-control
+    CarlaOscData fControlData; // for carla-control
 #endif
 
     // -------------------------------------------------------------------
@@ -146,17 +147,17 @@ private:
 
     // -----------------------------------------------------------------------
 
-    static void osc_error_handlerTCP(const int num, const char* const msg, const char* const path)
+    static void osc_error_handler_TCP(int num, const char* msg, const char* path)
     {
-        qWarning("CarlaEngineOsc::osc_error_handlerTCP(%i, \"%s\", \"%s\")", num, msg, path);
+        qWarning("CarlaEngineOsc::osc_error_handler_TCP(%i, \"%s\", \"%s\")", num, msg, path);
     }
 
-    static void osc_error_handlerUDP(const int num, const char* const msg, const char* const path)
+    static void osc_error_handler_UDP(int num, const char* msg, const char* path)
     {
-        qWarning("CarlaEngineOsc::osc_error_handlerUDP(%i, \"%s\", \"%s\")", num, msg, path);
+        qWarning("CarlaEngineOsc::osc_error_handler_UDP(%i, \"%s\", \"%s\")", num, msg, path);
     }
 
-    static int osc_message_handler(const char* const path, const char* const types, lo_arg** const argv, const int argc, const lo_message msg, void* const userData)
+    static int osc_message_handler(const char* path, const char* types, lo_arg** argv, int argc, lo_message msg, void* userData)
     {
         CARLA_ASSERT(userData);
         if (CarlaEngineOsc* const _this_ = (CarlaEngineOsc*)userData)

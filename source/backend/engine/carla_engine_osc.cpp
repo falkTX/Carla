@@ -1,18 +1,18 @@
 /*
  * Carla Engine OSC
- * Copyright (C) 2011-2012 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * any later version.
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the COPYING file
+ * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
 #include "carla_engine.hpp"
@@ -20,31 +20,27 @@
 #include "carla_plugin.hpp"
 #include "carla_midi.h"
 
-#include <QtCore/QString>
-
 CARLA_BACKEND_START_NAMESPACE
 
 // -----------------------------------------------------------------------
 
-CarlaEngineOsc::CarlaEngineOsc(CarlaEngine* const engine_)
-    : engine(engine_)
+CarlaEngineOsc::CarlaEngineOsc(CarlaEngine* const engine)
+    : kEngine(engine),
+      fServerTCP(nullptr),
+      fServerUDP(nullptr)
 {
     qDebug("CarlaEngineOsc::CarlaEngineOsc(%p)", engine);
-    CARLA_ASSERT(engine);
-
-    m_name = nullptr;
-    m_nameSize = 0;
-
-    m_serverTCP = nullptr;
-    m_serverUDP = nullptr;
+    CARLA_ASSERT(engine != nullptr);
 }
 
 CarlaEngineOsc::~CarlaEngineOsc()
 {
     qDebug("CarlaEngineOsc::~CarlaEngineOsc()");
-    CARLA_ASSERT(! m_name);
-    CARLA_ASSERT(! m_serverTCP);
-    CARLA_ASSERT(! m_serverUDP);
+    CARLA_ASSERT(fName.isEmpty());
+    CARLA_ASSERT(fServerPathTCP.isEmpty());
+    CARLA_ASSERT(fServerPathUDP.isEmpty());
+    CARLA_ASSERT(fServerTCP == nullptr);
+    CARLA_ASSERT(fServerUDP == nullptr);
 }
 
 // -----------------------------------------------------------------------
@@ -52,117 +48,115 @@ CarlaEngineOsc::~CarlaEngineOsc()
 void CarlaEngineOsc::init(const char* const name)
 {
     qDebug("CarlaEngineOsc::init(\"%s\")", name);
-    CARLA_ASSERT(! m_name);
-    CARLA_ASSERT(! m_serverTCP);
-    CARLA_ASSERT(! m_serverUDP);
-    CARLA_ASSERT(m_nameSize == 0);
-    CARLA_ASSERT(m_serverPathTCP.isEmpty());
-    CARLA_ASSERT(m_serverPathUDP.isEmpty());
+    CARLA_ASSERT(fName.isEmpty());
+    CARLA_ASSERT(fServerPathTCP.isEmpty());
+    CARLA_ASSERT(fServerPathUDP.isEmpty());
+    CARLA_ASSERT(fServerTCP == nullptr);
+    CARLA_ASSERT(fServerUDP == nullptr);
     CARLA_ASSERT(name);
 
-    m_name = strdup(name ? name : "");
-    m_nameSize = strlen(m_name);
+    fName = name;
+    fName.toBasic();
 
-    m_serverTCP = lo_server_new_with_proto(nullptr, LO_TCP, osc_error_handlerTCP);
-    m_serverUDP = lo_server_new_with_proto(nullptr, LO_UDP, osc_error_handlerUDP);
+    fServerTCP = lo_server_new_with_proto(nullptr, LO_TCP, osc_error_handler_TCP);
 
-    if (m_serverTCP)
+    if (fServerTCP != nullptr)
     {
-        if (char* const serverPathTCP = lo_server_get_url(m_serverTCP))
+        if (char* const tmpServerPathTCP = lo_server_get_url(fServerTCP))
         {
-            m_serverPathTCP  = serverPathTCP;
-            m_serverPathTCP += m_name;
-            free(serverPathTCP);
+            fServerPathTCP  = tmpServerPathTCP;
+            fServerPathTCP += fName;
+            free(tmpServerPathTCP);
         }
 
-        lo_server_add_method(m_serverTCP, nullptr, nullptr, osc_message_handler, this);
+        lo_server_add_method(fServerTCP, nullptr, nullptr, osc_message_handler, this);
     }
 
-    if (m_serverUDP)
+    fServerUDP = lo_server_new_with_proto(nullptr, LO_UDP, osc_error_handler_UDP);
+
+    if (fServerUDP != nullptr)
     {
-        if (char* const serverPathUDP = lo_server_get_url(m_serverUDP))
+        if (char* const tmpServerPathUDP = lo_server_get_url(fServerUDP))
         {
-            m_serverPathUDP  = serverPathUDP;
-            m_serverPathUDP += m_name;
-            free(serverPathUDP);
+            fServerPathUDP  = tmpServerPathUDP;
+            fServerPathUDP += fName;
+            free(tmpServerPathUDP);
         }
 
-        lo_server_add_method(m_serverUDP, nullptr, nullptr, osc_message_handler, this);
+        lo_server_add_method(fServerUDP, nullptr, nullptr, osc_message_handler, this);
     }
 }
 
 void CarlaEngineOsc::idle()
 {
-    if (m_serverTCP)
+    if (fServerTCP != nullptr)
     {
-        while (lo_server_recv_noblock(m_serverTCP, 0) != 0) {}
+        while (lo_server_recv_noblock(fServerTCP, 0) != 0) {}
     }
 
-    if (m_serverUDP)
+    if (fServerUDP != nullptr)
     {
-        while (lo_server_recv_noblock(m_serverUDP, 0) != 0) {}
+        while (lo_server_recv_noblock(fServerUDP, 0) != 0) {}
     }
 }
 
 void CarlaEngineOsc::close()
 {
     qDebug("CarlaEngineOsc::close()");
-    CARLA_ASSERT(m_name);
-    CARLA_ASSERT(m_serverTCP);
-    CARLA_ASSERT(m_serverUDP);
-    CARLA_ASSERT(m_serverPathTCP.isNotEmpty());
-    CARLA_ASSERT(m_serverPathUDP.isNotEmpty());
+    CARLA_ASSERT(fName.isNotEmpty());
+    CARLA_ASSERT(fServerPathTCP.isNotEmpty());
+    CARLA_ASSERT(fServerPathUDP.isNotEmpty());
+    CARLA_ASSERT(fServerTCP != nullptr);
+    CARLA_ASSERT(fServerUDP != nullptr);
 
-    m_nameSize = 0;
+    fName.clear();
 
-    if (m_name)
+    if (fServerTCP != nullptr)
     {
-        free(m_name);
-        m_name = nullptr;
+        lo_server_del_method(fServerTCP, nullptr, nullptr);
+        lo_server_free(fServerTCP);
+        fServerTCP = nullptr;
     }
 
-    if (m_serverTCP)
+    if (fServerUDP != nullptr)
     {
-        lo_server_del_method(m_serverTCP, nullptr, nullptr);
-        lo_server_free(m_serverTCP);
-        m_serverTCP = nullptr;
+        lo_server_del_method(fServerUDP, nullptr, nullptr);
+        lo_server_free(fServerUDP);
+        fServerUDP = nullptr;
     }
 
-    if (m_serverUDP)
-    {
-        lo_server_del_method(m_serverUDP, nullptr, nullptr);
-        lo_server_free(m_serverUDP);
-        m_serverUDP = nullptr;
-    }
-
-    m_serverPathTCP.clear();
-    m_serverPathUDP.clear();
+    fServerPathTCP.clear();
+    fServerPathUDP.clear();
 
 #ifndef BUILD_BRIDGE
-    m_controlData.free();
+    fControlData.free();
 #endif
 }
 
 // -----------------------------------------------------------------------
 
+bool isDigit(const char c)
+{
+    return (c >= '0' && c <= '9');
+}
+
 int CarlaEngineOsc::handleMessage(const char* const path, const int argc, const lo_arg* const* const argv, const char* const types, const lo_message msg)
 {
 #if DEBUG
-    if (! QString(path).endsWith("peak"))
-        qDebug("CarlaEngineOsc::handleMessage(%s, %i, %p, %s, %p)", path, argc, argv, types, msg);
+    qDebug("CarlaEngineOsc::handleMessage(%s, %i, %p, %s, %p)", path, argc, argv, types, msg);
 #endif
-    CARLA_ASSERT(m_name);
-    CARLA_ASSERT(m_serverTCP || m_serverUDP);
-    CARLA_ASSERT(m_serverPathTCP.isNotEmpty() || m_serverPathUDP.isNotEmpty());
-    CARLA_ASSERT(path);
+    CARLA_ASSERT(fName.isNotEmpty());
+    CARLA_ASSERT(fServerPathTCP.isNotEmpty() || fServerPathUDP.isNotEmpty());
+    CARLA_ASSERT(fServerTCP != nullptr || fServerUDP != nullptr);
+    CARLA_ASSERT(path != nullptr);
 
-    if (! path)
+    if (path == nullptr)
     {
         qCritical("CarlaEngineOsc::handleMessage() - got invalid path");
         return 1;
     }
 
-    if (! m_name)
+    if (fName.isEmpty())
     {
         qCritical("CarlaEngineOsc::handleMessage(\"%s\", ...) - received message but client is offline", path);
         return 1;
@@ -181,43 +175,69 @@ int CarlaEngineOsc::handleMessage(const char* const path, const int argc, const 
     }
 #endif
 
+    const size_t nameSize = fName.length();
+
     // Check if message is for this client
-    if (strlen(path) <= m_nameSize || strncmp(path+1, m_name, m_nameSize) != 0)
+    if (std::strlen(path) <= nameSize || std::strncmp(path+1, (const char*)fName, nameSize) != 0)
     {
-        qWarning("CarlaEngineOsc::handleMessage() - message not for this client -> '%s' != '/%s/'", path, m_name);
+        qWarning("CarlaEngineOsc::handleMessage() - message not for this client -> '%s' != '/%s/'", path, (const char*)fName);
         return 1;
     }
 
     // Get plugin id from message
-    int pluginId = 0;
+    // eg, /carla/23/method
 
-    if (std::isdigit(path[m_nameSize+2]))
-        pluginId += path[m_nameSize+2]-'0';
+    int pluginId = -1;
 
-    if (std::isdigit(path[m_nameSize+3]))
-        pluginId += (path[m_nameSize+3]-'0')*10;
+    if (isDigit(path[nameSize+2]))
+    {
+        if (isDigit(path[nameSize+3]))
+        {
+            if (isDigit(path[nameSize+5]))
+            {
+                qCritical("CarlaEngineOsc::handleMessage() - invalid plugin id, over 999? (value: \"%s\")", path+nameSize);
+                return 1;
+            }
+            else if (isDigit(path[nameSize+4]))
+            {
+                // 3 digits, /xyz/method
+                pluginId += (path[nameSize+2]-'0')*100;
+                pluginId += (path[nameSize+3]-'0')*10;
+                pluginId += (path[nameSize+4]-'0');
+            }
+            else
+            {
+                // 2 digits, /xy/method
+                pluginId += (path[nameSize+2]-'0')*10;
+                pluginId += (path[nameSize+3]-'0');
+            }
+        }
+        else
+        {
+            // single digit, /x/method
+            pluginId += path[nameSize+2]-'0';
+        }
+    }
 
-    if (pluginId < 0 || pluginId > static_cast<int>(engine->currentPluginCount()))
+    if (pluginId < 0 || pluginId > kEngine->currentPluginCount())
     {
         qCritical("CarlaEngineOsc::handleMessage() - failed to get plugin, wrong id '%i'", pluginId);
         return 1;
     }
 
     // Get plugin
-    CarlaPlugin* const plugin = engine->getPluginUnchecked(pluginId);
+    CarlaPlugin* const plugin = kEngine->getPluginUnchecked(pluginId);
 
-#if 0
     if (plugin == nullptr || plugin->id() != pluginId)
     {
         qWarning("CarlaEngineOsc::handleMessage() - invalid plugin id '%i', probably has been removed", pluginId);
         return 1;
     }
-#endif
 
-    // Get method from path, "/Carla/i/method"
+    // Get method from path, "/Carla/i/method" -> "method"
     const int offset = (pluginId >= 10) ? 5 : 4;
     char  method[32] = { 0 };
-    strncpy(method, path + (m_nameSize + offset), 31);
+    strncpy(method, path + (nameSize + offset), 31);
 
     if (method[0] == '\0')
     {
@@ -269,7 +289,7 @@ int CarlaEngineOsc::handleMessage(const char* const path, const int argc, const 
     if (strcmp(method, "note_off") == 0)
         return handleMsgNoteOff(plugin, argc, argv, types);
 
-#if 0
+#if 0 // FIXME
     // Plugin Bridges
     if ((plugin->hints() & PLUGIN_IS_BRIDGE) > 0 && strlen(method) > 11 && strncmp(method, "bridge_", 7) == 0)
     {
@@ -321,14 +341,12 @@ int CarlaEngineOsc::handleMessage(const char* const path, const int argc, const 
 #endif
 #endif
 
-#if 0
-    // Plugin-specific methods
-#ifdef WANT_LV2
+    // Plugin-specific methods, FIXME
+#if 0 //def WANT_LV2
     if (strcmp(method, "lv2_atom_transfer") == 0)
         return handleMsgLv2AtomTransfer(plugin, argc, argv, types);
     if (strcmp(method, "lv2_event_transfer") == 0)
         return handleMsgLv2EventTransfer(plugin, argc, argv, types);
-#endif
 #endif
 
     qWarning("CarlaEngineOsc::handleMessage() - unsupported OSC method '%s'", method);
@@ -402,10 +420,9 @@ int CarlaEngineOsc::handleMsgUpdate(CARLA_ENGINE_OSC_HANDLE_ARGS2, const lo_addr
     qDebug("CarlaEngineOsc::handleMsgUpdate()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(1, "s");
 
-#if 0
     const char* const url = (const char*)&argv[0]->s;
+
     plugin->updateOscData(source, url);
-#endif
 
     return 0;
 }
@@ -418,13 +435,8 @@ int CarlaEngineOsc::handleMsgConfigure(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     const char* const key   = (const char*)&argv[0]->s;
     const char* const value = (const char*)&argv[1]->s;
 
-#ifdef DEBUG
-    qDebug("CarlaEngineOsc::handleMsgConfigure(\"%s\", \"%s\")", key, value);
-#endif
-
-#if 0
-    plugin->setCustomData(CUSTOM_DATA_STRING, key, value, false);
-#endif
+    // FIXME
+    plugin->setCustomData("CUSTOM_DATA_STRING", key, value, false);
 
     return 0;
 }
@@ -434,11 +446,10 @@ int CarlaEngineOsc::handleMsgControl(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     qDebug("CarlaEngineOsc::handleMsgControl()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(2, "if");
 
-#if 0
-    const int  rindex = argv[0]->i;
-    const float value = argv[1]->f;
+    const int32_t rindex = argv[0]->i;
+    const float   value  = argv[1]->f;
+
     plugin->setParameterValueByRIndex(rindex, value, false, true, true);
-#endif
 
     return 0;
 }
@@ -447,14 +458,14 @@ int CarlaEngineOsc::handleMsgProgram(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 {
     qDebug("CarlaEngineOsc::handleMsgProgram()");
 
-#if 0
     if (argc == 2)
     {
         CARLA_ENGINE_OSC_CHECK_OSC_TYPES(2, "ii");
 
-        const uint32_t bank_id    = argv[0]->i;
-        const uint32_t program_id = argv[1]->i;
-        plugin->setMidiProgramById(bank_id, program_id, false, true, true, true);
+        const uint32_t bank    = argv[0]->i;
+        const uint32_t program = argv[1]->i;
+
+        plugin->setMidiProgramById(bank, program, false, true, true, true);
 
         return 0;
     }
@@ -462,17 +473,16 @@ int CarlaEngineOsc::handleMsgProgram(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     {
         CARLA_ENGINE_OSC_CHECK_OSC_TYPES(1, "i");
 
-        const uint32_t program_id = argv[0]->i;
+        const uint32_t program = argv[0]->i;
 
-        if (program_id < plugin->programCount())
+        if (program < plugin->programCount())
         {
-            plugin->setProgram(program_id, false, true, true, true);
+            plugin->setProgram(program, false, true, true, true);
             return 0;
         }
 
-        qCritical("CarlaEngineOsc::handleMsgProgram() - program_id '%i' out of bounds", program_id);
+        qCritical("CarlaEngineOsc::handleMsgProgram() - program_id '%i' out of bounds", program);
     }
-#endif
 
     return 1;
 }
@@ -482,9 +492,9 @@ int CarlaEngineOsc::handleMsgMidi(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     qDebug("CarlaEngineOsc::handleMsgMidi()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(1, "m");
 
-#if 0
     if (plugin->midiInCount() > 0)
     {
+#if 0
         const uint8_t* const data = argv[0]->m;
         uint8_t status  = data[1];
         uint8_t channel = status & 0x0F;
@@ -504,10 +514,10 @@ int CarlaEngineOsc::handleMsgMidi(CARLA_ENGINE_OSC_HANDLE_ARGS2)
             uint8_t velo = data[3];
             plugin->sendMidiSingleNote(channel, note, velo, false, true, true);
         }
+#endif
 
         return 0;
     }
-#endif
 
     qWarning("CarlaEngineOsc::handleMsgMidi() - recived midi when plugin has no midi inputs");
     return 1;
@@ -517,11 +527,10 @@ int CarlaEngineOsc::handleMsgExiting(CARLA_ENGINE_OSC_HANDLE_ARGS1)
 {
     qDebug("CarlaEngineOsc::handleMsgExiting()");
 
-#if 0
     // TODO - check for non-UIs (dssi-vst) and set to -1 instead
-    engine->callback(CALLBACK_SHOW_GUI, plugin->id(), 0, 0, 0.0, nullptr);
+    kEngine->callback(CALLBACK_SHOW_GUI, plugin->id(), 0, 0, 0.0, nullptr);
+
     plugin->freeOscData();
-#endif
 
     return 0;
 }

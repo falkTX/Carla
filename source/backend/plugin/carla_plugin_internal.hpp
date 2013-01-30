@@ -286,7 +286,7 @@ const unsigned int PLUGIN_OPTION2_HAS_MIDI_IN  = 0x1;
 const unsigned int PLUGIN_OPTION2_HAS_MIDI_OUT = 0x2;
 
 struct CarlaPluginProtectedData {
-    unsigned short id;
+    int id;
 
     CarlaEngine* const engine;
     CarlaEngineClient* client;
@@ -328,13 +328,21 @@ struct CarlaPluginProtectedData {
     struct PostRtEvents {
         CarlaMutex mutex;
         RtList<PluginPostRtEvent> data;
+        RtList<PluginPostRtEvent> dataPendingRT;
 
         PostRtEvents()
-            : data(152, 512) {}
+            : data(152, 512),
+              dataPendingRT(152, 256) {}
 
-        void append(const PluginPostRtEvent& event)
+        void appendRT(const PluginPostRtEvent& event)
         {
-            data.append(event);
+            dataPendingRT.append(event);
+
+            if (mutex.tryLock())
+            {
+                dataPendingRT.splice(data, true);
+                mutex.unlock();
+            }
         }
 
     } postRtEvents;
