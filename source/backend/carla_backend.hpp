@@ -546,7 +546,7 @@ enum ProcessMode {
  *
  * \see CallbackType and set_callback_function()
  */
-typedef void (*CallbackFunc)(void* ptr, CallbackType action, unsigned int pluginId, int value1, int value2, double value3, const char* valueStr);
+typedef void (*CallbackFunc)(void* ptr, CallbackType action, unsigned int pluginId, int value1, int value2, float value3, const char* valueStr);
 
 /*!
  * Parameter data
@@ -598,6 +598,15 @@ struct ParameterRanges {
             value = min;
         else if (value > max)
             value = max;
+    }
+
+    float fixValue(const float& value) const
+    {
+        if (value < min)
+            return min;
+        else if (value > max)
+            return max;
+        return value;
     }
 };
 

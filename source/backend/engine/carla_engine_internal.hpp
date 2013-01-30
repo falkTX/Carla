@@ -98,20 +98,13 @@ const char* EngineControlEventType2Str(const EngineControlEventType type)
  * \note There are both input and output peaks.
  */
 /*static*/
-const unsigned short MAX_PEAKS = 2;
+const unsigned short MAX_PEAKS     = 2;
 
 const uint32_t       PATCHBAY_BUFFER_SIZE = 128;
 const unsigned short PATCHBAY_EVENT_COUNT = 512;
 const unsigned short RACK_EVENT_COUNT     = 1024;
 
 #if 0
-enum EnginePostEventType {
-    EnginePostEventNull,
-    EnginePostEventDebug,
-    EnginePostEventAddPlugin,   // id, ptr
-    EnginePostEventRemovePlugin // id
-};
-
 struct EnginePostEvent {
     EnginePostEventType type;
     int32_t value1;
@@ -124,18 +117,25 @@ struct EnginePostEvent {
 };
 #endif
 
+enum EnginePostAction {
+    EnginePostActionNull,
+    EnginePostActionRemovePlugin
+};
+
 struct EnginePluginData {
     CarlaPlugin* plugin;
-    double insPeak[MAX_PEAKS];
-    double outsPeak[MAX_PEAKS];
+    float insPeak[MAX_PEAKS];
+    float outsPeak[MAX_PEAKS];
 
     EnginePluginData()
         : plugin(nullptr),
-          insPeak{0},
-          outsPeak{0} {}
+          insPeak{ 0.0f },
+          outsPeak{ 0.0f } {}
 };
 
-struct CarlaEngineProtectedData {
+// -------------------------------------------------------------------------------------------------------------------
+
+struct CarlaEnginePrivateData {
     CarlaEngineOsc    osc;
     CarlaEngineThread thread;
 
@@ -154,9 +154,25 @@ struct CarlaEngineProtectedData {
     unsigned int curPluginCount;  // number of plugins loaded (0...max)
     unsigned int maxPluginNumber; // number of plugins allowed (0, 16, 99 or 999)
 
+    struct NextAction {
+        EnginePostAction opcode;
+        unsigned int     pluginId;
+        CarlaMutex       mutex;
+
+        NextAction()
+            : opcode(EnginePostActionNull),
+              pluginId(0) {}
+
+        void ready()
+        {
+            mutex.lock();
+            mutex.unlock();
+        }
+    } nextAction;
+
     EnginePluginData* plugins;
 
-    CarlaEngineProtectedData(CarlaEngine* const engine)
+    CarlaEnginePrivateData(CarlaEngine* const engine)
         : osc(engine),
           thread(engine),
           oscData(nullptr),
@@ -167,9 +183,9 @@ struct CarlaEngineProtectedData {
           maxPluginNumber(0),
           plugins(nullptr) {}
 
-    CarlaEngineProtectedData() = delete;
+    CarlaEnginePrivateData() = delete;
 
-    CARLA_LEAK_DETECTOR(CarlaEngineProtectedData)
+    CARLA_LEAK_DETECTOR(CarlaEnginePrivateData)
 };
 
 CARLA_BACKEND_END_NAMESPACE

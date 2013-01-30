@@ -59,7 +59,7 @@ public:
     // ---------------------------------------------------------------------
     // processing
 
-    virtual void setParameter(const int32_t rindex, const double value) = 0;
+    virtual void setParameter(const int32_t rindex, const float value) = 0;
     virtual void setProgram(const uint32_t index) = 0;
 #ifdef BUILD_BRIDGE_PLUGIN
     virtual void setMidiProgram(const uint32_t index) = 0;

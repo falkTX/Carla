@@ -216,7 +216,6 @@ struct EngineEvent {
  */
 struct EngineOptions {
     ProcessMode processMode;
-    bool processHighPrecision;
 
     bool forceStereo;
     bool preferPluginBridges;
@@ -254,7 +253,6 @@ struct EngineOptions {
 
     EngineOptions()
         : processMode(PROCESS_MODE_CONTINUOUS_RACK),
-          processHighPrecision(false),
           forceStereo(false),
           preferPluginBridges(false),
           preferUiBridges(true),
@@ -535,7 +533,7 @@ private:
  * Private data used in CarlaEngine.
  * No other than CarlaEngine must have direct access to this.
  */
-struct CarlaEngineProtectedData;
+struct CarlaEnginePrivateData;
 
 /*!
  * Carla Engine.
@@ -665,13 +663,13 @@ public:
      * Add new plugin.\n
      * Returns the id of the plugin, or -1 if the operation failed.
      */
-    bool addPlugin(const BinaryType btype, const PluginType ptype, const char* const filename, const char* const name, const char* const label, void* const extra = nullptr);
+    bool addPlugin(const BinaryType btype, const PluginType ptype, const char* const filename, const char* const name, const char* const label, const void* const extra = nullptr);
 
     /*!
      * Add new plugin, using native binary type.\n
      * Returns the id of the plugin, or -1 if the operation failed.
      */
-    bool addPlugin(const PluginType ptype, const char* const filename, const char* const name, const char* const label, void* const extra = nullptr)
+    bool addPlugin(const PluginType ptype, const char* const filename, const char* const name, const char* const label, const void* const extra = nullptr)
     {
         return addPlugin(BINARY_NATIVE, ptype, filename, name, label, extra);
     }
@@ -733,6 +731,11 @@ public:
         return fOptions;
     }
 
+    ProcessMode getProccessMode() const
+    {
+        return fOptions.processMode;
+    }
+
     /*!
      * Get current Time information (read-only).
      */
@@ -763,7 +766,7 @@ public:
     /*!
      * TODO.
      */
-    void callback(const CallbackType action, const unsigned short pluginId, const int value1, const int value2, const double value3, const char* const valueStr);
+    void callback(const CallbackType action, const unsigned short pluginId, const int value1, const int value2, const float value3, const char* const valueStr);
 
     /*!
      * TODO.
@@ -846,8 +849,6 @@ protected:
     EngineOptions  fOptions;
     EngineTimeInfo fTimeInfo;
 
-    ScopedPointer<CarlaEngineProtectedData> const fData;
-
 #ifndef BUILD_BRIDGE
     // Rack mode data
     EngineEvent* getRackEventBuffer(const bool isInput);
@@ -869,6 +870,11 @@ protected:
 #endif
 
     /*!
+     * TODO.
+     */
+    void proccessPendingEvents();
+
+    /*!
      * Report to all plugins about buffer size change.
      */
     void bufferSizeChanged(const uint32_t newBufferSize);
@@ -881,6 +887,8 @@ protected:
     void sampleRateChanged(const double newSampleRate);
 
 private:
+    ScopedPointer<CarlaEnginePrivateData> const fData;
+
 #ifdef WANT_JACK
     static CarlaEngine* newJack();
 #endif

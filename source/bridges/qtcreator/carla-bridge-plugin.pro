@@ -34,9 +34,10 @@ SOURCES += \
 
 # carla-plugin
 SOURCES += \
-    ../../backend/plugin/carla_plugin.cpp
+    ../../backend/plugin/carla_plugin.cpp \
+    ../../backend/plugin/ladspa.cpp
+
 #    ../../backend/plugin/carla_plugin_thread.cpp \
-#    ../../backend/plugin/ladspa.cpp \
 #    ../../backend/plugin/dssi.cpp \
 #    ../../backend/plugin/lv2.cpp \
 #    ../../backend/plugin/vst.cpp

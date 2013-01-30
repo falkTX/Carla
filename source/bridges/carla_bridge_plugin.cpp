@@ -628,7 +628,7 @@ public:
     // ---------------------------------------------------------------------
     // processing
 
-    void setParameter(const int32_t rindex, const double value)
+    void setParameter(const int32_t rindex, const float value)
     {
         qDebug("CarlaPluginClient::setParameter(%i, %g)", rindex, value);
         CARLA_ASSERT(plugin);
@@ -799,7 +799,7 @@ public:
     // ---------------------------------------------------------------------
     // callback
 
-    static void callback(void* const ptr, CarlaBackend::CallbackType const action, const unsigned int, const int value1, const int value2, const double value3, const char* const valueStr)
+    static void callback(void* ptr, CarlaBackend::CallbackType action, unsigned int, int value1, int value2, float value3, const char* valueStr)
     {
         CARLA_ASSERT(ptr);
 

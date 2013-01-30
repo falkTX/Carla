@@ -22,14 +22,13 @@
 #include "carla_plugin_thread.hpp"
 
 #include "carla_engine.hpp"
+#include "carla_osc_utils.hpp"
 
-#ifdef BUILD_BRIDGE
-# include "carla_bridge_osc.hpp"
-#else
-# include "carla_osc_utils.hpp"
-#endif
+//#include "carla_bridge_osc.hpp"
 
 #include "rt_list.hpp"
+
+#include <QtGui/QMainWindow>
 
 #define CARLA_DECLARE_NON_COPY_STRUCT(structName) \
     structName(const structName&) = delete;
@@ -81,14 +80,37 @@ struct PluginAudioData {
             ports = new PluginAudioPort[count];
     }
 
-    void free()
+    void freePorts()
     {
-        CARLA_ASSERT(ports != nullptr);
+        for (uint32_t i=0; i < count; i++)
+        {
+            if (ports[i].port != nullptr)
+            {
+                delete ports[i].port;
+                ports[i].port = nullptr;
+            }
+        }
+    }
+
+    void clear()
+    {
+        freePorts();
 
         if (ports != nullptr)
         {
             delete[] ports;
             ports = nullptr;
+        }
+
+        count = 0;
+    }
+
+    void initBuffers(CarlaEngine* const engine)
+    {
+        for (uint32_t i=0; i < count; i++)
+        {
+            if (ports[i].port != nullptr)
+                ports[i].port->initBuffer(engine);
         }
     }
 
@@ -109,6 +131,35 @@ struct PluginEventData {
     {
         CARLA_ASSERT(portIn == nullptr);
         CARLA_ASSERT(portOut == nullptr);
+    }
+
+    void freePorts()
+    {
+        if (portIn != nullptr)
+        {
+            delete portIn;
+            portIn = nullptr;
+        }
+
+        if (portOut != nullptr)
+        {
+            delete portOut;
+            portOut = nullptr;
+        }
+    }
+
+    void clear()
+    {
+        freePorts();
+    }
+
+    void initBuffers(CarlaEngine* const engine)
+    {
+        if (portIn != nullptr)
+            portIn->initBuffer(engine);
+
+        if (portOut != nullptr)
+            portOut->initBuffer(engine);
     }
 
     CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(PluginEventData)
@@ -144,11 +195,8 @@ struct PluginParameterData {
             ranges = new ParameterRanges[count];
     }
 
-    void free()
+    void clear()
     {
-        CARLA_ASSERT(data != nullptr);
-        CARLA_ASSERT(ranges != nullptr);
-
         if (data != nullptr)
         {
             delete[] data;
@@ -160,6 +208,8 @@ struct PluginParameterData {
             delete[] ranges;
             ranges = nullptr;
         }
+
+        count = 0;
     }
 
     CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(PluginParameterData)
@@ -184,27 +234,38 @@ struct PluginProgramData {
         CARLA_ASSERT(names == nullptr);
     }
 
-    void createNew(const size_t count)
+    void createNew(const uint32_t count)
     {
         CARLA_ASSERT(names == nullptr);
 
         if (names == nullptr)
             names = new ProgramName[count];
+
+        for (uint32_t i=0; i < count; i++)
+            names[i] = nullptr;
+
+        this->count = count;
     }
 
-    void free()
+    void clear()
     {
-        CARLA_ASSERT(names != nullptr);
-
         if (names != nullptr)
         {
+            for (uint32_t i=0; i < count; i++)
+                std::free((void*)names[i]);
+
             delete[] names;
             names = nullptr;
         }
+
+        count = 0;
+        current = -1;
     }
 
     CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(PluginProgramData)
 };
+
+// -----------------------------------------------------------------------
 
 struct PluginMidiProgramData {
     uint32_t count;
@@ -221,27 +282,31 @@ struct PluginMidiProgramData {
         CARLA_ASSERT(data == nullptr);
     }
 
-    void createNew(const size_t count)
+    void createNew(const uint32_t count)
     {
         CARLA_ASSERT(data == nullptr);
 
         if (data == nullptr)
             data = new MidiProgramData[count];
+
+        this->count = count;
     }
 
-    void free()
+    void clear()
     {
-        CARLA_ASSERT(data != nullptr);
-
         if (data != nullptr)
         {
             delete[] data;
             data = nullptr;
         }
+
+        count = 0;
+        current = -1;
     }
 
-    const MidiProgramData& getCurrent()
+    const MidiProgramData& getCurrent() const
     {
+        CARLA_ASSERT(current >= 0 && current < static_cast<int32_t>(count));
         return data[current];
     }
 
@@ -282,14 +347,33 @@ struct ExternalMidiNote {
 
 // -----------------------------------------------------------------------
 
+class CarlaPluginGUI : public QMainWindow
+{
+public:
+    CarlaPluginGUI(QWidget* const parent = nullptr);
+
+    ~CarlaPluginGUI();
+
+private:
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginGUI)
+};
+
+// -----------------------------------------------------------------------
+
+const unsigned short MIN_RT_EVENTS = 152;
+const unsigned short MAX_RT_EVENTS = 512;
+
 const unsigned int PLUGIN_OPTION2_HAS_MIDI_IN  = 0x1;
 const unsigned int PLUGIN_OPTION2_HAS_MIDI_OUT = 0x2;
 
+// -----------------------------------------------------------------------
+
 struct CarlaPluginProtectedData {
-    int id;
+    unsigned int id;
 
     CarlaEngine* const engine;
     CarlaEngineClient* client;
+    CarlaPluginGUI* gui;
 
     unsigned int hints;
     unsigned int options;
@@ -300,13 +384,16 @@ struct CarlaPluginProtectedData {
     bool enabled;
 
     void* lib;
-    const char* name;
-    const char* filename;
+    CarlaString name;
+    CarlaString filename;
 
     // misc
-    int8_t   ctrlInChannel;
+    int8_t ctrlInChannel;
+
+#if 0
     uint32_t latency;
     float**  latencyBuffers;
+#endif
 
     // data
     PluginAudioData       audioIn;
@@ -315,7 +402,7 @@ struct CarlaPluginProtectedData {
     PluginParameterData   param;
     PluginProgramData     prog;
     PluginMidiProgramData midiprog;
-    NonRtList<CustomData> custom;
+    NonRtListNew<CustomData> custom;
 
     struct ExternalNotes {
         CarlaMutex mutex;
@@ -323,6 +410,12 @@ struct CarlaPluginProtectedData {
 
         ExternalNotes()
             : data(32, 512) {}
+
+        void append(const ExternalMidiNote& note)
+        {
+            data.append_sleepy(note);
+        }
+
     } extNotes;
 
     struct PostRtEvents {
@@ -331,8 +424,8 @@ struct CarlaPluginProtectedData {
         RtList<PluginPostRtEvent> dataPendingRT;
 
         PostRtEvents()
-            : data(152, 512),
-              dataPendingRT(152, 256) {}
+            : data(MIN_RT_EVENTS, MAX_RT_EVENTS),
+              dataPendingRT(MIN_RT_EVENTS, MAX_RT_EVENTS) {}
 
         void appendRT(const PluginPostRtEvent& event)
         {
@@ -345,21 +438,26 @@ struct CarlaPluginProtectedData {
             }
         }
 
+        //void appendNonRT(const PluginPostRtEvent& event)
+        //{
+        //    data.append_sleepy(event);
+        //}
+
     } postRtEvents;
 
     struct PostProc {
-        double dryWet;
-        double volume;
-        double balanceLeft;
-        double balanceRight;
-        double panning;
+        float dryWet;
+        float volume;
+        float balanceLeft;
+        float balanceRight;
+        float panning;
 
         PostProc()
-            : dryWet(1.0),
-              volume(1.0),
-              balanceLeft(-1.0),
-              balanceRight(1.0),
-              panning(0.0) {}
+            : dryWet(1.0f),
+              volume(1.0f),
+              balanceLeft(-1.0f),
+              balanceRight(1.0f),
+              panning(0.0f) {}
     } postProc;
 
     struct OSC {
@@ -374,6 +472,7 @@ struct CarlaPluginProtectedData {
         : id(id_),
           engine(engine_),
           client(nullptr),
+          gui(nullptr),
           hints(0x0),
           options(0x0),
           options2(0x0),
@@ -381,11 +480,11 @@ struct CarlaPluginProtectedData {
           activeBefore(false),
           enabled(false),
           lib(nullptr),
-          name(nullptr),
-          filename(nullptr),
-          ctrlInChannel(-1),
+          ctrlInChannel(-1) {}
+#if 0
           latency(0),
           latencyBuffers(nullptr) {}
+#endif
 
     CarlaPluginProtectedData() = delete;
 

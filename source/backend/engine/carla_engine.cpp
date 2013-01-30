@@ -1,18 +1,18 @@
 /*
  * Carla Engine
- * Copyright (C) 2012 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * any later version.
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the COPYING file
+ * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
 #include "carla_engine_internal.hpp"
@@ -40,16 +40,15 @@ CarlaEnginePort::~CarlaEnginePort()
 // Carla Engine Audio port
 
 CarlaEngineAudioPort::CarlaEngineAudioPort(const bool isInput, const ProcessMode processMode)
-    : CarlaEnginePort(isInput, processMode)
+    : CarlaEnginePort(isInput, processMode),
+      fBuffer(nullptr)
 {
     qDebug("CarlaEngineAudioPort::CarlaEngineAudioPort(%s, %s)", bool2str(isInput), ProcessMode2Str(processMode));
 
 #ifndef BUILD_BRIDGE
     if (kProcessMode == PROCESS_MODE_PATCHBAY)
         fBuffer = new float[PATCHBAY_BUFFER_SIZE];
-    else
 #endif
-        fBuffer = nullptr;
 }
 
 CarlaEngineAudioPort::~CarlaEngineAudioPort()
@@ -62,7 +61,7 @@ CarlaEngineAudioPort::~CarlaEngineAudioPort()
         CARLA_ASSERT(fBuffer);
 
         if (fBuffer)
-            delete[] (float*)fBuffer;
+            delete[] fBuffer;
     }
 #endif
 }
@@ -70,9 +69,7 @@ CarlaEngineAudioPort::~CarlaEngineAudioPort()
 void CarlaEngineAudioPort::initBuffer(CarlaEngine* const)
 {
 #ifndef BUILD_BRIDGE
-    if (kProcessMode != PROCESS_MODE_PATCHBAY)
-        fBuffer = nullptr;
-    else if (! kIsInput)
+    if (kProcessMode == PROCESS_MODE_PATCHBAY && ! kIsInput)
         carla_zeroFloat(fBuffer, PATCHBAY_BUFFER_SIZE);
 #endif
 }
@@ -82,16 +79,15 @@ void CarlaEngineAudioPort::initBuffer(CarlaEngine* const)
 
 CarlaEngineEventPort::CarlaEngineEventPort(const bool isInput, const ProcessMode processMode)
     : CarlaEnginePort(isInput, processMode),
-      kMaxEventCount(processMode == PROCESS_MODE_CONTINUOUS_RACK ? RACK_EVENT_COUNT : PATCHBAY_EVENT_COUNT)
+      kMaxEventCount(processMode == PROCESS_MODE_CONTINUOUS_RACK ? RACK_EVENT_COUNT : PATCHBAY_EVENT_COUNT),
+      fBuffer(nullptr)
 {
     qDebug("CarlaEngineEventPort::CarlaEngineEventPort(%s, %s)", bool2str(isInput), ProcessMode2Str(processMode));
 
 #ifndef BUILD_BRIDGE
     if (kProcessMode == PROCESS_MODE_PATCHBAY)
         fBuffer = new EngineEvent[PATCHBAY_EVENT_COUNT];
-    else
 #endif
-        fBuffer = nullptr;
 }
 
 CarlaEngineEventPort::~CarlaEngineEventPort()
@@ -235,14 +231,16 @@ void CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t cha
 
     CARLA_ASSERT(fBuffer != nullptr);
     CARLA_ASSERT(channel < MAX_MIDI_CHANNELS);
-    CARLA_ASSERT(data);
+    CARLA_ASSERT(data != nullptr);
     CARLA_ASSERT(size > 0);
 
     if (fBuffer == nullptr)
         return;
     if (channel >= MAX_MIDI_CHANNELS)
         return;
-    if (! (data && size > 0))
+    if (data == nullptr)
+        return;
+    if (size == 0)
         return;
 
 #ifndef BUILD_BRIDGE
@@ -282,13 +280,12 @@ void CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t cha
 
 CarlaEngineClient::CarlaEngineClient(const EngineType engineType, const ProcessMode processMode)
     : kEngineType(engineType),
-      kProcessMode(processMode)
+      kProcessMode(processMode),
+      fActive(false),
+      fLatency(0)
 {
     qDebug("CarlaEngineClient::CarlaEngineClient(%s, %s)", EngineType2Str(engineType), ProcessMode2Str(processMode));
     CARLA_ASSERT(engineType != kEngineTypeNull);
-
-    fActive  = false;
-    fLatency = 0;
 }
 
 CarlaEngineClient::~CarlaEngineClient()
@@ -341,12 +338,11 @@ void CarlaEngineClient::setLatency(const uint32_t samples)
 // Carla Engine
 
 CarlaEngine::CarlaEngine()
-    : fData(new CarlaEngineProtectedData(this))
+    : fBufferSize(0),
+      fSampleRate(0.0),
+      fData(new CarlaEnginePrivateData(this))
 {
     qDebug("CarlaEngine::CarlaEngine()");
-
-    fBufferSize = 0;
-    fSampleRate = 0.0;
 }
 
 CarlaEngine::~CarlaEngine()
@@ -357,6 +353,46 @@ CarlaEngine::~CarlaEngine()
 }
 
 // -----------------------------------------------------------------------
+// Helpers
+
+void doPluginRemove(CarlaEnginePrivateData* const fData, const bool unlock)
+{
+    CARLA_ASSERT(fData->curPluginCount > 0);
+    fData->curPluginCount--;
+
+    const unsigned int id = fData->nextAction.pluginId;
+
+    // reset current plugin
+    fData->plugins[id].plugin = nullptr;
+
+    CarlaPlugin* plugin;
+
+    // move all plugins 1 spot backwards
+    for (unsigned int i=id; i < fData->curPluginCount; i++)
+    {
+        plugin = fData->plugins[i+1].plugin;
+
+        CARLA_ASSERT(plugin);
+
+        if (plugin == nullptr)
+            break;
+
+        plugin->setId(i);
+
+        fData->plugins[i].plugin      = plugin;
+        fData->plugins[i].insPeak[0]  = 0.0f;
+        fData->plugins[i].insPeak[1]  = 0.0f;
+        fData->plugins[i].outsPeak[0] = 0.0f;
+        fData->plugins[i].outsPeak[1] = 0.0f;
+    }
+
+    fData->nextAction.opcode = EnginePostActionNull;
+
+    if (unlock)
+        fData->nextAction.mutex.unlock();
+}
+
+// -----------------------------------------------------------------------
 // Static values and calls
 
 unsigned int CarlaEngine::getDriverCount()
@@ -364,12 +400,14 @@ unsigned int CarlaEngine::getDriverCount()
     qDebug("CarlaEngine::getDriverCount()");
 
     unsigned int count = 0;
+
 #ifdef WANT_JACK
     count += 1;
 #endif
 #ifdef WANT_RTAUDIO
     count += getRtAudioApiCount();
 #endif
+
     return count;
 }
 
@@ -470,9 +508,11 @@ bool CarlaEngine::init(const char* const clientName)
     qDebug("CarlaEngine::init(\"%s\")", clientName);
     CARLA_ASSERT(fData->plugins == nullptr);
 
+    fName = clientName;
+    fName.toBasic();
+
     fData->aboutToClose = false;
     fData->curPluginCount = 0;
-    fData->maxPluginNumber = 0;
 
     switch (fOptions.processMode)
     {
@@ -481,6 +521,9 @@ bool CarlaEngine::init(const char* const clientName)
         break;
     case PROCESS_MODE_PATCHBAY:
         fData->maxPluginNumber = MAX_PATCHBAY_PLUGINS;
+        break;
+    case PROCESS_MODE_BRIDGE:
+        fData->maxPluginNumber = 1;
         break;
     default:
         fData->maxPluginNumber = MAX_DEFAULT_PLUGINS;
@@ -494,7 +537,7 @@ bool CarlaEngine::init(const char* const clientName)
 #ifndef BUILD_BRIDGE
     fData->oscData = fData->osc.getControlData();
 #else
-    fData->oscData = nullptr; // set in setOscBridgeData()
+    fData->oscData = nullptr; // set later in setOscBridgeData()
 #endif
 
 #ifndef BUILD_BRIDGE
@@ -502,6 +545,7 @@ bool CarlaEngine::init(const char* const clientName)
     carla_setprocname(clientName);
 #endif
 
+    fData->nextAction.ready();
     fData->thread.startNow();
 
     return true;
@@ -512,6 +556,7 @@ bool CarlaEngine::close()
     qDebug("CarlaEngine::close()");
     CARLA_ASSERT(fData->plugins != nullptr);
 
+    fData->nextAction.ready();
     fData->thread.stopNow();
 
 #ifndef BUILD_BRIDGE
@@ -539,16 +584,6 @@ bool CarlaEngine::close()
 // -----------------------------------------------------------------------
 // Plugin management
 
-#if 0
-int CarlaEngine::getNewPluginId() const
-{
-    qDebug("CarlaEngine::getNewPluginId()");
-    CARLA_ASSERT(data->maxPluginNumber > 0);
-
-    return data->nextPluginId;
-}
-#endif
-
 CarlaPlugin* CarlaEngine::getPlugin(const unsigned int id) const
 {
     qDebug("CarlaEngine::getPlugin(%i) [count:%i]", id, fData->curPluginCount);
@@ -556,7 +591,7 @@ CarlaPlugin* CarlaEngine::getPlugin(const unsigned int id) const
     CARLA_ASSERT(id < fData->curPluginCount);
     CARLA_ASSERT(fData->plugins != nullptr);
 
-    if (id < fData->curPluginCount && fData->plugins)
+    if (id < fData->curPluginCount && fData->plugins != nullptr)
         return fData->plugins[id].plugin;
 
     return nullptr;
@@ -572,7 +607,7 @@ const char* CarlaEngine::getNewUniquePluginName(const char* const name)
     qDebug("CarlaEngine::getNewUniquePluginName(\"%s\")", name);
     CARLA_ASSERT(fData->curPluginCount > 0);
     CARLA_ASSERT(fData->plugins != nullptr);
-    CARLA_ASSERT(name);
+    CARLA_ASSERT(name != nullptr);
 
     CarlaString sname(name);
 
@@ -584,14 +619,14 @@ const char* CarlaEngine::getNewUniquePluginName(const char* const name)
 
     for (unsigned short i=0; i < fData->curPluginCount; i++)
     {
-#if 0
+        CARLA_ASSERT(fData->plugins[i].plugin);
+
         // Check if unique name doesn't exist
         if (const char* const pluginName = fData->plugins[i].plugin->name())
         {
             if (sname != pluginName)
                 continue;
         }
-#endif
 
         // Check if string has already been modified
         {
@@ -643,7 +678,7 @@ const char* CarlaEngine::getNewUniquePluginName(const char* const name)
     return strdup(sname);
 }
 
-bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, const char* const filename, const char* const name, const char* const label, void* const extra)
+bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, const char* const filename, const char* const name, const char* const label, const void* const extra)
 {
     qDebug("CarlaEngine::addPlugin(%s, %s, \"%s\", \"%s\", \"%s\", %p)", BinaryType2Str(btype), PluginType2Str(ptype), filename, name, label, extra);
     CARLA_ASSERT(btype != BINARY_NONE);
@@ -651,12 +686,19 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
     CARLA_ASSERT(filename);
     CARLA_ASSERT(label);
 
-    //CarlaPlugin::Initializer init = {
-    //    this,
-    //    filename,
-    //    name,
-    //    label
-    //};
+    if (fData->curPluginCount == fData->maxPluginNumber)
+    {
+        setLastError("Maximum number of plugins reached");
+        return false;
+    }
+
+    CarlaPlugin::Initializer init = {
+        this,
+        fData->curPluginCount,
+        filename,
+        name,
+        label
+    };
 
     CarlaPlugin* plugin = nullptr;
 
@@ -710,23 +752,24 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
     else
 #endif // BUILD_BRIDGE
     {
-#if 0
         switch (ptype)
         {
         case PLUGIN_NONE:
             break;
-        case PLUGIN_INTERNAL:
+
 #ifndef BUILD_BRIDGE
+        case PLUGIN_INTERNAL:
             plugin = CarlaPlugin::newNative(init);
-#endif
             break;
+#endif
 
         case PLUGIN_LADSPA:
 #ifdef WANT_LADSPA
-            plugin = CarlaPlugin::newLADSPA(init, extra);
+            plugin = CarlaPlugin::newLADSPA(init, (const LADSPA_RDF_Descriptor*)extra);
 #endif
             break;
 
+#if 0
         case PLUGIN_DSSI:
 #ifdef WANT_DSSI
             plugin = CarlaPlugin::newDSSI(init, extra);
@@ -762,20 +805,20 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
             plugin = CarlaPlugin::newSFZ(init);
 #endif
             break;
-        }
+#else
+        default:
+            break;
 #endif
+        }
     }
 
     if (plugin == nullptr)
         return false;
 
-    //const int id = fData->curPluginCount++;
+    fData->curPluginCount++;
 
-#if 0
-    plugin->setId(id);
-#endif
+    callback(CALLBACK_PLUGIN_ADDED, init.id, 0, 0, 0.0f, nullptr);
 
-    //return id;
     return true;
 }
 
@@ -788,70 +831,46 @@ bool CarlaEngine::removePlugin(const unsigned int id)
 
     if (fData->plugins == nullptr)
     {
-        // TODO - warning
+        setLastError("Critical error: no plugins are currently loaded!");
         return false;
     }
 
-    CarlaPlugin* plugin = fData->plugins[id].plugin;
+    CarlaPlugin* const plugin = fData->plugins[id].plugin;
 
     CARLA_ASSERT(plugin);
 
-    if (plugin /*&& plugin->id() == id*/)
+    if (plugin)
     {
-#if 0
         CARLA_ASSERT(plugin->id() == id);
-#endif
 
         fData->thread.stopNow();
 
-        // wait for processing to stop for this plugin
-        // TODO
+        fData->nextAction.pluginId = id;
+        fData->nextAction.opcode   = EnginePostActionRemovePlugin;
 
-        // clear this plugin
-        fData->plugins[id].plugin      = nullptr;
-        fData->plugins[id].insPeak[0]  = 0.0;
-        fData->plugins[id].insPeak[1]  = 0.0;
-        fData->plugins[id].outsPeak[0] = 0.0;
-        fData->plugins[id].outsPeak[1] = 0.0;
+        fData->nextAction.mutex.lock();
 
-        // wait for processing to stop for this plugin
-        // TODO
+        if (isRunning())
+        {
+            // block wait for unlock on proccessing side
+            fData->nextAction.mutex.lock();
+        }
+        else
+        {
+            doPluginRemove(fData, false);
+        }
 
-        //processLock();
-        //plugin->setEnabled(false);
-        //data->carlaPlugins[id] = nullptr;
-        //data->uniqueNames[id]  = nullptr;
-        //processUnlock();
+#ifndef BUILD_BRIDGE
+        if (isOscControlRegistered())
+            osc_send_control_remove_plugin(id);
+#endif
 
         delete plugin;
 
-#ifndef BUILD_BRIDGE
-        osc_send_control_remove_plugin(static_cast<int32_t>(id));
-
-        // move all plugins 1 spot backwards
-        for (unsigned int i=id; i < fData->curPluginCount-1; i++)
-        {
-            plugin = fData->plugins[i+1].plugin;
-
-            CARLA_ASSERT(plugin);
-
-#if 0
-            if (plugin)
-                plugin->setId(i);
-#endif
-
-            fData->plugins[i].plugin      = plugin;
-            fData->plugins[i].insPeak[0]  = 0.0;
-            fData->plugins[i].insPeak[1]  = 0.0;
-            fData->plugins[i].outsPeak[0] = 0.0;
-            fData->plugins[i].outsPeak[1] = 0.0;
-        }
-
-        fData->curPluginCount--;
+        fData->nextAction.mutex.unlock();
 
         if (isRunning() && ! fData->aboutToClose)
             fData->thread.startNow();
-#endif
 
         return true;
     }
@@ -965,7 +984,7 @@ void CarlaEngine::setOutputPeak(const unsigned short pluginId, const unsigned sh
 // -----------------------------------------------------------------------
 // Callback
 
-void CarlaEngine::callback(const CallbackType action, const unsigned short pluginId, const int value1, const int value2, const double value3, const char* const valueStr)
+void CarlaEngine::callback(const CallbackType action, const unsigned short pluginId, const int value1, const int value2, const float value3, const char* const valueStr)
 {
     qDebug("CarlaEngine::callback(%s, %i, %i, %i, %f, \"%s\")", CallbackType2Str(action), pluginId, value1, value2, value3, valueStr);
 
@@ -1297,6 +1316,18 @@ void CarlaEngine::processPatchbay(float** inBuf, float** outBuf, const uint32_t 
 }
 #endif
 
+void CarlaEngine::proccessPendingEvents()
+{
+    switch (fData->nextAction.opcode)
+    {
+    case EnginePostActionNull:
+        break;
+    case EnginePostActionRemovePlugin:
+        doPluginRemove(fData, true);
+        break;
+    }
+}
+
 void CarlaEngine::bufferSizeChanged(const uint32_t newBufferSize)
 {
     qDebug("CarlaEngine::bufferSizeChanged(%i)", newBufferSize);
@@ -1321,7 +1352,7 @@ void CarlaEngine::sampleRateChanged(const double newSampleRate)
 // Carla Engine OSC stuff
 
 #ifdef BUILD_BRIDGE
-void CarlaEngine::osc_send_peaks(CarlaPlugin* const plugin)
+void CarlaEngine::osc_send_peaks(CarlaPlugin* const /*plugin*/)
 #else
 void CarlaEngine::osc_send_peaks(CarlaPlugin* const plugin, const unsigned short& id)
 #endif

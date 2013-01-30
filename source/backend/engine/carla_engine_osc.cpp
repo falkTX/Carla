@@ -528,7 +528,7 @@ int CarlaEngineOsc::handleMsgExiting(CARLA_ENGINE_OSC_HANDLE_ARGS1)
     qDebug("CarlaEngineOsc::handleMsgExiting()");
 
     // TODO - check for non-UIs (dssi-vst) and set to -1 instead
-    kEngine->callback(CALLBACK_SHOW_GUI, plugin->id(), 0, 0, 0.0, nullptr);
+    kEngine->callback(CALLBACK_SHOW_GUI, plugin->id(), 0, 0, 0.0f, nullptr);
 
     plugin->freeOscData();
 

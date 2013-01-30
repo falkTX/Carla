@@ -1,18 +1,18 @@
 /*
  * Carla JACK Engine
- * Copyright (C) 2011-2012 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * any later version.
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the COPYING file
+ * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
 #ifdef WANT_JACK
@@ -499,7 +499,7 @@ public:
 #ifndef BUILD_BRIDGE
         if (fOptions.processMode == PROCESS_MODE_SINGLE_CLIENT || fOptions.processMode == PROCESS_MODE_MULTIPLE_CLIENTS)
 #endif
-            return (unsigned int)jackbridge_client_name_size() - 3; // reserve space for "_2" forced-stereo ports
+            return static_cast<unsigned int>(jackbridge_client_name_size());
 
         return CarlaEngine::maxClientNameSize();
     }
@@ -509,7 +509,7 @@ public:
 #ifndef BUILD_BRIDGE
         if (fOptions.processMode == PROCESS_MODE_SINGLE_CLIENT || fOptions.processMode == PROCESS_MODE_MULTIPLE_CLIENTS)
 #endif
-            return (unsigned int)jackbridge_port_name_size();
+            return static_cast<unsigned int>(jackbridge_port_name_size());
 
         return CarlaEngine::maxPortNameSize();
     }
@@ -970,7 +970,7 @@ protected:
         }
 
         m_client = nullptr;
-        callback(CALLBACK_QUIT, 0, 0, 0, 0.0, nullptr);
+        callback(CALLBACK_QUIT, 0, 0, 0, 0.0f, nullptr);
     }
 
     // -------------------------------------

@@ -143,6 +143,17 @@ const T& carla_min(const T& v1, const T& v2, const T& min)
 
 template<typename T>
 static inline
+const T& carla_fixValue(const T& min, const T& max, const T& value)
+{
+    if (value < min)
+        return min;
+    if (value > max)
+        return max;
+    return value;
+}
+
+template<typename T>
+static inline
 void carla_fill(T* data, const unsigned int size, const T v)
 {
     CARLA_ASSERT(data != nullptr);

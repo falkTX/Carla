@@ -94,7 +94,7 @@ public:
      * \param engine The engine which this plugin belongs to, must not be null
      * \param id     The 'id' of this plugin, must be between 0 and CarlaEngine::maxPluginNumber()
      */
-    CarlaPlugin(CarlaEngine* const engine, const int id);
+    CarlaPlugin(CarlaEngine* const engine, const unsigned int id);
 
     /*!
      * This is the destructor of the base plugin class.
@@ -124,7 +124,7 @@ public:
      *
      * \see setId()
      */
-    unsigned short id() const;
+    unsigned int id() const;
 
     /*!
      * Get the plugin's hints.
@@ -291,12 +291,12 @@ public:
     /*!
      * Get the current parameter value of \a parameterId.
      */
-    virtual double getParameterValue(const uint32_t parameterId);
+    virtual float getParameterValue(const uint32_t parameterId);
 
     /*!
      * Get the scalepoint \a scalePointId value of the parameter \a parameterId.
      */
-    virtual double getParameterScalePointValue(const uint32_t parameterId, const uint32_t scalePointId);
+    virtual float getParameterScalePointValue(const uint32_t parameterId, const uint32_t scalePointId);
 
     /*!
      * Get the plugin's label (URI for PLUGIN_LV2).
@@ -402,7 +402,7 @@ public:
      * \param sendOsc Send message change over OSC
      * \param sendCallback Send message change to registered callback
      */
-    void setDryWet(double value, const bool sendOsc, const bool sendCallback);
+    void setDryWet(const float value, const bool sendOsc, const bool sendCallback);
 
     /*!
      * Set the plugin's output volume to \a value.\n
@@ -411,7 +411,7 @@ public:
      * \param sendOsc Send message change over OSC
      * \param sendCallback Send message change to registered callback
      */
-    void setVolume(double value, const bool sendOsc, const bool sendCallback);
+    void setVolume(const float value, const bool sendOsc, const bool sendCallback);
 
     /*!
      * Set the plugin's output left balance value to \a value.\n
@@ -422,7 +422,7 @@ public:
      *
      * \note Pure-Stereo plugins only!
      */
-    void setBalanceLeft(double value, const bool sendOsc, const bool sendCallback);
+    void setBalanceLeft(const float value, const bool sendOsc, const bool sendCallback);
 
     /*!
      * Set the plugin's output right balance value to \a value.\n
@@ -433,7 +433,7 @@ public:
      *
      * \note Pure-Stereo plugins only!
      */
-    void setBalanceRight(double value, const bool sendOsc, const bool sendCallback);
+    void setBalanceRight(const float value, const bool sendOsc, const bool sendCallback);
 
     /*!
      * Set the plugin's output panning value to \a value.\n
@@ -444,7 +444,7 @@ public:
      *
      * \note Force-Stereo plugins only!
      */
-    void setPanning(double value, const bool sendOsc, const bool sendCallback);
+    void setPanning(const float value, const bool sendOsc, const bool sendCallback);
 
 #if 0 //ndef BUILD_BRIDGE
     /*!
@@ -467,7 +467,7 @@ public:
      *
      * \see getParameterValue()
      */
-    virtual void setParameterValue(const uint32_t parameterId, double value, const bool sendGui, const bool sendOsc, const bool sendCallback);
+    virtual void setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback);
 
     /*!
      * Set a plugin's parameter value, including internal parameters.\n
@@ -480,7 +480,7 @@ public:
      * \see setBalanceLeft()
      * \see setBalanceRight()
      */
-    void setParameterValueByRIndex(const int32_t rindex, const double value, const bool sendGui, const bool sendOsc, const bool sendCallback);
+    void setParameterValueByRIndex(const int32_t rindex, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback);
 
     /*!
      * Set parameter's \a parameterId MIDI channel to \a channel.\n
@@ -529,7 +529,7 @@ public:
      * \param sendCallback Send message change to registered callback
      * \param block Block the audio callback
      */
-    virtual void setProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback, const bool block);
+    virtual void setProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback, const bool block);
 
     /*!
      * Change the current MIDI plugin program to \a index.
@@ -543,7 +543,7 @@ public:
      * \param sendCallback Send message change to registered callback
      * \param block Block the audio callback
      */
-    virtual void setMidiProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback, const bool block);
+    virtual void setMidiProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback, const bool block);
 
     /*!
      * This is an overloaded call to setMidiProgram().\n
@@ -641,6 +641,7 @@ public:
     /*!
      * Send a single midi note to be processed in the next audio callback.\n
      * A note with 0 velocity means note-off.
+     * \note Non-RT call
      */
     void sendMidiSingleNote(const uint8_t channel, const uint8_t note, const uint8_t velo, const bool sendGui, const bool sendOsc, const bool sendCallback);
 
@@ -736,6 +737,7 @@ public:
 
     struct Initializer {
         CarlaEngine* const engine;
+        const unsigned int id;
         const char* const filename;
         const char* const name;
         const char* const label;
