@@ -240,6 +240,10 @@ const char* CallbackType2Str(const CallbackType& type)
     {
     case CALLBACK_DEBUG:
         return "CALLBACK_DEBUG";
+    case CALLBACK_PLUGIN_ADDED:
+        return "CALLBACK_PLUGIN_ADDED";
+    case CALLBACK_PLUGIN_REMOVED:
+        return "CALLBACK_PLUGIN_REMOVED";
     case CALLBACK_PARAMETER_VALUE_CHANGED:
         return "CALLBACK_PARAMETER_VALUE_CHANGED";
     case CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED:

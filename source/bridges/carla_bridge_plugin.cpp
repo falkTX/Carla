@@ -799,7 +799,7 @@ public:
     // ---------------------------------------------------------------------
     // callback
 
-    static void callback(void* const ptr, CarlaBackend::CallbackType const action, const int, const int value1, const int value2, const double value3, const char* const valueStr)
+    static void callback(void* const ptr, CarlaBackend::CallbackType const action, const unsigned int, const int value1, const int value2, const double value3, const char* const valueStr)
     {
         CARLA_ASSERT(ptr);
 
@@ -833,6 +833,12 @@ protected:
         switch (action)
         {
         case CALLBACK_DEBUG:
+            break;
+
+        case CALLBACK_PLUGIN_ADDED:
+            break;
+
+        case CALLBACK_PLUGIN_REMOVED:
             break;
 
         case CALLBACK_PARAMETER_VALUE_CHANGED:
@@ -1113,7 +1119,7 @@ int main(int argc, char* argv[])
     if (itype == CarlaBackend::PLUGIN_DSSI)
         extraStuff = findDSSIGUI(filename, name, label);
 
-    // Init plugin
+    // Init plugin, FIXME
     int id = engine->addPlugin(itype, filename, name, label, extraStuff);
     int ret;
 

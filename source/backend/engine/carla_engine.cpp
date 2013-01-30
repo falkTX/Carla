@@ -452,12 +452,12 @@ unsigned int CarlaEngine::maxPortNameSize() const
     return STR_MAX;
 }
 
-int CarlaEngine::currentPluginCount() const
+unsigned int CarlaEngine::currentPluginCount() const
 {
     return fData->curPluginCount;
 }
 
-int CarlaEngine::maxPluginNumber() const
+unsigned int CarlaEngine::maxPluginNumber() const
 {
     return fData->maxPluginNumber;
 }
@@ -549,7 +549,7 @@ int CarlaEngine::getNewPluginId() const
 }
 #endif
 
-CarlaPlugin* CarlaEngine::getPlugin(const int id) const
+CarlaPlugin* CarlaEngine::getPlugin(const unsigned int id) const
 {
     qDebug("CarlaEngine::getPlugin(%i) [count:%i]", id, fData->curPluginCount);
     CARLA_ASSERT(fData->curPluginCount > 0);
@@ -562,7 +562,7 @@ CarlaPlugin* CarlaEngine::getPlugin(const int id) const
     return nullptr;
 }
 
-CarlaPlugin* CarlaEngine::getPluginUnchecked(const int id) const
+CarlaPlugin* CarlaEngine::getPluginUnchecked(const unsigned int id) const
 {
     return fData->plugins[id].plugin;
 }
@@ -643,7 +643,7 @@ const char* CarlaEngine::getNewUniquePluginName(const char* const name)
     return strdup(sname);
 }
 
-int CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, const char* const filename, const char* const name, const char* const label, void* const extra)
+bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, const char* const filename, const char* const name, const char* const label, void* const extra)
 {
     qDebug("CarlaEngine::addPlugin(%s, %s, \"%s\", \"%s\", \"%s\", %p)", BinaryType2Str(btype), PluginType2Str(ptype), filename, name, label, extra);
     CARLA_ASSERT(btype != BINARY_NONE);
@@ -651,12 +651,12 @@ int CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, const
     CARLA_ASSERT(filename);
     CARLA_ASSERT(label);
 
-    CarlaPlugin::Initializer init = {
-        this,
-        filename,
-        name,
-        label
-    };
+    //CarlaPlugin::Initializer init = {
+    //    this,
+    //    filename,
+    //    name,
+    //    label
+    //};
 
     CarlaPlugin* plugin = nullptr;
 
@@ -766,19 +766,20 @@ int CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, const
 #endif
     }
 
-    if (! plugin)
-        return -1;
+    if (plugin == nullptr)
+        return false;
 
-    const int id = fData->curPluginCount++;
+    //const int id = fData->curPluginCount++;
 
 #if 0
     plugin->setId(id);
 #endif
 
-    return id;
+    //return id;
+    return true;
 }
 
-bool CarlaEngine::removePlugin(const int id)
+bool CarlaEngine::removePlugin(const unsigned int id)
 {
     qDebug("CarlaEngine::removePlugin(%i)", id);
     CARLA_ASSERT(fData->curPluginCount > 0);

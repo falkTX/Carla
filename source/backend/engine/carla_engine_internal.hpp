@@ -150,9 +150,9 @@ struct CarlaEngineProtectedData {
     QProcessEnvironment procEnv;
 #endif
 
-    bool aboutToClose;    // don't re-activate thread if true
-    int  curPluginCount;  // number of plugins loaded (0...max)
-    int  maxPluginNumber; // number of plugins allowed (0, 16, 99 or 999)
+    bool aboutToClose;            // don't re-activate thread if true
+    unsigned int curPluginCount;  // number of plugins loaded (0...max)
+    unsigned int maxPluginNumber; // number of plugins allowed (0, 16, 99 or 999)
 
     EnginePluginData* plugins;
 

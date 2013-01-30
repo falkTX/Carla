@@ -110,7 +110,6 @@ const unsigned int PARAMETER_USES_SCALEPOINTS = 0x40; //!< Parameter uses scalep
 const unsigned int PARAMETER_USES_CUSTOM_TEXT = 0x80; //!< Parameter uses custom text for displaying its value.\see CarlaPlugin::getParameterText()
 /**@}*/
 
-#if 0
 /*!
  * @defgroup CustomDataTypes Custom Data types
  *
@@ -123,7 +122,6 @@ const char* const CUSTOM_DATA_INVALID = nullptr;                                
 const char* const CUSTOM_DATA_CHUNK   = "http://kxstudio.sf.net/ns/carla/chunk";  //!< Carla Chunk
 const char* const CUSTOM_DATA_STRING  = "http://kxstudio.sf.net/ns/carla/string"; //!< Carla String
 /**@}*/
-#endif
 
 #if 0
 /*!
@@ -399,12 +397,22 @@ enum CallbackType {
     CALLBACK_DEBUG = 0,
 
     /*!
+     * A plugin has been added.
+     */
+    CALLBACK_PLUGIN_ADDED = 1,
+
+    /*!
+     * A plugin has been removed.
+     */
+    CALLBACK_PLUGIN_REMOVED = 2,
+
+    /*!
      * A parameter has been changed.
      *
      * \param value1 Parameter index
      * \param value3 Value
      */
-    CALLBACK_PARAMETER_VALUE_CHANGED = 1,
+    CALLBACK_PARAMETER_VALUE_CHANGED = 3,
 
     /*!
      * A parameter's MIDI channel has been changed.
@@ -412,7 +420,7 @@ enum CallbackType {
      * \param value1 Parameter index
      * \param value2 MIDI channel
      */
-    CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED = 2,
+    CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED = 4,
 
     /*!
      * A parameter's MIDI CC has been changed.
@@ -420,14 +428,14 @@ enum CallbackType {
      * \param value1 Parameter index
      * \param value2 MIDI CC
      */
-    CALLBACK_PARAMETER_MIDI_CC_CHANGED = 3,
+    CALLBACK_PARAMETER_MIDI_CC_CHANGED = 5,
 
     /*!
      * The current program has has been changed.
      *
      * \param value1 Program index
      */
-    CALLBACK_PROGRAM_CHANGED = 4,
+    CALLBACK_PROGRAM_CHANGED = 6,
 
     /*!
      * The current MIDI program has been changed.
@@ -435,7 +443,7 @@ enum CallbackType {
      * \param value1 MIDI bank
      * \param value2 MIDI program
      */
-    CALLBACK_MIDI_PROGRAM_CHANGED = 5,
+    CALLBACK_MIDI_PROGRAM_CHANGED = 7,
 
     /*!
      * A note has been pressed.
@@ -444,7 +452,7 @@ enum CallbackType {
      * \param value2 Note
      * \param value3 Velocity
      */
-    CALLBACK_NOTE_ON = 6,
+    CALLBACK_NOTE_ON = 8,
 
     /*!
      * A note has been released.
@@ -452,7 +460,7 @@ enum CallbackType {
      * \param value1 Channel
      * \param value2 Note
      */
-    CALLBACK_NOTE_OFF = 7,
+    CALLBACK_NOTE_OFF = 9,
 
     /*!
      * The plugin's custom GUI state has changed.
@@ -462,62 +470,62 @@ enum CallbackType {
      *                1: GUI has been shown\n
      *               -1: GUI has crashed and should not be shown again
      */
-    CALLBACK_SHOW_GUI = 8,
+    CALLBACK_SHOW_GUI = 10,
 
     /*!
      * The plugin needs update.
      */
-    CALLBACK_UPDATE = 9,
+    CALLBACK_UPDATE = 11,
 
     /*!
      * The plugin's data/information has changed.
      */
-    CALLBACK_RELOAD_INFO = 10,
+    CALLBACK_RELOAD_INFO = 12,
 
     /*!
      * The plugin's parameters have changed.
      */
-    CALLBACK_RELOAD_PARAMETERS = 11,
+    CALLBACK_RELOAD_PARAMETERS = 13,
 
     /*!
      * The plugin's programs have changed.
      */
-    CALLBACK_RELOAD_PROGRAMS = 12,
+    CALLBACK_RELOAD_PROGRAMS = 14,
 
     /*!
      * The plugin's state has changed.
      */
-    CALLBACK_RELOAD_ALL = 13,
+    CALLBACK_RELOAD_ALL = 15,
 
     /*!
      * Non-Session-Manager Announce message.
      */
-    CALLBACK_NSM_ANNOUNCE = 14,
+    CALLBACK_NSM_ANNOUNCE = 16,
 
     /*!
      * Non-Session-Manager Open message #1.
      */
-    CALLBACK_NSM_OPEN1 = 15,
+    CALLBACK_NSM_OPEN1 = 17,
 
     /*!
      * Non-Session-Manager Open message #2.
      */
-    CALLBACK_NSM_OPEN2 = 16,
+    CALLBACK_NSM_OPEN2 = 18,
 
     /*!
      * Non-Session-Manager Save message.
      */
-    CALLBACK_NSM_SAVE = 17,
+    CALLBACK_NSM_SAVE = 19,
 
     /*!
      * An error occurred, show last error to user.
      */
-    CALLBACK_ERROR = 18,
+    CALLBACK_ERROR = 20,
 
     /*!
      * The engine has crashed or malfunctioned and will no longer work.
      */
-    CALLBACK_QUIT = 19
+    CALLBACK_QUIT = 21
 };
 
 /*!
@@ -534,11 +542,11 @@ enum ProcessMode {
 };
 
 /*!
- * Callback function the backend will call when something interesting happens.
+ * Callback function the engine will call when something interesting happens.
  *
- * \see set_callback_function() and CallbackType
+ * \see CallbackType and set_callback_function()
  */
-typedef void (*CallbackFunc)(void* ptr, CallbackType action, int pluginId, int value1, int value2, double value3, const char* valueStr);
+typedef void (*CallbackFunc)(void* ptr, CallbackType action, unsigned int pluginId, int value1, int value2, double value3, const char* valueStr);
 
 /*!
  * Parameter data

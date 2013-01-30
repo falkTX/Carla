@@ -592,13 +592,13 @@ public:
     /*!
      * Current number of plugins loaded.
      */
-    int currentPluginCount() const;
+    unsigned int currentPluginCount() const;
 
     /*!
      * Maximum number of loadable plugins allowed.
      * \note This function returns 0 if engine is not started.
      */
-    int maxPluginNumber() const;
+    unsigned int maxPluginNumber() const;
 
     // -------------------------------------------------------------------
     // Virtual, per-engine type calls
@@ -648,12 +648,12 @@ public:
     /*!
      * Get plugin with id \a id.
      */
-    CarlaPlugin* getPlugin(const int id) const;
+    CarlaPlugin* getPlugin(const unsigned int id) const;
 
     /*!
      * Get plugin with id \a id, faster unchecked version.
      */
-    CarlaPlugin* getPluginUnchecked(const int id) const;
+    CarlaPlugin* getPluginUnchecked(const unsigned int id) const;
 
     /*!
      * Get a unique plugin name within the engine.\n
@@ -665,13 +665,13 @@ public:
      * Add new plugin.\n
      * Returns the id of the plugin, or -1 if the operation failed.
      */
-    int addPlugin(const BinaryType btype, const PluginType ptype, const char* const filename, const char* const name, const char* const label, void* const extra = nullptr);
+    bool addPlugin(const BinaryType btype, const PluginType ptype, const char* const filename, const char* const name, const char* const label, void* const extra = nullptr);
 
     /*!
      * Add new plugin, using native binary type.\n
      * Returns the id of the plugin, or -1 if the operation failed.
      */
-    int addPlugin(const PluginType ptype, const char* const filename, const char* const name, const char* const label, void* const extra = nullptr)
+    bool addPlugin(const PluginType ptype, const char* const filename, const char* const name, const char* const label, void* const extra = nullptr)
     {
         return addPlugin(BINARY_NATIVE, ptype, filename, name, label, extra);
     }
@@ -679,7 +679,7 @@ public:
     /*!
      * Remove plugin with id \a id.
      */
-    bool removePlugin(const int id);
+    bool removePlugin(const unsigned int id);
 
     /*!
      * Remove all plugins.

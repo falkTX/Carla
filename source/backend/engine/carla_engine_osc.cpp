@@ -187,7 +187,7 @@ int CarlaEngineOsc::handleMessage(const char* const path, const int argc, const 
     // Get plugin id from message
     // eg, /carla/23/method
 
-    int pluginId = -1;
+    unsigned int pluginId = 0;
 
     if (isDigit(path[nameSize+2]))
     {
@@ -219,7 +219,7 @@ int CarlaEngineOsc::handleMessage(const char* const path, const int argc, const 
         }
     }
 
-    if (pluginId < 0 || pluginId > kEngine->currentPluginCount())
+    if (pluginId > kEngine->currentPluginCount())
     {
         qCritical("CarlaEngineOsc::handleMessage() - failed to get plugin, wrong id '%i'", pluginId);
         return 1;
