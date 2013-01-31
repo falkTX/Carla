@@ -30,11 +30,11 @@ endif
 
 OBJS = \
 	carla_plugin.cpp.o \
-	native.cpp.o
+	native.cpp.o \
+	ladspa.cpp.o
 
 # 	carla_plugin_thread.cpp.o \
 # 	carla_bridge.cpp.o \
-# 	ladspa.cpp.o \
 # 	dssi.cpp.o \
 # 	lv2.cpp.o \
 # 	vst.cpp.o \

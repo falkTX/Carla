@@ -1,10 +1,9 @@
 # QtCreator project file
 
-# QT = core
+QT = core
 
 CONFIG    = debug
-CONFIG   += link_pkgconfig shared warn_on
-# qt
+CONFIG   += link_pkgconfig qt shared warn_on
 
 DEFINES   = DEBUG
 DEFINES  += QTCREATOR_TEST
@@ -30,7 +29,7 @@ DEFINES  += WANT_JACK WANT_RTAUDIO
 PKGCONFIG = liblo jack alsa libpulse-simple
 
 TARGET   = carla_engine
-TEMPLATE = app
+TEMPLATE = lib
 VERSION  = 0.5.0
 
 SOURCES  = \
@@ -92,4 +91,5 @@ WARN_FLAGS = \
     -fipa-pure-const -Wsuggest-attribute=const #pure,const,noreturn
 
 QMAKE_CFLAGS   *= $${WARN_FLAGS} -std=c99 -Wc++-compat -Wunsuffixed-float-constants -Wwrite-strings
-QMAKE_CXXFLAGS *= $${WARN_FLAGS} -std=c++11 -Wzero-as-null-pointer-constant
+QMAKE_CXXFLAGS *= $${WARN_FLAGS} -std=c++0x -fPIC
+#QMAKE_CXXFLAGS *= $${WARN_FLAGS} -std=c++11 -Wzero-as-null-pointer-constant

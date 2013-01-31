@@ -430,7 +430,7 @@ protected:
     void d_activate()
     {
 #if 0
-        for (unsigned short i=0, max=maxPluginNumber(); i < max; i++)
+        for (unsigned int i=0; i < fData->curPluginCount; i++)
         {
             CarlaPlugin* const plugin = getPluginUnchecked(i);
 
@@ -445,7 +445,7 @@ protected:
     void d_deactivate()
     {
 #if 0
-        for (unsigned short i=0, max=maxPluginNumber(); i < max; i++)
+        for (unsigned int i=0; i < fData->curPluginCount; i++)
         {
             CarlaPlugin* const plugin = getPluginUnchecked(i);
 

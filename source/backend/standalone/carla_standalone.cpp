@@ -201,7 +201,8 @@ bool carla_engine_init(const char* driverName, const char* clientName)
     }
 #endif
 
-    standalone.engine->setCallback(standalone.callback, nullptr);
+    if (standalone.callback != nullptr)
+        standalone.engine->setCallback(standalone.callback, nullptr);
 
     standalone.engine->setOption(CarlaBackend::OPTION_PROCESS_MODE,               standalone.options.processMode,          nullptr);
     standalone.engine->setOption(CarlaBackend::OPTION_FORCE_STEREO,               standalone.options.forceStereo,          nullptr);

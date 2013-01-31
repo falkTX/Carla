@@ -25,19 +25,19 @@ import sys
 from codecs import open as codecopen
 from copy import deepcopy
 #from decimal import Decimal
-from PyQt4.QtCore import pyqtSlot, qWarning, Qt, QSettings, QTimer, SIGNAL, SLOT
+from PyQt4.QtCore import pyqtSlot, qWarning, Qt, QByteArray, QSettings, QTimer, SIGNAL, SLOT
 #pyqtSlot, qFatal,
-from PyQt4.QtGui import QDialog, QIcon, QMessageBox, QWidget
-#from PyQt4.QtGui import QColor, QCursor, QFontMetrics, QFrame, QGraphicsScene, QInputDialog, QLinearGradient, QMenu, QPainter, QPainterPath, QVBoxLayout
+from PyQt4.QtGui import QColor, QDialog, QIcon, QFontMetrics, QFrame, QMessageBox, QPainter, QPainterPath, QVBoxLayout, QWidget
+#from PyQt4.QtGui import QCursor, QGraphicsScene, QInputDialog, QLinearGradient, QMenu,
 #from PyQt4.QtXml import QDomDocument
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
 
 import ui_carla_about
-#import ui_carla_edit
+import ui_carla_edit
 import ui_carla_parameter
-#import ui_carla_plugin
+import ui_carla_plugin
 
 # ------------------------------------------------------------------------------------------------------------
 # Try Import Signal
@@ -398,7 +398,7 @@ CarlaStateParameter = {
 }
 
 CarlaStateCustomData = {
-    'type': None, #CUSTOM_DATA_INVALID,
+    'type': "",
     'key': "",
     'value': ""
 }
@@ -842,6 +842,10 @@ class PluginParameter(QWidget):
         self.fMidiChannel = channel
         self.ui.sb_channel.setValue(channel)
 
+    def setLabelWidth(self, width):
+        self.ui.label.setMinimumWidth(width)
+        self.ui.label.setMaximumWidth(width)
+
     def tabIndex(self):
         return self.fTabIndex
 
@@ -884,6 +888,598 @@ class PluginParameter(QWidget):
         return cString(Carla.host.get_parameter_text(self.fPluginId, self.fParameterId))
 
 # ------------------------------------------------------------------------------------------------------------
+# Plugin Editor (Built-in)
+
+class PluginEdit(QDialog):
+    def __init__(self, parent, pluginId):
+        QDialog.__init__(self, Carla.gui)
+        self.ui = ui_carla_edit.Ui_PluginEdit()
+        self.ui.setupUi(self)
+
+        self.fGeometry   = QByteArray()
+        self.fPluginId   = pluginId
+        self.fPuginInfo  = None
+        self.fRealParent = parent
+
+        self.fCurrentProgram = -1
+        self.fCurrentMidiProgram = -1
+        self.fCurrentStateFilename = None
+
+        self.fParameterCount = 0
+        self.fParameterList  = [] # (type, id, widget)
+        self.fParameterIdsToUpdate = [] # id
+
+        self.fTabIconOff = QIcon(":/bitmaps/led_off.png")
+        self.fTabIconOn  = QIcon(":/bitmaps/led_yellow.png")
+        self.fTabIconCount  = 0
+        self.fTabIconTimers = []
+
+        self.ui.keyboard.setMode(self.ui.keyboard.HORIZONTAL)
+        self.ui.keyboard.setOctaves(6)
+        self.ui.scrollArea.ensureVisible(self.ui.keyboard.width() * 1 / 5, 0)
+        self.ui.scrollArea.setVisible(False)
+
+        # TODO - not implemented yet
+        self.ui.b_reload_program.setEnabled(False)
+        self.ui.b_reload_midi_program.setEnabled(False)
+
+        # Not available for carla-control
+        if Carla.isControl:
+            self.ui.b_load_state.setEnabled(False)
+            self.ui.b_save_state.setEnabled(False)
+        else:
+            self.connect(self.ui.b_save_state, SIGNAL("clicked()"), SLOT("slot_saveState()"))
+            self.connect(self.ui.b_load_state, SIGNAL("clicked()"), SLOT("slot_loadState()"))
+
+        self.connect(self.ui.keyboard, SIGNAL("noteOn(int)"), SLOT("slot_noteOn(int)"))
+        self.connect(self.ui.keyboard, SIGNAL("noteOff(int)"), SLOT("slot_noteOff(int)"))
+
+        self.connect(self.ui.cb_programs, SIGNAL("currentIndexChanged(int)"), SLOT("slot_programIndexChanged(int)"))
+        self.connect(self.ui.cb_midi_programs, SIGNAL("currentIndexChanged(int)"), SLOT("slot_midiProgramIndexChanged(int)"))
+
+        self.connect(self, SIGNAL("finished(int)"), SLOT("slot_finished()"))
+
+        #self.reloadAll()
+
+    def reloadAll(self):
+        self.fPluginInfo = Carla.host.get_plugin_info(self.fPluginId)
+        self.fPluginInfo["binary"]    = cString(self.fPluginInfo["binary"])
+        self.fPluginInfo["name"]      = cString(self.fPluginInfo["name"])
+        self.fPluginInfo["label"]     = cString(self.fPluginInfo["label"])
+        self.fPluginInfo["maker"]     = cString(self.fPluginInfo["maker"])
+        self.fPluginInfo["copyright"] = cString(self.fPluginInfo["copyright"])
+
+        self.reloadInfo()
+        self.reloadParameters()
+        self.reloadPrograms()
+
+    def reloadInfo(self):
+        pluginName  = cString(Carla.host.get_real_plugin_name(self.fPluginId))
+        pluginType  = self.fPluginInfo['type']
+        pluginHints = self.fPluginInfo['hints']
+
+        # Automatically change to MidiProgram tab
+        if pluginType != PLUGIN_VST and not self.ui.le_name.text():
+            self.ui.tab_programs.setCurrentIndex(1)
+
+        # Set Meta-Data
+        if pluginType == PLUGIN_INTERNAL:
+            self.ui.le_type.setText(self.tr("Internal"))
+        elif pluginType == PLUGIN_LADSPA:
+            self.ui.le_type.setText("LADSPA")
+        elif pluginType == PLUGIN_DSSI:
+            self.ui.le_type.setText("DSSI")
+        elif pluginType == PLUGIN_LV2:
+            self.ui.le_type.setText("LV2")
+        elif pluginType == PLUGIN_VST:
+            self.ui.le_type.setText("VST")
+        elif pluginType == PLUGIN_GIG:
+            self.ui.le_type.setText("GIG")
+        elif pluginType == PLUGIN_SF2:
+            self.ui.le_type.setText("SF2")
+        elif pluginType == PLUGIN_SFZ:
+            self.ui.le_type.setText("SFZ")
+        else:
+            self.ui.le_type.setText(self.tr("Unknown"))
+
+        self.ui.le_name.setText(pluginName)
+        self.ui.le_name.setToolTip(pluginName)
+        self.ui.le_label.setText(self.fPluginInfo['label'])
+        self.ui.le_label.setToolTip(self.fPluginInfo['label'])
+        self.ui.le_maker.setText(self.fPluginInfo['maker'])
+        self.ui.le_maker.setToolTip(self.fPluginInfo['maker'])
+        self.ui.le_copyright.setText(self.fPluginInfo['copyright'])
+        self.ui.le_copyright.setToolTip(self.fPluginInfo['copyright'])
+        self.ui.le_unique_id.setText(str(self.fPluginInfo['uniqueId']))
+        self.ui.le_unique_id.setToolTip(str(self.fPluginInfo['uniqueId']))
+        self.ui.label_plugin.setText("\n%s\n" % self.fPluginInfo['name'])
+        self.setWindowTitle(self.fPluginInfo['name'])
+
+        # Set Processing Data
+        audioCountInfo = Carla.host.get_audio_port_count_info(self.fPluginId)
+        midiCountInfo  = Carla.host.get_midi_port_count_info(self.fPluginId)
+        paramCountInfo = Carla.host.get_parameter_count_info(self.fPluginId)
+
+        self.ui.le_ains.setText(str(audioCountInfo['ins']))
+        self.ui.le_aouts.setText(str(audioCountInfo['outs']))
+        self.ui.le_params.setText(str(paramCountInfo['ins']))
+        self.ui.le_couts.setText(str(paramCountInfo['outs']))
+
+        self.ui.le_is_synth.setText(self.tr("Yes") if (pluginHints & PLUGIN_IS_SYNTH) else self.tr("No"))
+        self.ui.le_has_gui.setText(self.tr("Yes") if (pluginHints & PLUGIN_HAS_GUI) else self.tr("No"))
+
+        # Show/hide keyboard
+        self.ui.scrollArea.setVisible((pluginHints & PLUGIN_IS_SYNTH) != 0 or (midiCountInfo['ins'] > 0 < midiCountInfo['outs']))
+
+        # Force-Update parent for new hints (knobs)
+        if self.fRealParent:
+            self.fRealParent.recheckPluginHints(pluginHints)
+
+    def reloadParameters(self):
+        parameterCount = Carla.host.get_parameter_count(self.m_pluginId)
+
+        # Reset
+        self.fParameterCount = 0
+        self.fParameterList  = []
+        self.fParameterIdsToUpdate = []
+
+        self.fTabIconCount  = 0
+        self.fTabIconTimers = []
+
+        # Remove all previous parameters
+        for i in range(self.ui.tabWidget.count()-1):
+            self.ui.tabWidget.widget(1).deleteLater()
+            self.ui.tabWidget.removeTab(1)
+
+        if parameterCount <= 0:
+            pass
+
+        elif parameterCount <= Carla.maxParameters:
+            paramInputListFull  = []
+            paramOutputListFull = []
+
+            paramInputList   = [] # ([params], width)
+            paramInputWidth  = 0
+            paramOutputList  = [] # ([params], width)
+            paramOutputWidth = 0
+
+            for i in range(parameterCount):
+                paramInfo   = Carla.host.get_parameter_info(self.fPluginId, i)
+                paramData   = Carla.host.get_parameter_data(self.fPluginId, i)
+                paramRanges = Carla.host.get_parameter_ranges(self.fPluginId, i)
+
+                if paramData['type'] not in (PARAMETER_INPUT, PARAMETER_OUTPUT):
+                    continue
+
+                parameter = {
+                    'type':  paramData['type'],
+                    'hints': paramData['hints'],
+                    'name':  cString(paramInfo['name']),
+                    'unit':  cString(paramInfo['unit']),
+                    'scalePoints': [],
+
+                    'index':   paramData['index'],
+                    'default': paramRanges['def'],
+                    'minimum': paramRanges['min'],
+                    'maximum': paramRanges['max'],
+                    'step':    paramRanges['step'],
+                    'stepSmall': paramRanges['stepSmall'],
+                    'stepLarge': paramRanges['stepLarge'],
+                    'midiCC':    paramData['midiCC'],
+                    'midiChannel': paramData['midiChannel'],
+
+                    'current': Carla.host.get_current_parameter_value(self.fPluginId, i)
+                }
+
+                for j in range(paramInfo['scalePointCount']):
+                    scalePointInfo = Carla.host.get_parameter_scalepoint_info(self.fPluginId, i, j)
+
+                    parameter['scalepoints'].append(
+                        {
+                          'value': scalePointInfo['value'],
+                          'label': cString(scalePointInfo['label'])
+                        })
+
+                paramInputList.append(parameter)
+
+                # -----------------------------------------------------------------
+                # Get width values, in packs of 10
+
+                if parameter['type'] == PARAMETER_INPUT:
+                    paramInputWidthTMP = QFontMetrics(self.font()).width(parameter['name'])
+
+                    if paramInputWidthTMP > paramInputWidth:
+                        paramInputWidth = paramInputWidthTMP
+
+                    if len(paramInputList) == 10:
+                        paramInputListFull.append((paramInputList, paramInputWidth))
+                        paramInputList  = []
+                        paramInputWidth = 0
+
+                else:
+                    paramOutputWidthTMP = QFontMetrics(self.font()).width(parameter['name'])
+
+                    if paramOutputWidthTMP > paramOutputWidth:
+                        paramOutputWidth = paramOutputWidthTMP
+
+                    if len(paramOutputList) == 10:
+                        paramOutputListFull.append((paramOutputList, paramOutputWidth))
+                        paramOutputList  = []
+                        paramOutputWidth = 0
+
+            # for i in range(parameterCount)
+            else:
+                # Final page width values
+                if 0 < len(paramInputList) < 10:
+                    paramInputListFull.append((paramInputList, paramInputWidth))
+
+                if 0 < len(paramOutputList) < 10:
+                    paramOutputListFull.append((paramOutputList, paramOutputWidth))
+
+            # -----------------------------------------------------------------
+            # Create parameter widgets
+
+            self._createParameterWidgets(PARAMETER_INPUT,  paramInputListFull,  self.tr("Parameters"))
+            self._createParameterWidgets(PARAMETER_OUTPUT, paramOutputListFull, self.tr("Outputs"))
+
+        else: # > Carla.maxParameters
+            fakeName = self.tr("This plugin has too many parameters to display here!")
+
+            paramFakeListFull = []
+            paramFakeList  = []
+            paramFakeWidth = QFontMetrics(self.font()).width(fakeName)
+
+            parameter = {
+                'type':  PARAMETER_UNKNOWN,
+                'hints': 0,
+                'name':  fakeName,
+                'unit':  "",
+                'scalepoints': [],
+
+                'index':   0,
+                'default': 0,
+                'minimum': 0,
+                'maximum': 0,
+                'step':     0,
+                'stepSmall': 0,
+                'stepLarge': 0,
+                'midiCC':   -1,
+                'midiChannel': 0,
+
+                'current': 0.0
+            }
+
+            paramFakeList.append(parameter)
+            paramFakeListFull.append((paramFakeList, paramFakeWidth))
+
+            self.createParameterWidgets(PARAMETER_UNKNOWN, paramFakeListFull, self.tr("Information"))
+
+    def reloadPrograms(self):
+        # Programs
+        self.ui.cb_programs.blockSignals(True)
+        self.ui.cb_programs.clear()
+
+        programCount = Carla.host.get_program_count(self.fPluginId)
+
+        if programCount > 0:
+            self.ui.cb_programs.setEnabled(True)
+
+            for i in range(programCount):
+                pName = cString(Carla.host.get_program_name(self.fPluginId, i))
+                self.ui.cb_programs.addItem(pName)
+
+            self.fCurrentProgram = Carla.host.get_current_program_index(self.fPluginId)
+            self.ui.cb_programs.setCurrentIndex(self.fCurrentProgram)
+
+        else:
+            self.fCurrentProgram = -1
+            self.ui.cb_programs.setEnabled(False)
+
+        self.ui.cb_programs.blockSignals(False)
+
+        # MIDI Programs
+        self.ui.cb_midi_programs.blockSignals(True)
+        self.ui.cb_midi_programs.clear()
+
+        midiProgramCount = Carla.host.get_midi_program_count(self.fPluginId)
+
+        if midiProgramCount > 0:
+            self.ui.cb_midi_programs.setEnabled(True)
+
+            for i in range(midiProgramCount):
+                mpData  = Carla.host.get_midi_program_data(self.fPluginId, i)
+                mpBank  = int(mpData['bank'])
+                mpProg  = int(mpData['program'])
+                mpLabel = cString(mpData['label'])
+                self.ui.cb_midi_programs.addItem("%03i:%03i - %s" % (mpBank, mpProg, mpLabel))
+
+            self.fCurrentMidiProgram = Carla.host.get_current_midi_program_index(self.fPluginId)
+            self.ui.cb_midi_programs.setCurrentIndex(self.fCurrentMidiProgram)
+
+        else:
+            self.fCurrentMidiProgram = -1
+            self.ui.cb_midi_programs.setEnabled(False)
+
+        self.ui.cb_midi_programs.blockSignals(False)
+
+    def setVisible(self, yesNo):
+        if yesNo:
+            if not self.fGeometry.isNull():
+                self.restoreGeometry(self.fGeometry)
+        else:
+            self.fGeometry = self.saveGeometry()
+
+        QDialog.setVisible(self, yesNo)
+
+    @pyqtSlot(int, float)
+    def slot_parameterValueChanged(self, parameterId, value):
+        Carla.host.set_parameter_value(self.fPluginId, parameterId, value)
+
+    @pyqtSlot(int, int)
+    def slot_parameterMidiChannelChanged(self, parameterId, channel):
+        Carla.host.set_parameter_midi_channel(self.fPluginId, parameterId, channel-1)
+
+    @pyqtSlot(int, int)
+    def slot_parameterMidiCcChanged(self, parameterId, cc):
+        Carla.host.set_parameter_midi_cc(self.fPluginId, parameterId, cc)
+
+    @pyqtSlot(int)
+    def slot_programIndexChanged(self, index):
+        if self.fCurrentProgram != index:
+            self.fCurrentProgram = index
+            Carla.host.set_program(self.fPluginId, index)
+
+    @pyqtSlot(int)
+    def slot_midiProgramIndexChanged(self, index):
+        if self.fCurrentMidiProgram != index:
+            self.fCurrentMidiProgram = index
+            Carla.host.set_midi_program(self.fPluginId, index)
+
+    @pyqtSlot(int)
+    def slot_noteOn(self, note):
+        Carla.host.send_midi_note(self.fPluginId, 0, note, 100)
+
+    @pyqtSlot(int)
+    def slot_noteOff(self, note):
+        Carla.host.send_midi_note(self.fPluginId, 0, note, 0)
+
+    @pyqtSlot()
+    def slot_notesOn(self):
+        if self.fRealParent:
+            self.fRealParent.led_midi.setChecked(True)
+
+    @pyqtSlot()
+    def slot_notesOff(self):
+        if self.fRealParent:
+            self.fRealParent.led_midi.setChecked(False)
+
+    @pyqtSlot()
+    def slot_finished(self):
+        if self.fRealParent:
+            self.fRealParent.editClosed()
+
+    def _createParameterWidgets(self, paramType, paramListFull, tabPageName):
+        i = 1
+        for paramList, width in paramListFull:
+            if len(paramList) == 0:
+                break
+
+            tabIndex         = self.ui.tabWidget.count()
+            tabPageContainer = QWidget(self.ui.tabWidget)
+            tabPageLayout    = QVBoxLayout(tabPageContainer)
+            tabPageContainer.setLayout(tabPageLayout)
+
+            for paramInfo in paramList:
+                paramWidget = PluginParameter(tabPageContainer, paramInfo, self.fPluginId, tabIndex)
+                paramWidget.setLabelWidth(width)
+                tabPageLayout.addWidget(paramWidget)
+
+                self.fParameterList.append((paramType, paramInfo['index'], paramWidget))
+
+                if paramType == PARAMETER_INPUT:
+                    self.connect(paramWidget, SIGNAL("valueChanged(int, double)"), SLOT("slot_parameterValueChanged(int, double)"))
+
+                self.connect(paramWidget, SIGNAL("midiChannelChanged(int, int)"), SLOT("slot_parameterMidiChannelChanged(int, int)"))
+                self.connect(paramWidget, SIGNAL("midiCcChanged(int, int)"), SLOT("slot_parameterMidiCcChanged(int, int)"))
+
+            tabPageLayout.addStretch()
+
+            self.ui.tabWidget.addTab(tabPageContainer, "%s (%i)" % (tabPageName, i))
+            i += 1
+
+            if paramType == PARAMETER_INPUT:
+                self.ui.tabWidget.setTabIcon(tabIndex, self.fTabIconOff)
+
+            self.fTabIconTimers.append(ICON_STATE_NULL)
+
+    def done(self, r):
+        QDialog.done(self, r)
+        self.close()
+
+# ------------------------------------------------------------------------------------------------------------
+# Plugin Widget
+
+class PluginWidget(QFrame):
+    def __init__(self, parent, pluginId):
+        QFrame.__init__(self, parent)
+        self.ui = ui_carla_plugin.Ui_PluginWidget()
+        self.ui.setupUi(self)
+
+        self.fPluginId   = pluginId
+        #self.fPluginInfo = Carla.host.get_plugin_info(self.fPluginId)
+        #self.fPluginInfo["binary"]    = cString(self.fPluginInfo["binary"])
+        #self.fPluginInfo["name"]      = cString(self.fPluginInfo["name"])
+        #self.fPluginInfo["label"]     = cString(self.fPluginInfo["label"])
+        #self.fPluginInfo["maker"]     = cString(self.fPluginInfo["maker"])
+        #self.fPluginInfo["copyright"] = cString(self.fPluginInfo["copyright"])
+
+        self.fParameterIconTimer = ICON_STATE_NULL
+
+        self.fLastGreenLedState = False
+        self.fLastBlueLedState  = False
+
+        if Carla.processMode == PROCESS_MODE_CONTINUOUS_RACK:
+            self.fPeaksInputCount  = 2
+            self.fPeaksOutputCount = 2
+            #self.ui.stackedWidget.setCurrentIndex(0)
+        else:
+            audioCountInfo = Carla.host.get_audio_port_count_info(self.fPluginId)
+
+            self.fPeaksInputCount  = int(audioCountInfo['ins'])
+            self.fPeaksOutputCount = int(audioCountInfo['outs'])
+
+            if self.fPeaksInputCount > 2:
+                self.fPeaksInputCount = 2
+
+            if self.fPeaksOutputCount > 2:
+                self.fPeaksOutputCount = 2
+
+            #if audioCountInfo['total'] == 0:
+                #self.ui.stackedWidget.setCurrentIndex(1)
+            #else:
+                #self.ui.stackedWidget.setCurrentIndex(0)
+
+        # Background
+        self.fColorTop    = QColor(60, 60, 60)
+        self.fColorBottom = QColor(47, 47, 47)
+
+        # Colorify
+        #if self.m_pluginInfo['category'] == PLUGIN_CATEGORY_SYNTH:
+            #self.setWidgetColor(PALETTE_COLOR_WHITE)
+        #elif self.m_pluginInfo['category'] == PLUGIN_CATEGORY_DELAY:
+            #self.setWidgetColor(PALETTE_COLOR_ORANGE)
+        #elif self.m_pluginInfo['category'] == PLUGIN_CATEGORY_EQ:
+            #self.setWidgetColor(PALETTE_COLOR_GREEN)
+        #elif self.m_pluginInfo['category'] == PLUGIN_CATEGORY_FILTER:
+            #self.setWidgetColor(PALETTE_COLOR_BLUE)
+        #elif self.m_pluginInfo['category'] == PLUGIN_CATEGORY_DYNAMICS:
+            #self.setWidgetColor(PALETTE_COLOR_PINK)
+        #elif self.m_pluginInfo['category'] == PLUGIN_CATEGORY_MODULATOR:
+            #self.setWidgetColor(PALETTE_COLOR_RED)
+        #elif self.m_pluginInfo['category'] == PLUGIN_CATEGORY_UTILITY:
+            #self.setWidgetColor(PALETTE_COLOR_YELLOW)
+        #elif self.m_pluginInfo['category'] == PLUGIN_CATEGORY_OTHER:
+            #self.setWidgetColor(PALETTE_COLOR_BROWN)
+        #else:
+            #self.setWidgetColor(PALETTE_COLOR_NONE)
+
+        self.ui.led_enable.setColor(self.ui.led_enable.BIG_RED)
+        self.ui.led_enable.setChecked(False)
+
+        self.ui.led_control.setColor(self.ui.led_control.YELLOW)
+        self.ui.led_control.setEnabled(False)
+
+        self.ui.led_midi.setColor(self.ui.led_midi.RED)
+        self.ui.led_midi.setEnabled(False)
+
+        self.ui.led_audio_in.setColor(self.ui.led_audio_in.GREEN)
+        self.ui.led_audio_in.setEnabled(False)
+
+        self.ui.led_audio_out.setColor(self.ui.led_audio_out.BLUE)
+        self.ui.led_audio_out.setEnabled(False)
+
+        self.ui.dial_drywet.setPixmap(3)
+        self.ui.dial_vol.setPixmap(3)
+        self.ui.dial_b_left.setPixmap(4)
+        self.ui.dial_b_right.setPixmap(4)
+
+        self.ui.dial_drywet.setCustomPaint(self.ui.dial_drywet.CUSTOM_PAINT_CARLA_WET)
+        self.ui.dial_vol.setCustomPaint(self.ui.dial_vol.CUSTOM_PAINT_CARLA_VOL)
+        self.ui.dial_b_left.setCustomPaint(self.ui.dial_b_left.CUSTOM_PAINT_CARLA_L)
+        self.ui.dial_b_right.setCustomPaint(self.ui.dial_b_right.CUSTOM_PAINT_CARLA_R)
+
+        self.ui.peak_in.setColor(self.ui.peak_in.GREEN)
+        self.ui.peak_in.setOrientation(self.ui.peak_in.HORIZONTAL)
+
+        self.ui.peak_out.setColor(self.ui.peak_in.BLUE)
+        self.ui.peak_out.setOrientation(self.ui.peak_out.HORIZONTAL)
+
+        self.ui.peak_in.setChannels(self.fPeaksInputCount)
+        self.ui.peak_out.setChannels(self.fPeaksOutputCount)
+
+        #self.ui.label_name.setText(self.fPluginInfo['name'])
+
+        self.ui.edit_dialog = PluginEdit(self, self.fPluginId)
+        self.ui.edit_dialog.hide()
+
+        #self.connect(self.ui.led_enable, SIGNAL("clicked(bool)"), SLOT("slot_setActive(bool)"))
+        #self.connect(self.ui.dial_drywet, SIGNAL("sliderMoved(int)"), SLOT("slot_setDryWet(int)"))
+        #self.connect(self.ui.dial_vol, SIGNAL("sliderMoved(int)"), SLOT("slot_setVolume(int)"))
+        #self.connect(self.ui.dial_b_left, SIGNAL("sliderMoved(int)"), SLOT("slot_setBalanceLeft(int)"))
+        #self.connect(self.ui.dial_b_right, SIGNAL("sliderMoved(int)"), SLOT("slot_setBalanceRight(int)"))
+        #self.connect(self.ui.b_gui, SIGNAL("clicked(bool)"), SLOT("slot_guiClicked(bool)"))
+        self.connect(self.ui.b_edit, SIGNAL("clicked(bool)"), SLOT("slot_editClicked(bool)"))
+        #self.connect(self.ui.b_remove, SIGNAL("clicked()"), SLOT("slot_removeClicked()"))
+
+        #self.connect(self.ui.dial_drywet, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_showCustomDialMenu()"))
+        #self.connect(self.ui.dial_vol, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_showCustomDialMenu()"))
+        #self.connect(self.ui.dial_b_left, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_showCustomDialMenu()"))
+        #self.connect(self.ui.dial_b_right, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_showCustomDialMenu()"))
+
+        # FIXME
+        self.ui.frame_controls.setVisible(False)
+        self.ui.pushButton.setVisible(False)
+        self.ui.pushButton_2.setVisible(False)
+        self.ui.pushButton_3.setVisible(False)
+        self.setMaximumHeight(30)
+
+    def editClosed(self):
+        self.ui.b_edit.setChecked(False)
+
+    def recheckPluginHints(self, hints):
+        self.fPluginInfo['hints'] = hints
+        self.ui.dial_drywet.setEnabled(hints & PLUGIN_CAN_DRYWET)
+        self.ui.dial_vol.setEnabled(hints & PLUGIN_CAN_VOLUME)
+        self.ui.dial_b_left.setEnabled(hints & PLUGIN_CAN_BALANCE)
+        self.ui.dial_b_right.setEnabled(hints & PLUGIN_CAN_BALANCE)
+        self.ui.b_gui.setEnabled(hints & PLUGIN_HAS_GUI)
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+
+        areaX = self.ui.area_right.x()
+
+        # background
+        #painter.setPen(self.m_colorTop)
+        #painter.setBrush(self.m_colorTop)
+        #painter.drawRect(0, 0, areaX+40, self.height())
+
+        # bottom line
+        painter.setPen(self.fColorBottom)
+        painter.setBrush(self.fColorBottom)
+        painter.drawRect(0, self.height()-5, areaX, 5)
+
+        # top line
+        painter.drawLine(0, 0, areaX+40, 0)
+
+        # name -> leds arc
+        path = QPainterPath()
+        path.moveTo(areaX-80, self.height())
+        path.cubicTo(areaX+40, self.height()-5, areaX-40, 30, areaX+20, 0)
+        path.lineTo(areaX+20, self.height())
+        painter.drawPath(path)
+
+        # fill the rest
+        painter.drawRect(areaX+20, 0, self.width(), self.height())
+
+        #painter.drawLine(0, 3, self.width(), 3)
+        #painter.drawLine(0, self.height() - 4, self.width(), self.height() - 4)
+        #painter.setPen(self.m_color2)
+        #painter.drawLine(0, 2, self.width(), 2)
+        #painter.drawLine(0, self.height() - 3, self.width(), self.height() - 3)
+        #painter.setPen(self.m_color3)
+        #painter.drawLine(0, 1, self.width(), 1)
+        #painter.drawLine(0, self.height() - 2, self.width(), self.height() - 2)
+        #painter.setPen(self.m_color4)
+        #painter.drawLine(0, 0, self.width(), 0)
+        #painter.drawLine(0, self.height() - 1, self.width(), self.height() - 1)
+        QFrame.paintEvent(self, event)
+
+    @pyqtSlot(bool)
+    def slot_editClicked(self, show):
+        self.ui.edit_dialog.setVisible(show)
+
+# ------------------------------------------------------------------------------------------------------------
 # TESTING
 
 #from PyQt4.QtGui import QApplication
@@ -912,6 +1508,10 @@ class PluginParameter(QWidget):
 #app  = QApplication(sys.argv)
 #gui1 = CarlaAboutW(None)
 #gui2 = PluginParameter(None, ptest, 0, 0)
+#gui3 = PluginEdit(None, 0)
+#gui4 = PluginWidget(None, 0)
 #gui1.show()
 #gui2.show()
+#gui3.show()
+#gui4.show()
 #app.exec_()

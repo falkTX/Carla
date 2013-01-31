@@ -182,6 +182,7 @@ void CarlaEngineEventPort::writeControlEvent(const uint32_t time, const uint8_t 
     CARLA_ASSERT(fBuffer != nullptr);
     CARLA_ASSERT(type != kEngineControlEventTypeNull);
     CARLA_ASSERT(channel < MAX_MIDI_CHANNELS);
+    CARLA_ASSERT(value >= 0.0 && value <= 1.0);
 
     if (fBuffer == nullptr)
         return;
@@ -340,7 +341,7 @@ void CarlaEngineClient::setLatency(const uint32_t samples)
 CarlaEngine::CarlaEngine()
     : fBufferSize(0),
       fSampleRate(0.0),
-      fData(new CarlaEnginePrivateData(this))
+      fData(new CarlaEngineProtectedData(this))
 {
     qDebug("CarlaEngine::CarlaEngine()");
 }
@@ -355,7 +356,7 @@ CarlaEngine::~CarlaEngine()
 // -----------------------------------------------------------------------
 // Helpers
 
-void doPluginRemove(CarlaEnginePrivateData* const fData, const bool unlock)
+void doPluginRemove(CarlaEngineProtectedData* const fData, const bool unlock)
 {
     CARLA_ASSERT(fData->curPluginCount > 0);
     fData->curPluginCount--;
@@ -510,6 +511,8 @@ bool CarlaEngine::init(const char* const clientName)
 
     fName = clientName;
     fName.toBasic();
+
+    fTimeInfo.clear();
 
     fData->aboutToClose = false;
     fData->curPluginCount = 0;
@@ -1198,6 +1201,40 @@ void CarlaEngine::setOscBridgeData(const CarlaOscData* const oscData)
 // -----------------------------------------------------------------------
 // protected calls
 
+void CarlaEngine::bufferSizeChanged(const uint32_t newBufferSize)
+{
+    qDebug("CarlaEngine::bufferSizeChanged(%i)", newBufferSize);
+
+#if 0
+    for (unsigned short i=0; i < data->maxPluginNumber; i++)
+    {
+        if (data->carlaPlugins[i] && data->carlaPlugins[i]->enabled() /*&& ! data->carlaPlugins[i]->data->processHighPrecision*/)
+            data->carlaPlugins[i]->bufferSizeChanged(newBufferSize);
+    }
+#endif
+}
+
+void CarlaEngine::sampleRateChanged(const double newSampleRate)
+{
+    qDebug("CarlaEngine::sampleRateChanged(%g)", newSampleRate);
+
+    // TODO
+}
+
+void CarlaEngine::proccessPendingEvents()
+{
+    switch (fData->nextAction.opcode)
+    {
+    case EnginePostActionNull:
+        break;
+    case EnginePostActionRemovePlugin:
+        doPluginRemove(fData, true);
+        break;
+    }
+
+    // TODO - peak values
+}
+
 #ifndef BUILD_BRIDGE
 EngineEvent* CarlaEngine::getRackEventBuffer(const bool isInput)
 {
@@ -1210,19 +1247,19 @@ void CarlaEngine::processRack(float* inBuf[2], float* outBuf[2], const uint32_t 
     // initialize outputs (zero)
     carla_zeroFloat(outBuf[0], frames);
     carla_zeroFloat(outBuf[1], frames);
-#if 0
-    std::memset(rackEventsOut, 0, sizeof(EngineEvent)*MAX_EVENTS);
+
+    //std::memset(rackEventsOut, 0, sizeof(EngineEvent)*MAX_EVENTS);
 
     bool processed = false;
-
     // process plugins
-    for (unsigned short i=0, max=maxPluginNumber(); i < max; i++)
+    for (unsigned int i=0; i < fData->curPluginCount; i++)
     {
         CarlaPlugin* const plugin = getPluginUnchecked(i);
 
-        if (! (plugin && plugin->enabled()))
+        if (plugin == nullptr || ! plugin->enabled())
             continue;
 
+#if 0
         if (processed)
         {
             // initialize inputs (from previous outputs)
@@ -1302,6 +1339,7 @@ void CarlaEngine::processRack(float* inBuf[2], float* outBuf[2], const uint32_t 
             data->outsPeak[i*MAX_PEAKS + 0] = outPeak1;
             data->outsPeak[i*MAX_PEAKS + 1] = outPeak2;
         }
+#endif
 
         processed = true;
     }
@@ -1311,9 +1349,8 @@ void CarlaEngine::processRack(float* inBuf[2], float* outBuf[2], const uint32_t 
     {
         std::memcpy(outBuf[0], inBuf[0], sizeof(float)*frames);
         std::memcpy(outBuf[1], inBuf[1], sizeof(float)*frames);
-        std::memcpy(rackEventsOut, rackEventsIn, sizeof(EngineEvent)*MAX_EVENTS);
+        //std::memcpy(rackEventsOut, rackEventsIn, sizeof(EngineEvent)*MAX_EVENTS);
     }
-#endif
 }
 
 void CarlaEngine::processPatchbay(float** inBuf, float** outBuf, const uint32_t bufCount[2], const uint32_t frames)
@@ -1325,40 +1362,6 @@ void CarlaEngine::processPatchbay(float** inBuf, float** outBuf, const uint32_t 
     Q_UNUSED(frames);
 }
 #endif
-
-void CarlaEngine::proccessPendingEvents()
-{
-    switch (fData->nextAction.opcode)
-    {
-    case EnginePostActionNull:
-        break;
-    case EnginePostActionRemovePlugin:
-        doPluginRemove(fData, true);
-        break;
-    }
-
-    // TODO - peak values
-}
-
-void CarlaEngine::bufferSizeChanged(const uint32_t newBufferSize)
-{
-    qDebug("CarlaEngine::bufferSizeChanged(%i)", newBufferSize);
-
-#if 0
-    for (unsigned short i=0; i < data->maxPluginNumber; i++)
-    {
-        if (data->carlaPlugins[i] && data->carlaPlugins[i]->enabled() /*&& ! data->carlaPlugins[i]->data->processHighPrecision*/)
-            data->carlaPlugins[i]->bufferSizeChanged(newBufferSize);
-    }
-#endif
-}
-
-void CarlaEngine::sampleRateChanged(const double newSampleRate)
-{
-    qDebug("CarlaEngine::sampleRateChanged(%g)", newSampleRate);
-
-    // TODO
-}
 
 // -------------------------------------------------------------------------------------------------------------------
 // Carla Engine OSC stuff

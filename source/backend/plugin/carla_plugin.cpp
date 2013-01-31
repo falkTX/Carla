@@ -1231,7 +1231,7 @@ void CarlaPlugin::postRtEventsRun()
             // Update OSC control client
             if (fData->engine->isOscControlRegistered())
             {
-                fData->engine->osc_send_control_set_program(m_id, event->value1);
+                fData->engine->osc_send_control_set_program(fData->id, event->value1);
 
                 for (uint32_t j=0; j < fData->param.count; j++)
                     fData->engine->osc_send_control_set_default_value(fData->id, j, fData->param.ranges[j].def);
@@ -1253,7 +1253,7 @@ void CarlaPlugin::postRtEventsRun()
             {
                 fData->engine->osc_send_control_set_midi_program(fData->id, event->value1);
 
-                for (uint32_t j=0; j < param.count; j++)
+                for (uint32_t j=0; j < fData->param.count; j++)
                     fData->engine->osc_send_control_set_default_value(fData->id, j, fData->param.ranges[j].def);
             }
 #endif

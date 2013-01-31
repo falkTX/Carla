@@ -633,6 +633,9 @@ private:
 
                 std::strcpy(buffer, strBuf);
 
+                // FIXME?
+                buffer[bufferLen-1] = '\0';
+
                 firstInit = false;
             }
         }
@@ -651,7 +654,7 @@ private:
 
                 bufferLen = 0;
                 buffer    = new char[1];
-                buffer[0] = 0;
+                buffer[0] = '\0';
 
                 firstInit = false;
             }

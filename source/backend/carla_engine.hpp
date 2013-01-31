@@ -308,6 +308,14 @@ struct EngineTimeInfo {
           frame(0),
           time(0),
           valid(0x0) {}
+
+    void clear()
+    {
+        playing = false;
+        frame   = 0;
+        time    = 0;
+        valid   = 0x0;
+    }
 };
 
 // -----------------------------------------------------------------------
@@ -539,9 +547,9 @@ private:
 
 /*!
  * Private data used in CarlaEngine.
- * No other than CarlaEngine must have direct access to this.
+ * Non-engine code MUST NEVER have direct access to this.
  */
-struct CarlaEnginePrivateData;
+struct CarlaEngineProtectedData;
 
 /*!
  * Carla Engine.
@@ -857,6 +865,25 @@ protected:
     EngineOptions  fOptions;
     EngineTimeInfo fTimeInfo;
 
+    ScopedPointer<CarlaEngineProtectedData> const fData;
+
+    /*!
+     * Report to all plugins about buffer size change.
+     */
+    void bufferSizeChanged(const uint32_t newBufferSize);
+
+    /*!
+     * Report to all plugins about sample rate change.\n
+     * This is not supported on all plugin types, on which case they will be re-initiated.\n
+     * TODO: Not implemented yet.
+     */
+    void sampleRateChanged(const double newSampleRate);
+
+    /*!
+     * TODO.
+     */
+    void proccessPendingEvents();
+
 #ifndef BUILD_BRIDGE
     // Rack mode data
     EngineEvent* getRackEventBuffer(const bool isInput);
@@ -877,26 +904,7 @@ protected:
     void processPatchbay(float** inBuf, float** outBuf, const uint32_t bufCount[2], const uint32_t frames);
 #endif
 
-    /*!
-     * TODO.
-     */
-    void proccessPendingEvents();
-
-    /*!
-     * Report to all plugins about buffer size change.
-     */
-    void bufferSizeChanged(const uint32_t newBufferSize);
-
-    /*!
-     * Report to all plugins about sample rate change.\n
-     * This is not supported on all plugin types, on which case they will be re-initiated.\n
-     * TODO: Not implemented yet.
-     */
-    void sampleRateChanged(const double newSampleRate);
-
 private:
-    ScopedPointer<CarlaEnginePrivateData> const fData;
-
 #ifdef WANT_JACK
     static CarlaEngine* newJack();
 #endif

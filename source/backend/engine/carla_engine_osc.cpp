@@ -361,9 +361,9 @@ int CarlaEngineOsc::handleMsgRegister(const int argc, const lo_arg* const* const
     qDebug("CarlaEngineOsc::handleMsgRegister()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(1, "s");
 
-    if (m_controlData.path)
+    if (fControlData.path != nullptr)
     {
-        qWarning("CarlaEngineOsc::handleMsgRegister() - OSC backend already registered to %s", m_controlData.path);
+        qWarning("CarlaEngineOsc::handleMsgRegister() - OSC backend already registered to %s", fControlData.path);
         return 1;
     }
 
@@ -375,25 +375,23 @@ int CarlaEngineOsc::handleMsgRegister(const int argc, const lo_arg* const* const
 
     host = lo_address_get_hostname(source);
     port = lo_address_get_port(source);
-    m_controlData.source = lo_address_new_with_proto(LO_TCP, host, port);
+    fControlData.source = lo_address_new_with_proto(LO_TCP, host, port);
 
     host = lo_url_get_hostname(url);
     port = lo_url_get_port(url);
-    m_controlData.path   = lo_url_get_path(url);
-    m_controlData.target = lo_address_new_with_proto(LO_TCP, host, port);
+    fControlData.path   = lo_url_get_path(url);
+    fControlData.target = lo_address_new_with_proto(LO_TCP, host, port);
 
     free((void*)host);
     free((void*)port);
 
-#if 0
-    for (unsigned short i=0; i < engine->maxPluginNumber(); i++)
+    for (unsigned short i=0; i < kEngine->currentPluginCount(); i++)
     {
-        CarlaPlugin* const plugin = engine->getPluginUnchecked(i);
+        CarlaPlugin* const plugin = kEngine->getPluginUnchecked(i);
 
         if (plugin && plugin->enabled())
             plugin->registerToOscClient();
     }
-#endif
 
     return 0;
 }
@@ -402,13 +400,13 @@ int CarlaEngineOsc::handleMsgUnregister()
 {
     qDebug("CarlaEngineOsc::handleMsgUnregister()");
 
-    if (! m_controlData.path)
+    if (fControlData.path == nullptr)
     {
         qWarning("CarlaEngineOsc::handleMsgUnregister() - OSC backend is not registered yet");
         return 1;
     }
 
-    m_controlData.free();
+    fControlData.free();
     return 0;
 }
 #endif

@@ -51,6 +51,7 @@ endif
 LIBS  = ../libcarla_engine.a
 LIBS += ../libcarla_plugin.a
 LIBS += ../libcarla_native.a
+LIBS += ../../libs/rtmempool.a
 
 OBJS  = \
      carla_standalone.cpp.o

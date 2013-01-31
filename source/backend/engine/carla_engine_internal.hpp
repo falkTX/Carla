@@ -135,7 +135,7 @@ struct EnginePluginData {
 
 // -------------------------------------------------------------------------------------------------------------------
 
-struct CarlaEnginePrivateData {
+struct CarlaEngineProtectedData {
     CarlaEngineOsc    osc;
     CarlaEngineThread thread;
 
@@ -172,7 +172,7 @@ struct CarlaEnginePrivateData {
 
     EnginePluginData* plugins;
 
-    CarlaEnginePrivateData(CarlaEngine* const engine)
+    CarlaEngineProtectedData(CarlaEngine* const engine)
         : osc(engine),
           thread(engine),
           oscData(nullptr),
@@ -183,9 +183,9 @@ struct CarlaEnginePrivateData {
           maxPluginNumber(0),
           plugins(nullptr) {}
 
-    CarlaEnginePrivateData() = delete;
+    CarlaEngineProtectedData() = delete;
 
-    CARLA_LEAK_DETECTOR(CarlaEnginePrivateData)
+    CARLA_LEAK_DETECTOR(CarlaEngineProtectedData)
 };
 
 CARLA_BACKEND_END_NAMESPACE

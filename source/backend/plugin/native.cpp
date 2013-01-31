@@ -1668,11 +1668,13 @@ std::vector<const PluginDescriptor*> NativePlugin::pluginDescriptors;
 
 // -----------------------------------------------------------------------
 
-#if 0
-CarlaPlugin* CarlaPlugin::newNative(const initializer& init)
+CarlaPlugin* CarlaPlugin::newNative(const Initializer& init)
 {
     qDebug("CarlaPlugin::newNative(%p, \"%s\", \"%s\", \"%s\")", init.engine, init.filename, init.name, init.label);
 
+    return nullptr;
+
+#if 0
     short id = init.engine->getNewPluginId();
 
     if (id < 0 || id > init.engine->maxPluginNumber())
@@ -1704,8 +1706,8 @@ CarlaPlugin* CarlaPlugin::newNative(const initializer& init)
     plugin->registerToOscClient();
 
     return plugin;
-}
 #endif
+}
 
 // -----------------------------------------------------------------------
 
