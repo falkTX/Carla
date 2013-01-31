@@ -31,6 +31,7 @@
  * @{
  */
 
+typedef CarlaBackend::BinaryType CarlaBinaryType;
 typedef CarlaBackend::PluginType CarlaPluginType;
 typedef CarlaBackend::PluginCategory CarlaPluginCategory;
 
@@ -55,6 +56,13 @@ struct CarlaPluginInfo {
           maker(nullptr),
           copyright(nullptr),
           uniqueId(0) {}
+
+    ~CarlaPluginInfo()
+    {
+        std::free((void*)label);
+        std::free((void*)maker);
+        std::free((void*)copyright);
+    }
 };
 
 struct CarlaNativePluginInfo {
@@ -108,15 +116,27 @@ struct CarlaParameterInfo {
           symbol(nullptr),
           unit(nullptr),
           scalePointCount(0) {}
+
+    ~CarlaParameterInfo()
+    {
+        std::free((void*)name);
+        std::free((void*)symbol);
+        std::free((void*)unit);
+    }
 };
 
 struct CarlaScalePointInfo {
-    double value;
+    float value;
     const char* label;
 
     CarlaScalePointInfo()
-        : value(0.0),
+        : value(0.0f),
           label(nullptr) {}
+
+    ~CarlaScalePointInfo()
+    {
+        std::free((void*)label);
+    }
 };
 
 CARLA_EXPORT const char* carla_get_extended_license_text();
@@ -131,20 +151,20 @@ CARLA_EXPORT bool carla_engine_init(const char* driverName, const char* clientNa
 CARLA_EXPORT bool carla_engine_close();
 CARLA_EXPORT bool carla_is_engine_running();
 
+CARLA_EXPORT bool carla_add_plugin(CarlaBinaryType btype, CarlaPluginType ptype, const char* filename, const char* name, const char* label, void* extraPtr);
+CARLA_EXPORT bool carla_remove_plugin(unsigned int pluginId);
+
+CARLA_EXPORT const CarlaPluginInfo* carla_get_plugin_info(unsigned int pluginId);
+CARLA_EXPORT const CarlaPortCountInfo* carla_get_audio_port_count_info(unsigned int pluginId);
+CARLA_EXPORT const CarlaPortCountInfo* carla_get_midi_port_count_info(unsigned int pluginId);
+CARLA_EXPORT const CarlaPortCountInfo* carla_get_parameter_count_info(unsigned int pluginId);
+CARLA_EXPORT const CarlaParameterInfo* carla_get_parameter_info(unsigned int pluginId, uint32_t parameterId);
+CARLA_EXPORT const CarlaScalePointInfo* carla_get_parameter_scalepoint_info(unsigned int pluginId, uint32_t parameterId, uint32_t scalePointId);
+
+CARLA_EXPORT const CarlaBackend::ParameterData* carla_get_parameter_data(unsigned int pluginId, uint32_t parameterId);
+CARLA_EXPORT const CarlaBackend::ParameterRanges* carla_get_parameter_ranges(unsigned int pluginId, uint32_t parameterId);
+CARLA_EXPORT const CarlaBackend::MidiProgramData* carla_get_midi_program_data(unsigned int pluginId, uint32_t midiProgramId);
 #if 0
-CARLA_EXPORT int add_plugin(BinaryType btype, PluginType ptype, const char* filename, const char* name, const char* label, void* extraPtr);
-CARLA_EXPORT bool remove_plugin(unsigned int pluginId);
-
-CARLA_EXPORT const PluginInfo* get_plugin_info(unsigned int pluginId);
-CARLA_EXPORT const PortCountInfo* get_audio_port_count_info(unsigned int pluginId);
-CARLA_EXPORT const PortCountInfo* get_midi_port_count_info(unsigned int pluginId);
-CARLA_EXPORT const PortCountInfo* get_parameter_count_info(unsigned int pluginId);
-CARLA_EXPORT const ParameterInfo* get_parameter_info(unsigned short plugin_id, uint32_t parameterId);
-CARLA_EXPORT const ScalePointInfo* get_parameter_scalepoint_info(unsigned int pluginId, uint32_t parameterId, uint32_t scalePointId);
-
-CARLA_EXPORT const ParameterData* get_parameter_data(unsigned int pluginId, uint32_t parameterId);
-CARLA_EXPORT const ParameterRanges* get_parameter_ranges(unsigned int pluginId, uint32_t parameterId);
-CARLA_EXPORT const MidiProgramData* get_midi_program_data(unsigned int pluginId, uint32_t midiProgramId);
 CARLA_EXPORT const CustomData* get_custom_data(unsigned int pluginId, uint32_t customDataId);
 CARLA_EXPORT const char* get_chunk_data(unsigned int pluginId);
 

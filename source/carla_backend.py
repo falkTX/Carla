@@ -662,7 +662,7 @@ class CarlaParameterInfo(Structure):
 
 class CarlaScalePointInfo(Structure):
     _fields_ = [
-        ("value", c_double),
+        ("value", c_float),
         ("label", c_char_p)
     ]
 
@@ -708,41 +708,38 @@ class Host(object):
         self.lib.carla_is_engine_running.argtypes = None
         self.lib.carla_is_engine_running.restype = c_bool
 
-        #self.lib.add_plugin.argtypes = [c_enum, c_enum, c_char_p, c_char_p, c_char_p, c_void_p]
-        #self.lib.add_plugin.restype = c_short
+        self.lib.carla_add_plugin.argtypes = [c_enum, c_enum, c_char_p, c_char_p, c_char_p, c_void_p]
+        self.lib.carla_add_plugin.restype = c_bool
 
-        #self.lib.remove_plugin.argtypes = [c_ushort]
-        #self.lib.remove_plugin.restype = c_bool
+        self.lib.carla_remove_plugin.argtypes = [c_uint]
+        self.lib.carla_remove_plugin.restype = c_bool
 
-        #self.lib.get_plugin_info.argtypes = [c_ushort]
-        #self.lib.get_plugin_info.restype = POINTER(PluginInfo)
+        self.lib.carla_get_plugin_info.argtypes = [c_uint]
+        self.lib.carla_get_plugin_info.restype = POINTER(CarlaPluginInfo)
 
-        #self.lib.get_audio_port_count_info.argtypes = [c_ushort]
-        #self.lib.get_audio_port_count_info.restype = POINTER(PortCountInfo)
+        self.lib.carla_get_audio_port_count_info.argtypes = [c_uint]
+        self.lib.carla_get_audio_port_count_info.restype = POINTER(CarlaPortCountInfo)
 
-        #self.lib.get_midi_port_count_info.argtypes = [c_ushort]
-        #self.lib.get_midi_port_count_info.restype = POINTER(PortCountInfo)
+        self.lib.carla_get_midi_port_count_info.argtypes = [c_uint]
+        self.lib.carla_get_midi_port_count_info.restype = POINTER(CarlaPortCountInfo)
 
-        #self.lib.get_parameter_count_info.argtypes = [c_ushort]
-        #self.lib.get_parameter_count_info.restype = POINTER(PortCountInfo)
+        self.lib.carla_get_parameter_count_info.argtypes = [c_uint]
+        self.lib.carla_get_parameter_count_info.restype = POINTER(CarlaPortCountInfo)
 
-        #self.lib.get_parameter_info.argtypes = [c_ushort, c_uint32]
-        #self.lib.get_parameter_info.restype = POINTER(ParameterInfo)
+        self.lib.carla_get_parameter_info.argtypes = [c_uint, c_uint32]
+        self.lib.carla_get_parameter_info.restype = POINTER(CarlaParameterInfo)
 
-        #self.lib.get_parameter_scalepoint_info.argtypes = [c_ushort, c_uint32, c_uint32]
-        #self.lib.get_parameter_scalepoint_info.restype = POINTER(ScalePointInfo)
+        self.lib.carla_get_parameter_scalepoint_info.argtypes = [c_uint, c_uint32, c_uint32]
+        self.lib.carla_get_parameter_scalepoint_info.restype = POINTER(CarlaScalePointInfo)
 
-        #self.lib.get_gui_info.argtypes = [c_ushort]
-        #self.lib.get_gui_info.restype = POINTER(GuiInfo)
+        self.lib.carla_get_parameter_data.argtypes = [c_uint, c_uint32]
+        self.lib.carla_get_parameter_data.restype = POINTER(ParameterData)
 
-        #self.lib.get_parameter_data.argtypes = [c_ushort, c_uint32]
-        #self.lib.get_parameter_data.restype = POINTER(ParameterData)
+        self.lib.carla_get_parameter_ranges.argtypes = [c_uint, c_uint32]
+        self.lib.carla_get_parameter_ranges.restype = POINTER(ParameterRanges)
 
-        #self.lib.get_parameter_ranges.argtypes = [c_ushort, c_uint32]
-        #self.lib.get_parameter_ranges.restype = POINTER(ParameterRanges)
-
-        #self.lib.get_midi_program_data.argtypes = [c_ushort, c_uint32]
-        #self.lib.get_midi_program_data.restype = POINTER(MidiProgramData)
+        self.lib.carla_get_midi_program_data.argtypes = [c_uint, c_uint32]
+        self.lib.carla_get_midi_program_data.restype = POINTER(MidiProgramData)
 
         #self.lib.get_custom_data.argtypes = [c_ushort, c_uint32]
         #self.lib.get_custom_data.restype = POINTER(CustomData)
@@ -894,38 +891,39 @@ class Host(object):
     def is_engine_running(self):
         return self.lib.carla_is_engine_running()
 
-    #def add_plugin(self, btype, ptype, filename, name, label, extraStuff):
-        #return self.lib.add_plugin(btype, ptype, filename.encode("utf-8"), name.encode("utf-8") if name else c_nullptr, label.encode("utf-8"), cast(extraStuff, c_void_p))
+    def add_plugin(self, btype, ptype, filename, name, label, extraStuff):
+        cname = name.encode("utf-8") if name else c_nullptr
+        return self.lib.carla_add_plugin(btype, ptype, filename.encode("utf-8"), cname, label.encode("utf-8"), cast(extraStuff, c_void_p))
 
-    #def remove_plugin(self, pluginId):
-        #return self.lib.remove_plugin(pluginId)
+    def remove_plugin(self, pluginId):
+        return self.lib.carla_remove_plugin(pluginId)
 
-    #def get_plugin_info(self, pluginId):
-        #return structToDict(self.lib.get_plugin_info(pluginId).contents)
+    def get_plugin_info(self, pluginId):
+        return structToDict(self.lib.carla_get_plugin_info(pluginId).contents)
 
-    #def get_audio_port_count_info(self, pluginId):
-        #return structToDict(self.lib.get_audio_port_count_info(pluginId).contents)
+    def get_audio_port_count_info(self, pluginId):
+        return structToDict(self.lib.carla_get_audio_port_count_info(pluginId).contents)
 
-    #def get_midi_port_count_info(self, pluginId):
-        #return structToDict(self.lib.get_midi_port_count_info(pluginId).contents)
+    def get_midi_port_count_info(self, pluginId):
+        return structToDict(self.lib.carla_get_midi_port_count_info(pluginId).contents)
 
-    #def get_parameter_count_info(self, pluginId):
-        #return structToDict(self.lib.get_parameter_count_info(pluginId).contents)
+    def get_parameter_count_info(self, pluginId):
+        return structToDict(self.lib.carla_get_parameter_count_info(pluginId).contents)
 
-    #def get_parameter_info(self, pluginId, parameterId):
-        #return structToDict(self.lib.get_parameter_info(pluginId, parameterId).contents)
+    def get_parameter_info(self, pluginId, parameterId):
+        return structToDict(self.lib.carla_get_parameter_info(pluginId, parameterId).contents)
 
-    #def get_parameter_scalepoint_info(self, pluginId, parameterId, scalePointId):
-        #return structToDict(self.lib.get_parameter_scalepoint_info(pluginId, parameterId, scalePointId).contents)
+    def get_parameter_scalepoint_info(self, pluginId, parameterId, scalePointId):
+        return structToDict(self.lib.carla_get_parameter_scalepoint_info(pluginId, parameterId, scalePointId).contents)
 
-    #def get_parameter_data(self, pluginId, parameterId):
-        #return structToDict(self.lib.get_parameter_data(pluginId, parameterId).contents)
+    def get_parameter_data(self, pluginId, parameterId):
+        return structToDict(self.lib.carla_get_parameter_data(pluginId, parameterId).contents)
 
-    #def get_parameter_ranges(self, pluginId, parameterId):
-        #return structToDict(self.lib.get_parameter_ranges(pluginId, parameterId).contents)
+    def get_parameter_ranges(self, pluginId, parameterId):
+        return structToDict(self.lib.carla_get_parameter_ranges(pluginId, parameterId).contents)
 
-    #def get_midi_program_data(self, pluginId, midiProgramId):
-        #return structToDict(self.lib.get_midi_program_data(pluginId, midiProgramId).contents)
+    def get_midi_program_data(self, pluginId, midiProgramId):
+        return structToDict(self.lib.carla_get_midi_program_data(pluginId, midiProgramId).contents)
 
     #def get_custom_data(self, pluginId, customDataId):
         #return structToDict(self.lib.get_custom_data(pluginId, customDataId).contents)
