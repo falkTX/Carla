@@ -9,41 +9,41 @@ include ../Makefile.mk
 # --------------------------------------------------------------
 # Shared
 
-LINK_FLAGS      += $(shell pkg-config --libs liblo QtGui)
+LINK_FLAGS += $(shell pkg-config --libs liblo QtGui)
 
 # --------------------------------------------------------------
 # Engine
 
 ifeq ($(HAVE_ALSA),true)
-LINK_FLAGS      += $(shell pkg-config --libs alsa)
+LINK_FLAGS += $(shell pkg-config --libs alsa)
 endif
 ifeq ($(HAVE_JACK),true)
-LINK_FLAGS      += $(shell pkg-config --libs jack)
+LINK_FLAGS += $(shell pkg-config --libs jack)
 endif
 ifeq ($(HAVE_PULSEAUDIO),true)
-LINK_FLAGS      += $(shell pkg-config --libs libpulse-simple)
+LINK_FLAGS += $(shell pkg-config --libs libpulse-simple)
 endif
 
 # --------------------------------------------------------------
 # Plugin
 
 ifeq ($(HAVE_SUIL),true)
-LINK_FLAGS      += $(shell pkg-config --libs suil-0)
+LINK_FLAGS += $(shell pkg-config --libs suil-0)
 endif
 ifeq ($(HAVE_FLUIDSYNTH),true)
-LINK_FLAGS      += $(shell pkg-config --libs fluidsynth)
+LINK_FLAGS += $(shell pkg-config --libs fluidsynth)
 endif
 ifeq ($(HAVE_LINUXSAMPLER),true)
-LINK_FLAGS      += $(shell pkg-config --libs linuxsampler)
+LINK_FLAGS += $(shell pkg-config --libs linuxsampler)
 endif
 
 # --------------------------------------------------------------
 # Native
 
-LINK_FLAGS      +=  -lGL
+LINK_FLAGS += -lGL
 
 ifeq ($(HAVE_ZYN_DEPS),true)
-LINK_FLAGS      += $(shell pkg-config --libs fftw3 mxml) -lpthread
+LINK_FLAGS += $(shell pkg-config --libs fftw3 mxml) -lpthread
 endif
 
 # --------------------------------------------------------------
@@ -82,11 +82,8 @@ $(STATIC): $(OBJS) $(LIBS)
 
 # --------------------------------------------------------------
 
-../libcarla_engine.a:
-	$(MAKE) -C ../engine $@
+../libcarla_%.a:
+	$(MAKE) -C ../$* $@
 
-../libcarla_plugin.a:
-	$(MAKE) -C ../plugin $@
-
-../libcarla_native.a:
-	$(MAKE) -C ../native $@
+../../libs/%.a:
+	$(MAKE) -C ../../libs/ $*.a
