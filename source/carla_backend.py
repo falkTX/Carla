@@ -676,7 +676,7 @@ class Host(object):
         global carla_library_path
 
         if lib_prefix_arg:
-            carla_library_path = os.path.join(lib_prefix_arg, "lib", "cadence", carla_libname)
+            carla_library_path = os.path.join(lib_prefix_arg, "lib", "carla", carla_libname)
 
         if not carla_library_path:
             self.lib = None
