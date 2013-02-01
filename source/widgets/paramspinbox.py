@@ -266,7 +266,7 @@ class ParamSpinBox(QAbstractSpinBox):
     def setReadOnly(self, yesNo):
         self.setButtonSymbols(QAbstractSpinBox.UpDownArrows if yesNo else QAbstractSpinBox.NoButtons)
         self.fReadOnly = yesNo
-        ParamSpinBox.setReadOnly(self, yesNo)
+        QAbstractSpinBox.setReadOnly(self, yesNo)
 
     def setScalePoints(self, scalePoints, useScalePoints):
         if len(scalePoints) == 0:

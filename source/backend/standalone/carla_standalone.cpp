@@ -284,7 +284,7 @@ bool carla_is_engine_running()
 {
     qDebug("carla_is_engine_running()");
 
-    return standalone.engine && standalone.engine->isRunning();
+    return standalone.engine != nullptr && standalone.engine->isRunning();
 }
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -298,7 +298,7 @@ bool carla_add_plugin(CarlaBackend::BinaryType btype, CarlaBackend::PluginType p
         return standalone.engine->addPlugin(btype, ptype, filename, name, label, extraStuff);
 
     standalone.lastError = "Engine is not started";
-    return -1;
+    return false;
 }
 
 bool carla_remove_plugin(unsigned int pluginId)

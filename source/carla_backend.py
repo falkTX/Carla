@@ -105,7 +105,6 @@ class CarlaNativePluginInfo(Structure):
         ("midiOuts", c_uint32),
         ("parameterIns", c_uint32),
         ("parameterOuts", c_uint32),
-        ("binary", c_char_p),
         ("name", c_char_p),
         ("label", c_char_p),
         ("maker", c_char_p),

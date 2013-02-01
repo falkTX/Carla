@@ -195,6 +195,8 @@ struct PluginParameterData {
 
         if (ranges == nullptr)
             ranges = new ParameterRanges[count];
+
+        this->count = count;
     }
 
     void clear()

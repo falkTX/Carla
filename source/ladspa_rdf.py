@@ -706,7 +706,7 @@ def recheck_all_plugins(qobject, startValue, percentValue, curValue):
         # Tell GUI we're parsing this bundle
         if qobject:
             percent = (float(i) / len(rdfFiles) ) * percentValue
-            qobject.pluginLook(startValue + (percent * curValue), rdfFile)
+            qobject._pluginLook(startValue + (percent * curValue), rdfFile)
 
         # Parse RDF
         parse_rdf_file(rdfFile)

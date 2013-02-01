@@ -479,6 +479,9 @@ public:
     {
         for (size_t i=n; i < bufferLen; i++)
             buffer[i] = '\0';
+
+        // FIXME
+        bufferLen = std::strlen(buffer);
     }
 
     void toBasic()
@@ -629,12 +632,11 @@ private:
                 }
 
                 bufferLen = (size > 0) ? size : std::strlen(strBuf);
-                buffer    = new char[bufferLen];
+                buffer    = new char[bufferLen+1];
 
                 std::strcpy(buffer, strBuf);
 
-                // FIXME?
-                buffer[bufferLen-1] = '\0';
+                buffer[bufferLen] = '\0';
 
                 firstInit = false;
             }
