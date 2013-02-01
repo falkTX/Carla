@@ -628,6 +628,11 @@ public:
     virtual bool close();
 
     /*!
+     * Idle.
+     */
+    virtual void idle();
+
+    /*!
      * Check if engine is running.
      */
     virtual bool isRunning() const = 0;
@@ -650,14 +655,6 @@ public:
 
     // -------------------------------------------------------------------
     // Plugin management
-
-#if 0
-    /*!
-     * Get next available plugin id.\n
-     * Returns -1 if no more plugins can be loaded.
-     */
-    int getNewPluginId() const;
-#endif
 
     /*!
      * Get plugin with id \a id.
@@ -699,11 +696,6 @@ public:
      * Remove all plugins.
      */
     void removeAllPlugins();
-
-    /*!
-     * Idle all plugins GUIs.
-     */
-    void idlePluginGuis();
 
     // bridge, internal use only
     // TODO - find a better way for this

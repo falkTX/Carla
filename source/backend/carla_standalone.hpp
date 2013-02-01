@@ -151,6 +151,7 @@ CARLA_EXPORT const CarlaNativePluginInfo* carla_get_internal_plugin_info(unsigne
 
 CARLA_EXPORT bool carla_engine_init(const char* driverName, const char* clientName);
 CARLA_EXPORT bool carla_engine_close();
+CARLA_EXPORT void carla_engine_idle();
 CARLA_EXPORT bool carla_is_engine_running();
 
 CARLA_EXPORT bool carla_add_plugin(CarlaBinaryType btype, CarlaPluginType ptype, const char* filename, const char* name, const char* label, void* extraPtr);
@@ -204,11 +205,9 @@ CARLA_EXPORT void carla_set_midi_program(unsigned int pluginId, uint32_t midiPro
 CARLA_EXPORT void carla_set_custom_data(unsigned int pluginId, const char* type, const char* key, const char* value);
 CARLA_EXPORT void carla_set_chunk_data(unsigned int pluginId, const char* chunkData);
 
-CARLA_EXPORT void carla_show_gui(unsigned int pluginId, bool yesNo);
-CARLA_EXPORT void carla_idle_guis();
-
-CARLA_EXPORT void carla_send_midi_note(unsigned int pluginId, uint8_t channel, uint8_t note, uint8_t velocity);
 CARLA_EXPORT void carla_prepare_for_save(unsigned int pluginId);
+CARLA_EXPORT void carla_send_midi_note(unsigned int pluginId, uint8_t channel, uint8_t note, uint8_t velocity);
+CARLA_EXPORT void carla_show_gui(unsigned int pluginId, bool yesNo);
 
 CARLA_EXPORT uint32_t carla_get_buffer_size();
 CARLA_EXPORT double   carla_get_sample_rate();

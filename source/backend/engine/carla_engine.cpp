@@ -584,6 +584,20 @@ bool CarlaEngine::close()
     return true;
 }
 
+void CarlaEngine::idle()
+{
+    CARLA_ASSERT(fData->plugins != nullptr);
+    CARLA_ASSERT(isRunning());
+
+    for (unsigned int i=0; i < fData->curPluginCount; i++)
+    {
+        CarlaPlugin* const plugin = fData->plugins[i].plugin;
+
+        if (plugin && plugin->enabled())
+            plugin->idleGui();
+    }
+}
+
 // -----------------------------------------------------------------------
 // Plugin management
 
@@ -929,19 +943,6 @@ void CarlaEngine::removeAllPlugins()
 }
 
 #if 0
-void CarlaEngine::idlePluginGuis()
-{
-    CARLA_ASSERT(data->maxPluginNumber > 0);
-
-    for (unsigned short i=0; i < data->maxPluginNumber; i++)
-    {
-        CarlaPlugin* const plugin = data->carlaPlugins[i];
-
-        if (plugin && plugin->enabled())
-            plugin->idleGui();
-    }
-}
-
 void CarlaEngine::__bridgePluginRegister(const unsigned short id, CarlaPlugin* const plugin)
 {
     data->carlaPlugins[id] = plugin;
