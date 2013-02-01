@@ -741,122 +741,122 @@ class Host(object):
         self.lib.carla_get_midi_program_data.argtypes = [c_uint, c_uint32]
         self.lib.carla_get_midi_program_data.restype = POINTER(MidiProgramData)
 
-        #self.lib.get_custom_data.argtypes = [c_ushort, c_uint32]
-        #self.lib.get_custom_data.restype = POINTER(CustomData)
+        self.lib.carla_get_custom_data.argtypes = [c_uint, c_uint32]
+        self.lib.carla_get_custom_data.restype = POINTER(CustomData)
 
-        #self.lib.get_chunk_data.argtypes = [c_ushort]
-        #self.lib.get_chunk_data.restype = c_char_p
+        self.lib.carla_get_chunk_data.argtypes = [c_uint]
+        self.lib.carla_get_chunk_data.restype = c_char_p
 
-        #self.lib.get_parameter_count.argtypes = [c_ushort]
-        #self.lib.get_parameter_count.restype = c_uint32
+        self.lib.carla_get_parameter_count.argtypes = [c_uint]
+        self.lib.carla_get_parameter_count.restype = c_uint32
 
-        #self.lib.get_program_count.argtypes = [c_ushort]
-        #self.lib.get_program_count.restype = c_uint32
+        self.lib.carla_get_program_count.argtypes = [c_uint]
+        self.lib.carla_get_program_count.restype = c_uint32
 
-        #self.lib.get_midi_program_count.argtypes = [c_ushort]
-        #self.lib.get_midi_program_count.restype = c_uint32
+        self.lib.carla_get_midi_program_count.argtypes = [c_uint]
+        self.lib.carla_get_midi_program_count.restype = c_uint32
 
-        #self.lib.get_custom_data_count.argtypes = [c_ushort]
-        #self.lib.get_custom_data_count.restype = c_uint32
+        self.lib.carla_get_custom_data_count.argtypes = [c_uint]
+        self.lib.carla_get_custom_data_count.restype = c_uint32
 
-        #self.lib.get_parameter_text.argtypes = [c_ushort, c_uint32]
-        #self.lib.get_parameter_text.restype = c_char_p
+        #self.lib.carla_get_parameter_text.argtypes = [c_uint, c_uint32]
+        #self.lib.carla_get_parameter_text.restype = c_char_p
 
-        #self.lib.get_program_name.argtypes = [c_ushort, c_uint32]
-        #self.lib.get_program_name.restype = c_char_p
+        #self.lib.carla_get_program_name.argtypes = [c_uint, c_uint32]
+        #self.lib.carla_get_program_name.restype = c_char_p
 
-        #self.lib.get_midi_program_name.argtypes = [c_ushort, c_uint32]
-        #self.lib.get_midi_program_name.restype = c_char_p
+        #self.lib.carla_get_midi_program_name.argtypes = [c_uint, c_uint32]
+        #self.lib.carla_get_midi_program_name.restype = c_char_p
 
-        #self.lib.get_real_plugin_name.argtypes = [c_ushort]
-        #self.lib.get_real_plugin_name.restype = c_char_p
+        #self.lib.carla_get_real_plugin_name.argtypes = [c_uint]
+        #self.lib.carla_get_real_plugin_name.restype = c_char_p
 
-        #self.lib.get_current_program_index.argtypes = [c_ushort]
-        #self.lib.get_current_program_index.restype = c_int32
+        #self.lib.carla_get_current_program_index.argtypes = [c_uint]
+        #self.lib.carla_get_current_program_index.restype = c_int32
 
-        #self.lib.get_current_midi_program_index.argtypes = [c_ushort]
-        #self.lib.get_current_midi_program_index.restype = c_int32
+        #self.lib.carla_get_current_midi_program_index.argtypes = [c_uint]
+        #self.lib.carla_get_current_midi_program_index.restype = c_int32
 
-        #self.lib.get_default_parameter_value.argtypes = [c_ushort, c_uint32]
-        #self.lib.get_default_parameter_value.restype = c_double
+        #self.lib.carla_get_default_parameter_value.argtypes = [c_uint, c_uint32]
+        #self.lib.carla_get_default_parameter_value.restype = c_double
 
-        #self.lib.get_current_parameter_value.argtypes = [c_ushort, c_uint32]
-        #self.lib.get_current_parameter_value.restype = c_double
+        #self.lib.carla_get_current_parameter_value.argtypes = [c_uint, c_uint32]
+        #self.lib.carla_get_current_parameter_value.restype = c_double
 
-        #self.lib.get_input_peak_value.argtypes = [c_ushort, c_ushort]
-        #self.lib.get_input_peak_value.restype = c_double
+        #self.lib.carla_get_input_peak_value.argtypes = [c_uint, c_ushort]
+        #self.lib.carla_get_input_peak_value.restype = c_double
 
-        #self.lib.get_output_peak_value.argtypes = [c_ushort, c_ushort]
-        #self.lib.get_output_peak_value.restype = c_double
+        #self.lib.carla_get_output_peak_value.argtypes = [c_uint, c_ushort]
+        #self.lib.carla_get_output_peak_value.restype = c_double
 
-        #self.lib.set_active.argtypes = [c_ushort, c_bool]
-        #self.lib.set_active.restype = None
+        #self.lib.carla_set_active.argtypes = [c_uint, c_bool]
+        #self.lib.carla_set_active.restype = None
 
-        #self.lib.set_drywet.argtypes = [c_ushort, c_double]
-        #self.lib.set_drywet.restype = None
+        #self.lib.carla_set_drywet.argtypes = [c_uint, c_double]
+        #self.lib.carla_set_drywet.restype = None
 
-        #self.lib.set_volume.argtypes = [c_ushort, c_double]
-        #self.lib.set_volume.restype = None
+        #self.lib.carla_set_volume.argtypes = [c_uint, c_double]
+        #self.lib.carla_set_volume.restype = None
 
-        #self.lib.set_balance_left.argtypes = [c_ushort, c_double]
-        #self.lib.set_balance_left.restype = None
+        #self.lib.carla_set_balance_left.argtypes = [c_uint, c_double]
+        #self.lib.carla_set_balance_left.restype = None
 
-        #self.lib.set_balance_right.argtypes = [c_ushort, c_double]
-        #self.lib.set_balance_right.restype = None
+        #self.lib.carla_set_balance_right.argtypes = [c_uint, c_double]
+        #self.lib.carla_set_balance_right.restype = None
 
-        #self.lib.set_parameter_value.argtypes = [c_ushort, c_uint32, c_double]
-        #self.lib.set_parameter_value.restype = None
+        #self.lib.carla_set_parameter_value.argtypes = [c_uint, c_uint32, c_double]
+        #self.lib.carla_set_parameter_value.restype = None
 
-        #self.lib.set_parameter_midi_cc.argtypes = [c_ushort, c_uint32, c_int16]
-        #self.lib.set_parameter_midi_cc.restype = None
+        #self.lib.carla_set_parameter_midi_cc.argtypes = [c_uint, c_uint32, c_int16]
+        #self.lib.carla_set_parameter_midi_cc.restype = None
 
-        #self.lib.set_parameter_midi_channel.argtypes = [c_ushort, c_uint32, c_uint8]
-        #self.lib.set_parameter_midi_channel.restype = None
+        #self.lib.carla_set_parameter_midi_channel.argtypes = [c_uint, c_uint32, c_uint8]
+        #self.lib.carla_set_parameter_midi_channel.restype = None
 
-        #self.lib.set_program.argtypes = [c_ushort, c_uint32]
-        #self.lib.set_program.restype = None
+        #self.lib.carla_set_program.argtypes = [c_uint, c_uint32]
+        #self.lib.carla_set_program.restype = None
 
-        #self.lib.set_midi_program.argtypes = [c_ushort, c_uint32]
-        #self.lib.set_midi_program.restype = None
+        #self.lib.carla_set_midi_program.argtypes = [c_uint, c_uint32]
+        #self.lib.carla_set_midi_program.restype = None
 
-        #self.lib.set_custom_data.argtypes = [c_ushort, c_char_p, c_char_p, c_char_p]
-        #self.lib.set_custom_data.restype = None
+        #self.lib.carla_set_custom_data.argtypes = [c_uint, c_char_p, c_char_p, c_char_p]
+        #self.lib.carla_set_custom_data.restype = None
 
-        #self.lib.set_chunk_data.argtypes = [c_ushort, c_char_p]
-        #self.lib.set_chunk_data.restype = None
+        #self.lib.carla_set_chunk_data.argtypes = [c_uint, c_char_p]
+        #self.lib.carla_set_chunk_data.restype = None
 
-        #self.lib.set_gui_container.argtypes = [c_ushort, c_uintptr]
-        #self.lib.set_gui_container.restype = None
+        #self.lib.carla_set_gui_container.argtypes = [c_uint, c_uintptr]
+        #self.lib.carla_set_gui_container.restype = None
 
-        #self.lib.show_gui.argtypes = [c_ushort, c_bool]
+        #self.lib.show_gui.argtypes = [c_uint, c_bool]
         #self.lib.show_gui.restype = None
 
         #self.lib.idle_guis.argtypes = None
         #self.lib.idle_guis.restype = None
 
-        #self.lib.send_midi_note.argtypes = [c_ushort, c_uint8, c_uint8, c_uint8]
+        #self.lib.send_midi_note.argtypes = [c_uint, c_uint8, c_uint8, c_uint8]
         #self.lib.send_midi_note.restype = None
 
-        #self.lib.prepare_for_save.argtypes = [c_ushort]
+        #self.lib.prepare_for_save.argtypes = [c_uint]
         #self.lib.prepare_for_save.restype = None
 
-        #self.lib.get_buffer_size.argtypes = None
-        #self.lib.get_buffer_size.restype = c_uint32
+        #self.lib.carla_get_buffer_size.argtypes = None
+        #self.lib.carla_get_buffer_size.restype = c_uint32
 
-        #self.lib.get_sample_rate.argtypes = None
-        #self.lib.get_sample_rate.restype = c_double
+        #self.lib.carla_get_sample_rate.argtypes = None
+        #self.lib.carla_get_sample_rate.restype = c_double
 
-        #self.lib.get_last_error.argtypes = None
-        #self.lib.get_last_error.restype = c_char_p
+        #self.lib.carla_get_last_error.argtypes = None
+        #self.lib.carla_get_last_error.restype = c_char_p
 
-        #self.lib.get_host_osc_url.argtypes = None
-        #self.lib.get_host_osc_url.restype = c_char_p
+        #self.lib.carla_get_host_osc_url.argtypes = None
+        #self.lib.carla_get_host_osc_url.restype = c_char_p
 
-        #self.lib.set_callback_function.argtypes = [CallbackFunc]
-        #self.lib.set_callback_function.restype = None
+        #self.lib.carla_set_callback_function.argtypes = [CallbackFunc]
+        #self.lib.carla_set_callback_function.restype = None
 
-        #self.lib.set_option.argtypes = [c_enum, c_int, c_char_p]
-        #self.lib.set_option.restype = None
+        #self.lib.carla_set_option.argtypes = [c_enum, c_int, c_char_p]
+        #self.lib.carla_set_option.restype = None
 
         #self.lib.nsm_announce.argtypes = [c_char_p, c_int]
         #self.lib.nsm_announce.restype = None
@@ -926,94 +926,94 @@ class Host(object):
         return structToDict(self.lib.carla_get_midi_program_data(pluginId, midiProgramId).contents)
 
     #def get_custom_data(self, pluginId, customDataId):
-        #return structToDict(self.lib.get_custom_data(pluginId, customDataId).contents)
+        #return structToDict(self.lib.carla_get_custom_data(pluginId, customDataId).contents)
 
     #def get_chunk_data(self, pluginId):
-        #return self.lib.get_chunk_data(pluginId)
+        #return self.lib.carla_get_chunk_data(pluginId)
 
     #def get_gui_info(self, pluginId):
-        #return structToDict(self.lib.get_gui_info(pluginId).contents)
+        #return structToDict(self.lib.carla_get_gui_info(pluginId).contents)
 
     #def get_parameter_count(self, pluginId):
-        #return self.lib.get_parameter_count(pluginId)
+        #return self.lib.carla_get_parameter_count(pluginId)
 
     #def get_program_count(self, pluginId):
-        #return self.lib.get_program_count(pluginId)
+        #return self.lib.carla_get_program_count(pluginId)
 
     #def get_midi_program_count(self, pluginId):
-        #return self.lib.get_midi_program_count(pluginId)
+        #return self.lib.carla_get_midi_program_count(pluginId)
 
     #def get_custom_data_count(self, pluginId):
-        #return self.lib.get_custom_data_count(pluginId)
+        #return self.lib.carla_get_custom_data_count(pluginId)
 
     #def get_parameter_text(self, pluginId, parameterId):
-        #return self.lib.get_parameter_text(pluginId, parameterId)
+        #return self.lib.carla_get_parameter_text(pluginId, parameterId)
 
     #def get_program_name(self, pluginId, programId):
-        #return self.lib.get_program_name(pluginId, programId)
+        #return self.lib.carla_get_program_name(pluginId, programId)
 
     #def get_midi_program_name(self, pluginId, midiProgramId):
-        #return self.lib.get_midi_program_name(pluginId, midiProgramId)
+        #return self.lib.carla_get_midi_program_name(pluginId, midiProgramId)
 
     #def get_real_plugin_name(self, pluginId):
-        #return self.lib.get_real_plugin_name(pluginId)
+        #return self.lib.carla_get_real_plugin_name(pluginId)
 
     #def get_current_program_index(self, pluginId):
-        #return self.lib.get_current_program_index(pluginId)
+        #return self.lib.carla_get_current_program_index(pluginId)
 
     #def get_current_midi_program_index(self, pluginId):
-        #return self.lib.get_current_midi_program_index(pluginId)
+        #return self.lib.carla_get_current_midi_program_index(pluginId)
 
     #def get_default_parameter_value(self, pluginId, parameterId):
-        #return self.lib.get_default_parameter_value(pluginId, parameterId)
+        #return self.lib.carla_get_default_parameter_value(pluginId, parameterId)
 
     #def get_current_parameter_value(self, pluginId, parameterId):
-        #return self.lib.get_current_parameter_value(pluginId, parameterId)
+        #return self.lib.carla_get_current_parameter_value(pluginId, parameterId)
 
     #def get_input_peak_value(self, pluginId, portId):
-        #return self.lib.get_input_peak_value(pluginId, portId)
+        #return self.lib.carla_get_input_peak_value(pluginId, portId)
 
     #def get_output_peak_value(self, pluginId, portId):
-        #return self.lib.get_output_peak_value(pluginId, portId)
+        #return self.lib.carla_get_output_peak_value(pluginId, portId)
 
     #def set_active(self, pluginId, onOff):
-        #self.lib.set_active(pluginId, onOff)
+        #self.lib.carla_set_active(pluginId, onOff)
 
     #def set_drywet(self, pluginId, value):
-        #self.lib.set_drywet(pluginId, value)
+        #self.lib.carla_set_drywet(pluginId, value)
 
     #def set_volume(self, pluginId, value):
-        #self.lib.set_volume(pluginId, value)
+        #self.lib.carla_set_volume(pluginId, value)
 
     #def set_balance_left(self, pluginId, value):
-        #self.lib.set_balance_left(pluginId, value)
+        #self.lib.carla_set_balance_left(pluginId, value)
 
     #def set_balance_right(self, pluginId, value):
-        #self.lib.set_balance_right(pluginId, value)
+        #self.lib.carla_set_balance_right(pluginId, value)
 
     #def set_parameter_value(self, pluginId, parameterId, value):
-        #self.lib.set_parameter_value(pluginId, parameterId, value)
+        #self.lib.carla_set_parameter_value(pluginId, parameterId, value)
 
     #def set_parameter_midi_cc(self, pluginId, parameterId, cc):
-        #self.lib.set_parameter_midi_cc(pluginId, parameterId, cc)
+        #self.lib.carla_set_parameter_midi_cc(pluginId, parameterId, cc)
 
     #def set_parameter_midi_channel(self, pluginId, parameterId, channel):
-        #self.lib.set_parameter_midi_channel(pluginId, parameterId, channel)
+        #self.lib.carla_set_parameter_midi_channel(pluginId, parameterId, channel)
 
     #def set_program(self, pluginId, programId):
-        #self.lib.set_program(pluginId, programId)
+        #self.lib.carla_set_program(pluginId, programId)
 
     #def set_midi_program(self, pluginId, midiProgramId):
-        #self.lib.set_midi_program(pluginId, midiProgramId)
+        #self.lib.carla_set_midi_program(pluginId, midiProgramId)
 
     #def set_custom_data(self, pluginId, type_, key, value):
-        #self.lib.set_custom_data(pluginId, type_.encode("utf-8"), key.encode("utf-8"), value.encode("utf-8"))
+        #self.lib.carla_set_custom_data(pluginId, type_.encode("utf-8"), key.encode("utf-8"), value.encode("utf-8"))
 
     #def set_chunk_data(self, pluginId, chunkData):
-        #self.lib.set_chunk_data(pluginId, chunkData.encode("utf-8"))
+        #self.lib.carla_set_chunk_data(pluginId, chunkData.encode("utf-8"))
 
     #def set_gui_container(self, pluginId, guiAddr):
-        #self.lib.set_gui_container(pluginId, guiAddr)
+        #self.lib.carla_set_gui_container(pluginId, guiAddr)
 
     #def show_gui(self, pluginId, yesNo):
         #self.lib.show_gui(pluginId, yesNo)
@@ -1029,22 +1029,22 @@ class Host(object):
 
     #def set_callback_function(self, func):
         #self.callback = CallbackFunc(func)
-        #self.lib.set_callback_function(self.callback)
+        #self.lib.carla_set_callback_function(self.callback)
 
     #def set_option(self, option, value, valueStr):
-        #self.lib.set_option(option, value, valueStr.encode("utf-8"))
+        #self.lib.carla_set_option(option, value, valueStr.encode("utf-8"))
 
     #def get_last_error(self):
-        #return self.lib.get_last_error()
+        #return self.lib.carla_get_last_error()
 
     #def get_host_osc_url(self):
-        #return self.lib.get_host_osc_url()
+        #return self.lib.carla_get_host_osc_url()
 
     #def get_buffer_size(self):
-        #return self.lib.get_buffer_size()
+        #return self.lib.carla_get_buffer_size()
 
     #def get_sample_rate(self):
-        #return self.lib.get_sample_rate()
+        #return self.lib.carla_get_sample_rate()
 
     #def nsm_announce(self, url, pid):
         #self.lib.nsm_announce(url.encode("utf-8"), pid)
