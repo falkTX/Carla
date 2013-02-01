@@ -184,7 +184,7 @@ public:
     // ---------------------------------------------------------------------
     // processing
 
-    void setParameter(const int32_t rindex, const double value)
+    void setParameter(const int32_t rindex, const float value)
     {
         if (effect)
             effect->setParameter(effect, rindex, value);
