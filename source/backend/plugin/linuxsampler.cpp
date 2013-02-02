@@ -21,7 +21,7 @@
 # error Should not use linuxsampler for bridges!
 #endif
 
-#include "carla_plugin.hpp"
+#include "carla_plugin_internal.hpp"
 
 #ifdef WANT_LINUXSAMPLER
 
@@ -930,7 +930,7 @@ private:
     const char* m_maker;
 };
 
-CarlaPlugin* LinuxSamplerPlugin::newLinuxSampler(const initializer& init, bool isGIG)
+CarlaPlugin* LinuxSamplerPlugin::newLinuxSampler(const Initializer& init, bool isGIG)
 {
     qDebug("LinuxSamplerPlugin::newLinuxSampler(%p, \"%s\", \"%s\", \"%s\", %s)", init.engine, init.filename, init.name, init.label, bool2str(isGIG));
 
@@ -966,7 +966,7 @@ CARLA_BACKEND_END_NAMESPACE
 
 CARLA_BACKEND_START_NAMESPACE
 
-CarlaPlugin* CarlaPlugin::newGIG(const initializer& init)
+CarlaPlugin* CarlaPlugin::newGIG(const Initializer& init)
 {
     qDebug("CarlaPlugin::newGIG(%p, \"%s\", \"%s\", \"%s\")", init.engine, init.filename, init.name, init.label);
 #ifdef WANT_LINUXSAMPLER
@@ -977,7 +977,7 @@ CarlaPlugin* CarlaPlugin::newGIG(const initializer& init)
 #endif
 }
 
-CarlaPlugin* CarlaPlugin::newSFZ(const initializer& init)
+CarlaPlugin* CarlaPlugin::newSFZ(const Initializer& init)
 {
     qDebug("CarlaPlugin::newSFZ(%p, \"%s\", \"%s\", \"%s\")", init.engine, init.filename, init.name, init.label);
 #ifdef WANT_LINUXSAMPLER

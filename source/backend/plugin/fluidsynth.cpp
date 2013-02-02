@@ -19,7 +19,7 @@
 # error Should not use fluidsynth for bridges!
 #endif
 
-#include "carla_plugin.hpp"
+#include "carla_plugin_internal.hpp"
 
 #ifdef WANT_FLUIDSYNTH
 
@@ -1327,7 +1327,7 @@ CARLA_BACKEND_END_NAMESPACE
 
 CARLA_BACKEND_START_NAMESPACE
 
-CarlaPlugin* CarlaPlugin::newSF2(const initializer& init)
+CarlaPlugin* CarlaPlugin::newSF2(const Initializer& init)
 {
     qDebug("CarlaPlugin::newSF2(%p, \"%s\", \"%s\", \"%s\")", init.engine, init.filename, init.name, init.label);
 

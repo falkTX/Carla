@@ -394,7 +394,7 @@ protected:
         return paramBuffers[index];
     }
 
-    void  d_setParameterValue(uint32_t index, float value)
+    void d_setParameterValue(uint32_t index, float value)
     {
         if (index >= paramCount)
             return;
@@ -402,7 +402,7 @@ protected:
         paramBuffers[index] = value;
     }
 
-    void  d_setProgram(uint32_t index)
+    void d_setProgram(uint32_t index)
     {
         if (index >= programCount)
             return;

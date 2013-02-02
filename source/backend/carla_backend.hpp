@@ -407,7 +407,7 @@ enum CallbackType {
     CALLBACK_PLUGIN_REMOVED = 2,
 
     /*!
-     * A parameter has been changed.
+     * A parameter value has been changed.
      *
      * \param value1 Parameter index
      * \param value3 Value
@@ -415,12 +415,20 @@ enum CallbackType {
     CALLBACK_PARAMETER_VALUE_CHANGED = 3,
 
     /*!
+     * A parameter default has been changed.
+     *
+     * \param value1 Parameter index
+     * \param value3 Default value
+     */
+    CALLBACK_PARAMETER_DEFAULT_CHANGED = 4,
+
+    /*!
      * A parameter's MIDI channel has been changed.
      *
      * \param value1 Parameter index
      * \param value2 MIDI channel
      */
-    CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED = 4,
+    CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED = 5,
 
     /*!
      * A parameter's MIDI CC has been changed.
@@ -428,14 +436,14 @@ enum CallbackType {
      * \param value1 Parameter index
      * \param value2 MIDI CC
      */
-    CALLBACK_PARAMETER_MIDI_CC_CHANGED = 5,
+    CALLBACK_PARAMETER_MIDI_CC_CHANGED = 6,
 
     /*!
      * The current program has has been changed.
      *
      * \param value1 Program index
      */
-    CALLBACK_PROGRAM_CHANGED = 6,
+    CALLBACK_PROGRAM_CHANGED = 7,
 
     /*!
      * The current MIDI program has been changed.
@@ -443,7 +451,7 @@ enum CallbackType {
      * \param value1 MIDI bank
      * \param value2 MIDI program
      */
-    CALLBACK_MIDI_PROGRAM_CHANGED = 7,
+    CALLBACK_MIDI_PROGRAM_CHANGED = 8,
 
     /*!
      * A note has been pressed.
@@ -452,7 +460,7 @@ enum CallbackType {
      * \param value2 Note
      * \param value3 Velocity
      */
-    CALLBACK_NOTE_ON = 8,
+    CALLBACK_NOTE_ON = 9,
 
     /*!
      * A note has been released.
@@ -460,7 +468,7 @@ enum CallbackType {
      * \param value1 Channel
      * \param value2 Note
      */
-    CALLBACK_NOTE_OFF = 9,
+    CALLBACK_NOTE_OFF = 10,
 
     /*!
      * The plugin's custom GUI state has changed.
@@ -470,62 +478,62 @@ enum CallbackType {
      *                1: GUI has been shown\n
      *               -1: GUI has crashed and should not be shown again
      */
-    CALLBACK_SHOW_GUI = 10,
+    CALLBACK_SHOW_GUI = 11,
 
     /*!
      * The plugin needs update.
      */
-    CALLBACK_UPDATE = 11,
+    CALLBACK_UPDATE = 12,
 
     /*!
      * The plugin's data/information has changed.
      */
-    CALLBACK_RELOAD_INFO = 12,
+    CALLBACK_RELOAD_INFO = 13,
 
     /*!
      * The plugin's parameters have changed.
      */
-    CALLBACK_RELOAD_PARAMETERS = 13,
+    CALLBACK_RELOAD_PARAMETERS = 14,
 
     /*!
      * The plugin's programs have changed.
      */
-    CALLBACK_RELOAD_PROGRAMS = 14,
+    CALLBACK_RELOAD_PROGRAMS = 15,
 
     /*!
      * The plugin's state has changed.
      */
-    CALLBACK_RELOAD_ALL = 15,
+    CALLBACK_RELOAD_ALL = 16,
 
     /*!
      * Non-Session-Manager Announce message.
      */
-    CALLBACK_NSM_ANNOUNCE = 16,
+    CALLBACK_NSM_ANNOUNCE = 17,
 
     /*!
      * Non-Session-Manager Open message #1.
      */
-    CALLBACK_NSM_OPEN1 = 17,
+    CALLBACK_NSM_OPEN1 = 18,
 
     /*!
      * Non-Session-Manager Open message #2.
      */
-    CALLBACK_NSM_OPEN2 = 18,
+    CALLBACK_NSM_OPEN2 = 19,
 
     /*!
      * Non-Session-Manager Save message.
      */
-    CALLBACK_NSM_SAVE = 19,
+    CALLBACK_NSM_SAVE = 20,
 
     /*!
      * An error occurred, show last error to user.
      */
-    CALLBACK_ERROR = 20,
+    CALLBACK_ERROR = 21,
 
     /*!
      * The engine has crashed or malfunctioned and will no longer work.
      */
-    CALLBACK_QUIT = 21
+    CALLBACK_QUIT = 22
 };
 
 /*!

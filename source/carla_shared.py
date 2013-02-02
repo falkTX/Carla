@@ -191,11 +191,10 @@ PARAMETER_USES_SAMPLERATE  = 0x20
 PARAMETER_USES_SCALEPOINTS = 0x40
 PARAMETER_USES_CUSTOM_TEXT = 0x80
 
-# FIXME
 # Custom Data types
-#CUSTOM_DATA_INVALID = None
-#CUSTOM_DATA_CHUNK   = "http://kxstudio.sf.net/ns/carla/chunk"
-#CUSTOM_DATA_STRING  = "http://kxstudio.sf.net/ns/carla/string"
+CUSTOM_DATA_INVALID = None
+CUSTOM_DATA_CHUNK   = "http://kxstudio.sf.net/ns/carla/chunk"
+CUSTOM_DATA_STRING  = "http://kxstudio.sf.net/ns/carla/string"
 
 # Binary Type
 BINARY_NONE    = 0
@@ -274,26 +273,29 @@ OPTION_PATH_BRIDGE_VST_HWND    = 23
 OPTION_PATH_BRIDGE_VST_X11     = 24
 
 # Callback Type
-CALLBACK_DEBUG                          = 0
-CALLBACK_PARAMETER_VALUE_CHANGED        = 1
-CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED = 2
-CALLBACK_PARAMETER_MIDI_CC_CHANGED = 3
-CALLBACK_PROGRAM_CHANGED      = 4
-CALLBACK_MIDI_PROGRAM_CHANGED = 5
-CALLBACK_NOTE_ON              = 6
-CALLBACK_NOTE_OFF             = 7
-CALLBACK_SHOW_GUI             = 8
-CALLBACK_UPDATE               = 9
-CALLBACK_RELOAD_INFO          = 10
-CALLBACK_RELOAD_PARAMETERS    = 11
-CALLBACK_RELOAD_PROGRAMS      = 12
-CALLBACK_RELOAD_ALL           = 13
-CALLBACK_NSM_ANNOUNCE         = 14
-CALLBACK_NSM_OPEN1            = 15
-CALLBACK_NSM_OPEN2            = 16
-CALLBACK_NSM_SAVE             = 17
-CALLBACK_ERROR                = 18
-CALLBACK_QUIT                 = 19
+CALLBACK_DEBUG          = 0
+CALLBACK_PLUGIN_ADDED   = 1
+CALLBACK_PLUGIN_REMOVED = 2
+CALLBACK_PARAMETER_VALUE_CHANGED        = 3
+CALLBACK_PARAMETER_DEFAULT_CHANGED      = 4
+CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED = 5
+CALLBACK_PARAMETER_MIDI_CC_CHANGED      = 6
+CALLBACK_PROGRAM_CHANGED      = 7
+CALLBACK_MIDI_PROGRAM_CHANGED = 8
+CALLBACK_NOTE_ON              = 9
+CALLBACK_NOTE_OFF             = 10
+CALLBACK_SHOW_GUI             = 11
+CALLBACK_UPDATE               = 12
+CALLBACK_RELOAD_INFO          = 13
+CALLBACK_RELOAD_PARAMETERS    = 14
+CALLBACK_RELOAD_PROGRAMS      = 15
+CALLBACK_RELOAD_ALL           = 16
+CALLBACK_NSM_ANNOUNCE         = 17
+CALLBACK_NSM_OPEN1            = 18
+CALLBACK_NSM_OPEN2            = 19
+CALLBACK_NSM_SAVE             = 20
+CALLBACK_ERROR                = 21
+CALLBACK_QUIT                 = 22
 
 # Process Mode Type
 PROCESS_MODE_SINGLE_CLIENT    = 0
@@ -317,6 +319,7 @@ class CarlaHostObject(object):
         'host',
         'gui',
         'isControl',
+        'isLocal',
         'processMode',
         'maxParameters'
     ]
@@ -325,6 +328,7 @@ Carla = CarlaHostObject()
 Carla.host = None
 Carla.gui  = None
 Carla.isControl = False
+Carla.isLocal   = True
 Carla.processMode   = PROCESS_MODE_CONTINUOUS_RACK
 Carla.maxParameters = MAX_RACK_PLUGINS
 
@@ -1394,29 +1398,52 @@ class PluginEdit(QDialog):
 
         self.fParameterCount = 0
         self.fParameterList  = [] # (type, id, widget)
-        self.fParameterIdsToUpdate = [] # id
+        self.fParameterToUpdate = [] # (id, value)
 
         self.fTabIconOff = QIcon(":/bitmaps/led_off.png")
         self.fTabIconOn  = QIcon(":/bitmaps/led_yellow.png")
         self.fTabIconCount  = 0
         self.fTabIconTimers = []
 
+        self.ui.dial_drywet.setPixmap(3)
+        self.ui.dial_drywet.setLabel("Dry/Wet")
+        self.ui.dial_vol.setPixmap(3)
+        self.ui.dial_vol.setLabel("Volume")
+        self.ui.dial_b_left.setPixmap(4)
+        self.ui.dial_b_left.setLabel("L")
+        self.ui.dial_b_right.setPixmap(4)
+        self.ui.dial_b_right.setLabel("R")
+
+        self.ui.dial_drywet.setCustomPaint(self.ui.dial_drywet.CUSTOM_PAINT_CARLA_WET)
+        self.ui.dial_vol.setCustomPaint(self.ui.dial_vol.CUSTOM_PAINT_CARLA_VOL)
+        self.ui.dial_b_left.setCustomPaint(self.ui.dial_b_left.CUSTOM_PAINT_CARLA_L)
+        self.ui.dial_b_right.setCustomPaint(self.ui.dial_b_right.CUSTOM_PAINT_CARLA_R)
+
         self.ui.keyboard.setMode(self.ui.keyboard.HORIZONTAL)
         self.ui.keyboard.setOctaves(6)
-        self.ui.scrollArea.ensureVisible(self.ui.keyboard.width() * 1 / 5, 0)
+        self.ui.scrollArea.ensureVisible(self.ui.keyboard.width() / 5, 0)
         self.ui.scrollArea.setVisible(False)
 
         # TODO - not implemented yet
         self.ui.b_reload_program.setEnabled(False)
         self.ui.b_reload_midi_program.setEnabled(False)
 
-        # Not available for carla-control
-        if Carla.isControl:
-            self.ui.b_load_state.setEnabled(False)
-            self.ui.b_save_state.setEnabled(False)
-        else:
+        if Carla.isLocal:
             self.connect(self.ui.b_save_state, SIGNAL("clicked()"), SLOT("slot_saveState()"))
             self.connect(self.ui.b_load_state, SIGNAL("clicked()"), SLOT("slot_loadState()"))
+        else:
+            self.ui.b_load_state.setEnabled(False)
+            self.ui.b_save_state.setEnabled(False)
+
+        self.connect(self.ui.dial_drywet, SIGNAL("sliderMoved(int)"), SLOT("slot_dryWetChanged(int)"))
+        self.connect(self.ui.dial_vol, SIGNAL("sliderMoved(int)"), SLOT("slot_volumeChanged(int)"))
+        self.connect(self.ui.dial_b_left, SIGNAL("sliderMoved(int)"), SLOT("slot_balanceLeftChanged(int)"))
+        self.connect(self.ui.dial_b_right, SIGNAL("sliderMoved(int)"), SLOT("slot_balanceRightChanged(int)"))
+
+        #self.connect(self.ui.dial_drywet, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_showCustomDialMenu()"))
+        #self.connect(self.ui.dial_vol, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_showCustomDialMenu()"))
+        #self.connect(self.ui.dial_b_left, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_showCustomDialMenu()"))
+        #self.connect(self.ui.dial_b_right, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_showCustomDialMenu()"))
 
         self.connect(self.ui.keyboard, SIGNAL("noteOn(int)"), SLOT("slot_noteOn(int)"))
         self.connect(self.ui.keyboard, SIGNAL("noteOff(int)"), SLOT("slot_noteOff(int)"))
@@ -1427,6 +1454,7 @@ class PluginEdit(QDialog):
         self.connect(self, SIGNAL("finished(int)"), SLOT("slot_finished()"))
 
         self.reloadAll()
+        self.resize(self.width(), self.height()-self.ui.keyboard.height())
 
     def reloadAll(self):
         self.fPluginInfo = Carla.host.get_plugin_info(self.fPluginId)
@@ -1490,10 +1518,11 @@ class PluginEdit(QDialog):
         self.ui.le_ains.setText(str(audioCountInfo['ins']))
         self.ui.le_aouts.setText(str(audioCountInfo['outs']))
         self.ui.le_params.setText(str(paramCountInfo['ins']))
-        self.ui.le_couts.setText(str(paramCountInfo['outs']))
 
-        self.ui.le_is_synth.setText(self.tr("Yes") if (pluginHints & PLUGIN_IS_SYNTH) else self.tr("No"))
-        self.ui.le_has_gui.setText(self.tr("Yes") if (pluginHints & PLUGIN_HAS_GUI) else self.tr("No"))
+        self.ui.dial_drywet.setEnabled(pluginHints & PLUGIN_CAN_DRYWET)
+        self.ui.dial_vol.setEnabled(pluginHints & PLUGIN_CAN_VOLUME)
+        self.ui.dial_b_left.setEnabled(pluginHints & PLUGIN_CAN_BALANCE)
+        self.ui.dial_b_right.setEnabled(pluginHints & PLUGIN_CAN_BALANCE)
 
         # Show/hide keyboard
         self.ui.scrollArea.setVisible((pluginHints & PLUGIN_IS_SYNTH) != 0 or (midiCountInfo['ins'] > 0 < midiCountInfo['outs']))
@@ -1508,7 +1537,7 @@ class PluginEdit(QDialog):
         # Reset
         self.fParameterCount = 0
         self.fParameterList  = []
-        self.fParameterIdsToUpdate = []
+        self.fParameterToUpdate = []
 
         self.fTabIconCount  = 0
         self.fTabIconTimers = []
@@ -1561,11 +1590,10 @@ class PluginEdit(QDialog):
                 for j in range(paramInfo['scalePointCount']):
                     scalePointInfo = Carla.host.get_parameter_scalepoint_info(self.fPluginId, i, j)
 
-                    parameter['scalepoints'].append(
-                        {
-                          'value': scalePointInfo['value'],
-                          'label': cString(scalePointInfo['label'])
-                        })
+                    parameter['scalePoints'].append({
+                        'value': scalePointInfo['value'],
+                        'label': cString(scalePointInfo['label'])
+                    })
 
                 paramInputList.append(parameter)
 
@@ -1689,6 +1717,28 @@ class PluginEdit(QDialog):
 
         self.ui.cb_midi_programs.blockSignals(False)
 
+    def setParameterValue(self, parameterId, value):
+        #if parameterId == PARAMETER_ACTIVE:
+            #pass
+        #elif parameterId == PARAMETER_DRYWET:
+            #self.ui.dial_drywet.setValue(value * 1000, True, False)
+        #elif parameterId == PARAMETER_VOLUME:
+            #self.ui.dial_vol.setValue(value * 1000, True, False)
+        #elif parameterId == PARAMETER_BALANCE_LEFT:
+            #self.ui.dial_b_left.setValue(value * 1000, True, False)
+        #elif parameterId == PARAMETER_BALANCE_RIGHT:
+            #self.ui.dial_b_right.setValue(value * 1000, True, False)
+        #elif parameterId == PARAMETER_PANNING:
+            ##self.ui.dial_pan.setValue(value * 1000, True, False)
+            #pass
+        #elif parameterId >= 0:
+        for paramItem in self.fParameterToUpdate:
+            if paramItem[0] == parameterId:
+                paramItem[1] = value
+                break
+        else:
+            self.fParameterToUpdate.append([parameterId, value])
+
     def setVisible(self, yesNo):
         if yesNo:
             if not self.fGeometry.isNull():
@@ -1697,6 +1747,26 @@ class PluginEdit(QDialog):
             self.fGeometry = self.saveGeometry()
 
         QDialog.setVisible(self, yesNo)
+
+    @pyqtSlot(int)
+    def slot_dryWetChanged(self, value):
+        Carla.host.set_drywet(self.fPluginId, float(value)/1000)
+
+    @pyqtSlot(int)
+    def slot_volumeChanged(self, value):
+        Carla.host.set_volume(self.fPluginId, float(value)/1000)
+
+    @pyqtSlot(int)
+    def slot_balanceLeftChanged(self, value):
+        Carla.host.set_balance_left(self.fPluginId, float(value)/1000)
+
+    @pyqtSlot(int)
+    def slot_balanceRightChanged(self, value):
+        Carla.host.set_balance_right(self.fPluginId, float(value)/1000)
+
+    @pyqtSlot(int)
+    def slot_panningChanged(self, value):
+        Carla.host.set_panning(self.fPluginId, float(value)/1000)
 
     @pyqtSlot(int, float)
     def slot_parameterValueChanged(self, parameterId, value):
@@ -1787,10 +1857,15 @@ class PluginEdit(QDialog):
 # Plugin Widget
 
 class PluginWidget(QFrame):
-    def __init__(self, parent, pluginId):
+    def __init__(self, parent, listWidgetItem, pluginId):
         QFrame.__init__(self, parent)
         self.ui = ui_carla_plugin.Ui_PluginWidget()
         self.ui.setupUi(self)
+
+        self.fLastGreenLedState = False
+        self.fLastBlueLedState  = False
+
+        self.fParameterIconTimer = ICON_STATE_NULL
 
         self.fPluginId   = pluginId
         self.fPluginInfo = Carla.host.get_plugin_info(self.fPluginId)
@@ -1800,10 +1875,7 @@ class PluginWidget(QFrame):
         self.fPluginInfo["maker"]     = cString(self.fPluginInfo["maker"])
         self.fPluginInfo["copyright"] = cString(self.fPluginInfo["copyright"])
 
-        self.fParameterIconTimer = ICON_STATE_NULL
-
-        self.fLastGreenLedState = False
-        self.fLastBlueLedState  = False
+        self.fListWidgetItem = listWidgetItem
 
         if Carla.processMode == PROCESS_MODE_CONTINUOUS_RACK:
             self.fPeaksInputCount  = 2
@@ -1865,16 +1937,6 @@ class PluginWidget(QFrame):
         self.ui.led_audio_out.setColor(self.ui.led_audio_out.BLUE)
         self.ui.led_audio_out.setEnabled(False)
 
-        self.ui.dial_drywet.setPixmap(3)
-        self.ui.dial_vol.setPixmap(3)
-        self.ui.dial_b_left.setPixmap(4)
-        self.ui.dial_b_right.setPixmap(4)
-
-        self.ui.dial_drywet.setCustomPaint(self.ui.dial_drywet.CUSTOM_PAINT_CARLA_WET)
-        self.ui.dial_vol.setCustomPaint(self.ui.dial_vol.CUSTOM_PAINT_CARLA_VOL)
-        self.ui.dial_b_left.setCustomPaint(self.ui.dial_b_left.CUSTOM_PAINT_CARLA_L)
-        self.ui.dial_b_right.setCustomPaint(self.ui.dial_b_right.CUSTOM_PAINT_CARLA_R)
-
         self.ui.peak_in.setColor(self.ui.peak_in.GREEN)
         self.ui.peak_in.setOrientation(self.ui.peak_in.HORIZONTAL)
 
@@ -1890,25 +1952,15 @@ class PluginWidget(QFrame):
         self.ui.edit_dialog.hide()
 
         self.connect(self.ui.led_enable, SIGNAL("clicked(bool)"), SLOT("slot_setActive(bool)"))
-        self.connect(self.ui.dial_drywet, SIGNAL("sliderMoved(int)"), SLOT("slot_setDryWet(int)"))
-        self.connect(self.ui.dial_vol, SIGNAL("sliderMoved(int)"), SLOT("slot_setVolume(int)"))
-        self.connect(self.ui.dial_b_left, SIGNAL("sliderMoved(int)"), SLOT("slot_setBalanceLeft(int)"))
-        self.connect(self.ui.dial_b_right, SIGNAL("sliderMoved(int)"), SLOT("slot_setBalanceRight(int)"))
-        #self.connect(self.ui.b_gui, SIGNAL("clicked(bool)"), SLOT("slot_guiClicked(bool)"))
+        self.connect(self.ui.b_gui, SIGNAL("clicked(bool)"), SLOT("slot_guiClicked(bool)"))
         self.connect(self.ui.b_edit, SIGNAL("clicked(bool)"), SLOT("slot_editClicked(bool)"))
-        #self.connect(self.ui.b_remove, SIGNAL("clicked()"), SLOT("slot_removeClicked()"))
-
-        #self.connect(self.ui.dial_drywet, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_showCustomDialMenu()"))
-        #self.connect(self.ui.dial_vol, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_showCustomDialMenu()"))
-        #self.connect(self.ui.dial_b_left, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_showCustomDialMenu()"))
-        #self.connect(self.ui.dial_b_right, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_showCustomDialMenu()"))
+        self.connect(self.ui.b_remove, SIGNAL("clicked()"), SLOT("slot_removeClicked()"))
 
         # FIXME
-        self.ui.frame_controls.setVisible(False)
-        self.ui.pushButton.setVisible(False)
-        self.ui.pushButton_2.setVisible(False)
-        self.ui.pushButton_3.setVisible(False)
         self.setMaximumHeight(48)
+
+    def getListWidgetItem(self):
+        return self.fListWidgetItem
 
     def setActive(self, active, sendGui=False, sendCallback=True):
         if sendGui:      self.ui.led_enable.setChecked(active)
@@ -1917,67 +1969,23 @@ class PluginWidget(QFrame):
         if active:
             self.ui.edit_dialog.ui.keyboard.allNotesOff()
 
-    def setDryWet(self, value, sendGui=False, sendCallback=True):
-        if sendGui:      self.ui.dial_drywet.setValue(value)
-        if sendCallback: Carla.host.set_drywet(self.fPluginId, float(value)/1000)
+    def setParameterValue(self, parameterId, value):
+        self.fParameterIconTimer = ICON_STATE_ON
 
-        message = self.tr("Output dry/wet (%i%%)" % int(value / 10))
-        self.ui.dial_drywet.setStatusTip(message)
-        #Carla.gui.statusBar().showMessage(message)
+        if parameterId == PARAMETER_ACTIVE:
+            return self.setActive(bool(value), True, False)
 
-    def setVolume(self, value, sendGui=False, sendCallback=True):
-        if sendGui:      self.ui.dial_vol.setValue(value)
-        if sendCallback: Carla.host.set_volume(self.fPluginId, float(value)/1000)
+        self.ui.edit_dialog.setParameterValue(parameterId, value)
 
-        message = self.tr("Output volume (%i%%)" % int(value / 10))
-        self.ui.dial_vol.setStatusTip(message)
-        #Carla.gui.statusBar().showMessage(message)
-
-    def setBalanceLeft(self, value, sendGui=False, sendCallback=True):
-        if sendGui:      self.ui.dial_b_left.setValue(value)
-        if sendCallback: Carla.host.set_balance_left(self.fPluginId, float(value)/1000)
-
-        if value < 0:
-            message = self.tr("Left Panning (%i%% Left)" % int(-value / 10))
-        elif value > 0:
-            message = self.tr("Left Panning (%i%% Right)" % int(value / 10))
-        else:
-            message = self.tr("Left Panning (Center)")
-
-        self.ui.dial_b_left.setStatusTip(message)
-        #Carla.gui.statusBar().showMessage(message)
-
-    def setBalanceRight(self, value, sendGui=False, sendCallback=True):
-        if sendGui:      self.ui.dial_b_right.setValue(value)
-        if sendCallback: Carla.host.set_balance_right(self.fPluginId, float(value)/1000)
-
-        if value < 0:
-            message = self.tr("Right Panning (%i%% Left)" % int(-value / 10))
-        elif value > 0:
-            message = self.tr("Right Panning (%i%% Right)" % int(value / 10))
-        else:
-            message = self.tr("Right Panning (Center)")
-
-        self.ui.dial_b_right.setStatusTip(message)
-        #Carla.gui.statusBar().showMessage(message)
-
-    def setPanning(self, value, sendGui=False, sendCallback=True):
-        #if sendGui:      self.ui.dial_vol.setValue(value)
-        if sendCallback: Carla.host.set_panning(self.fPluginId, float(value)/1000)
-
-        #message = self.tr("Output panning (%i%%)" % int(value / 10))
-        #self.ui.dial_vol.setStatusTip(message)
-        #Carla.gui.statusBar().showMessage(message)
+    def setId(self, idx):
+        self.fPluginId = idx
+        self.ui.edit_dialog.fPluginId = idx
 
     def editClosed(self):
         self.ui.b_edit.setChecked(False)
 
     def recheckPluginHints(self, hints):
         self.fPluginInfo['hints'] = hints
-        self.ui.dial_drywet.setEnabled(hints & PLUGIN_CAN_DRYWET)
-        self.ui.dial_vol.setEnabled(hints & PLUGIN_CAN_VOLUME)
-        self.ui.dial_b_left.setEnabled(hints & PLUGIN_CAN_BALANCE)
-        self.ui.dial_b_right.setEnabled(hints & PLUGIN_CAN_BALANCE)
         self.ui.b_gui.setEnabled(hints & PLUGIN_HAS_GUI)
 
     def paintEvent(self, event):
@@ -2025,29 +2033,17 @@ class PluginWidget(QFrame):
     def slot_setActive(self, yesNo):
         self.setActive(yesNo, False, True)
 
-    @pyqtSlot(int)
-    def slot_setDryWet(self, value):
-        self.setDryWet(value, False, True)
-
-    @pyqtSlot(int)
-    def slot_setVolume(self, value):
-        self.setVolume(value, False, True)
-
-    @pyqtSlot(int)
-    def slot_setBalanceLeft(self, value):
-        self.setBalanceLeft(value, False, True)
-
-    @pyqtSlot(int)
-    def slot_setBalanceRight(self, value):
-        self.setBalanceRight(value, False, True)
-
-    @pyqtSlot(int)
-    def slot_setPanning(self, value):
-        self.setPanning(value, False, True)
+    @pyqtSlot(bool)
+    def slot_guiClicked(self, show):
+        Carla.host.show_gui(show)
 
     @pyqtSlot(bool)
     def slot_editClicked(self, show):
         self.ui.edit_dialog.setVisible(show)
+
+    @pyqtSlot()
+    def slot_removeClicked(self):
+        Carla.host.remove_plugin(self.fPluginId)
 
 # ------------------------------------------------------------------------------------------------------------
 # Separate Thread for Plugin Search

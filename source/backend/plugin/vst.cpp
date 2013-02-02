@@ -15,7 +15,7 @@
  * For a full copy of the GNU General Public License see the COPYING file
  */
 
-#include "carla_plugin.hpp"
+#include "carla_plugin_internal.hpp"
 
 #ifdef WANT_VST
 
@@ -2386,7 +2386,7 @@ CARLA_BACKEND_END_NAMESPACE
 
 CARLA_BACKEND_START_NAMESPACE
 
-CarlaPlugin* CarlaPlugin::newVST(const initializer& init)
+CarlaPlugin* CarlaPlugin::newVST(const Initializer& init)
 {
     qDebug("CarlaPlugin::newVST(%p, \"%s\", \"%s\", \"%s\")", init.engine, init.filename, init.name, init.label);
 

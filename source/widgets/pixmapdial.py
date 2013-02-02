@@ -21,7 +21,8 @@
 
 from math import floor
 from PyQt4.QtCore import Qt, QPointF, QRectF, QTimer, QSize, SLOT
-from PyQt4.QtGui import QColor, QConicalGradient, QDial, QFontMetrics, QLinearGradient, QPainter, QPainterPath, QPen, QPixmap
+from PyQt4.QtGui import QColor, QConicalGradient, QDial, QFont, QFontMetrics
+from PyQt4.QtGui import QLinearGradient, QPainter, QPainterPath, QPen, QPixmap
 
 # ------------------------------------------------------------------------------------------------------------
 # Widget Class
@@ -58,6 +59,8 @@ class PixmapDial(QDial):
 
         self.m_label = ""
         self.m_labelPos = QPointF(0.0, 0.0)
+        self.m_labelFont = QFont()
+        self.m_labelFont.setPointSize(6)
         self.m_labelWidth  = 0
         self.m_labelHeight = 0
         self.m_labelGradient = QLinearGradient(0, 0, 0, 1)
@@ -81,6 +84,7 @@ class PixmapDial(QDial):
 
     def setCustomPaint(self, paint):
         self.m_customPaint = paint
+        self.m_labelPos.setY(self.p_size + self.m_labelHeight/2)
         self.update()
 
     def setEnabled(self, enabled):
@@ -93,8 +97,8 @@ class PixmapDial(QDial):
     def setLabel(self, label):
         self.m_label = label
 
-        self.m_labelWidth  = QFontMetrics(self.font()).width(label)
-        self.m_labelHeight = QFontMetrics(self.font()).height()
+        self.m_labelWidth  = QFontMetrics(self.m_labelFont).width(label)
+        self.m_labelHeight = QFontMetrics(self.m_labelFont).height()
 
         self.m_labelPos.setX(float(self.p_size)/2 - float(self.m_labelWidth)/2)
         self.m_labelPos.setY(self.p_size + self.m_labelHeight)
@@ -164,10 +168,12 @@ class PixmapDial(QDial):
         painter.setRenderHint(QPainter.Antialiasing, True)
 
         if self.m_label:
-            painter.setPen(self.m_color2)
-            painter.setBrush(self.m_labelGradient)
-            painter.drawRect(self.m_labelGradient_rect)
+            if self.m_customPaint == self.CUSTOM_PAINT_NULL:
+                painter.setPen(self.m_color2)
+                painter.setBrush(self.m_labelGradient)
+                painter.drawRect(self.m_labelGradient_rect)
 
+            painter.setFont(self.m_labelFont)
             painter.setPen(self.m_colorT[0 if self.isEnabled() else 1])
             painter.drawText(self.m_labelPos, self.m_label)
 

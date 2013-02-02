@@ -15,7 +15,7 @@
  * For a full copy of the GNU General Public License see the COPYING file
  */
 
-#include "carla_plugin.hpp"
+#include "carla_plugin_internal.hpp"
 #include "carla_native.h"
 
 CARLA_BACKEND_START_NAMESPACE

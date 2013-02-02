@@ -756,23 +756,13 @@ public:
     static CarlaPlugin* newNative(const Initializer& init);
     static CarlaPlugin* newBridge(const Initializer& init, const BinaryType btype, const PluginType ptype, const char* const bridgeFilename);
 #endif
-#ifdef WANT_LADSPA
     static CarlaPlugin* newLADSPA(const Initializer& init, const LADSPA_RDF_Descriptor* const rdfDescriptor);
-#endif
-#ifdef WANT_DSSI
     static CarlaPlugin* newDSSI(const Initializer& init, const char* const guiFilename);
-#endif
-#ifdef WANT_LV2
     static CarlaPlugin* newLV2(const Initializer& init);
-#endif
-#ifdef WANT_VST
     static CarlaPlugin* newVST(const Initializer& init);
-#endif
-#ifdef WANT_LINUXSAMPLER
+#ifndef BUILD_BRIDGE
     static CarlaPlugin* newGIG(const Initializer& init);
     static CarlaPlugin* newSFZ(const Initializer& init);
-#endif
-#ifdef WANT_FLUIDSYNTH
     static CarlaPlugin* newSF2(const Initializer& init);
 #endif
 

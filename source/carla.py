@@ -1,35 +1,38 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# Carla Backend code
-# Copyright (C) 2011-2012 Filipe Coelho <falktx@falktx.com>
+# Carla plugin host
+# Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
 #
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# any later version.
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 2 of
+# the License, or any later version.
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
-# For a full copy of the GNU General Public License see the COPYING file
+# For a full copy of the GNU General Public License see the GPL.txt file
 
+# ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
-from PyQt4.QtGui import QApplication, QMainWindow, QTableWidgetItem
 
+from PyQt4.QtCore import QSize
+from PyQt4.QtGui import QApplication, QListWidgetItem, QMainWindow
+
+# ------------------------------------------------------------------------------------------------------------
 # Imports (Custom Stuff)
-import ui_carla, ui_carla_database, ui_carla_refresh
+
+import ui_carla
 from carla_backend import *
+from carla_shared import * # FIXME, remove later
 #from shared_settings import *
 
-# set defaults
-DEFAULT_PROJECT_FOLDER = HOME
-#setDefaultProjectFolder(DEFAULT_PROJECT_FOLDER)
-#setDefaultPluginsPaths(LADSPA_PATH, DSSI_PATH, LV2_PATH, VST_PATH, GIG_PATH, SF2_PATH, SFZ_PATH)
-
+# ------------------------------------------------------------------------------------------------------------
 # Main Window
+
 class CarlaMainW(QMainWindow):
     def __init__(self, parent=None):
         QMainWindow.__init__(self, parent)
@@ -59,18 +62,16 @@ class CarlaMainW(QMainWindow):
         self.fEngineStarted   = False
         self.fFirstEngineInit = False
 
+        self.fPluginCount = 0
+        self.fPluginList  = []
+
         #self.m_project_filename = None
-        #self.m_pluginCount = 0
 
         #self._nsmAnnounce2str = ""
         #self._nsmOpen1str = ""
         #self._nsmOpen2str = ""
         #self.nsm_server = None
         #self.nsm_url = None
-
-        #self.m_plugin_list = []
-        #for x in range(MAX_DEFAULT_PLUGINS):
-            #self.m_plugin_list.append(None)
 
         # -------------------------------------------------------------
         # Set-up GUI stuff
@@ -108,27 +109,29 @@ class CarlaMainW(QMainWindow):
         self.connect(self.ui.act_help_about_qt, SIGNAL("triggered()"), app, SLOT("aboutQt()"))
 
         #self.connect(self, SIGNAL("SIGUSR1()"), SLOT("slot_handleSIGUSR1()"))
-        #self.connect(self, SIGNAL("DebugCallback(int, int, int, double, QString)"), SLOT("slot_handleDebugCallback(int, int, int, double, QString)"))
-        #self.connect(self, SIGNAL("ParameterValueCallback(int, int, double)"), SLOT("slot_handleParameterValueCallback(int, int, double)"))
-        #self.connect(self, SIGNAL("ParameterMidiChannelCallback(int, int, int)"), SLOT("slot_handleParameterMidiChannelCallback(int, int, int)"))
-        #self.connect(self, SIGNAL("ParameterMidiCcCallback(int, int, int)"), SLOT("slot_handleParameterMidiCcCallback(int, int, int)"))
-        #self.connect(self, SIGNAL("ProgramCallback(int, int)"), SLOT("slot_handleProgramCallback(int, int)"))
-        #self.connect(self, SIGNAL("MidiProgramCallback(int, int)"), SLOT("slot_handleMidiProgramCallback(int, int)"))
-        #self.connect(self, SIGNAL("NoteOnCallback(int, int, int, int)"), SLOT("slot_handleNoteOnCallback(int, int, int, int)"))
-        #self.connect(self, SIGNAL("NoteOffCallback(int, int, int)"), SLOT("slot_handleNoteOffCallback(int, int, int)"))
-        #self.connect(self, SIGNAL("ShowGuiCallback(int, int)"), SLOT("slot_handleShowGuiCallback(int, int)"))
-        #self.connect(self, SIGNAL("ResizeGuiCallback(int, int, int)"), SLOT("slot_handleResizeGuiCallback(int, int, int)"))
-        #self.connect(self, SIGNAL("UpdateCallback(int)"), SLOT("slot_handleUpdateCallback(int)"))
-        #self.connect(self, SIGNAL("ReloadInfoCallback(int)"), SLOT("slot_handleReloadInfoCallback(int)"))
-        #self.connect(self, SIGNAL("ReloadParametersCallback(int)"), SLOT("slot_handleReloadParametersCallback(int)"))
-        #self.connect(self, SIGNAL("ReloadProgramsCallback(int)"), SLOT("slot_handleReloadProgramsCallback(int)"))
-        #self.connect(self, SIGNAL("ReloadAllCallback(int)"), SLOT("slot_handleReloadAllCallback(int)"))
+        self.connect(self, SIGNAL("DebugCallback(int, int, int, double, QString)"), SLOT("slot_handleDebugCallback(int, int, int, double, QString)"))
+        self.connect(self, SIGNAL("PluginAddedCallback(int)"), SLOT("slot_handlePluginAddedCallback(int)"))
+        self.connect(self, SIGNAL("PluginRemovedCallback(int)"), SLOT("slot_handlePluginRemovedCallback(int)"))
+        self.connect(self, SIGNAL("ParameterValueChangedCallback(int, int, double)"), SLOT("slot_handleParameterValueChangedCallback(int, int, double)"))
+        self.connect(self, SIGNAL("ParameterDefaultChangedCallback(int, int, double)"), SLOT("slot_handleParameterDefaultChangedCallback(int, int, double)"))
+        self.connect(self, SIGNAL("ParameterMidiChannelChangedCallback(int, int, int)"), SLOT("slot_handleParameterMidiChannelChangedCallback(int, int, int)"))
+        self.connect(self, SIGNAL("ParameterMidiCcChangedCallback(int, int, int)"), SLOT("slot_handleParameterMidiCcChangedCallback(int, int, int)"))
+        self.connect(self, SIGNAL("ProgramChangedCallback(int, int)"), SLOT("slot_handleProgramChangedCallback(int, int)"))
+        self.connect(self, SIGNAL("MidiProgramChangedCallback(int, int)"), SLOT("slot_handleMidiProgramChangedCallback(int, int)"))
+        self.connect(self, SIGNAL("NoteOnCallback(int, int, int, int)"), SLOT("slot_handleNoteOnCallback(int, int, int, int)"))
+        self.connect(self, SIGNAL("NoteOffCallback(int, int, int)"), SLOT("slot_handleNoteOffCallback(int, int, int)"))
+        self.connect(self, SIGNAL("ShowGuiCallback(int, int)"), SLOT("slot_handleShowGuiCallback(int, int)"))
+        self.connect(self, SIGNAL("UpdateCallback(int)"), SLOT("slot_handleUpdateCallback(int)"))
+        self.connect(self, SIGNAL("ReloadInfoCallback(int)"), SLOT("slot_handleReloadInfoCallback(int)"))
+        self.connect(self, SIGNAL("ReloadParametersCallback(int)"), SLOT("slot_handleReloadParametersCallback(int)"))
+        self.connect(self, SIGNAL("ReloadProgramsCallback(int)"), SLOT("slot_handleReloadProgramsCallback(int)"))
+        self.connect(self, SIGNAL("ReloadAllCallback(int)"), SLOT("slot_handleReloadAllCallback(int)"))
         #self.connect(self, SIGNAL("NSM_AnnounceCallback()"), SLOT("slot_handleNSM_AnnounceCallback()"))
         #self.connect(self, SIGNAL("NSM_Open1Callback()"), SLOT("slot_handleNSM_Open1Callback()"))
         #self.connect(self, SIGNAL("NSM_Open2Callback()"), SLOT("slot_handleNSM_Open2Callback()"))
         #self.connect(self, SIGNAL("NSM_SaveCallback()"), SLOT("slot_handleNSM_SaveCallback()"))
-        #self.connect(self, SIGNAL("ErrorCallback(QString)"), SLOT("slot_handleErrorCallback(QString)"))
-        #self.connect(self, SIGNAL("QuitCallback()"), SLOT("slot_handleQuitCallback()"))
+        self.connect(self, SIGNAL("ErrorCallback(QString)"), SLOT("slot_handleErrorCallback(QString)"))
+        self.connect(self, SIGNAL("QuitCallback()"), SLOT("slot_handleQuitCallback()"))
 
         #self.TIMER_GUI_STUFF  = self.startTimer(self.m_savedSettings["Main/RefreshInterval"])     # Peaks
         #self.TIMER_GUI_STUFF2 = self.startTimer(self.m_savedSettings["Main/RefreshInterval"] * 2) # LEDs and edit dialog
@@ -203,47 +206,45 @@ class CarlaMainW(QMainWindow):
         self.fEngineStarted   = True
         self.fFirstEngineInit = False
 
+        self.fPluginCount = 0
+        self.fPluginList  = []
+
+        if Carla.processMode == PROCESS_MODE_CONTINUOUS_RACK:
+            maxCount = MAX_RACK_PLUGINS
+        elif Carla.processMode == PROCESS_MODE_PATCHBAY:
+            maxCount = MAX_PATCHBAY_PLUGINS
+        else:
+            maxCount = MAX_DEFAULT_PLUGINS
+
+        for x in range(maxCount):
+            self.fPluginList.append(None)
+
     def stopEngine(self):
-        #if self.m_pluginCount > 0:
-            #ask = QMessageBox.question(self, self.tr("Warning"), self.tr("There are still some plugins loaded, you need to remove them to stop the engine.\n"
-                                                                         #"Do you want to do this now?"),
-                                                                         #QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-            #if ask == QMessageBox.Yes:
-                #self.slot_remove_all()
-            #else:
-                #return
+        if self.fPluginCount > 0:
+            ask = QMessageBox.question(self, self.tr("Warning"), self.tr("There are still some plugins loaded, you need to remove them to stop the engine.\n"
+                                                                         "Do you want to do this now?"),
+                                                                         QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+            if ask != QMessageBox.Yes:
+                return
+
+            #self.slot_remove_all()
 
         if Carla.host.is_engine_running() and not Carla.host.engine_close():
             print(cString(Carla.host.get_last_error()))
 
         self.fEngineStarted = False
+        self.fPluginCount = 0
+        self.fPluginList  = []
 
-    def addPlugin(self, btype, ptype, filename, name, label, extraStuff, activate):
+    def addPlugin(self, btype, ptype, filename, name, label, extraStuff):
         if not self.fEngineStarted:
-            if activate:
-                QMessageBox.warning(self, self.tr("Warning"), self.tr("Cannot add new plugins while engine is stopped"))
-            return -1
+            QMessageBox.warning(self, self.tr("Warning"), self.tr("Cannot add new plugins while engine is stopped"))
+            return False
 
         if not Carla.host.add_plugin(btype, ptype, filename, name, label, extraStuff):
             CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"), self.tr("Failed to load plugin"), cString(Carla.host.get_last_error()), QMessageBox.Ok, QMessageBox.Ok)
             return False
 
-        else:
-            print("added plugin!!")
-            new_plugin_id = 0
-
-            pwidget = PluginWidget(self, new_plugin_id)
-            self.ui.w_plugins.layout().addWidget(pwidget)
-            #self.m_plugin_list[new_plugin_id] = pwidget
-            self.ui.act_plugin_remove_all.setEnabled(True)
-
-            pwidget.ui.peak_in.setRefreshRate(self.fSavedSettings["Main/RefreshInterval"])
-            pwidget.ui.peak_out.setRefreshRate(self.fSavedSettings["Main/RefreshInterval"])
-
-            if activate:
-                pwidget.setActive(True, True, True)
-
-        #self.m_pluginCount += 1
         return True
 
     #def pluginWidgetActivated(self, widget):
@@ -287,33 +288,58 @@ class CarlaMainW(QMainWindow):
         self.ui.act_engine_start.setEnabled(not check)
         self.ui.act_engine_stop.setEnabled(check)
 
-    #@pyqtSlot()
-    #def slot_handleSIGUSR1(self):
-        #print("Got SIGUSR1 -> Saving project now")
+    @pyqtSlot()
+    def slot_handleSIGUSR1(self):
+        print("Got SIGUSR1 -> Saving project now")
         #QTimer.singleShot(0, self, SLOT("slot_file_save()"))
 
-    #@pyqtSlot(int, int, int, float, str)
-    #def slot_handleDebugCallback(self, plugin_id, value1, value2, value3, valueStr):
-        #print("DEBUG :: %i, %i, %i, %f, \"%s\")" % (plugin_id, value1, value2, value3, valueStr))
+    @pyqtSlot(int, int, int, float, str)
+    def slot_handleDebugCallback(self, pluginId, value1, value2, value3, valueStr):
+        print("DEBUG :: %i, %i, %i, %f, \"%s\")" % (pluginId, value1, value2, value3, valueStr))
 
-    #@pyqtSlot(int, int, float)
-    #def slot_handleParameterValueCallback(self, pluginId, parameterId, value):
-        #pwidget = self.m_plugin_list[pluginId]
-        #if pwidget:
-            #pwidget.m_parameterIconTimer = ICON_STATE_ON
+    @pyqtSlot(int)
+    def slot_handlePluginAddedCallback(self, pluginId, pluginName="todo"):
+        pwidgetItem = QListWidgetItem(self.ui.listWidget)
+        pwidgetItem.setSizeHint(QSize(pwidgetItem.sizeHint().width(), 48))
 
-            #if parameterId == PARAMETER_ACTIVE:
-                #pwidget.set_active((value > 0.0), True, False)
-            #elif parameterId == PARAMETER_DRYWET:
-                #pwidget.set_drywet(value * 1000, True, False)
-            #elif parameterId == PARAMETER_VOLUME:
-                #pwidget.set_volume(value * 1000, True, False)
-            #elif parameterId == PARAMETER_BALANCE_LEFT:
-                #pwidget.set_balance_left(value * 1000, True, False)
-            #elif parameterId == PARAMETER_BALANCE_RIGHT:
-                #pwidget.set_balance_right(value * 1000, True, False)
-            #elif parameterId >= 0:
-                #pwidget.edit_dialog.set_parameter_to_update(parameterId)
+        pwidget = PluginWidget(self, pwidgetItem, pluginId)
+        pwidget.ui.peak_in.setRefreshRate(self.fSavedSettings["Main/RefreshInterval"])
+        pwidget.ui.peak_out.setRefreshRate(self.fSavedSettings["Main/RefreshInterval"])
+
+        self.ui.listWidget.setItemWidget(pwidgetItem, pwidget)
+
+        self.fPluginCount += 1
+        self.fPluginList[pluginId] = pwidget
+
+        if self.fPluginCount == 1:
+            self.ui.act_plugin_remove_all.setEnabled(True)
+
+    @pyqtSlot(int)
+    def slot_handlePluginRemovedCallback(self, pluginId):
+        pwidget = self.fPluginList[pluginId]
+        if pwidget is None:
+            return
+
+        self.fPluginList[pluginId] = None
+        self.fPluginCount -= 1
+
+        pwidget.ui.edit_dialog.close()
+        pwidget.close()
+        del pwidget
+
+        self.ui.listWidget.takeItem(pluginId)
+        #self.ui.listWidget.removeItemWidget(pwidget.getListWidgetItem())
+
+        if self.fPluginCount == 0:
+            self.ui.act_plugin_remove_all.setEnabled(False)
+
+    @pyqtSlot(int, int, float)
+    def slot_handleParameterValueChangedCallback(self, pluginId, parameterId, value):
+        pwidget = self.fPluginList[pluginId]
+        if pwidget is None:
+            return
+
+        pwidget.setParameterValue(value, True, False)
 
     #@pyqtSlot(int, int, int)
     #def slot_handleParameterMidiChannelCallback(self, pluginId, parameterId, channel):
@@ -366,14 +392,6 @@ class CarlaMainW(QMainWindow):
             #elif show == -1:
                 #pwidget.b_gui.setChecked(False)
                 #pwidget.b_gui.setEnabled(False)
-
-    #@pyqtSlot(int, int, int)
-    #def slot_handleResizeGuiCallback(self, plugin_id, width, height):
-        #pwidget = self.m_plugin_list[plugin_id]
-        #if pwidget:
-            #gui_dialog = pwidget.gui_dialog
-            #if gui_dialog:
-                #gui_dialog.setNewSize(width, height)
 
     #@pyqtSlot(int)
     #def slot_handleUpdateCallback(self, plugin_id):
@@ -446,15 +464,15 @@ class CarlaMainW(QMainWindow):
         #self.save_project()
         #Carla.host.nsm_reply_save()
 
-    #@pyqtSlot(str)
-    #def slot_handleErrorCallback(self, error):
-        #QMessageBox.critical(self, self.tr("Error"), error)
+    @pyqtSlot(str)
+    def slot_handleErrorCallback(self, error):
+        QMessageBox.critical(self, self.tr("Error"), error)
 
-    #@pyqtSlot()
-    #def slot_handleQuitCallback(self):
-        #CustomMessageBox(self, QMessageBox.Warning, self.tr("Warning"),
-            #self.tr("JACK has been stopped or crashed.\nPlease start JACK and restart Carla"),
-            #self.tr("You may want to save your session now..."), QMessageBox.Ok, QMessageBox.Ok)
+    @pyqtSlot()
+    def slot_handleQuitCallback(self):
+        CustomMessageBox(self, QMessageBox.Warning, self.tr("Warning"),
+            self.tr("Engine has been stopped or crashed.\nPlease restart Carla"),
+            self.tr("You may want to save your session now..."), QMessageBox.Ok, QMessageBox.Ok)
 
     #def remove_plugin(self, plugin_id, showError):
         #pwidget = self.m_plugin_list[plugin_id]
@@ -499,23 +517,6 @@ class CarlaMainW(QMainWindow):
             #if self.m_plugin_list[i]: break
         #else:
             #self.act_plugin_remove_all.setEnabled(False)
-
-    #def get_extra_stuff(self, plugin):
-        #ptype = plugin['type']
-
-        #if ptype == PLUGIN_LADSPA:
-            #unique_id = plugin['unique_id']
-            #for rdf_item in self.ladspa_rdf_list:
-                #if rdf_item.UniqueID == unique_id:
-                    #return pointer(rdf_item)
-
-        #elif ptype == PLUGIN_DSSI:
-            #if plugin['hints'] & PLUGIN_HAS_GUI:
-                #gui = findDSSIGUI(plugin['binary'], plugin['name'], plugin['label'])
-                #if gui:
-                    #return gui.encode("utf-8")
-
-        #return c_nullptr
 
     #def save_project(self):
         #content = ("<?xml version='1.0' encoding='UTF-8'?>\n"
@@ -825,8 +826,8 @@ class CarlaMainW(QMainWindow):
             ptype    = dialog.fRetPlugin['type']
             filename = dialog.fRetPlugin['binary']
             label    = dialog.fRetPlugin['label']
-            extraStuff = None #self.get_extra_stuff(dialog.ret_plugin)
-            self.addPlugin(btype, ptype, filename, None, label, extraStuff, True)
+            extraStuff = self.getExtraStuff(dialog.fRetPlugin)
+            self.addPlugin(btype, ptype, filename, None, label, extraStuff)
 
     #@pyqtSlot()
     #def slot_remove_all(self):
@@ -870,6 +871,23 @@ class CarlaMainW(QMainWindow):
                     #pwidget.peak_in.setRefreshRate(self.m_savedSettings["Main/RefreshInterval"])
                     #pwidget.peak_out.setRefreshRate(self.m_savedSettings["Main/RefreshInterval"])
 
+    def getExtraStuff(self, plugin):
+        ptype = plugin['type']
+
+        if ptype == PLUGIN_LADSPA:
+            uniqueId = plugin['uniqueId']
+            for rdfItem in self.fLadspaRdfList:
+                if rdfItem.UniqueID == uniqueId:
+                    return pointer(rdfItem)
+
+        elif ptype == PLUGIN_DSSI:
+            if plugin['hints'] & PLUGIN_HAS_GUI:
+                gui = findDSSIGUI(plugin['binary'], plugin['name'], plugin['label'])
+                if gui:
+                    return gui.encode("utf-8")
+
+        return c_nullptr
+
     def loadRDFs(self):
         # Save RDF info for later
         self.fLadspaRdfList = []
@@ -904,7 +922,7 @@ class CarlaMainW(QMainWindow):
             self.ui.toolBar.setVisible(showToolbar)
 
         self.fSavedSettings = {
-            "Main/DefaultProjectFolder": settings.value("Main/DefaultProjectFolder", DEFAULT_PROJECT_FOLDER, type=str),
+            "Main/DefaultProjectFolder": settings.value("Main/DefaultProjectFolder", HOME, type=str),
             "Main/RefreshInterval": settings.value("Main/RefreshInterval", 120, type=int)
         }
 
@@ -937,7 +955,7 @@ class CarlaMainW(QMainWindow):
         os.environ["SF2_PATH"] = splitter.join(SF2_PATH)
         os.environ["SFZ_PATH"] = splitter.join(SFZ_PATH)
 
-    #def timerEvent(self, event):
+    def timerEvent(self, event):
         #if event.timerId() == self.TIMER_GUI_STUFF:
             #for pwidget in self.m_plugin_list:
                 #if pwidget: pwidget.check_gui_stuff()
@@ -948,7 +966,7 @@ class CarlaMainW(QMainWindow):
             #for pwidget in self.m_plugin_list:
                 #if pwidget: pwidget.check_gui_stuff2()
 
-        #QMainWindow.timerEvent(self, event)
+        QMainWindow.timerEvent(self, event)
 
     def closeEvent(self, event):
         #if self.nsm_server:
@@ -963,53 +981,62 @@ class CarlaMainW(QMainWindow):
 
 # ------------------------------------------------------------------------------------------------
 
-def callback_function(ptr, action, pluginId, value1, value2, value3, valueStr):
+def callbackFunction(ptr, action, pluginId, value1, value2, value3, valueStr):
     if pluginId < 0 or not Carla.gui:
         return
 
-    #if action == CALLBACK_DEBUG:
-        #Carla.gui.emit(SIGNAL("DebugCallback(int, int, int, double, QString)"), pluginId, value1, value2, value3, cString(valueStr))
-    #elif action == CALLBACK_PARAMETER_VALUE_CHANGED:
-        #Carla.gui.emit(SIGNAL("ParameterValueCallback(int, int, double)"), pluginId, value1, value3)
-    #elif action == CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED:
-        #Carla.gui.emit(SIGNAL("ParameterMidiChannelCallback(int, int, int)"), pluginId, value1, value2)
-    #elif action == CALLBACK_PARAMETER_MIDI_CC_CHANGED:
-        #Carla.gui.emit(SIGNAL("ParameterMidiCcCallback(int, int, int)"), pluginId, value1, value2)
-    #elif action == CALLBACK_PROGRAM_CHANGED:
-        #Carla.gui.emit(SIGNAL("ProgramCallback(int, int)"), pluginId, value1)
-    #elif action == CALLBACK_MIDI_PROGRAM_CHANGED:
-        #Carla.gui.emit(SIGNAL("MidiProgramCallback(int, int)"), pluginId, value1)
-    #elif action == CALLBACK_NOTE_ON:
-        #Carla.gui.emit(SIGNAL("NoteOnCallback(int, int, int, int)"), pluginId, value1, value2, value3)
-    #elif action == CALLBACK_NOTE_OFF:
-        #Carla.gui.emit(SIGNAL("NoteOffCallback(int, int, int)"), pluginId, value1, value2)
-    #elif action == CALLBACK_SHOW_GUI:
-        #Carla.gui.emit(SIGNAL("ShowGuiCallback(int, int)"), pluginId, value1)
-    #elif action == CALLBACK_UPDATE:
-        #Carla.gui.emit(SIGNAL("UpdateCallback(int)"), pluginId)
-    #elif action == CALLBACK_RELOAD_INFO:
-        #Carla.gui.emit(SIGNAL("ReloadInfoCallback(int)"), pluginId)
-    #elif action == CALLBACK_RELOAD_PARAMETERS:
-        #Carla.gui.emit(SIGNAL("ReloadParametersCallback(int)"), pluginId)
-    #elif action == CALLBACK_RELOAD_PROGRAMS:
-        #Carla.gui.emit(SIGNAL("ReloadProgramsCallback(int)"), pluginId)
-    #elif action == CALLBACK_RELOAD_ALL:
-        #Carla.gui.emit(SIGNAL("ReloadAllCallback(int)"), pluginId)
+    if action == CALLBACK_DEBUG:
+        return Carla.gui.emit(SIGNAL("DebugCallback(int, int, int, double, QString)"), pluginId, value1, value2, value3, cString(valueStr))
+    elif action == CALLBACK_PLUGIN_ADDED:
+        return Carla.gui.emit(SIGNAL("PluginAddedCallback(int)"), pluginId)
+    elif action == CALLBACK_PLUGIN_REMOVED:
+        return Carla.gui.emit(SIGNAL("PluginRemovedCallback(int)"), pluginId)
+    elif action == CALLBACK_PARAMETER_VALUE_CHANGED:
+        return Carla.gui.emit(SIGNAL("ParameterValueChangedCallback(int, int, double)"), pluginId, value1, value3)
+    elif action == CALLBACK_PARAMETER_DEFAULT_CHANGED:
+        return Carla.gui.emit(SIGNAL("ParameterDefaultChangedCallback(int, int, double)"), pluginId, value1, value3)
+    elif action == CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED:
+        return Carla.gui.emit(SIGNAL("ParameterMidiChannelChangedCallback(int, int, int)"), pluginId, value1, value2)
+    elif action == CALLBACK_PARAMETER_MIDI_CC_CHANGED:
+        return Carla.gui.emit(SIGNAL("ParameterMidiCcChangedCallback(int, int, int)"), pluginId, value1, value2)
+    elif action == CALLBACK_PROGRAM_CHANGED:
+        return Carla.gui.emit(SIGNAL("ProgramChangedCallback(int, int)"), pluginId, value1)
+    elif action == CALLBACK_MIDI_PROGRAM_CHANGED:
+        return Carla.gui.emit(SIGNAL("MidiProgramChangedCallback(int, int)"), pluginId, value1)
+    elif action == CALLBACK_NOTE_ON:
+        return Carla.gui.emit(SIGNAL("NoteOnCallback(int, int, int, int)"), pluginId, value1, value2, value3)
+    elif action == CALLBACK_NOTE_OFF:
+        return Carla.gui.emit(SIGNAL("NoteOffCallback(int, int, int)"), pluginId, value1, value2)
+    elif action == CALLBACK_SHOW_GUI:
+        return Carla.gui.emit(SIGNAL("ShowGuiCallback(int, int)"), pluginId, value1)
+    elif action == CALLBACK_UPDATE:
+        return Carla.gui.emit(SIGNAL("UpdateCallback(int)"), pluginId)
+    elif action == CALLBACK_RELOAD_INFO:
+        return Carla.gui.emit(SIGNAL("ReloadInfoCallback(int)"), pluginId)
+    elif action == CALLBACK_RELOAD_PARAMETERS:
+        return Carla.gui.emit(SIGNAL("ReloadParametersCallback(int)"), pluginId)
+    elif action == CALLBACK_RELOAD_PROGRAMS:
+        return Carla.gui.emit(SIGNAL("ReloadProgramsCallback(int)"), pluginId)
+    elif action == CALLBACK_RELOAD_ALL:
+        return Carla.gui.emit(SIGNAL("ReloadAllCallback(int)"), pluginId)
     #elif action == CALLBACK_NSM_ANNOUNCE:
         #Carla.gui._nsmAnnounce2str = cString(Carla.host.get_last_error())
         #Carla.gui.emit(SIGNAL("NSM_AnnounceCallback()"))
+        #return
     #elif action == CALLBACK_NSM_OPEN1:
         #Carla.gui._nsmOpen1str = cString(valueStr)
         #Carla.gui.emit(SIGNAL("NSM_Open1Callback()"))
+        #return
     #elif action == CALLBACK_NSM_OPEN2:
         #Carla.gui._nsmOpen2str = cString(valueStr)
         #Carla.gui.emit(SIGNAL("NSM_Open2Callback()"))
+        #return
     #elif action == CALLBACK_NSM_SAVE:
-        #Carla.gui.emit(SIGNAL("NSM_SaveCallback()"))
-    #elif action == CALLBACK_ERROR:
-        #Carla.gui.emit(SIGNAL("ErrorCallback(QString)"), cString(Carla.host.get_last_error()))
-    #elif action == CALLBACK_QUIT:
-        #Carla.gui.emit(SIGNAL("QuitCallback()"))
+        #return Carla.gui.emit(SIGNAL("NSM_SaveCallback()"))
+    elif action == CALLBACK_ERROR:
+        return Carla.gui.emit(SIGNAL("ErrorCallback(QString)"), valueStr)
+    elif action == CALLBACK_QUIT:
+        return Carla.gui.emit(SIGNAL("QuitCallback()"))
 
 #--------------- main ------------------
 if __name__ == '__main__':
@@ -1035,7 +1062,7 @@ if __name__ == '__main__':
 
     # Init backend
     Carla.host = Host(libPrefix)
-    Carla.host.set_callback_function(callback_function)
+    Carla.host.set_callback_function(callbackFunction)
     Carla.host.set_option(OPTION_PROCESS_NAME, 0, "carla")
 
     # Set bridge paths

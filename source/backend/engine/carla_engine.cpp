@@ -770,6 +770,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
 #if 0
         plugin = CarlaPlugin::newBridge(init, btype, ptype, bridgeBinary);
 #endif
+        setLastError("Bridged plugins are not implemented yet");
     }
     else
 #endif // BUILD_BRIDGE
@@ -786,51 +787,32 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
 #endif
 
         case PLUGIN_LADSPA:
-#ifdef WANT_LADSPA
             plugin = CarlaPlugin::newLADSPA(init, (const LADSPA_RDF_Descriptor*)extra);
-#endif
             break;
 
-#if 0
         case PLUGIN_DSSI:
-#ifdef WANT_DSSI
-            plugin = CarlaPlugin::newDSSI(init, extra);
-#endif
+            plugin = CarlaPlugin::newDSSI(init, (const char*)extra);
             break;
 
         case PLUGIN_LV2:
-#ifdef WANT_LV2
             plugin = CarlaPlugin::newLV2(init);
-#endif
             break;
 
         case PLUGIN_VST:
-#ifdef WANT_VST
             plugin = CarlaPlugin::newVST(init);
-#endif
             break;
 
         case PLUGIN_GIG:
-#ifdef WANT_LINUXSAMPLER
             plugin = CarlaPlugin::newGIG(init);
-#endif
             break;
 
         case PLUGIN_SF2:
-#ifdef WANT_FLUIDSYNTH
             plugin = CarlaPlugin::newSF2(init);
-#endif
             break;
 
         case PLUGIN_SFZ:
-#ifdef WANT_LINUXSAMPLER
             plugin = CarlaPlugin::newSFZ(init);
-#endif
             break;
-#else
-        default:
-            break;
-#endif
         }
     }
 
@@ -1209,20 +1191,26 @@ void CarlaEngine::bufferSizeChanged(const uint32_t newBufferSize)
 {
     qDebug("CarlaEngine::bufferSizeChanged(%i)", newBufferSize);
 
-#if 0
-    for (unsigned short i=0; i < data->maxPluginNumber; i++)
+    for (unsigned int i=0; i < fData->curPluginCount; i++)
     {
-        if (data->carlaPlugins[i] && data->carlaPlugins[i]->enabled() /*&& ! data->carlaPlugins[i]->data->processHighPrecision*/)
-            data->carlaPlugins[i]->bufferSizeChanged(newBufferSize);
+        CarlaPlugin* const plugin = getPluginUnchecked(i);
+
+        if (plugin != nullptr && plugin->enabled())
+            plugin->bufferSizeChanged(newBufferSize);
     }
-#endif
 }
 
 void CarlaEngine::sampleRateChanged(const double newSampleRate)
 {
     qDebug("CarlaEngine::sampleRateChanged(%g)", newSampleRate);
 
-    // TODO
+    for (unsigned int i=0; i < fData->curPluginCount; i++)
+    {
+        CarlaPlugin* const plugin = getPluginUnchecked(i);
+
+        if (plugin != nullptr && plugin->enabled())
+            plugin->sampleRateChanged(newSampleRate);
+    }
 }
 
 void CarlaEngine::proccessPendingEvents()

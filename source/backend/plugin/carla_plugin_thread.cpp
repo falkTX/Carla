@@ -15,7 +15,7 @@
  * For a full copy of the GNU General Public License see the COPYING file
  */
 
-#include "carla_plugin.hpp"
+#include "carla_plugin_internal.hpp"
 
 #include <QtCore/QProcess>
 
@@ -39,99 +39,99 @@ const char* PluginThreadMode2str(const CarlaPluginThread::PluginThreadMode mode)
     return nullptr;
 }
 
-CarlaPluginThread::CarlaPluginThread(CarlaBackend::CarlaEngine* const engine_, CarlaBackend::CarlaPlugin* const plugin_, const PluginThreadMode mode_, QObject* const parent)
+CarlaPluginThread::CarlaPluginThread(CarlaBackend::CarlaEngine* const engine, CarlaBackend::CarlaPlugin* const plugin, const PluginThreadMode mode, QObject* const parent)
     : QThread(parent),
-      engine(engine_),
-      plugin(plugin_),
-      mode(mode_)
+      kEngine(engine),
+      kPlugin(plugin),
+      kMode(mode)
 {
     qDebug("CarlaPluginThread::CarlaPluginThread(plugin:\"%s\", engine:\"%s\", %s)", plugin->name(), engine->getName(), PluginThreadMode2str(mode));
 
-    m_process = nullptr;
+    fProcess = nullptr;
 }
 
 CarlaPluginThread::~CarlaPluginThread()
 {
-    if (m_process)
-        delete m_process;
+    if (fProcess != nullptr)
+        delete fProcess;
 }
 
 void CarlaPluginThread::setOscData(const char* const binary, const char* const label, const char* const data1)
 {
-    m_binary = QString(binary);
-    m_label  = QString(label);
-    m_data1  = QString(data1);
+    fBinary = binary;
+    fLabel  = label;
+    fData1  = data1;
 }
 
 void CarlaPluginThread::run()
 {
     qDebug("CarlaPluginThread::run()");
 
-    if (! m_process)
+    if (fProcess == nullptr)
     {
-        m_process = new QProcess(nullptr);
-        m_process->setProcessChannelMode(QProcess::ForwardedChannels);
+        fProcess = new QProcess(nullptr);
+        fProcess->setProcessChannelMode(QProcess::ForwardedChannels);
 #ifndef BUILD_BRIDGE
-        m_process->setProcessEnvironment(engine->getOptionsAsProcessEnvironment());
+        fProcess->setProcessEnvironment(kEngine->getOptionsAsProcessEnvironment());
 #endif
     }
 
-    QString name(plugin->name() ? plugin->name() : "(none)");
+    QString name(kPlugin->name() ? kPlugin->name() : "(none)");
     QStringList arguments;
 
-    switch (mode)
+    switch (kMode)
     {
     case PLUGIN_THREAD_DSSI_GUI:
-        /* osc_url  */ arguments << QString("%1/%2").arg(engine->getOscServerPathUDP()).arg(plugin->id());
-        /* filename */ arguments << plugin->filename();
-        /* label    */ arguments << m_label;
-        /* ui-title */ arguments << QString("%1 (GUI)").arg(plugin->name());
+        /* osc_url  */ arguments << QString("%1/%2").arg(kEngine->getOscServerPathUDP()).arg(kPlugin->id());
+        /* filename */ arguments << kPlugin->filename();
+        /* label    */ arguments << (const char*)fLabel;
+        /* ui-title */ arguments << QString("%1 (GUI)").arg(kPlugin->name());
         break;
 
     case PLUGIN_THREAD_LV2_GUI:
-        /* osc_url  */ arguments << QString("%1/%2").arg(engine->getOscServerPathTCP()).arg(plugin->id());
-        /* URI      */ arguments << m_label;
-        /* ui-URI   */ arguments << m_data1;
-        /* ui-title */ arguments << QString("%1 (GUI)").arg(plugin->name());
+        /* osc_url  */ arguments << QString("%1/%2").arg(kEngine->getOscServerPathTCP()).arg(kPlugin->id());
+        /* URI      */ arguments << (const char*)fLabel;
+        /* ui-URI   */ arguments << (const char*)fData1;
+        /* ui-title */ arguments << QString("%1 (GUI)").arg(kPlugin->name());
         break;
 
     case PLUGIN_THREAD_VST_GUI:
-        /* osc_url  */ arguments << QString("%1/%2").arg(engine->getOscServerPathTCP()).arg(plugin->id());
-        /* filename */ arguments << plugin->filename();
-        /* ui-title */ arguments << QString("%1 (GUI)").arg(plugin->name());
+        /* osc_url  */ arguments << QString("%1/%2").arg(kEngine->getOscServerPathTCP()).arg(kPlugin->id());
+        /* filename */ arguments << kPlugin->filename();
+        /* ui-title */ arguments << QString("%1 (GUI)").arg(kPlugin->name());
         break;
 
     case PLUGIN_THREAD_BRIDGE:
-        /* osc_url  */ arguments << QString("%1/%2").arg(engine->getOscServerPathTCP()).arg(plugin->id());
-        /* stype    */ arguments << m_data1;
-        /* filename */ arguments << plugin->filename();
+        /* osc_url  */ arguments << QString("%1/%2").arg(kEngine->getOscServerPathTCP()).arg(kPlugin->id());
+        /* stype    */ arguments << (const char*)fData1;
+        /* filename */ arguments << kPlugin->filename();
         /* name     */ arguments << name;
-        /* label    */ arguments << m_label;
+        /* label    */ arguments << (const char*)fLabel;
         break;
     }
 
-    m_process->start(m_binary, arguments);
-    m_process->waitForStarted();
+    fProcess->start((const char*)fBinary, arguments);
+    fProcess->waitForStarted();
 
-    switch (mode)
+    switch (kMode)
     {
     case PLUGIN_THREAD_DSSI_GUI:
     case PLUGIN_THREAD_LV2_GUI:
     case PLUGIN_THREAD_VST_GUI:
-        if (plugin->waitForOscGuiShow())
+        if (kPlugin->waitForOscGuiShow())
         {
-            m_process->waitForFinished(-1);
+            fProcess->waitForFinished(-1);
 
-            if (m_process->exitCode() == 0)
+            if (fProcess->exitCode() == 0)
             {
                 // Hide
-                engine->callback(CarlaBackend::CALLBACK_SHOW_GUI, plugin->id(), 0, 0, 0.0, nullptr);
+                kEngine->callback(CarlaBackend::CALLBACK_SHOW_GUI, kPlugin->id(), 0, 0, 0.0, nullptr);
                 qWarning("CarlaPluginThread::run() - GUI closed");
             }
             else
             {
                 // Kill
-                engine->callback(CarlaBackend::CALLBACK_SHOW_GUI, plugin->id(), -1, 0, 0.0, nullptr);
+                kEngine->callback(CarlaBackend::CALLBACK_SHOW_GUI, kPlugin->id(), -1, 0, 0.0, nullptr);
                 qWarning("CarlaPluginThread::run() - GUI crashed");
                 break;
             }
@@ -139,22 +139,22 @@ void CarlaPluginThread::run()
         else
         {
             qDebug("CarlaPluginThread::run() - GUI timeout");
-            engine->callback(CarlaBackend::CALLBACK_SHOW_GUI, plugin->id(), 0, 0, 0.0, nullptr);
+            kEngine->callback(CarlaBackend::CALLBACK_SHOW_GUI, kPlugin->id(), 0, 0, 0.0, nullptr);
         }
         break;
 
     case PLUGIN_THREAD_BRIDGE:
-        m_process->waitForFinished(-1);
+        fProcess->waitForFinished(-1);
 
-        if (m_process->exitCode() != 0)
+        if (fProcess->exitCode() != 0)
         {
             qWarning("CarlaPluginThread::run() - bridge crashed");
 
             QString errorString = QString("Plugin '%1' has crashed!\n"
                                           "Saving now will lose its current settings.\n"
-                                          "Please remove this plugin, and not rely on it from this point.").arg(plugin->name());
-            engine->setLastError(errorString.toUtf8().constData());
-            engine->callback(CarlaBackend::CALLBACK_ERROR, plugin->id(), 0, 0, 0.0, nullptr);
+                                          "Please remove this plugin, and not rely on it from this point.").arg(kPlugin->name());
+            kEngine->setLastError(errorString.toUtf8().constData());
+            kEngine->callback(CarlaBackend::CALLBACK_ERROR, kPlugin->id(), 0, 0, 0.0, nullptr);
         }
 
         break;

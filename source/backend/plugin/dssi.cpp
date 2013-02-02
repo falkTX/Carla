@@ -15,7 +15,7 @@
  * For a full copy of the GNU General Public License see the COPYING file
  */
 
-#include "carla_plugin.hpp"
+#include "carla_plugin_internal.hpp"
 
 #ifdef WANT_DSSI
 
@@ -1599,9 +1599,9 @@ CARLA_BACKEND_END_NAMESPACE
 
 CARLA_BACKEND_START_NAMESPACE
 
-CarlaPlugin* CarlaPlugin::newDSSI(const initializer& init, const void* const extra)
+CarlaPlugin* CarlaPlugin::newDSSI(const Initializer& init, const char* const guiFilename)
 {
-    qDebug("CarlaPlugin::newDSSI(%p, \"%s\", \"%s\", \"%s\", %p)", init.engine, init.filename, init.name, init.label, extra);
+    qDebug("CarlaPlugin::newDSSI(%p, \"%s\", \"%s\", \"%s\", \"%s\")", init.engine, init.filename, init.name, init.label, guiFilename);
 
 #ifdef WANT_DSSI
     short id = init.engine->getNewPluginId();
