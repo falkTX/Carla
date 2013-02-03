@@ -1011,13 +1011,44 @@ private:
         float* inBuffer[inCount];
         float* outBuffer[outCount];
 
+        float inPeaks[inCount];
+        float outPeaks[outCount];
+
+        carla_zeroFloat(inPeaks, inCount);
+        carla_zeroFloat(outPeaks, outCount);
+
         for (uint32_t i=0; i < inCount; i++)
             inBuffer[i] = p->getAudioInPortBuffer(i);
 
         for (uint32_t i=0; i < outCount; i++)
             outBuffer[i] = p->getAudioOutPortBuffer(i);
 
+        for (uint32_t i=0; i < inCount; i++)
+        {
+            for (uint32_t j=0; j < nframes; j++)
+            {
+                const float absV = std::abs(inBuffer[i][j]);
+
+                if (absV > inPeaks[i])
+                    inPeaks[i] = absV;
+            }
+        }
+
         p->process(inBuffer, outBuffer, nframes);
+
+        for (uint32_t i=0; i < outCount; i++)
+        {
+            for (uint32_t j=0; j < nframes; j++)
+            {
+                const float absV = std::abs(outBuffer[i][j]);
+
+                if (absV > outPeaks[i])
+                    outPeaks[i] = absV;
+            }
+        }
+
+        if (CarlaEngine* const engine = p->getEngine())
+            engine->setPeaks(p->id(), inPeaks, outPeaks);
     }
 
     static void latencyPlugin(CarlaPlugin* const p, jack_latency_callback_mode_t mode)

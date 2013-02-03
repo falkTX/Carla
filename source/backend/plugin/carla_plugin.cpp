@@ -1421,6 +1421,11 @@ float* CarlaPlugin::getAudioOutPortBuffer(uint32_t index)
     return fData->audioOut.ports[index].port->getBuffer();
 }
 
+CarlaEngine* CarlaPlugin::getEngine() const
+{
+    return fData->engine;
+}
+
 // -------------------------------------------------------------------
 // Scoped Disabler
 

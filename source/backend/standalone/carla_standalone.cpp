@@ -966,8 +966,8 @@ float carla_get_input_peak_value(unsigned int pluginId, unsigned short portId)
         return 0.0f;
     }
 
-    //if (portId == 1 || portId == 2)
-    //    return standalone.engine->getInputPeak(pluginId, portId-1);
+    if (portId == 1 || portId == 2)
+       return standalone.engine->getInputPeak(pluginId, portId-1);
 
     qCritical("carla_get_input_peak_value(%i, %i) - invalid port value", pluginId, portId);
     return 0.0f;
@@ -987,8 +987,8 @@ float carla_get_output_peak_value(unsigned int pluginId, unsigned short portId)
         return 0.0f;
     }
 
-    //if (portId == 1 || portId == 2)
-    //    return standalone.engine->getOutputPeak(pluginId, portId-1);
+    if (portId == 1 || portId == 2)
+       return standalone.engine->getOutputPeak(pluginId, portId-1);
 
     qCritical("carla_get_output_peak_value(%i, %i) - invalid port value", pluginId, portId);
     return 0.0f;

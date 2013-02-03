@@ -356,6 +356,14 @@ CarlaEngine::~CarlaEngine()
 // -----------------------------------------------------------------------
 // Helpers
 
+void doIdle(CarlaEngineProtectedData* const fData, const bool unlock)
+{
+    fData->nextAction.opcode = EnginePostActionNull;
+
+    if (unlock)
+        fData->nextAction.mutex.unlock();
+}
+
 void doPluginRemove(CarlaEngineProtectedData* const fData, const bool unlock)
 {
     CARLA_ASSERT(fData->curPluginCount > 0);
@@ -937,48 +945,49 @@ void CarlaEngine::__bridgePluginRegister(const unsigned short id, CarlaPlugin* c
 // -----------------------------------------------------------------------
 // Information (base)
 
+float CarlaEngine::getInputPeak(const unsigned int pluginId, const unsigned short id) const
+{
+    CARLA_ASSERT(pluginId < fData->curPluginCount);
+    CARLA_ASSERT(id < MAX_PEAKS);
+
+    return fData->plugins[pluginId].insPeak[id];
+}
+
+float CarlaEngine::getOutputPeak(const unsigned int pluginId, const unsigned short id) const
+{
+    CARLA_ASSERT(pluginId < fData->curPluginCount);
+    CARLA_ASSERT(id < MAX_PEAKS);
+
+    return fData->plugins[pluginId].outsPeak[id];
+}
+
 void CarlaEngine::setAboutToClose()
 {
     qDebug("CarlaEngine::setAboutToClose()");
     fData->aboutToClose = true;
 }
 
-#if 0
-// -----------------------------------------------------------------------
-// Information (audio peaks)
-
-double CarlaEngine::getInputPeak(const unsigned short pluginId, const unsigned short id) const
+void CarlaEngine::waitForProccessEnd()
 {
-    CARLA_ASSERT(pluginId < data->maxPluginNumber);
-    CARLA_ASSERT(id < MAX_PEAKS);
+    qDebug("CarlaEngine::waitForProccessEnd()");
 
-    return data->insPeak[pluginId*MAX_PEAKS + id];
+    fData->nextAction.pluginId = 0;
+    fData->nextAction.opcode   = EnginePostActionIdle;
+
+    fData->nextAction.mutex.lock();
+
+    if (isRunning())
+    {
+        // block wait for unlock on proccessing side
+        fData->nextAction.mutex.lock();
+    }
+    else
+    {
+        doIdle(fData, false);
+    }
+
+    fData->nextAction.mutex.unlock();
 }
-
-double CarlaEngine::getOutputPeak(const unsigned short pluginId, const unsigned short id) const
-{
-    CARLA_ASSERT(pluginId < data->maxPluginNumber);
-    CARLA_ASSERT(id < MAX_PEAKS);
-
-    return data->outsPeak[pluginId*MAX_PEAKS + id];
-}
-
-void CarlaEngine::setInputPeak(const unsigned short pluginId, const unsigned short id, double value)
-{
-    CARLA_ASSERT(pluginId < data->maxPluginNumber);
-    CARLA_ASSERT(id < MAX_PEAKS);
-
-    data->insPeak[pluginId*MAX_PEAKS + id] = value;
-}
-
-void CarlaEngine::setOutputPeak(const unsigned short pluginId, const unsigned short id, double value)
-{
-    CARLA_ASSERT(pluginId < data->maxPluginNumber);
-    CARLA_ASSERT(id < MAX_PEAKS);
-
-    data->outsPeak[pluginId*MAX_PEAKS + id] = value;
-}
-#endif
 
 // -----------------------------------------------------------------------
 // Callback
@@ -1219,12 +1228,26 @@ void CarlaEngine::proccessPendingEvents()
     {
     case EnginePostActionNull:
         break;
+    case EnginePostActionIdle:
+        doIdle(fData, true);
+        break;
     case EnginePostActionRemovePlugin:
         doPluginRemove(fData, true);
         break;
     }
 
-    // TODO - peak values
+    for (unsigned int i=0; i < fData->curPluginCount; i++)
+    {
+        // TODO - peak values
+    }
+}
+
+void CarlaEngine::setPeaks(const unsigned int pluginId, float* inPeaks, float* outPeaks)
+{
+    fData->plugins[pluginId].insPeak[0]  = inPeaks[0];
+    fData->plugins[pluginId].insPeak[1]  = inPeaks[1];
+    fData->plugins[pluginId].outsPeak[0] = outPeaks[0];
+    fData->plugins[pluginId].outsPeak[1] = outPeaks[1];
 }
 
 #ifndef BUILD_BRIDGE

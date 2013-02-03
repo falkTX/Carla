@@ -31,6 +31,7 @@ endif
 OBJS = \
 	carla_plugin.cpp.o \
 	carla_plugin_thread.cpp.o \
+	carla_bridge.cpp.o \
 	native.cpp.o \
 	ladspa.cpp.o \
 	dssi.cpp.o \
@@ -38,8 +39,6 @@ OBJS = \
 	vst.cpp.o \
 	fluidsynth.cpp.o \
 	linuxsampler.cpp.o
-
-# 	carla_bridge.cpp.o
 
 SHARED = ../libcarla_plugin.so
 STATIC = ../libcarla_plugin.a

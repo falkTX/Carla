@@ -753,6 +753,16 @@ public:
     }
 
     /*!
+     * TODO.
+     */
+    float getInputPeak(const unsigned int pluginId, const unsigned short id) const;
+
+    /*!
+     * TODO.
+     */
+    float getOutputPeak(const unsigned int pluginId, const unsigned short id) const;
+
+    /*!
      * Tell the engine it's about to close.\n
      * This is used to prevent the engine thread(s) from reactivating.
      */
@@ -762,16 +772,6 @@ public:
      * Safely block wait until the current proccessing callback ends.
      */
     void waitForProccessEnd();
-
-#if 0
-    // -------------------------------------------------------------------
-    // Information (audio peaks)
-
-    double getInputPeak(const unsigned short pluginId, const unsigned short id) const;
-    double getOutputPeak(const unsigned short pluginId, const unsigned short id) const;
-    void   setInputPeak(const unsigned short pluginId, const unsigned short id, double value);
-    void   setOutputPeak(const unsigned short pluginId, const unsigned short id, double value);
-#endif
 
     // -------------------------------------------------------------------
     // Callback
@@ -880,6 +880,12 @@ protected:
      * TODO.
      */
     void proccessPendingEvents();
+
+public:
+    /*!
+     * TODO.
+     */
+    void setPeaks(const unsigned int pluginId, float* inPeaks, float* outPeaks);
 
 #ifndef BUILD_BRIDGE
     // Rack mode data

@@ -735,8 +735,20 @@ public:
     // -------------------------------------------------------------------
     // Engine helpers
 
+    /*!
+     * TODO.
+     */
     float* getAudioInPortBuffer(uint32_t index);
+
+    /*!
+     * TODO.
+     */
     float* getAudioOutPortBuffer(uint32_t index);
+
+    /*!
+     * TODO.
+     */
+    CarlaEngine* getEngine() const;
 
     // -------------------------------------------------------------------
     // Plugin initializers

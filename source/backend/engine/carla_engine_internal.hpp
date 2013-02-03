@@ -119,6 +119,7 @@ struct EnginePostEvent {
 
 enum EnginePostAction {
     EnginePostActionNull,
+    EnginePostActionIdle,
     EnginePostActionRemovePlugin
 };
 
@@ -129,8 +130,8 @@ struct EnginePluginData {
 
     EnginePluginData()
         : plugin(nullptr),
-          insPeak{ 0.0f },
-          outsPeak{ 0.0f } {}
+          insPeak{0.0f},
+          outsPeak{0.0f} {}
 };
 
 // -------------------------------------------------------------------------------------------------------------------
