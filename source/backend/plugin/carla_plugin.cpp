@@ -58,7 +58,7 @@ CarlaPlugin::~CarlaPlugin()
     qDebug("CarlaPlugin::~CarlaPlugin()");
 
     // Remove client and ports
-    if (fData->client)
+    if (fData->client != nullptr)
     {
         if (fData->client->isActive())
             fData->client->deactivate();
@@ -1419,6 +1419,24 @@ float* CarlaPlugin::getAudioOutPortBuffer(uint32_t index)
     CARLA_ASSERT(fData->audioOut.ports[index].port);
 
     return fData->audioOut.ports[index].port->getBuffer();
+}
+
+// -------------------------------------------------------------------
+// Scoped Disabler
+
+CarlaPlugin::ScopedDisabler::ScopedDisabler(CarlaPlugin* const plugin)
+    : kPlugin(plugin)
+{
+    if (plugin->fData->enabled)
+    {
+        plugin->fData->enabled = false;
+        plugin->fData->engine->waitForProccessEnd();
+    }
+}
+
+CarlaPlugin::ScopedDisabler::~ScopedDisabler()
+{
+    kPlugin->fData->enabled = true;
 }
 
 // -------------------------------------------------------------------

@@ -27,7 +27,8 @@ from PyQt4.QtGui import QApplication, QListWidgetItem, QMainWindow
 
 import ui_carla
 from carla_backend import *
-from carla_shared import * # FIXME, remove later
+from carla_shared import *
+# FIXME, remove later
 #from shared_settings import *
 
 # ------------------------------------------------------------------------------------------------------------
@@ -65,6 +66,9 @@ class CarlaMainW(QMainWindow):
         self.fPluginCount = 0
         self.fPluginList  = []
 
+        self.fIdleTimerFast = 0
+        self.fIdleTimerSlow = 0
+
         #self.m_project_filename = None
 
         #self._nsmAnnounce2str = ""
@@ -79,9 +83,6 @@ class CarlaMainW(QMainWindow):
         self.ui.act_engine_start.setEnabled(False)
         self.ui.act_engine_stop.setEnabled(False)
         self.ui.act_plugin_remove_all.setEnabled(False)
-
-        #self.m_scene = CarlaScene(self, self.graphicsView)
-        #self.graphicsView.setScene(self.m_scene)
 
         self.resize(self.width(), 0)
 
@@ -133,20 +134,12 @@ class CarlaMainW(QMainWindow):
         self.connect(self, SIGNAL("ErrorCallback(QString)"), SLOT("slot_handleErrorCallback(QString)"))
         self.connect(self, SIGNAL("QuitCallback()"), SLOT("slot_handleQuitCallback()"))
 
-        #self.TIMER_GUI_STUFF  = self.startTimer(self.m_savedSettings["Main/RefreshInterval"])     # Peaks
-        #self.TIMER_GUI_STUFF2 = self.startTimer(self.m_savedSettings["Main/RefreshInterval"] * 2) # LEDs and edit dialog
-
         #NSM_URL = os.getenv("NSM_URL")
 
         #if NSM_URL:
             #Carla.host.nsm_announce(NSM_URL, os.getpid())
         #else:
         QTimer.singleShot(0, self, SLOT("slot_startEngine()"))
-
-        #QTimer.singleShot(0, self, SLOT("slot_showInitialWarning()"))
-
-    #def loadProjectLater(self):
-        #QTimer.singleShot(0, self.load_project)
 
     def startEngine(self, clientName = "Carla"):
         # ---------------------------------------------
@@ -219,6 +212,11 @@ class CarlaMainW(QMainWindow):
         for x in range(maxCount):
             self.fPluginList.append(None)
 
+        # Peaks
+        self.fIdleTimerFast = self.startTimer(self.fSavedSettings["Main/RefreshInterval"])
+        # LEDs and edit dialog parameters
+        self.fIdleTimerSlow = self.startTimer(self.fSavedSettings["Main/RefreshInterval"]*2)
+
     def stopEngine(self):
         if self.fPluginCount > 0:
             ask = QMessageBox.question(self, self.tr("Warning"), self.tr("There are still some plugins loaded, you need to remove them to stop the engine.\n"
@@ -236,6 +234,9 @@ class CarlaMainW(QMainWindow):
         self.fPluginCount = 0
         self.fPluginList  = []
 
+        self.killTimer(self.fIdleTimerFast)
+        self.killTimer(self.fIdleTimerSlow)
+
     def addPlugin(self, btype, ptype, filename, name, label, extraStuff):
         if not self.fEngineStarted:
             QMessageBox.warning(self, self.tr("Warning"), self.tr("Cannot add new plugins while engine is stopped"))
@@ -246,31 +247,6 @@ class CarlaMainW(QMainWindow):
             return False
 
         return True
-
-    #def pluginWidgetActivated(self, widget):
-        #if self.m_curEdit == widget:
-            #self.keyboard.allNotesOff()
-
-    #def pluginWidgetClicked(self, widget):
-        #if self.m_curEdit == widget:
-            #return
-
-        #self.w_edit.layout().removeWidget(self.m_curEdit)
-        #self.w_edit.layout().insertWidget(0, widget)
-
-        #widget.show()
-        #self.m_curEdit.hide()
-
-        #self.m_curEdit = widget
-
-    #@pyqtSlot()
-    #def slot_showInitialWarning(self):
-        #QMessageBox.warning(self, self.tr("Carla is incomplete"), self.tr(""
-            #"The version of Carla you're currently running is incomplete.\n"
-            #"Although most things work fine, Carla is not yet in a stable state.\n"
-            #"\n"
-            #"It will be fully functional for the next Cadence beta release."
-            #""))
 
     @pyqtSlot()
     def slot_startEngine(self):
@@ -341,129 +317,6 @@ class CarlaMainW(QMainWindow):
 
         pwidget.setParameterValue(value, True, False)
 
-    #@pyqtSlot(int, int, int)
-    #def slot_handleParameterMidiChannelCallback(self, pluginId, parameterId, channel):
-        #pwidget = self.m_plugin_list[pluginId]
-        #if pwidget:
-            #pwidget.edit_dialog.set_parameter_midi_channel(parameterId, channel, True)
-
-    #@pyqtSlot(int, int, int)
-    #def slot_handleParameterMidiCcCallback(self, pluginId, parameterId, cc):
-        #pwidget = self.m_plugin_list[pluginId]
-        #if pwidget:
-            #pwidget.edit_dialog.set_parameter_midi_cc(parameterId, cc, True)
-
-    #@pyqtSlot(int, int)
-    #def slot_handleProgramCallback(self, plugin_id, program_id):
-        #pwidget = self.m_plugin_list[plugin_id]
-        #if pwidget:
-            #pwidget.edit_dialog.set_program(program_id)
-            #pwidget.m_parameterIconTimer = ICON_STATE_ON
-
-    #@pyqtSlot(int, int)
-    #def slot_handleMidiProgramCallback(self, plugin_id, midi_program_id):
-        #pwidget = self.m_plugin_list[plugin_id]
-        #if pwidget:
-            #pwidget.edit_dialog.set_midi_program(midi_program_id)
-            #pwidget.m_parameterIconTimer = ICON_STATE_ON
-
-    #@pyqtSlot(int, int, int, int)
-    #def slot_handleNoteOnCallback(self, plugin_id, channel, note, velo):
-        #pwidget = self.m_plugin_list[plugin_id]
-        #if pwidget:
-            #pwidget.edit_dialog.keyboard.sendNoteOn(note, False)
-
-    #@pyqtSlot(int, int, int)
-    #def slot_handleNoteOffCallback(self, plugin_id, channel, note):
-        #pwidget = self.m_plugin_list[plugin_id]
-        #if pwidget:
-            #pwidget.edit_dialog.keyboard.sendNoteOff(note, False)
-
-    #@pyqtSlot(int, int)
-    #def slot_handleShowGuiCallback(self, plugin_id, show):
-        #pwidget = self.m_plugin_list[plugin_id]
-        #if pwidget:
-            #if show == 0:
-                #pwidget.b_gui.setChecked(False)
-                #pwidget.b_gui.setEnabled(True)
-            #elif show == 1:
-                #pwidget.b_gui.setChecked(True)
-                #pwidget.b_gui.setEnabled(True)
-            #elif show == -1:
-                #pwidget.b_gui.setChecked(False)
-                #pwidget.b_gui.setEnabled(False)
-
-    #@pyqtSlot(int)
-    #def slot_handleUpdateCallback(self, plugin_id):
-        #pwidget = self.m_plugin_list[plugin_id]
-        #if pwidget:
-            #pwidget.edit_dialog.do_update()
-
-    #@pyqtSlot(int)
-    #def slot_handleReloadInfoCallback(self, plugin_id):
-        #pwidget = self.m_plugin_list[plugin_id]
-        #if pwidget:
-            #pwidget.edit_dialog.do_reload_info()
-
-    #@pyqtSlot(int)
-    #def slot_handleReloadParametersCallback(self, plugin_id):
-        #pwidget = self.m_plugin_list[plugin_id]
-        #if pwidget:
-            #pwidget.edit_dialog.do_reload_parameters()
-
-    #@pyqtSlot(int)
-    #def slot_handleReloadProgramsCallback(self, plugin_id):
-        #pwidget = self.m_plugin_list[plugin_id]
-        #if pwidget:
-            #pwidget.edit_dialog.do_reload_programs()
-
-    #@pyqtSlot(int)
-    #def slot_handleReloadAllCallback(self, plugin_id):
-        #pwidget = self.m_plugin_list[plugin_id]
-        #if pwidget:
-            #pwidget.edit_dialog.do_reload_all()
-
-    #@pyqtSlot()
-    #def slot_handleNSM_AnnounceCallback(self):
-        #smName = self._nsmAnnounce2str
-
-        #self.act_file_new.setEnabled(False)
-        #self.act_file_open.setEnabled(False)
-        #self.act_file_save_as.setEnabled(False)
-        #self.setWindowTitle("Carla (%s)" % smName)
-
-    #@pyqtSlot()
-    #def slot_handleNSM_Open1Callback(self):
-        #clientId = self._nsmOpen1str
-
-        ## remove all previous plugins
-        #self.slot_remove_all()
-
-        ## restart engine
-        #if Carla.host.is_engine_running():
-            #self.stopEngine()
-
-        #self.startEngine(clientId)
-
-    #@pyqtSlot()
-    #def slot_handleNSM_Open2Callback(self):
-        #projectPath = self._nsmOpen2str
-
-        #self.m_project_filename = projectPath
-
-        #if os.path.exists(self.m_project_filename):
-            #self.load_project()
-        #else:
-            #self.save_project()
-
-        #self.setWindowTitle("Carla - %s" % os.path.basename(self.m_project_filename))
-        #Carla.host.nsm_reply_open()
-
-    #@pyqtSlot()
-    #def slot_handleNSM_SaveCallback(self):
-        #self.save_project()
-        #Carla.host.nsm_reply_save()
-
     @pyqtSlot(str)
     def slot_handleErrorCallback(self, error):
         QMessageBox.critical(self, self.tr("Error"), error)
@@ -473,350 +326,6 @@ class CarlaMainW(QMainWindow):
         CustomMessageBox(self, QMessageBox.Warning, self.tr("Warning"),
             self.tr("Engine has been stopped or crashed.\nPlease restart Carla"),
             self.tr("You may want to save your session now..."), QMessageBox.Ok, QMessageBox.Ok)
-
-    #def remove_plugin(self, plugin_id, showError):
-        #pwidget = self.m_plugin_list[plugin_id]
-
-        ##if pwidget.edit_dialog == self.m_curEdit:
-            ##self.w_edit.layout().removeWidget(self.m_curEdit)
-            ##self.w_edit.layout().insertWidget(0, self.m_fakeEdit)
-
-            ##self.m_fakeEdit.show()
-            ##self.m_curEdit.hide()
-
-            ##self.m_curEdit = self.m_fakeEdit
-
-        #pwidget.edit_dialog.close()
-
-        #if pwidget.gui_dialog:
-            #pwidget.gui_dialog.close()
-
-        #if Carla.host.remove_plugin(plugin_id):
-            #pwidget.close()
-            #pwidget.deleteLater()
-            #self.w_plugins.layout().removeWidget(pwidget)
-            #self.m_plugin_list[plugin_id] = None
-            #self.m_pluginCount -= 1
-
-        #elif showError:
-            #CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"), self.tr("Failed to remove plugin"), cString(Carla.host.get_last_error()), QMessageBox.Ok, QMessageBox.Ok)
-
-        ## push all plugins 1 slot if rack mode
-        #if Carla.processMode == PROCESS_MODE_CONTINUOUS_RACK:
-            #for i in range(MAX_DEFAULT_PLUGINS-1):
-                #if i < plugin_id: continue
-                #self.m_plugin_list[i] = self.m_plugin_list[i+1]
-
-                #if self.m_plugin_list[i]:
-                    #self.m_plugin_list[i].setId(i)
-
-            #self.m_plugin_list[MAX_DEFAULT_PLUGINS-1] = None
-
-        ## check if there are still plugins
-        #for i in range(MAX_DEFAULT_PLUGINS):
-            #if self.m_plugin_list[i]: break
-        #else:
-            #self.act_plugin_remove_all.setEnabled(False)
-
-    #def save_project(self):
-        #content = ("<?xml version='1.0' encoding='UTF-8'?>\n"
-                   #"<!DOCTYPE CARLA-PROJECT>\n"
-                   #"<CARLA-PROJECT VERSION='%s'>\n") % (VERSION)
-
-        #first_plugin = True
-
-        #for pwidget in self.m_plugin_list:
-            #if pwidget:
-                #if not first_plugin:
-                    #content += "\n"
-
-                #real_plugin_name = cString(Carla.host.get_real_plugin_name(pwidget.m_pluginId))
-                #if real_plugin_name:
-                    #content += " <!-- %s -->\n" % xmlSafeString(real_plugin_name, True)
-
-                #content += " <Plugin>\n"
-                #content += pwidget.getSaveXMLContent()
-                #content += " </Plugin>\n"
-
-                #first_plugin = False
-
-        #content += "</CARLA-PROJECT>\n"
-
-        #try:
-            #fd = uopen(self.m_project_filename, "w")
-            #fd.write(content)
-            #fd.close()
-        #except:
-            #QMessageBox.critical(self, self.tr("Error"), self.tr("Failed to save project file"))
-
-    #def load_project(self):
-        #try:
-            #fd = uopen(self.m_project_filename, "r")
-            #projectRead = fd.read()
-            #fd.close()
-        #except:
-            #projectRead = None
-
-        #if not projectRead:
-            #QMessageBox.critical(self, self.tr("Error"), self.tr("Failed to load project file"))
-            #return
-
-        #xml = QDomDocument()
-        #xml.setContent(projectRead.encode("utf-8"))
-
-        #xml_node = xml.documentElement()
-        #if xml_node.tagName() != "CARLA-PROJECT":
-            #QMessageBox.critical(self, self.tr("Error"), self.tr("Not a valid Carla project file"))
-            #return
-
-        #x_internal_plugins = None
-        #x_ladspa_plugins = None
-        #x_dssi_plugins = None
-        #x_lv2_plugins = None
-        #x_vst_plugins = None
-        #x_gig_plugins = None
-        #x_sf2_plugins = None
-        #x_sfz_plugins = None
-
-        #x_failedPlugins = []
-        #x_saveStates = []
-
-        #node = xml_node.firstChild()
-        #while not node.isNull():
-            #if node.toElement().tagName() == "Plugin":
-                #x_saveState = getSaveStateDictFromXML(node)
-                #x_saveStates.append(x_saveState)
-            #node = node.nextSibling()
-
-        #for x_saveState in x_saveStates:
-            #ptype = x_saveState['Type']
-            #label = x_saveState['Label']
-            #binary = x_saveState['Binary']
-            #binaryS = os.path.basename(binary)
-            #unique_id = x_saveState['UniqueID']
-
-            #if ptype == "Internal":
-                #if not x_internal_plugins: x_internal_plugins = toList(self.settings_db.value("Plugins/Internal", []))
-                #x_plugins = x_internal_plugins
-
-            #elif ptype == "LADSPA":
-                #if not x_ladspa_plugins:
-                    #x_ladspa_plugins  = []
-                    #x_ladspa_plugins += toList(self.settings_db.value("Plugins/LADSPA_native", []))
-                    #x_ladspa_plugins += toList(self.settings_db.value("Plugins/LADSPA_posix32", []))
-                    #x_ladspa_plugins += toList(self.settings_db.value("Plugins/LADSPA_posix64", []))
-                    #x_ladspa_plugins += toList(self.settings_db.value("Plugins/LADSPA_win32", []))
-                    #x_ladspa_plugins += toList(self.settings_db.value("Plugins/LADSPA_win64", []))
-                #x_plugins = x_ladspa_plugins
-
-            #elif ptype == "DSSI":
-                #if not x_dssi_plugins:
-                    #x_dssi_plugins  = []
-                    #x_dssi_plugins += toList(self.settings_db.value("Plugins/DSSI_native", []))
-                    #x_dssi_plugins += toList(self.settings_db.value("Plugins/DSSI_posix32", []))
-                    #x_dssi_plugins += toList(self.settings_db.value("Plugins/DSSI_posix64", []))
-                    #x_dssi_plugins += toList(self.settings_db.value("Plugins/DSSI_win32", []))
-                    #x_dssi_plugins += toList(self.settings_db.value("Plugins/DSSI_win64", []))
-                #x_plugins = x_dssi_plugins
-
-            #elif ptype == "LV2":
-                #if not x_lv2_plugins:
-                    #x_lv2_plugins  = []
-                    #x_lv2_plugins += toList(self.settings_db.value("Plugins/LV2_native", []))
-                    #x_lv2_plugins += toList(self.settings_db.value("Plugins/LV2_posix32", []))
-                    #x_lv2_plugins += toList(self.settings_db.value("Plugins/LV2_posix64", []))
-                    #x_lv2_plugins += toList(self.settings_db.value("Plugins/LV2_win32", []))
-                    #x_lv2_plugins += toList(self.settings_db.value("Plugins/LV2_win64", []))
-                #x_plugins = x_lv2_plugins
-
-            #elif ptype == "VST":
-                #if not x_vst_plugins:
-                    #x_vst_plugins  = []
-                    #x_vst_plugins += toList(self.settings_db.value("Plugins/VST_native", []))
-                    #x_vst_plugins += toList(self.settings_db.value("Plugins/VST_posix32", []))
-                    #x_vst_plugins += toList(self.settings_db.value("Plugins/VST_posix64", []))
-                    #x_vst_plugins += toList(self.settings_db.value("Plugins/VST_win32", []))
-                    #x_vst_plugins += toList(self.settings_db.value("Plugins/VST_win64", []))
-                #x_plugins = x_vst_plugins
-
-            #elif ptype == "GIG":
-                #if not x_gig_plugins: x_gig_plugins = toList(self.settings_db.value("Plugins/GIG", []))
-                #x_plugins = x_gig_plugins
-
-            #elif ptype == "SF2":
-                #if not x_sf2_plugins: x_sf2_plugins = toList(self.settings_db.value("Plugins/SF2", []))
-                #x_plugins = x_sf2_plugins
-
-            #elif ptype == "SFZ":
-                #if not x_sfz_plugins: x_sfz_plugins = toList(self.settings_db.value("Plugins/SFZ", []))
-                #x_plugins = x_sfz_plugins
-
-            #else:
-                #print("load_project() - ptype '%s' not recognized" % ptype)
-                #x_failedPlugins.append(x_saveState['Name'])
-                #continue
-
-            ## Try UniqueID -> Label -> Binary (full) -> Binary (short)
-            #plugin_ulB = None
-            #plugin_ulb = None
-            #plugin_ul = None
-            #plugin_uB = None
-            #plugin_ub = None
-            #plugin_lB = None
-            #plugin_lb = None
-            #plugin_u = None
-            #plugin_l = None
-            #plugin_B = None
-
-            #for _plugins in x_plugins:
-                #for x_plugin in _plugins:
-                    #if unique_id == x_plugin['unique_id'] and label == x_plugin['label'] and binary == x_plugin['binary']:
-                        #plugin_ulB = x_plugin
-                        #break
-                    #elif unique_id == x_plugin['unique_id'] and label == x_plugin['label'] and binaryS == os.path.basename(x_plugin['binary']):
-                        #plugin_ulb = x_plugin
-                    #elif unique_id == x_plugin['unique_id'] and label == x_plugin['label']:
-                        #plugin_ul = x_plugin
-                    #elif unique_id == x_plugin['unique_id'] and binary == x_plugin['binary']:
-                        #plugin_uB = x_plugin
-                    #elif unique_id == x_plugin['unique_id'] and binaryS == os.path.basename(x_plugin['binary']):
-                        #plugin_ub = x_plugin
-                    #elif label == x_plugin['label'] and binary == x_plugin['binary']:
-                        #plugin_lB = x_plugin
-                    #elif label == x_plugin['label'] and binaryS == os.path.basename(x_plugin['binary']):
-                        #plugin_lb = x_plugin
-                    #elif unique_id == x_plugin['unique_id']:
-                        #plugin_u = x_plugin
-                    #elif label == x_plugin['label']:
-                        #plugin_l = x_plugin
-                    #elif binary == x_plugin['binary']:
-                        #plugin_B = x_plugin
-
-            ## LADSPA uses UniqueID or binary+label
-            #if ptype == "LADSPA":
-                #plugin_l = None
-                #plugin_B = None
-
-            ## DSSI uses binary+label (UniqueID ignored)
-            #elif ptype == "DSSI":
-                #plugin_ul = None
-                #plugin_uB = None
-                #plugin_ub = None
-                #plugin_u = None
-                #plugin_l = None
-                #plugin_B = None
-
-            ## LV2 uses URIs (label in this case)
-            #elif ptype == "LV2":
-                #plugin_uB = None
-                #plugin_ub = None
-                #plugin_u = None
-                #plugin_B = None
-
-            ## VST uses UniqueID
-            #elif ptype == "VST":
-                #plugin_lB = None
-                #plugin_lb = None
-                #plugin_l = None
-                #plugin_B = None
-
-            ## Sound Kits use binaries
-            #elif ptype in ("GIG", "SF2", "SFZ"):
-                #plugin_ul = None
-                #plugin_u = None
-                #plugin_l = None
-                #plugin_B = binary
-
-            #if plugin_ulB:
-                #plugin = plugin_ulB
-            #elif plugin_ulb:
-                #plugin = plugin_ulb
-            #elif plugin_ul:
-                #plugin = plugin_ul
-            #elif plugin_uB:
-                #plugin = plugin_uB
-            #elif plugin_ub:
-                #plugin = plugin_ub
-            #elif plugin_lB:
-                #plugin = plugin_lB
-            #elif plugin_lb:
-                #plugin = plugin_lb
-            #elif plugin_u:
-                #plugin = plugin_u
-            #elif plugin_l:
-                #plugin = plugin_l
-            #elif plugin_B:
-                #plugin = plugin_B
-            #else:
-                #plugin = None
-
-            #if plugin:
-                #btype    = plugin['build']
-                #ptype    = plugin['type']
-                #filename = plugin['binary']
-                #name     = x_saveState['Name']
-                #label    = plugin['label']
-                #extra_stuff   = self.get_extra_stuff(plugin)
-                #new_plugin_id = self.add_plugin(btype, ptype, filename, name, label, extra_stuff, False)
-
-                #if new_plugin_id >= 0:
-                    #pwidget = self.m_plugin_list[new_plugin_id]
-                    #pwidget.loadStateDict(x_saveState)
-
-                #else:
-                    #x_failedPlugins.append(x_saveState['Name'])
-
-            #else:
-                #x_failedPlugins.append(x_saveState['Name'])
-
-        #if len(x_failedPlugins) > 0:
-            #text = self.tr("The following plugins were not found or failed to initialize:\n")
-            #for plugin in x_failedPlugins:
-                #text += " - %s\n" % plugin
-
-            #self.statusBar().showMessage("State file loaded with errors")
-            #QMessageBox.critical(self, self.tr("Error"), text)
-
-        #else:
-            #self.statusBar().showMessage("State file loaded sucessfully!")
-
-    #@pyqtSlot()
-    #def slot_file_new(self):
-        #self.slot_remove_all()
-        #self.m_project_filename = None
-        #self.setWindowTitle("Carla")
-
-    #@pyqtSlot()
-    #def slot_file_open(self):
-        #fileFilter  = self.tr("Carla Project File (*.carxp)")
-        #filenameTry = QFileDialog.getOpenFileName(self, self.tr("Open Carla Project File"), self.m_savedSettings["Main/DefaultProjectFolder"], filter=fileFilter)
-
-        #if filenameTry:
-            #self.m_project_filename = filenameTry
-            #self.slot_remove_all()
-            #self.load_project()
-            #self.setWindowTitle("Carla - %s" % os.path.basename(self.m_project_filename))
-
-    #@pyqtSlot()
-    #def slot_file_save(self, saveAs=False):
-        #if self.m_project_filename == None or saveAs:
-            #fileFilter  = self.tr("Carla Project File (*.carxp)")
-            #filenameTry = QFileDialog.getSaveFileName(self, self.tr("Save Carla Project File"), self.m_savedSettings["Main/DefaultProjectFolder"], filter=fileFilter)
-
-            #if filenameTry:
-                #if not filenameTry.endswith(".carxp"):
-                    #filenameTry += ".carxp"
-
-                #self.m_project_filename = filenameTry
-                #self.save_project()
-                #self.setWindowTitle("Carla - %s" % os.path.basename(self.m_project_filename))
-
-        #else:
-            #self.save_project()
-
-    #@pyqtSlot()
-    #def slot_file_save_as(self):
-        #self.slot_file_save(True)
 
     @pyqtSlot()
     def slot_addPlugin(self):
@@ -829,47 +338,9 @@ class CarlaMainW(QMainWindow):
             extraStuff = self.getExtraStuff(dialog.fRetPlugin)
             self.addPlugin(btype, ptype, filename, None, label, extraStuff)
 
-    #@pyqtSlot()
-    #def slot_remove_all(self):
-        #h = 0
-        #for i in range(MAX_DEFAULT_PLUGINS):
-            #pwidget = self.m_plugin_list[i]
-
-            #if not pwidget:
-                #continue
-
-            #pwidget.setId(i-h)
-            #pwidget.edit_dialog.close()
-
-            #if pwidget.gui_dialog:
-                #pwidget.gui_dialog.close()
-
-            #if Carla.host.remove_plugin(i-h):
-                #pwidget.close()
-                #pwidget.deleteLater()
-                #self.w_plugins.layout().removeWidget(pwidget)
-                #self.m_plugin_list[i] = None
-
-            #if Carla.processMode == PROCESS_MODE_CONTINUOUS_RACK:
-                #h += 1
-
-        #self.m_pluginCount = 0
-        #self.act_plugin_remove_all.setEnabled(False)
-
     @pyqtSlot()
     def slot_aboutCarla(self):
         CarlaAboutW(self).exec_()
-
-    #@pyqtSlot()
-    #def slot_configureCarla(self):
-        #dialog = SettingsW(self, "carla")
-        #if dialog.exec_():
-            #self.loadSettings(False)
-
-            #for pwidget in self.m_plugin_list:
-                #if pwidget:
-                    #pwidget.peak_in.setRefreshRate(self.m_savedSettings["Main/RefreshInterval"])
-                    #pwidget.peak_out.setRefreshRate(self.m_savedSettings["Main/RefreshInterval"])
 
     def getExtraStuff(self, plugin):
         ptype = plugin['type']
@@ -956,15 +427,17 @@ class CarlaMainW(QMainWindow):
         os.environ["SFZ_PATH"] = splitter.join(SFZ_PATH)
 
     def timerEvent(self, event):
-        #if event.timerId() == self.TIMER_GUI_STUFF:
-            #for pwidget in self.m_plugin_list:
-                #if pwidget: pwidget.check_gui_stuff()
-            #if self.m_engine_started and self.m_pluginCount > 0:
-                #Carla.host.idle_guis()
+        if event.timerId() == self.fIdleTimerFast:
+            Carla.host.engine_idle()
 
-        #elif event.timerId() == self.TIMER_GUI_STUFF2:
-            #for pwidget in self.m_plugin_list:
-                #if pwidget: pwidget.check_gui_stuff2()
+            for pwidget in self.fPluginList:
+                if pwidget is not None:
+                    pwidget.idleFast()
+
+        elif event.timerId() == self.fIdleTimerSlow:
+            for pwidget in self.fPluginList:
+                if pwidget is not None:
+                    pwidget.idleSlow()
 
         QMainWindow.timerEvent(self, event)
 

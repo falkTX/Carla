@@ -159,18 +159,14 @@ enum BinaryType {
  */
 enum PluginType {
     PLUGIN_NONE     = 0, //!< Null plugin type.
-#ifndef BUILD_BRIDGE
     PLUGIN_INTERNAL = 1, //!< Internal plugin.\see NativePlugin
-#endif
     PLUGIN_LADSPA   = 2, //!< LADSPA plugin.\see LadspaPlugin
     PLUGIN_DSSI     = 3, //!< DSSI plugin.\see DssiPlugin
     PLUGIN_LV2      = 4, //!< LV2 plugin.\see Lv2Plugin
     PLUGIN_VST      = 5, //!< VST plugin.\see VstPlugin
-#ifndef BUILD_BRIDGE
     PLUGIN_GIG      = 6, //!< GIG sound kit, implemented via LinuxSampler.\see LinuxSamplerPlugin
     PLUGIN_SF2      = 7, //!< SF2 sound kit (aka SoundFont), implemented via FluidSynth.\see FluidSynthPlugin
     PLUGIN_SFZ      = 8  //!< SFZ sound kit, implemented via LinuxSampler.\see LinuxSamplerPlugin
-#endif
 };
 
 /*!

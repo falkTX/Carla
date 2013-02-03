@@ -15,7 +15,7 @@
  * For a full copy of the GNU General Public License see the COPYING file
  */
 
-#include "carla_plugin.hpp"
+#include "carla_plugin_internal.hpp"
 
 #include <QtCore/QDir>
 #include <QtCore/QFile>
@@ -59,12 +59,13 @@ struct BridgeParamInfo {
 class BridgePlugin : public CarlaPlugin
 {
 public:
-    BridgePlugin(CarlaEngine* const engine, const unsigned short id, const BinaryType btype, const PluginType ptype)
-        : CarlaPlugin(engine, id),
-          m_binary(btype)
+    BridgePlugin(CarlaEngine* const engine, const unsigned int id, const BinaryType btype, const PluginType ptype)
+        : CarlaPlugin(engine, id)//,
+          //m_binary(btype)
     {
         qDebug("BridgePlugin::BridgePlugin()");
 
+#if 0
         m_type  = ptype;
         m_hints = PLUGIN_IS_BRIDGE;
 
@@ -88,8 +89,10 @@ public:
         params = nullptr;
 
         osc.thread = new CarlaPluginThread(engine, this, CarlaPluginThread::PLUGIN_THREAD_BRIDGE);
+#endif
     }
 
+#if 0
     ~BridgePlugin()
     {
         qDebug("BridgePlugin::~BridgePlugin()");
@@ -986,12 +989,14 @@ private:
     } info;
 
     BridgeParamInfo* params;
+#endif
 };
 
-CarlaPlugin* CarlaPlugin::newBridge(const initializer& init, BinaryType btype, PluginType ptype, const void* const extra)
+CarlaPlugin* CarlaPlugin::newBridge(const Initializer& init, BinaryType btype, PluginType ptype, const char* const extra)
 {
     qDebug("CarlaPlugin::newBridge(%p, \"%s\", \"%s\", \"%s\", %s, %s)", init.engine, init.filename, init.name, init.label, BinaryType2Str(btype), PluginType2Str(ptype));
 
+#if 0
     if (! extra)
     {
         init.engine->setLastError("Bridge not possible, bridge-binary not found");
@@ -1018,6 +1023,8 @@ CarlaPlugin* CarlaPlugin::newBridge(const initializer& init, BinaryType btype, P
     plugin->registerToOscClient();
 
     return plugin;
+#endif
+    return nullptr;
 }
 
 CARLA_BACKEND_END_NAMESPACE

@@ -758,6 +758,11 @@ public:
      */
     void setAboutToClose();
 
+    /*!
+     * Safely block wait until the current proccessing callback ends.
+     */
+    void waitForProccessEnd();
+
 #if 0
     // -------------------------------------------------------------------
     // Information (audio peaks)

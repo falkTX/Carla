@@ -756,15 +756,14 @@ public:
     static CarlaPlugin* newNative(const Initializer& init);
     static CarlaPlugin* newBridge(const Initializer& init, const BinaryType btype, const PluginType ptype, const char* const bridgeFilename);
 #endif
+
     static CarlaPlugin* newLADSPA(const Initializer& init, const LADSPA_RDF_Descriptor* const rdfDescriptor);
     static CarlaPlugin* newDSSI(const Initializer& init, const char* const guiFilename);
     static CarlaPlugin* newLV2(const Initializer& init);
     static CarlaPlugin* newVST(const Initializer& init);
-#ifndef BUILD_BRIDGE
     static CarlaPlugin* newGIG(const Initializer& init);
     static CarlaPlugin* newSFZ(const Initializer& init);
     static CarlaPlugin* newSF2(const Initializer& init);
-#endif
 
     // -------------------------------------------------------------------
 
@@ -774,19 +773,13 @@ protected:
     class ScopedDisabler
     {
     public:
-        ScopedDisabler(CarlaPlugin* const plugin)
-            : kPlugin(plugin)
-        {
-            plugin->setEnabled(false);
-        }
-
-        ~ScopedDisabler()
-        {
-            kPlugin->setEnabled(true);
-        }
+        ScopedDisabler(CarlaPlugin* const plugin);
+        ~ScopedDisabler();
 
     private:
         CarlaPlugin* const kPlugin;
+
+        CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ScopedDisabler)
     };
 
 private:

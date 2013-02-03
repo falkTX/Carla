@@ -1456,6 +1456,37 @@ class PluginEdit(QDialog):
         self.reloadAll()
         self.resize(self.width(), self.height()-self.ui.keyboard.height())
 
+    def animateTab(self, index):
+        if self.fTabIconTimers[index-1] == ICON_STATE_NULL:
+            self.ui.tabWidget.setTabIcon(index, self.fTabIconOn)
+
+        self.fTabIconTimers[index-1] = ICON_STATE_ON
+
+    def idleSlow(self):
+        # Check Tab icons
+        for i in range(len(self.fTabIconTimers)):
+            if self.fTabIconTimers[i] == ICON_STATE_ON:
+                self.fTabIconTimers[i] = ICON_STATE_WAIT
+            elif self.fTabIconTimers[i] == ICON_STATE_WAIT:
+                self.fTabIconTimers[i] = ICON_STATE_OFF
+            elif self.fTabIconTimers[i] == ICON_STATE_OFF:
+                self.fTabIconTimers[i] = ICON_STATE_NULL
+                self.ui.tabWidget.setTabIcon(i+1, self.fTabIconOff)
+
+        # Check parameters needing update
+        for index, value in self.fParameterToUpdate:
+            for paramType, paramId, paramWidget in self.fParameterList:
+                if paramId == index:
+                    paramWidget.setValue(value, False)
+
+                    if paramType == PARAMETER_INPUT:
+                        self.animateTab(paramWidget.tabIndex())
+
+                    break
+
+        # Clear all parameters
+        self.fParameterToUpdate = []
+
     def reloadAll(self):
         self.fPluginInfo = Carla.host.get_plugin_info(self.fPluginId)
         self.fPluginInfo["binary"]    = cString(self.fPluginInfo["binary"])
@@ -1958,6 +1989,61 @@ class PluginWidget(QFrame):
 
         # FIXME
         self.setMaximumHeight(48)
+
+    def idleFast(self):
+        # Input peaks
+        if self.fPeaksInputCount > 0:
+            if self.fPeaksInputCount > 1:
+                peak1 = Carla.host.get_input_peak_value(self.fPluginId, 1)
+                peak2 = Carla.host.get_input_peak_value(self.fPluginId, 2)
+                ledState = bool(peak1 != 0.0 or peak2 != 0.0)
+
+                self.ui.peak_in.displayMeter(1, peak1)
+                self.ui.peak_in.displayMeter(2, peak2)
+
+            else:
+                peak = Carla.host.get_input_peak_value(self.fPluginId, 1)
+                ledState = bool(peak != 0.0)
+
+                self.ui.peak_in.displayMeter(1, peak)
+
+            if self.fLastGreenLedState != ledState:
+                self.fLastGreenLedState = ledState
+                self.ui.led_audio_in.setChecked(ledState)
+
+        # Output peaks
+        if self.fPeaksOutputCount > 0:
+            if self.fPeaksOutputCount > 1:
+                peak1 = Carla.host.get_output_peak_value(self.fPluginId, 1)
+                peak2 = Carla.host.get_output_peak_value(self.fPluginId, 2)
+                ledState = bool(peak1 != 0.0 or peak2 != 0.0)
+
+                self.ui.peak_out.displayMeter(1, peak1)
+                self.ui.peak_out.displayMeter(2, peak2)
+
+            else:
+                peak = Carla.host.get_output_peak_value(self.fPluginId, 1)
+                ledState = bool(peak != 0.0)
+
+                self.ui.peak_out.displayMeter(1, peak)
+
+            if self.fLastBlueLedState != ledState:
+                self.fLastBlueLedState = ledState
+                self.ui.led_audio_out.setChecked(ledState)
+
+    def idleSlow(self):
+        # Parameter Activity LED
+        if self.fParameterIconTimer == ICON_STATE_ON:
+            self.fParameterIconTimer = ICON_STATE_WAIT
+            self.ui.led_control.setChecked(True)
+        elif self.fParameterIconTimer == ICON_STATE_WAIT:
+            self.fParameterIconTimer = ICON_STATE_OFF
+        elif self.fParameterIconTimer == ICON_STATE_OFF:
+            self.fParameterIconTimer = ICON_STATE_NULL
+            self.ui.led_control.setChecked(False)
+
+        # Update edit dialog
+        self.ui.edit_dialog.idleSlow()
 
     def getListWidgetItem(self):
         return self.fListWidgetItem
