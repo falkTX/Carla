@@ -28,9 +28,9 @@ from copy import deepcopy
 #from decimal import Decimal
 from subprocess import Popen, PIPE
 from PyQt4.QtCore import pyqtSlot, qWarning, Qt, QByteArray, QSettings, QThread, QTimer, SIGNAL, SLOT
-from PyQt4.QtGui import QColor, QDialog, QIcon, QFontMetrics, QFrame, QMessageBox
-from PyQt4.QtGui import QPainter, QPainterPath, QTableWidgetItem, QVBoxLayout, QWidget
-#from PyQt4.QtGui import QCursor, QGraphicsScene, QInputDialog, QLinearGradient, QMenu,
+from PyQt4.QtGui import QColor, QCursor, QDialog, QIcon, QFileDialog, QFontMetrics, QFrame, QMenu
+from PyQt4.QtGui import QMessageBox, QPainter, QPainterPath, QTableWidgetItem, QVBoxLayout, QWidget
+#from PyQt4.QtGui import QGraphicsScene, QInputDialog, QLinearGradient,
 #from PyQt4.QtXml import QDomDocument
 
 # ------------------------------------------------------------------------------------------------------------
@@ -1257,16 +1257,14 @@ class PluginParameter(QWidget):
         pType  = pInfo['type']
         pHints = pInfo['hints']
 
-        self.fMidiCC      = -1
+        self.fMidiControl = -1
         self.fMidiChannel = 1
         self.fParameterId = pInfo['index']
         self.fPluginId    = pluginId
         self.fTabIndex    = tabIndex
 
         self.ui.label.setText(pInfo['name'])
-
-        for MIDI_CC in MIDI_CC_LIST:
-            self.ui.combo.addItem(MIDI_CC)
+        self.ui.widget.setName(pInfo['name'])
 
         if pType == PARAMETER_INPUT:
             self.ui.widget.setMinimum(pInfo['minimum'])
@@ -1281,11 +1279,11 @@ class PluginParameter(QWidget):
 
             if not pHints & PARAMETER_IS_ENABLED:
                 self.ui.widget.setReadOnly(True)
-                self.ui.combo.setEnabled(False)
+                self.ui.sb_control.setEnabled(False)
                 self.ui.sb_channel.setEnabled(False)
 
             elif not pHints & PARAMETER_IS_AUTOMABLE:
-                self.ui.combo.setEnabled(False)
+                self.ui.sb_control.setEnabled(False)
                 self.ui.sb_channel.setEnabled(False)
 
         elif pType == PARAMETER_OUTPUT:
@@ -1296,26 +1294,24 @@ class PluginParameter(QWidget):
             self.ui.widget.setReadOnly(True)
 
             if not pHints & PARAMETER_IS_AUTOMABLE:
-                self.ui.combo.setEnabled(False)
+                self.ui.sb_control.setEnabled(False)
                 self.ui.sb_channel.setEnabled(False)
 
         else:
             self.ui.widget.setVisible(False)
-            self.ui.combo.setVisible(False)
+            self.ui.sb_control.setVisible(False)
             self.ui.sb_channel.setVisible(False)
 
         if pHints & PARAMETER_USES_CUSTOM_TEXT:
             self.ui.widget.setTextCallback(self._textCallBack)
 
-        self.setMidiCC(pInfo['midiCC'])
+        self.setMidiControl(pInfo['midiCC'])
         self.setMidiChannel(pInfo['midiChannel'])
 
-        self.connect(self.ui.widget, SIGNAL("valueChanged(double)"), SLOT("slot_valueChanged(double)"))
-        self.connect(self.ui.sb_channel, SIGNAL("valueChanged(int)"), SLOT("slot_midiChannelChanged(int)"))
-        self.connect(self.ui.combo, SIGNAL("currentIndexChanged(int)"), SLOT("slot_midiCcChanged(int)"))
-
-        #if force_parameters_style:
-        #self.widget.force_plastique_style()
+        self.connect(self.ui.sb_control, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_controlSpinboxCustomMenu()"))
+        self.connect(self.ui.sb_control, SIGNAL("valueChanged(int)"), SLOT("slot_controlSpinboxChanged(int)"))
+        self.connect(self.ui.sb_channel, SIGNAL("valueChanged(int)"), SLOT("slot_channelSpinboxChanged(int)"))
+        self.connect(self.ui.widget, SIGNAL("valueChanged(double)"), SLOT("slot_widgetValueChanged(double)"))
 
         self.ui.widget.updateAll()
 
@@ -1325,13 +1321,17 @@ class PluginParameter(QWidget):
     def setValue(self, value, send=True):
         self.ui.widget.setValue(value, send)
 
-    def setMidiCC(self, cc):
-        self.fMidiCC = cc
-        self._setMidiCcInComboBox(cc)
+    def setMidiControl(self, control):
+        self.fMidiControl = control
+        self.ui.sb_control.blockSignals(True)
+        self.ui.sb_control.setValue(control)
+        self.ui.sb_control.blockSignals(False)
 
     def setMidiChannel(self, channel):
         self.fMidiChannel = channel
+        self.ui.sb_channel.blockSignals(True)
         self.ui.sb_channel.setValue(channel)
+        self.ui.sb_channel.blockSignals(False)
 
     def setLabelWidth(self, width):
         self.ui.label.setMinimumWidth(width)
@@ -1340,40 +1340,41 @@ class PluginParameter(QWidget):
     def tabIndex(self):
         return self.fTabIndex
 
-    @pyqtSlot(float)
-    def slot_valueChanged(self, value):
-        self.emit(SIGNAL("valueChanged(int, double)"), self.fParameterId, value)
+    @pyqtSlot()
+    def slot_controlSpinboxCustomMenu(self):
+        menu = QMenu(self)
+
+        for cc in MIDI_CC_LIST:
+            action = menu.addAction(cc)
+
+            if int(cc.split(" ")[0], 16) == self.fMidiControl:
+                action.setCheckable(True)
+                action.setChecked(True)
+
+        actSel = menu.exec_(QCursor.pos())
+
+        if actSel:
+            selControlStr = actSel.text()
+            selControl    = int(selControlStr.split(" ")[0], 16)
+            self.ui.sb_control.setValue(selControl)
 
     @pyqtSlot(int)
-    def slot_midiCcChanged(self, ccIndex):
-        if ccIndex <= 0:
-            cc = -1
-        else:
-            ccStr = MIDI_CC_LIST[ccIndex - 1].split(" ")[0]
-            cc    = int(ccStr, 16)
+    def slot_controlSpinboxChanged(self, control):
+        if self.fMidiControl != control:
+            self.emit(SIGNAL("midiControlChanged(int, int)"), self.fParameterId, control)
 
-        if self.fMidiCC != cc:
-            self.emit(SIGNAL("midiCcChanged(int, int)"), self.fParameterId, cc)
-
-        self.fMidiCC = cc
+        self.fMidiControl = control
 
     @pyqtSlot(int)
-    def slot_midiChannelChanged(self, channel):
+    def slot_channelSpinboxChanged(self, channel):
         if self.fMidiChannel != channel:
             self.emit(SIGNAL("midiChannelChanged(int, int)"), self.fParameterId, channel)
 
         self.fMidiChannel = channel
 
-    def _setMidiCcInComboBox(self, cc):
-        for i in range(len(MIDI_CC_LIST)):
-            ccStr = MIDI_CC_LIST[i].split(" ")[0]
-            if int(ccStr, 16) == cc:
-                ccIndex = i+1
-                break
-        else:
-            ccIndex = 0
-
-        self.ui.combo.setCurrentIndex(ccIndex)
+    @pyqtSlot(float)
+    def slot_widgetValueChanged(self, value):
+        self.emit(SIGNAL("valueChanged(int, double)"), self.fParameterId, value)
 
     def _textCallBack(self):
         return cString(Carla.host.get_parameter_text(self.fPluginId, self.fParameterId))
@@ -1421,7 +1422,9 @@ class PluginEdit(QDialog):
 
         self.ui.keyboard.setMode(self.ui.keyboard.HORIZONTAL)
         self.ui.keyboard.setOctaves(6)
+
         self.ui.scrollArea.ensureVisible(self.ui.keyboard.width() / 5, 0)
+        self.ui.scrollArea.setEnabled(False)
         self.ui.scrollArea.setVisible(False)
 
         # TODO - not implemented yet
@@ -1454,38 +1457,6 @@ class PluginEdit(QDialog):
         self.connect(self, SIGNAL("finished(int)"), SLOT("slot_finished()"))
 
         self.reloadAll()
-        self.resize(self.width(), self.height()-self.ui.keyboard.height())
-
-    def animateTab(self, index):
-        if self.fTabIconTimers[index-1] == ICON_STATE_NULL:
-            self.ui.tabWidget.setTabIcon(index, self.fTabIconOn)
-
-        self.fTabIconTimers[index-1] = ICON_STATE_ON
-
-    def idleSlow(self):
-        # Check Tab icons
-        for i in range(len(self.fTabIconTimers)):
-            if self.fTabIconTimers[i] == ICON_STATE_ON:
-                self.fTabIconTimers[i] = ICON_STATE_WAIT
-            elif self.fTabIconTimers[i] == ICON_STATE_WAIT:
-                self.fTabIconTimers[i] = ICON_STATE_OFF
-            elif self.fTabIconTimers[i] == ICON_STATE_OFF:
-                self.fTabIconTimers[i] = ICON_STATE_NULL
-                self.ui.tabWidget.setTabIcon(i+1, self.fTabIconOff)
-
-        # Check parameters needing update
-        for index, value in self.fParameterToUpdate:
-            for paramType, paramId, paramWidget in self.fParameterList:
-                if paramId == index:
-                    paramWidget.setValue(value, False)
-
-                    if paramType == PARAMETER_INPUT:
-                        self.animateTab(paramWidget.tabIndex())
-
-                    break
-
-        # Clear all parameters
-        self.fParameterToUpdate = []
 
     def reloadAll(self):
         self.fPluginInfo = Carla.host.get_plugin_info(self.fPluginId)
@@ -1499,16 +1470,18 @@ class PluginEdit(QDialog):
         self.reloadParameters()
         self.reloadPrograms()
 
+        if not self.ui.scrollArea.isEnabled():
+            self.resize(self.width(), self.height()-self.ui.keyboard.height())
+
     def reloadInfo(self):
         pluginName  = cString(Carla.host.get_real_plugin_name(self.fPluginId))
         pluginType  = self.fPluginInfo['type']
         pluginHints = self.fPluginInfo['hints']
 
-        # Automatically change to MidiProgram tab
-        if pluginType != PLUGIN_VST and not self.ui.le_name.text():
-            self.ui.tab_programs.setCurrentIndex(1)
+        audioCountInfo = Carla.host.get_audio_port_count_info(self.fPluginId)
+        midiCountInfo  = Carla.host.get_midi_port_count_info(self.fPluginId)
+        paramCountInfo = Carla.host.get_parameter_count_info(self.fPluginId)
 
-        # Set Meta-Data
         if pluginType == PLUGIN_INTERNAL:
             self.ui.le_type.setText(self.tr("Internal"))
         elif pluginType == PLUGIN_LADSPA:
@@ -1538,17 +1511,16 @@ class PluginEdit(QDialog):
         self.ui.le_copyright.setToolTip(self.fPluginInfo['copyright'])
         self.ui.le_unique_id.setText(str(self.fPluginInfo['uniqueId']))
         self.ui.le_unique_id.setToolTip(str(self.fPluginInfo['uniqueId']))
-        self.ui.label_plugin.setText("\n%s\n" % self.fPluginInfo['name'])
-        self.setWindowTitle(self.fPluginInfo['name'])
-
-        # Set Processing Data
-        audioCountInfo = Carla.host.get_audio_port_count_info(self.fPluginId)
-        midiCountInfo  = Carla.host.get_midi_port_count_info(self.fPluginId)
-        paramCountInfo = Carla.host.get_parameter_count_info(self.fPluginId)
-
         self.ui.le_ains.setText(str(audioCountInfo['ins']))
         self.ui.le_aouts.setText(str(audioCountInfo['outs']))
         self.ui.le_params.setText(str(paramCountInfo['ins']))
+        self.ui.label_plugin.setText("\n%s\n" % self.fPluginInfo['name'])
+        self.setWindowTitle(self.fPluginInfo['name'])
+
+        if self.fPluginInfo['latency'] > 0:
+            self.ui.le_latency.setText("%i samples" % self.fPluginInfo['latency'])
+        else:
+            self.ui.le_latency.setText(self.tr("None"))
 
         self.ui.dial_drywet.setEnabled(pluginHints & PLUGIN_CAN_DRYWET)
         self.ui.dial_vol.setEnabled(pluginHints & PLUGIN_CAN_VOLUME)
@@ -1556,7 +1528,9 @@ class PluginEdit(QDialog):
         self.ui.dial_b_right.setEnabled(pluginHints & PLUGIN_CAN_BALANCE)
 
         # Show/hide keyboard
-        self.ui.scrollArea.setVisible((pluginHints & PLUGIN_IS_SYNTH) != 0 or (midiCountInfo['ins'] > 0 < midiCountInfo['outs']))
+        showKeyboard = (pluginHints & PLUGIN_IS_SYNTH) != 0 or (midiCountInfo['ins'] > 0 < midiCountInfo['outs'])
+        self.ui.scrollArea.setEnabled(showKeyboard)
+        self.ui.scrollArea.setVisible(showKeyboard)
 
         # Force-Update parent for new hints (knobs)
         if self.fRealParent:
@@ -1680,7 +1654,7 @@ class PluginEdit(QDialog):
                 'hints': 0,
                 'name':  fakeName,
                 'unit':  "",
-                'scalepoints': [],
+                'scalePoints': [],
 
                 'index':   0,
                 'default': 0,
@@ -1748,21 +1722,32 @@ class PluginEdit(QDialog):
 
         self.ui.cb_midi_programs.blockSignals(False)
 
+        # Automatically change to Midi Programs tab
+        if midiProgramCount > 0 and programCount == 0:
+            self.ui.tab_programs.setCurrentIndex(1)
+
+    def updateInfo(self):
+        # Update current program text
+        if self.ui.cb_programs.count() > 0:
+            pIndex = self.ui.cb_programs.currentIndex()
+            pName  = cString(Carla.host.get_program_name(self.fPluginId, pIndex))
+            self.ui.cb_programs.setItemText(pIndex, pName)
+
+        # Update current midi program text
+        if self.ui.cb_midi_programs.count() > 0:
+            mpIndex = self.ui.cb_midi_programs.currentIndex()
+            mpData  = Carla.host.get_midi_program_data(self.fPluginId, mpIndex)
+            mpBank  = int(mpData['bank'])
+            mpProg  = int(mpData['program'])
+            mpLabel = cString(mpData['label'])
+            self.ui.cb_midi_programs.setItemText(mpIndex, "%03i:%03i - %s" % (mpBank, mpProg, mpLabel))
+
+        # Update all parameter values
+        for paramType, paramId, paramWidget in self.fParameterList:
+            paramWidget.setValue(Carla.host.get_current_parameter_value(self.fPluginId, paramId), False)
+            paramWidget.update()
+
     def setParameterValue(self, parameterId, value):
-        #if parameterId == PARAMETER_ACTIVE:
-            #pass
-        #elif parameterId == PARAMETER_DRYWET:
-            #self.ui.dial_drywet.setValue(value * 1000, True, False)
-        #elif parameterId == PARAMETER_VOLUME:
-            #self.ui.dial_vol.setValue(value * 1000, True, False)
-        #elif parameterId == PARAMETER_BALANCE_LEFT:
-            #self.ui.dial_b_left.setValue(value * 1000, True, False)
-        #elif parameterId == PARAMETER_BALANCE_RIGHT:
-            #self.ui.dial_b_right.setValue(value * 1000, True, False)
-        #elif parameterId == PARAMETER_PANNING:
-            ##self.ui.dial_pan.setValue(value * 1000, True, False)
-            #pass
-        #elif parameterId >= 0:
         for paramItem in self.fParameterToUpdate:
             if paramItem[0] == parameterId:
                 paramItem[1] = value
@@ -1778,6 +1763,76 @@ class PluginEdit(QDialog):
             self.fGeometry = self.saveGeometry()
 
         QDialog.setVisible(self, yesNo)
+
+    def idleSlow(self):
+        # Check Tab icons
+        for i in range(len(self.fTabIconTimers)):
+            if self.fTabIconTimers[i] == ICON_STATE_ON:
+                self.fTabIconTimers[i] = ICON_STATE_WAIT
+            elif self.fTabIconTimers[i] == ICON_STATE_WAIT:
+                self.fTabIconTimers[i] = ICON_STATE_OFF
+            elif self.fTabIconTimers[i] == ICON_STATE_OFF:
+                self.fTabIconTimers[i] = ICON_STATE_NULL
+                self.ui.tabWidget.setTabIcon(i+1, self.fTabIconOff)
+
+        # Check parameters needing update
+        for index, value in self.fParameterToUpdate:
+            if index == PARAMETER_DRYWET:
+                self.ui.dial_drywet.setValue(value * 1000, True, False)
+            elif index == PARAMETER_VOLUME:
+                self.ui.dial_vol.setValue(value * 1000, True, False)
+            elif index == PARAMETER_BALANCE_LEFT:
+                self.ui.dial_b_left.setValue(value * 1000, True, False)
+            elif index == PARAMETER_BALANCE_RIGHT:
+                self.ui.dial_b_right.setValue(value * 1000, True, False)
+            elif index == PARAMETER_PANNING:
+                pass #self.ui.dial_pan.setValue(value * 1000, True, False)
+            elif index >= 0:
+                for paramType, paramId, paramWidget in self.fParameterList:
+                    if paramId == index:
+                        paramWidget.setValue(value, False)
+
+                        if paramType == PARAMETER_INPUT:
+                            tabIndex = paramWidget.tabIndex()
+
+                            if self.fTabIconTimers[tabIndex-1] == ICON_STATE_NULL:
+                                self.ui.tabWidget.setTabIcon(tabIndex, self.fTabIconOn)
+
+                            self.fTabIconTimers[tabIndex-1] = ICON_STATE_ON
+
+                        break
+
+        # Clear all parameters
+        self.fParameterToUpdate = []
+
+    @pyqtSlot()
+    def slot_saveState(self):
+        if self.fCurrentStateFilename:
+            askTry = QMessageBox.question(self, self.tr("Overwrite?"), self.tr("Overwrite previously created file?"), QMessageBox.Ok|QMessageBox.Cancel)
+
+            if askTry == QMessageBox.Ok:
+                return #self.saveState()
+
+            self.fCurrentStateFilename = None
+
+        fileFilter  = self.tr("Carla State File (*.carxs)")
+        filenameTry = QFileDialog.getSaveFileName(self, self.tr("Save Plugin State File"), filter=fileFilter)
+
+        if filenameTry:
+            if not filenameTry.endswith(".carxs"):
+                filenameTry += ".carxs"
+
+            self.fCurrentStateFilename = filenameTry
+            #self.saveState()
+
+    @pyqtSlot()
+    def slot_loadState(self):
+        fileFilter  = self.tr("Carla State File (*.carxs)")
+        filenameTry = QFileDialog.getOpenFileName(self, self.tr("Open Plugin State File"), filter=fileFilter)
+
+        if filenameTry:
+            self.fCurrentStateFilename = filenameTry
+            #self.loadState()
 
     @pyqtSlot(int)
     def slot_dryWetChanged(self, value):
@@ -1804,12 +1859,12 @@ class PluginEdit(QDialog):
         Carla.host.set_parameter_value(self.fPluginId, parameterId, value)
 
     @pyqtSlot(int, int)
-    def slot_parameterMidiChannelChanged(self, parameterId, channel):
-        Carla.host.set_parameter_midi_channel(self.fPluginId, parameterId, channel-1)
+    def slot_parameterMidiControlChanged(self, parameterId, control):
+        Carla.host.set_parameter_midi_cc(self.fPluginId, parameterId, control)
 
     @pyqtSlot(int, int)
-    def slot_parameterMidiCcChanged(self, parameterId, cc):
-        Carla.host.set_parameter_midi_cc(self.fPluginId, parameterId, cc)
+    def slot_parameterMidiChannelChanged(self, parameterId, channel):
+        Carla.host.set_parameter_midi_channel(self.fPluginId, parameterId, channel-1)
 
     @pyqtSlot(int)
     def slot_programIndexChanged(self, index):
@@ -1867,8 +1922,8 @@ class PluginEdit(QDialog):
                 if paramType == PARAMETER_INPUT:
                     self.connect(paramWidget, SIGNAL("valueChanged(int, double)"), SLOT("slot_parameterValueChanged(int, double)"))
 
+                self.connect(paramWidget, SIGNAL("midiControlChanged(int, int)"), SLOT("slot_parameterMidiControlChanged(int, int)"))
                 self.connect(paramWidget, SIGNAL("midiChannelChanged(int, int)"), SLOT("slot_parameterMidiChannelChanged(int, int)"))
-                self.connect(paramWidget, SIGNAL("midiCcChanged(int, int)"), SLOT("slot_parameterMidiCcChanged(int, int)"))
 
             tabPageLayout.addStretch()
 
@@ -3130,8 +3185,8 @@ class PluginDatabaseW(QDialog):
 
 #ptest = {
     #'index': 0,
-    #'name': "",
-    #'symbol': "",
+    #'name': "Parameter",
+    #'symbol': "param",
     #'current': 0.1,
     #'default': 0.3,
     #'minimum': 0.0,
@@ -3140,7 +3195,7 @@ class PluginDatabaseW(QDialog):
     #'midiCC': 2,
     #'type': PARAMETER_INPUT,
     #'hints': PARAMETER_IS_ENABLED | PARAMETER_IS_AUTOMABLE,
-    #'scalepoints': [],
+    #'scalePoints': [],
     #'step': 0.01,
     #'stepSmall': 0.001,
     #'stepLarge': 0.1,
@@ -3151,13 +3206,13 @@ class PluginDatabaseW(QDialog):
 #app.setApplicationName("Carla")
 #app.setApplicationVersion(VERSION)
 #app.setOrganizationName("falkTX")
-#gui = CarlaAboutW(None)
-#gui = PluginParameter(None, ptest, 0, 0)
+##gui = CarlaAboutW(None)
+##gui = PluginParameter(None, ptest, 0, 0)
 #gui = PluginEdit(None, 0)
-#gui = PluginWidget(None, 0)
-#gui = PluginDatabaseW(None)
+##gui = PluginWidget(None, 0)
+##gui = PluginDatabaseW(None)
 #gui.show()
-#if gui.exec_():
-    #print(gui.fRetPlugin)
-#gui = PluginRefreshW(None)
+##if gui.exec_():
+    ##print(gui.fRetPlugin)
+##gui = PluginRefreshW(None)
 #app.exec_()

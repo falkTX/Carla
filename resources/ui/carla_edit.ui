@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>720</width>
-    <height>550</height>
+    <width>697</width>
+    <height>518</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -294,6 +294,9 @@ Plugin Name
          <layout class="QVBoxLayout" name="verticalLayout_2">
           <item>
            <widget class="QCheckBox" name="checkBox">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="text">
              <string>Fixed-size buffer</string>
             </property>
@@ -301,6 +304,9 @@ Plugin Name
           </item>
           <item>
            <widget class="QCheckBox" name="checkBox_2">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="text">
              <string>Force Stereo</string>
             </property>
@@ -308,6 +314,9 @@ Plugin Name
           </item>
           <item>
            <widget class="QCheckBox" name="checkBox_3">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="text">
              <string>Self-automation</string>
             </property>
@@ -315,6 +324,9 @@ Plugin Name
           </item>
           <item>
            <widget class="QCheckBox" name="checkBox_4">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="text">
              <string>Use chunks</string>
             </property>
@@ -322,6 +334,9 @@ Plugin Name
           </item>
           <item>
            <widget class="QCheckBox" name="checkBox_5">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="text">
              <string>Send All Sound/Notes Off</string>
             </property>
@@ -329,6 +344,9 @@ Plugin Name
           </item>
           <item>
            <widget class="QCheckBox" name="checkBox_6">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="text">
              <string>Send Note-Off Velocity</string>
             </property>
@@ -336,6 +354,9 @@ Plugin Name
           </item>
           <item>
            <widget class="QCheckBox" name="checkBox_7">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="text">
              <string>Send Note Aftertouch</string>
             </property>
@@ -343,6 +364,9 @@ Plugin Name
           </item>
           <item>
            <widget class="QCheckBox" name="checkBox_8">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="text">
              <string>Send Pitchbend</string>
             </property>
@@ -358,28 +382,11 @@ Plugin Name
             </property>
             <layout class="QHBoxLayout" name="horizontalLayout_5">
              <property name="topMargin">
-              <number>0</number>
+              <number>2</number>
              </property>
              <property name="bottomMargin">
               <number>0</number>
              </property>
-             <item>
-              <widget class="QLabel" name="label_5">
-               <property name="text">
-                <string>MIDI Control Channel:</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QSpinBox" name="spinBox">
-               <property name="minimum">
-                <number>1</number>
-               </property>
-               <property name="maximum">
-                <number>16</number>
-               </property>
-              </widget>
-             </item>
              <item>
               <widget class="PixmapDial" name="dial_vol">
                <property name="minimumSize">
@@ -498,6 +505,36 @@ Plugin Name
                </property>
               </widget>
              </item>
+             <item>
+              <widget class="Line" name="line">
+               <property name="orientation">
+                <enum>Qt::Vertical</enum>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="label_5">
+               <property name="enabled">
+                <bool>false</bool>
+               </property>
+               <property name="text">
+                <string>MIDI Control Channel:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QSpinBox" name="spinBox">
+               <property name="enabled">
+                <bool>false</bool>
+               </property>
+               <property name="minimum">
+                <number>1</number>
+               </property>
+               <property name="maximum">
+                <number>16</number>
+               </property>
+              </widget>
+             </item>
             </layout>
            </widget>
           </item>
@@ -525,6 +562,9 @@ Plugin Name
               </item>
               <item>
                <widget class="QToolButton" name="b_reload_program">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
                 <property name="text">
                  <string/>
                 </property>
@@ -546,6 +586,9 @@ Plugin Name
               </item>
               <item>
                <widget class="QToolButton" name="b_reload_midi_program">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
                 <property name="text">
                  <string/>
                 </property>
@@ -608,7 +651,7 @@ Plugin Name
      <widget class="QWidget" name="scrollAreaWidgetContents">
       <property name="geometry">
        <rect>
-        <x>0</x>
+        <x>-87</x>
         <y>0</y>
         <width>864</width>
         <height>64</height>

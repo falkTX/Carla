@@ -335,6 +335,7 @@ const CarlaPluginInfo* carla_get_plugin_info(unsigned int pluginId)
     info.binary   = nullptr;
     info.name     = nullptr;
     info.uniqueId = 0;
+    info.latency  = 0;
 
     // cleanup
     if (info.label != nullptr)
@@ -370,6 +371,7 @@ const CarlaPluginInfo* carla_get_plugin_info(unsigned int pluginId)
         info.binary   = plugin->filename();
         info.name     = plugin->name();
         info.uniqueId = plugin->uniqueId();
+        info.latency  = plugin->latency();
 
         plugin->getLabel(strBufLabel);
         info.label = strdup(strBufLabel);

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Carla Backend
  * Copyright (C) 2011-2012 Filipe Coelho <falktx@falktx.com>
  *
@@ -14,10 +14,6 @@
  *
  * For a full copy of the GNU General Public License see the COPYING file
  */
-
-#ifdef BUILD_BRIDGE
-# error Should not use fluidsynth for bridges!
-#endif
 
 #include "carla_plugin_internal.hpp"
 

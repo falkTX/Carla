@@ -20,7 +20,7 @@
 # Imports (Global)
 
 from PyQt4.QtCore import pyqtSlot, Qt, QTimer, SIGNAL, SLOT
-from PyQt4.QtGui import QAbstractSpinBox, QComboBox, QCursor, QDialog, QInputDialog, QMenu, QPainter, QProgressBar, QValidator
+from PyQt4.QtGui import QAbstractSpinBox, QComboBox, QCursor, QDialog, QMenu, QProgressBar
 #from PyQt4.QtGui import QStyleFactory
 from math import isnan
 
@@ -71,12 +71,13 @@ class CustomInputDialog(QDialog):
 
         self.fRetValue = current
 
-        self.connect(self, SIGNAL("accepted()"), self.setReturnValue)
+        self.connect(self, SIGNAL("accepted()"), SLOT("slot_setReturnValue()"))
 
     def returnValue(self):
         return self.fRetValue
 
-    def setReturnValue(self):
+    @pyqtSlot()
+    def slot_setReturnValue(self):
         self.fRetValue = self.ui.doubleSpinBox.value()
 
     def done(self, r):
@@ -189,6 +190,8 @@ class ParamSpinBox(QAbstractSpinBox):
         self.fBar.setContextMenuPolicy(Qt.NoContextMenu)
         self.fBar.show()
 
+        self.fName = ""
+
         self.lineEdit().setVisible(False)
 
         self.connect(self, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_showCustomMenu()"))
@@ -259,6 +262,9 @@ class ParamSpinBox(QAbstractSpinBox):
 
     def setLabel(self, label):
         self.fBar.setLabel(label)
+
+    def setName(self, name):
+        self.fName = name
 
     def setTextCallback(self, textCall):
         self.fBar.setTextCall(textCall)
@@ -375,7 +381,7 @@ class ParamSpinBox(QAbstractSpinBox):
         actSel = menu.exec_(QCursor.pos())
 
         if actSel == actSet:
-            dialog = CustomInputDialog(self, self.parent().label.text(), self.fValue, self.fMinimum, self.fMaximum, self.fStep, self.fScalePoints)
+            dialog = CustomInputDialog(self, self.fName, self.fValue, self.fMinimum, self.fMaximum, self.fStep, self.fScalePoints)
             if dialog.exec_():
                 value = dialog.returnValue()
                 self.setValue(value)

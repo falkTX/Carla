@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>452</width>
-    <height>35</height>
+    <height>34</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -38,12 +38,25 @@
     </widget>
    </item>
    <item>
-    <widget class="QComboBox" name="combo">
-     <item>
-      <property name="text">
-       <string>(none)</string>
-      </property>
-     </item>
+    <widget class="QSpinBox" name="sb_control">
+     <property name="contextMenuPolicy">
+      <enum>Qt::CustomContextMenu</enum>
+     </property>
+     <property name="specialValueText">
+      <string>(none)</string>
+     </property>
+     <property name="prefix">
+      <string>cc #</string>
+     </property>
+     <property name="minimum">
+      <number>-1</number>
+     </property>
+     <property name="maximum">
+      <number>127</number>
+     </property>
+     <property name="value">
+      <number>-1</number>
+     </property>
     </widget>
    </item>
    <item>

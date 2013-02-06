@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Carla Standalone API
  * Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
  *
@@ -47,6 +47,7 @@ struct CarlaPluginInfo {
     const char* maker;
     const char* copyright;
     long uniqueId;
+    uint32_t latency;
 
     CarlaPluginInfo()
         : type(CarlaBackend::PLUGIN_NONE),
@@ -57,7 +58,8 @@ struct CarlaPluginInfo {
           label(nullptr),
           maker(nullptr),
           copyright(nullptr),
-          uniqueId(0) {}
+          uniqueId(0),
+          latency(0) {}
 
     ~CarlaPluginInfo()
     {

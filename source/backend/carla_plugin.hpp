@@ -178,6 +178,11 @@ public:
         return 0;
     }
 
+    /*!
+     * Get the plugin's latency, in samples.
+     */
+    uint32_t latency();
+
     // -------------------------------------------------------------------
     // Information (count)
 

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Carla JACK Engine
  * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
  *
@@ -631,7 +631,7 @@ public:
     bool isRunning() const
     {
 #ifdef BUILD_BRIDGE
-        return (fClient != nullptr || ! m_hasQuit);
+        return (fClient != nullptr || ! fHasQuit);
 #else
         return (fClient != nullptr);
 #endif

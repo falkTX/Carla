@@ -92,7 +92,8 @@ class CarlaPluginInfo(Structure):
         ("label", c_char_p),
         ("maker", c_char_p),
         ("copyright", c_char_p),
-        ("uniqueId", c_long)
+        ("uniqueId", c_long),
+        ("latency", c_uint32)
     ]
 
 class CarlaNativePluginInfo(Structure):

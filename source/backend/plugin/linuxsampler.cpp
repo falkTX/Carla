@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Carla LinuxSampler Plugin
  * Copyright (C) 2011-2012 Filipe Coelho <falktx@falktx.com>
  *
@@ -16,10 +16,6 @@
  */
 
 // TODO - setMidiProgram()
-
-#ifdef BUILD_BRIDGE
-# error Should not use linuxsampler for bridges!
-#endif
 
 #include "carla_plugin_internal.hpp"
 

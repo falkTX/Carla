@@ -35,12 +35,13 @@ SOURCES += \
 # carla-plugin
 SOURCES += \
     ../../backend/plugin/carla_plugin.cpp \
-    ../../backend/plugin/ladspa.cpp
-
-#    ../../backend/plugin/carla_plugin_thread.cpp \
-#    ../../backend/plugin/dssi.cpp \
-#    ../../backend/plugin/lv2.cpp \
-#    ../../backend/plugin/vst.cpp
+    ../../backend/plugin/carla_plugin_thread.cpp \
+    ../../backend/plugin/ladspa.cpp \
+    ../../backend/plugin/dssi.cpp \
+    ../../backend/plugin/lv2.cpp \
+    ../../backend/plugin/vst.cpp \
+    ../../backend/plugin/fluidsynth.cpp \
+    ../../backend/plugin/linuxsampler.cpp
 
 # carla-utils
 SOURCES += \
@@ -101,7 +102,8 @@ DEFINES += DEBUG
 DEFINES += BUILD_BRIDGE BUILD_BRIDGE_PLUGIN BRIDGE_PLUGIN
 
 DEFINES += WANT_JACK
-DEFINES += WANT_LADSPA WANT_DSSI WANT_LV2 WANT_VST
+DEFINES += WANT_LADSPA
+# WANT_DSSI WANT_LV2 WANT_VST
 
 LIBS     = -ldl \
     ../../libs/lilv.a \

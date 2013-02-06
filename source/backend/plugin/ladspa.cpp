@@ -68,6 +68,11 @@ public:
     // -------------------------------------------------------------------
     // Information (base)
 
+    virtual PluginType type() const
+    {
+        return PLUGIN_LADSPA;
+    }
+
     PluginCategory category()
     {
         if (fRdfDescriptor)

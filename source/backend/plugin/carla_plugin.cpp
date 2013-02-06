@@ -122,6 +122,11 @@ const char* CarlaPlugin::filename() const
     return (const char*)fData->filename;
 }
 
+uint32_t CarlaPlugin::latency()
+{
+    return 0;
+}
+
 // -------------------------------------------------------------------
 // Information (count)
 
