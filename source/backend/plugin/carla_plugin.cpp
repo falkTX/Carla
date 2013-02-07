@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Carla Plugin
  * Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
  *
@@ -63,30 +63,24 @@ CarlaPlugin::~CarlaPlugin()
         if (fData->client->isActive())
             fData->client->deactivate();
 
-        removeClientPorts();
+        deleteBuffers();
 
         delete fData->client;
     }
 
-    // Delete data
-    deleteBuffers();
-
-    // Unload DLL
-    libClose();
-
-    fData->prog.clear();
-    fData->midiprog.clear();
-    fData->custom.clear();
-
-#if 0
-    if (fData->latencyBuffers)
+    if (fData->latencyBuffers != nullptr)
     {
         for (uint32_t i=0; i < fData->audioIn.count; i++)
             delete[] fData->latencyBuffers[i];
 
         delete[] fData->latencyBuffers;
     }
-#endif
+
+    fData->prog.clear();
+    fData->midiprog.clear();
+    fData->custom.clear();
+
+    libClose();
 }
 
 // -------------------------------------------------------------------
@@ -122,7 +116,7 @@ const char* CarlaPlugin::filename() const
     return (const char*)fData->filename;
 }
 
-uint32_t CarlaPlugin::latency()
+uint32_t CarlaPlugin::latency() const
 {
     return 0;
 }
@@ -130,22 +124,22 @@ uint32_t CarlaPlugin::latency()
 // -------------------------------------------------------------------
 // Information (count)
 
-uint32_t CarlaPlugin::audioInCount()
+uint32_t CarlaPlugin::audioInCount() const
 {
     return fData->audioIn.count;
 }
 
-uint32_t CarlaPlugin::audioOutCount()
+uint32_t CarlaPlugin::audioOutCount() const
 {
     return fData->audioOut.count;
 }
 
-uint32_t CarlaPlugin::midiInCount()
+uint32_t CarlaPlugin::midiInCount() const
 {
     return (fData->options2 & PLUGIN_OPTION2_HAS_MIDI_IN) ? 1 : 0;
 }
 
-uint32_t CarlaPlugin::midiOutCount()
+uint32_t CarlaPlugin::midiOutCount() const
 {
     return (fData->options2 & PLUGIN_OPTION2_HAS_MIDI_OUT) ? 1 : 0;
 }
@@ -155,7 +149,7 @@ uint32_t CarlaPlugin::parameterCount() const
     return fData->param.count;
 }
 
-uint32_t CarlaPlugin::parameterScalePointCount(const uint32_t parameterId)
+uint32_t CarlaPlugin::parameterScalePointCount(const uint32_t parameterId) const
 {
     CARLA_ASSERT(parameterId < fData->param.count);
     return 0;
@@ -1353,17 +1347,6 @@ void CarlaPlugin::uiNoteOff(const uint8_t channel, const uint8_t note)
 // -------------------------------------------------------------------
 // Cleanup
 
-void CarlaPlugin::removeClientPorts()
-{
-    qDebug("CarlaPlugin::removeClientPorts() - start");
-
-    fData->audioIn.freePorts();
-    fData->audioOut.freePorts();
-    fData->event.freePorts();
-
-    qDebug("CarlaPlugin::removeClientPorts() - end");
-}
-
 void CarlaPlugin::initBuffers()
 {
     fData->audioIn.initBuffers(fData->engine);
@@ -1452,8 +1435,9 @@ CarlaPlugin::ScopedDisabler::~ScopedDisabler()
 // -------------------------------------------------------------------
 // CarlaPluginGUI
 
-CarlaPluginGUI::CarlaPluginGUI(QWidget* const parent)
-    : QMainWindow(parent)
+CarlaPluginGUI::CarlaPluginGUI(QWidget* const parent, Callback* const callback)
+    : QMainWindow(parent),
+      kCallback(callback)
 {
     qDebug("CarlaPluginGUI::CarlaPluginGUI(%p)", parent);
     //CARLA_ASSERT(callback);

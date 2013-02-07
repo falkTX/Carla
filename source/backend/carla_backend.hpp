@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Carla Backend API
  * Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
  *

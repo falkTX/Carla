@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Carla Plugin API
  * Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
  *
@@ -164,7 +164,7 @@ public:
     /*!
      * Get the plugin's category (delay, filter, synth, etc).
      */
-    virtual PluginCategory category()
+    virtual PluginCategory category() const
     {
         return PLUGIN_CATEGORY_NONE;
     }
@@ -173,7 +173,7 @@ public:
      * Get the plugin's native unique Id.\n
      * May return 0 on plugin types that don't support Ids.
      */
-    virtual long uniqueId()
+    virtual long uniqueId() const
     {
         return 0;
     }
@@ -181,7 +181,7 @@ public:
     /*!
      * Get the plugin's latency, in samples.
      */
-    uint32_t latency();
+    uint32_t latency() const;
 
     // -------------------------------------------------------------------
     // Information (count)
@@ -189,22 +189,22 @@ public:
     /*!
      * Get the number of audio inputs.
      */
-    virtual uint32_t audioInCount();
+    virtual uint32_t audioInCount() const;
 
     /*!
      * Get the number of audio outputs.
      */
-    virtual uint32_t audioOutCount();
+    virtual uint32_t audioOutCount() const;
 
     /*!
      * Get the number of MIDI inputs.
      */
-    virtual uint32_t midiInCount();
+    virtual uint32_t midiInCount() const;
 
     /*!
      * Get the number of MIDI outputs.
      */
-    virtual uint32_t midiOutCount();
+    virtual uint32_t midiOutCount() const;
 
     /*!
      * Get the number of parameters.\n
@@ -215,7 +215,7 @@ public:
     /*!
      * Get the number of scalepoints for parameter \a parameterId.
      */
-    virtual uint32_t parameterScalePointCount(const uint32_t parameterId);
+    virtual uint32_t parameterScalePointCount(const uint32_t parameterId) const;
 
     /*!
      * Get the number of programs.
@@ -698,11 +698,6 @@ public:
 
     // -------------------------------------------------------------------
     // Cleanup
-
-    /*!
-     * Clear the engine client ports of the plugin.
-     */
-    virtual void removeClientPorts();
 
     /*!
      * Initialize all RT buffers of the plugin.

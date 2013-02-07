@@ -279,8 +279,7 @@ class CarlaMainW(QMainWindow):
         pwidgetItem.setSizeHint(QSize(pwidgetItem.sizeHint().width(), 48))
 
         pwidget = PluginWidget(self, pwidgetItem, pluginId)
-        pwidget.ui.peak_in.setRefreshRate(self.fSavedSettings["Main/RefreshInterval"])
-        pwidget.ui.peak_out.setRefreshRate(self.fSavedSettings["Main/RefreshInterval"])
+        pwidget.setRefreshRate(self.fSavedSettings["Main/RefreshInterval"])
 
         self.ui.listWidget.setItemWidget(pwidgetItem, pwidget)
 
@@ -317,6 +316,118 @@ class CarlaMainW(QMainWindow):
 
         pwidget.setParameterValue(value, True, False)
 
+    @pyqtSlot(int, int, float)
+    def slot_handleParameterDefaultChangedCallback(self, pluginId, parameterId, value):
+        pwidget = self.fPluginList[pluginId]
+        if pwidget is None:
+            return
+
+        pwidget.setParameterDefault(value, True, False)
+
+    @pyqtSlot(int, int, int)
+    def slot_handleParameterMidiChannelChangedCallback(self, pluginId, parameterId, channel):
+        pwidget = self.fPluginList[pluginId]
+        if pwidget is None:
+            return
+
+        pwidget.setParameterMidiChannel(parameterId, channel, True)
+
+    @pyqtSlot(int, int, int)
+    def slot_handleParameterMidiCcChangedCallback(self, pluginId, parameterId, cc):
+        pwidget = self.fPluginList[pluginId]
+        if pwidget is None:
+            return
+
+        pwidget.setParameterMidiControl(parameterId, cc, True)
+
+    @pyqtSlot(int, int)
+    def slot_handleProgramChangedCallback(self, pluginId, programId):
+        pwidget = self.fPluginList[pluginId]
+        if pwidget is None:
+            return
+
+        pwidget.setProgram(programId)
+
+    @pyqtSlot(int, int)
+    def slot_handleMidiProgramChangedCallback(self, pluginId, midiProgramId):
+        pwidget = self.fPluginList[pluginId]
+        if pwidget is None:
+            return
+
+        pwidget.setMidiProgram(midiProgramId)
+
+    @pyqtSlot(int, int, int, int)
+    def slot_handleNoteOnCallback(self, pluginId, channel, note, velo):
+        pwidget = self.fPluginList[pluginId]
+        if pwidget is None:
+            return
+
+        pwidget.ui.edit_dialog.keyboard.sendNoteOn(note, False)
+
+    @pyqtSlot(int, int, int)
+    def slot_handleNoteOffCallback(self, pluginId, channel, note):
+        pwidget = self.fPluginList[pluginId]
+        if pwidget is None:
+            return
+
+        pwidget.ui.edit_dialog.keyboard.sendNoteOff(note, False)
+
+    @pyqtSlot(int, int)
+    def slot_handleShowGuiCallback(self, pluginId, show):
+        pwidget = self.fPluginList[pluginId]
+        if pwidget is None:
+            return
+
+        if show == 0:
+            pwidget.ui.b_gui.setChecked(False)
+            pwidget.ui.b_gui.setEnabled(True)
+        elif show == 1:
+            pwidget.ui.b_gui.setChecked(True)
+            pwidget.ui.b_gui.setEnabled(True)
+        elif show == -1:
+            pwidget.ui.b_gui.setChecked(False)
+            pwidget.ui.b_gui.setEnabled(False)
+
+    @pyqtSlot(int)
+    def slot_handleUpdateCallback(self, pluginId):
+        pwidget = self.fPluginList[pluginId]
+        if pwidget is None:
+            return
+
+        pwidget.ui.edit_dialog.do_update()
+
+    @pyqtSlot(int)
+    def slot_handleReloadInfoCallback(self, pluginId):
+        pwidget = self.fPluginList[pluginId]
+        if pwidget is None:
+            return
+
+        pwidget.ui.edit_dialog.reloadInfo()
+
+    @pyqtSlot(int)
+    def slot_handleReloadParametersCallback(self, pluginId):
+        pwidget = self.fPluginList[pluginId]
+        if pwidget is None:
+            return
+
+        pwidget.ui.edit_dialog.reloadParameters()
+
+    @pyqtSlot(int)
+    def slot_handleReloadProgramsCallback(self, pluginId):
+        pwidget = self.fPluginList[pluginId]
+        if pwidget is None:
+            return
+
+        pwidget.ui.edit_dialog.reloadPrograms()
+
+    @pyqtSlot(int)
+    def slot_handleReloadAllCallback(self, pluginId):
+        pwidget = self.fPluginList[pluginId]
+        if pwidget is None:
+            return
+
+        pwidget.ui.edit_dialog.reloadAll()
+
     @pyqtSlot(str)
     def slot_handleErrorCallback(self, error):
         QMessageBox.critical(self, self.tr("Error"), error)
@@ -352,7 +463,7 @@ class CarlaMainW(QMainWindow):
                     return pointer(rdfItem)
 
         elif ptype == PLUGIN_DSSI:
-            if plugin['hints'] & PLUGIN_HAS_GUI:
+            if (plugin['hints'] & PLUGIN_HAS_GUI):
                 gui = findDSSIGUI(plugin['binary'], plugin['name'], plugin['label'])
                 if gui:
                     return gui.encode("utf-8")
@@ -394,7 +505,7 @@ class CarlaMainW(QMainWindow):
 
         self.fSavedSettings = {
             "Main/DefaultProjectFolder": settings.value("Main/DefaultProjectFolder", HOME, type=str),
-            "Main/RefreshInterval": settings.value("Main/RefreshInterval", 120, type=int)
+            "Main/RefreshInterval": settings.value("Main/RefreshInterval", 50, type=int)
         }
 
         # ---------------------------------------------

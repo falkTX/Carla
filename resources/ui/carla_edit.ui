@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>697</width>
-    <height>518</height>
+    <height>520</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -22,9 +22,9 @@
      <property name="currentIndex">
       <number>0</number>
      </property>
-     <widget class="QWidget" name="tabInfo">
+     <widget class="QWidget" name="tabEdit">
       <attribute name="title">
-       <string>Information</string>
+       <string>Edit</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_2">
        <item row="0" column="0" colspan="2">
@@ -560,20 +560,6 @@ Plugin Name
               <item>
                <widget class="QComboBox" name="cb_programs"/>
               </item>
-              <item>
-               <widget class="QToolButton" name="b_reload_program">
-                <property name="enabled">
-                 <bool>false</bool>
-                </property>
-                <property name="text">
-                 <string/>
-                </property>
-                <property name="icon">
-                 <iconset resource="../resources.qrc">
-                  <normaloff>:/16x16/document-open.png</normaloff>:/16x16/document-open.png</iconset>
-                </property>
-               </widget>
-              </item>
              </layout>
             </widget>
             <widget class="QWidget" name="midi_programs">
@@ -583,20 +569,6 @@ Plugin Name
              <layout class="QHBoxLayout" name="horizontalLayout_4">
               <item>
                <widget class="QComboBox" name="cb_midi_programs"/>
-              </item>
-              <item>
-               <widget class="QToolButton" name="b_reload_midi_program">
-                <property name="enabled">
-                 <bool>false</bool>
-                </property>
-                <property name="text">
-                 <string/>
-                </property>
-                <property name="icon">
-                 <iconset resource="../resources.qrc">
-                  <normaloff>:/16x16/document-open.png</normaloff>:/16x16/document-open.png</iconset>
-                </property>
-               </widget>
               </item>
              </layout>
             </widget>
@@ -651,7 +623,7 @@ Plugin Name
      <widget class="QWidget" name="scrollAreaWidgetContents">
       <property name="geometry">
        <rect>
-        <x>-87</x>
+        <x>0</x>
         <y>0</y>
         <width>864</width>
         <height>64</height>

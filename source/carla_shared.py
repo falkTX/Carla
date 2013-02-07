@@ -679,39 +679,39 @@ def findTool(tdir, tname):
 # find wine/windows tools
 carla_discovery_win32 = findTool("discovery", "carla-discovery-win32.exe")
 carla_discovery_win64 = findTool("discovery", "carla-discovery-win64.exe")
-carla_bridge_win32    = findTool("bridge", "carla-bridge-win32.exe")
-carla_bridge_win64    = findTool("bridge", "carla-bridge-win64.exe")
+carla_bridge_win32    = findTool("bridges", "carla-bridge-win32.exe")
+carla_bridge_win64    = findTool("bridges", "carla-bridge-win64.exe")
 
 # find native and posix tools
 if not WINDOWS:
     carla_discovery_native  = findTool("discovery", "carla-discovery-native")
     carla_discovery_posix32 = findTool("discovery", "carla-discovery-posix32")
     carla_discovery_posix64 = findTool("discovery", "carla-discovery-posix64")
-    carla_bridge_native     = findTool("bridge", "carla-bridge-native")
-    carla_bridge_posix32    = findTool("bridge", "carla-bridge-posix32")
-    carla_bridge_posix64    = findTool("bridge", "carla-bridge-posix64")
+    carla_bridge_native     = findTool("bridges", "carla-bridge-native")
+    carla_bridge_posix32    = findTool("bridges", "carla-bridge-posix32")
+    carla_bridge_posix64    = findTool("bridges", "carla-bridge-posix64")
 
 # find windows only tools
 if WINDOWS:
-    carla_bridge_lv2_windows = findTool("bridge", "carla-bridge-lv2-windows.exe")
-    carla_bridge_vst_hwnd    = findTool("bridge", "carla-bridge-vst-hwnd.exe")
+    carla_bridge_lv2_windows = findTool("bridges", "carla-bridge-lv2-windows.exe")
+    carla_bridge_vst_hwnd    = findTool("bridges", "carla-bridge-vst-hwnd.exe")
 
 # find mac os only tools
 elif MACOS:
-    carla_bridge_lv2_cocoa = findTool("bridge", "carla-bridge-lv2-cocoa")
-    carla_bridge_vst_cocoa = findTool("bridge", "carla-bridge-vst-cocoa")
+    carla_bridge_lv2_cocoa = findTool("bridges", "carla-bridge-lv2-cocoa")
+    carla_bridge_vst_cocoa = findTool("bridges", "carla-bridge-vst-cocoa")
 
 # find generic tools
 else:
-    carla_bridge_lv2_gtk2 = findTool("bridge", "carla-bridge-lv2-gtk2")
-    carla_bridge_lv2_gtk3 = findTool("bridge", "carla-bridge-lv2-gtk3")
-    carla_bridge_lv2_qt4  = findTool("bridge", "carla-bridge-lv2-qt4")
-    carla_bridge_lv2_qt5  = findTool("bridge", "carla-bridge-lv2-qt5")
+    carla_bridge_lv2_gtk2 = findTool("bridges", "carla-bridge-lv2-gtk2")
+    carla_bridge_lv2_gtk3 = findTool("bridges", "carla-bridge-lv2-gtk3")
+    carla_bridge_lv2_qt4  = findTool("bridges", "carla-bridge-lv2-qt4")
+    carla_bridge_lv2_qt5  = findTool("bridges", "carla-bridge-lv2-qt5")
 
 # find linux only tools
 if LINUX:
-    carla_bridge_lv2_x11 = os.path.join("bridge", "carla-bridge-lv2-x11")
-    carla_bridge_vst_x11 = os.path.join("bridge", "carla-bridge-vst-x11")
+    carla_bridge_lv2_x11 = os.path.join("bridges", "carla-bridge-lv2-x11")
+    carla_bridge_vst_x11 = os.path.join("bridges", "carla-bridge-vst-x11")
 
 # ------------------------------------------------------------------------------------------------------------
 # Convert a ctypes c_char_p into a python string
@@ -788,14 +788,12 @@ def findBinaries(bPATH, OS):
 
     return binaries
 
-# FIXME - may use any extension, just needs to have manifest.ttl
 def findLV2Bundles(bPATH):
     bundles = []
-    extensions = (".lv2", ".lV2", ".LV2", ".Lv2") if not WINDOWS else (".lv2",)
 
     for root, dirs, files in os.walk(bPATH):
-        for dir_ in [dir_ for dir_ in dirs if dir_.endswith(extensions)]:
-            bundles.append(os.path.join(root, dir_))
+        if os.path.exists(os.path.join(root, "manifest.ttl")):
+            bundles.append(root)
 
     return bundles
 
@@ -1014,6 +1012,12 @@ def checkPluginSFZ(filename, tool):
 # ------------------------------------------------------------------------------------------------------------
 # Carla XML helpers
 
+def xmlSafeString(string, toXml):
+    if toXml:
+        return string.replace("&", "&amp;").replace("<","&lt;").replace(">","&gt;").replace("'","&apos;").replace("\"","&quot;")
+    else:
+        return string.replace("&amp;", "&").replace("&lt;","<").replace("&gt;",">").replace("&apos;","'").replace("&quot;","\"")
+
 def getSaveStateDictFromXML(xmlNode):
     saveState = deepcopy(CarlaSaveState)
 
@@ -1152,12 +1156,6 @@ def getSaveStateDictFromXML(xmlNode):
         node = node.nextSibling()
 
     return saveState
-
-def xmlSafeString(string, toXml):
-    if toXml:
-        return string.replace("&", "&amp;").replace("<","&lt;").replace(">","&gt;").replace("'","&apos;").replace("\"","&quot;")
-    else:
-        return string.replace("&amp;", "&").replace("&lt;","<").replace("&gt;",">").replace("&apos;","'").replace("&quot;","\"")
 
 # ------------------------------------------------------------------------------------------------------------
 # Carla About dialog
@@ -1398,8 +1396,8 @@ class PluginEdit(QDialog):
         self.fCurrentStateFilename = None
 
         self.fParameterCount = 0
-        self.fParameterList  = [] # (type, id, widget)
-        self.fParameterToUpdate = [] # (id, value)
+        self.fParameterList  = []     # (type, id, widget)
+        self.fParametersToUpdate = [] # (id, value)
 
         self.fTabIconOff = QIcon(":/bitmaps/led_off.png")
         self.fTabIconOn  = QIcon(":/bitmaps/led_yellow.png")
@@ -1426,10 +1424,6 @@ class PluginEdit(QDialog):
         self.ui.scrollArea.ensureVisible(self.ui.keyboard.width() / 5, 0)
         self.ui.scrollArea.setEnabled(False)
         self.ui.scrollArea.setVisible(False)
-
-        # TODO - not implemented yet
-        self.ui.b_reload_program.setEnabled(False)
-        self.ui.b_reload_midi_program.setEnabled(False)
 
         if Carla.isLocal:
             self.connect(self.ui.b_save_state, SIGNAL("clicked()"), SLOT("slot_saveState()"))
@@ -1542,7 +1536,7 @@ class PluginEdit(QDialog):
         # Reset
         self.fParameterCount = 0
         self.fParameterList  = []
-        self.fParameterToUpdate = []
+        self.fParametersToUpdate = []
 
         self.fTabIconCount  = 0
         self.fTabIconTimers = []
@@ -1600,8 +1594,6 @@ class PluginEdit(QDialog):
                         'label': cString(scalePointInfo['label'])
                     })
 
-                paramInputList.append(parameter)
-
                 # -----------------------------------------------------------------
                 # Get width values, in packs of 10
 
@@ -1610,6 +1602,8 @@ class PluginEdit(QDialog):
 
                     if paramInputWidthTMP > paramInputWidth:
                         paramInputWidth = paramInputWidthTMP
+
+                    paramInputList.append(parameter)
 
                     if len(paramInputList) == 10:
                         paramInputListFull.append((paramInputList, paramInputWidth))
@@ -1621,6 +1615,8 @@ class PluginEdit(QDialog):
 
                     if paramOutputWidthTMP > paramOutputWidth:
                         paramOutputWidth = paramOutputWidthTMP
+
+                    paramOutputList.append(parameter)
 
                     if len(paramOutputList) == 10:
                         paramOutputListFull.append((paramOutputList, paramOutputWidth))
@@ -1748,12 +1744,40 @@ class PluginEdit(QDialog):
             paramWidget.update()
 
     def setParameterValue(self, parameterId, value):
-        for paramItem in self.fParameterToUpdate:
+        for paramItem in self.fParametersToUpdate:
             if paramItem[0] == parameterId:
                 paramItem[1] = value
                 break
         else:
-            self.fParameterToUpdate.append([parameterId, value])
+            self.fParametersToUpdate.append([parameterId, value])
+
+    def setParameterDefault(self, parameterId, value):
+        for paramType, paramId, paramWidget in self.fParameterList:
+            if paramId == parameterId:
+                paramWidget.setDefault(value)
+                break
+
+    def setParameterMidiControl(self, parameterId, control):
+        for paramType, paramId, paramWidget in self.fParameterList:
+            if paramId == parameterId:
+                paramWidget.setMidiControl(control)
+                break
+
+    def setParameterMidiChannel(self, parameterId, channel):
+        for paramType, paramId, paramWidget in self.fParameterList:
+            if paramId == parameterId:
+                paramWidget.setMidiChannel(channel)
+                break
+
+    def setProgram(self, index):
+        self.ui.cb_programs.blockSignals(True)
+        self.ui.cb_programs.setCurrentIndex(index)
+        self.ui.cb_programs.blockSignals(False)
+
+    def setMidiProgram(self, index):
+        self.ui.cb_midi_programs.blockSignals(True)
+        self.ui.cb_midi_programs.setCurrentIndex(index)
+        self.ui.cb_midi_programs.blockSignals(False)
 
     def setVisible(self, yesNo):
         if yesNo:
@@ -1776,7 +1800,7 @@ class PluginEdit(QDialog):
                 self.ui.tabWidget.setTabIcon(i+1, self.fTabIconOff)
 
         # Check parameters needing update
-        for index, value in self.fParameterToUpdate:
+        for index, value in self.fParametersToUpdate:
             if index == PARAMETER_DRYWET:
                 self.ui.dial_drywet.setValue(value * 1000, True, False)
             elif index == PARAMETER_VOLUME:
@@ -1803,7 +1827,13 @@ class PluginEdit(QDialog):
                         break
 
         # Clear all parameters
-        self.fParameterToUpdate = []
+        self.fParametersToUpdate = []
+
+        # Update parameter outputs
+        for paramType, paramId, paramWidget in self.fParameterList:
+            if paramType == PARAMETER_OUTPUT:
+                value = Carla.host.get_current_parameter_value(self.fPluginId, paramId)
+                paramWidget.setValue(value, False)
 
     @pyqtSlot()
     def slot_saveState(self):
@@ -1902,6 +1932,7 @@ class PluginEdit(QDialog):
             self.fRealParent.editClosed()
 
     def _createParameterWidgets(self, paramType, paramListFull, tabPageName):
+        print("createParameterWidgets()", paramType, tabPageName)
         i = 1
         for paramList, width in paramListFull:
             if len(paramList) == 0:
@@ -2103,12 +2134,22 @@ class PluginWidget(QFrame):
     def getListWidgetItem(self):
         return self.fListWidgetItem
 
+    def editClosed(self):
+        self.ui.b_edit.setChecked(False)
+
+    def recheckPluginHints(self, hints):
+        self.fPluginInfo['hints'] = hints
+        self.ui.b_gui.setEnabled(hints & PLUGIN_HAS_GUI)
+
     def setActive(self, active, sendGui=False, sendCallback=True):
         if sendGui:      self.ui.led_enable.setChecked(active)
         if sendCallback: Carla.host.set_active(self.fPluginId, active)
 
         if active:
             self.ui.edit_dialog.ui.keyboard.allNotesOff()
+
+    def setParameterDefault(self, parameterId, value):
+        self.ui.edit_dialog.setParameterDefault(parameterId, value)
 
     def setParameterValue(self, parameterId, value):
         self.fParameterIconTimer = ICON_STATE_ON
@@ -2118,16 +2159,27 @@ class PluginWidget(QFrame):
 
         self.ui.edit_dialog.setParameterValue(parameterId, value)
 
+    def setParameterMidiControl(self, parameterId, control):
+        self.ui.edit_dialog.setParameterMidiControl(parameterId, control)
+
+    def setParameterMidiChannel(self, parameterId, channel):
+        self.ui.edit_dialog.setParameterMidiChannel(parameterId, channel)
+
+    def setProgram(self, parameterId, index):
+        self.fParameterIconTimer = ICON_STATE_ON
+        self.ui.edit_dialog.setProgram(index)
+
+    def setMidiProgram(self, parameterId, index):
+        self.fParameterIconTimer = ICON_STATE_ON
+        self.ui.edit_dialog.setMidiProgram(index)
+
     def setId(self, idx):
         self.fPluginId = idx
         self.ui.edit_dialog.fPluginId = idx
 
-    def editClosed(self):
-        self.ui.b_edit.setChecked(False)
-
-    def recheckPluginHints(self, hints):
-        self.fPluginInfo['hints'] = hints
-        self.ui.b_gui.setEnabled(hints & PLUGIN_HAS_GUI)
+    def setRefreshRate(self, rate):
+        self.ui.peak_in.setRefreshRate(rate)
+        self.ui.peak_out.setRefreshRate(rate)
 
     def paintEvent(self, event):
         painter = QPainter(self)

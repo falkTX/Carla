@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Carla Plugin
  * Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
  *
@@ -23,6 +23,7 @@
 
 #include "carla_engine.hpp"
 #include "carla_osc_utils.hpp"
+#include "carla_midi.h"
 
 //#include "carla_bridge_osc.hpp"
 
@@ -82,24 +83,19 @@ struct PluginAudioData {
         this->count = count;
     }
 
-    void freePorts()
-    {
-        for (uint32_t i=0; i < count; i++)
-        {
-            if (ports[i].port != nullptr)
-            {
-                delete ports[i].port;
-                ports[i].port = nullptr;
-            }
-        }
-    }
-
     void clear()
     {
-        freePorts();
-
         if (ports != nullptr)
         {
+            for (uint32_t i=0; i < count; i++)
+            {
+                if (ports[i].port != nullptr)
+                {
+                    delete ports[i].port;
+                    ports[i].port = nullptr;
+                }
+            }
+
             delete[] ports;
             ports = nullptr;
         }
@@ -135,7 +131,7 @@ struct PluginEventData {
         CARLA_ASSERT(portOut == nullptr);
     }
 
-    void freePorts()
+    void clear()
     {
         if (portIn != nullptr)
         {
@@ -148,11 +144,6 @@ struct PluginEventData {
             delete portOut;
             portOut = nullptr;
         }
-    }
-
-    void clear()
-    {
-        freePorts();
     }
 
     void initBuffers(CarlaEngine* const engine)
@@ -214,6 +205,11 @@ struct PluginParameterData {
         }
 
         count = 0;
+    }
+
+    float fixValue(const uint32_t parameterId, const float& value)
+    {
+        return ranges[parameterId].fixValue(value);
     }
 
     CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(PluginParameterData)
@@ -354,11 +350,20 @@ struct ExternalMidiNote {
 class CarlaPluginGUI : public QMainWindow
 {
 public:
-    CarlaPluginGUI(QWidget* const parent = nullptr);
+    class Callback
+    {
+    public:
+        virtual ~Callback() {}
+        virtual void guiClosedCallback() = 0;
+    };
+
+    CarlaPluginGUI(QWidget* const parent, Callback* const callback);
 
     ~CarlaPluginGUI();
 
 private:
+    Callback* const kCallback;
+
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginGUI)
 };
 
@@ -394,10 +399,8 @@ struct CarlaPluginProtectedData {
     // misc
     int8_t ctrlInChannel;
 
-#if 0
     uint32_t latency;
     float**  latencyBuffers;
-#endif
 
     // data
     PluginAudioData       audioIn;
@@ -484,13 +487,13 @@ struct CarlaPluginProtectedData {
           activeBefore(false),
           enabled(false),
           lib(nullptr),
-          ctrlInChannel(-1) {}
-#if 0
+          ctrlInChannel(-1),
           latency(0),
           latencyBuffers(nullptr) {}
-#endif
 
     CarlaPluginProtectedData() = delete;
+    CarlaPluginProtectedData(CarlaPluginProtectedData&) = delete;
+    CarlaPluginProtectedData(const CarlaPluginProtectedData&) = delete;
 
     CARLA_LEAK_DETECTOR(CarlaPluginProtectedData)
 };
@@ -515,92 +518,7 @@ CARLA_BACKEND_END_NAMESPACE
 //typedef QWidget GuiContainer;
 //#endif
 
-
 #if 0
-// -------------------------------------------------------------------
-// Extra
-
-ExternalMidiNote extMidiNotes[MAX_MIDI_EVENTS];
-
-// -------------------------------------------------------------------
-// Utilities
-
-static double fixParameterValue(double& value, const ParameterRanges& ranges)
-{
-    if (value < ranges.min)
-        value = ranges.min;
-    else if (value > ranges.max)
-        value = ranges.max;
-    return value;
-}
-
-static float fixParameterValue(float& value, const ParameterRanges& ranges)
-{
-    if (value < ranges.min)
-        value = ranges.min;
-    else if (value > ranges.max)
-        value = ranges.max;
-    return value;
-}
-
-friend class CarlaEngine; // FIXME
-friend class CarlaEngineJack;
-#endif
-
-#if 0
-
-// -------------------------------------------------------------------
-
-/*!
- * \class ScopedDisabler
- *
- * \brief Carla plugin scoped disabler
- *
- * This is a handy class that temporarily disables a plugin during a function scope.\n
- * It should be used when the plugin needs reload or state change, something like this:
- * \code
- * {
- *      const CarlaPlugin::ScopedDisabler m(plugin);
- *      plugin->setChunkData(data);
- * }
- * \endcode
- */
-class ScopedDisabler
-{
-public:
-    /*!
-     * Disable plugin \a plugin if \a disable is true.
-     * The plugin is re-enabled in the deconstructor of this class if \a disable is true.
-     *
-     * \param plugin The plugin to disable
-     * \param disable Wherever to disable the plugin or not, true by default
-     */
-    ScopedDisabler(CarlaPlugin* const plugin, const bool disable = true)
-        : m_plugin(plugin),
-          m_disable(disable)
-    {
-        if (m_disable)
-        {
-            m_plugin->engineProcessLock();
-            m_plugin->setEnabled(false);
-            m_plugin->engineProcessUnlock();
-        }
-    }
-
-    ~ScopedDisabler()
-    {
-        if (m_disable)
-        {
-            m_plugin->engineProcessLock();
-            m_plugin->setEnabled(true);
-            m_plugin->engineProcessUnlock();
-        }
-    }
-
-private:
-    CarlaPlugin* const m_plugin;
-    const bool m_disable;
-};
 
 /*!
  * \class CarlaPluginGUI
