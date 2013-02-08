@@ -178,11 +178,20 @@ class Host(object):
         self.lib.carla_is_engine_running.argtypes = None
         self.lib.carla_is_engine_running.restype = c_bool
 
+        self.lib.carla_load_project.argtypes = [c_char_p]
+        self.lib.carla_load_project.restype = c_bool
+
+        self.lib.carla_save_project.argtypes = [c_char_p]
+        self.lib.carla_save_project.restype = c_bool
+
         self.lib.carla_add_plugin.argtypes = [c_enum, c_enum, c_char_p, c_char_p, c_char_p, c_void_p]
         self.lib.carla_add_plugin.restype = c_bool
 
         self.lib.carla_remove_plugin.argtypes = [c_uint]
         self.lib.carla_remove_plugin.restype = c_bool
+
+        self.lib.carla_remove_all_plugins.argtypes = None
+        self.lib.carla_remove_all_plugins.restype = None
 
         self.lib.carla_get_plugin_info.argtypes = [c_uint]
         self.lib.carla_get_plugin_info.restype = POINTER(CarlaPluginInfo)
@@ -363,12 +372,21 @@ class Host(object):
     def is_engine_running(self):
         return self.lib.carla_is_engine_running()
 
+    def load_project(self, filename):
+        return self.lib.carla_load_project(filename.encode("utf-8"))
+
+    def save_project(self, filename):
+        return self.lib.carla_save_project(filename.encode("utf-8"))
+
     def add_plugin(self, btype, ptype, filename, name, label, extraStuff):
         cname = name.encode("utf-8") if name else c_nullptr
         return self.lib.carla_add_plugin(btype, ptype, filename.encode("utf-8"), cname, label.encode("utf-8"), cast(extraStuff, c_void_p))
 
     def remove_plugin(self, pluginId):
         return self.lib.carla_remove_plugin(pluginId)
+
+    def remove_all_plugins(self):
+        self.lib.carla_remove_all_plugins()
 
     def get_plugin_info(self, pluginId):
         return structToDict(self.lib.carla_get_plugin_info(pluginId).contents)

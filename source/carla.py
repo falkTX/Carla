@@ -63,13 +63,14 @@ class CarlaMainW(QMainWindow):
         self.fEngineStarted   = False
         self.fFirstEngineInit = False
 
+        self.fProjectFilename = None
+        self.fProjectLoading  = False
+
         self.fPluginCount = 0
         self.fPluginList  = []
 
         self.fIdleTimerFast = 0
         self.fIdleTimerSlow = 0
-
-        #self.m_project_filename = None
 
         #self._nsmAnnounce2str = ""
         #self._nsmOpen1str = ""
@@ -94,22 +95,24 @@ class CarlaMainW(QMainWindow):
         # -------------------------------------------------------------
         # Connect actions to functions
 
-        #self.connect(self.act_file_new, SIGNAL("triggered()"), SLOT("slot_file_new()"))
-        #self.connect(self.act_file_open, SIGNAL("triggered()"), SLOT("slot_file_open()"))
-        #self.connect(self.act_file_save, SIGNAL("triggered()"), SLOT("slot_file_save()"))
-        #self.connect(self.act_file_save_as, SIGNAL("triggered()"), SLOT("slot_file_save_as()"))
+        self.connect(self.ui.act_file_new, SIGNAL("triggered()"), SLOT("slot_fileNew()"))
+        self.connect(self.ui.act_file_open, SIGNAL("triggered()"), SLOT("slot_fileOpen()"))
+        self.connect(self.ui.act_file_save, SIGNAL("triggered()"), SLOT("slot_fileSave()"))
+        self.connect(self.ui.act_file_save_as, SIGNAL("triggered()"), SLOT("slot_fileSaveAs()"))
 
-        self.connect(self.ui.act_engine_start, SIGNAL("triggered()"), SLOT("slot_startEngine()"))
-        self.connect(self.ui.act_engine_stop, SIGNAL("triggered()"), SLOT("slot_stopEngine()"))
+        self.connect(self.ui.act_engine_start, SIGNAL("triggered()"), SLOT("slot_engineStart()"))
+        self.connect(self.ui.act_engine_stop, SIGNAL("triggered()"), SLOT("slot_engineStop()"))
 
-        self.connect(self.ui.act_plugin_add, SIGNAL("triggered()"), SLOT("slot_addPlugin()"))
-        #self.connect(self.act_plugin_remove_all, SIGNAL("triggered()"), SLOT("slot_remove_all()"))
+        self.connect(self.ui.act_plugin_add, SIGNAL("triggered()"), SLOT("slot_pluginAdd()"))
+        self.connect(self.ui.act_plugin_remove_all, SIGNAL("triggered()"), SLOT("slot_pluginRemoveAll()"))
 
-        #self.connect(self.act_settings_configure, SIGNAL("triggered()"), SLOT("slot_configureCarla()"))
+        self.connect(self.ui.act_settings_configure, SIGNAL("triggered()"), SLOT("slot_configureCarla()"))
         self.connect(self.ui.act_help_about, SIGNAL("triggered()"), SLOT("slot_aboutCarla()"))
         self.connect(self.ui.act_help_about_qt, SIGNAL("triggered()"), app, SLOT("aboutQt()"))
 
-        #self.connect(self, SIGNAL("SIGUSR1()"), SLOT("slot_handleSIGUSR1()"))
+        self.connect(self, SIGNAL("SIGUSR1()"), SLOT("slot_handleSIGUSR1()"))
+        self.connect(self, SIGNAL("SIGTERM()"), SLOT("slot_handleSIGTERM()"))
+
         self.connect(self, SIGNAL("DebugCallback(int, int, int, double, QString)"), SLOT("slot_handleDebugCallback(int, int, int, double, QString)"))
         self.connect(self, SIGNAL("PluginAddedCallback(int)"), SLOT("slot_handlePluginAddedCallback(int)"))
         self.connect(self, SIGNAL("PluginRemovedCallback(int)"), SLOT("slot_handlePluginRemovedCallback(int)"))
@@ -139,7 +142,7 @@ class CarlaMainW(QMainWindow):
         #if NSM_URL:
             #Carla.host.nsm_announce(NSM_URL, os.getpid())
         #else:
-        QTimer.singleShot(0, self, SLOT("slot_startEngine()"))
+        QTimer.singleShot(0, self, SLOT("slot_engineStart()"))
 
     def startEngine(self, clientName = "Carla"):
         # ---------------------------------------------
@@ -185,8 +188,8 @@ class CarlaMainW(QMainWindow):
                 self.fFirstEngineInit = False
                 return
 
-            self.ui.act_engine_start.setEnabled(True)
-            self.ui.act_engine_stop.setEnabled(False)
+            #self.ui.act_engine_start.setEnabled(True)
+            #self.ui.act_engine_stop.setEnabled(False)
 
             audioError = cString(Carla.host.get_last_error())
 
@@ -225,7 +228,7 @@ class CarlaMainW(QMainWindow):
             if ask != QMessageBox.Yes:
                 return
 
-            #self.slot_remove_all()
+            self.removeAllPlugins()
 
         if Carla.host.is_engine_running() and not Carla.host.engine_close():
             print(cString(Carla.host.get_last_error()))
@@ -236,6 +239,20 @@ class CarlaMainW(QMainWindow):
 
         self.killTimer(self.fIdleTimerFast)
         self.killTimer(self.fIdleTimerSlow)
+
+    def loadProject(self, filename):
+        self.fProjectLoading  = True
+        self.fProjectFilename = filename
+        Carla.host.load_project(filename)
+
+    def loadProjectLater(self, filename):
+        self.fProjectLoading  = True
+        self.fProjectFilename = filename
+        self.setWindowTitle("Carla - %s" % os.path.basename(filename))
+        QTimer.singleShot(0, self, SLOT("slot_loadProjectLater()"))
+
+    def saveProject(self):
+        Carla.host.save_project(self.fProjectFilename)
 
     def addPlugin(self, btype, ptype, filename, name, label, extraStuff):
         if not self.fEngineStarted:
@@ -248,8 +265,69 @@ class CarlaMainW(QMainWindow):
 
         return True
 
+    def removeAllPlugins(self):
+        while (self.ui.w_plugins.layout().takeAt(0)):
+            pass
+
+        for i in range(self.fPluginCount):
+            pwidget = self.fPluginList[i]
+
+            if pwidget is None:
+                break
+
+            self.fPluginList[i] = None
+
+            pwidget.ui.edit_dialog.close()
+            pwidget.close()
+            pwidget.deleteLater()
+            del pwidget
+
+        self.fPluginCount = 0
+
     @pyqtSlot()
-    def slot_startEngine(self):
+    def slot_fileNew(self):
+        self.removeAllPlugins()
+        self.fProjectFilename = None
+        self.fProjectLoading  = False
+        self.setWindowTitle("Carla")
+
+    @pyqtSlot()
+    def slot_fileOpen(self):
+        fileFilter  = self.tr("Carla Project File (*.carxp)")
+        filenameTry = QFileDialog.getOpenFileName(self, self.tr("Open Carla Project File"), self.fSavedSettings["Main/DefaultProjectFolder"], filter=fileFilter)
+
+        if filenameTry:
+            # FIXME - show dialog to user
+            self.removeAllPlugins()
+            self.loadProject(filenameTry)
+            self.setWindowTitle("Carla - %s" % os.path.basename(filenameTry))
+
+    @pyqtSlot()
+    def slot_fileSave(self, saveAs=False):
+        if self.fProjectFilename and not saveAs:
+            return self.saveProject()
+
+        fileFilter  = self.tr("Carla Project File (*.carxp)")
+        filenameTry = QFileDialog.getSaveFileName(self, self.tr("Save Carla Project File"), self.fSavedSettings["Main/DefaultProjectFolder"], filter=fileFilter)
+
+        if filenameTry:
+            if not filenameTry.endswith(".carxp"):
+                filenameTry += ".carxp"
+
+            self.fProjectFilename = filenameTry
+            self.saveProject()
+            self.setWindowTitle("Carla - %s" % os.path.basename(filenameTry))
+
+    @pyqtSlot()
+    def slot_fileSaveAs(self):
+        self.slot_fileSave(True)
+
+    @pyqtSlot()
+    def slot_loadProjectLater(self):
+        Carla.host.load_project(self.fProjectFilename)
+
+    @pyqtSlot()
+    def slot_engineStart(self):
         self.startEngine()
         check = Carla.host.is_engine_running()
         self.ui.act_file_open.setEnabled(check)
@@ -257,7 +335,7 @@ class CarlaMainW(QMainWindow):
         self.ui.act_engine_stop.setEnabled(check)
 
     @pyqtSlot()
-    def slot_stopEngine(self):
+    def slot_engineStop(self):
         self.stopEngine()
         check = Carla.host.is_engine_running()
         self.ui.act_file_open.setEnabled(check)
@@ -265,9 +343,37 @@ class CarlaMainW(QMainWindow):
         self.ui.act_engine_stop.setEnabled(check)
 
     @pyqtSlot()
+    def slot_pluginAdd(self):
+        dialog = PluginDatabaseW(self)
+        if dialog.exec_():
+            btype    = dialog.fRetPlugin['build']
+            ptype    = dialog.fRetPlugin['type']
+            filename = dialog.fRetPlugin['binary']
+            label    = dialog.fRetPlugin['label']
+            extraStuff = self.getExtraStuff(dialog.fRetPlugin)
+            self.addPlugin(btype, ptype, filename, None, label, extraStuff)
+
+    @pyqtSlot()
+    def slot_pluginRemoveAll(self):
+        self.removeAllPlugins()
+
+    @pyqtSlot()
+    def slot_aboutCarla(self):
+        CarlaAboutW(self).exec_()
+
+    @pyqtSlot()
+    def slot_configureCarla(self):
+        CarlaAboutW(self).exec_()
+
+    @pyqtSlot()
     def slot_handleSIGUSR1(self):
         print("Got SIGUSR1 -> Saving project now")
-        #QTimer.singleShot(0, self, SLOT("slot_file_save()"))
+        QTimer.singleShot(0, self, SLOT("slot_fileSave()"))
+
+    @pyqtSlot()
+    def slot_handleSIGTERM(self):
+        print("Got SIGTERM -> Closing now")
+        self.close()
 
     @pyqtSlot(int, int, int, float, str)
     def slot_handleDebugCallback(self, pluginId, value1, value2, value3, valueStr):
@@ -275,19 +381,19 @@ class CarlaMainW(QMainWindow):
 
     @pyqtSlot(int)
     def slot_handlePluginAddedCallback(self, pluginId, pluginName="todo"):
-        pwidgetItem = QListWidgetItem(self.ui.listWidget)
-        pwidgetItem.setSizeHint(QSize(pwidgetItem.sizeHint().width(), 48))
-
-        pwidget = PluginWidget(self, pwidgetItem, pluginId)
+        pwidget = PluginWidget(self, pluginId)
         pwidget.setRefreshRate(self.fSavedSettings["Main/RefreshInterval"])
 
-        self.ui.listWidget.setItemWidget(pwidgetItem, pwidget)
+        self.ui.w_plugins.layout().addWidget(pwidget)
 
         self.fPluginCount += 1
         self.fPluginList[pluginId] = pwidget
 
         if self.fPluginCount == 1:
             self.ui.act_plugin_remove_all.setEnabled(True)
+
+        if not self.fProjectLoading:
+            pwidget.setActive(True, True, True)
 
     @pyqtSlot(int)
     def slot_handlePluginRemovedCallback(self, pluginId):
@@ -298,12 +404,20 @@ class CarlaMainW(QMainWindow):
         self.fPluginList[pluginId] = None
         self.fPluginCount -= 1
 
+        self.ui.w_plugins.layout().removeWidget(pwidget)
+
         pwidget.ui.edit_dialog.close()
         pwidget.close()
+        pwidget.deleteLater()
         del pwidget
 
-        self.ui.listWidget.takeItem(pluginId)
-        #self.ui.listWidget.removeItemWidget(pwidget.getListWidgetItem())
+        # push all plugins 1 slot back
+        for i in range(self.fPluginCount):
+            if i < pluginId:
+                continue
+
+            self.fPluginList[i] = self.fPluginList[i+1]
+            self.fPluginList[i].setId(i)
 
         if self.fPluginCount == 0:
             self.ui.act_plugin_remove_all.setEnabled(False)
@@ -438,21 +552,6 @@ class CarlaMainW(QMainWindow):
             self.tr("Engine has been stopped or crashed.\nPlease restart Carla"),
             self.tr("You may want to save your session now..."), QMessageBox.Ok, QMessageBox.Ok)
 
-    @pyqtSlot()
-    def slot_addPlugin(self):
-        dialog = PluginDatabaseW(self)
-        if dialog.exec_():
-            btype    = dialog.fRetPlugin['build']
-            ptype    = dialog.fRetPlugin['type']
-            filename = dialog.fRetPlugin['binary']
-            label    = dialog.fRetPlugin['label']
-            extraStuff = self.getExtraStuff(dialog.fRetPlugin)
-            self.addPlugin(btype, ptype, filename, None, label, extraStuff)
-
-    @pyqtSlot()
-    def slot_aboutCarla(self):
-        CarlaAboutW(self).exec_()
-
     def getExtraStuff(self, plugin):
         ptype = plugin['type']
 
@@ -474,19 +573,21 @@ class CarlaMainW(QMainWindow):
         # Save RDF info for later
         self.fLadspaRdfList = []
 
-        if haveLRDF:
-            settingsDir  = os.path.join(HOME, ".config", "Cadence")
-            frLadspaFile = os.path.join(settingsDir, "ladspa_rdf.db")
+        if not haveLRDF:
+            return
 
-            if os.path.exists(frLadspaFile):
-                frLadspa = open(frLadspaFile, 'r')
+        settingsDir  = os.path.join(HOME, ".config", "Cadence")
+        frLadspaFile = os.path.join(settingsDir, "ladspa_rdf.db")
 
-                try:
-                    self.fLadspaRdfList = ladspa_rdf.get_c_ladspa_rdfs(json.load(frLadspa))
-                except:
-                    pass
+        if os.path.exists(frLadspaFile):
+            frLadspa = open(frLadspaFile, 'r')
 
-                frLadspa.close()
+            try:
+                self.fLadspaRdfList = ladspa_rdf.get_c_ladspa_rdfs(json.load(frLadspa))
+            except:
+                pass
+
+            frLadspa.close()
 
     def saveSettings(self):
         settings = QSettings()
@@ -542,13 +643,15 @@ class CarlaMainW(QMainWindow):
             Carla.host.engine_idle()
 
             for pwidget in self.fPluginList:
-                if pwidget is not None:
-                    pwidget.idleFast()
+                if pwidget is None:
+                    break
+                pwidget.idleFast()
 
         elif event.timerId() == self.fIdleTimerSlow:
             for pwidget in self.fPluginList:
-                if pwidget is not None:
-                    pwidget.idleSlow()
+                if pwidget is None:
+                    break
+                pwidget.idleSlow()
 
         QMainWindow.timerEvent(self, event)
 
@@ -558,7 +661,7 @@ class CarlaMainW(QMainWindow):
 
         self.saveSettings()
 
-        #self.slot_remove_all()
+        self.removeAllPlugins()
         self.stopEngine()
 
         QMainWindow.closeEvent(self, event)
@@ -702,16 +805,14 @@ if __name__ == '__main__':
     Carla.gui = CarlaMainW()
 
     # Set-up custom signal handling
-    #setUpSignals(Carla.gui)
+    setUpSignals(Carla.gui)
 
     # Show GUI
     Carla.gui.show()
 
     # Load project file if set
-    #if projectFilename:
-        #Carla.gui.m_project_filename = projectFilename
-        #Carla.gui.loadProjectLater()
-        #Carla.gui.setWindowTitle("Carla - %s" % os.path.basename(projectFilename)) # FIXME - put in loadProject
+    if projectFilename:
+        Carla.gui.loadProjectLater(projectFilename)
 
     # App-Loop
     ret = app.exec_()

@@ -712,8 +712,6 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
     CARLA_ASSERT(filename);
     CARLA_ASSERT(label);
 
-    qWarning("CarlaEngine::addPlugin() started");
-
     if (fData->curPluginCount == fData->maxPluginNumber)
     {
         setLastError("Maximum number of plugins reached");
@@ -834,7 +832,6 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
     fData->plugins[id].outsPeak[1] = 0.0f;
 
     fData->curPluginCount += 1;
-    qWarning("CarlaEngine::addPlugin() finished");
 
     // FIXME
     callback(CALLBACK_PLUGIN_ADDED, id, 0, 0, 0.0f, nullptr);
@@ -891,6 +888,9 @@ bool CarlaEngine::removePlugin(const unsigned int id)
 
         if (isRunning() && ! fData->aboutToClose)
             fData->thread.startNow();
+
+        // FIXME
+        callback(CALLBACK_PLUGIN_REMOVED, id, 0, 0, 0.0f, nullptr);
 
         return true;
     }

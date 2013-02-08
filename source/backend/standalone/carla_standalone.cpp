@@ -295,6 +295,20 @@ bool carla_is_engine_running()
 
 // -------------------------------------------------------------------------------------------------------------------
 
+bool carla_load_project(const char* filename)
+{
+    CARLA_ASSERT(standalone.engine != nullptr);
+    CARLA_ASSERT(filename != nullptr);
+}
+
+bool carla_save_project(const char* filename)
+{
+    CARLA_ASSERT(standalone.engine != nullptr);
+    CARLA_ASSERT(filename != nullptr);
+}
+
+// -------------------------------------------------------------------------------------------------------------------
+
 bool carla_add_plugin(CarlaBackend::BinaryType btype, CarlaBackend::PluginType ptype, const char* filename, const char* const name, const char* label, void* extraStuff)
 {
     qDebug("carla_add_plugin(%s, %s, \"%s\", \"%s\", \"%s\", %p)", CarlaBackend::BinaryType2Str(btype), CarlaBackend::PluginType2Str(ptype), filename, name, label, extraStuff);
@@ -317,6 +331,15 @@ bool carla_remove_plugin(unsigned int pluginId)
 
     standalone.lastError = "Engine is not started";
     return false;
+}
+
+CARLA_EXPORT void carla_remove_all_plugins()
+{
+    qDebug("carla_remove_all_plugins()");
+    CARLA_ASSERT(standalone.engine != nullptr);
+
+    if (standalone.engine != nullptr && standalone.engine->isRunning())
+        standalone.engine->removeAllPlugins();
 }
 
 // -------------------------------------------------------------------------------------------------------------------

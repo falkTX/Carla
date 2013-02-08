@@ -57,7 +57,7 @@ except:
 # Try Import Signal
 
 try:
-    from signal import signal, SIGINT, SIGTERM, SIGUSR1, SIGUSR2
+    from signal import signal, SIGINT, SIGTERM, SIGUSR1
     haveSignal = True
 except:
     haveSignal = False
@@ -755,6 +755,23 @@ def uopen(filename, mode="r"):
 
 def getIcon(icon, size=16):
     return QIcon.fromTheme(icon, QIcon(":/%ix%i/%s.png" % (size, size, icon)))
+
+# ------------------------------------------------------------------------------------------------------------
+# Signal handler
+
+def setUpSignals(self_):
+    if not haveSignal:
+        return
+
+    signal(SIGINT,  signalHandler)
+    signal(SIGTERM, signalHandler)
+    signal(SIGUSR1, signalHandler)
+
+def signalHandler(sig, frame):
+    if sig in (SIGINT, SIGTERM):
+        Carla.gui.emit(SIGNAL("SIGTERM()"))
+    elif sig == SIGUSR1:
+        Carla.gui.emit(SIGNAL("SIGUSR1()"))
 
 # ------------------------------------------------------------------------------------------------------------
 # Custom MessageBox
@@ -1932,7 +1949,6 @@ class PluginEdit(QDialog):
             self.fRealParent.editClosed()
 
     def _createParameterWidgets(self, paramType, paramListFull, tabPageName):
-        print("createParameterWidgets()", paramType, tabPageName)
         i = 1
         for paramList, width in paramListFull:
             if len(paramList) == 0:
@@ -1974,7 +1990,7 @@ class PluginEdit(QDialog):
 # Plugin Widget
 
 class PluginWidget(QFrame):
-    def __init__(self, parent, listWidgetItem, pluginId):
+    def __init__(self, parent, pluginId):
         QFrame.__init__(self, parent)
         self.ui = ui_carla_plugin.Ui_PluginWidget()
         self.ui.setupUi(self)
@@ -1991,8 +2007,6 @@ class PluginWidget(QFrame):
         self.fPluginInfo["label"]     = cString(self.fPluginInfo["label"])
         self.fPluginInfo["maker"]     = cString(self.fPluginInfo["maker"])
         self.fPluginInfo["copyright"] = cString(self.fPluginInfo["copyright"])
-
-        self.fListWidgetItem = listWidgetItem
 
         if Carla.processMode == PROCESS_MODE_CONTINUOUS_RACK:
             self.fPeaksInputCount  = 2
@@ -2130,9 +2144,6 @@ class PluginWidget(QFrame):
 
         # Update edit dialog
         self.ui.edit_dialog.idleSlow()
-
-    def getListWidgetItem(self):
-        return self.fListWidgetItem
 
     def editClosed(self):
         self.ui.b_edit.setChecked(False)

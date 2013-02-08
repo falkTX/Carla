@@ -156,8 +156,15 @@ CARLA_EXPORT bool carla_engine_close();
 CARLA_EXPORT void carla_engine_idle();
 CARLA_EXPORT bool carla_is_engine_running();
 
+CARLA_EXPORT bool carla_load_project(const char* filename);
+CARLA_EXPORT bool carla_save_project(const char* filename);
+
 CARLA_EXPORT bool carla_add_plugin(CarlaBinaryType btype, CarlaPluginType ptype, const char* filename, const char* name, const char* label, void* extraPtr);
 CARLA_EXPORT bool carla_remove_plugin(unsigned int pluginId);
+CARLA_EXPORT void carla_remove_all_plugins();
+
+//CARLA_EXPORT bool carla_load_plugin_state(unsigned int pluginId, const char* filename);
+//CARLA_EXPORT bool carla_save_plugin_state(unsigned int pluginId, const char* filename);
 
 CARLA_EXPORT const CarlaPluginInfo* carla_get_plugin_info(unsigned int pluginId);
 CARLA_EXPORT const CarlaPortCountInfo* carla_get_audio_port_count_info(unsigned int pluginId);
