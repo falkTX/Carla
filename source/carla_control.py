@@ -1,28 +1,32 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# Carla Backend code
-# Copyright (C) 2011-2012 Filipe Coelho <falktx@falktx.com>
+# Carla OSC controller
+# Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
 #
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# any later version.
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 2 of
+# the License, or any later version.
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
-# For a full copy of the GNU General Public License see the COPYING file
+# For a full copy of the GNU General Public License see the GPL.txt file
 
+# ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
-from PyQt4.QtGui import QApplication, QMainWindow
+
+from PyQt4.QtGui import QApplication, QInputDialog, QMainWindow
 from liblo import make_method, Address, ServerError, ServerThread
 from liblo import send as lo_send
 from liblo import TCP as LO_TCP
 
+# ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
+
 import ui_carla_control
 from carla_shared import *
 
@@ -32,7 +36,9 @@ lo_targetName = ""
 
 Carla.isControl = True
 
+# ------------------------------------------------------------------------------------------------------------
 # Python Object dicts compatible to carla-backend struct ctypes
+
 MidiProgramData = {
     'bank': 0,
     'program': 0,
@@ -114,16 +120,14 @@ class ControlPluginInfo(object):
         'outPeak'
     ]
 
+# ------------------------------------------------------------------------------------------------------------
 # Python Object class compatible to 'Host' on the Carla Backend code
+
 class Host(object):
     def __init__(self):
         object.__init__(self)
 
         self.pluginInfo = []
-
-        for i in range(MAX_DEFAULT_PLUGINS):
-            self.pluginInfo.append(ControlPluginInfo())
-            self._clear(i)
 
     def _clear(self, index):
         self.pluginInfo[index].pluginInfo = PluginInfo
@@ -258,9 +262,6 @@ class Host(object):
     def get_parameter_scalepoint_info(self, plugin_id, parameter_id, scalepoint_id):
         return ScalePointInfo
 
-    def get_gui_info(self, plugin_id):
-        return GuiInfo
-
     def get_parameter_data(self, plugin_id, parameter_id):
         return self.pluginInfo[plugin_id].parameterDataS[parameter_id]
 
@@ -377,7 +378,9 @@ class Host(object):
             lo_path = "/%s/%i/note_off" % (lo_targetName, plugin_id)
             lo_send(lo_target, lo_path, channel, note)
 
+# ------------------------------------------------------------------------------------------------------------
 # OSC Control server
+
 class ControlServer(ServerThread):
     def __init__(self, parent):
         ServerThread.__init__(self, 8087, LO_TCP)
@@ -500,16 +503,18 @@ class ControlServer(ServerThread):
     def fallback(self, path, args):
         print("ControlServer::fallback(\"%s\") - unknown message, args =" % path, args)
 
+# ------------------------------------------------------------------------------------------------------------
 # Main Window
-class CarlaControlW(QMainWindow, ui_carla_control.Ui_CarlaControlW):
+
+class CarlaControlW(QMainWindow):
     def __init__(self, parent=None):
         QMainWindow.__init__(self, parent)
-        self.setupUi(self)
+        self.ui = ui_carla_control.Ui_CarlaControlW
+        self.ui.setupUi(self)
 
         # -------------------------------------------------------------
         # Load Settings
 
-        self.settings = QSettings("Cadence", "Carla-Control")
         self.loadSettings()
 
         self.setStyleSheet("""
@@ -529,26 +534,29 @@ class CarlaControlW(QMainWindow, ui_carla_control.Ui_CarlaControlW):
         self.lo_address = ""
         self.lo_server  = None
 
-        self.m_lastPluginName = None
+        self.fLastPluginName = ""
 
-        self.m_plugin_list = []
-        for x in range(MAX_DEFAULT_PLUGINS):
-            self.m_plugin_list.append(None)
+        self.fPluginCount = 0
+        self.fPluginList  = []
+
+        self.fIdleTimerFast = 0
+        self.fIdleTimerSlow = 0
 
         # -------------------------------------------------------------
         # Set-up GUI stuff
 
-        self.act_file_refresh.setEnabled(False)
+        self.ui.act_file_refresh.setEnabled(False)
+
         self.resize(self.width(), 0)
 
         # -------------------------------------------------------------
         # Connect actions to functions
 
-        self.connect(self.act_file_connect, SIGNAL("triggered()"), SLOT("slot_doConnect()"))
-        self.connect(self.act_file_refresh, SIGNAL("triggered()"), SLOT("slot_doRefresh()"))
+        self.connect(self.ui.act_file_connect, SIGNAL("triggered()"), SLOT("slot_fileConnect()"))
+        self.connect(self.ui.act_file_refresh, SIGNAL("triggered()"), SLOT("slot_fileRefresh()"))
 
-        self.connect(self.act_help_about, SIGNAL("triggered()"), SLOT("slot_aboutCarlaControl()"))
-        self.connect(self.act_help_about_qt, SIGNAL("triggered()"), app, SLOT("aboutQt()"))
+        self.connect(self.ui.act_help_about, SIGNAL("triggered()"), SLOT("slot_aboutCarlaControl()"))
+        self.connect(self.ui.act_help_about_qt, SIGNAL("triggered()"), app, SLOT("aboutQt()"))
 
         self.connect(self, SIGNAL("AddPluginStart(int, QString)"), SLOT("slot_handleAddPluginStart(int, QString)"))
         self.connect(self, SIGNAL("AddPluginEnd(int)"), SLOT("slot_handleAddPluginEnd(int)"))
@@ -573,16 +581,17 @@ class CarlaControlW(QMainWindow, ui_carla_control.Ui_CarlaControlW):
         self.connect(self, SIGNAL("NoteOff(int, int, int)"), SLOT("slot_handleNoteOff(int, int, int)"))
         self.connect(self, SIGNAL("Exit()"), SLOT("slot_handleExit()"))
 
-        self.TIMER_GUI_STUFF  = self.startTimer(50)     # Peaks
-        self.TIMER_GUI_STUFF2 = self.startTimer(50 * 2) # LEDs and edit dialog
+        # Peaks
+        self.fIdleTimerFast = self.startTimer(50)
+        # LEDs and edit dialog parameters
+        self.fIdleTimerSlow = self.startTimer(50*2)
 
-    def remove_all(self):
-        for i in range(MAX_DEFAULT_PLUGINS):
-            if self.m_plugin_list[i]:
-                self.slot_handleRemovePlugin(i)
+    def removeAll(self):
+        for i in range(self.fPluginCount):
+            self.slot_handleRemovePlugin(i)
 
     @pyqtSlot()
-    def slot_doConnect(self):
+    def slot_fileConnect(self):
         global lo_target, lo_targetName
 
         if lo_target and self.lo_server:
@@ -611,14 +620,14 @@ class CarlaControlW(QMainWindow, ui_carla_control.Ui_CarlaControlW):
 
         if self.lo_server:
             self.lo_server.start()
-            self.act_file_refresh.setEnabled(True)
+            self.ui.act_file_refresh.setEnabled(True)
             lo_send(lo_target, "/register", self.lo_server.getFullURL())
 
     @pyqtSlot()
-    def slot_doRefresh(self):
+    def slot_fileRefresh(self):
         global lo_target
         if lo_target and self.lo_server:
-            self.remove_all()
+            self.removeAll()
             lo_send(lo_target, "/unregister")
             lo_send(lo_target, "/register", self.lo_server.getFullURL())
 
@@ -633,18 +642,35 @@ class CarlaControlW(QMainWindow, ui_carla_control.Ui_CarlaControlW):
     @pyqtSlot(int)
     def slot_handleAddPluginEnd(self, pluginId):
         pwidget = PluginWidget(self, pluginId)
-        self.w_plugins.layout().addWidget(pwidget)
-        self.m_plugin_list[pluginId] = pwidget
+        pwidget.setRefreshRate(50)
+
+        self.ui.w_plugins.layout().addWidget(pwidget)
+
+        self.fPluginCount += 1
+        self.fPluginList.append(pwidget)
 
     @pyqtSlot(int)
     def slot_handleRemovePlugin(self, pluginId):
-        pwidget = self.m_plugin_list[pluginId]
-        if pwidget:
-            pwidget.edit_dialog.close()
-            pwidget.close()
-            pwidget.deleteLater()
-            self.w_plugins.layout().removeWidget(pwidget)
-            self.m_plugin_list[pluginId] = None
+        pwidget = self.fPluginList[pluginId]
+        if pwidget is None:
+            return
+
+        self.fPluginList[pluginId] = None
+        self.fPluginCount -= 1
+
+        self.ui.w_plugins.layout().removeWidget(pwidget)
+
+        pwidget.ui.edit_dialog.close()
+        pwidget.close()
+        pwidget.deleteLater()
+        del pwidget
+
+        # push all plugins 1 slot back
+        for i in range(pluginId, self.fPluginCount):
+            self.fPluginList[i] = self.fPluginList[i+1]
+            self.fPluginList[i].setId(i)
+
+        # TODO - move Carla.host.* stuff too
 
     @pyqtSlot(int, int, int, int, str, str, str, str, int)
     def slot_handleSetPluginData(self, pluginId, type_, category, hints, realName, label, maker, copyright, uniqueId):
@@ -713,67 +739,56 @@ class CarlaControlW(QMainWindow, ui_carla_control.Ui_CarlaControlW):
 
         Carla.host._set_parameterRangeS(pluginId, index, ranges)
 
-    @pyqtSlot(int, int, int)
-    def slot_handleSetParameterMidiCC(self, pluginId, index, cc):
-        Carla.host._set_parameterMidiCC(pluginId, index, cc)
-
-        pwidget = self.m_plugin_list[pluginId]
-        if pwidget:
-            pwidget.edit_dialog.set_parameter_midi_cc(index, cc, True)
-
-    @pyqtSlot(int, int, int)
-    def slot_handleSetParameterMidiChannel(self, pluginId, index, channel):
-        Carla.host._set_parameterMidiChannel(pluginId, index, channel)
-
-        pwidget = self.m_plugin_list[pluginId]
-        if pwidget:
-            pwidget.edit_dialog.set_parameter_midi_channel(index, channel, True)
-
     @pyqtSlot(int, int, float)
     def slot_handleSetParameterValue(self, pluginId, parameterId, value):
         if parameterId >= 0:
             Carla.host._set_parameterValueS(pluginId, parameterId, value)
 
-        pwidget = self.m_plugin_list[pluginId]
-        if pwidget:
-            if parameterId < PARAMETER_NULL:
-                pwidget.m_parameterIconTimer = ICON_STATE_ON
-            else:
-                for param in pwidget.edit_dialog.m_parameterList:
-                    if param[1] == parameterId:
-                        if param[0] == PARAMETER_INPUT:
-                            pwidget.m_parameterIconTimer = ICON_STATE_ON
-                        break
+        pwidget = self.fPluginList[pluginId]
+        if pwidget is None:
+            return
 
-            if parameterId == PARAMETER_ACTIVE:
-                pwidget.set_active((value > 0.0), True, False)
-            elif parameterId == PARAMETER_DRYWET:
-                pwidget.set_drywet(value * 1000, True, False)
-            elif parameterId == PARAMETER_VOLUME:
-                pwidget.set_volume(value * 1000, True, False)
-            elif parameterId == PARAMETER_BALANCE_LEFT:
-                pwidget.set_balance_left(value * 1000, True, False)
-            elif parameterId == PARAMETER_BALANCE_RIGHT:
-                pwidget.set_balance_right(value * 1000, True, False)
-            elif parameterId >= 0:
-                pwidget.edit_dialog.set_parameter_to_update(parameterId)
+        pwidget.setParameterValue(parameterId, value)
 
     @pyqtSlot(int, int, float)
     def slot_handleSetDefaultValue(self, pluginId, parameterId, value):
         Carla.host._set_parameterDefaultValue(pluginId, parameterId, value)
 
-        #pwidget = self.m_plugin_list[pluginId]
-        #if pwidget:
-            #pwidget.edit_dialog.set_parameter_default_value(parameterId, value)
+        pwidget = self.fPluginList[pluginId]
+        if pwidget is None:
+            return
+
+        pwidget.setParameterDefault(parameterId, value)
+
+    @pyqtSlot(int, int, int)
+    def slot_handleSetParameterMidiCC(self, pluginId, index, cc):
+        Carla.host._set_parameterMidiCC(pluginId, index, cc)
+
+        pwidget = self.fPluginList[pluginId]
+        if pwidget is None:
+            return
+
+        pwidget.setParameterMidiControl(index, cc)
+
+    @pyqtSlot(int, int, int)
+    def slot_handleSetParameterMidiChannel(self, pluginId, index, channel):
+        Carla.host._set_parameterMidiChannel(pluginId, index, channel)
+
+        pwidget = self.fPluginList[pluginId]
+        if pwidget is None:
+            return
+
+        pwidget.setParameterMidiChannel(index, channel)
 
     @pyqtSlot(int, int)
     def slot_handleSetProgram(self, pluginId, index):
         Carla.host._set_currentProgram(pluginId, index)
 
-        pwidget = self.m_plugin_list[pluginId]
-        if pwidget:
-            pwidget.edit_dialog.set_program(index)
-            pwidget.m_parameterIconTimer = ICON_STATE_ON
+        pwidget = self.fPluginList[pluginId]
+        if pwidget is None:
+            return
+
+        pwidget.setProgram(index)
 
     @pyqtSlot(int, int)
     def slot_handleSetProgramCount(self, pluginId, count):
@@ -787,10 +802,11 @@ class CarlaControlW(QMainWindow, ui_carla_control.Ui_CarlaControlW):
     def slot_handleSetMidiProgram(self, pluginId, index):
         Carla.host._set_currentMidiProgram(pluginId, index)
 
-        pwidget = self.m_plugin_list[pluginId]
-        if pwidget:
-            pwidget.edit_dialog.set_midi_program(index)
-            pwidget.m_parameterIconTimer = ICON_STATE_ON
+        pwidget = self.fPluginList[pluginId]
+        if pwidget is None:
+            return
+
+        pwidget.setMidiProgram(index)
 
     @pyqtSlot(int, int)
     def slot_handleSetMidiProgramCount(self, pluginId, count):
@@ -814,24 +830,28 @@ class CarlaControlW(QMainWindow, ui_carla_control.Ui_CarlaControlW):
 
     @pyqtSlot(int, int, int, int)
     def slot_handleNoteOn(self, pluginId, channel, note, velo):
-        pwidget = self.m_plugin_list[pluginId]
-        if pwidget:
-            pwidget.edit_dialog.keyboard.sendNoteOn(note, False)
+        pwidget = self.fPluginList[pluginId]
+        if pwidget is None:
+            return
+
+        pwidget.sendNoteOn(note)
 
     @pyqtSlot(int, int, int)
     def slot_handleNoteOff(self, pluginId, channel, note):
-        pwidget = self.m_plugin_list[pluginId]
-        if pwidget:
-            pwidget.edit_dialog.keyboard.sendNoteOff(note, False)
+        pwidget = self.fPluginList[pluginId]
+        if pwidget is None:
+            return
+
+        pwidget.sendNoteOff(note)
 
     @pyqtSlot()
     def slot_handleExit(self):
-        self.remove_all()
+        self.removeAll()
 
         if self.lo_server:
             self.lo_server.stop()
             self.lo_server = None
-            self.act_file_refresh.setEnabled(False)
+            self.ui.act_file_refresh.setEnabled(False)
 
         global lo_target, lo_targetName
         lo_target     = None
@@ -839,23 +859,31 @@ class CarlaControlW(QMainWindow, ui_carla_control.Ui_CarlaControlW):
         self.lo_address = ""
 
     def saveSettings(self):
-        self.settings.setValue("Geometry", self.saveGeometry())
-        #self.settings.setValue("ShowToolbar", self.toolBar.isVisible())
+        settings = QSettings()
+        settings.setValue("Geometry", self.saveGeometry())
+        #settings.setValue("ShowToolbar", self.ui.toolBar.isVisible())
 
     def loadSettings(self):
-        self.restoreGeometry(self.settings.value("Geometry", ""))
+        settings = QSettings()
+        self.restoreGeometry(settings.value("Geometry", ""))
 
-        #show_toolbar = self.settings.value("ShowToolbar", True, type=bool)
-        #self.act_settings_show_toolbar.setChecked(show_toolbar)
-        #self.toolBar.setVisible(show_toolbar)
+        #showToolbar = settings.value("ShowToolbar", True, type=bool)
+        #self.ui.act_settings_show_toolbar.setChecked(showToolbar)
+        #self.ui.toolBar.setVisible(showToolbar)
 
     def timerEvent(self, event):
-        if event.timerId() == self.TIMER_GUI_STUFF:
-            for pwidget in self.m_plugin_list:
-                if pwidget: pwidget.check_gui_stuff()
-        elif event.timerId() == self.TIMER_GUI_STUFF2:
-            for pwidget in self.m_plugin_list:
-                if pwidget: pwidget.check_gui_stuff2()
+        if event.timerId() == self.fIdleTimerFast:
+            for pwidget in self.fPluginList:
+                if pwidget is None:
+                    break
+                pwidget.idleFast()
+
+        elif event.timerId() == self.fIdleTimerSlow:
+            for pwidget in self.fPluginList:
+                if pwidget is None:
+                    break
+                pwidget.idleSlow()
+
         QMainWindow.timerEvent(self, event)
 
     def closeEvent(self, event):
@@ -883,7 +911,7 @@ if __name__ == '__main__':
     Carla.gui = CarlaControlW()
 
     # Set-up custom signal handling
-    #setUpSignals(Carla.gui)
+    setUpSignals()
 
     # Show GUI
     Carla.gui.show()

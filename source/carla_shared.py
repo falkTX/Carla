@@ -759,7 +759,7 @@ def getIcon(icon, size=16):
 # ------------------------------------------------------------------------------------------------------------
 # Signal handler
 
-def setUpSignals(self_):
+def setUpSignals():
     if not haveSignal:
         return
 
@@ -2176,13 +2176,19 @@ class PluginWidget(QFrame):
     def setParameterMidiChannel(self, parameterId, channel):
         self.ui.edit_dialog.setParameterMidiChannel(parameterId, channel)
 
-    def setProgram(self, parameterId, index):
+    def setProgram(self, index):
         self.fParameterIconTimer = ICON_STATE_ON
         self.ui.edit_dialog.setProgram(index)
 
-    def setMidiProgram(self, parameterId, index):
+    def setMidiProgram(self, index):
         self.fParameterIconTimer = ICON_STATE_ON
         self.ui.edit_dialog.setMidiProgram(index)
+
+    def sendNoteOn(self, note):
+        self.ui.edit_dialog.ui.keyboard.sendNoteOn(note, False)
+
+    def sendNoteOff(self, note):
+        self.ui.edit_dialog.ui.keyboard.sendNoteOff(note, False)
 
     def setId(self, idx):
         self.fPluginId = idx
