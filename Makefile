@@ -69,7 +69,8 @@ source/resources_rc.py: resources/resources.qrc
 # UI code
 
 UIs = source/ui_carla.py source/ui_carla_control.py\
-	source/ui_carla_about.py source/ui_carla_database.py source/ui_carla_edit.py source/ui_carla_parameter.py source/ui_carla_plugin.py source/ui_carla_refresh.py \
+	source/ui_carla_about.py source/ui_carla_database.py source/ui_carla_edit.py source/ui_carla_parameter.py source/ui_carla_plugin.py \
+	source/ui_carla_refresh.py source/ui_carla_settings.py \
 	source/ui_inputdialog_value.py
 
 UI: $(UIs)
