@@ -47,7 +47,7 @@ On Debian and Ubuntu, use these commands to install all dependencies: <br/>
 NOTE: linuxsampler is not packaged in either Debian or Ubuntu, but it's available in KXStudio. <br/>
 <br/>
 
-To run all the Carla-Control, you'll additionally need:
+To run Carla-Control, you'll additionally need:
 
  - python3-liblo
 
@@ -55,7 +55,7 @@ Optional but recommended:
 
  - python3-rdflib (for LADSPA-RDF support)
 
-The python version used and tested is python3.2. <br/>
+The python version used and tested is python3.2. Older versions won't work! <br/>
 After install, Carla will still work on distros with python2 as default, without any additional work.
 
 <br/>
