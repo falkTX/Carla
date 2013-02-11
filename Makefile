@@ -122,7 +122,7 @@ install:
 	install -m 755 \
 		data/carla \
 		data/carla-control \
-		data/carla-standalone \
+		data/carla-single \
 		$(DESTDIR)$(PREFIX)/bin/
 
 	# Install desktop files
@@ -162,7 +162,7 @@ install:
 	sed -i "s/X-PREFIX-X/$(SED_PREFIX)/" \
 		$(DESTDIR)$(PREFIX)/bin/carla \
 		$(DESTDIR)$(PREFIX)/bin/carla-control \
-		$(DESTDIR)$(PREFIX)/bin/carla-standalone \
+		$(DESTDIR)$(PREFIX)/bin/carla-single
 
 # -----------------------------------------------------------------------------------------------------------------------------------------
 
