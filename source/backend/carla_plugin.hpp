@@ -22,6 +22,9 @@
 #include "carla_native.h"
 #include "carla_utils.hpp"
 
+// FIXME
+#include "carla_state_utils.hpp"
+
 // Avoid including extra libs here
 struct LADSPA_RDF_Descriptor;
 typedef void* lo_address;
@@ -371,6 +374,21 @@ public:
      * \see parameterCount()
      */
     void getParameterCountInfo(uint32_t* const ins, uint32_t* const outs, uint32_t* const total);
+
+    /*!
+     * Get the plugin's save state.\n
+     * The plugin will automatically call prepareForSave() as needed.
+     *
+     * \see loadSaveState()
+     */
+    virtual const SaveState& getSaveState();
+
+    /*!
+     * Get the plugin's save state.
+     *
+     * \see getSaveState()
+     */
+    virtual void loadSaveState(const SaveState& saveState);
 
     // -------------------------------------------------------------------
     // Set data (internal stuff)

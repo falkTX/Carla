@@ -19,6 +19,9 @@
 #include "carla_backend_utils.hpp"
 #include "carla_midi.h"
 
+#include <QtCore/QFile>
+#include <QtCore/QTextStream>
+
 CARLA_BACKEND_START_NAMESPACE
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -914,7 +917,7 @@ void CarlaEngine::removeAllPlugins()
     fData->curPluginCount = 0;
     fData->maxPluginNumber = 0;
 
-    for (unsigned short i=0; i < oldCount; i++)
+    for (unsigned int i=0; i < oldCount; i++)
     {
         CarlaPlugin* const plugin = fData->plugins[i].plugin;
 
@@ -941,6 +944,49 @@ void CarlaEngine::__bridgePluginRegister(const unsigned short id, CarlaPlugin* c
     data->carlaPlugins[id] = plugin;
 }
 #endif
+
+// -----------------------------------------------------------------------
+// Information (base)
+
+void CarlaEngine::loadProject(const char* const filename)
+{
+    CARLA_ASSERT(filename != nullptr);
+
+    //QFile file(filename);
+
+    //if (! file.open(QIODevice::WriteOnly | QIODevice::Text))
+    //    return;
+
+    //getSaveStateDictFromXML
+}
+
+void CarlaEngine::saveProject(const char* const filename)
+{
+    CARLA_ASSERT(filename != nullptr);
+
+    QFile file(filename);
+    file.open(QIODevice::WriteOnly | QIODevice::Text);
+
+    QTextStream out(&file);
+    out << "<?xml version='1.0' encoding='UTF-8'?>\n";
+    out << "<!DOCTYPE CARLA-PRESET>\n";
+    out << "<CARLA-PRESET VERSION='0.5.0'>\n";
+
+    for (unsigned int i=0; i < fData->curPluginCount; i++)
+    {
+        CarlaPlugin* const plugin = fData->plugins[i].plugin;
+
+        if (plugin != nullptr && plugin->enabled())
+        {
+            const SaveState& saveState = plugin->getSaveState();
+            // TODO
+        }
+    }
+
+    out << "</CARLA-PRESET>\n";
+
+    file.close();
+}
 
 // -----------------------------------------------------------------------
 // Information (base)
@@ -1202,7 +1248,7 @@ void CarlaEngine::bufferSizeChanged(const uint32_t newBufferSize)
 
     for (unsigned int i=0; i < fData->curPluginCount; i++)
     {
-        CarlaPlugin* const plugin = getPluginUnchecked(i);
+        CarlaPlugin* const plugin = fData->plugins[i].plugin;
 
         if (plugin != nullptr && plugin->enabled())
             plugin->bufferSizeChanged(newBufferSize);
@@ -1215,7 +1261,7 @@ void CarlaEngine::sampleRateChanged(const double newSampleRate)
 
     for (unsigned int i=0; i < fData->curPluginCount; i++)
     {
-        CarlaPlugin* const plugin = getPluginUnchecked(i);
+        CarlaPlugin* const plugin = fData->plugins[i].plugin;
 
         if (plugin != nullptr && plugin->enabled())
             plugin->sampleRateChanged(newSampleRate);

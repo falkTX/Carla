@@ -369,6 +369,20 @@ void CarlaPlugin::getParameterCountInfo(uint32_t* const ins, uint32_t* const out
     }
 }
 
+const SaveState& CarlaPlugin::getSaveState()
+{
+    static SaveState saveState;
+
+    // TODO
+    return saveState;
+}
+
+void CarlaPlugin::loadSaveState(const SaveState& saveState)
+{
+    // TODO
+    Q_UNUSED(saveState);
+}
+
 // -------------------------------------------------------------------
 // Set data (internal stuff)
 

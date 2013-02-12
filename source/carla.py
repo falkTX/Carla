@@ -747,6 +747,8 @@ class CarlaMainW(QMainWindow):
 
         self.fPluginCount = 0
 
+        Carla.host.remove_all_plugins()
+
     @pyqtSlot()
     def slot_fileNew(self):
         self.removeAllPlugins()

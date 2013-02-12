@@ -1,10 +1,6 @@
-# QtCreator project file
+﻿# QtCreator project file
 
-contains(QT_VERSION, ^5.*) {
-QT = core widgets xml
-} else {
 QT = core gui xml
-}
 
 CONFIG    = debug link_pkgconfig qt warn_on
 PKGCONFIG = jack liblo
@@ -13,29 +9,36 @@ TARGET   = carla-bridge-qtcreator
 TEMPLATE = app
 VERSION  = 0.5.0
 
-SOURCES  = \
+# -----------------------------------------------------------
+
+SOURCES = \
     ../carla_bridge_client.cpp \
     ../carla_bridge_osc.cpp \
     ../carla_bridge_toolkit.cpp \
     ../carla_bridge_plugin.cpp
 
-HEADERS  = \
+HEADERS = \
     ../carla_bridge.hpp \
     ../carla_bridge_client.hpp \
     ../carla_bridge_osc.hpp \
-    ../carla_bridge_toolkit.hpp \
+    ../carla_bridge_toolkit.hpp
+
+# -----------------------------------------------------------
 
 # carla-engine
 SOURCES += \
     ../../backend/engine/carla_engine.cpp \
     ../../backend/engine/carla_engine_osc.cpp \
     ../../backend/engine/carla_engine_thread.cpp \
-    ../../backend/engine/jack.cpp
+    ../../backend/engine/jack.cpp \
+    ../../backend/engine/plugin.cpp \
+    ../../backend/engine/rtaudio.cpp
 
 # carla-plugin
 SOURCES += \
     ../../backend/plugin/carla_plugin.cpp \
     ../../backend/plugin/carla_plugin_thread.cpp \
+    ../../backend/plugin/native.cpp \
     ../../backend/plugin/ladspa.cpp \
     ../../backend/plugin/dssi.cpp \
     ../../backend/plugin/lv2.cpp \
@@ -43,9 +46,11 @@ SOURCES += \
     ../../backend/plugin/fluidsynth.cpp \
     ../../backend/plugin/linuxsampler.cpp
 
-# carla-utils
+# carla-standalone
 SOURCES += \
-    ../../backend/utils/Shared.cpp
+    ../../backend/standalone/carla_standalone.cpp
+
+# -----------------------------------------------------------
 
 # common
 HEADERS += \
@@ -56,17 +61,17 @@ HEADERS += \
     ../../backend/carla_plugin.hpp \
     ../../backend/carla_standalone.hpp
 
+# engine
 HEADERS += \
     ../../backend/engine/carla_engine_internal.hpp \
     ../../backend/engine/carla_engine_osc.hpp \
     ../../backend/engine/carla_engine_thread.hpp \
+    ../../backend/engine/plugin/DistrhoPluginInfo.h
 
+# plugin
 HEADERS += \
     ../../backend/plugin/carla_plugin_internal.hpp \
     ../../backend/plugin/carla_plugin_thread.hpp
-
-HEADERS += \
-    ../../backend/utils/Shared.hpp
 
 # includes
 HEADERS += \
@@ -77,13 +82,15 @@ HEADERS += \
 
 # utils
 HEADERS += \
-    ../../utils/carla_backend_utils.hpp\
+    ../../utils/carla_backend_utils.hpp \
     ../../utils/carla_juce_utils.hpp \
     ../../utils/carla_ladspa_utils.hpp \
     ../../utils/carla_lib_utils.hpp \
     ../../utils/carla_lv2_utils.hpp \
     ../../utils/carla_osc_utils.hpp \
+    ../../utils/carla_state_utils.hpp \
     ../../utils/carla_vst_utils.hpp \
+    ../../utils/carla_utils.hpp \
     ../../utils/lv2_atom_queue.hpp \
     ../../utils/rt_list.hpp
 
@@ -95,6 +102,8 @@ INCLUDEPATH = .. \
     ../../includes \
     ../../libs \
     ../../utils
+
+# -----------------------------------------------------------
 
 DEFINES  = QTCREATOR_TEST
 DEFINES += DEBUG

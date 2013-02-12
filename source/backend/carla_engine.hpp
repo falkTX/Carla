@@ -256,9 +256,9 @@ struct EngineOptions {
           forceStereo(false),
           preferPluginBridges(false),
           preferUiBridges(true),
-      #ifdef WANT_DSSI
+#ifdef WANT_DSSI
           useDssiVstChunks(false),
-      #endif
+#endif
           maxParameters(MAX_DEFAULT_PARAMETERS),
           oscUiTimeout(4000),
           preferredBufferSize(512),
@@ -703,6 +703,21 @@ public:
     //{
     //    m_carlaPlugins[id] = plugin;
     //}
+
+    // -------------------------------------------------------------------
+    // Project management
+
+    /*!
+     * Load \a filename session.
+     * \note Already loaded plugins are not removed, but added afterwards.\n
+     *       Call removeAllPlugins() first if needed.
+     */
+    void loadProject(const char* const filename);
+
+    /*!
+     * Save current session to \a filename.
+     */
+    void saveProject(const char* const filename);
 
     // -------------------------------------------------------------------
     // Information (base)

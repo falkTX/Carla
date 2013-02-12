@@ -1,17 +1,13 @@
-# QtCreator project file
+﻿# QtCreator project file
 
 QT = core
 
-win {
-CONFIG    = release
-} else {
-CONFIG    = debug
-}
-CONFIG   += link_pkgconfig qt warn_on
+CONFIG    = debug link_pkgconfig qt warn_on
 
 DEFINES   = DEBUG
 DEFINES  += WANT_LADSPA WANT_DSSI WANT_LV2 WANT_VST
 DEFINES  += WANT_FLUIDSYNTH WANT_LINUXSAMPLER
+
 PKGCONFIG = fluidsynth linuxsampler
 
 TARGET   = carla-discovery-qtcreator

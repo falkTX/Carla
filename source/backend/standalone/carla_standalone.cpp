@@ -282,7 +282,7 @@ void carla_engine_idle()
 {
     CARLA_ASSERT(standalone.engine != nullptr);
 
-    if (standalone.engine)
+    if (standalone.engine != nullptr)
         standalone.engine->idle();
 }
 
@@ -290,7 +290,7 @@ bool carla_is_engine_running()
 {
     qDebug("carla_is_engine_running()");
 
-    return standalone.engine != nullptr && standalone.engine->isRunning();
+    return (standalone.engine != nullptr && standalone.engine->isRunning());
 }
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -299,12 +299,18 @@ bool carla_load_project(const char* filename)
 {
     CARLA_ASSERT(standalone.engine != nullptr);
     CARLA_ASSERT(filename != nullptr);
+
+    if (standalone.engine != nullptr)
+        standalone.engine->loadProject(filename);
 }
 
 bool carla_save_project(const char* filename)
 {
     CARLA_ASSERT(standalone.engine != nullptr);
     CARLA_ASSERT(filename != nullptr);
+
+    if (standalone.engine != nullptr)
+        standalone.engine->saveProject(filename);
 }
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -333,7 +339,7 @@ bool carla_remove_plugin(unsigned int pluginId)
     return false;
 }
 
-CARLA_EXPORT void carla_remove_all_plugins()
+void carla_remove_all_plugins()
 {
     qDebug("carla_remove_all_plugins()");
     CARLA_ASSERT(standalone.engine != nullptr);
