@@ -24,7 +24,7 @@
 #include <cstdlib>
 #include <cstring>
 
-#ifdef DONT_USE_PTHREAD
+#ifdef CPP11_MUTEX
 # include <mutex>
 #else
 # include <pthread.h>
@@ -219,44 +219,42 @@ class CarlaMutex
 public:
     CarlaMutex()
     {
-#ifndef DONT_USE_PTHREAD
+#ifndef CPP11_MUTEX
         pthread_mutex_init(&pmutex, nullptr);
 #endif
     }
 
     ~CarlaMutex()
     {
-#ifndef DONT_USE_PTHREAD
+#ifndef CPP11_MUTEX
         pthread_mutex_destroy(&pmutex);
 #endif
     }
 
-    bool lock()
+    void lock()
     {
-#ifdef DONT_USE_PTHREAD
+#ifdef CPP11_MUTEX
         cmutex.lock();
-        return true;
 #else
-        return (pthread_mutex_lock(&pmutex) == 0);
+        pthread_mutex_lock(&pmutex);
 #endif
     }
 
     bool tryLock()
     {
-#ifdef DONT_USE_PTHREAD
+#ifdef CPP11_MUTEX
         return cmutex.try_lock();
 #else
         return (pthread_mutex_trylock(&pmutex) == 0);
 #endif
     }
 
-    bool unlock()
+    void unlock()
     {
-#ifdef DONT_USE_PTHREAD
+#ifdef CPP11_MUTEX
         cmutex.unlock();
-        return true;
 #else
-        return (pthread_mutex_unlock(&pmutex) == 0);
+        pthread_mutex_unlock(&pmutex);
 #endif
     }
 
@@ -282,7 +280,7 @@ public:
     };
 
 private:
-#ifdef DONT_USE_PTHREAD
+#ifdef CPP11_MUTEX
     std::mutex cmutex;
 #else
     pthread_mutex_t pmutex;
@@ -414,14 +412,14 @@ public:
         return (bufferLen != 0);
     }
 
-#if __USE_GNU && 0
+#if __USE_GNU
     bool contains(const char* const strBuf, const bool ignoreCase = false) const
     {
         if (strBuf == nullptr)
             return false;
 
         if (ignoreCase)
-            return (std::strcasestr(buffer, strBuf) != nullptr);
+            return (strcasestr(buffer, strBuf) != nullptr);
         else
             return (std::strstr(buffer, strBuf) != nullptr);
     }
