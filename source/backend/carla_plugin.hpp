@@ -779,13 +779,11 @@ public:
         const char* const label;
     };
 
-#ifndef BUILD_BRIDGE
     static size_t getNativePluginCount();
     static const PluginDescriptor* getNativePluginDescriptor(const size_t index);
 
     static CarlaPlugin* newNative(const Initializer& init);
     static CarlaPlugin* newBridge(const Initializer& init, const BinaryType btype, const PluginType ptype, const char* const bridgeFilename);
-#endif
 
     static CarlaPlugin* newLADSPA(const Initializer& init, const LADSPA_RDF_Descriptor* const rdfDescriptor);
     static CarlaPlugin* newDSSI(const Initializer& init, const char* const guiFilename);

@@ -53,16 +53,12 @@ const unsigned int MAX_DEFAULT_PARAMETERS = 200; //!< Maximum default number of 
  * \see CarlaPlugin::hints()
  * @{
  */
-#ifndef BUILD_BRIDGE
 const unsigned int PLUGIN_IS_BRIDGE          = 0x001; //!< Plugin is a bridge (ie, BridgePlugin). This hint is required because "bridge" itself is not a plugin type.
-#endif
 const unsigned int PLUGIN_IS_RTSAFE          = 0x002; //!< Plugin is hard real-time safe.
 const unsigned int PLUGIN_IS_SYNTH           = 0x004; //!< Plugin is a synthesizer (produces sound).
 const unsigned int PLUGIN_HAS_GUI            = 0x010; //!< Plugin has its own custom GUI.
 const unsigned int PLUGIN_USES_CHUNKS        = 0x020; //!< Plugin uses chunks to save internal data.\see CarlaPlugin::chunkData()
-#ifndef BUILD_BRIDGE
 const unsigned int PLUGIN_USES_SINGLE_THREAD = 0x040; //!< Plugin needs a single thread for both DSP and UI events.
-#endif
 const unsigned int PLUGIN_CAN_DRYWET         = 0x100; //!< Plugin can make use of Dry/Wet controls.
 const unsigned int PLUGIN_CAN_VOLUME         = 0x200; //!< Plugin can make use of Volume controls.
 const unsigned int PLUGIN_CAN_BALANCE        = 0x400; //!< Plugin can make use of Left & Right Balance controls.

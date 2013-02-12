@@ -1,4 +1,4 @@
-﻿# QtCreator project file
+# QtCreator project file
 
 QT = core
 

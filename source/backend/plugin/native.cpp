@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Carla Native Plugin
  * Copyright (C) 2012 Filipe Coelho <falktx@falktx.com>
  *
@@ -1566,6 +1566,7 @@ public:
 
         firstInit = false;
 
+#ifndef BUILD_BRIDGE
         carla_register_native_plugin_bypass();
         carla_register_native_plugin_midiSplit();
         carla_register_native_plugin_midiThrough();
@@ -1574,8 +1575,9 @@ public:
         carla_register_native_plugin_3BandSplitter();
         carla_register_native_plugin_PingPongPan();
 
-#ifdef WANT_ZYNADDSUBFX
+# ifdef WANT_ZYNADDSUBFX
         carla_register_native_plugin_zynaddsubfx();
+# endif
 #endif
     }
 

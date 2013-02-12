@@ -1,13 +1,13 @@
 #!/usr/bin/make -f
 # Makefile for carla-standalone #
-# --------------------------------------- #
+# ----------------------------- #
 # Created by falkTX
 #
 
 include ../Makefile.mk
 
 # --------------------------------------------------------------
-# Shared
+# Common
 
 LINK_FLAGS += $(shell pkg-config --libs liblo QtGui)
 

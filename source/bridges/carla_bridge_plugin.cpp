@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Carla Plugin bridge code
  * Copyright (C) 2012 Filipe Coelho <falktx@falktx.com>
  *
@@ -20,9 +20,9 @@
 #include "carla_bridge_client.hpp"
 #include "carla_bridge_toolkit.hpp"
 #include "carla_backend_utils.hpp"
+#include "carla_state_utils.hpp"
 #include "carla_engine.hpp"
 #include "carla_plugin.hpp"
-#include "Shared.hpp"
 
 #include <set>
 #include <QtCore/QDir>
@@ -373,7 +373,7 @@ public:
 
             if (xmlNode.tagName() == "CARLA-PRESET")
             {
-                loadStateDict(getSaveStateDictFromXML(xmlNode));
+                loadStateDict(CarlaBackend::getSaveStateDictFromXML(xmlNode));
             }
             else
                 qWarning("Plugin preset file is not valid or corrupted");
@@ -384,13 +384,8 @@ public:
 
     // ---------------------------------------------------------------------
 
-    void loadStateDict(const CarlaSaveState* const content)
+    void loadStateDict(const CarlaBackend::SaveState& content)
     {
-        CARLA_ASSERT(content);
-
-        if (! content)
-            return;
-
         qDebug("Loading plugin state now...");
 
 #if 0
@@ -408,7 +403,6 @@ public:
                 plugin->setCustomData(type, key, value, true);
             }
         }
-#endif
 
         // ---------------------------------------------------------------------
         // Part 2 - set program
@@ -585,6 +579,7 @@ public:
             else
                 qWarning("Could not set parameter data for '%s')", parameter.name.toUtf8().constData());
         }
+#endif
 
 #if 0
         // ---------------------------------------------------------------------
@@ -603,8 +598,8 @@ public:
         }
 #endif
 
-        if (! content->chunk.isEmpty())
-            plugin->setChunkData(content->chunk.toUtf8().constData());
+        //if (! content.chunk.isEmpty())
+         //   plugin->setChunkData(content.chunk);
 
         qDebug("Loading plugin state now finished");
     }
@@ -1116,8 +1111,8 @@ int main(int argc, char* argv[])
 
     void* extraStuff = nullptr;
 
-    if (itype == CarlaBackend::PLUGIN_DSSI)
-        extraStuff = findDSSIGUI(filename, name, label);
+    //if (itype == CarlaBackend::PLUGIN_DSSI)
+        //extraStuff = findDSSIGUI(filename, name, label);
 
     // Init plugin
     int ret;

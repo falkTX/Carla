@@ -1,6 +1,6 @@
 #!/usr/bin/make -f
 # Makefile for carla-plugin #
-# ------------------------------------ #
+# ------------------------- #
 # Created by falkTX
 #
 

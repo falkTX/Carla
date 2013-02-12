@@ -1,6 +1,6 @@
 #!/usr/bin/make -f
 # Makefile for carla-engine #
-# ------------------------------------ #
+# ------------------------- #
 # Created by falkTX
 #
 
