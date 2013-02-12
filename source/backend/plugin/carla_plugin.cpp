@@ -1213,8 +1213,8 @@ void CarlaPlugin::postRtEventsRun()
     while (! fData->postRtEvents.data.isEmpty())
     {
         PluginPostRtEvent& event = fData->postRtEvents.data.getFirst(true);
-        //listData[i++] = event;
-        std::memcpy(&listData[k++], &event, sizeof(PluginPostRtEvent));
+        listData[k++] = event;
+        //std::memcpy(&listData[k++], &event, sizeof(PluginPostRtEvent));
     }
 
     fData->postRtEvents.mutex.unlock();
@@ -1223,9 +1223,6 @@ void CarlaPlugin::postRtEventsRun()
     for (unsigned short i=0; i < k; i++)
     {
         const PluginPostRtEvent& event = listData[i];
-
-        if (event.type != kPluginPostRtEventNull)
-            qWarning("postRtEventsRun() - @ %i", i);
 
         switch (event.type)
         {

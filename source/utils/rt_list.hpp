@@ -1,5 +1,5 @@
 /*
- * High-level, real-time safe, templated C++ doubly-linked list
+ * High-level, real-time safe, templated, C++ doubly-linked list
  * Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
@@ -40,6 +40,8 @@ extern "C" {
 typedef struct list_head k_list_head;
 
 // -----------------------------------------------------------------------
+// Abstract List class
+// _allocate() and _deallocate are virtual calls provided by subclasses
 
 template<typename T>
 class List
@@ -197,7 +199,7 @@ public:
         }
     }
 
-    void splice(List& list, const bool init = false)
+    virtual void splice(List& list, const bool init = false)
     {
         if (init)
         {
@@ -273,23 +275,80 @@ private:
     }
 
     LIST_DECLARATIONS(List)
+
+    //template<typename P> friend class Pool;
 };
+
+// -----------------------------------------------------------------------
+// Realtime safe list
 
 template<typename T>
 class RtList : public List<T>
 {
 public:
-    RtList(const size_t minPreallocated, const size_t maxPreallocated)
-        : fMemPool(nullptr)
+    // -------------------------------------------------------------------
+    // RtMemPool C++ class
+
+    class Pool
     {
-        rtsafe_memory_pool_create(&fMemPool, nullptr, this->kDataSize, minPreallocated, maxPreallocated);
-        CARLA_ASSERT(fMemPool != nullptr);
+    public:
+        Pool(const size_t minPreallocated, const size_t maxPreallocated)
+            : fHandle(nullptr),
+              kDataSize(sizeof(typename List<T>::Data))
+        {
+            rtsafe_memory_pool_create(&fHandle, nullptr, kDataSize, minPreallocated, maxPreallocated);
+            CARLA_ASSERT(fHandle != nullptr);
+        }
+
+        ~Pool()
+        {
+            if (fHandle != nullptr)
+                rtsafe_memory_pool_destroy(fHandle);
+        }
+
+        void* allocate_atomic()
+        {
+            return rtsafe_memory_pool_allocate_atomic(fHandle);
+        }
+
+        void* allocate_sleepy()
+        {
+            return rtsafe_memory_pool_allocate_sleepy(fHandle);
+        }
+
+        void deallocate(void* const dataPtr)
+        {
+            rtsafe_memory_pool_deallocate(fHandle, dataPtr);
+        }
+
+        void resize(const size_t minPreallocated, const size_t maxPreallocated)
+        {
+            if (fHandle != nullptr)
+            {
+                rtsafe_memory_pool_destroy(fHandle);
+                fHandle = nullptr;
+            }
+
+            rtsafe_memory_pool_create(&fHandle, nullptr, kDataSize, minPreallocated, maxPreallocated);
+            CARLA_ASSERT(fHandle != nullptr);
+        }
+
+    private:
+        RtMemPool_Handle fHandle;
+        const size_t     kDataSize;
+    };
+
+    // -------------------------------------------------------------------
+    // Now the actual list code
+
+    RtList(Pool* const memPool)
+        : kMemPool(memPool)
+    {
+        CARLA_ASSERT(kMemPool != nullptr);
     }
 
     ~RtList()
     {
-        if (fMemPool != nullptr)
-            rtsafe_memory_pool_destroy(fMemPool);
     }
 
     void append_sleepy(const T& value)
@@ -302,20 +361,32 @@ public:
         }
     }
 
+    void insert_sleepy(const T& value)
+    {
+        if (typename List<T>::Data* const data = _allocate_sleepy())
+        {
+            std::memcpy(&data->value, &value, sizeof(T));
+            list_add(&data->siblings, &this->fQueue);
+            this->fCount++;
+        }
+    }
+
     void resize(const size_t minPreallocated, const size_t maxPreallocated)
     {
         this->clear();
 
-        if (fMemPool != nullptr)
-            rtsafe_memory_pool_destroy(fMemPool);
+        kMemPool->resize(minPreallocated, maxPreallocated);
+    }
 
-        fMemPool = nullptr;
-        rtsafe_memory_pool_create(&fMemPool, nullptr, this->fDataSize, minPreallocated, maxPreallocated);
-        CARLA_ASSERT(fMemPool != nullptr);
+    void splice(RtList& list, const bool init = false)
+    {
+        CARLA_ASSERT(kMemPool == list.kMemPool);
+
+        List<T>::splice(list, init);
     }
 
 private:
-    RtMemPool_Handle fMemPool;
+    Pool* const kMemPool;
 
     typename List<T>::Data* _allocate()
     {
@@ -324,21 +395,24 @@ private:
 
     typename List<T>::Data* _allocate_atomic()
     {
-        return (typename List<T>::Data*)rtsafe_memory_pool_allocate_atomic(fMemPool);
+        return (typename List<T>::Data*)kMemPool->allocate_atomic();
     }
 
     typename List<T>::Data* _allocate_sleepy()
     {
-        return (typename List<T>::Data*)rtsafe_memory_pool_allocate_sleepy(fMemPool);
+        return (typename List<T>::Data*)kMemPool->allocate_sleepy();
     }
 
     void _deallocate(typename List<T>::Data* const dataPtr)
     {
-        rtsafe_memory_pool_deallocate(fMemPool, dataPtr);
+        kMemPool->deallocate(dataPtr);
     }
 
     LIST_DECLARATIONS(RtList)
 };
+
+// -----------------------------------------------------------------------
+// Non-Realtime list, using malloc/free methods
 
 template<typename T>
 class NonRtList : public List<T>
@@ -365,6 +439,9 @@ private:
 
     LIST_DECLARATIONS(NonRtList)
 };
+
+// -----------------------------------------------------------------------
+// Non-Realtime list, using new/delete methods
 
 template<typename T>
 class NonRtListNew : public List<T>

@@ -413,10 +413,12 @@ struct CarlaPluginProtectedData {
 
     struct ExternalNotes {
         CarlaMutex mutex;
+        RtList<ExternalMidiNote>::Pool dataPool;
         RtList<ExternalMidiNote> data;
 
         ExternalNotes()
-            : data(32, 512) {}
+            : dataPool(32, 512),
+              data(&dataPool) {}
 
         void append(const ExternalMidiNote& note)
         {
@@ -427,12 +429,14 @@ struct CarlaPluginProtectedData {
 
     struct PostRtEvents {
         CarlaMutex mutex;
+        RtList<PluginPostRtEvent>::Pool dataPool;
         RtList<PluginPostRtEvent> data;
         RtList<PluginPostRtEvent> dataPendingRT;
 
         PostRtEvents()
-            : data(MIN_RT_EVENTS, MAX_RT_EVENTS),
-              dataPendingRT(MIN_RT_EVENTS, MAX_RT_EVENTS) {}
+            : dataPool(MIN_RT_EVENTS, MAX_RT_EVENTS),
+              data(&dataPool),
+              dataPendingRT(&dataPool) {}
 
         ~PostRtEvents()
         {
@@ -451,6 +455,8 @@ struct CarlaPluginProtectedData {
                 dataPendingRT.splice(data, true);
                 mutex.unlock();
             }
+            else
+              qWarning("trySplice() failed");
         }
 
         void clear()
