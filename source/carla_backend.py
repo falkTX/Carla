@@ -37,13 +37,9 @@ def structToDict(struct):
 
 c_enum = c_int
 c_nullptr = None
+c_uintptr = c_uint64 if kIs64bit else c_uint32
 
-#if kIs64bit:
-    #c_uintptr = c_uint64
-#else:
-    #c_uintptr = c_uint32
-
-CallbackFunc = CFUNCTYPE(None, c_void_p, c_enum, c_int, c_int, c_int, c_double, c_char_p)
+CallbackFunc = CFUNCTYPE(None, c_void_p, c_enum, c_uint, c_int, c_int, c_float, c_char_p)
 
 class ParameterData(Structure):
     _fields_ = [

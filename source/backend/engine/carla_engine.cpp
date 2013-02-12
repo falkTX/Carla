@@ -1038,7 +1038,7 @@ void CarlaEngine::waitForProccessEnd()
 // -----------------------------------------------------------------------
 // Callback
 
-void CarlaEngine::callback(const CallbackType action, const unsigned short pluginId, const int value1, const int value2, const float value3, const char* const valueStr)
+void CarlaEngine::callback(const CallbackType action, const unsigned int pluginId, const int value1, const int value2, const float value3, const char* const valueStr)
 {
     qDebug("CarlaEngine::callback(%s, %i, %i, %i, %f, \"%s\")", CallbackType2Str(action), pluginId, value1, value2, value3, valueStr);
 

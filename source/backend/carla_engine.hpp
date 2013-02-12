@@ -56,7 +56,7 @@ enum EngineType {
     kEngineTypeRtAudio = 2,
 
     /*!
-    * Plugin engine type, used to export the engine as a plugin (DSSI, LV2 and VST) via the DISTRHO Plugin Toolkit.
+    * Plugin engine type, used to export the engine as a plugin.
     */
     kEngineTypePlugin = 3
 };
@@ -147,7 +147,7 @@ enum EngineControlEventType {
 struct EngineControlEvent {
     EngineControlEventType type; //!< Control-Event type.
     uint16_t parameter;          //!< Parameter ID, midi bank or midi program.
-    double   value;              //!< Parameter value.
+    double   value;              //!< Parameter value, normalized to 0.0<->1.0.
 
     EngineControlEvent()
     {
@@ -167,7 +167,7 @@ struct EngineControlEvent {
  */
 struct EngineMidiEvent {
     uint8_t port;    //!< Port offset (usually 0)
-    uint8_t data[3]; //!< MIDI data, without channel
+    uint8_t data[3]; //!< MIDI data, without channel bit
     uint8_t size;    //!< Number of bytes used
 
     EngineMidiEvent()
@@ -177,9 +177,11 @@ struct EngineMidiEvent {
 
     void clear()
     {
-        port = 0;
-        data[0] = data[1] = data[2] = 0;
-        size = 0;
+        port    = 0;
+        data[0] = 0;
+        data[1] = 0;
+        data[2] = 0;
+        size    = 0;
     }
 };
 
@@ -794,7 +796,7 @@ public:
     /*!
      * TODO.
      */
-    void callback(const CallbackType action, const unsigned short pluginId, const int value1, const int value2, const float value3, const char* const valueStr);
+    void callback(const CallbackType action, const unsigned int pluginId, const int value1, const int value2, const float value3, const char* const valueStr);
 
     /*!
      * TODO.

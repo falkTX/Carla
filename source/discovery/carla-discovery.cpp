@@ -168,7 +168,7 @@ intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t opcode
 
     case audioMasterGetTime:
         static VstTimeInfo_R timeInfo;
-        memset(&timeInfo, 0, sizeof(VstTimeInfo_R));
+        memset(&timeInfo, 0, sizeof(VstTimeInfo_R)); //FIXME
         timeInfo.sampleRate = sampleRate;
 
         // Tempo
@@ -635,7 +635,7 @@ void do_dssi_check(void* const libHandle, const bool init)
             if (descriptor->run_synth || descriptor->run_multiple_synths)
             {
                 snd_seq_event_t midiEvents[2];
-                memset(midiEvents, 0, sizeof(snd_seq_event_t)*2);
+                memset(midiEvents, 0, sizeof(snd_seq_event_t)*2); //FIXME
 
                 const unsigned long midiEventCount = 2;
 
@@ -963,13 +963,13 @@ void do_vst_check(void* const libHandle, const bool init)
             cName = strBuf;
     }
 
-    memset(strBuf, 0, sizeof(char)*STR_MAX);
+    memset(strBuf, 0, sizeof(char)*STR_MAX); //FIXME
     if (effect->dispatcher(effect, effGetVendorString, 0, 0, strBuf, 0.0f) == 1)
         cVendor = strBuf;
 
     // FIXME: Waves crash during processing
     if (cVendor == "Waves")
-        memset((void*)&init, 0, sizeof(bool));
+        memset((void*)&init, 0, sizeof(bool)); //FIXME
 
     if (vstCurrentUniqueId == 0)
     {
@@ -979,7 +979,7 @@ void do_vst_check(void* const libHandle, const bool init)
 
     while (vstCurrentUniqueId != 0)
     {
-        memset(strBuf, 0, sizeof(char)*STR_MAX);
+        memset(strBuf, 0, sizeof(char)*STR_MAX); //FIXME
         if (effect->dispatcher(effect, effGetProductString, 0, 0, strBuf, 0.0f) == 1)
             cProduct = strBuf;
         else
@@ -1056,8 +1056,8 @@ void do_vst_check(void* const libHandle, const bool init)
             VstEventsFixed events;
             VstMidiEvent   midiEvents[2];
 
-            memset(&events, 0, sizeof(VstEventsFixed));
-            memset(midiEvents, 0, sizeof(VstMidiEvent)*2);
+            memset(&events, 0, sizeof(VstEventsFixed)); //FIXME
+            memset(midiEvents, 0, sizeof(VstMidiEvent)*2); //FIXME
 
             midiEvents[0].type = kVstMidiType;
             midiEvents[0].byteSize = sizeof(VstMidiEvent);
@@ -1145,7 +1145,7 @@ void do_vst_check(void* const libHandle, const bool init)
         // FIXME: Waves sometimes return the same ID
         while (nextUniqueId == vstCurrentUniqueId)
         {
-            memset(strBuf, 0, sizeof(char)*STR_MAX);
+            memset(strBuf, 0, sizeof(char)*STR_MAX); //FIXME
             if ((vstCurrentUniqueId = effect->dispatcher(effect, effShellGetNextPlugin, 0, 0, strBuf, 0.0f)) != 0)
                 cName = strBuf;
         }

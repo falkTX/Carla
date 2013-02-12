@@ -1,9 +1,7 @@
 # QtCreator project file
 
-QT = core
-
 CONFIG    = debug
-CONFIG   += link_pkgconfig qt shared warn_on
+CONFIG   += link_pkgconfig shared warn_on
 
 DEFINES   = DEBUG
 DEFINES  += QTCREATOR_TEST
@@ -24,7 +22,7 @@ DEFINES  += DISTRHO_PLUGIN_TARGET_STANDALONE
 
 # Misc
 DEFINES  += WANT_LADSPA WANT_DSSI WANT_LV2 WANT_VST
-DEFINES  += WANT_JACK WANT_RTAUDIO
+DEFINES  += WANT_JACK WANT_PLUGIN WANT_RTAUDIO
 
 PKGCONFIG = liblo jack alsa libpulse-simple
 
@@ -56,7 +54,8 @@ HEADERS += \
     ../../utils/carla_utils.hpp \
     ../../utils/carla_backend_utils.hpp \
     ../../utils/carla_juce_utils.hpp \
-    ../../utils/carla_osc_utils.hpp
+    ../../utils/carla_osc_utils.hpp \
+    ../../utils/carla_state_utils.hpp
 
 HEADERS += \
     plugin/DistrhoPluginInfo.h
@@ -74,12 +73,14 @@ SOURCES     += rtmidi-2.0.1/RtMidi.cpp
 # Plugin
 INCLUDEPATH += plugin ../../libs/distrho-plugin-toolkit
 
+# ---------------------------------------------------------------------------------------
+
+PKGCONFIG += QtCore
+
 # Fake includes
 INCLUDEPATH += \
     /usr/include/qt4/ \
     /opt/kxstudio/include/
-
-PKGCONFIG += QtCore
 
 # System includes
 QMAKE_CXXFLAGS += -isystem /usr/include/qt4/
@@ -90,6 +91,6 @@ WARN_FLAGS = \
     -Wcast-qual -Wconversion -Wsign-conversion -Wlogical-op -Waggregate-return  -Wno-vla \
     -fipa-pure-const -Wsuggest-attribute=const #pure,const,noreturn
 
-QMAKE_CFLAGS   *= $${WARN_FLAGS} -std=c99 -Wc++-compat -Wunsuffixed-float-constants -Wwrite-strings
-QMAKE_CXXFLAGS *= $${WARN_FLAGS} -std=c++0x -fPIC
-#QMAKE_CXXFLAGS *= $${WARN_FLAGS} -std=c++11 -Wzero-as-null-pointer-constant
+QMAKE_CFLAGS   += $${WARN_FLAGS} -std=c99 -Wc++-compat -Wunsuffixed-float-constants -Wwrite-strings
+# QMAKE_CXXFLAGS += $${WARN_FLAGS} -std=c++0x -fPIC
+QMAKE_CXXFLAGS += $${WARN_FLAGS} -std=c++11 -Wzero-as-null-pointer-constant

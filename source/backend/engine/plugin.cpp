@@ -98,7 +98,7 @@ public:
         paramBuffers[paramBalance] = 63.5f;
         paramBuffers[paramPan]     = 63.5f;
 
-        memcpy(prevParamBuffers, paramBuffers, sizeof(float)*paramCount);
+        std::memcpy(prevParamBuffers, paramBuffers, sizeof(float)*paramCount);
 
         // set-up engine
         fOptions.processMode = PROCESS_MODE_CONTINUOUS_RACK;
@@ -439,7 +439,7 @@ protected:
         }
 #endif
 
-        memcpy(prevParamBuffers, paramBuffers, sizeof(float)*paramCount);
+        std::memcpy(prevParamBuffers, paramBuffers, sizeof(float)*paramCount);
     }
 
     void d_deactivate()
@@ -466,7 +466,7 @@ protected:
 
 #if 0
         // initialize control input
-        memset(rackControlEventsIn, 0, sizeof(CarlaEngineControlEvent)*CarlaEngine::MAX_CONTROL_EVENTS);
+        std::memset(rackControlEventsIn, 0, sizeof(CarlaEngineControlEvent)*CarlaEngine::MAX_CONTROL_EVENTS);
         {
             uint32_t carlaEventIndex = 0;
 
@@ -482,10 +482,10 @@ protected:
                 carlaEvent->value     = paramBuffers[i]/127;
             }
         }
-        memcpy(prevParamBuffers, paramBuffers, sizeof(float)*paramCount);
+        std::memcpy(prevParamBuffers, paramBuffers, sizeof(float)*paramCount);
 
         // initialize midi input
-        memset(rackMidiEventsIn, 0, sizeof(CarlaEngineMidiEvent)*CarlaEngine::MAX_MIDI_EVENTS);
+        std::memset(rackMidiEventsIn, 0, sizeof(CarlaEngineMidiEvent)*CarlaEngine::MAX_MIDI_EVENTS);
         {
             const DISTRHO::MidiEvent* event;
 
@@ -498,7 +498,7 @@ protected:
 
                 rackMidiEventsIn[i].time = event->frame;
                 rackMidiEventsIn[i].size = 3;
-                memcpy(rackMidiEventsIn[i].data, event->buffer, 3);
+                std::memcpy(rackMidiEventsIn[i].data, event->buffer, 3);
                 i += 1;
             }
         }

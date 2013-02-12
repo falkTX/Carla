@@ -2545,7 +2545,7 @@ public:
                 if (m_latency > 0)
                 {
                     for (i=0; i < aIn.count; i++)
-                        memset(m_latencyBuffers[i], 0, sizeof(float)*m_latency);
+                        memset(m_latencyBuffers[i], 0, sizeof(float)*m_latency); //FIXME
                 }
 
                 if (descriptor->activate)

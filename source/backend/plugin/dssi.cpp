@@ -48,6 +48,7 @@ public:
 
         paramBuffers = nullptr;
 
+        //FIXME
         memset(midiEvents, 0, sizeof(snd_seq_event_t)*MAX_MIDI_EVENTS);
     }
 
@@ -1087,7 +1088,7 @@ public:
                         break;
 
                     snd_seq_event_t* const midiEvent = &midiEvents[midiEventCount];
-                    memset(midiEvent, 0, sizeof(snd_seq_event_t));
+                    memset(midiEvent, 0, sizeof(snd_seq_event_t)); //FIXME
 
                     midiEvent->type = extMidiNotes[i].velo ? SND_SEQ_EVENT_NOTEON : SND_SEQ_EVENT_NOTEOFF;
                     midiEvent->data.note.channel  = extMidiNotes[i].channel;
@@ -1131,7 +1132,7 @@ public:
                         status -= 0x10;
 
                     snd_seq_event_t* const midiEvent = &midiEvents[midiEventCount];
-                    memset(midiEvent, 0, sizeof(snd_seq_event_t));
+                    memset(midiEvent, 0, sizeof(snd_seq_event_t)); //FIXME
 
                     midiEvent->time.tick = time;
 
@@ -1221,12 +1222,12 @@ public:
                 {
                     for (k=0; k < MAX_MIDI_CHANNELS; k++)
                     {
-                        memset(&midiEvents[k], 0, sizeof(snd_seq_event_t));
+                        memset(&midiEvents[k], 0, sizeof(snd_seq_event_t)); //FIXME
                         midiEvents[k].type      = SND_SEQ_EVENT_CONTROLLER;
                         midiEvents[k].data.control.channel = k;
                         midiEvents[k].data.control.param   = MIDI_CONTROL_ALL_SOUND_OFF;
 
-                        memset(&midiEvents[k*2], 0, sizeof(snd_seq_event_t));
+                        memset(&midiEvents[k*2], 0, sizeof(snd_seq_event_t)); //FIXME
                         midiEvents[k*2].type      = SND_SEQ_EVENT_CONTROLLER;
                         midiEvents[k*2].data.control.channel = k;
                         midiEvents[k*2].data.control.param   = MIDI_CONTROL_ALL_NOTES_OFF;
@@ -1238,7 +1239,7 @@ public:
                 if (m_latency > 0)
                 {
                     for (i=0; i < aIn.count; i++)
-                        memset(m_latencyBuffers[i], 0, sizeof(float)*m_latency);
+                        memset(m_latencyBuffers[i], 0, sizeof(float)*m_latency); //FIXME
                 }
 
                 if (ldescriptor->activate)
