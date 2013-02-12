@@ -921,6 +921,8 @@ public:
                 }
             }
 
+            fData->postRtEvents.trySplice();
+
         } // End of Parameters Input
 
         CARLA_PROCESS_CONTINUE_CHECK;

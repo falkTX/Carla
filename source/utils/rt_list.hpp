@@ -1,5 +1,5 @@
 /*
- * High-level, real-time safe, templated C++ doubly linked list
+ * High-level, real-time safe, templated C++ doubly-linked list
  * Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
@@ -23,8 +23,7 @@ extern "C" {
 #include "rtmempool/rtmempool.h"
 }
 
-#include <cassert>
-#include <cstring>
+#include "carla_utils.hpp"
 
 // list_entry C++11 version (using nullptr instead of 0)
 #undef list_entry
@@ -47,7 +46,8 @@ class List
 {
 protected:
     List()
-        : fDataSize(sizeof(Data))
+        : kDataSize(sizeof(Data)),
+          fCount(0)
     {
         _init();
     }
@@ -55,20 +55,19 @@ protected:
 public:
     virtual ~List()
     {
-        clear();
+        CARLA_ASSERT(fCount == 0);
     }
 
     void clear()
     {
         if (fCount != 0)
         {
-            Data* data;
             k_list_head* entry;
 
             list_for_each(entry, &fQueue)
             {
-                data = list_entry(entry, Data, siblings);
-                _deallocate(data);
+                if (Data* data = list_entry(entry, Data, siblings))
+                    _deallocate(data);
             }
         }
 
@@ -98,14 +97,27 @@ public:
         return false;
     }
 
+    bool insert(const T& value)
+    {
+        if (Data* const data = _allocate())
+        {
+            std::memcpy(&data->value, &value, sizeof(T));
+            list_add(&data->siblings, &fQueue);
+            fCount++;
+            return true;
+        }
+
+        return false;
+    }
+
     T& getAt(const size_t index, const bool remove = false)
     {
         if (fCount == 0 || index >= fCount)
             return _retEmpty();
 
+        size_t i = 0;
         Data* data = nullptr;
         k_list_head* entry;
-        size_t i = 0;
 
         list_for_each(entry, &fQueue)
         {
@@ -113,20 +125,22 @@ public:
                 continue;
 
             data = list_entry(entry, Data, siblings);
-            assert(data);
 
             if (remove)
             {
                 fCount--;
                 list_del(entry);
-                _deallocate(data);
+
+                if (data != nullptr)
+                    _deallocate(data);
             }
 
             break;
         }
 
-        assert(data);
-        return data->value;
+        CARLA_ASSERT(data != nullptr);
+
+        return (data != nullptr) ? data->value : _retEmpty();
     }
 
     T& getFirst(const bool remove = false)
@@ -147,9 +161,10 @@ public:
         list_for_each(entry, &fQueue)
         {
             data = list_entry(entry, Data, siblings);
-            assert(data);
 
-            if (data->value == value)
+            CARLA_ASSERT(data != nullptr);
+
+            if (data != nullptr && data->value == value)
             {
                 fCount--;
                 list_del(entry);
@@ -170,9 +185,10 @@ public:
         list_for_each_safe(entry, tmp, &fQueue)
         {
             data = list_entry(entry, Data, siblings);
-            assert(data);
 
-            if (data->value == value)
+            CARLA_ASSERT(data != nullptr);
+
+            if (data != nullptr && data->value == value)
             {
                 fCount--;
                 list_del(entry);
@@ -184,13 +200,20 @@ public:
     void splice(List& list, const bool init = false)
     {
         if (init)
+        {
             list_splice_init(&fQueue, &list.fQueue);
+            list.fCount += fCount;
+            fCount = 0;
+        }
         else
+        {
             list_splice(&fQueue, &list.fQueue);
+            list.fCount += fCount;
+        }
     }
 
 protected:
-    const size_t fDataSize;
+    const size_t kDataSize;
           size_t fCount;
     k_list_head  fQueue;
 
@@ -214,15 +237,17 @@ private:
         if (fCount == 0)
             return _retEmpty();
 
-        k_list_head* const entry = first ? fQueue.next : fQueue.prev;
+        k_list_head* const entry = first ? fQueue.prev : fQueue.next;
         Data*        const data  = list_entry(entry, Data, siblings);
+
+        CARLA_ASSERT(data != nullptr);
 
         if (data == nullptr)
             return _retEmpty();
 
         T& ret = data->value;
 
-        if (data && remove)
+        if (data != nullptr && remove)
         {
             fCount--;
             list_del(entry);
@@ -247,7 +272,7 @@ private:
         return value;
     }
 
-    //LIST_DECLARATIONS(List)
+    LIST_DECLARATIONS(List)
 };
 
 template<typename T>
@@ -255,9 +280,10 @@ class RtList : public List<T>
 {
 public:
     RtList(const size_t minPreallocated, const size_t maxPreallocated)
+        : fMemPool(nullptr)
     {
-        rtsafe_memory_pool_create(&fMemPool, nullptr, this->fDataSize, minPreallocated, maxPreallocated);
-        assert(fMemPool);
+        rtsafe_memory_pool_create(&fMemPool, nullptr, this->kDataSize, minPreallocated, maxPreallocated);
+        CARLA_ASSERT(fMemPool != nullptr);
     }
 
     ~RtList()
@@ -280,9 +306,12 @@ public:
     {
         this->clear();
 
-        rtsafe_memory_pool_destroy(fMemPool);
+        if (fMemPool != nullptr)
+            rtsafe_memory_pool_destroy(fMemPool);
+
+        fMemPool = nullptr;
         rtsafe_memory_pool_create(&fMemPool, nullptr, this->fDataSize, minPreallocated, maxPreallocated);
-        assert(fMemPool);
+        CARLA_ASSERT(fMemPool != nullptr);
     }
 
 private:
@@ -303,7 +332,7 @@ private:
         return (typename List<T>::Data*)rtsafe_memory_pool_allocate_sleepy(fMemPool);
     }
 
-    void  _deallocate(typename List<T>::Data* const dataPtr)
+    void _deallocate(typename List<T>::Data* const dataPtr)
     {
         rtsafe_memory_pool_deallocate(fMemPool, dataPtr);
     }
@@ -329,7 +358,7 @@ private:
         return (typename List<T>::Data*)malloc(this->fDataSize);
     }
 
-    void  _deallocate(typename List<T>::Data* const dataPtr)
+    void _deallocate(typename List<T>::Data* const dataPtr)
     {
         free(dataPtr);
     }
@@ -355,7 +384,7 @@ private:
         return new typename List<T>::Data;
     }
 
-    void  _deallocate(typename List<T>::Data* const dataPtr)
+    void _deallocate(typename List<T>::Data* const dataPtr)
     {
         delete dataPtr;
     }

@@ -1820,15 +1820,26 @@ class PluginEdit(QDialog):
         # Check parameters needing update
         for index, value in self.fParametersToUpdate:
             if index == PARAMETER_DRYWET:
-                self.ui.dial_drywet.setValue(value * 1000, True, False)
+                self.ui.dial_drywet.blockSignals(True)
+                self.ui.dial_drywet.setValue(value * 1000)
+                self.ui.dial_drywet.blockSignals(False)
             elif index == PARAMETER_VOLUME:
-                self.ui.dial_vol.setValue(value * 1000, True, False)
+                self.ui.dial_vol.blockSignals(True)
+                self.ui.dial_vol.setValue(value * 1000)
+                self.ui.dial_vol.blockSignals(False)
             elif index == PARAMETER_BALANCE_LEFT:
-                self.ui.dial_b_left.setValue(value * 1000, True, False)
+                self.ui.dial_b_left.blockSignals(True)
+                self.ui.dial_b_left.setValue(value * 1000)
+                self.ui.dial_b_left.blockSignals(False)
             elif index == PARAMETER_BALANCE_RIGHT:
-                self.ui.dial_b_right.setValue(value * 1000, True, False)
+                self.ui.dial_b_right.blockSignals(True)
+                self.ui.dial_b_right.setValue(value * 1000)
+                self.ui.dial_b_right.blockSignals(False)
             elif index == PARAMETER_PANNING:
-                pass #self.ui.dial_pan.setValue(value * 1000, True, False)
+                pass
+                #self.ui.dial_pan.blockSignals(True)
+                #self.ui.dial_pan.setValue(value * 1000, True, False)
+                #self.ui.dial_pan.blockSignals(False)
             elif index >= 0:
                 for paramType, paramId, paramWidget in self.fParameterList:
                     if paramId == index:

@@ -434,15 +434,31 @@ struct CarlaPluginProtectedData {
             : data(MIN_RT_EVENTS, MAX_RT_EVENTS),
               dataPendingRT(MIN_RT_EVENTS, MAX_RT_EVENTS) {}
 
+        ~PostRtEvents()
+        {
+            clear();
+        }
+
         void appendRT(const PluginPostRtEvent& event)
         {
             dataPendingRT.append(event);
+        }
 
+        void trySplice()
+        {
             if (mutex.tryLock())
             {
                 dataPendingRT.splice(data, true);
                 mutex.unlock();
             }
+        }
+
+        void clear()
+        {
+            mutex.lock();
+            data.clear();
+            dataPendingRT.clear();
+            mutex.unlock();
         }
 
         //void appendNonRT(const PluginPostRtEvent& event)
