@@ -768,30 +768,26 @@ public:
 
         if (fData->event.portIn != nullptr && fData->activeBefore)
         {
-            const EngineEvent* event = nullptr;
             uint32_t time, nEvents = fData->event.portIn->getEventCount();
 
             for (i=0; i < nEvents; i++)
             {
-                event = fData->event.portIn->getEvent(i);
+                const EngineEvent& event = fData->event.portIn->getEvent(i);
 
-                if (event == nullptr)
-                    continue;
-
-                time = event->time - framesOffset;
+                time = event.time - framesOffset;
 
                 if (time >= frames)
                     continue;
 
                 // Control change
-                switch (event->type)
+                switch (event.type)
                 {
                 case kEngineEventTypeNull:
                     break;
 
                 case kEngineEventTypeControl:
                 {
-                    const EngineControlEvent& ctrlEvent = event->ctrl;
+                    const EngineControlEvent& ctrlEvent = event.ctrl;
 
                     switch (ctrlEvent.type)
                     {
@@ -801,11 +797,11 @@ public:
                     case kEngineControlEventTypeParameter:
                     {
                         // Control backend stuff
-                        if (event->channel == fData->ctrlInChannel)
+                        if (event.channel == fData->ctrlInChannel)
                         {
                             double value;
 
-                            if (MIDI_IS_CONTROL_BREATH_CONTROLLER(ctrlEvent.parameter) && (fData->hints & PLUGIN_CAN_DRYWET) > 0)
+                            if (MIDI_IS_CONTROL_BREATH_CONTROLLER(ctrlEvent.param) && (fData->hints & PLUGIN_CAN_DRYWET) > 0)
                             {
                                 value = ctrlEvent.value;
                                 setDryWet(value, false, false);
@@ -813,7 +809,7 @@ public:
                                 continue;
                             }
 
-                            if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.parameter) && (fData->hints & PLUGIN_CAN_VOLUME) > 0)
+                            if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (fData->hints & PLUGIN_CAN_VOLUME) > 0)
                             {
                                 value = ctrlEvent.value*127/100;
                                 setVolume(value, false, false);
@@ -821,7 +817,7 @@ public:
                                 continue;
                             }
 
-                            if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.parameter) && (fData->hints & PLUGIN_CAN_BALANCE) > 0)
+                            if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (fData->hints & PLUGIN_CAN_BALANCE) > 0)
                             {
                                 double left, right;
                                 value = ctrlEvent.value/0.5 - 1.0;
@@ -853,9 +849,9 @@ public:
                         // Control plugin parameters
                         for (k=0; k < fData->param.count; k++)
                         {
-                            if (fData->param.data[k].midiChannel != event->channel)
+                            if (fData->param.data[k].midiChannel != event.channel)
                                 continue;
-                            if (fData->param.data[k].midiCC != ctrlEvent.parameter)
+                            if (fData->param.data[k].midiCC != ctrlEvent.param)
                                 continue;
                             if (fData->param.data[k].type != PARAMETER_INPUT)
                                 continue;
@@ -889,7 +885,7 @@ public:
                         break;
 
                     case kEngineControlEventTypeAllSoundOff:
-                        if (event->channel == fData->ctrlInChannel)
+                        if (event.channel == fData->ctrlInChannel)
                         {
                             if (fDescriptor->deactivate != nullptr)
                             {
@@ -1078,7 +1074,7 @@ public:
 
                 if (fData->param.data[k].midiCC > 0)
                 {
-                    value = fData->param.ranges[k].Value(fParamBuffers[k]); // FIXME - range 0.0-1.0 new name
+                    value = fData->param.ranges[k].normalizeValue(fParamBuffers[k]);
                     fData->event.portOut->writeControlEvent(framesOffset, fData->param.data[k].midiChannel, kEngineControlEventTypeParameter, fData->param.data[k].midiCC, value);
                 }
             }

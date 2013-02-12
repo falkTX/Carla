@@ -4635,7 +4635,7 @@ int CarlaEngineOsc::handleMsgLv2EventTransfer(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 CARLA_BACKEND_END_NAMESPACE
 
 #else // WANT_LV2
-# warning Building without LV2 support
+//# warning Building without LV2 support
 #endif
 
 CARLA_BACKEND_START_NAMESPACE

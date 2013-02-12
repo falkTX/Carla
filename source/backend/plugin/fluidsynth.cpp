@@ -1318,7 +1318,7 @@ private:
 CARLA_BACKEND_END_NAMESPACE
 
 #else // WANT_FLUIDSYNTH
-#  warning fluidsynth not available (no SF2 support)
+//#  warning fluidsynth not available (no SF2 support)
 #endif
 
 CARLA_BACKEND_START_NAMESPACE

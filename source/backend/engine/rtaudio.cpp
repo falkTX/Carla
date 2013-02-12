@@ -31,45 +31,6 @@ CARLA_BACKEND_START_NAMESPACE
 #endif
 
 // -------------------------------------------------------------------------------------------------------------------
-// RtAudio Engine client
-
-class CarlaEngineRtAudioClient : public CarlaEngineClient
-{
-public:
-    CarlaEngineRtAudioClient(const EngineType engineType, const ProcessMode processMode)
-        : CarlaEngineClient(engineType, processMode)
-    {
-        qDebug("CarlaEngineRtAudioClient::CarlaEngineRtAudioClient(%s, %s)", EngineType2Str(engineType), ProcessMode2Str(processMode));
-    }
-
-    ~CarlaEngineRtAudioClient()
-    {
-        qDebug("CarlaEngineRtAudioClient::~CarlaEngineRtAudioClient()");
-    }
-
-    const CarlaEnginePort* addPort(const EnginePortType portType, const char* const name, const bool isInput)
-    {
-        qDebug("CarlaEngineRtAudioClient::addPort(%s, \"%s\", %s)", EnginePortType2Str(portType), name, bool2str(isInput));
-
-        switch (portType)
-        {
-        case kEnginePortTypeNull:
-            break;
-        case kEnginePortTypeAudio:
-            return new CarlaEngineAudioPort(isInput, kProcessMode);
-        case kEnginePortTypeEvent:
-            return new CarlaEngineEventPort(isInput, kProcessMode);
-        }
-
-        qCritical("CarlaEngineRtAudioClient::addPort(%s, \"%s\", %s) - invalid type", EnginePortType2Str(portType), name, bool2str(isInput));
-        return nullptr;
-    }
-
-private:
-    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineRtAudioClient)
-};
-
-// -------------------------------------------------------------------------------------------------------------------
 // RtAudio Engine
 
 class CarlaEngineRtAudio : public CarlaEngine
@@ -246,11 +207,6 @@ public:
     EngineType type() const
     {
         return kEngineTypeRtAudio;
-    }
-
-    CarlaEngineClient* addClient(CarlaPlugin* const)
-    {
-        return new CarlaEngineRtAudioClient(kEngineTypeRtAudio, fOptions.processMode);
     }
 
     // -------------------------------------

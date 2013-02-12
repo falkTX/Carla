@@ -1595,7 +1595,7 @@ private:
 CARLA_BACKEND_END_NAMESPACE
 
 #else // WANT_DSSI
-#  warning Building without DSSI support
+//#  warning Building without DSSI support
 #endif
 
 CARLA_BACKEND_START_NAMESPACE

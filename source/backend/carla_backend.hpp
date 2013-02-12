@@ -60,7 +60,7 @@ const unsigned int PLUGIN_USES_SINGLE_THREAD = 0x0040; //!< Plugin needs a singl
 const unsigned int PLUGIN_CAN_DRYWET         = 0x0100; //!< Plugin can make use of Dry/Wet controls.
 const unsigned int PLUGIN_CAN_VOLUME         = 0x0200; //!< Plugin can make use of Volume controls.
 const unsigned int PLUGIN_CAN_BALANCE        = 0x0400; //!< Plugin can make use of Left & Right Balance controls.
-const unsigned int PLUGIN_CAN_BALANCE        = 0x0800; //!< Plugin can make use of Panning controls.
+const unsigned int PLUGIN_CAN_PANNING        = 0x0800; //!< Plugin can make use of Panning controls.
 const unsigned int PLUGIN_CAN_FORCE_STEREO   = 0x1000; //!< Plugin can be used in forced-stereo mode.
 /**@}*/
 

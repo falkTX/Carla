@@ -42,40 +42,6 @@ static const unsigned int paramPan     = 8;
 static const unsigned int paramCount   = sizeof(paramMap);
 static const unsigned int programCount = 128;
 
-// -------------------------------------------------------------------------------------------------------------------
-// Plugin Engine client
-
-class CarlaEnginePluginClient : public CarlaEngineClient
-{
-public:
-    CarlaEnginePluginClient(const EngineType engineType, const ProcessMode processMode)
-        : CarlaEngineClient(engineType, processMode)
-    {
-    }
-
-    ~CarlaEnginePluginClient()
-    {
-    }
-
-    const CarlaEnginePort* addPort(const EnginePortType portType, const char* const name, const bool isInput)
-    {
-        qDebug("CarlaEnginePluginClient::addPort(%s, \"%s\", %s)", EnginePortType2Str(portType), name, bool2str(isInput));
-
-        switch (portType)
-        {
-        case kEnginePortTypeNull:
-            break;
-        case kEnginePortTypeAudio:
-            return new CarlaEngineAudioPort(isInput, kProcessMode);
-        case kEnginePortTypeEvent:
-            return new CarlaEngineEventPort(isInput, kProcessMode);
-        }
-
-        qCritical("CarlaEnginePluginClient::addPort(%s, \"%s\", %s) - invalid type", EnginePortType2Str(portType), name, bool2str(isInput));
-        return nullptr;
-    }
-};
-
 // -----------------------------------------
 
 class CarlaEnginePlugin : public CarlaEngine,
@@ -161,11 +127,6 @@ public:
     EngineType type() const
     {
         return kEngineTypeRtAudio;
-    }
-
-    CarlaEngineClient* addClient(CarlaPlugin* const)
-    {
-        return new CarlaEnginePluginClient(kEngineTypePlugin, fOptions.processMode);
     }
 
 protected:

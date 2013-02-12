@@ -957,7 +957,7 @@ CarlaPlugin* LinuxSamplerPlugin::newLinuxSampler(const Initializer& init, bool i
 CARLA_BACKEND_END_NAMESPACE
 
 #else // WANT_LINUXSAMPLER
-#  warning linuxsampler not available (no GIG and SFZ support)
+//#  warning linuxsampler not available (no GIG and SFZ support)
 #endif
 
 CARLA_BACKEND_START_NAMESPACE

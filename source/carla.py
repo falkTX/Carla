@@ -732,6 +732,8 @@ class CarlaMainW(QMainWindow):
         while (self.ui.w_plugins.layout().takeAt(0)):
             pass
 
+        self.ui.act_plugin_remove_all.setEnabled(False)
+
         for i in range(self.fPluginCount):
             pwidget = self.fPluginList[i]
 

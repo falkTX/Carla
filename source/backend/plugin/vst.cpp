@@ -2381,7 +2381,7 @@ VstPlugin* VstPlugin::lastVstPlugin = nullptr;
 CARLA_BACKEND_END_NAMESPACE
 
 #else // WANT_VST
-#  warning Building without VST support
+//#  warning Building without VST support
 #endif
 
 CARLA_BACKEND_START_NAMESPACE

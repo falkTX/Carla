@@ -146,7 +146,7 @@ enum EngineControlEventType {
  */
 struct EngineControlEvent {
     EngineControlEventType type; //!< Control-Event type.
-    uint16_t parameter;          //!< Parameter ID, midi bank or midi program.
+    uint16_t param;              //!< Parameter ID, midi bank or midi program.
     double   value;              //!< Parameter value, normalized to 0.0<->1.0.
 
     EngineControlEvent()
@@ -156,8 +156,8 @@ struct EngineControlEvent {
 
     void clear()
     {
-        type = kEngineControlEventTypeNull;
-        parameter = 0;
+        type  = kEngineControlEventTypeNull;
+        param = 0;
         value = 0.0;
     }
 };
@@ -214,6 +214,42 @@ struct EngineEvent {
 // -----------------------------------------------------------------------
 
 /*!
+ * Engine devices
+ */
+struct EngineDevices {
+    struct Audio {
+        uint32_t     count;
+        int32_t      current;
+        const char** names;
+    } audio;
+
+    struct Midi {
+        uint32_t     count;
+        const char** names;
+        bool*        selected;
+    } midi;
+
+    struct Info {
+        unsigned int* bufferSizes; // valid until 0 value reached
+        unsigned int* sampleRates; // valid until 0 value reached
+    } info;
+
+    EngineDevices()
+    {
+        audio.count   = 0;
+        audio.current = -1;
+        audio.names   = nullptr;
+
+        midi.count    = 0;
+        midi.names    = nullptr;
+        midi.selected = nullptr;
+
+        info.bufferSizes = nullptr;
+        info.sampleRates = nullptr;
+    }
+};
+
+/*!
  * Engine options.
  */
 struct EngineOptions {
@@ -226,10 +262,10 @@ struct EngineOptions {
     bool useDssiVstChunks;
 #endif
 
-    uint maxParameters;
-    uint oscUiTimeout;
-    uint preferredBufferSize;
-    uint preferredSampleRate;
+    unsigned int maxParameters;
+    unsigned int oscUiTimeout;
+    unsigned int preferredBufferSize;
+    unsigned int preferredSampleRate;
 
 #ifndef BUILD_BRIDGE
     CarlaString bridge_native;
@@ -301,15 +337,14 @@ struct EngineTimeInfo {
 
     bool playing;
     uint32_t frame;
-    uint32_t time;
+    uint64_t time;
     uint32_t valid;
     EngineTimeInfoBBT bbt;
 
     EngineTimeInfo()
-        : playing(false),
-          frame(0),
-          time(0),
-          valid(0x0) {}
+    {
+        clear();
+    }
 
     void clear()
     {
@@ -337,7 +372,7 @@ public:
     CarlaEnginePort(const bool isInput, const ProcessMode processMode);
 
     /*!
-     * The decontructor.
+     * The destructor.
      */
     virtual ~CarlaEnginePort();
 
@@ -374,7 +409,7 @@ public:
     CarlaEngineAudioPort(const bool isInput, const ProcessMode processMode);
 
     /*!
-     * The decontructor.
+     * The destructor.
      */
     virtual ~CarlaEngineAudioPort();
 
@@ -421,7 +456,7 @@ public:
     CarlaEngineEventPort(const bool isInput, const ProcessMode processMode);
 
     /*!
-     * The decontructor.
+     * The destructor.
      */
     virtual ~CarlaEngineEventPort();
 
@@ -446,23 +481,39 @@ public:
 
     /*!
      * Get the event at \a index.
-     ** \note You must only call this for input ports.
+     * \note You must only call this for input ports.
      */
-    virtual const EngineEvent* getEvent(const uint32_t index);
+    virtual const EngineEvent& getEvent(const uint32_t index);
 
     /*!
      * Write a control event into the buffer.\n
      * Arguments are the same as in the EngineControlEvent struct.
-     ** \note You must only call this for output ports.
+     * \note You must only call this for output ports.
      */
-    virtual void writeControlEvent(const uint32_t time, const uint8_t channel, const EngineControlEventType type, const uint16_t parameter, const double value = 0.0);
+    virtual void writeControlEvent(const uint32_t time, const uint8_t channel, const EngineControlEventType type, const uint16_t param, const double value = 0.0);
+
+    /*!
+     * Write a control event into the buffer, overloaded call.
+     */
+    void writeControlEvent(const uint32_t time, const uint8_t channel, const EngineControlEvent& ctrl)
+    {
+        writeControlEvent(time, channel, ctrl.type, ctrl.param, ctrl.value);
+    }
 
     /*!
      * Write a MIDI event into the buffer.\n
      * Arguments are the same as in the EngineMidiEvent struct.
      ** \note You must only call this for output ports.
      */
-    virtual void writeMidiEvent(const uint32_t time, const uint8_t channel, const uint8_t* const data, const uint8_t size);
+    virtual void writeMidiEvent(const uint32_t time, const uint8_t channel, const uint8_t port, const uint8_t* const data, const uint8_t size);
+
+    /*!
+     * Write a MIDI event into the buffer, overloaded call.
+     */
+    void writeMidiEvent(const uint32_t time, const uint8_t channel, const EngineMidiEvent& midi)
+    {
+        writeMidiEvent(time, channel, midi.port, midi.data, midi.size);
+    }
 
 private:
     const uint32_t kMaxEventCount;
@@ -480,7 +531,7 @@ private:
  */
 class CarlaEngineClient
 {
-protected:
+public:
     /*!
      * The constructor, protected.\n
      * All constructor parameters are constant and will never change in the lifetime of the client.\n
@@ -488,7 +539,6 @@ protected:
      */
     CarlaEngineClient(const CarlaBackend::EngineType engineType, const CarlaBackend::ProcessMode processMode);
 
-public:
     /*!
      * The destructor.
      */
@@ -532,23 +582,23 @@ public:
      * Add a new port of type \a portType.
      * \note This function does nothing in rack processing mode since ports are static there (2 audio + 1 event for both input and output).
      */
-    virtual const CarlaEnginePort* addPort(const EnginePortType portType, const char* const name, const bool isInput) = 0;
+    virtual const CarlaEnginePort* addPort(const EnginePortType portType, const char* const name, const bool isInput);
 
 protected:
     const EngineType  kEngineType;
     const ProcessMode kProcessMode;
 
-private:
     bool     fActive;
     uint32_t fLatency;
 
+private:
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineClient)
 };
 
 // -----------------------------------------------------------------------
 
 /*!
- * Private data used in CarlaEngine.
+ * Protected data used in CarlaEngine.
  * Non-engine code MUST NEVER have direct access to this.
  */
 struct CarlaEngineProtectedData;
@@ -630,7 +680,7 @@ public:
     virtual bool close();
 
     /*!
-     * Idle.
+     * Idle engine.
      */
     virtual void idle();
 
@@ -653,10 +703,33 @@ public:
      * Add new engine client.
      * \note This must only be called within a plugin class.
      */
-    virtual CarlaEngineClient* addClient(CarlaPlugin* const plugin) = 0;
+    virtual CarlaEngineClient* addClient(CarlaPlugin* const plugin);
 
     // -------------------------------------------------------------------
     // Plugin management
+
+    /*!
+     * Add new plugin.
+     */
+    bool addPlugin(const BinaryType btype, const PluginType ptype, const char* const filename, const char* const name, const char* const label, const void* const extra = nullptr);
+
+    /*!
+     * Add new plugin, using native binary type.
+     */
+    bool addPlugin(const PluginType ptype, const char* const filename, const char* const name, const char* const label, const void* const extra = nullptr)
+    {
+        return addPlugin(BINARY_NATIVE, ptype, filename, name, label, extra);
+    }
+
+    /*!
+     * Remove plugin with id \a id.
+     */
+    bool removePlugin(const unsigned int id);
+
+    /*!
+     * Remove all plugins.
+     */
+    void removeAllPlugins();
 
     /*!
      * Get plugin with id \a id.
@@ -674,31 +747,6 @@ public:
      */
     const char* getNewUniquePluginName(const char* const name);
 
-    /*!
-     * Add new plugin.\n
-     * Returns the id of the plugin, or -1 if the operation failed.
-     */
-    bool addPlugin(const BinaryType btype, const PluginType ptype, const char* const filename, const char* const name, const char* const label, const void* const extra = nullptr);
-
-    /*!
-     * Add new plugin, using native binary type.\n
-     * Returns the id of the plugin, or -1 if the operation failed.
-     */
-    bool addPlugin(const PluginType ptype, const char* const filename, const char* const name, const char* const label, const void* const extra = nullptr)
-    {
-        return addPlugin(BINARY_NATIVE, ptype, filename, name, label, extra);
-    }
-
-    /*!
-     * Remove plugin with id \a id.
-     */
-    bool removePlugin(const unsigned int id);
-
-    /*!
-     * Remove all plugins.
-     */
-    void removeAllPlugins();
-
     // bridge, internal use only
     // TODO - find a better way for this
     //void __bridgePluginRegister(const unsigned short id, CarlaPlugin* const plugin);
@@ -711,8 +759,7 @@ public:
 
     /*!
      * Load \a filename session.
-     * \note Already loaded plugins are not removed, but added afterwards.\n
-     *       Call removeAllPlugins() first if needed.
+     * \note Already loaded plugins are not removed; call removeAllPlugins() first if needed.
      */
     void loadProject(const char* const filename);
 
@@ -769,6 +816,9 @@ public:
         return fTimeInfo;
     }
 
+    // -------------------------------------------------------------------
+    // Information (peaks)
+
     /*!
      * TODO.
      */
@@ -778,17 +828,6 @@ public:
      * TODO.
      */
     float getOutputPeak(const unsigned int pluginId, const unsigned short id) const;
-
-    /*!
-     * Tell the engine it's about to close.\n
-     * This is used to prevent the engine thread(s) from reactivating.
-     */
-    void setAboutToClose();
-
-    /*!
-     * Safely block wait until the current proccessing callback ends.
-     */
-    void waitForProccessEnd();
 
     // -------------------------------------------------------------------
     // Callback
@@ -815,6 +854,20 @@ public:
      * Set last error.
      */
     void setLastError(const char* const error);
+
+    // -------------------------------------------------------------------
+    // Misc
+
+    /*!
+     * Tell the engine it's about to close.\n
+     * This is used to prevent the engine thread(s) from reactivating.
+     */
+    void setAboutToClose();
+
+    /*!
+     * Safely block wait until the current proccessing callback ends.
+     */
+    void waitForProccessEnd();
 
     // -------------------------------------------------------------------
     // Options
@@ -879,7 +932,7 @@ protected:
     EngineOptions  fOptions;
     EngineTimeInfo fTimeInfo;
 
-    ScopedPointer<CarlaEngineProtectedData> const fData;
+    CarlaEngineProtectedData* const fData;
 
     /*!
      * Report to all plugins about buffer size change.
@@ -898,19 +951,18 @@ protected:
      */
     void proccessPendingEvents();
 
-public:
     /*!
      * TODO.
      */
     void setPeaks(const unsigned int pluginId, float* inPeaks, float* outPeaks);
 
 #ifndef BUILD_BRIDGE
-    // Rack mode data
-    EngineEvent* getRackEventBuffer(const bool isInput);
-
     //static const unsigned short MAX_EVENTS = 1024;
     //EngineEvent fRackEventsIn[MAX_EVENTS];
     //EngineEvent fRackEventsOut[MAX_EVENTS];
+
+    // Rack mode data
+    EngineEvent* getRackEventBuffer(const bool isInput);
 
     /*!
      * Proccess audio buffer in rack mode.
