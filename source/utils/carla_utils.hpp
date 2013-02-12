@@ -321,7 +321,7 @@ public:
 
     explicit CarlaString(const int value)
     {
-        const size_t strBufSize = (unsigned int)std::abs(value/10) + 3;
+        const size_t strBufSize = std::abs(value/10) + 3;
         char         strBuf[strBufSize];
         std::snprintf(strBuf, strBufSize, "%d", value);
 
@@ -341,7 +341,7 @@ public:
 
     explicit CarlaString(const long int value)
     {
-        const size_t strBufSize = (unsigned long)std::abs(value/10) + 3;
+        const size_t strBufSize = std::abs(value/10) + 3;
         char         strBuf[strBufSize];
         std::snprintf(strBuf, strBufSize, "%ld", value);
 
@@ -364,6 +364,7 @@ public:
         char strBuf[0xff];
         std::snprintf(strBuf, 0xff, "%f", value);
 
+        _init();
         _dup(strBuf);
     }
 
@@ -418,8 +419,6 @@ public:
     {
         if (strBuf == nullptr)
             return false;
-        if (bufferLen == 0)
-            return false;
 
         if (ignoreCase)
             return (std::strcasestr(buffer, strBuf) != nullptr);
@@ -435,8 +434,6 @@ public:
     bool contains(const char* const strBuf) const
     {
         if (strBuf == nullptr)
-            return false;
-        if (bufferLen == 0)
             return false;
 
         return (std::strstr(buffer, strBuf) != nullptr);
@@ -477,11 +474,13 @@ public:
 
     void truncate(const size_t n)
     {
+        if (n >= bufferLen)
+            return;
+
         for (size_t i=n; i < bufferLen; i++)
             buffer[i] = '\0';
 
-        // FIXME
-        bufferLen = std::strlen(buffer);
+        bufferLen = n;
     }
 
     void toBasic()
@@ -570,13 +569,13 @@ public:
 
     CarlaString& operator+=(const char* const strBuf)
     {
-        const size_t newBufSize = std::strlen(buffer) + ((strBuf != nullptr) ? std::strlen(strBuf) : 0) + 1;
+        const size_t newBufSize = bufferLen + ((strBuf != nullptr) ? std::strlen(strBuf) : 0) + 1;
         char         newBuf[newBufSize];
 
         std::strcpy(newBuf, buffer);
         std::strcat(newBuf, strBuf);
 
-        _dup(newBuf, newBufSize);
+        _dup(newBuf, newBufSize-1);
 
         return *this;
     }
@@ -588,7 +587,7 @@ public:
 
     CarlaString operator+(const char* const strBuf)
     {
-        const size_t newBufSize = std::strlen(buffer) + ((strBuf != nullptr) ? std::strlen(strBuf) : 0) + 1;
+        const size_t newBufSize = bufferLen + ((strBuf != nullptr) ? std::strlen(strBuf) : 0) + 1;
         char         newBuf[newBufSize];
 
         std::strcpy(newBuf, buffer);

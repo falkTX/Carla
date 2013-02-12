@@ -73,7 +73,7 @@ struct PluginAudioData {
         CARLA_ASSERT(ports == nullptr);
     }
 
-    void createNew(const size_t count)
+    void createNew(const uint32_t count)
     {
         CARLA_ASSERT(ports == nullptr);
 
@@ -176,7 +176,7 @@ struct PluginParameterData {
         CARLA_ASSERT(ranges == nullptr);
     }
 
-    void createNew(const size_t count)
+    void createNew(const uint32_t count)
     {
         CARLA_ASSERT(data == nullptr);
         CARLA_ASSERT(ranges == nullptr);

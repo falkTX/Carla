@@ -819,11 +819,10 @@ void CarlaEngine::removeAllPlugins()
 
     const unsigned int oldCount = fData->curPluginCount;
 
-    // wait for processing
-    // TODO
-
     fData->curPluginCount = 0;
-    fData->maxPluginNumber = 0;
+
+    // wait for processing
+    waitForProccessEnd();
 
     for (unsigned int i=0; i < oldCount; i++)
     {

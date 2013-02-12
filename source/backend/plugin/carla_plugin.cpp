@@ -44,12 +44,19 @@ CarlaPlugin::CarlaPlugin(CarlaEngine* const engine, const unsigned int id)
     CARLA_ASSERT(id < engine->maxPluginNumber());
     qDebug("CarlaPlugin::CarlaPlugin(%p, %i)", engine, id);
 
-    if (engine->getProccessMode() == PROCESS_MODE_CONTINUOUS_RACK)
+    switch (engine->getProccessMode())
     {
+    case PROCESS_MODE_SINGLE_CLIENT:
+    case PROCESS_MODE_MULTIPLE_CLIENTS:
+        fData->ctrlInChannel = 0;
+        break;
+    case PROCESS_MODE_CONTINUOUS_RACK:
         CARLA_ASSERT(id < MAX_RACK_PLUGINS && id < MAX_MIDI_CHANNELS);
 
         if (id < MAX_RACK_PLUGINS && id < MAX_MIDI_CHANNELS)
             fData->ctrlInChannel = id;
+
+        break;
     }
 }
 
@@ -1201,7 +1208,8 @@ void CarlaPlugin::postRtEventsRun()
     while (! fData->postRtEvents.data.isEmpty())
     {
         PluginPostRtEvent& event = fData->postRtEvents.data.getFirst(true);
-        listData[i++] = event;
+        //listData[i++] = event;
+        std::memcpy(&listData[i++], &event, sizeof(PluginPostRtEvent));
     }
 
     fData->postRtEvents.mutex.unlock();
@@ -1210,6 +1218,9 @@ void CarlaPlugin::postRtEventsRun()
     for (i=0; i < MAX_RT_EVENTS; i++)
     {
         const PluginPostRtEvent* const event = &listData[i];
+
+        if (event->type != kPluginPostRtEventNull)
+            qWarning("postRtEventsRun() - event type %i", i);
 
         switch (event->type)
         {

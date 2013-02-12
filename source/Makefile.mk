@@ -17,12 +17,14 @@ WINDRES ?= windres
 
 DEBUG ?= false
 
+BASE_FLAGS  = -Wall -Wextra
+
 ifeq ($(DEBUG),true)
-BASE_FLAGS  = -O0 -g
+BASE_FLAGS += -O0 -g
 BASE_FLAGS += -DDEBUG
 STRIP       = true # FIXME
 else
-BASE_FLAGS  = -O2 -ffast-math -mtune=generic -msse -mfpmath=sse
+BASE_FLAGS += -O2 -ffast-math -mtune=generic -msse -mfpmath=sse
 BASE_FLAGS += -DNDEBUG
 endif
 

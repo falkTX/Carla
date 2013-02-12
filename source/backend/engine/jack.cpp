@@ -146,7 +146,7 @@ public:
 
         if (! kIsInput)
             return 0;
-        if (fJackBuffer != nullptr)
+        if (fJackBuffer == nullptr)
             return 0;
 
         return jackbridge_midi_get_event_count(fJackBuffer);
@@ -717,6 +717,8 @@ protected:
 
     void handleJackProcessCallback(const uint32_t nframes)
     {
+        proccessPendingEvents();
+
 #ifndef BUILD_BRIDGE
         if (fData->curPluginCount == 0)
             return;
@@ -944,8 +946,6 @@ protected:
 #endif
         }
 #endif
-
-        proccessPendingEvents();
     }
 
     void handleJackLatencyCallback(const jack_latency_callback_mode_t mode)

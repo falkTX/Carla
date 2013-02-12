@@ -26,14 +26,17 @@ extern "C" {
 #include <cassert>
 #include <cstring>
 
+// list_entry C++11 version (using nullptr instead of 0)
+#undef list_entry
+#define list_entry(ptr, type, member) \
+    ((type *)((char *)(ptr)-(unsigned long)(&((type *)nullptr)->member)))
+
 // Declare non copyable and prevent heap allocation
 #define LIST_DECLARATIONS(className) \
     className(const className&); \
-    className& operator= (const className&);
-
-// FIXME
-//static void* operator new (size_t);
-//static void operator delete (void*);
+    className& operator= (const className&); \
+    static void* operator new (size_t) { return nullptr; } \
+    static void operator delete (void*) {}
 
 typedef struct list_head k_list_head;
 
