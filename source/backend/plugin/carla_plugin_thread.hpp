@@ -15,8 +15,8 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#ifndef CARLA_PLUGIN_THREAD_HPP
-#define CARLA_PLUGIN_THREAD_HPP
+#ifndef __CARLA_PLUGIN_THREAD_HPP__
+#define __CARLA_PLUGIN_THREAD_HPP__
 
 #include "carla_backend_utils.hpp"
 
@@ -57,4 +57,4 @@ private:
 
 CARLA_BACKEND_END_NAMESPACE
 
-#endif // CARLA_PLUGIN_THREAD_HPP
+#endif // __CARLA_PLUGIN_THREAD_HPP__

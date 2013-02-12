@@ -15,8 +15,8 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#ifndef DIGITALPEAKMETER_HPP
-#define DIGITALPEAKMETER_HPP
+#ifndef __DIGITALPEAKMETER_HPP__
+#define __DIGITALPEAKMETER_HPP__
 
 #include <QtCore/QTimer>
 #include <QtGui/QWidget>
@@ -70,4 +70,4 @@ private:
     QTimer m_paintTimer;
 };
 
-#endif // DIGITALPEAKMETER_HPP
+#endif // __DIGITALPEAKMETER_HPP__

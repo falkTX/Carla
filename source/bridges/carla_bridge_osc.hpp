@@ -15,8 +15,8 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#ifndef CARLA_BRIDGE_OSC_HPP
-#define CARLA_BRIDGE_OSC_HPP
+#ifndef __CARLA_BRIDGE_OSC_HPP__
+#define __CARLA_BRIDGE_OSC_HPP__
 
 #include "carla_bridge.hpp"
 #include "carla_osc_utils.hpp"
@@ -134,4 +134,4 @@ private:
 
 CARLA_BRIDGE_END_NAMESPACE
 
-#endif // CARLA_BRIDGE_OSC_HPP
+#endif // __CARLA_BRIDGE_OSC_HPP__

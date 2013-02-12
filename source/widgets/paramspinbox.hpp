@@ -15,8 +15,8 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#ifndef PARAMPROGRESSBAR_H
-#define PARAMPROGRESSBAR_H
+#ifndef __PARAMPROGRESSBAR_HPP__
+#define __PARAMPROGRESSBAR_HPP__
 
 #include <QtGui/QProgressBar>
 
@@ -61,4 +61,4 @@ private:
     TextCallback* m_textCall;
 };
 
-#endif // #define PARAMPROGRESSBAR_H
+#endif // __PARAMPROGRESSBAR_HPP__

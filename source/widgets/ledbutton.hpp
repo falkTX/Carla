@@ -15,8 +15,8 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#ifndef LEDBUTTON_HPP
-#define LEDBUTTON_HPP
+#ifndef __LEDBUTTON_HPP__
+#define __LEDBUTTON_HPP__
 
 #include <QtGui/QPixmap>
 #include <QtGui/QPushButton>
@@ -51,4 +51,4 @@ private:
     Color m_color;
 };
 
-#endif // LEDBUTTON_HPP
+#endif // __LEDBUTTON_HPP__
