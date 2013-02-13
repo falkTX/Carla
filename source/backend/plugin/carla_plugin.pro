@@ -48,6 +48,13 @@ HEADERS += \
     ../carla_native.hpp \
     ../carla_plugin.hpp
 
+HEADERS += \
+    ../../utils/carla_juce_utils.hpp \
+    ../../utils/carla_lib_utils.hpp \
+    ../../utils/carla_osc_utils.hpp \
+    ../../utils/carla_state_utils.hpp \
+    ../../utils/carla_utils.hpp
+
 INCLUDEPATH = . .. \
     ../../includes \
     ../../libs \
@@ -67,10 +74,10 @@ QMAKE_CXXFLAGS += -isystem /usr/include/qt4/
 QMAKE_CXXFLAGS += -isystem /opt/kxstudio/include/
 
 WARN_FLAGS = \
-    -ansi -pedantic -pedantic-errors -Wall -Wextra -Wformat=2 -Wunused-parameter -Wuninitialized \
-    -Wcast-qual -Wconversion -Wsign-conversion -Wlogical-op -Waggregate-return  -Wno-vla \
+    -ansi -pedantic -pedantic-errors -Wall -Wextra -Wunused-parameter -Wuninitialized \
+    -Wlogical-op -Waggregate-return  -Wno-vla \
     -fipa-pure-const -Wsuggest-attribute=const #pure,const,noreturn
+#-Wcast-qual -Wconversion -Wsign-conversion -Wformat=2
 
 QMAKE_CFLAGS   += $${WARN_FLAGS} -std=c99 -Wc++-compat -Wunsuffixed-float-constants -Wwrite-strings
-# QMAKE_CXXFLAGS += $${WARN_FLAGS} -std=c++0x -fPIC
 QMAKE_CXXFLAGS += $${WARN_FLAGS} -std=c++11 -Wzero-as-null-pointer-constant

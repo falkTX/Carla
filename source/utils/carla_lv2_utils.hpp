@@ -18,7 +18,7 @@
 #ifndef __CARLA_LV2_UTILS_HPP__
 #define __CARLA_LV2_UTILS_HPP__
 
-#include "carla_juce_utils.hpp"
+#include "carla_utils.hpp"
 
 #include "lv2/lv2.h"
 #include "lv2/atom.h"
@@ -497,26 +497,26 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
     // --------------------------------------------------
     // Set Plugin Information
     {
-        rdfDescriptor->URI = strdup(uri);
+        rdfDescriptor->URI = carla_strdup(uri);
 
         if (const char* const name = lilvPlugin.get_name().as_string())
-            rdfDescriptor->Name = strdup(name);
+            rdfDescriptor->Name = carla_strdup(name);
 
         if (const char* const author = lilvPlugin.get_author_name().as_string())
-            rdfDescriptor->Author = strdup(author);
+            rdfDescriptor->Author = carla_strdup(author);
 
         if (const char* const binary = lilvPlugin.get_library_uri().as_string())
-            rdfDescriptor->Binary = strdup(lilv_uri_to_path(binary));
+            rdfDescriptor->Binary = carla_strdup(lilv_uri_to_path(binary));
 
         if (const char* const bundle = lilvPlugin.get_bundle_uri().as_string())
-            rdfDescriptor->Bundle = strdup(lilv_uri_to_path(bundle));
+            rdfDescriptor->Bundle = carla_strdup(lilv_uri_to_path(bundle));
 
         Lilv::Nodes licenseNodes(lilvPlugin.get_value(lv2World.doap_license));
 
         if (licenseNodes.size() > 0)
         {
             if (const char* const license = licenseNodes.get_first().as_string())
-                rdfDescriptor->License = strdup(license);
+                rdfDescriptor->License = carla_strdup(license);
         }
     }
 
@@ -564,10 +564,10 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
             // Set Port Information
             {
                 if (const char* const name = Lilv::Node(lilvPort.get_name()).as_string())
-                    rdfPort->Name = strdup(name);
+                    rdfPort->Name = carla_strdup(name);
 
                 if (const char* const symbol = Lilv::Node(lilvPort.get_symbol()).as_string())
-                    rdfPort->Symbol = strdup(symbol);
+                    rdfPort->Symbol = carla_strdup(symbol);
             }
 
             // --------------------------------------
@@ -850,7 +850,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
                     if (const char* const unitName = unitNameNodes.get_first().as_string())
                     {
                         rdfPort->Unit.Hints |= LV2_PORT_UNIT_NAME;
-                        rdfPort->Unit.Name   = strdup(unitName);
+                        rdfPort->Unit.Name   = carla_strdup(unitName);
                     }
                 }
 
@@ -861,7 +861,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
                     if (const char* const unitRender = unitRenderNodes.get_first().as_string())
                     {
                         rdfPort->Unit.Hints |= LV2_PORT_UNIT_RENDER;
-                        rdfPort->Unit.Render = strdup(unitRender);
+                        rdfPort->Unit.Render = carla_strdup(unitRender);
                     }
                 }
 
@@ -872,7 +872,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
                     if (const char* const unitSymbol = unitSymbolNodes.get_first().as_string())
                     {
                         rdfPort->Unit.Hints |= LV2_PORT_UNIT_SYMBOL;
-                        rdfPort->Unit.Symbol = strdup(unitSymbol);
+                        rdfPort->Unit.Symbol = carla_strdup(unitSymbol);
                     }
                 }
             }
@@ -894,7 +894,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
                     LV2_RDF_PortScalePoint* const rdfScalePoint = &rdfPort->ScalePoints[h++];
 
                     if (const char* const label = Lilv::Node(lilvScalePoint.get_label()).as_string())
-                        rdfScalePoint->Label = strdup(label);
+                        rdfScalePoint->Label = carla_strdup(label);
 
                     rdfScalePoint->Value = Lilv::Node(lilvScalePoint.get_value()).as_float();
                 }
@@ -949,14 +949,14 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
                     // --------------------------------------
                     // Set Preset Information
                     {
-                        rdfPreset->URI = strdup(presetURI);
+                        rdfPreset->URI = carla_strdup(presetURI);
 
                         Lilv::Nodes presetLabelNodes(lv2World.find_nodes(presetNode, lv2World.rdfs_label, nullptr));
 
                         if (presetLabelNodes.size() > 0)
                         {
                             if (const char* const label = presetLabelNodes.get_first().as_string())
-                                rdfPreset->Label = strdup(label);
+                                rdfPreset->Label = carla_strdup(label);
                         }
                     }
                 }
@@ -985,7 +985,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
                 rdfFeature->Type = lilvFeatureNodesR.contains(lilvFeatureNode) ? LV2_FEATURE_REQUIRED : LV2_FEATURE_OPTIONAL;
 
                 if (const char* const featureURI = lilvFeatureNode.as_uri())
-                    rdfFeature->URI = strdup(featureURI);
+                    rdfFeature->URI = carla_strdup(featureURI);
             }
         }
     }
@@ -1008,7 +1008,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
                 LV2_URI* const rdfExtension = &rdfDescriptor->Extensions[h++];
 
                 if (const char* const extURI = lilvExtensionDataNode.as_uri())
-                    *rdfExtension = strdup(extURI);
+                    *rdfExtension = carla_strdup(extURI);
             }
         }
     }
@@ -1036,7 +1036,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
                 {
                     // FIXME - uiType is probably wrong
 
-                    rdfUI->Type.URI = strdup(uiType);
+                    rdfUI->Type.URI = carla_strdup(uiType);
 
                     if (lilvUI.is_a(lv2World.ui_gtk2))
                         rdfUI->Type.Value = LV2_UI_GTK2;
@@ -1064,13 +1064,13 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
                 // Set UI Information
                 {
                     if (const char* const uiURI = lilvUI.get_uri().as_uri())
-                        rdfUI->URI = strdup(uiURI);
+                        rdfUI->URI = carla_strdup(uiURI);
 
                     if (const char* const uiBinary = lilvUI.get_binary_uri().as_string())
-                        rdfUI->Binary = strdup(lilv_uri_to_path(uiBinary));
+                        rdfUI->Binary = carla_strdup(lilv_uri_to_path(uiBinary));
 
                     if (const char* const uiBundle = lilvUI.get_bundle_uri().as_string())
-                        rdfUI->Bundle = strdup(lilv_uri_to_path(uiBundle));
+                        rdfUI->Bundle = carla_strdup(lilv_uri_to_path(uiBundle));
                 }
 
                 // --------------------------------------
@@ -1092,7 +1092,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
 
                             LV2_RDF_Feature* const rdfFeature = &rdfUI->Features[x++];
                             rdfFeature->Type = lilvFeatureNodesR.contains(lilvFeatureNode) ? LV2_FEATURE_REQUIRED : LV2_FEATURE_OPTIONAL;
-                            rdfFeature->URI  = strdup(lilvFeatureNode.as_uri());
+                            rdfFeature->URI  = carla_strdup(lilvFeatureNode.as_uri());
                             // TODO: char check
                         }
                     }
@@ -1114,7 +1114,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
                             Lilv::Node lilvExtensionDataNode(lilvExtensionDataNodes.get(k));
 
                             LV2_URI* const rdfExtension = &rdfUI->Extensions[x++];
-                            *rdfExtension = strdup(lilvExtensionDataNode.as_uri());
+                            *rdfExtension = carla_strdup(lilvExtensionDataNode.as_uri());
                             // TODO: char check
                         }
                     }

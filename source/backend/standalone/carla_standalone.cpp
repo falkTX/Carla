@@ -371,19 +371,19 @@ const CarlaPluginInfo* carla_get_plugin_info(unsigned int pluginId)
     // cleanup
     if (info.label != nullptr)
     {
-        std::free((void*)info.label);
+        delete[] info.label;
         info.label = nullptr;
     }
 
     if (info.maker != nullptr)
     {
-        std::free((void*)info.maker);
+        delete[] info.maker;
         info.maker = nullptr;
     }
 
     if (info.copyright != nullptr)
     {
-        std::free((void*)info.copyright);
+        delete[] info.copyright;
         info.copyright = nullptr;
     }
 
@@ -405,13 +405,13 @@ const CarlaPluginInfo* carla_get_plugin_info(unsigned int pluginId)
         info.latency  = plugin->latency();
 
         plugin->getLabel(strBufLabel);
-        info.label = strdup(strBufLabel);
+        info.label = carla_strdup(strBufLabel);
 
         plugin->getMaker(strBufMaker);
-        info.maker = strdup(strBufMaker);
+        info.maker = carla_strdup(strBufMaker);
 
         plugin->getCopyright(strBufCopyright);
-        info.copyright = strdup(strBufCopyright);
+        info.copyright = carla_strdup(strBufCopyright);
 
         return &info;
     }
@@ -512,19 +512,19 @@ const CarlaParameterInfo* carla_get_parameter_info(unsigned int pluginId, uint32
     // cleanup
     if (info.name != nullptr)
     {
-        std::free((void*)info.name);
+        delete[] (void*)info.name;
         info.name = nullptr;
     }
 
     if (info.symbol != nullptr)
     {
-        std::free((void*)info.symbol);
+        delete[] info.symbol;
         info.symbol = nullptr;
     }
 
     if (info.unit != nullptr)
     {
-        std::free((void*)info.unit);
+        delete[] info.unit;
         info.unit = nullptr;
     }
 
@@ -542,13 +542,13 @@ const CarlaParameterInfo* carla_get_parameter_info(unsigned int pluginId, uint32
             info.scalePointCount = plugin->parameterScalePointCount(parameterId);
 
             plugin->getParameterName(parameterId, strBufName);
-            info.name = strdup(strBufName);
+            info.name = carla_strdup(strBufName);
 
             plugin->getParameterSymbol(parameterId, strBufSymbol);
-            info.symbol = strdup(strBufSymbol);
+            info.symbol = carla_strdup(strBufSymbol);
 
             plugin->getParameterUnit(parameterId, strBufUnit);
-            info.unit = strdup(strBufUnit);
+            info.unit = carla_strdup(strBufUnit);
         }
         else
             qCritical("carla_get_parameter_info(%i, %i) - parameterId out of bounds", pluginId, parameterId);
@@ -573,7 +573,7 @@ const CarlaScalePointInfo* carla_get_parameter_scalepoint_info(unsigned int plug
     // cleanup
     if (info.label != nullptr)
     {
-        free((void*)info.label);
+        delete[] info.label;
         info.label = nullptr;
     }
 
@@ -591,7 +591,7 @@ const CarlaScalePointInfo* carla_get_parameter_scalepoint_info(unsigned int plug
                 info.value = plugin->getParameterScalePointValue(parameterId, scalePointId);
 
                 plugin->getParameterScalePointLabel(parameterId, scalePointId, strBufLabel);
-                info.label = strdup(strBufLabel);
+                info.label = carla_strdup(strBufLabel);
             }
             else
                 qCritical("carla_get_parameter_scalepoint_info(%i, %i, %i) - scalePointId out of bounds", pluginId, parameterId, scalePointId);

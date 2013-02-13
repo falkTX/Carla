@@ -43,11 +43,11 @@ const LADSPA_RDF_Descriptor* ladspa_rdf_dup(const LADSPA_RDF_Descriptor* const o
     newDescriptor->UniqueID  = oldDescriptor->UniqueID;
     newDescriptor->PortCount = oldDescriptor->PortCount;
 
-    if (oldDescriptor->Title)
-        newDescriptor->Title = strdup(oldDescriptor->Title);
+    if (oldDescriptor->Title != nullptr)
+        newDescriptor->Title = carla_strdup(oldDescriptor->Title);
 
-    if (oldDescriptor->Creator)
-        newDescriptor->Creator = strdup(oldDescriptor->Creator);
+    if (oldDescriptor->Creator != nullptr)
+        newDescriptor->Creator = carla_strdup(oldDescriptor->Creator);
 
     if (newDescriptor->PortCount > 0)
     {
@@ -64,8 +64,8 @@ const LADSPA_RDF_Descriptor* ladspa_rdf_dup(const LADSPA_RDF_Descriptor* const o
             newPort->Unit    = oldPort->Unit;
             newPort->ScalePointCount = oldPort->ScalePointCount;
 
-            if (oldPort->Label)
-                newPort->Label = strdup(oldPort->Label);
+            if (oldPort->Label != nullptr)
+                newPort->Label = carla_strdup(oldPort->Label);
 
             if (oldPort->ScalePointCount > 0)
             {
@@ -78,8 +78,8 @@ const LADSPA_RDF_Descriptor* ladspa_rdf_dup(const LADSPA_RDF_Descriptor* const o
 
                     newScalePoint->Value = oldScalePoint->Value;
 
-                    if (oldScalePoint->Label)
-                        newScalePoint->Label = strdup(oldScalePoint->Label);
+                    if (oldScalePoint->Label != nullptr)
+                        newScalePoint->Label = carla_strdup(oldScalePoint->Label);
                 }
             }
         }

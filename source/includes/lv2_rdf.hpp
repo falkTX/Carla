@@ -19,7 +19,6 @@
 #define LV2_RDF_INCLUDED
 
 #include <cstdint>
-#include <cstdlib>
 
 // Base Types
 typedef const char* LV2_URI;
@@ -35,8 +34,8 @@ struct LV2_Type {
 
     ~LV2_Type()
     {
-        if (URI)
-            ::free((void*)URI);
+        if (URI != nullptr)
+            delete[] URI;
     }
 };
 
@@ -344,14 +343,12 @@ struct LV2_RDF_PortUnit {
 
     ~LV2_RDF_PortUnit()
     {
-        if (Name)
-            ::free((void*)Name);
-
-        if (Render)
-            ::free((void*)Render);
-
-        if (Symbol)
-            ::free((void*)Symbol);
+        if (Name != nullptr)
+            delete[] Name;
+        if (Render != nullptr)
+            delete[] Render;
+        if (Symbol != nullptr)
+            delete[] Symbol;
     }
 };
 
@@ -366,8 +363,8 @@ struct LV2_RDF_PortScalePoint {
 
     ~LV2_RDF_PortScalePoint()
     {
-        if (Label)
-            ::free((void*)Label);
+        if (Label != nullptr)
+            delete[] Label;
     }
 };
 
@@ -397,13 +394,11 @@ struct LV2_RDF_Port {
 
     ~LV2_RDF_Port()
     {
-        if (Name)
-            ::free((void*)Name);
-
-        if (Symbol)
-            ::free((void*)Symbol);
-
-        if (ScalePoints)
+        if (Name != nullptr)
+            delete[] Name;
+        if (Symbol != nullptr)
+            delete[] Symbol;
+        if (ScalePoints != nullptr)
             delete[] ScalePoints;
     }
 };
@@ -419,11 +414,10 @@ struct LV2_RDF_Preset {
 
     ~LV2_RDF_Preset()
     {
-        if (URI)
-            ::free((void*)URI);
-
-        if (Label)
-            ::free((void*)Label);
+        if (URI != nullptr)
+            delete[] URI;
+        if (Label != nullptr)
+            delete[] Label;
     }
 };
 
@@ -438,8 +432,8 @@ struct LV2_RDF_Feature {
 
     ~LV2_RDF_Feature()
     {
-        if (URI)
-            ::free((void*)URI);
+        if (URI != nullptr)
+            delete[] URI;
     }
 };
 
@@ -467,19 +461,15 @@ struct LV2_RDF_UI {
 
     ~LV2_RDF_UI()
     {
-        if (URI)
-            ::free((void*)URI);
-
-        if (Binary)
-            ::free((void*)Binary);
-
-        if (Bundle)
-            ::free((void*)Bundle);
-
-        if (Features)
+        if (URI != nullptr)
+            delete[] URI;
+        if (Binary != nullptr)
+            delete[] Binary;
+        if (Bundle != nullptr)
+            delete[] Bundle;
+        if (Features != nullptr)
             delete[] Features;
-
-        if (Extensions)
+        if (Extensions != nullptr)
             delete[] Extensions;
     }
 };
@@ -532,37 +522,27 @@ struct LV2_RDF_Descriptor {
 
     ~LV2_RDF_Descriptor()
     {
-        if (URI)
-            ::free((void*)URI);
-
-        if (Name)
-            ::free((void*)Name);
-
-        if (Author)
-            ::free((void*)Author);
-
-        if (License)
-            ::free((void*)License);
-
-        if (Binary)
-            ::free((void*)Binary);
-
-        if (Bundle)
-            ::free((void*)Bundle);
-
-        if (Ports)
+        if (URI != nullptr)
+            delete[] URI;
+        if (Name != nullptr)
+            delete[] Name;
+        if (Author != nullptr)
+            delete[] Author;
+        if (License != nullptr)
+            delete[] License;
+        if (Binary != nullptr)
+            delete[] Binary;
+        if (Bundle != nullptr)
+            delete[] Bundle;
+        if (Ports != nullptr)
             delete[] Ports;
-
-        if (Presets)
+        if (Presets != nullptr)
             delete[] Presets;
-
-        if (Features)
+        if (Features != nullptr)
             delete[] Features;
-
-        if (Extensions)
+        if (Extensions != nullptr)
             delete[] Extensions;
-
-        if (UIs)
+        if (UIs != nullptr)
             delete[] UIs;
     }
 };

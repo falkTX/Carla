@@ -18,8 +18,6 @@
 #ifndef LADSPA_RDF_INCLUDED
 #define LADSPA_RDF_INCLUDED
 
-#include <cstdlib>
-
 // Base Types
 typedef float LADSPA_Data;
 typedef int LADSPA_Property;
@@ -128,8 +126,8 @@ struct LADSPA_RDF_ScalePoint {
 
     ~LADSPA_RDF_ScalePoint()
     {
-        if (Label)
-            ::free((void*)Label);
+        if (Label != nullptr)
+            delete[] Label;
     }
 };
 
@@ -155,10 +153,9 @@ struct LADSPA_RDF_Port {
 
     ~LADSPA_RDF_Port()
     {
-        if (Label)
-            ::free((void*)Label);
-
-        if (ScalePoints)
+        if (Label != nullptr)
+            delete[] Label;
+        if (ScalePoints != nullptr)
             delete[] ScalePoints;
     }
 };
@@ -183,13 +180,11 @@ struct LADSPA_RDF_Descriptor {
 
     ~LADSPA_RDF_Descriptor()
     {
-        if (Title)
-            ::free((void*)Title);
-
-        if (Creator)
-            ::free((void*)Creator);
-
-        if (Ports)
+        if (Title != nullptr)
+            delete[] Title;
+        if (Creator != nullptr)
+            delete[] Creator;
+        if (Ports != nullptr)
             delete[] Ports;
     }
 };

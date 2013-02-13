@@ -20,9 +20,6 @@
 
 #include "carla_backend.hpp"
 
-// TODO - create struct for internal plugin info
-// TODO - dont strdup() on const-char* returns, use static char[STR_MAX]
-
 /*!
  * @defgroup CarlaBackendStandalone Carla Backend Standalone
  *
@@ -63,9 +60,12 @@ struct CarlaPluginInfo {
 
     ~CarlaPluginInfo()
     {
-        std::free((void*)label);
-        std::free((void*)maker);
-        std::free((void*)copyright);
+        if (label != nullptr)
+            delete[] label;
+        if (maker != nullptr)
+            delete[] maker;
+        if (copyright != nullptr)
+            delete[] copyright;
     }
 };
 
@@ -123,9 +123,12 @@ struct CarlaParameterInfo {
 
     ~CarlaParameterInfo()
     {
-        std::free((void*)name);
-        std::free((void*)symbol);
-        std::free((void*)unit);
+        if (name != nullptr)
+            delete[] name;
+        if (symbol != nullptr)
+            delete[] symbol;
+        if (unit != nullptr)
+            delete[] unit;
     }
 };
 
@@ -139,7 +142,8 @@ struct CarlaScalePointInfo {
 
     ~CarlaScalePointInfo()
     {
-        std::free((void*)label);
+        if (label != nullptr)
+            delete[] label;
     }
 };
 

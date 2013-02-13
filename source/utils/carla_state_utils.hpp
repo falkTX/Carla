@@ -46,8 +46,10 @@ struct StateParameter {
 
     ~StateParameter()
     {
-        std::free((void*)name);
-        std::free((void*)symbol);
+        if (name != nullptr)
+            delete[] name;
+        if (symbol != nullptr)
+            delete[] symbol;
     }
 };
 
@@ -63,9 +65,12 @@ struct StateCustomData {
 
     ~StateCustomData()
     {
-        std::free((void*)type);
-        std::free((void*)key);
-        std::free((void*)value);
+        if (type != nullptr)
+            delete[] type;
+        if (key != nullptr)
+            delete[] key;
+        if (value != nullptr)
+            delete[] value;
     }
 };
 
@@ -122,37 +127,37 @@ struct SaveState {
     {
         if (type != nullptr)
         {
-            std::free((void*)type);
+            delete[] type;
             type = nullptr;
         }
 
         if (name != nullptr)
         {
-            std::free((void*)name);
+            delete[] name;
             name = nullptr;
         }
 
         if (label != nullptr)
         {
-            std::free((void*)label);
+            delete[] label;
             label = nullptr;
         }
 
         if (binary != nullptr)
         {
-            std::free((void*)binary);
+            delete[] binary;
             binary = nullptr;
         }
 
         if (currentProgramName != nullptr)
         {
-            std::free((void*)currentProgramName);
+            delete[] currentProgramName;
             currentProgramName = nullptr;
         }
 
         if (chunk != nullptr)
         {
-            std::free((void*)chunk);
+            delete[] chunk;
             chunk = nullptr;
         }
 
@@ -189,7 +194,7 @@ QString xmlSafeString(const QString& string, const bool toXml)
 static inline
 const char* xmlSafeStringChar(const QString& string, const bool toXml)
 {
-    return strdup(xmlSafeString(string, toXml).toUtf8().constData());
+    return carla_strdup(xmlSafeString(string, toXml).toUtf8().constData());
 }
 
 static inline

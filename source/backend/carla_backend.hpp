@@ -21,7 +21,6 @@
 #include "carla_defines.hpp"
 
 #include <cstdint>
-#include <cstdlib>
 
 #define CARLA_BACKEND_START_NAMESPACE namespace CarlaBackend {
 #define CARLA_BACKEND_END_NAMESPACE }
@@ -633,7 +632,8 @@ struct MidiProgramData {
 
     ~MidiProgramData()
     {
-        std::free((void*)name);
+        if (name != nullptr)
+            delete[] name;
     }
 };
 
@@ -655,9 +655,12 @@ struct CustomData {
 
     ~CustomData()
     {
-        std::free((void*)type);
-        std::free((void*)key);
-        std::free((void*)value);
+        if (type != nullptr)
+            delete[] type;
+        if (key != nullptr)
+            delete[] key;
+        if (value != nullptr)
+            delete[] value;
     }
 };
 

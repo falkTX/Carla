@@ -32,7 +32,7 @@ public:
     PluginDescriptorClass(const HostDescriptor* const host)
         : kHost(host)
     {
-        CARLA_ASSERT(host);
+        CARLA_ASSERT(host != nullptr);
     }
 
     virtual ~PluginDescriptorClass()
@@ -49,9 +49,9 @@ public:
 
     uint32_t getBufferSize() const
     {
-        CARLA_ASSERT(kHost);
+        CARLA_ASSERT(kHost != nullptr);
 
-        if (kHost)
+        if (kHost != nullptr)
             return kHost->get_buffer_size(kHost->handle);
 
         return 0;
@@ -59,9 +59,9 @@ public:
 
     double getSampleRate() const
     {
-        CARLA_ASSERT(kHost);
+        CARLA_ASSERT(kHost != nullptr);
 
-        if (kHost)
+        if (kHost != nullptr)
             return kHost->get_sample_rate(kHost->handle);
 
         return 0.0;
@@ -69,9 +69,9 @@ public:
 
     const TimeInfo* getTimeInfo() const
     {
-        CARLA_ASSERT(kHost);
+        CARLA_ASSERT(kHost != nullptr);
 
-        if (kHost)
+        if (kHost != nullptr)
             return kHost->get_time_info(kHost->handle);
 
         return nullptr;
@@ -79,41 +79,41 @@ public:
 
     void writeMidiEvent(const MidiEvent* const event)
     {
-        CARLA_ASSERT(kHost);
+        CARLA_ASSERT(kHost != nullptr);
 
-        if (kHost)
+        if (kHost != nullptr)
             kHost->write_midi_event(kHost->handle, event);
     }
 
     void uiParameterChanged(const uint32_t index, const float value)
     {
-        CARLA_ASSERT(kHost);
+        CARLA_ASSERT(kHost != nullptr);
 
-        if (kHost)
+        if (kHost != nullptr)
             kHost->ui_parameter_changed(kHost->handle, index, value);
     }
 
     void uiMidiProgramChanged(const uint32_t bank, const uint32_t program)
     {
-        CARLA_ASSERT(kHost);
+        CARLA_ASSERT(kHost != nullptr);
 
-        if (kHost)
+        if (kHost != nullptr)
             kHost->ui_midi_program_changed(kHost->handle, bank, program);
     }
 
     void uiCustomDataChanged(const char* const key, const char* const value)
     {
-        CARLA_ASSERT(kHost);
+        CARLA_ASSERT(kHost != nullptr);
 
-        if (kHost)
+        if (kHost != nullptr)
             kHost->ui_custom_data_changed(kHost->handle, key, value);
     }
 
     void uiClosed()
     {
-        CARLA_ASSERT(kHost);
+        CARLA_ASSERT(kHost != nullptr);
 
-        if (kHost)
+        if (kHost != nullptr)
             kHost->ui_closed(kHost->handle);
     }
 

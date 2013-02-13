@@ -17,6 +17,7 @@
 
 #include "carla_plugin_internal.hpp"
 #include "carla_lib_utils.hpp"
+#include "carla_state_utils.hpp"
 #include "carla_midi.h"
 
 //#include <QtGui/QtEvents>
@@ -37,9 +38,13 @@ static const CustomData       kCustomDataNull;
 // Constructor and destructor
 
 CarlaPlugin::CarlaPlugin(CarlaEngine* const engine, const unsigned int id)
-    : fData(new CarlaPluginProtectedData(engine, id))
+    : fId(id),
+      fHints(0x0),
+      fOptions(0x0),
+      fEnabled(false),
+      kData(new CarlaPluginProtectedData(engine))
 {
-    CARLA_ASSERT(fData != nullptr);
+    CARLA_ASSERT(kData != nullptr);
     CARLA_ASSERT(engine != nullptr);
     CARLA_ASSERT(id < engine->maxPluginNumber());
     qDebug("CarlaPlugin::CarlaPlugin(%p, %i)", engine, id);
@@ -48,14 +53,14 @@ CarlaPlugin::CarlaPlugin(CarlaEngine* const engine, const unsigned int id)
     {
     case PROCESS_MODE_SINGLE_CLIENT:
     case PROCESS_MODE_MULTIPLE_CLIENTS:
-        fData->ctrlInChannel = 0;
+        kData->ctrlInChannel = 0;
         break;
 
     case PROCESS_MODE_CONTINUOUS_RACK:
         CARLA_ASSERT(id < MAX_RACK_PLUGINS && id < MAX_MIDI_CHANNELS);
 
         if (id < MAX_RACK_PLUGINS && id < MAX_MIDI_CHANNELS)
-            fData->ctrlInChannel = id;
+            kData->ctrlInChannel = id;
 
         break;
 
@@ -70,67 +75,40 @@ CarlaPlugin::~CarlaPlugin()
     qDebug("CarlaPlugin::~CarlaPlugin()");
 
     // Remove client and ports
-    if (fData->client != nullptr)
+    if (kData->client != nullptr)
     {
-        if (fData->client->isActive())
-            fData->client->deactivate();
+        if (kData->client->isActive())
+            kData->client->deactivate();
 
-        deleteBuffers();
+        // can't call virtual functions in destructor
+        CarlaPlugin::deleteBuffers();
 
-        delete fData->client;
+        delete kData->client;
     }
 
-    if (fData->latencyBuffers != nullptr)
+    if (kData->latencyBuffers != nullptr)
     {
-        for (uint32_t i=0; i < fData->audioIn.count; i++)
-            delete[] fData->latencyBuffers[i];
+        for (uint32_t i=0; i < kData->audioIn.count; i++)
+            delete[] kData->latencyBuffers[i];
 
-        delete[] fData->latencyBuffers;
+        delete[] kData->latencyBuffers;
     }
 
-    fData->prog.clear();
-    fData->midiprog.clear();
-    fData->custom.clear();
+    kData->prog.clear();
+    kData->midiprog.clear();
+    kData->custom.clear();
 
     libClose();
+
+    delete kData;
 }
 
 // -------------------------------------------------------------------
 // Information (base)
 
-unsigned int CarlaPlugin::id() const
-{
-    return fData->id;
-}
-
-unsigned int CarlaPlugin::hints() const
-{
-    return fData->hints;
-}
-
-unsigned int CarlaPlugin::options() const
-{
-    return fData->options;
-}
-
-bool CarlaPlugin::enabled() const
-{
-    return fData->enabled;
-}
-
-const char* CarlaPlugin::name() const
-{
-    return (const char*)fData->name;
-}
-
-const char* CarlaPlugin::filename() const
-{
-    return (const char*)fData->filename;
-}
-
 uint32_t CarlaPlugin::latency() const
 {
-    return 0;
+    return kData->latency;
 }
 
 // -------------------------------------------------------------------
@@ -138,32 +116,32 @@ uint32_t CarlaPlugin::latency() const
 
 uint32_t CarlaPlugin::audioInCount() const
 {
-    return fData->audioIn.count;
+    return kData->audioIn.count;
 }
 
 uint32_t CarlaPlugin::audioOutCount() const
 {
-    return fData->audioOut.count;
+    return kData->audioOut.count;
 }
 
 uint32_t CarlaPlugin::midiInCount() const
 {
-    return (fData->options2 & PLUGIN_OPTION2_HAS_MIDI_IN) ? 1 : 0;
+    return (kData->extraHints & PLUGIN_HINT_HAS_MIDI_IN) ? 1 : 0;
 }
 
 uint32_t CarlaPlugin::midiOutCount() const
 {
-    return (fData->options2 & PLUGIN_OPTION2_HAS_MIDI_OUT) ? 1 : 0;
+    return (kData->extraHints & PLUGIN_HINT_HAS_MIDI_OUT) ? 1 : 0;
 }
 
 uint32_t CarlaPlugin::parameterCount() const
 {
-    return fData->param.count;
+    return kData->param.count;
 }
 
 uint32_t CarlaPlugin::parameterScalePointCount(const uint32_t parameterId) const
 {
-    CARLA_ASSERT(parameterId < fData->param.count);
+    CARLA_ASSERT(parameterId < kData->param.count);
     return 0;
 
     // unused
@@ -172,17 +150,17 @@ uint32_t CarlaPlugin::parameterScalePointCount(const uint32_t parameterId) const
 
 uint32_t CarlaPlugin::programCount() const
 {
-    return fData->prog.count;
+    return kData->prog.count;
 }
 
 uint32_t CarlaPlugin::midiProgramCount() const
 {
-    return fData->midiprog.count;
+    return kData->midiprog.count;
 }
 
 size_t CarlaPlugin::customDataCount() const
 {
-    return fData->custom.count();
+    return kData->custom.count();
 }
 
 // -------------------------------------------------------------------
@@ -190,47 +168,47 @@ size_t CarlaPlugin::customDataCount() const
 
 int32_t CarlaPlugin::currentProgram() const
 {
-    return fData->prog.current;
+    return kData->prog.current;
 }
 
 int32_t CarlaPlugin::currentMidiProgram() const
 {
-    return fData->midiprog.current;
+    return kData->midiprog.current;
 }
 
 const ParameterData& CarlaPlugin::parameterData(const uint32_t parameterId) const
 {
-    CARLA_ASSERT(parameterId < fData->param.count);
+    CARLA_ASSERT(parameterId < kData->param.count);
 
-    return (parameterId < fData->param.count) ? fData->param.data[parameterId] : kParameterDataNull;
+    return (parameterId < kData->param.count) ? kData->param.data[parameterId] : kParameterDataNull;
 }
 
 const ParameterRanges& CarlaPlugin::parameterRanges(const uint32_t parameterId) const
 {
-    CARLA_ASSERT(parameterId < fData->param.count);
+    CARLA_ASSERT(parameterId < kData->param.count);
 
-    return (parameterId < fData->param.count) ? fData->param.ranges[parameterId] : kParameterRangesNull;
+    return (parameterId < kData->param.count) ? kData->param.ranges[parameterId] : kParameterRangesNull;
 }
 
 bool CarlaPlugin::parameterIsOutput(const uint32_t parameterId) const
 {
-    CARLA_ASSERT(parameterId < fData->param.count);
+    CARLA_ASSERT(parameterId < kData->param.count);
 
-    return (parameterId < fData->param.count) ? (fData->param.data[parameterId].type == PARAMETER_OUTPUT) : false;
+    return (parameterId < kData->param.count) ? (kData->param.data[parameterId].type == PARAMETER_OUTPUT) : false;
 }
 
 const MidiProgramData& CarlaPlugin::midiProgramData(const uint32_t index) const
 {
-    CARLA_ASSERT(index < fData->midiprog.count);
+    CARLA_ASSERT(index < kData->midiprog.count);
 
-    return (index < fData->midiprog.count) ? fData->midiprog.data[index] : kMidiProgramDataNull;
+    return (index < kData->midiprog.count) ? kData->midiprog.data[index] : kMidiProgramDataNull;
 }
 
 const CustomData& CarlaPlugin::customData(const size_t index) const
 {
-    CARLA_ASSERT(index < fData->custom.count());
+    CARLA_ASSERT(index < kData->custom.count());
 
-    return (index < fData->custom.count()) ? fData->custom.getAt(index) : kCustomDataNull;
+    return (index < kData->custom.count()) ? kData->custom.getAt(index) : kCustomDataNull;
 }
 
 int32_t CarlaPlugin::chunkData(void** const dataPtr)
@@ -339,22 +317,22 @@ void CarlaPlugin::getParameterScalePointLabel(const uint32_t parameterId, const 
 
 void CarlaPlugin::getProgramName(const uint32_t index, char* const strBuf)
 {
-    CARLA_ASSERT(index < fData->prog.count);
-    CARLA_ASSERT(fData->prog.names[index] != nullptr);
+    CARLA_ASSERT(index < kData->prog.count);
+    CARLA_ASSERT(kData->prog.names[index] != nullptr);
 
-    if (index < fData->prog.count && fData->prog.names[index])
-        std::strncpy(strBuf, fData->prog.names[index], STR_MAX);
+    if (index < kData->prog.count && kData->prog.names[index])
+        std::strncpy(strBuf, kData->prog.names[index], STR_MAX);
     else
         *strBuf = 0;
 }
 
 void CarlaPlugin::getMidiProgramName(const uint32_t index, char* const strBuf)
 {
-    CARLA_ASSERT(index < fData->midiprog.count);
-    CARLA_ASSERT(fData->midiprog.data[index].name != nullptr);
+    CARLA_ASSERT(index < kData->midiprog.count);
+    CARLA_ASSERT(kData->midiprog.data[index].name != nullptr);
 
-    if (index < fData->midiprog.count && fData->midiprog.data[index].name)
-        std::strncpy(strBuf, fData->midiprog.data[index].name, STR_MAX);
+    if (index < kData->midiprog.count && kData->midiprog.data[index].name)
+        std::strncpy(strBuf, kData->midiprog.data[index].name, STR_MAX);
     else
         *strBuf = 0;
 }
@@ -370,13 +348,13 @@ void CarlaPlugin::getParameterCountInfo(uint32_t* const ins, uint32_t* const out
 
     *ins   = 0;
     *outs  = 0;
-    *total = fData->param.count;
+    *total = kData->param.count;
 
-    for (uint32_t i=0; i < fData->param.count; i++)
+    for (uint32_t i=0; i < kData->param.count; i++)
     {
-        if (fData->param.data[i].type == PARAMETER_INPUT)
+        if (kData->param.data[i].type == PARAMETER_INPUT)
             *ins += 1;
-        else if (fData->param.data[i].type == PARAMETER_OUTPUT)
+        else if (kData->param.data[i].type == PARAMETER_OUTPUT)
             *outs += 1;
     }
 }
@@ -400,35 +378,35 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
 
 void CarlaPlugin::setId(const unsigned int id)
 {
-    fData->id = id;
+    fId = id;
 
-    if (fData->engine->getProccessMode() == PROCESS_MODE_CONTINUOUS_RACK)
-        fData->ctrlInChannel = id;
+    if (kData->engine->getProccessMode() == PROCESS_MODE_CONTINUOUS_RACK)
+        kData->ctrlInChannel = id;
 }
 
 void CarlaPlugin::setEnabled(const bool yesNo)
 {
-    fData->enabled = yesNo;
+    fEnabled = yesNo;
 }
 
 void CarlaPlugin::setActive(const bool active, const bool sendOsc, const bool sendCallback)
 {
-    fData->active = active;
+    kData->active = active;
 
     const float value = active ? 1.0f : 0.0f;
 
 #ifndef BUILD_BRIDGE
     if (sendOsc)
-        fData->engine->osc_send_control_set_parameter_value(fData->id, PARAMETER_ACTIVE, value);
+        kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_ACTIVE, value);
 #else
     Q_UNUSED(sendOsc);
 #endif
 
     if (sendCallback)
-        fData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fData->id, PARAMETER_ACTIVE, 0, value, nullptr);
+        kData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, PARAMETER_ACTIVE, 0, value, nullptr);
 #ifndef BUILD_BRIDGE
-    else if (fData->hints & PLUGIN_IS_BRIDGE)
-        osc_send_control(&fData->osc.data, PARAMETER_ACTIVE, value);
+    else if (fHints & PLUGIN_IS_BRIDGE)
+        osc_send_control(&kData->osc.data, PARAMETER_ACTIVE, value);
 #endif
 }
 
@@ -438,20 +416,20 @@ void CarlaPlugin::setDryWet(const float value, const bool sendOsc, const bool se
 
     const float fixedValue = carla_fixValue<float>(0.0f, 1.0f, value);
 
-    fData->postProc.dryWet = fixedValue;
+    kData->postProc.dryWet = fixedValue;
 
 #ifndef BUILD_BRIDGE
     if (sendOsc)
-        fData->engine->osc_send_control_set_parameter_value(fData->id, PARAMETER_DRYWET, fixedValue);
+        kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_DRYWET, fixedValue);
 #else
     Q_UNUSED(sendOsc);
 #endif
 
     if (sendCallback)
-        fData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fData->id, PARAMETER_DRYWET, 0, fixedValue, nullptr);
+        kData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, PARAMETER_DRYWET, 0, fixedValue, nullptr);
 #ifndef BUILD_BRIDGE
-    else if (fData->hints & PLUGIN_IS_BRIDGE)
-        osc_send_control(&fData->osc.data, PARAMETER_DRYWET, fixedValue);
+    else if (fHints & PLUGIN_IS_BRIDGE)
+        osc_send_control(&kData->osc.data, PARAMETER_DRYWET, fixedValue);
 #endif
 }
 
@@ -461,20 +439,20 @@ void CarlaPlugin::setVolume(const float value, const bool sendOsc, const bool se
 
     const float fixedValue = carla_fixValue<float>(0.0f, 1.27f, value);
 
-    fData->postProc.volume = fixedValue;
+    kData->postProc.volume = fixedValue;
 
 #ifndef BUILD_BRIDGE
     if (sendOsc)
-        fData->engine->osc_send_control_set_parameter_value(fData->id, PARAMETER_VOLUME, fixedValue);
+        kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_VOLUME, fixedValue);
 #else
     Q_UNUSED(sendOsc);
 #endif
 
     if (sendCallback)
-        fData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fData->id, PARAMETER_VOLUME, 0, fixedValue, nullptr);
+        kData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, PARAMETER_VOLUME, 0, fixedValue, nullptr);
 #ifndef BUILD_BRIDGE
-    else if (fData->hints & PLUGIN_IS_BRIDGE)
-        osc_send_control(&fData->osc.data, PARAMETER_VOLUME, fixedValue);
+    else if (fHints & PLUGIN_IS_BRIDGE)
+        osc_send_control(&kData->osc.data, PARAMETER_VOLUME, fixedValue);
 #endif
 }
 
@@ -484,20 +462,20 @@ void CarlaPlugin::setBalanceLeft(const float value, const bool sendOsc, const bo
 
     const float fixedValue = carla_fixValue<float>(-1.0f, 1.0f, value);
 
-    fData->postProc.balanceLeft = fixedValue;
+    kData->postProc.balanceLeft = fixedValue;
 
 #ifndef BUILD_BRIDGE
     if (sendOsc)
-        fData->engine->osc_send_control_set_parameter_value(fData->id, PARAMETER_BALANCE_LEFT, fixedValue);
+        kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_BALANCE_LEFT, fixedValue);
 #else
     Q_UNUSED(sendOsc);
 #endif
 
     if (sendCallback)
-        fData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fData->id, PARAMETER_BALANCE_LEFT, 0, fixedValue, nullptr);
+        kData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, PARAMETER_BALANCE_LEFT, 0, fixedValue, nullptr);
 #ifndef BUILD_BRIDGE
-    else if (fData->hints & PLUGIN_IS_BRIDGE)
-        osc_send_control(&fData->osc.data, PARAMETER_BALANCE_LEFT, fixedValue);
+    else if (fHints & PLUGIN_IS_BRIDGE)
+        osc_send_control(&kData->osc.data, PARAMETER_BALANCE_LEFT, fixedValue);
 #endif
 }
 
@@ -507,20 +485,20 @@ void CarlaPlugin::setBalanceRight(const float value, const bool sendOsc, const b
 
     const float fixedValue = carla_fixValue<float>(-1.0f, 1.0f, value);
 
-    fData->postProc.balanceRight = fixedValue;
+    kData->postProc.balanceRight = fixedValue;
 
 #ifndef BUILD_BRIDGE
     if (sendOsc)
-        fData->engine->osc_send_control_set_parameter_value(fData->id, PARAMETER_BALANCE_RIGHT, fixedValue);
+        kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_BALANCE_RIGHT, fixedValue);
 #else
     Q_UNUSED(sendOsc);
 #endif
 
     if (sendCallback)
-        fData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fData->id, PARAMETER_BALANCE_RIGHT, 0, fixedValue, nullptr);
+        kData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, PARAMETER_BALANCE_RIGHT, 0, fixedValue, nullptr);
 #ifndef BUILD_BRIDGE
-    else if (fData->hints & PLUGIN_IS_BRIDGE)
-        osc_send_control(&fData->osc.data, PARAMETER_BALANCE_RIGHT, fixedValue);
+    else if (fHints & PLUGIN_IS_BRIDGE)
+        osc_send_control(&kData->osc.data, PARAMETER_BALANCE_RIGHT, fixedValue);
 #endif
 }
 
@@ -530,20 +508,20 @@ void CarlaPlugin::setPanning(const float value, const bool sendOsc, const bool s
 
     const float fixedValue = carla_fixValue<float>(-1.0f, 1.0f, value);
 
-    fData->postProc.panning = fixedValue;
+    kData->postProc.panning = fixedValue;
 
 #ifndef BUILD_BRIDGE
     if (sendOsc)
-        fData->engine->osc_send_control_set_parameter_value(fData->id, PARAMETER_PANNING, fixedValue);
+        kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_PANNING, fixedValue);
 #else
     Q_UNUSED(sendOsc);
 #endif
 
     if (sendCallback)
-        fData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fData->id, PARAMETER_PANNING, 0, fixedValue, nullptr);
+        kData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, PARAMETER_PANNING, 0, fixedValue, nullptr);
 #ifndef BUILD_BRIDGE
-    else if (fData->hints & PLUGIN_IS_BRIDGE)
-        osc_send_control(&fData->osc.data, PARAMETER_PANNING, fixedValue);
+    else if (fHints & PLUGIN_IS_BRIDGE)
+        osc_send_control(&kData->osc.data, PARAMETER_PANNING, fixedValue);
 #endif
 }
 
@@ -559,20 +537,20 @@ int CarlaPlugin::setOscBridgeInfo(const PluginBridgeInfoType, const int, const l
 
 void CarlaPlugin::setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback)
 {
-    CARLA_ASSERT(parameterId < fData->param.count);
+    CARLA_ASSERT(parameterId < kData->param.count);
 
     if (sendGui)
         uiParameterChange(parameterId, value);
 
 #ifndef BUILD_BRIDGE
     if (sendOsc)
-        fData->engine->osc_send_control_set_parameter_value(fData->id, parameterId, value);
+        kData->engine->osc_send_control_set_parameter_value(fId, parameterId, value);
 #else
     Q_UNUSED(sendOsc);
 #endif
 
     if (sendCallback)
-        fData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fData->id, parameterId, 0, value, nullptr);
+        kData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, parameterId, 0, value, nullptr);
 }
 
 void CarlaPlugin::setParameterValueByRIndex(const int32_t rindex, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback)
@@ -596,53 +574,53 @@ void CarlaPlugin::setParameterValueByRIndex(const int32_t rindex, const float va
     if (rindex == PARAMETER_PANNING)
         return setPanning(value, sendOsc, sendCallback);
 
-    for (uint32_t i=0; i < fData->param.count; i++)
+    for (uint32_t i=0; i < kData->param.count; i++)
     {
-        if (fData->param.data[i].rindex == rindex)
+        if (kData->param.data[i].rindex == rindex)
             return setParameterValue(i, value, sendGui, sendOsc, sendCallback);
     }
 }
 
 void CarlaPlugin::setParameterMidiChannel(const uint32_t parameterId, uint8_t channel, const bool sendOsc, const bool sendCallback)
 {
-    CARLA_ASSERT(parameterId < fData->param.count);
+    CARLA_ASSERT(parameterId < kData->param.count);
     CARLA_ASSERT(channel < MAX_MIDI_CHANNELS);
 
     if (channel >= MAX_MIDI_CHANNELS)
         channel = MAX_MIDI_CHANNELS;
 
-    fData->param.data[parameterId].midiChannel = channel;
+    kData->param.data[parameterId].midiChannel = channel;
 
 #ifndef BUILD_BRIDGE
     if (sendOsc)
-        fData->engine->osc_send_control_set_parameter_midi_channel(fData->id, parameterId, channel);
+        kData->engine->osc_send_control_set_parameter_midi_channel(fId, parameterId, channel);
 #else
     Q_UNUSED(sendOsc);
 #endif
 
     if (sendCallback)
-        fData->engine->callback(CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED, fData->id, parameterId, channel, 0.0f, nullptr);
+        kData->engine->callback(CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED, fId, parameterId, channel, 0.0f, nullptr);
 }
 
 void CarlaPlugin::setParameterMidiCC(const uint32_t parameterId, int16_t cc, const bool sendOsc, const bool sendCallback)
 {
-    CARLA_ASSERT(parameterId < fData->param.count);
+    CARLA_ASSERT(parameterId < kData->param.count);
     CARLA_ASSERT(cc >= -1);
 
     if (cc < -1 || cc > 0x5F)
         cc = -1;
 
-    fData->param.data[parameterId].midiCC = cc;
+    kData->param.data[parameterId].midiCC = cc;
 
 #ifndef BUILD_BRIDGE
     if (sendOsc)
-        fData->engine->osc_send_control_set_parameter_midi_cc(fData->id, parameterId, cc);
+        kData->engine->osc_send_control_set_parameter_midi_cc(fId, parameterId, cc);
 #else
     Q_UNUSED(sendOsc);
 #endif
 
     if (sendCallback)
-        fData->engine->callback(CALLBACK_PARAMETER_MIDI_CC_CHANGED, fData->id, parameterId, cc, 0.0f, nullptr);
+        kData->engine->callback(CALLBACK_PARAMETER_MIDI_CC_CHANGED, fId, parameterId, cc, 0.0f, nullptr);
 }
 
 void CarlaPlugin::setCustomData(const char* const type, const char* const key, const char* const value, const bool sendGui)
@@ -675,12 +653,12 @@ void CarlaPlugin::setCustomData(const char* const type, const char* const key, c
     {
 #if 0
         // Check if we already have this key
-        for (size_t i=0; i < fData->custom.count(); i++)
+        for (size_t i=0; i < kData->custom.count(); i++)
         {
             if (strcmp(custom[i].key, key) == 0)
             {
-                free((void*)custom[i].value);
-                custom[i].value = strdup(value);
+                delete[] custom[i].value;
+                custom[i].value = carla_strdup(value);
                 return;
             }
         }
@@ -688,10 +666,10 @@ void CarlaPlugin::setCustomData(const char* const type, const char* const key, c
 
         // Otherwise store it
         CustomData newData;
-        newData.type  = strdup(type);
-        newData.key   = strdup(key);
-        newData.value = strdup(value);
-        fData->custom.append(newData);
+        newData.type  = carla_strdup(type);
+        newData.key   = carla_strdup(key);
+        newData.value = carla_strdup(value);
+        kData->custom.append(newData);
     }
 }
 
@@ -706,14 +684,14 @@ void CarlaPlugin::setChunkData(const char* const stringData)
 
 void CarlaPlugin::setProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback, const bool)
 {
-    CARLA_ASSERT(index >= -1 && index < static_cast<int32_t>(fData->prog.count));
+    CARLA_ASSERT(index >= -1 && index < static_cast<int32_t>(kData->prog.count));
 
-    if (index > static_cast<int32_t>(fData->prog.count))
+    if (index > static_cast<int32_t>(kData->prog.count))
         return;
 
-    const int32_t fixedIndex = carla_fixValue<int32_t>(-1, fData->prog.count, index);
+    const int32_t fixedIndex = carla_fixValue<int32_t>(-1, kData->prog.count, index);
 
-    fData->prog.current = fixedIndex;
+    kData->prog.current = fixedIndex;
 
     // Change default parameter values
     if (fixedIndex >= 0)
@@ -721,17 +699,17 @@ void CarlaPlugin::setProgram(const int32_t index, const bool sendGui, const bool
         if (sendGui)
             uiProgramChange(fixedIndex);
 
-        for (uint32_t i=0; i < fData->param.count; i++)
+        for (uint32_t i=0; i < kData->param.count; i++)
         {
             // FIXME?
-            fData->param.ranges[i].def = getParameterValue(i);
-            fData->param.ranges[i].fixDefault();
+            kData->param.ranges[i].def = getParameterValue(i);
+            kData->param.ranges[i].fixDefault();
 
             if (sendOsc)
             {
 #ifndef BUILD_BRIDGE
-                fData->engine->osc_send_control_set_default_value(fData->id, i, fData->param.ranges[i].def);
-                fData->engine->osc_send_control_set_parameter_value(fData->id, i, fData->param.ranges[i].def);
+                kData->engine->osc_send_control_set_default_value(fId, i, kData->param.ranges[i].def);
+                kData->engine->osc_send_control_set_parameter_value(fId, i, kData->param.ranges[i].def);
 #endif
             }
         }
@@ -739,23 +717,23 @@ void CarlaPlugin::setProgram(const int32_t index, const bool sendGui, const bool
 
 #ifndef BUILD_BRIDGE
     if (sendOsc)
-        fData->engine->osc_send_control_set_program(fData->id, fixedIndex);
+        kData->engine->osc_send_control_set_program(fId, fixedIndex);
 #endif
 
     if (sendCallback)
-        fData->engine->callback(CALLBACK_PROGRAM_CHANGED, fData->id, fixedIndex, 0, 0.0f, nullptr);
+        kData->engine->callback(CALLBACK_PROGRAM_CHANGED, fId, fixedIndex, 0, 0.0f, nullptr);
 }
 
 void CarlaPlugin::setMidiProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback, const bool)
 {
-    CARLA_ASSERT(index >= -1 && index < static_cast<int32_t>(fData->midiprog.count));
+    CARLA_ASSERT(index >= -1 && index < static_cast<int32_t>(kData->midiprog.count));
 
-    if (index > static_cast<int32_t>(fData->midiprog.count))
+    if (index > static_cast<int32_t>(kData->midiprog.count))
         return;
 
-    const int32_t fixedIndex = carla_fixValue<int32_t>(-1, fData->midiprog.count, index);
+    const int32_t fixedIndex = carla_fixValue<int32_t>(-1, kData->midiprog.count, index);
 
-    fData->midiprog.current = fixedIndex;
+    kData->midiprog.current = fixedIndex;
 
     if (fixedIndex >= 0)
     {
@@ -767,17 +745,17 @@ void CarlaPlugin::setMidiProgram(int32_t index, const bool sendGui, const bool s
         if (type() != PLUGIN_GIG && type() != PLUGIN_SF2 && type() != PLUGIN_SFZ)
 #endif
         {
-            for (uint32_t i=0; i < fData->param.count; i++)
+            for (uint32_t i=0; i < kData->param.count; i++)
             {
                 // FIXME?
-                fData->param.ranges[i].def = getParameterValue(i);
-                fData->param.ranges[i].fixDefault();
+                kData->param.ranges[i].def = getParameterValue(i);
+                kData->param.ranges[i].fixDefault();
 
                 if (sendOsc)
                 {
 #ifndef BUILD_BRIDGE
-                    fData->engine->osc_send_control_set_default_value(fData->id, i, fData->param.ranges[i].def);
-                    fData->engine->osc_send_control_set_parameter_value(fData->id, i, fData->param.ranges[i].def);
+                    kData->engine->osc_send_control_set_default_value(fId, i, kData->param.ranges[i].def);
+                    kData->engine->osc_send_control_set_parameter_value(fId, i, kData->param.ranges[i].def);
 #endif
                 }
             }
@@ -786,18 +764,18 @@ void CarlaPlugin::setMidiProgram(int32_t index, const bool sendGui, const bool s
 
 #ifndef BUILD_BRIDGE
     if (sendOsc)
-        fData->engine->osc_send_control_set_midi_program(fData->id, fixedIndex);
+        kData->engine->osc_send_control_set_midi_program(fId, fixedIndex);
 #endif
 
     if (sendCallback)
-        fData->engine->callback(CALLBACK_MIDI_PROGRAM_CHANGED, fData->id, fixedIndex, 0, 0.0f, nullptr);
+        kData->engine->callback(CALLBACK_MIDI_PROGRAM_CHANGED, fId, fixedIndex, 0, 0.0f, nullptr);
 }
 
 void CarlaPlugin::setMidiProgramById(const uint32_t bank, const uint32_t program, const bool sendGui, const bool sendOsc, const bool sendCallback, const bool block)
 {
-    for (uint32_t i=0; i < fData->midiprog.count; i++)
+    for (uint32_t i=0; i < kData->midiprog.count; i++)
     {
-        if (fData->midiprog.data[i].bank == bank && fData->midiprog.data[i].program == program)
+        if (kData->midiprog.data[i].bank == bank && kData->midiprog.data[i].program == program)
             return setMidiProgram(i, sendGui, sendOsc, sendCallback, block);
     }
 }
@@ -812,18 +790,18 @@ void CarlaPlugin::showGui(const bool yesNo)
 
 void CarlaPlugin::idleGui()
 {
-    if (! fData->enabled)
+    if (! fEnabled)
         return;
 
-    if (fData->hints & PLUGIN_USES_SINGLE_THREAD)
+    if (fHints & PLUGIN_USES_SINGLE_THREAD)
     {
         // Process postponed events
         postRtEventsRun();
 
         // Update parameter outputs
-        for (uint32_t i=0; i < fData->param.count; i++)
+        for (uint32_t i=0; i < kData->param.count; i++)
         {
-            if (fData->param.data[i].type == PARAMETER_OUTPUT)
+            if (kData->param.data[i].type == PARAMETER_OUTPUT)
                 uiParameterChange(i, getParameterValue(i));
         }
     }
@@ -862,23 +840,23 @@ void CarlaPlugin::sampleRateChanged(const double)
 void CarlaPlugin::recreateLatencyBuffers()
 {
 #if 0
-    if (fData->latencyBuffers)
+    if (kData->latencyBuffers)
     {
-        for (uint32_t i=0; i < fData->audioIn.count; i++)
-            delete[] fData->latencyBuffers[i];
+        for (uint32_t i=0; i < kData->audioIn.count; i++)
+            delete[] kData->latencyBuffers[i];
 
-        delete[] fData->latencyBuffers;
+        delete[] kData->latencyBuffers;
     }
 
-    if (fData->audioIn.count > 0 && fData->latency > 0)
+    if (kData->audioIn.count > 0 && kData->latency > 0)
     {
-        fData->latencyBuffers = new float*[fData->audioIn.count];
+        kData->latencyBuffers = new float*[kData->audioIn.count];
 
-        for (uint32_t i=0; i < fData->audioIn.count; i++)
-            fData->latencyBuffers[i] = new float[fData->latency];
+        for (uint32_t i=0; i < kData->audioIn.count; i++)
+            kData->latencyBuffers[i] = new float[kData->latency];
     }
     else
-        fData->latencyBuffers = nullptr;
+        kData->latencyBuffers = nullptr;
 #endif
 }
 
@@ -888,15 +866,15 @@ void CarlaPlugin::recreateLatencyBuffers()
 void CarlaPlugin::registerToOscClient()
 {
 #ifdef BUILD_BRIDGE
-    if (! fData->engine->isOscBridgeRegistered())
+    if (! kData->engine->isOscBridgeRegistered())
         return;
 #else
-    if (! fData->engine->isOscControlRegistered())
+    if (! kData->engine->isOscControlRegistered())
         return;
 #endif
 
 #ifndef BUILD_BRIDGE
-    fData->engine->osc_send_control_add_plugin_start(fData->id, fData->name);
+    kData->engine->osc_send_control_add_plugin_start(fId, fName);
 #endif
 
     // Base data
@@ -911,9 +889,9 @@ void CarlaPlugin::registerToOscClient()
         getCopyright(bufCopyright);
 
 #ifdef BUILD_BRIDGE
-        fData->engine->osc_send_bridge_plugin_info(category(), fData->hints, bufName, bufLabel, bufMaker, bufCopyright, uniqueId());
+        kData->engine->osc_send_bridge_plugin_info(category(), fHints, bufName, bufLabel, bufMaker, bufCopyright, uniqueId());
 #else
-        fData->engine->osc_send_control_set_plugin_data(fData->id, type(), category(), fData->hints, bufName, bufLabel, bufMaker, bufCopyright, uniqueId());
+        kData->engine->osc_send_control_set_plugin_data(fId, type(), category(), fHints, bufName, bufLabel, bufMaker, bufCopyright, uniqueId());
 #endif
     }
 
@@ -923,101 +901,101 @@ void CarlaPlugin::registerToOscClient()
         getParameterCountInfo(&cIns, &cOuts, &cTotals);
 
 #ifdef BUILD_BRIDGE
-        fData->engine->osc_send_bridge_audio_count(audioInCount(), audioOutCount(), audioInCount() + audioOutCount());
-        fData->engine->osc_send_bridge_midi_count(midiInCount(), midiOutCount(), midiInCount() + midiOutCount());
-        fData->engine->osc_send_bridge_parameter_count(cIns, cOuts, cTotals);
+        kData->engine->osc_send_bridge_audio_count(audioInCount(), audioOutCount(), audioInCount() + audioOutCount());
+        kData->engine->osc_send_bridge_midi_count(midiInCount(), midiOutCount(), midiInCount() + midiOutCount());
+        kData->engine->osc_send_bridge_parameter_count(cIns, cOuts, cTotals);
 #else
-        fData->engine->osc_send_control_set_plugin_ports(fData->id, audioInCount(), audioOutCount(), midiInCount(), midiOutCount(), cIns, cOuts, cTotals);
+        kData->engine->osc_send_control_set_plugin_ports(fId, audioInCount(), audioOutCount(), midiInCount(), midiOutCount(), cIns, cOuts, cTotals);
 #endif
     }
 
     // Plugin Parameters
-    if (fData->param.count > 0 && fData->param.count < fData->engine->getOptions().maxParameters)
+    if (kData->param.count > 0 && kData->param.count < kData->engine->getOptions().maxParameters)
     {
         char bufName[STR_MAX], bufUnit[STR_MAX];
 
-        for (uint32_t i=0; i < fData->param.count; i++)
+        for (uint32_t i=0; i < kData->param.count; i++)
         {
             getParameterName(i, bufName);
             getParameterUnit(i, bufUnit);
 
-            const ParameterData& paramData(fData->param.data[i]);
-            const ParameterRanges& paramRanges(fData->param.ranges[i]);
+            const ParameterData& paramData(kData->param.data[i]);
+            const ParameterRanges& paramRanges(kData->param.ranges[i]);
 
 #ifdef BUILD_BRIDGE
-            fData->engine->osc_send_bridge_parameter_info(i, bufName, bufUnit);
-            fData->engine->osc_send_bridge_parameter_data(i, paramData.type, paramData.rindex, paramData.hints, paramData.midiChannel, paramData.midiCC);
-            fData->engine->osc_send_bridge_parameter_ranges(i, paramRanges.def, paramRanges.min, paramRanges.max, paramRanges.step, paramRanges.stepSmall, paramRanges.stepLarge);
-            fData->engine->osc_send_bridge_set_parameter_value(i, getParameterValue(i));
+            kData->engine->osc_send_bridge_parameter_info(i, bufName, bufUnit);
+            kData->engine->osc_send_bridge_parameter_data(i, paramData.type, paramData.rindex, paramData.hints, paramData.midiChannel, paramData.midiCC);
+            kData->engine->osc_send_bridge_parameter_ranges(i, paramRanges.def, paramRanges.min, paramRanges.max, paramRanges.step, paramRanges.stepSmall, paramRanges.stepLarge);
+            kData->engine->osc_send_bridge_set_parameter_value(i, getParameterValue(i));
 #else
-            fData->engine->osc_send_control_set_parameter_data(fData->id, i, paramData.type, paramData.hints, bufName, bufUnit, getParameterValue(i));
-            fData->engine->osc_send_control_set_parameter_ranges(fData->id, i, paramRanges.min, paramRanges.max, paramRanges.def, paramRanges.step, paramRanges.stepSmall, paramRanges.stepLarge);
-            fData->engine->osc_send_control_set_parameter_midi_cc(fData->id, i, paramData.midiCC);
-            fData->engine->osc_send_control_set_parameter_midi_channel(fData->id, i, paramData.midiChannel);
-            fData->engine->osc_send_control_set_parameter_value(fData->id, i, getParameterValue(i));
+            kData->engine->osc_send_control_set_parameter_data(fId, i, paramData.type, paramData.hints, bufName, bufUnit, getParameterValue(i));
+            kData->engine->osc_send_control_set_parameter_ranges(fId, i, paramRanges.min, paramRanges.max, paramRanges.def, paramRanges.step, paramRanges.stepSmall, paramRanges.stepLarge);
+            kData->engine->osc_send_control_set_parameter_midi_cc(fId, i, paramData.midiCC);
+            kData->engine->osc_send_control_set_parameter_midi_channel(fId, i, paramData.midiChannel);
+            kData->engine->osc_send_control_set_parameter_value(fId, i, getParameterValue(i));
 #endif
         }
     }
 
     // Programs
-    if (fData->prog.count > 0)
+    if (kData->prog.count > 0)
     {
 #ifdef BUILD_BRIDGE
-        fData->engine->osc_send_bridge_program_count(fData->prog.count);
+        kData->engine->osc_send_bridge_program_count(kData->prog.count);
 
-        for (uint32_t i=0; i < fData->prog.count; i++)
-            fData->engine->osc_send_bridge_program_info(i, fData->prog.names[i]);
+        for (uint32_t i=0; i < kData->prog.count; i++)
+            kData->engine->osc_send_bridge_program_info(i, kData->prog.names[i]);
 
-        fData->engine->osc_send_bridge_set_program(fData->prog.current);
+        kData->engine->osc_send_bridge_set_program(kData->prog.current);
 #else
-        fData->engine->osc_send_control_set_program_count(fData->id, fData->prog.count);
+        kData->engine->osc_send_control_set_program_count(fId, kData->prog.count);
 
-        for (uint32_t i=0; i < fData->prog.count; i++)
-            fData->engine->osc_send_control_set_program_name(fData->id, i, fData->prog.names[i]);
+        for (uint32_t i=0; i < kData->prog.count; i++)
+            kData->engine->osc_send_control_set_program_name(fId, i, kData->prog.names[i]);
 
-        fData->engine->osc_send_control_set_program(fData->id, fData->prog.current);
+        kData->engine->osc_send_control_set_program(fId, kData->prog.current);
 #endif
     }
 
     // MIDI Programs
-    if (fData->midiprog.count > 0)
+    if (kData->midiprog.count > 0)
     {
 #ifdef BUILD_BRIDGE
-        fData->engine->osc_send_bridge_midi_program_count(fData->midiprog.count);
+        kData->engine->osc_send_bridge_midi_program_count(kData->midiprog.count);
 
-        for (uint32_t i=0; i < fData->midiprog.count; i++)
+        for (uint32_t i=0; i < kData->midiprog.count; i++)
         {
-            const MidiProgramData& mpData(fData->midiprog.data[i]);
+            const MidiProgramData& mpData(kData->midiprog.data[i]);
 
-            fData->engine->osc_send_bridge_midi_program_info(i, mpData.bank, mpData.program, mpData.name);
+            kData->engine->osc_send_bridge_midi_program_info(i, mpData.bank, mpData.program, mpData.name);
         }
 
-        fData->engine->osc_send_bridge_set_midi_program(fData->midiprog.current);
+        kData->engine->osc_send_bridge_set_midi_program(kData->midiprog.current);
 #else
-        fData->engine->osc_send_control_set_midi_program_count(fData->id, fData->midiprog.count);
+        kData->engine->osc_send_control_set_midi_program_count(fId, kData->midiprog.count);
 
-        for (uint32_t i=0; i < fData->midiprog.count; i++)
+        for (uint32_t i=0; i < kData->midiprog.count; i++)
         {
-            const MidiProgramData& mpData(fData->midiprog.data[i]);
+            const MidiProgramData& mpData(kData->midiprog.data[i]);
 
-            fData->engine->osc_send_control_set_midi_program_data(fData->id, i, mpData.bank, mpData.program, mpData.name);
+            kData->engine->osc_send_control_set_midi_program_data(fId, i, mpData.bank, mpData.program, mpData.name);
         }
 
-        fData->engine->osc_send_control_set_midi_program(fData->id, fData->midiprog.current);
+        kData->engine->osc_send_control_set_midi_program(fId, kData->midiprog.current);
 #endif
     }
 
 #ifndef BUILD_BRIDGE
-    fData->engine->osc_send_control_add_plugin_end(fData->id);
+    kData->engine->osc_send_control_add_plugin_end(fId);
 
     // Internal Parameters
     {
-        fData->engine->osc_send_control_set_parameter_value(fData->id, PARAMETER_ACTIVE, fData->active ? 1.0 : 0.0);
-        fData->engine->osc_send_control_set_parameter_value(fData->id, PARAMETER_DRYWET, fData->postProc.dryWet);
-        fData->engine->osc_send_control_set_parameter_value(fData->id, PARAMETER_VOLUME, fData->postProc.volume);
-        fData->engine->osc_send_control_set_parameter_value(fData->id, PARAMETER_BALANCE_LEFT, fData->postProc.balanceLeft);
-        fData->engine->osc_send_control_set_parameter_value(fData->id, PARAMETER_BALANCE_RIGHT, fData->postProc.balanceRight);
-        fData->engine->osc_send_control_set_parameter_value(fData->id, PARAMETER_PANNING, fData->postProc.panning);
+        kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_ACTIVE, kData->active ? 1.0 : 0.0);
+        kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_DRYWET, kData->postProc.dryWet);
+        kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_VOLUME, kData->postProc.volume);
+        kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_BALANCE_LEFT, kData->postProc.balanceLeft);
+        kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_BALANCE_RIGHT, kData->postProc.balanceRight);
+        kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_PANNING, kData->postProc.panning);
     }
 #endif
 }
@@ -1031,31 +1009,31 @@ void CarlaPlugin::updateOscData(const lo_address& source, const char* const url)
     const char* port;
     const int proto = lo_address_get_protocol(source);
 
-    fData->osc.data.free();
+    kData->osc.data.free();
 
     host = lo_address_get_hostname(source);
     port = lo_address_get_port(source);
-    fData->osc.data.source = lo_address_new_with_proto(proto, host, port);
+    kData->osc.data.source = lo_address_new_with_proto(proto, host, port);
     qWarning("CarlaPlugin::updateOscData() - source: host \"%s\", port \"%s\"", host, port);
 
     host = lo_url_get_hostname(url);
     port = lo_url_get_port(url);
-    fData->osc.data.path   = lo_url_get_path(url);
-    fData->osc.data.target = lo_address_new_with_proto(proto, host, port);
-    qWarning("CarlaPlugin::updateOscData() - target: host \"%s\", port \"%s\", path \"%s\"", host, port, fData->osc.data.path);
+    kData->osc.data.path   = lo_url_get_path(url);
+    kData->osc.data.target = lo_address_new_with_proto(proto, host, port);
+    qWarning("CarlaPlugin::updateOscData() - target: host \"%s\", port \"%s\", path \"%s\"", host, port, kData->osc.data.path);
 
     free((void*)host);
     free((void*)port);
 
 #ifndef BUILD_BRIDGE
-    if (fData->hints & PLUGIN_IS_BRIDGE)
+    if (fHints & PLUGIN_IS_BRIDGE)
         return;
 #endif
 
-    osc_send_sample_rate(&fData->osc.data, fData->engine->getSampleRate());
+    osc_send_sample_rate(&kData->osc.data, kData->engine->getSampleRate());
 
 #if 0
-    for (size_t i=0; i < fData->custom.count(); i++)
+    for (size_t i=0; i < kData->custom.count(); i++)
     {
         // TODO
         //if (m_type == PLUGIN_LV2)
@@ -1066,28 +1044,28 @@ void CarlaPlugin::updateOscData(const lo_address& source, const char* const url)
     }
 #endif
 
-    if (fData->prog.current >= 0)
-        osc_send_program(&fData->osc.data, fData->prog.current);
+    if (kData->prog.current >= 0)
+        osc_send_program(&kData->osc.data, kData->prog.current);
 
-    if (fData->midiprog.current >= 0)
+    if (kData->midiprog.current >= 0)
     {
-        const MidiProgramData& curMidiProg(fData->midiprog.getCurrent());
+        const MidiProgramData& curMidiProg(kData->midiprog.getCurrent());
 
         if (type() == PLUGIN_DSSI)
-            osc_send_program(&fData->osc.data, curMidiProg.bank, curMidiProg.program);
+            osc_send_program(&kData->osc.data, curMidiProg.bank, curMidiProg.program);
         else
-            osc_send_midi_program(&fData->osc.data, curMidiProg.bank, curMidiProg.program);
+            osc_send_midi_program(&kData->osc.data, curMidiProg.bank, curMidiProg.program);
     }
 
-    for (uint32_t i=0; i < fData->param.count; i++)
-        osc_send_control(&fData->osc.data, fData->param.data[i].rindex, getParameterValue(i));
+    for (uint32_t i=0; i < kData->param.count; i++)
+        osc_send_control(&kData->osc.data, kData->param.data[i].rindex, getParameterValue(i));
 
     qWarning("CarlaPlugin::updateOscData() - done");
 }
 
 void CarlaPlugin::freeOscData()
 {
-    fData->osc.data.free();
+    kData->osc.data.free();
 }
 
 bool CarlaPlugin::waitForOscGuiShow()
@@ -1095,19 +1073,19 @@ bool CarlaPlugin::waitForOscGuiShow()
     qWarning("CarlaPlugin::waitForOscGuiShow()");
 
     // wait for UI 'update' call
-    for (uint i=0, oscUiTimeout = fData->engine->getOptions().oscUiTimeout; i < oscUiTimeout; i++)
+    for (uint i=0, oscUiTimeout = kData->engine->getOptions().oscUiTimeout; i < oscUiTimeout; i++)
     {
-        if (fData->osc.data.target)
+        if (kData->osc.data.target)
         {
             qWarning("CarlaPlugin::waitForOscGuiShow() - got response, asking UI to show itself now");
-            osc_send_show(&fData->osc.data);
+            osc_send_show(&kData->osc.data);
             return true;
         }
         else
             carla_msleep(100);
     }
 
-    qWarning("CarlaPlugin::waitForOscGuiShow() - Timeout while waiting for UI to respond (waited %u msecs)", fData->engine->getOptions().oscUiTimeout);
+    qWarning("CarlaPlugin::waitForOscGuiShow() - Timeout while waiting for UI to respond (waited %u msecs)", kData->engine->getOptions().oscUiTimeout);
     return false;
 }
 
@@ -1120,7 +1098,7 @@ void CarlaPlugin::sendMidiSingleNote(const uint8_t channel, const uint8_t note, 
     CARLA_ASSERT(note < MAX_MIDI_NOTE);
     CARLA_ASSERT(velo < MAX_MIDI_VALUE);
 
-    if (! fData->active)
+    if (! kData->active)
         return;
 
     ExternalMidiNote extNote;
@@ -1128,9 +1106,9 @@ void CarlaPlugin::sendMidiSingleNote(const uint8_t channel, const uint8_t note, 
     extNote.note    = note;
     extNote.velo    = velo;
 
-    fData->extNotes.mutex.lock();
-    fData->extNotes.append(extNote);
-    fData->extNotes.mutex.unlock();
+    kData->extNotes.mutex.lock();
+    kData->extNotes.append(extNote);
+    kData->extNotes.mutex.unlock();
 
     if (sendGui)
     {
@@ -1144,33 +1122,33 @@ void CarlaPlugin::sendMidiSingleNote(const uint8_t channel, const uint8_t note, 
     if (sendOsc)
     {
         if (velo > 0)
-            fData->engine->osc_send_control_note_on(fData->id, channel, note, velo);
+            kData->engine->osc_send_control_note_on(fId, channel, note, velo);
         else
-            fData->engine->osc_send_control_note_off(fData->id, channel, note);
+            kData->engine->osc_send_control_note_off(fId, channel, note);
     }
 #else
     Q_UNUSED(sendOsc);
 #endif
 
     if (sendCallback)
-        fData->engine->callback(velo ? CALLBACK_NOTE_ON : CALLBACK_NOTE_OFF, fData->id, channel, note, velo, nullptr);
+        kData->engine->callback(velo ? CALLBACK_NOTE_ON : CALLBACK_NOTE_OFF, fId, channel, note, velo, nullptr);
 }
 
 void CarlaPlugin::sendMidiAllNotesOff()
 {
     // TODO
 #if 0
-    fData->extNotes.mutex.lock();
-    fData->postRtEvents.mutex.lock();
+    kData->extNotes.mutex.lock();
+    kData->postRtEvents.mutex.lock();
 
     ExternalMidiNote extNote;
-    extNote.channel = fData->ctrlInChannel;
+    extNote.channel = kData->ctrlInChannel;
     extNote.note    = 0;
     extNote.velo    = 0;
 
     PluginPostRtEvent postEvent;
     postEvent.type   = kPluginPostRtEventNoteOff;
-    postEvent.value1 = fData->ctrlInChannel;
+    postEvent.value1 = kData->ctrlInChannel;
     postEvent.value2 = 0;
     postEvent.value3 = 0.0;
 
@@ -1179,12 +1157,12 @@ void CarlaPlugin::sendMidiAllNotesOff()
         extNote.note     = i;
         postEvent.value2 = i;
 
-        fData->extNotes.append(extNote);
-        fData->postRtEvents.appendNonRT(event);
+        kData->extNotes.append(extNote);
+        kData->postRtEvents.appendNonRT(event);
     }
 
-    fData->postRtEvents.mutex.unlock();
-    fData->extNotes.mutex.unlock();
+    kData->postRtEvents.mutex.unlock();
+    kData->extNotes.mutex.unlock();
 #endif
 }
 
@@ -1199,7 +1177,7 @@ void CarlaPlugin::postponeRtEvent(const PluginPostRtEventType type, const int32_
     event.value2 = value2;
     event.value3 = value3;
 
-    fData->postRtEvents.appendRT(event);
+    kData->postRtEvents.appendRT(event);
 }
 
 void CarlaPlugin::postRtEventsRun()
@@ -1208,16 +1186,16 @@ void CarlaPlugin::postRtEventsRun()
     PluginPostRtEvent listData[MAX_RT_EVENTS];
 
     // Make a safe copy of events while clearing them
-    fData->postRtEvents.mutex.lock();
+    kData->postRtEvents.mutex.lock();
 
-    while (! fData->postRtEvents.data.isEmpty())
+    while (! kData->postRtEvents.data.isEmpty())
     {
-        PluginPostRtEvent& event = fData->postRtEvents.data.getFirst(true);
+        PluginPostRtEvent& event = kData->postRtEvents.data.getFirst(true);
         listData[k++] = event;
         //std::memcpy(&listData[k++], &event, sizeof(PluginPostRtEvent));
     }
 
-    fData->postRtEvents.mutex.unlock();
+    kData->postRtEvents.mutex.unlock();
 
     // Handle events now
     for (unsigned short i=0; i < k; i++)
@@ -1230,7 +1208,7 @@ void CarlaPlugin::postRtEventsRun()
             break;
 
         case kPluginPostRtEventDebug:
-            fData->engine->callback(CALLBACK_DEBUG, fData->id, event.value1, event.value2, event.value3, nullptr);
+            kData->engine->callback(CALLBACK_DEBUG, fId, event.value1, event.value2, event.value3, nullptr);
             break;
 
         case kPluginPostRtEventParameterChange:
@@ -1240,12 +1218,12 @@ void CarlaPlugin::postRtEventsRun()
 
 #ifndef BUILD_BRIDGE
             // Update OSC control client
-            if (fData->engine->isOscControlRegistered())
-                fData->engine->osc_send_control_set_parameter_value(fData->id, event.value1, event.value3);
+            if (kData->engine->isOscControlRegistered())
+                kData->engine->osc_send_control_set_parameter_value(fId, event.value1, event.value3);
 #endif
 
             // Update Host
-            fData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fData->id, event.value1, 0, event.value3, nullptr);
+            kData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, event.value1, 0, event.value3, nullptr);
             break;
 
         case kPluginPostRtEventProgramChange:
@@ -1255,17 +1233,17 @@ void CarlaPlugin::postRtEventsRun()
 
 #ifndef BUILD_BRIDGE
             // Update OSC control client
-            if (fData->engine->isOscControlRegistered())
+            if (kData->engine->isOscControlRegistered())
             {
-                fData->engine->osc_send_control_set_program(fData->id, event.value1);
+                kData->engine->osc_send_control_set_program(fId, event.value1);
 
-                for (uint32_t j=0; j < fData->param.count; j++)
-                    fData->engine->osc_send_control_set_default_value(fData->id, j, fData->param.ranges[j].def);
+                for (uint32_t j=0; j < kData->param.count; j++)
+                    kData->engine->osc_send_control_set_default_value(fId, j, kData->param.ranges[j].def);
             }
 #endif
 
             // Update Host
-            fData->engine->callback(CALLBACK_PROGRAM_CHANGED, fData->id, event.value1, 0, 0.0, nullptr);
+            kData->engine->callback(CALLBACK_PROGRAM_CHANGED, fId, event.value1, 0, 0.0, nullptr);
             break;
 
         case kPluginPostRtEventMidiProgramChange:
@@ -1275,17 +1253,17 @@ void CarlaPlugin::postRtEventsRun()
 
 #ifndef BUILD_BRIDGE
             // Update OSC control client
-            if (fData->engine->isOscControlRegistered())
+            if (kData->engine->isOscControlRegistered())
             {
-                fData->engine->osc_send_control_set_midi_program(fData->id, event.value1);
+                kData->engine->osc_send_control_set_midi_program(fId, event.value1);
 
-                for (uint32_t j=0; j < fData->param.count; j++)
-                    fData->engine->osc_send_control_set_default_value(fData->id, j, fData->param.ranges[j].def);
+                for (uint32_t j=0; j < kData->param.count; j++)
+                    kData->engine->osc_send_control_set_default_value(fId, j, kData->param.ranges[j].def);
             }
 #endif
 
             // Update Host
-            fData->engine->callback(CALLBACK_MIDI_PROGRAM_CHANGED, fData->id, event.value1, 0, 0.0, nullptr);
+            kData->engine->callback(CALLBACK_MIDI_PROGRAM_CHANGED, fId, event.value1, 0, 0.0, nullptr);
             break;
 
         case kPluginPostRtEventNoteOn:
@@ -1294,12 +1272,12 @@ void CarlaPlugin::postRtEventsRun()
 
 #ifndef BUILD_BRIDGE
             // Update OSC control client
-            if (fData->engine->isOscControlRegistered())
-                fData->engine->osc_send_control_note_on(fData->id, event.value1, event.value2, int(event.value3));
+            if (kData->engine->isOscControlRegistered())
+                kData->engine->osc_send_control_note_on(fId, event.value1, event.value2, int(event.value3));
 #endif
 
             // Update Host
-            fData->engine->callback(CALLBACK_NOTE_ON, fData->id, event.value1, event.value2, int(event.value3), nullptr);
+            kData->engine->callback(CALLBACK_NOTE_ON, fId, event.value1, event.value2, int(event.value3), nullptr);
             break;
 
         case kPluginPostRtEventNoteOff:
@@ -1308,12 +1286,12 @@ void CarlaPlugin::postRtEventsRun()
 
 #ifndef BUILD_BRIDGE
             // Update OSC control client
-            if (fData->engine->isOscControlRegistered())
-                fData->engine->osc_send_control_note_off(fData->id, event.value1, event.value2);
+            if (kData->engine->isOscControlRegistered())
+                kData->engine->osc_send_control_note_off(fId, event.value1, event.value2);
 #endif
 
             // Update Host
-            fData->engine->callback(CALLBACK_NOTE_OFF, fData->id, event.value1, event.value2, 0.0, nullptr);
+            kData->engine->callback(CALLBACK_NOTE_OFF, fId, event.value1, event.value2, 0.0, nullptr);
             break;
         }
     }
@@ -1376,19 +1354,19 @@ void CarlaPlugin::uiNoteOff(const uint8_t channel, const uint8_t note)
 
 void CarlaPlugin::initBuffers()
 {
-    fData->audioIn.initBuffers(fData->engine);
-    fData->audioOut.initBuffers(fData->engine);
-    fData->event.initBuffers(fData->engine);
+    kData->audioIn.initBuffers(kData->engine);
+    kData->audioOut.initBuffers(kData->engine);
+    kData->event.initBuffers(kData->engine);
 }
 
 void CarlaPlugin::deleteBuffers()
 {
     qDebug("CarlaPlugin::deleteBuffers() - start");
 
-    fData->audioIn.clear();
-    fData->audioOut.clear();
-    fData->param.clear();
-    fData->event.clear();
+    kData->audioIn.clear();
+    kData->audioOut.clear();
+    kData->param.clear();
+    kData->event.clear();
 
     qDebug("CarlaPlugin::deleteBuffers() - end");
 }
@@ -1398,20 +1376,20 @@ void CarlaPlugin::deleteBuffers()
 
 bool CarlaPlugin::libOpen(const char* const filename)
 {
-    fData->lib = lib_open(filename);
-    return bool(fData->lib);
+    kData->lib = lib_open(filename);
+    return bool(kData->lib);
 }
 
 bool CarlaPlugin::libClose()
 {
-    const bool ret = lib_close(fData->lib);
-    fData->lib = nullptr;
+    const bool ret = lib_close(kData->lib);
+    kData->lib = nullptr;
     return ret;
 }
 
 void* CarlaPlugin::libSymbol(const char* const symbol)
 {
-    return lib_symbol(fData->lib, symbol);
+    return lib_symbol(kData->lib, symbol);
 }
 
 const char* CarlaPlugin::libError(const char* const filename)
@@ -1424,21 +1402,16 @@ const char* CarlaPlugin::libError(const char* const filename)
 
 float* CarlaPlugin::getAudioInPortBuffer(uint32_t index)
 {
-    CARLA_ASSERT(fData->audioIn.ports[index].port);
+    CARLA_ASSERT(kData->audioIn.ports[index].port);
 
-    return fData->audioIn.ports[index].port->getBuffer();
+    return kData->audioIn.ports[index].port->getBuffer();
 }
 
 float* CarlaPlugin::getAudioOutPortBuffer(uint32_t index)
 {
-    CARLA_ASSERT(fData->audioOut.ports[index].port);
+    CARLA_ASSERT(kData->audioOut.ports[index].port);
 
-    return fData->audioOut.ports[index].port->getBuffer();
-}
-
-CarlaEngine* CarlaPlugin::getEngine() const
-{
-    return fData->engine;
+    return kData->audioOut.ports[index].port->getBuffer();
 }
 
 // -------------------------------------------------------------------
@@ -1447,16 +1420,16 @@ CarlaEngine* CarlaPlugin::getEngine() const
 CarlaPlugin::ScopedDisabler::ScopedDisabler(CarlaPlugin* const plugin)
     : kPlugin(plugin)
 {
-    if (plugin->fData->enabled)
+    if (plugin->fEnabled)
     {
-        plugin->fData->enabled = false;
-        plugin->fData->engine->waitForProccessEnd();
+        plugin->fEnabled = false;
+        plugin->kData->engine->waitForProccessEnd();
     }
 }
 
 CarlaPlugin::ScopedDisabler::~ScopedDisabler()
 {
-    kPlugin->fData->enabled = true;
+    kPlugin->fEnabled = true;
 }
 
 // -------------------------------------------------------------------

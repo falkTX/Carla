@@ -720,7 +720,7 @@ protected:
         proccessPendingEvents();
 
 #ifndef BUILD_BRIDGE
-        if (fData->curPluginCount == 0)
+        if (kData->curPluginCount == 0)
             return;
 #endif
 
@@ -767,7 +767,7 @@ protected:
 #else
         if (fOptions.processMode == PROCESS_MODE_SINGLE_CLIENT)
         {
-            for (unsigned int i=0; i < fData->curPluginCount; i++)
+            for (unsigned int i=0; i < kData->curPluginCount; i++)
             {
                 CarlaPlugin* const plugin = getPluginUnchecked(i);
 
@@ -955,7 +955,7 @@ protected:
             return;
 #endif
 
-        for (unsigned int i=0; i < fData->curPluginCount; i++)
+        for (unsigned int i=0; i < kData->curPluginCount; i++)
         {
             CarlaPlugin* const plugin = getPluginUnchecked(i);
 
@@ -966,7 +966,7 @@ protected:
 
     void handleJackShutdownCallback()
     {
-        for (unsigned int i=0; i < fData->curPluginCount; i++)
+        for (unsigned int i=0; i < kData->curPluginCount; i++)
         {
             //CarlaPlugin* const plugin = getPluginUnchecked(i);
 
@@ -1051,8 +1051,8 @@ private:
             }
         }
 
-        if (CarlaEngineJack* const engine = (CarlaEngineJack*)p->getEngine())
-            engine->setPeaks(p->id(), inPeaks, outPeaks);
+        //if (CarlaEngineJack* const engine = (CarlaEngineJack*)p->getEngine())
+        //    engine->setPeaks(p->id(), inPeaks, outPeaks);
     }
 
     static void latencyPlugin(CarlaPlugin* const p, jack_latency_callback_mode_t mode)

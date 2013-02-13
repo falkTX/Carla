@@ -747,13 +747,6 @@ public:
      */
     const char* getNewUniquePluginName(const char* const name);
 
-    // bridge, internal use only
-    // TODO - find a better way for this
-    //void __bridgePluginRegister(const unsigned short id, CarlaPlugin* const plugin);
-    //{
-    //    m_carlaPlugins[id] = plugin;
-    //}
-
     // -------------------------------------------------------------------
     // Project management
 
@@ -772,14 +765,6 @@ public:
     // Information (base)
 
     /*!
-     * Get engine name.
-     */
-    const char* getName() const
-    {
-        return (const char*)fName;
-    }
-
-    /*!
      * Get current buffer size.
      */
     uint32_t getBufferSize() const
@@ -793,6 +778,14 @@ public:
     double getSampleRate() const
     {
         return fSampleRate;
+    }
+
+    /*!
+     * Get engine name.
+     */
+    const char* getName() const
+    {
+        return (const char*)fName;
     }
 
     /*!
@@ -869,10 +862,10 @@ public:
      */
     void waitForProccessEnd();
 
+#ifndef BUILD_BRIDGE
     // -------------------------------------------------------------------
     // Options
 
-#ifndef BUILD_BRIDGE
     /*!
      * Get the engine options as process environment.
      */
@@ -932,7 +925,7 @@ protected:
     EngineOptions  fOptions;
     EngineTimeInfo fTimeInfo;
 
-    CarlaEngineProtectedData* const fData;
+    CarlaEngineProtectedData* const kData;
 
     /*!
      * Report to all plugins about buffer size change.
@@ -957,10 +950,6 @@ protected:
     void setPeaks(const unsigned int pluginId, float* inPeaks, float* outPeaks);
 
 #ifndef BUILD_BRIDGE
-    //static const unsigned short MAX_EVENTS = 1024;
-    //EngineEvent fRackEventsIn[MAX_EVENTS];
-    //EngineEvent fRackEventsOut[MAX_EVENTS];
-
     // Rack mode data
     EngineEvent* getRackEventBuffer(const bool isInput);
 

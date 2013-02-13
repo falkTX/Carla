@@ -132,6 +132,22 @@ void carla_setprocname(const char* const name)
 }
 
 // -------------------------------------------------
+// carla_strdup
+
+static inline
+const char* carla_strdup(const char* const strBuf)
+{
+    const size_t bufferLen = (strBuf != nullptr) ? std::strlen(strBuf) : 0;
+    char* const  buffer    = new char [bufferLen+1];
+
+    std::strcpy(buffer, strBuf);
+
+    buffer[bufferLen] = '\0';
+
+    return buffer;
+}
+
+// -------------------------------------------------
 // math functions
 
 template<typename T>

@@ -23,9 +23,8 @@
 
 #include "carla_engine.hpp"
 #include "carla_osc_utils.hpp"
+#include "carla_state_utils.hpp"
 #include "carla_midi.h"
-
-//#include "carla_bridge_osc.hpp"
 
 #include "rt_list.hpp"
 
@@ -38,11 +37,39 @@
     CARLA_DECLARE_NON_COPY_STRUCT(structName) \
     CARLA_LEAK_DETECTOR(structName)
 
-#define CARLA_PROCESS_CONTINUE_CHECK if (! fData->enabled) { fData->engine->callback(CALLBACK_DEBUG, fData->id, 0, 0, 0.0, nullptr); return; }
+#define CARLA_PROCESS_CONTINUE_CHECK if (! fEnabled) { kData->engine->callback(CALLBACK_DEBUG, fId, 0, 0, 0.0, nullptr); return; }
 
 CARLA_BACKEND_START_NAMESPACE
 
 // -----------------------------------------------------------------------
+
+#ifndef BUILD_BRIDGE
+enum PluginBridgeInfoType {
+    kPluginBridgeAudioCount,
+    kPluginBridgeMidiCount,
+    kPluginBridgeParameterCount,
+    kPluginBridgeProgramCount,
+    kPluginBridgeMidiProgramCount,
+    kPluginBridgePluginInfo,
+    kPluginBridgeParameterInfo,
+    kPluginBridgeParameterData,
+    kPluginBridgeParameterRanges,
+    kPluginBridgeProgramInfo,
+    kPluginBridgeMidiProgramInfo,
+    kPluginBridgeConfigure,
+    kPluginBridgeSetParameterValue,
+    kPluginBridgeSetDefaultValue,
+    kPluginBridgeSetProgram,
+    kPluginBridgeSetMidiProgram,
+    kPluginBridgeSetCustomData,
+    kPluginBridgeSetChunkData,
+    kPluginBridgeUpdateNow,
+    kPluginBridgeError
+};
+
+int setPluginOscBridgeInfo(CarlaPlugin* const plugin, const PluginBridgeInfoType type,
+                           const int argc, const lo_arg* const* const argv, const char* const types);
+#endif
 
 struct PluginAudioPort {
     uint32_t rindex;
@@ -369,35 +396,25 @@ private:
 
 // -----------------------------------------------------------------------
 
-const unsigned short MIN_RT_EVENTS = 152;
 const unsigned short MAX_RT_EVENTS = 512;
 
-const unsigned int PLUGIN_OPTION2_HAS_MIDI_IN  = 0x1;
-const unsigned int PLUGIN_OPTION2_HAS_MIDI_OUT = 0x2;
+const unsigned int PLUGIN_HINT_HAS_MIDI_IN  = 0x1;
+const unsigned int PLUGIN_HINT_HAS_MIDI_OUT = 0x2;
 
 // -----------------------------------------------------------------------
 
 struct CarlaPluginProtectedData {
-    unsigned int id;
-
     CarlaEngine* const engine;
     CarlaEngineClient* client;
     CarlaPluginGUI* gui;
 
-    unsigned int hints;
-    unsigned int options;
-    unsigned int options2;
-
     bool active;
     bool activeBefore;
-    bool enabled;
-
     void* lib;
-    CarlaString name;
-    CarlaString filename;
 
     // misc
-    int8_t ctrlInChannel;
+    int8_t       ctrlInChannel;
+    unsigned int extraHints;
 
     uint32_t latency;
     float**  latencyBuffers;
@@ -420,6 +437,11 @@ struct CarlaPluginProtectedData {
             : dataPool(32, 512),
               data(&dataPool) {}
 
+        ~ExternalNotes()
+        {
+            data.clear();
+        }
+
         void append(const ExternalMidiNote& note)
         {
             data.append_sleepy(note);
@@ -434,7 +456,7 @@ struct CarlaPluginProtectedData {
         RtList<PluginPostRtEvent> dataPendingRT;
 
         PostRtEvents()
-            : dataPool(MIN_RT_EVENTS, MAX_RT_EVENTS),
+            : dataPool(MAX_RT_EVENTS, MAX_RT_EVENTS),
               data(&dataPool),
               dataPendingRT(&dataPool) {}
 
@@ -465,11 +487,6 @@ struct CarlaPluginProtectedData {
             mutex.unlock();
         }
 
-        //void appendNonRT(const PluginPostRtEvent& event)
-        //{
-        //    data.append_sleepy(event);
-        //}
-
     } postRtEvents;
 
     struct PostProc {
@@ -495,19 +512,15 @@ struct CarlaPluginProtectedData {
             : thread(nullptr) {}
     } osc;
 
-    CarlaPluginProtectedData(CarlaEngine* const engine_, const unsigned short id_)
-        : id(id_),
-          engine(engine_),
+    CarlaPluginProtectedData(CarlaEngine* const engine_)
+        : engine(engine_),
           client(nullptr),
           gui(nullptr),
-          hints(0x0),
-          options(0x0),
-          options2(0x0),
           active(false),
           activeBefore(false),
-          enabled(false),
           lib(nullptr),
           ctrlInChannel(-1),
+          extraHints(0x0),
           latency(0),
           latencyBuffers(nullptr) {}
 

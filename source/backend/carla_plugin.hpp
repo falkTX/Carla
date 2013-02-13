@@ -22,9 +22,6 @@
 #include "carla_native.h"
 #include "carla_utils.hpp"
 
-// FIXME
-#include "carla_state_utils.hpp"
-
 // Avoid including extra libs here
 struct LADSPA_RDF_Descriptor;
 typedef void* lo_address;
@@ -33,31 +30,6 @@ CARLA_BACKEND_START_NAMESPACE
 
 #if 0
 } // Fix editor indentation
-#endif
-
-#if 0 //ndef BUILD_BRIDGE
-enum PluginBridgeInfoType {
-    kPluginBridgeAudioCount,
-    kPluginBridgeMidiCount,
-    kPluginBridgeParameterCount,
-    kPluginBridgeProgramCount,
-    kPluginBridgeMidiProgramCount,
-    kPluginBridgePluginInfo,
-    kPluginBridgeParameterInfo,
-    kPluginBridgeParameterData,
-    kPluginBridgeParameterRanges,
-    kPluginBridgeProgramInfo,
-    kPluginBridgeMidiProgramInfo,
-    kPluginBridgeConfigure,
-    kPluginBridgeSetParameterValue,
-    kPluginBridgeSetDefaultValue,
-    kPluginBridgeSetProgram,
-    kPluginBridgeSetMidiProgram,
-    kPluginBridgeSetCustomData,
-    kPluginBridgeSetChunkData,
-    kPluginBridgeUpdateNow,
-    kPluginBridgeError
-};
 #endif
 
 enum PluginPostRtEventType {
@@ -71,6 +43,11 @@ enum PluginPostRtEventType {
 };
 
 // -----------------------------------------------------------------------
+
+/*!
+ * Save state data.
+ */
+struct SaveState;
 
 /*!
  * Protected data used in CarlaPlugin and subclasses.\n
@@ -117,38 +94,49 @@ public:
      *     ...
      * \endcode
      */
-    virtual PluginType type() const
-    {
-        return PLUGIN_NONE;
-    }
+    virtual PluginType type() const = 0;
 
     /*!
      * Get the plugin's id (as passed in the constructor).
      *
      * \see setId()
      */
-    unsigned int id() const;
+    unsigned int id() const
+    {
+        return fId;
+    }
 
     /*!
      * Get the plugin's hints.
      *
      * \see PluginHints
      */
-    unsigned int hints() const;
+    unsigned int hints() const
+    {
+        return fHints;
+    }
 
     /*!
      * Get the plugin's options.
      *
      * \see PluginOptions
      */
-    unsigned int options() const;
+    unsigned int options() const
+    {
+        return fOptions;
+    }
 
     /*!
-     * Check if the plugin is enabled.
+     * Check if the plugin is enabled.\n
+     * When a plugin is disabled, it will never be processed or managed in any way.\n
+     * To 'bypass' a plugin use setActive() instead.
      *
      * \see setEnabled()
      */
-    bool enabled() const;
+    bool enabled() const
+    {
+        return fEnabled;
+    }
 
     /*!
      * Get the plugin's internal name.\n
@@ -156,13 +144,19 @@ public:
      *
      * \see getRealName()
      */
-    const char* name() const;
+    const char* name() const
+    {
+        return (const char*)fName;
+    }
 
     /*!
      * Get the currently loaded DLL filename for this plugin.\n
      * (Sound kits return their exact filename).
      */
-    const char* filename() const;
+    const char* filename() const
+    {
+        return (const char*)fFilename;
+    }
 
     /*!
      * Get the plugin's category (delay, filter, synth, etc).
@@ -381,14 +375,14 @@ public:
      *
      * \see loadSaveState()
      */
-    virtual const SaveState& getSaveState();
+    const SaveState& getSaveState();
 
     /*!
      * Get the plugin's save state.
      *
      * \see getSaveState()
      */
-    virtual void loadSaveState(const SaveState& saveState);
+    void loadSaveState(const SaveState& saveState);
 
     // -------------------------------------------------------------------
     // Set data (internal stuff)
@@ -468,13 +462,6 @@ public:
      * \note Force-Stereo plugins only!
      */
     void setPanning(const float value, const bool sendOsc, const bool sendCallback);
-
-#if 0 //ndef BUILD_BRIDGE
-    /*!
-     * BridgePlugin call used to set internal data.
-     */
-    virtual int setOscBridgeInfo(const PluginBridgeInfoType type, const int argc, const lo_arg* const* const argv, const char* const types);
-#endif
 
     // -------------------------------------------------------------------
     // Set data (plugin-specific stuff)
@@ -763,11 +750,6 @@ public:
      */
     float* getAudioOutPortBuffer(uint32_t index);
 
-    /*!
-     * TODO.
-     */
-    CarlaEngine* getEngine() const;
-
     // -------------------------------------------------------------------
     // Plugin initializers
 
@@ -796,7 +778,16 @@ public:
     // -------------------------------------------------------------------
 
 protected:
-    ScopedPointer<CarlaPluginProtectedData> const fData;
+    unsigned int fId;
+    unsigned int fHints;
+    unsigned int fOptions;
+
+    bool fEnabled;
+
+    CarlaString fName;
+    CarlaString fFilename;
+
+    CarlaPluginProtectedData* const kData;
 
     class ScopedDisabler
     {
