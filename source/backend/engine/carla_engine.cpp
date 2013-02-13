@@ -953,7 +953,7 @@ void CarlaEngine::__bridgePluginRegister(const unsigned short id, CarlaPlugin* c
 // -----------------------------------------------------------------------
 // Information (base)
 
-void CarlaEngine::loadProject(const char* const filename)
+bool CarlaEngine::loadProject(const char* const filename)
 {
     CARLA_ASSERT(filename != nullptr);
 
@@ -963,9 +963,10 @@ void CarlaEngine::loadProject(const char* const filename)
     //    return;
 
     //getSaveStateDictFromXML
+    return true;
 }
 
-void CarlaEngine::saveProject(const char* const filename)
+bool CarlaEngine::saveProject(const char* const filename)
 {
     CARLA_ASSERT(filename != nullptr);
 
@@ -991,6 +992,8 @@ void CarlaEngine::saveProject(const char* const filename)
     out << "</CARLA-PRESET>\n";
 
     file.close();
+
+    return true;
 }
 
 // -----------------------------------------------------------------------

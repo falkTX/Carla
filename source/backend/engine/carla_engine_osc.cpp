@@ -66,7 +66,7 @@ void CarlaEngineOsc::init(const char* const name)
         {
             fServerPathTCP  = tmpServerPathTCP;
             fServerPathTCP += fName;
-            free(tmpServerPathTCP);
+            std::free(tmpServerPathTCP);
         }
 
         lo_server_add_method(fServerTCP, nullptr, nullptr, osc_message_handler, this);
@@ -80,7 +80,7 @@ void CarlaEngineOsc::init(const char* const name)
         {
             fServerPathUDP  = tmpServerPathUDP;
             fServerPathUDP += fName;
-            free(tmpServerPathUDP);
+            std::free(tmpServerPathUDP);
         }
 
         lo_server_add_method(fServerUDP, nullptr, nullptr, osc_message_handler, this);
@@ -367,23 +367,25 @@ int CarlaEngineOsc::handleMsgRegister(const int argc, const lo_arg* const* const
         return 1;
     }
 
-    const char* const url = (const char*)&argv[0]->s;
-    const char* host;
-    const char* port;
+    const char* const url = &argv[0]->s;
 
     qDebug("CarlaEngineOsc::handleMsgRegister() - OSC backend registered to %s", url);
 
-    host = lo_address_get_hostname(source);
-    port = lo_address_get_port(source);
-    fControlData.source = lo_address_new_with_proto(LO_TCP, host, port);
+    {
+        const char* host = lo_address_get_hostname(source);
+        const char* port = lo_address_get_port(source);
+        fControlData.source = lo_address_new_with_proto(LO_TCP, host, port);
+    }
 
-    host = lo_url_get_hostname(url);
-    port = lo_url_get_port(url);
-    fControlData.path   = lo_url_get_path(url);
-    fControlData.target = lo_address_new_with_proto(LO_TCP, host, port);
+    {
+        char* host = lo_url_get_hostname(url);
+        char* port = lo_url_get_port(url);
+        fControlData.path   = carla_strdup_free(lo_url_get_path(url));
+        fControlData.target = lo_address_new_with_proto(LO_TCP, host, port);
 
-    free((void*)host);
-    free((void*)port);
+        std::free(host);
+        std::free(port);
+    }
 
     for (unsigned short i=0; i < kEngine->currentPluginCount(); i++)
     {

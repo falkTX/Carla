@@ -147,6 +147,14 @@ const char* carla_strdup(const char* const strBuf)
     return buffer;
 }
 
+static inline
+const char* carla_strdup_free(const char* const strBuf)
+{
+    const char* const buffer = carla_strdup(strBuf);
+    std::free((void*)strBuf);
+    return buffer;
+}
+
 // -------------------------------------------------
 // math functions
 

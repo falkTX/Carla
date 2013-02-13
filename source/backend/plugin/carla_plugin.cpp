@@ -1005,25 +1005,28 @@ void CarlaPlugin::updateOscData(const lo_address& source, const char* const url)
     // FIXME - remove debug prints later
     qWarning("CarlaPlugin::updateOscData(%p, \"%s\")", source, url);
 
-    const char* host;
-    const char* port;
-    const int proto = lo_address_get_protocol(source);
-
     kData->osc.data.free();
 
-    host = lo_address_get_hostname(source);
-    port = lo_address_get_port(source);
-    kData->osc.data.source = lo_address_new_with_proto(proto, host, port);
-    qWarning("CarlaPlugin::updateOscData() - source: host \"%s\", port \"%s\"", host, port);
+    const int proto = lo_address_get_protocol(source);
 
-    host = lo_url_get_hostname(url);
-    port = lo_url_get_port(url);
-    kData->osc.data.path   = lo_url_get_path(url);
-    kData->osc.data.target = lo_address_new_with_proto(proto, host, port);
-    qWarning("CarlaPlugin::updateOscData() - target: host \"%s\", port \"%s\", path \"%s\"", host, port, kData->osc.data.path);
+    {
+        const char* host = lo_address_get_hostname(source);
+        const char* port = lo_address_get_port(source);
+        kData->osc.data.source = lo_address_new_with_proto(proto, host, port);
 
-    free((void*)host);
-    free((void*)port);
+        qWarning("CarlaPlugin::updateOscData() - source: host \"%s\", port \"%s\"", host, port);
+    }
+
+    {
+        char* host = lo_url_get_hostname(url);
+        char* port = lo_url_get_port(url);
+        kData->osc.data.path   = carla_strdup_free(lo_url_get_path(url));
+        kData->osc.data.target = lo_address_new_with_proto(proto, host, port);
+        qWarning("CarlaPlugin::updateOscData() - target: host \"%s\", port \"%s\", path \"%s\"", host, port, kData->osc.data.path);
+
+        std::free(host);
+        std::free(port);
+    }
 
 #ifndef BUILD_BRIDGE
     if (fHints & PLUGIN_IS_BRIDGE)

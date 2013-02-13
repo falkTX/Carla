@@ -82,24 +82,25 @@ bool CarlaBridgeOsc::init(const char* const url)
 
     if (! path)
     {
-        free(host);
+        std::free(host);
         qCritical("CarlaBridgeOsc::init(\"%s\") - failed to get url path", url);
         return false;
     }
 
     if (! port)
     {
-        free(host);
-        free(path);
+        std::free(host);
+        std::free(path);
         qCritical("CarlaBridgeOsc::init(\"%s\") - failed to get url port", url);
         return false;
     }
 
-    m_controlData.path   = path;
+    m_controlData.path   = carla_strdup(path);
     m_controlData.target = lo_address_new_with_proto(LO_TCP, host, port);
 
-    free(host);
-    free(port);
+    std::free(path);
+    std::free(host);
+    std::free(port);
 
     if (! m_controlData.target)
     {
@@ -118,7 +119,7 @@ bool CarlaBridgeOsc::init(const char* const url)
     if (char* const serverUrl = lo_server_get_url(m_server))
     {
         m_serverPath = strdup(QString("%1%2").arg(serverUrl).arg(m_name).toUtf8().constData());
-        free(serverUrl);
+        std::free(serverUrl);
     }
     else
         m_serverPath = strdup(QString("%1carla-bridge").arg(serverUrl).toUtf8().constData());

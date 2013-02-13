@@ -754,12 +754,12 @@ public:
      * Load \a filename session.
      * \note Already loaded plugins are not removed; call removeAllPlugins() first if needed.
      */
-    void loadProject(const char* const filename);
+    bool loadProject(const char* const filename);
 
     /*!
      * Save current session to \a filename.
      */
-    void saveProject(const char* const filename);
+    bool saveProject(const char* const filename);
 
     // -------------------------------------------------------------------
     // Information (base)

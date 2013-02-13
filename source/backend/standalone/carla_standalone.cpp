@@ -303,7 +303,10 @@ bool carla_load_project(const char* filename)
     CARLA_ASSERT(filename != nullptr);
 
     if (standalone.engine != nullptr)
-        standalone.engine->loadProject(filename);
+        return standalone.engine->loadProject(filename);
+
+    standalone.lastError = "Engine is not started";
+    return false;
 }
 
 bool carla_save_project(const char* filename)
@@ -312,7 +315,10 @@ bool carla_save_project(const char* filename)
     CARLA_ASSERT(filename != nullptr);
 
     if (standalone.engine != nullptr)
-        standalone.engine->saveProject(filename);
+        return standalone.engine->saveProject(filename);
+
+    standalone.lastError = "Engine is not started";
+    return false;
 }
 
 // -------------------------------------------------------------------------------------------------------------------

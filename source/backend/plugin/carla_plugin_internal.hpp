@@ -279,13 +279,16 @@ struct PluginProgramData {
         if (names != nullptr)
         {
             for (uint32_t i=0; i < count; i++)
-                std::free((void*)names[i]);
+            {
+                if (names[i] != nullptr)
+                    delete[] names[i];
+            }
 
             delete[] names;
             names = nullptr;
         }
 
-        count = 0;
+        count   = 0;
         current = -1;
     }
 
