@@ -56,6 +56,10 @@ carla-discovery-native
 carla-discovery-posix32
 carla-discovery-posix64
 
+source/tests/CarlaString
+source/tests/RtList
+source/tests/Thread
+
 # Docs
 doc/carla-backend/
 doc/carla-bridge/
