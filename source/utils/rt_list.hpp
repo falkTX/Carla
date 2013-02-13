@@ -275,8 +275,6 @@ private:
     }
 
     LIST_DECLARATIONS(List)
-
-    //template<typename P> friend class Pool;
 };
 
 // -----------------------------------------------------------------------

@@ -455,8 +455,6 @@ struct CarlaPluginProtectedData {
                 dataPendingRT.splice(data, true);
                 mutex.unlock();
             }
-            else
-              qWarning("trySplice() failed");
         }
 
         void clear()
