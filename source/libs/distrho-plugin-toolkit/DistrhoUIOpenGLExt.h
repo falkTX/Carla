@@ -22,7 +22,6 @@
 #ifdef DISTRHO_UI_OPENGL
 
 #include "DistrhoUIOpenGL.h"
-#include <GL/gl.h>
 
 START_NAMESPACE_DISTRHO
 

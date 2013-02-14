@@ -427,7 +427,7 @@ public:
 private:
     typename List<T>::Data* _allocate()
     {
-        return (typename List<T>::Data*)malloc(this->fDataSize);
+        return (typename List<T>::Data*)malloc(this->kDataSize);
     }
 
     void _deallocate(typename List<T>::Data* const dataPtr)

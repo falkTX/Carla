@@ -110,7 +110,6 @@ puglCreate(PuglNativeWindow parent,
 
 	// unused
 	(void)resizable;
-	(void)addToDesktop;
 	(void)x11Display;
 }
 

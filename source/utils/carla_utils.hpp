@@ -350,7 +350,7 @@ public:
             delete cthread;
         }
 #else
-        if (pthreadId != 0)
+        if (! _isNull())
             pthread_join(pthreadId, nullptr);
 
         pthread_attr_destroy(&pthreadAttr);
@@ -378,9 +378,9 @@ public:
 
         return true;
 #else
-        CARLA_ASSERT(pthreadId == 0);
+        CARLA_ASSERT(_isNull());
 
-        if (pthreadId != 0)
+        if (! _isNull())
             return false;
 
         return (pthread_create(&pthreadId, &pthreadAttr, _pthreadRoutine, this) == 0);
@@ -398,7 +398,7 @@ public:
         if (cthread == nullptr)
             return true;
 #else
-        if (pthreadId == 0)
+        if (_isNull())
             return true;
 #endif
 
@@ -440,7 +440,7 @@ public:
         if (cthread == nullptr)
             return;
 #else
-        if (pthreadId == 0)
+        if (_isNull())
             return;
 #endif
 
@@ -515,6 +515,16 @@ private:
     {
         ((CarlaThread*)_this_)->handleRoutine();
         pthread_exit(nullptr);
+        return nullptr;
+    }
+
+    bool _isNull()
+    {
+#ifdef Q_OS_WIN
+        return pthreadId.p == nullptr;
+#else
+        return pthreadId == 0;
+#endif
     }
 
     void _zero()
