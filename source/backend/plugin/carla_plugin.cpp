@@ -35,6 +35,27 @@ static const MidiProgramData  kMidiProgramDataNull;
 static const CustomData       kCustomDataNull;
 
 // -------------------------------------------------------------------
+// Helpers
+
+CarlaEngineAudioPort* CarlaPluginGetAudioInPort(CarlaPlugin* const plugin, uint32_t index)
+{
+    return CarlaPluginProtectedData::getAudioInPort(plugin, index);
+}
+
+CarlaEngineAudioPort* CarlaPluginGetAudioOutPort(CarlaPlugin* const plugin, uint32_t index)
+{
+    return CarlaPluginProtectedData::getAudioOutPort(plugin, index);
+}
+
+#if 0
+int CarlaPluginSetOscBridgeInfo(CarlaPlugin* const plugin, const PluginBridgeInfoType type,
+                                const int argc, const lo_arg* const* const argv, const char* const types)
+{
+    return ((BridgePlugin*)plugin)->setOscPluginBridgeInfo(type, argc, argv, types);
+}
+#endif
+
+// -------------------------------------------------------------------
 // Constructor and destructor
 
 CarlaPlugin::CarlaPlugin(CarlaEngine* const engine, const unsigned int id)
@@ -358,6 +379,9 @@ void CarlaPlugin::getParameterCountInfo(uint32_t* const ins, uint32_t* const out
             *outs += 1;
     }
 }
+
+// -------------------------------------------------------------------
+// Set data (state)
 
 const SaveState& CarlaPlugin::getSaveState()
 {
@@ -1139,15 +1163,7 @@ void CarlaPlugin::sendMidiSingleNote(const uint8_t channel, const uint8_t note, 
 
 void CarlaPlugin::sendMidiAllNotesOff()
 {
-    // TODO
-#if 0
-    kData->extNotes.mutex.lock();
     kData->postRtEvents.mutex.lock();
-
-    ExternalMidiNote extNote;
-    extNote.channel = kData->ctrlInChannel;
-    extNote.note    = 0;
-    extNote.velo    = 0;
 
     PluginPostRtEvent postEvent;
     postEvent.type   = kPluginPostRtEventNoteOff;
@@ -1157,16 +1173,11 @@ void CarlaPlugin::sendMidiAllNotesOff()
 
     for (unsigned short i=0; i < MAX_MIDI_NOTE; i++)
     {
-        extNote.note     = i;
         postEvent.value2 = i;
-
-        kData->extNotes.append(extNote);
-        kData->postRtEvents.appendNonRT(event);
+        kData->postRtEvents.data.append(postEvent);
     }
 
     kData->postRtEvents.mutex.unlock();
-    kData->extNotes.mutex.unlock();
-#endif
 }
 
 // -------------------------------------------------------------------
@@ -1398,23 +1409,6 @@ void* CarlaPlugin::libSymbol(const char* const symbol)
 const char* CarlaPlugin::libError(const char* const filename)
 {
     return lib_error(filename);
-}
-
-// -------------------------------------------------------------------
-// Engine helpers
-
-float* CarlaPlugin::getAudioInPortBuffer(uint32_t index)
-{
-    CARLA_ASSERT(kData->audioIn.ports[index].port);
-
-    return kData->audioIn.ports[index].port->getBuffer();
-}
-
-float* CarlaPlugin::getAudioOutPortBuffer(uint32_t index)
-{
-    CARLA_ASSERT(kData->audioOut.ports[index].port);
-
-    return kData->audioOut.ports[index].port->getBuffer();
 }
 
 // -------------------------------------------------------------------

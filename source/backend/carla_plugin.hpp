@@ -22,9 +22,11 @@
 #include "carla_native.h"
 #include "carla_utils.hpp"
 
+#ifndef DOXYGEN
 // Avoid including extra libs here
 struct LADSPA_RDF_Descriptor;
 typedef void* lo_address;
+#endif
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -32,6 +34,9 @@ CARLA_BACKEND_START_NAMESPACE
 } // Fix editor indentation
 #endif
 
+/*!
+ * TODO.
+ */
 enum PluginPostRtEventType {
     kPluginPostRtEventNull,
     kPluginPostRtEventDebug,
@@ -54,6 +59,8 @@ struct SaveState;
  * Non-plugin code MUST NEVER have direct access to this.
  */
 struct CarlaPluginProtectedData;
+
+class CarlaEngineAudioPort;
 
 /*!
  * \class CarlaPlugin
@@ -176,7 +183,7 @@ public:
     }
 
     /*!
-     * Get the plugin's latency, in samples.
+     * Get the plugin's latency, in sample frames.
      */
     uint32_t latency() const;
 
@@ -368,6 +375,9 @@ public:
      * \see parameterCount()
      */
     void getParameterCountInfo(uint32_t* const ins, uint32_t* const outs, uint32_t* const total);
+
+    // -------------------------------------------------------------------
+    // Set data (state)
 
     /*!
      * Get the plugin's save state.\n
@@ -658,6 +668,7 @@ public:
     /*!
      * Send all midi notes off for the next audio callback.\n
      * This doesn't send the actual MIDI All-Notes-Off event, but 128 note-offs instead.
+     * \note RT call
      */
     void sendMidiAllNotesOff();
 
@@ -738,19 +749,6 @@ public:
     const char* libError(const char* const filename);
 
     // -------------------------------------------------------------------
-    // Engine helpers
-
-    /*!
-     * TODO.
-     */
-    float* getAudioInPortBuffer(uint32_t index);
-
-    /*!
-     * TODO.
-     */
-    float* getAudioOutPortBuffer(uint32_t index);
-
-    // -------------------------------------------------------------------
     // Plugin initializers
 
     struct Initializer {
@@ -787,6 +785,7 @@ protected:
     CarlaString fName;
     CarlaString fFilename;
 
+    friend struct CarlaPluginProtectedData;
     CarlaPluginProtectedData* const kData;
 
     class ScopedDisabler

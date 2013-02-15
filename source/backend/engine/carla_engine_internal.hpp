@@ -97,9 +97,6 @@ const char* EngineControlEventType2Str(const EngineControlEventType type)
  * Maximum number of peaks per plugin.\n
  * \note There are both input and output peaks.
  */
-/*static*/
-const unsigned short MAX_PEAKS     = 2;
-
 const uint32_t       PATCHBAY_BUFFER_SIZE = 128;
 const unsigned short PATCHBAY_EVENT_COUNT = 512;
 const unsigned short RACK_EVENT_COUNT     = 1024;

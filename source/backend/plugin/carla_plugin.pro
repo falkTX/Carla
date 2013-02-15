@@ -75,8 +75,10 @@ QMAKE_CXXFLAGS += -isystem /opt/kxstudio/include/
 
 WARN_FLAGS = \
     -ansi -pedantic -pedantic-errors -Wall -Wextra -Wunused-parameter -Wuninitialized \
-    -Wlogical-op -Waggregate-return  -Wno-vla \
-    -fipa-pure-const -Wsuggest-attribute=const #pure,const,noreturn
+    -Wlogical-op -Wno-vla
+
+#-fipa-pure-const -Wsuggest-attribute=const #pure,const,noreturn
+#-Waggregate-return
 #-Wcast-qual -Wconversion -Wsign-conversion -Wformat=2
 
 QMAKE_CFLAGS   += $${WARN_FLAGS} -std=c99 -Wc++-compat -Wunsuffixed-float-constants -Wwrite-strings

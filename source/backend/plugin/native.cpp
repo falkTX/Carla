@@ -36,72 +36,80 @@ struct NativePluginMidiData {
 class NativePlugin : public CarlaPlugin
 {
 public:
-    NativePlugin(CarlaEngine* const engine, const int id)
+    NativePlugin(CarlaEngine* const engine, const unsigned int id)
         : CarlaPlugin(engine, id)
     {
         qDebug("NativePlugin::NativePlugin(%p, %i)", engine, id);
 
-#if 0
-        descriptor  = nullptr;
-        handle = h2 = nullptr;
+        fHandle  = nullptr;
+        fHandle2 = nullptr;
+        fDescriptor = nullptr;
 
-        host.handle = this;
-        host.get_buffer_size  = carla_host_get_buffer_size;
-        host.get_sample_rate  = carla_host_get_sample_rate;
-        host.get_time_info    = carla_host_get_time_info;
-        host.write_midi_event = carla_host_write_midi_event;
-        host.ui_parameter_changed   = carla_host_ui_parameter_changed;
-        host.ui_custom_data_changed = carla_host_ui_custom_data_changed;
-        host.ui_closed = carla_host_ui_closed;
+        fHost.handle = this;
+        fHost.get_buffer_size        = carla_host_get_buffer_size;
+        fHost.get_sample_rate        = carla_host_get_sample_rate;
+        fHost.get_time_info          = carla_host_get_time_info;
+        fHost.write_midi_event       = carla_host_write_midi_event;
+        fHost.ui_parameter_changed   = carla_host_ui_parameter_changed;
+        fHost.ui_custom_data_changed = carla_host_ui_custom_data_changed;
+        fHost.ui_closed              = carla_host_ui_closed;
 
-        isProcessing = false;
+        fIsProcessing = false;
 
-        midiEventCount = 0;
-        memset(midiEvents, 0, sizeof(::MidiEvent) * MAX_MIDI_EVENTS * 2);
-#endif
+        //midiEventCount = 0;
+        //memset(midiEvents, 0, sizeof(::MidiEvent) * MAX_MIDI_EVENTS * 2);
     }
 
-#if 0
     ~NativePlugin()
     {
         qDebug("NativePlugin::~NativePlugin()");
 
-        if (descriptor)
+        if (fDescriptor != nullptr)
         {
-            if (descriptor->deactivate && m_activeBefore)
+            if (fDescriptor->deactivate != nullptr && kData->activeBefore)
             {
-                if (handle)
-                    descriptor->deactivate(handle);
-                if (h2)
-                    descriptor->deactivate(h2);
+                if (fHandle != nullptr)
+                    fDescriptor->deactivate(fHandle);
+                if (fHandle2 != nullptr)
+                    fDescriptor->deactivate(fHandle2);
             }
 
-            if (descriptor->cleanup)
+            if (fDescriptor->cleanup != nullptr)
             {
-                if (handle)
-                    descriptor->cleanup(handle);
-                if (h2)
-                    descriptor->cleanup(h2);
+                if (fHandle != nullptr)
+                    fDescriptor->cleanup(fHandle);
+                if (fHandle2 != nullptr)
+                    fDescriptor->cleanup(fHandle2);
             }
+
+            fHandle  = nullptr;
+            fHandle2 = nullptr;
+            fDescriptor = nullptr;
         }
     }
 
     // -------------------------------------------------------------------
     // Information (base)
 
+    virtual PluginType type() const
+    {
+        return PLUGIN_INTERNAL;
+    }
+
     PluginCategory category()
     {
-        CARLA_ASSERT(descriptor);
+        CARLA_ASSERT(fDescriptor != nullptr);
 
-        if (descriptor)
-            return static_cast<PluginCategory>(descriptor->category);
+        if (fDescriptor != nullptr)
+            return static_cast<PluginCategory>(fDescriptor->category);
 
-        return getPluginCategoryFromName(m_name);
+        return getPluginCategoryFromName(fName);
     }
 
     // -------------------------------------------------------------------
     // Information (count)
 
+#if 0
     uint32_t midiInCount()
     {
         return mIn.count;
@@ -111,18 +119,17 @@ public:
     {
         return mOut.count;
     }
+#endif
 
-    uint32_t parameterScalePointCount(const uint32_t parameterId)
+    uint32_t parameterScalePointCount(const uint32_t parameterId) const
     {
-        CARLA_ASSERT(descriptor);
-        CARLA_ASSERT(handle);
-        CARLA_ASSERT(parameterId < param.count);
+        CARLA_ASSERT(fDescriptor != nullptr);
+        CARLA_ASSERT(fHandle != nullptr);
+        CARLA_ASSERT(parameterId < kData->param.count);
 
-        if (descriptor && handle && parameterId < param.count && descriptor->get_parameter_info)
+        if (fDescriptor != nullptr && fHandle != nullptr && parameterId < kData->param.count && fDescriptor->get_parameter_info != nullptr)
         {
-            const ::Parameter* const param = descriptor->get_parameter_info(handle, parameterId);
-
-            if (param)
+            if (const Parameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId))
                 return param->scalePointCount;
         }
 
@@ -132,81 +139,79 @@ public:
     // -------------------------------------------------------------------
     // Information (per-plugin data)
 
-    double getParameterValue(const uint32_t parameterId)
+    float getParameterValue(const uint32_t parameterId)
     {
-        CARLA_ASSERT(descriptor);
-        CARLA_ASSERT(handle);
-        CARLA_ASSERT(parameterId < param.count);
+        CARLA_ASSERT(fDescriptor != nullptr);
+        CARLA_ASSERT(fHandle != nullptr);
+        CARLA_ASSERT(parameterId < kData->param.count);
 
-        if (descriptor && handle && parameterId < param.count && descriptor->get_parameter_value)
-            return descriptor->get_parameter_value(handle, parameterId);
+        if (fDescriptor != nullptr && fHandle != nullptr && parameterId < kData->param.count && fDescriptor->get_parameter_value != nullptr)
+            return fDescriptor->get_parameter_value(fHandle, parameterId);
 
-        return 0.0;
+        return 0.0f;
     }
 
-    double getParameterScalePointValue(const uint32_t parameterId, const uint32_t scalePointId)
+    float getParameterScalePointValue(const uint32_t parameterId, const uint32_t scalePointId)
     {
-        CARLA_ASSERT(descriptor);
-        CARLA_ASSERT(handle);
-        CARLA_ASSERT(parameterId < param.count);
+        CARLA_ASSERT(fDescriptor != nullptr);
+        CARLA_ASSERT(fHandle != nullptr);
+        CARLA_ASSERT(parameterId < kData->param.count);
         CARLA_ASSERT(scalePointId < parameterScalePointCount(parameterId));
 
-        if (descriptor && handle && parameterId < param.count && descriptor->get_parameter_info)
+        if (fDescriptor != nullptr && fHandle != nullptr && parameterId < kData->param.count && fDescriptor->get_parameter_info != nullptr)
         {
-            const ::Parameter* const param = descriptor->get_parameter_info(handle, parameterId);
-
-            if (param && scalePointId < param->scalePointCount && param->scalePoints)
+            if (const Parameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId))
             {
-                const ::ParameterScalePoint* const scalePoint = &param->scalePoints[scalePointId];
+                const ParameterScalePoint& scalePoint = param->scalePoints[scalePointId];
 
-                if (scalePoint)
-                    return scalePoint->value;
+                return scalePoint.value;
             }
         }
 
-        return 0.0;
+        return 0.0f;
     }
 
     void getLabel(char* const strBuf)
     {
-        CARLA_ASSERT(descriptor);
+        CARLA_ASSERT(fDescriptor != nullptr);
 
-        if (descriptor && descriptor->label)
-            strncpy(strBuf, descriptor->label, STR_MAX);
+        if (fDescriptor != nullptr && fDescriptor->label != nullptr)
+            std::strncpy(strBuf, fDescriptor->label, STR_MAX);
         else
             CarlaPlugin::getLabel(strBuf);
     }
 
     void getMaker(char* const strBuf)
     {
-        CARLA_ASSERT(descriptor);
+        CARLA_ASSERT(fDescriptor != nullptr);
 
-        if (descriptor && descriptor->maker)
-            strncpy(strBuf, descriptor->maker, STR_MAX);
+        if (fDescriptor != nullptr && fDescriptor->maker != nullptr)
+            std::strncpy(strBuf, fDescriptor->maker, STR_MAX);
         else
             CarlaPlugin::getMaker(strBuf);
     }
 
     void getCopyright(char* const strBuf)
     {
-        CARLA_ASSERT(descriptor);
+        CARLA_ASSERT(fDescriptor != nullptr);
 
-        if (descriptor && descriptor->copyright)
-            strncpy(strBuf, descriptor->copyright, STR_MAX);
+        if (fDescriptor != nullptr && fDescriptor->copyright != nullptr)
+            std::strncpy(strBuf, fDescriptor->copyright, STR_MAX);
         else
             CarlaPlugin::getCopyright(strBuf);
     }
 
     void getRealName(char* const strBuf)
     {
-        CARLA_ASSERT(descriptor);
+        CARLA_ASSERT(fDescriptor != nullptr);
 
-        if (descriptor && descriptor->name)
-            strncpy(strBuf, descriptor->name, STR_MAX);
+        if (fDescriptor != nullptr && fDescriptor->name != nullptr)
+            std::strncpy(strBuf, fDescriptor->name, STR_MAX);
         else
             CarlaPlugin::getRealName(strBuf);
     }
 
+#if 0
     void getParameterName(const uint32_t parameterId, char* const strBuf)
     {
         CARLA_ASSERT(descriptor);
@@ -1430,15 +1435,17 @@ public:
     }
 
     // -------------------------------------------------------------------
+#endif
 
+protected:
     uint32_t handleGetBufferSize()
     {
-        return x_engine->getBufferSize();
+        return kData->engine->getBufferSize();
     }
 
     double handleGetSampleRate()
     {
-        return x_engine->getSampleRate();
+        return kData->engine->getSampleRate();
     }
 
     const TimeInfo* handleGetTimeInfo()
@@ -1447,124 +1454,78 @@ public:
         return nullptr;
     }
 
-    bool handleWriteMidiEvent(MidiEvent* event)
+    bool handleWriteMidiEvent(const MidiEvent* const event)
     {
-        CARLA_ASSERT(m_enabled);
-        CARLA_ASSERT(mOut.count > 0);
-        CARLA_ASSERT(isProcessing);
-        CARLA_ASSERT(event);
+        CARLA_ASSERT(fEnabled);
+        //CARLA_ASSERT(mOut.count > 0);
+        CARLA_ASSERT(fIsProcessing);
+        CARLA_ASSERT(event != nullptr);
 
-        if (! m_enabled)
+        if (! fEnabled)
             return false;
 
-        if (mOut.count == 0)
-            return false;
+        //if (mOut.count == 0)
+        //    return false;
 
-        if (! isProcessing)
+        if (! fIsProcessing)
         {
             qCritical("NativePlugin::handleWriteMidiEvent(%p) - received MIDI out events outside audio thread, ignoring", event);
             return false;
         }
 
-        if (midiEventCount >= MAX_MIDI_EVENTS*2)
-            return false;
+        //if (midiEventCount >= MAX_MIDI_EVENTS*2)
+        //    return false;
 
-        memcpy(&midiEvents[midiEventCount], event, sizeof(::MidiEvent));
-        midiEventCount += 1;
+        //memcpy(&midiEvents[midiEventCount], event, sizeof(::MidiEvent));
+        //midiEventCount += 1;
 
         return true;
     }
 
-    void handleUiParameterChanged(uint32_t index, float value)
+    void handleUiParameterChanged(const uint32_t index, const float value)
     {
         setParameterValue(index, value, false, true, true);
     }
 
-    void handleUiCustomDataChanged(const char* key, const char* value)
+    void handleUiCustomDataChanged(const char* const key, const char* const value)
     {
         setCustomData(CUSTOM_DATA_STRING, key, value, false);
     }
 
     void handleUiClosed()
     {
-        x_engine->callback(CALLBACK_SHOW_GUI, m_id, 0, 0, 0.0, nullptr);
+        kData->engine->callback(CALLBACK_SHOW_GUI, fId, 0, 0, 0.0f, nullptr);
     }
 
-    // -------------------------------------------------------------------
-
-    static uint32_t carla_host_get_buffer_size(HostHandle handle)
-    {
-        CARLA_ASSERT(handle);
-        return ((NativePlugin*)handle)->handleGetBufferSize();
-    }
-
-    static double carla_host_get_sample_rate(HostHandle handle)
-    {
-        CARLA_ASSERT(handle);
-        return ((NativePlugin*)handle)->handleGetSampleRate();
-    }
-
-    static const TimeInfo* carla_host_get_time_info(HostHandle handle)
-    {
-        CARLA_ASSERT(handle);
-        return ((NativePlugin*)handle)->handleGetTimeInfo();
-    }
-
-    static bool carla_host_write_midi_event(HostHandle handle, MidiEvent* event)
-    {
-        CARLA_ASSERT(handle);
-        return ((NativePlugin*)handle)->handleWriteMidiEvent(event);
-    }
-
-    static void carla_host_ui_parameter_changed(HostHandle handle, uint32_t index, float value)
-    {
-        CARLA_ASSERT(handle);
-        ((NativePlugin*)handle)->handleUiParameterChanged(index, value);
-    }
-
-    static void carla_host_ui_custom_data_changed(HostHandle handle, const char* key, const char* value)
-    {
-        CARLA_ASSERT(handle);
-        ((NativePlugin*)handle)->handleUiCustomDataChanged(key, value);
-    }
-
-    static void carla_host_ui_closed(HostHandle handle)
-    {
-        CARLA_ASSERT(handle);
-        ((NativePlugin*)handle)->handleUiClosed();
-    }
-
-    // -------------------------------------------------------------------
-#endif
-
+public:
     static size_t getPluginCount()
     {
         maybeFirstInit();
-        return pluginDescriptors.size();
+        return sPluginDescriptors.size();
     }
 
     static const PluginDescriptor* getPlugin(const size_t index)
     {
         maybeFirstInit();
-        CARLA_ASSERT(index < pluginDescriptors.size());
+        CARLA_ASSERT(index < sPluginDescriptors.size());
 
-        if (index < pluginDescriptors.size())
-            return pluginDescriptors[index];
+        if (index < sPluginDescriptors.size())
+            return sPluginDescriptors[index];
 
         return nullptr;
     }
 
     static void registerPlugin(const PluginDescriptor* desc)
     {
-        pluginDescriptors.push_back(desc);
+        sPluginDescriptors.push_back(desc);
     }
 
     static void maybeFirstInit()
     {
-        if (! firstInit)
+        if (! sFirstInit)
             return;
 
-        firstInit = false;
+        sFirstInit = false;
 
 #ifndef BUILD_BRIDGE
         carla_register_native_plugin_bypass();
@@ -1581,11 +1542,14 @@ public:
 #endif
     }
 
-#if 0
     // -------------------------------------------------------------------
 
     bool init(const char* const name, const char* const label)
     {
+        CARLA_ASSERT(kData->engine != nullptr);
+        CARLA_ASSERT(kData->client == nullptr);
+        CARLA_ASSERT(label);
+
         // ---------------------------------------------------------------
         // initialize native-plugins descriptors
 
@@ -1594,66 +1558,68 @@ public:
         // ---------------------------------------------------------------
         // get descriptor that matches label
 
-        for (size_t i=0; i < pluginDescriptors.size(); i++)
+        for (size_t i=0; i < sPluginDescriptors.size(); i++)
         {
-            descriptor = pluginDescriptors[i];
+            fDescriptor = sPluginDescriptors[i];
 
-            if (! descriptor)
+            if (fDescriptor == nullptr)
                 break;
-            if (descriptor->label && strcmp(descriptor->label, label) == 0)
+            if (fDescriptor->label != nullptr && std::strcmp(fDescriptor->label, label) == 0)
                 break;
 
-            descriptor = nullptr;
+            fDescriptor = nullptr;
         }
 
-        if (! descriptor)
+        if (fDescriptor == nullptr)
         {
-            x_engine->setLastError("Invalid internal plugin");
+            kData->engine->setLastError("Invalid internal plugin");
             return false;
         }
 
         // ---------------------------------------------------------------
         // get info
 
-        if (name)
-            m_name = x_engine->getUniquePluginName(name);
+        if (name != nullptr)
+            fName = kData->engine->getNewUniquePluginName(name);
+        else if (fDescriptor->name != nullptr)
+            fName = kData->engine->getNewUniquePluginName(fDescriptor->name);
         else
-            m_name = x_engine->getUniquePluginName(descriptor->name);
+            fName = kData->engine->getNewUniquePluginName(fDescriptor->name);
 
         // ---------------------------------------------------------------
         // register client
 
-        x_client = x_engine->addClient(this);
+        kData->client = kData->engine->addClient(this);
 
-        if (! x_client->isOk())
+        if (kData->client == nullptr || ! kData->client->isOk())
         {
-            x_engine->setLastError("Failed to register plugin client");
+            kData->engine->setLastError("Failed to register plugin client");
             return false;
         }
 
         // ---------------------------------------------------------------
         // initialize plugin
 
-        handle = descriptor->instantiate(descriptor, &host);
+        fHandle = fDescriptor->instantiate(fDescriptor, &fHost);
 
-        if (! handle)
+        if (fHandle == nullptr)
         {
-            x_engine->setLastError("Plugin failed to initialize");
+            kData->engine->setLastError("Plugin failed to initialize");
             return false;
         }
 
         return true;
     }
-#endif
 
 private:
+    PluginHandle   fHandle;
+    PluginHandle   fHandle2;
+    HostDescriptor fHost;
+    const PluginDescriptor* fDescriptor;
+
+    bool fIsProcessing;
+
 #if 0
-    const PluginDescriptor* descriptor;
-    PluginHandle handle, h2;
-    HostDescriptor host;
-
-    bool isProcessing;
-
     NativePluginMidiData mIn;
     NativePluginMidiData mOut;
 
@@ -1661,55 +1627,53 @@ private:
     ::MidiEvent midiEvents[MAX_MIDI_EVENTS*2];
 #endif
 
-    static bool firstInit;
-    static std::vector<const PluginDescriptor*> pluginDescriptors;
+    static bool sFirstInit;
+    static std::vector<const PluginDescriptor*> sPluginDescriptors;
+
+    // -------------------------------------------------------------------
+
+    #define handlePtr ((NativePlugin*)handle)
+
+    static uint32_t carla_host_get_buffer_size(HostHandle handle)
+    {
+        return handlePtr->handleGetBufferSize();
+    }
+
+    static double carla_host_get_sample_rate(HostHandle handle)
+    {
+        return handlePtr->handleGetSampleRate();
+    }
+
+    static const TimeInfo* carla_host_get_time_info(HostHandle handle)
+    {
+        return handlePtr->handleGetTimeInfo();
+    }
+
+    static bool carla_host_write_midi_event(HostHandle handle, const MidiEvent* event)
+    {
+        return handlePtr->handleWriteMidiEvent(event);
+    }
+
+    static void carla_host_ui_parameter_changed(HostHandle handle, uint32_t index, float value)
+    {
+        handlePtr->handleUiParameterChanged(index, value);
+    }
+
+    static void carla_host_ui_custom_data_changed(HostHandle handle, const char* key, const char* value)
+    {
+        handlePtr->handleUiCustomDataChanged(key, value);
+    }
+
+    static void carla_host_ui_closed(HostHandle handle)
+    {
+        handlePtr->handleUiClosed();
+    }
+
+    #undef handlePtr
 };
 
-bool NativePlugin::firstInit = true;
-std::vector<const PluginDescriptor*> NativePlugin::pluginDescriptors;
-
-// -----------------------------------------------------------------------
-
-CarlaPlugin* CarlaPlugin::newNative(const Initializer& init)
-{
-    qDebug("CarlaPlugin::newNative(%p, \"%s\", \"%s\", \"%s\")", init.engine, init.filename, init.name, init.label);
-
-    return nullptr;
-
-#if 0
-    short id = init.engine->getNewPluginId();
-
-    if (id < 0 || id > init.engine->maxPluginNumber())
-    {
-        init.engine->setLastError("Maximum number of plugins reached");
-        return nullptr;
-    }
-
-    NativePlugin* const plugin = new NativePlugin(init.engine, id);
-
-    if (! plugin->init(init.name, init.label))
-    {
-        delete plugin;
-        return nullptr;
-    }
-
-    plugin->reload();
-
-    if (init.engine->getOptions().processMode == PROCESS_MODE_CONTINUOUS_RACK)
-    {
-        if (! (plugin->hints() & PLUGIN_CAN_FORCE_STEREO))
-        {
-            init.engine->setLastError("Carla's rack mode can only work with Mono or Stereo Internal plugins, sorry!");
-            delete plugin;
-            return nullptr;
-        }
-    }
-
-    plugin->registerToOscClient();
-
-    return plugin;
-#endif
-}
+bool NativePlugin::sFirstInit = true;
+std::vector<const PluginDescriptor*> NativePlugin::sPluginDescriptors;
 
 // -----------------------------------------------------------------------
 
@@ -1723,6 +1687,32 @@ const PluginDescriptor* CarlaPlugin::getNativePluginDescriptor(const size_t inde
     return NativePlugin::getPlugin(index);
 }
 
+CarlaPlugin* CarlaPlugin::newNative(const Initializer& init)
+{
+    qDebug("CarlaPlugin::newNative(%p, \"%s\", \"%s\", \"%s\")", init.engine, init.filename, init.name, init.label);
+
+    NativePlugin* const plugin = new NativePlugin(init.engine, init.id);
+
+    if (! plugin->init(init.name, init.label))
+    {
+        delete plugin;
+        return nullptr;
+    }
+
+    plugin->reload();
+
+    if (init.engine->getProccessMode() == PROCESS_MODE_CONTINUOUS_RACK && (plugin->hints() & PLUGIN_CAN_FORCE_STEREO) == 0)
+    {
+        init.engine->setLastError("Carla's rack mode can only work with Mono or Stereo Internal plugins, sorry!");
+        delete plugin;
+        return nullptr;
+    }
+
+    plugin->registerToOscClient();
+
+    return plugin;
+}
+
 // -----------------------------------------------------------------------
 
 CARLA_BACKEND_END_NAMESPACE
@@ -1732,3 +1722,5 @@ void carla_register_native_plugin(const PluginDescriptor* desc)
     CARLA_BACKEND_USE_NAMESPACE
     NativePlugin::registerPlugin(desc);
 }
+
+// -----------------------------------------------------------------------

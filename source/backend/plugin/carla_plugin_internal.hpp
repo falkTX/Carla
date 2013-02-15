@@ -66,10 +66,9 @@ enum PluginBridgeInfoType {
     kPluginBridgeUpdateNow,
     kPluginBridgeError
 };
-
-int setPluginOscBridgeInfo(CarlaPlugin* const plugin, const PluginBridgeInfoType type,
-                           const int argc, const lo_arg* const* const argv, const char* const types);
 #endif
+
+// -----------------------------------------------------------------------
 
 struct PluginAudioPort {
     uint32_t rindex;
@@ -399,7 +398,7 @@ private:
 
 // -----------------------------------------------------------------------
 
-const unsigned short MAX_RT_EVENTS = 512;
+const unsigned short MAX_RT_EVENTS = 128;
 
 const unsigned int PLUGIN_HINT_HAS_MIDI_IN  = 0x1;
 const unsigned int PLUGIN_HINT_HAS_MIDI_OUT = 0x2;
@@ -437,7 +436,7 @@ struct CarlaPluginProtectedData {
         RtList<ExternalMidiNote> data;
 
         ExternalNotes()
-            : dataPool(32, 512),
+            : dataPool(152, 512),
               data(&dataPool) {}
 
         ~ExternalNotes()
@@ -530,6 +529,16 @@ struct CarlaPluginProtectedData {
     CarlaPluginProtectedData() = delete;
     CarlaPluginProtectedData(CarlaPluginProtectedData&) = delete;
     CarlaPluginProtectedData(const CarlaPluginProtectedData&) = delete;
+
+    static CarlaEngineAudioPort* getAudioInPort(CarlaPlugin* const plugin, uint32_t index)
+    {
+        return plugin->kData->audioIn.ports[index].port;
+    }
+
+    static CarlaEngineAudioPort* getAudioOutPort(CarlaPlugin* const plugin, uint32_t index)
+    {
+        return plugin->kData->audioOut.ports[index].port;
+    }
 
     CARLA_LEAK_DETECTOR(CarlaPluginProtectedData)
 };

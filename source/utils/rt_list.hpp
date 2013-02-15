@@ -18,12 +18,12 @@
 #ifndef __RT_LIST_HPP__
 #define __RT_LIST_HPP__
 
+#include "carla_utils.hpp"
+
 extern "C" {
 #include "rtmempool/list.h"
 #include "rtmempool/rtmempool.h"
 }
-
-#include "carla_utils.hpp"
 
 // list_entry C++11 version (using nullptr instead of 0)
 #undef list_entry

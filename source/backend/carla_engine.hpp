@@ -525,7 +525,7 @@ private:
 // -----------------------------------------------------------------------
 
 /*!
- * Carla Engine client (Abstract).\n
+ * Carla Engine client.\n
  * Each plugin requires one client from the engine (created via CarlaEngine::addPort()).\n
  * \note This is a virtual class, each engine type provides its own funtionality.
  */
@@ -796,6 +796,9 @@ public:
         return fOptions;
     }
 
+    /*!
+     * TODO.
+     */
     ProcessMode getProccessMode() const
     {
         return fOptions.processMode;
@@ -858,7 +861,7 @@ public:
     void setAboutToClose();
 
     /*!
-     * Safely block wait until the current proccessing callback ends.
+     * Safely block-wait until the current proccessing callback ends.
      */
     void waitForProccessEnd();
 
@@ -917,6 +920,8 @@ public:
     // -------------------------------------
 
 protected:
+    static const unsigned short MAX_PEAKS = 2;
+
     uint32_t fBufferSize;
     double   fSampleRate;
 
@@ -947,7 +952,7 @@ protected:
     /*!
      * TODO.
      */
-    void setPeaks(const unsigned int pluginId, float* inPeaks, float* outPeaks);
+    void setPeaks(const unsigned int pluginId, float inPeaks[MAX_PEAKS], float outPeaks[MAX_PEAKS]);
 
 #ifndef BUILD_BRIDGE
     // Rack mode data
@@ -989,11 +994,6 @@ private:
 public:
 #ifdef BUILD_BRIDGE
     void osc_send_peaks(CarlaPlugin* const plugin);
-#else
-    void osc_send_peaks(CarlaPlugin* const plugin, const unsigned short& id);
-#endif
-
-#ifdef BUILD_BRIDGE
     void osc_send_bridge_audio_count(const int32_t ins, const int32_t outs, const int32_t total);
     void osc_send_bridge_midi_count(const int32_t ins, const int32_t outs, const int32_t total);
     void osc_send_bridge_parameter_count(const int32_t ins, const int32_t outs, const int32_t total);
@@ -1015,6 +1015,7 @@ public:
     void osc_send_bridge_set_inpeak(const int32_t portId);
     void osc_send_bridge_set_outpeak(const int32_t portId);
 #else
+    void osc_send_peaks(CarlaPlugin* const plugin, const unsigned short id);
     void osc_send_control_add_plugin_start(const int32_t pluginId, const char* const pluginName);
     void osc_send_control_add_plugin_end(const int32_t pluginId);
     void osc_send_control_remove_plugin(const int32_t pluginId);

@@ -30,7 +30,11 @@
  * Filipe Coelho (aka falkTX <falktx@falktx.com>)
  */
 
-#include <stddef.h>
+#ifdef __cplusplus
+# include <cstddef>
+#else
+# include <stddef.h>
+#endif
 
 #if !defined(offsetof)
 # define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
