@@ -1442,7 +1442,7 @@ void CarlaEngine::processPatchbay(float** inBuf, float** outBuf, const uint32_t 
 #ifdef BUILD_BRIDGE
 void CarlaEngine::osc_send_peaks(CarlaPlugin* const /*plugin*/)
 #else
-void CarlaEngine::osc_send_peaks(CarlaPlugin* const plugin, const unsigned short& id)
+void CarlaEngine::osc_send_peaks(CarlaPlugin* const plugin, const unsigned short id)
 #endif
 {
     // Peak values

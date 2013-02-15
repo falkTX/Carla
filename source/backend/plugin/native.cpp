@@ -211,20 +211,19 @@ public:
             CarlaPlugin::getRealName(strBuf);
     }
 
-#if 0
     void getParameterName(const uint32_t parameterId, char* const strBuf)
     {
-        CARLA_ASSERT(descriptor);
-        CARLA_ASSERT(handle);
-        CARLA_ASSERT(parameterId < param.count);
+        CARLA_ASSERT(fDescriptor != nullptr);
+        CARLA_ASSERT(fHandle != nullptr);
+        CARLA_ASSERT(parameterId < kData->param.count);
 
-        if (descriptor && handle && parameterId < param.count && descriptor->get_parameter_info)
+        if (fDescriptor != nullptr && fHandle != nullptr && parameterId < kData->param.count && fDescriptor->get_parameter_info != nullptr)
         {
-            const ::Parameter* const param = descriptor->get_parameter_info(handle, parameterId);
+            const Parameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId);
 
-            if (param && param->name)
+            if (param != nullptr && param->name != nullptr)
             {
-                strncpy(strBuf, param->name, STR_MAX);
+                std::strncpy(strBuf, param->name, STR_MAX);
                 return;
             }
         }
@@ -234,17 +233,15 @@ public:
 
     void getParameterText(const uint32_t parameterId, char* const strBuf)
     {
-        CARLA_ASSERT(descriptor);
-        CARLA_ASSERT(handle);
-        CARLA_ASSERT(parameterId < param.count);
+        CARLA_ASSERT(fDescriptor != nullptr);
+        CARLA_ASSERT(fHandle != nullptr);
+        CARLA_ASSERT(parameterId < kData->param.count);
 
-        if (descriptor && handle && parameterId < param.count && descriptor->get_parameter_text)
+        if (fDescriptor != nullptr && fHandle != nullptr && parameterId < kData->param.count && fDescriptor->get_parameter_text != nullptr)
         {
-            const char* const text = descriptor->get_parameter_text(handle, parameterId);
-
-            if (text)
+            if (const char* const text = fDescriptor->get_parameter_text(fHandle, parameterId))
             {
-                strncpy(strBuf, text, STR_MAX);
+                std::strncpy(strBuf, text, STR_MAX);
                 return;
             }
         }
@@ -254,17 +251,17 @@ public:
 
     void getParameterUnit(const uint32_t parameterId, char* const strBuf)
     {
-        CARLA_ASSERT(descriptor);
-        CARLA_ASSERT(handle);
-        CARLA_ASSERT(parameterId < param.count);
+        CARLA_ASSERT(fDescriptor != nullptr);
+        CARLA_ASSERT(fHandle != nullptr);
+        CARLA_ASSERT(parameterId < kData->param.count);
 
-        if (descriptor && handle && parameterId < param.count && descriptor->get_parameter_info)
+        if (fDescriptor != nullptr && fHandle != nullptr && parameterId < kData->param.count && fDescriptor->get_parameter_info != nullptr)
         {
-            const ::Parameter* const param = descriptor->get_parameter_info(handle, parameterId);
+            const Parameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId);
 
-            if (param && param->unit)
+            if (param != nullptr && param->unit != nullptr)
             {
-                strncpy(strBuf, param->unit, STR_MAX);
+                std::strncpy(strBuf, param->unit, STR_MAX);
                 return;
             }
         }
@@ -274,22 +271,20 @@ public:
 
     void getParameterScalePointLabel(const uint32_t parameterId, const uint32_t scalePointId, char* const strBuf)
     {
-        CARLA_ASSERT(descriptor);
-        CARLA_ASSERT(handle);
-        CARLA_ASSERT(parameterId < param.count);
+        CARLA_ASSERT(fDescriptor != nullptr);
+        CARLA_ASSERT(fHandle != nullptr);
+        CARLA_ASSERT(parameterId < kData->param.count);
         CARLA_ASSERT(scalePointId < parameterScalePointCount(parameterId));
 
-        if (descriptor && handle && parameterId < param.count && descriptor->get_parameter_info)
+        if (fDescriptor != nullptr && fHandle != nullptr && parameterId < kData->param.count && fDescriptor->get_parameter_info != nullptr)
         {
-            const ::Parameter* const param = descriptor->get_parameter_info(handle, parameterId);
-
-            if (param && scalePointId < param->scalePointCount && param->scalePoints)
+            if (const Parameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId))
             {
-                const ::ParameterScalePoint* const scalePoint = &param->scalePoints[scalePointId];
+                const ParameterScalePoint& scalePoint = param->scalePoints[scalePointId];
 
-                if (scalePoint && scalePoint->label)
+                if (scalePoint.label != nullptr)
                 {
-                    strncpy(strBuf, scalePoint->label, STR_MAX);
+                    std::strncpy(strBuf, scalePoint.label, STR_MAX);
                     return;
                 }
             }
@@ -298,32 +293,29 @@ public:
         CarlaPlugin::getParameterScalePointLabel(parameterId, scalePointId, strBuf);
     }
 
-    void getGuiInfo(GuiType* const type, bool* const resizable)
-    {
-        *type = GUI_EXTERNAL_LV2; // FIXME, should be as _PLUGIN
-        *resizable = false;
-    }
-
     // -------------------------------------------------------------------
     // Set data (plugin-specific stuff)
 
-    void setParameterValue(const uint32_t parameterId, double value, const bool sendGui, const bool sendOsc, const bool sendCallback)
+    void setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback)
     {
-        CARLA_ASSERT(descriptor);
-        CARLA_ASSERT(handle);
-        CARLA_ASSERT(parameterId < param.count);
+        CARLA_ASSERT(fDescriptor != nullptr);
+        CARLA_ASSERT(fHandle != nullptr);
+        CARLA_ASSERT(parameterId < kData->param.count);
 
-        if (descriptor && handle && parameterId < param.count)
+        const float fixedValue = kData->param.fixValue(parameterId, value);
+
+        if (fDescriptor != nullptr && fHandle != nullptr && parameterId < kData->param.count && fDescriptor->set_parameter_value != nullptr)
         {
-            fixParameterValue(value, param.ranges[parameterId]);
+            fDescriptor->set_parameter_value(fHandle, parameterId, fixedValue);
 
-            descriptor->set_parameter_value(handle, param.data[parameterId].rindex, value);
-            if (h2) descriptor->set_parameter_value(h2, param.data[parameterId].rindex, value);
+            if (fHandle2 != nullptr)
+                fDescriptor->set_parameter_value(fHandle2, parameterId, fixedValue);
         }
 
-        CarlaPlugin::setParameterValue(parameterId, value, sendGui, sendOsc, sendCallback);
+        CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
     }
 
+#if 0
     void setCustomData(const char* const type, const char* const key, const char* const value, const bool sendGui)
     {
         CARLA_ASSERT(descriptor);
@@ -359,8 +351,8 @@ public:
 
     void setMidiProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback, const bool block)
     {
-        CARLA_ASSERT(descriptor);
-        CARLA_ASSERT(handle);
+        CARLA_ASSERT(fDescriptor != nullptr);
+        CARLA_ASSERT(fHandle != nullptr);
         CARLA_ASSERT(index >= -1 && index < (int32_t)midiprog.count);
 
         if (index < -1)
@@ -386,27 +378,27 @@ public:
 
         CarlaPlugin::setMidiProgram(index, sendGui, sendOsc, sendCallback, block);
     }
+#endif
 
     // -------------------------------------------------------------------
     // Set gui stuff
 
     void showGui(const bool yesNo)
     {
-        CARLA_ASSERT(descriptor);
-        CARLA_ASSERT(handle);
+        CARLA_ASSERT(fDescriptor != nullptr);
+        CARLA_ASSERT(fHandle != nullptr);
 
-        if (descriptor && handle && descriptor->ui_show)
-            descriptor->ui_show(handle, yesNo);
+        if (fDescriptor != nullptr && fHandle != nullptr && fDescriptor->ui_show != nullptr)
+            fDescriptor->ui_show(fHandle, yesNo);
     }
 
     void idleGui()
     {
-        // FIXME - this should not be called if there's no GUI!
-        CARLA_ASSERT(descriptor);
-        CARLA_ASSERT(handle);
+        CARLA_ASSERT(fDescriptor != nullptr);
+        CARLA_ASSERT(fHandle != nullptr);
 
-        if (descriptor && handle && descriptor->ui_idle)
-            descriptor->ui_idle(handle);
+        if (fDescriptor != nullptr && fHandle != nullptr && fDescriptor->ui_idle != nullptr)
+            fDescriptor->ui_idle(fHandle);
     }
 
     // -------------------------------------------------------------------
@@ -415,8 +407,9 @@ public:
     void reload()
     {
         qDebug("NativePlugin::reload() - start");
-        CARLA_ASSERT(descriptor);
+        CARLA_ASSERT(fDescriptor != nullptr);
 
+#if 0
         const ProcessMode processMode(x_engine->getOptions().processMode);
 
         // Safely disable plugin for reload
@@ -702,35 +695,39 @@ public:
         param.count = params;
 
         // plugin checks
-        m_hints &= ~(PLUGIN_IS_SYNTH | PLUGIN_USES_CHUNKS | PLUGIN_CAN_DRYWET | PLUGIN_CAN_VOLUME | PLUGIN_CAN_BALANCE | PLUGIN_CAN_FORCE_STEREO);
+        fHints &= ~(PLUGIN_IS_SYNTH | PLUGIN_USES_CHUNKS | PLUGIN_CAN_DRYWET | PLUGIN_CAN_VOLUME | PLUGIN_CAN_BALANCE | PLUGIN_CAN_FORCE_STEREO);
 
         if (aOuts > 0 && (aIns == aOuts || aIns == 1))
-            m_hints |= PLUGIN_CAN_DRYWET;
+            fHints |= PLUGIN_CAN_DRYWET;
 
         if (aOuts > 0)
-            m_hints |= PLUGIN_CAN_VOLUME;
+            fHints |= PLUGIN_CAN_VOLUME;
 
         if (aOuts >= 2 && aOuts%2 == 0)
-            m_hints |= PLUGIN_CAN_BALANCE;
+            fHints |= PLUGIN_CAN_BALANCE;
 
         if (aIns <= 2 && aOuts <= 2 && (aIns == aOuts || aIns == 0 || aOuts == 0) && mIns <= 1 && mOuts <= 1)
-            m_hints |= PLUGIN_CAN_FORCE_STEREO;
+            fHints |= PLUGIN_CAN_FORCE_STEREO;
+#endif
 
         // native plugin hints
-        if (descriptor->hints & ::PLUGIN_IS_SYNTH)
-            m_hints |= PLUGIN_IS_SYNTH;
-        if (descriptor->hints & ::PLUGIN_HAS_GUI)
-            m_hints |= PLUGIN_HAS_GUI;
-        if (descriptor->hints & ::PLUGIN_USES_SINGLE_THREAD)
-            m_hints |= PLUGIN_USES_SINGLE_THREAD;
+        if (fDescriptor->hints & ::PLUGIN_IS_RTSAFE)
+            fHints |= PLUGIN_IS_RTSAFE;
+        if (fDescriptor->hints & ::PLUGIN_IS_SYNTH)
+            fHints |= PLUGIN_IS_SYNTH;
+        if (fDescriptor->hints & ::PLUGIN_HAS_GUI)
+            fHints |= PLUGIN_HAS_GUI;
+        if (fDescriptor->hints & ::PLUGIN_USES_SINGLE_THREAD)
+            fHints |= PLUGIN_USES_SINGLE_THREAD;
 
         reloadPrograms(true);
 
-        x_client->activate();
+        kData->client->activate();
 
         qDebug("NativePlugin::reload() - end");
     }
 
+#if 0
     void reloadPrograms(const bool init)
     {
         qDebug("NativePlugin::reloadPrograms(%s)", bool2str(init));

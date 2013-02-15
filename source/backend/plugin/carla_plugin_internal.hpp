@@ -530,6 +530,11 @@ struct CarlaPluginProtectedData {
     CarlaPluginProtectedData(CarlaPluginProtectedData&) = delete;
     CarlaPluginProtectedData(const CarlaPluginProtectedData&) = delete;
 
+    static CarlaEngine* getEngine(CarlaPlugin* const plugin)
+    {
+        return plugin->kData->engine;
+    }
+
     static CarlaEngineAudioPort* getAudioInPort(CarlaPlugin* const plugin, uint32_t index)
     {
         return plugin->kData->audioIn.ports[index].port;

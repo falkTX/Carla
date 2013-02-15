@@ -627,6 +627,11 @@ public:
     // Static values and calls
 
     /*!
+     * TODO.
+     */
+    static const unsigned short MAX_PEAKS = 2;
+
+    /*!
      * Get the number of available engine drivers.
      */
     static unsigned int getDriverCount();
@@ -920,8 +925,6 @@ public:
     // -------------------------------------
 
 protected:
-    static const unsigned short MAX_PEAKS = 2;
-
     uint32_t fBufferSize;
     double   fSampleRate;
 

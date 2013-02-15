@@ -122,8 +122,8 @@ enum EnginePostAction {
 
 struct EnginePluginData {
     CarlaPlugin* plugin;
-    float insPeak[MAX_PEAKS];
-    float outsPeak[MAX_PEAKS];
+    float insPeak[CarlaEngine::MAX_PEAKS];
+    float outsPeak[CarlaEngine::MAX_PEAKS];
 
     EnginePluginData()
         : plugin(nullptr),

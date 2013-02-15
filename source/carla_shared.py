@@ -2257,7 +2257,7 @@ class PluginWidget(QFrame):
 
     @pyqtSlot(bool)
     def slot_guiClicked(self, show):
-        Carla.host.show_gui(show)
+        Carla.host.show_gui(self.fPluginId, show)
 
     @pyqtSlot(bool)
     def slot_editClicked(self, show):

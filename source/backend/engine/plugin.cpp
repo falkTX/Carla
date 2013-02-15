@@ -15,7 +15,7 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#ifdef CARLA_ENGINE_PLUGIN
+#if 0 //def CARLA_ENGINE_PLUGIN
 
 #include "carla_engine_internal.hpp"
 #include "carla_backend_utils.hpp"

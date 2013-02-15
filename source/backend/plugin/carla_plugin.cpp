@@ -37,6 +37,11 @@ static const CustomData       kCustomDataNull;
 // -------------------------------------------------------------------
 // Helpers
 
+CarlaEngine* CarlaPluginGetEngine(CarlaPlugin* const plugin)
+{
+    return CarlaPluginProtectedData::getEngine(plugin);
+}
+
 CarlaEngineAudioPort* CarlaPluginGetAudioInPort(CarlaPlugin* const plugin, uint32_t index)
 {
     return CarlaPluginProtectedData::getAudioInPort(plugin, index);
@@ -1396,6 +1401,9 @@ bool CarlaPlugin::libOpen(const char* const filename)
 
 bool CarlaPlugin::libClose()
 {
+    if (kData->lib == nullptr)
+        return false;
+
     const bool ret = lib_close(kData->lib);
     kData->lib = nullptr;
     return ret;
