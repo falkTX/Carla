@@ -27,10 +27,10 @@ OBJS  = \
 	midi-through.c.o
 
 # DISTRHO plugins
-OBJS += \
-	distrho-3bandeq.cpp.o \
-	distrho-3bandsplitter.cpp.o \
-	distrho-pingpongpan.cpp.o
+# OBJS += \
+# 	distrho-3bandeq.cpp.o \
+# 	distrho-3bandsplitter.cpp.o \
+# 	distrho-pingpongpan.cpp.o
 
 # ZynAddSubFX
 ifeq ($(HAVE_ZYN_DEPS),true)

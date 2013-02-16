@@ -761,102 +761,89 @@ public:
         qDebug("DssiPlugin::reload() - end");
     }
 
-#if 0
     void reloadPrograms(const bool init)
     {
         qDebug("DssiPlugin::reloadPrograms(%s)", bool2str(init));
-        uint32_t i, oldCount = midiprog.count;
+        uint32_t i, oldCount = kData->midiprog.count;
 
         // Delete old programs
-        if (midiprog.count > 0)
-        {
-            for (i=0; i < midiprog.count; i++)
-            {
-                if (midiprog.data[i].name)
-                    free((void*)midiprog.data[i].name);
-            }
-
-            delete[] midiprog.data;
-        }
-
-        midiprog.count = 0;
-        midiprog.data  = nullptr;
+        kData->midiprog.clear();
 
         // Query new programs
-        if (descriptor->get_program && descriptor->select_program)
+        uint32_t count = 0;
+        if (fDssiDescriptor->get_program != nullptr && fDssiDescriptor->select_program != nullptr)
         {
-            while (descriptor->get_program(handle, midiprog.count))
-                midiprog.count += 1;
+            while (fDssiDescriptor->get_program(fHandle, count))
+                count++;
         }
 
-        if (midiprog.count > 0)
-            midiprog.data = new MidiProgramData[midiprog.count];
+        if (count > 0)
+            kData->midiprog.createNew(count);
 
         // Update data
-        for (i=0; i < midiprog.count; i++)
+        for (i=0; i < kData->midiprog.count; i++)
         {
-            const DSSI_Program_Descriptor* const pdesc = descriptor->get_program(handle, i);
-            CARLA_ASSERT(pdesc);
-            CARLA_ASSERT(pdesc->Name);
+            const DSSI_Program_Descriptor* const pdesc = fDssiDescriptor->get_program(fHandle, i);
+            CARLA_ASSERT(pdesc != nullptr);
+            CARLA_ASSERT(pdesc->Name != nullptr);
 
-            midiprog.data[i].bank    = pdesc->Bank;
-            midiprog.data[i].program = pdesc->Program;
-            midiprog.data[i].name    = strdup(pdesc->Name ? pdesc->Name : "");
+            kData->midiprog.data[i].bank    = pdesc->Bank;
+            kData->midiprog.data[i].program = pdesc->Program;
+            kData->midiprog.data[i].name    = carla_strdup(pdesc->Name);
         }
 
 #ifndef BUILD_BRIDGE
         // Update OSC Names
-        if (x_engine->isOscControlRegistered())
+        if (kData->engine->isOscControlRegistered())
         {
-            x_engine->osc_send_control_set_midi_program_count(m_id, midiprog.count);
+            kData->engine->osc_send_control_set_midi_program_count(fId, kData->midiprog.count);
 
-            for (i=0; i < midiprog.count; i++)
-                x_engine->osc_send_control_set_midi_program_data(m_id, i, midiprog.data[i].bank, midiprog.data[i].program, midiprog.data[i].name);
+            for (i=0; i < kData->midiprog.count; i++)
+                kData->engine->osc_send_control_set_midi_program_data(fId, i, kData->midiprog.data[i].bank, kData->midiprog.data[i].program, kData->midiprog.data[i].name);
         }
 #endif
 
         if (init)
         {
-            if (midiprog.count > 0)
+            if (kData->midiprog.count > 0)
                 setMidiProgram(0, false, false, false, true);
         }
         else
         {
-            x_engine->callback(CALLBACK_RELOAD_PROGRAMS, m_id, 0, 0, 0.0, nullptr);
+            kData->engine->callback(CALLBACK_RELOAD_PROGRAMS, fId, 0, 0, 0.0f, nullptr);
 
             // Check if current program is invalid
             bool programChanged = false;
 
-            if (midiprog.count == oldCount+1)
+            if (kData->midiprog.count == oldCount+1)
             {
                 // one midi program added, probably created by user
-                midiprog.current = oldCount;
-                programChanged   = true;
+                kData->midiprog.current = oldCount;
+                programChanged = true;
             }
-            else if (midiprog.current >= (int32_t)midiprog.count)
+            else if (kData->midiprog.current >= static_cast<int32_t>(kData->midiprog.count))
             {
                 // current midi program > count
-                midiprog.current = 0;
-                programChanged   = true;
+                kData->midiprog.current = 0;
+                programChanged = true;
             }
-            else if (midiprog.current < 0 && midiprog.count > 0)
+            else if (kData->midiprog.current < 0 && kData->midiprog.count > 0)
             {
                 // programs exist now, but not before
-                midiprog.current = 0;
-                programChanged   = true;
+                kData->midiprog.current = 0;
+                programChanged = true;
             }
-            else if (midiprog.current >= 0 && midiprog.count == 0)
+            else if (kData->midiprog.current >= 0 && kData->midiprog.count == 0)
             {
                 // programs existed before, but not anymore
-                midiprog.current = -1;
-                programChanged   = true;
+                kData->midiprog.current = -1;
+                programChanged = true;
             }
 
             if (programChanged)
-                setMidiProgram(midiprog.current, true, true, true, true);
+                setMidiProgram(kData->midiprog.current, true, true, true, true);
         }
     }
-#endif
 
     // -------------------------------------------------------------------
     // Plugin processing

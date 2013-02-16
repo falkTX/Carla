@@ -198,10 +198,12 @@ void carla_register_native_plugin_bypass();
 void carla_register_native_plugin_midiSplit();
 void carla_register_native_plugin_midiThrough();
 
+#if 0
 // DISTRHO plugins
 void carla_register_native_plugin_3BandEQ();
 void carla_register_native_plugin_3BandSplitter();
 void carla_register_native_plugin_PingPongPan();
+#endif
 
 #ifdef WANT_ZYNADDSUBFX
 // ZynAddSubFX
