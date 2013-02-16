@@ -82,7 +82,7 @@ public:
     // -------------------------------------------------------------------
     // Information (base)
 
-    virtual PluginType type() const
+    PluginType type() const
     {
         return PLUGIN_LADSPA;
     }
@@ -762,11 +762,35 @@ public:
         }
 
         // --------------------------------------------------------------------------------------------------------
-        // Parameters Input [Automation]
+        // Check if active before
 
-        if (kData->event.portIn != nullptr && kData->activeBefore)
+        if (! kData->activeBefore)
         {
+            if (kData->latency > 0)
+            {
+                for (i=0; i < kData->audioIn.count; i++)
+                    carla_zeroFloat(kData->latencyBuffers[i], kData->latency);
+            }
+
+            if (fDescriptor->activate != nullptr)
+            {
+                fDescriptor->activate(fHandle);
+
+                if (fHandle2 != nullptr)
+                    fDescriptor->activate(fHandle2);
+            }
+        }
+
+        // --------------------------------------------------------------------------------------------------------
+        // Event Input and Processing
+
+        else if (kData->event.portIn != nullptr)
+        {
+            // ----------------------------------------------------------------------------------------------------
+            // Event Input (System)
+
             uint32_t time, nEvents = kData->event.portIn->getEventCount();
+            uint32_t timeOffset = 0;
 
             for (i=0; i < nEvents; i++)
             {
@@ -776,6 +800,14 @@ public:
 
                 if (time >= frames)
                     continue;
+
+                CARLA_ASSERT(time >= timeOffset);
+
+                if (time > timeOffset)
+                {
+                    processSingle(inBuffer, outBuffer, frames - timeOffset, timeOffset);
+                    timeOffset = time;
+                }
 
                 // Control change
                 switch (event.type)
@@ -921,64 +953,36 @@ public:
 
             kData->postRtEvents.trySplice();
 
-        } // End of Parameters Input
+            if (frames > timeOffset)
+                processSingle(inBuffer, outBuffer, frames - timeOffset, timeOffset);
 
-        CARLA_PROCESS_CONTINUE_CHECK;
+        } // End of Event Input and Processing
 
         // --------------------------------------------------------------------------------------------------------
-        // Plugin processing
+        // Plugin processing (no events)
 
+        else
         {
-            if (! kData->activeBefore)
+            processSingle(inBuffer, outBuffer, frames, 0);
+
+        } // End of Plugin processing (no events)
+
+        // --------------------------------------------------------------------------------------------------------
+        // Special Parameters
+
+#if 0
+        CARLA_PROCESS_CONTINUE_CHECK;
+
+        for (k=0; k < param.count; k++)
+        {
+            if (param.data[k].type == PARAMETER_LATENCY)
             {
-                if (kData->latency > 0)
-                {
-                    for (i=0; i < kData->audioIn.count; i++)
-                        carla_zeroFloat(kData->latencyBuffers[i], kData->latency);
-                }
-
-                if (fDescriptor->activate != nullptr)
-                {
-                    fDescriptor->activate(fHandle);
-
-                    if (fHandle2 != nullptr)
-                        fDescriptor->activate(fHandle2);
-                }
+                // TODO
             }
+        }
 
-            if (fHandle2 == nullptr)
-            {
-                for (i=0; i < kData->audioIn.count; i++)
-                    fDescriptor->connect_port(fHandle, kData->audioIn.ports[i].rindex, inBuffer[i]);
-
-                for (i=0; i < kData->audioOut.count; i++)
-                    fDescriptor->connect_port(fHandle, kData->audioOut.ports[i].rindex, outBuffer[i]);
-            }
-            else
-            {
-                if (kData->audioIn.count > 0)
-                {
-                    CARLA_ASSERT(kData->audioIn.count == 2);
-
-                    fDescriptor->connect_port(fHandle,  kData->audioIn.ports[0].rindex, inBuffer[0]);
-                    fDescriptor->connect_port(fHandle2, kData->audioIn.ports[1].rindex, inBuffer[1]);
-                }
-
-                if (kData->audioOut.count > 0)
-                {
-                    CARLA_ASSERT(kData->audioOut.count == 2);
-
-                    fDescriptor->connect_port(fHandle,  kData->audioOut.ports[0].rindex, outBuffer[0]);
-                    fDescriptor->connect_port(fHandle2, kData->audioOut.ports[1].rindex, outBuffer[1]);
-                }
-            }
-
-            fDescriptor->run(fHandle, frames);
-
-            if (fHandle2 != nullptr)
-                fDescriptor->run(fHandle2, frames);
-
-        } // End of Plugin processing
+        CARLA_PROCESS_CONTINUE_CHECK;
+#endif
 
         CARLA_PROCESS_CONTINUE_CHECK;
 
@@ -1086,6 +1090,41 @@ public:
         // --------------------------------------------------------------------------------------------------------
 
         kData->activeBefore = kData->active;
+    }
+
+    void processSingle(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t timeOffset)
+    {
+        if (fHandle2 == nullptr)
+        {
+            for (uint32_t i=0; i < kData->audioIn.count; i++)
+                fDescriptor->connect_port(fHandle, kData->audioIn.ports[i].rindex, inBuffer[i]+timeOffset);
+
+            for (uint32_t i=0; i < kData->audioOut.count; i++)
+                fDescriptor->connect_port(fHandle, kData->audioOut.ports[i].rindex, outBuffer[i]+timeOffset);
+        }
+        else
+        {
+            if (kData->audioIn.count > 0)
+            {
+                CARLA_ASSERT(kData->audioIn.count == 2);
+
+                fDescriptor->connect_port(fHandle,  kData->audioIn.ports[0].rindex, inBuffer[0]+timeOffset);
+                fDescriptor->connect_port(fHandle2, kData->audioIn.ports[1].rindex, inBuffer[1]+timeOffset);
+            }
+
+            if (kData->audioOut.count > 0)
+            {
+                CARLA_ASSERT(kData->audioOut.count == 2);
+
+                fDescriptor->connect_port(fHandle,  kData->audioOut.ports[0].rindex, outBuffer[0]+timeOffset);
+                fDescriptor->connect_port(fHandle2, kData->audioOut.ports[1].rindex, outBuffer[1]+timeOffset);
+            }
+        }
+
+        fDescriptor->run(fHandle, frames);
+
+        if (fHandle2 != nullptr)
+            fDescriptor->run(fHandle2, frames);
     }
 
     // -------------------------------------------------------------------

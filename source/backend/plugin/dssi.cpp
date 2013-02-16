@@ -98,7 +98,7 @@ public:
     // -------------------------------------------------------------------
     // Information (base)
 
-    virtual PluginType type() const
+    PluginType type() const
     {
         return PLUGIN_DSSI;
     }
@@ -891,13 +891,81 @@ public:
         }
 
         // --------------------------------------------------------------------------------------------------------
-        // Event Input
+        // Check if active before
 
-        if (kData->event.portIn != nullptr && kData->activeBefore)
+        if (! kData->activeBefore)
         {
+            if (kData->event.portIn != nullptr)
+            {
+                for (k=0, i=MAX_MIDI_CHANNELS; k < MAX_MIDI_CHANNELS; k++)
+                {
+                    carla_zeroStruct<snd_seq_event_t>(fMidiEvents[k]);
+                    carla_zeroStruct<snd_seq_event_t>(fMidiEvents[k+i]);
+
+                    fMidiEvents[k].type = SND_SEQ_EVENT_CONTROLLER;
+                    fMidiEvents[k].data.control.channel = k;
+                    fMidiEvents[k].data.control.param   = MIDI_CONTROL_ALL_SOUND_OFF;
+
+                    fMidiEvents[k+i].type = SND_SEQ_EVENT_CONTROLLER;
+                    fMidiEvents[k+i].data.control.channel = k;
+                    fMidiEvents[k+i].data.control.param   = MIDI_CONTROL_ALL_NOTES_OFF;
+                }
+
+                midiEventCount = MAX_MIDI_CHANNELS*2;
+            }
+
+            if (kData->latency > 0)
+            {
+                for (i=0; i < kData->audioIn.count; i++)
+                    carla_zeroFloat(kData->latencyBuffers[i], kData->latency);
+            }
+
+            if (fDescriptor->activate != nullptr)
+            {
+                fDescriptor->activate(fHandle);
+
+                if (fHandle2 != nullptr)
+                    fDescriptor->activate(fHandle2);
+            }
+        }
+
+        // --------------------------------------------------------------------------------------------------------
+        // Event Input and Processing
+
+        else if (kData->event.portIn != nullptr)
+        {
+            // ----------------------------------------------------------------------------------------------------
+            // MIDI Input (External)
+
+            if (kData->extNotes.mutex.tryLock())
+            {
+                while (midiEventCount < MAX_MIDI_EVENTS && ! kData->extNotes.data.isEmpty())
+                {
+                    const ExternalMidiNote& note = kData->extNotes.data.getFirst(true);
+
+                    CARLA_ASSERT(note.channel >= 0);
+
+                    carla_zeroStruct<snd_seq_event_t>(fMidiEvents[midiEventCount]);
+
+                    fMidiEvents[midiEventCount].type               = (note.velo > 0) ? SND_SEQ_EVENT_NOTEON : SND_SEQ_EVENT_NOTEOFF;
+                    fMidiEvents[midiEventCount].data.note.channel  = note.channel;
+                    fMidiEvents[midiEventCount].data.note.note     = note.note;
+                    fMidiEvents[midiEventCount].data.note.velocity = note.velo;
+
+                    midiEventCount += 1;
+                }
+
+                kData->extNotes.mutex.unlock();
+
+            } // End of MIDI Input (External)
+
+            // ----------------------------------------------------------------------------------------------------
+            // Event Input (System)
+
             bool allNotesOffSent = false;
 
             uint32_t time, nEvents = kData->event.portIn->getEventCount();
+            uint32_t timeOffset = 0;
 
             uint32_t nextBankId = 0;
             if (kData->midiprog.current >= 0 && kData->midiprog.count > 0)
@@ -911,6 +979,15 @@ public:
 
                 if (time >= frames)
                     continue;
+
+                CARLA_ASSERT(time >= timeOffset);
+
+                if (time > timeOffset)
+                {
+                    processSingle(inBuffer, outBuffer, frames - timeOffset, timeOffset, midiEventCount);
+                    midiEventCount = 0;
+                    timeOffset = time;
+                }
 
                 // Control change
                 switch (event.type)
@@ -1021,7 +1098,7 @@ public:
                     case kEngineControlEventTypeMidiProgram:
                         if (event.channel == kData->ctrlInChannel)
                         {
-                            uint32_t nextProgramId = ctrlEvent.param;
+                            const uint32_t nextProgramId = ctrlEvent.param;
 
                             for (k=0; k < kData->midiprog.count; k++)
                             {
@@ -1038,7 +1115,7 @@ public:
                     case kEngineControlEventTypeAllSoundOff:
                         if (event.channel == kData->ctrlInChannel)
                         {
-                            if (/*midi.portMin &&*/ ! allNotesOffSent)
+                            if (! allNotesOffSent)
                                 sendMidiAllNotesOff();
 
                             if (fDescriptor->deactivate != nullptr)
@@ -1067,7 +1144,7 @@ public:
                     case kEngineControlEventTypeAllNotesOff:
                         if (event.channel == kData->ctrlInChannel)
                         {
-                            if (/*midi.portMin &&*/ ! allNotesOffSent)
+                            if (! allNotesOffSent)
                                 sendMidiAllNotesOff();
 
                             allNotesOffSent = true;
@@ -1157,39 +1234,26 @@ public:
 
             kData->postRtEvents.trySplice();
 
-            // ----------------------------------------------------------------------------------------------------
-            // MIDI Input (External)
+            if (frames > timeOffset)
+                processSingle(inBuffer, outBuffer, frames - timeOffset, timeOffset, midiEventCount);
 
-            if (kData->extNotes.mutex.tryLock())
-            {
-                while (midiEventCount < MAX_MIDI_EVENTS && ! kData->extNotes.data.isEmpty())
-                {
-                    const ExternalMidiNote& note = kData->extNotes.data.getFirst(true);
+        } // End of Event Input and Processing
 
-                    CARLA_ASSERT(note.channel >= 0);
+        // --------------------------------------------------------------------------------------------------------
+        // Plugin processing (no events)
 
-                    carla_zeroStruct<snd_seq_event_t>(fMidiEvents[midiEventCount]);
+        else
+        {
+            processSingle(inBuffer, outBuffer, frames, 0, 0);
 
-                    fMidiEvents[midiEventCount].type               = (note.velo > 0) ? SND_SEQ_EVENT_NOTEON : SND_SEQ_EVENT_NOTEOFF;
-                    fMidiEvents[midiEventCount].data.note.channel  = note.channel;
-                    fMidiEvents[midiEventCount].data.note.note     = note.note;
-                    fMidiEvents[midiEventCount].data.note.velocity = note.velo;
-
-                    midiEventCount += 1;
-                }
-
-                kData->extNotes.mutex.unlock();
-
-            } // End of MIDI Input (External)
-
-        } // End of Event Input
-
-        CARLA_PROCESS_CONTINUE_CHECK;
+        } // End of Plugin processing (no events)
 
         // --------------------------------------------------------------------------------------------------------
         // Special Parameters
 
 #if 0
+        CARLA_PROCESS_CONTINUE_CHECK;
+
         for (k=0; k < param.count; k++)
         {
             if (param.data[k].type == PARAMETER_LATENCY)
@@ -1200,98 +1264,6 @@ public:
 
         CARLA_PROCESS_CONTINUE_CHECK;
 #endif
-
-        // --------------------------------------------------------------------------------------------------------
-        // Plugin processing
-
-        {
-            if (! kData->activeBefore)
-            {
-#if 0
-                if (midi.portMin)
-                {
-                    for (k=0; k < MAX_MIDI_CHANNELS; k++)
-                    {
-                        memset(&midiEvents[k], 0, sizeof(snd_seq_event_t)); //FIXME
-                        midiEvents[k].type      = SND_SEQ_EVENT_CONTROLLER;
-                        midiEvents[k].data.control.channel = k;
-                        midiEvents[k].data.control.param   = MIDI_CONTROL_ALL_SOUND_OFF;
-
-                        memset(&midiEvents[k*2], 0, sizeof(snd_seq_event_t)); //FIXME
-                        midiEvents[k*2].type      = SND_SEQ_EVENT_CONTROLLER;
-                        midiEvents[k*2].data.control.channel = k;
-                        midiEvents[k*2].data.control.param   = MIDI_CONTROL_ALL_NOTES_OFF;
-                    }
-
-                    midiEventCount = MAX_MIDI_CHANNELS;
-                }
-#endif
-
-                if (kData->latency > 0)
-                {
-                    for (i=0; i < kData->audioIn.count; i++)
-                        carla_zeroFloat(kData->latencyBuffers[i], kData->latency);
-                }
-
-                if (fDescriptor->activate != nullptr)
-                {
-                    fDescriptor->activate(fHandle);
-
-                    if (fHandle2 != nullptr)
-                        fDescriptor->activate(fHandle2);
-                }
-            }
-
-            if (fHandle2 == nullptr)
-            {
-                for (i=0; i < kData->audioIn.count; i++)
-                    fDescriptor->connect_port(fHandle, kData->audioIn.ports[i].rindex, inBuffer[i]);
-
-                for (i=0; i < kData->audioOut.count; i++)
-                    fDescriptor->connect_port(fHandle, kData->audioOut.ports[i].rindex, outBuffer[i]);
-            }
-            else
-            {
-                if (kData->audioIn.count > 0)
-                {
-                    CARLA_ASSERT(kData->audioIn.count == 2);
-
-                    fDescriptor->connect_port(fHandle,  kData->audioIn.ports[0].rindex, inBuffer[0]);
-                    fDescriptor->connect_port(fHandle2, kData->audioIn.ports[1].rindex, inBuffer[1]);
-                }
-
-                if (kData->audioOut.count > 0)
-                {
-                    CARLA_ASSERT(kData->audioOut.count == 2);
-
-                    fDescriptor->connect_port(fHandle,  kData->audioOut.ports[0].rindex, outBuffer[0]);
-                    fDescriptor->connect_port(fHandle2, kData->audioOut.ports[1].rindex, outBuffer[1]);
-                }
-            }
-
-            if (fDssiDescriptor->run_synth != nullptr)
-            {
-                fDssiDescriptor->run_synth(fHandle, frames, fMidiEvents, midiEventCount);
-
-                if (fHandle2)
-                    fDssiDescriptor->run_synth(fHandle2, frames, fMidiEvents, midiEventCount);
-            }
-            else if (fDssiDescriptor->run_multiple_synths != nullptr)
-            {
-                LADSPA_Handle handlePtr[2] = { fHandle, fHandle2 };
-                snd_seq_event_t* midiEventsPtr[2] = { fMidiEvents, fMidiEvents };
-                unsigned long midiEventCountPtr[2] = { midiEventCount, midiEventCount };
-                fDssiDescriptor->run_multiple_synths((fHandle2 != nullptr) ? 2 : 1, handlePtr, frames, midiEventsPtr, midiEventCountPtr);
-            }
-            else
-            {
-                fDescriptor->run(fHandle, frames);
-
-                if (fHandle2)
-                    fDescriptor->run(fHandle2, frames);
-            }
-
-        } // End of Plugin processing
 
         CARLA_PROCESS_CONTINUE_CHECK;
 
@@ -1409,6 +1381,58 @@ public:
         // --------------------------------------------------------------------------------------------------------
 
         kData->activeBefore = kData->active;
+    }
+
+    void processSingle(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t timeOffset, const uint32_t midiEventCount)
+    {
+        if (fHandle2 == nullptr)
+        {
+            for (uint32_t i=0; i < kData->audioIn.count; i++)
+                fDescriptor->connect_port(fHandle, kData->audioIn.ports[i].rindex, inBuffer[i]+timeOffset);
+
+            for (uint32_t i=0; i < kData->audioOut.count; i++)
+                fDescriptor->connect_port(fHandle, kData->audioOut.ports[i].rindex, outBuffer[i]+timeOffset);
+        }
+        else
+        {
+            if (kData->audioIn.count > 0)
+            {
+                CARLA_ASSERT(kData->audioIn.count == 2);
+
+                fDescriptor->connect_port(fHandle,  kData->audioIn.ports[0].rindex, inBuffer[0]+timeOffset);
+                fDescriptor->connect_port(fHandle2, kData->audioIn.ports[1].rindex, inBuffer[1]+timeOffset);
+            }
+
+            if (kData->audioOut.count > 0)
+            {
+                CARLA_ASSERT(kData->audioOut.count == 2);
+
+                fDescriptor->connect_port(fHandle,  kData->audioOut.ports[0].rindex, outBuffer[0]+timeOffset);
+                fDescriptor->connect_port(fHandle2, kData->audioOut.ports[1].rindex, outBuffer[1]+timeOffset);
+            }
+        }
+
+        if (fDssiDescriptor->run_synth != nullptr)
+        {
+            fDssiDescriptor->run_synth(fHandle, frames, fMidiEvents, midiEventCount);
+
+            if (fHandle2)
+                fDssiDescriptor->run_synth(fHandle2, frames, fMidiEvents, midiEventCount);
+        }
+        else if (fDssiDescriptor->run_multiple_synths != nullptr)
+        {
+            LADSPA_Handle handlePtr[2] = { fHandle, fHandle2 };
+            snd_seq_event_t* midiEventsPtr[2] = { fMidiEvents, fMidiEvents };
+            unsigned long midiEventCountPtr[2] = { midiEventCount, midiEventCount };
+            fDssiDescriptor->run_multiple_synths((fHandle2 != nullptr) ? 2 : 1, handlePtr, frames, midiEventsPtr, midiEventCountPtr);
+        }
+        else
+        {
+            fDescriptor->run(fHandle, frames);
+
+            if (fHandle2)
+                fDescriptor->run(fHandle2, frames);
+        }
     }
 
     // -------------------------------------------------------------------

@@ -1462,6 +1462,8 @@ class PluginEdit(QDialog):
 
         self.connect(self.ui.keyboard, SIGNAL("noteOn(int)"), SLOT("slot_noteOn(int)"))
         self.connect(self.ui.keyboard, SIGNAL("noteOff(int)"), SLOT("slot_noteOff(int)"))
+        self.connect(self.ui.keyboard, SIGNAL("notesOn()"), SLOT("slot_notesOn()"))
+        self.connect(self.ui.keyboard, SIGNAL("notesOff()"), SLOT("slot_notesOff()"))
 
         self.connect(self.ui.cb_programs, SIGNAL("currentIndexChanged(int)"), SLOT("slot_programIndexChanged(int)"))
         self.connect(self.ui.cb_midi_programs, SIGNAL("currentIndexChanged(int)"), SLOT("slot_midiProgramIndexChanged(int)"))
@@ -1724,7 +1726,7 @@ class PluginEdit(QDialog):
                 mpData  = Carla.host.get_midi_program_data(self.fPluginId, i)
                 mpBank  = int(mpData['bank'])
                 mpProg  = int(mpData['program'])
-                mpLabel = cString(mpData['label'])
+                mpLabel = cString(mpData['name'])
                 self.ui.cb_midi_programs.addItem("%03i:%03i - %s" % (mpBank, mpProg, mpLabel))
 
             self.fCurrentMidiProgram = Carla.host.get_current_midi_program_index(self.fPluginId)
@@ -1753,7 +1755,7 @@ class PluginEdit(QDialog):
             mpData  = Carla.host.get_midi_program_data(self.fPluginId, mpIndex)
             mpBank  = int(mpData['bank'])
             mpProg  = int(mpData['program'])
-            mpLabel = cString(mpData['label'])
+            mpLabel = cString(mpData['name'])
             self.ui.cb_midi_programs.setItemText(mpIndex, "%03i:%03i - %s" % (mpBank, mpProg, mpLabel))
 
         # Update all parameter values
@@ -1948,12 +1950,12 @@ class PluginEdit(QDialog):
     @pyqtSlot()
     def slot_notesOn(self):
         if self.fRealParent:
-            self.fRealParent.led_midi.setChecked(True)
+            self.fRealParent.ui.led_midi.setChecked(True)
 
     @pyqtSlot()
     def slot_notesOff(self):
         if self.fRealParent:
-            self.fRealParent.led_midi.setChecked(False)
+            self.fRealParent.ui.led_midi.setChecked(False)
 
     @pyqtSlot()
     def slot_finished(self):

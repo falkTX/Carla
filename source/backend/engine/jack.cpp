@@ -1044,8 +1044,10 @@ private:
         float inPeaks[inCount];
         float outPeaks[outCount];
 
-        carla_zeroFloat(inPeaks, inCount);
-        carla_zeroFloat(outPeaks, outCount);
+        if (inCount > 0)
+            carla_zeroFloat(inPeaks, inCount);
+        if (outCount > 0)
+            carla_zeroFloat(outPeaks, outCount);
 
         for (uint32_t i=0; i < inCount; i++)
         {
