@@ -690,7 +690,7 @@ public:
     /*!
      * Tell the UI a parameter has changed.
      */
-    virtual void uiParameterChange(const uint32_t index, const double value);
+    virtual void uiParameterChange(const uint32_t index, const float value);
 
     /*!
      * Tell the UI the current program has changed.

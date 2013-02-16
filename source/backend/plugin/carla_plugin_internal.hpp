@@ -70,6 +70,14 @@ enum PluginBridgeInfoType {
 
 // -----------------------------------------------------------------------
 
+const unsigned short MAX_RT_EVENTS   = 128;
+const unsigned short MAX_MIDI_EVENTS = 512;
+
+const unsigned int PLUGIN_HINT_HAS_MIDI_IN  = 0x1;
+const unsigned int PLUGIN_HINT_HAS_MIDI_OUT = 0x2;
+
+// -----------------------------------------------------------------------
+
 struct PluginAudioPort {
     uint32_t rindex;
     CarlaEngineAudioPort* port;
@@ -395,13 +403,6 @@ private:
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginGUI)
 };
-
-// -----------------------------------------------------------------------
-
-const unsigned short MAX_RT_EVENTS = 128;
-
-const unsigned int PLUGIN_HINT_HAS_MIDI_IN  = 0x1;
-const unsigned int PLUGIN_HINT_HAS_MIDI_OUT = 0x2;
 
 // -----------------------------------------------------------------------
 

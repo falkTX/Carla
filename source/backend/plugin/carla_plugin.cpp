@@ -672,7 +672,7 @@ void CarlaPlugin::setCustomData(const char* const type, const char* const key, c
     if (std::strcmp(type, CUSTOM_DATA_STRING) == 0)
     {
         // Ignore some keys
-        if (strncmp(key, "OSC:", 4) == 0 || std::strcmp(key, "guiVisible") == 0)
+        if (std::strncmp(key, "OSC:", 4) == 0 || std::strcmp(key, "guiVisible") == 0)
             saveData = false;
         //else if (strcmp(key, CARLA_BRIDGE_MSG_SAVE_NOW) == 0 || strcmp(key, CARLA_BRIDGE_MSG_SET_CHUNK) == 0 || strcmp(key, CARLA_BRIDGE_MSG_SET_CUSTOM) == 0)
         //    saveData = false;
@@ -1316,7 +1316,7 @@ void CarlaPlugin::postRtEventsRun()
     }
 }
 
-void CarlaPlugin::uiParameterChange(const uint32_t index, const double value)
+void CarlaPlugin::uiParameterChange(const uint32_t index, const float value)
 {
     CARLA_ASSERT(index < parameterCount());
     return;

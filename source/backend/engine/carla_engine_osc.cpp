@@ -436,7 +436,7 @@ int CarlaEngineOsc::handleMsgConfigure(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     const char* const value = (const char*)&argv[1]->s;
 
     // FIXME
-    plugin->setCustomData("CUSTOM_DATA_STRING", key, value, false);
+    plugin->setCustomData(CUSTOM_DATA_STRING, key, value, false);
 
     return 0;
 }

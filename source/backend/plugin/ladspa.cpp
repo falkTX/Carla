@@ -761,8 +761,6 @@ public:
             return;
         }
 
-        CARLA_PROCESS_CONTINUE_CHECK;
-
         // --------------------------------------------------------------------------------------------------------
         // Parameters Input [Automation]
 
@@ -1114,8 +1112,8 @@ public:
     {
         CARLA_ASSERT(kData->engine != nullptr);
         CARLA_ASSERT(kData->client == nullptr);
-        CARLA_ASSERT(filename);
-        CARLA_ASSERT(label);
+        CARLA_ASSERT(filename != nullptr);
+        CARLA_ASSERT(label != nullptr);
 
         // ---------------------------------------------------------------
         // open DLL
@@ -1143,9 +1141,7 @@ public:
         unsigned long i = 0;
         while ((fDescriptor = descFn(i++)) != nullptr)
         {
-            if (fDescriptor->Label == nullptr)
-                continue;
-            if (std::strcmp(fDescriptor->Label, label) == 0)
+            if (fDescriptor->Label != nullptr && std::strcmp(fDescriptor->Label, label) == 0)
                 break;
         }
 
