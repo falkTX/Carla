@@ -18,27 +18,81 @@
 #ifndef __CARLA_UTILS_HPP__
 #define __CARLA_UTILS_HPP__
 
-#include "carla_juce_utils.hpp"
+#include "carla_defines.hpp"
 
+#include <cassert>
+#include <cstdarg>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
-// #define CPP11_MUTEX
-
-#ifdef CPP11_MUTEX
-# include <mutex>
-# include <thread>
-#else
-# include <pthread.h>
-#endif
-
-#if defined(Q_OS_HAIKU)
+#if defined(CARLA_OS_HAIKU)
 # include <kernel/OS.h>
-#elif defined(Q_OS_LINUX)
+#elif defined(CARLA_OS_LINUX)
 # include <sys/prctl.h>
 # include <linux/prctl.h>
 #endif
+
+// -------------------------------------------------
+// misc functions
+
+static inline
+const char* bool2str(const bool yesNo)
+{
+    return yesNo ? "true" : "false";
+}
+
+static inline
+void pass() {}
+
+// -------------------------------------------------
+// string print functions
+
+#ifndef DEBUG
+# define carla_debug(...)
+#else
+static inline
+void carla_debug(const char* const fmt, ...)
+{
+    std::va_list args;
+    va_start(args, fmt);
+    std::fprintf(stdout, "\x1b[30;1m");
+    std::vfprintf(stdout, fmt, args);
+    std::fprintf(stdout, "\x1b[0m\n");
+    va_end(args);
+}
+#endif
+
+static inline
+void carla_stdout(const char* const fmt, ...)
+{
+    std::va_list args;
+    va_start(args, fmt);
+    std::vfprintf(stdout, fmt, args);
+    std::fprintf(stdout, "\n");
+    va_end(args);
+}
+
+static inline
+void carla_stderr(const char* const fmt, ...)
+{
+    std::va_list args;
+    va_start(args, fmt);
+    std::vfprintf(stderr, fmt, args);
+    std::fprintf(stderr, "\n");
+    va_end(args);
+}
+
+static inline
+void carla_stderr2(const char* const fmt, ...)
+{
+    std::va_list args;
+    va_start(args, fmt);
+    std::fprintf(stderr, "\x1b[31m");
+    std::vfprintf(stderr, fmt, args);
+    std::fprintf(stderr, "\x1b[0m\n");
+    va_end(args);
+}
 
 // -------------------------------------------------
 // carla_assert*
@@ -46,19 +100,19 @@
 static inline
 void carla_assert(const char* const assertion, const char* const file, const int line)
 {
-    qCritical("Carla assertion failure: \"%s\" in file %s, line %i", assertion, file, line);
+    carla_stderr2("Carla assertion failure: \"%s\" in file %s, line %i", assertion, file, line);
 }
 
 static inline
 void carla_assert_int(const char* const assertion, const char* const file, const int line, const int value)
 {
-    qCritical("Carla assertion failure: \"%s\" in file %s, line %i, value %i", assertion, file, line, value);
+    carla_stderr2("Carla assertion failure: \"%s\" in file %s, line %i, value %i", assertion, file, line, value);
 }
 
 static inline
 void carla_assert_int2(const char* const assertion, const char* const file, const int line, const int v1, const int v2)
 {
-    qCritical("Carla assertion failure: \"%s\" in file %s, line %i, v1 %i, v2 %i", assertion, file, line, v1, v2);
+    carla_stderr2("Carla assertion failure: \"%s\" in file %s, line %i, v1 %i, v2 %i", assertion, file, line, v1, v2);
 }
 
 // -------------------------------------------------
@@ -69,7 +123,7 @@ void carla_sleep(const unsigned int secs)
 {
     CARLA_ASSERT(secs > 0);
 
-#ifdef Q_OS_WIN
+#ifdef CARLA_OS_WIN
     Sleep(secs * 1000);
 #else
     sleep(secs);
@@ -81,7 +135,7 @@ void carla_msleep(const unsigned int msecs)
 {
     CARLA_ASSERT(msecs > 0);
 
-#ifdef Q_OS_WIN
+#ifdef CARLA_OS_WIN
     Sleep(msecs);
 #else
     usleep(msecs * 1000);
@@ -93,7 +147,7 @@ void carla_usleep(const unsigned int usecs)
 {
     CARLA_ASSERT(usecs > 0);
 
-#ifdef Q_OS_WIN
+#ifdef CARLA_OS_WIN
     Sleep(usecs / 1000);
 #else
     usleep(usecs);
@@ -109,7 +163,7 @@ void carla_setenv(const char* const key, const char* const value)
     CARLA_ASSERT(key != nullptr);
     CARLA_ASSERT(value != nullptr);
 
-#ifdef Q_OS_WIN
+#ifdef CARLA_OS_WIN
     SetEnvironmentVariableA(key, value);
 #else
     setenv(key, value, 1);
@@ -124,13 +178,13 @@ void carla_setprocname(const char* const name)
 {
     CARLA_ASSERT(name != nullptr);
 
-#if defined(Q_OS_HAIKU)
+#if defined(CARLA_OS_HAIKU)
     if ((thread_id this_thread = find_thread(nullptr)) != B_NAME_NOT_FOUND)
         rename_thread(this_thread, name);
-#elif defined(Q_OS_LINUX)
+#elif defined(CARLA_OS_LINUX)
     prctl(PR_SET_NAME, name);
 #else
-    qWarning("carla_setprocname(\"%s\") - unsupported on this platform", name);
+    carla_stderr("carla_setprocname(\"%s\") - unsupported on this platform", name);
 #endif
 }
 
@@ -224,704 +278,6 @@ static inline
 void carla_zeroStruct(T& structure)
 {
     std::memset(&structure, 0, sizeof(T));
-}
-
-// -------------------------------------------------
-// other misc functions
-
-static inline
-const char* bool2str(const bool yesNo)
-{
-    return yesNo ? "true" : "false";
-}
-
-static inline
-void pass() {}
-
-// -------------------------------------------------
-// CarlaMutex class
-
-class CarlaMutex
-{
-public:
-    CarlaMutex()
-    {
-#ifndef CPP11_MUTEX
-        pthread_mutex_init(&pmutex, nullptr);
-#endif
-    }
-
-    ~CarlaMutex()
-    {
-#ifndef CPP11_MUTEX
-        pthread_mutex_destroy(&pmutex);
-#endif
-    }
-
-    void lock()
-    {
-#ifdef CPP11_MUTEX
-        cmutex.lock();
-#else
-        pthread_mutex_lock(&pmutex);
-#endif
-    }
-
-    bool tryLock()
-    {
-#ifdef CPP11_MUTEX
-        return cmutex.try_lock();
-#else
-        return (pthread_mutex_trylock(&pmutex) == 0);
-#endif
-    }
-
-    void unlock()
-    {
-#ifdef CPP11_MUTEX
-        cmutex.unlock();
-#else
-        pthread_mutex_unlock(&pmutex);
-#endif
-    }
-
-    class ScopedLocker
-    {
-    public:
-        ScopedLocker(CarlaMutex* const mutex)
-            : fMutex(mutex)
-        {
-            fMutex->lock();
-        }
-
-        ~ScopedLocker()
-        {
-            fMutex->unlock();
-        }
-
-    private:
-        CarlaMutex* const fMutex;
-
-        CARLA_PREVENT_HEAP_ALLOCATION
-        CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ScopedLocker)
-    };
-
-private:
-#ifdef CPP11_MUTEX
-    std::mutex cmutex;
-#else
-    pthread_mutex_t pmutex;
-#endif
-
-    CARLA_PREVENT_HEAP_ALLOCATION
-    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaMutex)
-};
-
-// -------------------------------------------------
-// CarlaThread class
-
-class CarlaThread
-{
-public:
-    CarlaThread()
-        : fStarted(false),
-          fFinished(false)
-    {
-#ifdef CPP11_MUTEX
-        cthread = nullptr;
-#else
-        _zero();
-        pthread_attr_init(&pthreadAttr);
-        pthread_attr_setdetachstate(&pthreadAttr, PTHREAD_CREATE_JOINABLE);
-#endif
-    }
-
-    ~CarlaThread()
-    {
-        CARLA_ASSERT(! isRunning());
-
-        if (isRunning())
-            terminate();
-
-#ifdef CPP11_MUTEX
-        if (cthread != nullptr)
-        {
-            cthread->join();
-            delete cthread;
-        }
-#else
-        if (! _isNull())
-            pthread_join(pthreadId, nullptr);
-
-        pthread_attr_destroy(&pthreadAttr);
-#endif
-    }
-
-    bool start()
-    {
-        CARLA_ASSERT(! isRunning());
-
-        if (isRunning())
-            return false;
-
-        fStarted  = false;
-        fFinished = false;
-
-#ifdef CPP11_MUTEX
-        CARLA_ASSERT(cthread == nullptr);
-
-        if (cthread != nullptr)
-            return false;
-
-        cthread = new std::thread(_cthreadRoutine, this);
-        CARLA_ASSERT(cthread->joinable());
-
-        return true;
-#else
-        CARLA_ASSERT(_isNull());
-
-        if (! _isNull())
-            return false;
-
-        return (pthread_create(&pthreadId, &pthreadAttr, _pthreadRoutine, this) == 0);
-#endif
-    }
-
-    bool stop(const unsigned int timeout = 0)
-    {
-        CARLA_ASSERT(isRunning());
-
-        if (! isRunning())
-            return true;
-
-#ifdef CPP11_MUTEX
-        if (cthread == nullptr)
-            return true;
-#else
-        if (_isNull())
-            return true;
-#endif
-
-        if (timeout == 0)
-        {
-#ifdef CPP11_MUTEX
-              cthread->join();
-#else
-              pthread_join(pthreadId, nullptr);
-#endif
-        }
-        else
-        {
-            for (unsigned int i=0; i < timeout && ! fFinished; i++)
-                carla_msleep(1);
-        }
-
-        if (! fFinished)
-            return false;
-
-#ifdef CPP11_MUTEX
-        delete cthread;
-        cthread = nullptr;
-#else
-        _zero();
-#endif
-
-        return true;
-    }
-
-    void terminate()
-    {
-        CARLA_ASSERT(isRunning());
-
-        if (fFinished)
-            return;
-
-#ifdef CPP11_MUTEX
-        if (cthread == nullptr)
-            return;
-#else
-        if (_isNull())
-            return;
-#endif
-
-#ifdef CPP11_MUTEX
-        cthread->detach();
-        //cthread->join();
-        delete cthread;
-        cthread = nullptr;
-#else
-        pthread_detach(pthreadId);
-        //pthread_join(pthreadId, nullptr);
-        pthread_cancel(pthreadId);
-        _zero();
-#endif
-
-        fFinished = true;
-    }
-
-    bool isRunning()
-    {
-        return (fStarted && ! fFinished);
-    }
-
-    void waitForStarted(const unsigned int timeout = 0) // ms
-    {
-        if (fStarted)
-            return;
-
-        if (timeout == 0)
-        {
-            while (! fStarted) {}
-        }
-        else
-        {
-            for (unsigned int i=0; i < timeout && ! fStarted; i++)
-                carla_msleep(1);
-        }
-    }
-
-    void waitForFinished()
-    {
-        waitForStarted();
-        stop(0);
-    }
-
-protected:
-    virtual void run() = 0;
-
-private:
-    bool fStarted;
-    bool fFinished;
-
-    void handleRoutine()
-    {
-        fStarted = true;
-        run();
-        fFinished = true;
-    }
-
-#ifdef CPP11_MUTEX
-    std::thread* cthread;
-
-    static void _cthreadRoutine(CarlaThread* const _this_)
-    {
-        _this_->handleRoutine();
-    }
-#else
-    pthread_t      pthreadId;
-    pthread_attr_t pthreadAttr;
-
-    static void* _pthreadRoutine(void* const _this_)
-    {
-        ((CarlaThread*)_this_)->handleRoutine();
-        pthread_exit(nullptr);
-        return nullptr;
-    }
-
-    bool _isNull()
-    {
-#ifdef Q_OS_WIN
-        return pthreadId.p == nullptr;
-#else
-        return pthreadId == 0;
-#endif
-    }
-
-    void _zero()
-    {
-        carla_zeroStruct<pthread_t>(pthreadId);
-    }
-#endif
-
-    CARLA_PREVENT_HEAP_ALLOCATION
-    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaThread)
-};
-
-// -------------------------------------------------
-// CarlaString class
-
-class CarlaString
-{
-public:
-    // ---------------------------------------------
-    // constructors (no explicit conversions allowed)
-
-    explicit CarlaString()
-    {
-        _init();
-        _dup(nullptr);
-    }
-
-    explicit CarlaString(char* const strBuf)
-    {
-        _init();
-        _dup(strBuf);
-    }
-
-    explicit CarlaString(const char* const strBuf)
-    {
-        _init();
-        _dup(strBuf);
-    }
-
-    explicit CarlaString(const int value)
-    {
-        const size_t strBufSize = std::abs(value/10) + 3;
-        char         strBuf[strBufSize];
-        std::snprintf(strBuf, strBufSize, "%d", value);
-
-        _init();
-        _dup(strBuf, strBufSize);
-    }
-
-    explicit CarlaString(const unsigned int value, const bool hexadecimal = false)
-    {
-        const size_t strBufSize = value/10 + 2 + (hexadecimal ? 2 : 0);
-        char         strBuf[strBufSize];
-        std::snprintf(strBuf, strBufSize, hexadecimal ? "0x%x" : "%u", value);
-
-        _init();
-        _dup(strBuf, strBufSize);
-    }
-
-    explicit CarlaString(const long int value)
-    {
-        const size_t strBufSize = std::abs(value/10) + 3;
-        char         strBuf[strBufSize];
-        std::snprintf(strBuf, strBufSize, "%ld", value);
-
-        _init();
-        _dup(strBuf, strBufSize);
-    }
-
-    explicit CarlaString(const unsigned long int value, const bool hexadecimal = false)
-    {
-        const size_t strBufSize = value/10 + 2 + (hexadecimal ? 2 : 0);
-        char         strBuf[strBufSize];
-        std::snprintf(strBuf, strBufSize, hexadecimal ? "0x%lx" : "%lu", value);
-
-        _init();
-        _dup(strBuf, strBufSize);
-    }
-
-    explicit CarlaString(const float value)
-    {
-        char strBuf[0xff];
-        std::snprintf(strBuf, 0xff, "%f", value);
-
-        _init();
-        _dup(strBuf);
-    }
-
-    explicit CarlaString(const double value)
-    {
-        char strBuf[0xff];
-        std::snprintf(strBuf, 0xff, "%g", value);
-
-        _init();
-        _dup(strBuf);
-    }
-
-    // ---------------------------------------------
-    // non-explicit constructor
-
-    CarlaString(const CarlaString& str)
-    {
-        _init();
-        _dup(str.buffer);
-    }
-
-    // ---------------------------------------------
-    // deconstructor
-
-    ~CarlaString()
-    {
-        CARLA_ASSERT(buffer);
-
-        delete[] buffer;
-    }
-
-    // ---------------------------------------------
-    // public methods
-
-    size_t length() const
-    {
-        return bufferLen;
-    }
-
-    bool isEmpty() const
-    {
-        return (bufferLen == 0);
-    }
-
-    bool isNotEmpty() const
-    {
-        return (bufferLen != 0);
-    }
-
-#if __USE_GNU
-    bool contains(const char* const strBuf, const bool ignoreCase = false) const
-    {
-        if (strBuf == nullptr)
-            return false;
-
-        if (ignoreCase)
-            return (strcasestr(buffer, strBuf) != nullptr);
-        else
-            return (std::strstr(buffer, strBuf) != nullptr);
-    }
-
-    bool contains(const CarlaString& str, const bool ignoreCase = false) const
-    {
-        return contains(str.buffer, ignoreCase);
-    }
-#else
-    bool contains(const char* const strBuf) const
-    {
-        if (strBuf == nullptr)
-            return false;
-
-        return (std::strstr(buffer, strBuf) != nullptr);
-    }
-
-    bool contains(const CarlaString& str) const
-    {
-        return contains(str.buffer);
-    }
-#endif
-
-    bool isDigit(const size_t pos) const
-    {
-        if (pos >= bufferLen)
-            return false;
-
-        return (buffer[pos] >= '0' && buffer[pos] <= '9');
-    }
-
-    void clear()
-    {
-        truncate(0);
-    }
-
-    void replace(const char before, const char after)
-    {
-        if (after == '\0')
-            return;
-
-        for (size_t i=0; i < bufferLen; i++)
-        {
-            if (buffer[i] == before)
-                buffer[i] = after;
-            else if (buffer[i] == '\0')
-                break;
-        }
-    }
-
-    void truncate(const size_t n)
-    {
-        if (n >= bufferLen)
-            return;
-
-        for (size_t i=n; i < bufferLen; i++)
-            buffer[i] = '\0';
-
-        bufferLen = n;
-    }
-
-    void toBasic()
-    {
-        for (size_t i=0; i < bufferLen; i++)
-        {
-            if (buffer[i] >= '0' && buffer[i] <= '9')
-                continue;
-            if (buffer[i] >= 'A' && buffer[i] <= 'Z')
-                continue;
-            if (buffer[i] >= 'a' && buffer[i] <= 'z')
-                continue;
-            if (buffer[i] == '_')
-                continue;
-
-            buffer[i] = '_';
-        }
-    }
-
-    void toLower()
-    {
-        static const char charDiff = 'a' - 'A';
-
-        for (size_t i=0; i < bufferLen; i++)
-        {
-            if (buffer[i] >= 'A' && buffer[i] <= 'Z')
-                buffer[i] += charDiff;
-        }
-    }
-
-    void toUpper()
-    {
-        static const char charDiff = 'a' - 'A';
-
-        for (size_t i=0; i < bufferLen; i++)
-        {
-            if (buffer[i] >= 'a' && buffer[i] <= 'z')
-                buffer[i] -= charDiff;
-        }
-    }
-
-    // ---------------------------------------------
-    // public operators
-
-    operator const char*() const
-    {
-        return buffer;
-    }
-
-    char& operator[](const size_t pos)
-    {
-        return buffer[pos];
-    }
-
-    bool operator==(const char* const strBuf) const
-    {
-        return (strBuf != nullptr && std::strcmp(buffer, strBuf) == 0);
-    }
-
-    bool operator==(const CarlaString& str) const
-    {
-        return operator==(str.buffer);
-    }
-
-    bool operator!=(const char* const strBuf) const
-    {
-        return !operator==(strBuf);
-    }
-
-    bool operator!=(const CarlaString& str) const
-    {
-        return !operator==(str.buffer);
-    }
-
-    CarlaString& operator=(const char* const strBuf)
-    {
-        _dup(strBuf);
-
-        return *this;
-    }
-
-    CarlaString& operator=(const CarlaString& str)
-    {
-        return operator=(str.buffer);
-    }
-
-    CarlaString& operator+=(const char* const strBuf)
-    {
-        const size_t newBufSize = bufferLen + ((strBuf != nullptr) ? std::strlen(strBuf) : 0) + 1;
-        char         newBuf[newBufSize];
-
-        std::strcpy(newBuf, buffer);
-        std::strcat(newBuf, strBuf);
-
-        _dup(newBuf, newBufSize-1);
-
-        return *this;
-    }
-
-    CarlaString& operator+=(const CarlaString& str)
-    {
-        return operator+=(str.buffer);
-    }
-
-    CarlaString operator+(const char* const strBuf)
-    {
-        const size_t newBufSize = bufferLen + ((strBuf != nullptr) ? std::strlen(strBuf) : 0) + 1;
-        char         newBuf[newBufSize];
-
-        std::strcpy(newBuf, buffer);
-        std::strcat(newBuf, strBuf);
-
-        return CarlaString(newBuf);
-    }
-
-    CarlaString operator+(const CarlaString& str)
-    {
-        return operator+(str.buffer);
-    }
-
-    // ---------------------------------------------
-
-private:
-    char*  buffer;
-    size_t bufferLen;
-    bool   firstInit;
-
-    void _init()
-    {
-        buffer    = nullptr;
-        bufferLen = 0;
-        firstInit = true;
-    }
-
-    // allocate string strBuf if not null
-    // size > 0 only if strBuf is valid
-    void _dup(const char* const strBuf, const size_t size = 0)
-    {
-        if (strBuf != nullptr)
-        {
-            // don't recreate string if contents match
-            if (firstInit || std::strcmp(buffer, strBuf) != 0)
-            {
-                if (! firstInit)
-                {
-                    CARLA_ASSERT(buffer);
-                    delete[] buffer;
-                }
-
-                bufferLen = (size > 0) ? size : std::strlen(strBuf);
-                buffer    = new char[bufferLen+1];
-
-                std::strcpy(buffer, strBuf);
-
-                buffer[bufferLen] = '\0';
-
-                firstInit = false;
-            }
-        }
-        else
-        {
-            CARLA_ASSERT(size == 0);
-
-            // don't recreate null string
-            if (firstInit || bufferLen != 0)
-            {
-                if (! firstInit)
-                {
-                    CARLA_ASSERT(buffer);
-                    delete[] buffer;
-                }
-
-                bufferLen = 0;
-                buffer    = new char[1];
-                buffer[0] = '\0';
-
-                firstInit = false;
-            }
-        }
-    }
-
-    CARLA_LEAK_DETECTOR(CarlaString)
-    CARLA_PREVENT_HEAP_ALLOCATION
-};
-
-static inline
-CarlaString operator+(const char* const strBufBefore, const CarlaString& strAfter)
-{
-    const char* const strBufAfter = (const char*)strAfter;
-    const size_t newBufSize = ((strBufBefore != nullptr) ? std::strlen(strBufBefore) : 0) + std::strlen(strBufAfter) + 1;
-    char         newBuf[newBufSize];
-
-    std::strcpy(newBuf, strBufBefore);
-    std::strcat(newBuf, strBufAfter);
-
-    return CarlaString(newBuf);
 }
 
 // -------------------------------------------------

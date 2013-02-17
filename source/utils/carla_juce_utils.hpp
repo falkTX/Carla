@@ -19,9 +19,9 @@
 #ifndef __CARLA_JUCE_UTILS_HPP__
 #define __CARLA_JUCE_UTILS_HPP__
 
-#include "carla_defines.hpp"
+#include "carla_utils.hpp"
 
-#include <cassert>
+#include <algorithm>
 
 #define CARLA_DECLARE_NON_COPYABLE(className) \
     className (const className&);\
@@ -82,7 +82,7 @@ public:
     {
         if (--(getCounter().numObjects) < 0)
         {
-            qWarning("*** Dangling pointer deletion! Class: '%s'", getLeakedObjectClassName());
+            carla_stderr("*** Dangling pointer deletion! Class: '%s'", getLeakedObjectClassName());
 
             /** If you hit this, then you've managed to delete more instances of this class than you've
                 created.. That indicates that you're deleting some dangling pointers.
@@ -113,7 +113,7 @@ private:
         {
             if (numObjects > 0)
             {
-                qWarning("*** Leaked objects detected: %i instance(s) of class '%s'", numObjects, getLeakedObjectClassName());
+                carla_stderr("*** Leaked objects detected: %i instance(s) of class '%s'", numObjects, getLeakedObjectClassName());
 
                 /** If you hit this, then you've leaked one or more objects of the type specified by
                     the 'OwnerClass' template parameter - the name should have been printed by the line above.
@@ -313,7 +313,7 @@ private:
         return this;
     }
 
-#if ! defined(Q_CC_MSVC)  // (MSVC can't deal with multiple copy constructors)
+#if ! defined(CARLA_CC_MSVC)  // (MSVC can't deal with multiple copy constructors)
     /* These are private to stop people accidentally copying a const ScopedPointer (the compiler
        would let you do so by implicitly casting the source to its raw object pointer).
 

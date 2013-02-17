@@ -44,7 +44,7 @@ const char* BinaryType2Str(const BinaryType& type)
         return "BINARY_OTHER";
     }
 
-    qWarning("CarlaBackend::BinaryType2Str(%i) - invalid type", type);
+    carla_stderr("CarlaBackend::BinaryType2Str(%i) - invalid type", type);
     return nullptr;
 }
 
@@ -73,7 +73,7 @@ const char* PluginType2Str(const PluginType& type)
         return "PLUGIN_SFZ";
     }
 
-    qWarning("CarlaBackend::PluginType2Str(%i) - invalid type", type);
+    carla_stderr("CarlaBackend::PluginType2Str(%i) - invalid type", type);
     return nullptr;
 }
 
@@ -102,7 +102,7 @@ const char* PluginCategory2Str(const PluginCategory& category)
         return "PLUGIN_CATEGORY_OTHER";
     }
 
-    qWarning("CarlaBackend::PluginCategory2Str(%i) - invalid category", category);
+    carla_stderr("CarlaBackend::PluginCategory2Str(%i) - invalid category", category);
     return nullptr;
 }
 
@@ -129,7 +129,7 @@ const char* ParameterType2Str(const ParameterType& type)
 #endif
     }
 
-    qWarning("CarlaBackend::ParameterType2Str(%i) - invalid type", type);
+    carla_stderr("CarlaBackend::ParameterType2Str(%i) - invalid type", type);
     return nullptr;
 }
 
@@ -156,7 +156,7 @@ const char* InternalParametersIndex2Str(const InternalParametersIndex& index)
         return "PARAMETER_MAX";
     }
 
-    qWarning("CarlaBackend::InternalParametersIndex2Str(%i) - invalid index", index);
+    carla_stderr("CarlaBackend::InternalParametersIndex2Str(%i) - invalid index", index);
     return nullptr;
 }
 
@@ -225,7 +225,7 @@ const char* OptionsType2Str(const OptionsType& type)
 #endif
     }
 
-    qWarning("CarlaBackend::OptionsType2Str(%i) - invalid type", type);
+    carla_stderr("CarlaBackend::OptionsType2Str(%i) - invalid type", type);
     return nullptr;
 }
 
@@ -282,7 +282,7 @@ const char* CallbackType2Str(const CallbackType& type)
         return "CALLBACK_QUIT";
     }
 
-    qWarning("CarlaBackend::CallbackType2Str(%i) - invalid type", type);
+    carla_stderr("CarlaBackend::CallbackType2Str(%i) - invalid type", type);
     return nullptr;
 }
 
@@ -303,7 +303,7 @@ const char* ProcessMode2Str(const ProcessMode& mode)
         return "PROCESS_MODE_BRIDGE";
     }
 
-    qWarning("CarlaBackend::ProcessModeType2Str(%i) - invalid type", mode);
+    carla_stderr("CarlaBackend::ProcessModeType2Str(%i) - invalid type", mode);
     return nullptr;
 }
 
@@ -312,7 +312,7 @@ const char* ProcessMode2Str(const ProcessMode& mode)
 static inline
 uintptr_t getAddressFromPointer(void* ptr)
 {
-    qDebug("CarlaBackend::getAddressFromPointer(%p)", ptr);
+    carla_debug("CarlaBackend::getAddressFromPointer(%p)", ptr);
     CARLA_ASSERT(ptr != nullptr);
 
     uintptr_t* addr = (uintptr_t*)&ptr;
@@ -333,7 +333,7 @@ void* getPointerFromAddress(uintptr_t& addr)
 static inline
 const char* getPluginTypeString(const PluginType& type)
 {
-    qDebug("CarlaBackend::getPluginTypeString(%s)", PluginType2Str(type));
+    carla_debug("CarlaBackend::getPluginTypeString(%s)", PluginType2Str(type));
 
     switch (type)
     {
@@ -357,6 +357,7 @@ const char* getPluginTypeString(const PluginType& type)
         return "SFZ";
     }
 
+    carla_stderr("CarlaBackend::getPluginTypeString(%i) - invalid type", type);
     return "NONE";
 }
 
@@ -365,7 +366,7 @@ const char* getPluginTypeString(const PluginType& type)
 static inline
 PluginCategory getPluginCategoryFromName(const char* const name)
 {
-    qDebug("CarlaBackend::getPluginCategoryFromName(\"%s\")", name);
+    carla_debug("CarlaBackend::getPluginCategoryFromName(\"%s\")", name);
     CARLA_ASSERT(name);
 
     if (! name)

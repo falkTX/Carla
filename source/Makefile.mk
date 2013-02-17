@@ -35,10 +35,6 @@ BUILD_C_FLAGS   = $(BASE_FLAGS) -std=c99 $(CFLAGS)
 BUILD_CXX_FLAGS = $(BASE_FLAGS) -std=c++0x $(CXXFLAGS)
 LINK_FLAGS      = $(LDFLAGS)
 
-ifneq ($(DEBUG),true)
-BUILD_CXX_FLAGS += -DQT_NO_DEBUG -DQT_NO_DEBUG_STREAM -DQT_NO_DEBUG_OUTPUT
-endif
-
 # --------------------------------------------------------------
 # Modify to enable/disable specific features
 

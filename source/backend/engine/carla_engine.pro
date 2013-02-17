@@ -51,6 +51,9 @@ HEADERS += \
 HEADERS += \
     ../../includes/carla_defines.hpp \
     ../../includes/carla_midi.h \
+    ../../utils/carla_mutex.hpp \
+    ../../utils/carla_string.hpp \
+    ../../utils/carla_thread.hpp \
     ../../utils/carla_utils.hpp \
     ../../utils/carla_backend_utils.hpp \
     ../../utils/carla_juce_utils.hpp \

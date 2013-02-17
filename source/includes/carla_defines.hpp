@@ -18,15 +18,38 @@
 #ifndef __CARLA_DEFINES_HPP__
 #define __CARLA_DEFINES_HPP__
 
-#include <QtCore/Qt>
+// Check OS
+#if defined(__APPLE__)
+# define CARLA_OS_MAC
+#elif defined(__HAIKU__)
+# define CARLA_OS_HAIKU
+#elif defined(__linux__) || defined(__linux) || defined(QTCREATOR_TEST)
+# define CARLA_OS_LINUX
+#elif defined(WIN64) || defined(_WIN64) || defined(__WIN64__)
+# define CARLA_OS_WIN64
+#elif defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
+# define CARLA_OS_WIN32
+#else
+# warning Unsupported platform!
+#endif
 
-// If the compiler can't do C++11 lambdas, it most likely doesn't know about nullptr either
-#ifndef Q_COMPILER_LAMBDA
-# define nullptr (0)
+#if defined(CARLA_OS_WIN32) || defined(CARLA_OS_WIN64)
+# define CARLA_OS_WIN
+#elif ! defined(CARLA_OS_HAIKU)
+# define CARLA_OS_UNIX
+#endif
+
+// Check for C++11 support
+#if defined(HAVE_CPP11_SUPPORT) || defined(QTCREATOR_TEST)
+# define CARLA_CPP11_SUPPORT
+#elif defined(__GNUC__) && defined(__GXX_EXPERIMENTAL_CXX0X__)
+# if  (__GNUC__ * 100 + __GNUC_MINOR__) >= 405
+#  define CARLA_CPP11_SUPPORT
+# endif
 #endif
 
 // Common includes
-#ifdef Q_OS_WIN
+#ifdef CARLA_OS_WIN
 # include <winsock2.h>
 # include <windows.h>
 #else
@@ -36,13 +59,13 @@
 # endif
 #endif
 
-// Define various string format types, needed for qDebug/Warning/Critical sections
-#if defined(Q_OS_WIN64)
+// Define various string format types
+#if defined(CARLA_OS_WIN64)
 # define P_INT64   "%I64i"
 # define P_INTPTR  "%I64i"
 # define P_UINTPTR "%I64x"
 # define P_SIZE    "%I64u"
-#elif defined(Q_OS_WIN32)
+#elif defined(CARLA_OS_WIN32)
 # define P_INT64   "%I64i"
 # define P_INTPTR  "%i"
 # define P_UINTPTR "%x"
@@ -60,14 +83,14 @@
 #endif
 
 // Define BINARY_NATIVE
-#if defined(Q_OS_HAIKU) || defined(Q_OS_UNIX)
+#if defined(CARLA_OS_HAIKU) || defined(CARLA_OS_UNIX)
 # ifdef __LP64__
 #  define BINARY_NATIVE BINARY_POSIX64
 # else
 #  define BINARY_NATIVE BINARY_POSIX32
 # endif
-#elif defined(Q_OS_WIN)
-# ifdef Q_OS_WIN64
+#elif defined(CARLA_OS_WIN)
+# ifdef CARLA_OS_WIN64
 #  define BINARY_NATIVE BINARY_WIN64
 # else
 #  define BINARY_NATIVE BINARY_WIN32
@@ -79,20 +102,20 @@
 
 // Define CARLA_ASSERT*
 #ifdef NDEBUG
-# define CARLA_ASSERT(cond) ((!(cond)) ? carla_assert(#cond, __FILE__, __LINE__) : qt_noop())
-# define CARLA_ASSERT_INT(cond, value) ((!(cond)) ? carla_assert_int(#cond, __FILE__, __LINE__, value) : qt_noop())
-# define CARLA_ASSERT_INT2(cond, v1, v2) ((!(cond)) ? carla_assert_int2(#cond, __FILE__, __LINE__, v1, v2) : qt_noop())
+# define CARLA_ASSERT(cond) ((!(cond)) ? carla_assert(#cond, __FILE__, __LINE__) : pass())
+# define CARLA_ASSERT_INT(cond, value) ((!(cond)) ? carla_assert_int(#cond, __FILE__, __LINE__, value) : pass())
+# define CARLA_ASSERT_INT2(cond, v1, v2) ((!(cond)) ? carla_assert_int2(#cond, __FILE__, __LINE__, v1, v2) : pass())
 #else
-# define CARLA_ASSERT(cond) Q_ASSERT(cond)
-# define CARLA_ASSERT_INT(cond, value) Q_ASSERT(cond)
-# define CARLA_ASSERT_INT2(cond, v1, v2) Q_ASSERT(cond)
+# define CARLA_ASSERT(cond) assert(cond)
+# define CARLA_ASSERT_INT(cond, value) assert(cond)
+# define CARLA_ASSERT_INT2(cond, v1, v2) assert(cond)
 #endif
 
 // Define CARLA_EXPORT
 #ifdef BUILD_BRIDGE
 # define CARLA_EXPORT extern "C"
 #else
-# if defined(Q_OS_WIN) && ! defined(__WINE__)
+# if defined(CARLA_OS_WIN) && ! defined(__WINE__)
 #  define CARLA_EXPORT extern "C" __declspec (dllexport)
 # else
 #  define CARLA_EXPORT extern "C" __attribute__ ((visibility("default")))

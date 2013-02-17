@@ -15,10 +15,10 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#include "carla_utils.hpp"
 #include "rt_list.hpp"
 
-#include <cassert>
+#include "carla_string.hpp"
+#include "carla_mutex.hpp"
 
 const unsigned short MIN_RT_EVENTS = 152;
 const unsigned short MAX_RT_EVENTS = 512;

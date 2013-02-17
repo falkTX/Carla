@@ -15,9 +15,7 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#include "carla_utils.hpp"
-
-#include <cassert>
+#include "carla_string.hpp"
 
 int main()
 {
