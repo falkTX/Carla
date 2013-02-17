@@ -583,7 +583,8 @@ else:
                                  os.path.join("/", "usr", "share", "sounds", "gig")))
 
     DEFAULT_SF2_PATH = ":".join((os.path.join(HOME, ".sounds"),
-                                 os.path.join("/", "usr", "share", "sounds", "sf2")))
+                                 os.path.join("/", "usr", "share", "sounds", "sf2"),
+                                 "/home/falktx/Personal/Muzyks/Kits/SF2/"))
 
     DEFAULT_SFZ_PATH = ":".join((os.path.join(HOME, ".sounds"),
                                  os.path.join("/", "usr", "share", "sounds", "sfz")))
@@ -2504,16 +2505,19 @@ class SearchPluginsThread(QThread):
                 settingsDB.sync()
 
         if self.fCheckGIG:
+            global GIG_PATH
             self._checkKIT(GIG_PATH, "gig")
             settingsDB.setValue("Plugins/GIG", self.fKitPlugins)
             settingsDB.sync()
 
         if self.fCheckSF2:
+            global SF2_PATH
             self._checkKIT(SF2_PATH, "sf2")
             settingsDB.setValue("Plugins/SF2", self.fKitPlugins)
             settingsDB.sync()
 
         if self.fCheckSFZ:
+            global SFZ_PATH
             self._checkKIT(SFZ_PATH, "sfz")
             settingsDB.setValue("Plugins/SFZ", self.fKitPlugins)
             settingsDB.sync()

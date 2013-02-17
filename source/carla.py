@@ -27,8 +27,8 @@ from PyQt4.QtGui import QApplication, QDialogButtonBox, QMainWindow
 
 import ui_carla
 import ui_carla_settings
-from carla_shared import *
 from carla_backend import * # FIXME, remove later
+#from carla_shared import *
 
 # ------------------------------------------------------------------------------------------------------------
 # Global variables
@@ -863,6 +863,9 @@ class CarlaMainW(QMainWindow):
 
     @pyqtSlot(int)
     def slot_handlePluginRemovedCallback(self, pluginId):
+        if pluginId >= self.fPluginCount:
+            return
+
         pwidget = self.fPluginList[pluginId]
         if pwidget is None:
             return
@@ -887,6 +890,9 @@ class CarlaMainW(QMainWindow):
 
     @pyqtSlot(int, int, float)
     def slot_handleParameterValueChangedCallback(self, pluginId, parameterId, value):
+        if pluginId >= self.fPluginCount:
+            return
+
         pwidget = self.fPluginList[pluginId]
         if pwidget is None:
             return
@@ -895,6 +901,9 @@ class CarlaMainW(QMainWindow):
 
     @pyqtSlot(int, int, float)
     def slot_handleParameterDefaultChangedCallback(self, pluginId, parameterId, value):
+        if pluginId >= self.fPluginCount:
+            return
+
         pwidget = self.fPluginList[pluginId]
         if pwidget is None:
             return
@@ -903,6 +912,9 @@ class CarlaMainW(QMainWindow):
 
     @pyqtSlot(int, int, int)
     def slot_handleParameterMidiChannelChangedCallback(self, pluginId, parameterId, channel):
+        if pluginId >= self.fPluginCount:
+            return
+
         pwidget = self.fPluginList[pluginId]
         if pwidget is None:
             return
@@ -911,6 +923,9 @@ class CarlaMainW(QMainWindow):
 
     @pyqtSlot(int, int, int)
     def slot_handleParameterMidiCcChangedCallback(self, pluginId, parameterId, cc):
+        if pluginId >= self.fPluginCount:
+            return
+
         pwidget = self.fPluginList[pluginId]
         if pwidget is None:
             return
@@ -919,6 +934,9 @@ class CarlaMainW(QMainWindow):
 
     @pyqtSlot(int, int)
     def slot_handleProgramChangedCallback(self, pluginId, programId):
+        if pluginId >= self.fPluginCount:
+            return
+
         pwidget = self.fPluginList[pluginId]
         if pwidget is None:
             return
@@ -927,6 +945,9 @@ class CarlaMainW(QMainWindow):
 
     @pyqtSlot(int, int)
     def slot_handleMidiProgramChangedCallback(self, pluginId, midiProgramId):
+        if pluginId >= self.fPluginCount:
+            return
+
         pwidget = self.fPluginList[pluginId]
         if pwidget is None:
             return
@@ -935,6 +956,9 @@ class CarlaMainW(QMainWindow):
 
     @pyqtSlot(int, int, int, int)
     def slot_handleNoteOnCallback(self, pluginId, channel, note, velo):
+        if pluginId >= self.fPluginCount:
+            return
+
         pwidget = self.fPluginList[pluginId]
         if pwidget is None:
             return
@@ -943,6 +967,9 @@ class CarlaMainW(QMainWindow):
 
     @pyqtSlot(int, int, int)
     def slot_handleNoteOffCallback(self, pluginId, channel, note):
+        if pluginId >= self.fPluginCount:
+            return
+
         pwidget = self.fPluginList[pluginId]
         if pwidget is None:
             return
@@ -951,6 +978,9 @@ class CarlaMainW(QMainWindow):
 
     @pyqtSlot(int, int)
     def slot_handleShowGuiCallback(self, pluginId, show):
+        if pluginId >= self.fPluginCount:
+            return
+
         pwidget = self.fPluginList[pluginId]
         if pwidget is None:
             return
@@ -967,6 +997,9 @@ class CarlaMainW(QMainWindow):
 
     @pyqtSlot(int)
     def slot_handleUpdateCallback(self, pluginId):
+        if pluginId >= self.fPluginCount:
+            return
+
         pwidget = self.fPluginList[pluginId]
         if pwidget is None:
             return
@@ -975,6 +1008,9 @@ class CarlaMainW(QMainWindow):
 
     @pyqtSlot(int)
     def slot_handleReloadInfoCallback(self, pluginId):
+        if pluginId >= self.fPluginCount:
+            return
+
         pwidget = self.fPluginList[pluginId]
         if pwidget is None:
             return
@@ -983,6 +1019,9 @@ class CarlaMainW(QMainWindow):
 
     @pyqtSlot(int)
     def slot_handleReloadParametersCallback(self, pluginId):
+        if pluginId >= self.fPluginCount:
+            return
+
         pwidget = self.fPluginList[pluginId]
         if pwidget is None:
             return
@@ -991,6 +1030,9 @@ class CarlaMainW(QMainWindow):
 
     @pyqtSlot(int)
     def slot_handleReloadProgramsCallback(self, pluginId):
+        if pluginId >= self.fPluginCount:
+            return
+
         pwidget = self.fPluginList[pluginId]
         if pwidget is None:
             return
@@ -999,6 +1041,9 @@ class CarlaMainW(QMainWindow):
 
     @pyqtSlot(int)
     def slot_handleReloadAllCallback(self, pluginId):
+        if pluginId >= self.fPluginCount:
+            return
+
         pwidget = self.fPluginList[pluginId]
         if pwidget is None:
             return
