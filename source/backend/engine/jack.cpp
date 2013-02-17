@@ -83,6 +83,9 @@ public:
             return CarlaEngineAudioPort::initBuffer(engine);
 
         fBuffer = (float*)jackbridge_port_get_buffer(kPort, engine->getBufferSize());
+
+        //if (! kIsInput)
+        //    carla_zeroFloat(fBuffer, engine->getBufferSize());
     }
 
 private:

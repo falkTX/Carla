@@ -36,7 +36,9 @@ public:
         fDescriptor = nullptr;
         fRdfDescriptor = nullptr;
 
-        fParamBuffers = nullptr;
+        fAudioInBuffers  = nullptr;
+        fAudioOutBuffers = nullptr;
+        fParamBuffers    = nullptr;
     }
 
     ~LadspaPlugin()
@@ -72,11 +74,7 @@ public:
             fRdfDescriptor = nullptr;
         }
 
-        if (fParamBuffers != nullptr)
-        {
-            delete[] fParamBuffers;
-            fParamBuffers = nullptr;
-        }
+        deleteBuffers();
     }
 
     // -------------------------------------------------------------------
@@ -408,11 +406,19 @@ public:
         if (aIns > 0)
         {
             kData->audioIn.createNew(aIns);
+            fAudioInBuffers = new float*[aIns];
+
+            for (uint32_t i=0; i < aIns; i++)
+                fAudioInBuffers[i] = nullptr;
         }
 
         if (aOuts > 0)
         {
             kData->audioOut.createNew(aOuts);
+            fAudioOutBuffers = new float*[aOuts];
+
+            for (uint32_t i=0; i < aOuts; i++)
+                fAudioOutBuffers[i] = nullptr;
         }
 
         if (params > 0)
@@ -725,6 +731,8 @@ public:
             }
         }
 
+        bufferSizeChanged(kData->engine->getBufferSize());
+
         kData->client->activate();
 
         qDebug("LadspaPlugin::reload() - end");
@@ -789,6 +797,8 @@ public:
             // ----------------------------------------------------------------------------------------------------
             // Event Input (System)
 
+            bool sampleAccurate  = (fHints & PLUGIN_OPTION_FIXED_BUFFER) == 0;
+
             uint32_t time, nEvents = kData->event.portIn->getEventCount();
             uint32_t timeOffset = 0;
 
@@ -803,9 +813,9 @@ public:
 
                 CARLA_ASSERT(time >= timeOffset);
 
-                if (time > timeOffset)
+                if (time > timeOffset && sampleAccurate)
                 {
-                    processSingle(inBuffer, outBuffer, frames - timeOffset, timeOffset);
+                    processSingle(inBuffer, outBuffer, time - timeOffset, timeOffset);
                     timeOffset = time;
                 }
 
@@ -1094,37 +1104,75 @@ public:
 
     void processSingle(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t timeOffset)
     {
+        for (uint32_t i=0; i < kData->audioIn.count; i++)
+            std::memcpy(fAudioInBuffers[i], inBuffer[i]+timeOffset, sizeof(float)*frames);
+        for (uint32_t i=0; i < kData->audioOut.count; i++)
+            carla_zeroFloat(fAudioOutBuffers[i], frames);
+
+        fDescriptor->run(fHandle, frames);
+
+        if (fHandle2 != nullptr)
+            fDescriptor->run(fHandle2, frames);
+
+        for (uint32_t i=0, k; i < kData->audioOut.count; i++)
+        {
+            for (k=0; k < frames; k++)
+                outBuffer[i][k+timeOffset] = fAudioOutBuffers[i][k];
+        }
+    }
+
+    void bufferSizeChanged(const uint32_t newBufferSize)
+    {
+        for (uint32_t i=0; i < kData->audioIn.count; i++)
+        {
+            if (fAudioInBuffers[i] != nullptr)
+                delete[] fAudioInBuffers[i];
+            fAudioInBuffers[i] = new float[newBufferSize];
+        }
+
+        for (uint32_t i=0; i < kData->audioOut.count; i++)
+        {
+            if (fAudioOutBuffers[i] != nullptr)
+                delete[] fAudioOutBuffers[i];
+            fAudioOutBuffers[i] = new float[newBufferSize];
+        }
+
         if (fHandle2 == nullptr)
         {
             for (uint32_t i=0; i < kData->audioIn.count; i++)
-                fDescriptor->connect_port(fHandle, kData->audioIn.ports[i].rindex, inBuffer[i]+timeOffset);
+            {
+                CARLA_ASSERT(fAudioInBuffers[i] != nullptr);
+                fDescriptor->connect_port(fHandle, kData->audioIn.ports[i].rindex, fAudioInBuffers[i]);
+            }
 
             for (uint32_t i=0; i < kData->audioOut.count; i++)
-                fDescriptor->connect_port(fHandle, kData->audioOut.ports[i].rindex, outBuffer[i]+timeOffset);
+            {
+                CARLA_ASSERT(fAudioOutBuffers[i] != nullptr);
+                fDescriptor->connect_port(fHandle, kData->audioOut.ports[i].rindex, fAudioOutBuffers[i]);
+            }
         }
         else
         {
             if (kData->audioIn.count > 0)
             {
                 CARLA_ASSERT(kData->audioIn.count == 2);
+                CARLA_ASSERT(fAudioInBuffers[0] != nullptr);
+                CARLA_ASSERT(fAudioInBuffers[1] != nullptr);
 
-                fDescriptor->connect_port(fHandle,  kData->audioIn.ports[0].rindex, inBuffer[0]+timeOffset);
-                fDescriptor->connect_port(fHandle2, kData->audioIn.ports[1].rindex, inBuffer[1]+timeOffset);
+                fDescriptor->connect_port(fHandle,  kData->audioIn.ports[0].rindex, fAudioInBuffers[0]);
+                fDescriptor->connect_port(fHandle2, kData->audioIn.ports[1].rindex, fAudioInBuffers[1]);
             }
 
             if (kData->audioOut.count > 0)
             {
                 CARLA_ASSERT(kData->audioOut.count == 2);
+                CARLA_ASSERT(fAudioOutBuffers[0] != nullptr);
+                CARLA_ASSERT(fAudioOutBuffers[1] != nullptr);
 
-                fDescriptor->connect_port(fHandle,  kData->audioOut.ports[0].rindex, outBuffer[0]+timeOffset);
-                fDescriptor->connect_port(fHandle2, kData->audioOut.ports[1].rindex, outBuffer[1]+timeOffset);
+                fDescriptor->connect_port(fHandle,  kData->audioOut.ports[0].rindex, fAudioOutBuffers[0]);
+                fDescriptor->connect_port(fHandle2, kData->audioOut.ports[1].rindex, fAudioOutBuffers[1]);
             }
         }
-
-        fDescriptor->run(fHandle, frames);
-
-        if (fHandle2 != nullptr)
-            fDescriptor->run(fHandle2, frames);
     }
 
     // -------------------------------------------------------------------
@@ -1133,6 +1181,36 @@ public:
     void deleteBuffers()
     {
         qDebug("LadspaPlugin::deleteBuffers() - start");
+
+        if (fAudioInBuffers != nullptr)
+        {
+            for (uint32_t i=0; i < kData->audioIn.count; i++)
+            {
+                if (fAudioInBuffers[i] != nullptr)
+                {
+                    delete[] fAudioInBuffers[i];
+                    fAudioInBuffers[i] = nullptr;
+                }
+            }
+
+            delete[] fAudioInBuffers;
+            fAudioInBuffers = nullptr;
+        }
+
+        if (fAudioOutBuffers != nullptr)
+        {
+            for (uint32_t i=0; i < kData->audioOut.count; i++)
+            {
+                if (fAudioOutBuffers[i] != nullptr)
+                {
+                    delete[] fAudioOutBuffers[i];
+                    fAudioOutBuffers[i] = nullptr;
+                }
+            }
+
+            delete[] fAudioOutBuffers;
+            fAudioOutBuffers = nullptr;
+        }
 
         if (fParamBuffers != nullptr)
         {
@@ -1238,7 +1316,9 @@ private:
     const LADSPA_Descriptor*     fDescriptor;
     const LADSPA_RDF_Descriptor* fRdfDescriptor;
 
-    float* fParamBuffers;
+    float** fAudioInBuffers;
+    float** fAudioOutBuffers;
+    float*  fParamBuffers;
 };
 
 CARLA_BACKEND_END_NAMESPACE

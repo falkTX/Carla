@@ -23,6 +23,12 @@
 #include "carla_midi.h"
 #include "carla_native.h"
 
+#if 0
+extern "C" {
+#include "siginfo.c"
+}
+#endif
+
 #include <QtCore/QByteArray>
 
 using CarlaBackend::CarlaEngine;
@@ -186,6 +192,16 @@ bool carla_engine_init(const char* driverName, const char* clientName)
     CARLA_ASSERT(standalone.engine == nullptr);
     CARLA_ASSERT(driverName != nullptr);
     CARLA_ASSERT(clientName != nullptr);
+
+#if 0
+    static bool sigInfoInitiated = false;
+
+    if (! sigInfoInitiated)
+    {
+        setup_siginfo();
+        sigInfoInitiated = true;
+    }
+#endif
 
     standalone.engine = CarlaEngine::newDriverByName(driverName);
 
