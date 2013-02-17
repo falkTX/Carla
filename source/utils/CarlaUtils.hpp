@@ -18,7 +18,7 @@
 #ifndef __CARLA_UTILS_HPP__
 #define __CARLA_UTILS_HPP__
 
-#include "carla_defines.hpp"
+#include "CarlaDefines.hpp"
 
 #include <cassert>
 #include <cstdarg>
