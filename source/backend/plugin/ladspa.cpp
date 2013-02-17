@@ -811,7 +811,7 @@ public:
                 if (time >= frames)
                     continue;
 
-                CARLA_ASSERT(time >= timeOffset);
+                CARLA_ASSERT_INT2(time >= timeOffset, time, timeOffset);
 
                 if (time > timeOffset && sampleAccurate)
                 {

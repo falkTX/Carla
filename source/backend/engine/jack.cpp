@@ -84,8 +84,8 @@ public:
 
         fBuffer = (float*)jackbridge_port_get_buffer(kPort, engine->getBufferSize());
 
-        //if (! kIsInput)
-        //    carla_zeroFloat(fBuffer, engine->getBufferSize());
+        if (! kIsInput)
+           carla_zeroFloat(fBuffer, engine->getBufferSize());
     }
 
 private:
@@ -975,6 +975,8 @@ protected:
 #endif
         }
 #endif
+
+        proccessPendingEvents();
     }
 
     void handleJackLatencyCallback(const jack_latency_callback_mode_t mode)

@@ -975,7 +975,7 @@ public:
                 if (time >= frames)
                     continue;
 
-                CARLA_ASSERT(time >= timeOffset);
+                CARLA_ASSERT_INT2(time >= timeOffset, time, timeOffset);
 
                 if (time > timeOffset && sampleAccurate)
                 {
@@ -1227,18 +1227,15 @@ public:
                         fMidiEvents[midiEventCount].data.note.note     = note;
                         fMidiEvents[midiEventCount].data.note.velocity = pressure;
                     }
-                    else if (MIDI_IS_STATUS_CONTROL_CHANGE(status))
+                    else if (MIDI_IS_STATUS_CONTROL_CHANGE(status) && (fHints & PLUGIN_OPTION_SELF_AUTOMATION) != 0)
                     {
-                        if (fHints & PLUGIN_OPTION_SELF_AUTOMATION)
-                        {
-                            const uint8_t control = midiEvent.data[1];
-                            const uint8_t value   = midiEvent.data[2];
+                        const uint8_t control = midiEvent.data[1];
+                        const uint8_t value   = midiEvent.data[2];
 
-                            fMidiEvents[midiEventCount].type = SND_SEQ_EVENT_CONTROLLER;
-                            fMidiEvents[midiEventCount].data.control.channel = channel;
-                            fMidiEvents[midiEventCount].data.control.param   = control;
-                            fMidiEvents[midiEventCount].data.control.value   = value;
-                        }
+                        fMidiEvents[midiEventCount].type = SND_SEQ_EVENT_CONTROLLER;
+                        fMidiEvents[midiEventCount].data.control.channel = channel;
+                        fMidiEvents[midiEventCount].data.control.param   = control;
+                        fMidiEvents[midiEventCount].data.control.value   = value;
                     }
                     else if (MIDI_IS_STATUS_AFTERTOUCH(status))
                     {

@@ -765,9 +765,9 @@ bool CarlaEngine::removePlugin(const unsigned int id)
 
     CarlaPlugin* const plugin = kData->plugins[id].plugin;
 
-    CARLA_ASSERT(plugin);
+    CARLA_ASSERT(plugin != nullptr);
 
-    if (plugin)
+    if (plugin != nullptr)
     {
         CARLA_ASSERT(plugin->id() == id);
 
@@ -780,8 +780,10 @@ bool CarlaEngine::removePlugin(const unsigned int id)
 
         if (isRunning())
         {
+            qWarning("CarlaEngine::removePlugin(%i) - remove blocking START", id);
             // block wait for unlock on proccessing side
             kData->nextAction.mutex.lock();
+            qWarning("CarlaEngine::removePlugin(%i) - remove blocking DONE", id);
         }
         else
         {
@@ -821,6 +823,16 @@ void CarlaEngine::removeAllPlugins()
 
     kData->curPluginCount = 0;
 
+    for (unsigned int i=0; i < oldCount; i++)
+    {
+        CarlaPlugin* const plugin = kData->plugins[i].plugin;
+
+        CARLA_ASSERT(plugin != nullptr);
+
+        if (plugin != nullptr)
+            plugin->setEnabled(false);
+    }
+
     // wait for processing
     waitForProccessEnd();
 
@@ -828,9 +840,9 @@ void CarlaEngine::removeAllPlugins()
     {
         CarlaPlugin* const plugin = kData->plugins[i].plugin;
 
-        CARLA_ASSERT(plugin);
+        CARLA_ASSERT(plugin != nullptr);
 
-        if (plugin)
+        if (plugin != nullptr)
             delete plugin;
 
         // clear this plugin

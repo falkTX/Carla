@@ -901,7 +901,7 @@ public:
                 if (time >= frames)
                     continue;
 
-                CARLA_ASSERT(time >= timeOffset);
+                CARLA_ASSERT_INT2(time >= timeOffset, time, timeOffset);
 
                 if (time > timeOffset)
                 {
@@ -1011,7 +1011,7 @@ public:
                     }
 
                     case kEngineControlEventTypeMidiBank:
-                        if (event.channel < 16)
+                        if (event.channel < 16 && event.channel != 9) // FIXME
                             nextBankIds[event.channel] = ctrlEvent.param;
                         break;
 
