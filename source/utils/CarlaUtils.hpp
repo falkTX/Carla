@@ -194,6 +194,8 @@ void carla_setprocname(const char* const name)
 static inline
 const char* carla_strdup(const char* const strBuf)
 {
+    CARLA_ASSERT(strBuf != nullptr);
+
     const size_t bufferLen = (strBuf != nullptr) ? std::strlen(strBuf) : 0;
     char* const  buffer    = new char [bufferLen+1];
 
@@ -205,10 +207,10 @@ const char* carla_strdup(const char* const strBuf)
 }
 
 static inline
-const char* carla_strdup_free(const char* const strBuf)
+const char* carla_strdup_free(char* const strBuf)
 {
     const char* const buffer = carla_strdup(strBuf);
-    std::free((void*)strBuf);
+    std::free(strBuf);
     return buffer;
 }
 

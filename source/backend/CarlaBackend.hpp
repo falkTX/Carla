@@ -18,7 +18,7 @@
 #ifndef __CARLA_BACKEND_HPP__
 #define __CARLA_BACKEND_HPP__
 
-#include "carla_defines.hpp"
+#include "CarlaDefines.hpp"
 
 #include <cstdint>
 

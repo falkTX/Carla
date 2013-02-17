@@ -18,8 +18,8 @@
 #ifndef __CARLA_BACKEND_UTILS_HPP__
 #define __CARLA_BACKEND_UTILS_HPP__
 
-#include "carla_backend.hpp"
-#include "CarlaUtils.hpp"
+#include "CarlaBackend.hpp"
+#include "CarlaString.hpp"
 
 CARLA_BACKEND_START_NAMESPACE
 

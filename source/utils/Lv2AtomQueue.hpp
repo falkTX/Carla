@@ -18,10 +18,10 @@
 #ifndef __LV2_ATOM_QUEUE_HPP__
 #define __LV2_ATOM_QUEUE_HPP__
 
-#include "carla_utils.hpp"
-#include "lv2/atom.h"
+#include "CarlaUtils.hpp"
 
 #include <cstring> // memcpy, memset
+#include "lv2/atom.h"
 
 class Lv2AtomQueue
 {

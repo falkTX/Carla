@@ -18,7 +18,7 @@
 #ifndef __CARLA_MUTEX_HPP__
 #define __CARLA_MUTEX_HPP__
 
-#include "carla_juce_utils.hpp"
+#include "CarlaJuceUtils.hpp"
 
 // #define CPP11_MUTEX
 

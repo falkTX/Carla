@@ -8,14 +8,22 @@ include ../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += -I../backend -I../includes -I../utils
+BUILD_CXX_FLAGS += -I../backend -I../includes -I../utils -Wall -Wextra
 # BUILD_CXX_FLAGS += -I/opt/mingw32/include
 
-TARGETS = CarlaString RtList Thread Print_
+ANSI_CXX_FLAGS   = -ansi -pedantic -pedantic-errors -Wunused-parameter -Wuninitialized -Wno-vla
+ANSI_CXX_FLAGS  += -Wcast-qual -Wconversion -Wsign-conversion -Wlogical-op -Waggregate-return
+ANSI_CXX_FLAGS  += -std=c++11 -Wzero-as-null-pointer-constant
+ANSI_CXX_FLAGS  += -DVESTIGE_HEADER
+
+TARGETS = ANSI CarlaString RtList Thread Print
 
 all: $(TARGETS) RUN
 
 # --------------------------------------------------------------
+
+ANSI: ANSI.cpp
+	$(CXX) $^ $(BUILD_CXX_FLAGS) $(ANSI_CXX_FLAGS) $(LINK_FLAGS) -o $@
 
 CarlaString: CarlaString.cpp
 	$(CXX) $^ $(BUILD_CXX_FLAGS) $(LINK_FLAGS) -o $@
@@ -26,8 +34,8 @@ RtList: RtList.cpp ../libs/rtmempool.a
 Thread: Thread.cpp
 	$(CXX) $^ $(BUILD_CXX_FLAGS) $(LINK_FLAGS) -pthread -lpthread -o $@
 
-Print_: Print.cpp
-	$(CXX) $^ $(BUILD_CXX_FLAGS) $(LINK_FLAGS) -o Print # $@
+Print: Print.cpp
+	$(CXX) $^ $(BUILD_CXX_FLAGS) $(LINK_FLAGS) -o $@
 
 GL_: GL.cpp
 # 	$(CXX) $^ $(BUILD_CXX_FLAGS) -I../backend/engine/plugin -I../libs/distrho-plugin-toolkit $(LINK_FLAGS) -lgdi32 -lopengl32 -lole32 -luuid -lws2_32 -o GL # $@
@@ -35,7 +43,7 @@ GL_: GL.cpp
 
 RUN: $(TARGETS)
 # 	./CarlaString && ./RtList && ./Thread
-	./Print
+# 	./Print
 # 	./GL
 
 # --------------------------------------------------------------

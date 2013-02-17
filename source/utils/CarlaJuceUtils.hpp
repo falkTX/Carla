@@ -19,7 +19,7 @@
 #ifndef __CARLA_JUCE_UTILS_HPP__
 #define __CARLA_JUCE_UTILS_HPP__
 
-#include "carla_utils.hpp"
+#include "CarlaUtils.hpp"
 
 #include <algorithm>
 

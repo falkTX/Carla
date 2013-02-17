@@ -18,8 +18,8 @@
 #ifndef __CARLA_NATIVE_HPP__
 #define __CARLA_NATIVE_HPP__
 
-#include "carla_native.h"
-#include "carla_utils.hpp"
+#include "CarlaNative.h"
+#include "CarlaJuceUtils.hpp"
 
 /*!
  * @defgroup CarlaNativeAPI Carla Native API
@@ -133,7 +133,7 @@ protected:
         return nullptr;
 
         // unused
-        Q_UNUSED(index);
+        (void)index;
     }
 
     virtual float getParameterValue(const uint32_t index)
@@ -143,7 +143,7 @@ protected:
         return 0.0f;
 
         // unused
-        Q_UNUSED(index);
+        (void)index;
     }
 
     virtual const char* getParameterText(const uint32_t index)
@@ -153,7 +153,7 @@ protected:
         return nullptr;
 
         // unused
-        Q_UNUSED(index);
+        (void)index;
     }
 
     // -------------------------------------------------------------------
@@ -171,7 +171,7 @@ protected:
         return nullptr;
 
         // unused
-        Q_UNUSED(index);
+        (void)index;
     }
 
     // -------------------------------------------------------------------
@@ -184,8 +184,8 @@ protected:
         return;
 
         // unused
-        Q_UNUSED(index);
-        Q_UNUSED(value);
+        (void)index;
+        (void)value;
     }
 
     virtual void setMidiProgram(const uint32_t bank, const uint32_t program)
@@ -193,8 +193,8 @@ protected:
         return;
 
         // unused
-        Q_UNUSED(bank);
-        Q_UNUSED(program);
+        (void)bank;
+        (void)program;
     }
 
     virtual void setCustomData(const char* const key, const char* const value)
@@ -230,7 +230,7 @@ protected:
         return;
 
         // unused
-        Q_UNUSED(show);
+        (void)show;
     }
 
     virtual void uiIdle()
@@ -244,7 +244,7 @@ protected:
         return;
 
         // unused
-        Q_UNUSED(value);
+        (void)value;
     }
 
     virtual void uiSetMidiProgram(const uint32_t bank, const uint32_t program)
@@ -252,8 +252,8 @@ protected:
         return;
 
         // unused
-        Q_UNUSED(bank);
-        Q_UNUSED(program);
+        (void)bank;
+        (void)program;
     }
 
     virtual void uiSetCustomData(const char* const key, const char* const value)
@@ -264,8 +264,8 @@ protected:
         return;
 
         // unused
-        Q_UNUSED(key);
-        Q_UNUSED(value);
+        (void)key;
+        (void)value;
     }
 
     // -------------------------------------------------------------------

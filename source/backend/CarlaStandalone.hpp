@@ -18,7 +18,7 @@
 #ifndef __CARLA_STANDALONE_HPP__
 #define __CARLA_STANDALONE_HPP__
 
-#include "carla_backend.hpp"
+#include "CarlaBackend.hpp"
 
 /*!
  * @defgroup CarlaBackendStandalone Carla Backend Standalone

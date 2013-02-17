@@ -18,13 +18,12 @@
 #ifndef __CARLA_LADSPA_UTILS_HPP__
 #define __CARLA_LADSPA_UTILS_HPP__
 
-#include "carla_utils.hpp"
+#include "CarlaUtils.hpp"
 
 #include "ladspa/ladspa.h"
 #include "ladspa_rdf.hpp"
 
 #include <cmath>
-#include <cstring>
 
 // -------------------------------------------------
 // Copy RDF object
@@ -32,9 +31,9 @@
 static inline
 const LADSPA_RDF_Descriptor* ladspa_rdf_dup(const LADSPA_RDF_Descriptor* const oldDescriptor)
 {
-    CARLA_ASSERT(oldDescriptor);
+    CARLA_ASSERT(oldDescriptor != nullptr);
 
-    if (! oldDescriptor)
+    if (oldDescriptor == nullptr)
         return nullptr;
 
     LADSPA_RDF_Descriptor* const newDescriptor = new LADSPA_RDF_Descriptor;
@@ -116,13 +115,13 @@ bool is_ladspa_rdf_descriptor_valid(const LADSPA_RDF_Descriptor* const rdfDescri
 
     if (rdfDescriptor->UniqueID != descriptor->UniqueID)
     {
-        qWarning("WARNING - Plugin has wrong UniqueID: %li != %li", rdfDescriptor->UniqueID, descriptor->UniqueID);
+        carla_stderr("WARNING - Plugin has wrong UniqueID: %li != %li", rdfDescriptor->UniqueID, descriptor->UniqueID);
         return false;
     }
 
     if (rdfDescriptor->PortCount > descriptor->PortCount)
     {
-        qWarning("WARNING - Plugin has RDF data, but invalid PortCount: %li > %li", rdfDescriptor->PortCount, descriptor->PortCount);
+        carla_stderr("WARNING - Plugin has RDF data, but invalid PortCount: %li > %li", rdfDescriptor->PortCount, descriptor->PortCount);
         return false;
     }
 
@@ -130,7 +129,7 @@ bool is_ladspa_rdf_descriptor_valid(const LADSPA_RDF_Descriptor* const rdfDescri
     {
         if (! is_ladspa_port_good(rdfDescriptor->Ports[i].Type, descriptor->PortDescriptors[i]))
         {
-            qWarning("WARNING - Plugin has RDF data, but invalid PortTypes: %i != %i", rdfDescriptor->Ports[i].Type, descriptor->PortDescriptors[i]);
+            carla_stderr("WARNING - Plugin has RDF data, but invalid PortTypes: %i != %i", rdfDescriptor->Ports[i].Type, descriptor->PortDescriptors[i]);
             return false;
         }
     }

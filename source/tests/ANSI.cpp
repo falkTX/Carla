@@ -15,13 +15,37 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
+#if 1
+#include "CarlaDefines.hpp"
+#include "CarlaMIDI.h"
+#include "ladspa_rdf.hpp"
+#include "lv2_rdf.hpp"
+
+#include "CarlaBackend.hpp"
+#include "CarlaEngine.hpp"
+#include "CarlaNative.h"
+#include "CarlaNative.hpp"
+#include "CarlaPlugin.hpp"
+#include "CarlaStandalone.hpp"
+
 #include "CarlaUtils.hpp"
+#include "CarlaBackendUtils.hpp"
+#include "CarlaJuceUtils.hpp"
+#include "CarlaLibUtils.hpp"
+#include "CarlaOscUtils.hpp"
+//#include "CarlaStateUtils.hpp"
+#include "CarlaLadspaUtils.hpp"
+//#include "CarlaLv2Utils.hpp"
+#include "CarlaVstUtils.hpp"
+
+#include "CarlaMutex.hpp"
+#include "CarlaString.hpp"
+#include "CarlaThread.hpp"
+//#include "Lv2AtomQueue.hpp"
+#include "RtList.hpp"
+#endif
 
 int main()
 {
-    carla_debug("DEBUG");
-    carla_stdout("STDOUT");
-    carla_stderr("STDERR");
-    carla_stderr2("STDERR2");
     return 0;
 }

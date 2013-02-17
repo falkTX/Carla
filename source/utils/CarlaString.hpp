@@ -18,7 +18,7 @@
 #ifndef __CARLA_STRING_HPP__
 #define __CARLA_STRING_HPP__
 
-#include "carla_juce_utils.hpp"
+#include "CarlaJuceUtils.hpp"
 
 // -------------------------------------------------
 // CarlaString class

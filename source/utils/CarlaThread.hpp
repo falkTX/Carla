@@ -18,9 +18,9 @@
 #ifndef __CARLA_THREAD_HPP__
 #define __CARLA_THREAD_HPP__
 
-#include "carla_juce_utils.hpp"
+#include "CarlaJuceUtils.hpp"
 
-// #define CPP11_MUTEX
+// #define CPP11_THREAD
 
 #ifdef CPP11_THREAD
 # include <thread>
@@ -38,7 +38,7 @@ public:
         : fStarted(false),
           fFinished(false)
     {
-#ifdef CPP11_MUTEX
+#ifdef CPP11_THREAD
         cthread = nullptr;
 #else
         _zero();
@@ -54,7 +54,7 @@ public:
         if (isRunning())
             terminate();
 
-#ifdef CPP11_MUTEX
+#ifdef CPP11_THREAD
         if (cthread != nullptr)
         {
             cthread->join();
@@ -78,7 +78,7 @@ public:
         fStarted  = false;
         fFinished = false;
 
-#ifdef CPP11_MUTEX
+#ifdef CPP11_THREAD
         CARLA_ASSERT(cthread == nullptr);
 
         if (cthread != nullptr)
@@ -105,7 +105,7 @@ public:
         if (! isRunning())
             return true;
 
-#ifdef CPP11_MUTEX
+#ifdef CPP11_THREAD
         if (cthread == nullptr)
             return true;
 #else
@@ -115,7 +115,7 @@ public:
 
         if (timeout == 0)
         {
-#ifdef CPP11_MUTEX
+#ifdef CPP11_THREAD
               cthread->join();
 #else
               pthread_join(pthreadId, nullptr);
@@ -130,7 +130,7 @@ public:
         if (! fFinished)
             return false;
 
-#ifdef CPP11_MUTEX
+#ifdef CPP11_THREAD
         delete cthread;
         cthread = nullptr;
 #else
@@ -147,7 +147,7 @@ public:
         if (fFinished)
             return;
 
-#ifdef CPP11_MUTEX
+#ifdef CPP11_THREAD
         if (cthread == nullptr)
             return;
 #else
@@ -155,7 +155,7 @@ public:
             return;
 #endif
 
-#ifdef CPP11_MUTEX
+#ifdef CPP11_THREAD
         cthread->detach();
         //cthread->join();
         delete cthread;
@@ -211,7 +211,7 @@ private:
         fFinished = true;
     }
 
-#ifdef CPP11_MUTEX
+#ifdef CPP11_THREAD
     std::thread* cthread;
 
     static void _cthreadRoutine(CarlaThread* const _this_)

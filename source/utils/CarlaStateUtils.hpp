@@ -18,8 +18,8 @@
 #ifndef __CARLA_STATE_UTILS_HPP__
 #define __CARLA_STATE_UTILS_HPP__
 
-#include "carla_backend.hpp"
-#include "carla_utils.hpp"
+#include "CarlaBackend.hpp"
+#include "CarlaUtils.hpp"
 
 #include <QtXml/QDomNode>
 
@@ -422,7 +422,7 @@ QString getXMLFromSaveState(const SaveState& saveState)
     return "";
 
     // TODO
-    Q_UNUSED(saveState);
+    (void)saveState;
 }
 
 // -------------------------------------------------

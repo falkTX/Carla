@@ -18,8 +18,8 @@
 #ifndef __CARLA_ENGINE_HPP__
 #define __CARLA_ENGINE_HPP__
 
-#include "carla_backend.hpp"
-#include "carla_utils.hpp"
+#include "CarlaBackend.hpp"
+#include "CarlaString.hpp"
 
 #ifdef BUILD_BRIDGE
 struct CarlaOscData;

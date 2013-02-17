@@ -18,9 +18,9 @@
 #ifndef __CARLA_PLUGIN_HPP__
 #define __CARLA_PLUGIN_HPP__
 
-#include "carla_backend.hpp"
-#include "carla_native.h"
-#include "carla_utils.hpp"
+#include "CarlaBackend.hpp"
+#include "CarlaNative.h"
+#include "CarlaString.hpp"
 
 #ifndef DOXYGEN
 // Avoid including extra libs here

@@ -18,7 +18,7 @@
 #ifndef __CARLA_VST_UTILS_HPP__
 #define __CARLA_VST_UTILS_HPP__
 
-#include "carla_utils.hpp"
+#include "CarlaUtils.hpp"
 
 #include <cstdint>
 
@@ -128,7 +128,7 @@ typedef AEffect* (*VST_Function)(audioMasterCallback);
 // Check if feature is supported by the plugin
 
 static inline
-bool vstPluginCanDo(AEffect* const effect, const char* const feature)
+bool vstPluginCanDo(AEffect* const effect, char* const feature)
 {
     return (effect->dispatcher(effect, effCanDo, 0, 0, (void*)feature, 0.0f) == 1);
 }

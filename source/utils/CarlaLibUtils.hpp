@@ -18,9 +18,9 @@
 #ifndef __CARLA_LIB_UTILS_HPP__
 #define __CARLA_LIB_UTILS_HPP__
 
-#include "carla_utils.hpp"
+#include "CarlaUtils.hpp"
 
-#ifndef Q_OS_WIN
+#ifndef CARLA_OS_WIN
 # include <dlfcn.h>
 #endif
 
@@ -32,7 +32,7 @@ void* lib_open(const char* const filename)
 {
     CARLA_ASSERT(filename);
 
-#ifdef Q_OS_WIN
+#ifdef CARLA_OS_WIN
     return (void*)LoadLibraryA(filename);
 #else
     return dlopen(filename, RTLD_NOW|RTLD_LOCAL);
@@ -47,7 +47,7 @@ bool lib_close(void* const lib)
     if (! lib)
         return false;
 
-#ifdef Q_OS_WIN
+#ifdef CARLA_OS_WIN
     return FreeLibrary((HMODULE)lib);
 #else
     return (dlclose(lib) == 0);
@@ -63,7 +63,7 @@ void* lib_symbol(void* const lib, const char* const symbol)
     if (! (lib && symbol))
         return nullptr;
 
-#ifdef Q_OS_WIN
+#ifdef CARLA_OS_WIN
     return (void*)GetProcAddress((HMODULE)lib, symbol);
 #else
     return dlsym(lib, symbol);
@@ -75,7 +75,7 @@ const char* lib_error(const char* const filename)
 {
     CARLA_ASSERT(filename);
 
-#ifdef Q_OS_WIN
+#ifdef CARLA_OS_WIN
     static char libError[2048];
     std::memset(libError, 0, sizeof(char)*2048);
 
@@ -89,7 +89,9 @@ const char* lib_error(const char* const filename)
     return libError;
 #else
     return dlerror();
-    Q_UNUSED(filename);
+
+    // unused
+    (void)filename;
 #endif
 }
 
