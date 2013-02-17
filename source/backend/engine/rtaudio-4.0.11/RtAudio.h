@@ -47,6 +47,8 @@
 #ifndef __RTAUDIO_H
 #define __RTAUDIO_H
 
+#include "CarlaDefines.hpp"
+
 #include <string>
 #include <vector>
 #include "RtError.h"

@@ -41,11 +41,16 @@
 
 // Check for C++11 support
 #if defined(HAVE_CPP11_SUPPORT) || defined(QTCREATOR_TEST)
-# define CARLA_CPP11_SUPPORT
+# define CARLA_PROPER_CPP11_SUPPORT
 #elif defined(__GNUC__) && defined(__GXX_EXPERIMENTAL_CXX0X__)
 # if  (__GNUC__ * 100 + __GNUC_MINOR__) >= 405
-#  define CARLA_CPP11_SUPPORT
+#  define CARLA_PROPER_CPP11_SUPPORT
 # endif
+#endif
+
+#ifndef CARLA_PROPER_CPP11_SUPPORT
+# define noexcept
+# define nullptr (0)
 #endif
 
 // Common includes

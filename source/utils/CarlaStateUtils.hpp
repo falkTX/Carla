@@ -22,6 +22,7 @@
 #include "CarlaUtils.hpp"
 
 #include <QtXml/QDomNode>
+#include <vector>
 
 CARLA_BACKEND_START_NAMESPACE
 

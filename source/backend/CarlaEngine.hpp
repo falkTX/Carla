@@ -149,10 +149,12 @@ struct EngineControlEvent {
     uint16_t param;              //!< Parameter ID, midi bank or midi program.
     double   value;              //!< Parameter value, normalized to 0.0<->1.0.
 
+#ifndef CARLA_PROPER_CPP11_SUPPORT
     EngineControlEvent()
     {
         clear();
     }
+#endif
 
     void clear()
     {
@@ -170,10 +172,12 @@ struct EngineMidiEvent {
     uint8_t data[3]; //!< MIDI data, without channel bit
     uint8_t size;    //!< Number of bytes used
 
+#ifndef CARLA_PROPER_CPP11_SUPPORT
     EngineMidiEvent()
     {
         clear();
     }
+#endif
 
     void clear()
     {

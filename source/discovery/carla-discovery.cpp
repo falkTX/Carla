@@ -15,25 +15,25 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#include "carla_backend.hpp"
-#include "carla_juce_utils.hpp"
-#include "carla_lib_utils.hpp"
-#include "carla_midi.h"
+#include "CarlaBackend.hpp"
+#include "CarlaJuceUtils.hpp"
+#include "CarlaLibUtils.hpp"
+#include "CarlaMIDI.h"
 
 #ifdef WANT_LADSPA
-# include "carla_ladspa_utils.hpp"
+# include "CarlaLadspaUtils.hpp"
 #endif
 #ifdef WANT_DSSI
-# include "carla_ladspa_utils.hpp"
+# include "CarlaLadspaUtils.hpp"
 # include "dssi/dssi.h"
 #endif
 #ifdef WANT_LV2
 # include <QtCore/QDir>
 # include <QtCore/QUrl>
-# include "carla_lv2_utils.hpp"
+# include "CarlaLv2Utils.hpp"
 #endif
 #ifdef WANT_VST
-# include "carla_vst_utils.hpp"
+# include "CarlaVstUtils.hpp"
 #endif
 #ifdef WANT_FLUIDSYNTH
 # include <fluidsynth.h>
@@ -255,6 +255,101 @@ intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t opcode
 
     return ret;
 }
+#endif
+
+// --------------------------------------------------------------------------
+// LinuxSampler stuff
+
+#ifdef WANT_LINUXSAMPLER
+class LinuxSamplerScopedEngine
+{
+public:
+    LinuxSamplerScopedEngine(const char* const filename, const char* const stype)
+        : engine(nullptr),
+          ins(nullptr)
+    {
+        using namespace LinuxSampler;
+
+        try {
+            engine = EngineFactory::Create(stype);
+        }
+        catch (const Exception& e)
+        {
+            DISCOVERY_OUT("error", e.what());
+            return;
+        }
+
+        if (engine == nullptr)
+            return;
+
+        ins = engine->GetInstrumentManager();
+
+        if (ins == nullptr)
+        {
+            DISCOVERY_OUT("error", "Failed to get LinuxSampler instrument manager");
+            return;
+        }
+
+        std::vector<InstrumentManager::instrument_id_t> ids;
+
+        try {
+            ids = ins->GetInstrumentFileContent(filename);
+        }
+        catch (const Exception& e)
+        {
+            DISCOVERY_OUT("error", e.what());
+            return;
+        }
+
+        if (ids.size() > 0)
+        {
+            InstrumentManager::instrument_info_t info = ins->GetInstrumentInfo(ids[0]);
+            outputInfo(&info, ids.size());
+        }
+    }
+
+    ~LinuxSamplerScopedEngine()
+    {
+        if (engine != nullptr)
+            EngineFactory::Destroy(engine);
+    }
+
+    static void outputInfo(InstrumentManager::instrument_info_t* const info, const int programs, const char* const basename = nullptr)
+    {
+        DISCOVERY_OUT("init", "-----------");
+
+        if (info)
+        {
+            DISCOVERY_OUT("name", info->InstrumentName);
+            DISCOVERY_OUT("label", info->Product);
+            DISCOVERY_OUT("maker", info->Artists);
+            DISCOVERY_OUT("copyright", info->Artists);
+        }
+        else
+        {
+            DISCOVERY_OUT("name", basename);
+            DISCOVERY_OUT("label", basename);
+        }
+
+        DISCOVERY_OUT("hints", PLUGIN_IS_SYNTH);
+        DISCOVERY_OUT("audio.outs", 2);
+        DISCOVERY_OUT("audio.total", 2);
+        DISCOVERY_OUT("midi.ins", 1);
+        DISCOVERY_OUT("midi.total", 1);
+        DISCOVERY_OUT("programs.total", programs);
+        //DISCOVERY_OUT("parameters.ins", 13); // defined in Carla - TODO
+        //DISCOVERY_OUT("parameters.outs", 1);
+        //DISCOVERY_OUT("parameters.total", 14);
+        DISCOVERY_OUT("build", BINARY_NATIVE);
+        DISCOVERY_OUT("end", "------------");
+    }
+
+private:
+    Engine* engine;
+    InstrumentManager* ins;
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LinuxSamplerScopedEngine)
+};
 #endif
 
 // ------------------------------ Plugin Checks -----------------------------
@@ -1240,96 +1335,6 @@ void do_linuxsampler_check(const char* const filename, const char* const stype, 
         DISCOVERY_OUT("error", "Requested file is not readable");
         return;
     }
-
-    using namespace LinuxSampler;
-
-    class LinuxSamplerScopedEngine
-    {
-    public:
-        LinuxSamplerScopedEngine(const char* const filename, const char* const stype)
-        {
-            engine = nullptr;
-
-            try {
-                engine = EngineFactory::Create(stype);
-            }
-            catch (const Exception& e)
-            {
-                DISCOVERY_OUT("error", e.what());
-                return;
-            }
-
-            if (! engine)
-                return;
-
-            ins = engine->GetInstrumentManager();
-
-            if (! ins)
-            {
-                DISCOVERY_OUT("error", "Failed to get LinuxSampler instrument manager");
-                return;
-            }
-
-            std::vector<InstrumentManager::instrument_id_t> ids;
-
-            try {
-                ids = ins->GetInstrumentFileContent(filename);
-            }
-            catch (const Exception& e)
-            {
-                DISCOVERY_OUT("error", e.what());
-                return;
-            }
-
-            if (ids.size() > 0)
-            {
-                InstrumentManager::instrument_info_t info = ins->GetInstrumentInfo(ids[0]);
-                outputInfo(&info, ids.size());
-            }
-        }
-
-        ~LinuxSamplerScopedEngine()
-        {
-            if (engine)
-                EngineFactory::Destroy(engine);
-        }
-
-        static void outputInfo(InstrumentManager::instrument_info_t* const info, const int programs, const char* const basename = nullptr)
-        {
-            DISCOVERY_OUT("init", "-----------");
-
-            if (info)
-            {
-                DISCOVERY_OUT("name", info->InstrumentName);
-                DISCOVERY_OUT("label", info->Product);
-                DISCOVERY_OUT("maker", info->Artists);
-                DISCOVERY_OUT("copyright", info->Artists);
-            }
-            else
-            {
-                DISCOVERY_OUT("name", basename);
-                DISCOVERY_OUT("label", basename);
-            }
-
-            DISCOVERY_OUT("hints", PLUGIN_IS_SYNTH);
-            DISCOVERY_OUT("audio.outs", 2);
-            DISCOVERY_OUT("audio.total", 2);
-            DISCOVERY_OUT("midi.ins", 1);
-            DISCOVERY_OUT("midi.total", 1);
-            DISCOVERY_OUT("programs.total", programs);
-            //DISCOVERY_OUT("parameters.ins", 13); // defined in Carla - TODO
-            //DISCOVERY_OUT("parameters.outs", 1);
-            //DISCOVERY_OUT("parameters.total", 14);
-            DISCOVERY_OUT("build", BINARY_NATIVE);
-            DISCOVERY_OUT("end", "------------");
-        }
-
-    private:
-        Engine* engine;
-        InstrumentManager* ins;
-
-        CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LinuxSamplerScopedEngine)
-    };
 
     if (init)
         const LinuxSamplerScopedEngine engine(filename, stype);
