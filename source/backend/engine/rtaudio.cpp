@@ -17,9 +17,9 @@
 
 #ifdef WANT_RTAUDIO
 
-#include "carla_engine_internal.hpp"
-#include "carla_backend_utils.hpp"
-#include "carla_midi.h"
+#include "CarlaEngineInternal.hpp"
+#include "CarlaBackendUtils.hpp"
+#include "CarlaMIDI.h"
 
 #include "RtAudio.h"
 #include "RtMidi.h"

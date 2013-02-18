@@ -15,9 +15,9 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#include "carla_engine_internal.hpp"
-#include "carla_backend_utils.hpp"
-#include "carla_midi.h"
+#include "CarlaEngineInternal.hpp"
+#include "CarlaBackendUtils.hpp"
+#include "CarlaMIDI.h"
 
 #include <QtCore/QFile>
 #include <QtCore/QTextStream>
@@ -1454,7 +1454,7 @@ void CarlaEngine::processPatchbay(float** inBuf, float** outBuf, const uint32_t 
 #ifdef BUILD_BRIDGE
 void CarlaEngine::osc_send_peaks(CarlaPlugin* const /*plugin*/)
 #else
-void CarlaEngine::osc_send_peaks(CarlaPlugin* const plugin, const unsigned short id)
+void CarlaEngine::osc_send_peaks(CarlaPlugin* const plugin, const unsigned int id)
 #endif
 {
     // Peak values
@@ -1558,7 +1558,7 @@ void CarlaEngine::osc_send_control_set_plugin_ports(const int32_t pluginId, cons
     }
 }
 
-void CarlaEngine::osc_send_control_set_parameter_data(const int32_t pluginId, const int32_t index, const int32_t type, const int32_t hints, const char* const name, const char* const label, const double current)
+void CarlaEngine::osc_send_control_set_parameter_data(const int32_t pluginId, const int32_t index, const int32_t type, const int32_t hints, const char* const name, const char* const label, const float current)
 {
     qDebug("CarlaEngine::osc_send_control_set_parameter_data(%i, %i, %i, %i, \"%s\", \"%s\", %g)", pluginId, index, type, hints, name, label, current);
     CARLA_ASSERT(kData->oscData != nullptr);
@@ -1575,7 +1575,7 @@ void CarlaEngine::osc_send_control_set_parameter_data(const int32_t pluginId, co
     }
 }
 
-void CarlaEngine::osc_send_control_set_parameter_ranges(const int32_t pluginId, const int32_t index, const double min, const double max, const double def, const double step, const double stepSmall, const double stepLarge)
+void CarlaEngine::osc_send_control_set_parameter_ranges(const int32_t pluginId, const int32_t index, const float min, const float max, const float def, const float step, const float stepSmall, const float stepLarge)
 {
     qDebug("CarlaEngine::osc_send_control_set_parameter_ranges(%i, %i, %g, %g, %g, %g, %g, %g)", pluginId, index, min, max, def, step, stepSmall, stepLarge);
     CARLA_ASSERT(kData->oscData != nullptr);
@@ -1625,7 +1625,7 @@ void CarlaEngine::osc_send_control_set_parameter_midi_channel(const int32_t plug
     }
 }
 
-void CarlaEngine::osc_send_control_set_parameter_value(const int32_t pluginId, const int32_t index, const double value)
+void CarlaEngine::osc_send_control_set_parameter_value(const int32_t pluginId, const int32_t index, const float value)
 {
 #if DEBUG
     if (index < 0)
@@ -1645,7 +1645,7 @@ void CarlaEngine::osc_send_control_set_parameter_value(const int32_t pluginId, c
     }
 }
 
-void CarlaEngine::osc_send_control_set_default_value(const int32_t pluginId, const int32_t index, const double value)
+void CarlaEngine::osc_send_control_set_default_value(const int32_t pluginId, const int32_t index, const float value)
 {
     qDebug("CarlaEngine::osc_send_control_set_default_value(%i, %i, %g)", pluginId, index, value);
     CARLA_ASSERT(kData->oscData != nullptr);
@@ -1963,7 +1963,7 @@ void CarlaEngine::osc_send_bridge_parameter_data(const int32_t index, const int3
     }
 }
 
-void CarlaEngine::osc_send_bridge_parameter_ranges(const int32_t index, const double def, const double min, const double max, const double step, const double stepSmall, const double stepLarge)
+void CarlaEngine::osc_send_bridge_parameter_ranges(const int32_t index, const float def, const float min, const float max, const float step, const float stepSmall, const float stepLarge)
 {
     qDebug("CarlaEngine::osc_send_bridge_parameter_ranges(%i, %g, %g, %g, %g, %g, %g)", index, def, min, max, step, stepSmall, stepLarge);
     CARLA_ASSERT(kData->oscData != nullptr);
@@ -2021,7 +2021,7 @@ void CarlaEngine::osc_send_bridge_configure(const char* const key, const char* c
     }
 }
 
-void CarlaEngine::osc_send_bridge_set_parameter_value(const int32_t index, const double value)
+void CarlaEngine::osc_send_bridge_set_parameter_value(const int32_t index, const float value)
 {
     qDebug("CarlaEngine::osc_send_bridge_set_parameter_value(%i, %g)", index, value);
     CARLA_ASSERT(kData->oscData != nullptr);
@@ -2035,7 +2035,7 @@ void CarlaEngine::osc_send_bridge_set_parameter_value(const int32_t index, const
     }
 }
 
-void CarlaEngine::osc_send_bridge_set_default_value(const int32_t index, const double value)
+void CarlaEngine::osc_send_bridge_set_default_value(const int32_t index, const float value)
 {
     qDebug("CarlaEngine::osc_send_bridge_set_default_value(%i, %g)", index, value);
     CARLA_ASSERT(kData->oscData != nullptr);

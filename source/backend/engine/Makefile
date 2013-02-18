@@ -43,9 +43,9 @@ endif
 # --------------------------------------------------------------
 
 OBJS  = \
-     carla_engine.cpp.o \
-     carla_engine_osc.cpp.o \
-     carla_engine_thread.cpp.o \
+     CarlaEngine.cpp.o \
+     CarlaEngineOsc.cpp.o \
+     CarlaEngineThread.cpp.o \
      jack.cpp.o \
      rtaudio.cpp.o
 
