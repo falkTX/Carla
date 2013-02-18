@@ -18,9 +18,9 @@
 #ifndef __CARLA_ENGINE_OSC_HPP__
 #define __CARLA_ENGINE_OSC_HPP__
 
-#include "carla_backend.hpp"
-#include "carla_juce_utils.hpp"
-#include "carla_osc_utils.hpp"
+#include "CarlaBackend.hpp"
+#include "CarlaString.hpp"
+#include "CarlaOscUtils.hpp"
 
 #define CARLA_ENGINE_OSC_HANDLE_ARGS1 CarlaPlugin* const plugin
 #define CARLA_ENGINE_OSC_HANDLE_ARGS2 CarlaPlugin* const plugin, const int argc, const lo_arg* const* const argv, const char* const types
@@ -29,7 +29,7 @@
     /* check argument count */                                                                                              \
     if (argc != argcToCompare)                                                                                              \
     {                                                                                                                       \
-        qCritical("CarlaEngineOsc::%s() - argument count mismatch: %i != %i", __FUNCTION__, argc, argcToCompare);           \
+        carla_stderr("CarlaEngineOsc::%s() - argument count mismatch: %i != %i", __FUNCTION__, argc, argcToCompare);           \
         return 1;                                                                                                           \
     }                                                                                                                       \
     if (argc > 0)                                                                                                           \
@@ -37,13 +37,13 @@
         /* check for nullness */                                                                                            \
         if (! (types && typesToCompare))                                                                                    \
         {                                                                                                                   \
-            qCritical("CarlaEngineOsc::%s() - argument types are null", __FUNCTION__);                                      \
+            carla_stderr("CarlaEngineOsc::%s() - argument types are null", __FUNCTION__);                                      \
             return 1;                                                                                                       \
         }                                                                                                                   \
         /* check argument types */                                                                                          \
         if (strcmp(types, typesToCompare) != 0)                                                                             \
         {                                                                                                                   \
-            qCritical("CarlaEngineOsc::%s() - argument types mismatch: '%s' != '%s'", __FUNCTION__, types, typesToCompare); \
+            carla_stderr("CarlaEngineOsc::%s() - argument types mismatch: '%s' != '%s'", __FUNCTION__, types, typesToCompare); \
             return 1;                                                                                                       \
         }                                                                                                                   \
     }
@@ -149,20 +149,17 @@ private:
 
     static void osc_error_handler_TCP(int num, const char* msg, const char* path)
     {
-        qWarning("CarlaEngineOsc::osc_error_handler_TCP(%i, \"%s\", \"%s\")", num, msg, path);
+        carla_stderr2("CarlaEngineOsc::osc_error_handler_TCP(%i, \"%s\", \"%s\")", num, msg, path);
     }
 
     static void osc_error_handler_UDP(int num, const char* msg, const char* path)
     {
-        qWarning("CarlaEngineOsc::osc_error_handler_UDP(%i, \"%s\", \"%s\")", num, msg, path);
+        carla_stderr2("CarlaEngineOsc::osc_error_handler_UDP(%i, \"%s\", \"%s\")", num, msg, path);
     }
 
     static int osc_message_handler(const char* path, const char* types, lo_arg** argv, int argc, lo_message msg, void* userData)
     {
-        CARLA_ASSERT(userData);
-        if (CarlaEngineOsc* const _this_ = (CarlaEngineOsc*)userData)
-            return _this_->handleMessage(path, argc, argv, types, msg);
-        return 1;
+        return ((CarlaEngineOsc*)userData)->handleMessage(path, argc, argv, types, msg);
     }
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineOsc)

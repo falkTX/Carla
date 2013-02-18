@@ -15,19 +15,19 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#include "carla_engine.hpp"
-#include "carla_engine_thread.hpp"
-#include "carla_plugin.hpp"
+#include "CarlaEngineThread.hpp"
+
+#include "CarlaEngine.hpp"
+#include "CarlaPlugin.hpp"
 
 CARLA_BACKEND_START_NAMESPACE
 
 // -----------------------------------------------------------------------
 
-CarlaEngineThread::CarlaEngineThread(CarlaEngine* const engine, QObject* const parent)
-    : QThread(parent),
-      kEngine(engine)
+CarlaEngineThread::CarlaEngineThread(CarlaEngine* const engine)
+    : kEngine(engine)
 {
-    qDebug("CarlaEngineThread::CarlaEngineThread(%p, %p)", engine, parent);
+    carla_debug("CarlaEngineThread::CarlaEngineThread(%p)", engine);
     CARLA_ASSERT(engine);
 
     fStopNow = true;
@@ -35,7 +35,7 @@ CarlaEngineThread::CarlaEngineThread(CarlaEngine* const engine, QObject* const p
 
 CarlaEngineThread::~CarlaEngineThread()
 {
-    qDebug("CarlaEngineThread::~CarlaEngineThread()");
+    carla_debug("CarlaEngineThread::~CarlaEngineThread()");
     CARLA_ASSERT(fStopNow);
 }
 
@@ -43,17 +43,17 @@ CarlaEngineThread::~CarlaEngineThread()
 
 void CarlaEngineThread::startNow()
 {
-    qDebug("CarlaEngineThread::startNow()");
+    carla_debug("CarlaEngineThread::startNow()");
     CARLA_ASSERT(fStopNow);
 
     fStopNow = false;
 
-    start(QThread::HighPriority);
+    start();
 }
 
 void CarlaEngineThread::stopNow()
 {
-    qDebug("CarlaEngineThread::stopNow()");
+    carla_debug("CarlaEngineThread::stopNow()");
 
     if (fStopNow)
         return;
@@ -62,25 +62,20 @@ void CarlaEngineThread::stopNow()
 
     const CarlaMutex::ScopedLocker sl(&fMutex);
 
-    if (isRunning() && ! wait(200))
-    {
-        quit();
-
-        if (isRunning() && ! wait(300))
-            terminate();
-    }
+    if (isRunning() && ! stop(500))
+        terminate();
 }
 
 // -----------------------------------------------------------------------
 
 void CarlaEngineThread::run()
 {
-    qDebug("CarlaEngineThread::run()");
+    carla_debug("CarlaEngineThread::run()");
     CARLA_ASSERT(kEngine->isRunning());
 
     bool oscRegisted, usesSingleThread;
     unsigned int i, count;
-    double value;
+    float value;
 
     while (kEngine->isRunning() && ! fStopNow)
     {
@@ -151,7 +146,7 @@ void CarlaEngineThread::run()
         }
 
         kEngine->idleOsc();
-        msleep(oscRegisted ? 40 : 50);
+        carla_msleep(oscRegisted ? 40 : 50);
     }
 }
 

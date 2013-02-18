@@ -15,7 +15,8 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#include "standalone/CarlaStandalone.cpp"
+// still need warn check
+#include "engine/CarlaEngineOsc.cpp"
 
 #if 0
 #include "CarlaDefines.hpp"

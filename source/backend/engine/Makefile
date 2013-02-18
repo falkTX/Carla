@@ -8,8 +8,8 @@ include ../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo)
-LINK_FLAGS      += $(shell pkg-config --libs liblo)
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo QtCore)
+LINK_FLAGS      += $(shell pkg-config --libs liblo QtCore)
 
 # --------------------------------------------------------------
 

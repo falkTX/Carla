@@ -15,10 +15,11 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#include "carla_engine.hpp"
-#include "carla_engine_osc.hpp"
-#include "carla_plugin.hpp"
-#include "carla_midi.h"
+#include "CarlaEngineOsc.hpp"
+
+#include "CarlaEngine.hpp"
+#include "CarlaPlugin.hpp"
+#include "CarlaMIDI.h"
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -29,13 +30,13 @@ CarlaEngineOsc::CarlaEngineOsc(CarlaEngine* const engine)
       fServerTCP(nullptr),
       fServerUDP(nullptr)
 {
-    qDebug("CarlaEngineOsc::CarlaEngineOsc(%p)", engine);
+    carla_debug("CarlaEngineOsc::CarlaEngineOsc(%p)", engine);
     CARLA_ASSERT(engine != nullptr);
 }
 
 CarlaEngineOsc::~CarlaEngineOsc()
 {
-    qDebug("CarlaEngineOsc::~CarlaEngineOsc()");
+    carla_debug("CarlaEngineOsc::~CarlaEngineOsc()");
     //CARLA_ASSERT(fName.isEmpty()); // FIXME
     //CARLA_ASSERT(fServerPathTCP.isEmpty()); // FIXME
     //CARLA_ASSERT(fServerPathUDP.isEmpty()); // FIXME
@@ -47,7 +48,7 @@ CarlaEngineOsc::~CarlaEngineOsc()
 
 void CarlaEngineOsc::init(const char* const name)
 {
-    qDebug("CarlaEngineOsc::init(\"%s\")", name);
+    carla_debug("CarlaEngineOsc::init(\"%s\")", name);
     CARLA_ASSERT(fName.isEmpty());
     CARLA_ASSERT(fServerPathTCP.isEmpty());
     CARLA_ASSERT(fServerPathUDP.isEmpty());
@@ -102,7 +103,7 @@ void CarlaEngineOsc::idle()
 
 void CarlaEngineOsc::close()
 {
-    qDebug("CarlaEngineOsc::close()");
+    carla_debug("CarlaEngineOsc::close()");
     CARLA_ASSERT(fName.isNotEmpty());
     CARLA_ASSERT(fServerPathTCP.isNotEmpty());
     CARLA_ASSERT(fServerPathUDP.isNotEmpty());
@@ -143,7 +144,7 @@ bool isDigit(const char c)
 int CarlaEngineOsc::handleMessage(const char* const path, const int argc, const lo_arg* const* const argv, const char* const types, const lo_message msg)
 {
 #if DEBUG
-    qDebug("CarlaEngineOsc::handleMessage(%s, %i, %p, %s, %p)", path, argc, argv, types, msg);
+    carla_debug("CarlaEngineOsc::handleMessage(%s, %i, %p, %s, %p)", path, argc, argv, types, msg);
 #endif
     CARLA_ASSERT(fName.isNotEmpty());
     CARLA_ASSERT(fServerPathTCP.isNotEmpty() || fServerPathUDP.isNotEmpty());
@@ -152,13 +153,13 @@ int CarlaEngineOsc::handleMessage(const char* const path, const int argc, const 
 
     if (path == nullptr)
     {
-        qCritical("CarlaEngineOsc::handleMessage() - got invalid path");
+        carla_stderr("CarlaEngineOsc::handleMessage() - got invalid path");
         return 1;
     }
 
     if (fName.isEmpty())
     {
-        qCritical("CarlaEngineOsc::handleMessage(\"%s\", ...) - received message but client is offline", path);
+        carla_stderr("CarlaEngineOsc::handleMessage(\"%s\", ...) - received message but client is offline", path);
         return 1;
     }
 
@@ -180,7 +181,7 @@ int CarlaEngineOsc::handleMessage(const char* const path, const int argc, const 
     // Check if message is for this client
     if (std::strlen(path) <= nameSize || std::strncmp(path+1, (const char*)fName, nameSize) != 0)
     {
-        qWarning("CarlaEngineOsc::handleMessage() - message not for this client -> '%s' != '/%s/'", path, (const char*)fName);
+        carla_stderr("CarlaEngineOsc::handleMessage() - message not for this client -> '%s' != '/%s/'", path, (const char*)fName);
         return 1;
     }
 
@@ -195,7 +196,7 @@ int CarlaEngineOsc::handleMessage(const char* const path, const int argc, const 
         {
             if (isDigit(path[nameSize+5]))
             {
-                qCritical("CarlaEngineOsc::handleMessage() - invalid plugin id, over 999? (value: \"%s\")", path+nameSize);
+                carla_stderr2("CarlaEngineOsc::handleMessage() - invalid plugin id, over 999? (value: \"%s\")", path+nameSize);
                 return 1;
             }
             else if (isDigit(path[nameSize+4]))
@@ -221,7 +222,7 @@ int CarlaEngineOsc::handleMessage(const char* const path, const int argc, const 
 
     if (pluginId > kEngine->currentPluginCount())
     {
-        qCritical("CarlaEngineOsc::handleMessage() - failed to get plugin, wrong id '%i'", pluginId);
+        carla_stderr("CarlaEngineOsc::handleMessage() - failed to get plugin, wrong id '%i'", pluginId);
         return 1;
     }
 
@@ -230,7 +231,7 @@ int CarlaEngineOsc::handleMessage(const char* const path, const int argc, const 
 
     if (plugin == nullptr || plugin->id() != pluginId)
     {
-        qWarning("CarlaEngineOsc::handleMessage() - invalid plugin id '%i', probably has been removed", pluginId);
+        carla_stderr("CarlaEngineOsc::handleMessage() - invalid plugin id '%i', probably has been removed", pluginId);
         return 1;
     }
 
@@ -241,7 +242,7 @@ int CarlaEngineOsc::handleMessage(const char* const path, const int argc, const 
 
     if (method[0] == '\0')
     {
-        qWarning("CarlaEngineOsc::handleMessage(\"%s\", ...) - received message without method", path);
+        carla_stderr("CarlaEngineOsc::handleMessage(\"%s\", ...) - received message without method", path);
         return 1;
     }
 
@@ -349,7 +350,7 @@ int CarlaEngineOsc::handleMessage(const char* const path, const int argc, const 
         return handleMsgLv2EventTransfer(plugin, argc, argv, types);
 #endif
 
-    qWarning("CarlaEngineOsc::handleMessage() - unsupported OSC method '%s'", method);
+    carla_stderr("CarlaEngineOsc::handleMessage() - unsupported OSC method '%s'", method);
     return 1;
 }
 
@@ -358,18 +359,18 @@ int CarlaEngineOsc::handleMessage(const char* const path, const int argc, const 
 #ifndef BUILD_BRIDGE
 int CarlaEngineOsc::handleMsgRegister(const int argc, const lo_arg* const* const argv, const char* const types, const lo_address source)
 {
-    qDebug("CarlaEngineOsc::handleMsgRegister()");
+    carla_debug("CarlaEngineOsc::handleMsgRegister()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(1, "s");
 
     if (fControlData.path != nullptr)
     {
-        qWarning("CarlaEngineOsc::handleMsgRegister() - OSC backend already registered to %s", fControlData.path);
+        carla_stderr("CarlaEngineOsc::handleMsgRegister() - OSC backend already registered to %s", fControlData.path);
         return 1;
     }
 
     const char* const url = &argv[0]->s;
 
-    qDebug("CarlaEngineOsc::handleMsgRegister() - OSC backend registered to %s", url);
+    carla_debug("CarlaEngineOsc::handleMsgRegister() - OSC backend registered to %s", url);
 
     {
         const char* host = lo_address_get_hostname(source);
@@ -400,11 +401,11 @@ int CarlaEngineOsc::handleMsgRegister(const int argc, const lo_arg* const* const
 
 int CarlaEngineOsc::handleMsgUnregister()
 {
-    qDebug("CarlaEngineOsc::handleMsgUnregister()");
+    carla_debug("CarlaEngineOsc::handleMsgUnregister()");
 
     if (fControlData.path == nullptr)
     {
-        qWarning("CarlaEngineOsc::handleMsgUnregister() - OSC backend is not registered yet");
+        carla_stderr("CarlaEngineOsc::handleMsgUnregister() - OSC backend is not registered yet");
         return 1;
     }
 
@@ -417,7 +418,7 @@ int CarlaEngineOsc::handleMsgUnregister()
 
 int CarlaEngineOsc::handleMsgUpdate(CARLA_ENGINE_OSC_HANDLE_ARGS2, const lo_address source)
 {
-    qDebug("CarlaEngineOsc::handleMsgUpdate()");
+    carla_debug("CarlaEngineOsc::handleMsgUpdate()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(1, "s");
 
     const char* const url = (const char*)&argv[0]->s;
@@ -429,7 +430,7 @@ int CarlaEngineOsc::handleMsgUpdate(CARLA_ENGINE_OSC_HANDLE_ARGS2, const lo_addr
 
 int CarlaEngineOsc::handleMsgConfigure(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 {
-    qDebug("CarlaEngineOsc::handleMsgConfigure()");
+    carla_debug("CarlaEngineOsc::handleMsgConfigure()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(2, "ss");
 
     const char* const key   = (const char*)&argv[0]->s;
@@ -443,7 +444,7 @@ int CarlaEngineOsc::handleMsgConfigure(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 
 int CarlaEngineOsc::handleMsgControl(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 {
-    qDebug("CarlaEngineOsc::handleMsgControl()");
+    carla_debug("CarlaEngineOsc::handleMsgControl()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(2, "if");
 
     const int32_t rindex = argv[0]->i;
@@ -456,7 +457,7 @@ int CarlaEngineOsc::handleMsgControl(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 
 int CarlaEngineOsc::handleMsgProgram(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 {
-    qDebug("CarlaEngineOsc::handleMsgProgram()");
+    carla_debug("CarlaEngineOsc::handleMsgProgram()");
 
     if (argc == 2)
     {
@@ -481,7 +482,7 @@ int CarlaEngineOsc::handleMsgProgram(CARLA_ENGINE_OSC_HANDLE_ARGS2)
             return 0;
         }
 
-        qCritical("CarlaEngineOsc::handleMsgProgram() - program_id '%i' out of bounds", program);
+        carla_stderr("CarlaEngineOsc::handleMsgProgram() - programId '%i' out of bounds", program);
     }
 
     return 1;
@@ -489,7 +490,7 @@ int CarlaEngineOsc::handleMsgProgram(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 
 int CarlaEngineOsc::handleMsgMidi(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 {
-    qDebug("CarlaEngineOsc::handleMsgMidi()");
+    carla_debug("CarlaEngineOsc::handleMsgMidi()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(1, "m");
 
     if (plugin->midiInCount() > 0)
@@ -517,13 +518,13 @@ int CarlaEngineOsc::handleMsgMidi(CARLA_ENGINE_OSC_HANDLE_ARGS2)
         return 0;
     }
 
-    qWarning("CarlaEngineOsc::handleMsgMidi() - recived midi when plugin has no midi inputs");
+    carla_stderr("CarlaEngineOsc::handleMsgMidi() - recived midi when plugin has no midi inputs");
     return 1;
 }
 
 int CarlaEngineOsc::handleMsgExiting(CARLA_ENGINE_OSC_HANDLE_ARGS1)
 {
-    qDebug("CarlaEngineOsc::handleMsgExiting()");
+    carla_debug("CarlaEngineOsc::handleMsgExiting()");
 
     // TODO - check for non-UIs (dssi-vst) and set to -1 instead
     kEngine->callback(CALLBACK_SHOW_GUI, plugin->id(), 0, 0, 0.0f, nullptr);
@@ -538,7 +539,7 @@ int CarlaEngineOsc::handleMsgExiting(CARLA_ENGINE_OSC_HANDLE_ARGS1)
 #ifndef BUILD_BRIDGE
 int CarlaEngineOsc::handleMsgSetActive(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 {
-    qDebug("CarlaEngineOsc::handleMsgSetActive()");
+    carla_debug("CarlaEngineOsc::handleMsgSetActive()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(1, "i");
 
     const bool active = (bool)argv[0]->i;
@@ -549,7 +550,7 @@ int CarlaEngineOsc::handleMsgSetActive(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 
 int CarlaEngineOsc::handleMsgSetDryWet(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 {
-    qDebug("CarlaEngineOsc::handleMsgSetDryWet()");
+    carla_debug("CarlaEngineOsc::handleMsgSetDryWet()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(1, "f");
 
     const float value = argv[0]->f;
@@ -560,7 +561,7 @@ int CarlaEngineOsc::handleMsgSetDryWet(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 
 int CarlaEngineOsc::handleMsgSetVolume(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 {
-    qDebug("CarlaEngineOsc::handleMsgSetVolume()");
+    carla_debug("CarlaEngineOsc::handleMsgSetVolume()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(1, "f");
 
     const float value = argv[0]->f;
@@ -571,7 +572,7 @@ int CarlaEngineOsc::handleMsgSetVolume(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 
 int CarlaEngineOsc::handleMsgSetBalanceLeft(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 {
-    qDebug("CarlaEngineOsc::handleMsgSetBalanceLeft()");
+    carla_debug("CarlaEngineOsc::handleMsgSetBalanceLeft()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(1, "f");
 
     const float value = argv[0]->f;
@@ -582,7 +583,7 @@ int CarlaEngineOsc::handleMsgSetBalanceLeft(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 
 int CarlaEngineOsc::handleMsgSetBalanceRight(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 {
-    qDebug("CarlaEngineOsc::handleMsgSetBalanceRight()");
+    carla_debug("CarlaEngineOsc::handleMsgSetBalanceRight()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(1, "f");
 
     const float value = argv[0]->f;
@@ -593,7 +594,7 @@ int CarlaEngineOsc::handleMsgSetBalanceRight(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 
 int CarlaEngineOsc::handleMsgSetParameterValue(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 {
-    qDebug("CarlaEngineOsc::handleMsgSetParameterValue()");
+    carla_debug("CarlaEngineOsc::handleMsgSetParameterValue()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(2, "if");
 
     const int32_t index = argv[0]->i;
@@ -605,7 +606,7 @@ int CarlaEngineOsc::handleMsgSetParameterValue(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 
 int CarlaEngineOsc::handleMsgSetParameterMidiCC(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 {
-    qDebug("CarlaEngineOsc::handleMsgSetParameterMidiCC()");
+    carla_debug("CarlaEngineOsc::handleMsgSetParameterMidiCC()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(2, "ii");
 
     const int32_t index = argv[0]->i;
@@ -617,7 +618,7 @@ int CarlaEngineOsc::handleMsgSetParameterMidiCC(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 
 int CarlaEngineOsc::handleMsgSetParameterMidiChannel(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 {
-    qDebug("CarlaEngineOsc::handleMsgSetParameterMidiChannel()");
+    carla_debug("CarlaEngineOsc::handleMsgSetParameterMidiChannel()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(2, "ii");
 
     const int32_t index   = argv[0]->i;
@@ -629,7 +630,7 @@ int CarlaEngineOsc::handleMsgSetParameterMidiChannel(CARLA_ENGINE_OSC_HANDLE_ARG
 
 int CarlaEngineOsc::handleMsgSetProgram(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 {
-    qDebug("CarlaEngineOsc::handleMsgSetProgram()");
+    carla_debug("CarlaEngineOsc::handleMsgSetProgram()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(1, "i");
 
     const int32_t index = argv[0]->i;
@@ -640,7 +641,7 @@ int CarlaEngineOsc::handleMsgSetProgram(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 
 int CarlaEngineOsc::handleMsgSetMidiProgram(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 {
-    qDebug("CarlaEngineOsc::handleMsgSetMidiProgram()");
+    carla_debug("CarlaEngineOsc::handleMsgSetMidiProgram()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(1, "i");
 
     const int32_t index = argv[0]->i;
@@ -651,7 +652,7 @@ int CarlaEngineOsc::handleMsgSetMidiProgram(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 
 int CarlaEngineOsc::handleMsgNoteOn(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 {
-    qDebug("CarlaEngineOsc::handleMsgNoteOn()");
+    carla_debug("CarlaEngineOsc::handleMsgNoteOn()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(3, "iii");
 
     const int32_t channel = argv[0]->i;
@@ -664,7 +665,7 @@ int CarlaEngineOsc::handleMsgNoteOn(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 
 int CarlaEngineOsc::handleMsgNoteOff(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 {
-    qDebug("CarlaEngineOsc::handleMsgNoteOff()");
+    carla_debug("CarlaEngineOsc::handleMsgNoteOff()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(2, "ii");
 
     const int32_t channel = argv[0]->i;

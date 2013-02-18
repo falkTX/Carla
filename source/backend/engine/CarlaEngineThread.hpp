@@ -18,10 +18,9 @@
 #ifndef __CARLA_ENGINE_THREAD_HPP__
 #define __CARLA_ENGINE_THREAD_HPP__
 
-#include "carla_backend.hpp"
-#include "carla_utils.hpp"
-
-#include <QtCore/QThread>
+#include "CarlaBackend.hpp"
+#include "CarlaMutex.hpp"
+#include "CarlaThread.hpp"
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -29,10 +28,10 @@ CARLA_BACKEND_START_NAMESPACE
 } // Fix editor indentation
 #endif
 
-class CarlaEngineThread : public QThread
+class CarlaEngineThread : public CarlaThread
 {
 public:
-    CarlaEngineThread(CarlaEngine* const engine, QObject* const parent = nullptr);
+    CarlaEngineThread(CarlaEngine* const engine);
     ~CarlaEngineThread();
 
     void startNow();

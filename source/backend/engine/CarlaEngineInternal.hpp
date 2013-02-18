@@ -18,11 +18,11 @@
 #ifndef __CARLA_ENGINE_INTERNAL_HPP__
 #define __CARLA_ENGINE_INTERNAL_HPP__
 
-#include "carla_engine.hpp"
-#include "carla_engine_osc.hpp"
-#include "carla_engine_thread.hpp"
+#include "CarlaEngine.hpp"
+#include "CarlaEngineOsc.hpp"
+#include "CarlaEngineThread.hpp"
 
-#include "carla_plugin.hpp"
+#include "CarlaPlugin.hpp"
 
 #ifndef BUILD_BRIDGE
 # include <QtCore/QProcessEnvironment>
@@ -47,7 +47,7 @@ const char* EngineType2Str(const EngineType type)
         return "kEngineTypePlugin";
     }
 
-    qWarning("CarlaBackend::EngineType2Str(%i) - invalid type", type);
+    carla_stderr("CarlaBackend::EngineType2Str(%i) - invalid type", type);
     return nullptr;
 }
 
@@ -64,7 +64,7 @@ const char* EnginePortType2Str(const EnginePortType type)
         return "kEnginePortTypeEvent";
     }
 
-    qWarning("CarlaBackend::EnginePortType2Str(%i) - invalid type", type);
+    carla_stderr("CarlaBackend::EnginePortType2Str(%i) - invalid type", type);
     return nullptr;
 }
 
@@ -87,7 +87,7 @@ const char* EngineControlEventType2Str(const EngineControlEventType type)
         return "kEngineControlEventTypeAllNotesOff";
     }
 
-    qWarning("CarlaBackend::EngineControlEventType2Str(%i) - invalid type", type);
+    carla_stderr("CarlaBackend::EngineControlEventType2Str(%i) - invalid type", type);
     return nullptr;
 }
 

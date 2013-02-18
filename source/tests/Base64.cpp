@@ -34,7 +34,11 @@ int main()
             : s{'1', 's', 't', 0},
               i(228),
               d(3.33333333333),
-              ptr((void*)0x500) {}
+              ptr((void*)0x500)
+        {
+            carla_zeroMem(padding, sizeof(char)*100);
+        }
+
     } blob;
 
     // binary -> base64
@@ -46,7 +50,8 @@ int main()
 
     printf("BINARY '%s'\n", buf0);
 
-    char buf0dec[carla_base64_decoded_max_len(buf0)];
+    char buf0dec[carla_base64_decoded_max_len(buf0)+1];
+    carla_zeroMem(buf0dec, sizeof(buf0dec));
     carla_base64_decode(buf0, (uint8_t*)buf0dec);
 
     Blob blobTester;
@@ -71,7 +76,8 @@ int main()
     // base64 -> string
     const char* const test2 = "SGVsbG8gV29ybGQh";
 
-    char buf2[carla_base64_decoded_max_len(test2)];
+    char buf2[carla_base64_decoded_max_len(test2)+1];
+    carla_zeroMem(buf2, sizeof(buf2));
     carla_base64_decode(test2, (uint8_t*)buf2);
 
     printf("'%s' => '%s'\n", test2, buf2);
