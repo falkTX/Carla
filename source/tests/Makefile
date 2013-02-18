@@ -14,16 +14,19 @@ BUILD_CXX_FLAGS += -I../backend -I../includes -I../utils -Wall -Wextra
 ANSI_CXX_FLAGS   = -ansi -pedantic -pedantic-errors -Wunused-parameter -Wuninitialized -Wno-vla
 ANSI_CXX_FLAGS  += -Wcast-qual -Wconversion -Wsign-conversion -Wlogical-op -Waggregate-return
 ANSI_CXX_FLAGS  += -std=c++11 -Wzero-as-null-pointer-constant
-ANSI_CXX_FLAGS  += -DVESTIGE_HEADER
+ANSI_CXX_FLAGS  += -DVESTIGE_HEADER -shared -fPIC
 
-TARGETS = ANSI CarlaString RtList Thread Print
+TARGETS = ANSI_ Base64 CarlaString RtList Thread Print
 
 all: $(TARGETS) RUN
 
 # --------------------------------------------------------------
 
-ANSI: ANSI.cpp
-	$(CXX) $^ $(BUILD_CXX_FLAGS) $(ANSI_CXX_FLAGS) $(LINK_FLAGS) -o $@
+ANSI_: ANSI.cpp
+	$(CXX) $^ $(BUILD_CXX_FLAGS) $(ANSI_CXX_FLAGS) $(LINK_FLAGS) -o ANSI # $@
+
+Base64: Base64.cpp
+	$(CXX) $^ $(BUILD_CXX_FLAGS) $(LINK_FLAGS) -o $@
 
 CarlaString: CarlaString.cpp
 	$(CXX) $^ $(BUILD_CXX_FLAGS) $(LINK_FLAGS) -o $@
@@ -44,6 +47,7 @@ GL_: GL.cpp
 RUN: $(TARGETS)
 # 	./CarlaString && ./RtList && ./Thread
 # 	./Print
+# 	./Base64
 # 	./GL
 
 # --------------------------------------------------------------

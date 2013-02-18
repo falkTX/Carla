@@ -15,7 +15,9 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#if 1
+#include "standalone/carla_standalone.cpp"
+
+#if 0
 #include "CarlaDefines.hpp"
 #include "CarlaMIDI.h"
 #include "ladspa_rdf.hpp"
@@ -30,6 +32,7 @@
 
 #include "CarlaUtils.hpp"
 #include "CarlaBackendUtils.hpp"
+#include "CarlaBase64Utils.hpp"
 #include "CarlaJuceUtils.hpp"
 #include "CarlaLibUtils.hpp"
 #include "CarlaOscUtils.hpp"

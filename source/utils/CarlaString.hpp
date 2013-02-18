@@ -18,6 +18,7 @@
 #ifndef __CARLA_STRING_HPP__
 #define __CARLA_STRING_HPP__
 
+#include "CarlaBase64Utils.hpp"
 #include "CarlaJuceUtils.hpp"
 
 // -------------------------------------------------
@@ -248,6 +249,71 @@ public:
             if (buffer[i] >= 'a' && buffer[i] <= 'z')
                 buffer[i] -= charDiff;
         }
+    }
+
+    void toBase64()
+    {
+        importBinaryAsBase64((const uint8_t*)buffer, bufferLen);
+    }
+
+    void fromBase64()
+    {
+       uint8_t buffer2[carla_base64_decoded_max_len(buffer)];
+
+       if (unsigned int len = carla_base64_decode(buffer, buffer2))
+          _dup((char*)buffer2, len);
+       else
+          clear();
+    }
+
+    void importBinaryAsBase64(const uint8_t* const raw, const size_t rawLen)
+    {
+        const size_t rawBufferSize = carla_base64_encoded_len(rawLen) + 1;
+        char         rawBuffer[rawBufferSize];
+        carla_base64_encode(raw, rawLen, rawBuffer);
+
+        _dup(rawBuffer, rawBufferSize-1);
+    }
+
+    template<typename T>
+    void importBinaryAsBase64(const T* const t)
+    {
+        const size_t tSize = sizeof(T);
+        importBinaryAsBase64((const uint8_t*)t, tSize);
+    }
+
+    size_t exportAsBase64Binary(uint8_t** const rawPtr)
+    {
+        uint8_t binaryBuffer[carla_base64_decoded_max_len(buffer)];
+
+        if (unsigned int len = carla_base64_decode(buffer, binaryBuffer))
+        {
+            uint8_t* const binaryBufferHeap = new uint8_t[len];
+            std::memcpy(binaryBufferHeap, binaryBuffer, len);
+
+            *rawPtr = binaryBufferHeap;
+            return len;
+        }
+
+        return 0;
+    }
+
+    template<typename T>
+    T* exportAsBase64Binary()
+    {
+        uint8_t binaryBuffer[carla_base64_decoded_max_len(buffer)];
+
+        if (unsigned int len = carla_base64_decode(buffer, binaryBuffer))
+        {
+            CARLA_ASSERT_INT2(len == sizeof(T), len, sizeof(T));
+
+            T* const t = new T();
+            std::memcpy(t, binaryBuffer, len);
+
+            return t;
+        }
+
+        return nullptr;
     }
 
     // ---------------------------------------------

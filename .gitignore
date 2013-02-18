@@ -57,6 +57,7 @@ carla-discovery-posix32
 carla-discovery-posix64
 
 source/tests/ANSI
+source/tests/Base64
 source/tests/CarlaString
 source/tests/Print
 source/tests/RtList
