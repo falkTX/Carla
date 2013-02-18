@@ -110,8 +110,6 @@ void carla_base64_encode(const uint8_t* const raw, const size_t len, char* const
 static inline
 unsigned int carla_base64_decode(const char* const encoded, uint8_t* const raw)
 {
-    char base64[65] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-
     const uint8_t* encodedBytes = (const uint8_t*)encoded;
     uint8_t* rawBytes = (uint8_t*)raw;
     uint8_t encodedByte;
@@ -149,7 +147,7 @@ unsigned int carla_base64_decode(const char* const encoded, uint8_t* const raw)
         }
 
         /* Process normal characters */
-        char* match = std::strchr(base64, encodedByte);
+        const char* match = std::strchr(kBase64, encodedByte);
 
         if (match == nullptr)
         {
@@ -157,7 +155,7 @@ unsigned int carla_base64_decode(const char* const encoded, uint8_t* const raw)
             return 0;
         }
 
-        int decoded = match - base64;
+        int decoded = match - kBase64;
 
         /* Add to raw data */
         decoded <<= 2;

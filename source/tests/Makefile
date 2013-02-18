@@ -9,6 +9,7 @@ include ../Makefile.mk
 # --------------------------------------------------------------
 
 BUILD_CXX_FLAGS += -I../backend -I../includes -I../utils -Wall -Wextra
+# BUILD_CXX_FLAGS += -D_FORTIFY_SOURCE=2 -fstack-protector
 # BUILD_CXX_FLAGS += -I/opt/mingw32/include
 
 ANSI_CXX_FLAGS   = -ansi -pedantic -pedantic-errors -Wunused-parameter -Wuninitialized -Wno-vla
