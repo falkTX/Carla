@@ -1014,17 +1014,17 @@ bool CarlaEngine::saveProject(const char* const filename)
 float CarlaEngine::getInputPeak(const unsigned int pluginId, const unsigned short id) const
 {
     CARLA_ASSERT(pluginId < kData->curPluginCount);
-    CARLA_ASSERT(id < MAX_PEAKS);
+    CARLA_ASSERT(id-1 < MAX_PEAKS);
 
-    return kData->plugins[pluginId].insPeak[id];
+    return kData->plugins[pluginId].insPeak[id-1];
 }
 
 float CarlaEngine::getOutputPeak(const unsigned int pluginId, const unsigned short id) const
 {
     CARLA_ASSERT(pluginId < kData->curPluginCount);
-    CARLA_ASSERT(id < MAX_PEAKS);
+    CARLA_ASSERT(id-1 < MAX_PEAKS);
 
-    return kData->plugins[pluginId].outsPeak[id];
+    return kData->plugins[pluginId].outsPeak[id-1];
 }
 
 // -----------------------------------------------------------------------

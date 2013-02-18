@@ -234,7 +234,7 @@ public:
     /*!
      * Get the number of custom data sets.
      */
-    size_t customDataCount() const;
+    uint32_t customDataCount() const;
 
     // -------------------------------------------------------------------
     // Information (current data)

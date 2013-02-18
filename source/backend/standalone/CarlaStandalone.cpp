@@ -128,7 +128,7 @@ unsigned int carla_get_internal_plugin_count()
 {
     carla_debug("carla_get_internal_plugin_count()");
 
-    return CarlaPlugin::getNativePluginCount();
+    return static_cast<unsigned int>(CarlaPlugin::getNativePluginCount());
 }
 
 const CarlaNativePluginInfo* carla_get_internal_plugin_info(unsigned int internalPluginId)
@@ -212,17 +212,17 @@ bool carla_engine_init(const char* driverName, const char* clientName)
         standalone.engine->setCallback(standalone.callback, nullptr);
 
 #ifndef BUILD_BRIDGE
-    standalone.engine->setOption(CarlaBackend::OPTION_PROCESS_MODE,               standalone.options.processMode,          nullptr);
-    standalone.engine->setOption(CarlaBackend::OPTION_FORCE_STEREO,               standalone.options.forceStereo,          nullptr);
-    standalone.engine->setOption(CarlaBackend::OPTION_PREFER_PLUGIN_BRIDGES,      standalone.options.preferPluginBridges,  nullptr);
-    standalone.engine->setOption(CarlaBackend::OPTION_PREFER_UI_BRIDGES,          standalone.options.preferUiBridges,      nullptr);
+    standalone.engine->setOption(CarlaBackend::OPTION_PROCESS_MODE,               standalone.options.processMode ? 1 : 0,         nullptr);
+    standalone.engine->setOption(CarlaBackend::OPTION_FORCE_STEREO,               standalone.options.forceStereo ? 1 : 0,         nullptr);
+    standalone.engine->setOption(CarlaBackend::OPTION_PREFER_PLUGIN_BRIDGES,      standalone.options.preferPluginBridges ? 1 : 0, nullptr);
+    standalone.engine->setOption(CarlaBackend::OPTION_PREFER_UI_BRIDGES,          standalone.options.preferUiBridges ? 1 : 0,     nullptr);
 # ifdef WANT_DSSI
-    standalone.engine->setOption(CarlaBackend::OPTION_USE_DSSI_VST_CHUNKS,        standalone.options.useDssiVstChunks,     nullptr);
+    standalone.engine->setOption(CarlaBackend::OPTION_USE_DSSI_VST_CHUNKS,        standalone.options.useDssiVstChunks ? 1 : 0,    nullptr);
 # endif
-    standalone.engine->setOption(CarlaBackend::OPTION_MAX_PARAMETERS,             standalone.options.maxParameters,        nullptr);
-    standalone.engine->setOption(CarlaBackend::OPTION_PREFERRED_BUFFER_SIZE,      standalone.options.preferredBufferSize,  nullptr);
-    standalone.engine->setOption(CarlaBackend::OPTION_PREFERRED_SAMPLE_RATE,      standalone.options.preferredSampleRate,  nullptr);
-    standalone.engine->setOption(CarlaBackend::OPTION_OSC_UI_TIMEOUT,             standalone.options.oscUiTimeout,         nullptr);
+    standalone.engine->setOption(CarlaBackend::OPTION_MAX_PARAMETERS,             static_cast<int>(standalone.options.maxParameters),       nullptr);
+    standalone.engine->setOption(CarlaBackend::OPTION_PREFERRED_BUFFER_SIZE,      static_cast<int>(standalone.options.preferredBufferSize), nullptr);
+    standalone.engine->setOption(CarlaBackend::OPTION_PREFERRED_SAMPLE_RATE,      static_cast<int>(standalone.options.preferredSampleRate), nullptr);
+    standalone.engine->setOption(CarlaBackend::OPTION_OSC_UI_TIMEOUT,             static_cast<int>(standalone.options.oscUiTimeout),        nullptr);
     standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_NATIVE,      0, standalone.options.bridge_native);
     standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_POSIX32,     0, standalone.options.bridge_posix32);
     standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_POSIX64,     0, standalone.options.bridge_posix64);
@@ -734,7 +734,7 @@ const char* carla_get_chunk_data(unsigned int pluginId)
 
             if (data != nullptr && dataSize >= 4)
             {
-                chunkData.importBinaryAsBase64((const uint8_t*)data, dataSize);
+                chunkData.importBinaryAsBase64((const uint8_t*)data, static_cast<size_t>(dataSize));
                 return (const char*)chunkData;
             }
             else
@@ -1012,7 +1012,7 @@ float carla_get_input_peak_value(unsigned int pluginId, unsigned short portId)
     }
 
     if (portId == 1 || portId == 2)
-       return standalone.engine->getInputPeak(pluginId, portId-1);
+       return standalone.engine->getInputPeak(pluginId, portId);
 
     carla_stderr2("carla_get_input_peak_value(%i, %i) - invalid port value", pluginId, portId);
     return 0.0f;
@@ -1033,7 +1033,7 @@ float carla_get_output_peak_value(unsigned int pluginId, unsigned short portId)
     }
 
     if (portId == 1 || portId == 2)
-       return standalone.engine->getOutputPeak(pluginId, portId-1);
+       return standalone.engine->getOutputPeak(pluginId, portId);
 
     carla_stderr2("carla_get_output_peak_value(%i, %i) - invalid port value", pluginId, portId);
     return 0.0f;
@@ -1216,7 +1216,7 @@ void carla_set_program(unsigned int pluginId, uint32_t programId)
     if (CarlaPlugin* const plugin = standalone.engine->getPlugin(pluginId))
     {
         if (programId < plugin->programCount())
-            return plugin->setProgram(programId, true, true, false, true);
+            return plugin->setProgram(static_cast<int32_t>(programId), true, true, false, true);
 
         carla_stderr2("carla_set_program(%i, %i) - programId out of bounds", pluginId, programId);
         return;
@@ -1236,7 +1236,7 @@ void carla_set_midi_program(unsigned int pluginId, uint32_t midiProgramId)
     if (CarlaPlugin* const plugin = standalone.engine->getPlugin(pluginId))
     {
         if (midiProgramId < plugin->midiProgramCount())
-            return plugin->setMidiProgram(midiProgramId, true, true, false, true);
+            return plugin->setMidiProgram(static_cast<int32_t>(midiProgramId), true, true, false, true);
 
         carla_stderr2("carla_set_midi_program(%i, %i) - midiProgramId out of bounds", pluginId, midiProgramId);
         return;
@@ -1407,37 +1407,37 @@ void carla_set_option(CarlaBackend::OptionsType option, int value, const char* v
         break;
 
     case CarlaBackend::OPTION_FORCE_STEREO:
-        standalone.options.forceStereo = value;
+        standalone.options.forceStereo = (value != 0);
         break;
 
     case CarlaBackend::OPTION_PREFER_PLUGIN_BRIDGES:
-        standalone.options.preferPluginBridges = value;
+        standalone.options.preferPluginBridges = (value != 0);
         break;
 
     case CarlaBackend::OPTION_PREFER_UI_BRIDGES:
-        standalone.options.preferUiBridges = value;
+        standalone.options.preferUiBridges = (value != 0);
         break;
 
 #ifdef WANT_DSSI
     case CarlaBackend::OPTION_USE_DSSI_VST_CHUNKS:
-        standalone.options.useDssiVstChunks = value;
+        standalone.options.useDssiVstChunks = (value != 0);
         break;
 #endif
 
     case CarlaBackend::OPTION_MAX_PARAMETERS:
-        standalone.options.maxParameters = (value > 0) ? value : CarlaBackend::MAX_DEFAULT_PARAMETERS;
+        standalone.options.maxParameters = (value > 0) ? static_cast<unsigned int>(value) : CarlaBackend::MAX_DEFAULT_PARAMETERS;
         break;
 
     case CarlaBackend::OPTION_OSC_UI_TIMEOUT:
-        standalone.options.oscUiTimeout = value;
+        standalone.options.oscUiTimeout = static_cast<unsigned int>(value);
         break;
 
     case CarlaBackend::OPTION_PREFERRED_BUFFER_SIZE:
-        standalone.options.preferredBufferSize = value;
+        standalone.options.preferredBufferSize = static_cast<unsigned int>(value);
         break;
 
     case CarlaBackend::OPTION_PREFERRED_SAMPLE_RATE:
-        standalone.options.preferredSampleRate = value;
+        standalone.options.preferredSampleRate = static_cast<unsigned int>(value);
         break;
 
 #ifndef BUILD_BRIDGE

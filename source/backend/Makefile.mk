@@ -10,8 +10,6 @@ include ../../Makefile.mk
 
 BUILD_C_FLAGS   += -fvisibility=hidden -fPIC -I. -I.. -I../../includes
 BUILD_CXX_FLAGS += -fvisibility=hidden -fPIC -I. -I.. -I../../includes -I../../libs -I../../utils
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtCore)
-LINK_FLAGS      += $(shell pkg-config --libs QtCore)
 
 # --------------------------------------------------------------
 

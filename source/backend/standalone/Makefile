@@ -9,7 +9,7 @@ include ../Makefile.mk
 # --------------------------------------------------------------
 # Common
 
-LINK_FLAGS += $(shell pkg-config --libs liblo QtGui)
+LINK_FLAGS += $(shell pkg-config --libs liblo QtCore QtGui)
 
 # --------------------------------------------------------------
 # Engine
@@ -54,7 +54,7 @@ LIBS += ../libcarla_native.a
 LIBS += ../../libs/rtmempool.a
 
 OBJS  = \
-     carla_standalone.cpp.o
+     CarlaStandalone.cpp.o
 
 SHARED = ../libcarla_standalone.so
 STATIC = ../libcarla_standalone.a

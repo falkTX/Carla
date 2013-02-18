@@ -184,7 +184,7 @@ uint32_t CarlaPlugin::midiProgramCount() const
     return kData->midiprog.count;
 }
 
-size_t CarlaPlugin::customDataCount() const
+uint32_t CarlaPlugin::customDataCount() const
 {
     return kData->custom.count();
 }

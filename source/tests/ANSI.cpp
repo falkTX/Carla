@@ -15,7 +15,7 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#include "standalone/carla_standalone.cpp"
+#include "standalone/CarlaStandalone.cpp"
 
 #if 0
 #include "CarlaDefines.hpp"
