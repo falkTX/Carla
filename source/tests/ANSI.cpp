@@ -16,7 +16,7 @@
  */
 
 // still need qt classes check
-#include "engine/CarlaEngine.cpp"
+#include "engine/CarlaEngineThread.cpp"
 
 #if 0
 #include "CarlaDefines.hpp"
@@ -51,6 +51,5 @@
 
 int main()
 {
-    CarlaBackend::CarlaEngineProtectedData x(nullptr);
     return 0;
 }

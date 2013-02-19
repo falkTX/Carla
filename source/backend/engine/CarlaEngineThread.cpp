@@ -135,9 +135,9 @@ void CarlaEngineThread::run()
                 if (oscRegisted)
                 {
 #ifdef BUILD_BRIDGE
-                    kEngine->osc_send_peaks(plugin);
+                    kEngine->osc_send_bridge_set_peaks();
 #else
-                    kEngine->osc_send_peaks(plugin, i);
+                    kEngine->osc_send_control_set_peaks(i);
 #endif
                 }
             }

@@ -1005,7 +1005,6 @@ private:
 
 public:
 #ifdef BUILD_BRIDGE
-    void osc_send_peaks(CarlaPlugin* const plugin);
     void osc_send_bridge_audio_count(const int32_t ins, const int32_t outs, const int32_t total);
     void osc_send_bridge_midi_count(const int32_t ins, const int32_t outs, const int32_t total);
     void osc_send_bridge_parameter_count(const int32_t ins, const int32_t outs, const int32_t total);
@@ -1024,10 +1023,8 @@ public:
     void osc_send_bridge_set_midi_program(const int32_t index);
     void osc_send_bridge_set_custom_data(const char* const type, const char* const key, const char* const value);
     void osc_send_bridge_set_chunk_data(const char* const chunkFile);
-    void osc_send_bridge_set_inpeak(const int32_t portId);
-    void osc_send_bridge_set_outpeak(const int32_t portId);
+    void osc_send_bridge_set_peaks();
 #else
-    void osc_send_peaks(CarlaPlugin* const plugin, const unsigned int id);
     void osc_send_control_add_plugin_start(const int32_t pluginId, const char* const pluginName);
     void osc_send_control_add_plugin_end(const int32_t pluginId);
     void osc_send_control_remove_plugin(const int32_t pluginId);
@@ -1047,10 +1044,7 @@ public:
     void osc_send_control_set_midi_program_data(const int32_t pluginId, const int32_t index, const int32_t bank, const int32_t program, const char* const name);
     void osc_send_control_note_on(const int32_t pluginId, const int32_t channel, const int32_t note, const int32_t velo);
     void osc_send_control_note_off(const int32_t pluginId, const int32_t channel, const int32_t note);
-    // FIXME, join
-    void osc_send_control_set_input_peak_value(const int32_t pluginId, const int32_t portId);
-    // FIXME, join
-    void osc_send_control_set_output_peak_value(const int32_t pluginId, const int32_t portId);
+    void osc_send_control_set_peaks(const int32_t pluginId);
     void osc_send_control_exit();
 #endif
 
