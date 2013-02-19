@@ -20,8 +20,8 @@
 
 #include "CarlaEngineOsc.hpp"
 #include "CarlaEngineThread.hpp"
-#include "CarlaPlugin.hpp"
 #include "CarlaEngine.hpp"
+#include "CarlaPlugin.hpp"
 
 #ifndef BUILD_BRIDGE
 # include <QtCore/QProcessEnvironment>

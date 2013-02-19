@@ -18,15 +18,14 @@
 #ifndef __CARLA_PLUGIN_INTERNAL_HPP__
 #define __CARLA_PLUGIN_INTERNAL_HPP__
 
-#include "carla_plugin.hpp"
-#include "carla_plugin_thread.hpp"
+#include "CarlaPluginThread.hpp"
+#include "CarlaPlugin.hpp"
+#include "CarlaEngine.hpp"
+#include "CarlaOscUtils.hpp"
+#include "CarlaStateUtils.hpp"
+#include "CarlaMIDI.h"
 
-#include "carla_engine.hpp"
-#include "carla_osc_utils.hpp"
-#include "carla_state_utils.hpp"
-#include "carla_midi.h"
-
-#include "rt_list.hpp"
+#include "RtList.hpp"
 
 #include <QtGui/QMainWindow>
 
