@@ -443,6 +443,7 @@ struct CarlaPluginProtectedData {
 
         void appendRT(const PluginPostRtEvent& event)
         {
+            // FIXME!! need lock?
             dataPendingRT.append(event);
         }
 

@@ -44,10 +44,10 @@ endif
 
 OBJS  = \
      CarlaEngine.cpp.o \
+     CarlaEngineJack.cpp.o \
+     CarlaEngineRtAudio.cpp.o \
      CarlaEngineOsc.cpp.o \
-     CarlaEngineThread.cpp.o \
-     jack.cpp.o \
-     rtaudio.cpp.o
+     CarlaEngineThread.cpp.o
 
 ifeq ($(CARLA_RTAUDIO_SUPPORT),true)
 OBJS += \

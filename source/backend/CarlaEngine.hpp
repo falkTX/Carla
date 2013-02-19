@@ -836,6 +836,9 @@ public:
      */
     float getOutputPeak(const unsigned int pluginId, const unsigned short id) const;
 
+    // FIXME - remove once IPC audio is implemented
+    void setPeaks(const unsigned int pluginId, float const inPeaks[MAX_PEAKS], float const outPeaks[MAX_PEAKS]);
+
     // -------------------------------------------------------------------
     // Callback
 
@@ -958,14 +961,6 @@ protected:
      */
     void proccessPendingEvents();
 
-    /*!
-     * TODO.
-     */
-public:
-    // FIXME - remove once IPC audio is implemented
-    void setPeaks(const unsigned int pluginId, float const inPeaks[MAX_PEAKS], float const outPeaks[MAX_PEAKS]);
-
-private:
 #ifndef BUILD_BRIDGE
     // Rack mode data
     EngineEvent* getRackEventBuffer(const bool isInput);
@@ -999,8 +994,8 @@ private:
     };
 
     static CarlaEngine* newRtAudio(const RtAudioApi api);
-    static unsigned int getRtAudioApiCount();
-    static const char*  getRtAudioApiName(unsigned int index);
+    static size_t       getRtAudioApiCount();
+    static const char*  getRtAudioApiName(const unsigned int index);
 #endif
 
 public:

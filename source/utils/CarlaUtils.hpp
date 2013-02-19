@@ -237,7 +237,7 @@ const T& carla_fixValue(const T& min, const T& max, const T& value)
 
 template<typename T>
 static inline
-void carla_fill(T* data, const unsigned int size, const T v)
+void carla_fill(T* data, const size_t size, const T v)
 {
     CARLA_ASSERT(data != nullptr);
     CARLA_ASSERT(size > 0);
@@ -250,13 +250,13 @@ void carla_fill(T* data, const unsigned int size, const T v)
 }
 
 static inline
-void carla_zeroDouble(double* data, const unsigned size)
+void carla_zeroDouble(double* data, const size_t size)
 {
     carla_fill<double>(data, size, 0.0);
 }
 
 static inline
-void carla_zeroFloat(float* data, const unsigned size)
+void carla_zeroFloat(float* data, const size_t size)
 {
     carla_fill<float>(data, size, 0.0f);
 }

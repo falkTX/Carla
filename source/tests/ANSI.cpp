@@ -16,7 +16,8 @@
  */
 
 // still need qt classes check
-#include "engine/CarlaEngineThread.cpp"
+//#include "CarlaPlugin.hpp"
+#include "engine/RtAudio.cpp"
 
 #if 0
 #include "CarlaDefines.hpp"
