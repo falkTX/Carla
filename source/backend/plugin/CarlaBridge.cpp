@@ -247,14 +247,16 @@ public:
             *type = GUI_NONE;
         *resizable = false;
     }
+#endif
 
     // -------------------------------------------------------------------
     // Set data (internal stuff)
 
-    int setOscBridgeInfo(const PluginBridgeInfoType type, const int argc, const lo_arg* const* const argv, const char* const types)
+    int setOscPluginBridgeInfo(const PluginBridgeInfoType type, const int argc, const lo_arg* const* const argv, const char* const types)
     {
-        qDebug("setOscBridgeInfo(%i, %i, %p, \"%s\")", type, argc, argv, types);
+        qDebug("setOscPluginBridgeInfo(%i, %i, %p, \"%s\")", type, argc, argv, types);
 
+#if 0
         switch (type)
         {
         case PluginBridgeAudioCount:
@@ -739,10 +741,12 @@ public:
             break;
         }
         }
+#endif
 
         return 0;
     }
 
+#if 0
     // -------------------------------------------------------------------
     // Set data (plugin-specific stuff)
 

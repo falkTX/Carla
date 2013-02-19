@@ -15,8 +15,8 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#include "carla_native.h"
-#include "carla_midi.h"
+#include "CarlaNative.h"
+#include "CarlaMIDI.h"
 
 #include <stdlib.h>
 

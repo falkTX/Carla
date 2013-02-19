@@ -15,11 +15,11 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#include "carla_plugin_internal.hpp"
+#include "CarlaPluginInternal.hpp"
 
 #ifdef WANT_LADSPA
 
-#include "carla_ladspa_utils.hpp"
+#include "CarlaLadspaUtils.hpp"
 
 CARLA_BACKEND_START_NAMESPACE
 

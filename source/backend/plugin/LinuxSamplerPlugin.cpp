@@ -17,7 +17,7 @@
 
 // TODO - setMidiProgram()
 
-#include "carla_plugin_internal.hpp"
+#include "CarlaPluginInternal.hpp"
 
 #ifdef WANT_LINUXSAMPLER
 

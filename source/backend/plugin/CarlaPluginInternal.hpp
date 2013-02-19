@@ -23,6 +23,7 @@
 #include "CarlaEngine.hpp"
 #include "CarlaOscUtils.hpp"
 #include "CarlaStateUtils.hpp"
+#include "CarlaMutex.hpp"
 #include "CarlaMIDI.h"
 
 #include "RtList.hpp"

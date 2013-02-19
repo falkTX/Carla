@@ -15,11 +15,11 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#include "carla_plugin_internal.hpp"
+#include "CarlaPluginInternal.hpp"
 
 #ifdef WANT_VST
 
-#include "carla_vst_utils.hpp"
+#include "CarlaVstUtils.hpp"
 
 #ifdef Q_WS_X11
 # include <QtGui/QX11Info>

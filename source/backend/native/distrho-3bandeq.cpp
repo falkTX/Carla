@@ -15,7 +15,7 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#include "carla_native.hpp"
+#include "CarlaNative.hpp"
 
 // Plugin Code
 #include "3bandeq/DistrhoArtwork3BandEQ.cpp"

@@ -8,8 +8,8 @@ include ../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo QtGui)
-LINK_FLAGS      += $(shell pkg-config --libs liblo QtGui)
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo QtCore QtGui)
+LINK_FLAGS      += $(shell pkg-config --libs liblo QtCore QtGui)
 
 ifeq ($(HAVE_SUIL),true)
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags suil-0)
@@ -29,16 +29,16 @@ endif
 # --------------------------------------------------------------
 
 OBJS = \
-	carla_plugin.cpp.o \
-	carla_plugin_thread.cpp.o \
-	carla_bridge.cpp.o \
-	native.cpp.o \
-	ladspa.cpp.o \
-	dssi.cpp.o \
-	lv2.cpp.o \
-	vst.cpp.o \
-	fluidsynth.cpp.o \
-	linuxsampler.cpp.o
+	CarlaPlugin.cpp.o \
+	CarlaPluginThread.cpp.o \
+	CarlaBridge.cpp.o \
+	NativePlugin.cpp.o \
+	LadspaPlugin.cpp.o \
+	DssiPlugin.cpp.o \
+	Lv2Plugin.cpp.o \
+	VstPlugin.cpp.o \
+	FluidSynthPlugin.cpp.o \
+	LinuxSamplerPlugin.cpp.o
 
 SHARED = ../libcarla_plugin.so
 STATIC = ../libcarla_plugin.a

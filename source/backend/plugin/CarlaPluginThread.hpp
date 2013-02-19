@@ -18,7 +18,7 @@
 #ifndef __CARLA_PLUGIN_THREAD_HPP__
 #define __CARLA_PLUGIN_THREAD_HPP__
 
-#include "carla_backend_utils.hpp"
+#include "CarlaBackendUtils.hpp"
 
 #include <QtCore/QThread>
 

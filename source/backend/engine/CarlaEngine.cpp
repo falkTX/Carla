@@ -1093,12 +1093,10 @@ void CarlaEngine::waitForProccessEnd()
 
 #ifndef BUILD_BRIDGE
 
-#if 0
 const QProcessEnvironment& CarlaEngine::getOptionsAsProcessEnvironment() const
 {
     return kData->procEnv;
 }
-#endif
 
 #define CARLA_ENGINE_SET_OPTION_RUNNING_CHECK \
     if (isRunning()) \

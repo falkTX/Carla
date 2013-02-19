@@ -19,8 +19,9 @@
 #define __STDC_LIMIT_MACROS
 #include <cstdint>
 
-#include "carla_native.hpp"
-#include "carla_midi.h"
+#include "CarlaNative.hpp"
+#include "CarlaMIDI.h"
+#include "CarlaString.hpp"
 
 #include "zynaddsubfx/Misc/Master.h"
 #include "zynaddsubfx/Misc/Util.h"
@@ -180,7 +181,7 @@ protected:
         return;
 
         // unused, TODO
-        Q_UNUSED(value);
+        (void)value;
     }
 
     void setMidiProgram(const uint32_t bank, const uint32_t program)

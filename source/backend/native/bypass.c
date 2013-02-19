@@ -15,7 +15,7 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#include "carla_native.h"
+#include "CarlaNative.h"
 
 static PluginHandle bypass_instantiate(const PluginDescriptor* _this_, HostDescriptor* host)
 {
