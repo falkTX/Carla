@@ -18,8 +18,8 @@
 #ifdef BRIDGE_LV2
 
 #include "carla_bridge_client.hpp"
-#include "carla_lv2_utils.hpp"
-#include "carla_midi.h"
+#include "CarlaLv2Utils.hpp"
+#include "CarlaMIDI.h"
 
 extern "C" {
 #include "rtmempool/rtmempool-lv2.h"

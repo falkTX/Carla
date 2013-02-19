@@ -19,7 +19,7 @@
 #define __CARLA_BRIDGE_OSC_HPP__
 
 #include "carla_bridge.hpp"
-#include "carla_osc_utils.hpp"
+#include "CarlaOscUtils.hpp"
 
 #define CARLA_BRIDGE_OSC_HANDLE_ARGS const int argc, const lo_arg* const* const argv, const char* const types
 
@@ -27,7 +27,7 @@
     /* check argument count */                                                                                              \
     if (argc != argcToCompare)                                                                                              \
     {                                                                                                                       \
-        qCritical("CarlaBridgeOsc::%s() - argument count mismatch: %i != %i", __FUNCTION__, argc, argcToCompare);           \
+        carla_stderr("CarlaBridgeOsc::%s() - argument count mismatch: %i != %i", __FUNCTION__, argc, argcToCompare);           \
         return 1;                                                                                                           \
     }                                                                                                                       \
     if (argc > 0)                                                                                                           \
@@ -35,13 +35,13 @@
         /* check for nullness */                                                                                            \
         if (! (types && typesToCompare))                                                                                    \
         {                                                                                                                   \
-            qCritical("CarlaBridgeOsc::%s() - argument types are null", __FUNCTION__);                                      \
+            carla_stderr("CarlaBridgeOsc::%s() - argument types are null", __FUNCTION__);                                      \
             return 1;                                                                                                       \
         }                                                                                                                   \
         /* check argument types */                                                                                          \
         if (strcmp(types, typesToCompare) != 0)                                                                             \
         {                                                                                                                   \
-            qCritical("CarlaBridgeOsc::%s() - argument types mismatch: '%s' != '%s'", __FUNCTION__, types, typesToCompare); \
+            carla_stderr("CarlaBridgeOsc::%s() - argument types mismatch: '%s' != '%s'", __FUNCTION__, types, typesToCompare); \
             return 1;                                                                                                       \
         }                                                                                                                   \
     }
@@ -120,15 +120,12 @@ private:
 
     static void osc_error_handler(const int num, const char* const msg, const char* const path)
     {
-        qWarning("CarlaBridgeOsc::osc_error_handler(%i, \"%s\", \"%s\")", num, msg, path);
+        carla_stderr("CarlaBridgeOsc::osc_error_handler(%i, \"%s\", \"%s\")", num, msg, path);
     }
 
     static int osc_message_handler(const char* const path, const char* const types, lo_arg** const argv, const int argc, const lo_message msg, void* const user_data)
     {
-        CARLA_ASSERT(user_data);
-        if (CarlaBridgeOsc* const _this_ = (CarlaBridgeOsc*)user_data)
-            return _this_->handleMessage(path, argc, argv, types, msg);
-        return 1;
+        return ((CarlaBridgeOsc*)user_data)->handleMessage(path, argc, argv, types, msg);
     }
 };
 

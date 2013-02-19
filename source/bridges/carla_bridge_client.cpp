@@ -19,7 +19,7 @@
 #include "carla_bridge_toolkit.hpp"
 
 #ifdef BUILD_BRIDGE_UI
-# include "carla_lib_utils.hpp"
+# include "CarlaLibUtils.hpp"
 #endif
 
 #include <cstdlib>
@@ -33,7 +33,7 @@ CarlaBridgeClient::CarlaBridgeClient(const char* const uiTitle)
     : m_osc(this),
       m_toolkit(CarlaBridgeToolkit::createNew(this, uiTitle))
 {
-    qDebug("CarlaBridgeClient::CarlaBridgeClient(\"%s\")", uiTitle);
+    carla_debug("CarlaBridgeClient::CarlaBridgeClient(\"%s\")", uiTitle);
 
     m_oscData = nullptr;
 
@@ -46,7 +46,7 @@ CarlaBridgeClient::CarlaBridgeClient(const char* const uiTitle)
 
 CarlaBridgeClient::~CarlaBridgeClient()
 {
-    qDebug("CarlaBridgeClient::~CarlaBridgeClient()");
+    carla_debug("CarlaBridgeClient::~CarlaBridgeClient()");
 
 #ifdef BUILD_BRIDGE_UI
     if (m_uiFilename)
@@ -62,7 +62,7 @@ CarlaBridgeClient::~CarlaBridgeClient()
 
 bool CarlaBridgeClient::init(const char* const, const char* const)
 {
-    qDebug("CarlaBridgeClient::init()");
+    carla_debug("CarlaBridgeClient::init()");
 
     // Test for single init
     {
@@ -80,7 +80,7 @@ bool CarlaBridgeClient::init(const char* const, const char* const)
 
 void CarlaBridgeClient::close()
 {
-    qDebug("CarlaBridgeClient::close()");
+    carla_debug("CarlaBridgeClient::close()");
 
     if (! m_uiQuit)
     {
@@ -99,7 +99,7 @@ void CarlaBridgeClient::close()
 
 bool CarlaBridgeClient::oscInit(const char* const url)
 {
-    qDebug("CarlaBridgeClient::oscInit(\"%s\")", url);
+    carla_debug("CarlaBridgeClient::oscInit(\"%s\")", url);
 
     const bool ret = m_osc.init(url);
     m_oscData = m_osc.getControlData();
@@ -120,7 +120,7 @@ bool CarlaBridgeClient::oscIdle()
 
 void CarlaBridgeClient::oscClose()
 {
-    qDebug("CarlaBridgeClient::oscClose()");
+    carla_debug("CarlaBridgeClient::oscClose()");
     CARLA_ASSERT(m_oscData);
 
     m_osc.close();
@@ -134,7 +134,7 @@ bool CarlaBridgeClient::isOscControlRegistered() const
 
 void CarlaBridgeClient::sendOscUpdate()
 {
-    qDebug("CarlaBridgeClient::sendOscUpdate()");
+    carla_debug("CarlaBridgeClient::sendOscUpdate()");
     CARLA_ASSERT(m_oscData);
 
     if (m_oscData && m_oscData->target)
@@ -144,7 +144,7 @@ void CarlaBridgeClient::sendOscUpdate()
 #ifdef BUILD_BRIDGE_PLUGIN
 void CarlaBridgeClient::sendOscBridgeUpdate()
 {
-    qDebug("CarlaBridgeClient::sendOscBridgeUpdate()");
+    carla_debug("CarlaBridgeClient::sendOscBridgeUpdate()");
     CARLA_ASSERT(m_oscData);
     CARLA_ASSERT(m_oscData->target && m_oscData->path);
 
@@ -154,7 +154,7 @@ void CarlaBridgeClient::sendOscBridgeUpdate()
 
 void CarlaBridgeClient::sendOscBridgeError(const char* const error)
 {
-    qDebug("CarlaBridgeClient::sendOscBridgeError(\"%s\")", error);
+    carla_debug("CarlaBridgeClient::sendOscBridgeError(\"%s\")", error);
     CARLA_ASSERT(m_oscData);
     CARLA_ASSERT(error);
 
@@ -168,35 +168,35 @@ void CarlaBridgeClient::sendOscBridgeError(const char* const error)
 
 void CarlaBridgeClient::toolkitShow()
 {
-    qDebug("CarlaBridgeClient::toolkitShow()");
+    carla_debug("CarlaBridgeClient::toolkitShow()");
 
     m_toolkit->show();
 }
 
 void CarlaBridgeClient::toolkitHide()
 {
-    qDebug("CarlaBridgeClient::toolkitHide()");
+    carla_debug("CarlaBridgeClient::toolkitHide()");
 
     m_toolkit->hide();
 }
 
 void CarlaBridgeClient::toolkitResize(const int width, const int height)
 {
-    qDebug("CarlaBridgeClient::toolkitResize(%i, %i)", width, height);
+    carla_debug("CarlaBridgeClient::toolkitResize(%i, %i)", width, height);
 
     m_toolkit->resize(width, height);
 }
 
 void CarlaBridgeClient::toolkitExec(const bool showGui)
 {
-    qDebug("CarlaBridgeClient::toolkitExec(%s)", bool2str(showGui));
+    carla_debug("CarlaBridgeClient::toolkitExec(%s)", bool2str(showGui));
 
     m_toolkit->exec(showGui);
 }
 
 void CarlaBridgeClient::toolkitQuit()
 {
-    qDebug("CarlaBridgeClient::toolkitQuit()");
+    carla_debug("CarlaBridgeClient::toolkitQuit()");
 
 #ifdef BUILD_BRIDGE_UI
     m_uiQuit = true;
@@ -208,7 +208,7 @@ void CarlaBridgeClient::toolkitQuit()
 
 void CarlaBridgeClient::sendOscConfigure(const char* const key, const char* const value)
 {
-    qDebug("CarlaBridgeClient::sendOscConfigure(\"%s\", \"%s\")", key, value);
+    carla_debug("CarlaBridgeClient::sendOscConfigure(\"%s\", \"%s\")", key, value);
     CARLA_ASSERT(m_oscData);
 
     if (m_oscData && m_oscData->target)
@@ -217,7 +217,7 @@ void CarlaBridgeClient::sendOscConfigure(const char* const key, const char* cons
 
 void CarlaBridgeClient::sendOscControl(const int32_t index, const float value)
 {
-    qDebug("CarlaBridgeClient::sendOscControl(%i, %f)", index, value);
+    carla_debug("CarlaBridgeClient::sendOscControl(%i, %f)", index, value);
     CARLA_ASSERT(m_oscData);
 
     if (m_oscData && m_oscData->target)
@@ -226,7 +226,7 @@ void CarlaBridgeClient::sendOscControl(const int32_t index, const float value)
 
 void CarlaBridgeClient::sendOscProgram(const int32_t index)
 {
-    qDebug("CarlaBridgeClient::sendOscProgram(%i)", index);
+    carla_debug("CarlaBridgeClient::sendOscProgram(%i)", index);
     CARLA_ASSERT(m_oscData);
 
     if (m_oscData && m_oscData->target)
@@ -235,7 +235,7 @@ void CarlaBridgeClient::sendOscProgram(const int32_t index)
 
 void CarlaBridgeClient::sendOscMidiProgram(const int32_t index)
 {
-    qDebug("CarlaBridgeClient::sendOscMidiProgram(%i)", index);
+    carla_debug("CarlaBridgeClient::sendOscMidiProgram(%i)", index);
     CARLA_ASSERT(m_oscData);
 
     if (m_oscData && m_oscData->target)
@@ -244,7 +244,7 @@ void CarlaBridgeClient::sendOscMidiProgram(const int32_t index)
 
 void CarlaBridgeClient::sendOscMidi(const uint8_t midiBuf[4])
 {
-    qDebug("CarlaBridgeClient::sendOscMidi(%p)", midiBuf);
+    carla_debug("CarlaBridgeClient::sendOscMidi(%p)", midiBuf);
     CARLA_ASSERT(m_oscData);
 
     if (m_oscData && m_oscData->target)
@@ -253,7 +253,7 @@ void CarlaBridgeClient::sendOscMidi(const uint8_t midiBuf[4])
 
 void CarlaBridgeClient::sendOscExiting()
 {
-    qDebug("CarlaBridgeClient::sendOscExiting()");
+    carla_debug("CarlaBridgeClient::sendOscExiting()");
     CARLA_ASSERT(m_oscData);
 
     if (m_oscData && m_oscData->target)
@@ -263,7 +263,7 @@ void CarlaBridgeClient::sendOscExiting()
 #ifdef BRIDGE_LV2
 void CarlaBridgeClient::sendOscLv2TransferAtom(const int32_t portIndex, const char* const typeStr, const char* const atomBuf)
 {
-    qDebug("CarlaBridgeClient::sendOscLv2TransferAtom(%i, \"%s\", \"%s\")", portIndex, typeStr, atomBuf);
+    carla_debug("CarlaBridgeClient::sendOscLv2TransferAtom(%i, \"%s\", \"%s\")", portIndex, typeStr, atomBuf);
     CARLA_ASSERT(m_oscData);
 
     if (m_oscData && m_oscData->target)
@@ -272,7 +272,7 @@ void CarlaBridgeClient::sendOscLv2TransferAtom(const int32_t portIndex, const ch
 
 void CarlaBridgeClient::sendOscLv2TransferEvent(const int32_t portIndex, const char* const typeStr, const char* const atomBuf)
 {
-    qDebug("CarlaBridgeClient::sendOscLv2TransferEvent(%i, \"%s\", \"%s\")", portIndex, typeStr, atomBuf);
+    carla_debug("CarlaBridgeClient::sendOscLv2TransferEvent(%i, \"%s\", \"%s\")", portIndex, typeStr, atomBuf);
     CARLA_ASSERT(m_oscData);
 
     if (m_oscData && m_oscData->target)

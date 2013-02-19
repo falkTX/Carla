@@ -16,7 +16,7 @@
  */
 
 #include "carla_bridge_toolkit.hpp"
-#include "carla_utils.hpp"
+#include "CarlaUtils.hpp"
 
 #include <cstdlib>
 #include <cstring>
@@ -26,7 +26,7 @@ CARLA_BRIDGE_START_NAMESPACE
 CarlaBridgeToolkit::CarlaBridgeToolkit(CarlaBridgeClient* const client_, const char* const newTitle)
     : client(client_)
 {
-    qDebug("CarlaBridgeToolkit::CarlaBridgeToolkit(%p, \"%s\")", client, newTitle);
+    carla_debug("CarlaBridgeToolkit::CarlaBridgeToolkit(%p, \"%s\")", client, newTitle);
     CARLA_ASSERT(client);
     CARLA_ASSERT(newTitle);
 
@@ -35,14 +35,14 @@ CarlaBridgeToolkit::CarlaBridgeToolkit(CarlaBridgeClient* const client_, const c
 
 CarlaBridgeToolkit::~CarlaBridgeToolkit()
 {
-    qDebug("CarlaBridgeToolkit::~CarlaBridgeToolkit()");
+    carla_debug("CarlaBridgeToolkit::~CarlaBridgeToolkit()");
 
     free(uiTitle);
 }
 
 void* CarlaBridgeToolkit::getContainerId()
 {
-    qDebug("CarlaBridgeToolkit::getContainerId()");
+    carla_debug("CarlaBridgeToolkit::getContainerId()");
     return nullptr;
 }
 

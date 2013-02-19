@@ -19,8 +19,8 @@
 
 #include "carla_bridge_client.hpp"
 #include "carla_bridge_toolkit.hpp"
-#include "carla_vst_utils.hpp"
-#include "carla_midi.h"
+#include "CarlaVstUtils.hpp"
+#include "CarlaMIDI.h"
 
 #include <QtCore/QObject>
 #include <QtCore/QTimerEvent>

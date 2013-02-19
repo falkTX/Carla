@@ -18,6 +18,7 @@
 #include "CarlaBackend.hpp"
 #include "CarlaJuceUtils.hpp"
 #include "CarlaLibUtils.hpp"
+#include "CarlaString.hpp"
 #include "CarlaMIDI.h"
 
 #ifdef WANT_LADSPA
@@ -311,14 +312,14 @@ public:
     ~LinuxSamplerScopedEngine()
     {
         if (engine != nullptr)
-            EngineFactory::Destroy(engine);
+            LinuxSampler::EngineFactory::Destroy(engine);
     }
 
-    static void outputInfo(InstrumentManager::instrument_info_t* const info, const int programs, const char* const basename = nullptr)
+    static void outputInfo(LinuxSampler::InstrumentManager::instrument_info_t* const info, const int programs, const char* const basename = nullptr)
     {
         DISCOVERY_OUT("init", "-----------");
 
-        if (info)
+        if (info != nullptr)
         {
             DISCOVERY_OUT("name", info->InstrumentName);
             DISCOVERY_OUT("label", info->Product);
@@ -345,8 +346,8 @@ public:
     }
 
 private:
-    Engine* engine;
-    InstrumentManager* ins;
+    LinuxSampler::Engine* engine;
+    LinuxSampler::InstrumentManager* ins;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LinuxSamplerScopedEngine)
 };

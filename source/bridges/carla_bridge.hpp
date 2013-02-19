@@ -18,7 +18,7 @@
 #ifndef __CARLA_BRIDGE_HPP__
 #define __CARLA_BRIDGE_HPP__
 
-#include "carla_defines.hpp"
+#include "CarlaDefines.hpp"
 
 #define CARLA_BRIDGE_START_NAMESPACE namespace CarlaBridge {
 #define CARLA_BRIDGE_END_NAMESPACE }

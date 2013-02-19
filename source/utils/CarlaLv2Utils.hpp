@@ -18,7 +18,7 @@
 #ifndef __CARLA_LV2_UTILS_HPP__
 #define __CARLA_LV2_UTILS_HPP__
 
-#include "CarlaUtils.hpp"
+#include "CarlaJuceUtils.hpp"
 
 #include "lv2/lv2.h"
 #include "lv2/atom.h"
