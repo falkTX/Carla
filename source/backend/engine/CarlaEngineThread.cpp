@@ -25,12 +25,11 @@ CARLA_BACKEND_START_NAMESPACE
 // -----------------------------------------------------------------------
 
 CarlaEngineThread::CarlaEngineThread(CarlaEngine* const engine)
-    : kEngine(engine)
+    : kEngine(engine),
+      fStopNow(true)
 {
     carla_debug("CarlaEngineThread::CarlaEngineThread(%p)", engine);
     CARLA_ASSERT(engine);
-
-    fStopNow = true;
 }
 
 CarlaEngineThread::~CarlaEngineThread()
@@ -47,7 +46,6 @@ void CarlaEngineThread::startNow()
     CARLA_ASSERT(fStopNow);
 
     fStopNow = false;
-
     start();
 }
 
@@ -94,7 +92,7 @@ void CarlaEngineThread::run()
             if (plugin == nullptr || ! plugin->enabled())
                 continue;
 
-            CARLA_ASSERT(i == plugin->id());
+            CARLA_SAFE_ASSERT_INT2(i == plugin->id(), i, plugin->id());
 
             usesSingleThread = (plugin->hints() & PLUGIN_USES_SINGLE_THREAD);
 

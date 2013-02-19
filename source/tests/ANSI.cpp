@@ -15,8 +15,8 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-// still need warn check
-#include "engine/CarlaEngineOsc.cpp"
+// still need qt classes check
+#include "engine/CarlaEngine.cpp"
 
 #if 0
 #include "CarlaDefines.hpp"
@@ -51,5 +51,6 @@
 
 int main()
 {
+    CarlaBackend::CarlaEngineProtectedData x(nullptr);
     return 0;
 }

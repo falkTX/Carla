@@ -1047,7 +1047,9 @@ public:
     void osc_send_control_set_midi_program_data(const int32_t pluginId, const int32_t index, const int32_t bank, const int32_t program, const char* const name);
     void osc_send_control_note_on(const int32_t pluginId, const int32_t channel, const int32_t note, const int32_t velo);
     void osc_send_control_note_off(const int32_t pluginId, const int32_t channel, const int32_t note);
+    // FIXME, join
     void osc_send_control_set_input_peak_value(const int32_t pluginId, const int32_t portId);
+    // FIXME, join
     void osc_send_control_set_output_peak_value(const int32_t pluginId, const int32_t portId);
     void osc_send_control_exit();
 #endif

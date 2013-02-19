@@ -935,11 +935,11 @@ const char* CarlaEngine::getNewUniquePluginName(const char* const name)
 
                 if (n2 == '9')
                 {
-                    n2 = '0';
-                    n3 = char(n3 + 1);
+                    n2  = '0';
+                    n3 += 1;
                 }
                 else
-                    n2 = char(n2 + 1);
+                    n2 += 1;
 
                 sname[len-2] = n2;
                 sname[len-3] = n3;
@@ -1016,6 +1016,9 @@ float CarlaEngine::getInputPeak(const unsigned int pluginId, const unsigned shor
     CARLA_ASSERT(pluginId < kData->curPluginCount);
     CARLA_ASSERT(id-1 < MAX_PEAKS);
 
+    if (id > MAX_PEAKS)
+        return 0.0f;
+
     return kData->plugins[pluginId].insPeak[id-1];
 }
 
@@ -1023,6 +1026,9 @@ float CarlaEngine::getOutputPeak(const unsigned int pluginId, const unsigned sho
 {
     CARLA_ASSERT(pluginId < kData->curPluginCount);
     CARLA_ASSERT(id-1 < MAX_PEAKS);
+
+    if (id > MAX_PEAKS)
+        return 0.0f;
 
     return kData->plugins[pluginId].outsPeak[id-1];
 }
@@ -1103,7 +1109,7 @@ const QProcessEnvironment& CarlaEngine::getOptionsAsProcessEnvironment() const
 
 #define CARLA_ENGINE_SET_OPTION_RUNNING_CHECK \
     if (isRunning()) \
-        return qCritical("CarlaEngine::setOption(%s, %i, \"%s\") - Cannot set this option while engine is running!", OptionsType2Str(option), value, valueStr);
+        return carla_stderr("CarlaEngine::setOption(%s, %i, \"%s\") - Cannot set this option while engine is running!", OptionsType2Str(option), value, valueStr);
 
 void CarlaEngine::setOption(const OptionsType option, const int value, const char* const valueStr)
 {
@@ -1307,7 +1313,7 @@ void CarlaEngine::proccessPendingEvents()
 
     for (unsigned int i=0; i < kData->curPluginCount; i++)
     {
-        // TODO - peak values
+        // TODO - peak values?
     }
 }
 
@@ -1344,6 +1350,7 @@ void CarlaEngine::processRack(float* inBuf[2], float* outBuf[2], const uint32_t 
         if (plugin == nullptr || ! plugin->enabled())
             continue;
 
+        // TODO
 #if 0
         if (processed)
         {
@@ -1441,10 +1448,13 @@ void CarlaEngine::processRack(float* inBuf[2], float* outBuf[2], const uint32_t 
 void CarlaEngine::processPatchbay(float** inBuf, float** outBuf, const uint32_t bufCount[2], const uint32_t frames)
 {
     // TODO
-    Q_UNUSED(inBuf);
-    Q_UNUSED(outBuf);
-    Q_UNUSED(bufCount);
-    Q_UNUSED(frames);
+    return;
+
+    // unused, for now
+    (void)inBuf;
+    (void)outBuf;
+    (void)bufCount;
+    (void)frames;
 }
 #endif
 
@@ -1794,6 +1804,7 @@ void CarlaEngine::osc_send_control_note_off(const int32_t pluginId, const int32_
     }
 }
 
+// FIXME, join
 void CarlaEngine::osc_send_control_set_input_peak_value(const int32_t pluginId, const int32_t portId)
 {
     //qDebug("CarlaEngine::osc_send_control_set_input_peak_value(%i, %i)", pluginId, portId);
@@ -1810,6 +1821,7 @@ void CarlaEngine::osc_send_control_set_input_peak_value(const int32_t pluginId, 
     }
 }
 
+// FIXME, join
 void CarlaEngine::osc_send_control_set_output_peak_value(const int32_t pluginId, const int32_t portId)
 {
     //qDebug("CarlaEngine::osc_send_control_set_output_peak_value(%i, %i)", pluginId, portId);

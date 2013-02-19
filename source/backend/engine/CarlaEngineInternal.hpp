@@ -18,11 +18,10 @@
 #ifndef __CARLA_ENGINE_INTERNAL_HPP__
 #define __CARLA_ENGINE_INTERNAL_HPP__
 
-#include "CarlaEngine.hpp"
 #include "CarlaEngineOsc.hpp"
 #include "CarlaEngineThread.hpp"
-
 #include "CarlaPlugin.hpp"
+#include "CarlaEngine.hpp"
 
 #ifndef BUILD_BRIDGE
 # include <QtCore/QProcessEnvironment>
@@ -180,10 +179,6 @@ struct CarlaEngineProtectedData {
           curPluginCount(0),
           maxPluginNumber(0),
           plugins(nullptr) {}
-
-    CarlaEngineProtectedData() = delete;
-
-    CARLA_LEAK_DETECTOR(CarlaEngineProtectedData)
 };
 
 CARLA_BACKEND_END_NAMESPACE
