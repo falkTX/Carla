@@ -43,33 +43,6 @@ CARLA_BACKEND_START_NAMESPACE
 
 // -----------------------------------------------------------------------
 
-#ifndef BUILD_BRIDGE
-enum PluginBridgeInfoType {
-    kPluginBridgeAudioCount,
-    kPluginBridgeMidiCount,
-    kPluginBridgeParameterCount,
-    kPluginBridgeProgramCount,
-    kPluginBridgeMidiProgramCount,
-    kPluginBridgePluginInfo,
-    kPluginBridgeParameterInfo,
-    kPluginBridgeParameterData,
-    kPluginBridgeParameterRanges,
-    kPluginBridgeProgramInfo,
-    kPluginBridgeMidiProgramInfo,
-    kPluginBridgeConfigure,
-    kPluginBridgeSetParameterValue,
-    kPluginBridgeSetDefaultValue,
-    kPluginBridgeSetProgram,
-    kPluginBridgeSetMidiProgram,
-    kPluginBridgeSetCustomData,
-    kPluginBridgeSetChunkData,
-    kPluginBridgeUpdateNow,
-    kPluginBridgeError
-};
-#endif
-
-// -----------------------------------------------------------------------
-
 const unsigned short MAX_RT_EVENTS   = 128;
 const unsigned short MAX_MIDI_EVENTS = 512;
 

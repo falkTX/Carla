@@ -15,10 +15,10 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#include "carla_plugin_internal.hpp"
-#include "carla_lib_utils.hpp"
-#include "carla_state_utils.hpp"
-#include "carla_midi.h"
+#include "CarlaPluginInternal.hpp"
+#include "CarlaLibUtils.hpp"
+#include "CarlaStateUtils.hpp"
+#include "CarlaMIDI.h"
 
 //#include <QtGui/QtEvents>
 
@@ -51,14 +51,6 @@ CarlaEngineAudioPort* CarlaPluginGetAudioOutPort(CarlaPlugin* const plugin, uint
 {
     return CarlaPluginProtectedData::getAudioOutPort(plugin, index);
 }
-
-#if 0
-int CarlaPluginSetOscBridgeInfo(CarlaPlugin* const plugin, const PluginBridgeInfoType type,
-                                const int argc, const lo_arg* const* const argv, const char* const types)
-{
-    return ((BridgePlugin*)plugin)->setOscPluginBridgeInfo(type, argc, argv, types);
-}
-#endif
 
 // -------------------------------------------------------------------
 // Constructor and destructor

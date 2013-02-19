@@ -15,7 +15,7 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#include "carla_plugin_internal.hpp"
+#include "CarlaPluginInternal.hpp"
 
 #include <QtCore/QDir>
 #include <QtCore/QFile>
@@ -1025,6 +1025,15 @@ CarlaPlugin* CarlaPlugin::newBridge(const Initializer& init, BinaryType btype, P
     return plugin;
 #endif
     return nullptr;
+}
+
+// -------------------------------------------------------------------
+// Bridge Helper
+
+int CarlaPluginSetOscBridgeInfo(CarlaPlugin* const plugin, const PluginBridgeInfoType type,
+                                const int argc, const lo_arg* const* const argv, const char* const types)
+{
+    return ((BridgePlugin*)plugin)->setOscPluginBridgeInfo(type, argc, argv, types);
 }
 
 CARLA_BACKEND_END_NAMESPACE

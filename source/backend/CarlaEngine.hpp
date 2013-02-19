@@ -961,8 +961,11 @@ protected:
     /*!
      * TODO.
      */
-    void setPeaks(const unsigned int pluginId, float inPeaks[MAX_PEAKS], float outPeaks[MAX_PEAKS]);
+public:
+    // FIXME - remove once IPC audio is implemented
+    void setPeaks(const unsigned int pluginId, float const inPeaks[MAX_PEAKS], float const outPeaks[MAX_PEAKS]);
 
+private:
 #ifndef BUILD_BRIDGE
     // Rack mode data
     EngineEvent* getRackEventBuffer(const bool isInput);

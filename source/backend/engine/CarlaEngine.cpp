@@ -1311,7 +1311,7 @@ void CarlaEngine::proccessPendingEvents()
     }
 }
 
-void CarlaEngine::setPeaks(const unsigned int pluginId, float* inPeaks, float* outPeaks)
+void CarlaEngine::setPeaks(const unsigned int pluginId, float const inPeaks[MAX_PEAKS], float const outPeaks[MAX_PEAKS])
 {
     kData->plugins[pluginId].insPeak[0]  = inPeaks[0];
     kData->plugins[pluginId].insPeak[1]  = inPeaks[1];

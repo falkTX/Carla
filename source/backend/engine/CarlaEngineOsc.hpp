@@ -25,27 +25,27 @@
 #define CARLA_ENGINE_OSC_HANDLE_ARGS1 CarlaPlugin* const plugin
 #define CARLA_ENGINE_OSC_HANDLE_ARGS2 CarlaPlugin* const plugin, const int argc, const lo_arg* const* const argv, const char* const types
 
-#define CARLA_ENGINE_OSC_CHECK_OSC_TYPES(/* argc, types, */ argcToCompare, typesToCompare)                                  \
-    /* check argument count */                                                                                              \
-    if (argc != argcToCompare)                                                                                              \
-    {                                                                                                                       \
+#define CARLA_ENGINE_OSC_CHECK_OSC_TYPES(/* argc, types, */ argcToCompare, typesToCompare)                                     \
+    /* check argument count */                                                                                                 \
+    if (argc != argcToCompare)                                                                                                 \
+    {                                                                                                                          \
         carla_stderr("CarlaEngineOsc::%s() - argument count mismatch: %i != %i", __FUNCTION__, argc, argcToCompare);           \
-        return 1;                                                                                                           \
-    }                                                                                                                       \
-    if (argc > 0)                                                                                                           \
-    {                                                                                                                       \
-        /* check for nullness */                                                                                            \
-        if (! (types && typesToCompare))                                                                                    \
-        {                                                                                                                   \
+        return 1;                                                                                                              \
+    }                                                                                                                          \
+    if (argc > 0)                                                                                                              \
+    {                                                                                                                          \
+        /* check for nullness */                                                                                               \
+        if (! (types && typesToCompare))                                                                                       \
+        {                                                                                                                      \
             carla_stderr("CarlaEngineOsc::%s() - argument types are null", __FUNCTION__);                                      \
-            return 1;                                                                                                       \
-        }                                                                                                                   \
-        /* check argument types */                                                                                          \
-        if (strcmp(types, typesToCompare) != 0)                                                                             \
-        {                                                                                                                   \
+            return 1;                                                                                                          \
+        }                                                                                                                      \
+        /* check argument types */                                                                                             \
+        if (strcmp(types, typesToCompare) != 0)                                                                                \
+        {                                                                                                                      \
             carla_stderr("CarlaEngineOsc::%s() - argument types mismatch: '%s' != '%s'", __FUNCTION__, types, typesToCompare); \
-            return 1;                                                                                                       \
-        }                                                                                                                   \
+            return 1;                                                                                                          \
+        }                                                                                                                      \
     }
 
 CARLA_BACKEND_START_NAMESPACE
@@ -81,7 +81,7 @@ public:
 #ifndef BUILD_BRIDGE
     bool isControlRegistered() const
     {
-        return bool(fControlData.target);
+        return (fControlData.target != nullptr);
     }
 
     const CarlaOscData* getControlData() const
@@ -108,10 +108,10 @@ private:
 
     // -------------------------------------------------------------------
 
-    int handleMessage(const char* const path, const int argc, const lo_arg* const* const argv, const char* const types, const lo_message msg);
+    int handleMessage(const bool isTCP, const char* const path, const int argc, const lo_arg* const* const argv, const char* const types, const lo_message msg);
 
 #ifndef BUILD_BRIDGE
-    int handleMsgRegister(const int argc, const lo_arg* const* const argv, const char* const types, const lo_address source);
+    int handleMsgRegister(const bool isTCP, const int argc, const lo_arg* const* const argv, const char* const types, const lo_address source);
     int handleMsgUnregister();
 #endif
 
@@ -128,6 +128,7 @@ private:
     int handleMsgSetVolume(CARLA_ENGINE_OSC_HANDLE_ARGS2);
     int handleMsgSetBalanceLeft(CARLA_ENGINE_OSC_HANDLE_ARGS2);
     int handleMsgSetBalanceRight(CARLA_ENGINE_OSC_HANDLE_ARGS2);
+    int handleMsgSetPanning(CARLA_ENGINE_OSC_HANDLE_ARGS2);
     int handleMsgSetParameterValue(CARLA_ENGINE_OSC_HANDLE_ARGS2);
     int handleMsgSetParameterMidiCC(CARLA_ENGINE_OSC_HANDLE_ARGS2);
     int handleMsgSetParameterMidiChannel(CARLA_ENGINE_OSC_HANDLE_ARGS2);
@@ -136,8 +137,8 @@ private:
     int handleMsgNoteOn(CARLA_ENGINE_OSC_HANDLE_ARGS2);
     int handleMsgNoteOff(CARLA_ENGINE_OSC_HANDLE_ARGS2);
 
-    int handleMsgBridgeSetInPeak(CARLA_ENGINE_OSC_HANDLE_ARGS2);
-    int handleMsgBridgeSetOutPeak(CARLA_ENGINE_OSC_HANDLE_ARGS2);
+    // FIXME - remove once IPC audio is implemented
+    int handleMsgBridgeSetPeaks(CARLA_ENGINE_OSC_HANDLE_ARGS2);
 #endif
 
 #ifdef WANT_LV2
@@ -149,17 +150,22 @@ private:
 
     static void osc_error_handler_TCP(int num, const char* msg, const char* path)
     {
-        carla_stderr2("CarlaEngineOsc::osc_error_handler_TCP(%i, \"%s\", \"%s\")", num, msg, path);
+        carla_stderr("CarlaEngineOsc::osc_error_handler_TCP(%i, \"%s\", \"%s\")", num, msg, path);
     }
 
     static void osc_error_handler_UDP(int num, const char* msg, const char* path)
     {
-        carla_stderr2("CarlaEngineOsc::osc_error_handler_UDP(%i, \"%s\", \"%s\")", num, msg, path);
+        carla_stderr("CarlaEngineOsc::osc_error_handler_UDP(%i, \"%s\", \"%s\")", num, msg, path);
     }
 
-    static int osc_message_handler(const char* path, const char* types, lo_arg** argv, int argc, lo_message msg, void* userData)
+    static int osc_message_handler_TCP(const char* path, const char* types, lo_arg** argv, int argc, lo_message msg, void* userData)
     {
-        return ((CarlaEngineOsc*)userData)->handleMessage(path, argc, argv, types, msg);
+        return ((CarlaEngineOsc*)userData)->handleMessage(true, path, argc, argv, types, msg);
+    }
+
+    static int osc_message_handler_UDP(const char* path, const char* types, lo_arg** argv, int argc, lo_message msg, void* userData)
+    {
+        return ((CarlaEngineOsc*)userData)->handleMessage(false, path, argc, argv, types, msg);
     }
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineOsc)
