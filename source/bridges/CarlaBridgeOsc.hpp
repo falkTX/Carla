@@ -18,8 +18,9 @@
 #ifndef __CARLA_BRIDGE_OSC_HPP__
 #define __CARLA_BRIDGE_OSC_HPP__
 
-#include "carla_bridge.hpp"
+#include "CarlaBridge.hpp"
 #include "CarlaOscUtils.hpp"
+#include "CarlaString.hpp"
 
 #define CARLA_BRIDGE_OSC_HANDLE_ARGS const int argc, const lo_arg* const* const argv, const char* const types
 
@@ -58,7 +59,7 @@ public:
     CarlaBridgeOsc(CarlaBridgeClient* const client);
     ~CarlaBridgeOsc();
 
-    bool init(const char* const url);
+    void init(const char* const url);
     void idle();
     void close();
 
@@ -66,31 +67,30 @@ public:
 
     bool isControlRegistered() const
     {
-        return bool(m_controlData.target);
+        return (fControlData.target != nullptr);
     }
 
     const CarlaOscData* getControlData() const
     {
-        return &m_controlData;
+        return &fControlData;
     }
 
     const char* getServerPath() const
     {
-        return m_serverPath;
+        return (const char*)fServerPath;
     }
 
     // -------------------------------------------------------------------
 
 private:
-    CarlaBridgeClient* const client;
+    CarlaBridgeClient* const kClient;
 
-    char*  m_name;
-    size_t m_nameSize;
+    CarlaString fName;
 
-    lo_server m_server;
-    char*     m_serverPath;
+    CarlaString fServerPath;
+    lo_server   fServer;
 
-    CarlaOscData m_controlData;
+    CarlaOscData fControlData;
 
     // -------------------------------------------------------------------
 
@@ -118,14 +118,14 @@ private:
 
     // -------------------------------------------------------------------
 
-    static void osc_error_handler(const int num, const char* const msg, const char* const path)
+    static void osc_error_handler(int num, const char* msg, const char* path)
     {
         carla_stderr("CarlaBridgeOsc::osc_error_handler(%i, \"%s\", \"%s\")", num, msg, path);
     }
 
-    static int osc_message_handler(const char* const path, const char* const types, lo_arg** const argv, const int argc, const lo_message msg, void* const user_data)
+    static int osc_message_handler(const char* path, const char* types, lo_arg** argv, int argc, lo_message msg, void* userData)
     {
-        return ((CarlaBridgeOsc*)user_data)->handleMessage(path, argc, argv, types, msg);
+        return ((CarlaBridgeOsc*)userData)->handleMessage(path, argc, argv, types, msg);
     }
 };
 

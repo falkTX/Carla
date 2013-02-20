@@ -107,10 +107,12 @@ void CarlaEngineEventPort::initBuffer(CarlaEngine* const engine)
     if (engine == nullptr)
         return;
 
+#ifndef BUILD_BRIDGE
     if (kProcessMode == PROCESS_MODE_CONTINUOUS_RACK)
         fBuffer = engine->getRackEventBuffer(kIsInput);
     else if (kProcessMode == PROCESS_MODE_PATCHBAY && ! kIsInput)
         carla_zeroMem(fBuffer, sizeof(EngineEvent)*PATCHBAY_EVENT_COUNT);
+#endif
 }
 
 uint32_t CarlaEngineEventPort::getEventCount()
@@ -700,11 +702,9 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
         case PLUGIN_NONE:
             break;
 
-#ifndef BUILD_BRIDGE
         case PLUGIN_INTERNAL:
             plugin = CarlaPlugin::newNative(init);
             break;
-#endif
 
         case PLUGIN_LADSPA:
             plugin = CarlaPlugin::newLADSPA(init, (const LADSPA_RDF_Descriptor*)extra);

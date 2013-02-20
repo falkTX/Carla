@@ -19,8 +19,8 @@
 #define __CARLA_ENGINE_OSC_HPP__
 
 #include "CarlaBackend.hpp"
-#include "CarlaString.hpp"
 #include "CarlaOscUtils.hpp"
+#include "CarlaString.hpp"
 
 #define CARLA_ENGINE_OSC_HANDLE_ARGS1 CarlaPlugin* const plugin
 #define CARLA_ENGINE_OSC_HANDLE_ARGS2 CarlaPlugin* const plugin, const int argc, const lo_arg* const* const argv, const char* const types

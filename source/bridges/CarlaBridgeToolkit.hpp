@@ -18,7 +18,7 @@
 #ifndef __CARLA_BRIDGE_TOOLKIT_HPP__
 #define __CARLA_BRIDGE_TOOLKIT_HPP__
 
-#include "carla_bridge.hpp"
+#include "CarlaBridge.hpp"
 
 CARLA_BRIDGE_START_NAMESPACE
 
@@ -52,8 +52,8 @@ public:
     static CarlaBridgeToolkit* createNew(CarlaBridgeClient* const client, const char* const uiTitle);
 
 protected:
-    CarlaBridgeClient* const client;
-    char* uiTitle;
+    CarlaBridgeClient* const kClient;
+    char* fUiTitle;
 };
 
 /**@}*/

@@ -12,87 +12,87 @@ VERSION  = 0.5.0
 # -----------------------------------------------------------
 
 SOURCES = \
-    ../carla_bridge_client.cpp \
-    ../carla_bridge_osc.cpp \
-    ../carla_bridge_toolkit.cpp \
-    ../carla_bridge_plugin.cpp
+#    ../CarlaBridgeClient.cpp \
+    ../CarlaBridgeOsc.cpp
+#    ../CarlaBridgeToolkit.cpp \
+#    ../CarlaBridgePlugin.cpp
 
 HEADERS = \
-    ../carla_bridge.hpp \
-    ../carla_bridge_client.hpp \
-    ../carla_bridge_osc.hpp \
-    ../carla_bridge_toolkit.hpp
+    ../CarlaBridge.hpp \
+    ../CarlaBridgeClient.hpp \
+    ../CarlaBridgeOsc.hpp \
+    ../CarlaBridgeToolkit.hpp
 
 # -----------------------------------------------------------
 
 # carla-engine
 SOURCES += \
-    ../../backend/engine/carla_engine.cpp \
-    ../../backend/engine/carla_engine_osc.cpp \
-    ../../backend/engine/carla_engine_thread.cpp \
-    ../../backend/engine/jack.cpp \
-    ../../backend/engine/plugin.cpp \
-    ../../backend/engine/rtaudio.cpp
+    ../../backend/engine/CarlaEngine.cpp \
+    ../../backend/engine/CarlaEngineOsc.cpp \
+    ../../backend/engine/CarlaEngineThread.cpp \
+    ../../backend/engine/CarlaEngineJack.cpp \
+    ../../backend/engine/CarlaEnginePlugin.cpp \
+    ../../backend/engine/CarlaEngineRtAudio.cpp
 
 # carla-plugin
 SOURCES += \
-    ../../backend/plugin/carla_plugin.cpp \
-    ../../backend/plugin/carla_plugin_thread.cpp \
-    ../../backend/plugin/native.cpp \
-    ../../backend/plugin/ladspa.cpp \
-    ../../backend/plugin/dssi.cpp \
-    ../../backend/plugin/lv2.cpp \
-    ../../backend/plugin/vst.cpp \
-    ../../backend/plugin/fluidsynth.cpp \
-    ../../backend/plugin/linuxsampler.cpp
+    ../../backend/plugin/CarlaPlugin.cpp \
+    ../../backend/plugin/CarlaPluginThread.cpp \
+    ../../backend/plugin/NativePlugin.cpp \
+    ../../backend/plugin/LadspaPlugin.cpp \
+    ../../backend/plugin/DssiPlugin.cpp \
+    ../../backend/plugin/Lv2Plugin.cpp \
+    ../../backend/plugin/VstPlugin.cpp \
+    ../../backend/plugin/FluidSynthPlugin.cpp \
+    ../../backend/plugin/LinuxSamplerPlugin.cpp
 
 # carla-standalone
 SOURCES += \
-    ../../backend/standalone/carla_standalone.cpp
+    ../../backend/standalone/CarlaStandalone.cpp
 
 # -----------------------------------------------------------
 
 # common
 HEADERS += \
-    ../../backend/carla_backend.hpp \
-    ../../backend/carla_engine.hpp \
-    ../../backend/carla_native.h \
-    ../../backend/carla_native.hpp \
-    ../../backend/carla_plugin.hpp \
-    ../../backend/carla_standalone.hpp
+    ../../CarlaBackend.hpp \
+    ../../CarlaEngine.hpp \
+    ../../CarlaNative.h \
+    ../../CarlaNative.hpp \
+    ../../CarlaPlugin.hpp \
+    ../../CarlaStandalone.hpp
 
 # engine
 HEADERS += \
-    ../../backend/engine/carla_engine_internal.hpp \
-    ../../backend/engine/carla_engine_osc.hpp \
-    ../../backend/engine/carla_engine_thread.hpp \
-    ../../backend/engine/plugin/DistrhoPluginInfo.h
+    ../../backend/engine/CarlaEngineInternal.hpp \
+    ../../backend/engine/CarlaEngineOsc.hpp \
+    ../../backend/engine/CarlaEngineThread.hpp \
+    ../../backend/engine/distrho/DistrhoPluginInfo.h
 
 # plugin
 HEADERS += \
-    ../../backend/plugin/carla_plugin_internal.hpp \
-    ../../backend/plugin/carla_plugin_thread.hpp
+    ../../backend/plugin/CarlaPluginInternal.hpp \
+    ../../backend/plugin/CarlaPluginThread.hpp
 
 # includes
 HEADERS += \
-    ../../includes/carla_defines.hpp \
-    ../../includes/carla_midi.h \
+    ../../includes/CarlaDefines.hpp \
+    ../../includes/CarlaMIDI.h \
     ../../includes/ladspa_rdf.hpp \
     ../../includes/lv2_rdf.hpp
 
 # utils
 HEADERS += \
-    ../../utils/carla_backend_utils.hpp \
-    ../../utils/carla_juce_utils.hpp \
-    ../../utils/carla_ladspa_utils.hpp \
-    ../../utils/carla_lib_utils.hpp \
-    ../../utils/carla_lv2_utils.hpp \
-    ../../utils/carla_osc_utils.hpp \
-    ../../utils/carla_state_utils.hpp \
-    ../../utils/carla_vst_utils.hpp \
-    ../../utils/carla_utils.hpp \
+    ../../utils/CarlaBackendUtils.hpp \
+    ../../utils/CarlaJuceUtils.hpp \
+    ../../utils/CarlaLadspaUtils.hpp \
+    ../../utils/CarlaLibUtils.hpp \
+    ../../utils/CarlaLv2Utils.hpp \
+    ../../utils/CarlaOscUtils.hpp \
+    ../../utils/CarlaStateUtils.hpp \
+    ../../utils/CarlaVstUtils.hpp \
+    ../../utils/CarlaUtils.hpp \
     ../../utils/lv2_atom_queue.hpp \
-    ../../utils/rt_list.hpp
+    ../../utils/RtList.hpp
 
 INCLUDEPATH = .. \
     ../../backend \
@@ -111,8 +111,8 @@ DEFINES += DEBUG
 DEFINES += BUILD_BRIDGE BUILD_BRIDGE_PLUGIN BRIDGE_PLUGIN
 
 DEFINES += WANT_JACK
-DEFINES += WANT_LADSPA
-# WANT_DSSI WANT_LV2 WANT_VST
+DEFINES += WANT_LADSPA WANT_DSSI
+# WANT_LV2 WANT_VST
 
 LIBS     = -ldl \
     ../../libs/lilv.a \

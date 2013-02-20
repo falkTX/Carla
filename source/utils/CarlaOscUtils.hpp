@@ -141,7 +141,7 @@ void osc_send_midi_program(const CarlaOscData* const oscData, const int32_t inde
     {
         char targetPath[strlen(oscData->path)+14];
         strcpy(targetPath, oscData->path);
-        strcat(targetPath, "/midi_program");
+        strcat(targetPath, "/midi-program");
         lo_send(oscData->target, targetPath, "i", index);
     }
 }
@@ -158,7 +158,7 @@ void osc_send_midi_program(const CarlaOscData* const oscData, const int32_t bank
     {
         char targetPath[strlen(oscData->path)+14];
         strcpy(targetPath, oscData->path);
-        strcat(targetPath, "/midi_program");
+        strcat(targetPath, "/midi-program");
         lo_send(oscData->target, targetPath, "ii", bank, program);
     }
 }

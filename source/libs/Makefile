@@ -25,34 +25,16 @@ jackbridge-win64.dll.so:
 lilv.a:
 	$(MAKE) -C lilv
 
-lilv_posix32.a:
-	$(MAKE) -C lilv posix32
-
-lilv_posix64.a:
-	$(MAKE) -C lilv posix64
-
-lilv_win32.a:
-	$(MAKE) -C lilv win32
-
-lilv_win64.a:
-	$(MAKE) -C lilv win64
+lilv_%.a:
+	$(MAKE) -C lilv $*
 
 # --------------------------------------------------------------
 
 rtmempool.a:
 	$(MAKE) -C rtmempool
 
-rtmempool_posix32.a:
-	$(MAKE) -C rtmempool posix32
-
-rtmempool_posix64.a:
-	$(MAKE) -C rtmempool posix64
-
-rtmempool_win32.a:
-	$(MAKE) -C rtmempool win32
-
-rtmempool_win64.a:
-	$(MAKE) -C rtmempool win64
+rtmempool_%.a:
+	$(MAKE) -C rtmempool $*
 
 # --------------------------------------------------------------
 

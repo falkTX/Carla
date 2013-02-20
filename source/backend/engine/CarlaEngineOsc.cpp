@@ -23,11 +23,13 @@
 
 CARLA_BACKEND_START_NAMESPACE
 
+#ifndef BUILD_BRIDGE
 // -------------------------------------------------------------------
 // Bridge Helper, defined in plugin/CarlaBlugin.cpp
 
 extern int CarlaPluginSetOscBridgeInfo(CarlaPlugin* const plugin, const PluginBridgeInfoType type,
                                        const int argc, const lo_arg* const* const argv, const char* const types);
+#endif
 
 // -----------------------------------------------------------------------
 
@@ -161,9 +163,7 @@ bool isDigit(const char c)
 
 int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, const int argc, const lo_arg* const* const argv, const char* const types, const lo_message msg)
 {
-#if DEBUG
-    carla_debug("CarlaEngineOsc::handleMessage(%s, %s, %i, %p, %s, %p)", bool2str(isTCP), path, argc, argv, types, msg);
-#endif
+    carla_debug("CarlaEngineOsc::handleMessage(%s, \"%s\", %i, %p, \"%s\", %p)", bool2str(isTCP), path, argc, argv, types, msg);
     CARLA_ASSERT(fName.isNotEmpty());
     CARLA_ASSERT(fServerPathTCP.isNotEmpty());
     CARLA_ASSERT(fServerPathUDP.isNotEmpty());
@@ -185,12 +185,12 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
 
 #ifndef BUILD_BRIDGE
     // Initial path check
-    if (strcmp(path, "/register") == 0)
+    if (std::strcmp(path, "/register") == 0)
     {
         const lo_address source = lo_message_get_source(msg);
         return handleMsgRegister(isTCP, argc, argv, types, source);
     }
-    if (strcmp(path, "/unregister") == 0)
+    if (std::strcmp(path, "/unregister") == 0)
     {
         return handleMsgUnregister();
     }
@@ -270,104 +270,104 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
     }
 
     // Common OSC methods (DSSI and bridge UIs)
-    if (strcmp(method, "update") == 0)
+    if (std::strcmp(method, "update") == 0)
     {
         const lo_address source = lo_message_get_source(msg);
         return handleMsgUpdate(plugin, argc, argv, types, source);
     }
-    if (strcmp(method, "configure") == 0)
+    if (std::strcmp(method, "configure") == 0)
         return handleMsgConfigure(plugin, argc, argv, types);
-    if (strcmp(method, "control") == 0)
+    if (std::strcmp(method, "control") == 0)
         return handleMsgControl(plugin, argc, argv, types);
-    if (strcmp(method, "program") == 0)
+    if (std::strcmp(method, "program") == 0)
         return handleMsgProgram(plugin, argc, argv, types);
-    if (strcmp(method, "midi") == 0)
+    if (std::strcmp(method, "midi") == 0)
         return handleMsgMidi(plugin, argc, argv, types);
-    if (strcmp(method, "exiting") == 0)
+    if (std::strcmp(method, "exiting") == 0)
         return handleMsgExiting(plugin);
 
 #ifndef BUILD_BRIDGE
     // Internal methods
-    if (strcmp(method, "set_active") == 0)
+    if (std::strcmp(method, "set_active") == 0)
         return handleMsgSetActive(plugin, argc, argv, types);
-    if (strcmp(method, "set_drywet") == 0)
+    if (std::strcmp(method, "set_drywet") == 0)
         return handleMsgSetDryWet(plugin, argc, argv, types);
-    if (strcmp(method, "set_volume") == 0)
+    if (std::strcmp(method, "set_volume") == 0)
         return handleMsgSetVolume(plugin, argc, argv, types);
-    if (strcmp(method, "set_balance_left") == 0)
+    if (std::strcmp(method, "set_balance_left") == 0)
         return handleMsgSetBalanceLeft(plugin, argc, argv, types);
-    if (strcmp(method, "set_balance_right") == 0)
+    if (std::strcmp(method, "set_balance_right") == 0)
         return handleMsgSetBalanceRight(plugin, argc, argv, types);
-    if (strcmp(method, "set_panning") == 0)
+    if (std::strcmp(method, "set_panning") == 0)
         return handleMsgSetPanning(plugin, argc, argv, types);
-    if (strcmp(method, "set_parameter_value") == 0)
+    if (std::strcmp(method, "set_parameter_value") == 0)
         return handleMsgSetParameterValue(plugin, argc, argv, types);
-    if (strcmp(method, "set_parameter_midi_cc") == 0)
+    if (std::strcmp(method, "set_parameter_midi_cc") == 0)
         return handleMsgSetParameterMidiCC(plugin, argc, argv, types);
-    if (strcmp(method, "set_parameter_midi_channel") == 0)
+    if (std::strcmp(method, "set_parameter_midi_channel") == 0)
         return handleMsgSetParameterMidiChannel(plugin, argc, argv, types);
-    if (strcmp(method, "set_program") == 0)
+    if (std::strcmp(method, "set_program") == 0)
         return handleMsgSetProgram(plugin, argc, argv, types);
-    if (strcmp(method, "set_midi_program") == 0)
+    if (std::strcmp(method, "set_midi_program") == 0)
         return handleMsgSetMidiProgram(plugin, argc, argv, types);
-    if (strcmp(method, "note_on") == 0)
+    if (std::strcmp(method, "note_on") == 0)
         return handleMsgNoteOn(plugin, argc, argv, types);
-    if (strcmp(method, "note_off") == 0)
+    if (std::strcmp(method, "note_off") == 0)
         return handleMsgNoteOff(plugin, argc, argv, types);
 
     // Plugin Bridges
     if ((plugin->hints() & PLUGIN_IS_BRIDGE) > 0 && strlen(method) > 11 && strncmp(method, "bridge_", 7) == 0)
     {
-        if (strcmp(method+7, "set_peaks") == 0)
+        if (std::strcmp(method+7, "set_peaks") == 0)
             return handleMsgBridgeSetPeaks(plugin, argc, argv, types);
-        if (strcmp(method+7, "audio_count") == 0)
+        if (std::strcmp(method+7, "audio_count") == 0)
             return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeAudioCount, argc, argv, types);
-        if (strcmp(method+7, "midi_count") == 0)
+        if (std::strcmp(method+7, "midi_count") == 0)
             return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeMidiCount, argc, argv, types);
-        if (strcmp(method+7, "parameter_count") == 0)
+        if (std::strcmp(method+7, "parameter_count") == 0)
             return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeParameterCount, argc, argv, types);
-        if (strcmp(method+7, "program_count") == 0)
+        if (std::strcmp(method+7, "program_count") == 0)
             return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeProgramCount, argc, argv, types);
-        if (strcmp(method+7, "midi_program_count") == 0)
+        if (std::strcmp(method+7, "midi_program_count") == 0)
             return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeMidiProgramCount, argc, argv, types);
-        if (strcmp(method+7, "plugin_info") == 0)
+        if (std::strcmp(method+7, "plugin_info") == 0)
             return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgePluginInfo, argc, argv, types);
-        if (strcmp(method+7, "parameter_info") == 0)
+        if (std::strcmp(method+7, "parameter_info") == 0)
             return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeParameterInfo, argc, argv, types);
-        if (strcmp(method+7, "parameter_data") == 0)
+        if (std::strcmp(method+7, "parameter_data") == 0)
             return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeParameterData, argc, argv, types);
-        if (strcmp(method+7, "parameter_ranges") == 0)
+        if (std::strcmp(method+7, "parameter_ranges") == 0)
             return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeParameterRanges, argc, argv, types);
-        if (strcmp(method+7, "program_info") == 0)
+        if (std::strcmp(method+7, "program_info") == 0)
             return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeProgramInfo, argc, argv, types);
-        if (strcmp(method+7, "midi_program_info") == 0)
+        if (std::strcmp(method+7, "midi_program_info") == 0)
             return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeMidiProgramInfo, argc, argv, types);
-        if (strcmp(method+7, "configure") == 0)
+        if (std::strcmp(method+7, "configure") == 0)
             return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeConfigure, argc, argv, types);
-        if (strcmp(method+7, "set_parameter_value") == 0)
+        if (std::strcmp(method+7, "set_parameter_value") == 0)
             return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeSetParameterValue, argc, argv, types);
-        if (strcmp(method+7, "set_default_value") == 0)
+        if (std::strcmp(method+7, "set_default_value") == 0)
             return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeSetDefaultValue, argc, argv, types);
-        if (strcmp(method+7, "set_program") == 0)
+        if (std::strcmp(method+7, "set_program") == 0)
             return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeSetProgram, argc, argv, types);
-        if (strcmp(method+7, "set_midi_program") == 0)
+        if (std::strcmp(method+7, "set_midi_program") == 0)
             return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeSetMidiProgram, argc, argv, types);
-        if (strcmp(method+7, "set_custom_data") == 0)
+        if (std::strcmp(method+7, "set_custom_data") == 0)
             return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeSetCustomData, argc, argv, types);
-        if (strcmp(method+7, "set_chunk_data") == 0)
+        if (std::strcmp(method+7, "set_chunk_data") == 0)
             return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeSetChunkData, argc, argv, types);
-        if (strcmp(method+7, "update") == 0)
+        if (std::strcmp(method+7, "update") == 0)
             return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeUpdateNow, argc, argv, types);
-        if (strcmp(method+7, "error") == 0)
+        if (std::strcmp(method+7, "error") == 0)
             return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeError, argc, argv, types);
     }
 #endif
 
     // Plugin-specific methods, FIXME
 #if 0 //def WANT_LV2
-    if (strcmp(method, "lv2_atom_transfer") == 0)
+    if (std::strcmp(method, "lv2_atom_transfer") == 0)
         return handleMsgLv2AtomTransfer(plugin, argc, argv, types);
-    if (strcmp(method, "lv2_event_transfer") == 0)
+    if (std::strcmp(method, "lv2_event_transfer") == 0)
         return handleMsgLv2EventTransfer(plugin, argc, argv, types);
 #endif
 

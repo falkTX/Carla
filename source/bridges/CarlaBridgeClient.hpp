@@ -15,10 +15,10 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#ifndef CARLA_BRIDGE_CLIENT_HPP
-#define CARLA_BRIDGE_CLIENT_HPP
+#ifndef __CARLA_BRIDGE_CLIENT_HPP__
+#define __CARLA_BRIDGE_CLIENT_HPP__
 
-#include "carla_bridge_osc.hpp"
+#include "CarlaBridgeOsc.hpp"
 
 CARLA_BRIDGE_START_NAMESPACE
 
@@ -132,15 +132,15 @@ protected:
     // ---------------------------------------------------------------------
 
 private:
-    CarlaBridgeOsc m_osc;
-    CarlaBridgeToolkit* const m_toolkit;
+    CarlaBridgeOsc      const kOsc;
+    CarlaBridgeToolkit* const kToolkit;
 
-    const CarlaOscData* m_oscData;
+    const CarlaOscData* fOscData;
 
 #ifdef BUILD_BRIDGE_UI
-    char* m_uiFilename;
-    void* m_uiLib;
-    bool  m_uiQuit;
+    char* fFilename;
+    void* fLib;
+    bool  fQuit;
 #else
     friend class CarlaPluginClient;
 #endif
@@ -150,4 +150,4 @@ private:
 
 CARLA_BRIDGE_END_NAMESPACE
 
-#endif // CARLA_BRIDGE_CLIENT_HPP
+#endif // __CARLA_BRIDGE_CLIENT_HPP__
