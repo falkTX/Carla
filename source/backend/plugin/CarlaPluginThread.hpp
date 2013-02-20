@@ -18,15 +18,15 @@
 #ifndef __CARLA_PLUGIN_THREAD_HPP__
 #define __CARLA_PLUGIN_THREAD_HPP__
 
-#include "CarlaBackendUtils.hpp"
-
-#include <QtCore/QThread>
+#include "CarlaBackend.hpp"
+#include "CarlaString.hpp"
+#include "CarlaThread.hpp"
 
 class QProcess;
 
 CARLA_BACKEND_START_NAMESPACE
 
-class CarlaPluginThread : public QThread
+class CarlaPluginThread : public CarlaThread
 {
 public:
     enum PluginThreadMode {
@@ -36,10 +36,10 @@ public:
         PLUGIN_THREAD_BRIDGE
     };
 
-    CarlaPluginThread(CarlaEngine* const engine, CarlaPlugin* const plugin, const PluginThreadMode mode, QObject* const parent = nullptr);
+    CarlaPluginThread(CarlaEngine* const engine, CarlaPlugin* const plugin, const PluginThreadMode mode);
     ~CarlaPluginThread();
 
-    void setOscData(const char* const binary, const char* const label, const char* const data1="");
+    void setOscData(const char* const binary, const char* const label, const char* const extra="");
 
 protected:
     void run();
@@ -51,7 +51,7 @@ private:
 
     CarlaString fBinary;
     CarlaString fLabel;
-    CarlaString fData1;
+    CarlaString fExtra;
     QProcess*   fProcess;
 };
 

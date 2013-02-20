@@ -15,7 +15,10 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#include "CarlaPluginInternal.hpp"
+#include "CarlaPluginThread.hpp"
+
+#include "CarlaPlugin.hpp"
+#include "CarlaEngine.hpp"
 
 #include <QtCore/QProcess>
 
@@ -35,44 +38,42 @@ const char* PluginThreadMode2str(const CarlaPluginThread::PluginThreadMode mode)
         return "PLUGIN_THREAD_BRIDGE";
     }
 
-    qWarning("CarlaPluginThread::PluginThreadMode2str(%i) - invalid mode", mode);
+    carla_stderr("CarlaPluginThread::PluginThreadMode2str(%i) - invalid mode", mode);
     return nullptr;
 }
 
-CarlaPluginThread::CarlaPluginThread(CarlaBackend::CarlaEngine* const engine, CarlaBackend::CarlaPlugin* const plugin, const PluginThreadMode mode, QObject* const parent)
-    : QThread(parent),
-      kEngine(engine),
+CarlaPluginThread::CarlaPluginThread(CarlaBackend::CarlaEngine* const engine, CarlaBackend::CarlaPlugin* const plugin, const PluginThreadMode mode)
+    : kEngine(engine),
       kPlugin(plugin),
-      kMode(mode)
+      kMode(mode),
+      fProcess(nullptr)
 {
-    qDebug("CarlaPluginThread::CarlaPluginThread(plugin:\"%s\", engine:\"%s\", %s)", plugin->name(), engine->getName(), PluginThreadMode2str(mode));
-
-    fProcess = nullptr;
+    carla_debug("CarlaPluginThread::CarlaPluginThread(plugin:\"%s\", engine:\"%s\", %s)", plugin->name(), engine->getName(), PluginThreadMode2str(mode));
 }
 
 CarlaPluginThread::~CarlaPluginThread()
 {
     if (fProcess != nullptr)
-        delete fProcess;
+       delete fProcess;
 }
 
-void CarlaPluginThread::setOscData(const char* const binary, const char* const label, const char* const data1)
+void CarlaPluginThread::setOscData(const char* const binary, const char* const label, const char* const extra)
 {
     fBinary = binary;
     fLabel  = label;
-    fData1  = data1;
+    fExtra  = extra;
 }
 
 void CarlaPluginThread::run()
 {
-    qDebug("CarlaPluginThread::run()");
+    carla_debug("CarlaPluginThread::run()");
 
     if (fProcess == nullptr)
     {
-        fProcess = new QProcess(nullptr);
-        fProcess->setProcessChannelMode(QProcess::ForwardedChannels);
+       fProcess = new QProcess(nullptr);
+       fProcess->setProcessChannelMode(QProcess::ForwardedChannels);
 #ifndef BUILD_BRIDGE
-        fProcess->setProcessEnvironment(kEngine->getOptionsAsProcessEnvironment());
+       fProcess->setProcessEnvironment(kEngine->getOptionsAsProcessEnvironment());
 #endif
     }
 
@@ -91,7 +92,7 @@ void CarlaPluginThread::run()
     case PLUGIN_THREAD_LV2_GUI:
         /* osc_url  */ arguments << QString("%1/%2").arg(kEngine->getOscServerPathTCP()).arg(kPlugin->id());
         /* URI      */ arguments << (const char*)fLabel;
-        /* ui-URI   */ arguments << (const char*)fData1;
+        /* ui-URI   */ arguments << (const char*)fExtra;
         /* ui-title */ arguments << QString("%1 (GUI)").arg(kPlugin->name());
         break;
 
@@ -103,7 +104,7 @@ void CarlaPluginThread::run()
 
     case PLUGIN_THREAD_BRIDGE:
         /* osc_url  */ arguments << QString("%1/%2").arg(kEngine->getOscServerPathTCP()).arg(kPlugin->id());
-        /* stype    */ arguments << (const char*)fData1;
+        /* stype    */ arguments << (const char*)fExtra;
         /* filename */ arguments << kPlugin->filename();
         /* name     */ arguments << name;
         /* label    */ arguments << (const char*)fLabel;
@@ -125,21 +126,20 @@ void CarlaPluginThread::run()
             if (fProcess->exitCode() == 0)
             {
                 // Hide
-                kEngine->callback(CarlaBackend::CALLBACK_SHOW_GUI, kPlugin->id(), 0, 0, 0.0, nullptr);
-                qWarning("CarlaPluginThread::run() - GUI closed");
+                kEngine->callback(CarlaBackend::CALLBACK_SHOW_GUI, kPlugin->id(), 0, 0, 0.0f, nullptr);
+                carla_stdout("CarlaPluginThread::run() - GUI closed");
             }
             else
             {
                 // Kill
-                kEngine->callback(CarlaBackend::CALLBACK_SHOW_GUI, kPlugin->id(), -1, 0, 0.0, nullptr);
-                qWarning("CarlaPluginThread::run() - GUI crashed");
-                break;
+                kEngine->callback(CarlaBackend::CALLBACK_SHOW_GUI, kPlugin->id(), -1, 0, 0.0f, nullptr);
+                carla_stderr("CarlaPluginThread::run() - GUI crashed");
             }
         }
         else
         {
-            qDebug("CarlaPluginThread::run() - GUI timeout");
-            kEngine->callback(CarlaBackend::CALLBACK_SHOW_GUI, kPlugin->id(), 0, 0, 0.0, nullptr);
+            carla_debug("CarlaPluginThread::run() - GUI timeout");
+            kEngine->callback(CarlaBackend::CALLBACK_SHOW_GUI, kPlugin->id(), 0, 0, 0.0f, nullptr);
         }
         break;
 
@@ -148,15 +148,13 @@ void CarlaPluginThread::run()
 
         if (fProcess->exitCode() != 0)
         {
-            qWarning("CarlaPluginThread::run() - bridge crashed");
+            carla_stderr("CarlaPluginThread::run() - bridge crashed");
 
-            QString errorString = QString("Plugin '%1' has crashed!\n"
-                                          "Saving now will lose its current settings.\n"
-                                          "Please remove this plugin, and not rely on it from this point.").arg(kPlugin->name());
-            kEngine->setLastError(errorString.toUtf8().constData());
-            kEngine->callback(CarlaBackend::CALLBACK_ERROR, kPlugin->id(), 0, 0, 0.0, nullptr);
+            CarlaString errorString("Plugin '" + CarlaString(kPlugin->name()) + "' has crashed!\n"
+                                    "Saving now will lose its current settings.\n"
+                                    "Please remove this plugin, and not rely on it from this point.");
+            kEngine->callback(CarlaBackend::CALLBACK_ERROR, kPlugin->id(), 0, 0, 0.0f, (const char*)errorString);
         }
-
         break;
     }
 }
