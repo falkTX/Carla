@@ -15,29 +15,25 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#include "carla_bridge_toolkit.hpp"
+#include "CarlaBridgeToolkit.hpp"
 #include "CarlaUtils.hpp"
-
-#include <cstdlib>
-#include <cstring>
 
 CARLA_BRIDGE_START_NAMESPACE
 
-CarlaBridgeToolkit::CarlaBridgeToolkit(CarlaBridgeClient* const client_, const char* const newTitle)
-    : client(client_)
+CarlaBridgeToolkit::CarlaBridgeToolkit(CarlaBridgeClient* const client, const char* const uiTitle)
+    : kClient(client),
+      kUiTitle(carla_strdup((uiTitle != nullptr) ? uiTitle : "(null)"))
 {
-    carla_debug("CarlaBridgeToolkit::CarlaBridgeToolkit(%p, \"%s\")", client, newTitle);
-    CARLA_ASSERT(client);
-    CARLA_ASSERT(newTitle);
-
-    uiTitle  = strdup(newTitle ? newTitle : "(null)");
+    carla_debug("CarlaBridgeToolkit::CarlaBridgeToolkit(%p, \"%s\")", client, uiTitle);
+    CARLA_ASSERT(client != nullptr);
+    CARLA_ASSERT(uiTitle != nullptr);
 }
 
 CarlaBridgeToolkit::~CarlaBridgeToolkit()
 {
     carla_debug("CarlaBridgeToolkit::~CarlaBridgeToolkit()");
 
-    free(uiTitle);
+    delete[] kUiTitle;
 }
 
 void* CarlaBridgeToolkit::getContainerId()

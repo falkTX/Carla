@@ -40,6 +40,7 @@ using CarlaBackend::EngineOptions;
 // Single, standalone engine
 struct CarlaBackendStandalone {
     CallbackFunc  callback;
+    void*         callbackPtr;
     CarlaEngine*  engine;
     CarlaString   lastError;
     CarlaString   procName;
@@ -47,11 +48,21 @@ struct CarlaBackendStandalone {
 
     CarlaBackendStandalone()
         : callback(nullptr),
+          callbackPtr(nullptr),
           engine(nullptr) {}
 
 } standalone;
 
 // -------------------------------------------------------------------------------------------------------------------
+// Helpers
+
+CarlaEngine* carla_get_standalone_engine()
+{
+    return standalone.engine;
+}
+
+// -------------------------------------------------------------------------------------------------------------------
+// API
 
 const char* carla_get_extended_license_text()
 {
@@ -338,7 +349,7 @@ bool carla_save_project(const char* filename)
 
 // -------------------------------------------------------------------------------------------------------------------
 
-bool carla_add_plugin(CarlaBackend::BinaryType btype, CarlaBackend::PluginType ptype, const char* filename, const char* const name, const char* label, void* extraStuff)
+bool carla_add_plugin(CarlaBackend::BinaryType btype, CarlaBackend::PluginType ptype, const char* filename, const char* const name, const char* label, const void* extraStuff)
 {
     carla_debug("carla_add_plugin(%s, %s, \"%s\", \"%s\", \"%s\", %p)", CarlaBackend::BinaryType2Str(btype), CarlaBackend::PluginType2Str(ptype), filename, name, label, extraStuff);
     CARLA_ASSERT(standalone.engine != nullptr);
@@ -1383,14 +1394,15 @@ const char* carla_get_host_osc_url()
 
 // -------------------------------------------------------------------------------------------------------------------
 
-void carla_set_callback_function(CarlaBackend::CallbackFunc func)
+void carla_set_callback_function(CarlaBackend::CallbackFunc func, void* ptr)
 {
     carla_debug("carla_set_callback_function(%p)", func);
 
-    standalone.callback = func;
+    standalone.callback    = func;
+    standalone.callbackPtr = ptr;
 
-    if (standalone.engine)
-        standalone.engine->setCallback(func, nullptr);
+    if (standalone.engine != nullptr)
+        standalone.engine->setCallback(func, ptr);
 }
 
 void carla_set_option(CarlaBackend::OptionsType option, int value, const char* valueStr)

@@ -19,6 +19,7 @@
 #define __CARLA_BRIDGE_OSC_HPP__
 
 #include "CarlaBridge.hpp"
+#include "CarlaJuceUtils.hpp"
 #include "CarlaOscUtils.hpp"
 #include "CarlaString.hpp"
 
@@ -127,6 +128,8 @@ private:
     {
         return ((CarlaBridgeOsc*)userData)->handleMessage(path, argc, argv, types, msg);
     }
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaBridgeOsc)
 };
 
 CARLA_BRIDGE_END_NAMESPACE

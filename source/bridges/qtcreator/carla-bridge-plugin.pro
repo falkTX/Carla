@@ -12,16 +12,14 @@ VERSION  = 0.5.0
 # -----------------------------------------------------------
 
 SOURCES = \
-#    ../CarlaBridgeClient.cpp \
-    ../CarlaBridgeOsc.cpp
-#    ../CarlaBridgeToolkit.cpp \
-#    ../CarlaBridgePlugin.cpp
+    ../CarlaBridgeClient.cpp \
+    ../CarlaBridgeOsc.cpp \
+    ../CarlaBridgePlugin.cpp
 
 HEADERS = \
     ../CarlaBridge.hpp \
     ../CarlaBridgeClient.hpp \
-    ../CarlaBridgeOsc.hpp \
-    ../CarlaBridgeToolkit.hpp
+    ../CarlaBridgeOsc.hpp
 
 # -----------------------------------------------------------
 
@@ -54,12 +52,12 @@ SOURCES += \
 
 # common
 HEADERS += \
-    ../../CarlaBackend.hpp \
-    ../../CarlaEngine.hpp \
-    ../../CarlaNative.h \
-    ../../CarlaNative.hpp \
-    ../../CarlaPlugin.hpp \
-    ../../CarlaStandalone.hpp
+    ../../backend/CarlaBackend.hpp \
+    ../../backend/CarlaEngine.hpp \
+    ../../backend/CarlaNative.h \
+    ../../backend/CarlaNative.hpp \
+    ../../backend/CarlaPlugin.hpp \
+    ../../backend/CarlaStandalone.hpp
 
 # engine
 HEADERS += \

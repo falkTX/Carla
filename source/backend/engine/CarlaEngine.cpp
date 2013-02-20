@@ -822,38 +822,41 @@ void CarlaEngine::removeAllPlugins()
 
     kData->thread.stopNow();
 
-    const unsigned int oldCount = kData->curPluginCount;
-
-    kData->curPluginCount = 0;
-
-    for (unsigned int i=0; i < oldCount; i++)
+    if (kData->curPluginCount > 0)
     {
-        CarlaPlugin* const plugin = kData->plugins[i].plugin;
+        const unsigned int oldCount = kData->curPluginCount;
 
-        CARLA_ASSERT(plugin != nullptr);
+        kData->curPluginCount = 0;
 
-        if (plugin != nullptr)
-            plugin->setEnabled(false);
-    }
+        for (unsigned int i=0; i < oldCount; i++)
+        {
+            CarlaPlugin* const plugin = kData->plugins[i].plugin;
 
-    // wait for processing
-    waitForProccessEnd();
+            CARLA_ASSERT(plugin != nullptr);
 
-    for (unsigned int i=0; i < oldCount; i++)
-    {
-        CarlaPlugin* const plugin = kData->plugins[i].plugin;
+            if (plugin != nullptr)
+                plugin->setEnabled(false);
+        }
 
-        CARLA_ASSERT(plugin != nullptr);
+        // wait for processing
+        waitForProccessEnd();
 
-        if (plugin != nullptr)
-            delete plugin;
+        for (unsigned int i=0; i < oldCount; i++)
+        {
+            CarlaPlugin* const plugin = kData->plugins[i].plugin;
 
-        // clear this plugin
-        kData->plugins[i].plugin      = nullptr;
-        kData->plugins[i].insPeak[0]  = 0.0;
-        kData->plugins[i].insPeak[1]  = 0.0;
-        kData->plugins[i].outsPeak[0] = 0.0;
-        kData->plugins[i].outsPeak[1] = 0.0;
+            CARLA_ASSERT(plugin != nullptr);
+
+            if (plugin != nullptr)
+                delete plugin;
+
+            // clear this plugin
+            kData->plugins[i].plugin      = nullptr;
+            kData->plugins[i].insPeak[0]  = 0.0;
+            kData->plugins[i].insPeak[1]  = 0.0;
+            kData->plugins[i].outsPeak[0] = 0.0;
+            kData->plugins[i].outsPeak[1] = 0.0;
+        }
     }
 
     if (isRunning() && ! kData->aboutToClose)
@@ -1304,6 +1307,8 @@ void CarlaEngine::sampleRateChanged(const double newSampleRate)
 
 void CarlaEngine::proccessPendingEvents()
 {
+    //carla_stderr("proccessPendingEvents(%i)", kData->nextAction.opcode);
+
     switch (kData->nextAction.opcode)
     {
     case EnginePostActionNull:

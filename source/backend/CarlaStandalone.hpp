@@ -164,7 +164,7 @@ CARLA_EXPORT void carla_set_engine_about_to_close();
 CARLA_EXPORT bool carla_load_project(const char* filename);
 CARLA_EXPORT bool carla_save_project(const char* filename);
 
-CARLA_EXPORT bool carla_add_plugin(CarlaBinaryType btype, CarlaPluginType ptype, const char* filename, const char* name, const char* label, void* extraPtr);
+CARLA_EXPORT bool carla_add_plugin(CarlaBinaryType btype, CarlaPluginType ptype, const char* filename, const char* name, const char* label, const void* extraPtr);
 CARLA_EXPORT bool carla_remove_plugin(unsigned int pluginId);
 CARLA_EXPORT void carla_remove_all_plugins();
 
@@ -229,7 +229,7 @@ CARLA_EXPORT double   carla_get_sample_rate();
 CARLA_EXPORT const char* carla_get_last_error();
 CARLA_EXPORT const char* carla_get_host_osc_url();
 
-CARLA_EXPORT void carla_set_callback_function(CarlaCallbackFunc func);
+CARLA_EXPORT void carla_set_callback_function(CarlaCallbackFunc func, void* ptr);
 CARLA_EXPORT void carla_set_option(CarlaOptionsType option, int value, const char* valueStr);
 
 #if 0

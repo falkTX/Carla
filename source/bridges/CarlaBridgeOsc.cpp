@@ -21,8 +21,6 @@
 #include "CarlaMIDI.h"
 #include "CarlaUtils.hpp"
 
-int main() { return 0; }
-
 CARLA_BRIDGE_START_NAMESPACE
 
 // -----------------------------------------------------------------------
@@ -362,6 +360,7 @@ int CarlaBridgeOsc::handleMsgMidi(CARLA_BRIDGE_OSC_HANDLE_ARGS)
     return 0;
 }
 
+#ifdef BUILD_BRIDGE_UI
 int CarlaBridgeOsc::handleMsgShow()
 {
     carla_debug("CarlaBridgeOsc::handleMsgShow()");
@@ -400,5 +399,6 @@ int CarlaBridgeOsc::handleMsgQuit()
 
     return 0;
 }
+#endif
 
 CARLA_BRIDGE_END_NAMESPACE

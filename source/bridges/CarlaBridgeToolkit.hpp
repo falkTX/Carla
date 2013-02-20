@@ -53,7 +53,7 @@ public:
 
 protected:
     CarlaBridgeClient* const kClient;
-    char* fUiTitle;
+    const char* kUiTitle;
 };
 
 /**@}*/

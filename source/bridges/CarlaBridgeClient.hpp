@@ -43,17 +43,24 @@ public:
     // ---------------------------------------------------------------------
     // ui initialization
 
-    virtual bool init(const char* const, const char* const);
-    virtual void close();
-#endif
+    virtual bool uiInit(const char* const, const char* const);
+    virtual void uiClose();
 
-#ifdef BUILD_BRIDGE_UI
     // ---------------------------------------------------------------------
     // ui management
 
     virtual void* getWidget() const = 0;
     virtual bool isResizable() const = 0;
     virtual bool needsReparent() const = 0;
+#endif
+
+#ifdef BUILD_BRIDGE_PLUGIN
+    // ---------------------------------------------------------------------
+    // plugin management
+
+    virtual void saveNow() = 0;
+    virtual void setCustomData(const char* const type, const char* const key, const char* const value) = 0;
+    virtual void setChunkData(const char* const filePath) = 0;
 #endif
 
     // ---------------------------------------------------------------------
@@ -63,26 +70,16 @@ public:
     virtual void setProgram(const uint32_t index) = 0;
 #ifdef BUILD_BRIDGE_PLUGIN
     virtual void setMidiProgram(const uint32_t index) = 0;
-#endif
-#ifdef BUILD_BRIDGE_UI
+#else
     virtual void setMidiProgram(const uint32_t bank, const uint32_t program) = 0;
 #endif
     virtual void noteOn(const uint8_t channel, const uint8_t note, const uint8_t velo) = 0;
     virtual void noteOff(const uint8_t channel, const uint8_t note) = 0;
 
-#ifdef BUILD_BRIDGE_PLUGIN
-    // ---------------------------------------------------------------------
-    // plugin
-
-    virtual void saveNow() = 0;
-    virtual void setCustomData(const char* const type, const char* const key, const char* const value) = 0;
-    virtual void setChunkData(const char* const filePath) = 0;
-#endif
-
     // ---------------------------------------------------------------------
     // osc stuff
 
-    bool oscInit(const char* const url);
+    void oscInit(const char* const url);
     bool oscIdle();
     void oscClose();
 
@@ -94,6 +91,7 @@ public:
     void sendOscBridgeError(const char* const error);
 #endif
 
+#ifdef BUILD_BRIDGE_UI
     // ---------------------------------------------------------------------
     // toolkit
 
@@ -102,6 +100,7 @@ public:
     void toolkitResize(const int width, const int height);
     void toolkitExec(const bool showGui);
     void toolkitQuit();
+#endif
 
     // ---------------------------------------------------------------------
 
@@ -109,7 +108,9 @@ protected:
     void sendOscConfigure(const char* const key, const char* const value);
     void sendOscControl(const int32_t index, const float value);
     void sendOscProgram(const int32_t index);
+#ifdef BUILD_BRIDGE_PLUGIN
     void sendOscMidiProgram(const int32_t index);
+#endif
     void sendOscMidi(const uint8_t midiBuf[4]);
     void sendOscExiting();
 
@@ -120,11 +121,10 @@ protected:
 
     // ---------------------------------------------------------------------
 
-    void* getContainerId();
-
 #ifdef BUILD_BRIDGE_UI
-    bool uiLibOpen(const char* const filename);
-    bool uiLibClose();
+    void* getContainerId();
+    bool  uiLibOpen(const char* const filename);
+    bool  uiLibClose();
     void* uiLibSymbol(const char* const symbol);
     const char* uiLibError();
 #endif
@@ -132,18 +132,19 @@ protected:
     // ---------------------------------------------------------------------
 
 private:
-    CarlaBridgeOsc      const kOsc;
-    CarlaBridgeToolkit* const kToolkit;
+    CarlaBridgeOsc kOsc;
+
+#ifdef BUILD_BRIDGE_UI
+    CarlaBridgeToolkit* const kUiToolkit;
+
+    char* fUiFilename;
+    void* fUiLib;
+    bool  fUiQuit;
+#endif
 
     const CarlaOscData* fOscData;
 
-#ifdef BUILD_BRIDGE_UI
-    char* fFilename;
-    void* fLib;
-    bool  fQuit;
-#else
-    friend class CarlaPluginClient;
-#endif
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaBridgeClient)
 };
 
 /**@}*/

@@ -15,9 +15,9 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#include "carla_bridge_client.hpp"
-#include "carla_bridge_toolkit.hpp"
-#include "carla_plugin.hpp"
+#include "CarlaBridgeClient.hpp"
+#include "CarlaBridgeToolkit.hpp"
+#include "CarlaPlugin.hpp"
 
 CARLA_BRIDGE_START_NAMESPACE
 
@@ -26,14 +26,14 @@ static char* qargv[0] = {};
 
 // -------------------------------------------------------------------------
 
-class CarlaBridgeToolkitPlugin : public CarlaBridgeToolkit,
-                                 public CarlaBackend::CarlaPluginGUI::Callback
+class CarlaBridgeToolkitPlugin : public CarlaBridgeToolkit/*,
+                                 public CarlaBackend::CarlaPluginGUI::Callback*/
 {
 public:
     CarlaBridgeToolkitPlugin(CarlaBridgeClient* const client, const char* const uiTitle)
         : CarlaBridgeToolkit(client, uiTitle)
     {
-        qDebug("CarlaBridgeToolkitPlugin::CarlaBridgeToolkitPlugin(%p, \"%s\")", client, uiTitle);
+        carla_debug("CarlaBridgeToolkitPlugin::CarlaBridgeToolkitPlugin(%p, \"%s\")", client, uiTitle);
 
         app = nullptr;
         gui = nullptr;
@@ -45,14 +45,14 @@ public:
 
     ~CarlaBridgeToolkitPlugin()
     {
-        qDebug("CarlaBridgeToolkitPlugin::~CarlaBridgeToolkitPlugin()");
+        carla_debug("CarlaBridgeToolkitPlugin::~CarlaBridgeToolkitPlugin()");
         CARLA_ASSERT(! app);
         CARLA_ASSERT(! gui);
     }
 
     void init()
     {
-        qDebug("CarlaBridgeToolkitPlugin::init()");
+        carla_debug("CarlaBridgeToolkitPlugin::init()");
         CARLA_ASSERT(! app);
         CARLA_ASSERT(! gui);
 
@@ -63,7 +63,7 @@ public:
 
     void exec(const bool showGui)
     {
-        qDebug("CarlaBridgeToolkitPlugin::exec(%s)", bool2str(showGui));
+        carla_debug("CarlaBridgeToolkitPlugin::exec(%s)", bool2str(showGui));
         CARLA_ASSERT(app);
         CARLA_ASSERT(gui);
         CARLA_ASSERT(client);
@@ -87,7 +87,7 @@ public:
 
     void quit()
     {
-        qDebug("CarlaBridgeToolkitPlugin::quit()");
+        carla_debug("CarlaBridgeToolkitPlugin::quit()");
         CARLA_ASSERT(app);
 
         if (gui)
@@ -110,7 +110,7 @@ public:
 
     void show()
     {
-        qDebug("CarlaBridgeToolkitPlugin::show()");
+        carla_debug("CarlaBridgeToolkitPlugin::show()");
         CARLA_ASSERT(gui);
 
         if (gui && m_uiShow)
@@ -119,7 +119,7 @@ public:
 
     void hide()
     {
-        qDebug("CarlaBridgeToolkitPlugin::hide()");
+        carla_debug("CarlaBridgeToolkitPlugin::hide()");
         CARLA_ASSERT(gui);
 
         if (gui && m_uiShow)
@@ -128,21 +128,19 @@ public:
 
     void resize(const int width, const int height)
     {
-        qDebug("CarlaBridgeToolkitPlugin::resize(%i, %i)", width, height);
+        carla_debug("CarlaBridgeToolkitPlugin::resize(%i, %i)", width, height);
         CARLA_ASSERT(gui);
 
         if (gui)
             gui->setNewSize(width, height);
     }
 
-protected:
-    QApplication* app;
-    CarlaBackend::CarlaPluginGUI* gui;
-
-    void guiClosedCallback();
-
 private:
-    bool m_uiQuit;
+    QApplication* fApp;
+    bool fQuit;
+    //CarlaBackend::CarlaPluginGUI* gui;
+
+    //void guiClosedCallback();
 };
 
 // -------------------------------------------------------------------------
