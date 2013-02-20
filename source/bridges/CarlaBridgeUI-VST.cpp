@@ -17,8 +17,8 @@
 
 #ifdef BRIDGE_VST
 
-#include "carla_bridge_client.hpp"
-#include "carla_bridge_toolkit.hpp"
+#include "CarlaBridgeClient.hpp"
+#include "CarlaBridgeToolkit.hpp"
 #include "CarlaVstUtils.hpp"
 #include "CarlaMIDI.h"
 
@@ -64,12 +64,12 @@ public:
     // ---------------------------------------------------------------------
     // ui initialization
 
-    bool init(const char* binary, const char*)
+    bool uiInit(const char* binary, const char*)
     {
         // -----------------------------------------------------------------
         // init
 
-        CarlaBridgeClient::init(binary, nullptr);
+        CarlaBridgeClient::uiInit(binary, nullptr);
 
         // -----------------------------------------------------------------
         // open DLL
@@ -152,9 +152,9 @@ public:
         return true;
     }
 
-    void close()
+    void uiClose()
     {
-        CarlaBridgeClient::close();
+        CarlaBridgeClient::uiClose();
 
         if (effect)
         {
@@ -560,15 +560,13 @@ int main(int argc, char* argv[])
     CarlaVstClient client(uiTitle);
 
     // Init OSC
-    if (useOsc && ! client.oscInit(oscUrl))
-    {
-        return -1;
-    }
+    if (useOsc)
+        client.oscInit(oscUrl);
 
     // Load UI
     int ret;
 
-    if (client.init(binary, nullptr))
+    if (client.uiInit(binary, nullptr))
     {
         client.toolkitExec(!useOsc);
         ret = 0;
@@ -581,12 +579,10 @@ int main(int argc, char* argv[])
 
     // Close OSC
     if (useOsc)
-    {
         client.oscClose();
-    }
 
     // Close VST client
-    client.close();
+    client.uiClose();
 
     return ret;
 }

@@ -137,7 +137,7 @@ private:
 #ifdef BUILD_BRIDGE_UI
     CarlaBridgeToolkit* const kUiToolkit;
 
-    char* fUiFilename;
+    const char* fUiFilename;
     void* fUiLib;
     bool  fUiQuit;
 #endif

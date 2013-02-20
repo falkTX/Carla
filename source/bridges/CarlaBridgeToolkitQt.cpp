@@ -15,8 +15,8 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#include "carla_bridge_client.hpp"
-#include "carla_bridge_toolkit.hpp"
+#include "CarlaBridgeClient.hpp"
+#include "CarlaBridgeToolkit.hpp"
 
 #include <QtCore/QSettings>
 #include <QtCore/QThread>
@@ -120,10 +120,10 @@ public:
         qDebug("CarlaBridgeToolkitQt::exec(%s)", bool2str(showGui));
         CARLA_ASSERT(app);
         CARLA_ASSERT(window);
-        CARLA_ASSERT(client);
+        CARLA_ASSERT(kClient);
 
 #if defined(BRIDGE_QT4) || defined(BRIDGE_QT5)
-        QWidget* const widget = (QWidget*)client->getWidget();
+        QWidget* const widget = (QWidget*)kClient->getWidget();
 
         window->setCentralWidget(widget);
         window->adjustSize();
@@ -132,7 +132,7 @@ public:
         widget->show();
 #endif
 
-        if (! client->isResizable())
+        if (! kClient->isResizable())
         {
             window->setFixedSize(window->width(), window->height());
 #ifdef Q_OS_WIN
@@ -140,22 +140,22 @@ public:
 #endif
         }
 
-        window->setWindowTitle(uiTitle);
+        window->setWindowTitle(kUiTitle);
 
-        if (settings.contains(QString("%1/pos_x").arg(uiTitle)))
+        if (settings.contains(QString("%1/pos_x").arg(kUiTitle)))
         {
             bool hasX, hasY;
-            int posX = settings.value(QString("%1/pos_x").arg(uiTitle), window->x()).toInt(&hasX);
-            int posY = settings.value(QString("%1/pos_y").arg(uiTitle), window->y()).toInt(&hasY);
+            int posX = settings.value(QString("%1/pos_x").arg(kUiTitle), window->x()).toInt(&hasX);
+            int posY = settings.value(QString("%1/pos_y").arg(kUiTitle), window->y()).toInt(&hasY);
 
             if (hasX && hasY)
                 window->move(posX, posY);
 
-            if (client->isResizable())
+            if (kClient->isResizable())
             {
                 bool hasWidth, hasHeight;
-                int width  = settings.value(QString("%1/width").arg(uiTitle), window->width()).toInt(&hasWidth);
-                int height = settings.value(QString("%1/height").arg(uiTitle), window->height()).toInt(&hasHeight);
+                int width  = settings.value(QString("%1/width").arg(kUiTitle), window->width()).toInt(&hasWidth);
+                int height = settings.value(QString("%1/height").arg(kUiTitle), window->height()).toInt(&hasHeight);
 
                 if (hasWidth && hasHeight)
                     window->resize(width, height);
@@ -165,7 +165,7 @@ public:
         if (showGui)
             show();
         else
-            client->sendOscUpdate();
+            kClient->sendOscUpdate();
 
         // Timer
         msgTimer = startTimer(50);
@@ -190,10 +190,10 @@ public:
 
         if (window)
         {
-            settings.setValue(QString("%1/pos_x").arg(uiTitle), window->x());
-            settings.setValue(QString("%1/pos_y").arg(uiTitle), window->y());
-            settings.setValue(QString("%1/width").arg(uiTitle), window->width());
-            settings.setValue(QString("%1/height").arg(uiTitle), window->height());
+            settings.setValue(QString("%1/pos_x").arg(kUiTitle), window->x());
+            settings.setValue(QString("%1/pos_y").arg(kUiTitle), window->y());
+            settings.setValue(QString("%1/width").arg(kUiTitle), window->width());
+            settings.setValue(QString("%1/height").arg(kUiTitle), window->height());
             settings.sync();
 
             window->close();
@@ -298,16 +298,16 @@ protected:
 
     void handleTimeout()
     {
-        if (! client)
+        if (! kClient)
             return;
 
         if (needsResize)
         {
-            client->toolkitResize(nextWidth, nextHeight);
+            kClient->toolkitResize(nextWidth, nextHeight);
             needsResize = false;
         }
 
-        if (client->isOscControlRegistered() && ! client->oscIdle())
+        if (kClient->isOscControlRegistered() && ! kClient->oscIdle())
         {
             killTimer(msgTimer);
             msgTimer = 0;

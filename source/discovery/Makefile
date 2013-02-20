@@ -70,17 +70,8 @@ carla-discovery-win64.exe: $(OBJS) ../libs/lilv_win64.a
 ../libs/lilv.a:
 	$(MAKE) -C ../libs/lilv
 
-../libs/lilv_posix32.a:
-	$(MAKE) -C ../libs/lilv posix32
-
-../libs/lilv_posix64.a:
-	$(MAKE) -C ../libs/lilv posix64
-
-../libs/lilv_win32.a:
-	$(MAKE) -C ../libs/lilv win32
-
-../libs/lilv_win64.a:
-	$(MAKE) -C ../libs/lilv win64
+../libs/lilv_%.a:
+	$(MAKE) -C ../libs/lilv $*
 
 # --------------------------------------------------------------
 

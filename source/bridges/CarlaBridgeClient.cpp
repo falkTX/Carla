@@ -279,31 +279,31 @@ void CarlaBridgeClient::sendOscLv2TransferEvent(const int32_t portIndex, const c
 #ifdef BUILD_BRIDGE_UI
 void* CarlaBridgeClient::getContainerId()
 {
-    return kToolkit->getContainerId();
+    return kUiToolkit->getContainerId();
 }
 
 bool CarlaBridgeClient::uiLibOpen(const char* const filename)
 {
-    CARLA_ASSERT(fLib == nullptr);
-    CARLA_ASSERT(filename != nullptr);
+    CARLA_ASSERT(fUiLib == nullptr);
+    CARLA_ASSERT(fUiFilename != nullptr);
 
-    if (fFilename != nullptr)
-        delete[] fFilename;
+    if (fUiFilename != nullptr)
+        delete[] fUiFilename;
 
-    fLib = lib_open(filename);
-    fFilename = carla_strdup(filename ? filename : "");
+    fUiLib = lib_open(filename);
+    fUiFilename = carla_strdup(filename ? filename : "");
 
-    return (fLib != nullptr);
+    return (fUiLib != nullptr);
 }
 
 bool CarlaBridgeClient::uiLibClose()
 {
-    CARLA_ASSERT(fLib != nullptr);
+    CARLA_ASSERT(fUiLib != nullptr);
 
-    if (fLib != nullptr)
+    if (fUiLib != nullptr)
     {
-        const bool closed = lib_close(fLib);
-        fLib = nullptr;
+        const bool closed = lib_close(fUiLib);
+        fUiLib = nullptr;
         return closed;
     }
 
@@ -312,17 +312,17 @@ bool CarlaBridgeClient::uiLibClose()
 
 void* CarlaBridgeClient::uiLibSymbol(const char* const symbol)
 {
-    CARLA_ASSERT(fLib != nullptr);
+    CARLA_ASSERT(fUiLib != nullptr);
 
-    if (fLib != nullptr)
-        return lib_symbol(fLib, symbol);
+    if (fUiLib != nullptr)
+        return lib_symbol(fUiLib, symbol);
 
     return nullptr;
 }
 
 const char* CarlaBridgeClient::uiLibError()
 {
-    return lib_error(fFilename);
+    return lib_error(fUiFilename);
 }
 #endif
 

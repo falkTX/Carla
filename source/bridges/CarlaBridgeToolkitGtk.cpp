@@ -15,8 +15,8 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#include "carla_bridge_client.hpp"
-#include "carla_bridge_toolkit.hpp"
+#include "CarlaBridgeClient.hpp"
+#include "CarlaBridgeToolkit.hpp"
 
 #if defined(BRIDGE_COCOA) || defined(BRIDGE_HWND) || defined(BRIDGE_X11)
 # error Embed UI uses Qt
@@ -49,7 +49,7 @@ public:
         : CarlaBridgeToolkit(client, uiTitle),
           settings("Cadence", appName)
     {
-        qDebug("CarlaToolkitGtk::CarlaToolkitGtk(%p, \"%s\")", client, uiTitle);
+        carla_debug("CarlaToolkitGtk::CarlaToolkitGtk(%p, \"%s\")", client, uiTitle);
 
         window = nullptr;
 
@@ -61,7 +61,7 @@ public:
 
     ~CarlaToolkitGtk()
     {
-        qDebug("CarlaToolkitGtk::~CarlaToolkitGtk()");
+        carla_debug("CarlaToolkitGtk::~CarlaToolkitGtk()");
 
         if (window)
             gtk_widget_destroy(window);
@@ -69,7 +69,7 @@ public:
 
     void init()
     {
-        qDebug("CarlaToolkitGtk::init()");
+        carla_debug("CarlaToolkitGtk::init()");
         CARLA_ASSERT(! window);
 
         gtk_init(&gargc, &gargv);
@@ -81,35 +81,35 @@ public:
 
     void exec(const bool showGui)
     {
-        qDebug("CarlaToolkitGtk::exec(%s)", bool2str(showGui));
+        carla_debug("CarlaToolkitGtk::exec(%s)", bool2str(showGui));
         CARLA_ASSERT(window);
-        CARLA_ASSERT(client);
+        CARLA_ASSERT(kClient);
 
-        GtkWidget* const widget = (GtkWidget*)client->getWidget();
+        GtkWidget* const widget = (GtkWidget*)kClient->getWidget();
 
         gtk_container_add(GTK_CONTAINER(window), widget);
 
-        gtk_window_set_resizable(GTK_WINDOW(window), client->isResizable());
-        gtk_window_set_title(GTK_WINDOW(window), uiTitle);
+        gtk_window_set_resizable(GTK_WINDOW(window), kClient->isResizable());
+        gtk_window_set_title(GTK_WINDOW(window), kUiTitle);
 
-        if (settings.contains(QString("%1/pos_x").arg(uiTitle)))
+        if (settings.contains(QString("%1/pos_x").arg(kUiTitle)))
         {
             gtk_window_get_position(GTK_WINDOW(window), &lastX, &lastY);
 
             bool hasX, hasY;
-            lastX = settings.value(QString("%1/pos_x").arg(uiTitle), lastX).toInt(&hasX);
-            lastY = settings.value(QString("%1/pos_y").arg(uiTitle), lastY).toInt(&hasY);
+            lastX = settings.value(QString("%1/pos_x").arg(kUiTitle), lastX).toInt(&hasX);
+            lastY = settings.value(QString("%1/pos_y").arg(kUiTitle), lastY).toInt(&hasY);
 
             if (hasX && hasY)
                 gtk_window_move(GTK_WINDOW(window), lastX, lastY);
 
-            if (client->isResizable())
+            if (kClient->isResizable())
             {
                 gtk_window_get_size(GTK_WINDOW(window), &lastWidth, &lastHeight);
 
                 bool hasWidth, hasHeight;
-                lastWidth  = settings.value(QString("%1/width").arg(uiTitle), lastWidth).toInt(&hasWidth);
-                lastHeight = settings.value(QString("%1/height").arg(uiTitle), lastHeight).toInt(&hasHeight);
+                lastWidth  = settings.value(QString("%1/width").arg(kUiTitle), lastWidth).toInt(&hasWidth);
+                lastHeight = settings.value(QString("%1/height").arg(kUiTitle), lastHeight).toInt(&hasHeight);
 
                 if (hasWidth && hasHeight)
                     gtk_window_resize(GTK_WINDOW(window), lastWidth, lastHeight);
@@ -119,7 +119,7 @@ public:
         if (showGui)
             show();
         else
-            client->sendOscUpdate();
+            kClient->sendOscUpdate();
 
         // Timer
         g_timeout_add(50, gtk_ui_timeout, this);
@@ -134,7 +134,7 @@ public:
 
     void quit()
     {
-        qDebug("CarlaToolkitGtk::quit()");
+        carla_debug("CarlaToolkitGtk::quit()");
 
         if (window)
         {
@@ -147,7 +147,7 @@ public:
 
     void show()
     {
-        qDebug("CarlaToolkitGtk::show()");
+        carla_debug("CarlaToolkitGtk::show()");
         CARLA_ASSERT(window);
 
         if (window)
@@ -156,7 +156,7 @@ public:
 
     void hide()
     {
-        qDebug("CarlaToolkitGtk::hide()");
+        carla_debug("CarlaToolkitGtk::hide()");
         CARLA_ASSERT(window);
 
         if (window)
@@ -171,7 +171,7 @@ public:
 
     void resize(int width, int height)
     {
-        qDebug("CarlaToolkitGtk::resize(%i, %i)", width, height);
+        carla_debug("CarlaToolkitGtk::resize(%i, %i)", width, height);
         CARLA_ASSERT(window);
 
         if (window)
@@ -188,14 +188,14 @@ protected:
 
     void handleDestroy()
     {
-        qDebug("CarlaToolkitGtk::handleDestroy()");
+        carla_debug("CarlaToolkitGtk::handleDestroy()");
 
         window = nullptr;
 
-        settings.setValue(QString("%1/pos_x").arg(uiTitle), lastX);
-        settings.setValue(QString("%1/pos_y").arg(uiTitle), lastY);
-        settings.setValue(QString("%1/width").arg(uiTitle), lastWidth);
-        settings.setValue(QString("%1/height").arg(uiTitle), lastHeight);
+        settings.setValue(QString("%1/pos_x").arg(kUiTitle), lastX);
+        settings.setValue(QString("%1/pos_y").arg(kUiTitle), lastY);
+        settings.setValue(QString("%1/width").arg(kUiTitle), lastWidth);
+        settings.setValue(QString("%1/height").arg(kUiTitle), lastHeight);
         settings.sync();
     }
 
@@ -208,7 +208,7 @@ protected:
         }
 
         // FIXME?
-        return client->isOscControlRegistered() ? client->oscIdle() : false;
+        return kClient->isOscControlRegistered() ? kClient->oscIdle() : false;
     }
 
     // ---------------------------------------------------------------------

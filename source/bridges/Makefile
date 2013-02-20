@@ -19,7 +19,8 @@ BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo QtCore QtXml)
 LINK_FLAGS      += $(shell pkg-config --libs liblo QtCore QtXml)
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-BUILD_CXX_FLAGS += -DWANT_LADSPA -DWANT_DSSI -DWANT_LV2 -DWANT_VST
+BUILD_CXX_FLAGS += -DWANT_LADSPA -DWANT_DSSI
+#-DWANT_LV2 -DWANT_VST
 endif
 
 ifeq ($(HAVE_QT5),true)
@@ -34,7 +35,7 @@ endif
 # Plugin bridges
 
 BUILD_PLUGIN_FLAGS  = $(BUILD_CXX_FLAGS) -DBUILD_BRIDGE_PLUGIN -DBRIDGE_PLUGIN
-BUILD_PLUGIN_FLAGS += -DCARLA_ENGINE_JACK -I../carla-backend -I../carla-engine -I../carla-jackbridge -I../carla-plugin
+BUILD_PLUGIN_FLAGS += -DWANT_JACK -I../backend/engine -I../backend/plugin -I../libs
 BUILD_PLUGIN_FLAGS += $(shell pkg-config --cflags jack) $(QT_UI_FLAGS)
 
 LINK_PLUGIN_FLAGS   = $(LINK_FLAGS)
@@ -86,8 +87,7 @@ LINK_UI_VST_X11_FLAGS   = $(LINK_UI_FLAGS) $(QT_UI_LIBS)
 # --------------------------------------------------------------
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-all: ui_lv2-gtk2 ui_lv2-gtk3 ui_lv2-qt4 ui_lv2-qt5 ui_lv2-x11 ui_vst-x11
-# native
+all: native ui_lv2-gtk2 ui_lv2-gtk3 ui_lv2-qt4 ui_lv2-qt5 ui_lv2-x11 ui_vst-x11
 
 ifeq ($(HAVE_GTK2),true)
 ui_lv2-gtk2: carla-bridge-lv2-gtk2
@@ -143,9 +143,9 @@ OBJS_UI_LV2_LIBS = \
 # --------------------------------------------------------------
 # ui_lv2-gtk2
 
-OBJS_UI_LV2_GTK2 = carla_bridge_ui-lv2__lv2-gtk2.o \
-	carla_bridge_client__lv2.o carla_bridge_osc__lv2.o \
-	carla_bridge_toolkit__lv2.o carla_bridge_toolkit-gtk__lv2-gtk2.o
+OBJS_UI_LV2_GTK2 = CarlaBridgeUI-LV2__lv2-gtk2.o \
+	CarlaBridgeClient__lv2.o CarlaBridgeOsc__lv2.o \
+	CarlaBridgeToolkit__lv2.o CarlaBridgeToolkitGtk__lv2-gtk2.o
 
 carla-bridge-lv2-gtk2: $(OBJS_UI_LV2_GTK2) $(OBJS_UI_LV2_LIBS)
 	$(CXX) $^ $(LINK_UI_LV2_GTK2_FLAGS) -o $@ && $(STRIP) $@
@@ -156,9 +156,9 @@ carla-bridge-lv2-gtk2: $(OBJS_UI_LV2_GTK2) $(OBJS_UI_LV2_LIBS)
 # --------------------------------------------------------------
 # ui_lv2-gtk3
 
-OBJS_UI_LV2_GTK3 = carla_bridge_ui-lv2__lv2-gtk3.o \
-	carla_bridge_client__lv2.o carla_bridge_osc__lv2.o \
-	carla_bridge_toolkit__lv2.o carla_bridge_toolkit-gtk__lv2-gtk3.o
+OBJS_UI_LV2_GTK3 = CarlaBridgeUI-LV2__lv2-gtk3.o \
+	CarlaBridgeClient__lv2.o CarlaBridgeOsc__lv2.o \
+	CarlaBridgeToolkit__lv2.o CarlaBridgeToolkitGtk__lv2-gtk3.o
 
 carla-bridge-lv2-gtk3: $(OBJS_UI_LV2_GTK3) $(OBJS_UI_LV2_LIBS)
 	$(CXX) $^ $(LINK_UI_LV2_GTK3_FLAGS) -o $@ && $(STRIP) $@
@@ -169,9 +169,9 @@ carla-bridge-lv2-gtk3: $(OBJS_UI_LV2_GTK3) $(OBJS_UI_LV2_LIBS)
 # --------------------------------------------------------------
 # ui_lv2-qt4
 
-OBJS_UI_LV2_QT4 = carla_bridge_ui-lv2__lv2-qt4.o \
-	carla_bridge_client__lv2.o carla_bridge_osc__lv2.o \
-	carla_bridge_toolkit__lv2.o carla_bridge_toolkit-qt__lv2-qt4.o
+OBJS_UI_LV2_QT4 = CarlaBridgeUI-LV2__lv2-qt4.o \
+	CarlaBridgeClient__lv2.o CarlaBridgeOsc__lv2.o \
+	CarlaBridgeToolkit__lv2.o CarlaBridgeToolkitQt__lv2-qt4.o
 
 carla-bridge-lv2-qt4: $(OBJS_UI_LV2_QT4) $(OBJS_UI_LV2_LIBS)
 	$(CXX) $^ $(LINK_UI_LV2_QT4_FLAGS) -o $@ && $(STRIP) $@
@@ -182,9 +182,9 @@ carla-bridge-lv2-qt4: $(OBJS_UI_LV2_QT4) $(OBJS_UI_LV2_LIBS)
 # --------------------------------------------------------------
 # ui_lv2-qt5
 
-OBJS_UI_LV2_QT5 = carla_bridge_ui-lv2__lv2-qt5.o \
-	carla_bridge_client__lv2.o carla_bridge_osc__lv2.o \
-	carla_bridge_toolkit__lv2.o carla_bridge_toolkit-qt__lv2-qt5.o
+OBJS_UI_LV2_QT5 = CarlaBridgeUI-LV2__lv2-qt5.o \
+	CarlaBridgeClient__lv2.o CarlaBridgeOsc__lv2.o \
+	CarlaBridgeToolkit__lv2.o CarlaBridgeToolkitQt__lv2-qt5.o
 
 carla-bridge-lv2-qt5: $(OBJS_UI_LV2_QT5) $(OBJS_UI_LV2_LIBS)
 	$(CXX) $^ $(LINK_UI_LV2_QT5_FLAGS) -o $@ && $(STRIP) $@
@@ -195,9 +195,9 @@ carla-bridge-lv2-qt5: $(OBJS_UI_LV2_QT5) $(OBJS_UI_LV2_LIBS)
 # --------------------------------------------------------------
 # ui_lv2-x11
 
-OBJS_UI_LV2_X11 = carla_bridge_ui-lv2__lv2-x11.o \
-	carla_bridge_client__lv2.o carla_bridge_osc__lv2.o \
-	carla_bridge_toolkit__lv2.o carla_bridge_toolkit-qt__lv2-x11.o
+OBJS_UI_LV2_X11 = CarlaBridgeUI-LV2__lv2-x11.o \
+	CarlaBridgeClient__lv2.o CarlaBridgeOsc__lv2.o \
+	CarlaBridgeToolkit__lv2.o CarlaBridgeToolkitQt__lv2-x11.o
 
 carla-bridge-lv2-x11: $(OBJS_UI_LV2_X11) $(OBJS_UI_LV2_LIBS)
 	$(CXX) $^ $(LINK_UI_LV2_X11_FLAGS) -o $@ && $(STRIP) $@
@@ -208,9 +208,9 @@ carla-bridge-lv2-x11: $(OBJS_UI_LV2_X11) $(OBJS_UI_LV2_LIBS)
 # --------------------------------------------------------------
 # ui_vst-hwnd
 
-OBJS_UI_VST_HWND = carla_bridge_ui-vst__vst-hwnd.o \
-	carla_bridge_client__vst.o carla_bridge_osc__vst.o \
-	carla_bridge_toolkit__vst.o carla_bridge_toolkit-qt__vst-hwnd.o
+OBJS_UI_VST_HWND = CarlaBridgeUI-VST__vst-hwnd.o \
+	CarlaBridgeClient__vst.o CarlaBridgeOsc__vst.o \
+	CarlaBridgeToolkit__vst.o CarlaBridgeToolkitQt__vst-hwnd.o
 
 carla-bridge-vst-hwnd.exe: $(OBJS_UI_VST_HWND)
 	$(CXX) $^ $(LINK_UI_VST_HWND_FLAGS) -o $@ && $(STRIP) $@
@@ -221,9 +221,9 @@ carla-bridge-vst-hwnd.exe: $(OBJS_UI_VST_HWND)
 # --------------------------------------------------------------
 # ui_vst-x11
 
-OBJS_UI_VST_X11 = carla_bridge_ui-vst__vst-x11.o \
-	carla_bridge_client__vst.o carla_bridge_osc__vst.o \
-	carla_bridge_toolkit__vst.o carla_bridge_toolkit-qt__vst-x11.o
+OBJS_UI_VST_X11 = CarlaBridgeUI-VST__vst-x11.o \
+	CarlaBridgeClient__vst.o CarlaBridgeOsc__vst.o \
+	CarlaBridgeToolkit__vst.o CarlaBridgeToolkitQt__vst-x11.o
 
 carla-bridge-vst-x11: $(OBJS_UI_VST_X11)
 	$(CXX) $^ $(LINK_UI_VST_X11_FLAGS) -o $@ && $(STRIP) $@
@@ -242,34 +242,36 @@ NATIVE_BUILD_FLAGS += $(shell pkg-config --cflags suil-0) -DWANT_SUIL
 NATIVE_LINK_FLAGS  += $(shell pkg-config --libs suil-0)
 endif
 
-OBJS_NATIVE  = carla_bridge_plugin__native.o \
-	carla_bridge_client__native.o carla_bridge_osc__native.o \
-	carla_bridge_toolkit__native.o
-
-# carla
-OBJS_NATIVE += \
-	../carla/Shared__native.o
+OBJS_NATIVE  = CarlaBridgePlugin__native.o \
+	CarlaBridgeClient__native.o CarlaBridgeOsc__native.o
 
 # carla-engine
 OBJS_NATIVE += \
-	../carla-engine/carla_engine__native.o \
-	../carla-engine/carla_engine_osc__native.o \
-	../carla-engine/carla_engine_thread__native.o \
-	../carla-engine/jack__native.o
+	../backend/engine/CarlaEngine__native.o \
+	../backend/engine/CarlaEngineOsc__native.o \
+	../backend/engine/CarlaEngineThread__native.o \
+	../backend/engine/CarlaEngineJack__native.o
 
 # carla-plugin
 OBJS_NATIVE += \
-	../carla-plugin/carla_plugin__native.o \
-	../carla-plugin/carla_plugin_thread__native.o \
-	../carla-plugin/ladspa__native.o \
-	../carla-plugin/dssi__native.o \
-	../carla-plugin/lv2__native.o \
-	../carla-plugin/vst__native.o
+	../backend/plugin/CarlaPlugin__native.o \
+	../backend/plugin/CarlaPluginThread__native.o \
+	../backend/plugin/NativePlugin__native.o \
+	../backend/plugin/LadspaPlugin__native.o \
+	../backend/plugin/DssiPlugin__native.o \
+	../backend/plugin/Lv2Plugin__native.o \
+	../backend/plugin/VstPlugin__native.o \
+	../backend/plugin/FluidSynthPlugin__native.o \
+	../backend/plugin/LinuxSamplerPlugin__native.o
+
+# carla-standalone
+OBJS_NATIVE += \
+	../backend/standalone/CarlaStandalone__native.o
 
 # libs
 OBJS_NATIVE += \
-	../carla-lilv/carla_lilv.a \
-	../carla-rtmempool/carla_rtmempool.a
+	../libs/lilv.a \
+	../libs/rtmempool.a
 
 carla-bridge-native: $(OBJS_NATIVE)
 	$(CXX) $^ $(NATIVE_LINK_FLAGS) -o $@ && $(STRIP) $@
@@ -281,12 +283,7 @@ carla-bridge-native: $(OBJS_NATIVE)
 # posix32
 
 OBJS_POSIX32  = carla_bridge_plugin__posix32.o \
-	carla_bridge_client__posix32.o carla_bridge_osc__posix32.o \
-	carla_bridge_toolkit__posix32.o
-
-# carla
-OBJS_POSIX32 += \
-	../carla/Shared__posix32.o
+	carla_bridge_client__posix32.o carla_bridge_osc__posix32.o
 
 # carla-engine
 OBJS_POSIX32 += \
@@ -319,8 +316,7 @@ carla-bridge-posix32: $(OBJS_POSIX32)
 # posix64
 
 OBJS_POSIX64  = carla_bridge_plugin__posix64.o \
-	carla_bridge_client__posix64.o carla_bridge_osc__posix64.o \
-	carla_bridge_toolkit__posix64.o
+	carla_bridge_client__posix64.o carla_bridge_osc__posix64.o
 
 # carla
 OBJS_POSIX64 += \
@@ -357,12 +353,7 @@ carla-bridge-posix64: $(OBJS_POSIX64)
 # win32
 
 OBJS_WIN32 = carla_bridge_plugin__win32.o \
-	carla_bridge_client__win32.o carla_bridge_osc__win32.o \
-	carla_bridge_toolkit__win32.o
-
-# carla
-OBJS_WIN32 += \
-	../carla/Shared__win32.o
+	carla_bridge_client__win32.o carla_bridge_osc__win32.o
 
 # carla-engine
 OBJS_WIN32 += \
@@ -395,12 +386,7 @@ carla-bridge-win32.exe: $(OBJS_WIN32) ../carla-jackbridge/libcarla-jackbridge-wi
 # win64
 
 OBJS_WIN64 = carla_bridge_plugin__win64.o \
-	carla_bridge_client__win64.o carla_bridge_osc__win64.o \
-	carla_bridge_toolkit__win64.o
-
-# carla
-OBJS_WIN64 += \
-	../carla/Shared__win64.o
+	carla_bridge_client__win64.o carla_bridge_osc__win64.o
 
 # carla-engine
 OBJS_WIN64 += \

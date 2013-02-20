@@ -17,7 +17,7 @@
 
 #ifdef BRIDGE_LV2
 
-#include "carla_bridge_client.hpp"
+#include "CarlaBridgeClient.hpp"
 #include "CarlaLv2Utils.hpp"
 #include "CarlaMIDI.h"
 
@@ -328,12 +328,12 @@ public:
     // ---------------------------------------------------------------------
     // ui initialization
 
-    bool init(const char* pluginURI, const char* uiURI)
+    bool uiInit(const char* pluginURI, const char* uiURI)
     {
         // -----------------------------------------------------------------
         // init
 
-        CarlaBridgeClient::init(pluginURI, uiURI);
+        CarlaBridgeClient::uiInit(pluginURI, uiURI);
 
         // -----------------------------------------------------------------
         // get plugin from lv2_rdf (lilv)
@@ -428,9 +428,9 @@ public:
         return true;
     }
 
-    void close()
+    void uiClose()
     {
-        CarlaBridgeClient::close();
+        CarlaBridgeClient::uiClose();
 
         if (handle && descriptor && descriptor->cleanup)
             descriptor->cleanup(handle);
@@ -1017,7 +1017,7 @@ int CarlaBridgeOsc::handleMsgLv2TransferAtom(CARLA_BRIDGE_OSC_HANDLE_ARGS)
     qDebug("CarlaBridgeOsc::handleMsgLv2TransferAtom()");
     CARLA_BRIDGE_OSC_CHECK_OSC_TYPES(3, "iss");
 
-    if (! client)
+    if (! kClient)
         return 1;
 
     const int32_t portIndex   = argv[0]->i;
@@ -1028,7 +1028,7 @@ int CarlaBridgeOsc::handleMsgLv2TransferAtom(CARLA_BRIDGE_OSC_HANDLE_ARGS)
     chunk = QByteArray::fromBase64(atomBuf);
 
     LV2_Atom* const atom = (LV2_Atom*)chunk.constData();
-    CarlaLv2Client* const lv2Client = (CarlaLv2Client*)client;
+    CarlaLv2Client* const lv2Client = (CarlaLv2Client*)kClient;
 
     atom->type = lv2Client->getCustomURID(typeStr);
     lv2Client->handleTransferAtom(portIndex, atom);
@@ -1041,7 +1041,7 @@ int CarlaBridgeOsc::handleMsgLv2TransferEvent(CARLA_BRIDGE_OSC_HANDLE_ARGS)
     qDebug("CarlaBridgeOsc::handleMsgLv2TransferEvent()");
     CARLA_BRIDGE_OSC_CHECK_OSC_TYPES(3, "iss");
 
-    if (! client)
+    if (! kClient)
         return 1;
 
     const int32_t portIndex   = argv[0]->i;
@@ -1052,7 +1052,7 @@ int CarlaBridgeOsc::handleMsgLv2TransferEvent(CARLA_BRIDGE_OSC_HANDLE_ARGS)
     chunk = QByteArray::fromBase64(atomBuf);
 
     LV2_Atom* const atom = (LV2_Atom*)chunk.constData();
-    CarlaLv2Client* const lv2Client = (CarlaLv2Client*)client;
+    CarlaLv2Client* const lv2Client = (CarlaLv2Client*)kClient;
 
     atom->type = lv2Client->getCustomURID(typeStr);
     lv2Client->handleTransferEvent(portIndex, atom);
@@ -1089,15 +1089,13 @@ int main(int argc, char* argv[])
     CarlaLv2Client client(uiTitle);
 
     // Init OSC
-    if (useOsc && ! client.oscInit(oscUrl))
-    {
-        return -1;
-    }
+    if (useOsc)
+        client.oscInit(oscUrl);
 
     // Load UI
     int ret;
 
-    if (client.init(pluginURI, uiURI))
+    if (client.uiInit(pluginURI, uiURI))
     {
         client.toolkitExec(!useOsc);
         ret = 0;
@@ -1110,12 +1108,10 @@ int main(int argc, char* argv[])
 
     // Close OSC
     if (useOsc)
-    {
         client.oscClose();
-    }
 
     // Close LV2 client
-    client.close();
+    client.uiClose();
 
     return ret;
 }
