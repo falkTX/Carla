@@ -38,7 +38,7 @@ public:
     NativePlugin(CarlaEngine* const engine, const unsigned int id)
         : CarlaPlugin(engine, id)
     {
-        qDebug("NativePlugin::NativePlugin(%p, %i)", engine, id);
+        carla_debug("NativePlugin::NativePlugin(%p, %i)", engine, id);
 
         fHandle  = nullptr;
         fHandle2 = nullptr;
@@ -61,7 +61,7 @@ public:
 
     ~NativePlugin()
     {
-        qDebug("NativePlugin::~NativePlugin()");
+        carla_debug("NativePlugin::~NativePlugin()");
 
         if (fDescriptor != nullptr)
         {
@@ -324,13 +324,13 @@ public:
         CARLA_ASSERT(value);
 
         if (! type)
-            return qCritical("NativePlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is not string", type, key, value, bool2str(sendGui));
+            return carla_stderr2("NativePlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is not string", type, key, value, bool2str(sendGui));
 
         if (! key)
-            return qCritical("NativePlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - key is null", type, key, value, bool2str(sendGui));
+            return carla_stderr2("NativePlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - key is null", type, key, value, bool2str(sendGui));
 
         if (! value)
-            return qCritical("Nativelugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - value is null", type, key, value, bool2str(sendGui));
+            return carla_stderr2("Nativelugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - value is null", type, key, value, bool2str(sendGui));
 
         if (descriptor && handle)
         {
@@ -405,7 +405,7 @@ public:
 
     void reload()
     {
-        qDebug("NativePlugin::reload() - start");
+        carla_debug("NativePlugin::reload() - start");
         CARLA_ASSERT(fDescriptor != nullptr);
 
 #if 0
@@ -516,7 +516,7 @@ public:
             else
                 sprintf(portName, "output_%02i", j+1);
 
-            qDebug("Audio Out #%i", j);
+            carla_debug("Audio Out #%i", j);
             aOut.ports[j]    = (CarlaEngineAudioPort*)x_client->addPort(CarlaEnginePortTypeAudio, portName, false);
             aOut.rindexes[j] = j;
             needsCtrlIn = true;
@@ -584,7 +584,7 @@ public:
 
             if (max - min == 0.0)
             {
-                qWarning("Broken plugin parameter: max - min == 0");
+                carla_stderr("Broken plugin parameter: max - min == 0");
                 max = min + 0.1;
             }
 
@@ -723,13 +723,13 @@ public:
 
         kData->client->activate();
 
-        qDebug("NativePlugin::reload() - end");
+        carla_debug("NativePlugin::reload() - end");
     }
 
 #if 0
     void reloadPrograms(const bool init)
     {
-        qDebug("NativePlugin::reloadPrograms(%s)", bool2str(init));
+        carla_debug("NativePlugin::reloadPrograms(%s)", bool2str(init));
         uint32_t i, oldCount = midiprog.count;
 
         // Delete old programs
@@ -1365,7 +1365,7 @@ public:
 
     void removeClientPorts()
     {
-        qDebug("NativePlugin::removeClientPorts() - start");
+        carla_debug("NativePlugin::removeClientPorts() - start");
 
         for (uint32_t i=0; i < mIn.count; i++)
         {
@@ -1381,7 +1381,7 @@ public:
 
         CarlaPlugin::removeClientPorts();
 
-        qDebug("NativePlugin::removeClientPorts() - end");
+        carla_debug("NativePlugin::removeClientPorts() - end");
     }
 
     void initBuffers()
@@ -1403,7 +1403,7 @@ public:
 
     void deleteBuffers()
     {
-        qDebug("NativePlugin::deleteBuffers() - start");
+        carla_debug("NativePlugin::deleteBuffers() - start");
 
         if (mIn.count > 0)
         {
@@ -1427,7 +1427,7 @@ public:
 
         CarlaPlugin::deleteBuffers();
 
-        qDebug("NativePlugin::deleteBuffers() - end");
+        carla_debug("NativePlugin::deleteBuffers() - end");
     }
 
     // -------------------------------------------------------------------
@@ -1465,7 +1465,7 @@ protected:
 
         if (! fIsProcessing)
         {
-            qCritical("NativePlugin::handleWriteMidiEvent(%p) - received MIDI out events outside audio thread, ignoring", event);
+            carla_stderr2("NativePlugin::handleWriteMidiEvent(%p) - received MIDI out events outside audio thread, ignoring", event);
             return false;
         }
 
@@ -1687,7 +1687,7 @@ const PluginDescriptor* CarlaPlugin::getNativePluginDescriptor(const size_t inde
 
 CarlaPlugin* CarlaPlugin::newNative(const Initializer& init)
 {
-    qDebug("CarlaPlugin::newNative(%p, \"%s\", \"%s\", \"%s\")", init.engine, init.filename, init.name, init.label);
+    carla_debug("CarlaPlugin::newNative(%p, \"%s\", \"%s\", \"%s\")", init.engine, init.filename, init.name, init.label);
 
     NativePlugin* const plugin = new NativePlugin(init.engine, init.id);
 

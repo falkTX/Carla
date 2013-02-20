@@ -199,7 +199,7 @@ public:
     Lv2Plugin(CarlaEngine* const engine, const unsigned short id)
         : CarlaPlugin(engine, id)
     {
-        qDebug("Lv2Plugin::Lv2Plugin()");
+        carla_debug("Lv2Plugin::Lv2Plugin()");
 
         m_type   = PLUGIN_LV2;
         m_count += 1;
@@ -315,7 +315,7 @@ public:
 
     ~Lv2Plugin()
     {
-        qDebug("Lv2Plugin::~Lv2Plugin()");
+        carla_debug("Lv2Plugin::~Lv2Plugin()");
         m_count -= 1;
 
         // close UI
@@ -346,7 +346,7 @@ public:
                     // Wait a bit first, try safe quit, then force kill
                     if (osc.thread->isRunning() && ! osc.thread->wait(x_engine->getOptions().oscUiTimeout))
                     {
-                        qWarning("Failed to properly stop LV2 OSC GUI thread");
+                        carla_stderr("Failed to properly stop LV2 OSC GUI thread");
                         osc.thread->terminate();
                     }
 
@@ -830,13 +830,13 @@ public:
         CARLA_ASSERT(value);
 
         if (! type)
-            return qCritical("Lv2Plugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is invalid", type, key, value, bool2str(sendGui));
+            return carla_stderr2("Lv2Plugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is invalid", type, key, value, bool2str(sendGui));
 
         if (! key)
-            return qCritical("Lv2Plugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - key is null", type, key, value, bool2str(sendGui));
+            return carla_stderr2("Lv2Plugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - key is null", type, key, value, bool2str(sendGui));
 
         if (! value)
-            return qCritical("Lv2Plugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - value is null", type, key, value, bool2str(sendGui));
+            return carla_stderr2("Lv2Plugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - value is null", type, key, value, bool2str(sendGui));
 
         CarlaPlugin::setCustomData(type, key, value, sendGui);
 
@@ -860,22 +860,22 @@ public:
             switch (status)
             {
             case LV2_STATE_SUCCESS:
-                qDebug("Lv2Plugin::setCustomData(\"%s\", \"%s\", <value>, %s) - success", type, key, bool2str(sendGui));
+                carla_debug("Lv2Plugin::setCustomData(\"%s\", \"%s\", <value>, %s) - success", type, key, bool2str(sendGui));
                 break;
             case LV2_STATE_ERR_UNKNOWN:
-                qWarning("Lv2Plugin::setCustomData(\"%s\", \"%s\", <value>, %s) - unknown error", type, key, bool2str(sendGui));
+                carla_stderr("Lv2Plugin::setCustomData(\"%s\", \"%s\", <value>, %s) - unknown error", type, key, bool2str(sendGui));
                 break;
             case LV2_STATE_ERR_BAD_TYPE:
-                qWarning("Lv2Plugin::setCustomData(\"%s\", \"%s\", <value>, %s) - error, bad type", type, key, bool2str(sendGui));
+                carla_stderr("Lv2Plugin::setCustomData(\"%s\", \"%s\", <value>, %s) - error, bad type", type, key, bool2str(sendGui));
                 break;
             case LV2_STATE_ERR_BAD_FLAGS:
-                qWarning("Lv2Plugin::setCustomData(\"%s\", \"%s\", <value>, %s) - error, bad flags", type, key, bool2str(sendGui));
+                carla_stderr("Lv2Plugin::setCustomData(\"%s\", \"%s\", <value>, %s) - error, bad flags", type, key, bool2str(sendGui));
                 break;
             case LV2_STATE_ERR_NO_FEATURE:
-                qWarning("Lv2Plugin::setCustomData(\"%s\", \"%s\", <value>, %s) - error, missing feature", type, key, bool2str(sendGui));
+                carla_stderr("Lv2Plugin::setCustomData(\"%s\", \"%s\", <value>, %s) - error, missing feature", type, key, bool2str(sendGui));
                 break;
             case LV2_STATE_ERR_NO_PROPERTY:
-                qWarning("Lv2Plugin::setCustomData(\"%s\", \"%s\", <value>, %s) - error, missing property", type, key, bool2str(sendGui));
+                carla_stderr("Lv2Plugin::setCustomData(\"%s\", \"%s\", <value>, %s) - error, missing property", type, key, bool2str(sendGui));
                 break;
             }
         }
@@ -923,7 +923,7 @@ public:
 
     void setGuiContainer(GuiContainer* const container)
     {
-        qDebug("Lv2Plugin::setGuiContainer(%p)", container);
+        carla_debug("Lv2Plugin::setGuiContainer(%p)", container);
         CARLA_ASSERT(container);
 
         switch(gui.type)
@@ -967,7 +967,7 @@ public:
 
     void showGui(const bool yesNo)
     {
-        qDebug("Lv2Plugin::showGui(%s)", bool2str(yesNo));
+        carla_debug("Lv2Plugin::showGui(%s)", bool2str(yesNo));
 
         switch(gui.type)
         {
@@ -998,7 +998,7 @@ public:
 
                     if (rdf_descriptor->Author && strcmp(rdf_descriptor->Author, "linuxDSP") == 0)
                     {
-                        qWarning("linuxDSP LV2 UI hack (force close instead of hide)");
+                        carla_stderr("linuxDSP LV2 UI hack (force close instead of hide)");
 
                         if (ui.descriptor->cleanup)
                             ui.descriptor->cleanup(ui.handle);
@@ -1037,7 +1037,7 @@ public:
 
             if (! osc.thread)
             {
-                qCritical("Lv2Plugin::showGui(%s) - attempt to show gui, but it does not exist!", bool2str(yesNo));
+                carla_stderr2("Lv2Plugin::showGui(%s) - attempt to show gui, but it does not exist!", bool2str(yesNo));
                 return;
             }
 
@@ -1102,7 +1102,7 @@ public:
 
     void reload()
     {
-        qDebug("Lv2Plugin::reload() - start");
+        carla_debug("Lv2Plugin::reload() - start");
         CARLA_ASSERT(descriptor && rdf_descriptor);
 
         const ProcessMode processMode(x_engine->getOptions().processMode);
@@ -1347,20 +1347,20 @@ public:
                     }
                 }
                 else
-                    qWarning("WARNING - Got a broken Port (Audio, but not input or output)");
+                    carla_stderr("WARNING - Got a broken Port (Audio, but not input or output)");
             }
             else if (LV2_IS_PORT_CV(portTypes))
             {
                 if (LV2_IS_PORT_INPUT(portTypes))
                 {
-                    qWarning("WARNING - CV Ports are not supported yet");
+                    carla_stderr("WARNING - CV Ports are not supported yet");
                 }
                 else if (LV2_IS_PORT_OUTPUT(portTypes))
                 {
-                    qWarning("WARNING - CV Ports are not supported yet");
+                    carla_stderr("WARNING - CV Ports are not supported yet");
                 }
                 else
-                    qWarning("WARNING - Got a broken Port (CV, but not input or output)");
+                    carla_stderr("WARNING - Got a broken Port (CV, but not input or output)");
 
                 descriptor->connect_port(handle, i, nullptr);
                 if (h2) descriptor->connect_port(h2, i, nullptr);
@@ -1404,7 +1404,7 @@ public:
                     }
                 }
                 else
-                    qWarning("WARNING - Got a broken Port (Atom Sequence, but not input or output)");
+                    carla_stderr("WARNING - Got a broken Port (Atom Sequence, but not input or output)");
             }
             else if (LV2_IS_PORT_EVENT(portTypes))
             {
@@ -1437,7 +1437,7 @@ public:
                     }
                 }
                 else
-                    qWarning("WARNING - Got a broken Port (Event, but not input or output)");
+                    carla_stderr("WARNING - Got a broken Port (Event, but not input or output)");
             }
             else if (LV2_IS_PORT_MIDI_LL(portTypes))
             {
@@ -1462,7 +1462,7 @@ public:
                     evOut.data[j].rindex = i;
                 }
                 else
-                    qWarning("WARNING - Got a broken Port (Midi, but not input or output)");
+                    carla_stderr("WARNING - Got a broken Port (Midi, but not input or output)");
             }
             else if (LV2_IS_PORT_CONTROL(portTypes))
             {
@@ -1505,7 +1505,7 @@ public:
 
                 if (max - min == 0.0)
                 {
-                    qWarning("Broken plugin parameter: max - min == 0");
+                    carla_stderr("Broken plugin parameter: max - min == 0");
                     max = min + 0.1;
                 }
 
@@ -1562,7 +1562,7 @@ public:
                 {
                     if (LV2_IS_PORT_DESIGNATION_LATENCY(portDesignation))
                     {
-                        qWarning("Plugin has latency input port, this should not happen!");
+                        carla_stderr("Plugin has latency input port, this should not happen!");
                     }
                     else if (LV2_IS_PORT_DESIGNATION_SAMPLE_RATE(portDesignation))
                     {
@@ -1624,7 +1624,7 @@ public:
                     }
                     else if (LV2_IS_PORT_DESIGNATION_FREEWHEELING(portDesignation))
                     {
-                        qWarning("Plugin has freewheeling output port, this should not happen!");
+                        carla_stderr("Plugin has freewheeling output port, this should not happen!");
                     }
                     else if (LV2_IS_PORT_DESIGNATION_TIME(portDesignation))
                     {
@@ -1641,7 +1641,7 @@ public:
                 else
                 {
                     param.data[j].type = PARAMETER_UNKNOWN;
-                    qWarning("WARNING - Got a broken Port (Control, but not input or output)");
+                    carla_stderr("WARNING - Got a broken Port (Control, but not input or output)");
                 }
 
                 // extra parameter hints
@@ -1806,12 +1806,12 @@ public:
 
         x_client->activate();
 
-        qDebug("Lv2Plugin::reload() - end");
+        carla_debug("Lv2Plugin::reload() - end");
     }
 
     void reloadPrograms(const bool init)
     {
-        qDebug("Lv2Plugin::reloadPrograms(%s)", bool2str(init));
+        carla_debug("Lv2Plugin::reloadPrograms(%s)", bool2str(init));
         uint32_t i, oldCount = midiprog.count;
 
         // Delete old programs
@@ -2726,13 +2726,13 @@ public:
 
                     while (offset < size)
                     {
-                        qDebug("output event??, offset:%i, size:%i", offset, size);
+                        carla_debug("output event??, offset:%i, size:%i", offset, size);
                         const LV2_Atom_Event* const aev = (LV2_Atom_Event*)((char*)LV2_ATOM_CONTENTS(LV2_Atom_Sequence, evOut.data[i].atom) + offset);
 
                         if ((! aev) || aev->body.type == CARLA_URI_MAP_ID_NULL)
                             break;
 
-                        qDebug("output event ------------------------------ YES!");
+                        carla_debug("output event ------------------------------ YES!");
 
                         if (aev->body.type == CARLA_URI_MAP_ID_MIDI_EVENT)
                         {
@@ -2809,7 +2809,7 @@ public:
 
     void postEventHandleCustom(const int32_t size, const int32_t, const double, const void* const data)
     {
-        qDebug("Lv2Plugin::postEventHandleCustom(%i, %p)", size, data);
+        carla_debug("Lv2Plugin::postEventHandleCustom(%i, %p)", size, data);
         CARLA_ASSERT(ext.worker && ext.worker->work);
 
         if (ext.worker && ext.worker->work)
@@ -2928,7 +2928,7 @@ public:
 
     void removeClientPorts()
     {
-        qDebug("Lv2Plugin::removeClientPorts() - start");
+        carla_debug("Lv2Plugin::removeClientPorts() - start");
 
         for (uint32_t i=0; i < evIn.count; i++)
         {
@@ -2950,7 +2950,7 @@ public:
 
         CarlaPlugin::removeClientPorts();
 
-        qDebug("Lv2Plugin::removeClientPorts() - end");
+        carla_debug("Lv2Plugin::removeClientPorts() - end");
     }
 
     void initBuffers()
@@ -2974,7 +2974,7 @@ public:
 
     void deleteBuffers()
     {
-        qDebug("Lv2Plugin::deleteBuffers() - start");
+        carla_debug("Lv2Plugin::deleteBuffers() - start");
 
         if (evIn.count > 0)
         {
@@ -3033,14 +3033,14 @@ public:
 
         CarlaPlugin::deleteBuffers();
 
-        qDebug("Lv2Plugin::deleteBuffers() - end");
+        carla_debug("Lv2Plugin::deleteBuffers() - end");
     }
 
     // -------------------------------------------------------------------
 
     uint32_t getCustomURID(const char* const uri)
     {
-        qDebug("Lv2Plugin::getCustomURID(%s)", uri);
+        carla_debug("Lv2Plugin::getCustomURID(%s)", uri);
         CARLA_ASSERT(uri);
 
         if (! uri)
@@ -3059,7 +3059,7 @@ public:
 
     const char* getCustomURIString(const LV2_URID urid) const
     {
-        qDebug("Lv2Plugin::getCustomURIString(%i)", urid);
+        carla_debug("Lv2Plugin::getCustomURIString(%i)", urid);
         CARLA_ASSERT(urid > CARLA_URI_MAP_ID_NULL);
 
         if (urid == CARLA_URI_MAP_ID_NULL)
@@ -3074,7 +3074,7 @@ public:
 
     void handleTransferAtom(const int32_t portIndex, const LV2_Atom* const atom)
     {
-        qDebug("Lv2Plugin::handleTransferAtom(%i, %p)", portIndex, atom);
+        carla_debug("Lv2Plugin::handleTransferAtom(%i, %p)", portIndex, atom);
         CARLA_ASSERT(portIndex >= 0);
         CARLA_ASSERT(atom);
 
@@ -3083,7 +3083,7 @@ public:
 
     void handleTransferEvent(const int32_t portIndex, const LV2_Atom* const atom)
     {
-        qDebug("Lv2Plugin::handleTransferEvent(%i, %p)", portIndex, atom);
+        carla_debug("Lv2Plugin::handleTransferEvent(%i, %p)", portIndex, atom);
         CARLA_ASSERT(portIndex >= 0);
         CARLA_ASSERT(atom);
 
@@ -3127,31 +3127,31 @@ public:
         // do basic checks
         if (! key)
         {
-            qWarning("Lv2Plugin::handleStateStore(%i, %p, " P_SIZE ", %i, %i) - invalid key", key, value, size, type, flags);
+            carla_stderr("Lv2Plugin::handleStateStore(%i, %p, " P_SIZE ", %i, %i) - invalid key", key, value, size, type, flags);
             return LV2_STATE_ERR_NO_PROPERTY;
         }
 
         if (! value)
         {
-            qWarning("Lv2Plugin::handleStateStore(%i, %p, " P_SIZE ", %i, %i) - invalid value", key, value, size, type, flags);
+            carla_stderr("Lv2Plugin::handleStateStore(%i, %p, " P_SIZE ", %i, %i) - invalid value", key, value, size, type, flags);
             return LV2_STATE_ERR_NO_PROPERTY;
         }
 
         if (! uriKey)
         {
-            qWarning("Lv2Plugin::handleStateStore(%i, %p, " P_SIZE ", %i, %i) - invalid key URI", key, value, size, type, flags);
+            carla_stderr("Lv2Plugin::handleStateStore(%i, %p, " P_SIZE ", %i, %i) - invalid key URI", key, value, size, type, flags);
             return LV2_STATE_ERR_NO_PROPERTY;
         }
 
         if (! flags & LV2_STATE_IS_POD)
         {
-            qWarning("Lv2Plugin::handleStateStore(%i, %p, " P_SIZE ", %i, %i) - invalid flags", key, value, size, type, flags);
+            carla_stderr("Lv2Plugin::handleStateStore(%i, %p, " P_SIZE ", %i, %i) - invalid flags", key, value, size, type, flags);
             return LV2_STATE_ERR_BAD_FLAGS;
         }
 
         if (! stype)
         {
-            qCritical("Lv2Plugin::handleStateStore(%i, %p, " P_SIZE ", %i, %i) - invalid type", key, value, size, type, flags);
+            carla_stderr2("Lv2Plugin::handleStateStore(%i, %p, " P_SIZE ", %i, %i) - invalid type", key, value, size, type, flags);
             return LV2_STATE_ERR_BAD_TYPE;
         }
 
@@ -3195,7 +3195,7 @@ public:
 
         if (! uriKey)
         {
-            qCritical("Lv2Plugin::handleStateRetrieve(%i, %p, %p, %p) - failed to find key", key, size, type, flags);
+            carla_stderr2("Lv2Plugin::handleStateRetrieve(%i, %p, %p, %p) - failed to find key", key, size, type, flags);
             return nullptr;
         }
 
@@ -3214,7 +3214,7 @@ public:
 
         if (! stringData)
         {
-            qCritical("Lv2Plugin::handleStateRetrieve(%i, %p, %p, %p) - invalid key '%s'", key, size, type, flags, uriKey);
+            carla_stderr2("Lv2Plugin::handleStateRetrieve(%i, %p, %p, %p) - invalid key '%s'", key, size, type, flags, uriKey);
             return nullptr;
         }
 
@@ -3240,7 +3240,7 @@ public:
             return chunk.constData();
         }
 
-        qCritical("Lv2Plugin::handleStateRetrieve(%i, %p, %p, %p) - invalid key type '%s'", key, size, type, flags, stype);
+        carla_stderr2("Lv2Plugin::handleStateRetrieve(%i, %p, %p, %p) - invalid key type '%s'", key, size, type, flags, stype);
         return nullptr;
     }
 
@@ -3248,7 +3248,7 @@ public:
     {
         if (! ext.worker)
         {
-            qWarning("Lv2Plugin::handleWorkerSchedule(%i, %p) - plugin has no worker", size, data);
+            carla_stderr("Lv2Plugin::handleWorkerSchedule(%i, %p) - plugin has no worker", size, data);
             return LV2_WORKER_ERR_UNKNOWN;
         }
 
@@ -3423,7 +3423,7 @@ public:
 
     void initExternalUi()
     {
-        qDebug("Lv2Plugin::initExternalUi()");
+        carla_debug("Lv2Plugin::initExternalUi()");
 
         ui.widget = nullptr;
         ui.handle = ui.descriptor->instantiate(ui.descriptor, descriptor->URI, ui.rdf_descriptor->Bundle, carla_lv2_ui_write_function, this, &ui.widget, features);
@@ -3434,7 +3434,7 @@ public:
         }
         else
         {
-            qWarning("Lv2Plugin::initExternalUi() - failed to instantiate UI");
+            carla_stderr("Lv2Plugin::initExternalUi() - failed to instantiate UI");
             ui.handle = nullptr;
             ui.widget = nullptr;
             x_engine->callback(CALLBACK_SHOW_GUI, m_id, -1, 0, 0.0, nullptr);
@@ -3521,7 +3521,7 @@ public:
 
     static uint32_t carla_lv2_event_ref(const LV2_Event_Callback_Data callback_data, LV2_Event* const event)
     {
-        qDebug("Lv2Plugin::carla_lv2_event_ref(%p, %p)", callback_data, event);
+        carla_debug("Lv2Plugin::carla_lv2_event_ref(%p, %p)", callback_data, event);
         CARLA_ASSERT(callback_data);
         CARLA_ASSERT(event);
 
@@ -3530,7 +3530,7 @@ public:
 
     static uint32_t carla_lv2_event_unref(const LV2_Event_Callback_Data callback_data, LV2_Event* const event)
     {
-        qDebug("Lv2Plugin::carla_lv2_event_unref(%p, %p)", callback_data, event);
+        carla_debug("Lv2Plugin::carla_lv2_event_unref(%p, %p)", callback_data, event);
         CARLA_ASSERT(callback_data);
         CARLA_ASSERT(event);
 
@@ -3541,7 +3541,7 @@ public:
 
     static int carla_lv2_log_printf(const LV2_Log_Handle handle, const LV2_URID type, const char* const fmt, ...)
     {
-        qDebug("Lv2Plugin::carla_lv2_log_printf(%p, %i, \"%s\", ...)", handle, type, fmt);
+        carla_debug("Lv2Plugin::carla_lv2_log_printf(%p, %i, \"%s\", ...)", handle, type, fmt);
         CARLA_ASSERT(handle);
         CARLA_ASSERT(type > 0);
 
@@ -3560,7 +3560,7 @@ public:
 
     static int carla_lv2_log_vprintf(const LV2_Log_Handle handle, const LV2_URID type, const char* const fmt, va_list ap)
     {
-        qDebug("Lv2Plugin::carla_lv2_log_vprintf(%p, %i, \"%s\", ...)", handle, type, fmt);
+        carla_debug("Lv2Plugin::carla_lv2_log_vprintf(%p, %i, \"%s\", ...)", handle, type, fmt);
         CARLA_ASSERT(handle);
         CARLA_ASSERT(type > 0);
 
@@ -3578,16 +3578,16 @@ public:
         switch (type)
         {
         case CARLA_URI_MAP_ID_LOG_ERROR:
-            qCritical("%s", buf);
+            carla_stderr2("%s", buf);
             break;
         case CARLA_URI_MAP_ID_LOG_NOTE:
             printf("%s\n", buf);
             break;
         case CARLA_URI_MAP_ID_LOG_TRACE:
-            qDebug("%s", buf);
+            carla_debug("%s", buf);
             break;
         case CARLA_URI_MAP_ID_LOG_WARNING:
-            qWarning("%s", buf);
+            carla_stderr("%s", buf);
             break;
         default:
             break;
@@ -3600,7 +3600,7 @@ public:
 
     static void carla_lv2_program_changed(const LV2_Programs_Handle handle, const int32_t index)
     {
-        qDebug("Lv2Plugin::carla_lv2_program_changed(%p, %i)", handle, index);
+        carla_debug("Lv2Plugin::carla_lv2_program_changed(%p, %i)", handle, index);
         CARLA_ASSERT(handle);
 
         if (! handle)
@@ -3614,7 +3614,7 @@ public:
 
     static char* carla_lv2_state_make_path(const LV2_State_Make_Path_Handle handle, const char* const path)
     {
-        qDebug("Lv2Plugin::carla_lv2_state_make_path(%p, \"%s\")", handle, path);
+        carla_debug("Lv2Plugin::carla_lv2_state_make_path(%p, \"%s\")", handle, path);
         CARLA_ASSERT(handle);
         CARLA_ASSERT(path);
 
@@ -3628,7 +3628,7 @@ public:
 
     static char* carla_lv2_state_map_abstract_path(const LV2_State_Map_Path_Handle handle, const char* const absolute_path)
     {
-        qDebug("Lv2Plugin::carla_lv2_state_map_abstract_path(%p, \"%s\")", handle, absolute_path);
+        carla_debug("Lv2Plugin::carla_lv2_state_map_abstract_path(%p, \"%s\")", handle, absolute_path);
         CARLA_ASSERT(handle);
         CARLA_ASSERT(absolute_path);
 
@@ -3641,7 +3641,7 @@ public:
 
     static char* carla_lv2_state_map_absolute_path(const LV2_State_Map_Path_Handle handle, const char* const abstract_path)
     {
-        qDebug("Lv2Plugin::carla_lv2_state_map_absolute_path(%p, \"%s\")", handle, abstract_path);
+        carla_debug("Lv2Plugin::carla_lv2_state_map_absolute_path(%p, \"%s\")", handle, abstract_path);
         CARLA_ASSERT(handle);
         CARLA_ASSERT(abstract_path);
 
@@ -3654,7 +3654,7 @@ public:
 
     static LV2_State_Status carla_lv2_state_store(const LV2_State_Handle handle, const uint32_t key, const void* const value, const size_t size, const uint32_t type, const uint32_t flags)
     {
-        qDebug("Lv2Plugin::carla_lv2_state_store(%p, %i, %p, " P_SIZE ", %i, %i)", handle, key, value, size, type, flags);
+        carla_debug("Lv2Plugin::carla_lv2_state_store(%p, %i, %p, " P_SIZE ", %i, %i)", handle, key, value, size, type, flags);
         CARLA_ASSERT(handle);
 
         if (! handle)
@@ -3666,7 +3666,7 @@ public:
 
     static const void* carla_lv2_state_retrieve(const LV2_State_Handle handle, const uint32_t key, size_t* const size, uint32_t* const type, uint32_t* const flags)
     {
-        qDebug("Lv2Plugin::carla_lv2_state_retrieve(%p, %i, %p, %p, %p)", handle, key, size, type, flags);
+        carla_debug("Lv2Plugin::carla_lv2_state_retrieve(%p, %i, %p, %p, %p)", handle, key, size, type, flags);
         CARLA_ASSERT(handle);
 
         if (! handle)
@@ -3680,7 +3680,7 @@ public:
 
     static uint32_t carla_lv2_uri_to_id(const LV2_URI_Map_Callback_Data data, const char* const map, const char* const uri)
     {
-        qDebug("Lv2Plugin::carla_lv2_uri_to_id(%p, \"%s\", \"%s\")", data, map, uri);
+        carla_debug("Lv2Plugin::carla_lv2_uri_to_id(%p, \"%s\", \"%s\")", data, map, uri);
         return carla_lv2_urid_map((LV2_URID_Map_Handle*)data, uri);
     }
 
@@ -3688,7 +3688,7 @@ public:
 
     static LV2_URID carla_lv2_urid_map(const LV2_URID_Map_Handle handle, const char* const uri)
     {
-        qDebug("Lv2Plugin::carla_lv2_urid_map(%p, \"%s\")", handle, uri);
+        carla_debug("Lv2Plugin::carla_lv2_urid_map(%p, \"%s\")", handle, uri);
         CARLA_ASSERT(handle);
         CARLA_ASSERT(uri);
 
@@ -3747,7 +3747,7 @@ public:
 
     static const char* carla_lv2_urid_unmap(const LV2_URID_Map_Handle handle, const LV2_URID urid)
     {
-        qDebug("Lv2Plugin::carla_lv2_urid_unmap(%p, %i)", handle, urid);
+        carla_debug("Lv2Plugin::carla_lv2_urid_unmap(%p, %i)", handle, urid);
         CARLA_ASSERT(handle);
         CARLA_ASSERT(urid > CARLA_URI_MAP_ID_NULL);
 
@@ -3810,7 +3810,7 @@ public:
 
     static LV2_Worker_Status carla_lv2_worker_schedule(const LV2_Worker_Schedule_Handle handle, const uint32_t size, const void* const data)
     {
-        qDebug("Lv2Plugin::carla_lv2_worker_schedule(%p, %i, %p)", handle, size, data);
+        carla_debug("Lv2Plugin::carla_lv2_worker_schedule(%p, %i, %p)", handle, size, data);
         CARLA_ASSERT(handle);
 
         if (! handle)
@@ -3822,7 +3822,7 @@ public:
 
     static LV2_Worker_Status carla_lv2_worker_respond(const LV2_Worker_Respond_Handle handle, const uint32_t size, const void* const data)
     {
-        qDebug("Lv2Plugin::carla_lv2_worker_respond(%p, %i, %p)", handle, size, data);
+        carla_debug("Lv2Plugin::carla_lv2_worker_respond(%p, %i, %p)", handle, size, data);
         CARLA_ASSERT(handle);
 
         if (! handle)
@@ -3836,7 +3836,7 @@ public:
 
     static uint32_t carla_lv2_ui_port_map(const LV2UI_Feature_Handle handle, const char* const symbol)
     {
-        qDebug("Lv2Plugin::carla_lv2_ui_port_map(%p, \"%s\")", handle, symbol);
+        carla_debug("Lv2Plugin::carla_lv2_ui_port_map(%p, \"%s\")", handle, symbol);
         CARLA_ASSERT(handle);
 
         if (! handle)
@@ -3850,7 +3850,7 @@ public:
 
     static int carla_lv2_ui_resize(const LV2UI_Feature_Handle handle, const int width, const int height)
     {
-        qDebug("Lv2Plugin::carla_lv2_ui_resize(%p, %i, %i)", handle, width, height);
+        carla_debug("Lv2Plugin::carla_lv2_ui_resize(%p, %i, %i)", handle, width, height);
         CARLA_ASSERT(handle);
 
         if (! handle)
@@ -3864,7 +3864,7 @@ public:
 
     static void carla_lv2_external_ui_closed(const LV2UI_Controller controller)
     {
-        qDebug("Lv2Plugin::carla_lv2_external_ui_closed(%p)", controller);
+        carla_debug("Lv2Plugin::carla_lv2_external_ui_closed(%p)", controller);
         CARLA_ASSERT(controller);
 
         if (! controller)
@@ -3878,7 +3878,7 @@ public:
 
     static void carla_lv2_ui_write_function(const LV2UI_Controller controller, const uint32_t port_index, const uint32_t buffer_size, const uint32_t format, const void* const buffer)
     {
-        qDebug("Lv2Plugin::carla_lv2_ui_write_function(%p, %i, %i, %i, %p)", controller, port_index, buffer_size, format, buffer);
+        carla_debug("Lv2Plugin::carla_lv2_ui_write_function(%p, %i, %i, %i, %p)", controller, port_index, buffer_size, format, buffer);
         CARLA_ASSERT(controller);
 
         if (! controller)
@@ -4137,7 +4137,7 @@ public:
             else if (strcmp(rdf_descriptor->Extensions[i], LV2_WORKER__interface) == 0)
                 m_hints |= PLUGIN_HAS_EXTENSION_WORKER;
             else
-                qDebug("Plugin has non-supported extension: '%s'", rdf_descriptor->Extensions[i]);
+                carla_debug("Plugin has non-supported extension: '%s'", rdf_descriptor->Extensions[i]);
         }
 
         if (! canContinue)
@@ -4202,7 +4202,7 @@ public:
 
             if (! rdf_descriptor->UIs[i].URI)
             {
-                qWarning("Plugin has an UI without a valid URI");
+                carla_stderr("Plugin has an UI without a valid URI");
                 continue;
             }
 
@@ -4296,7 +4296,7 @@ public:
 
         if (iFinal < 0)
         {
-            qWarning("Failed to find an appropriate LV2 UI for this plugin");
+            carla_stderr("Failed to find an appropriate LV2 UI for this plugin");
             return true;
         }
 
@@ -4311,7 +4311,7 @@ public:
         {
             if (LV2_IS_FEATURE_REQUIRED(ui.rdf_descriptor->Features[i].Type) && is_lv2_ui_feature_supported(ui.rdf_descriptor->Features[i].URI) == false)
             {
-                qCritical("Plugin UI requires a feature that is not supported:\n%s", ui.rdf_descriptor->Features[i].URI);
+                carla_stderr2("Plugin UI requires a feature that is not supported:\n%s", ui.rdf_descriptor->Features[i].URI);
                 canContinue = false;
                 break;
             }
@@ -4339,7 +4339,7 @@ public:
 
             if (! uiLibOpen(ui.rdf_descriptor->Binary))
             {
-                qCritical("Could not load UI library, error was:\n%s", libError(ui.rdf_descriptor->Binary));
+                carla_stderr2("Could not load UI library, error was:\n%s", libError(ui.rdf_descriptor->Binary));
                 ui.rdf_descriptor = nullptr;
                 return true;
             }
@@ -4351,7 +4351,7 @@ public:
 
             if (! ui_descFn)
             {
-                qCritical("Could not find the LV2UI Descriptor in the UI library");
+                carla_stderr2("Could not find the LV2UI Descriptor in the UI library");
                 uiLibClose();
                 ui.lib = nullptr;
                 ui.rdf_descriptor = nullptr;
@@ -4370,7 +4370,7 @@ public:
 
             if (! ui.descriptor)
             {
-                qCritical("Could not find the requested GUI in the plugin UI library");
+                carla_stderr2("Could not find the requested GUI in the plugin UI library");
                 uiLibClose();
                 ui.lib = nullptr;
                 ui.rdf_descriptor = nullptr;
@@ -4451,7 +4451,7 @@ public:
             switch (uiType)
             {
             case LV2_UI_QT4:
-                qDebug("Will use LV2 Qt4 UI");
+                carla_debug("Will use LV2 Qt4 UI");
                 gui.type      = GUI_INTERNAL_QT4;
                 gui.resizable = isUiResizable();
                 ui.handle     = ui.descriptor->instantiate(ui.descriptor, descriptor->URI, ui.rdf_descriptor->Bundle, carla_lv2_ui_write_function, this, &ui.widget, features);
@@ -4459,26 +4459,26 @@ public:
                 break;
 
             case LV2_UI_COCOA:
-                qDebug("Will use LV2 Cocoa UI");
+                carla_debug("Will use LV2 Cocoa UI");
                 gui.type      = GUI_INTERNAL_COCOA;
                 gui.resizable = isUiResizable();
                 break;
 
             case LV2_UI_WINDOWS:
-                qDebug("Will use LV2 Windows UI");
+                carla_debug("Will use LV2 Windows UI");
                 gui.type      = GUI_INTERNAL_HWND;
                 gui.resizable = isUiResizable();
                 break;
 
             case LV2_UI_X11:
-                qDebug("Will use LV2 X11 UI");
+                carla_debug("Will use LV2 X11 UI");
                 gui.type      = GUI_INTERNAL_X11;
                 gui.resizable = isUiResizable();
                 break;
 
             case LV2_UI_GTK2:
 #ifdef WANT_SUIL
-                qDebug("Will use LV2 Gtk2 UI (suil)");
+                carla_debug("Will use LV2 Gtk2 UI (suil)");
                 gui.type      = GUI_EXTERNAL_SUIL;
                 gui.resizable = isUiResizable();
                 suil.handle   = suil_instance_new(suil.host, this, LV2_UI__Qt4UI, rdf_descriptor->URI, ui.rdf_descriptor->URI, ui.rdf_descriptor->Type.URI, ui.rdf_descriptor->Bundle, ui.rdf_descriptor->Binary, features);
@@ -4497,17 +4497,17 @@ public:
                     }
                 }
 #else
-                qDebug("Will use LV2 Gtk2 UI, NOT!");
+                carla_debug("Will use LV2 Gtk2 UI, NOT!");
 #endif
                 break;
 
             case LV2_UI_GTK3:
-                qDebug("Will use LV2 Gtk3 UI, NOT!");
+                carla_debug("Will use LV2 Gtk3 UI, NOT!");
                 break;
 
             case LV2_UI_EXTERNAL:
             case LV2_UI_OLD_EXTERNAL:
-                qDebug("Will use LV2 External UI");
+                carla_debug("Will use LV2 External UI");
                 gui.type = GUI_EXTERNAL_LV2;
                 break;
             }
@@ -4592,7 +4592,7 @@ Lv2Plugin::Ft Lv2Plugin::ft = { nullptr, nullptr, nullptr, nullptr, nullptr, nul
 
 int CarlaEngineOsc::handleMsgLv2AtomTransfer(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 {
-    qDebug("CarlaOsc::handleMsgLv2AtomTransfer()");
+    carla_debug("CarlaOsc::handleMsgLv2AtomTransfer()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(3, "iss");
 
     const int32_t portIndex   = argv[0]->i;
@@ -4613,7 +4613,7 @@ int CarlaEngineOsc::handleMsgLv2AtomTransfer(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 
 int CarlaEngineOsc::handleMsgLv2EventTransfer(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 {
-    qDebug("CarlaOsc::handleMsgLv2EventTransfer()");
+    carla_debug("CarlaOsc::handleMsgLv2EventTransfer()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(3, "iss");
 
     const int32_t portIndex   = argv[0]->i;
@@ -4642,7 +4642,7 @@ CARLA_BACKEND_START_NAMESPACE
 
 CarlaPlugin* CarlaPlugin::newLV2(const Initializer& init)
 {
-    qDebug("CarlaPlugin::newLV2(%p, \"%s\", \"%s\", \"%s\")", init.engine, init.filename, init.name, init.label);
+    carla_debug("CarlaPlugin::newLV2(%p, \"%s\", \"%s\", \"%s\")", init.engine, init.filename, init.name, init.label);
 
 #ifdef WANT_LV2
     short id = init.engine->getNewPluginId();

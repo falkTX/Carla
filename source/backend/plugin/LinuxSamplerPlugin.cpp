@@ -173,7 +173,7 @@ public:
     LinuxSamplerPlugin(CarlaEngine* const engine_, const unsigned short id, const bool isGIG)
         : CarlaPlugin(engine_, id)
     {
-        qDebug("LinuxSamplerPlugin::LinuxSamplerPlugin()");
+        carla_debug("LinuxSamplerPlugin::LinuxSamplerPlugin()");
 
         m_type  = isGIG ? PLUGIN_GIG : PLUGIN_SFZ;
 
@@ -195,7 +195,7 @@ public:
 
     ~LinuxSamplerPlugin()
     {
-        qDebug("LinuxSamplerPlugin::~LinuxSamplerPlugin()");
+        carla_debug("LinuxSamplerPlugin::~LinuxSamplerPlugin()");
 
         if (m_activeBefore)
             audioOutputDevice->Stop();
@@ -257,7 +257,7 @@ public:
 
     void reload()
     {
-        qDebug("LinuxSamplerPlugin::reload() - start");
+        carla_debug("LinuxSamplerPlugin::reload() - start");
         CARLA_ASSERT(instrument);
 
         const ProcessMode processMode(x_engine->getOptions().processMode);
@@ -370,12 +370,12 @@ public:
 
         x_client->activate();
 
-        qDebug("LinuxSamplerPlugin::reload() - end");
+        carla_debug("LinuxSamplerPlugin::reload() - end");
     }
 
     void reloadPrograms(bool init)
     {
-        qDebug("LinuxSamplerPlugin::reloadPrograms(%s)", bool2str(init));
+        carla_debug("LinuxSamplerPlugin::reloadPrograms(%s)", bool2str(init));
 
         // Delete old programs
         if (midiprog.count > 0)
@@ -928,7 +928,7 @@ private:
 
 CarlaPlugin* LinuxSamplerPlugin::newLinuxSampler(const Initializer& init, bool isGIG)
 {
-    qDebug("LinuxSamplerPlugin::newLinuxSampler(%p, \"%s\", \"%s\", \"%s\", %s)", init.engine, init.filename, init.name, init.label, bool2str(isGIG));
+    carla_debug("LinuxSamplerPlugin::newLinuxSampler(%p, \"%s\", \"%s\", \"%s\", %s)", init.engine, init.filename, init.name, init.label, bool2str(isGIG));
 
     short id = init.engine->getNewPluginId();
 
@@ -964,7 +964,7 @@ CARLA_BACKEND_START_NAMESPACE
 
 CarlaPlugin* CarlaPlugin::newGIG(const Initializer& init)
 {
-    qDebug("CarlaPlugin::newGIG(%p, \"%s\", \"%s\", \"%s\")", init.engine, init.filename, init.name, init.label);
+    carla_debug("CarlaPlugin::newGIG(%p, \"%s\", \"%s\", \"%s\")", init.engine, init.filename, init.name, init.label);
 #ifdef WANT_LINUXSAMPLER
     return LinuxSamplerPlugin::newLinuxSampler(init, true);
 #else
@@ -975,7 +975,7 @@ CarlaPlugin* CarlaPlugin::newGIG(const Initializer& init)
 
 CarlaPlugin* CarlaPlugin::newSFZ(const Initializer& init)
 {
-    qDebug("CarlaPlugin::newSFZ(%p, \"%s\", \"%s\", \"%s\")", init.engine, init.filename, init.name, init.label);
+    carla_debug("CarlaPlugin::newSFZ(%p, \"%s\", \"%s\", \"%s\")", init.engine, init.filename, init.name, init.label);
 #ifdef WANT_LINUXSAMPLER
     return LinuxSamplerPlugin::newLinuxSampler(init, false);
 #else

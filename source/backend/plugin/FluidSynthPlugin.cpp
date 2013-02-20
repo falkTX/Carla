@@ -31,7 +31,7 @@ public:
     FluidSynthPlugin(CarlaEngine* const engine, const unsigned int id)
         : CarlaPlugin(engine, id)
     {
-        qDebug("FluidSynthPlugin::FluidSynthPlugin()");
+        carla_debug("FluidSynthPlugin::FluidSynthPlugin()");
 
         // create settings
         fSettings = new_fluid_settings();
@@ -62,7 +62,7 @@ public:
 
     ~FluidSynthPlugin()
     {
-        qDebug("FluidSynthPlugin::~FluidSynthPlugin()");
+        carla_debug("FluidSynthPlugin::~FluidSynthPlugin()");
 
         delete_fluid_synth(fSynth);
         delete_fluid_settings(fSettings);
@@ -385,7 +385,7 @@ public:
 
     void reload()
     {
-        qDebug("FluidSynthPlugin::reload() - start");
+        carla_debug("FluidSynthPlugin::reload() - start");
         CARLA_ASSERT(kData->engine != nullptr);
         CARLA_ASSERT(fSynth != nullptr);
 
@@ -718,12 +718,12 @@ public:
 
         kData->client->activate();
 
-        qDebug("FluidSynthPlugin::reload() - end");
+        carla_debug("FluidSynthPlugin::reload() - end");
     }
 
     void reloadPrograms(const bool init)
     {
-        qDebug("FluidSynthPlugin::reloadPrograms(%s)", bool2str(init));
+        carla_debug("FluidSynthPlugin::reloadPrograms(%s)", bool2str(init));
 
         // Delete old programs
         kData->midiprog.clear();
@@ -1292,7 +1292,7 @@ CARLA_BACKEND_START_NAMESPACE
 
 CarlaPlugin* CarlaPlugin::newSF2(const Initializer& init)
 {
-    qDebug("CarlaPlugin::newSF2({%p, \"%s\", \"%s\", \"%s\"})", init.engine, init.filename, init.name, init.label);
+    carla_debug("CarlaPlugin::newSF2({%p, \"%s\", \"%s\", \"%s\"})", init.engine, init.filename, init.name, init.label);
 
 #ifdef WANT_FLUIDSYNTH
 

@@ -22,27 +22,27 @@
 #include <QtCore/QStringList>
 #include <QtCore/QTextStream>
 
-#define CARLA_BRIDGE_CHECK_OSC_TYPES(/* argc, types, */ argcToCompare, typesToCompare)                                    \
-    /* check argument count */                                                                                            \
-    if (argc != argcToCompare)                                                                                            \
-    {                                                                                                                     \
-        qCritical("BridgePlugin::%s() - argument count mismatch: %i != %i", __FUNCTION__, argc, argcToCompare);           \
-        return 1;                                                                                                         \
-    }                                                                                                                     \
-    if (argc > 0)                                                                                                         \
-    {                                                                                                                     \
-        /* check for nullness */                                                                                          \
-        if (! (types && typesToCompare))                                                                                  \
-        {                                                                                                                 \
-            qCritical("BridgePlugin::%s() - argument types are null", __FUNCTION__);                                      \
-            return 1;                                                                                                     \
-        }                                                                                                                 \
-        /* check argument types */                                                                                        \
-        if (strcmp(types, typesToCompare) != 0)                                                                           \
-        {                                                                                                                 \
-            qCritical("BridgePlugin::%s() - argument types mismatch: '%s' != '%s'", __FUNCTION__, types, typesToCompare); \
-            return 1;                                                                                                     \
-        }                                                                                                                 \
+#define CARLA_BRIDGE_CHECK_OSC_TYPES(/* argc, types, */ argcToCompare, typesToCompare)                                       \
+    /* check argument count */                                                                                               \
+    if (argc != argcToCompare)                                                                                               \
+    {                                                                                                                        \
+        carla_stderr("BridgePlugin::%s() - argument count mismatch: %i != %i", __FUNCTION__, argc, argcToCompare);           \
+        return 1;                                                                                                            \
+    }                                                                                                                        \
+    if (argc > 0)                                                                                                            \
+    {                                                                                                                        \
+        /* check for nullness */                                                                                             \
+        if (! (types && typesToCompare))                                                                                     \
+        {                                                                                                                    \
+            carla_stderr("BridgePlugin::%s() - argument types are null", __FUNCTION__);                                      \
+            return 1;                                                                                                        \
+        }                                                                                                                    \
+        /* check argument types */                                                                                           \
+        if (strcmp(types, typesToCompare) != 0)                                                                              \
+        {                                                                                                                    \
+            carla_stderr("BridgePlugin::%s() - argument types mismatch: '%s' != '%s'", __FUNCTION__, types, typesToCompare); \
+            return 1;                                                                                                        \
+        }                                                                                                                    \
     }
 
 CARLA_BACKEND_START_NAMESPACE
@@ -63,7 +63,7 @@ public:
         : CarlaPlugin(engine, id)//,
           //m_binary(btype)
     {
-        qDebug("BridgePlugin::BridgePlugin()");
+        carla_debug("BridgePlugin::BridgePlugin()");
 
 #if 0
         m_type  = ptype;
@@ -95,7 +95,7 @@ public:
 #if 0
     ~BridgePlugin()
     {
-        qDebug("BridgePlugin::~BridgePlugin()");
+        carla_debug("BridgePlugin::~BridgePlugin()");
 
         if (osc.data.target)
         {
@@ -109,7 +109,7 @@ public:
             // Wait a bit first, try safe quit, then force kill
             if (osc.thread->isRunning() && ! osc.thread->wait(3000))
             {
-                qWarning("Failed to properly stop Plugin Bridge thread");
+                carla_stderr("Failed to properly stop Plugin Bridge thread");
                 osc.thread->terminate();
             }
 
@@ -254,7 +254,7 @@ public:
 
     int setOscPluginBridgeInfo(const PluginBridgeInfoType type, const int argc, const lo_arg* const* const argv, const char* const types)
     {
-        qDebug("setOscPluginBridgeInfo(%i, %i, %p, \"%s\")", type, argc, argv, types);
+        carla_debug("setOscPluginBridgeInfo(%i, %i, %p, \"%s\")", type, argc, argv, types);
 
 #if 0
         switch (type)
@@ -817,7 +817,7 @@ public:
     void idleGui()
     {
         if (! osc.thread->isRunning())
-            qWarning("TESTING: Bridge has closed!");
+            carla_stderr("TESTING: Bridge has closed!");
 
         CarlaPlugin::idleGui();
     }
@@ -838,9 +838,9 @@ public:
         }
 
         if (! m_saved)
-            qWarning("BridgePlugin::prepareForSave() - Timeout while requesting save state");
+            carla_stderr("BridgePlugin::prepareForSave() - Timeout while requesting save state");
         else
-            qDebug("BridgePlugin::prepareForSave() - success!");
+            carla_debug("BridgePlugin::prepareForSave() - success!");
     }
 
     // -------------------------------------------------------------------
@@ -917,7 +917,7 @@ public:
 
     void deleteBuffers()
     {
-        qDebug("BridgePlugin::delete_buffers() - start");
+        carla_debug("BridgePlugin::delete_buffers() - start");
 
         if (param.count > 0)
             delete[] params;
@@ -926,7 +926,7 @@ public:
 
         CarlaPlugin::deleteBuffers();
 
-        qDebug("BridgePlugin::delete_buffers() - end");
+        carla_debug("BridgePlugin::delete_buffers() - end");
     }
 
     // -------------------------------------------------------------------
@@ -998,7 +998,7 @@ private:
 
 CarlaPlugin* CarlaPlugin::newBridge(const Initializer& init, BinaryType btype, PluginType ptype, const char* const extra)
 {
-    qDebug("CarlaPlugin::newBridge(%p, \"%s\", \"%s\", \"%s\", %s, %s)", init.engine, init.filename, init.name, init.label, BinaryType2Str(btype), PluginType2Str(ptype));
+    carla_debug("CarlaPlugin::newBridge(%p, \"%s\", \"%s\", \"%s\", %s, %s)", init.engine, init.filename, init.name, init.label, BinaryType2Str(btype), PluginType2Str(ptype));
 
 #if 0
     if (! extra)

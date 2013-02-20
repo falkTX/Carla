@@ -30,7 +30,7 @@ public:
     DssiPlugin(CarlaEngine* const engine, const unsigned int id)
         : CarlaPlugin(engine, id)
     {
-        qDebug("DssiPlugin::DssiPlugin()");
+        carla_debug("DssiPlugin::DssiPlugin()");
 
         fHandle  = nullptr;
         fHandle2 = nullptr;
@@ -46,7 +46,7 @@ public:
 
     ~DssiPlugin()
     {
-        qDebug("DssiPlugin::~DssiPlugin()");
+        carla_debug("DssiPlugin::~DssiPlugin()");
 
         // close UI
         if (fHints & PLUGIN_HAS_GUI)
@@ -56,7 +56,7 @@ public:
             // Wait a bit first, try safe quit, then force kill
             if (kData->osc.thread.isRunning() && ! kData->osc.thread.stop(kData->engine->getOptions().oscUiTimeout))
             {
-                qWarning("Failed to properly stop DSSI GUI thread");
+                carla_stderr("Failed to properly stop DSSI GUI thread");
                 kData->osc.thread.terminate();
             }
         }
@@ -216,16 +216,16 @@ public:
         CARLA_ASSERT(value != nullptr);
 
         if (type == nullptr)
-            return qCritical("DssiPlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is invalid", type, key, value, bool2str(sendGui));
+            return carla_stderr2("DssiPlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is invalid", type, key, value, bool2str(sendGui));
 
         if (std::strcmp(type, CUSTOM_DATA_STRING) != 0)
-            return qCritical("DssiPlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is not string", type, key, value, bool2str(sendGui));
+            return carla_stderr2("DssiPlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is not string", type, key, value, bool2str(sendGui));
 
         if (key == nullptr)
-            return qCritical("DssiPlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - key is null", type, key, value, bool2str(sendGui));
+            return carla_stderr2("DssiPlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - key is null", type, key, value, bool2str(sendGui));
 
         if (value == nullptr)
-            return qCritical("DssiPlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - value is null", type, key, value, bool2str(sendGui));
+            return carla_stderr2("DssiPlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - value is null", type, key, value, bool2str(sendGui));
 
         if (fDssiDescriptor->configure != nullptr)
         {
@@ -340,7 +340,7 @@ public:
 
     void reload()
     {
-        qDebug("DssiPlugin::reload() - start");
+        carla_debug("DssiPlugin::reload() - start");
         CARLA_ASSERT(kData->engine != nullptr);
         CARLA_ASSERT(fDescriptor != nullptr);
         CARLA_ASSERT(fHandle != nullptr);
@@ -479,7 +479,7 @@ public:
                     }
                 }
                 else
-                    qWarning("WARNING - Got a broken Port (Audio, but not input or output)");
+                    carla_stderr2("WARNING - Got a broken Port (Audio, but not input or output)");
             }
             else if (LADSPA_IS_PORT_CONTROL(portType))
             {
@@ -511,7 +511,7 @@ public:
 
                 if (max - min == 0.0f)
                 {
-                    qWarning("Broken plugin parameter: max - min == 0");
+                    carla_stderr2("WARNING - Broken plugin parameter '%s': max - min == 0.0f", fDescriptor->PortNames[i]);
                     max = min + 0.1f;
                 }
 
@@ -607,7 +607,7 @@ public:
                 else
                 {
                     kData->param.data[j].type = PARAMETER_UNKNOWN;
-                    qWarning("WARNING - Got a broken Port (Control, but not input or output)");
+                    carla_stderr2("WARNING - Got a broken Port (Control, but not input or output)");
                 }
 
                 // extra parameter hints
@@ -632,7 +632,7 @@ public:
             else
             {
                 // Not Audio or Control
-                qCritical("ERROR - Got a broken Port (neither Audio or Control)");
+                carla_stderr2("ERROR - Got a broken Port (neither Audio or Control)");
 
                 fDescriptor->connect_port(fHandle, i, nullptr);
 
@@ -752,12 +752,12 @@ public:
 
         kData->client->activate();
 
-        qDebug("DssiPlugin::reload() - end");
+        carla_debug("DssiPlugin::reload() - end");
     }
 
     void reloadPrograms(const bool init)
     {
-        qDebug("DssiPlugin::reloadPrograms(%s)", bool2str(init));
+        carla_debug("DssiPlugin::reloadPrograms(%s)", bool2str(init));
         uint32_t i, oldCount = kData->midiprog.count;
 
         // Delete old programs
@@ -966,7 +966,6 @@ public:
 
                 if (time > timeOffset && sampleAccurate)
                 {
-                    qWarning("Variable proccessing @ frame %04i/%04i for %04i frames, cur:%04i", timeOffset, frames, time - timeOffset, time);
                     processSingle(inBuffer, outBuffer, time - timeOffset, timeOffset, midiEventCount);
                     midiEventCount = 0;
                     nextBankId = 0;
@@ -1254,12 +1253,7 @@ public:
             kData->postRtEvents.trySplice();
 
             if (frames > timeOffset)
-            {
-                if (timeOffset != 0)
-                    qWarning("FINAL    proccessing @ frame %04i/%04i for %04i frames, cur:%04i", timeOffset, frames, frames - timeOffset, time);
-
                 processSingle(inBuffer, outBuffer, frames - timeOffset, timeOffset, midiEventCount);
-            }
 
         } // End of Event Input and Processing
 
@@ -1572,7 +1566,7 @@ public:
 
     void deleteBuffers()
     {
-        qDebug("DssiPlugin::deleteBuffers() - start");
+        carla_debug("DssiPlugin::deleteBuffers() - start");
 
         if (fAudioInBuffers != nullptr)
         {
@@ -1612,7 +1606,7 @@ public:
 
         CarlaPlugin::deleteBuffers();
 
-        qDebug("DssiPlugin::deleteBuffers() - end");
+        carla_debug("DssiPlugin::deleteBuffers() - end");
     }
 
     // -------------------------------------------------------------------
@@ -1732,7 +1726,7 @@ CARLA_BACKEND_START_NAMESPACE
 
 CarlaPlugin* CarlaPlugin::newDSSI(const Initializer& init, const char* const guiFilename)
 {
-    qDebug("CarlaPlugin::newDSSI({%p, \"%s\", \"%s\", \"%s\"}, \"%s\")", init.engine, init.filename, init.name, init.label, guiFilename);
+    carla_debug("CarlaPlugin::newDSSI({%p, \"%s\", \"%s\", \"%s\"}, \"%s\")", init.engine, init.filename, init.name, init.label, guiFilename);
 
 #ifdef WANT_DSSI
     DssiPlugin* const plugin = new DssiPlugin(init.engine, init.id);

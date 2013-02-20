@@ -50,7 +50,7 @@ public:
     VstPlugin(CarlaEngine* const engine, const unsigned short id)
         : CarlaPlugin(engine, id)
     {
-        qDebug("VstPlugin::VstPlugin()");
+        carla_debug("VstPlugin::VstPlugin()");
 
         m_type = PLUGIN_VST;
 
@@ -80,7 +80,7 @@ public:
 
     ~VstPlugin()
     {
-        qDebug("VstPlugin::~VstPlugin()");
+        carla_debug("VstPlugin::~VstPlugin()");
 
         // make plugin invalid
         unique2 += 1;
@@ -99,7 +99,7 @@ public:
                         // Wait a bit first, try safe quit, then force kill
                         if (osc.thread->isRunning() && ! osc.thread->wait(x_engine->getOptions().oscUiTimeout))
                         {
-                            qWarning("Failed to properly stop VST OSC GUI thread");
+                            carla_stderr("Failed to properly stop VST OSC GUI thread");
                             osc.thread->terminate();
                         }
 
@@ -338,7 +338,7 @@ public:
 
     void setGuiContainer(GuiContainer* const container)
     {
-        qDebug("VstPlugin::setGuiContainer(%p)", container);
+        carla_debug("VstPlugin::setGuiContainer(%p)", container);
         CARLA_ASSERT(container);
 
         if (gui.type == GUI_EXTERNAL_OSC)
@@ -383,7 +383,7 @@ public:
 
                 if (width <= 0 || height <= 0)
                 {
-                    qCritical("VstPlugin::setGuiContainer(%p) - failed to get proper editor size", container);
+                    carla_stderr2("VstPlugin::setGuiContainer(%p) - failed to get proper editor size", container);
                     return;
                 }
 
@@ -391,15 +391,15 @@ public:
                 gui.height = height;
 
                 container->setFixedSize(width, height);
-                qDebug("VstPlugin::setGuiContainer(%p) -> setFixedSize(%i, %i)", container, width, height);
+                carla_debug("VstPlugin::setGuiContainer(%p) -> setFixedSize(%i, %i)", container, width, height);
             }
             else
-                qCritical("VstPlugin::setGuiContainer(%p) - failed to get plugin editor size", container);
+                carla_stderr2("VstPlugin::setGuiContainer(%p) - failed to get plugin editor size", container);
         }
         else
         {
             // failed to open UI
-            qWarning("VstPlugin::setGuiContainer(%p) - failed to open UI", container);
+            carla_stderr("VstPlugin::setGuiContainer(%p) - failed to open UI", container);
 
             m_hints &= ~PLUGIN_HAS_GUI;
             x_engine->callback(CALLBACK_SHOW_GUI, m_id, -1, 0, 0.0, nullptr);
@@ -416,7 +416,7 @@ public:
 
             if (! osc.thread)
             {
-                qCritical("VstPlugin::showGui(%s) - attempt to show gui, but it does not exist!", bool2str(yesNo));
+                carla_stderr2("VstPlugin::showGui(%s) - attempt to show gui, but it does not exist!", bool2str(yesNo));
                 return;
             }
 
@@ -469,7 +469,7 @@ public:
 
     void reload()
     {
-        qDebug("VstPlugin::reload() - start");
+        carla_debug("VstPlugin::reload() - start");
         CARLA_ASSERT(effect);
 
         const ProcessMode processMode(x_engine->getOptions().processMode);
@@ -604,7 +604,7 @@ public:
 
                 if (max - min == 0.0)
                 {
-                    qWarning("Broken plugin parameter: max - min == 0");
+                    carla_stderr("Broken plugin parameter: max - min == 0");
                     max = min + 0.1;
                 }
 
@@ -787,12 +787,12 @@ public:
 
         x_client->activate();
 
-        qDebug("VstPlugin::reload() - end");
+        carla_debug("VstPlugin::reload() - end");
     }
 
     void reloadPrograms(const bool init)
     {
-        qDebug("VstPlugin::reloadPrograms(%s)", bool2str(init));
+        carla_debug("VstPlugin::reloadPrograms(%s)", bool2str(init));
         uint32_t i, oldCount = prog.count;
 
         // Delete old programs
@@ -1610,7 +1610,7 @@ public:
 
     intptr_t handleAudioMasterIOChanged()
     {
-        qDebug("VstPlugin::handleAudioMasterIOChanged()");
+        carla_debug("VstPlugin::handleAudioMasterIOChanged()");
         CARLA_ASSERT(m_enabled);
 
         // TESTING
@@ -1620,7 +1620,7 @@ public:
 
         if (x_engine->getOptions().processMode == PROCESS_MODE_CONTINUOUS_RACK)
         {
-            qCritical("VstPlugin::handleAudioMasterIOChanged() - plugin asked IO change, but it's not supported in rack mode");
+            carla_stderr2("VstPlugin::handleAudioMasterIOChanged() - plugin asked IO change, but it's not supported in rack mode");
             return 0;
         }
 
@@ -1649,7 +1649,7 @@ public:
 
     void handleAudioMasterNeedIdle()
     {
-        qDebug("VstPlugin::handleAudioMasterNeedIdle()");
+        carla_debug("VstPlugin::handleAudioMasterNeedIdle()");
         needIdle = true;
     }
 
@@ -1667,7 +1667,7 @@ public:
 
         if (! isProcessing)
         {
-            qCritical("VstPlugin::handleAudioMasterProcessEvents(%p) - received MIDI out events outside audio thread, ignoring", vstEvents);
+            carla_stderr2("VstPlugin::handleAudioMasterProcessEvents(%p) - received MIDI out events outside audio thread, ignoring", vstEvents);
             return 0;
         }
 
@@ -1687,7 +1687,7 @@ public:
 
     intptr_t handleAdioMasterSizeWindow(int32_t width, int32_t height)
     {
-        qDebug("VstPlugin::handleAudioMasterSizeWindow(%i, %i)", width, height);
+        carla_debug("VstPlugin::handleAudioMasterSizeWindow(%i, %i)", width, height);
 
         gui.width  = width;
         gui.height = height;
@@ -1699,7 +1699,7 @@ public:
 
     void handleAudioMasterUpdateDisplay()
     {
-        qDebug("VstPlugin::handleAudioMasterUpdateDisplay()");
+        carla_debug("VstPlugin::handleAudioMasterUpdateDisplay()");
 
         // Update current program name
         if (prog.count > 0 && prog.current >= 0)
@@ -1726,7 +1726,7 @@ public:
 
     void handleAudioMasterWantMidi()
     {
-        qDebug("VstPlugin::handleAudioMasterWantMidi()");
+        carla_debug("VstPlugin::handleAudioMasterWantMidi()");
 
         m_hints |= PLUGIN_WANTS_MIDI_INPUT;
     }
@@ -1735,7 +1735,7 @@ public:
 
     static intptr_t hostCanDo(const char* const feature)
     {
-        qDebug("VstPlugin::hostCanDo(\"%s\")", feature);
+        carla_debug("VstPlugin::hostCanDo(\"%s\")", feature);
 
         if (strcmp(feature, "supplyIdle") == 0)
             return 1;
@@ -1777,7 +1777,7 @@ public:
             return -1;
 
         // unimplemented
-        qWarning("VstPlugin::hostCanDo(\"%s\") - unknown feature", feature);
+        carla_stderr("VstPlugin::hostCanDo(\"%s\") - unknown feature", feature);
         return 0;
     }
 
@@ -1785,7 +1785,7 @@ public:
     {
 #ifdef DEBUG
         if (opcode != audioMasterGetTime && opcode != audioMasterProcessEvents && opcode != audioMasterGetCurrentProcessLevel && opcode != audioMasterGetOutputLatency)
-            qDebug("VstPlugin::hostCallback(%p, %02i:%s, %i, " P_INTPTR ", %p, %f)", effect, opcode, vstMasterOpcode2str(opcode), index, value, ptr, opt);
+            carla_debug("VstPlugin::hostCallback(%p, %02i:%s, %i, " P_INTPTR ", %p, %f)", effect, opcode, vstMasterOpcode2str(opcode), index, value, ptr, opt);
 #endif
 
 #if 0
@@ -1848,7 +1848,7 @@ public:
 
                 if (self->effect != effect)
                 {
-                    qWarning("VstPlugin::hostCallback() - host pointer mismatch: %p != %p", self->effect, effect);
+                    carla_stderr("VstPlugin::hostCallback() - host pointer mismatch: %p != %p", self->effect, effect);
                     self = nullptr;
                 }
             }
@@ -1872,7 +1872,7 @@ public:
             if (self)
                 self->handleAudioMasterAutomate(index, opt);
             else
-                qWarning("VstPlugin::hostCallback::audioMasterAutomate called without valid object");
+                carla_stderr("VstPlugin::hostCallback::audioMasterAutomate called without valid object");
             break;
 
         case audioMasterVersion:
@@ -1889,7 +1889,7 @@ public:
             if (effect)
                 effect->dispatcher(effect, effEditIdle, 0, 0, nullptr, 0.0f);
             else
-                qWarning("VstPlugin::hostCallback::audioMasterIdle called without valid effect");
+                carla_stderr("VstPlugin::hostCallback::audioMasterIdle called without valid effect");
             break;
 
 #if ! VST_FORCE_DEPRECATED
@@ -1904,7 +1904,7 @@ public:
             if (self)
                 self->handleAudioMasterWantMidi();
             else
-                qWarning("VstPlugin::hostCallback::audioMasterWantMidi called without valid object");
+                carla_stderr("VstPlugin::hostCallback::audioMasterWantMidi called without valid object");
             break;
 #endif
 
@@ -1940,10 +1940,10 @@ public:
                 if (ptr)
                     ret = self->handleAudioMasterProcessEvents((const VstEvents*)ptr);
                 else
-                    qWarning("VstPlugin::hostCallback::audioMasterProcessEvents called with invalid pointer");
+                    carla_stderr("VstPlugin::hostCallback::audioMasterProcessEvents called with invalid pointer");
             }
             else
-                qWarning("VstPlugin::hostCallback::audioMasterProcessEvents called without valid object");
+                carla_stderr("VstPlugin::hostCallback::audioMasterProcessEvents called without valid object");
             break;
 
 #if ! VST_FORCE_DEPRECATED
@@ -1957,7 +1957,7 @@ public:
             if (self)
                 ret = self->handleAudioMasterTempoAt();
             else
-                qWarning("VstPlugin::hostCallback::audioMasterTempoAt called without valid object");
+                carla_stderr("VstPlugin::hostCallback::audioMasterTempoAt called without valid object");
             if (ret == 0)
                 ret = 120 * 10000;
             break;
@@ -1983,7 +1983,7 @@ public:
             if (self)
                 ret = self->handleAudioMasterIOChanged();
             else
-                qWarning("VstPlugin::hostCallback::audioMasterIOChanged called without valid object");
+                carla_stderr("VstPlugin::hostCallback::audioMasterIOChanged called without valid object");
             break;
 
         case audioMasterNeedIdle:
@@ -1992,7 +1992,7 @@ public:
             if (self)
                 self->handleAudioMasterNeedIdle();
             else
-                qWarning("VstPlugin::hostCallback::audioMasterNeedIdle called without valid object");
+                carla_stderr("VstPlugin::hostCallback::audioMasterNeedIdle called without valid object");
             break;
 
         case audioMasterSizeWindow:
@@ -2002,10 +2002,10 @@ public:
                 if (index > 0 && value > 0)
                     ret = self->handleAdioMasterSizeWindow(index, value);
                 else
-                    qWarning("VstPlugin::hostCallback::audioMasterSizeWindow called with invalid size");
+                    carla_stderr("VstPlugin::hostCallback::audioMasterSizeWindow called with invalid size");
             }
             else
-                qWarning("VstPlugin::hostCallback::audioMasterSizeWindow called without valid object");
+                carla_stderr("VstPlugin::hostCallback::audioMasterSizeWindow called without valid object");
             break;
 
         case audioMasterGetSampleRate:
@@ -2013,7 +2013,7 @@ public:
             if (self)
                 ret = self->handleAudioMasterGetSampleRate();
             else
-                qWarning("VstPlugin::hostCallback::audioMasterGetSampleRate called without valid object");
+                carla_stderr("VstPlugin::hostCallback::audioMasterGetSampleRate called without valid object");
             if (ret == 0)
                 ret = 44100;
             break;
@@ -2023,7 +2023,7 @@ public:
             if (self)
                 ret = self->handleAudioMasterGetBlockSize();
             else
-                qWarning("VstPlugin::hostCallback::audioMasterGetBlockSize called without valid object");
+                carla_stderr("VstPlugin::hostCallback::audioMasterGetBlockSize called without valid object");
             if (ret == 0)
 //                ret = CarlaEngine::processHighPrecision ? 8 : 512;
                 ret = 512;
@@ -2061,7 +2061,7 @@ public:
             }
             else
             {
-                qWarning("VstPlugin::hostCallback::audioMasterGetCurrentProcessLevel called without valid object");
+                carla_stderr("VstPlugin::hostCallback::audioMasterGetCurrentProcessLevel called without valid object");
                 ret = kVstProcessLevelUnknown;
             }
             break;
@@ -2097,7 +2097,7 @@ public:
                 ret = 1;
             }
             else
-                qWarning("VstPlugin::hostCallback::audioMasterGetVendorString called with invalid pointer");
+                carla_stderr("VstPlugin::hostCallback::audioMasterGetVendorString called with invalid pointer");
             break;
 
         case audioMasterGetProductString:
@@ -2108,7 +2108,7 @@ public:
                 ret = 1;
             }
             else
-                qWarning("VstPlugin::hostCallback::audioMasterGetProductString called with invalid pointer");
+                carla_stderr("VstPlugin::hostCallback::audioMasterGetProductString called with invalid pointer");
             break;
 
         case audioMasterGetVendorVersion:
@@ -2130,7 +2130,7 @@ public:
             if (ptr)
                 ret = hostCanDo((const char*)ptr);
             else
-                qWarning("VstPlugin::hostCallback::audioMasterCanDo called with invalid pointer");
+                carla_stderr("VstPlugin::hostCallback::audioMasterCanDo called with invalid pointer");
             break;
 
         case audioMasterGetLanguage:
@@ -2150,7 +2150,7 @@ public:
             //if (ptr)
             //    strcpy((char*)ptr, "stuff");
             //else
-            //    qWarning("VstPlugin::hostCallback::audioMasterGetDirectory called with invalid pointer");
+            //    carla_stderr("VstPlugin::hostCallback::audioMasterGetDirectory called with invalid pointer");
             break;
 
         case audioMasterUpdateDisplay:
@@ -2191,7 +2191,7 @@ public:
 
         default:
 #ifdef DEBUG
-            qDebug("VstPlugin::hostCallback(%p, %02i:%s, %i, " P_INTPTR ", %p, %f)", effect, opcode, vstMasterOpcode2str(opcode), index, value, ptr, opt);
+            carla_debug("VstPlugin::hostCallback(%p, %02i:%s, %i, " P_INTPTR ", %p, %f)", effect, opcode, vstMasterOpcode2str(opcode), index, value, ptr, opt);
 #endif
             break;
         }
@@ -2302,7 +2302,7 @@ public:
         // special checks
         if ((uintptr_t)effect->dispatcher(effect, effCanDo, 0, 0, (void*)"hasCockosExtensions", 0.0f) == 0xbeef0000)
         {
-            qDebug("Plugin has Cockos extensions!");
+            carla_debug("Plugin has Cockos extensions!");
             m_hints |= PLUGIN_HAS_COCKOS_EXTENSIONS;
         }
 
@@ -2388,7 +2388,7 @@ CARLA_BACKEND_START_NAMESPACE
 
 CarlaPlugin* CarlaPlugin::newVST(const Initializer& init)
 {
-    qDebug("CarlaPlugin::newVST(%p, \"%s\", \"%s\", \"%s\")", init.engine, init.filename, init.name, init.label);
+    carla_debug("CarlaPlugin::newVST(%p, \"%s\", \"%s\", \"%s\")", init.engine, init.filename, init.name, init.label);
 
 #ifdef WANT_VST
     short id = init.engine->getNewPluginId();

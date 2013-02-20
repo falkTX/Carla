@@ -29,7 +29,7 @@ public:
     LadspaPlugin(CarlaEngine* const engine, const unsigned int id)
         : CarlaPlugin(engine, id)
     {
-        qDebug("LadspaPlugin::LadspaPlugin(%p, %i)", engine, id);
+        carla_debug("LadspaPlugin::LadspaPlugin(%p, %i)", engine, id);
 
         fHandle  = nullptr;
         fHandle2 = nullptr;
@@ -43,7 +43,7 @@ public:
 
     ~LadspaPlugin()
     {
-        qDebug("LadspaPlugin::~LadspaPlugin()");
+        carla_debug("LadspaPlugin::~LadspaPlugin()");
 
         if (fDescriptor != nullptr)
         {
@@ -343,7 +343,7 @@ public:
 
     void reload()
     {
-        qDebug("LadspaPlugin::reload() - start");
+        carla_debug("LadspaPlugin::reload() - start");
         CARLA_ASSERT(kData->engine != nullptr);
         CARLA_ASSERT(fDescriptor != nullptr);
         CARLA_ASSERT(fHandle != nullptr);
@@ -477,7 +477,7 @@ public:
                     }
                 }
                 else
-                    qWarning("WARNING - Got a broken Port (Audio, but not input or output)");
+                    carla_stderr2("WARNING - Got a broken Port (Audio, but not input or output)");
             }
             else if (LADSPA_IS_PORT_CONTROL(portType))
             {
@@ -509,7 +509,7 @@ public:
 
                 if (max - min == 0.0f)
                 {
-                    qWarning("Broken plugin parameter: max - min == 0");
+                    carla_stderr2("Broken plugin parameter: max - min == 0");
                     max = min + 0.1f;
                 }
 
@@ -596,7 +596,7 @@ public:
                 else
                 {
                     kData->param.data[j].type = PARAMETER_UNKNOWN;
-                    qWarning("WARNING - Got a broken Port (Control, but not input or output)");
+                    carla_stderr2("WARNING - Got a broken Port (Control, but not input or output)");
                 }
 
                 // extra parameter hints
@@ -625,7 +625,7 @@ public:
             else
             {
                 // Not Audio or Control
-                qCritical("ERROR - Got a broken Port (neither Audio or Control)");
+                carla_stderr2("ERROR - Got a broken Port (neither Audio or Control)");
 
                 fDescriptor->connect_port(fHandle, i, nullptr);
 
@@ -735,7 +735,7 @@ public:
 
         kData->client->activate();
 
-        qDebug("LadspaPlugin::reload() - end");
+        carla_debug("LadspaPlugin::reload() - end");
     }
 
     // -------------------------------------------------------------------
@@ -1180,7 +1180,7 @@ public:
 
     void deleteBuffers()
     {
-        qDebug("LadspaPlugin::deleteBuffers() - start");
+        carla_debug("LadspaPlugin::deleteBuffers() - start");
 
         if (fAudioInBuffers != nullptr)
         {
@@ -1220,7 +1220,7 @@ public:
 
         CarlaPlugin::deleteBuffers();
 
-        qDebug("LadspaPlugin::deleteBuffers() - end");
+        carla_debug("LadspaPlugin::deleteBuffers() - end");
     }
 
     // -------------------------------------------------------------------
@@ -1331,7 +1331,7 @@ CARLA_BACKEND_START_NAMESPACE
 
 CarlaPlugin* CarlaPlugin::newLADSPA(const Initializer& init, const LADSPA_RDF_Descriptor* const rdfDescriptor)
 {
-    qDebug("CarlaPlugin::newLADSPA({%p, \"%s\", \"%s\", \"%s\"}, %p)", init.engine, init.filename, init.name, init.label, rdfDescriptor);
+    carla_debug("CarlaPlugin::newLADSPA({%p, \"%s\", \"%s\", \"%s\"}, %p)", init.engine, init.filename, init.name, init.label, rdfDescriptor);
 
 #ifdef WANT_LADSPA
     LadspaPlugin* const plugin = new LadspaPlugin(init.engine, init.id);
