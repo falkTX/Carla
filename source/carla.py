@@ -175,15 +175,13 @@ class CarlaSettingsW(QDialog):
 
         # --------------------------------------------
 
-        global LADSPA_PATH, DSSI_PATH, LV2_PATH, VST_PATH, GIG_PATH, SF2_PATH, SFZ_PATH
-
-        ladspas = toList(settings.value("Paths/LADSPA", LADSPA_PATH))
-        dssis = toList(settings.value("Paths/DSSI", DSSI_PATH))
-        lv2s = toList(settings.value("Paths/LV2", LV2_PATH))
-        vsts = toList(settings.value("Paths/VST", VST_PATH))
-        gigs = toList(settings.value("Paths/GIG", GIG_PATH))
-        sf2s = toList(settings.value("Paths/SF2", SF2_PATH))
-        sfzs = toList(settings.value("Paths/SFZ", SFZ_PATH))
+        ladspas = toList(settings.value("Paths/LADSPA", Carla.LADSPA_PATH))
+        dssis = toList(settings.value("Paths/DSSI", Carla.DSSI_PATH))
+        lv2s = toList(settings.value("Paths/LV2", Carla.LV2_PATH))
+        vsts = toList(settings.value("Paths/VST", Carla.VST_PATH))
+        gigs = toList(settings.value("Paths/GIG", Carla.GIG_PATH))
+        sf2s = toList(settings.value("Paths/SF2", Carla.SF2_PATH))
+        sfzs = toList(settings.value("Paths/SFZ", Carla.SFZ_PATH))
 
         ladspas.sort()
         dssis.sort()
@@ -326,55 +324,53 @@ class CarlaSettingsW(QDialog):
                 self.ui.sw_engine_process_mode.setCurrentIndex(1)
 
         elif self.ui.lw_page.currentRow() == TAB_INDEX_CARLA_PATHS:
-            global LADSPA_PATH, DSSI_PATH, LV2_PATH, VST_PATH, GIG_PATH, SF2_PATH, SFZ_PATH
-
             if self.ui.tw_paths.currentIndex() == 0:
-                LADSPA_PATH.sort()
+                Carla.LADSPA_PATH.sort()
                 self.ui.lw_ladspa.clear()
 
-                for ladspa in LADSPA_PATH:
+                for ladspa in Carla.LADSPA_PATH:
                     self.ui.lw_ladspa.addItem(ladspa)
 
             elif self.ui.tw_paths.currentIndex() == 1:
-                DSSI_PATH.sort()
+                Carla.DSSI_PATH.sort()
                 self.ui.lw_dssi.clear()
 
-                for dssi in DSSI_PATH:
+                for dssi in Carla.DSSI_PATH:
                     self.ui.lw_dssi.addItem(dssi)
 
             elif self.ui.tw_paths.currentIndex() == 2:
-                LV2_PATH.sort()
+                Carla.LV2_PATH.sort()
                 self.ui.lw_lv2.clear()
 
-                for lv2 in LV2_PATH:
+                for lv2 in Carla.LV2_PATH:
                     self.ui.lw_lv2.addItem(lv2)
 
             elif self.ui.tw_paths.currentIndex() == 3:
-                VST_PATH.sort()
+                Carla.VST_PATH.sort()
                 self.ui.lw_vst.clear()
 
-                for vst in VST_PATH:
+                for vst in Carla.VST_PATH:
                     self.ui.lw_vst.addItem(vst)
 
             elif self.ui.tw_paths.currentIndex() == 4:
-                GIG_PATH.sort()
+                Carla.GIG_PATH.sort()
                 self.ui.lw_gig.clear()
 
-                for gig in GIG_PATH:
+                for gig in Carla.GIG_PATH:
                     self.ui.lw_gig.addItem(gig)
 
             elif self.ui.tw_paths.currentIndex() == 5:
-                SF2_PATH.sort()
+                Carla.SF2_PATH.sort()
                 self.ui.lw_sf2.clear()
 
-                for sf2 in SF2_PATH:
+                for sf2 in Carla.SF2_PATH:
                     self.ui.lw_sf2.addItem(sf2)
 
             elif self.ui.tw_paths.currentIndex() == 6:
-                SFZ_PATH.sort()
+                Carla.SFZ_PATH.sort()
                 self.ui.lw_sfz.clear()
 
-                for sfz in SFZ_PATH:
+                for sfz in Carla.SFZ_PATH:
                     self.ui.lw_sfz.addItem(sfz)
 
     @pyqtSlot()
@@ -829,7 +825,14 @@ class CarlaMainW(QMainWindow):
 
     @pyqtSlot()
     def slot_configureCarla(self):
-        CarlaSettingsW(self).exec_()
+        dialog = CarlaSettingsW(self)
+        if dialog.exec_():
+            self.loadSettings(False)
+
+            for pwidget in self.fPluginList:
+                if pwidget is None:
+                    return
+                pwidget.setRefreshRate(self.fSavedSettings["Main/RefreshInterval"])
 
     @pyqtSlot()
     def slot_handleSIGUSR1(self):
@@ -1137,22 +1140,21 @@ class CarlaMainW(QMainWindow):
         # ---------------------------------------------
         # plugin paths
 
-        global LADSPA_PATH, DSSI_PATH, LV2_PATH, VST_PATH, GIG_PATH, SF2_PATH, SFZ_PATH
-        LADSPA_PATH = toList(settings.value("Paths/LADSPA", LADSPA_PATH))
-        DSSI_PATH = toList(settings.value("Paths/DSSI", DSSI_PATH))
-        LV2_PATH = toList(settings.value("Paths/LV2", LV2_PATH))
-        VST_PATH = toList(settings.value("Paths/VST", VST_PATH))
-        GIG_PATH = toList(settings.value("Paths/GIG", GIG_PATH))
-        SF2_PATH = toList(settings.value("Paths/SF2", SF2_PATH))
-        SFZ_PATH = toList(settings.value("Paths/SFZ", SFZ_PATH))
+        Carla.LADSPA_PATH = toList(settings.value("Paths/LADSPA", Carla.LADSPA_PATH))
+        Carla.DSSI_PATH = toList(settings.value("Paths/DSSI", Carla.DSSI_PATH))
+        Carla.LV2_PATH = toList(settings.value("Paths/LV2", Carla.LV2_PATH))
+        Carla.VST_PATH = toList(settings.value("Paths/VST", Carla.VST_PATH))
+        Carla.GIG_PATH = toList(settings.value("Paths/GIG", Carla.GIG_PATH))
+        Carla.SF2_PATH = toList(settings.value("Paths/SF2", Carla.SF2_PATH))
+        Carla.SFZ_PATH = toList(settings.value("Paths/SFZ", Carla.SFZ_PATH))
 
-        os.environ["LADSPA_PATH"] = splitter.join(LADSPA_PATH)
-        os.environ["DSSI_PATH"] = splitter.join(DSSI_PATH)
-        os.environ["LV2_PATH"] = splitter.join(LV2_PATH)
-        os.environ["VST_PATH"] = splitter.join(VST_PATH)
-        os.environ["GIG_PATH"] = splitter.join(GIG_PATH)
-        os.environ["SF2_PATH"] = splitter.join(SF2_PATH)
-        os.environ["SFZ_PATH"] = splitter.join(SFZ_PATH)
+        os.environ["LADSPA_PATH"] = splitter.join(Carla.LADSPA_PATH)
+        os.environ["DSSI_PATH"] = splitter.join(Carla.DSSI_PATH)
+        os.environ["LV2_PATH"] = splitter.join(Carla.LV2_PATH)
+        os.environ["VST_PATH"] = splitter.join(Carla.VST_PATH)
+        os.environ["GIG_PATH"] = splitter.join(Carla.GIG_PATH)
+        os.environ["SF2_PATH"] = splitter.join(Carla.SF2_PATH)
+        os.environ["SFZ_PATH"] = splitter.join(Carla.SFZ_PATH)
 
     def timerEvent(self, event):
         if event.timerId() == self.fIdleTimerFast:

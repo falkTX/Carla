@@ -322,7 +322,14 @@ class CarlaHostObject(object):
         'isControl',
         'isLocal',
         'processMode',
-        'maxParameters'
+        'maxParameters',
+        'LADSPA_PATH',
+        'DSSI_PATH',
+        'LV2_PATH',
+        'VST_PATH',
+        'GIG_PATH',
+        'SF2_PATH',
+        'SFZ_PATH'
     ]
 
 Carla = CarlaHostObject()
@@ -592,15 +599,13 @@ else:
 # ------------------------------------------------------------------------------------------------------------
 # Default Plugin Folders (set)
 
-global LADSPA_PATH, DSSI_PATH, LV2_PATH, VST_PATH, GIG_PATH, SF2_PATH, SFZ_PATH
-
-LADSPA_PATH = os.getenv("LADSPA_PATH", DEFAULT_LADSPA_PATH).split(splitter)
-DSSI_PATH = os.getenv("DSSI_PATH", DEFAULT_DSSI_PATH).split(splitter)
-LV2_PATH = os.getenv("LV2_PATH", DEFAULT_LV2_PATH).split(splitter)
-VST_PATH = os.getenv("VST_PATH", DEFAULT_VST_PATH).split(splitter)
-GIG_PATH = os.getenv("GIG_PATH", DEFAULT_GIG_PATH).split(splitter)
-SF2_PATH = os.getenv("SF2_PATH", DEFAULT_SF2_PATH).split(splitter)
-SFZ_PATH = os.getenv("SFZ_PATH", DEFAULT_SFZ_PATH).split(splitter)
+Carla.LADSPA_PATH = os.getenv("LADSPA_PATH", DEFAULT_LADSPA_PATH).split(splitter)
+Carla.DSSI_PATH = os.getenv("DSSI_PATH", DEFAULT_DSSI_PATH).split(splitter)
+Carla.LV2_PATH = os.getenv("LV2_PATH", DEFAULT_LV2_PATH).split(splitter)
+Carla.VST_PATH = os.getenv("VST_PATH", DEFAULT_VST_PATH).split(splitter)
+Carla.GIG_PATH = os.getenv("GIG_PATH", DEFAULT_GIG_PATH).split(splitter)
+Carla.SF2_PATH = os.getenv("SF2_PATH", DEFAULT_SF2_PATH).split(splitter)
+Carla.SFZ_PATH = os.getenv("SFZ_PATH", DEFAULT_SFZ_PATH).split(splitter)
 
 if haveLRDF:
     LADSPA_RDF_PATH_env = os.getenv("LADSPA_RDF_PATH")
@@ -2505,29 +2510,25 @@ class SearchPluginsThread(QThread):
                 settingsDB.sync()
 
         if self.fCheckGIG:
-            global GIG_PATH
-            self._checkKIT(GIG_PATH, "gig")
+            self._checkKIT(Carla.GIG_PATH, "gig")
             settingsDB.setValue("Plugins/GIG", self.fKitPlugins)
             settingsDB.sync()
 
         if self.fCheckSF2:
-            global SF2_PATH
-            self._checkKIT(SF2_PATH, "sf2")
+            self._checkKIT(Carla.SF2_PATH, "sf2")
             settingsDB.setValue("Plugins/SF2", self.fKitPlugins)
             settingsDB.sync()
 
         if self.fCheckSFZ:
-            global SFZ_PATH
-            self._checkKIT(SFZ_PATH, "sfz")
+            self._checkKIT(Carla.SFZ_PATH, "sfz")
             settingsDB.setValue("Plugins/SFZ", self.fKitPlugins)
             settingsDB.sync()
 
     def _checkLADSPA(self, OS, tool, isWine=False):
-        global LADSPA_PATH
         ladspaBinaries = []
         self.fLadspaPlugins = []
 
-        for iPATH in LADSPA_PATH:
+        for iPATH in Carla.LADSPA_PATH:
             binaries = findBinaries(iPATH, OS)
             for binary in binaries:
                 if binary not in ladspaBinaries:
@@ -2548,11 +2549,10 @@ class SearchPluginsThread(QThread):
         self.fLastCheckValue += self.fCurPercentValue
 
     def _checkDSSI(self, OS, tool, isWine=False):
-        global DSSI_PATH
         dssiBinaries = []
         self.fDssiPlugins = []
 
-        for iPATH in DSSI_PATH:
+        for iPATH in Carla.DSSI_PATH:
             binaries = findBinaries(iPATH, OS)
             for binary in binaries:
                 if binary not in dssiBinaries:
@@ -2573,13 +2573,12 @@ class SearchPluginsThread(QThread):
         self.fLastCheckValue += self.fCurPercentValue
 
     def _checkLV2(self, tool, isWine=False):
-        global LV2_PATH
         lv2Bundles = []
         self.fLv2Plugins = []
 
         self._pluginLook(self.fLastCheckValue, "LV2 bundles...")
 
-        for iPATH in LV2_PATH:
+        for iPATH in Carla.LV2_PATH:
             bundles = findLV2Bundles(iPATH)
             for bundle in bundles:
                 if bundle not in lv2Bundles:
@@ -2600,11 +2599,10 @@ class SearchPluginsThread(QThread):
         self.fLastCheckValue += self.fCurPercentValue
 
     def _checkVST(self, OS, tool, isWine=False):
-        global VST_PATH
         vstBinaries = []
         self.fVstPlugins = []
 
-        for iPATH in VST_PATH:
+        for iPATH in Carla.VST_PATH:
             binaries = findBinaries(iPATH, OS)
             for binary in binaries:
                 if binary not in vstBinaries:
