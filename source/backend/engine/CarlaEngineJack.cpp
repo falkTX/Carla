@@ -805,150 +805,168 @@ protected:
             float* inBuf[2]  = { audioIn1, audioIn2 };
             float* outBuf[2] = { audioOut1, audioOut2 };
 
-#if 0
-            // initialize control input
-            memset(rackControlEventsIn, 0, sizeof(CarlaEngineControlEvent)*MAX_CONTROL_EVENTS);
+            // initialize input events
+            carla_zeroMem(kData->rack.in, sizeof(EngineEvent)*RACK_EVENT_COUNT);
             {
-                jack_midi_event_t jackEvent;
-                const uint32_t jackEventCount = jackbridge_midi_get_event_count(controlIn);
+                uint32_t engineEventIndex = 0;
 
-                uint32_t carlaEventIndex = 0;
+                jack_midi_event_t jackEvent;
+                const uint32_t jackEventCount = jackbridge_midi_get_event_count(eventIn);
 
                 for (uint32_t jackEventIndex=0; jackEventIndex < jackEventCount; jackEventIndex++)
                 {
-                    if (jackbridge_midi_event_get(&jackEvent, controlIn, jackEventIndex) != 0)
+                    if (jackbridge_midi_event_get(&jackEvent, eventIn, jackEventIndex) != 0)
                         continue;
 
-                    CarlaEngineControlEvent* const carlaEvent = &rackControlEventsIn[carlaEventIndex++];
+                    EngineEvent* const engineEvent = &kData->rack.in[engineEventIndex++];
+                    engineEvent->clear();
 
-                    const uint8_t midiStatus  = jackEvent.buffer[0];
-                    const uint8_t midiChannel = midiStatus & 0x0F;
+                    const uint8_t midiStatus  = MIDI_GET_STATUS_FROM_DATA(jackEvent.buffer);
+                    const uint8_t midiChannel = MIDI_GET_CHANNEL_FROM_DATA(jackEvent.buffer);
 
-                    carlaEvent->time    = jackEvent.time;
-                    carlaEvent->channel = midiChannel;
+                    engineEvent->time    = jackEvent.time;
+                    engineEvent->channel = midiChannel;
 
                     if (MIDI_IS_STATUS_CONTROL_CHANGE(midiStatus))
                     {
                         const uint8_t midiControl = jackEvent.buffer[1];
+                        engineEvent->type         = kEngineEventTypeControl;
 
                         if (MIDI_IS_CONTROL_BANK_SELECT(midiControl))
                         {
-                            const uint8_t midiBank = jackEvent.buffer[2];
-                            carlaEvent->type  = CarlaEngineMidiBankChangeEvent;
-                            carlaEvent->value = midiBank;
+                            const uint8_t midiBank  = jackEvent.buffer[2];
+
+                            engineEvent->ctrl.type  = kEngineControlEventTypeMidiBank;
+                            engineEvent->ctrl.param = midiBank;
+                            engineEvent->ctrl.value = 0.0;
                         }
                         else if (midiControl == MIDI_CONTROL_ALL_SOUND_OFF)
                         {
-                            carlaEvent->type = CarlaEngineAllSoundOffEvent;
+                            engineEvent->ctrl.type  = kEngineControlEventTypeAllSoundOff;
+                            engineEvent->ctrl.param = 0;
+                            engineEvent->ctrl.value = 0.0;
                         }
                         else if (midiControl == MIDI_CONTROL_ALL_NOTES_OFF)
                         {
-                            carlaEvent->type = CarlaEngineAllNotesOffEvent;
+                            engineEvent->ctrl.type  = kEngineControlEventTypeAllNotesOff;
+                            engineEvent->ctrl.param = 0;
+                            engineEvent->ctrl.value = 0.0;
                         }
                         else
                         {
                             const uint8_t midiValue = jackEvent.buffer[2];
-                            carlaEvent->type      = CarlaEngineParameterChangeEvent;
-                            carlaEvent->parameter = midiControl;
-                            carlaEvent->value     = double(midiValue)/127;
+
+                            engineEvent->ctrl.type  = kEngineControlEventTypeParameter;
+                            engineEvent->ctrl.param = midiControl;
+                            engineEvent->ctrl.value = double(midiValue)/127.0;
                         }
                     }
                     else if (MIDI_IS_STATUS_PROGRAM_CHANGE(midiStatus))
                     {
                         const uint8_t midiProgram = jackEvent.buffer[1];
-                        carlaEvent->type  = CarlaEngineMidiProgramChangeEvent;
-                        carlaEvent->value = midiProgram;
+                        engineEvent->type         = kEngineEventTypeControl;
+
+                        engineEvent->ctrl.type  = kEngineControlEventTypeMidiProgram;
+                        engineEvent->ctrl.param = midiProgram;
+                        engineEvent->ctrl.value = 0.0;
                     }
-                }
-            }
-
-            // initialize midi input
-            memset(rackMidiEventsIn, 0, sizeof(CarlaEngineMidiEvent)*MAX_MIDI_EVENTS);
-            {
-                uint32_t i = 0, j = 0;
-                jack_midi_event_t jackEvent;
-
-                while (jackbridge_midi_event_get(&jackEvent, midiIn, j++) == 0)
-                {
-                    if (i == MAX_MIDI_EVENTS)
-                        break;
-
-                    if (jackEvent.size < 4)
+                    else
                     {
-                        rackMidiEventsIn[i].time = jackEvent.time;
-                        rackMidiEventsIn[i].size = jackEvent.size;
-                        memcpy(rackMidiEventsIn[i].data, jackEvent.buffer, jackEvent.size);
-                        i += 1;
+                        engineEvent->type = kEngineEventTypeMidi;
+
+                        engineEvent->midi.data[0] = midiStatus;
+                        engineEvent->midi.data[1] = jackEvent.buffer[1];
+                        engineEvent->midi.data[2] = jackEvent.buffer[2];
+                        engineEvent->midi.size    = static_cast<uint8_t>(jackEvent.size);
                     }
+
+                    if (engineEventIndex >= RACK_EVENT_COUNT)
+                        break;
                 }
             }
-#endif
 
             // process rack
             processRack(inBuf, outBuf, nframes);
 
-#if 0
             // output control
             {
-                jackbridge_midi_clear_buffer(controlOut);
+                jackbridge_midi_clear_buffer(eventOut);
 
-                for (unsigned short i=0; i < MAX_CONTROL_EVENTS; i++)
+                for (unsigned short i=0; i < RACK_EVENT_COUNT; i++)
                 {
-                    CarlaEngineControlEvent* const event = &rackControlEventsOut[i];
+                    EngineEvent* const engineEvent = &kData->rack.out[i];
 
-                    if (event->type == CarlaEngineParameterChangeEvent && MIDI_IS_CONTROL_BANK_SELECT(event->parameter))
-                        event->type = CarlaEngineMidiBankChangeEvent;
+                    uint8_t data[3] = { 0 };
+                    uint8_t size    = 0;
 
-                    uint8_t data[4] = { 0 };
-
-                    switch (event->type)
+                    switch (engineEvent->type)
                     {
-                    case CarlaEngineNullEvent:
+                    case kEngineEventTypeNull:
                         break;
-                    case CarlaEngineParameterChangeEvent:
-                        data[0] = MIDI_STATUS_CONTROL_CHANGE + event->channel;
-                        data[1] = event->parameter;
-                        data[2] = event->value * 127;
-                        jackbridge_midi_event_write(controlOut, event->time, data, 3);
-                        break;
-                    case CarlaEngineMidiBankChangeEvent:
-                        data[0] = MIDI_STATUS_CONTROL_CHANGE + event->channel;
-                        data[1] = MIDI_CONTROL_BANK_SELECT;
-                        data[2] = event->value;
-                        jackbridge_midi_event_write(controlOut, event->time, data, 3);
-                        break;
-                    case CarlaEngineMidiProgramChangeEvent:
-                        data[0] = MIDI_STATUS_PROGRAM_CHANGE + event->channel;
-                        data[1] = event->value;
-                        jackbridge_midi_event_write(controlOut, event->time, data, 2);
-                        break;
-                    case CarlaEngineAllSoundOffEvent:
-                        data[0] = MIDI_STATUS_CONTROL_CHANGE + event->channel;
-                        data[1] = MIDI_CONTROL_ALL_SOUND_OFF;
-                        jackbridge_midi_event_write(controlOut, event->time, data, 2);
-                        break;
-                    case CarlaEngineAllNotesOffEvent:
-                        data[0] = MIDI_STATUS_CONTROL_CHANGE + event->channel;
-                        data[1] = MIDI_CONTROL_ALL_NOTES_OFF;
-                        jackbridge_midi_event_write(controlOut, event->time, data, 2);
+
+                    case kEngineEventTypeControl:
+                    {
+                        EngineControlEvent* const ctrlEvent = &engineEvent->ctrl;
+
+                        if (ctrlEvent->type == kEngineControlEventTypeParameter && MIDI_IS_CONTROL_BANK_SELECT(ctrlEvent->param))
+                        {
+                            // FIXME?
+                            ctrlEvent->type  = kEngineControlEventTypeMidiBank;
+                            ctrlEvent->param = ctrlEvent->value;
+                            ctrlEvent->value = 0.0;
+                        }
+
+                        switch (ctrlEvent->type)
+                        {
+                        case kEngineControlEventTypeNull:
+                            break;
+                        case kEngineControlEventTypeParameter:
+                            data[0] = MIDI_STATUS_CONTROL_CHANGE + engineEvent->channel;
+                            data[1] = static_cast<uint8_t>(ctrlEvent->param);
+                            data[2] = uint8_t(ctrlEvent->value * 127.0);
+                            size    = 3;
+                            break;
+                        case kEngineControlEventTypeMidiBank:
+                            data[0] = MIDI_STATUS_CONTROL_CHANGE + engineEvent->channel;
+                            data[1] = MIDI_CONTROL_BANK_SELECT;
+                            data[2] = static_cast<uint8_t>(ctrlEvent->param);
+                            size    = 3;
+                            break;
+                        case kEngineControlEventTypeMidiProgram:
+                            data[0] = MIDI_STATUS_PROGRAM_CHANGE + engineEvent->channel;
+                            data[1] = static_cast<uint8_t>(ctrlEvent->param);
+                            size    = 2;
+                            break;
+                        case kEngineControlEventTypeAllSoundOff:
+                            data[0] = MIDI_STATUS_CONTROL_CHANGE + engineEvent->channel;
+                            data[1] = MIDI_CONTROL_ALL_SOUND_OFF;
+                            size    = 2;
+                            break;
+                        case kEngineControlEventTypeAllNotesOff:
+                            data[0] = MIDI_STATUS_CONTROL_CHANGE + engineEvent->channel;
+                            data[1] = MIDI_CONTROL_ALL_NOTES_OFF;
+                            size    = 2;
+                            break;
+                        }
                         break;
                     }
-                }
-            }
 
-            // output midi
-            {
-                jackbridge_midi_clear_buffer(midiOut);
+                    case kEngineEventTypeMidi:
+                    {
+                        EngineMidiEvent* const midiEvent = &engineEvent->midi;
 
-                for (unsigned short i=0; i < MAX_MIDI_EVENTS; i++)
-                {
-                    if (rackMidiEventsOut[i].size == 0)
+                        data[0] = midiEvent->data[0];
+                        data[1] = midiEvent->data[1];
+                        data[2] = midiEvent->data[2];
+                        size    = midiEvent->size;
                         break;
+                    }
+                    }
 
-                    jackbridge_midi_event_write(midiOut, rackMidiEventsOut[i].time, rackMidiEventsOut[i].data, rackMidiEventsOut[i].size);
+                    if (size > 0)
+                        jackbridge_midi_event_write(eventOut, engineEvent->time, data, size);
                 }
             }
-#endif
         }
 #endif // ! BUILD_BRIDGE
 

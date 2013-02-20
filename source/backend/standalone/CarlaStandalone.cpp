@@ -212,12 +212,12 @@ bool carla_engine_init(const char* driverName, const char* clientName)
         standalone.engine->setCallback(standalone.callback, nullptr);
 
 #ifndef BUILD_BRIDGE
-    standalone.engine->setOption(CarlaBackend::OPTION_PROCESS_MODE,               standalone.options.processMode ? 1 : 0,         nullptr);
-    standalone.engine->setOption(CarlaBackend::OPTION_FORCE_STEREO,               standalone.options.forceStereo ? 1 : 0,         nullptr);
-    standalone.engine->setOption(CarlaBackend::OPTION_PREFER_PLUGIN_BRIDGES,      standalone.options.preferPluginBridges ? 1 : 0, nullptr);
-    standalone.engine->setOption(CarlaBackend::OPTION_PREFER_UI_BRIDGES,          standalone.options.preferUiBridges ? 1 : 0,     nullptr);
+    standalone.engine->setOption(CarlaBackend::OPTION_PROCESS_MODE,               static_cast<int>(standalone.options.processMode), nullptr);
+    standalone.engine->setOption(CarlaBackend::OPTION_FORCE_STEREO,               standalone.options.forceStereo ? 1 : 0,           nullptr);
+    standalone.engine->setOption(CarlaBackend::OPTION_PREFER_PLUGIN_BRIDGES,      standalone.options.preferPluginBridges ? 1 : 0,   nullptr);
+    standalone.engine->setOption(CarlaBackend::OPTION_PREFER_UI_BRIDGES,          standalone.options.preferUiBridges ? 1 : 0,       nullptr);
 # ifdef WANT_DSSI
-    standalone.engine->setOption(CarlaBackend::OPTION_USE_DSSI_VST_CHUNKS,        standalone.options.useDssiVstChunks ? 1 : 0,    nullptr);
+    standalone.engine->setOption(CarlaBackend::OPTION_USE_DSSI_VST_CHUNKS,        standalone.options.useDssiVstChunks ? 1 : 0,      nullptr);
 # endif
     standalone.engine->setOption(CarlaBackend::OPTION_MAX_PARAMETERS,             static_cast<int>(standalone.options.maxParameters),       nullptr);
     standalone.engine->setOption(CarlaBackend::OPTION_PREFERRED_BUFFER_SIZE,      static_cast<int>(standalone.options.preferredBufferSize), nullptr);

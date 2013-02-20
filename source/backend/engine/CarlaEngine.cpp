@@ -516,6 +516,8 @@ bool CarlaEngine::init(const char* const clientName)
     {
     case PROCESS_MODE_CONTINUOUS_RACK:
         kData->maxPluginNumber = MAX_RACK_PLUGINS;
+        kData->rack.in  = new EngineEvent[RACK_EVENT_COUNT];
+        kData->rack.out = new EngineEvent[RACK_EVENT_COUNT];
         break;
     case PROCESS_MODE_PATCHBAY:
         kData->maxPluginNumber = MAX_PATCHBAY_PLUGINS;
@@ -572,6 +574,18 @@ bool CarlaEngine::close()
     {
         delete[] kData->plugins;
         kData->plugins = nullptr;
+    }
+
+    if (kData->rack.in != nullptr)
+    {
+        delete[] kData->rack.in;
+        kData->rack.in = nullptr;
+    }
+
+    if (kData->rack.out != nullptr)
+    {
+        delete[] kData->rack.out;
+        kData->rack.out = nullptr;
     }
 
     fName.clear();
@@ -1319,11 +1333,13 @@ void CarlaEngine::setPeaks(const unsigned int pluginId, float const inPeaks[MAX_
 #ifndef BUILD_BRIDGE
 EngineEvent* CarlaEngine::getRackEventBuffer(const bool isInput)
 {
-    // TODO
-    return nullptr;
+    return isInput ? kData->rack.in : kData->rack.out;
+}
 
-    // unused
-    (void)isInput;
+void setValueIfHigher(float& value, const float& compare)
+{
+    if (value < compare)
+        value = compare;
 }
 
 void CarlaEngine::processRack(float* inBuf[2], float* outBuf[2], const uint32_t frames)
@@ -1331,57 +1347,34 @@ void CarlaEngine::processRack(float* inBuf[2], float* outBuf[2], const uint32_t 
     // initialize outputs (zero)
     carla_zeroFloat(outBuf[0], frames);
     carla_zeroFloat(outBuf[1], frames);
-
-    //std::memset(rackEventsOut, 0, sizeof(EngineEvent)*MAX_EVENTS);
+    carla_zeroMem(kData->rack.out, sizeof(EngineEvent)*RACK_EVENT_COUNT);
 
     bool processed = false;
+
     // process plugins
     for (unsigned int i=0; i < kData->curPluginCount; i++)
     {
-        CarlaPlugin* const plugin = getPluginUnchecked(i);
+        CarlaPlugin* const plugin = kData->plugins[i].plugin;
 
         if (plugin == nullptr || ! plugin->enabled())
             continue;
 
-        // TODO
-#if 0
         if (processed)
         {
             // initialize inputs (from previous outputs)
-            memcpy(inBuf[0], outBuf[0], sizeof(float)*frames);
-            memcpy(inBuf[1], outBuf[1], sizeof(float)*frames);
-            memcpy(rackMidiEventsIn, rackMidiEventsOut, sizeof(CarlaEngineMidiEvent)*MAX_MIDI_EVENTS);
+            std::memcpy(inBuf[0], outBuf[0], sizeof(float)*frames);
+            std::memcpy(inBuf[1], outBuf[1], sizeof(float)*frames);
+            std::memcpy(kData->rack.in, kData->rack.out, sizeof(EngineEvent)*RACK_EVENT_COUNT);
 
             // initialize outputs (zero)
             carla_zeroFloat(outBuf[0], frames);
             carla_zeroFloat(outBuf[1], frames);
-            memset(rackMidiEventsOut, 0, sizeof(CarlaEngineMidiEvent)*MAX_MIDI_EVENTS);
+            carla_zeroMem(kData->rack.out, sizeof(EngineEvent)*RACK_EVENT_COUNT);
         }
 
         // process
-        processLock();
         plugin->initBuffers();
-
-        if (false /*plugin->data->processHighPrecision*/)
-        {
-            float* inBuf2[2];
-            float* outBuf2[2];
-
-            for (uint32_t j=0; j < frames; j += 8)
-            {
-                inBuf2[0] = inBuf[0] + j;
-                inBuf2[1] = inBuf[1] + j;
-
-                outBuf2[0] = outBuf[0] + j;
-                outBuf2[1] = outBuf[1] + j;
-
-                plugin->process(inBuf2, outBuf2, 8, j);
-            }
-        }
-        else
-            plugin->process(inBuf, outBuf, frames);
-
-        processUnlock();
+        plugin->process(inBuf, outBuf, frames);
 
         // if plugin has no audio inputs, add previous buffers
         if (plugin->audioInCount() == 0)
@@ -1393,38 +1386,38 @@ void CarlaEngine::processRack(float* inBuf[2], float* outBuf[2], const uint32_t 
             }
         }
 
-        // if plugin has no midi output, add previous midi input
+#if 0
+        // if plugin has no midi output, add previous events
         if (plugin->midiOutCount() == 0)
         {
-            memcpy(rackMidiEventsOut, rackMidiEventsIn, sizeof(CarlaEngineMidiEvent)*MAX_MIDI_EVENTS);
+            for (uint32_t j=0, k=0; j < frames; j++)
+            {
+
+            }
+            std::memcpy(kData->rack.out, kData->rack.in, sizeof(EngineEvent)*RACK_EVENT_COUNT);
         }
+#endif
 
         // set peaks
         {
-            double inPeak1  = 0.0;
-            double inPeak2  = 0.0;
-            double outPeak1 = 0.0;
-            double outPeak2 = 0.0;
+            float inPeak1  = 0.0f;
+            float inPeak2  = 0.0f;
+            float outPeak1 = 0.0f;
+            float outPeak2 = 0.0f;
 
             for (uint32_t k=0; k < frames; k++)
             {
-                // TODO - optimize this
-                if (std::abs(inBuf[0][k]) > inPeak1)
-                    inPeak1 = std::abs(inBuf[0][k]);
-                if (std::abs(inBuf[1][k]) > inPeak2)
-                    inPeak2 = std::abs(inBuf[1][k]);
-                if (std::abs(outBuf[0][k]) > outPeak1)
-                    outPeak1 = std::abs(outBuf[0][k]);
-                if (std::abs(outBuf[1][k]) > outPeak2)
-                    outPeak2 = std::abs(outBuf[1][k]);
+                setValueIfHigher(inPeak1,  std::fabs(inBuf[0][k]));
+                setValueIfHigher(inPeak2,  std::fabs(inBuf[1][k]));
+                setValueIfHigher(outPeak1, std::fabs(outBuf[0][k]));
+                setValueIfHigher(outPeak2, std::fabs(outBuf[1][k]));
             }
 
-            data->insPeak[i*MAX_PEAKS + 0] = inPeak1;
-            data->insPeak[i*MAX_PEAKS + 1] = inPeak2;
-            data->outsPeak[i*MAX_PEAKS + 0] = outPeak1;
-            data->outsPeak[i*MAX_PEAKS + 1] = outPeak2;
+            kData->plugins[i].insPeak[0]  = inPeak1;
+            kData->plugins[i].insPeak[1]  = inPeak2;
+            kData->plugins[i].outsPeak[0] = outPeak1;
+            kData->plugins[i].outsPeak[1] = outPeak2;
         }
-#endif
 
         processed = true;
     }
@@ -1434,7 +1427,7 @@ void CarlaEngine::processRack(float* inBuf[2], float* outBuf[2], const uint32_t 
     {
         std::memcpy(outBuf[0], inBuf[0], sizeof(float)*frames);
         std::memcpy(outBuf[1], inBuf[1], sizeof(float)*frames);
-        //std::memcpy(rackEventsOut, rackEventsIn, sizeof(EngineEvent)*MAX_EVENTS);
+        std::memcpy(kData->rack.out, kData->rack.in, sizeof(EngineEvent)*RACK_EVENT_COUNT);
     }
 }
 

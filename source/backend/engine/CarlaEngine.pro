@@ -1,7 +1,9 @@
 # QtCreator project file
 
+QT = core
+
 CONFIG    = debug
-CONFIG   += link_pkgconfig shared warn_on
+CONFIG   += link_pkgconfig shared qt warn_on
 
 DEFINES   = DEBUG
 DEFINES  += QTCREATOR_TEST
@@ -31,37 +33,37 @@ TEMPLATE = lib
 VERSION  = 0.5.0
 
 SOURCES  = \
-    carla_engine.cpp \
-    carla_engine_osc.cpp \
-    carla_engine_thread.cpp \
-    jack.cpp \
-    plugin.cpp \
-    rtaudio.cpp
+    CarlaEngine.cpp \
+    CarlaEngineOsc.cpp \
+    CarlaEngineThread.cpp \
+    CarlaEngineJack.cpp \
+    CarlaEnginePlugin.cpp \
+    CarlaEngineRtAudio.cpp
 
 HEADERS  = \
-    carla_engine_internal.hpp \
-    carla_engine_osc.hpp \
-    carla_engine_thread.hpp
+    CarlaEngineInternal.hpp \
+    CarlaEngineOsc.hpp \
+    CarlaEngineThread.hpp
 
 HEADERS += \
-    ../carla_backend.hpp \
-    ../carla_engine.hpp \
-    ../carla_plugin.hpp
+    ../CarlaBackend.hpp \
+    ../CarlaEngine.hpp \
+    ../CarlaPlugin.hpp
 
 HEADERS += \
-    ../../includes/carla_defines.hpp \
-    ../../includes/carla_midi.h \
-    ../../utils/carla_mutex.hpp \
-    ../../utils/carla_string.hpp \
-    ../../utils/carla_thread.hpp \
-    ../../utils/carla_utils.hpp \
-    ../../utils/carla_backend_utils.hpp \
-    ../../utils/carla_juce_utils.hpp \
-    ../../utils/carla_osc_utils.hpp \
-    ../../utils/carla_state_utils.hpp
+    ../../includes/CarlaDefines.hpp \
+    ../../includes/CarlaMIDI.h \
+    ../../utils/CarlaMutex.hpp \
+    ../../utils/CarlaString.hpp \
+    ../../utils/CarlaThread.hpp \
+    ../../utils/CarlaUtils.hpp \
+    ../../utils/CarlaBackendUtils.hpp \
+    ../../utils/CarlaJuceUtils.hpp \
+    ../../utils/CarlaOscUtils.hpp \
+    ../../utils/CarlaStateUtils.hpp
 
 HEADERS += \
-    plugin/DistrhoPluginInfo.h
+    distrho/DistrhoPluginInfo.h
 
 INCLUDEPATH = . .. \
     ../../includes \
@@ -76,24 +78,4 @@ SOURCES     += rtmidi-2.0.1/RtMidi.cpp
 # Plugin
 INCLUDEPATH += plugin ../../libs/distrho-plugin-toolkit
 
-# ---------------------------------------------------------------------------------------
-
-PKGCONFIG += QtCore
-
-# Fake includes
-INCLUDEPATH += \
-    /usr/include/qt4/ \
-    /opt/kxstudio/include/
-
-# System includes
-QMAKE_CXXFLAGS += -isystem /usr/include/qt4/
-QMAKE_CXXFLAGS += -isystem /opt/kxstudio/include/
-
-WARN_FLAGS = \
-    -ansi -pedantic -pedantic-errors -Wall -Wextra -Wformat=2 -Wunused-parameter -Wuninitialized \
-    -Wcast-qual -Wconversion -Wsign-conversion -Wlogical-op -Waggregate-return -Wno-vla \
-    -fipa-pure-const -Wsuggest-attribute=const #pure,const,noreturn
-
-QMAKE_CFLAGS   += $${WARN_FLAGS} -std=c99 -Wc++-compat -Wunsuffixed-float-constants -Wwrite-strings
-# QMAKE_CXXFLAGS += $${WARN_FLAGS} -std=c++0x -fPIC
-QMAKE_CXXFLAGS += $${WARN_FLAGS} -std=c++11 -Wzero-as-null-pointer-constant
+QMAKE_CXXFLAGS += -std=c++0x

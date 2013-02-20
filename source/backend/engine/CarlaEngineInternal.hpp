@@ -98,7 +98,7 @@ const char* EngineControlEventType2Str(const EngineControlEventType type)
  */
 const uint32_t       PATCHBAY_BUFFER_SIZE = 128;
 const unsigned short PATCHBAY_EVENT_COUNT = 512;
-const unsigned short RACK_EVENT_COUNT     = 1024;
+const unsigned short RACK_EVENT_COUNT     = 512;
 
 #if 0
 struct EnginePostEvent {
@@ -166,6 +166,15 @@ struct CarlaEngineProtectedData {
             mutex.unlock();
         }
     } nextAction;
+
+    struct Rack {
+        EngineEvent* in;
+        EngineEvent* out;
+
+        Rack()
+            : in(nullptr),
+              out(nullptr) {}
+    } rack;
 
     EnginePluginData* plugins;
 
