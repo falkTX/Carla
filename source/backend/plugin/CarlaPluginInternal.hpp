@@ -18,6 +18,7 @@
 #ifndef __CARLA_PLUGIN_INTERNAL_HPP__
 #define __CARLA_PLUGIN_INTERNAL_HPP__
 
+#include "CarlaBackendUtils.hpp"
 #include "CarlaPluginThread.hpp"
 #include "CarlaPlugin.hpp"
 #include "CarlaEngine.hpp"
@@ -483,13 +484,13 @@ struct CarlaPluginProtectedData {
 
     struct OSC {
         CarlaOscData data;
-        CarlaPluginThread* thread;
+        CarlaPluginThread thread;
 
-        OSC()
-            : thread(nullptr) {}
+        OSC(CarlaEngine* const engine, CarlaPlugin* const plugin, const CarlaPluginThread::Mode mode)
+            : thread(engine, plugin, mode) {}
     } osc;
 
-    CarlaPluginProtectedData(CarlaEngine* const engine_)
+    CarlaPluginProtectedData(CarlaEngine* const engine_, CarlaPlugin* const plugin, const CarlaPluginThread::Mode mode)
         : engine(engine_),
           client(nullptr),
           gui(nullptr),
@@ -499,7 +500,8 @@ struct CarlaPluginProtectedData {
           ctrlInChannel(-1),
           extraHints(0x0),
           latency(0),
-          latencyBuffers(nullptr) {}
+          latencyBuffers(nullptr),
+          osc(engine_, plugin, mode) {}
 
     CarlaPluginProtectedData() = delete;
     CarlaPluginProtectedData(CarlaPluginProtectedData&) = delete;

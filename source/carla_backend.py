@@ -173,6 +173,9 @@ class Host(object):
 
         self.lib.carla_is_engine_running.argtypes = None
         self.lib.carla_is_engine_running.restype = c_bool
+        
+        self.lib.carla_set_engine_about_to_close.argtypes = None
+        self.lib.carla_set_engine_about_to_close.restype = None
 
         self.lib.carla_load_project.argtypes = [c_char_p]
         self.lib.carla_load_project.restype = c_bool
@@ -363,10 +366,13 @@ class Host(object):
         return self.lib.carla_engine_close()
 
     def engine_idle(self):
-        return self.lib.carla_engine_idle()
+        self.lib.carla_engine_idle()
 
     def is_engine_running(self):
         return self.lib.carla_is_engine_running()
+
+    def set_engine_about_to_close(self):
+        self.lib.carla_set_engine_about_to_close()
 
     def load_project(self, filename):
         return self.lib.carla_load_project(filename.encode("utf-8"))

@@ -17,7 +17,6 @@
 
 #include "CarlaPluginInternal.hpp"
 #include "CarlaLibUtils.hpp"
-#include "CarlaStateUtils.hpp"
 #include "CarlaMIDI.h"
 
 //#include <QtGui/QtEvents>
@@ -60,12 +59,12 @@ CarlaPlugin::CarlaPlugin(CarlaEngine* const engine, const unsigned int id)
       fHints(0x0),
       fOptions(0x0),
       fEnabled(false),
-      kData(new CarlaPluginProtectedData(engine))
+      kData(new CarlaPluginProtectedData(engine, this, CarlaPluginThread::PLUGIN_THREAD_NULL))
 {
     CARLA_ASSERT(kData != nullptr);
     CARLA_ASSERT(engine != nullptr);
     CARLA_ASSERT(id < engine->maxPluginNumber());
-    qDebug("CarlaPlugin::CarlaPlugin(%p, %i)", engine, id);
+    carla_debug("CarlaPlugin::CarlaPlugin(%p, %i)", engine, id);
 
     switch (engine->getProccessMode())
     {
@@ -90,7 +89,7 @@ CarlaPlugin::CarlaPlugin(CarlaEngine* const engine, const unsigned int id)
 
 CarlaPlugin::~CarlaPlugin()
 {
-    qDebug("CarlaPlugin::~CarlaPlugin()");
+    carla_debug("CarlaPlugin::~CarlaPlugin()");
 
     // Remove client and ports
     if (kData->client != nullptr)
@@ -163,7 +162,7 @@ uint32_t CarlaPlugin::parameterScalePointCount(const uint32_t parameterId) const
     return 0;
 
     // unused
-    Q_UNUSED(parameterId);
+    (void)parameterId;
 }
 
 uint32_t CarlaPlugin::programCount() const
@@ -235,7 +234,7 @@ int32_t CarlaPlugin::chunkData(void** const dataPtr)
     return 0;
 
     // unused
-    Q_UNUSED(dataPtr);
+    (void)dataPtr;
 }
 
 // -------------------------------------------------------------------
@@ -247,7 +246,7 @@ float CarlaPlugin::getParameterValue(const uint32_t parameterId)
     return 0.0f;
 
     // unused
-    Q_UNUSED(parameterId);
+    (void)parameterId;
 }
 
 float CarlaPlugin::getParameterScalePointValue(const uint32_t parameterId, const uint32_t scalePointId)
@@ -257,8 +256,8 @@ float CarlaPlugin::getParameterScalePointValue(const uint32_t parameterId, const
     return 0.0f;
 
     // unused
-    Q_UNUSED(parameterId);
-    Q_UNUSED(scalePointId);
+    (void)parameterId;
+    (void)scalePointId;
 }
 
 void CarlaPlugin::getLabel(char* const strBuf)
@@ -288,7 +287,7 @@ void CarlaPlugin::getParameterName(const uint32_t parameterId, char* const strBu
     return;
 
     // unused
-    Q_UNUSED(parameterId);
+    (void)parameterId;
 }
 
 void CarlaPlugin::getParameterSymbol(const uint32_t parameterId, char* const strBuf)
@@ -298,7 +297,7 @@ void CarlaPlugin::getParameterSymbol(const uint32_t parameterId, char* const str
     return;
 
     // unused
-    Q_UNUSED(parameterId);
+    (void)parameterId;
 }
 
 void CarlaPlugin::getParameterText(const uint32_t parameterId, char* const strBuf)
@@ -308,7 +307,7 @@ void CarlaPlugin::getParameterText(const uint32_t parameterId, char* const strBu
     return;
 
     // unused
-    Q_UNUSED(parameterId);
+    (void)parameterId;
 }
 
 void CarlaPlugin::getParameterUnit(const uint32_t parameterId, char* const strBuf)
@@ -318,7 +317,7 @@ void CarlaPlugin::getParameterUnit(const uint32_t parameterId, char* const strBu
     return;
 
     // unused
-    Q_UNUSED(parameterId);
+    (void)parameterId;
 }
 
 void CarlaPlugin::getParameterScalePointLabel(const uint32_t parameterId, const uint32_t scalePointId, char* const strBuf)
@@ -329,8 +328,8 @@ void CarlaPlugin::getParameterScalePointLabel(const uint32_t parameterId, const 
     return;
 
     // unused
-    Q_UNUSED(parameterId);
-    Q_UNUSED(scalePointId);
+    (void)parameterId;
+    (void)scalePointId;
 }
 
 void CarlaPlugin::getProgramName(const uint32_t index, char* const strBuf)
@@ -380,6 +379,7 @@ void CarlaPlugin::getParameterCountInfo(uint32_t* const ins, uint32_t* const out
 // -------------------------------------------------------------------
 // Set data (state)
 
+#if 0
 const SaveState& CarlaPlugin::getSaveState()
 {
     static SaveState saveState;
@@ -393,6 +393,7 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
     // TODO
     Q_UNUSED(saveState);
 }
+#endif
 
 // -------------------------------------------------------------------
 // Set data (internal stuff)
@@ -420,7 +421,8 @@ void CarlaPlugin::setActive(const bool active, const bool sendOsc, const bool se
     if (sendOsc)
         kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_ACTIVE, value);
 #else
-    Q_UNUSED(sendOsc);
+    // unused
+    (void)sendOsc;
 #endif
 
     if (sendCallback)
@@ -443,7 +445,8 @@ void CarlaPlugin::setDryWet(const float value, const bool sendOsc, const bool se
     if (sendOsc)
         kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_DRYWET, fixedValue);
 #else
-    Q_UNUSED(sendOsc);
+    // unused
+    (void)sendOsc;
 #endif
 
     if (sendCallback)
@@ -466,7 +469,8 @@ void CarlaPlugin::setVolume(const float value, const bool sendOsc, const bool se
     if (sendOsc)
         kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_VOLUME, fixedValue);
 #else
-    Q_UNUSED(sendOsc);
+    // unused
+    (void)sendOsc;
 #endif
 
     if (sendCallback)
@@ -489,7 +493,8 @@ void CarlaPlugin::setBalanceLeft(const float value, const bool sendOsc, const bo
     if (sendOsc)
         kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_BALANCE_LEFT, fixedValue);
 #else
-    Q_UNUSED(sendOsc);
+    // unused
+    (void)sendOsc;
 #endif
 
     if (sendCallback)
@@ -512,7 +517,8 @@ void CarlaPlugin::setBalanceRight(const float value, const bool sendOsc, const b
     if (sendOsc)
         kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_BALANCE_RIGHT, fixedValue);
 #else
-    Q_UNUSED(sendOsc);
+    // unused
+    (void)sendOsc;
 #endif
 
     if (sendCallback)
@@ -535,7 +541,8 @@ void CarlaPlugin::setPanning(const float value, const bool sendOsc, const bool s
     if (sendOsc)
         kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_PANNING, fixedValue);
 #else
-    Q_UNUSED(sendOsc);
+    // unused
+    (void)sendOsc;
 #endif
 
     if (sendCallback)
@@ -545,13 +552,6 @@ void CarlaPlugin::setPanning(const float value, const bool sendOsc, const bool s
         osc_send_control(&kData->osc.data, PARAMETER_PANNING, fixedValue);
 #endif
 }
-
-#if 0 //ndef BUILD_BRIDGE
-int CarlaPlugin::setOscBridgeInfo(const PluginBridgeInfoType, const int, const lo_arg* const* const, const char* const)
-{
-    return 1;
-}
-#endif
 
 // -------------------------------------------------------------------
 // Set data (plugin-specific stuff)
@@ -567,7 +567,8 @@ void CarlaPlugin::setParameterValue(const uint32_t parameterId, const float valu
     if (sendOsc)
         kData->engine->osc_send_control_set_parameter_value(fId, parameterId, value);
 #else
-    Q_UNUSED(sendOsc);
+    // unused
+    (void)sendOsc;
 #endif
 
     if (sendCallback)
@@ -616,7 +617,8 @@ void CarlaPlugin::setParameterMidiChannel(const uint32_t parameterId, uint8_t ch
     if (sendOsc)
         kData->engine->osc_send_control_set_parameter_midi_channel(fId, parameterId, channel);
 #else
-    Q_UNUSED(sendOsc);
+    // unused
+    (void)sendOsc;
 #endif
 
     if (sendCallback)
@@ -637,7 +639,8 @@ void CarlaPlugin::setParameterMidiCC(const uint32_t parameterId, int16_t cc, con
     if (sendOsc)
         kData->engine->osc_send_control_set_parameter_midi_cc(fId, parameterId, cc);
 #else
-    Q_UNUSED(sendOsc);
+    // unused
+    (void)sendOsc;
 #endif
 
     if (sendCallback)
@@ -651,13 +654,13 @@ void CarlaPlugin::setCustomData(const char* const type, const char* const key, c
     CARLA_ASSERT(value != nullptr);
 
     if (type == nullptr)
-        return qCritical("CarlaPlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is invalid", type, key, value, bool2str(sendGui));
+        return carla_stderr2("CarlaPlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is invalid", type, key, value, bool2str(sendGui));
 
     if (key == nullptr)
-        return qCritical("CarlaPlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - key is null", type, key, value, bool2str(sendGui));
+        return carla_stderr2("CarlaPlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - key is null", type, key, value, bool2str(sendGui));
 
     if (value == nullptr)
-        return qCritical("CarlaPlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - value is null", type, key, value, bool2str(sendGui));
+        return carla_stderr2("CarlaPlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - value is null", type, key, value, bool2str(sendGui));
 
     bool saveData = true;
 
@@ -700,7 +703,7 @@ void CarlaPlugin::setChunkData(const char* const stringData)
     return;
 
     // unused
-    Q_UNUSED(stringData);
+    (void)stringData;
 }
 
 void CarlaPlugin::setProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback, const bool)
@@ -806,7 +809,10 @@ void CarlaPlugin::setMidiProgramById(const uint32_t bank, const uint32_t program
 
 void CarlaPlugin::showGui(const bool yesNo)
 {
-    Q_UNUSED(yesNo);
+    return;
+
+    // unused
+    (void)yesNo;
 }
 
 void CarlaPlugin::idleGui()
@@ -1024,7 +1030,7 @@ void CarlaPlugin::registerToOscClient()
 void CarlaPlugin::updateOscData(const lo_address& source, const char* const url)
 {
     // FIXME - remove debug prints later
-    qWarning("CarlaPlugin::updateOscData(%p, \"%s\")", source, url);
+    carla_stdout("CarlaPlugin::updateOscData(%p, \"%s\")", source, url);
 
     kData->osc.data.free();
 
@@ -1035,7 +1041,7 @@ void CarlaPlugin::updateOscData(const lo_address& source, const char* const url)
         const char* port = lo_address_get_port(source);
         kData->osc.data.source = lo_address_new_with_proto(proto, host, port);
 
-        qWarning("CarlaPlugin::updateOscData() - source: host \"%s\", port \"%s\"", host, port);
+        carla_stdout("CarlaPlugin::updateOscData() - source: host \"%s\", port \"%s\"", host, port);
     }
 
     {
@@ -1043,7 +1049,7 @@ void CarlaPlugin::updateOscData(const lo_address& source, const char* const url)
         char* port = lo_url_get_port(url);
         kData->osc.data.path   = carla_strdup_free(lo_url_get_path(url));
         kData->osc.data.target = lo_address_new_with_proto(proto, host, port);
-        qWarning("CarlaPlugin::updateOscData() - target: host \"%s\", port \"%s\", path \"%s\"", host, port, kData->osc.data.path);
+        carla_stdout("CarlaPlugin::updateOscData() - target: host \"%s\", port \"%s\", path \"%s\"", host, port, kData->osc.data.path);
 
         std::free(host);
         std::free(port);
@@ -1084,7 +1090,7 @@ void CarlaPlugin::updateOscData(const lo_address& source, const char* const url)
     for (uint32_t i=0; i < kData->param.count; i++)
         osc_send_control(&kData->osc.data, kData->param.data[i].rindex, getParameterValue(i));
 
-    qWarning("CarlaPlugin::updateOscData() - done");
+    carla_stdout("CarlaPlugin::updateOscData() - done");
 }
 
 void CarlaPlugin::freeOscData()
@@ -1094,14 +1100,14 @@ void CarlaPlugin::freeOscData()
 
 bool CarlaPlugin::waitForOscGuiShow()
 {
-    qWarning("CarlaPlugin::waitForOscGuiShow()");
+    carla_stdout("CarlaPlugin::waitForOscGuiShow()");
 
     // wait for UI 'update' call
     for (uint i=0, oscUiTimeout = kData->engine->getOptions().oscUiTimeout; i < oscUiTimeout; i++)
     {
         if (kData->osc.data.target)
         {
-            qWarning("CarlaPlugin::waitForOscGuiShow() - got response, asking UI to show itself now");
+            carla_stdout("CarlaPlugin::waitForOscGuiShow() - got response, asking UI to show itself now");
             osc_send_show(&kData->osc.data);
             return true;
         }
@@ -1109,7 +1115,7 @@ bool CarlaPlugin::waitForOscGuiShow()
             carla_msleep(100);
     }
 
-    qWarning("CarlaPlugin::waitForOscGuiShow() - Timeout while waiting for UI to respond (waited %u msecs)", kData->engine->getOptions().oscUiTimeout);
+    carla_stdout("CarlaPlugin::waitForOscGuiShow() - Timeout while waiting for UI to respond (waited %u msecs)", kData->engine->getOptions().oscUiTimeout);
     return false;
 }
 
@@ -1151,7 +1157,8 @@ void CarlaPlugin::sendMidiSingleNote(const uint8_t channel, const uint8_t note, 
             kData->engine->osc_send_control_note_off(fId, channel, note);
     }
 #else
-    Q_UNUSED(sendOsc);
+    // unused
+    (void)sendOsc;
 #endif
 
     if (sendCallback)
@@ -1314,8 +1321,8 @@ void CarlaPlugin::uiParameterChange(const uint32_t index, const float value)
     return;
 
     // unused
-    Q_UNUSED(index);
-    Q_UNUSED(value);
+    (void)index;
+    (void)value;
 }
 
 void CarlaPlugin::uiProgramChange(const uint32_t index)
@@ -1324,7 +1331,7 @@ void CarlaPlugin::uiProgramChange(const uint32_t index)
     return;
 
     // unused
-    Q_UNUSED(index);
+    (void)index;
 }
 
 void CarlaPlugin::uiMidiProgramChange(const uint32_t index)
@@ -1333,7 +1340,7 @@ void CarlaPlugin::uiMidiProgramChange(const uint32_t index)
     return;
 
     // unused
-    Q_UNUSED(index);
+    (void)index;
 }
 
 void CarlaPlugin::uiNoteOn(const uint8_t channel, const uint8_t note, const uint8_t velo)
@@ -1344,9 +1351,9 @@ void CarlaPlugin::uiNoteOn(const uint8_t channel, const uint8_t note, const uint
     return;
 
     // unused
-    Q_UNUSED(channel);
-    Q_UNUSED(note);
-    Q_UNUSED(velo);
+    (void)channel;
+    (void)note;
+    (void)velo;
 }
 
 void CarlaPlugin::uiNoteOff(const uint8_t channel, const uint8_t note)
@@ -1356,8 +1363,8 @@ void CarlaPlugin::uiNoteOff(const uint8_t channel, const uint8_t note)
     return;
 
     // unused
-    Q_UNUSED(channel);
-    Q_UNUSED(note);
+    (void)channel;
+    (void)note;
 }
 
 // -------------------------------------------------------------------
@@ -1372,14 +1379,14 @@ void CarlaPlugin::initBuffers()
 
 void CarlaPlugin::deleteBuffers()
 {
-    qDebug("CarlaPlugin::deleteBuffers() - start");
+    carla_debug("CarlaPlugin::deleteBuffers() - start");
 
     kData->audioIn.clear();
     kData->audioOut.clear();
     kData->param.clear();
     kData->event.clear();
 
-    qDebug("CarlaPlugin::deleteBuffers() - end");
+    carla_debug("CarlaPlugin::deleteBuffers() - end");
 }
 
 // -------------------------------------------------------------------
@@ -1432,11 +1439,12 @@ CarlaPlugin::ScopedDisabler::~ScopedDisabler()
 // -------------------------------------------------------------------
 // CarlaPluginGUI
 
+#if 0
 CarlaPluginGUI::CarlaPluginGUI(QWidget* const parent, Callback* const callback)
     : QMainWindow(parent),
       kCallback(callback)
 {
-    qDebug("CarlaPluginGUI::CarlaPluginGUI(%p)", parent);
+    carla_debug("CarlaPluginGUI::CarlaPluginGUI(%p)", parent);
     //CARLA_ASSERT(callback);
 
     //m_container = new GuiContainer(this);
@@ -1455,12 +1463,13 @@ CarlaPluginGUI::CarlaPluginGUI(QWidget* const parent, Callback* const callback)
 
 CarlaPluginGUI::~CarlaPluginGUI()
 {
-    qDebug("CarlaPluginGUI::~CarlaPluginGUI()");
+    carla_debug("CarlaPluginGUI::~CarlaPluginGUI()");
     //CARLA_ASSERT(m_container);
 
     // FIXME, automatically deleted by parent ?
     //delete m_container;
 }
+#endif
 
 #if 0
 
@@ -1480,7 +1489,7 @@ WId CarlaPluginGUI::getWinId() const
 
 void CarlaPluginGUI::setNewSize(int width, int height)
 {
-    qDebug("CarlaPluginGUI::setNewSize(%i, %i)", width, height);
+    carla_debug("CarlaPluginGUI::setNewSize(%i, %i)", width, height);
 
     if (width < 30)
         width = 30;
@@ -1517,7 +1526,7 @@ void CarlaPluginGUI::setTitle(const char* const title)
 
 void CarlaPluginGUI::setVisible(const bool yesNo)
 {
-    qDebug("CarlaPluginGUI::setVisible(%s)", bool2str(yesNo));
+    carla_debug("CarlaPluginGUI::setVisible(%s)", bool2str(yesNo));
 
     if (yesNo)
     {
@@ -1534,7 +1543,7 @@ void CarlaPluginGUI::setVisible(const bool yesNo)
 
 void CarlaPluginGUI::hideEvent(QHideEvent* const event)
 {
-    qDebug("CarlaPluginGUI::hideEvent(%p)", event);
+    carla_debug("CarlaPluginGUI::hideEvent(%p)", event);
     CARLA_ASSERT(event);
 
     event->accept();
@@ -1543,7 +1552,7 @@ void CarlaPluginGUI::hideEvent(QHideEvent* const event)
 
 void CarlaPluginGUI::closeEvent(QCloseEvent* const event)
 {
-    qDebug("CarlaPluginGUI::closeEvent(%p)", event);
+    carla_debug("CarlaPluginGUI::closeEvent(%p)", event);
     CARLA_ASSERT(event);
 
     if (event->spontaneous())

@@ -1169,6 +1169,7 @@ class CarlaMainW(QMainWindow):
 
         self.saveSettings()
 
+        Carla.host.set_engine_about_to_close()
         self.removeAllPlugins()
         self.stopEngine()
 

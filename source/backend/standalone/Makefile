@@ -75,7 +75,7 @@ debug:
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 $(SHARED): $(OBJS) $(LIBS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
+	$(CXX) $^ -shared $(LINK_FLAGS) -o $@ && $(STRIP) $@
 
 $(STATIC): $(OBJS) $(LIBS)
 	$(AR) rs $@ $^

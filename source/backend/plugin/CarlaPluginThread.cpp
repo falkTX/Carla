@@ -24,10 +24,12 @@
 
 CARLA_BACKEND_START_NAMESPACE
 
-const char* PluginThreadMode2str(const CarlaPluginThread::PluginThreadMode mode)
+const char* PluginThreadMode2str(const CarlaPluginThread::Mode mode)
 {
     switch (mode)
     {
+    case CarlaPluginThread::PLUGIN_THREAD_NULL:
+        return "PLUGIN_THREAD_NULL";
     case CarlaPluginThread::PLUGIN_THREAD_DSSI_GUI:
         return "PLUGIN_THREAD_DSSI_GUI";
     case CarlaPluginThread::PLUGIN_THREAD_LV2_GUI:
@@ -42,10 +44,10 @@ const char* PluginThreadMode2str(const CarlaPluginThread::PluginThreadMode mode)
     return nullptr;
 }
 
-CarlaPluginThread::CarlaPluginThread(CarlaBackend::CarlaEngine* const engine, CarlaBackend::CarlaPlugin* const plugin, const PluginThreadMode mode)
+CarlaPluginThread::CarlaPluginThread(CarlaBackend::CarlaEngine* const engine, CarlaBackend::CarlaPlugin* const plugin, const Mode mode)
     : kEngine(engine),
       kPlugin(plugin),
-      kMode(mode),
+      fMode(mode),
       fProcess(nullptr)
 {
     carla_debug("CarlaPluginThread::CarlaPluginThread(plugin:\"%s\", engine:\"%s\", %s)", plugin->name(), engine->getName(), PluginThreadMode2str(mode));
@@ -55,6 +57,11 @@ CarlaPluginThread::~CarlaPluginThread()
 {
     if (fProcess != nullptr)
        delete fProcess;
+}
+
+void CarlaPluginThread::setMode(const CarlaPluginThread::Mode mode)
+{
+    fMode = mode;
 }
 
 void CarlaPluginThread::setOscData(const char* const binary, const char* const label, const char* const extra)
@@ -73,15 +80,18 @@ void CarlaPluginThread::run()
        fProcess = new QProcess(nullptr);
        fProcess->setProcessChannelMode(QProcess::ForwardedChannels);
 #ifndef BUILD_BRIDGE
-       fProcess->setProcessEnvironment(kEngine->getOptionsAsProcessEnvironment());
+       //fProcess->setProcessEnvironment(kEngine->getOptionsAsProcessEnvironment());
 #endif
     }
 
     QString name(kPlugin->name() ? kPlugin->name() : "(none)");
     QStringList arguments;
 
-    switch (kMode)
+    switch (fMode)
     {
+    case PLUGIN_THREAD_NULL:
+        break;
+
     case PLUGIN_THREAD_DSSI_GUI:
         /* osc_url  */ arguments << QString("%1/%2").arg(kEngine->getOscServerPathUDP()).arg(kPlugin->id());
         /* filename */ arguments << kPlugin->filename();
@@ -114,8 +124,11 @@ void CarlaPluginThread::run()
     fProcess->start((const char*)fBinary, arguments);
     fProcess->waitForStarted();
 
-    switch (kMode)
+    switch (fMode)
     {
+    case PLUGIN_THREAD_NULL:
+        break;
+
     case PLUGIN_THREAD_DSSI_GUI:
     case PLUGIN_THREAD_LV2_GUI:
     case PLUGIN_THREAD_VST_GUI:

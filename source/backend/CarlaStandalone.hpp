@@ -159,6 +159,7 @@ CARLA_EXPORT bool carla_engine_init(const char* driverName, const char* clientNa
 CARLA_EXPORT bool carla_engine_close();
 CARLA_EXPORT void carla_engine_idle();
 CARLA_EXPORT bool carla_is_engine_running();
+CARLA_EXPORT void carla_set_engine_about_to_close();
 
 CARLA_EXPORT bool carla_load_project(const char* filename);
 CARLA_EXPORT bool carla_save_project(const char* filename);

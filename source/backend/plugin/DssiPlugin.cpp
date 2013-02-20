@@ -53,16 +53,11 @@ public:
         {
             showGui(false);
 
-            if (kData->osc.thread != nullptr)
+            // Wait a bit first, try safe quit, then force kill
+            if (kData->osc.thread.isRunning() && ! kData->osc.thread.stop(kData->engine->getOptions().oscUiTimeout))
             {
-                // Wait a bit first, try safe quit, then force kill
-                if (kData->osc.thread->isRunning() && ! kData->osc.thread->wait(kData->engine->getOptions().oscUiTimeout))
-                {
-                    qWarning("Failed to properly stop DSSI GUI thread");
-                    kData->osc.thread->terminate();
-                }
-
-                delete kData->osc.thread;
+                qWarning("Failed to properly stop DSSI GUI thread");
+                kData->osc.thread.terminate();
             }
         }
 
@@ -322,17 +317,9 @@ public:
 
     void showGui(const bool yesNo)
     {
-        CARLA_ASSERT(kData->osc.thread != nullptr);
-
-        if (kData->osc.thread == nullptr)
-        {
-            qCritical("DssiPlugin::showGui(%s) - attempt to show gui, but it does not exist!", bool2str(yesNo));
-            return;
-        }
-
         if (yesNo)
         {
-            kData->osc.thread->start();
+            kData->osc.thread.start();
         }
         else
         {
@@ -343,8 +330,8 @@ public:
                 kData->osc.data.free();
             }
 
-            if (! kData->osc.thread->wait(500))
-                kData->osc.thread->quit();
+            if (kData->osc.thread.isRunning() && ! kData->osc.thread.stop(kData->engine->getOptions().oscUiTimeout))
+                kData->osc.thread.terminate();
         }
     }
 
@@ -1711,10 +1698,10 @@ public:
         // ---------------------------------------------------------------
         // gui stuff
 
-        if (guiFilename)
+        if (guiFilename != nullptr)
         {
-            kData->osc.thread = new CarlaPluginThread(kData->engine, this, CarlaPluginThread::PLUGIN_THREAD_DSSI_GUI);
-            kData->osc.thread->setOscData(guiFilename, fDescriptor->Label);
+            kData->osc.thread.setMode(CarlaPluginThread::PLUGIN_THREAD_DSSI_GUI);
+            kData->osc.thread.setOscData(guiFilename, fDescriptor->Label);
 
             fHints |= PLUGIN_HAS_GUI;
         }

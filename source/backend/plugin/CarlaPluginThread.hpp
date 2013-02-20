@@ -29,16 +29,18 @@ CARLA_BACKEND_START_NAMESPACE
 class CarlaPluginThread : public CarlaThread
 {
 public:
-    enum PluginThreadMode {
+    enum Mode {
+        PLUGIN_THREAD_NULL,
         PLUGIN_THREAD_DSSI_GUI,
         PLUGIN_THREAD_LV2_GUI,
         PLUGIN_THREAD_VST_GUI,
         PLUGIN_THREAD_BRIDGE
     };
 
-    CarlaPluginThread(CarlaEngine* const engine, CarlaPlugin* const plugin, const PluginThreadMode mode);
+    CarlaPluginThread(CarlaEngine* const engine, CarlaPlugin* const plugin, const Mode mode);
     ~CarlaPluginThread();
 
+    void setMode(const CarlaPluginThread::Mode mode);
     void setOscData(const char* const binary, const char* const label, const char* const extra="");
 
 protected:
@@ -47,8 +49,8 @@ protected:
 private:
     CarlaEngine* const kEngine;
     CarlaPlugin* const kPlugin;
-    const PluginThreadMode kMode;
 
+    Mode        fMode;
     CarlaString fBinary;
     CarlaString fLabel;
     CarlaString fExtra;

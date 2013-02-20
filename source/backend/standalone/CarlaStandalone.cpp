@@ -299,6 +299,15 @@ bool carla_is_engine_running()
     return (standalone.engine != nullptr && standalone.engine->isRunning());
 }
 
+void carla_set_engine_about_to_close()
+{
+    carla_debug("carla_set_engine_about_to_close()");
+    CARLA_ASSERT(standalone.engine != nullptr);
+
+    if (standalone.engine != nullptr)
+        standalone.engine->setAboutToClose();
+}
+
 // -------------------------------------------------------------------------------------------------------------------
 
 bool carla_load_project(const char* filename)
