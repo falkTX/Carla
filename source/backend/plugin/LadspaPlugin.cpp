@@ -509,7 +509,7 @@ public:
 
                 if (max - min == 0.0f)
                 {
-                    carla_stderr2("Broken plugin parameter: max - min == 0");
+                    carla_stderr2("WARNING - Broken plugin parameter '%s': max - min == 0.0f", fDescriptor->PortNames[i]);
                     max = min + 0.1f;
                 }
 
@@ -1068,7 +1068,6 @@ public:
             }
 #endif
         } // End of Post-processing
-
 
         CARLA_PROCESS_CONTINUE_CHECK;
 

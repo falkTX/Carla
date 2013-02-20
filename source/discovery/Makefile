@@ -86,3 +86,8 @@ carla-discovery-win64.exe: $(OBJS) ../libs/lilv_win64.a
 
 clean:
 	rm -f carla-discovery-*
+
+# --------------------------------------------------------------
+
+debug:
+	$(MAKE) DEBUG=true

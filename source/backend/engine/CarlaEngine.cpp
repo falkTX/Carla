@@ -713,7 +713,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
             break;
 
         case PLUGIN_SF2:
-            plugin = CarlaPlugin::newSF2(init);
+            plugin = CarlaPlugin::newSF2(init, (extra != nullptr));
             break;
 
         case PLUGIN_SFZ:

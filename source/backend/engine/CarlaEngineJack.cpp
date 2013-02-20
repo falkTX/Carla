@@ -49,7 +49,7 @@ public:
           kClient(client),
           kPort(port)
     {
-        qDebug("CarlaEngineJackAudioPort::CarlaEngineJackAudioPort(%s, %s, %p, %p)", bool2str(isInput), ProcessMode2Str(processMode), client, port);
+        carla_debug("CarlaEngineJackAudioPort::CarlaEngineJackAudioPort(%s, %s, %p, %p)", bool2str(isInput), ProcessMode2Str(processMode), client, port);
 
         if (processMode == PROCESS_MODE_SINGLE_CLIENT || processMode == PROCESS_MODE_MULTIPLE_CLIENTS)
         {
@@ -63,7 +63,7 @@ public:
 
     ~CarlaEngineJackAudioPort()
     {
-        qDebug("CarlaEngineJackAudioPort::~CarlaEngineJackAudioPort()");
+        carla_debug("CarlaEngineJackAudioPort::~CarlaEngineJackAudioPort()");
 
         if (kClient != nullptr && kPort != nullptr)
             jackbridge_port_unregister(kClient, kPort);
@@ -111,7 +111,7 @@ public:
           kPort(port),
           fJackBuffer(nullptr)
     {
-        qDebug("CarlaEngineJackEventPort::CarlaEngineJackEventPort(%s, %s, %p, %p)", bool2str(isInput), ProcessMode2Str(processMode), client, port);
+        carla_debug("CarlaEngineJackEventPort::CarlaEngineJackEventPort(%s, %s, %p, %p)", bool2str(isInput), ProcessMode2Str(processMode), client, port);
 
         if (processMode == PROCESS_MODE_SINGLE_CLIENT || processMode == PROCESS_MODE_MULTIPLE_CLIENTS)
         {
@@ -125,7 +125,7 @@ public:
 
     ~CarlaEngineJackEventPort()
     {
-        qDebug("CarlaEngineJackEventPort::~CarlaEngineJackEventPort()");
+        carla_debug("CarlaEngineJackEventPort::~CarlaEngineJackEventPort()");
 
         if (kClient != nullptr && kPort != nullptr)
             jackbridge_port_unregister(kClient, kPort);
@@ -368,7 +368,7 @@ public:
           kClient(client),
           kUseClient(processMode == PROCESS_MODE_SINGLE_CLIENT || processMode == PROCESS_MODE_MULTIPLE_CLIENTS)
     {
-        qDebug("CarlaEngineJackClient::CarlaEngineJackClient(%s, %s, %p)", EngineType2Str(engineType), ProcessMode2Str(processMode), client);
+        carla_debug("CarlaEngineJackClient::CarlaEngineJackClient(%s, %s, %p)", EngineType2Str(engineType), ProcessMode2Str(processMode), client);
 
         if (kUseClient)
         {
@@ -382,7 +382,7 @@ public:
 
     ~CarlaEngineJackClient()
     {
-        qDebug("CarlaEngineClient::~CarlaEngineClient()");
+        carla_debug("CarlaEngineClient::~CarlaEngineClient()");
 
         if (kProcessMode == PROCESS_MODE_MULTIPLE_CLIENTS)
         {
@@ -393,7 +393,7 @@ public:
 
     void activate()
     {
-        qDebug("CarlaEngineJackClient::activate()");
+        carla_debug("CarlaEngineJackClient::activate()");
 
         if (kProcessMode == PROCESS_MODE_MULTIPLE_CLIENTS)
         {
@@ -408,7 +408,7 @@ public:
 
     void deactivate()
     {
-        qDebug("CarlaEngineJackClient::deactivate()");
+        carla_debug("CarlaEngineJackClient::deactivate()");
 
         if (kProcessMode == PROCESS_MODE_MULTIPLE_CLIENTS)
         {
@@ -423,7 +423,7 @@ public:
 
     bool isOk() const
     {
-        qDebug("CarlaEngineJackClient::isOk()");
+        carla_debug("CarlaEngineJackClient::isOk()");
 
         if (kUseClient)
             return bool(kClient);
@@ -441,7 +441,7 @@ public:
 
     const CarlaEnginePort* addPort(const EnginePortType portType, const char* const name, const bool isInput)
     {
-        qDebug("CarlaEngineJackClient::addPort(%s, \"%s\", %s)", EnginePortType2Str(portType), name, bool2str(isInput));
+        carla_debug("CarlaEngineJackClient::addPort(%s, \"%s\", %s)", EnginePortType2Str(portType), name, bool2str(isInput));
 
         jack_port_t* port = nullptr;
 
@@ -500,7 +500,7 @@ public:
 #endif
           fFreewheel(false)
     {
-        qDebug("CarlaEngineJack::CarlaEngineJack()");
+        carla_debug("CarlaEngineJack::CarlaEngineJack()");
 
 #ifdef BUILD_BRIDGE
         fOptions.processMode = PROCESS_MODE_MULTIPLE_CLIENTS;
@@ -511,7 +511,7 @@ public:
 
     ~CarlaEngineJack()
     {
-        qDebug("CarlaEngineJack::~CarlaEngineJack()");
+        carla_debug("CarlaEngineJack::~CarlaEngineJack()");
         CARLA_ASSERT(fClient == nullptr);
     }
 
@@ -539,7 +539,7 @@ public:
 
     bool init(const char* const clientName)
     {
-        qDebug("CarlaEngineJack::init(\"%s\")", clientName);
+        carla_debug("CarlaEngineJack::init(\"%s\")", clientName);
 
         fFreewheel      = false;
         fTransportState = JackTransportStopped;
@@ -607,7 +607,7 @@ public:
 
     bool close()
     {
-        qDebug("CarlaEngineJack::close()");
+        carla_debug("CarlaEngineJack::close()");
         CarlaEngine::close();
 
 #ifdef BUILD_BRIDGE

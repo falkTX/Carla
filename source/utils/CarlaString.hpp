@@ -187,6 +187,30 @@ public:
         truncate(0);
     }
 
+    size_t find(const char c)
+    {
+        for (size_t i=0; i < bufferLen; i++)
+        {
+            if (buffer[i] == c)
+                return i;
+        }
+
+        return 0;
+    }
+
+    size_t rfind(const char c)
+    {
+        size_t pos = 0;
+
+        for (size_t i=0; i < bufferLen; i++)
+        {
+            if (buffer[i] == c)
+                pos = i;
+        }
+
+        return pos;
+    }
+
     void replace(const char before, const char after)
     {
         if (after == '\0')

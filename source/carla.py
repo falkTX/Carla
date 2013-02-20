@@ -1075,6 +1075,14 @@ class CarlaMainW(QMainWindow):
                 if gui:
                     return gui.encode("utf-8")
 
+        elif ptype == PLUGIN_SF2:
+            if plugin['name'].endswith(" (16 outputs)"):
+                # return a dummy non-null pointer
+                INTPOINTER = POINTER(c_int)
+                ptr  = c_int(0x1)
+                addr = addressof(ptr)
+                return cast(addr, INTPOINTER)
+
         return c_nullptr
 
     def loadRDFs(self):

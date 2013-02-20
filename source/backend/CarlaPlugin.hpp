@@ -798,8 +798,8 @@ public:
     static CarlaPlugin* newLV2(const Initializer& init);
     static CarlaPlugin* newVST(const Initializer& init);
     static CarlaPlugin* newGIG(const Initializer& init);
+    static CarlaPlugin* newSF2(const Initializer& init, const bool use16Outs);
     static CarlaPlugin* newSFZ(const Initializer& init);
-    static CarlaPlugin* newSF2(const Initializer& init);
 
     // -------------------------------------------------------------------
 

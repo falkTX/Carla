@@ -53,10 +53,10 @@ public:
         {
             showGui(false);
 
-            // Wait a bit first, try safe quit, then force kill
+            // Wait a bit first, then force kill
             if (kData->osc.thread.isRunning() && ! kData->osc.thread.stop(kData->engine->getOptions().oscUiTimeout))
             {
-                carla_stderr("Failed to properly stop DSSI GUI thread");
+                carla_stderr("DSSI GUI thread still running, forcing termination now");
                 kData->osc.thread.terminate();
             }
         }
@@ -1170,7 +1170,7 @@ public:
                     const EngineMidiEvent& midiEvent = event.midi;
 
                     uint8_t status  = MIDI_GET_STATUS_FROM_DATA(midiEvent.data);
-                    uint8_t channel = MIDI_GET_CHANNEL_FROM_DATA(midiEvent.data);
+                    uint8_t channel = event.channel;
 
                     // Fix bad note-off (per DSSI spec)
                     if (MIDI_IS_STATUS_NOTE_ON(status) && midiEvent.data[2] == 0)

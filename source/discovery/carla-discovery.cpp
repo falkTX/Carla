@@ -1291,14 +1291,46 @@ void do_fluidsynth_check(const char* const filename, const bool init)
         delete_fluid_settings(f_settings);
     }
 
+#if CARLA_OS_WIN
+    int sep = '\\';
+#else
+    int sep = '/';
+#endif
+
+    CarlaString name(std::strrchr(filename, sep)+1);
+    name.truncate(name.rfind('.'));
+
+    CarlaString label(name);
+
+    // 2 channels
     DISCOVERY_OUT("init", "-----------");
-    DISCOVERY_OUT("name", "");
-    DISCOVERY_OUT("label", "");
+    DISCOVERY_OUT("name", (const char*)name);
+    DISCOVERY_OUT("label", (const char*)label);
     DISCOVERY_OUT("maker", "");
     DISCOVERY_OUT("copyright", "");
     DISCOVERY_OUT("hints", PLUGIN_IS_SYNTH);
     DISCOVERY_OUT("audio.outs", 2);
     DISCOVERY_OUT("audio.total", 2);
+    DISCOVERY_OUT("midi.ins", 1);
+    DISCOVERY_OUT("midi.total", 1);
+    DISCOVERY_OUT("programs.total", programs);
+    DISCOVERY_OUT("parameters.ins", 13); // defined in Carla
+    DISCOVERY_OUT("parameters.outs", 1);
+    DISCOVERY_OUT("parameters.total", 14);
+    DISCOVERY_OUT("build", BINARY_NATIVE);
+    DISCOVERY_OUT("end", "------------");
+
+    // 16 channels
+    if (name.isNotEmpty())
+        name += " (16 outputs)";
+    DISCOVERY_OUT("init", "-----------");
+    DISCOVERY_OUT("name", "");
+    DISCOVERY_OUT("name", (const char*)name);
+    DISCOVERY_OUT("label", (const char*)label);
+    DISCOVERY_OUT("copyright", "");
+    DISCOVERY_OUT("hints", PLUGIN_IS_SYNTH);
+    DISCOVERY_OUT("audio.outs", 32);
+    DISCOVERY_OUT("audio.total", 32);
     DISCOVERY_OUT("midi.ins", 1);
     DISCOVERY_OUT("midi.total", 1);
     DISCOVERY_OUT("programs.total", programs);
