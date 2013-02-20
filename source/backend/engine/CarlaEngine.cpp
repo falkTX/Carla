@@ -1376,6 +1376,7 @@ void CarlaEngine::processRack(float* inBuf[2], float* outBuf[2], const uint32_t 
         plugin->initBuffers();
         plugin->process(inBuf, outBuf, frames);
 
+#if 0
         // if plugin has no audio inputs, add previous buffers
         if (plugin->audioInCount() == 0)
         {
@@ -1385,8 +1386,6 @@ void CarlaEngine::processRack(float* inBuf[2], float* outBuf[2], const uint32_t 
                 outBuf[1][j] += inBuf[1][j];
             }
         }
-
-#if 0
         // if plugin has no midi output, add previous events
         if (plugin->midiOutCount() == 0)
         {

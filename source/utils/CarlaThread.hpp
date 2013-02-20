@@ -172,7 +172,20 @@ public:
 
     bool isRunning()
     {
-        return (fStarted && ! fFinished);
+        if (fStarted && ! fFinished)
+            return true;
+
+        // take the change to clear data
+#ifdef CPP11_THREAD
+        if (cthread != nullptr)
+        {
+            delete cthread;
+            cthread = nullptr;
+        }
+#else
+        _zero();
+#endif
+        return false;
     }
 
     void waitForStarted(const unsigned int timeout = 0) // ms
