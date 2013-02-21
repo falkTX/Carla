@@ -313,7 +313,7 @@ public:
         if (unsigned int len = carla_base64_decode(buffer, binaryBuffer))
         {
             uint8_t* const binaryBufferHeap = new uint8_t[len];
-            std::memcpy(binaryBufferHeap, binaryBuffer, len);
+            carla_copy<uint8_t>(binaryBufferHeap, binaryBuffer, len);
 
             *rawPtr = binaryBufferHeap;
             return len;

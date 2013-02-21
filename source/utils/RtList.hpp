@@ -268,7 +268,7 @@ private:
         if (reset)
         {
             reset = false;
-            std::memset(&value, 0, sizeof(T));
+            carla_zeroMem(&value, sizeof(T));
         }
 
         return value;

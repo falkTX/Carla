@@ -1219,7 +1219,7 @@ public:
                 if (doBalance)
                 {
                     if (i % 2 == 0)
-                        std::memcpy(oldBufLeft, outBuffer[i], sizeof(float)*frames);
+                        carla_copyFloat(oldBufLeft, outBuffer[i], frames);
 
                     float balRangeL = (kData->postProc.balanceLeft  + 1.0f)/2.0f;
                     float balRangeR = (kData->postProc.balanceRight + 1.0f)/2.0f;

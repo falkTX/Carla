@@ -340,7 +340,7 @@ public:
             return;
 
         uint8_t jdata[size];
-        std::memcpy(jdata, data, sizeof(uint8_t)*size);
+        carla_copy<uint8_t>(jdata, data, size);
 
         jdata[0] = data[0] + channel;
 

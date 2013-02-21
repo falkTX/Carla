@@ -237,16 +237,58 @@ const T& carla_fixValue(const T& min, const T& max, const T& value)
 
 template<typename T>
 static inline
+void carla_copy(T* dataDst, T* dataSrc, const size_t size)
+{
+    CARLA_ASSERT(dataDst != nullptr);
+    CARLA_ASSERT(dataSrc != nullptr);
+    CARLA_ASSERT(size > 0);
+
+    if (dataDst == nullptr || dataSrc == nullptr || size == 0)
+        return;
+
+    for (size_t i=0; i < size; i++)
+        *dataDst++ = *dataSrc++;
+}
+
+template<typename T>
+static inline
+void carla_copy(T* dataDst, const T* dataSrc, const size_t size)
+{
+    CARLA_ASSERT(dataDst != nullptr);
+    CARLA_ASSERT(dataSrc != nullptr);
+    CARLA_ASSERT(size > 0);
+
+    if (dataDst == nullptr || dataSrc == nullptr || size == 0)
+        return;
+
+    for (size_t i=0; i < size; i++)
+        *dataDst++ = *dataSrc++;
+}
+
+template<typename T>
+static inline
 void carla_fill(T* data, const size_t size, const T v)
 {
     CARLA_ASSERT(data != nullptr);
     CARLA_ASSERT(size > 0);
 
-    if (data == nullptr)
+    if (data == nullptr || size == 0)
         return;
 
-    for (unsigned int i=0; i < size; i++)
+    for (size_t i=0; i < size; i++)
         *data++ = v;
+}
+
+static inline
+void carla_copyDouble(double* dataDst, double* dataSrc, const size_t size)
+{
+    carla_copy<double>(dataDst, dataSrc, size);
+}
+
+static inline
+void carla_copyFloat(float* dataDst, float* dataSrc, const size_t size)
+{
+    carla_copy<float>(dataDst, dataSrc, size);
 }
 
 static inline
@@ -268,8 +310,9 @@ static inline
 void carla_zeroMem(void* const memory, const size_t numBytes)
 {
     CARLA_ASSERT(memory != nullptr);
+    CARLA_ASSERT(numBytes > 0);
 
-    if (memory == nullptr)
+    if (memory == nullptr || numBytes == 0)
         return;
 
     std::memset(memory, 0, numBytes);

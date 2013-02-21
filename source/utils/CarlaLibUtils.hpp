@@ -77,7 +77,7 @@ const char* lib_error(const char* const filename)
 
 #ifdef CARLA_OS_WIN
     static char libError[2048];
-    std::memset(libError, 0, sizeof(char)*2048);
+    carla_zeroMem(libError, sizeof(char)*2048);
 
     LPVOID winErrorString;
     DWORD  winErrorCode = GetLastError();

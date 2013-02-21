@@ -764,7 +764,7 @@ public:
                 if (do_balance)
                 {
                     if (i%2 == 0)
-                        memcpy(&oldBufLeft, outBuffer[i], sizeof(float)*frames);
+                        carla_copyFloat(oldBufLeft, outBuffer[i], frames);
 
                     bal_rangeL = (x_balanceLeft+1.0)/2;
                     bal_rangeR = (x_balanceRight+1.0)/2;

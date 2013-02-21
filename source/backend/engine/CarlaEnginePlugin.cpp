@@ -64,7 +64,7 @@ public:
         paramBuffers[paramBalance] = 63.5f;
         paramBuffers[paramPan]     = 63.5f;
 
-        std::memcpy(prevParamBuffers, paramBuffers, sizeof(float)*paramCount);
+        carla_copyFloat(prevParamBuffers, paramBuffers, paramCount);
 
         // set-up engine
         fOptions.processMode = PROCESS_MODE_CONTINUOUS_RACK;
@@ -400,7 +400,7 @@ protected:
         }
 #endif
 
-        std::memcpy(prevParamBuffers, paramBuffers, sizeof(float)*paramCount);
+        carla_copyFloat(prevParamBuffers, paramBuffers, paramCount);
     }
 
     void d_deactivate()
@@ -443,7 +443,7 @@ protected:
                 carlaEvent->value     = paramBuffers[i]/127;
             }
         }
-        std::memcpy(prevParamBuffers, paramBuffers, sizeof(float)*paramCount);
+        carla_copyFloat(prevParamBuffers, paramBuffers, paramCount);
 
         // initialize midi input
         std::memset(rackMidiEventsIn, 0, sizeof(CarlaEngineMidiEvent)*CarlaEngine::MAX_MIDI_EVENTS);

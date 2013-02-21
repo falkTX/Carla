@@ -298,8 +298,8 @@ protected:
         }
         else
         {
-            std::memcpy(fAudioInBuf1, insPtr, sizeof(float)*nframes);
-            std::memcpy(fAudioInBuf2, insPtr+nframes, sizeof(float)*nframes);
+            carla_copyFloat(fAudioInBuf1, insPtr, nframes);
+            carla_copyFloat(fAudioInBuf2, insPtr+nframes, nframes);
         }
 
         // initialize audio output
@@ -417,8 +417,8 @@ protected:
         }
         else
         {
-            std::memcpy(outsPtr, fAudioOutBuf1, sizeof(float)*nframes);
-            std::memcpy(outsPtr+nframes, fAudioOutBuf2, sizeof(float)*nframes);
+            carla_copyFloat(outsPtr, fAudioOutBuf1, nframes);
+            carla_copyFloat(outsPtr+nframes, fAudioOutBuf2, nframes);
         }
 
         // output events

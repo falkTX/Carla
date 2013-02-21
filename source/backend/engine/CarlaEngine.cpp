@@ -1370,8 +1370,8 @@ void CarlaEngine::processRack(float* inBuf[2], float* outBuf[2], const uint32_t 
         if (processed)
         {
             // initialize inputs (from previous outputs)
-            std::memcpy(inBuf[0], outBuf[0], sizeof(float)*frames);
-            std::memcpy(inBuf[1], outBuf[1], sizeof(float)*frames);
+            carla_copyFloat(inBuf[0], outBuf[0], frames);
+            carla_copyFloat(inBuf[1], outBuf[1], frames);
             std::memcpy(kData->rack.in, kData->rack.out, sizeof(EngineEvent)*RACK_EVENT_COUNT);
 
             // initialize outputs (zero)
@@ -1432,8 +1432,8 @@ void CarlaEngine::processRack(float* inBuf[2], float* outBuf[2], const uint32_t 
     // if no plugins in the rack, copy inputs over outputs
     if (! processed)
     {
-        std::memcpy(outBuf[0], inBuf[0], sizeof(float)*frames);
-        std::memcpy(outBuf[1], inBuf[1], sizeof(float)*frames);
+        carla_copyFloat(outBuf[0], inBuf[0], frames);
+        carla_copyFloat(outBuf[1], inBuf[1], frames);
         std::memcpy(kData->rack.out, kData->rack.in, sizeof(EngineEvent)*RACK_EVENT_COUNT);
     }
 }

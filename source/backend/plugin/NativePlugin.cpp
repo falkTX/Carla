@@ -1377,7 +1377,7 @@ public:
                 if (doBalance)
                 {
                     if (i % 2 == 0)
-                        std::memcpy(oldBufLeft, outBuffer[i], sizeof(float)*frames);
+                        carla_copyFloat(oldBufLeft, outBuffer[i], frames);
 
                     float balRangeL = (kData->postProc.balanceLeft  + 1.0f)/2.0f;
                     float balRangeR = (kData->postProc.balanceRight + 1.0f)/2.0f;
@@ -1465,7 +1465,7 @@ public:
     void processSingle(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t timeOffset)
     {
         for (uint32_t i=0; i < kData->audioIn.count; i++)
-            std::memcpy(fAudioInBuffers[i], inBuffer[i]+timeOffset, sizeof(float)*frames);
+            carla_copyFloat(fAudioInBuffers[i], inBuffer[i]+timeOffset, frames);
         for (uint32_t i=0; i < kData->audioOut.count; i++)
             carla_zeroFloat(fAudioOutBuffers[i], frames);
 
@@ -1576,7 +1576,7 @@ protected:
         return &fTimeInfo;
     }
 
-    bool handleWriteMidiEvent(const MidiEvent* const event)
+    bool handleWriteMidiEvent(const ::MidiEvent* const event)
     {
         CARLA_ASSERT(fEnabled);
         CARLA_ASSERT(fMidiOut.count > 0);

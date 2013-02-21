@@ -1365,7 +1365,7 @@ public:
                 if (doBalance)
                 {
                     if (i % 2 == 0)
-                        std::memcpy(oldBufLeft, outBuffer[i], sizeof(float)*frames);
+                        carla_copyFloat(oldBufLeft, outBuffer[i], frames);
 
                     float balRangeL = (kData->postProc.balanceLeft  + 1.0f)/2.0f;
                     float balRangeR = (kData->postProc.balanceRight + 1.0f)/2.0f;
@@ -1400,7 +1400,7 @@ public:
             if (kData->latency > 0 && kData->latency < frames)
             {
                 for (i=0; i < kData->audioIn.count; i++)
-                    std::memcpy(kData->latencyBuffers[i], inBuffer[i] + (frames - kData->latency), sizeof(float)*kData->latency);
+                    carla_copyFloat(kData->latencyBuffers[i], inBuffer[i] + (frames - kData->latency), kData->latency);
             }
 #endif
         } // End of Post-processing
@@ -1438,7 +1438,7 @@ public:
     void processSingle(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t timeOffset, const uint32_t midiEventCount)
     {
         for (uint32_t i=0; i < kData->audioIn.count; i++)
-            std::memcpy(fAudioInBuffers[i], inBuffer[i]+timeOffset, sizeof(float)*frames);
+            carla_copyFloat(fAudioInBuffers[i], inBuffer[i]+timeOffset, frames);
         for (uint32_t i=0; i < kData->audioOut.count; i++)
             carla_zeroFloat(fAudioOutBuffers[i], frames);
 
