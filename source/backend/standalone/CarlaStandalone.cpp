@@ -266,6 +266,7 @@ bool carla_engine_init(const char* driverName, const char* clientName)
     }
     else
     {
+        standalone.lastError = standalone.engine->getLastError();
         delete standalone.engine;
         standalone.engine = nullptr;
     }

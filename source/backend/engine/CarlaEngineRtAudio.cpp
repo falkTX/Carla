@@ -77,8 +77,8 @@ public:
           fAudioInBuf2(nullptr),
           fAudioOutBuf1(nullptr),
           fAudioOutBuf2(nullptr),
-          fMidiIn(getMatchedAudioMidiAPi(api)),
-          fMidiOut(getMatchedAudioMidiAPi(api))
+          fMidiIn(getMatchedAudioMidiAPi(api), "CarlaIn"),
+          fMidiOut(getMatchedAudioMidiAPi(api), "CarlaOut")
     {
         carla_debug("CarlaEngineRtAudio::CarlaEngineRtAudio(%i)", api);
 
@@ -106,6 +106,7 @@ public:
         CARLA_ASSERT(fAudioInBuf2 == nullptr);
         CARLA_ASSERT(fAudioOutBuf1 == nullptr);
         CARLA_ASSERT(fAudioOutBuf2 == nullptr);
+        CARLA_ASSERT(clientName != nullptr);
 
         if (fAudio.getDeviceCount() == 0)
         {
@@ -145,7 +146,13 @@ public:
             }
             catch (RtError& e)
             {
-                setLastError(e.what());
+                carla_stderr2("RtAudio::openStream() failed");
+                if (e.getType() == RtError::SYSTEM_ERROR)
+                    setLastError("Stream cannot be opened with the specified parameters");
+                else if (e.getType() == RtError::INVALID_USE)
+                    setLastError("Invalid device ID");
+                else
+                    setLastError("Unknown error");
                 return false;
             }
 
@@ -154,7 +161,9 @@ public:
             }
             catch (RtError& e)
             {
+                carla_stderr2("RtAudio::startStream() failed");
                 setLastError(e.what());
+                fAudio.closeStream();
                 return false;
             }
 
@@ -192,10 +201,20 @@ public:
         fAudioIsReady = false;
 
         if (fAudio.isStreamRunning())
-            fAudio.stopStream();
+        {
+            try {
+                fAudio.stopStream();
+            }
+            catch (...) {}
+        }
 
         if (fAudio.isStreamOpen())
-            fAudio.closeStream();
+        {
+            try {
+                fAudio.closeStream();
+            }
+            catch (...) {}
+        }
 
         fMidiIn.cancelCallback();
         fMidiIn.closePort();
@@ -259,9 +278,10 @@ protected:
         CARLA_ASSERT(insPtr != nullptr);
         CARLA_ASSERT(outsPtr != nullptr);
 
-        if (currentPluginCount() == 0 || ! fAudioIsReady)
+        if (! fAudioIsReady)
         {
-            carla_zeroFloat(outsPtr, sizeof(float)*nframes*2);
+            carla_zeroFloat(outsPtr, nframes*2);
+            proccessPendingEvents();
             return;
         }
 
@@ -280,21 +300,102 @@ protected:
         {
             std::memcpy(fAudioInBuf1, insPtr, sizeof(float)*nframes);
             std::memcpy(fAudioInBuf2, insPtr+nframes, sizeof(float)*nframes);
-
-            //for (unsigned int i=0; i < nframes; i++)
-            //    fAudioInBuf1[i] = insPtr[i];
-            //for (unsigned int i=0, j=nframes; i < nframes; i++, j++)
-            //    fAudioInBuf2[i] = insPtr[j];
         }
 
         // initialize audio output
         carla_zeroFloat(fAudioOutBuf1, fBufferSize);
         carla_zeroFloat(fAudioOutBuf2, fBufferSize);
 
-        // initialize events input
-        //memset(rackEventsIn, 0, sizeof(EngineEvent)*MAX_EVENTS);
+        // initialize input events
+        carla_zeroMem(kData->rack.in, sizeof(EngineEvent)*RACK_EVENT_COUNT);
+
+        if (fMidiInEvents.mutex.tryLock())
         {
-            // TODO
+            uint32_t engineEventIndex = 0;
+            fMidiInEvents.splice();
+
+            while (! fMidiInEvents.data.isEmpty())
+            {
+                const RtMidiEvent& midiEvent = fMidiInEvents.data.getLast(true);
+
+                EngineEvent* const engineEvent = &kData->rack.in[engineEventIndex++];
+                engineEvent->clear();
+
+                const uint8_t midiStatus  = MIDI_GET_STATUS_FROM_DATA(midiEvent.data);
+                const uint8_t midiChannel = MIDI_GET_CHANNEL_FROM_DATA(midiEvent.data);
+
+                engineEvent->channel = midiChannel;
+
+                if (midiEvent.time < fTimeInfo.frame)
+                    engineEvent->time = 0;
+                else if (midiEvent.time >= fTimeInfo.frame + nframes)
+                {
+                    engineEvent->time = fTimeInfo.frame + nframes-1;
+                    carla_stderr("MIDI Event in the future!, %i vs %i", engineEvent->time, fTimeInfo.frame);
+                }
+                else
+                    engineEvent->time = midiEvent.time - fTimeInfo.frame;
+
+                //carla_stdout("Got midi, time %f vs %i", midiEvent.time, engineEvent->time);
+
+                if (MIDI_IS_STATUS_CONTROL_CHANGE(midiStatus))
+                {
+                    const uint8_t midiControl = midiEvent.data[1];
+                    engineEvent->type         = kEngineEventTypeControl;
+
+                    if (MIDI_IS_CONTROL_BANK_SELECT(midiControl))
+                    {
+                        const uint8_t midiBank  = midiEvent.data[2];
+
+                        engineEvent->ctrl.type  = kEngineControlEventTypeMidiBank;
+                        engineEvent->ctrl.param = midiBank;
+                        engineEvent->ctrl.value = 0.0;
+                    }
+                    else if (midiControl == MIDI_CONTROL_ALL_SOUND_OFF)
+                    {
+                        engineEvent->ctrl.type  = kEngineControlEventTypeAllSoundOff;
+                        engineEvent->ctrl.param = 0;
+                        engineEvent->ctrl.value = 0.0;
+                    }
+                    else if (midiControl == MIDI_CONTROL_ALL_NOTES_OFF)
+                    {
+                        engineEvent->ctrl.type  = kEngineControlEventTypeAllNotesOff;
+                        engineEvent->ctrl.param = 0;
+                        engineEvent->ctrl.value = 0.0;
+                    }
+                    else
+                    {
+                        const uint8_t midiValue = midiEvent.data[2];
+
+                        engineEvent->ctrl.type  = kEngineControlEventTypeParameter;
+                        engineEvent->ctrl.param = midiControl;
+                        engineEvent->ctrl.value = double(midiValue)/127.0;
+                    }
+                }
+                else if (MIDI_IS_STATUS_PROGRAM_CHANGE(midiStatus))
+                {
+                    const uint8_t midiProgram = midiEvent.data[1];
+                    engineEvent->type         = kEngineEventTypeControl;
+
+                    engineEvent->ctrl.type  = kEngineControlEventTypeMidiProgram;
+                    engineEvent->ctrl.param = midiProgram;
+                    engineEvent->ctrl.value = 0.0;
+                }
+                else
+                {
+                    engineEvent->type = kEngineEventTypeMidi;
+
+                    engineEvent->midi.data[0] = midiStatus;
+                    engineEvent->midi.data[1] = midiEvent.data[1];
+                    engineEvent->midi.data[2] = midiEvent.data[2];
+                    engineEvent->midi.size    = midiEvent.size;
+                }
+
+                if (engineEventIndex >= RACK_EVENT_COUNT)
+                    break;
+            }
+
+            fMidiInEvents.mutex.unlock();
         }
 
         // create audio buffers
@@ -318,11 +419,6 @@ protected:
         {
             std::memcpy(outsPtr, fAudioOutBuf1, sizeof(float)*nframes);
             std::memcpy(outsPtr+nframes, fAudioOutBuf2, sizeof(float)*nframes);
-
-            //for (unsigned int i=0; i < nframes; i++)
-            //    outsPtr[i] = fAudioOutBuf1[i];
-            //for (unsigned int i=0, j=nframes; i < nframes; i++, j++)
-            //    outsPtr[j] = fAudioOutBuf2[i];
         }
 
         // output events
@@ -331,37 +427,61 @@ protected:
             //fMidiOut.sendMessage();
         }
 
+        // TESTING
+        fTimeInfo.playing  = true;
+        fTimeInfo.frame   += nframes;
+
+        proccessPendingEvents();
+
+        return;
+
+        // unused
         (void)streamTime;
         (void)status;
     }
 
-    void handleMidiCallback(const double timeStamp, std::vector<unsigned char>* const message)
+    void handleMidiCallback(double timeStamp, std::vector<unsigned char>* const message)
     {
         const size_t messageSize = message->size();
+        static uint32_t lastTime = 0;
 
         if (messageSize == 0 || messageSize > 3)
             return;
 
+        timeStamp /= 2;
+
+        if (timeStamp > 0.95)
+            timeStamp = 0.95;
+
         RtMidiEvent midiEvent;
-        midiEvent.time = timeStamp;
+        midiEvent.time = fTimeInfo.frame + (timeStamp*(double)fBufferSize);
+        carla_stdout("Put midi, frame:%09i/%09i, stamp:%g", fTimeInfo.frame, midiEvent.time, timeStamp);
+
+        if (midiEvent.time < lastTime)
+            midiEvent.time = lastTime;
+        else
+            lastTime = midiEvent.time;
 
         if (messageSize == 1)
         {
             midiEvent.data[0] = message->at(0);
             midiEvent.data[1] = 0;
             midiEvent.data[2] = 0;
+            midiEvent.size    = 1;
         }
         else if (messageSize == 2)
         {
             midiEvent.data[0] = message->at(0);
             midiEvent.data[1] = message->at(1);
             midiEvent.data[2] = 0;
+            midiEvent.size    = 2;
         }
         else
         {
             midiEvent.data[0] = message->at(0);
             midiEvent.data[1] = message->at(1);
             midiEvent.data[2] = message->at(2);
+            midiEvent.size    = 3;
         }
 
         fMidiInEvents.append(midiEvent);
@@ -382,8 +502,9 @@ private:
     RtMidiOut fMidiOut;
 
     struct RtMidiEvent {
-        double time;
+        uint32_t time;
         unsigned char data[3];
+        unsigned char size;
     };
 
     struct RtMidiEvents {
@@ -417,13 +538,9 @@ private:
             mutex.unlock();
         }
 
-        void trySplice()
+        void splice()
         {
-            if (mutex.tryLock())
-            {
-                dataPending.splice(data, true);
-                mutex.unlock();
-            }
+            dataPending.splice(data, true);
         }
     };
 

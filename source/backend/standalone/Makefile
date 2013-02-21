@@ -43,11 +43,11 @@ endif
 LINK_FLAGS += $(shell pkg-config --libs gl)
 
 ifeq ($(HAVE_AF_DEPS),true)
-LINK_FLAGS += $(shell pkg-config --libs libavcodec libavformat sndfile) -lpthread
+LINK_FLAGS += $(shell pkg-config --libs libavcodec libavformat sndfile)
 endif
 
 ifeq ($(HAVE_ZYN_DEPS),true)
-LINK_FLAGS += $(shell pkg-config --libs fftw3 mxml) -lpthread
+LINK_FLAGS += $(shell pkg-config --libs fftw3 mxml)
 endif
 
 # --------------------------------------------------------------

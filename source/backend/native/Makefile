@@ -14,8 +14,8 @@ LINK_FLAGS      += $(shell pkg-config --libs QtGui gl)
 
 ifeq ($(HAVE_AF_DEPS),true)
 AF_CXX_FLAGS     = $(BUILD_CXX_FLAGS)
-AF_CXX_FLAGS    += $(shell pkg-config --cflags libavcodec libavformat sndfile) -pthread
-LINK_FLAGS      += $(shell pkg-config --libs libavcodec libavformat sndfile) -lpthread
+AF_CXX_FLAGS    += $(shell pkg-config --cflags libavcodec libavformat sndfile)
+LINK_FLAGS      += $(shell pkg-config --libs libavcodec libavformat sndfile)
 endif
 
 ifeq ($(HAVE_ZYN_DEPS),true)

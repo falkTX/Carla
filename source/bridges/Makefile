@@ -13,10 +13,10 @@ HAVE_GTK3        = $(shell pkg-config --exists gtk+-3.0 && echo true)
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += -DBUILD_BRIDGE
+BUILD_CXX_FLAGS += -DBUILD_BRIDGE -pthread
 BUILD_CXX_FLAGS += -I. -I../backend -I../includes -I../utils
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo QtCore QtXml)
-LINK_FLAGS      += $(shell pkg-config --libs liblo QtCore QtXml)
+LINK_FLAGS      += $(shell pkg-config --libs liblo QtCore QtXml) -lpthread
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
 BUILD_CXX_FLAGS += -DWANT_LADSPA -DWANT_DSSI

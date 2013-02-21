@@ -649,7 +649,7 @@ class CarlaMainW(QMainWindow):
             audioError = cString(Carla.host.get_last_error())
 
             if audioError:
-                QMessageBox.critical(self, self.tr("Error"), self.tr("Could not connect to Audio backend '%s', possible reasons: %s" % (audioDriver, audioError)))
+                QMessageBox.critical(self, self.tr("Error"), self.tr("Could not connect to Audio backend '%s', possible reasons:\n%s" % (audioDriver, audioError)))
             else:
                 QMessageBox.critical(self, self.tr("Error"), self.tr("Could not connect to Audio backend '%s'" % audioDriver))
             return
@@ -1179,8 +1179,10 @@ class CarlaMainW(QMainWindow):
 
         self.saveSettings()
 
-        Carla.host.set_engine_about_to_close()
-        self.removeAllPlugins()
+        if Carla.host.is_engine_running():
+            Carla.host.set_engine_about_to_close()
+            self.removeAllPlugins()
+
         self.stopEngine()
 
         QMainWindow.closeEvent(self, event)
