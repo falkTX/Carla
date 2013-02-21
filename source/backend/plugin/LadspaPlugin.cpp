@@ -792,7 +792,7 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Event Input and Processing
 
-        else if (kData->event.portIn != nullptr)
+        if (kData->event.portIn != nullptr && kData->activeBefore)
         {
             // ----------------------------------------------------------------------------------------------------
             // Event Input (System)

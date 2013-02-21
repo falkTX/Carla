@@ -243,6 +243,11 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
             pluginId += path[nameSize+2]-'0';
         }
     }
+    else
+    {
+        carla_stderr("CarlaEngineOsc::handleMessage() - invalid message '%s'", path);
+        return 1;
+    }
 
     if (pluginId > kEngine->currentPluginCount())
     {

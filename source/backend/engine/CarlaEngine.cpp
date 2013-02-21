@@ -904,6 +904,9 @@ const char* CarlaEngine::getNewUniquePluginName(const char* const name)
     {
         CARLA_ASSERT(kData->plugins[i].plugin);
 
+        if (kData->plugins[i].plugin == nullptr)
+            continue;
+
         // Check if unique name doesn't exist
         if (const char* const pluginName = kData->plugins[i].plugin->name())
         {

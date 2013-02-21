@@ -179,10 +179,12 @@ public:
 #ifdef CPP11_THREAD
         if (cthread != nullptr)
         {
+            cthread->join();
             delete cthread;
             cthread = nullptr;
         }
 #else
+        pthread_join(pthreadId, nullptr);
         _zero();
 #endif
         return false;

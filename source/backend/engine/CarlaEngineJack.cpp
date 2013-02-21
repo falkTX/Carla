@@ -491,14 +491,14 @@ class CarlaEngineJack : public CarlaEngine
 public:
     CarlaEngineJack()
         : CarlaEngine(),
-#ifdef BUILD_BRIDGE
-          fHasQuit(false),
-#else
           fClient(nullptr),
           fTransportState(JackTransportStopped),
-          fRackPorts{nullptr},
+          fFreewheel(false),
+#ifdef BUILD_BRIDGE
+          fHasQuit(false)
+#else
+          fRackPorts{nullptr}
 #endif
-          fFreewheel(false)
     {
         carla_debug("CarlaEngineJack::CarlaEngineJack()");
 
@@ -1007,6 +1007,7 @@ private:
     jack_client_t*         fClient;
     jack_position_t        fTransportPos;
     jack_transport_state_t fTransportState;
+    bool fFreewheel;
 
     // -------------------------------------
 
@@ -1025,8 +1026,6 @@ private:
 
     jack_port_t* fRackPorts[rackPortCount];
 #endif
-
-    bool fFreewheel;
 
     // -------------------------------------
 

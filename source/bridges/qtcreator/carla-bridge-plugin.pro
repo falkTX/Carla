@@ -89,6 +89,9 @@ HEADERS += \
     ../../utils/CarlaStateUtils.hpp \
     ../../utils/CarlaVstUtils.hpp \
     ../../utils/CarlaUtils.hpp \
+    ../../utils/CarlaMutex.hpp \
+    ../../utils/CarlaString.hpp \
+    ../../utils/CarlaThread.hpp \
     ../../utils/lv2_atom_queue.hpp \
     ../../utils/RtList.hpp
 

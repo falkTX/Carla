@@ -916,7 +916,7 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Event Input and Processing
 
-        else if (kData->event.portIn != nullptr)
+        if (kData->event.portIn != nullptr && kData->activeBefore)
         {
             // ----------------------------------------------------------------------------------------------------
             // MIDI Input (External)
@@ -1271,7 +1271,7 @@ public:
 
         else
         {
-            processSingle(inBuffer, outBuffer, frames, 0, 0);
+            processSingle(inBuffer, outBuffer, frames, 0, midiEventCount);
 
         } // End of Plugin processing (no events)
 

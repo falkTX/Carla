@@ -494,7 +494,6 @@ public:
         const double sampleRate = kData->engine->getSampleRate();
 
         uint32_t aIns, aOuts, mIns, mOuts, params, j;
-        aIns = aOuts = mIns = mOuts = params = 0;
 
         bool forcedStereoIn, forcedStereoOut;
         forcedStereoIn = forcedStereoOut = false;
@@ -988,7 +987,7 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Event Input and Processing
 
-        else if (kData->event.portIn != nullptr)
+        if (kData->event.portIn != nullptr && kData->activeBefore)
         {
             // ----------------------------------------------------------------------------------------------------
             // MIDI Input (External)
@@ -1358,7 +1357,7 @@ public:
         if (fMidiOut.count > 0)
         {
             // reverse lookup
-            for (uint32_t i=fMidiEventCount-1; i >= fMidiEventCount; i--)
+            for (uint32_t i = (MAX_MIDI_EVENTS*2)-1; i >= fMidiEventCount; i--)
             {
                 if (fMidiEvents[i].data[0] == 0)
                     break;
@@ -1412,10 +1411,10 @@ public:
 
         fIsProcessing = true;
 
-        fDescriptor->process(fHandle, fAudioInBuffers, fAudioOutBuffers, frames, 0, nullptr);
+        fDescriptor->process(fHandle, fAudioInBuffers, fAudioOutBuffers, frames, fMidiEventCount, fMidiEvents);
 
         if (fHandle2 != nullptr)
-            fDescriptor->process(fHandle2, fAudioInBuffers, fAudioOutBuffers, frames, 0, nullptr);
+            fDescriptor->process(fHandle2, fAudioInBuffers, fAudioOutBuffers, frames, fMidiEventCount, fMidiEvents);
 
         fIsProcessing = false;
 
@@ -1519,12 +1518,14 @@ protected:
     {
         CARLA_ASSERT(fEnabled);
         CARLA_ASSERT(fMidiOut.count > 0);
-        CARLA_ASSERT(fIsProcessing);
         CARLA_ASSERT(event != nullptr);
+        CARLA_ASSERT(fIsProcessing);
 
         if (! fEnabled)
             return false;
         if (fMidiOut.count == 0)
+            return false;
+        if (event == nullptr)
             return false;
         if (! fIsProcessing)
         {
