@@ -199,7 +199,7 @@ public:
     Lv2Plugin(CarlaEngine* const engine, const unsigned short id)
         : CarlaPlugin(engine, id)
     {
-        carla_debug("Lv2Plugin::Lv2Plugin()");
+        carla_debug("Lv2Plugin::Lv2Plugin(%p, %i)", engine, id);
 
         m_type   = PLUGIN_LV2;
         m_count += 1;

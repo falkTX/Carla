@@ -30,7 +30,7 @@ public:
     DssiPlugin(CarlaEngine* const engine, const unsigned int id)
         : CarlaPlugin(engine, id)
     {
-        carla_debug("DssiPlugin::DssiPlugin()");
+        carla_debug("DssiPlugin::DssiPlugin(%p, %i)", engine, id);
 
         fHandle  = nullptr;
         fHandle2 = nullptr;
@@ -277,6 +277,8 @@ public:
 
     void setMidiProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback, const bool block)
     {
+        CARLA_ASSERT(fDssiDescriptor != nullptr);
+        CARLA_ASSERT(fHandle != nullptr);
         CARLA_ASSERT(index >= -1 && index < static_cast<int32_t>(kData->midiprog.count));
 
         if (index < -1)
@@ -285,7 +287,7 @@ public:
             return;
 
         // FIXME
-        if (index >= 0)
+        if (fDssiDescriptor != nullptr && fHandle != nullptr && index >= 0)
         {
             const uint32_t bank    = kData->midiprog.data[index].bank;
             const uint32_t program = kData->midiprog.data[index].program;
@@ -295,7 +297,7 @@ public:
                 //const CarlaEngine::ScopedLocker m(x_engine, block);
                 fDssiDescriptor->select_program(fHandle, bank, program);
 
-                if (fHandle)
+                if (fHandle2 != nullptr)
                     fDssiDescriptor->select_program(fHandle2, bank, program);
             }
             else
@@ -304,7 +306,7 @@ public:
 
                 fDssiDescriptor->select_program(fHandle, bank, program);
 
-                if (fHandle2)
+                if (fHandle2 != nullptr)
                     fDssiDescriptor->select_program(fHandle2, bank, program);
             }
         }
@@ -419,6 +421,7 @@ public:
         {
             kData->audioOut.createNew(aOuts);
             fAudioOutBuffers = new float*[aOuts];
+            needsCtrlIn = true;
 
             for (uint32_t i=0; i < aOuts; i++)
                 fAudioOutBuffers[i] = nullptr;
@@ -469,7 +472,6 @@ public:
                     j = iAudioOut++;
                     kData->audioOut.ports[j].port   = (CarlaEngineAudioPort*)kData->client->addPort(kEnginePortTypeAudio, portName, false);
                     kData->audioOut.ports[j].rindex = i;
-                    needsCtrlIn = true;
 
                     if (forcedStereoOut)
                     {
@@ -681,7 +683,7 @@ public:
 
         if (kData->engine->getOptions().useDssiVstChunks && QString(fFilename).endsWith("dssi-vst.so", Qt::CaseInsensitive))
         {
-            if (fDssiDescriptor->get_custom_data && fDssiDescriptor->set_custom_data)
+            if (fDssiDescriptor->get_custom_data != nullptr && fDssiDescriptor->set_custom_data != nullptr)
                 fHints |= PLUGIN_USES_CHUNKS;
         }
 
@@ -845,7 +847,6 @@ public:
     void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t framesOffset)
     {
         uint32_t i, k;
-        unsigned long midiEventCount = 0;
 
         // --------------------------------------------------------------------------------------------------------
         // Check if active
@@ -871,8 +872,10 @@ public:
             return;
         }
 
+        unsigned long midiEventCount = 0;
+
         // --------------------------------------------------------------------------------------------------------
-        // Check if active before
+        // Check if not active before
 
         if (! kData->activeBefore)
         {
@@ -1123,6 +1126,9 @@ public:
                             allNotesOffSent = true;
                         }
 
+                        if (midiEventCount >= MAX_MIDI_EVENTS)
+                            continue;
+
                         carla_zeroStruct<snd_seq_event_t>(fMidiEvents[midiEventCount]);
 
                         if (! sampleAccurate)
@@ -1132,7 +1138,7 @@ public:
                         fMidiEvents[midiEventCount].data.control.channel = event.channel;
                         fMidiEvents[midiEventCount].data.control.param   = MIDI_CONTROL_ALL_SOUND_OFF;
 
-                        midiEventCount++;
+                        midiEventCount += 1;
 
                         break;
 
@@ -1145,6 +1151,9 @@ public:
                             allNotesOffSent = true;
                         }
 
+                        if (midiEventCount >= MAX_MIDI_EVENTS)
+                            continue;
+
                         carla_zeroStruct<snd_seq_event_t>(fMidiEvents[midiEventCount]);
 
                         if (! sampleAccurate)
@@ -1154,7 +1163,7 @@ public:
                         fMidiEvents[midiEventCount].data.control.channel = event.channel;
                         fMidiEvents[midiEventCount].data.control.param   = MIDI_CONTROL_ALL_NOTES_OFF;
 
-                        midiEventCount++;
+                        midiEventCount += 1;
 
                         break;
                     }
@@ -1178,8 +1187,8 @@ public:
 
                     carla_zeroStruct<snd_seq_event_t>(fMidiEvents[midiEventCount]);
 
-                    //if (! sampleAccurate)
-                    fMidiEvents[midiEventCount].time.tick = time - timeOffset;
+                    if (! sampleAccurate)
+                        fMidiEvents[midiEventCount].time.tick = time - timeOffset;
 
                     if (MIDI_IS_STATUS_NOTE_OFF(status))
                     {
@@ -1393,8 +1402,6 @@ public:
             }
 
         } // End of Control Output
-
-        CARLA_PROCESS_CONTINUE_CHECK;
 
         // --------------------------------------------------------------------------------------------------------
 

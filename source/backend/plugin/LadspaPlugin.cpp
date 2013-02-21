@@ -416,6 +416,7 @@ public:
         {
             kData->audioOut.createNew(aOuts);
             fAudioOutBuffers = new float*[aOuts];
+            needsCtrlIn = true;
 
             for (uint32_t i=0; i < aOuts; i++)
                 fAudioOutBuffers[i] = nullptr;
@@ -467,7 +468,6 @@ public:
                     j = iAudioOut++;
                     kData->audioOut.ports[j].port   = (CarlaEngineAudioPort*)kData->client->addPort(kEnginePortTypeAudio, portName, false);
                     kData->audioOut.ports[j].rindex = i;
-                    needsCtrlIn = true;
 
                     if (forcedStereoOut)
                     {
@@ -770,7 +770,7 @@ public:
         }
 
         // --------------------------------------------------------------------------------------------------------
-        // Check if active before
+        // Check if not active before
 
         if (! kData->activeBefore)
         {
@@ -1093,8 +1093,6 @@ public:
             }
 
         } // End of Control Output
-
-        CARLA_PROCESS_CONTINUE_CHECK;
 
         // --------------------------------------------------------------------------------------------------------
 

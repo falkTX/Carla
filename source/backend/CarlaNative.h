@@ -98,7 +98,7 @@ typedef struct _Parameter {
 } Parameter;
 
 typedef struct _MidiEvent {
-    uint32_t port;
+    uint8_t  port;
     uint32_t time;
     uint8_t  data[3];
 } MidiEvent;

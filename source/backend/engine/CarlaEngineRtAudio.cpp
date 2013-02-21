@@ -270,7 +270,7 @@ protected:
         {
             for (unsigned int i=0; i < nframes*2; i++)
             {
-                if (i % 2)
+                if (i % 2 == 0)
                     fAudioInBuf1[i/2] = insPtr[i];
                 else
                     fAudioInBuf2[i/2] = insPtr[i];
@@ -308,7 +308,7 @@ protected:
         {
             for (unsigned int i=0; i < nframes*2; i++)
             {
-                if (i % 2)
+                if (i % 2 == 0)
                     outsPtr[i] = fAudioOutBuf1[i/2];
                 else
                     outsPtr[i] = fAudioOutBuf2[i/2];

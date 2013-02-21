@@ -50,7 +50,7 @@ public:
     VstPlugin(CarlaEngine* const engine, const unsigned short id)
         : CarlaPlugin(engine, id)
     {
-        carla_debug("VstPlugin::VstPlugin()");
+        carla_debug("VstPlugin::VstPlugin(%p, %i)", engine, id);
 
         m_type = PLUGIN_VST;
 

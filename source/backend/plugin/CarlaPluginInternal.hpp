@@ -247,10 +247,12 @@ struct PluginProgramData {
         CARLA_ASSERT(names == nullptr);
 
         if (names == nullptr)
+        {
             names = new ProgramName[count];
 
-        for (uint32_t i=0; i < count; i++)
-            names[i] = nullptr;
+            for (uint32_t i=0; i < count; i++)
+                names[i] = nullptr;
+        }
 
         this->count = count;
     }
