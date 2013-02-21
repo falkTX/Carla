@@ -355,7 +355,7 @@ static void audiofile_process(PluginHandle handle, float** inBuffer, float** out
     pthread_mutex_unlock(&handlePtr->mutex);
 
     return;
-.
+
     // unused
     (void)inBuffer;
     (void)midiEventCount;
