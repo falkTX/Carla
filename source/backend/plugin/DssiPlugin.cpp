@@ -42,6 +42,9 @@ public:
         fParamBuffers    = nullptr;
 
         carla_zeroMem(fMidiEvents, sizeof(snd_seq_event_t)*MAX_MIDI_EVENTS);
+
+        if (engine->getOptions().useDssiVstChunks)
+            fOptions |= PLUGIN_OPTION_USE_CHUNKS;
     }
 
     ~DssiPlugin()
@@ -681,12 +684,6 @@ public:
         if (mIns == 1 && aIns == 0 && aOuts > 0)
             fHints |= PLUGIN_IS_SYNTH;
 
-        if (kData->engine->getOptions().useDssiVstChunks && QString(fFilename).endsWith("dssi-vst.so", Qt::CaseInsensitive))
-        {
-            if (fDssiDescriptor->get_custom_data != nullptr && fDssiDescriptor->set_custom_data != nullptr)
-                fHints |= PLUGIN_USES_CHUNKS;
-        }
-
         if (aOuts > 0 && (aIns == aOuts || aIns == 1))
             fHints |= PLUGIN_CAN_DRYWET;
 
@@ -698,6 +695,36 @@ public:
 
         if (aIns <= 2 && aOuts <= 2 && (aIns == aOuts || aIns == 0 || aOuts == 0))
             fHints |= PLUGIN_CAN_FORCE_STEREO;
+
+        // plugin options
+        kData->availOptions &= ~(PLUGIN_OPTION_FIXED_BUFFER | PLUGIN_OPTION_SELF_AUTOMATION | PLUGIN_OPTION_SEND_ALL_SOUND_OFF | PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH | PLUGIN_OPTION_SEND_PITCHBEND);
+
+        // always available if needed
+        kData->availOptions |= PLUGIN_OPTION_SELF_AUTOMATION;
+
+        // dssi-vst can do chunks, but needs fixed buffers
+        if (QString(fFilename).endsWith("dssi-vst.so", Qt::CaseInsensitive))
+        {
+            fOptions |= PLUGIN_OPTION_FIXED_BUFFER;
+
+            if (fOptions & PLUGIN_OPTION_USE_CHUNKS)
+            {
+                if (fDssiDescriptor->get_custom_data != nullptr && fDssiDescriptor->set_custom_data != nullptr)
+                    fHints |= PLUGIN_USES_CHUNKS;
+            }
+        }
+        else
+        {
+            kData->availOptions |= PLUGIN_OPTION_FIXED_BUFFER;
+        }
+
+        // only for plugins with midi input
+        if (mIns > 0)
+        {
+            kData->availOptions |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+            kData->availOptions |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
+            kData->availOptions |= PLUGIN_OPTION_SEND_PITCHBEND;
+        }
 
         // check latency
         if (fHints & PLUGIN_CAN_DRYWET)

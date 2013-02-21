@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>697</width>
+    <width>672</width>
     <height>520</height>
    </rect>
   </property>
@@ -294,9 +294,6 @@ Plugin Name
          <layout class="QVBoxLayout" name="verticalLayout_2">
           <item>
            <widget class="QCheckBox" name="ch_fixed_buffer">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
             <property name="text">
              <string>Fixed-size buffer</string>
             </property>
@@ -304,9 +301,6 @@ Plugin Name
           </item>
           <item>
            <widget class="QCheckBox" name="ch_force_stereo">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
             <property name="text">
              <string>Force Stereo</string>
             </property>
@@ -314,9 +308,6 @@ Plugin Name
           </item>
           <item>
            <widget class="QCheckBox" name="ch_self_automation">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
             <property name="text">
              <string>Self-automation</string>
             </property>
@@ -324,9 +315,6 @@ Plugin Name
           </item>
           <item>
            <widget class="QCheckBox" name="ch_use_chunks">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
             <property name="text">
              <string>Use chunks</string>
             </property>
@@ -334,9 +322,6 @@ Plugin Name
           </item>
           <item>
            <widget class="QCheckBox" name="ch_send_all_sound_off">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
             <property name="text">
              <string>Send All Sound/Notes Off</string>
             </property>
@@ -344,9 +329,6 @@ Plugin Name
           </item>
           <item>
            <widget class="QCheckBox" name="ch_send_note_aftertouch">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
             <property name="text">
              <string>Send Note Aftertouch</string>
             </property>
@@ -354,9 +336,6 @@ Plugin Name
           </item>
           <item>
            <widget class="QCheckBox" name="ch_send_pitchbend">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
             <property name="text">
              <string>Send Pitchbend</string>
             </property>
@@ -504,9 +483,6 @@ Plugin Name
              </item>
              <item>
               <widget class="QLabel" name="label_ctrl_channel">
-               <property name="enabled">
-                <bool>false</bool>
-               </property>
                <property name="text">
                 <string>MIDI Control Channel:</string>
                </property>
@@ -514,14 +490,20 @@ Plugin Name
              </item>
              <item>
               <widget class="QSpinBox" name="sb_ctrl_channel">
-               <property name="enabled">
-                <bool>false</bool>
+               <property name="alignment">
+                <set>Qt::AlignCenter</set>
+               </property>
+               <property name="specialValueText">
+                <string>N</string>
                </property>
                <property name="minimum">
-                <number>1</number>
+                <number>0</number>
                </property>
                <property name="maximum">
                 <number>16</number>
+               </property>
+               <property name="value">
+                <number>0</number>
                </property>
               </widget>
              </item>

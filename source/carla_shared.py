@@ -243,7 +243,8 @@ PARAMETER_VOLUME        = -4
 PARAMETER_BALANCE_LEFT  = -5
 PARAMETER_BALANCE_RIGHT = -6
 PARAMETER_PANNING       = -7
-PARAMETER_MAX           = -8
+PARAMETER_CTRL_CHANNEL  = -8
+PARAMETER_MAX           = -9
 
 # Options Type
 OPTION_PROCESS_NAME            = 0
@@ -1455,10 +1456,11 @@ class PluginEdit(QDialog):
             self.ui.b_load_state.setEnabled(False)
             self.ui.b_save_state.setEnabled(False)
 
-        self.connect(self.ui.dial_drywet, SIGNAL("sliderMoved(int)"), SLOT("slot_dryWetChanged(int)"))
-        self.connect(self.ui.dial_vol, SIGNAL("sliderMoved(int)"), SLOT("slot_volumeChanged(int)"))
-        self.connect(self.ui.dial_b_left, SIGNAL("sliderMoved(int)"), SLOT("slot_balanceLeftChanged(int)"))
-        self.connect(self.ui.dial_b_right, SIGNAL("sliderMoved(int)"), SLOT("slot_balanceRightChanged(int)"))
+        self.connect(self.ui.dial_drywet, SIGNAL("valueChanged(int)"), SLOT("slot_dryWetChanged(int)"))
+        self.connect(self.ui.dial_vol, SIGNAL("valueChanged(int)"), SLOT("slot_volumeChanged(int)"))
+        self.connect(self.ui.dial_b_left, SIGNAL("valueChanged(int)"), SLOT("slot_balanceLeftChanged(int)"))
+        self.connect(self.ui.dial_b_right, SIGNAL("valueChanged(int)"), SLOT("slot_balanceRightChanged(int)"))
+        self.connect(self.ui.sb_ctrl_channel, SIGNAL("valueChanged(int)"), SLOT("slot_ctrlChannelChanged(int)"))
 
         #self.connect(self.ui.dial_drywet, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_showCustomDialMenu()"))
         #self.connect(self.ui.dial_vol, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_showCustomDialMenu()"))
@@ -1545,6 +1547,22 @@ class PluginEdit(QDialog):
         self.ui.dial_vol.setEnabled(pluginHints & PLUGIN_CAN_VOLUME)
         self.ui.dial_b_left.setEnabled(pluginHints & PLUGIN_CAN_BALANCE)
         self.ui.dial_b_right.setEnabled(pluginHints & PLUGIN_CAN_BALANCE)
+
+        # Set options
+        self.ui.ch_fixed_buffer.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_FIXED_BUFFER)
+        self.ui.ch_fixed_buffer.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_FIXED_BUFFER)
+        self.ui.ch_force_stereo.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_FORCE_STEREO)
+        self.ui.ch_force_stereo.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_FORCE_STEREO)
+        self.ui.ch_self_automation.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_SELF_AUTOMATION)
+        self.ui.ch_self_automation.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_SELF_AUTOMATION)
+        self.ui.ch_use_chunks.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_USE_CHUNKS)
+        self.ui.ch_use_chunks.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_USE_CHUNKS)
+        self.ui.ch_send_all_sound_off.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
+        self.ui.ch_send_all_sound_off.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
+        self.ui.ch_send_note_aftertouch.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH)
+        self.ui.ch_send_note_aftertouch.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH)
+        self.ui.ch_send_pitchbend.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_SEND_PITCHBEND)
+        self.ui.ch_send_pitchbend.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_SEND_PITCHBEND)
 
         # Show/hide keyboard
         showKeyboard = (pluginHints & PLUGIN_IS_SYNTH) != 0 or (midiCountInfo['ins'] > 0 < midiCountInfo['outs'])
@@ -1847,6 +1865,10 @@ class PluginEdit(QDialog):
                 #self.ui.dial_pan.blockSignals(True)
                 #self.ui.dial_pan.setValue(value * 1000, True, False)
                 #self.ui.dial_pan.blockSignals(False)
+            elif index == PARAMETER_CTRL_CHANNEL:
+                self.ui.sb_ctrl_channel.blockSignals(True)
+                self.ui.sb_ctrl_channel.setValue(value)
+                self.ui.sb_ctrl_channel.blockSignals(False)
             elif index >= 0:
                 for paramType, paramId, paramWidget in self.fParameterList:
                     if paramId == index:
@@ -1919,6 +1941,10 @@ class PluginEdit(QDialog):
     @pyqtSlot(int)
     def slot_panningChanged(self, value):
         Carla.host.set_panning(self.fPluginId, float(value)/1000)
+
+    @pyqtSlot(int)
+    def slot_ctrlChannelChanged(self, value):
+        Carla.host.set_ctrl_channel(self.fPluginId, value)
 
     @pyqtSlot(int, float)
     def slot_parameterValueChanged(self, parameterId, value):

@@ -85,6 +85,9 @@ CarlaPlugin::CarlaPlugin(CarlaEngine* const engine, const unsigned int id)
     case PROCESS_MODE_BRIDGE:
         break;
     }
+
+    if (engine->getOptions().forceStereo)
+        fOptions |= PLUGIN_OPTION_FORCE_STEREO;
 }
 
 CarlaPlugin::~CarlaPlugin()

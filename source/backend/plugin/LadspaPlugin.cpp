@@ -681,6 +681,13 @@ public:
         if (aIns <= 2 && aOuts <= 2 && (aIns == aOuts || aIns == 0 || aOuts == 0))
             fHints |= PLUGIN_CAN_FORCE_STEREO;
 
+        // plugin options
+        kData->availOptions &= ~(PLUGIN_OPTION_FIXED_BUFFER | PLUGIN_OPTION_SELF_AUTOMATION | PLUGIN_OPTION_SEND_ALL_SOUND_OFF | PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH | PLUGIN_OPTION_SEND_PITCHBEND);
+
+        // always available if needed
+        kData->availOptions |= PLUGIN_OPTION_FIXED_BUFFER;
+        kData->availOptions |= PLUGIN_OPTION_SELF_AUTOMATION;
+
         // check latency
         if (fHints & PLUGIN_CAN_DRYWET)
         {

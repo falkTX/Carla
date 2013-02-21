@@ -759,6 +759,15 @@ public:
         fHints |= PLUGIN_CAN_BALANCE;
         fHints |= PLUGIN_CAN_FORCE_STEREO;
 
+        // plugin options
+        kData->availOptions &= ~(PLUGIN_OPTION_FIXED_BUFFER | PLUGIN_OPTION_SELF_AUTOMATION | PLUGIN_OPTION_SEND_ALL_SOUND_OFF | PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH | PLUGIN_OPTION_SEND_PITCHBEND);
+
+        // always available if needed
+        kData->availOptions |= PLUGIN_OPTION_SELF_AUTOMATION;
+        kData->availOptions |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+        kData->availOptions |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
+        kData->availOptions |= PLUGIN_OPTION_SEND_PITCHBEND;
+
         bufferSizeChanged(kData->engine->getBufferSize());
         reloadPrograms(true);
 
