@@ -14,13 +14,13 @@ LINK_FLAGS      += $(shell pkg-config --libs QtGui gl)
 
 ifeq ($(HAVE_AF_DEPS),true)
 AF_CXX_FLAGS     = $(BUILD_CXX_FLAGS)
-AF_CXX_FLAGS    += $(shell pkg-config --cflags libavcodec libavformat sndfile) -dpthread
+AF_CXX_FLAGS    += $(shell pkg-config --cflags libavcodec libavformat sndfile) -pthread
 LINK_FLAGS      += $(shell pkg-config --libs libavcodec libavformat sndfile) -lpthread
 endif
 
 ifeq ($(HAVE_ZYN_DEPS),true)
 ZYN_CXX_FLAGS    = $(BUILD_CXX_FLAGS)
-ZYN_CXX_FLAGS   += $(shell pkg-config --cflags fftw3 mxml) -dpthread
+ZYN_CXX_FLAGS   += $(shell pkg-config --cflags fftw3 mxml) -pthread
 LINK_FLAGS      += $(shell pkg-config --libs fftw3 mxml) -lpthread
 endif
 

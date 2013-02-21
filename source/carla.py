@@ -626,15 +626,15 @@ class CarlaMainW(QMainWindow):
             print("LADISH detected but using multiple clients (not allowed), forcing single client now")
             Carla.processMode = PROCESS_MODE_SINGLE_CLIENT
 
-        Carla.host.set_option(OPTION_PROCESS_MODE, Carla.processMode, "")
-        Carla.host.set_option(OPTION_MAX_PARAMETERS, Carla.maxParameters, "")
-        Carla.host.set_option(OPTION_FORCE_STEREO, forceStereo, "")
-        Carla.host.set_option(OPTION_PREFER_PLUGIN_BRIDGES, preferPluginBridges, "")
-        Carla.host.set_option(OPTION_PREFER_UI_BRIDGES, preferUiBridges, "")
-        Carla.host.set_option(OPTION_USE_DSSI_VST_CHUNKS, useDssiVstChunks, "")
-        Carla.host.set_option(OPTION_OSC_UI_TIMEOUT, oscUiTimeout, "")
-        Carla.host.set_option(OPTION_PREFERRED_BUFFER_SIZE, preferredBufferSize, "")
-        Carla.host.set_option(OPTION_PREFERRED_SAMPLE_RATE, preferredSampleRate, "")
+        Carla.host.set_engine_option(OPTION_PROCESS_MODE, Carla.processMode, "")
+        Carla.host.set_engine_option(OPTION_MAX_PARAMETERS, Carla.maxParameters, "")
+        Carla.host.set_engine_option(OPTION_FORCE_STEREO, forceStereo, "")
+        Carla.host.set_engine_option(OPTION_PREFER_PLUGIN_BRIDGES, preferPluginBridges, "")
+        Carla.host.set_engine_option(OPTION_PREFER_UI_BRIDGES, preferUiBridges, "")
+        Carla.host.set_engine_option(OPTION_USE_DSSI_VST_CHUNKS, useDssiVstChunks, "")
+        Carla.host.set_engine_option(OPTION_OSC_UI_TIMEOUT, oscUiTimeout, "")
+        Carla.host.set_engine_option(OPTION_PREFERRED_BUFFER_SIZE, preferredBufferSize, "")
+        Carla.host.set_engine_option(OPTION_PREFERRED_SAMPLE_RATE, preferredSampleRate, "")
 
         # ---------------------------------------------
         # Start
@@ -1265,57 +1265,57 @@ if __name__ == '__main__':
 
     # Init backend
     Carla.host = Host(libPrefix)
-    Carla.host.set_callback_function(callbackFunction)
-    Carla.host.set_option(OPTION_PROCESS_NAME, 0, "carla")
+    Carla.host.set_engine_callback(callbackFunction)
+    Carla.host.set_engine_option(OPTION_PROCESS_NAME, 0, "carla")
 
     # Set bridge paths
     if carla_bridge_native:
-        Carla.host.set_option(OPTION_PATH_BRIDGE_NATIVE, 0, carla_bridge_native)
+        Carla.host.set_engine_option(OPTION_PATH_BRIDGE_NATIVE, 0, carla_bridge_native)
 
     if carla_bridge_posix32:
-        Carla.host.set_option(OPTION_PATH_BRIDGE_POSIX32, 0, carla_bridge_posix32)
+        Carla.host.set_engine_option(OPTION_PATH_BRIDGE_POSIX32, 0, carla_bridge_posix32)
 
     if carla_bridge_posix64:
-        Carla.host.set_option(OPTION_PATH_BRIDGE_POSIX64, 0, carla_bridge_posix64)
+        Carla.host.set_engine_option(OPTION_PATH_BRIDGE_POSIX64, 0, carla_bridge_posix64)
 
     if carla_bridge_win32:
-        Carla.host.set_option(OPTION_PATH_BRIDGE_WIN32, 0, carla_bridge_win32)
+        Carla.host.set_engine_option(OPTION_PATH_BRIDGE_WIN32, 0, carla_bridge_win32)
 
     if carla_bridge_win64:
-        Carla.host.set_option(OPTION_PATH_BRIDGE_WIN64, 0, carla_bridge_win64)
+        Carla.host.set_engine_option(OPTION_PATH_BRIDGE_WIN64, 0, carla_bridge_win64)
 
     if WINDOWS:
         if carla_bridge_lv2_windows:
-            Carla.host.set_option(OPTION_PATH_BRIDGE_LV2_WINDOWS, 0, carla_bridge_lv2_windows)
+            Carla.host.set_engine_option(OPTION_PATH_BRIDGE_LV2_WINDOWS, 0, carla_bridge_lv2_windows)
 
         if carla_bridge_vst_hwnd:
-            Carla.host.set_option(OPTION_PATH_BRIDGE_VST_HWND, 0, carla_bridge_vst_hwnd)
+            Carla.host.set_engine_option(OPTION_PATH_BRIDGE_VST_HWND, 0, carla_bridge_vst_hwnd)
 
     elif MACOS:
         if carla_bridge_lv2_cocoa:
-            Carla.host.set_option(OPTION_PATH_BRIDGE_LV2_COCOA, 0, carla_bridge_lv2_cocoa)
+            Carla.host.set_engine_option(OPTION_PATH_BRIDGE_LV2_COCOA, 0, carla_bridge_lv2_cocoa)
 
         if carla_bridge_vst_cocoa:
-            Carla.host.set_option(OPTION_PATH_BRIDGE_VST_COCOA, 0, carla_bridge_vst_cocoa)
+            Carla.host.set_engine_option(OPTION_PATH_BRIDGE_VST_COCOA, 0, carla_bridge_vst_cocoa)
 
     else:
         if carla_bridge_lv2_gtk2:
-            Carla.host.set_option(OPTION_PATH_BRIDGE_LV2_GTK2, 0, carla_bridge_lv2_gtk2)
+            Carla.host.set_engine_option(OPTION_PATH_BRIDGE_LV2_GTK2, 0, carla_bridge_lv2_gtk2)
 
         if carla_bridge_lv2_gtk3:
-            Carla.host.set_option(OPTION_PATH_BRIDGE_LV2_GTK3, 0, carla_bridge_lv2_gtk3)
+            Carla.host.set_engine_option(OPTION_PATH_BRIDGE_LV2_GTK3, 0, carla_bridge_lv2_gtk3)
 
         if carla_bridge_lv2_qt4:
-            Carla.host.set_option(OPTION_PATH_BRIDGE_LV2_QT4, 0, carla_bridge_lv2_qt4)
+            Carla.host.set_engine_option(OPTION_PATH_BRIDGE_LV2_QT4, 0, carla_bridge_lv2_qt4)
 
         if carla_bridge_lv2_qt5:
-            Carla.host.set_option(OPTION_PATH_BRIDGE_LV2_QT5, 0, carla_bridge_lv2_qt5)
+            Carla.host.set_engine_option(OPTION_PATH_BRIDGE_LV2_QT5, 0, carla_bridge_lv2_qt5)
 
         if carla_bridge_lv2_x11:
-            Carla.host.set_option(OPTION_PATH_BRIDGE_LV2_X11, 0, carla_bridge_lv2_x11)
+            Carla.host.set_engine_option(OPTION_PATH_BRIDGE_LV2_X11, 0, carla_bridge_lv2_x11)
 
         if carla_bridge_vst_x11:
-            Carla.host.set_option(OPTION_PATH_BRIDGE_VST_X11, 0, carla_bridge_vst_x11)
+            Carla.host.set_engine_option(OPTION_PATH_BRIDGE_VST_X11, 0, carla_bridge_vst_x11)
 
     # Create GUI and start engine
     Carla.gui = CarlaMainW()

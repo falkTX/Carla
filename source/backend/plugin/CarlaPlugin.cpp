@@ -70,14 +70,14 @@ CarlaPlugin::CarlaPlugin(CarlaEngine* const engine, const unsigned int id)
     {
     case PROCESS_MODE_SINGLE_CLIENT:
     case PROCESS_MODE_MULTIPLE_CLIENTS:
-        kData->ctrlInChannel = 0;
+        kData->ctrlChannel = 0;
         break;
 
     case PROCESS_MODE_CONTINUOUS_RACK:
         CARLA_ASSERT(id < MAX_RACK_PLUGINS && id < MAX_MIDI_CHANNELS);
 
         if (id < MAX_RACK_PLUGINS && id < MAX_MIDI_CHANNELS)
-            kData->ctrlInChannel = id;
+            kData->ctrlChannel = id;
 
         break;
 
@@ -239,6 +239,11 @@ int32_t CarlaPlugin::chunkData(void** const dataPtr)
 
 // -------------------------------------------------------------------
 // Information (per-plugin data)
+
+unsigned int CarlaPlugin::availableOptions()
+{
+    return kData->availOptions;
+}
 
 float CarlaPlugin::getParameterValue(const uint32_t parameterId)
 {
@@ -403,7 +408,23 @@ void CarlaPlugin::setId(const unsigned int id)
     fId = id;
 
     if (kData->engine->getProccessMode() == PROCESS_MODE_CONTINUOUS_RACK)
-        kData->ctrlInChannel = id;
+    {
+        CARLA_ASSERT(id < MAX_RACK_PLUGINS);
+
+        if (id >= MAX_RACK_PLUGINS || kData->ctrlChannel == static_cast<int8_t>(id))
+            return;
+
+        kData->ctrlChannel = id;
+        kData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, PARAMETER_CTRL_CHANNEL, 0, id, nullptr);
+    }
+}
+
+void CarlaPlugin::setOption(const unsigned int option, const bool yesNo)
+{
+    if (yesNo)
+        fOptions |= option;
+    else
+        fOptions &= ~option;
 }
 
 void CarlaPlugin::setEnabled(const bool yesNo)
@@ -553,6 +574,36 @@ void CarlaPlugin::setPanning(const float value, const bool sendOsc, const bool s
 #endif
 }
 
+void CarlaPlugin::setCtrlChannel(const int8_t channel, const bool sendOsc, const bool sendCallback)
+{
+    CARLA_SAFE_ASSERT(kData->engine->getProccessMode() != PROCESS_MODE_CONTINUOUS_RACK);
+
+    if (kData->engine->getProccessMode() == PROCESS_MODE_CONTINUOUS_RACK)
+        return;
+
+    if (kData->ctrlChannel != channel)
+    {
+        kData->ctrlChannel = channel;
+
+#ifndef BUILD_BRIDGE
+        const float ctrlf = channel;
+
+        if (sendOsc)
+            kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_CTRL_CHANNEL, ctrlf);
+#else
+        // unused
+        (void)sendOsc;
+#endif
+
+        if (sendCallback)
+            kData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, PARAMETER_CTRL_CHANNEL, 0, channel, nullptr);
+#ifndef BUILD_BRIDGE
+        else if (fHints & PLUGIN_IS_BRIDGE)
+            osc_send_control(&kData->osc.data, PARAMETER_CTRL_CHANNEL, ctrlf);
+#endif
+    }
+}
+
 // -------------------------------------------------------------------
 // Set data (plugin-specific stuff)
 
@@ -595,6 +646,8 @@ void CarlaPlugin::setParameterValueByRIndex(const int32_t rindex, const float va
         return setBalanceRight(value, sendOsc, sendCallback);
     if (rindex == PARAMETER_PANNING)
         return setPanning(value, sendOsc, sendCallback);
+    if (rindex == PARAMETER_CTRL_CHANNEL)
+        return setCtrlChannel(int8_t(value), sendOsc, sendCallback);
 
     for (uint32_t i=0; i < kData->param.count; i++)
     {
@@ -1171,7 +1224,7 @@ void CarlaPlugin::sendMidiAllNotesOff()
 
     PluginPostRtEvent postEvent;
     postEvent.type   = kPluginPostRtEventNoteOff;
-    postEvent.value1 = kData->ctrlInChannel;
+    postEvent.value1 = kData->ctrlChannel;
     postEvent.value2 = 0;
     postEvent.value3 = 0.0;
 

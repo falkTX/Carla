@@ -365,7 +365,7 @@ public:
         else if (index > static_cast<int32_t>(kData->midiprog.count))
             return;
 
-        if (kData->ctrlInChannel < 0 || kData->ctrlInChannel >= 16)
+        if (kData->ctrlChannel < 0 || kData->ctrlChannel >= 16)
             return;
 
         // FIXME
@@ -377,12 +377,12 @@ public:
             if (kData->engine->isOffline())
             {
                 //const CarlaEngine::ScopedLocker m(x_engine, block);
-                fluid_synth_program_select(fSynth, kData->ctrlInChannel, fSynthId, bank, program);
+                fluid_synth_program_select(fSynth, kData->ctrlChannel, fSynthId, bank, program);
             }
             else
             {
                 //const ScopedDisabler m(this, block);
-                fluid_synth_program_select(fSynth, kData->ctrlInChannel, fSynthId, bank, program);
+                fluid_synth_program_select(fSynth, kData->ctrlChannel, fSynthId, bank, program);
             }
         }
 
@@ -932,8 +932,8 @@ public:
 
             uint32_t nextBankIds[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 128, 0, 0, 0, 0, 0, 0 };
 
-            if (kData->midiprog.current >= 0 && kData->midiprog.count > 0 && kData->ctrlInChannel >= 0 && kData->ctrlInChannel < 16)
-                nextBankIds[kData->ctrlInChannel] = kData->midiprog.data[kData->midiprog.current].bank;
+            if (kData->midiprog.current >= 0 && kData->midiprog.count > 0 && kData->ctrlChannel >= 0 && kData->ctrlChannel < 16)
+                nextBankIds[kData->ctrlChannel] = kData->midiprog.data[kData->midiprog.current].bank;
 
             for (i=0; i < nEvents; i++)
             {
@@ -974,7 +974,7 @@ public:
                     case kEngineControlEventTypeParameter:
                     {
                         // Control backend stuff
-                        if (event.channel == kData->ctrlInChannel)
+                        if (event.channel == kData->ctrlChannel)
                         {
                             double value;
 
@@ -1072,7 +1072,7 @@ public:
                             {
                                 if (kData->midiprog.data[k].bank == bankId && kData->midiprog.data[k].program == progId)
                                 {
-                                    if (event.channel == kData->ctrlInChannel)
+                                    if (event.channel == kData->ctrlChannel)
                                     {
                                         setMidiProgram(k, false, false, false, false);
                                         postponeRtEvent(kPluginPostRtEventMidiProgramChange, k, 0, 0.0);
@@ -1087,7 +1087,7 @@ public:
                         break;
 
                     case kEngineControlEventTypeAllSoundOff:
-                        if (event.channel == kData->ctrlInChannel)
+                        if (event.channel == kData->ctrlChannel)
                         {
                             if (! allNotesOffSent)
                                 sendMidiAllNotesOff();
@@ -1100,7 +1100,7 @@ public:
                         break;
 
                     case kEngineControlEventTypeAllNotesOff:
-                        if (event.channel == kData->ctrlInChannel)
+                        if (event.channel == kData->ctrlChannel)
                         {
                             if (! allNotesOffSent)
                                 sendMidiAllNotesOff();

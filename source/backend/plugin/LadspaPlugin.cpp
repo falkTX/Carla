@@ -837,7 +837,7 @@ public:
                     case kEngineControlEventTypeParameter:
                     {
                         // Control backend stuff
-                        if (event.channel == kData->ctrlInChannel)
+                        if (event.channel == kData->ctrlChannel)
                         {
                             double value;
 
@@ -925,7 +925,7 @@ public:
                         break;
 
                     case kEngineControlEventTypeAllSoundOff:
-                        if (event.channel == kData->ctrlInChannel)
+                        if (event.channel == kData->ctrlChannel)
                         {
                             if (fDescriptor->deactivate != nullptr)
                             {

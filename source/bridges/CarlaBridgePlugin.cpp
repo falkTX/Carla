@@ -158,7 +158,7 @@ public:
         carla_debug("CarlaPluginClient::CarlaPluginClient()");
 
         carla_engine_init("JACK", name);
-        carla_set_callback_function(callback, this);
+        carla_set_engine_callback(callback, this);
     }
 
     ~CarlaPluginClient()

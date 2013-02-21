@@ -38,6 +38,8 @@ struct CarlaPluginInfo {
     CarlaPluginType type;
     CarlaPluginCategory category;
     unsigned int hints;
+    unsigned int optionsAvailable;
+    unsigned int optionsEnabled;
     const char* binary;
     const char* name;
     const char* label;
@@ -50,6 +52,8 @@ struct CarlaPluginInfo {
         : type(CarlaBackend::PLUGIN_NONE),
           category(CarlaBackend::PLUGIN_CATEGORY_NONE),
           hints(0x0),
+          optionsAvailable(0x0),
+          optionsEnabled(0x0),
           binary(nullptr),
           name(nullptr),
           label(nullptr),
@@ -160,6 +164,8 @@ CARLA_EXPORT bool carla_engine_close();
 CARLA_EXPORT void carla_engine_idle();
 CARLA_EXPORT bool carla_is_engine_running();
 CARLA_EXPORT void carla_set_engine_about_to_close();
+CARLA_EXPORT void carla_set_engine_callback(CarlaCallbackFunc func, void* ptr);
+CARLA_EXPORT void carla_set_engine_option(CarlaOptionsType option, int value, const char* valueStr);
 
 CARLA_EXPORT bool carla_load_project(const char* filename);
 CARLA_EXPORT bool carla_save_project(const char* filename);
@@ -203,12 +209,14 @@ CARLA_EXPORT float carla_get_current_parameter_value(unsigned int pluginId, uint
 CARLA_EXPORT float carla_get_input_peak_value(unsigned int pluginId, unsigned short portId);
 CARLA_EXPORT float carla_get_output_peak_value(unsigned int pluginId, unsigned short portId);
 
+CARLA_EXPORT void carla_set_option(unsigned int pluginId, unsigned int option, bool yesNo);
 CARLA_EXPORT void carla_set_active(unsigned int pluginId, bool onOff);
 CARLA_EXPORT void carla_set_drywet(unsigned int pluginId, float value);
 CARLA_EXPORT void carla_set_volume(unsigned int pluginId, float value);
 CARLA_EXPORT void carla_set_balance_left(unsigned int pluginId, float value);
 CARLA_EXPORT void carla_set_balance_right(unsigned int pluginId, float value);
 CARLA_EXPORT void carla_set_panning(unsigned int pluginId, float value);
+CARLA_EXPORT void carla_set_ctrl_channel(unsigned int pluginId, int8_t channel);
 
 CARLA_EXPORT void carla_set_parameter_value(unsigned int pluginId, uint32_t parameterId, float value);
 CARLA_EXPORT void carla_set_parameter_midi_channel(unsigned int pluginId, uint32_t parameterId, uint8_t channel);
@@ -228,9 +236,6 @@ CARLA_EXPORT double   carla_get_sample_rate();
 
 CARLA_EXPORT const char* carla_get_last_error();
 CARLA_EXPORT const char* carla_get_host_osc_url();
-
-CARLA_EXPORT void carla_set_callback_function(CarlaCallbackFunc func, void* ptr);
-CARLA_EXPORT void carla_set_option(CarlaOptionsType option, int value, const char* valueStr);
 
 #if 0
 CARLA_EXPORT void carla_nsm_announce(const char* url, int pid);

@@ -993,7 +993,7 @@ public:
                     case kEngineControlEventTypeParameter:
                     {
                         // Control backend stuff
-                        if (event.channel == kData->ctrlInChannel)
+                        if (event.channel == kData->ctrlChannel)
                         {
                             double value;
 
@@ -1077,12 +1077,12 @@ public:
                     }
 
                     case kEngineControlEventTypeMidiBank:
-                        if (event.channel == kData->ctrlInChannel)
+                        if (event.channel == kData->ctrlChannel)
                             nextBankId = ctrlEvent.param;
                         break;
 
                     case kEngineControlEventTypeMidiProgram:
-                        if (event.channel == kData->ctrlInChannel)
+                        if (event.channel == kData->ctrlChannel)
                         {
                             const uint32_t nextProgramId = ctrlEvent.param;
 
@@ -1099,7 +1099,7 @@ public:
                         break;
 
                     case kEngineControlEventTypeAllSoundOff:
-                        if (event.channel == kData->ctrlInChannel)
+                        if (event.channel == kData->ctrlChannel)
                         {
                             if (! allNotesOffSent)
                                 sendMidiAllNotesOff();
@@ -1143,7 +1143,7 @@ public:
                         break;
 
                     case kEngineControlEventTypeAllNotesOff:
-                        if (event.channel == kData->ctrlInChannel)
+                        if (event.channel == kData->ctrlChannel)
                         {
                             if (! allNotesOffSent)
                                 sendMidiAllNotesOff();

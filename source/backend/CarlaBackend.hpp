@@ -77,9 +77,8 @@ const unsigned int PLUGIN_OPTION_FORCE_STEREO         = 0x002; //!< OFF: Force m
 const unsigned int PLUGIN_OPTION_SELF_AUTOMATION      = 0x004; //!< OFF: Let the plugin handle MIDI-CC automation, not the host
 const unsigned int PLUGIN_OPTION_USE_CHUNKS           = 0x008; //!< ON:  Use chunks to save data
 const unsigned int PLUGIN_OPTION_SEND_ALL_SOUND_OFF   = 0x010; //!< ON:  Send MIDI ALL_SOUND_OFF / ALL_NOTES_OFF events
-const unsigned int PLUGIN_OPTION_SEND_NOTE_OFF_VELO   = 0x020; //!< OFF: Send MIDI Note-Off events with a velocity value
-const unsigned int PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH = 0x040; //!< ON:  Send MIDI Note aftertouch events
-const unsigned int PLUGIN_OPTION_SEND_PITCHBEND       = 0x080; //!< ON:  Send MIDI Pitchbend events
+const unsigned int PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH = 0x020; //!< ON:  Send MIDI Note aftertouch events
+const unsigned int PLUGIN_OPTION_SEND_PITCHBEND       = 0x040; //!< ON:  Send MIDI Pitchbend events
 #ifdef WANT_VST
 const unsigned int PLUGIN_OPTION_VST_SUPPLY_IDLE      = 0x100; //!< ON: Idle Plugin's custom GUI (VST only)
 const unsigned int PLUGIN_OPTION_VST_UPDATE_DISPLAY   = 0x200; //!< ON: Recheck plugin properties on updateDisplay message (VST Only)
@@ -205,7 +204,8 @@ enum InternalParametersIndex {
     PARAMETER_BALANCE_LEFT  = -5, //!< Stereo Balance-Left parameter, range -1.0...1.0; default is -1.0.
     PARAMETER_BALANCE_RIGHT = -6, //!< Stereo Balance-Right parameter, range -1.0...1.0; default is 1.0.
     PARAMETER_PANNING       = -7, //!< Mono Panning parameter, range -1.0...1.0; default is 0.0.
-    PARAMETER_MAX           = -8  //!< Max value, defined for convenience
+    PARAMETER_CTRL_CHANNEL  = -8, //!< MIDI Control channel
+    PARAMETER_MAX           = -9  //!< Max value, defined for convenience
 };
 
 /*!

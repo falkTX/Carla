@@ -70,7 +70,7 @@ debug:
 
 # --------------------------------------------------------------
 
-%.cpp.o: %.cpp
+%.cpp.o: %.cpp ../CarlaEngine.hpp CarlaEngineInternal.hpp CarlaEngineOsc.hpp CarlaEngineThread.hpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 $(SHARED): $(OBJS) $(LIBS)

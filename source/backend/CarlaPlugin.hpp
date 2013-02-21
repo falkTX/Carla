@@ -88,8 +88,6 @@ struct SaveState;
  */
 struct CarlaPluginProtectedData;
 
-class CarlaEngineAudioPort;
-
 /*!
  * \class CarlaPlugin
  *
@@ -154,7 +152,7 @@ public:
     /*!
      * Get the plugin's options.
      *
-     * \see PluginOptions
+     * \see PluginOptions, availableOptions() and setOption()
      */
     unsigned int options() const
     {
@@ -326,6 +324,13 @@ public:
     // Information (per-plugin data)
 
     /*!
+     * Get the plugin available options.
+     *
+     * \see PluginOptions
+     */
+    virtual unsigned int availableOptions();
+
+    /*!
      * Get the current parameter value of \a parameterId.
      */
     virtual float getParameterValue(const uint32_t parameterId);
@@ -433,6 +438,13 @@ public:
     void setId(const unsigned int id);
 
     /*!
+     * Set a plugin's option.
+     *
+     * \see options()
+     */
+    void setOption(const unsigned int option, const bool yesNo);
+
+    /*!
      * Enable or disable the plugin according to \a yesNo.
      *
      * When a plugin is disabled, it will never be processed or managed in any way.\n
@@ -500,6 +512,14 @@ public:
      * \note Force-Stereo plugins only!
      */
     void setPanning(const float value, const bool sendOsc, const bool sendCallback);
+
+    /*!
+     * Set the plugin's midi control channel.
+     *
+     * \param sendOsc Send message change over OSC
+     * \param sendCallback Send message change to registered callback
+     */
+    void setCtrlChannel(const int8_t channel, const bool sendOsc, const bool sendCallback);
 
     // -------------------------------------------------------------------
     // Set data (plugin-specific stuff)

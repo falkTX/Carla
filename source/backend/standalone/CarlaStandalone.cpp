@@ -319,6 +319,127 @@ void carla_set_engine_about_to_close()
         standalone.engine->setAboutToClose();
 }
 
+void carla_set_engine_callback(CarlaBackend::CallbackFunc func, void* ptr)
+{
+    carla_debug("carla_set_engine_callback(%p)", func);
+
+    standalone.callback    = func;
+    standalone.callbackPtr = ptr;
+
+    if (standalone.engine != nullptr)
+        standalone.engine->setCallback(func, ptr);
+}
+
+void carla_set_engine_option(CarlaBackend::OptionsType option, int value, const char* valueStr)
+{
+    carla_debug("carla_set_engine_option(%s, %i, \"%s\")", CarlaBackend::OptionsType2Str(option), value, valueStr);
+
+#ifndef BUILD_BRIDGE
+    if (standalone.engine != nullptr)
+        standalone.engine->setOption(option, value, valueStr);
+#endif
+
+    switch (option)
+    {
+    case CarlaBackend::OPTION_PROCESS_NAME:
+        standalone.procName = valueStr;
+        break;
+
+    case CarlaBackend::OPTION_PROCESS_MODE:
+        if (value < CarlaBackend::PROCESS_MODE_SINGLE_CLIENT || value > CarlaBackend::PROCESS_MODE_PATCHBAY)
+            return carla_stderr2("carla_set_engine_option(OPTION_PROCESS_MODE, %i, \"%s\") - invalid value", value, valueStr);
+
+        standalone.options.processMode = static_cast<CarlaBackend::ProcessMode>(value);
+        break;
+
+    case CarlaBackend::OPTION_FORCE_STEREO:
+        standalone.options.forceStereo = (value != 0);
+        break;
+
+    case CarlaBackend::OPTION_PREFER_PLUGIN_BRIDGES:
+        standalone.options.preferPluginBridges = (value != 0);
+        break;
+
+    case CarlaBackend::OPTION_PREFER_UI_BRIDGES:
+        standalone.options.preferUiBridges = (value != 0);
+        break;
+
+#ifdef WANT_DSSI
+    case CarlaBackend::OPTION_USE_DSSI_VST_CHUNKS:
+        standalone.options.useDssiVstChunks = (value != 0);
+        break;
+#endif
+
+    case CarlaBackend::OPTION_MAX_PARAMETERS:
+        standalone.options.maxParameters = (value > 0) ? static_cast<unsigned int>(value) : CarlaBackend::MAX_DEFAULT_PARAMETERS;
+        break;
+
+    case CarlaBackend::OPTION_OSC_UI_TIMEOUT:
+        standalone.options.oscUiTimeout = static_cast<unsigned int>(value);
+        break;
+
+    case CarlaBackend::OPTION_PREFERRED_BUFFER_SIZE:
+        standalone.options.preferredBufferSize = static_cast<unsigned int>(value);
+        break;
+
+    case CarlaBackend::OPTION_PREFERRED_SAMPLE_RATE:
+        standalone.options.preferredSampleRate = static_cast<unsigned int>(value);
+        break;
+
+#ifndef BUILD_BRIDGE
+    case CarlaBackend::OPTION_PATH_BRIDGE_NATIVE:
+        standalone.options.bridge_native = valueStr;
+        break;
+    case CarlaBackend::OPTION_PATH_BRIDGE_POSIX32:
+        standalone.options.bridge_posix32 = valueStr;
+        break;
+    case CarlaBackend::OPTION_PATH_BRIDGE_POSIX64:
+        standalone.options.bridge_posix64 = valueStr;
+        break;
+    case CarlaBackend::OPTION_PATH_BRIDGE_WIN32:
+        standalone.options.bridge_win32 = valueStr;
+        break;
+    case CarlaBackend::OPTION_PATH_BRIDGE_WIN64:
+        standalone.options.bridge_win64 = valueStr;
+        break;
+#endif
+#ifdef WANT_LV2
+    case CarlaBackend::OPTION_PATH_BRIDGE_LV2_GTK2:
+        standalone.options.bridge_lv2gtk2 = valueStr;
+        break;
+    case CarlaBackend::OPTION_PATH_BRIDGE_LV2_GTK3:
+        standalone.options.bridge_lv2gtk3 = valueStr;
+        break;
+    case CarlaBackend::OPTION_PATH_BRIDGE_LV2_QT4:
+        standalone.options.bridge_lv2qt4 = valueStr;
+        break;
+    case CarlaBackend::OPTION_PATH_BRIDGE_LV2_QT5:
+        standalone.options.bridge_lv2qt5 = valueStr;
+        break;
+    case CarlaBackend::OPTION_PATH_BRIDGE_LV2_COCOA:
+        standalone.options.bridge_lv2cocoa = valueStr;
+        break;
+    case CarlaBackend::OPTION_PATH_BRIDGE_LV2_WINDOWS:
+        standalone.options.bridge_lv2win = valueStr;
+        break;
+    case CarlaBackend::OPTION_PATH_BRIDGE_LV2_X11:
+        standalone.options.bridge_lv2x11 = valueStr;
+        break;
+#endif
+#ifdef WANT_VST
+    case CarlaBackend::OPTION_PATH_BRIDGE_VST_COCOA:
+        standalone.options.bridge_vstcocoa = valueStr;
+        break;
+    case CarlaBackend::OPTION_PATH_BRIDGE_VST_HWND:
+        standalone.options.bridge_vsthwnd = valueStr;
+        break;
+    case CarlaBackend::OPTION_PATH_BRIDGE_VST_X11:
+        standalone.options.bridge_vstx11 = valueStr;
+        break;
+#endif
+    }
+}
+
 // -------------------------------------------------------------------------------------------------------------------
 
 bool carla_load_project(const char* filename)
@@ -395,10 +516,13 @@ const CarlaPluginInfo* carla_get_plugin_info(unsigned int pluginId)
     info.type     = CarlaBackend::PLUGIN_NONE;
     info.category = CarlaBackend::PLUGIN_CATEGORY_NONE;
     info.hints    = 0x0;
+    info.hints    = 0x0;
     info.binary   = nullptr;
     info.name     = nullptr;
     info.uniqueId = 0;
     info.latency  = 0;
+    info.optionsAvailable = 0x0;
+    info.optionsEnabled   = 0x0;
 
     // cleanup
     if (info.label != nullptr)
@@ -435,6 +559,9 @@ const CarlaPluginInfo* carla_get_plugin_info(unsigned int pluginId)
         info.name     = plugin->name();
         info.uniqueId = plugin->uniqueId();
         info.latency  = plugin->latency();
+
+        info.optionsAvailable = plugin->availableOptions();
+        info.optionsEnabled   = plugin->options();
 
         plugin->getLabel(strBufLabel);
         info.label = carla_strdup(strBufLabel);
@@ -1061,6 +1188,20 @@ float carla_get_output_peak_value(unsigned int pluginId, unsigned short portId)
 
 // -------------------------------------------------------------------------------------------------------------------
 
+void carla_set_option(unsigned int pluginId, unsigned int option, bool yesNo)
+{
+    carla_debug("carla_set_option(%i, %i, %s)", pluginId, option, bool2str(yesNo));
+    CARLA_ASSERT(standalone.engine != nullptr);
+
+    if (standalone.engine == nullptr)
+        return;
+
+    if (CarlaPlugin* const plugin = standalone.engine->getPlugin(pluginId))
+        return plugin->setOption(option, yesNo);
+
+    carla_stderr2("carla_set_option(%i, %i, %s) - could not find plugin", pluginId, option, bool2str(yesNo));
+}
+
 void carla_set_active(unsigned int pluginId, bool onOff)
 {
     carla_debug("carla_set_active(%i, %s)", pluginId, bool2str(onOff));
@@ -1143,6 +1284,20 @@ void carla_set_panning(unsigned int pluginId, float value)
         return plugin->setPanning(value, true, false);
 
     carla_stderr2("carla_set_panning(%i, %f) - could not find plugin", pluginId, value);
+}
+
+void carla_set_ctrl_channel(unsigned int pluginId, int8_t channel)
+{
+    carla_debug("carla_set_ctrl_channel(%i, %i)", pluginId, channel);
+    CARLA_ASSERT(standalone.engine != nullptr);
+
+    if (standalone.engine == nullptr)
+        return;
+
+    if (CarlaPlugin* const plugin = standalone.engine->getPlugin(pluginId))
+        return plugin->setCtrlChannel(channel, true, false);
+
+    carla_stderr2("carla_set_ctrl_channel(%i, %i) - could not find plugin", pluginId, channel);
 }
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -1390,129 +1545,6 @@ const char* carla_get_host_osc_url()
         return nullptr;
 
     return standalone.engine->getOscServerPathTCP();
-}
-
-// -------------------------------------------------------------------------------------------------------------------
-
-void carla_set_callback_function(CarlaBackend::CallbackFunc func, void* ptr)
-{
-    carla_debug("carla_set_callback_function(%p)", func);
-
-    standalone.callback    = func;
-    standalone.callbackPtr = ptr;
-
-    if (standalone.engine != nullptr)
-        standalone.engine->setCallback(func, ptr);
-}
-
-void carla_set_option(CarlaBackend::OptionsType option, int value, const char* valueStr)
-{
-    carla_debug("carla_set_option(%s, %i, \"%s\")", CarlaBackend::OptionsType2Str(option), value, valueStr);
-
-#ifndef BUILD_BRIDGE
-    if (standalone.engine != nullptr)
-        standalone.engine->setOption(option, value, valueStr);
-#endif
-
-    switch (option)
-    {
-    case CarlaBackend::OPTION_PROCESS_NAME:
-        standalone.procName = valueStr;
-        break;
-
-    case CarlaBackend::OPTION_PROCESS_MODE:
-        if (value < CarlaBackend::PROCESS_MODE_SINGLE_CLIENT || value > CarlaBackend::PROCESS_MODE_PATCHBAY)
-            return carla_stderr2("carla_set_option(OPTION_PROCESS_MODE, %i, \"%s\") - invalid value", value, valueStr);
-
-        standalone.options.processMode = static_cast<CarlaBackend::ProcessMode>(value);
-        break;
-
-    case CarlaBackend::OPTION_FORCE_STEREO:
-        standalone.options.forceStereo = (value != 0);
-        break;
-
-    case CarlaBackend::OPTION_PREFER_PLUGIN_BRIDGES:
-        standalone.options.preferPluginBridges = (value != 0);
-        break;
-
-    case CarlaBackend::OPTION_PREFER_UI_BRIDGES:
-        standalone.options.preferUiBridges = (value != 0);
-        break;
-
-#ifdef WANT_DSSI
-    case CarlaBackend::OPTION_USE_DSSI_VST_CHUNKS:
-        standalone.options.useDssiVstChunks = (value != 0);
-        break;
-#endif
-
-    case CarlaBackend::OPTION_MAX_PARAMETERS:
-        standalone.options.maxParameters = (value > 0) ? static_cast<unsigned int>(value) : CarlaBackend::MAX_DEFAULT_PARAMETERS;
-        break;
-
-    case CarlaBackend::OPTION_OSC_UI_TIMEOUT:
-        standalone.options.oscUiTimeout = static_cast<unsigned int>(value);
-        break;
-
-    case CarlaBackend::OPTION_PREFERRED_BUFFER_SIZE:
-        standalone.options.preferredBufferSize = static_cast<unsigned int>(value);
-        break;
-
-    case CarlaBackend::OPTION_PREFERRED_SAMPLE_RATE:
-        standalone.options.preferredSampleRate = static_cast<unsigned int>(value);
-        break;
-
-#ifndef BUILD_BRIDGE
-    case CarlaBackend::OPTION_PATH_BRIDGE_NATIVE:
-        standalone.options.bridge_native = valueStr;
-        break;
-    case CarlaBackend::OPTION_PATH_BRIDGE_POSIX32:
-        standalone.options.bridge_posix32 = valueStr;
-        break;
-    case CarlaBackend::OPTION_PATH_BRIDGE_POSIX64:
-        standalone.options.bridge_posix64 = valueStr;
-        break;
-    case CarlaBackend::OPTION_PATH_BRIDGE_WIN32:
-        standalone.options.bridge_win32 = valueStr;
-        break;
-    case CarlaBackend::OPTION_PATH_BRIDGE_WIN64:
-        standalone.options.bridge_win64 = valueStr;
-        break;
-#endif
-#ifdef WANT_LV2
-    case CarlaBackend::OPTION_PATH_BRIDGE_LV2_GTK2:
-        standalone.options.bridge_lv2gtk2 = valueStr;
-        break;
-    case CarlaBackend::OPTION_PATH_BRIDGE_LV2_GTK3:
-        standalone.options.bridge_lv2gtk3 = valueStr;
-        break;
-    case CarlaBackend::OPTION_PATH_BRIDGE_LV2_QT4:
-        standalone.options.bridge_lv2qt4 = valueStr;
-        break;
-    case CarlaBackend::OPTION_PATH_BRIDGE_LV2_QT5:
-        standalone.options.bridge_lv2qt5 = valueStr;
-        break;
-    case CarlaBackend::OPTION_PATH_BRIDGE_LV2_COCOA:
-        standalone.options.bridge_lv2cocoa = valueStr;
-        break;
-    case CarlaBackend::OPTION_PATH_BRIDGE_LV2_WINDOWS:
-        standalone.options.bridge_lv2win = valueStr;
-        break;
-    case CarlaBackend::OPTION_PATH_BRIDGE_LV2_X11:
-        standalone.options.bridge_lv2x11 = valueStr;
-        break;
-#endif
-#ifdef WANT_VST
-    case CarlaBackend::OPTION_PATH_BRIDGE_VST_COCOA:
-        standalone.options.bridge_vstcocoa = valueStr;
-        break;
-    case CarlaBackend::OPTION_PATH_BRIDGE_VST_HWND:
-        standalone.options.bridge_vsthwnd = valueStr;
-        break;
-    case CarlaBackend::OPTION_PATH_BRIDGE_VST_X11:
-        standalone.options.bridge_vstx11 = valueStr;
-        break;
-#endif
-    }
 }
 
 #if 0

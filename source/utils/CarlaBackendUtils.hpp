@@ -26,6 +26,39 @@ CARLA_BACKEND_START_NAMESPACE
 // -------------------------------------------------
 
 static inline
+const char* PluginOption2Str(const unsigned int& option)
+{
+    switch (option)
+    {
+    case PLUGIN_OPTION_FIXED_BUFFER:
+        return "PLUGIN_OPTION_FIXED_BUFFER";
+    case PLUGIN_OPTION_FORCE_STEREO:
+        return "PLUGIN_OPTION_FORCE_STEREO";
+    case PLUGIN_OPTION_SELF_AUTOMATION:
+        return "PLUGIN_OPTION_SELF_AUTOMATION";
+    case PLUGIN_OPTION_USE_CHUNKS:
+        return "PLUGIN_OPTION_USE_CHUNKS";
+    case PLUGIN_OPTION_SEND_ALL_SOUND_OFF:
+        return "PLUGIN_OPTION_SEND_ALL_SOUND_OFF";
+    case PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH:
+        return "PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH";
+    case PLUGIN_OPTION_SEND_PITCHBEND:
+        return "PLUGIN_OPTION_SEND_PITCHBEND";
+#ifdef WANT_VST
+    case PLUGIN_OPTION_VST_SUPPLY_IDLE:
+        return "PLUGIN_OPTION_VST_SUPPLY_IDLE";
+    case PLUGIN_OPTION_VST_UPDATE_DISPLAY:
+        return "PLUGIN_OPTION_VST_UPDATE_DISPLAY";
+#endif
+    }
+
+    carla_stderr("CarlaBackend::PluginOption2Str(%i) - invalid type", option);
+    return nullptr;
+}
+
+// -------------------------------------------------
+
+static inline
 const char* BinaryType2Str(const BinaryType& type)
 {
     switch (type)
@@ -152,6 +185,8 @@ const char* InternalParametersIndex2Str(const InternalParametersIndex& index)
         return "PARAMETER_BALANCE_RIGHT";
     case PARAMETER_PANNING:
         return "PARAMETER_PANNING";
+    case PARAMETER_CTRL_CHANNEL:
+        return "PARAMETER_CTRL_CHANNEL";
     case PARAMETER_MAX:
         return "PARAMETER_MAX";
     }

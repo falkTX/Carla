@@ -392,9 +392,11 @@ struct CarlaPluginProtectedData {
     void* lib;
 
     // misc
-    int8_t       ctrlInChannel;
+    unsigned int availOptions;
     unsigned int extraHints;
+    int8_t       ctrlChannel;
 
+    // latency
     uint32_t latency;
     float**  latencyBuffers;
 
@@ -499,8 +501,9 @@ struct CarlaPluginProtectedData {
           active(false),
           activeBefore(false),
           lib(nullptr),
-          ctrlInChannel(-1),
+          availOptions(0x0),
           extraHints(0x0),
+          ctrlChannel(-1),
           latency(0),
           latencyBuffers(nullptr),
           osc(engine_, plugin, mode) {}

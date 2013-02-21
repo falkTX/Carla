@@ -83,6 +83,8 @@ class CarlaPluginInfo(Structure):
         ("type", c_enum),
         ("category", c_enum),
         ("hints", c_uint),
+        ("optionsAvailable", c_uint),
+        ("optionsEnabled", c_uint),
         ("binary", c_char_p),
         ("name", c_char_p),
         ("label", c_char_p),
@@ -173,9 +175,15 @@ class Host(object):
 
         self.lib.carla_is_engine_running.argtypes = None
         self.lib.carla_is_engine_running.restype = c_bool
-        
+
         self.lib.carla_set_engine_about_to_close.argtypes = None
         self.lib.carla_set_engine_about_to_close.restype = None
+
+        self.lib.carla_set_engine_callback.argtypes = [CallbackFunc, c_void_p]
+        self.lib.carla_set_engine_callback.restype = None
+
+        self.lib.carla_set_engine_option.argtypes = [c_enum, c_int, c_char_p]
+        self.lib.carla_set_engine_option.restype = None
 
         self.lib.carla_load_project.argtypes = [c_char_p]
         self.lib.carla_load_project.restype = c_bool
@@ -269,6 +277,9 @@ class Host(object):
         self.lib.carla_get_output_peak_value.argtypes = [c_uint, c_ushort]
         self.lib.carla_get_output_peak_value.restype = c_float
 
+        self.lib.carla_set_option.argtypes = [c_uint, c_uint, c_bool]
+        self.lib.carla_set_option.restype = None
+
         self.lib.carla_set_active.argtypes = [c_uint, c_bool]
         self.lib.carla_set_active.restype = None
 
@@ -286,6 +297,9 @@ class Host(object):
 
         self.lib.carla_set_panning.argtypes = [c_uint, c_float]
         self.lib.carla_set_panning.restype = None
+
+        self.lib.carla_set_ctrl_channel.argtypes = [c_uint, c_int8]
+        self.lib.carla_set_ctrl_channel.restype = None
 
         self.lib.carla_set_parameter_value.argtypes = [c_uint, c_uint32, c_float]
         self.lib.carla_set_parameter_value.restype = None
@@ -329,12 +343,6 @@ class Host(object):
         self.lib.carla_get_host_osc_url.argtypes = None
         self.lib.carla_get_host_osc_url.restype = c_char_p
 
-        self.lib.carla_set_callback_function.argtypes = [CallbackFunc]
-        self.lib.carla_set_callback_function.restype = None
-
-        self.lib.carla_set_option.argtypes = [c_enum, c_int, c_char_p]
-        self.lib.carla_set_option.restype = None
-
         #self.lib.nsm_announce.argtypes = [c_char_p, c_int]
         #self.lib.nsm_announce.restype = None
 
@@ -373,6 +381,13 @@ class Host(object):
 
     def set_engine_about_to_close(self):
         self.lib.carla_set_engine_about_to_close()
+
+    def set_engine_callback(self, func):
+        self._callback = CallbackFunc(func)
+        self.lib.carla_set_engine_callback(self._callback, c_nullptr)
+
+    def set_engine_option(self, option, value, valueStr):
+        self.lib.carla_set_engine_option(option, value, valueStr.encode("utf-8"))
 
     def load_project(self, filename):
         return self.lib.carla_load_project(filename.encode("utf-8"))
@@ -465,6 +480,9 @@ class Host(object):
     def get_output_peak_value(self, pluginId, portId):
         return self.lib.carla_get_output_peak_value(pluginId, portId)
 
+    def set_option(self, pluginId, option, yesNo):
+        self.lib.carla_set_option(pluginId, option, yesNo)
+
     def set_active(self, pluginId, onOff):
         self.lib.carla_set_active(pluginId, onOff)
 
@@ -482,6 +500,9 @@ class Host(object):
 
     def set_panning(self, pluginId, value):
         self.lib.carla_set_panning(pluginId, value)
+
+    def set_ctrl_channel(self, pluginId, channel):
+        self.lib.carla_set_ctrl_channel(pluginId, channel)
 
     def set_parameter_value(self, pluginId, parameterId, value):
         self.lib.carla_set_parameter_value(pluginId, parameterId, value)
@@ -524,13 +545,6 @@ class Host(object):
 
     def get_sample_rate(self):
         return self.lib.carla_get_sample_rate()
-
-    def set_callback_function(self, func):
-        self._callback = CallbackFunc(func)
-        self.lib.carla_set_callback_function(self._callback)
-
-    def set_option(self, option, value, valueStr):
-        self.lib.carla_set_option(option, value, valueStr.encode("utf-8"))
 
     #def nsm_announce(self, url, pid):
         #self.lib.nsm_announce(url.encode("utf-8"), pid)
