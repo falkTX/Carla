@@ -33,7 +33,7 @@ static void bypass_process(PluginHandle handle, float** inBuffer, float** outBuf
     float* out = outBuffer[0];
 
     for (uint32_t i=0; i < frames; i++)
-        *in++ = *out++;
+        *out++ = *in++;
 
     return;
 

@@ -41,6 +41,10 @@ ifeq ($(HAVE_SUIL),true)
 BUILD_CXX_FLAGS += -DWANT_SUIL
 endif
 
+ifeq ($(HAVE_AF_DEPS),true)
+BUILD_CXX_FLAGS += -DWANT_AUDIOFILE
+endif
+
 ifeq ($(HAVE_ZYN_DEPS),true)
 BUILD_CXX_FLAGS += -DWANT_ZYNADDSUBFX
 endif

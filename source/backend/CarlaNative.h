@@ -205,6 +205,10 @@ void carla_register_native_plugin_3BandSplitter();
 void carla_register_native_plugin_PingPongPan();
 #endif
 
+#ifdef WANT_AUDIOFILE
+void carla_register_native_plugin_audiofile();
+#endif
+
 #ifdef WANT_ZYNADDSUBFX
 // ZynAddSubFX
 void carla_register_native_plugin_zynaddsubfx();

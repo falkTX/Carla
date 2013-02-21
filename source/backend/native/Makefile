@@ -10,11 +10,17 @@ include ../Makefile.mk
 
 BUILD_CXX_FLAGS += -I../../libs/distrho-plugin-toolkit
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtGui)
-LINK_FLAGS      += $(shell pkg-config --libs QtGui) -lGL
+LINK_FLAGS      += $(shell pkg-config --libs QtGui gl)
+
+ifeq ($(HAVE_AF_DEPS),true)
+AF_CXX_FLAGS     = $(BUILD_CXX_FLAGS)
+AF_CXX_FLAGS    += $(shell pkg-config --cflags libavcodec libavformat sndfile) -dpthread
+LINK_FLAGS      += $(shell pkg-config --libs libavcodec libavformat sndfile) -lpthread
+endif
 
 ifeq ($(HAVE_ZYN_DEPS),true)
 ZYN_CXX_FLAGS    = $(BUILD_CXX_FLAGS)
-ZYN_CXX_FLAGS   += $(shell pkg-config --cflags fftw3 mxml)
+ZYN_CXX_FLAGS   += $(shell pkg-config --cflags fftw3 mxml) -dpthread
 LINK_FLAGS      += $(shell pkg-config --libs fftw3 mxml) -lpthread
 endif
 
@@ -31,6 +37,11 @@ OBJS  = \
 # 	distrho-3bandeq.cpp.o \
 # 	distrho-3bandsplitter.cpp.o \
 # 	distrho-pingpongpan.cpp.o
+
+ifeq ($(HAVE_AF_DEPS),true)
+OBJS += \
+	audiofile.c.o
+endif
 
 # ZynAddSubFX
 ifeq ($(HAVE_ZYN_DEPS),true)

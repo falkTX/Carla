@@ -53,6 +53,8 @@ BUILD_CXX_FLAGS += -DVESTIGE_HEADER
 # --------------------------------------------------------------
 
 HAVE_JACK         = $(shell pkg-config --exists jack && echo true)
+
+HAVE_AF_DEPS      = $(shell pkg-config --exists libavcodec libavformat sndfile && echo true)
 HAVE_ZYN_DEPS     = $(shell pkg-config --exists fftw3 mxml && echo true)
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)

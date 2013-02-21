@@ -17,6 +17,8 @@
 
 #include "CarlaPluginInternal.hpp"
 
+#include <QtGui/QFileDialog>
+
 CARLA_BACKEND_START_NAMESPACE
 
 struct NativePluginMidiData {
@@ -458,8 +460,20 @@ public:
         CARLA_ASSERT(fDescriptor != nullptr);
         CARLA_ASSERT(fHandle != nullptr);
 
-        if (fDescriptor != nullptr && fHandle != nullptr && fDescriptor->ui_show != nullptr)
-            fDescriptor->ui_show(fHandle, yesNo);
+        if (fDescriptor != nullptr && fHandle != nullptr)
+        {
+            if (fDescriptor->name != nullptr && std::strcmp(fDescriptor->label, "audiofile") == 0)
+            {
+                QString filenameTry = QFileDialog::getOpenFileName(nullptr, "Open Audio File");
+
+                if (! filenameTry.isEmpty())
+                    fDescriptor->set_custom_data(fHandle, "file", filenameTry.toUtf8().constData());
+
+                kData->engine->callback(CALLBACK_SHOW_GUI, fId, 0, 0, 0.0f, nullptr);
+            }
+            else if (fDescriptor->ui_show != nullptr)
+                fDescriptor->ui_show(fHandle, yesNo);
+        }
     }
 
     void idleGui()
@@ -984,6 +998,37 @@ public:
             }
         }
 
+        CARLA_PROCESS_CONTINUE_CHECK;
+
+        // --------------------------------------------------------------------------------------------------------
+        // Set TimeInfo
+
+        const EngineTimeInfo& timeInfo = kData->engine->getTimeInfo();
+
+        fTimeInfo.playing = timeInfo.playing;
+        fTimeInfo.frame   = timeInfo.frame;
+        fTimeInfo.time    = timeInfo.time;
+
+        if (timeInfo.valid & EngineTimeInfo::ValidBBT)
+        {
+            fTimeInfo.bbt.valid = true;
+
+            fTimeInfo.bbt.bar  = timeInfo.bbt.bar;
+            fTimeInfo.bbt.beat = timeInfo.bbt.beat;
+            fTimeInfo.bbt.tick = timeInfo.bbt.tick;
+            fTimeInfo.bbt.barStartTick = timeInfo.bbt.barStartTick;
+
+            fTimeInfo.bbt.beatsPerBar = timeInfo.bbt.beatsPerBar;
+            fTimeInfo.bbt.beatType    = timeInfo.bbt.beatType;
+
+            fTimeInfo.bbt.ticksPerBeat   = timeInfo.bbt.ticksPerBeat;
+            fTimeInfo.bbt.beatsPerMinute = timeInfo.bbt.beatsPerMinute;
+        }
+        else
+            fTimeInfo.bbt.valid = false;
+
+        CARLA_PROCESS_CONTINUE_CHECK;
+
         // --------------------------------------------------------------------------------------------------------
         // Event Input and Processing
 
@@ -1417,6 +1462,7 @@ public:
             fDescriptor->process(fHandle2, fAudioInBuffers, fAudioOutBuffers, frames, fMidiEventCount, fMidiEvents);
 
         fIsProcessing = false;
+        fTimeInfo.frame += frames;
 
         for (uint32_t i=0, k; i < kData->audioOut.count; i++)
         {
@@ -1510,8 +1556,9 @@ protected:
 
     const ::TimeInfo* handleGetTimeInfo()
     {
-        // TODO
-        return nullptr;
+        CARLA_ASSERT(fIsProcessing);
+
+        return &fTimeInfo;
     }
 
     bool handleWriteMidiEvent(const MidiEvent* const event)
@@ -1605,6 +1652,10 @@ public:
         carla_register_native_plugin_PingPongPan();
 #endif
 
+# ifdef WANT_AUDIOFILE
+        carla_register_native_plugin_audiofile();
+# endif
+
 # ifdef WANT_ZYNADDSUBFX
         carla_register_native_plugin_zynaddsubfx();
 # endif
@@ -1695,6 +1746,8 @@ private:
 
     NativePluginMidiData fMidiIn;
     NativePluginMidiData fMidiOut;
+
+    ::TimeInfo fTimeInfo;
 
     static bool sFirstInit;
     static std::vector<const PluginDescriptor*> sPluginDescriptors;

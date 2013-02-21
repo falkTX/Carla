@@ -40,7 +40,11 @@ endif
 # --------------------------------------------------------------
 # Native
 
-LINK_FLAGS += -lGL
+LINK_FLAGS += $(shell pkg-config --libs gl)
+
+ifeq ($(HAVE_AF_DEPS),true)
+LINK_FLAGS += $(shell pkg-config --libs libavcodec libavformat sndfile) -lpthread
+endif
 
 ifeq ($(HAVE_ZYN_DEPS),true)
 LINK_FLAGS += $(shell pkg-config --libs fftw3 mxml) -lpthread

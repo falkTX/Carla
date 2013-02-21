@@ -722,13 +722,8 @@ protected:
         fFreewheel = isFreewheel;
     }
 
-    void handleJackProcessCallback(const uint32_t nframes)
+    void saveTransportInfo()
     {
-#ifndef BUILD_BRIDGE
-        if (kData->curPluginCount == 0)
-            return proccessPendingEvents();
-#endif
-
         fTransportPos.unique_1 = fTransportPos.unique_2 + 1; // invalidate
 
         fTransportState = jackbridge_transport_query(fClient, &fTransportPos);
@@ -760,6 +755,16 @@ protected:
             fTimeInfo.frame = 0;
             fTimeInfo.valid = 0x0;
         }
+    }
+
+    void handleJackProcessCallback(const uint32_t nframes)
+    {
+#ifndef BUILD_BRIDGE
+        if (kData->curPluginCount == 0)
+            return proccessPendingEvents();
+#endif
+
+        saveTransportInfo();
 
 #ifdef BUILD_BRIDGE
         CarlaPlugin* const plugin = getPluginUnchecked(0);
@@ -1176,6 +1181,7 @@ private:
             CarlaEngineJack* const engine = (CarlaEngineJack*)CarlaPluginGetEngine(plugin);
 
             plugin->initBuffers();
+            engine->saveTransportInfo();
             engine->processPlugin(plugin, nframes);
         }
 
