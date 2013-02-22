@@ -34,7 +34,7 @@ CARLA_BACKEND_START_NAMESPACE
 } // Fix editor indentation
 #endif
 
-#ifndef BUILD_BRIDGE
+#if 1//ndef BUILD_BRIDGE
 /*!
  * TODO.
  */

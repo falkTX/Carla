@@ -28,13 +28,6 @@
 CARLA_BACKEND_START_NAMESPACE
 
 /*!
- * @defgroup CarlaBackendVstPlugin Carla Backend VST Plugin
- *
- * The Carla Backend VST Plugin.
- * @{
- */
-
-/*!
  * @defgroup PluginHints Plugin Hints
  * @{
  */
@@ -52,6 +45,7 @@ public:
     {
         carla_debug("VstPlugin::VstPlugin(%p, %i)", engine, id);
 
+#if 0
         m_type = PLUGIN_VST;
 
         effect = nullptr;
@@ -76,12 +70,14 @@ public:
         // make plugin valid
         srand(id);
         unique1 = unique2 = rand();
+#endif
     }
 
     ~VstPlugin()
     {
         carla_debug("VstPlugin::~VstPlugin()");
 
+#if 0
         // make plugin invalid
         unique2 += 1;
 
@@ -116,11 +112,18 @@ public:
             effect->dispatcher(effect, effMainsChanged, 0, 0, nullptr, 0.0f);
             effect->dispatcher(effect, effClose, 0, 0, nullptr, 0.0f);
         }
+#endif
     }
 
     // -------------------------------------------------------------------
     // Information (base)
 
+    PluginType type() const
+    {
+        return PLUGIN_VST;
+    }
+
+#if 0
     PluginCategory category()
     {
         CARLA_ASSERT(effect);
@@ -2344,6 +2347,7 @@ public:
 
         return true;
     }
+#endif
 
 private:
     int unique1;
@@ -2361,7 +2365,7 @@ private:
     VstTimeInfo_R vstTimeInfo;
 
     struct {
-        GuiType type;
+        //GuiType type;
         bool visible;
         int width;
         int height;
@@ -2376,12 +2380,10 @@ private:
 
 VstPlugin* VstPlugin::lastVstPlugin = nullptr;
 
-/**@}*/
-
 CARLA_BACKEND_END_NAMESPACE
 
 #else // WANT_VST
-//#  warning Building without VST support
+# warning Building without VST support
 #endif
 
 CARLA_BACKEND_START_NAMESPACE
@@ -2391,17 +2393,9 @@ CarlaPlugin* CarlaPlugin::newVST(const Initializer& init)
     carla_debug("CarlaPlugin::newVST(%p, \"%s\", \"%s\", \"%s\")", init.engine, init.filename, init.name, init.label);
 
 #ifdef WANT_VST
-    short id = init.engine->getNewPluginId();
+    VstPlugin* const plugin = new VstPlugin(init.engine, init.id);
 
-    if (id < 0 || id > init.engine->maxPluginNumber())
-    {
-        init.engine->setLastError("Maximum number of plugins reached");
-        return nullptr;
-    }
-
-    VstPlugin* const plugin = new VstPlugin(init.engine, id);
-
-    if (! plugin->init(init.filename, init.name, init.label))
+    //if (! plugin->init(init.filename, init.name, init.label))
     {
         delete plugin;
         return nullptr;
@@ -2409,7 +2403,7 @@ CarlaPlugin* CarlaPlugin::newVST(const Initializer& init)
 
     plugin->reload();
 
-    if (init.engine->getOptions().processMode == PROCESS_MODE_CONTINUOUS_RACK)
+    if (init.engine->getProccessMode() == PROCESS_MODE_CONTINUOUS_RACK)
     {
         if (! (plugin->hints() & PLUGIN_CAN_FORCE_STEREO))
         {

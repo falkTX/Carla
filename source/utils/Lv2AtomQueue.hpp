@@ -73,9 +73,9 @@ public:
         return full;
     }
 
-    bool lock()
+    void lock()
     {
-        return mutex.lock();
+        mutex.lock();
     }
 
     bool tryLock()
@@ -83,9 +83,9 @@ public:
         return mutex.tryLock();
     }
 
-    bool unlock()
+    void unlock()
     {
-        return mutex.unlock();
+        mutex.unlock();
     }
 
     void put(const uint32_t portIndex, const LV2_Atom* const atom)

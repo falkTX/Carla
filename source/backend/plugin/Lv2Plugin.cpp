@@ -19,11 +19,14 @@
 
 #ifdef WANT_LV2
 
-#include "carla_lib_utils.hpp"
-#include "carla_lv2_utils.hpp"
+#include "CarlaLv2Utils.hpp"
+#include "CarlaLibUtils.hpp"
 
-#include "lv2_atom_queue.hpp"
+#include "Lv2AtomQueue.hpp"
+
+extern "C" {
 #include "rtmempool/rtmempool.h"
+}
 
 #include <set>
 
@@ -43,14 +46,7 @@ struct SuilInstanceImpl {
 
 CARLA_BACKEND_START_NAMESPACE
 
-/*!
- * @defgroup CarlaBackendLv2Plugin Carla Backend LV2 Plugin
- *
- * The Carla Backend LV2 Plugin.\n
- * http://lv2plug.in/
- * @{
- */
-
+#if 0
 // static max values
 const unsigned int MAX_EVENT_BUFFER = 8192; // 0x2000
 
@@ -143,10 +139,12 @@ const uint32_t CARLA_URI_MAP_ID_PARAM_SAMPLE_RATE   = 18;
 const uint32_t CARLA_URI_MAP_ID_COUNT               = 19;
 /**@}*/
 
+// -----------------------------------------------------
+
 struct Lv2EventData {
     uint32_t type;
     uint32_t rindex;
-    CarlaEngineMidiPort* port;
+    CarlaEngineEventPort* port;
     union {
         LV2_Atom_Sequence* atom;
         LV2_Event_Buffer* event;
@@ -186,12 +184,21 @@ struct Lv2PluginOptions {
           sampleRate(0.0) {}
 };
 
+// -----------------------------------------------------
+
 Lv2PluginOptions lv2Options;
+#endif
+
+Lv2WorldClass lv2World;
+
+// -----------------------------------------------------
 
 LV2_Atom_Event* getLv2AtomEvent(LV2_Atom_Sequence* const atom, const uint32_t offset)
 {
     return (LV2_Atom_Event*)((char*)LV2_ATOM_CONTENTS(LV2_Atom_Sequence, atom) + offset);
 }
+
+// -----------------------------------------------------
 
 class Lv2Plugin : public CarlaPlugin
 {
@@ -201,6 +208,7 @@ public:
     {
         carla_debug("Lv2Plugin::Lv2Plugin(%p, %i)", engine, id);
 
+#if 0
         m_type   = PLUGIN_LV2;
         m_count += 1;
 
@@ -309,6 +317,7 @@ public:
             ft.options[3] = lv2Options.oSampleRate;
             ft.options[4] = lv2Options.oNull;
         }
+#endif
 
         lv2World.init();
     }
@@ -316,6 +325,7 @@ public:
     ~Lv2Plugin()
     {
         carla_debug("Lv2Plugin::~Lv2Plugin()");
+#if 0
         m_count -= 1;
 
         // close UI
@@ -486,11 +496,18 @@ public:
             ft.stateMakePath = nullptr;
             ft.stateMapPath  = nullptr;
         }
+#endif
     }
 
     // -------------------------------------------------------------------
     // Information (base)
 
+    PluginType type() const
+    {
+        return PLUGIN_LV2;
+    }
+
+#if 0
     PluginCategory category()
     {
         CARLA_ASSERT(rdf_descriptor);
@@ -4518,8 +4535,10 @@ public:
 
         return true;
     }
+#endif
 
 private:
+#if 0
     LV2_Handle handle, h2;
     const LV2_Descriptor* descriptor;
     const LV2_RDF_Descriptor* rdf_descriptor;
@@ -4576,20 +4595,20 @@ private:
         LV2_State_Make_Path* stateMakePath;
         LV2_State_Map_Path* stateMapPath;
     } ft;
+#endif
 };
-
-/**@}*/
 
 // -------------------------------------------------------------------
 // static data
 
-unsigned int Lv2Plugin::m_count = 0;
-std::set<const LV2_Lib_Descriptor*> Lv2Plugin::libDescs;
+//unsigned int Lv2Plugin::m_count = 0;
+//std::set<const LV2_Lib_Descriptor*> Lv2Plugin::libDescs;
 
-Lv2Plugin::Ft Lv2Plugin::ft = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+//Lv2Plugin::Ft Lv2Plugin::ft = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
 
 // -------------------------------------------------------------------------------------------------------------------
 
+#if 0
 int CarlaEngineOsc::handleMsgLv2AtomTransfer(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 {
     carla_debug("CarlaOsc::handleMsgLv2AtomTransfer()");
@@ -4631,11 +4650,12 @@ int CarlaEngineOsc::handleMsgLv2EventTransfer(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 
     return 0;
 }
+#endif
 
 CARLA_BACKEND_END_NAMESPACE
 
 #else // WANT_LV2
-//# warning Building without LV2 support
+# warning Building without LV2 support
 #endif
 
 CARLA_BACKEND_START_NAMESPACE
@@ -4645,17 +4665,9 @@ CarlaPlugin* CarlaPlugin::newLV2(const Initializer& init)
     carla_debug("CarlaPlugin::newLV2(%p, \"%s\", \"%s\", \"%s\")", init.engine, init.filename, init.name, init.label);
 
 #ifdef WANT_LV2
-    short id = init.engine->getNewPluginId();
+    Lv2Plugin* const plugin = new Lv2Plugin(init.engine, init.id);
 
-    if (id < 0 || id > init.engine->maxPluginNumber())
-    {
-        init.engine->setLastError("Maximum number of plugins reached");
-        return nullptr;
-    }
-
-    Lv2Plugin* const plugin = new Lv2Plugin(init.engine, id);
-
-    if (! plugin->init(init.filename, init.name, init.label))
+    //if (! plugin->init(init.filename, init.name, init.label))
     {
         delete plugin;
         return nullptr;
@@ -4663,7 +4675,7 @@ CarlaPlugin* CarlaPlugin::newLV2(const Initializer& init)
 
     plugin->reload();
 
-    if (init.engine->getOptions().processMode == PROCESS_MODE_CONTINUOUS_RACK)
+    if (init.engine->getProccessMode() == PROCESS_MODE_CONTINUOUS_RACK)
     {
         if (! (plugin->hints() & PLUGIN_CAN_FORCE_STEREO))
         {
@@ -4674,7 +4686,7 @@ CarlaPlugin* CarlaPlugin::newLV2(const Initializer& init)
     }
 
     plugin->registerToOscClient();
-    plugin->updateUi();
+    //plugin->updateUi();
 
     return plugin;
 #else

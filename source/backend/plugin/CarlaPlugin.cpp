@@ -1256,6 +1256,7 @@ void CarlaPlugin::postponeRtEvent(const PluginPostRtEventType type, const int32_
 
 void CarlaPlugin::postRtEventsRun()
 {
+    // TODO: optimize
     unsigned short k = 0;
     PluginPostRtEvent listData[MAX_RT_EVENTS];
 

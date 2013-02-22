@@ -31,7 +31,7 @@ endif
 OBJS = \
 	CarlaPlugin.cpp.o \
 	CarlaPluginThread.cpp.o \
-	CarlaBridge.cpp.o \
+	BridgePlugin.cpp.o \
 	NativePlugin.cpp.o \
 	LadspaPlugin.cpp.o \
 	DssiPlugin.cpp.o \

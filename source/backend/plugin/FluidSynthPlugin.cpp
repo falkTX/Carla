@@ -823,6 +823,7 @@ public:
 
         //f_sfont->free(f_sfont);
 
+#ifndef BUILD_BRIDGE
         // Update OSC Names
         if (kData->engine->isOscControlRegistered())
         {
@@ -831,6 +832,7 @@ public:
             for (i=0; i < kData->midiprog.count; i++)
                 kData->engine->osc_send_control_set_midi_program_data(fId, i, kData->midiprog.data[i].bank, kData->midiprog.data[i].program, kData->midiprog.data[i].name);
         }
+#endif
 
         if (init)
         {
@@ -891,7 +893,7 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Check if active before
 
-        if (! kData->activeBefore)
+        if (kData->needsReset || ! kData->activeBefore)
         {
             for (int c=0; c < MAX_MIDI_CHANNELS; c++)
             {
@@ -903,12 +905,14 @@ public:
                 fluid_synth_cc(f_synth, c, MIDI_CONTROL_ALL_NOTES_OFF, 0);
 #endif
             }
+
+            kData->needsReset = false;
         }
 
         // --------------------------------------------------------------------------------------------------------
         // Event Input and Processing
 
-        else
+        if (kData->activeBefore)
         {
             // ----------------------------------------------------------------------------------------------------
             // MIDI Input (External)

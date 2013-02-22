@@ -15,14 +15,16 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-// TODO - setMidiProgram()
-
 #include "CarlaPluginInternal.hpp"
 
 #ifdef WANT_LINUXSAMPLER
 
 #include "linuxsampler/EngineFactory.h"
 #include <linuxsampler/Sampler.h>
+
+#include <QtCore/QFileInfo>
+
+// TODO - setMidiProgram()
 
 namespace LinuxSampler {
 
@@ -40,11 +42,11 @@ class AudioOutputDevicePlugin : public AudioOutputDevice
 public:
     AudioOutputDevicePlugin(CarlaBackend::CarlaEngine* const engine, CarlaBackend::CarlaPlugin* const plugin)
         : AudioOutputDevice(std::map<String, DeviceCreationParameter*>()),
-          m_engine(engine),
-          m_plugin(plugin)
+          kEngine(engine),
+          kPlugin(plugin)
     {
-        CARLA_ASSERT(engine);
-        CARLA_ASSERT(plugin);
+        CARLA_ASSERT(engine != nullptr);
+        CARLA_ASSERT(plugin != nullptr);
     }
 
     // -------------------------------------------------------------------
@@ -56,7 +58,7 @@ public:
 
     bool IsPlaying()
     {
-        return m_engine->isRunning() && m_plugin->enabled();
+        return (kEngine->isRunning() && kPlugin->enabled());
     }
 
     void Stop()
@@ -65,12 +67,12 @@ public:
 
     uint MaxSamplesPerCycle()
     {
-        return m_engine->getBufferSize();
+        return kEngine->getBufferSize();
     }
 
     uint SampleRate()
     {
-        return m_engine->getSampleRate();
+        return kEngine->getSampleRate();
     }
 
     String Driver()
@@ -86,14 +88,14 @@ public:
     // -------------------------------------------------------------------
     // Give public access to the RenderAudio call
 
-    int Render(uint samples)
+    int Render(const uint samples)
     {
         return RenderAudio(samples);
     }
 
 private:
-    CarlaBackend::CarlaEngine* const m_engine;
-    CarlaBackend::CarlaPlugin* const m_plugin;
+    CarlaBackend::CarlaEngine* const kEngine;
+    CarlaBackend::CarlaPlugin* const kPlugin;
 };
 
 // -----------------------------------------------------------------------
@@ -129,7 +131,7 @@ public:
     }
 
     // -------------------------------------------------------------------
-    // Properly delete port (deconstructor is protected)
+    // Properly delete port (destructor is protected)
 
     void DeleteMidiPort(MidiInputPort* const port)
     {
@@ -138,7 +140,7 @@ public:
 
     // -------------------------------------------------------------------
     // MIDI Port implementation for this plugin MIDI input driver
-    // (Constructor and deconstructor are protected)
+    // (Constructor and destructor are protected)
 
     class MidiInputPortPlugin : public MidiInputPort
     {
@@ -155,74 +157,66 @@ public:
 
 // -----------------------------------------------------------------------
 
-#include <QtCore/QFileInfo>
-
 CARLA_BACKEND_START_NAMESPACE
-
-/*!
- * @defgroup CarlaBackendLinuxSamplerPlugin Carla Backend LinuxSampler Plugin
- *
- * The Carla Backend LinuxSampler Plugin.\n
- * http://www.linuxsampler.org/
- * @{
- */
 
 class LinuxSamplerPlugin : public CarlaPlugin
 {
 public:
-    LinuxSamplerPlugin(CarlaEngine* const engine_, const unsigned short id, const bool isGIG)
-        : CarlaPlugin(engine_, id)
+    LinuxSamplerPlugin(CarlaEngine* const engine, const unsigned short id, const bool isGIG)
+        : CarlaPlugin(engine, id),
+          kIsGIG(isGIG)
     {
-        carla_debug("LinuxSamplerPlugin::LinuxSamplerPlugin()");
+        carla_debug("LinuxSamplerPlugin::LinuxSamplerPlugin(%p, %i, %s)", engine, id, bool2str(isGIG));
 
-        m_type  = isGIG ? PLUGIN_GIG : PLUGIN_SFZ;
+        fSampler        = new LinuxSampler::Sampler;
+        fSamplerChannel = nullptr;
 
-        sampler = new LinuxSampler::Sampler;
-        sampler_channel = nullptr;
+        fEngine        = nullptr;
+        fEngineChannel = nullptr;
 
-        engine = nullptr;
-        engine_channel = nullptr;
-        instrument = nullptr;
+        fAudioOutputDevice = new LinuxSampler::AudioOutputDevicePlugin(engine, this);
+        fMidiInputDevice   = new LinuxSampler::MidiInputDevicePlugin(fSampler);
+        fMidiInputPort     = fMidiInputDevice->CreateMidiPort();
 
-        audioOutputDevice = new LinuxSampler::AudioOutputDevicePlugin(engine_, this);
-        midiInputDevice   = new LinuxSampler::MidiInputDevicePlugin(sampler);
-        midiInputPort     = midiInputDevice->CreateMidiPort();
-
-        m_isGIG = isGIG;
-        m_label = nullptr;
-        m_maker = nullptr;
+        fInstrument = nullptr;
     }
 
     ~LinuxSamplerPlugin()
     {
         carla_debug("LinuxSamplerPlugin::~LinuxSamplerPlugin()");
 
-        if (m_activeBefore)
-            audioOutputDevice->Stop();
+        if (kData->activeBefore)
+            fAudioOutputDevice->Stop();
 
-        if (sampler_channel)
+        if (fEngine != nullptr)
         {
-            midiInputPort->Disconnect(sampler_channel->GetEngineChannel());
-            sampler->RemoveSamplerChannel(sampler_channel);
+            if (fSamplerChannel != nullptr)
+            {
+                fMidiInputPort->Disconnect(fSamplerChannel->GetEngineChannel());
+                fEngineChannel->DisconnectAudioOutputDevice();
+                fSampler->RemoveSamplerChannel(fSamplerChannel);
+            }
+
+            LinuxSampler::EngineFactory::Destroy(fEngine);
         }
 
-        midiInputDevice->DeleteMidiPort(midiInputPort);
+        // destructor is private
+        fMidiInputDevice->DeleteMidiPort(fMidiInputPort);
 
-        delete audioOutputDevice;
-        delete midiInputDevice;
-        delete sampler;
+        delete fMidiInputDevice;
+        delete fAudioOutputDevice;
+        delete fSampler;
 
-        instrumentIds.clear();
-
-        if (m_label)
-            free((void*)m_label);
-
-        if (m_maker)
-            free((void*)m_maker);
+        fInstrumentIds.clear();
     }
 
     // -------------------------------------------------------------------
     // Information (base)
+
+    PluginType type() const
+    {
+        return kIsGIG ? PLUGIN_GIG : PLUGIN_SFZ;
+    }
 
     PluginCategory category()
     {
@@ -234,12 +228,12 @@ public:
 
     void getLabel(char* const strBuf)
     {
-        strncpy(strBuf, m_label, STR_MAX);
+        std::strncpy(strBuf, (const char*)fLabel, STR_MAX);
     }
 
     void getMaker(char* const strBuf)
     {
-        strncpy(strBuf, m_maker, STR_MAX);
+        std::strncpy(strBuf, (const char*)fMaker, STR_MAX);
     }
 
     void getCopyright(char* const strBuf)
@@ -249,7 +243,7 @@ public:
 
     void getRealName(char* const strBuf)
     {
-        strncpy(strBuf, m_name, STR_MAX);
+        std::strncpy(strBuf, (const char*)fRealName, STR_MAX);
     }
 
     // -------------------------------------------------------------------
@@ -258,117 +252,103 @@ public:
     void reload()
     {
         carla_debug("LinuxSamplerPlugin::reload() - start");
-        CARLA_ASSERT(instrument);
+        CARLA_ASSERT(kData->engine != nullptr);
+        CARLA_ASSERT(fInstrument != nullptr);
 
-        const ProcessMode processMode(x_engine->getOptions().processMode);
+        const ProcessMode processMode(kData->engine->getProccessMode());
 
         // Safely disable plugin for reload
-        const ScopedDisabler m(this);
+        const ScopedDisabler sd(this);
 
-        if (x_client->isActive())
-            x_client->deactivate();
+        if (kData->client->isActive())
+            kData->client->deactivate();
 
-        // Remove client ports
-        removeClientPorts();
-
-        // Delete old data
         deleteBuffers();
 
         uint32_t aOuts;
         aOuts  = 2;
 
-        aOut.ports    = new CarlaEngineAudioPort*[aOuts];
-        aOut.rindexes = new uint32_t[aOuts];
+        kData->audioOut.createNew(aOuts);
 
-        const int   portNameSize = x_engine->maxPortNameSize();
+        const int   portNameSize = kData->engine->maxPortNameSize();
         CarlaString portName;
 
         // ---------------------------------------
         // Audio Outputs
 
         {
+            // out-left
             portName.clear();
 
             if (processMode == PROCESS_MODE_SINGLE_CLIENT)
             {
-                portName  = m_name;
+                portName  = fName;
                 portName += ":";
             }
 
             portName += "out-left";
             portName.truncate(portNameSize);
 
-            aOut.ports[0]    = (CarlaEngineAudioPort*)x_client->addPort(CarlaEnginePortTypeAudio, portName, false);
-            aOut.rindexes[0] = 0;
-        }
+            kData->audioOut.ports[0].port   = (CarlaEngineAudioPort*)kData->client->addPort(kEnginePortTypeAudio, portName, false);
+            kData->audioOut.ports[0].rindex = 0;
 
-        {
+            // out-right
             portName.clear();
 
             if (processMode == PROCESS_MODE_SINGLE_CLIENT)
             {
-                portName  = m_name;
+                portName  = fName;
                 portName += ":";
             }
 
             portName += "out-right";
             portName.truncate(portNameSize);
 
-            aOut.ports[1]    = (CarlaEngineAudioPort*)x_client->addPort(CarlaEnginePortTypeAudio, portName, false);
-            aOut.rindexes[1] = 1;
+            kData->audioOut.ports[1].port   = (CarlaEngineAudioPort*)kData->client->addPort(kEnginePortTypeAudio, portName, false);
+            kData->audioOut.ports[1].rindex = 1;
         }
 
         // ---------------------------------------
-        // Control Input
+        // Event Input
 
         {
             portName.clear();
 
             if (processMode == PROCESS_MODE_SINGLE_CLIENT)
             {
-                portName  = m_name;
+                portName  = fName;
                 portName += ":";
             }
 
-            portName += "control-in";
+            portName += "event-in";
             portName.truncate(portNameSize);
 
-            param.portCin = (CarlaEngineControlPort*)x_client->addPort(CarlaEnginePortTypeControl, portName, true);
+            kData->event.portIn = (CarlaEngineEventPort*)kData->client->addPort(kEnginePortTypeEvent, portName, true);
         }
 
         // ---------------------------------------
-        // MIDI Input
-
-        {
-            portName.clear();
-
-            if (processMode == PROCESS_MODE_SINGLE_CLIENT)
-            {
-                portName  = m_name;
-                portName += ":";
-            }
-
-            portName += "midi-in";
-            portName.truncate(portNameSize);
-
-            midi.portMin = (CarlaEngineMidiPort*)x_client->addPort(CarlaEnginePortTypeMIDI, portName, true);
-        }
-
-        // ---------------------------------------
-
-        aOut.count  = aOuts;
 
         // plugin checks
-        m_hints &= ~(PLUGIN_IS_SYNTH | PLUGIN_USES_CHUNKS | PLUGIN_CAN_DRYWET | PLUGIN_CAN_VOLUME | PLUGIN_CAN_BALANCE | PLUGIN_CAN_FORCE_STEREO);
+        fHints &= ~(PLUGIN_IS_SYNTH | PLUGIN_USES_CHUNKS | PLUGIN_CAN_DRYWET | PLUGIN_CAN_VOLUME | PLUGIN_CAN_BALANCE | PLUGIN_CAN_FORCE_STEREO);
 
-        m_hints |= PLUGIN_IS_SYNTH;
-        m_hints |= PLUGIN_CAN_VOLUME;
-        m_hints |= PLUGIN_CAN_BALANCE;
-        m_hints |= PLUGIN_CAN_FORCE_STEREO;
+        fHints |= PLUGIN_IS_SYNTH;
+        fHints |= PLUGIN_CAN_VOLUME;
+        fHints |= PLUGIN_CAN_BALANCE;
+        fHints |= PLUGIN_CAN_FORCE_STEREO;
 
+        // plugin options
+        kData->availOptions &= ~(PLUGIN_OPTION_FIXED_BUFFER | PLUGIN_OPTION_SELF_AUTOMATION | PLUGIN_OPTION_SEND_ALL_SOUND_OFF | PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH | PLUGIN_OPTION_SEND_PITCHBEND);
+
+        // always available if needed
+        kData->availOptions |= PLUGIN_OPTION_SELF_AUTOMATION;
+        kData->availOptions |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+        kData->availOptions |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
+        kData->availOptions |= PLUGIN_OPTION_SEND_PITCHBEND;
+
+        bufferSizeChanged(kData->engine->getBufferSize());
         reloadPrograms(true);
 
-        x_client->activate();
+        kData->client->activate();
 
         carla_debug("LinuxSamplerPlugin::reload() - end");
     }
@@ -378,55 +358,47 @@ public:
         carla_debug("LinuxSamplerPlugin::reloadPrograms(%s)", bool2str(init));
 
         // Delete old programs
-        if (midiprog.count > 0)
-        {
-            for (uint32_t i=0; i < midiprog.count; i++)
-                free((void*)midiprog.data[i].name);
-
-            delete[] midiprog.data;
-        }
-
-        midiprog.count = 0;
-        midiprog.data  = nullptr;
+        kData->midiprog.clear();
 
         // Query new programs
-        uint32_t i = 0;
-        midiprog.count += instrumentIds.size();
+        uint32_t i, count = 0; fInstrumentIds.size();
 
         // sound kits must always have at least 1 midi-program
-        CARLA_ASSERT(midiprog.count > 0);
+        CARLA_SAFE_ASSERT(count > 0); // FIXME
 
-        if (midiprog.count > 0)
-            midiprog.data = new MidiProgramData[midiprog.count];
+        if (count == 0)
+            return;
+
+        kData->midiprog.createNew(count);
 
         // Update data
-        for (i=0; i < midiprog.count; i++)
+        for (i=0; i < kData->midiprog.count; i++)
         {
-            LinuxSampler::InstrumentManager::instrument_info_t info = instrument->GetInstrumentInfo(instrumentIds[i]);
+            LinuxSampler::InstrumentManager::instrument_info_t info = fInstrument->GetInstrumentInfo(fInstrumentIds[i]);
 
-            // FIXME - use % 128 stuff
-            midiprog.data[i].bank    = 0;
-            midiprog.data[i].program = i;
-            midiprog.data[i].name    = strdup(info.InstrumentName.c_str());
+            kData->midiprog.data[i].bank    = i / 128;
+            kData->midiprog.data[i].program = i % 128;
+            kData->midiprog.data[i].name    = carla_strdup(info.InstrumentName.c_str());
         }
 
+#ifndef BUILD_BRIDGE
         // Update OSC Names
-        if (x_engine->isOscControlRegistered())
+        if (kData->engine->isOscControlRegistered())
         {
-            x_engine->osc_send_control_set_midi_program_count(m_id, midiprog.count);
+            kData->engine->osc_send_control_set_midi_program_count(fId, kData->midiprog.count);
 
-            for (i=0; i < midiprog.count; i++)
-                x_engine->osc_send_control_set_midi_program_data(m_id, i, midiprog.data[i].bank, midiprog.data[i].program, midiprog.data[i].name);
+            for (i=0; i < kData->midiprog.count; i++)
+                kData->engine->osc_send_control_set_midi_program_data(fId, i, kData->midiprog.data[i].bank, kData->midiprog.data[i].program, kData->midiprog.data[i].name);
         }
+#endif
 
         if (init)
         {
-            if (midiprog.count > 0)
-                setMidiProgram(0, false, false, false, true);
+            setMidiProgram(0, false, false, false, true);
         }
         else
         {
-            x_engine->callback(CALLBACK_RELOAD_PROGRAMS, m_id, 0, 0, 0.0, nullptr);
+            kData->engine->callback(CALLBACK_RELOAD_PROGRAMS, fId, 0, 0, 0.0f, nullptr);
         }
     }
 
@@ -436,509 +408,576 @@ public:
     void process(float** const, float** const outBuffer, const uint32_t frames)
     {
         uint32_t i, k;
-        uint32_t midiEventCount = 0;
-
-        double aOutsPeak[2] = { 0.0 };
-
-        CARLA_PROCESS_CONTINUE_CHECK;
 
         // --------------------------------------------------------------------------------------------------------
-        // Parameters Input [Automation]
+        // Check if active
 
-        if (m_active && m_activeBefore)
+        if (! kData->active)
         {
-            bool allNotesOffSent = false;
+            // disable any output sound
+            for (i=0; i < kData->audioOut.count; i++)
+                carla_zeroFloat(outBuffer[i], frames);
 
-            const CarlaEngineControlEvent* cinEvent;
-            uint32_t time, nEvents = param.portCin->getEventCount();
+            if (kData->activeBefore)
+                fAudioOutputDevice->Stop();
 
-            uint32_t nextBankId = 0;
-            if (midiprog.current >= 0 && midiprog.count > 0)
-                nextBankId = midiprog.data[midiprog.current].bank;
+            kData->activeBefore = kData->active;
+            return;
+        }
 
-            for (i=0; i < nEvents; i++)
+        // --------------------------------------------------------------------------------------------------------
+        // Check if not active before
+
+        if (kData->needsReset || ! kData->activeBefore)
+        {
+            if (kData->event.portIn != nullptr)
             {
-                cinEvent = param.portCin->getEvent(i);
-
-                if (! cinEvent)
-                    continue;
-
-                time = cinEvent->time;
-
-                if (time >= frames)
-                    continue;
-
-                // Control change
-                switch (cinEvent->type)
+                for (k=0, i=MAX_MIDI_CHANNELS; k < MAX_MIDI_CHANNELS; k++)
                 {
-                case CarlaEngineNullEvent:
-                    break;
-
-                case CarlaEngineParameterChangeEvent:
-                {
-                    double value;
-
-                    // Control backend stuff
-                    if (cinEvent->channel == m_ctrlInChannel)
-                    {
-                        if (MIDI_IS_CONTROL_BREATH_CONTROLLER(cinEvent->parameter) && (m_hints & PLUGIN_CAN_DRYWET) > 0)
-                        {
-                            value = cinEvent->value;
-                            setDryWet(value, false, false);
-                            postponeEvent(PluginPostEventParameterChange, PARAMETER_DRYWET, 0, value);
-                            continue;
-                        }
-
-                        if (MIDI_IS_CONTROL_CHANNEL_VOLUME(cinEvent->parameter) && (m_hints & PLUGIN_CAN_VOLUME) > 0)
-                        {
-                            value = cinEvent->value*127/100;
-                            setVolume(value, false, false);
-                            postponeEvent(PluginPostEventParameterChange, PARAMETER_VOLUME, 0, value);
-                            continue;
-                        }
-
-                        if (MIDI_IS_CONTROL_BALANCE(cinEvent->parameter) && (m_hints & PLUGIN_CAN_BALANCE) > 0)
-                        {
-                            double left, right;
-                            value = cinEvent->value/0.5 - 1.0;
-
-                            if (value < 0.0)
-                            {
-                                left  = -1.0;
-                                right = (value*2)+1.0;
-                            }
-                            else if (value > 0.0)
-                            {
-                                left  = (value*2)-1.0;
-                                right = 1.0;
-                            }
-                            else
-                            {
-                                left  = -1.0;
-                                right = 1.0;
-                            }
-
-                            setBalanceLeft(left, false, false);
-                            setBalanceRight(right, false, false);
-                            postponeEvent(PluginPostEventParameterChange, PARAMETER_BALANCE_LEFT, 0, left);
-                            postponeEvent(PluginPostEventParameterChange, PARAMETER_BALANCE_RIGHT, 0, right);
-                            continue;
-                        }
-                    }
-
-#if 0
-                    // Control plugin parameters
-                    for (k=0; k < param.count; k++)
-                    {
-                        if (param.data[k].midiChannel != cinEvent->channel)
-                            continue;
-                        if (param.data[k].midiCC != cinEvent->parameter)
-                            continue;
-                        if (param.data[k].type != PARAMETER_INPUT)
-                            continue;
-
-                        if (param.data[k].hints & PARAMETER_IS_AUTOMABLE)
-                        {
-                            if (param.data[k].hints & PARAMETER_IS_BOOLEAN)
-                            {
-                                value = cinEvent->value < 0.5 ? param.ranges[k].min : param.ranges[k].max;
-                            }
-                            else
-                            {
-                                value = cinEvent->value * (param.ranges[k].max - param.ranges[k].min) + param.ranges[k].min;
-
-                                if (param.data[k].hints & PARAMETER_IS_INTEGER)
-                                    value = rint(value);
-                            }
-
-                            setParameterValue(k, value, false, false, false);
-                            postponeEvent(PluginPostEventParameterChange, k, 0, value);
-                        }
-                    }
-#endif
-
-                    break;
-                }
-
-                case CarlaEngineMidiBankChangeEvent:
-                    if (cinEvent->channel == m_ctrlInChannel)
-                        nextBankId = rint(cinEvent->value);
-                    break;
-
-                case CarlaEngineMidiProgramChangeEvent:
-                    if (cinEvent->channel == m_ctrlInChannel)
-                    {
-                        uint32_t nextProgramId = rint(cinEvent->value);
-
-                        for (k=0; k < midiprog.count; k++)
-                        {
-                            if (midiprog.data[k].bank == nextBankId && midiprog.data[k].program == nextProgramId)
-                            {
-                                setMidiProgram(k, false, false, false, false);
-                                postponeEvent(PluginPostEventMidiProgramChange, k, 0, 0.0);
-                                break;
-                            }
-                        }
-                    }
-                    break;
-
-                case CarlaEngineAllSoundOffEvent:
-                    if (cinEvent->channel == m_ctrlInChannel)
-                    {
-                        if (midi.portMin && ! allNotesOffSent)
-                            sendMidiAllNotesOff();
-
-                        audioOutputDevice->Stop();
-                        audioOutputDevice->Play();
-
-                        postponeEvent(PluginPostEventParameterChange, PARAMETER_ACTIVE, 0, 0.0);
-                        postponeEvent(PluginPostEventParameterChange, PARAMETER_ACTIVE, 0, 1.0);
-
-                        allNotesOffSent = true;
-                    }
-                    break;
-
-                case CarlaEngineAllNotesOffEvent:
-                    if (cinEvent->channel == m_ctrlInChannel)
-                    {
-                        if (midi.portMin && ! allNotesOffSent)
-                            sendMidiAllNotesOff();
-
-                        allNotesOffSent = true;
-                    }
-                    break;
+                    fMidiInputPort->DispatchControlChange(MIDI_CONTROL_ALL_SOUND_OFF, 0, k, 0);
+                    fMidiInputPort->DispatchControlChange(MIDI_CONTROL_ALL_NOTES_OFF, 0, k, 0);
                 }
             }
-        } // End of Parameters Input
 
-        CARLA_PROCESS_CONTINUE_CHECK;
+            if (kData->activeBefore)
+                fAudioOutputDevice->Stop();
+
+            fAudioOutputDevice->Play();
+
+            kData->needsReset = false;
+        }
 
         // --------------------------------------------------------------------------------------------------------
-        // MIDI Input
+        // Event Input and Processing
 
-        if (m_active && m_activeBefore)
+        if (kData->event.portIn != nullptr && kData->activeBefore)
         {
             // ----------------------------------------------------------------------------------------------------
             // MIDI Input (External)
 
+            if (kData->extNotes.mutex.tryLock())
             {
-                engineMidiLock();
-
-                for (i=0; i < MAX_MIDI_EVENTS && midiEventCount < MAX_MIDI_EVENTS; i++)
+                while (! kData->extNotes.data.isEmpty())
                 {
-                    if (extMidiNotes[i].channel < 0)
-                        break;
+                    const ExternalMidiNote& note = kData->extNotes.data.getFirst(true);
 
-                    if (extMidiNotes[i].velo)
-                        midiInputPort->DispatchNoteOn(extMidiNotes[i].note, extMidiNotes[i].velo, m_ctrlInChannel, 0);
+                    CARLA_ASSERT(note.channel >= 0);
+
+                    if (note.velo > 0)
+                        fMidiInputPort->DispatchNoteOn(note.note, note.velo, note.channel, 0);
                     else
-                        midiInputPort->DispatchNoteOff(extMidiNotes[i].note, extMidiNotes[i].velo, m_ctrlInChannel, 0);
-
-                    extMidiNotes[i].channel = -1; // mark as invalid
-                    midiEventCount += 1;
+                        fMidiInputPort->DispatchNoteOff(note.note, note.velo, note.channel, 0);
                 }
 
-                engineMidiUnlock();
+                kData->extNotes.mutex.unlock();
 
             } // End of MIDI Input (External)
 
-            CARLA_PROCESS_CONTINUE_CHECK;
-
             // ----------------------------------------------------------------------------------------------------
-            // MIDI Input (System)
+            // Event Input (System)
 
+            bool allNotesOffSent = false;
+            bool sampleAccurate  = (fHints & PLUGIN_OPTION_FIXED_BUFFER) == 0;
+
+            uint32_t time, nEvents = kData->event.portIn->getEventCount();
+            uint32_t startTime  = 0;
+            uint32_t timeOffset = 0;
+
+            uint32_t nextBankId = 0;
+            if (kData->midiprog.current >= 0 && kData->midiprog.count > 0)
+                nextBankId = kData->midiprog.data[kData->midiprog.current].bank;
+
+            for (i=0; i < nEvents; i++)
             {
-                const CarlaEngineMidiEvent* minEvent;
-                uint32_t time, nEvents = midi.portMin->getEventCount();
+                const EngineEvent& event = kData->event.portIn->getEvent(i);
 
-                for (i=0; i < nEvents && midiEventCount < MAX_MIDI_EVENTS; i++)
+                time = event.time;
+
+                if (time >= frames)
+                    continue;
+
+                CARLA_ASSERT_INT2(time >= timeOffset, time, timeOffset);
+
+                if (time > timeOffset && sampleAccurate)
                 {
-                    minEvent = midi.portMin->getEvent(i);
+                    if (processSingle(outBuffer, time - timeOffset, timeOffset))
+                    {
+                        timeOffset = time;
 
-                    if (! minEvent)
-                        continue;
+                        if (kData->midiprog.current >= 0 && kData->midiprog.count > 0)
+                            nextBankId = kData->midiprog.data[kData->midiprog.current].bank;
+                        else
+                            nextBankId = 0;
+                    }
+                    else
+                        startTime += timeOffset;
+                }
 
-                    time = minEvent->time;
+                // Control change
+                switch (event.type)
+                {
+                case kEngineEventTypeNull:
+                    break;
 
-                    if (time >= frames)
-                        continue;
+                case kEngineEventTypeControl:
+                {
+                    const EngineControlEvent& ctrlEvent = event.ctrl;
 
-                    uint8_t status  = minEvent->data[0];
-                    uint8_t channel = status & 0x0F;
+                    switch (ctrlEvent.type)
+                    {
+                    case kEngineControlEventTypeNull:
+                        break;
 
-                    // Fix bad note-off
-                    if (MIDI_IS_STATUS_NOTE_ON(status) && minEvent->data[2] == 0)
+                    case kEngineControlEventTypeParameter:
+                    {
+                        // Control backend stuff
+                        if (event.channel == kData->ctrlChannel)
+                        {
+                            double value;
+
+                            if (MIDI_IS_CONTROL_BREATH_CONTROLLER(ctrlEvent.param) && (fHints & PLUGIN_CAN_DRYWET) > 0)
+                            {
+                                value = ctrlEvent.value;
+                                setDryWet(value, false, false);
+                                postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_DRYWET, 0, value);
+                                continue;
+                            }
+
+                            if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (fHints & PLUGIN_CAN_VOLUME) > 0)
+                            {
+                                value = ctrlEvent.value*127/100;
+                                setVolume(value, false, false);
+                                postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_VOLUME, 0, value);
+                                continue;
+                            }
+
+                            if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (fHints & PLUGIN_CAN_BALANCE) > 0)
+                            {
+                                double left, right;
+                                value = ctrlEvent.value/0.5 - 1.0;
+
+                                if (value < 0.0)
+                                {
+                                    left  = -1.0;
+                                    right = (value*2)+1.0;
+                                }
+                                else if (value > 0.0)
+                                {
+                                    left  = (value*2)-1.0;
+                                    right = 1.0;
+                                }
+                                else
+                                {
+                                    left  = -1.0;
+                                    right = 1.0;
+                                }
+
+                                setBalanceLeft(left, false, false);
+                                setBalanceRight(right, false, false);
+                                postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_LEFT, 0, left);
+                                postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_RIGHT, 0, right);
+                                continue;
+                            }
+                        }
+
+                        // Control plugin parameters
+                        for (k=0; k < kData->param.count; k++)
+                        {
+                            if (kData->param.data[k].midiChannel != event.channel)
+                                continue;
+                            if (kData->param.data[k].midiCC != ctrlEvent.param)
+                                continue;
+                            if (kData->param.data[k].type != PARAMETER_INPUT)
+                                continue;
+                            if ((kData->param.data[k].hints & PARAMETER_IS_AUTOMABLE) == 0)
+                                continue;
+
+                            double value;
+
+                            if (kData->param.data[k].hints & PARAMETER_IS_BOOLEAN)
+                            {
+                                value = (ctrlEvent.value < 0.5) ? kData->param.ranges[k].min : kData->param.ranges[k].max;
+                            }
+                            else
+                            {
+                                // FIXME - ranges call for this
+                                value = ctrlEvent.value * (kData->param.ranges[k].max - kData->param.ranges[k].min) + kData->param.ranges[k].min;
+
+                                if (kData->param.data[k].hints & PARAMETER_IS_INTEGER)
+                                    value = std::rint(value);
+                            }
+
+                            setParameterValue(k, value, false, false, false);
+                            postponeRtEvent(kPluginPostRtEventParameterChange, k, 0, value);
+                        }
+
+                        break;
+                    }
+
+                    case kEngineControlEventTypeMidiBank:
+                        if (event.channel == kData->ctrlChannel)
+                            nextBankId = ctrlEvent.param;
+                        break;
+
+                    case kEngineControlEventTypeMidiProgram:
+                        if (event.channel == kData->ctrlChannel)
+                        {
+                            const uint32_t nextProgramId = ctrlEvent.param;
+
+                            for (k=0; k < kData->midiprog.count; k++)
+                            {
+                                if (kData->midiprog.data[k].bank == nextBankId && kData->midiprog.data[k].program == nextProgramId)
+                                {
+                                    setMidiProgram(k, false, false, false, false);
+                                    postponeRtEvent(kPluginPostRtEventMidiProgramChange, k, 0, 0.0);
+                                    break;
+                                }
+                            }
+                        }
+                        break;
+
+                    case kEngineControlEventTypeAllSoundOff:
+                        if (event.channel == kData->ctrlChannel)
+                        {
+                            if (! allNotesOffSent)
+                                sendMidiAllNotesOff();
+
+                            fAudioOutputDevice->Stop();
+                            fAudioOutputDevice->Play();
+
+                            postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_ACTIVE, 0, 0.0);
+                            postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_ACTIVE, 0, 1.0);
+
+                            allNotesOffSent = true;
+                        }
+
+                        fMidiInputPort->DispatchControlChange(MIDI_CONTROL_ALL_SOUND_OFF, 0, k, sampleAccurate ? startTime : time);
+
+                        break;
+
+                    case kEngineControlEventTypeAllNotesOff:
+                        if (event.channel == kData->ctrlChannel)
+                        {
+                            if (! allNotesOffSent)
+                                sendMidiAllNotesOff();
+
+                            allNotesOffSent = true;
+                        }
+
+                        fMidiInputPort->DispatchControlChange(MIDI_CONTROL_ALL_NOTES_OFF, 0, k, sampleAccurate ? startTime : time);
+
+                        break;
+                    }
+
+                    break;
+                }
+
+                case kEngineEventTypeMidi:
+                {
+                    const EngineMidiEvent& midiEvent = event.midi;
+
+                    uint8_t status  = MIDI_GET_STATUS_FROM_DATA(midiEvent.data);
+                    uint8_t channel = event.channel;
+
+                    // Fix bad note-off (per DSSI spec)
+                    if (MIDI_IS_STATUS_NOTE_ON(status) && midiEvent.data[2] == 0)
                         status -= 0x10;
+
+                    int32_t fragmentPos = sampleAccurate ? startTime : time;
 
                     if (MIDI_IS_STATUS_NOTE_OFF(status))
                     {
-                        uint8_t note = minEvent->data[1];
+                        const uint8_t note = midiEvent.data[1];
 
-                        midiInputPort->DispatchNoteOff(note, 0, channel, time);
+                        fMidiInputPort->DispatchNoteOff(note, 0, channel, fragmentPos);
 
-                        postponeEvent(PluginPostEventNoteOff, channel, note, 0.0);
+                        postponeRtEvent(kPluginPostRtEventNoteOff, channel, note, 0.0);
                     }
                     else if (MIDI_IS_STATUS_NOTE_ON(status))
                     {
-                        uint8_t note = minEvent->data[1];
-                        uint8_t velo = minEvent->data[2];
+                        const uint8_t note = midiEvent.data[1];
+                        const uint8_t velo = midiEvent.data[2];
 
-                        midiInputPort->DispatchNoteOn(note, velo, channel, time);
+                        fMidiInputPort->DispatchNoteOn(note, velo, channel, fragmentPos);
 
-                        postponeEvent(PluginPostEventNoteOn, channel, note, velo);
+                        postponeRtEvent(kPluginPostRtEventNoteOn, channel, note, velo);
                     }
                     else if (MIDI_IS_STATUS_POLYPHONIC_AFTERTOUCH(status))
                     {
-                        //uint8_t note     = minEvent->data[1];
-                        //uint8_t pressure = minEvent->data[2];
+                        //const uint8_t note     = midiEvent.data[1];
+                        //const uint8_t pressure = midiEvent.data[2];
 
-                        // TODO, not in linuxsampler API?
+                        // unsupported
+                    }
+                    else if (MIDI_IS_STATUS_CONTROL_CHANGE(status) && (fHints & PLUGIN_OPTION_SELF_AUTOMATION) != 0)
+                    {
+                        const uint8_t control = midiEvent.data[1];
+                        const uint8_t value   = midiEvent.data[2];
+
+                        fMidiInputPort->DispatchControlChange(control, value, channel, fragmentPos);
                     }
                     else if (MIDI_IS_STATUS_AFTERTOUCH(status))
                     {
-                        uint8_t pressure = minEvent->data[1];
+                        //const uint8_t pressure = midiEvent.data[1];
 
-                        midiInputPort->DispatchControlChange(MIDI_STATUS_AFTERTOUCH, pressure, channel, time);
+                        // unsupported
                     }
                     else if (MIDI_IS_STATUS_PITCH_WHEEL_CONTROL(status))
                     {
-                        uint8_t lsb = minEvent->data[1];
-                        uint8_t msb = minEvent->data[2];
+                        const uint8_t lsb = midiEvent.data[1];
+                        const uint8_t msb = midiEvent.data[2];
 
-                        midiInputPort->DispatchPitchbend(((msb << 7) | lsb) - 8192, channel, time);
+                        fMidiInputPort->DispatchPitchbend(((msb << 7) | lsb) - 8192, channel, fragmentPos);
                     }
-                    else
-                        continue;
 
-                    midiEventCount += 1;
+                    break;
                 }
-            } // End of MIDI Input (System)
-
-        } // End of MIDI Input
-
-        CARLA_PROCESS_CONTINUE_CHECK;
-
-        // --------------------------------------------------------------------------------------------------------
-        // Plugin processing
-
-        if (m_active)
-        {
-            if (! m_activeBefore)
-            {
-                for (int c=0; c < MAX_MIDI_CHANNELS; c++)
-                {
-                    midiInputPort->DispatchControlChange(MIDI_CONTROL_ALL_SOUND_OFF, 0, c);
-                    midiInputPort->DispatchControlChange(MIDI_CONTROL_ALL_NOTES_OFF, 0, c);
                 }
-
-                audioOutputDevice->Play();
             }
 
-            audioOutputDevice->Channel(0)->SetBuffer(outBuffer[0]);
-            audioOutputDevice->Channel(1)->SetBuffer(outBuffer[1]);
-            // QUESTION: Need to clear it before?
-            audioOutputDevice->Render(frames);
-        }
+            kData->postRtEvents.trySplice();
+
+            if (frames > timeOffset)
+                processSingle(outBuffer, frames - timeOffset, timeOffset);
+
+        } // End of Event Input and Processing
+
+        // --------------------------------------------------------------------------------------------------------
+        // Plugin processing (no events)
+
         else
         {
-            if (m_activeBefore)
-                audioOutputDevice->Stop();
+            processSingle(outBuffer, frames, 0);
+
+        } // End of Plugin processing (no events)
+
+        // --------------------------------------------------------------------------------------------------------
+
+        kData->activeBefore = kData->active;
+    }
+
+    bool processSingle(float** const outBuffer, const uint32_t frames, const uint32_t timeOffset)
+    {
+        uint32_t i, k;
+
+        // --------------------------------------------------------------------------------------------------------
+        // Try lock, silence otherwise
+
+        if (! kData->mutex.tryLock())
+        {
+            for (i=0; i < kData->audioOut.count; i++)
+            {
+                for (k=0; k < frames; k++)
+                    outBuffer[i][k+timeOffset] = 0.0f;
+            }
+
+            return false;
         }
 
-        CARLA_PROCESS_CONTINUE_CHECK;
+        // --------------------------------------------------------------------------------------------------------
+        // Run plugin
+
+        fAudioOutputDevice->Channel(0)->SetBuffer(outBuffer[0] + timeOffset);
+        fAudioOutputDevice->Channel(1)->SetBuffer(outBuffer[1] + timeOffset);
+        // QUESTION: Need to clear it before?
+        fAudioOutputDevice->Render(frames);
 
         // --------------------------------------------------------------------------------------------------------
         // Post-processing (dry/wet, volume and balance)
 
-        if (m_active)
         {
-            bool do_volume  = x_volume != 1.0;
-            bool do_balance = (x_balanceLeft != -1.0 || x_balanceRight != 1.0);
+            const bool doVolume  = (fHints & PLUGIN_CAN_VOLUME) > 0 && kData->postProc.volume != 1.0f;
+            const bool doBalance = (fHints & PLUGIN_CAN_BALANCE) > 0 && (kData->postProc.balanceLeft != -1.0f || kData->postProc.balanceRight != 1.0f);
 
-            double bal_rangeL, bal_rangeR;
-            float oldBufLeft[do_balance ? frames : 0];
+            float oldBufLeft[doBalance ? frames : 1];
 
-            for (i=0; i < aOut.count; i++)
+            for (i=0; i < kData->audioOut.count; i++)
             {
                 // Balance
-                if (do_balance)
+                if (doBalance)
                 {
-                    if (i%2 == 0)
+                    if (i % 2 == 0)
                         carla_copyFloat(oldBufLeft, outBuffer[i], frames);
 
-                    bal_rangeL = (x_balanceLeft+1.0)/2;
-                    bal_rangeR = (x_balanceRight+1.0)/2;
+                    float balRangeL = (kData->postProc.balanceLeft  + 1.0f)/2.0f;
+                    float balRangeR = (kData->postProc.balanceRight + 1.0f)/2.0f;
 
                     for (k=0; k < frames; k++)
                     {
-                        if (i%2 == 0)
+                        if (i % 2 == 0)
                         {
-                            // left output
-                            outBuffer[i][k]  = oldBufLeft[k]*(1.0-bal_rangeL);
-                            outBuffer[i][k] += outBuffer[i+1][k]*(1.0-bal_rangeR);
+                            // left
+                            outBuffer[i][k]  = oldBufLeft[k]     * (1.0f - balRangeL);
+                            outBuffer[i][k] += outBuffer[i+1][k] * (1.0f - balRangeR);
                         }
                         else
                         {
                             // right
-                            outBuffer[i][k]  = outBuffer[i][k]*bal_rangeR;
-                            outBuffer[i][k] += oldBufLeft[k]*bal_rangeL;
+                            outBuffer[i][k]  = outBuffer[i][k] * balRangeR;
+                            outBuffer[i][k] += oldBufLeft[k]   * balRangeL;
                         }
                     }
                 }
 
                 // Volume
-                if (do_volume)
+                if (doVolume)
                 {
                     for (k=0; k < frames; k++)
-                        outBuffer[i][k] *= x_volume;
-                }
-
-                // Output VU
-                if (x_engine->getOptions().processMode != PROCESS_MODE_CONTINUOUS_RACK)
-                {
-                    for (k=0; i < 2 && k < frames; k++)
-                    {
-                        if (std::abs(outBuffer[i][k]) > aOutsPeak[i])
-                            aOutsPeak[i] = std::abs(outBuffer[i][k]);
-                    }
+                        outBuffer[i][k+timeOffset] *= kData->postProc.volume;
                 }
             }
-        }
-        else
-        {
-            // disable any output sound if not active
-            for (i=0; i < aOut.count; i++)
-                carla_zeroF(outBuffer[i], frames);
-
-            aOutsPeak[0] = 0.0;
-            aOutsPeak[1] = 0.0;
 
         } // End of Post-processing
 
-        CARLA_PROCESS_CONTINUE_CHECK;
-
         // --------------------------------------------------------------------------------------------------------
-        // Peak Values
 
-        x_engine->setOutputPeak(m_id, 0, aOutsPeak[0]);
-        x_engine->setOutputPeak(m_id, 1, aOutsPeak[1]);
-
-        m_activeBefore = m_active;
+        kData->mutex.unlock();
+        return true;
     }
 
     // -------------------------------------------------------------------
 
     bool init(const char* filename, const char* const name, const char* label)
     {
-        QFileInfo file(filename);
+        CARLA_ASSERT(kData->engine != nullptr);
+        CARLA_ASSERT(kData->client == nullptr);
+        CARLA_ASSERT(filename != nullptr);
+        CARLA_ASSERT(label != nullptr);
 
-        if (file.exists() && file.isFile() && file.isReadable())
+        // ---------------------------------------------------------------
+        // Check if file exists
         {
-            const char* stype = m_isGIG ? "gig" : "sfz";
+            QFileInfo file(filename);
 
-            try {
-                engine = LinuxSampler::EngineFactory::Create(stype);
-            }
-            catch (LinuxSampler::Exception& e)
+            if (! (file.exists() && file.isFile() && file.isReadable()))
             {
-                x_engine->setLastError(e.what());
+                kData->engine->setLastError("Requested file is not valid or does not exist");
                 return false;
             }
+        }
 
-            try {
-                instrument = engine->GetInstrumentManager();
-            }
-            catch (LinuxSampler::Exception& e)
-            {
-                x_engine->setLastError(e.what());
-                return false;
-            }
+        // ---------------------------------------------------------------
+        // Create the LinuxSampler Engine
+        const char* const stype = kIsGIG ? "gig" : "sfz";
 
-            try {
-                instrumentIds = instrument->GetInstrumentFileContent(filename);
-            }
-            catch (LinuxSampler::Exception& e)
-            {
-                x_engine->setLastError(e.what());
-                return false;
-            }
+        try {
+            fEngine = LinuxSampler::EngineFactory::Create(stype);
+        }
+        catch (LinuxSampler::Exception& e)
+        {
+            kData->engine->setLastError(e.what());
+            return false;
+        }
 
-            if (instrumentIds.size() > 0)
-            {
-                LinuxSampler::InstrumentManager::instrument_info_t info = instrument->GetInstrumentInfo(instrumentIds[0]);
+        // ---------------------------------------------------------------
+        // Get the Engine's Instrument Manager
 
-                m_label = strdup(info.Product.c_str());
-                m_maker = strdup(info.Artists.c_str());
-                m_filename = strdup(filename);
+        try {
+            fInstrument = fEngine->GetInstrumentManager();
+        }
+        catch (LinuxSampler::Exception& e)
+        {
+            kData->engine->setLastError(e.what());
+            LinuxSampler::EngineFactory::Destroy(fEngine);
+            return false;
+        }
 
-                if (name)
-                    m_name = x_engine->getUniquePluginName(name);
-                else
-                    m_name = x_engine->getUniquePluginName(label && label[0] ? label : info.InstrumentName.c_str());
+        // ---------------------------------------------------------------
+        // Load the Instrument via filename
 
-                sampler_channel = sampler->AddSamplerChannel();
-                sampler_channel->SetEngineType(stype);
-                sampler_channel->SetAudioOutputDevice(audioOutputDevice);
-                //sampler_channel->SetMidiInputDevice(midiInputDevice);
-                //sampler_channel->SetMidiInputChannel(LinuxSampler::midi_chan_1);
-                midiInputPort->Connect(sampler_channel->GetEngineChannel(), LinuxSampler::midi_chan_all);
+        try {
+            fInstrumentIds = fInstrument->GetInstrumentFileContent(filename);
+        }
+        catch (LinuxSampler::Exception& e)
+        {
+            kData->engine->setLastError(e.what());
+            LinuxSampler::EngineFactory::Destroy(fEngine);
+            return false;
+        }
 
-                engine_channel = sampler_channel->GetEngineChannel();
-                engine_channel->Connect(audioOutputDevice);
-                engine_channel->PrepareLoadInstrument(filename, 0); // todo - find instrument from label
-                engine_channel->LoadInstrument();
-                engine_channel->Volume(LinuxSampler::VOLUME_MAX);
+        // ---------------------------------------------------------------
+        // Get info
 
-                x_client = x_engine->addClient(this);
-
-                if (x_client->isOk())
-                    return true;
-                else
-                    x_engine->setLastError("Failed to register plugin client");
-            }
-            else
-                x_engine->setLastError("Failed to find any instruments");
+        if (fInstrumentIds.size() == 0)
+        {
+            kData->engine->setLastError("Failed to find any instruments");
+            LinuxSampler::EngineFactory::Destroy(fEngine);
+            return false;
         }
         else
-            x_engine->setLastError("Requested file is not valid or does not exist");
+        {
+            LinuxSampler::InstrumentManager::instrument_info_t info = fInstrument->GetInstrumentInfo(fInstrumentIds[0]);
 
-        return false;
+            fRealName = info.InstrumentName.c_str();
+            fLabel    = info.Product.c_str();
+            fMaker    = info.Artists.c_str();
+            fFilename = filename;
+
+            if (name != nullptr)
+                fName = kData->engine->getNewUniquePluginName(name);
+            else
+                fName = kData->engine->getNewUniquePluginName((const char*)fRealName);
+        }
+
+        // ---------------------------------------------------------------
+        // Register client
+
+        kData->client = kData->engine->addClient(this);
+
+        if (kData->client == nullptr || ! kData->client->isOk())
+        {
+            kData->engine->setLastError("Failed to register plugin client");
+            LinuxSampler::EngineFactory::Destroy(fEngine);
+            return false;
+        }
+
+        // ---------------------------------------------------------------
+        // Init LinuxSampler stuff
+
+        fSamplerChannel = fSampler->AddSamplerChannel();
+        fSamplerChannel->SetEngineType(stype);
+        fSamplerChannel->SetAudioOutputDevice(fAudioOutputDevice);
+
+        fEngineChannel = fSamplerChannel->GetEngineChannel();
+        fEngineChannel->Connect(fAudioOutputDevice);
+        fEngineChannel->PrepareLoadInstrument(filename, 0); // todo - find instrument from label
+        fEngineChannel->LoadInstrument();
+        fEngineChannel->Volume(LinuxSampler::VOLUME_MAX);
+
+        fMidiInputPort->Connect(fSamplerChannel->GetEngineChannel(), LinuxSampler::midi_chan_all);
+
+        return true;
     }
 
     // -------------------------------------------------------------------
 
-    static CarlaPlugin* newLinuxSampler(const initializer& init, bool isGIG);
+    static CarlaPlugin* newLinuxSampler(const Initializer& init, bool isGIG);
 
 private:
-    LinuxSampler::Sampler* sampler;
-    LinuxSampler::SamplerChannel* sampler_channel;
-    LinuxSampler::Engine* engine;
-    LinuxSampler::EngineChannel* engine_channel;
-    LinuxSampler::InstrumentManager* instrument;
-    std::vector<LinuxSampler::InstrumentManager::instrument_id_t> instrumentIds;
+    const bool kIsGIG;
+    CarlaString fRealName;
+    CarlaString fLabel;
+    CarlaString fMaker;
 
-    LinuxSampler::AudioOutputDevicePlugin* audioOutputDevice;
-    LinuxSampler::MidiInputDevicePlugin* midiInputDevice;
-    LinuxSampler::MidiInputPort* midiInputPort;
+    LinuxSampler::Sampler*        fSampler;
+    LinuxSampler::SamplerChannel* fSamplerChannel;
 
-    bool m_isGIG;
-    const char* m_label;
-    const char* m_maker;
+    LinuxSampler::Engine*        fEngine;
+    LinuxSampler::EngineChannel* fEngineChannel;
+
+    LinuxSampler::AudioOutputDevicePlugin* fAudioOutputDevice;
+    LinuxSampler::MidiInputDevicePlugin* fMidiInputDevice;
+    LinuxSampler::MidiInputPort* fMidiInputPort;
+
+    LinuxSampler::InstrumentManager* fInstrument;
+    std::vector<LinuxSampler::InstrumentManager::instrument_id_t> fInstrumentIds;
 };
 
 CarlaPlugin* LinuxSamplerPlugin::newLinuxSampler(const Initializer& init, bool isGIG)
 {
-    carla_debug("LinuxSamplerPlugin::newLinuxSampler(%p, \"%s\", \"%s\", \"%s\", %s)", init.engine, init.filename, init.name, init.label, bool2str(isGIG));
+    carla_debug("LinuxSamplerPlugin::newLinuxSampler({%p, \"%s\", \"%s\", \"%s\"}, %s)", init.engine, init.filename, init.name, init.label, bool2str(isGIG));
 
-    short id = init.engine->getNewPluginId();
-
-    if (id < 0 || id > init.engine->maxPluginNumber())
-    {
-        init.engine->setLastError("Maximum number of plugins reached");
-        return nullptr;
-    }
-
-    LinuxSamplerPlugin* const plugin = new LinuxSamplerPlugin(init.engine, id, isGIG);
+    LinuxSamplerPlugin* const plugin = new LinuxSamplerPlugin(init.engine, init.id, isGIG);
 
     if (! plugin->init(init.filename, init.name, init.label))
     {
@@ -952,19 +991,17 @@ CarlaPlugin* LinuxSamplerPlugin::newLinuxSampler(const Initializer& init, bool i
     return plugin;
 }
 
-/**@}*/
-
 CARLA_BACKEND_END_NAMESPACE
 
 #else // WANT_LINUXSAMPLER
-//#  warning linuxsampler not available (no GIG and SFZ support)
+# warning linuxsampler not available (no GIG and SFZ support)
 #endif
 
 CARLA_BACKEND_START_NAMESPACE
 
 CarlaPlugin* CarlaPlugin::newGIG(const Initializer& init)
 {
-    carla_debug("CarlaPlugin::newGIG(%p, \"%s\", \"%s\", \"%s\")", init.engine, init.filename, init.name, init.label);
+    carla_debug("CarlaPlugin::newGIG({%p, \"%s\", \"%s\", \"%s\"})", init.engine, init.filename, init.name, init.label);
 #ifdef WANT_LINUXSAMPLER
     return LinuxSamplerPlugin::newLinuxSampler(init, true);
 #else
@@ -975,7 +1012,7 @@ CarlaPlugin* CarlaPlugin::newGIG(const Initializer& init)
 
 CarlaPlugin* CarlaPlugin::newSFZ(const Initializer& init)
 {
-    carla_debug("CarlaPlugin::newSFZ(%p, \"%s\", \"%s\", \"%s\")", init.engine, init.filename, init.name, init.label);
+    carla_debug("CarlaPlugin::newSFZ({%p, \"%s\", \"%s\", \"%s\"})", init.engine, init.filename, init.name, init.label);
 #ifdef WANT_LINUXSAMPLER
     return LinuxSamplerPlugin::newLinuxSampler(init, false);
 #else

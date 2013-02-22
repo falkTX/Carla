@@ -17,6 +17,8 @@
 
 #include "CarlaPluginInternal.hpp"
 
+#ifdef WANT_NATIVE
+
 #include <QtGui/QFileDialog>
 
 CARLA_BACKEND_START_NAMESPACE
@@ -1630,23 +1632,23 @@ public:
     static size_t getPluginCount()
     {
         maybeFirstInit();
-        return sPluginDescriptors.size();
+        return sPluginDescriptors.count();
     }
 
-    static const PluginDescriptor* getPlugin(const size_t index)
+    static const PluginDescriptor* getPluginDescriptor(const size_t index)
     {
         maybeFirstInit();
-        CARLA_ASSERT(index < sPluginDescriptors.size());
+        CARLA_ASSERT(index < sPluginDescriptors.count());
 
-        if (index < sPluginDescriptors.size())
-            return sPluginDescriptors[index];
+        if (index < sPluginDescriptors.count())
+            return sPluginDescriptors.getAt(index);
 
         return nullptr;
     }
 
     static void registerPlugin(const PluginDescriptor* desc)
     {
-        sPluginDescriptors.push_back(desc);
+        sPluginDescriptors.append(desc);
     }
 
     static void maybeFirstInit()
@@ -1693,9 +1695,10 @@ public:
         // ---------------------------------------------------------------
         // get descriptor that matches label
 
-        for (size_t i=0; i < sPluginDescriptors.size(); i++)
+        // FIXME - use itenerator when available
+        for (size_t i=0; i < sPluginDescriptors.count(); i++)
         {
-            fDescriptor = sPluginDescriptors[i];
+            fDescriptor = sPluginDescriptors.getAt(i);
 
             if (fDescriptor == nullptr)
                 break;
@@ -1765,7 +1768,7 @@ private:
     ::TimeInfo fTimeInfo;
 
     static bool sFirstInit;
-    static std::vector<const PluginDescriptor*> sPluginDescriptors;
+    static NonRtList<const PluginDescriptor*> sPluginDescriptors;
 
     // -------------------------------------------------------------------
 
@@ -1786,7 +1789,7 @@ private:
         return handlePtr->handleGetTimeInfo();
     }
 
-    static bool carla_host_write_midi_event(HostHandle handle, const MidiEvent* event)
+    static bool carla_host_write_midi_event(HostHandle handle, const ::MidiEvent* event)
     {
         return handlePtr->handleWriteMidiEvent(event);
     }
@@ -1810,24 +1813,49 @@ private:
 };
 
 bool NativePlugin::sFirstInit = true;
-std::vector<const PluginDescriptor*> NativePlugin::sPluginDescriptors;
+NonRtList<const PluginDescriptor*> NativePlugin::sPluginDescriptors;
 
-// -----------------------------------------------------------------------
+CARLA_BACKEND_END_NAMESPACE
+
+void carla_register_native_plugin(const PluginDescriptor* desc)
+{
+    CARLA_BACKEND_USE_NAMESPACE
+    NativePlugin::registerPlugin(desc);
+}
+
+#else // WANT_NATIVE
+# warning Building without Internal plugin support
+#endif
+
+CARLA_BACKEND_START_NAMESPACE
 
 size_t CarlaPlugin::getNativePluginCount()
 {
+#ifdef WANT_NATIVE
     return NativePlugin::getPluginCount();
+#else
+    return 0;
+#endif
 }
 
 const PluginDescriptor* CarlaPlugin::getNativePluginDescriptor(const size_t index)
 {
-    return NativePlugin::getPlugin(index);
+#ifdef WANT_NATIVE
+    return NativePlugin::getPluginDescriptor(index);
+#else
+    return nullptr;
+    // unused
+    (void)index;
+#endif
 }
+
+// -----------------------------------------------------------------------
 
 CarlaPlugin* CarlaPlugin::newNative(const Initializer& init)
 {
     carla_debug("CarlaPlugin::newNative(%p, \"%s\", \"%s\", \"%s\")", init.engine, init.filename, init.name, init.label);
 
+#ifdef WANT_NATIVE
     NativePlugin* const plugin = new NativePlugin(init.engine, init.id);
 
     if (! plugin->init(init.name, init.label))
@@ -1848,16 +1876,10 @@ CarlaPlugin* CarlaPlugin::newNative(const Initializer& init)
     plugin->registerToOscClient();
 
     return plugin;
+#else
+    init.engine->setLastError("Internal plugins not available");
+    return nullptr;
+#endif
 }
-
-// -----------------------------------------------------------------------
 
 CARLA_BACKEND_END_NAMESPACE
-
-void carla_register_native_plugin(const PluginDescriptor* desc)
-{
-    CARLA_BACKEND_USE_NAMESPACE
-    NativePlugin::registerPlugin(desc);
-}
-
-// -----------------------------------------------------------------------

@@ -3,7 +3,7 @@
 QT = core gui xml
 
 CONFIG    = debug link_pkgconfig qt warn_on
-PKGCONFIG = jack liblo
+PKGCONFIG = jack liblo fluidsynth linuxsampler
 
 TARGET   = carla-bridge-qtcreator
 TEMPLATE = app
@@ -36,6 +36,7 @@ SOURCES += \
 SOURCES += \
     ../../backend/plugin/CarlaPlugin.cpp \
     ../../backend/plugin/CarlaPluginThread.cpp \
+    ../../backend/plugin/BridgePlugin.cpp \
     ../../backend/plugin/NativePlugin.cpp \
     ../../backend/plugin/LadspaPlugin.cpp \
     ../../backend/plugin/DssiPlugin.cpp \
@@ -112,8 +113,8 @@ DEFINES += DEBUG
 DEFINES += BUILD_BRIDGE BUILD_BRIDGE_PLUGIN BRIDGE_PLUGIN
 
 DEFINES += WANT_JACK
-DEFINES += WANT_LADSPA WANT_DSSI
-# WANT_LV2 WANT_VST
+DEFINES += WANT_NATIVE WANT_LADSPA WANT_DSSI WANT_LV2 WANT_VST
+DEFINES += WANT_FLUIDSYNTH WANT_LINUXSAMPLER
 
 LIBS     = -ldl \
     ../../libs/lilv.a \

@@ -805,7 +805,7 @@ public:
                     fDescriptor->activate(fHandle2);
             }
 
-           kData->needsReset = false;
+            kData->needsReset = false;
         }
 
         // --------------------------------------------------------------------------------------------------------
