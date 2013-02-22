@@ -389,6 +389,7 @@ struct CarlaPluginProtectedData {
 
     bool active;
     bool activeBefore;
+    bool needsReset;
     void* lib;
 
     // misc
@@ -408,6 +409,8 @@ struct CarlaPluginProtectedData {
     PluginProgramData     prog;
     PluginMidiProgramData midiprog;
     NonRtListNew<CustomData> custom;
+
+    CarlaMutex mutex;
 
     struct ExternalNotes {
         CarlaMutex mutex;
@@ -500,6 +503,7 @@ struct CarlaPluginProtectedData {
           gui(nullptr),
           active(false),
           activeBefore(false),
+          needsReset(false),
           lib(nullptr),
           availOptions(0x0),
           extraHints(0x0),

@@ -120,6 +120,8 @@ class CarlaSettingsW(QDialog):
         #QTimer.singleShot(0, self, )
         #self.slot_pluginPathTabChanged(self.tw_paths.currentIndex())
 
+        self.ui.lw_page.setCurrentCell(0, 0)
+
     def loadSettings(self):
         settings = QSettings()
 

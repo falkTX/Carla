@@ -686,7 +686,6 @@ public:
 
         // always available if needed
         kData->availOptions |= PLUGIN_OPTION_FIXED_BUFFER;
-        kData->availOptions |= PLUGIN_OPTION_SELF_AUTOMATION;
 
         // check latency
         if (fHints & PLUGIN_CAN_DRYWET)
@@ -779,12 +778,23 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Check if not active before
 
-        if (! kData->activeBefore)
+        if (kData->needsReset || ! kData->activeBefore)
         {
             if (kData->latency > 0)
             {
                 for (i=0; i < kData->audioIn.count; i++)
                     carla_zeroFloat(kData->latencyBuffers[i], kData->latency);
+            }
+
+            if (kData->activeBefore)
+            {
+                if (fDescriptor->deactivate != nullptr)
+                {
+                    fDescriptor->deactivate(fHandle);
+
+                    if (fHandle2 != nullptr)
+                        fDescriptor->deactivate(fHandle2);
+                }
             }
 
             if (fDescriptor->activate != nullptr)
@@ -794,6 +804,8 @@ public:
                 if (fHandle2 != nullptr)
                     fDescriptor->activate(fHandle2);
             }
+
+           kData->needsReset = false;
         }
 
         // --------------------------------------------------------------------------------------------------------
@@ -822,8 +834,8 @@ public:
 
                 if (time > timeOffset && sampleAccurate)
                 {
-                    processSingle(inBuffer, outBuffer, time - timeOffset, timeOffset);
-                    timeOffset = time;
+                    if (processSingle(inBuffer, outBuffer, time - timeOffset, timeOffset))
+                        timeOffset = time;
                 }
 
                 // Control change
@@ -1004,81 +1016,6 @@ public:
         CARLA_PROCESS_CONTINUE_CHECK;
 
         // --------------------------------------------------------------------------------------------------------
-        // Post-processing (dry/wet, volume and balance)
-
-        {
-            const bool doDryWet  = (fHints & PLUGIN_CAN_DRYWET) > 0 && kData->postProc.dryWet != 1.0f;
-            const bool doVolume  = (fHints & PLUGIN_CAN_VOLUME) > 0 && kData->postProc.volume != 1.0f;
-            const bool doBalance = (fHints & PLUGIN_CAN_BALANCE) > 0 && (kData->postProc.balanceLeft != -1.0f || kData->postProc.balanceRight != 1.0f);
-
-            float bufValue, oldBufLeft[doBalance ? frames : 1];
-
-            for (i=0; i < kData->audioOut.count; i++)
-            {
-                // Dry/Wet
-                if (doDryWet)
-                {
-                    for (k=0; k < frames; k++)
-                    {
-                        // TODO
-                        //if (k < kData->latency && kData->latency < frames)
-                        //    bufValue = (kData->audioIn.count == 1) ? kData->latencyBuffers[0][k] : kData->latencyBuffers[i][k];
-                        //else
-                        //    bufValue = (kData->audioIn.count == 1) ? inBuffer[0][k-m_latency] : inBuffer[i][k-m_latency];
-
-                        bufValue = inBuffer[ (kData->audioIn.count == 1) ? 0 : i ][k];
-
-                        outBuffer[i][k] = (outBuffer[i][k] * kData->postProc.dryWet) + (bufValue * (1.0f - kData->postProc.dryWet));
-                    }
-                }
-
-                // Balance
-                if (doBalance)
-                {
-                    if (i % 2 == 0)
-                        carla_copyFloat(oldBufLeft, outBuffer[i], frames);
-
-                    float balRangeL = (kData->postProc.balanceLeft  + 1.0f)/2.0f;
-                    float balRangeR = (kData->postProc.balanceRight + 1.0f)/2.0f;
-
-                    for (k=0; k < frames; k++)
-                    {
-                        if (i % 2 == 0)
-                        {
-                            // left
-                            outBuffer[i][k]  = oldBufLeft[k]     * (1.0f - balRangeL);
-                            outBuffer[i][k] += outBuffer[i+1][k] * (1.0f - balRangeR);
-                        }
-                        else
-                        {
-                            // right
-                            outBuffer[i][k]  = outBuffer[i][k] * balRangeR;
-                            outBuffer[i][k] += oldBufLeft[k]   * balRangeL;
-                        }
-                    }
-                }
-
-                // Volume
-                if (doVolume)
-                {
-                    for (k=0; k < frames; k++)
-                        outBuffer[i][k] *= kData->postProc.volume;
-                }
-            }
-
-#if 0
-            // Latency, save values for next callback, TODO
-            if (kData->latency > 0 && kData->latency < frames)
-            {
-                for (i=0; i < kData->audioIn.count; i++)
-                    carla_copyFloat(kData->latencyBuffers[i], inBuffer[i] + (frames - kData->latency), kData->latency);
-            }
-#endif
-        } // End of Post-processing
-
-        CARLA_PROCESS_CONTINUE_CHECK;
-
-        // --------------------------------------------------------------------------------------------------------
         // Control Output
 
         if (kData->event.portOut != nullptr)
@@ -1106,23 +1043,114 @@ public:
         kData->activeBefore = kData->active;
     }
 
-    void processSingle(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t timeOffset)
+    bool processSingle(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t timeOffset)
     {
-        for (uint32_t i=0; i < kData->audioIn.count; i++)
+        uint32_t i, k;
+
+        // --------------------------------------------------------------------------------------------------------
+        // Try lock, silence otherwise
+
+        if (! kData->mutex.tryLock())
+        {
+            for (i=0; i < kData->audioOut.count; i++)
+            {
+                for (k=0; k < frames; k++)
+                    outBuffer[i][k+timeOffset] = 0.0f;
+            }
+
+            return false;
+        }
+
+        // --------------------------------------------------------------------------------------------------------
+        // Fill plugin buffers
+
+        for (i=0; i < kData->audioIn.count; i++)
             carla_copyFloat(fAudioInBuffers[i], inBuffer[i]+timeOffset, frames);
-        for (uint32_t i=0; i < kData->audioOut.count; i++)
+        for (i=0; i < kData->audioOut.count; i++)
             carla_zeroFloat(fAudioOutBuffers[i], frames);
+
+        // --------------------------------------------------------------------------------------------------------
+        // Run plugin
 
         fDescriptor->run(fHandle, frames);
 
         if (fHandle2 != nullptr)
             fDescriptor->run(fHandle2, frames);
 
-        for (uint32_t i=0, k; i < kData->audioOut.count; i++)
+        // --------------------------------------------------------------------------------------------------------
+        // Post-processing (dry/wet, volume and balance)
+
         {
-            for (k=0; k < frames; k++)
-                outBuffer[i][k+timeOffset] = fAudioOutBuffers[i][k];
-        }
+            const bool doDryWet  = (fHints & PLUGIN_CAN_DRYWET) > 0 && kData->postProc.dryWet != 1.0f;
+            const bool doBalance = (fHints & PLUGIN_CAN_BALANCE) > 0 && (kData->postProc.balanceLeft != -1.0f || kData->postProc.balanceRight != 1.0f);
+
+            float bufValue, oldBufLeft[doBalance ? frames : 1];
+
+            for (i=0; i < kData->audioOut.count; i++)
+            {
+                // Dry/Wet
+                if (doDryWet)
+                {
+                    for (k=0; k < frames; k++)
+                    {
+                        // TODO
+                        //if (k < kData->latency && kData->latency < frames)
+                        //    bufValue = (kData->audioIn.count == 1) ? kData->latencyBuffers[0][k] : kData->latencyBuffers[i][k];
+                        //else
+                        //    bufValue = (kData->audioIn.count == 1) ? inBuffer[0][k-m_latency] : inBuffer[i][k-m_latency];
+
+                        bufValue = fAudioInBuffers[(kData->audioIn.count == 1) ? 0 : i][k];
+                        fAudioOutBuffers[i][k] = (fAudioOutBuffers[i][k] * kData->postProc.dryWet) + (bufValue * (1.0f - kData->postProc.dryWet));
+                    }
+                }
+
+                // Balance
+                if (doBalance)
+                {
+                    if (i % 2 == 0)
+                        carla_copyFloat(oldBufLeft, fAudioOutBuffers[i], frames);
+
+                    float balRangeL = (kData->postProc.balanceLeft  + 1.0f)/2.0f;
+                    float balRangeR = (kData->postProc.balanceRight + 1.0f)/2.0f;
+
+                    for (k=0; k < frames; k++)
+                    {
+                        if (i % 2 == 0)
+                        {
+                            // left
+                            fAudioOutBuffers[i][k]  = oldBufLeft[k]     * (1.0f - balRangeL);
+                            fAudioOutBuffers[i][k] += fAudioOutBuffers[i+1][k] * (1.0f - balRangeR);
+                        }
+                        else
+                        {
+                            // right
+                            fAudioOutBuffers[i][k]  = fAudioOutBuffers[i][k] * balRangeR;
+                            fAudioOutBuffers[i][k] += oldBufLeft[k]   * balRangeL;
+                        }
+                    }
+                }
+
+                // Volume (and buffer copy)
+                {
+                    for (k=0; k < frames; k++)
+                        outBuffer[i][k+timeOffset] = fAudioOutBuffers[i][k] * kData->postProc.volume;
+                }
+            }
+
+#if 0
+            // Latency, save values for next callback, TODO
+            if (kData->latency > 0 && kData->latency < frames)
+            {
+                for (i=0; i < kData->audioIn.count; i++)
+                    carla_copyFloat(kData->latencyBuffers[i], inBuffer[i] + (frames - kData->latency), kData->latency);
+            }
+#endif
+        } // End of Post-processing
+
+        // --------------------------------------------------------------------------------------------------------
+
+        kData->mutex.unlock();
+        return true;
     }
 
     void bufferSizeChanged(const uint32_t newBufferSize)
