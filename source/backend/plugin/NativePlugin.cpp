@@ -1056,7 +1056,7 @@ public:
             {
                 while (fMidiEventCount < MAX_MIDI_EVENTS*2 && ! kData->extNotes.data.isEmpty())
                 {
-                    const ExternalMidiNote& note = kData->extNotes.data.getLast(true); // FIXME, should be first
+                    const ExternalMidiNote& note = kData->extNotes.data.getFirst(true);
 
                     CARLA_ASSERT(note.channel >= 0);
 

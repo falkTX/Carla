@@ -316,7 +316,7 @@ protected:
 
             while (! fMidiInEvents.data.isEmpty())
             {
-                const RtMidiEvent& midiEvent = fMidiInEvents.data.getLast(true);
+                const RtMidiEvent& midiEvent = fMidiInEvents.data.getFirst(true);
 
                 EngineEvent* const engineEvent = &kData->rack.in[engineEventIndex++];
                 engineEvent->clear();

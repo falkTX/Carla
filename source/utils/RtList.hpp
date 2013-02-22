@@ -239,7 +239,7 @@ private:
         if (fCount == 0)
             return _retEmpty();
 
-        k_list_head* const entry = first ? fQueue.prev : fQueue.next;
+        k_list_head* const entry = first ? fQueue.next : fQueue.prev;
         Data*        const data  = list_entry(entry, Data, siblings);
 
         CARLA_ASSERT(data != nullptr);
