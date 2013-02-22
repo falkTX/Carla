@@ -1423,7 +1423,7 @@ class PluginEdit(QDialog):
         self.fCurrentProgram = -1
         self.fCurrentMidiProgram = -1
         self.fCurrentStateFilename = None
-        self.fControlChannel = -1
+        self.fControlChannel = pluginId+1 if Carla.processMode == PROCESS_MODE_CONTINUOUS_RACK else 1
 
         self.fParameterCount = 0
         self.fParameterList  = []     # (type, id, widget)
@@ -1450,6 +1450,8 @@ class PluginEdit(QDialog):
 
         self.ui.keyboard.setMode(self.ui.keyboard.HORIZONTAL)
         self.ui.keyboard.setOctaves(6)
+
+        self.ui.sb_ctrl_channel.setValue(self.fControlChannel)
 
         self.ui.scrollArea.ensureVisible(self.ui.keyboard.width() / 5, 0)
         self.ui.scrollArea.setEnabled(False)
