@@ -15,7 +15,7 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#ifdef WANT_JACK
+#if 1//def WANT_JACK
 
 #include "CarlaEngineInternal.hpp"
 #include "CarlaBackendUtils.hpp"
@@ -694,6 +694,33 @@ public:
         return new CarlaEngineJackClient(kEngineTypeJack, fOptions.processMode, client);
     }
 
+    // -------------------------------------------------------------------
+    // Transport
+
+    void transportPlay()
+    {
+        if (fOptions.transportMode == TRANSPORT_MODE_INTERNAL)
+            CarlaEngine::transportPlay();
+        else if (fClient != nullptr)
+            jackbridge_transport_start(fClient);
+    }
+
+    void transportPause()
+    {
+        if (fOptions.transportMode == TRANSPORT_MODE_INTERNAL)
+            CarlaEngine::transportPause();
+        else if (fClient != nullptr)
+            jackbridge_transport_stop(fClient);
+    }
+
+    void transportRelocate(const uint32_t frame)
+    {
+        if (fOptions.transportMode == TRANSPORT_MODE_INTERNAL)
+            CarlaEngine::transportRelocate(frame);
+        else if (fClient != nullptr)
+            jackbridge_transport_locate(fClient, frame);
+    }
+
     // -------------------------------------
 
 protected:
@@ -724,6 +751,9 @@ protected:
 
     void saveTransportInfo()
     {
+        if (fOptions.transportMode != TRANSPORT_MODE_JACK)
+            return;
+
         fTransportPos.unique_1 = fTransportPos.unique_2 + 1; // invalidate
 
         fTransportState = jackbridge_transport_query(fClient, &fTransportPos);

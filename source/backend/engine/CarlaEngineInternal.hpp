@@ -176,6 +176,15 @@ struct CarlaEngineProtectedData {
               out(nullptr) {}
     } rack;
 
+    struct Time {
+        bool playing;
+        uint32_t frame;
+
+        Time()
+            : playing(false),
+              frame(0) {}
+    } time;
+
     EnginePluginData* plugins;
 
     CarlaEngineProtectedData(CarlaEngine* const engine)

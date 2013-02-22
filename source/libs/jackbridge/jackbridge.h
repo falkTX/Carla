@@ -67,7 +67,10 @@ BRIDGE_EXPORT void jackbridge_midi_clear_buffer(void* port_buffer);
 BRIDGE_EXPORT jack_midi_data_t* jackbridge_midi_event_reserve(void* port_buffer, jack_nframes_t time, size_t data_size);
 BRIDGE_EXPORT int jackbridge_midi_event_write(void* port_buffer, jack_nframes_t time, const jack_midi_data_t* data, size_t data_size);
 
+BRIDGE_EXPORT int jackbridge_transport_locate(jack_client_t* client, jack_nframes_t frame);
 BRIDGE_EXPORT jack_transport_state_t jackbridge_transport_query(const jack_client_t* client, jack_position_t* pos);
+BRIDGE_EXPORT void jackbridge_transport_start(jack_client_t* client);
+BRIDGE_EXPORT void jackbridge_transport_stop(jack_client_t* client);
 
 #ifdef __cplusplus
 }
@@ -103,7 +106,10 @@ BRIDGE_EXPORT jack_transport_state_t jackbridge_transport_query(const jack_clien
 #define jackbridge_midi_event_reserve jack_midi_event_reserve
 #define jackbridge_midi_event_write jack_midi_event_write
 
+#define jackbridge_transport_locate jack_transport_locate
 #define jackbridge_transport_query jack_transport_query
+#define jackbridge_transport_start jack_transport_start
+#define jackbridge_transport_stop jack_transport_stop
 
 #endif // JACKBRIDGE_EXPORT
 

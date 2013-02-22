@@ -1916,7 +1916,7 @@ public:
     // -------------------------------------------------------------------
     // Plugin processing
 
-    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t framesOffset)
+    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames)
     {
         uint32_t i, k;
         uint32_t midiEventCount = 0;
@@ -2024,7 +2024,7 @@ public:
                 if (! cinEvent)
                     continue;
 
-                time = cinEvent->time - framesOffset;
+                time = cinEvent->time;
 
                 if (time >= frames)
                     continue;
@@ -2260,7 +2260,7 @@ public:
                     if (! minEvent)
                         continue;
 
-                    time = minEvent->time - framesOffset;
+                    time = minEvent->time;
 
                     if (time >= frames)
                         continue;
@@ -2359,7 +2359,7 @@ public:
                         }
 
                         LV2_Atom_Event* const aev = getLv2AtomEvent(evIn.data[i].atom, evInAtomOffsets[i]);
-                        aev->time.frames = framesOffset;
+                        aev->time.frames = 0;
                         aev->body.type   = lv2Pos->type;
                         aev->body.size   = lv2Pos->size;
                         memcpy(LV2_ATOM_BODY(&aev->body), LV2_ATOM_BODY(lv2Pos), lv2Pos->size);
@@ -2390,7 +2390,7 @@ public:
                             }
 
                             LV2_Atom_Event* const aev = getLv2AtomEvent(evIn.data[i].atom, evInAtomOffsets[i]);
-                            aev->time.frames = framesOffset;
+                            aev->time.frames = 0;
                             aev->body.type   = atom->type;
                             aev->body.size   = atom->size;
                             memcpy(LV2_ATOM_BODY(&aev->body), LV2_ATOM_BODY(atom), atom->size);
@@ -2698,7 +2698,7 @@ public:
                     if (param.data[k].midiCC > 0)
                     {
                         value = (paramBuffers[k] - param.ranges[k].min) / (param.ranges[k].max - param.ranges[k].min);
-                        param.portCout->writeEvent(CarlaEngineParameterChangeEvent, framesOffset, param.data[k].midiChannel, param.data[k].midiCC, value);
+                        param.portCout->writeEvent(CarlaEngineParameterChangeEvent, 0, param.data[k].midiChannel, param.data[k].midiCC, value);
                     }
                 }
             }

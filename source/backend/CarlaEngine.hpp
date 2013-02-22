@@ -257,7 +257,8 @@ struct EngineDevices {
  * Engine options.
  */
 struct EngineOptions {
-    ProcessMode processMode;
+    ProcessMode   processMode;
+    TransportMode transportMode;
 
     bool forceStereo;
     bool preferPluginBridges;
@@ -295,6 +296,7 @@ struct EngineOptions {
 
     EngineOptions()
         : processMode(PROCESS_MODE_CONTINUOUS_RACK),
+          transportMode(TRANSPORT_MODE_INTERNAL),
           forceStereo(false),
           preferPluginBridges(false),
           preferUiBridges(true),
@@ -851,6 +853,24 @@ public:
      * TODO.
      */
     void setCallback(const CallbackFunc func, void* const ptr);
+
+    // -------------------------------------------------------------------
+    // Transport
+
+    /*!
+     * TODO.
+     */
+    virtual void transportPlay();
+
+    /*!
+     * TODO.
+     */
+    virtual void transportPause();
+
+    /*!
+     * TODO.
+     */
+    virtual void transportRelocate(const uint32_t frame);
 
     // -------------------------------------------------------------------
     // Error handling

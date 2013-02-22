@@ -55,7 +55,7 @@ debug:
 
 # --------------------------------------------------------------
 
-%.cpp.o: %.cpp ../CarlaPlugin.hpp CarlaPluginInternal.hpp CarlaPluginThread.hpp
+%.cpp.o: %.cpp ../CarlaEngine.hpp ../CarlaPlugin.hpp CarlaPluginInternal.hpp CarlaPluginThread.hpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 $(SHARED): $(OBJS) $(LIBS)

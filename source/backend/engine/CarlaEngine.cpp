@@ -1065,6 +1065,24 @@ void CarlaEngine::setCallback(const CallbackFunc func, void* const ptr)
 }
 
 // -----------------------------------------------------------------------
+// Transport
+
+void CarlaEngine::transportPlay()
+{
+    kData->time.playing = true;
+}
+
+void CarlaEngine::transportPause()
+{
+    kData->time.playing = false;
+}
+
+void CarlaEngine::transportRelocate(const uint32_t frame)
+{
+    kData->time.frame = frame;
+}
+
+// -----------------------------------------------------------------------
 // Error handling
 
 const char* CarlaEngine::getLastError() const
@@ -1139,6 +1157,13 @@ void CarlaEngine::setOption(const OptionsType option, const int value, const cha
             return carla_stderr("CarlaEngine::setOption(%s, %i, \"%s\") - invalid value", OptionsType2Str(option), value, valueStr);
 
         fOptions.processMode = static_cast<ProcessMode>(value);
+        break;
+
+    case OPTION_TRANSPORT_MODE:
+        if (value < CarlaBackend::TRANSPORT_MODE_INTERNAL || value > CarlaBackend::TRANSPORT_MODE_JACK)
+            return carla_stderr2("carla_set_engine_option(OPTION_TRANSPORT_MODE, %i, \"%s\") - invalid value", value, valueStr);
+
+        fOptions.transportMode = static_cast<CarlaBackend::TransportMode>(value);
         break;
 
     case OPTION_MAX_PARAMETERS:
@@ -1322,6 +1347,15 @@ void CarlaEngine::proccessPendingEvents()
     case EnginePostActionRemovePlugin:
         doPluginRemove(kData, true);
         break;
+    }
+
+    if (kData->time.playing)
+        kData->time.frame += fBufferSize;
+
+    if (fOptions.transportMode == CarlaBackend::TRANSPORT_MODE_INTERNAL)
+    {
+        fTimeInfo.playing = kData->time.playing;
+        fTimeInfo.frame   = kData->time.frame;
     }
 
     for (unsigned int i=0; i < kData->curPluginCount; i++)

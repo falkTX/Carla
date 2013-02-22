@@ -661,7 +661,7 @@ public:
     /*!
      * Plugin process callback.
      */
-    virtual void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t framesOffset = 0);
+    virtual void process(float** const inBuffer, float** const outBuffer, const uint32_t frames);
 
     /*!
      * Tell the plugin the current buffer size has changed.

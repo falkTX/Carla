@@ -871,7 +871,7 @@ public:
     // -------------------------------------------------------------------
     // Plugin processing
 
-    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t framesOffset)
+    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames)
     {
         uint32_t i, k;
 
@@ -987,7 +987,7 @@ public:
             {
                 const EngineEvent& event = kData->event.portIn->getEvent(i);
 
-                time = event.time - framesOffset;
+                time = event.time;
 
                 if (time >= frames)
                     continue;
@@ -1424,7 +1424,7 @@ public:
                 if (kData->param.data[k].midiCC > 0)
                 {
                     value = kData->param.ranges[k].normalizeValue(fParamBuffers[k]);
-                    kData->event.portOut->writeControlEvent(framesOffset, kData->param.data[k].midiChannel, kEngineControlEventTypeParameter, kData->param.data[k].midiCC, value);
+                    kData->event.portOut->writeControlEvent(0, kData->param.data[k].midiChannel, kEngineControlEventTypeParameter, kData->param.data[k].midiCC, value);
                 }
             }
 

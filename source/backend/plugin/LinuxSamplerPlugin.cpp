@@ -433,7 +433,7 @@ public:
     // -------------------------------------------------------------------
     // Plugin processing
 
-    void process(float** const, float** const outBuffer, const uint32_t frames, const uint32_t framesOffset)
+    void process(float** const, float** const outBuffer, const uint32_t frames)
     {
         uint32_t i, k;
         uint32_t midiEventCount = 0;
@@ -463,7 +463,7 @@ public:
                 if (! cinEvent)
                     continue;
 
-                time = cinEvent->time - framesOffset;
+                time = cinEvent->time;
 
                 if (time >= frames)
                     continue;
@@ -658,7 +658,7 @@ public:
                     if (! minEvent)
                         continue;
 
-                    time = minEvent->time - framesOffset;
+                    time = minEvent->time;
 
                     if (time >= frames)
                         continue;

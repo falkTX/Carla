@@ -427,10 +427,6 @@ protected:
             //fMidiOut.sendMessage();
         }
 
-        // TESTING
-        fTimeInfo.playing  = true;
-        fTimeInfo.frame   += nframes;
-
         proccessPendingEvents();
 
         return;

@@ -248,11 +248,34 @@ int jackbridge_midi_event_write(void* port_buffer, jack_nframes_t time, const ja
 
 // -----------------------------------------------------------------------------
 
+int jackbridge_transport_locate(jack_client_t* client, jack_nframes_t frame)
+{
+#ifndef JACKBRIDGE_DUMMY
+    return jack_transport_locate(client, frame);
+#else
+    return 0;
+#endif
+}
+
 jack_transport_state_t jackbridge_transport_query(const jack_client_t* client, jack_position_t* pos)
 {
 #ifndef JACKBRIDGE_DUMMY
     return jack_transport_query(client, pos);
 #else
     return JackTransportStopped;
+#endif
+}
+
+void jackbridge_transport_start(jack_client_t* client)
+{
+#ifndef JACKBRIDGE_DUMMY
+    jack_transport_start(client);
+#endif
+}
+
+void jackbridge_transport_stop(jack_client_t* client)
+{
+#ifndef JACKBRIDGE_DUMMY
+    jack_transport_stop(client);
 #endif
 }

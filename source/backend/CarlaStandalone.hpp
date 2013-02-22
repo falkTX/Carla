@@ -170,6 +170,10 @@ CARLA_EXPORT void carla_set_engine_option(CarlaOptionsType option, int value, co
 CARLA_EXPORT bool carla_load_project(const char* filename);
 CARLA_EXPORT bool carla_save_project(const char* filename);
 
+CARLA_EXPORT void carla_transport_play();
+CARLA_EXPORT void carla_transport_pause();
+CARLA_EXPORT void carla_transport_relocate(uint32_t frames);
+
 CARLA_EXPORT bool carla_add_plugin(CarlaBinaryType btype, CarlaPluginType ptype, const char* filename, const char* name, const char* label, const void* extraPtr);
 CARLA_EXPORT bool carla_remove_plugin(unsigned int pluginId);
 CARLA_EXPORT void carla_remove_all_plugins();

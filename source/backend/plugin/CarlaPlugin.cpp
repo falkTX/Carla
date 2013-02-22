@@ -908,7 +908,7 @@ void CarlaPlugin::prepareForSave()
 // -------------------------------------------------------------------
 // Plugin processing
 
-void CarlaPlugin::process(float** const, float** const, const uint32_t, const uint32_t)
+void CarlaPlugin::process(float** const, float** const, const uint32_t)
 {
 }
 

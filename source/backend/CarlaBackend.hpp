@@ -227,84 +227,91 @@ enum OptionsType {
     OPTION_PROCESS_MODE = 1,
 
     /*!
+     * Set the engine transport mode.\n
+     * Default is TRANSPORT_MODE_INTERNAL.
+     * \see TransportMode
+     */
+    OPTION_TRANSPORT_MODE = 2,
+
+    /*!
      * Force mono plugins as stereo, by running 2 instances at the same time.
      * \note Not supported by all plugins.
      */
-    OPTION_FORCE_STEREO = 2,
+    OPTION_FORCE_STEREO = 3,
 
     /*!
      * Use plugin bridges whenever possible.\n
      * Default is no, and not recommended at this point!.
      * EXPERIMENTAL AND INCOMPLETE!
      */
-    OPTION_PREFER_PLUGIN_BRIDGES = 3,
+    OPTION_PREFER_PLUGIN_BRIDGES = 4,
 
     /*!
      * Use OSC-UI bridges whenever possible, otherwise UIs will be handled in the main thread.\n
      * Default is yes.
      */
-    OPTION_PREFER_UI_BRIDGES = 4,
+    OPTION_PREFER_UI_BRIDGES = 5,
 
 #ifdef WANT_DSSI
     /*!
      * Use (unofficial) dssi-vst chunks feature.\n
      * Default is no.
      */
-    OPTION_USE_DSSI_VST_CHUNKS = 5,
+    OPTION_USE_DSSI_VST_CHUNKS = 6,
 #endif
 
     /*!
      * Maximum number of parameters allowed.\n
      * Default is MAX_DEFAULT_PARAMETERS.
      */
-    OPTION_MAX_PARAMETERS = 6,
+    OPTION_MAX_PARAMETERS = 7,
 
     /*!
      * Timeout value in ms for how much to wait for OSC-Bridges to respond.\n
      * Default is 4000 (4 secs).
      */
-    OPTION_OSC_UI_TIMEOUT = 7,
+    OPTION_OSC_UI_TIMEOUT = 8,
 
     /*!
      * Prefered buffer size.
      */
-    OPTION_PREFERRED_BUFFER_SIZE = 8,
+    OPTION_PREFERRED_BUFFER_SIZE = 9,
 
     /*!
      * Prefered sample rate.
      */
-    OPTION_PREFERRED_SAMPLE_RATE = 9,
+    OPTION_PREFERRED_SAMPLE_RATE = 10,
 
 #ifndef BUILD_BRIDGE
     /*!
      * Set path to the native plugin bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_NATIVE = 10,
+    OPTION_PATH_BRIDGE_NATIVE = 11,
 
     /*!
      * Set path to the POSIX 32bit plugin bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_POSIX32 = 11,
+    OPTION_PATH_BRIDGE_POSIX32 = 12,
 
     /*!
      * Set path to the POSIX 64bit plugin bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_POSIX64 = 12,
+    OPTION_PATH_BRIDGE_POSIX64 = 13,
 
     /*!
      * Set path to the Windows 32bit plugin bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_WIN32 = 13,
+    OPTION_PATH_BRIDGE_WIN32 = 14,
 
     /*!
      * Set path to the Windows 64bit plugin bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_WIN64 = 14,
+    OPTION_PATH_BRIDGE_WIN64 = 15,
 #endif
 
 #ifdef WANT_LV2
@@ -312,43 +319,43 @@ enum OptionsType {
      * Set path to the LV2 Gtk2 UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_GTK2 = 15,
+    OPTION_PATH_BRIDGE_LV2_GTK2 = 16,
 
     /*!
      * Set path to the LV2 Gtk3 UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_GTK3 = 16,
+    OPTION_PATH_BRIDGE_LV2_GTK3 = 17,
 
     /*!
      * Set path to the LV2 Qt4 UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_QT4 = 17,
+    OPTION_PATH_BRIDGE_LV2_QT4 = 18,
 
     /*!
      * Set path to the LV2 Qt5 UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_QT5 = 18,
+    OPTION_PATH_BRIDGE_LV2_QT5 = 19,
 
     /*!
      * Set path to the LV2 Cocoa UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_COCOA = 19,
+    OPTION_PATH_BRIDGE_LV2_COCOA = 20,
 
     /*!
      * Set path to the LV2 Windows UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_WINDOWS = 20,
+    OPTION_PATH_BRIDGE_LV2_WINDOWS = 21,
 
     /*!
      * Set path to the LV2 X11 UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_X11 = 21,
+    OPTION_PATH_BRIDGE_LV2_X11 = 22,
 #endif
 
 #ifdef WANT_VST
@@ -356,19 +363,19 @@ enum OptionsType {
      * Set path to the VST Cocoa UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_VST_COCOA = 22,
+    OPTION_PATH_BRIDGE_VST_COCOA = 23,
 
     /*!
      * Set path to the VST HWND UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_VST_HWND = 23,
+    OPTION_PATH_BRIDGE_VST_HWND = 24,
 
     /*!
      * Set path to the VST X11 UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_VST_X11 = 24
+    OPTION_PATH_BRIDGE_VST_X11 = 25
 #endif
 };
 
@@ -536,6 +543,14 @@ enum ProcessMode {
     PROCESS_MODE_CONTINUOUS_RACK  = 2, //!< Single client, 'rack' mode. Processes plugins in order of id, with forced stereo.
     PROCESS_MODE_PATCHBAY         = 3, //!< Single client, 'patchbay' mode.
     PROCESS_MODE_BRIDGE           = 4  //!< Special mode, used in plugin-bridges only. RT buffers come from shared memory in a separate host app.
+};
+
+/*!
+ * All the available transport modes
+ */
+enum TransportMode {
+    TRANSPORT_MODE_INTERNAL = 0, //!< Internal transport mode.
+    TRANSPORT_MODE_JACK     = 1, //!< JACK transport, only available if driver name is "JACK"
 };
 
 /*!

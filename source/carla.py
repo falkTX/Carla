@@ -568,6 +568,10 @@ class CarlaMainW(QMainWindow):
         self.connect(self.ui.act_help_about, SIGNAL("triggered()"), SLOT("slot_aboutCarla()"))
         self.connect(self.ui.act_help_about_qt, SIGNAL("triggered()"), app, SLOT("aboutQt()"))
 
+        self.connect(self.ui.ch_transport, SIGNAL("currentIndexChanged(int)"), SLOT("slot_transportModeChanged(int)"))
+        self.connect(self.ui.b_transport_play, SIGNAL("clicked(bool)"), SLOT("slot_transportPlayPause(bool)"))
+        self.connect(self.ui.b_transport_stop, SIGNAL("clicked()"), SLOT("slot_transportStop()"))
+
         self.connect(self, SIGNAL("SIGUSR1()"), SLOT("slot_handleSIGUSR1()"))
         self.connect(self, SIGNAL("SIGTERM()"), SLOT("slot_handleSIGTERM()"))
 
@@ -611,6 +615,7 @@ class CarlaMainW(QMainWindow):
         Carla.processMode    = settings.value("Engine/ProcessMode", PROCESS_MODE_MULTIPLE_CLIENTS, type=int)
         Carla.maxParameters  = settings.value("Engine/MaxParameters", MAX_DEFAULT_PARAMETERS, type=int)
 
+        transportMode        = settings.value("Engine/TransportMode", TRANSPORT_MODE_JACK, type=int)
         forceStereo          = settings.value("Engine/ForceStereo", False, type=bool)
         preferPluginBridges  = settings.value("Engine/PreferPluginBridges", False, type=bool)
         preferUiBridges      = settings.value("Engine/PreferUiBridges", True, type=bool)
@@ -667,8 +672,21 @@ class CarlaMainW(QMainWindow):
         else:
             maxCount = MAX_DEFAULT_PLUGINS
 
+        self.ui.ch_transport.blockSignals(True)
+        self.ui.ch_transport.addItem(self.tr("Internal"))
+
+        if audioDriver == "JACK":
+            self.ui.ch_transport.addItem(self.tr("JACK"))
+        elif transportMode == TRANSPORT_MODE_JACK:
+            transportMode = TRANSPORT_MODE_INTERNAL
+
+        self.ui.ch_transport.setCurrentIndex(transportMode)
+        self.ui.ch_transport.blockSignals(False)
+
         for x in range(maxCount):
             self.fPluginList.append(None)
+
+        Carla.host.set_engine_option(OPTION_TRANSPORT_MODE, transportMode, "")
 
         # Peaks
         self.fIdleTimerFast = self.startTimer(self.fSavedSettings["Main/RefreshInterval"])
@@ -694,6 +712,12 @@ class CarlaMainW(QMainWindow):
 
         self.killTimer(self.fIdleTimerFast)
         self.killTimer(self.fIdleTimerSlow)
+
+        settings = QSettings()
+        settings.setValue("Engine/TransportMode", self.ui.ch_transport.currentIndex())
+        self.ui.ch_transport.blockSignals(True)
+        self.ui.ch_transport.clear()
+        self.ui.ch_transport.blockSignals(False)
 
     def loadProject(self, filename):
         self.fProjectFilename = filename
@@ -795,6 +819,8 @@ class CarlaMainW(QMainWindow):
         self.ui.act_file_open.setEnabled(check)
         self.ui.act_engine_start.setEnabled(not check)
         self.ui.act_engine_stop.setEnabled(check)
+        self.ui.act_engine_configure.setEnabled(not check)
+        self.ui.frame_transport.setEnabled(check)
 
     @pyqtSlot()
     def slot_engineStop(self):
@@ -803,6 +829,7 @@ class CarlaMainW(QMainWindow):
         self.ui.act_file_open.setEnabled(check)
         self.ui.act_engine_start.setEnabled(not check)
         self.ui.act_engine_stop.setEnabled(check)
+        self.ui.frame_transport.setEnabled(check)
 
     @pyqtSlot()
     def slot_pluginAdd(self):
@@ -818,6 +845,26 @@ class CarlaMainW(QMainWindow):
     @pyqtSlot()
     def slot_pluginRemoveAll(self):
         self.removeAllPlugins()
+
+        self.connect(self.ui.ch_transport, SIGNAL("currentIndexChanged(int)"), SLOT("(int)"))
+        self.connect(self.ui.b_transport_play, SIGNAL("clicked(bool)"), SLOT("(bool)"))
+        self.connect(self.ui.b_transport_stop, SIGNAL("clicked()"), SLOT("()"))
+
+    @pyqtSlot(int)
+    def slot_transportModeChanged(self, newMode):
+        Carla.host.set_engine_option(OPTION_TRANSPORT_MODE, newMode, "")
+
+    @pyqtSlot(bool)
+    def slot_transportPlayPause(self, toggled):
+        if toggled:
+            Carla.host.transport_play()
+        else:
+            Carla.host.transport_pause()
+
+    @pyqtSlot()
+    def slot_transportStop(self):
+        Carla.host.transport_pause()
+        Carla.host.transport_relocate(0)
 
     @pyqtSlot()
     def slot_aboutCarla(self):

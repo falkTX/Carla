@@ -223,12 +223,13 @@ bool carla_engine_init(const char* driverName, const char* clientName)
         standalone.engine->setCallback(standalone.callback, nullptr);
 
 #ifndef BUILD_BRIDGE
-    standalone.engine->setOption(CarlaBackend::OPTION_PROCESS_MODE,               static_cast<int>(standalone.options.processMode), nullptr);
-    standalone.engine->setOption(CarlaBackend::OPTION_FORCE_STEREO,               standalone.options.forceStereo ? 1 : 0,           nullptr);
-    standalone.engine->setOption(CarlaBackend::OPTION_PREFER_PLUGIN_BRIDGES,      standalone.options.preferPluginBridges ? 1 : 0,   nullptr);
-    standalone.engine->setOption(CarlaBackend::OPTION_PREFER_UI_BRIDGES,          standalone.options.preferUiBridges ? 1 : 0,       nullptr);
+    standalone.engine->setOption(CarlaBackend::OPTION_PROCESS_MODE,               static_cast<int>(standalone.options.processMode),   nullptr);
+    standalone.engine->setOption(CarlaBackend::OPTION_TRANSPORT_MODE,             static_cast<int>(standalone.options.transportMode), nullptr);
+    standalone.engine->setOption(CarlaBackend::OPTION_FORCE_STEREO,               standalone.options.forceStereo ? 1 : 0,             nullptr);
+    standalone.engine->setOption(CarlaBackend::OPTION_PREFER_PLUGIN_BRIDGES,      standalone.options.preferPluginBridges ? 1 : 0,     nullptr);
+    standalone.engine->setOption(CarlaBackend::OPTION_PREFER_UI_BRIDGES,          standalone.options.preferUiBridges ? 1 : 0,         nullptr);
 # ifdef WANT_DSSI
-    standalone.engine->setOption(CarlaBackend::OPTION_USE_DSSI_VST_CHUNKS,        standalone.options.useDssiVstChunks ? 1 : 0,      nullptr);
+    standalone.engine->setOption(CarlaBackend::OPTION_USE_DSSI_VST_CHUNKS,        standalone.options.useDssiVstChunks ? 1 : 0,        nullptr);
 # endif
     standalone.engine->setOption(CarlaBackend::OPTION_MAX_PARAMETERS,             static_cast<int>(standalone.options.maxParameters),       nullptr);
     standalone.engine->setOption(CarlaBackend::OPTION_PREFERRED_BUFFER_SIZE,      static_cast<int>(standalone.options.preferredBufferSize), nullptr);
@@ -353,6 +354,13 @@ void carla_set_engine_option(CarlaBackend::OptionsType option, int value, const 
         standalone.options.processMode = static_cast<CarlaBackend::ProcessMode>(value);
         break;
 
+    case CarlaBackend::OPTION_TRANSPORT_MODE:
+        if (value < CarlaBackend::TRANSPORT_MODE_INTERNAL || value > CarlaBackend::TRANSPORT_MODE_JACK)
+            return carla_stderr2("carla_set_engine_option(OPTION_TRANSPORT_MODE, %i, \"%s\") - invalid value", value, valueStr);
+
+        standalone.options.transportMode = static_cast<CarlaBackend::TransportMode>(value);
+        break;
+
     case CarlaBackend::OPTION_FORCE_STEREO:
         standalone.options.forceStereo = (value != 0);
         break;
@@ -467,6 +475,35 @@ bool carla_save_project(const char* filename)
 
     standalone.lastError = "Engine is not started";
     return false;
+}
+
+// -------------------------------------------------------------------------------------------------------------------
+
+void carla_transport_play()
+{
+    carla_debug("carla_transport_play()");
+    CARLA_ASSERT(standalone.engine != nullptr);
+
+    if (standalone.engine != nullptr)
+        return standalone.engine->transportPlay();
+}
+
+void carla_transport_pause()
+{
+    carla_debug("carla_transport_pause()");
+    CARLA_ASSERT(standalone.engine != nullptr);
+
+    if (standalone.engine != nullptr)
+        return standalone.engine->transportPause();
+}
+
+void carla_transport_relocate(uint32_t frames)
+{
+    carla_debug("carla_transport_relocate(%i)", frames);
+    CARLA_ASSERT(standalone.engine != nullptr);
+
+    if (standalone.engine != nullptr)
+        return standalone.engine->transportRelocate(frames);
 }
 
 // -------------------------------------------------------------------------------------------------------------------

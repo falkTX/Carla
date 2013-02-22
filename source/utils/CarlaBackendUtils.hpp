@@ -204,6 +204,8 @@ const char* OptionsType2Str(const OptionsType& type)
         return "OPTION_PROCESS_NAME";
     case OPTION_PROCESS_MODE:
         return "OPTION_PROCESS_MODE";
+    case OPTION_TRANSPORT_MODE:
+        return "OPTION_TRANSPORT_MODE";
     case OPTION_FORCE_STEREO:
         return "OPTION_FORCE_STEREO";
     case OPTION_PREFER_PLUGIN_BRIDGES:

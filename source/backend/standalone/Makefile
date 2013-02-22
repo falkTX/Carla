@@ -75,7 +75,7 @@ debug:
 
 # --------------------------------------------------------------
 
-%.cpp.o: %.cpp
+%.cpp.o: %.cpp ../CarlaEngine.hpp ../CarlaPlugin.hpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 $(SHARED): $(OBJS) $(LIBS)

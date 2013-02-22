@@ -191,6 +191,15 @@ class Host(object):
         self.lib.carla_save_project.argtypes = [c_char_p]
         self.lib.carla_save_project.restype = c_bool
 
+        self.lib.carla_transport_play.argtypes = None
+        self.lib.carla_transport_play.restype = None
+
+        self.lib.carla_transport_pause.argtypes = None
+        self.lib.carla_transport_pause.restype = None
+
+        self.lib.carla_transport_relocate.argtypes = [c_uint32]
+        self.lib.carla_transport_relocate.restype = None
+
         self.lib.carla_add_plugin.argtypes = [c_enum, c_enum, c_char_p, c_char_p, c_char_p, c_void_p]
         self.lib.carla_add_plugin.restype = c_bool
 
@@ -394,6 +403,15 @@ class Host(object):
 
     def save_project(self, filename):
         return self.lib.carla_save_project(filename.encode("utf-8"))
+
+    def transport_play(self):
+        self.lib.carla_transport_play()
+
+    def transport_pause(self):
+        self.lib.carla_transport_pause()
+
+    def transport_relocate(self, frames):
+        self.lib.carla_transport_relocate(frames)
 
     def add_plugin(self, btype, ptype, filename, name, label, extraStuff):
         cname = name.encode("utf-8") if name else c_nullptr
