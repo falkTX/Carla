@@ -1423,6 +1423,7 @@ class PluginEdit(QDialog):
         self.fCurrentProgram = -1
         self.fCurrentMidiProgram = -1
         self.fCurrentStateFilename = None
+        self.fControlChannel = -1
 
         self.fParameterCount = 0
         self.fParameterList  = []     # (type, id, widget)
@@ -1827,6 +1828,14 @@ class PluginEdit(QDialog):
         self.ui.cb_midi_programs.setCurrentIndex(index)
         self.ui.cb_midi_programs.blockSignals(False)
 
+    def sendNoteOn(self, channel, note):
+        if self.fControlChannel == channel:
+            self.ui.keyboard.sendNoteOn(note, False)
+
+    def sendNoteOff(self, channel, note):
+        if self.fControlChannel == channel:
+            self.ui.keyboard.sendNoteOff(note, False)
+
     def setVisible(self, yesNo):
         if yesNo:
             if not self.fGeometry.isNull():
@@ -1871,9 +1880,11 @@ class PluginEdit(QDialog):
                 #self.ui.dial_pan.setValue(value * 1000, True, False)
                 #self.ui.dial_pan.blockSignals(False)
             elif index == PARAMETER_CTRL_CHANNEL:
+                self.fControlChannel = int(value)
                 self.ui.sb_ctrl_channel.blockSignals(True)
-                self.ui.sb_ctrl_channel.setValue(value)
+                self.ui.sb_ctrl_channel.setValue(self.fControlChannel+1)
                 self.ui.sb_ctrl_channel.blockSignals(False)
+                self.ui.keyboard.allNotesOff()
             elif index >= 0:
                 for paramType, paramId, paramWidget in self.fParameterList:
                     if paramId == index:
@@ -1949,7 +1960,9 @@ class PluginEdit(QDialog):
 
     @pyqtSlot(int)
     def slot_ctrlChannelChanged(self, value):
-        Carla.host.set_ctrl_channel(self.fPluginId, value)
+        self.fControlChannel = value-1
+        Carla.host.set_ctrl_channel(self.fPluginId, self.fControlChannel)
+        self.ui.keyboard.allNotesOff()
 
     @pyqtSlot(int, float)
     def slot_parameterValueChanged(self, parameterId, value):
@@ -1977,11 +1990,13 @@ class PluginEdit(QDialog):
 
     @pyqtSlot(int)
     def slot_noteOn(self, note):
-        Carla.host.send_midi_note(self.fPluginId, 0, note, 100)
+        if self.fControlChannel >= 0:
+            Carla.host.send_midi_note(self.fPluginId, self.fControlChannel, note, 100)
 
     @pyqtSlot(int)
     def slot_noteOff(self, note):
-        Carla.host.send_midi_note(self.fPluginId, 0, note, 0)
+        if self.fControlChannel >= 0:
+            Carla.host.send_midi_note(self.fPluginId, self.fControlChannel, note, 0)
 
     @pyqtSlot()
     def slot_notesOn(self):
@@ -2234,11 +2249,11 @@ class PluginWidget(QFrame):
         self.fParameterIconTimer = ICON_STATE_ON
         self.ui.edit_dialog.setMidiProgram(index)
 
-    def sendNoteOn(self, note):
-        self.ui.edit_dialog.ui.keyboard.sendNoteOn(note, False)
+    def sendNoteOn(self, channel, note):
+        self.ui.edit_dialog.sendNoteOn(channel, note)
 
-    def sendNoteOff(self, note):
-        self.ui.edit_dialog.ui.keyboard.sendNoteOff(note, False)
+    def sendNoteOff(self, channel, note):
+        self.ui.edit_dialog.sendNoteOff(channel, note)
 
     def setId(self, idx):
         self.fPluginId = idx

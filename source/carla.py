@@ -1013,7 +1013,7 @@ class CarlaMainW(QMainWindow):
         if pwidget is None:
             return
 
-        pwidget.sendNoteOn(note)
+        pwidget.sendNoteOn(channel, note)
 
     @pyqtSlot(int, int, int)
     def slot_handleNoteOffCallback(self, pluginId, channel, note):
@@ -1024,7 +1024,7 @@ class CarlaMainW(QMainWindow):
         if pwidget is None:
             return
 
-        pwidget.sendNoteOff(note)
+        pwidget.sendNoteOff(channel, note)
 
     @pyqtSlot(int, int)
     def slot_handleShowGuiCallback(self, pluginId, show):
