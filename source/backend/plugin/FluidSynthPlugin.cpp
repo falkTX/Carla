@@ -731,8 +731,12 @@ public:
 
         fHints |= PLUGIN_IS_SYNTH;
         fHints |= PLUGIN_CAN_VOLUME;
-        fHints |= PLUGIN_CAN_BALANCE;
-        fHints |= PLUGIN_CAN_FORCE_STEREO;
+
+        if (! kUses16Outs)
+        {
+            fHints |= PLUGIN_CAN_BALANCE;
+            fHints |= PLUGIN_CAN_FORCE_STEREO;
+        }
 
         // plugin options
         kData->availOptions &= ~(PLUGIN_OPTION_FIXED_BUFFER | PLUGIN_OPTION_SELF_AUTOMATION | PLUGIN_OPTION_SEND_ALL_SOUND_OFF | PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH | PLUGIN_OPTION_SEND_PITCHBEND);
@@ -1253,7 +1257,7 @@ public:
                 if (doBalance)
                 {
                     if (i % 2 == 0)
-                        carla_copyFloat(oldBufLeft, outBuffer[i], frames);
+                        carla_copyFloat(oldBufLeft, outBuffer[i]+timeOffset, frames);
 
                     float balRangeL = (kData->postProc.balanceLeft  + 1.0f)/2.0f;
                     float balRangeR = (kData->postProc.balanceRight + 1.0f)/2.0f;
@@ -1263,14 +1267,14 @@ public:
                         if (i % 2 == 0)
                         {
                             // left
-                            outBuffer[i][k]  = oldBufLeft[k]     * (1.0f - balRangeL);
-                            outBuffer[i][k] += outBuffer[i+1][k] * (1.0f - balRangeR);
+                            outBuffer[i][k+timeOffset]  = oldBufLeft[k]                * (1.0f - balRangeL);
+                            outBuffer[i][k+timeOffset] += outBuffer[i+1][k+timeOffset] * (1.0f - balRangeR);
                         }
                         else
                         {
                             // right
-                            outBuffer[i][k]  = outBuffer[i][k] * balRangeR;
-                            outBuffer[i][k] += oldBufLeft[k]   * balRangeL;
+                            outBuffer[i][k+timeOffset]  = outBuffer[i][k+timeOffset] * balRangeR;
+                            outBuffer[i][k+timeOffset] += oldBufLeft[k]              * balRangeL;
                         }
                     }
                 }
@@ -1284,7 +1288,7 @@ public:
                 else if (doVolume)
                 {
                     for (k=0; k < frames; k++)
-                        outBuffer[i][k] *= kData->postProc.volume;
+                        outBuffer[i][k+timeOffset] *= kData->postProc.volume;
                 }
             }
 
