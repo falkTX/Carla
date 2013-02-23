@@ -829,19 +829,7 @@ void CarlaEngine::removeAllPlugins()
         const unsigned int oldCount = kData->curPluginCount;
 
         kData->curPluginCount = 0;
-
-        for (unsigned int i=0; i < oldCount; i++)
-        {
-            CarlaPlugin* const plugin = kData->plugins[i].plugin;
-
-            CARLA_ASSERT(plugin != nullptr);
-
-            if (plugin != nullptr)
-                plugin->setEnabled(false);
-        }
-
-        // wait for processing
-        waitForProccessEnd(0);
+        waitForProccessEnd(0); // FIXME - doesn't work for multi-client
 
         for (unsigned int i=0; i < oldCount; i++)
         {

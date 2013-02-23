@@ -821,7 +821,7 @@ public:
             // ----------------------------------------------------------------------------------------------------
             // Event Input (System)
 
-            bool sampleAccurate  = (fHints & PLUGIN_OPTION_FIXED_BUFFER) == 0;
+            bool sampleAccurate  = (fOptions & PLUGIN_OPTION_FIXED_BUFFER) == 0;
 
             uint32_t time, nEvents = kData->event.portIn->getEventCount();
             uint32_t timeOffset = 0;

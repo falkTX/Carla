@@ -1078,7 +1078,7 @@ public:
             // Event Input (System)
 
             bool allNotesOffSent = false;
-            bool sampleAccurate  = (fHints & PLUGIN_OPTION_FIXED_BUFFER) == 0;
+            bool sampleAccurate  = (fOptions & PLUGIN_OPTION_FIXED_BUFFER) == 0;
 
             uint32_t time, nEvents = kData->event.portIn->getEventCount();
             uint32_t timeOffset = 0;
@@ -1629,13 +1629,11 @@ protected:
 public:
     static size_t getPluginCount()
     {
-        maybeFirstInit();
         return sPluginDescriptors.count();
     }
 
     static const PluginDescriptor* getPluginDescriptor(const size_t index)
     {
-        maybeFirstInit();
         CARLA_ASSERT(index < sPluginDescriptors.count());
 
         if (index < sPluginDescriptors.count())
@@ -1649,34 +1647,6 @@ public:
         sPluginDescriptors.append(desc);
     }
 
-    static void maybeFirstInit()
-    {
-        if (! sFirstInit)
-            return;
-
-        sFirstInit = false;
-
-#ifndef BUILD_BRIDGE
-        carla_register_native_plugin_bypass();
-        carla_register_native_plugin_midiSplit();
-        carla_register_native_plugin_midiThrough();
-
-#if 0
-        carla_register_native_plugin_3BandEQ();
-        carla_register_native_plugin_3BandSplitter();
-        carla_register_native_plugin_PingPongPan();
-#endif
-
-# ifdef WANT_AUDIOFILE
-        carla_register_native_plugin_audiofile();
-# endif
-
-# ifdef WANT_ZYNADDSUBFX
-        carla_register_native_plugin_zynaddsubfx();
-# endif
-#endif
-    }
-
     // -------------------------------------------------------------------
 
     bool init(const char* const name, const char* const label)
@@ -1684,11 +1654,6 @@ public:
         CARLA_ASSERT(kData->engine != nullptr);
         CARLA_ASSERT(kData->client == nullptr);
         CARLA_ASSERT(label);
-
-        // ---------------------------------------------------------------
-        // initialize native-plugins descriptors
-
-        maybeFirstInit();
 
         // ---------------------------------------------------------------
         // get descriptor that matches label
@@ -1747,6 +1712,20 @@ public:
         return true;
     }
 
+    class ScopedInitializer
+    {
+    public:
+        ScopedInitializer()
+        {
+            initDescriptors();
+        }
+
+        ~ScopedInitializer()
+        {
+            clearDescriptors();
+        }
+    };
+
 private:
     PluginHandle   fHandle;
     PluginHandle   fHandle2;
@@ -1765,8 +1744,36 @@ private:
 
     ::TimeInfo fTimeInfo;
 
-    static bool sFirstInit;
     static NonRtList<const PluginDescriptor*> sPluginDescriptors;
+
+    // -------------------------------------------------------------------
+
+    static void initDescriptors()
+    {
+#ifndef BUILD_BRIDGE
+        carla_register_native_plugin_bypass();
+        carla_register_native_plugin_midiSplit();
+        carla_register_native_plugin_midiThrough();
+
+#if 0
+        carla_register_native_plugin_3BandEQ();
+        carla_register_native_plugin_3BandSplitter();
+        carla_register_native_plugin_PingPongPan();
+#endif
+
+# ifdef WANT_AUDIOFILE
+        carla_register_native_plugin_audiofile();
+# endif
+# ifdef WANT_ZYNADDSUBFX
+        carla_register_native_plugin_zynaddsubfx();
+# endif
+#endif
+    }
+
+    static void clearDescriptors()
+    {
+        sPluginDescriptors.clear();
+    }
 
     // -------------------------------------------------------------------
 
@@ -1810,8 +1817,9 @@ private:
     #undef handlePtr
 };
 
-bool NativePlugin::sFirstInit = true;
 NonRtList<const PluginDescriptor*> NativePlugin::sPluginDescriptors;
+
+static const NativePlugin::ScopedInitializer _si;
 
 CARLA_BACKEND_END_NAMESPACE
 

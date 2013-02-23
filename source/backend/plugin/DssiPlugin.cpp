@@ -695,6 +695,7 @@ public:
         // dssi-vst can do chunks, but needs fixed buffers
         if (QString(fFilename).endsWith("dssi-vst.so", Qt::CaseInsensitive))
         {
+            carla_stdout("dssi-vst detected, disabling sample accurate events (ie, fixed buffer)");
             fOptions |= PLUGIN_OPTION_FIXED_BUFFER;
 
             if (fOptions & PLUGIN_OPTION_USE_CHUNKS)
@@ -975,7 +976,7 @@ public:
             // Event Input (System)
 
             bool allNotesOffSent = false;
-            bool sampleAccurate  = (fHints & PLUGIN_OPTION_FIXED_BUFFER) == 0;
+            bool sampleAccurate  = (fOptions & PLUGIN_OPTION_FIXED_BUFFER) == 0;
 
             uint32_t time, nEvents = kData->event.portIn->getEventCount();
             uint32_t startTime  = 0;

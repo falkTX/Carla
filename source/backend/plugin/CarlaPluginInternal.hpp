@@ -453,9 +453,7 @@ struct CarlaPluginProtectedData {
 
         ~PostRtEvents()
         {
-            mutex.lock();
             clear();
-            mutex.unlock();
         }
 
         void appendRT(const PluginPostRtEvent& event)
