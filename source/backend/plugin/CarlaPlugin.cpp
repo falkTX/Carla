@@ -586,7 +586,10 @@ void CarlaPlugin::setCtrlChannel(const int8_t channel, const bool sendOsc, const
 
     if (kData->ctrlChannel != channel)
     {
-        kData->ctrlChannel = channel;
+        {
+            const ScopedProcessLocker spl(this, true);
+            kData->ctrlChannel = channel;
+        }
 
 #ifndef BUILD_BRIDGE
         const float ctrlf = channel;

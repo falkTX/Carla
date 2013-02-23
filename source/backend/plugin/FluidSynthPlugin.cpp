@@ -914,7 +914,6 @@ public:
             bool allNotesOffSent = false;
 
             uint32_t time, nEvents = kData->event.portIn->getEventCount();
-            uint32_t startTime  = 0;
             uint32_t timeOffset = 0;
 
             uint32_t nextBankIds[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 128, 0, 0, 0, 0, 0, 0 };
@@ -942,8 +941,6 @@ public:
                         if (kData->midiprog.current >= 0 && kData->midiprog.count > 0 && kData->ctrlChannel >= 0 && kData->ctrlChannel < 16)
                             nextBankIds[kData->ctrlChannel] = kData->midiprog.data[kData->midiprog.current].bank;
                     }
-                    else
-                        startTime += timeOffset;
                 }
 
                 // Control change
