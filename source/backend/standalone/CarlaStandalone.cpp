@@ -1429,7 +1429,7 @@ void carla_set_program(unsigned int pluginId, uint32_t programId)
     if (CarlaPlugin* const plugin = standalone.engine->getPlugin(pluginId))
     {
         if (programId < plugin->programCount())
-            return plugin->setProgram(static_cast<int32_t>(programId), true, true, false, true);
+            return plugin->setProgram(static_cast<int32_t>(programId), true, true, false);
 
         carla_stderr2("carla_set_program(%i, %i) - programId out of bounds", pluginId, programId);
         return;
@@ -1449,7 +1449,7 @@ void carla_set_midi_program(unsigned int pluginId, uint32_t midiProgramId)
     if (CarlaPlugin* const plugin = standalone.engine->getPlugin(pluginId))
     {
         if (midiProgramId < plugin->midiProgramCount())
-            return plugin->setMidiProgram(static_cast<int32_t>(midiProgramId), true, true, false, true);
+            return plugin->setMidiProgram(static_cast<int32_t>(midiProgramId), true, true, false);
 
         carla_stderr2("carla_set_midi_program(%i, %i) - midiProgramId out of bounds", pluginId, midiProgramId);
         return;

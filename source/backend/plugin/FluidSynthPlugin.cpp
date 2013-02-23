@@ -297,67 +297,54 @@ public:
         const float fixedValue = kData->param.fixValue(parameterId, value);
         fParamBuffers[parameterId] = fixedValue;
 
-        switch (parameterId)
         {
-        case FluidSynthReverbOnOff:
-            fluid_synth_set_reverb_on(fSynth, (fixedValue > 0.5f) ? 1 : 0);
-            break;
+            const ScopedProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
 
-        case FluidSynthReverbRoomSize:
-        case FluidSynthReverbDamp:
-        case FluidSynthReverbLevel:
-        case FluidSynthReverbWidth:
-            fluid_synth_set_reverb(fSynth, fParamBuffers[FluidSynthReverbRoomSize], fParamBuffers[FluidSynthReverbDamp], fParamBuffers[FluidSynthReverbWidth], fParamBuffers[FluidSynthReverbLevel]);
-            break;
+            switch (parameterId)
+            {
+            case FluidSynthReverbOnOff:
+                fluid_synth_set_reverb_on(fSynth, (fixedValue > 0.5f) ? 1 : 0);
+                break;
 
-        case FluidSynthChorusOnOff:
-        {
-            // FIXME
-            //const ScopedDisabler m(this, ! kData->engine->isOffline());
-            fluid_synth_set_chorus_on(fSynth, (value > 0.5f) ? 1 : 0);
-            break;
-        }
+            case FluidSynthReverbRoomSize:
+            case FluidSynthReverbDamp:
+            case FluidSynthReverbLevel:
+            case FluidSynthReverbWidth:
+                fluid_synth_set_reverb(fSynth, fParamBuffers[FluidSynthReverbRoomSize], fParamBuffers[FluidSynthReverbDamp], fParamBuffers[FluidSynthReverbWidth], fParamBuffers[FluidSynthReverbLevel]);
+                break;
 
-        case FluidSynthChorusNr:
-        case FluidSynthChorusLevel:
-        case FluidSynthChorusSpeedHz:
-        case FluidSynthChorusDepthMs:
-        case FluidSynthChorusType:
-        {
-            //FIXME
-            //const ScopedDisabler m(this, ! kData->engine->isOffline());
-            fluid_synth_set_chorus(fSynth, fParamBuffers[FluidSynthChorusNr], fParamBuffers[FluidSynthChorusLevel], fParamBuffers[FluidSynthChorusSpeedHz], fParamBuffers[FluidSynthChorusDepthMs], fParamBuffers[FluidSynthChorusType]);
-            break;
-        }
+            case FluidSynthChorusOnOff:
+                fluid_synth_set_chorus_on(fSynth, (value > 0.5f) ? 1 : 0);
+                break;
 
-        case FluidSynthPolyphony:
-        {
-            //FIXME
-            //const ScopedDisabler m(this, ! kData->engine->isOffline());
-            fluid_synth_set_polyphony(fSynth, value);
-            break;
-        }
+            case FluidSynthChorusNr:
+            case FluidSynthChorusLevel:
+            case FluidSynthChorusSpeedHz:
+            case FluidSynthChorusDepthMs:
+            case FluidSynthChorusType:
+                fluid_synth_set_chorus(fSynth, fParamBuffers[FluidSynthChorusNr], fParamBuffers[FluidSynthChorusLevel], fParamBuffers[FluidSynthChorusSpeedHz], fParamBuffers[FluidSynthChorusDepthMs], fParamBuffers[FluidSynthChorusType]);
+                break;
 
-        case FluidSynthInterpolation:
-        {
-            //FIXME
-            //const ScopedDisabler m(this, ! kData->engine->isOffline());
+            case FluidSynthPolyphony:
+                fluid_synth_set_polyphony(fSynth, value);
+                break;
 
-            for (int i=0; i < 16; i++)
-                fluid_synth_set_interp_method(fSynth, i, value);
+            case FluidSynthInterpolation:
+                for (int i=0; i < 16; i++)
+                    fluid_synth_set_interp_method(fSynth, i, value);
+                break;
 
-            break;
-        }
-
-        default:
-            break;
+            default:
+                break;
+            }
         }
 
         CarlaPlugin::setParameterValue(parameterId, value, sendGui, sendOsc, sendCallback);
     }
 
-    void setMidiProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback, const bool block)
+    void setMidiProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback)
     {
+        CARLA_ASSERT(fSynth != nullptr);
         CARLA_ASSERT(index >= -1 && index < static_cast<int32_t>(kData->midiprog.count));
 
         if (index < -1)
@@ -368,25 +355,16 @@ public:
         if (kData->ctrlChannel < 0 || kData->ctrlChannel >= 16)
             return;
 
-        // FIXME
         if (index >= 0)
         {
             const uint32_t bank    = kData->midiprog.data[index].bank;
             const uint32_t program = kData->midiprog.data[index].program;
 
-            if (kData->engine->isOffline())
-            {
-                //const CarlaEngine::ScopedLocker m(x_engine, block);
-                fluid_synth_program_select(fSynth, kData->ctrlChannel, fSynthId, bank, program);
-            }
-            else
-            {
-                //const ScopedDisabler m(this, block);
-                fluid_synth_program_select(fSynth, kData->ctrlChannel, fSynthId, bank, program);
-            }
+            const ScopedProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
+            fluid_synth_program_select(fSynth, kData->ctrlChannel, fSynthId, bank, program);
         }
 
-        CarlaPlugin::setMidiProgram(index, sendGui, sendOsc, sendCallback, block);
+        CarlaPlugin::setMidiProgram(index, sendGui, sendOsc, sendCallback);
     }
 
     // -------------------------------------------------------------------
@@ -402,9 +380,6 @@ public:
 
         // Safely disable plugin for reload
         const ScopedDisabler sd(this);
-
-        if (kData->client->isActive())
-            kData->client->deactivate();
 
         deleteBuffers();
 
@@ -771,8 +746,6 @@ public:
         bufferSizeChanged(kData->engine->getBufferSize());
         reloadPrograms(true);
 
-        kData->client->activate();
-
         carla_debug("FluidSynthPlugin::reload() - end");
     }
 
@@ -862,7 +835,7 @@ public:
 #endif
             }
 
-            setMidiProgram(0, false, false, false, true);
+            setMidiProgram(0, false, false, false);
         }
         else
         {
@@ -891,7 +864,7 @@ public:
         }
 
         // --------------------------------------------------------------------------------------------------------
-        // Check if active before
+        // Check if not active before
 
         if (kData->needsReset || ! kData->activeBefore)
         {
@@ -941,6 +914,7 @@ public:
             bool allNotesOffSent = false;
 
             uint32_t time, nEvents = kData->event.portIn->getEventCount();
+            uint32_t startTime  = 0;
             uint32_t timeOffset = 0;
 
             uint32_t nextBankIds[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 128, 0, 0, 0, 0, 0, 0 };
@@ -961,12 +935,15 @@ public:
 
                 if (time > timeOffset)
                 {
-                    if (kUses16Outs)
-                        processSingle(outBuffer, time - timeOffset, timeOffset);
-                    else
-                        fluid_synth_write_float(fSynth, time - timeOffset, outBuffer[0] + timeOffset, 0, 1, outBuffer[1] + timeOffset, 0, 1);
+                    if (processSingle(outBuffer, time - timeOffset, timeOffset))
+                    {
+                        timeOffset = time;
 
-                    timeOffset = time;
+                        if (kData->midiprog.current >= 0 && kData->midiprog.count > 0 && kData->ctrlChannel >= 0 && kData->ctrlChannel < 16)
+                            nextBankIds[kData->ctrlChannel] = kData->midiprog.data[kData->midiprog.current].bank;
+                    }
+                    else
+                        startTime += timeOffset;
                 }
 
                 // Control change
@@ -989,7 +966,7 @@ public:
                         // Control backend stuff
                         if (event.channel == kData->ctrlChannel)
                         {
-                            double value;
+                            float value;
 
                             if (MIDI_IS_CONTROL_BREATH_CONTROLLER(ctrlEvent.param) && (fHints & PLUGIN_CAN_DRYWET) > 0)
                             {
@@ -1001,7 +978,7 @@ public:
 
                             if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (fHints & PLUGIN_CAN_VOLUME) > 0)
                             {
-                                value = ctrlEvent.value*127/100;
+                                value = ctrlEvent.value*127.0f/100.0f;
                                 setVolume(value, false, false);
                                 postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_VOLUME, 0, value);
                                 continue;
@@ -1009,23 +986,23 @@ public:
 
                             if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (fHints & PLUGIN_CAN_BALANCE) > 0)
                             {
-                                double left, right;
-                                value = ctrlEvent.value/0.5 - 1.0;
+                                float left, right;
+                                value = ctrlEvent.value/0.5f - 1.0f;
 
-                                if (value < 0.0)
+                                if (value < 0.0f)
                                 {
-                                    left  = -1.0;
-                                    right = (value*2)+1.0;
+                                    left  = -1.0f;
+                                    right = (value*2.0f)+1.0f;
                                 }
-                                else if (value > 0.0)
+                                else if (value > 0.0f)
                                 {
-                                    left  = (value*2)-1.0;
-                                    right = 1.0;
+                                    left  = (value*2.0f)-1.0f;
+                                    right = 1.0f;
                                 }
                                 else
                                 {
-                                    left  = -1.0;
-                                    right = 1.0;
+                                    left  = -1.0f;
+                                    right = 1.0f;
                                 }
 
                                 setBalanceLeft(left, false, false);
@@ -1048,23 +1025,22 @@ public:
                             if ((kData->param.data[k].hints & PARAMETER_IS_AUTOMABLE) == 0)
                                 continue;
 
-                            double value;
+                            float value;
 
                             if (kData->param.data[k].hints & PARAMETER_IS_BOOLEAN)
                             {
-                                value = (ctrlEvent.value < 0.5) ? kData->param.ranges[k].min : kData->param.ranges[k].max;
+                                value = (ctrlEvent.value < 0.5f) ? kData->param.ranges[k].min : kData->param.ranges[k].max;
                             }
                             else
                             {
-                                // FIXME - ranges call for this
-                                value = ctrlEvent.value * (kData->param.ranges[k].max - kData->param.ranges[k].min) + kData->param.ranges[k].min;
+                                value = kData->param.ranges[i].unnormalizeValue(ctrlEvent.value);
 
                                 if (kData->param.data[k].hints & PARAMETER_IS_INTEGER)
                                     value = std::rint(value);
                             }
 
                             setParameterValue(k, value, false, false, false);
-                            postponeRtEvent(kPluginPostRtEventParameterChange, k, 0, value);
+                            postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 0, value);
                         }
 
                         break;
@@ -1087,7 +1063,7 @@ public:
                                 {
                                     if (event.channel == kData->ctrlChannel)
                                     {
-                                        setMidiProgram(k, false, false, false, false);
+                                        setMidiProgram(k, false, false, false);
                                         postponeRtEvent(kPluginPostRtEventMidiProgramChange, k, 0, 0.0);
                                     }
                                     else
@@ -1109,6 +1085,12 @@ public:
                             postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_ACTIVE, 0, 1.0);
 
                             allNotesOffSent = true;
+
+#ifdef FLUIDSYNTH_VERSION_NEW_API
+                            fluid_synth_all_sounds_off(fSynth, event.channel);
+#else
+                            fluid_synth_cc(f_synth, event.channel, MIDI_CONTROL_ALL_SOUND_OFF, 0);
+#endif
                         }
                         break;
 
@@ -1119,6 +1101,12 @@ public:
                                 sendMidiAllNotesOff();
 
                             allNotesOffSent = true;
+
+#ifdef FLUIDSYNTH_VERSION_NEW_API
+                            fluid_synth_all_notes_off(fSynth, event.channel);
+#else
+                            fluid_synth_cc(f_synth, event.channel, MIDI_CONTROL_ALL_NOTES_OFF, 0);
+#endif
                         }
                         break;
                     }
@@ -1156,15 +1144,10 @@ public:
                     }
                     else if (MIDI_IS_STATUS_POLYPHONIC_AFTERTOUCH(status))
                     {
-                        const uint8_t note     = midiEvent.data[1];
-                        const uint8_t pressure = midiEvent.data[2];
+                        //const uint8_t note     = midiEvent.data[1];
+                        //const uint8_t pressure = midiEvent.data[2];
 
-                        // TODO, not in fluidsynth API?
-                        continue;
-
-                        // unused
-                        (void)note;
-                        (void)pressure;
+                        // TODO, not in fluidsynth API
                     }
                     else if (MIDI_IS_STATUS_CONTROL_CHANGE(status) && (fHints & PLUGIN_OPTION_SELF_AUTOMATION) != 0)
                     {
@@ -1186,8 +1169,6 @@ public:
 
                         fluid_synth_pitch_bend(fSynth, channel, (msb << 7) | lsb);
                     }
-                    else
-                        continue;
 
                     break;
                 }
@@ -1197,21 +1178,73 @@ public:
             kData->postRtEvents.trySplice();
 
             if (frames > timeOffset)
-            {
-                if (kUses16Outs)
-                    processSingle(outBuffer, frames - timeOffset, timeOffset);
-                else
-                    fluid_synth_write_float(fSynth, frames - timeOffset, outBuffer[0] + timeOffset, 0, 1, outBuffer[1] + timeOffset, 0, 1);
-            }
+                processSingle(outBuffer, frames - timeOffset, timeOffset);
 
         } // End of Event Input and Processing
 
         CARLA_PROCESS_CONTINUE_CHECK;
 
         // --------------------------------------------------------------------------------------------------------
+        // Control Output
+
+        {
+            k = FluidSynthVoiceCount;
+            fParamBuffers[k] = fluid_synth_get_active_voice_count(fSynth);
+            kData->param.ranges[k].fixValue(fParamBuffers[k]);
+
+            if (kData->param.data[k].midiCC > 0)
+            {
+                double value = kData->param.ranges[k].normalizeValue(fParamBuffers[k]);
+                kData->event.portOut->writeControlEvent(0, kData->param.data[k].midiChannel, kEngineControlEventTypeParameter, kData->param.data[k].midiCC, value);
+            }
+
+        } // End of Control Output
+
+        // --------------------------------------------------------------------------------------------------------
+
+        kData->activeBefore = kData->active;
+    }
+
+    bool processSingle(float** const outBuffer, const uint32_t frames, const uint32_t timeOffset)
+    {
+        uint32_t i, k;
+
+        // --------------------------------------------------------------------------------------------------------
+        // Try lock, silence otherwise
+
+        if (kData->engine->isOffline())
+        {
+            kData->mutex.lock();
+        }
+        else if (! kData->mutex.tryLock())
+        {
+            for (i=0; i < kData->audioOut.count; i++)
+            {
+                for (k=0; k < frames; k++)
+                    outBuffer[i][k+timeOffset] = 0.0f;
+            }
+
+            return false;
+        }
+
+        // --------------------------------------------------------------------------------------------------------
+        // Fill plugin buffers and Run plugin
+
+        if (kUses16Outs)
+        {
+            for (i=0; i < kData->audioOut.count; i++)
+                carla_zeroFloat(fAudio16Buffers[i], frames);
+
+            fluid_synth_process(fSynth, frames, 0, nullptr, kData->audioOut.count, fAudio16Buffers);
+        }
+        else
+            fluid_synth_write_float(fSynth, frames, outBuffer[0] + timeOffset, 0, 1, outBuffer[1] + timeOffset, 0, 1);
+
+        // --------------------------------------------------------------------------------------------------------
         // Post-processing (volume and balance)
 
         {
+            // note - balance not possible with kUses16Outs, so we can safely skip fAudioOutBuffers
             const bool doVolume  = (fHints & PLUGIN_CAN_VOLUME) > 0 && kData->postProc.volume != 1.0f;
             const bool doBalance = (fHints & PLUGIN_CAN_BALANCE) > 0 && (kData->postProc.balanceLeft != -1.0f || kData->postProc.balanceRight != 1.0f);
 
@@ -1246,7 +1279,12 @@ public:
                 }
 
                 // Volume
-                if (doVolume)
+                if (kUses16Outs)
+                {
+                    for (k=0; k < frames; k++)
+                        outBuffer[i][k+timeOffset] = fAudio16Buffers[i][k] * kData->postProc.volume;
+                }
+                else if (doVolume)
                 {
                     for (k=0; k < frames; k++)
                         outBuffer[i][k] *= kData->postProc.volume;
@@ -1255,41 +1293,10 @@ public:
 
         } // End of Post-processing
 
-        CARLA_PROCESS_CONTINUE_CHECK;
-
-        // --------------------------------------------------------------------------------------------------------
-        // Control Output
-
-        {
-            k = FluidSynthVoiceCount;
-            fParamBuffers[k] = fluid_synth_get_active_voice_count(fSynth);
-            kData->param.ranges[k].fixValue(fParamBuffers[k]);
-
-            if (kData->param.data[k].midiCC > 0)
-            {
-                double value = kData->param.ranges[k].normalizeValue(fParamBuffers[k]);
-                kData->event.portOut->writeControlEvent(0, kData->param.data[k].midiChannel, kEngineControlEventTypeParameter, kData->param.data[k].midiCC, value);
-            }
-
-        } // End of Control Output
-
         // --------------------------------------------------------------------------------------------------------
 
-        kData->activeBefore = kData->active;
-    }
-
-    void processSingle(float** const outBuffer, const uint32_t frames, const uint32_t timeOffset)
-    {
-        for (uint32_t i=0; i < kData->audioOut.count; i++)
-            carla_zeroFloat(fAudio16Buffers[i], frames);
-
-        fluid_synth_process(fSynth, frames, 0, nullptr, kData->audioOut.count, fAudio16Buffers);
-
-        for (uint32_t i=0, k; i < kData->audioOut.count; i++)
-        {
-            for (k=0; k < frames; k++)
-                outBuffer[i][k+timeOffset] = fAudio16Buffers[i][k];
-        }
+        kData->mutex.unlock();
+        return true;
     }
 
     void bufferSizeChanged(const uint32_t newBufferSize)
@@ -1406,8 +1413,6 @@ private:
     float** fAudio16Buffers;
     double  fParamBuffers[FluidSynthParametersMax];
 };
-
-/**@}*/
 
 CARLA_BACKEND_END_NAMESPACE
 

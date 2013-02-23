@@ -414,7 +414,7 @@ public:
         CarlaPlugin::setCustomData(type, key, value, sendGui);
     }
 
-    void setMidiProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback, const bool block)
+    void setMidiProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback)
     {
         CARLA_ASSERT(fDescriptor != nullptr);
         CARLA_ASSERT(fHandle != nullptr);
@@ -425,31 +425,20 @@ public:
         else if (index > static_cast<int32_t>(kData->midiprog.count))
             return;
 
-        // FIXME
         if (fDescriptor != nullptr && fHandle != nullptr && index >= 0)
         {
             const uint32_t bank    = kData->midiprog.data[index].bank;
             const uint32_t program = kData->midiprog.data[index].program;
 
-            if (kData->engine->isOffline())
-            {
-                //const CarlaEngine::ScopedLocker m(x_engine, block);
-                fDescriptor->set_midi_program(fHandle, bank, program);
+            const ScopedProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
 
-                if (fHandle2 != nullptr)
-                    fDescriptor->set_midi_program(fHandle2, bank, program);
-            }
-            else
-            {
-                //const ScopedDisabler m(this, block);
-                fDescriptor->set_midi_program(fHandle, bank, program);
+            fDescriptor->set_midi_program(fHandle, bank, program);
 
-                if (fHandle2 != nullptr)
-                    fDescriptor->set_midi_program(fHandle2, bank, program);
-            }
+            if (fHandle2 != nullptr)
+                fDescriptor->set_midi_program(fHandle2, bank, program);
         }
 
-        CarlaPlugin::setMidiProgram(index, sendGui, sendOsc, sendCallback, block);
+        CarlaPlugin::setMidiProgram(index, sendGui, sendOsc, sendCallback);
     }
 
     // -------------------------------------------------------------------
@@ -499,9 +488,6 @@ public:
 
         // Safely disable plugin for reload
         const ScopedDisabler sd(this);
-
-        if (kData->client->isActive())
-            kData->client->deactivate();
 
         deleteBuffers();
 
@@ -865,8 +851,6 @@ public:
         bufferSizeChanged(kData->engine->getBufferSize());
         reloadPrograms(true);
 
-        kData->client->activate();
-
         carla_debug("NativePlugin::reload() - end");
     }
 
@@ -912,7 +896,7 @@ public:
         if (init)
         {
             if (kData->midiprog.count > 0)
-                setMidiProgram(0, false, false, false, true);
+                setMidiProgram(0, false, false, false);
         }
         else
         {
@@ -947,7 +931,7 @@ public:
             }
 
             if (programChanged)
-                setMidiProgram(kData->midiprog.current, true, true, true, true);
+                setMidiProgram(kData->midiprog.current, true, true, true);
         }
     }
 
@@ -1195,19 +1179,18 @@ public:
 
                             if (kData->param.data[k].hints & PARAMETER_IS_BOOLEAN)
                             {
-                                value = (ctrlEvent.value < 0.5) ? kData->param.ranges[k].min : kData->param.ranges[k].max;
+                                value = (ctrlEvent.value < 0.5f) ? kData->param.ranges[k].min : kData->param.ranges[k].max;
                             }
                             else
                             {
-                                // FIXME - ranges call for this
-                                value = ctrlEvent.value * (kData->param.ranges[k].max - kData->param.ranges[k].min) + kData->param.ranges[k].min;
+                                value = kData->param.ranges[i].unnormalizeValue(ctrlEvent.value);
 
                                 if (kData->param.data[k].hints & PARAMETER_IS_INTEGER)
                                     value = std::rint(value);
                             }
 
                             setParameterValue(k, value, false, false, false);
-                            postponeRtEvent(kPluginPostRtEventParameterChange, k, 0, value);
+                            postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 0, value);
                         }
 
                         break;
@@ -1227,7 +1210,7 @@ public:
                             {
                                 if (kData->midiprog.data[k].bank == nextBankId && kData->midiprog.data[k].program == nextProgramId)
                                 {
-                                    setMidiProgram(k, false, false, false, false);
+                                    setMidiProgram(k, false, false, false);
                                     postponeRtEvent(kPluginPostRtEventMidiProgramChange, k, 0, 0.0);
                                     break;
                                 }

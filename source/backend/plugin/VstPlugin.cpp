@@ -480,9 +480,6 @@ public:
         // Safely disable plugin for reload
         const ScopedDisabler m(this);
 
-        if (x_client->isActive())
-            x_client->deactivate();
-
         // Remove client ports
         removeClientPorts();
 
@@ -787,8 +784,6 @@ public:
 #endif
 
         reloadPrograms(true);
-
-        x_client->activate();
 
         carla_debug("VstPlugin::reload() - end");
     }

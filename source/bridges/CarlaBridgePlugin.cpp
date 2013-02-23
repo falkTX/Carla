@@ -320,7 +320,7 @@ public:
         CARLA_ASSERT(fPlugin != nullptr);
 
         if (fPlugin != nullptr)
-            fPlugin->setProgram(index, true, true, false, true);
+            fPlugin->setProgram(index, true, true, false);
     }
 
     void setMidiProgram(const uint32_t index)
@@ -329,7 +329,7 @@ public:
         CARLA_ASSERT(fPlugin != nullptr);
 
         if (fPlugin != nullptr)
-            fPlugin->setMidiProgram(index, true, true, false, true);
+            fPlugin->setMidiProgram(index, true, true, false);
     }
 
     void noteOn(const uint8_t channel, const uint8_t note, const uint8_t velo)

@@ -499,7 +499,7 @@ int CarlaEngineOsc::handleMsgProgram(CARLA_ENGINE_OSC_HANDLE_ARGS2)
         if (program < 0)
             return 1;
 
-        plugin->setMidiProgramById(static_cast<uint32_t>(bank), static_cast<uint32_t>(program), false, true, true, true);
+        plugin->setMidiProgramById(static_cast<uint32_t>(bank), static_cast<uint32_t>(program), false, true, true);
 
         return 0;
     }
@@ -516,7 +516,7 @@ int CarlaEngineOsc::handleMsgProgram(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 
         if (program < static_cast<int32_t>(plugin->programCount()))
         {
-            plugin->setProgram(program, false, true, true, true);
+            plugin->setProgram(program, false, true, true);
             return 0;
         }
 
@@ -728,7 +728,7 @@ int CarlaEngineOsc::handleMsgSetProgram(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 
     const int32_t index = argv[0]->i;
 
-    plugin->setProgram(index, true, false, true, true);
+    plugin->setProgram(index, true, false, true);
 
     return 0;
 }
@@ -740,7 +740,7 @@ int CarlaEngineOsc::handleMsgSetMidiProgram(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 
     const int32_t index = argv[0]->i;
 
-    plugin->setMidiProgram(index, true, false, true, true);
+    plugin->setMidiProgram(index, true, false, true);
 
     return 0;
 }

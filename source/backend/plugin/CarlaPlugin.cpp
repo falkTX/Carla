@@ -762,7 +762,7 @@ void CarlaPlugin::setChunkData(const char* const stringData)
     (void)stringData;
 }
 
-void CarlaPlugin::setProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback, const bool)
+void CarlaPlugin::setProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback)
 {
     CARLA_ASSERT(index >= -1 && index < static_cast<int32_t>(kData->prog.count));
 
@@ -804,7 +804,7 @@ void CarlaPlugin::setProgram(const int32_t index, const bool sendGui, const bool
         kData->engine->callback(CALLBACK_PROGRAM_CHANGED, fId, fixedIndex, 0, 0.0f, nullptr);
 }
 
-void CarlaPlugin::setMidiProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback, const bool)
+void CarlaPlugin::setMidiProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback)
 {
     CARLA_ASSERT(index >= -1 && index < static_cast<int32_t>(kData->midiprog.count));
 
@@ -851,12 +851,12 @@ void CarlaPlugin::setMidiProgram(int32_t index, const bool sendGui, const bool s
         kData->engine->callback(CALLBACK_MIDI_PROGRAM_CHANGED, fId, fixedIndex, 0, 0.0f, nullptr);
 }
 
-void CarlaPlugin::setMidiProgramById(const uint32_t bank, const uint32_t program, const bool sendGui, const bool sendOsc, const bool sendCallback, const bool block)
+void CarlaPlugin::setMidiProgramById(const uint32_t bank, const uint32_t program, const bool sendGui, const bool sendOsc, const bool sendCallback)
 {
     for (uint32_t i=0; i < kData->midiprog.count; i++)
     {
         if (kData->midiprog.data[i].bank == bank && kData->midiprog.data[i].program == program)
-            return setMidiProgram(i, sendGui, sendOsc, sendCallback, block);
+            return setMidiProgram(i, sendGui, sendOsc, sendCallback);
     }
 }
 
@@ -1464,6 +1464,9 @@ const char* CarlaPlugin::libError(const char* const filename)
 CarlaPlugin::ScopedDisabler::ScopedDisabler(CarlaPlugin* const plugin)
     : kPlugin(plugin)
 {
+    carla_debug("CarlaPlugin::ScopedDisabler(%p)", plugin);
+    CARLA_ASSERT(plugin != nullptr);
+
     if (plugin->fEnabled)
     {
         plugin->fEnabled = false;
@@ -1476,6 +1479,8 @@ CarlaPlugin::ScopedDisabler::ScopedDisabler(CarlaPlugin* const plugin)
 
 CarlaPlugin::ScopedDisabler::~ScopedDisabler()
 {
+    carla_debug("CarlaPlugin::~ScopedDisabler()");
+
     kPlugin->fEnabled = true;
     kPlugin->kData->client->activate();
 }
@@ -1483,16 +1488,26 @@ CarlaPlugin::ScopedDisabler::~ScopedDisabler()
 // -------------------------------------------------------------------
 // Scoped Process Locker
 
-CarlaPlugin::ScopedProcessLocker::ScopedProcessLocker(CarlaPlugin* const plugin)
-    : kPlugin(plugin)
+CarlaPlugin::ScopedProcessLocker::ScopedProcessLocker(CarlaPlugin* const plugin, const bool block)
+    : kPlugin(plugin),
+      kBlock(block)
 {
-    plugin->kData->mutex.lock();
+    carla_debug("CarlaPlugin::ScopedProcessLocker(%p, %s)", plugin, bool2str(block));
+    CARLA_ASSERT(plugin != nullptr);
+
+    if (block)
+        plugin->kData->mutex.lock();
 }
 
 CarlaPlugin::ScopedProcessLocker::~ScopedProcessLocker()
 {
-    kPlugin->kData->needsReset = true;
-    kPlugin->kData->mutex.unlock();
+    carla_debug("CarlaPlugin::~ScopedProcessLocker()");
+
+    if (kBlock)
+    {
+        kPlugin->kData->needsReset = true;
+        kPlugin->kData->mutex.unlock();
+    }
 }
 
 // -------------------------------------------------------------------

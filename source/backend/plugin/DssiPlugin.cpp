@@ -233,7 +233,7 @@ public:
 
         if (fDssiDescriptor->configure != nullptr)
         {
-            const ScopedProcessLocker spl(this);
+            const ScopedProcessLocker spl(this, true);
 
             fDssiDescriptor->configure(fHandle, key, value);
 
@@ -269,11 +269,11 @@ public:
         fChunk = QByteArray::fromBase64(QByteArray(stringData));
         //fChunk.toBase64();
 
-        const ScopedProcessLocker spl(this);
+        const ScopedProcessLocker spl(this, true);
         fDssiDescriptor->set_custom_data(fHandle, fChunk.data(), (unsigned long)fChunk.size());
     }
 
-    void setMidiProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback, const bool block)
+    void setMidiProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback)
     {
         CARLA_ASSERT(fDssiDescriptor != nullptr);
         CARLA_ASSERT(fHandle != nullptr);
@@ -289,7 +289,7 @@ public:
             const uint32_t bank    = kData->midiprog.data[index].bank;
             const uint32_t program = kData->midiprog.data[index].program;
 
-            const ScopedProcessLocker spl(this);
+            const ScopedProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
 
             fDssiDescriptor->select_program(fHandle, bank, program);
 
@@ -297,7 +297,7 @@ public:
                 fDssiDescriptor->select_program(fHandle2, bank, program);
         }
 
-        CarlaPlugin::setMidiProgram(index, sendGui, sendOsc, sendCallback, block);
+        CarlaPlugin::setMidiProgram(index, sendGui, sendOsc, sendCallback);
     }
 
     // -------------------------------------------------------------------
@@ -818,7 +818,7 @@ public:
         if (init)
         {
             if (kData->midiprog.count > 0)
-                setMidiProgram(0, false, false, false, true);
+                setMidiProgram(0, false, false, false);
         }
         else
         {
@@ -853,7 +853,7 @@ public:
             }
 
             if (programChanged)
-                setMidiProgram(kData->midiprog.current, true, true, true, true);
+                setMidiProgram(kData->midiprog.current, true, true, true);
         }
     }
 
@@ -1096,7 +1096,7 @@ public:
 
                             if (kData->param.data[k].hints & PARAMETER_IS_BOOLEAN)
                             {
-                                value = (ctrlEvent.value < 0.5) ? kData->param.ranges[k].min : kData->param.ranges[k].max;
+                                value = (ctrlEvent.value < 0.5f) ? kData->param.ranges[k].min : kData->param.ranges[k].max;
                             }
                             else
                             {
@@ -1127,7 +1127,7 @@ public:
                             {
                                 if (kData->midiprog.data[k].bank == nextBankId && kData->midiprog.data[k].program == nextProgramId)
                                 {
-                                    setMidiProgram(k, false, false, false, false);
+                                    setMidiProgram(k, false, false, false);
                                     postponeRtEvent(kPluginPostRtEventMidiProgramChange, k, 0, 0.0);
                                     break;
                                 }

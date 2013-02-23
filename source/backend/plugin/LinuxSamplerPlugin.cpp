@@ -249,6 +249,34 @@ public:
     }
 
     // -------------------------------------------------------------------
+    // Set data (plugin-specific stuff)
+
+    void setMidiProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback)
+    {
+        CARLA_ASSERT(index >= -1 && index < static_cast<int32_t>(kData->midiprog.count));
+
+        if (index < -1)
+            index = -1;
+        else if (index > static_cast<int32_t>(kData->midiprog.count))
+            return;
+
+        if (kData->ctrlChannel < 0 || kData->ctrlChannel >= 16)
+            return;
+
+        if (index >= 0)
+        {
+            // TODO
+            //const uint32_t bank    = kData->midiprog.data[index].bank;
+            //const uint32_t program = kData->midiprog.data[index].program;
+
+            //const ScopedProcessLocker spl(this);
+            //fluid_synth_program_select(fSynth, kData->ctrlChannel, fSynthId, bank, program);
+        }
+
+        CarlaPlugin::setMidiProgram(index, sendGui, sendOsc, sendCallback);
+    }
+
+    // -------------------------------------------------------------------
     // Plugin state
 
     void reload()
@@ -261,9 +289,6 @@ public:
 
         // Safely disable plugin for reload
         const ScopedDisabler sd(this);
-
-        if (kData->client->isActive())
-            kData->client->deactivate();
 
         deleteBuffers();
 
@@ -350,8 +375,6 @@ public:
         bufferSizeChanged(kData->engine->getBufferSize());
         reloadPrograms(true);
 
-        kData->client->activate();
-
         carla_debug("LinuxSamplerPlugin::reload() - end");
     }
 
@@ -396,7 +419,7 @@ public:
 
         if (init)
         {
-            setMidiProgram(0, false, false, false, true);
+            setMidiProgram(0, false, false, false);
         }
         else
         {
@@ -598,19 +621,18 @@ public:
 
                             if (kData->param.data[k].hints & PARAMETER_IS_BOOLEAN)
                             {
-                                value = (ctrlEvent.value < 0.5) ? kData->param.ranges[k].min : kData->param.ranges[k].max;
+                                value = (ctrlEvent.value < 0.5f) ? kData->param.ranges[k].min : kData->param.ranges[k].max;
                             }
                             else
                             {
-                                // FIXME - ranges call for this
-                                value = ctrlEvent.value * (kData->param.ranges[k].max - kData->param.ranges[k].min) + kData->param.ranges[k].min;
+                                value = kData->param.ranges[i].unnormalizeValue(ctrlEvent.value);
 
                                 if (kData->param.data[k].hints & PARAMETER_IS_INTEGER)
                                     value = std::rint(value);
                             }
 
                             setParameterValue(k, value, false, false, false);
-                            postponeRtEvent(kPluginPostRtEventParameterChange, k, 0, value);
+                            postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 0, value);
                         }
 
                         break;
@@ -630,7 +652,7 @@ public:
                             {
                                 if (kData->midiprog.data[k].bank == nextBankId && kData->midiprog.data[k].program == nextProgramId)
                                 {
-                                    setMidiProgram(k, false, false, false, false);
+                                    setMidiProgram(k, false, false, false);
                                     postponeRtEvent(kPluginPostRtEventMidiProgramChange, k, 0, 0.0);
                                     break;
                                 }

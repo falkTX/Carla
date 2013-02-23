@@ -926,7 +926,7 @@ public:
 
                             if (kData->param.data[k].hints & PARAMETER_IS_BOOLEAN)
                             {
-                                value = (ctrlEvent.value < 0.5) ? kData->param.ranges[k].min : kData->param.ranges[k].max;
+                                value = (ctrlEvent.value < 0.5f) ? kData->param.ranges[k].min : kData->param.ranges[k].max;
                             }
                             else
                             {

@@ -597,7 +597,7 @@ public:
      * \param sendCallback Send message change to registered callback
      * \param block Block the audio callback
      */
-    virtual void setProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback, const bool block);
+    virtual void setProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback);
 
     /*!
      * Change the current MIDI plugin program to \a index.
@@ -611,13 +611,13 @@ public:
      * \param sendCallback Send message change to registered callback
      * \param block Block the audio callback
      */
-    virtual void setMidiProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback, const bool block);
+    virtual void setMidiProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback);
 
     /*!
      * This is an overloaded call to setMidiProgram().\n
      * It changes the current MIDI program using \a bank and \a program values instead of index.
      */
-    void setMidiProgramById(const uint32_t bank, const uint32_t program, const bool sendGui, const bool sendOsc, const bool sendCallback, const bool block);
+    void setMidiProgramById(const uint32_t bank, const uint32_t program, const bool sendGui, const bool sendOsc, const bool sendCallback);
 
     // -------------------------------------------------------------------
     // Set gui stuff
@@ -847,6 +847,7 @@ protected:
     private:
         CarlaPlugin* const kPlugin;
 
+        CARLA_PREVENT_HEAP_ALLOCATION
         CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ScopedDisabler)
     };
 
@@ -856,12 +857,14 @@ protected:
     class ScopedProcessLocker
     {
     public:
-        ScopedProcessLocker(CarlaPlugin* const plugin);
+        ScopedProcessLocker(CarlaPlugin* const plugin, const bool block);
         ~ScopedProcessLocker();
 
     private:
         CarlaPlugin* const kPlugin;
+        const bool kBlock;
 
+        CARLA_PREVENT_HEAP_ALLOCATION
         CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ScopedProcessLocker)
     };
 

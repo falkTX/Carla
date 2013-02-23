@@ -1456,9 +1456,10 @@ void CarlaEngine::processRack(float* inBuf[2], float* outBuf[2], const uint32_t 
     // if no plugins in the rack, copy inputs over outputs
     if (! processed)
     {
-        carla_copyFloat(outBuf[0], inBuf[0], frames);
-        carla_copyFloat(outBuf[1], inBuf[1], frames);
-        std::memcpy(kData->rack.out, kData->rack.in, sizeof(EngineEvent)*RACK_EVENT_COUNT);
+        // FIXME
+        //carla_copyFloat(outBuf[0], inBuf[0], frames);
+        //carla_copyFloat(outBuf[1], inBuf[1], frames);
+        //std::memcpy(kData->rack.out, kData->rack.in, sizeof(EngineEvent)*RACK_EVENT_COUNT);
     }
 }
 
