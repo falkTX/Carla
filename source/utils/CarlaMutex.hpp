@@ -35,6 +35,7 @@ class CarlaMutex
 {
 public:
     CarlaMutex()
+        : fTryLockCalled(false)
     {
 #ifndef CPP11_MUTEX
         pthread_mutex_init(&pmutex, nullptr);
@@ -59,6 +60,8 @@ public:
 
     bool tryLock()
     {
+        fTryLockCalled = true;
+
 #ifdef CPP11_MUTEX
         return cmutex.try_lock();
 #else
@@ -73,6 +76,13 @@ public:
 #else
         pthread_mutex_unlock(&pmutex);
 #endif
+    }
+
+    bool wasTryLockCalled()
+    {
+        const bool ret = fTryLockCalled;
+        fTryLockCalled = false;
+        return ret;
     }
 
     class ScopedLocker
@@ -102,6 +112,7 @@ private:
 #else
     pthread_mutex_t pmutex;
 #endif
+    bool fTryLockCalled;
 
     CARLA_PREVENT_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaMutex)

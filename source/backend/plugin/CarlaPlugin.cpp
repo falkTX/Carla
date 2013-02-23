@@ -1505,7 +1505,8 @@ CarlaPlugin::ScopedProcessLocker::~ScopedProcessLocker()
 
     if (kBlock)
     {
-        kPlugin->kData->needsReset = true;
+        if (kPlugin->kData->mutex.wasTryLockCalled())
+            kPlugin->kData->needsReset = true;
         kPlugin->kData->mutex.unlock();
     }
 }
