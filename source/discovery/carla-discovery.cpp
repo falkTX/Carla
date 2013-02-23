@@ -93,39 +93,39 @@ intptr_t vstHostCanDo(const char* const feature)
     qDebug("vstHostCanDo(\"%s\")", feature);
 #endif
 
-    if (strcmp(feature, "supplyIdle") == 0)
+    if (std::strcmp(feature, "supplyIdle") == 0)
         return 1;
-    if (strcmp(feature, "sendVstEvents") == 0)
+    if (std::strcmp(feature, "sendVstEvents") == 0)
         return 1;
-    if (strcmp(feature, "sendVstMidiEvent") == 0)
+    if (std::strcmp(feature, "sendVstMidiEvent") == 0)
         return 1;
-    if (strcmp(feature, "sendVstMidiEventFlagIsRealtime") == 0)
+    if (std::strcmp(feature, "sendVstMidiEventFlagIsRealtime") == 0)
         return 1;
-    if (strcmp(feature, "sendVstTimeInfo") == 0)
+    if (std::strcmp(feature, "sendVstTimeInfo") == 0)
         return 1;
-    if (strcmp(feature, "receiveVstEvents") == 0)
+    if (std::strcmp(feature, "receiveVstEvents") == 0)
         return 1;
-    if (strcmp(feature, "receiveVstMidiEvent") == 0)
+    if (std::strcmp(feature, "receiveVstMidiEvent") == 0)
         return 1;
-    if (strcmp(feature, "receiveVstTimeInfo") == 0)
+    if (std::strcmp(feature, "receiveVstTimeInfo") == 0)
         return -1;
-    if (strcmp(feature, "reportConnectionChanges") == 0)
+    if (std::strcmp(feature, "reportConnectionChanges") == 0)
         return -1;
-    if (strcmp(feature, "acceptIOChanges") == 0)
+    if (std::strcmp(feature, "acceptIOChanges") == 0)
         return 1;
-    if (strcmp(feature, "sizeWindow") == 0)
+    if (std::strcmp(feature, "sizeWindow") == 0)
         return 1;
-    if (strcmp(feature, "offline") == 0)
+    if (std::strcmp(feature, "offline") == 0)
         return -1;
-    if (strcmp(feature, "openFileSelector") == 0)
+    if (std::strcmp(feature, "openFileSelector") == 0)
         return -1;
-    if (strcmp(feature, "closeFileSelector") == 0)
+    if (std::strcmp(feature, "closeFileSelector") == 0)
         return -1;
-    if (strcmp(feature, "startStopProcess") == 0)
+    if (std::strcmp(feature, "startStopProcess") == 0)
         return 1;
-    if (strcmp(feature, "supportShell") == 0)
+    if (std::strcmp(feature, "supportShell") == 0)
         return 1;
-    if (strcmp(feature, "shellCategory") == 0)
+    if (std::strcmp(feature, "shellCategory") == 0)
         return 1;
 
     // unimplemented
@@ -223,7 +223,7 @@ intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t opcode
     case audioMasterGetVendorString:
         if (ptr)
         {
-            strcpy((char*)ptr, "falkTX");
+            std::strcpy((char*)ptr, "falkTX");
             ret = 1;
         }
         break;
@@ -231,7 +231,7 @@ intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t opcode
     case audioMasterGetProductString:
         if (ptr)
         {
-            strcpy((char*)ptr, "Carla-Discovery");
+            std::strcpy((char*)ptr, "Carla-Discovery");
             ret = 1;
         }
         break;
@@ -419,7 +419,7 @@ void do_ladspa_check(void* const libHandle, const bool init)
             {
                 if (LADSPA_IS_PORT_INPUT(portDescriptor))
                     parametersIns += 1;
-                else if (LADSPA_IS_PORT_OUTPUT(portDescriptor) && strcmp(descriptor->PortNames[j], "latency") && strcmp(descriptor->PortNames[j], "_latency"))
+                else if (LADSPA_IS_PORT_OUTPUT(portDescriptor) && std::strcmp(descriptor->PortNames[j], "latency") && std::strcmp(descriptor->PortNames[j], "_latency"))
                     parametersOuts += 1;
 
                 parametersTotal += 1;
@@ -489,7 +489,7 @@ void do_ladspa_check(void* const libHandle, const bool init)
                         def *= sampleRate;
                     }
 
-                    if (LADSPA_IS_PORT_OUTPUT(portDescriptor) && (strcmp(portName, "latency") == 0 || strcmp(portName, "_latency") == 0))
+                    if (LADSPA_IS_PORT_OUTPUT(portDescriptor) && (std::strcmp(portName, "latency") == 0 || std::strcmp(portName, "_latency") == 0))
                     {
                         // latency parameter
                         def = 0.0f;
@@ -618,7 +618,7 @@ void do_dssi_check(void* const libHandle, const bool init)
             {
                 if (LADSPA_IS_PORT_INPUT(portDescriptor))
                     parametersIns += 1;
-                else if (LADSPA_IS_PORT_OUTPUT(portDescriptor) && strcmp(ldescriptor->PortNames[j], "latency") && strcmp(ldescriptor->PortNames[j], "_latency"))
+                else if (LADSPA_IS_PORT_OUTPUT(portDescriptor) && std::strcmp(ldescriptor->PortNames[j], "latency") && std::strcmp(ldescriptor->PortNames[j], "_latency"))
                     parametersOuts += 1;
 
                 parametersTotal += 1;
@@ -700,7 +700,7 @@ void do_dssi_check(void* const libHandle, const bool init)
                         def *= sampleRate;
                     }
 
-                    if (LADSPA_IS_PORT_OUTPUT(portDescriptor) && (strcmp(portName, "latency") == 0 || strcmp(portName, "_latency") == 0))
+                    if (LADSPA_IS_PORT_OUTPUT(portDescriptor) && (std::strcmp(portName, "latency") == 0 || std::strcmp(portName, "_latency") == 0))
                     {
                         // latency parameter
                         def = 0.0f;
@@ -919,7 +919,7 @@ void do_lv2_check(const char* const bundle, const bool init)
         {
             const LV2_RDF_Feature* const rdfFeature = &rdfDescriptor->Features[j];
 
-            if (strcmp(rdfFeature->URI, LV2_CORE__hardRTCapable) == 0)
+            if (std::strcmp(rdfFeature->URI, LV2_CORE__hardRTCapable) == 0)
                 hints |= PLUGIN_IS_RTSAFE;
         }
 
@@ -1384,7 +1384,7 @@ void do_linuxsampler_check(const char* const filename, const char* const stype, 
 
 int main(int argc, char* argv[])
 {
-    if (argc == 2 && strcmp(argv[1], "-formats") == 0)
+    if (argc == 2 && std::strcmp(argv[1], "-formats") == 0)
     {
         printf("Available plugin formats:\n");
         printf("LADSPA: ");
@@ -1448,37 +1448,37 @@ int main(int argc, char* argv[])
     PluginType type;
     void* handle = nullptr;
 
-    if (strcmp(stype, "LADSPA") == 0)
+    if (std::strcmp(stype, "LADSPA") == 0)
     {
         openLib = true;
         type = PLUGIN_LADSPA;
     }
-    else if (strcmp(stype, "DSSI") == 0)
+    else if (std::strcmp(stype, "DSSI") == 0)
     {
         openLib = true;
         type = PLUGIN_DSSI;
     }
-    else if (strcmp(stype, "LV2") == 0)
+    else if (std::strcmp(stype, "LV2") == 0)
     {
         openLib = false;
         type = PLUGIN_LV2;
     }
-    else if (strcmp(stype, "VST") == 0)
+    else if (std::strcmp(stype, "VST") == 0)
     {
         openLib = true;
         type = PLUGIN_VST;
     }
-    else if (strcmp(stype, "GIG") == 0)
+    else if (std::strcmp(stype, "GIG") == 0)
     {
         openLib = false;
         type = PLUGIN_GIG;
     }
-    else if (strcmp(stype, "SF2") == 0)
+    else if (std::strcmp(stype, "SF2") == 0)
     {
         openLib = false;
         type = PLUGIN_SF2;
     }
-    else if (strcmp(stype, "SFZ") == 0)
+    else if (std::strcmp(stype, "SFZ") == 0)
     {
         openLib = false;
         type = PLUGIN_SFZ;

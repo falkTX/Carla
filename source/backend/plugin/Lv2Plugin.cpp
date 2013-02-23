@@ -208,6 +208,7 @@ public:
     {
         carla_debug("Lv2Plugin::Lv2Plugin(%p, %i)", engine, id);
 
+        kData->osc.thread.setMode(CarlaPluginThread::PLUGIN_THREAD_LV2_GUI);
 #if 0
         m_type   = PLUGIN_LV2;
         m_count += 1;
@@ -1013,7 +1014,7 @@ public:
                 {
                     LV2_EXTERNAL_UI_HIDE((LV2_External_UI_Widget*)ui.widget);
 
-                    if (rdf_descriptor->Author && strcmp(rdf_descriptor->Author, "linuxDSP") == 0)
+                    if (rdf_descriptor->Author && std::strcmp(rdf_descriptor->Author, "linuxDSP") == 0)
                     {
                         carla_stderr("linuxDSP LV2 UI hack (force close instead of hide)");
 
@@ -1514,7 +1515,7 @@ public:
                     min = max;
 
                 // stupid hack for ir.lv2 (broken plugin)
-                if (strcmp(rdf_descriptor->URI, "http://factorial.hu/plugins/lv2/ir") == 0 && strncmp(rdf_descriptor->Ports[i].Name, "FileHash", 8) == 0)
+                if (std::strcmp(rdf_descriptor->URI, "http://factorial.hu/plugins/lv2/ir") == 0 && std::strncmp(rdf_descriptor->Ports[i].Name, "FileHash", 8) == 0)
                 {
                     min = 0.0;
                     max = 16777215.0; // 0xffffff
@@ -3065,7 +3066,7 @@ public:
 
         for (size_t i=0; i < customURIDs.size(); i++)
         {
-            if (customURIDs[i] && strcmp(customURIDs[i], uri) == 0)
+            if (customURIDs[i] && std::strcmp(customURIDs[i], uri) == 0)
                 return i;
         }
 
@@ -3175,12 +3176,12 @@ public:
         // Check if we already have this key
         for (size_t i=0; i < custom.size(); i++)
         {
-            if (strcmp(custom[i].key, uriKey) == 0)
+            if (std::strcmp(custom[i].key, uriKey) == 0)
             {
                 if (custom[i].value)
                     free((void*)custom[i].value);
 
-                if (strcmp(stype, LV2_ATOM__String) == 0 || strcmp(stype, LV2_ATOM__Path) == 0)
+                if (std::strcmp(stype, LV2_ATOM__String) == 0 || std::strcmp(stype, LV2_ATOM__Path) == 0)
                     custom[i].value = strdup((const char*)value);
                 else
                     custom[i].value = strdup(QByteArray((const char*)value, size).toBase64().constData());
@@ -3194,7 +3195,7 @@ public:
         newData.type = strdup(stype);
         newData.key  = strdup(uriKey);
 
-        if (strcmp(stype, LV2_ATOM__String) == 0 || strcmp(stype, LV2_ATOM__Path) == 0)
+        if (std::strcmp(stype, LV2_ATOM__String) == 0 || std::strcmp(stype, LV2_ATOM__Path) == 0)
             newData.value = strdup((const char*)value);
         else
             newData.value = strdup(QByteArray((const char*)value, size).toBase64().constData());
@@ -3221,7 +3222,7 @@ public:
 
         for (size_t i=0; i < custom.size(); i++)
         {
-            if (strcmp(custom[i].key, uriKey) == 0)
+            if (std::strcmp(custom[i].key, uriKey) == 0)
             {
                 stype      = custom[i].type;
                 stringData = custom[i].value;
@@ -3239,14 +3240,14 @@ public:
         *type  = key;
         *flags = LV2_STATE_IS_POD;
 
-        if (strcmp(stype, LV2_ATOM__String) == 0)
+        if (std::strcmp(stype, LV2_ATOM__String) == 0)
         {
-            *size = strlen(stringData);
+            *size = std::strlen(stringData);
             return stringData;
         }
-        else if (strcmp(stype, LV2_ATOM__Path) == 0)
+        else if (std::strcmp(stype, LV2_ATOM__Path) == 0)
         {
-            *size = strlen(stringData);
+            *size = std::strlen(stringData);
             return stringData;
         }
         else
@@ -3308,7 +3309,7 @@ public:
 
         for (uint32_t i=0; i < rdf_descriptor->PortCount; i++)
         {
-            if (strcmp(rdf_descriptor->Ports[i].Symbol, symbol) == 0)
+            if (std::strcmp(rdf_descriptor->Ports[i].Symbol, symbol) == 0)
                 return i;
         }
 
@@ -3408,14 +3409,14 @@ public:
         CARLA_ASSERT(rdf_ui && rdf_ui->URI);
 
         // Calf Analyzer is useless without instance-data
-        if (strcmp(rdf_ui->URI, "http://calf.sourceforge.net/plugins/Analyzer") == 0)
+        if (std::strcmp(rdf_ui->URI, "http://calf.sourceforge.net/plugins/Analyzer") == 0)
             return false;
 
         for (uint32_t i=0; i < rdf_ui->FeatureCount; i++)
         {
             CARLA_ASSERT(rdf_ui->Features[i].URI);
 
-            if (strcmp(rdf_ui->Features[i].URI, LV2_INSTANCE_ACCESS_URI) == 0 || strcmp(rdf_ui->Features[i].URI, LV2_DATA_ACCESS_URI) == 0)
+            if (std::strcmp(rdf_ui->Features[i].URI, LV2_INSTANCE_ACCESS_URI) == 0 || std::strcmp(rdf_ui->Features[i].URI, LV2_DATA_ACCESS_URI) == 0)
                 return false;
         }
 
@@ -3431,7 +3432,7 @@ public:
 
         for (uint32_t i=0; i < ui.rdf_descriptor->FeatureCount; i++)
         {
-            if (strcmp(ui.rdf_descriptor->Features[i].URI, LV2_UI__fixedSize) == 0 || strcmp(ui.rdf_descriptor->Features[i].URI, LV2_UI__noUserResize) == 0)
+            if (std::strcmp(ui.rdf_descriptor->Features[i].URI, LV2_UI__fixedSize) == 0 || std::strcmp(ui.rdf_descriptor->Features[i].URI, LV2_UI__noUserResize) == 0)
                 return false;
         }
 
@@ -3482,14 +3483,14 @@ public:
 
         lv2_atom_forge_property_head(&forge, getCustomURID(cdata->key), CARLA_URI_MAP_ID_NULL);
 
-        if (strcmp(cdata->type, LV2_ATOM__String) == 0)
-            lv2_atom_forge_string(&forge, cdata->value, strlen(cdata->value));
-        else if (strcmp(cdata->type, LV2_ATOM__Path) == 0)
+        if (std::strcmp(cdata->type, LV2_ATOM__String) == 0)
+            lv2_atom_forge_string(&forge, cdata->value, std::strlen(cdata->value));
+        else if (std::strcmp(cdata->type, LV2_ATOM__Path) == 0)
             lv2_atom_forge_path(&forge, cdata->value, strlen(cdata->value));
-        else if (strcmp(cdata->type, LV2_ATOM__Chunk) == 0)
-            lv2_atom_forge_literal(&forge, cdata->value, strlen(cdata->value), CARLA_URI_MAP_ID_ATOM_CHUNK, CARLA_URI_MAP_ID_NULL);
+        else if (std::strcmp(cdata->type, LV2_ATOM__Chunk) == 0)
+            lv2_atom_forge_literal(&forge, cdata->value, std::strlen(cdata->value), CARLA_URI_MAP_ID_ATOM_CHUNK, CARLA_URI_MAP_ID_NULL);
         else
-            lv2_atom_forge_literal(&forge, cdata->value, strlen(cdata->value), getCustomURID(cdata->key), CARLA_URI_MAP_ID_NULL);
+            lv2_atom_forge_literal(&forge, cdata->value, std::strlen(cdata->value), getCustomURID(cdata->key), CARLA_URI_MAP_ID_NULL);
 
         lv2_atom_forge_pop(&forge, &bodyFrame);
         lv2_atom_forge_pop(&forge, &refFrame);
@@ -3610,7 +3611,7 @@ public:
             break;
         }
 
-        return strlen(buf);
+        return std::strlen(buf);
     }
 
     // ----------------- Programs Feature ------------------------------------------------
@@ -3713,45 +3714,45 @@ public:
             return CARLA_URI_MAP_ID_NULL;
 
         // Atom types
-        if (strcmp(uri, LV2_ATOM__Chunk) == 0)
+        if (std::strcmp(uri, LV2_ATOM__Chunk) == 0)
             return CARLA_URI_MAP_ID_ATOM_CHUNK;
-        if (strcmp(uri, LV2_ATOM__Double) == 0)
+        if (std::strcmp(uri, LV2_ATOM__Double) == 0)
             return CARLA_URI_MAP_ID_ATOM_DOUBLE;
-        if (strcmp(uri, LV2_ATOM__Int) == 0)
+        if (std::strcmp(uri, LV2_ATOM__Int) == 0)
             return CARLA_URI_MAP_ID_ATOM_INT;
-        if (strcmp(uri, LV2_ATOM__Path) == 0)
+        if (std::strcmp(uri, LV2_ATOM__Path) == 0)
             return CARLA_URI_MAP_ID_ATOM_PATH;
-        if (strcmp(uri, LV2_ATOM__Sequence) == 0)
+        if (std::strcmp(uri, LV2_ATOM__Sequence) == 0)
             return CARLA_URI_MAP_ID_ATOM_SEQUENCE;
-        if (strcmp(uri, LV2_ATOM__String) == 0)
+        if (std::strcmp(uri, LV2_ATOM__String) == 0)
             return CARLA_URI_MAP_ID_ATOM_STRING;
-        if (strcmp(uri, LV2_ATOM__atomTransfer) == 0)
+        if (std::strcmp(uri, LV2_ATOM__atomTransfer) == 0)
             return CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM;
-        if (strcmp(uri, LV2_ATOM__eventTransfer) == 0)
+        if (std::strcmp(uri, LV2_ATOM__eventTransfer) == 0)
             return CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT;
 
         // BufSize types
-        if (strcmp(uri, LV2_BUF_SIZE__maxBlockLength) == 0)
+        if (std::strcmp(uri, LV2_BUF_SIZE__maxBlockLength) == 0)
             return CARLA_URI_MAP_ID_BUF_MAX_LENGTH;
-        if (strcmp(uri, LV2_BUF_SIZE__minBlockLength) == 0)
+        if (std::strcmp(uri, LV2_BUF_SIZE__minBlockLength) == 0)
             return CARLA_URI_MAP_ID_BUF_MIN_LENGTH;
-        if (strcmp(uri, LV2_BUF_SIZE__sequenceSize) == 0)
+        if (std::strcmp(uri, LV2_BUF_SIZE__sequenceSize) == 0)
             return CARLA_URI_MAP_ID_BUF_SEQUENCE_SIZE;
 
         // Log types
-        if (strcmp(uri, LV2_LOG__Error) == 0)
+        if (std::strcmp(uri, LV2_LOG__Error) == 0)
             return CARLA_URI_MAP_ID_LOG_ERROR;
-        if (strcmp(uri, LV2_LOG__Note) == 0)
+        if (std::strcmp(uri, LV2_LOG__Note) == 0)
             return CARLA_URI_MAP_ID_LOG_NOTE;
-        if (strcmp(uri, LV2_LOG__Trace) == 0)
+        if (std::strcmp(uri, LV2_LOG__Trace) == 0)
             return CARLA_URI_MAP_ID_LOG_TRACE;
-        if (strcmp(uri, LV2_LOG__Warning) == 0)
+        if (std::strcmp(uri, LV2_LOG__Warning) == 0)
             return CARLA_URI_MAP_ID_LOG_WARNING;
 
         // Others
-        if (strcmp(uri, LV2_MIDI__MidiEvent) == 0)
+        if (std::strcmp(uri, LV2_MIDI__MidiEvent) == 0)
             return CARLA_URI_MAP_ID_MIDI_EVENT;
-        if (strcmp(uri, LV2_PARAMETERS__sampleRate) == 0)
+        if (std::strcmp(uri, LV2_PARAMETERS__sampleRate) == 0)
             return CARLA_URI_MAP_ID_PARAM_SAMPLE_RATE;
 
         if (! handle)
@@ -4070,7 +4071,7 @@ public:
             uint32_t i = 0;
             while ((descriptor = libDesc->get_plugin(libDesc->handle, i++)))
             {
-                if (strcmp(descriptor->URI, URI) == 0)
+                if (std::strcmp(descriptor->URI, URI) == 0)
                     break;
             }
 
@@ -4101,7 +4102,7 @@ public:
             uint32_t i = 0;
             while ((descriptor = descFn(i++)))
             {
-                if (strcmp(descriptor->URI, URI) == 0)
+                if (std::strcmp(descriptor->URI, URI) == 0)
                     break;
             }
         }
@@ -4147,11 +4148,11 @@ public:
         // Check extensions
         for (uint32_t i=0; i < rdf_descriptor->ExtensionCount; i++)
         {
-            if (strcmp(rdf_descriptor->Extensions[i], LV2_PROGRAMS__Interface) == 0)
+            if (std::strcmp(rdf_descriptor->Extensions[i], LV2_PROGRAMS__Interface) == 0)
                 m_hints |= PLUGIN_HAS_EXTENSION_PROGRAMS;
-            else if (strcmp(rdf_descriptor->Extensions[i], LV2_STATE__interface) == 0)
+            else if (std::strcmp(rdf_descriptor->Extensions[i], LV2_STATE__interface) == 0)
                 m_hints |= PLUGIN_HAS_EXTENSION_STATE;
-            else if (strcmp(rdf_descriptor->Extensions[i], LV2_WORKER__interface) == 0)
+            else if (std::strcmp(rdf_descriptor->Extensions[i], LV2_WORKER__interface) == 0)
                 m_hints |= PLUGIN_HAS_EXTENSION_WORKER;
             else
                 carla_debug("Plugin has non-supported extension: '%s'", rdf_descriptor->Extensions[i]);
@@ -4270,7 +4271,7 @@ public:
             case LV2_UI_EXTERNAL:
             case LV2_UI_OLD_EXTERNAL:
                 // Calf Analyzer is useless using external-ui
-                if (strcmp(rdf_descriptor->URI, "http://calf.sourceforge.net/plugins/Analyzer") != 0)
+                if (std::strcmp(rdf_descriptor->URI, "http://calf.sourceforge.net/plugins/Analyzer") != 0)
                     iExt = i;
                 break;
 
@@ -4381,7 +4382,7 @@ public:
             uint32_t i = 0;
             while ((ui.descriptor = ui_descFn(i++)))
             {
-                if (strcmp(ui.descriptor->URI, ui.rdf_descriptor->URI) == 0)
+                if (std::strcmp(ui.descriptor->URI, ui.rdf_descriptor->URI) == 0)
                     break;
             }
 
@@ -4685,7 +4686,6 @@ CarlaPlugin* CarlaPlugin::newLV2(const Initializer& init)
         }
     }
 
-    plugin->registerToOscClient();
     //plugin->updateUi();
 
     return plugin;

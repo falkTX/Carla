@@ -41,12 +41,12 @@ CarlaEngine* CarlaPluginGetEngine(CarlaPlugin* const plugin)
     return CarlaPluginProtectedData::getEngine(plugin);
 }
 
-CarlaEngineAudioPort* CarlaPluginGetAudioInPort(CarlaPlugin* const plugin, uint32_t index)
+CarlaEngineAudioPort* CarlaPluginGetAudioInPort(CarlaPlugin* const plugin, const uint32_t index)
 {
     return CarlaPluginProtectedData::getAudioInPort(plugin, index);
 }
 
-CarlaEngineAudioPort* CarlaPluginGetAudioOutPort(CarlaPlugin* const plugin, uint32_t index)
+CarlaEngineAudioPort* CarlaPluginGetAudioOutPort(CarlaPlugin* const plugin, const uint32_t index)
 {
     return CarlaPluginProtectedData::getAudioOutPort(plugin, index);
 }
@@ -59,7 +59,7 @@ CarlaPlugin::CarlaPlugin(CarlaEngine* const engine, const unsigned int id)
       fHints(0x0),
       fOptions(0x0),
       fEnabled(false),
-      kData(new CarlaPluginProtectedData(engine, this, CarlaPluginThread::PLUGIN_THREAD_NULL))
+      kData(new CarlaPluginProtectedData(engine, this))
 {
     CARLA_ASSERT(kData != nullptr);
     CARLA_ASSERT(engine != nullptr);
@@ -725,7 +725,7 @@ void CarlaPlugin::setCustomData(const char* const type, const char* const key, c
         // Ignore some keys
         if (std::strncmp(key, "OSC:", 4) == 0 || std::strcmp(key, "guiVisible") == 0)
             saveData = false;
-        //else if (strcmp(key, CARLA_BRIDGE_MSG_SAVE_NOW) == 0 || strcmp(key, CARLA_BRIDGE_MSG_SET_CHUNK) == 0 || strcmp(key, CARLA_BRIDGE_MSG_SET_CUSTOM) == 0)
+        //else if (std::strcmp(key, CARLA_BRIDGE_MSG_SAVE_NOW) == 0 || std::strcmp(key, CARLA_BRIDGE_MSG_SET_CHUNK) == 0 || std::strcmp(key, CARLA_BRIDGE_MSG_SET_CUSTOM) == 0)
         //    saveData = false;
     }
 
@@ -735,7 +735,7 @@ void CarlaPlugin::setCustomData(const char* const type, const char* const key, c
         // Check if we already have this key
         for (size_t i=0; i < kData->custom.count(); i++)
         {
-            if (strcmp(custom[i].key, key) == 0)
+            if (std::strcmp(custom[i].key, key) == 0)
             {
                 delete[] custom[i].value;
                 custom[i].value = carla_strdup(value);
@@ -1192,9 +1192,7 @@ void CarlaPlugin::sendMidiSingleNote(const uint8_t channel, const uint8_t note, 
     extNote.note    = note;
     extNote.velo    = velo;
 
-    kData->extNotes.mutex.lock();
     kData->extNotes.append(extNote);
-    kData->extNotes.mutex.unlock();
 
     if (sendGui)
     {
@@ -1243,7 +1241,7 @@ void CarlaPlugin::sendMidiAllNotesOff()
 // -------------------------------------------------------------------
 // Post-poned events
 
-void CarlaPlugin::postponeRtEvent(const PluginPostRtEventType type, const int32_t value1, const int32_t value2, const double value3)
+void CarlaPlugin::postponeRtEvent(const PluginPostRtEventType type, const int32_t value1, const int32_t value2, const float value3)
 {
     PluginPostRtEvent event;
     event.type   = type;
@@ -1256,26 +1254,11 @@ void CarlaPlugin::postponeRtEvent(const PluginPostRtEventType type, const int32_
 
 void CarlaPlugin::postRtEventsRun()
 {
-    // TODO: optimize
-    unsigned short k = 0;
-    PluginPostRtEvent listData[MAX_RT_EVENTS];
-
-    // Make a safe copy of events while clearing them
-    kData->postRtEvents.mutex.lock();
+    const CarlaMutex::ScopedLocker sl(&kData->postRtEvents.mutex);
 
     while (! kData->postRtEvents.data.isEmpty())
     {
-        PluginPostRtEvent& event = kData->postRtEvents.data.getFirst(true);
-        listData[k++] = event;
-        //std::memcpy(&listData[k++], &event, sizeof(PluginPostRtEvent));
-    }
-
-    kData->postRtEvents.mutex.unlock();
-
-    // Handle events now
-    for (unsigned short i=0; i < k; i++)
-    {
-        const PluginPostRtEvent& event = listData[i];
+        const PluginPostRtEvent& event = kData->postRtEvents.data.getFirst(true);
 
         switch (event.type)
         {
@@ -1484,13 +1467,32 @@ CarlaPlugin::ScopedDisabler::ScopedDisabler(CarlaPlugin* const plugin)
     if (plugin->fEnabled)
     {
         plugin->fEnabled = false;
-        plugin->kData->engine->waitForProccessEnd();
+        plugin->kData->engine->waitForProccessEnd(plugin->id());
     }
+
+    if (plugin->kData->client->isActive())
+        plugin->kData->client->deactivate();
 }
 
 CarlaPlugin::ScopedDisabler::~ScopedDisabler()
 {
     kPlugin->fEnabled = true;
+    kPlugin->kData->client->activate();
+}
+
+// -------------------------------------------------------------------
+// Scoped Process Locker
+
+CarlaPlugin::ScopedProcessLocker::ScopedProcessLocker(CarlaPlugin* const plugin)
+    : kPlugin(plugin)
+{
+    plugin->kData->mutex.lock();
+}
+
+CarlaPlugin::ScopedProcessLocker::~ScopedProcessLocker()
+{
+    kPlugin->kData->needsReset = true;
+    kPlugin->kData->mutex.unlock();
 }
 
 // -------------------------------------------------------------------

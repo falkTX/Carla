@@ -46,8 +46,6 @@ public:
         carla_debug("VstPlugin::VstPlugin(%p, %i)", engine, id);
 
 #if 0
-        m_type = PLUGIN_VST;
-
         effect = nullptr;
         events.numEvents = 0;
         events.reserved  = 0;
@@ -71,6 +69,8 @@ public:
         srand(id);
         unique1 = unique2 = rand();
 #endif
+
+        kData->osc.thread.setMode(CarlaPluginThread::PLUGIN_THREAD_VST_GUI);
     }
 
     ~VstPlugin()
@@ -779,7 +779,7 @@ public:
             char strBuf[255] = { 0 };
             getLabel(strBuf);
 
-            if (strcmp(strBuf, "IL Harmless") == 0)
+            if (std::strcmp(strBuf, "IL Harmless") == 0)
             {
                 // TODO - disable threaded processing
             }
@@ -1716,7 +1716,7 @@ public:
             {
                 prog.names[index] = strdup(strBuf);
             }
-            else if (strBuf[0] != 0 && strcmp(strBuf, prog.names[index]) != 0)
+            else if (strBuf[0] != 0 && std::strcmp(strBuf, prog.names[index]) != 0)
             {
                 free((void*)prog.names[index]);
                 prog.names[index] = strdup(strBuf);
@@ -1740,43 +1740,43 @@ public:
     {
         carla_debug("VstPlugin::hostCanDo(\"%s\")", feature);
 
-        if (strcmp(feature, "supplyIdle") == 0)
+        if (std::strcmp(feature, "supplyIdle") == 0)
             return 1;
-        if (strcmp(feature, "sendVstEvents") == 0)
+        if (std::strcmp(feature, "sendVstEvents") == 0)
             return 1;
-        if (strcmp(feature, "sendVstMidiEvent") == 0)
+        if (std::strcmp(feature, "sendVstMidiEvent") == 0)
             return 1;
-        if (strcmp(feature, "sendVstMidiEventFlagIsRealtime") == 0)
+        if (std::strcmp(feature, "sendVstMidiEventFlagIsRealtime") == 0)
             return -1;
-        if (strcmp(feature, "sendVstTimeInfo") == 0)
+        if (std::strcmp(feature, "sendVstTimeInfo") == 0)
             return 1;
-        if (strcmp(feature, "receiveVstEvents") == 0)
+        if (std::strcmp(feature, "receiveVstEvents") == 0)
             return 1;
-        if (strcmp(feature, "receiveVstMidiEvent") == 0)
+        if (std::strcmp(feature, "receiveVstMidiEvent") == 0)
             return 1;
-        if (strcmp(feature, "receiveVstTimeInfo") == 0)
+        if (std::strcmp(feature, "receiveVstTimeInfo") == 0)
             return -1;
-        if (strcmp(feature, "reportConnectionChanges") == 0)
+        if (std::strcmp(feature, "reportConnectionChanges") == 0)
             return -1;
-        if (strcmp(feature, "acceptIOChanges") == 0)
+        if (std::strcmp(feature, "acceptIOChanges") == 0)
         {
             //if (CarlaEngine::processMode == PROCESS_MODE_CONTINUOUS_RACK)
             //    return -1;
             return 1;
         }
-        if (strcmp(feature, "sizeWindow") == 0)
+        if (std::strcmp(feature, "sizeWindow") == 0)
             return 1;
-        if (strcmp(feature, "offline") == 0)
+        if (std::strcmp(feature, "offline") == 0)
             return -1;
-        if (strcmp(feature, "openFileSelector") == 0)
+        if (std::strcmp(feature, "openFileSelector") == 0)
             return -1;
-        if (strcmp(feature, "closeFileSelector") == 0)
+        if (std::strcmp(feature, "closeFileSelector") == 0)
             return -1;
-        if (strcmp(feature, "startStopProcess") == 0)
+        if (std::strcmp(feature, "startStopProcess") == 0)
             return 1;
-        if (strcmp(feature, "supportShell") == 0)
+        if (std::strcmp(feature, "supportShell") == 0)
             return -1;
-        if (strcmp(feature, "shellCategory") == 0)
+        if (std::strcmp(feature, "shellCategory") == 0)
             return -1;
 
         // unimplemented
@@ -1797,29 +1797,29 @@ public:
         {
             const char* const func = (char*)ptr;
 
-            if (strcmp(func, "GetPlayPosition") == 0)
+            if (std::strcmp(func, "GetPlayPosition") == 0)
                 return 0;
-            if (strcmp(func, "GetPlayPosition2") == 0)
+            if (std::strcmp(func, "GetPlayPosition2") == 0)
                 return 0;
-            if (strcmp(func, "GetCursorPosition") == 0)
+            if (std::strcmp(func, "GetCursorPosition") == 0)
                 return 0;
-            if (strcmp(func, "GetPlayState") == 0)
+            if (std::strcmp(func, "GetPlayState") == 0)
                 return 0;
-            if (strcmp(func, "SetEditCurPos") == 0)
+            if (std::strcmp(func, "SetEditCurPos") == 0)
                 return 0;
-            if (strcmp(func, "GetSetRepeat") == 0)
+            if (std::strcmp(func, "GetSetRepeat") == 0)
                 return 0;
-            if (strcmp(func, "GetProjectPath") == 0)
+            if (std::strcmp(func, "GetProjectPath") == 0)
                 return 0;
-            if (strcmp(func, "OnPlayButton") == 0)
+            if (std::strcmp(func, "OnPlayButton") == 0)
                 return 0;
-            if (strcmp(func, "OnStopButton") == 0)
+            if (std::strcmp(func, "OnStopButton") == 0)
                 return 0;
-            if (strcmp(func, "OnPauseButton") == 0)
+            if (std::strcmp(func, "OnPauseButton") == 0)
                 return 0;
-            if (strcmp(func, "IsInRealTimeAudio") == 0)
+            if (std::strcmp(func, "IsInRealTimeAudio") == 0)
                 return 0;
-            if (strcmp(func, "Audio_IsRunning") == 0)
+            if (std::strcmp(func, "Audio_IsRunning") == 0)
                 return 0;
         }
 #endif
@@ -2096,7 +2096,7 @@ public:
             CARLA_ASSERT(ptr);
             if (ptr)
             {
-                strcpy((char*)ptr, "Cadence");
+                std::strcpy((char*)ptr, "Cadence");
                 ret = 1;
             }
             else
@@ -2107,7 +2107,7 @@ public:
             CARLA_ASSERT(ptr);
             if (ptr)
             {
-                strcpy((char*)ptr, "Carla");
+                std::strcpy((char*)ptr, "Carla");
                 ret = 1;
             }
             else
@@ -2151,7 +2151,7 @@ public:
         case audioMasterGetDirectory:
             // TODO
             //if (ptr)
-            //    strcpy((char*)ptr, "stuff");
+            //    std::strcpy((char*)ptr, "stuff");
             //else
             //    carla_stderr("VstPlugin::hostCallback::audioMasterGetDirectory called with invalid pointer");
             break;
@@ -2412,8 +2412,6 @@ CarlaPlugin* CarlaPlugin::newVST(const Initializer& init)
             return nullptr;
         }
     }
-
-    plugin->registerToOscClient();
 
     return plugin;
 #else

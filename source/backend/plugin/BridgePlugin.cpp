@@ -17,6 +17,8 @@
 
 #include "CarlaPluginInternal.hpp"
 
+#if 1//ndef BUILD_BRIDGE
+
 #include <QtCore/QDir>
 #include <QtCore/QFile>
 #include <QtCore/QStringList>
@@ -38,7 +40,7 @@
             return 1;                                                                                                        \
         }                                                                                                                    \
         /* check argument types */                                                                                           \
-        if (strcmp(types, typesToCompare) != 0)                                                                              \
+        if (std::strcmp(types, typesToCompare) != 0)                                                                         \
         {                                                                                                                    \
             carla_stderr("BridgePlugin::%s() - argument types mismatch: '%s' != '%s'", __FUNCTION__, types, typesToCompare); \
             return 1;                                                                                                        \
@@ -48,48 +50,29 @@
 CARLA_BACKEND_START_NAMESPACE
 
 struct BridgeParamInfo {
-    double value;
-    QString name;
-    QString unit;
+    float value;
+    CarlaString name;
+    CarlaString unit;
 
     BridgeParamInfo()
-        : value(0.0) {}
+        : value(0.0f) {}
 };
 
 class BridgePlugin : public CarlaPlugin
 {
 public:
     BridgePlugin(CarlaEngine* const engine, const unsigned int id, const BinaryType btype, const PluginType ptype)
-        : CarlaPlugin(engine, id)//,
-          //m_binary(btype)
+        : CarlaPlugin(engine, id),
+          fBinaryType(btype),
+          fPluginType(ptype),
+          fInitiated(false),
+          fInitError(false),
+          fSaved(false),
+          fParams(nullptr)
     {
-        carla_debug("BridgePlugin::BridgePlugin()");
+        carla_debug("BridgePlugin::BridgePlugin(%p, %i, %s, %s)", engine, id, BinaryType2Str(btype), PluginType2Str(ptype));
 
-#if 0
-        m_type  = ptype;
-        m_hints = PLUGIN_IS_BRIDGE;
-
-        m_initiated = false;
-        m_initError = false;
-        m_saved = false;
-
-        info.aIns  = 0;
-        info.aOuts = 0;
-        info.mIns  = 0;
-        info.mOuts = 0;
-
-        info.category = PLUGIN_CATEGORY_NONE;
-        info.uniqueId = 0;
-
-        info.name  = nullptr;
-        info.label = nullptr;
-        info.maker = nullptr;
-        info.copyright = nullptr;
-
-        params = nullptr;
-
-        osc.thread = new CarlaPluginThread(engine, this, CarlaPluginThread::PLUGIN_THREAD_BRIDGE);
-#endif
+        kData->osc.thread.setMode(CarlaPluginThread::PLUGIN_THREAD_BRIDGE);
     }
 
 #if 0
@@ -116,32 +99,26 @@ public:
             delete osc.thread;
         }
 
-        if (info.name)
-            free((void*)info.name);
-
-        if (info.label)
-            free((void*)info.label);
-
-        if (info.maker)
-            free((void*)info.maker);
-
-        if (info.copyright)
-            free((void*)info.copyright);
-
         info.chunk.clear();
     }
+#endif
 
     // -------------------------------------------------------------------
     // Information (base)
 
-    PluginCategory category()
+    PluginType type() const
     {
-        return info.category;
+        return fPluginType;
+    }
+
+    PluginCategory category() const
+    {
+        return fInfo.category;
     }
 
     long uniqueId()
     {
-        return info.uniqueId;
+        return fInfo.uniqueId;
     }
 
     // -------------------------------------------------------------------
@@ -149,24 +126,25 @@ public:
 
     uint32_t audioInCount()
     {
-        return info.aIns;
+        return fInfo.aIns;
     }
 
     uint32_t audioOutCount()
     {
-        return info.aOuts;
+        return fInfo.aOuts;
     }
 
     uint32_t midiInCount()
     {
-        return info.mIns;
+        return fInfo.mIns;
     }
 
     uint32_t midiOutCount()
     {
-        return info.mOuts;
+        return fInfo.mOuts;
     }
 
+#if 0
     // -------------------------------------------------------------------
     // Information (current data)
 
@@ -584,11 +562,11 @@ public:
                 // invalid
                 pass();
             }
-            else if (strcmp(key, CARLA_BRIDGE_MSG_HIDE_GUI) == 0)
+            else if (std::strcmp(key, CARLA_BRIDGE_MSG_HIDE_GUI) == 0)
             {
                 x_engine->callback(CALLBACK_SHOW_GUI, m_id, 0, 0, 0.0, nullptr);
             }
-            else if (strcmp(key, CARLA_BRIDGE_MSG_SAVED) == 0)
+            else if (std::strcmp(key, CARLA_BRIDGE_MSG_SAVED) == 0)
             {
                 m_saved = true;
             }
@@ -972,65 +950,74 @@ public:
 
         return true;
     }
+#endif
 
 private:
-    const BinaryType m_binary;
+    const BinaryType fBinaryType;
+    const PluginType fPluginType;
 
-    bool m_initiated;
-    bool m_initError;
-    bool m_saved;
+    bool fInitiated;
+    bool fInitError;
+    bool fSaved;
 
-    struct {
+    struct Info {
         uint32_t aIns, aOuts;
         uint32_t mIns, mOuts;
         PluginCategory category;
         long uniqueId;
-        const char* name;
-        const char* label;
-        const char* maker;
-        const char* copyright;
-        QByteArray chunk;
-    } info;
+        CarlaString name;
+        CarlaString label;
+        CarlaString maker;
+        CarlaString copyright;
+        //QByteArray chunk;
 
-    BridgeParamInfo* params;
-#endif
+        Info()
+            : aIns(0),
+              aOuts(0),
+              mIns(0),
+              mOuts(0),
+              category(PLUGIN_CATEGORY_NONE),
+              uniqueId(0) {}
+    } fInfo;
+
+    BridgeParamInfo* fParams;
 };
+
+CARLA_BACKEND_END_NAMESPACE
+
+#endif // ! BUILD_BRIDGE
+
+CARLA_BACKEND_START_NAMESPACE
 
 CarlaPlugin* CarlaPlugin::newBridge(const Initializer& init, BinaryType btype, PluginType ptype, const char* const extra)
 {
-    carla_debug("CarlaPlugin::newBridge(%p, \"%s\", \"%s\", \"%s\", %s, %s)", init.engine, init.filename, init.name, init.label, BinaryType2Str(btype), PluginType2Str(ptype));
+    carla_debug("CarlaPlugin::newBridge({%p, \"%s\", \"%s\", \"%s\"}, %s, %s)", init.engine, init.filename, init.name, init.label, BinaryType2Str(btype), PluginType2Str(ptype));
 
-#if 0
-    if (! extra)
+#if 1//ndef BUILD_BRIDGE
+    if (extra == nullptr)
     {
         init.engine->setLastError("Bridge not possible, bridge-binary not found");
         return nullptr;
     }
 
-    short id = init.engine->getNewPluginId();
+    BridgePlugin* const plugin = new BridgePlugin(init.engine, init.id, btype, ptype);
 
-    if (id < 0 || id > init.engine->maxPluginNumber())
-    {
-        init.engine->setLastError("Maximum number of plugins reached");
-        return nullptr;
-    }
-
-    BridgePlugin* const plugin = new BridgePlugin(init.engine, id, btype, ptype);
-
-    if (! plugin->init(init.filename, init.name, init.label, (const char*)extra))
+    //if (! plugin->init(init.filename, init.name, init.label, (const char*)extra))
     {
         delete plugin;
         return nullptr;
     }
 
     //plugin->reload();
-    plugin->registerToOscClient();
 
     return plugin;
-#endif
+#else
+    init.engine->setLastError("Plugin bridge support not available");
     return nullptr;
+#endif
 }
 
+#if 1//ndef BUILD_BRIDGE
 // -------------------------------------------------------------------
 // Bridge Helper
 
@@ -1039,5 +1026,6 @@ int CarlaPluginSetOscBridgeInfo(CarlaPlugin* const plugin, const PluginBridgeInf
 {
     return ((BridgePlugin*)plugin)->setOscPluginBridgeInfo(type, argc, argv, types);
 }
+#endif
 
 CARLA_BACKEND_END_NAMESPACE

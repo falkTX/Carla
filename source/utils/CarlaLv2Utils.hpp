@@ -681,35 +681,35 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
                 {
                     if (const char* const designation = designationNodes.get_first().as_string())
                     {
-                        if (strcmp(designation, LV2_CORE__freeWheeling) == 0)
+                        if (std::strcmp(designation, LV2_CORE__freeWheeling) == 0)
                             rdfPort->Designation = LV2_PORT_DESIGNATION_FREEWHEELING;
-                        else if (strcmp(designation, LV2_CORE__latency) == 0)
+                        else if (std::strcmp(designation, LV2_CORE__latency) == 0)
                             rdfPort->Designation = LV2_PORT_DESIGNATION_LATENCY;
-                        else if (strcmp(designation, LV2_PARAMETERS__sampleRate) == 0)
+                        else if (std::strcmp(designation, LV2_PARAMETERS__sampleRate) == 0)
                             rdfPort->Designation = LV2_PORT_DESIGNATION_SAMPLE_RATE;
-                        else if (strcmp(designation, LV2_TIME__bar) == 0)
+                        else if (std::strcmp(designation, LV2_TIME__bar) == 0)
                             rdfPort->Designation = LV2_PORT_DESIGNATION_TIME_BAR;
-                        else if (strcmp(designation, LV2_TIME__barBeat) == 0)
+                        else if (std::strcmp(designation, LV2_TIME__barBeat) == 0)
                             rdfPort->Designation = LV2_PORT_DESIGNATION_TIME_BAR_BEAT;
-                        else if (strcmp(designation, LV2_TIME__beat) == 0)
+                        else if (std::strcmp(designation, LV2_TIME__beat) == 0)
                             rdfPort->Designation = LV2_PORT_DESIGNATION_TIME_BEAT;
-                        else if (strcmp(designation, LV2_TIME__beatUnit) == 0)
+                        else if (std::strcmp(designation, LV2_TIME__beatUnit) == 0)
                             rdfPort->Designation = LV2_PORT_DESIGNATION_TIME_BEAT_UNIT;
-                        else if (strcmp(designation, LV2_TIME__beatsPerBar) == 0)
+                        else if (std::strcmp(designation, LV2_TIME__beatsPerBar) == 0)
                             rdfPort->Designation = LV2_PORT_DESIGNATION_TIME_BEATS_PER_BAR;
-                        else if (strcmp(designation, LV2_TIME__beatsPerMinute) == 0)
+                        else if (std::strcmp(designation, LV2_TIME__beatsPerMinute) == 0)
                             rdfPort->Designation = LV2_PORT_DESIGNATION_TIME_BEATS_PER_MINUTE;
-                        else if (strcmp(designation, LV2_TIME__frame) == 0)
+                        else if (std::strcmp(designation, LV2_TIME__frame) == 0)
                             rdfPort->Designation = LV2_PORT_DESIGNATION_TIME_FRAME;
-                        else if (strcmp(designation, LV2_TIME__framesPerSecond) == 0)
+                        else if (std::strcmp(designation, LV2_TIME__framesPerSecond) == 0)
                             rdfPort->Designation = LV2_PORT_DESIGNATION_TIME_FRAMES_PER_SECOND;
-                        else if (strcmp(designation, LV2_TIME__position) == 0)
+                        else if (std::strcmp(designation, LV2_TIME__position) == 0)
                             rdfPort->Designation = LV2_PORT_DESIGNATION_TIME_POSITION;
-                        else if (strcmp(designation, LV2_TIME__speed) == 0)
+                        else if (std::strcmp(designation, LV2_TIME__speed) == 0)
                             rdfPort->Designation = LV2_PORT_DESIGNATION_TIME_SPEED;
-                        else if (strncmp(designation, LV2_PARAMETERS_PREFIX, strlen(LV2_PARAMETERS_PREFIX)) == 0)
+                        else if (std::strncmp(designation, LV2_PARAMETERS_PREFIX, std::strlen(LV2_PARAMETERS_PREFIX)) == 0)
                             pass();
-                        else if (strncmp(designation, LV2_PORT_GROUPS_PREFIX, strlen(LV2_PORT_GROUPS_PREFIX)) == 0)
+                        else if (std::strncmp(designation, LV2_PORT_GROUPS_PREFIX, std::strlen(LV2_PORT_GROUPS_PREFIX)) == 0)
                             pass();
                         else
                             qWarning("lv2_rdf_new(\"%s\") - got unknown port designation '%s'", uri, designation);
@@ -735,9 +735,9 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
                         {
                             if (const char* const midiMapType = midiMapTypeNodes.get_first().as_string())
                             {
-                                if (strcmp(midiMapType, LV2_MIDI_Map__CC) == 0)
+                                if (std::strcmp(midiMapType, LV2_MIDI_Map__CC) == 0)
                                     rdfPort->MidiMap.Type = LV2_PORT_MIDI_MAP_CC;
-                                else if (strcmp(midiMapType, LV2_MIDI_Map__NRPN) == 0)
+                                else if (std::strcmp(midiMapType, LV2_MIDI_Map__NRPN) == 0)
                                     rdfPort->MidiMap.Type = LV2_PORT_MIDI_MAP_NRPN;
                                 else
                                     qWarning("lv2_rdf_new(\"%s\") - got unknown port Midi-Map type '%s'", uri, midiMapType);
@@ -790,53 +790,53 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
                     {
                         rdfPort->Unit.Hints |= LV2_PORT_UNIT_UNIT;
 
-                        if (strcmp(unitUnit, LV2_UNITS__bar) == 0)
+                        if (std::strcmp(unitUnit, LV2_UNITS__bar) == 0)
                             rdfPort->Unit.Unit = LV2_PORT_UNIT_BAR;
-                        else if (strcmp(unitUnit, LV2_UNITS__beat) == 0)
+                        else if (std::strcmp(unitUnit, LV2_UNITS__beat) == 0)
                             rdfPort->Unit.Unit = LV2_PORT_UNIT_BEAT;
-                        else if (strcmp(unitUnit, LV2_UNITS__bpm) == 0)
+                        else if (std::strcmp(unitUnit, LV2_UNITS__bpm) == 0)
                             rdfPort->Unit.Unit = LV2_PORT_UNIT_BPM;
-                        else if (strcmp(unitUnit, LV2_UNITS__cent) == 0)
+                        else if (std::strcmp(unitUnit, LV2_UNITS__cent) == 0)
                             rdfPort->Unit.Unit = LV2_PORT_UNIT_CENT;
-                        else if (strcmp(unitUnit, LV2_UNITS__cm) == 0)
+                        else if (std::strcmp(unitUnit, LV2_UNITS__cm) == 0)
                             rdfPort->Unit.Unit = LV2_PORT_UNIT_CM;
-                        else if (strcmp(unitUnit, LV2_UNITS__coef) == 0)
+                        else if (std::strcmp(unitUnit, LV2_UNITS__coef) == 0)
                             rdfPort->Unit.Unit = LV2_PORT_UNIT_COEF;
-                        else if (strcmp(unitUnit, LV2_UNITS__db) == 0)
+                        else if (std::strcmp(unitUnit, LV2_UNITS__db) == 0)
                             rdfPort->Unit.Unit = LV2_PORT_UNIT_DB;
-                        else if (strcmp(unitUnit, LV2_UNITS__degree) == 0)
+                        else if (std::strcmp(unitUnit, LV2_UNITS__degree) == 0)
                             rdfPort->Unit.Unit = LV2_PORT_UNIT_DEGREE;
-                        else if (strcmp(unitUnit, LV2_UNITS__frame) == 0)
+                        else if (std::strcmp(unitUnit, LV2_UNITS__frame) == 0)
                             rdfPort->Unit.Unit = LV2_PORT_UNIT_FRAME;
-                        else if (strcmp(unitUnit, LV2_UNITS__hz) == 0)
+                        else if (std::strcmp(unitUnit, LV2_UNITS__hz) == 0)
                             rdfPort->Unit.Unit = LV2_PORT_UNIT_HZ;
-                        else if (strcmp(unitUnit, LV2_UNITS__inch) == 0)
+                        else if (std::strcmp(unitUnit, LV2_UNITS__inch) == 0)
                             rdfPort->Unit.Unit = LV2_PORT_UNIT_INCH;
-                        else if (strcmp(unitUnit, LV2_UNITS__khz) == 0)
+                        else if (std::strcmp(unitUnit, LV2_UNITS__khz) == 0)
                             rdfPort->Unit.Unit = LV2_PORT_UNIT_KHZ;
-                        else if (strcmp(unitUnit, LV2_UNITS__km) == 0)
+                        else if (std::strcmp(unitUnit, LV2_UNITS__km) == 0)
                             rdfPort->Unit.Unit = LV2_PORT_UNIT_KM;
-                        else if (strcmp(unitUnit, LV2_UNITS__m) == 0)
+                        else if (std::strcmp(unitUnit, LV2_UNITS__m) == 0)
                             rdfPort->Unit.Unit = LV2_PORT_UNIT_M;
-                        else if (strcmp(unitUnit, LV2_UNITS__mhz) == 0)
+                        else if (std::strcmp(unitUnit, LV2_UNITS__mhz) == 0)
                             rdfPort->Unit.Unit = LV2_PORT_UNIT_MHZ;
-                        else if (strcmp(unitUnit, LV2_UNITS__midiNote) == 0)
+                        else if (std::strcmp(unitUnit, LV2_UNITS__midiNote) == 0)
                             rdfPort->Unit.Unit = LV2_PORT_UNIT_MIDINOTE;
-                        else if (strcmp(unitUnit, LV2_UNITS__mile) == 0)
+                        else if (std::strcmp(unitUnit, LV2_UNITS__mile) == 0)
                             rdfPort->Unit.Unit = LV2_PORT_UNIT_MILE;
-                        else if (strcmp(unitUnit, LV2_UNITS__min) == 0)
+                        else if (std::strcmp(unitUnit, LV2_UNITS__min) == 0)
                             rdfPort->Unit.Unit = LV2_PORT_UNIT_MIN;
-                        else if (strcmp(unitUnit, LV2_UNITS__mm) == 0)
+                        else if (std::strcmp(unitUnit, LV2_UNITS__mm) == 0)
                             rdfPort->Unit.Unit = LV2_PORT_UNIT_MM;
-                        else if (strcmp(unitUnit, LV2_UNITS__ms) == 0)
+                        else if (std::strcmp(unitUnit, LV2_UNITS__ms) == 0)
                             rdfPort->Unit.Unit = LV2_PORT_UNIT_MS;
-                        else if (strcmp(unitUnit, LV2_UNITS__oct) == 0)
+                        else if (std::strcmp(unitUnit, LV2_UNITS__oct) == 0)
                             rdfPort->Unit.Unit = LV2_PORT_UNIT_OCT;
-                        else if (strcmp(unitUnit, LV2_UNITS__pc) == 0)
+                        else if (std::strcmp(unitUnit, LV2_UNITS__pc) == 0)
                             rdfPort->Unit.Unit = LV2_PORT_UNIT_PC;
-                        else if (strcmp(unitUnit, LV2_UNITS__s) == 0)
+                        else if (std::strcmp(unitUnit, LV2_UNITS__s) == 0)
                             rdfPort->Unit.Unit = LV2_PORT_UNIT_S;
-                        else if (strcmp(unitUnit, LV2_UNITS__semitone12TET) == 0)
+                        else if (std::strcmp(unitUnit, LV2_UNITS__semitone12TET) == 0)
                             rdfPort->Unit.Unit = LV2_PORT_UNIT_SEMITONE;
                         else
                             qWarning("lv2_rdf_new(\"%s\") - got unknown unit type '%s'", uri, unitUnit);
@@ -1153,41 +1153,41 @@ bool is_lv2_port_supported(const LV2_Property types)
 static inline
 bool is_lv2_feature_supported(const LV2_URI uri)
 {
-    if (strcmp(uri, LV2_CORE__hardRTCapable) == 0)
+    if (std::strcmp(uri, LV2_CORE__hardRTCapable) == 0)
         return true;
-    if (strcmp(uri, LV2_CORE__inPlaceBroken) == 0)
+    if (std::strcmp(uri, LV2_CORE__inPlaceBroken) == 0)
         return true;
-    if (strcmp(uri, LV2_CORE__isLive) == 0)
+    if (std::strcmp(uri, LV2_CORE__isLive) == 0)
         return true;
-    if (strcmp(uri, LV2_BUF_SIZE__boundedBlockLength) == 0)
+    if (std::strcmp(uri, LV2_BUF_SIZE__boundedBlockLength) == 0)
         return true;
-    if (strcmp(uri, LV2_BUF_SIZE__fixedBlockLength) == 0)
+    if (std::strcmp(uri, LV2_BUF_SIZE__fixedBlockLength) == 0)
         return true;
-    if (strcmp(uri, LV2_BUF_SIZE__powerOf2BlockLength) == 0)
+    if (std::strcmp(uri, LV2_BUF_SIZE__powerOf2BlockLength) == 0)
         return true;
-    if (strcmp(uri, LV2_EVENT_URI) == 0)
+    if (std::strcmp(uri, LV2_EVENT_URI) == 0)
         return true;
-    if (strcmp(uri, LV2_LOG__log) == 0)
+    if (std::strcmp(uri, LV2_LOG__log) == 0)
         return true;
-    if (strcmp(uri, LV2_OPTIONS__options) == 0)
+    if (std::strcmp(uri, LV2_OPTIONS__options) == 0)
         return true;
-    if (strcmp(uri, LV2_PROGRAMS__Host) == 0)
+    if (std::strcmp(uri, LV2_PROGRAMS__Host) == 0)
         return true;
-    if (strcmp(uri, LV2_RTSAFE_MEMORY_POOL__Pool) == 0)
+    if (std::strcmp(uri, LV2_RTSAFE_MEMORY_POOL__Pool) == 0)
         return true;
-    if (strcmp(uri, LV2_STATE__makePath) == 0)
+    if (std::strcmp(uri, LV2_STATE__makePath) == 0)
         return true;
-    if (strcmp(uri, LV2_STATE__mapPath) == 0)
+    if (std::strcmp(uri, LV2_STATE__mapPath) == 0)
         return true;
-    if (strcmp(uri, LV2_PORT_PROPS__supportsStrictBounds) == 0)
+    if (std::strcmp(uri, LV2_PORT_PROPS__supportsStrictBounds) == 0)
         return true;
-    if (strcmp(uri, LV2_URI_MAP_URI) == 0)
+    if (std::strcmp(uri, LV2_URI_MAP_URI) == 0)
         return true;
-    if (strcmp(uri, LV2_URID__map) == 0)
+    if (std::strcmp(uri, LV2_URID__map) == 0)
         return true;
-    if (strcmp(uri, LV2_URID__unmap) == 0)
+    if (std::strcmp(uri, LV2_URID__unmap) == 0)
         return true;
-    if (strcmp(uri, LV2_WORKER__schedule) == 0)
+    if (std::strcmp(uri, LV2_WORKER__schedule) == 0)
         return true;
     return false;
 }
@@ -1200,29 +1200,29 @@ bool is_lv2_ui_feature_supported(const LV2_URI uri)
 {
     if (is_lv2_feature_supported(uri))
         return true;
-    if (strcmp(uri, LV2_DATA_ACCESS_URI) == 0)
+    if (std::strcmp(uri, LV2_DATA_ACCESS_URI) == 0)
         return true;
-    if (strcmp(uri, LV2_INSTANCE_ACCESS_URI) == 0)
+    if (std::strcmp(uri, LV2_INSTANCE_ACCESS_URI) == 0)
         return true;
-    if (strcmp(uri, LV2_UI__fixedSize) == 0)
+    if (std::strcmp(uri, LV2_UI__fixedSize) == 0)
         return true;
-    if (strcmp(uri, LV2_UI__makeResident) == 0)
+    if (std::strcmp(uri, LV2_UI__makeResident) == 0)
         return true;
-    if (strcmp(uri, LV2_UI__noUserResize) == 0)
+    if (std::strcmp(uri, LV2_UI__noUserResize) == 0)
         return true;
-    if (strcmp(uri, LV2_UI__parent) == 0)
+    if (std::strcmp(uri, LV2_UI__parent) == 0)
         return true;
-    if (strcmp(uri, LV2_UI__portMap) == 0)
+    if (std::strcmp(uri, LV2_UI__portMap) == 0)
         return true;
-    if (strcmp(uri, LV2_UI__portSubscribe) == 0)
+    if (std::strcmp(uri, LV2_UI__portSubscribe) == 0)
         return false; // TODO
-    if (strcmp(uri, LV2_UI__resize) == 0)
+    if (std::strcmp(uri, LV2_UI__resize) == 0)
         return true;
-    if (strcmp(uri, LV2_UI__touch) == 0)
+    if (std::strcmp(uri, LV2_UI__touch) == 0)
         return false; // TODO
-    if (strcmp(uri, LV2_EXTERNAL_UI__Widget) == 0)
+    if (std::strcmp(uri, LV2_EXTERNAL_UI__Widget) == 0)
         return true;
-    if (strcmp(uri, LV2_EXTERNAL_UI_DEPRECATED_URI) == 0)
+    if (std::strcmp(uri, LV2_EXTERNAL_UI_DEPRECATED_URI) == 0)
         return true;
     return false;
 }

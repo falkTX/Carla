@@ -306,7 +306,7 @@ void CarlaEngineClient::setLatency(const uint32_t samples)
     fLatency = samples;
 }
 
-const CarlaEnginePort* CarlaEngineClient::addPort(const EnginePortType portType, const char* const name, const bool isInput)
+CarlaEnginePort* CarlaEngineClient::addPort(const EnginePortType portType, const char* const name, const bool isInput)
 {
     carla_debug("CarlaEngineClient::addPort(%s, \"%s\", %s)", EnginePortType2Str(portType), name, bool2str(isInput));
 
@@ -434,7 +434,7 @@ CarlaEngine* CarlaEngine::newDriverByName(const char* const driverName)
     carla_debug("CarlaEngine::newDriverByName(\"%s\")", driverName);
 
 #ifdef WANT_JACK
-    if (strcmp(driverName, "JACK") == 0)
+    if (std::strcmp(driverName, "JACK") == 0)
         return newJack();
 #else
     if (false)
@@ -443,31 +443,31 @@ CarlaEngine* CarlaEngine::newDriverByName(const char* const driverName)
 
 #ifdef WANT_RTAUDIO
 # ifdef __LINUX_ALSA__
-    else if (strcmp(driverName, "ALSA") == 0)
+    else if (std::strcmp(driverName, "ALSA") == 0)
         return newRtAudio(RTAUDIO_LINUX_ALSA);
 # endif
 # ifdef __LINUX_PULSE__
-    else if (strcmp(driverName, "PulseAudio") == 0)
+    else if (std::strcmp(driverName, "PulseAudio") == 0)
         return newRtAudio(RTAUDIO_LINUX_PULSE);
 # endif
 # ifdef __LINUX_OSS__
-    else if (strcmp(driverName, "OSS") == 0)
+    else if (std::strcmp(driverName, "OSS") == 0)
         return newRtAudio(RTAUDIO_LINUX_OSS);
 # endif
 # ifdef __UNIX_JACK__
-    else if (strcmp(driverName, "JACK (RtAudio)") == 0)
+    else if (std::strcmp(driverName, "JACK (RtAudio)") == 0)
         return newRtAudio(RTAUDIO_UNIX_JACK);
 # endif
 # ifdef __MACOSX_CORE__
-    else if (strcmp(driverName, "CoreAudio") == 0)
+    else if (std::strcmp(driverName, "CoreAudio") == 0)
         return newRtAudio(RTAUDIO_MACOSX_CORE);
 # endif
 # ifdef __WINDOWS_ASIO__
-    else if (strcmp(driverName, "ASIO") == 0)
+    else if (std::strcmp(driverName, "ASIO") == 0)
         return newRtAudio(RTAUDIO_WINDOWS_ASIO);
 # endif
 # ifdef __WINDOWS_DS__
-    else if (strcmp(driverName, "DirectSound") == 0)
+    else if (std::strcmp(driverName, "DirectSound") == 0)
         return newRtAudio(RTAUDIO_WINDOWS_DS);
 # endif
 #endif
@@ -543,7 +543,7 @@ bool CarlaEngine::init(const char* const clientName)
 #endif
 
 #ifndef BUILD_BRIDGE
-    //if (strcmp(clientName, "Carla") != 0)
+    //if (std::strcmp(clientName, "Carla") != 0)
     carla_setprocname(clientName);
 #endif
 
@@ -739,6 +739,8 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
     if (plugin == nullptr)
         return false;
 
+    plugin->registerToOscClient();
+
     kData->plugins[id].plugin      = plugin;
     kData->plugins[id].insPeak[0]  = 0.0f;
     kData->plugins[id].insPeak[1]  = 0.0f;
@@ -839,7 +841,7 @@ void CarlaEngine::removeAllPlugins()
         }
 
         // wait for processing
-        waitForProccessEnd();
+        waitForProccessEnd(0);
 
         for (unsigned int i=0; i < oldCount; i++)
         {
@@ -1104,11 +1106,11 @@ void CarlaEngine::setAboutToClose()
 // -----------------------------------------------------------------------
 // Misc
 
-void CarlaEngine::waitForProccessEnd()
+void CarlaEngine::waitForProccessEnd(const unsigned int pluginId)
 {
     carla_debug("CarlaEngine::waitForProccessEnd()");
 
-    kData->nextAction.pluginId = 0;
+    kData->nextAction.pluginId = pluginId;
     kData->nextAction.opcode   = EnginePostActionIdle;
 
     kData->nextAction.mutex.lock();
@@ -1498,10 +1500,10 @@ void CarlaEngine::osc_send_control_add_plugin_start(const int32_t pluginId, cons
 
     if (kData->oscData != nullptr && kData->oscData->target != nullptr)
     {
-        char target_path[strlen(kData->oscData->path)+18];
-        strcpy(target_path, kData->oscData->path);
-        strcat(target_path, "/add_plugin_start");
-        lo_send(kData->oscData->target, target_path, "is", pluginId, pluginName);
+        char targetPath[std::strlen(kData->oscData->path)+18];
+        std::strcpy(targetPath, kData->oscData->path);
+        std::strcat(targetPath, "/add_plugin_start");
+        lo_send(kData->oscData->target, targetPath, "is", pluginId, pluginName);
     }
 }
 
@@ -1513,10 +1515,10 @@ void CarlaEngine::osc_send_control_add_plugin_end(const int32_t pluginId)
 
     if (kData->oscData != nullptr && kData->oscData->target != nullptr)
     {
-        char target_path[strlen(kData->oscData->path)+16];
-        strcpy(target_path, kData->oscData->path);
-        strcat(target_path, "/add_plugin_end");
-        lo_send(kData->oscData->target, target_path, "i", pluginId);
+        char targetPath[std::strlen(kData->oscData->path)+16];
+        std::strcpy(targetPath, kData->oscData->path);
+        std::strcat(targetPath, "/add_plugin_end");
+        lo_send(kData->oscData->target, targetPath, "i", pluginId);
     }
 }
 
@@ -1528,10 +1530,10 @@ void CarlaEngine::osc_send_control_remove_plugin(const int32_t pluginId)
 
     if (kData->oscData != nullptr && kData->oscData->target != nullptr)
     {
-        char target_path[strlen(kData->oscData->path)+15];
-        strcpy(target_path, kData->oscData->path);
-        strcat(target_path, "/remove_plugin");
-        lo_send(kData->oscData->target, target_path, "i", pluginId);
+        char targetPath[std::strlen(kData->oscData->path)+15];
+        std::strcpy(targetPath, kData->oscData->path);
+        std::strcat(targetPath, "/remove_plugin");
+        lo_send(kData->oscData->target, targetPath, "i", pluginId);
     }
 }
 
@@ -1544,10 +1546,10 @@ void CarlaEngine::osc_send_control_set_plugin_data(const int32_t pluginId, const
 
     if (kData->oscData != nullptr && kData->oscData->target != nullptr)
     {
-        char target_path[strlen(kData->oscData->path)+17];
-        strcpy(target_path, kData->oscData->path);
-        strcat(target_path, "/set_plugin_data");
-        lo_send(kData->oscData->target, target_path, "iiiissssh", pluginId, type, category, hints, realName, label, maker, copyright, uniqueId);
+        char targetPath[std::strlen(kData->oscData->path)+17];
+        std::strcpy(targetPath, kData->oscData->path);
+        std::strcat(targetPath, "/set_plugin_data");
+        lo_send(kData->oscData->target, targetPath, "iiiissssh", pluginId, type, category, hints, realName, label, maker, copyright, uniqueId);
     }
 }
 
@@ -1559,10 +1561,10 @@ void CarlaEngine::osc_send_control_set_plugin_ports(const int32_t pluginId, cons
 
     if (kData->oscData != nullptr && kData->oscData->target != nullptr)
     {
-        char target_path[strlen(kData->oscData->path)+18];
-        strcpy(target_path, kData->oscData->path);
-        strcat(target_path, "/set_plugin_ports");
-        lo_send(kData->oscData->target, target_path, "iiiiiiii", pluginId, audioIns, audioOuts, midiIns, midiOuts, cIns, cOuts, cTotals);
+        char targetPath[std::strlen(kData->oscData->path)+18];
+        std::strcpy(targetPath, kData->oscData->path);
+        std::strcat(targetPath, "/set_plugin_ports");
+        lo_send(kData->oscData->target, targetPath, "iiiiiiii", pluginId, audioIns, audioOuts, midiIns, midiOuts, cIns, cOuts, cTotals);
     }
 }
 
@@ -1576,10 +1578,10 @@ void CarlaEngine::osc_send_control_set_parameter_data(const int32_t pluginId, co
 
     if (kData->oscData != nullptr && kData->oscData->target != nullptr)
     {
-        char target_path[strlen(kData->oscData->path)+20];
-        strcpy(target_path, kData->oscData->path);
-        strcat(target_path, "/set_parameter_data");
-        lo_send(kData->oscData->target, target_path, "iiiissd", pluginId, index, type, hints, name, label, current);
+        char targetPath[std::strlen(kData->oscData->path)+20];
+        std::strcpy(targetPath, kData->oscData->path);
+        std::strcat(targetPath, "/set_parameter_data");
+        lo_send(kData->oscData->target, targetPath, "iiiissd", pluginId, index, type, hints, name, label, current);
     }
 }
 
@@ -1593,10 +1595,10 @@ void CarlaEngine::osc_send_control_set_parameter_ranges(const int32_t pluginId, 
 
     if (kData->oscData != nullptr && kData->oscData->target != nullptr)
     {
-        char target_path[strlen(kData->oscData->path)+22];
-        strcpy(target_path, kData->oscData->path);
-        strcat(target_path, "/set_parameter_ranges");
-        lo_send(kData->oscData->target, target_path, "iidddddd", pluginId, index, min, max, def, step, stepSmall, stepLarge);
+        char targetPath[std::strlen(kData->oscData->path)+22];
+        std::strcpy(targetPath, kData->oscData->path);
+        std::strcat(targetPath, "/set_parameter_ranges");
+        lo_send(kData->oscData->target, targetPath, "iidddddd", pluginId, index, min, max, def, step, stepSmall, stepLarge);
     }
 }
 
@@ -1609,10 +1611,10 @@ void CarlaEngine::osc_send_control_set_parameter_midi_cc(const int32_t pluginId,
 
     if (kData->oscData != nullptr && kData->oscData->target != nullptr)
     {
-        char target_path[strlen(kData->oscData->path)+23];
-        strcpy(target_path, kData->oscData->path);
-        strcat(target_path, "/set_parameter_midi_cc");
-        lo_send(kData->oscData->target, target_path, "iii", pluginId, index, cc);
+        char targetPath[std::strlen(kData->oscData->path)+23];
+        std::strcpy(targetPath, kData->oscData->path);
+        std::strcat(targetPath, "/set_parameter_midi_cc");
+        lo_send(kData->oscData->target, targetPath, "iii", pluginId, index, cc);
     }
 }
 
@@ -1626,10 +1628,10 @@ void CarlaEngine::osc_send_control_set_parameter_midi_channel(const int32_t plug
 
     if (kData->oscData != nullptr && kData->oscData->target != nullptr)
     {
-        char target_path[strlen(kData->oscData->path)+28];
-        strcpy(target_path, kData->oscData->path);
-        strcat(target_path, "/set_parameter_midi_channel");
-        lo_send(kData->oscData->target, target_path, "iii", pluginId, index, channel);
+        char targetPath[std::strlen(kData->oscData->path)+28];
+        std::strcpy(targetPath, kData->oscData->path);
+        std::strcat(targetPath, "/set_parameter_midi_channel");
+        lo_send(kData->oscData->target, targetPath, "iii", pluginId, index, channel);
     }
 }
 
@@ -1646,10 +1648,10 @@ void CarlaEngine::osc_send_control_set_parameter_value(const int32_t pluginId, c
 
     if (kData->oscData != nullptr && kData->oscData->target != nullptr)
     {
-        char target_path[strlen(kData->oscData->path)+21];
-        strcpy(target_path, kData->oscData->path);
-        strcat(target_path, "/set_parameter_value");
-        lo_send(kData->oscData->target, target_path, "iid", pluginId, index, value);
+        char targetPath[std::strlen(kData->oscData->path)+21];
+        std::strcpy(targetPath, kData->oscData->path);
+        std::strcat(targetPath, "/set_parameter_value");
+        lo_send(kData->oscData->target, targetPath, "iid", pluginId, index, value);
     }
 }
 
@@ -1662,10 +1664,10 @@ void CarlaEngine::osc_send_control_set_default_value(const int32_t pluginId, con
 
     if (kData->oscData != nullptr && kData->oscData->target != nullptr)
     {
-        char target_path[strlen(kData->oscData->path)+19];
-        strcpy(target_path, kData->oscData->path);
-        strcat(target_path, "/set_default_value");
-        lo_send(kData->oscData->target, target_path, "iid", pluginId, index, value);
+        char targetPath[std::strlen(kData->oscData->path)+19];
+        std::strcpy(targetPath, kData->oscData->path);
+        std::strcat(targetPath, "/set_default_value");
+        lo_send(kData->oscData->target, targetPath, "iid", pluginId, index, value);
     }
 }
 
@@ -1677,10 +1679,10 @@ void CarlaEngine::osc_send_control_set_program(const int32_t pluginId, const int
 
     if (kData->oscData != nullptr && kData->oscData->target != nullptr)
     {
-        char target_path[strlen(kData->oscData->path)+13];
-        strcpy(target_path, kData->oscData->path);
-        strcat(target_path, "/set_program");
-        lo_send(kData->oscData->target, target_path, "ii", pluginId, index);
+        char targetPath[std::strlen(kData->oscData->path)+13];
+        std::strcpy(targetPath, kData->oscData->path);
+        std::strcat(targetPath, "/set_program");
+        lo_send(kData->oscData->target, targetPath, "ii", pluginId, index);
     }
 }
 
@@ -1693,10 +1695,10 @@ void CarlaEngine::osc_send_control_set_program_count(const int32_t pluginId, con
 
     if (kData->oscData != nullptr && kData->oscData->target != nullptr)
     {
-        char target_path[strlen(kData->oscData->path)+19];
-        strcpy(target_path, kData->oscData->path);
-        strcat(target_path, "/set_program_count");
-        lo_send(kData->oscData->target, target_path, "ii", pluginId, count);
+        char targetPath[std::strlen(kData->oscData->path)+19];
+        std::strcpy(targetPath, kData->oscData->path);
+        std::strcat(targetPath, "/set_program_count");
+        lo_send(kData->oscData->target, targetPath, "ii", pluginId, count);
     }
 }
 
@@ -1710,10 +1712,10 @@ void CarlaEngine::osc_send_control_set_program_name(const int32_t pluginId, cons
 
     if (kData->oscData != nullptr && kData->oscData->target != nullptr)
     {
-        char target_path[strlen(kData->oscData->path)+18];
-        strcpy(target_path, kData->oscData->path);
-        strcat(target_path, "/set_program_name");
-        lo_send(kData->oscData->target, target_path, "iis", pluginId, index, name);
+        char targetPath[std::strlen(kData->oscData->path)+18];
+        std::strcpy(targetPath, kData->oscData->path);
+        std::strcat(targetPath, "/set_program_name");
+        lo_send(kData->oscData->target, targetPath, "iis", pluginId, index, name);
     }
 }
 
@@ -1725,10 +1727,10 @@ void CarlaEngine::osc_send_control_set_midi_program(const int32_t pluginId, cons
 
     if (kData->oscData != nullptr && kData->oscData->target != nullptr)
     {
-        char target_path[strlen(kData->oscData->path)+18];
-        strcpy(target_path, kData->oscData->path);
-        strcat(target_path, "/set_midi_program");
-        lo_send(kData->oscData->target, target_path, "ii", pluginId, index);
+        char targetPath[std::strlen(kData->oscData->path)+18];
+        std::strcpy(targetPath, kData->oscData->path);
+        std::strcat(targetPath, "/set_midi_program");
+        lo_send(kData->oscData->target, targetPath, "ii", pluginId, index);
     }
 }
 
@@ -1741,10 +1743,10 @@ void CarlaEngine::osc_send_control_set_midi_program_count(const int32_t pluginId
 
     if (kData->oscData != nullptr && kData->oscData->target != nullptr)
     {
-        char target_path[strlen(kData->oscData->path)+24];
-        strcpy(target_path, kData->oscData->path);
-        strcat(target_path, "/set_midi_program_count");
-        lo_send(kData->oscData->target, target_path, "ii", pluginId, count);
+        char targetPath[std::strlen(kData->oscData->path)+24];
+        std::strcpy(targetPath, kData->oscData->path);
+        std::strcat(targetPath, "/set_midi_program_count");
+        lo_send(kData->oscData->target, targetPath, "ii", pluginId, count);
     }
 }
 
@@ -1760,10 +1762,10 @@ void CarlaEngine::osc_send_control_set_midi_program_data(const int32_t pluginId,
 
     if (kData->oscData != nullptr && kData->oscData->target != nullptr)
     {
-        char target_path[strlen(kData->oscData->path)+23];
-        strcpy(target_path, kData->oscData->path);
-        strcat(target_path, "/set_midi_program_data");
-        lo_send(kData->oscData->target, target_path, "iiiis", pluginId, index, bank, program, name);
+        char targetPath[std::strlen(kData->oscData->path)+23];
+        std::strcpy(targetPath, kData->oscData->path);
+        std::strcat(targetPath, "/set_midi_program_data");
+        lo_send(kData->oscData->target, targetPath, "iiiis", pluginId, index, bank, program, name);
     }
 }
 
@@ -1778,10 +1780,10 @@ void CarlaEngine::osc_send_control_note_on(const int32_t pluginId, const int32_t
 
     if (kData->oscData != nullptr && kData->oscData->target != nullptr)
     {
-        char target_path[strlen(kData->oscData->path)+9];
-        strcpy(target_path, kData->oscData->path);
-        strcat(target_path, "/note_on");
-        lo_send(kData->oscData->target, target_path, "iiii", pluginId, channel, note, velo);
+        char targetPath[std::strlen(kData->oscData->path)+9];
+        std::strcpy(targetPath, kData->oscData->path);
+        std::strcat(targetPath, "/note_on");
+        lo_send(kData->oscData->target, targetPath, "iiii", pluginId, channel, note, velo);
     }
 }
 
@@ -1795,10 +1797,10 @@ void CarlaEngine::osc_send_control_note_off(const int32_t pluginId, const int32_
 
     if (kData->oscData != nullptr && kData->oscData->target != nullptr)
     {
-        char target_path[strlen(kData->oscData->path)+10];
-        strcpy(target_path, kData->oscData->path);
-        strcat(target_path, "/note_off");
-        lo_send(kData->oscData->target, target_path, "iii", pluginId, channel, note);
+        char targetPath[std::strlen(kData->oscData->path)+10];
+        std::strcpy(targetPath, kData->oscData->path);
+        std::strcat(targetPath, "/note_off");
+        lo_send(kData->oscData->target, targetPath, "iii", pluginId, channel, note);
     }
 }
 
@@ -1811,10 +1813,10 @@ void CarlaEngine::osc_send_control_set_peaks(const int32_t pluginId)
 
     if (kData->oscData != nullptr && kData->oscData->target != nullptr)
     {
-        char target_path[strlen(kData->oscData->path)+22];
-        strcpy(target_path, kData->oscData->path);
-        strcat(target_path, "/set_peaks");
-        lo_send(kData->oscData->target, target_path, "iffff", pluginId, pData.insPeak[0], pData.insPeak[1], pData.outsPeak[0], pData.outsPeak[1]);
+        char targetPath[std::strlen(kData->oscData->path)+22];
+        std::strcpy(targetPath, kData->oscData->path);
+        std::strcat(targetPath, "/set_peaks");
+        lo_send(kData->oscData->target, targetPath, "iffff", pluginId, pData.insPeak[0], pData.insPeak[1], pData.outsPeak[0], pData.outsPeak[1]);
     }
 }
 
@@ -1825,10 +1827,10 @@ void CarlaEngine::osc_send_control_exit()
 
     if (kData->oscData && kData->oscData->target)
     {
-        char target_path[strlen(kData->oscData->path)+6];
-        strcpy(target_path, kData->oscData->path);
-        strcat(target_path, "/exit");
-        lo_send(kData->oscData->target, target_path, "");
+        char targetPath[std::strlen(kData->oscData->path)+6];
+        std::strcpy(targetPath, kData->oscData->path);
+        std::strcat(targetPath, "/exit");
+        lo_send(kData->oscData->target, targetPath, "");
     }
 }
 #else
@@ -1840,10 +1842,10 @@ void CarlaEngine::osc_send_bridge_audio_count(const int32_t ins, const int32_t o
 
     if (kData->oscData != nullptr && kData->oscData->target != nullptr)
     {
-        char target_path[strlen(kData->oscData->path)+20];
-        strcpy(target_path, kData->oscData->path);
-        strcat(target_path, "/bridge_audio_count");
-        lo_send(kData->oscData->target, target_path, "iii", ins, outs, total);
+        char targetPath[std::strlen(kData->oscData->path)+20];
+        std::strcpy(targetPath, kData->oscData->path);
+        std::strcat(targetPath, "/bridge_audio_count");
+        lo_send(kData->oscData->target, targetPath, "iii", ins, outs, total);
     }
 }
 
@@ -1855,10 +1857,10 @@ void CarlaEngine::osc_send_bridge_midi_count(const int32_t ins, const int32_t ou
 
     if (kData->oscData != nullptr && kData->oscData->target != nullptr)
     {
-        char target_path[strlen(kData->oscData->path)+19];
-        strcpy(target_path, kData->oscData->path);
-        strcat(target_path, "/bridge_midi_count");
-        lo_send(kData->oscData->target, target_path, "iii", ins, outs, total);
+        char targetPath[std::strlen(kData->oscData->path)+19];
+        std::strcpy(targetPath, kData->oscData->path);
+        std::strcat(targetPath, "/bridge_midi_count");
+        lo_send(kData->oscData->target, targetPath, "iii", ins, outs, total);
     }
 }
 
@@ -1870,10 +1872,10 @@ void CarlaEngine::osc_send_bridge_parameter_count(const int32_t ins, const int32
 
     if (kData->oscData != nullptr && kData->oscData->target != nullptr)
     {
-        char target_path[strlen(kData->oscData->path)+24];
-        strcpy(target_path, kData->oscData->path);
-        strcat(target_path, "/bridge_parameter_count");
-        lo_send(kData->oscData->target, target_path, "iii", ins, outs, total);
+        char targetPath[std::strlen(kData->oscData->path)+24];
+        std::strcpy(targetPath, kData->oscData->path);
+        std::strcat(targetPath, "/bridge_parameter_count");
+        lo_send(kData->oscData->target, targetPath, "iii", ins, outs, total);
     }
 }
 
@@ -1885,10 +1887,10 @@ void CarlaEngine::osc_send_bridge_program_count(const int32_t count)
 
     if (kData->oscData != nullptr && kData->oscData->target != nullptr)
     {
-        char target_path[strlen(kData->oscData->path)+22];
-        strcpy(target_path, kData->oscData->path);
-        strcat(target_path, "/bridge_program_count");
-        lo_send(kData->oscData->target, target_path, "i", count);
+        char targetPath[std::strlen(kData->oscData->path)+22];
+        std::strcpy(targetPath, kData->oscData->path);
+        std::strcat(targetPath, "/bridge_program_count");
+        lo_send(kData->oscData->target, targetPath, "i", count);
     }
 }
 
@@ -1900,10 +1902,10 @@ void CarlaEngine::osc_send_bridge_midi_program_count(const int32_t count)
 
     if (kData->oscData != nullptr && kData->oscData->target != nullptr)
     {
-        char target_path[strlen(kData->oscData->path)+27];
-        strcpy(target_path, kData->oscData->path);
-        strcat(target_path, "/bridge_midi_program_count");
-        lo_send(kData->oscData->target, target_path, "i", count);
+        char targetPath[std::strlen(kData->oscData->path)+27];
+        std::strcpy(targetPath, kData->oscData->path);
+        std::strcat(targetPath, "/bridge_midi_program_count");
+        lo_send(kData->oscData->target, targetPath, "i", count);
     }
 }
 
@@ -1918,10 +1920,10 @@ void CarlaEngine::osc_send_bridge_plugin_info(const int32_t category, const int3
 
     if (kData->oscData != nullptr && kData->oscData->target != nullptr)
     {
-        char target_path[strlen(kData->oscData->path)+20];
-        strcpy(target_path, kData->oscData->path);
-        strcat(target_path, "/bridge_plugin_info");
-        lo_send(kData->oscData->target, target_path, "iissssh", category, hints, name, label, maker, copyright, uniqueId);
+        char targetPath[std::strlen(kData->oscData->path)+20];
+        std::strcpy(targetPath, kData->oscData->path);
+        std::strcat(targetPath, "/bridge_plugin_info");
+        lo_send(kData->oscData->target, targetPath, "iissssh", category, hints, name, label, maker, copyright, uniqueId);
     }
 }
 
@@ -1934,10 +1936,10 @@ void CarlaEngine::osc_send_bridge_parameter_info(const int32_t index, const char
 
     if (kData->oscData != nullptr && kData->oscData->target != nullptr)
     {
-        char target_path[strlen(kData->oscData->path)+23];
-        strcpy(target_path, kData->oscData->path);
-        strcat(target_path, "/bridge_parameter_info");
-        lo_send(kData->oscData->target, target_path, "iss", index, name, unit);
+        char targetPath[std::strlen(kData->oscData->path)+23];
+        std::strcpy(targetPath, kData->oscData->path);
+        std::strcat(targetPath, "/bridge_parameter_info");
+        lo_send(kData->oscData->target, targetPath, "iss", index, name, unit);
     }
 }
 
@@ -1948,10 +1950,10 @@ void CarlaEngine::osc_send_bridge_parameter_data(const int32_t index, const int3
 
     if (kData->oscData != nullptr && kData->oscData->target != nullptr)
     {
-        char target_path[strlen(kData->oscData->path)+23];
-        strcpy(target_path, kData->oscData->path);
-        strcat(target_path, "/bridge_parameter_data");
-        lo_send(kData->oscData->target, target_path, "iiiiii", index, type, rindex, hints, midiChannel, midiCC);
+        char targetPath[std::strlen(kData->oscData->path)+23];
+        std::strcpy(targetPath, kData->oscData->path);
+        std::strcat(targetPath, "/bridge_parameter_data");
+        lo_send(kData->oscData->target, targetPath, "iiiiii", index, type, rindex, hints, midiChannel, midiCC);
     }
 }
 
@@ -1962,10 +1964,10 @@ void CarlaEngine::osc_send_bridge_parameter_ranges(const int32_t index, const fl
 
     if (kData->oscData != nullptr && kData->oscData->target != nullptr)
     {
-        char target_path[strlen(kData->oscData->path)+25];
-        strcpy(target_path, kData->oscData->path);
-        strcat(target_path, "/bridge_parameter_ranges");
-        lo_send(kData->oscData->target, target_path, "idddddd", index, def, min, max, step, stepSmall, stepLarge);
+        char targetPath[std::strlen(kData->oscData->path)+25];
+        std::strcpy(targetPath, kData->oscData->path);
+        std::strcat(targetPath, "/bridge_parameter_ranges");
+        lo_send(kData->oscData->target, targetPath, "idddddd", index, def, min, max, step, stepSmall, stepLarge);
     }
 }
 
@@ -1976,10 +1978,10 @@ void CarlaEngine::osc_send_bridge_program_info(const int32_t index, const char* 
 
     if (kData->oscData != nullptr && kData->oscData->target != nullptr)
     {
-        char target_path[strlen(kData->oscData->path)+21];
-        strcpy(target_path, kData->oscData->path);
-        strcat(target_path, "/bridge_program_info");
-        lo_send(kData->oscData->target, target_path, "is", index, name);
+        char targetPath[std::strlen(kData->oscData->path)+21];
+        std::strcpy(targetPath, kData->oscData->path);
+        std::strcat(targetPath, "/bridge_program_info");
+        lo_send(kData->oscData->target, targetPath, "is", index, name);
     }
 }
 
@@ -1990,10 +1992,10 @@ void CarlaEngine::osc_send_bridge_midi_program_info(const int32_t index, const i
 
     if (kData->oscData != nullptr && kData->oscData->target != nullptr)
     {
-        char target_path[strlen(kData->oscData->path)+26];
-        strcpy(target_path, kData->oscData->path);
-        strcat(target_path, "/bridge_midi_program_info");
-        lo_send(kData->oscData->target, target_path, "iiis", index, bank, program, label);
+        char targetPath[std::strlen(kData->oscData->path)+26];
+        std::strcpy(targetPath, kData->oscData->path);
+        std::strcat(targetPath, "/bridge_midi_program_info");
+        lo_send(kData->oscData->target, targetPath, "iiis", index, bank, program, label);
     }
 }
 
@@ -2006,10 +2008,10 @@ void CarlaEngine::osc_send_bridge_configure(const char* const key, const char* c
 
     if (kData->oscData != nullptr && kData->oscData->target != nullptr)
     {
-        char target_path[strlen(kData->oscData->path)+18];
-        strcpy(target_path, kData->oscData->path);
-        strcat(target_path, "/bridge_configure");
-        lo_send(kData->oscData->target, target_path, "ss", key, value);
+        char targetPath[std::strlen(kData->oscData->path)+18];
+        std::strcpy(targetPath, kData->oscData->path);
+        std::strcat(targetPath, "/bridge_configure");
+        lo_send(kData->oscData->target, targetPath, "ss", key, value);
     }
 }
 
@@ -2020,10 +2022,10 @@ void CarlaEngine::osc_send_bridge_set_parameter_value(const int32_t index, const
 
     if (kData->oscData != nullptr && kData->oscData->target != nullptr)
     {
-        char target_path[strlen(kData->oscData->path)+28];
-        strcpy(target_path, kData->oscData->path);
-        strcat(target_path, "/bridge_set_parameter_value");
-        lo_send(kData->oscData->target, target_path, "id", index, value);
+        char targetPath[std::strlen(kData->oscData->path)+28];
+        std::strcpy(targetPath, kData->oscData->path);
+        std::strcat(targetPath, "/bridge_set_parameter_value");
+        lo_send(kData->oscData->target, targetPath, "id", index, value);
     }
 }
 
@@ -2034,10 +2036,10 @@ void CarlaEngine::osc_send_bridge_set_default_value(const int32_t index, const f
 
     if (kData->oscData != nullptr && kData->oscData->target != nullptr)
     {
-        char target_path[strlen(kData->oscData->path)+26];
-        strcpy(target_path, kData->oscData->path);
-        strcat(target_path, "/bridge_set_default_value");
-        lo_send(kData->oscData->target, target_path, "id", index, value);
+        char targetPath[std::strlen(kData->oscData->path)+26];
+        std::strcpy(targetPath, kData->oscData->path);
+        std::strcat(targetPath, "/bridge_set_default_value");
+        lo_send(kData->oscData->target, targetPath, "id", index, value);
     }
 }
 
@@ -2048,10 +2050,10 @@ void CarlaEngine::osc_send_bridge_set_program(const int32_t index)
 
     if (kData->oscData != nullptr && kData->oscData->target != nullptr)
     {
-        char target_path[strlen(kData->oscData->path)+20];
-        strcpy(target_path, kData->oscData->path);
-        strcat(target_path, "/bridge_set_program");
-        lo_send(kData->oscData->target, target_path, "i", index);
+        char targetPath[std::strlen(kData->oscData->path)+20];
+        std::strcpy(targetPath, kData->oscData->path);
+        std::strcat(targetPath, "/bridge_set_program");
+        lo_send(kData->oscData->target, targetPath, "i", index);
     }
 }
 
@@ -2062,10 +2064,10 @@ void CarlaEngine::osc_send_bridge_set_midi_program(const int32_t index)
 
     if (kData->oscData != nullptr && kData->oscData->target != nullptr)
     {
-        char target_path[strlen(kData->oscData->path)+25];
-        strcpy(target_path, kData->oscData->path);
-        strcat(target_path, "/bridge_set_midi_program");
-        lo_send(kData->oscData->target, target_path, "i", index);
+        char targetPath[std::strlen(kData->oscData->path)+25];
+        std::strcpy(targetPath, kData->oscData->path);
+        std::strcat(targetPath, "/bridge_set_midi_program");
+        lo_send(kData->oscData->target, targetPath, "i", index);
     }
 }
 
@@ -2076,10 +2078,10 @@ void CarlaEngine::osc_send_bridge_set_custom_data(const char* const type, const 
 
     if (kData->oscData != nullptr && kData->oscData->target != nullptr)
     {
-        char target_path[strlen(kData->oscData->path)+24];
-        strcpy(target_path, kData->oscData->path);
-        strcat(target_path, "/bridge_set_custom_data");
-        lo_send(kData->oscData->target, target_path, "sss", type, key, value);
+        char targetPath[std::strlen(kData->oscData->path)+24];
+        std::strcpy(targetPath, kData->oscData->path);
+        std::strcat(targetPath, "/bridge_set_custom_data");
+        lo_send(kData->oscData->target, targetPath, "sss", type, key, value);
     }
 }
 
@@ -2090,10 +2092,10 @@ void CarlaEngine::osc_send_bridge_set_chunk_data(const char* const chunkFile)
 
     if (kData->oscData != nullptr && kData->oscData->target != nullptr)
     {
-        char target_path[strlen(kData->oscData->path)+23];
-        strcpy(target_path, kData->oscData->path);
-        strcat(target_path, "/bridge_set_chunk_data");
-        lo_send(kData->oscData->target, target_path, "s", chunkFile);
+        char targetPath[std::strlen(kData->oscData->path)+23];
+        std::strcpy(targetPath, kData->oscData->path);
+        std::strcat(targetPath, "/bridge_set_chunk_data");
+        lo_send(kData->oscData->target, targetPath, "s", chunkFile);
     }
 }
 
@@ -2105,10 +2107,10 @@ void CarlaEngine::osc_send_bridge_set_peaks()
 
     if (kData->oscData != nullptr && kData->oscData->target != nullptr)
     {
-        char target_path[strlen(kData->oscData->path)+22];
-        strcpy(target_path, kData->oscData->path);
-        strcat(target_path, "/bridge_set_peaks");
-        lo_send(kData->oscData->target, target_path, "ffff", pData.insPeak[0], pData.insPeak[1], pData.outsPeak[0], pData.outsPeak[1]);
+        char targetPath[std::strlen(kData->oscData->path)+22];
+        std::strcpy(targetPath, kData->oscData->path);
+        std::strcat(targetPath, "/bridge_set_peaks");
+        lo_send(kData->oscData->target, targetPath, "ffff", pData.insPeak[0], pData.insPeak[1], pData.outsPeak[0], pData.outsPeak[1]);
     }
 }
 #endif

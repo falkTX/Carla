@@ -99,13 +99,16 @@ class NativePlugin : public CarlaPlugin
 {
 public:
     NativePlugin(CarlaEngine* const engine, const unsigned int id)
-        : CarlaPlugin(engine, id)
+        : CarlaPlugin(engine, id),
+          fHandle(nullptr),
+          fHandle2(nullptr),
+          fDescriptor(nullptr),
+          fIsProcessing(false),
+          fAudioInBuffers(nullptr),
+          fAudioOutBuffers(nullptr),
+          fMidiEventCount(0)
     {
         carla_debug("NativePlugin::NativePlugin(%p, %i)", engine, id);
-
-        fHandle  = nullptr;
-        fHandle2 = nullptr;
-        fDescriptor = nullptr;
 
         fHost.handle = this;
         fHost.get_buffer_size        = carla_host_get_buffer_size;
@@ -116,11 +119,6 @@ public:
         fHost.ui_custom_data_changed = carla_host_ui_custom_data_changed;
         fHost.ui_closed              = carla_host_ui_closed;
 
-        fIsProcessing = false;
-
-        fAudioInBuffers  = nullptr;
-        fAudioOutBuffers = nullptr;
-        fMidiEventCount  = 0;
         carla_zeroMem(fMidiEvents, sizeof(::MidiEvent)*MAX_MIDI_EVENTS*2);
     }
 
@@ -1872,8 +1870,6 @@ CarlaPlugin* CarlaPlugin::newNative(const Initializer& init)
         delete plugin;
         return nullptr;
     }
-
-    plugin->registerToOscClient();
 
     return plugin;
 #else

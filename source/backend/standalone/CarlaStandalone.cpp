@@ -1659,7 +1659,7 @@ protected:
 
         const char* const method = &argv[0]->s;
 
-        if (strcmp(method, "/nsm/server/announce") == 0 && standalone.callback)
+        if (std::strcmp(method, "/nsm/server/announce") == 0 && standalone.callback)
             standalone.callback(nullptr, CarlaBackend::CALLBACK_NSM_ANNOUNCE, 0, 0, 0, 0.0, nullptr); // FIXME?
 
         return 0;

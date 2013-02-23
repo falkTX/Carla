@@ -41,7 +41,7 @@
             return 1;                                                                                                          \
         }                                                                                                                      \
         /* check argument types */                                                                                             \
-        if (strcmp(types, typesToCompare) != 0)                                                                                \
+        if (std::strcmp(types, typesToCompare) != 0)                                                                                \
         {                                                                                                                      \
             carla_stderr("CarlaEngineOsc::%s() - argument types mismatch: '%s' != '%s'", __FUNCTION__, types, typesToCompare); \
             return 1;                                                                                                          \

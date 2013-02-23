@@ -147,7 +147,7 @@ enum EngineControlEventType {
 struct EngineControlEvent {
     EngineControlEventType type; //!< Control-Event type.
     uint16_t param;              //!< Parameter ID, midi bank or midi program.
-    double   value;              //!< Parameter value, normalized to 0.0<->1.0.
+    float    value;              //!< Parameter value, normalized to 0.0f<->1.0f.
 
 #ifndef CARLA_PROPER_CPP11_SUPPORT
     EngineControlEvent()
@@ -160,7 +160,7 @@ struct EngineControlEvent {
     {
         type  = kEngineControlEventTypeNull;
         param = 0;
-        value = 0.0;
+        value = 0.0f;
     }
 };
 
@@ -588,7 +588,7 @@ public:
      * Add a new port of type \a portType.
      * \note This function does nothing in rack processing mode since ports are static there (2 audio + 1 event for both input and output).
      */
-    virtual const CarlaEnginePort* addPort(const EnginePortType portType, const char* const name, const bool isInput);
+    virtual CarlaEnginePort* addPort(const EnginePortType portType, const char* const name, const bool isInput);
 
 protected:
     const EngineType  kEngineType;
@@ -895,9 +895,9 @@ public:
     void setAboutToClose();
 
     /*!
-     * Safely block-wait until the current proccessing callback ends.
+     * Safely block-wait until a plugin proccessing callback ends.
      */
-    void waitForProccessEnd();
+    void waitForProccessEnd(const unsigned int pluginId);
 
 #ifndef BUILD_BRIDGE
     // -------------------------------------------------------------------

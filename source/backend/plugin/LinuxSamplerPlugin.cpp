@@ -164,21 +164,23 @@ class LinuxSamplerPlugin : public CarlaPlugin
 public:
     LinuxSamplerPlugin(CarlaEngine* const engine, const unsigned short id, const bool isGIG)
         : CarlaPlugin(engine, id),
-          kIsGIG(isGIG)
+          kIsGIG(isGIG),
+          fSampler(nullptr),
+          fSamplerChannel(nullptr),
+          fEngine(nullptr),
+          fEngineChannel(nullptr),
+          fAudioOutputDevice(nullptr),
+          fMidiInputDevice(nullptr),
+          fMidiInputPort(nullptr),
+          fInstrument(nullptr)
     {
         carla_debug("LinuxSamplerPlugin::LinuxSamplerPlugin(%p, %i, %s)", engine, id, bool2str(isGIG));
 
-        fSampler        = new LinuxSampler::Sampler;
-        fSamplerChannel = nullptr;
-
-        fEngine        = nullptr;
-        fEngineChannel = nullptr;
+        fSampler = new LinuxSampler::Sampler;
 
         fAudioOutputDevice = new LinuxSampler::AudioOutputDevicePlugin(engine, this);
         fMidiInputDevice   = new LinuxSampler::MidiInputDevicePlugin(fSampler);
         fMidiInputPort     = fMidiInputDevice->CreateMidiPort();
-
-        fInstrument = nullptr;
     }
 
     ~LinuxSamplerPlugin()
@@ -986,7 +988,6 @@ CarlaPlugin* LinuxSamplerPlugin::newLinuxSampler(const Initializer& init, bool i
     }
 
     plugin->reload();
-    plugin->registerToOscClient();
 
     return plugin;
 }

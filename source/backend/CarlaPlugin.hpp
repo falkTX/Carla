@@ -727,7 +727,7 @@ public:
      * Post pone an event of type \a type.\n
      * The event will be processed later, but as soon as possible.
      */
-    void postponeRtEvent(const PluginPostRtEventType type, const int32_t value1, const int32_t value2, const double value3);
+    void postponeRtEvent(const PluginPostRtEventType type, const int32_t value1, const int32_t value2, const float value3);
 
     /*!
      * Process all the post-poned events.
@@ -836,6 +836,8 @@ protected:
     friend struct CarlaPluginProtectedData;
     CarlaPluginProtectedData* const kData;
 
+    // Fully disable plugin in scope and also its engine client
+    // May wait-block on constructor for plugin process to end
     class ScopedDisabler
     {
     public:
@@ -846,6 +848,21 @@ protected:
         CarlaPlugin* const kPlugin;
 
         CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ScopedDisabler)
+    };
+
+    // Lock the plugin's own run/process call
+    // Plugin will still work as normal, but output only silence
+    // On destructor needsReset flag is set, as the plugin might have missed some events
+    class ScopedProcessLocker
+    {
+    public:
+        ScopedProcessLocker(CarlaPlugin* const plugin);
+        ~ScopedProcessLocker();
+
+    private:
+        CarlaPlugin* const kPlugin;
+
+        CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ScopedProcessLocker)
     };
 
 private:

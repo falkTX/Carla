@@ -303,39 +303,39 @@ public:
     {
         qDebug("CarlaVstClient::hostCanDo(\"%s\")", feature);
 
-        if (strcmp(feature, "supplyIdle") == 0)
+        if (std::strcmp(feature, "supplyIdle") == 0)
             return 1;
-        if (strcmp(feature, "sendVstEvents") == 0)
+        if (std::strcmp(feature, "sendVstEvents") == 0)
             return 1;
-        if (strcmp(feature, "sendVstMidiEvent") == 0)
+        if (std::strcmp(feature, "sendVstMidiEvent") == 0)
             return 1;
-        if (strcmp(feature, "sendVstMidiEventFlagIsRealtime") == 0)
+        if (std::strcmp(feature, "sendVstMidiEventFlagIsRealtime") == 0)
             return -1;
-        if (strcmp(feature, "sendVstTimeInfo") == 0)
+        if (std::strcmp(feature, "sendVstTimeInfo") == 0)
             return 1;
-        if (strcmp(feature, "receiveVstEvents") == 0)
+        if (std::strcmp(feature, "receiveVstEvents") == 0)
             return 1;
-        if (strcmp(feature, "receiveVstMidiEvent") == 0)
+        if (std::strcmp(feature, "receiveVstMidiEvent") == 0)
             return 1;
-        if (strcmp(feature, "receiveVstTimeInfo") == 0)
+        if (std::strcmp(feature, "receiveVstTimeInfo") == 0)
             return -1;
-        if (strcmp(feature, "reportConnectionChanges") == 0)
+        if (std::strcmp(feature, "reportConnectionChanges") == 0)
             return -1;
-        if (strcmp(feature, "acceptIOChanges") == 0)
+        if (std::strcmp(feature, "acceptIOChanges") == 0)
             return 1;
-        if (strcmp(feature, "sizeWindow") == 0)
+        if (std::strcmp(feature, "sizeWindow") == 0)
             return 1;
-        if (strcmp(feature, "offline") == 0)
+        if (std::strcmp(feature, "offline") == 0)
             return -1;
-        if (strcmp(feature, "openFileSelector") == 0)
+        if (std::strcmp(feature, "openFileSelector") == 0)
             return -1;
-        if (strcmp(feature, "closeFileSelector") == 0)
+        if (std::strcmp(feature, "closeFileSelector") == 0)
             return -1;
-        if (strcmp(feature, "startStopProcess") == 0)
+        if (std::strcmp(feature, "startStopProcess") == 0)
             return 1;
-        if (strcmp(feature, "supportShell") == 0)
+        if (std::strcmp(feature, "supportShell") == 0)
             return -1;
-        if (strcmp(feature, "shellCategory") == 0)
+        if (std::strcmp(feature, "shellCategory") == 0)
             return -1;
 
         // unimplemented
@@ -465,12 +465,12 @@ public:
 
         case audioMasterGetVendorString:
             if (ptr)
-                strcpy((char*)ptr, "Cadence");
+                std::strcpy((char*)ptr, "Cadence");
             break;
 
         case audioMasterGetProductString:
             if (ptr)
-                strcpy((char*)ptr, "Carla-Bridge");
+                std::strcpy((char*)ptr, "Carla-Bridge");
             break;
 
         case audioMasterGetVendorVersion:
@@ -548,7 +548,7 @@ int main(int argc, char* argv[])
     const char* binary  = argv[2];
     const char* uiTitle = argv[3];
 
-    const bool useOsc = strcmp(oscUrl, "null");
+    const bool useOsc = std::strcmp(oscUrl, "null");
 
     // try to get sampleRate value
     const char* const sampleRateStr = getenv("CARLA_SAMPLE_RATE");

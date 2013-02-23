@@ -74,9 +74,9 @@ void osc_send_configure(const CarlaOscData* const oscData, const char* const key
 
     if (oscData != nullptr && oscData->path != nullptr && oscData->target != nullptr && key != nullptr && value != nullptr)
     {
-        char targetPath[strlen(oscData->path)+11];
-        strcpy(targetPath, oscData->path);
-        strcat(targetPath, "/configure");
+        char targetPath[std::strlen(oscData->path)+11];
+        std::strcpy(targetPath, oscData->path);
+        std::strcat(targetPath, "/configure");
         lo_send(oscData->target, targetPath, "ss", key, value);
     }
 }
@@ -90,9 +90,9 @@ void osc_send_control(const CarlaOscData* const oscData, const int32_t index, co
 
     if (oscData != nullptr && oscData->path != nullptr && oscData->target != nullptr && index != -1)
     {
-        char targetPath[strlen(oscData->path)+9];
-        strcpy(targetPath, oscData->path);
-        strcat(targetPath, "/control");
+        char targetPath[std::strlen(oscData->path)+9];
+        std::strcpy(targetPath, oscData->path);
+        std::strcat(targetPath, "/control");
         lo_send(oscData->target, targetPath, "if", index, value);
     }
 }
@@ -106,9 +106,9 @@ void osc_send_program(const CarlaOscData* const oscData, const int32_t index)
 
     if (oscData != nullptr && oscData->path != nullptr && oscData->target != nullptr && index >= 0)
     {
-        char targetPath[strlen(oscData->path)+9];
-        strcpy(targetPath, oscData->path);
-        strcat(targetPath, "/program");
+        char targetPath[std::strlen(oscData->path)+9];
+        std::strcpy(targetPath, oscData->path);
+        std::strcat(targetPath, "/program");
         lo_send(oscData->target, targetPath, "i", index);
     }
 }
@@ -123,9 +123,9 @@ void osc_send_program(const CarlaOscData* const oscData, const int32_t bank, con
 
     if (oscData != nullptr && oscData->path != nullptr && oscData->target != nullptr && bank >= 0 && program >= 0)
     {
-        char targetPath[strlen(oscData->path)+9];
-        strcpy(targetPath, oscData->path);
-        strcat(targetPath, "/program");
+        char targetPath[std::strlen(oscData->path)+9];
+        std::strcpy(targetPath, oscData->path);
+        std::strcat(targetPath, "/program");
         lo_send(oscData->target, targetPath, "ii", bank, program);
     }
 }
@@ -139,9 +139,9 @@ void osc_send_midi_program(const CarlaOscData* const oscData, const int32_t inde
 
     if (oscData != nullptr && oscData->path != nullptr && oscData->target != nullptr && index >= 0)
     {
-        char targetPath[strlen(oscData->path)+14];
-        strcpy(targetPath, oscData->path);
-        strcat(targetPath, "/midi-program");
+        char targetPath[std::strlen(oscData->path)+14];
+        std::strcpy(targetPath, oscData->path);
+        std::strcat(targetPath, "/midi-program");
         lo_send(oscData->target, targetPath, "i", index);
     }
 }
@@ -156,9 +156,9 @@ void osc_send_midi_program(const CarlaOscData* const oscData, const int32_t bank
 
     if (oscData != nullptr && oscData->path != nullptr && oscData->target != nullptr && bank >= 0 && program >= 0)
     {
-        char targetPath[strlen(oscData->path)+14];
-        strcpy(targetPath, oscData->path);
-        strcat(targetPath, "/midi-program");
+        char targetPath[std::strlen(oscData->path)+14];
+        std::strcpy(targetPath, oscData->path);
+        std::strcat(targetPath, "/midi-program");
         lo_send(oscData->target, targetPath, "ii", bank, program);
     }
 }
@@ -173,9 +173,9 @@ void osc_send_midi(const CarlaOscData* const oscData, const uint8_t buf[4])
 
     if (oscData != nullptr && oscData->path != nullptr && oscData->target != nullptr && buf[0] == 0 && buf[1] != 0)
     {
-        char targetPath[strlen(oscData->path)+6];
-        strcpy(targetPath, oscData->path);
-        strcat(targetPath, "/midi");
+        char targetPath[std::strlen(oscData->path)+6];
+        std::strcpy(targetPath, oscData->path);
+        std::strcat(targetPath, "/midi");
         lo_send(oscData->target, targetPath, "m", buf);
     }
 }
@@ -189,9 +189,9 @@ void osc_send_sample_rate(const CarlaOscData* const oscData, const float sampleR
 
     if (oscData != nullptr && oscData->path != nullptr && oscData->target != nullptr && sampleRate > 0.0f)
     {
-        char targetPath[strlen(oscData->path)+13];
-        strcpy(targetPath, oscData->path);
-        strcat(targetPath, "/sample-rate");
+        char targetPath[std::strlen(oscData->path)+13];
+        std::strcpy(targetPath, oscData->path);
+        std::strcat(targetPath, "/sample-rate");
         lo_send(oscData->target, targetPath, "f", sampleRate);
     }
 }
@@ -206,9 +206,9 @@ void osc_send_update(const CarlaOscData* const oscData, const char* const url)
 
     if (oscData != nullptr && oscData->path != nullptr && oscData->target != nullptr && url != nullptr)
     {
-        char targetPath[strlen(oscData->path)+8];
-        strcpy(targetPath, oscData->path);
-        strcat(targetPath, "/update");
+        char targetPath[std::strlen(oscData->path)+8];
+        std::strcpy(targetPath, oscData->path);
+        std::strcat(targetPath, "/update");
         lo_send(oscData->target, targetPath, "s", url);
     }
 }
@@ -221,9 +221,9 @@ void osc_send_exiting(const CarlaOscData* const oscData)
 
     if (oscData != nullptr && oscData->path != nullptr && oscData->target != nullptr)
     {
-        char targetPath[strlen(oscData->path)+9];
-        strcpy(targetPath, oscData->path);
-        strcat(targetPath, "/exiting");
+        char targetPath[std::strlen(oscData->path)+9];
+        std::strcpy(targetPath, oscData->path);
+        std::strcat(targetPath, "/exiting");
         lo_send(oscData->target, targetPath, "");
     }
 }
@@ -237,9 +237,9 @@ void osc_send_show(const CarlaOscData* const oscData)
 
     if (oscData != nullptr && oscData->path != nullptr && oscData->target != nullptr)
     {
-        char targetPath[strlen(oscData->path)+6];
-        strcpy(targetPath, oscData->path);
-        strcat(targetPath, "/show");
+        char targetPath[std::strlen(oscData->path)+6];
+        std::strcpy(targetPath, oscData->path);
+        std::strcat(targetPath, "/show");
         lo_send(oscData->target, targetPath, "");
     }
 }
@@ -252,9 +252,9 @@ void osc_send_hide(const CarlaOscData* const oscData)
 
     if (oscData != nullptr && oscData->path != nullptr && oscData->target != nullptr)
     {
-        char targetPath[strlen(oscData->path)+6];
-        strcpy(targetPath, oscData->path);
-        strcat(targetPath, "/hide");
+        char targetPath[std::strlen(oscData->path)+6];
+        std::strcpy(targetPath, oscData->path);
+        std::strcat(targetPath, "/hide");
         lo_send(oscData->target, targetPath, "");
     }
 }
@@ -267,9 +267,9 @@ void osc_send_quit(const CarlaOscData* const oscData)
 
     if (oscData != nullptr && oscData->path != nullptr && oscData->target != nullptr)
     {
-        char targetPath[strlen(oscData->path)+6];
-        strcpy(targetPath, oscData->path);
-        strcat(targetPath, "/quit");
+        char targetPath[std::strlen(oscData->path)+6];
+        std::strcpy(targetPath, oscData->path);
+        std::strcat(targetPath, "/quit");
         lo_send(oscData->target, targetPath, "");
     }
 }
@@ -286,9 +286,9 @@ void osc_send_bridge_update(const CarlaOscData* const oscData, const char* const
 
     if (oscData != nullptr && oscData->path != nullptr && oscData->target != nullptr && url != nullptr)
     {
-        char targetPath[strlen(oscData->path)+15];
-        strcpy(targetPath, oscData->path);
-        strcat(targetPath, "/bridge_update");
+        char targetPath[std::strlen(oscData->path)+15];
+        std::strcpy(targetPath, oscData->path);
+        std::strcat(targetPath, "/bridge_update");
         lo_send(oscData->target, targetPath, "s", url);
     }
 }
@@ -302,9 +302,9 @@ void osc_send_bridge_error(const CarlaOscData* const oscData, const char* const 
 
     if (oscData != nullptr && oscData->path != nullptr && oscData->target != nullptr && error != nullptr)
     {
-        char targetPath[strlen(oscData->path)+14];
-        strcpy(targetPath, oscData->path);
-        strcat(targetPath, "/bridge_error");
+        char targetPath[std::strlen(oscData->path)+14];
+        std::strcpy(targetPath, oscData->path);
+        std::strcat(targetPath, "/bridge_error");
         lo_send(oscData->target, targetPath, "s", error);
     }
 }
@@ -322,9 +322,9 @@ void osc_send_lv2_transfer_atom(const CarlaOscData* const oscData, const int32_t
 
     if (oscData != nullptr && oscData->path != nullptr && oscData->target != nullptr && portIndex >= 0 && typeStr != nullptr && atomBuf != nullptr)
     {
-        char targetPath[strlen(oscData->path)+19];
-        strcpy(targetPath, oscData->path);
-        strcat(targetPath, "/lv2_atom_transfer");
+        char targetPath[std::strlen(oscData->path)+19];
+        std::strcpy(targetPath, oscData->path);
+        std::strcat(targetPath, "/lv2_atom_transfer");
         lo_send(oscData->target, targetPath, "iss", portIndex, typeStr, atomBuf);
     }
 }
@@ -340,9 +340,9 @@ void osc_send_lv2_transfer_event(const CarlaOscData* const oscData, const int32_
 
     if (oscData != nullptr && oscData->path != nullptr && oscData->target != nullptr && portIndex >= 0 && typeStr != nullptr && atomBuf != nullptr)
     {
-        char targetPath[strlen(oscData->path)+20];
-        strcpy(targetPath, oscData->path);
-        strcat(targetPath, "/lv2_event_transfer");
+        char targetPath[std::strlen(oscData->path)+20];
+        std::strcpy(targetPath, oscData->path);
+        std::strcat(targetPath, "/lv2_event_transfer");
         lo_send(oscData->target, targetPath, "iss", portIndex, typeStr, atomBuf);
     }
 }

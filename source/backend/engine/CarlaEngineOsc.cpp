@@ -321,7 +321,7 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
         return handleMsgNoteOff(plugin, argc, argv, types);
 
     // Plugin Bridges
-    if ((plugin->hints() & PLUGIN_IS_BRIDGE) > 0 && strlen(method) > 11 && strncmp(method, "bridge_", 7) == 0)
+    if ((plugin->hints() & PLUGIN_IS_BRIDGE) > 0 && std::strlen(method) > 11 && std::strncmp(method, "bridge_", 7) == 0)
     {
         if (std::strcmp(method+7, "set_peaks") == 0)
             return handleMsgBridgeSetPeaks(plugin, argc, argv, types);

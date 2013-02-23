@@ -9,8 +9,8 @@ include ../Makefile.mk
 # --------------------------------------------------------------
 
 BUILD_CXX_FLAGS += -I../backend -I../includes -I../libs -I../utils -Wall -Wextra
-BUILD_CXX_FLAGS += -DWANT_JACK -DWANT_RTAUDIO
-# BUILD_CXX_FLAGS += -isystem /usr/include/qt4
+BUILD_CXX_FLAGS += -DWANT_JACK -DWANT_LADSPA -DWANT_DSSI
+BUILD_CXX_FLAGS += -isystem /usr/include/qt4
 # BUILD_CXX_FLAGS += -isystem ../backend/engine/rtaudio-4.0.11
 # BUILD_CXX_FLAGS += -I/opt/mingw32/include
 

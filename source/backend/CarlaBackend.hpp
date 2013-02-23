@@ -565,17 +565,17 @@ typedef void (*CallbackFunc)(void* ptr, CallbackType action, unsigned int plugin
  */
 struct ParameterData {
     ParameterType type;
-    int32_t index;
-    int32_t rindex;
-    int32_t hints;
-    uint8_t midiChannel;
-    int16_t midiCC;
+    int32_t  index;
+    int32_t  rindex;
+    uint32_t hints;
+    uint8_t  midiChannel;
+    int16_t  midiCC;
 
     ParameterData()
         : type(PARAMETER_UNKNOWN),
           index(-1),
           rindex(-1),
-          hints(0),
+          hints(0x0),
           midiChannel(0),
           midiCC(-1) {}
 };

@@ -1443,7 +1443,6 @@ CarlaPlugin* CarlaPlugin::newSF2(const Initializer& init, const bool use16Outs)
     }
 
     plugin->reload();
-    plugin->registerToOscClient();
 
     return plugin;
 #else

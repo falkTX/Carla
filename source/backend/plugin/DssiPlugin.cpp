@@ -28,21 +28,22 @@ class DssiPlugin : public CarlaPlugin
 {
 public:
     DssiPlugin(CarlaEngine* const engine, const unsigned int id)
-        : CarlaPlugin(engine, id)
+        : CarlaPlugin(engine, id),
+          fHandle(nullptr),
+          fHandle2(nullptr),
+          fDescriptor(nullptr),
+          fDssiDescriptor(nullptr),
+          fAudioInBuffers(nullptr),
+          fAudioOutBuffers(nullptr),
+          fParamBuffers(nullptr)
     {
         carla_debug("DssiPlugin::DssiPlugin(%p, %i)", engine, id);
 
-        fHandle  = nullptr;
-        fHandle2 = nullptr;
-        fDescriptor = nullptr;
-        fDssiDescriptor = nullptr;
-
-        fAudioInBuffers  = nullptr;
-        fAudioOutBuffers = nullptr;
-        fParamBuffers    = nullptr;
-
         carla_zeroMem(fMidiEvents, sizeof(snd_seq_event_t)*MAX_MIDI_EVENTS);
 
+        kData->osc.thread.setMode(CarlaPluginThread::PLUGIN_THREAD_DSSI_GUI);
+
+        // FIXME
         if (engine->getOptions().useDssiVstChunks)
             fOptions |= PLUGIN_OPTION_USE_CHUNKS;
     }
@@ -111,7 +112,7 @@ public:
     {
         CARLA_ASSERT(fDescriptor != nullptr);
 
-        return (fDescriptor != nullptr) ? fDescriptor->UniqueID : 0;
+        return (fDescriptor != nullptr) ? static_cast<long>(fDescriptor->UniqueID) : 0;
     }
 
     // -------------------------------------------------------------------
@@ -129,7 +130,7 @@ public:
         unsigned long dataSize = 0;
 
         if (fDssiDescriptor->get_custom_data != nullptr && fDssiDescriptor->get_custom_data(fHandle, dataPtr, &dataSize))
-            return dataSize;
+            return (int32_t)dataSize;
 
         return 0;
     }
@@ -232,6 +233,8 @@ public:
 
         if (fDssiDescriptor->configure != nullptr)
         {
+            const ScopedProcessLocker spl(this);
+
             fDssiDescriptor->configure(fHandle, key, value);
 
             if (fHandle2)
@@ -241,9 +244,9 @@ public:
         if (sendGui && kData->osc.data.target != nullptr)
             osc_send_configure(&kData->osc.data, key, value);
 
-        if (strcmp(key, "reloadprograms") == 0 || strcmp(key, "load") == 0 || strncmp(key, "patches", 7) == 0)
+        if (std::strcmp(key, "reloadprograms") == 0 || std::strcmp(key, "load") == 0 || std::strncmp(key, "patches", 7) == 0)
         {
-            const ScopedDisabler m(this); // FIXME
+            const ScopedDisabler sd(this);
             reloadPrograms(false);
         }
 
@@ -266,16 +269,8 @@ public:
         fChunk = QByteArray::fromBase64(QByteArray(stringData));
         //fChunk.toBase64();
 
-        if (kData->engine->isOffline())
-        {
-            //const CarlaEngine::ScopedLocker m(kData->engine);
-            fDssiDescriptor->set_custom_data(fHandle, fChunk.data(), fChunk.size());
-        }
-        else
-        {
-            const CarlaPlugin::ScopedDisabler m(this);
-            fDssiDescriptor->set_custom_data(fHandle, fChunk.data(), fChunk.size());
-        }
+        const ScopedProcessLocker spl(this);
+        fDssiDescriptor->set_custom_data(fHandle, fChunk.data(), (unsigned long)fChunk.size());
     }
 
     void setMidiProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback, const bool block)
@@ -289,29 +284,17 @@ public:
         else if (index > static_cast<int32_t>(kData->midiprog.count))
             return;
 
-        // FIXME
         if (fDssiDescriptor != nullptr && fHandle != nullptr && index >= 0)
         {
             const uint32_t bank    = kData->midiprog.data[index].bank;
             const uint32_t program = kData->midiprog.data[index].program;
 
-            if (kData->engine->isOffline())
-            {
-                //const CarlaEngine::ScopedLocker m(x_engine, block);
-                fDssiDescriptor->select_program(fHandle, bank, program);
+            const ScopedProcessLocker spl(this);
 
-                if (fHandle2 != nullptr)
-                    fDssiDescriptor->select_program(fHandle2, bank, program);
-            }
-            else
-            {
-                //const ScopedDisabler m(this, block);
+            fDssiDescriptor->select_program(fHandle, bank, program);
 
-                fDssiDescriptor->select_program(fHandle, bank, program);
-
-                if (fHandle2 != nullptr)
-                    fDssiDescriptor->select_program(fHandle2, bank, program);
-            }
+            if (fHandle2 != nullptr)
+                fDssiDescriptor->select_program(fHandle2, bank, program);
         }
 
         CarlaPlugin::setMidiProgram(index, sendGui, sendOsc, sendCallback, block);
@@ -355,13 +338,10 @@ public:
         // Safely disable plugin for reload
         const ScopedDisabler sd(this);
 
-        if (kData->client->isActive())
-            kData->client->deactivate();
-
         deleteBuffers();
 
-        const double sampleRate = kData->engine->getSampleRate();
-        const unsigned long portCount = fDescriptor->PortCount;
+        const float   sampleRate = (float)kData->engine->getSampleRate();
+        const uint32_t portCount = static_cast<uint32_t>(fDescriptor->PortCount);
 
         uint32_t aIns, aOuts, mIns, params, j;
         aIns = aOuts = mIns = params = 0;
@@ -372,25 +352,32 @@ public:
         bool needsCtrlIn, needsCtrlOut;
         needsCtrlIn = needsCtrlOut = false;
 
-        for (unsigned long i=0; i < portCount; i++)
+        if (portCount > 0)
         {
-            const LADSPA_PortDescriptor portType = fDescriptor->PortDescriptors[i];
+            CARLA_ASSERT(fDescriptor->PortDescriptors != nullptr);
+            CARLA_ASSERT(fDescriptor->PortRangeHints != nullptr);
+            CARLA_ASSERT(fDescriptor->PortNames != nullptr);
 
-            if (LADSPA_IS_PORT_AUDIO(portType))
+            for (uint32_t i=0; i < portCount; i++)
             {
-                if (LADSPA_IS_PORT_INPUT(portType))
-                    aIns += 1;
-                else if (LADSPA_IS_PORT_OUTPUT(portType))
-                    aOuts += 1;
+                const LADSPA_PortDescriptor portType = fDescriptor->PortDescriptors[i];
+
+                if (LADSPA_IS_PORT_AUDIO(portType))
+                {
+                    if (LADSPA_IS_PORT_INPUT(portType))
+                        aIns += 1;
+                    else if (LADSPA_IS_PORT_OUTPUT(portType))
+                        aOuts += 1;
+                }
+                else if (LADSPA_IS_PORT_CONTROL(portType))
+                    params += 1;
             }
-            else if (LADSPA_IS_PORT_CONTROL(portType))
-                params += 1;
         }
 
         if ((fOptions & PLUGIN_OPTION_FORCE_STEREO) != 0 && (aIns == 1 || aOuts == 1))
         {
             if (fHandle2 == nullptr)
-                fHandle2 = fDescriptor->instantiate(fDescriptor, sampleRate);
+                fHandle2 = fDescriptor->instantiate(fDescriptor, (unsigned long)sampleRate);
 
             if (aIns == 1)
             {
@@ -434,12 +421,15 @@ public:
         {
             kData->param.createNew(params);
             fParamBuffers = new float[params];
+
+            for (uint32_t i=0; i < params; i++)
+                fParamBuffers[i] = 0.0f;
         }
 
-        const int   portNameSize = kData->engine->maxPortNameSize();
+        const uint  portNameSize = kData->engine->maxPortNameSize();
         CarlaString portName;
 
-        for (unsigned long i=0, iAudioIn=0, iAudioOut=0, iCtrl=0; i < portCount; i++)
+        for (uint32_t i=0, iAudioIn=0, iAudioOut=0, iCtrl=0; i < portCount; i++)
         {
             const LADSPA_PortDescriptor portType      = fDescriptor->PortDescriptors[i];
             const LADSPA_PortRangeHint portRangeHints = fDescriptor->PortRangeHints[i];
@@ -763,7 +753,7 @@ public:
                 if (fDescriptor->deactivate != nullptr)
                     fDescriptor->deactivate(fHandle);
 
-                const uint32_t latency = std::rint(fParamBuffers[i]);
+                const uint32_t latency = (uint32_t)fParamBuffers[i];
 
                 if (kData->latency != latency)
                 {
@@ -778,8 +768,6 @@ public:
 
         bufferSizeChanged(kData->engine->getBufferSize());
         reloadPrograms(true);
-
-        kData->client->activate();
 
         carla_debug("DssiPlugin::reload() - end");
     }
@@ -810,8 +798,8 @@ public:
             CARLA_ASSERT(pdesc != nullptr);
             CARLA_ASSERT(pdesc->Name != nullptr);
 
-            kData->midiprog.data[i].bank    = pdesc->Bank;
-            kData->midiprog.data[i].program = pdesc->Program;
+            kData->midiprog.data[i].bank    = static_cast<uint32_t>(pdesc->Bank);
+            kData->midiprog.data[i].program = static_cast<uint32_t>(pdesc->Program);
             kData->midiprog.data[i].name    = carla_strdup(pdesc->Name);
         }
 
@@ -908,18 +896,18 @@ public:
         {
             if (kData->event.portIn != nullptr)
             {
-                for (k=0, i=MAX_MIDI_CHANNELS; k < MAX_MIDI_CHANNELS; k++)
+                for (unsigned char j=0, l=MAX_MIDI_CHANNELS; j < MAX_MIDI_CHANNELS; j++)
                 {
-                    carla_zeroStruct<snd_seq_event_t>(fMidiEvents[k]);
-                    carla_zeroStruct<snd_seq_event_t>(fMidiEvents[k+i]);
+                    carla_zeroStruct<snd_seq_event_t>(fMidiEvents[j]);
+                    carla_zeroStruct<snd_seq_event_t>(fMidiEvents[j+l]);
 
-                    fMidiEvents[k].type = SND_SEQ_EVENT_CONTROLLER;
-                    fMidiEvents[k].data.control.channel = k;
-                    fMidiEvents[k].data.control.param   = MIDI_CONTROL_ALL_SOUND_OFF;
+                    fMidiEvents[j].type = SND_SEQ_EVENT_CONTROLLER;
+                    fMidiEvents[j].data.control.channel = j;
+                    fMidiEvents[j].data.control.param   = MIDI_CONTROL_ALL_SOUND_OFF;
 
-                    fMidiEvents[k+i].type = SND_SEQ_EVENT_CONTROLLER;
-                    fMidiEvents[k+i].data.control.channel = k;
-                    fMidiEvents[k+i].data.control.param   = MIDI_CONTROL_ALL_NOTES_OFF;
+                    fMidiEvents[j+l].type = SND_SEQ_EVENT_CONTROLLER;
+                    fMidiEvents[j+l].data.control.channel = j;
+                    fMidiEvents[j+l].data.control.param   = MIDI_CONTROL_ALL_NOTES_OFF;
                 }
 
                 midiEventCount = MAX_MIDI_CHANNELS*2;
@@ -1044,7 +1032,7 @@ public:
                         // Control backend stuff
                         if (event.channel == kData->ctrlChannel)
                         {
-                            double value;
+                            float value;
 
                             if (MIDI_IS_CONTROL_BREATH_CONTROLLER(ctrlEvent.param) && (fHints & PLUGIN_CAN_DRYWET) > 0)
                             {
@@ -1056,7 +1044,7 @@ public:
 
                             if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (fHints & PLUGIN_CAN_VOLUME) > 0)
                             {
-                                value = ctrlEvent.value*127/100;
+                                value = ctrlEvent.value*127.0f/100.0f;
                                 setVolume(value, false, false);
                                 postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_VOLUME, 0, value);
                                 continue;
@@ -1064,23 +1052,23 @@ public:
 
                             if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (fHints & PLUGIN_CAN_BALANCE) > 0)
                             {
-                                double left, right;
-                                value = ctrlEvent.value/0.5 - 1.0;
+                                float left, right;
+                                value = ctrlEvent.value/0.5f - 1.0f;
 
-                                if (value < 0.0)
+                                if (value < 0.0f)
                                 {
-                                    left  = -1.0;
-                                    right = (value*2)+1.0;
+                                    left  = -1.0f;
+                                    right = (value*2.0f)+1.0f;
                                 }
-                                else if (value > 0.0)
+                                else if (value > 0.0f)
                                 {
-                                    left  = (value*2)-1.0;
-                                    right = 1.0;
+                                    left  = (value*2.0f)-1.0f;
+                                    right = 1.0f;
                                 }
                                 else
                                 {
-                                    left  = -1.0;
-                                    right = 1.0;
+                                    left  = -1.0f;
+                                    right = 1.0f;
                                 }
 
                                 setBalanceLeft(left, false, false);
@@ -1103,7 +1091,7 @@ public:
                             if ((kData->param.data[k].hints & PARAMETER_IS_AUTOMABLE) == 0)
                                 continue;
 
-                            double value;
+                            float value;
 
                             if (kData->param.data[k].hints & PARAMETER_IS_BOOLEAN)
                             {
@@ -1111,15 +1099,14 @@ public:
                             }
                             else
                             {
-                                // FIXME - ranges call for this
-                                value = ctrlEvent.value * (kData->param.ranges[k].max - kData->param.ranges[k].min) + kData->param.ranges[k].min;
+                                value = kData->param.ranges[i].unnormalizeValue(ctrlEvent.value);
 
                                 if (kData->param.data[k].hints & PARAMETER_IS_INTEGER)
                                     value = std::rint(value);
                             }
 
                             setParameterValue(k, value, false, false, false);
-                            postponeRtEvent(kPluginPostRtEventParameterChange, k, 0, value);
+                            postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 0, value);
                         }
 
                         break;
@@ -1345,7 +1332,9 @@ public:
 
         if (kData->event.portOut != nullptr)
         {
-            float value;
+            uint8_t  channel;
+            uint16_t param;
+            float    value;
 
             for (k=0; k < kData->param.count; k++)
             {
@@ -1356,8 +1345,10 @@ public:
 
                 if (kData->param.data[k].midiCC > 0)
                 {
-                    value = kData->param.ranges[k].normalizeValue(fParamBuffers[k]);
-                    kData->event.portOut->writeControlEvent(0, kData->param.data[k].midiChannel, kEngineControlEventTypeParameter, kData->param.data[k].midiCC, value);
+                    channel = kData->param.data[k].midiChannel;
+                    param   = static_cast<uint16_t>(kData->param.data[k].midiCC);
+                    value   = kData->param.ranges[k].normalizeValue(fParamBuffers[k]);
+                    kData->event.portOut->writeControlEvent(0, channel, kEngineControlEventTypeParameter, param, value);
                 }
             }
 
@@ -1368,14 +1359,18 @@ public:
         kData->activeBefore = kData->active;
     }
 
-    bool processSingle(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t timeOffset, const uint32_t midiEventCount)
+    bool processSingle(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t timeOffset, const unsigned long midiEventCount)
     {
         uint32_t i, k;
 
         // --------------------------------------------------------------------------------------------------------
         // Try lock, silence otherwise
 
-        if (! kData->mutex.tryLock())
+        if (kData->engine->isOffline())
+        {
+            kData->mutex.lock();
+        }
+        else if (! kData->mutex.tryLock())
         {
             for (i=0; i < kData->audioOut.count; i++)
             {
@@ -1461,14 +1456,14 @@ public:
                         if (i % 2 == 0)
                         {
                             // left
-                            fAudioOutBuffers[i][k]  = oldBufLeft[k]     * (1.0f - balRangeL);
+                            fAudioOutBuffers[i][k]  = oldBufLeft[k]            * (1.0f - balRangeL);
                             fAudioOutBuffers[i][k] += fAudioOutBuffers[i+1][k] * (1.0f - balRangeR);
                         }
                         else
                         {
                             // right
                             fAudioOutBuffers[i][k]  = fAudioOutBuffers[i][k] * balRangeR;
-                            fAudioOutBuffers[i][k] += oldBufLeft[k]   * balRangeL;
+                            fAudioOutBuffers[i][k] += oldBufLeft[k]          * balRangeL;
                         }
                     }
                 }
@@ -1498,6 +1493,8 @@ public:
 
     void bufferSizeChanged(const uint32_t newBufferSize)
     {
+        carla_debug("DssiPlugin::bufferSizeChanged(%i) - start", newBufferSize);
+
         for (uint32_t i=0; i < kData->audioIn.count; i++)
         {
             if (fAudioInBuffers[i] != nullptr)
@@ -1548,6 +1545,8 @@ public:
                 fDescriptor->connect_port(fHandle2, kData->audioOut.ports[1].rindex, fAudioOutBuffers[1]);
             }
         }
+
+        carla_debug("DssiPlugin::bufferSizeChanged(%i) - start", newBufferSize);
     }
 
     // -------------------------------------------------------------------
@@ -1739,7 +1738,7 @@ public:
         // ---------------------------------------------------------------
         // initialize plugin
 
-        fHandle = fDescriptor->instantiate(fDescriptor, kData->engine->getSampleRate());
+        fHandle = fDescriptor->instantiate(fDescriptor, (unsigned long)kData->engine->getSampleRate());
 
         if (fHandle == nullptr)
         {
@@ -1752,9 +1751,7 @@ public:
 
         if (guiFilename != nullptr)
         {
-            kData->osc.thread.setMode(CarlaPluginThread::PLUGIN_THREAD_DSSI_GUI);
             kData->osc.thread.setOscData(guiFilename, fDescriptor->Label);
-
             fHints |= PLUGIN_HAS_GUI;
         }
 
@@ -1803,8 +1800,6 @@ CarlaPlugin* CarlaPlugin::newDSSI(const Initializer& init, const char* const gui
         delete plugin;
         return nullptr;
     }
-
-    plugin->registerToOscClient();
 
     return plugin;
 #else

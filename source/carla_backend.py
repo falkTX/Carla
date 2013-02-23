@@ -46,7 +46,7 @@ class ParameterData(Structure):
         ("type", c_enum),
         ("index", c_int32),
         ("rindex", c_int32),
-        ("hints", c_int32),
+        ("hints", c_uint32),
         ("midiChannel", c_uint8),
         ("midiCC", c_int16)
     ]

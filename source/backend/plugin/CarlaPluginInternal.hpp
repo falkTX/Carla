@@ -332,13 +332,13 @@ struct PluginPostRtEvent {
     PluginPostRtEventType type;
     int32_t value1;
     int32_t value2;
-    double  value3;
+    float   value3;
 
     PluginPostRtEvent()
         : type(kPluginPostRtEventNull),
           value1(-1),
           value2(-1),
-          value3(0.0) {}
+          value3(0.0f) {}
 
     CARLA_DECLARE_NON_COPY_STRUCT(PluginPostRtEvent)
 };
@@ -402,11 +402,11 @@ struct CarlaPluginProtectedData {
     float**  latencyBuffers;
 
     // data
-    PluginAudioData       audioIn;
-    PluginAudioData       audioOut;
-    PluginEventData       event;
-    PluginParameterData   param;
-    PluginProgramData     prog;
+    PluginAudioData audioIn;
+    PluginAudioData audioOut;
+    PluginEventData event;
+    PluginParameterData param;
+    PluginProgramData prog;
     PluginMidiProgramData midiprog;
     NonRtListNew<CustomData> custom;
 
@@ -418,18 +418,25 @@ struct CarlaPluginProtectedData {
         RtList<ExternalMidiNote> data;
 
         ExternalNotes()
-            : dataPool(152, 512),
+            : dataPool(32, 128),
               data(&dataPool) {}
 
         ~ExternalNotes()
         {
+            mutex.lock();
             data.clear();
+            mutex.unlock();
         }
 
         void append(const ExternalMidiNote& note)
         {
+            mutex.lock();
             data.append_sleepy(note);
+            mutex.unlock();
         }
+
+        ExternalNotes(ExternalNotes&) = delete;
+        ExternalNotes(const ExternalNotes&) = delete;
 
     } extNotes;
 
@@ -446,12 +453,13 @@ struct CarlaPluginProtectedData {
 
         ~PostRtEvents()
         {
+            mutex.lock();
             clear();
+            mutex.unlock();
         }
 
         void appendRT(const PluginPostRtEvent& event)
         {
-            // FIXME!! need lock?
             dataPendingRT.append(event);
         }
 
@@ -472,6 +480,9 @@ struct CarlaPluginProtectedData {
             mutex.unlock();
         }
 
+        PostRtEvents(PostRtEvents&) = delete;
+        PostRtEvents(const PostRtEvents&) = delete;
+
     } postRtEvents;
 
     struct PostProc {
@@ -487,6 +498,10 @@ struct CarlaPluginProtectedData {
               balanceLeft(-1.0f),
               balanceRight(1.0f),
               panning(0.0f) {}
+
+        PostProc(PostProc&) = delete;
+        PostProc(const PostProc&) = delete;
+
     } postProc;
 
     struct OSC {
@@ -495,9 +510,14 @@ struct CarlaPluginProtectedData {
 
         OSC(CarlaEngine* const engine, CarlaPlugin* const plugin, const CarlaPluginThread::Mode mode)
             : thread(engine, plugin, mode) {}
+
+        OSC() = delete;
+        OSC(OSC&) = delete;
+        OSC(const OSC&) = delete;
+
     } osc;
 
-    CarlaPluginProtectedData(CarlaEngine* const engine_, CarlaPlugin* const plugin, const CarlaPluginThread::Mode mode)
+    CarlaPluginProtectedData(CarlaEngine* const engine_, CarlaPlugin* const plugin)
         : engine(engine_),
           client(nullptr),
           gui(nullptr),
@@ -510,7 +530,7 @@ struct CarlaPluginProtectedData {
           ctrlChannel(-1),
           latency(0),
           latencyBuffers(nullptr),
-          osc(engine_, plugin, mode) {}
+          osc(engine_, plugin, CarlaPluginThread::PLUGIN_THREAD_NULL) {}
 
     CarlaPluginProtectedData() = delete;
     CarlaPluginProtectedData(CarlaPluginProtectedData&) = delete;
@@ -521,12 +541,12 @@ struct CarlaPluginProtectedData {
         return plugin->kData->engine;
     }
 
-    static CarlaEngineAudioPort* getAudioInPort(CarlaPlugin* const plugin, uint32_t index)
+    static CarlaEngineAudioPort* getAudioInPort(CarlaPlugin* const plugin, const uint32_t index)
     {
         return plugin->kData->audioIn.ports[index].port;
     }
 
-    static CarlaEngineAudioPort* getAudioOutPort(CarlaPlugin* const plugin, uint32_t index)
+    static CarlaEngineAudioPort* getAudioOutPort(CarlaPlugin* const plugin, const uint32_t index)
     {
         return plugin->kData->audioOut.ports[index].port;
     }

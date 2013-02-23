@@ -349,7 +349,7 @@ public:
 
         for (uint32_t i=0; i < rdf_descriptor->UICount; i++)
         {
-            if (strcmp(rdf_descriptor->UIs[i].URI, uiURI) == 0)
+            if (std::strcmp(rdf_descriptor->UIs[i].URI, uiURI) == 0)
             {
                 rdf_ui_descriptor = &rdf_descriptor->UIs[i];
                 break;
@@ -379,7 +379,7 @@ public:
         uint32_t i = 0;
         while ((descriptor = ui_descFn(i++)))
         {
-            if (strcmp(descriptor->URI, uiURI) == 0)
+            if (std::strcmp(descriptor->URI, uiURI) == 0)
                 break;
         }
 
@@ -400,7 +400,7 @@ public:
 #ifndef BRIDGE_LV2_X11
         for (uint32_t i=0; i < rdf_ui_descriptor->FeatureCount; i++)
         {
-            if (strcmp(rdf_ui_descriptor->Features[i].URI, LV2_UI__fixedSize) == 0 || strcmp(rdf_ui_descriptor->Features[i].URI, LV2_UI__noUserResize) == 0)
+            if (std::strcmp(rdf_ui_descriptor->Features[i].URI, LV2_UI__fixedSize) == 0 || std::strcmp(rdf_ui_descriptor->Features[i].URI, LV2_UI__noUserResize) == 0)
             {
                 m_resizable = false;
                 break;
@@ -413,7 +413,7 @@ public:
 
         for (uint32_t i=0; descriptor->extension_data && i < rdf_ui_descriptor->ExtensionCount; i++)
         {
-            if (strcmp(rdf_ui_descriptor->Extensions[i], LV2_PROGRAMS__UIInterface) == 0)
+            if (std::strcmp(rdf_ui_descriptor->Extensions[i], LV2_PROGRAMS__UIInterface) == 0)
             {
                 programs = (LV2_Programs_UI_Interface*)descriptor->extension_data(LV2_PROGRAMS__UIInterface);
 
@@ -534,7 +534,7 @@ public:
 
         for (size_t i=0; i < customURIDs.size(); i++)
         {
-            if (customURIDs[i] && strcmp(customURIDs[i], uri) == 0)
+            if (customURIDs[i] && std::strcmp(customURIDs[i], uri) == 0)
                 return i;
         }
 
@@ -598,14 +598,14 @@ public:
 
             //lv2_atom_forge_property_head(&forge, getCustomURID(key), CARLA_URI_MAP_ID_NULL);
 
-            if (strcmp(type, "string") == 0)
-                lv2_atom_forge_string(&forge, value, strlen(value));
-            else if (strcmp(type, "path") == 0)
-                lv2_atom_forge_path(&forge, value, strlen(value));
-            else if (strcmp(type, "chunk") == 0)
-                lv2_atom_forge_literal(&forge, value, strlen(value), CARLA_URI_MAP_ID_ATOM_CHUNK, CARLA_URI_MAP_ID_NULL);
+            if (std::strcmp(type, "string") == 0)
+                lv2_atom_forge_string(&forge, value, std::strlen(value));
+            else if (std::strcmp(type, "path") == 0)
+                lv2_atom_forge_path(&forge, value, std::strlen(value));
+            else if (std::strcmp(type, "chunk") == 0)
+                lv2_atom_forge_literal(&forge, value, std::strlen(value), CARLA_URI_MAP_ID_ATOM_CHUNK, CARLA_URI_MAP_ID_NULL);
             //else
-            //    lv2_atom_forge_literal(&forge, value, strlen(value), getCustomURID(key), CARLA_URI_MAP_ID_NULL);
+            //    lv2_atom_forge_literal(&forge, value, std::strlen(value), getCustomURID(key), CARLA_URI_MAP_ID_NULL);
 
             lv2_atom_forge_pop(&forge, &bodyFrame);
             lv2_atom_forge_pop(&forge, &refFrame);
@@ -636,7 +636,7 @@ public:
 
         for (uint32_t i=0; i < rdf_descriptor->PortCount; i++)
         {
-            if (strcmp(rdf_descriptor->Ports[i].Symbol, symbol) == 0)
+            if (std::strcmp(rdf_descriptor->Ports[i].Symbol, symbol) == 0)
                 return i;
         }
 
@@ -767,7 +767,7 @@ public:
             break;
         }
 
-        return strlen(buf);
+        return std::strlen(buf);
     }
 
     // ----------------- Programs Feature ------------------------------------------------
@@ -846,45 +846,45 @@ public:
             return CARLA_URI_MAP_ID_NULL;
 
         // Atom types
-        if (strcmp(uri, LV2_ATOM__Chunk) == 0)
+        if (std::strcmp(uri, LV2_ATOM__Chunk) == 0)
             return CARLA_URI_MAP_ID_ATOM_CHUNK;
-        if (strcmp(uri, LV2_ATOM__Double) == 0)
+        if (std::strcmp(uri, LV2_ATOM__Double) == 0)
             return CARLA_URI_MAP_ID_ATOM_DOUBLE;
-        if (strcmp(uri, LV2_ATOM__Int) == 0)
+        if (std::strcmp(uri, LV2_ATOM__Int) == 0)
             return CARLA_URI_MAP_ID_ATOM_INT;
-        if (strcmp(uri, LV2_ATOM__Path) == 0)
+        if (std::strcmp(uri, LV2_ATOM__Path) == 0)
             return CARLA_URI_MAP_ID_ATOM_PATH;
-        if (strcmp(uri, LV2_ATOM__Sequence) == 0)
+        if (std::strcmp(uri, LV2_ATOM__Sequence) == 0)
             return CARLA_URI_MAP_ID_ATOM_SEQUENCE;
-        if (strcmp(uri, LV2_ATOM__String) == 0)
+        if (std::strcmp(uri, LV2_ATOM__String) == 0)
             return CARLA_URI_MAP_ID_ATOM_STRING;
-        if (strcmp(uri, LV2_ATOM__atomTransfer) == 0)
+        if (std::strcmp(uri, LV2_ATOM__atomTransfer) == 0)
             return CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM;
-        if (strcmp(uri, LV2_ATOM__eventTransfer) == 0)
+        if (std::strcmp(uri, LV2_ATOM__eventTransfer) == 0)
             return CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT;
 
         // BufSize types
-        if (strcmp(uri, LV2_BUF_SIZE__maxBlockLength) == 0)
+        if (std::strcmp(uri, LV2_BUF_SIZE__maxBlockLength) == 0)
             return CARLA_URI_MAP_ID_BUF_MAX_LENGTH;
-        if (strcmp(uri, LV2_BUF_SIZE__minBlockLength) == 0)
+        if (std::strcmp(uri, LV2_BUF_SIZE__minBlockLength) == 0)
             return CARLA_URI_MAP_ID_BUF_MIN_LENGTH;
-        if (strcmp(uri, LV2_BUF_SIZE__sequenceSize) == 0)
+        if (std::strcmp(uri, LV2_BUF_SIZE__sequenceSize) == 0)
             return CARLA_URI_MAP_ID_BUF_SEQUENCE_SIZE;
 
         // Log types
-        if (strcmp(uri, LV2_LOG__Error) == 0)
+        if (std::strcmp(uri, LV2_LOG__Error) == 0)
             return CARLA_URI_MAP_ID_LOG_ERROR;
-        if (strcmp(uri, LV2_LOG__Note) == 0)
+        if (std::strcmp(uri, LV2_LOG__Note) == 0)
             return CARLA_URI_MAP_ID_LOG_NOTE;
-        if (strcmp(uri, LV2_LOG__Trace) == 0)
+        if (std::strcmp(uri, LV2_LOG__Trace) == 0)
             return CARLA_URI_MAP_ID_LOG_TRACE;
-        if (strcmp(uri, LV2_LOG__Warning) == 0)
+        if (std::strcmp(uri, LV2_LOG__Warning) == 0)
             return CARLA_URI_MAP_ID_LOG_WARNING;
 
         // Others
-        if (strcmp(uri, LV2_MIDI__MidiEvent) == 0)
+        if (std::strcmp(uri, LV2_MIDI__MidiEvent) == 0)
             return CARLA_URI_MAP_ID_MIDI_EVENT;
-        if (strcmp(uri, LV2_PARAMETERS__sampleRate) == 0)
+        if (std::strcmp(uri, LV2_PARAMETERS__sampleRate) == 0)
             return CARLA_URI_MAP_ID_PARAM_SAMPLE_RATE;
 
         if (! handle)
@@ -1077,7 +1077,7 @@ int main(int argc, char* argv[])
     const char* uiURI     = argv[3];
     const char* uiTitle   = argv[4];
 
-    const bool useOsc = strcmp(oscUrl, "null");
+    const bool useOsc = std::strcmp(oscUrl, "null");
 
     // try to get sampleRate value
     const char* const sampleRateStr = getenv("CARLA_SAMPLE_RATE");

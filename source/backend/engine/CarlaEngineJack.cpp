@@ -439,7 +439,7 @@ public:
             jackbridge_recompute_total_latencies(kClient);
     }
 
-    const CarlaEnginePort* addPort(const EnginePortType portType, const char* const name, const bool isInput)
+    CarlaEnginePort* addPort(const EnginePortType portType, const char* const name, const bool isInput)
     {
         carla_debug("CarlaEngineJackClient::addPort(%s, \"%s\", %s)", EnginePortType2Str(portType), name, bool2str(isInput));
 
