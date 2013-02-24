@@ -50,17 +50,15 @@ const unsigned int MAX_DEFAULT_PARAMETERS = 200; //!< Maximum default number of 
  * \see CarlaPlugin::hints()
  * @{
  */
-const unsigned int PLUGIN_IS_BRIDGE          = 0x0001; //!< Plugin is a bridge (ie, BridgePlugin). This hint is required because "bridge" itself is not a plugin type.
-const unsigned int PLUGIN_IS_RTSAFE          = 0x0002; //!< Plugin is hard real-time safe.
-const unsigned int PLUGIN_IS_SYNTH           = 0x0004; //!< Plugin is a synthesizer (produces sound).
-const unsigned int PLUGIN_HAS_GUI            = 0x0010; //!< Plugin has its own custom GUI.
-const unsigned int PLUGIN_USES_CHUNKS        = 0x0020; //!< Plugin uses chunks to save internal data.\see CarlaPlugin::chunkData()
-const unsigned int PLUGIN_USES_SINGLE_THREAD = 0x0040; //!< Plugin needs a single thread for both DSP and UI events.
-const unsigned int PLUGIN_CAN_DRYWET         = 0x0100; //!< Plugin can make use of Dry/Wet controls.
-const unsigned int PLUGIN_CAN_VOLUME         = 0x0200; //!< Plugin can make use of Volume controls.
-const unsigned int PLUGIN_CAN_BALANCE        = 0x0400; //!< Plugin can make use of Left & Right Balance controls.
-const unsigned int PLUGIN_CAN_PANNING        = 0x0800; //!< Plugin can make use of Panning controls.
-const unsigned int PLUGIN_CAN_FORCE_STEREO   = 0x1000; //!< Plugin can be used in forced-stereo mode.
+const unsigned int PLUGIN_IS_BRIDGE         = 0x001; //!< Plugin is a bridge (ie, BridgePlugin). This hint is required because "bridge" itself is not a plugin type.
+const unsigned int PLUGIN_IS_RTSAFE         = 0x002; //!< Plugin is hard real-time safe.
+const unsigned int PLUGIN_IS_SYNTH          = 0x004; //!< Plugin is a synthesizer (produces sound).
+const unsigned int PLUGIN_HAS_GUI           = 0x010; //!< Plugin has its own custom GUI.
+const unsigned int PLUGIN_HAS_SINGLE_THREAD = 0x020; //!< Plugin needs a single thread for both DSP and UI events.
+const unsigned int PLUGIN_CAN_DRYWET        = 0x100; //!< Plugin can make use of Dry/Wet controls.
+const unsigned int PLUGIN_CAN_VOLUME        = 0x200; //!< Plugin can make use of Volume controls.
+const unsigned int PLUGIN_CAN_BALANCE       = 0x400; //!< Plugin can make use of Left & Right Balance controls.
+const unsigned int PLUGIN_CAN_PANNING       = 0x800; //!< Plugin can make use of Panning controls.
 /**@}*/
 
 /*!
@@ -69,20 +67,17 @@ const unsigned int PLUGIN_CAN_FORCE_STEREO   = 0x1000; //!< Plugin can be used i
  * Various plugin options.\n
  * ON or OFF defines the default plugin value.
  * \see CarlaPlugin::options()
- * \note PitchBend is disabled by default on VST plugins
  * @{
  */
-const unsigned int PLUGIN_OPTION_FIXED_BUFFER         = 0x001; //!< OFF: Use a constant, fixed size audio buffer (128 or lower is used)
-const unsigned int PLUGIN_OPTION_FORCE_STEREO         = 0x002; //!< OFF: Force mono plugin as stereo
-const unsigned int PLUGIN_OPTION_SELF_AUTOMATION      = 0x004; //!< OFF: Let the plugin handle MIDI-CC automation, not the host
-const unsigned int PLUGIN_OPTION_USE_CHUNKS           = 0x008; //!< ON:  Use chunks to save data
-const unsigned int PLUGIN_OPTION_SEND_ALL_SOUND_OFF   = 0x010; //!< ON:  Send MIDI ALL_SOUND_OFF / ALL_NOTES_OFF events
-const unsigned int PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH = 0x020; //!< ON:  Send MIDI Note aftertouch events
-const unsigned int PLUGIN_OPTION_SEND_PITCHBEND       = 0x040; //!< ON:  Send MIDI Pitchbend events
-#ifdef WANT_VST
-const unsigned int PLUGIN_OPTION_VST_SUPPLY_IDLE      = 0x100; //!< ON: Idle Plugin's custom GUI (VST only)
-const unsigned int PLUGIN_OPTION_VST_UPDATE_DISPLAY   = 0x200; //!< ON: Recheck plugin properties on updateDisplay message (VST Only)
-#endif
+const unsigned int PLUGIN_OPTION_FIXED_BUFFER          = 0x001; //!< Use a constant, fixed-size audio buffer
+const unsigned int PLUGIN_OPTION_FORCE_STEREO          = 0x002; //!< Force mono plugin as stereo
+const unsigned int PLUGIN_OPTION_MAP_PROGRAM_CHANGES   = 0x004; //!< Map MIDI-Programs to plugin programs
+const unsigned int PLUGIN_OPTION_USE_CHUNKS            = 0x008; //!< Use chunks to save data
+const unsigned int PLUGIN_OPTION_SEND_CONTROL_CHANGES  = 0x010; //!< Send MIDI CC events
+const unsigned int PLUGIN_OPTION_SEND_CHANNEL_PRESSURE = 0x020; //!< Send MIDI channel pressure events
+const unsigned int PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH  = 0x040; //!< Send MIDI note aftertouch events
+const unsigned int PLUGIN_OPTION_SEND_PITCHBEND        = 0x080; //!< Send MIDI pitchbend events
+const unsigned int PLUGIN_OPTION_SEND_ALL_SOUND_OFF    = 0x100; //!< Send MIDI ALL_SOUND_OFF / ALL_NOTES_OFF events
 /**@}*/
 
 /*!

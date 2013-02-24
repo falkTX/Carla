@@ -32,10 +32,11 @@
 #include <QtGui/QMainWindow>
 
 #define CARLA_DECLARE_NON_COPY_STRUCT(structName) \
+    structName(structName&) = delete;             \
     structName(const structName&) = delete;
 
 #define CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(structName) \
-    CARLA_DECLARE_NON_COPY_STRUCT(structName) \
+    CARLA_DECLARE_NON_COPY_STRUCT(structName)                        \
     CARLA_LEAK_DETECTOR(structName)
 
 #define CARLA_PROCESS_CONTINUE_CHECK if (! fEnabled) { kData->engine->callback(CALLBACK_DEBUG, fId, 0, 0, 0.0, nullptr); return; }
@@ -393,7 +394,6 @@ struct CarlaPluginProtectedData {
     void* lib;
 
     // misc
-    unsigned int availOptions;
     unsigned int extraHints;
     int8_t       ctrlChannel;
 
@@ -523,7 +523,6 @@ struct CarlaPluginProtectedData {
           activeBefore(false),
           needsReset(false),
           lib(nullptr),
-          availOptions(0x0),
           extraHints(0x0),
           ctrlChannel(-1),
           latency(0),

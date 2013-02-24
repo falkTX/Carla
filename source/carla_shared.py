@@ -158,28 +158,26 @@ MAX_PATCHBAY_PLUGINS   = 999
 MAX_DEFAULT_PARAMETERS = 200
 
 # Plugin Hints
-PLUGIN_IS_BRIDGE          = 0x0001
-PLUGIN_IS_RTSAFE          = 0x0002
-PLUGIN_IS_SYNTH           = 0x0004
-PLUGIN_HAS_GUI            = 0x0010
-PLUGIN_USES_CHUNKS        = 0x0020
-PLUGIN_USES_SINGLE_THREAD = 0x0040
-PLUGIN_CAN_DRYWET         = 0x0100
-PLUGIN_CAN_VOLUME         = 0x0200
-PLUGIN_CAN_BALANCE        = 0x0400
-PLUGIN_CAN_PANNING        = 0x0800
-PLUGIN_CAN_FORCE_STEREO   = 0x1000
+PLUGIN_IS_BRIDGE         = 0x001
+PLUGIN_IS_RTSAFE         = 0x002
+PLUGIN_IS_SYNTH          = 0x004
+PLUGIN_HAS_GUI           = 0x010
+PLUGIN_HAS_SINGLE_THREAD = 0x020
+PLUGIN_CAN_DRYWET        = 0x100
+PLUGIN_CAN_VOLUME        = 0x200
+PLUGIN_CAN_BALANCE       = 0x400
+PLUGIN_CAN_PANNING       = 0x800
 
 # Plugin Options
-PLUGIN_OPTION_FIXED_BUFFER         = 0x001
-PLUGIN_OPTION_FORCE_STEREO         = 0x002
-PLUGIN_OPTION_SELF_AUTOMATION      = 0x004
-PLUGIN_OPTION_USE_CHUNKS           = 0x008
-PLUGIN_OPTION_SEND_ALL_SOUND_OFF   = 0x010
-PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH = 0x020
-PLUGIN_OPTION_SEND_PITCHBEND       = 0x040
-PLUGIN_OPTION_VST_SUPPLY_IDLE      = 0x100
-PLUGIN_OPTION_VST_UPDATE_DISPLAY   = 0x200
+PLUGIN_OPTION_FIXED_BUFFER          = 0x001
+PLUGIN_OPTION_FORCE_STEREO          = 0x002
+PLUGIN_OPTION_MAP_PROGRAM_CHANGES   = 0x004
+PLUGIN_OPTION_USE_CHUNKS            = 0x008
+PLUGIN_OPTION_SEND_CONTROL_CHANGES  = 0x010
+PLUGIN_OPTION_SEND_CHANNEL_PRESSURE = 0x020
+PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH  = 0x040
+PLUGIN_OPTION_SEND_PITCHBEND        = 0x080
+PLUGIN_OPTION_SEND_ALL_SOUND_OFF    = 0x100
 
 # Parameter Hints
 PARAMETER_IS_BOOLEAN       = 0x01
@@ -1557,20 +1555,20 @@ class PluginEdit(QDialog):
         self.ui.dial_b_right.setEnabled(pluginHints & PLUGIN_CAN_BALANCE)
 
         # Set options
-        self.ui.ch_fixed_buffer.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_FIXED_BUFFER)
-        self.ui.ch_fixed_buffer.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_FIXED_BUFFER)
-        self.ui.ch_force_stereo.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_FORCE_STEREO)
-        self.ui.ch_force_stereo.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_FORCE_STEREO)
-        self.ui.ch_self_automation.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_SELF_AUTOMATION)
-        self.ui.ch_self_automation.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_SELF_AUTOMATION)
-        self.ui.ch_use_chunks.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_USE_CHUNKS)
-        self.ui.ch_use_chunks.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_USE_CHUNKS)
-        self.ui.ch_send_all_sound_off.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
-        self.ui.ch_send_all_sound_off.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
-        self.ui.ch_send_note_aftertouch.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH)
-        self.ui.ch_send_note_aftertouch.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH)
-        self.ui.ch_send_pitchbend.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_SEND_PITCHBEND)
-        self.ui.ch_send_pitchbend.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_SEND_PITCHBEND)
+        #self.ui.ch_fixed_buffer.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_FIXED_BUFFER)
+        #self.ui.ch_fixed_buffer.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_FIXED_BUFFER)
+        #self.ui.ch_force_stereo.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_FORCE_STEREO)
+        #self.ui.ch_force_stereo.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_FORCE_STEREO)
+        #self.ui.ch_self_automation.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_SELF_AUTOMATION)
+        #self.ui.ch_self_automation.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_SELF_AUTOMATION)
+        #self.ui.ch_use_chunks.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_USE_CHUNKS)
+        #self.ui.ch_use_chunks.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_USE_CHUNKS)
+        #self.ui.ch_send_all_sound_off.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
+        #self.ui.ch_send_all_sound_off.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
+        #self.ui.ch_send_note_aftertouch.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH)
+        #self.ui.ch_send_note_aftertouch.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH)
+        #self.ui.ch_send_pitchbend.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_SEND_PITCHBEND)
+        #self.ui.ch_send_pitchbend.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_SEND_PITCHBEND)
 
         # Show/hide keyboard
         showKeyboard = (pluginHints & PLUGIN_IS_SYNTH) != 0 or (midiCountInfo['ins'] > 0 < midiCountInfo['outs'])

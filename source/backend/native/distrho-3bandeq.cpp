@@ -18,9 +18,9 @@
 #include "CarlaNative.hpp"
 
 // Plugin Code
-#include "3bandeq/DistrhoArtwork3BandEQ.cpp"
+//#include "3bandeq/DistrhoArtwork3BandEQ.cpp"
 #include "3bandeq/DistrhoPlugin3BandEQ.cpp"
-#include "3bandeq/DistrhoUI3BandEQ.cpp"
+//#include "3bandeq/DistrhoUI3BandEQ.cpp"
 
 // Carla DISTRHO Plugin
 #include "distrho/DistrhoPluginCarla.cpp"
@@ -31,7 +31,7 @@ START_NAMESPACE_DISTRHO
 
 static const PluginDescriptor tBandEqDesc = {
     /* category  */ ::PLUGIN_CATEGORY_EQ,
-    /* hints     */ static_cast<PluginHints>(::PLUGIN_IS_RTSAFE | ::PLUGIN_HAS_GUI),
+    /* hints     */ static_cast<PluginHints>(::PLUGIN_IS_RTSAFE /*| ::PLUGIN_HAS_GUI*/),
     /* audioIns  */ DISTRHO_PLUGIN_NUM_INPUTS,
     /* audioOuts */ DISTRHO_PLUGIN_NUM_OUTPUTS,
     /* midiIns   */ 0,

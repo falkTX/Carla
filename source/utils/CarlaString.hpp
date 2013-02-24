@@ -120,7 +120,7 @@ public:
 
     ~CarlaString()
     {
-        CARLA_ASSERT(buffer);
+        CARLA_ASSERT(buffer != nullptr);
 
         delete[] buffer;
     }
@@ -444,7 +444,7 @@ private:
             {
                 if (! firstInit)
                 {
-                    CARLA_ASSERT(buffer);
+                    CARLA_ASSERT(buffer != nullptr);
                     delete[] buffer;
                 }
 
@@ -467,7 +467,7 @@ private:
             {
                 if (! firstInit)
                 {
-                    CARLA_ASSERT(buffer);
+                    CARLA_ASSERT(buffer != nullptr);
                     delete[] buffer;
                 }
 

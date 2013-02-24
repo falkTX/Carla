@@ -8,8 +8,8 @@ include ../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += -I../../libs/distrho-plugin-toolkit
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtGui)
+BUILD_CXX_FLAGS += -I../../libs/distrho
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtGui gl)
 LINK_FLAGS      += $(shell pkg-config --libs QtGui gl)
 
 ifeq ($(HAVE_AF_DEPS),true)
@@ -33,10 +33,10 @@ OBJS  = \
 	midi-through.c.o
 
 # DISTRHO plugins
-# OBJS += \
-# 	distrho-3bandeq.cpp.o \
-# 	distrho-3bandsplitter.cpp.o \
-# 	distrho-pingpongpan.cpp.o
+OBJS += \
+	distrho-3bandeq.cpp.o \
+	distrho-3bandsplitter.cpp.o \
+	distrho-pingpongpan.cpp.o
 
 ifeq ($(HAVE_AF_DEPS),true)
 OBJS += \

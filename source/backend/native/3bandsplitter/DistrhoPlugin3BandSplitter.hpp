@@ -18,7 +18,7 @@
 #ifndef __DISTRHO_PLUGIN_3BANDSPLITTER_HPP__
 #define __DISTRHO_PLUGIN_3BANDSPLITTER_HPP__
 
-#include "DistrhoPlugin.h"
+#include "DistrhoPlugin.hpp"
 
 START_NAMESPACE_DISTRHO
 

@@ -245,7 +245,7 @@ int32_t CarlaPlugin::chunkData(void** const dataPtr)
 
 unsigned int CarlaPlugin::availableOptions()
 {
-    return kData->availOptions;
+    return 0x0;
 }
 
 float CarlaPlugin::getParameterValue(const uint32_t parameterId)
