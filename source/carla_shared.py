@@ -1462,6 +1462,17 @@ class PluginEdit(QDialog):
             self.ui.b_load_state.setEnabled(False)
             self.ui.b_save_state.setEnabled(False)
 
+        # Set options
+        self.connect(self.ui.ch_fixed_buffer, SIGNAL("clicked(bool)"), SLOT("slot_optionChanged(bool)"))
+        self.connect(self.ui.ch_force_stereo, SIGNAL("clicked(bool)"), SLOT("slot_optionChanged(bool)"))
+        self.connect(self.ui.ch_map_program_changes, SIGNAL("clicked(bool)"), SLOT("slot_optionChanged(bool)"))
+        self.connect(self.ui.ch_use_chunks, SIGNAL("clicked(bool)"), SLOT("slot_optionChanged(bool)"))
+        self.connect(self.ui.ch_send_control_changes, SIGNAL("clicked(bool)"), SLOT("slot_optionChanged(bool)"))
+        self.connect(self.ui.ch_send_channel_pressure, SIGNAL("clicked(bool)"), SLOT("slot_optionChanged(bool)"))
+        self.connect(self.ui.ch_send_note_aftertouch, SIGNAL("clicked(bool)"), SLOT("slot_optionChanged(bool)"))
+        self.connect(self.ui.ch_send_pitchbend, SIGNAL("clicked(bool)"), SLOT("slot_optionChanged(bool)"))
+        self.connect(self.ui.ch_send_all_sound_off, SIGNAL("clicked(bool)"), SLOT("slot_optionChanged(bool)"))
+
         self.connect(self.ui.dial_drywet, SIGNAL("valueChanged(int)"), SLOT("slot_dryWetChanged(int)"))
         self.connect(self.ui.dial_vol, SIGNAL("valueChanged(int)"), SLOT("slot_volumeChanged(int)"))
         self.connect(self.ui.dial_b_left, SIGNAL("valueChanged(int)"), SLOT("slot_balanceLeftChanged(int)"))
@@ -1555,20 +1566,24 @@ class PluginEdit(QDialog):
         self.ui.dial_b_right.setEnabled(pluginHints & PLUGIN_CAN_BALANCE)
 
         # Set options
-        #self.ui.ch_fixed_buffer.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_FIXED_BUFFER)
-        #self.ui.ch_fixed_buffer.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_FIXED_BUFFER)
-        #self.ui.ch_force_stereo.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_FORCE_STEREO)
-        #self.ui.ch_force_stereo.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_FORCE_STEREO)
-        #self.ui.ch_self_automation.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_SELF_AUTOMATION)
-        #self.ui.ch_self_automation.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_SELF_AUTOMATION)
-        #self.ui.ch_use_chunks.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_USE_CHUNKS)
-        #self.ui.ch_use_chunks.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_USE_CHUNKS)
-        #self.ui.ch_send_all_sound_off.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
-        #self.ui.ch_send_all_sound_off.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
-        #self.ui.ch_send_note_aftertouch.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH)
-        #self.ui.ch_send_note_aftertouch.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH)
-        #self.ui.ch_send_pitchbend.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_SEND_PITCHBEND)
-        #self.ui.ch_send_pitchbend.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_SEND_PITCHBEND)
+        self.ui.ch_fixed_buffer.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_FIXED_BUFFER)
+        self.ui.ch_fixed_buffer.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_FIXED_BUFFER)
+        self.ui.ch_force_stereo.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_FORCE_STEREO)
+        self.ui.ch_force_stereo.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_FORCE_STEREO)
+        self.ui.ch_map_program_changes.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_MAP_PROGRAM_CHANGES)
+        self.ui.ch_map_program_changes.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_MAP_PROGRAM_CHANGES)
+        self.ui.ch_use_chunks.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_USE_CHUNKS)
+        self.ui.ch_use_chunks.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_USE_CHUNKS)
+        self.ui.ch_send_control_changes.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_SEND_CONTROL_CHANGES)
+        self.ui.ch_send_control_changes.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_SEND_CONTROL_CHANGES)
+        self.ui.ch_send_channel_pressure.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE)
+        self.ui.ch_send_channel_pressure.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE)
+        self.ui.ch_send_note_aftertouch.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH)
+        self.ui.ch_send_note_aftertouch.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH)
+        self.ui.ch_send_pitchbend.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_SEND_PITCHBEND)
+        self.ui.ch_send_pitchbend.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_SEND_PITCHBEND)
+        self.ui.ch_send_all_sound_off.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
+        self.ui.ch_send_all_sound_off.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
 
         # Show/hide keyboard
         showKeyboard = (pluginHints & PLUGIN_IS_SYNTH) != 0 or (midiCountInfo['ins'] > 0 < midiCountInfo['outs'])
@@ -1937,6 +1952,33 @@ class PluginEdit(QDialog):
         if filenameTry:
             self.fCurrentStateFilename = filenameTry
             #self.loadState()
+
+    @pyqtSlot(bool)
+    def slot_optionChanged(self, clicked):
+        sender = self.sender()
+
+        if sender == self.ui.ch_fixed_buffer:
+            option = PLUGIN_OPTION_FIXED_BUFFER
+        elif sender == self.ui.ch_force_stereo:
+            option = PLUGIN_OPTION_FORCE_STEREO
+        elif sender == self.ui.ch_map_program_changes:
+            option = PLUGIN_OPTION_MAP_PROGRAM_CHANGES
+        elif sender == self.ui.ch_use_chunks:
+            option = PLUGIN_OPTION_USE_CHUNKS
+        elif sender == self.ui.ch_send_control_changes:
+            option = PLUGIN_OPTION_SEND_CONTROL_CHANGES
+        elif sender == self.ui.ch_send_channel_pressure:
+            option = PLUGIN_OPTION_SEND_CHANNEL_PRESSURE
+        elif sender == self.ui.ch_send_note_aftertouch:
+            option = PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH
+        elif sender == self.ui.ch_send_pitchbend:
+            option = PLUGIN_OPTION_SEND_PITCHBEND
+        elif sender == self.ui.ch_send_all_sound_off:
+            option = PLUGIN_OPTION_SEND_ALL_SOUND_OFF
+        else:
+            return
+
+        Carla.host.set_option(self.fPluginId, option, clicked)
 
     @pyqtSlot(int)
     def slot_dryWetChanged(self, value):

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>672</width>
-    <height>520</height>
+    <height>541</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -302,28 +302,35 @@ Plugin Name
           <item>
            <widget class="QCheckBox" name="ch_force_stereo">
             <property name="text">
-             <string>Force Stereo</string>
+             <string>Force stereo</string>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="QCheckBox" name="ch_self_automation">
+           <widget class="QCheckBox" name="ch_map_program_changes">
             <property name="text">
-             <string>Self-automation</string>
+             <string>Map Program changes</string>
             </property>
            </widget>
           </item>
           <item>
            <widget class="QCheckBox" name="ch_use_chunks">
             <property name="text">
-             <string>Use chunks</string>
+             <string>Use Chunks</string>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="QCheckBox" name="ch_send_all_sound_off">
+           <widget class="QCheckBox" name="ch_send_control_changes">
             <property name="text">
-             <string>Send All Sound/Notes Off</string>
+             <string>Send Control Changes</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="ch_send_channel_pressure">
+            <property name="text">
+             <string>Send Channel Pressure</string>
             </property>
            </widget>
           </item>
@@ -342,6 +349,13 @@ Plugin Name
            </widget>
           </item>
           <item>
+           <widget class="QCheckBox" name="ch_send_all_sound_off">
+            <property name="text">
+             <string>Send All Sound/Notes Off</string>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="QFrame" name="frame">
             <property name="frameShape">
              <enum>QFrame::StyledPanel</enum>
@@ -349,201 +363,199 @@ Plugin Name
             <property name="frameShadow">
              <enum>QFrame::Raised</enum>
             </property>
-            <layout class="QHBoxLayout" name="horizontalLayout_5">
-             <property name="topMargin">
-              <number>2</number>
-             </property>
-             <property name="bottomMargin">
-              <number>0</number>
-             </property>
+            <layout class="QVBoxLayout" name="verticalLayout_3">
              <item>
-              <widget class="PixmapDial" name="dial_vol">
-               <property name="minimumSize">
-                <size>
-                 <width>34</width>
-                 <height>34</height>
-                </size>
-               </property>
-               <property name="maximumSize">
-                <size>
-                 <width>34</width>
-                 <height>34</height>
-                </size>
-               </property>
-               <property name="contextMenuPolicy">
-                <enum>Qt::CustomContextMenu</enum>
-               </property>
-               <property name="statusTip">
-                <string>Output volume (100%)</string>
-               </property>
-               <property name="maximum">
-                <number>1270</number>
-               </property>
-               <property name="value">
-                <number>1000</number>
-               </property>
-              </widget>
+              <layout class="QHBoxLayout" name="horizontalLayout_5">
+               <item>
+                <widget class="PixmapDial" name="dial_vol">
+                 <property name="minimumSize">
+                  <size>
+                   <width>34</width>
+                   <height>34</height>
+                  </size>
+                 </property>
+                 <property name="maximumSize">
+                  <size>
+                   <width>34</width>
+                   <height>34</height>
+                  </size>
+                 </property>
+                 <property name="contextMenuPolicy">
+                  <enum>Qt::CustomContextMenu</enum>
+                 </property>
+                 <property name="statusTip">
+                  <string>Output volume (100%)</string>
+                 </property>
+                 <property name="maximum">
+                  <number>1270</number>
+                 </property>
+                 <property name="value">
+                  <number>1000</number>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="PixmapDial" name="dial_drywet">
+                 <property name="minimumSize">
+                  <size>
+                   <width>34</width>
+                   <height>34</height>
+                  </size>
+                 </property>
+                 <property name="maximumSize">
+                  <size>
+                   <width>34</width>
+                   <height>34</height>
+                  </size>
+                 </property>
+                 <property name="contextMenuPolicy">
+                  <enum>Qt::CustomContextMenu</enum>
+                 </property>
+                 <property name="statusTip">
+                  <string>Output dry/wet (100%)</string>
+                 </property>
+                 <property name="maximum">
+                  <number>1000</number>
+                 </property>
+                 <property name="value">
+                  <number>1000</number>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="PixmapDial" name="dial_b_left">
+                 <property name="minimumSize">
+                  <size>
+                   <width>26</width>
+                   <height>26</height>
+                  </size>
+                 </property>
+                 <property name="maximumSize">
+                  <size>
+                   <width>26</width>
+                   <height>26</height>
+                  </size>
+                 </property>
+                 <property name="contextMenuPolicy">
+                  <enum>Qt::CustomContextMenu</enum>
+                 </property>
+                 <property name="statusTip">
+                  <string>Balance Left (0%)</string>
+                 </property>
+                 <property name="minimum">
+                  <number>-1000</number>
+                 </property>
+                 <property name="maximum">
+                  <number>1000</number>
+                 </property>
+                 <property name="value">
+                  <number>-1000</number>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="PixmapDial" name="dial_b_right">
+                 <property name="minimumSize">
+                  <size>
+                   <width>26</width>
+                   <height>26</height>
+                  </size>
+                 </property>
+                 <property name="maximumSize">
+                  <size>
+                   <width>26</width>
+                   <height>26</height>
+                  </size>
+                 </property>
+                 <property name="contextMenuPolicy">
+                  <enum>Qt::CustomContextMenu</enum>
+                 </property>
+                 <property name="statusTip">
+                  <string>Balance Right (0%)</string>
+                 </property>
+                 <property name="minimum">
+                  <number>-1000</number>
+                 </property>
+                 <property name="maximum">
+                  <number>1000</number>
+                 </property>
+                 <property name="value">
+                  <number>1000</number>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="Line" name="line">
+                 <property name="orientation">
+                  <enum>Qt::Vertical</enum>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="label_ctrl_channel">
+                 <property name="text">
+                  <string>MIDI Control Channel:</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QSpinBox" name="sb_ctrl_channel">
+                 <property name="alignment">
+                  <set>Qt::AlignCenter</set>
+                 </property>
+                 <property name="specialValueText">
+                  <string>N</string>
+                 </property>
+                 <property name="minimum">
+                  <number>0</number>
+                 </property>
+                 <property name="maximum">
+                  <number>16</number>
+                 </property>
+                 <property name="value">
+                  <number>0</number>
+                 </property>
+                </widget>
+               </item>
+              </layout>
              </item>
              <item>
-              <widget class="PixmapDial" name="dial_drywet">
-               <property name="minimumSize">
-                <size>
-                 <width>34</width>
-                 <height>34</height>
-                </size>
+              <widget class="QTabWidget" name="tab_programs">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
                </property>
-               <property name="maximumSize">
-                <size>
-                 <width>34</width>
-                 <height>34</height>
-                </size>
+               <property name="tabPosition">
+                <enum>QTabWidget::South</enum>
                </property>
-               <property name="contextMenuPolicy">
-                <enum>Qt::CustomContextMenu</enum>
-               </property>
-               <property name="statusTip">
-                <string>Output dry/wet (100%)</string>
-               </property>
-               <property name="maximum">
-                <number>1000</number>
-               </property>
-               <property name="value">
-                <number>1000</number>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="PixmapDial" name="dial_b_left">
-               <property name="minimumSize">
-                <size>
-                 <width>26</width>
-                 <height>26</height>
-                </size>
-               </property>
-               <property name="maximumSize">
-                <size>
-                 <width>26</width>
-                 <height>26</height>
-                </size>
-               </property>
-               <property name="contextMenuPolicy">
-                <enum>Qt::CustomContextMenu</enum>
-               </property>
-               <property name="statusTip">
-                <string>Balance Left (0%)</string>
-               </property>
-               <property name="minimum">
-                <number>-1000</number>
-               </property>
-               <property name="maximum">
-                <number>1000</number>
-               </property>
-               <property name="value">
-                <number>-1000</number>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="PixmapDial" name="dial_b_right">
-               <property name="minimumSize">
-                <size>
-                 <width>26</width>
-                 <height>26</height>
-                </size>
-               </property>
-               <property name="maximumSize">
-                <size>
-                 <width>26</width>
-                 <height>26</height>
-                </size>
-               </property>
-               <property name="contextMenuPolicy">
-                <enum>Qt::CustomContextMenu</enum>
-               </property>
-               <property name="statusTip">
-                <string>Balance Right (0%)</string>
-               </property>
-               <property name="minimum">
-                <number>-1000</number>
-               </property>
-               <property name="maximum">
-                <number>1000</number>
-               </property>
-               <property name="value">
-                <number>1000</number>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="Line" name="line">
-               <property name="orientation">
-                <enum>Qt::Vertical</enum>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QLabel" name="label_ctrl_channel">
-               <property name="text">
-                <string>MIDI Control Channel:</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QSpinBox" name="sb_ctrl_channel">
-               <property name="alignment">
-                <set>Qt::AlignCenter</set>
-               </property>
-               <property name="specialValueText">
-                <string>N</string>
-               </property>
-               <property name="minimum">
+               <property name="currentIndex">
                 <number>0</number>
                </property>
-               <property name="maximum">
-                <number>16</number>
-               </property>
-               <property name="value">
-                <number>0</number>
-               </property>
+               <widget class="QWidget" name="programs">
+                <attribute name="title">
+                 <string>Programs</string>
+                </attribute>
+                <layout class="QHBoxLayout" name="horizontalLayout_3">
+                 <item>
+                  <widget class="QComboBox" name="cb_programs"/>
+                 </item>
+                </layout>
+               </widget>
+               <widget class="QWidget" name="midi_programs">
+                <attribute name="title">
+                 <string>MIDI Programs</string>
+                </attribute>
+                <layout class="QHBoxLayout" name="horizontalLayout_4">
+                 <item>
+                  <widget class="QComboBox" name="cb_midi_programs"/>
+                 </item>
+                </layout>
+               </widget>
               </widget>
              </item>
             </layout>
-           </widget>
-          </item>
-          <item>
-           <widget class="QTabWidget" name="tab_programs">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="tabPosition">
-             <enum>QTabWidget::South</enum>
-            </property>
-            <property name="currentIndex">
-             <number>0</number>
-            </property>
-            <widget class="QWidget" name="programs">
-             <attribute name="title">
-              <string>Programs</string>
-             </attribute>
-             <layout class="QHBoxLayout" name="horizontalLayout_3">
-              <item>
-               <widget class="QComboBox" name="cb_programs"/>
-              </item>
-             </layout>
-            </widget>
-            <widget class="QWidget" name="midi_programs">
-             <attribute name="title">
-              <string>MIDI Programs</string>
-             </attribute>
-             <layout class="QHBoxLayout" name="horizontalLayout_4">
-              <item>
-               <widget class="QComboBox" name="cb_midi_programs"/>
-              </item>
-             </layout>
-            </widget>
            </widget>
           </item>
           <item>
