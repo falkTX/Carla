@@ -166,7 +166,7 @@ const CarlaNativePluginInfo* carla_get_internal_plugin_info(unsigned int interna
      if (nativePlugin->hints & PLUGIN_HAS_GUI)
          info.hints |= CarlaBackend::PLUGIN_HAS_GUI;
      if (nativePlugin->hints & PLUGIN_USES_SINGLE_THREAD)
-         info.hints |= CarlaBackend::PLUGIN_USES_SINGLE_THREAD;
+         info.hints |= CarlaBackend::PLUGIN_HAS_SINGLE_THREAD;
 
      info.audioIns  = nativePlugin->audioIns;
      info.audioOuts = nativePlugin->audioOuts;
@@ -912,7 +912,7 @@ const char* carla_get_chunk_data(unsigned int pluginId)
 
     if (CarlaPlugin* const plugin = standalone.engine->getPlugin(pluginId))
     {
-        if (plugin->hints() & CarlaBackend::PLUGIN_USES_CHUNKS)
+        if (plugin->options() & CarlaBackend::PLUGIN_OPTION_USE_CHUNKS)
         {
             void* data = nullptr;
             const int32_t dataSize = plugin->chunkData(&data);
@@ -1484,7 +1484,7 @@ void carla_set_chunk_data(unsigned int pluginId, const char* chunkData)
 
     if (CarlaPlugin* const plugin = standalone.engine->getPlugin(pluginId))
     {
-        if (plugin->hints() & CarlaBackend::PLUGIN_USES_CHUNKS)
+        if (plugin->options() & CarlaBackend::PLUGIN_OPTION_USE_CHUNKS)
             return plugin->setChunkData(chunkData);
 
         carla_stderr2("carla_set_chunk_data(%i, \"%s\") - plugin does not support chunks", pluginId, chunkData);

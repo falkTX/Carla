@@ -673,8 +673,8 @@ public:
             kData->event.portOut = (CarlaEngineEventPort*)kData->client->addPort(kEnginePortTypeEvent, portName, false);
         }
 
-        // plugin checks
-        fHints &= ~(PLUGIN_IS_SYNTH | PLUGIN_USES_CHUNKS | PLUGIN_CAN_DRYWET | PLUGIN_CAN_VOLUME | PLUGIN_CAN_BALANCE | PLUGIN_CAN_FORCE_STEREO);
+        // plugin hints
+        fHints = 0x0;
 
         if (aOuts > 0 && (aIns == aOuts || aIns == 1))
             fHints |= PLUGIN_CAN_DRYWET;
@@ -685,14 +685,17 @@ public:
         if (aOuts >= 2 && aOuts % 2 == 0)
             fHints |= PLUGIN_CAN_BALANCE;
 
+        // extra plugin hints
+        kData->extraHints = 0x0;
+
         if (aIns <= 2 && aOuts <= 2 && (aIns == aOuts || aIns == 0 || aOuts == 0))
-            fHints |= PLUGIN_CAN_FORCE_STEREO;
+            kData->extraHints |= PLUGIN_HINT_CAN_RUN_RACK;
 
         // plugin options
-        kData->availOptions &= ~(PLUGIN_OPTION_FIXED_BUFFER | PLUGIN_OPTION_SELF_AUTOMATION | PLUGIN_OPTION_SEND_ALL_SOUND_OFF | PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH | PLUGIN_OPTION_SEND_PITCHBEND);
+        fOptions = 0x0;
 
-        // always available if needed
-        kData->availOptions |= PLUGIN_OPTION_FIXED_BUFFER;
+        if (forcedStereoIn || forcedStereoOut)
+            fOptions |= PLUGIN_OPTION_FORCE_STEREO;
 
         // check latency
         if (fHints & PLUGIN_CAN_DRYWET)
@@ -1392,7 +1395,7 @@ CarlaPlugin* CarlaPlugin::newLADSPA(const Initializer& init, const LADSPA_RDF_De
 
     plugin->reload();
 
-    if (init.engine->getProccessMode() == PROCESS_MODE_CONTINUOUS_RACK && (plugin->hints() & PLUGIN_CAN_FORCE_STEREO) == 0)
+    if (init.engine->getProccessMode() == PROCESS_MODE_CONTINUOUS_RACK && ! CarlaPluginProtectedData::canRunInRack(plugin))
     {
         init.engine->setLastError("Carla's rack mode can only work with Mono or Stereo LADSPA plugins, sorry!");
         delete plugin;

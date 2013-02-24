@@ -4671,14 +4671,11 @@ CarlaPlugin* CarlaPlugin::newLV2(const Initializer& init)
 
     plugin->reload();
 
-    if (init.engine->getProccessMode() == PROCESS_MODE_CONTINUOUS_RACK)
+    if (init.engine->getProccessMode() == PROCESS_MODE_CONTINUOUS_RACK && ! CarlaPluginProtectedData::canRunInRack(plugin))
     {
-        if (! (plugin->hints() & PLUGIN_CAN_FORCE_STEREO))
-        {
-            init.engine->setLastError("Carla's rack mode can only work with Mono (simple) or Stereo LV2 plugins, sorry!");
-            delete plugin;
-            return nullptr;
-        }
+        init.engine->setLastError("Carla's rack mode can only work with Mono (simple) or Stereo LV2 plugins, sorry!");
+        delete plugin;
+        return nullptr;
     }
 
     //plugin->updateUi();

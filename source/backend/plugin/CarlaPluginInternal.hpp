@@ -50,6 +50,7 @@ const unsigned short MAX_MIDI_EVENTS = 512;
 
 const unsigned int PLUGIN_HINT_HAS_MIDI_IN  = 0x1;
 const unsigned int PLUGIN_HINT_HAS_MIDI_OUT = 0x2;
+const unsigned int PLUGIN_HINT_CAN_RUN_RACK = 0x4;
 
 // -----------------------------------------------------------------------
 
@@ -546,6 +547,11 @@ struct CarlaPluginProtectedData {
     static CarlaEngineAudioPort* getAudioOutPort(CarlaPlugin* const plugin, const uint32_t index)
     {
         return plugin->kData->audioOut.ports[index].port;
+    }
+
+    static bool canRunInRack(CarlaPlugin* const plugin)
+    {
+        return (plugin->kData->extraHints & PLUGIN_HINT_CAN_RUN_RACK);
     }
 
     CARLA_LEAK_DETECTOR(CarlaPluginProtectedData)

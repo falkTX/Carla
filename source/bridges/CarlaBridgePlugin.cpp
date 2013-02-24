@@ -231,7 +231,7 @@ public:
             fEngine->osc_send_bridge_set_custom_data(cdata.type, cdata.key, cdata.value);
         }
 
-        if (fPlugin->hints() & CarlaBackend::PLUGIN_USES_CHUNKS)
+        if (fPlugin->options() & CarlaBackend::PLUGIN_OPTION_USE_CHUNKS)
         {
             void* data = nullptr;
             int32_t dataSize = fPlugin->chunkData(&data);

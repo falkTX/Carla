@@ -120,7 +120,7 @@ public:
 
     int32_t chunkData(void** const dataPtr)
     {
-        CARLA_ASSERT(fHints & PLUGIN_USES_CHUNKS);
+        CARLA_ASSERT(fOptions & PLUGIN_OPTION_USE_CHUNKS);
         CARLA_ASSERT(fDssiDescriptor != nullptr);
         CARLA_ASSERT(fDssiDescriptor->get_custom_data != nullptr);
         CARLA_ASSERT(fHandle != nullptr);
@@ -255,7 +255,7 @@ public:
 
     void setChunkData(const char* const stringData)
     {
-        CARLA_ASSERT(fHints & PLUGIN_USES_CHUNKS);
+        CARLA_ASSERT(fOptions & PLUGIN_OPTION_USE_CHUNKS);
         CARLA_ASSERT(fDssiDescriptor != nullptr);
         CARLA_ASSERT(fDssiDescriptor->set_custom_data != nullptr);
         CARLA_ASSERT(fHandle != nullptr);
@@ -668,8 +668,14 @@ public:
             kData->event.portOut = (CarlaEngineEventPort*)kData->client->addPort(kEnginePortTypeEvent, portName, false);
         }
 
-        // plugin checks
-        fHints &= ~(PLUGIN_IS_SYNTH | PLUGIN_USES_CHUNKS | PLUGIN_CAN_DRYWET | PLUGIN_CAN_VOLUME | PLUGIN_CAN_BALANCE | PLUGIN_CAN_FORCE_STEREO);
+        // plugin hints
+        const bool haveGUI   = (fHints & PLUGIN_HAS_GUI);
+        const bool isDssiVst = QString(fFilename).endsWith("dssi-vst.so", Qt::CaseInsensitive);
+
+        fHints = 0x0;
+
+        if (haveGUI)
+            fHints |= PLUGIN_HAS_GUI;
 
         if (mIns == 1 && aIns == 0 && aOuts > 0)
             fHints |= PLUGIN_IS_SYNTH;
@@ -683,38 +689,37 @@ public:
         if (aOuts >= 2 && aOuts % 2 == 0)
             fHints |= PLUGIN_CAN_BALANCE;
 
+        // extra plugin hints
+        kData->extraHints = 0x0;
+
+        if (mIns > 0)
+            kData->extraHints |= PLUGIN_HINT_HAS_MIDI_IN;
+
         if (aIns <= 2 && aOuts <= 2 && (aIns == aOuts || aIns == 0 || aOuts == 0))
-            fHints |= PLUGIN_CAN_FORCE_STEREO;
+            kData->extraHints |= PLUGIN_HINT_CAN_RUN_RACK;
 
         // plugin options
-        kData->availOptions &= ~(PLUGIN_OPTION_FIXED_BUFFER | PLUGIN_OPTION_SELF_AUTOMATION | PLUGIN_OPTION_SEND_ALL_SOUND_OFF | PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH | PLUGIN_OPTION_SEND_PITCHBEND);
+        fOptions = 0x0;
 
-        // always available if needed
-        kData->availOptions |= PLUGIN_OPTION_SELF_AUTOMATION;
+        fOptions |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
-        // dssi-vst can do chunks, but needs fixed buffers
-        if (QString(fFilename).endsWith("dssi-vst.so", Qt::CaseInsensitive))
+        if (forcedStereoIn || forcedStereoOut)
+            fOptions |= PLUGIN_OPTION_FORCE_STEREO;
+
+        if (isDssiVst)
         {
-            carla_stdout("dssi-vst detected, disabling sample accurate events (ie, fixed buffer)");
             fOptions |= PLUGIN_OPTION_FIXED_BUFFER;
 
-            if (fOptions & PLUGIN_OPTION_USE_CHUNKS)
-            {
-                if (fDssiDescriptor->get_custom_data != nullptr && fDssiDescriptor->set_custom_data != nullptr)
-                    fHints |= PLUGIN_USES_CHUNKS;
-            }
-        }
-        else
-        {
-            kData->availOptions |= PLUGIN_OPTION_FIXED_BUFFER;
+            if (kData->engine->getOptions().useDssiVstChunks && fDssiDescriptor->get_custom_data != nullptr && fDssiDescriptor->set_custom_data != nullptr)
+                fOptions |= PLUGIN_OPTION_USE_CHUNKS;
         }
 
-        // only for plugins with midi input
         if (mIns > 0)
         {
-            kData->availOptions |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
-            kData->availOptions |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
-            kData->availOptions |= PLUGIN_OPTION_SEND_PITCHBEND;
+            fOptions |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
+            fOptions |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
+            fOptions |= PLUGIN_OPTION_SEND_PITCHBEND;
+            fOptions |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
         }
 
         // check latency
@@ -1246,7 +1251,7 @@ public:
 
                         postponeRtEvent(kPluginPostRtEventNoteOn, channel, note, velo);
                     }
-                    else if (MIDI_IS_STATUS_POLYPHONIC_AFTERTOUCH(status))
+                    else if (MIDI_IS_STATUS_POLYPHONIC_AFTERTOUCH(status) && (fOptions & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH) != 0)
                     {
                         const uint8_t note     = midiEvent.data[1];
                         const uint8_t pressure = midiEvent.data[2];
@@ -1256,7 +1261,7 @@ public:
                         fMidiEvents[midiEventCount].data.note.note     = note;
                         fMidiEvents[midiEventCount].data.note.velocity = pressure;
                     }
-                    else if (MIDI_IS_STATUS_CONTROL_CHANGE(status) && (fHints & PLUGIN_OPTION_SELF_AUTOMATION) != 0)
+                    else if (MIDI_IS_STATUS_CONTROL_CHANGE(status) && (fOptions & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0)
                     {
                         const uint8_t control = midiEvent.data[1];
                         const uint8_t value   = midiEvent.data[2];
@@ -1266,7 +1271,7 @@ public:
                         fMidiEvents[midiEventCount].data.control.param   = control;
                         fMidiEvents[midiEventCount].data.control.value   = value;
                     }
-                    else if (MIDI_IS_STATUS_AFTERTOUCH(status))
+                    else if (MIDI_IS_STATUS_AFTERTOUCH(status) && (fOptions & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE) != 0)
                     {
                         const uint8_t pressure = midiEvent.data[1];
 
@@ -1274,7 +1279,7 @@ public:
                         fMidiEvents[midiEventCount].data.control.channel = channel;
                         fMidiEvents[midiEventCount].data.control.value   = pressure;
                     }
-                    else if (MIDI_IS_STATUS_PITCH_WHEEL_CONTROL(status))
+                    else if (MIDI_IS_STATUS_PITCH_WHEEL_CONTROL(status) && (fOptions & PLUGIN_OPTION_SEND_PITCHBEND) != 0)
                     {
                         const uint8_t lsb = midiEvent.data[1];
                         const uint8_t msb = midiEvent.data[2];
@@ -1795,7 +1800,7 @@ CarlaPlugin* CarlaPlugin::newDSSI(const Initializer& init, const char* const gui
 
     plugin->reload();
 
-    if (init.engine->getProccessMode() == PROCESS_MODE_CONTINUOUS_RACK && (plugin->hints() & PLUGIN_CAN_FORCE_STEREO) == 0)
+    if (init.engine->getProccessMode() == PROCESS_MODE_CONTINUOUS_RACK && ! CarlaPluginProtectedData::canRunInRack(plugin))
     {
         init.engine->setLastError("Carla's rack mode can only work with Mono or Stereo DSSI plugins, sorry!");
         delete plugin;

@@ -726,23 +726,24 @@ public:
 
         // ---------------------------------------
 
-        // plugin checks
-        fHints = 0;
-
+        // plugin hints
+        fHints  = 0x0;
         fHints |= PLUGIN_IS_RTSAFE;
         fHints |= PLUGIN_IS_SYNTH;
         fHints |= PLUGIN_CAN_VOLUME;
+        fHints |= PLUGIN_CAN_BALANCE;
 
-        if (! kUses16Outs)
-        {
-            fHints |= PLUGIN_CAN_BALANCE;
-        }
+        // extra plugin hints
+        kData->extraHints  = 0x0;
+        kData->extraHints |= PLUGIN_HINT_CAN_RUN_RACK;
 
         // plugin options
-        fOptions = 0;
-
-        fOptions |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+        fOptions  = 0x0;
+        fOptions |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+        fOptions |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
+        fOptions |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
         fOptions |= PLUGIN_OPTION_SEND_PITCHBEND;
+        fOptions |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
 
         bufferSizeChanged(kData->engine->getBufferSize());
         reloadPrograms(true);

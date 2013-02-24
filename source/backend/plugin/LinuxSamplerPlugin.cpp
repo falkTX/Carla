@@ -355,22 +355,23 @@ public:
 
         // ---------------------------------------
 
-        // plugin checks
-        fHints &= ~(PLUGIN_IS_SYNTH | PLUGIN_USES_CHUNKS | PLUGIN_CAN_DRYWET | PLUGIN_CAN_VOLUME | PLUGIN_CAN_BALANCE | PLUGIN_CAN_FORCE_STEREO);
-
+        // plugin hints
+        fHints  = 0x0;
+        fHints |= PLUGIN_IS_RTSAFE;
         fHints |= PLUGIN_IS_SYNTH;
         fHints |= PLUGIN_CAN_VOLUME;
         fHints |= PLUGIN_CAN_BALANCE;
-        fHints |= PLUGIN_CAN_FORCE_STEREO;
+
+        // extra plugin hints
+        kData->extraHints  = 0x0;
+        kData->extraHints |= PLUGIN_HINT_CAN_RUN_RACK;
 
         // plugin options
-        kData->availOptions &= ~(PLUGIN_OPTION_FIXED_BUFFER | PLUGIN_OPTION_SELF_AUTOMATION | PLUGIN_OPTION_SEND_ALL_SOUND_OFF | PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH | PLUGIN_OPTION_SEND_PITCHBEND);
-
-        // always available if needed
-        kData->availOptions |= PLUGIN_OPTION_SELF_AUTOMATION;
-        kData->availOptions |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
-        kData->availOptions |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
-        kData->availOptions |= PLUGIN_OPTION_SEND_PITCHBEND;
+        fOptions  = 0x0;
+        fOptions |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+        fOptions |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
+        fOptions |= PLUGIN_OPTION_SEND_PITCHBEND;
+        fOptions |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
 
         bufferSizeChanged(kData->engine->getBufferSize());
         reloadPrograms(true);
@@ -726,27 +727,27 @@ public:
 
                         postponeRtEvent(kPluginPostRtEventNoteOn, channel, note, velo);
                     }
-                    else if (MIDI_IS_STATUS_POLYPHONIC_AFTERTOUCH(status))
+                    else if (MIDI_IS_STATUS_POLYPHONIC_AFTERTOUCH(status) && (fOptions & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH) != 0)
                     {
                         //const uint8_t note     = midiEvent.data[1];
                         //const uint8_t pressure = midiEvent.data[2];
 
                         // unsupported
                     }
-                    else if (MIDI_IS_STATUS_CONTROL_CHANGE(status) && (fHints & PLUGIN_OPTION_SELF_AUTOMATION) != 0)
+                    else if (MIDI_IS_STATUS_CONTROL_CHANGE(status) && (fOptions & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0)
                     {
                         const uint8_t control = midiEvent.data[1];
                         const uint8_t value   = midiEvent.data[2];
 
                         fMidiInputPort->DispatchControlChange(control, value, channel, fragmentPos);
                     }
-                    else if (MIDI_IS_STATUS_AFTERTOUCH(status))
+                    else if (MIDI_IS_STATUS_AFTERTOUCH(status) && (fOptions & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE) != 0)
                     {
                         //const uint8_t pressure = midiEvent.data[1];
 
                         // unsupported
                     }
-                    else if (MIDI_IS_STATUS_PITCH_WHEEL_CONTROL(status))
+                    else if (MIDI_IS_STATUS_PITCH_WHEEL_CONTROL(status) && (fOptions & PLUGIN_OPTION_SEND_PITCHBEND) != 0)
                     {
                         const uint8_t lsb = midiEvent.data[1];
                         const uint8_t msb = midiEvent.data[2];

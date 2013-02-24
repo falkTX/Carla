@@ -160,7 +160,7 @@ public:
         return PLUGIN_INTERNAL;
     }
 
-    PluginCategory category()
+    PluginCategory category() const
     {
         CARLA_ASSERT(fDescriptor != nullptr);
 
@@ -491,7 +491,7 @@ public:
 
         deleteBuffers();
 
-        const double sampleRate = kData->engine->getSampleRate();
+        const float sampleRate = (float)kData->engine->getSampleRate();
 
         uint32_t aIns, aOuts, mIns, mOuts, params, j;
 
@@ -561,7 +561,7 @@ public:
             kData->param.createNew(params);
         }
 
-        const int   portNameSize = kData->engine->maxPortNameSize();
+        const uint  portNameSize = kData->engine->maxPortNameSize();
         CarlaString portName;
 
         // Audio Ins
@@ -808,8 +808,8 @@ public:
             kData->event.portOut = (CarlaEngineEventPort*)kData->client->addPort(kEnginePortTypeEvent, portName, false);
         }
 
-        // plugin checks
-        fHints &= ~(PLUGIN_IS_SYNTH | PLUGIN_USES_CHUNKS | PLUGIN_CAN_DRYWET | PLUGIN_CAN_VOLUME | PLUGIN_CAN_BALANCE | PLUGIN_CAN_FORCE_STEREO);
+        // plugin hints
+        fHints = 0x0;
 
         if (aOuts > 0 && (aIns == aOuts || aIns == 1))
             fHints |= PLUGIN_CAN_DRYWET;
@@ -817,11 +817,8 @@ public:
         if (aOuts > 0)
             fHints |= PLUGIN_CAN_VOLUME;
 
-        if (aOuts >= 2 && aOuts%2 == 0)
+        if (aOuts >= 2 && aOuts % 2 == 0)
             fHints |= PLUGIN_CAN_BALANCE;
-
-        if (aIns <= 2 && aOuts <= 2 && (aIns == aOuts || aIns == 0 || aOuts == 0) && mIns <= 1 && mOuts <= 1)
-            fHints |= PLUGIN_CAN_FORCE_STEREO;
 
         // native plugin hints
         if (fDescriptor->hints & ::PLUGIN_IS_RTSAFE)
@@ -831,21 +828,28 @@ public:
         if (fDescriptor->hints & ::PLUGIN_HAS_GUI)
             fHints |= PLUGIN_HAS_GUI;
         if (fDescriptor->hints & ::PLUGIN_USES_SINGLE_THREAD)
-            fHints |= PLUGIN_USES_SINGLE_THREAD;
+            fHints |= PLUGIN_HAS_SINGLE_THREAD;
+
+        // extra plugin hints
+        kData->extraHints = 0x0;
+
+        if (aIns <= 2 && aOuts <= 2 && (aIns == aOuts || aIns == 0 || aOuts == 0) && mIns <= 1 && mOuts <= 1)
+            kData->extraHints |= PLUGIN_HINT_CAN_RUN_RACK;
 
         // plugin options
-        kData->availOptions &= ~(PLUGIN_OPTION_FIXED_BUFFER | PLUGIN_OPTION_SELF_AUTOMATION | PLUGIN_OPTION_SEND_ALL_SOUND_OFF | PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH | PLUGIN_OPTION_SEND_PITCHBEND);
+        fOptions = 0x0;
 
-        // always available if needed
-        kData->availOptions |= PLUGIN_OPTION_FIXED_BUFFER;
-        kData->availOptions |= PLUGIN_OPTION_SELF_AUTOMATION;
+        fOptions |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
-        // only for plugins with midi input
+        if (forcedStereoIn || forcedStereoOut)
+            fOptions |= PLUGIN_OPTION_FORCE_STEREO;
+
         if (mIns > 0)
         {
-            kData->availOptions |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
-            kData->availOptions |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
-            kData->availOptions |= PLUGIN_OPTION_SEND_PITCHBEND;
+            fOptions |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
+            fOptions |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
+            fOptions |= PLUGIN_OPTION_SEND_PITCHBEND;
+            fOptions |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
         }
 
         bufferSizeChanged(kData->engine->getBufferSize());
@@ -1295,10 +1299,16 @@ public:
                     uint8_t status  = MIDI_GET_STATUS_FROM_DATA(midiEvent.data);
                     uint8_t channel = event.channel;
 
-                    if (MIDI_IS_STATUS_CONTROL_CHANGE(status) && (fHints & PLUGIN_OPTION_SELF_AUTOMATION) == 0)
+                    if (MIDI_IS_STATUS_AFTERTOUCH(status) && (fOptions & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE) == 0)
+                        continue;
+                    if (MIDI_IS_STATUS_CONTROL_CHANGE(status) && (fOptions & PLUGIN_OPTION_SEND_CONTROL_CHANGES) == 0)
+                        continue;
+                    if (MIDI_IS_STATUS_POLYPHONIC_AFTERTOUCH(status) && (fOptions & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH) == 0)
+                        continue;
+                    if (MIDI_IS_STATUS_PITCH_WHEEL_CONTROL(status) && (fOptions & PLUGIN_OPTION_SEND_PITCHBEND) == 0)
                         continue;
 
-                    // Fix bad note-off (per DSSI spec)
+                    // Fix bad note-off
                     if (MIDI_IS_STATUS_NOTE_ON(status) && midiEvent.data[2] == 0)
                         status -= 0x10;
 
@@ -1855,7 +1865,7 @@ CarlaPlugin* CarlaPlugin::newNative(const Initializer& init)
 
     plugin->reload();
 
-    if (init.engine->getProccessMode() == PROCESS_MODE_CONTINUOUS_RACK && (plugin->hints() & PLUGIN_CAN_FORCE_STEREO) == 0)
+    if (init.engine->getProccessMode() == PROCESS_MODE_CONTINUOUS_RACK && ! CarlaPluginProtectedData::canRunInRack(plugin))
     {
         init.engine->setLastError("Carla's rack mode can only work with Mono or Stereo Internal plugins, sorry!");
         delete plugin;
