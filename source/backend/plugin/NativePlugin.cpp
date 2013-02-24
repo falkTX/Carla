@@ -1748,11 +1748,9 @@ private:
         carla_register_native_plugin_midiSplit();
         carla_register_native_plugin_midiThrough();
 
-#if 0
         carla_register_native_plugin_3BandEQ();
         carla_register_native_plugin_3BandSplitter();
         carla_register_native_plugin_PingPongPan();
-#endif
 
 # ifdef WANT_AUDIOFILE
         carla_register_native_plugin_audiofile();
