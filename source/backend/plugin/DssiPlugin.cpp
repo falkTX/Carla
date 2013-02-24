@@ -138,6 +138,40 @@ public:
     // -------------------------------------------------------------------
     // Information (per-plugin data)
 
+    unsigned int availableOptions()
+    {
+        CARLA_ASSERT(fDescriptor != nullptr);
+
+        const bool isDssiVst = fFilename.contains("dssi-vst", true);
+        unsigned int options = 0x0;
+
+        options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+
+        //if ((kData->audioIns.count() == 1 || kData->audioOuts.count() == 0) || (kData->audioIns.count() == 0 || kData->audioOuts.count() == 1))
+        //    options |= PLUGIN_OPTION_FORCE_STEREO;
+
+        if (isDssiVst)
+        {
+            if (fDescriptor != nullptr && fDssiDescriptor->get_custom_data != nullptr && fDssiDescriptor->set_custom_data != nullptr)
+                options |= PLUGIN_OPTION_USE_CHUNKS;
+        }
+        else
+        {
+            options |= PLUGIN_OPTION_FIXED_BUFFER;
+        }
+
+        if (kData->extraHints & PLUGIN_HINT_HAS_MIDI_IN)
+        {
+            options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
+            options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
+            options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
+            options |= PLUGIN_OPTION_SEND_PITCHBEND;
+            options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+        }
+
+        return options;
+    }
+
     float getParameterValue(const uint32_t parameterId)
     {
         CARLA_ASSERT(parameterId < kData->param.count);
@@ -670,7 +704,7 @@ public:
 
         // plugin hints
         const bool haveGUI   = (fHints & PLUGIN_HAS_GUI);
-        const bool isDssiVst = QString(fFilename).endsWith("dssi-vst.so", Qt::CaseInsensitive);
+        const bool isDssiVst = fFilename.contains("dssi-vst", true);
 
         fHints = 0x0;
 

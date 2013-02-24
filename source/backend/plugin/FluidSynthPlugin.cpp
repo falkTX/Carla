@@ -111,6 +111,19 @@ public:
     // -------------------------------------------------------------------
     // Information (per-plugin data)
 
+    unsigned int availableOptions()
+    {
+        unsigned int options = 0x0;
+
+        options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+        options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
+        options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
+        options |= PLUGIN_OPTION_SEND_PITCHBEND;
+        options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+
+        return options;
+    }
+
     float getParameterValue(const uint32_t parameterId)
     {
         CARLA_ASSERT(parameterId < kData->param.count);

@@ -150,6 +150,20 @@ public:
     // -------------------------------------------------------------------
     // Information (per-plugin data)
 
+    unsigned int availableOptions()
+    {
+        const bool isDssiVst = fFilename.contains("dssi-vst", true);
+        unsigned int options = 0x0;
+
+        if (! isDssiVst)
+            options |= PLUGIN_OPTION_FIXED_BUFFER;
+
+        //if ((kData->audioIns.count() == 1 || kData->audioOuts.count() == 0) || (kData->audioIns.count() == 0 || kData->audioOuts.count() == 1))
+        //    options |= PLUGIN_OPTION_FORCE_STEREO;
+
+        return options;
+    }
+
     float getParameterValue(const uint32_t parameterId)
     {
         CARLA_ASSERT(parameterId < kData->param.count);

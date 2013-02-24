@@ -201,6 +201,30 @@ public:
     // -------------------------------------------------------------------
     // Information (per-plugin data)
 
+    unsigned int availableOptions()
+    {
+        CARLA_ASSERT(fDescriptor != nullptr);
+
+        unsigned int options = 0x0;
+
+        options |= PLUGIN_OPTION_FIXED_BUFFER;
+        options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+
+        //if ((kData->audioIns.count() == 1 || kData->audioOuts.count() == 0) || (kData->audioIns.count() == 0 || kData->audioOuts.count() == 1))
+        //    options |= PLUGIN_OPTION_FORCE_STEREO;
+
+        if (fMidiIn.count > 0)
+        {
+            options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
+            options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
+            options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
+            options |= PLUGIN_OPTION_SEND_PITCHBEND;
+            options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+        }
+
+        return options;
+    }
+
     float getParameterValue(const uint32_t parameterId)
     {
         CARLA_ASSERT(fDescriptor != nullptr);

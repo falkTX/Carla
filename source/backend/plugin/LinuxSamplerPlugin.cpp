@@ -228,6 +228,18 @@ public:
     // -------------------------------------------------------------------
     // Information (per-plugin data)
 
+    unsigned int availableOptions()
+    {
+        unsigned int options = 0x0;
+
+        options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+        options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
+        options |= PLUGIN_OPTION_SEND_PITCHBEND;
+        options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+
+        return options;
+    }
+
     void getLabel(char* const strBuf)
     {
         std::strncpy(strBuf, (const char*)fLabel, STR_MAX);
