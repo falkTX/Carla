@@ -20,7 +20,7 @@
 #include "DistrhoPluginMain.cpp"
 
 // TODO
-#undef DISTRHO_PLUGIN_HAS_UI
+//#undef DISTRHO_PLUGIN_HAS_UI
 
 #if DISTRHO_PLUGIN_HAS_UI
 #include <QtGui/QMainWindow>
@@ -43,11 +43,11 @@ public:
           kHost(host),
           kPlugin(plugin),
           fWidget(this),
-          fUi(this, (intptr_t)fWidget.winId(), setParameterCallback, setStateCallback, uiEditParameterCallback, uiSendNoteCallback, uiResizeCallback)
+          fUi(this, (intptr_t)fWidget.winId(), editParameterCallback, setParameterCallback, setStateCallback, sendNoteCallback, uiResizeCallback)
     {
         setCentralWidget(&fWidget);
-        setFixedSize(fUi.getWidth(), fUi.getHeight());
-        setWindowTitle(fUi.getName());
+        setFixedSize(fUi.width(), fUi.height());
+        setWindowTitle(fUi.name());
     }
 
     ~UICarla()
@@ -73,17 +73,35 @@ public:
 
     void carla_setMidiProgram(const uint32_t realProgram)
     {
+#if DISTRHO_PLUGIN_WANT_PROGRAMS
         fUi.programChanged(realProgram);
+#else
+        return;
+        // unused
+        (void)realProgram;
+#endif
     }
 
     void carla_setCustomData(const char* const key, const char* const value)
     {
+#if DISTRHO_PLUGIN_WANT_STATE
         fUi.stateChanged(key, value);
+#else
+        return;
+        // unused
+        (void)key;
+        (void)value;
+#endif
     }
 
     // ---------------------------------------------
 
 protected:
+    void editParameter(uint32_t, bool)
+    {
+        // TODO
+    }
+
     void setParameterValue(uint32_t rindex, float value)
     {
         kHost->ui_parameter_changed(kHost->handle, rindex, value);
@@ -94,17 +112,12 @@ protected:
         kHost->ui_custom_data_changed(kHost->handle, key, value);
     }
 
-    void uiEditParameter(uint32_t, bool)
+    void sendNote(bool, uint8_t, uint8_t, uint8_t)
     {
         // TODO
     }
 
-    void uiSendNote(bool, uint8_t, uint8_t, uint8_t)
-    {
-        // TODO
-    }
-
-    void uiResize(int width, int height)
+    void uiResize(unsigned int width, unsigned int height)
     {
         setFixedSize(width, height);
     }
@@ -137,6 +150,11 @@ private:
 
     #define handlePtr ((UICarla*)ptr)
 
+    static void editParameterCallback(void* ptr, uint32_t index, bool started)
+    {
+        handlePtr->editParameter(index, started);
+    }
+
     static void setParameterCallback(void* ptr, uint32_t rindex, float value)
     {
         handlePtr->setParameterValue(rindex, value);
@@ -147,17 +165,12 @@ private:
         handlePtr->setState(key, value);
     }
 
-    static void uiEditParameterCallback(void* ptr, uint32_t index, bool started)
+    static void sendNoteCallback(void* ptr, bool onOff, uint8_t channel, uint8_t note, uint8_t velocity)
     {
-        handlePtr->uiEditParameter(index, started);
+        handlePtr->sendNote(onOff, channel, note, velocity);
     }
 
-    static void uiSendNoteCallback(void* ptr, bool onOff, uint8_t channel, uint8_t note, uint8_t velocity)
-    {
-        handlePtr->uiSendNote(onOff, channel, note, velocity);
-    }
-
-    static void uiResizeCallback(void* ptr, int width, int height)
+    static void uiResizeCallback(void* ptr, unsigned int width, unsigned int height)
     {
         handlePtr->uiResize(width, height);
     }
@@ -178,14 +191,14 @@ public:
         : PluginDescriptorClass(host)
     {
 #if DISTRHO_PLUGIN_HAS_UI
-        fUi = nullptr;
+        fUiPtr = nullptr;
 #endif
     }
 
     ~PluginCarla()
     {
 #if DISTRHO_PLUGIN_HAS_UI
-        fUi = nullptr;
+        fUiPtr = nullptr;
 #endif
     }
 
@@ -358,51 +371,51 @@ protected:
         if (show)
             createUiIfNeeded();
 
-        if (uiPtr != nullptr)
-            uiPtr->carla_show(show);
+        if (fUiPtr != nullptr)
+            fUiPtr->carla_show(show);
     }
 
     void uiIdle()
     {
-        CARLA_ASSERT(uiPtr != nullptr);
+        CARLA_ASSERT(fUiPtr != nullptr);
 
-        if (uiPtr != nullptr)
-            uiPtr->carla_idle();
+        if (fUiPtr != nullptr)
+            fUiPtr->carla_idle();
     }
 
     void uiSetParameterValue(const uint32_t index, const float value)
     {
-        CARLA_ASSERT(uiPtr != nullptr);
+        CARLA_ASSERT(fUiPtr != nullptr);
         CARLA_ASSERT(index < getParameterCount());
 
-        if (uiPtr != nullptr)
-            uiPtr->carla_setParameterValue(index, value);
+        if (fUiPtr != nullptr)
+            fUiPtr->carla_setParameterValue(index, value);
     }
 
 # if DISTRHO_PLUGIN_WANT_PROGRAMS
     void uiSetMidiProgram(const uint32_t bank, const uint32_t program)
     {
-        CARLA_ASSERT(uiPtr);
+        CARLA_ASSERT(fUiPtr != nullptr);
 
         uint32_t realProgram = bank * 128 + program;
 
-        if (realProgram >= plugin.programCount())
+        if (realProgram >= fPlugin.programCount())
             return;
 
-        if (uiPtr != nullptr)
-            uiPtr->carla_setMidiProgram(realProgram);
+        if (fUiPtr != nullptr)
+            fUiPtr->carla_setMidiProgram(realProgram);
     }
 # endif
 
 # if DISTRHO_PLUGIN_WANT_STATE
     void uiSetCustomData(const char* const key, const char* const value)
     {
-        CARLA_ASSERT(uiPtr != nullptr);
+        CARLA_ASSERT(fUiPtr != nullptr);
         CARLA_ASSERT(key != nullptr);
         CARLA_ASSERT(value != nullptr);
 
-        if (uiPtr != nullptr)
-            uiPtr->carla_setCustomData(key, value);
+        if (fUiPtr != nullptr)
+            fUiPtr->carla_setCustomData(key, value);
     }
 # endif
 #endif
@@ -418,14 +431,14 @@ private:
 
 #if DISTRHO_PLUGIN_HAS_UI
     // UI
-    ScopedPointer<UICarla> fUi;
+    ScopedPointer<UICarla> fUiPtr;
 
     void createUiIfNeeded()
     {
-        if (fUi == nullptr)
+        if (fUiPtr == nullptr)
         {
             d_lastUiSampleRate = getSampleRate();
-            fUi = new UICarla(getHostHandle(), &fPlugin);
+            fUiPtr = new UICarla(getHostHandle(), &fPlugin);
         }
     }
 #endif

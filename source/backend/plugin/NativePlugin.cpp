@@ -1775,6 +1775,7 @@ private:
         carla_register_native_plugin_3BandEQ();
         carla_register_native_plugin_3BandSplitter();
         carla_register_native_plugin_PingPongPan();
+        carla_register_native_plugin_Notes();
 
 # ifdef WANT_AUDIOFILE
         carla_register_native_plugin_audiofile();

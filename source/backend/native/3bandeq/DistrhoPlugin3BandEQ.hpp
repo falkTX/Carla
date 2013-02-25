@@ -39,10 +39,10 @@ public:
     DistrhoPlugin3BandEQ();
     ~DistrhoPlugin3BandEQ();
 
-    // ---------------------------------------------
-
 protected:
+    // ---------------------------------------------
     // Information
+
     const char* d_label() const
     {
         return "3BandEQ";
@@ -68,26 +68,27 @@ protected:
         return d_cconst('D', '3', 'E', 'Q');
     }
 
+    // ---------------------------------------------
     // Init
+
     void d_initParameter(uint32_t index, Parameter& parameter);
     void d_initProgramName(uint32_t index, d_string& programName);
 
+    // ---------------------------------------------
     // Internal data
+
     float d_parameterValue(uint32_t index);
     void  d_setParameterValue(uint32_t index, float value);
     void  d_setProgram(uint32_t index);
 
+    // ---------------------------------------------
     // Process
+
     void d_activate();
     void d_deactivate();
     void d_run(float** inputs, float** outputs, uint32_t frames, uint32_t midiEventCount, const MidiEvent* midiEvents);
 
     // ---------------------------------------------
-
-#ifdef QTCREATOR_TEST
-    void d_initStateKey(uint32_t, d_string&) {}
-    void d_setState(const char*, const char*) {}
-#endif
 
 private:
     float fLow, fMid, fHigh, fMaster, fLowMidFreq, fMidHighFreq;

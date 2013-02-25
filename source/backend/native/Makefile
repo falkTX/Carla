@@ -9,8 +9,8 @@ include ../Makefile.mk
 # --------------------------------------------------------------
 
 BUILD_CXX_FLAGS += -I../../libs/distrho
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtGui gl)
-LINK_FLAGS      += $(shell pkg-config --libs QtGui gl)
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtCore QtGui gl)
+LINK_FLAGS      += $(shell pkg-config --libs QtCore QtGui gl)
 
 ifeq ($(HAVE_AF_DEPS),true)
 AF_CXX_FLAGS     = $(BUILD_CXX_FLAGS)
@@ -20,8 +20,8 @@ endif
 
 ifeq ($(HAVE_ZYN_DEPS),true)
 ZYN_CXX_FLAGS    = $(BUILD_CXX_FLAGS)
-ZYN_CXX_FLAGS   += $(shell pkg-config --cflags fftw3 mxml) -pthread
-LINK_FLAGS      += $(shell pkg-config --libs fftw3 mxml) -lpthread
+ZYN_CXX_FLAGS   += $(shell pkg-config --cflags fftw3 mxml)
+LINK_FLAGS      += $(shell pkg-config --libs fftw3 mxml)
 endif
 
 # --------------------------------------------------------------
@@ -36,7 +36,8 @@ OBJS  = \
 OBJS += \
 	distrho-3bandeq.cpp.o \
 	distrho-3bandsplitter.cpp.o \
-	distrho-pingpongpan.cpp.o
+	distrho-pingpongpan.cpp.o \
+	distrho-notes.cpp.o
 
 ifeq ($(HAVE_AF_DEPS),true)
 OBJS += \
@@ -88,8 +89,16 @@ distrho-3bandsplitter.cpp.o: distrho-3bandsplitter.cpp
 distrho-pingpongpan.cpp.o: distrho-pingpongpan.cpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) -Ipingpongpan -DDISTRHO_NAMESPACE=DISTRHO_PingPongPan -c -o $@
 
+distrho-notes.cpp.o: distrho-notes.cpp
+	$(CXX) $< $(BUILD_CXX_FLAGS) -Inotes -DDISTRHO_NAMESPACE=DISTRHO_Notes -c -o $@
+
 zynaddsubfx.cpp.o: zynaddsubfx.cpp
 	$(CXX) $< $(ZYN_CXX_FLAGS) -c -o $@
 
 zynaddsubfx-src.cpp.o: zynaddsubfx-src.cpp
 	$(CXX) $< $(ZYN_CXX_FLAGS) -c -o $@
+
+# --------------------------------------------------------------
+
+moc_%.cpp: %.hpp
+	$(MOC) $< -o $@

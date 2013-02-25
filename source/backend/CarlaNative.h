@@ -202,6 +202,7 @@ void carla_register_native_plugin_midiThrough();
 void carla_register_native_plugin_3BandEQ();
 void carla_register_native_plugin_3BandSplitter();
 void carla_register_native_plugin_PingPongPan();
+void carla_register_native_plugin_Notes();
 
 #ifdef WANT_AUDIOFILE
 void carla_register_native_plugin_audiofile();

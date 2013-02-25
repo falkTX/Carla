@@ -1,39 +1,32 @@
 /*
- * DISTRHO PingPongPan Plugin, based on PingPongPan by Michael Gruhn
- * Copyright (C) 2007 Michael Gruhn <michael-gruhn@web.de>
+ * DISTRHO Notes Plugin
  * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation.
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Lesser General Public License for more details.
+ * GNU General Public License for more details.
  *
- * For a full copy of the license see the LGPL.txt file
+ * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#ifndef __DISTRHO_PLUGIN_PINGPONGPAN_HPP__
-#define __DISTRHO_PLUGIN_PINGPONGPAN_HPP__
+#ifndef __DISTRHO_PLUGIN_NOTES_HPP__
+#define __DISTRHO_PLUGIN_NOTES_HPP__
 
 #include "DistrhoPlugin.hpp"
 
 START_NAMESPACE_DISTRHO
 
-class DistrhoPluginPingPongPan : public Plugin
+class DistrhoPluginNotes : public Plugin
 {
 public:
-    enum Parameters
-    {
-        paramFreq = 0,
-        paramWidth,
-        paramCount
-    };
-
-    DistrhoPluginPingPongPan();
-    ~DistrhoPluginPingPongPan();
+    DistrhoPluginNotes();
+    ~DistrhoPluginNotes();
 
 protected:
     // ---------------------------------------------
@@ -41,7 +34,7 @@ protected:
 
     const char* d_label() const
     {
-        return "PingPongPan";
+        return "Notes";
     }
 
     const char* d_maker() const
@@ -51,7 +44,7 @@ protected:
 
     const char* d_license() const
     {
-        return "LGPL";
+        return "GPL v2+";
     }
 
     uint32_t d_version() const
@@ -61,39 +54,33 @@ protected:
 
     long d_uniqueId() const
     {
-        return d_cconst('D', 'P', 'P', 'P');
+        return d_cconst('D', 'N', 'o', 't');
     }
 
     // ---------------------------------------------
     // Init
 
     void d_initParameter(uint32_t index, Parameter& parameter);
-    void d_initProgramName(uint32_t index, d_string& programName);
+    void d_initStateKey(uint32_t index, d_string& stateKeyName);
 
     // ---------------------------------------------
     // Internal data
 
     float d_parameterValue(uint32_t index);
     void  d_setParameterValue(uint32_t index, float value);
-    void  d_setProgram(uint32_t index);
+    void  d_setState(const char* key, const char* value);
 
     // ---------------------------------------------
     // Process
 
-    void d_activate();
-    void d_deactivate();
     void d_run(float** inputs, float** outputs, uint32_t frames, uint32_t midiEventCount, const MidiEvent* midiEvents);
 
     // ---------------------------------------------
 
 private:
-    float fFreq;
-    float fWidth;
-    float waveSpeed;
-
-    float pan, wavePos;
+    int fCurPage;
 };
 
 END_NAMESPACE_DISTRHO
 
-#endif  // __DISTRHO_PLUGIN_PINGPONGPAN_HPP__
+#endif  // __DISTRHO_PLUGIN_NOTES_HPP__
