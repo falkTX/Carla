@@ -60,6 +60,7 @@ all: $(STATIC)
 
 clean:
 	rm -f $(OBJS) $(SHARED) $(STATIC)
+	rm -f moc_*.cpp
 
 debug:
 	$(MAKE) DEBUG=true
@@ -89,7 +90,7 @@ distrho-3bandsplitter.cpp.o: distrho-3bandsplitter.cpp
 distrho-pingpongpan.cpp.o: distrho-pingpongpan.cpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) -Ipingpongpan -DDISTRHO_NAMESPACE=DISTRHO_PingPongPan -c -o $@
 
-distrho-notes.cpp.o: distrho-notes.cpp
+distrho-notes.cpp.o: distrho-notes.cpp moc_DistrhoUINotes.cpp moc_ParamProgressBar.cpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) -Inotes -DDISTRHO_NAMESPACE=DISTRHO_Notes -c -o $@
 
 zynaddsubfx.cpp.o: zynaddsubfx.cpp
@@ -100,5 +101,8 @@ zynaddsubfx-src.cpp.o: zynaddsubfx-src.cpp
 
 # --------------------------------------------------------------
 
-moc_%.cpp: %.hpp
+moc_DistrhoUINotes.cpp: notes/DistrhoUINotes.hpp
+	$(MOC) $< -o $@
+
+moc_ParamProgressBar.cpp: notes/ParamProgressBar.hpp
 	$(MOC) $< -o $@

@@ -104,6 +104,7 @@ public:
           fHandle2(nullptr),
           fDescriptor(nullptr),
           fIsProcessing(false),
+          fIsUiVisible(false),
           fAudioInBuffers(nullptr),
           fAudioOutBuffers(nullptr),
           fMidiEventCount(0)
@@ -128,6 +129,9 @@ public:
 
         if (fDescriptor != nullptr)
         {
+            if (fIsUiVisible)
+                fDescriptor->ui_show(fHandle, false);
+
             if (fDescriptor->deactivate != nullptr && kData->activeBefore)
             {
                 if (fHandle != nullptr)
@@ -487,6 +491,8 @@ public:
             else if (fDescriptor->ui_show != nullptr)
                 fDescriptor->ui_show(fHandle, yesNo);
         }
+
+        fIsUiVisible = yesNo;
     }
 
     void idleGui()
@@ -494,7 +500,7 @@ public:
         CARLA_ASSERT(fDescriptor != nullptr);
         CARLA_ASSERT(fHandle != nullptr);
 
-        if (fDescriptor != nullptr && fHandle != nullptr && fDescriptor->ui_idle != nullptr)
+        if (fIsUiVisible)
             fDescriptor->ui_idle(fHandle);
     }
 
@@ -1641,6 +1647,7 @@ protected:
     void handleUiClosed()
     {
         kData->engine->callback(CALLBACK_SHOW_GUI, fId, 0, 0, 0.0f, nullptr);
+        fIsUiVisible = false;
     }
 
 public:
@@ -1750,6 +1757,7 @@ private:
     const PluginDescriptor* fDescriptor;
 
     bool fIsProcessing;
+    bool fIsUiVisible;
 
     float**     fAudioInBuffers;
     float**     fAudioOutBuffers;

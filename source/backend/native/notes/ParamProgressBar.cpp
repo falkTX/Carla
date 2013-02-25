@@ -15,7 +15,7 @@
  * For a full copy of the GNU General Public License see the COPYING file
  */
 
-#include "ParamProgressBar.h"
+#include "ParamProgressBar.hpp"
 
 #include <QtGui/QMouseEvent>
 

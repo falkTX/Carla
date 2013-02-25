@@ -21,10 +21,16 @@
 #include "notes/DistrhoPluginNotes.cpp"
 #include "notes/DistrhoUINotes.cpp"
 
+// FIXME - link to widgets
+#include "notes/ParamProgressBar.cpp"
+#include "moc_ParamProgressBar.cpp"
+
 // Carla DISTRHO Plugin
 #include "distrho/DistrhoPluginCarla.cpp"
 
 START_NAMESPACE_DISTRHO
+
+#include "moc_DistrhoUINotes.cpp"
 
 // -----------------------------------------------------------------------
 
