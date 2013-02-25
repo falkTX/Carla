@@ -14,58 +14,43 @@
  * For a full copy of the license see the LGPL.txt file
  */
 
-#include "DistrhoUIInternal.hpp"
+#ifndef __DGL_IMAGE_HPP__
+#define __DGL_IMAGE_HPP__
+
+#include "Geometry.hpp"
 
 START_NAMESPACE_DISTRHO
 
 // -------------------------------------------------
-// QEmbedWidget
 
-QEmbedWidget::QEmbedWidget()
+class Image
 {
-}
+public:
+    Image();
+    Image(const char* data, const Size<int>& size, GLenum format = GL_BGRA, GLenum type = GL_UNSIGNED_BYTE);
+    Image(const Image& image);
 
-QEmbedWidget::~QEmbedWidget()
-{
-}
+    void loadFromMemory(const char* data, const Size<int>& size, GLenum format = GL_BGRA, GLenum type = GL_UNSIGNED_BYTE);
 
-void QEmbedWidget::embedInto(WId id)
-{
-#ifdef Q_WS_X11
-    QX11EmbedWidget::embedInto(id);
-#endif
-}
+    bool isValid() const;
 
-WId QEmbedWidget::containerWinId() const
-{
-#ifdef Q_WS_X11
-    return QX11EmbedWidget::containerWinId();
-#else
-    return 0;
-#endif
-}
+    int getWidth() const;
+    int getHeight() const;
+    const Size<int>& getSize() const;
 
-// -------------------------------------------------
-// Qt4UI
+    const char* getData() const;
+    GLenum getFormat() const;
+    GLenum getType() const;
 
-Qt4UI::Qt4UI()
-    : UI(),
-      QWidget(nullptr)
-{
-}
-
-Qt4UI::~Qt4UI()
-{
-}
-
-// -------------------------------------------------
-// Implement resize internally
-
-void Qt4UI::d_uiResize(unsigned int width, unsigned int height)
-{
-    UI::d_uiResize(width, height);
-}
+private:
+    const char* fData;
+    Size<int> fSize;
+    GLenum fFormat;
+    GLenum fType;
+};
 
 // -------------------------------------------------
 
 END_NAMESPACE_DISTRHO
+
+#endif // __DGL_IMAGE_HPP__

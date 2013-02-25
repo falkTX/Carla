@@ -14,58 +14,52 @@
  * For a full copy of the license see the LGPL.txt file
  */
 
-#include "DistrhoUIInternal.hpp"
+#ifndef __DGL_WINDOW_HPP__
+#define __DGL_WINDOW_HPP__
+
+#include "Base.hpp"
 
 START_NAMESPACE_DISTRHO
 
 // -------------------------------------------------
-// QEmbedWidget
 
-QEmbedWidget::QEmbedWidget()
+class App;
+
+class Window
 {
-}
+public:
+    Window(App* app, Window* parent = nullptr);
+    Window(App* app, intptr_t parentId);
+    virtual ~Window();
 
-QEmbedWidget::~QEmbedWidget()
-{
-}
+    void exec();
+    void focus();
+    void idle();
+    void repaint();
 
-void QEmbedWidget::embedInto(WId id)
-{
-#ifdef Q_WS_X11
-    QX11EmbedWidget::embedInto(id);
-#endif
-}
+    bool isVisible();
+    void setVisible(bool yesNo);
+    void setWindowTitle(const char* title);
 
-WId QEmbedWidget::containerWinId() const
-{
-#ifdef Q_WS_X11
-    return QX11EmbedWidget::containerWinId();
-#else
-    return 0;
-#endif
-}
+    intptr_t getWindowId();
 
-// -------------------------------------------------
-// Qt4UI
+    void show()
+    {
+        setVisible(true);
+    }
 
-Qt4UI::Qt4UI()
-    : UI(),
-      QWidget(nullptr)
-{
-}
+    void hide()
+    {
+        setVisible(false);
+    }
 
-Qt4UI::~Qt4UI()
-{
-}
-
-// -------------------------------------------------
-// Implement resize internally
-
-void Qt4UI::d_uiResize(unsigned int width, unsigned int height)
-{
-    UI::d_uiResize(width, height);
-}
+private:
+    class Private;
+    Private* const kPrivate;
+};
 
 // -------------------------------------------------
 
 END_NAMESPACE_DISTRHO
+
+#endif // __DGL_WINDOW_HPP__

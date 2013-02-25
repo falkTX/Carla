@@ -19,13 +19,11 @@
 
 #include "DistrhoDefines.h"
 
-//#ifdef DISTRHO_UI_OPENGL
-//# include "DistrhoUIOpenGL.h"
-// START_NAMESPACE_DISTRHO
-//# include "pugl/pugl.h"
-// END_NAMESPACE_DISTRHO
-//#else
-
+#ifdef DISTRHO_UI_OPENGL
+# include "../DistrhoUIOpenGL.hpp"
+# include "../dgl/App.hpp"
+# include "../dgl/Window.hpp"
+#else
 # include "../DistrhoUIQt4.hpp"
 # include <QtGui/QMouseEvent>
 # include <QtGui/QResizeEvent>
@@ -34,18 +32,11 @@
 # ifdef Q_WS_X11
 #  include <QtGui/QX11EmbedWidget>
 # endif
-
-//#endif
+#endif
 
 START_NAMESPACE_DISTRHO
 
 // -------------------------------------------------
-
-//#ifdef DISTRHO_UI_OPENGL
-//typedef PuglView NativeWidget;
-//#else
-typedef QWidget  NativeWidget;
-//#endif
 
 typedef void (*editParamFunc) (void* ptr, uint32_t index, bool started);
 typedef void (*setParamFunc)  (void* ptr, uint32_t index, float value);
@@ -53,11 +44,14 @@ typedef void (*setStateFunc)  (void* ptr, const char* key, const char* value);
 typedef void (*sendNoteFunc)  (void* ptr, bool onOff, uint8_t channel, uint8_t note, uint8_t velo);
 typedef void (*uiResizeFunc)  (void* ptr, unsigned int width, unsigned int height);
 
-extern double d_lastUiSampleRate;
+extern double  d_lastUiSampleRate;
+#ifdef DISTRHO_UI_OPENGL
+extern Window* d_lastUiParent;
+#endif
 
 // -------------------------------------------------
 
-//#ifdef DISTRHO_UI_QT4
+#ifdef DISTRHO_UI_QT4
 # ifdef Q_WS_X11
 class QEmbedWidget : public QX11EmbedWidget
 # else
@@ -71,7 +65,7 @@ public:
     void embedInto(WId id);
     WId containerWinId() const;
 };
-//#endif
+#endif
 
 // -------------------------------------------------
 
@@ -80,27 +74,23 @@ struct UIPrivateData {
     double   sampleRate;
     uint32_t parameterOffset;
 
-    // UI
-    void*         ptr;
-    NativeWidget* widget;
-
     // Callbacks
     editParamFunc editParamCallbackFunc;
     setParamFunc  setParamCallbackFunc;
     setStateFunc  setStateCallbackFunc;
     sendNoteFunc  sendNoteCallbackFunc;
     uiResizeFunc  uiResizeCallbackFunc;
+    void*         ptr;
 
     UIPrivateData()
         : sampleRate(d_lastUiSampleRate),
           parameterOffset(0),
-          ptr(nullptr),
-          widget(nullptr),
           editParamCallbackFunc(nullptr),
           setParamCallbackFunc(nullptr),
           setStateCallbackFunc(nullptr),
           sendNoteCallbackFunc(nullptr),
-          uiResizeCallbackFunc(nullptr)
+          uiResizeCallbackFunc(nullptr),
+          ptr(nullptr)
     {
         assert(d_lastUiSampleRate != 0.0);
     }
@@ -150,15 +140,14 @@ class UIInternal
 {
 public:
     UIInternal(void* ptr, intptr_t winId, editParamFunc editParamCall, setParamFunc setParamCall, setStateFunc setStateCall, sendNoteFunc sendNoteCall, uiResizeFunc uiResizeCall)
-        : kUi(createUI()),
-          kData((kUi != nullptr) ? kUi->pData : nullptr),
 #ifdef DISTRHO_UI_QT4
-          qtMouseDown(false),
-          qtGrip(nullptr),
-          qtWidget(nullptr)
+        : qtGrip(nullptr),
+          qtWidget(nullptr),
 #else
-          glInitiated(false)
+        : glWindow(createWindow(winId)),
 #endif
+          kUi(createUI()),
+          kData((kUi != nullptr) ? kUi->pData : nullptr)
     {
         assert(kUi != nullptr);
         assert(winId != 0);
@@ -173,7 +162,11 @@ public:
         kData->sendNoteCallbackFunc  = sendNoteCall;
         kData->uiResizeCallbackFunc  = uiResizeCall;
 
+#ifdef DISTRHO_UI_QT4
         createWindow(winId);
+#else
+        d_lastUiParent = nullptr;
+#endif
     }
 
     ~UIInternal()
@@ -255,20 +248,22 @@ public:
             kUi->d_uiIdle();
     }
 
-    intptr_t getWindowId()
+    intptr_t getWinId()
     {
 #ifdef DISTRHO_UI_QT4
         assert(qtWidget != nullptr);
         return (qtWidget != nullptr) ? qtWidget->winId() : 0;
 #else
+        assert(glWindow != nullptr);
+        return (glWindow != nullptr) ? glWindow->getWindowId() : 0;
 #endif
     }
 
     // ---------------------------------------------
 
+#ifdef DISTRHO_UI_QT4
     void createWindow(intptr_t parent)
     {
-#ifdef DISTRHO_UI_QT4
         assert(kUi != nullptr);
         assert(kData != nullptr);
         assert(kData->widget != nullptr);
@@ -279,14 +274,12 @@ public:
             return;
         if (kData == nullptr)
             return;
-        if (kData->widget == nullptr)
-            return;
         if (qtGrip != nullptr)
             return;
         if (qtWidget != nullptr)
             return;
 
-        qtMouseDown = false;
+        Qt4UI* qt4Ui = (Qt4UI*)kUi;
 
         // create embedable widget
         qtWidget = new QEmbedWidget;
@@ -298,10 +291,10 @@ public:
         qtWidget->setFixedSize(kUi->d_width(), kUi->d_height());
 
         // set resize grip
-        if (((Qt4UI*)kUi)->d_resizable())
+        if (qt4Ui->d_resizable())
         {
             // listen for resize on the plugin widget
-            kData->widget->installEventFilter(this);
+            qt4Ui->installEventFilter(this);
 
             // create resize grip on bottom-right
             qtGrip = new QSizeGrip(qtWidget);
@@ -318,9 +311,15 @@ public:
 
         // show it
         qtWidget->show();
-#else
-#endif
     }
+#else
+    Window* createWindow(intptr_t parent)
+    {
+        Window* window = new Window(&glApp, parent);
+        d_lastParent = window;
+        return window;
+    }
+#endif
 
     void destroyWindow()
     {
@@ -331,16 +330,16 @@ public:
 
         if (kData == nullptr)
             return;
-        if (kData->widget == nullptr)
-            return;
         if (qtWidget == nullptr)
             return;
 
+        Qt4UI* qt4Ui = (Qt4UI*)kUi;
+
         // remove main widget, to prevent it from being auto-deleted
-        kData->widget->hide();
-        qtWidget->layout()->removeWidget(kData->widget);
-        kData->widget->setParent(nullptr);
-        kData->widget->close();
+        qt4Ui->hide();
+        qtWidget->layout()->removeWidget(qt4Ui);
+        qt4Ui->setParent(nullptr);
+        qt4Ui->close();
 
         qtWidget->close();
         qtWidget->removeEventFilter(this);
@@ -355,17 +354,36 @@ public:
         delete qtWidget;
         qtWidget = nullptr;
 #else
+        assert(kData != nullptr);
+        assert(glWindow != nullptr);
+
+        if (kData == nullptr)
+            return;
+        if (glWindow == nullptr)
+            return;
+
+        glWindow->hide();
+        delete glWindow;
+        glWindow = nullptr;
 #endif
     }
 
     // ---------------------------------------------
+
+private:
+#ifdef DISTRHO_UI_QT4
+    QSizeGrip*    qtGrip;
+    QEmbedWidget* qtWidget;
+#else
+    App     glApp;
+    Window* glWindow;
+#endif
 
 protected:
     UI* const kUi;
     UIPrivateData* const kData;
 
 #ifdef DISTRHO_UI_QT4
-    // FIXME - remove qtMouseDown usage
     bool eventFilter(QObject* obj, QEvent* event)
     {
         assert(kUi != nullptr);
@@ -378,12 +396,12 @@ protected:
             return false;
         if (kData == nullptr)
             return false;
-        if (kData->widget == nullptr)
-            return false;
         if (qtGrip == nullptr)
             return false;
         if (qtWidget == nullptr)
             return false;
+
+        Qt4UI* qt4Ui = (Qt4UI*)kUi;
 
         if (obj == nullptr)
         {
@@ -391,39 +409,27 @@ protected:
         }
         else if (obj == qtGrip)
         {
-            if (event->type() == QEvent::MouseButtonPress)
+            if (event->type() == QEvent::MouseMove)
             {
                 QMouseEvent* mEvent = (QMouseEvent*)event;
+
                 if (mEvent->button() == Qt::LeftButton)
-                    qtMouseDown = true;
-            }
-            else if (event->type() == QEvent::MouseMove)
-            {
-                if (qtMouseDown)
                 {
-                    Qt4UI* qtUi = (Qt4UI*)kUi;
-                    QMouseEvent* mEvent = (QMouseEvent*)event;
-                    unsigned int width  = qtUi->d_width()  + mEvent->x() - qtGrip->width();
-                    unsigned int height = qtUi->d_height() + mEvent->y() - qtGrip->height();
+                    unsigned int width  = qt4Ui->d_width()  + mEvent->x() - qtGrip->width();
+                    unsigned int height = qt4Ui->d_height() + mEvent->y() - qtGrip->height();
 
-                    if (width < qtUi->d_minimumWidth())
-                        width = qtUi->d_minimumWidth();
-                    if (height < qtUi->d_minimumHeight())
-                        height = qtUi->d_minimumHeight();
+                    if (width < qt4Ui->d_minimumWidth())
+                        width = qt4Ui->d_minimumWidth();
+                    if (height < qt4Ui->d_minimumHeight())
+                        height = qt4Ui->d_minimumHeight();
 
-                    kData->widget->setFixedSize(width, height);
+                    qt4Ui->setFixedSize(width, height);
 
                     return true;
                 }
             }
-            else if (event->type() == QEvent::MouseButtonRelease)
-            {
-                QMouseEvent* mEvent = (QMouseEvent*)event;
-                if (mEvent->button() == Qt::LeftButton)
-                    qtMouseDown = false;
-            }
         }
-        else if (obj == kData->widget && event->type() == QEvent::Resize)
+        else if (obj == qt4Ui && event->type() == QEvent::Resize)
         {
             QResizeEvent* rEvent = (QResizeEvent*)event;
             const QSize&  size   = rEvent->size();
@@ -436,15 +442,6 @@ protected:
 
         return QObject::eventFilter(obj, event);
     }
-#endif
-
-private:
-#ifdef DISTRHO_UI_QT4
-    bool qtMouseDown;
-    QSizeGrip* qtGrip;
-    QEmbedWidget* qtWidget;
-#else
-    bool glInitiated;
 #endif
 };
 

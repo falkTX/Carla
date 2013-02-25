@@ -58,7 +58,7 @@ protected:
     // ---------------------------------------------
     // UI Callbacks
 
-    virtual void d_uiIdle();
+    virtual void d_uiIdle() {}
 
 private:
     friend class UIInternal;

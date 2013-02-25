@@ -38,7 +38,9 @@ UI::UI()
 #endif
 
 #ifdef DISTRHO_UI_QT4
-    pData->widget = (Qt4UI*)this;
+    pData->ui = (Qt4UI*)this;
+#else
+    pData->ui = (OpenGLUI*)this;
 #endif
 }
 

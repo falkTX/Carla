@@ -14,56 +14,41 @@
  * For a full copy of the license see the LGPL.txt file
  */
 
-#include "DistrhoUIInternal.hpp"
+#include "AppPrivate.hpp"
+
+#include "../Window.hpp"
+#include "../../DistrhoUtils.hpp"
 
 START_NAMESPACE_DISTRHO
 
 // -------------------------------------------------
-// QEmbedWidget
 
-QEmbedWidget::QEmbedWidget()
+App::App()
+    : kPrivate(new Private)
 {
 }
 
-QEmbedWidget::~QEmbedWidget()
+App::~App()
 {
+    delete kPrivate;
 }
 
-void QEmbedWidget::embedInto(WId id)
+void App::idle()
 {
-#ifdef Q_WS_X11
-    QX11EmbedWidget::embedInto(id);
-#endif
+    for (auto it = kPrivate->fWindows.begin(); it != kPrivate->fWindows.end(); it++)
+    {
+        Window* window = *it;
+        window->idle();
+    }
 }
 
-WId QEmbedWidget::containerWinId() const
+void App::exec()
 {
-#ifdef Q_WS_X11
-    return QX11EmbedWidget::containerWinId();
-#else
-    return 0;
-#endif
-}
-
-// -------------------------------------------------
-// Qt4UI
-
-Qt4UI::Qt4UI()
-    : UI(),
-      QWidget(nullptr)
-{
-}
-
-Qt4UI::~Qt4UI()
-{
-}
-
-// -------------------------------------------------
-// Implement resize internally
-
-void Qt4UI::d_uiResize(unsigned int width, unsigned int height)
-{
-    UI::d_uiResize(width, height);
+    while (kPrivate->fDoLoop)
+    {
+        idle();
+        d_msleep(10);
+    }
 }
 
 // -------------------------------------------------

@@ -19,51 +19,21 @@
 START_NAMESPACE_DISTRHO
 
 // -------------------------------------------------
-// QEmbedWidget
+// Static data
 
-QEmbedWidget::QEmbedWidget()
-{
-}
-
-QEmbedWidget::~QEmbedWidget()
-{
-}
-
-void QEmbedWidget::embedInto(WId id)
-{
-#ifdef Q_WS_X11
-    QX11EmbedWidget::embedInto(id);
-#endif
-}
-
-WId QEmbedWidget::containerWinId() const
-{
-#ifdef Q_WS_X11
-    return QX11EmbedWidget::containerWinId();
-#else
-    return 0;
-#endif
-}
+Window* d_lastParent = nullptr;
 
 // -------------------------------------------------
-// Qt4UI
+// OpenGLUI
 
-Qt4UI::Qt4UI()
+OpenGLUI::OpenGLUI()
     : UI(),
-      QWidget(nullptr)
+      Widget(d_lastParent)
 {
 }
 
-Qt4UI::~Qt4UI()
+OpenGLUI::~OpenGLUI()
 {
-}
-
-// -------------------------------------------------
-// Implement resize internally
-
-void Qt4UI::d_uiResize(unsigned int width, unsigned int height)
-{
-    UI::d_uiResize(width, height);
 }
 
 // -------------------------------------------------
