@@ -17,7 +17,7 @@
 #ifndef __DGL_WIDGET_HPP__
 #define __DGL_WIDGET_HPP__
 
-#include "Base.hpp"
+#include "Geometry.hpp"
 
 START_NAMESPACE_DISTRHO
 
@@ -44,19 +44,47 @@ public:
         setVisible(false);
     }
 
+    int getX() const;
+    int getY() const;
+    const Point<int>& getPos() const;
+
+    void setX(int x);
+    void setY(int y);
+    void setPos(int x, int y);
+    void setPos(const Point<int>& pos);
+
+    void move(int x, int y);
+    void move(const Point<int>& pos);
+
+    int getWidth() const;
+    int getHeight() const;
+    const Size<int>& getSize() const;
+
+    void setWidth(int width);
+    void setHeight(int height);
+    void setSize(int width, int height);
+    void setSize(const Size<int>& size);
+
+    const Rectangle<int>& getArea() const;
+
+    Window* getParent() const;
+    void repaint();
+
 protected:
     virtual void onDisplay();
-    virtual void onKeyboard(bool press, uint32_t key);
-    virtual void onMouse(int button, bool press, int x, int y);
-    virtual void onMotion(int x, int y);
-    virtual void onScroll(float dx, float dy);
-    virtual void onSpecial(bool press, Key key);
+    virtual bool onKeyboard(bool press, uint32_t key);
+    virtual bool onMouse(int button, bool press, int x, int y);
+    virtual bool onMotion(int x, int y);
+    virtual bool onScroll(float dx, float dy);
+    virtual bool onSpecial(bool press, Key key);
     virtual void onReshape(int width, int height);
     virtual void onClose();
 
 private:
     Window* fParent;
-    bool fVisible;
+    bool    fVisible;
+    Rectangle<int> fArea;
+
     friend class Window;
 };
 

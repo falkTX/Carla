@@ -97,7 +97,7 @@ void Image::draw(const Point<int>& pos)
     if (! isValid())
         return;
 
-    glRasterPos2i(pos.getX(), fSize.getHeight()-pos.getY());
+    glRasterPos2i(pos.getX(), fSize.getHeight()+pos.getY());
     glDrawPixels(fSize.getWidth(), fSize.getHeight(), fFormat, fType, fRawData);
 }
 

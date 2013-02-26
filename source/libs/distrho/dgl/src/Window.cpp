@@ -47,7 +47,10 @@ static Bool isUnmapNotify(Display*, XEvent* ev, XPointer win)
 #endif
 
 #define FOR_EACH_WIDGET(it) \
-  for (auto it = fWidgets.begin(); it != fWidgets.end(); it++)
+  for (auto it = fWidgets.begin(); it != fWidgets.end(); ++it)
+
+#define FOR_EACH_WIDGET_INV(rit) \
+  for (auto rit = fWidgets.rbegin(); rit != fWidgets.rend(); ++rit)
 
 // -------------------------------------------------
 // Window Private
@@ -305,11 +308,14 @@ protected:
         if (fChildFocus != nullptr)
             return fChildFocus->focus();
 
-        FOR_EACH_WIDGET(it)
+        FOR_EACH_WIDGET_INV(rit)
         {
-            Widget* widget = *it;
+            Widget* widget = *rit;
             if (widget->isVisible())
-                widget->onKeyboard(press, key);
+            {
+                if (widget->onKeyboard(press, key))
+                    break;
+            }
         }
     }
 
@@ -318,11 +324,14 @@ protected:
         if (fChildFocus != nullptr)
             return fChildFocus->focus();
 
-        FOR_EACH_WIDGET(it)
+        FOR_EACH_WIDGET_INV(rit)
         {
-            Widget* widget = *it;
+            Widget* widget = *rit;
             if (widget->isVisible())
-                widget->onMouse(button, press, x, y);
+            {
+                if (widget->onMouse(button, press, x, y))
+                    break;
+            }
         }
     }
 
@@ -331,11 +340,14 @@ protected:
         if (fChildFocus != nullptr)
             return;
 
-        FOR_EACH_WIDGET(it)
+        FOR_EACH_WIDGET_INV(rit)
         {
-            Widget* widget = *it;
+            Widget* widget = *rit;
             if (widget->isVisible())
-                widget->onMotion(x, y);
+            {
+                if (widget->onMotion(x, y))
+                    break;
+            }
         }
     }
 
@@ -344,11 +356,14 @@ protected:
         if (fChildFocus != nullptr)
             return;
 
-        FOR_EACH_WIDGET(it)
+        FOR_EACH_WIDGET_INV(rit)
         {
-            Widget* widget = *it;
+            Widget* widget = *rit;
             if (widget->isVisible())
-                widget->onScroll(dx, dy);
+            {
+                if (widget->onScroll(dx, dy))
+                    break;
+            }
         }
     }
 
@@ -357,11 +372,14 @@ protected:
         if (fChildFocus != nullptr)
             return;
 
-        FOR_EACH_WIDGET(it)
+        FOR_EACH_WIDGET_INV(rit)
         {
-            Widget* widget = *it;
+            Widget* widget = *rit;
             if (widget->isVisible())
-                widget->onSpecial(press, key);
+            {
+                if (widget->onSpecial(press, key))
+                    break;
+            }
         }
     }
 
