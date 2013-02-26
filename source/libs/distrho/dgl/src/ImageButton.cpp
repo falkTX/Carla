@@ -17,7 +17,6 @@
 #include "../ImageButton.hpp"
 
 #include <cassert>
-#include <cstdio>
 
 START_NAMESPACE_DISTRHO
 
@@ -76,25 +75,20 @@ bool ImageButton::onMouse(int button, bool press, int x, int y)
 {
     if (fCurButton != -1 && ! press)
     {
-        if (getArea().contains(x, y))
+        if (fCurImage != &fImageNormal)
         {
-            if (fCurImage != &fImageHover)
-            {
-                fCurImage = &fImageHover;
-                repaint();
-            }
-        }
-        else
-        {
-            if (fCurImage != &fImageNormal)
-            {
-                fCurImage = &fImageNormal;
-                repaint();
-            }
+            fCurImage = &fImageNormal;
+            repaint();
         }
 
         if (fCallback != nullptr)
             fCallback->imageButtonClicked(this, fCurButton);
+
+        //if (getArea().contains(x, y))
+        //{
+        //    fCurImage = &fImageHover;
+        //    repaint();
+        //}
 
         fCurButton = -1;
 

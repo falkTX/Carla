@@ -81,7 +81,7 @@ public:
         // we can't have both
         if (parent != nullptr)
         {
-            assert(parentId != 0);
+            assert(parentId == 0);
         }
 
         puglSetHandle(kView, this);
@@ -103,24 +103,8 @@ public:
         if (parent != nullptr && parentId == 0)
         {
             PuglInternals* parentImpl = parent->kView->impl;
-            bool     parentWasVisible = parent->isVisible();
-
-            if (parentWasVisible)
-            {
-                XEvent event;
-                XUnmapWindow(xDisplay, xWindow);
-                XIfEvent(xDisplay, &event, &isUnmapNotify, (XPointer)&xWindow);
-            }
 
             XSetTransientForHint(xDisplay, xWindow, parentImpl->win);
-
-            if (parentWasVisible)
-            {
-                XEvent event;
-                XMapWindow(xDisplay, xWindow);
-                XIfEvent(xDisplay, &event, &isMapNotify, (XPointer)&xWindow);
-            }
-
             XFlush(xDisplay);
         }
 #endif
@@ -153,9 +137,7 @@ public:
             fParent->show();
         }
 
-        focus();
-
-        while (! fClosed)
+        while (isVisible() && ! fClosed)
         {
             idle();
 
@@ -164,6 +146,8 @@ public:
 
             d_msleep(10);
         }
+
+        fClosed = true;
 
         if (fParent != nullptr)
         {
