@@ -20,7 +20,7 @@
 
 #include <cstdio>
 
-START_NAMESPACE_DISTRHO
+START_NAMESPACE_DGL
 
 // -------------------------------------------------
 // Widget
@@ -228,4 +228,4 @@ void Widget::onClose()
 
 // -------------------------------------------------
 
-END_NAMESPACE_DISTRHO
+END_NAMESPACE_DGL

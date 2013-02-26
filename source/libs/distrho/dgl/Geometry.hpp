@@ -19,7 +19,7 @@
 
 #include "Base.hpp"
 
-START_NAMESPACE_DISTRHO
+START_NAMESPACE_DGL
 
 // -------------------------------------------------
 
@@ -128,6 +128,6 @@ private:
 
 // -------------------------------------------------
 
-END_NAMESPACE_DISTRHO
+END_NAMESPACE_DGL
 
 #endif // __DGL_GEOMETRY_HPP__

@@ -21,7 +21,7 @@
 
 #include <list>
 
-START_NAMESPACE_DISTRHO
+START_NAMESPACE_DGL
 
 // -------------------------------------------------
 
@@ -77,6 +77,6 @@ private:
 
 // -------------------------------------------------
 
-END_NAMESPACE_DISTRHO
+END_NAMESPACE_DGL
 
 #endif // __APP_PRIVATE_HPP__

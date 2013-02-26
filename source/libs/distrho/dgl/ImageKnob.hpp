@@ -20,7 +20,7 @@
 #include "Image.hpp"
 #include "Widget.hpp"
 
-START_NAMESPACE_DISTRHO
+START_NAMESPACE_DGL
 
 // -------------------------------------------------
 
@@ -78,6 +78,6 @@ private:
 
 // -------------------------------------------------
 
-END_NAMESPACE_DISTRHO
+END_NAMESPACE_DGL
 
 #endif // __DGL_IMAGE_KNOB_HPP__

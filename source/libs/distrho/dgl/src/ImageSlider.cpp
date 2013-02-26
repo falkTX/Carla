@@ -16,7 +16,7 @@
 
 #include "../ImageSlider.hpp"
 
-START_NAMESPACE_DISTRHO
+START_NAMESPACE_DGL
 
 // -------------------------------------------------
 
@@ -43,7 +43,7 @@ ImageSlider::ImageSlider(const ImageSlider& imageSlider)
       fDragging(false),
       fStartedX(0),
       fStartedY(0),
-      fCallback(nullptr),
+      fCallback(imageSlider.fCallback),
       fStartPos(imageSlider.fStartPos),
       fEndPos(imageSlider.fEndPos),
       fSliderArea(imageSlider.fSliderArea)
@@ -253,4 +253,4 @@ void ImageSlider::_recheckArea()
 
 // -------------------------------------------------
 
-END_NAMESPACE_DISTRHO
+END_NAMESPACE_DGL

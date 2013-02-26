@@ -16,7 +16,7 @@
 
 #include "../ImageKnob.hpp"
 
-START_NAMESPACE_DISTRHO
+START_NAMESPACE_DGL
 
 // -------------------------------------------------
 
@@ -49,7 +49,7 @@ ImageKnob::ImageKnob(const ImageKnob& imageKnob)
       fDragging(false),
       fLastX(0),
       fLastY(0),
-      fCallback(nullptr),
+      fCallback(imageKnob.fCallback),
       fIsImgVertical(imageKnob.fIsImgVertical),
       fImgLayerSize(imageKnob.fImgLayerSize),
       fImgLayerCount(imageKnob.fImgLayerCount),
@@ -203,4 +203,4 @@ bool ImageKnob::onMotion(int x, int y)
 
 // -------------------------------------------------
 
-END_NAMESPACE_DISTRHO
+END_NAMESPACE_DGL

@@ -16,7 +16,7 @@
 
 #include "../Geometry.hpp"
 
-START_NAMESPACE_DISTRHO
+START_NAMESPACE_DGL
 
 // -------------------------------------------------
 // Point
@@ -412,5 +412,5 @@ template class Rectangle<double>;
 
 // -------------------------------------------------
 
-END_NAMESPACE_DISTRHO
+END_NAMESPACE_DGL
 

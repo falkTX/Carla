@@ -51,7 +51,7 @@
 # error DISTRHO_PLUGIN_WANT_STATE undefined!
 #endif
 
-#if defined(__WIN32__) || defined(__WIN64__)
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
 # define DISTRHO_PLUGIN_EXPORT extern "C" __declspec (dllexport)
 # define DISTRHO_OS_WINDOWS    1
 # define DISTRHO_DLL_EXTENSION "dll"

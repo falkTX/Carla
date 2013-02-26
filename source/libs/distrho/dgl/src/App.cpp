@@ -19,7 +19,7 @@
 #include "../Window.hpp"
 #include "../../DistrhoUtils.hpp"
 
-START_NAMESPACE_DISTRHO
+START_NAMESPACE_DGL
 
 // -------------------------------------------------
 
@@ -47,10 +47,10 @@ void App::exec()
     while (kPrivate->fDoLoop)
     {
         idle();
-        d_msleep(10);
+        dgl_msleep(10);
     }
 }
 
 // -------------------------------------------------
 
-END_NAMESPACE_DISTRHO
+END_NAMESPACE_DGL

@@ -18,7 +18,7 @@
 
 #include <cassert>
 
-START_NAMESPACE_DISTRHO
+START_NAMESPACE_DGL
 
 // -------------------------------------------------
 
@@ -54,7 +54,7 @@ ImageButton::ImageButton(const ImageButton& imageButton)
       fImageDown(imageButton.fImageDown),
       fCurImage(&fImageNormal),
       fCurButton(-1),
-      fCallback(nullptr)
+      fCallback(imageButton.fCallback)
 {
     assert(fImageNormal.getSize() == fImageHover.getSize() && fImageHover.getSize() == fImageDown.getSize());
 
@@ -145,4 +145,4 @@ bool ImageButton::onMotion(int x, int y)
 
 // -------------------------------------------------
 
-END_NAMESPACE_DISTRHO
+END_NAMESPACE_DGL

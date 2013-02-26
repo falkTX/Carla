@@ -16,7 +16,7 @@
 
 #include "../ImageAboutWindow.hpp"
 
-START_NAMESPACE_DISTRHO
+START_NAMESPACE_DGL
 
 // -------------------------------------------------
 
@@ -25,7 +25,7 @@ ImageAboutWindow::ImageAboutWindow(App* app, Window* parent, const Image& image)
       Widget(this),
       fImgBackground(image)
 {
-#if DISTRHO_OS_WINDOWS
+#if DGL_OS_WINDOWS
     // FIXME
     Window::setSize(image.getWidth(), image.getHeight()+1);
 #else
@@ -64,4 +64,4 @@ bool ImageAboutWindow::onKeyboard(bool press, uint32_t key)
 
 // -------------------------------------------------
 
-END_NAMESPACE_DISTRHO
+END_NAMESPACE_DGL

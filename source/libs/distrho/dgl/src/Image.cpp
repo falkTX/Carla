@@ -16,7 +16,7 @@
 
 #include "../Image.hpp"
 
-START_NAMESPACE_DISTRHO
+START_NAMESPACE_DGL
 
 // -------------------------------------------------
 
@@ -117,4 +117,4 @@ Image& Image::operator=(const Image& image)
 
 // -------------------------------------------------
 
-END_NAMESPACE_DISTRHO
+END_NAMESPACE_DGL

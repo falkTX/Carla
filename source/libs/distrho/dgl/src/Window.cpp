@@ -18,17 +18,18 @@
 
 #include "../Widget.hpp"
 #include "../Window.hpp"
-#include "../../DistrhoUtils.hpp"
 
-#if DISTRHO_OS_WINDOWS
+#if DGL_OS_WINDOWS
 # include "pugl/pugl_win.cpp"
-#elif DISTRHO_OS_MAC
+#elif DGL_OS_MAC
 # include "pugl/pugl_osx.m"
-#elif DISTRHO_OS_LINUX
+#elif DGL_OS_LINUX
 # include "pugl/pugl_x11.c"
 #else
 # error Unsupported platform!
 #endif
+
+#include <cassert>
 
 #define FOR_EACH_WIDGET(it) \
   for (auto it = fWidgets.begin(); it != fWidgets.end(); ++it)
@@ -36,7 +37,7 @@
 #define FOR_EACH_WIDGET_INV(rit) \
   for (auto rit = fWidgets.rbegin(); rit != fWidgets.rend(); ++rit)
 
-START_NAMESPACE_DISTRHO
+START_NAMESPACE_DGL
 
 // -------------------------------------------------
 // Window Private
@@ -54,9 +55,9 @@ public:
           fVisible(false),
           fClosed(false),
           fResizable(false),
-#if DISTRHO_OS_WINDOWS
+#if DGL_OS_WINDOWS
           hwnd(0)
-#elif DISTRHO_OS_LINUX
+#elif DGL_OS_LINUX
           xDisplay(nullptr),
           xWindow(0)
 #else
@@ -84,9 +85,9 @@ public:
 
         PuglInternals* impl = kView->impl;
 
-#if DISTRHO_OS_WINDOWS
+#if DGL_OS_WINDOWS
         hwnd = impl->hwnd;
-#elif DISTRHO_OS_LINUX
+#elif DGL_OS_LINUX
         xDisplay = impl->display;
         xWindow  = impl->win;
 
@@ -121,7 +122,7 @@ public:
         {
             fParent->fChildFocus = this;
 
-#if DISTRHO_OS_WINDOWS
+#if DGL_OS_WINDOWS
             // Center this window
             PuglInternals* parentImpl = fParent->kView->impl;
 
@@ -149,7 +150,7 @@ public:
             if (fParent != nullptr)
                 fParent->idle();
 
-            d_msleep(10);
+            dgl_msleep(10);
         }
 
         fClosed = true;
@@ -162,11 +163,11 @@ public:
 
     void focus()
     {
-#if DISTRHO_OS_WINDOWS
+#if DGL_OS_WINDOWS
         SetForegroundWindow(hwnd);
         SetActiveWindow(hwnd);
         SetFocus(hwnd);
-#elif DISTRHO_OS_LINUX
+#elif DGL_OS_LINUX
         XRaiseWindow(xDisplay, xWindow);
         XSetInputFocus(xDisplay, xWindow, RevertToPointerRoot, CurrentTime);
         XFlush(xDisplay);
@@ -205,7 +206,7 @@ public:
 
         fVisible = yesNo;
 
-#if DISTRHO_OS_WINDOWS
+#if DGL_OS_WINDOWS
         if (yesNo)
         {
             ShowWindow(hwnd, WS_VISIBLE);
@@ -218,7 +219,7 @@ public:
         }
 
         UpdateWindow(hwnd);
-#elif DISTRHO_OS_LINUX
+#elif DGL_OS_LINUX
         if (yesNo)
             XMapRaised(xDisplay, xWindow);
         else
@@ -235,7 +236,7 @@ public:
 
     void setSize(unsigned int width, unsigned int height)
     {
-#if DISTRHO_OS_WINDOWS
+#if DGL_OS_WINDOWS
         int winFlags = WS_POPUPWINDOW | WS_CAPTION;
 
         if (fResizable)
@@ -246,7 +247,7 @@ public:
 
         SetWindowPos(hwnd, 0, 0, 0, wr.right-wr.left, wr.bottom-wr.top, SWP_NOACTIVATE|SWP_NOMOVE|SWP_NOOWNERZORDER|SWP_NOZORDER);
         UpdateWindow(hwnd);
-#elif DISTRHO_OS_LINUX
+#elif DGL_OS_LINUX
         XSizeHints sizeHints;
         memset(&sizeHints, 0, sizeof(sizeHints));
 
@@ -264,9 +265,9 @@ public:
 
     void setWindowTitle(const char* title)
     {
-#if DISTRHO_OS_WINDOWS
+#if DGL_OS_WINDOWS
         SetWindowTextA(hwnd, title);
-#elif DISTRHO_OS_LINUX
+#elif DGL_OS_LINUX
         XStoreName(xDisplay, xWindow, title);
         XFlush(xDisplay);
 #endif
@@ -429,9 +430,9 @@ private:
 
     std::list<Widget*> fWidgets;
 
-#if DISTRHO_OS_WINDOWS
+#if DGL_OS_WINDOWS
     HWND     hwnd;
-#elif DISTRHO_OS_LINUX
+#elif DGL_OS_LINUX
     Display* xDisplay;
     ::Window xWindow;
 #else
@@ -569,4 +570,4 @@ void Window::removeWidget(Widget* widget)
 
 // -------------------------------------------------
 
-END_NAMESPACE_DISTRHO
+END_NAMESPACE_DGL
