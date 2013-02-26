@@ -39,25 +39,29 @@ public:
     DistrhoUI3BandEQ();
     ~DistrhoUI3BandEQ();
 
-    // ---------------------------------------------
 protected:
-
+    // ---------------------------------------------
     // Information
-    int d_width()
+
+    unsigned int d_width() const
     {
-        return (int)DistrhoArtwork3BandEQ::backgroundWidth;
+        return DistrhoArtwork3BandEQ::backgroundWidth;
     }
 
-    int d_height()
+    unsigned int d_height() const
     {
-        return (int)DistrhoArtwork3BandEQ::backgroundHeight;
+        return DistrhoArtwork3BandEQ::backgroundHeight;
     }
 
+    // ---------------------------------------------
     // DSP Callbacks
+
     void d_parameterChanged(uint32_t index, float value);
     void d_programChanged(uint32_t index);
 
-    // Extended Callbacks
+    // ---------------------------------------------
+    // Widget Callbacks
+
     void imageButtonClicked(ImageButton* button, int);
     void imageKnobDragStarted(ImageKnob* knob);
     void imageKnobDragFinished(ImageKnob* knob);

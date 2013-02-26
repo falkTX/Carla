@@ -21,6 +21,8 @@
 
 #include "dgl/Widget.hpp"
 
+USE_NAMESPACE_DGL
+
 START_NAMESPACE_DISTRHO
 
 // -------------------------------------------------
@@ -57,7 +59,7 @@ protected:
     // ---------------------------------------------
     // UI Callbacks
 
-    virtual void d_uiIdle() = 0;
+    virtual void d_uiIdle() {}
 
 private:
     friend class UIInternal;

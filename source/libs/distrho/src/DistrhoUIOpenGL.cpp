@@ -30,6 +30,7 @@ OpenGLUI::OpenGLUI()
     : UI(),
       Widget(d_lastParent)
 {
+    d_lastParent = nullptr;
 }
 
 OpenGLUI::~OpenGLUI()

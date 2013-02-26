@@ -28,6 +28,14 @@ Image::Image()
 {
 }
 
+Image::Image(const char* rawData, int width, int height, GLenum format, GLenum type)
+    : fRawData(rawData),
+      fSize(width, height),
+      fFormat(format),
+      fType(type)
+{
+}
+
 Image::Image(const char* rawData, const Size<int>& size, GLenum format, GLenum type)
     : fRawData(rawData),
       fSize(size),

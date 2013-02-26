@@ -36,12 +36,6 @@ UI::UI()
 # endif
     pData->parameterOffset += 1; // sample-rate
 #endif
-
-#ifdef DISTRHO_UI_QT4
-    pData->ui = (Qt4UI*)this;
-#else
-    pData->ui = (OpenGLUI*)this;
-#endif
 }
 
 UI::~UI()

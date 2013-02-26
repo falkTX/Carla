@@ -164,8 +164,6 @@ public:
 
 #ifdef DISTRHO_UI_QT4
         createWindow(winId);
-#else
-        d_lastUiParent = nullptr;
 #endif
     }
 
@@ -316,7 +314,7 @@ public:
     Window* createWindow(intptr_t parent)
     {
         Window* window = new Window(&glApp, parent);
-        d_lastParent = window;
+        d_lastUiParent = window;
         return window;
     }
 #endif

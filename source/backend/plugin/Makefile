@@ -58,8 +58,8 @@ debug:
 %.cpp.o: %.cpp ../CarlaEngine.hpp ../CarlaPlugin.hpp CarlaPluginInternal.hpp CarlaPluginThread.hpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
-$(SHARED): $(OBJS) $(LIBS)
+$(SHARED): $(OBJS)
 	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
 
-$(STATIC): $(OBJS) $(LIBS)
+$(STATIC): $(OBJS)
 	$(AR) rs $@ $^

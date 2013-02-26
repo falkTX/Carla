@@ -23,6 +23,8 @@ START_NAMESPACE_DISTRHO
 DistrhoUI3BandEQ::DistrhoUI3BandEQ()
     : OpenGLUI()
 {
+    Window* win = getParent();
+
     // background
     fImgBackground = Image(DistrhoArtwork3BandEQ::backgroundData, DistrhoArtwork3BandEQ::backgroundWidth, DistrhoArtwork3BandEQ::backgroundHeight, GL_BGR);
 
@@ -32,7 +34,7 @@ DistrhoUI3BandEQ::DistrhoUI3BandEQ()
     Point<int> sliderPosEnd(57, 43 + 160);
 
     // slider Low
-    fSliderLow = new ImageSlider(sliderImage);
+    fSliderLow = new ImageSlider(win, sliderImage);
     fSliderLow->setStartPos(sliderPosStart);
     fSliderLow->setEndPos(sliderPosEnd);
     fSliderLow->setRange(-24.0f, 24.0f);
@@ -45,7 +47,6 @@ DistrhoUI3BandEQ::DistrhoUI3BandEQ()
     fSliderMid = new ImageSlider(*fSliderLow);
     fSliderMid->setStartPos(sliderPosStart);
     fSliderMid->setEndPos(sliderPosEnd);
-    fSliderMid->setCallback(this);
 
     // slider High
     sliderPosStart.setX(183);
@@ -53,7 +54,6 @@ DistrhoUI3BandEQ::DistrhoUI3BandEQ()
     fSliderHigh = new ImageSlider(*fSliderLow);
     fSliderHigh->setStartPos(sliderPosStart);
     fSliderHigh->setEndPos(sliderPosEnd);
-    fSliderHigh->setCallback(this);
 
     // slider Master
     sliderPosStart.setX(287);
@@ -61,14 +61,12 @@ DistrhoUI3BandEQ::DistrhoUI3BandEQ()
     fSliderMaster = new ImageSlider(*fSliderLow);
     fSliderMaster->setStartPos(sliderPosStart);
     fSliderMaster->setEndPos(sliderPosEnd);
-    fSliderMaster->setCallback(this);
 
     // knobs
     Image knobImage(DistrhoArtwork3BandEQ::knobData, DistrhoArtwork3BandEQ::knobWidth, DistrhoArtwork3BandEQ::knobHeight);
-    Point knobPos(66, 270);
 
     // knob Low-Mid
-    fKnobLowMid = new ImageKnob(knobImage);
+    fKnobLowMid = new ImageKnob(win, knobImage);
     fKnobLowMid->setPos(66, 270);
     fKnobLowMid->setRange(0.0f, 1000.0f);
     fKnobLowMid->setValue(220.0f);
@@ -77,12 +75,11 @@ DistrhoUI3BandEQ::DistrhoUI3BandEQ()
     // knob Mid-High
     fKnobMidHigh = new ImageKnob(*fKnobLowMid);
     fKnobMidHigh->setPos(160, 270);
-    fKnobMidHigh->setCallback(this);
 
     // about button
     Image aboutImageNormal(DistrhoArtwork3BandEQ::aboutButtonNormalData, DistrhoArtwork3BandEQ::aboutButtonNormalWidth, DistrhoArtwork3BandEQ::aboutButtonNormalHeight);
     Image aboutImageHover(DistrhoArtwork3BandEQ::aboutButtonHoverData, DistrhoArtwork3BandEQ::aboutButtonHoverWidth, DistrhoArtwork3BandEQ::aboutButtonHoverHeight);
-    fButtonAbout = new ImageButton(aboutImageNormal, aboutImageHover, aboutImageHover);
+    fButtonAbout = new ImageButton(win, aboutImageNormal, aboutImageHover, aboutImageHover);
     fButtonAbout->setPos(264, 300);
     fButtonAbout->setCallback(this);
 }

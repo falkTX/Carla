@@ -27,6 +27,7 @@ class Image
 {
 public:
     Image();
+    Image(const char* rawData, int width, int height, GLenum format = GL_BGRA, GLenum type = GL_UNSIGNED_BYTE);
     Image(const char* rawData, const Size<int>& size, GLenum format = GL_BGRA, GLenum type = GL_UNSIGNED_BYTE);
     Image(const Image& image);
 
