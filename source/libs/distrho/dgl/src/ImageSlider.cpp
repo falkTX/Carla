@@ -43,7 +43,10 @@ ImageSlider::ImageSlider(const ImageSlider& imageSlider)
       fDragging(false),
       fStartedX(0),
       fStartedY(0),
-      fCallback(nullptr)
+      fCallback(nullptr),
+      fStartPos(imageSlider.fStartPos),
+      fEndPos(imageSlider.fEndPos),
+      fSliderArea(imageSlider.fSliderArea)
 {
     setSize(fImage.getSize());
 }

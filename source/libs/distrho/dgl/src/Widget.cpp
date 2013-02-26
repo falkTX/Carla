@@ -161,6 +161,11 @@ const Rectangle<int>& Widget::getArea() const
     return fArea;
 }
 
+int Widget::getModifiers()
+{
+    return fParent->getModifiers();
+}
+
 Window* Widget::getParent() const
 {
     return fParent;

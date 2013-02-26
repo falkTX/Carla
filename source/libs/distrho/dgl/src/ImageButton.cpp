@@ -81,6 +81,12 @@ bool ImageButton::onMouse(int button, bool press, int x, int y)
             repaint();
         }
 
+        if (! getArea().contains(x, y))
+        {
+            fCurButton = -1;
+            return false;
+        }
+
         if (fCallback != nullptr)
             fCallback->imageButtonClicked(this, fCurButton);
 

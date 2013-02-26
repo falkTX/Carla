@@ -44,6 +44,7 @@ public:
     void setSize(unsigned int width, unsigned int height);
     void setWindowTitle(const char* title);
 
+    int getModifiers();
     intptr_t getWindowId();
 
     void addWidget(Widget* widget);

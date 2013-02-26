@@ -30,27 +30,13 @@
 # error Unsupported platform!
 #endif
 
-START_NAMESPACE_DISTRHO
-
-// -------------------------------------------------
-// Utils
-
-#if DISTRHO_OS_LINUX
-static Bool isMapNotify(Display*, XEvent* ev, XPointer win)
-{
-    return (ev->type == MapNotify && ev->xmap.window == *((::Window*)win));
-}
-static Bool isUnmapNotify(Display*, XEvent* ev, XPointer win)
-{
-    return (ev->type == UnmapNotify && ev->xunmap.window == *((::Window*)win));
-}
-#endif
-
 #define FOR_EACH_WIDGET(it) \
   for (auto it = fWidgets.begin(); it != fWidgets.end(); ++it)
 
 #define FOR_EACH_WIDGET_INV(rit) \
   for (auto rit = fWidgets.rbegin(); rit != fWidgets.rend(); ++rit)
+
+START_NAMESPACE_DISTRHO
 
 // -------------------------------------------------
 // Window Private
@@ -257,6 +243,11 @@ public:
         XStoreName(xDisplay, xWindow, title);
         XFlush(xDisplay);
 #endif
+    }
+
+    int getModifiers()
+    {
+        return puglGetModifiers(kView);
     }
 
     intptr_t getWindowId()
@@ -515,6 +506,11 @@ void Window::setSize(unsigned int width, unsigned int height)
 void Window::setWindowTitle(const char* title)
 {
     kPrivate->setWindowTitle(title);
+}
+
+int Window::getModifiers()
+{
+    return kPrivate->getModifiers();
 }
 
 intptr_t Window::getWindowId()

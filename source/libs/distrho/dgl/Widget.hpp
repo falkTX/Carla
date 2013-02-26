@@ -67,6 +67,8 @@ public:
 
     const Rectangle<int>& getArea() const;
 
+    int getModifiers();
+
     Window* getParent() const;
     void repaint();
 
