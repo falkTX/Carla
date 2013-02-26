@@ -85,6 +85,7 @@ public:
 
 #if DISTRHO_OS_WINDOWS
         hwnd = impl->hwnd;
+
 #elif DISTRHO_OS_LINUX
         xDisplay = impl->display;
         xWindow  = impl->win;
@@ -222,7 +223,17 @@ public:
 
     void setSize(unsigned int width, unsigned int height)
     {
-#if DISTRHO_OS_LINUX
+#if DISTRHO_OS_WINDOWS
+        RECT rcClient;
+        RECT rcWindow;
+        POINT ptDiff;
+        GetClientRect(hwnd, &rcClient);
+        GetWindowRect(hwnd, &rcWindow);
+        ptDiff.x = (rcWindow.right  - rcWindow.left) - rcClient.right;
+        ptDiff.y = (rcWindow.bottom - rcWindow.top)  - rcClient.bottom;
+        SetWindowPos(hwnd, 0, 0, 0, width + ptDiff.x, height + ptDiff.y, SWP_NOACTIVATE|SWP_NOMOVE|SWP_NOOWNERZORDER|SWP_NOZORDER);
+        UpdateWindow(hwnd);
+#elif DISTRHO_OS_LINUX
         XSizeHints sizeHints;
         memset(&sizeHints, 0, sizeof(sizeHints));
 
@@ -272,6 +283,16 @@ public:
     {
         fWidgets.remove(widget);
     }
+
+#if DISTRHO_OS_WINDOWS
+    Rectangle<int> getBounds()
+    {
+        RECT rcClient;
+        GetClientRect(hwnd, &rcClient);
+
+        return Rectangle<int>(rcClient.left, rcClient.top, rcClient.right, rcClient.bottom);
+    }
+#endif
 
 protected:
     void onDisplay()
@@ -541,6 +562,13 @@ void Window::removeWidget(Widget* widget)
 {
     kPrivate->removeWidget(widget);
 }
+
+#if DISTRHO_OS_WINDOWS
+Rectangle<int> Window::getBounds()
+{
+    return kPrivate->getBounds();
+}
+#endif
 
 // -------------------------------------------------
 

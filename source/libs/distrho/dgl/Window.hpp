@@ -17,7 +17,7 @@
 #ifndef __DGL_WINDOW_HPP__
 #define __DGL_WINDOW_HPP__
 
-#include "Base.hpp"
+#include "Geometry.hpp"
 
 START_NAMESPACE_DISTRHO
 
@@ -60,6 +60,10 @@ public:
     {
         setVisible(false);
     }
+
+#if DISTRHO_OS_WINDOWS
+    Rectangle<int> getBounds();
+#endif
 
 private:
     class Private;

@@ -217,8 +217,15 @@ void Widget::onReshape(int width, int height)
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glOrtho(0, width, height, 0, 0, 1);
+
+#if DISTRHO_OS_WINDOWS
+    Rectangle<int> r(fParent->getBounds());
+    glOrtho(r.getX(), r.getWidth(), r.getHeight(), r.getY(), -1.0f, 1.0f);
+    glViewport(0, 0, r.getWidth() - r.getX(), r.getHeight() - r.getY());
+#else
+    glOrtho(0, width, height, 0, 0.0f, 1.0f);
     glViewport(0, 0, width, height);
+#endif
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();

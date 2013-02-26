@@ -74,8 +74,8 @@ puglCreate(PuglNativeWindow parent,
 
 	impl->hwnd = CreateWindow(
 		"Pugl", title,
-		(addToDesktop ? WS_VISIBLE : 0) | (parent ? WS_CHILD : (WS_POPUPWINDOW | WS_CAPTION)),
-		0, 0, width, height,
+		(addToDesktop ? WS_VISIBLE : 0) | (parent ? WS_CHILD : (WS_OVERLAPPEDWINDOW & ~WS_THICKFRAME & ~WS_MAXIMIZEBOX)),
+		CW_USEDEFAULT, CW_USEDEFAULT, width, height,
 		(HWND)parent, NULL, NULL, NULL);
 	if (!impl->hwnd) {
 		free(impl);
