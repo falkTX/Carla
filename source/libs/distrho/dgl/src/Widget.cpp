@@ -166,6 +166,11 @@ int Widget::getModifiers()
     return fParent->getModifiers();
 }
 
+App* Widget::getApp() const
+{
+    return fParent->getApp();
+}
+
 Window* Widget::getParent() const
 {
     return fParent;

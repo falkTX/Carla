@@ -44,8 +44,9 @@ START_NAMESPACE_DISTRHO
 class Window::Private
 {
 public:
-    Private(Window* self, App::Private* app, Private* parent, intptr_t parentId = 0)
+    Private(Window* self, App* app, App::Private* appPriv, Private* parent, intptr_t parentId = 0)
         : kApp(app),
+          kAppPriv(appPriv),
           kSelf(self),
           kView(puglCreate(parentId, "Window", 600, 500, false, false)),
           fParent(parent),
@@ -80,9 +81,11 @@ public:
         puglSetReshapeFunc(kView, onReshapeCallback);
         puglSetCloseFunc(kView, onCloseCallback);
 
-#if DISTRHO_OS_LINUX
         PuglInternals* impl = kView->impl;
 
+#if DISTRHO_OS_WINDOWS
+        hwnd = impl->hwnd;
+#elif DISTRHO_OS_LINUX
         xDisplay = impl->display;
         xWindow  = impl->win;
 
@@ -95,7 +98,7 @@ public:
         }
 #endif
 
-        kApp->addWindow(kSelf);
+        kAppPriv->addWindow(kSelf);
     }
 
     ~Private()
@@ -104,7 +107,7 @@ public:
 
         if (kView != nullptr)
         {
-            kApp->removeWindow(kSelf);
+            kAppPriv->removeWindow(kSelf);
             puglDestroy(kView);
         }
     }
@@ -212,9 +215,9 @@ public:
 #endif
 
         if (yesNo)
-            kApp->oneShown();
+            kAppPriv->oneShown();
         else
-            kApp->oneHidden();
+            kAppPriv->oneHidden();
     }
 
     void setSize(unsigned int width, unsigned int height)
@@ -243,6 +246,11 @@ public:
         XStoreName(xDisplay, xWindow, title);
         XFlush(xDisplay);
 #endif
+    }
+
+    App* getApp() const
+    {
+        return kApp;
     }
 
     int getModifiers()
@@ -384,7 +392,8 @@ protected:
     }
 
 private:
-    App::Private* const kApp;
+    App*          const kApp;
+    App::Private* const kAppPriv;
     Window*       const kSelf;
     PuglView*     const kView;
 
@@ -454,12 +463,12 @@ private:
 // Window
 
 Window::Window(App* app, Window* parent)
-    : kPrivate(new Private(this, app->kPrivate, (parent != nullptr) ? parent->kPrivate : nullptr))
+    : kPrivate(new Private(this, app, app->kPrivate, (parent != nullptr) ? parent->kPrivate : nullptr))
 {
 }
 
 Window::Window(App* app, intptr_t parentId)
-    : kPrivate(new Private(this, app->kPrivate, nullptr, parentId))
+    : kPrivate(new Private(this, app, app->kPrivate, nullptr, parentId))
 {
 }
 
@@ -506,6 +515,11 @@ void Window::setSize(unsigned int width, unsigned int height)
 void Window::setWindowTitle(const char* title)
 {
     kPrivate->setWindowTitle(title);
+}
+
+App* Window::getApp() const
+{
+    return kPrivate->getApp();
 }
 
 int Window::getModifiers()

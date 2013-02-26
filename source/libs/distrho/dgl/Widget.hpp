@@ -19,10 +19,13 @@
 
 #include "Geometry.hpp"
 
+#include <cstdint>
+
 START_NAMESPACE_DISTRHO
 
 // -------------------------------------------------
 
+class App;
 class Window;
 
 class Widget
@@ -69,6 +72,7 @@ public:
 
     int getModifiers();
 
+    App* getApp() const;
     Window* getParent() const;
     void repaint();
 

@@ -44,6 +44,7 @@ public:
     void setSize(unsigned int width, unsigned int height);
     void setWindowTitle(const char* title);
 
+    App* getApp() const;
     int getModifiers();
     intptr_t getWindowId();
 

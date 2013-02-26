@@ -21,6 +21,8 @@
 #include "Widget.hpp"
 #include "Window.hpp"
 
+#include <cstdint>
+
 START_NAMESPACE_DISTRHO
 
 // -------------------------------------------------
