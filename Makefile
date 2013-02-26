@@ -94,6 +94,7 @@ clean:
 	$(MAKE) clean -C source/backend
 	$(MAKE) clean -C source/bridges
 	$(MAKE) clean -C source/discovery
+	$(MAKE) clean -C source/libs
 	rm -f $(RES)
 	rm -f $(UIs)
 	rm -f $(WIDGETS)

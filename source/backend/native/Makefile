@@ -54,6 +54,8 @@ endif
 SHARED = ../libcarla_native.so
 STATIC = ../libcarla_native.a
 
+LIBS = ../../libs/dgl.a
+
 # --------------------------------------------------------------
 
 all: $(STATIC)
@@ -76,7 +78,7 @@ debug:
 $(SHARED): $(OBJS) $(LIBS)
 	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
 
-$(STATIC): $(OBJS) $(LIBS)
+$(STATIC): $(OBJS)
 	$(AR) rs $@ $^
 
 # --------------------------------------------------------------
