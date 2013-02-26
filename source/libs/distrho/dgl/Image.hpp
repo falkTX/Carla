@@ -27,10 +27,10 @@ class Image
 {
 public:
     Image();
-    Image(const char* data, const Size<int>& size, GLenum format = GL_BGRA, GLenum type = GL_UNSIGNED_BYTE);
+    Image(const char* rawData, const Size<int>& size, GLenum format = GL_BGRA, GLenum type = GL_UNSIGNED_BYTE);
     Image(const Image& image);
 
-    void loadFromMemory(const char* data, const Size<int>& size, GLenum format = GL_BGRA, GLenum type = GL_UNSIGNED_BYTE);
+    void loadFromMemory(const char* rawData, const Size<int>& size, GLenum format = GL_BGRA, GLenum type = GL_UNSIGNED_BYTE);
 
     bool isValid() const;
 
@@ -38,12 +38,14 @@ public:
     int getHeight() const;
     const Size<int>& getSize() const;
 
-    const char* getData() const;
+    const char* getRawData() const;
     GLenum getFormat() const;
     GLenum getType() const;
 
+    Image& operator=(const Image& image);
+
 private:
-    const char* fData;
+    const char* fRawData;
     Size<int> fSize;
     GLenum fFormat;
     GLenum fType;

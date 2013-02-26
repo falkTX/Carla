@@ -18,58 +18,40 @@
 #include "../Widget.hpp"
 #include "../Window.hpp"
 
+#include <cstdio>
+
 START_NAMESPACE_DISTRHO
-
-// -------------------------------------------------
-// Window Private
-
-class Widget::Private
-{
-public:
-    Private(Window* parent)
-        : fApp(nullptr),
-          fWindow(nullptr)
-    {
-        if (parent == nullptr)
-        {
-            fApp = new App;
-            fWindow = new Window(fApp);
-        }
-    }
-
-    ~Private()
-    {
-        if (fWindow != nullptr)
-            delete fWindow;
-        if (fApp != nullptr)
-            delete fApp;
-    }
-
-private:
-    App*    fApp;
-    Window* fWindow;
-};
 
 // -------------------------------------------------
 // Widget
 
 Widget::Widget(Window* parent)
-    : kPrivate(new Private(parent))
+    : fParent(parent),
+      fVisible(true)
 {
+    parent->addWidget(this);
 }
 
 Widget::~Widget()
 {
 }
 
+bool Widget::isVisible()
+{
+    return fVisible;
+}
+
+void Widget::setVisible(bool yesNo)
+{
+    if (yesNo == fVisible)
+        return;
+
+    fVisible = yesNo;
+    fParent->repaint();
+}
+
 void Widget::onDisplay()
 {
-    //if (fParent == nullptr)
-    //    glColor3f(0.0f, 1.0f, 0.0f);
-    //else
-    glColor3f(0.0f, 0.0f, 1.0f);
-    glRectf(-0.75f, 0.75f, 0.75f, -0.75f);
-
 }
 
 void Widget::onKeyboard(bool, uint32_t)

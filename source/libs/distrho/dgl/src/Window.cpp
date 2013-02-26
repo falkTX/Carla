@@ -58,7 +58,7 @@ public:
     Private(Window* self, App::Private* app, Private* parent, intptr_t parentId = 0)
         : kApp(app),
           kSelf(self),
-          kView(puglCreate(parentId, "test", 300, 100, false, false)),
+          kView(puglCreate(parentId, "Window", 600, 500, false, false)),
           fParent(parent),
           fChildFocus(nullptr),
           fVisible(false),
@@ -75,6 +75,12 @@ public:
         if (kView == nullptr)
             return;
 
+        // we can't have both
+        if (parent != nullptr)
+        {
+            assert(parentId != 0);
+        }
+
         puglSetHandle(kView, this);
         puglSetDisplayFunc(kView, onDisplayCallback);
         puglSetKeyboardFunc(kView, onKeyboardCallback);
@@ -85,21 +91,13 @@ public:
         puglSetReshapeFunc(kView, onReshapeCallback);
         puglSetCloseFunc(kView, onCloseCallback);
 
+#if DISTRHO_OS_LINUX
         PuglInternals* impl = kView->impl;
 
-#if DISTRHO_OS_WINDOWS
-        //hwnd = impl->hwnd;
-
-        if (parent != nullptr)
-        {
-            //PuglInternals* parentImpl = parent->kView->impl;
-            //SetParent(parentImpl->hwnd, hwnd);
-        }
-#elif DISTRHO_OS_LINUX
         xDisplay = impl->display;
         xWindow  = impl->win;
 
-        if (parent != nullptr)
+        if (parent != nullptr && parentId == 0)
         {
             PuglInternals* parentImpl = parent->kView->impl;
             bool     parentWasVisible = parent->isVisible();
@@ -232,18 +230,10 @@ public:
 
         UpdateWindow(hwnd);
 #elif DISTRHO_OS_LINUX
-        XEvent event;
-
         if (yesNo)
-        {
             XMapRaised(xDisplay, xWindow);
-            XIfEvent(xDisplay, &event, &isMapNotify, (XPointer)&xWindow);
-        }
         else
-        {
             XUnmapWindow(xDisplay, xWindow);
-            XIfEvent(xDisplay, &event, &isUnmapNotify, (XPointer)&xWindow);
-        }
 
         XFlush(xDisplay);
 #endif
@@ -252,6 +242,24 @@ public:
             kApp->oneShown();
         else
             kApp->oneHidden();
+    }
+
+    void setSize(unsigned int width, unsigned int height)
+    {
+#if DISTRHO_OS_LINUX
+        XSizeHints sizeHints;
+        memset(&sizeHints, 0, sizeof(sizeHints));
+
+        sizeHints.flags      = PMinSize|PMaxSize;
+        sizeHints.min_width  = width;
+        sizeHints.min_height = height;
+        sizeHints.max_width  = width;
+        sizeHints.max_height = height;
+        XSetNormalHints(xDisplay, xWindow, &sizeHints);
+        XFlush(xDisplay);
+#endif
+
+        repaint();
     }
 
     void setWindowTitle(const char* title)
@@ -269,6 +277,16 @@ public:
         return puglGetNativeWindow(kView);
     }
 
+    void addWidget(Widget* widget)
+    {
+        fWidgets.push_back(widget);
+    }
+
+    void removeWidget(Widget* widget)
+    {
+        fWidgets.remove(widget);
+    }
+
 protected:
     void onDisplay()
     {
@@ -277,7 +295,8 @@ protected:
         FOR_EACH_WIDGET(it)
         {
             Widget* widget = *it;
-            widget->onDisplay();
+            if (widget->isVisible())
+                widget->onDisplay();
         }
     }
 
@@ -289,7 +308,8 @@ protected:
         FOR_EACH_WIDGET(it)
         {
             Widget* widget = *it;
-            widget->onKeyboard(press, key);
+            if (widget->isVisible())
+                widget->onKeyboard(press, key);
         }
     }
 
@@ -301,7 +321,8 @@ protected:
         FOR_EACH_WIDGET(it)
         {
             Widget* widget = *it;
-            widget->onMouse(button, press, x, y);
+            if (widget->isVisible())
+                widget->onMouse(button, press, x, y);
         }
     }
 
@@ -313,7 +334,8 @@ protected:
         FOR_EACH_WIDGET(it)
         {
             Widget* widget = *it;
-            widget->onMotion(x, y);
+            if (widget->isVisible())
+                widget->onMotion(x, y);
         }
     }
 
@@ -325,7 +347,8 @@ protected:
         FOR_EACH_WIDGET(it)
         {
             Widget* widget = *it;
-            widget->onScroll(dx, dy);
+            if (widget->isVisible())
+                widget->onScroll(dx, dy);
         }
     }
 
@@ -337,13 +360,13 @@ protected:
         FOR_EACH_WIDGET(it)
         {
             Widget* widget = *it;
-            widget->onSpecial(press, key);
+            if (widget->isVisible())
+                widget->onSpecial(press, key);
         }
     }
 
     void onReshape(int width, int height)
     {
-
         FOR_EACH_WIDGET(it)
         {
             Widget* widget = *it;
@@ -482,6 +505,11 @@ void Window::setVisible(bool yesNo)
     kPrivate->setVisible(yesNo);
 }
 
+void Window::setSize(unsigned int width, unsigned int height)
+{
+    kPrivate->setSize(width, height);
+}
+
 void Window::setWindowTitle(const char* title)
 {
     kPrivate->setWindowTitle(title);
@@ -490,6 +518,16 @@ void Window::setWindowTitle(const char* title)
 intptr_t Window::getWindowId()
 {
     return kPrivate->getWindowId();
+}
+
+void Window::addWidget(Widget* widget)
+{
+    kPrivate->addWidget(widget);
+}
+
+void Window::removeWidget(Widget* widget)
+{
+    kPrivate->removeWidget(widget);
 }
 
 // -------------------------------------------------

@@ -28,22 +28,35 @@ class Window;
 class Widget
 {
 public:
-    Widget(Window* parent = nullptr);
+    Widget(Window* parent);
     virtual ~Widget();
 
+    bool isVisible();
+    void setVisible(bool yesNo);
+
+    void show()
+    {
+        setVisible(true);
+    }
+
+    void hide()
+    {
+        setVisible(false);
+    }
+
 protected:
-    void onDisplay();
-    void onKeyboard(bool press, uint32_t key);
-    void onMouse(int button, bool press, int x, int y);
-    void onMotion(int x, int y);
-    void onScroll(float dx, float dy);
-    void onSpecial(bool press, Key key);
-    void onReshape(int width, int height);
-    void onClose();
+    virtual void onDisplay();
+    virtual void onKeyboard(bool press, uint32_t key);
+    virtual void onMouse(int button, bool press, int x, int y);
+    virtual void onMotion(int x, int y);
+    virtual void onScroll(float dx, float dy);
+    virtual void onSpecial(bool press, Key key);
+    virtual void onReshape(int width, int height);
+    virtual void onClose();
 
 private:
-    class Private;
-    Private* const kPrivate;
+    Window* fParent;
+    bool fVisible;
     friend class Window;
 };
 

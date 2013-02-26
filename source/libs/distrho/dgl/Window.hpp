@@ -24,6 +24,7 @@ START_NAMESPACE_DISTRHO
 // -------------------------------------------------
 
 class App;
+class Widget;
 
 class Window
 {
@@ -39,9 +40,14 @@ public:
 
     bool isVisible();
     void setVisible(bool yesNo);
+    void setResizable(bool yesNo);
+    void setSize(unsigned int width, unsigned int height);
     void setWindowTitle(const char* title);
 
     intptr_t getWindowId();
+
+    void addWidget(Widget* widget);
+    void removeWidget(Widget* widget);
 
     void show()
     {
