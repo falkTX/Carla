@@ -22,6 +22,9 @@
 #include <windowsx.h>
 #include <GL/gl.h>
 
+#include <stdio.h>
+#include <stdlib.h>
+
 #include "pugl_internal.h"
 
 #ifndef WM_MOUSEWHEEL
@@ -30,11 +33,17 @@
 #ifndef WM_MOUSEHWHEEL
 #    define WM_MOUSEHWHEEL 0x020E
 #endif
+#ifndef WHEEL_DELTA
+#    define WHEEL_DELTA 120
+#endif
+
+const int LOCAL_CLOSE_MSG = WM_USER + 50;
 
 struct PuglInternalsImpl {
-	HWND  hwnd;
-	HDC   hdc;
-	HGLRC hglrc;
+	HWND     hwnd;
+	HDC      hdc;
+	HGLRC    hglrc;
+	WNDCLASS wc;
 };
 
 LRESULT CALLBACK
@@ -46,8 +55,7 @@ puglCreate(PuglNativeWindow parent,
            int              width,
            int              height,
            bool             resizable,
-           bool             addToDesktop,
-           const char*      x11Display)
+           bool             addToDesktop)
 {
 	PuglView*      view = (PuglView*)calloc(1, sizeof(PuglView));
 	PuglInternals* impl = (PuglInternals*)calloc(1, sizeof(PuglInternals));
@@ -59,30 +67,47 @@ puglCreate(PuglNativeWindow parent,
 	view->width  = width;
 	view->height = height;
 
-	WNDCLASS wc;
-	wc.style         = CS_OWNDC;
-	wc.lpfnWndProc   = wndProc;
-	wc.cbClsExtra    = 0;
-	wc.cbWndExtra    = 0;
-	wc.hInstance     = 0;
-	wc.hIcon         = LoadIcon(NULL, IDI_APPLICATION);
-	wc.hCursor       = LoadCursor(NULL, IDC_ARROW);
-	wc.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
-	wc.lpszMenuName  = NULL;
-	wc.lpszClassName = "Pugl";
-	RegisterClass(&wc);
+	// FIXME: This is nasty, and pugl should not have static anything.
+	// Should class be a parameter?  Does this make sense on other platforms?
+	static int wc_count = 0;
+	char classNameBuf[256];
+	_snprintf(classNameBuf, sizeof(classNameBuf), "%s_%d\n", title, wc_count++);
 
-	impl->hwnd = CreateWindow(
-		"Pugl", title,
-		(addToDesktop ? WS_VISIBLE : 0) | (parent ? WS_CHILD : (WS_OVERLAPPEDWINDOW & ~WS_THICKFRAME & ~WS_MAXIMIZEBOX)),
-		CW_USEDEFAULT, CW_USEDEFAULT, width, height,
+	impl->wc.style         = CS_OWNDC;
+	impl->wc.lpfnWndProc   = wndProc;
+	impl->wc.cbClsExtra    = 0;
+	impl->wc.cbWndExtra    = 0;
+	impl->wc.hInstance     = 0;
+	impl->wc.hIcon         = LoadIcon(NULL, IDI_APPLICATION);
+	impl->wc.hCursor       = LoadCursor(NULL, IDC_ARROW);
+	impl->wc.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
+	impl->wc.lpszMenuName  = NULL;
+	impl->wc.lpszClassName = classNameBuf;
+	RegisterClass(&impl->wc);
+
+	int winFlags = WS_POPUPWINDOW | WS_CAPTION;
+	if (resizable) {
+		winFlags |= WS_SIZEBOX;
+	}
+
+	// Adjust the overall window size to accomodate our requested client size
+	RECT wr = { 0, 0, width, height };
+	AdjustWindowRectEx(
+		&wr, winFlags, FALSE, WS_EX_TOPMOST);
+
+	impl->hwnd = CreateWindowEx(
+		WS_EX_TOPMOST,
+		classNameBuf, title,
+		(addToDesktop ? WS_VISIBLE : 0) | (parent ? WS_CHILD : winFlags),
+		0, 0, wr.right-wr.left, wr.bottom-wr.top,
 		(HWND)parent, NULL, NULL, NULL);
+
 	if (!impl->hwnd) {
 		free(impl);
 		free(view);
 		return NULL;
 	}
-		
+
 	SetWindowLongPtr(impl->hwnd, GWL_USERDATA, (LONG)view);
 
 	impl->hdc = GetDC(impl->hwnd);
@@ -107,10 +132,6 @@ puglCreate(PuglNativeWindow parent,
 	view->height = height;
 
 	return view;
-
-	// unused
-	(void)resizable;
-	(void)x11Display;
 }
 
 void
@@ -120,11 +141,12 @@ puglDestroy(PuglView* view)
 	wglDeleteContext(view->impl->hglrc);
 	ReleaseDC(view->impl->hwnd, view->impl->hdc);
 	DestroyWindow(view->impl->hwnd);
+	UnregisterClass(view->impl->wc.lpszClassName, NULL);
 	free(view->impl);
 	free(view);
 }
 
-void
+static void
 puglReshape(PuglView* view, int width, int height)
 {
 	wglMakeCurrent(view->impl->hdc, view->impl->hglrc);
@@ -192,6 +214,13 @@ keySymToSpecial(int sym)
 static void
 processMouseEvent(PuglView* view, int button, bool press, LPARAM lParam)
 {
+	view->event_timestamp_ms = GetMessageTime();
+	if (press) {
+		SetCapture(view->impl->hwnd);
+	} else {
+		ReleaseCapture();
+	}
+	
 	if (view->mouseFunc) {
 		view->mouseFunc(view, button, press,
 		                GET_X_LPARAM(lParam),
@@ -221,7 +250,11 @@ handleMessage(PuglView* view, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_CREATE:
 	case WM_SHOWWINDOW:
 	case WM_SIZE:
-		puglReshape(view, view->width, view->height);
+		RECT rect; 
+		GetClientRect(view->impl->hwnd, &rect);
+		puglReshape(view, rect.right, rect.bottom);
+		view->width = rect.right;
+		view->height = rect.bottom;
 		break;
 	case WM_PAINT:
 		BeginPaint(view->impl->hwnd, &ps);
@@ -230,8 +263,7 @@ handleMessage(PuglView* view, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 	case WM_MOUSEMOVE:
 		if (view->motionFunc) {
-			view->motionFunc(
-				view, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+			view->motionFunc(view, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
 		}
 		break;
 	case WM_LBUTTONDOWN:
@@ -265,6 +297,7 @@ handleMessage(PuglView* view, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		break;
 	case WM_KEYDOWN:
+		view->event_timestamp_ms = (GetMessageTime());
 		if (view->ignoreKeyRepeat && (lParam & (1 << 30))) {
 			break;
 		} // else nobreak
@@ -278,6 +311,7 @@ handleMessage(PuglView* view, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		break;
 	case WM_QUIT:
+	case LOCAL_CLOSE_MSG:
 		if (view->closeFunc) {
 			view->closeFunc(view);
 		}
@@ -298,8 +332,9 @@ puglProcessEvents(PuglView* view)
 		handleMessage(view, msg.message, msg.wParam, msg.lParam);
 	}
 
+
 	if (view->redisplay) {
-		puglDisplay(view);
+		InvalidateRect(view->impl->hwnd, NULL, FALSE);
 	}
 
 	return PUGL_SUCCESS;
@@ -314,13 +349,9 @@ wndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		PostMessage(hwnd, WM_SHOWWINDOW, TRUE, 0);
 		return 0;
 	case WM_CLOSE:
-		PostQuitMessage(0);
+		PostMessage(hwnd, LOCAL_CLOSE_MSG, wParam, lParam);
 		return 0;
 	case WM_DESTROY:
-		return 0;
-	case WM_MOUSEWHEEL:
-	case WM_MOUSEHWHEEL:
-		PostMessage(hwnd, message, wParam, lParam);
 		return 0;
 	default:
 		if (view) {

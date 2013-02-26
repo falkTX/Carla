@@ -53,6 +53,7 @@ public:
           fChildFocus(nullptr),
           fVisible(false),
           fClosed(false),
+          fResizable(false),
 #if DISTRHO_OS_WINDOWS
           hwnd(0)
 #elif DISTRHO_OS_LINUX
@@ -85,7 +86,6 @@ public:
 
 #if DISTRHO_OS_WINDOWS
         hwnd = impl->hwnd;
-
 #elif DISTRHO_OS_LINUX
         xDisplay = impl->display;
         xWindow  = impl->win;
@@ -116,16 +116,31 @@ public:
     void exec()
     {
         fClosed = false;
-        show();
 
         if (fParent != nullptr)
         {
-#if DISTRHO_OS_WINDOWS
-            EnableWindow(fParent->hwnd, FALSE);
-#endif
             fParent->fChildFocus = this;
+
+#if DISTRHO_OS_WINDOWS
+            // Center this window
+            PuglInternals* parentImpl = fParent->kView->impl;
+
+            RECT curRect;
+            RECT parentRect;
+            GetWindowRect(hwnd, &curRect);
+            GetWindowRect(parentImpl->hwnd, &parentRect);
+
+            int x = parentRect.left+(parentRect.right-curRect.right)/2;
+            int y = parentRect.top+(parentRect.bottom-curRect.bottom)/2;
+
+            SetWindowPos(hwnd, 0, x, y, 0, 0, SWP_NOACTIVATE|SWP_NOOWNERZORDER|SWP_NOSIZE|SWP_NOZORDER);
+            UpdateWindow(hwnd);
+#endif
+
             fParent->show();
         }
+
+        show();
 
         while (isVisible() && ! fClosed)
         {
@@ -142,9 +157,6 @@ public:
         if (fParent != nullptr)
         {
             fParent->fChildFocus = nullptr;
-#if DISTRHO_OS_WINDOWS
-            EnableWindow(fParent->hwnd, TRUE);
-#endif
         }
     }
 
@@ -224,14 +236,15 @@ public:
     void setSize(unsigned int width, unsigned int height)
     {
 #if DISTRHO_OS_WINDOWS
-        RECT rcClient;
-        RECT rcWindow;
-        POINT ptDiff;
-        GetClientRect(hwnd, &rcClient);
-        GetWindowRect(hwnd, &rcWindow);
-        ptDiff.x = (rcWindow.right  - rcWindow.left) - rcClient.right;
-        ptDiff.y = (rcWindow.bottom - rcWindow.top)  - rcClient.bottom;
-        SetWindowPos(hwnd, 0, 0, 0, width + ptDiff.x, height + ptDiff.y, SWP_NOACTIVATE|SWP_NOMOVE|SWP_NOOWNERZORDER|SWP_NOZORDER);
+        int winFlags = WS_POPUPWINDOW | WS_CAPTION;
+
+        if (fResizable)
+            winFlags |= WS_SIZEBOX;
+
+        RECT wr = { 0, 0, (long)width, (long)height };
+        AdjustWindowRectEx(&wr, winFlags, FALSE, WS_EX_TOPMOST);
+
+        SetWindowPos(hwnd, 0, 0, 0, wr.right-wr.left, wr.bottom-wr.top, SWP_NOACTIVATE|SWP_NOMOVE|SWP_NOOWNERZORDER|SWP_NOZORDER);
         UpdateWindow(hwnd);
 #elif DISTRHO_OS_LINUX
         XSizeHints sizeHints;
@@ -283,16 +296,6 @@ public:
     {
         fWidgets.remove(widget);
     }
-
-#if DISTRHO_OS_WINDOWS
-    Rectangle<int> getBounds()
-    {
-        RECT rcClient;
-        GetClientRect(hwnd, &rcClient);
-
-        return Rectangle<int>(rcClient.left, rcClient.top, rcClient.right, rcClient.bottom);
-    }
-#endif
 
 protected:
     void onDisplay()
@@ -422,6 +425,7 @@ private:
     Private* fChildFocus;
     bool     fVisible;
     bool     fClosed;
+    bool     fResizable;
 
     std::list<Widget*> fWidgets;
 
@@ -562,13 +566,6 @@ void Window::removeWidget(Widget* widget)
 {
     kPrivate->removeWidget(widget);
 }
-
-#if DISTRHO_OS_WINDOWS
-Rectangle<int> Window::getBounds()
-{
-    return kPrivate->getBounds();
-}
-#endif
 
 // -------------------------------------------------
 

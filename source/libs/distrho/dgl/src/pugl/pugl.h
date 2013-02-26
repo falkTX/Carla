@@ -54,7 +54,9 @@
 #    define PUGL_API
 #endif
 
-#ifndef __cplusplus
+#ifdef __cplusplus
+extern "C" {
+#else
 #    include <stdbool.h>
 #endif
 
@@ -224,8 +226,7 @@ puglCreate(PuglNativeWindow parent,
            int              width,
            int              height,
            bool             resizable,
-           bool             addToDesktop = true,
-           const char*      x11Display   = nullptr);
+           bool             addToDesktop = true);
 
 /**
    Set the handle to be passed to all callbacks.
@@ -244,6 +245,12 @@ puglSetHandle(PuglView* view, PuglHandle handle);
 */
 PUGL_API PuglHandle
 puglGetHandle(PuglView* view);
+
+/**
+   Return the timestamp (if any) of the currently-processing event.
+*/
+PUGL_API uint32_t
+puglGetEventTimestamp(PuglView* view);
 
 /**
    Get the currently active modifiers (PuglMod flags).
@@ -337,5 +344,9 @@ puglDestroy(PuglView* view);
 /**
    @}
 */
+
+#ifdef __cplusplus
+}  /* extern "C" */
+#endif
 
 #endif  /* PUGL_H_INCLUDED */

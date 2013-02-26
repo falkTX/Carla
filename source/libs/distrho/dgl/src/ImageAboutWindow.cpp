@@ -27,13 +27,12 @@ ImageAboutWindow::ImageAboutWindow(App* app, Window* parent, const Image& image)
 {
 #if DISTRHO_OS_WINDOWS
     // FIXME
-    Window::setSize(image.getWidth()+1, image.getHeight()+1);
+    Window::setSize(image.getWidth(), image.getHeight()+1);
 #else
     Window::setSize(image.getWidth(), image.getHeight());
 #endif
 
     Window::setWindowTitle("About");
-    Window::show();
 }
 
 void ImageAboutWindow::onDisplay()

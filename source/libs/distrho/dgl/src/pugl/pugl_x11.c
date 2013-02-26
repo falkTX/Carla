@@ -23,8 +23,21 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "pugl_x11.h"
+#include <GL/gl.h>
+#include <GL/glx.h>
+#include <X11/Xatom.h>
+#include <X11/Xlib.h>
+#include <X11/keysym.h>
+
 #include "pugl_internal.h"
+
+struct PuglInternalsImpl {
+	Display*   display;
+	int        screen;
+	Window     win;
+	GLXContext ctx;
+	Bool       doubleBuffered;
+};
 
 /**
    Attributes for single-buffered RGBA with at least
@@ -58,20 +71,19 @@ puglCreate(PuglNativeWindow parent,
            int              width,
            int              height,
            bool             resizable,
-           bool             addToDesktop,
-           const char*      x11Display)
+           bool             addToDesktop)
 {
 	PuglView*      view = (PuglView*)calloc(1, sizeof(PuglView));
 	PuglInternals* impl = (PuglInternals*)calloc(1, sizeof(PuglInternals));
 	if (!view || !impl) {
-		return nullptr;
+		return NULL;
 	}
 
 	view->impl   = impl;
 	view->width  = width;
 	view->height = height;
 
-	impl->display = XOpenDisplay(x11Display);
+	impl->display = XOpenDisplay(0);
 	impl->screen  = DefaultScreen(impl->display);
 
 	XVisualInfo* vi = glXChooseVisual(impl->display, impl->screen, attrListDbl);
@@ -88,7 +100,7 @@ puglCreate(PuglNativeWindow parent,
 	glXQueryVersion(impl->display, &glxMajor, &glxMinor);
 	printf("GLX-Version %d.%d\n", glxMajor, glxMinor);
 
-	impl->ctx = glXCreateContext(impl->display, vi, nullptr, GL_TRUE);
+	impl->ctx = glXCreateContext(impl->display, vi, 0, GL_TRUE);
 
 	Window xParent = parent
 		? (Window)parent
@@ -108,7 +120,7 @@ puglCreate(PuglNativeWindow parent,
 
 	impl->win = XCreateWindow(
 		impl->display, xParent,
-		0, 0, (unsigned int)view->width, (unsigned int)view->height, 0, vi->depth, InputOutput, vi->visual,
+		0, 0, view->width, view->height, 0, vi->depth, InputOutput, vi->visual,
 		CWBorderPixel | CWColormap | CWEventMask, &attr);
 
 	XSizeHints sizeHints;
@@ -138,7 +150,7 @@ puglCreate(PuglNativeWindow parent,
 	if (glXIsDirect(impl->display, impl->ctx)) {
 		printf("DRI enabled\n");
 	} else {
-		printf("no DRI available\n");
+		printf("No DRI available\n");
 	}
 
 	XFree(vi);
@@ -232,8 +244,10 @@ keySymToSpecial(KeySym sym)
 }
 
 static void
-setModifiers(PuglView* view, int xstate)
+setModifiers(PuglView* view, unsigned xstate, unsigned xtime)
 {
+	view->event_timestamp_ms = xtime;
+
 	view->mods = 0;
 	view->mods |= (xstate & ShiftMask)   ? PUGL_MOD_SHIFT  : 0;
 	view->mods |= (xstate & ControlMask) ? PUGL_MOD_CTRL   : 0;
@@ -264,16 +278,15 @@ puglProcessEvents(PuglView* view)
 				break;
 			}
 			puglDisplay(view);
-			view->redisplay = false;
 			break;
 		case MotionNotify:
-			setModifiers(view, (int)event.xmotion.state);
+			setModifiers(view, event.xmotion.state, event.xmotion.time);
 			if (view->motionFunc) {
 				view->motionFunc(view, event.xmotion.x, event.xmotion.y);
 			}
 			break;
 		case ButtonPress:
-			setModifiers(view, (int)event.xbutton.state);
+			setModifiers(view, event.xbutton.state, event.xbutton.time);
 			if (event.xbutton.button >= 4 && event.xbutton.button <= 7) {
 				if (view->scrollFunc) {
 					float dx = 0, dy = 0;
@@ -289,23 +302,23 @@ puglProcessEvents(PuglView* view)
 			}
 			// nobreak
 		case ButtonRelease:
-			setModifiers(view, (int)event.xbutton.state);
+			setModifiers(view, event.xbutton.state, event.xbutton.time);
 			if (view->mouseFunc &&
 			    (event.xbutton.button < 4 || event.xbutton.button > 7)) {
 				view->mouseFunc(view,
-				                (int)event.xbutton.button, event.type == ButtonPress,
+				                event.xbutton.button, event.type == ButtonPress,
 				                event.xbutton.x, event.xbutton.y);
 			}
 			break;
 		case KeyPress: {
-			setModifiers(view, (int)event.xkey.state);
+			setModifiers(view, event.xkey.state, event.xkey.time);
 			KeySym  sym;
 			char    str[5];
-			int     n   = XLookupString(&event.xkey, str, 4, &sym, nullptr);
+			int     n   = XLookupString(&event.xkey, str, 4, &sym, NULL);
 			PuglKey key = keySymToSpecial(sym);
 			if (!key && view->keyboardFunc) {
 				if (n == 1) {
-					view->keyboardFunc(view, true, (uint32_t)str[0]);
+					view->keyboardFunc(view, true, str[0]);
 				} else {
 					fprintf(stderr, "warning: Unknown key %X\n", (int)sym);
 				}
@@ -314,7 +327,7 @@ puglProcessEvents(PuglView* view)
 			}
 		} break;
 		case KeyRelease: {
-			setModifiers(view, (int)event.xkey.state);
+			setModifiers(view, event.xkey.state, event.xkey.time);
 			bool repeated = false;
 			if (view->ignoreKeyRepeat &&
 			    XEventsQueued(view->impl->display, QueuedAfterReading)) {
@@ -330,10 +343,10 @@ puglProcessEvents(PuglView* view)
 
 			if (!repeated && view->keyboardFunc) {
 				KeySym sym = XKeycodeToKeysym(
-					view->impl->display, (KeyCode)event.xkey.keycode, 0);
+					view->impl->display, event.xkey.keycode, 0);
 				PuglKey special = keySymToSpecial(sym);
 				if (!special) {
-					view->keyboardFunc(view, false, (uint32_t)sym);
+					view->keyboardFunc(view, false, sym);
 				} else if (view->specialFunc) {
 					view->specialFunc(view, false, special);
 				}
@@ -369,11 +382,5 @@ puglPostRedisplay(PuglView* view)
 PuglNativeWindow
 puglGetNativeWindow(PuglView* view)
 {
-	return static_cast<PuglNativeWindow>(view->impl->win);
-}
-
-PuglInternals*
-puglGetInternalsImpl(PuglView* view)
-{
-	return view->impl;
+	return view->impl->win;
 }

@@ -61,10 +61,6 @@ public:
         setVisible(false);
     }
 
-#if DISTRHO_OS_WINDOWS
-    Rectangle<int> getBounds();
-#endif
-
 private:
     class Private;
     Private* const kPrivate;

@@ -39,11 +39,13 @@ struct PuglViewImpl {
 
 	PuglInternals* impl;
 
-	int  width;
-	int  height;
-	int  mods;
-	bool ignoreKeyRepeat;
-	bool redisplay;
+	int      width;
+	int      height;
+	int      mods;
+	bool     mouse_in_view;
+	bool     ignoreKeyRepeat;
+	bool     redisplay;
+	uint32_t event_timestamp_ms;
 };
 
 void
@@ -58,13 +60,19 @@ puglGetHandle(PuglView* view)
 	return view->handle;
 }
 
+uint32_t
+puglGetEventTimestamp(PuglView* view)
+{
+	return view->event_timestamp_ms;
+}
+
 int
 puglGetModifiers(PuglView* view)
 {
 	return view->mods;
 }
 
-static inline void
+void
 puglDefaultReshape(PuglView* view, int width, int height)
 {
 	glMatrixMode(GL_PROJECTION);
