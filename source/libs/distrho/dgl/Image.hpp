@@ -42,6 +42,9 @@ public:
     GLenum getFormat() const;
     GLenum getType() const;
 
+    void draw();
+    void draw(const Point<int>& pos);
+
     Image& operator=(const Image& image);
 
 private:

@@ -256,8 +256,8 @@ Rectangle<T>::Rectangle(const Point<T>& pos, const Size<T>& size)
 
 template<typename T>
 Rectangle<T>::Rectangle(const Rectangle<T>& rect)
-    : fPos(rect._pos),
-      fSize(rect._size)
+    : fPos(rect.fPos),
+      fSize(rect.fSize)
 {
 }
 
@@ -309,70 +309,94 @@ bool Rectangle<T>::contains(const Point<T>& pos) const
     return contains(pos.fX, pos.fY);
 }
 
-#if 0
 template<typename T>
-void Rectangle::setX(int x)
+void Rectangle<T>::setX(T x)
 {
-    _pos._x = x;
+    fPos.fX = x;
 }
 
 template<typename T>
-void Rectangle::setY(int y)
+void Rectangle<T>::setY(T y)
 {
-    _pos._y = y;
+    fPos.fY = y;
 }
 
-void Rectangle::setPos(int x, int y)
+template<typename T>
+void Rectangle<T>::setPos(T x, T y)
 {
-    _pos._x = x;
-    _pos._y = y;
+    fPos.fX = x;
+    fPos.fY = y;
 }
 
-void Rectangle::setPos(const Point& pos)
+template<typename T>
+void Rectangle<T>::setPos(const Point<T>& pos)
 {
-    _pos = pos;
+    fPos = pos;
 }
 
-void Rectangle::move(int x, int y)
+template<typename T>
+void Rectangle<T>::move(T x, T y)
 {
-    _pos._x += x;
-    _pos._y +=  y;
+    fPos.fX += x;
+    fPos.fY += y;
 }
 
-void Rectangle::move(const Point& pos)
+template<typename T>
+void Rectangle<T>::move(const Point<T>& pos)
 {
-    _pos += pos;
+    fPos += pos;
 }
 
-void Rectangle::setWidth(int width)
+template<typename T>
+void Rectangle<T>::setWidth(T width)
 {
-    _size._width = width;
+    fSize.fWidth = width;
 }
 
-void Rectangle::setHeight(int height)
+template<typename T>
+void Rectangle<T>::setHeight(T height)
 {
-    _size._height = height;
+    fSize.fHeight = height;
 }
 
-void Rectangle::setSize(int width, int height)
+template<typename T>
+void Rectangle<T>::setSize(T width, T height)
 {
-    _size._width  = width;
-    _size._height = height;
+    fSize.fWidth  = width;
+    fSize.fHeight = height;
 }
 
-void Rectangle::setSize(const Size& size)
+template<typename T>
+void Rectangle<T>::setSize(const Size<T>& size)
 {
-    _size = size;
+    fSize = size;
 }
 
-Rectangle& Rectangle::operator=(const Rectangle& rect)
+template<typename T>
+Rectangle<T>& Rectangle<T>::operator=(const Rectangle<T>& rect)
 {
-    _pos  = rect._pos;
-    _size = rect._size;
+    fPos  = rect.fPos;
+    fSize = rect.fSize;
     return *this;
 }
 
-#endif
+// -------------------------------------------------
+// Possible template data types
+
+template class Point<int>;
+template class Point<long>;
+template class Point<float>;
+template class Point<double>;
+
+template class Size<int>;
+template class Size<long>;
+template class Size<float>;
+template class Size<double>;
+
+template class Rectangle<int>;
+template class Rectangle<long>;
+template class Rectangle<float>;
+template class Rectangle<double>;
 
 // -------------------------------------------------
 
