@@ -103,6 +103,8 @@ public:
 
     bool contains(T x, T y) const;
     bool contains(const Point<T>& pos) const;
+    bool containsX(T x) const;
+    bool containsY(T y) const;
 
     void setX(T x);
     void setY(T y);

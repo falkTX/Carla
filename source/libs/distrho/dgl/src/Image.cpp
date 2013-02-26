@@ -89,16 +89,21 @@ GLenum Image::getType() const
 
 void Image::draw()
 {
-    draw(Point<int>(0, 0));
+    draw(0, 0);
 }
 
-void Image::draw(const Point<int>& pos)
+void Image::draw(int x, int y)
 {
     if (! isValid())
         return;
 
-    glRasterPos2i(pos.getX(), fSize.getHeight()+pos.getY());
+    glRasterPos2i(x, fSize.getHeight()+y);
     glDrawPixels(fSize.getWidth(), fSize.getHeight(), fFormat, fType, fRawData);
+}
+
+void Image::draw(const Point<int>& pos)
+{
+    draw(pos.getX(), pos.getY());
 }
 
 Image& Image::operator=(const Image& image)

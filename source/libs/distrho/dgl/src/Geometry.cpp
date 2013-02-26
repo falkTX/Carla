@@ -310,6 +310,18 @@ bool Rectangle<T>::contains(const Point<T>& pos) const
 }
 
 template<typename T>
+bool Rectangle<T>::containsX(T x) const
+{
+    return (x >= fPos.fX && x <= fPos.fX + fSize.fWidth);
+}
+
+template<typename T>
+bool Rectangle<T>::containsY(T y) const
+{
+    return (y >= fPos.fY && y <= fPos.fY + fSize.fHeight);
+}
+
+template<typename T>
 void Rectangle<T>::setX(T x)
 {
     fPos.fX = x;

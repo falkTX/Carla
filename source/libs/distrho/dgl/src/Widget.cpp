@@ -177,22 +177,27 @@ void Widget::onDisplay()
 
 bool Widget::onKeyboard(bool, uint32_t)
 {
+    return false;
 }
 
 bool Widget::onMouse(int, bool, int, int)
 {
+    return false;
 }
 
 bool Widget::onMotion(int, int)
 {
+    return false;
 }
 
 bool Widget::onScroll(float, float)
 {
+    return false;
 }
 
 bool Widget::onSpecial(bool, Key)
 {
+    return false;
 }
 
 void Widget::onReshape(int width, int height)
