@@ -16,86 +16,88 @@
 
 #include "DistrhoUI3BandSplitter.hpp"
 
+#include "dgl/ImageAboutWindow.hpp"
+
 START_NAMESPACE_DISTRHO
 
 // -------------------------------------------------
 
 DistrhoUI3BandSplitter::DistrhoUI3BandSplitter()
-    : OpenGLExtUI()
+    : OpenGLUI()
 {
+    Window* win = getParent();
+
     // background
-    Image bgImage(DistrhoArtwork3BandSplitter::backgroundData, DistrhoArtwork3BandSplitter::backgroundWidth, DistrhoArtwork3BandSplitter::backgroundHeight, GL_BGR);
-    setBackgroundImage(bgImage);
+    fImgBackground = Image(DistrhoArtwork3BandSplitter::backgroundData, DistrhoArtwork3BandSplitter::backgroundWidth, DistrhoArtwork3BandSplitter::backgroundHeight, GL_BGR);
 
     // sliders
     Image sliderImage(DistrhoArtwork3BandSplitter::sliderData, DistrhoArtwork3BandSplitter::sliderWidth, DistrhoArtwork3BandSplitter::sliderHeight);
-    Point sliderPosStart(57, 43);
-    Point sliderPosEnd(57, 43 + 160);
+    Point<int> sliderPosStart(57, 43);
+    Point<int> sliderPosEnd(57, 43 + 160);
 
     // slider Low
-    sliderLow = new ImageSlider(sliderImage, sliderPosStart, sliderPosEnd);
-    sliderLow->setRange(-24.0f, 24.0f);
-    sliderLow->setValue(0.0f);
-    addImageSlider(sliderLow);
+    fSliderLow = new ImageSlider(win, sliderImage);
+    fSliderLow->setStartPos(sliderPosStart);
+    fSliderLow->setEndPos(sliderPosEnd);
+    fSliderLow->setRange(-24.0f, 24.0f);
+    fSliderLow->setValue(0.0f);
+    fSliderLow->setCallback(this);
 
     // slider Mid
     sliderPosStart.setX(120);
     sliderPosEnd.setX(120);
-    sliderMid = new ImageSlider(sliderImage, sliderPosStart, sliderPosEnd);
-    sliderMid->setRange(-24.0f, 24.0f);
-    sliderMid->setValue(0.0f);
-    addImageSlider(sliderMid);
+    fSliderMid = new ImageSlider(*fSliderLow);
+    fSliderMid->setStartPos(sliderPosStart);
+    fSliderMid->setEndPos(sliderPosEnd);
 
     // slider High
     sliderPosStart.setX(183);
     sliderPosEnd.setX(183);
-    sliderHigh = new ImageSlider(sliderImage, sliderPosStart, sliderPosEnd);
-    sliderHigh->setRange(-24.0f, 24.0f);
-    sliderHigh->setValue(0.0f);
-    addImageSlider(sliderHigh);
+    fSliderHigh = new ImageSlider(*fSliderLow);
+    fSliderHigh->setStartPos(sliderPosStart);
+    fSliderHigh->setEndPos(sliderPosEnd);
 
     // slider Master
     sliderPosStart.setX(287);
     sliderPosEnd.setX(287);
-    sliderMaster = new ImageSlider(sliderImage, sliderPosStart, sliderPosEnd);
-    sliderMaster->setRange(-24.0f, 24.0f);
-    sliderMaster->setValue(0.0f);
-    addImageSlider(sliderMaster);
+    fSliderMaster = new ImageSlider(*fSliderLow);
+    fSliderMaster->setStartPos(sliderPosStart);
+    fSliderMaster->setEndPos(sliderPosEnd);
 
     // knobs
     Image knobImage(DistrhoArtwork3BandSplitter::knobData, DistrhoArtwork3BandSplitter::knobWidth, DistrhoArtwork3BandSplitter::knobHeight);
-    Point knobPos(66, 270);
 
     // knob Low-Mid
-    knobLowMid = new ImageKnob(knobImage, knobPos);
-    knobLowMid->setRange(0.0f, 1000.0f);
-    knobLowMid->setValue(220.0f);
-    addImageKnob(knobLowMid);
+    fKnobLowMid = new ImageKnob(win, knobImage);
+    fKnobLowMid->setPos(66, 270);
+    fKnobLowMid->setRange(0.0f, 1000.0f);
+    fKnobLowMid->setValue(220.0f);
+    fKnobLowMid->setCallback(this);
 
     // knob Mid-High
-    knobPos.setX(160);
-    knobMidHigh = new ImageKnob(knobImage, knobPos);
-    knobMidHigh->setRange(1000.0f, 20000.0f);
-    knobMidHigh->setValue(2000.0f);
-    addImageKnob(knobMidHigh);
+    fKnobMidHigh = new ImageKnob(win, knobImage);
+    fKnobMidHigh->setPos(160, 270);
+    fKnobMidHigh->setRange(1000.0f, 20000.0f);
+    fKnobMidHigh->setValue(2000.0f);
+    fKnobMidHigh->setCallback(this);
 
     // about button
     Image aboutImageNormal(DistrhoArtwork3BandSplitter::aboutButtonNormalData, DistrhoArtwork3BandSplitter::aboutButtonNormalWidth, DistrhoArtwork3BandSplitter::aboutButtonNormalHeight);
     Image aboutImageHover(DistrhoArtwork3BandSplitter::aboutButtonHoverData, DistrhoArtwork3BandSplitter::aboutButtonHoverWidth, DistrhoArtwork3BandSplitter::aboutButtonHoverHeight);
-    Point aboutPos(264, 300);
-    buttonAbout = new ImageButton(aboutImageNormal, aboutImageHover, aboutImageHover, aboutPos);
-    addImageButton(buttonAbout);
+    fButtonAbout = new ImageButton(win, aboutImageNormal, aboutImageHover, aboutImageHover);
+    fButtonAbout->setPos(264, 300);
+    fButtonAbout->setCallback(this);
 }
 
 DistrhoUI3BandSplitter::~DistrhoUI3BandSplitter()
 {
-    delete sliderLow;
-    delete sliderMid;
-    delete sliderHigh;
-    delete sliderMaster;
-    delete knobLowMid;
-    delete knobMidHigh;
-    delete buttonAbout;
+    delete fSliderLow;
+    delete fSliderMid;
+    delete fSliderHigh;
+    delete fSliderMaster;
+    delete fKnobLowMid;
+    delete fKnobMidHigh;
+    delete fButtonAbout;
 }
 
 // -------------------------------------------------
@@ -106,26 +108,24 @@ void DistrhoUI3BandSplitter::d_parameterChanged(uint32_t index, float value)
     switch (index)
     {
     case DistrhoPlugin3BandSplitter::paramLow:
-        sliderLow->setValue(value);
+        fSliderLow->setValue(value);
         break;
     case DistrhoPlugin3BandSplitter::paramMid:
-        sliderMid->setValue(value);
+        fSliderMid->setValue(value);
         break;
     case DistrhoPlugin3BandSplitter::paramHigh:
-        sliderHigh->setValue(value);
+        fSliderHigh->setValue(value);
         break;
     case DistrhoPlugin3BandSplitter::paramMaster:
-        sliderMaster->setValue(value);
+        fSliderMaster->setValue(value);
         break;
     case DistrhoPlugin3BandSplitter::paramLowMidFreq:
-        knobLowMid->setValue(value);
+        fKnobLowMid->setValue(value);
         break;
     case DistrhoPlugin3BandSplitter::paramMidHighFreq:
-        knobMidHigh->setValue(value);
+        fKnobMidHigh->setValue(value);
         break;
     }
-
-    d_uiRepaint();
 }
 
 void DistrhoUI3BandSplitter::d_programChanged(uint32_t index)
@@ -134,87 +134,91 @@ void DistrhoUI3BandSplitter::d_programChanged(uint32_t index)
         return;
 
     // Default values
-    sliderLow->setValue(0.0f);
-    sliderMid->setValue(0.0f);
-    sliderHigh->setValue(0.0f);
-    sliderMaster->setValue(0.0f);
-    knobLowMid->setValue(220.0f);
-    knobMidHigh->setValue(2000.0f);
-
-    d_uiRepaint();
+    fSliderLow->setValue(0.0f);
+    fSliderMid->setValue(0.0f);
+    fSliderHigh->setValue(0.0f);
+    fSliderMaster->setValue(0.0f);
+    fKnobLowMid->setValue(220.0f);
+    fKnobMidHigh->setValue(2000.0f);
 }
 
 // -------------------------------------------------
-// Extended Callbacks
+// Widget Callbacks
 
-void DistrhoUI3BandSplitter::imageButtonClicked(ImageButton* button)
+void DistrhoUI3BandSplitter::imageButtonClicked(ImageButton* button, int)
 {
-    if (button != buttonAbout)
+    if (button != fButtonAbout)
         return;
 
     Image imageAbout(DistrhoArtwork3BandSplitter::aboutData, DistrhoArtwork3BandSplitter::aboutWidth, DistrhoArtwork3BandSplitter::aboutHeight, GL_BGRA);
-    showImageModalDialog(imageAbout, "About");
+    ImageAboutWindow aboutWindow(getApp(), getParent(), imageAbout);
+    aboutWindow.exec();
 }
 
 void DistrhoUI3BandSplitter::imageKnobDragStarted(ImageKnob* knob)
 {
-    if (knob == knobLowMid)
-        d_uiEditParameter(DistrhoPlugin3BandSplitter::paramLowMidFreq, true);
-    else if (knob == knobMidHigh)
-        d_uiEditParameter(DistrhoPlugin3BandSplitter::paramMidHighFreq, true);
+    if (knob == fKnobLowMid)
+        d_editParameter(DistrhoPlugin3BandSplitter::paramLowMidFreq, true);
+    else if (knob == fKnobMidHigh)
+        d_editParameter(DistrhoPlugin3BandSplitter::paramMidHighFreq, true);
 }
 
 void DistrhoUI3BandSplitter::imageKnobDragFinished(ImageKnob* knob)
 {
-    if (knob == knobLowMid)
-        d_uiEditParameter(DistrhoPlugin3BandSplitter::paramLowMidFreq, false);
-    else if (knob == knobMidHigh)
-        d_uiEditParameter(DistrhoPlugin3BandSplitter::paramMidHighFreq, false);
+    if (knob == fKnobLowMid)
+        d_editParameter(DistrhoPlugin3BandSplitter::paramLowMidFreq, false);
+    else if (knob == fKnobMidHigh)
+        d_editParameter(DistrhoPlugin3BandSplitter::paramMidHighFreq, false);
 }
 
 
 void DistrhoUI3BandSplitter::imageKnobValueChanged(ImageKnob* knob, float value)
 {
-    if (knob == knobLowMid)
+    if (knob == fKnobLowMid)
         d_setParameterValue(DistrhoPlugin3BandSplitter::paramLowMidFreq, value);
-    else if (knob == knobMidHigh)
+    else if (knob == fKnobMidHigh)
         d_setParameterValue(DistrhoPlugin3BandSplitter::paramMidHighFreq, value);
 }
 
 void DistrhoUI3BandSplitter::imageSliderDragStarted(ImageSlider* slider)
 {
-    if (slider == sliderLow)
-        d_uiEditParameter(DistrhoPlugin3BandSplitter::paramLow, true);
-    else if (slider == sliderMid)
-        d_uiEditParameter(DistrhoPlugin3BandSplitter::paramMid, true);
-    else if (slider == sliderHigh)
-        d_uiEditParameter(DistrhoPlugin3BandSplitter::paramHigh, true);
-    else if (slider == sliderMaster)
-        d_uiEditParameter(DistrhoPlugin3BandSplitter::paramMaster, true);
+    if (slider == fSliderLow)
+        d_editParameter(DistrhoPlugin3BandSplitter::paramLow, true);
+    else if (slider == fSliderMid)
+        d_editParameter(DistrhoPlugin3BandSplitter::paramMid, true);
+    else if (slider == fSliderHigh)
+        d_editParameter(DistrhoPlugin3BandSplitter::paramHigh, true);
+    else if (slider == fSliderMaster)
+        d_editParameter(DistrhoPlugin3BandSplitter::paramMaster, true);
 }
 
 void DistrhoUI3BandSplitter::imageSliderDragFinished(ImageSlider* slider)
 {
-    if (slider == sliderLow)
-        d_uiEditParameter(DistrhoPlugin3BandSplitter::paramLow, false);
-    else if (slider == sliderMid)
-        d_uiEditParameter(DistrhoPlugin3BandSplitter::paramMid, false);
-    else if (slider == sliderHigh)
-        d_uiEditParameter(DistrhoPlugin3BandSplitter::paramHigh, false);
-    else if (slider == sliderMaster)
-        d_uiEditParameter(DistrhoPlugin3BandSplitter::paramMaster, false);
+    if (slider == fSliderLow)
+        d_editParameter(DistrhoPlugin3BandSplitter::paramLow, false);
+    else if (slider == fSliderMid)
+        d_editParameter(DistrhoPlugin3BandSplitter::paramMid, false);
+    else if (slider == fSliderHigh)
+        d_editParameter(DistrhoPlugin3BandSplitter::paramHigh, false);
+    else if (slider == fSliderMaster)
+        d_editParameter(DistrhoPlugin3BandSplitter::paramMaster, false);
 }
 
 void DistrhoUI3BandSplitter::imageSliderValueChanged(ImageSlider* slider, float value)
 {
-    if (slider == sliderLow)
+    if (slider == fSliderLow)
         d_setParameterValue(DistrhoPlugin3BandSplitter::paramLow, value);
-    else if (slider == sliderMid)
+    else if (slider == fSliderMid)
         d_setParameterValue(DistrhoPlugin3BandSplitter::paramMid, value);
-    else if (slider == sliderHigh)
+    else if (slider == fSliderHigh)
         d_setParameterValue(DistrhoPlugin3BandSplitter::paramHigh, value);
-    else if (slider == sliderMaster)
+    else if (slider == fSliderMaster)
         d_setParameterValue(DistrhoPlugin3BandSplitter::paramMaster, value);
+}
+
+void DistrhoUI3BandSplitter::onDisplay()
+{
+    fImgBackground.draw();
 }
 
 // -------------------------------------------------

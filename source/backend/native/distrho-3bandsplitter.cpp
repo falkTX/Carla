@@ -18,9 +18,9 @@
 #include "CarlaNative.hpp"
 
 // Plugin Code
-//#include "3bandsplitter/DistrhoArtwork3BandSplitter.cpp"
+#include "3bandsplitter/DistrhoArtwork3BandSplitter.cpp"
 #include "3bandsplitter/DistrhoPlugin3BandSplitter.cpp"
-//#include "3bandsplitter/DistrhoUI3BandSplitter.cpp"
+#include "3bandsplitter/DistrhoUI3BandSplitter.cpp"
 
 // Carla DISTRHO Plugin
 #include "distrho/DistrhoPluginCarla.cpp"
@@ -31,7 +31,7 @@ START_NAMESPACE_DISTRHO
 
 static const PluginDescriptor tBandSplitterDesc = {
     /* category  */ ::PLUGIN_CATEGORY_EQ,
-    /* hints     */ static_cast<PluginHints>(::PLUGIN_IS_RTSAFE /*| ::PLUGIN_HAS_GUI*/),
+    /* hints     */ static_cast<PluginHints>(::PLUGIN_IS_RTSAFE | ::PLUGIN_HAS_GUI),
     /* audioIns  */ DISTRHO_PLUGIN_NUM_INPUTS,
     /* audioOuts */ DISTRHO_PLUGIN_NUM_OUTPUTS,
     /* midiIns   */ 0,

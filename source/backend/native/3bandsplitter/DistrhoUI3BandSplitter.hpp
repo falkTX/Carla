@@ -17,7 +17,10 @@
 #ifndef __DISTRHO_UI_3BANDSPLITTER_HPP__
 #define __DISTRHO_UI_3BANDSPLITTER_HPP__
 
-#include "DistrhoUIOpenGLExt.h"
+#include "DistrhoUIOpenGL.hpp"
+#include "dgl/ImageButton.hpp"
+#include "dgl/ImageKnob.hpp"
+#include "dgl/ImageSlider.hpp"
 
 #include "DistrhoArtwork3BandSplitter.hpp"
 #include "DistrhoPlugin3BandSplitter.hpp"
@@ -26,32 +29,40 @@ START_NAMESPACE_DISTRHO
 
 // -------------------------------------------------
 
-class DistrhoUI3BandSplitter : public OpenGLExtUI
+class DistrhoUI3BandSplitter : public OpenGLUI,
+                               public ImageButton::Callback,
+                               public ImageKnob::Callback,
+                               public ImageSlider::Callback
 {
 public:
     DistrhoUI3BandSplitter();
     ~DistrhoUI3BandSplitter();
 
-    // ---------------------------------------------
 protected:
 
+    // ---------------------------------------------
     // Information
-    int d_width()
+
+    unsigned int d_width() const
     {
         return DistrhoArtwork3BandSplitter::backgroundWidth;
     }
 
-    int d_height()
+    unsigned int d_height() const
     {
         return DistrhoArtwork3BandSplitter::backgroundHeight;
     }
 
+    // ---------------------------------------------
     // DSP Callbacks
+
     void d_parameterChanged(uint32_t index, float value);
     void d_programChanged(uint32_t index);
 
-    // Extended Callbacks
-    void imageButtonClicked(ImageButton* button);
+    // ---------------------------------------------
+    // Widget Callbacks
+
+    void imageButtonClicked(ImageButton* button, int);
     void imageKnobDragStarted(ImageKnob* knob);
     void imageKnobDragFinished(ImageKnob* knob);
     void imageKnobValueChanged(ImageKnob* knob, float value);
@@ -59,14 +70,18 @@ protected:
     void imageSliderDragFinished(ImageSlider* slider);
     void imageSliderValueChanged(ImageSlider* slider, float value);
 
+    void onDisplay();
+
 private:
-    ImageSlider* sliderLow;
-    ImageSlider* sliderMid;
-    ImageSlider* sliderHigh;
-    ImageSlider* sliderMaster;
-    ImageKnob* knobLowMid;
-    ImageKnob* knobMidHigh;
-    ImageButton* buttonAbout;
+    Image fImgBackground;
+
+    ImageSlider* fSliderLow;
+    ImageSlider* fSliderMid;
+    ImageSlider* fSliderHigh;
+    ImageSlider* fSliderMaster;
+    ImageKnob*   fKnobLowMid;
+    ImageKnob*   fKnobMidHigh;
+    ImageButton* fButtonAbout;
 };
 
 // -------------------------------------------------

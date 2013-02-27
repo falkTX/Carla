@@ -16,6 +16,8 @@
 
 #include "DistrhoUI3BandEQ.hpp"
 
+#include "dgl/ImageAboutWindow.hpp"
+
 START_NAMESPACE_DISTRHO
 
 // -------------------------------------------------
@@ -141,7 +143,7 @@ void DistrhoUI3BandEQ::d_programChanged(uint32_t index)
 }
 
 // -------------------------------------------------
-// Extended Callbacks
+// Widget Callbacks
 
 void DistrhoUI3BandEQ::imageButtonClicked(ImageButton* button, int)
 {

@@ -243,7 +243,10 @@ public:
     void idle()
     {
 #ifdef DISTRHO_UI_QT4
-        kUi->d_uiIdle();
+        assert(kUi != nullptr);
+
+        if (kUi != nullptr)
+            kUi->d_uiIdle();
 #else
         glApp.idle();
 #endif

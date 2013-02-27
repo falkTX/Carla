@@ -18,9 +18,9 @@
 #include "CarlaNative.hpp"
 
 // Plugin Code
-//#include "pingpongpan/DistrhoArtworkPingPongPan.cpp"
+#include "pingpongpan/DistrhoArtworkPingPongPan.cpp"
 #include "pingpongpan/DistrhoPluginPingPongPan.cpp"
-//#include "pingpongpan/DistrhoUIPingPongPan.cpp"
+#include "pingpongpan/DistrhoUIPingPongPan.cpp"
 
 // Carla DISTRHO Plugin
 #include "distrho/DistrhoPluginCarla.cpp"
@@ -31,7 +31,7 @@ START_NAMESPACE_DISTRHO
 
 static PluginDescriptor tBandEqDesc = {
     /* category  */ ::PLUGIN_CATEGORY_UTILITY,
-    /* hints     */ static_cast<PluginHints>(::PLUGIN_IS_RTSAFE /*| ::PLUGIN_HAS_GUI*/),
+    /* hints     */ static_cast<PluginHints>(::PLUGIN_IS_RTSAFE | ::PLUGIN_HAS_GUI),
     /* audioIns  */ DISTRHO_PLUGIN_NUM_INPUTS,
     /* audioOuts */ DISTRHO_PLUGIN_NUM_OUTPUTS,
     /* midiIns   */ 0,

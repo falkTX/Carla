@@ -17,7 +17,9 @@
 #ifndef __DISTRHO_UI_PINGPONGPAN_HPP__
 #define __DISTRHO_UI_PINGPONGPAN_HPP__
 
-#include "DistrhoUIOpenGLExt.h"
+#include "DistrhoUIOpenGL.hpp"
+#include "dgl/ImageButton.hpp"
+#include "dgl/ImageKnob.hpp"
 
 #include "DistrhoArtworkPingPongPan.hpp"
 #include "DistrhoPluginPingPongPan.hpp"
@@ -26,40 +28,51 @@ START_NAMESPACE_DISTRHO
 
 // -------------------------------------------------
 
-class DistrhoUIPingPongPan : public OpenGLExtUI
+class DistrhoUIPingPongPan : public OpenGLUI,
+                             public ImageButton::Callback,
+                             public ImageKnob::Callback
 {
 public:
     DistrhoUIPingPongPan();
     ~DistrhoUIPingPongPan();
 
-    // ---------------------------------------------
 protected:
 
+    // ---------------------------------------------
     // Information
-    int d_width()
+
+    unsigned int d_width() const
     {
         return DistrhoArtworkPingPongPan::backgroundWidth;
     }
 
-    int d_height()
+    unsigned int d_height() const
     {
         return DistrhoArtworkPingPongPan::backgroundHeight;
     }
 
+    // ---------------------------------------------
     // DSP Callbacks
+
     void d_parameterChanged(uint32_t index, float value);
     void d_programChanged(uint32_t index);
 
-    // Extended Callbacks
-    void imageButtonClicked(ImageButton* button);
+    // ---------------------------------------------
+    // Widget Callbacks
+
+    void imageButtonClicked(ImageButton* button, int);
     void imageKnobDragStarted(ImageKnob* knob);
     void imageKnobDragFinished(ImageKnob* knob);
     void imageKnobValueChanged(ImageKnob* knob, float value);
 
+    void onDisplay();
+
 private:
-    ImageKnob* knobFreq;
-    ImageKnob* knobWidth;
-    ImageButton* buttonAbout;
+    Image fImgBackground;
+
+    ImageKnob*   fKnobFreq;
+    ImageKnob*   fKnobWidth;
+    ImageButton* fButtonAbout;
 };
 
 // -------------------------------------------------

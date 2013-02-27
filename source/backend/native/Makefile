@@ -86,13 +86,13 @@ $(STATIC): $(OBJS)
 distrho-3bandeq.cpp.o: distrho-3bandeq.cpp 3bandeq/DistrhoArtwork3BandEQ.cpp 3bandeq/DistrhoPlugin3BandEQ.cpp 3bandeq/DistrhoUI3BandEQ.cpp distrho/DistrhoPluginCarla.cpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) -I3bandeq -DDISTRHO_NAMESPACE=DISTRHO_3BandEQ -c -o $@
 
-distrho-3bandsplitter.cpp.o: distrho-3bandsplitter.cpp distrho/DistrhoPluginCarla.cpp
+distrho-3bandsplitter.cpp.o: distrho-3bandsplitter.cpp 3bandsplitter/DistrhoArtwork3BandSplitter.cpp 3bandsplitter/DistrhoPlugin3BandSplitter.cpp 3bandsplitter/DistrhoUI3BandSplitter.cpp distrho/DistrhoPluginCarla.cpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) -I3bandsplitter -DDISTRHO_NAMESPACE=DISTRHO_3BandSplitter -c -o $@
 
-distrho-pingpongpan.cpp.o: distrho-pingpongpan.cpp distrho/DistrhoPluginCarla.cpp
+distrho-pingpongpan.cpp.o: distrho-pingpongpan.cpp pingpongpan/DistrhoArtworkPingPongPan.cpp pingpongpan/DistrhoPluginPingPongPan.cpp pingpongpan/DistrhoUIPingPongPan.cpp distrho/DistrhoPluginCarla.cpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) -Ipingpongpan -DDISTRHO_NAMESPACE=DISTRHO_PingPongPan -c -o $@
 
-distrho-notes.cpp.o: distrho-notes.cpp distrho/DistrhoPluginCarla.cpp moc_DistrhoUINotes.cpp moc_ParamProgressBar.cpp
+distrho-notes.cpp.o: distrho-notes.cpp notes/DistrhoPluginNotes.cpp notes/DistrhoUINotes.cpp distrho/DistrhoPluginCarla.cpp moc_DistrhoUINotes.cpp moc_ParamProgressBar.cpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) -Inotes -DDISTRHO_NAMESPACE=DISTRHO_Notes -c -o $@
 
 zynaddsubfx.cpp.o: zynaddsubfx.cpp
