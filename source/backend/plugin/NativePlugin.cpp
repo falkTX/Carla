@@ -479,6 +479,7 @@ public:
 
         if (fDescriptor != nullptr && fHandle != nullptr)
         {
+            // FIXME - this be as a host-side call to request files
             if (fDescriptor->name != nullptr && std::strcmp(fDescriptor->label, "audiofile") == 0)
             {
                 QString filenameTry = QFileDialog::getOpenFileName(nullptr, "Open Audio File");
@@ -489,7 +490,24 @@ public:
                 kData->engine->callback(CALLBACK_SHOW_GUI, fId, 0, 0, 0.0f, nullptr);
             }
             else if (fDescriptor->ui_show != nullptr)
+            {
                 fDescriptor->ui_show(fHandle, yesNo);
+
+                if (yesNo)
+                {
+                    // Update UI values
+                    if (kData->midiprog.current >= 0)
+                    {
+                        const MidiProgramData& mpData = kData->midiprog.getCurrent();
+                        fDescriptor->ui_set_midi_program(fHandle, mpData.bank, mpData.program);
+                    }
+
+                    for (uint32_t i=0; i < kData->param.count; i++)
+                    {
+                        fDescriptor->ui_set_parameter_value(fHandle, i, fDescriptor->get_parameter_value(fHandle, i));
+                    }
+                }
+            }
         }
 
         fIsUiVisible = yesNo;
