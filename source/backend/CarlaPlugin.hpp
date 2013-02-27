@@ -19,13 +19,13 @@
 #define __CARLA_PLUGIN_HPP__
 
 #include "CarlaBackend.hpp"
-#include "CarlaNative.h"
 #include "CarlaString.hpp"
 
 #ifndef DOXYGEN
 // Avoid including extra libs here
 struct LADSPA_RDF_Descriptor;
 typedef void* lo_address;
+typedef struct _PluginDescriptor PluginDescriptor;
 #endif
 
 CARLA_BACKEND_START_NAMESPACE

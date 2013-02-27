@@ -256,7 +256,7 @@ public:
     {
 #ifdef DISTRHO_UI_QT4
         assert(qtWidget != nullptr);
-        return (qtWidget != nullptr) ? qtWidget->winId() : 0;
+        return (qtWidget != nullptr) ? (intptr_t)qtWidget->winId() : 0;
 #else
         return glWindow.getWindowId();
 #endif
@@ -309,7 +309,7 @@ public:
         }
 
         // reparent widget
-        qtWidget->embedInto(parent);
+        qtWidget->embedInto((WId)parent);
 
         // show it
         qtWidget->show();

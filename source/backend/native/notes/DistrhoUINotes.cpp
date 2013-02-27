@@ -17,9 +17,14 @@
 
 #include "DistrhoUINotes.hpp"
 
+#include "notes/ParamProgressBar.cpp"
+#include "moc_ParamProgressBar.cpp"
+
 #include <QtGui/QResizeEvent>
 
 START_NAMESPACE_DISTRHO
+
+#include "moc_DistrhoUINotes.cpp"
 
 // -------------------------------------------------
 
