@@ -1527,6 +1527,82 @@ public:
     }
 
     // -------------------------------------------------------------------
+    // Post-poned events
+
+    void uiParameterChange(const uint32_t index, const float value)
+    {
+        CARLA_ASSERT(fDescriptor != nullptr);
+        CARLA_ASSERT(fHandle != nullptr);
+        CARLA_ASSERT(index < kData->param.count);
+
+        if (! fIsUiVisible)
+            return;
+        if (fDescriptor == nullptr || fHandle == nullptr)
+            return;
+        if (index >= kData->param.count)
+            return;
+
+        fDescriptor->ui_set_parameter_value(fHandle, index, value);
+    }
+
+    void uiMidiProgramChange(const uint32_t index)
+    {
+        CARLA_ASSERT(fDescriptor != nullptr);
+        CARLA_ASSERT(fHandle != nullptr);
+        CARLA_ASSERT(index < kData->midiprog.count);
+
+        if (! fIsUiVisible)
+            return;
+        if (fDescriptor == nullptr || fHandle == nullptr)
+            return;
+        if (index >= kData->midiprog.count)
+            return;
+
+        fDescriptor->ui_set_parameter_value(fHandle, kData->midiprog.data[index].bank, kData->midiprog.data[index].program);
+    }
+
+    void uiNoteOn(const uint8_t channel, const uint8_t note, const uint8_t velo)
+    {
+        CARLA_ASSERT(fDescriptor != nullptr);
+        CARLA_ASSERT(fHandle != nullptr);
+        CARLA_ASSERT(channel < MAX_MIDI_CHANNELS);
+        CARLA_ASSERT(note < MAX_MIDI_NOTE);
+        CARLA_ASSERT(velo > 0 && velo < MAX_MIDI_VALUE);
+
+        if (! fIsUiVisible)
+            return;
+        if (fDescriptor == nullptr || fHandle == nullptr)
+            return;
+        if (channel >= MAX_MIDI_CHANNELS)
+            return;
+        if (note >= MAX_MIDI_NOTE)
+            return;
+        if (velo >= MAX_MIDI_VALUE)
+            return;
+
+        // TODO
+    }
+
+    void uiNoteOff(const uint8_t channel, const uint8_t note)
+    {
+        CARLA_ASSERT(fDescriptor != nullptr);
+        CARLA_ASSERT(fHandle != nullptr);
+        CARLA_ASSERT(channel < MAX_MIDI_CHANNELS);
+        CARLA_ASSERT(note < MAX_MIDI_NOTE);
+
+        if (! fIsUiVisible)
+            return;
+        if (fDescriptor == nullptr || fHandle == nullptr)
+            return;
+        if (channel >= MAX_MIDI_CHANNELS)
+            return;
+        if (note >= MAX_MIDI_NOTE)
+            return;
+
+        // TODO
+    }
+
+    // -------------------------------------------------------------------
     // Cleanup
 
     void initBuffers()

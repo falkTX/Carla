@@ -45,6 +45,6 @@ rtmempool_%.a:
 
 clean:
 	rm -f *.a *.def *.dll *.so
-	$(MAKE) clean -C dgl
+	$(MAKE) clean -C distrho/dgl
 	$(MAKE) clean -C lilv
 	$(MAKE) clean -C rtmempool

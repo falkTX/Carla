@@ -122,11 +122,11 @@ void ImageSlider::onDisplay()
     if (fStartPos.getX() == fEndPos.getX())
     {
         x = fStartPos.getX();
-        y = fStartPos.getY() + normValue*(fEndPos.getY()-fStartPos.getY());
+        y = fEndPos.getY() - normValue*(fEndPos.getY()-fStartPos.getY());
     }
     else if (fStartPos.getY() == fEndPos.getY())
     {
-        x = fStartPos.getX() + normValue*(fEndPos.getX()-fStartPos.getX());
+        x = fEndPos.getX() - normValue*(fEndPos.getX()-fStartPos.getX());
         y = fStartPos.getY();
     }
     else
@@ -160,7 +160,7 @@ bool ImageSlider::onMouse(int button, bool press, int x, int y)
         else
             return false;
 
-        float value = vper * (fMaximum - fMinimum) + fMinimum;
+        float value = fMaximum - vper * (fMaximum - fMinimum);
 
         if (value < fMinimum)
             value = fMinimum;
@@ -212,7 +212,7 @@ bool ImageSlider::onMotion(int x, int y)
             vper = float(y - fSliderArea.getY()) / float(fSliderArea.getHeight());
         }
 
-        float value = vper * (fMaximum - fMinimum) + fMinimum;
+        float value = fMaximum - vper * (fMaximum - fMinimum);
 
         if (value < fMinimum)
             value = fMinimum;
@@ -223,11 +223,11 @@ bool ImageSlider::onMotion(int x, int y)
     }
     else if (y < fSliderArea.getY())
     {
-        setValue(horizontal ? fMaximum : fMinimum, true);
+        setValue(fMaximum, true);
     }
     else
     {
-        setValue(horizontal ? fMinimum : fMaximum, true);
+        setValue(fMinimum, true);
     }
 
     return true;

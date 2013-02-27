@@ -16,21 +16,22 @@
 
 #include "DistrhoUIInternal.hpp"
 
+START_NAMESPACE_DGL
+extern Window* dgl_lastUiParent;
+END_NAMESPACE_DGL
+
 START_NAMESPACE_DISTRHO
-
-// -------------------------------------------------
-// Static data
-
-Window* d_lastParent = nullptr;
 
 // -------------------------------------------------
 // OpenGLUI
 
 OpenGLUI::OpenGLUI()
     : UI(),
-      Widget(d_lastParent)
+      Widget(dgl_lastUiParent)
 {
-    d_lastParent = nullptr;
+    assert(dgl_lastUiParent != nullptr);
+
+    dgl_lastUiParent = nullptr;
 }
 
 OpenGLUI::~OpenGLUI()

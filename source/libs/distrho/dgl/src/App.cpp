@@ -17,7 +17,6 @@
 #include "AppPrivate.hpp"
 
 #include "../Window.hpp"
-#include "../../DistrhoUtils.hpp"
 
 START_NAMESPACE_DGL
 

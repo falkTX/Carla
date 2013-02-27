@@ -34,6 +34,8 @@
 # endif
 #endif
 
+#include <cassert>
+
 START_NAMESPACE_DISTRHO
 
 // -------------------------------------------------
@@ -44,10 +46,7 @@ typedef void (*setStateFunc)  (void* ptr, const char* key, const char* value);
 typedef void (*sendNoteFunc)  (void* ptr, bool onOff, uint8_t channel, uint8_t note, uint8_t velo);
 typedef void (*uiResizeFunc)  (void* ptr, unsigned int width, unsigned int height);
 
-extern double  d_lastUiSampleRate;
-#ifdef DISTRHO_UI_OPENGL
-extern Window* d_lastUiParent;
-#endif
+extern double d_lastUiSampleRate;
 
 // -------------------------------------------------
 
@@ -144,7 +143,8 @@ public:
         : qtGrip(nullptr),
           qtWidget(nullptr),
 #else
-        : glWindow(createWindow(winId)),
+        : glApp(),
+          glWindow(&glApp, winId),
 #endif
           kUi(createUI()),
           kData((kUi != nullptr) ? kUi->pData : nullptr)
@@ -171,7 +171,9 @@ public:
     {
         if (kUi != nullptr)
         {
+#ifdef DISTRHO_UI_QT4
             destroyWindow();
+#endif
             delete kUi;
         }
     }
@@ -240,10 +242,11 @@ public:
 
     void idle()
     {
-        assert(kUi != nullptr);
-
-        if (kUi != nullptr)
-            kUi->d_uiIdle();
+#ifdef DISTRHO_UI_QT4
+        kUi->d_uiIdle();
+#else
+        glApp.idle();
+#endif
     }
 
     intptr_t getWinId()
@@ -252,8 +255,7 @@ public:
         assert(qtWidget != nullptr);
         return (qtWidget != nullptr) ? qtWidget->winId() : 0;
 #else
-        assert(glWindow != nullptr);
-        return (glWindow != nullptr) ? glWindow->getWindowId() : 0;
+        return glWindow.getWindowId();
 #endif
     }
 
@@ -264,7 +266,6 @@ public:
     {
         assert(kUi != nullptr);
         assert(kData != nullptr);
-        assert(kData->widget != nullptr);
         assert(qtGrip == nullptr);
         assert(qtWidget == nullptr);
 
@@ -284,7 +285,7 @@ public:
 
         // set layout
         qtWidget->setLayout(new QVBoxLayout(qtWidget));
-        qtWidget->layout()->addWidget(kData->widget);
+        qtWidget->layout()->addWidget(qt4Ui);
         qtWidget->layout()->setContentsMargins(0, 0, 0, 0);
         qtWidget->setFixedSize(kUi->d_width(), kUi->d_height());
 
@@ -310,20 +311,10 @@ public:
         // show it
         qtWidget->show();
     }
-#else
-    Window* createWindow(intptr_t parent)
-    {
-        Window* window = new Window(&glApp, parent);
-        d_lastUiParent = window;
-        return window;
-    }
-#endif
 
     void destroyWindow()
     {
-#ifdef DISTRHO_UI_QT4
         assert(kData != nullptr);
-        assert(kData->widget != nullptr);
         assert(qtWidget != nullptr);
 
         if (kData == nullptr)
@@ -351,20 +342,8 @@ public:
 
         delete qtWidget;
         qtWidget = nullptr;
-#else
-        assert(kData != nullptr);
-        assert(glWindow != nullptr);
-
-        if (kData == nullptr)
-            return;
-        if (glWindow == nullptr)
-            return;
-
-        glWindow->hide();
-        delete glWindow;
-        glWindow = nullptr;
-#endif
     }
+#endif
 
     // ---------------------------------------------
 
@@ -373,8 +352,8 @@ private:
     QSizeGrip*    qtGrip;
     QEmbedWidget* qtWidget;
 #else
-    App     glApp;
-    Window* glWindow;
+    App    glApp;
+    Window glWindow;
 #endif
 
 protected:
@@ -386,8 +365,7 @@ protected:
     {
         assert(kUi != nullptr);
         assert(kData != nullptr);
-        assert(kData->widget != nullptr);
-        assert(qtGrip != nullptr);
+        //assert(qtGrip != nullptr);
         assert(qtWidget != nullptr);
 
         if (kUi == nullptr)

@@ -70,6 +70,8 @@ protected:
     void imageSliderDragFinished(ImageSlider* slider);
     void imageSliderValueChanged(ImageSlider* slider, float value);
 
+    void onDisplay();
+
 private:
     Image fImgBackground;
 

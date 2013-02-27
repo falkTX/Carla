@@ -39,6 +39,8 @@
 
 START_NAMESPACE_DGL
 
+Window* dgl_lastUiParent = nullptr;
+
 // -------------------------------------------------
 // Window Private
 
@@ -49,10 +51,10 @@ public:
         : kApp(app),
           kAppPriv(appPriv),
           kSelf(self),
-          kView(puglCreate(parentId, "Window", 600, 500, false, false)),
+          kView(puglCreate(parentId, "Window", 600, 500, (parentId != 0), (parentId != 0))),
           fParent(parent),
           fChildFocus(nullptr),
-          fVisible(false),
+          fVisible((parentId != 0)),
           fClosed(false),
           fResizable(false),
 #if DGL_OS_WINDOWS
@@ -491,11 +493,13 @@ private:
 Window::Window(App* app, Window* parent)
     : kPrivate(new Private(this, app, app->kPrivate, (parent != nullptr) ? parent->kPrivate : nullptr))
 {
+    dgl_lastUiParent = this;
 }
 
 Window::Window(App* app, intptr_t parentId)
     : kPrivate(new Private(this, app, app->kPrivate, nullptr, parentId))
 {
+    dgl_lastUiParent = this;
 }
 
 Window::~Window()

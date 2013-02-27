@@ -19,9 +19,6 @@
 
 #include "DistrhoPluginMain.cpp"
 
-// TODO
-//#undef DISTRHO_PLUGIN_HAS_UI
-
 #if DISTRHO_PLUGIN_HAS_UI
 #include <QtGui/QMainWindow>
 #include "DistrhoUIMain.cpp"
@@ -46,8 +43,9 @@ public:
           fUi(this, (intptr_t)fWidget.winId(), editParameterCallback, setParameterCallback, setStateCallback, sendNoteCallback, uiResizeCallback)
     {
         setCentralWidget(&fWidget);
-        setFixedSize(fUi.width(), fUi.height());
-        setWindowTitle(fUi.name());
+        setWindowTitle(QString("%1 (GUI)").arg(fUi.name()));
+
+        uiResize(fUi.width(), fUi.height());
     }
 
     ~UICarla()
@@ -119,6 +117,7 @@ protected:
 
     void uiResize(unsigned int width, unsigned int height)
     {
+        fWidget.setFixedSize(width, height);
         setFixedSize(width, height);
     }
 
@@ -223,7 +222,7 @@ protected:
         param.scalePoints = nullptr;
 
         {
-            int nativeParamHints = 0;
+            int      nativeParamHints = ::PARAMETER_IS_ENABLED;
             const uint32_t paramHints = fPlugin.parameterHints(index);
 
             if (paramHints & PARAMETER_IS_AUTOMABLE)

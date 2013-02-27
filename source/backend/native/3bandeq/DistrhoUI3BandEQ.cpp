@@ -73,8 +73,11 @@ DistrhoUI3BandEQ::DistrhoUI3BandEQ()
     fKnobLowMid->setCallback(this);
 
     // knob Mid-High
-    fKnobMidHigh = new ImageKnob(*fKnobLowMid);
+    fKnobMidHigh = new ImageKnob(win, knobImage);
     fKnobMidHigh->setPos(160, 270);
+    fKnobMidHigh->setRange(1000.0f, 20000.0f);
+    fKnobMidHigh->setValue(2000.0f);
+    fKnobMidHigh->setCallback(this);
 
     // about button
     Image aboutImageNormal(DistrhoArtwork3BandEQ::aboutButtonNormalData, DistrhoArtwork3BandEQ::aboutButtonNormalWidth, DistrhoArtwork3BandEQ::aboutButtonNormalHeight);
@@ -208,6 +211,11 @@ void DistrhoUI3BandEQ::imageSliderValueChanged(ImageSlider* slider, float value)
         d_setParameterValue(DistrhoPlugin3BandEQ::paramHigh, value);
     else if (slider == fSliderMaster)
         d_setParameterValue(DistrhoPlugin3BandEQ::paramMaster, value);
+}
+
+void DistrhoUI3BandEQ::onDisplay()
+{
+    fImgBackground.draw();
 }
 
 // -------------------------------------------------

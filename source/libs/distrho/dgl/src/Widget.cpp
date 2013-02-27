@@ -18,6 +18,7 @@
 #include "../Widget.hpp"
 #include "../Window.hpp"
 
+#include <cassert>
 #include <cstdio>
 
 START_NAMESPACE_DGL
@@ -29,11 +30,14 @@ Widget::Widget(Window* parent)
     : fParent(parent),
       fVisible(true)
 {
+    assert(parent != nullptr);
+
     parent->addWidget(this);
 }
 
 Widget::~Widget()
 {
+    fParent->removeWidget(this);
 }
 
 bool Widget::isVisible()
@@ -212,6 +216,7 @@ bool Widget::onSpecial(bool, Key)
 
 void Widget::onReshape(int width, int height)
 {
+    printf("Reshape(%i, %i)\n", width, height);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glMatrixMode(GL_PROJECTION);
