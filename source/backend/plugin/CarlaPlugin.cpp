@@ -879,7 +879,7 @@ void CarlaPlugin::idleGui()
     if (! fEnabled)
         return;
 
-    if (fHints & PLUGIN_USES_SINGLE_THREAD)
+    if (fHints & PLUGIN_HAS_SINGLE_THREAD)
     {
         // Process postponed events
         postRtEventsRun();

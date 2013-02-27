@@ -19,6 +19,8 @@
 
 #ifdef WANT_NATIVE
 
+#include "CarlaNative.h"
+
 #include <QtGui/QFileDialog>
 
 CARLA_BACKEND_START_NAMESPACE

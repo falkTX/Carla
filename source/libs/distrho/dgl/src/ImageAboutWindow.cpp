@@ -53,7 +53,7 @@ bool ImageAboutWindow::onMouse(int, bool press, int, int)
 
 bool ImageAboutWindow::onKeyboard(bool press, uint32_t key)
 {
-    if (press && key == CHAR_ESCAPE)
+    if (press && key == DGL_CHAR_ESCAPE)
     {
         Window::hide();
         return true;

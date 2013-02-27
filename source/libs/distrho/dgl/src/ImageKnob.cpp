@@ -166,7 +166,7 @@ bool ImageKnob::onMotion(int x, int y)
 
         if (movX != 0)
         {
-            float d     = (getModifiers() & MODIFIER_SHIFT) ? 2000.0f : 200.0f;
+            float d     = (getModifiers() & DGL_MODIFIER_SHIFT) ? 2000.0f : 200.0f;
             float value = fValue + (float(fMaximum - fMinimum) / d * float(movX));
 
             if (value < fMinimum)
@@ -183,7 +183,7 @@ bool ImageKnob::onMotion(int x, int y)
 
         if (movY != 0)
         {
-            float d     = (getModifiers() & MODIFIER_SHIFT) ? 2000.0f : 200.0f;
+            float d     = (getModifiers() & DGL_MODIFIER_SHIFT) ? 2000.0f : 200.0f;
             float value = fValue + (float(fMaximum - fMinimum) / d * float(movY));
 
             if (value < fMinimum)

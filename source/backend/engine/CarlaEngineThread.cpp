@@ -94,7 +94,7 @@ void CarlaEngineThread::run()
 
             CARLA_SAFE_ASSERT_INT2(i == plugin->id(), i, plugin->id());
 
-            usesSingleThread = (plugin->hints() & PLUGIN_USES_SINGLE_THREAD);
+            usesSingleThread = (plugin->hints() & PLUGIN_HAS_SINGLE_THREAD);
 
             // -------------------------------------------------------
             // Process postponed events
