@@ -213,7 +213,18 @@ public:
 
         unsigned int options = 0x0;
 
-        options |= PLUGIN_OPTION_FIXED_BUFFER;
+        if (fDescriptor->name != nullptr)
+        {
+            if (std::strcmp(fDescriptor->name, "ZynAddSubFX") == 0)
+            {
+                // nothing
+            }
+            else
+            {
+                options |= PLUGIN_OPTION_FIXED_BUFFER;
+            }
+        }
+
         options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
         //if ((kData->audioIns.count() == 1 || kData->audioOuts.count() == 0) || (kData->audioIns.count() == 0 || kData->audioOuts.count() == 1))
@@ -891,6 +902,14 @@ public:
 
         // plugin options
         fOptions = 0x0;
+
+        if (fDescriptor->name != nullptr)
+        {
+            if (std::strcmp(fDescriptor->name, "ZynAddSubFX") == 0)
+            {
+                fOptions |= PLUGIN_OPTION_FIXED_BUFFER;
+            }
+        }
 
         fOptions |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 

@@ -143,6 +143,7 @@ public:
         CARLA_ASSERT(fDescriptor != nullptr);
 
         const bool isDssiVst = fFilename.contains("dssi-vst", true);
+        const bool isZASX    = fFilename.contains("zynaddsubfx", true);
         unsigned int options = 0x0;
 
         options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
@@ -155,7 +156,7 @@ public:
             if (fDescriptor != nullptr && fDssiDescriptor->get_custom_data != nullptr && fDssiDescriptor->set_custom_data != nullptr)
                 options |= PLUGIN_OPTION_USE_CHUNKS;
         }
-        else
+        else if (! isZASX)
         {
             options |= PLUGIN_OPTION_FIXED_BUFFER;
         }
@@ -706,6 +707,7 @@ public:
         // plugin hints
         const bool haveGUI   = (fHints & PLUGIN_HAS_GUI);
         const bool isDssiVst = fFilename.contains("dssi-vst", true);
+        const bool isZASX    = fFilename.contains("zynaddsubfx", true);
 
         fHints = 0x0;
 
@@ -747,6 +749,10 @@ public:
 
             if (kData->engine->getOptions().useDssiVstChunks && fDssiDescriptor->get_custom_data != nullptr && fDssiDescriptor->set_custom_data != nullptr)
                 fOptions |= PLUGIN_OPTION_USE_CHUNKS;
+        }
+        else if (isZASX)
+        {
+            fOptions |= PLUGIN_OPTION_FIXED_BUFFER;
         }
 
         if (mIns > 0)
