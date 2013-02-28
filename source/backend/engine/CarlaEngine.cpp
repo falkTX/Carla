@@ -626,8 +626,6 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
     carla_debug("CarlaEngine::addPlugin(%s, %s, \"%s\", \"%s\", \"%s\", %p)", BinaryType2Str(btype), PluginType2Str(ptype), filename, name, label, extra);
     CARLA_ASSERT(btype != BINARY_NONE);
     CARLA_ASSERT(ptype != PLUGIN_NONE);
-    CARLA_ASSERT(filename);
-    CARLA_ASSERT(label);
 
     if (kData->curPluginCount == kData->maxPluginNumber)
     {
@@ -1004,8 +1002,22 @@ bool CarlaEngine::loadProject(const char* const filename)
         }
     }
 
-    // TODO - add plugins as set in XML
-    // TODO - clear+free states
+    // TODO - proper find&load plugins
+
+    for (auto it = saveStates.begin(); it != saveStates.end(); ++it)
+    {
+        SaveState& saveState(*it);
+
+        if (addPlugin(getPluginTypeFromString(saveState.type), saveState.binary, saveState.name, saveState.label, nullptr))
+        {
+            if (CarlaPlugin* plugin = getPlugin(kData->curPluginCount-1))
+                plugin->loadSaveState(saveState);
+        }
+
+        saveState.reset();
+    }
+
+    saveStates.clear();
 
     return true;
 }
