@@ -18,8 +18,7 @@
 #ifndef __CARLA_STATE_UTILS_HPP__
 #define __CARLA_STATE_UTILS_HPP__
 
-#include "CarlaBackend.hpp"
-#include "CarlaUtils.hpp"
+#include "CarlaBackendUtils.hpp"
 
 #include <QtXml/QDomNode>
 #include <vector>
@@ -27,7 +26,6 @@
 CARLA_BACKEND_START_NAMESPACE
 
 // -------------------------------------------------
-// Carla GUI stuff
 
 struct StateParameter {
     uint32_t    index;
@@ -75,8 +73,8 @@ struct StateCustomData {
     }
 };
 
-typedef std::vector<StateParameter> StateParameterVector;
-typedef std::vector<StateCustomData> StateCustomDataVector;
+typedef std::vector<StateParameter*> StateParameterVector;
+typedef std::vector<StateCustomData*> StateCustomDataVector;
 
 struct SaveState {
     const char* type;
@@ -173,13 +171,24 @@ struct SaveState {
         currentMidiBank     = -1;
         currentMidiProgram  = -1;
 
+        for (auto it = parameters.begin(); it != parameters.end(); ++it)
+        {
+            StateParameter* stateParameter = *it;
+            delete stateParameter;
+        }
+
+        for (auto it = customData.begin(); it != customData.end(); ++it)
+        {
+            StateCustomData* stateCustomData = *it;
+            delete stateCustomData;
+        }
+
         parameters.clear();
         customData.clear();
     }
 };
 
 // -------------------------------------------------
-// Carla XML helpers (xml to state)
 
 static inline
 QString xmlSafeString(const QString& string, const bool toXml)
@@ -197,6 +206,8 @@ const char* xmlSafeStringChar(const QString& string, const bool toXml)
 {
     return carla_strdup(xmlSafeString(string, toXml).toUtf8().constData());
 }
+
+// -------------------------------------------------
 
 static inline
 const SaveState& getSaveStateDictFromXML(const QDomNode& xmlNode)
@@ -261,26 +272,32 @@ const SaveState& getSaveStateDictFromXML(const QDomNode& xmlNode)
                 else if (tag == "DryWet")
                 {
                     bool ok;
-                    double value = text.toDouble(&ok);
+                    float value = text.toFloat(&ok);
                     if (ok) saveState.dryWet = value;
                 }
                 else if (tag == "Volume")
                 {
                     bool ok;
-                    double value = text.toDouble(&ok);
+                    float value = text.toFloat(&ok);
                     if (ok) saveState.volume = value;
                 }
                 else if (tag == "Balance-Left")
                 {
                     bool ok;
-                    double value = text.toDouble(&ok);
+                    float value = text.toFloat(&ok);
                     if (ok) saveState.balanceLeft = value;
                 }
                 else if (tag == "Balance-Right")
                 {
                     bool ok;
-                    double value = text.toDouble(&ok);
+                    float value = text.toFloat(&ok);
                     if (ok) saveState.balanceRight = value;
+                }
+                else if (tag == "Panning")
+                {
+                    bool ok;
+                    float value = text.toFloat(&ok);
+                    if (ok) saveState.panning = value;
                 }
 
                 // ----------------------------------------------
@@ -318,7 +335,7 @@ const SaveState& getSaveStateDictFromXML(const QDomNode& xmlNode)
 
                 else if (tag == "Parameter")
                 {
-                    StateParameter stateParameter;
+                    StateParameter* stateParameter(new StateParameter);
 
                     QDomNode xmlSubData(xmlData.toElement().firstChild());
 
@@ -327,39 +344,39 @@ const SaveState& getSaveStateDictFromXML(const QDomNode& xmlNode)
                         const QString pTag  = xmlSubData.toElement().tagName();
                         const QString pText = xmlSubData.toElement().text(); //.strip();
 
-                        if (pTag == "index")
+                        if (pTag == "Index")
                         {
                             bool ok;
                             uint index = pText.toUInt(&ok);
-                            if (ok) stateParameter.index = index;
+                            if (ok) stateParameter->index = index;
                         }
-                        else if (pTag == "name")
+                        else if (pTag == "Name")
                         {
-                            stateParameter.name = xmlSafeStringChar(pText, false);
+                            stateParameter->name = xmlSafeStringChar(pText, false);
                         }
-                        else if (pTag == "symbol")
+                        else if (pTag == "Symbol")
                         {
-                            stateParameter.symbol = xmlSafeStringChar(pText, false);
+                            stateParameter->symbol = xmlSafeStringChar(pText, false);
                         }
-                        else if (pTag == "value")
+                        else if (pTag == "Value")
                         {
                             bool ok;
-                            double value = pText.toDouble(&ok);
-                            if (ok) stateParameter.value = value;
+                            float value = text.toFloat(&ok);
+                            if (ok) stateParameter->value = value;
                         }
-                        else if (pTag == "midiChannel")
+                        else if (pTag == "MidiChannel")
                         {
                             bool ok;
                             uint channel = pText.toUInt(&ok);
                             if (ok && channel < 16)
-                                stateParameter.midiChannel = static_cast<uint8_t>(channel);
+                                stateParameter->midiChannel = static_cast<uint8_t>(channel);
                         }
-                        else if (pTag == "midiCC")
+                        else if (pTag == "MidiCC")
                         {
                             bool ok;
                             int cc = pText.toInt(&ok);
                             if (ok && cc < INT16_MAX)
-                                stateParameter.midiCC = static_cast<int16_t>(cc);
+                                stateParameter->midiCC = static_cast<int16_t>(cc);
                         }
 
                         xmlSubData = xmlSubData.nextSibling();
@@ -373,7 +390,7 @@ const SaveState& getSaveStateDictFromXML(const QDomNode& xmlNode)
 
                 else if (tag == "CustomData")
                 {
-                    StateCustomData stateCustomData;
+                    StateCustomData* stateCustomData(new StateCustomData);
 
                     QDomNode xmlSubData(xmlData.toElement().firstChild());
 
@@ -382,12 +399,12 @@ const SaveState& getSaveStateDictFromXML(const QDomNode& xmlNode)
                         const QString cTag  = xmlSubData.toElement().tagName();
                         const QString cText = xmlSubData.toElement().text(); //.strip();
 
-                        if (cTag == "type")
-                            stateCustomData.type = xmlSafeStringChar(cText, false);
-                        else if (cTag == "key")
-                            stateCustomData.key = xmlSafeStringChar(cText, false);
-                        else if (cTag == "value")
-                            stateCustomData.value = xmlSafeStringChar(cText, false);
+                        if (cTag == "Type")
+                            stateCustomData->type = xmlSafeStringChar(cText, false);
+                        else if (cTag == "Key")
+                            stateCustomData->key = xmlSafeStringChar(cText, false);
+                        else if (cTag == "Value")
+                            stateCustomData->value = xmlSafeStringChar(cText, false);
 
                         xmlSubData = xmlSubData.nextSibling();
                     }
@@ -417,17 +434,151 @@ const SaveState& getSaveStateDictFromXML(const QDomNode& xmlNode)
     return saveState;
 }
 
+// -------------------------------------------------
+
 static inline
 QString getXMLFromSaveState(const SaveState& saveState)
 {
-    return "";
+    QString content;
 
-    // TODO
-    (void)saveState;
+    {
+        QString info("  <Info>\n");
+
+        info += QString("   <Type>%1</Type>\n").arg(saveState.type);
+        info += QString("   <Name>%1</Name>\n").arg(xmlSafeString(saveState.name, true));
+
+        switch (getPluginTypeFromString(saveState.type))
+        {
+        case PLUGIN_NONE:
+            break;
+        case PLUGIN_INTERNAL:
+            info += QString("   <Label>%1</Label>\n").arg(xmlSafeString(saveState.label, true));
+            break;
+        case PLUGIN_LADSPA:
+            info += QString("   <Binary>%1</Binary>\n").arg(xmlSafeString(saveState.binary, true));
+            info += QString("   <Label>%1</Label>\n").arg(xmlSafeString(saveState.label, true));
+            info += QString("   <UniqueID>%1</UniqueID>\n").arg(saveState.uniqueID);
+            break;
+        case PLUGIN_DSSI:
+            info += QString("   <Binary>%1</Binary>\n").arg(xmlSafeString(saveState.binary, true));
+            info += QString("   <Label>%1</Label>\n").arg(xmlSafeString(saveState.label, true));
+            break;
+        case PLUGIN_LV2:
+            info += QString("   <URI>%1</URI>\n").arg(xmlSafeString(saveState.label, true));
+            break;
+        case PLUGIN_VST:
+            info += QString("   <Binary>%1</Binary>\n").arg(xmlSafeString(saveState.binary, true));
+            info += QString("   <UniqueID>%1</UniqueID>\n").arg(saveState.uniqueID);
+            break;
+        case PLUGIN_GIG:
+        case PLUGIN_SF2:
+        case PLUGIN_SFZ:
+            info += QString("   <Binary>%1</Binary>\n").arg(xmlSafeString(saveState.binary, true));
+            break;
+        }
+
+        info += "  </Info>\n\n";
+
+        content += info;
+    }
+
+    {
+        QString data("  <Data>\n");
+
+        data += QString("   <Active>%1</Active>\n").arg(saveState.active ? "Yes" : "No");
+
+        if (saveState.dryWet != 1.0f)
+            data += QString("   <DryWet>%1</DryWet>\n").arg(saveState.dryWet);
+        if (saveState.volume != 1.0f)
+            data += QString("   <Volume>%1</Volume>\n").arg(saveState.volume);
+        if (saveState.balanceLeft != -1.0f)
+            data += QString("   <Balance-Left>%1</Balance-Left>\n").arg(saveState.balanceLeft);
+        if (saveState.balanceRight != 1.0f)
+            data += QString("   <Balance-Right>%1</Balance-Right>\n").arg(saveState.balanceRight);
+        if (saveState.panning != 0.0f)
+            data += QString("   <Panning>%1</Panning>\n").arg(saveState.panning);
+
+        content += data;
+    }
+
+    for (auto it = saveState.parameters.begin(); it != saveState.parameters.end(); ++it)
+    {
+        StateParameter* stateParameter = *it;
+
+        QString parameter("\n""   <Parameter>\n");
+
+        parameter += QString("    <Index>%1</Index>\n").arg(stateParameter->index);
+        parameter += QString("    <Name>%1</Name>\n").arg(xmlSafeString(stateParameter->name, true));
+
+        if (stateParameter->symbol != nullptr && *stateParameter->symbol != 0)
+            parameter += QString("    <Symbol>%1</Symbol>\n").arg(xmlSafeString(stateParameter->symbol, true));
+
+        parameter += QString("    <Value>%1</Value>\n").arg(stateParameter->value);
+
+        if (stateParameter->midiCC > 0)
+        {
+            parameter += QString("    <MidiCC>%1</MidiCC>\n").arg(stateParameter->midiCC);
+            parameter += QString("    <MidiChannel>%1</MidiChannel>\n").arg(stateParameter->midiChannel);
+        }
+
+        parameter += "   </Parameter>\n";
+
+        content += parameter;
+    }
+
+    if (saveState.currentProgramIndex >= 0)
+    {
+        QString program("\n");
+        program += QString("   <CurrentProgramIndex>%1</CurrentProgramIndex>\n").arg(saveState.currentProgramIndex);
+        program += QString("   <CurrentProgramName>%1</CurrentProgramName>\n").arg(xmlSafeString(saveState.currentProgramName, true));
+
+        content += program;
+    }
+
+    if (saveState.currentMidiBank >= 0 && saveState.currentMidiProgram >= 0)
+    {
+        QString midiProgram("\n");
+        midiProgram += QString("   <CurrentMidiBank>%1</CurrentMidiBank>\n").arg(saveState.currentMidiBank);
+        midiProgram += QString("   <CurrentMidiProgram>%1</CurrentMidiProgram>\n").arg(saveState.currentMidiProgram);
+
+        content += midiProgram;
+    }
+
+    for (auto it = saveState.customData.begin(); it != saveState.customData.end(); ++it)
+    {
+        StateCustomData* stateCustomData = *it;
+
+        QString customData("\n""   <CustomData>\n");
+        customData += QString("    <Type>%1</Type>\n").arg(xmlSafeString(stateCustomData->type, true));
+        customData += QString("    <Key>%1</Key>\n").arg(xmlSafeString(stateCustomData->key, true));
+
+        if (std::strcmp(stateCustomData->type, CUSTOM_DATA_CHUNK) == 0)
+        {
+            customData += "    <Value>\n";
+            customData += QString("%1\n").arg(xmlSafeString(stateCustomData->value, true));
+            customData += "    </Value>\n";
+        }
+        else
+            customData += QString("    <Value>%1</Value>\n").arg(xmlSafeString(stateCustomData->value, true));
+
+        customData += "   </CustomData>\n";
+
+        content += customData;
+    }
+
+    if (saveState.chunk != nullptr && *saveState.chunk != 0)
+    {
+        QString chunk("\n""   <Chunk>\n");
+        chunk += QString("%1\n").arg(saveState.chunk);
+        chunk += "   </Chunk>\n";
+
+        content += chunk;
+    }
+
+    content += "  </Data>\n";
+
+    return content;
 }
-
-// -------------------------------------------------
-// Carla XML helpers (state to xml)
 
 // -------------------------------------------------
 

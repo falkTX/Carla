@@ -178,8 +178,8 @@ CARLA_EXPORT bool carla_add_plugin(CarlaBinaryType btype, CarlaPluginType ptype,
 CARLA_EXPORT bool carla_remove_plugin(unsigned int pluginId);
 CARLA_EXPORT void carla_remove_all_plugins();
 
-//CARLA_EXPORT bool carla_load_plugin_state(unsigned int pluginId, const char* filename);
-//CARLA_EXPORT bool carla_save_plugin_state(unsigned int pluginId, const char* filename);
+CARLA_EXPORT bool carla_load_plugin_state(unsigned int pluginId, const char* filename);
+CARLA_EXPORT bool carla_save_plugin_state(unsigned int pluginId, const char* filename);
 
 CARLA_EXPORT const CarlaPluginInfo* carla_get_plugin_info(unsigned int pluginId);
 CARLA_EXPORT const CarlaPortCountInfo* carla_get_audio_port_count_info(unsigned int pluginId);

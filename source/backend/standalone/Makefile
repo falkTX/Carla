@@ -9,7 +9,7 @@ include ../Makefile.mk
 # --------------------------------------------------------------
 # Common
 
-LINK_FLAGS += $(shell pkg-config --libs liblo QtCore QtGui)
+LINK_FLAGS += $(shell pkg-config --libs liblo QtCore QtGui QtXml)
 
 # --------------------------------------------------------------
 # Engine

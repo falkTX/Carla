@@ -427,6 +427,16 @@ public:
      */
     void loadSaveState(const SaveState& saveState);
 
+    /*!
+     * TODO
+     */
+    bool saveStateToFile(const char* const filename);
+
+    /*!
+     * TODO
+     */
+    bool loadStateFromFile(const char* const filename);
+
     // -------------------------------------------------------------------
     // Set data (internal stuff)
 

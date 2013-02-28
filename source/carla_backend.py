@@ -209,6 +209,12 @@ class Host(object):
         self.lib.carla_remove_all_plugins.argtypes = None
         self.lib.carla_remove_all_plugins.restype = None
 
+        self.lib.carla_load_plugin_state.argtypes = [c_uint, c_char_p]
+        self.lib.carla_load_plugin_state.restype = c_bool
+
+        self.lib.carla_save_plugin_state.argtypes = [c_uint, c_char_p]
+        self.lib.carla_save_plugin_state.restype = c_bool
+
         self.lib.carla_get_plugin_info.argtypes = [c_uint]
         self.lib.carla_get_plugin_info.restype = POINTER(CarlaPluginInfo)
 
@@ -422,6 +428,12 @@ class Host(object):
 
     def remove_all_plugins(self):
         self.lib.carla_remove_all_plugins()
+
+    def load_plugin_state(self, pluginId, filename):
+        return self.lib.carla_load_plugin_state(pluginId, filename.encode("utf-8"))
+
+    def save_plugin_state(self, pluginId, filename):
+        return self.lib.carla_save_plugin_state(pluginId, filename.encode("utf-8"))
 
     def get_plugin_info(self, pluginId):
         return structToDict(self.lib.carla_get_plugin_info(pluginId).contents)

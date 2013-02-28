@@ -541,6 +541,36 @@ void carla_remove_all_plugins()
         standalone.engine->removeAllPlugins();
 }
 
+bool carla_load_plugin_state(unsigned int pluginId, const char* filename)
+{
+    carla_debug("carla_load_plugin_state(%i, \"%s\")", pluginId, filename);
+    CARLA_ASSERT(standalone.engine != nullptr);
+
+    if (standalone.engine == nullptr)
+        return false;
+
+    if (CarlaPlugin* const plugin = standalone.engine->getPlugin(pluginId))
+        return plugin->loadStateFromFile(filename);
+
+    carla_stderr2("carla_load_plugin_state(%i, \"%s\") - could not find plugin", pluginId, filename);
+    return false;
+}
+
+bool carla_save_plugin_state(unsigned int pluginId, const char* filename)
+{
+    carla_debug("carla_save_plugin_state(%i, \"%s\")", pluginId, filename);
+    CARLA_ASSERT(standalone.engine != nullptr);
+
+    if (standalone.engine == nullptr)
+        return false;
+
+    if (CarlaPlugin* const plugin = standalone.engine->getPlugin(pluginId))
+        return plugin->saveStateToFile(filename);
+
+    carla_stderr2("carla_save_plugin_state(%i, \"%s\") - could not find plugin", pluginId, filename);
+    return false;
+}
+
 // -------------------------------------------------------------------------------------------------------------------
 
 const CarlaPluginInfo* carla_get_plugin_info(unsigned int pluginId)

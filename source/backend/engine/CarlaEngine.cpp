@@ -17,6 +17,7 @@
 
 #include "CarlaEngineInternal.hpp"
 #include "CarlaBackendUtils.hpp"
+#include "CarlaStateUtils.hpp"
 #include "CarlaMIDI.h"
 
 #include <QtCore/QFile>
@@ -966,29 +967,66 @@ void CarlaEngine::__bridgePluginRegister(const unsigned short id, CarlaPlugin* c
 
 bool CarlaEngine::loadProject(const char* const filename)
 {
+    carla_debug("CarlaEngine::loadProject(\"%s\")", filename);
     CARLA_ASSERT(filename != nullptr);
 
-    //QFile file(filename);
+    QFile file(filename);
 
-    //if (! file.open(QIODevice::WriteOnly | QIODevice::Text))
-    //    return;
+    if (! file.open(QIODevice::ReadOnly | QIODevice::Text))
+        return false;
 
-    //getSaveStateDictFromXML
+    QDomDocument xml;
+    xml.setContent(file.readAll());
+    file.close();
+
+    QDomNode xmlNode(xml.documentElement());
+
+    if (xmlNode.toElement().tagName() != "CARLA-PROJECT")
+    {
+        carla_stderr2("Not a valid Carla project file");
+        return false;
+    }
+
+    std::vector<SaveState> saveStates;
+
+    {
+        QDomNode node(xmlNode.firstChild());
+
+        while (! node.isNull())
+        {
+            if (node.toElement().tagName() == "Plugin")
+            {
+                const SaveState& saveState = getSaveStateDictFromXML(node);
+                saveStates.push_back(saveState);
+            }
+
+            node = node.nextSibling();
+        }
+    }
+
+    // TODO - add plugins as set in XML
+    // TODO - clear+free states
+
     return true;
 }
 
 bool CarlaEngine::saveProject(const char* const filename)
 {
+    carla_debug("CarlaEngine::saveProject(\"%s\")", filename);
     CARLA_ASSERT(filename != nullptr);
 
-#if 0
     QFile file(filename);
-    file.open(QIODevice::WriteOnly | QIODevice::Text);
+
+    if (! file.open(QIODevice::WriteOnly | QIODevice::Text))
+        return false;
 
     QTextStream out(&file);
     out << "<?xml version='1.0' encoding='UTF-8'?>\n";
-    out << "<!DOCTYPE CARLA-PRESET>\n";
-    out << "<CARLA-PRESET VERSION='0.5.0'>\n";
+    out << "<!DOCTYPE CARLA-PROJECT>\n";
+    out << "<CARLA-PROJECT VERSION='1.0'>\n";
+
+    bool firstPlugin = true;
+    char strBuf[STR_MAX];
 
     for (unsigned int i=0; i < kData->curPluginCount; i++)
     {
@@ -996,16 +1034,25 @@ bool CarlaEngine::saveProject(const char* const filename)
 
         if (plugin != nullptr && plugin->enabled())
         {
-            const SaveState& saveState = plugin->getSaveState();
-            // TODO
+            if (! firstPlugin)
+                out << "\n";
+
+            plugin->getRealName(strBuf);
+
+            if (*strBuf != 0)
+                out << QString(" <!-- %1 -->\n").arg(xmlSafeString(strBuf, true));
+
+            out << " <Plugin>\n";
+            out << getXMLFromSaveState(plugin->getSaveState());
+            out << " </Plugin>\n";
+
+            firstPlugin = false;
         }
     }
 
-    out << "</CARLA-PRESET>\n";
+    out << "</CARLA-PROJECT>\n";
 
     file.close();
-#endif
-
     return true;
 }
 

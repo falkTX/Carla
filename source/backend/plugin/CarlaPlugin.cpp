@@ -19,6 +19,9 @@
 #include "CarlaLibUtils.hpp"
 #include "CarlaMIDI.h"
 
+#include <QtCore/QFile>
+#include <QtCore/QTextStream>
+
 //#include <QtGui/QtEvents>
 
 // TODO - save&load options
@@ -477,22 +480,22 @@ const SaveState& CarlaPlugin::getSaveState()
         if (paramData.type != PARAMETER_INPUT)
             continue;
 
-        StateParameter stateParameter;
+        StateParameter* stateParameter(new StateParameter);
 
-        stateParameter.index  = paramData.index;
-        stateParameter.midiCC = paramData.midiCC;
-        stateParameter.midiChannel = paramData.midiChannel + 1;
+        stateParameter->index  = paramData.index;
+        stateParameter->midiCC = paramData.midiCC;
+        stateParameter->midiChannel = paramData.midiChannel + 1;
 
         getParameterName(i, strBuf);
-        stateParameter.name = carla_strdup(strBuf);
+        stateParameter->name = carla_strdup(strBuf);
 
         getParameterSymbol(i, strBuf);
-        stateParameter.symbol = carla_strdup(strBuf);;
+        stateParameter->symbol = carla_strdup(strBuf);;
 
-        stateParameter.value  = getParameterValue(i);
+        stateParameter->value  = getParameterValue(i);
 
         if (paramData.hints & PARAMETER_USES_SAMPLERATE)
-            stateParameter.value /= sampleRate;
+            stateParameter->value /= sampleRate;
 
         saveState.parameters.push_back(stateParameter);
     }
@@ -507,11 +510,11 @@ const SaveState& CarlaPlugin::getSaveState()
         if (cData.type == nullptr)
             continue;
 
-        StateCustomData stateCustomData;
+        StateCustomData* stateCustomData(new StateCustomData);
 
-        stateCustomData.type  = carla_strdup(cData.type);
-        stateCustomData.key   = carla_strdup(cData.key);
-        stateCustomData.value = carla_strdup(cData.value);
+        stateCustomData->type  = carla_strdup(cData.type);
+        stateCustomData->key   = carla_strdup(cData.key);
+        stateCustomData->value = carla_strdup(cData.value);
 
         saveState.customData.push_back(stateCustomData);
     }
@@ -540,6 +543,53 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
 {
     // TODO
     Q_UNUSED(saveState);
+}
+
+bool CarlaPlugin::saveStateToFile(const char* const filename)
+{
+    carla_debug("CarlaPlugin::saveStateToFile(\"%s\")", filename);
+    CARLA_ASSERT(filename != nullptr);
+
+    QFile file(filename);
+
+    if (! file.open(QIODevice::WriteOnly | QIODevice::Text))
+        return false;
+
+    QTextStream out(&file);
+    out << "<?xml version='1.0' encoding='UTF-8'?>\n";
+    out << "<!DOCTYPE CARLA-PRESET>\n";
+    out << "<CARLA-PRESET VERSION='1.0'>\n";
+    out << getXMLFromSaveState(getSaveState());
+    out << "</CARLA-PRESET>\n";
+
+    file.close();
+    return true;
+}
+
+bool CarlaPlugin::loadStateFromFile(const char* const filename)
+{
+    carla_debug("CarlaPlugin::loadStateFromFile(\"%s\")", filename);
+    CARLA_ASSERT(filename != nullptr);
+
+    QFile file(filename);
+
+    if (! file.open(QIODevice::ReadOnly | QIODevice::Text))
+        return false;
+
+    QDomDocument xml;
+    xml.setContent(file.readAll());
+    file.close();
+
+    QDomNode xmlNode(xml.documentElement());
+
+    if (xmlNode.toElement().tagName() != "CARLA-PRESET")
+    {
+        carla_stderr2("Not a valid Carla preset file");
+        return false;
+    }
+
+    loadSaveState(getSaveStateDictFromXML(xmlNode));
+    return true;
 }
 
 // -------------------------------------------------------------------

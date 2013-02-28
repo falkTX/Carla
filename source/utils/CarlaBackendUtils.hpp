@@ -366,9 +366,9 @@ void* getPointerFromAddress(uintptr_t& addr)
 // -------------------------------------------------
 
 static inline
-const char* getPluginTypeString(const PluginType& type)
+const char* getPluginTypeAsString(const PluginType& type)
 {
-    carla_debug("CarlaBackend::getPluginTypeString(%s)", PluginType2Str(type));
+    carla_debug("CarlaBackend::getPluginTypeAsString(%s)", PluginType2Str(type));
 
     switch (type)
     {
@@ -392,8 +392,42 @@ const char* getPluginTypeString(const PluginType& type)
         return "SFZ";
     }
 
-    carla_stderr("CarlaBackend::getPluginTypeString(%i) - invalid type", type);
+    carla_stderr("CarlaBackend::getPluginTypeAsString(%i) - invalid type", type);
     return "NONE";
+}
+
+static inline
+PluginType getPluginTypeFromString(const char* const stype)
+{
+    carla_debug("CarlaBackend::getPluginTypeFromString(%s)", stype);
+
+    if (stype == nullptr)
+    {
+        carla_stderr("CarlaBackend::getPluginTypeFromString() - null string type");
+        return PLUGIN_NONE;
+    }
+
+    if (std::strcmp(stype, "NONE") == 0)
+        return PLUGIN_NONE;
+    if (std::strcmp(stype, "INTERNAL") == 0 || std::strcmp(stype, "Internal") == 0)
+        return PLUGIN_INTERNAL;
+    if (std::strcmp(stype, "LADSPA") == 0)
+        return PLUGIN_LADSPA;
+    if (std::strcmp(stype, "DSSI") == 0)
+        return PLUGIN_DSSI;
+    if (std::strcmp(stype, "LV2") == 0)
+        return PLUGIN_LV2;
+    if (std::strcmp(stype, "VST") == 0)
+        return PLUGIN_VST;
+    if (std::strcmp(stype, "GIG") == 0)
+        return PLUGIN_GIG;
+    if (std::strcmp(stype, "SF2") == 0)
+        return PLUGIN_SF2;
+    if (std::strcmp(stype, "SFZ") == 0)
+        return PLUGIN_SFZ;
+
+    carla_stderr("CarlaBackend::getPluginTypeFromString(%s) - invalid string type", stype);
+    return PLUGIN_NONE;
 }
 
 // -------------------------------------------------

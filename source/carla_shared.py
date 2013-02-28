@@ -1930,7 +1930,7 @@ class PluginEdit(QDialog):
             askTry = QMessageBox.question(self, self.tr("Overwrite?"), self.tr("Overwrite previously created file?"), QMessageBox.Ok|QMessageBox.Cancel)
 
             if askTry == QMessageBox.Ok:
-                return #self.saveState()
+                Carla.host.save_plugin_state(self.fPluginId, self.fCurrentStateFilename)
 
             self.fCurrentStateFilename = None
 
@@ -1942,7 +1942,7 @@ class PluginEdit(QDialog):
                 filenameTry += ".carxs"
 
             self.fCurrentStateFilename = filenameTry
-            #self.saveState()
+            Carla.host.save_plugin_state(self.fPluginId, self.fCurrentStateFilename)
 
     @pyqtSlot()
     def slot_loadState(self):
@@ -1951,7 +1951,7 @@ class PluginEdit(QDialog):
 
         if filenameTry:
             self.fCurrentStateFilename = filenameTry
-            #self.loadState()
+            Carla.host.load_plugin_state(self.fPluginId, self.fCurrentStateFilename)
 
     @pyqtSlot(bool)
     def slot_optionChanged(self, clicked):
