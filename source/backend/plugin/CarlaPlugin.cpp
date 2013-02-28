@@ -387,12 +387,152 @@ void CarlaPlugin::getParameterCountInfo(uint32_t* const ins, uint32_t* const out
 // -------------------------------------------------------------------
 // Set data (state)
 
-#if 0
 const SaveState& CarlaPlugin::getSaveState()
 {
     static SaveState saveState;
+    saveState.reset();
+    prepareForSave();
 
-    // TODO
+    char strBuf[STR_MAX];
+
+    // ----------------------------
+    // Basic info
+
+    switch (type())
+    {
+    case PLUGIN_INTERNAL:
+        saveState.type = carla_strdup("Internal");
+        break;
+    case PLUGIN_LADSPA:
+        saveState.type = carla_strdup("LADSPA");
+        break;
+    case PLUGIN_DSSI:
+        saveState.type = carla_strdup("DSSI");
+        break;
+    case PLUGIN_LV2:
+        saveState.type = carla_strdup("LV2");
+        break;
+    case PLUGIN_VST:
+        saveState.type = carla_strdup("VST");
+        break;
+    case PLUGIN_GIG:
+        saveState.type = carla_strdup("GIG");
+        break;
+    case PLUGIN_SF2:
+        saveState.type = carla_strdup("SF2");
+        break;
+    case PLUGIN_SFZ:
+        saveState.type = carla_strdup("SFZ");
+        break;
+    default:
+        saveState.type = carla_strdup("Unknown");
+        break;
+    }
+
+    getLabel(strBuf);
+
+    saveState.name   = carla_strdup(fName);
+    saveState.label  = carla_strdup(strBuf);
+    saveState.binary = carla_strdup(fFilename);
+    saveState.uniqueID = uniqueId();
+
+    // ----------------------------
+    // Internals
+
+    saveState.active = kData->active;
+    saveState.dryWet = kData->postProc.dryWet;
+    saveState.volume = kData->postProc.volume;
+    saveState.balanceLeft  = kData->postProc.balanceLeft;
+    saveState.balanceRight = kData->postProc.balanceRight;
+    saveState.panning      = kData->postProc.panning;
+
+    // ----------------------------
+    // Current Program
+
+    if (kData->prog.current >= 0)
+    {
+        saveState.currentProgramIndex = kData->prog.current;
+        saveState.currentProgramName  = carla_strdup(kData->prog.names[kData->prog.current]);
+    }
+
+    // ----------------------------
+    // Current MIDI Program
+
+    if (kData->midiprog.current >= 0)
+    {
+        const MidiProgramData& mpData = kData->midiprog.getCurrent();
+        saveState.currentMidiBank     = mpData.bank;
+        saveState.currentMidiProgram  = mpData.program;
+    }
+
+    // ----------------------------
+    // Parameters
+
+    float sampleRate = kData->engine->getSampleRate();
+
+    for (uint32_t i=0, count=kData->param.count; i < count; i++)
+    {
+        const ParameterData& paramData = kData->param.data[i];
+
+        if (paramData.type != PARAMETER_INPUT)
+            continue;
+
+        StateParameter stateParameter;
+
+        stateParameter.index  = paramData.index;
+        stateParameter.midiCC = paramData.midiCC;
+        stateParameter.midiChannel = paramData.midiChannel + 1;
+
+        getParameterName(i, strBuf);
+        stateParameter.name = carla_strdup(strBuf);
+
+        getParameterSymbol(i, strBuf);
+        stateParameter.symbol = carla_strdup(strBuf);;
+
+        stateParameter.value  = getParameterValue(i);
+
+        if (paramData.hints & PARAMETER_USES_SAMPLERATE)
+            stateParameter.value /= sampleRate;
+
+        saveState.parameters.push_back(stateParameter);
+    }
+
+    // ----------------------------
+    // Custom Data
+
+    for (uint32_t i=0, count=customDataCount(); i < count; i++)
+    {
+        const CustomData& cData = customData(i);
+
+        if (cData.type == nullptr)
+            continue;
+
+        StateCustomData stateCustomData;
+
+        stateCustomData.type  = carla_strdup(cData.type);
+        stateCustomData.key   = carla_strdup(cData.key);
+        stateCustomData.value = carla_strdup(cData.value);
+
+        saveState.customData.push_back(stateCustomData);
+    }
+
+    // ----------------------------
+    // Chunk
+
+    if (fOptions & PLUGIN_OPTION_USE_CHUNKS)
+    {
+        void* data = nullptr;
+        const int32_t dataSize = chunkData(&data);
+
+        if (data != nullptr && dataSize >= 4)
+        {
+            CarlaString chunkStr;
+            chunkStr.importBinaryAsBase64((const uint8_t*)data, static_cast<size_t>(dataSize));
+
+            saveState.chunk = carla_strdup(chunkStr);
+        }
+    }
+
     return saveState;
 }
 
@@ -401,7 +541,6 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
     // TODO
     Q_UNUSED(saveState);
 }
-#endif
 
 // -------------------------------------------------------------------
 // Set data (internal stuff)

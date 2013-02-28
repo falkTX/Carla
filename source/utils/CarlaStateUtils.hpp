@@ -33,7 +33,7 @@ struct StateParameter {
     uint32_t    index;
     const char* name;
     const char* symbol;
-    double      value;
+    float       value;
     uint8_t     midiChannel;
     int16_t     midiCC;
 
@@ -41,7 +41,7 @@ struct StateParameter {
         : index(0),
           name(nullptr),
           symbol(nullptr),
-          value(0.0),
+          value(0.0f),
           midiChannel(1),
           midiCC(-1) {}
 
