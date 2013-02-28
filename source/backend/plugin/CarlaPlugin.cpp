@@ -541,8 +541,202 @@ const SaveState& CarlaPlugin::getSaveState()
 
 void CarlaPlugin::loadSaveState(const SaveState& saveState)
 {
-    // TODO
-    Q_UNUSED(saveState);
+    char strBuf[STR_MAX];
+
+    // ---------------------------------------------------------------------
+    // Part 1 - set custom data (except binary/chunks)
+
+    for (auto it = saveState.customData.begin(); it != saveState.customData.end(); ++it)
+    {
+        StateCustomData* stateCustomData = *it;
+
+        if (std::strcmp(stateCustomData->type, CUSTOM_DATA_CHUNK) != 0)
+            setCustomData(stateCustomData->type, stateCustomData->key, stateCustomData->value, true);
+    }
+
+    // ---------------------------------------------------------------------
+    // Part 2 - set program
+
+    int32_t programId = -1;
+
+    if (saveState.currentProgramName != nullptr)
+    {
+        getProgramName(saveState.currentProgramIndex, strBuf);
+
+        // Program name matches
+        if (std::strcmp(saveState.currentProgramName, strBuf) == 0)
+        {
+            programId = saveState.currentProgramIndex;
+        }
+        // index < count
+        else if (saveState.currentProgramIndex < static_cast<int32_t>(kData->prog.count))
+        {
+            programId = saveState.currentProgramIndex;
+        }
+        // index not valid, try to find by name
+        else
+        {
+            for (uint32_t i=0; i < kData->prog.count; i++)
+            {
+                getProgramName(i, strBuf);
+
+                if (std::strcmp(saveState.currentProgramName, strBuf) == 0)
+                {
+                    programId = i;
+                    break;
+                }
+            }
+        }
+    }
+
+    // set program now, if valid
+    if (programId >= 0)
+        setProgram(programId, true, true, true);
+
+    // ---------------------------------------------------------------------
+    // Part 3 - set midi program
+
+    if (saveState.currentMidiBank >= 0 && saveState.currentMidiProgram)
+        setMidiProgramById(saveState.currentMidiBank, currentMidiProgram(), true, true, true);
+
+    // ---------------------------------------------------------------------
+    // Part 4a - get plugin parameter symbols
+
+    struct ParamSymbol {
+        uint32_t index;
+        const char* symbol;
+
+        ParamSymbol()
+            : index(0),
+              symbol(nullptr) {}
+
+        ParamSymbol(uint32_t index_, const char* symbol_)
+            : index(index_),
+              symbol(carla_strdup(symbol_)) {}
+
+        void free()
+        {
+            if (symbol != nullptr)
+            {
+                delete[] symbol;
+                symbol = nullptr;
+            }
+        }
+    };
+
+    QVector<ParamSymbol> paramSymbols;
+
+    if (std::strcmp(saveState.type, "LADSPA") == 0 || std::strcmp(saveState.type, "LV2") == 0)
+    {
+        for (uint32_t i=0; i < kData->param.count; i++)
+        {
+            getParameterSymbol(i, strBuf);
+
+            if (*strBuf != 0)
+            {
+                ParamSymbol paramSymbol(i, strBuf);
+                paramSymbols.append(paramSymbol);
+            }
+        }
+    }
+
+    // ---------------------------------------------------------------------
+    // Part 4b - set parameter values (carefully)
+
+    float sampleRate = kData->engine->getSampleRate();
+
+    for (auto it = saveState.parameters.begin(); it != saveState.parameters.end(); ++it)
+    {
+        StateParameter* stateParameter = *it;
+
+        int32_t index = -1;
+
+        if (std::strcmp(saveState.type, "LADSPA") == 0)
+        {
+            // Try to set by symbol, otherwise use index
+            if (stateParameter->symbol != nullptr && *stateParameter->symbol != 0)
+            {
+                foreach (const ParamSymbol& paramSymbol, paramSymbols)
+                {
+                    if (std::strcmp(stateParameter->symbol, paramSymbol.symbol) == 0)
+                    {
+                        index = paramSymbol.index;
+                        break;
+                    }
+                }
+                if (index == -1)
+                    index = stateParameter->index;
+            }
+            else
+                index = stateParameter->index;
+        }
+        else if (std::strcmp(saveState.type, "LV2") == 0)
+        {
+            // Symbol only
+            if (stateParameter->symbol != nullptr && *stateParameter->symbol != 0)
+            {
+                foreach (const ParamSymbol& paramSymbol, paramSymbols)
+                {
+                    if (std::strcmp(stateParameter->symbol, paramSymbol.symbol) == 0)
+                    {
+                        index = paramSymbol.index;
+                        break;
+                    }
+                }
+                if (index == -1)
+                    carla_stderr("Failed to find LV2 parameter symbol for '%s')", stateParameter->symbol);
+            }
+            else
+                carla_stderr("LV2 Plugin parameter '%s' has no symbol", stateParameter->name);
+        }
+        else
+        {
+            // Index only
+            index = stateParameter->index;
+        }
+
+        // Now set parameter
+        if (index >= 0 && index < static_cast<int32_t>(kData->param.count))
+        {
+            if (kData->param.data[index].hints & PARAMETER_USES_SAMPLERATE)
+                stateParameter->value *= sampleRate;
+
+            setParameterValue(index, stateParameter->value, true, true, true);
+            setParameterMidiCC(index, stateParameter->midiCC, true, true);
+            setParameterMidiChannel(index, stateParameter->midiChannel-1, true, true);
+        }
+        else
+            carla_stderr("Could not set parameter data for '%s'", stateParameter->name);
+    }
+
+    // clear
+    foreach (ParamSymbol paramSymbol, paramSymbols)
+        paramSymbol.free();
+
+    // ---------------------------------------------------------------------
+    // Part 5 - set chunk data
+
+    for (auto it = saveState.customData.begin(); it != saveState.customData.end(); ++it)
+    {
+        StateCustomData* stateCustomData = *it;
+
+        if (std::strcmp(stateCustomData->type, CUSTOM_DATA_CHUNK) == 0)
+            setCustomData(stateCustomData->type, stateCustomData->key, stateCustomData->value, true);
+    }
+
+    if (saveState.chunk != nullptr && (fOptions & PLUGIN_OPTION_USE_CHUNKS) != 0)
+        setChunkData(saveState.chunk);
+
+    // ---------------------------------------------------------------------
+    // Part 6 - set internal stuff
+
+    setDryWet(saveState.dryWet, true, true);
+    setVolume(saveState.volume, true, true);
+    setBalanceLeft(saveState.balanceLeft, true, true);
+    setBalanceRight(saveState.balanceRight, true, true);
+    setPanning(saveState.panning, true, true);
+
+    setActive(saveState.active, true, true);
 }
 
 bool CarlaPlugin::saveStateToFile(const char* const filename)

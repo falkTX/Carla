@@ -361,7 +361,7 @@ const SaveState& getSaveStateDictFromXML(const QDomNode& xmlNode)
                         else if (pTag == "Value")
                         {
                             bool ok;
-                            float value = text.toFloat(&ok);
+                            float value = pText.toFloat(&ok);
                             if (ok) stateParameter->value = value;
                         }
                         else if (pTag == "MidiChannel")
