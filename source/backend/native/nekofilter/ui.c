@@ -268,6 +268,20 @@ nekoui_quit(
 {
   write(control_ptr->send_pipe, "quit\n", 5);
   control_ptr->visible = false;
+  
+  /* for a while wait child to exit, we dont like zombie processes */
+  if (!wait_child(control_ptr->pid))
+  {
+    fprintf(stderr, "force killing misbehaved child %d (exit)\n", (int)control_ptr->pid);
+    if (kill(control_ptr->pid, SIGKILL) == -1)
+    {
+      fprintf(stderr, "kill() failed: %s (exit)\n", strerror(errno));
+    }
+    else
+    {
+      wait_child(control_ptr->pid);
+    }
+  }
 }
 
 #if defined(FORK_TIME_MEASURE)
@@ -324,7 +338,7 @@ nekoui_instantiate(
   char ui_send_pipe[100];
   int oldflags;
   FORK_TIME_MEASURE_VAR;
-  const char * argv[5];
+  const char * argv[6];
   int ret;
   int i;
   char ch;
@@ -361,6 +375,9 @@ nekoui_instantiate(
 
   strcpy(filename, bundle_path);
   strcat(filename, UI_EXECUTABLE);
+  
+  char sample_rate_str[12] = { 0 };
+  snprintf(sample_rate_str, 12, "%g", host->get_sample_rate(host->handle));
 
   control_ptr->running = false;
   control_ptr->visible = false;
@@ -369,9 +386,10 @@ nekoui_instantiate(
 
   argv[0] = "python";
   argv[1] = filename;
-  argv[2] = ui_recv_pipe;       /* reading end */
-  argv[3] = ui_send_pipe;       /* writting end */
-  argv[4] = NULL;
+  argv[2] = sample_rate_str;
+  argv[3] = ui_recv_pipe;       /* reading end */
+  argv[4] = ui_send_pipe;       /* writting end */
+  argv[5] = NULL;
 
   FORK_TIME_MEASURE_BEGIN;
 

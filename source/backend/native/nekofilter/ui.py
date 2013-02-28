@@ -621,8 +621,8 @@ class Knob(gtk.VBox):
         return False
 
 class filter_band:
-    def __init__(self):
-        self.fsamp = 48e3
+    def __init__(self, sample_rate):
+        self.fsamp = sample_rate
 
     def set_params(self, freq, bandw, gain):
         freq_ratio = freq / self.fsamp
@@ -827,9 +827,9 @@ class frequency_response(gtk.DrawingArea):
             cairo_ctx.show_text(label)
             cairo_ctx.stroke()
 
-    def add_filter(self, label, adj_hz, adj_db, adj_bw, color):
+    def add_filter(self, label, sample_rate, adj_hz, adj_db, adj_bw, color):
         #print "filter %s added (%.2f Hz, %.2f dB, %.2f bw)" % (label, adj_hz.value, adj_db.value, adj_bw.value)
-        filter = filter_band()
+        filter = filter_band(sample_rate)
         filter.enabled = False
         filter.label = label
         filter.color = color
@@ -880,9 +880,11 @@ class filter_ui:
 
         if self.fake:
             self.shown = False
+            self.sample_rate  = 48e3
         else:
-            self.recv_pipe_fd = int(argv[1])
-            self.send_pipe_fd = int(argv[2])
+            self.sample_rate  = float(argv[1])
+            self.recv_pipe_fd = int(argv[2])
+            self.send_pipe_fd = int(argv[3])
 
             oldflags = fcntl.fcntl(self.recv_pipe_fd, fcntl.F_GETFL)
             fcntl.fcntl(self.recv_pipe_fd, fcntl.F_SETFL, oldflags | os.O_NONBLOCK)
@@ -1006,6 +1008,7 @@ class filter_ui:
 
             self.fr.add_filter(
                 str(i + 1),
+                self.sample_rate,
                 self.ports[port_index - 3]['adj'], # frequency
                 self.ports[port_index - 1]['adj'], # gain
                 self.ports[port_index - 2]['adj'], # bandwidth
