@@ -409,7 +409,7 @@ struct CarlaPluginProtectedData {
     PluginParameterData param;
     PluginProgramData prog;
     PluginMidiProgramData midiprog;
-    NonRtListNew<CustomData> custom;
+    NonRtList<CustomData*> custom;
 
     CarlaMutex mutex;
 

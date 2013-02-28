@@ -231,7 +231,7 @@ const CustomData& CarlaPlugin::customData(const size_t index) const
 {
     CARLA_ASSERT(index < kData->custom.count());
 
-    return (index < kData->custom.count()) ? kData->custom.getAt(index) : kCustomDataNull;
+    return (index < kData->custom.count()) ? *kData->custom.getAt(index) : kCustomDataNull;
 }
 
 int32_t CarlaPlugin::chunkData(void** const dataPtr)
@@ -1117,24 +1117,28 @@ void CarlaPlugin::setCustomData(const char* const type, const char* const key, c
 
     if (saveData)
     {
-#if 0
         // Check if we already have this key
-        for (size_t i=0; i < kData->custom.count(); i++)
+        for (size_t i=0, count=kData->custom.count(); i < count; i++)
         {
-            if (std::strcmp(custom[i].key, key) == 0)
+            CustomData* const cData(kData->custom.getAt(i));
+
+            assert(cData->type != nullptr);
+            assert(cData->key != nullptr);
+            assert(cData->value != nullptr);
+
+            if (std::strcmp(cData->key, key) == 0)
             {
-                delete[] custom[i].value;
-                custom[i].value = carla_strdup(value);
+                delete[] cData->value;
+                cData->value = carla_strdup(value);
                 return;
             }
         }
-#endif
 
         // Otherwise store it
-        CustomData newData;
-        newData.type  = carla_strdup(type);
-        newData.key   = carla_strdup(key);
-        newData.value = carla_strdup(value);
+        CustomData* newData(new CustomData);
+        newData->type  = carla_strdup(type);
+        newData->key   = carla_strdup(key);
+        newData->value = carla_strdup(value);
         kData->custom.append(newData);
     }
 }

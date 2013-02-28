@@ -131,7 +131,7 @@ public:
 
         if (fDescriptor != nullptr)
         {
-            if (fIsUiVisible)
+            if (fDescriptor->ui_show != nullptr && fIsUiVisible)
                 fDescriptor->ui_show(fHandle, false);
 
             if (fDescriptor->deactivate != nullptr && kData->activeBefore)
@@ -487,7 +487,10 @@ public:
                 QString filenameTry = QFileDialog::getOpenFileName(nullptr, "Open Audio File");
 
                 if (! filenameTry.isEmpty())
-                    fDescriptor->set_custom_data(fHandle, "file", filenameTry.toUtf8().constData());
+                {
+                    const char* const filename = filenameTry.toUtf8().constData();
+                    setCustomData(CUSTOM_DATA_STRING, "file", filename, false);
+                }
 
                 kData->engine->callback(CALLBACK_SHOW_GUI, fId, 0, 0, 0.0f, nullptr);
             }
@@ -520,7 +523,7 @@ public:
         CARLA_ASSERT(fDescriptor != nullptr);
         CARLA_ASSERT(fHandle != nullptr);
 
-        if (fIsUiVisible)
+        if (fIsUiVisible && fDescriptor != nullptr && fHandle != nullptr && fDescriptor->ui_idle != nullptr)
             fDescriptor->ui_idle(fHandle);
     }
 
