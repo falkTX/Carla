@@ -597,7 +597,7 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
     // Part 3 - set midi program
 
     if (saveState.currentMidiBank >= 0 && saveState.currentMidiProgram)
-        setMidiProgramById(saveState.currentMidiBank, currentMidiProgram(), true, true, true);
+        setMidiProgramById(saveState.currentMidiBank, saveState.currentMidiProgram, true, true, true);
 
     // ---------------------------------------------------------------------
     // Part 4a - get plugin parameter symbols
@@ -1508,17 +1508,22 @@ void CarlaPlugin::updateOscData(const lo_address& source, const char* const url)
 
     osc_send_sample_rate(&kData->osc.data, kData->engine->getSampleRate());
 
-#if 0
-    for (size_t i=0; i < kData->custom.count(); i++)
+    for (size_t i=0, count=kData->custom.count(); i < count; i++)
     {
-        // TODO
-        //if (m_type == PLUGIN_LV2)
-        //osc_send_lv2_transfer_event(&osc.data, getCustomDataTypeString(custom[i].type), /*custom[i].key,*/ custom[i].value);
-        //else
-        if (custom[i].type == CUSTOM_DATA_STRING)
-            osc_send_configure(&osc.data, custom[i].key, custom[i].value);
-    }
+        CustomData* const cData(kData->custom.getAt(i));
+
+        assert(cData->type != nullptr);
+        assert(cData->key != nullptr);
+        assert(cData->value != nullptr);
+
+#ifdef WANT_LV2
+        if (type() == PLUGIN_LV2)
+            osc_send_lv2_transfer_event(&kData->osc.data, 0, cData->type, cData->value);
+        else
 #endif
+            if (std::strcmp(cData->type, CUSTOM_DATA_STRING) == 0)
+            osc_send_configure(&kData->osc.data, cData->key, cData->value);
+    }
 
     if (kData->prog.current >= 0)
         osc_send_program(&kData->osc.data, kData->prog.current);

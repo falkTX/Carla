@@ -247,6 +247,7 @@ public:
 
     void setCustomData(const char* const type, const char* const key, const char* const value, const bool sendGui)
     {
+        carla_debug("DssiPlugin::setCustomData(%s, %s, %s, %s)", type, key, value, bool2str(sendGui));
         CARLA_ASSERT(fDescriptor != nullptr);
         CARLA_ASSERT(fHandle != nullptr);
         CARLA_ASSERT(type != nullptr);

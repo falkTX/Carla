@@ -20,7 +20,9 @@
 #include "CarlaStateUtils.hpp"
 #include "CarlaMIDI.h"
 
+#include <QtCore/QDir>
 #include <QtCore/QFile>
+#include <QtCore/QFileInfo>
 #include <QtCore/QTextStream>
 
 CARLA_BACKEND_START_NAMESPACE
@@ -389,6 +391,40 @@ void doPluginRemove(CarlaEngineProtectedData* const kData, const bool unlock)
 
     if (unlock)
         kData->nextAction.mutex.unlock();
+}
+
+const char* findDSSIGUI(const char* const filename, const char* const label)
+{
+    QString guiFilename;
+    guiFilename.clear();
+
+    QString pluginDir(filename);
+    pluginDir.resize(pluginDir.lastIndexOf("."));
+
+    QString shortName = QFileInfo(pluginDir).baseName();
+
+    QString checkLabel = QString(label);
+    QString checkSName = shortName;
+
+    if (! checkLabel.endsWith("_")) checkLabel += "_";
+    if (! checkSName.endsWith("_")) checkSName += "_";
+
+    QStringList guiFiles = QDir(pluginDir).entryList();
+
+    foreach (const QString& gui, guiFiles)
+    {
+        if (gui.startsWith(checkLabel) || gui.startsWith(checkSName))
+        {
+            QFileInfo finalname(pluginDir + QDir::separator() + gui);
+            guiFilename = finalname.absoluteFilePath();
+            break;
+        }
+    }
+
+    if (guiFilename.isEmpty())
+        return nullptr;
+
+    return carla_strdup(guiFilename.toUtf8().constData());
 }
 
 // -----------------------------------------------------------------------
@@ -993,8 +1029,13 @@ bool CarlaEngine::loadProject(const char* const filename)
         {
             const SaveState& saveState = getSaveStateDictFromXML(node);
 
+            const void* extraStuff = nullptr;
+
+            if (std::strcmp(saveState.type, "DSSI") == 0)
+                extraStuff = findDSSIGUI(saveState.binary, saveState.label);
+
             // TODO - proper find&load plugins
-            if (addPlugin(getPluginTypeFromString(saveState.type), saveState.binary, saveState.name, saveState.label, nullptr))
+            if (addPlugin(getPluginTypeFromString(saveState.type), saveState.binary, saveState.name, saveState.label, extraStuff))
             {
                 if (CarlaPlugin* plugin = getPlugin(kData->curPluginCount-1))
                     plugin->loadSaveState(saveState);

@@ -101,39 +101,9 @@ void initSignalHandler()
 
 extern CarlaBackend::CarlaEngine* carla_get_standalone_engine();
 
-const char* findDSSIGUI(const char* const filename, const char* const label)
-{
-    QString guiFilename;
-    guiFilename.clear();
-
-    QString pluginDir(filename);
-    pluginDir.resize(pluginDir.lastIndexOf("."));
-
-    QString shortName = QFileInfo(pluginDir).baseName();
-
-    QString checkLabel = QString(label);
-    QString checkSName = shortName;
-
-    if (! checkLabel.endsWith("_")) checkLabel += "_";
-    if (! checkSName.endsWith("_")) checkSName += "_";
-
-    QStringList guiFiles = QDir(pluginDir).entryList();
-
-    foreach (const QString& gui, guiFiles)
-    {
-        if (gui.startsWith(checkLabel) || gui.startsWith(checkSName))
-        {
-            QFileInfo finalname(pluginDir + QDir::separator() + gui);
-            guiFilename = finalname.absoluteFilePath();
-            break;
-        }
-    }
-
-    if (guiFilename.isEmpty())
-        return nullptr;
-
-    return carla_strdup(guiFilename.toUtf8().constData());
-}
+CARLA_BACKEND_START_NAMESPACE
+extern const char* findDSSIGUI(const char* const filename, const char* const label);
+CARLA_BACKEND_END_NAMESPACE
 
 CARLA_BRIDGE_START_NAMESPACE
 
@@ -537,7 +507,7 @@ int main(int argc, char* argv[])
     const void* extraStuff = nullptr;
 
     if (itype == CarlaBackend::PLUGIN_DSSI)
-        extraStuff = findDSSIGUI(filename, label);
+        extraStuff = CarlaBackend::findDSSIGUI(filename, label);
 
     // Init plugin
     int ret;
