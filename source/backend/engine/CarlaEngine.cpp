@@ -985,39 +985,23 @@ bool CarlaEngine::loadProject(const char* const filename)
         return false;
     }
 
-    std::vector<SaveState> saveStates;
+    QDomNode node(xmlNode.firstChild());
 
+    while (! node.isNull())
     {
-        QDomNode node(xmlNode.firstChild());
-
-        while (! node.isNull())
+        if (node.toElement().tagName() == "Plugin")
         {
-            if (node.toElement().tagName() == "Plugin")
+            const SaveState& saveState = getSaveStateDictFromXML(node);
+
+            // TODO - proper find&load plugins
+            if (addPlugin(getPluginTypeFromString(saveState.type), saveState.binary, saveState.name, saveState.label, nullptr))
             {
-                const SaveState& saveState = getSaveStateDictFromXML(node);
-                saveStates.push_back(saveState);
+                if (CarlaPlugin* plugin = getPlugin(kData->curPluginCount-1))
+                    plugin->loadSaveState(saveState);
             }
-
-            node = node.nextSibling();
         }
+        node = node.nextSibling();
     }
-
-    // TODO - proper find&load plugins
-
-    for (auto it = saveStates.begin(); it != saveStates.end(); ++it)
-    {
-        SaveState& saveState(*it);
-
-        if (addPlugin(getPluginTypeFromString(saveState.type), saveState.binary, saveState.name, saveState.label, nullptr))
-        {
-            if (CarlaPlugin* plugin = getPlugin(kData->curPluginCount-1))
-                plugin->loadSaveState(saveState);
-        }
-
-        saveState.reset();
-    }
-
-    saveStates.clear();
 
     return true;
 }
