@@ -30,7 +30,8 @@ endif
 OBJS  = \
 	bypass.c.o \
 	midi-split.c.o \
-	midi-through.c.o
+	midi-through.c.o \
+	nekofilter.c.o
 
 # DISTRHO plugins
 OBJS += \

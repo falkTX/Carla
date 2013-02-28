@@ -1141,6 +1141,7 @@ public:
             bool sampleAccurate  = (fOptions & PLUGIN_OPTION_FIXED_BUFFER) == 0;
 
             uint32_t time, nEvents = kData->event.portIn->getEventCount();
+            uint32_t startTime  = 0;
             uint32_t timeOffset = 0;
 
             uint32_t nextBankId = 0;
@@ -1160,16 +1161,19 @@ public:
 
                 if (time > timeOffset && sampleAccurate)
                 {
-                    processSingle(inBuffer, outBuffer, time - timeOffset, timeOffset);
-
-                    if (fMidiEventCount > 0)
+                    if (processSingle(inBuffer, outBuffer, time - timeOffset, timeOffset))
                     {
-                        carla_zeroMem(fMidiEvents, sizeof(::MidiEvent)*fMidiEventCount);
-                        fMidiEventCount = 0;
-                    }
+                        if (fMidiEventCount > 0)
+                        {
+                            carla_zeroMem(fMidiEvents, sizeof(::MidiEvent)*fMidiEventCount);
+                            fMidiEventCount = 0;
+                        }
 
-                    nextBankId = 0;
-                    timeOffset = time;
+                        nextBankId = 0;
+                        timeOffset = time;
+                    }
+                    else
+                        startTime += timeOffset;
                 }
 
                 // Control change
@@ -1326,7 +1330,7 @@ public:
                             continue;
 
                         fMidiEvents[fMidiEventCount].port = 0;
-                        fMidiEvents[fMidiEventCount].time = sampleAccurate ? 0 : time;
+                        fMidiEvents[fMidiEventCount].time = sampleAccurate ? startTime : time;
                         fMidiEvents[fMidiEventCount].data[0] = MIDI_STATUS_CONTROL_CHANGE + event.channel;
                         fMidiEvents[fMidiEventCount].data[1] = MIDI_CONTROL_ALL_SOUND_OFF;
                         fMidiEvents[fMidiEventCount].data[2] = 0;
@@ -1348,7 +1352,7 @@ public:
                             continue;
 
                         fMidiEvents[fMidiEventCount].port = 0;
-                        fMidiEvents[fMidiEventCount].time = sampleAccurate ? 0: time;
+                        fMidiEvents[fMidiEventCount].time = sampleAccurate ? startTime : time;
                         fMidiEvents[fMidiEventCount].data[0] = MIDI_STATUS_CONTROL_CHANGE + event.channel;
                         fMidiEvents[fMidiEventCount].data[1] = MIDI_CONTROL_ALL_NOTES_OFF;
                         fMidiEvents[fMidiEventCount].data[2] = 0;
@@ -1385,7 +1389,7 @@ public:
                         status -= 0x10;
 
                     fMidiEvents[fMidiEventCount].port = 0;
-                    fMidiEvents[fMidiEventCount].time = sampleAccurate ? 0 : time - timeOffset;
+                    fMidiEvents[fMidiEventCount].time = sampleAccurate ? startTime : time;
 
                     fMidiEvents[fMidiEventCount].data[0] = status + channel;
                     fMidiEvents[fMidiEventCount].data[1] = midiEvent.data[1];
@@ -1413,66 +1417,6 @@ public:
             processSingle(inBuffer, outBuffer, frames, 0);
 
         } // End of Plugin processing (no events)
-
-        CARLA_PROCESS_CONTINUE_CHECK;
-
-        // --------------------------------------------------------------------------------------------------------
-        // Post-processing (dry/wet, volume and balance)
-
-        {
-            const bool doDryWet  = (fHints & PLUGIN_CAN_DRYWET) > 0 && kData->postProc.dryWet != 1.0f;
-            const bool doVolume  = (fHints & PLUGIN_CAN_VOLUME) > 0 && kData->postProc.volume != 1.0f;
-            const bool doBalance = (fHints & PLUGIN_CAN_BALANCE) > 0 && (kData->postProc.balanceLeft != -1.0f || kData->postProc.balanceRight != 1.0f);
-
-            float bufValue, oldBufLeft[doBalance ? frames : 1];
-
-            for (i=0; i < kData->audioOut.count; i++)
-            {
-                // Dry/Wet
-                if (doDryWet)
-                {
-                    for (k=0; k < frames; k++)
-                    {
-                        bufValue = inBuffer[(kData->audioIn.count == 1) ? 0 : i][k];
-                        outBuffer[i][k] = (outBuffer[i][k] * kData->postProc.dryWet) + (bufValue * (1.0f - kData->postProc.dryWet));
-                    }
-                }
-
-                // Balance
-                if (doBalance)
-                {
-                    if (i % 2 == 0)
-                        carla_copyFloat(oldBufLeft, outBuffer[i], frames);
-
-                    float balRangeL = (kData->postProc.balanceLeft  + 1.0f)/2.0f;
-                    float balRangeR = (kData->postProc.balanceRight + 1.0f)/2.0f;
-
-                    for (k=0; k < frames; k++)
-                    {
-                        if (i % 2 == 0)
-                        {
-                            // left
-                            outBuffer[i][k]  = oldBufLeft[k]     * (1.0f - balRangeL);
-                            outBuffer[i][k] += outBuffer[i+1][k] * (1.0f - balRangeR);
-                        }
-                        else
-                        {
-                            // right
-                            outBuffer[i][k]  = outBuffer[i][k] * balRangeR;
-                            outBuffer[i][k] += oldBufLeft[k]   * balRangeL;
-                        }
-                    }
-                }
-
-                // Volume
-                if (doVolume)
-                {
-                    for (k=0; k < frames; k++)
-                        outBuffer[i][k] *= kData->postProc.volume;
-                }
-            }
-
-        } // End of Post-processing
 
         CARLA_PROCESS_CONTINUE_CHECK;
 
@@ -1527,28 +1471,115 @@ public:
         kData->activeBefore = kData->active;
     }
 
-    void processSingle(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t timeOffset)
+    bool processSingle(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t timeOffset)
     {
-        for (uint32_t i=0; i < kData->audioIn.count; i++)
+        uint32_t i, k;
+
+        // --------------------------------------------------------------------------------------------------------
+        // Try lock, silence otherwise
+
+        if (kData->engine->isOffline())
+        {
+            kData->mutex.lock();
+        }
+        else if (! kData->mutex.tryLock())
+        {
+            for (i=0; i < kData->audioOut.count; i++)
+            {
+                for (k=0; k < frames; k++)
+                    outBuffer[i][k+timeOffset] = 0.0f;
+            }
+
+            return false;
+        }
+
+        for (i=0; i < kData->audioIn.count; i++)
             carla_copyFloat(fAudioInBuffers[i], inBuffer[i]+timeOffset, frames);
-        for (uint32_t i=0; i < kData->audioOut.count; i++)
+        for (i=0; i < kData->audioOut.count; i++)
             carla_zeroFloat(fAudioOutBuffers[i], frames);
 
         fIsProcessing = true;
 
-        fDescriptor->process(fHandle, fAudioInBuffers, fAudioOutBuffers, frames, fMidiEventCount, fMidiEvents);
+        if (fHandle2 == nullptr)
+        {
+            fDescriptor->process(fHandle, fAudioInBuffers, fAudioOutBuffers, frames, fMidiEventCount, fMidiEvents);
+        }
+        else
+        {
+            fDescriptor->process(fHandle,
+                                 (kData->audioIn.count > 0) ? &fAudioInBuffers[0] : nullptr,
+                                 (kData->audioOut.count > 0) ? &fAudioOutBuffers[0] : nullptr,
+                                 frames, fMidiEventCount, fMidiEvents);
 
-        if (fHandle2 != nullptr)
-            fDescriptor->process(fHandle2, fAudioInBuffers, fAudioOutBuffers, frames, fMidiEventCount, fMidiEvents);
+            fDescriptor->process(fHandle2,
+                                 (kData->audioIn.count > 0) ? &fAudioInBuffers[1] : nullptr,
+                                 (kData->audioOut.count > 0) ? &fAudioOutBuffers[1] : nullptr,
+                                 frames, fMidiEventCount, fMidiEvents);
+        }
 
         fIsProcessing = false;
         fTimeInfo.frame += frames;
 
-        for (uint32_t i=0, k; i < kData->audioOut.count; i++)
+        // --------------------------------------------------------------------------------------------------------
+        // Post-processing (dry/wet, volume and balance)
+
         {
-            for (k=0; k < frames; k++)
-                outBuffer[i][k+timeOffset] = fAudioOutBuffers[i][k];
-        }
+            const bool doDryWet  = (fHints & PLUGIN_CAN_DRYWET) > 0 && kData->postProc.dryWet != 1.0f;
+            const bool doBalance = (fHints & PLUGIN_CAN_BALANCE) > 0 && (kData->postProc.balanceLeft != -1.0f || kData->postProc.balanceRight != 1.0f);
+
+            float bufValue, oldBufLeft[doBalance ? frames : 1];
+
+            for (i=0; i < kData->audioOut.count; i++)
+            {
+                // Dry/Wet
+                if (doDryWet)
+                {
+                    for (k=0; k < frames; k++)
+                    {
+                        bufValue = fAudioInBuffers[(kData->audioIn.count == 1) ? 0 : i][k];
+                        fAudioOutBuffers[i][k] = (fAudioOutBuffers[i][k] * kData->postProc.dryWet) + (bufValue * (1.0f - kData->postProc.dryWet));
+                    }
+                }
+
+                // Balance
+                if (doBalance)
+                {
+                    if (i % 2 == 0)
+                        carla_copyFloat(oldBufLeft, fAudioOutBuffers[i], frames);
+
+                    float balRangeL = (kData->postProc.balanceLeft  + 1.0f)/2.0f;
+                    float balRangeR = (kData->postProc.balanceRight + 1.0f)/2.0f;
+
+                    for (k=0; k < frames; k++)
+                    {
+                        if (i % 2 == 0)
+                        {
+                            // left
+                            fAudioOutBuffers[i][k]  = oldBufLeft[k]            * (1.0f - balRangeL);
+                            fAudioOutBuffers[i][k] += fAudioOutBuffers[i+1][k] * (1.0f - balRangeR);
+                        }
+                        else
+                        {
+                            // right
+                            fAudioOutBuffers[i][k]  = fAudioOutBuffers[i][k] * balRangeR;
+                            fAudioOutBuffers[i][k] += oldBufLeft[k]          * balRangeL;
+                        }
+                    }
+                }
+
+                // Volume (and buffer copy)
+                {
+                    for (k=0; k < frames; k++)
+                        outBuffer[i][k+timeOffset] = fAudioOutBuffers[i][k] * kData->postProc.volume;
+                }
+            }
+
+        } // End of Post-processing
+
+        // --------------------------------------------------------------------------------------------------------
+
+        kData->mutex.unlock();
+        return true;
     }
 
     void bufferSizeChanged(const uint32_t newBufferSize)
@@ -1897,6 +1928,7 @@ private:
         carla_register_native_plugin_bypass();
         carla_register_native_plugin_midiSplit();
         carla_register_native_plugin_midiThrough();
+        carla_register_native_plugin_nekofilter();
 
         carla_register_native_plugin_3BandEQ();
         carla_register_native_plugin_3BandSplitter();
