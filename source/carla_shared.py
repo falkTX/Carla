@@ -2154,7 +2154,7 @@ class PluginWidget(QFrame):
         #else:
             #self.setWidgetColor(PALETTE_COLOR_NONE)
 
-        self.ui.b_enable.setPixmaps(":/bitmaps/button_gui.png", ":/bitmaps/button_gui_down.png", ":/bitmaps/button_gui_hover.png")
+        self.ui.b_enable.setPixmaps(":/bitmaps/led_red.png", ":/bitmaps/led_green.png", ":/bitmaps/led_red.png")
         self.ui.b_gui.setPixmaps(":/bitmaps/button_gui.png", ":/bitmaps/button_gui_down.png", ":/bitmaps/button_gui_hover.png")
         self.ui.b_edit.setPixmaps(":/bitmaps/button_edit.png", ":/bitmaps/button_edit_down.png", ":/bitmaps/button_edit_hover.png")
 
