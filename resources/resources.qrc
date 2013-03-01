@@ -38,8 +38,8 @@
 
         <file>bitmaps/carla_about.png</file>
         <file>bitmaps/button_close.png</file>
+        <file>bitmaps/button_close_down.png</file>
         <file>bitmaps/button_close_hover.png</file>
-        <file>bitmaps/button_close_pressed.png</file>
         <file>bitmaps/button_down.png</file>
         <file>bitmaps/button_down_hover.png</file>
         <file>bitmaps/button_edit.png</file>

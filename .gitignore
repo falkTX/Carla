@@ -33,6 +33,7 @@ ui_*.py
 source/digitalpeakmeter.py
 source/ledbutton.py
 source/paramspinbox.py
+source/pixmapbutton.py
 source/pixmapdial.py
 source/pixmapkeyboard.py
 source/resources_rc.py

@@ -2154,8 +2154,19 @@ class PluginWidget(QFrame):
         #else:
             #self.setWidgetColor(PALETTE_COLOR_NONE)
 
-        #self.ui.led_enable.setColor(self.ui.led_enable.BIG_RED)
-        #self.ui.led_enable.setChecked(False)
+        self.ui.b_enable.setPixmaps(":/bitmaps/button_gui.png", ":/bitmaps/button_gui_down.png", ":/bitmaps/button_gui_hover.png")
+        self.ui.b_gui.setPixmaps(":/bitmaps/button_gui.png", ":/bitmaps/button_gui_down.png", ":/bitmaps/button_gui_hover.png")
+        self.ui.b_edit.setPixmaps(":/bitmaps/button_edit.png", ":/bitmaps/button_edit_down.png", ":/bitmaps/button_edit_hover.png")
+
+        self.ui.b_up.setPixmaps(":/bitmaps/button_up.png", ":/bitmaps/button_up.png", ":/bitmaps/button_up_hover.png")
+        self.ui.b_down.setPixmaps(":/bitmaps/button_down.png", ":/bitmaps/button_down.png", ":/bitmaps/button_down_hover.png")
+        self.ui.b_restore.setPixmaps(":/bitmaps/button_restore.png", ":/bitmaps/button_restore.png", ":/bitmaps/button_restore_hover.png")
+        self.ui.b_close.setPixmaps(":/bitmaps/button_close.png", ":/bitmaps/button_close_down.png", ":/bitmaps/button_close_hover.png")
+
+        # TODO
+        self.ui.b_up.setEnabled(False)
+        self.ui.b_down.setEnabled(False)
+        self.ui.b_restore.setEnabled(False)
 
         self.ui.led_control.setColor(self.ui.led_control.YELLOW)
         self.ui.led_control.setEnabled(False)

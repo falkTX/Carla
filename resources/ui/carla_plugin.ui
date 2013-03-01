@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>557</width>
-    <height>28</height>
+    <width>538</width>
+    <height>30</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,7 +15,7 @@
   </property>
   <layout class="QHBoxLayout" name="horizontalLayout">
    <property name="spacing">
-    <number>1</number>
+    <number>2</number>
    </property>
    <property name="leftMargin">
     <number>0</number>
@@ -30,7 +30,7 @@
     <number>2</number>
    </property>
    <item>
-    <widget class="QPushButton" name="b_enable">
+    <widget class="PixmapButton" name="b_enable">
      <property name="minimumSize">
       <size>
        <width>24</width>
@@ -45,10 +45,6 @@
      </property>
      <property name="text">
       <string/>
-     </property>
-     <property name="icon">
-      <iconset resource="../resources.qrc">
-       <normaloff>:/bitmaps/led-big_on.png</normaloff>:/bitmaps/led-big_on.png</iconset>
      </property>
      <property name="iconSize">
       <size>
@@ -65,7 +61,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QPushButton" name="b_gui">
+    <widget class="PixmapButton" name="b_gui">
      <property name="minimumSize">
       <size>
        <width>24</width>
@@ -83,7 +79,7 @@
      </property>
      <property name="icon">
       <iconset resource="../resources.qrc">
-       <normaloff>:/bitmaps/button_gui_down.png</normaloff>:/bitmaps/button_gui_down.png</iconset>
+       <normaloff>:/bitmaps/button_gui.png</normaloff>:/bitmaps/button_gui.png</iconset>
      </property>
      <property name="iconSize">
       <size>
@@ -100,7 +96,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QPushButton" name="b_edit">
+    <widget class="PixmapButton" name="b_edit">
      <property name="minimumSize">
       <size>
        <width>24</width>
@@ -118,7 +114,7 @@
      </property>
      <property name="icon">
       <iconset resource="../resources.qrc">
-       <normaloff>:/bitmaps/button_edit_down.png</normaloff>:/bitmaps/button_edit_down.png</iconset>
+       <normaloff>:/bitmaps/button_edit.png</normaloff>:/bitmaps/button_edit.png</iconset>
      </property>
      <property name="iconSize">
       <size>
@@ -287,7 +283,7 @@
       <number>0</number>
      </property>
      <item row="0" column="0">
-      <widget class="QPushButton" name="b_up">
+      <widget class="PixmapButton" name="b_up">
        <property name="minimumSize">
         <size>
          <width>12</width>
@@ -310,7 +306,7 @@
       </widget>
      </item>
      <item row="0" column="1">
-      <widget class="QPushButton" name="b_close">
+      <widget class="PixmapButton" name="b_close">
        <property name="minimumSize">
         <size>
          <width>12</width>
@@ -328,7 +324,7 @@
        </property>
        <property name="icon">
         <iconset resource="../resources.qrc">
-         <normaloff>:/bitmaps/button_close_pressed.png</normaloff>:/bitmaps/button_close_pressed.png</iconset>
+         <normaloff>:/bitmaps/button_close.png</normaloff>:/bitmaps/button_close.png</iconset>
        </property>
        <property name="iconSize">
         <size>
@@ -342,7 +338,7 @@
       </widget>
      </item>
      <item row="1" column="0">
-      <widget class="QPushButton" name="b_down">
+      <widget class="PixmapButton" name="b_down">
        <property name="minimumSize">
         <size>
          <width>12</width>
@@ -365,7 +361,7 @@
       </widget>
      </item>
      <item row="1" column="1">
-      <widget class="QPushButton" name="b_restore">
+      <widget class="PixmapButton" name="b_restore">
        <property name="minimumSize">
         <size>
          <width>12</width>
@@ -402,6 +398,11 @@
    <class>LEDButton</class>
    <extends>QPushButton</extends>
    <header>ledbutton.h</header>
+  </customwidget>
+  <customwidget>
+   <class>PixmapButton</class>
+   <extends>QPushButton</extends>
+   <header>pixmapbutton.h</header>
   </customwidget>
  </customwidgets>
  <resources>

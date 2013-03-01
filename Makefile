@@ -81,7 +81,7 @@ source/ui_%.py: resources/ui/%.ui
 # -----------------------------------------------------------------------------------------------------------------------------------------
 # Widgets
 
-WIDGETS = source/digitalpeakmeter.py source/ledbutton.py source/paramspinbox.py source/pixmapdial.py source/pixmapkeyboard.py
+WIDGETS = source/digitalpeakmeter.py source/ledbutton.py source/paramspinbox.py source/pixmapbutton.py source/pixmapdial.py source/pixmapkeyboard.py
 
 WIDGETS: $(WIDGETS)
 
