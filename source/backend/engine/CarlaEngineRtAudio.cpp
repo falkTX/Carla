@@ -281,8 +281,16 @@ protected:
         if (! fAudioIsReady)
         {
             carla_zeroFloat(outsPtr, nframes*2);
-            proccessPendingEvents();
-            return;
+            return proccessPendingEvents();
+        }
+
+        if (kData->curPluginCount == 0)
+        {
+            // pass-through
+            if (fOptions.processMode == PROCESS_MODE_CONTINUOUS_RACK)
+                carla_copyFloat(outsPtr, insPtr, nframes*2);
+
+            return proccessPendingEvents();
         }
 
         // initialize audio input

@@ -125,7 +125,7 @@ class DigitalPeakMeter(QWidget):
         self.m_smoothMultiplier = value
 
     def minimumSizeHint(self):
-        return QSize(30, 30)
+        return QSize(10, 10)
 
     def sizeHint(self):
         return QSize(self.m_width, self.m_height)

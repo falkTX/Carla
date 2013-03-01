@@ -70,7 +70,7 @@ void audiofile_read_poll(AudioFileInstance* const handlePtr)
 {
     if (handlePtr->fileNfo.frames == 0)
     {
-        fprintf(stderr, "R: no song loaded\n");
+        //fprintf(stderr, "R: no song loaded\n");
         handlePtr->needsRead = false;
         return;
     }
@@ -296,7 +296,7 @@ static void audiofile_process(PluginHandle handle, float** inBuffer, float** out
 
     if (! handlePtr->doProcess)
     {
-        fprintf(stderr, "P: no process\n");
+        //fprintf(stderr, "P: no process\n");
         zeroFloat(out1, frames);
         zeroFloat(out2, frames);
         return;
@@ -307,7 +307,7 @@ static void audiofile_process(PluginHandle handle, float** inBuffer, float** out
     // not playing
     if (! timePos->playing)
     {
-        fprintf(stderr, "P: not rolling\n");
+        //fprintf(stderr, "P: not rolling\n");
         handlePtr->lastFrame = timePos->frame;
 
         zeroFloat(out1, frames);
@@ -320,7 +320,7 @@ static void audiofile_process(PluginHandle handle, float** inBuffer, float** out
     // out of reach
     if (timePos->frame + frames < handlePtr->pool.startFrame || timePos->frame >= handlePtr->maxFrame)
     {
-        fprintf(stderr, "P: non-continuous playback, out of reach %u vs %u\n", timePos->frame + frames, handlePtr->maxFrame);
+        //fprintf(stderr, "P: non-continuous playback, out of reach %u vs %u\n", timePos->frame + frames, handlePtr->maxFrame);
         handlePtr->lastFrame = timePos->frame;
         handlePtr->needsRead = true;
         pthread_mutex_unlock(&handlePtr->mutex);

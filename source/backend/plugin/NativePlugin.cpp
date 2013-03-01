@@ -1761,7 +1761,7 @@ protected:
             return false;
         if (! fIsProcessing)
         {
-            carla_stderr2("NativePlugin::handleWriteMidiEvent(%p) - received MIDI out events outside audio thread, ignoring", event);
+            carla_stderr2("NativePlugin::handleWriteMidiEvent(%p) - received MIDI out event outside audio thread, ignoring", event);
             return false;
         }
 

@@ -791,7 +791,29 @@ protected:
     {
 #ifndef BUILD_BRIDGE
         if (kData->curPluginCount == 0)
+        {
+            // pass-through
+            if (fOptions.processMode == PROCESS_MODE_CONTINUOUS_RACK)
+            {
+                float* const audioIn1  = (float*)jackbridge_port_get_buffer(fRackPorts[rackPortAudioIn1], nframes);
+                float* const audioIn2  = (float*)jackbridge_port_get_buffer(fRackPorts[rackPortAudioIn2], nframes);
+                float* const audioOut1 = (float*)jackbridge_port_get_buffer(fRackPorts[rackPortAudioOut1], nframes);
+                float* const audioOut2 = (float*)jackbridge_port_get_buffer(fRackPorts[rackPortAudioOut2], nframes);
+                void* const  eventOut  = jackbridge_port_get_buffer(fRackPorts[rackPortEventOut], nframes);
+
+                CARLA_ASSERT(audioIn1 != nullptr);
+                CARLA_ASSERT(audioIn2 != nullptr);
+                CARLA_ASSERT(audioOut1 != nullptr);
+                CARLA_ASSERT(audioOut2 != nullptr);
+                CARLA_ASSERT(eventOut != nullptr);
+
+                carla_copyFloat(audioOut1, audioIn1, nframes);
+                carla_copyFloat(audioOut2, audioIn2, nframes);
+                jackbridge_midi_clear_buffer(eventOut);
+            }
+
             return proccessPendingEvents();
+        }
 #endif
 
         saveTransportInfo();

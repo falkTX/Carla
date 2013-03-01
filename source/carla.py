@@ -507,7 +507,7 @@ class CarlaMainW(QMainWindow):
         self.loadRDFs()
 
         self.setStyleSheet("""
-          QWidget#centralwidget {
+          QWidget#w_plugins {
             background-color: qlineargradient(spread:pad,
                 x1:0.0, y1:0.0,
                 x2:0.2, y2:1.0,

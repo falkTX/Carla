@@ -8,6 +8,7 @@ include ../Makefile.mk
 
 # --------------------------------------------------------------
 
+BUILD_C_FLAGS   += -std=gnu99
 BUILD_CXX_FLAGS += -I../../libs/distrho
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtCore QtGui gl)
 LINK_FLAGS      += $(shell pkg-config --libs QtCore QtGui gl)

@@ -2118,7 +2118,6 @@ class PluginWidget(QFrame):
         if Carla.processMode == PROCESS_MODE_CONTINUOUS_RACK:
             self.fPeaksInputCount  = 2
             self.fPeaksOutputCount = 2
-            #self.ui.stackedWidget.setCurrentIndex(0)
         else:
             audioCountInfo = Carla.host.get_audio_port_count_info(self.fPluginId)
 
@@ -2130,11 +2129,6 @@ class PluginWidget(QFrame):
 
             if self.fPeaksOutputCount > 2:
                 self.fPeaksOutputCount = 2
-
-            #if audioCountInfo['total'] == 0:
-                #self.ui.stackedWidget.setCurrentIndex(1)
-            #else:
-                #self.ui.stackedWidget.setCurrentIndex(0)
 
         # Background
         self.fColorTop    = QColor(60, 60, 60)
@@ -2160,8 +2154,8 @@ class PluginWidget(QFrame):
         #else:
             #self.setWidgetColor(PALETTE_COLOR_NONE)
 
-        self.ui.led_enable.setColor(self.ui.led_enable.BIG_RED)
-        self.ui.led_enable.setChecked(False)
+        #self.ui.led_enable.setColor(self.ui.led_enable.BIG_RED)
+        #self.ui.led_enable.setChecked(False)
 
         self.ui.led_control.setColor(self.ui.led_control.YELLOW)
         self.ui.led_control.setEnabled(False)
@@ -2189,13 +2183,16 @@ class PluginWidget(QFrame):
         self.ui.edit_dialog = PluginEdit(self, self.fPluginId)
         self.ui.edit_dialog.hide()
 
-        self.connect(self.ui.led_enable, SIGNAL("clicked(bool)"), SLOT("slot_setActive(bool)"))
+        self.connect(self.ui.b_enable, SIGNAL("clicked(bool)"), SLOT("slot_setActive(bool)"))
         self.connect(self.ui.b_gui, SIGNAL("clicked(bool)"), SLOT("slot_guiClicked(bool)"))
         self.connect(self.ui.b_edit, SIGNAL("clicked(bool)"), SLOT("slot_editClicked(bool)"))
-        self.connect(self.ui.b_remove, SIGNAL("clicked()"), SLOT("slot_removeClicked()"))
+        self.connect(self.ui.b_up, SIGNAL("clicked()"), SLOT("slot_upClicked()"))
+        self.connect(self.ui.b_down, SIGNAL("clicked()"), SLOT("slot_downClicked()"))
+        self.connect(self.ui.b_restore, SIGNAL("clicked()"), SLOT("slot_restoreClicked()"))
+        self.connect(self.ui.b_close, SIGNAL("clicked()"), SLOT("slot_closeClicked()"))
 
         # FIXME
-        self.setMaximumHeight(48)
+        #self.setMaximumHeight(32)
 
     def idleFast(self):
         # Input peaks
@@ -2260,7 +2257,7 @@ class PluginWidget(QFrame):
         self.ui.b_gui.setEnabled(hints & PLUGIN_HAS_GUI)
 
     def setActive(self, active, sendGui=False, sendCallback=True):
-        if sendGui:      self.ui.led_enable.setChecked(active)
+        if sendGui:      self.ui.b_enable.setChecked(active)
         if sendCallback: Carla.host.set_active(self.fPluginId, active)
 
         if active:
@@ -2308,12 +2305,7 @@ class PluginWidget(QFrame):
     def paintEvent(self, event):
         painter = QPainter(self)
 
-        areaX = self.ui.area_right.x()
-
-        # background
-        #painter.setPen(self.m_colorTop)
-        #painter.setBrush(self.m_colorTop)
-        #painter.drawRect(0, 0, areaX+40, self.height())
+        areaX = self.ui.led_control.x()
 
         # bottom line
         painter.setPen(self.fColorBottom)
@@ -2359,7 +2351,19 @@ class PluginWidget(QFrame):
         self.ui.edit_dialog.setVisible(show)
 
     @pyqtSlot()
-    def slot_removeClicked(self):
+    def slot_upClicked(self):
+        pass
+
+    @pyqtSlot()
+    def slot_downClicked(self):
+        pass
+
+    @pyqtSlot()
+    def slot_restoreClicked(self):
+        pass
+
+    @pyqtSlot()
+    def slot_closeClicked(self):
         Carla.host.remove_plugin(self.fPluginId)
 
 # ------------------------------------------------------------------------------------------------------------
@@ -3378,13 +3382,13 @@ class PluginDatabaseW(QDialog):
 #app.setApplicationName("Carla")
 #app.setApplicationVersion(VERSION)
 #app.setOrganizationName("falkTX")
-##gui = CarlaAboutW(None)
-##gui = PluginParameter(None, ptest, 0, 0)
+#gui = CarlaAboutW(None)
+#gui = PluginParameter(None, ptest, 0, 0)
 #gui = PluginEdit(None, 0)
-##gui = PluginWidget(None, 0)
-##gui = PluginDatabaseW(None)
+#gui = PluginWidget(None, 0)
+#gui = PluginDatabaseW(None)
 #gui.show()
-##if gui.exec_():
-    ##print(gui.fRetPlugin)
-##gui = PluginRefreshW(None)
+#if gui.exec_():
+    #print(gui.fRetPlugin)
+#gui = PluginRefreshW(None)
 #app.exec_()

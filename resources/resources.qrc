@@ -37,7 +37,21 @@
         <file>scalable/carla-control.svg</file>
 
         <file>bitmaps/carla_about.png</file>
-        <file>bitmaps/carla_knobs1.png</file>
+        <file>bitmaps/button_close.png</file>
+        <file>bitmaps/button_close_hover.png</file>
+        <file>bitmaps/button_close_pressed.png</file>
+        <file>bitmaps/button_down.png</file>
+        <file>bitmaps/button_down_hover.png</file>
+        <file>bitmaps/button_edit.png</file>
+        <file>bitmaps/button_edit_down.png</file>
+        <file>bitmaps/button_edit_hover.png</file>
+        <file>bitmaps/button_gui.png</file>
+        <file>bitmaps/button_gui_down.png</file>
+        <file>bitmaps/button_gui_hover.png</file>
+        <file>bitmaps/button_restore.png</file>
+        <file>bitmaps/button_restore_hover.png</file>
+        <file>bitmaps/button_up.png</file>
+        <file>bitmaps/button_up_hover.png</file>
         <file>bitmaps/dial_01.png</file>
         <file>bitmaps/dial_01d.png</file>
         <file>bitmaps/dial_02.png</file>
