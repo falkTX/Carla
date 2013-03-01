@@ -227,14 +227,6 @@
     <addaction name="act_help_about"/>
     <addaction name="act_help_about_qt"/>
    </widget>
-   <widget class="QMenu" name="menu_Settings">
-    <property name="title">
-     <string>&amp;Settings</string>
-    </property>
-    <addaction name="act_settings_show_toolbar"/>
-    <addaction name="separator"/>
-    <addaction name="act_settings_configure"/>
-   </widget>
    <widget class="QMenu" name="menu_Engine">
     <property name="title">
      <string>&amp;Engine</string>
@@ -243,6 +235,15 @@
     <addaction name="act_engine_stop"/>
     <addaction name="separator"/>
     <addaction name="act_engine_configure"/>
+   </widget>
+   <widget class="QMenu" name="menu_Settings">
+    <property name="title">
+     <string>&amp;Settings</string>
+    </property>
+    <addaction name="act_settings_show_toolbar"/>
+    <addaction name="act_settings_show_transport"/>
+    <addaction name="separator"/>
+    <addaction name="act_settings_configure"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_Engine"/>
@@ -402,6 +403,17 @@
     <string>Configure Driver</string>
    </property>
   </action>
+  <action name="act_settings_show_transport">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show Transport bar</string>
+   </property>
+   <property name="iconText">
+    <string>Show Transport bar</string>
+   </property>
+  </action>
  </widget>
  <resources>
   <include location="../resources.qrc"/>
@@ -436,6 +448,22 @@
     <hint type="destinationlabel">
      <x>354</x>
      <y>35</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>act_settings_show_transport</sender>
+   <signal>triggered(bool)</signal>
+   <receiver>frame_transport</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>377</x>
+     <y>65</y>
     </hint>
    </hints>
   </connection>
