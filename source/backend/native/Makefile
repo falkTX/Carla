@@ -31,6 +31,7 @@ OBJS  = \
 	bypass.c.o \
 	midi-split.c.o \
 	midi-through.c.o \
+	midi-transpose.c.o \
 	nekofilter.c.o
 
 # DISTRHO plugins

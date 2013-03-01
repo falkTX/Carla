@@ -197,6 +197,7 @@ void carla_register_native_plugin(const PluginDescriptor* desc);
 void carla_register_native_plugin_bypass();
 void carla_register_native_plugin_midiSplit();
 void carla_register_native_plugin_midiThrough();
+void carla_register_native_plugin_midiTranspose();
 void carla_register_native_plugin_nekofilter();
 
 // DISTRHO plugins

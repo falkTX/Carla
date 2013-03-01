@@ -474,6 +474,7 @@ QString getXMLFromSaveState(const SaveState& saveState)
         case PLUGIN_SF2:
         case PLUGIN_SFZ:
             info += QString("   <Binary>%1</Binary>\n").arg(xmlSafeString(saveState.binary, true));
+            info += QString("   <Label>%1</Label>\n").arg(xmlSafeString(saveState.label, true));
             break;
         }
 

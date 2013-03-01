@@ -28,7 +28,7 @@ static PluginHandle midiSplit_instantiate(const PluginDescriptor* _this_, HostDe
 {
     MidiSplitHandle* const handle = (MidiSplitHandle*)malloc(sizeof(MidiSplitHandle));
 
-    if (handle)
+    if (handle != NULL)
     {
         handle->host = host;
         return handle;
@@ -66,7 +66,7 @@ static void midiSplit_process(PluginHandle handle, float** inBuffer, float** out
         tmpEvent.data[1] = midiEvent->data[1];
         tmpEvent.data[2] = midiEvent->data[2];
 
-        host->write_midi_event(host, &tmpEvent);
+        host->write_midi_event(host->handle, &tmpEvent);
     }
 
     return;

@@ -28,7 +28,7 @@ static PluginHandle midiThrough_instantiate(const PluginDescriptor* _this_, Host
 {
     MidiThroughHandle* const handle = (MidiThroughHandle*)malloc(sizeof(MidiThroughHandle));
 
-    if (handle)
+    if (handle != NULL)
     {
         handle->host = host;
         return handle;
@@ -50,7 +50,7 @@ static void midiThrough_process(PluginHandle handle, float** inBuffer, float** o
     HostDescriptor* const host = ((MidiThroughHandle*)handle)->host;
 
     for (uint32_t i=0; i < midiEventCount; i++)
-        host->write_midi_event(host, &midiEvents[i]);
+        host->write_midi_event(host->handle, &midiEvents[i]);
 
     return;
 

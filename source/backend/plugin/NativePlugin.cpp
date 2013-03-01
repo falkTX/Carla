@@ -1165,7 +1165,7 @@ public:
                     {
                         if (fMidiEventCount > 0)
                         {
-                            carla_zeroMem(fMidiEvents, sizeof(::MidiEvent)*fMidiEventCount);
+                            //carla_zeroMem(fMidiEvents, sizeof(::MidiEvent)*fMidiEventCount);
                             fMidiEventCount = 0;
                         }
 
@@ -1385,7 +1385,7 @@ public:
                         continue;
 
                     // Fix bad note-off
-                    if (MIDI_IS_STATUS_NOTE_ON(status) && midiEvent.data[2] == 0)
+                    if (status == MIDI_STATUS_NOTE_ON && midiEvent.data[2] == 0)
                         status -= 0x10;
 
                     fMidiEvents[fMidiEventCount].port = 0;
@@ -1396,6 +1396,11 @@ public:
                     fMidiEvents[fMidiEventCount].data[2] = midiEvent.data[2];
 
                     fMidiEventCount += 1;
+
+                    if (status == MIDI_STATUS_NOTE_ON)
+                        postponeRtEvent(kPluginPostRtEventNoteOn, channel, midiEvent.data[1], midiEvent.data[2]);
+                    else if (status == MIDI_STATUS_NOTE_OFF)
+                        postponeRtEvent(kPluginPostRtEventNoteOff, channel, midiEvent.data[1], 0.0);
 
                     break;
                 }
@@ -1421,31 +1426,9 @@ public:
         CARLA_PROCESS_CONTINUE_CHECK;
 
         // --------------------------------------------------------------------------------------------------------
-        // MIDI Output
+        // Control and MIDI Output
 
-        if (fMidiOut.count > 0)
-        {
-            // reverse lookup
-            for (uint32_t i = (MAX_MIDI_EVENTS*2)-1; i >= fMidiEventCount; i--)
-            {
-                if (fMidiEvents[i].data[0] == 0)
-                    break;
-
-                const uint8_t channel = MIDI_GET_CHANNEL_FROM_DATA(fMidiEvents[i].data);
-                const uint8_t port    = fMidiEvents[i].port;
-
-                if (port < fMidiOut.count)
-                    fMidiOut.ports[port]->writeMidiEvent(fMidiEvents[i].time, channel, port, fMidiEvents[i].data, 3);
-            }
-
-        } // End of MIDI Output
-
-        CARLA_PROCESS_CONTINUE_CHECK;
-
-        // --------------------------------------------------------------------------------------------------------
-        // Control Output
-
-        if (kData->event.portOut != nullptr)
+        if (fMidiOut.count > 0 || kData->event.portOut != nullptr)
         {
             float value, curValue;
 
@@ -1464,7 +1447,22 @@ public:
                 }
             }
 
-        } // End of Control Output
+            // reverse lookup MIDI events
+            for (k = (MAX_MIDI_EVENTS*2)-1; k >= fMidiEventCount; k--)
+            {
+                if (fMidiEvents[k].data[0] == 0)
+                    break;
+
+                const uint8_t channel = MIDI_GET_CHANNEL_FROM_DATA(fMidiEvents[k].data);
+                const uint8_t port    = fMidiEvents[k].port;
+
+                if (kData->event.portOut != nullptr)
+                    kData->event.portOut->writeMidiEvent(fMidiEvents[k].time, channel, port, fMidiEvents[k].data, 3);
+                else if (port < fMidiOut.count)
+                    fMidiOut.ports[port]->writeMidiEvent(fMidiEvents[k].time, channel, port, fMidiEvents[k].data, 3);
+            }
+
+        } // End of Control and MIDI Output
 
         // --------------------------------------------------------------------------------------------------------
 
@@ -1751,7 +1749,7 @@ protected:
     bool handleWriteMidiEvent(const ::MidiEvent* const event)
     {
         CARLA_ASSERT(fEnabled);
-        CARLA_ASSERT(fMidiOut.count > 0);
+        CARLA_ASSERT(fMidiOut.count > 0 || kData->event.portOut != nullptr);
         CARLA_ASSERT(event != nullptr);
         CARLA_ASSERT(fIsProcessing);
 
@@ -1771,7 +1769,7 @@ protected:
             return false;
 
         // reverse-find first free event, and put it there
-        for (uint32_t i=fMidiEventCount-1; i >= fMidiEventCount; i--)
+        for (uint32_t i=(MAX_MIDI_EVENTS*2)-1; i >= fMidiEventCount; i--)
         {
             if (fMidiEvents[i].data[0] == 0)
             {
@@ -1928,6 +1926,7 @@ private:
         carla_register_native_plugin_bypass();
         carla_register_native_plugin_midiSplit();
         carla_register_native_plugin_midiThrough();
+        carla_register_native_plugin_midiTranspose();
         carla_register_native_plugin_nekofilter();
 
         carla_register_native_plugin_3BandEQ();
