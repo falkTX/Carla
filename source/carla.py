@@ -660,11 +660,11 @@ class CarlaMainW(QMainWindow):
         self.connect(self, SIGNAL("PatchbayClientAddedCallback(int, QString)"), SLOT("slot_handlePatchbayClientAddedCallback(int, QString)"))
         self.connect(self, SIGNAL("PatchbayClientRemovedCallback(int)"), SLOT("slot_handlePatchbayClientRemovedCallback(int)"))
         self.connect(self, SIGNAL("PatchbayClientRenamedCallback(int, QString)"), SLOT("slot_handlePatchbayClientRenamedCallback(int, QString)"))
-        self.connect(self, SIGNAL("PatchbayPortAddedCallback(int, int, QString)"), SLOT("slot_handlePatchbayPortAddedCallback(int, int, QString)"))
+        self.connect(self, SIGNAL("PatchbayPortAddedCallback(int, int, int, QString)"), SLOT("slot_handlePatchbayPortAddedCallback(int, int, int, QString)"))
         self.connect(self, SIGNAL("PatchbayPortRemovedCallback(int)"), SLOT("slot_handlePatchbayPortRemovedCallback(int)"))
         self.connect(self, SIGNAL("PatchbayPortRenamedCallback(int, QString)"), SLOT("slot_handlePatchbayPortRenamedCallback(int, QString)"))
-        self.connect(self, SIGNAL("PatchbayConnectionAddedCallback(int, int)"), SLOT("slot_handlePatchbayConnectionAddedCallback(int, int)"))
-        self.connect(self, SIGNAL("PatchbayConnectionRemovedCallback(int, int)"), SLOT("slot_handlePatchbayConnectionRemovedCallback(int, int)"))
+        self.connect(self, SIGNAL("PatchbayConnectionAddedCallback(int, int, int)"), SLOT("slot_handlePatchbayConnectionAddedCallback(int, int, int)"))
+        self.connect(self, SIGNAL("PatchbayConnectionRemovedCallback(int)"), SLOT("slot_handlePatchbayConnectionRemovedCallback(int)"))
         #self.connect(self, SIGNAL("NSM_AnnounceCallback()"), SLOT("slot_handleNSM_AnnounceCallback()"))
         #self.connect(self, SIGNAL("NSM_Open1Callback()"), SLOT("slot_handleNSM_Open1Callback()"))
         #self.connect(self, SIGNAL("NSM_Open2Callback()"), SLOT("slot_handleNSM_Open2Callback()"))
@@ -838,6 +838,8 @@ class CarlaMainW(QMainWindow):
         self.ui.ch_transport.blockSignals(True)
         self.ui.ch_transport.clear()
         self.ui.ch_transport.blockSignals(False)
+
+        patchcanvas.clear()
 
     def loadProject(self, filename):
         self.fProjectFilename = filename
@@ -1232,10 +1234,23 @@ class CarlaMainW(QMainWindow):
     def slot_handlePatchbayClientRenamedCallback(self, clientId, newClientName):
         patchcanvas.renameGroup(clientId, newClientName)
 
-    @pyqtSlot(int, int, str)
-    def slot_handlePatchbayPortAddedCallback(self, clientId, portId, portName):
-        # FIXME - needs mode and type
-        patchcanvas.addPort(clientId, portId, portName, 0, 0)
+    @pyqtSlot(int, int, int, str)
+    def slot_handlePatchbayPortAddedCallback(self, clientId, portId, portFlags, portName):
+        if (portFlags & PATCHBAY_PORT_IS_INPUT):
+            portMode = patchcanvas.PORT_MODE_INPUT
+        elif (portFlags & PATCHBAY_PORT_IS_OUTPUT):
+            portMode = patchcanvas.PORT_MODE_OUTPUT
+        else:
+            portMode = patchcanvas.PORT_MODE_NULL
+
+        if (portFlags & PATCHBAY_PORT_IS_AUDIO):
+            portType = patchcanvas.PORT_TYPE_AUDIO_JACK
+        elif (portFlags & PATCHBAY_PORT_IS_MIDI):
+            portType = patchcanvas.PORT_TYPE_MIDI_JACK
+        else:
+            portType = patchcanvas.PORT_TYPE_NULL
+
+        patchcanvas.addPort(clientId, portId, portName, portMode, portType)
 
     @pyqtSlot(int)
     def slot_handlePatchbayPortRemovedCallback(self, portId):
@@ -1245,14 +1260,13 @@ class CarlaMainW(QMainWindow):
     def slot_handlePatchbayPortRenamedCallback(self, portId, newPortName):
         patchcanvas.renamePort(portId, newPortName)
 
-    @pyqtSlot(int, int)
-    def slot_handlePatchbayConnectionAddedCallback(self, portOutId, portInId):
-        patchcanvas.connectPorts(0, portOutId, portInId)
+    @pyqtSlot(int, int, int)
+    def slot_handlePatchbayConnectionAddedCallback(self, connectionId, portOutId, portInId):
+        patchcanvas.connectPorts(connectionId, portOutId, portInId)
 
-    @pyqtSlot(int, int)
-    def slot_handlePatchbayConnectionRemovedCallback(self, portOutId, portInId):
-        # FIXME
-        patchcanvas.disconnectPorts(0)
+    @pyqtSlot(int)
+    def slot_handlePatchbayConnectionRemovedCallback(self, connectionId):
+        patchcanvas.disconnectPorts(connectionId)
 
     @pyqtSlot(str)
     def slot_handleErrorCallback(self, error):
@@ -1411,7 +1425,6 @@ class CarlaMainW(QMainWindow):
 
         self.stopEngine()
 
-        patchcanvas.clear()
         QMainWindow.closeEvent(self, event)
 
 # ------------------------------------------------------------------------------------------------
@@ -1464,15 +1477,15 @@ def engineCallback(ptr, action, pluginId, value1, value2, value3, valueStr):
     elif action == CALLBACK_PATCHBAY_CLIENT_RENAMED:
         Carla.gui.emit(SIGNAL("PatchbayClientRenamedCallback(int, QString)"), value1, cString(valueStr))
     elif action == CALLBACK_PATCHBAY_PORT_ADDED:
-        Carla.gui.emit(SIGNAL("PatchbayPortAddedCallback(int, int, QString)"), value1, value2, cString(valueStr))
+        Carla.gui.emit(SIGNAL("PatchbayPortAddedCallback(int, int, int, QString)"), value1, value2, value3, cString(valueStr))
     elif action == CALLBACK_PATCHBAY_PORT_REMOVED:
         Carla.gui.emit(SIGNAL("PatchbayPortRemovedCallback(int)"), value1)
     elif action == CALLBACK_PATCHBAY_PORT_RENAMED:
         Carla.gui.emit(SIGNAL("PatchbayPortRenamedCallback(int, QString)"), value1, cString(valueStr))
     elif action == CALLBACK_PATCHBAY_CONNECTION_ADDED:
-        Carla.gui.emit(SIGNAL("PatchbayConnectionAddedCallback(int, int)"), value1, value2)
+        Carla.gui.emit(SIGNAL("PatchbayConnectionAddedCallback(int, int, int)"), value1, value2, value3)
     elif action == CALLBACK_PATCHBAY_CONNECTION_REMOVED:
-        Carla.gui.emit(SIGNAL("PatchbayConnectionRemovedCallback(int, int)"), value1, value2)
+        Carla.gui.emit(SIGNAL("PatchbayConnectionRemovedCallback(int)"), value1)
     #elif action == CALLBACK_NSM_ANNOUNCE:
         #Carla.gui._nsmAnnounce2str = cString(Carla.host.get_last_error())
         #Carla.gui.emit(SIGNAL("NSM_AnnounceCallback()"))

@@ -497,7 +497,10 @@ public:
 #ifdef BUILD_BRIDGE
           fHasQuit(false)
 #else
-          fRackPorts{nullptr}
+          fRackPorts{nullptr},
+          fLastGroupId(0),
+          fLastPortId(0),
+          fLastConnectionId(0)
 #endif
     {
         carla_debug("CarlaEngineJack::CarlaEngineJack()");
@@ -513,6 +516,12 @@ public:
     {
         carla_debug("CarlaEngineJack::~CarlaEngineJack()");
         CARLA_ASSERT(fClient == nullptr);
+
+#ifndef BUILD_BRIDGE
+        fUsedGroupNames.clear();
+        fUsedPortNames.clear();
+        fUsedConnections.clear();
+#endif
     }
 
     // -------------------------------------------------------------------
@@ -547,6 +556,14 @@ public:
         carla_zeroStruct<jack_position_t>(fTransportPos);
 
 #ifndef BUILD_BRIDGE
+        fLastGroupId = 0;
+        fLastPortId  = 0;
+        fLastConnectionId = 0;
+
+        fUsedGroupNames.clear();
+        fUsedPortNames.clear();
+        fUsedConnections.clear();
+
         fClient = jackbridge_client_open(clientName, JackNullOption, nullptr);
 
         if (fClient != nullptr)
@@ -570,6 +587,14 @@ public:
                 fRackPorts[rackPortEventIn]   = jackbridge_port_register(fClient, "events-in",  JACK_DEFAULT_MIDI_TYPE, JackPortIsInput, 0);
                 fRackPorts[rackPortEventOut]  = jackbridge_port_register(fClient, "events-out", JACK_DEFAULT_MIDI_TYPE, JackPortIsOutput, 0);
             }
+
+            // TODO - update jackbridge
+            jack_set_client_registration_callback(fClient, carla_jack_client_registration_callback, this);
+            jack_set_port_registration_callback(fClient, carla_jack_port_registration_callback, this);
+            jack_set_port_connect_callback(fClient, carla_jack_port_connect_callback, this);
+
+            if (jack_set_port_rename_callback)
+              jack_set_port_rename_callback(fClient, carla_jack_port_rename_callback, this);
 
             if (jackbridge_activate(fClient) == 0)
             {
@@ -639,6 +664,10 @@ public:
             setLastError("Failed to deactivate the JACK client");
 
         fClient = nullptr;
+
+        fUsedGroupNames.clear();
+        fUsedPortNames.clear();
+        fUsedConnections.clear();
 #endif
         return false;
     }
@@ -690,9 +719,6 @@ public:
             jackbridge_set_latency_callback(client, carla_jack_latency_callback_plugin, plugin);
         }
 #endif
-
-        static int test = 0;
-        callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, test++, 0, 0, plugin->name());
 
         return new CarlaEngineJackClient(kEngineTypeJack, fOptions.processMode, client);
     }
@@ -1047,6 +1073,113 @@ protected:
         }
     }
 
+#ifndef BUILD_BRIDGE
+    void handleJackClientRegistrationCallback(const char* name, bool reg)
+    {
+        if (reg)
+        {
+            GroupNameToId groupNameToId;
+            groupNameToId.id   = fLastGroupId;
+            groupNameToId.name = name;
+
+            callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, fLastGroupId, 0, 0.0f, name);
+            fUsedGroupNames.append(groupNameToId);
+            fLastGroupId++;
+        }
+        else
+        {
+            for (int i=0, count=fUsedGroupNames.count(); i < count; i++)
+            {
+                if (fUsedGroupNames[i].name == name)
+                {
+                    callback(CALLBACK_PATCHBAY_CLIENT_REMOVED, 0, fUsedGroupNames[i].id, 0, 0.0f, nullptr);
+                    fUsedGroupNames.takeAt(i);
+                    break;
+                }
+            }
+        }
+    }
+
+    void handleJackPortRegistrationCallback(jack_port_id_t port, bool reg)
+    {
+        jack_port_t* jackPort = jack_port_by_id(fClient, port);
+
+        QString fullName(jack_port_name(jackPort));
+        QString groupName = fullName.split(":").at(0);
+        int     groupId   = getGroupId(groupName);
+
+        const char* portName = jack_port_short_name(jackPort);
+
+        if (reg)
+        {
+            bool portIsInput = (jack_port_flags(jackPort) & JackPortIsInput);
+            bool portIsAudio = (std::strcmp(jack_port_type(jackPort), JACK_DEFAULT_AUDIO_TYPE) == 0);
+
+            unsigned int portFlags = 0x0;
+            portFlags |= portIsInput ? PATCHBAY_PORT_IS_INPUT : PATCHBAY_PORT_IS_OUTPUT;
+            portFlags |= portIsAudio ? PATCHBAY_PORT_IS_AUDIO : PATCHBAY_PORT_IS_MIDI;
+
+            PortNameToId portNameToId;
+            portNameToId.groupId = groupId;
+            portNameToId.portId  = fLastPortId;
+            portNameToId.name    = portName;
+
+            fUsedPortNames.append(portNameToId);
+            callback(CALLBACK_PATCHBAY_PORT_ADDED, 0, groupId, fLastPortId, portFlags, portName);
+            fLastPortId++;
+        }
+        else
+        {
+            for (int i=0, count=fUsedPortNames.count(); i < count; i++)
+            {
+                if (fUsedPortNames[i].groupId == groupId && fUsedPortNames[i].name == portName)
+                {
+                    callback(CALLBACK_PATCHBAY_PORT_REMOVED, 0, fUsedPortNames[i].portId, 0, 0.0f, nullptr);
+                    fUsedPortNames.takeAt(i);
+                    break;
+                }
+            }
+        }
+    }
+
+    void handleJackPortConnectCallback(jack_port_id_t a, jack_port_id_t b, bool connect)
+    {
+        jack_port_t* jackPortA = jack_port_by_id(fClient, a);
+        jack_port_t* jackPortB = jack_port_by_id(fClient, b);
+
+        int portIdA = getPortId(QString(jack_port_name(jackPortA)));
+        int portIdB = getPortId(QString(jack_port_name(jackPortB)));
+
+        if (connect)
+        {
+            ConnectionToId connectionToId;
+            connectionToId.id      = fLastConnectionId;
+            connectionToId.portOut = portIdA;
+            connectionToId.portIn  = portIdB;
+
+            fUsedConnections.append(connectionToId);
+            callback(CALLBACK_PATCHBAY_CONNECTION_ADDED, 0, fLastConnectionId, portIdA, portIdB, nullptr);
+            fLastConnectionId++;
+        }
+        else
+        {
+            for (int i=0, count=fUsedConnections.count(); i < count; i++)
+            {
+                if (fUsedConnections[i].portOut == portIdA && fUsedConnections[i].portIn == portIdB)
+                {
+                    callback(CALLBACK_PATCHBAY_CONNECTION_REMOVED, 0, fUsedConnections[i].id, 0, 0.0f, nullptr);
+                    fUsedConnections.takeAt(i);
+                    break;
+                }
+            }
+        }
+    }
+
+    int handleJackPortRenameCallback(jack_port_id_t port, const char* oldName, const char* newName)
+    {
+    }
+#endif
+
     void handleJackShutdownCallback()
     {
         for (unsigned int i=0; i < kData->curPluginCount; i++)
@@ -1085,6 +1218,61 @@ private:
     };
 
     jack_port_t* fRackPorts[rackPortCount];
+
+    struct GroupNameToId {
+        int id;
+        QString name;
+    };
+
+    struct PortNameToId {
+        int groupId;
+        int portId;
+        QString name;
+    };
+
+    struct ConnectionToId {
+        int id;
+        int portOut;
+        int portIn;
+    };
+
+    int fLastGroupId;
+    int fLastPortId;
+    int fLastConnectionId ;
+
+    QList<GroupNameToId>  fUsedGroupNames;
+    QList<PortNameToId>   fUsedPortNames;
+    QList<ConnectionToId> fUsedConnections;
+
+    int getGroupId(QString groupName)
+    {
+        for (int i=0, count=fUsedGroupNames.count(); i < count; i++)
+        {
+            if (fUsedGroupNames[i].name == groupName)
+            {
+                return fUsedGroupNames[i].id;
+            }
+        }
+        return -1;
+    }
+
+    int getPortId(QString fullPortName)
+    {
+        QString groupName = fullPortName.split(":").at(0);
+        QString portName  = fullPortName.replace(groupName+":", "");
+
+        int groupId = getGroupId(groupName);
+
+        for (int i=0, count=fUsedPortNames.count(); i < count; i++)
+        {
+            if (fUsedPortNames[i].groupId == groupId && fUsedPortNames[i].name == portName)
+            {
+                return fUsedPortNames[i].portId;
+            }
+        }
+
+        return -1;
+    }
 #endif
 
     // -------------------------------------
@@ -1216,6 +1404,29 @@ private:
     {
         handlePtr->handleJackLatencyCallback(mode);
     }
+
+#ifndef BUILD_BRIDGE
+    static void carla_jack_client_registration_callback(const char* name, int reg, void* arg)
+    {
+        handlePtr->handleJackClientRegistrationCallback(name, (reg != 0));
+    }
+
+    static void carla_jack_port_registration_callback(jack_port_id_t port, int reg, void* arg)
+    {
+        handlePtr->handleJackPortRegistrationCallback(port, (reg != 0));
+    }
+
+    static void carla_jack_port_connect_callback(jack_port_id_t a, jack_port_id_t b, int connect, void* arg)
+    {
+        handlePtr->handleJackPortConnectCallback(a, b, (connect != 0));
+    }
+
+    static int carla_jack_port_rename_callback(jack_port_id_t port, const char* oldName, const char* newName, void* arg)
+    {
+        handlePtr->handleJackPortRenameCallback(port, oldName, newName);
+        return 0;
+    }
+#endif
 
     static void carla_jack_shutdown_callback(void* arg)
     {

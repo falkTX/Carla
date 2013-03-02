@@ -98,6 +98,18 @@ const unsigned int PARAMETER_USES_CUSTOM_TEXT = 0x80; //!< Parameter uses custom
 /**@}*/
 
 /*!
+ * @defgroup PatchbayPortHints Patchbay Port Hints
+ *
+ * Various patchbay port hints.
+ * @{
+ */
+const unsigned int PATCHBAY_PORT_IS_INPUT  = 0x1; //!< Patchbay port is input.
+const unsigned int PATCHBAY_PORT_IS_OUTPUT = 0x2; //!< Patchbay port is output.
+const unsigned int PATCHBAY_PORT_IS_AUDIO  = 0x4; //!< Patchbay port is of Audio type.
+const unsigned int PATCHBAY_PORT_IS_MIDI   = 0x8; //!< Patchbay port is of MIDI type.
+/**@}*/
+
+/*!
  * @defgroup CustomDataTypes Custom Data types
  *
  * The type defines how the \param value in CustomData is stored.
