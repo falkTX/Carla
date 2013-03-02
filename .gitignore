@@ -30,6 +30,7 @@ ui_*.h
 # Python files
 *.pyc
 ui_*.py
+source/canvaspreviewframe.py
 source/digitalpeakmeter.py
 source/ledbutton.py
 source/paramspinbox.py
