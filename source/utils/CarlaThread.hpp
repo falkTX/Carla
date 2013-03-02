@@ -184,8 +184,11 @@ public:
             cthread = nullptr;
         }
 #else
-        pthread_join(pthreadId, nullptr);
-        _zero();
+        if (! _isNull())
+        {
+            pthread_join(pthreadId, nullptr);
+            _zero();
+        }
 #endif
         return false;
     }

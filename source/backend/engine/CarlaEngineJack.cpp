@@ -691,6 +691,9 @@ public:
         }
 #endif
 
+        static int test = 0;
+        callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, test++, 0, 0, plugin->name());
+
         return new CarlaEngineJackClient(kEngineTypeJack, fOptions.processMode, client);
     }
 

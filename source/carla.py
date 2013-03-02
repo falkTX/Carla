@@ -19,19 +19,32 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from PyQt4.QtCore import Qt, QSize
-from PyQt4.QtGui import QApplication, QDialogButtonBox, QMainWindow
+from PyQt4.QtCore import Qt, QPointF, QSize
+from PyQt4.QtGui import QApplication, QDialogButtonBox, QMainWindow, QResizeEvent
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom Stuff)
 
+import patchcanvas
 import ui_carla
 import ui_carla_settings
 from carla_backend import * # FIXME, remove later
-#from carla_shared import *
+from carla_shared import *
 
 # ------------------------------------------------------------------------------------------------------------
-# Global variables
+# Try Import OpenGL
+
+try:
+    from PyQt4.QtOpenGL import QGLWidget
+    hasGL = True
+except:
+    hasGL = False
+
+# ------------------------------------------------------------------------------------------------------------
+# Static Variables
+
+DEFAULT_CANVAS_WIDTH  = 3100
+DEFAULT_CANVAS_HEIGHT = 2400
 
 # Tab indexes
 TAB_INDEX_MAIN         = 0
@@ -545,7 +558,49 @@ class CarlaMainW(QMainWindow):
         self.ui.act_engine_stop.setEnabled(False)
         self.ui.act_plugin_remove_all.setEnabled(False)
 
-        self.resize(self.width(), 0)
+        # FIXME: Qt4 needs this so it properly create & resize the canvas
+        self.ui.tabWidget.setCurrentIndex(1)
+        self.ui.tabWidget.setCurrentIndex(0)
+
+        # -------------------------------------------------------------
+        # Set-up Canvas
+
+        self.scene = patchcanvas.PatchScene(self, self.ui.graphicsView)
+        self.ui.graphicsView.setScene(self.scene)
+        #self.ui.graphicsView.setRenderHint(QPainter.Antialiasing, bool(self.fSavedSettings["Canvas/Antialiasing"] == patchcanvas.ANTIALIASING_FULL))
+        #if self.fSavedSettings["Canvas/UseOpenGL"] and hasGL:
+            #self.ui.graphicsView.setViewport(QGLWidget(self.ui.graphicsView))
+            #self.ui.graphicsView.setRenderHint(QPainter.HighQualityAntialiasing, self.fSavedSettings["Canvas/HighQualityAntialiasing"])
+
+        pOptions = patchcanvas.options_t()
+        pOptions.theme_name       = self.fSavedSettings["Canvas/Theme"]
+        pOptions.auto_hide_groups = self.fSavedSettings["Canvas/AutoHideGroups"]
+        pOptions.use_bezier_lines = self.fSavedSettings["Canvas/UseBezierLines"]
+        pOptions.antialiasing     = self.fSavedSettings["Canvas/Antialiasing"]
+        pOptions.eyecandy         = self.fSavedSettings["Canvas/EyeCandy"]
+
+        pFeatures = patchcanvas.features_t()
+        pFeatures.group_info   = False
+        pFeatures.group_rename = False
+        pFeatures.port_info    = False
+        pFeatures.port_rename  = False
+        pFeatures.handle_group_pos = True
+
+        patchcanvas.setOptions(pOptions)
+        patchcanvas.setFeatures(pFeatures)
+        patchcanvas.init("Carla", self.scene, canvasCallback, True)
+
+        patchcanvas.setCanvasSize(0, 0, DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT)
+        patchcanvas.setInitialPos(DEFAULT_CANVAS_WIDTH / 2, DEFAULT_CANVAS_HEIGHT / 2)
+        self.ui.graphicsView.setSceneRect(0, 0, DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT)
+
+        # -------------------------------------------------------------
+        # Set-up Canvas Preview
+
+        self.ui.miniCanvasPreview.setRealParent(self)
+        self.ui.miniCanvasPreview.setViewTheme(patchcanvas.canvas.theme.rubberband_brush, patchcanvas.canvas.theme.rubberband_pen.color())
+        self.ui.miniCanvasPreview.init(self.scene, DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT)
+        QTimer.singleShot(100, self, SLOT("slot_miniCanvasInit()"))
 
         #self.m_fakeEdit = PluginEdit(self, -1)
         #self.m_curEdit  = self.m_fakeEdit
@@ -574,6 +629,14 @@ class CarlaMainW(QMainWindow):
         self.connect(self.ui.b_transport_play, SIGNAL("clicked(bool)"), SLOT("slot_transportPlayPause(bool)"))
         self.connect(self.ui.b_transport_stop, SIGNAL("clicked()"), SLOT("slot_transportStop()"))
 
+        self.connect(self.ui.miniCanvasPreview, SIGNAL("miniCanvasMoved(double, double)"), SLOT("slot_miniCanvasMoved(double, double)"))
+
+        self.connect(self.ui.graphicsView.horizontalScrollBar(), SIGNAL("valueChanged(int)"), SLOT("slot_horizontalScrollBarChanged(int)"))
+        self.connect(self.ui.graphicsView.verticalScrollBar(), SIGNAL("valueChanged(int)"), SLOT("slot_verticalScrollBarChanged(int)"))
+
+        self.connect(self.scene, SIGNAL("sceneGroupMoved(int, int, QPointF)"), SLOT("slot_canvasItemMoved(int, int, QPointF)"))
+        self.connect(self.scene, SIGNAL("scaleChanged(double)"), SLOT("slot_canvasScaleChanged(double)"))
+
         self.connect(self, SIGNAL("SIGUSR1()"), SLOT("slot_handleSIGUSR1()"))
         self.connect(self, SIGNAL("SIGTERM()"), SLOT("slot_handleSIGTERM()"))
 
@@ -594,6 +657,14 @@ class CarlaMainW(QMainWindow):
         self.connect(self, SIGNAL("ReloadParametersCallback(int)"), SLOT("slot_handleReloadParametersCallback(int)"))
         self.connect(self, SIGNAL("ReloadProgramsCallback(int)"), SLOT("slot_handleReloadProgramsCallback(int)"))
         self.connect(self, SIGNAL("ReloadAllCallback(int)"), SLOT("slot_handleReloadAllCallback(int)"))
+        self.connect(self, SIGNAL("PatchbayClientAddedCallback(int, QString)"), SLOT("slot_handlePatchbayClientAddedCallback(int, QString)"))
+        self.connect(self, SIGNAL("PatchbayClientRemovedCallback(int)"), SLOT("slot_handlePatchbayClientRemovedCallback(int)"))
+        self.connect(self, SIGNAL("PatchbayClientRenamedCallback(int, QString)"), SLOT("slot_handlePatchbayClientRenamedCallback(int, QString)"))
+        self.connect(self, SIGNAL("PatchbayPortAddedCallback(int, int, QString)"), SLOT("slot_handlePatchbayPortAddedCallback(int, int, QString)"))
+        self.connect(self, SIGNAL("PatchbayPortRemovedCallback(int)"), SLOT("slot_handlePatchbayPortRemovedCallback(int)"))
+        self.connect(self, SIGNAL("PatchbayPortRenamedCallback(int, QString)"), SLOT("slot_handlePatchbayPortRenamedCallback(int, QString)"))
+        self.connect(self, SIGNAL("PatchbayConnectionAddedCallback(int, int)"), SLOT("slot_handlePatchbayConnectionAddedCallback(int, int)"))
+        self.connect(self, SIGNAL("PatchbayConnectionRemovedCallback(int, int)"), SLOT("slot_handlePatchbayConnectionRemovedCallback(int, int)"))
         #self.connect(self, SIGNAL("NSM_AnnounceCallback()"), SLOT("slot_handleNSM_AnnounceCallback()"))
         #self.connect(self, SIGNAL("NSM_Open1Callback()"), SLOT("slot_handleNSM_Open1Callback()"))
         #self.connect(self, SIGNAL("NSM_Open2Callback()"), SLOT("slot_handleNSM_Open2Callback()"))
@@ -607,6 +678,53 @@ class CarlaMainW(QMainWindow):
             #Carla.host.nsm_announce(NSM_URL, os.getpid())
         #else:
         QTimer.singleShot(0, self, SLOT("slot_engineStart()"))
+
+    @pyqtSlot(float)
+    def slot_canvasScaleChanged(self, scale):
+        self.ui.miniCanvasPreview.setViewScale(scale)
+
+    @pyqtSlot(int, int, QPointF)
+    def slot_canvasItemMoved(self, group_id, split_mode, pos):
+        self.ui.miniCanvasPreview.update()
+
+    @pyqtSlot(int)
+    def slot_horizontalScrollBarChanged(self, value):
+        maximum = self.ui.graphicsView.horizontalScrollBar().maximum()
+        if maximum == 0:
+            xp = 0
+        else:
+            xp = float(value) / maximum
+        self.ui.miniCanvasPreview.setViewPosX(xp)
+
+    @pyqtSlot(int)
+    def slot_verticalScrollBarChanged(self, value):
+        maximum = self.ui.graphicsView.verticalScrollBar().maximum()
+        if maximum == 0:
+            yp = 0
+        else:
+            yp = float(value) / maximum
+        self.ui.miniCanvasPreview.setViewPosY(yp)
+
+    @pyqtSlot()
+    def slot_miniCanvasInit(self):
+        settings = QSettings()
+        self.ui.graphicsView.horizontalScrollBar().setValue(settings.value("HorizontalScrollBarValue", DEFAULT_CANVAS_WIDTH / 3, type=int))
+        self.ui.graphicsView.verticalScrollBar().setValue(settings.value("VerticalScrollBarValue", DEFAULT_CANVAS_HEIGHT * 3 / 8, type=int))
+
+    @pyqtSlot(float, float)
+    def slot_miniCanvasMoved(self, xp, yp):
+        self.ui.graphicsView.horizontalScrollBar().setValue(xp * DEFAULT_CANVAS_WIDTH)
+        self.ui.graphicsView.verticalScrollBar().setValue(yp * DEFAULT_CANVAS_HEIGHT)
+
+    @pyqtSlot()
+    def slot_miniCanvasCheckAll(self):
+        self.slot_miniCanvasCheckSize()
+        self.slot_horizontalScrollBarChanged(self.ui.graphicsView.horizontalScrollBar().value())
+        self.slot_verticalScrollBarChanged(self.ui.graphicsView.verticalScrollBar().value())
+
+    @pyqtSlot()
+    def slot_miniCanvasCheckSize(self):
+        self.ui.miniCanvasPreview.setViewSize(float(self.ui.graphicsView.width()) / DEFAULT_CANVAS_WIDTH, float(self.ui.graphicsView.height()) / DEFAULT_CANVAS_HEIGHT)
 
     def startEngine(self, clientName = "Carla"):
         # ---------------------------------------------
@@ -1102,6 +1220,40 @@ class CarlaMainW(QMainWindow):
 
         pwidget.ui.edit_dialog.reloadAll()
 
+    @pyqtSlot(int, str)
+    def slot_handlePatchbayClientAddedCallback(self, clientId, clientName):
+        patchcanvas.addGroup(clientId, clientName)
+
+    @pyqtSlot(int)
+    def slot_handlePatchbayClientRemovedCallback(self, clientId):
+        patchcanvas.removeGroup(clientId)
+
+    @pyqtSlot(int, str)
+    def slot_handlePatchbayClientRenamedCallback(self, clientId, newClientName):
+        patchcanvas.renameGroup(clientId, newClientName)
+
+    @pyqtSlot(int, int, str)
+    def slot_handlePatchbayPortAddedCallback(self, clientId, portId, portName):
+        # FIXME - needs mode and type
+        patchcanvas.addPort(clientId, portId, portName, 0, 0)
+
+    @pyqtSlot(int)
+    def slot_handlePatchbayPortRemovedCallback(self, portId):
+        patchcanvas.removePort(portId)
+
+    @pyqtSlot(int, str)
+    def slot_handlePatchbayPortRenamedCallback(self, portId, newPortName):
+        patchcanvas.renamePort(portId, newPortName)
+
+    @pyqtSlot(int, int)
+    def slot_handlePatchbayConnectionAddedCallback(self, portOutId, portInId):
+        patchcanvas.connectPorts(0, portOutId, portInId)
+
+    @pyqtSlot(int, int)
+    def slot_handlePatchbayConnectionRemovedCallback(self, portOutId, portInId):
+        # FIXME
+        patchcanvas.disconnectPorts(0)
+
     @pyqtSlot(str)
     def slot_handleErrorCallback(self, error):
         QMessageBox.critical(self, self.tr("Error"), error)
@@ -1162,6 +1314,8 @@ class CarlaMainW(QMainWindow):
         settings.setValue("Geometry", self.saveGeometry())
         settings.setValue("ShowToolbar", self.ui.toolBar.isVisible())
         settings.setValue("ShowTransport", self.ui.frame_transport.isVisible())
+        settings.setValue("HorizontalScrollBarValue", self.ui.graphicsView.horizontalScrollBar().value())
+        settings.setValue("VerticalScrollBarValue", self.ui.graphicsView.verticalScrollBar().value())
 
     def loadSettings(self, geometry):
         settings = QSettings()
@@ -1179,7 +1333,14 @@ class CarlaMainW(QMainWindow):
 
         self.fSavedSettings = {
             "Main/DefaultProjectFolder": settings.value("Main/DefaultProjectFolder", HOME, type=str),
-            "Main/RefreshInterval": settings.value("Main/RefreshInterval", 50, type=int)
+            "Main/RefreshInterval": settings.value("Main/RefreshInterval", 50, type=int),
+            "Canvas/Theme": settings.value("Canvas/Theme", patchcanvas.getDefaultThemeName(), type=str),
+            "Canvas/AutoHideGroups": settings.value("Canvas/AutoHideGroups", False, type=bool),
+            "Canvas/UseBezierLines": settings.value("Canvas/UseBezierLines", True, type=bool),
+            "Canvas/EyeCandy": settings.value("Canvas/EyeCandy", patchcanvas.EYECANDY_SMALL, type=int),
+            "Canvas/UseOpenGL": settings.value("Canvas/UseOpenGL", False, type=bool),
+            "Canvas/Antialiasing": settings.value("Canvas/Antialiasing", patchcanvas.ANTIALIASING_SMALL, type=int),
+            "Canvas/HighQualityAntialiasing": settings.value("Canvas/HighQualityAntialiasing", False, type=bool)
         }
 
         # ---------------------------------------------
@@ -1210,6 +1371,17 @@ class CarlaMainW(QMainWindow):
         os.environ["SF2_PATH"] = splitter.join(Carla.SF2_PATH)
         os.environ["SFZ_PATH"] = splitter.join(Carla.SFZ_PATH)
 
+    def resizeEvent(self, event):
+        if self.ui.tabWidget.currentIndex() == 0:
+            # Force update of 2nd tab
+            width  = self.ui.tab_plugins.width()-4
+            height = self.ui.tab_plugins.height()-4
+            self.ui.miniCanvasPreview.setViewSize(float(width) / DEFAULT_CANVAS_WIDTH, float(height) / DEFAULT_CANVAS_HEIGHT)
+        else:
+            QTimer.singleShot(0, self, SLOT("slot_miniCanvasCheckSize()"))
+
+        QMainWindow.resizeEvent(self, event)
+
     def timerEvent(self, event):
         if event.timerId() == self.fIdleTimerFast:
             Carla.host.engine_idle()
@@ -1239,11 +1411,15 @@ class CarlaMainW(QMainWindow):
 
         self.stopEngine()
 
+        patchcanvas.clear()
         QMainWindow.closeEvent(self, event)
 
 # ------------------------------------------------------------------------------------------------
 
-def callbackFunction(ptr, action, pluginId, value1, value2, value3, valueStr):
+def canvasCallback(self, action, value1, value2, valueStr):
+    print(action, value1, value2, valueStr)
+
+def engineCallback(ptr, action, pluginId, value1, value2, value3, valueStr):
     if pluginId < 0 or not Carla.gui:
         return
 
@@ -1281,6 +1457,22 @@ def callbackFunction(ptr, action, pluginId, value1, value2, value3, valueStr):
         Carla.gui.emit(SIGNAL("ReloadProgramsCallback(int)"), pluginId)
     elif action == CALLBACK_RELOAD_ALL:
         Carla.gui.emit(SIGNAL("ReloadAllCallback(int)"), pluginId)
+    elif action == CALLBACK_PATCHBAY_CLIENT_ADDED:
+        Carla.gui.emit(SIGNAL("PatchbayClientAddedCallback(int, QString)"), value1, cString(valueStr))
+    elif action == CALLBACK_PATCHBAY_CLIENT_REMOVED:
+        Carla.gui.emit(SIGNAL("PatchbayClientRemovedCallback(int)"), value1)
+    elif action == CALLBACK_PATCHBAY_CLIENT_RENAMED:
+        Carla.gui.emit(SIGNAL("PatchbayClientRenamedCallback(int, QString)"), value1, cString(valueStr))
+    elif action == CALLBACK_PATCHBAY_PORT_ADDED:
+        Carla.gui.emit(SIGNAL("PatchbayPortAddedCallback(int, int, QString)"), value1, value2, cString(valueStr))
+    elif action == CALLBACK_PATCHBAY_PORT_REMOVED:
+        Carla.gui.emit(SIGNAL("PatchbayPortRemovedCallback(int)"), value1)
+    elif action == CALLBACK_PATCHBAY_PORT_RENAMED:
+        Carla.gui.emit(SIGNAL("PatchbayPortRenamedCallback(int, QString)"), value1, cString(valueStr))
+    elif action == CALLBACK_PATCHBAY_CONNECTION_ADDED:
+        Carla.gui.emit(SIGNAL("PatchbayConnectionAddedCallback(int, int)"), value1, value2)
+    elif action == CALLBACK_PATCHBAY_CONNECTION_REMOVED:
+        Carla.gui.emit(SIGNAL("PatchbayConnectionRemovedCallback(int, int)"), value1, value2)
     #elif action == CALLBACK_NSM_ANNOUNCE:
         #Carla.gui._nsmAnnounce2str = cString(Carla.host.get_last_error())
         #Carla.gui.emit(SIGNAL("NSM_AnnounceCallback()"))
@@ -1321,7 +1513,7 @@ if __name__ == '__main__':
 
     # Init backend
     Carla.host = Host(libPrefix)
-    Carla.host.set_engine_callback(callbackFunction)
+    Carla.host.set_engine_callback(engineCallback)
     Carla.host.set_engine_option(OPTION_PROCESS_NAME, 0, "carla")
 
     # Set bridge paths

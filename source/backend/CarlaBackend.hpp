@@ -497,34 +497,97 @@ enum CallbackType {
     CALLBACK_RELOAD_ALL = 16,
 
     /*!
+     * Canvas client added
+     *
+     * \param value1   Client ID
+     * \param valueStr Client Name
+     */
+    CALLBACK_PATCHBAY_CLIENT_ADDED = 17,
+
+    /*!
+     * Canvas client removed
+     *
+     * \param value1 Client ID
+     */
+    CALLBACK_PATCHBAY_CLIENT_REMOVED = 18,
+
+    /*!
+     * Canvas client renamed
+     *
+     * \param value1   Client ID
+     * \param valueStr New Client name
+     */
+    CALLBACK_PATCHBAY_CLIENT_RENAMED = 19,
+
+    /*!
+     * Canvas port added
+     *
+     * \param value1   Client ID
+     * \param value2   Port ID
+     * \param valueStr Port name
+     */
+    CALLBACK_PATCHBAY_PORT_ADDED = 20,
+
+    /*!
+     * Canvas port remvoed
+     *
+     * \param value1 Port ID
+     */
+    CALLBACK_PATCHBAY_PORT_REMOVED = 21,
+
+    /*!
+     * Canvas port renamed
+     *
+     * \param value1   Port ID
+     * \param valueStr New Port name
+     */
+    CALLBACK_PATCHBAY_PORT_RENAMED = 22,
+
+    /*!
+     * Canvas port connection added
+     *
+     * \param value1 Output port ID
+     * \param value2 Input port ID
+     */
+    CALLBACK_PATCHBAY_CONNECTION_ADDED = 23,
+
+    /*!
+     * Canvas port connection removed
+     *
+     * \param value1 Output port ID
+     * \param value2 Input port ID
+     */
+    CALLBACK_PATCHBAY_CONNECTION_REMOVED = 24,
+
+    /*!
      * Non-Session-Manager Announce message.
      */
-    CALLBACK_NSM_ANNOUNCE = 17,
+    CALLBACK_NSM_ANNOUNCE = 25,
 
     /*!
      * Non-Session-Manager Open message #1.
      */
-    CALLBACK_NSM_OPEN1 = 18,
+    CALLBACK_NSM_OPEN1 = 26,
 
     /*!
      * Non-Session-Manager Open message #2.
      */
-    CALLBACK_NSM_OPEN2 = 19,
+    CALLBACK_NSM_OPEN2 = 27,
 
     /*!
      * Non-Session-Manager Save message.
      */
-    CALLBACK_NSM_SAVE = 20,
+    CALLBACK_NSM_SAVE = 28,
 
     /*!
      * An error occurred, show last error to user.
      */
-    CALLBACK_ERROR = 21,
+    CALLBACK_ERROR = 29,
 
     /*!
      * The engine has crashed or malfunctioned and will no longer work.
      */
-    CALLBACK_QUIT = 22
+    CALLBACK_QUIT = 30
 };
 
 /*!

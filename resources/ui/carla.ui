@@ -6,28 +6,16 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>756</width>
-    <height>283</height>
+    <width>782</width>
+    <height>482</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Carla</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QVBoxLayout" name="verticalLayout">
-    <property name="leftMargin">
-     <number>0</number>
-    </property>
-    <property name="topMargin">
-     <number>0</number>
-    </property>
-    <property name="rightMargin">
-     <number>0</number>
-    </property>
-    <property name="bottomMargin">
-     <number>2</number>
-    </property>
-    <item>
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="0" column="0" colspan="2">
      <widget class="QFrame" name="frame_transport">
       <layout class="QHBoxLayout" name="horizontalLayout">
        <property name="leftMargin">
@@ -39,19 +27,6 @@
        <property name="bottomMargin">
         <number>0</number>
        </property>
-       <item>
-        <spacer name="horizontalSpacer_2">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
        <item>
         <widget class="QLabel" name="label">
          <property name="text">
@@ -165,30 +140,122 @@
       </layout>
      </widget>
     </item>
-    <item>
-     <widget class="QWidget" name="w_plugins" native="true">
-      <layout class="QVBoxLayout" name="layout">
-       <property name="spacing">
-        <number>1</number>
-       </property>
-       <property name="margin">
-        <number>0</number>
-       </property>
-      </layout>
+    <item row="1" column="0" rowspan="2">
+     <widget class="QTabWidget" name="tabWidget">
+      <property name="currentIndex">
+       <number>0</number>
+      </property>
+      <widget class="QWidget" name="tab_plugins">
+       <attribute name="title">
+        <string>Plugins</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout">
+        <property name="spacing">
+         <number>1</number>
+        </property>
+        <property name="margin">
+         <number>2</number>
+        </property>
+        <item>
+         <widget class="QWidget" name="w_plugins" native="true">
+          <layout class="QVBoxLayout" name="layout">
+           <property name="spacing">
+            <number>1</number>
+           </property>
+           <property name="margin">
+            <number>0</number>
+           </property>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <spacer name="verticalSpacer">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>333</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tab_patchbay">
+       <attribute name="title">
+        <string>Patchbay</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_2">
+        <property name="spacing">
+         <number>0</number>
+        </property>
+        <property name="margin">
+         <number>2</number>
+        </property>
+        <item>
+         <widget class="QGraphicsView" name="graphicsView">
+          <property name="verticalScrollBarPolicy">
+           <enum>Qt::ScrollBarAlwaysOn</enum>
+          </property>
+          <property name="horizontalScrollBarPolicy">
+           <enum>Qt::ScrollBarAlwaysOn</enum>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
      </widget>
     </item>
-    <item>
-     <spacer name="verticalSpacer">
-      <property name="orientation">
-       <enum>Qt::Vertical</enum>
-      </property>
-      <property name="sizeHint" stdset="0">
+    <item row="1" column="1">
+     <widget class="QTabWidget" name="tabWidget_2">
+      <property name="minimumSize">
        <size>
-        <width>20</width>
-        <height>128</height>
+        <width>210</width>
+        <height>0</height>
        </size>
       </property>
-     </spacer>
+      <property name="maximumSize">
+       <size>
+        <width>210</width>
+        <height>16777215</height>
+       </size>
+      </property>
+      <property name="tabPosition">
+       <enum>QTabWidget::East</enum>
+      </property>
+      <property name="currentIndex">
+       <number>0</number>
+      </property>
+      <widget class="QWidget" name="disk">
+       <attribute name="title">
+        <string>Disk</string>
+       </attribute>
+      </widget>
+     </widget>
+    </item>
+    <item row="2" column="1">
+     <widget class="CanvasPreviewFrame" name="miniCanvasPreview">
+      <property name="minimumSize">
+       <size>
+        <width>210</width>
+        <height>162</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>210</width>
+        <height>162</height>
+       </size>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::StyledPanel</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Raised</enum>
+      </property>
+     </widget>
     </item>
    </layout>
   </widget>
@@ -197,7 +264,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>756</width>
+     <width>782</width>
      <height>19</height>
     </rect>
    </property>
@@ -415,6 +482,14 @@
    </property>
   </action>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>CanvasPreviewFrame</class>
+   <extends>QFrame</extends>
+   <header>canvaspreviewframe.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="../resources.qrc"/>
  </resources>
