@@ -191,6 +191,12 @@ class Host(object):
         self.lib.carla_save_project.argtypes = [c_char_p]
         self.lib.carla_save_project.restype = c_bool
 
+        self.lib.carla_patchbay_connect.argtypes = [c_int, c_int]
+        self.lib.carla_patchbay_connect.restype = None
+
+        self.lib.carla_patchbay_disconnect.argtypes = [c_int]
+        self.lib.carla_patchbay_disconnect.restype = None
+
         self.lib.carla_transport_play.argtypes = None
         self.lib.carla_transport_play.restype = None
 
@@ -409,6 +415,12 @@ class Host(object):
 
     def save_project(self, filename):
         return self.lib.carla_save_project(filename.encode("utf-8"))
+
+    def patchbay_connect(self, portIdA, portIdB):
+        self.lib.carla_patchbay_connect(portIdA, portIdB)
+
+    def patchbay_disconnect(self, connectionId):
+        self.lib.carla_patchbay_disconnect(connectionId)
 
     def transport_play(self):
         self.lib.carla_transport_play()

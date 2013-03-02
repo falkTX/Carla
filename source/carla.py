@@ -1429,8 +1429,37 @@ class CarlaMainW(QMainWindow):
 
 # ------------------------------------------------------------------------------------------------
 
-def canvasCallback(self, action, value1, value2, valueStr):
-    print(action, value1, value2, valueStr)
+def canvasCallback(action, value1, value2, valueStr):
+    if action == patchcanvas.ACTION_GROUP_INFO:
+        pass
+
+    elif action == patchcanvas.ACTION_GROUP_RENAME:
+        pass
+
+    elif action == patchcanvas.ACTION_GROUP_SPLIT:
+        groupId = value1
+        patchcanvas.splitGroup(groupId)
+
+    elif action == patchcanvas.ACTION_GROUP_JOIN:
+        groupId = value1
+        patchcanvas.joinGroup(groupId)
+
+    elif action == patchcanvas.ACTION_PORT_INFO:
+        pass
+
+    elif action == patchcanvas.ACTION_PORT_RENAME:
+        pass
+
+    elif action == patchcanvas.ACTION_PORTS_CONNECT:
+        portIdA = value1
+        portIdB = value2
+
+        Carla.host.patchbay_connect(portIdA, portIdB)
+
+    elif action == patchcanvas.ACTION_PORTS_DISCONNECT:
+        connectionId = value1
+
+        Carla.host.patchbay_disconnect(connectionId)
 
 def engineCallback(ptr, action, pluginId, value1, value2, value3, valueStr):
     if pluginId < 0 or not Carla.gui:

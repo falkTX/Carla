@@ -855,6 +855,19 @@ public:
     void setCallback(const CallbackFunc func, void* const ptr);
 
     // -------------------------------------------------------------------
+    // Patchbay
+
+    /*!
+     * TODO.
+     */
+    virtual void patchbayConnect(int portA, int portB);
+
+    /*!
+     * TODO.
+     */
+    virtual void patchbayDisconnect(int connectionId);
+
+    // -------------------------------------------------------------------
     // Transport
 
     /*!

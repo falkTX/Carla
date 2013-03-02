@@ -479,6 +479,26 @@ bool carla_save_project(const char* filename)
 
 // -------------------------------------------------------------------------------------------------------------------
 
+void carla_patchbay_connect(int portA, int portB)
+{
+    carla_debug("carla_patchbay_connect(%i, %i)", portA, portB);
+    CARLA_ASSERT(standalone.engine != nullptr);
+
+    if (standalone.engine != nullptr)
+        return standalone.engine->patchbayConnect(portA, portB);
+}
+
+void carla_patchbay_disconnect(int connectionId)
+{
+    carla_debug("carla_patchbay_disconnect(%i)", connectionId);
+    CARLA_ASSERT(standalone.engine != nullptr);
+
+    if (standalone.engine != nullptr)
+        return standalone.engine->patchbayDisconnect(connectionId);
+}
+
+// -------------------------------------------------------------------------------------------------------------------
+
 void carla_transport_play()
 {
     carla_debug("carla_transport_play()");

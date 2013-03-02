@@ -578,6 +578,18 @@ public:
             jackbridge_set_latency_callback(fClient, carla_jack_latency_callback, this);
             jackbridge_on_shutdown(fClient, carla_jack_shutdown_callback, this);
 
+            const char* const jackClientName = jackbridge_get_client_name(fClient);
+
+            initJackPatchbay(jackClientName);
+
+            // TODO - update jackbridge
+            jack_set_client_registration_callback(fClient, carla_jack_client_registration_callback, this);
+            jack_set_port_registration_callback(fClient, carla_jack_port_registration_callback, this);
+            jack_set_port_connect_callback(fClient, carla_jack_port_connect_callback, this);
+
+            if (jack_set_port_rename_callback)
+              jack_set_port_rename_callback(fClient, carla_jack_port_rename_callback, this);
+
             if (fOptions.processMode == PROCESS_MODE_CONTINUOUS_RACK)
             {
                 fRackPorts[rackPortAudioIn1]  = jackbridge_port_register(fClient, "audio-in1",  JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
@@ -588,18 +600,8 @@ public:
                 fRackPorts[rackPortEventOut]  = jackbridge_port_register(fClient, "events-out", JACK_DEFAULT_MIDI_TYPE, JackPortIsOutput, 0);
             }
 
-            // TODO - update jackbridge
-            jack_set_client_registration_callback(fClient, carla_jack_client_registration_callback, this);
-            jack_set_port_registration_callback(fClient, carla_jack_port_registration_callback, this);
-            jack_set_port_connect_callback(fClient, carla_jack_port_connect_callback, this);
-
-            if (jack_set_port_rename_callback)
-              jack_set_port_rename_callback(fClient, carla_jack_port_rename_callback, this);
-
             if (jackbridge_activate(fClient) == 0)
             {
-                const char* const jackClientName = jackbridge_get_client_name(fClient);
-
                 return CarlaEngine::init(jackClientName);
             }
             else
@@ -722,6 +724,40 @@ public:
 
         return new CarlaEngineJackClient(kEngineTypeJack, fOptions.processMode, client);
     }
+
+#ifndef BUILD_BRIDGE
+    // -------------------------------------------------------------------
+    // Patchbay
+
+    void patchbayConnect(int portA, int portB)
+    {
+        if (fClient == nullptr)
+            return;
+
+        const char* const portNameA = getFullPortName(portA).toUtf8().constData();
+        const char* const portNameB = getFullPortName(portB).toUtf8().constData();
+
+        jack_connect(fClient, portNameA, portNameB);
+    }
+
+    void patchbayDisconnect(int connectionId)
+    {
+        if (fClient == nullptr)
+            return;
+
+        for (int i=0, count=fUsedConnections.count(); i < count; i++)
+        {
+            if (fUsedConnections[i].id == connectionId)
+            {
+                const char* const portNameA = getFullPortName(fUsedConnections[i].portOut).toUtf8().constData();
+                const char* const portNameB = getFullPortName(fUsedConnections[i].portIn).toUtf8().constData();
+
+                jack_disconnect(fClient, portNameA, portNameB);
+                break;
+            }
+        }
+    }
+#endif
 
     // -------------------------------------------------------------------
     // Transport
@@ -1108,6 +1144,8 @@ protected:
         QString groupName = fullName.split(":").at(0);
         int     groupId   = getGroupId(groupName);
 
+        carla_stderr2("---------------------------------------------------- groupName: \"%s\", ID: %i", groupName.toUtf8().constData(), groupId);
+
         const char* portName = jack_port_short_name(jackPort);
 
         if (reg)
@@ -1120,9 +1158,10 @@ protected:
             portFlags |= portIsAudio ? PATCHBAY_PORT_IS_AUDIO : PATCHBAY_PORT_IS_MIDI;
 
             PortNameToId portNameToId;
-            portNameToId.groupId = groupId;
-            portNameToId.portId  = fLastPortId;
-            portNameToId.name    = portName;
+            portNameToId.groupId  = groupId;
+            portNameToId.portId   = fLastPortId;
+            portNameToId.name     = portName;
+            portNameToId.fullName = fullName;
 
             fUsedPortNames.append(portNameToId);
             callback(CALLBACK_PATCHBAY_PORT_ADDED, 0, groupId, fLastPortId, portFlags, portName);
@@ -1175,8 +1214,25 @@ protected:
         }
     }
 
-    int handleJackPortRenameCallback(jack_port_id_t port, const char* oldName, const char* newName)
+    void handleJackPortRenameCallback(jack_port_id_t port, const char* oldName, const char* newName)
     {
+        jack_port_t* jackPort = jack_port_by_id(fClient, port);
+
+        QString fullName(oldName);
+        QString groupName = fullName.split(":").at(0);
+        int     groupId   = getGroupId(groupName);
+
+        const char* portName = jack_port_short_name(jackPort);
+
+        for (int i=0, count=fUsedPortNames.count(); i < count; i++)
+        {
+            if (fUsedPortNames[i].groupId == groupId && fUsedPortNames[i].name == portName)
+            {
+                callback(CALLBACK_PATCHBAY_PORT_RENAMED, 0, fUsedPortNames[i].portId, 0, 0.0f, newName);
+                fUsedPortNames[i].name = newName;
+                break;
+            }
+        }
     }
 #endif
 
@@ -1228,6 +1284,7 @@ private:
         int groupId;
         int portId;
         QString name;
+        QString fullName;
     };
 
     struct ConnectionToId {
@@ -1272,6 +1329,125 @@ private:
         }
 
         return -1;
+    }
+
+    QString& getFullPortName(int portId)
+    {
+        static QString fallbackString;
+
+        for (int i=0, count=fUsedPortNames.count(); i < count; i++)
+        {
+            if (fUsedPortNames[i].portId == portId)
+            {
+                return fUsedPortNames[i].fullName;
+            }
+        }
+
+        return fallbackString;
+    }
+
+    void initJackPatchbay(const char* const ourName)
+    {
+        // query initial jack ports
+        QList<QString> parsedGroups;
+
+        // our client
+        {
+            GroupNameToId groupNameToId;
+            groupNameToId.id   = fLastGroupId;
+            groupNameToId.name = ourName;
+
+            callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, fLastGroupId, 0, 0.0f, ourName);
+            fUsedGroupNames.append(groupNameToId);
+            fLastGroupId++;
+
+            parsedGroups.append(QString(ourName));
+        }
+
+        if (const char** ports = jack_get_ports(fClient, nullptr, nullptr, 0))
+        {
+            for (int i=0; ports[i] != nullptr; i++)
+            {
+                jack_port_t* jackPort = jack_port_by_name(fClient, ports[i]);
+                const char* portName  = jack_port_short_name(jackPort);
+
+                QString fullName(ports[i]);
+                QString groupName(fullName.split(":").at(0));
+                int     groupId   = -1;
+
+                if (groupName == ourName)
+                    continue;
+
+                if (parsedGroups.contains(groupName))
+                {
+                    groupId = getGroupId(groupName);
+                }
+                else
+                {
+                    groupId = fLastGroupId++;
+
+                    GroupNameToId groupNameToId;
+                    groupNameToId.id   = groupId;
+                    groupNameToId.name = groupName;
+
+                    fUsedGroupNames.append(groupNameToId);
+                    parsedGroups.append(groupName);
+
+                    callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, groupId, 0, 0.0f, groupName.toUtf8().constData());
+                }
+
+                bool portIsInput = (jack_port_flags(jackPort) & JackPortIsInput);
+                bool portIsAudio = (std::strcmp(jack_port_type(jackPort), JACK_DEFAULT_AUDIO_TYPE) == 0);
+
+                unsigned int portFlags = 0x0;
+                portFlags |= portIsInput ? PATCHBAY_PORT_IS_INPUT : PATCHBAY_PORT_IS_OUTPUT;
+                portFlags |= portIsAudio ? PATCHBAY_PORT_IS_AUDIO : PATCHBAY_PORT_IS_MIDI;
+
+                PortNameToId portNameToId;
+                portNameToId.groupId  = groupId;
+                portNameToId.portId   = fLastPortId;
+                portNameToId.name     = portName;
+                portNameToId.fullName = fullName;
+
+                fUsedPortNames.append(portNameToId);
+                callback(CALLBACK_PATCHBAY_PORT_ADDED, 0, groupId, fLastPortId, portFlags, portName);
+                fLastPortId++;
+            }
+
+            jack_free(ports);
+        }
+
+        // query connections, after all ports are in place
+        if (const char** ports = jack_get_ports(fClient, nullptr, nullptr, JackPortIsOutput))
+        {
+            for (int i=0; ports[i] != nullptr; i++)
+            {
+                jack_port_t* jackPort = jack_port_by_name(fClient, ports[i]);
+
+                int thisPortId = getPortId(QString(ports[i]));
+
+                if (const char** jackConnections = jack_port_get_connections(jackPort))
+                {
+                    for (int j=0; jackConnections[j] != nullptr; j++)
+                    {
+                        int targetPortId = getPortId(QString(jackConnections[j]));
+
+                        ConnectionToId connectionToId;
+                        connectionToId.id      = fLastConnectionId;
+                        connectionToId.portOut = thisPortId;
+                        connectionToId.portIn  = targetPortId;
+
+                        fUsedConnections.append(connectionToId);
+                        callback(CALLBACK_PATCHBAY_CONNECTION_ADDED, 0, fLastConnectionId, thisPortId, targetPortId, nullptr);
+                        fLastConnectionId++;
+                    }
+
+                    jack_free(jackConnections);
+                }
+            }
+
+            jack_free(ports);
+        }
     }
 #endif
 

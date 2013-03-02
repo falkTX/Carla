@@ -170,6 +170,9 @@ CARLA_EXPORT void carla_set_engine_option(CarlaOptionsType option, int value, co
 CARLA_EXPORT bool carla_load_project(const char* filename);
 CARLA_EXPORT bool carla_save_project(const char* filename);
 
+CARLA_EXPORT void carla_patchbay_connect(int portA, int portB);
+CARLA_EXPORT void carla_patchbay_disconnect(int connectionId);
+
 CARLA_EXPORT void carla_transport_play();
 CARLA_EXPORT void carla_transport_pause();
 CARLA_EXPORT void carla_transport_relocate(uint32_t frames);

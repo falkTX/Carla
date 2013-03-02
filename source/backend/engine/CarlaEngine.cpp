@@ -1139,6 +1139,19 @@ void CarlaEngine::setCallback(const CallbackFunc func, void* const ptr)
 }
 
 // -----------------------------------------------------------------------
+// Patchbay
+
+void CarlaEngine::patchbayConnect(int portA, int portB)
+{
+    // TODO
+}
+
+void CarlaEngine::patchbayDisconnect(int connectionId)
+{
+    // TODO
+}
+
+// -----------------------------------------------------------------------
 // Transport
 
 void CarlaEngine::transportPlay()
