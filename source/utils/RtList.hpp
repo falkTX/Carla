@@ -80,6 +80,8 @@ protected:
         k_list_head* const kQueue;
         k_list_head* fEntry;
         Data* fData;
+
+        friend class List;
     };
 
     List()
@@ -139,12 +141,38 @@ public:
         return false;
     }
 
+    bool appendAt(const T& value, const Itenerator& it)
+    {
+        if (Data* const data = _allocate())
+        {
+            std::memcpy(&data->value, &value, sizeof(T));
+            list_add_tail(&data->siblings, it.fEntry->next);
+            fCount++;
+            return true;
+        }
+
+        return false;
+    }
+
     bool insert(const T& value)
     {
         if (Data* const data = _allocate())
         {
             std::memcpy(&data->value, &value, sizeof(T));
             list_add(&data->siblings, &fQueue);
+            fCount++;
+            return true;
+        }
+
+        return false;
+    }
+
+    bool insertAt(const T& value, const Itenerator& it)
+    {
+        if (Data* const data = _allocate())
+        {
+            std::memcpy(&data->value, &value, sizeof(T));
+            list_add(&data->siblings, it.fEntry->prev);
             fCount++;
             return true;
         }

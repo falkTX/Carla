@@ -83,7 +83,7 @@ struct PostRtEvents {
 
 } postRtEvents;
 
-void run4Tests()
+void run5Tests()
 {
     unsigned short k = 0;
     MyData allMyData[MAX_RT_EVENTS];
@@ -101,7 +101,7 @@ void run4Tests()
     postRtEvents.mutex.unlock();
 
     printf("Post-Rt Event Count: %i\n", k);
-    assert(k == 4);
+    assert(k == 5);
 
     // data should be empty now
     assert(postRtEvents.data.count() == 0);
@@ -124,6 +124,7 @@ int main()
     MyData m2(2);
     MyData m3(3);
     MyData m4(4);
+    MyData m5(5);
 
     // start
     assert(postRtEvents.data.count() == 0);
@@ -141,6 +142,8 @@ int main()
     postRtEvents.appendRT(m2);
     postRtEvents.appendRT(m4);
     postRtEvents.appendRT(m3);
+    assert(postRtEvents.data.count() == 1);
+    assert(postRtEvents.dataPendingRT.count() == 3);
     postRtEvents.trySplice();
     assert(postRtEvents.data.count() == 4);
     assert(postRtEvents.dataPendingRT.count() == 0);
@@ -150,9 +153,20 @@ int main()
         MyData& my = *it;
 
         printf("FOR DATA!!!: %i %s\n", my.idStr, (const char*)my.str);
+
+        if (my.idStr == 1)
+        {
+            // +1 append at
+            postRtEvents.dataPendingRT.insertAt(m5, it);
+            assert(postRtEvents.data.count() == 4);
+            assert(postRtEvents.dataPendingRT.count() == 1);
+            postRtEvents.trySplice();
+            assert(postRtEvents.data.count() == 5);
+            assert(postRtEvents.dataPendingRT.count() == 0);
+        }
     }
 
-    run4Tests();
+    run5Tests();
 
     // reset
     postRtEvents.clear();

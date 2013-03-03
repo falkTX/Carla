@@ -279,7 +279,7 @@ static inline void list_splice_init(struct list_head *list, struct list_head *he
 }
 
 /**
- * list_splice_init - join two lists and reinitialise the emptied list.
+ * list_splice_tail_init - join two lists and reinitialise the emptied list.
  * @list: the new list to add.
  * @head: the place to add it in the first list.
  *
