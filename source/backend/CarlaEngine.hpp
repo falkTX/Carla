@@ -975,6 +975,7 @@ protected:
     EngineOptions  fOptions;
     EngineTimeInfo fTimeInfo;
 
+    friend struct CarlaEngineProtectedData;
     CarlaEngineProtectedData* const kData;
 
     /*!

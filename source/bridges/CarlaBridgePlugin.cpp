@@ -332,6 +332,11 @@ protected:
             if (value1 != 1 && ! isOscControlRegistered())
                 gCloseNow = true;
             break;
+        default: // TODO
+            (void)value2;
+            (void)value3;
+            (void)valueStr;
+            break;
         }
     }
 

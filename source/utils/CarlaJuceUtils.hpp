@@ -31,14 +31,15 @@
     CARLA_LEAK_DETECTOR macro for a class.
 */
 #define CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(className) \
-    CARLA_DECLARE_NON_COPYABLE(className) \
+private:                                                         \
+    CARLA_DECLARE_NON_COPYABLE(className)                        \
     CARLA_LEAK_DETECTOR(className)
 
 /** This macro can be added to class definitions to disable the use of new/delete to
     allocate the object on the heap, forcing it to only be used as a stack or member variable.
 */
-#define CARLA_PREVENT_HEAP_ALLOCATION \
-private: \
+#define CARLA_PREVENT_HEAP_ALLOCATION   \
+private:                                \
     static void* operator new (size_t); \
     static void operator delete (void*);
 

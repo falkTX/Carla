@@ -1924,6 +1924,7 @@ private:
     {
 #ifndef BUILD_BRIDGE
         carla_register_native_plugin_bypass();
+        carla_register_native_plugin_midiSequencer();
         carla_register_native_plugin_midiSplit();
         carla_register_native_plugin_midiThrough();
         carla_register_native_plugin_midiTranspose();

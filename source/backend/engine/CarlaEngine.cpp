@@ -569,6 +569,7 @@ bool CarlaEngine::init(const char* const clientName)
         break;
     }
 
+    //kData->pluginsPool.resize(maxPluginNumber, 999);
     kData->plugins = new EnginePluginData[kData->maxPluginNumber];
 
     kData->osc.init(clientName);
@@ -609,6 +610,7 @@ bool CarlaEngine::close()
     kData->curPluginCount = 0;
     kData->maxPluginNumber = 0;
 
+    //kData->plugins.clear();
     if (kData->plugins != nullptr)
     {
         delete[] kData->plugins;
@@ -636,6 +638,17 @@ void CarlaEngine::idle()
 {
     CARLA_ASSERT(kData->plugins != nullptr);
     CARLA_ASSERT(isRunning());
+
+#if 0
+    for (auto it = kData->plugins.begin(); it.valid(); it.next())
+    {
+        CarlaPlugin* const plugin = (*it).plugin;
+        CARLA_ASSERT(plugin != nullptr);
+
+        if (plugin && plugin->enabled())
+            plugin->idleGui();
+    }
+#endif
 
     for (unsigned int i=0; i < kData->curPluginCount; i++)
     {
@@ -1101,7 +1114,7 @@ float CarlaEngine::getInputPeak(const unsigned int pluginId, const unsigned shor
     CARLA_ASSERT(pluginId < kData->curPluginCount);
     CARLA_ASSERT(id-1 < MAX_PEAKS);
 
-    if (id > MAX_PEAKS)
+    if (id == 0 || id > MAX_PEAKS)
         return 0.0f;
 
     return kData->plugins[pluginId].insPeak[id-1];
@@ -1112,7 +1125,7 @@ float CarlaEngine::getOutputPeak(const unsigned int pluginId, const unsigned sho
     CARLA_ASSERT(pluginId < kData->curPluginCount);
     CARLA_ASSERT(id-1 < MAX_PEAKS);
 
-    if (id > MAX_PEAKS)
+    if (id == 0 || id > MAX_PEAKS)
         return 0.0f;
 
     return kData->plugins[pluginId].outsPeak[id-1];

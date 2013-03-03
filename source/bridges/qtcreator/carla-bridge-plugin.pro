@@ -120,4 +120,4 @@ LIBS     = -ldl \
     ../../libs/lilv.a \
     ../../libs/rtmempool.a
 
-QMAKE_CXXFLAGS *= -std=c++0x
+QMAKE_CXXFLAGS *= -std=gnu++0x
