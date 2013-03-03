@@ -26,9 +26,9 @@ extern "C" {
 }
 
 // Declare non copyable and prevent heap allocation
-#define LIST_DECLARATIONS(className) \
-    className(const className&); \
-    className& operator= (const className&); \
+#define LIST_DECLARATIONS(className)                       \
+    className(const className&);                           \
+    className& operator= (const className&);               \
     static void* operator new (size_t) { return nullptr; } \
     static void operator delete (void*) {}
 
@@ -42,6 +42,46 @@ template<typename T>
 class List
 {
 protected:
+    struct Data {
+        T value;
+        k_list_head siblings;
+    };
+
+    class Itenerator {
+    public:
+        Itenerator(k_list_head* queue)
+            : kQueue(queue),
+              fEntry(queue->next),
+              fData(nullptr)
+        {
+            CARLA_ASSERT(kQueue != nullptr);
+            CARLA_ASSERT(fEntry != nullptr);
+        }
+
+        bool valid()
+        {
+            prefetch(fEntry->next);
+            return (fEntry != kQueue);
+        }
+
+        void next()
+        {
+            fEntry = fEntry->next;
+        }
+
+        T& operator*()
+        {
+            fData = list_entry(fEntry, Data, siblings);
+            CARLA_ASSERT(fData != nullptr);
+            return fData->value;
+        }
+
+    private:
+        k_list_head* const kQueue;
+        k_list_head* fEntry;
+        Data* fData;
+    };
+
     List()
         : kDataSize(sizeof(Data)),
           fCount(0)
@@ -53,6 +93,11 @@ public:
     virtual ~List()
     {
         CARLA_ASSERT(fCount == 0);
+    }
+
+    Itenerator begin()
+    {
+        return Itenerator(&fQueue);
     }
 
     void clear()
@@ -110,7 +155,7 @@ public:
     T& getAt(const size_t index, const bool remove = false)
     {
         if (fCount == 0 || index >= fCount)
-            return _retEmpty();
+            return _getEmpty();
 
         size_t i = 0;
         Data* data = nullptr;
@@ -137,7 +182,7 @@ public:
 
         CARLA_ASSERT(data != nullptr);
 
-        return (data != nullptr) ? data->value : _retEmpty();
+        return (data != nullptr) ? data->value : _getEmpty();
     }
 
     T& getFirst(const bool remove = false)
@@ -194,7 +239,22 @@ public:
         }
     }
 
-    virtual void splice(List& list, const bool init = false)
+    virtual void spliceAppend(List& list, const bool init = false)
+    {
+        if (init)
+        {
+            list_splice_tail_init(&fQueue, &list.fQueue);
+            list.fCount += fCount;
+            fCount = 0;
+        }
+        else
+        {
+            list_splice_tail(&fQueue, &list.fQueue);
+            list.fCount += fCount;
+        }
+    }
+
+    virtual void spliceInsert(List& list, const bool init = false)
     {
         if (init)
         {
@@ -214,11 +274,6 @@ protected:
           size_t fCount;
     k_list_head  fQueue;
 
-    struct Data {
-        T value;
-        k_list_head siblings;
-    };
-
     virtual Data* _allocate() = 0;
     virtual void  _deallocate(Data* const dataPtr) = 0;
 
@@ -232,7 +287,7 @@ private:
     T& _getFirstOrLast(const bool first, const bool remove)
     {
         if (fCount == 0)
-            return _retEmpty();
+            return _getEmpty();
 
         k_list_head* const entry = first ? fQueue.next : fQueue.prev;
         Data*        const data  = list_entry(entry, Data, siblings);
@@ -240,7 +295,7 @@ private:
         CARLA_ASSERT(data != nullptr);
 
         if (data == nullptr)
-            return _retEmpty();
+            return _getEmpty();
 
         T& ret = data->value;
 
@@ -254,7 +309,7 @@ private:
         return ret;
     }
 
-    T& _retEmpty()
+    T& _getEmpty()
     {
         // FIXME ?
         static T value;
@@ -371,11 +426,18 @@ public:
         kMemPool->resize(minPreallocated, maxPreallocated);
     }
 
-    void splice(RtList& list, const bool init = false)
+    void spliceAppend(RtList& list, const bool init = false)
     {
         CARLA_ASSERT(kMemPool == list.kMemPool);
 
-        List<T>::splice(list, init);
+        List<T>::spliceAppend(list, init);
+    }
+
+    void spliceInsert(RtList& list, const bool init = false)
+    {
+        CARLA_ASSERT(kMemPool == list.kMemPool);
+
+        List<T>::spliceInsert(list, init);
     }
 
 private:

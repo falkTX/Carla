@@ -25,7 +25,9 @@
 #define __LINUX_LIST_H__
 
 /* This file is from Linux Kernel (include/linux/list.h)
- * and modified by simply removing hardware prefetching of list items.
+ * and modified by removing hardware prefetching of list items
+ * and added list_split_tail* functions.
+ *
  * Here by copyright, credits attributed to wherever they belong.
  * Filipe Coelho (aka falkTX <falktx@falktx.com>)
  */
@@ -224,6 +226,19 @@ static inline void __list_splice(struct list_head *list, struct list_head *head)
     at->prev = last;
 }
 
+static inline void __list_splice_tail(struct list_head *list, struct list_head *head)
+{
+    struct list_head *first = list->next;
+    struct list_head *last = list->prev;
+    struct list_head *at = head->prev;
+
+    first->prev = at;
+    at->next = first;
+
+    last->next = head;
+    head->prev = last;
+}
+
 /**
  * list_splice - join two lists
  * @list: the new list to add.
@@ -233,6 +248,19 @@ static inline void list_splice(struct list_head *list, struct list_head *head)
 {
     if (!list_empty(list))
         __list_splice(list, head);
+}
+
+/**
+ * list_splice_tail - join two lists
+ * @list: the new list to add.
+ * @head: the place to add it in the first list.
+ *
+ * @list goes to the end (at head->prev)
+ */
+static inline void list_splice_tail(struct list_head *list, struct list_head *head)
+{
+    if (!list_empty(list))
+        __list_splice_tail(list, head);
 }
 
 /**
@@ -246,6 +274,22 @@ static inline void list_splice_init(struct list_head *list, struct list_head *he
 {
     if (!list_empty(list)) {
         __list_splice(list, head);
+        INIT_LIST_HEAD(list);
+    }
+}
+
+/**
+ * list_splice_init - join two lists and reinitialise the emptied list.
+ * @list: the new list to add.
+ * @head: the place to add it in the first list.
+ *
+ * The list at @list is reinitialised
+ * @list goes to the end (at head->prev)
+ */
+static inline void list_splice_tail_init(struct list_head *list, struct list_head *head)
+{
+    if (!list_empty(list)) {
+        __list_splice_tail(list, head);
         INIT_LIST_HEAD(list);
     }
 }

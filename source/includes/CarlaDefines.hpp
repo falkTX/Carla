@@ -23,7 +23,7 @@
 # define CARLA_OS_MAC
 #elif defined(__HAIKU__)
 # define CARLA_OS_HAIKU
-#elif defined(__linux__) || defined(__linux) || defined(QTCREATOR_TEST)
+#elif defined(__linux__) || defined(__linux)
 # define CARLA_OS_LINUX
 #elif defined(WIN64) || defined(_WIN64) || defined(__WIN64__)
 # define CARLA_OS_WIN64
@@ -40,7 +40,7 @@
 #endif
 
 // Check for C++11 support
-#if defined(HAVE_CPP11_SUPPORT) || defined(QTCREATOR_TEST)
+#if defined(HAVE_CPP11_SUPPORT)
 # define CARLA_PROPER_CPP11_SUPPORT
 #elif defined(__GNUC__) && defined(__GXX_EXPERIMENTAL_CXX0X__)
 # if  (__GNUC__ * 100 + __GNUC_MINOR__) >= 405

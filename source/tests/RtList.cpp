@@ -71,7 +71,7 @@ struct PostRtEvents {
     {
         if (mutex.tryLock())
         {
-            dataPendingRT.splice(data, true);
+            dataPendingRT.spliceAppend(data, true);
             mutex.unlock();
         }
     }
@@ -144,6 +144,13 @@ int main()
     postRtEvents.trySplice();
     assert(postRtEvents.data.count() == 4);
     assert(postRtEvents.dataPendingRT.count() == 0);
+
+    for (auto it = postRtEvents.data.begin(); it.valid(); it.next())
+    {
+        MyData& my = *it;
+
+        printf("FOR DATA!!!: %i %s\n", my.idStr, (const char*)my.str);
+    }
 
     run4Tests();
 

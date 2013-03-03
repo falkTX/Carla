@@ -620,7 +620,7 @@ enum ProcessMode {
  */
 enum TransportMode {
     TRANSPORT_MODE_INTERNAL = 0, //!< Internal transport mode.
-    TRANSPORT_MODE_JACK     = 1, //!< JACK transport, only available if driver name is "JACK"
+    TRANSPORT_MODE_JACK     = 1  //!< JACK transport, only available if driver name is "JACK"
 };
 
 /*!
