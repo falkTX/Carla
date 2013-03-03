@@ -196,9 +196,9 @@ QString xmlSafeString(const QString& string, const bool toXml)
     QString newString(string);
 
     if (toXml)
-        return newString.replace("&", "&amp;").replace("<","&lt;").replace(">","&gt;").replace("'","&apos;").replace("\"","&quot;");
+        return newString.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace("'","&apos;").replace("\"","&quot;");
     else
-        return newString.replace("&amp;", "&").replace("&lt;","<").replace("&gt;",">").replace("&apos;","'").replace("&quot;","\"");
+        return newString.replace("&amp;","&").replace("&lt;","<").replace("&gt;",">").replace("&apos;","'").replace("&quot;","\"");
 }
 
 static inline
@@ -222,24 +222,24 @@ const SaveState& getSaveStateDictFromXML(const QDomNode& xmlNode)
         // ------------------------------------------------------
         // Info
 
-        if (node.toElement().tagName() == "Info")
+        if (node.toElement().tagName().compare("Info", Qt::CaseInsensitive) == 0)
         {
             QDomNode xmlInfo(node.toElement().firstChild());
 
             while (! xmlInfo.isNull())
             {
                 const QString tag  = xmlInfo.toElement().tagName();
-                const QString text = xmlInfo.toElement().text(); //.strip();
+                const QString text = xmlInfo.toElement().text().trimmed();
 
-                if (tag == "Type")
+                if (tag.compare("Type", Qt::CaseInsensitive) == 0)
                     saveState.type = xmlSafeStringChar(text, false);
-                else if (tag == "Name")
+                else if (tag.compare("Name", Qt::CaseInsensitive) == 0)
                     saveState.name = xmlSafeStringChar(text, false);
-                else if (tag == "Label" || tag == "URI")
+                else if (tag.compare("Label", Qt::CaseInsensitive) == 0 || tag.compare("URI", Qt::CaseInsensitive) == 0)
                     saveState.label = xmlSafeStringChar(text, false);
-                else if (tag == "Binary")
+                else if (tag.compare("Binary", Qt::CaseInsensitive) == 0)
                     saveState.binary = xmlSafeStringChar(text, false);
-                else if (tag == "UniqueID")
+                else if (tag.compare("UniqueID", Qt::CaseInsensitive) == 0)
                 {
                     bool ok;
                     long uniqueID = text.toLong(&ok);
@@ -253,47 +253,47 @@ const SaveState& getSaveStateDictFromXML(const QDomNode& xmlNode)
         // ------------------------------------------------------
         // Data
 
-        else if (node.toElement().tagName() == "Data")
+        else if (node.toElement().tagName().compare("Data", Qt::CaseInsensitive) == 0)
         {
             QDomNode xmlData(node.toElement().firstChild());
 
             while (! xmlData.isNull())
             {
                 const QString tag  = xmlData.toElement().tagName();
-                const QString text = xmlData.toElement().text(); //.strip();
+                const QString text = xmlData.toElement().text().trimmed();
 
                 // ----------------------------------------------
                 // Internal Data
 
-                if (tag == "Active")
+                if (tag.compare("Active", Qt::CaseInsensitive) == 0)
                 {
-                    saveState.active = bool(text == "Yes");
+                    saveState.active = (text.compare("Yes", Qt::CaseInsensitive) == 0);
                 }
-                else if (tag == "DryWet")
+                else if (tag.compare("DryWet", Qt::CaseInsensitive) == 0)
                 {
                     bool ok;
                     float value = text.toFloat(&ok);
                     if (ok) saveState.dryWet = value;
                 }
-                else if (tag == "Volume")
+                else if (tag.compare("Volume", Qt::CaseInsensitive) == 0)
                 {
                     bool ok;
                     float value = text.toFloat(&ok);
                     if (ok) saveState.volume = value;
                 }
-                else if (tag == "Balance-Left")
+                else if (tag.compare("Balance-Left", Qt::CaseInsensitive) == 0)
                 {
                     bool ok;
                     float value = text.toFloat(&ok);
                     if (ok) saveState.balanceLeft = value;
                 }
-                else if (tag == "Balance-Right")
+                else if (tag.compare("Balance-Right", Qt::CaseInsensitive) == 0)
                 {
                     bool ok;
                     float value = text.toFloat(&ok);
                     if (ok) saveState.balanceRight = value;
                 }
-                else if (tag == "Panning")
+                else if (tag.compare("Panning", Qt::CaseInsensitive) == 0)
                 {
                     bool ok;
                     float value = text.toFloat(&ok);
@@ -303,13 +303,13 @@ const SaveState& getSaveStateDictFromXML(const QDomNode& xmlNode)
                 // ----------------------------------------------
                 // Program (current)
 
-                else if (tag == "CurrentProgramIndex")
+                else if (tag.compare("CurrentProgramIndex", Qt::CaseInsensitive) == 0)
                 {
                     bool ok;
                     int value = text.toInt(&ok);
                     if (ok) saveState.currentProgramIndex = value;
                 }
-                else if (tag == "CurrentProgramName")
+                else if (tag.compare("CurrentProgramName", Qt::CaseInsensitive) == 0)
                 {
                     saveState.currentProgramName = xmlSafeStringChar(text, false);
                 }
@@ -317,13 +317,13 @@ const SaveState& getSaveStateDictFromXML(const QDomNode& xmlNode)
                 // ----------------------------------------------
                 // Midi Program (current)
 
-                else if (tag == "CurrentMidiBank")
+                else if (tag.compare("CurrentMidiBank", Qt::CaseInsensitive) == 0)
                 {
                     bool ok;
                     int value = text.toInt(&ok);
                     if (ok) saveState.currentMidiBank = value;
                 }
-                else if (tag == "CurrentMidiProgram")
+                else if (tag.compare("CurrentMidiProgram", Qt::CaseInsensitive) == 0)
                 {
                     bool ok;
                     int value = text.toInt(&ok);
@@ -333,7 +333,7 @@ const SaveState& getSaveStateDictFromXML(const QDomNode& xmlNode)
                 // ----------------------------------------------
                 // Parameters
 
-                else if (tag == "Parameter")
+                else if (tag.compare("Parameter", Qt::CaseInsensitive) == 0)
                 {
                     StateParameter* stateParameter(new StateParameter);
 
@@ -342,36 +342,36 @@ const SaveState& getSaveStateDictFromXML(const QDomNode& xmlNode)
                     while (! xmlSubData.isNull())
                     {
                         const QString pTag  = xmlSubData.toElement().tagName();
-                        const QString pText = xmlSubData.toElement().text(); //.strip();
+                        const QString pText = xmlSubData.toElement().text().trimmed();
 
-                        if (pTag == "Index")
+                        if (pTag.compare("Index", Qt::CaseInsensitive) == 0)
                         {
                             bool ok;
                             uint index = pText.toUInt(&ok);
                             if (ok) stateParameter->index = index;
                         }
-                        else if (pTag == "Name")
+                        else if (pTag.compare("Name", Qt::CaseInsensitive) == 0)
                         {
                             stateParameter->name = xmlSafeStringChar(pText, false);
                         }
-                        else if (pTag == "Symbol")
+                        else if (pTag.compare("Symbol", Qt::CaseInsensitive) == 0)
                         {
                             stateParameter->symbol = xmlSafeStringChar(pText, false);
                         }
-                        else if (pTag == "Value")
+                        else if (pTag.compare("Value", Qt::CaseInsensitive) == 0)
                         {
                             bool ok;
                             float value = pText.toFloat(&ok);
                             if (ok) stateParameter->value = value;
                         }
-                        else if (pTag == "MidiChannel")
+                        else if (pTag.compare("MidiChannel", Qt::CaseInsensitive) == 0)
                         {
                             bool ok;
                             uint channel = pText.toUInt(&ok);
                             if (ok && channel < 16)
                                 stateParameter->midiChannel = static_cast<uint8_t>(channel);
                         }
-                        else if (pTag == "MidiCC")
+                        else if (pTag.compare("MidiCC", Qt::CaseInsensitive) == 0)
                         {
                             bool ok;
                             int cc = pText.toInt(&ok);
@@ -388,7 +388,7 @@ const SaveState& getSaveStateDictFromXML(const QDomNode& xmlNode)
                 // ----------------------------------------------
                 // Custom Data
 
-                else if (tag == "CustomData")
+                else if (tag.compare("CustomData", Qt::CaseInsensitive) == 0)
                 {
                     StateCustomData* stateCustomData(new StateCustomData);
 
@@ -397,13 +397,13 @@ const SaveState& getSaveStateDictFromXML(const QDomNode& xmlNode)
                     while (! xmlSubData.isNull())
                     {
                         const QString cTag  = xmlSubData.toElement().tagName();
-                        const QString cText = xmlSubData.toElement().text(); //.strip();
+                        const QString cText = xmlSubData.toElement().text().trimmed();
 
-                        if (cTag == "Type")
+                        if (cTag.compare("Type", Qt::CaseInsensitive) == 0)
                             stateCustomData->type = xmlSafeStringChar(cText, false);
-                        else if (cTag == "Key")
+                        else if (cTag.compare("Key", Qt::CaseInsensitive) == 0)
                             stateCustomData->key = xmlSafeStringChar(cText, false);
-                        else if (cTag == "Value")
+                        else if (cTag.compare("Value", Qt::CaseInsensitive) == 0)
                             stateCustomData->value = xmlSafeStringChar(cText, false);
 
                         xmlSubData = xmlSubData.nextSibling();
@@ -415,7 +415,7 @@ const SaveState& getSaveStateDictFromXML(const QDomNode& xmlNode)
                 // ----------------------------------------------
                 // Chunk
 
-                else if (tag == "Chunk")
+                else if (tag.compare("Chunk", Qt::CaseInsensitive) == 0)
                 {
                     saveState.chunk = xmlSafeStringChar(text, false);
                 }
