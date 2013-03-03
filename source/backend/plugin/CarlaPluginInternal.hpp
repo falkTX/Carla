@@ -466,7 +466,7 @@ struct CarlaPluginProtectedData {
         {
             if (mutex.tryLock())
             {
-                dataPendingRT.splice(data, true);
+                dataPendingRT.spliceAppend(data, true);
                 mutex.unlock();
             }
         }

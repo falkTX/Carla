@@ -544,7 +544,7 @@ private:
 
         void splice()
         {
-            dataPending.splice(data, true);
+            dataPending.spliceAppend(data, true);
         }
     };
 
