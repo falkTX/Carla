@@ -31,8 +31,8 @@ endif
 32BIT_FLAGS = -m32
 64BIT_FLAGS = -m64
 
-BUILD_C_FLAGS   = $(BASE_FLAGS) -std=c99 $(CFLAGS)
-BUILD_CXX_FLAGS = $(BASE_FLAGS) -std=c++0x $(CXXFLAGS)
+BUILD_C_FLAGS   = $(BASE_FLAGS) -std=gnu99 $(CFLAGS)
+BUILD_CXX_FLAGS = $(BASE_FLAGS) -std=gnu++0x $(CXXFLAGS)
 LINK_FLAGS      = $(LDFLAGS)
 
 # --------------------------------------------------------------

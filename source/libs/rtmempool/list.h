@@ -256,9 +256,13 @@ static inline void list_splice_init(struct list_head *list, struct list_head *he
  * @type:   the type of the struct this is embedded in.
  * @member: the name of the list_struct within the struct.
  */
-#define list_entry(ptr, type, member) \
+#ifdef __GNUC__
+# define list_entry(ptr, type, member) \
+    container_of(ptr, type, member)
+#else
+# define list_entry(ptr, type, member) \
     ((type *)((char *)(ptr)-(unsigned long)(&((type *)0)->member)))
-    //container_of(ptr, type, member)
+#endif
 
 /**
  * list_for_each - iterate over a list
