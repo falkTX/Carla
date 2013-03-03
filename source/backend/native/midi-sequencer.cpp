@@ -167,15 +167,19 @@ protected:
 
                 fInEvents.appendRT(rawMidiEvent);
             }
+
+            if (fInEvents.mutex.tryLock())
+            {
+                fInEvents.splice();
+                fInEvents.mutex.unlock();
+            }
         }
 
-        if (! fMutex.tryLock())
+        if (! timePos->playing)
+            return;
+        if (! fOutEvents.mutex.tryLock())
             return;
 
-        if (fWantInEvents)
-            fInEvents.splice();
-
-        if (timePos->playing)
         {
             MidiEvent midiEvent;
 
@@ -196,14 +200,14 @@ protected:
             }
         }
 
-        fMutex.unlock();
+        fOutEvents.mutex.unlock();
     }
 
 private:
-    CarlaMutex fMutex;
-    bool       fWantInEvents;
+    bool fWantInEvents;
 
     struct InRtEvents {
+        CarlaMutex mutex;
         RtList<RawMidiEvent>::Pool dataPool;
         RtList<RawMidiEvent> data;
         RtList<RawMidiEvent> dataPendingRT;
@@ -237,7 +241,32 @@ private:
     } fInEvents;
 
     struct OutRtEvents {
+        CarlaMutex mutex;
         NonRtList<RawMidiEvent*> data;
+
+        void appendAt(RawMidiEvent* event, uint32_t time)
+        {
+            if (data.isEmpty())
+            {
+                mutex.lock();
+                data.append(event);
+                mutex.unlock();
+                return;
+            }
+
+            for (auto it = data.begin(); it.valid(); it.next())
+            {
+                RawMidiEvent* const oldEvent(*it);
+
+                if (time > oldEvent->time)
+                {
+                    mutex.lock();
+                    data.appendAt(event, it);
+                    mutex.unlock();
+                    break;
+                }
+            }
+        }
 
         void addControl(uint32_t time, uint8_t channel, uint8_t control, uint8_t value)
         {
@@ -247,7 +276,7 @@ private:
             ctrlEvent->data[2] = value;
             ctrlEvent->time    = time;
 
-            data.append(ctrlEvent);
+            appendAt(ctrlEvent, time);
         }
 
         void addProgram(uint32_t time, uint8_t channel, uint8_t bank, uint8_t program)
@@ -264,8 +293,8 @@ private:
             programEvent->data[2] = 0;
             programEvent->time    = time;
 
-            data.append(bankEvent);
-            data.append(programEvent);
+            appendAt(bankEvent, time);
+            appendAt(programEvent, time);
         }
 
         void addNote(uint32_t time, uint8_t channel, uint8_t pitch, uint8_t velocity, uint32_t duration)
@@ -282,8 +311,8 @@ private:
             noteOffEvent->data[2] = velocity;
             noteOffEvent->time    = time+duration;
 
-            data.append(noteOnEvent);
-            data.append(noteOffEvent);
+            appendAt(noteOnEvent, time);
+            appendAt(noteOffEvent, time+duration);
         }
 
     } fOutEvents;
