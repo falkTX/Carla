@@ -38,7 +38,7 @@ public:
         : PluginDescriptorClass(host),
           fWantInEvents(false)
     {
-        // TEST SONG
+        // TEST SONG (unsorted to test RtList API)
 
         uint32_t m = 44;
 
@@ -46,15 +46,15 @@ public:
         fOutEvents.addControl(0*m, 0, 10, 63);
         fOutEvents.addProgram(0*m, 0,  0, 0);
 
-        // 0 On ch=1 n=64 v=90
-        // 325 Off ch=1 n=64 v=90
-        // 384 On ch=1 n=62 v=90
-        // 709 Off ch=1 n=62 v=90
-        // 768 On ch=1 n=60 v=90
-        //1093 Off ch=1 n=60 v=90
-        fOutEvents.addNote(  0*m, 0, 64, 90, 325*m);
-        fOutEvents.addNote(384*m, 0, 62, 90, 325*m);
-        fOutEvents.addNote(768*m, 0, 60, 90, 325*m);
+        // 6912 On ch=1 n=60 v=90
+        // 7237 Off ch=1 n=60 v=90
+        // 7296 On ch=1 n=62 v=90
+        // 7621 Off ch=1 n=62 v=90
+        // 7680 On ch=1 n=64 v=90
+        // 8005 Off ch=1 n=64 v=90
+        fOutEvents.addNote(6912*m, 0, 60, 90, 325*m);
+        fOutEvents.addNote(7680*m, 0, 64, 90, 325*m);
+        fOutEvents.addNote(7296*m, 0, 62, 90, 325*m);
 
         // 1152 On ch=1 n=62 v=90
         // 1477 Off ch=1 n=62 v=90
@@ -63,18 +63,8 @@ public:
         // 1920 On ch=1 n=64 v=90
         // 2245 Off ch=1 n=64 v=90
         fOutEvents.addNote(1152*m, 0, 62, 90, 325*m);
-        fOutEvents.addNote(1536*m, 0, 64, 90, 325*m);
         fOutEvents.addNote(1920*m, 0, 64, 90, 325*m);
-
-        // 2304 On ch=1 n=64 v=90
-        // 2955 Off ch=1 n=64 v=90
-        // 3072 On ch=1 n=62 v=90
-        // 3397 Off ch=1 n=62 v=90
-        // 3456 On ch=1 n=62 v=90
-        // 3781 Off ch=1 n=62 v=90
-        fOutEvents.addNote(2304*m, 0, 64, 90, 650*m);
-        fOutEvents.addNote(3072*m, 0, 62, 90, 325*m);
-        fOutEvents.addNote(3456*m, 0, 62, 90, 325*m);
+        fOutEvents.addNote(1536*m, 0, 64, 90, 325*m);
 
         // 3840 On ch=1 n=62 v=90
         // 4491 Off ch=1 n=62 v=90
@@ -83,8 +73,22 @@ public:
         // 4992 On ch=1 n=67 v=90
         // 5317 Off ch=1 n=67 v=90
         fOutEvents.addNote(3840*m, 0, 62, 90, 650*m);
-        fOutEvents.addNote(4608*m, 0, 64, 90, 325*m);
         fOutEvents.addNote(4992*m, 0, 67, 90, 325*m);
+        fOutEvents.addNote(4608*m, 0, 64, 90, 325*m);
+
+        // 0 On ch=1 n=64 v=90
+        // 325 Off ch=1 n=64 v=90
+        // 384 On ch=1 n=62 v=90
+        // 709 Off ch=1 n=62 v=90
+        // 768 On ch=1 n=60 v=90
+        //1093 Off ch=1 n=60 v=90
+        fOutEvents.addNote(  0*m, 0, 64, 90, 325*m);
+        fOutEvents.addNote(768*m, 0, 60, 90, 325*m);
+        fOutEvents.addNote(384*m, 0, 62, 90, 325*m);
+
+        // 10752 On ch=1 n=60 v=90
+        // 12056 Off ch=1 n=60 v=90
+        fOutEvents.addNote(10752*m, 0, 60, 90, 650*m);
 
         // 5376 On ch=1 n=67 v=90
         // 6027 Off ch=1 n=67 v=90
@@ -95,16 +99,6 @@ public:
         fOutEvents.addNote(5376*m, 0, 67, 90, 650*m);
         fOutEvents.addNote(6144*m, 0, 64, 90, 325*m);
         fOutEvents.addNote(6528*m, 0, 62, 90, 325*m);
-
-        // 6912 On ch=1 n=60 v=90
-        // 7237 Off ch=1 n=60 v=90
-        // 7296 On ch=1 n=62 v=90
-        // 7621 Off ch=1 n=62 v=90
-        // 7680 On ch=1 n=64 v=90
-        // 8005 Off ch=1 n=64 v=90
-        fOutEvents.addNote(6912*m, 0, 60, 90, 325*m);
-        fOutEvents.addNote(7296*m, 0, 62, 90, 325*m);
-        fOutEvents.addNote(7680*m, 0, 64, 90, 325*m);
 
         // 8064 On ch=1 n=64 v=90
         // 8389 Off ch=1 n=64 v=90
@@ -126,9 +120,15 @@ public:
         fOutEvents.addNote(9984*m, 0, 64, 90, 325*m);
         fOutEvents.addNote(10368*m, 0, 62, 90, 325*m);
 
-        // 10752 On ch=1 n=60 v=90
-        // 12056 Off ch=1 n=60 v=90
-        fOutEvents.addNote(10752*m, 0, 60, 90, 650*m);
+        // 2304 On ch=1 n=64 v=90
+        // 2955 Off ch=1 n=64 v=90
+        // 3072 On ch=1 n=62 v=90
+        // 3397 Off ch=1 n=62 v=90
+        // 3456 On ch=1 n=62 v=90
+        // 3781 Off ch=1 n=62 v=90
+        fOutEvents.addNote(2304*m, 0, 64, 90, 650*m);
+        fOutEvents.addNote(3072*m, 0, 62, 90, 325*m);
+        fOutEvents.addNote(3456*m, 0, 62, 90, 325*m);
     }
 
     ~MidiSequencerPlugin()
@@ -254,18 +254,31 @@ private:
                 return;
             }
 
+            uint32_t lastTime = 0;
+
             for (auto it = data.begin(); it.valid(); it.next())
             {
                 RawMidiEvent* const oldEvent(*it);
 
-                if (time > oldEvent->time)
+                if (lastTime > time)
                 {
                     mutex.lock();
-                    data.appendAt(event, it);
+                    data.insertAt(event, it);
                     mutex.unlock();
-                    break;
+                    return;
                 }
+
+                lastTime = oldEvent->time;
             }
+
+            if (time >= lastTime)
+            {
+                mutex.lock();
+                data.append(event);
+                mutex.unlock();
+            }
+            else
+                carla_stderr2("MidiSequencerPlugin::appendAt() failed for time %i", time);
         }
 
         void addControl(uint32_t time, uint8_t channel, uint8_t control, uint8_t value)
