@@ -144,6 +144,9 @@ typedef struct _HostDescriptor {
     void (*ui_custom_data_changed)(HostHandle handle, const char* key, const char* value);
     void (*ui_closed)(HostHandle handle);
 
+    const char* (*ui_open_file)(HostHandle handle, bool isDir, const char* title, const char* filter);
+    const char* (*ui_save_file)(HostHandle handle, bool isDir, const char* title, const char* filter);
+
 } HostDescriptor;
 
 typedef struct _PluginDescriptor {

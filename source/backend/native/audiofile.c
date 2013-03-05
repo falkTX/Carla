@@ -288,6 +288,18 @@ static void audiofile_set_custom_data(PluginHandle handle, const char* key, cons
         audiofile_load_filename(handlePtr, value);
 }
 
+static void audiofile_ui_show(PluginHandle handle, bool show)
+{
+    AudioFileInstance* const handlePtr = (AudioFileInstance*)handle;
+
+    const char* const filename = handlePtr->host->ui_open_file(handlePtr->host->handle, false, "Open Audio File", "");
+
+    if (filename != NULL)
+        handlePtr->host->ui_custom_data_changed(handlePtr->host->handle, "file", filename);
+
+    handlePtr->host->ui_closed(handlePtr->host->handle);
+}
+
 static void audiofile_process(PluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, uint32_t midiEventCount, const MidiEvent* midiEvents)
 {
     AudioFileInstance* const handlePtr = (AudioFileInstance*)handle;
@@ -394,7 +406,7 @@ static const PluginDescriptor audiofileDesc = {
     .set_midi_program    = NULL,
     .set_custom_data     = audiofile_set_custom_data,
 
-    .ui_show = NULL,
+    .ui_show = audiofile_ui_show,
     .ui_idle = NULL,
 
     .ui_set_parameter_value = NULL,

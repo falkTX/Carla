@@ -121,6 +121,8 @@ public:
         fHost.ui_parameter_changed   = carla_host_ui_parameter_changed;
         fHost.ui_custom_data_changed = carla_host_ui_custom_data_changed;
         fHost.ui_closed              = carla_host_ui_closed;
+        fHost.ui_open_file           = carla_host_ui_open_file;
+        fHost.ui_save_file           = carla_host_ui_save_file;
 
         carla_zeroMem(fMidiEvents, sizeof(::MidiEvent)*MAX_MIDI_EVENTS*2);
     }
@@ -490,38 +492,22 @@ public:
         CARLA_ASSERT(fDescriptor != nullptr);
         CARLA_ASSERT(fHandle != nullptr);
 
-        if (fDescriptor != nullptr && fHandle != nullptr)
+        if (fDescriptor != nullptr && fHandle != nullptr && fDescriptor->ui_show != nullptr)
         {
-            // FIXME - this be as a host-side call to request files
-            if (fDescriptor->name != nullptr && std::strcmp(fDescriptor->label, "audiofile") == 0)
-            {
-                QString filenameTry = QFileDialog::getOpenFileName(nullptr, "Open Audio File");
+            fDescriptor->ui_show(fHandle, yesNo);
 
-                if (! filenameTry.isEmpty())
+            if (yesNo)
+            {
+                // Update UI values, FIXME
+                if (kData->midiprog.current >= 0)
                 {
-                    const char* const filename = filenameTry.toUtf8().constData();
-                    setCustomData(CUSTOM_DATA_STRING, "file", filename, false);
+                    const MidiProgramData& mpData = kData->midiprog.getCurrent();
+                    fDescriptor->ui_set_midi_program(fHandle, mpData.bank, mpData.program);
                 }
 
-                kData->engine->callback(CALLBACK_SHOW_GUI, fId, 0, 0, 0.0f, nullptr);
-            }
-            else if (fDescriptor->ui_show != nullptr)
-            {
-                fDescriptor->ui_show(fHandle, yesNo);
-
-                if (yesNo)
+                for (uint32_t i=0; i < kData->param.count; i++)
                 {
-                    // Update UI values
-                    if (kData->midiprog.current >= 0)
-                    {
-                        const MidiProgramData& mpData = kData->midiprog.getCurrent();
-                        fDescriptor->ui_set_midi_program(fHandle, mpData.bank, mpData.program);
-                    }
-
-                    for (uint32_t i=0; i < kData->param.count; i++)
-                    {
-                        fDescriptor->ui_set_parameter_value(fHandle, i, fDescriptor->get_parameter_value(fHandle, i));
-                    }
+                    fDescriptor->ui_set_parameter_value(fHandle, i, fDescriptor->get_parameter_value(fHandle, i));
                 }
             }
         }
@@ -1797,6 +1783,28 @@ protected:
         fIsUiVisible = false;
     }
 
+    const char* handleUiOpenFile(const bool isDir, const char* const title, const char* const filter)
+    {
+        static CarlaString retStr;
+
+        retStr = QFileDialog::getOpenFileName(nullptr, title, "", filter).toUtf8().constData();
+
+        return retStr.isNotEmpty() ? (const char*)retStr : nullptr;
+
+        // TODO - isDir
+    }
+
+    const char* handleUiSaveFile(const bool isDir, const char* const title, const char* const filter)
+    {
+        static CarlaString retStr;
+
+        retStr = QFileDialog::getSaveFileName(nullptr, title, "", filter).toUtf8().constData();
+
+        return (const char*)retStr;
+
+        // TODO - isDir
+    }
+
 public:
     static size_t getPluginCount()
     {
@@ -1986,6 +1994,16 @@ private:
     static void carla_host_ui_closed(HostHandle handle)
     {
         handlePtr->handleUiClosed();
+    }
+
+    static const char* carla_host_ui_open_file(HostHandle handle, bool isDir, const char* title, const char* filter)
+    {
+        return handlePtr->handleUiOpenFile(isDir, title, filter);
+    }
+
+    static const char* carla_host_ui_save_file(HostHandle handle, bool isDir, const char* title, const char* filter)
+    {
+        return handlePtr->handleUiSaveFile(isDir, title, filter);
     }
 
     #undef handlePtr

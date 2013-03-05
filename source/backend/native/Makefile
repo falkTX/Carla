@@ -72,10 +72,10 @@ debug:
 
 # --------------------------------------------------------------
 
-%.c.o: %.c
+%.c.o: %.c ../CarlaNative.h
 	$(CC) $< $(BUILD_C_FLAGS) -c -o $@
 
-%.cpp.o: %.cpp
+%.cpp.o: %.cpp ../CarlaNative.h ../CarlaNative.hpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 $(SHARED): $(OBJS) $(LIBS)
