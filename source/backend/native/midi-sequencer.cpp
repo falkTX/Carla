@@ -136,13 +136,6 @@ public:
         addNote(2304*m, 0, 64, 90, 650*m);
         addNote(3072*m, 0, 62, 90, 325*m);
         addNote(3456*m, 0, 62, 90, 325*m);
-
-        for (auto it = fData.begin(); it.valid(); it.next())
-        {
-            const RawMidiEvent* const rawMidiEvent(*it);
-
-            carla_stdout("Got event %02X @%i", rawMidiEvent->data[0], rawMidiEvent->time);
-        }
     }
 
     ~MidiPattern()
@@ -159,7 +152,7 @@ public:
         ctrlEvent->size    = 3;
         ctrlEvent->time    = time;
 
-        appendAt(ctrlEvent, time);
+        append(ctrlEvent);
     }
 
     void addProgram(const uint32_t time, const uint8_t channel, const uint8_t bank, const uint8_t program)
@@ -177,8 +170,8 @@ public:
         programEvent->size    = 2;
         programEvent->time    = time;
 
-        appendAt(bankEvent, time);
-        appendAt(programEvent, time);
+        append(bankEvent);
+        append(programEvent);
     }
 
     void addNote(const uint32_t time, const uint8_t channel, const uint8_t pitch, const uint8_t velocity, const uint32_t duration)
@@ -197,8 +190,8 @@ public:
         noteOffEvent->size    = 3;
         noteOffEvent->time    = time+duration;
 
-        appendAt(noteOnEvent, time);
-        appendAt(noteOffEvent, time+duration);
+        append(noteOnEvent);
+        append(noteOffEvent);
     }
 
     void play(uint32_t timePosFrame, uint32_t frames)
@@ -238,41 +231,29 @@ private:
     CarlaMutex fMutex;
     NonRtList<const RawMidiEvent*> fData;
 
-    void appendAt(const RawMidiEvent* const event, const uint32_t time)
+    void append(const RawMidiEvent* const event)
     {
         if (fData.isEmpty())
         {
-            fMutex.lock();
+            const CarlaMutex::ScopedLocker sl(&fMutex);
             fData.append(event);
-            fMutex.unlock();
             return;
         }
-
-        uint32_t lastTime = 0;
 
         for (auto it = fData.begin(); it.valid(); it.next())
         {
             const RawMidiEvent* const oldEvent(*it);
 
-            if (lastTime > time)
-            {
-                fMutex.lock();
-                fData.insertAt(event, it);
-                fMutex.unlock();
-                return;
-            }
+            if (event->time >= oldEvent->time)
+                continue;
 
-            lastTime = oldEvent->time;
+            const CarlaMutex::ScopedLocker sl(&fMutex);
+            fData.insertAt(event, it);
+            return;
         }
 
-        if (time >= lastTime)
-        {
-            fMutex.lock();
-            fData.append(event);
-            fMutex.unlock();
-        }
-        else
-            carla_stderr2("MidiPattern::appendAt() failed for time %i", time);
+        const CarlaMutex::ScopedLocker sl(&fMutex);
+        fData.append(event);
     }
 
     void writeMidiEvent(const MidiEvent* const event)
