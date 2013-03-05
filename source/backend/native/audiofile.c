@@ -25,16 +25,30 @@
 #include <string.h>
 #include <unistd.h>
 
+#define PROGRAM_COUNT 16
+
+#ifdef _WIN32
+# define OS_SEP '\\'
+#else
+# define OS_SEP '/'
+#endif
+
 typedef struct adinfo   ADInfo;
 typedef pthread_mutex_t Mutex;
 typedef pthread_t       Thread;
 
 typedef struct _AudioFilePool {
-    float* buffer[2];
+    float*   buffer[2];
     uint32_t startFrame;
     uint32_t size;
 
 } AudioFilePool;
+
+typedef struct _AudioFilePrograms {
+    uint32_t    current;
+    const char* fullNames[PROGRAM_COUNT];
+    const char* shortNames[PROGRAM_COUNT];
+} AudioFilePrograms;
 
 typedef struct _AudioFileInstance {
     HostDescriptor* host;
@@ -45,7 +59,9 @@ typedef struct _AudioFileInstance {
     uint32_t lastFrame;
     uint32_t maxFrame;
     AudioFilePool pool;
+    AudioFilePrograms programs;
 
+    bool loopMode;
     bool needsRead;
     bool doProcess;
     bool doQuit;
@@ -54,10 +70,6 @@ typedef struct _AudioFileInstance {
     Thread thread;
 
 } AudioFileInstance;
-
-// ------------------------------------------------------------------------------------------
-
-static bool gADInitiated = false;
 
 // ------------------------------------------------------------------------------------------
 
@@ -76,11 +88,11 @@ void audiofile_read_poll(AudioFileInstance* const handlePtr)
         return;
     }
 
-    int64_t lastFrame = handlePtr->lastFrame;
+    const int64_t lastFrame = handlePtr->lastFrame;
 
     if (lastFrame >= handlePtr->maxFrame)
     {
-        //fprintf(stderr, "R: transport out of bounds\n");
+        fprintf(stderr, "R: transport out of bounds\n");
         handlePtr->needsRead = false;
         return;
     }
@@ -96,47 +108,43 @@ void audiofile_read_poll(AudioFileInstance* const handlePtr)
 
         ad_seek(handlePtr->filePtr, lastFrame);
         ssize_t i, j, rv = ad_read(handlePtr->filePtr, tmpData, tmpSize);
+        i = j = 0;
 
+        // lock, and put data asap
+        pthread_mutex_lock(&handlePtr->mutex);
+
+        for (; i < handlePtr->pool.size && j < rv; j++)
         {
-            // lock, and put data asap
-            pthread_mutex_lock(&handlePtr->mutex);
-
-            //zeroFloat(handlePtr->pool.buffer[0], handlePtr->pool.size);
-            //zeroFloat(handlePtr->pool.buffer[1], handlePtr->pool.size);
-
-            for (i=0, j=0; i < handlePtr->pool.size && j < rv; j++)
+            if (handlePtr->fileNfo.channels == 1)
             {
-                if (handlePtr->fileNfo.channels == 1)
+                handlePtr->pool.buffer[0][i] = tmpData[j];
+                handlePtr->pool.buffer[1][i] = tmpData[j];
+                i++;
+            }
+            else
+            {
+                if (j % 2 == 0)
                 {
                     handlePtr->pool.buffer[0][i] = tmpData[j];
-                    handlePtr->pool.buffer[1][i] = tmpData[j];
-                    i++;
                 }
                 else
                 {
-                    if (j % 2 == 0)
-                    {
-                        handlePtr->pool.buffer[0][i] = tmpData[j];
-                    }
-                    else
-                    {
-                        handlePtr->pool.buffer[1][i] = tmpData[j];
-                        i++;
-                    }
+                    handlePtr->pool.buffer[1][i] = tmpData[j];
+                    i++;
                 }
             }
-
-            for (; i < handlePtr->pool.size; i++)
-            {
-                handlePtr->pool.buffer[0][i] = 0.0f;
-                handlePtr->pool.buffer[1][i] = 0.0f;
-            }
-
-            handlePtr->pool.startFrame = lastFrame;
-
-            // done
-            pthread_mutex_unlock(&handlePtr->mutex);
         }
+
+        for (; i < handlePtr->pool.size; i++)
+        {
+            handlePtr->pool.buffer[0][i] = 0.0f;
+            handlePtr->pool.buffer[1][i] = 0.0f;
+        }
+
+        handlePtr->pool.startFrame = lastFrame;
+
+        // done
+        pthread_mutex_unlock(&handlePtr->mutex);
     }
 
     handlePtr->needsRead = false;
@@ -157,12 +165,15 @@ void audiofile_load_filename(AudioFileInstance* const handlePtr, const char* con
     }
     ad_clear_nfo(&handlePtr->fileNfo);
 
+    if (filename == NULL)
+        return;
+
     // open new
     handlePtr->filePtr = ad_open(filename, &handlePtr->fileNfo);
 
     if (handlePtr->filePtr != NULL)
     {
-        ad_dump_nfo(1, &handlePtr->fileNfo);
+        ad_dump_nfo(99, &handlePtr->fileNfo);
 
         if (handlePtr->fileNfo.channels == 1 || handlePtr->fileNfo.channels == 2)
         {
@@ -191,8 +202,12 @@ static void audiofile_thread_idle(void* ptr)
             usleep(50*1000);
     }
 
-    pthread_exit(0);
+    pthread_exit(NULL);
 }
+
+// ------------------------------------------------------------------------------------------
+
+static bool gADInitiated = false;
 
 // ------------------------------------------------------------------------------------------
 
@@ -218,7 +233,9 @@ static PluginHandle audiofile_instantiate(const PluginDescriptor* _this_, HostDe
     handlePtr->pool.buffer[1]  = NULL;
     handlePtr->pool.startFrame = 0;
     handlePtr->pool.size = 0;
+    handlePtr->programs.current = 0;
 
+    handlePtr->loopMode  = true;
     handlePtr->needsRead = false;
     handlePtr->doProcess = false;
     handlePtr->doQuit    = false;
@@ -226,14 +243,26 @@ static PluginHandle audiofile_instantiate(const PluginDescriptor* _this_, HostDe
     ad_clear_nfo(&handlePtr->fileNfo);
     pthread_mutex_init(&handlePtr->mutex, NULL);
 
+    for (uint32_t i=0; i < PROGRAM_COUNT; i++)
+    {
+        handlePtr->programs.fullNames[i]  = NULL;
+        handlePtr->programs.shortNames[i] = NULL;
+    }
+
     // create audio pool
-    handlePtr->pool.size  = host->get_sample_rate(host->handle) * 6; // 6 secs
+    handlePtr->pool.size = host->get_sample_rate(host->handle) * 6; // 6 secs
 
     handlePtr->pool.buffer[0] = (float*)malloc(sizeof(float) * handlePtr->pool.size);
-    handlePtr->pool.buffer[1] = (float*)malloc(sizeof(float) * handlePtr->pool.size);
-
-    if (handlePtr->pool.buffer[0] == NULL || handlePtr->pool.buffer[1] == NULL)
+    if (handlePtr->pool.buffer[0] == NULL)
     {
+        free(handlePtr);
+        return NULL;
+    }
+
+    handlePtr->pool.buffer[1] = (float*)malloc(sizeof(float) * handlePtr->pool.size);
+    if (handlePtr->pool.buffer[1] == NULL)
+    {
+        free(handlePtr->pool.buffer[0]);
         free(handlePtr);
         return NULL;
     }
@@ -242,12 +271,6 @@ static PluginHandle audiofile_instantiate(const PluginDescriptor* _this_, HostDe
     zeroFloat(handlePtr->pool.buffer[1], handlePtr->pool.size);
 
     pthread_create(&handlePtr->thread, NULL, (void*)&audiofile_thread_idle, handlePtr);
-
-    // load file, TESTING
-    // wait for jack processing to end
-    handlePtr->doProcess = false;
-    pthread_mutex_lock(&handlePtr->mutex);
-    pthread_mutex_unlock(&handlePtr->mutex);
 
     return handlePtr;
 
@@ -277,14 +300,145 @@ static void audiofile_cleanup(PluginHandle handle)
     if (handlePtr->pool.buffer[1] != NULL)
         free(handlePtr->pool.buffer[1]);
 
+    for (uint32_t i=0; i < PROGRAM_COUNT; i++)
+    {
+        if (handlePtr->programs.fullNames[i] != NULL)
+            free((void*)handlePtr->programs.fullNames[i]);
+        if (handlePtr->programs.shortNames[i] != NULL)
+            free((void*)handlePtr->programs.shortNames[i]);
+    }
+
     free(handlePtr);
+}
+
+static uint32_t audiofile_get_parameter_count(PluginHandle handle)
+{
+    return 1;
+
+    // unused
+    (void)handle;
+}
+
+static const Parameter* audiofile_get_parameter_info(PluginHandle handle, uint32_t index)
+{
+    if (index != 0)
+        return NULL;
+
+    static Parameter param;
+
+    param.name  = "Loop Mode";
+    param.unit  = NULL;
+    param.hints = PARAMETER_IS_ENABLED|PARAMETER_IS_BOOLEAN;
+    param.ranges.def = 1.0f;
+    param.ranges.min = 0.0f;
+    param.ranges.max = 1.0f;
+    param.ranges.step = 1.0f;
+    param.ranges.stepSmall = 1.0f;
+    param.ranges.stepLarge = 1.0f;
+    param.scalePointCount = 0;
+    param.scalePoints     = NULL;
+
+    return &param;
+
+    // unused
+    (void)handle;
+}
+
+static float audiofile_get_parameter_value(PluginHandle handle, uint32_t index)
+{
+    AudioFileInstance* const handlePtr = (AudioFileInstance*)handle;
+
+    if (index != 0)
+        return 0.0f;
+
+    return handlePtr->loopMode ? 1.0f : 0.0f;
+
+    // unused
+    (void)handle;
+}
+
+static uint32_t audiofile_get_program_count(PluginHandle handle)
+{
+    return PROGRAM_COUNT;
+}
+
+const MidiProgram* audiofile_get_program_info(PluginHandle handle, uint32_t index)
+{
+    AudioFileInstance* const handlePtr = (AudioFileInstance*)handle;
+
+    if (index >= PROGRAM_COUNT)
+        return NULL;
+
+    static MidiProgram midiProgram;
+
+    midiProgram.bank    = 0;
+    midiProgram.program = index;
+    midiProgram.name    = handlePtr->programs.shortNames[index];
+
+    if (midiProgram.name == NULL)
+        midiProgram.name = "";
+
+    return &midiProgram;
+}
+
+static void audiofile_set_parameter_value(PluginHandle handle, uint32_t index, float value)
+{
+    AudioFileInstance* const handlePtr = (AudioFileInstance*)handle;
+
+    if (index != 0)
+        return;
+
+    handlePtr->loopMode = (value > 0.5f);
+}
+
+static void audiofile_set_program(PluginHandle handle, uint32_t bank, uint32_t program)
+{
+    AudioFileInstance* const handlePtr = (AudioFileInstance*)handle;
+
+    if (bank != 0 || program >= PROGRAM_COUNT)
+        return;
+
+    if (handlePtr->programs.current != program)
+    {
+        audiofile_load_filename(handlePtr, handlePtr->programs.fullNames[program]);
+        handlePtr->programs.current = program;
+    }
 }
 
 static void audiofile_set_custom_data(PluginHandle handle, const char* key, const char* value)
 {
     AudioFileInstance* const handlePtr = (AudioFileInstance*)handle;
 
-    if (strcmp(key, "file") == 0)
+    if (strncmp(key, "file", 4) != 0)
+        return;
+    if (key[4] < '0' || key[4] > '9')
+        return;
+    if (key[5] < '0' || key[5] > '9')
+        return;
+
+    uint8_t tens = key[4]-'0';
+    uint8_t nums = key[5]-'0';
+
+    uint32_t program = tens*10 + nums;
+
+    if (program >= PROGRAM_COUNT)
+        return;
+
+    if (handlePtr->programs.fullNames[program] != NULL)
+        free((void*)handlePtr->programs.fullNames[program]);
+    if (handlePtr->programs.shortNames[program] != NULL)
+        free((void*)handlePtr->programs.shortNames[program]);
+
+    handlePtr->programs.fullNames[program] = strdup(value);
+
+    {
+        const char* shortName1 = strrchr(value, OS_SEP)+1;
+        //const char* shortName2 = strchr(shortName1, '.');
+
+        handlePtr->programs.shortNames[program] = strdup(shortName1);
+    }
+
+    if (handlePtr->programs.current == program)
         audiofile_load_filename(handlePtr, value);
 }
 
@@ -298,7 +452,13 @@ static void audiofile_ui_show(PluginHandle handle, bool show)
     const char* const filename = handlePtr->host->ui_open_file(handlePtr->host->handle, false, "Open Audio File", "");
 
     if (filename != NULL)
-        handlePtr->host->ui_custom_data_changed(handlePtr->host->handle, "file", filename);
+    {
+        char fileStr[4+2+1] = { 'f', 'i', 'l', 'e', 0, 0, 0 };
+        fileStr[4] = '0' + (handlePtr->programs.current / 10);
+        fileStr[5] = '0' + (handlePtr->programs.current % 10);
+
+        handlePtr->host->ui_custom_data_changed(handlePtr->host->handle, fileStr, filename);
+    }
 
     handlePtr->host->ui_closed(handlePtr->host->handle);
 }
@@ -387,7 +547,7 @@ static const PluginDescriptor audiofileDesc = {
     .audioOuts = 2,
     .midiIns   = 0,
     .midiOuts  = 0,
-    .parameterIns  = 0,
+    .parameterIns  = 1,
     .parameterOuts = 0,
     .name      = "Audio File",
     .label     = "audiofile",
@@ -397,16 +557,16 @@ static const PluginDescriptor audiofileDesc = {
     .instantiate = audiofile_instantiate,
     .cleanup     = audiofile_cleanup,
 
-    .get_parameter_count = NULL,
-    .get_parameter_info  = NULL,
-    .get_parameter_value = NULL,
+    .get_parameter_count = audiofile_get_parameter_count,
+    .get_parameter_info  = audiofile_get_parameter_info,
+    .get_parameter_value = audiofile_get_parameter_value,
     .get_parameter_text  = NULL,
 
-    .get_midi_program_count = NULL,
-    .get_midi_program_info  = NULL,
+    .get_midi_program_count = audiofile_get_program_count,
+    .get_midi_program_info  = audiofile_get_program_info,
 
-    .set_parameter_value = NULL,
-    .set_midi_program    = NULL,
+    .set_parameter_value = audiofile_set_parameter_value,
+    .set_midi_program    = audiofile_set_program,
     .set_custom_data     = audiofile_set_custom_data,
 
     .ui_show = audiofile_ui_show,
@@ -429,7 +589,7 @@ void carla_register_native_plugin_audiofile()
 }
 
 // -----------------------------------------------------------------------
-// amagamated build
+// amalgamated build
 
 #include "audio_decoder/ad_ffmpeg.c"
 #include "audio_decoder/ad_plugin.c"

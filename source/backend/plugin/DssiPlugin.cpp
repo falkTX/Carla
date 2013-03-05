@@ -822,7 +822,8 @@ public:
     void reloadPrograms(const bool init)
     {
         carla_debug("DssiPlugin::reloadPrograms(%s)", bool2str(init));
-        uint32_t i, oldCount = kData->midiprog.count;
+        uint32_t i, oldCount  = kData->midiprog.count;
+        const int32_t current = kData->midiprog.current;
 
         // Delete old programs
         kData->midiprog.clear();
@@ -868,8 +869,6 @@ public:
         }
         else
         {
-            kData->engine->callback(CALLBACK_RELOAD_PROGRAMS, fId, 0, 0, 0.0f, nullptr);
-
             // Check if current program is invalid
             bool programChanged = false;
 
@@ -879,27 +878,34 @@ public:
                 kData->midiprog.current = oldCount;
                 programChanged = true;
             }
-            else if (kData->midiprog.current >= static_cast<int32_t>(kData->midiprog.count))
+            else if (current >= static_cast<int32_t>(kData->midiprog.count))
             {
                 // current midi program > count
                 kData->midiprog.current = 0;
                 programChanged = true;
             }
-            else if (kData->midiprog.current < 0 && kData->midiprog.count > 0)
+            else if (current < 0 && kData->midiprog.count > 0)
             {
                 // programs exist now, but not before
                 kData->midiprog.current = 0;
                 programChanged = true;
             }
-            else if (kData->midiprog.current >= 0 && kData->midiprog.count == 0)
+            else if (current >= 0 && kData->midiprog.count == 0)
             {
                 // programs existed before, but not anymore
                 kData->midiprog.current = -1;
                 programChanged = true;
             }
+            else
+            {
+                // no change
+                kData->midiprog.current = current;
+            }
 
             if (programChanged)
                 setMidiProgram(kData->midiprog.current, true, true, true);
+
+            kData->engine->callback(CALLBACK_RELOAD_PROGRAMS, fId, 0, 0, 0.0f, nullptr);
         }
     }
 
