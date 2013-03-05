@@ -25,26 +25,33 @@
 #define MAX_PREALLOCATED_EVENT_COUNT 1000
 
 struct RawMidiEvent {
-    unsigned char data[MAX_EVENT_DATA_SIZE];
-    //size_t        dataSize;
-    uint32_t      time;
-    //double        value; // used for special events
+    uint8_t  data[MAX_EVENT_DATA_SIZE];
+    size_t   size;
+    uint32_t time;
+
+    RawMidiEvent()
+        : data{0},
+          size(0),
+          time(0) {}
 };
 
-class MidiSequencerPlugin : public PluginDescriptorClass
+class MidiPattern
 {
 public:
-    MidiSequencerPlugin(const HostDescriptor* const host)
-        : PluginDescriptorClass(host),
-          fWantInEvents(false)
+    MidiPattern(const HostDescriptor* const host)
+        : kHost(host),
+          fStartTime(0),
+          fDuration(0)
     {
+        CARLA_ASSERT(host != nullptr);
+
         // TEST SONG (unsorted to test RtList API)
 
         uint32_t m = 44;
 
-        fOutEvents.addControl(0*m, 0,  7, 99);
-        fOutEvents.addControl(0*m, 0, 10, 63);
-        fOutEvents.addProgram(0*m, 0,  0, 0);
+        addControl(0*m, 0,  7, 99);
+        addControl(0*m, 0, 10, 63);
+        addProgram(0*m, 0,  0, 0);
 
         // 6912 On ch=1 n=60 v=90
         // 7237 Off ch=1 n=60 v=90
@@ -52,9 +59,9 @@ public:
         // 7621 Off ch=1 n=62 v=90
         // 7680 On ch=1 n=64 v=90
         // 8005 Off ch=1 n=64 v=90
-        fOutEvents.addNote(6912*m, 0, 60, 90, 325*m);
-        fOutEvents.addNote(7680*m, 0, 64, 90, 325*m);
-        fOutEvents.addNote(7296*m, 0, 62, 90, 325*m);
+        addNote(6912*m, 0, 60, 90, 325*m);
+        addNote(7680*m, 0, 64, 90, 325*m);
+        addNote(7296*m, 0, 62, 90, 325*m);
 
         // 1152 On ch=1 n=62 v=90
         // 1477 Off ch=1 n=62 v=90
@@ -62,9 +69,9 @@ public:
         // 1861 Off ch=1 n=64 v=90
         // 1920 On ch=1 n=64 v=90
         // 2245 Off ch=1 n=64 v=90
-        fOutEvents.addNote(1152*m, 0, 62, 90, 325*m);
-        fOutEvents.addNote(1920*m, 0, 64, 90, 325*m);
-        fOutEvents.addNote(1536*m, 0, 64, 90, 325*m);
+        addNote(1152*m, 0, 62, 90, 325*m);
+        addNote(1920*m, 0, 64, 90, 325*m);
+        addNote(1536*m, 0, 64, 90, 325*m);
 
         // 3840 On ch=1 n=62 v=90
         // 4491 Off ch=1 n=62 v=90
@@ -72,9 +79,9 @@ public:
         // 4933 Off ch=1 n=64 v=90
         // 4992 On ch=1 n=67 v=90
         // 5317 Off ch=1 n=67 v=90
-        fOutEvents.addNote(3840*m, 0, 62, 90, 650*m);
-        fOutEvents.addNote(4992*m, 0, 67, 90, 325*m);
-        fOutEvents.addNote(4608*m, 0, 64, 90, 325*m);
+        addNote(3840*m, 0, 62, 90, 650*m);
+        addNote(4992*m, 0, 67, 90, 325*m);
+        addNote(4608*m, 0, 64, 90, 325*m);
 
         // 0 On ch=1 n=64 v=90
         // 325 Off ch=1 n=64 v=90
@@ -82,13 +89,13 @@ public:
         // 709 Off ch=1 n=62 v=90
         // 768 On ch=1 n=60 v=90
         //1093 Off ch=1 n=60 v=90
-        fOutEvents.addNote(  0*m, 0, 64, 90, 325*m);
-        fOutEvents.addNote(768*m, 0, 60, 90, 325*m);
-        fOutEvents.addNote(384*m, 0, 62, 90, 325*m);
+        addNote(  0*m, 0, 64, 90, 325*m);
+        addNote(768*m, 0, 60, 90, 325*m);
+        addNote(384*m, 0, 62, 90, 325*m);
 
         // 10752 On ch=1 n=60 v=90
         // 12056 Off ch=1 n=60 v=90
-        fOutEvents.addNote(10752*m, 0, 60, 90, 650*m);
+        addNote(10752*m, 0, 60, 90, 650*m);
 
         // 5376 On ch=1 n=67 v=90
         // 6027 Off ch=1 n=67 v=90
@@ -96,9 +103,9 @@ public:
         // 6469 Off ch=1 n=64 v=90
         // 6528 On ch=1 n=62 v=90
         // 6853 Off ch=1 n=62 v=90
-        fOutEvents.addNote(5376*m, 0, 67, 90, 650*m);
-        fOutEvents.addNote(6144*m, 0, 64, 90, 325*m);
-        fOutEvents.addNote(6528*m, 0, 62, 90, 325*m);
+        addNote(5376*m, 0, 67, 90, 650*m);
+        addNote(6144*m, 0, 64, 90, 325*m);
+        addNote(6528*m, 0, 62, 90, 325*m);
 
         // 8064 On ch=1 n=64 v=90
         // 8389 Off ch=1 n=64 v=90
@@ -106,9 +113,9 @@ public:
         // 9099 Off ch=1 n=64 v=90
         // 9216 On ch=1 n=62 v=90
         // 9541 Off ch=1 n=62 v=90
-        fOutEvents.addNote(8064*m, 0, 64, 90, 325*m);
-        fOutEvents.addNote(8448*m, 0, 64, 90, 650*m);
-        fOutEvents.addNote(9216*m, 0, 62, 90, 325*m);
+        addNote(8064*m, 0, 64, 90, 325*m);
+        addNote(8448*m, 0, 64, 90, 650*m);
+        addNote(9216*m, 0, 62, 90, 325*m);
 
         // 9600 On ch=1 n=62 v=90
         // 9925 Off ch=1 n=62 v=90
@@ -116,9 +123,9 @@ public:
         // 10309 Off ch=1 n=64 v=90
         // 10368 On ch=1 n=62 v=90
         // 10693 Off ch=1 n=62 v=90
-        fOutEvents.addNote(9600*m, 0, 62, 90, 325*m);
-        fOutEvents.addNote(9984*m, 0, 64, 90, 325*m);
-        fOutEvents.addNote(10368*m, 0, 62, 90, 325*m);
+        addNote(9600*m, 0, 62, 90, 325*m);
+        addNote(9984*m, 0, 64, 90, 325*m);
+        addNote(10368*m, 0, 62, 90, 325*m);
 
         // 2304 On ch=1 n=64 v=90
         // 2955 Off ch=1 n=64 v=90
@@ -126,14 +133,166 @@ public:
         // 3397 Off ch=1 n=62 v=90
         // 3456 On ch=1 n=62 v=90
         // 3781 Off ch=1 n=62 v=90
-        fOutEvents.addNote(2304*m, 0, 64, 90, 650*m);
-        fOutEvents.addNote(3072*m, 0, 62, 90, 325*m);
-        fOutEvents.addNote(3456*m, 0, 62, 90, 325*m);
+        addNote(2304*m, 0, 64, 90, 650*m);
+        addNote(3072*m, 0, 62, 90, 325*m);
+        addNote(3456*m, 0, 62, 90, 325*m);
+
+        for (auto it = fData.begin(); it.valid(); it.next())
+        {
+            const RawMidiEvent* const rawMidiEvent(*it);
+
+            carla_stdout("Got event %02X @%i", rawMidiEvent->data[0], rawMidiEvent->time);
+        }
+    }
+
+    ~MidiPattern()
+    {
+        fData.clear();
+    }
+
+    void addControl(const uint32_t time, const uint8_t channel, const uint8_t control, const uint8_t value)
+    {
+        RawMidiEvent* ctrlEvent(new RawMidiEvent());
+        ctrlEvent->data[0] = MIDI_STATUS_CONTROL_CHANGE | (channel & 0x0F);
+        ctrlEvent->data[1] = control;
+        ctrlEvent->data[2] = value;
+        ctrlEvent->size    = 3;
+        ctrlEvent->time    = time;
+
+        appendAt(ctrlEvent, time);
+    }
+
+    void addProgram(const uint32_t time, const uint8_t channel, const uint8_t bank, const uint8_t program)
+    {
+        RawMidiEvent* bankEvent(new RawMidiEvent());
+        bankEvent->data[0] = MIDI_STATUS_CONTROL_CHANGE | (channel & 0x0F);
+        bankEvent->data[1] = MIDI_CONTROL_BANK_SELECT;
+        bankEvent->data[2] = bank;
+        bankEvent->size    = 3;
+        bankEvent->time    = time;
+
+        RawMidiEvent* programEvent(new RawMidiEvent());
+        programEvent->data[0] = MIDI_STATUS_PROGRAM_CHANGE | (channel & 0x0F);
+        programEvent->data[1] = program;
+        programEvent->size    = 2;
+        programEvent->time    = time;
+
+        appendAt(bankEvent, time);
+        appendAt(programEvent, time);
+    }
+
+    void addNote(const uint32_t time, const uint8_t channel, const uint8_t pitch, const uint8_t velocity, const uint32_t duration)
+    {
+        RawMidiEvent* noteOnEvent(new RawMidiEvent());
+        noteOnEvent->data[0] = MIDI_STATUS_NOTE_ON | (channel & 0x0F);
+        noteOnEvent->data[1] = pitch;
+        noteOnEvent->data[2] = velocity;
+        noteOnEvent->size    = 3;
+        noteOnEvent->time    = time;
+
+        RawMidiEvent* noteOffEvent(new RawMidiEvent());
+        noteOffEvent->data[0] = MIDI_STATUS_NOTE_OFF | (channel & 0x0F);
+        noteOffEvent->data[1] = pitch;
+        noteOffEvent->data[2] = velocity;
+        noteOffEvent->size    = 3;
+        noteOffEvent->time    = time+duration;
+
+        appendAt(noteOnEvent, time);
+        appendAt(noteOffEvent, time+duration);
+    }
+
+    void play(uint32_t timePosFrame, uint32_t frames)
+    {
+        if (! fMutex.tryLock())
+            return;
+
+        MidiEvent midiEvent;
+
+        for (auto it = fData.begin(); it.valid(); it.next())
+        {
+            const RawMidiEvent* const rawMidiEvent(*it);
+
+            if (timePosFrame > rawMidiEvent->time)
+                continue;
+            if (timePosFrame + frames <= rawMidiEvent->time)
+                continue;
+
+            midiEvent.port    = 0;
+            midiEvent.time    = rawMidiEvent->time-timePosFrame;
+            midiEvent.data[0] = rawMidiEvent->data[0];
+            midiEvent.data[1] = rawMidiEvent->data[1];
+            midiEvent.data[2] = rawMidiEvent->data[2];
+
+            writeMidiEvent(&midiEvent);
+        }
+
+        fMutex.unlock();
+    }
+
+private:
+    const HostDescriptor* const kHost;
+
+    uint32_t fStartTime;
+    uint32_t fDuration;
+
+    CarlaMutex fMutex;
+    NonRtList<const RawMidiEvent*> fData;
+
+    void appendAt(const RawMidiEvent* const event, const uint32_t time)
+    {
+        if (fData.isEmpty())
+        {
+            fMutex.lock();
+            fData.append(event);
+            fMutex.unlock();
+            return;
+        }
+
+        uint32_t lastTime = 0;
+
+        for (auto it = fData.begin(); it.valid(); it.next())
+        {
+            const RawMidiEvent* const oldEvent(*it);
+
+            if (lastTime > time)
+            {
+                fMutex.lock();
+                fData.insertAt(event, it);
+                fMutex.unlock();
+                return;
+            }
+
+            lastTime = oldEvent->time;
+        }
+
+        if (time >= lastTime)
+        {
+            fMutex.lock();
+            fData.append(event);
+            fMutex.unlock();
+        }
+        else
+            carla_stderr2("MidiPattern::appendAt() failed for time %i", time);
+    }
+
+    void writeMidiEvent(const MidiEvent* const event)
+    {
+        kHost->write_midi_event(kHost->handle, event);
+    }
+};
+
+class MidiSequencerPlugin : public PluginDescriptorClass
+{
+public:
+    MidiSequencerPlugin(const HostDescriptor* const host)
+        : PluginDescriptorClass(host),
+          fWantInEvents(false),
+          fMidiOut(host)
+    {
     }
 
     ~MidiSequencerPlugin()
     {
-        fOutEvents.data.clear();
     }
 
 protected:
@@ -175,32 +334,8 @@ protected:
             }
         }
 
-        if (! timePos->playing)
-            return;
-        if (! fOutEvents.mutex.tryLock())
-            return;
-
-        {
-            MidiEvent midiEvent;
-
-            for (auto it = fOutEvents.data.begin(); it.valid(); it.next())
-            {
-                RawMidiEvent* const rawMidiEvent(*it);
-
-                if (timePos->frame > rawMidiEvent->time || timePos->frame + frames <= rawMidiEvent->time)
-                    continue;
-
-                midiEvent.port    = 0;
-                midiEvent.time    = rawMidiEvent->time-timePos->frame;
-                midiEvent.data[0] = rawMidiEvent->data[0];
-                midiEvent.data[1] = rawMidiEvent->data[1];
-                midiEvent.data[2] = rawMidiEvent->data[2];
-
-                writeMidiEvent(&midiEvent);
-            }
-        }
-
-        fOutEvents.mutex.unlock();
+        if (timePos->playing)
+            fMidiOut.play(timePos->frame, frames);
     }
 
 private:
@@ -240,95 +375,7 @@ private:
 
     } fInEvents;
 
-    struct OutRtEvents {
-        CarlaMutex mutex;
-        NonRtList<RawMidiEvent*> data;
-
-        void appendAt(RawMidiEvent* event, uint32_t time)
-        {
-            if (data.isEmpty())
-            {
-                mutex.lock();
-                data.append(event);
-                mutex.unlock();
-                return;
-            }
-
-            uint32_t lastTime = 0;
-
-            for (auto it = data.begin(); it.valid(); it.next())
-            {
-                RawMidiEvent* const oldEvent(*it);
-
-                if (lastTime > time)
-                {
-                    mutex.lock();
-                    data.insertAt(event, it);
-                    mutex.unlock();
-                    return;
-                }
-
-                lastTime = oldEvent->time;
-            }
-
-            if (time >= lastTime)
-            {
-                mutex.lock();
-                data.append(event);
-                mutex.unlock();
-            }
-            else
-                carla_stderr2("MidiSequencerPlugin::appendAt() failed for time %i", time);
-        }
-
-        void addControl(uint32_t time, uint8_t channel, uint8_t control, uint8_t value)
-        {
-            RawMidiEvent* ctrlEvent(new RawMidiEvent);
-            ctrlEvent->data[0] = MIDI_STATUS_CONTROL_CHANGE | (channel & 0x0F);
-            ctrlEvent->data[1] = control;
-            ctrlEvent->data[2] = value;
-            ctrlEvent->time    = time;
-
-            appendAt(ctrlEvent, time);
-        }
-
-        void addProgram(uint32_t time, uint8_t channel, uint8_t bank, uint8_t program)
-        {
-            RawMidiEvent* bankEvent(new RawMidiEvent);
-            bankEvent->data[0] = MIDI_STATUS_CONTROL_CHANGE | (channel & 0x0F);
-            bankEvent->data[1] = MIDI_CONTROL_BANK_SELECT;
-            bankEvent->data[2] = bank;
-            bankEvent->time    = time;
-
-            RawMidiEvent* programEvent(new RawMidiEvent);
-            programEvent->data[0] = MIDI_STATUS_PROGRAM_CHANGE | (channel & 0x0F);
-            programEvent->data[1] = program;
-            programEvent->data[2] = 0;
-            programEvent->time    = time;
-
-            appendAt(bankEvent, time);
-            appendAt(programEvent, time);
-        }
-
-        void addNote(uint32_t time, uint8_t channel, uint8_t pitch, uint8_t velocity, uint32_t duration)
-        {
-            RawMidiEvent* noteOnEvent(new RawMidiEvent);
-            noteOnEvent->data[0] = MIDI_STATUS_NOTE_ON | (channel & 0x0F);
-            noteOnEvent->data[1] = pitch;
-            noteOnEvent->data[2] = velocity;
-            noteOnEvent->time    = time;
-
-            RawMidiEvent* noteOffEvent(new RawMidiEvent);
-            noteOffEvent->data[0] = MIDI_STATUS_NOTE_OFF | (channel & 0x0F);
-            noteOffEvent->data[1] = pitch;
-            noteOffEvent->data[2] = velocity;
-            noteOffEvent->time    = time+duration;
-
-            appendAt(noteOnEvent, time);
-            appendAt(noteOffEvent, time+duration);
-        }
-
-    } fOutEvents;
+    MidiPattern fMidiOut;
 
     PluginDescriptorClassEND(MidiSequencerPlugin)
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MidiSequencerPlugin)

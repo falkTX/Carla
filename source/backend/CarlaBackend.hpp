@@ -410,12 +410,17 @@ enum CallbackType {
     CALLBACK_PLUGIN_REMOVED = 2,
 
     /*!
+     * A plugin has been renamed.
+     */
+    CALLBACK_PLUGIN_RENAMED = 3,
+
+    /*!
      * A parameter value has been changed.
      *
      * \param value1 Parameter index
      * \param value3 Value
      */
-    CALLBACK_PARAMETER_VALUE_CHANGED = 3,
+    CALLBACK_PARAMETER_VALUE_CHANGED = 4,
 
     /*!
      * A parameter default has been changed.
@@ -423,7 +428,7 @@ enum CallbackType {
      * \param value1 Parameter index
      * \param value3 Default value
      */
-    CALLBACK_PARAMETER_DEFAULT_CHANGED = 4,
+    CALLBACK_PARAMETER_DEFAULT_CHANGED = 5,
 
     /*!
      * A parameter's MIDI channel has been changed.
@@ -431,7 +436,7 @@ enum CallbackType {
      * \param value1 Parameter index
      * \param value2 MIDI channel
      */
-    CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED = 5,
+    CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED = 6,
 
     /*!
      * A parameter's MIDI CC has been changed.
@@ -439,14 +444,14 @@ enum CallbackType {
      * \param value1 Parameter index
      * \param value2 MIDI CC
      */
-    CALLBACK_PARAMETER_MIDI_CC_CHANGED = 6,
+    CALLBACK_PARAMETER_MIDI_CC_CHANGED = 7,
 
     /*!
      * The current program has has been changed.
      *
      * \param value1 Program index
      */
-    CALLBACK_PROGRAM_CHANGED = 7,
+    CALLBACK_PROGRAM_CHANGED = 8,
 
     /*!
      * The current MIDI program has been changed.
@@ -454,7 +459,7 @@ enum CallbackType {
      * \param value1 MIDI bank
      * \param value2 MIDI program
      */
-    CALLBACK_MIDI_PROGRAM_CHANGED = 8,
+    CALLBACK_MIDI_PROGRAM_CHANGED = 9,
 
     /*!
      * A note has been pressed.
@@ -463,7 +468,7 @@ enum CallbackType {
      * \param value2 Note
      * \param value3 Velocity
      */
-    CALLBACK_NOTE_ON = 9,
+    CALLBACK_NOTE_ON = 10,
 
     /*!
      * A note has been released.
@@ -471,7 +476,7 @@ enum CallbackType {
      * \param value1 Channel
      * \param value2 Note
      */
-    CALLBACK_NOTE_OFF = 10,
+    CALLBACK_NOTE_OFF = 11,
 
     /*!
      * The plugin's custom GUI state has changed.
@@ -481,32 +486,32 @@ enum CallbackType {
      *                1: GUI has been shown\n
      *               -1: GUI has crashed and should not be shown again
      */
-    CALLBACK_SHOW_GUI = 11,
+    CALLBACK_SHOW_GUI = 12,
 
     /*!
      * The plugin needs update.
      */
-    CALLBACK_UPDATE = 12,
+    CALLBACK_UPDATE = 13,
 
     /*!
      * The plugin's data/information has changed.
      */
-    CALLBACK_RELOAD_INFO = 13,
+    CALLBACK_RELOAD_INFO = 14,
 
     /*!
      * The plugin's parameters have changed.
      */
-    CALLBACK_RELOAD_PARAMETERS = 14,
+    CALLBACK_RELOAD_PARAMETERS = 15,
 
     /*!
      * The plugin's programs have changed.
      */
-    CALLBACK_RELOAD_PROGRAMS = 15,
+    CALLBACK_RELOAD_PROGRAMS = 16,
 
     /*!
      * The plugin's state has changed.
      */
-    CALLBACK_RELOAD_ALL = 16,
+    CALLBACK_RELOAD_ALL = 17,
 
     /*!
      * Canvas client added
@@ -514,14 +519,14 @@ enum CallbackType {
      * \param value1   Client ID
      * \param valueStr Client Name
      */
-    CALLBACK_PATCHBAY_CLIENT_ADDED = 17,
+    CALLBACK_PATCHBAY_CLIENT_ADDED = 18,
 
     /*!
      * Canvas client removed
      *
      * \param value1 Client ID
      */
-    CALLBACK_PATCHBAY_CLIENT_REMOVED = 18,
+    CALLBACK_PATCHBAY_CLIENT_REMOVED = 19,
 
     /*!
      * Canvas client renamed
@@ -529,7 +534,7 @@ enum CallbackType {
      * \param value1   Client ID
      * \param valueStr New Client name
      */
-    CALLBACK_PATCHBAY_CLIENT_RENAMED = 19,
+    CALLBACK_PATCHBAY_CLIENT_RENAMED = 20,
 
     /*!
      * Canvas port added
@@ -538,14 +543,14 @@ enum CallbackType {
      * \param value2   Port ID
      * \param valueStr Port name
      */
-    CALLBACK_PATCHBAY_PORT_ADDED = 20,
+    CALLBACK_PATCHBAY_PORT_ADDED = 21,
 
     /*!
      * Canvas port remvoed
      *
      * \param value1 Port ID
      */
-    CALLBACK_PATCHBAY_PORT_REMOVED = 21,
+    CALLBACK_PATCHBAY_PORT_REMOVED = 22,
 
     /*!
      * Canvas port renamed
@@ -553,7 +558,7 @@ enum CallbackType {
      * \param value1   Port ID
      * \param valueStr New Port name
      */
-    CALLBACK_PATCHBAY_PORT_RENAMED = 22,
+    CALLBACK_PATCHBAY_PORT_RENAMED = 23,
 
     /*!
      * Canvas port connection added
@@ -561,7 +566,7 @@ enum CallbackType {
      * \param value1 Output port ID
      * \param value2 Input port ID
      */
-    CALLBACK_PATCHBAY_CONNECTION_ADDED = 23,
+    CALLBACK_PATCHBAY_CONNECTION_ADDED = 24,
 
     /*!
      * Canvas port connection removed
@@ -569,37 +574,37 @@ enum CallbackType {
      * \param value1 Output port ID
      * \param value2 Input port ID
      */
-    CALLBACK_PATCHBAY_CONNECTION_REMOVED = 24,
+    CALLBACK_PATCHBAY_CONNECTION_REMOVED = 25,
 
     /*!
      * Non-Session-Manager Announce message.
      */
-    CALLBACK_NSM_ANNOUNCE = 25,
+    CALLBACK_NSM_ANNOUNCE = 26,
 
     /*!
      * Non-Session-Manager Open message #1.
      */
-    CALLBACK_NSM_OPEN1 = 26,
+    CALLBACK_NSM_OPEN1 = 27,
 
     /*!
      * Non-Session-Manager Open message #2.
      */
-    CALLBACK_NSM_OPEN2 = 27,
+    CALLBACK_NSM_OPEN2 = 28,
 
     /*!
      * Non-Session-Manager Save message.
      */
-    CALLBACK_NSM_SAVE = 28,
+    CALLBACK_NSM_SAVE = 29,
 
     /*!
      * An error occurred, show last error to user.
      */
-    CALLBACK_ERROR = 29,
+    CALLBACK_ERROR = 30,
 
     /*!
      * The engine has crashed or malfunctioned and will no longer work.
      */
-    CALLBACK_QUIT = 30
+    CALLBACK_QUIT = 31
 };
 
 /*!

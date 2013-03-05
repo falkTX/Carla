@@ -643,6 +643,7 @@ class CarlaMainW(QMainWindow):
         self.connect(self, SIGNAL("DebugCallback(int, int, int, double, QString)"), SLOT("slot_handleDebugCallback(int, int, int, double, QString)"))
         self.connect(self, SIGNAL("PluginAddedCallback(int)"), SLOT("slot_handlePluginAddedCallback(int)"))
         self.connect(self, SIGNAL("PluginRemovedCallback(int)"), SLOT("slot_handlePluginRemovedCallback(int)"))
+        self.connect(self, SIGNAL("PluginRenamedCallback(int, QString)"), SLOT("slot_handlePluginRenamedCallback(int, QString)"))
         self.connect(self, SIGNAL("ParameterValueChangedCallback(int, int, double)"), SLOT("slot_handleParameterValueChangedCallback(int, int, double)"))
         self.connect(self, SIGNAL("ParameterDefaultChangedCallback(int, int, double)"), SLOT("slot_handleParameterDefaultChangedCallback(int, int, double)"))
         self.connect(self, SIGNAL("ParameterMidiChannelChangedCallback(int, int, int)"), SLOT("slot_handleParameterMidiChannelChangedCallback(int, int, int)"))
@@ -1060,6 +1061,17 @@ class CarlaMainW(QMainWindow):
         if self.fPluginCount == 0:
             self.ui.act_plugin_remove_all.setEnabled(False)
 
+    @pyqtSlot(int, str)
+    def slot_handlePluginRenamedCallback(self, pluginId, newName):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pwidget = self.fPluginList[pluginId]
+        if pwidget is None:
+            return
+
+        pwidget.ui.label_name.setText(newName)
+
     @pyqtSlot(int, int, float)
     def slot_handleParameterValueChangedCallback(self, pluginId, parameterId, value):
         if pluginId >= self.fPluginCount:
@@ -1471,6 +1483,8 @@ def engineCallback(ptr, action, pluginId, value1, value2, value3, valueStr):
         Carla.gui.emit(SIGNAL("PluginAddedCallback(int)"), pluginId)
     elif action == CALLBACK_PLUGIN_REMOVED:
         Carla.gui.emit(SIGNAL("PluginRemovedCallback(int)"), pluginId)
+    elif action == CALLBACK_PLUGIN_RENAMED:
+        Carla.gui.emit(SIGNAL("PluginRenamedCallback(int, QString)"), pluginId, valueStr)
     elif action == CALLBACK_PARAMETER_VALUE_CHANGED:
         Carla.gui.emit(SIGNAL("ParameterValueChangedCallback(int, int, double)"), pluginId, value1, value3)
     elif action == CALLBACK_PARAMETER_DEFAULT_CHANGED:
