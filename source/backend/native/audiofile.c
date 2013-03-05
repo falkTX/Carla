@@ -88,13 +88,29 @@ void audiofile_read_poll(AudioFileInstance* const handlePtr)
         return;
     }
 
-    const int64_t lastFrame = handlePtr->lastFrame;
+    int64_t lastFrame = handlePtr->lastFrame;
+    int64_t readFrame = lastFrame;
 
     if (lastFrame >= handlePtr->maxFrame)
     {
-        fprintf(stderr, "R: transport out of bounds\n");
-        handlePtr->needsRead = false;
-        return;
+        if (handlePtr->loopMode)
+        {
+            if (handlePtr->maxFrame >= handlePtr->pool.size)
+            {
+                readFrame %= handlePtr->maxFrame;
+            }
+            else
+            {
+                readFrame  = 0;
+                lastFrame -= lastFrame % handlePtr->maxFrame;
+            }
+        }
+        else
+        {
+            //fprintf(stderr, "R: transport out of bounds\n");
+            handlePtr->needsRead = false;
+            return;
+        }
     }
 
     // temp data buffer
@@ -104,9 +120,9 @@ void audiofile_read_poll(AudioFileInstance* const handlePtr)
     zeroFloat(tmpData, tmpSize);
 
     {
-        fprintf(stderr, "R: poll data - reading at %li:%02li\n", lastFrame/44100/60, (lastFrame/44100) % 60);
+        fprintf(stderr, "R: poll data - reading at %li:%02li\n", readFrame/44100/60, (readFrame/44100) % 60);
 
-        ad_seek(handlePtr->filePtr, lastFrame);
+        ad_seek(handlePtr->filePtr, readFrame);
         ssize_t i, j, rv = ad_read(handlePtr->filePtr, tmpData, tmpSize);
         i = j = 0;
 
@@ -135,10 +151,40 @@ void audiofile_read_poll(AudioFileInstance* const handlePtr)
             }
         }
 
-        for (; i < handlePtr->pool.size; i++)
+        if (handlePtr->loopMode && readFrame+j == handlePtr->maxFrame)
         {
-            handlePtr->pool.buffer[0][i] = 0.0f;
-            handlePtr->pool.buffer[1][i] = 0.0f;
+            while (i < handlePtr->pool.size)
+            {
+                for (j=0; i < handlePtr->pool.size && j < rv; j++)
+                {
+                    if (handlePtr->fileNfo.channels == 1)
+                    {
+                        handlePtr->pool.buffer[0][i] = tmpData[j];
+                        handlePtr->pool.buffer[1][i] = tmpData[j];
+                        i++;
+                    }
+                    else
+                    {
+                        if (j % 2 == 0)
+                        {
+                            handlePtr->pool.buffer[0][i] = tmpData[j];
+                        }
+                        else
+                        {
+                            handlePtr->pool.buffer[1][i] = tmpData[j];
+                            i++;
+                        }
+                    }
+                }
+            }
+        }
+        else
+        {
+            for (; i < handlePtr->pool.size; i++)
+            {
+                handlePtr->pool.buffer[0][i] = 0.0f;
+                handlePtr->pool.buffer[1][i] = 0.0f;
+            }
         }
 
         handlePtr->pool.startFrame = lastFrame;
@@ -388,7 +434,8 @@ static void audiofile_set_parameter_value(PluginHandle handle, uint32_t index, f
     if (index != 0)
         return;
 
-    handlePtr->loopMode = (value > 0.5f);
+    handlePtr->loopMode  = (value > 0.5f);
+    handlePtr->needsRead = true;
 }
 
 static void audiofile_set_program(PluginHandle handle, uint32_t bank, uint32_t program)
@@ -467,23 +514,29 @@ static void audiofile_process(PluginHandle handle, float** inBuffer, float** out
 {
     AudioFileInstance* const handlePtr = (AudioFileInstance*)handle;
 
+    const TimeInfo* const timePos = handlePtr->host->get_time_info(handlePtr->host->handle);
+
     float* out1 = outBuffer[0];
     float* out2 = outBuffer[1];
 
     if (! handlePtr->doProcess)
     {
         //fprintf(stderr, "P: no process\n");
+        handlePtr->lastFrame = timePos->frame;
+
         zeroFloat(out1, frames);
         zeroFloat(out2, frames);
         return;
     }
 
-    const TimeInfo* const timePos = handlePtr->host->get_time_info(handlePtr->host->handle);
-
     // not playing
     if (! timePos->playing)
     {
         //fprintf(stderr, "P: not rolling\n");
+
+        if (timePos->frame == 0 && handlePtr->lastFrame > 0)
+            handlePtr->needsRead = true;
+
         handlePtr->lastFrame = timePos->frame;
 
         zeroFloat(out1, frames);
@@ -494,7 +547,7 @@ static void audiofile_process(PluginHandle handle, float** inBuffer, float** out
     pthread_mutex_lock(&handlePtr->mutex);
 
     // out of reach
-    if (timePos->frame + frames < handlePtr->pool.startFrame || timePos->frame >= handlePtr->maxFrame)
+    if (timePos->frame + frames < handlePtr->pool.startFrame || (timePos->frame >= handlePtr->maxFrame && ! handlePtr->loopMode))
     {
         //fprintf(stderr, "P: non-continuous playback, out of reach %u vs %u\n", timePos->frame + frames, handlePtr->maxFrame);
         handlePtr->lastFrame = timePos->frame;
