@@ -1667,12 +1667,16 @@ class PluginEdit(QDialog):
                 }
 
                 for j in range(paramInfo['scalePointCount']):
-                    scalePointInfo = Carla.host.get_parameter_scalepoint_info(self.fPluginId, i, j)
+                    scalePointInfo  = Carla.host.get_parameter_scalepoint_info(self.fPluginId, i, j)
+                    scalePointLabel = cString(scalePointInfo['label'])
+                    scalePointLabel = scalePointLabel[:50] + (scalePointLabel[50:] and "...")
 
                     parameter['scalePoints'].append({
                         'value': scalePointInfo['value'],
                         'label': cString(scalePointInfo['label'])
                     })
+
+                parameter['name'] = parameter['name'][:30] + (parameter['name'][30:] and "...")
 
                 # -----------------------------------------------------------------
                 # Get width values, in packs of 10
@@ -1762,6 +1766,7 @@ class PluginEdit(QDialog):
 
             for i in range(programCount):
                 pName = cString(Carla.host.get_program_name(self.fPluginId, i))
+                pName = pName[:40] + (pName[40:] and "...")
                 self.ui.cb_programs.addItem(pName)
 
             self.fCurrentProgram = Carla.host.get_current_program_index(self.fPluginId)
@@ -1783,11 +1788,13 @@ class PluginEdit(QDialog):
             self.ui.cb_midi_programs.setEnabled(True)
 
             for i in range(midiProgramCount):
-                mpData  = Carla.host.get_midi_program_data(self.fPluginId, i)
-                mpBank  = int(mpData['bank'])
-                mpProg  = int(mpData['program'])
-                mpLabel = cString(mpData['name'])
-                self.ui.cb_midi_programs.addItem("%03i:%03i - %s" % (mpBank, mpProg, mpLabel))
+                mpData = Carla.host.get_midi_program_data(self.fPluginId, i)
+                mpBank = int(mpData['bank'])
+                mpProg = int(mpData['program'])
+                mpName = cString(mpData['name'])
+                mpName = mpName[:40] + (mpName[40:] and "...")
+
+                self.ui.cb_midi_programs.addItem("%03i:%03i - %s" % (mpBank, mpProg, mpName))
 
             self.fCurrentMidiProgram = Carla.host.get_current_midi_program_index(self.fPluginId)
             self.ui.cb_midi_programs.setCurrentIndex(self.fCurrentMidiProgram)
