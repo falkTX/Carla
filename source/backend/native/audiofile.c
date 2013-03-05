@@ -292,6 +292,9 @@ static void audiofile_ui_show(PluginHandle handle, bool show)
 {
     AudioFileInstance* const handlePtr = (AudioFileInstance*)handle;
 
+    if (! show)
+        return;
+
     const char* const filename = handlePtr->host->ui_open_file(handlePtr->host->handle, false, "Open Audio File", "");
 
     if (filename != NULL)

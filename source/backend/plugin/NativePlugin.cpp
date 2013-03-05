@@ -494,25 +494,33 @@ public:
 
         if (fDescriptor != nullptr && fHandle != nullptr && fDescriptor->ui_show != nullptr)
         {
+            fIsUiVisible = yesNo;
+
             fDescriptor->ui_show(fHandle, yesNo);
 
             if (yesNo)
             {
-                // Update UI values, FIXME
-                if (kData->midiprog.current >= 0)
+                // Update UI values
+                if (fDescriptor->ui_set_custom_data != nullptr)
+                {
+                    // TODO
+                }
+
+                if (fDescriptor->ui_set_midi_program != nullptr && kData->midiprog.current >= 0)
                 {
                     const MidiProgramData& mpData = kData->midiprog.getCurrent();
                     fDescriptor->ui_set_midi_program(fHandle, mpData.bank, mpData.program);
                 }
 
-                for (uint32_t i=0; i < kData->param.count; i++)
+                if (fDescriptor->ui_set_parameter_value != nullptr)
                 {
-                    fDescriptor->ui_set_parameter_value(fHandle, i, fDescriptor->get_parameter_value(fHandle, i));
+                    for (uint32_t i=0; i < kData->param.count; i++)
+                    {
+                        fDescriptor->ui_set_parameter_value(fHandle, i, fDescriptor->get_parameter_value(fHandle, i));
+                    }
                 }
             }
         }
-
-        fIsUiVisible = yesNo;
     }
 
     void idleGui()
