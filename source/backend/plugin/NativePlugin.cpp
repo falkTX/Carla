@@ -35,28 +35,32 @@ struct NativePluginMidiData {
           indexes(nullptr),
           ports(nullptr) {}
 
-    void createNew(const uint32_t count)
+    ~NativePluginMidiData()
     {
+        CARLA_ASSERT_INT(count == 0, count);
         CARLA_ASSERT(ports == nullptr);
         CARLA_ASSERT(indexes == nullptr);
+    }
 
-        if (ports == nullptr)
-        {
-            ports = new CarlaEngineEventPort*[count];
+    void createNew(const uint32_t newCount)
+    {
+        CARLA_ASSERT_INT(count == 0, count);
+        CARLA_ASSERT(ports == nullptr);
+        CARLA_ASSERT(indexes == nullptr);
+        CARLA_ASSERT_INT(newCount > 0, newCount);
 
-            for (uint32_t i=0; i < count; i++)
-                ports[i] = nullptr;
-        }
+        if (ports != nullptr || indexes != nullptr || newCount == 0)
+            return;
 
-        if (indexes == nullptr)
-        {
-            indexes = new uint32_t[count];
+        ports   = new CarlaEngineEventPort*[newCount];
+        indexes = new uint32_t[newCount];
+        count   = newCount;
 
-            for (uint32_t i=0; i < count; i++)
-                indexes[i] = 0;
-        }
+        for (uint32_t i=0; i < newCount; i++)
+            ports[i] = nullptr;
 
-        this->count = count;
+        for (uint32_t i=0; i < newCount; i++)
+            indexes[i] = 0;
     }
 
     void clear()

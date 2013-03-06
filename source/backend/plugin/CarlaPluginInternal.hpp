@@ -80,21 +80,21 @@ struct PluginAudioData {
 
     ~PluginAudioData()
     {
-        CARLA_ASSERT(count == 0);
+        CARLA_ASSERT_INT(count == 0, count);
         CARLA_ASSERT(ports == nullptr);
     }
 
-    void createNew(const uint32_t count)
+    void createNew(const uint32_t newCount)
     {
-        CARLA_ASSERT(count == 0);
+        CARLA_ASSERT_INT(count == 0, count);
         CARLA_ASSERT(ports == nullptr);
+        CARLA_ASSERT_INT(newCount > 0, newCount);
 
-        if (ports != nullptr)
+        if (ports != nullptr || newCount == 0)
             return;
 
-        ports = new PluginAudioPort[count];
-
-        this->count = count;
+        ports = new PluginAudioPort[newCount];
+        count = newCount;
     }
 
     void clear()
@@ -186,24 +186,24 @@ struct PluginParameterData {
 
     ~PluginParameterData()
     {
-        CARLA_ASSERT(count == 0);
+        CARLA_ASSERT_INT(count == 0, count);
         CARLA_ASSERT(data == nullptr);
         CARLA_ASSERT(ranges == nullptr);
     }
 
-    void createNew(const uint32_t count)
+    void createNew(const uint32_t newCount)
     {
-        CARLA_ASSERT(count == 0);
+        CARLA_ASSERT_INT(count == 0, count);
         CARLA_ASSERT(data == nullptr);
         CARLA_ASSERT(ranges == nullptr);
+        CARLA_ASSERT_INT(newCount > 0, newCount);
 
-        if (data != nullptr || ranges != nullptr)
+        if (data != nullptr || ranges != nullptr || newCount == 0)
             return;
 
-        data = new ParameterData[count];
-        ranges = new ParameterRanges[count];
-
-        this->count = count;
+        data   = new ParameterData[newCount];
+        ranges = new ParameterRanges[newCount];
+        count  = newCount;
     }
 
     void clear()
@@ -248,26 +248,26 @@ struct PluginProgramData {
 
     ~PluginProgramData()
     {
-        CARLA_ASSERT(count == 0);
-        CARLA_ASSERT(current == -1);
+        CARLA_ASSERT_INT(count == 0, count);
+        CARLA_ASSERT_INT(current == -1, current);
         CARLA_ASSERT(names == nullptr);
     }
 
-    void createNew(const uint32_t count)
+    void createNew(const uint32_t newCount)
     {
-        CARLA_ASSERT(count == 0);
-        CARLA_ASSERT(current == -1);
+        CARLA_ASSERT_INT(count == 0, count);
+        CARLA_ASSERT_INT(current == -1, current);
         CARLA_ASSERT(names == nullptr);
+        CARLA_ASSERT_INT(newCount > 0, newCount);
 
-        if (names != nullptr)
+        if (names != nullptr || newCount == 0)
             return;
 
-        names = new ProgramName[count];
+        names = new ProgramName[newCount];
+        count = newCount;
 
-        for (uint32_t i=0; i < count; i++)
+        for (uint32_t i=0; i < newCount; i++)
             names[i] = nullptr;
-
-        this->count = count;
     }
 
     void clear()
@@ -305,23 +305,23 @@ struct PluginMidiProgramData {
 
     ~PluginMidiProgramData()
     {
-        CARLA_ASSERT(count == 0);
-        CARLA_ASSERT(current == -1);
+        CARLA_ASSERT_INT(count == 0, count);
+        CARLA_ASSERT_INT(current == -1, current);
         CARLA_ASSERT(data == nullptr);
     }
 
-    void createNew(const uint32_t count)
+    void createNew(const uint32_t newCount)
     {
-        CARLA_ASSERT(count == 0);
-        CARLA_ASSERT(current == -1);
+        CARLA_ASSERT_INT(count == 0, count);
+        CARLA_ASSERT_INT(current == -1, current);
         CARLA_ASSERT(data == nullptr);
+        CARLA_ASSERT_INT(newCount > 0, newCount);
 
-        if (data != nullptr)
+        if (data != nullptr || newCount == 0)
             return;
 
-        data = new MidiProgramData[count];
-
-        this->count = count;
+        data  = new MidiProgramData[newCount];
+        count = newCount;
     }
 
     void clear()
@@ -359,7 +359,7 @@ struct PluginPostRtEvent {
           value2(-1),
           value3(0.0f) {}
 
-#ifdef DEBUG
+#if 1//def DEBUG
     CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(PluginPostRtEvent)
 #else
     CARLA_DECLARE_NON_COPY_STRUCT(PluginPostRtEvent)
@@ -378,7 +378,7 @@ struct ExternalMidiNote {
           note(0),
           velo(0) {}
 
-#ifdef DEBUG
+#if 1//def DEBUG
     CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(ExternalMidiNote)
 #else
     CARLA_DECLARE_NON_COPY_STRUCT(ExternalMidiNote)

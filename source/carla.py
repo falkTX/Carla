@@ -588,7 +588,7 @@ class CarlaMainW(QMainWindow):
 
         patchcanvas.setOptions(pOptions)
         patchcanvas.setFeatures(pFeatures)
-        patchcanvas.init("Carla", self.scene, canvasCallback, True)
+        patchcanvas.init("Carla", self.scene, canvasCallback, False)
 
         patchcanvas.setCanvasSize(0, 0, DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT)
         patchcanvas.setInitialPos(DEFAULT_CANVAS_WIDTH / 2, DEFAULT_CANVAS_HEIGHT / 2)

@@ -1144,8 +1144,6 @@ protected:
         QString groupName = fullName.split(":").at(0);
         int     groupId   = getGroupId(groupName);
 
-        carla_stderr2("---------------------------------------------------- groupName: \"%s\", ID: %i", groupName.toUtf8().constData(), groupId);
-
         const char* portName = jack_port_short_name(jackPort);
 
         if (reg)
