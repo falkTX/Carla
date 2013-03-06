@@ -1008,7 +1008,7 @@ CarlaPlugin* CarlaPlugin::newBridge(const Initializer& init, BinaryType btype, P
         return nullptr;
     }
 
-    //plugin->reload();
+    plugin->reload();
 
     return plugin;
 #else

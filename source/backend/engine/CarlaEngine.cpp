@@ -771,7 +771,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
             break;
 
         case PLUGIN_GIG:
-            plugin = CarlaPlugin::newGIG(init);
+            plugin = CarlaPlugin::newGIG(init, (extra != nullptr));
             break;
 
         case PLUGIN_SF2:
@@ -779,7 +779,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
             break;
 
         case PLUGIN_SFZ:
-            plugin = CarlaPlugin::newSFZ(init);
+            plugin = CarlaPlugin::newSFZ(init, (extra != nullptr));
             break;
         }
     }
