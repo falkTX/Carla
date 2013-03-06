@@ -275,6 +275,8 @@ const char* CallbackType2Str(const CallbackType& type)
         return "CALLBACK_PLUGIN_ADDED";
     case CALLBACK_PLUGIN_REMOVED:
         return "CALLBACK_PLUGIN_REMOVED";
+    case CALLBACK_PLUGIN_RENAMED:
+        return "CALLBACK_PLUGIN_RENAMED";
     case CALLBACK_PARAMETER_VALUE_CHANGED:
         return "CALLBACK_PARAMETER_VALUE_CHANGED";
     case CALLBACK_PARAMETER_DEFAULT_CHANGED:

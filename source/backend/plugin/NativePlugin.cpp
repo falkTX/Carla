@@ -1808,23 +1808,21 @@ protected:
     const char* handleUiOpenFile(const bool isDir, const char* const title, const char* const filter)
     {
         static CarlaString retStr;
+        QFileDialog::Options options(isDir ? QFileDialog::ShowDirsOnly : 0x0);
 
-        retStr = QFileDialog::getOpenFileName(nullptr, title, "", filter).toUtf8().constData();
+        retStr = QFileDialog::getOpenFileName(nullptr, title, "", filter, nullptr, options).toUtf8().constData();
 
         return retStr.isNotEmpty() ? (const char*)retStr : nullptr;
-
-        // TODO - isDir
     }
 
     const char* handleUiSaveFile(const bool isDir, const char* const title, const char* const filter)
     {
         static CarlaString retStr;
+        QFileDialog::Options options(isDir ? QFileDialog::ShowDirsOnly : 0x0);
 
-        retStr = QFileDialog::getSaveFileName(nullptr, title, "", filter).toUtf8().constData();
+        retStr = QFileDialog::getSaveFileName(nullptr, title, "", filter, nullptr, options).toUtf8().constData();
 
         return (const char*)retStr;
-
-        // TODO - isDir
     }
 
 public:
