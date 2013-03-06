@@ -73,15 +73,14 @@ void carla_base64_encode(const uint8_t* const raw, const size_t len, char* const
     const uint8_t* rawBytes = (const uint8_t*)raw;
     uint8_t*   encodedBytes = (uint8_t*)encoded;
     size_t     rawBitLen    = 8*len;
-    unsigned int bit;
-    unsigned int tmp;
+    size_t     bit, tmp;
 
     for (bit = 0; bit < rawBitLen; bit += 6)
     {
-        tmp = (rawBytes[bit/8] << (bit % 8)) | (rawBytes[bit/8 + 1] >> (8 - (bit % 8)));
-        tmp = (tmp >> 2) & 0x3f;
+        tmp = static_cast<size_t>((rawBytes[bit/8] << (bit % 8)) | (rawBytes[bit/8 + 1] >> (8 - (bit % 8))));
+        tmp = static_cast<size_t>((tmp >> 2) & 0x3f);
 
-        *(encodedBytes++) = kBase64[tmp];
+        *(encodedBytes++) = static_cast<uint8_t>(kBase64[tmp]);
     }
 
     for (; (bit % 8) != 0; bit += 6)
@@ -155,7 +154,7 @@ unsigned int carla_base64_decode(const char* const encoded, uint8_t* const raw)
             return 0;
         }
 
-        int decoded = match - kBase64;
+        uint8_t decoded = static_cast<uint8_t>(match - kBase64);
 
         /* Add to raw data */
         decoded <<= 2;

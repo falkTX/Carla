@@ -50,7 +50,7 @@ public:
 
     explicit CarlaString(const int value)
     {
-        const size_t strBufSize = std::abs(value/10) + 3;
+        const size_t strBufSize = static_cast<size_t>(std::abs(value/10) + 3);
         char         strBuf[strBufSize];
         std::snprintf(strBuf, strBufSize, "%d", value);
 
@@ -70,7 +70,7 @@ public:
 
     explicit CarlaString(const long int value)
     {
-        const size_t strBufSize = std::abs(value/10) + 3;
+        const size_t strBufSize = static_cast<size_t>(std::abs(value/10) + 3);
         char         strBuf[strBufSize];
         std::snprintf(strBuf, strBufSize, "%ld", value);
 
