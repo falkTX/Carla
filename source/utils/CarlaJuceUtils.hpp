@@ -24,14 +24,14 @@
 #include <algorithm>
 
 #define CARLA_DECLARE_NON_COPYABLE(className) \
-    className (const className&);\
+private:                                      \
+    className (const className&);             \
     className& operator= (const className&);
 
 /** This is a shorthand way of writing both a CARLA_DECLARE_NON_COPYABLE and
     CARLA_LEAK_DETECTOR macro for a class.
 */
 #define CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(className) \
-private:                                                         \
     CARLA_DECLARE_NON_COPYABLE(className)                        \
     CARLA_LEAK_DETECTOR(className)
 

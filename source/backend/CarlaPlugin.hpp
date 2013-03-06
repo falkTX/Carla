@@ -100,7 +100,7 @@ struct CarlaPluginProtectedData;
  */
 class CarlaPlugin
 {
-public:
+protected:
     /*!
      * This is the constructor of the base plugin class.
      *
@@ -109,6 +109,7 @@ public:
      */
     CarlaPlugin(CarlaEngine* const engine, const unsigned int id);
 
+public:
     /*!
      * This is the destructor of the base plugin class.
      */
@@ -312,9 +313,8 @@ public:
     /*!
      * Get the complete plugin chunk data into \a dataPtr.
      *
-     * \return The size of the chunk or 0 if invalid.
-     *
      * \note Make sure to verify the plugin supports chunks before calling this function!
+     * \return The size of the chunk or 0 if invalid.
      *
      * \see setChunkData()
      */
@@ -411,6 +411,11 @@ public:
 
     // -------------------------------------------------------------------
     // Set data (state)
+
+    /*!
+     * Tell the plugin to prepare for save.
+     */
+    virtual void prepareForSave();
 
     /*!
      * Get the plugin's save state.\n
@@ -660,11 +665,6 @@ public:
      */
     virtual void reloadPrograms(const bool init);
 
-    /*!
-     * Tell the plugin to prepare for save.
-     */
-    virtual void prepareForSave();
-
     // -------------------------------------------------------------------
     // Plugin processing
 
@@ -863,7 +863,7 @@ protected:
 
     // Lock the plugin's own run/process call
     // Plugin will still work as normal, but output only silence
-    // On destructor needsReset flag is set, as the plugin might have missed some events
+    // On destructor needsReset flag might be set if the plugin might have missed some events
     class ScopedProcessLocker
     {
     public:
