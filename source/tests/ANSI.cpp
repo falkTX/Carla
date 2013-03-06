@@ -16,7 +16,7 @@
  */
 
 // still need qt classes check
-#include "CarlaPlugin.hpp"
+#include "plugin/CarlaPluginInternal.hpp"
 //#include "plugin/DssiPlugin.cpp"
 
 #if 0

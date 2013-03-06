@@ -37,7 +37,7 @@ public:
         PLUGIN_THREAD_BRIDGE
     };
 
-    CarlaPluginThread(CarlaEngine* const engine, CarlaPlugin* const plugin, const Mode mode);
+    CarlaPluginThread(CarlaEngine* const engine, CarlaPlugin* const plugin, const Mode mode = PLUGIN_THREAD_NULL);
     ~CarlaPluginThread();
 
     void setMode(const CarlaPluginThread::Mode mode);

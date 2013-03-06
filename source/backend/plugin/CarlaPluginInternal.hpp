@@ -80,15 +80,19 @@ struct PluginAudioData {
 
     ~PluginAudioData()
     {
+        CARLA_ASSERT(count == 0);
         CARLA_ASSERT(ports == nullptr);
     }
 
     void createNew(const uint32_t count)
     {
+        CARLA_ASSERT(count == 0);
         CARLA_ASSERT(ports == nullptr);
 
-        if (ports == nullptr)
-            ports = new PluginAudioPort[count];
+        if (ports != nullptr)
+            return;
+
+        ports = new PluginAudioPort[count];
 
         this->count = count;
     }
@@ -182,20 +186,22 @@ struct PluginParameterData {
 
     ~PluginParameterData()
     {
+        CARLA_ASSERT(count == 0);
         CARLA_ASSERT(data == nullptr);
         CARLA_ASSERT(ranges == nullptr);
     }
 
     void createNew(const uint32_t count)
     {
+        CARLA_ASSERT(count == 0);
         CARLA_ASSERT(data == nullptr);
         CARLA_ASSERT(ranges == nullptr);
 
-        if (data == nullptr)
-            data = new ParameterData[count];
+        if (data != nullptr || ranges != nullptr)
+            return;
 
-        if (ranges == nullptr)
-            ranges = new ParameterRanges[count];
+        data = new ParameterData[count];
+        ranges = new ParameterRanges[count];
 
         this->count = count;
     }
@@ -219,6 +225,7 @@ struct PluginParameterData {
 
     float fixValue(const uint32_t parameterId, const float& value)
     {
+        CARLA_ASSERT(parameterId < count);
         return ranges[parameterId].fixValue(value);
     }
 
@@ -241,20 +248,24 @@ struct PluginProgramData {
 
     ~PluginProgramData()
     {
+        CARLA_ASSERT(count == 0);
+        CARLA_ASSERT(current == -1);
         CARLA_ASSERT(names == nullptr);
     }
 
     void createNew(const uint32_t count)
     {
+        CARLA_ASSERT(count == 0);
+        CARLA_ASSERT(current == -1);
         CARLA_ASSERT(names == nullptr);
 
-        if (names == nullptr)
-        {
-            names = new ProgramName[count];
+        if (names != nullptr)
+            return;
 
-            for (uint32_t i=0; i < count; i++)
-                names[i] = nullptr;
-        }
+        names = new ProgramName[count];
+
+        for (uint32_t i=0; i < count; i++)
+            names[i] = nullptr;
 
         this->count = count;
     }
@@ -273,7 +284,7 @@ struct PluginProgramData {
             names = nullptr;
         }
 
-        count   = 0;
+        count = 0;
         current = -1;
     }
 
@@ -294,15 +305,21 @@ struct PluginMidiProgramData {
 
     ~PluginMidiProgramData()
     {
+        CARLA_ASSERT(count == 0);
+        CARLA_ASSERT(current == -1);
         CARLA_ASSERT(data == nullptr);
     }
 
     void createNew(const uint32_t count)
     {
+        CARLA_ASSERT(count == 0);
+        CARLA_ASSERT(current == -1);
         CARLA_ASSERT(data == nullptr);
 
-        if (data == nullptr)
-            data = new MidiProgramData[count];
+        if (data != nullptr)
+            return;
+
+        data = new MidiProgramData[count];
 
         this->count = count;
     }
@@ -342,7 +359,11 @@ struct PluginPostRtEvent {
           value2(-1),
           value3(0.0f) {}
 
+#ifdef DEBUG
+    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(PluginPostRtEvent)
+#else
     CARLA_DECLARE_NON_COPY_STRUCT(PluginPostRtEvent)
+#endif
 };
 
 // -----------------------------------------------------------------------
@@ -357,7 +378,11 @@ struct ExternalMidiNote {
           note(0),
           velo(0) {}
 
+#ifdef DEBUG
+    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(ExternalMidiNote)
+#else
     CARLA_DECLARE_NON_COPY_STRUCT(ExternalMidiNote)
+#endif
 };
 
 // -----------------------------------------------------------------------
@@ -373,7 +398,6 @@ public:
     };
 
     CarlaPluginGUI(QWidget* const parent, Callback* const callback);
-
     ~CarlaPluginGUI();
 
 private:
@@ -395,8 +419,8 @@ struct CarlaPluginProtectedData {
     void* lib;
 
     // misc
-    unsigned int extraHints;
     int8_t       ctrlChannel;
+    unsigned int extraHints;
 
     // latency
     uint32_t latency;
@@ -419,7 +443,7 @@ struct CarlaPluginProtectedData {
         RtList<ExternalMidiNote> data;
 
         ExternalNotes()
-            : dataPool(32, 128),
+            : dataPool(32, 152),
               data(&dataPool) {}
 
         ~ExternalNotes()
@@ -507,8 +531,8 @@ struct CarlaPluginProtectedData {
         CarlaOscData data;
         CarlaPluginThread thread;
 
-        OSC(CarlaEngine* const engine, CarlaPlugin* const plugin, const CarlaPluginThread::Mode mode)
-            : thread(engine, plugin, mode) {}
+        OSC(CarlaEngine* const engine, CarlaPlugin* const plugin)
+            : thread(engine, plugin) {}
 
         OSC() = delete;
         OSC(OSC&) = delete;
@@ -524,11 +548,11 @@ struct CarlaPluginProtectedData {
           activeBefore(false),
           needsReset(false),
           lib(nullptr),
-          extraHints(0x0),
           ctrlChannel(-1),
+          extraHints(0x0),
           latency(0),
           latencyBuffers(nullptr),
-          osc(engine_, plugin, CarlaPluginThread::PLUGIN_THREAD_NULL) {}
+          osc(engine_, plugin) {}
 
     CarlaPluginProtectedData() = delete;
     CarlaPluginProtectedData(CarlaPluginProtectedData&) = delete;
