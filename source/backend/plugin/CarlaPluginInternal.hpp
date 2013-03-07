@@ -548,11 +548,11 @@ struct CarlaPluginProtectedData {
           activeBefore(false),
           needsReset(false),
           lib(nullptr),
-          ctrlChannel(-1),
+          ctrlChannel(0),
           extraHints(0x0),
           latency(0),
           latencyBuffers(nullptr),
-          osc(engine_, plugin) {}
+          osc(engine, plugin) {}
 
     CarlaPluginProtectedData() = delete;
     CarlaPluginProtectedData(CarlaPluginProtectedData&) = delete;

@@ -688,6 +688,16 @@ public:
      */
     void recreateLatencyBuffers();
 
+    /*!
+     * TODO.
+     */
+    bool tryLock();
+
+    /*!
+     * TODO.
+     */
+    void unlock();
+
     // -------------------------------------------------------------------
     // OSC stuff
 

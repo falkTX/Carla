@@ -24,8 +24,6 @@
 
 //#include <QtGui/QtEvents>
 
-// TODO - save&load options
-
 CARLA_BACKEND_START_NAMESPACE
 
 // -------------------------------------------------------------------
@@ -73,19 +71,19 @@ CarlaPlugin::CarlaPlugin(CarlaEngine* const engine, const unsigned int id)
     {
     case PROCESS_MODE_SINGLE_CLIENT:
     case PROCESS_MODE_MULTIPLE_CLIENTS:
-        kData->ctrlChannel = 0;
+        CARLA_ASSERT(id < MAX_DEFAULT_PLUGINS);
         break;
 
     case PROCESS_MODE_CONTINUOUS_RACK:
-        CARLA_ASSERT(id < MAX_RACK_PLUGINS && id < MAX_MIDI_CHANNELS);
-
-        if (id < MAX_RACK_PLUGINS && id < MAX_MIDI_CHANNELS)
-            kData->ctrlChannel = id;
-
+        CARLA_ASSERT(id < MAX_RACK_PLUGINS);
         break;
 
     case PROCESS_MODE_PATCHBAY:
+        CARLA_ASSERT(id < MAX_PATCHBAY_PLUGINS);
+        break;
+
     case PROCESS_MODE_BRIDGE:
+        CARLA_ASSERT(id == 0);
         break;
     }
 
@@ -390,6 +388,10 @@ void CarlaPlugin::getParameterCountInfo(uint32_t* const ins, uint32_t* const out
 // -------------------------------------------------------------------
 // Set data (state)
 
+void CarlaPlugin::prepareForSave()
+{
+}
+
 const SaveState& CarlaPlugin::getSaveState()
 {
     static SaveState saveState;
@@ -448,6 +450,7 @@ const SaveState& CarlaPlugin::getSaveState()
     saveState.balanceLeft  = kData->postProc.balanceLeft;
     saveState.balanceRight = kData->postProc.balanceRight;
     saveState.panning      = kData->postProc.panning;
+    saveState.ctrlChannel  = kData->ctrlChannel;
 
     // ----------------------------
     // Current Program
@@ -735,6 +738,7 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
     setBalanceLeft(saveState.balanceLeft, true, true);
     setBalanceRight(saveState.balanceRight, true, true);
     setPanning(saveState.panning, true, true);
+    setCtrlChannel(saveState.ctrlChannel, true, true);
 
     setActive(saveState.active, true, true);
 }
@@ -820,6 +824,9 @@ void CarlaPlugin::setEnabled(const bool yesNo)
 
 void CarlaPlugin::setActive(const bool active, const bool sendOsc, const bool sendCallback)
 {
+    if (kData->active == active)
+        return;
+
     kData->active = active;
 
     const float value = active ? 1.0f : 0.0f;
@@ -846,6 +853,9 @@ void CarlaPlugin::setDryWet(const float value, const bool sendOsc, const bool se
 
     const float fixedValue = carla_fixValue<float>(0.0f, 1.0f, value);
 
+    if (kData->postProc.dryWet == fixedValue)
+        return;
+
     kData->postProc.dryWet = fixedValue;
 
 #ifndef BUILD_BRIDGE
@@ -869,6 +879,9 @@ void CarlaPlugin::setVolume(const float value, const bool sendOsc, const bool se
     CARLA_ASSERT(value >= 0.0f && value <= 1.27f);
 
     const float fixedValue = carla_fixValue<float>(0.0f, 1.27f, value);
+
+    if (kData->postProc.volume == fixedValue)
+        return;
 
     kData->postProc.volume = fixedValue;
 
@@ -894,6 +907,9 @@ void CarlaPlugin::setBalanceLeft(const float value, const bool sendOsc, const bo
 
     const float fixedValue = carla_fixValue<float>(-1.0f, 1.0f, value);
 
+    if (kData->postProc.balanceLeft == fixedValue)
+        return;
+
     kData->postProc.balanceLeft = fixedValue;
 
 #ifndef BUILD_BRIDGE
@@ -917,6 +933,9 @@ void CarlaPlugin::setBalanceRight(const float value, const bool sendOsc, const b
     CARLA_ASSERT(value >= -1.0f && value <= 1.0f);
 
     const float fixedValue = carla_fixValue<float>(-1.0f, 1.0f, value);
+
+    if (kData->postProc.balanceRight == fixedValue)
+        return;
 
     kData->postProc.balanceRight = fixedValue;
 
@@ -942,6 +961,9 @@ void CarlaPlugin::setPanning(const float value, const bool sendOsc, const bool s
 
     const float fixedValue = carla_fixValue<float>(-1.0f, 1.0f, value);
 
+    if (kData->postProc.panning == fixedValue)
+        return;
+
     kData->postProc.panning = fixedValue;
 
 #ifndef BUILD_BRIDGE
@@ -962,35 +984,27 @@ void CarlaPlugin::setPanning(const float value, const bool sendOsc, const bool s
 
 void CarlaPlugin::setCtrlChannel(const int8_t channel, const bool sendOsc, const bool sendCallback)
 {
-    CARLA_SAFE_ASSERT(kData->engine->getProccessMode() != PROCESS_MODE_CONTINUOUS_RACK);
-
-    if (kData->engine->getProccessMode() == PROCESS_MODE_CONTINUOUS_RACK)
+    if (kData->ctrlChannel == channel)
         return;
 
-    if (kData->ctrlChannel != channel)
-    {
-        {
-            const ScopedProcessLocker spl(this, true);
-            kData->ctrlChannel = channel;
-        }
+    kData->ctrlChannel = channel;
 
 #ifndef BUILD_BRIDGE
-        const float ctrlf = channel;
+    const float ctrlf = channel;
 
-        if (sendOsc)
-            kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_CTRL_CHANNEL, ctrlf);
+    if (sendOsc)
+        kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_CTRL_CHANNEL, ctrlf);
 #else
-        // unused
-        (void)sendOsc;
+    // unused
+    (void)sendOsc;
 #endif
 
-        if (sendCallback)
-            kData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, PARAMETER_CTRL_CHANNEL, 0, channel, nullptr);
+    if (sendCallback)
+        kData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, PARAMETER_CTRL_CHANNEL, 0, channel, nullptr);
 #ifndef BUILD_BRIDGE
-        else if (fHints & PLUGIN_IS_BRIDGE)
-            osc_send_control(&kData->osc.data, PARAMETER_CTRL_CHANNEL, ctrlf);
+    else if (fHints & PLUGIN_IS_BRIDGE)
+        osc_send_control(&kData->osc.data, PARAMETER_CTRL_CHANNEL, ctrlf);
 #endif
-    }
 }
 
 // -------------------------------------------------------------------
@@ -1013,6 +1027,10 @@ void CarlaPlugin::setParameterValue(const uint32_t parameterId, const float valu
 
     if (sendCallback)
         kData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, parameterId, 0, value, nullptr);
+#ifndef BUILD_BRIDGE
+    else if (fHints & PLUGIN_IS_BRIDGE)
+        osc_send_control(&kData->osc.data, parameterId, value);
+#endif
 }
 
 void CarlaPlugin::setParameterValueByRIndex(const int32_t rindex, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback)
@@ -1024,7 +1042,7 @@ void CarlaPlugin::setParameterValueByRIndex(const int32_t rindex, const float va
     if (rindex == PARAMETER_NULL)
         return;
     if (rindex == PARAMETER_ACTIVE)
-        return setActive(value > 0.0, sendOsc, sendCallback);
+        return setActive((value > 0.0f), sendOsc, sendCallback);
     if (rindex == PARAMETER_DRYWET)
         return setDryWet(value, sendOsc, sendCallback);
     if (rindex == PARAMETER_VOLUME)
@@ -1065,6 +1083,10 @@ void CarlaPlugin::setParameterMidiChannel(const uint32_t parameterId, uint8_t ch
 
     if (sendCallback)
         kData->engine->callback(CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED, fId, parameterId, channel, 0.0f, nullptr);
+#ifndef BUILD_BRIDGE
+    else if (fHints & PLUGIN_IS_BRIDGE)
+         {} // TODO
+#endif
 }
 
 void CarlaPlugin::setParameterMidiCC(const uint32_t parameterId, int16_t cc, const bool sendOsc, const bool sendCallback)
@@ -1087,16 +1109,20 @@ void CarlaPlugin::setParameterMidiCC(const uint32_t parameterId, int16_t cc, con
 
     if (sendCallback)
         kData->engine->callback(CALLBACK_PARAMETER_MIDI_CC_CHANGED, fId, parameterId, cc, 0.0f, nullptr);
+#ifndef BUILD_BRIDGE
+    else if (fHints & PLUGIN_IS_BRIDGE)
+         {} // TODO
+#endif
 }
 
 void CarlaPlugin::setCustomData(const char* const type, const char* const key, const char* const value, const bool sendGui)
 {
-    CARLA_ASSERT(type  != nullptr);
-    CARLA_ASSERT(key   != nullptr);
+    CARLA_ASSERT(type != nullptr);
+    CARLA_ASSERT(key != nullptr);
     CARLA_ASSERT(value != nullptr);
 
     if (type == nullptr)
-        return carla_stderr2("CarlaPlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is invalid", type, key, value, bool2str(sendGui));
+        return carla_stderr2("CarlaPlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is null", type, key, value, bool2str(sendGui));
 
     if (key == nullptr)
         return carla_stderr2("CarlaPlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - key is null", type, key, value, bool2str(sendGui));
@@ -1291,10 +1317,6 @@ void CarlaPlugin::reloadPrograms(const bool)
 {
 }
 
-void CarlaPlugin::prepareForSave()
-{
-}
-
 // -------------------------------------------------------------------
 // Plugin processing
 
@@ -1312,13 +1334,18 @@ void CarlaPlugin::sampleRateChanged(const double)
 
 void CarlaPlugin::recreateLatencyBuffers()
 {
-#if 0
-    if (kData->latencyBuffers)
+    if (kData->latencyBuffers != nullptr)
     {
         for (uint32_t i=0; i < kData->audioIn.count; i++)
-            delete[] kData->latencyBuffers[i];
+        {
+            CARLA_ASSERT(kData->latencyBuffers[i] != nullptr);
+
+            if (kData->latencyBuffers[i] != nullptr)
+                delete[] kData->latencyBuffers[i];
+        }
 
         delete[] kData->latencyBuffers;
+        kData->latencyBuffers = nullptr;
     }
 
     if (kData->audioIn.count > 0 && kData->latency > 0)
@@ -1326,11 +1353,21 @@ void CarlaPlugin::recreateLatencyBuffers()
         kData->latencyBuffers = new float*[kData->audioIn.count];
 
         for (uint32_t i=0; i < kData->audioIn.count; i++)
+        {
             kData->latencyBuffers[i] = new float[kData->latency];
+            carla_zeroFloat(kData->latencyBuffers[i], kData->latency);
+        }
     }
-    else
-        kData->latencyBuffers = nullptr;
-#endif
+}
+
+bool CarlaPlugin::tryLock()
+{
+    return kData->mutex.tryLock();
+}
+
+void CarlaPlugin::unlock()
+{
+    kData->mutex.unlock();
 }
 
 // -------------------------------------------------------------------

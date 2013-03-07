@@ -83,12 +83,13 @@ struct SaveState {
     const char* binary;
     long        uniqueID;
 
-    bool   active;
-    double dryWet;
-    double volume;
-    double balanceLeft;
-    double balanceRight;
-    double panning;
+    bool  active;
+    float dryWet;
+    float volume;
+    float balanceLeft;
+    float balanceRight;
+    float panning;
+    int8_t ctrlChannel;
 
     int32_t     currentProgramIndex;
     const char* currentProgramName;
@@ -106,11 +107,12 @@ struct SaveState {
           binary(nullptr),
           uniqueID(0),
           active(false),
-          dryWet(1.0),
-          volume(1.0),
-          balanceLeft(-1.0),
-          balanceRight(1.0),
-          panning(0.0),
+          dryWet(1.0f),
+          volume(1.0f),
+          balanceLeft(-1.0f),
+          balanceRight(1.0f),
+          panning(0.0f),
+          ctrlChannel(0),
           currentProgramIndex(-1),
           currentProgramName(nullptr),
           currentMidiBank(-1),
@@ -162,11 +164,12 @@ struct SaveState {
 
         uniqueID = 0;
         active = false;
-        dryWet = 1.0;
-        volume = 1.0;
-        balanceLeft  = -1.0;
-        balanceRight = 1.0;
-        panning      = 0.0;
+        dryWet = 1.0f;
+        volume = 1.0f;
+        balanceLeft  = -1.0f;
+        balanceRight = 1.0f;
+        panning      = 0.0f;
+        ctrlChannel  = 0;
         currentProgramIndex = -1;
         currentMidiBank     = -1;
         currentMidiProgram  = -1;
@@ -299,6 +302,13 @@ const SaveState& getSaveStateDictFromXML(const QDomNode& xmlNode)
                     float value = text.toFloat(&ok);
                     if (ok) saveState.panning = value;
                 }
+                else if (tag.compare("ControlChannel", Qt::CaseInsensitive) == 0)
+                {
+                    bool ok;
+                    short value = text.toShort(&ok);
+                    if (ok && value < INT8_MAX)
+                        saveState.ctrlChannel = static_cast<int8_t>(value-1);
+                }
 
                 // ----------------------------------------------
                 // Program (current)
@@ -307,7 +317,7 @@ const SaveState& getSaveStateDictFromXML(const QDomNode& xmlNode)
                 {
                     bool ok;
                     int value = text.toInt(&ok);
-                    if (ok) saveState.currentProgramIndex = value;
+                    if (ok) saveState.currentProgramIndex = value-1;
                 }
                 else if (tag.compare("CurrentProgramName", Qt::CaseInsensitive) == 0)
                 {
@@ -321,13 +331,13 @@ const SaveState& getSaveStateDictFromXML(const QDomNode& xmlNode)
                 {
                     bool ok;
                     int value = text.toInt(&ok);
-                    if (ok) saveState.currentMidiBank = value;
+                    if (ok) saveState.currentMidiBank = value-1;
                 }
                 else if (tag.compare("CurrentMidiProgram", Qt::CaseInsensitive) == 0)
                 {
                     bool ok;
                     int value = text.toInt(&ok);
-                    if (ok) saveState.currentMidiProgram = value;
+                    if (ok) saveState.currentMidiProgram = value-1;
                 }
 
                 // ----------------------------------------------
@@ -367,7 +377,7 @@ const SaveState& getSaveStateDictFromXML(const QDomNode& xmlNode)
                         else if (pTag.compare("MidiChannel", Qt::CaseInsensitive) == 0)
                         {
                             bool ok;
-                            uint channel = pText.toUInt(&ok);
+                            ushort channel = pText.toUShort(&ok);
                             if (ok && channel < 16)
                                 stateParameter->midiChannel = static_cast<uint8_t>(channel);
                         }
@@ -499,6 +509,8 @@ QString getXMLFromSaveState(const SaveState& saveState)
         if (saveState.panning != 0.0f)
             data += QString("   <Panning>%1</Panning>\n").arg(saveState.panning);
 
+        data += QString("   <ControlChannel>%1</ControlChannel>\n").arg(saveState.ctrlChannel+1);
+
         content += data;
     }
 
@@ -530,7 +542,7 @@ QString getXMLFromSaveState(const SaveState& saveState)
     if (saveState.currentProgramIndex >= 0)
     {
         QString program("\n");
-        program += QString("   <CurrentProgramIndex>%1</CurrentProgramIndex>\n").arg(saveState.currentProgramIndex);
+        program += QString("   <CurrentProgramIndex>%1</CurrentProgramIndex>\n").arg(saveState.currentProgramIndex+1);
         program += QString("   <CurrentProgramName>%1</CurrentProgramName>\n").arg(xmlSafeString(saveState.currentProgramName, true));
 
         content += program;
@@ -539,8 +551,8 @@ QString getXMLFromSaveState(const SaveState& saveState)
     if (saveState.currentMidiBank >= 0 && saveState.currentMidiProgram >= 0)
     {
         QString midiProgram("\n");
-        midiProgram += QString("   <CurrentMidiBank>%1</CurrentMidiBank>\n").arg(saveState.currentMidiBank);
-        midiProgram += QString("   <CurrentMidiProgram>%1</CurrentMidiProgram>\n").arg(saveState.currentMidiProgram);
+        midiProgram += QString("   <CurrentMidiBank>%1</CurrentMidiBank>\n").arg(saveState.currentMidiBank+1);
+        midiProgram += QString("   <CurrentMidiProgram>%1</CurrentMidiProgram>\n").arg(saveState.currentMidiProgram+1);
 
         content += midiProgram;
     }

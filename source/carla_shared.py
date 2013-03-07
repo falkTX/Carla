@@ -1437,7 +1437,7 @@ class PluginEdit(QDialog):
         self.fCurrentProgram = -1
         self.fCurrentMidiProgram = -1
         self.fCurrentStateFilename = None
-        self.fControlChannel = pluginId+1 if Carla.processMode == PROCESS_MODE_CONTINUOUS_RACK else 1
+        self.fControlChannel = 0
 
         self.fParameterCount = 0
         self.fParameterList  = []     # (type, id, widget)
@@ -1465,7 +1465,7 @@ class PluginEdit(QDialog):
         self.ui.keyboard.setMode(self.ui.keyboard.HORIZONTAL)
         self.ui.keyboard.setOctaves(6)
 
-        self.ui.sb_ctrl_channel.setValue(self.fControlChannel)
+        self.ui.sb_ctrl_channel.setValue(self.fControlChannel+1)
 
         self.ui.scrollArea.ensureVisible(self.ui.keyboard.width() / 5, 0)
         self.ui.scrollArea.setEnabled(False)
@@ -1794,7 +1794,7 @@ class PluginEdit(QDialog):
                 mpName = cString(mpData['name'])
                 mpName = mpName[:40] + (mpName[40:] and "...")
 
-                self.ui.cb_midi_programs.addItem("%03i:%03i - %s" % (mpBank, mpProg, mpName))
+                self.ui.cb_midi_programs.addItem("%03i:%03i - %s" % (mpBank+1, mpProg+1, mpName))
 
             self.fCurrentMidiProgram = Carla.host.get_current_midi_program_index(self.fPluginId)
             self.ui.cb_midi_programs.setCurrentIndex(self.fCurrentMidiProgram)
@@ -1814,6 +1814,7 @@ class PluginEdit(QDialog):
         if self.ui.cb_programs.count() > 0:
             pIndex = self.ui.cb_programs.currentIndex()
             pName  = cString(Carla.host.get_program_name(self.fPluginId, pIndex))
+            pName  = pName[:40] + (pName[40:] and "...")
             self.ui.cb_programs.setItemText(pIndex, pName)
 
         # Update current midi program text
@@ -1822,8 +1823,9 @@ class PluginEdit(QDialog):
             mpData  = Carla.host.get_midi_program_data(self.fPluginId, mpIndex)
             mpBank  = int(mpData['bank'])
             mpProg  = int(mpData['program'])
-            mpLabel = cString(mpData['name'])
-            self.ui.cb_midi_programs.setItemText(mpIndex, "%03i:%03i - %s" % (mpBank, mpProg, mpLabel))
+            mpName  = cString(mpData['name'])
+            mpName  = mpName[:40] + (mpName[40:] and "...")
+            self.ui.cb_midi_programs.setItemText(mpIndex, "%03i:%03i - %s" % (mpBank+1, mpProg+1, mpName))
 
         # Update all parameter values
         for paramType, paramId, paramWidget in self.fParameterList:
