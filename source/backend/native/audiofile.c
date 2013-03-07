@@ -81,6 +81,12 @@ void zeroFloat(float* data, unsigned size)
 
 void audiofile_read_poll(AudioFileInstance* const handlePtr)
 {
+    if (handlePtr == NULL)
+    {
+        fprintf(stderr, "R: invalid instance\n");
+        return;
+    }
+
     if (handlePtr->fileNfo.frames == 0)
     {
         //fprintf(stderr, "R: no song loaded\n");
@@ -95,6 +101,8 @@ void audiofile_read_poll(AudioFileInstance* const handlePtr)
     {
         if (handlePtr->loopMode)
         {
+            //fprintf(stderr, "R: DEBUG read loop, lastFrame:%i, maxFrame:%i\n", handlePtr->lastFrame, handlePtr->maxFrame);
+
             if (handlePtr->maxFrame >= handlePtr->pool.size)
             {
                 readFrame %= handlePtr->maxFrame;
@@ -221,7 +229,10 @@ void audiofile_load_filename(AudioFileInstance* const handlePtr, const char* con
     {
         ad_dump_nfo(99, &handlePtr->fileNfo);
 
-        if (handlePtr->fileNfo.channels == 1 || handlePtr->fileNfo.channels == 2)
+        if (handlePtr->fileNfo.frames == 0)
+            fprintf(stderr, "L: filename \"%s\" has 0 frames\n", filename);
+
+        if ((handlePtr->fileNfo.channels == 1 || handlePtr->fileNfo.channels == 2) && handlePtr->fileNfo.frames > 0)
         {
             handlePtr->maxFrame = handlePtr->fileNfo.frames;
             audiofile_read_poll(handlePtr);
