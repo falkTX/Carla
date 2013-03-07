@@ -115,6 +115,22 @@ CarlaPlugin::~CarlaPlugin()
         delete[] kData->latencyBuffers;
     }
 
+    for (auto it = kData->custom.begin(); it.valid(); it.next())
+    {
+        CustomData& cData(*it);
+
+        CARLA_ASSERT(cData.type != nullptr);
+        CARLA_ASSERT(cData.key != nullptr);
+        CARLA_ASSERT(cData.value != nullptr);
+
+        if (cData.type != nullptr)
+            delete[] cData.type;
+        if (cData.key != nullptr)
+            delete[] cData.key;
+        if (cData.value != nullptr)
+            delete[] cData.value;
+    }
+
     kData->prog.clear();
     kData->midiprog.clear();
     kData->custom.clear();
