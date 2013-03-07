@@ -95,6 +95,8 @@ CarlaPlugin::~CarlaPlugin()
 {
     carla_debug("CarlaPlugin::~CarlaPlugin()");
 
+    kData->mutex.lock();
+
     // Remove client and ports
     if (kData->client != nullptr)
     {
@@ -118,6 +120,7 @@ CarlaPlugin::~CarlaPlugin()
     kData->prog.clear();
     kData->midiprog.clear();
     kData->custom.clear();
+    kData->mutex.unlock();
 
     libClose();
 
@@ -1899,11 +1902,10 @@ CarlaPlugin::ScopedDisabler::ScopedDisabler(CarlaPlugin* const plugin)
     carla_debug("CarlaPlugin::ScopedDisabler(%p)", plugin);
     CARLA_ASSERT(plugin != nullptr);
 
+    plugin->kData->mutex.lock();
+
     if (plugin->fEnabled)
-    {
         plugin->fEnabled = false;
-        plugin->kData->engine->waitForProccessEnd(plugin->id());
-    }
 
     if (plugin->kData->client->isActive())
         plugin->kData->client->deactivate();
@@ -1915,6 +1917,7 @@ CarlaPlugin::ScopedDisabler::~ScopedDisabler()
 
     kPlugin->fEnabled = true;
     kPlugin->kData->client->activate();
+    kPlugin->kData->mutex.unlock();
 }
 
 // -------------------------------------------------------------------

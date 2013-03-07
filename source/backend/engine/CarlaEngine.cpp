@@ -1498,7 +1498,7 @@ void CarlaEngine::processRack(float* inBuf[2], float* outBuf[2], const uint32_t 
     {
         CarlaPlugin* const plugin = kData->plugins[i].plugin;
 
-        if (plugin == nullptr || ! plugin->enabled())
+        if (plugin == nullptr || ! plugin->enabled() || ! plugin->tryLock())
             continue;
 
         if (processed)
@@ -1517,6 +1517,7 @@ void CarlaEngine::processRack(float* inBuf[2], float* outBuf[2], const uint32_t 
         // process
         plugin->initBuffers();
         plugin->process(inBuf, outBuf, frames);
+        plugin->unlock();
 
 #if 0
         // if plugin has no audio inputs, add previous buffers

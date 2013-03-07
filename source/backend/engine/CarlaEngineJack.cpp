@@ -886,10 +886,11 @@ protected:
 #ifdef BUILD_BRIDGE
         CarlaPlugin* const plugin = getPluginUnchecked(0);
 
-        if (plugin && plugin->enabled())
+        if (plugin && plugin->enabled() && plugin->tryLock())
         {
             plugin->initBuffers();
             processPlugin(plugin, nframes);
+            plugin->unlock();
         }
 #else
         if (fOptions.processMode == PROCESS_MODE_SINGLE_CLIENT)
@@ -898,10 +899,11 @@ protected:
             {
                 CarlaPlugin* const plugin = getPluginUnchecked(i);
 
-                if (plugin && plugin->enabled())
+                if (plugin && plugin->enabled() && plugin->tryLock())
                 {
                     plugin->initBuffers();
                     processPlugin(plugin, nframes);
+                    plugin->unlock();
                 }
             }
         }
@@ -1616,13 +1618,14 @@ private:
     {
         CarlaPlugin* const plugin = (CarlaPlugin*)arg;
 
-        if (plugin != nullptr && plugin->enabled())
+        if (plugin != nullptr && plugin->enabled() && plugin->tryLock())
         {
             CarlaEngineJack* const engine = (CarlaEngineJack*)CarlaPluginGetEngine(plugin);
 
             plugin->initBuffers();
             engine->saveTransportInfo();
             engine->processPlugin(plugin, nframes);
+            plugin->unlock();
         }
 
         return 0;
