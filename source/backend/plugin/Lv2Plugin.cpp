@@ -329,6 +329,9 @@ public:
 #if 0
         m_count -= 1;
 
+        kData->singleMutex.lock();
+        kData->masterMutex.lock();
+
         // close UI
         if (m_hints & PLUGIN_HAS_GUI)
         {

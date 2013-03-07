@@ -135,6 +135,9 @@ public:
     {
         carla_debug("NativePlugin::~NativePlugin()");
 
+        kData->singleMutex.lock();
+        kData->masterMutex.lock();
+
         if (fDescriptor != nullptr)
         {
             if (fDescriptor->ui_show != nullptr && fIsUiVisible)
@@ -1488,9 +1491,9 @@ public:
 
         if (kData->engine->isOffline())
         {
-            kData->mutex.lock();
+            kData->singleMutex.lock();
         }
-        else if (! kData->mutex.tryLock())
+        else if (! kData->singleMutex.tryLock())
         {
             for (i=0; i < kData->audioOut.count; i++)
             {
@@ -1586,7 +1589,7 @@ public:
 
         // --------------------------------------------------------------------------------------------------------
 
-        kData->mutex.unlock();
+        kData->singleMutex.unlock();
         return true;
     }
 

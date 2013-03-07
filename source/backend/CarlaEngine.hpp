@@ -907,11 +907,6 @@ public:
      */
     void setAboutToClose();
 
-    /*!
-     * Safely block-wait until a plugin proccessing callback ends.
-     */
-    void waitForProccessEnd(const unsigned int pluginId);
-
 #ifndef BUILD_BRIDGE
     // -------------------------------------------------------------------
     // Options

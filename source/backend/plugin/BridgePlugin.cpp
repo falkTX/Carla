@@ -80,6 +80,9 @@ public:
     {
         carla_debug("BridgePlugin::~BridgePlugin()");
 
+        kData->singleMutex.lock();
+        kData->masterMutex.lock();
+
         if (osc.data.target)
         {
             osc_send_hide(&osc.data);

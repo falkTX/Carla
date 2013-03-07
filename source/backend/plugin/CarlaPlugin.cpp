@@ -95,8 +95,6 @@ CarlaPlugin::~CarlaPlugin()
 {
     carla_debug("CarlaPlugin::~CarlaPlugin()");
 
-    kData->mutex.lock();
-
     // Remove client and ports
     if (kData->client != nullptr)
     {
@@ -120,7 +118,10 @@ CarlaPlugin::~CarlaPlugin()
     kData->prog.clear();
     kData->midiprog.clear();
     kData->custom.clear();
-    kData->mutex.unlock();
+
+    // MUST have been unlocked before
+    kData->masterMutex.unlock();
+    kData->singleMutex.unlock();
 
     libClose();
 
@@ -232,7 +233,7 @@ const CustomData& CarlaPlugin::customData(const size_t index) const
 {
     CARLA_ASSERT(index < kData->custom.count());
 
-    return (index < kData->custom.count()) ? *kData->custom.getAt(index) : kCustomDataNull;
+    return (index < kData->custom.count()) ? kData->custom.getAt(index) : kCustomDataNull;
 }
 
 int32_t CarlaPlugin::chunkData(void** const dataPtr)
@@ -509,9 +510,9 @@ const SaveState& CarlaPlugin::getSaveState()
     // ----------------------------
     // Custom Data
 
-    for (uint32_t i=0, count=customDataCount(); i < count; i++)
+    for (auto it = kData->custom.begin(); it.valid(); it.next())
     {
-        const CustomData& cData = customData(i);
+        const CustomData& cData(*it);
 
         if (cData.type == nullptr)
             continue;
@@ -554,7 +555,7 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
 
     for (auto it = saveState.customData.begin(); it != saveState.customData.end(); ++it)
     {
-        StateCustomData* stateCustomData = *it;
+        const StateCustomData* const stateCustomData(*it);
 
         if (std::strcmp(stateCustomData->type, CUSTOM_DATA_CHUNK) != 0)
             setCustomData(stateCustomData->type, stateCustomData->key, stateCustomData->value, true);
@@ -724,7 +725,7 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
 
     for (auto it = saveState.customData.begin(); it != saveState.customData.end(); ++it)
     {
-        StateCustomData* stateCustomData = *it;
+        const StateCustomData* const stateCustomData(*it);
 
         if (std::strcmp(stateCustomData->type, CUSTOM_DATA_CHUNK) == 0)
             setCustomData(stateCustomData->type, stateCustomData->key, stateCustomData->value, true);
@@ -1147,27 +1148,29 @@ void CarlaPlugin::setCustomData(const char* const type, const char* const key, c
     if (saveData)
     {
         // Check if we already have this key
-        for (size_t i=0, count=kData->custom.count(); i < count; i++)
+        for (auto it = kData->custom.begin(); it.valid(); it.next())
         {
-            CustomData* const cData(kData->custom.getAt(i));
+            CustomData& cData(*it);
 
-            assert(cData->type != nullptr);
-            assert(cData->key != nullptr);
-            assert(cData->value != nullptr);
+            CARLA_ASSERT(cData.type != nullptr);
+            CARLA_ASSERT(cData.key != nullptr);
+            CARLA_ASSERT(cData.value != nullptr);
 
-            if (std::strcmp(cData->key, key) == 0)
+            if (std::strcmp(cData.key, key) == 0)
             {
-                delete[] cData->value;
-                cData->value = carla_strdup(value);
+                if (cData.value != nullptr)
+                    delete[] cData.value;
+
+                cData.value = carla_strdup(value);
                 return;
             }
         }
 
         // Otherwise store it
-        CustomData* newData(new CustomData);
-        newData->type  = carla_strdup(type);
-        newData->key   = carla_strdup(key);
-        newData->value = carla_strdup(value);
+        CustomData newData;
+        newData.type  = carla_strdup(type);
+        newData.key   = carla_strdup(key);
+        newData.value = carla_strdup(value);
         kData->custom.append(newData);
     }
 }
@@ -1365,12 +1368,12 @@ void CarlaPlugin::recreateLatencyBuffers()
 
 bool CarlaPlugin::tryLock()
 {
-    return kData->mutex.tryLock();
+    return kData->masterMutex.tryLock();
 }
 
 void CarlaPlugin::unlock()
 {
-    kData->mutex.unlock();
+    kData->masterMutex.unlock();
 }
 
 // -------------------------------------------------------------------
@@ -1548,21 +1551,21 @@ void CarlaPlugin::updateOscData(const lo_address& source, const char* const url)
 
     osc_send_sample_rate(&kData->osc.data, kData->engine->getSampleRate());
 
-    for (size_t i=0, count=kData->custom.count(); i < count; i++)
+    for (auto it = kData->custom.begin(); it.valid(); it.next())
     {
-        CustomData* const cData(kData->custom.getAt(i));
+        const CustomData& cData(*it);
 
-        assert(cData->type != nullptr);
-        assert(cData->key != nullptr);
-        assert(cData->value != nullptr);
+        CARLA_ASSERT(cData.type != nullptr);
+        CARLA_ASSERT(cData.key != nullptr);
+        CARLA_ASSERT(cData.value != nullptr);
 
 #ifdef WANT_LV2
         if (type() == PLUGIN_LV2)
-            osc_send_lv2_transfer_event(&kData->osc.data, 0, cData->type, cData->value);
+            osc_send_lv2_transfer_event(&kData->osc.data, 0, cData.type, cData.value);
         else
 #endif
-            if (std::strcmp(cData->type, CUSTOM_DATA_STRING) == 0)
-            osc_send_configure(&kData->osc.data, cData->key, cData->value);
+            if (std::strcmp(cData.type, CUSTOM_DATA_STRING) == 0)
+                osc_send_configure(&kData->osc.data, cData.key, cData.value);
     }
 
     if (kData->prog.current >= 0)
@@ -1592,11 +1595,12 @@ void CarlaPlugin::freeOscData()
 bool CarlaPlugin::waitForOscGuiShow()
 {
     carla_stdout("CarlaPlugin::waitForOscGuiShow()");
+    uint i=0, oscUiTimeout = kData->engine->getOptions().oscUiTimeout;
 
     // wait for UI 'update' call
-    for (uint i=0, oscUiTimeout = kData->engine->getOptions().oscUiTimeout; i < oscUiTimeout; i++)
+    for (; i < oscUiTimeout; i++)
     {
-        if (kData->osc.data.target)
+        if (kData->osc.data.target != nullptr)
         {
             carla_stdout("CarlaPlugin::waitForOscGuiShow() - got response, asking UI to show itself now");
             osc_send_show(&kData->osc.data);
@@ -1606,7 +1610,7 @@ bool CarlaPlugin::waitForOscGuiShow()
             carla_msleep(100);
     }
 
-    carla_stdout("CarlaPlugin::waitForOscGuiShow() - Timeout while waiting for UI to respond (waited %u msecs)", kData->engine->getOptions().oscUiTimeout);
+    carla_stdout("CarlaPlugin::waitForOscGuiShow() - Timeout while waiting for UI to respond (waited %u msecs)", oscUiTimeout);
     return false;
 }
 
@@ -1651,26 +1655,25 @@ void CarlaPlugin::sendMidiSingleNote(const uint8_t channel, const uint8_t note, 
 #endif
 
     if (sendCallback)
-        kData->engine->callback(velo ? CALLBACK_NOTE_ON : CALLBACK_NOTE_OFF, fId, channel, note, velo, nullptr);
+        kData->engine->callback((velo > 0) ? CALLBACK_NOTE_ON : CALLBACK_NOTE_OFF, fId, channel, note, velo, nullptr);
 }
 
 void CarlaPlugin::sendMidiAllNotesOff()
 {
-    kData->postRtEvents.mutex.lock();
+    if (kData->ctrlChannel < 0 || kData->ctrlChannel >= MAX_MIDI_CHANNELS)
+        return;
 
     PluginPostRtEvent postEvent;
     postEvent.type   = kPluginPostRtEventNoteOff;
     postEvent.value1 = kData->ctrlChannel;
     postEvent.value2 = 0;
-    postEvent.value3 = 0.0;
+    postEvent.value3 = 0.0f;
 
     for (unsigned short i=0; i < MAX_MIDI_NOTE; i++)
     {
         postEvent.value2 = i;
-        kData->postRtEvents.data.append(postEvent);
+        kData->postRtEvents.appendRT(postEvent);
     }
-
-    kData->postRtEvents.mutex.unlock();
 }
 
 // -------------------------------------------------------------------
@@ -1902,7 +1905,7 @@ CarlaPlugin::ScopedDisabler::ScopedDisabler(CarlaPlugin* const plugin)
     carla_debug("CarlaPlugin::ScopedDisabler(%p)", plugin);
     CARLA_ASSERT(plugin != nullptr);
 
-    plugin->kData->mutex.lock();
+    plugin->kData->masterMutex.lock();
 
     if (plugin->fEnabled)
         plugin->fEnabled = false;
@@ -1917,7 +1920,7 @@ CarlaPlugin::ScopedDisabler::~ScopedDisabler()
 
     kPlugin->fEnabled = true;
     kPlugin->kData->client->activate();
-    kPlugin->kData->mutex.unlock();
+    kPlugin->kData->masterMutex.unlock();
 }
 
 // -------------------------------------------------------------------
@@ -1931,7 +1934,7 @@ CarlaPlugin::ScopedProcessLocker::ScopedProcessLocker(CarlaPlugin* const plugin,
     CARLA_ASSERT(plugin != nullptr);
 
     if (block)
-        plugin->kData->mutex.lock();
+        plugin->kData->singleMutex.lock();
 }
 
 CarlaPlugin::ScopedProcessLocker::~ScopedProcessLocker()
@@ -1940,9 +1943,10 @@ CarlaPlugin::ScopedProcessLocker::~ScopedProcessLocker()
 
     if (kBlock)
     {
-        if (kPlugin->kData->mutex.wasTryLockCalled())
+        if (kPlugin->kData->singleMutex.wasTryLockCalled())
             kPlugin->kData->needsReset = true;
-        kPlugin->kData->mutex.unlock();
+
+        kPlugin->kData->singleMutex.unlock();
     }
 }
 

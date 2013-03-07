@@ -71,6 +71,9 @@ public:
     {
         carla_debug("FluidSynthPlugin::~FluidSynthPlugin()");
 
+        kData->singleMutex.lock();
+        kData->masterMutex.lock();
+
         delete_fluid_synth(fSynth);
         delete_fluid_settings(fSettings);
 
@@ -1226,9 +1229,9 @@ public:
 
         if (kData->engine->isOffline())
         {
-            kData->mutex.lock();
+            kData->singleMutex.lock();
         }
-        else if (! kData->mutex.tryLock())
+        else if (! kData->singleMutex.tryLock())
         {
             for (i=0; i < kData->audioOut.count; i++)
             {
@@ -1307,7 +1310,7 @@ public:
 
         // --------------------------------------------------------------------------------------------------------
 
-        kData->mutex.unlock();
+        kData->singleMutex.unlock();
         return true;
     }
 

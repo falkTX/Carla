@@ -188,6 +188,9 @@ public:
     {
         carla_debug("LinuxSamplerPlugin::~LinuxSamplerPlugin()");
 
+        kData->singleMutex.lock();
+        kData->masterMutex.lock();
+
         if (kData->activeBefore)
             fAudioOutputDevice->Stop();
 
@@ -801,7 +804,11 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Try lock, silence otherwise
 
-        if (! kData->mutex.tryLock())
+        if (kData->engine->isOffline())
+        {
+            kData->singleMutex.lock();
+        }
+        else if (! kData->singleMutex.tryLock())
         {
             for (i=0; i < kData->audioOut.count; i++)
             {
@@ -869,7 +876,7 @@ public:
 
         // --------------------------------------------------------------------------------------------------------
 
-        kData->mutex.unlock();
+        kData->singleMutex.unlock();
         return true;
     }
 

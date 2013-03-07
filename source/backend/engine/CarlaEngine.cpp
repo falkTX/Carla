@@ -348,14 +348,6 @@ CarlaEngine::~CarlaEngine()
 // -----------------------------------------------------------------------
 // Helpers
 
-void doIdle(CarlaEngineProtectedData* const kData, const bool unlock)
-{
-    kData->nextAction.opcode = EnginePostActionNull;
-
-    if (unlock)
-        kData->nextAction.mutex.unlock();
-}
-
 void doPluginRemove(CarlaEngineProtectedData* const kData, const bool unlock)
 {
     CARLA_ASSERT(kData->curPluginCount > 0);
@@ -868,7 +860,7 @@ bool CarlaEngine::removePlugin(const unsigned int id)
 
 void CarlaEngine::removeAllPlugins()
 {
-    carla_debug("CarlaEngine::removeAllPlugins()");
+    carla_debug("CarlaEngine::removeAllPlugins() - START");
 
     kData->thread.stopNow();
 
@@ -877,7 +869,6 @@ void CarlaEngine::removeAllPlugins()
         const unsigned int oldCount = kData->curPluginCount;
 
         kData->curPluginCount = 0;
-        waitForProccessEnd(0); // FIXME - doesn't work for multi-client
 
         for (unsigned int i=0; i < oldCount; i++)
         {
@@ -885,20 +876,23 @@ void CarlaEngine::removeAllPlugins()
 
             CARLA_ASSERT(plugin != nullptr);
 
+            kData->plugins[i].plugin = nullptr;
+
             if (plugin != nullptr)
                 delete plugin;
 
             // clear this plugin
-            kData->plugins[i].plugin      = nullptr;
-            kData->plugins[i].insPeak[0]  = 0.0;
-            kData->plugins[i].insPeak[1]  = 0.0;
-            kData->plugins[i].outsPeak[0] = 0.0;
-            kData->plugins[i].outsPeak[1] = 0.0;
+            kData->plugins[i].insPeak[0]  = 0.0f;
+            kData->plugins[i].insPeak[1]  = 0.0f;
+            kData->plugins[i].outsPeak[0] = 0.0f;
+            kData->plugins[i].outsPeak[1] = 0.0f;
         }
     }
 
     if (isRunning() && ! kData->aboutToClose)
         kData->thread.startNow();
+
+    carla_debug("CarlaEngine::removeAllPlugins() - END");
 }
 
 CarlaPlugin* CarlaEngine::getPlugin(const unsigned int id) const
@@ -1154,14 +1148,14 @@ void CarlaEngine::setCallback(const CallbackFunc func, void* const ptr)
 // -----------------------------------------------------------------------
 // Patchbay
 
-void CarlaEngine::patchbayConnect(int portA, int portB)
+void CarlaEngine::patchbayConnect(int, int)
 {
-    // TODO
+    // nothing
 }
 
-void CarlaEngine::patchbayDisconnect(int connectionId)
+void CarlaEngine::patchbayDisconnect(int)
 {
-    // TODO
+    // nothing
 }
 
 // -----------------------------------------------------------------------
@@ -1199,31 +1193,6 @@ void CarlaEngine::setAboutToClose()
 {
     carla_debug("CarlaEngine::setAboutToClose()");
     kData->aboutToClose = true;
-}
-
-// -----------------------------------------------------------------------
-// Misc
-
-void CarlaEngine::waitForProccessEnd(const unsigned int pluginId)
-{
-    carla_debug("CarlaEngine::waitForProccessEnd()");
-
-    kData->nextAction.pluginId = pluginId;
-    kData->nextAction.opcode   = EnginePostActionIdle;
-
-    kData->nextAction.mutex.lock();
-
-    if (isRunning())
-    {
-        // block wait for unlock on proccessing side
-        kData->nextAction.mutex.lock();
-    }
-    else
-    {
-        doIdle(kData, false);
-    }
-
-    kData->nextAction.mutex.unlock();
 }
 
 // -----------------------------------------------------------------------
@@ -1440,9 +1409,6 @@ void CarlaEngine::proccessPendingEvents()
     switch (kData->nextAction.opcode)
     {
     case EnginePostActionNull:
-        break;
-    case EnginePostActionIdle:
-        doIdle(kData, true);
         break;
     case EnginePostActionRemovePlugin:
         doPluginRemove(kData, true);

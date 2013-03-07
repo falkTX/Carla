@@ -360,6 +360,9 @@ private:
     static void callback(void* ptr, CarlaBackend::CallbackType action, unsigned int pluginId, int value1, int value2, float value3, const char* valueStr)
     {
         return ((CarlaPluginClient*)ptr)->handleCallback(action, value1, value2, value3, valueStr);
+
+        // unused
+        (void)pluginId;
     }
 };
 

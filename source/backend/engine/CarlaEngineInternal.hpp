@@ -97,23 +97,8 @@ const uint32_t       PATCHBAY_BUFFER_SIZE = 128;
 const unsigned short PATCHBAY_EVENT_COUNT = 512;
 const unsigned short RACK_EVENT_COUNT     = 512;
 
-#if 0
-struct EnginePostEvent {
-    EnginePostEventType type;
-    int32_t value1;
-    void*   valuePtr;
-
-    EnginePostEvent()
-        : type(EnginePostEventNull),
-          value1(-1),
-          valuePtr(nullptr) {}
-};
-#endif
-
 enum EnginePostAction {
     EnginePostActionNull,
-    EnginePostActionIdle,
-    EnginePostActionInsertPlugin,
     EnginePostActionRemovePlugin
 };
 

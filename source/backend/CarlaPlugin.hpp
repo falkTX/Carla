@@ -746,6 +746,7 @@ public:
     /*!
      * Post pone an event of type \a type.\n
      * The event will be processed later, but as soon as possible.
+     * \note RT call
      */
     void postponeRtEvent(const PluginPostRtEventType type, const int32_t value1, const int32_t value2, const float value3);
 

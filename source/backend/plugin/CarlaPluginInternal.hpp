@@ -433,9 +433,10 @@ struct CarlaPluginProtectedData {
     PluginParameterData param;
     PluginProgramData prog;
     PluginMidiProgramData midiprog;
-    NonRtList<CustomData*> custom;
+    NonRtList<CustomData> custom;
 
-    CarlaMutex mutex;
+    CarlaMutex masterMutex; // global master lock
+    CarlaMutex singleMutex; // small lock used only in processSingle()
 
     struct ExternalNotes {
         CarlaMutex mutex;

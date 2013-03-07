@@ -1627,6 +1627,8 @@ private:
             engine->processPlugin(plugin, nframes);
             plugin->unlock();
         }
+        else
+            carla_stdout("Plugin not enabled or locked");
 
         return 0;
     }

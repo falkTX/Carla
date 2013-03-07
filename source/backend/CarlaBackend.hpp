@@ -742,16 +742,6 @@ struct CustomData {
         : type(nullptr),
           key(nullptr),
           value(nullptr) {}
-
-    ~CustomData()
-    {
-        if (type != nullptr)
-            delete[] type;
-        if (key != nullptr)
-            delete[] key;
-        if (value != nullptr)
-            delete[] value;
-    }
 };
 
 /**@}*/

@@ -81,6 +81,9 @@ public:
         // make plugin invalid
         unique2 += 1;
 
+        kData->singleMutex.lock();
+        kData->masterMutex.lock();
+
         if (effect)
         {
             // close UI

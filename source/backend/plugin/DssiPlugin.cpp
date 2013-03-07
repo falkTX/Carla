@@ -52,6 +52,9 @@ public:
     {
         carla_debug("DssiPlugin::~DssiPlugin()");
 
+        kData->singleMutex.lock();
+        kData->masterMutex.lock();
+
         // close UI
         if (fHints & PLUGIN_HAS_GUI)
         {
@@ -269,8 +272,6 @@ public:
 
         if (fDssiDescriptor->configure != nullptr)
         {
-            const ScopedProcessLocker spl(this, true);
-
             fDssiDescriptor->configure(fHandle, key, value);
 
             if (fHandle2)
@@ -1421,9 +1422,9 @@ public:
 
         if (kData->engine->isOffline())
         {
-            kData->mutex.lock();
+            kData->singleMutex.lock();
         }
-        else if (! kData->mutex.tryLock())
+        else if (! kData->singleMutex.tryLock())
         {
             for (i=0; i < kData->audioOut.count; i++)
             {
@@ -1540,7 +1541,7 @@ public:
 
         // --------------------------------------------------------------------------------------------------------
 
-        kData->mutex.unlock();
+        kData->singleMutex.unlock();
         return true;
     }
 
