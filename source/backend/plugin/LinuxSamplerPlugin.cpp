@@ -472,7 +472,7 @@ public:
 
         if (kData->needsReset || ! kData->activeBefore)
         {
-            if (kData->event.portIn != nullptr)
+            if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
             {
                 for (k=0, i=MAX_MIDI_CHANNELS; k < MAX_MIDI_CHANNELS; k++)
                 {
@@ -670,7 +670,7 @@ public:
                                 if (kData->midiprog.data[k].bank == nextBankId && kData->midiprog.data[k].program == nextProgramId)
                                 {
                                     setMidiProgram(k, false, false, false);
-                                    postponeRtEvent(kPluginPostRtEventMidiProgramChange, k, 0, 0.0);
+                                    postponeRtEvent(kPluginPostRtEventMidiProgramChange, k, 0, 0.0f);
                                     break;
                                 }
                             }
@@ -681,18 +681,20 @@ public:
                         if (event.channel == kData->ctrlChannel)
                         {
                             if (! allNotesOffSent)
+                            {
+                                allNotesOffSent = true;
                                 sendMidiAllNotesOff();
+                            }
 
                             fAudioOutputDevice->Stop();
                             fAudioOutputDevice->Play();
 
-                            postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_ACTIVE, 0, 0.0);
-                            postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_ACTIVE, 0, 1.0);
-
-                            allNotesOffSent = true;
+                            postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_ACTIVE, 0, 0.0f);
+                            postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_ACTIVE, 0, 1.0f);
                         }
 
-                        fMidiInputPort->DispatchControlChange(MIDI_CONTROL_ALL_SOUND_OFF, 0, k, sampleAccurate ? startTime : time);
+                        if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
+                            fMidiInputPort->DispatchControlChange(MIDI_CONTROL_ALL_SOUND_OFF, 0, k, sampleAccurate ? startTime : time);
 
                         break;
 
@@ -700,12 +702,14 @@ public:
                         if (event.channel == kData->ctrlChannel)
                         {
                             if (! allNotesOffSent)
+                            {
+                                allNotesOffSent = true;
                                 sendMidiAllNotesOff();
-
-                            allNotesOffSent = true;
+                            }
                         }
 
-                        fMidiInputPort->DispatchControlChange(MIDI_CONTROL_ALL_NOTES_OFF, 0, k, sampleAccurate ? startTime : time);
+                        if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
+                            fMidiInputPort->DispatchControlChange(MIDI_CONTROL_ALL_NOTES_OFF, 0, k, sampleAccurate ? startTime : time);
 
                         break;
                     }
@@ -732,7 +736,7 @@ public:
 
                         fMidiInputPort->DispatchNoteOff(note, 0, channel, fragmentPos);
 
-                        postponeRtEvent(kPluginPostRtEventNoteOff, channel, note, 0.0);
+                        postponeRtEvent(kPluginPostRtEventNoteOff, channel, note, 0.0f);
                     }
                     else if (MIDI_IS_STATUS_NOTE_ON(status))
                     {

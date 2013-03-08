@@ -97,6 +97,8 @@ public:
         dispatcher(effStopProcess, 0, 0, nullptr, 0.0f);
         dispatcher(effMainsChanged, 0, 0, nullptr, 0.0f);
         dispatcher(effClose, 0, 0, nullptr, 0.0f);
+
+        fEffect = nullptr;
     }
 
     // -------------------------------------------------------------------

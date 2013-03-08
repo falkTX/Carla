@@ -471,6 +471,8 @@ public:
             const LADSPA_PortDescriptor portType      = fDescriptor->PortDescriptors[i];
             const LADSPA_PortRangeHint portRangeHints = fDescriptor->PortRangeHints[i];
 
+            CARLA_ASSERT(fDescriptor->PortNames[i] != nullptr);
+
             if (LADSPA_IS_PORT_AUDIO(portType))
             {
                 portName.clear();
@@ -948,7 +950,7 @@ public:
 
         if (kData->needsReset || ! kData->activeBefore)
         {
-            if (kData->event.portIn != nullptr)
+            if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
             {
                 for (unsigned char j=0, l=MAX_MIDI_CHANNELS; j < MAX_MIDI_CHANNELS; j++)
                 {
@@ -1181,7 +1183,7 @@ public:
                                 if (kData->midiprog.data[k].bank == nextBankId && kData->midiprog.data[k].program == nextProgramId)
                                 {
                                     setMidiProgram(k, false, false, false);
-                                    postponeRtEvent(kPluginPostRtEventMidiProgramChange, k, 0, 0.0);
+                                    postponeRtEvent(kPluginPostRtEventMidiProgramChange, k, 0, 0.0f);
                                     break;
                                 }
                             }
@@ -1192,7 +1194,10 @@ public:
                         if (event.channel == kData->ctrlChannel)
                         {
                             if (! allNotesOffSent)
+                            {
                                 sendMidiAllNotesOff();
+                                allNotesOffSent = true;
+                            }
 
                             if (fDescriptor->deactivate != nullptr)
                             {
@@ -1210,24 +1215,25 @@ public:
                                     fDescriptor->activate(fHandle2);
                             }
 
-                            postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_ACTIVE, 0, 0.0);
-                            postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_ACTIVE, 0, 1.0);
-
-                            allNotesOffSent = true;
+                            postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_ACTIVE, 0, 0.0f);
+                            postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_ACTIVE, 0, 1.0f);
                         }
 
                         if (midiEventCount >= MAX_MIDI_EVENTS)
                             continue;
 
-                        carla_zeroStruct<snd_seq_event_t>(fMidiEvents[midiEventCount]);
+                        if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
+                        {
+                            carla_zeroStruct<snd_seq_event_t>(fMidiEvents[midiEventCount]);
 
-                        fMidiEvents[midiEventCount].time.tick = sampleAccurate ? startTime : time;
+                            fMidiEvents[midiEventCount].time.tick = sampleAccurate ? startTime : time;
 
-                        fMidiEvents[midiEventCount].type = SND_SEQ_EVENT_CONTROLLER;
-                        fMidiEvents[midiEventCount].data.control.channel = event.channel;
-                        fMidiEvents[midiEventCount].data.control.param   = MIDI_CONTROL_ALL_SOUND_OFF;
+                            fMidiEvents[midiEventCount].type = SND_SEQ_EVENT_CONTROLLER;
+                            fMidiEvents[midiEventCount].data.control.channel = event.channel;
+                            fMidiEvents[midiEventCount].data.control.param   = MIDI_CONTROL_ALL_SOUND_OFF;
 
-                        midiEventCount += 1;
+                            midiEventCount += 1;
+                        }
 
                         break;
 
@@ -1235,23 +1241,27 @@ public:
                         if (event.channel == kData->ctrlChannel)
                         {
                             if (! allNotesOffSent)
+                            {
+                                allNotesOffSent = true;
                                 sendMidiAllNotesOff();
-
-                            allNotesOffSent = true;
+                            }
                         }
 
                         if (midiEventCount >= MAX_MIDI_EVENTS)
                             continue;
 
-                        carla_zeroStruct<snd_seq_event_t>(fMidiEvents[midiEventCount]);
+                        if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
+                        {
+                            carla_zeroStruct<snd_seq_event_t>(fMidiEvents[midiEventCount]);
 
-                        fMidiEvents[midiEventCount].time.tick = sampleAccurate ? startTime : time;
+                            fMidiEvents[midiEventCount].time.tick = sampleAccurate ? startTime : time;
 
-                        fMidiEvents[midiEventCount].type = SND_SEQ_EVENT_CONTROLLER;
-                        fMidiEvents[midiEventCount].data.control.channel = event.channel;
-                        fMidiEvents[midiEventCount].data.control.param   = MIDI_CONTROL_ALL_NOTES_OFF;
+                            fMidiEvents[midiEventCount].type = SND_SEQ_EVENT_CONTROLLER;
+                            fMidiEvents[midiEventCount].data.control.channel = event.channel;
+                            fMidiEvents[midiEventCount].data.control.param   = MIDI_CONTROL_ALL_NOTES_OFF;
 
-                        midiEventCount += 1;
+                            midiEventCount += 1;
+                        }
 
                         break;
                     }
@@ -1285,7 +1295,7 @@ public:
                         fMidiEvents[midiEventCount].data.note.channel = channel;
                         fMidiEvents[midiEventCount].data.note.note    = note;
 
-                        postponeRtEvent(kPluginPostRtEventNoteOff, channel, note, 0.0);
+                        postponeRtEvent(kPluginPostRtEventNoteOff, channel, note, 0.0f);
                     }
                     else if (MIDI_IS_STATUS_NOTE_ON(status))
                     {
