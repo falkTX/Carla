@@ -162,10 +162,11 @@ enum PluginType {
     PLUGIN_LADSPA   = 2, //!< LADSPA plugin.\see LadspaPlugin
     PLUGIN_DSSI     = 3, //!< DSSI plugin.\see DssiPlugin
     PLUGIN_LV2      = 4, //!< LV2 plugin.\see Lv2Plugin
-    PLUGIN_VST      = 5, //!< VST plugin.\see VstPlugin
-    PLUGIN_GIG      = 6, //!< GIG sound kit, implemented via LinuxSampler.\see LinuxSamplerPlugin
-    PLUGIN_SF2      = 7, //!< SF2 sound kit (aka SoundFont), implemented via FluidSynth.\see FluidSynthPlugin
-    PLUGIN_SFZ      = 8  //!< SFZ sound kit, implemented via LinuxSampler.\see LinuxSamplerPlugin
+    PLUGIN_VST      = 5, //!< VST1/2 plugin.\see VstPlugin
+    PLUGIN_VST3     = 6, //!< VST3 plugin.\see VstPlugin
+    PLUGIN_GIG      = 7, //!< GIG sound kit, implemented via LinuxSampler.\see LinuxSamplerPlugin
+    PLUGIN_SF2      = 8, //!< SF2 sound kit (aka SoundFont), implemented via FluidSynth.\see FluidSynthPlugin
+    PLUGIN_SFZ      = 9  //!< SFZ sound kit, implemented via LinuxSampler.\see LinuxSamplerPlugin
 };
 
 /*!

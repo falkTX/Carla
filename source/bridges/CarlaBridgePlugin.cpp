@@ -494,6 +494,8 @@ int main(int argc, char* argv[])
         itype = CarlaBackend::PLUGIN_LV2;
     else if (std::strcmp(stype, "VST") == 0)
         itype = CarlaBackend::PLUGIN_VST;
+    else if (std::strcmp(stype, "VST3") == 0)
+        itype = CarlaBackend::PLUGIN_VST3;
     else
     {
         carla_stderr("Invalid plugin type '%s'", stype);

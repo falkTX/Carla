@@ -37,6 +37,7 @@ OBJS = \
 	DssiPlugin.cpp.o \
 	Lv2Plugin.cpp.o \
 	VstPlugin.cpp.o \
+	Vst3Plugin.cpp.o \
 	FluidSynthPlugin.cpp.o \
 	LinuxSamplerPlugin.cpp.o
 

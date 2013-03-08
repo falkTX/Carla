@@ -425,6 +425,9 @@ const SaveState& CarlaPlugin::getSaveState()
 
     switch (type())
     {
+    case PLUGIN_NONE:
+        saveState.type = carla_strdup("None");
+        break;
     case PLUGIN_INTERNAL:
         saveState.type = carla_strdup("Internal");
         break;
@@ -440,6 +443,9 @@ const SaveState& CarlaPlugin::getSaveState()
     case PLUGIN_VST:
         saveState.type = carla_strdup("VST");
         break;
+    case PLUGIN_VST3:
+        saveState.type = carla_strdup("VST3");
+        break;
     case PLUGIN_GIG:
         saveState.type = carla_strdup("GIG");
         break;
@@ -448,9 +454,6 @@ const SaveState& CarlaPlugin::getSaveState()
         break;
     case PLUGIN_SFZ:
         saveState.type = carla_strdup("SFZ");
-        break;
-    default:
-        saveState.type = carla_strdup("Unknown");
         break;
     }
 

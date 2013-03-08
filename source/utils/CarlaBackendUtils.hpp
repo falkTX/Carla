@@ -96,6 +96,8 @@ const char* PluginType2Str(const PluginType& type)
         return "PLUGIN_LV2";
     case PLUGIN_VST:
         return "PLUGIN_VST";
+    case PLUGIN_VST3:
+        return "PLUGIN_VST3";
     case PLUGIN_GIG:
         return "PLUGIN_GIG";
     case PLUGIN_SF2:
@@ -402,6 +404,8 @@ const char* getPluginTypeAsString(const PluginType& type)
         return "LV2";
     case PLUGIN_VST:
         return "VST";
+    case PLUGIN_VST3:
+        return "VST3";
     case PLUGIN_GIG:
         return "GIG";
     case PLUGIN_SF2:

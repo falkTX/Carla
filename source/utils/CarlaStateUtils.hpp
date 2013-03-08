@@ -479,6 +479,10 @@ QString getXMLFromSaveState(const SaveState& saveState)
         case PLUGIN_VST:
             info += QString("   <Binary>%1</Binary>\n").arg(xmlSafeString(saveState.binary, true));
             info += QString("   <UniqueID>%1</UniqueID>\n").arg(saveState.uniqueID);
+        case PLUGIN_VST3:
+            // TODO?
+            info += QString("   <Binary>%1</Binary>\n").arg(xmlSafeString(saveState.binary, true));
+            info += QString("   <UniqueID>%1</UniqueID>\n").arg(saveState.uniqueID);
             break;
         case PLUGIN_GIG:
         case PLUGIN_SF2:

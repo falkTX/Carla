@@ -762,6 +762,10 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
             plugin = CarlaPlugin::newVST(init);
             break;
 
+        case PLUGIN_VST3:
+            plugin = CarlaPlugin::newVST3(init);
+            break;
+
         case PLUGIN_GIG:
             plugin = CarlaPlugin::newGIG(init, (extra != nullptr));
             break;

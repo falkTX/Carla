@@ -42,6 +42,7 @@ SOURCES += \
     ../../backend/plugin/DssiPlugin.cpp \
     ../../backend/plugin/Lv2Plugin.cpp \
     ../../backend/plugin/VstPlugin.cpp \
+    ../../backend/plugin/Vst3Plugin.cpp \
     ../../backend/plugin/FluidSynthPlugin.cpp \
     ../../backend/plugin/LinuxSamplerPlugin.cpp
 
@@ -113,7 +114,7 @@ DEFINES += DEBUG
 DEFINES += BUILD_BRIDGE BUILD_BRIDGE_PLUGIN BRIDGE_PLUGIN
 
 DEFINES += WANT_JACK
-DEFINES += WANT_NATIVE WANT_LADSPA WANT_DSSI WANT_LV2 WANT_VST
+DEFINES += WANT_NATIVE WANT_LADSPA WANT_DSSI WANT_LV2 WANT_VST WANT_VST3
 DEFINES += WANT_FLUIDSYNTH WANT_LINUXSAMPLER
 
 LIBS     = -ldl \

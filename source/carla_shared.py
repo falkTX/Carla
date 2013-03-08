@@ -215,9 +215,10 @@ PLUGIN_LADSPA   = 2
 PLUGIN_DSSI     = 3
 PLUGIN_LV2      = 4
 PLUGIN_VST      = 5
-PLUGIN_GIG      = 6
-PLUGIN_SF2      = 7
-PLUGIN_SFZ      = 8
+PLUGIN_VST3     = 6
+PLUGIN_GIG      = 7
+PLUGIN_SF2      = 8
+PLUGIN_SFZ      = 9
 
 # Plugin Category
 PLUGIN_CATEGORY_NONE      = 0
