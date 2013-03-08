@@ -1018,6 +1018,8 @@ private:
 
     LinuxSampler::InstrumentManager* fInstrument;
     std::vector<LinuxSampler::InstrumentManager::instrument_id_t> fInstrumentIds;
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LinuxSamplerPlugin)
 };
 
 CarlaPlugin* LinuxSamplerPlugin::newLinuxSampler(const Initializer& init, const bool isGIG, const bool use16Outs)

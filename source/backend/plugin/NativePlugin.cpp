@@ -175,7 +175,7 @@ public:
         return PLUGIN_INTERNAL;
     }
 
-    PluginCategory category() const
+    PluginCategory category()
     {
         CARLA_ASSERT(fDescriptor != nullptr);
 
@@ -2034,6 +2034,8 @@ private:
     }
 
     #undef handlePtr
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(NativePlugin)
 };
 
 NonRtList<const PluginDescriptor*> NativePlugin::sPluginDescriptors;

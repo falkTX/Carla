@@ -103,7 +103,7 @@ public:
         return PLUGIN_DSSI;
     }
 
-    PluginCategory category() const
+    PluginCategory category()
     {
         if (fHints & PLUGIN_IS_SYNTH)
             return PLUGIN_CATEGORY_SYNTH;
@@ -1823,6 +1823,8 @@ private:
     float*  fParamBuffers;
     snd_seq_event_t fMidiEvents[MAX_MIDI_EVENTS];
     QByteArray      fChunk;
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DssiPlugin)
 };
 
 CARLA_BACKEND_END_NAMESPACE

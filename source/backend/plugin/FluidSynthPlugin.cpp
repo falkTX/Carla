@@ -88,7 +88,7 @@ public:
         return PLUGIN_SF2;
     }
 
-    PluginCategory category() const
+    PluginCategory category()
     {
         return PLUGIN_CATEGORY_SYNTH;
     }
@@ -1427,6 +1427,8 @@ private:
 
     float** fAudio16Buffers;
     double  fParamBuffers[FluidSynthParametersMax];
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FluidSynthPlugin)
 };
 
 CARLA_BACKEND_END_NAMESPACE

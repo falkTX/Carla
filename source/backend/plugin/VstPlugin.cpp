@@ -41,81 +41,62 @@ class VstPlugin : public CarlaPlugin
 {
 public:
     VstPlugin(CarlaEngine* const engine, const unsigned short id)
-        : CarlaPlugin(engine, id)
+        : CarlaPlugin(engine, id),
+          fUnique1(1),
+          fEffect(nullptr),
+          fIsProcessing(false),
+          fNeedIdle(false),
+          fUnique2(2)
     {
         carla_debug("VstPlugin::VstPlugin(%p, %i)", engine, id);
 
-#if 0
-        effect = nullptr;
-        events.numEvents = 0;
-        events.reserved  = 0;
-
-        gui.type = GUI_NONE;
-        gui.visible = false;
-        gui.width  = 0;
-        gui.height = 0;
-
-        isProcessing  = false;
-        needIdle      = false;
-
-        vstTimeOffset = 0;
-
-        memset(midiEvents, 0, sizeof(VstMidiEvent)*MAX_MIDI_EVENTS*2);
+        carla_zeroMem(fMidiEvents, sizeof(VstMidiEvent)*MAX_MIDI_EVENTS*2);
+        carla_zeroMem(&fTimeInfo, sizeof(VstTimeInfo_R));
 
         for (unsigned short i=0; i < MAX_MIDI_EVENTS*2; i++)
-            events.data[i] = (VstEvent*)&midiEvents[i];
+            fEvents.data[i] = (VstEvent*)&fMidiEvents[i];
+
+        kData->osc.thread.setMode(CarlaPluginThread::PLUGIN_THREAD_VST_GUI);
 
         // make plugin valid
         srand(id);
-        unique1 = unique2 = rand();
-#endif
-
-        kData->osc.thread.setMode(CarlaPluginThread::PLUGIN_THREAD_VST_GUI);
+        fUnique1 = fUnique2 = rand();
     }
 
     ~VstPlugin()
     {
         carla_debug("VstPlugin::~VstPlugin()");
 
-#if 0
-        // make plugin invalid
-        unique2 += 1;
-
         kData->singleMutex.lock();
         kData->masterMutex.lock();
 
-        if (effect)
+        // make plugin invalid
+        fUnique2 += 1;
+
+        if (fEffect == nullptr)
+            return;
+
+        // close UI
+        if (fHints & PLUGIN_HAS_GUI)
         {
-            // close UI
-            if (m_hints & PLUGIN_HAS_GUI)
+            showGui(false);
+
+            if (fGui.isOsc)
             {
-                showGui(false);
-
-                if (gui.type == GUI_EXTERNAL_OSC)
+                // Wait a bit first, then force kill
+                if (kData->osc.thread.isRunning() && ! kData->osc.thread.stop(kData->engine->getOptions().oscUiTimeout))
                 {
-                    if (osc.thread)
-                    {
-                        // Wait a bit first, try safe quit, then force kill
-                        if (osc.thread->isRunning() && ! osc.thread->wait(x_engine->getOptions().oscUiTimeout))
-                        {
-                            carla_stderr("Failed to properly stop VST OSC GUI thread");
-                            osc.thread->terminate();
-                        }
-
-                        delete osc.thread;
-                    }
+                    carla_stderr("VST GUI thread still running, forcing termination now");
+                    kData->osc.thread.terminate();
                 }
-                else
-                    effect->dispatcher(effect, effEditClose, 0, 0, nullptr, 0.0f);
             }
-
-            if (m_activeBefore)
-                effect->dispatcher(effect, effStopProcess, 0, 0, nullptr, 0.0f);
-
-            effect->dispatcher(effect, effMainsChanged, 0, 0, nullptr, 0.0f);
-            effect->dispatcher(effect, effClose, 0, 0, nullptr, 0.0f);
+            else
+                dispatcher(effEditClose, 0, 0, nullptr, 0.0f);
         }
-#endif
+
+        dispatcher(effStopProcess, 0, 0, nullptr, 0.0f);
+        dispatcher(effMainsChanged, 0, 0, nullptr, 0.0f);
+        dispatcher(effClose, 0, 0, nullptr, 0.0f);
     }
 
     // -------------------------------------------------------------------
@@ -126,14 +107,13 @@ public:
         return PLUGIN_VST;
     }
 
-#if 0
     PluginCategory category()
     {
-        CARLA_ASSERT(effect);
+        CARLA_ASSERT(fEffect != nullptr);
 
-        if (effect)
+        if (fEffect != nullptr)
         {
-            intptr_t category = effect->dispatcher(effect, effGetPlugCategory, 0, 0, nullptr, 0.0f);
+            const intptr_t category = dispatcher(effGetPlugCategory, 0, 0, nullptr, 0.0f);
 
             switch (category)
             {
@@ -151,18 +131,18 @@ public:
                 return PLUGIN_CATEGORY_SYNTH;
             }
 
-            if (effect->flags & effFlagsIsSynth)
+            if (fEffect->flags & effFlagsIsSynth)
                 return PLUGIN_CATEGORY_SYNTH;
         }
 
-        return getPluginCategoryFromName(m_name);
+        return getPluginCategoryFromName(fName);
     }
 
     long uniqueId()
     {
-        CARLA_ASSERT(effect);
+        CARLA_ASSERT(fEffect != nullptr);
 
-        return effect ? effect->uniqueID : 0;
+        return fEffect ? fEffect->uniqueID : 0;
     }
 
     // -------------------------------------------------------------------
@@ -170,91 +150,113 @@ public:
 
     int32_t chunkData(void** const dataPtr)
     {
-        CARLA_ASSERT(dataPtr);
-        CARLA_ASSERT(effect);
+        CARLA_ASSERT(fOptions & PLUGIN_OPTION_USE_CHUNKS);
+        CARLA_ASSERT(fEffect != nullptr);
+        CARLA_ASSERT(dataPtr != nullptr);
 
-        if (effect)
-            return effect->dispatcher(effect, effGetChunk, 0 /* bank */, 0, dataPtr, 0.0f);
-
-        return 0;
+        return (fEffect != nullptr) ? dispatcher(effGetChunk, 0 /* bank */, 0, dataPtr, 0.0f) : 0;
     }
 
     // -------------------------------------------------------------------
     // Information (per-plugin data)
 
-    double getParameterValue(const uint32_t parameterId)
+    unsigned int availableOptions()
     {
-        CARLA_ASSERT(effect);
-        CARLA_ASSERT(parameterId < param.count);
+        CARLA_ASSERT(fEffect != nullptr);
 
-        if (effect)
-            return effect->getParameter(effect, parameterId);
+        unsigned int options = 0x0;
 
-        return 0.0;
+        options |= PLUGIN_OPTION_FIXED_BUFFER;
+        options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+
+        //if ((kData->audioIns.count() == 2 || kData->audioOuts.count() == 0) || (kData->audioIns.count() == 0 || kData->audioOuts.count() == 2))
+        //    options |= PLUGIN_OPTION_FORCE_STEREO;
+
+        if (fEffect->flags & effFlagsProgramChunks)
+            options |= PLUGIN_OPTION_USE_CHUNKS;
+
+        if (kData->extraHints & PLUGIN_HINT_HAS_MIDI_IN)
+        {
+            options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
+            options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
+            options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
+            options |= PLUGIN_OPTION_SEND_PITCHBEND;
+            options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+        }
+
+        return options;
+    }
+
+    float getParameterValue(const uint32_t parameterId)
+    {
+        CARLA_ASSERT(fEffect != nullptr);
+        CARLA_ASSERT(parameterId < kData->param.count);
+
+        return (fEffect != nullptr) ? fEffect->getParameter(fEffect, parameterId) : 0;
     }
 
     void getLabel(char* const strBuf)
     {
-        CARLA_ASSERT(effect);
+        CARLA_ASSERT(fEffect != nullptr);
 
-        if (effect)
-            effect->dispatcher(effect, effGetProductString, 0, 0, strBuf, 0.0f);
+        if (fEffect != nullptr)
+            dispatcher(effGetProductString, 0, 0, strBuf, 0.0f);
         else
             CarlaPlugin::getLabel(strBuf);
     }
 
     void getMaker(char* const strBuf)
     {
-        CARLA_ASSERT(effect);
+        CARLA_ASSERT(fEffect != nullptr);
 
-        if (effect)
-            effect->dispatcher(effect, effGetVendorString, 0, 0, strBuf, 0.0f);
+        if (fEffect != nullptr)
+            dispatcher(effGetVendorString, 0, 0, strBuf, 0.0f);
         else
             CarlaPlugin::getMaker(strBuf);
     }
 
     void getCopyright(char* const strBuf)
     {
-        CARLA_ASSERT(effect);
+        CARLA_ASSERT(fEffect != nullptr);
 
-        if (effect)
-            effect->dispatcher(effect, effGetVendorString, 0, 0, strBuf, 0.0f);
+        if (fEffect != nullptr)
+            dispatcher(effGetVendorString, 0, 0, strBuf, 0.0f);
         else
             CarlaPlugin::getCopyright(strBuf);
     }
 
     void getRealName(char* const strBuf)
     {
-        CARLA_ASSERT(effect);
+        CARLA_ASSERT(fEffect != nullptr);
 
-        if (effect)
-            effect->dispatcher(effect, effGetEffectName, 0, 0, strBuf, 0.0f);
+        if (fEffect != nullptr)
+            dispatcher(effGetEffectName, 0, 0, strBuf, 0.0f);
         else
             CarlaPlugin::getRealName(strBuf);
     }
 
     void getParameterName(const uint32_t parameterId, char* const strBuf)
     {
-        CARLA_ASSERT(effect);
-        CARLA_ASSERT(parameterId < param.count);
+        CARLA_ASSERT(fEffect != nullptr);
+        CARLA_ASSERT(parameterId < kData->param.count);
 
-        if (effect)
-            effect->dispatcher(effect, effGetParamName, parameterId, 0, strBuf, 0.0f);
+        if (fEffect != nullptr)
+            dispatcher(effGetParamName, parameterId, 0, strBuf, 0.0f);
         else
             CarlaPlugin::getParameterName(parameterId, strBuf);
     }
 
     void getParameterText(const uint32_t parameterId, char* const strBuf)
     {
-        CARLA_ASSERT(effect);
-        CARLA_ASSERT(parameterId < param.count);
+        CARLA_ASSERT(fEffect != nullptr);
+        CARLA_ASSERT(parameterId < kData->param.count);
 
-        if (effect)
+        if (fEffect != nullptr)
         {
-            effect->dispatcher(effect, effGetParamDisplay, parameterId, 0, strBuf, 0.0f);
+            dispatcher(effGetParamDisplay, parameterId, 0, strBuf, 0.0f);
 
             if (*strBuf == 0)
-                sprintf(strBuf, "%f", getParameterValue(parameterId));
+                std::sprintf(strBuf, "%f", getParameterValue(parameterId));
         }
         else
             CarlaPlugin::getParameterText(parameterId, strBuf);
@@ -262,83 +264,66 @@ public:
 
     void getParameterUnit(const uint32_t parameterId, char* const strBuf)
     {
-        CARLA_ASSERT(effect);
-        CARLA_ASSERT(parameterId < param.count);
+        CARLA_ASSERT(fEffect != nullptr);
+        CARLA_ASSERT(parameterId < kData->param.count);
 
-        if (effect)
-            effect->dispatcher(effect, effGetParamLabel, parameterId, 0, strBuf, 0.0f);
+        if (fEffect != nullptr)
+            dispatcher(effGetParamLabel, parameterId, 0, strBuf, 0.0f);
         else
             CarlaPlugin::getParameterUnit(parameterId, strBuf);
-    }
-
-    void getGuiInfo(GuiType* const type, bool* const resizable)
-    {
-        *type = gui.type;
-        *resizable = false;
     }
 
     // -------------------------------------------------------------------
     // Set data (plugin-specific stuff)
 
-    void setParameterValue(const uint32_t parameterId, double value, const bool sendGui, const bool sendOsc, const bool sendCallback)
+    void setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback)
     {
-        CARLA_ASSERT(parameterId < param.count);
+        CARLA_ASSERT(fEffect != nullptr);
+        CARLA_ASSERT(parameterId < kData->param.count);
 
-        effect->setParameter(effect, parameterId, fixParameterValue(value, param.ranges[parameterId]));
+        const float fixedValue = kData->param.fixValue(parameterId, value);
+        fEffect->setParameter(fEffect, parameterId, fixedValue);
 
-        CarlaPlugin::setParameterValue(parameterId, value, sendGui, sendOsc, sendCallback);
+        CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
     }
 
     void setChunkData(const char* const stringData)
     {
-        CARLA_ASSERT(m_hints & PLUGIN_USES_CHUNKS);
-        CARLA_ASSERT(stringData);
+        CARLA_ASSERT(fEffect != nullptr);
+        CARLA_ASSERT(fOptions & PLUGIN_OPTION_USE_CHUNKS);
+        CARLA_ASSERT(stringData != nullptr);
 
-        static QByteArray chunk;
-        chunk = QByteArray::fromBase64(stringData);
+        // FIXME
+        fChunk = QByteArray::fromBase64(QByteArray(stringData));
+        //fChunk.toBase64();
 
-        if (x_engine->isOffline())
-        {
-            const CarlaEngine::ScopedLocker m(x_engine);
-            effect->dispatcher(effect, effSetChunk, 0 /* bank */, chunk.size(), chunk.data(), 0.0f);
-        }
-        else
-        {
-            const CarlaPlugin::ScopedDisabler m(this);
-            effect->dispatcher(effect, effSetChunk, 0 /* bank */, chunk.size(), chunk.data(), 0.0f);
-        }
+        const ScopedProcessLocker spl(this, true);
+        dispatcher(effSetChunk, 0 /* bank */, fChunk.size(), fChunk.data(), 0.0f);
     }
 
-    void setProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback, const bool block)
+    void setProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback)
     {
-        CARLA_ASSERT(index >= -1 && index < (int32_t)prog.count);
+        CARLA_ASSERT(fEffect != nullptr);
+        CARLA_ASSERT(index >= -1 && index < static_cast<int32_t>(kData->prog.count));
 
         if (index < -1)
             index = -1;
-        else if (index > (int32_t)prog.count)
+        else if (index > static_cast<int32_t>(kData->prog.count))
             return;
 
         if (index >= 0)
         {
-            if (x_engine->isOffline())
-            {
-                const CarlaEngine::ScopedLocker m(x_engine, block);
-                effect->dispatcher(effect, effBeginSetProgram, 0, 0, nullptr, 0.0f);
-                effect->dispatcher(effect, effSetProgram, 0, index, nullptr, 0.0f);
-                effect->dispatcher(effect, effEndSetProgram, 0, 0, nullptr, 0.0f);
-            }
-            else
-            {
-                const ScopedDisabler m(this, block);
-                effect->dispatcher(effect, effBeginSetProgram, 0, 0, nullptr, 0.0f);
-                effect->dispatcher(effect, effSetProgram, 0, index, nullptr, 0.0f);
-                effect->dispatcher(effect, effEndSetProgram, 0, 0, nullptr, 0.0f);
-            }
+            const ScopedProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
+
+            dispatcher(effBeginSetProgram, 0, 0, nullptr, 0.0f);
+            dispatcher(effSetProgram, 0, index, nullptr, 0.0f);
+            dispatcher(effEndSetProgram, 0, 0, nullptr, 0.0f);
         }
 
-        CarlaPlugin::setProgram(index, sendGui, sendOsc, sendCallback, block);
+        CarlaPlugin::setProgram(index, sendGui, sendOsc, sendCallback);
     }
 
+#if 0
     // -------------------------------------------------------------------
     // Set gui stuff
 
@@ -413,63 +398,57 @@ public:
             effect->dispatcher(effect, effEditClose, 0, 0, nullptr, 0.0f);
         }
     }
+#endif
 
     void showGui(const bool yesNo)
     {
-        if (gui.type == GUI_EXTERNAL_OSC)
+        if (fGui.isOsc)
         {
-            CARLA_ASSERT(osc.thread);
-
-            if (! osc.thread)
-            {
-                carla_stderr2("VstPlugin::showGui(%s) - attempt to show gui, but it does not exist!", bool2str(yesNo));
-                return;
-            }
-
             if (yesNo)
             {
-                osc.thread->start();
+                kData->osc.thread.start();
             }
             else
             {
-                if (osc.data.target)
+                if (kData->osc.data.target != nullptr)
                 {
-                    osc_send_hide(&osc.data);
-                    osc_send_quit(&osc.data);
-                    osc.data.free();
+                    osc_send_hide(&kData->osc.data);
+                    osc_send_quit(&kData->osc.data);
+                    kData->osc.data.free();
                 }
 
-                if (! osc.thread->wait(500))
-                    osc.thread->quit();
+                if (kData->osc.thread.isRunning() && ! kData->osc.thread.stop(kData->engine->getOptions().oscUiTimeout))
+                    kData->osc.thread.terminate();
             }
         }
         else
         {
-            if (yesNo && gui.width > 0 && gui.height > 0)
-                x_engine->callback(CALLBACK_RESIZE_GUI, m_id, gui.width, gui.height, 0.0, nullptr);
+            if (yesNo && fGui.width > 0 && fGui.height > 0 && kData->gui != nullptr)
+                kData->gui->setFixedSize(fGui.width, fGui.height);
         }
 
-        gui.visible = yesNo;
+        fGui.isVisible = yesNo;
     }
 
     void idleGui()
     {
 #ifdef VESTIGE_HEADER
-        if (effect /*&& effect->ptr1*/)
+        if (fEffect != nullptr /*&& effect->ptr1*/)
 #else
-        if (effect /*&& effect->resvd1*/)
+        if (fEffect != nullptr /*&& effect->resvd1*/)
 #endif
         {
-            if (needIdle)
-                effect->dispatcher(effect, effIdle, 0, 0, nullptr, 0.0f);
+            if (fNeedIdle)
+                dispatcher(effIdle, 0, 0, nullptr, 0.0f);
 
-            if (gui.type != GUI_EXTERNAL_OSC)
-                effect->dispatcher(effect, effEditIdle, 0, 0, nullptr, 0.0f);
+            if (! fGui.isOsc && fGui.isVisible)
+                dispatcher(effEditIdle, 0, 0, nullptr, 0.0f);
         }
 
         CarlaPlugin::idleGui();
     }
 
+#if 0
     // -------------------------------------------------------------------
     // Plugin state
 
@@ -1504,101 +1483,6 @@ public:
 
     // -------------------------------------------------------------------
 
-    void handleAudioMasterAutomate(const uint32_t index, const double value)
-    {
-        //CARLA_ASSERT(m_enabled);
-        CARLA_ASSERT_INT(index < param.count, index);
-
-        if (index >= param.count /*|| ! m_enabled*/)
-            return;
-
-        if (isProcessing && ! x_engine->isOffline())
-        {
-            setParameterValue(index, value, false, false, false);
-            postponeEvent(PluginPostEventParameterChange, index, 0, value);
-        }
-        else
-            setParameterValue(index, value, isProcessing, true, true);
-    }
-
-    intptr_t handleAudioMasterGetCurrentProcessLevel()
-    {
-        if (x_engine->isOffline())
-            return kVstProcessLevelOffline;
-        if (isProcessing)
-            return kVstProcessLevelRealtime;
-        return kVstProcessLevelUser;
-    }
-
-    intptr_t handleAudioMasterGetBlockSize()
-    {
-        const uint32_t bufferSize = x_engine->getBufferSize();
-        effect->dispatcher(effect, effSetBlockSize, 0, bufferSize, nullptr, 0.0f);
-        return bufferSize;
-    }
-
-    intptr_t handleAudioMasterGetSampleRate()
-    {
-        const double sampleRate = x_engine->getSampleRate();
-        effect->dispatcher(effect, effSetSampleRate, 0, 0, nullptr, sampleRate);
-        return sampleRate;
-    }
-
-    intptr_t handleAudioMasterGetTime()
-    {
-        memset(&vstTimeInfo, 0, sizeof(VstTimeInfo_R));
-
-        const CarlaEngineTimeInfo* const timeInfo = x_engine->getTimeInfo();
-
-        vstTimeInfo.flags |= kVstTransportChanged;
-
-        if (timeInfo->playing)
-            vstTimeInfo.flags |= kVstTransportPlaying;
-
-        vstTimeInfo.samplePos  = timeInfo->frame + vstTimeOffset;
-        vstTimeInfo.sampleRate = x_engine->getSampleRate();
-
-        vstTimeInfo.nanoSeconds = timeInfo->time;
-        vstTimeInfo.flags |= kVstNanosValid;
-
-        if (timeInfo->valid & CarlaEngineTimeBBT)
-        {
-            double ppqBar  = double(timeInfo->bbt.bar - 1) * timeInfo->bbt.beats_per_bar;
-            double ppqBeat = double(timeInfo->bbt.beat - 1);
-            double ppqTick = double(timeInfo->bbt.tick) / timeInfo->bbt.ticks_per_beat;
-
-            // Bars
-            vstTimeInfo.barStartPos = ppqBar;
-            vstTimeInfo.flags |= kVstBarsValid;
-
-            // PPQ Pos
-            vstTimeInfo.ppqPos = ppqBar + ppqBeat + ppqTick;
-            vstTimeInfo.flags |= kVstPpqPosValid;
-
-            // Tempo
-            vstTimeInfo.tempo  = timeInfo->bbt.beats_per_minute;
-            vstTimeInfo.flags |= kVstTempoValid;
-
-            // Time Signature
-            vstTimeInfo.timeSigNumerator   = timeInfo->bbt.beats_per_bar;
-            vstTimeInfo.timeSigDenominator = timeInfo->bbt.beat_type;
-            vstTimeInfo.flags |= kVstTimeSigValid;
-        }
-        else
-        {
-            // Tempo
-            vstTimeInfo.tempo  = 120.0;
-            vstTimeInfo.flags |= kVstTempoValid;
-
-            // Time Signature
-            vstTimeInfo.timeSigNumerator   = 4;
-            vstTimeInfo.timeSigDenominator = 4;
-            vstTimeInfo.flags |= kVstTimeSigValid;
-        }
-
-        return (intptr_t)&vstTimeInfo;
-    }
-
     intptr_t handleAudioMasterTempoAt()
     {
         const CarlaEngineTimeInfo* const timeInfo = x_engine->getTimeInfo();
@@ -1646,12 +1530,6 @@ public:
         x_engine->callback(CALLBACK_RELOAD_ALL, m_id, 0, 0, 0.0, nullptr);
 
         return 1;
-    }
-
-    void handleAudioMasterNeedIdle()
-    {
-        carla_debug("VstPlugin::handleAudioMasterNeedIdle()");
-        needIdle = true;
     }
 
     intptr_t handleAudioMasterProcessEvents(const VstEvents* const vstEvents)
@@ -1724,71 +1602,19 @@ public:
         // Tell backend to update
         x_engine->callback(CALLBACK_UPDATE, m_id, 0, 0, 0.0, nullptr);
     }
-
-    void handleAudioMasterWantMidi()
-    {
-        carla_debug("VstPlugin::handleAudioMasterWantMidi()");
-
-        m_hints |= PLUGIN_WANTS_MIDI_INPUT;
-    }
-
-    // -------------------------------------------------------------------
-
-    static intptr_t hostCanDo(const char* const feature)
-    {
-        carla_debug("VstPlugin::hostCanDo(\"%s\")", feature);
-
-        if (std::strcmp(feature, "supplyIdle") == 0)
-            return 1;
-        if (std::strcmp(feature, "sendVstEvents") == 0)
-            return 1;
-        if (std::strcmp(feature, "sendVstMidiEvent") == 0)
-            return 1;
-        if (std::strcmp(feature, "sendVstMidiEventFlagIsRealtime") == 0)
-            return -1;
-        if (std::strcmp(feature, "sendVstTimeInfo") == 0)
-            return 1;
-        if (std::strcmp(feature, "receiveVstEvents") == 0)
-            return 1;
-        if (std::strcmp(feature, "receiveVstMidiEvent") == 0)
-            return 1;
-        if (std::strcmp(feature, "receiveVstTimeInfo") == 0)
-            return -1;
-        if (std::strcmp(feature, "reportConnectionChanges") == 0)
-            return -1;
-        if (std::strcmp(feature, "acceptIOChanges") == 0)
-        {
-            //if (CarlaEngine::processMode == PROCESS_MODE_CONTINUOUS_RACK)
-            //    return -1;
-            return 1;
-        }
-        if (std::strcmp(feature, "sizeWindow") == 0)
-            return 1;
-        if (std::strcmp(feature, "offline") == 0)
-            return -1;
-        if (std::strcmp(feature, "openFileSelector") == 0)
-            return -1;
-        if (std::strcmp(feature, "closeFileSelector") == 0)
-            return -1;
-        if (std::strcmp(feature, "startStopProcess") == 0)
-            return 1;
-        if (std::strcmp(feature, "supportShell") == 0)
-            return -1;
-        if (std::strcmp(feature, "shellCategory") == 0)
-            return -1;
-
-        // unimplemented
-        carla_stderr("VstPlugin::hostCanDo(\"%s\") - unknown feature", feature);
-        return 0;
-    }
-
-    static intptr_t VSTCALLBACK hostCallback(AEffect* const effect, const int32_t opcode, const int32_t index, const intptr_t value, void* const ptr, const float opt)
-    {
-#ifdef DEBUG
-        if (opcode != audioMasterGetTime && opcode != audioMasterProcessEvents && opcode != audioMasterGetCurrentProcessLevel && opcode != audioMasterGetOutputLatency)
-            carla_debug("VstPlugin::hostCallback(%p, %02i:%s, %i, " P_INTPTR ", %p, %f)", effect, opcode, vstMasterOpcode2str(opcode), index, value, ptr, opt);
 #endif
 
+protected:
+    intptr_t dispatcher(int32_t opcode, int32_t index, intptr_t value, void* ptr, float opt)
+    {
+        carla_debug("VstPlugin::dispatcher(%02i:%s, %i, " P_INTPTR ", %p, %f)", opcode, vstEffectOpcode2str(opcode), index, value, ptr, opt);
+        CARLA_ASSERT(fEffect != nullptr);
+
+        return (fEffect != nullptr) ? fEffect->dispatcher(fEffect, opcode, index, value, ptr, opt) : 0;
+    }
+
+    intptr_t handleAudioMasterCallback(const int32_t opcode, const int32_t index, const intptr_t value, void* const ptr, const float opt)
+    {
 #if 0
         // Cockos VST extensions
         if (/*effect &&*/ ptr && (uint32_t)opcode == 0xdeadbeef && (uint32_t)index == 0xdeadf00d)
@@ -1822,62 +1648,27 @@ public:
         }
 #endif
 
-        // Check if 'resvd1' points to this plugin, or register ourselfs if possible
-        VstPlugin* self = nullptr;
-
-        if (effect)
-        {
-#ifdef VESTIGE_HEADER
-            if (effect->ptr1)
-            {
-                self = (VstPlugin*)effect->ptr1;
-#else
-            if (effect->resvd1)
-            {
-                self = (VstPlugin*)getPointerFromAddress(effect->resvd1);
-#endif
-                if (self->unique1 != self->unique2)
-                    self = nullptr;
-            }
-
-            if (self)
-            {
-                if (! self->effect)
-                    self->effect = effect;
-
-                CARLA_ASSERT(self->effect == effect);
-
-                if (self->effect != effect)
-                {
-                    carla_stderr("VstPlugin::hostCallback() - host pointer mismatch: %p != %p", self->effect, effect);
-                    self = nullptr;
-                }
-            }
-            else if (lastVstPlugin)
-            {
-#ifdef VESTIGE_HEADER
-                effect->ptr1 = lastVstPlugin;
-#else
-                effect->resvd1 = getAddressFromPointer(lastVstPlugin);
-#endif
-                self = lastVstPlugin;
-            }
-        }
-
         intptr_t ret = 0;
 
         switch (opcode)
         {
         case audioMasterAutomate:
-            CARLA_ASSERT(self);
-            if (self)
-                self->handleAudioMasterAutomate(index, opt);
-            else
-                carla_stderr("VstPlugin::hostCallback::audioMasterAutomate called without valid object");
-            break;
+            //CARLA_ASSERT(fEnabled);
+            CARLA_ASSERT_INT(index < static_cast<int32_t>(kData->param.count), index);
 
-        case audioMasterVersion:
-            ret = kVstVersion;
+            if (index < 0 || index >= static_cast<int32_t>(kData->param.count) /*|| ! fEnabled*/)
+                break;
+
+            if (fIsProcessing && ! kData->engine->isOffline())
+            {
+                setParameterValue(index, opt, false, false, false);
+                postponeRtEvent(kPluginPostRtEventParameterChange, index, 0, opt);
+            }
+            else
+            {
+                CARLA_ASSERT(fGui.isVisible); // FIXME - remove when offline is implemented
+                setParameterValue(index, opt, fIsProcessing, true, true);
+            }
             break;
 
         case audioMasterCurrentId:
@@ -1886,11 +1677,7 @@ public:
             break;
 
         case audioMasterIdle:
-            CARLA_ASSERT(effect);
-            if (effect)
-                effect->dispatcher(effect, effEditIdle, 0, 0, nullptr, 0.0f);
-            else
-                carla_stderr("VstPlugin::hostCallback::audioMasterIdle called without valid effect");
+            dispatcher(effEditIdle, 0, 0, nullptr, 0.0f);
             break;
 
 #if ! VST_FORCE_DEPRECATED
@@ -1901,39 +1688,21 @@ public:
 
         case audioMasterWantMidi:
             // Deprecated in VST SDK 2.4
-            CARLA_ASSERT(self);
-            if (self)
-                self->handleAudioMasterWantMidi();
-            else
-                carla_stderr("VstPlugin::hostCallback::audioMasterWantMidi called without valid object");
+            fHints |= PLUGIN_WANTS_MIDI_INPUT;
             break;
 #endif
 
         case audioMasterGetTime:
-            CARLA_ASSERT(self);
-            if (self)
-            {
-                ret = self->handleAudioMasterGetTime();
-            }
-            else
-            {
-                static VstTimeInfo_R vstTimeInfo;
-                memset(&vstTimeInfo, 0, sizeof(VstTimeInfo_R));
-                vstTimeInfo.sampleRate = 44100.0;
+            CARLA_ASSERT(fIsProcessing);
 
-                // Tempo
-                vstTimeInfo.tempo  = 120.0;
-                vstTimeInfo.flags |= kVstTempoValid;
-
-                // Time Signature
-                vstTimeInfo.timeSigNumerator   = 4;
-                vstTimeInfo.timeSigDenominator = 4;
-                vstTimeInfo.flags |= kVstTimeSigValid;
-
-                ret = (intptr_t)&vstTimeInfo;
-            }
+#ifdef VESTIGE_HEADER
+            ret = getAddressFromPointer(&fTimeInfo);
+#else
+            ret = ToVstPtr<VstTimeInfo_R>(&fTimeInfo);
+#endif
             break;
 
+#if 0
         case audioMasterProcessEvents:
             CARLA_ASSERT(self && ptr);
             if (self)
@@ -1946,12 +1715,14 @@ public:
             else
                 carla_stderr("VstPlugin::hostCallback::audioMasterProcessEvents called without valid object");
             break;
+#endif
 
 #if ! VST_FORCE_DEPRECATED
         case audioMasterSetTime:
             // Deprecated in VST SDK 2.4
             break;
 
+#if 0
         case audioMasterTempoAt:
             // Deprecated in VST SDK 2.4
             CARLA_ASSERT(self);
@@ -1962,15 +1733,11 @@ public:
             if (ret == 0)
                 ret = 120 * 10000;
             break;
+#endif
 
         case audioMasterGetNumAutomatableParameters:
             // Deprecated in VST SDK 2.4
-            ret = 0; //x_engine->options.maxParameters;
-
-            if (effect && ret > effect->numParams)
-                ret = effect->numParams;
-        // FIXME
-        //ret = carla_minPositiveI(effect->numParams, MAX_PARAMETERS);
+            ret = carla_min<intptr_t>(0, fEffect->numParams, kData->engine->getOptions().maxParameters);
             break;
 
         case audioMasterGetParameterQuantization:
@@ -1979,6 +1746,7 @@ public:
             break;
 #endif
 
+#if 0
         case audioMasterIOChanged:
             CARLA_ASSERT(self);
             if (self)
@@ -1986,16 +1754,14 @@ public:
             else
                 carla_stderr("VstPlugin::hostCallback::audioMasterIOChanged called without valid object");
             break;
+#endif
 
         case audioMasterNeedIdle:
             // Deprecated in VST SDK 2.4
-            CARLA_ASSERT(self);
-            if (self)
-                self->handleAudioMasterNeedIdle();
-            else
-                carla_stderr("VstPlugin::hostCallback::audioMasterNeedIdle called without valid object");
+            fNeedIdle = true;
             break;
 
+#if 0
         case audioMasterSizeWindow:
             CARLA_ASSERT(self);
             if (self)
@@ -2008,26 +1774,14 @@ public:
             else
                 carla_stderr("VstPlugin::hostCallback::audioMasterSizeWindow called without valid object");
             break;
+#endif
 
         case audioMasterGetSampleRate:
-            CARLA_ASSERT(self);
-            if (self)
-                ret = self->handleAudioMasterGetSampleRate();
-            else
-                carla_stderr("VstPlugin::hostCallback::audioMasterGetSampleRate called without valid object");
-            if (ret == 0)
-                ret = 44100;
+            ret = kData->engine->getSampleRate();
             break;
 
         case audioMasterGetBlockSize:
-            CARLA_ASSERT(self);
-            if (self)
-                ret = self->handleAudioMasterGetBlockSize();
-            else
-                carla_stderr("VstPlugin::hostCallback::audioMasterGetBlockSize called without valid object");
-            if (ret == 0)
-//                ret = CarlaEngine::processHighPrecision ? 8 : 512;
-                ret = 512;
+            ret = kData->engine->getBufferSize();
             break;
 
         case audioMasterGetInputLatency:
@@ -2056,15 +1810,12 @@ public:
 #endif
 
         case audioMasterGetCurrentProcessLevel:
-            if (self)
-            {
-                ret = self->handleAudioMasterGetCurrentProcessLevel();
-            }
+            if (kData->engine->isOffline())
+                ret = kVstProcessLevelOffline;
+            else if (fIsProcessing)
+                ret = kVstProcessLevelRealtime;
             else
-            {
-                carla_stderr("VstPlugin::hostCallback::audioMasterGetCurrentProcessLevel called without valid object");
-                ret = kVstProcessLevelUnknown;
-            }
+                ret = kVstProcessLevelUser;
             break;
 
         case audioMasterGetAutomationState:
@@ -2090,32 +1841,6 @@ public:
             break;
 #endif
 
-        case audioMasterGetVendorString:
-            CARLA_ASSERT(ptr);
-            if (ptr)
-            {
-                std::strcpy((char*)ptr, "Cadence");
-                ret = 1;
-            }
-            else
-                carla_stderr("VstPlugin::hostCallback::audioMasterGetVendorString called with invalid pointer");
-            break;
-
-        case audioMasterGetProductString:
-            CARLA_ASSERT(ptr);
-            if (ptr)
-            {
-                std::strcpy((char*)ptr, "Carla");
-                ret = 1;
-            }
-            else
-                carla_stderr("VstPlugin::hostCallback::audioMasterGetProductString called with invalid pointer");
-            break;
-
-        case audioMasterGetVendorVersion:
-            ret = 0x050; // 0.5.0
-            break;
-
         case audioMasterVendorSpecific:
             // TODO - cockos extensions
             break;
@@ -2125,14 +1850,6 @@ public:
             // Deprecated in VST SDK 2.4
             break;
 #endif
-
-        case audioMasterCanDo:
-            CARLA_ASSERT(ptr);
-            if (ptr)
-                ret = hostCanDo((const char*)ptr);
-            else
-                carla_stderr("VstPlugin::hostCallback::audioMasterCanDo called with invalid pointer");
-            break;
 
         case audioMasterGetLanguage:
             ret = kVstLangEnglish;
@@ -2154,6 +1871,7 @@ public:
             //    carla_stderr("VstPlugin::hostCallback::audioMasterGetDirectory called with invalid pointer");
             break;
 
+#if 0
         case audioMasterUpdateDisplay:
             CARLA_ASSERT(effect);
             if (self)
@@ -2162,6 +1880,7 @@ public:
                 effect->dispatcher(effect, effEditIdle, 0, 0, nullptr, 0.0f);
             ret = 1;
             break;
+#endif
 
         case audioMasterBeginEdit:
         case audioMasterEndEdit:
@@ -2191,25 +1910,29 @@ public:
 #endif
 
         default:
-#ifdef DEBUG
-            carla_debug("VstPlugin::hostCallback(%p, %02i:%s, %i, " P_INTPTR ", %p, %f)", effect, opcode, vstMasterOpcode2str(opcode), index, value, ptr, opt);
-#endif
+            carla_debug("VstPlugin::handleAudioMasterCallback(%02i:%s, %i, " P_INTPTR ", %p, %f)", opcode, vstMasterOpcode2str(opcode), index, value, ptr, opt);
             break;
         }
 
         return ret;
     }
 
+public:
     // -------------------------------------------------------------------
 
     bool init(const char* const filename, const char* const name, const char* const label)
     {
+        CARLA_ASSERT(kData->engine != nullptr);
+        CARLA_ASSERT(kData->client == nullptr);
+        CARLA_ASSERT(filename != nullptr);
+        CARLA_ASSERT(label != nullptr);
+
         // ---------------------------------------------------------------
         // open DLL
 
         if (! libOpen(filename))
         {
-            x_engine->setLastError(libError(filename));
+            kData->engine->setLastError(libError(filename));
             return false;
         }
 
@@ -2218,13 +1941,13 @@ public:
 
         VST_Function vstFn = (VST_Function)libSymbol("VSTPluginMain");
 
-        if (! vstFn)
+        if (vstFn == nullptr)
         {
             vstFn = (VST_Function)libSymbol("main");
 
-            if (! vstFn)
+            if (vstFn == nullptr)
             {
-                x_engine->setLastError("Could not find the VST main entry in the plugin library");
+                kData->engine->setLastError("Could not find the VST main entry in the plugin library");
                 return false;
             }
         }
@@ -2232,53 +1955,54 @@ public:
         // ---------------------------------------------------------------
         // initialize plugin (part 1)
 
-        lastVstPlugin = this;
-        effect = vstFn(hostCallback);
-        lastVstPlugin = nullptr;
+        sLastVstPlugin = this;
+        fEffect = vstFn(carla_vst_audioMasterCallback);
+        sLastVstPlugin = nullptr;
 
-        if ((! effect) || effect->magic != kEffectMagic)
+        if (fEffect == nullptr || fEffect->magic != kEffectMagic)
         {
-            x_engine->setLastError("Plugin failed to initialize");
+            kData->engine->setLastError("Plugin failed to initialize");
             return false;
         }
 
 #ifdef VESTIGE_HEADER
-        effect->ptr1 = this;
+        fEffect->ptr1 = this;
 #else
-        effect->resvd1 = getAddressFromPointer(this);
+        fEffect->resvd1 = getAddressFromPointer(this);
 #endif
 
-        effect->dispatcher(effect, effOpen, 0, 0, nullptr, 0.0f);
-        effect->dispatcher(effect, effMainsChanged, 0, 0, nullptr, 0.0f);
+        dispatcher(effOpen, 0, 0, nullptr, 0.0f);
+        //dispatcher(effStopProcess, 0, 0, nullptr, 0.0f);
+        //dispatcher(effMainsChanged, 0, 0, nullptr, 0.0f);
 
         // ---------------------------------------------------------------
         // get info
 
-        m_filename = strdup(filename);
-
-        if (name)
+        if (name != nullptr)
         {
-            m_name = x_engine->getUniquePluginName(name);
+            fName = kData->engine->getNewUniquePluginName(name);
         }
         else
         {
             char strBuf[STR_MAX] = { 0 };
-            effect->dispatcher(effect, effGetEffectName, 0, 0, strBuf, 0.0f);
+            dispatcher(effGetEffectName, 0, 0, strBuf, 0.0f);
 
             if (strBuf[0] != 0)
-                m_name = x_engine->getUniquePluginName(strBuf);
+                fName = kData->engine->getNewUniquePluginName(strBuf);
             else
-                m_name = x_engine->getUniquePluginName(label);
+                fName = kData->engine->getNewUniquePluginName(label);
         }
+
+        fFilename = filename;
 
         // ---------------------------------------------------------------
         // register client
 
-        x_client = x_engine->addClient(this);
+        kData->client = kData->engine->addClient(this);
 
-        if (! x_client->isOk())
+        if (kData->client == nullptr || ! kData->client->isOk())
         {
-            x_engine->setLastError("Failed to register plugin client");
+            kData->engine->setLastError("Failed to register plugin client");
             return false;
         }
 
@@ -2286,97 +2010,249 @@ public:
         // initialize plugin (part 2)
 
 #if ! VST_FORCE_DEPRECATED
-        effect->dispatcher(effect, effSetBlockSizeAndSampleRate, 0, x_engine->getBufferSize(), nullptr, x_engine->getSampleRate());
+        dispatcher(effSetBlockSizeAndSampleRate, 0, kData->engine->getBufferSize(), nullptr, kData->engine->getSampleRate());
 #endif
-        effect->dispatcher(effect, effSetSampleRate, 0, 0, nullptr, x_engine->getSampleRate());
-        effect->dispatcher(effect, effSetBlockSize, 0, x_engine->getBufferSize(), nullptr, 0.0f);
-        effect->dispatcher(effect, effSetProcessPrecision, 0, kVstProcessPrecision32, nullptr, 0.0f);
+        dispatcher(effSetSampleRate, 0, 0, nullptr, kData->engine->getSampleRate());
+        dispatcher(effSetBlockSize, 0, kData->engine->getBufferSize(), nullptr, 0.0f);
+        dispatcher(effSetProcessPrecision, 0, kVstProcessPrecision32, nullptr, 0.0f);
+
+        dispatcher(effStopProcess, 0, 0, nullptr, 0.0f);
+        dispatcher(effMainsChanged, 0, 0, nullptr, 0.0f);
 
 #if ! VST_FORCE_DEPRECATED
         // dummy pre-start to catch possible wantEvents() call on old plugins
-        effect->dispatcher(effect, effMainsChanged, 0, 1, nullptr, 0.0f);
-        effect->dispatcher(effect, effStartProcess, 0, 0, nullptr, 0.0f);
-        effect->dispatcher(effect, effStopProcess, 0, 0, nullptr, 0.0f);
-        effect->dispatcher(effect, effMainsChanged, 0, 0, nullptr, 0.0f);
+        //dispatcher(effMainsChanged, 0, 1, nullptr, 0.0f);
+        //dispatcher(effStartProcess, 0, 0, nullptr, 0.0f);
+        //dispatcher(effStopProcess, 0, 0, nullptr, 0.0f);
+        //dispatcher(effMainsChanged, 0, 0, nullptr, 0.0f);
 #endif
 
         // special checks
-        if ((uintptr_t)effect->dispatcher(effect, effCanDo, 0, 0, (void*)"hasCockosExtensions", 0.0f) == 0xbeef0000)
+        if (static_cast<uintptr_t>(dispatcher(effCanDo, 0, 0, (void*)"hasCockosExtensions", 0.0f)) == 0xbeef0000)
         {
             carla_debug("Plugin has Cockos extensions!");
-            m_hints |= PLUGIN_HAS_COCKOS_EXTENSIONS;
+            fHints |= PLUGIN_HAS_COCKOS_EXTENSIONS;
         }
 
-        if (effect->dispatcher(effect, effGetVstVersion, 0, 0, nullptr, 0.0f) < kVstVersion)
-            m_hints |= PLUGIN_USES_OLD_VSTSDK;
+        if (dispatcher(effGetVstVersion, 0, 0, nullptr, 0.0f) < kVstVersion)
+            fHints |= PLUGIN_USES_OLD_VSTSDK;
 
-        if ((effect->flags & effFlagsCanReplacing) > 0 && effect->processReplacing != effect->process)
-            m_hints |= PLUGIN_CAN_PROCESS_REPLACING;
+        if ((fEffect->flags & effFlagsCanReplacing) != 0 && fEffect->processReplacing != fEffect->process)
+            fHints |= PLUGIN_CAN_PROCESS_REPLACING;
 
         // ---------------------------------------------------------------
         // gui stuff
 
-        if (effect->flags & effFlagsHasEditor)
+        if (fEffect->flags & effFlagsHasEditor)
         {
-            m_hints |= PLUGIN_HAS_GUI;
+            fHints |= PLUGIN_HAS_GUI;
 
-#if defined(Q_OS_LINUX) && 0 // FIXME
-            if (x_engine->options.bridge_vstx11 && x_engine->preferUiBridges() && ! (effect->flags & effFlagsProgramChunks))
+            const EngineOptions& engineOptions(kData->engine->getOptions());
+
+            if (engineOptions.preferUiBridges && engineOptions.bridge_vstx11.isNotEmpty() && (fEffect->flags & effFlagsProgramChunks) == 0)
             {
-                osc.thread = new CarlaPluginThread(x_engine, this, CarlaPluginThread::PLUGIN_THREAD_VST_GUI);
-                osc.thread->setOscData(x_engine->options.bridge_vstx11, label);
-                gui.type = GUI_EXTERNAL_OSC;
+                kData->osc.thread.setOscData(engineOptions.bridge_vstx11, label);
+                fGui.isOsc = true;
             }
             else
-#endif
             {
-                m_hints |= PLUGIN_USES_SINGLE_THREAD;
-#if defined(Q_OS_WIN)
-                gui.type = GUI_INTERNAL_HWND;
-#elif defined(Q_OS_MACOS)
-                gui.type = GUI_INTERNAL_COCOA;
-#elif defined(Q_OS_LINUX)
-                gui.type = GUI_INTERNAL_X11;
-#else
-                m_hints &= ~PLUGIN_HAS_GUI;
-#endif
+                fHints |= PLUGIN_HAS_SINGLE_THREAD;
             }
         }
 
         return true;
     }
-#endif
 
 private:
-    int unique1;
+    int fUnique1;
+    AEffect* fEffect;
 
-    AEffect* effect;
+    QByteArray    fChunk;
+    VstMidiEvent  fMidiEvents[MAX_MIDI_EVENTS*2];
+    VstTimeInfo_R fTimeInfo;
 
-    struct {
+    struct FixedVstEvents {
         int32_t numEvents;
         intptr_t reserved;
         VstEvent* data[MAX_MIDI_EVENTS*2];
-    } events;
-    VstMidiEvent midiEvents[MAX_MIDI_EVENTS*2];
 
-    uint32_t vstTimeOffset;
-    VstTimeInfo_R vstTimeInfo;
+#ifndef QTCREATOR_TEST // missing proper C++11 support
+        FixedVstEvents()
+            : numEvents(0),
+              reserved(0),
+              data{0} {}
+#endif
+    } fEvents;
 
-    struct {
-        //GuiType type;
-        bool visible;
+    struct GuiInfo {
+        bool isOsc;
+        bool isVisible;
         int width;
         int height;
-    } gui;
 
-    bool isProcessing;
-    bool needIdle;
-    static VstPlugin* lastVstPlugin;
+        GuiInfo()
+            : isOsc(false),
+              isVisible(false),
+              width(0),
+              height(0) {}
+    } fGui;
 
-    int unique2;
+    bool fIsProcessing;
+    bool fNeedIdle;
+    int  fUnique2;
+
+    static VstPlugin* sLastVstPlugin;
+
+    // -------------------------------------------------------------------
+
+    static intptr_t carla_vst_hostCanDo(const char* const feature)
+    {
+        carla_debug("carla_vst_hostCanDo(\"%s\")", feature);
+
+        if (std::strcmp(feature, "supplyIdle") == 0)
+            return 1;
+        if (std::strcmp(feature, "sendVstEvents") == 0)
+            return 1;
+        if (std::strcmp(feature, "sendVstMidiEvent") == 0)
+            return 1;
+        if (std::strcmp(feature, "sendVstMidiEventFlagIsRealtime") == 0)
+            return 1;
+        if (std::strcmp(feature, "sendVstTimeInfo") == 0)
+            return 1;
+        if (std::strcmp(feature, "receiveVstEvents") == 0)
+            return 1;
+        if (std::strcmp(feature, "receiveVstMidiEvent") == 0)
+            return 1;
+        if (std::strcmp(feature, "receiveVstTimeInfo") == 0)
+            return -1;
+        if (std::strcmp(feature, "reportConnectionChanges") == 0)
+            return -1;
+        if (std::strcmp(feature, "acceptIOChanges") == 0)
+            return 1;
+        if (std::strcmp(feature, "sizeWindow") == 0)
+            return 1;
+        if (std::strcmp(feature, "offline") == 0)
+            return -1;
+        if (std::strcmp(feature, "openFileSelector") == 0)
+            return -1;
+        if (std::strcmp(feature, "closeFileSelector") == 0)
+            return -1;
+        if (std::strcmp(feature, "startStopProcess") == 0)
+            return 1;
+        if (std::strcmp(feature, "supportShell") == 0)
+            return -1;
+        if (std::strcmp(feature, "shellCategory") == 0)
+            return -1;
+
+        // unimplemented
+        carla_stderr("carla_vst_hostCanDo(\"%s\") - unknown feature", feature);
+        return 0;
+    }
+
+    static intptr_t VSTCALLBACK carla_vst_audioMasterCallback(AEffect* effect, int32_t opcode, int32_t index, intptr_t value, void* ptr, float opt)
+    {
+#ifdef DEBUG
+        if (opcode != audioMasterGetTime && opcode != audioMasterProcessEvents && opcode != audioMasterGetCurrentProcessLevel && opcode != audioMasterGetOutputLatency)
+            carla_debug("carla_vst_audioMasterCallback(%p, %02i:%s, %i, " P_INTPTR ", %p, %f)", effect, opcode, vstMasterOpcode2str(opcode), index, value, ptr, opt);
+#endif
+
+        switch (opcode)
+        {
+        case audioMasterVersion:
+            return kVstVersion;
+
+        case audioMasterGetVendorString:
+            CARLA_ASSERT(ptr != nullptr);
+
+            if (ptr != nullptr)
+            {
+                std::strcpy((char*)ptr, "falkTX");
+                return 1;
+            }
+            else
+            {
+                carla_stderr("carla_vst_audioMasterCallback() - audioMasterGetVendorString called with invalid pointer");
+                return 0;
+            }
+
+        case audioMasterGetProductString:
+            CARLA_ASSERT(ptr != nullptr);
+
+            if (ptr != nullptr)
+            {
+                std::strcpy((char*)ptr, "Carla");
+                return 1;
+            }
+            else
+            {
+                carla_stderr("carla_vst_audioMasterCallback() - audioMasterGetProductString called with invalid pointer");
+                return 0;
+            }
+
+        case audioMasterGetVendorVersion:
+            return 0x1000; // 1.0.0
+
+        case audioMasterCanDo:
+            CARLA_ASSERT(ptr != nullptr);
+
+            if (ptr != nullptr)
+            {
+                return carla_vst_hostCanDo((const char*)ptr);
+            }
+            else
+            {
+                carla_stderr("carla_vst_audioMasterCallback() - audioMasterCanDo called with invalid pointer");
+                return 0;
+            }
+        }
+
+        // Check if 'resvd1' points to us, otherwise register ourselfs if possible
+        VstPlugin* self = nullptr;
+
+        if (effect != nullptr)
+        {
+#ifdef VESTIGE_HEADER
+            if (effect->ptr1 != nullptr)
+            {
+                self = (VstPlugin*)effect->ptr1;
+#else
+            if (effect->resvd1 != 0)
+            {
+                self = FromVstPtr<VstPlugin>(effect->resvd1);
+#endif
+                if (self->fUnique1 != self->fUnique2)
+                    self = nullptr;
+            }
+
+            if (self != nullptr)
+            {
+                if (self->fEffect == nullptr)
+                    self->fEffect = effect;
+
+                if (self->fEffect != effect)
+                {
+                    carla_stderr2("carla_vst_audioMasterCallback() - host pointer mismatch: %p != %p", self->fEffect, effect);
+                    self = nullptr;
+                }
+            }
+            else if (sLastVstPlugin != nullptr)
+            {
+#ifdef VESTIGE_HEADER
+                effect->ptr1 = sLastVstPlugin;
+#else
+                effect->resvd1 = ToVstPtr<VstPlugin>(sLastVstPlugin);
+#endif
+                self = sLastVstPlugin;
+            }
+        }
+
+        return (self != nullptr) ? self->handleAudioMasterCallback(opcode, index, value, ptr, opt) : 0;
+    }
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(VstPlugin)
 };
 
-VstPlugin* VstPlugin::lastVstPlugin = nullptr;
+VstPlugin* VstPlugin::sLastVstPlugin = nullptr;
 
 CARLA_BACKEND_END_NAMESPACE
 
@@ -2393,7 +2269,7 @@ CarlaPlugin* CarlaPlugin::newVST(const Initializer& init)
 #ifdef WANT_VST
     VstPlugin* const plugin = new VstPlugin(init.engine, init.id);
 
-    //if (! plugin->init(init.filename, init.name, init.label))
+    if (! plugin->init(init.filename, init.name, init.label))
     {
         delete plugin;
         return nullptr;

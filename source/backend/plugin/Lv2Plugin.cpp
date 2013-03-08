@@ -4595,6 +4595,8 @@ private:
         LV2_State_Map_Path* stateMapPath;
     } ft;
 #endif
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Lv2Plugin)
 };
 
 // -------------------------------------------------------------------

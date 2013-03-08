@@ -86,7 +86,7 @@ public:
         return PLUGIN_LADSPA;
     }
 
-    PluginCategory category() const
+    PluginCategory category()
     {
         if (fRdfDescriptor != nullptr)
         {
@@ -1387,6 +1387,8 @@ private:
     float** fAudioInBuffers;
     float** fAudioOutBuffers;
     float*  fParamBuffers;
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LadspaPlugin)
 };
 
 CARLA_BACKEND_END_NAMESPACE

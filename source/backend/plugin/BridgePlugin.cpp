@@ -114,7 +114,7 @@ public:
         return fPluginType;
     }
 
-    PluginCategory category() const
+    PluginCategory category()
     {
         return fInfo.category;
     }
@@ -984,6 +984,8 @@ private:
     } fInfo;
 
     BridgeParamInfo* fParams;
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(BridgePlugin)
 };
 
 CARLA_BACKEND_END_NAMESPACE

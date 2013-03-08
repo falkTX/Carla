@@ -1200,7 +1200,7 @@ void CarlaPlugin::setChunkData(const char* const stringData)
     (void)stringData;
 }
 
-void CarlaPlugin::setProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback)
+void CarlaPlugin::setProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback)
 {
     CARLA_ASSERT(index >= -1 && index < static_cast<int32_t>(kData->prog.count));
 
