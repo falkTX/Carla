@@ -952,34 +952,36 @@ public:
             count = fDescriptor->get_midi_program_count(fHandle);
 
         if (count > 0)
+        {
             kData->midiprog.createNew(count);
 
-        // Update data
-        for (i=0; i < kData->midiprog.count; i++)
-        {
-            const ::MidiProgram* const mpDesc = fDescriptor->get_midi_program_info(fHandle, i);
-            CARLA_ASSERT(mpDesc != nullptr);
-            CARLA_ASSERT(mpDesc->name != nullptr);
+            // Update data
+            for (i=0; i < count; i++)
+            {
+                const ::MidiProgram* const mpDesc = fDescriptor->get_midi_program_info(fHandle, i);
+                CARLA_ASSERT(mpDesc != nullptr);
+                CARLA_ASSERT(mpDesc->name != nullptr);
 
-            kData->midiprog.data[i].bank    = mpDesc->bank;
-            kData->midiprog.data[i].program = mpDesc->program;
-            kData->midiprog.data[i].name    = carla_strdup(mpDesc->name);
+                kData->midiprog.data[i].bank    = mpDesc->bank;
+                kData->midiprog.data[i].program = mpDesc->program;
+                kData->midiprog.data[i].name    = carla_strdup(mpDesc->name);
+            }
         }
 
 #ifndef BUILD_BRIDGE
         // Update OSC Names
         if (kData->engine->isOscControlRegistered())
         {
-            kData->engine->osc_send_control_set_midi_program_count(fId, kData->midiprog.count);
+            kData->engine->osc_send_control_set_midi_program_count(fId, count);
 
-            for (i=0; i < kData->midiprog.count; i++)
+            for (i=0; i < count; i++)
                 kData->engine->osc_send_control_set_midi_program_data(fId, i, kData->midiprog.data[i].bank, kData->midiprog.data[i].program, kData->midiprog.data[i].name);
         }
 #endif
 
         if (init)
         {
-            if (kData->midiprog.count > 0)
+            if (count > 0)
                 setMidiProgram(0, false, false, false);
         }
         else
@@ -987,28 +989,28 @@ public:
             // Check if current program is invalid
             bool programChanged = false;
 
-            if (kData->midiprog.count == oldCount+1)
+            if (count == oldCount+1)
             {
                 // one midi program added, probably created by user
                 kData->midiprog.current = oldCount;
                 programChanged = true;
             }
-            else if (current >= static_cast<int32_t>(kData->midiprog.count))
-            {
-                // current midi program > count
-                kData->midiprog.current = 0;
-                programChanged = true;
-            }
-            else if (current < 0 && kData->midiprog.count > 0)
+            else if (current < 0 && count > 0)
             {
                 // programs exist now, but not before
                 kData->midiprog.current = 0;
                 programChanged = true;
             }
-            else if (current >= 0 && kData->midiprog.count == 0)
+            else if (current >= 0 && count == 0)
             {
                 // programs existed before, but not anymore
                 kData->midiprog.current = -1;
+                programChanged = true;
+            }
+            else if (current >= static_cast<int32_t>(count))
+            {
+                // current midi program > count
+                kData->midiprog.current = 0;
                 programChanged = true;
             }
             else
@@ -1872,10 +1874,11 @@ public:
         // ---------------------------------------------------------------
         // get descriptor that matches label
 
-        // FIXME - use itenerator when available
-        for (size_t i=0; i < sPluginDescriptors.count(); i++)
+        for (auto it = sPluginDescriptors.begin(); it.valid(); it.next())
         {
-            fDescriptor = sPluginDescriptors.getAt(i);
+            fDescriptor = *it;
+
+            CARLA_ASSERT(fDescriptor != nullptr);
 
             if (fDescriptor == nullptr)
                 break;
@@ -2110,7 +2113,7 @@ CarlaPlugin* CarlaPlugin::newNative(const Initializer& init)
 
     return plugin;
 #else
-    init.engine->setLastError("Internal plugins not available");
+    init.engine->setLastError("Internal plugins support not available");
     return nullptr;
 #endif
 }

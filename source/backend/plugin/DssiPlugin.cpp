@@ -42,10 +42,6 @@ public:
         carla_zeroMem(fMidiEvents, sizeof(snd_seq_event_t)*MAX_MIDI_EVENTS);
 
         kData->osc.thread.setMode(CarlaPluginThread::PLUGIN_THREAD_DSSI_GUI);
-
-        // FIXME
-        if (engine->getOptions().useDssiVstChunks)
-            fOptions |= PLUGIN_OPTION_USE_CHUNKS;
     }
 
     ~DssiPlugin()
@@ -708,13 +704,13 @@ public:
         }
 
         // plugin hints
-        const bool haveGUI   = (fHints & PLUGIN_HAS_GUI);
+        const bool hasGUI    = (fHints & PLUGIN_HAS_GUI);
         const bool isDssiVst = fFilename.contains("dssi-vst", true);
         const bool isZASX    = fFilename.contains("zynaddsubfx", true);
 
         fHints = 0x0;
 
-        if (haveGUI)
+        if (hasGUI)
             fHints |= PLUGIN_HAS_GUI;
 
         if (mIns == 1 && aIns == 0 && aOuts > 0)
@@ -840,34 +836,36 @@ public:
         }
 
         if (count > 0)
+        {
             kData->midiprog.createNew(count);
 
-        // Update data
-        for (i=0; i < kData->midiprog.count; i++)
-        {
-            const DSSI_Program_Descriptor* const pdesc = fDssiDescriptor->get_program(fHandle, i);
-            CARLA_ASSERT(pdesc != nullptr);
-            CARLA_ASSERT(pdesc->Name != nullptr);
+            // Update data
+            for (i=0; i < count; i++)
+            {
+                const DSSI_Program_Descriptor* const pdesc = fDssiDescriptor->get_program(fHandle, i);
+                CARLA_ASSERT(pdesc != nullptr);
+                CARLA_ASSERT(pdesc->Name != nullptr);
 
-            kData->midiprog.data[i].bank    = static_cast<uint32_t>(pdesc->Bank);
-            kData->midiprog.data[i].program = static_cast<uint32_t>(pdesc->Program);
-            kData->midiprog.data[i].name    = carla_strdup(pdesc->Name);
+                kData->midiprog.data[i].bank    = static_cast<uint32_t>(pdesc->Bank);
+                kData->midiprog.data[i].program = static_cast<uint32_t>(pdesc->Program);
+                kData->midiprog.data[i].name    = carla_strdup(pdesc->Name);
+            }
         }
 
 #ifndef BUILD_BRIDGE
         // Update OSC Names
         if (kData->engine->isOscControlRegistered())
         {
-            kData->engine->osc_send_control_set_midi_program_count(fId, kData->midiprog.count);
+            kData->engine->osc_send_control_set_midi_program_count(fId, count);
 
-            for (i=0; i < kData->midiprog.count; i++)
+            for (i=0; i < count; i++)
                 kData->engine->osc_send_control_set_midi_program_data(fId, i, kData->midiprog.data[i].bank, kData->midiprog.data[i].program, kData->midiprog.data[i].name);
         }
 #endif
 
         if (init)
         {
-            if (kData->midiprog.count > 0)
+            if (count > 0)
                 setMidiProgram(0, false, false, false);
         }
         else
@@ -875,28 +873,28 @@ public:
             // Check if current program is invalid
             bool programChanged = false;
 
-            if (kData->midiprog.count == oldCount+1)
+            if (count == oldCount+1)
             {
                 // one midi program added, probably created by user
                 kData->midiprog.current = oldCount;
                 programChanged = true;
             }
-            else if (current >= static_cast<int32_t>(kData->midiprog.count))
-            {
-                // current midi program > count
-                kData->midiprog.current = 0;
-                programChanged = true;
-            }
-            else if (current < 0 && kData->midiprog.count > 0)
+            else if (current < 0 && count > 0)
             {
                 // programs exist now, but not before
                 kData->midiprog.current = 0;
                 programChanged = true;
             }
-            else if (current >= 0 && kData->midiprog.count == 0)
+            else if (current >= 0 && count == 0)
             {
                 // programs existed before, but not anymore
                 kData->midiprog.current = -1;
+                programChanged = true;
+            }
+            else if (current >= static_cast<int32_t>(count))
+            {
+                // current midi program > count
+                kData->midiprog.current = 0;
                 programChanged = true;
             }
             else

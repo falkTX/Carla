@@ -550,7 +550,7 @@ public:
         return getPluginCategoryFromName(m_name);
     }
 
-    long uniqueId()
+    long uniqueId() const
     {
         CARLA_ASSERT(rdf_descriptor);
 
@@ -1853,34 +1853,36 @@ public:
         }
 
         if (midiprog.count > 0)
+        {
             midiprog.data = new MidiProgramData[midiprog.count];
 
-        // Update data
-        for (i=0; i < midiprog.count; i++)
-        {
-            const LV2_Program_Descriptor* const pdesc = ext.programs->get_program(handle, i);
-            CARLA_ASSERT(pdesc);
-            CARLA_ASSERT(pdesc->name);
+            // Update data
+            for (i=0; i < midiprog.count; i++)
+            {
+                const LV2_Program_Descriptor* const pdesc = ext.programs->get_program(handle, i);
+                CARLA_ASSERT(pdesc);
+                CARLA_ASSERT(pdesc->name);
 
-            midiprog.data[i].bank    = pdesc->bank;
-            midiprog.data[i].program = pdesc->program;
-            midiprog.data[i].name    = strdup(pdesc->name ? pdesc->name : "");
+                midiprog.data[i].bank    = pdesc->bank;
+                midiprog.data[i].program = pdesc->program;
+                midiprog.data[i].name    = strdup(pdesc->name ? pdesc->name : "");
+            }
         }
 
 #ifndef BUILD_BRIDGE
         // Update OSC Names
         if (x_engine->isOscControlRegistered())
         {
-            x_engine->osc_send_control_set_midi_program_count(m_id, midiprog.count);
+            x_engine->osc_send_control_set_midi_program_count(m_id, count);
 
-            for (i=0; i < midiprog.count; i++)
+            for (i=0; i < count; i++)
                 x_engine->osc_send_control_set_midi_program_data(m_id, i, midiprog.data[i].bank, midiprog.data[i].program, midiprog.data[i].name);
         }
 #endif
 
         if (init)
         {
-            if (midiprog.count > 0)
+            if (count > 0)
                 setMidiProgram(0, false, false, false, true);
         }
         else
@@ -1890,29 +1892,34 @@ public:
             // Check if current program is invalid
             bool programChanged = false;
 
-            if (midiprog.count == oldCount+1)
+            if (count == oldCount+1)
             {
                 // one midi program added, probably created by user
                 midiprog.current = oldCount;
                 programChanged   = true;
             }
-            else if (midiprog.current >= (int32_t)midiprog.count)
-            {
-                // current midi program > count
-                midiprog.current = 0;
-                programChanged   = true;
-            }
-            else if (midiprog.current < 0 && midiprog.count > 0)
+            else if (current < 0 && count > 0)
             {
                 // programs exist now, but not before
                 midiprog.current = 0;
                 programChanged   = true;
             }
-            else if (midiprog.current >= 0 && midiprog.count == 0)
+            else if (current >= 0 && count == 0)
             {
                 // programs existed before, but not anymore
                 midiprog.current = -1;
                 programChanged   = true;
+            }
+            else if (current >= static_cast<int32_t>(count))
+            {
+                // current midi program > count
+                midiprog.current = 0;
+                programChanged   = true;
+            }
+            else
+            {
+                // no change
+                kData->midiprog.current = current;
             }
 
             if (programChanged)

@@ -140,11 +140,11 @@ public:
         return getPluginCategoryFromName(fName);
     }
 
-    long uniqueId()
+    long uniqueId() const
     {
         CARLA_ASSERT(fEffect != nullptr);
 
-        return fEffect ? fEffect->uniqueID : 0;
+        return (fEffect != nullptr) ? fEffect->uniqueID : 0;
     }
 
     // -------------------------------------------------------------------
@@ -313,7 +313,7 @@ public:
         else if (index > static_cast<int32_t>(kData->prog.count))
             return;
 
-        if (index >= 0)
+        if (fEffect != nullptr && index >= 0)
         {
             const ScopedProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
 
@@ -450,63 +450,65 @@ public:
         CarlaPlugin::idleGui();
     }
 
-#if 0
     // -------------------------------------------------------------------
     // Plugin state
 
     void reload()
     {
         carla_debug("VstPlugin::reload() - start");
-        CARLA_ASSERT(effect);
+        CARLA_ASSERT(kData->engine != nullptr);
+        CARLA_ASSERT(fEffect != nullptr);
 
-        const ProcessMode processMode(x_engine->getOptions().processMode);
+        const ProcessMode processMode(kData->engine->getProccessMode());
 
         // Safely disable plugin for reload
-        const ScopedDisabler m(this);
+        const ScopedDisabler sd(this);
 
-        // Remove client ports
-        removeClientPorts();
-
-        // Delete old data
         deleteBuffers();
 
         uint32_t aIns, aOuts, mIns, mOuts, params, j;
 
-        aIns   = effect->numInputs;
-        aOuts  = effect->numOutputs;
-        params = effect->numParams;
+        bool needsCtrlIn, needsCtrlOut;
+        needsCtrlIn = needsCtrlOut = false;
 
-        if (vstPluginCanDo(effect, "receiveVstEvents") || vstPluginCanDo(effect, "receiveVstMidiEvent") || (effect->flags & effFlagsIsSynth) > 0 || (m_hints & PLUGIN_WANTS_MIDI_INPUT))
+        aIns   = fEffect->numInputs;
+        aOuts  = fEffect->numOutputs;
+        params = fEffect->numParams;
+
+        if (vstPluginCanDo(fEffect, "receiveVstEvents") || vstPluginCanDo(fEffect, "receiveVstMidiEvent") || (fEffect->flags & effFlagsIsSynth) > 0 || (fHints & PLUGIN_WANTS_MIDI_INPUT))
+        {
             mIns = 1;
+            needsCtrlIn = true;
+        }
         else
             mIns = 0;
 
-        if (vstPluginCanDo(effect, "sendVstEvents") || vstPluginCanDo(effect, "sendVstMidiEvent"))
+        if (vstPluginCanDo(fEffect, "sendVstEvents") || vstPluginCanDo(fEffect, "sendVstMidiEvent"))
+        {
             mOuts = 1;
+            needsCtrlOut = true;
+        }
         else
             mOuts = 0;
 
         if (aIns > 0)
         {
-            aIn.ports    = new CarlaEngineAudioPort*[aIns];
-            aIn.rindexes = new uint32_t[aIns];
+            kData->audioIn.createNew(aIns);
         }
 
         if (aOuts > 0)
         {
-            aOut.ports    = new CarlaEngineAudioPort*[aOuts];
-            aOut.rindexes = new uint32_t[aOuts];
+            kData->audioOut.createNew(aOuts);
+            needsCtrlIn = true;
         }
 
         if (params > 0)
         {
-            param.data    = new ParameterData[params];
-            param.ranges  = new ParameterRanges[params];
+            kData->param.createNew(params);
+            needsCtrlIn = true;
         }
 
-        bool needsCtrlIn = (aOuts > 0 || params > 0);
-
-        const int   portNameSize = x_engine->maxPortNameSize();
+        const uint  portNameSize = kData->engine->maxPortNameSize();
         CarlaString portName;
 
         // Audio Ins
@@ -516,16 +518,21 @@ public:
 
             if (processMode == PROCESS_MODE_SINGLE_CLIENT)
             {
-                portName  = m_name;
+                portName  = fName;
                 portName += ":";
             }
 
-            char tmp[12] = { 0 };
-            sprintf(tmp, "input_%02i", j+1);
-            portName += tmp;
+            if (aIns > 1)
+            {
+                portName += "input_";
+                portName += CarlaString(j+1);
+            }
+            else
+                portName += "input";
+            portName.truncate(portNameSize);
 
-            aIn.ports[j]    = (CarlaEngineAudioPort*)x_client->addPort(CarlaEnginePortTypeAudio, portName, true);
-            aIn.rindexes[j] = j;
+            kData->audioIn.ports[j].port   = (CarlaEngineAudioPort*)kData->client->addPort(kEnginePortTypeAudio, portName, true);
+            kData->audioIn.ports[j].rindex = j;
         }
 
         // Audio Outs
@@ -535,82 +542,114 @@ public:
 
             if (processMode == PROCESS_MODE_SINGLE_CLIENT)
             {
-                portName  = m_name;
+                portName  = fName;
                 portName += ":";
             }
 
-            char tmp[12] = { 0 };
-            sprintf(tmp, "output_%02i", j+1);
-            portName += tmp;
+            if (aOuts > 1)
+            {
+                portName += "output_";
+                portName += CarlaString(j+1);
+            }
+            else
+                portName += "output";
+            portName.truncate(portNameSize);
 
-            aOut.ports[j]    = (CarlaEngineAudioPort*)x_client->addPort(CarlaEnginePortTypeAudio, portName, false);
-            aOut.rindexes[j] = j;
+            kData->audioOut.ports[j].port   = (CarlaEngineAudioPort*)kData->client->addPort(kEnginePortTypeAudio, portName, false);
+            kData->audioOut.ports[j].rindex = j;
         }
 
         for (j=0; j < params; j++)
         {
-            param.data[j].type   = PARAMETER_INPUT;
-            param.data[j].index  = j;
-            param.data[j].rindex = j;
-            param.data[j].hints  = 0;
-            param.data[j].midiChannel = 0;
-            param.data[j].midiCC = -1;
+            kData->param.data[j].type   = PARAMETER_INPUT;
+            kData->param.data[j].index  = j;
+            kData->param.data[j].rindex = j;
+            kData->param.data[j].hints  = 0x0;
+            kData->param.data[j].midiChannel = 0;
+            kData->param.data[j].midiCC = -1;
 
-            double min, max, def, step, stepSmall, stepLarge;
+            float min, max, def, step, stepSmall, stepLarge;
 
             VstParameterProperties prop;
-            prop.flags = 0;
+            carla_zeroMem(&prop, sizeof(VstParameterProperties));
 
-            if (effect->dispatcher(effect, effGetParameterProperties, j, 0, &prop, 0))
+            if (fHints & PLUGIN_HAS_COCKOS_EXTENSIONS)
             {
                 double range[2] = { 0.0, 1.0 };
 
-                if ((m_hints & PLUGIN_HAS_COCKOS_EXTENSIONS) > 0 && effect->dispatcher(effect, effVendorSpecific, 0xdeadbef0, j, range, 0.0) >= 0xbeef)
+                if (dispatcher(effVendorSpecific, 0xdeadbef0, j, range, 0.0f) >= 0xbeef)
                 {
                     min = range[0];
                     max = range[1];
-                }
-                else if (prop.flags & kVstParameterUsesIntegerMinMax)
-                {
-                    min = prop.minInteger;
-                    max = prop.maxInteger;
+
+                    if (min > max)
+                        max = min;
+                    else if (max < min)
+                        min = max;
+
+                    if (max - min == 0.0f)
+                    {
+                        carla_stderr2("WARNING - Broken plugin parameter: max - min == 0.0f (with cockos extensions)");
+                        max = min + 0.1f;
+                    }
                 }
                 else
                 {
-                    min = 0.0;
-                    max = 1.0;
+                    min = 0.0f;
+                    max = 1.0f;
                 }
 
-                if (min > max)
-                    max = min;
-                else if (max < min)
-                    min = max;
-
-                if (max - min == 0.0)
+                if (dispatcher(effVendorSpecific, kVstParameterUsesIntStep, j, nullptr, 0.0f) >= 0xbeef)
                 {
-                    carla_stderr("Broken plugin parameter: max - min == 0");
-                    max = min + 0.1;
+                    step = 1.0f;
+                    stepSmall = 1.0f;
+                    stepLarge = 10.0f;
+                }
+                else
+                {
+                    float range = max - min;
+                    step = range/100.0f;
+                    stepSmall = range/1000.0f;
+                    stepLarge = range/10.0f;
+                }
+            }
+            else if (dispatcher(effGetParameterProperties, j, 0, &prop, 0) == 1)
+            {
+                if (prop.flags & kVstParameterUsesIntegerMinMax)
+                {
+                    min = float(prop.minInteger);
+                    max = float(prop.maxInteger);
+
+                    if (min > max)
+                        max = min;
+                    else if (max < min)
+                        min = max;
+
+                    if (max - min == 0.0f)
+                    {
+                        carla_stderr2("WARNING - Broken plugin parameter: max - min == 0.0f");
+                        max = min + 0.1f;
+                    }
+                }
+                else
+                {
+                    min = 0.0f;
+                    max = 1.0f;
                 }
 
-                if ((m_hints & PLUGIN_HAS_COCKOS_EXTENSIONS) > 0 && effect->dispatcher(effect, effVendorSpecific, kVstParameterUsesIntStep, j, nullptr, 0.0f) >= 0xbeef)
-                {
-                    step = 1.0;
-                    stepSmall = 1.0;
-                    stepLarge = 10.0;
-                }
-                else if (prop.flags & kVstParameterIsSwitch)
+                if (prop.flags & kVstParameterIsSwitch)
                 {
                     step = max - min;
                     stepSmall = step;
                     stepLarge = step;
-                    param.data[j].hints |= PARAMETER_IS_BOOLEAN;
+                    kData->param.data[j].hints |= PARAMETER_IS_BOOLEAN;
                 }
                 else if (prop.flags & kVstParameterUsesIntStep)
                 {
-                    step = prop.stepInteger;
-                    stepSmall = prop.stepInteger;
-                    stepLarge = prop.largeStepInteger;
-                    param.data[j].hints |= PARAMETER_IS_INTEGER;
+                    step = float(prop.stepInteger);
+                    stepSmall = float(prop.stepInteger)/10;
+                    stepLarge = float(prop.largeStepInteger);
+                    kData->param.data[j].hints |= PARAMETER_IS_INTEGER;
                 }
                 else if (prop.flags & kVstParameterUsesFloatStep)
                 {
@@ -620,46 +659,46 @@ public:
                 }
                 else
                 {
-                    double range = max - min;
-                    step = range/100.0;
-                    stepSmall = range/1000.0;
-                    stepLarge = range/10.0;
+                    float range = max - min;
+                    step = range/100.0f;
+                    stepSmall = range/1000.0f;
+                    stepLarge = range/10.0f;
                 }
 
                 if (prop.flags & kVstParameterCanRamp)
-                    param.data[j].hints |= PARAMETER_IS_LOGARITHMIC;
+                    kData->param.data[j].hints |= PARAMETER_IS_LOGARITHMIC;
             }
             else
             {
-                min = 0.0;
-                max = 1.0;
-                step = 0.001;
-                stepSmall = 0.0001;
-                stepLarge = 0.1;
+                min = 0.0f;
+                max = 1.0f;
+                step = 0.001f;
+                stepSmall = 0.0001f;
+                stepLarge = 0.1f;
             }
 
+            kData->param.data[j].hints |= PARAMETER_IS_ENABLED;
+#ifndef BUILD_BRIDGE
+            kData->param.data[j].hints |= PARAMETER_USES_CUSTOM_TEXT;
+#endif
+
+            if ((fHints & PLUGIN_USES_OLD_VSTSDK) != 0 || dispatcher(effCanBeAutomated, j, 0, nullptr, 0.0f) == 1)
+                kData->param.data[j].hints |= PARAMETER_IS_AUTOMABLE;
+
             // no such thing as VST default parameters
-            def = effect->getParameter(effect, j);
+            def = fEffect->getParameter(fEffect, j);
 
             if (def < min)
                 def = min;
             else if (def > max)
                 def = max;
 
-            param.ranges[j].min = min;
-            param.ranges[j].max = max;
-            param.ranges[j].def = def;
-            param.ranges[j].step = step;
-            param.ranges[j].stepSmall = stepSmall;
-            param.ranges[j].stepLarge = stepLarge;
-
-            param.data[j].hints |= PARAMETER_IS_ENABLED;
-#ifndef BUILD_BRIDGE
-            param.data[j].hints |= PARAMETER_USES_CUSTOM_TEXT;
-#endif
-
-            if ((m_hints & PLUGIN_USES_OLD_VSTSDK) > 0 || effect->dispatcher(effect, effCanBeAutomated, j, 0, nullptr, 0.0f) == 1)
-                param.data[j].hints |= PARAMETER_IS_AUTOMABLE;
+            kData->param.ranges[j].min = min;
+            kData->param.ranges[j].max = max;
+            kData->param.ranges[j].def = def;
+            kData->param.ranges[j].step = step;
+            kData->param.ranges[j].stepSmall = stepSmall;
+            kData->param.ranges[j].stepLarge = stepLarge;
         }
 
         if (needsCtrlIn)
@@ -668,96 +707,130 @@ public:
 
             if (processMode == PROCESS_MODE_SINGLE_CLIENT)
             {
-                portName  = m_name;
+                portName  = fName;
                 portName += ":";
             }
 
-            portName += "control-in";
+            portName += "event-in";
             portName.truncate(portNameSize);
 
-            param.portCin = (CarlaEngineControlPort*)x_client->addPort(CarlaEnginePortTypeControl, portName, true);
+            kData->event.portIn = (CarlaEngineEventPort*)kData->client->addPort(kEnginePortTypeEvent, portName, true);
         }
 
-        if (mIns == 1)
+        if (needsCtrlOut)
         {
             portName.clear();
 
             if (processMode == PROCESS_MODE_SINGLE_CLIENT)
             {
-                portName  = m_name;
+                portName  = fName;
                 portName += ":";
             }
 
-            portName += "midi-in";
+            portName += "event-out";
             portName.truncate(portNameSize);
 
-            midi.portMin = (CarlaEngineMidiPort*)x_client->addPort(CarlaEnginePortTypeMIDI, portName, true);
+            kData->event.portOut = (CarlaEngineEventPort*)kData->client->addPort(kEnginePortTypeEvent, portName, false);
         }
 
-        if (mOuts == 1)
-        {
-            portName.clear();
+        // plugin hints
+        const intptr_t vstCategory = dispatcher(effGetPlugCategory, 0, 0, nullptr, 0.0f);
 
-            if (processMode == PROCESS_MODE_SINGLE_CLIENT)
-            {
-                portName  = m_name;
-                portName += ":";
-            }
-
-            portName += "midi-out";
-            portName.truncate(portNameSize);
-
-            midi.portMout = (CarlaEngineMidiPort*)x_client->addPort(CarlaEnginePortTypeMIDI, portName, false);
-        }
-
-        aIn.count   = aIns;
-        aOut.count  = aOuts;
-        param.count = params;
-
-        // plugin checks
-        m_hints &= ~(PLUGIN_IS_SYNTH | PLUGIN_USES_CHUNKS | PLUGIN_CAN_DRYWET | PLUGIN_CAN_VOLUME | PLUGIN_CAN_BALANCE | PLUGIN_CAN_FORCE_STEREO);
-
-        intptr_t vstCategory = effect->dispatcher(effect, effGetPlugCategory, 0, 0, nullptr, 0.0f);
+        fHints = 0x0;
 
         if (vstCategory == kPlugCategSynth || vstCategory == kPlugCategGenerator)
-            m_hints |= PLUGIN_IS_SYNTH;
+            fHints |= PLUGIN_IS_SYNTH;
 
-        if (effect->flags & effFlagsProgramChunks)
-            m_hints |= PLUGIN_USES_CHUNKS;
+        if (fEffect->flags & effFlagsHasEditor)
+        {
+            fHints |= PLUGIN_HAS_GUI;
+
+            if (! fGui.isOsc)
+                fHints |= PLUGIN_HAS_SINGLE_THREAD;
+        }
+
+        if (dispatcher(effGetVstVersion, 0, 0, nullptr, 0.0f) < kVstVersion)
+            fHints |= PLUGIN_USES_OLD_VSTSDK;
+
+        if ((fEffect->flags & effFlagsCanReplacing) != 0 && fEffect->processReplacing != fEffect->process)
+            fHints |= PLUGIN_CAN_PROCESS_REPLACING;
+
+        if (fEffect->flags & effFlagsHasEditor)
+            fHints |= PLUGIN_HAS_GUI;
+
+        if (static_cast<uintptr_t>(dispatcher(effCanDo, 0, 0, (void*)"hasCockosExtensions", 0.0f)) == 0xbeef0000)
+            fHints |= PLUGIN_HAS_COCKOS_EXTENSIONS;
 
         if (aOuts > 0 && (aIns == aOuts || aIns == 1))
-            m_hints |= PLUGIN_CAN_DRYWET;
+            fHints |= PLUGIN_CAN_DRYWET;
 
         if (aOuts > 0)
-            m_hints |= PLUGIN_CAN_VOLUME;
+            fHints |= PLUGIN_CAN_VOLUME;
 
-        if (aOuts >= 2 && aOuts%2 == 0)
-            m_hints |= PLUGIN_CAN_BALANCE;
+        if (aOuts >= 2 && aOuts % 2 == 0)
+            fHints |= PLUGIN_CAN_BALANCE;
 
-        if ((aIns == 0 || aIns == 2) && (aOuts == 0 || aOuts == 2))
-            m_hints |= PLUGIN_CAN_FORCE_STEREO;
+        // extra plugin hints
+        kData->extraHints = 0x0;
 
-        // check latency
-        if (m_hints & PLUGIN_CAN_DRYWET)
-        {
-#ifdef VESTIGE_HEADER
-            char* const empty3Ptr = &effect->empty3[0];
-            int32_t* initialDelayPtr = (int32_t*)empty3Ptr;
-            m_latency = *initialDelayPtr;
-#else
-            m_latency = effect->initialDelay;
+        if (mIns > 0)
+            kData->extraHints |= PLUGIN_HINT_HAS_MIDI_IN;
+
+        if (mOuts > 0)
+            kData->extraHints |= PLUGIN_HINT_HAS_MIDI_OUT;
+
+        if (aIns <= 2 && aOuts <= 2 && (aIns == aOuts || aIns == 0 || aOuts == 0))
+            kData->extraHints |= PLUGIN_HINT_CAN_RUN_RACK;
+
+        // plugin options
+        fOptions = 0x0;
+
+        fOptions |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+
+        if (fEffect->flags & effFlagsProgramChunks)
+            fOptions |= PLUGIN_OPTION_USE_CHUNKS;
+
+#ifdef CARLA_OS_WIN
+        // Most Windows plugins have issues with this
+        fOptions |= PLUGIN_OPTION_FIXED_BUFFER;
 #endif
 
-            x_client->setLatency(m_latency);
+        if (mIns > 0)
+        {
+            fOptions |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
+            fOptions |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
+            fOptions |= PLUGIN_OPTION_SEND_PITCHBEND;
+            fOptions |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+        }
+
+        // dummy pre-start to catch latency and possible wantEvents() call on old plugins
+        {
+            dispatcher(effMainsChanged, 0, 1, nullptr, 0.0f);
+            dispatcher(effStartProcess, 0, 0, nullptr, 0.0f);
+            dispatcher(effStopProcess, 0, 0, nullptr, 0.0f);
+            dispatcher(effMainsChanged, 0, 0, nullptr, 0.0f);
+        }
+
+        // check latency
+        if (fHints & PLUGIN_CAN_DRYWET)
+        {
+#ifdef VESTIGE_HEADER
+            char* const empty3Ptr = &fEffect->empty3[0];
+            int32_t* initialDelayPtr = (int32_t*)empty3Ptr;
+            kData->latency = *initialDelayPtr;
+#else
+            kData->latency = fEffect->initialDelay;
+#endif
+
+            kData->client->setLatency(kData->latency);
             recreateLatencyBuffers();
         }
 
         // special plugin fixes
-#ifdef __WINE__
         // 1. IL Harmless - disable threaded processing
-        if (effect->uniqueID == 1229484653)
+        if (fEffect->uniqueID == 1229484653)
         {
-            char strBuf[255] = { 0 };
+            char strBuf[STR_MAX] = { 0 };
             getLabel(strBuf);
 
             if (std::strcmp(strBuf, "IL Harmless") == 0)
@@ -765,8 +838,8 @@ public:
                 // TODO - disable threaded processing
             }
         }
-#endif
 
+        bufferSizeChanged(kData->engine->getBufferSize());
         reloadPrograms(true);
 
         carla_debug("VstPlugin::reload() - end");
@@ -775,100 +848,96 @@ public:
     void reloadPrograms(const bool init)
     {
         carla_debug("VstPlugin::reloadPrograms(%s)", bool2str(init));
-        uint32_t i, oldCount = prog.count;
+        uint32_t i, oldCount  = kData->prog.count;
+        const int32_t current = kData->prog.current;
 
         // Delete old programs
-        if (prog.count > 0)
-        {
-            for (i=0; i < prog.count; i++)
-            {
-                if (prog.names[i])
-                    free((void*)prog.names[i]);
-            }
-
-            delete[] prog.names;
-        }
-
-        prog.count = 0;
-        prog.names = nullptr;
+        kData->prog.clear();
 
         // Query new programs
-        prog.count = effect->numPrograms;
+        uint32_t count = static_cast<uint32_t>(fEffect->numPrograms);
 
-        if (prog.count > 0)
-            prog.names = new const char* [prog.count];
-
-        // Update names
-        for (i=0; i < prog.count; i++)
+        if (count > 0)
         {
-            char strBuf[STR_MAX] = { 0 };
-            if (effect->dispatcher(effect, effGetProgramNameIndexed, i, 0, strBuf, 0.0f) != 1)
+            kData->prog.createNew(count);
+
+            // Update names
+            for (i=0; i < count; i++)
             {
-                // program will be [re-]changed later
-                effect->dispatcher(effect, effSetProgram, 0, i, nullptr, 0.0f);
-                effect->dispatcher(effect, effGetProgramName, 0, 0, strBuf, 0.0f);
+                char strBuf[STR_MAX] = { 0 };
+                if (dispatcher(effGetProgramNameIndexed, i, 0, strBuf, 0.0f) != 1)
+                {
+                    // program will be [re-]changed later
+                    dispatcher(effSetProgram, 0, i, nullptr, 0.0f);
+                    dispatcher(effGetProgramName, 0, 0, strBuf, 0.0f);
+                }
+                kData->prog.names[i] = strdup(strBuf);
             }
-            prog.names[i] = strdup(strBuf);
         }
 
 #ifndef BUILD_BRIDGE
         // Update OSC Names
-        if (x_engine->isOscControlRegistered())
+        if (kData->engine->isOscControlRegistered())
         {
-            x_engine->osc_send_control_set_program_count(m_id, prog.count);
+            kData->engine->osc_send_control_set_program_count(fId, count);
 
-            for (i=0; i < prog.count; i++)
-                x_engine->osc_send_control_set_program_name(m_id, i, prog.names[i]);
+            for (i=0; i < count; i++)
+                kData->engine->osc_send_control_set_program_name(fId, i, kData->prog.names[i]);
         }
 #endif
 
         if (init)
         {
-            if (prog.count > 0)
-                setProgram(0, false, false, false, true);
+            if (count > 0)
+                setProgram(0, false, false, false);
         }
         else
         {
-            x_engine->callback(CALLBACK_RELOAD_PROGRAMS, m_id, 0, 0, 0.0, nullptr);
-
             // Check if current program is invalid
             bool programChanged = false;
 
-            if (prog.count == oldCount+1)
+            if (count == oldCount+1)
             {
                 // one program added, probably created by user
-                prog.current   = oldCount;
+                kData->prog.current = oldCount;
                 programChanged = true;
             }
-            else if (prog.current >= (int32_t)prog.count)
-            {
-                // current program > count
-                prog.current   = 0;
-                programChanged = true;
-            }
-            else if (prog.current < 0 && prog.count > 0)
+            else if (current < 0 && count > 0)
             {
                 // programs exist now, but not before
-                prog.current   = 0;
+                kData->prog.current = 0;
                 programChanged = true;
             }
-            else if (prog.current >= 0 && prog.count == 0)
+            else if (current >= 0 && count == 0)
             {
                 // programs existed before, but not anymore
-                prog.current   = -1;
+                kData->prog.current = -1;
                 programChanged = true;
+            }
+            else if (current >= static_cast<int32_t>(count))
+            {
+                // current program > count
+                kData->prog.current = 0;
+                programChanged = true;
+            }
+            else
+            {
+                // no change
+                kData->prog.current = current;
             }
 
             if (programChanged)
             {
-                setProgram(prog.current, true, true, true, true);
+                setProgram(kData->prog.current, true, true, true);
             }
             else
             {
                 // Program was changed during update, re-set it
-                if (prog.current >= 0)
-                    effect->dispatcher(effect, effSetProgram, 0, prog.current, nullptr, 0.0f);
+                if (kData->prog.current >= 0)
+                    dispatcher(effSetProgram, 0, kData->prog.current, nullptr, 0.0f);
             }
+
+            kData->engine->callback(CALLBACK_RELOAD_PROGRAMS, fId, 0, 0, 0.0f, nullptr);
         }
     }
 
@@ -880,6 +949,7 @@ public:
         uint32_t i, k;
         uint32_t midiEventCount = 0;
 
+#if 0
         vstTimeOffset = 0;
 
         double aInsPeak[2]  = { 0.0 };
@@ -1406,25 +1476,26 @@ public:
         x_engine->setOutputPeak(m_id, 1, aOutsPeak[1]);
 
         m_activeBefore = m_active;
+#endif
     }
 
     void bufferSizeChanged(uint32_t newBufferSize)
     {
-        if (m_active)
+        if (kData->active)
         {
-            effect->dispatcher(effect, effStopProcess, 0, 0, nullptr, 0.0f);
-            effect->dispatcher(effect, effMainsChanged, 0, 0, nullptr, 0.0f);
+            dispatcher(effStopProcess, 0, 0, nullptr, 0.0f);
+            dispatcher(effMainsChanged, 0, 0, nullptr, 0.0f);
         }
 
 #if ! VST_FORCE_DEPRECATED
-        effect->dispatcher(effect, effSetBlockSizeAndSampleRate, 0, newBufferSize, nullptr, x_engine->getSampleRate());
+        dispatcher(effSetBlockSizeAndSampleRate, 0, newBufferSize, nullptr, kData->engine->getSampleRate());
 #endif
-        effect->dispatcher(effect, effSetBlockSize, 0, newBufferSize, nullptr, 0.0f);
+        dispatcher(effSetBlockSize, 0, newBufferSize, nullptr, 0.0f);
 
-        if (m_active)
+        if (kData->active)
         {
-            effect->dispatcher(effect, effMainsChanged, 0, 1, nullptr, 0.0f);
-            effect->dispatcher(effect, effStartProcess, 0, 0, nullptr, 0.0f);
+            dispatcher(effMainsChanged, 0, 1, nullptr, 0.0f);
+            dispatcher(effStartProcess, 0, 0, nullptr, 0.0f);
         }
     }
 
@@ -1433,58 +1504,81 @@ public:
 
     void uiParameterChange(const uint32_t index, const double value)
     {
-        CARLA_ASSERT(index < param.count);
+        CARLA_ASSERT(index < kData->param.count);
 
-        if (index >= param.count)
+        if (index >= kData->param.count)
+            return;
+        if (! fGui.isOsc)
+            return;
+        if (kData->osc.data.target == nullptr)
             return;
 
-        if (gui.type == GUI_EXTERNAL_OSC && osc.data.target)
-            osc_send_control(&osc.data, param.data[index].rindex, value);
+        osc_send_control(&kData->osc.data, kData->param.data[index].rindex, value);
     }
 
     void uiProgramChange(const uint32_t index)
     {
-        CARLA_ASSERT(index < prog.count);
+        CARLA_ASSERT(index < kData->prog.count);
 
-        if (index >= prog.count)
+        if (index >= kData->prog.count)
+            return;
+        if (! fGui.isOsc)
+            return;
+        if (kData->osc.data.target == nullptr)
             return;
 
-        if (gui.type == GUI_EXTERNAL_OSC && osc.data.target)
-            osc_send_program(&osc.data, index);
+        osc_send_program(&kData->osc.data, index);
     }
 
     void uiNoteOn(const uint8_t channel, const uint8_t note, const uint8_t velo)
     {
-        CARLA_ASSERT(channel < 16);
-        CARLA_ASSERT(note < 128);
-        CARLA_ASSERT(velo > 0 && velo < 128);
+        CARLA_ASSERT(channel < MAX_MIDI_CHANNELS);
+        CARLA_ASSERT(note < MAX_MIDI_NOTE);
+        CARLA_ASSERT(velo > 0 && velo < MAX_MIDI_VALUE);
 
-        if (gui.type == GUI_EXTERNAL_OSC && osc.data.target)
-        {
-            uint8_t midiData[4] = { 0 };
-            midiData[1] = MIDI_STATUS_NOTE_ON + channel;
-            midiData[2] = note;
-            midiData[3] = velo;
-            osc_send_midi(&osc.data, midiData);
-        }
+        if (channel >= MAX_MIDI_CHANNELS)
+            return;
+        if (note >= MAX_MIDI_NOTE)
+            return;
+        if (velo >= MAX_MIDI_VALUE)
+            return;
+        if (! fGui.isOsc)
+            return;
+        if (kData->osc.data.target == nullptr)
+            return;
+
+        uint8_t midiData[4] = { 0 };
+        midiData[1] = MIDI_STATUS_NOTE_ON + channel;
+        midiData[2] = note;
+        midiData[3] = velo;
+
+        osc_send_midi(&kData->osc.data, midiData);
     }
 
     void uiNoteOff(const uint8_t channel, const uint8_t note)
     {
-        CARLA_ASSERT(channel < 16);
-        CARLA_ASSERT(note < 128);
+        CARLA_ASSERT(channel < MAX_MIDI_CHANNELS);
+        CARLA_ASSERT(note < MAX_MIDI_NOTE);
 
-        if (gui.type == GUI_EXTERNAL_OSC && osc.data.target)
-        {
-            uint8_t midiData[4] = { 0 };
-            midiData[1] = MIDI_STATUS_NOTE_OFF + channel;
-            midiData[2] = note;
-            osc_send_midi(&osc.data, midiData);
-        }
+        if (channel >= MAX_MIDI_CHANNELS)
+            return;
+        if (note >= MAX_MIDI_NOTE)
+            return;
+        if (! fGui.isOsc)
+            return;
+        if (kData->osc.data.target == nullptr)
+            return;
+
+        uint8_t midiData[4] = { 0 };
+        midiData[1] = MIDI_STATUS_NOTE_OFF + channel;
+        midiData[2] = note;
+
+        osc_send_midi(&kData->osc.data, midiData);
     }
 
     // -------------------------------------------------------------------
 
+#if 0
     intptr_t handleAudioMasterTempoAt()
     {
         const CarlaEngineTimeInfo* const timeInfo = x_engine->getTimeInfo();
@@ -1974,8 +2068,6 @@ public:
 #endif
 
         dispatcher(effOpen, 0, 0, nullptr, 0.0f);
-        //dispatcher(effStopProcess, 0, 0, nullptr, 0.0f);
-        //dispatcher(effMainsChanged, 0, 0, nullptr, 0.0f);
 
         // ---------------------------------------------------------------
         // get info
@@ -2021,44 +2113,23 @@ public:
         dispatcher(effStopProcess, 0, 0, nullptr, 0.0f);
         dispatcher(effMainsChanged, 0, 0, nullptr, 0.0f);
 
-#if ! VST_FORCE_DEPRECATED
-        // dummy pre-start to catch possible wantEvents() call on old plugins
-        //dispatcher(effMainsChanged, 0, 1, nullptr, 0.0f);
-        //dispatcher(effStartProcess, 0, 0, nullptr, 0.0f);
-        //dispatcher(effStopProcess, 0, 0, nullptr, 0.0f);
-        //dispatcher(effMainsChanged, 0, 0, nullptr, 0.0f);
-#endif
-
-        // special checks
-        if (static_cast<uintptr_t>(dispatcher(effCanDo, 0, 0, (void*)"hasCockosExtensions", 0.0f)) == 0xbeef0000)
-        {
-            carla_debug("Plugin has Cockos extensions!");
-            fHints |= PLUGIN_HAS_COCKOS_EXTENSIONS;
-        }
-
         if (dispatcher(effGetVstVersion, 0, 0, nullptr, 0.0f) < kVstVersion)
             fHints |= PLUGIN_USES_OLD_VSTSDK;
 
-        if ((fEffect->flags & effFlagsCanReplacing) != 0 && fEffect->processReplacing != fEffect->process)
-            fHints |= PLUGIN_CAN_PROCESS_REPLACING;
+        if (static_cast<uintptr_t>(dispatcher(effCanDo, 0, 0, (void*)"hasCockosExtensions", 0.0f)) == 0xbeef0000)
+            fHints |= PLUGIN_HAS_COCKOS_EXTENSIONS;
 
         // ---------------------------------------------------------------
         // gui stuff
 
         if (fEffect->flags & effFlagsHasEditor)
         {
-            fHints |= PLUGIN_HAS_GUI;
-
             const EngineOptions& engineOptions(kData->engine->getOptions());
 
             if (engineOptions.preferUiBridges && engineOptions.bridge_vstx11.isNotEmpty() && (fEffect->flags & effFlagsProgramChunks) == 0)
             {
                 kData->osc.thread.setOscData(engineOptions.bridge_vstx11, label);
                 fGui.isOsc = true;
-            }
-            else
-            {
-                fHints |= PLUGIN_HAS_SINGLE_THREAD;
             }
         }
 

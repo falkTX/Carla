@@ -119,7 +119,7 @@ public:
         return fInfo.category;
     }
 
-    long uniqueId()
+    long uniqueId() const
     {
         return fInfo.uniqueId;
     }

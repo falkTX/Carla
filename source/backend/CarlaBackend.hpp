@@ -26,7 +26,7 @@
 #define CARLA_BACKEND_END_NAMESPACE }
 #define CARLA_BACKEND_USE_NAMESPACE using namespace CarlaBackend;
 
-#define STR_MAX 0xFF
+#define STR_MAX 0xFF+1
 
 CARLA_BACKEND_START_NAMESPACE
 

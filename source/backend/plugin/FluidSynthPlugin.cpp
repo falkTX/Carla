@@ -818,9 +818,9 @@ public:
         // Update OSC Names
         if (kData->engine->isOscControlRegistered())
         {
-            kData->engine->osc_send_control_set_midi_program_count(fId, kData->midiprog.count);
+            kData->engine->osc_send_control_set_midi_program_count(fId, count);
 
-            for (i=0; i < kData->midiprog.count; i++)
+            for (i=0; i < count; i++)
                 kData->engine->osc_send_control_set_midi_program_data(fId, i, kData->midiprog.data[i].bank, kData->midiprog.data[i].program, kData->midiprog.data[i].name);
         }
 #endif
