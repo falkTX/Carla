@@ -950,42 +950,9 @@ public:
         uint32_t midiEventCount = 0;
 
 #if 0
-        vstTimeOffset = 0;
-
-        double aInsPeak[2]  = { 0.0 };
-        double aOutsPeak[2] = { 0.0 };
-
         // reset MIDI
         events.numEvents = 0;
         midiEvents[0].type = 0;
-
-        CARLA_PROCESS_CONTINUE_CHECK;
-
-        // --------------------------------------------------------------------------------------------------------
-        // Input VU
-
-        if (aIn.count > 0 && x_engine->getOptions().processMode != PROCESS_MODE_CONTINUOUS_RACK)
-        {
-            if (aIn.count == 1)
-            {
-                for (k=0; k < frames; k++)
-                {
-                    if (std::abs(inBuffer[0][k]) > aInsPeak[0])
-                        aInsPeak[0] = std::abs(inBuffer[0][k]);
-                }
-            }
-            else if (aIn.count > 1)
-            {
-                for (k=0; k < frames; k++)
-                {
-                    if (std::abs(inBuffer[0][k]) > aInsPeak[0])
-                        aInsPeak[0] = std::abs(inBuffer[0][k]);
-
-                    if (std::abs(inBuffer[1][k]) > aInsPeak[1])
-                        aInsPeak[1] = std::abs(inBuffer[1][k]);
-                }
-            }
-        }
 
         CARLA_PROCESS_CONTINUE_CHECK;
 
