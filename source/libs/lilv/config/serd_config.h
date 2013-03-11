@@ -4,7 +4,10 @@
 
 #define SERD_VERSION "0.18.2"
 
-#if defined(__APPLE__) || defined(__HAIKU__)
+#if defined(__APPLE__)
+ #define HAVE_FMAX   1
+ #define HAVE_FILENO 1
+#elif defined(__HAIKU__)
  #define HAVE_FMAX   1
  #define HAVE_FILENO 1
  #define HAVE_POSIX_MEMALIGN 1

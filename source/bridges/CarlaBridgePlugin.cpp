@@ -71,7 +71,7 @@ void initSignalHandler()
 {
 #ifdef CARLA_OS_WIN
     SetConsoleCtrlHandler(closeSignalHandler, TRUE);
-#else
+#elif defined(CARLA_OS_LINUX) || defined(CARLA_OS_HAIKU)
     struct sigaction sint;
     struct sigaction sterm;
     struct sigaction susr1;

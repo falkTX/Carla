@@ -35,11 +35,16 @@ OBJS  = \
 	midi-transpose.c.o \
 	nekofilter.c.o
 
-# DISTRHO plugins
+# DISTRHO plugins (GL)
+ifeq ($(HAVE_OPENGL),true)
 OBJS += \
 	distrho-3bandeq.cpp.o \
 	distrho-3bandsplitter.cpp.o \
-	distrho-pingpongpan.cpp.o \
+	distrho-pingpongpan.cpp.o
+endif
+
+# DISTRHO plugins (Qt)
+OBJS += \
 	distrho-notes.cpp.o
 
 ifeq ($(HAVE_AF_DEPS),true)

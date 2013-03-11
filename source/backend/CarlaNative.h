@@ -204,10 +204,14 @@ void carla_register_native_plugin_midiThrough();
 void carla_register_native_plugin_midiTranspose();
 void carla_register_native_plugin_nekofilter();
 
-// DISTRHO plugins
+// DISTRHO plugins (GL)
+#ifdef WANT_OPENGL
 void carla_register_native_plugin_3BandEQ();
 void carla_register_native_plugin_3BandSplitter();
 void carla_register_native_plugin_PingPongPan();
+#endif
+
+// DISTRHO plugins (Qt)
 void carla_register_native_plugin_Notes();
 
 #ifdef WANT_AUDIOFILE

@@ -1976,9 +1976,11 @@ private:
         carla_register_native_plugin_midiTranspose();
         carla_register_native_plugin_nekofilter();
 
+# ifdef WANT_OPENGL
         carla_register_native_plugin_3BandEQ();
         carla_register_native_plugin_3BandSplitter();
         carla_register_native_plugin_PingPongPan();
+# endif
         carla_register_native_plugin_Notes();
 
 # ifdef WANT_AUDIOFILE
