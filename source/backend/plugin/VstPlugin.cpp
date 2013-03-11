@@ -44,6 +44,7 @@ public:
         : CarlaPlugin(engine, id),
           fUnique1(1),
           fEffect(nullptr),
+          fMidiEventCount(0),
           fIsProcessing(false),
           fNeedIdle(false),
           fUnique2(2)
@@ -842,6 +843,10 @@ public:
         bufferSizeChanged(kData->engine->getBufferSize());
         reloadPrograms(true);
 
+        // always enabled, FIXME
+        dispatcher(effMainsChanged, 0, 1, nullptr, 0.0f);
+        dispatcher(effStartProcess, 0, 0, nullptr, 0.0f);
+
         carla_debug("VstPlugin::reload() - end");
     }
 
@@ -947,506 +952,536 @@ public:
     void process(float** const inBuffer, float** const outBuffer, const uint32_t frames)
     {
         uint32_t i, k;
-        uint32_t midiEventCount = 0;
-
-#if 0
-        // reset MIDI
-        events.numEvents = 0;
-        midiEvents[0].type = 0;
-
-        CARLA_PROCESS_CONTINUE_CHECK;
 
         // --------------------------------------------------------------------------------------------------------
-        // Parameters Input [Automation]
+        // Check if active
 
-        if (param.portCin && m_active && m_activeBefore)
+        if (! kData->active)
         {
-            bool allNotesOffSent = false;
+            // disable any output sound
+            for (i=0; i < kData->audioOut.count; i++)
+                carla_zeroFloat(outBuffer[i], frames);
 
-            const CarlaEngineControlEvent* cinEvent;
-            uint32_t time, nEvents = param.portCin->getEventCount();
+            kData->activeBefore = kData->active;
+            return;
+        }
 
-            for (i=0; i < nEvents; i++)
-            {
-                cinEvent = param.portCin->getEvent(i);
-
-                if (! cinEvent)
-                    continue;
-
-                time = cinEvent->time;
-
-                if (time >= frames)
-                    continue;
-
-                // Control change
-                switch (cinEvent->type)
-                {
-                case CarlaEngineNullEvent:
-                    break;
-
-                case CarlaEngineParameterChangeEvent:
-                {
-                    double value;
-
-                    // Control backend stuff
-                    if (cinEvent->channel == m_ctrlInChannel)
-                    {
-                        if (MIDI_IS_CONTROL_BREATH_CONTROLLER(cinEvent->parameter) && (m_hints & PLUGIN_CAN_DRYWET) > 0)
-                        {
-                            value = cinEvent->value;
-                            setDryWet(value, false, false);
-                            postponeEvent(PluginPostEventParameterChange, PARAMETER_DRYWET, 0, value);
-                            continue;
-                        }
-
-                        if (MIDI_IS_CONTROL_CHANNEL_VOLUME(cinEvent->parameter) && (m_hints & PLUGIN_CAN_VOLUME) > 0)
-                        {
-                            value = cinEvent->value*127/100;
-                            setVolume(value, false, false);
-                            postponeEvent(PluginPostEventParameterChange, PARAMETER_VOLUME, 0, value);
-                            continue;
-                        }
-
-                        if (MIDI_IS_CONTROL_BALANCE(cinEvent->parameter) && (m_hints & PLUGIN_CAN_BALANCE) > 0)
-                        {
-                            double left, right;
-                            value = cinEvent->value/0.5 - 1.0;
-
-                            if (value < 0.0)
-                            {
-                                left  = -1.0;
-                                right = (value*2)+1.0;
-                            }
-                            else if (value > 0.0)
-                            {
-                                left  = (value*2)-1.0;
-                                right = 1.0;
-                            }
-                            else
-                            {
-                                left  = -1.0;
-                                right = 1.0;
-                            }
-
-                            setBalanceLeft(left, false, false);
-                            setBalanceRight(right, false, false);
-                            postponeEvent(PluginPostEventParameterChange, PARAMETER_BALANCE_LEFT, 0, left);
-                            postponeEvent(PluginPostEventParameterChange, PARAMETER_BALANCE_RIGHT, 0, right);
-                            continue;
-                        }
-                    }
-
-                    // Control plugin parameters
-                    for (k=0; k < param.count; k++)
-                    {
-                        if (param.data[k].midiChannel != cinEvent->channel)
-                            continue;
-                        if (param.data[k].midiCC != cinEvent->parameter)
-                            continue;
-                        if (param.data[k].type != PARAMETER_INPUT)
-                            continue;
-
-                        if (param.data[k].hints & PARAMETER_IS_AUTOMABLE)
-                        {
-                            if (param.data[k].hints & PARAMETER_IS_BOOLEAN)
-                            {
-                                value = cinEvent->value < 0.5 ? param.ranges[k].min : param.ranges[k].max;
-                            }
-                            else
-                            {
-                                value = cinEvent->value * (param.ranges[k].max - param.ranges[k].min) + param.ranges[k].min;
-
-                                if (param.data[k].hints & PARAMETER_IS_INTEGER)
-                                    value = rint(value);
-                            }
-
-                            setParameterValue(k, value, false, false, false);
-                            postponeEvent(PluginPostEventParameterChange, k, 0, value);
-                        }
-                    }
-
-                    break;
-                }
-
-                case CarlaEngineMidiBankChangeEvent:
-                    break;
-
-                case CarlaEngineMidiProgramChangeEvent:
-                    if (cinEvent->channel == m_ctrlInChannel)
-                    {
-                        uint32_t progId = rint(cinEvent->value);
-
-                        if (progId < prog.count)
-                        {
-                            setProgram(progId, false, false, false, false);
-                            postponeEvent(PluginPostEventProgramChange, progId, 0, 0.0);
-                        }
-                    }
-                    break;
-
-                case CarlaEngineAllSoundOffEvent:
-                    if (cinEvent->channel == m_ctrlInChannel)
-                    {
-                        if (midi.portMin && ! allNotesOffSent)
-                            sendMidiAllNotesOff();
-
-                        effect->dispatcher(effect, effStopProcess, 0, 0, nullptr, 0.0f);
-                        effect->dispatcher(effect, effMainsChanged, 0, 0, nullptr, 0.0f);
-                        effect->dispatcher(effect, effMainsChanged, 0, 1, nullptr, 0.0f);
-                        effect->dispatcher(effect, effStartProcess, 0, 0, nullptr, 0.0f);
-
-                        postponeEvent(PluginPostEventParameterChange, PARAMETER_ACTIVE, 0, 0.0);
-                        postponeEvent(PluginPostEventParameterChange, PARAMETER_ACTIVE, 0, 1.0);
-
-                        allNotesOffSent = true;
-                    }
-                    break;
-
-                case CarlaEngineAllNotesOffEvent:
-                    if (cinEvent->channel == m_ctrlInChannel)
-                    {
-                        if (midi.portMin && ! allNotesOffSent)
-                            sendMidiAllNotesOff();
-
-                        allNotesOffSent = true;
-                    }
-                    break;
-                }
-            }
-        } // End of Parameters Input
-
-        CARLA_PROCESS_CONTINUE_CHECK;
+        fMidiEventCount = 0;
+        carla_zeroMem(fMidiEvents, sizeof(VstMidiEvent)*MAX_MIDI_EVENTS*2);
 
         // --------------------------------------------------------------------------------------------------------
-        // MIDI Input
+        // Check if not active before
 
-        if (midi.portMin && m_active && m_activeBefore)
+        if (kData->needsReset || ! kData->activeBefore)
+        {
+            if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
+            {
+                for (unsigned char j=0, l=MAX_MIDI_CHANNELS; j < MAX_MIDI_CHANNELS; j++)
+                {
+                    carla_zeroStruct<VstMidiEvent>(fMidiEvents[j]);
+                    carla_zeroStruct<VstMidiEvent>(fMidiEvents[j+l]);
+
+                    fMidiEvents[j].type = kVstMidiType;
+                    fMidiEvents[j].byteSize = sizeof(VstMidiEvent);
+                    fMidiEvents[j].midiData[0] = MIDI_STATUS_CONTROL_CHANGE + j;
+                    fMidiEvents[j].midiData[1] = MIDI_CONTROL_ALL_SOUND_OFF;
+
+                    fMidiEvents[j+l].type = kVstMidiType;
+                    fMidiEvents[j+l].byteSize = sizeof(VstMidiEvent);
+                    fMidiEvents[j+l].midiData[0] = MIDI_STATUS_CONTROL_CHANGE + j;
+                    fMidiEvents[j+l].midiData[1] = MIDI_CONTROL_ALL_SOUND_OFF;
+                }
+
+                fMidiEventCount = MAX_MIDI_CHANNELS*2;
+            }
+
+            if (kData->latency > 0)
+            {
+                for (i=0; i < kData->audioIn.count; i++)
+                    carla_zeroFloat(kData->latencyBuffers[i], kData->latency);
+            }
+
+            kData->needsReset = false;
+        }
+
+        // --------------------------------------------------------------------------------------------------------
+        // Event Input and Processing
+
+        if (kData->event.portIn != nullptr && kData->activeBefore)
         {
             // ----------------------------------------------------------------------------------------------------
             // MIDI Input (External)
 
+            if (kData->extNotes.mutex.tryLock())
             {
-                engineMidiLock();
-
-                for (i=0; i < MAX_MIDI_EVENTS && midiEventCount < MAX_MIDI_EVENTS; i++)
+                while (fMidiEventCount < MAX_MIDI_EVENTS*2 && ! kData->extNotes.data.isEmpty())
                 {
-                    if (extMidiNotes[i].channel < 0)
-                        break;
+                    const ExternalMidiNote& note = kData->extNotes.data.getFirst(true);
 
-                    VstMidiEvent* const midiEvent = &midiEvents[midiEventCount];
-                    memset(midiEvent, 0, sizeof(VstMidiEvent));
+                    carla_zeroStruct<VstMidiEvent>(fMidiEvents[fMidiEventCount]);
 
-                    midiEvent->type = kVstMidiType;
-                    midiEvent->byteSize = sizeof(VstMidiEvent);
-                    midiEvent->midiData[0] = uint8_t(extMidiNotes[i].velo ? MIDI_STATUS_NOTE_ON : MIDI_STATUS_NOTE_OFF) + extMidiNotes[i].channel;
-                    midiEvent->midiData[1] = extMidiNotes[i].note;
-                    midiEvent->midiData[2] = extMidiNotes[i].velo;
+                    fMidiEvents[fMidiEventCount].type = kVstMidiType;
+                    fMidiEvents[fMidiEventCount].byteSize = sizeof(VstMidiEvent);
+                    fMidiEvents[fMidiEventCount].midiData[0]  = (note.velo > 0) ? MIDI_STATUS_NOTE_ON : MIDI_STATUS_NOTE_OFF;
+                    fMidiEvents[fMidiEventCount].midiData[0] += note.channel;
+                    fMidiEvents[fMidiEventCount].midiData[1]  = note.note;
+                    fMidiEvents[fMidiEventCount].midiData[2]  = note.velo;
 
-                    extMidiNotes[i].channel = -1; // mark as invalid
-                    midiEventCount += 1;
+                    fMidiEventCount += 1;
                 }
 
-                engineMidiUnlock();
+                kData->extNotes.mutex.unlock();
 
             } // End of MIDI Input (External)
 
-            CARLA_PROCESS_CONTINUE_CHECK;
-
             // ----------------------------------------------------------------------------------------------------
-            // MIDI Input (System)
+            // Event Input (System)
 
+            bool allNotesOffSent = false;
+            bool sampleAccurate  = (fOptions & PLUGIN_OPTION_FIXED_BUFFER) == 0;
+
+            uint32_t time, nEvents = kData->event.portIn->getEventCount();
+            uint32_t startTime  = 0;
+            uint32_t timeOffset = 0;
+
+            uint32_t nextBankId = 0;
+            if (kData->midiprog.current >= 0 && kData->midiprog.count > 0)
+                nextBankId = kData->midiprog.data[kData->midiprog.current].bank;
+
+            for (i=0; i < nEvents; i++)
             {
-                const CarlaEngineMidiEvent* minEvent;
-                uint32_t time, nEvents = midi.portMin->getEventCount();
+                const EngineEvent& event = kData->event.portIn->getEvent(i);
 
-                for (i=0; i < nEvents && midiEventCount < MAX_MIDI_EVENTS; i++)
+                time = event.time;
+
+                if (time >= frames)
+                    continue;
+
+                CARLA_ASSERT_INT2(time >= timeOffset, time, timeOffset);
+
+                if (time > timeOffset && sampleAccurate)
                 {
-                    minEvent = midi.portMin->getEvent(i);
-
-                    if (! minEvent)
-                        continue;
-
-                    time = minEvent->time;
-
-                    if (time >= frames)
-                        continue;
-
-                    uint8_t status  = minEvent->data[0];
-                    uint8_t channel = status & 0x0F;
-
-                    // Fix bad note-off
-                    if (MIDI_IS_STATUS_NOTE_ON(status) && minEvent->data[2] == 0)
-                        status -= 0x10;
-
-                    VstMidiEvent* const midiEvent = &midiEvents[midiEventCount];
-                    memset(midiEvent, 0, sizeof(VstMidiEvent));
-
-                    midiEvent->type = kVstMidiType;
-                    midiEvent->byteSize = sizeof(VstMidiEvent);
-                    midiEvent->deltaFrames = minEvent->time;
-
-                    if (MIDI_IS_STATUS_NOTE_OFF(status))
+                    if (processSingle(inBuffer, outBuffer, time - timeOffset, timeOffset))
                     {
-                        uint8_t note = minEvent->data[1];
+                        if (fMidiEventCount > 0)
+                        {
+                            //carla_zeroMem(fMidiEvents, sizeof(::MidiEvent)*fMidiEventCount);
+                            fMidiEventCount = 0;
+                        }
 
-                        midiEvent->midiData[0] = status;
-                        midiEvent->midiData[1] = note;
-
-                        postponeEvent(PluginPostEventNoteOff, channel, note, 0.0);
-                    }
-                    else if (MIDI_IS_STATUS_NOTE_ON(status))
-                    {
-                        uint8_t note = minEvent->data[1];
-                        uint8_t velo = minEvent->data[2];
-
-                        midiEvent->midiData[0] = status;
-                        midiEvent->midiData[1] = note;
-                        midiEvent->midiData[2] = velo;
-
-                        postponeEvent(PluginPostEventNoteOn, channel, note, velo);
-                    }
-                    else if (MIDI_IS_STATUS_POLYPHONIC_AFTERTOUCH(status))
-                    {
-                        uint8_t note     = minEvent->data[1];
-                        uint8_t pressure = minEvent->data[2];
-
-                        midiEvent->midiData[0] = status;
-                        midiEvent->midiData[1] = note;
-                        midiEvent->midiData[2] = pressure;
-                    }
-                    else if (MIDI_IS_STATUS_AFTERTOUCH(status))
-                    {
-                        uint8_t pressure = minEvent->data[1];
-
-                        midiEvent->midiData[0] = status;
-                        midiEvent->midiData[1] = pressure;
-                    }
-                    else if (MIDI_IS_STATUS_PITCH_WHEEL_CONTROL(status))
-                    {
-                        uint8_t lsb = minEvent->data[1];
-                        uint8_t msb = minEvent->data[2];
-
-                        midiEvent->midiData[0] = status;
-                        midiEvent->midiData[1] = lsb;
-                        midiEvent->midiData[2] = msb;
+                        nextBankId = 0;
+                        timeOffset = time;
                     }
                     else
+                        startTime += timeOffset;
+                }
+
+                // Control change
+                switch (event.type)
+                {
+                case kEngineEventTypeNull:
+                    break;
+
+                case kEngineEventTypeControl:
+                {
+                    const EngineControlEvent& ctrlEvent = event.ctrl;
+
+                    switch (ctrlEvent.type)
+                    {
+                    case kEngineControlEventTypeNull:
+                        break;
+
+                    case kEngineControlEventTypeParameter:
+                    {
+                        // Control backend stuff
+                        if (event.channel == kData->ctrlChannel)
+                        {
+                            double value;
+
+                            if (MIDI_IS_CONTROL_BREATH_CONTROLLER(ctrlEvent.param) && (fHints & PLUGIN_CAN_DRYWET) > 0)
+                            {
+                                value = ctrlEvent.value;
+                                setDryWet(value, false, false);
+                                postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_DRYWET, 0, value);
+                                continue;
+                            }
+
+                            if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (fHints & PLUGIN_CAN_VOLUME) > 0)
+                            {
+                                value = ctrlEvent.value*127/100;
+                                setVolume(value, false, false);
+                                postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_VOLUME, 0, value);
+                                continue;
+                            }
+
+                            if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (fHints & PLUGIN_CAN_BALANCE) > 0)
+                            {
+                                double left, right;
+                                value = ctrlEvent.value/0.5 - 1.0;
+
+                                if (value < 0.0)
+                                {
+                                    left  = -1.0;
+                                    right = (value*2)+1.0;
+                                }
+                                else if (value > 0.0)
+                                {
+                                    left  = (value*2)-1.0;
+                                    right = 1.0;
+                                }
+                                else
+                                {
+                                    left  = -1.0;
+                                    right = 1.0;
+                                }
+
+                                setBalanceLeft(left, false, false);
+                                setBalanceRight(right, false, false);
+                                postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_LEFT, 0, left);
+                                postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_RIGHT, 0, right);
+                                continue;
+                            }
+                        }
+
+                        // Control plugin parameters
+                        for (k=0; k < kData->param.count; k++)
+                        {
+                            if (kData->param.data[k].midiChannel != event.channel)
+                                continue;
+                            if (kData->param.data[k].midiCC != ctrlEvent.param)
+                                continue;
+                            if (kData->param.data[k].type != PARAMETER_INPUT)
+                                continue;
+                            if ((kData->param.data[k].hints & PARAMETER_IS_AUTOMABLE) == 0)
+                                continue;
+
+                            double value;
+
+                            if (kData->param.data[k].hints & PARAMETER_IS_BOOLEAN)
+                            {
+                                value = (ctrlEvent.value < 0.5f) ? kData->param.ranges[k].min : kData->param.ranges[k].max;
+                            }
+                            else
+                            {
+                                value = kData->param.ranges[i].unnormalizeValue(ctrlEvent.value);
+
+                                if (kData->param.data[k].hints & PARAMETER_IS_INTEGER)
+                                    value = std::rint(value);
+                            }
+
+                            setParameterValue(k, value, false, false, false);
+                            postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 0, value);
+                        }
+
+                        break;
+                    }
+
+                    case kEngineControlEventTypeMidiBank:
+                        if (event.channel == kData->ctrlChannel)
+                            nextBankId = ctrlEvent.param;
+                        break;
+
+                    case kEngineControlEventTypeMidiProgram:
+                        if (event.channel == kData->ctrlChannel)
+                        {
+                            const uint32_t nextProgramId = ctrlEvent.param;
+
+                            for (k=0; k < kData->midiprog.count; k++)
+                            {
+                                if (kData->midiprog.data[k].bank == nextBankId && kData->midiprog.data[k].program == nextProgramId)
+                                {
+                                    setMidiProgram(k, false, false, false);
+                                    postponeRtEvent(kPluginPostRtEventMidiProgramChange, k, 0, 0.0f);
+                                    break;
+                                }
+                            }
+                        }
+                        break;
+
+                    case kEngineControlEventTypeAllSoundOff:
+                        if (event.channel == kData->ctrlChannel)
+                        {
+                            if (! allNotesOffSent)
+                            {
+                                allNotesOffSent = true;
+                                sendMidiAllNotesOff();
+                            }
+
+                            postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_ACTIVE, 0, 0.0f);
+                            postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_ACTIVE, 0, 1.0f);
+                        }
+
+                        if (fMidiEventCount >= MAX_MIDI_EVENTS*2)
+                            continue;
+
+                        if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
+                        {
+                            carla_zeroStruct<VstMidiEvent>(fMidiEvents[fMidiEventCount]);
+
+                            fMidiEvents[fMidiEventCount].type = kVstMidiType;
+                            fMidiEvents[fMidiEventCount].byteSize = sizeof(VstMidiEvent);
+                            fMidiEvents[fMidiEventCount].midiData[0] = MIDI_STATUS_CONTROL_CHANGE + event.channel;
+                            fMidiEvents[fMidiEventCount].midiData[1] = MIDI_CONTROL_ALL_SOUND_OFF;
+                            fMidiEvents[fMidiEventCount].deltaFrames = sampleAccurate ? startTime : time;
+
+                            fMidiEventCount += 1;
+                        }
+
+                        break;
+
+                    case kEngineControlEventTypeAllNotesOff:
+                        if (event.channel == kData->ctrlChannel)
+                        {
+                            if (! allNotesOffSent)
+                            {
+                                allNotesOffSent = true;
+                                sendMidiAllNotesOff();
+                            }
+                        }
+
+                        if (fMidiEventCount >= MAX_MIDI_EVENTS*2)
+                            continue;
+
+                        if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
+                        {
+                            carla_zeroStruct<VstMidiEvent>(fMidiEvents[fMidiEventCount]);
+
+                            fMidiEvents[fMidiEventCount].type = kVstMidiType;
+                            fMidiEvents[fMidiEventCount].byteSize = sizeof(VstMidiEvent);
+                            fMidiEvents[fMidiEventCount].midiData[0] = MIDI_STATUS_CONTROL_CHANGE + event.channel;
+                            fMidiEvents[fMidiEventCount].midiData[1] = MIDI_CONTROL_ALL_NOTES_OFF;
+                            fMidiEvents[fMidiEventCount].deltaFrames = sampleAccurate ? startTime : time;
+
+                            fMidiEventCount += 1;
+                        }
+
+                        break;
+                    }
+
+                    break;
+                }
+
+                case kEngineEventTypeMidi:
+                {
+                    if (fMidiEventCount >= MAX_MIDI_EVENTS*2)
                         continue;
 
-                    midiEventCount += 1;
+                    const EngineMidiEvent& midiEvent = event.midi;
+
+                    uint8_t status  = MIDI_GET_STATUS_FROM_DATA(midiEvent.data);
+                    uint8_t channel = event.channel;
+
+                    if (MIDI_IS_STATUS_AFTERTOUCH(status) && (fOptions & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE) == 0)
+                        continue;
+                    if (MIDI_IS_STATUS_CONTROL_CHANGE(status) && (fOptions & PLUGIN_OPTION_SEND_CONTROL_CHANGES) == 0)
+                        continue;
+                    if (MIDI_IS_STATUS_POLYPHONIC_AFTERTOUCH(status) && (fOptions & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH) == 0)
+                        continue;
+                    if (MIDI_IS_STATUS_PITCH_WHEEL_CONTROL(status) && (fOptions & PLUGIN_OPTION_SEND_PITCHBEND) == 0)
+                        continue;
+
+                    // Fix bad note-off
+                    if (status == MIDI_STATUS_NOTE_ON && midiEvent.data[2] == 0)
+                        status -= 0x10;
+
+                    carla_zeroStruct<VstMidiEvent>(fMidiEvents[fMidiEventCount]);
+
+                    fMidiEvents[fMidiEventCount].type = kVstMidiType;
+                    fMidiEvents[fMidiEventCount].byteSize = sizeof(VstMidiEvent);
+                    fMidiEvents[fMidiEventCount].midiData[0] = status + channel;
+                    fMidiEvents[fMidiEventCount].midiData[1] = midiEvent.data[1];
+                    fMidiEvents[fMidiEventCount].midiData[2] = midiEvent.data[2];
+                    fMidiEvents[fMidiEventCount].deltaFrames = sampleAccurate ? startTime : time;
+
+                    fMidiEventCount += 1;
+
+                    if (status == MIDI_STATUS_NOTE_ON)
+                        postponeRtEvent(kPluginPostRtEventNoteOn, channel, midiEvent.data[1], midiEvent.data[2]);
+                    else if (status == MIDI_STATUS_NOTE_OFF)
+                        postponeRtEvent(kPluginPostRtEventNoteOff, channel, midiEvent.data[1], 0.0f);
+
+                    break;
                 }
-            } // End of MIDI Input (System)
+                }
+            }
 
-        } // End of MIDI Input
+            kData->postRtEvents.trySplice();
 
-        CARLA_PROCESS_CONTINUE_CHECK;
+            if (frames > timeOffset)
+                processSingle(inBuffer, outBuffer, frames - timeOffset, timeOffset);
+
+        } // End of Event Input and Processing
 
         // --------------------------------------------------------------------------------------------------------
-        // Plugin processing
+        // Plugin processing (no events)
 
-        if (m_active)
-        {
-            if (! m_activeBefore)
-            {
-                if (midi.portMin)
-                {
-                    for (k=0; k < MAX_MIDI_CHANNELS; k++)
-                    {
-                        memset(&midiEvents[k], 0, sizeof(VstMidiEvent));
-                        midiEvents[k].type = kVstMidiType;
-                        midiEvents[k].byteSize = sizeof(VstMidiEvent);
-                        midiEvents[k].midiData[0] = MIDI_STATUS_CONTROL_CHANGE + k;
-                        midiEvents[k].midiData[1] = MIDI_CONTROL_ALL_SOUND_OFF;
-
-                        memset(&midiEvents[k*2], 0, sizeof(VstMidiEvent));
-                        midiEvents[k*2].type = kVstMidiType;
-                        midiEvents[k*2].byteSize = sizeof(VstMidiEvent);
-                        midiEvents[k*2].midiData[0] = MIDI_STATUS_CONTROL_CHANGE + k;
-                        midiEvents[k*2].midiData[1] = MIDI_CONTROL_ALL_NOTES_OFF;
-                    }
-
-                    midiEventCount = MAX_MIDI_CHANNELS*2;
-                }
-
-                if (m_latency > 0)
-                {
-                    for (i=0; i < aIn.count; i++)
-                        memset(m_latencyBuffers[i], 0, sizeof(float)*m_latency);
-                }
-
-                effect->dispatcher(effect, effMainsChanged, 0, 1, nullptr, 0.0f);
-                effect->dispatcher(effect, effStartProcess, 0, 0, nullptr, 0.0f);
-            }
-
-            if (midiEventCount > 0)
-            {
-                events.numEvents = midiEventCount;
-                events.reserved  = 0;
-                effect->dispatcher(effect, effProcessEvents, 0, 0, &events, 0.0f);
-            }
-
-            // FIXME - make this a global option
-            // don't process if not needed
-            //if ((effect->flags & effFlagsNoSoundInStop) > 0 && aInsPeak[0] == 0.0 && aInsPeak[1] == 0.0 && midiEventCount == 0 && ! midi.portMout)
-            //{
-            if (m_hints & PLUGIN_CAN_PROCESS_REPLACING)
-            {
-                isProcessing = true;
-                effect->processReplacing(effect, inBuffer, outBuffer, frames);
-                isProcessing = false;
-            }
-            else
-            {
-                for (i=0; i < aOut.count; i++)
-                    carla_zeroF(outBuffer[i], frames);
-
-#if ! VST_FORCE_DEPRECATED
-                isProcessing = true;
-                effect->process(effect, inBuffer, outBuffer, frames);
-                isProcessing = false;
-#endif
-            }
-            //}
-        }
         else
         {
-            if (m_activeBefore)
-            {
-                effect->dispatcher(effect, effStopProcess, 0, 0, nullptr, 0.0f);
-                effect->dispatcher(effect, effMainsChanged, 0, 0, nullptr, 0.0f);
-            }
-        }
+            processSingle(inBuffer, outBuffer, frames, 0);
 
-        CARLA_PROCESS_CONTINUE_CHECK;
-
-        // --------------------------------------------------------------------------------------------------------
-        // Post-processing (dry/wet, volume and balance)
-
-        if (m_active)
-        {
-            bool do_drywet  = (m_hints & PLUGIN_CAN_DRYWET) > 0 && x_dryWet != 1.0;
-            bool do_volume  = (m_hints & PLUGIN_CAN_VOLUME) > 0 && x_volume != 1.0;
-            bool do_balance = (m_hints & PLUGIN_CAN_BALANCE) > 0 && (x_balanceLeft != -1.0 || x_balanceRight != 1.0);
-
-            double bal_rangeL, bal_rangeR;
-            float bufValue, oldBufLeft[do_balance ? frames : 1];
-
-            for (i=0; i < aOut.count; i++)
-            {
-                // Dry/Wet
-                if (do_drywet)
-                {
-                    for (k=0; k < frames; k++)
-                    {
-                        if (k < m_latency && m_latency < frames)
-                            bufValue = (aIn.count == 1) ? m_latencyBuffers[0][k] : m_latencyBuffers[i][k];
-                        else
-                            bufValue = (aIn.count == 1) ? inBuffer[0][k-m_latency] : inBuffer[i][k-m_latency];
-
-                        outBuffer[i][k] = (outBuffer[i][k]*x_dryWet)+(bufValue*(1.0-x_dryWet));
-                    }
-                }
-
-                // Balance
-                if (do_balance)
-                {
-                    if (i%2 == 0)
-                        memcpy(&oldBufLeft, outBuffer[i], sizeof(float)*frames);
-
-                    bal_rangeL = (x_balanceLeft+1.0)/2;
-                    bal_rangeR = (x_balanceRight+1.0)/2;
-
-                    for (k=0; k < frames; k++)
-                    {
-                        if (i%2 == 0)
-                        {
-                            // left output
-                            outBuffer[i][k]  = oldBufLeft[k]*(1.0-bal_rangeL);
-                            outBuffer[i][k] += outBuffer[i+1][k]*(1.0-bal_rangeR);
-                        }
-                        else
-                        {
-                            // right
-                            outBuffer[i][k]  = outBuffer[i][k]*bal_rangeR;
-                            outBuffer[i][k] += oldBufLeft[k]*bal_rangeL;
-                        }
-                    }
-                }
-
-                // Volume
-                if (do_volume)
-                {
-                    for (k=0; k < frames; k++)
-                        outBuffer[i][k] *= x_volume;
-                }
-
-                // Output VU
-                if (x_engine->getOptions().processMode != PROCESS_MODE_CONTINUOUS_RACK)
-                {
-                    for (k=0; i < 2 && k < frames; k++)
-                    {
-                        if (std::abs(outBuffer[i][k]) > aOutsPeak[i])
-                            aOutsPeak[i] = std::abs(outBuffer[i][k]);
-                    }
-                }
-            }
-
-            // Latency, save values for next callback
-            if (m_latency > 0 && m_latency < frames)
-            {
-                for (i=0; i < aIn.count; i++)
-                    memcpy(m_latencyBuffers[i], inBuffer[i] + (frames - m_latency), sizeof(float)*m_latency);
-            }
-        }
-        else
-        {
-            // disable any output sound if not active
-            for (i=0; i < aOut.count; i++)
-                carla_zeroF(outBuffer[i], frames);
-
-            aOutsPeak[0] = 0.0;
-            aOutsPeak[1] = 0.0;
-
-        } // End of Post-processing
+        } // End of Plugin processing (no events)
 
         CARLA_PROCESS_CONTINUE_CHECK;
 
         // --------------------------------------------------------------------------------------------------------
         // MIDI Output
 
-        if (midi.portMout && m_active)
+        if (kData->event.portOut != nullptr)
         {
-            uint8_t data[3] = { 0 };
-
-            for (int32_t i = midiEventCount; i < events.numEvents; i++)
+            // reverse lookup MIDI events
+            for (k = (MAX_MIDI_EVENTS*2)-1; k >= fMidiEventCount; k--)
             {
-                data[0] = midiEvents[i].midiData[0];
-                data[1] = midiEvents[i].midiData[1];
-                data[2] = midiEvents[i].midiData[2];
+                if (fMidiEvents[k].type == 0)
+                    break;
 
-                // Fix bad note-off
-                if (MIDI_IS_STATUS_NOTE_ON(data[0]) && data[2] == 0)
-                    data[0] -= 0x10;
+                const uint8_t channel = MIDI_GET_CHANNEL_FROM_DATA(fMidiEvents[k].midiData);
 
-                midi.portMout->writeEvent(midiEvents[i].deltaFrames, data, 3);
+                uint8_t midiData[3] = { 0 };
+                midiData[0] = fMidiEvents[k].midiData[0];
+                midiData[1] = fMidiEvents[k].midiData[1];
+                midiData[2] = fMidiEvents[k].midiData[2];
+
+                kData->event.portOut->writeMidiEvent(fMidiEvents[k].deltaFrames, channel, 0, midiData, 3);
             }
-        } // End of MIDI Output
 
-        CARLA_PROCESS_CONTINUE_CHECK;
+        } // End of Control and MIDI Output
 
         // --------------------------------------------------------------------------------------------------------
-        // Peak Values
 
-        x_engine->setInputPeak(m_id, 0, aInsPeak[0]);
-        x_engine->setInputPeak(m_id, 1, aInsPeak[1]);
-        x_engine->setOutputPeak(m_id, 0, aOutsPeak[0]);
-        x_engine->setOutputPeak(m_id, 1, aOutsPeak[1]);
-
-        m_activeBefore = m_active;
-#endif
+        kData->activeBefore = kData->active;
     }
 
-    void bufferSizeChanged(uint32_t newBufferSize)
+    bool processSingle(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t timeOffset)
+    {
+        uint32_t i, k;
+
+        // --------------------------------------------------------------------------------------------------------
+        // Try lock, silence otherwise
+
+        if (kData->engine->isOffline())
+        {
+            kData->singleMutex.lock();
+        }
+        else if (! kData->singleMutex.tryLock())
+        {
+            for (i=0; i < kData->audioOut.count; i++)
+            {
+                for (k=0; k < frames; k++)
+                    outBuffer[i][k+timeOffset] = 0.0f;
+            }
+
+            return false;
+        }
+
+        // --------------------------------------------------------------------------------------------------------
+        // Run plugin
+
+        if (fMidiEventCount > 0)
+        {
+            fEvents.numEvents = fMidiEventCount;
+            fEvents.reserved  = 0;
+            dispatcher(effProcessEvents, 0, 0, &fEvents, 0.0f);
+        }
+
+        float* vstInBuffer[kData->audioIn.count];
+        float* vstOutBuffer[kData->audioOut.count];
+
+        for (i=0; i < kData->audioIn.count; i++)
+            vstInBuffer[i] = inBuffer[i]+timeOffset;
+        for (i=0; i < kData->audioOut.count; i++)
+            vstOutBuffer[i] = outBuffer[i]+timeOffset;
+
+        fIsProcessing = true;
+
+        if (fHints & PLUGIN_CAN_PROCESS_REPLACING)
+        {
+
+            fEffect->processReplacing(fEffect,
+                                      (kData->audioIn.count > 0) ? vstInBuffer : nullptr,
+                                      (kData->audioOut.count > 0) ? vstOutBuffer : nullptr,
+                                      frames);
+        }
+        else
+        {
+            for (i=0; i < kData->audioOut.count; i++)
+                carla_zeroFloat(vstOutBuffer[i], frames);
+
+#if ! VST_FORCE_DEPRECATED
+            fEffect->process(fEffect,
+                             (kData->audioIn.count > 0) ? vstInBuffer : nullptr,
+                             (kData->audioOut.count > 0) ? vstOutBuffer : nullptr,
+                             frames);
+#endif
+        }
+
+        fIsProcessing = false;
+        fTimeInfo.samplePos += frames;
+
+        // --------------------------------------------------------------------------------------------------------
+        // Post-processing (dry/wet, volume and balance)
+
+        {
+            const bool doVolume  = (fHints & PLUGIN_CAN_VOLUME) > 0 && kData->postProc.volume != 1.0f;
+            const bool doDryWet  = (fHints & PLUGIN_CAN_DRYWET) > 0 && kData->postProc.dryWet != 1.0f;
+            const bool doBalance = (fHints & PLUGIN_CAN_BALANCE) > 0 && (kData->postProc.balanceLeft != -1.0f || kData->postProc.balanceRight != 1.0f);
+
+            float bufValue, oldBufLeft[doBalance ? frames : 1];
+
+            for (i=0; i < kData->audioOut.count; i++)
+            {
+                // Dry/Wet
+                if (doDryWet)
+                {
+                    for (k=0; k < frames; k++)
+                    {
+                        bufValue = inBuffer[(kData->audioIn.count == 1) ? 0 : i][k+timeOffset];
+                        outBuffer[i][k+timeOffset] = (outBuffer[i][k+timeOffset] * kData->postProc.dryWet) + (bufValue * (1.0f - kData->postProc.dryWet));
+                    }
+                }
+
+                // Balance
+                if (doBalance)
+                {
+                    if (i % 2 == 0)
+                        carla_copyFloat(oldBufLeft, outBuffer[i]+timeOffset, frames);
+
+                    float balRangeL = (kData->postProc.balanceLeft  + 1.0f)/2.0f;
+                    float balRangeR = (kData->postProc.balanceRight + 1.0f)/2.0f;
+
+                    for (k=0; k < frames; k++)
+                    {
+                        if (i % 2 == 0)
+                        {
+                            // left
+                            outBuffer[i][k+timeOffset]  = oldBufLeft[k]                * (1.0f - balRangeL);
+                            outBuffer[i][k+timeOffset] += outBuffer[i+1][k+timeOffset] * (1.0f - balRangeR);
+                        }
+                        else
+                        {
+                            // right
+                            outBuffer[i][k+timeOffset]  = outBuffer[i][k+timeOffset] * balRangeR;
+                            outBuffer[i][k+timeOffset] += oldBufLeft[k]              * balRangeL;
+                        }
+                    }
+                }
+
+                // Volume
+                if (doVolume)
+                {
+                    for (k=0; k < frames; k++)
+                        outBuffer[i][k+timeOffset] *= kData->postProc.volume;
+                }
+            }
+
+        } // End of Post-processing
+
+        // --------------------------------------------------------------------------------------------------------
+
+        kData->singleMutex.unlock();
+        return true;
+    }
+
+    void bufferSizeChanged(const uint32_t newBufferSize)
     {
         if (kData->active)
         {
@@ -1458,6 +1493,26 @@ public:
         dispatcher(effSetBlockSizeAndSampleRate, 0, newBufferSize, nullptr, kData->engine->getSampleRate());
 #endif
         dispatcher(effSetBlockSize, 0, newBufferSize, nullptr, 0.0f);
+
+        if (kData->active)
+        {
+            dispatcher(effMainsChanged, 0, 1, nullptr, 0.0f);
+            dispatcher(effStartProcess, 0, 0, nullptr, 0.0f);
+        }
+    }
+
+    void sampleRateChanged(const double newSampleRate)
+    {
+        if (kData->active)
+        {
+            dispatcher(effStopProcess, 0, 0, nullptr, 0.0f);
+            dispatcher(effMainsChanged, 0, 0, nullptr, 0.0f);
+        }
+
+#if ! VST_FORCE_DEPRECATED
+        dispatcher(effSetBlockSizeAndSampleRate, 0, kData->engine->getBufferSize(), nullptr, newSampleRate);
+#endif
+        dispatcher(effSetSampleRate, 0, 0, nullptr, newSampleRate);
 
         if (kData->active)
         {
@@ -1545,128 +1600,6 @@ public:
 
     // -------------------------------------------------------------------
 
-#if 0
-    intptr_t handleAudioMasterTempoAt()
-    {
-        const CarlaEngineTimeInfo* const timeInfo = x_engine->getTimeInfo();
-
-        if (timeInfo->valid & CarlaEngineTimeBBT)
-            return timeInfo->bbt.beats_per_minute * 10000;
-
-        return 0;
-    }
-
-    intptr_t handleAudioMasterIOChanged()
-    {
-        carla_debug("VstPlugin::handleAudioMasterIOChanged()");
-        CARLA_ASSERT(m_enabled);
-
-        // TESTING
-
-        if (! m_enabled)
-            return 1;
-
-        if (x_engine->getOptions().processMode == PROCESS_MODE_CONTINUOUS_RACK)
-        {
-            carla_stderr2("VstPlugin::handleAudioMasterIOChanged() - plugin asked IO change, but it's not supported in rack mode");
-            return 0;
-        }
-
-        engineProcessLock();
-        m_enabled = false;
-        engineProcessUnlock();
-
-        if (m_active)
-        {
-            effect->dispatcher(effect, effStopProcess, 0, 0, nullptr, 0.0f);
-            effect->dispatcher(effect, effMainsChanged, 0, 0, nullptr, 0.0f);
-        }
-
-        reload();
-
-        if (m_active)
-        {
-            effect->dispatcher(effect, effMainsChanged, 0, 1, nullptr, 0.0f);
-            effect->dispatcher(effect, effStartProcess, 0, 0, nullptr, 0.0f);
-        }
-
-        x_engine->callback(CALLBACK_RELOAD_ALL, m_id, 0, 0, 0.0, nullptr);
-
-        return 1;
-    }
-
-    intptr_t handleAudioMasterProcessEvents(const VstEvents* const vstEvents)
-    {
-        CARLA_ASSERT(m_enabled);
-        CARLA_ASSERT(midi.portMout);
-        CARLA_ASSERT(isProcessing);
-
-        if (! m_enabled)
-            return 0;
-
-        if (! midi.portMout)
-            return 0;
-
-        if (! isProcessing)
-        {
-            carla_stderr2("VstPlugin::handleAudioMasterProcessEvents(%p) - received MIDI out events outside audio thread, ignoring", vstEvents);
-            return 0;
-        }
-
-        for (int32_t i=0; i < vstEvents->numEvents && events.numEvents < MAX_MIDI_EVENTS*2; i++)
-        {
-            if (! vstEvents->events[i])
-                break;
-
-            const VstMidiEvent* const vstMidiEvent = (const VstMidiEvent*)vstEvents->events[i];
-
-            if (vstMidiEvent->type == kVstMidiType)
-                memcpy(&midiEvents[events.numEvents++], vstMidiEvent, sizeof(VstMidiEvent));
-        }
-
-        return 1;
-    }
-
-    intptr_t handleAdioMasterSizeWindow(int32_t width, int32_t height)
-    {
-        carla_debug("VstPlugin::handleAudioMasterSizeWindow(%i, %i)", width, height);
-
-        gui.width  = width;
-        gui.height = height;
-
-        x_engine->callback(CALLBACK_RESIZE_GUI, m_id, width, height, 0.0, nullptr);
-
-        return 1;
-    }
-
-    void handleAudioMasterUpdateDisplay()
-    {
-        carla_debug("VstPlugin::handleAudioMasterUpdateDisplay()");
-
-        // Update current program name
-        if (prog.count > 0 && prog.current >= 0)
-        {
-            const int32_t index = prog.current;
-            char strBuf[STR_MAX] = { 0 };
-
-            effect->dispatcher(effect, effGetProgramName, 0, 0, strBuf, 0.0f);
-
-            if (! prog.names[index])
-            {
-                prog.names[index] = strdup(strBuf);
-            }
-            else if (strBuf[0] != 0 && std::strcmp(strBuf, prog.names[index]) != 0)
-            {
-                free((void*)prog.names[index]);
-                prog.names[index] = strdup(strBuf);
-            }
-        }
-
-        // Tell backend to update
-        x_engine->callback(CALLBACK_UPDATE, m_id, 0, 0, 0.0, nullptr);
-    }
-#endif
-
 protected:
     intptr_t dispatcher(int32_t opcode, int32_t index, intptr_t value, void* ptr, float opt)
     {
@@ -1680,7 +1613,7 @@ protected:
     {
 #if 0
         // Cockos VST extensions
-        if (/*effect &&*/ ptr && (uint32_t)opcode == 0xdeadbeef && (uint32_t)index == 0xdeadf00d)
+        if (ptr != nullptr && static_cast<uint32_t>(opcode) == 0xdeadbeef && static_cast<uint32_t>(index) == 0xdeadf00d)
         {
             const char* const func = (char*)ptr;
 
@@ -1716,10 +1649,10 @@ protected:
         switch (opcode)
         {
         case audioMasterAutomate:
-            //CARLA_ASSERT(fEnabled);
+            CARLA_ASSERT(fEnabled);
             CARLA_ASSERT_INT(index < static_cast<int32_t>(kData->param.count), index);
 
-            if (index < 0 || index >= static_cast<int32_t>(kData->param.count) /*|| ! fEnabled*/)
+            if (index < 0 || index >= static_cast<int32_t>(kData->param.count) || ! fEnabled)
                 break;
 
             if (fIsProcessing && ! kData->engine->isOffline())
@@ -1740,7 +1673,8 @@ protected:
             break;
 
         case audioMasterIdle:
-            dispatcher(effEditIdle, 0, 0, nullptr, 0.0f);
+            if (fGui.isVisible)
+                dispatcher(effEditIdle, 0, 0, nullptr, 0.0f);
             break;
 
 #if ! VST_FORCE_DEPRECATED
@@ -1757,7 +1691,6 @@ protected:
 
         case audioMasterGetTime:
             CARLA_ASSERT(fIsProcessing);
-
 #ifdef VESTIGE_HEADER
             ret = getAddressFromPointer(&fTimeInfo);
 #else
@@ -1767,16 +1700,35 @@ protected:
 
 #if 0
         case audioMasterProcessEvents:
-            CARLA_ASSERT(self && ptr);
-            if (self)
+            CARLA_ASSERT(ptr != nullptr);
+            CARLA_ASSERT(m_enabled);
+            CARLA_ASSERT(midi.portMout);
+            CARLA_ASSERT(isProcessing);
+
+            if (! m_enabled)
+                return 0;
+
+            if (! midi.portMout)
+                return 0;
+
+            if (! isProcessing)
             {
-                if (ptr)
-                    ret = self->handleAudioMasterProcessEvents((const VstEvents*)ptr);
-                else
-                    carla_stderr("VstPlugin::hostCallback::audioMasterProcessEvents called with invalid pointer");
+                carla_stderr2("VstPlugin::handleAudioMasterProcessEvents(%p) - received MIDI out events outside audio thread, ignoring", vstEvents);
+                return 0;
             }
-            else
-                carla_stderr("VstPlugin::hostCallback::audioMasterProcessEvents called without valid object");
+
+            for (int32_t i=0; i < vstEvents->numEvents && events.numEvents < MAX_MIDI_EVENTS*2; i++)
+            {
+                if (! vstEvents->events[i])
+                    break;
+
+                const VstMidiEvent* const vstMidiEvent = (const VstMidiEvent*)vstEvents->events[i];
+
+                if (vstMidiEvent->type == kVstMidiType)
+                    memcpy(&midiEvents[events.numEvents++], vstMidiEvent, sizeof(VstMidiEvent));
+            }
+
+            ret = 1;
             break;
 #endif
 
@@ -1785,18 +1737,11 @@ protected:
             // Deprecated in VST SDK 2.4
             break;
 
-#if 0
         case audioMasterTempoAt:
             // Deprecated in VST SDK 2.4
-            CARLA_ASSERT(self);
-            if (self)
-                ret = self->handleAudioMasterTempoAt();
-            else
-                carla_stderr("VstPlugin::hostCallback::audioMasterTempoAt called without valid object");
-            if (ret == 0)
-                ret = 120 * 10000;
+            CARLA_ASSERT(fIsProcessing);
+            ret = fTimeInfo.tempo * 10000;
             break;
-#endif
 
         case audioMasterGetNumAutomatableParameters:
             // Deprecated in VST SDK 2.4
@@ -1811,11 +1756,43 @@ protected:
 
 #if 0
         case audioMasterIOChanged:
-            CARLA_ASSERT(self);
-            if (self)
-                ret = self->handleAudioMasterIOChanged();
-            else
-                carla_stderr("VstPlugin::hostCallback::audioMasterIOChanged called without valid object");
+            CARLA_ASSERT(fEnabled);
+
+            // TESTING
+
+            if (! fEnabled)
+            {
+                ret = 1;
+                break;
+            }
+
+            if (x_engine->getOptions().processMode == PROCESS_MODE_CONTINUOUS_RACK)
+            {
+                carla_stderr2("VstPlugin::handleAudioMasterIOChanged() - plugin asked IO change, but it's not supported in rack mode");
+                return 0;
+            }
+
+            engineProcessLock();
+            m_enabled = false;
+            engineProcessUnlock();
+
+            if (m_active)
+            {
+                effect->dispatcher(effect, effStopProcess, 0, 0, nullptr, 0.0f);
+                effect->dispatcher(effect, effMainsChanged, 0, 0, nullptr, 0.0f);
+            }
+
+            reload();
+
+            if (m_active)
+            {
+                effect->dispatcher(effect, effMainsChanged, 0, 1, nullptr, 0.0f);
+                effect->dispatcher(effect, effStartProcess, 0, 0, nullptr, 0.0f);
+            }
+
+            x_engine->callback(CALLBACK_RELOAD_ALL, m_id, 0, 0, 0.0, nullptr);
+
+            ret = 1;
             break;
 #endif
 
@@ -1824,20 +1801,16 @@ protected:
             fNeedIdle = true;
             break;
 
-#if 0
         case audioMasterSizeWindow:
-            CARLA_ASSERT(self);
-            if (self)
-            {
-                if (index > 0 && value > 0)
-                    ret = self->handleAdioMasterSizeWindow(index, value);
-                else
-                    carla_stderr("VstPlugin::hostCallback::audioMasterSizeWindow called with invalid size");
-            }
-            else
-                carla_stderr("VstPlugin::hostCallback::audioMasterSizeWindow called without valid object");
+            fGui.width  = index;
+            fGui.height = value;
+
+            // FIXME - ensure thread safe
+            if (kData->gui != nullptr)
+                kData->gui->setFixedSize(index, value);
+
+            ret = 1;
             break;
-#endif
 
         case audioMasterGetSampleRate:
             ret = kData->engine->getSampleRate();
@@ -1882,7 +1855,7 @@ protected:
             break;
 
         case audioMasterGetAutomationState:
-            ret = kVstAutomationReadWrite;
+            ret = kData->active ? kVstAutomationReadWrite : kVstAutomationOff;
             break;
 
         case audioMasterOfflineStart:
@@ -1914,10 +1887,6 @@ protected:
             break;
 #endif
 
-        case audioMasterGetLanguage:
-            ret = kVstLangEnglish;
-            break;
-
 #if ! VST_FORCE_DEPRECATED
         case audioMasterOpenWindow:
         case audioMasterCloseWindow:
@@ -1928,22 +1897,39 @@ protected:
 
         case audioMasterGetDirectory:
             // TODO
-            //if (ptr)
-            //    std::strcpy((char*)ptr, "stuff");
-            //else
-            //    carla_stderr("VstPlugin::hostCallback::audioMasterGetDirectory called with invalid pointer");
             break;
 
-#if 0
         case audioMasterUpdateDisplay:
-            CARLA_ASSERT(effect);
-            if (self)
-                self->handleAudioMasterUpdateDisplay();
-            if (effect)
-                effect->dispatcher(effect, effEditIdle, 0, 0, nullptr, 0.0f);
+            // Idle UI if visible
+            if (fGui.isVisible)
+                dispatcher(effEditIdle, 0, 0, nullptr, 0.0f);
+
+            // Update current program
+            if (kData->prog.count > 0)
+            {
+                const int32_t current = dispatcher(effGetProgram, 0, 0, nullptr, 0.0f);
+
+                if (current >= 0 && current < static_cast<int32_t>(kData->prog.count))
+                {
+                    char strBuf[STR_MAX]  = { 0 };
+                    dispatcher(effGetProgramName, 0, 0, strBuf, 0.0f);
+
+                    if (kData->prog.names[current] != nullptr)
+                        delete[] kData->prog.names[current];
+
+                    kData->prog.names[current] = carla_strdup(strBuf);
+
+                    if (kData->prog.current != current)
+                    {
+                        kData->prog.current = current;
+                        kData->engine->callback(CALLBACK_PROGRAM_CHANGED, fId, current, 0, 0.0f, nullptr);
+                    }
+                }
+            }
+
+            kData->engine->callback(CALLBACK_UPDATE, fId, 0, 0, 0.0f, nullptr);
             ret = 1;
             break;
-#endif
 
         case audioMasterBeginEdit:
         case audioMasterEndEdit:
@@ -1983,12 +1969,18 @@ protected:
 public:
     // -------------------------------------------------------------------
 
-    bool init(const char* const filename, const char* const name, const char* const label)
+    // FIXME
+    #ifdef _WIN32
+    # define OS_SEP '\\'
+    #else
+    # define OS_SEP '/'
+    #endif
+
+    bool init(const char* const filename, const char* const name)
     {
         CARLA_ASSERT(kData->engine != nullptr);
         CARLA_ASSERT(kData->client == nullptr);
         CARLA_ASSERT(filename != nullptr);
-        CARLA_ASSERT(label != nullptr);
 
         // ---------------------------------------------------------------
         // open DLL
@@ -2031,7 +2023,7 @@ public:
 #ifdef VESTIGE_HEADER
         fEffect->ptr1 = this;
 #else
-        fEffect->resvd1 = getAddressFromPointer(this);
+        fEffect->resvd1 = ToVstPtr<VstPlugin>(this);
 #endif
 
         dispatcher(effOpen, 0, 0, nullptr, 0.0f);
@@ -2049,9 +2041,14 @@ public:
             dispatcher(effGetEffectName, 0, 0, strBuf, 0.0f);
 
             if (strBuf[0] != 0)
+            {
                 fName = kData->engine->getNewUniquePluginName(strBuf);
+            }
             else
+            {
+                const char* const label = strrchr(filename, OS_SEP)+1;
                 fName = kData->engine->getNewUniquePluginName(label);
+            }
         }
 
         fFilename = filename;
@@ -2095,7 +2092,7 @@ public:
 
             if (engineOptions.preferUiBridges && engineOptions.bridge_vstx11.isNotEmpty() && (fEffect->flags & effFlagsProgramChunks) == 0)
             {
-                kData->osc.thread.setOscData(engineOptions.bridge_vstx11, label);
+                kData->osc.thread.setOscData(engineOptions.bridge_vstx11, nullptr);
                 fGui.isOsc = true;
             }
         }
@@ -2108,6 +2105,7 @@ private:
     AEffect* fEffect;
 
     QByteArray    fChunk;
+    uint32_t      fMidiEventCount;
     VstMidiEvent  fMidiEvents[MAX_MIDI_EVENTS*2];
     VstTimeInfo_R fTimeInfo;
 
@@ -2244,6 +2242,9 @@ private:
                 carla_stderr("carla_vst_audioMasterCallback() - audioMasterCanDo called with invalid pointer");
                 return 0;
             }
+
+        case audioMasterGetLanguage:
+            return kVstLangEnglish;
         }
 
         // Check if 'resvd1' points to us, otherwise register ourselfs if possible
@@ -2304,12 +2305,12 @@ CARLA_BACKEND_START_NAMESPACE
 
 CarlaPlugin* CarlaPlugin::newVST(const Initializer& init)
 {
-    carla_debug("CarlaPlugin::newVST(%p, \"%s\", \"%s\", \"%s\")", init.engine, init.filename, init.name, init.label);
+    carla_debug("CarlaPlugin::newVST({%p, \"%s\", \"%s\"})", init.engine, init.filename, init.name);
 
 #ifdef WANT_VST
     VstPlugin* const plugin = new VstPlugin(init.engine, init.id);
 
-    if (! plugin->init(init.filename, init.name, init.label))
+    if (! plugin->init(init.filename, init.name))
     {
         delete plugin;
         return nullptr;

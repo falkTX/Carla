@@ -367,7 +367,6 @@ const char* ProcessMode2Str(const ProcessMode& mode)
 static inline
 uintptr_t getAddressFromPointer(void* ptr)
 {
-    carla_debug("CarlaBackend::getAddressFromPointer(%p)", ptr);
     CARLA_ASSERT(ptr != nullptr);
 
     uintptr_t* addr = (uintptr_t*)&ptr;

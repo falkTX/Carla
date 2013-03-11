@@ -1188,7 +1188,7 @@ class CarlaMainW(QMainWindow):
         if pwidget is None:
             return
 
-        pwidget.ui.edit_dialog.do_update()
+        pwidget.ui.edit_dialog.updateInfo()
 
     @pyqtSlot(int)
     def slot_handleReloadInfoCallback(self, pluginId):
