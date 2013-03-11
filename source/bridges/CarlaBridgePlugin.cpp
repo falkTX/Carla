@@ -503,6 +503,7 @@ int main(int argc, char* argv[])
     }
 
     QApplication app(argc, argv, true);
+    app.setQuitOnLastWindowClosed(false);
 
     // Init Plugin client
     CarlaPluginClient client(name ? name : label);
@@ -526,7 +527,6 @@ int main(int argc, char* argv[])
     {
         if (useOsc)
         {
-            app.setQuitOnLastWindowClosed(false);
             client.sendOscUpdate();
             client.sendOscBridgeUpdate();
         }

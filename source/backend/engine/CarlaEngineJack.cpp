@@ -1523,7 +1523,7 @@ private:
         {
             for (uint32_t i=0; i < inCount; i++)
             {
-                uint aOutI = (i >= outCount) ? outCount : i;
+                uint32_t aOutI = (i >= outCount) ? outCount : i;
                 jack_port_t* const portIn  = ((CarlaEngineJackAudioPort*)CarlaPluginGetAudioInPort(plugin, i))->kPort;
                 jack_port_t* const portOut = ((CarlaEngineJackAudioPort*)CarlaPluginGetAudioOutPort(plugin, aOutI))->kPort;
 
@@ -1537,7 +1537,7 @@ private:
         {
             for (uint32_t i=0; i < outCount; i++)
             {
-                uint aInI = (i >= inCount) ? inCount : i;
+                uint32_t aInI = (i >= inCount) ? inCount : i;
                 jack_port_t* const portIn  = ((CarlaEngineJackAudioPort*)CarlaPluginGetAudioInPort(plugin, aInI))->kPort;
                 jack_port_t* const portOut = ((CarlaEngineJackAudioPort*)CarlaPluginGetAudioOutPort(plugin, i))->kPort;
 

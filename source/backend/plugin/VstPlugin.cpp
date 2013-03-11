@@ -327,52 +327,8 @@ public:
         CarlaPlugin::setProgram(index, sendGui, sendOsc, sendCallback);
     }
 
-#if 0
     // -------------------------------------------------------------------
     // Set gui stuff
-
-    void setGuiContainer(GuiContainer* const container)
-    {
-
-        // open UI
-
-        {
-            // get UI size again, can't fail now
-            vstRect = nullptr;
-            effect->dispatcher(effect, effEditGetRect, 0, 0, &vstRect, 0.0f);
-
-            if (vstRect)
-            {
-                int width  = vstRect->right  - vstRect->left;
-                int height = vstRect->bottom - vstRect->top;
-
-                if (width <= 0 || height <= 0)
-                {
-                    carla_stderr2("VstPlugin::setGuiContainer(%p) - failed to get proper editor size", container);
-                    return;
-                }
-
-                gui.width  = width;
-                gui.height = height;
-
-                container->setFixedSize(width, height);
-                carla_debug("VstPlugin::setGuiContainer(%p) -> setFixedSize(%i, %i)", container, width, height);
-            }
-            else
-                carla_stderr2("VstPlugin::setGuiContainer(%p) - failed to get plugin editor size", container);
-        }
-        else
-        {
-            // failed to open UI
-            carla_stderr("VstPlugin::setGuiContainer(%p) - failed to open UI", container);
-
-            m_hints &= ~PLUGIN_HAS_GUI;
-            x_engine->callback(CALLBACK_SHOW_GUI, m_id, -1, 0, 0.0, nullptr);
-
-
-        }
-    }
-#endif
 
     void showGui(const bool yesNo)
     {
@@ -407,7 +363,7 @@ public:
 #endif
                 void* const ptr = (void*)kData->gui->getWinId();
 
-                if (dispatcher(effEditOpen, 0, value, ptr, 0.0f) == 1)
+                if (dispatcher(effEditOpen, 0, value, ptr, 0.0f) != 0)
                 {
                     ERect* vstRect = nullptr;
 
@@ -1670,8 +1626,9 @@ protected:
         switch (opcode)
         {
         case audioMasterAutomate:
-            CARLA_ASSERT_INT(index < static_cast<int32_t>(kData->param.count), index);
-            CARLA_SAFE_ASSERT(fEnabled); // plugins should never do this!
+            // plugins should never do this:
+            CARLA_SAFE_ASSERT(fEnabled);
+            CARLA_SAFE_ASSERT_INT(index < static_cast<int32_t>(kData->param.count), index);
 
             if (index < 0 || index >= static_cast<int32_t>(kData->param.count) || ! fEnabled)
                 break;
@@ -1728,7 +1685,6 @@ protected:
 #endif
 
         case audioMasterGetTime:
-            CARLA_ASSERT(fIsProcessing);
 #ifdef VESTIGE_HEADER
             ret = getAddressFromPointer(&fTimeInfo);
 #else
@@ -1843,8 +1799,8 @@ protected:
             CARLA_ASSERT(kData->gui != nullptr);
 
             // FIXME - ensure thread safe
-            if (kData->gui != nullptr)
-                kData->gui->setFixedSize(index, value);
+            //if (kData->gui != nullptr)
+            //    kData->gui->setFixedSize(index, value);
 
             ret = 1;
             break;

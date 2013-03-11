@@ -32,28 +32,28 @@ discovery:
 	$(MAKE) -C source/discovery
 
 posix32:
-	$(MAKE) -C source/bridge posix32
+	$(MAKE) -C source/bridges posix32
 	$(MAKE) -C source/discovery posix32
 
 posix64:
-	$(MAKE) -C source/bridge posix64
+	$(MAKE) -C source/bridges posix64
 	$(MAKE) -C source/discovery posix64
 
 win32:
-	$(MAKE) -C source/bridge win32
+	$(MAKE) -C source/bridges win32
 	$(MAKE) -C source/discovery win32
 
 win64:
-	$(MAKE) -C source/bridge win64
+	$(MAKE) -C source/bridges win64
 	$(MAKE) -C source/discovery win64
 
 wine32:
-	$(MAKE) -C source/jackbridge wine32
-	$(LINK) source/libs/jackbridge/libcarla-jackbridge-win32.dll.so source/bridge/libcarla-jackbridge-win32.dll
+	$(MAKE) -C source/libs jackbridge-win32.dll.so
+	$(LINK) ../libs/jackbridge-win32.dll.so source/bridges/jackbridge-win32.dll
 
 wine64:
-	$(MAKE) -C source/jackbridge wine64
-	$(LINK) source/libs/jackbridge/libcarla-jackbridge-win64.dll.so source/bridge/libcarla-jackbridge-win64.dll
+	$(MAKE) -C source/libs jackbridge-win64.dll.so
+	$(LINK) ../libs/jackbridge-win64.dll.so source/bridges/jackbridge-win64.dll
 
 # -----------------------------------------------------------------------------------------------------------------------------------------
 # Resources

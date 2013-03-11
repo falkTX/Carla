@@ -141,8 +141,14 @@ public:
     {
         CARLA_ASSERT(fDescriptor != nullptr);
 
+#ifdef __USE_GNU
         const bool isDssiVst = fFilename.contains("dssi-vst", true);
         const bool isZASX    = fFilename.contains("zynaddsubfx", true);
+#else
+        const bool isDssiVst = fFilename.contains("dssi-vst");
+        const bool isZASX    = fFilename.contains("zynaddsubfx");
+#endif
+
         unsigned int options = 0x0;
 
         options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
@@ -705,8 +711,13 @@ public:
 
         // plugin hints
         const bool hasGUI    = (fHints & PLUGIN_HAS_GUI);
+#ifdef __USE_GNU
         const bool isDssiVst = fFilename.contains("dssi-vst", true);
         const bool isZASX    = fFilename.contains("zynaddsubfx", true);
+#else
+        const bool isDssiVst = fFilename.contains("dssi-vst");
+        const bool isZASX    = fFilename.contains("zynaddsubfx");
+#endif
 
         fHints = 0x0;
 

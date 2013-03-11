@@ -19,8 +19,7 @@ BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo QtCore QtXml)
 LINK_FLAGS      += $(shell pkg-config --libs liblo QtCore QtXml) -lpthread
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-BUILD_CXX_FLAGS += -DWANT_LADSPA -DWANT_DSSI
-#-DWANT_LV2 -DWANT_VST
+BUILD_CXX_FLAGS += -DWANT_LADSPA -DWANT_DSSI -DWANT_LV2 -DWANT_VST
 endif
 
 ifeq ($(HAVE_QT5),true)
@@ -41,15 +40,23 @@ BUILD_PLUGIN_FLAGS += $(shell pkg-config --cflags jack) $(QT_UI_FLAGS)
 LINK_PLUGIN_FLAGS   = $(LINK_FLAGS)
 LINK_PLUGIN_FLAGS  += $(QT_UI_LIBS)
 
+NATIVE_BUILD_FLAGS  = $(BUILD_PLUGIN_FLAGS)
+NATIVE_LINK_FLAGS   = $(LINK_PLUGIN_FLAGS) $(shell pkg-config --libs jack) -ldl
+
+ifeq ($(HAVE_SUIL),true)
+NATIVE_BUILD_FLAGS += $(shell pkg-config --cflags suil-0) -DWANT_SUIL
+NATIVE_LINK_FLAGS  += $(shell pkg-config --libs suil-0)
+endif
+
 POSIX_BUILD_FLAGS   = $(BUILD_PLUGIN_FLAGS)
 POSIX_32BIT_FLAGS   = $(32BIT_FLAGS) -L/usr/lib32 -L/usr/lib/i386-linux-gnu
 POSIX_64BIT_FLAGS   = $(64BIT_FLAGS) -L/usr/lib64 -L/usr/lib/x86_64-linux-gnu
 POSIX_LINK_FLAGS    = $(LINK_PLUGIN_FLAGS) $(shell pkg-config --libs jack) -ldl
 
-WIN_BUILD_FLAGS     = $(BUILD_PLUGIN_FLAGS) -DJACKBRIDGE_EXPORT -DPTW32_STATIC_LIB
+WIN_BUILD_FLAGS     = $(BUILD_PLUGIN_FLAGS) -DJACKBRIDGE_EXPORT -DPTW32_STATIC_LIB -I../libs/jackbridge
 WIN_32BIT_FLAGS     = $(32BIT_FLAGS)
 WIN_64BIT_FLAGS     = $(64BIT_FLAGS)
-WIN_LINK_FLAGS      = $(LINK_PLUGIN_FLAGS) -mwindows -L../carla-jackbridge -lpthread -lwinspool -lole32 -luuid -limm32 -lshell32 -lws2_32
+WIN_LINK_FLAGS      = $(LINK_PLUGIN_FLAGS) -mwindows -L../libs -lpthread -lwinspool -lole32 -luuid -limm32 -lshell32 -lws2_32
 
 # --------------------------------------------------------------
 # UI bridges
@@ -234,14 +241,6 @@ carla-bridge-vst-x11: $(OBJS_UI_VST_X11)
 # --------------------------------------------------------------
 # native
 
-NATIVE_BUILD_FLAGS  = $(BUILD_PLUGIN_FLAGS)
-NATIVE_LINK_FLAGS   = $(LINK_PLUGIN_FLAGS) $(shell pkg-config --libs jack) -ldl
-
-ifeq ($(HAVE_SUIL),true)
-NATIVE_BUILD_FLAGS += $(shell pkg-config --cflags suil-0) -DWANT_SUIL
-NATIVE_LINK_FLAGS  += $(shell pkg-config --libs suil-0)
-endif
-
 OBJS_NATIVE  = CarlaBridgePlugin__native.o \
 	CarlaBridgeClient__native.o CarlaBridgeOsc__native.o
 
@@ -283,29 +282,37 @@ carla-bridge-native: $(OBJS_NATIVE)
 # --------------------------------------------------------------
 # posix32
 
-OBJS_POSIX32  = carla_bridge_plugin__posix32.o \
-	carla_bridge_client__posix32.o carla_bridge_osc__posix32.o
+OBJS_POSIX32  = CarlaBridgePlugin__posix32.o \
+	CarlaBridgeClient__posix32.o CarlaBridgeOsc__posix32.o
 
 # carla-engine
 OBJS_POSIX32 += \
-	../carla-engine/carla_engine__posix32.o \
-	../carla-engine/carla_engine_osc__posix32.o \
-	../carla-engine/carla_engine_thread__posix32.o \
-	../carla-engine/jack__posix32.o
+	../backend/engine/CarlaEngine__posix32.o \
+	../backend/engine/CarlaEngineOsc__posix32.o \
+	../backend/engine/CarlaEngineThread__posix32.o \
+	../backend/engine/CarlaEngineJack__posix32.o
 
 # carla-plugin
 OBJS_POSIX32 += \
-	../carla-plugin/carla_plugin__posix32.o \
-	../carla-plugin/carla_plugin_thread__posix32.o \
-	../carla-plugin/ladspa__posix32.o \
-	../carla-plugin/dssi__posix32.o \
-	../carla-plugin/lv2__posix32.o \
-	../carla-plugin/vst__posix32.o
+	../backend/plugin/CarlaPlugin__posix32.o \
+	../backend/plugin/CarlaPluginThread__posix32.o \
+	../backend/plugin/NativePlugin__posix32.o \
+	../backend/plugin/LadspaPlugin__posix32.o \
+	../backend/plugin/DssiPlugin__posix32.o \
+	../backend/plugin/Lv2Plugin__posix32.o \
+	../backend/plugin/VstPlugin__posix32.o \
+	../backend/plugin/Vst3Plugin__posix32.o \
+	../backend/plugin/FluidSynthPlugin__posix32.o \
+	../backend/plugin/LinuxSamplerPlugin__posix32.o
+
+# carla-standalone
+OBJS_POSIX32 += \
+	../backend/standalone/CarlaStandalone__posix32.o
 
 # libs
 OBJS_POSIX32 += \
-	../carla-lilv/carla_lilv_posix32.a \
-	../carla-rtmempool/carla_rtmempool_posix32.a
+	../libs/lilv_posix32.a \
+	../libs/rtmempool_posix32.a
 
 carla-bridge-posix32: $(OBJS_POSIX32)
 	$(CXX) $^ $(POSIX_LINK_FLAGS) $(POSIX_32BIT_FLAGS) -o $@ && $(STRIP) $@
@@ -316,33 +323,37 @@ carla-bridge-posix32: $(OBJS_POSIX32)
 # --------------------------------------------------------------
 # posix64
 
-OBJS_POSIX64  = carla_bridge_plugin__posix64.o \
-	carla_bridge_client__posix64.o carla_bridge_osc__posix64.o
-
-# carla
-OBJS_POSIX64 += \
-	../carla/Shared__posix64.o
+OBJS_POSIX64  = CarlaBridgePlugin__posix64.o \
+	CarlaBridgeClient__posix64.o CarlaBridgeOsc__posix64.o
 
 # carla-engine
 OBJS_POSIX64 += \
-	../carla-engine/carla_engine__posix64.o \
-	../carla-engine/carla_engine_osc__posix64.o \
-	../carla-engine/carla_engine_thread__posix64.o \
-	../carla-engine/jack__posix64.o
+	../backend/engine/CarlaEngine__posix64.o \
+	../backend/engine/CarlaEngineOsc__posix64.o \
+	../backend/engine/CarlaEngineThread__posix64.o \
+	../backend/engine/CarlaEngineJack__posix64.o
 
 # carla-plugin
 OBJS_POSIX64 += \
-	../carla-plugin/carla_plugin__posix64.o \
-	../carla-plugin/carla_plugin_thread__posix64.o \
-	../carla-plugin/ladspa__posix64.o \
-	../carla-plugin/dssi__posix64.o \
-	../carla-plugin/lv2__posix64.o \
-	../carla-plugin/vst__posix64.o
+	../backend/plugin/CarlaPlugin__posix64.o \
+	../backend/plugin/CarlaPluginThread__posix64.o \
+	../backend/plugin/NativePlugin__posix64.o \
+	../backend/plugin/LadspaPlugin__posix64.o \
+	../backend/plugin/DssiPlugin__posix64.o \
+	../backend/plugin/Lv2Plugin__posix64.o \
+	../backend/plugin/VstPlugin__posix64.o \
+	../backend/plugin/Vst3Plugin__posix64.o \
+	../backend/plugin/FluidSynthPlugin__posix64.o \
+	../backend/plugin/LinuxSamplerPlugin__posix64.o
+
+# carla-standalone
+OBJS_POSIX64 += \
+	../backend/standalone/CarlaStandalone__posix64.o
 
 # libs
 OBJS_POSIX64 += \
-	../carla-lilv/carla_lilv_posix64.a \
-	../carla-rtmempool/carla_rtmempool_posix64.a
+	../libs/lilv_posix64.a \
+	../libs/rtmempool_posix64.a
 
 carla-bridge-posix64: $(OBJS_POSIX64)
 	$(CXX) $^ $(POSIX_LINK_FLAGS) $(POSIX_64BIT_FLAGS) -o $@ && $(STRIP) $@
@@ -353,32 +364,40 @@ carla-bridge-posix64: $(OBJS_POSIX64)
 # --------------------------------------------------------------
 # win32
 
-OBJS_WIN32 = carla_bridge_plugin__win32.o \
-	carla_bridge_client__win32.o carla_bridge_osc__win32.o
+OBJS_WIN32  = CarlaBridgePlugin__win32.o \
+	CarlaBridgeClient__win32.o CarlaBridgeOsc__win32.o
 
 # carla-engine
 OBJS_WIN32 += \
-	../carla-engine/carla_engine__win32.o \
-	../carla-engine/carla_engine_osc__win32.o \
-	../carla-engine/carla_engine_thread__win32.o \
-	../carla-engine/jack__win32.o
+	../backend/engine/CarlaEngine__win32.o \
+	../backend/engine/CarlaEngineOsc__win32.o \
+	../backend/engine/CarlaEngineThread__win32.o \
+	../backend/engine/CarlaEngineJack__win32.o
 
 # carla-plugin
 OBJS_WIN32 += \
-	../carla-plugin/carla_plugin__win32.o \
-	../carla-plugin/carla_plugin_thread__win32.o \
-	../carla-plugin/ladspa__win32.o \
-	../carla-plugin/dssi__win32.o \
-	../carla-plugin/lv2__win32.o \
-	../carla-plugin/vst__win32.o
+	../backend/plugin/CarlaPlugin__win32.o \
+	../backend/plugin/CarlaPluginThread__win32.o \
+	../backend/plugin/NativePlugin__win32.o \
+	../backend/plugin/LadspaPlugin__win32.o \
+	../backend/plugin/DssiPlugin__win32.o \
+	../backend/plugin/Lv2Plugin__win32.o \
+	../backend/plugin/VstPlugin__win32.o \
+	../backend/plugin/Vst3Plugin__win32.o \
+	../backend/plugin/FluidSynthPlugin__win32.o \
+	../backend/plugin/LinuxSamplerPlugin__win32.o
+
+# carla-standalone
+OBJS_WIN32 += \
+	../backend/standalone/CarlaStandalone__win32.o
 
 # libs
 OBJS_WIN32 += \
-	../carla-lilv/carla_lilv_win32.a \
-	../carla-rtmempool/carla_rtmempool_win32.a
+	../libs/lilv_win32.a \
+	../libs/rtmempool_win32.a
 
-carla-bridge-win32.exe: $(OBJS_WIN32) ../carla-jackbridge/libcarla-jackbridge-win32.dll
-	$(CXX) $(OBJS_WIN32) $(WIN_32BIT_FLAGS) $(WIN_LINK_FLAGS) -lcarla-jackbridge-win32 -o $@ && $(STRIP) $@
+carla-bridge-win32.exe: $(OBJS_WIN32)  ../libs/jackbridge-win32.dll
+	$(CXX) $(OBJS_WIN32) $(WIN_32BIT_FLAGS) $(WIN_LINK_FLAGS) -ljackbridge-win32 -o $@ && $(STRIP) $@
 
 %__win32.o: %.cpp
 	$(CXX) $< $(WIN_BUILD_FLAGS) $(WIN_32BIT_FLAGS) -c -o $@
@@ -386,32 +405,40 @@ carla-bridge-win32.exe: $(OBJS_WIN32) ../carla-jackbridge/libcarla-jackbridge-wi
 # --------------------------------------------------------------
 # win64
 
-OBJS_WIN64 = carla_bridge_plugin__win64.o \
-	carla_bridge_client__win64.o carla_bridge_osc__win64.o
+OBJS_WIN64  = CarlaBridgePlugin__win64.o \
+	CarlaBridgeClient__win64.o CarlaBridgeOsc__win64.o
 
 # carla-engine
 OBJS_WIN64 += \
-	../carla-engine/carla_engine__win64.o \
-	../carla-engine/carla_engine_osc__win64.o \
-	../carla-engine/carla_engine_thread__win64.o \
-	../carla-engine/jack__win64.o
+	../backend/engine/CarlaEngine__win64.o \
+	../backend/engine/CarlaEngineOsc__win64.o \
+	../backend/engine/CarlaEngineThread__win64.o \
+	../backend/engine/CarlaEngineJack__win64.o
 
 # carla-plugin
 OBJS_WIN64 += \
-	../carla-plugin/carla_plugin__win64.o \
-	../carla-plugin/carla_plugin_thread__win64.o \
-	../carla-plugin/ladspa__win64.o \
-	../carla-plugin/dssi__win64.o \
-	../carla-plugin/lv2__win64.o \
-	../carla-plugin/vst__win64.o
+	../backend/plugin/CarlaPlugin__win64.o \
+	../backend/plugin/CarlaPluginThread__win64.o \
+	../backend/plugin/NativePlugin__win64.o \
+	../backend/plugin/LadspaPlugin__win64.o \
+	../backend/plugin/DssiPlugin__win64.o \
+	../backend/plugin/Lv2Plugin__win64.o \
+	../backend/plugin/VstPlugin__win64.o \
+	../backend/plugin/Vst3Plugin__win64.o \
+	../backend/plugin/FluidSynthPlugin__win64.o \
+	../backend/plugin/LinuxSamplerPlugin__win64.o
+
+# carla-standalone
+OBJS_WIN64 += \
+	../backend/standalone/CarlaStandalone__win64.o
 
 # libs
 OBJS_WIN64 += \
-	../carla-lilv/carla_lilv_win64.a \
-	../carla-rtmempool/carla_rtmempool_win64.a
+	../libs/lilv_win64.a \
+	../libs/rtmempool_win64.a
 
-carla-bridge-win64.exe: $(OBJS_WIN64) ../carla-jackbridge/libcarla-jackbridge-win64.dll
-	$(CXX) $(OBJS_WIN64) $(WIN_64BIT_FLAGS) $(WIN_LINK_FLAGS) -lcarla-jackbridge-win64 -o $@ && $(STRIP) $@
+carla-bridge-win64.exe: $(OBJS_WIN64) ../libs/jackbridge-win64.dll
+	$(CXX) $(OBJS_WIN64) $(WIN_64BIT_FLAGS) $(WIN_LINK_FLAGS) -ljackbridge-win64 -o $@ && $(STRIP) $@
 
 %__win64.o: %.cpp
 	$(CXX) $< $(WIN_BUILD_FLAGS) $(WIN_64BIT_FLAGS) -c -o $@
@@ -420,12 +447,6 @@ carla-bridge-win64.exe: $(OBJS_WIN64) ../carla-jackbridge/libcarla-jackbridge-wi
 
 ../libs/%:
 	$(MAKE) -C ../libs $*
-
-../carla-jackbridge/libcarla-jackbridge-win32.dll:
-	$(MAKE) -C ../carla-jackbridge win32
-
-../carla-jackbridge/libcarla-jackbridge-win64.dll:
-	$(MAKE) -C ../carla-jackbridge win64
 
 # --------------------------------------------------------------
 

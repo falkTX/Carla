@@ -155,7 +155,12 @@ public:
 
     unsigned int availableOptions()
     {
+#ifdef __USE_GNU
         const bool isDssiVst = fFilename.contains("dssi-vst", true);
+#else
+        const bool isDssiVst = fFilename.contains("dssi-vst");
+#endif
+
         unsigned int options = 0x0;
 
         if (! isDssiVst)
