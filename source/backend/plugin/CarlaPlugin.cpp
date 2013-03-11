@@ -21,8 +21,7 @@
 
 #include <QtCore/QFile>
 #include <QtCore/QTextStream>
-
-//#include <QtGui/QtEvents>
+#include <QtGui/QCloseEvent>
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -1972,24 +1971,16 @@ CarlaPlugin::ScopedProcessLocker::~ScopedProcessLocker()
 // -------------------------------------------------------------------
 // CarlaPluginGUI
 
-#if 0
 CarlaPluginGUI::CarlaPluginGUI(QWidget* const parent, Callback* const callback)
     : QMainWindow(parent),
-      kCallback(callback)
+      kCallback(callback),
+      fContainer(this)
 {
-    carla_debug("CarlaPluginGUI::CarlaPluginGUI(%p)", parent);
-    //CARLA_ASSERT(callback);
+    carla_debug("CarlaPluginGUI::CarlaPluginGUI(%p, %p)", parent, callback);
+    CARLA_ASSERT(callback != nullptr);
 
-    //m_container = new GuiContainer(this);
-    //setCentralWidget(m_container);
-    //adjustSize();
-
-    //m_container->setParent(this);
-    //m_container->show();
-
-    //m_resizable = true;
-
-    //setNewSize(50, 50);
+    setCentralWidget(&fContainer);
+    adjustSize();
 
     QMainWindow::setVisible(false);
 }
@@ -1997,109 +1988,30 @@ CarlaPluginGUI::CarlaPluginGUI(QWidget* const parent, Callback* const callback)
 CarlaPluginGUI::~CarlaPluginGUI()
 {
     carla_debug("CarlaPluginGUI::~CarlaPluginGUI()");
-    //CARLA_ASSERT(m_container);
-
-    // FIXME, automatically deleted by parent ?
-    //delete m_container;
-}
-#endif
-
-#if 0
-
-// -------------------------------------------------------------------
-
-GuiContainer* CarlaPluginGUI::getContainer() const
-{
-    return m_container;
 }
 
 WId CarlaPluginGUI::getWinId() const
 {
-    return m_container->winId();
-}
-
-// -------------------------------------------------------------------
-
-void CarlaPluginGUI::setNewSize(int width, int height)
-{
-    carla_debug("CarlaPluginGUI::setNewSize(%i, %i)", width, height);
-
-    if (width < 30)
-        width = 30;
-    if (height < 30)
-        height = 30;
-
-    if (m_resizable)
-    {
-        resize(width, height);
-    }
-    else
-    {
-        setFixedSize(width, height);
-        m_container->setFixedSize(width, height);
-    }
-}
-
-void CarlaPluginGUI::setResizable(bool resizable)
-{
-    m_resizable = resizable;
-    setNewSize(width(), height());
-
-#ifdef Q_OS_WIN
-    if (! resizable)
-        setWindowFlags(windowFlags() | Qt::MSWindowsFixedSizeDialogHint);
-#endif
-}
-
-void CarlaPluginGUI::setTitle(const char* const title)
-{
-    CARLA_ASSERT(title);
-    setWindowTitle(QString("%1 (GUI)").arg(title));
-}
-
-void CarlaPluginGUI::setVisible(const bool yesNo)
-{
-    carla_debug("CarlaPluginGUI::setVisible(%s)", bool2str(yesNo));
-
-    if (yesNo)
-    {
-        if (! m_geometry.isNull())
-            restoreGeometry(m_geometry);
-    }
-    else
-        m_geometry = saveGeometry();
-
-    QMainWindow::setVisible(yesNo);
-}
-
-// -------------------------------------------------------------------
-
-void CarlaPluginGUI::hideEvent(QHideEvent* const event)
-{
-    carla_debug("CarlaPluginGUI::hideEvent(%p)", event);
-    CARLA_ASSERT(event);
-
-    event->accept();
-    close();
+    carla_debug("CarlaPluginGUI::getWinId()");
+    return fContainer.winId();
 }
 
 void CarlaPluginGUI::closeEvent(QCloseEvent* const event)
 {
     carla_debug("CarlaPluginGUI::closeEvent(%p)", event);
-    CARLA_ASSERT(event);
+    CARLA_ASSERT(event != nullptr);
 
-    if (event->spontaneous())
+    if (! event->spontaneous())
     {
-        if (m_callback)
-            m_callback->guiClosedCallback();
-
-        QMainWindow::closeEvent(event);
+        event->ignore();
         return;
     }
 
-    event->ignore();
+    if (kCallback != nullptr)
+        kCallback->guiClosedCallback();
+
+    QMainWindow::closeEvent(event);
 }
-#endif
 
 // -------------------------------------------------------------------
 

@@ -1541,7 +1541,7 @@ def engineCallback(ptr, action, pluginId, value1, value2, value3, valueStr):
     #elif action == CALLBACK_NSM_SAVE:
         #Carla.gui.emit(SIGNAL("NSM_SaveCallback()"))
     elif action == CALLBACK_ERROR:
-        Carla.gui.emit(SIGNAL("ErrorCallback(QString)"), valueStr)
+        Carla.gui.emit(SIGNAL("ErrorCallback(QString)"), cString(valueStr))
     elif action == CALLBACK_QUIT:
         Carla.gui.emit(SIGNAL("QuitCallback()"))
 

@@ -182,6 +182,10 @@ const char* vstEffectOpcode2str(const int32_t opcode)
         return "effEditMouse";
     case effEditKey:
         return "effEditKey";
+#endif
+    case effEditIdle:
+        return "effEditIdle";
+#if ! VST_FORCE_DEPRECATED
     case effEditTop:
         return "effEditTop";
     case effEditSleep:

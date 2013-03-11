@@ -31,6 +31,14 @@
 
 #include <QtGui/QMainWindow>
 
+#ifdef Q_WS_X11
+# include <QtGui/QX11EmbedContainer>
+typedef QX11EmbedContainer GuiContainer;
+#else
+# include <QtGui/QWidget>
+typedef QWidget GuiContainer;
+#endif
+
 #define CARLA_DECLARE_NON_COPY_STRUCT(structName) \
     structName(structName&) = delete;             \
     structName(const structName&) = delete;
@@ -400,8 +408,14 @@ public:
     CarlaPluginGUI(QWidget* const parent, Callback* const callback);
     ~CarlaPluginGUI();
 
+    WId getWinId() const;
+
+protected:
+    void closeEvent(QCloseEvent* const event);
+
 private:
     Callback* const kCallback;
+    GuiContainer fContainer;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginGUI)
 };
@@ -559,6 +573,24 @@ struct CarlaPluginProtectedData {
     CarlaPluginProtectedData(CarlaPluginProtectedData&) = delete;
     CarlaPluginProtectedData(const CarlaPluginProtectedData&) = delete;
 
+    void createUiIfNeeded(CarlaPluginGUI::Callback* const callback)
+    {
+        if (gui != nullptr)
+            return;
+
+        gui = new CarlaPluginGUI(nullptr, callback);
+    }
+
+    void destroyUiIfNeeded()
+    {
+        if (gui == nullptr)
+            return;
+
+        gui->close();
+        delete gui;
+        gui = nullptr;
+    }
+
     static CarlaEngine* getEngine(CarlaPlugin* const plugin)
     {
         return plugin->kData->engine;
@@ -587,104 +619,3 @@ struct CarlaPluginProtectedData {
 CARLA_BACKEND_END_NAMESPACE
 
 #endif // __CARLA_PLUGIN_INTERNAL_HPP__
-
-// common includes
-//#include <cmath>
-//#include <vector>
-//#include <QtCore/QMutex>
-//#include <QtGui/QMainWindow>
-
-//#ifdef Q_WS_X11
-//# include <QtGui/QX11EmbedContainer>
-//typedef QX11EmbedContainer GuiContainer;
-//#else
-//# include <QtGui/QWidget>
-//typedef QWidget GuiContainer;
-//#endif
-
-#if 0
-
-/*!
- * \class CarlaPluginGUI
- *
- * \brief Carla Backend gui plugin class
- *
- * \see CarlaPlugin
- */
-class CarlaPluginGUI : public QMainWindow
-{
-public:
-    /*!
-     * \class Callback
-     *
-     * \brief Carla plugin GUI callback
-     */
-    class Callback
-    {
-    public:
-        virtual ~Callback() {}
-        virtual void guiClosedCallback() = 0;
-    };
-
-    // -------------------------------------------------------------------
-    // Constructor and destructor
-
-    /*!
-     * TODO
-     */
-    CarlaPluginGUI(QWidget* const parent, Callback* const callback);
-
-    /*!
-     * TODO
-     */
-    ~CarlaPluginGUI();
-
-    // -------------------------------------------------------------------
-    // Get data
-
-    /*!
-     * TODO
-     */
-    GuiContainer* getContainer() const;
-
-    /*!
-     * TODO
-     */
-    WId getWinId() const;
-
-    // -------------------------------------------------------------------
-    // Set data
-
-    /*!
-     * TODO
-     */
-    void setNewSize(const int width, const int height);
-
-    /*!
-     * TODO
-     */
-    void setResizable(const bool resizable);
-
-    /*!
-     * TODO
-     */
-    void setTitle(const char* const title);
-
-    /*!
-     * TODO
-     */
-    void setVisible(const bool yesNo);
-
-    // -------------------------------------------------------------------
-
-private:
-    Callback* const m_callback;
-    GuiContainer*   m_container;
-
-    QByteArray m_geometry;
-    bool m_resizable;
-
-    void hideEvent(QHideEvent* const event);
-    void closeEvent(QCloseEvent* const event);
-};
-#endif

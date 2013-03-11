@@ -37,7 +37,8 @@ const unsigned int PLUGIN_USES_OLD_VSTSDK       = 0x4000; //!< VST Plugin uses a
 const unsigned int PLUGIN_WANTS_MIDI_INPUT      = 0x8000; //!< VST Plugin wants MIDI input
 /**@}*/
 
-class VstPlugin : public CarlaPlugin
+class VstPlugin : public CarlaPlugin,
+                  public CarlaPluginGUI::Callback
 {
 public:
     VstPlugin(CarlaEngine* const engine, const unsigned short id)
@@ -332,39 +333,9 @@ public:
 
     void setGuiContainer(GuiContainer* const container)
     {
-        carla_debug("VstPlugin::setGuiContainer(%p)", container);
-        CARLA_ASSERT(container);
-
-        if (gui.type == GUI_EXTERNAL_OSC)
-            return;
-
-        int32_t value   = 0;
-        void* const ptr = (void*)container->winId();
-        ERect* vstRect  = nullptr;
-
-#ifdef Q_WS_X11
-        value = (intptr_t)QX11Info::display();
-#endif
-
-        // get UI size before opening UI, plugin may refuse this
-        effect->dispatcher(effect, effEditGetRect, 0, 0, &vstRect, 0.0f);
-
-        if (vstRect)
-        {
-            int width  = vstRect->right  - vstRect->left;
-            int height = vstRect->bottom - vstRect->top;
-
-            if (width > 0 || height > 0)
-            {
-                container->setFixedSize(width, height);
-#ifdef BUILD_BRIDGE
-                x_engine->callback(CALLBACK_RESIZE_GUI, m_id, width, height, 1.0, nullptr);
-#endif
-            }
-        }
 
         // open UI
-        if (effect->dispatcher(effect, effEditOpen, 0, value, ptr, 0.0f) == 1)
+
         {
             // get UI size again, can't fail now
             vstRect = nullptr;
@@ -398,7 +369,7 @@ public:
             m_hints &= ~PLUGIN_HAS_GUI;
             x_engine->callback(CALLBACK_SHOW_GUI, m_id, -1, 0, 0.0, nullptr);
 
-            effect->dispatcher(effect, effEditClose, 0, 0, nullptr, 0.0f);
+
         }
     }
 #endif
@@ -426,8 +397,49 @@ public:
         }
         else
         {
-            if (yesNo && fGui.width > 0 && fGui.height > 0 && kData->gui != nullptr)
-                kData->gui->setFixedSize(fGui.width, fGui.height);
+            if (yesNo)
+            {
+                kData->createUiIfNeeded(this);
+
+                int32_t value = 0;
+#ifdef Q_WS_X11
+                //value = (intptr_t)QX11Info::display();
+#endif
+                void* const ptr = (void*)kData->gui->getWinId();
+
+                if (dispatcher(effEditOpen, 0, value, ptr, 0.0f) == 1)
+                {
+                    ERect* vstRect = nullptr;
+
+                    dispatcher(effEditGetRect, 0, 0, &vstRect, 0.0f);
+
+                    if (vstRect != nullptr)
+                    {
+                        const int16_t width  = vstRect->right  - vstRect->left;
+                        const int16_t height = vstRect->bottom - vstRect->top;
+
+                        if (width > 0 && height > 0)
+                        {
+                            kData->gui->setFixedSize(width, height);
+                        }
+                    }
+
+                    kData->gui->setWindowTitle(QString("%1 (GUI)").arg((const char*)fName));
+                    kData->gui->show();
+                }
+                else
+                {
+                    kData->destroyUiIfNeeded();
+                    kData->engine->callback(CALLBACK_ERROR, fId, 0, 0, 0.0f, "Plugin refused to open its own UI");
+                    kData->engine->callback(CALLBACK_SHOW_GUI, fId, 0, 0, 0.0f, nullptr);
+                    return;
+                }
+            }
+            else if (fGui.isVisible)
+            {
+                dispatcher(effEditClose, 0, 0, nullptr, 0.0f);
+                kData->destroyUiIfNeeded();
+            }
         }
 
         fGui.isVisible = yesNo;
@@ -1601,9 +1613,18 @@ public:
     // -------------------------------------------------------------------
 
 protected:
+    void guiClosedCallback()
+    {
+        showGui(false);
+        kData->engine->callback(CALLBACK_SHOW_GUI, fId, 0, 0, 0.0f, nullptr);
+    }
+
     intptr_t dispatcher(int32_t opcode, int32_t index, intptr_t value, void* ptr, float opt)
     {
-        carla_debug("VstPlugin::dispatcher(%02i:%s, %i, " P_INTPTR ", %p, %f)", opcode, vstEffectOpcode2str(opcode), index, value, ptr, opt);
+#if defined(DEBUG) && ! defined(CARLA_OS_WIN)
+        if (opcode != effEditIdle && opcode != effProcessEvents)
+            carla_debug("VstPlugin::dispatcher(%02i:%s, %i, " P_INTPTR ", %p, %f)", opcode, vstEffectOpcode2str(opcode), index, value, ptr, opt);
+#endif
         CARLA_ASSERT(fEffect != nullptr);
 
         return (fEffect != nullptr) ? fEffect->dispatcher(fEffect, opcode, index, value, ptr, opt) : 0;
@@ -1649,21 +1670,38 @@ protected:
         switch (opcode)
         {
         case audioMasterAutomate:
-            CARLA_ASSERT(fEnabled);
             CARLA_ASSERT_INT(index < static_cast<int32_t>(kData->param.count), index);
+            CARLA_SAFE_ASSERT(fEnabled); // plugins should never do this!
 
             if (index < 0 || index >= static_cast<int32_t>(kData->param.count) || ! fEnabled)
                 break;
 
-            if (fIsProcessing && ! kData->engine->isOffline())
+            if (fIsProcessing)
             {
+                // Called from engine
+                if (kData->engine->isOffline())
+                {
+                    setParameterValue(index, opt, true, true, true);
+                }
+                else
+                {
+                    setParameterValue(index, opt, false, false, false);
+                    postponeRtEvent(kPluginPostRtEventParameterChange, index, 0, opt);
+                }
+            }
+            else if (! kData->active)
+            {
+                // On init?
                 setParameterValue(index, opt, false, false, false);
-                postponeRtEvent(kPluginPostRtEventParameterChange, index, 0, opt);
+            }
+            else if (fGui.isVisible)
+            {
+                // Called from GUI
+                setParameterValue(index, opt, false, true, true);
             }
             else
             {
-                CARLA_ASSERT(fGui.isVisible); // FIXME - remove when offline is implemented
-                setParameterValue(index, opt, fIsProcessing, true, true);
+                carla_stdout("audioMasterAutomate called from unknown source");
             }
             break;
 
@@ -1802,8 +1840,7 @@ protected:
             break;
 
         case audioMasterSizeWindow:
-            fGui.width  = index;
-            fGui.height = value;
+            CARLA_ASSERT(kData->gui != nullptr);
 
             // FIXME - ensure thread safe
             if (kData->gui != nullptr)
@@ -2125,14 +2162,10 @@ private:
     struct GuiInfo {
         bool isOsc;
         bool isVisible;
-        int width;
-        int height;
 
         GuiInfo()
             : isOsc(false),
-              isVisible(false),
-              width(0),
-              height(0) {}
+              isVisible(false) {}
     } fGui;
 
     bool fIsProcessing;
