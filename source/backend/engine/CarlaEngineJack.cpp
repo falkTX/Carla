@@ -506,7 +506,8 @@ public:
         carla_debug("CarlaEngineJack::CarlaEngineJack()");
 
 #ifdef BUILD_BRIDGE
-        fOptions.processMode = PROCESS_MODE_MULTIPLE_CLIENTS;
+        fOptions.processMode   = PROCESS_MODE_MULTIPLE_CLIENTS;
+        fOptions.transportMode = TRANSPORT_MODE_JACK;
 #endif
 
         carla_zeroStruct<jack_position_t>(fTransportPos);

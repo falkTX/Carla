@@ -973,6 +973,61 @@ public:
         }
 
         // --------------------------------------------------------------------------------------------------------
+        // Set TimeInfo
+
+        const EngineTimeInfo& timeInfo = kData->engine->getTimeInfo();
+
+        fTimeInfo.flags = kVstTransportChanged;
+
+        if (timeInfo.playing)
+            fTimeInfo.flags |= kVstTransportPlaying;
+
+        fTimeInfo.samplePos  = timeInfo.frame;
+        fTimeInfo.sampleRate = kData->engine->getSampleRate();
+
+        fTimeInfo.nanoSeconds = timeInfo.time;
+        fTimeInfo.flags |= kVstNanosValid;
+
+        if (timeInfo.valid & EngineTimeInfo::ValidBBT)
+        {
+            double ppqBar  = double(timeInfo.bbt.bar - 1) * timeInfo.bbt.beatsPerBar;
+            double ppqBeat = double(timeInfo.bbt.beat - 1);
+            double ppqTick = double(timeInfo.bbt.tick) / timeInfo.bbt.ticksPerBeat;
+
+            // PPQ Pos
+            fTimeInfo.ppqPos = ppqBar + ppqBeat + ppqTick;
+            fTimeInfo.flags |= kVstPpqPosValid;
+
+            // Tempo
+            fTimeInfo.tempo  = timeInfo.bbt.beatsPerMinute;
+            fTimeInfo.flags |= kVstTempoValid;
+
+            // Bars
+            fTimeInfo.barStartPos = ppqBar;
+            fTimeInfo.flags |= kVstBarsValid;
+
+            // Time Signature
+            fTimeInfo.timeSigNumerator   = timeInfo.bbt.beatsPerBar;
+            fTimeInfo.timeSigDenominator = timeInfo.bbt.beatType;
+            fTimeInfo.flags |= kVstTimeSigValid;
+        }
+        else
+        {
+            // Tempo
+            fTimeInfo.tempo = 120.0;
+            fTimeInfo.flags |= kVstTempoValid;
+
+            // Time Signature
+            fTimeInfo.timeSigNumerator   = 4;
+            fTimeInfo.timeSigDenominator = 4;
+            fTimeInfo.flags |= kVstTimeSigValid;
+
+            // Missing info
+            fTimeInfo.ppqPos = 0.0;
+            fTimeInfo.barStartPos = 0.0;
+        }
+
+        // --------------------------------------------------------------------------------------------------------
         // Event Input and Processing
 
         if (kData->event.portIn != nullptr && kData->activeBefore)
@@ -1626,35 +1681,34 @@ protected:
         switch (opcode)
         {
         case audioMasterAutomate:
-            // plugins should never do this:
-            CARLA_SAFE_ASSERT(fEnabled);
-            CARLA_SAFE_ASSERT_INT(index < static_cast<int32_t>(kData->param.count), index);
-
-            if (index < 0 || index >= static_cast<int32_t>(kData->param.count) || ! fEnabled)
+            if (! fEnabled)
                 break;
 
-            if (fIsProcessing)
-            {
-                // Called from engine
-                if (kData->engine->isOffline())
-                {
-                    setParameterValue(index, opt, true, true, true);
-                }
-                else
-                {
-                    setParameterValue(index, opt, false, false, false);
-                    postponeRtEvent(kPluginPostRtEventParameterChange, index, 0, opt);
-                }
-            }
-            else if (! kData->active)
-            {
-                // On init?
-                setParameterValue(index, opt, false, false, false);
-            }
-            else if (fGui.isVisible)
+            // plugins should never do this:
+            CARLA_SAFE_ASSERT_INT(index < static_cast<int32_t>(kData->param.count), index);
+
+            if (index < 0 || index >= static_cast<int32_t>(kData->param.count))
+                break;
+
+            if (fGui.isVisible && ! fIsProcessing)
             {
                 // Called from GUI
                 setParameterValue(index, opt, false, true, true);
+            }
+            else if (fIsProcessing)
+            {
+                // Called from engine
+                const float fixedValue = kData->param.fixValue(index, opt);
+
+                if (kData->engine->isOffline())
+                {
+                    CarlaPlugin::setParameterValue(index, fixedValue, true, true, true);
+                }
+                else
+                {
+                    CarlaPlugin::setParameterValue(index, fixedValue, false, false, false);
+                    postponeRtEvent(kPluginPostRtEventParameterChange, index, 0, fixedValue);
+                }
             }
             else
             {
@@ -2007,9 +2061,15 @@ public:
         fEffect = vstFn(carla_vst_audioMasterCallback);
         sLastVstPlugin = nullptr;
 
-        if (fEffect == nullptr || fEffect->magic != kEffectMagic)
+        if (fEffect == nullptr)
         {
             kData->engine->setLastError("Plugin failed to initialize");
+            return false;
+        }
+
+        if (fEffect->magic != kEffectMagic)
+        {
+            kData->engine->setLastError("Plugin is not valid (wrong vst effect magic code)");
             return false;
         }
 
@@ -2178,7 +2238,7 @@ private:
 
     static intptr_t VSTCALLBACK carla_vst_audioMasterCallback(AEffect* effect, int32_t opcode, int32_t index, intptr_t value, void* ptr, float opt)
     {
-#ifdef DEBUG
+#if defined(DEBUG) && ! defined(CARLA_OS_WIN)
         if (opcode != audioMasterGetTime && opcode != audioMasterProcessEvents && opcode != audioMasterGetCurrentProcessLevel && opcode != audioMasterGetOutputLatency)
             carla_debug("carla_vst_audioMasterCallback(%p, %02i:%s, %i, " P_INTPTR ", %p, %f)", effect, opcode, vstMasterOpcode2str(opcode), index, value, ptr, opt);
 #endif
