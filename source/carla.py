@@ -598,7 +598,7 @@ class CarlaMainW(QMainWindow):
         # Set-up Canvas Preview
 
         self.ui.miniCanvasPreview.setRealParent(self)
-        self.ui.miniCanvasPreview.setViewTheme(patchcanvas.canvas.theme.rubberband_brush, patchcanvas.canvas.theme.rubberband_pen.color())
+        self.ui.miniCanvasPreview.setViewTheme(patchcanvas.canvas.theme.canvas_bg, patchcanvas.canvas.theme.rubberband_brush, patchcanvas.canvas.theme.rubberband_pen.color())
         self.ui.miniCanvasPreview.init(self.scene, DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT)
         QTimer.singleShot(100, self, SLOT("slot_miniCanvasInit()"))
 

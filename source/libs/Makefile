@@ -11,6 +11,25 @@ all:
 dgl.a:
 	$(MAKE) -C distrho/dgl
 
+dgl.%.a:
+	$(MAKE) -C distrho/dgl $*
+
+# --------------------------------------------------------------
+
+lilv.a:
+	$(MAKE) -C lilv
+
+lilv.%.a:
+	$(MAKE) -C lilv $*
+
+# --------------------------------------------------------------
+
+rtmempool.a:
+	$(MAKE) -C rtmempool
+
+rtmempool.%.a:
+	$(MAKE) -C rtmempool $*
+
 # --------------------------------------------------------------
 
 jackbridge-win32.dll:
@@ -27,24 +46,8 @@ jackbridge-win64.dll.so:
 
 # --------------------------------------------------------------
 
-lilv.a:
-	$(MAKE) -C lilv
-
-lilv_%.a:
-	$(MAKE) -C lilv $*
-
-# --------------------------------------------------------------
-
-rtmempool.a:
-	$(MAKE) -C rtmempool
-
-rtmempool_%.a:
-	$(MAKE) -C rtmempool $*
-
-# --------------------------------------------------------------
-
 clean:
-	rm -f *.a *.def *.dll *.so
+	rm -f *~ *.a *.def *.dll *.dylib *.so
 	$(MAKE) clean -C distrho/dgl
 	$(MAKE) clean -C lilv
 	$(MAKE) clean -C rtmempool

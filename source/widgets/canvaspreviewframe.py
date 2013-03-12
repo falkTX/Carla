@@ -39,6 +39,7 @@ class CanvasPreviewFrame(QFrame):
 
         self.fMouseDown = False
 
+        self.fViewBg    = QColor(0, 0, 0)
         self.fViewBrush = QBrush(QColor(75, 75, 255, 30))
         self.fViewPen   = QPen(Qt.blue, 1)
 
@@ -97,9 +98,10 @@ class CanvasPreviewFrame(QFrame):
         self.fViewRect[iHeight] = height * self.fFakeHeight
         self.update()
 
-    def setViewTheme(self, brushColor, penColor):
+    def setViewTheme(self, bgColor, brushColor, penColor):
         brushColor.setAlpha(40)
         penColor.setAlpha(100)
+        self.fViewBg    = bgColor
         self.fViewBrush = QBrush(brushColor)
         self.fViewPen   = QPen(penColor, 1)
 
@@ -152,8 +154,9 @@ class CanvasPreviewFrame(QFrame):
     def paintEvent(self, event):
         painter = QPainter(self)
 
-        painter.setBrush(QBrush(Qt.darkBlue, Qt.DiagCrossPattern))
-        painter.drawRect(0, 0, self.width(), self.height())
+        painter.setBrush(self.fViewBg)
+        painter.setPen(self.fViewBg)
+        painter.drawRoundRect(2, 2, self.width()-6, self.height()-6, 3, 3)
 
         self.fScene.render(painter, self.fRenderSource, self.fRenderTarget, Qt.KeepAspectRatio)
 

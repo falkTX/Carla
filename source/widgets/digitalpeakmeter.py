@@ -37,23 +37,23 @@ class DigitalPeakMeter(QWidget):
     def __init__(self, parent):
         QWidget.__init__(self, parent)
 
-        self.m_channels = 0
-        self.m_orientation = self.VERTICAL
-        self.m_smoothMultiplier = 1
+        self.fChannels    = 0
+        self.fOrientation = self.VERTICAL
+        self.fSmoothMultiplier = 1
 
-        self.m_colorBackground = QColor("#111111")
-        self.m_gradientMeter = QLinearGradient(0, 0, 1, 1)
+        self.fColorBackground = QColor("#111111")
+        self.fGradientMeter   = QLinearGradient(0, 0, 1, 1)
 
         self.setChannels(0)
         self.setColor(self.GREEN)
 
-        self.m_paintTimer = QTimer(self)
-        self.m_paintTimer.setInterval(60)
-        self.m_paintTimer.timeout.connect(self.update)
-        self.m_paintTimer.start()
+        self.fPaintTimer = QTimer(self)
+        self.fPaintTimer.setInterval(60)
+        self.fPaintTimer.timeout.connect(self.update)
+        self.fPaintTimer.start()
 
     def displayMeter(self, meter, level):
-        if meter <= 0 or meter > self.m_channels:
+        if meter <= 0 or meter > self.fChannels:
             return qCritical("DigitalPeakMeter::displayMeter(%i, %f) - invalid meter number" % (meter, level))
 
         if level < 0.0:
@@ -61,50 +61,50 @@ class DigitalPeakMeter(QWidget):
         elif level > 1.0:
             level = 1.0
 
-        self.m_channelsData[meter-1] = level
+        self.fChannelsData[meter-1] = level
 
     def setChannels(self, channels):
         if channels < 0:
             return qCritical("DigitalPeakMeter::setChannels(%i) - 'channels' must be a positive integer" % channels)
 
-        self.m_channels = channels
-        self.m_channelsData  = []
-        self.m_lastValueData = []
+        self.fChannels = channels
+        self.fChannelsData  = []
+        self.fLastValueData = []
 
         for x in range(channels):
-            self.m_channelsData.append(0.0)
-            self.m_lastValueData.append(0.0)
+            self.fChannelsData.append(0.0)
+            self.fLastValueData.append(0.0)
 
     def setColor(self, color):
         if color == self.GREEN:
-            self.m_colorBase  = QColor(93, 231, 61)
-            self.m_colorBaseT = QColor(15, 110, 15, 100)
+            self.fColorBase  = QColor(93, 231, 61)
+            self.fColorBaseT = QColor(15, 110, 15, 100)
         elif color == self.BLUE:
-            self.m_colorBase  = QColor(82, 238, 248)
-            self.m_colorBaseT = QColor(15, 15, 110, 100)
+            self.fColorBase  = QColor(82, 238, 248)
+            self.fColorBaseT = QColor(15, 15, 110, 100)
         else:
             return qCritical("DigitalPeakMeter::setColor(%i) - invalid color" % color)
 
-        self.setOrientation(self.m_orientation)
+        self.setOrientation(self.fOrientation)
 
     def setOrientation(self, orientation):
-        self.m_orientation = orientation
+        self.fOrientation = orientation
 
-        if self.m_orientation == self.HORIZONTAL:
-            self.m_gradientMeter.setColorAt(0.0, self.m_colorBase)
-            self.m_gradientMeter.setColorAt(0.2, self.m_colorBase)
-            self.m_gradientMeter.setColorAt(0.4, self.m_colorBase)
-            self.m_gradientMeter.setColorAt(0.6, self.m_colorBase)
-            self.m_gradientMeter.setColorAt(0.8, Qt.yellow)
-            self.m_gradientMeter.setColorAt(1.0, Qt.red)
+        if self.fOrientation == self.HORIZONTAL:
+            self.fGradientMeter.setColorAt(0.0, self.fColorBase)
+            self.fGradientMeter.setColorAt(0.2, self.fColorBase)
+            self.fGradientMeter.setColorAt(0.4, self.fColorBase)
+            self.fGradientMeter.setColorAt(0.6, self.fColorBase)
+            self.fGradientMeter.setColorAt(0.8, Qt.yellow)
+            self.fGradientMeter.setColorAt(1.0, Qt.red)
 
-        elif self.m_orientation == self.VERTICAL:
-            self.m_gradientMeter.setColorAt(0.0, Qt.red)
-            self.m_gradientMeter.setColorAt(0.2, Qt.yellow)
-            self.m_gradientMeter.setColorAt(0.4, self.m_colorBase)
-            self.m_gradientMeter.setColorAt(0.6, self.m_colorBase)
-            self.m_gradientMeter.setColorAt(0.8, self.m_colorBase)
-            self.m_gradientMeter.setColorAt(1.0, self.m_colorBase)
+        elif self.fOrientation == self.VERTICAL:
+            self.fGradientMeter.setColorAt(0.0, Qt.red)
+            self.fGradientMeter.setColorAt(0.2, Qt.yellow)
+            self.fGradientMeter.setColorAt(0.4, self.fColorBase)
+            self.fGradientMeter.setColorAt(0.6, self.fColorBase)
+            self.fGradientMeter.setColorAt(0.8, self.fColorBase)
+            self.fGradientMeter.setColorAt(1.0, self.fColorBase)
 
         else:
             return qCritical("DigitalPeakMeter::setOrientation(%i) - invalid orientation" % orientation)
@@ -112,9 +112,9 @@ class DigitalPeakMeter(QWidget):
         self.updateSizes()
 
     def setRefreshRate(self, rate):
-        self.m_paintTimer.stop()
-        self.m_paintTimer.setInterval(rate)
-        self.m_paintTimer.start()
+        self.fPaintTimer.stop()
+        self.fPaintTimer.setInterval(rate)
+        self.fPaintTimer.start()
 
     def setSmoothRelease(self, value):
         if value < 0:
@@ -122,77 +122,77 @@ class DigitalPeakMeter(QWidget):
         elif value > 5:
             value = 5
 
-        self.m_smoothMultiplier = value
+        self.fSmoothMultiplier = value
 
     def minimumSizeHint(self):
         return QSize(10, 10)
 
     def sizeHint(self):
-        return QSize(self.m_width, self.m_height)
+        return QSize(self.fWidth, self.fHeight)
 
     def updateSizes(self):
-        self.m_width  = self.width()
-        self.m_height = self.height()
-        self.m_sizeMeter = 0
+        self.fWidth  = self.width()
+        self.fHeight = self.height()
+        self.fSizeMeter = 0
 
-        if self.m_orientation == self.HORIZONTAL:
-            self.m_gradientMeter.setFinalStop(self.m_width, 0)
+        if self.fOrientation == self.HORIZONTAL:
+            self.fGradientMeter.setFinalStop(self.fWidth, 0)
 
-            if self.m_channels > 0:
-                self.m_sizeMeter = self.m_height / self.m_channels
+            if self.fChannels > 0:
+                self.fSizeMeter = self.fHeight / self.fChannels
 
-        elif self.m_orientation == self.VERTICAL:
-            self.m_gradientMeter.setFinalStop(0, self.m_height)
+        elif self.fOrientation == self.VERTICAL:
+            self.fGradientMeter.setFinalStop(0, self.fHeight)
 
-            if self.m_channels > 0:
-                self.m_sizeMeter = self.m_width / self.m_channels
+            if self.fChannels > 0:
+                self.fSizeMeter = self.fWidth / self.fChannels
 
     def paintEvent(self, event):
         painter = QPainter(self)
 
         painter.setPen(Qt.black)
         painter.setBrush(Qt.black)
-        painter.drawRect(0, 0, self.m_width, self.m_height)
+        painter.drawRect(0, 0, self.fWidth, self.fHeight)
 
         meterX = 0
-        painter.setPen(self.m_colorBackground)
-        painter.setBrush(self.m_gradientMeter)
+        painter.setPen(self.fColorBackground)
+        painter.setBrush(self.fGradientMeter)
 
-        for i in range(self.m_channels):
-            level = self.m_channelsData[i]
+        for i in range(self.fChannels):
+            level = self.fChannelsData[i]
 
-            if level == self.m_lastValueData[i]:
+            if level == self.fLastValueData[i]:
                 continue
 
-            if self.m_orientation == self.HORIZONTAL:
-                value = level * self.m_width
-            elif self.m_orientation == self.VERTICAL:
-                value = float(self.m_height) - (level * self.m_height)
+            if self.fOrientation == self.HORIZONTAL:
+                value = level * self.fWidth
+            elif self.fOrientation == self.VERTICAL:
+                value = float(self.fHeight) - (level * self.fHeight)
             else:
                 value = 0.0
 
             if value < 0.0:
                 value = 0.0
-            elif self.m_smoothMultiplier > 0:
-                value = (self.m_lastValueData[i] * self.m_smoothMultiplier + value) / (self.m_smoothMultiplier + 1)
+            elif self.fSmoothMultiplier > 0:
+                value = (self.fLastValueData[i] * self.fSmoothMultiplier + value) / (self.fSmoothMultiplier + 1)
 
-            if self.m_orientation == self.HORIZONTAL:
-                painter.drawRect(0, meterX, value, self.m_sizeMeter)
-            elif self.m_orientation == self.VERTICAL:
-                painter.drawRect(meterX, value, self.m_sizeMeter, self.m_height)
+            if self.fOrientation == self.HORIZONTAL:
+                painter.drawRect(0, meterX, value, self.fSizeMeter)
+            elif self.fOrientation == self.VERTICAL:
+                painter.drawRect(meterX, value, self.fSizeMeter, self.fHeight)
 
-            meterX += self.m_sizeMeter
-            self.m_lastValueData[i] = value
+            meterX += self.fSizeMeter
+            self.fLastValueData[i] = value
 
         painter.setBrush(QColor(0, 0, 0, 0))
 
-        if self.m_orientation == self.HORIZONTAL:
+        if self.fOrientation == self.HORIZONTAL:
             # Variables
-            lsmall = self.m_width
-            lfull  = self.m_height - 1
+            lsmall = self.fWidth
+            lfull  = self.fHeight - 1
 
             # Base
-            painter.setPen(self.m_colorBaseT)
+            painter.setPen(self.fColorBaseT)
             painter.drawLine(lsmall * 0.25, 2, lsmall * 0.25, lfull-2)
             painter.drawLine(lsmall * 0.50, 2, lsmall * 0.50, lfull-2)
 
@@ -209,13 +209,13 @@ class DigitalPeakMeter(QWidget):
             painter.setPen(QColor(110, 15, 15, 100))
             painter.drawLine(lsmall * 0.96, 2, lsmall * 0.96, lfull-2)
 
-        elif self.m_orientation == self.VERTICAL:
+        elif self.fOrientation == self.VERTICAL:
             # Variables
-            lsmall = self.m_height
-            lfull  = self.m_width - 1
+            lsmall = self.fHeight
+            lfull  = self.fWidth - 1
 
             # Base
-            painter.setPen(self.m_colorBaseT)
+            painter.setPen(self.fColorBaseT)
             painter.drawLine(2, lsmall - (lsmall * 0.25), lfull-2, lsmall - (lsmall * 0.25))
             painter.drawLine(2, lsmall - (lsmall * 0.50), lfull-2, lsmall - (lsmall * 0.50))
 

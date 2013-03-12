@@ -98,147 +98,147 @@ class PixmapKeyboard(QWidget):
     def __init__(self, parent):
         QWidget.__init__(self, parent)
 
-        self.m_octaves = 6
-        self.m_lastMouseNote = -1
+        self.fOctaves = 6
+        self.fLastMouseNote = -1
 
-        self.m_needsUpdate = False
-        self.m_enabledKeys = []
+        self.fNeedsUpdate = False
+        self.fEnabledKeys = []
 
-        self.m_font   = QFont("Monospace", 8, QFont.Normal)
-        self.m_pixmap = QPixmap("")
+        self.fFont   = QFont("Monospace", 8, QFont.Normal)
+        self.fPixmap = QPixmap("")
 
         self.setCursor(Qt.PointingHandCursor)
         self.setMode(self.HORIZONTAL)
 
     def allNotesOff(self):
-        self.m_enabledKeys = []
+        self.fEnabledKeys = []
 
-        self.m_needsUpdate = True
+        self.fNeedsUpdate = True
         QTimer.singleShot(0, self, SLOT("slot_updateOnce()"))
 
         self.emit(SIGNAL("notesOff()"))
 
     def sendNoteOn(self, note, sendSignal=True):
-        if 0 <= note <= 127 and note not in self.m_enabledKeys:
-            self.m_enabledKeys.append(note)
+        if 0 <= note <= 127 and note not in self.fEnabledKeys:
+            self.fEnabledKeys.append(note)
             if sendSignal:
                 self.emit(SIGNAL("noteOn(int)"), note)
 
-            self.m_needsUpdate = True
+            self.fNeedsUpdate = True
             QTimer.singleShot(0, self, SLOT("slot_updateOnce()"))
 
-        if len(self.m_enabledKeys) == 1:
+        if len(self.fEnabledKeys) == 1:
             self.emit(SIGNAL("notesOn()"))
 
     def sendNoteOff(self, note, sendSignal=True):
-        if 0 <= note <= 127 and note in self.m_enabledKeys:
-            self.m_enabledKeys.remove(note)
+        if 0 <= note <= 127 and note in self.fEnabledKeys:
+            self.fEnabledKeys.remove(note)
             if sendSignal:
                 self.emit(SIGNAL("noteOff(int)"), note)
 
-            self.m_needsUpdate = True
+            self.fNeedsUpdate = True
             QTimer.singleShot(0, self, SLOT("slot_updateOnce()"))
 
-        if len(self.m_enabledKeys) == 0:
+        if len(self.fEnabledKeys) == 0:
             self.emit(SIGNAL("notesOff()"))
 
     def setMode(self, mode, color=COLOR_ORANGE):
         if color == self.COLOR_CLASSIC:
-            self.m_colorStr = "classic"
+            self.fColorStr = "classic"
         elif color == self.COLOR_ORANGE:
-            self.m_colorStr = "orange"
+            self.fColorStr = "orange"
         else:
             qCritical("PixmapKeyboard::setMode(%i, %i) - invalid color" % (mode, color))
             return self.setMode(mode)
 
         if mode == self.HORIZONTAL:
-            self.m_midiMap = midi_key2rect_map_horizontal
-            self.m_pixmap.load(":/bitmaps/kbd_h_%s.png" % self.m_colorStr)
-            self.m_pixmapMode = self.HORIZONTAL
-            self.p_width  = self.m_pixmap.width()
-            self.p_height = self.m_pixmap.height() / 2
+            self.fMidiMap = midi_key2rect_map_horizontal
+            self.fPixmap.load(":/bitmaps/kbd_h_%s.png" % self.fColorStr)
+            self.fPixmapMode = self.HORIZONTAL
+            self.fWidth  = self.fPixmap.width()
+            self.fHeight = self.fPixmap.height() / 2
         elif mode == self.VERTICAL:
-            self.m_midiMap = midi_key2rect_map_vertical
-            self.m_pixmap.load(":/bitmaps/kbd_v_%s.png" % self.m_colorStr)
-            self.m_pixmapMode = self.VERTICAL
-            self.p_width  = self.m_pixmap.width() / 2
-            self.p_height = self.m_pixmap.height()
+            self.fMidiMap = midi_key2rect_map_vertical
+            self.fPixmap.load(":/bitmaps/kbd_v_%s.png" % self.fColorStr)
+            self.fPixmapMode = self.VERTICAL
+            self.fWidth  = self.fPixmap.width() / 2
+            self.fHeight = self.fPixmap.height()
         else:
             qCritical("PixmapKeyboard::setMode(%i, %i) - invalid mode" % (mode, color))
             return self.setMode(self.HORIZONTAL)
 
-        self.setOctaves(self.m_octaves)
+        self.setOctaves(self.fOctaves)
 
     def setOctaves(self, octaves):
         if octaves < 1:
             octaves = 1
         elif octaves > 8:
             octaves = 8
-        self.m_octaves = octaves
+        self.fOctaves = octaves
 
-        if self.m_pixmapMode == self.HORIZONTAL:
-            self.setMinimumSize(self.p_width * self.m_octaves, self.p_height)
-            self.setMaximumSize(self.p_width * self.m_octaves, self.p_height)
-        elif self.m_pixmapMode == self.VERTICAL:
-            self.setMinimumSize(self.p_width, self.p_height * self.m_octaves)
-            self.setMaximumSize(self.p_width, self.p_height * self.m_octaves)
+        if self.fPixmapMode == self.HORIZONTAL:
+            self.setMinimumSize(self.fWidth * self.fOctaves, self.fHeight)
+            self.setMaximumSize(self.fWidth * self.fOctaves, self.fHeight)
+        elif self.fPixmapMode == self.VERTICAL:
+            self.setMinimumSize(self.fWidth, self.fHeight * self.fOctaves)
+            self.setMaximumSize(self.fWidth, self.fHeight * self.fOctaves)
 
         self.update()
 
     def handleMousePos(self, pos):
-        if self.m_pixmapMode == self.HORIZONTAL:
-            if pos.x() < 0 or pos.x() > self.m_octaves * 144:
+        if self.fPixmapMode == self.HORIZONTAL:
+            if pos.x() < 0 or pos.x() > self.fOctaves * 144:
                 return
             posX = pos.x() - 1
-            octave = int(posX / self.p_width)
-            n_pos  = QPointF(posX % self.p_width, pos.y())
-        elif self.m_pixmapMode == self.VERTICAL:
-            if pos.y() < 0 or pos.y() > self.m_octaves * 144:
+            octave = int(posX / self.fWidth)
+            n_pos  = QPointF(posX % self.fWidth, pos.y())
+        elif self.fPixmapMode == self.VERTICAL:
+            if pos.y() < 0 or pos.y() > self.fOctaves * 144:
                 return
             posY = pos.y() - 1
-            octave = int(self.m_octaves - posY / self.p_height)
-            n_pos  = QPointF(pos.x(), posY % self.p_height)
+            octave = int(self.fOctaves - posY / self.fHeight)
+            n_pos  = QPointF(pos.x(), posY % self.fHeight)
         else:
             return
 
         octave += 3
 
-        if self.m_midiMap['1'].contains(n_pos):   # C#
+        if self.fMidiMap['1'].contains(n_pos):   # C#
             note = 1
-        elif self.m_midiMap['3'].contains(n_pos): # D#
+        elif self.fMidiMap['3'].contains(n_pos): # D#
             note = 3
-        elif self.m_midiMap['6'].contains(n_pos): # F#
+        elif self.fMidiMap['6'].contains(n_pos): # F#
             note = 6
-        elif self.m_midiMap['8'].contains(n_pos): # G#
+        elif self.fMidiMap['8'].contains(n_pos): # G#
             note = 8
-        elif self.m_midiMap['10'].contains(n_pos):# A#
+        elif self.fMidiMap['10'].contains(n_pos):# A#
             note = 10
-        elif self.m_midiMap['0'].contains(n_pos): # C
+        elif self.fMidiMap['0'].contains(n_pos): # C
             note = 0
-        elif self.m_midiMap['2'].contains(n_pos): # D
+        elif self.fMidiMap['2'].contains(n_pos): # D
             note = 2
-        elif self.m_midiMap['4'].contains(n_pos): # E
+        elif self.fMidiMap['4'].contains(n_pos): # E
             note = 4
-        elif self.m_midiMap['5'].contains(n_pos): # F
+        elif self.fMidiMap['5'].contains(n_pos): # F
             note = 5
-        elif self.m_midiMap['7'].contains(n_pos): # G
+        elif self.fMidiMap['7'].contains(n_pos): # G
             note = 7
-        elif self.m_midiMap['9'].contains(n_pos): # A
+        elif self.fMidiMap['9'].contains(n_pos): # A
             note = 9
-        elif self.m_midiMap['11'].contains(n_pos):# B
+        elif self.fMidiMap['11'].contains(n_pos):# B
             note = 11
         else:
             note = -1
 
         if note != -1:
             note += octave * 12
-            if self.m_lastMouseNote != note:
-                self.sendNoteOff(self.m_lastMouseNote)
+            if self.fLastMouseNote != note:
+                self.sendNoteOff(self.fLastMouseNote)
                 self.sendNoteOn(note)
         else:
-            self.sendNoteOff(self.m_lastMouseNote)
+            self.sendNoteOff(self.fLastMouseNote)
 
-        self.m_lastMouseNote = note
+        self.fLastMouseNote = note
 
     def keyPressEvent(self, event):
         if not event.isAutoRepeat():
@@ -255,7 +255,7 @@ class PixmapKeyboard(QWidget):
         QWidget.keyReleaseEvent(self, event)
 
     def mousePressEvent(self, event):
-        self.m_lastMouseNote = -1
+        self.fLastMouseNote = -1
         self.handleMousePos(event.pos())
         self.setFocus()
         QWidget.mousePressEvent(self, event)
@@ -265,35 +265,36 @@ class PixmapKeyboard(QWidget):
         QWidget.mousePressEvent(self, event)
 
     def mouseReleaseEvent(self, event):
-        if self.m_lastMouseNote != -1:
-            self.sendNoteOff(self.m_lastMouseNote)
-            self.m_lastMouseNote = -1
+        if self.fLastMouseNote != -1:
+            self.sendNoteOff(self.fLastMouseNote)
+            self.fLastMouseNote = -1
         QWidget.mouseReleaseEvent(self, event)
 
     def paintEvent(self, event):
         painter = QPainter(self)
+        event.accept()
 
         # -------------------------------------------------------------
         # Paint clean keys (as background)
 
-        for octave in range(self.m_octaves):
-            if self.m_pixmapMode == self.HORIZONTAL:
-                target = QRectF(self.p_width * octave, 0, self.p_width, self.p_height)
-            elif self.m_pixmapMode == self.VERTICAL:
-                target = QRectF(0, self.p_height * octave, self.p_width, self.p_height)
+        for octave in range(self.fOctaves):
+            if self.fPixmapMode == self.HORIZONTAL:
+                target = QRectF(self.fWidth * octave, 0, self.fWidth, self.fHeight)
+            elif self.fPixmapMode == self.VERTICAL:
+                target = QRectF(0, self.fHeight * octave, self.fWidth, self.fHeight)
             else:
                 return
 
-            source = QRectF(0, 0, self.p_width, self.p_height)
-            painter.drawPixmap(target, self.m_pixmap, source)
+            source = QRectF(0, 0, self.fWidth, self.fHeight)
+            painter.drawPixmap(target, self.fPixmap, source)
 
         # -------------------------------------------------------------
         # Paint (white) pressed keys
 
         paintedWhite = False
 
-        for i in range(len(self.m_enabledKeys)):
-            note = self.m_enabledKeys[i]
+        for i in range(len(self.fEnabledKeys)):
+            note = self.fEnabledKeys[i]
             pos = self._getRectFromMidiNote(note)
 
             if self._isNoteBlack(note):
@@ -322,44 +323,44 @@ class PixmapKeyboard(QWidget):
                 # cannot paint this note either
                 continue
 
-            if self.m_pixmapMode == self.VERTICAL:
-                octave = self.m_octaves - octave - 1
+            if self.fPixmapMode == self.VERTICAL:
+                octave = self.fOctaves - octave - 1
 
-            if self.m_pixmapMode == self.HORIZONTAL:
-                target = QRectF(pos.x() + (self.p_width * octave), 0, pos.width(), pos.height())
-                source = QRectF(pos.x(), self.p_height, pos.width(), pos.height())
-            elif self.m_pixmapMode == self.VERTICAL:
-                target = QRectF(pos.x(), pos.y() + (self.p_height * octave), pos.width(), pos.height())
-                source = QRectF(self.p_width, pos.y(), pos.width(), pos.height())
+            if self.fPixmapMode == self.HORIZONTAL:
+                target = QRectF(pos.x() + (self.fWidth * octave), 0, pos.width(), pos.height())
+                source = QRectF(pos.x(), self.fHeight, pos.width(), pos.height())
+            elif self.fPixmapMode == self.VERTICAL:
+                target = QRectF(pos.x(), pos.y() + (self.fHeight * octave), pos.width(), pos.height())
+                source = QRectF(self.fWidth, pos.y(), pos.width(), pos.height())
             else:
                 return
 
             paintedWhite = True
-            painter.drawPixmap(target, self.m_pixmap, source)
+            painter.drawPixmap(target, self.fPixmap, source)
 
         # -------------------------------------------------------------
         # Clear white keys border
 
         if paintedWhite:
-            for octave in range(self.m_octaves):
+            for octave in range(self.fOctaves):
                 for note in (1, 3, 6, 8, 10):
                     pos = self._getRectFromMidiNote(note)
-                    if self.m_pixmapMode == self.HORIZONTAL:
-                        target = QRectF(pos.x() + (self.p_width * octave), 0, pos.width(), pos.height())
+                    if self.fPixmapMode == self.HORIZONTAL:
+                        target = QRectF(pos.x() + (self.fWidth * octave), 0, pos.width(), pos.height())
                         source = QRectF(pos.x(), 0, pos.width(), pos.height())
-                    elif self.m_pixmapMode == self.VERTICAL:
-                        target = QRectF(pos.x(), pos.y() + (self.p_height * octave), pos.width(), pos.height())
+                    elif self.fPixmapMode == self.VERTICAL:
+                        target = QRectF(pos.x(), pos.y() + (self.fHeight * octave), pos.width(), pos.height())
                         source = QRectF(0, pos.y(), pos.width(), pos.height())
                     else:
                         return
 
-                    painter.drawPixmap(target, self.m_pixmap, source)
+                    painter.drawPixmap(target, self.fPixmap, source)
 
         # -------------------------------------------------------------
         # Paint (black) pressed keys
 
-        for i in range(len(self.m_enabledKeys)):
-            note = self.m_enabledKeys[i]
+        for i in range(len(self.fEnabledKeys)):
+            note = self.fEnabledKeys[i]
             pos = self._getRectFromMidiNote(note)
 
             if not self._isNoteBlack(note):
@@ -388,41 +389,39 @@ class PixmapKeyboard(QWidget):
                 # cannot paint this note either
                 continue
 
-            if self.m_pixmapMode == self.VERTICAL:
-                octave = self.m_octaves - octave - 1
+            if self.fPixmapMode == self.VERTICAL:
+                octave = self.fOctaves - octave - 1
 
-            if self.m_pixmapMode == self.HORIZONTAL:
-                target = QRectF(pos.x() + (self.p_width * octave), 0, pos.width(), pos.height())
-                source = QRectF(pos.x(), self.p_height, pos.width(), pos.height())
-            elif self.m_pixmapMode == self.VERTICAL:
-                target = QRectF(pos.x(), pos.y() + (self.p_height * octave), pos.width(), pos.height())
-                source = QRectF(self.p_width, pos.y(), pos.width(), pos.height())
+            if self.fPixmapMode == self.HORIZONTAL:
+                target = QRectF(pos.x() + (self.fWidth * octave), 0, pos.width(), pos.height())
+                source = QRectF(pos.x(), self.fHeight, pos.width(), pos.height())
+            elif self.fPixmapMode == self.VERTICAL:
+                target = QRectF(pos.x(), pos.y() + (self.fHeight * octave), pos.width(), pos.height())
+                source = QRectF(self.fWidth, pos.y(), pos.width(), pos.height())
             else:
                 return
 
-            painter.drawPixmap(target, self.m_pixmap, source)
+            painter.drawPixmap(target, self.fPixmap, source)
 
         # Paint C-number note info
-        painter.setFont(self.m_font)
+        painter.setFont(self.fFont)
         painter.setPen(Qt.black)
 
-        for i in range(self.m_octaves):
-            if self.m_pixmapMode == self.HORIZONTAL:
+        for i in range(self.fOctaves):
+            if self.fPixmapMode == self.HORIZONTAL:
                 painter.drawText(i * 144, 48, 18, 18, Qt.AlignCenter, "C%i" % int(i + 2))
-            elif self.m_pixmapMode == self.VERTICAL:
-                painter.drawText(45, (self.m_octaves * 144) - (i * 144) - 16, 18, 18, Qt.AlignCenter, "C%i" % int(i + 2))
-
-        event.accept()
+            elif self.fPixmapMode == self.VERTICAL:
+                painter.drawText(45, (self.fOctaves * 144) - (i * 144) - 16, 18, 18, Qt.AlignCenter, "C%i" % int(i + 2))
 
     @pyqtSlot()
     def slot_updateOnce(self):
-        if self.m_needsUpdate:
+        if self.fNeedsUpdate:
             self.update()
-            self.m_needsUpdate = False
+            self.fNeedsUpdate = False
 
     def _isNoteBlack(self, note):
         baseNote = note % 12
         return bool(baseNote in (1, 3, 6, 8, 10))
 
     def _getRectFromMidiNote(self, note):
-        return self.m_midiMap.get(str(note % 12))
+        return self.fMidiMap.get(str(note % 12))

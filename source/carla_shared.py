@@ -25,12 +25,11 @@ import platform
 import sys
 from codecs import open as codecopen
 from copy import deepcopy
-#from decimal import Decimal
 from subprocess import Popen, PIPE
 from PyQt4.QtCore import pyqtSlot, qWarning, Qt, QByteArray, QSettings, QThread, QTimer, SIGNAL, SLOT
 from PyQt4.QtGui import QColor, QCursor, QDialog, QIcon, QFileDialog, QFontMetrics, QFrame, QMenu
 from PyQt4.QtGui import QMessageBox, QPainter, QPainterPath, QTableWidgetItem, QVBoxLayout, QWidget
-#from PyQt4.QtGui import QGraphicsScene, QInputDialog, QLinearGradient,
+#from PyQt4.QtGui import QInputDialog, QLinearGradient,
 #from PyQt4.QtXml import QDomDocument
 
 # ------------------------------------------------------------------------------------------------------------

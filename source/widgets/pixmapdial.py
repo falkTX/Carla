@@ -45,7 +45,7 @@ class PixmapDial(QDial):
     def __init__(self, parent):
         QDial.__init__(self, parent)
 
-        self.fPixmap = QPixmap(":/bitmaps/dial_01d.png")
+        self.fPixmap      = QPixmap(":/bitmaps/dial_01d.png")
         self.fPixmapNum   = "01"
         self.fCustomPaint = self.CUSTOM_PAINT_NULL
 
@@ -57,8 +57,8 @@ class PixmapDial(QDial):
         else:
             self.fOrientation = self.VERTICAL
 
-        self.fLabel = ""
-        self.fLabelPos = QPointF(0.0, 0.0)
+        self.fLabel     = ""
+        self.fLabelPos  = QPointF(0.0, 0.0)
         self.fLabelFont = QFont()
         self.fLabelFont.setPointSize(6)
         self.fLabelWidth  = 0
@@ -132,21 +132,21 @@ class PixmapDial(QDial):
         return QSize(self.fSize, self.fSize)
 
     def updateSizes(self):
-        self.p_width  = self.fPixmap.width()
-        self.p_height = self.fPixmap.height()
+        self.fWidth  = self.fPixmap.width()
+        self.fHeight = self.fPixmap.height()
 
-        if self.p_width < 1:
-            self.p_width = 1
+        if self.fWidth < 1:
+            self.fWidth = 1
 
-        if self.p_height < 1:
-            self.p_height = 1
+        if self.fHeight < 1:
+            self.fHeight = 1
 
         if self.fOrientation == self.HORIZONTAL:
-            self.fSize  = self.p_height
-            self.p_count = self.p_width / self.p_height
+            self.fSize  = self.fHeight
+            self.fCount = self.fWidth / self.fHeight
         else:
-            self.fSize  = self.p_width
-            self.p_count = self.p_height / self.p_width
+            self.fSize  = self.fWidth
+            self.fCount = self.fHeight / self.fWidth
 
         self.setMinimumSize(self.fSize, self.fSize + self.fLabelHeight + 5)
         self.setMaximumSize(self.fSize, self.fSize + self.fLabelHeight + 5)
@@ -166,6 +166,7 @@ class PixmapDial(QDial):
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing, True)
+        event.accept()
 
         if self.fLabel:
             if self.fCustomPaint == self.CUSTOM_PAINT_NULL:
@@ -187,7 +188,7 @@ class PixmapDial(QDial):
             value  = current / divider
             target = QRectF(0.0, 0.0, self.fSize, self.fSize)
 
-            per = int((self.p_count - 1) * value)
+            per = int((self.fCount - 1) * value)
 
             if self.fOrientation == self.HORIZONTAL:
                 xpos = self.fSize * per
@@ -278,11 +279,9 @@ class PixmapDial(QDial):
                 self.fHoverStep += 1 if self.fHovered else -1
                 QTimer.singleShot(20, self, SLOT("update()"))
 
-        else:
+        else: # isEnabled()
             target = QRectF(0.0, 0.0, self.fSize, self.fSize)
             painter.drawPixmap(target, self.fPixmap, target)
-
-        event.accept()
 
     def resizeEvent(self, event):
         self.updateSizes()
