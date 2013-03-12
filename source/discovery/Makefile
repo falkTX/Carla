@@ -30,7 +30,6 @@ POSIX_BUILD_FLAGS = $(BUILD_CXX_FLAGS)
 POSIX_32BIT_FLAGS = $(32BIT_FLAGS) -L/usr/lib32 -L/usr/lib/i386-linux-gnu
 POSIX_64BIT_FLAGS = $(64BIT_FLAGS) -L/usr/lib64 -L/usr/lib/x86_64-linux-gnu
 POSIX_LINK_FLAGS  = $(LINK_FLAGS) -ldl
-#-lpthread
 
 WIN_BUILD_FLAGS   = $(BUILD_CXX_FLAGS)
 WIN_32BIT_FLAGS   = $(32BIT_FLAGS)
@@ -53,16 +52,16 @@ OBJS = carla-discovery.cpp
 carla-discovery-native: $(OBJS) ../libs/lilv.a
 	$(CXX) $^ $(POSIX_BUILD_FLAGS) $(POSIX_LINK_FLAGS) $(NATIVE_FLAGS) -o $@ && $(STRIP) $@
 
-carla-discovery-posix32: $(OBJS) ../libs/lilv_posix32.a
+carla-discovery-posix32: $(OBJS) ../libs/lilv.posix32.a
 	$(CXX) $^ $(POSIX_BUILD_FLAGS) $(POSIX_32BIT_FLAGS) $(POSIX_LINK_FLAGS) -o $@ && $(STRIP) $@
 
-carla-discovery-posix64: $(OBJS) ../libs/lilv_posix64.a
+carla-discovery-posix64: $(OBJS) ../libs/lilv.posix64.a
 	$(CXX) $^ $(POSIX_BUILD_FLAGS) $(POSIX_64BIT_FLAGS) $(POSIX_LINK_FLAGS) -o $@ && $(STRIP) $@
 
-carla-discovery-win32.exe: $(OBJS) ../libs/lilv_win32.a
+carla-discovery-win32.exe: $(OBJS) ../libs/lilv.win32.a
 	$(CXX) $^ $(WIN_BUILD_FLAGS) $(WIN_32BIT_FLAGS) $(WIN_LINK_FLAGS) -o $@ && $(STRIP) $@
 
-carla-discovery-win64.exe: $(OBJS) ../libs/lilv_win64.a
+carla-discovery-win64.exe: $(OBJS) ../libs/lilv.win64.a
 	$(CXX) $^ $(WIN_BUILD_FLAGS) $(WIN_64BIT_FLAGS) $(WIN_LINK_FLAGS) -o $@ && $(STRIP) $@
 
 # --------------------------------------------------------------

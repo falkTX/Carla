@@ -35,10 +35,10 @@ endif
 
 BUILD_PLUGIN_FLAGS  = $(BUILD_CXX_FLAGS) -DBUILD_BRIDGE_PLUGIN -DBRIDGE_PLUGIN
 BUILD_PLUGIN_FLAGS += -DWANT_JACK -I../backend/engine -I../backend/plugin -I../libs -I../libs/distrho
-BUILD_PLUGIN_FLAGS += $(shell pkg-config --cflags jack) $(QT_UI_FLAGS)
+BUILD_PLUGIN_FLAGS += $(shell pkg-config --cflags jack gl) $(QT_UI_FLAGS)
 
 LINK_PLUGIN_FLAGS   = $(LINK_FLAGS)
-LINK_PLUGIN_FLAGS  += $(QT_UI_LIBS) -lopengl32 -lgdi32
+LINK_PLUGIN_FLAGS  += $(QT_UI_LIBS) $(shell pkg-config --libs gl)
 
 NATIVE_BUILD_FLAGS  = $(BUILD_PLUGIN_FLAGS)
 NATIVE_LINK_FLAGS   = $(LINK_PLUGIN_FLAGS) $(shell pkg-config --libs jack) -ldl
