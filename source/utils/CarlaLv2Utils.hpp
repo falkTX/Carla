@@ -356,7 +356,7 @@ public:
 
         if (! uriNode)
         {
-            qWarning("Lv2WorldClass::getPlugin(\"%s\") - Failed to get node from uri", uri);
+            carla_stderr("Lv2WorldClass::getPlugin(\"%s\") - Failed to get node from uri", uri);
             return nullptr;
         }
 
@@ -367,7 +367,7 @@ public:
         }
         else
         {
-            qWarning("Lv2WorldClass::getPlugin(\"%s\") - Failed to get plugin", uri);
+            carla_stderr("Lv2WorldClass::getPlugin(\"%s\") - Failed to get plugin", uri);
             lilv_node_free(uriNode);
             return nullptr;
         }
@@ -394,7 +394,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
 
     if (! uri)
     {
-        qWarning("lv2_rdf_new() - Invalid uri");
+        carla_stderr("lv2_rdf_new() - Invalid uri");
         return nullptr;
     }
 
@@ -581,7 +581,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
                     rdfPort->Types |= LV2_PORT_OUTPUT;
 
                 else
-                    qWarning("lv2_rdf_new(\"%s\") - port '%s' is not input or output", uri, rdfPort->Name);
+                    carla_stderr("lv2_rdf_new(\"%s\") - port '%s' is not input or output", uri, rdfPort->Name);
 
                 // Data Type
                 if (lilvPort.is_a(lv2World.port_control))
@@ -602,7 +602,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
                     if (bufferTypeNodes.contains(lv2World.atom_sequence))
                         rdfPort->Types |= LV2_PORT_ATOM_SEQUENCE;
                     else
-                        qWarning("lv2_rdf_new(\"%s\") - port '%s' uses an unknown atom buffer type", uri, rdfPort->Name);
+                        carla_stderr("lv2_rdf_new(\"%s\") - port '%s' uses an unknown atom buffer type", uri, rdfPort->Name);
 
                     Lilv::Nodes supportNodes(lilvPort.get_value(lv2World.atom_supports));
 
@@ -612,7 +612,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
                         rdfPort->Types |= LV2_PORT_DATA_PATCH_MESSAGE;
 
                     if (! (supportNodes.contains(lv2World.midi_event) || supportNodes.contains(lv2World.patch_message)))
-                        qWarning("lv2_rdf_new(\"%s\") - port '%s' is of atom type but doesn't support MIDI or messages", uri, rdfPort->Name);
+                        carla_stderr("lv2_rdf_new(\"%s\") - port '%s' is of atom type but doesn't support MIDI or messages", uri, rdfPort->Name);
                 }
 
                 else if (lilvPort.is_a(lv2World.port_event))
@@ -622,7 +622,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
                     if (lilvPort.supports_event(lv2World.midi_event))
                         rdfPort->Types |= LV2_PORT_DATA_MIDI_EVENT;
                     else
-                        qWarning("lv2_rdf_new(\"%s\") - port '%s' is of event type but doesn't support MIDI", uri, rdfPort->Name);
+                        carla_stderr("lv2_rdf_new(\"%s\") - port '%s' is of event type but doesn't support MIDI", uri, rdfPort->Name);
                 }
 
                 else if (lilvPort.is_a(lv2World.port_midi))
@@ -632,7 +632,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
                 }
 
                 else
-                    qWarning("lv2_rdf_new(\"%s\") - port '%s' is of unkown data type", uri, rdfPort->Name);
+                    carla_stderr("lv2_rdf_new(\"%s\") - port '%s' is of unkown data type", uri, rdfPort->Name);
             }
 
             // --------------------------------------
@@ -712,7 +712,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
                         else if (std::strncmp(designation, LV2_PORT_GROUPS_PREFIX, std::strlen(LV2_PORT_GROUPS_PREFIX)) == 0)
                             pass();
                         else
-                            qWarning("lv2_rdf_new(\"%s\") - got unknown port designation '%s'", uri, designation);
+                            carla_stderr("lv2_rdf_new(\"%s\") - got unknown port designation '%s'", uri, designation);
                     }
                 }
             }
@@ -740,7 +740,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
                                 else if (std::strcmp(midiMapType, LV2_MIDI_Map__NRPN) == 0)
                                     rdfPort->MidiMap.Type = LV2_PORT_MIDI_MAP_NRPN;
                                 else
-                                    qWarning("lv2_rdf_new(\"%s\") - got unknown port Midi-Map type '%s'", uri, midiMapType);
+                                    carla_stderr("lv2_rdf_new(\"%s\") - got unknown port Midi-Map type '%s'", uri, midiMapType);
 
                                 rdfPort->MidiMap.Number = midiMapNumberNodes.get_first().as_int();
                             }
@@ -839,7 +839,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
                         else if (std::strcmp(unitUnit, LV2_UNITS__semitone12TET) == 0)
                             rdfPort->Unit.Unit = LV2_PORT_UNIT_SEMITONE;
                         else
-                            qWarning("lv2_rdf_new(\"%s\") - got unknown unit type '%s'", uri, unitUnit);
+                            carla_stderr("lv2_rdf_new(\"%s\") - got unknown unit type '%s'", uri, unitUnit);
                     }
                 }
 
@@ -1057,7 +1057,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
                     else if (lilvUI.is_a(lv2World.ui_externalOld))
                         rdfUI->Type.Value = LV2_UI_OLD_EXTERNAL;
                     else
-                        qWarning("lv2_rdf_new(\"%s\") - got unknown UI type '%s'", uri, uiType);
+                        carla_stderr("lv2_rdf_new(\"%s\") - got unknown UI type '%s'", uri, uiType);
                 }
 
                 // --------------------------------------

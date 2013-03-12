@@ -76,7 +76,7 @@ public:
 
         if (! uiLibOpen(binary))
         {
-            qWarning("%s", uiLibError());
+            carla_stderr("%s", uiLibError());
             return false;
         }
 
@@ -129,7 +129,7 @@ public:
         {
             //effect->dispatcher(effect, effClose, 0, 0, nullptr, 0.0f);
             //return false;
-            qWarning("VST UI failed to open, trying to init anyway...");
+            carla_stderr("VST UI failed to open, trying to init anyway...");
         }
 
         // -----------------------------------------------------------------
@@ -339,7 +339,7 @@ public:
             return -1;
 
         // unimplemented
-        qWarning("CarlaVstClient::hostCanDo(\"%s\") - unknown feature", feature);
+        carla_stderr("CarlaVstClient::hostCanDo(\"%s\") - unknown feature", feature);
         return 0;
     }
 
@@ -376,7 +376,7 @@ public:
 
                 if (self->effect != effect)
                 {
-                    qWarning("CarlaVstClient::hostCallback() - host pointer mismatch: %p != %p", self->effect, effect);
+                    carla_stderr("CarlaVstClient::hostCallback() - host pointer mismatch: %p != %p", self->effect, effect);
                     self = nullptr;
                 }
             }
@@ -540,7 +540,7 @@ int main(int argc, char* argv[])
 
     if (argc != 4)
     {
-        qWarning("usage: %s <osc-url|\"null\"> <binary> <ui-title>", argv[0]);
+        carla_stderr("usage: %s <osc-url|\"null\"> <binary> <ui-title>", argv[0]);
         return 1;
     }
 

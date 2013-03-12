@@ -39,6 +39,12 @@
 # define CARLA_OS_UNIX
 #endif
 
+#ifdef CARLA_OS_WIN
+# define OS_SEP '\\'
+#else
+# define OS_SEP '/'
+#endif
+
 // Check for C++11 support
 #if defined(HAVE_CPP11_SUPPORT)
 # define CARLA_PROPER_CPP11_SUPPORT

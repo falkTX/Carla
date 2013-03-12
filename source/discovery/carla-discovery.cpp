@@ -15,7 +15,7 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#include "CarlaBackend.hpp"
+#include "CarlaBackendUtils.hpp"
 #include "CarlaJuceUtils.hpp"
 #include "CarlaLibUtils.hpp"
 #include "CarlaString.hpp"
@@ -29,7 +29,6 @@
 # include "dssi/dssi.h"
 #endif
 #ifdef WANT_LV2
-# include <QtCore/QDir>
 # include <QtCore/QUrl>
 # include "CarlaLv2Utils.hpp"
 #endif
@@ -78,20 +77,18 @@ void print_lib_error(const char* const filename)
 
 #ifdef WANT_VST
 // Check if plugin wants midi
-bool vstWantsMidi = false;
+bool gVstWantsMidi = false;
 
 // Check if plugin is processing
-bool vstIsProcessing = false;
+bool gVstIsProcessing = false;
 
 // Current uniqueId for vst shell plugins
-intptr_t vstCurrentUniqueId = 0;
+intptr_t gVstCurrentUniqueId = 0;
 
 // Supported Carla features
 intptr_t vstHostCanDo(const char* const feature)
 {
-#if DEBUG
-    qDebug("vstHostCanDo(\"%s\")", feature);
-#endif
+    carla_debug("vstHostCanDo(\"%s\")", feature);
 
     if (std::strcmp(feature, "supplyIdle") == 0)
         return 1;
@@ -129,27 +126,21 @@ intptr_t vstHostCanDo(const char* const feature)
         return 1;
 
     // unimplemented
-    qWarning("vstHostCanDo(\"%s\") - unknown feature", feature);
+    carla_stderr("vstHostCanDo(\"%s\") - unknown feature", feature);
     return 0;
 }
 
 // Host-side callback
 intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t opcode, const int32_t index, const intptr_t value, void* const ptr, const float opt)
 {
-#if DEBUG
-    qDebug("vstHostCallback(%p, %s, %i, " P_INTPTR ", %p, %f)", effect, vstMasterOpcode2str(opcode), index, value, ptr, opt);
-#endif
+    carla_debug("vstHostCallback(%p, %s, %i, " P_INTPTR ", %p, %f)", effect, vstMasterOpcode2str(opcode), index, value, ptr, opt);
 
     intptr_t ret = 0;
 
     switch (opcode)
     {
     case audioMasterAutomate:
-        if (effect)
-        {
-            effect->setParameter(effect, index, opt);
-            ret = 1;
-        }
+        ret = 1;
         break;
 
     case audioMasterVersion:
@@ -157,19 +148,19 @@ intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t opcode
         break;
 
     case audioMasterCurrentId:
-        ret = vstCurrentUniqueId;
+        ret = gVstCurrentUniqueId;
         break;
 
 #if ! VST_FORCE_DEPRECATED
     case audioMasterWantMidi:
-        vstWantsMidi = true;
+        gVstWantsMidi = true;
         ret = 1;
         break;
 #endif
 
     case audioMasterGetTime:
         static VstTimeInfo_R timeInfo;
-        memset(&timeInfo, 0, sizeof(VstTimeInfo_R)); //FIXME
+        carla_zeroStruct<VstTimeInfo_R>(timeInfo);
         timeInfo.sampleRate = sampleRate;
 
         // Tempo
@@ -181,7 +172,7 @@ intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t opcode
         timeInfo.timeSigDenominator = 4;
         timeInfo.flags |= kVstTimeSigValid;
 
-        ret = (intptr_t)&timeInfo;
+        ret = getAddressFromPointer(&timeInfo);
         break;
 
 #if ! VST_FORCE_DEPRECATED
@@ -213,7 +204,7 @@ intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t opcode
 #endif
 
     case audioMasterGetCurrentProcessLevel:
-        ret = vstIsProcessing ? kVstProcessLevelRealtime : kVstProcessLevelUser;
+        ret = gVstIsProcessing ? kVstProcessLevelRealtime : kVstProcessLevelUser;
         break;
 
     case audioMasterGetAutomationState:
@@ -250,11 +241,16 @@ intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t opcode
         break;
 
     default:
-        qDebug("vstHostCallback(%p, %s, %i, " P_INTPTR ", %p, %f)", effect, vstMasterOpcode2str(opcode), index, value, ptr, opt);
+        carla_debug("vstHostCallback(%p, %s, %i, " P_INTPTR ", %p, %f)", effect, vstMasterOpcode2str(opcode), index, value, ptr, opt);
         break;
     }
 
     return ret;
+
+    // unused
+    (void)index;
+    (void)value;
+    (void)opt;
 }
 #endif
 
@@ -539,8 +535,11 @@ void do_ladspa_check(void* const libHandle, const bool init)
     }
 #else
     DISCOVERY_OUT("error", "LADSPA support not available");
-    Q_UNUSED(libHandle);
-    Q_UNUSED(init);
+    return;
+
+    // unused
+    (void)libHandle;
+    (void)init;
 #endif
 }
 
@@ -787,8 +786,11 @@ void do_dssi_check(void* const libHandle, const bool init)
     }
 #else
     DISCOVERY_OUT("error", "DSSI support not available");
-    Q_UNUSED(libHandle);
-    Q_UNUSED(init);
+    return;
+
+    // unused
+    (void)libHandle;
+    (void)init;
 #endif
 }
 
@@ -797,8 +799,8 @@ void do_lv2_check(const char* const bundle, const bool init)
 #ifdef WANT_LV2
     // Convert bundle filename to URI
     QString qBundle(QUrl::fromLocalFile(bundle).toString());
-    if (! qBundle.endsWith(QDir::separator()))
-        qBundle += QDir::separator();
+    if (! qBundle.endsWith(QChar(OS_SEP)))
+        qBundle += QChar(OS_SEP);
 
     // Load bundle
     Lilv::Node lilvBundle(lv2World.new_uri(qBundle.toUtf8().constData()));
@@ -1008,8 +1010,11 @@ void do_lv2_check(const char* const bundle, const bool init)
     }
 #else
     DISCOVERY_OUT("error", "LV2 support not available");
-    Q_UNUSED(bundle);
-    Q_UNUSED(init);
+    return;
+
+    // unused
+    (void)bundle;
+    (void)init;
 #endif
 }
 
@@ -1048,40 +1053,40 @@ void do_vst_check(void* const libHandle, const bool init)
 
     if (vstCategory == kPlugCategShell && effect->uniqueID == 0)
     {
-        if ((vstCurrentUniqueId = effect->dispatcher(effect, effShellGetNextPlugin, 0, 0, strBuf, 0.0f)) != 0)
+        if ((gVstCurrentUniqueId = effect->dispatcher(effect, effShellGetNextPlugin, 0, 0, strBuf, 0.0f)) != 0)
             cName = strBuf;
     }
     else
     {
-        vstCurrentUniqueId = effect->uniqueID;
+        gVstCurrentUniqueId = effect->uniqueID;
 
         if (effect->dispatcher(effect, effGetEffectName, 0, 0, strBuf, 0.0f) == 1)
             cName = strBuf;
     }
 
-    memset(strBuf, 0, sizeof(char)*STR_MAX); //FIXME
+    carla_zeroMem(strBuf, sizeof(char)*STR_MAX);
     if (effect->dispatcher(effect, effGetVendorString, 0, 0, strBuf, 0.0f) == 1)
         cVendor = strBuf;
 
     // FIXME: Waves crash during processing
     if (cVendor == "Waves")
-        memset((void*)&init, 0, sizeof(bool)); //FIXME
+        std::memset((void*)&init, 0, sizeof(bool)); //FIXME
 
-    if (vstCurrentUniqueId == 0)
+    if (gVstCurrentUniqueId == 0)
     {
         DISCOVERY_OUT("error", "Plugin doesn't have an Unique ID");
         return;
     }
 
-    while (vstCurrentUniqueId != 0)
+    while (gVstCurrentUniqueId != 0)
     {
-        memset(strBuf, 0, sizeof(char)*STR_MAX); //FIXME
+        carla_zeroMem(strBuf, sizeof(char)*STR_MAX);
         if (effect->dispatcher(effect, effGetProductString, 0, 0, strBuf, 0.0f) == 1)
             cProduct = strBuf;
         else
             cProduct.clear();
 
-        vstWantsMidi = false;
+        gVstWantsMidi = false;
 
         int hints = 0;
         int audioIns = effect->numInputs;
@@ -1120,11 +1125,14 @@ void do_vst_check(void* const libHandle, const bool init)
             effect->dispatcher(effect, effSetSampleRate, 0, 0, nullptr, sampleRate);
             effect->dispatcher(effect, effSetProcessPrecision, 0, kVstProcessPrecision32, nullptr, 0.0f);
 
+            effect->dispatcher(effect, effStopProcess,  0, 0, nullptr, 0.0f);
+            effect->dispatcher(effect, effMainsChanged, 0, 0, nullptr, 0.0f);
+
             effect->dispatcher(effect, effMainsChanged, 0, 1, nullptr, 0.0f);
             effect->dispatcher(effect, effStartProcess, 0, 0, nullptr, 0.0f);
 
             // Plugin might call wantMidi() during resume
-            if (midiIns == 0 && vstWantsMidi)
+            if (midiIns == 0 && gVstWantsMidi)
             {
                 midiIns = 1;
                 midiTotal = midiIns + midiOuts;
@@ -1148,12 +1156,15 @@ void do_vst_check(void* const libHandle, const bool init)
                 int32_t numEvents;
                 intptr_t reserved;
                 VstEvent* data[2];
-            };
-            VstEventsFixed events;
-            VstMidiEvent   midiEvents[2];
 
-            memset(&events, 0, sizeof(VstEventsFixed)); //FIXME
-            memset(midiEvents, 0, sizeof(VstMidiEvent)*2); //FIXME
+                VstEventsFixed()
+                    : numEvents(0),
+                      reserved(0),
+                      data{0} {}
+            } events;
+
+            VstMidiEvent midiEvents[2];
+            carla_zeroMem(midiEvents, sizeof(VstMidiEvent)*2);
 
             midiEvents[0].type = kVstMidiType;
             midiEvents[0].byteSize = sizeof(VstMidiEvent);
@@ -1173,7 +1184,7 @@ void do_vst_check(void* const libHandle, const bool init)
 
             // processing
             {
-                vstIsProcessing = true;
+                gVstIsProcessing = true;
 
                 if (midiIns > 0)
                     effect->dispatcher(effect, effProcessEvents, 0, 0, &events, 0.0f);
@@ -1198,7 +1209,7 @@ void do_vst_check(void* const libHandle, const bool init)
                     DISCOVERY_OUT("error", "Plugin doesn't have can't do process replacing");
 #endif
 
-                vstIsProcessing = false;
+                gVstIsProcessing = false;
             }
 
             effect->dispatcher(effect, effStopProcess, 0, 0, nullptr, 0.0f);
@@ -1218,7 +1229,7 @@ void do_vst_check(void* const libHandle, const bool init)
         DISCOVERY_OUT("label", (const char*)cProduct);
         DISCOVERY_OUT("maker", (const char*)cVendor);
         DISCOVERY_OUT("copyright", (const char*)cVendor);
-        DISCOVERY_OUT("unique_id", vstCurrentUniqueId);
+        DISCOVERY_OUT("unique_id", gVstCurrentUniqueId);
         DISCOVERY_OUT("hints", hints);
         DISCOVERY_OUT("audio.ins", audioIns);
         DISCOVERY_OUT("audio.outs", audioOuts);
@@ -1236,13 +1247,15 @@ void do_vst_check(void* const libHandle, const bool init)
             break;
 
         // request next Unique ID
-        intptr_t nextUniqueId = vstCurrentUniqueId;
+        intptr_t nextUniqueId = gVstCurrentUniqueId;
 
         // FIXME: Waves sometimes return the same ID
-        while (nextUniqueId == vstCurrentUniqueId)
+        while (nextUniqueId == gVstCurrentUniqueId)
         {
-            memset(strBuf, 0, sizeof(char)*STR_MAX); //FIXME
-            if ((vstCurrentUniqueId = effect->dispatcher(effect, effShellGetNextPlugin, 0, 0, strBuf, 0.0f)) != 0)
+            carla_zeroMem(strBuf, sizeof(char)*STR_MAX);
+            gVstCurrentUniqueId = effect->dispatcher(effect, effShellGetNextPlugin, 0, 0, strBuf, 0.0f);
+
+            if (gVstCurrentUniqueId != 0)
                 cName = strBuf;
         }
     }
@@ -1250,8 +1263,11 @@ void do_vst_check(void* const libHandle, const bool init)
     effect->dispatcher(effect, effClose, 0, 0, nullptr, 0.0f);
 #else
     DISCOVERY_OUT("error", "VST support not available");
-    Q_UNUSED(libHandle);
-    Q_UNUSED(init);
+    return;
+
+    // unused
+    (void)libHandle;
+    (void)init;
 #endif
 }
 
@@ -1323,6 +1339,7 @@ void do_fluidsynth_check(const char* const filename, const bool init)
     // 16 channels
     if (name.isNotEmpty())
         name += " (16 outputs)";
+
     DISCOVERY_OUT("init", "-----------");
     DISCOVERY_OUT("name", "");
     DISCOVERY_OUT("name", (const char*)name);
@@ -1341,8 +1358,11 @@ void do_fluidsynth_check(const char* const filename, const bool init)
     DISCOVERY_OUT("end", "------------");
 #else
     DISCOVERY_OUT("error", "SF2 support not available");
-    Q_UNUSED(filename);
-    Q_UNUSED(init);
+    return;
+
+    // unused
+    (void)filename;
+    (void)init;
 #endif
 }
 
@@ -1375,8 +1395,11 @@ void do_linuxsampler_check(const char* const filename, const char* const stype, 
         LinuxSamplerScopedEngine::outputInfo(nullptr, 0, file.baseName().toUtf8().constData());
 #else
     DISCOVERY_OUT("error", stype << " support not available");
-    Q_UNUSED(filename);
-    Q_UNUSED(init);
+    return;
+
+    // unused
+    (void)filename;
+    (void)init;
 #endif
 }
 
@@ -1437,7 +1460,7 @@ int main(int argc, char* argv[])
 
     if (argc != 3)
     {
-        qWarning("usage: %s <type> </path/to/plugin>", argv[0]);
+        carla_stdout("usage: %s <type> </path/to/plugin>", argv[0]);
         return 1;
     }
 

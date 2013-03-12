@@ -48,6 +48,15 @@ win64:   ../lilv.win64.a
 ../lilv.win64.a: $(OBJS_win64)
 	$(AR) rs $@ $^
 
+../lilv.dll: $(OBJS)
+	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
+
+../lilv.dylib: $(OBJS)
+	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
+
+../lilv.so: $(OBJS)
+	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
+
 # --------------------------------------------------------------
 
 serd.c.o: serd.c

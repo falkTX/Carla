@@ -761,7 +761,7 @@ public:
             qDebug("%s", buf);
             break;
         case CARLA_URI_MAP_ID_LOG_WARNING:
-            qWarning("%s", buf);
+            carla_stderr("%s", buf);
             break;
         default:
             break;
@@ -1068,7 +1068,7 @@ int main(int argc, char* argv[])
 
     if (argc != 5)
     {
-        qWarning("usage: %s <osc-url|\"null\"> <plugin-uri> <ui-uri> <ui-title>", argv[0]);
+        carla_stderr("usage: %s <osc-url|\"null\"> <plugin-uri> <ui-uri> <ui-title>", argv[0]);
         return 1;
     }
 
