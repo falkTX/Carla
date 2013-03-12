@@ -465,7 +465,7 @@ public:
 
         case audioMasterGetVendorString:
             if (ptr)
-                std::strcpy((char*)ptr, "Cadence");
+                std::strcpy((char*)ptr, "falkTX");
             break;
 
         case audioMasterGetProductString:

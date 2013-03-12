@@ -346,7 +346,7 @@ private:
         if (reset)
         {
             reset = false;
-            carla_zeroMem(&value, sizeof(T));
+            carla_zeroStruct<T>(value);
         }
 
         return value;

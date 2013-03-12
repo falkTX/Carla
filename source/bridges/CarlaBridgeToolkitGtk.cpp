@@ -47,7 +47,7 @@ class CarlaToolkitGtk : public CarlaBridgeToolkit
 public:
     CarlaToolkitGtk(CarlaBridgeClient* const client, const char* const uiTitle)
         : CarlaBridgeToolkit(client, uiTitle),
-          settings("Cadence", appName)
+          settings("falkTX", appName)
     {
         carla_debug("CarlaToolkitGtk::CarlaToolkitGtk(%p, \"%s\")", client, uiTitle);
 

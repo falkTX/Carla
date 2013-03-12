@@ -36,8 +36,6 @@
                      defer:(BOOL)flag;
 - (void) setPuglview:(PuglView*)view;
 - (BOOL) windowShouldClose:(id)sender;
-- (void) becomeKeyWindow:(id)sender;
-- (BOOL) canBecomeKeyWindow:(id)sender;
 @end
 
 @implementation PuglWindow
@@ -73,6 +71,14 @@
 }
 
 @end
+
+void
+puglDisplay(PuglView* view)
+{
+        if (view->displayFunc) {
+                view->displayFunc(view);
+        }
+}
 
 @interface PuglOpenGLView : NSOpenGLView
 {
@@ -169,9 +175,9 @@
 }
 
 static unsigned
-getModifiers(PuglView* view, NSevent* ev)
+getModifiers(PuglView* view, NSEvent* ev)
 {
-	const unsigned modifierFlags = [ev modifierFlags]
+	const unsigned modifierFlags = [ev modifierFlags];
 
 	view->event_timestamp_ms = fmod([ev timestamp] * 1000.0, UINT32_MAX);
 
@@ -368,14 +374,6 @@ puglDestroy(PuglView* view)
 	[view->impl->window release];
 	free(view->impl);
 	free(view);
-}
-
-void
-puglDisplay(PuglView* view)
-{
-	if (view->displayFunc) {
-		view->displayFunc(view);
-	}
 }
 
 PuglStatus

@@ -8,8 +8,7 @@ include ../../../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += -fvisibility=hidden -fPIC
-BUILD_CXX_FLAGS += -I.
+BUILD_CXX_FLAGS += -fvisibility=hidden -fPIC -I.
 
 OBJS   = \
 	src/App.cpp.o \
@@ -22,6 +21,8 @@ OBJS   = \
 	src/Widget.cpp.o \
 	src/Window.cpp.o
 
+OBJSM  = src/pugl/pugl_osx.m.o
+
 STATIC = ../../dgl.a
 
 # --------------------------------------------------------------
@@ -29,15 +30,12 @@ STATIC = ../../dgl.a
 all: $(STATIC)
 
 clean:
-	rm -f $(OBJS) $(SHARED) $(STATIC)
+	rm -f $(OBJS) $(OBJSM) $(SHARED) $(STATIC)
 
 debug:
 	$(MAKE) DEBUG=true
 
 # --------------------------------------------------------------
-
-%.cpp.o: %.cpp
-	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 $(STATIC): $(OBJS)
 	$(AR) rs $@ $^
@@ -45,5 +43,16 @@ $(STATIC): $(OBJS)
 ../../dgl.dll: $(OBJS)
 	$(CXX) $^ -shared $(LINK_FLAGS) -lopengl32 -lgdi32 -o $@
 
+../../dgl.dylib: $(OBJS) $(OBJSM)
+	$(CXX) $^ -shared $(LINK_FLAGS) -framework Cocoa -framework OpenGL -o $@
+
 ../../dgl.so: $(OBJS)
 	$(CXX) $^ -shared $(LINK_FLAGS) -lX11 -lGL -lGLU -o $@
+
+# --------------------------------------------------------------
+
+%.cpp.o: %.cpp
+	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+
+%.m.o: %.m
+	$(CC) $< $(BUILD_C_FLAGS) -objc -c -o $@

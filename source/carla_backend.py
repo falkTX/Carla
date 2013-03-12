@@ -432,8 +432,10 @@ class Host(object):
         self.lib.carla_transport_relocate(frames)
 
     def add_plugin(self, btype, ptype, filename, name, label, extraStuff):
-        cname = name.encode("utf-8") if name else c_nullptr
-        return self.lib.carla_add_plugin(btype, ptype, filename.encode("utf-8"), cname, label.encode("utf-8"), cast(extraStuff, c_void_p))
+        cfilename = filename.encode("utf-8") if filename else c_nullptr
+        cname     = name.encode("utf-8") if name else c_nullptr
+        clabel    = label.encode("utf-8") if label else c_nullptr
+        return self.lib.carla_add_plugin(btype, ptype, cfilename, cname, clabel, cast(extraStuff, c_void_p))
 
     def remove_plugin(self, pluginId):
         return self.lib.carla_remove_plugin(pluginId)

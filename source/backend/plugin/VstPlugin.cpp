@@ -53,7 +53,7 @@ public:
         carla_debug("VstPlugin::VstPlugin(%p, %i)", engine, id);
 
         carla_zeroMem(fMidiEvents, sizeof(VstMidiEvent)*MAX_MIDI_EVENTS*2);
-        carla_zeroMem(&fTimeInfo, sizeof(VstTimeInfo_R));
+        carla_zeroStruct<VstTimeInfo_R>(fTimeInfo);
 
         for (unsigned short i=0; i < MAX_MIDI_EVENTS*2; i++)
             fEvents.data[i] = (VstEvent*)&fMidiEvents[i];
@@ -540,7 +540,7 @@ public:
             float min, max, def, step, stepSmall, stepLarge;
 
             VstParameterProperties prop;
-            carla_zeroMem(&prop, sizeof(VstParameterProperties));
+            carla_zeroStruct<VstParameterProperties>(prop);
 
             if (fHints & PLUGIN_HAS_COCKOS_EXTENSIONS)
             {

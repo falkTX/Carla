@@ -226,7 +226,7 @@ puglCreate(PuglNativeWindow parent,
            int              width,
            int              height,
            bool             resizable,
-           bool             addToDesktop = true);
+           bool             addToDesktop);
 
 /**
    Set the handle to be passed to all callbacks.

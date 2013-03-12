@@ -3320,9 +3320,9 @@ class PluginDatabaseW(QDialog):
             bridgeText = self.tr("Yes (%s)" % typeText)
 
         self.ui.tableWidget.insertRow(index)
-        self.ui.tableWidget.setItem(index, 0, QTableWidgetItem(plugin['name']))
-        self.ui.tableWidget.setItem(index, 1, QTableWidgetItem(plugin['label']))
-        self.ui.tableWidget.setItem(index, 2, QTableWidgetItem(plugin['maker']))
+        self.ui.tableWidget.setItem(index, 0, QTableWidgetItem(str(plugin['name'])))
+        self.ui.tableWidget.setItem(index, 1, QTableWidgetItem(str(plugin['label'])))
+        self.ui.tableWidget.setItem(index, 2, QTableWidgetItem(str(plugin['maker'])))
         self.ui.tableWidget.setItem(index, 3, QTableWidgetItem(str(plugin['uniqueId'])))
         self.ui.tableWidget.setItem(index, 4, QTableWidgetItem(str(plugin['audio.ins'])))
         self.ui.tableWidget.setItem(index, 5, QTableWidgetItem(str(plugin['audio.outs'])))
@@ -3333,7 +3333,7 @@ class PluginDatabaseW(QDialog):
         self.ui.tableWidget.setItem(index, 10, QTableWidgetItem(self.tr("Yes") if (plugin['hints'] & PLUGIN_IS_SYNTH) else self.tr("No")))
         self.ui.tableWidget.setItem(index, 11, QTableWidgetItem(bridgeText))
         self.ui.tableWidget.setItem(index, 12, QTableWidgetItem(ptype))
-        self.ui.tableWidget.setItem(index, 13, QTableWidgetItem(plugin['binary']))
+        self.ui.tableWidget.setItem(index, 13, QTableWidgetItem(str(plugin['binary'])))
         self.ui.tableWidget.item(self.fLastTableIndex, 0).pluginData = plugin
         self.fLastTableIndex += 1
 

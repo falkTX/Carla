@@ -19,12 +19,16 @@
 #include "../Widget.hpp"
 #include "../Window.hpp"
 
+#include "pugl/pugl.h"
+
 #if DGL_OS_WINDOWS
 # include "pugl/pugl_win.cpp"
 #elif DGL_OS_MAC
-# include "pugl/pugl_osx.m"
+// compiled separately
 #elif DGL_OS_LINUX
+extern "C" {
 # include "pugl/pugl_x11.c"
+}
 #else
 # error Unsupported platform!
 #endif
@@ -32,10 +36,10 @@
 #include <cassert>
 
 #define FOR_EACH_WIDGET(it) \
-  for (auto it = fWidgets.begin(); it != fWidgets.end(); ++it)
+  for (std::list<Widget*>::iterator it = fWidgets.begin(); it != fWidgets.end(); ++it)
 
 #define FOR_EACH_WIDGET_INV(rit) \
-  for (auto rit = fWidgets.rbegin(); rit != fWidgets.rend(); ++rit)
+  for (std::list<Widget*>::reverse_iterator rit = fWidgets.rbegin(); rit != fWidgets.rend(); ++rit)
 
 START_NAMESPACE_DGL
 
@@ -85,11 +89,11 @@ public:
         puglSetReshapeFunc(kView, onReshapeCallback);
         puglSetCloseFunc(kView, onCloseCallback);
 
-        PuglInternals* impl = kView->impl;
-
 #if DGL_OS_WINDOWS
+        PuglInternals* impl = kView->impl;
         hwnd = impl->hwnd;
 #elif DGL_OS_LINUX
+        PuglInternals* impl = kView->impl;
         xDisplay = impl->display;
         xWindow  = impl->win;
 
@@ -307,7 +311,7 @@ protected:
 
         FOR_EACH_WIDGET(it)
         {
-            Widget* widget = *it;
+            Widget* const widget(*it);
             if (widget->isVisible())
                 widget->onDisplay();
         }
@@ -320,7 +324,7 @@ protected:
 
         FOR_EACH_WIDGET_INV(rit)
         {
-            Widget* widget = *rit;
+            Widget* const widget(*rit);
             if (widget->isVisible())
             {
                 if (widget->onKeyboard(press, key))
@@ -336,7 +340,7 @@ protected:
 
         FOR_EACH_WIDGET_INV(rit)
         {
-            Widget* widget = *rit;
+            Widget* const widget(*rit);
             if (widget->isVisible())
             {
                 if (widget->onMouse(button, press, x, y))
@@ -352,7 +356,7 @@ protected:
 
         FOR_EACH_WIDGET_INV(rit)
         {
-            Widget* widget = *rit;
+            Widget* const widget(*rit);
             if (widget->isVisible())
             {
                 if (widget->onMotion(x, y))
@@ -368,7 +372,7 @@ protected:
 
         FOR_EACH_WIDGET_INV(rit)
         {
-            Widget* widget = *rit;
+            Widget* const widget(*rit);
             if (widget->isVisible())
             {
                 if (widget->onScroll(dx, dy))
@@ -384,7 +388,7 @@ protected:
 
         FOR_EACH_WIDGET_INV(rit)
         {
-            Widget* widget = *rit;
+            Widget* const widget(*rit);
             if (widget->isVisible())
             {
                 if (widget->onSpecial(press, key))
@@ -397,7 +401,7 @@ protected:
     {
         FOR_EACH_WIDGET(it)
         {
-            Widget* widget = *it;
+            Widget* const widget(*it);
             widget->onReshape(width, height);
         }
     }
@@ -411,7 +415,7 @@ protected:
 
         FOR_EACH_WIDGET(it)
         {
-            Widget* widget = *it;
+            Widget* const widget(*it);
             widget->onClose();
         }
 

@@ -75,7 +75,7 @@ public:
     CarlaBridgeToolkitQt(CarlaBridgeClient* const client, const char* const uiTitle)
         : CarlaBridgeToolkit(client, uiTitle),
           QObject(nullptr),
-          settings("Cadence", appName)
+          settings("falkTX", appName)
     {
         qDebug("CarlaBridgeToolkitQt::CarlaBridgeToolkitQt(%p, \"%s\")", client, uiTitle);
 
