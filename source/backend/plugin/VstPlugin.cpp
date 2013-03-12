@@ -361,7 +361,7 @@ public:
 #ifdef Q_WS_X11
                 //value = (intptr_t)QX11Info::display();
 #endif
-                void* const ptr = (void*)kData->gui->getWinId();
+                void* const ptr = (void*)kData->gui->getWindowId();
 
                 if (dispatcher(effEditOpen, 0, value, ptr, 0.0f) != 0)
                 {
@@ -376,11 +376,11 @@ public:
 
                         if (width > 0 && height > 0)
                         {
-                            kData->gui->setFixedSize(width, height);
+                            kData->gui->setSize(width, height);
                         }
                     }
 
-                    kData->gui->setWindowTitle(QString("%1 (GUI)").arg((const char*)fName));
+                    kData->gui->setWindowTitle(QString("%1 (GUI)").arg((const char*)fName).toUtf8().constData());
                     kData->gui->show();
                 }
                 else
@@ -403,6 +403,8 @@ public:
 
     void idleGui()
     {
+        kData->app.idle();
+
 #ifdef VESTIGE_HEADER
         if (fEffect != nullptr /*&& effect->ptr1*/)
 #else
@@ -413,7 +415,10 @@ public:
                 dispatcher(effIdle, 0, 0, nullptr, 0.0f);
 
             if (! fGui.isOsc && fGui.isVisible)
+            {
                 dispatcher(effEditIdle, 0, 0, nullptr, 0.0f);
+                kData->gui->idle();
+            }
         }
 
         CarlaPlugin::idleGui();

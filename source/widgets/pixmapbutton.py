@@ -53,10 +53,8 @@ class PixmapButton(QPushButton):
     def setPixmapSize(self, size):
         self.fPixmapRect = QRectF(0, 0, size, size)
 
-        self.setMinimumWidth(size)
-        self.setMaximumWidth(size)
-        self.setMinimumHeight(size)
-        self.setMaximumHeight(size)
+        self.setMinimumSize(size, size)
+        self.setMaximumSize(size, size)
 
     def enterEvent(self, event):
         self.fIsHovered = True
@@ -68,6 +66,7 @@ class PixmapButton(QPushButton):
 
     def paintEvent(self, event):
         painter = QPainter(self)
+        event.accept()
 
         if not self.isEnabled():
             painter.setOpacity(0.2)
@@ -78,5 +77,3 @@ class PixmapButton(QPushButton):
             painter.drawPixmap(self.fPixmapRect, self.fPixmapHover, self.fPixmapRect)
         else:
             painter.drawPixmap(self.fPixmapRect, self.fPixmapNormal, self.fPixmapRect)
-
-        event.accept()

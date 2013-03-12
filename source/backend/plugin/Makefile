@@ -8,8 +8,10 @@ include ../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo QtCore QtGui)
-LINK_FLAGS      += $(shell pkg-config --libs liblo QtCore QtGui)
+BUILD_CXX_FLAGS += -I../../libs/distrho
+
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo QtCore gl)
+LINK_FLAGS      += $(shell pkg-config --libs liblo QtCore gl)
 
 ifeq ($(HAVE_SUIL),true)
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags suil-0)

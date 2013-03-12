@@ -1971,18 +1971,21 @@ CarlaPlugin::ScopedProcessLocker::~ScopedProcessLocker()
 // -------------------------------------------------------------------
 // CarlaPluginGUI
 
-CarlaPluginGUI::CarlaPluginGUI(QWidget* const parent, Callback* const callback)
-    : QMainWindow(parent),
-      kCallback(callback),
-      fContainer(this)
+CarlaPluginGUI::CarlaPluginGUI(DGL::App* const app, Callback* const callback)
+//CarlaPluginGUI::CarlaPluginGUI(QWidget* const parent, Callback* const callback)
+    : DGL::Window(app),
+      kCallback(callback)/*,
+      fContainer(this)*/
 {
-    carla_debug("CarlaPluginGUI::CarlaPluginGUI(%p, %p)", parent, callback);
+    carla_debug("CarlaPluginGUI::CarlaPluginGUI(%p, %p)", app, callback);
+    CARLA_ASSERT(app != nullptr);
     CARLA_ASSERT(callback != nullptr);
 
-    setCentralWidget(&fContainer);
-    adjustSize();
+    //setCentralWidget(&fContainer);
+    //adjustSize();
 
-    QMainWindow::setVisible(false);
+    //QMainWindow::setVisible(false);
+    hide();
 }
 
 CarlaPluginGUI::~CarlaPluginGUI()
@@ -1990,28 +1993,30 @@ CarlaPluginGUI::~CarlaPluginGUI()
     carla_debug("CarlaPluginGUI::~CarlaPluginGUI()");
 }
 
+#if 0
 WId CarlaPluginGUI::getWinId() const
 {
     carla_debug("CarlaPluginGUI::getWinId()");
     return fContainer.winId();
 }
+#endif
 
-void CarlaPluginGUI::closeEvent(QCloseEvent* const event)
-{
-    carla_debug("CarlaPluginGUI::closeEvent(%p)", event);
-    CARLA_ASSERT(event != nullptr);
-
-    if (! event->spontaneous())
-    {
-        event->ignore();
-        return;
-    }
-
-    if (kCallback != nullptr)
-        kCallback->guiClosedCallback();
-
-    QMainWindow::closeEvent(event);
-}
+// void CarlaPluginGUI::closeEvent(QCloseEvent* const event)
+// {
+//     carla_debug("CarlaPluginGUI::closeEvent(%p)", event);
+//     CARLA_ASSERT(event != nullptr);
+//
+//     if (! event->spontaneous())
+//     {
+//         event->ignore();
+//         return;
+//     }
+//
+//     if (kCallback != nullptr)
+//         kCallback->guiClosedCallback();
+//
+//     QMainWindow::closeEvent(event);
+// }
 
 // -------------------------------------------------------------------
 

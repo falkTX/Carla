@@ -9,13 +9,28 @@ DESTDIR =
 
 SED_PREFIX = $(shell echo $(PREFIX) | sed "s/\//\\\\\\\\\//g")
 
-LINK  = ln -sf
-PYUIC = pyuic4
-PYRCC = pyrcc4 -py3
+LINK   = ln -sf
+PYUIC ?= pyuic4
+PYRCC ?= pyrcc4 -py3
 
 # -----------------------------------------------------------------------------------------------------------------------------------------
 
+HAVE_OPENGL = $(shell pkg-config --exists gl && echo true)
+HAVE_QTCORE = $(shell pkg-config --exists QtCore && echo true)
+
+ifneq ($(HAVE_OPENGL),true)
+all:
+	@echo Error: Missing OpenGL or pkg-config, cannot build
+	@exit 1
+else
+ifneq ($(HAVE_QTCORE),true)
+all:
+	@echo Error: Missing QtCore, cannot build
+	@exit 1
+else
 all: CPP RES UI WIDGETS
+endif
+endif
 
 # -----------------------------------------------------------------------------------------------------------------------------------------
 # C++ code
@@ -62,15 +77,22 @@ RES = source/resources_rc.py
 
 RES: $(RES)
 
-source/resources_rc.py: resources/resources.qrc
+source/%_rc.py: resources/%.qrc
 	$(PYRCC) $< -o $@
 
 # -----------------------------------------------------------------------------------------------------------------------------------------
 # UI code
 
-UIs = source/ui_carla.py source/ui_carla_control.py \
-	source/ui_carla_about.py source/ui_carla_database.py source/ui_carla_edit.py source/ui_carla_parameter.py source/ui_carla_plugin.py \
-	source/ui_carla_refresh.py source/ui_carla_settings.py \
+UIs = \
+	source/ui_carla.py \
+	source/ui_carla_control.py \
+	source/ui_carla_about.py \
+	source/ui_carla_database.py \
+	source/ui_carla_edit.py \
+	source/ui_carla_parameter.py \
+	source/ui_carla_plugin.py \
+	source/ui_carla_refresh.py \
+	source/ui_carla_settings.py \
 	source/ui_inputdialog_value.py
 
 UI: $(UIs)
@@ -105,7 +127,7 @@ clean:
 	rm -f $(RES)
 	rm -f $(UIs)
 	rm -f $(WIDGETS)
-	rm -f *~ source/*~ source/*.pyc source/ui_*.py source/resources_rc.py
+	rm -f *~ source/*~ source/*.pyc source/*_rc.py source/ui_*.py
 
 # -----------------------------------------------------------------------------------------------------------------------------------------
 
@@ -126,7 +148,7 @@ install:
 	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/
 	install -d $(DESTDIR)$(PREFIX)/share/carla/
 
-	# Install script files and binaries
+	# Install script files
 	install -m 755 \
 		data/carla \
 		data/carla-control \
@@ -137,24 +159,24 @@ install:
 	install -m 644 data/*.desktop $(DESTDIR)$(PREFIX)/share/applications/
 
 	# Install icons, 16x16
-	install -m 644 resources/16x16/carla.png               $(DESTDIR)$(PREFIX)/share/icons/hicolor/16x16/apps/
-	install -m 644 resources/16x16/carla-control.png       $(DESTDIR)$(PREFIX)/share/icons/hicolor/16x16/apps/
+	install -m 644 resources/16x16/carla.png            $(DESTDIR)$(PREFIX)/share/icons/hicolor/16x16/apps/
+	install -m 644 resources/16x16/carla-control.png    $(DESTDIR)$(PREFIX)/share/icons/hicolor/16x16/apps/
 
 	# Install icons, 48x48
-	install -m 644 resources/48x48/carla.png               $(DESTDIR)$(PREFIX)/share/icons/hicolor/48x48/apps/
-	install -m 644 resources/48x48/carla-control.png       $(DESTDIR)$(PREFIX)/share/icons/hicolor/48x48/apps/
+	install -m 644 resources/48x48/carla.png            $(DESTDIR)$(PREFIX)/share/icons/hicolor/48x48/apps/
+	install -m 644 resources/48x48/carla-control.png    $(DESTDIR)$(PREFIX)/share/icons/hicolor/48x48/apps/
 
 	# Install icons, 128x128
-	install -m 644 resources/128x128/carla.png             $(DESTDIR)$(PREFIX)/share/icons/hicolor/128x128/apps/
-	install -m 644 resources/128x128/carla-control.png     $(DESTDIR)$(PREFIX)/share/icons/hicolor/128x128/apps/
+	install -m 644 resources/128x128/carla.png          $(DESTDIR)$(PREFIX)/share/icons/hicolor/128x128/apps/
+	install -m 644 resources/128x128/carla-control.png  $(DESTDIR)$(PREFIX)/share/icons/hicolor/128x128/apps/
 
 	# Install icons, 256x256
-	install -m 644 resources/256x256/carla.png             $(DESTDIR)$(PREFIX)/share/icons/hicolor/256x256/apps/
-	install -m 644 resources/256x256/carla-control.png     $(DESTDIR)$(PREFIX)/share/icons/hicolor/256x256/apps/
+	install -m 644 resources/256x256/carla.png          $(DESTDIR)$(PREFIX)/share/icons/hicolor/256x256/apps/
+	install -m 644 resources/256x256/carla-control.png  $(DESTDIR)$(PREFIX)/share/icons/hicolor/256x256/apps/
 
 	# Install icons, scalable
-	install -m 644 resources/scalable/carla.svg            $(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/
-	install -m 644 resources/scalable/carla-control.svg    $(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/
+	install -m 644 resources/scalable/carla.svg         $(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/
+	install -m 644 resources/scalable/carla-control.svg $(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/
 
 	# Install binary data
 	install -m 755 \

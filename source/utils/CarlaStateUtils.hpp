@@ -21,7 +21,7 @@
 #include "CarlaBackendUtils.hpp"
 
 #include <QtXml/QDomNode>
-#include <vector>
+#include <QtCore/QVector>
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -73,8 +73,8 @@ struct StateCustomData {
     }
 };
 
-typedef std::vector<StateParameter*> StateParameterVector;
-typedef std::vector<StateCustomData*> StateCustomDataVector;
+typedef QVector<StateParameter*> StateParameterVector;
+typedef QVector<StateCustomData*> StateCustomDataVector;
 
 struct SaveState {
     const char* type;

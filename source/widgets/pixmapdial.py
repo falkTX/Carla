@@ -45,95 +45,95 @@ class PixmapDial(QDial):
     def __init__(self, parent):
         QDial.__init__(self, parent)
 
-        self.m_pixmap = QPixmap(":/bitmaps/dial_01d.png")
-        self.m_pixmapNum   = "01"
-        self.m_customPaint = self.CUSTOM_PAINT_NULL
+        self.fPixmap = QPixmap(":/bitmaps/dial_01d.png")
+        self.fPixmapNum   = "01"
+        self.fCustomPaint = self.CUSTOM_PAINT_NULL
 
-        self.m_hovered   = False
-        self.m_hoverStep = self.HOVER_MIN
+        self.fHovered   = False
+        self.fHoverStep = self.HOVER_MIN
 
-        if self.m_pixmap.width() > self.m_pixmap.height():
-            self.m_orientation = self.HORIZONTAL
+        if self.fPixmap.width() > self.fPixmap.height():
+            self.fOrientation = self.HORIZONTAL
         else:
-            self.m_orientation = self.VERTICAL
+            self.fOrientation = self.VERTICAL
 
-        self.m_label = ""
-        self.m_labelPos = QPointF(0.0, 0.0)
-        self.m_labelFont = QFont()
-        self.m_labelFont.setPointSize(6)
-        self.m_labelWidth  = 0
-        self.m_labelHeight = 0
-        self.m_labelGradient = QLinearGradient(0, 0, 0, 1)
+        self.fLabel = ""
+        self.fLabelPos = QPointF(0.0, 0.0)
+        self.fLabelFont = QFont()
+        self.fLabelFont.setPointSize(6)
+        self.fLabelWidth  = 0
+        self.fLabelHeight = 0
+        self.fLabelGradient = QLinearGradient(0, 0, 0, 1)
 
         if self.palette().window().color().lightness() > 100:
             # Light background
             c = self.palette().dark().color()
-            self.m_color1 = c
-            self.m_color2 = QColor(c.red(), c.green(), c.blue(), 0)
-            self.m_colorT = [self.palette().buttonText().color(), self.palette().mid().color()]
+            self.fColor1 = c
+            self.fColor2 = QColor(c.red(), c.green(), c.blue(), 0)
+            self.fColorT = [self.palette().buttonText().color(), self.palette().mid().color()]
         else:
             # Dark background
-            self.m_color1 = QColor(0, 0, 0, 255)
-            self.m_color2 = QColor(0, 0, 0, 0)
-            self.m_colorT = [Qt.white, Qt.darkGray]
+            self.fColor1 = QColor(0, 0, 0, 255)
+            self.fColor2 = QColor(0, 0, 0, 0)
+            self.fColorT = [Qt.white, Qt.darkGray]
 
         self.updateSizes()
 
     def getSize(self):
-        return self.p_size
+        return self.fSize
 
     def setCustomPaint(self, paint):
-        self.m_customPaint = paint
-        self.m_labelPos.setY(self.p_size + self.m_labelHeight/2)
+        self.fCustomPaint = paint
+        self.fLabelPos.setY(self.fSize + self.fLabelHeight/2)
         self.update()
 
     def setEnabled(self, enabled):
         if self.isEnabled() != enabled:
-            self.m_pixmap.load(":/bitmaps/dial_%s%s.png" % (self.m_pixmapNum, "" if enabled else "d"))
+            self.fPixmap.load(":/bitmaps/dial_%s%s.png" % (self.fPixmapNum, "" if enabled else "d"))
             self.updateSizes()
             self.update()
         QDial.setEnabled(self, enabled)
 
     def setLabel(self, label):
-        self.m_label = label
+        self.fLabel = label
 
-        self.m_labelWidth  = QFontMetrics(self.m_labelFont).width(label)
-        self.m_labelHeight = QFontMetrics(self.m_labelFont).height()
+        self.fLabelWidth  = QFontMetrics(self.fLabelFont).width(label)
+        self.fLabelHeight = QFontMetrics(self.fLabelFont).height()
 
-        self.m_labelPos.setX(float(self.p_size)/2 - float(self.m_labelWidth)/2)
-        self.m_labelPos.setY(self.p_size + self.m_labelHeight)
+        self.fLabelPos.setX(float(self.fSize)/2 - float(self.fLabelWidth)/2)
+        self.fLabelPos.setY(self.fSize + self.fLabelHeight)
 
-        self.m_labelGradient.setColorAt(0.0, self.m_color1)
-        self.m_labelGradient.setColorAt(0.6, self.m_color1)
-        self.m_labelGradient.setColorAt(1.0, self.m_color2)
+        self.fLabelGradient.setColorAt(0.0, self.fColor1)
+        self.fLabelGradient.setColorAt(0.6, self.fColor1)
+        self.fLabelGradient.setColorAt(1.0, self.fColor2)
 
-        self.m_labelGradient.setStart(0, float(self.p_size)/2)
-        self.m_labelGradient.setFinalStop(0, self.p_size + self.m_labelHeight + 5)
+        self.fLabelGradient.setStart(0, float(self.fSize)/2)
+        self.fLabelGradient.setFinalStop(0, self.fSize + self.fLabelHeight + 5)
 
-        self.m_labelGradient_rect = QRectF(float(self.p_size)/8, float(self.p_size)/2, float(self.p_size)*6/8, self.p_size+self.m_labelHeight+5)
+        self.fLabelGradientRect = QRectF(float(self.fSize)/8, float(self.fSize)/2, float(self.fSize)*6/8, self.fSize+self.fLabelHeight+5)
         self.update()
 
     def setPixmap(self, pixmapId):
-        self.m_pixmapNum = "%02i" % pixmapId
-        self.m_pixmap.load(":/bitmaps/dial_%s%s.png" % (self.m_pixmapNum, "" if self.isEnabled() else "d"))
+        self.fPixmapNum = "%02i" % pixmapId
+        self.fPixmap.load(":/bitmaps/dial_%s%s.png" % (self.fPixmapNum, "" if self.isEnabled() else "d"))
 
-        if self.m_pixmap.width() > self.m_pixmap.height():
-            self.m_orientation = self.HORIZONTAL
+        if self.fPixmap.width() > self.fPixmap.height():
+            self.fOrientation = self.HORIZONTAL
         else:
-            self.m_orientation = self.VERTICAL
+            self.fOrientation = self.VERTICAL
 
         self.updateSizes()
         self.update()
 
     def minimumSizeHint(self):
-        return QSize(self.p_size, self.p_size)
+        return QSize(self.fSize, self.fSize)
 
     def sizeHint(self):
-        return QSize(self.p_size, self.p_size)
+        return QSize(self.fSize, self.fSize)
 
     def updateSizes(self):
-        self.p_width  = self.m_pixmap.width()
-        self.p_height = self.m_pixmap.height()
+        self.p_width  = self.fPixmap.width()
+        self.p_height = self.fPixmap.height()
 
         if self.p_width < 1:
             self.p_width = 1
@@ -141,41 +141,41 @@ class PixmapDial(QDial):
         if self.p_height < 1:
             self.p_height = 1
 
-        if self.m_orientation == self.HORIZONTAL:
-            self.p_size  = self.p_height
+        if self.fOrientation == self.HORIZONTAL:
+            self.fSize  = self.p_height
             self.p_count = self.p_width / self.p_height
         else:
-            self.p_size  = self.p_width
+            self.fSize  = self.p_width
             self.p_count = self.p_height / self.p_width
 
-        self.setMinimumSize(self.p_size, self.p_size + self.m_labelHeight + 5)
-        self.setMaximumSize(self.p_size, self.p_size + self.m_labelHeight + 5)
+        self.setMinimumSize(self.fSize, self.fSize + self.fLabelHeight + 5)
+        self.setMaximumSize(self.fSize, self.fSize + self.fLabelHeight + 5)
 
     def enterEvent(self, event):
-        self.m_hovered = True
-        if self.m_hoverStep  == self.HOVER_MIN:
-            self.m_hoverStep += 1
+        self.fHovered = True
+        if self.fHoverStep  == self.HOVER_MIN:
+            self.fHoverStep += 1
         QDial.enterEvent(self, event)
 
     def leaveEvent(self, event):
-        self.m_hovered = False
-        if self.m_hoverStep  == self.HOVER_MAX:
-            self.m_hoverStep -= 1
+        self.fHovered = False
+        if self.fHoverStep  == self.HOVER_MAX:
+            self.fHoverStep -= 1
         QDial.leaveEvent(self, event)
 
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing, True)
 
-        if self.m_label:
-            if self.m_customPaint == self.CUSTOM_PAINT_NULL:
-                painter.setPen(self.m_color2)
-                painter.setBrush(self.m_labelGradient)
-                painter.drawRect(self.m_labelGradient_rect)
+        if self.fLabel:
+            if self.fCustomPaint == self.CUSTOM_PAINT_NULL:
+                painter.setPen(self.fColor2)
+                painter.setBrush(self.fLabelGradient)
+                painter.drawRect(self.fLabelGradientRect)
 
-            painter.setFont(self.m_labelFont)
-            painter.setPen(self.m_colorT[0 if self.isEnabled() else 1])
-            painter.drawText(self.m_labelPos, self.m_label)
+            painter.setFont(self.fLabelFont)
+            painter.setPen(self.fColorT[0 if self.isEnabled() else 1])
+            painter.drawText(self.fLabelPos, self.fLabel)
 
         if self.isEnabled():
             current = float(self.value() - self.minimum())
@@ -185,25 +185,25 @@ class PixmapDial(QDial):
                 return
 
             value  = current / divider
-            target = QRectF(0.0, 0.0, self.p_size, self.p_size)
+            target = QRectF(0.0, 0.0, self.fSize, self.fSize)
 
             per = int((self.p_count - 1) * value)
 
-            if self.m_orientation == self.HORIZONTAL:
-                xpos = self.p_size * per
+            if self.fOrientation == self.HORIZONTAL:
+                xpos = self.fSize * per
                 ypos = 0.0
             else:
                 xpos = 0.0
-                ypos = self.p_size * per
+                ypos = self.fSize * per
 
-            source = QRectF(xpos, ypos, self.p_size, self.p_size)
-            painter.drawPixmap(target, self.m_pixmap, source)
+            source = QRectF(xpos, ypos, self.fSize, self.fSize)
+            painter.drawPixmap(target, self.fPixmap, source)
 
             # Custom knobs (Dry/Wet and Volume)
-            if self.m_customPaint in (self.CUSTOM_PAINT_CARLA_WET, self.CUSTOM_PAINT_CARLA_VOL):
+            if self.fCustomPaint in (self.CUSTOM_PAINT_CARLA_WET, self.CUSTOM_PAINT_CARLA_VOL):
                 # knob color
-                colorGreen = QColor(0x5D, 0xE7, 0x3D, 191 + self.m_hoverStep*7)
-                colorBlue  = QColor(0x3E, 0xB8, 0xBE, 191 + self.m_hoverStep*7)
+                colorGreen = QColor(0x5D, 0xE7, 0x3D, 191 + self.fHoverStep*7)
+                colorBlue  = QColor(0x3E, 0xB8, 0xBE, 191 + self.fHoverStep*7)
 
                 # draw small circle
                 ballRect = QRectF(8.0, 8.0, 15.0, 15.0)
@@ -218,7 +218,7 @@ class PixmapDial(QDial):
                 startAngle = 216*16
                 spanAngle  = -252*16*value
 
-                if self.m_customPaint == self.CUSTOM_PAINT_CARLA_WET:
+                if self.fCustomPaint == self.CUSTOM_PAINT_CARLA_WET:
                     painter.setBrush(colorBlue)
                     painter.setPen(QPen(colorBlue, 0))
                     painter.drawEllipse(QRectF(ballPoint.x(), ballPoint.y(), 2.2, 2.2))
@@ -244,9 +244,9 @@ class PixmapDial(QDial):
                 painter.drawArc(4.0, 4.0, 26.0, 26.0, startAngle, spanAngle)
 
             # Custom knobs (L and R)
-            elif self.m_customPaint in (self.CUSTOM_PAINT_CARLA_L, self.CUSTOM_PAINT_CARLA_R):
+            elif self.fCustomPaint in (self.CUSTOM_PAINT_CARLA_L, self.CUSTOM_PAINT_CARLA_R):
                 # knob color
-                color = QColor(0xAD + self.m_hoverStep*5, 0xD5 + self.m_hoverStep*4, 0x4B + self.m_hoverStep*5)
+                color = QColor(0xAD + self.fHoverStep*5, 0xD5 + self.fHoverStep*4, 0x4B + self.fHoverStep*5)
 
                 # draw small circle
                 ballRect = QRectF(7.0, 8.0, 11.0, 12.0)
@@ -262,10 +262,10 @@ class PixmapDial(QDial):
                 painter.drawEllipse(QRectF(ballPoint.x(), ballPoint.y(), 2.0, 2.0))
 
                 # draw arc
-                if self.m_customPaint == self.CUSTOM_PAINT_CARLA_L:
+                if self.fCustomPaint == self.CUSTOM_PAINT_CARLA_L:
                     startAngle = 216*16
                     spanAngle  = -252.0*16*value
-                elif self.m_customPaint == self.CUSTOM_PAINT_CARLA_R:
+                elif self.fCustomPaint == self.CUSTOM_PAINT_CARLA_R:
                     startAngle = 324.0*16
                     spanAngle  = 252.0*16*(1.0-value)
                 else:
@@ -274,13 +274,13 @@ class PixmapDial(QDial):
                 painter.setPen(QPen(color, 2))
                 painter.drawArc(3.5, 4.5, 22.0, 22.0, startAngle, spanAngle)
 
-            if self.HOVER_MIN < self.m_hoverStep < self.HOVER_MAX:
-                self.m_hoverStep += 1 if self.m_hovered else -1
+            if self.HOVER_MIN < self.fHoverStep < self.HOVER_MAX:
+                self.fHoverStep += 1 if self.fHovered else -1
                 QTimer.singleShot(20, self, SLOT("update()"))
 
         else:
-            target = QRectF(0.0, 0.0, self.p_size, self.p_size)
-            painter.drawPixmap(target, self.m_pixmap, target)
+            target = QRectF(0.0, 0.0, self.fSize, self.fSize)
+            painter.drawPixmap(target, self.fPixmap, target)
 
         event.accept()
 

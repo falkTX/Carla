@@ -1,20 +1,20 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 # Custom Mini Canvas Preview, a custom Qt4 widget
 # Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
 #
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# any later version.
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 2 of
+# the License, or any later version.
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
-# For a full copy of the GNU General Public License see the COPYING file
+# For a full copy of the GNU General Public License see the GPL.txt file
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
@@ -45,8 +45,8 @@ class CanvasPreviewFrame(QFrame):
         self.fScale = 1.0
         self.fScene = None
         self.fRealParent = None
-        self.fFakeWidth  = 0
-        self.fFakeHeight = 0
+        self.fFakeWidth  = 0.0
+        self.fFakeHeight = 0.0
 
         self.fRenderSource = self.getRenderSource()
         self.fRenderTarget = QRectF(0, 0, 0, 0)
@@ -72,18 +72,18 @@ class CanvasPreviewFrame(QFrame):
         self.fRealParent = parent
 
     def getRenderSource(self):
-        xPadding = (self.width()  - self.fFakeWidth) / 2
-        yPadding = (self.height() - self.fFakeHeight) / 2
+        xPadding = (float(self.width())  - self.fFakeWidth) / 2.0
+        yPadding = (float(self.height()) - self.fFakeHeight) / 2.0
         return QRectF(xPadding, yPadding, self.fFakeWidth, self.fFakeHeight)
 
     def setViewPosX(self, xp):
-        x = xp * self.fFakeWidth
+        x = self.fFakeWidth*xp
         xRatio = (x / self.fFakeWidth) * self.fViewRect[iWidth] / self.fScale
         self.fViewRect[iX] = x - xRatio + self.fRenderSource.x()
         self.update()
 
     def setViewPosY(self, yp):
-        y = yp * self.fFakeHeight
+        y = self.fFakeHeight*yp
         yRatio = (y / self.fFakeHeight) * self.fViewRect[iHeight] / self.fScale
         self.fViewRect[iY] = y - yRatio + self.fRenderSource.y()
         self.update()
@@ -103,9 +103,9 @@ class CanvasPreviewFrame(QFrame):
         self.fViewBrush = QBrush(brushColor)
         self.fViewPen   = QPen(penColor, 1)
 
-    def handleMouseEvent(self, event_x, event_y):
-        x = float(event_x) - self.fRenderSource.x() - (self.fViewRect[iWidth]  / self.fScale / 2)
-        y = float(event_y) - self.fRenderSource.y() - (self.fViewRect[iHeight] / self.fScale / 2)
+    def handleMouseEvent(self, eventX, eventY):
+        x = float(eventX) - self.fRenderSource.x() - (self.fViewRect[iWidth]  / self.fScale / 2)
+        y = float(eventY) - self.fRenderSource.y() - (self.fViewRect[iHeight] / self.fScale / 2)
 
         maxWidth  = self.fViewRect[iWidth] / self.fScale
         maxHeight = self.fViewRect[iHeight] / self.fScale
