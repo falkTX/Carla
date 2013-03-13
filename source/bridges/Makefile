@@ -313,8 +313,9 @@ OBJS_POSIX32 += \
 
 # libs
 OBJS_POSIX32 += \
-	../libs/lilv_posix32.a \
-	../libs/rtmempool_posix32.a
+	../libs/dgl.posix32.a \
+	../libs/lilv.posix32.a \
+	../libs/rtmempool.posix32.a
 
 carla-bridge-posix32: $(OBJS_POSIX32)
 	$(CXX) $^ $(POSIX_LINK_FLAGS) $(POSIX_32BIT_FLAGS) -o $@ && $(STRIP) $@
@@ -354,8 +355,9 @@ OBJS_POSIX64 += \
 
 # libs
 OBJS_POSIX64 += \
-	../libs/lilv_posix64.a \
-	../libs/rtmempool_posix64.a
+	../libs/dgl.posix64.a \
+	../libs/lilv.posix64.a \
+	../libs/rtmempool.posix64.a
 
 carla-bridge-posix64: $(OBJS_POSIX64)
 	$(CXX) $^ $(POSIX_LINK_FLAGS) $(POSIX_64BIT_FLAGS) -o $@ && $(STRIP) $@
@@ -395,9 +397,9 @@ OBJS_WIN32 += \
 
 # libs
 OBJS_WIN32 += \
-	../libs/dgl.a \
-	../libs/lilv_win32.a \
-	../libs/rtmempool_win32.a
+	../libs/dgl.win32.a \
+	../libs/lilv.win32.a \
+	../libs/rtmempool.win32.a
 
 carla-bridge-win32.exe: $(OBJS_WIN32)  ../libs/jackbridge-win32.dll
 	$(CXX) $(OBJS_WIN32) $(WIN_32BIT_FLAGS) $(WIN_LINK_FLAGS) -ljackbridge-win32 -o $@ && $(STRIP) $@
@@ -437,8 +439,9 @@ OBJS_WIN64 += \
 
 # libs
 OBJS_WIN64 += \
-	../libs/lilv_win64.a \
-	../libs/rtmempool_win64.a
+	../libs/dgl.win64.a \
+	../libs/lilv.win64.a \
+	../libs/rtmempool.win64.a
 
 carla-bridge-win64.exe: $(OBJS_WIN64) ../libs/jackbridge-win64.dll
 	$(CXX) $(OBJS_WIN64) $(WIN_64BIT_FLAGS) $(WIN_LINK_FLAGS) -ljackbridge-win64 -o $@ && $(STRIP) $@
