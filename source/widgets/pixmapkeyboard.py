@@ -24,7 +24,7 @@ from PyQt4.QtGui import QFont, QPainter, QPixmap, QWidget
 
 # ------------------------------------------------------------------------------------------------------------
 
-midi_key2rect_map_horizontal = {
+kMidiKey2RectMapHorizontal = {
     '0':  QRectF(0,   0, 18, 64), # C
     '1':  QRectF(13,  0, 11, 42), # C#
     '2':  QRectF(18,  0, 25, 64), # D
@@ -39,7 +39,7 @@ midi_key2rect_map_horizontal = {
     '11': QRectF(126, 0, 18, 64)  # B
 }
 
-midi_key2rect_map_vertical = {
+kMidiKey2RectMapVertical = {
     '11': QRectF(0,  0,  64, 18), # B
     '10': QRectF(0, 14,  42,  7), # A#
     '9':  QRectF(0, 18,  64, 24), # A
@@ -54,7 +54,7 @@ midi_key2rect_map_vertical = {
     '0':  QRectF(0, 126, 64, 18)  # C
 }
 
-midi_keyboard2key_map = {
+kMidiKeyboard2KeyMap = {
     # 3th octave
     '%i' % Qt.Key_Z: 48,
     '%i' % Qt.Key_S: 49,
@@ -81,7 +81,9 @@ midi_keyboard2key_map = {
     '%i' % Qt.Key_Y: 69,
     '%i' % Qt.Key_7: 70,
     '%i' % Qt.Key_U: 71,
-    }
+}
+
+kBlackNotes = (1, 3, 6, 8, 10)
 
 # ------------------------------------------------------------------------------------------------------------
 # MIDI Keyboard, using a pixmap for painting
@@ -112,15 +114,15 @@ class PixmapKeyboard(QWidget):
 
     def allNotesOff(self):
         self.fEnabledKeys = []
-
         self.fNeedsUpdate = True
-        QTimer.singleShot(0, self, SLOT("slot_updateOnce()"))
 
         self.emit(SIGNAL("notesOff()"))
+        QTimer.singleShot(0, self, SLOT("slot_updateOnce()"))
 
     def sendNoteOn(self, note, sendSignal=True):
         if 0 <= note <= 127 and note not in self.fEnabledKeys:
             self.fEnabledKeys.append(note)
+
             if sendSignal:
                 self.emit(SIGNAL("noteOn(int)"), note)
 
@@ -133,6 +135,7 @@ class PixmapKeyboard(QWidget):
     def sendNoteOff(self, note, sendSignal=True):
         if 0 <= note <= 127 and note in self.fEnabledKeys:
             self.fEnabledKeys.remove(note)
+
             if sendSignal:
                 self.emit(SIGNAL("noteOff(int)"), note)
 
@@ -152,13 +155,13 @@ class PixmapKeyboard(QWidget):
             return self.setMode(mode)
 
         if mode == self.HORIZONTAL:
-            self.fMidiMap = midi_key2rect_map_horizontal
+            self.fMidiMap = kMidiKey2RectMapHorizontal
             self.fPixmap.load(":/bitmaps/kbd_h_%s.png" % self.fColorStr)
             self.fPixmapMode = self.HORIZONTAL
             self.fWidth  = self.fPixmap.width()
             self.fHeight = self.fPixmap.height() / 2
         elif mode == self.VERTICAL:
-            self.fMidiMap = midi_key2rect_map_vertical
+            self.fMidiMap = kMidiKey2RectMapVertical
             self.fPixmap.load(":/bitmaps/kbd_v_%s.png" % self.fColorStr)
             self.fPixmapMode = self.VERTICAL
             self.fWidth  = self.fPixmap.width() / 2
@@ -174,6 +177,7 @@ class PixmapKeyboard(QWidget):
             octaves = 1
         elif octaves > 8:
             octaves = 8
+
         self.fOctaves = octaves
 
         if self.fPixmapMode == self.HORIZONTAL:
@@ -189,53 +193,55 @@ class PixmapKeyboard(QWidget):
         if self.fPixmapMode == self.HORIZONTAL:
             if pos.x() < 0 or pos.x() > self.fOctaves * 144:
                 return
-            posX = pos.x() - 1
+            posX   = pos.x() - 1
             octave = int(posX / self.fWidth)
-            n_pos  = QPointF(posX % self.fWidth, pos.y())
+            keyPos = QPointF(posX % self.fWidth, pos.y())
         elif self.fPixmapMode == self.VERTICAL:
             if pos.y() < 0 or pos.y() > self.fOctaves * 144:
                 return
-            posY = pos.y() - 1
+            posY   = pos.y() - 1
             octave = int(self.fOctaves - posY / self.fHeight)
-            n_pos  = QPointF(pos.x(), posY % self.fHeight)
+            keyPos = QPointF(pos.x(), posY % self.fHeight)
         else:
             return
 
         octave += 3
 
-        if self.fMidiMap['1'].contains(n_pos):   # C#
+        if self.fMidiMap['1'].contains(keyPos):   # C#
             note = 1
-        elif self.fMidiMap['3'].contains(n_pos): # D#
+        elif self.fMidiMap['3'].contains(keyPos): # D#
             note = 3
-        elif self.fMidiMap['6'].contains(n_pos): # F#
+        elif self.fMidiMap['6'].contains(keyPos): # F#
             note = 6
-        elif self.fMidiMap['8'].contains(n_pos): # G#
+        elif self.fMidiMap['8'].contains(keyPos): # G#
             note = 8
-        elif self.fMidiMap['10'].contains(n_pos):# A#
+        elif self.fMidiMap['10'].contains(keyPos):# A#
             note = 10
-        elif self.fMidiMap['0'].contains(n_pos): # C
+        elif self.fMidiMap['0'].contains(keyPos): # C
             note = 0
-        elif self.fMidiMap['2'].contains(n_pos): # D
+        elif self.fMidiMap['2'].contains(keyPos): # D
             note = 2
-        elif self.fMidiMap['4'].contains(n_pos): # E
+        elif self.fMidiMap['4'].contains(keyPos): # E
             note = 4
-        elif self.fMidiMap['5'].contains(n_pos): # F
+        elif self.fMidiMap['5'].contains(keyPos): # F
             note = 5
-        elif self.fMidiMap['7'].contains(n_pos): # G
+        elif self.fMidiMap['7'].contains(keyPos): # G
             note = 7
-        elif self.fMidiMap['9'].contains(n_pos): # A
+        elif self.fMidiMap['9'].contains(keyPos): # A
             note = 9
-        elif self.fMidiMap['11'].contains(n_pos):# B
+        elif self.fMidiMap['11'].contains(keyPos):# B
             note = 11
         else:
             note = -1
 
         if note != -1:
             note += octave * 12
+
             if self.fLastMouseNote != note:
                 self.sendNoteOff(self.fLastMouseNote)
                 self.sendNoteOn(note)
-        else:
+
+        elif self.fLastMouseNote != -1:
             self.sendNoteOff(self.fLastMouseNote)
 
         self.fLastMouseNote = note
@@ -243,15 +249,15 @@ class PixmapKeyboard(QWidget):
     def keyPressEvent(self, event):
         if not event.isAutoRepeat():
             qKey = str(event.key())
-            if qKey in midi_keyboard2key_map.keys():
-                self.sendNoteOn(midi_keyboard2key_map.get(qKey))
+            if qKey in kMidiKeyboard2KeyMap.keys():
+                self.sendNoteOn(kMidiKeyboard2KeyMap.get(qKey))
         QWidget.keyPressEvent(self, event)
 
     def keyReleaseEvent(self, event):
         if not event.isAutoRepeat():
             qKey = str(event.key())
-            if qKey in midi_keyboard2key_map.keys():
-                self.sendNoteOff(midi_keyboard2key_map.get(qKey))
+            if qKey in kMidiKeyboard2KeyMap.keys():
+                self.sendNoteOff(kMidiKeyboard2KeyMap.get(qKey))
         QWidget.keyReleaseEvent(self, event)
 
     def mousePressEvent(self, event):
@@ -295,7 +301,7 @@ class PixmapKeyboard(QWidget):
 
         for i in range(len(self.fEnabledKeys)):
             note = self.fEnabledKeys[i]
-            pos = self._getRectFromMidiNote(note)
+            pos  = self._getRectFromMidiNote(note)
 
             if self._isNoteBlack(note):
                 continue
@@ -343,8 +349,9 @@ class PixmapKeyboard(QWidget):
 
         if paintedWhite:
             for octave in range(self.fOctaves):
-                for note in (1, 3, 6, 8, 10):
+                for note in kBlackNotes:
                     pos = self._getRectFromMidiNote(note)
+
                     if self.fPixmapMode == self.HORIZONTAL:
                         target = QRectF(pos.x() + (self.fWidth * octave), 0, pos.width(), pos.height())
                         source = QRectF(pos.x(), 0, pos.width(), pos.height())
@@ -361,7 +368,7 @@ class PixmapKeyboard(QWidget):
 
         for i in range(len(self.fEnabledKeys)):
             note = self.fEnabledKeys[i]
-            pos = self._getRectFromMidiNote(note)
+            pos  = self._getRectFromMidiNote(note)
 
             if not self._isNoteBlack(note):
                 continue
@@ -421,7 +428,7 @@ class PixmapKeyboard(QWidget):
 
     def _isNoteBlack(self, note):
         baseNote = note % 12
-        return bool(baseNote in (1, 3, 6, 8, 10))
+        return bool(baseNote in kBlackNotes)
 
     def _getRectFromMidiNote(self, note):
         return self.fMidiMap.get(str(note % 12))

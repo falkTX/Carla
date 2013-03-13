@@ -30,7 +30,7 @@ START_NAMESPACE_DISTRHO
 
 static const PluginDescriptor notesDesc = {
     /* category  */ ::PLUGIN_CATEGORY_UTILITY,
-    /* hints     */ static_cast<PluginHints>(::PLUGIN_IS_RTSAFE | ::PLUGIN_HAS_GUI | ::PLUGIN_USES_SINGLE_THREAD),
+    /* hints     */ static_cast<PluginHints>(::PLUGIN_IS_RTSAFE|::PLUGIN_HAS_GUI|::PLUGIN_USES_SINGLE_THREAD),
     /* audioIns  */ DISTRHO_PLUGIN_NUM_INPUTS,
     /* audioOuts */ DISTRHO_PLUGIN_NUM_OUTPUTS,
     /* midiIns   */ 0,

@@ -9,7 +9,7 @@ include ../Makefile.mk
 # --------------------------------------------------------------
 # Common
 
-LINK_FLAGS += $(shell pkg-config --libs liblo QtCore QtGui QtXml)
+LINK_FLAGS += $(shell pkg-config --libs gl liblo QtCore QtGui QtXml)
 
 # --------------------------------------------------------------
 # Engine
@@ -27,9 +27,6 @@ endif
 # --------------------------------------------------------------
 # Plugin
 
-ifeq ($(HAVE_SUIL),true)
-LINK_FLAGS += $(shell pkg-config --libs suil-0)
-endif
 ifeq ($(HAVE_FLUIDSYNTH),true)
 LINK_FLAGS += $(shell pkg-config --libs fluidsynth)
 endif
@@ -40,12 +37,9 @@ endif
 # --------------------------------------------------------------
 # Native
 
-LINK_FLAGS += $(shell pkg-config --libs gl)
-
 ifeq ($(HAVE_AF_DEPS),true)
 LINK_FLAGS += $(shell pkg-config --libs libavcodec libavformat sndfile)
 endif
-
 ifeq ($(HAVE_ZYN_DEPS),true)
 LINK_FLAGS += $(shell pkg-config --libs fftw3 mxml)
 endif
@@ -58,6 +52,7 @@ LIBS += ../libcarla_native.a
 LIBS += ../../libs/dgl.a
 LIBS += ../../libs/lilv.a
 LIBS += ../../libs/rtmempool.a
+LIBS += ../../libs/widgets.a
 
 OBJS  = \
      CarlaStandalone.cpp.o

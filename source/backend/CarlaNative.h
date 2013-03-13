@@ -212,7 +212,7 @@ void carla_register_all_plugins()
     void carla_register_native_plugin_3BandEQ();
     void carla_register_native_plugin_3BandSplitter();
     void carla_register_native_plugin_PingPongPan();
-    //void carla_register_native_plugin_Notes();
+    void carla_register_native_plugin_Notes();
 
 #ifdef WANT_AUDIOFILE
     // AudioFile

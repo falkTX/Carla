@@ -8,7 +8,7 @@ include ../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtCore QtGui)
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtCore QtGui) -I../../widgets
 LINK_FLAGS      += $(shell pkg-config --libs QtCore QtGui)
 
 ifeq ($(HAVE_AF_DEPS),true)
@@ -38,8 +38,8 @@ OBJS  = \
 OBJS += \
 	distrho-3bandeq.cpp.o \
 	distrho-3bandsplitter.cpp.o \
-	distrho-pingpongpan.cpp.o
-# 	distrho-notes.cpp.o
+	distrho-pingpongpan.cpp.o \
+	distrho-notes.cpp.o
 
 # AudioFile
 ifeq ($(HAVE_AF_DEPS),true)

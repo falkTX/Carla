@@ -16,8 +16,9 @@
  */
 
 // still need qt classes check
-#include "plugin/CarlaPluginInternal.hpp"
+//#include "plugin/CarlaPluginInternal.hpp"
 //#include "plugin/DssiPlugin.cpp"
+#include "../widgets/digitalpeakmeter.cpp"
 
 #if 0
 #include "CarlaDefines.hpp"

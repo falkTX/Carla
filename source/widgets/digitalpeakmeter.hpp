@@ -35,6 +35,7 @@ public:
     };
 
     DigitalPeakMeter(QWidget* parent);
+    ~DigitalPeakMeter();
 
     void displayMeter(int meter, float level);
     void setChannels(int channels);
@@ -53,21 +54,21 @@ protected:
     void resizeEvent(QResizeEvent* event);
 
 private:
-    int m_channels;
-    int m_smoothMultiplier;
-    int m_width, m_height, m_sizeMeter;
-    Orientation m_orientation;
+    int fChannels;
+    int fSmoothMultiplier;
+    int fWidth, fHeight, fSizeMeter;
+    Orientation fOrientation;
 
-    QColor m_colorBackground;
-    QLinearGradient m_gradientMeter;
+    QColor fColorBackground;
+    QLinearGradient fGradientMeter;
 
-    QColor m_colorBase;
-    QColor m_colorBaseT;
+    QColor fColorBase;
+    QColor fColorBaseAlt;
 
-    QList<float> m_channelsData;
-    QList<float> m_lastValueData;
+    float* fChannelsData;
+    float* fLastValueData;
 
-    QTimer m_paintTimer;
+    QTimer fPaintTimer;
 };
 
 #endif // __DIGITALPEAKMETER_HPP__

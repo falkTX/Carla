@@ -19,7 +19,7 @@
 #define __DISTRHO_UI_NOTES_HPP__
 
 #include "DistrhoUIQt4.hpp"
-#include "ParamProgressBar.hpp"
+#include "paramspinbox.hpp"
 
 #include <QtGui/QGridLayout>
 #include <QtGui/QLabel>

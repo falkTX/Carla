@@ -32,6 +32,11 @@ rtmempool.%.a:
 
 # --------------------------------------------------------------
 
+widgets.a:
+	$(MAKE) -C ../widgets
+
+# --------------------------------------------------------------
+
 jackbridge-win32.dll:
 	$(MAKE) -C jackbridge win32
 
@@ -51,3 +56,4 @@ clean:
 	$(MAKE) clean -C distrho/dgl
 	$(MAKE) clean -C lilv
 	$(MAKE) clean -C rtmempool
+	$(MAKE) clean -C ../widgets

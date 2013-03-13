@@ -18,6 +18,7 @@
 #ifndef __PIXMAPKEYBOARD_HPP__
 #define __PIXMAPKEYBOARD_HPP__
 
+#include <map>
 #include <QtGui/QPixmap>
 #include <QtGui/QWidget>
 
@@ -64,22 +65,23 @@ private Q_SLOTS:
     void updateOnce();
 
 private:
-    QPixmap     m_pixmap;
-    Orientation m_pixmap_mode;
+    QPixmap     fPixmap;
+    Orientation fPixmapMode;
 
-    QString m_colorStr;
-    QFont   m_font;
+    QString fColorStr;
+    QFont   fFont;
 
-    int m_octaves;
-    int m_lastMouseNote;
-    int p_width, p_height;
+    int fOctaves;
+    int fLastMouseNote;
+    int fWidth;
+    int fHeight;
 
-    bool m_needsUpdate;
-    QList<int> m_enabledKeys;
-    QMap<int, QRectF> *m_midi_map;
+    bool fNeedsUpdate;
+    QList<int> fEnabledKeys;
+    std::map<int, QRectF>& fMidiMap;
 
-    bool   _isNoteBlack(int note);
-    QRectF _getRectFromMidiNote(int note);
+    bool _isNoteBlack(int note) const;
+    const QRectF& _getRectFromMidiNote(int note) const;
 };
 
 #endif // __PIXMAPKEYBOARD_HPP__

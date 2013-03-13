@@ -18,31 +18,46 @@
 #include "digitalpeakmeter.hpp"
 
 #include <QtGui/QPainter>
+#include <QtGui/QPaintEvent>
 
 DigitalPeakMeter::DigitalPeakMeter(QWidget* parent)
     : QWidget(parent),
-      m_paintTimer(this)
+      fChannels(0),
+      fSmoothMultiplier(1),
+      fWidth(0),
+      fHeight(0),
+      fSizeMeter(0),
+      fOrientation(VERTICAL),
+      fColorBackground("#111111"),
+      fGradientMeter(0, 0, 1, 1),
+      fColorBase(93, 231, 61),
+      fColorBaseAlt(15, 110, 15, 100),
+      fChannelsData(nullptr),
+      fLastValueData(nullptr),
+      fPaintTimer(this)
 {
-    m_channels = 0;
-    m_orientation = VERTICAL;
-    m_smoothMultiplier = 1;
-
-    m_colorBackground = QColor("#111111");
-    m_gradientMeter = QLinearGradient(0, 0, 1, 1);
-
     setChannels(0);
     setColor(GREEN);
 
-    m_paintTimer.setInterval(60);
-    connect(&m_paintTimer, SIGNAL(timeout()), this, SLOT(update()));
-    m_paintTimer.start();
+    fPaintTimer.setInterval(60);
+    connect(&fPaintTimer, SIGNAL(timeout()), this, SLOT(update()));
+    fPaintTimer.start();
+}
+
+DigitalPeakMeter::~DigitalPeakMeter()
+{
+    if (fChannelsData != nullptr)
+        delete[] fChannelsData;
+    if (fLastValueData != nullptr)
+        delete[] fLastValueData;
 }
 
 void DigitalPeakMeter::displayMeter(int meter, float level)
 {
-    Q_ASSERT(meter > 0 && meter <= m_channels);
+    Q_ASSERT(fChannelsData != nullptr);
+    Q_ASSERT(meter > 0 && meter <= fChannels);
 
-    if (meter <= 0 || meter > m_channels)
+    if (meter <= 0 || meter > fChannels || fChannelsData == nullptr)
         return qCritical("DigitalPeakMeter::displayMeter(%i, %f) - invalid meter number", meter, level);
 
     if (level < 0.0f)
@@ -50,7 +65,7 @@ void DigitalPeakMeter::displayMeter(int meter, float level)
     else if (level > 1.0f)
         level = 1.0f;
 
-    m_channelsData[meter-1] = level;
+    fChannelsData[meter-1] = level;
 }
 
 void DigitalPeakMeter::setChannels(int channels)
@@ -60,14 +75,28 @@ void DigitalPeakMeter::setChannels(int channels)
     if (channels < 0)
         return qCritical("DigitalPeakMeter::setChannels(%i) - 'channels' must be a positive integer", channels);
 
-    m_channels = channels;
-    m_channelsData.clear();
-    m_lastValueData.clear();
+    fChannels = channels;
 
-    for (int i=0; i < channels; i++)
+    if (fChannelsData != nullptr)
+        delete[] fChannelsData;
+    if (fLastValueData != nullptr)
+        delete[] fLastValueData;
+
+    if (channels > 0)
     {
-        m_channelsData.append(0.0f);
-        m_lastValueData.append(0.0f);
+        fChannelsData  = new float[channels];
+        fLastValueData = new float[channels];
+
+        for (int i=0; i < channels; i++)
+        {
+            fChannelsData[i]  = 0.0f;
+            fLastValueData[i] = 0.0f;
+        }
+    }
+    else
+    {
+        fChannelsData  = nullptr;
+        fLastValueData = nullptr;
     }
 }
 
@@ -75,41 +104,41 @@ void DigitalPeakMeter::setColor(Color color)
 {
     if (color == GREEN)
     {
-        m_colorBase  = QColor(93, 231, 61);
-        m_colorBaseT = QColor(15, 110, 15, 100);
+        fColorBase    = QColor(93, 231, 61);
+        fColorBaseAlt = QColor(15, 110, 15, 100);
     }
     else if (color == BLUE)
     {
-        m_colorBase  = QColor(82, 238, 248);
-        m_colorBaseT = QColor(15, 15, 110, 100);
+        fColorBase    = QColor(82, 238, 248);
+        fColorBaseAlt = QColor(15, 15, 110, 100);
     }
     else
         return qCritical("DigitalPeakMeter::setColor(%i) - invalid color", color);
 
-    setOrientation(m_orientation);
+    setOrientation(fOrientation);
 }
 
 void DigitalPeakMeter::setOrientation(Orientation orientation)
 {
-    m_orientation = orientation;
+    fOrientation = orientation;
 
-    if (m_orientation == HORIZONTAL)
+    if (fOrientation == HORIZONTAL)
     {
-        m_gradientMeter.setColorAt(0.0f, m_colorBase);
-        m_gradientMeter.setColorAt(0.2f, m_colorBase);
-        m_gradientMeter.setColorAt(0.4f, m_colorBase);
-        m_gradientMeter.setColorAt(0.6f, m_colorBase);
-        m_gradientMeter.setColorAt(0.8f, Qt::yellow);
-        m_gradientMeter.setColorAt(1.0f, Qt::red);
+        fGradientMeter.setColorAt(0.0f, fColorBase);
+        fGradientMeter.setColorAt(0.2f, fColorBase);
+        fGradientMeter.setColorAt(0.4f, fColorBase);
+        fGradientMeter.setColorAt(0.6f, fColorBase);
+        fGradientMeter.setColorAt(0.8f, Qt::yellow);
+        fGradientMeter.setColorAt(1.0f, Qt::red);
     }
-    else if (m_orientation == VERTICAL)
+    else if (fOrientation == VERTICAL)
     {
-        m_gradientMeter.setColorAt(0.0f, Qt::red);
-        m_gradientMeter.setColorAt(0.2f, Qt::yellow);
-        m_gradientMeter.setColorAt(0.4f, m_colorBase);
-        m_gradientMeter.setColorAt(0.6f, m_colorBase);
-        m_gradientMeter.setColorAt(0.8f, m_colorBase);
-        m_gradientMeter.setColorAt(1.0f, m_colorBase);
+        fGradientMeter.setColorAt(0.0f, Qt::red);
+        fGradientMeter.setColorAt(0.2f, Qt::yellow);
+        fGradientMeter.setColorAt(0.4f, fColorBase);
+        fGradientMeter.setColorAt(0.6f, fColorBase);
+        fGradientMeter.setColorAt(0.8f, fColorBase);
+        fGradientMeter.setColorAt(1.0f, fColorBase);
     }
     else
         return qCritical("DigitalPeakMeter::setOrientation(%i) - invalid orientation", orientation);
@@ -121,9 +150,9 @@ void DigitalPeakMeter::setRefreshRate(int rate)
 {
     Q_ASSERT(rate > 0);
 
-    m_paintTimer.stop();
-    m_paintTimer.setInterval(rate);
-    m_paintTimer.start();
+    fPaintTimer.stop();
+    fPaintTimer.setInterval(rate);
+    fPaintTimer.start();
 }
 
 void DigitalPeakMeter::setSmoothRelease(int value)
@@ -135,7 +164,7 @@ void DigitalPeakMeter::setSmoothRelease(int value)
     else if (value > 5)
         value = 5;
 
-    m_smoothMultiplier = value;
+    fSmoothMultiplier = value;
 }
 
 QSize DigitalPeakMeter::minimumSizeHint() const
@@ -145,121 +174,122 @@ QSize DigitalPeakMeter::minimumSizeHint() const
 
 QSize DigitalPeakMeter::sizeHint() const
 {
-    return QSize(m_width, m_height);
+    return QSize(fWidth, fHeight);
 }
 
 void DigitalPeakMeter::updateSizes()
 {
-    m_width  = width();
-    m_height = height();
-    m_sizeMeter = 0;
+    fWidth  = width();
+    fHeight = height();
+    fSizeMeter = 0;
 
-    if (m_orientation == HORIZONTAL)
+    if (fOrientation == HORIZONTAL)
     {
-        m_gradientMeter.setFinalStop(m_width, 0);
+        fGradientMeter.setFinalStop(fWidth, 0);
 
-        if (m_channels > 0)
-            m_sizeMeter = m_height/m_channels;
+        if (fChannels > 0)
+            fSizeMeter = fHeight/fChannels;
     }
-    else if (m_orientation == VERTICAL)
+    else if (fOrientation == VERTICAL)
     {
-        m_gradientMeter.setFinalStop(0, m_height);
+        fGradientMeter.setFinalStop(0, fHeight);
 
-        if (m_channels > 0)
-            m_sizeMeter = m_width/m_channels;
+        if (fChannels > 0)
+            fSizeMeter = fWidth/fChannels;
     }
 }
 
-void DigitalPeakMeter::paintEvent(QPaintEvent*)
+void DigitalPeakMeter::paintEvent(QPaintEvent* event)
 {
     QPainter painter(this);
+    event->accept();
 
     painter.setPen(Qt::black);
     painter.setBrush(Qt::black);
-    painter.drawRect(0, 0, m_width, m_height);
+    painter.drawRect(0, 0, fWidth, fHeight);
 
     int meterX = 0;
-    painter.setPen(m_colorBackground);
-    painter.setBrush(m_gradientMeter);
+    painter.setPen(fColorBackground);
+    painter.setBrush(fGradientMeter);
 
-    for (int i=0; i < m_channels; i++)
+    for (int i=0; i < fChannels; i++)
     {
-        float value, level = m_channelsData[i];
+        float value, level = fChannelsData[i];
 
-        if (level == m_lastValueData[i])
+        if (level == fLastValueData[i])
             continue;
 
-        if (m_orientation == HORIZONTAL)
-            value = level * m_width;
-        else if (m_orientation == VERTICAL)
-            value = float(m_height) - (level * m_height);
+        if (fOrientation == HORIZONTAL)
+            value = level * float(fWidth);
+        else if (fOrientation == VERTICAL)
+            value = float(fHeight) - (level * float(fHeight));
         else
             value = 0.0f;
 
         if (value < 0.0f)
             value = 0.0f;
-        else if (m_smoothMultiplier > 0)
-            value = (m_lastValueData[i] * m_smoothMultiplier + value) / (m_smoothMultiplier + 1);
+        else if (fSmoothMultiplier > 0)
+            value = (fLastValueData[i] * float(fSmoothMultiplier) + value) / float(fSmoothMultiplier + 1);
 
-        if (m_orientation == HORIZONTAL)
-            painter.drawRect(0, meterX, value, m_sizeMeter);
-        else if (m_orientation == VERTICAL)
-            painter.drawRect(meterX, value, m_sizeMeter, m_height);
+        if (fOrientation == HORIZONTAL)
+            painter.drawRect(0, meterX, int(value), fSizeMeter);
+        else if (fOrientation == VERTICAL)
+            painter.drawRect(meterX, int(value), fSizeMeter, fHeight);
 
-        meterX += m_sizeMeter;
-        m_lastValueData[i] = value;
+        meterX += fSizeMeter;
+        fLastValueData[i] = value;
     }
 
-    painter.setBrush(QColor(0, 0, 0, 0));
+    painter.setBrush(Qt::black);
 
-    if (m_orientation == HORIZONTAL)
+    if (fOrientation == HORIZONTAL)
     {
         // Variables
-        int lsmall = m_width;
-        int lfull  = m_height - 1;
+        float lsmall = fWidth;
+        float lfull  = fHeight - 1;
 
         // Base
-        painter.setPen(m_colorBaseT);
-        painter.drawLine(lsmall * 0.25f, 2, lsmall * 0.25f, lfull-2);
-        painter.drawLine(lsmall * 0.50f, 2, lsmall * 0.50f, lfull-2);
+        painter.setPen(fColorBaseAlt);
+        painter.drawLine(lsmall * 0.25f, 2, lsmall * 0.25f, lfull-2.0f);
+        painter.drawLine(lsmall * 0.50f, 2, lsmall * 0.50f, lfull-2.0f);
 
         // Yellow
         painter.setPen(QColor(110, 110, 15, 100));
-        painter.drawLine(lsmall * 0.70f, 2, lsmall * 0.70f, lfull-2);
-        painter.drawLine(lsmall * 0.83f, 2, lsmall * 0.83f, lfull-2);
+        painter.drawLine(lsmall * 0.70f, 2, lsmall * 0.70f, lfull-2.0f);
+        painter.drawLine(lsmall * 0.83f, 2, lsmall * 0.83f, lfull-2.0f);
 
         // Orange
         painter.setPen(QColor(180, 110, 15, 100));
-        painter.drawLine(lsmall * 0.90f, 2, lsmall * 0.90f, lfull-2);
+        painter.drawLine(lsmall * 0.90f, 2, lsmall * 0.90f, lfull-2.0f);
 
         // Red
         painter.setPen(QColor(110, 15, 15, 100));
-        painter.drawLine(lsmall * 0.96f, 2, lsmall * 0.96f, lfull-2);
+        painter.drawLine(lsmall * 0.96f, 2, lsmall * 0.96f, lfull-2.0f);
 
     }
-    else if (m_orientation == VERTICAL)
+    else if (fOrientation == VERTICAL)
     {
         // Variables
-        int lsmall = m_height;
-        int lfull  = m_width - 1;
+        float lsmall = fHeight;
+        float lfull  = fWidth - 1;
 
         // Base
-        painter.setPen(m_colorBaseT);
-        painter.drawLine(2, lsmall - (lsmall * 0.25f), lfull-2, lsmall - (lsmall * 0.25f));
-        painter.drawLine(2, lsmall - (lsmall * 0.50f), lfull-2, lsmall - (lsmall * 0.50f));
+        painter.setPen(fColorBaseAlt);
+        painter.drawLine(2, lsmall - (lsmall * 0.25f), lfull-2.0f, lsmall - (lsmall * 0.25f));
+        painter.drawLine(2, lsmall - (lsmall * 0.50f), lfull-2.0f, lsmall - (lsmall * 0.50f));
 
         // Yellow
         painter.setPen(QColor(110, 110, 15, 100));
-        painter.drawLine(2, lsmall - (lsmall * 0.70f), lfull-2, lsmall - (lsmall * 0.70f));
-        painter.drawLine(2, lsmall - (lsmall * 0.83f), lfull-2, lsmall - (lsmall * 0.83f));
+        painter.drawLine(2, lsmall - (lsmall * 0.70f), lfull-2.0f, lsmall - (lsmall * 0.70f));
+        painter.drawLine(2, lsmall - (lsmall * 0.83f), lfull-2.0f, lsmall - (lsmall * 0.83f));
 
         // Orange
         painter.setPen(QColor(180, 110, 15, 100));
-        painter.drawLine(2, lsmall - (lsmall * 0.90f), lfull-2, lsmall - (lsmall * 0.90f));
+        painter.drawLine(2, lsmall - (lsmall * 0.90f), lfull-2.0f, lsmall - (lsmall * 0.90f));
 
         // Red
         painter.setPen(QColor(110, 15, 15, 100));
-        painter.drawLine(2, lsmall - (lsmall * 0.96f), lfull-2, lsmall - (lsmall * 0.96f));
+        painter.drawLine(2, lsmall - (lsmall * 0.96f), lfull-2.0f, lsmall - (lsmall * 0.96f));
     }
 }
 
