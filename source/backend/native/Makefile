@@ -38,8 +38,8 @@ OBJS  = \
 OBJS += \
 	distrho-3bandeq.cpp.o \
 	distrho-3bandsplitter.cpp.o \
-	distrho-pingpongpan.cpp.o \
-	distrho-notes.cpp.o
+	distrho-pingpongpan.cpp.o
+# 	distrho-notes.cpp.o
 
 # AudioFile
 ifeq ($(HAVE_AF_DEPS),true)
@@ -100,7 +100,7 @@ distrho-notes.cpp.o: distrho-notes.cpp notes/DistrhoPluginNotes.cpp notes/Distrh
 	$(CXX) $< $(BUILD_CXX_FLAGS) -Inotes -DDISTRHO_NAMESPACE=DISTRHO_Notes -c -o $@
 
 audiofile.c.o: audiofile.c
-	$(CXX) $< $(AF_C_FLAGS) -c -o $@
+	$(CC) $< $(AF_C_FLAGS) -c -o $@
 
 zynaddsubfx.cpp.o: zynaddsubfx.cpp
 	$(CXX) $< $(ZYN_CXX_FLAGS) -c -o $@

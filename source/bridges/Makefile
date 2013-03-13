@@ -271,6 +271,7 @@ OBJS_NATIVE += \
 
 # libs
 OBJS_NATIVE += \
+	../libs/dgl.a \
 	../libs/lilv.a \
 	../libs/rtmempool.a
 
