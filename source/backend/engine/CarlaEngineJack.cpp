@@ -32,7 +32,7 @@ CARLA_BACKEND_START_NAMESPACE
 #endif
 
 // -------------------------------------------------------------------
-// Helpers, defined in CarlaPlugin.cpp
+// Plugin Helpers, defined in CarlaPlugin.cpp
 
 extern CarlaEngine* CarlaPluginGetEngine(CarlaPlugin* const plugin);
 extern CarlaEngineAudioPort* CarlaPluginGetAudioInPort(CarlaPlugin* const plugin, uint32_t index);
@@ -499,8 +499,10 @@ public:
 #ifdef BUILD_BRIDGE
           fHasQuit(false)
 #else
+# ifndef QTCREATOR_TEST
           fRackPorts{nullptr},
           fLastGroupId(0),
+# endif
           fLastPortId(0),
           fLastConnectionId(0)
 #endif
@@ -594,7 +596,7 @@ public:
 
 #ifdef WANT_JACK_PORT_RENAME
             if (jack_set_port_rename_callback)
-              jack_set_port_rename_callback(fClient, carla_jack_port_rename_callback, this);
+                jack_set_port_rename_callback(fClient, carla_jack_port_rename_callback, this);
 #endif
 
             if (fOptions.processMode == PROCESS_MODE_CONTINUOUS_RACK)

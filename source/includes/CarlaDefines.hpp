@@ -39,12 +39,6 @@
 # define CARLA_OS_UNIX
 #endif
 
-#ifdef CARLA_OS_WIN
-# define OS_SEP '\\'
-#else
-# define OS_SEP '/'
-#endif
-
 // Check for C++11 support
 #if defined(HAVE_CPP11_SUPPORT)
 # define CARLA_PROPER_CPP11_SUPPORT
@@ -135,6 +129,13 @@
 # else
 #  define CARLA_EXPORT extern "C" __attribute__ ((visibility("default")))
 # endif
+#endif
+
+// Define OS_SEP
+#ifdef CARLA_OS_WIN
+# define OS_SEP '\\'
+#else
+# define OS_SEP '/'
 #endif
 
 #endif // __CARLA_DEFINES_HPP__

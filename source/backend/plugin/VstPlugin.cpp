@@ -21,9 +21,9 @@
 
 #include "CarlaVstUtils.hpp"
 
-#ifdef Q_WS_X11
-# include <QtGui/QX11Info>
-#endif
+//#ifdef Q_WS_X11
+//# include <QtGui/QX11Info>
+//#endif
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -403,8 +403,6 @@ public:
 
     void idleGui()
     {
-        kData->app.idle();
-
 #ifdef VESTIGE_HEADER
         if (fEffect != nullptr /*&& effect->ptr1*/)
 #else

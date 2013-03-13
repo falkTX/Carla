@@ -33,14 +33,15 @@ endif
 # --------------------------------------------------------------
 # Plugin bridges
 
-BUILD_PLUGIN_FLAGS  = $(BUILD_CXX_FLAGS) -DBUILD_BRIDGE_PLUGIN -DBRIDGE_PLUGIN
-BUILD_PLUGIN_FLAGS += -DWANT_JACK -I../backend/engine -I../backend/plugin -I../libs -I../libs/distrho
-BUILD_PLUGIN_FLAGS += $(shell pkg-config --cflags jack gl) $(QT_UI_FLAGS)
+BUILD_PLUGIN_FLAGS  = $(BUILD_CXX_FLAGS)
+BUILD_PLUGIN_FLAGS += -DBUILD_BRIDGE_PLUGIN -DBRIDGE_PLUGIN -DWANT_JACK
+BUILD_PLUGIN_FLAGS += -I../backend/engine -I../backend/plugin -I../libs -I../libs/distrho
+BUILD_PLUGIN_FLAGS += $(shell pkg-config --cflags gl)
 
 LINK_PLUGIN_FLAGS   = $(LINK_FLAGS)
-LINK_PLUGIN_FLAGS  += $(QT_UI_LIBS) $(shell pkg-config --libs gl)
+LINK_PLUGIN_FLAGS  += $(shell pkg-config --libs gl)
 
-NATIVE_BUILD_FLAGS  = $(BUILD_PLUGIN_FLAGS)
+NATIVE_BUILD_FLAGS  = $(BUILD_PLUGIN_FLAGS) $(shell pkg-config --cflags jack)
 NATIVE_LINK_FLAGS   = $(LINK_PLUGIN_FLAGS) $(shell pkg-config --libs jack) -ldl
 
 ifeq ($(HAVE_SUIL),true)

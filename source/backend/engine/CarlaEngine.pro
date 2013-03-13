@@ -1,36 +1,57 @@
 # QtCreator project file
 
-QT = core
+TARGET   = CarlaEngine
+TEMPLATE = lib
+VERSION  = 1.0
 
-CONFIG    = debug
-CONFIG   += link_pkgconfig shared qt warn_on
+# -------------------------------------------------------
 
-DEFINES   = DEBUG
-DEFINES  += QTCREATOR_TEST
+CONFIG     = debug
+CONFIG    += link_pkgconfig shared warn_on
+
+DEFINES    = DEBUG
+DEFINES   += QTCREATOR_TEST
+
+# Shared
+DEFINES   += WANT_NATIVE
+DEFINES   += WANT_LADSPA
+DEFINES   += WANT_DSSI
+DEFINES   += WANT_LV2
+DEFINES   += WANT_VST
+DEFINES   += WANT_PLUGIN
+DEFINES   += WANT_RTAUDIO
+DEFINES   += WANT_JACK
+DEFINES   += WANT_JACK_LATENCY
+DEFINES   += WANT_JACK_PORT_RENAME
+DEFINES   += WANT_FLUIDSYNTH
+DEFINES   += WANT_LINUXSAMPLER
+DEFINES   += WANT_AUDIOFILE
+DEFINES   += WANT_ZYNADDSUBFX
+PKGCONFIG  = gl
+
+# Engine
+PKGCONFIG += liblo QtCore
+
+# RtAudio
+DEFINES   += HAVE_GETTIMEOFDAY
+DEFINES   += __RTAUDIO_DEBUG__ __RTMIDI_DEBUG__
+
+# ALSA
+DEFINES   += __LINUX_ALSA__ __LINUX_ALSASEQ__
+PKGCONFIG += alsa
 
 # JACK
-DEFINES  += CARLA_ENGINE_JACK
-DEFINES  += __UNIX_JACK__
+DEFINES   += __UNIX_JACK__
+PKGCONFIG += jack
 
-# RtAudio/RtMidi
-DEFINES  += CARLA_ENGINE_RTAUDIO HAVE_GETTIMEOFDAY
-DEFINES  += __RTAUDIO_DEBUG__ __RTMIDI_DEBUG__
-DEFINES  += __LINUX_ALSA__ __LINUX_ALSASEQ__
-DEFINES  += __LINUX_PULSE__
+# PulseAudio
+DEFINES   += __LINUX_PULSE__
+PKGCONFIG += libpulse-simple
 
 # DISTRHO Plugin
-DEFINES  += CARLA_ENGINE_PLUGIN
-DEFINES  += DISTRHO_PLUGIN_TARGET_STANDALONE
+DEFINES   += DISTRHO_PLUGIN_TARGET_VST
 
-# Misc
-DEFINES  += WANT_LADSPA WANT_DSSI WANT_LV2 WANT_VST
-DEFINES  += WANT_JACK WANT_PLUGIN WANT_RTAUDIO
-
-PKGCONFIG = liblo jack alsa libpulse-simple
-
-TARGET   = carla_engine
-TEMPLATE = lib
-VERSION  = 0.5.0
+# -------------------------------------------------------
 
 SOURCES  = \
     CarlaEngine.cpp \
@@ -65,17 +86,15 @@ HEADERS += \
 HEADERS += \
     distrho/DistrhoPluginInfo.h
 
-INCLUDEPATH = . .. \
+INCLUDEPATH = . .. plugin \
     ../../includes \
     ../../libs \
+    ../../libs/distrho \
     ../../utils
 
 # RtAudio/RtMidi
 INCLUDEPATH += rtaudio-4.0.11 rtmidi-2.0.1
 SOURCES     += rtaudio-4.0.11/RtAudio.cpp
 SOURCES     += rtmidi-2.0.1/RtMidi.cpp
-
-# Plugin
-INCLUDEPATH += plugin ../../libs/distrho-plugin-toolkit
 
 QMAKE_CXXFLAGS += -std=c++0x

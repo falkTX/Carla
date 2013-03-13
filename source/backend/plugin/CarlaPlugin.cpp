@@ -19,9 +19,10 @@
 #include "CarlaLibUtils.hpp"
 #include "CarlaMIDI.h"
 
+#include "dgl/App.hpp"
+
 #include <QtCore/QFile>
 #include <QtCore/QTextStream>
-#include <QtGui/QCloseEvent>
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -34,7 +35,7 @@ static const MidiProgramData  kMidiProgramDataNull;
 static const CustomData       kCustomDataNull;
 
 // -------------------------------------------------------------------
-// Helpers
+// Plugin Helpers
 
 CarlaEngine* CarlaPluginGetEngine(CarlaPlugin* const plugin)
 {
@@ -1972,19 +1973,13 @@ CarlaPlugin::ScopedProcessLocker::~ScopedProcessLocker()
 // CarlaPluginGUI
 
 CarlaPluginGUI::CarlaPluginGUI(DGL::App* const app, Callback* const callback)
-//CarlaPluginGUI::CarlaPluginGUI(QWidget* const parent, Callback* const callback)
     : DGL::Window(app),
-      kCallback(callback)/*,
-      fContainer(this)*/
+      kCallback(callback)
 {
     carla_debug("CarlaPluginGUI::CarlaPluginGUI(%p, %p)", app, callback);
     CARLA_ASSERT(app != nullptr);
     CARLA_ASSERT(callback != nullptr);
 
-    //setCentralWidget(&fContainer);
-    //adjustSize();
-
-    //QMainWindow::setVisible(false);
     hide();
 }
 
@@ -1992,14 +1987,6 @@ CarlaPluginGUI::~CarlaPluginGUI()
 {
     carla_debug("CarlaPluginGUI::~CarlaPluginGUI()");
 }
-
-#if 0
-WId CarlaPluginGUI::getWinId() const
-{
-    carla_debug("CarlaPluginGUI::getWinId()");
-    return fContainer.winId();
-}
-#endif
 
 // void CarlaPluginGUI::closeEvent(QCloseEvent* const event)
 // {

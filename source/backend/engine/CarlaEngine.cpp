@@ -28,6 +28,14 @@
 CARLA_BACKEND_START_NAMESPACE
 
 // -------------------------------------------------------------------------------------------------------------------
+// Engine Helpers
+
+DGL::App* getEngineApp(CarlaEngine* const engine)
+{
+    return CarlaEngineProtectedData::getApp(engine);
+}
+
+// -------------------------------------------------------------------------------------------------------------------
 // Carla Engine port (Abstract)
 
 CarlaEnginePort::CarlaEnginePort(const bool isInput, const ProcessMode processMode)
@@ -465,38 +473,35 @@ CarlaEngine* CarlaEngine::newDriverByName(const char* const driverName)
 #ifdef WANT_JACK
     if (std::strcmp(driverName, "JACK") == 0)
         return newJack();
-#else
-    if (false)
-        pass();
 #endif
 
 #ifdef WANT_RTAUDIO
 # ifdef __LINUX_ALSA__
-    else if (std::strcmp(driverName, "ALSA") == 0)
+    if (std::strcmp(driverName, "ALSA") == 0)
         return newRtAudio(RTAUDIO_LINUX_ALSA);
 # endif
 # ifdef __LINUX_PULSE__
-    else if (std::strcmp(driverName, "PulseAudio") == 0)
+    if (std::strcmp(driverName, "PulseAudio") == 0)
         return newRtAudio(RTAUDIO_LINUX_PULSE);
 # endif
 # ifdef __LINUX_OSS__
-    else if (std::strcmp(driverName, "OSS") == 0)
+    if (std::strcmp(driverName, "OSS") == 0)
         return newRtAudio(RTAUDIO_LINUX_OSS);
 # endif
 # ifdef __UNIX_JACK__
-    else if (std::strcmp(driverName, "JACK (RtAudio)") == 0)
+    if (std::strncmp(driverName, "JACK ", 5) == 0)
         return newRtAudio(RTAUDIO_UNIX_JACK);
 # endif
 # ifdef __MACOSX_CORE__
-    else if (std::strcmp(driverName, "CoreAudio") == 0)
+    if (std::strcmp(driverName, "CoreAudio") == 0)
         return newRtAudio(RTAUDIO_MACOSX_CORE);
 # endif
 # ifdef __WINDOWS_ASIO__
-    else if (std::strcmp(driverName, "ASIO") == 0)
+    if (std::strcmp(driverName, "ASIO") == 0)
         return newRtAudio(RTAUDIO_WINDOWS_ASIO);
 # endif
 # ifdef __WINDOWS_DS__
-    else if (std::strcmp(driverName, "DirectSound") == 0)
+    if (std::strcmp(driverName, "DirectSound") == 0)
         return newRtAudio(RTAUDIO_WINDOWS_DS);
 # endif
 #endif
@@ -631,24 +636,20 @@ void CarlaEngine::idle()
     CARLA_ASSERT(kData->plugins != nullptr);
     CARLA_ASSERT(isRunning());
 
-#if 0
-    for (auto it = kData->plugins.begin(); it.valid(); it.next())
-    {
-        CarlaPlugin* const plugin = (*it).plugin;
-        CARLA_ASSERT(plugin != nullptr);
-
-        if (plugin && plugin->enabled())
-            plugin->idleGui();
-    }
-#endif
-
     for (unsigned int i=0; i < kData->curPluginCount; i++)
     {
         CarlaPlugin* const plugin = kData->plugins[i].plugin;
 
-        if (plugin && plugin->enabled())
+        if (plugin != nullptr && plugin->enabled())
             plugin->idleGui();
     }
+
+    kData->app.idle();
+}
+
+void CarlaEngine::exec()
+{
+    kData->app.exec();
 }
 
 // -----------------------------------------------------------------------

@@ -24,6 +24,8 @@
 #include "CarlaPlugin.hpp"
 #include "RtList.hpp"
 
+#include "dgl/App.hpp"
+
 #ifndef BUILD_BRIDGE
 # include <QtCore/QProcessEnvironment>
 #endif
@@ -107,15 +109,19 @@ struct EnginePluginData {
     float insPeak[CarlaEngine::MAX_PEAKS];
     float outsPeak[CarlaEngine::MAX_PEAKS];
 
+#ifndef QTCREATOR_TEST
     EnginePluginData()
         : plugin(nullptr),
           insPeak{0.0f},
           outsPeak{0.0f} {}
+#endif
 };
 
 // -------------------------------------------------------------------------------------------------------------------
 
 struct CarlaEngineProtectedData {
+    DGL::App app;
+
     CarlaEngineOsc    osc;
     CarlaEngineThread thread;
 
@@ -168,9 +174,6 @@ struct CarlaEngineProtectedData {
               frame(0) {}
     } time;
 
-    //RtList<EnginePluginData>::Pool pluginsPool;
-    //RtList<EnginePluginData>       plugins;
-
     EnginePluginData* plugins;
 
     CarlaEngineProtectedData(CarlaEngine* const engine)
@@ -181,8 +184,6 @@ struct CarlaEngineProtectedData {
           callbackPtr(nullptr),
           aboutToClose(false),
           curPluginCount(0),
-          //pluginsPool(1, 999),
-          //plugins(&pluginsPool)
           maxPluginNumber(0),
           plugins(nullptr) {}
 
@@ -195,10 +196,10 @@ struct CarlaEngineProtectedData {
     CarlaEngineProtectedData(CarlaEngineProtectedData&) = delete;
     CarlaEngineProtectedData(const CarlaEngineProtectedData&) = delete;
 
-    //static RtList<EnginePluginData>::Itenerator pluginsBegin(CarlaEngine* const engine)
-    //{
-    //    return engine->kData->plugins.begin();
-    //}
+    static DGL::App* getApp(CarlaEngine* const engine)
+    {
+        return &engine->kData->app;
+    }
 };
 
 CARLA_BACKEND_END_NAMESPACE

@@ -28,18 +28,7 @@
 #include "CarlaMIDI.h"
 
 #include "RtList.hpp"
-#include "dgl/App.hpp"
 #include "dgl/Window.hpp"
-
-//#include <QtGui/QMainWindow>
-
-//#ifdef Q_WS_X11
-//# include <QtGui/QX11EmbedContainer>
-//typedef QX11EmbedContainer GuiContainer;
-//#else
-//# include <QtGui/QWidget>
-//typedef QWidget GuiContainer;
-//#endif
 
 #define CARLA_DECLARE_NON_COPY_STRUCT(structName) \
     structName(structName&) = delete;             \
@@ -397,7 +386,7 @@ struct ExternalMidiNote {
 
 // -----------------------------------------------------------------------
 
-class CarlaPluginGUI : public DGL::Window//QMainWindow
+class CarlaPluginGUI : public DGL::Window
 {
 public:
     class Callback
@@ -408,20 +397,21 @@ public:
     };
 
     CarlaPluginGUI(DGL::App* const app, Callback* const callback);
-    //CarlaPluginGUI(QWidget* const parent, Callback* const callback);
     ~CarlaPluginGUI();
-
-    //WId getWinId() const;
 
 //protected:
     //void closeEvent(QCloseEvent* const event);
 
 private:
     Callback* const kCallback;
-    //GuiContainer fContainer;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginGUI)
 };
+
+// -----------------------------------------------------------------------
+// Engine Helpers, defined in CarlaEngine.cpp
+
+extern DGL::App* getEngineApp(CarlaEngine* const engine);
 
 // -----------------------------------------------------------------------
 
@@ -429,7 +419,6 @@ struct CarlaPluginProtectedData {
     CarlaEngine* const engine;
     CarlaEngineClient* client;
     CarlaPluginGUI* gui;
-    DGL::App app;
 
     bool active;
     bool activeBefore;
@@ -582,7 +571,7 @@ struct CarlaPluginProtectedData {
         if (gui != nullptr)
             return;
 
-        gui = new CarlaPluginGUI(&app, callback);
+        gui = new CarlaPluginGUI(getEngineApp(engine), callback);
     }
 
     void destroyUiIfNeeded()

@@ -46,7 +46,15 @@ RtMidi::Api getMatchedAudioMidiAPi(const RtAudio::Api rtApi)
         return RtMidi::LINUX_ALSA;
 
     case RtAudio::UNIX_JACK:
+#if defined(CARLA_OS_WIN)
+        return RtMidi::WINDOWS_MM;
+#elif defined(CARLA_OS_MAC)
+        return RtMidi::MACOSX_CORE;
+#elif defined(CARLA_OS_LINUX)
+        return RtMidi::LINUX_ALSA;
+#else
         return RtMidi::UNIX_JACK;
+#endif
 
     case RtAudio::MACOSX_CORE:
         return RtMidi::MACOSX_CORE;
@@ -77,8 +85,8 @@ public:
           fAudioInBuf2(nullptr),
           fAudioOutBuf1(nullptr),
           fAudioOutBuf2(nullptr),
-          fMidiIn(getMatchedAudioMidiAPi(api), "CarlaIn"),
-          fMidiOut(getMatchedAudioMidiAPi(api), "CarlaOut")
+          fMidiIn(getMatchedAudioMidiAPi(api), "Carla"),
+          fMidiOut(getMatchedAudioMidiAPi(api), "Carla")
     {
         carla_debug("CarlaEngineRtAudio::CarlaEngineRtAudio(%i)", api);
 
@@ -646,7 +654,15 @@ const char* CarlaEngine::getRtAudioApiName(const unsigned int index)
         case RtAudio::LINUX_OSS:
             return "OSS";
         case RtAudio::UNIX_JACK:
-            return "JACK (RtAudio)";
+#if defined(CARLA_OS_WIN)
+        return "JACK with WinMM";
+#elif defined(CARLA_OS_MAC)
+        return "JACK with CoreMidi";
+#elif defined(CARLA_OS_LINUX)
+        return "JACK with ALSA-MIDI";
+#else
+        return "JACK (RtAudio)";
+#endif
         case RtAudio::MACOSX_CORE:
             return "CoreAudio";
         case RtAudio::WINDOWS_ASIO:

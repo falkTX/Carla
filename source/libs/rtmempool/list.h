@@ -300,7 +300,7 @@ static inline void list_splice_tail_init(struct list_head *list, struct list_hea
  * @type:   the type of the struct this is embedded in.
  * @member: the name of the list_struct within the struct.
  */
-#ifdef __GNUC__
+#if defined(__GNUC__) && ! defined(QTCREATOR_TEST)
 # define list_entry(ptr, type, member) \
     container_of(ptr, type, member)
 #else

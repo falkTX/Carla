@@ -1934,12 +1934,14 @@ public:
     public:
         ScopedInitializer()
         {
-            initDescriptors();
+#ifndef BUILD_BRIDGE
+            carla_register_all_plugins();
+#endif
         }
 
         ~ScopedInitializer()
         {
-            clearDescriptors();
+            sPluginDescriptors.clear();
         }
     };
 
@@ -1963,39 +1965,6 @@ private:
     ::TimeInfo fTimeInfo;
 
     static NonRtList<const PluginDescriptor*> sPluginDescriptors;
-
-    // -------------------------------------------------------------------
-
-    static void initDescriptors()
-    {
-#ifndef BUILD_BRIDGE
-        carla_register_native_plugin_bypass();
-        carla_register_native_plugin_midiSequencer();
-        carla_register_native_plugin_midiSplit();
-        carla_register_native_plugin_midiThrough();
-        carla_register_native_plugin_midiTranspose();
-        carla_register_native_plugin_nekofilter();
-
-# ifdef WANT_OPENGL
-        carla_register_native_plugin_3BandEQ();
-        carla_register_native_plugin_3BandSplitter();
-        carla_register_native_plugin_PingPongPan();
-# endif
-        carla_register_native_plugin_Notes();
-
-# ifdef WANT_AUDIOFILE
-        carla_register_native_plugin_audiofile();
-# endif
-# ifdef WANT_ZYNADDSUBFX
-        carla_register_native_plugin_zynaddsubfx();
-# endif
-#endif
-    }
-
-    static void clearDescriptors()
-    {
-        sPluginDescriptors.clear();
-    }
 
     // -------------------------------------------------------------------
 
