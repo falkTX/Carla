@@ -8,15 +8,8 @@ include ../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += -I../../libs/distrho
-
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo QtCore gl)
-LINK_FLAGS      += $(shell pkg-config --libs liblo QtCore gl)
-
-ifeq ($(HAVE_SUIL),true)
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags suil-0)
-LINK_FLAGS      += $(shell pkg-config --libs suil-0)
-endif
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo QtCore)
+LINK_FLAGS      += $(shell pkg-config --libs liblo QtCore)
 
 ifeq ($(HAVE_FLUIDSYNTH),true)
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags fluidsynth)

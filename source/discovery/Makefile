@@ -1,6 +1,6 @@
 #!/usr/bin/make -f
 # Makefile for carla-discovery #
-# ----------------------------------------- #
+# ---------------------------- #
 # Created by falkTX
 #
 
@@ -36,6 +36,16 @@ WIN_32BIT_FLAGS   = $(32BIT_FLAGS)
 WIN_64BIT_FLAGS   = $(64BIT_FLAGS)
 WIN_LINK_FLAGS    = $(LINK_FLAGS) -static -mwindows -lole32 -luuid -lws2_32
 
+ifeq ($(CARLA_PLUGIN_SUPPORT),true)
+LIBS         = ../libs/lilv.a
+LIBS_posix32 = ../libs/lilv.posix32.a
+LIBS_posix64 = ../libs/lilv.posix64.a
+LIBS_win32   = ../libs/lilv.win32.a
+LIBS_win64   = ../libs/lilv.win64.a
+endif
+
+OBJS = carla-discovery.cpp
+
 # --------------------------------------------------------------
 
 all: carla-discovery-native
@@ -47,21 +57,19 @@ win64:   carla-discovery-win64.exe
 
 # --------------------------------------------------------------
 
-OBJS = carla-discovery.cpp
-
-carla-discovery-native: $(OBJS) ../libs/lilv.a
+carla-discovery-native: $(OBJS) $(LIBS)
 	$(CXX) $^ $(POSIX_BUILD_FLAGS) $(POSIX_LINK_FLAGS) $(NATIVE_FLAGS) -o $@ && $(STRIP) $@
 
-carla-discovery-posix32: $(OBJS) ../libs/lilv.posix32.a
+carla-discovery-posix32: $(OBJS) $(LIBS_posix32)
 	$(CXX) $^ $(POSIX_BUILD_FLAGS) $(POSIX_32BIT_FLAGS) $(POSIX_LINK_FLAGS) -o $@ && $(STRIP) $@
 
-carla-discovery-posix64: $(OBJS) ../libs/lilv.posix64.a
+carla-discovery-posix64: $(OBJS) $(LIBS_posix64)
 	$(CXX) $^ $(POSIX_BUILD_FLAGS) $(POSIX_64BIT_FLAGS) $(POSIX_LINK_FLAGS) -o $@ && $(STRIP) $@
 
-carla-discovery-win32.exe: $(OBJS) ../libs/lilv.win32.a
+carla-discovery-win32.exe: $(OBJS) $(LIBS_win32)
 	$(CXX) $^ $(WIN_BUILD_FLAGS) $(WIN_32BIT_FLAGS) $(WIN_LINK_FLAGS) -o $@ && $(STRIP) $@
 
-carla-discovery-win64.exe: $(OBJS) ../libs/lilv.win64.a
+carla-discovery-win64.exe: $(OBJS) $(LIBS_win64)
 	$(CXX) $^ $(WIN_BUILD_FLAGS) $(WIN_64BIT_FLAGS) $(WIN_LINK_FLAGS) -o $@ && $(STRIP) $@
 
 # --------------------------------------------------------------

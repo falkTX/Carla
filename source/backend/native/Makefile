@@ -8,13 +8,12 @@ include ../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += -I../../libs/distrho
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtCore QtGui gl)
-LINK_FLAGS      += $(shell pkg-config --libs QtCore QtGui gl)
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtCore QtGui)
+LINK_FLAGS      += $(shell pkg-config --libs QtCore QtGui)
 
 ifeq ($(HAVE_AF_DEPS),true)
-AF_CXX_FLAGS     = $(BUILD_CXX_FLAGS)
-AF_CXX_FLAGS    += $(shell pkg-config --cflags libavcodec libavformat sndfile)
+AF_C_FLAGS       = $(BUILD_C_FLAGS)
+AF_C_FLAGS      += $(shell pkg-config --cflags libavcodec libavformat sndfile)
 LINK_FLAGS      += $(shell pkg-config --libs libavcodec libavformat sndfile)
 endif
 
@@ -35,18 +34,14 @@ OBJS  = \
 	midi-transpose.c.o \
 	nekofilter.c.o
 
-# DISTRHO plugins (GL)
-ifeq ($(HAVE_OPENGL),true)
+# DISTRHO plugins
 OBJS += \
 	distrho-3bandeq.cpp.o \
 	distrho-3bandsplitter.cpp.o \
-	distrho-pingpongpan.cpp.o
-endif
-
-# DISTRHO plugins (Qt)
-OBJS += \
+	distrho-pingpongpan.cpp.o \
 	distrho-notes.cpp.o
 
+# AudioFile
 ifeq ($(HAVE_AF_DEPS),true)
 OBJS += \
 	audiofile.c.o
@@ -62,7 +57,8 @@ endif
 SHARED = ../libcarla_native.so
 STATIC = ../libcarla_native.a
 
-LIBS = ../../libs/dgl.a
+LIBS  = ../../libs/dgl.a
+LIBS += ../../libs/widgets.a
 
 # --------------------------------------------------------------
 
@@ -100,8 +96,11 @@ distrho-3bandsplitter.cpp.o: distrho-3bandsplitter.cpp 3bandsplitter/DistrhoArtw
 distrho-pingpongpan.cpp.o: distrho-pingpongpan.cpp pingpongpan/DistrhoArtworkPingPongPan.cpp pingpongpan/DistrhoPluginPingPongPan.cpp pingpongpan/DistrhoUIPingPongPan.cpp distrho/DistrhoPluginCarla.cpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) -Ipingpongpan -DDISTRHO_NAMESPACE=DISTRHO_PingPongPan -c -o $@
 
-distrho-notes.cpp.o: distrho-notes.cpp notes/DistrhoPluginNotes.cpp notes/DistrhoUINotes.cpp distrho/DistrhoPluginCarla.cpp moc_DistrhoUINotes.cpp moc_ParamProgressBar.cpp
+distrho-notes.cpp.o: distrho-notes.cpp notes/DistrhoPluginNotes.cpp notes/DistrhoUINotes.cpp distrho/DistrhoPluginCarla.cpp moc_DistrhoUINotes.cpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) -Inotes -DDISTRHO_NAMESPACE=DISTRHO_Notes -c -o $@
+
+audiofile.c.o: audiofile.c
+	$(CXX) $< $(AF_C_FLAGS) -c -o $@
 
 zynaddsubfx.cpp.o: zynaddsubfx.cpp
 	$(CXX) $< $(ZYN_CXX_FLAGS) -c -o $@
@@ -114,5 +113,7 @@ zynaddsubfx-src.cpp.o: zynaddsubfx-src.cpp
 moc_DistrhoUINotes.cpp: notes/DistrhoUINotes.hpp
 	$(MOC) $< -o $@
 
-moc_ParamProgressBar.cpp: notes/ParamProgressBar.hpp
-	$(MOC) $< -o $@
+# --------------------------------------------------------------
+
+../libs/%:
+	$(MAKE) -C ../libs $*

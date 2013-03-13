@@ -18,8 +18,6 @@ BUILD_CXX_FLAGS += -DHAVE_GETTIMEOFDAY
 BUILD_CXX_FLAGS += -Irtaudio-4.0.11 -Irtmidi-2.0.1
 ifeq ($(DEBUG),true)
 BUILD_CXX_FLAGS += -D__RTAUDIO_DEBUG__ -D__RTMIDI_DEBUG__
-else
-BUILD_CXX_FLAGS += -D_FORTIFY_SOURCE=2
 endif
 endif
 
@@ -45,6 +43,7 @@ endif
 OBJS  = \
      CarlaEngine.cpp.o \
      CarlaEngineJack.cpp.o \
+     CarlaEnginePlugin.cpp.o \
      CarlaEngineRtAudio.cpp.o \
      CarlaEngineOsc.cpp.o \
      CarlaEngineThread.cpp.o
@@ -73,8 +72,8 @@ debug:
 %.cpp.o: %.cpp ../CarlaPlugin.hpp ../CarlaEngine.hpp CarlaEngineInternal.hpp CarlaEngineOsc.hpp CarlaEngineThread.hpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
-$(SHARED): $(OBJS) $(LIBS)
+$(SHARED): $(OBJS)
 	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
 
-$(STATIC): $(OBJS) $(LIBS)
+$(STATIC): $(OBJS)
 	$(AR) rs $@ $^
