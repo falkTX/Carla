@@ -13,6 +13,7 @@ BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtCore)
 LINK_FLAGS      += $(shell pkg-config --libs QtCore)
 
 FILES = \
+	moc_paramspinbox.cpp \
 	moc_pixmapkeyboard.cpp
 
 OBJS = \
@@ -21,6 +22,7 @@ OBJS = \
 	paramspinbox.cpp.o \
 	pixmapdial.cpp.o \
 	pixmapkeyboard.cpp.o \
+	moc_paramspinbox.cpp.o \
 	moc_pixmapkeyboard.cpp.o
 
 TARGET = ../libs/widgets.a

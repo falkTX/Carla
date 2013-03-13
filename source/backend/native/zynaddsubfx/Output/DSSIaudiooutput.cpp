@@ -629,6 +629,7 @@ DSSIaudiooutput::DSSIaudiooutput(unsigned long sampleRate)
     for(int i = 0; i < synth->buffersize; i++)
         denormalkillbuf[i] = (RND - 0.5f) * 1e-16;
 
+    synth->alias();
     this->master = new Master();
 }
 

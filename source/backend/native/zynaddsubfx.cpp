@@ -50,40 +50,41 @@ public:
 
     ZynAddSubFxPlugin(const HostDescriptor* const host)
         : PluginDescriptorClass(host),
-          m_master(new Master)
+          kMaster(new Master()),
+          kSampleRate(getSampleRate())
     {
         // refresh banks
-        m_master->bank.rescanforbanks();
+        kMaster->bank.rescanforbanks();
 
-        for (uint32_t i=0, size = m_master->bank.banks.size(); i < size; i++)
+        for (uint32_t i=0, size = kMaster->bank.banks.size(); i < size; i++)
         {
-            if (m_master->bank.banks[i].dir.empty())
+            if (kMaster->bank.banks[i].dir.empty())
                 continue;
 
-            m_master->bank.loadbank(m_master->bank.banks[i].dir);
+            kMaster->bank.loadbank(kMaster->bank.banks[i].dir);
 
             for (unsigned int instrument = 0; instrument < BANK_SIZE; instrument++)
             {
-                const std::string insName(m_master->bank.getname(instrument));
+                const std::string insName(kMaster->bank.getname(instrument));
 
                 if (insName.empty() || insName[0] == '\0' || insName[0] == ' ')
                     continue;
 
                 ProgramInfo pInfo(i, instrument, insName.c_str());
-                m_programs.push_back(pInfo);
+                fPrograms.push_back(pInfo);
             }
         }
     }
 
     ~ZynAddSubFxPlugin()
     {
-        //ensure that everything has stopped with the mutex wait
-        pthread_mutex_lock(&m_master->mutex);
-        pthread_mutex_unlock(&m_master->mutex);
+        //ensure that everything has stopped
+        pthread_mutex_lock(&kMaster->mutex);
+        pthread_mutex_unlock(&kMaster->mutex);
 
-        m_programs.clear();
+        fPrograms.clear();
 
-        delete m_master;
+        delete kMaster;
     }
 
 protected:
@@ -135,7 +136,7 @@ protected:
         {
 #if 0
         case PARAMETER_MASTER:
-            return m_master->Pvolume;
+            return kMaster->Pvolume;
 #endif
         default:
             return 0.0f;
@@ -147,17 +148,17 @@ protected:
 
     uint32_t getMidiProgramCount()
     {
-        return m_programs.size();
+        return fPrograms.size();
     }
 
     const MidiProgram* getMidiProgramInfo(const uint32_t index)
     {
         CARLA_ASSERT(index < getMidiProgramCount());
 
-        if (index >= m_programs.size())
+        if (index >= fPrograms.size())
             return nullptr;
 
-        const ProgramInfo& pInfo(m_programs[index]);
+        const ProgramInfo& pInfo(fPrograms[index]);
 
         static MidiProgram midiProgram;
         midiProgram.bank    = pInfo.bank;
@@ -186,21 +187,21 @@ protected:
 
     void setMidiProgram(const uint32_t bank, const uint32_t program)
     {
-        if (bank >= m_master->bank.banks.size())
+        if (bank >= kMaster->bank.banks.size())
             return;
         if (program >= BANK_SIZE)
             return;
 
-        const std::string bankdir(m_master->bank.banks[bank].dir);
+        const std::string bankdir(kMaster->bank.banks[bank].dir);
 
         if (! bankdir.empty())
         {
-            pthread_mutex_lock(&m_master->mutex);
+            pthread_mutex_lock(&kMaster->mutex);
 
-            m_master->bank.loadbank(bankdir);
-            m_master->bank.loadfromslot(program, m_master->part[0]);
+            kMaster->bank.loadbank(bankdir);
+            kMaster->bank.loadfromslot(program, kMaster->part[0]);
 
-            pthread_mutex_unlock(&m_master->mutex);
+            pthread_mutex_unlock(&kMaster->mutex);
         }
     }
 
@@ -209,81 +210,50 @@ protected:
 
     void activate()
     {
-        m_master->setController(0, MIDI_CONTROL_ALL_SOUND_OFF, 0);
+        kMaster->setController(0, MIDI_CONTROL_ALL_SOUND_OFF, 0);
     }
 
     void process(float**, float** const outBuffer, const uint32_t frames, const uint32_t midiEventCount, const MidiEvent* const midiEvents)
     {
-        if (pthread_mutex_trylock(&m_master->mutex) != 0)
+        if (pthread_mutex_trylock(&kMaster->mutex) != 0)
         {
             carla_zeroFloat(outBuffer[0], frames);
             carla_zeroFloat(outBuffer[1], frames);
             return;
         }
 
-        uint32_t fromFrame      = 0;
-        uint32_t eventIndex     = 0;
-        uint32_t nextEventFrame = 0;
-        uint32_t toFrame = 0;
+        for (uint32_t i=0; i < midiEventCount; i++)
+        {
+            const MidiEvent* const midiEvent = &midiEvents[i];
 
-        do {
-            // Find the time of the next event, if any
-            if (eventIndex >= midiEventCount)
-                nextEventFrame = UINT32_MAX;
-            else
-                nextEventFrame = midiEvents[eventIndex].time;
+            const uint8_t status  = MIDI_GET_STATUS_FROM_DATA(midiEvent->data);
+            const uint8_t channel = MIDI_GET_CHANNEL_FROM_DATA(midiEvent->data);
 
-            // find the end of the sub-sample to be processed this time round...
-            // if the next event falls within the desired sample interval...
-            if ((nextEventFrame < frames) && (nextEventFrame >= toFrame))
-                // set the end to be at that event
-                toFrame = nextEventFrame;
-            else
-                // ...else go for the whole remaining sample
-                toFrame = frames;
-
-            if (fromFrame < toFrame)
+            if (MIDI_IS_STATUS_NOTE_OFF(status))
             {
-                // call master to fill from `fromFrame` to `toFrame`:
-                m_master->GetAudioOutSamples(toFrame - fromFrame, (unsigned)getSampleRate(), &outBuffer[0][fromFrame], &outBuffer[1][fromFrame]);
-                // next sub-sample please...
-                fromFrame = toFrame;
-            }
+                const uint8_t note = midiEvent->data[1];
 
-            // Now process any event(s) at the current timing point
-            while (eventIndex < midiEventCount && midiEvents[eventIndex].time == toFrame)
+                kMaster->noteOff(channel, note);
+            }
+            else if (MIDI_IS_STATUS_NOTE_ON(status))
             {
-                const uint8_t status  = MIDI_GET_STATUS_FROM_DATA(midiEvents[eventIndex].data);
-                const uint8_t channel = MIDI_GET_CHANNEL_FROM_DATA(midiEvents[eventIndex].data);
+                const uint8_t note = midiEvent->data[1];
+                const uint8_t velo = midiEvent->data[2];
 
-                if (MIDI_IS_STATUS_NOTE_OFF(status))
-                {
-                    const uint8_t note = midiEvents[eventIndex].data[1];
-
-                    m_master->noteOff(channel, note);
-                }
-                else if (MIDI_IS_STATUS_NOTE_ON(status))
-                {
-                    const uint8_t note = midiEvents[eventIndex].data[1];
-                    const uint8_t velo = midiEvents[eventIndex].data[2];
-
-                    m_master->noteOn(channel, note, velo);
-                }
-                else if (MIDI_IS_STATUS_POLYPHONIC_AFTERTOUCH(status))
-                {
-                    const uint8_t note     = midiEvents[eventIndex].data[1];
-                    const uint8_t pressure = midiEvents[eventIndex].data[2];
-
-                    m_master->polyphonicAftertouch(channel, note, pressure);
-                }
-
-                eventIndex++;
+                kMaster->noteOn(channel, note, velo);
             }
+            else if (MIDI_IS_STATUS_POLYPHONIC_AFTERTOUCH(status))
+            {
+                const uint8_t note     = midiEvent->data[1];
+                const uint8_t pressure = midiEvent->data[2];
 
-        // Keep going until we have the desired total length of sample...
-        } while (toFrame < frames);
+                kMaster->polyphonicAftertouch(channel, note, pressure);
+            }
+        }
 
-        pthread_mutex_unlock(&m_master->mutex);
+        kMaster->GetAudioOutSamples(frames, kSampleRate, outBuffer[0], outBuffer[1]);
+
+        pthread_mutex_unlock(&kMaster->mutex);
     }
 
     // -------------------------------------------------------------------
@@ -302,16 +272,17 @@ private:
         ProgramInfo() = delete;
     };
 
-    std::vector<ProgramInfo> m_programs;
+    std::vector<ProgramInfo> fPrograms;
 
-    Master* const m_master;
+    Master* const  kMaster;
+    const unsigned kSampleRate;
 
 public:
-    static int s_instanceCount;
+    static int sInstanceCount;
 
     static PluginHandle _instantiate(const PluginDescriptor*, HostDescriptor* host)
     {
-        if (s_instanceCount++ == 0)
+        if (sInstanceCount++ == 0)
         {
             synth = new SYNTH_T;
             synth->buffersize = host->get_buffer_size(host->handle);
@@ -336,7 +307,7 @@ public:
     {
         delete (ZynAddSubFxPlugin*)handle;
 
-        if (--s_instanceCount == 0)
+        if (--sInstanceCount == 0)
         {
             delete[] denormalkillbuf;
             denormalkillbuf = nullptr;
@@ -349,7 +320,7 @@ public:
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ZynAddSubFxPlugin)
 };
 
-int ZynAddSubFxPlugin::s_instanceCount = 0;
+int ZynAddSubFxPlugin::sInstanceCount = 0;
 
 // -----------------------------------------------------------------------
 

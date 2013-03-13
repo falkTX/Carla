@@ -91,6 +91,10 @@ const char* carla_get_extended_license_text()
         retText += "<li>VST plugin support, using official VST SDK 2.4 (trademark of Steinberg Media Technologies GmbH)</li>";
 # endif
 #endif
+#ifdef WANT_AUDIOFILE
+        // TODO
+        //retText += "<li>ZynAddSubFX plugin code, http://zynaddsubfx.sf.net/</li>";
+#endif
 #ifdef WANT_ZYNADDSUBFX
         retText += "<li>ZynAddSubFX plugin code, http://zynaddsubfx.sf.net/</li>";
 #endif
@@ -104,7 +108,7 @@ const char* carla_get_extended_license_text()
 #ifdef WANT_LV2
         retText += "<li>serd, sord, sratom and lilv libraries for LV2 discovery, http://drobilla.net/software/lilv/</li>";
 #endif
-#ifdef CARLA_ENGINE_RTAUDIO
+#ifdef WANT_RTAUDIO
         retText += "<li>RtAudio and RtMidi libraries for extra Audio and MIDI support, http://www.music.mcgill.ca/~gary/rtaudio/</li>";
 #endif
         retText += "</ul>";

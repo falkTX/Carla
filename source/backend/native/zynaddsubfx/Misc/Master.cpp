@@ -490,6 +490,7 @@ void Master::GetAudioOutSamples(size_t nsamples,
         if(nsamples >= smps) {
             memcpy(outl + out_off, bufl + off, sizeof(float) * smps);
             memcpy(outr + out_off, bufr + off, sizeof(float) * smps);
+            nsamples -= smps;
 
             //generate samples
             AudioOut(bufl, bufr);
@@ -497,7 +498,6 @@ void Master::GetAudioOutSamples(size_t nsamples,
             smps = synth->buffersize;
 
             out_off  += smps;
-            nsamples -= smps;
         }
         else {   //use some samples
             memcpy(outl + out_off, bufl + off, sizeof(float) * nsamples);

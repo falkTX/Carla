@@ -8,11 +8,11 @@ include ../../Makefile.mk
 
 # --------------------------------------------------------------
 
-BASE_FLAGS       = -pthread -fvisibility=hidden -fPIC -I. -I.. -I../../includes
-BASE_FLAGS      += $(shell pkg-config --cflags gl)
+BACKEND_FLAGS    = -pthread -fvisibility=hidden -fPIC -I. -I.. -I../../includes
+BACKEND_FLAGS   += $(shell pkg-config --cflags gl)
 
-BUILD_C_FLAGS   += $(BASE_FLAGS)
-BUILD_CXX_FLAGS += $(BASE_FLAGS) -I../../libs -I../../libs/distrho -I../../utils
+BUILD_C_FLAGS   += $(BACKEND_FLAGS)
+BUILD_CXX_FLAGS += $(BACKEND_FLAGS) -I../../libs -I../../libs/distrho -I../../utils
 LINK_FLAGS      += $(shell pkg-config --libs gl) -lpthread
 
 # --------------------------------------------------------------

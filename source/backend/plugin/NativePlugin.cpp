@@ -23,6 +23,33 @@
 
 #include <QtGui/QFileDialog>
 
+void carla_register_all_plugins()
+{
+    // Simple plugins
+    carla_register_native_plugin_bypass();
+    carla_register_native_plugin_midiSequencer();
+    carla_register_native_plugin_midiSplit();
+    carla_register_native_plugin_midiThrough();
+    carla_register_native_plugin_midiTranspose();
+    carla_register_native_plugin_nekofilter();
+
+    // DISTRHO plugins
+    carla_register_native_plugin_3BandEQ();
+    carla_register_native_plugin_3BandSplitter();
+    carla_register_native_plugin_PingPongPan();
+    carla_register_native_plugin_Notes();
+
+#ifdef WANT_AUDIOFILE
+    // AudioFile
+    carla_register_native_plugin_audiofile();
+#endif
+
+#ifdef WANT_ZYNADDSUBFX
+    // ZynAddSubFX
+    carla_register_native_plugin_zynaddsubfx();
+#endif
+}
+
 CARLA_BACKEND_START_NAMESPACE
 
 struct NativePluginMidiData {
@@ -224,16 +251,17 @@ public:
 
         if (fDescriptor->name != nullptr)
         {
-            if (std::strcmp(fDescriptor->name, "ZynAddSubFX") == 0)
-            {
-                // nothing
-            }
-            else
-            {
-                options |= PLUGIN_OPTION_FIXED_BUFFER;
-            }
+//             if (std::strcmp(fDescriptor->name, "ZynAddSubFX") == 0)
+//             {
+//                 // nothing
+//             }
+//             else
+//             {
+
+//             }
         }
 
+        options |= PLUGIN_OPTION_FIXED_BUFFER;
         options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
         //if ((kData->audioIns.count() == 1 || kData->audioOuts.count() == 0) || (kData->audioIns.count() == 0 || kData->audioOuts.count() == 1))
@@ -909,14 +937,6 @@ public:
 
         // plugin options
         fOptions = 0x0;
-
-        if (fDescriptor->name != nullptr)
-        {
-            if (std::strcmp(fDescriptor->name, "ZynAddSubFX") == 0)
-            {
-                fOptions |= PLUGIN_OPTION_FIXED_BUFFER;
-            }
-        }
 
         fOptions |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
