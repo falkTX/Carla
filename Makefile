@@ -15,22 +15,15 @@ PYRCC ?= pyrcc4 -py3
 
 # -------------------------------------------------------------------------------------------------------------------------------------
 
-HAVE_OPENGL = $(shell pkg-config --exists gl && echo true)
-HAVE_QTCORE = $(shell pkg-config --exists QtCore && echo true)
+# HAVE_LIBS = $(shell pkg-config --exists freetype2 x11 && echo true)
 
-ifneq ($(HAVE_OPENGL),true)
-all:
-	@echo Error: Missing OpenGL or pkg-config, cannot build
-	@exit 1
-else
-ifneq ($(HAVE_QTCORE),true)
-all:
-	@echo Error: Missing QtCore, cannot build
-	@exit 1
-else
+# ifneq ($(HAVE_LIBS),true)
+# all
+# 	@echo Error Missing libraries or pkg-config, cannot build
+# 	@exit 1
+# else
 all: CPP RES UI WIDGETS
-endif
-endif
+# endif
 
 # -------------------------------------------------------------------------------------------------------------------------------------
 # C++ code

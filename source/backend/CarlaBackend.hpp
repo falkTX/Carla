@@ -721,12 +721,6 @@ struct MidiProgramData {
         : bank(0),
           program(0),
           name(nullptr) {}
-
-    ~MidiProgramData()
-    {
-        if (name != nullptr)
-            delete[] name;
-    }
 };
 
 /*!
