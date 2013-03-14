@@ -939,6 +939,7 @@ public:
         fOptions = 0x0;
 
         fOptions |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+        fOptions |= PLUGIN_OPTION_FIXED_BUFFER;
 
         if (forcedStereoIn || forcedStereoOut)
             fOptions |= PLUGIN_OPTION_FORCE_STEREO;

@@ -222,6 +222,10 @@ protected:
             return;
         }
 
+#if 0
+        carla_zeroFloat(outBuffer[0], frames);
+        carla_zeroFloat(outBuffer[1], frames);
+#else
         for (uint32_t i=0; i < midiEventCount; i++)
         {
             const MidiEvent* const midiEvent = &midiEvents[i];
@@ -252,6 +256,7 @@ protected:
         }
 
         kMaster->GetAudioOutSamples(frames, kSampleRate, outBuffer[0], outBuffer[1]);
+#endif
 
         pthread_mutex_unlock(&kMaster->mutex);
     }

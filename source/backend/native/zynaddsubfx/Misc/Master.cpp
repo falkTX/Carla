@@ -45,6 +45,8 @@ vuData::vuData(void)
       rmspeakl(0.0f), rmspeakr(0.0f), clipped(0)
 {}
 
+static Master* masterInstance = NULL;
+
 Master::Master()
 {
     swaplr = 0;
@@ -121,11 +123,19 @@ bool Master::mutexLock(lockset request)
 
 Master &Master::getInstance()
 {
-    static Master *instance = NULL;
-    if(!instance)
-        instance = new Master;
+    if (!masterInstance)
+        masterInstance = new Master;
 
-    return *instance;
+    return *masterInstance;
+}
+
+void Master::deleteInstance()
+{
+    if (masterInstance)
+    {
+        delete masterInstance;
+        masterInstance = NULL;
+    }
 }
 
 /*

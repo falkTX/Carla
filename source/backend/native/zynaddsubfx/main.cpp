@@ -166,6 +166,7 @@ void exitprogram()
 
     delete [] denormalkillbuf;
     FFT_cleanup();
+    Master::deleteInstance();
 }
 
 int main(int argc, char *argv[])
