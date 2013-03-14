@@ -9,7 +9,7 @@ include ../Makefile.mk
 # --------------------------------------------------------------
 
 BUILD_CXX_FLAGS += -I../backend -I../includes -I../libs -I../utils -Wall -Wextra
-BUILD_CXX_FLAGS += -isystem ../libs/juce
+# BUILD_CXX_FLAGS += -isystem ../libs/juce
 # BUILD_CXX_FLAGS += -DWANT_JACK -DWANT_LADSPA -DWANT_DSSI
 # BUILD_CXX_FLAGS += -isystem /usr/include/qt4
 # BUILD_CXX_FLAGS += -isystem ../backend/engine/rtaudio-4.0.11
@@ -20,14 +20,14 @@ ANSI_CXX_FLAGS  += -Wcast-qual -Wconversion -Wsign-conversion -Wlogical-op -Wagg
 ANSI_CXX_FLAGS  += -std=c++11 -Wzero-as-null-pointer-constant
 ANSI_CXX_FLAGS  += -DVESTIGE_HEADER -shared -fPIC
 
-TARGETS = ANSI_ Base64 CarlaString RtList Thread Print
+TARGETS = ANSI Base64 CarlaString RtList Thread Print Utils
 
 all: $(TARGETS) RUN
 
 # --------------------------------------------------------------
 
-ANSI_: ANSI.cpp
-	$(CXX) $^ $(BUILD_CXX_FLAGS) $(ANSI_CXX_FLAGS) $(LINK_FLAGS) -o ANSI # $@
+ANSI: ANSI.cpp
+	$(CXX) $^ $(BUILD_CXX_FLAGS) $(ANSI_CXX_FLAGS) $(LINK_FLAGS) -o $@
 
 Base64: Base64.cpp
 	$(CXX) $^ $(BUILD_CXX_FLAGS) $(LINK_FLAGS) -o $@
@@ -44,11 +44,11 @@ Thread: Thread.cpp
 Print: Print.cpp
 	$(CXX) $^ $(BUILD_CXX_FLAGS) $(LINK_FLAGS) -o $@
 
-GL_: GL.cpp
-# 	$(CXX) $^ $(BUILD_CXX_FLAGS) -I../backend/engine/plugin -I../libs/distrho-plugin-toolkit $(LINK_FLAGS) -lgdi32 -lopengl32 -lole32 -luuid -lws2_32 -o GL # $@
-	$(CXX) $^ $(BUILD_CXX_FLAGS) -I../backend/engine/plugin -I../libs/distrho-plugin-toolkit $(LINK_FLAGS) -lGL -lGLU -o GL # $@
+Utils: Utils.cpp
+	$(CXX) $^ $(BUILD_CXX_FLAGS) $(LINK_FLAGS) -o $@
 
 RUN: $(TARGETS)
+	valgrind ./Utils
 # 	./CarlaString && ./RtList && ./Thread
 # 	./Print
 # 	./Base64

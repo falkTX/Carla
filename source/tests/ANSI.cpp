@@ -20,7 +20,7 @@
 //#include "plugin/DssiPlugin.cpp"
 //#include "../widgets/digitalpeakmeter.cpp"
 
-#include "CarlaJuceHeader.hpp"
+#include "CarlaUtils.hpp"
 
 #if 0
 #include "CarlaDefines.hpp"
@@ -53,7 +53,9 @@
 #include "RtList.hpp"
 #endif
 
-int main()
+#include "Utils.cpp"
+
+int main2()
 {
     return 0;
 }

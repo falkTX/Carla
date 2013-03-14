@@ -10,7 +10,7 @@ include ../Makefile.mk
 # Common
 
 LINK_FLAGS += $(shell pkg-config --libs gl liblo QtCore QtXml)
-LINK_FLAGS += -X11
+LINK_FLAGS += -lX11
 
 # --------------------------------------------------------------
 # Engine

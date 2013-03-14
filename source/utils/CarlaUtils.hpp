@@ -54,7 +54,7 @@ void pass() {}
 static inline
 void carla_debug(const char* const fmt, ...)
 {
-    std::va_list args;
+    va_list args;
     va_start(args, fmt);
     std::fprintf(stdout, "\x1b[30;1m");
     std::vfprintf(stdout, fmt, args);
@@ -66,7 +66,7 @@ void carla_debug(const char* const fmt, ...)
 static inline
 void carla_stdout(const char* const fmt, ...)
 {
-    std::va_list args;
+    va_list args;
     va_start(args, fmt);
     std::vfprintf(stdout, fmt, args);
     std::fprintf(stdout, "\n");
@@ -76,7 +76,7 @@ void carla_stdout(const char* const fmt, ...)
 static inline
 void carla_stderr(const char* const fmt, ...)
 {
-    std::va_list args;
+    va_list args;
     va_start(args, fmt);
     std::vfprintf(stderr, fmt, args);
     std::fprintf(stderr, "\n");
@@ -86,7 +86,7 @@ void carla_stderr(const char* const fmt, ...)
 static inline
 void carla_stderr2(const char* const fmt, ...)
 {
-    std::va_list args;
+    va_list args;
     va_start(args, fmt);
     std::fprintf(stderr, "\x1b[31m");
     std::vfprintf(stderr, fmt, args);
@@ -226,6 +226,13 @@ const T& carla_min(const T& v1, const T& v2, const T& min)
 
 template<typename T>
 static inline
+const T& carla_max(const T& v1, const T& v2, const T& max)
+{
+    return ((v1 > max || v2 > max) ? max : (v1 > v2 ? v1 : v2));
+}
+
+template<typename T>
+static inline
 const T& carla_fixValue(const T& min, const T& max, const T& value)
 {
     if (value < min)
@@ -280,25 +287,25 @@ void carla_fill(T* data, const size_t size, const T v)
 }
 
 static inline
-void carla_copyDouble(double* dataDst, double* dataSrc, const size_t size)
+void carla_copyDouble(double* const dataDst, double* const dataSrc, const size_t size)
 {
     carla_copy<double>(dataDst, dataSrc, size);
 }
 
 static inline
-void carla_copyFloat(float* dataDst, float* dataSrc, const size_t size)
+void carla_copyFloat(float* const dataDst, float* const dataSrc, const size_t size)
 {
     carla_copy<float>(dataDst, dataSrc, size);
 }
 
 static inline
-void carla_zeroDouble(double* data, const size_t size)
+void carla_zeroDouble(double* const data, const size_t size)
 {
     carla_fill<double>(data, size, 0.0);
 }
 
 static inline
-void carla_zeroFloat(float* data, const size_t size)
+void carla_zeroFloat(float* const data, const size_t size)
 {
     carla_fill<float>(data, size, 0.0f);
 }

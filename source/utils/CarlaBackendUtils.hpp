@@ -420,6 +420,7 @@ const char* getPluginTypeAsString(const PluginType& type)
 static inline
 PluginType getPluginTypeFromString(const char* const stype)
 {
+    CARLA_ASSERT(stype != nullptr);
     carla_debug("CarlaBackend::getPluginTypeFromString(%s)", stype);
 
     if (stype == nullptr)
@@ -440,6 +441,8 @@ PluginType getPluginTypeFromString(const char* const stype)
         return PLUGIN_LV2;
     if (std::strcmp(stype, "VST") == 0)
         return PLUGIN_VST;
+    if (std::strcmp(stype, "VST3") == 0)
+        return PLUGIN_VST3;
     if (std::strcmp(stype, "GIG") == 0)
         return PLUGIN_GIG;
     if (std::strcmp(stype, "SF2") == 0)
@@ -456,11 +459,14 @@ PluginType getPluginTypeFromString(const char* const stype)
 static inline
 PluginCategory getPluginCategoryFromName(const char* const name)
 {
+    CARLA_ASSERT(name != nullptr);
     carla_debug("CarlaBackend::getPluginCategoryFromName(\"%s\")", name);
-    CARLA_ASSERT(name);
 
-    if (! name)
+    if (name == nullptr)
+    {
+        carla_stderr("CarlaBackend::getPluginCategoryFromName() - null name");
         return PLUGIN_CATEGORY_NONE;
+    }
 
     CarlaString sname(name);
 
