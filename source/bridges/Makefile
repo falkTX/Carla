@@ -45,16 +45,13 @@ NATIVE_BUILD_FLAGS  = $(BUILD_PLUGIN_FLAGS) $(shell pkg-config --cflags jack) -D
 NATIVE_LINK_FLAGS   = $(LINK_PLUGIN_FLAGS) $(shell pkg-config --libs jack) -ldl
 
 ifeq ($(HAVE_AF_DEPS),true)
+NATIVE_BUILD_FLAGS += -DWANT_AUDIOFILE
 NATIVE_LINK_FLAGS  += $(shell pkg-config --libs libavcodec libavformat sndfile)
 endif
 
 ifeq ($(HAVE_ZYN_DEPS),true)
+NATIVE_BUILD_FLAGS += -DWANT_ZYNADDSUBFX
 NATIVE_LINK_FLAGS  += $(shell pkg-config --libs fftw3 mxml)
-endif
-
-ifeq ($(HAVE_SUIL),true)
-NATIVE_BUILD_FLAGS += $(shell pkg-config --cflags suil-0) -DWANT_SUIL
-NATIVE_LINK_FLAGS  += $(shell pkg-config --libs suil-0)
 endif
 
 POSIX_BUILD_FLAGS   = $(BUILD_PLUGIN_FLAGS)

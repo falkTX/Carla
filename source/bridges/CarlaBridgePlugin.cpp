@@ -436,6 +436,7 @@ int main(int argc, char* argv[])
 {
     CARLA_BRIDGE_USE_NAMESPACE
 
+#if 0
     if (argc != 6)
     {
         carla_stdout("usage: %s <osc-url|\"null\"> <type> <filename> <name|\"(none)\"> <label>", argv[0]);
@@ -470,6 +471,14 @@ int main(int argc, char* argv[])
         carla_stderr("Invalid plugin type '%s'", stype);
         return 1;
     }
+#else
+    const char* const oscUrl   = "null";
+    const char* const filename = "zynaddsubfx";
+    const char* const name     = nullptr;
+    const char* const label    = "zynaddsubfx";
+    const bool useOsc = false;
+    CarlaBackend::PluginType itype = CarlaBackend::PLUGIN_INTERNAL;
+#endif
 
     // Init Plugin client
     CarlaPluginClient client(name ? name : label);
