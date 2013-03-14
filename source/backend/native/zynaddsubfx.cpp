@@ -53,6 +53,7 @@ public:
           kMaster(new Master()),
           kSampleRate(getSampleRate())
     {
+#if 0
         // refresh banks
         kMaster->bank.rescanforbanks();
 
@@ -74,6 +75,7 @@ public:
                 fPrograms.push_back(pInfo);
             }
         }
+#endif
     }
 
     ~ZynAddSubFxPlugin()
@@ -221,6 +223,9 @@ protected:
             carla_zeroFloat(outBuffer[1], frames);
             return;
         }
+
+        if (frames != 1024)
+            carla_stdout("ZYN process(%p, %i, %i, %p)", outBuffer, frames, midiEventCount, midiEvents);
 
 #if 0
         carla_zeroFloat(outBuffer[0], frames);
