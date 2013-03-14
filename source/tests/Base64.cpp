@@ -16,11 +16,33 @@
  */
 
 #include "CarlaBase64Utils.hpp"
-#include "CarlaString.hpp"
+//#include "CarlaString.hpp"
 
 int main()
 {
-    CARLA_ASSERT(std::strlen(kBase64) == 64);
+    // First check, cannot fail
+    assert(std::strlen(kBase64) == 64);
+
+    // Test regular C strings
+    {
+        const char strHelloWorld[] = "Hello World\n\0";
+        const char b64HelloWorld[] = "SGVsbG8gV29ybGQK\0";
+
+        // encode "Hello World" to base64
+        size_t bufSize = std::strlen(strHelloWorld);
+        char   bufEncoded[carla_base64_encoded_len(bufSize) + 1];
+        carla_base64_encode((const uint8_t*)strHelloWorld, bufSize, bufEncoded);
+        assert(std::strcmp(b64HelloWorld, bufEncoded) == 0);
+
+        // decode base64 "SGVsbG8gV29ybGQK" back to "Hello World"
+        uint8_t bufDecoded[carla_base64_decoded_max_len(b64HelloWorld)];
+        size_t  bufDecSize = carla_base64_decode(b64HelloWorld, bufDecoded);
+        char    strDecoded[bufDecSize+1];
+        std::strncpy(strDecoded, (char*)bufDecoded, bufDecSize);
+        strDecoded[bufDecSize] = '\0';
+        assert(std::strcmp(strHelloWorld, strDecoded) == 0);
+        assert(bufSize == bufDecSize);
+    }
 
     struct Blob {
         char s[4];
@@ -34,13 +56,11 @@ int main()
             : s{'1', 's', 't', 0},
               i(228),
               d(3.33333333333),
-              ptr((void*)0x500)
-        {
-            carla_zeroMem(padding, sizeof(char)*100);
-        }
-
+              padding{0},
+              ptr((void*)0x500) {}
     } blob;
 
+#if 0
     // binary -> base64
     void* const test0 = &blob;
     size_t test0Len = sizeof(Blob);
@@ -105,6 +125,7 @@ int main()
     CARLA_ASSERT(blob3->ptr == blob.ptr);
 
     delete blob3;
+#endif
 
     // -----------------------------------------------------------------
 

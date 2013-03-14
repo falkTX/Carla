@@ -15,47 +15,9 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-// still need qt classes check
-//#include "plugin/CarlaPluginInternal.hpp"
-//#include "plugin/DssiPlugin.cpp"
-//#include "../widgets/digitalpeakmeter.cpp"
-
-#include "CarlaUtils.hpp"
-
-#if 0
-#include "CarlaDefines.hpp"
-#include "CarlaMIDI.h"
-#include "ladspa_rdf.hpp"
-#include "lv2_rdf.hpp"
-
-#include "CarlaBackend.hpp"
-#include "CarlaEngine.hpp"
-#include "CarlaNative.h"
-#include "CarlaNative.hpp"
-#include "CarlaPlugin.hpp"
-#include "CarlaStandalone.hpp"
-
-#include "CarlaUtils.hpp"
-#include "CarlaBackendUtils.hpp"
 #include "CarlaBase64Utils.hpp"
-#include "CarlaJuceUtils.hpp"
-#include "CarlaLibUtils.hpp"
-#include "CarlaOscUtils.hpp"
-//#include "CarlaStateUtils.hpp"
-#include "CarlaLadspaUtils.hpp"
-//#include "CarlaLv2Utils.hpp"
-#include "CarlaVstUtils.hpp"
 
-#include "CarlaMutex.hpp"
-#include "CarlaString.hpp"
-#include "CarlaThread.hpp"
-//#include "Lv2AtomQueue.hpp"
-#include "RtList.hpp"
-#endif
-
-#include "Utils.cpp"
-
-int main2()
+int main()
 {
     return 0;
 }

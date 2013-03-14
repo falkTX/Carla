@@ -36,5 +36,5 @@ struct Stereo {
         //data
         T l, r;
 };
-
+#include "Stereo.cpp"
 #endif

@@ -32,6 +32,7 @@
 // TODO - free sPrograms
 
 // Dummy variables and functions for linking purposes
+const char* instance_name = nullptr;
 class WavFile;
 namespace Nio {
    bool start(void){return 1;}
@@ -283,7 +284,7 @@ public:
             config.init();
             config.cfg.SoundBufferSize = synth->buffersize;
             config.cfg.SampleRate      = synth->samplerate;
-            config.cfg.GzipCompression = 0;
+            //config.cfg.GzipCompression = 0;
 
             sprng(std::time(nullptr));
             denormalkillbuf = new float[synth->buffersize];
@@ -317,6 +318,7 @@ public:
 
         doSearch = false;
 
+        pthread_mutex_lock(&master->mutex);
 #if 0
         // refresh banks
         master->bank.rescanforbanks();
@@ -339,6 +341,7 @@ public:
             }
         }
 #endif
+        pthread_mutex_unlock(&master->mutex);
     }
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ZynAddSubFxPlugin)

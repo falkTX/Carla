@@ -18,7 +18,7 @@ BUILD_CXX_FLAGS += -I../backend -I../includes -I../libs -I../utils -Wall -Wextra
 ANSI_CXX_FLAGS   = -ansi -pedantic -pedantic-errors -Wunused-parameter -Wuninitialized -Wno-vla
 ANSI_CXX_FLAGS  += -Wcast-qual -Wconversion -Wsign-conversion -Wlogical-op -Waggregate-return
 ANSI_CXX_FLAGS  += -std=c++11 -Wzero-as-null-pointer-constant
-ANSI_CXX_FLAGS  += -DVESTIGE_HEADER -shared -fPIC
+ANSI_CXX_FLAGS  += -DVESTIGE_HEADER -fPIC
 
 TARGETS = ANSI Base64 CarlaString RtList Thread Print Utils
 
@@ -48,7 +48,8 @@ Utils: Utils.cpp
 	$(CXX) $^ $(BUILD_CXX_FLAGS) $(LINK_FLAGS) -o $@
 
 RUN: $(TARGETS)
-	valgrind ./Utils
+	valgrind ./Base64
+# 	./ANSI
 # 	./CarlaString && ./RtList && ./Thread
 # 	./Print
 # 	./Base64

@@ -70,7 +70,7 @@ size_t carla_base64_decoded_max_len(const char* const encoded)
 static inline
 void carla_base64_encode(const uint8_t* const raw, const size_t len, char* const encoded)
 {
-    const uint8_t* rawBytes = (const uint8_t*)raw;
+    const uint8_t* rawBytes = raw;
     uint8_t*   encodedBytes = (uint8_t*)encoded;
     size_t     rawBitLen    = 8*len;
     size_t     bit, tmp;
@@ -79,6 +79,7 @@ void carla_base64_encode(const uint8_t* const raw, const size_t len, char* const
     {
         tmp = static_cast<size_t>((rawBytes[bit/8] << (bit % 8)) | (rawBytes[bit/8 + 1] >> (8 - (bit % 8))));
         tmp = static_cast<size_t>((tmp >> 2) & 0x3f);
+        CARLA_ASSERT(tmp < 64);
 
         *(encodedBytes++) = static_cast<uint8_t>(kBase64[tmp]);
     }
@@ -110,13 +111,13 @@ static inline
 unsigned int carla_base64_decode(const char* const encoded, uint8_t* const raw)
 {
     const uint8_t* encodedBytes = (const uint8_t*)encoded;
-    uint8_t* rawBytes = (uint8_t*)raw;
+    uint8_t*           rawBytes = raw;
     uint8_t encodedByte;
     unsigned int bit = 0;
     unsigned int padCount = 0;
 
     /* Zero the raw data */
-    std::memset(raw, 0, carla_base64_decoded_max_len(encoded));
+    carla_zeroMem(raw, carla_base64_decoded_max_len(encoded));
 
     /* Decode string */
     while ((encodedByte = *(encodedBytes++)) > 0)
@@ -146,7 +147,7 @@ unsigned int carla_base64_decode(const char* const encoded, uint8_t* const raw)
         }
 
         /* Process normal characters */
-        const char* match = std::strchr(kBase64, encodedByte);
+        const char* const match = std::strchr(kBase64, encodedByte);
 
         if (match == nullptr)
         {
@@ -172,7 +173,7 @@ unsigned int carla_base64_decode(const char* const encoded, uint8_t* const raw)
 
     unsigned int len = bit/8;
 
-    carla_debug("Base64-decoded \"%s\" to: \"%s\"\n", encoded, raw);
+    carla_debug("Base64-decoded \"%s\"", encoded);
     CARLA_ASSERT(len <= carla_base64_decoded_max_len(encoded));
 
     /* Return length in bytes */

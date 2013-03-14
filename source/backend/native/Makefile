@@ -78,7 +78,6 @@ OBJS += \
 	zynaddsubfx/Misc/Microtonal.cpp.o \
 	zynaddsubfx/Misc/Part.cpp.o \
 	zynaddsubfx/Misc/Recorder.cpp.o \
-	zynaddsubfx/Misc/Stereo.cpp.o \
 	zynaddsubfx/Misc/Util.cpp.o \
 	zynaddsubfx/Misc/WavFile.cpp.o \
 	zynaddsubfx/Misc/WaveShapeSmps.cpp.o \
@@ -101,6 +100,7 @@ OBJS += \
 	zynaddsubfx/Synth/Resonance.cpp.o \
 	zynaddsubfx/Synth/SUBnote.cpp.o \
 	zynaddsubfx/Synth/SynthNote.cpp.o
+# 	zynaddsubfx/Misc/Stereo.cpp.o
 endif
 
 SHARED = ../libcarla_native.so
