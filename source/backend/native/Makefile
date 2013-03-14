@@ -35,11 +35,11 @@ OBJS  = \
 	nekofilter.c.o
 
 # DISTRHO plugins
-OBJS += \
-	distrho-3bandeq.cpp.o \
-	distrho-3bandsplitter.cpp.o \
-	distrho-pingpongpan.cpp.o \
-	distrho-notes.cpp.o
+# OBJS += \
+# 	distrho-3bandeq.cpp.o \
+# 	distrho-3bandsplitter.cpp.o \
+# 	distrho-pingpongpan.cpp.o \
+# 	distrho-notes.cpp.o
 
 # AudioFile
 ifeq ($(HAVE_AF_DEPS),true)

@@ -33,11 +33,13 @@ void carla_register_all_plugins()
     carla_register_native_plugin_midiTranspose();
     carla_register_native_plugin_nekofilter();
 
+#ifndef BUILD_BRIDGE
     // DISTRHO plugins
     carla_register_native_plugin_3BandEQ();
     carla_register_native_plugin_3BandSplitter();
     carla_register_native_plugin_PingPongPan();
     carla_register_native_plugin_Notes();
+#endif
 
 #ifdef WANT_AUDIOFILE
     // AudioFile
@@ -1845,22 +1847,30 @@ protected:
 
     const char* handleUiOpenFile(const bool isDir, const char* const title, const char* const filter)
     {
+#ifdef BUILD_BRIDGE
+        return nullptr;
+#else
         static CarlaString retStr;
         QFileDialog::Options options(isDir ? QFileDialog::ShowDirsOnly : 0x0);
 
         retStr = QFileDialog::getOpenFileName(nullptr, title, "", filter, nullptr, options).toUtf8().constData();
 
         return retStr.isNotEmpty() ? (const char*)retStr : nullptr;
+#endif
     }
 
     const char* handleUiSaveFile(const bool isDir, const char* const title, const char* const filter)
     {
+#ifdef BUILD_BRIDGE
+        return nullptr;
+#else
         static CarlaString retStr;
         QFileDialog::Options options(isDir ? QFileDialog::ShowDirsOnly : 0x0);
 
         retStr = QFileDialog::getSaveFileName(nullptr, title, "", filter, nullptr, options).toUtf8().constData();
 
         return (const char*)retStr;
+#endif
     }
 
 public:
@@ -1955,9 +1965,7 @@ public:
     public:
         ScopedInitializer()
         {
-#ifndef BUILD_BRIDGE
             carla_register_all_plugins();
-#endif
         }
 
         ~ScopedInitializer()

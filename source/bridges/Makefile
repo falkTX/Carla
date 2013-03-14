@@ -41,8 +41,16 @@ BUILD_PLUGIN_FLAGS += $(shell pkg-config --cflags gl)
 LINK_PLUGIN_FLAGS   = $(LINK_FLAGS)
 LINK_PLUGIN_FLAGS  += $(shell pkg-config --libs gl)
 
-NATIVE_BUILD_FLAGS  = $(BUILD_PLUGIN_FLAGS) $(shell pkg-config --cflags jack)
+NATIVE_BUILD_FLAGS  = $(BUILD_PLUGIN_FLAGS) $(shell pkg-config --cflags jack) -DWANT_NATIVE
 NATIVE_LINK_FLAGS   = $(LINK_PLUGIN_FLAGS) $(shell pkg-config --libs jack) -ldl
+
+ifeq ($(HAVE_AF_DEPS),true)
+NATIVE_LINK_FLAGS  += $(shell pkg-config --libs libavcodec libavformat sndfile)
+endif
+
+ifeq ($(HAVE_ZYN_DEPS),true)
+NATIVE_LINK_FLAGS  += $(shell pkg-config --libs fftw3 mxml)
+endif
 
 ifeq ($(HAVE_SUIL),true)
 NATIVE_BUILD_FLAGS += $(shell pkg-config --cflags suil-0) -DWANT_SUIL
@@ -271,6 +279,7 @@ OBJS_NATIVE += \
 
 # libs
 OBJS_NATIVE += \
+	../backend/libcarla_native.a \
 	../libs/dgl.a \
 	../libs/lilv.a \
 	../libs/rtmempool.a
@@ -450,6 +459,9 @@ carla-bridge-win64.exe: $(OBJS_WIN64) ../libs/jackbridge-win64.dll
 	$(CXX) $< $(WIN_BUILD_FLAGS) $(WIN_64BIT_FLAGS) -c -o $@
 
 # --------------------------------------------------------------
+
+../backend/libcarla_native.a:
+	$(MAKE) -C ../backend/native
 
 ../libs/%:
 	$(MAKE) -C ../libs $*
