@@ -9,7 +9,8 @@ include ../Makefile.mk
 # --------------------------------------------------------------
 # Common
 
-LINK_FLAGS += $(shell pkg-config --libs gl liblo QtCore QtGui QtXml)
+LINK_FLAGS += $(shell pkg-config --libs gl liblo QtCore QtXml)
+LINK_FLAGS += -X11
 
 # --------------------------------------------------------------
 # Engine
@@ -37,11 +38,13 @@ endif
 # --------------------------------------------------------------
 # Native
 
+LINK_FLAGS += $(shell pkg-config --libs QtGui)
+
 ifeq ($(HAVE_AF_DEPS),true)
 LINK_FLAGS += $(shell pkg-config --libs libavcodec libavformat sndfile)
 endif
 ifeq ($(HAVE_ZYN_DEPS),true)
-LINK_FLAGS += $(shell pkg-config --libs fftw3 mxml)
+LINK_FLAGS += $(shell pkg-config --libs fftw3 mxml zlib)
 endif
 
 # --------------------------------------------------------------

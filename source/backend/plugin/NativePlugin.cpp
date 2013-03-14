@@ -33,13 +33,11 @@ void carla_register_all_plugins()
     carla_register_native_plugin_midiTranspose();
     carla_register_native_plugin_nekofilter();
 
-#ifndef BUILD_BRIDGE
     // DISTRHO plugins
     carla_register_native_plugin_3BandEQ();
     carla_register_native_plugin_3BandSplitter();
     carla_register_native_plugin_PingPongPan();
     carla_register_native_plugin_Notes();
-#endif
 
 #ifdef WANT_AUDIOFILE
     // AudioFile

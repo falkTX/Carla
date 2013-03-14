@@ -22,11 +22,14 @@
 #include "CarlaNative.hpp"
 #include "CarlaMIDI.h"
 #include "CarlaString.hpp"
+#include "RtList.hpp"
 
 #include "zynaddsubfx/Misc/Master.h"
 #include "zynaddsubfx/Misc/Util.h"
 
 #include <ctime>
+
+// TODO - free sPrograms
 
 // Dummy variables and functions for linking purposes
 class WavFile;
@@ -53,29 +56,7 @@ public:
           kMaster(new Master()),
           kSampleRate(getSampleRate())
     {
-#if 0
-        // refresh banks
-        kMaster->bank.rescanforbanks();
-
-        for (uint32_t i=0, size = kMaster->bank.banks.size(); i < size; i++)
-        {
-            if (kMaster->bank.banks[i].dir.empty())
-                continue;
-
-            kMaster->bank.loadbank(kMaster->bank.banks[i].dir);
-
-            for (unsigned int instrument = 0; instrument < BANK_SIZE; instrument++)
-            {
-                const std::string insName(kMaster->bank.getname(instrument));
-
-                if (insName.empty() || insName[0] == '\0' || insName[0] == ' ')
-                    continue;
-
-                ProgramInfo pInfo(i, instrument, insName.c_str());
-                fPrograms.push_back(pInfo);
-            }
-        }
-#endif
+        _maybeInitPrograms(kMaster);
     }
 
     ~ZynAddSubFxPlugin()
@@ -83,8 +64,6 @@ public:
         //ensure that everything has stopped
         pthread_mutex_lock(&kMaster->mutex);
         pthread_mutex_unlock(&kMaster->mutex);
-
-        fPrograms.clear();
 
         delete kMaster;
     }
@@ -150,22 +129,22 @@ protected:
 
     uint32_t getMidiProgramCount()
     {
-        return fPrograms.size();
+        return sPrograms.count();
     }
 
     const MidiProgram* getMidiProgramInfo(const uint32_t index)
     {
         CARLA_ASSERT(index < getMidiProgramCount());
 
-        if (index >= fPrograms.size())
+        if (index >= sPrograms.count())
             return nullptr;
 
-        const ProgramInfo& pInfo(fPrograms[index]);
+        const ProgramInfo* const pInfo(sPrograms.getAt(index));
 
         static MidiProgram midiProgram;
-        midiProgram.bank    = pInfo.bank;
-        midiProgram.program = pInfo.prog;
-        midiProgram.name    = pInfo.name;
+        midiProgram.bank    = pInfo->bank;
+        midiProgram.program = pInfo->prog;
+        midiProgram.name    = pInfo->name;
 
         return &midiProgram;
     }
@@ -224,13 +203,6 @@ protected:
             return;
         }
 
-        if (frames != 1024)
-            carla_stdout("ZYN process(%p, %i, %i, %p)", outBuffer, frames, midiEventCount, midiEvents);
-
-#if 0
-        carla_zeroFloat(outBuffer[0], frames);
-        carla_zeroFloat(outBuffer[1], frames);
-#else
         for (uint32_t i=0; i < midiEventCount; i++)
         {
             const MidiEvent* const midiEvent = &midiEvents[i];
@@ -261,7 +233,6 @@ protected:
         }
 
         kMaster->GetAudioOutSamples(frames, kSampleRate, outBuffer[0], outBuffer[1]);
-#endif
 
         pthread_mutex_unlock(&kMaster->mutex);
     }
@@ -272,23 +243,33 @@ private:
     struct ProgramInfo {
         uint32_t bank;
         uint32_t prog;
-        CarlaString name;
+        const char* name;
 
         ProgramInfo(uint32_t bank_, uint32_t prog_, const char* name_)
           : bank(bank_),
             prog(prog_),
-            name(name_) {}
+            name(carla_strdup(name_)) {}
+
+        ~ProgramInfo()
+        {
+            if (name != nullptr)
+            {
+                delete[] name;
+                name = nullptr;
+            }
+        }
 
         ProgramInfo() = delete;
+        ProgramInfo(ProgramInfo&) = delete;
+        ProgramInfo(const ProgramInfo&) = delete;
     };
-
-    std::vector<ProgramInfo> fPrograms;
 
     Master* const  kMaster;
     const unsigned kSampleRate;
 
 public:
     static int sInstanceCount;
+    static NonRtList<ProgramInfo*> sPrograms;
 
     static PluginHandle _instantiate(const PluginDescriptor*, HostDescriptor* host)
     {
@@ -327,10 +308,44 @@ public:
         }
     }
 
+    static void _maybeInitPrograms(Master* const master)
+    {
+        static bool doSearch = true;
+
+        if (! doSearch)
+            return;
+
+        doSearch = false;
+
+#if 0
+        // refresh banks
+        master->bank.rescanforbanks();
+
+        for (uint32_t i=0, size = master->bank.banks.size(); i < size; i++)
+        {
+            if (master->bank.banks[i].dir.empty())
+                continue;
+
+            master->bank.loadbank(master->bank.banks[i].dir);
+
+            for (unsigned int instrument = 0; instrument < BANK_SIZE; instrument++)
+            {
+                const std::string insName(master->bank.getname(instrument));
+
+                if (insName.empty() || insName[0] == '\0' || insName[0] == ' ')
+                    continue;
+
+                sPrograms.append(new ProgramInfo(i, instrument, insName.c_str()));
+            }
+        }
+#endif
+    }
+
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ZynAddSubFxPlugin)
 };
 
 int ZynAddSubFxPlugin::sInstanceCount = 0;
+NonRtList<ZynAddSubFxPlugin::ProgramInfo*> ZynAddSubFxPlugin::sPrograms;
 
 // -----------------------------------------------------------------------
 

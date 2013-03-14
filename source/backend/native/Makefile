@@ -19,8 +19,8 @@ endif
 
 ifeq ($(HAVE_ZYN_DEPS),true)
 ZYN_CXX_FLAGS    = $(BUILD_CXX_FLAGS)
-ZYN_CXX_FLAGS   += $(shell pkg-config --cflags fftw3 mxml)
-LINK_FLAGS      += $(shell pkg-config --libs fftw3 mxml)
+ZYN_CXX_FLAGS   += $(shell pkg-config --cflags fftw3 mxml zlib)
+LINK_FLAGS      += $(shell pkg-config --libs fftw3 mxml zlib)
 endif
 
 # --------------------------------------------------------------
@@ -35,11 +35,11 @@ OBJS  = \
 	nekofilter.c.o
 
 # DISTRHO plugins
-# OBJS += \
-# 	distrho-3bandeq.cpp.o \
-# 	distrho-3bandsplitter.cpp.o \
-# 	distrho-pingpongpan.cpp.o \
-# 	distrho-notes.cpp.o
+OBJS += \
+	distrho-3bandeq.cpp.o \
+	distrho-3bandsplitter.cpp.o \
+	distrho-pingpongpan.cpp.o \
+	distrho-notes.cpp.o
 
 # AudioFile
 ifeq ($(HAVE_AF_DEPS),true)

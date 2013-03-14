@@ -51,7 +51,7 @@ endif
 
 ifeq ($(HAVE_ZYN_DEPS),true)
 NATIVE_BUILD_FLAGS += -DWANT_ZYNADDSUBFX
-NATIVE_LINK_FLAGS  += $(shell pkg-config --libs fftw3 mxml)
+NATIVE_LINK_FLAGS  += $(shell pkg-config --libs fftw3 mxml zlib)
 endif
 
 POSIX_BUILD_FLAGS   = $(BUILD_PLUGIN_FLAGS)
