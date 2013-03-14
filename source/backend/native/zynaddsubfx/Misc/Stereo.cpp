@@ -19,6 +19,8 @@
   Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 */
 
+#include "Stereo.h"
+
 template<class T>
 Stereo<T>::Stereo(const T &left, const T &right)
     :l(left), r(right)
