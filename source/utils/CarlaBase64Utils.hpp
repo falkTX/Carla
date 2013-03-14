@@ -89,7 +89,7 @@ void carla_base64_encode(const uint8_t* const raw, const size_t len, char* const
 
     *(encodedBytes++) = '\0';
 
-    carla_debug("Base64-encoded to \"%s\":\n", encoded);
+    carla_debug("Base64-encoded to \"%s\"\n", encoded);
     CARLA_ASSERT(std::strlen(encoded) == carla_base64_encoded_len(len));
 }
 
@@ -173,7 +173,7 @@ unsigned int carla_base64_decode(const char* const encoded, uint8_t* const raw)
 
     unsigned int len = bit/8;
 
-    carla_debug("Base64-decoded \"%s\"", encoded);
+    carla_debug("Base64-decoded from \"%s\"", encoded);
     CARLA_ASSERT(len <= carla_base64_decoded_max_len(encoded));
 
     /* Return length in bytes */

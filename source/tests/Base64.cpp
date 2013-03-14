@@ -16,7 +16,7 @@
  */
 
 #include "CarlaBase64Utils.hpp"
-//#include "CarlaString.hpp"
+#include "CarlaString.hpp"
 
 int main()
 {
@@ -48,86 +48,71 @@ int main()
         char s[4];
         int i;
         double d;
-
-        char padding[100];
         void* ptr;
-
-        Blob()
-            : s{'1', 's', 't', 0},
-              i(228),
-              d(3.33333333333),
-              padding{0},
-              ptr((void*)0x500) {}
+        int32_t i32;
+        int64_t i64;
+        bool b;
     } blob;
 
-#if 0
+    const size_t blobSize = sizeof(Blob);
+    carla_zeroStruct<Blob>(blob);
+
+    blob.s[0] = '1';
+    blob.s[1] = 's';
+    blob.s[2] = 't';
+    blob.i    = 228;
+    blob.d    = 3.33333333333;
+    blob.ptr  = (void*)0x500;
+    blob.i32  = 32;
+    blob.i64  = 64;
+    blob.b    = true;
+
     // binary -> base64
-    void* const test0 = &blob;
-    size_t test0Len = sizeof(Blob);
+    char blobEnc[carla_base64_encoded_len(blobSize) + 1];
+    carla_base64_encode((const uint8_t*)&blob, blobSize, blobEnc);
+    std::printf("BINARY '%s', size:" P_SIZE "\n", blobEnc, blobSize);
 
-    char buf0[carla_base64_encoded_len(test0Len) + 1];
-    carla_base64_encode((const uint8_t*)test0, test0Len, buf0);
+    {
+        // base64 -> binary
+        uint8_t blobDec[carla_base64_decoded_max_len(blobEnc)];
+        carla_base64_decode(blobEnc, blobDec);
 
-    printf("BINARY '%s'\n", buf0);
+        Blob blobTest;
+        carla_zeroStruct<Blob>(blobTest);
 
-    char buf0dec[carla_base64_decoded_max_len(buf0)+1];
-    carla_zeroMem(buf0dec, sizeof(buf0dec));
-    carla_base64_decode(buf0, (uint8_t*)buf0dec);
+        std::memcpy(&blobTest, blobDec, sizeof(Blob));
+        assert(blobTest.s[0] == '1');
+        assert(blobTest.s[1] == 's');
+        assert(blobTest.s[2] == 't');
+        assert(blobTest.i    == 228);
+        assert(blobTest.d    == 3.33333333333);
+        assert(blobTest.ptr  == (void*)0x500);
+        assert(blobTest.i32  == 32);
+        assert(blobTest.i64  == 64);
+        assert(blobTest.b    == true);
+    }
 
-    Blob blobTester;
-    blobTester.s[0] = 0;
-    blobTester.i = 0;
-    blobTester.d = 9999.99999999999999;
-    std::memcpy(&blobTester, buf0dec, sizeof(Blob));
+    {
+        // CarlaString usage
+        CarlaString string;
+        string.importBinaryAsBase64<Blob>(&blob);
+        assert(std::strcmp(blobEnc, (const char*)string) == 0);
+        assert(std::strlen(blobEnc) == string.length());
 
-    CARLA_ASSERT(std::strcmp(blobTester.s, "1st") == 0);
-    CARLA_ASSERT(blobTester.i == 228);
-    CARLA_ASSERT(blobTester.d == 3.33333333333);
+        Blob* blobNew = string.exportAsBase64Binary<Blob>();
 
-    // string -> base64
-    const char* const test1 = "Hello World!";
-    size_t test1Len = std::strlen(test1);
+        assert(blobNew->s[0] == '1');
+        assert(blobNew->s[1] == 's');
+        assert(blobNew->s[2] == 't');
+        assert(blobNew->i    == 228);
+        assert(blobNew->d    == 3.33333333333);
+        assert(blobNew->ptr  == (void*)0x500);
+        assert(blobNew->i32  == 32);
+        assert(blobNew->i64  == 64);
+        assert(blobNew->b    == true);
 
-    char buf1[carla_base64_encoded_len(test1Len) + 1];
-    carla_base64_encode((const uint8_t*)test1, test1Len, buf1);
-
-    printf("'%s' => '%s'\n", test1, buf1);
-
-    // base64 -> string
-    const char* const test2 = "SGVsbG8gV29ybGQh";
-
-    char buf2[carla_base64_decoded_max_len(test2)+1];
-    carla_zeroMem(buf2, sizeof(buf2));
-    carla_base64_decode(test2, (uint8_t*)buf2);
-
-    printf("'%s' => '%s'\n", test2, buf2);
-
-    printf("'%s' == '%s'\n", buf1, test2);
-    printf("'%s' == '%s'\n", buf2, test1);
-
-    CARLA_ASSERT(std::strcmp(buf1, test2) == 0);
-    CARLA_ASSERT(std::strcmp(buf2, test1) == 0);
-
-    // -----------------------------------------------------------------
-
-    blob.s[0] = 'X';
-    blob.i = 92320;
-    blob.d = 9999887.99999999999999;
-
-    CarlaString string;
-    string.importBinaryAsBase64<Blob>(&blob);
-
-    Blob* blob3 = string.exportAsBase64Binary<Blob>();
-
-    CARLA_ASSERT(std::strcmp(blob3->s, blob.s) == 0);
-    CARLA_ASSERT(blob3->i == blob.i);
-    CARLA_ASSERT(blob3->d == blob.d);
-    CARLA_ASSERT(blob3->ptr == blob.ptr);
-
-    delete blob3;
-#endif
-
-    // -----------------------------------------------------------------
+        delete blobNew;
+    }
 
     return 0;
 }

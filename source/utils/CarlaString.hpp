@@ -282,28 +282,32 @@ public:
 
     void fromBase64()
     {
-       uint8_t buffer2[carla_base64_decoded_max_len(buffer)];
+        uint8_t buffer2[carla_base64_decoded_max_len(buffer)];
 
-       if (unsigned int len = carla_base64_decode(buffer, buffer2))
-          _dup((char*)buffer2, len);
-       else
-          clear();
+        if (unsigned int len = carla_base64_decode(buffer, buffer2))
+        {
+            char bufDecoded[len+1];
+            std::strncpy(bufDecoded, (char*)buffer2, len);
+            bufDecoded[len] = '\0';
+            _dup(bufDecoded, len);
+        }
+        else
+            clear();
     }
 
     void importBinaryAsBase64(const uint8_t* const raw, const size_t rawLen)
     {
-        const size_t rawBufferSize = carla_base64_encoded_len(rawLen) + 1;
-        char         rawBuffer[rawBufferSize];
+        const size_t rawBufferSize = carla_base64_encoded_len(rawLen);
+        char         rawBuffer[rawBufferSize+1];
         carla_base64_encode(raw, rawLen, rawBuffer);
 
-        _dup(rawBuffer, rawBufferSize-1);
+        _dup(rawBuffer, rawBufferSize);
     }
 
     template<typename T>
     void importBinaryAsBase64(const T* const t)
     {
-        const size_t tSize = sizeof(T);
-        importBinaryAsBase64((const uint8_t*)t, tSize);
+        importBinaryAsBase64((const uint8_t*)t, sizeof(T));
     }
 
     size_t exportAsBase64Binary(uint8_t** const rawPtr)
@@ -319,6 +323,7 @@ public:
             return len;
         }
 
+        *rawPtr = nullptr;
         return 0;
     }
 
@@ -332,7 +337,7 @@ public:
             CARLA_ASSERT_INT2(len == sizeof(T), len, sizeof(T));
 
             T* const t = new T();
-            std::memcpy(t, binaryBuffer, len);
+            std::memcpy(t, binaryBuffer, sizeof(T));
 
             return t;
         }
