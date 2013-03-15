@@ -17,6 +17,7 @@
 
 #define PIXMAP_PATH "/usr/share/zynaddsubfx/pixmaps/"
 #define SOURCE_DIR "/usr/share/zynaddsubfx/examples"
+#define PLUGINVERSION
 
 // zynaddsubfx ui includes
 #include "zynaddsubfx/UI/NioUI.cpp"

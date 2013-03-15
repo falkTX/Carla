@@ -290,12 +290,15 @@ protected:
 
     size_t getChunk(void** const data)
     {
+        config.save();
         return kMaster->getalldata((char**)data);
     }
 
     void setChunk(void* const data, const size_t size)
     {
+        fThread.stopLoadLater();
         kMaster->putalldata((char*)data, size);
+        kMaster->applyparameters(true);
     }
 
     // -------------------------------------------------------------------
@@ -355,6 +358,13 @@ private:
             fNextBank    = bank;
             fNextProgram = program;
             fChangeProgram = true;
+        }
+
+        void stopLoadLater()
+        {
+            fChangeProgram = false;
+            fNextBank    = 0;
+            fNextProgram = 0;
         }
 
         void stop()
