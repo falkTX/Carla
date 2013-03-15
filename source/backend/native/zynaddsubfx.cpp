@@ -22,14 +22,13 @@
 #include "CarlaNative.hpp"
 #include "CarlaMIDI.h"
 #include "CarlaString.hpp"
+#include "CarlaThread.hpp"
 #include "RtList.hpp"
 
 #include "zynaddsubfx/Misc/Master.h"
 #include "zynaddsubfx/Misc/Util.h"
 
 #include <ctime>
-
-// TODO - free sPrograms
 
 // Dummy variables and functions for linking purposes
 const char* instance_name = nullptr;
@@ -55,9 +54,12 @@ public:
     ZynAddSubFxPlugin(const HostDescriptor* const host)
         : PluginDescriptorClass(host),
           kMaster(new Master()),
-          kSampleRate(getSampleRate())
+          kSampleRate(getSampleRate()),
+          fThread(kMaster)
     {
-        _maybeInitPrograms(kMaster);
+        fThread.start();
+        maybeInitPrograms(kMaster);
+        fThread.waitForStarted();
     }
 
     ~ZynAddSubFxPlugin()
@@ -65,6 +67,7 @@ public:
         //ensure that everything has stopped
         pthread_mutex_lock(&kMaster->mutex);
         pthread_mutex_unlock(&kMaster->mutex);
+        fThread.stop();
 
         delete kMaster;
     }
@@ -174,21 +177,12 @@ protected:
         if (program >= BANK_SIZE)
             return;
 
-        const std::string& bankdir(kMaster->bank.banks[bank].dir);
+        bool isOffline = false;
 
-        if (! bankdir.empty())
-        {
-            pthread_mutex_lock(&kMaster->mutex);
-
-            kMaster->bank.loadbank(bankdir);
-
-            for (int i=0; i < NUM_MIDI_PARTS; i++)
-                kMaster->bank.loadfromslot(program, kMaster->part[i]);
-
-            pthread_mutex_unlock(&kMaster->mutex);
-
-            kMaster->applyparameters();
-        }
+        if (isOffline)
+            loadProgram(kMaster, bank, program);
+        else
+            fThread.loadLater(bank, program);
     }
 
     // -------------------------------------------------------------------
@@ -284,13 +278,65 @@ private:
         ProgramInfo(const ProgramInfo&) = delete;
     };
 
+    class ZynThread : public CarlaThread
+    {
+    public:
+        ZynThread(Master* const master)
+            : kMaster(master),
+              fQuit(false),
+              fChangeNow(false),
+              fNextBank(0),
+              fNextProgram(0)
+        {
+        }
+
+        void loadLater(const uint32_t bank, const uint32_t program)
+        {
+            fNextBank    = bank;
+            fNextProgram = program;
+            fChangeNow   = true;
+        }
+
+        void stop()
+        {
+            fQuit = true;
+            CarlaThread::stop();
+        }
+
+    protected:
+        void run()
+        {
+            while (! fQuit)
+            {
+                if (fChangeNow)
+                {
+                    loadProgram(kMaster, fNextBank, fNextProgram);
+                    fNextBank    = 0;
+                    fNextProgram = 0;
+                    fChangeNow   = false;
+                }
+                carla_msleep(10);
+            }
+        }
+
+    private:
+        Master* const kMaster;
+
+        bool     fQuit;
+        bool     fChangeNow;
+        uint32_t fNextBank;
+        uint32_t fNextProgram;
+    };
+
     Master* const  kMaster;
     const unsigned kSampleRate;
 
-public:
+    ZynThread fThread;
+
     static int sInstanceCount;
     static NonRtList<ProgramInfo*> sPrograms;
 
+public:
     static PluginHandle _instantiate(const PluginDescriptor*, HostDescriptor* host)
     {
         if (sInstanceCount++ == 0)
@@ -338,7 +384,7 @@ public:
         }
     }
 
-    static void _maybeInitPrograms(Master* const master)
+    static void maybeInitPrograms(Master* const master)
     {
         static bool doSearch = true;
 
@@ -372,7 +418,26 @@ public:
         pthread_mutex_unlock(&master->mutex);
     }
 
-    static void _clearPrograms()
+    static void loadProgram(Master* const master, const uint32_t bank, const uint32_t program)
+    {
+        const std::string& bankdir(master->bank.banks[bank].dir);
+
+        if (! bankdir.empty())
+        {
+            pthread_mutex_lock(&master->mutex);
+
+            master->bank.loadbank(bankdir);
+
+            for (int i=0; i < NUM_MIDI_PARTS; i++)
+                master->bank.loadfromslot(program, master->part[i]);
+
+            master->applyparameters(false);
+
+            pthread_mutex_unlock(&master->mutex);
+        }
+    }
+
+    static void clearPrograms()
     {
         for (auto it = sPrograms.begin(); it.valid(); it.next())
         {
@@ -394,7 +459,7 @@ struct ProgramsDestructor {
     ProgramsDestructor() {}
     ~ProgramsDestructor()
     {
-        ZynAddSubFxPlugin::_clearPrograms();
+        ZynAddSubFxPlugin::clearPrograms();
     }
 } programsDestructor;
 
