@@ -82,9 +82,6 @@ bool gVstNeedsIdle = false;
 // Check if plugin wants midi
 bool gVstWantsMidi = false;
 
-// Check if plugin is processing
-bool gVstIsProcessing = false;
-
 // Current uniqueId for VST shell plugins
 intptr_t gVstCurrentUniqueId = 0;
 
@@ -217,7 +214,7 @@ intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t opcode
 #endif
 
     case audioMasterGetCurrentProcessLevel:
-        ret = gVstIsProcessing ? kVstProcessLevelRealtime : kVstProcessLevelUser;
+        ret = kVstProcessLevelUser;
         break;
 
     case audioMasterGetAutomationState:
@@ -357,7 +354,7 @@ public:
         DISCOVERY_OUT("midi.ins", 1);
         DISCOVERY_OUT("midi.total", 1);
         DISCOVERY_OUT("programs.total", programs);
-        //DISCOVERY_OUT("parameters.ins", 13); // defined in Carla - TODO
+        //DISCOVERY_OUT("parameters.ins", 13); // defined in Carla, TODO
         //DISCOVERY_OUT("parameters.outs", 1);
         //DISCOVERY_OUT("parameters.total", 14);
         DISCOVERY_OUT("build", BINARY_NATIVE);
@@ -379,7 +376,7 @@ void do_ladspa_check(void* const libHandle, const bool init)
 #ifdef WANT_LADSPA
     const LADSPA_Descriptor_Function descFn = (LADSPA_Descriptor_Function)lib_symbol(libHandle, "ladspa_descriptor");
 
-    if (! descFn)
+    if (descFn == nullptr)
     {
         DISCOVERY_OUT("error", "Not a LADSPA plugin");
         return;
@@ -388,19 +385,19 @@ void do_ladspa_check(void* const libHandle, const bool init)
     unsigned long i = 0;
     const LADSPA_Descriptor* descriptor;
 
-    while ((descriptor = descFn(i++)))
+    while ((descriptor = descFn(i++)) != nullptr)
     {
-        if (! descriptor->instantiate)
+        if (descriptor->instantiate == nullptr)
         {
             DISCOVERY_OUT("error", "Plugin '" << descriptor->Name << "' has no instantiate()");
             continue;
         }
-        if (! descriptor->cleanup)
+        if (descriptor->cleanup == nullptr)
         {
             DISCOVERY_OUT("error", "Plugin '" << descriptor->Name << "' has no cleanup()");
             continue;
         }
-        if (! descriptor->run)
+        if (descriptor->run == nullptr)
         {
             DISCOVERY_OUT("error", "Plugin '" << descriptor->Name << "' has no run()");
             continue;
@@ -423,6 +420,7 @@ void do_ladspa_check(void* const libHandle, const bool init)
 
         for (unsigned long j=0; j < descriptor->PortCount; j++)
         {
+            CARLA_ASSERT(descriptor->PortNames[j] != nullptr);
             const LADSPA_PortDescriptor portDescriptor = descriptor->PortDescriptors[j];
 
             if (LADSPA_IS_PORT_AUDIO(portDescriptor))
@@ -452,7 +450,7 @@ void do_ladspa_check(void* const libHandle, const bool init)
 
             const LADSPA_Handle handle = descriptor->instantiate(descriptor, kSampleRate);
 
-            if (! handle)
+            if (handle == nullptr)
             {
                 DISCOVERY_OUT("error", "Failed to init LADSPA plugin");
                 continue;
@@ -526,12 +524,12 @@ void do_ladspa_check(void* const libHandle, const bool init)
                 }
             }
 
-            if (descriptor->activate)
+            if (descriptor->activate != nullptr)
                 descriptor->activate(handle);
 
             descriptor->run(handle, kBufferSize);
 
-            if (descriptor->deactivate)
+            if (descriptor->deactivate != nullptr)
                 descriptor->deactivate(handle);
 
             descriptor->cleanup(handle);
@@ -571,7 +569,7 @@ void do_dssi_check(void* const libHandle, const bool init)
 #ifdef WANT_DSSI
     const DSSI_Descriptor_Function descFn = (DSSI_Descriptor_Function)lib_symbol(libHandle, "dssi_descriptor");
 
-    if (! descFn)
+    if (descFn == nullptr)
     {
         DISCOVERY_OUT("error", "Not a DSSI plugin");
         return;
@@ -580,26 +578,31 @@ void do_dssi_check(void* const libHandle, const bool init)
     unsigned long i = 0;
     const DSSI_Descriptor* descriptor;
 
-    while ((descriptor = descFn(i++)))
+    while ((descriptor = descFn(i++)) != nullptr)
     {
         const LADSPA_Descriptor* const ldescriptor = descriptor->LADSPA_Plugin;
 
-        if (! ldescriptor)
+        if (ldescriptor == nullptr)
         {
             DISCOVERY_OUT("error", "Plugin '" << ldescriptor->Name << "' has no LADSPA interface");
             continue;
         }
-        if (! ldescriptor->instantiate)
+        if (descriptor->DSSI_API_Version != DSSI_VERSION_MAJOR)
+        {
+            DISCOVERY_OUT("error", "Plugin '" << ldescriptor->Name << "' uses an unsupported DSSI spec version " << descriptor->DSSI_API_Version);
+            continue;
+        }
+        if (ldescriptor->instantiate == nullptr)
         {
             DISCOVERY_OUT("error", "Plugin '" << ldescriptor->Name << "' has no instantiate()");
             continue;
         }
-        if (! ldescriptor->cleanup)
+        if (ldescriptor->cleanup == nullptr)
         {
             DISCOVERY_OUT("error", "Plugin '" << ldescriptor->Name << "' has no cleanup()");
             continue;
         }
-        if (! (ldescriptor->run || descriptor->run_synth || descriptor->run_multiple_synths))
+        if (ldescriptor->run == nullptr && descriptor->run_synth == nullptr && descriptor->run_multiple_synths == nullptr)
         {
             DISCOVERY_OUT("error", "Plugin '" << ldescriptor->Name << "' has no run(), run_synth() or run_multiple_synths()");
             continue;
@@ -625,6 +628,7 @@ void do_dssi_check(void* const libHandle, const bool init)
 
         for (unsigned long j=0; j < ldescriptor->PortCount; j++)
         {
+            CARLA_ASSERT(ldescriptor->PortNames[j] != nullptr);
             const LADSPA_PortDescriptor portDescriptor = ldescriptor->PortDescriptors[j];
 
             if (LADSPA_IS_PORT_AUDIO(portDescriptor))
@@ -660,13 +664,13 @@ void do_dssi_check(void* const libHandle, const bool init)
 
             const LADSPA_Handle handle = ldescriptor->instantiate(ldescriptor, kSampleRate);
 
-            if (! handle)
+            if (handle == nullptr)
             {
                 DISCOVERY_OUT("error", "Failed to init DSSI plugin");
                 continue;
             }
 
-            if (descriptor->get_program && descriptor->select_program)
+            if (descriptor->get_program != nullptr && descriptor->select_program != nullptr)
             {
                 while (descriptor->get_program(handle, programsTotal++))
                     continue;
@@ -747,10 +751,10 @@ void do_dssi_check(void* const libHandle, const bool init)
                     descriptor->select_program(handle, pDesc->Bank, pDesc->Program);
             }
 
-            if (ldescriptor->activate)
+            if (ldescriptor->activate != nullptr)
                 ldescriptor->activate(handle);
 
-            if (descriptor->run_synth || descriptor->run_multiple_synths)
+            if (descriptor->run_synth != nullptr || descriptor->run_multiple_synths != nullptr)
             {
                 snd_seq_event_t midiEvents[2];
                 memset(midiEvents, 0, sizeof(snd_seq_event_t)*2); //FIXME
@@ -766,7 +770,7 @@ void do_dssi_check(void* const libHandle, const bool init)
                 midiEvents[1].data.note.velocity = 0;
                 midiEvents[1].time.tick = kBufferSize/2;
 
-                if (descriptor->run_multiple_synths && ! descriptor->run_synth)
+                if (descriptor->run_multiple_synths != nullptr && descriptor->run_synth == nullptr)
                 {
                     LADSPA_Handle handlePtr[1] = { handle };
                     snd_seq_event_t* midiEventsPtr[1] = { midiEvents };
@@ -779,7 +783,7 @@ void do_dssi_check(void* const libHandle, const bool init)
             else
                 ldescriptor->run(handle, kBufferSize);
 
-            if (ldescriptor->deactivate)
+            if (ldescriptor->deactivate != nullptr)
                 ldescriptor->deactivate(handle);
 
             ldescriptor->cleanup(handle);
@@ -1046,11 +1050,11 @@ void do_vst_check(void* const libHandle, const bool init)
 #ifdef WANT_VST
     VST_Function vstFn = (VST_Function)lib_symbol(libHandle, "VSTPluginMain");
 
-    if (! vstFn)
+    if (vstFn == nullptr)
     {
         vstFn = (VST_Function)lib_symbol(libHandle, "main");
 
-        if (! vstFn)
+        if (vstFn == nullptr)
         {
             DISCOVERY_OUT("error", "Not a VST plugin");
             return;
@@ -1059,7 +1063,7 @@ void do_vst_check(void* const libHandle, const bool init)
 
     AEffect* const effect = vstFn(vstHostCallback);
 
-    if (! (effect && effect->magic == kEffectMagic))
+    if (effect == nullptr || effect->magic != kEffectMagic)
     {
         DISCOVERY_OUT("error", "Failed to init VST plugin, or VST magic failed");
         return;
@@ -1072,9 +1076,9 @@ void do_vst_check(void* const libHandle, const bool init)
 
     effect->dispatcher(effect, effOpen, 0, 0, nullptr, 0.0f);
 
-    intptr_t vstCategory = effect->dispatcher(effect, effGetPlugCategory, 0, 0, nullptr, 0.0f);
+    const intptr_t vstCategory = effect->dispatcher(effect, effGetPlugCategory, 0, 0, nullptr, 0.0f);
 
-    if (vstCategory == kPlugCategShell && effect->uniqueID == 0)
+    if (vstCategory == kPlugCategShell)
     {
         if ((gVstCurrentUniqueId = effect->dispatcher(effect, effShellGetNextPlugin, 0, 0, strBuf, 0.0f)) != 0)
             cName = strBuf;
@@ -1083,27 +1087,26 @@ void do_vst_check(void* const libHandle, const bool init)
     {
         gVstCurrentUniqueId = effect->uniqueID;
 
-        if (effect->dispatcher(effect, effGetEffectName, 0, 0, strBuf, 0.0f) == 1)
+        if (gVstCurrentUniqueId != 0 && effect->dispatcher(effect, effGetEffectName, 0, 0, strBuf, 0.0f) == 1)
             cName = strBuf;
     }
-
-    carla_zeroMem(strBuf, sizeof(char)*STR_MAX);
-    if (effect->dispatcher(effect, effGetVendorString, 0, 0, strBuf, 0.0f) == 1)
-        cVendor = strBuf;
-
-    // FIXME: Waves crash during processing
-    if (cVendor == "Waves")
-        std::memset((void*)&init, 0, sizeof(bool)); //FIXME
 
     if (gVstCurrentUniqueId == 0)
     {
         DISCOVERY_OUT("error", "Plugin doesn't have an Unique ID");
+        effect->dispatcher(effect, effClose, 0, 0, nullptr, 0.0f);
         return;
     }
+
+    carla_zeroMem(strBuf, sizeof(char)*STR_MAX);
+
+    if (effect->dispatcher(effect, effGetVendorString, 0, 0, strBuf, 0.0f) == 1)
+        cVendor = strBuf;
 
     while (gVstCurrentUniqueId != 0)
     {
         carla_zeroMem(strBuf, sizeof(char)*STR_MAX);
+
         if (effect->dispatcher(effect, effGetProductString, 0, 0, strBuf, 0.0f) == 1)
             cProduct = strBuf;
         else
@@ -1141,6 +1144,9 @@ void do_vst_check(void* const libHandle, const bool init)
 
         if (init)
         {
+            if (gVstNeedsIdle)
+                effect->dispatcher(effect, effIdle, 0, 0, nullptr, 0.0f);
+
 #if ! VST_FORCE_DEPRECATED
             effect->dispatcher(effect, effSetBlockSizeAndSampleRate, 0, kBufferSize, nullptr, kSampleRate);
 #endif
@@ -1151,8 +1157,14 @@ void do_vst_check(void* const libHandle, const bool init)
             effect->dispatcher(effect, effStopProcess,  0, 0, nullptr, 0.0f);
             effect->dispatcher(effect, effMainsChanged, 0, 0, nullptr, 0.0f);
 
+            if (gVstNeedsIdle)
+                effect->dispatcher(effect, effIdle, 0, 0, nullptr, 0.0f);
+
             effect->dispatcher(effect, effMainsChanged, 0, 1, nullptr, 0.0f);
             effect->dispatcher(effect, effStartProcess, 0, 0, nullptr, 0.0f);
+
+            if (gVstNeedsIdle)
+                effect->dispatcher(effect, effIdle, 0, 0, nullptr, 0.0f);
 
             // Plugin might call wantMidi() during resume
             if (midiIns == 0 && gVstWantsMidi)
@@ -1204,18 +1216,17 @@ void do_vst_check(void* const libHandle, const bool init)
             midiEvents[1].deltaFrames = kBufferSize/2;
 
             events.numEvents = 2;
+            events.reserved  = 0;
             events.data[0] = (VstEvent*)&midiEvents[0];
             events.data[1] = (VstEvent*)&midiEvents[1];
 
             // processing
             {
-                gVstIsProcessing = true;
-
                 if (midiIns > 0)
                     effect->dispatcher(effect, effProcessEvents, 0, 0, &events, 0.0f);
 
 #if ! VST_FORCE_DEPRECATED
-                if ((effect->flags & effFlagsCanReplacing) > 0 && effect->processReplacing && effect->processReplacing != effect->process)
+                if ((effect->flags & effFlagsCanReplacing) > 0 && effect->processReplacing != nullptr && effect->processReplacing != effect->process)
                     effect->processReplacing(effect, bufferAudioIn, bufferAudioOut, kBufferSize);
                 else if (effect->process != nullptr)
                     effect->process(effect, bufferAudioIn, bufferAudioOut, kBufferSize);
@@ -1225,7 +1236,7 @@ void do_vst_check(void* const libHandle, const bool init)
                 CARLA_ASSERT(effect->flags & effFlagsCanReplacing);
                 if (effect->flags & effFlagsCanReplacing)
                 {
-                    if (effect->processReplacing)
+                    if (effect->processReplacing != nullptr)
                         effect->processReplacing(effect, bufferAudioIn, bufferAudioOut, bufferSize);
                     else
                         DISCOVERY_OUT("error", "Plugin doesn't have a process function");
@@ -1233,12 +1244,13 @@ void do_vst_check(void* const libHandle, const bool init)
                 else
                     DISCOVERY_OUT("error", "Plugin doesn't have can't do process replacing");
 #endif
-
-                gVstIsProcessing = false;
             }
 
             effect->dispatcher(effect, effStopProcess, 0, 0, nullptr, 0.0f);
             effect->dispatcher(effect, effMainsChanged, 0, 0, nullptr, 0.0f);
+
+            if (gVstNeedsIdle)
+                effect->dispatcher(effect, effIdle, 0, 0, nullptr, 0.0f);
 
             for (int j=0; j < audioIns; j++)
                 delete[] bufferAudioIn[j];
@@ -1268,22 +1280,19 @@ void do_vst_check(void* const libHandle, const bool init)
         DISCOVERY_OUT("build", BINARY_NATIVE);
         DISCOVERY_OUT("end", "------------");
 
-        if (vstCategory != kPlugCategShell)
-            break;
-
-        // request next Unique ID
-        intptr_t nextUniqueId = gVstCurrentUniqueId;
-
-        // FIXME: Waves sometimes return the same ID
-        while (nextUniqueId == gVstCurrentUniqueId)
+        if (vstCategory == kPlugCategShell)
         {
             carla_zeroMem(strBuf, sizeof(char)*STR_MAX);
-            gVstCurrentUniqueId = effect->dispatcher(effect, effShellGetNextPlugin, 0, 0, strBuf, 0.0f);
 
-            if (gVstCurrentUniqueId != 0)
+            if ((gVstCurrentUniqueId = effect->dispatcher(effect, effShellGetNextPlugin, 0, 0, strBuf, 0.0f)) != 0)
                 cName = strBuf;
         }
+        else
+            break;
     }
+
+    if (gVstNeedsIdle)
+        effect->dispatcher(effect, effIdle, 0, 0, nullptr, 0.0f);
 
     effect->dispatcher(effect, effClose, 0, 0, nullptr, 0.0f);
 #else
