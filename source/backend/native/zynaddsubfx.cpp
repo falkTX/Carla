@@ -28,8 +28,6 @@
 #include "zynaddsubfx/Misc/Master.h"
 #include "zynaddsubfx/Misc/Util.h"
 
-#define WANT_ZYNADDSUBFX_UI
-
 #ifdef WANT_ZYNADDSUBFX_UI
 #include "zynaddsubfx/UI/common.H"
 #include "zynaddsubfx/UI/MasterUI.h"
@@ -91,49 +89,15 @@ public:
         : PluginDescriptorClass(host),
           kMaster(new Master()),
           kSampleRate(getSampleRate()),
-#ifdef WANT_ZYNADDSUBFX_UI
-          fUi(nullptr),
-          fUiClosed(0),
-#endif
-          fThread(kMaster)
+          fThread(kMaster, host)
     {
         fThread.start();
         maybeInitPrograms(kMaster);
         fThread.waitForStarted();
-
-#ifdef WANT_ZYNADDSUBFX_UI
-        fl_register_images();
-
-        Fl_Dial::default_style(Fl_Dial::PIXMAP_DIAL);
-
-        if(Fl_Shared_Image *img = Fl_Shared_Image::get(PIXMAP_PATH "/knob.png"))
-            Fl_Dial::default_image(img);
-        else
-            Fl_Dial::default_image(Fl_Shared_Image::get(SOURCE_DIR "/../pixmaps/knob.png"));
-
-        if(Fl_Shared_Image *img = Fl_Shared_Image::get(PIXMAP_PATH "/window_backdrop.png"))
-            Fl::scheme_bg(new Fl_Tiled_Image(img));
-        else
-            Fl::scheme_bg(new Fl_Tiled_Image(Fl_Shared_Image::get(SOURCE_DIR "/../pixmaps/window_backdrop.png")));
-
-        if(Fl_Shared_Image *img = Fl_Shared_Image::get(PIXMAP_PATH "/module_backdrop.png"))
-            gModuleBackdrop = new Fl_Tiled_Image(img);
-        else
-            gModuleBackdrop = new Fl_Tiled_Image(Fl_Shared_Image::get(SOURCE_DIR "/../pixmaps/module_backdrop.png"));
-
-        Fl::background(50, 50, 50);
-        Fl::background2(70, 70, 70);
-        Fl::foreground(255, 255, 255);
-#endif
     }
 
     ~ZynAddSubFxPlugin()
     {
-#ifdef WANT_ZYNADDSUBFX_UI
-        if (fUi != nullptr)
-            delete fUi;
-#endif
-
         //ensure that everything has stopped
         pthread_mutex_lock(&kMaster->mutex);
         pthread_mutex_unlock(&kMaster->mutex);
@@ -315,37 +279,9 @@ protected:
     void uiShow(const bool show)
     {
         if (show)
-        {
-            CARLA_ASSERT(fUi == nullptr);
-
-            if (fUi != nullptr)
-                return;
-
-            fUiClosed = 0;
-            fUi = new MasterUI(kMaster, &fUiClosed);
-            fUi->showUI();
-
-            Fl::check();
-        }
+            fThread.uiShow();
         else
-        {
-            CARLA_ASSERT(fUi != nullptr);
-
-            if (fUi == nullptr)
-                return;
-
-            delete fUi;
-            fUi = nullptr;
-
-            Fl::check();
-        }
-    }
-
-    void uiIdle()
-    {
-        CARLA_ASSERT(fUi != nullptr);
-
-        Fl::check();
+            fThread.uiHide();
     }
 #endif
 
@@ -392,20 +328,33 @@ private:
     class ZynThread : public CarlaThread
     {
     public:
-        ZynThread(Master* const master)
+        ZynThread(Master* const master, const HostDescriptor* const host)
             : kMaster(master),
+              kHost(host),
+#ifdef WANT_ZYNADDSUBFX_UI
+              fUi(nullptr),
+              fUiClosed(0),
+              fNextUiAction(-1),
+#endif
               fQuit(false),
-              fChangeNow(false),
+              fChangeProgram(false),
               fNextBank(0),
               fNextProgram(0)
         {
+        }
+
+        ~ZynThread()
+        {
+            // must be closed by now
+            CARLA_ASSERT(fUi == nullptr);
+            CARLA_ASSERT(fQuit);
         }
 
         void loadLater(const uint32_t bank, const uint32_t program)
         {
             fNextBank    = bank;
             fNextProgram = program;
-            fChangeNow   = true;
+            fChangeProgram = true;
         }
 
         void stop()
@@ -414,38 +363,126 @@ private:
             CarlaThread::stop();
         }
 
+#ifdef WANT_ZYNADDSUBFX_UI
+        void uiShow()
+        {
+            fNextUiAction = 1;
+        }
+
+        void uiHide()
+        {
+            fNextUiAction = 0;
+        }
+#endif
+
     protected:
         void run()
         {
             while (! fQuit)
             {
-                if (fChangeNow)
+#ifdef WANT_ZYNADDSUBFX_UI
+                if (fNextUiAction == 1)
                 {
+                    static bool initialized = false;
+
+                    if (! initialized)
+                    {
+                        initialized = true;
+                        fl_register_images();
+
+                        Fl_Dial::default_style(Fl_Dial::PIXMAP_DIAL);
+
+                        if(Fl_Shared_Image *img = Fl_Shared_Image::get(PIXMAP_PATH "/knob.png"))
+                            Fl_Dial::default_image(img);
+                        else
+                            Fl_Dial::default_image(Fl_Shared_Image::get(SOURCE_DIR "/../pixmaps/knob.png"));
+
+                        if(Fl_Shared_Image *img = Fl_Shared_Image::get(PIXMAP_PATH "/window_backdrop.png"))
+                            Fl::scheme_bg(new Fl_Tiled_Image(img));
+                        else
+                            Fl::scheme_bg(new Fl_Tiled_Image(Fl_Shared_Image::get(SOURCE_DIR "/../pixmaps/window_backdrop.png")));
+
+                        if(Fl_Shared_Image *img = Fl_Shared_Image::get(PIXMAP_PATH "/module_backdrop.png"))
+                            gModuleBackdrop = new Fl_Tiled_Image(img);
+                        else
+                            gModuleBackdrop = new Fl_Tiled_Image(Fl_Shared_Image::get(SOURCE_DIR "/../pixmaps/module_backdrop.png"));
+
+                        Fl::background(50, 50, 50);
+                        Fl::background2(70, 70, 70);
+                        Fl::foreground(255, 255, 255);
+                    }
+
+                    CARLA_ASSERT(fUi == nullptr);
+
+                    if (fUi == nullptr)
+                    {
+                        fUiClosed = 0;
+                        fUi = new MasterUI(kMaster, &fUiClosed);
+                        fUi->showUI();
+                    }
+                }
+                else if (fNextUiAction == 0)
+                {
+                    CARLA_ASSERT(fUi != nullptr);
+
+                    if (fUi != nullptr)
+                    {
+                        delete fUi;
+                        fUi = nullptr;
+                    }
+                }
+
+                fNextUiAction = -1;
+
+                if (fUiClosed != 0)
+                {
+                    fUiClosed     = 0;
+                    fNextUiAction = 0;
+                    kHost->ui_closed(kHost->handle);
+                }
+
+                Fl::check();
+#endif
+
+                if (fChangeProgram)
+                {
+                    fChangeProgram = false;
                     loadProgram(kMaster, fNextBank, fNextProgram);
                     fNextBank    = 0;
                     fNextProgram = 0;
-                    fChangeNow   = false;
                 }
-                carla_msleep(10);
+
+                carla_msleep(15);
             }
+
+#ifdef WANT_ZYNADDSUBFX_UI
+            if (fQuit && fUi != nullptr)
+            {
+                delete fUi;
+                fUi = nullptr;
+                Fl::check();
+            }
+#endif
         }
 
     private:
         Master* const kMaster;
+        const HostDescriptor* const kHost;
+
+#ifdef WANT_ZYNADDSUBFX_UI
+        MasterUI* fUi;
+        int       fUiClosed;
+        int       fNextUiAction;
+#endif
 
         bool     fQuit;
-        bool     fChangeNow;
+        bool     fChangeProgram;
         uint32_t fNextBank;
         uint32_t fNextProgram;
     };
 
     Master* const  kMaster;
     const unsigned kSampleRate;
-
-#ifdef WANT_ZYNADDSUBFX_UI
-    MasterUI* fUi;
-    int       fUiClosed;
-#endif
 
     ZynThread fThread;
 
