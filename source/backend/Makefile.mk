@@ -57,3 +57,7 @@ endif
 ifeq ($(HAVE_ZYN_DEPS),true)
 BUILD_CXX_FLAGS += -DWANT_ZYNADDSUBFX
 endif
+
+ifeq ($(HAVE_ZYN_UI_DEPS),true)
+BUILD_CXX_FLAGS += -DWANT_ZYNADDSUBFX_UI
+endif

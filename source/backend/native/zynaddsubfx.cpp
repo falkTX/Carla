@@ -28,7 +28,20 @@
 #include "zynaddsubfx/Misc/Master.h"
 #include "zynaddsubfx/Misc/Util.h"
 
+#define WANT_ZYNADDSUBFX_UI
+
+#ifdef WANT_ZYNADDSUBFX_UI
+#include "zynaddsubfx/UI/common.H"
+#include "zynaddsubfx/UI/MasterUI.h"
+#include <FL/Fl_Shared_Image.H>
+#include <FL/Fl_Tiled_Image.H>
+#include <FL/Fl_Dial.H>
+#endif
+
 #include <ctime>
+
+#include <set>
+#include <string>
 
 // Dummy variables and functions for linking purposes
 const char* instance_name = nullptr;
@@ -36,6 +49,12 @@ class WavFile;
 namespace Nio {
    bool start(void){return 1;}
    void stop(void){}
+   bool setSource(std::string){return true;}
+   bool setSink(std::string){return true;}
+   std::set<std::string> getSources(void){return std::set<std::string>();}
+   std::set<std::string> getSinks(void){return std::set<std::string>();}
+   std::string getSource(void){return "";}
+   std::string getSink(void){return "";}
    void waveNew(WavFile*){}
    void waveStart(void){}
    void waveStop(void){}
@@ -43,6 +62,23 @@ namespace Nio {
 }
 
 SYNTH_T* synth = nullptr;
+
+#ifdef WANT_ZYNADDSUBFX_UI
+#define PIXMAP_PATH "/usr/share/zynaddsubfx/pixmaps"
+#define SOURCE_DIR "/usr/share/zynaddsubfx/examples"
+
+static Fl_Tiled_Image* gModuleBackdrop = nullptr;
+
+void set_module_parameters(Fl_Widget* o)
+{
+    CARLA_ASSERT(gModuleBackdrop != nullptr);
+    o->box(FL_DOWN_FRAME);
+    o->align(o->align() | FL_ALIGN_IMAGE_BACKDROP);
+    o->color(FL_BLACK);
+    o->image(gModuleBackdrop);
+    o->labeltype(FL_SHADOW_LABEL);
+}
+#endif
 
 class ZynAddSubFxPlugin : public PluginDescriptorClass
 {
@@ -55,15 +91,49 @@ public:
         : PluginDescriptorClass(host),
           kMaster(new Master()),
           kSampleRate(getSampleRate()),
+#ifdef WANT_ZYNADDSUBFX_UI
+          fUi(nullptr),
+          fUiClosed(0),
+#endif
           fThread(kMaster)
     {
         fThread.start();
         maybeInitPrograms(kMaster);
         fThread.waitForStarted();
+
+#ifdef WANT_ZYNADDSUBFX_UI
+        fl_register_images();
+
+        Fl_Dial::default_style(Fl_Dial::PIXMAP_DIAL);
+
+        if(Fl_Shared_Image *img = Fl_Shared_Image::get(PIXMAP_PATH "/knob.png"))
+            Fl_Dial::default_image(img);
+        else
+            Fl_Dial::default_image(Fl_Shared_Image::get(SOURCE_DIR "/../pixmaps/knob.png"));
+
+        if(Fl_Shared_Image *img = Fl_Shared_Image::get(PIXMAP_PATH "/window_backdrop.png"))
+            Fl::scheme_bg(new Fl_Tiled_Image(img));
+        else
+            Fl::scheme_bg(new Fl_Tiled_Image(Fl_Shared_Image::get(SOURCE_DIR "/../pixmaps/window_backdrop.png")));
+
+        if(Fl_Shared_Image *img = Fl_Shared_Image::get(PIXMAP_PATH "/module_backdrop.png"))
+            gModuleBackdrop = new Fl_Tiled_Image(img);
+        else
+            gModuleBackdrop = new Fl_Tiled_Image(Fl_Shared_Image::get(SOURCE_DIR "/../pixmaps/module_backdrop.png"));
+
+        Fl::background(50, 50, 50);
+        Fl::background2(70, 70, 70);
+        Fl::foreground(255, 255, 255);
+#endif
     }
 
     ~ZynAddSubFxPlugin()
     {
+#ifdef WANT_ZYNADDSUBFX_UI
+        if (fUi != nullptr)
+            delete fUi;
+#endif
+
         //ensure that everything has stopped
         pthread_mutex_lock(&kMaster->mutex);
         pthread_mutex_unlock(&kMaster->mutex);
@@ -238,6 +308,47 @@ protected:
         pthread_mutex_unlock(&kMaster->mutex);
     }
 
+#ifdef WANT_ZYNADDSUBFX_UI
+    // -------------------------------------------------------------------
+    // Plugin UI calls
+
+    void uiShow(const bool show)
+    {
+        if (show)
+        {
+            CARLA_ASSERT(fUi == nullptr);
+
+            if (fUi != nullptr)
+                return;
+
+            fUiClosed = 0;
+            fUi = new MasterUI(kMaster, &fUiClosed);
+            fUi->showUI();
+
+            Fl::check();
+        }
+        else
+        {
+            CARLA_ASSERT(fUi != nullptr);
+
+            if (fUi == nullptr)
+                return;
+
+            delete fUi;
+            fUi = nullptr;
+
+            Fl::check();
+        }
+    }
+
+    void uiIdle()
+    {
+        CARLA_ASSERT(fUi != nullptr);
+
+        Fl::check();
+    }
+#endif
+
     // -------------------------------------------------------------------
     // Plugin chunk calls
 
@@ -330,6 +441,11 @@ private:
 
     Master* const  kMaster;
     const unsigned kSampleRate;
+
+#ifdef WANT_ZYNADDSUBFX_UI
+    MasterUI* fUi;
+    int       fUiClosed;
+#endif
 
     ZynThread fThread;
 
@@ -467,7 +583,11 @@ struct ProgramsDestructor {
 
 static const PluginDescriptor zynAddSubFxDesc = {
     /* category  */ PLUGIN_CATEGORY_SYNTH,
+#ifdef WANT_ZYNADDSUBFX_UI
+    /* hints     */ static_cast<PluginHints>(PLUGIN_IS_SYNTH | PLUGIN_HAS_GUI | PLUGIN_USES_CHUNKS | PLUGIN_USES_SINGLE_THREAD),
+#else
     /* hints     */ static_cast<PluginHints>(PLUGIN_IS_SYNTH | PLUGIN_USES_CHUNKS),
+#endif
     /* audioIns  */ 2,
     /* audioOuts */ 2,
     /* midiIns   */ 1,
