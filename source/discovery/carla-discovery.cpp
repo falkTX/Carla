@@ -16,10 +16,10 @@
  */
 
 #include "CarlaBackendUtils.hpp"
-//#include "CarlaJuceUtils.hpp"
-//#include "CarlaLibUtils.hpp"
-//#include "CarlaString.hpp"
-//#include "CarlaMIDI.h"
+#include "CarlaJuceUtils.hpp"
+#include "CarlaLibUtils.hpp"
+#include "CarlaString.hpp"
+#include "CarlaMIDI.h"
 
 #ifdef WANT_LADSPA
 # include "CarlaLadspaUtils.hpp"

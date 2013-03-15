@@ -41,8 +41,8 @@ BUILD_PLUGIN_FLAGS += $(shell pkg-config --cflags gl)
 LINK_PLUGIN_FLAGS   = $(LINK_FLAGS)
 LINK_PLUGIN_FLAGS  += $(shell pkg-config --libs gl)
 
-NATIVE_BUILD_FLAGS  = $(BUILD_PLUGIN_FLAGS) $(shell pkg-config --cflags jack) -DWANT_NATIVE
-NATIVE_LINK_FLAGS   = $(LINK_PLUGIN_FLAGS) $(shell pkg-config --libs jack) -ldl
+NATIVE_BUILD_FLAGS  = $(BUILD_PLUGIN_FLAGS) $(shell pkg-config --cflags jack QtGui) -DWANT_NATIVE
+NATIVE_LINK_FLAGS   = $(LINK_PLUGIN_FLAGS) $(shell pkg-config --libs jack QtGui) -ldl
 
 ifeq ($(HAVE_AF_DEPS),true)
 NATIVE_BUILD_FLAGS += -DWANT_AUDIOFILE
@@ -279,7 +279,8 @@ OBJS_NATIVE += \
 	../backend/libcarla_native.a \
 	../libs/dgl.a \
 	../libs/lilv.a \
-	../libs/rtmempool.a
+	../libs/rtmempool.a \
+	../libs/widgets.a
 
 carla-bridge-native: $(OBJS_NATIVE)
 	$(CXX) $^ $(NATIVE_LINK_FLAGS) -o $@ && $(STRIP) $@

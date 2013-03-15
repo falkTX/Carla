@@ -9,6 +9,8 @@ include ../Makefile.mk
 # --------------------------------------------------------------
 
 BUILD_CXX_FLAGS += -I../backend -I../includes -I../utils
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtCore)
+LINK_FLAGS      += $(shell pkg-config --libs QtCore)
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
 BUILD_CXX_FLAGS += -DWANT_LADSPA -DWANT_DSSI -DWANT_LV2 -DWANT_VST
