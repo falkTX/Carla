@@ -8,8 +8,10 @@ include ../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo QtCore)
-LINK_FLAGS      += $(shell pkg-config --libs liblo QtCore)
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo QtCore QtGui)
+LINK_FLAGS      += $(shell pkg-config --libs liblo QtCore QtGui)
+
+# --------------------------------------------------------------
 
 ifeq ($(HAVE_FLUIDSYNTH),true)
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags fluidsynth)
@@ -51,7 +53,7 @@ debug:
 
 # --------------------------------------------------------------
 
-%.cpp.o: %.cpp ../CarlaEngine.hpp ../CarlaPlugin.hpp CarlaPluginInternal.hpp CarlaPluginThread.hpp
+%.cpp.o: %.cpp ../CarlaBackend.hpp ../CarlaEngine.hpp ../CarlaPlugin.hpp CarlaPluginInternal.hpp CarlaPluginThread.hpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 $(SHARED): $(OBJS)

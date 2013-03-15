@@ -9,8 +9,7 @@ include ../Makefile.mk
 # --------------------------------------------------------------
 # Common
 
-LINK_FLAGS += $(shell pkg-config --libs gl liblo QtCore QtXml)
-LINK_FLAGS += -lX11
+LINK_FLAGS += $(shell pkg-config --libs liblo QtCore QtGui QtXml)
 
 # --------------------------------------------------------------
 # Engine
@@ -18,9 +17,11 @@ LINK_FLAGS += -lX11
 ifeq ($(HAVE_ALSA),true)
 LINK_FLAGS += $(shell pkg-config --libs alsa)
 endif
+
 ifeq ($(HAVE_JACK),true)
 LINK_FLAGS += $(shell pkg-config --libs jack)
 endif
+
 ifeq ($(HAVE_PULSEAUDIO),true)
 LINK_FLAGS += $(shell pkg-config --libs libpulse-simple)
 endif
@@ -31,6 +32,7 @@ endif
 ifeq ($(HAVE_FLUIDSYNTH),true)
 LINK_FLAGS += $(shell pkg-config --libs fluidsynth)
 endif
+
 ifeq ($(HAVE_LINUXSAMPLER),true)
 LINK_FLAGS += $(shell pkg-config --libs linuxsampler)
 endif
@@ -43,11 +45,16 @@ LINK_FLAGS += $(shell pkg-config --libs QtGui)
 ifeq ($(HAVE_AF_DEPS),true)
 LINK_FLAGS += $(shell pkg-config --libs libavcodec libavformat sndfile)
 endif
+
+ifeq ($(HAVE_OPENGL),true)
+LINK_FLAGS += $(shell pkg-config --libs gl)
+endif
+
 ifeq ($(HAVE_ZYN_DEPS),true)
 LINK_FLAGS += $(shell pkg-config --libs fftw3 mxml zlib)
-# ifeq ($(HAVE_ZYN_UI_DEPS),true)
+ifeq ($(HAVE_ZYN_UI_DEPS),true)
 LINK_FLAGS += $(shell pkg-config --libs ntk ntk_images)
-# endif
+endif
 endif
 
 # --------------------------------------------------------------
@@ -55,10 +62,16 @@ endif
 LIBS  = ../libcarla_engine.a
 LIBS += ../libcarla_plugin.a
 LIBS += ../libcarla_native.a
-LIBS += ../../libs/dgl.a
-LIBS += ../../libs/lilv.a
 LIBS += ../../libs/rtmempool.a
 LIBS += ../../libs/widgets.a
+
+ifeq ($(CARLA_PLUGIN_SUPPORT),true)
+LIBS += ../../libs/lilv.a
+endif
+
+ifeq ($(HAVE_OPENGL),true)
+LIBS += ../../libs/dgl.a
+endif
 
 OBJS  = \
      CarlaStandalone.cpp.o
@@ -78,7 +91,7 @@ debug:
 
 # --------------------------------------------------------------
 
-%.cpp.o: %.cpp ../CarlaEngine.hpp ../CarlaPlugin.hpp
+%.cpp.o: %.cpp ../CarlaBackend.hpp ../CarlaEngine.hpp ../CarlaPlugin.hpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 $(SHARED): $(OBJS) $(LIBS)

@@ -210,16 +210,20 @@ void carla_register_native_plugin_midiThrough();
 void carla_register_native_plugin_midiTranspose();
 void carla_register_native_plugin_nekofilter();
 
-// DISTRHO plugins
-void carla_register_native_plugin_3BandEQ();
-void carla_register_native_plugin_3BandSplitter();
-void carla_register_native_plugin_PingPongPan();
-void carla_register_native_plugin_Notes();
-
 #ifdef WANT_AUDIOFILE
 // AudioFile
 void carla_register_native_plugin_audiofile();
 #endif
+
+#ifdef WANT_OPENGL
+// DISTRHO plugins (OpenGL)
+void carla_register_native_plugin_3BandEQ();
+void carla_register_native_plugin_3BandSplitter();
+void carla_register_native_plugin_PingPongPan();
+#endif
+
+// DISTRHO plugins (Qt)
+void carla_register_native_plugin_Notes();
 
 #ifdef WANT_ZYNADDSUBFX
 // ZynAddSubFX

@@ -8,12 +8,11 @@ include ../../Makefile.mk
 
 # --------------------------------------------------------------
 
-BACKEND_FLAGS    = -pthread -fvisibility=hidden -fPIC -I. -I.. -I../../includes
-BACKEND_FLAGS   += $(shell pkg-config --cflags gl)
+BACKEND_FLAGS    = -fvisibility=hidden -fPIC
+BACKEND_FLAGS   += -I. -I.. -I../../includes -I../../libs -I../../utils
 
 BUILD_C_FLAGS   += $(BACKEND_FLAGS)
-BUILD_CXX_FLAGS += $(BACKEND_FLAGS) -I../../libs -I../../libs/distrho -I../../utils
-LINK_FLAGS      += $(shell pkg-config --libs gl) -lpthread
+BUILD_CXX_FLAGS += $(BACKEND_FLAGS)
 
 # --------------------------------------------------------------
 
@@ -48,6 +47,10 @@ endif
 
 ifeq ($(HAVE_LINUXSAMPLER),true)
 BUILD_CXX_FLAGS += -DWANT_LINUXSAMPLER
+endif
+
+ifeq ($(HAVE_OPENGL),true)
+BUILD_CXX_FLAGS += -DWANT_OPENGL
 endif
 
 ifeq ($(HAVE_AF_DEPS),true)
