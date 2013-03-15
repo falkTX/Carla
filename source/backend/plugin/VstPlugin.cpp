@@ -1070,10 +1070,6 @@ public:
             uint32_t startTime  = 0;
             uint32_t timeOffset = 0;
 
-            uint32_t nextBankId = 0;
-            if (kData->midiprog.current >= 0 && kData->midiprog.count > 0)
-                nextBankId = kData->midiprog.data[kData->midiprog.current].bank;
-
             for (i=0; i < nEvents; i++)
             {
                 const EngineEvent& event = kData->event.portIn->getEvent(i);
@@ -1095,7 +1091,6 @@ public:
                             fMidiEventCount = 0;
                         }
 
-                        nextBankId = 0;
                         timeOffset = time;
                     }
                     else
@@ -1203,23 +1198,16 @@ public:
                     }
 
                     case kEngineControlEventTypeMidiBank:
-                        if (event.channel == kData->ctrlChannel)
-                            nextBankId = ctrlEvent.param;
                         break;
 
                     case kEngineControlEventTypeMidiProgram:
-                        if (event.channel == kData->ctrlChannel)
+                        if (event.channel == kData->ctrlChannel && (fOptions & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
                         {
-                            const uint32_t nextProgramId = ctrlEvent.param;
-
-                            for (k=0; k < kData->midiprog.count; k++)
+                            if (ctrlEvent.param < kData->prog.count)
                             {
-                                if (kData->midiprog.data[k].bank == nextBankId && kData->midiprog.data[k].program == nextProgramId)
-                                {
-                                    setMidiProgram(k, false, false, false);
-                                    postponeRtEvent(kPluginPostRtEventMidiProgramChange, k, 0, 0.0f);
-                                    break;
-                                }
+                                setProgram(ctrlEvent.param, false, false, false);
+                                postponeRtEvent(kPluginPostRtEventMidiProgramChange, ctrlEvent.param, 0, 0.0f);
+                                break;
                             }
                         }
                         break;

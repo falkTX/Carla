@@ -1065,12 +1065,12 @@ public:
                     }
 
                     case kEngineControlEventTypeMidiBank:
-                        if (event.channel < 16)
+                        if (event.channel < 16 && (fOptions & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
                             nextBankIds[event.channel] = ctrlEvent.param;
                         break;
 
                     case kEngineControlEventTypeMidiProgram:
-                        if (event.channel < 16)
+                        if (event.channel < 16 && (fOptions & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
                         {
                             const uint32_t bankId = nextBankIds[event.channel];
                             const uint32_t progId = ctrlEvent.param;

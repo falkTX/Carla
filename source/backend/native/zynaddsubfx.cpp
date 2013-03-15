@@ -174,14 +174,16 @@ protected:
         if (program >= BANK_SIZE)
             return;
 
-        const std::string bankdir(kMaster->bank.banks[bank].dir);
+        const std::string& bankdir(kMaster->bank.banks[bank].dir);
 
         if (! bankdir.empty())
         {
             pthread_mutex_lock(&kMaster->mutex);
 
             kMaster->bank.loadbank(bankdir);
-            kMaster->bank.loadfromslot(program, kMaster->part[0]);
+
+            for (int i=0; i < NUM_MIDI_PARTS; i++)
+                kMaster->bank.loadfromslot(program, kMaster->part[i]);
 
             pthread_mutex_unlock(&kMaster->mutex);
         }
@@ -192,7 +194,9 @@ protected:
 
     void activate()
     {
-        kMaster->setController(0, MIDI_CONTROL_ALL_SOUND_OFF, 0);
+        // broken
+        //for (int i=0; i < NUM_MIDI_PARTS; i++)
+        //    kMaster->setController(0, MIDI_CONTROL_ALL_SOUND_OFF, 0);
     }
 
     void process(float**, float** const outBuffer, const uint32_t frames, const uint32_t midiEventCount, const MidiEvent* const midiEvents)
