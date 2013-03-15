@@ -186,6 +186,8 @@ protected:
                 kMaster->bank.loadfromslot(program, kMaster->part[i]);
 
             pthread_mutex_unlock(&kMaster->mutex);
+
+            kMaster->applyparameters();
         }
     }
 
