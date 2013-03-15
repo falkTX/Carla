@@ -241,6 +241,21 @@ public:
     }
 
     // -------------------------------------------------------------------
+    // Information (current data)
+
+    int32_t chunkData(void** const dataPtr)
+    {
+        CARLA_ASSERT(fOptions & PLUGIN_OPTION_USE_CHUNKS);
+        CARLA_ASSERT(fDescriptor != nullptr);
+        CARLA_ASSERT(fHandle != nullptr);
+
+        if (fDescriptor != nullptr && fHandle != nullptr)
+            return fDescriptor->get_chunk(fHandle, dataPtr);
+
+        return 0;
+    }
+
+    // -------------------------------------------------------------------
     // Information (per-plugin data)
 
     unsigned int availableOptions()
@@ -263,6 +278,9 @@ public:
 
         options |= PLUGIN_OPTION_FIXED_BUFFER;
         options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+
+        if (fDescriptor->hints & ::PLUGIN_USES_CHUNKS)
+            options |= PLUGIN_OPTION_USE_CHUNKS;
 
         //if ((kData->audioIns.count() == 1 || kData->audioOuts.count() == 0) || (kData->audioIns.count() == 0 || kData->audioOuts.count() == 1))
         //    options |= PLUGIN_OPTION_FORCE_STEREO;
@@ -496,6 +514,20 @@ public:
         }
 
         CarlaPlugin::setCustomData(type, key, value, sendGui);
+    }
+
+    void setChunkData(const char* const stringData)
+    {
+        CARLA_ASSERT(fDescriptor != nullptr);
+        CARLA_ASSERT(fHandle != nullptr);
+        CARLA_ASSERT(stringData != nullptr);
+
+        // FIXME
+        fChunk = QByteArray::fromBase64(QByteArray(stringData));
+        //fChunk.toBase64();
+
+        const ScopedProcessLocker spl(this, true);
+        fDescriptor->set_chunk(fHandle, fChunk.data(), fChunk.size());
     }
 
     void setMidiProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback)
@@ -942,6 +974,9 @@ public:
 
         if (forcedStereoIn || forcedStereoOut)
             fOptions |= PLUGIN_OPTION_FORCE_STEREO;
+
+        if (fDescriptor->hints & ::PLUGIN_USES_CHUNKS)
+            fOptions |= PLUGIN_OPTION_USE_CHUNKS;
 
         if (mIns > 0)
         {
@@ -1980,6 +2015,7 @@ private:
     bool fIsProcessing;
     bool fIsUiVisible;
 
+    QByteArray  fChunk;
     float**     fAudioInBuffers;
     float**     fAudioOutBuffers;
     uint32_t    fMidiEventCount;

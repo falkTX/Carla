@@ -129,7 +129,6 @@ protected:
     virtual const Parameter* getParameterInfo(const uint32_t index)
     {
         CARLA_ASSERT(index < getParameterCount());
-
         return nullptr;
 
         // unused
@@ -139,7 +138,6 @@ protected:
     virtual float getParameterValue(const uint32_t index)
     {
         CARLA_ASSERT(index < getParameterCount());
-
         return 0.0f;
 
         // unused
@@ -149,7 +147,6 @@ protected:
     virtual const char* getParameterText(const uint32_t index)
     {
         CARLA_ASSERT(index < getParameterCount());
-
         return nullptr;
 
         // unused
@@ -167,7 +164,6 @@ protected:
     virtual const MidiProgram* getMidiProgramInfo(const uint32_t index)
     {
         CARLA_ASSERT(index < getMidiProgramCount());
-
         return nullptr;
 
         // unused
@@ -180,7 +176,6 @@ protected:
     virtual void setParameterValue(const uint32_t index, const float value)
     {
         CARLA_ASSERT(index < getParameterCount());
-
         return;
 
         // unused
@@ -199,14 +194,13 @@ protected:
 
     virtual void setCustomData(const char* const key, const char* const value)
     {
-        CARLA_ASSERT(key);
-        CARLA_ASSERT(value);
-
+        CARLA_ASSERT(key != nullptr);
+        CARLA_ASSERT(value != nullptr);
         return;
 
         // unused
-        CARLA_ASSERT(key);
-        CARLA_ASSERT(value);
+        (void)key;
+        (void)value;
     }
 
     // -------------------------------------------------------------------
@@ -240,7 +234,6 @@ protected:
     virtual void uiSetParameterValue(const uint32_t index, const float value)
     {
         CARLA_ASSERT(index < getParameterCount());
-
         return;
 
         // unused
@@ -258,14 +251,31 @@ protected:
 
     virtual void uiSetCustomData(const char* const key, const char* const value)
     {
-        CARLA_ASSERT(key);
-        CARLA_ASSERT(value);
-
+        CARLA_ASSERT(key != nullptr);
+        CARLA_ASSERT(value != nullptr);
         return;
 
         // unused
         (void)key;
         (void)value;
+    }
+
+    // -------------------------------------------------------------------
+    // Plugin chunk calls
+
+    virtual size_t getChunk(void** const data)
+    {
+        CARLA_ASSERT(data != nullptr);
+        return 0;
+
+        // unused
+        (void)data;
+    }
+
+    virtual void setChunk(void* const data, const size_t size)
+    {
+        CARLA_ASSERT(data != nullptr);
+        CARLA_ASSERT(size > 0);
     }
 
     // -------------------------------------------------------------------
@@ -364,6 +374,16 @@ public:
         return handlePtr->process(inBuffer, outBuffer, frames, midiEventCount, midiEvents);
     }
 
+    static size_t _get_chunk(PluginHandle handle, void** data)
+    {
+        return handlePtr->getChunk(data);
+    }
+
+    static void _set_chunk(PluginHandle handle, void* data, size_t size)
+    {
+        handlePtr->setChunk(data, size);
+    }
+
     #undef handlePtr
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PluginDescriptorClass)
@@ -404,6 +424,8 @@ public:                                                                         
     className::_ui_set_custom_data,     \
     className::_activate,               \
     className::_deactivate,             \
-    className::_process
+    className::_process,                \
+    className::_get_chunk,              \
+    className::_set_chunk
 
 #endif // __CARLA_NATIVE_HPP__

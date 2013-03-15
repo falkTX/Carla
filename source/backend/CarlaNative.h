@@ -19,6 +19,7 @@
 #define __CARLA_NATIVE_H__
 
 #ifdef __cplusplus
+# include <cstddef>
 # include <cstdint>
 extern "C" {
 #else
@@ -54,7 +55,8 @@ typedef enum _PluginHints {
     PLUGIN_IS_RTSAFE           = 1 << 0,
     PLUGIN_IS_SYNTH            = 1 << 1,
     PLUGIN_HAS_GUI             = 1 << 2,
-    PLUGIN_USES_SINGLE_THREAD  = 1 << 3
+    PLUGIN_USES_CHUNKS         = 1 << 3,
+    PLUGIN_USES_SINGLE_THREAD  = 1 << 4
 } PluginHints;
 
 typedef enum _ParameterHints {
@@ -100,7 +102,8 @@ typedef struct _Parameter {
 typedef struct _MidiEvent {
     uint8_t  port;
     uint32_t time;
-    uint8_t  data[3];
+    uint8_t  data[4];
+    uint8_t  size;
 } MidiEvent;
 
 typedef struct _MidiProgram {
@@ -188,6 +191,9 @@ typedef struct _PluginDescriptor {
     void (*activate)(PluginHandle handle);
     void (*deactivate)(PluginHandle handle);
     void (*process)(PluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, uint32_t midiEventCount, const MidiEvent* midiEvents);
+
+    size_t (*get_chunk)(PluginHandle handle, void** data);
+    void   (*set_chunk)(PluginHandle handle, void* data, size_t size);
 
 } PluginDescriptor;
 

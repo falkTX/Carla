@@ -58,6 +58,15 @@ public:
           kSampleRate(getSampleRate())
     {
         _maybeInitPrograms(kMaster);
+
+        // pre-run to create static data
+        {
+            const size_t bufSize = getBufferSize();
+            float out[bufSize];
+            carla_stdout("BEFORE %li %i", bufSize, kSampleRate);
+            //kMaster->GetAudioOutSamples(bufSize, kSampleRate, out, out);
+            carla_stdout("AFTER %li %i", bufSize, kSampleRate);
+        }
     }
 
     ~ZynAddSubFxPlugin()
@@ -197,12 +206,14 @@ protected:
 
     void process(float**, float** const outBuffer, const uint32_t frames, const uint32_t midiEventCount, const MidiEvent* const midiEvents)
     {
-        if (pthread_mutex_trylock(&kMaster->mutex) != 0)
+        //if (pthread_mutex_trylock(&kMaster->mutex) != 0)
         {
             carla_zeroFloat(outBuffer[0], frames);
             carla_zeroFloat(outBuffer[1], frames);
             return;
         }
+
+        pthread_mutex_lock(&kMaster->mutex);
 
         for (uint32_t i=0; i < midiEventCount; i++)
         {
@@ -236,6 +247,19 @@ protected:
         kMaster->GetAudioOutSamples(frames, kSampleRate, outBuffer[0], outBuffer[1]);
 
         pthread_mutex_unlock(&kMaster->mutex);
+    }
+
+    // -------------------------------------------------------------------
+    // Plugin chunk calls
+
+    size_t getChunk(void** const data)
+    {
+        return kMaster->getalldata((char**)data);
+    }
+
+    void setChunk(void* const data, const size_t size)
+    {
+        kMaster->putalldata((char*)data, size);
     }
 
     // -------------------------------------------------------------------
@@ -276,7 +300,10 @@ public:
     {
         if (sInstanceCount++ == 0)
         {
-            synth = new SYNTH_T;
+            CARLA_ASSERT(synth == nullptr);
+            CARLA_ASSERT(denormalkillbuf == nullptr);
+
+            synth = new SYNTH_T();
             synth->buffersize = host->get_buffer_size(host->handle);
             synth->samplerate = host->get_sample_rate(host->handle);
             synth->alias();
@@ -284,12 +311,14 @@ public:
             config.init();
             config.cfg.SoundBufferSize = synth->buffersize;
             config.cfg.SampleRate      = synth->samplerate;
-            //config.cfg.GzipCompression = 0;
+            config.cfg.GzipCompression = 0;
 
             sprng(std::time(nullptr));
             denormalkillbuf = new float[synth->buffersize];
             for (int i=0; i < synth->buffersize; i++)
                 denormalkillbuf[i] = (RND - 0.5f) * 1e-16;
+
+            Master::getInstance();
         }
 
         return new ZynAddSubFxPlugin(host);
@@ -301,6 +330,11 @@ public:
 
         if (--sInstanceCount == 0)
         {
+            CARLA_ASSERT(synth != nullptr);
+            CARLA_ASSERT(denormalkillbuf != nullptr);
+
+            Master::deleteInstance();
+
             delete[] denormalkillbuf;
             denormalkillbuf = nullptr;
 
@@ -354,7 +388,7 @@ NonRtList<ZynAddSubFxPlugin::ProgramInfo*> ZynAddSubFxPlugin::sPrograms;
 
 static const PluginDescriptor zynAddSubFxDesc = {
     /* category  */ PLUGIN_CATEGORY_SYNTH,
-    /* hints     */ PLUGIN_IS_SYNTH,
+    /* hints     */ static_cast<PluginHints>(PLUGIN_IS_SYNTH | PLUGIN_USES_CHUNKS),
     /* audioIns  */ 2,
     /* audioOuts */ 2,
     /* midiIns   */ 1,

@@ -417,6 +417,9 @@ static float audiofile_get_parameter_value(PluginHandle handle, uint32_t index)
 static uint32_t audiofile_get_program_count(PluginHandle handle)
 {
     return PROGRAM_COUNT;
+
+    // unused
+    (void)handle;
 }
 
 const MidiProgram* audiofile_get_program_info(PluginHandle handle, uint32_t index)
@@ -642,7 +645,10 @@ static const PluginDescriptor audiofileDesc = {
 
     .activate   = NULL,
     .deactivate = NULL,
-    .process    = audiofile_process
+    .process    = audiofile_process,
+
+    .get_chunk = NULL,
+    .set_chunk = NULL
 };
 
 // -----------------------------------------------------------------------

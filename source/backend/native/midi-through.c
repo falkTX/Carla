@@ -100,7 +100,10 @@ static const PluginDescriptor midiThroughDesc = {
 
     .activate   = NULL,
     .deactivate = NULL,
-    .process    = midiThrough_process
+    .process    = midiThrough_process,
+
+    .get_chunk = NULL,
+    .set_chunk = NULL
 };
 
 // -----------------------------------------------------------------------

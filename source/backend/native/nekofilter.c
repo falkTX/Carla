@@ -62,7 +62,10 @@ static const PluginDescriptor nekofilterDesc = {
 
     .activate   = NULL,
     .deactivate = NULL,
-    .process    = nekofilter_process
+    .process    = nekofilter_process,
+
+    .get_chunk = NULL,
+    .set_chunk = NULL
 };
 
 // -----------------------------------------------------------------------
