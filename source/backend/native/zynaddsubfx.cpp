@@ -428,6 +428,7 @@ private:
                     {
                         fUiClosed = 0;
                         fUi = new MasterUI(kMaster, &fUiClosed);
+                        fUi->npartcounter->callback(_npartcounterCallback, this);
                         fUi->showUI();
                     }
                 }
@@ -474,6 +475,18 @@ private:
             }
 #endif
         }
+
+#ifdef WANT_ZYNADDSUBFX_UI
+        void handlePartCounterCallback(Fl_Widget* widget)
+        {
+            carla_stdout("handlePartCounterCallback(%p)", widget);
+        }
+
+        static void _npartcounterCallback(Fl_Widget* widget, void* ptr)
+        {
+            ((ZynThread*)ptr)->handlePartCounterCallback(widget);
+        }
+#endif
 
     private:
         Master* const kMaster;

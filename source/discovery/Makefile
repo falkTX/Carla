@@ -34,8 +34,7 @@ POSIX_LINK_FLAGS  = $(LINK_FLAGS) -ldl
 WIN_BUILD_FLAGS   = $(BUILD_CXX_FLAGS)
 WIN_32BIT_FLAGS   = $(32BIT_FLAGS)
 WIN_64BIT_FLAGS   = $(64BIT_FLAGS)
-WIN_LINK_FLAGS    = $(LINK_FLAGS) -static -mwindows
-# -lole32 -luuid -lws2_32
+WIN_LINK_FLAGS    = $(LINK_FLAGS) -static -mwindows -lole32 -luuid -lws2_32
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
 LIBS         = ../libs/lilv.a

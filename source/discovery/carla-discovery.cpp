@@ -53,14 +53,14 @@ CARLA_BACKEND_USE_NAMESPACE
 // --------------------------------------------------------------------------
 // Our LV2 World class object
 
-Lv2WorldClass lv2World;
+Lv2WorldClass gLv2World;
 #endif
 
 // --------------------------------------------------------------------------
 // Dummy values to test plugins with
 
-const uint32_t bufferSize = 512;
-const double   sampleRate = 44100.0;
+const uint32_t kBufferSize = 512;
+const double   kSampleRate = 44100.0;
 
 // --------------------------------------------------------------------------
 // Don't print ELF/EXE related errors since discovery can find multi-architecture binaries
@@ -161,7 +161,7 @@ intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t opcode
     case audioMasterGetTime:
         static VstTimeInfo_R timeInfo;
         carla_zeroStruct<VstTimeInfo_R>(timeInfo);
-        timeInfo.sampleRate = sampleRate;
+        timeInfo.sampleRate = kSampleRate;
 
         // Tempo
         timeInfo.tempo  = 120.0;
@@ -190,11 +190,11 @@ intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t opcode
 #endif
 
     case audioMasterGetSampleRate:
-        ret = sampleRate;
+        ret = kSampleRate;
         break;
 
     case audioMasterGetBlockSize:
-        ret = bufferSize;
+        ret = kBufferSize;
         break;
 
 #if ! VST_FORCE_DEPRECATED
@@ -427,7 +427,7 @@ void do_ladspa_check(void* const libHandle, const bool init)
             // -----------------------------------------------------------------------
             // start crash-free plugin test
 
-            const LADSPA_Handle handle = descriptor->instantiate(descriptor, sampleRate);
+            const LADSPA_Handle handle = descriptor->instantiate(descriptor, kSampleRate);
 
             if (! handle)
             {
@@ -435,7 +435,7 @@ void do_ladspa_check(void* const libHandle, const bool init)
                 continue;
             }
 
-            LADSPA_Data bufferAudio[bufferSize][audioTotal];
+            LADSPA_Data bufferAudio[kBufferSize][audioTotal];
             LADSPA_Data bufferParams[parametersTotal];
             LADSPA_Data min, max, def;
 
@@ -447,7 +447,7 @@ void do_ladspa_check(void* const libHandle, const bool init)
 
                 if (LADSPA_IS_PORT_AUDIO(portDescriptor))
                 {
-                    carla_zeroFloat(bufferAudio[iA], bufferSize);
+                    carla_zeroFloat(bufferAudio[iA], kBufferSize);
                     descriptor->connect_port(handle, j, bufferAudio[iA++]);
                 }
                 else if (LADSPA_IS_PORT_CONTROL(portDescriptor))
@@ -480,9 +480,9 @@ void do_ladspa_check(void* const libHandle, const bool init)
 
                     if (LADSPA_IS_HINT_SAMPLE_RATE(portRangeHints.HintDescriptor))
                     {
-                        min *= sampleRate;
-                        max *= sampleRate;
-                        def *= sampleRate;
+                        min *= kSampleRate;
+                        max *= kSampleRate;
+                        def *= kSampleRate;
                     }
 
                     if (LADSPA_IS_PORT_OUTPUT(portDescriptor) && (std::strcmp(portName, "latency") == 0 || std::strcmp(portName, "_latency") == 0))
@@ -506,7 +506,7 @@ void do_ladspa_check(void* const libHandle, const bool init)
             if (descriptor->activate)
                 descriptor->activate(handle);
 
-            descriptor->run(handle, bufferSize);
+            descriptor->run(handle, kBufferSize);
 
             if (descriptor->deactivate)
                 descriptor->deactivate(handle);
@@ -635,7 +635,7 @@ void do_dssi_check(void* const libHandle, const bool init)
             // -----------------------------------------------------------------------
             // start crash-free plugin test
 
-            const LADSPA_Handle handle = ldescriptor->instantiate(ldescriptor, sampleRate);
+            const LADSPA_Handle handle = ldescriptor->instantiate(ldescriptor, kSampleRate);
 
             if (! handle)
             {
@@ -649,7 +649,7 @@ void do_dssi_check(void* const libHandle, const bool init)
                     continue;
             }
 
-            LADSPA_Data bufferAudio[bufferSize][audioTotal];
+            LADSPA_Data bufferAudio[kBufferSize][audioTotal];
             LADSPA_Data bufferParams[parametersTotal];
             LADSPA_Data min, max, def;
 
@@ -661,7 +661,7 @@ void do_dssi_check(void* const libHandle, const bool init)
 
                 if (LADSPA_IS_PORT_AUDIO(portDescriptor))
                 {
-                    carla_zeroFloat(bufferAudio[iA], bufferSize);
+                    carla_zeroFloat(bufferAudio[iA], kBufferSize);
                     ldescriptor->connect_port(handle, j, bufferAudio[iA++]);
                 }
                 else if (LADSPA_IS_PORT_CONTROL(portDescriptor))
@@ -694,9 +694,9 @@ void do_dssi_check(void* const libHandle, const bool init)
 
                     if (LADSPA_IS_HINT_SAMPLE_RATE(portRangeHints.HintDescriptor))
                     {
-                        min *= sampleRate;
-                        max *= sampleRate;
-                        def *= sampleRate;
+                        min *= kSampleRate;
+                        max *= kSampleRate;
+                        def *= kSampleRate;
                     }
 
                     if (LADSPA_IS_PORT_OUTPUT(portDescriptor) && (std::strcmp(portName, "latency") == 0 || std::strcmp(portName, "_latency") == 0))
@@ -741,20 +741,20 @@ void do_dssi_check(void* const libHandle, const bool init)
                 midiEvents[1].type = SND_SEQ_EVENT_NOTEOFF;
                 midiEvents[1].data.note.note     = 64;
                 midiEvents[1].data.note.velocity = 0;
-                midiEvents[1].time.tick = bufferSize/2;
+                midiEvents[1].time.tick = kBufferSize/2;
 
                 if (descriptor->run_multiple_synths && ! descriptor->run_synth)
                 {
                     LADSPA_Handle handlePtr[1] = { handle };
                     snd_seq_event_t* midiEventsPtr[1] = { midiEvents };
                     unsigned long midiEventCountPtr[1] = { midiEventCount };
-                    descriptor->run_multiple_synths(1, handlePtr, bufferSize, midiEventsPtr, midiEventCountPtr);
+                    descriptor->run_multiple_synths(1, handlePtr, kBufferSize, midiEventsPtr, midiEventCountPtr);
                 }
                 else
-                    descriptor->run_synth(handle, bufferSize, midiEvents, midiEventCount);
+                    descriptor->run_synth(handle, kBufferSize, midiEvents, midiEventCount);
             }
             else
-                ldescriptor->run(handle, bufferSize);
+                ldescriptor->run(handle, kBufferSize);
 
             if (ldescriptor->deactivate)
                 ldescriptor->deactivate(handle);
@@ -803,11 +803,11 @@ void do_lv2_check(const char* const bundle, const bool init)
         qBundle += QChar(OS_SEP);
 
     // Load bundle
-    Lilv::Node lilvBundle(lv2World.new_uri(qBundle.toUtf8().constData()));
-    lv2World.load_bundle(lilvBundle);
+    Lilv::Node lilvBundle(gLv2World.new_uri(qBundle.toUtf8().constData()));
+    gLv2World.load_bundle(lilvBundle);
 
     // Load plugins in this bundle
-    const Lilv::Plugins lilvPlugins = lv2World.get_all_plugins();
+    const Lilv::Plugins lilvPlugins(gLv2World.get_all_plugins());
 
     // Get all plugin URIs in this bundle
     QStringList URIs;
@@ -1119,10 +1119,10 @@ void do_vst_check(void* const libHandle, const bool init)
         if (init)
         {
 #if ! VST_FORCE_DEPRECATED
-            effect->dispatcher(effect, effSetBlockSizeAndSampleRate, 0, bufferSize, nullptr, sampleRate);
+            effect->dispatcher(effect, effSetBlockSizeAndSampleRate, 0, kBufferSize, nullptr, kSampleRate);
 #endif
-            effect->dispatcher(effect, effSetBlockSize, 0, bufferSize, nullptr, 0.0f);
-            effect->dispatcher(effect, effSetSampleRate, 0, 0, nullptr, sampleRate);
+            effect->dispatcher(effect, effSetBlockSize, 0, kBufferSize, nullptr, 0.0f);
+            effect->dispatcher(effect, effSetSampleRate, 0, 0, nullptr, kSampleRate);
             effect->dispatcher(effect, effSetProcessPrecision, 0, kVstProcessPrecision32, nullptr, 0.0f);
 
             effect->dispatcher(effect, effStopProcess,  0, 0, nullptr, 0.0f);
@@ -1141,15 +1141,15 @@ void do_vst_check(void* const libHandle, const bool init)
             float* bufferAudioIn[audioIns];
             for (int j=0; j < audioIns; j++)
             {
-                bufferAudioIn[j] = new float [bufferSize];
-                carla_zeroFloat(bufferAudioIn[j], bufferSize);
+                bufferAudioIn[j] = new float[kBufferSize];
+                carla_zeroFloat(bufferAudioIn[j], kBufferSize);
             }
 
             float* bufferAudioOut[audioOuts];
             for (int j=0; j < audioOuts; j++)
             {
-                bufferAudioOut[j] = new float [bufferSize];
-                carla_zeroFloat(bufferAudioOut[j], bufferSize);
+                bufferAudioOut[j] = new float[kBufferSize];
+                carla_zeroFloat(bufferAudioOut[j], kBufferSize);
             }
 
             struct VstEventsFixed {
@@ -1157,10 +1157,12 @@ void do_vst_check(void* const libHandle, const bool init)
                 intptr_t reserved;
                 VstEvent* data[2];
 
+#ifndef QTCREATOR_TEST
                 VstEventsFixed()
                     : numEvents(0),
                       reserved(0),
                       data{0} {}
+#endif
             } events;
 
             VstMidiEvent midiEvents[2];
@@ -1176,7 +1178,7 @@ void do_vst_check(void* const libHandle, const bool init)
             midiEvents[1].byteSize = sizeof(VstMidiEvent);
             midiEvents[1].midiData[0] = MIDI_STATUS_NOTE_OFF;
             midiEvents[1].midiData[1] = 64;
-            midiEvents[1].deltaFrames = bufferSize/2;
+            midiEvents[1].deltaFrames = kBufferSize/2;
 
             events.numEvents = 2;
             events.data[0] = (VstEvent*)&midiEvents[0];
@@ -1191,9 +1193,9 @@ void do_vst_check(void* const libHandle, const bool init)
 
 #if ! VST_FORCE_DEPRECATED
                 if ((effect->flags & effFlagsCanReplacing) > 0 && effect->processReplacing && effect->processReplacing != effect->process)
-                    effect->processReplacing(effect, bufferAudioIn, bufferAudioOut, bufferSize);
-                else if (effect->process)
-                    effect->process(effect, bufferAudioIn, bufferAudioOut, bufferSize);
+                    effect->processReplacing(effect, bufferAudioIn, bufferAudioOut, kBufferSize);
+                else if (effect->process != nullptr)
+                    effect->process(effect, bufferAudioIn, bufferAudioOut, kBufferSize);
                 else
                     DISCOVERY_OUT("error", "Plugin doesn't have a process function");
 #else
@@ -1466,50 +1468,20 @@ int main(int argc, char* argv[])
 
     const char* const stype    = argv[1];
     const char* const filename = argv[2];
+    const  PluginType type     = getPluginTypeFromString(stype);
 
-    bool openLib;
-    PluginType type;
+    bool openLib = false;
     void* handle = nullptr;
 
-    if (std::strcmp(stype, "LADSPA") == 0)
+    switch (type)
     {
+    case PLUGIN_LADSPA:
+    case PLUGIN_DSSI:
+    case PLUGIN_VST:
+    case PLUGIN_VST3:
         openLib = true;
-        type = PLUGIN_LADSPA;
-    }
-    else if (std::strcmp(stype, "DSSI") == 0)
-    {
-        openLib = true;
-        type = PLUGIN_DSSI;
-    }
-    else if (std::strcmp(stype, "LV2") == 0)
-    {
-        openLib = false;
-        type = PLUGIN_LV2;
-    }
-    else if (std::strcmp(stype, "VST") == 0)
-    {
-        openLib = true;
-        type = PLUGIN_VST;
-    }
-    else if (std::strcmp(stype, "GIG") == 0)
-    {
-        openLib = false;
-        type = PLUGIN_GIG;
-    }
-    else if (std::strcmp(stype, "SF2") == 0)
-    {
-        openLib = false;
-        type = PLUGIN_SF2;
-    }
-    else if (std::strcmp(stype, "SFZ") == 0)
-    {
-        openLib = false;
-        type = PLUGIN_SFZ;
-    }
-    else
-    {
-        DISCOVERY_OUT("error", "Invalid plugin type");
-        return 1;
+    default:
+        break;
     }
 
     if (openLib)
@@ -1523,6 +1495,7 @@ int main(int argc, char* argv[])
         }
     }
 
+    // never do init for dssi-vst, takes too long and it's crashy
     bool doInit = ! QString(filename).endsWith("dssi-vst.so", Qt::CaseInsensitive);
 
     if (doInit && getenv("CARLA_DISCOVERY_NO_PROCESSING_CHECKS"))
@@ -1559,6 +1532,7 @@ int main(int argc, char* argv[])
         do_lv2_check(filename, doInit);
         break;
     case PLUGIN_VST:
+    case PLUGIN_VST3:
         do_vst_check(handle, doInit);
         break;
     case PLUGIN_GIG:

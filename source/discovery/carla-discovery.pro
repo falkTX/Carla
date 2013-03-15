@@ -1,48 +1,54 @@
 # QtCreator project file
 
-QT = core
-
-CONFIG    = debug link_pkgconfig qt warn_on
-
-DEFINES   = DEBUG
-DEFINES  += WANT_LADSPA WANT_DSSI WANT_LV2 WANT_VST
-DEFINES  += WANT_FLUIDSYNTH WANT_LINUXSAMPLER
-
-PKGCONFIG = fluidsynth linuxsampler
-
 TARGET   = carla-discovery-qtcreator
 TEMPLATE = app
 VERSION  = 0.5.0
 
+# -------------------------------------------------------
+
+CONFIG     = debug
+CONFIG    += link_pkgconfig shared warn_on
+
+DEFINES    = DEBUG
+DEFINES   += QTCREATOR_TEST
+
+DEFINES   += WANT_LADSPA
+DEFINES   += WANT_DSSI
+DEFINES   += WANT_LV2
+DEFINES   += WANT_VST
+DEFINES   += WANT_FLUIDSYNTH
+DEFINES   += WANT_LINUXSAMPLER
+
+PKGCONFIG  = QtCore
+PKGCONFIG += fluidsynth
+PKGCONFIG += linuxsampler
+
 SOURCES = \
     carla-discovery.cpp
 
-HEADERS = \
-    ../includes/carla_defines.hpp \
-    ../includes/carla_midi.h \
+# -------------------------------------------------------
+
+HEADERS  = \
+    ../backend/CarlaBackend.hpp
+
+HEADERS += \
+    ../includes/CarlaDefines.hpp \
+    ../includes/CarlaMIDI.h \
     ../includes/ladspa_rdf.hpp \
     ../includes/lv2_rdf.hpp \
-    ../backend/carla_backend.hpp \
-    ../utils/carla_utils.hpp \
-    ../utils/carla_juce_utils.hpp \
-    ../utils/carla_lib_utils.hpp \
-    ../utils/carla_ladspa_utils.hpp \
-    ../utils/carla_lv2_utils.hpp \
-    ../utils/carla_vst_utils.hpp
+    ../utils/CarlaUtils.hpp \
+    ../utils/CarlaJuceUtils.hpp \
+    ../utils/CarlaLibUtils.hpp \
+    ../utils/CarlaLadspaUtils.hpp \
+    ../utils/CarlaLv2Utils.hpp \
+    ../utils/CarlaVstUtils.hpp
 
 INCLUDEPATH = \
     ../backend \
     ../includes \
     ../utils
 
-LIBS = \
-    ../libs/lilv.a
-
-unix {
-LIBS += -ldl
-}
-mingw {
-LIBS += -static -mwindows
-}
+LIBS  = -ldl
+LIBS += ../libs/lilv.a
 
 QMAKE_CXXFLAGS *= -std=c++0x
