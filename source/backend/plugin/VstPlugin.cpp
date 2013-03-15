@@ -1206,7 +1206,7 @@ public:
                             if (ctrlEvent.param < kData->prog.count)
                             {
                                 setProgram(ctrlEvent.param, false, false, false);
-                                postponeRtEvent(kPluginPostRtEventMidiProgramChange, ctrlEvent.param, 0, 0.0f);
+                                postponeRtEvent(kPluginPostRtEventProgramChange, ctrlEvent.param, 0, 0.0f);
                                 break;
                             }
                         }
