@@ -14,6 +14,7 @@
 *.o
 *.dll
 *.dll.def
+*.dylib
 *.exe
 *.so
 
@@ -29,7 +30,10 @@ ui_*.h
 
 # Python files
 *.pyc
+*_rc.py
 ui_*.py
+
+# PyQt widgets
 source/canvaspreviewframe.py
 source/digitalpeakmeter.py
 source/ledbutton.py
@@ -37,7 +41,6 @@ source/paramspinbox.py
 source/pixmapbutton.py
 source/pixmapdial.py
 source/pixmapkeyboard.py
-source/resources_rc.py
 
 # Binaries
 carla-bridge-qtcreator
@@ -64,6 +67,7 @@ source/tests/CarlaString
 source/tests/Print
 source/tests/RtList
 source/tests/Thread
+source/tests/Utils
 
 # Docs
 doc/carla-backend/
@@ -81,39 +85,40 @@ src/dist/
 *-build-*Release/
 
 # ZynAddSubFX UI
-c++/carla-native/zynaddsubfx/UI/ADnoteUI.cc
-c++/carla-native/zynaddsubfx/UI/ADnoteUI.h
-c++/carla-native/zynaddsubfx/UI/BankUI.cc
-c++/carla-native/zynaddsubfx/UI/BankUI.h
-c++/carla-native/zynaddsubfx/UI/ConfigUI.cc
-c++/carla-native/zynaddsubfx/UI/ConfigUI.h
-c++/carla-native/zynaddsubfx/UI/EffUI.cc
-c++/carla-native/zynaddsubfx/UI/EffUI.h
-c++/carla-native/zynaddsubfx/UI/EnvelopeUI.cc
-c++/carla-native/zynaddsubfx/UI/EnvelopeUI.h
-c++/carla-native/zynaddsubfx/UI/FilterUI.cc
-c++/carla-native/zynaddsubfx/UI/FilterUI.h
-c++/carla-native/zynaddsubfx/UI/LFOUI.cc
-c++/carla-native/zynaddsubfx/UI/LFOUI.h
-c++/carla-native/zynaddsubfx/UI/MasterUI.cc
-c++/carla-native/zynaddsubfx/UI/MasterUI.h
-c++/carla-native/zynaddsubfx/UI/MicrotonalUI.cc
-c++/carla-native/zynaddsubfx/UI/MicrotonalUI.h
-c++/carla-native/zynaddsubfx/UI/OscilGenUI.cc
-c++/carla-native/zynaddsubfx/UI/OscilGenUI.h
-c++/carla-native/zynaddsubfx/UI/PADnoteUI.cc
-c++/carla-native/zynaddsubfx/UI/PADnoteUI.h
-c++/carla-native/zynaddsubfx/UI/PartUI.cc
-c++/carla-native/zynaddsubfx/UI/PartUI.h
-c++/carla-native/zynaddsubfx/UI/PresetsUI.cc
-c++/carla-native/zynaddsubfx/UI/PresetsUI.h
-c++/carla-native/zynaddsubfx/UI/ResonanceUI.cc
-c++/carla-native/zynaddsubfx/UI/ResonanceUI.h
-c++/carla-native/zynaddsubfx/UI/SUBnoteUI.cc
-c++/carla-native/zynaddsubfx/UI/SUBnoteUI.h
-c++/carla-native/zynaddsubfx/UI/VirKeyboard.cc
-c++/carla-native/zynaddsubfx/UI/VirKeyboard.h
+source/backend/native/zynaddsubfx/UI/ADnoteUI.cpp
+source/backend/native/zynaddsubfx/UI/ADnoteUI.h
+source/backend/native/zynaddsubfx/UI/BankUI.cpp
+source/backend/native/zynaddsubfx/UI/BankUI.h
+source/backend/native/zynaddsubfx/UI/ConfigUI.cpp
+source/backend/native/zynaddsubfx/UI/ConfigUI.h
+source/backend/native/zynaddsubfx/UI/EffUI.cpp
+source/backend/native/zynaddsubfx/UI/EffUI.h
+source/backend/native/zynaddsubfx/UI/EnvelopeUI.cpp
+source/backend/native/zynaddsubfx/UI/EnvelopeUI.h
+source/backend/native/zynaddsubfx/UI/FilterUI.cpp
+source/backend/native/zynaddsubfx/UI/FilterUI.h
+source/backend/native/zynaddsubfx/UI/LFOUI.cpp
+source/backend/native/zynaddsubfx/UI/LFOUI.h
+source/backend/native/zynaddsubfx/UI/MasterUI.cpp
+source/backend/native/zynaddsubfx/UI/MasterUI.h
+source/backend/native/zynaddsubfx/UI/MicrotonalUI.cpp
+source/backend/native/zynaddsubfx/UI/MicrotonalUI.h
+source/backend/native/zynaddsubfx/UI/OscilGenUI.cpp
+source/backend/native/zynaddsubfx/UI/OscilGenUI.h
+source/backend/native/zynaddsubfx/UI/PADnoteUI.cpp
+source/backend/native/zynaddsubfx/UI/PADnoteUI.h
+source/backend/native/zynaddsubfx/UI/PartUI.cpp
+source/backend/native/zynaddsubfx/UI/PartUI.h
+source/backend/native/zynaddsubfx/UI/PresetsUI.cpp
+source/backend/native/zynaddsubfx/UI/PresetsUI.h
+source/backend/native/zynaddsubfx/UI/ResonanceUI.cpp
+source/backend/native/zynaddsubfx/UI/ResonanceUI.h
+source/backend/native/zynaddsubfx/UI/SUBnoteUI.cpp
+source/backend/native/zynaddsubfx/UI/SUBnoteUI.h
+source/backend/native/zynaddsubfx/UI/VirKeyboard.cpp
+source/backend/native/zynaddsubfx/UI/VirKeyboard.h
 
 # Other
 source/includes/vst/
+source/includes/vst3/
 source/libs/jackbridge/jack
