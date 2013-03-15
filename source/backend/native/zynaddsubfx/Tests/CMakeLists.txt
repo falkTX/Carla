@@ -12,6 +12,7 @@ CXXTEST_ADD_TEST(SUBnoteTest SubNoteTest.cpp ${CMAKE_CURRENT_SOURCE_DIR}/SubNote
 CXXTEST_ADD_TEST(OscilGenTest OscilGenTest.cpp ${CMAKE_CURRENT_SOURCE_DIR}/OscilGenTest.h)
 CXXTEST_ADD_TEST(RandTest RandTest.cpp ${CMAKE_CURRENT_SOURCE_DIR}/RandTest.h)
 CXXTEST_ADD_TEST(PADnoteTest PadNoteTest.cpp ${CMAKE_CURRENT_SOURCE_DIR}/PadNoteTest.h)
+CXXTEST_ADD_TEST(PluginTest PluginTest.cpp ${CMAKE_CURRENT_SOURCE_DIR}/PluginTest.h)
 
 #Extra libraries added to make test and full compilation use the same library
 #links for quirky compilers
@@ -26,5 +27,7 @@ target_link_libraries(MicrotonalTest ${test_lib})
 target_link_libraries(OscilGenTest   ${test_lib})
 target_link_libraries(XMLwrapperTest ${test_lib})
 target_link_libraries(RandTest       ${test_lib})
-target_link_libraries(PADnoteTest     ${test_lib})
+target_link_libraries(PADnoteTest    ${test_lib})
+target_link_libraries(PluginTest     zynaddsubfx_core zynaddsubfx_nio
+    ${OS_LIBRARIES} ${AUDIO_LIBRARIES})
 

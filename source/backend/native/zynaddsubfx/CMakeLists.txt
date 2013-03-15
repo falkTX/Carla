@@ -303,9 +303,6 @@ add_subdirectory(Synth)
 add_subdirectory(Effects)
 add_subdirectory(Params)
 add_subdirectory(DSP)
-if(CompileTests)
-	add_subdirectory(Tests)
-endif(CompileTests)
 add_subdirectory(Nio)
 
 add_library(zynaddsubfx_core STATIC
@@ -322,6 +319,10 @@ target_link_libraries(zynaddsubfx_core
 	${MXML_LIBRARIES}
 	${OS_LIBRARIES}
 	pthread)
+
+if(CompileTests)
+	add_subdirectory(Tests)
+endif(CompileTests)
 
 message(STATUS "using link directories: ${AUDIO_LIBRARY_DIRS} ${ZLIB_LIBRARY_DIRS} ${FFTW_LIBRARY_DIRS} ${MXML_LIBRARY_DIRS} ${FLTK_LIBRARY_DIRS}")
 

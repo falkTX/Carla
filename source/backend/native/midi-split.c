@@ -65,6 +65,8 @@ static void midiSplit_process(PluginHandle handle, float** inBuffer, float** out
         tmpEvent.data[0] = status;
         tmpEvent.data[1] = midiEvent->data[1];
         tmpEvent.data[2] = midiEvent->data[2];
+        tmpEvent.data[3] = midiEvent->data[3];
+        tmpEvent.size    = midiEvent->size;
 
         host->write_midi_event(host->handle, &tmpEvent);
     }

@@ -20,7 +20,7 @@
 #include "CarlaMutex.hpp"
 #include "RtList.hpp"
 
-#define MAX_EVENT_DATA_SIZE          3
+#define MAX_EVENT_DATA_SIZE          4
 #define MIN_PREALLOCATED_EVENT_COUNT 100
 #define MAX_PREALLOCATED_EVENT_COUNT 1000
 
@@ -215,6 +215,8 @@ public:
             midiEvent.data[0] = rawMidiEvent->data[0];
             midiEvent.data[1] = rawMidiEvent->data[1];
             midiEvent.data[2] = rawMidiEvent->data[2];
+            midiEvent.data[3] = rawMidiEvent->data[3];
+            midiEvent.size    = rawMidiEvent->size;
 
             writeMidiEvent(&midiEvent);
         }
@@ -303,6 +305,8 @@ protected:
                 rawMidiEvent.data[0] = midiEvent->data[0];
                 rawMidiEvent.data[1] = midiEvent->data[1];
                 rawMidiEvent.data[2] = midiEvent->data[2];
+                rawMidiEvent.data[3] = midiEvent->data[3];
+                rawMidiEvent.size    = midiEvent->size;
                 rawMidiEvent.time    = timePos->frame + midiEvent->time;
 
                 fInEvents.appendRT(rawMidiEvent);

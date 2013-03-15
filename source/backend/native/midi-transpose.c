@@ -123,6 +123,8 @@ static void midiTranspose_process(PluginHandle handle, float** inBuffer, float**
             tmpEvent.data[0] = midiEvent->data[0];
             tmpEvent.data[1] = rnote;
             tmpEvent.data[2] = midiEvent->data[2];
+            tmpEvent.data[3] = midiEvent->data[3];
+            tmpEvent.size    = midiEvent->size;
 
             host->write_midi_event(host->handle, &tmpEvent);
         }

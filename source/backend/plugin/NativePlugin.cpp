@@ -1468,10 +1468,12 @@ public:
 
                     fMidiEvents[fMidiEventCount].port = 0;
                     fMidiEvents[fMidiEventCount].time = sampleAccurate ? startTime : time;
+                    fMidiEvents[fMidiEventCount].size = 3; // FIXME
 
                     fMidiEvents[fMidiEventCount].data[0] = status + channel;
                     fMidiEvents[fMidiEventCount].data[1] = midiEvent.data[1];
                     fMidiEvents[fMidiEventCount].data[2] = midiEvent.data[2];
+                    fMidiEvents[fMidiEventCount].data[3] = midiEvent.data[3];
 
                     fMidiEventCount += 1;
 

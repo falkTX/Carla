@@ -169,7 +169,7 @@ struct EngineControlEvent {
  */
 struct EngineMidiEvent {
     uint8_t port;    //!< Port offset (usually 0)
-    uint8_t data[3]; //!< MIDI data, without channel bit
+    uint8_t data[4]; //!< MIDI data, without channel bit
     uint8_t size;    //!< Number of bytes used
 
 #ifndef CARLA_PROPER_CPP11_SUPPORT
@@ -185,6 +185,7 @@ struct EngineMidiEvent {
         data[0] = 0;
         data[1] = 0;
         data[2] = 0;
+        data[3] = 0;
         size    = 0;
     }
 };

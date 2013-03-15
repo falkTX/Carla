@@ -50,6 +50,10 @@ static Master* masterInstance = NULL;
 Master::Master()
 {
     swaplr = 0;
+    off  = 0;
+    smps = 0;
+    bufl = new float[synth->buffersize];
+    bufr = new float[synth->buffersize];
 
     pthread_mutex_init(&mutex, NULL);
     pthread_mutex_init(&vumutex, NULL);
@@ -482,11 +486,6 @@ void Master::GetAudioOutSamples(size_t nsamples,
                                 float *outl,
                                 float *outr)
 {
-    static float *bufl = new float[synth->buffersize],
-    *bufr = new float[synth->buffersize];
-    static off_t  off  = 0;
-    static size_t smps = 0;
-
     off_t out_off = 0;
 
     //Fail when resampling rather than doing a poor job
@@ -505,9 +504,8 @@ void Master::GetAudioOutSamples(size_t nsamples,
             //generate samples
             AudioOut(bufl, bufr);
             off  = 0;
-            smps = synth->buffersize;
-
             out_off  += smps;
+            smps = synth->buffersize;
         }
         else {   //use some samples
             memcpy(outl + out_off, bufl + off, sizeof(float) * nsamples);
@@ -521,6 +519,9 @@ void Master::GetAudioOutSamples(size_t nsamples,
 
 Master::~Master()
 {
+    delete []bufl;
+    delete []bufr;
+
     for(int npart = 0; npart < NUM_MIDI_PARTS; ++npart)
         delete part[npart];
     for(int nefx = 0; nefx < NUM_INS_EFX; ++nefx)

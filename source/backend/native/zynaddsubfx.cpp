@@ -58,15 +58,6 @@ public:
           kSampleRate(getSampleRate())
     {
         _maybeInitPrograms(kMaster);
-
-        // pre-run to create static data
-        {
-            const size_t bufSize = getBufferSize();
-            float out[bufSize];
-            carla_stdout("BEFORE %li %i", bufSize, kSampleRate);
-            //kMaster->GetAudioOutSamples(bufSize, kSampleRate, out, out);
-            carla_stdout("AFTER %li %i", bufSize, kSampleRate);
-        }
     }
 
     ~ZynAddSubFxPlugin()
@@ -206,14 +197,12 @@ protected:
 
     void process(float**, float** const outBuffer, const uint32_t frames, const uint32_t midiEventCount, const MidiEvent* const midiEvents)
     {
-        //if (pthread_mutex_trylock(&kMaster->mutex) != 0)
+        if (pthread_mutex_trylock(&kMaster->mutex) != 0)
         {
             carla_zeroFloat(outBuffer[0], frames);
             carla_zeroFloat(outBuffer[1], frames);
             return;
         }
-
-        pthread_mutex_lock(&kMaster->mutex);
 
         for (uint32_t i=0; i < midiEventCount; i++)
         {
@@ -349,11 +338,10 @@ public:
 
         if (! doSearch)
             return;
-
         doSearch = false;
 
         pthread_mutex_lock(&master->mutex);
-#if 0
+
         // refresh banks
         master->bank.rescanforbanks();
 
@@ -374,15 +362,35 @@ public:
                 sPrograms.append(new ProgramInfo(i, instrument, insName.c_str()));
             }
         }
-#endif
+
         pthread_mutex_unlock(&master->mutex);
     }
 
+    static void _clearPrograms()
+    {
+        for (auto it = sPrograms.begin(); it.valid(); it.next())
+        {
+            ProgramInfo* const programInfo(*it);
+            delete programInfo;
+        }
+
+        sPrograms.clear();
+    }
+
+private:
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ZynAddSubFxPlugin)
 };
 
 int ZynAddSubFxPlugin::sInstanceCount = 0;
 NonRtList<ZynAddSubFxPlugin::ProgramInfo*> ZynAddSubFxPlugin::sPrograms;
+
+struct ProgramsDestructor {
+    ProgramsDestructor() {}
+    ~ProgramsDestructor()
+    {
+        ZynAddSubFxPlugin::_clearPrograms();
+    }
+} programsDestructor;
 
 // -----------------------------------------------------------------------
 

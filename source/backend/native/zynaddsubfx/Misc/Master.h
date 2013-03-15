@@ -171,6 +171,12 @@ class Master
         float  sysefxvol[NUM_SYS_EFX][NUM_MIDI_PARTS];
         float  sysefxsend[NUM_SYS_EFX][NUM_SYS_EFX];
         int    keyshift;
+
+        //information relevent to generating plugin audio samples
+        float *bufl;
+        float *bufr;
+        off_t  off;
+        size_t smps;
 };
 
 #endif
