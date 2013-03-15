@@ -1838,6 +1838,7 @@ protected:
         case audioMasterNeedIdle:
             // Deprecated in VST SDK 2.4
             fNeedIdle = true;
+            ret = 1;
             break;
 
         case audioMasterSizeWindow:

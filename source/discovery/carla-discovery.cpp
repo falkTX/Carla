@@ -72,17 +72,20 @@ void print_lib_error(const char* const filename)
         DISCOVERY_OUT("error", error);
 }
 
+#ifdef WANT_VST
 // --------------------------------------------------------------------------
 // VST stuff
 
-#ifdef WANT_VST
+// Check if plugin needs idle
+bool gVstNeedsIdle = false;
+
 // Check if plugin wants midi
 bool gVstWantsMidi = false;
 
 // Check if plugin is processing
 bool gVstIsProcessing = false;
 
-// Current uniqueId for vst shell plugins
+// Current uniqueId for VST shell plugins
 intptr_t gVstCurrentUniqueId = 0;
 
 // Supported Carla features
@@ -172,7 +175,11 @@ intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t opcode
         timeInfo.timeSigDenominator = 4;
         timeInfo.flags |= kVstTimeSigValid;
 
+#ifdef VESTIGE_HEADER
         ret = getAddressFromPointer(&timeInfo);
+#else
+        ret = ToVstPtr<VstTimeInfo_R>(&timeInfo);
+#endif
         break;
 
 #if ! VST_FORCE_DEPRECATED
@@ -188,6 +195,12 @@ intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t opcode
         ret = 1; // full single float precision
         break;
 #endif
+
+    case audioMasterNeedIdle:
+        // Deprecated in VST SDK 2.4
+        gVstNeedsIdle = true;
+        ret = 1;
+        break;
 
     case audioMasterGetSampleRate:
         ret = kSampleRate;
@@ -212,7 +225,7 @@ intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t opcode
         break;
 
     case audioMasterGetVendorString:
-        if (ptr)
+        if (ptr != nullptr)
         {
             std::strcpy((char*)ptr, "falkTX");
             ret = 1;
@@ -220,7 +233,7 @@ intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t opcode
         break;
 
     case audioMasterGetProductString:
-        if (ptr)
+        if (ptr != nullptr)
         {
             std::strcpy((char*)ptr, "Carla-Discovery");
             ret = 1;
@@ -228,11 +241,11 @@ intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t opcode
         break;
 
     case audioMasterGetVendorVersion:
-        ret = 0x050; // 0.5.0
+        ret = 0x1000; // 1.0.0
         break;
 
     case audioMasterCanDo:
-        if (ptr)
+        if (ptr != nullptr)
             ret = vstHostCanDo((const char*)ptr);
         break;
 
@@ -254,21 +267,21 @@ intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t opcode
 }
 #endif
 
+#ifdef WANT_LINUXSAMPLER
 // --------------------------------------------------------------------------
 // LinuxSampler stuff
 
-#ifdef WANT_LINUXSAMPLER
 class LinuxSamplerScopedEngine
 {
 public:
     LinuxSamplerScopedEngine(const char* const filename, const char* const stype)
-        : engine(nullptr),
-          ins(nullptr)
+        : fEngine(nullptr),
+          fIns(nullptr)
     {
         using namespace LinuxSampler;
 
         try {
-            engine = EngineFactory::Create(stype);
+            fEngine = EngineFactory::Create(stype);
         }
         catch (const Exception& e)
         {
@@ -276,12 +289,12 @@ public:
             return;
         }
 
-        if (engine == nullptr)
+        if (fEngine == nullptr)
             return;
 
-        ins = engine->GetInstrumentManager();
+        fIns = fEngine->GetInstrumentManager();
 
-        if (ins == nullptr)
+        if (fIns == nullptr)
         {
             DISCOVERY_OUT("error", "Failed to get LinuxSampler instrument manager");
             return;
@@ -290,25 +303,35 @@ public:
         std::vector<InstrumentManager::instrument_id_t> ids;
 
         try {
-            ids = ins->GetInstrumentFileContent(filename);
+            ids = fIns->GetInstrumentFileContent(filename);
         }
-        catch (const Exception& e)
+        catch (const InstrumentManagerException& e)
         {
             DISCOVERY_OUT("error", e.what());
             return;
         }
 
-        if (ids.size() > 0)
-        {
-            InstrumentManager::instrument_info_t info = ins->GetInstrumentInfo(ids[0]);
-            outputInfo(&info, ids.size());
+        if (ids.size() == 0)
+            return;
+
+        InstrumentManager::instrument_info_t info;
+
+        try {
+            info = fIns->GetInstrumentInfo(ids[0]);
         }
+        catch (const InstrumentManagerException& e)
+        {
+            DISCOVERY_OUT("error", e.what());
+            return;
+        }
+
+        outputInfo(&info, ids.size());
     }
 
     ~LinuxSamplerScopedEngine()
     {
-        if (engine != nullptr)
-            LinuxSampler::EngineFactory::Destroy(engine);
+        if (fEngine != nullptr)
+            LinuxSampler::EngineFactory::Destroy(fEngine);
     }
 
     static void outputInfo(LinuxSampler::InstrumentManager::instrument_info_t* const info, const int programs, const char* const basename = nullptr)
@@ -322,7 +345,7 @@ public:
             DISCOVERY_OUT("maker", info->Artists);
             DISCOVERY_OUT("copyright", info->Artists);
         }
-        else
+        else if (basename != nullptr)
         {
             DISCOVERY_OUT("name", basename);
             DISCOVERY_OUT("label", basename);
@@ -342,8 +365,8 @@ public:
     }
 
 private:
-    LinuxSampler::Engine* engine;
-    LinuxSampler::InstrumentManager* ins;
+    LinuxSampler::Engine* fEngine;
+    LinuxSampler::InstrumentManager* fIns;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LinuxSamplerScopedEngine)
 };
@@ -1488,7 +1511,7 @@ int main(int argc, char* argv[])
     {
         handle = lib_open(filename);
 
-        if (! handle)
+        if (handle == nullptr)
         {
             print_lib_error(filename);
             return 1;
@@ -1496,15 +1519,14 @@ int main(int argc, char* argv[])
     }
 
     // never do init for dssi-vst, takes too long and it's crashy
-    bool doInit = ! QString(filename).endsWith("dssi-vst.so", Qt::CaseInsensitive);
+    bool doInit = !QString(filename).endsWith("dssi-vst.so", Qt::CaseInsensitive);
 
     if (doInit && getenv("CARLA_DISCOVERY_NO_PROCESSING_CHECKS"))
         doInit = false;
 
-    if (doInit && handle)
+    if (doInit && handle != nullptr)
     {
         // test fast loading & unloading DLL without initializing the plugin(s)
-
         if (! lib_close(handle))
         {
             print_lib_error(filename);
@@ -1513,7 +1535,7 @@ int main(int argc, char* argv[])
 
         handle = lib_open(filename);
 
-        if (! handle)
+        if (handle == nullptr)
         {
             print_lib_error(filename);
             return 1;
@@ -1548,7 +1570,7 @@ int main(int argc, char* argv[])
         break;
     }
 
-    if (openLib && handle)
+    if (openLib && handle != nullptr)
         lib_close(handle);
 
     return 0;

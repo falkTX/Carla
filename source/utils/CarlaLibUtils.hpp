@@ -30,7 +30,7 @@
 static inline
 void* lib_open(const char* const filename)
 {
-    CARLA_ASSERT(filename);
+    CARLA_ASSERT(filename != nullptr);
 
 #ifdef CARLA_OS_WIN
     return (void*)LoadLibraryA(filename);
@@ -42,9 +42,9 @@ void* lib_open(const char* const filename)
 static inline
 bool lib_close(void* const lib)
 {
-    CARLA_ASSERT(lib);
+    CARLA_ASSERT(lib != nullptr);
 
-    if (! lib)
+    if (lib == nullptr)
         return false;
 
 #ifdef CARLA_OS_WIN
@@ -57,10 +57,10 @@ bool lib_close(void* const lib)
 static inline
 void* lib_symbol(void* const lib, const char* const symbol)
 {
-    CARLA_ASSERT(lib);
-    CARLA_ASSERT(symbol);
+    CARLA_ASSERT(lib != nullptr);
+    CARLA_ASSERT(symbol != nullptr);
 
-    if (! (lib && symbol))
+    if (lib == nullptr && symbol == nullptr)
         return nullptr;
 
 #ifdef CARLA_OS_WIN
@@ -73,7 +73,7 @@ void* lib_symbol(void* const lib, const char* const symbol)
 static inline
 const char* lib_error(const char* const filename)
 {
-    CARLA_ASSERT(filename);
+    CARLA_ASSERT(filename != nullptr);
 
 #ifdef CARLA_OS_WIN
     static char libError[2048];
