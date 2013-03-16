@@ -11,17 +11,6 @@ include ../Makefile.mk
 HAVE_GTK2        = $(shell pkg-config --exists gtk+-2.0 && echo true)
 HAVE_GTK3        = $(shell pkg-config --exists gtk+-3.0 && echo true)
 
-# --------------------------------------------------------------
-
-BUILD_CXX_FLAGS += -DBUILD_BRIDGE -pthread
-BUILD_CXX_FLAGS += -I. -I../backend -I../includes -I../utils
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo QtCore QtXml)
-LINK_FLAGS      += $(shell pkg-config --libs liblo QtCore QtXml) -lpthread
-
-ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-BUILD_CXX_FLAGS += -DWANT_LADSPA -DWANT_DSSI -DWANT_LV2 -DWANT_VST
-endif
-
 ifeq ($(HAVE_QT5),true)
 QT_UI_FLAGS      = $(shell pkg-config --cflags QtWidgets)
 QT_UI_LIBS       = $(shell pkg-config --libs QtWidgets)
@@ -31,18 +20,63 @@ QT_UI_LIBS       = $(shell pkg-config --libs QtGui)
 endif
 
 # --------------------------------------------------------------
+
+BUILD_CXX_FLAGS += -DBUILD_BRIDGE
+BUILD_CXX_FLAGS += -I. -I../backend -I../includes -I../utils
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo QtCore)
+LINK_FLAGS      += $(shell pkg-config --libs liblo QtCore)
+
+# --------------------------------------------------------------
 # Plugin bridges
 
 BUILD_PLUGIN_FLAGS  = $(BUILD_CXX_FLAGS)
 BUILD_PLUGIN_FLAGS += -DBUILD_BRIDGE_PLUGIN -DBRIDGE_PLUGIN -DWANT_JACK
-BUILD_PLUGIN_FLAGS += -I../backend/engine -I../backend/plugin -I../libs -I../libs/distrho
-BUILD_PLUGIN_FLAGS += $(shell pkg-config --cflags gl)
+BUILD_PLUGIN_FLAGS += -I../backend/engine -I../backend/plugin -I../libs
+BUILD_PLUGIN_FLAGS += $(shell pkg-config --cflags QtGui QtXml)
 
 LINK_PLUGIN_FLAGS   = $(LINK_FLAGS)
-LINK_PLUGIN_FLAGS  += $(shell pkg-config --libs gl)
+LINK_PLUGIN_FLAGS  += $(shell pkg-config --libs QtGui QtXml) -lpthread
 
-NATIVE_BUILD_FLAGS  = $(BUILD_PLUGIN_FLAGS) $(shell pkg-config --cflags jack QtGui) -DWANT_NATIVE
-NATIVE_LINK_FLAGS   = $(LINK_PLUGIN_FLAGS) $(shell pkg-config --libs jack QtGui) -ldl
+ifeq ($(CARLA_PLUGIN_SUPPORT),true)
+BUILD_PLUGIN_FLAGS += -DWANT_LADSPA -DWANT_DSSI -DWANT_LV2 -DWANT_VST
+endif
+
+# --------------------------------------------------------------
+# Plugin bridges (POSIX)
+
+POSIX_BUILD_FLAGS   = $(BUILD_PLUGIN_FLAGS)
+POSIX_32BIT_FLAGS   = $(32BIT_FLAGS) -L/usr/lib32 -L/usr/lib/i386-linux-gnu
+POSIX_64BIT_FLAGS   = $(64BIT_FLAGS) -L/usr/lib64 -L/usr/lib/x86_64-linux-gnu
+POSIX_LINK_FLAGS    = $(LINK_PLUGIN_FLAGS) $(shell pkg-config --libs jack) -ldl
+
+# --------------------------------------------------------------
+# Plugin bridges (Windows)
+
+WIN_BUILD_FLAGS     = $(BUILD_PLUGIN_FLAGS) -DJACKBRIDGE_EXPORT -DPTW32_STATIC_LIB -I../libs/jackbridge
+WIN_32BIT_FLAGS     = $(32BIT_FLAGS)
+WIN_64BIT_FLAGS     = $(64BIT_FLAGS)
+WIN_LINK_FLAGS      = $(LINK_PLUGIN_FLAGS) -mwindows -lwinspool -lole32 -luuid -limm32 -lshell32 -lws2_32 -L../libs
+
+# --------------------------------------------------------------
+# Plugin bridges (Native)
+
+NATIVE_BUILD_FLAGS  = $(POSIX_BUILD_FLAGS)
+NATIVE_LINK_FLAGS   = $(POSIX_LINK_FLAGS)
+
+ifeq ($(HAVE_FLUIDSYNTH),true)
+NATIVE_BUILD_FLAGS += -DWANT_FLUIDSYNTH
+NATIVE_LINK_FLAGS  += $(shell pkg-config --libs fluidsynth)
+endif
+
+ifeq ($(HAVE_LINUXSAMPLER),true)
+NATIVE_BUILD_FLAGS += -DWANT_LINUXSAMPLER
+NATIVE_LINK_FLAGS  += $(shell pkg-config --libs linuxsampler)
+endif
+
+ifeq ($(HAVE_OPENGL),true)
+NATIVE_BUILD_FLAGS += -DWANT_OPENGL
+NATIVE_LINK_FLAGS  += $(shell pkg-config --libs gl)
+endif
 
 ifeq ($(HAVE_AF_DEPS),true)
 NATIVE_BUILD_FLAGS += -DWANT_AUDIOFILE
@@ -52,18 +86,10 @@ endif
 ifeq ($(HAVE_ZYN_DEPS),true)
 NATIVE_BUILD_FLAGS += -DWANT_ZYNADDSUBFX
 NATIVE_LINK_FLAGS  += $(shell pkg-config --libs fftw3 mxml zlib)
+ifeq ($(HAVE_ZYN_UI_DEPS),true)
 NATIVE_LINK_FLAGS  += $(shell pkg-config --libs ntk ntk_images)
 endif
-
-POSIX_BUILD_FLAGS   = $(BUILD_PLUGIN_FLAGS)
-POSIX_32BIT_FLAGS   = $(32BIT_FLAGS) -L/usr/lib32 -L/usr/lib/i386-linux-gnu
-POSIX_64BIT_FLAGS   = $(64BIT_FLAGS) -L/usr/lib64 -L/usr/lib/x86_64-linux-gnu
-POSIX_LINK_FLAGS    = $(LINK_PLUGIN_FLAGS) $(shell pkg-config --libs jack) -ldl
-
-WIN_BUILD_FLAGS     = $(BUILD_PLUGIN_FLAGS) -DJACKBRIDGE_EXPORT -DPTW32_STATIC_LIB -I../libs/jackbridge
-WIN_32BIT_FLAGS     = $(32BIT_FLAGS)
-WIN_64BIT_FLAGS     = $(64BIT_FLAGS)
-WIN_LINK_FLAGS      = $(LINK_PLUGIN_FLAGS) -mwindows -L../libs -lpthread -lwinspool -lole32 -luuid -limm32 -lshell32 -lws2_32
+endif
 
 # --------------------------------------------------------------
 # UI bridges

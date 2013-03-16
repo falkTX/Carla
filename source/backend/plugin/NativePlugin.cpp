@@ -33,16 +33,20 @@ void carla_register_all_plugins()
     carla_register_native_plugin_midiTranspose();
     carla_register_native_plugin_nekofilter();
 
-    // DISTRHO plugins
-    carla_register_native_plugin_3BandEQ();
-    carla_register_native_plugin_3BandSplitter();
-    carla_register_native_plugin_PingPongPan();
-    carla_register_native_plugin_Notes();
-
 #ifdef WANT_AUDIOFILE
     // AudioFile
     carla_register_native_plugin_audiofile();
 #endif
+
+#ifdef WANT_OPENGL
+    // DISTRHO plugins (OpenGL)
+    carla_register_native_plugin_3BandEQ();
+    carla_register_native_plugin_3BandSplitter();
+    carla_register_native_plugin_PingPongPan();
+#endif
+
+    // DISTRHO plugins (Qt)
+    carla_register_native_plugin_Notes();
 
 #ifdef WANT_ZYNADDSUBFX
     // ZynAddSubFX
@@ -1881,30 +1885,22 @@ protected:
 
     const char* handleUiOpenFile(const bool isDir, const char* const title, const char* const filter)
     {
-#ifdef BUILD_BRIDGE
-        return nullptr;
-#else
         static CarlaString retStr;
         QFileDialog::Options options(isDir ? QFileDialog::ShowDirsOnly : 0x0);
 
         retStr = QFileDialog::getOpenFileName(nullptr, title, "", filter, nullptr, options).toUtf8().constData();
 
         return retStr.isNotEmpty() ? (const char*)retStr : nullptr;
-#endif
     }
 
     const char* handleUiSaveFile(const bool isDir, const char* const title, const char* const filter)
     {
-#ifdef BUILD_BRIDGE
-        return nullptr;
-#else
         static CarlaString retStr;
         QFileDialog::Options options(isDir ? QFileDialog::ShowDirsOnly : 0x0);
 
         retStr = QFileDialog::getSaveFileName(nullptr, title, "", filter, nullptr, options).toUtf8().constData();
 
-        return (const char*)retStr;
-#endif
+        return retStr.isNotEmpty() ? (const char*)retStr : nullptr;
     }
 
 public:

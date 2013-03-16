@@ -24,11 +24,11 @@
 #include "CarlaPlugin.hpp"
 #include "RtList.hpp"
 
-#include "dgl/App.hpp"
-
 #ifndef BUILD_BRIDGE
 # include <QtCore/QProcessEnvironment>
 #endif
+
+class QMainWindow;
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -120,8 +120,6 @@ struct EnginePluginData {
 // -------------------------------------------------------------------------------------------------------------------
 
 struct CarlaEngineProtectedData {
-    DGL::App app;
-
     CarlaEngineOsc    osc;
     CarlaEngineThread thread;
 
@@ -134,6 +132,7 @@ struct CarlaEngineProtectedData {
 
 #ifndef BUILD_BRIDGE
     QProcessEnvironment procEnv;
+    QMainWindow* hostWindow;
 #endif
 
     bool aboutToClose;            // don't re-activate thread if true
@@ -182,23 +181,28 @@ struct CarlaEngineProtectedData {
           oscData(nullptr),
           callback(nullptr),
           callbackPtr(nullptr),
+#ifndef BUILD_BRIDGE
+          hostWindow(nullptr),
+#endif
           aboutToClose(false),
           curPluginCount(0),
           maxPluginNumber(0),
           plugins(nullptr) {}
 
-    ~CarlaEngineProtectedData()
-    {
-        //plugins.clear();
-    }
-
     CarlaEngineProtectedData() = delete;
     CarlaEngineProtectedData(CarlaEngineProtectedData&) = delete;
     CarlaEngineProtectedData(const CarlaEngineProtectedData&) = delete;
 
-    static DGL::App* getApp(CarlaEngine* const engine)
+    static ::QMainWindow* getHostWindow(CarlaEngine* const engine)
     {
-        return &engine->kData->app;
+#ifndef BUILD_BRIDGE
+        return engine->kData->hostWindow;
+#else
+        return nullptr;
+
+        // unused
+        (void)engine;
+#endif
     }
 };
 

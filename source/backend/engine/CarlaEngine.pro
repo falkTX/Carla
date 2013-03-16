@@ -6,8 +6,10 @@ VERSION  = 1.0
 
 # -------------------------------------------------------
 
+QT = core xml
+
 CONFIG     = debug
-CONFIG    += link_pkgconfig shared warn_on
+CONFIG    += link_pkgconfig qt shared warn_on
 
 DEFINES    = DEBUG
 DEFINES   += QTCREATOR_TEST
@@ -25,12 +27,13 @@ DEFINES   += WANT_JACK_LATENCY
 DEFINES   += WANT_JACK_PORT_RENAME
 DEFINES   += WANT_FLUIDSYNTH
 DEFINES   += WANT_LINUXSAMPLER
+DEFINES   += WANT_OPENGL
 DEFINES   += WANT_AUDIOFILE
 DEFINES   += WANT_ZYNADDSUBFX
-PKGCONFIG  = gl
+DEFINES   += WANT_ZYNADDSUBFX_UI
 
 # Engine
-PKGCONFIG += liblo QtCore
+PKGCONFIG += liblo
 
 # RtAudio
 DEFINES   += HAVE_GETTIMEOFDAY
@@ -89,7 +92,6 @@ HEADERS += \
 INCLUDEPATH = . .. plugin \
     ../../includes \
     ../../libs \
-    ../../libs/distrho \
     ../../utils
 
 # RtAudio/RtMidi

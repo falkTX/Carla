@@ -30,9 +30,9 @@ CARLA_BACKEND_START_NAMESPACE
 // -------------------------------------------------------------------------------------------------------------------
 // Engine Helpers
 
-DGL::App* getEngineApp(CarlaEngine* const engine)
+::QMainWindow* getEngineHostWindow(CarlaEngine* const engine)
 {
-    return CarlaEngineProtectedData::getApp(engine);
+    return CarlaEngineProtectedData::getHostWindow(engine);
 }
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -643,13 +643,6 @@ void CarlaEngine::idle()
         if (plugin != nullptr && plugin->enabled())
             plugin->idleGui();
     }
-
-    kData->app.idle();
-}
-
-void CarlaEngine::exec()
-{
-    kData->app.exec();
 }
 
 // -----------------------------------------------------------------------

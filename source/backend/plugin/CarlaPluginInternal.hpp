@@ -26,9 +26,9 @@
 #include "CarlaStateUtils.hpp"
 #include "CarlaMutex.hpp"
 #include "CarlaMIDI.h"
-
 #include "RtList.hpp"
-#include "dgl/Window.hpp"
+
+#include <QtGui/QMainWindow>
 
 #define CARLA_DECLARE_NON_COPY_STRUCT(structName) \
     structName(structName&) = delete;             \
@@ -386,7 +386,13 @@ struct ExternalMidiNote {
 
 // -----------------------------------------------------------------------
 
-class CarlaPluginGUI : public DGL::Window
+enum CarlaPluginGuiType {
+    PLUGIN_GUI_NULL,
+    PLUGIN_GUI_PARENT,
+    PLUGIN_GUI_QT
+};
+
+class CarlaPluginGUI : public QMainWindow
 {
 public:
     class Callback
@@ -396,14 +402,27 @@ public:
         virtual void guiClosedCallback() = 0;
     };
 
-    CarlaPluginGUI(DGL::App* const app, Callback* const callback);
+    CarlaPluginGUI(QWidget* const parent, Callback* const callback);
     ~CarlaPluginGUI();
 
-//protected:
-    //void closeEvent(QCloseEvent* const event);
+    void idle();
+    void resizeLater(int width, int height);
+
+    // Parent UIs
+    void* getContainerWinId();
+    void  closeContainer();
+
+    // Qt4 UIs, TODO
+
+protected:
+    void closeEvent(QCloseEvent* const event);
 
 private:
     Callback* const kCallback;
+    QWidget* fContainer;
+
+    int fNextWidth;
+    int fNextHeight;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginGUI)
 };
@@ -411,7 +430,7 @@ private:
 // -----------------------------------------------------------------------
 // Engine Helpers, defined in CarlaEngine.cpp
 
-extern DGL::App* getEngineApp(CarlaEngine* const engine);
+extern ::QMainWindow* getEngineHostWindow(CarlaEngine* const engine);
 
 // -----------------------------------------------------------------------
 
@@ -571,7 +590,7 @@ struct CarlaPluginProtectedData {
         if (gui != nullptr)
             return;
 
-        gui = new CarlaPluginGUI(getEngineApp(engine), callback);
+        gui = new CarlaPluginGUI(getEngineHostWindow(engine), callback);
     }
 
     void destroyUiIfNeeded()
@@ -579,9 +598,17 @@ struct CarlaPluginProtectedData {
         if (gui == nullptr)
             return;
 
-        gui->hide();
+        gui->close();
         delete gui;
         gui = nullptr;
+    }
+
+    void resizeUiLater(int width, int height)
+    {
+        if (gui == nullptr)
+            return;
+
+        gui->resizeLater(width, height);
     }
 
     static CarlaEngine* getEngine(CarlaPlugin* const plugin)

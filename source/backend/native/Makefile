@@ -8,7 +8,8 @@ include ../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtCore QtGui) -I../../widgets
+BUILD_CXX_FLAGS += -I. -I../../libs/distrho -I../../widgets
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtCore QtGui)
 LINK_FLAGS      += $(shell pkg-config --libs QtCore QtGui)
 
 # --------------------------------------------------------------
@@ -165,13 +166,13 @@ distrho-pingpongpan.cpp.o: distrho-pingpongpan.cpp pingpongpan/DistrhoArtworkPin
 distrho-notes.cpp.o: distrho-notes.cpp notes/DistrhoPluginNotes.cpp notes/DistrhoUINotes.cpp distrho/DistrhoPluginCarla.cpp moc_DistrhoUINotes.cpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) -Inotes -DDISTRHO_NAMESPACE=DISTRHO_Notes -c -o $@
 
-zynaddsubfx.cpp.o: zynaddsubfx.cpp $(ZYN_UI_FILES)
+zynaddsubfx.cpp.o: zynaddsubfx.cpp $(ZYN_UI_FILES_CPP)
 	$(CXX) $< $(ZYN_CXX_FLAGS) -c -o $@
 
 zynaddsubfx-src.cpp.o: zynaddsubfx-src.cpp
 	$(CXX) $< $(ZYN_CXX_FLAGS) -c -o $@
 
-zynaddsubfx-ui.cpp.o: zynaddsubfx-ui.cpp $(ZYN_UI_FILES)
+zynaddsubfx-ui.cpp.o: zynaddsubfx-ui.cpp $(ZYN_UI_FILES_CPP)
 	$(CXX) $< $(ZYN_CXX_FLAGS) -c -o $@
 
 # --------------------------------------------------------------

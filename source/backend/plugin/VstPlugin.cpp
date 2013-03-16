@@ -361,7 +361,7 @@ public:
 #ifdef Q_WS_X11
                 //value = (intptr_t)QX11Info::display();
 #endif
-                void* const ptr = (void*)kData->gui->getWindowId();
+                void* const ptr = kData->gui->getContainerWinId();
 
                 if (dispatcher(effEditOpen, 0, value, ptr, 0.0f) != 0)
                 {
@@ -376,7 +376,7 @@ public:
 
                         if (width > 0 && height > 0)
                         {
-                            kData->gui->setSize(width, height);
+                            kData->gui->setFixedSize(width, height);
                         }
                     }
 
@@ -391,7 +391,7 @@ public:
                     return;
                 }
             }
-            else if (fGui.isVisible)
+            else
             {
                 dispatcher(effEditClose, 0, 0, nullptr, 0.0f);
                 kData->destroyUiIfNeeded();
@@ -412,7 +412,7 @@ public:
             if (fNeedIdle)
                 dispatcher(effIdle, 0, 0, nullptr, 0.0f);
 
-            if (! fGui.isOsc && fGui.isVisible)
+            if (fGui.isVisible && ! fGui.isOsc)
             {
                 dispatcher(effEditIdle, 0, 0, nullptr, 0.0f);
                 kData->gui->idle();
@@ -1737,19 +1737,21 @@ protected:
 #endif
             break;
 
-#if 0
         case audioMasterProcessEvents:
+            CARLA_ASSERT(fEnabled);
+            CARLA_ASSERT(fIsProcessing);
+            CARLA_ASSERT(kData->event.portOut != nullptr);
             CARLA_ASSERT(ptr != nullptr);
-            CARLA_ASSERT(m_enabled);
-            CARLA_ASSERT(midi.portMout);
-            CARLA_ASSERT(isProcessing);
 
-            if (! m_enabled)
+            if (! fEnabled)
                 return 0;
-
-            if (! midi.portMout)
+            if (! fIsProcessing)
                 return 0;
-
+            if (kData->event.portOut == nullptr)
+                return 0;
+            if (ptr == nullptr)
+                return 0;
+#if 0
             if (! isProcessing)
             {
                 carla_stderr2("VstPlugin::handleAudioMasterProcessEvents(%p) - received MIDI out events outside audio thread, ignoring", vstEvents);
@@ -1766,10 +1768,9 @@ protected:
                 if (vstMidiEvent->type == kVstMidiType)
                     memcpy(&midiEvents[events.numEvents++], vstMidiEvent, sizeof(VstMidiEvent));
             }
-
+#endif
             ret = 1;
             break;
-#endif
 
 #if ! VST_FORCE_DEPRECATED
         case audioMasterSetTime:
@@ -1842,12 +1843,7 @@ protected:
             break;
 
         case audioMasterSizeWindow:
-            CARLA_ASSERT(kData->gui != nullptr);
-
-            // FIXME - ensure thread safe
-            //if (kData->gui != nullptr)
-            //    kData->gui->setFixedSize(index, value);
-
+            kData->resizeUiLater(index, value);
             ret = 1;
             break;
 

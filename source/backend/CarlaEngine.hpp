@@ -697,12 +697,6 @@ public:
     virtual void idle();
 
     /*!
-     * Give the event loop to the engine.\n
-     * The function will complete when the last plugin UI is closed.
-     */
-    virtual void exec();
-
-    /*!
      * Check if engine is running.
      */
     virtual bool isRunning() const = 0;

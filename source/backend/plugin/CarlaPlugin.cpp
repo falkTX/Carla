@@ -19,10 +19,13 @@
 #include "CarlaLibUtils.hpp"
 #include "CarlaMIDI.h"
 
-#include "dgl/App.hpp"
-
 #include <QtCore/QFile>
 #include <QtCore/QTextStream>
+#include <QtGui/QCloseEvent>
+
+#ifdef Q_WS_X11
+# include <QtGui/QX11EmbedContainer>
+#endif
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -1972,38 +1975,89 @@ CarlaPlugin::ScopedProcessLocker::~ScopedProcessLocker()
 // -------------------------------------------------------------------
 // CarlaPluginGUI
 
-CarlaPluginGUI::CarlaPluginGUI(DGL::App* const app, Callback* const callback)
-    : DGL::Window(app),
-      kCallback(callback)
+CarlaPluginGUI::CarlaPluginGUI(QWidget* const parent, Callback* const callback)
+    : QMainWindow(parent),
+      kCallback(callback),
+      fContainer(nullptr),
+      fNextWidth(0),
+      fNextHeight(0)
 {
-    carla_debug("CarlaPluginGUI::CarlaPluginGUI(%p, %p)", app, callback);
-    CARLA_ASSERT(app != nullptr);
     CARLA_ASSERT(callback != nullptr);
-
-    hide();
+    carla_debug("CarlaPluginGUI::CarlaPluginGUI(%p, %p)", parent, callback);
 }
 
 CarlaPluginGUI::~CarlaPluginGUI()
 {
     carla_debug("CarlaPluginGUI::~CarlaPluginGUI()");
+
+    closeContainer();
 }
 
-// void CarlaPluginGUI::closeEvent(QCloseEvent* const event)
-// {
-//     carla_debug("CarlaPluginGUI::closeEvent(%p)", event);
-//     CARLA_ASSERT(event != nullptr);
-//
-//     if (! event->spontaneous())
-//     {
-//         event->ignore();
-//         return;
-//     }
-//
-//     if (kCallback != nullptr)
-//         kCallback->guiClosedCallback();
-//
-//     QMainWindow::closeEvent(event);
-// }
+void CarlaPluginGUI::idle()
+{
+    if (fNextWidth > 0 && fNextHeight > 0)
+    {
+        setFixedSize(fNextWidth, fNextHeight);
+        fNextWidth  = 0;
+        fNextHeight = 0;
+    }
+}
+
+void CarlaPluginGUI::resizeLater(int width, int height)
+{
+    fNextWidth  = width;
+    fNextHeight = height;
+}
+
+void* CarlaPluginGUI::getContainerWinId()
+{
+    carla_debug("CarlaPluginGUI::getContainerWinId()");
+
+    if (fContainer == nullptr)
+    {
+#ifdef Q_WS_X11
+        QX11EmbedContainer* container(new QX11EmbedContainer(this));
+#else
+        QWidget* container(new QWidget(this));
+#endif
+        setCentralWidget(container);
+        fContainer = container;
+    }
+
+    return (void*)winId();
+}
+
+void  CarlaPluginGUI::closeContainer()
+{
+    carla_debug("CarlaPluginGUI::closeContainer()");
+
+    if (fContainer != nullptr)
+    {
+#ifdef Q_WS_X11
+        delete (QX11EmbedContainer*)fContainer;
+#else
+        delete (QWidget*)fContainer;
+#endif
+        fContainer = nullptr;
+    }
+}
+
+void CarlaPluginGUI::closeEvent(QCloseEvent* const event)
+{
+    carla_debug("CarlaPluginGUI::closeEvent(%p)", event);
+    CARLA_ASSERT(event != nullptr);
+
+    if (! event->spontaneous())
+    {
+        event->ignore();
+        return;
+    }
+
+    if (kCallback != nullptr)
+        kCallback->guiClosedCallback();
+
+    QMainWindow::closeEvent(event);
+}
 
 // -------------------------------------------------------------------
 

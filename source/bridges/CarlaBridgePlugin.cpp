@@ -24,11 +24,15 @@
 #include "CarlaEngine.hpp"
 #include "CarlaPlugin.hpp"
 
-#include "dgl/App.hpp"
-
 #include <QtCore/QDir>
 #include <QtCore/QFile>
 #include <QtCore/QTextStream>
+
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+# include <QtWidgets/QApplication>
+#else
+# include <QtGui/QApplication>
+#endif
 
 #ifdef CARLA_OS_UNIX
 # include <signal.h>
@@ -107,14 +111,18 @@ CARLA_BRIDGE_START_NAMESPACE
 
 // -------------------------------------------------------------------------
 
-class CarlaPluginClient : public CarlaBridgeClient
+class CarlaPluginClient : public CarlaBridgeClient,
+                          public QObject
 {
 public:
     CarlaPluginClient(const char* const name)
         : CarlaBridgeClient(nullptr),
+          QObject(nullptr),
           fEngine(nullptr),
-          fPlugin(nullptr)
+          fPlugin(nullptr),
+          fTimerId(0)
     {
+        CARLA_ASSERT(name != nullptr);
         carla_debug("CarlaPluginClient::CarlaPluginClient()");
 
         carla_engine_init("JACK", name);
@@ -123,15 +131,21 @@ public:
 
     ~CarlaPluginClient()
     {
+        CARLA_ASSERT(fTimerId == 0);
         carla_debug("CarlaPluginClient::~CarlaPluginClient()");
+
         carla_set_engine_about_to_close();
         carla_engine_close();
     }
 
     void ready()
     {
+        CARLA_ASSERT(fTimerId == 0);
+
         fEngine = carla_get_standalone_engine();
         fPlugin = fEngine->getPlugin(0);
+
+        fTimerId = startTimer(50);
     }
 
     void idle()
@@ -145,6 +159,21 @@ public:
         {
             // TODO
             gSaveNow = false;
+        }
+
+        if (gCloseNow)
+        {
+            if (fTimerId != 0)
+            {
+                killTimer(fTimerId);
+                fTimerId = 0;
+            }
+
+            if (QApplication* const app = qApp)
+            {
+                if (! app->closingDown())
+                    app->quit();
+            }
         }
     }
 
@@ -324,7 +353,15 @@ private:
     CarlaBackend::CarlaEngine* fEngine;
     CarlaBackend::CarlaPlugin* fPlugin;
 
-    bool fClosed;
+    int fTimerId;
+
+    void timerEvent(QTimerEvent* const event)
+    {
+        if (event->timerId() == fTimerId)
+            idle();
+
+        QObject::timerEvent(event);
+    }
 
     static void callback(void* ptr, CarlaBackend::CallbackType action, unsigned int pluginId, int value1, int value2, float value3, const char* valueStr)
     {
@@ -471,6 +508,9 @@ int main(int argc, char* argv[])
         return 1;
     }
 
+    QApplication app(argc, argv, true);
+    app.setQuitOnLastWindowClosed(false);
+
     // Init Plugin client
     CarlaPluginClient client(name ? name : label);
 
@@ -487,7 +527,7 @@ int main(int argc, char* argv[])
         extraStuff = CarlaBackend::findDSSIGUI(filename, label);
 
     // Init plugin
-    int ret = 0;
+    int ret;
 
     if (carla_add_plugin(CarlaBackend::BINARY_NATIVE, itype, filename, name, label, extraStuff))
     {
@@ -503,7 +543,8 @@ int main(int argc, char* argv[])
         }
 
         client.ready();
-        client.exec();
+
+        ret = app.exec();
 
         carla_remove_plugin(0);
     }
