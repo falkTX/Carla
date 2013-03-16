@@ -2024,7 +2024,7 @@ void* CarlaPluginGUI::getContainerWinId()
         fContainer = container;
     }
 
-    return (void*)winId();
+    return (void*)fContainer->winId();
 }
 
 void  CarlaPluginGUI::closeContainer()

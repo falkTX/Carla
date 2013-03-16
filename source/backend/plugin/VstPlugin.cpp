@@ -988,7 +988,7 @@ public:
         fTimeInfo.samplePos  = timeInfo.frame;
         fTimeInfo.sampleRate = kData->engine->getSampleRate();
 
-        fTimeInfo.nanoSeconds = timeInfo.time;
+        fTimeInfo.nanoSeconds = timeInfo.time*1000;
         fTimeInfo.flags |= kVstNanosValid;
 
         if (timeInfo.valid & EngineTimeInfo::ValidBBT)
