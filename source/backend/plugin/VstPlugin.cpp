@@ -168,6 +168,9 @@ public:
     {
         CARLA_ASSERT(fEffect != nullptr);
 
+        if (fEffect == nullptr)
+            return 0x0;
+
         unsigned int options = 0x0;
 
         options |= PLUGIN_OPTION_FIXED_BUFFER;
@@ -286,7 +289,9 @@ public:
         CARLA_ASSERT(parameterId < kData->param.count);
 
         const float fixedValue = kData->param.fixValue(parameterId, value);
-        fEffect->setParameter(fEffect, parameterId, fixedValue);
+
+        if (fEffect != nullptr)
+            fEffect->setParameter(fEffect, parameterId, fixedValue);
 
         CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
     }
@@ -430,6 +435,11 @@ public:
         carla_debug("VstPlugin::reload() - start");
         CARLA_ASSERT(kData->engine != nullptr);
         CARLA_ASSERT(fEffect != nullptr);
+
+        if (kData->engine == nullptr)
+            return;
+        if (fEffect == nullptr)
+            return;
 
         const ProcessMode processMode(kData->engine->getProccessMode());
 
@@ -1085,13 +1095,14 @@ public:
                 {
                     if (processSingle(inBuffer, outBuffer, time - timeOffset, timeOffset))
                     {
+                        startTime  = 0;
+                        timeOffset = time;
+
                         if (fMidiEventCount > 0)
                         {
                             //carla_zeroMem(fMidiEvents, sizeof(::MidiEvent)*fMidiEventCount);
                             fMidiEventCount = 0;
                         }
-
-                        timeOffset = time;
                     }
                     else
                         startTime += timeOffset;
@@ -1367,6 +1378,24 @@ public:
 
     bool processSingle(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t timeOffset)
     {
+        CARLA_ASSERT(frames > 0);
+
+        if (frames == 0)
+            return false;
+
+        if (kData->audioIn.count > 0)
+        {
+            CARLA_ASSERT(inBuffer != nullptr);
+            if (inBuffer == nullptr)
+                return false;
+        }
+        if (kData->audioOut.count > 0)
+        {
+            CARLA_ASSERT(outBuffer != nullptr);
+            if (outBuffer == nullptr)
+                return false;
+        }
+
         uint32_t i, k;
 
         // --------------------------------------------------------------------------------------------------------
@@ -2016,6 +2045,26 @@ public:
         CARLA_ASSERT(kData->engine != nullptr);
         CARLA_ASSERT(kData->client == nullptr);
         CARLA_ASSERT(filename != nullptr);
+
+        // ---------------------------------------------------------------
+        // first checks
+
+        if (kData->engine == nullptr)
+        {
+            return false;
+        }
+
+        if (kData->client != nullptr)
+        {
+            kData->engine->setLastError("Plugin client is already registered");
+            return false;
+        }
+
+        if (filename == nullptr)
+        {
+            kData->engine->setLastError("null filename");
+            return false;
+        }
 
         // ---------------------------------------------------------------
         // open DLL

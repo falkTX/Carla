@@ -1033,6 +1033,10 @@ bool CarlaEngine::loadProject(const char* const filename)
         if (node.toElement().tagName() == "Plugin")
         {
             const SaveState& saveState = getSaveStateDictFromXML(node);
+            CARLA_ASSERT(saveState.type != nullptr);
+
+            if (saveState.type == nullptr)
+                continue;
 
             const void* extraStuff = nullptr;
 

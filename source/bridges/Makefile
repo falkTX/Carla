@@ -30,16 +30,13 @@ LINK_FLAGS      += $(shell pkg-config --libs liblo QtCore)
 # Plugin bridges
 
 BUILD_PLUGIN_FLAGS  = $(BUILD_CXX_FLAGS)
-BUILD_PLUGIN_FLAGS += -DBUILD_BRIDGE_PLUGIN -DBRIDGE_PLUGIN -DWANT_JACK
+BUILD_PLUGIN_FLAGS += -DBUILD_BRIDGE_PLUGIN -DBRIDGE_PLUGIN
+BUILD_PLUGIN_FLAGS += -DWANT_LADSPA -DWANT_DSSI -DWANT_LV2 -DWANT_VST -DWANT_JACK
 BUILD_PLUGIN_FLAGS += -I../backend/engine -I../backend/plugin -I../libs
-BUILD_PLUGIN_FLAGS += $(shell pkg-config --cflags QtGui QtXml)
+BUILD_PLUGIN_FLAGS += $(QT_UI_FLAGS) $(shell pkg-config --cflags QtXml)
 
 LINK_PLUGIN_FLAGS   = $(LINK_FLAGS)
-LINK_PLUGIN_FLAGS  += $(shell pkg-config --libs QtGui QtXml) -lpthread
-
-ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-BUILD_PLUGIN_FLAGS += -DWANT_LADSPA -DWANT_DSSI -DWANT_LV2 -DWANT_VST
-endif
+LINK_PLUGIN_FLAGS  += $(QT_UI_FLAGS) $(shell pkg-config --libs QtXml) -lpthread
 
 # --------------------------------------------------------------
 # Plugin bridges (POSIX)
@@ -65,11 +62,13 @@ NATIVE_LINK_FLAGS   = $(POSIX_LINK_FLAGS)
 
 ifeq ($(HAVE_FLUIDSYNTH),true)
 NATIVE_BUILD_FLAGS += -DWANT_FLUIDSYNTH
+NATIVE_BUILD_FLAGS += $(shell pkg-config --cflags fluidsynth)
 NATIVE_LINK_FLAGS  += $(shell pkg-config --libs fluidsynth)
 endif
 
 ifeq ($(HAVE_LINUXSAMPLER),true)
 NATIVE_BUILD_FLAGS += -DWANT_LINUXSAMPLER
+NATIVE_BUILD_FLAGS += $(shell pkg-config --cflags linuxsampler)
 NATIVE_LINK_FLAGS  += $(shell pkg-config --libs linuxsampler)
 endif
 
@@ -503,5 +502,6 @@ clean:
 	rm -f $(OBJS_POSIX64)
 	rm -f $(OBJS_WIN32)
 	rm -f $(OBJS_WIN64)
-	rm -f carla-bridge-lv2-gtk2 carla-bridge-lv2-gtk3 carla-bridge-lv2-qt4 carla-bridge-lv2-qt5 carla-bridge-lv2-x11 carla-bridge-vst-x11
+	rm -f carla-bridge-lv2-gtk2 carla-bridge-lv2-gtk3 carla-bridge-lv2-qt4 carla-bridge-lv2-qt5 carla-bridge-lv2-x11
+	rm -f carla-bridge-vst-x11
 	rm -f carla-bridge-native carla-bridge-posix32 carla-bridge-posix64

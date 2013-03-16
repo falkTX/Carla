@@ -655,7 +655,7 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
 
     QVector<ParamSymbol> paramSymbols;
 
-    if (std::strcmp(saveState.type, "LADSPA") == 0 || std::strcmp(saveState.type, "LV2") == 0)
+    if (type() == PLUGIN_LADSPA || type() == PLUGIN_LV2)
     {
         for (uint32_t i=0; i < kData->param.count; i++)
         {
@@ -680,7 +680,7 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
 
         int32_t index = -1;
 
-        if (std::strcmp(saveState.type, "LADSPA") == 0)
+        if (type() == PLUGIN_LADSPA)
         {
             // Try to set by symbol, otherwise use index
             if (stateParameter->symbol != nullptr && *stateParameter->symbol != 0)
@@ -699,7 +699,7 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
             else
                 index = stateParameter->index;
         }
-        else if (std::strcmp(saveState.type, "LV2") == 0)
+        else if (type() == PLUGIN_LV2)
         {
             // Symbol only
             if (stateParameter->symbol != nullptr && *stateParameter->symbol != 0)
@@ -1177,6 +1177,13 @@ void CarlaPlugin::setCustomData(const char* const type, const char* const key, c
             CARLA_ASSERT(cData.type != nullptr);
             CARLA_ASSERT(cData.key != nullptr);
             CARLA_ASSERT(cData.value != nullptr);
+
+            if (cData.type == nullptr)
+                return;
+            if (cData.key == nullptr)
+                return;
+            if (cData.value == nullptr)
+                return;
 
             if (std::strcmp(cData.key, key) == 0)
             {
@@ -1926,6 +1933,15 @@ CarlaPlugin::ScopedDisabler::ScopedDisabler(CarlaPlugin* const plugin)
 {
     carla_debug("CarlaPlugin::ScopedDisabler(%p)", plugin);
     CARLA_ASSERT(plugin != nullptr);
+    CARLA_ASSERT(plugin->kData != nullptr);
+    CARLA_ASSERT(plugin->kData->client != nullptr);
+
+    if (plugin == nullptr)
+        return;
+    if (plugin->kData == nullptr)
+        return;
+    if (plugin->kData->client == nullptr)
+        return;
 
     plugin->kData->masterMutex.lock();
 
@@ -1939,6 +1955,16 @@ CarlaPlugin::ScopedDisabler::ScopedDisabler(CarlaPlugin* const plugin)
 CarlaPlugin::ScopedDisabler::~ScopedDisabler()
 {
     carla_debug("CarlaPlugin::~ScopedDisabler()");
+    CARLA_ASSERT(kPlugin != nullptr);
+    CARLA_ASSERT(kPlugin->kData != nullptr);
+    CARLA_ASSERT(kPlugin->kData->client != nullptr);
+
+    if (kPlugin == nullptr)
+        return;
+    if (kPlugin->kData == nullptr)
+        return;
+    if (kPlugin->kData->client == nullptr)
+        return;
 
     kPlugin->fEnabled = true;
     kPlugin->kData->client->activate();
@@ -1955,13 +1981,19 @@ CarlaPlugin::ScopedProcessLocker::ScopedProcessLocker(CarlaPlugin* const plugin,
     carla_debug("CarlaPlugin::ScopedProcessLocker(%p, %s)", plugin, bool2str(block));
     CARLA_ASSERT(plugin != nullptr);
 
-    if (block)
+    if (plugin != nullptr && block)
         plugin->kData->singleMutex.lock();
 }
 
 CarlaPlugin::ScopedProcessLocker::~ScopedProcessLocker()
 {
     carla_debug("CarlaPlugin::~ScopedProcessLocker()");
+    CARLA_ASSERT(kPlugin != nullptr && kPlugin->kData != nullptr);
+
+    if (kPlugin == nullptr)
+        return;
+    if (kPlugin->kData == nullptr)
+        return;
 
     if (kBlock)
     {
@@ -2005,6 +2037,14 @@ void CarlaPluginGUI::idle()
 
 void CarlaPluginGUI::resizeLater(int width, int height)
 {
+    CARLA_ASSERT_INT(width > 0, width);
+    CARLA_ASSERT_INT(height > 0, height);
+
+    if (width <= 0)
+        return;
+    if (height <= 0)
+        return;
+
     fNextWidth  = width;
     fNextHeight = height;
 }
@@ -2046,6 +2086,9 @@ void CarlaPluginGUI::closeEvent(QCloseEvent* const event)
 {
     carla_debug("CarlaPluginGUI::closeEvent(%p)", event);
     CARLA_ASSERT(event != nullptr);
+
+    if (event == nullptr)
+        return;
 
     if (! event->spontaneous())
     {

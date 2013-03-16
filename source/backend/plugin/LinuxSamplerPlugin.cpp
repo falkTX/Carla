@@ -301,6 +301,11 @@ public:
         CARLA_ASSERT(kData->engine != nullptr);
         CARLA_ASSERT(fInstrument != nullptr);
 
+        if (kData->engine == nullptr)
+            return;
+        if (fInstrument == nullptr)
+            return;
+
         const ProcessMode processMode(kData->engine->getProccessMode());
 
         // Safely disable plugin for reload
@@ -544,6 +549,7 @@ public:
                 {
                     if (processSingle(outBuffer, time - timeOffset, timeOffset))
                     {
+                        startTime  = 0;
                         timeOffset = time;
 
                         if (kData->midiprog.current >= 0 && kData->midiprog.count > 0)
@@ -803,6 +809,14 @@ public:
 
     bool processSingle(float** const outBuffer, const uint32_t frames, const uint32_t timeOffset)
     {
+        CARLA_ASSERT(outBuffer != nullptr);
+        CARLA_ASSERT(frames > 0);
+
+        if (outBuffer == nullptr)
+            return false;
+        if (frames == 0)
+            return false;
+
         uint32_t i, k;
 
         // --------------------------------------------------------------------------------------------------------
@@ -892,6 +906,32 @@ public:
         CARLA_ASSERT(kData->client == nullptr);
         CARLA_ASSERT(filename != nullptr);
         CARLA_ASSERT(label != nullptr);
+
+        // ---------------------------------------------------------------
+        // first checks
+
+        if (kData->engine == nullptr)
+        {
+            return false;
+        }
+
+        if (kData->client != nullptr)
+        {
+            kData->engine->setLastError("Plugin client is already registered");
+            return false;
+        }
+
+        if (filename == nullptr)
+        {
+            kData->engine->setLastError("null filename");
+            return false;
+        }
+
+        if (label == nullptr)
+        {
+            kData->engine->setLastError("null label");
+            return false;
+        }
 
         // ---------------------------------------------------------------
         // Check if file exists

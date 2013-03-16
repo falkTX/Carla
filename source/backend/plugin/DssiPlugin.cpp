@@ -370,7 +370,17 @@ public:
         carla_debug("DssiPlugin::reload() - start");
         CARLA_ASSERT(kData->engine != nullptr);
         CARLA_ASSERT(fDescriptor != nullptr);
+        CARLA_ASSERT(fDssiDescriptor != nullptr);
         CARLA_ASSERT(fHandle != nullptr);
+
+        if (kData->engine == nullptr)
+            return;
+        if (fDescriptor == nullptr)
+            return;
+        if (fDssiDescriptor == nullptr)
+            return;
+        if (fHandle == nullptr)
+            return;
 
         const ProcessMode processMode(kData->engine->getProccessMode());
 
@@ -1065,8 +1075,9 @@ public:
                 {
                     if (processSingle(inBuffer, outBuffer, time - timeOffset, timeOffset, midiEventCount))
                     {
-                        midiEventCount = 0;
+                        startTime  = 0;
                         timeOffset = time;
+                        midiEventCount = 0;
 
                         if (kData->midiprog.current >= 0 && kData->midiprog.count > 0)
                             nextBankId = kData->midiprog.data[kData->midiprog.current].bank;
@@ -1434,6 +1445,24 @@ public:
 
     bool processSingle(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t timeOffset, const unsigned long midiEventCount)
     {
+        CARLA_ASSERT(frames > 0);
+
+        if (frames == 0)
+            return false;
+
+        if (kData->audioIn.count > 0)
+        {
+            CARLA_ASSERT(inBuffer != nullptr);
+            if (inBuffer == nullptr)
+                return false;
+        }
+        if (kData->audioOut.count > 0)
+        {
+            CARLA_ASSERT(outBuffer != nullptr);
+            if (outBuffer == nullptr)
+                return false;
+        }
+
         uint32_t i, k;
 
         // --------------------------------------------------------------------------------------------------------
@@ -1747,6 +1776,32 @@ public:
         CARLA_ASSERT(kData->client == nullptr);
         CARLA_ASSERT(filename != nullptr);
         CARLA_ASSERT(label != nullptr);
+
+        // ---------------------------------------------------------------
+        // first checks
+
+        if (kData->engine == nullptr)
+        {
+            return false;
+        }
+
+        if (kData->client != nullptr)
+        {
+            kData->engine->setLastError("Plugin client is already registered");
+            return false;
+        }
+
+        if (filename == nullptr)
+        {
+            kData->engine->setLastError("null filename");
+            return false;
+        }
+
+        if (label == nullptr)
+        {
+            kData->engine->setLastError("null label");
+            return false;
+        }
 
         // ---------------------------------------------------------------
         // open DLL

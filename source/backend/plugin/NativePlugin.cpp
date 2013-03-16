@@ -266,6 +266,9 @@ public:
     {
         CARLA_ASSERT(fDescriptor != nullptr);
 
+        if (fDescriptor == nullptr)
+            return 0x0;
+
         unsigned int options = 0x0;
 
         if (fDescriptor->name != nullptr)
@@ -618,6 +621,13 @@ public:
         CARLA_ASSERT(kData->engine != nullptr);
         CARLA_ASSERT(fDescriptor != nullptr);
         CARLA_ASSERT(fHandle != nullptr);
+
+        if (kData->engine == nullptr)
+            return;
+        if (fDescriptor == nullptr)
+            return;
+        if (fHandle == nullptr)
+            return;
 
         const ProcessMode processMode(kData->engine->getProccessMode());
 
@@ -1237,14 +1247,15 @@ public:
                 {
                     if (processSingle(inBuffer, outBuffer, time - timeOffset, timeOffset))
                     {
+                        startTime  = 0;
+                        timeOffset = time;
+                        nextBankId = 0;
+
                         if (fMidiEventCount > 0)
                         {
                             //carla_zeroMem(fMidiEvents, sizeof(::MidiEvent)*fMidiEventCount);
                             fMidiEventCount = 0;
                         }
-
-                        nextBankId = 0;
-                        timeOffset = time;
                     }
                     else
                         startTime += timeOffset;
@@ -1555,6 +1566,24 @@ public:
 
     bool processSingle(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t timeOffset)
     {
+        CARLA_ASSERT(frames > 0);
+
+        if (frames == 0)
+            return false;
+
+        if (kData->audioIn.count > 0)
+        {
+            CARLA_ASSERT(inBuffer != nullptr);
+            if (inBuffer == nullptr)
+                return false;
+        }
+        if (kData->audioOut.count > 0)
+        {
+            CARLA_ASSERT(outBuffer != nullptr);
+            if (outBuffer == nullptr)
+                return false;
+        }
+
         uint32_t i, k;
 
         // --------------------------------------------------------------------------------------------------------
@@ -1930,7 +1959,27 @@ public:
     {
         CARLA_ASSERT(kData->engine != nullptr);
         CARLA_ASSERT(kData->client == nullptr);
-        CARLA_ASSERT(label);
+        CARLA_ASSERT(label != nullptr);
+
+        // ---------------------------------------------------------------
+        // first checks
+
+        if (kData->engine == nullptr)
+        {
+            return false;
+        }
+
+        if (kData->client != nullptr)
+        {
+            kData->engine->setLastError("Plugin client is already registered");
+            return false;
+        }
+
+        if (label == nullptr)
+        {
+            kData->engine->setLastError("null label");
+            return false;
+        }
 
         // ---------------------------------------------------------------
         // get descriptor that matches label

@@ -3938,6 +3938,26 @@ public:
     bool init(const char* const bundle, const char* const name, const char* const URI)
     {
         // ---------------------------------------------------------------
+        // first checks
+
+        if (kData->engine == nullptr)
+        {
+            return false;
+        }
+
+        if (kData->client != nullptr)
+        {
+            kData->engine->setLastError("Plugin client is already registered");
+            return false;
+        }
+
+        if (filename == nullptr)
+        {
+            kData->engine->setLastError("null filename");
+            return false;
+        }
+
+        // ---------------------------------------------------------------
         // get plugin from lv2_rdf (lilv)
 
         rdf_descriptor = lv2_rdf_new(URI);

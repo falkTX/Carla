@@ -914,6 +914,26 @@ public:
 
     bool init(const char* const filename, const char* const name, const char* const label, const char* const bridgeBinary)
     {
+        // ---------------------------------------------------------------
+        // first checks
+
+        if (kData->engine == nullptr)
+        {
+            return false;
+        }
+
+        if (kData->client != nullptr)
+        {
+            kData->engine->setLastError("Plugin client is already registered");
+            return false;
+        }
+
+        if (filename == nullptr)
+        {
+            kData->engine->setLastError("null filename");
+            return false;
+        }
+
         m_filename = strdup(filename);
 
         if (name)
