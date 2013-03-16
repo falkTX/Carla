@@ -962,7 +962,6 @@ public:
                 {
                     if (processSingle(outBuffer, time - timeOffset, timeOffset))
                     {
-                        startTime  = 0;
                         timeOffset = time;
 
                         if (kData->midiprog.current >= 0 && kData->midiprog.count > 0 && kData->ctrlChannel >= 0 && kData->ctrlChannel < 16)

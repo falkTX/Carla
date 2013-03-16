@@ -28,7 +28,7 @@ extern "C" {
 #include <vector>
 #include <QtCore/QDir>
 
-Lv2WorldClass lv2World;
+Lv2WorldClass gLv2World;
 
 CARLA_BRIDGE_START_NAMESPACE
 
@@ -338,7 +338,7 @@ public:
         // -----------------------------------------------------------------
         // get plugin from lv2_rdf (lilv)
 
-        lv2World.init();
+        gLv2World.init();
         rdf_descriptor = lv2_rdf_new(pluginURI);
 
         if (! rdf_descriptor)

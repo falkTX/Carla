@@ -36,7 +36,7 @@ BUILD_PLUGIN_FLAGS += -I../backend/engine -I../backend/plugin -I../libs
 BUILD_PLUGIN_FLAGS += $(QT_UI_FLAGS) $(shell pkg-config --cflags QtXml)
 
 LINK_PLUGIN_FLAGS   = $(LINK_FLAGS)
-LINK_PLUGIN_FLAGS  += $(QT_UI_FLAGS) $(shell pkg-config --libs QtXml) -lpthread
+LINK_PLUGIN_FLAGS  += $(QT_UI_LIBS) $(shell pkg-config --libs QtXml) -lpthread
 
 # --------------------------------------------------------------
 # Plugin bridges (POSIX)
