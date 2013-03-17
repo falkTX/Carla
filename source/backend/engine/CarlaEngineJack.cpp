@@ -511,8 +511,9 @@ public:
 
 #ifdef BUILD_BRIDGE
         fOptions.processMode   = PROCESS_MODE_MULTIPLE_CLIENTS;
-        fOptions.transportMode = TRANSPORT_MODE_JACK;
 #endif
+        // FIXME: Always enable JACK transport for now
+        fOptions.transportMode = TRANSPORT_MODE_JACK;
 
         carla_zeroStruct<jack_position_t>(fTransportPos);
     }

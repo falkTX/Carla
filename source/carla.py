@@ -1339,7 +1339,7 @@ class CarlaMainW(QMainWindow):
         settings = QSettings()
         settings.setValue("Geometry", self.saveGeometry())
         settings.setValue("ShowToolbar", self.ui.toolBar.isVisible())
-        settings.setValue("ShowTransport", self.ui.frame_transport.isVisible())
+        #settings.setValue("ShowTransport", self.ui.frame_transport.isVisible())
         settings.setValue("HorizontalScrollBarValue", self.ui.graphicsView.horizontalScrollBar().value())
         settings.setValue("VerticalScrollBarValue", self.ui.graphicsView.verticalScrollBar().value())
 
@@ -1353,9 +1353,10 @@ class CarlaMainW(QMainWindow):
             self.ui.act_settings_show_toolbar.setChecked(showToolbar)
             self.ui.toolBar.setVisible(showToolbar)
 
-            showTransport = settings.value("ShowTransport", True, type=bool)
-            self.ui.act_settings_show_transport.setChecked(showTransport)
-            self.ui.frame_transport.setVisible(showTransport)
+            #showTransport = settings.value("ShowTransport", True, type=bool)
+            #self.ui.act_settings_show_transport.setChecked(showTransport)
+            #self.ui.frame_transport.setVisible(showTransport)
+            self.ui.frame_transport.setVisible(False)
 
         self.fSavedSettings = {
             "Main/DefaultProjectFolder": settings.value("Main/DefaultProjectFolder", HOME, type=str),

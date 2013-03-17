@@ -1231,10 +1231,13 @@ void CarlaEngine::setOption(const OptionsType option, const int value, const cha
         break;
 
     case OPTION_TRANSPORT_MODE:
+        // FIXME: Always enable JACK transport for now
+#if 0
         if (value < CarlaBackend::TRANSPORT_MODE_INTERNAL || value > CarlaBackend::TRANSPORT_MODE_JACK)
             return carla_stderr2("carla_set_engine_option(OPTION_TRANSPORT_MODE, %i, \"%s\") - invalid value", value, valueStr);
 
         fOptions.transportMode = static_cast<CarlaBackend::TransportMode>(value);
+#endif
         break;
 
     case OPTION_MAX_PARAMETERS:
