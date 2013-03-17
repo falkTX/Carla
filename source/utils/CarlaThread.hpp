@@ -200,7 +200,8 @@ public:
 
         if (timeout == 0)
         {
-            while (! fStarted) {}
+            while (! fStarted)
+                carla_msleep(1);
         }
         else
         {
