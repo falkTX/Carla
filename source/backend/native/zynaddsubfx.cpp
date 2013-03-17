@@ -391,6 +391,7 @@ private:
             while (! fQuit)
             {
 #ifdef WANT_ZYNADDSUBFX_UI
+                Fl::lock();
                 if (fNextUiAction == 1)
                 {
                     static bool initialized = false;
@@ -453,6 +454,7 @@ private:
                 }
 
                 Fl::check();
+                Fl::unlock();
 #endif
 
                 if (fChangeProgram)
@@ -469,9 +471,11 @@ private:
 #ifdef WANT_ZYNADDSUBFX_UI
             if (fQuit && fUi != nullptr)
             {
+                Fl::lock();
                 delete fUi;
                 fUi = nullptr;
                 Fl::check();
+                Fl::unlock();
             }
 #endif
         }
