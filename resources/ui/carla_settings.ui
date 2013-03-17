@@ -594,7 +594,7 @@ You can disable these checks to get a faster scanning time (at your own risk).</
                </sizepolicy>
               </property>
               <property name="currentIndex">
-               <number>1</number>
+               <number>0</number>
               </property>
               <widget class="QWidget" name="page_engine_process_mode_jack">
                <layout class="QHBoxLayout" name="horizontalLayout_4">
@@ -607,7 +607,7 @@ You can disable these checks to get a faster scanning time (at your own risk).</
                 <item>
                  <widget class="QComboBox" name="cb_engine_process_mode_jack">
                   <property name="currentIndex">
-                   <number>1</number>
+                   <number>0</number>
                   </property>
                   <item>
                    <property name="text">
@@ -621,7 +621,7 @@ You can disable these checks to get a faster scanning time (at your own risk).</
                   </item>
                   <item>
                    <property name="text">
-                    <string>Continuous Rack (EXPERIMENTAL)</string>
+                    <string>Continuous Rack</string>
                    </property>
                   </item>
                  </widget>
@@ -784,6 +784,9 @@ You can disable these checks to get a faster scanning time (at your own risk).</
             </item>
             <item row="0" column="0" colspan="3">
              <widget class="QCheckBox" name="ch_engine_prefer_ui_bridges">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
               <property name="toolTip">
                <string>Use OSC-GUI bridges when possible, this way separating the UI from DSP code</string>
               </property>
@@ -804,12 +807,15 @@ You can disable these checks to get a faster scanning time (at your own risk).</
             <item>
              <widget class="QCheckBox" name="ch_engine_dssi_chunks">
               <property name="text">
-               <string>Enable chunk data for dssi-vst (EXPERIMENTAL)</string>
+               <string>Enable chunk data for dssi-vst</string>
               </property>
              </widget>
             </item>
             <item>
              <widget class="QCheckBox" name="ch_engine_prefer_plugin_bridges">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
               <property name="toolTip">
                <string>Whenever possible, run the plugins in bridge mode.</string>
               </property>
