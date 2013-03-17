@@ -45,7 +45,7 @@ CARLA_PLUGIN_SUPPORT = true
 CARLA_SAMPLERS_SUPPORT = true
 
 # Support for Native Audio (ALSA and/or PulseAudio in Linux)
-CARLA_RTAUDIO_SUPPORT = true
+CARLA_RTAUDIO_SUPPORT = false
 
 # Comment this line to not use vestige header
 BUILD_CXX_FLAGS += -DVESTIGE_HEADER
