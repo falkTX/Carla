@@ -59,6 +59,9 @@
           </item>
           <item>
            <widget class="QCheckBox" name="ch_lv2">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="text">
              <string>LV2</string>
             </property>
@@ -236,7 +239,7 @@
            <string/>
           </property>
           <property name="pixmap">
-           <pixmap resource="../../resources/resources.qrc">:/16x16/dialog-ok-apply.png</pixmap>
+           <pixmap resource="../resources.qrc">:/16x16/dialog-ok-apply.png</pixmap>
           </property>
          </widget>
         </item>
@@ -252,7 +255,7 @@
            <string/>
           </property>
           <property name="pixmap">
-           <pixmap resource="../../resources/resources.qrc">:/16x16/dialog-ok-apply.png</pixmap>
+           <pixmap resource="../resources.qrc">:/16x16/dialog-ok-apply.png</pixmap>
           </property>
          </widget>
         </item>
@@ -283,7 +286,7 @@
            <string/>
           </property>
           <property name="pixmap">
-           <pixmap resource="../../resources/resources.qrc">:/16x16/dialog-ok-apply.png</pixmap>
+           <pixmap resource="../resources.qrc">:/16x16/dialog-ok-apply.png</pixmap>
           </property>
          </widget>
         </item>
@@ -299,7 +302,7 @@
            <string/>
           </property>
           <property name="pixmap">
-           <pixmap resource="../../resources/resources.qrc">:/16x16/dialog-ok-apply.png</pixmap>
+           <pixmap resource="../resources.qrc">:/16x16/dialog-ok-apply.png</pixmap>
           </property>
          </widget>
         </item>
@@ -322,7 +325,7 @@
            <string/>
           </property>
           <property name="pixmap">
-           <pixmap resource="../../resources/resources.qrc">:/16x16/dialog-ok-apply.png</pixmap>
+           <pixmap resource="../resources.qrc">:/16x16/dialog-ok-apply.png</pixmap>
           </property>
          </widget>
         </item>
@@ -332,7 +335,7 @@
            <string/>
           </property>
           <property name="pixmap">
-           <pixmap resource="../../resources/resources.qrc">:/16x16/dialog-ok-apply.png</pixmap>
+           <pixmap resource="../resources.qrc">:/16x16/dialog-ok-apply.png</pixmap>
           </property>
          </widget>
         </item>
@@ -431,7 +434,7 @@
         <string>Start</string>
        </property>
        <property name="icon">
-        <iconset resource="../../resources/resources.qrc">
+        <iconset resource="../resources.qrc">
          <normaloff>:/16x16/arrow-right.png</normaloff>:/16x16/arrow-right.png</iconset>
        </property>
       </widget>
@@ -449,7 +452,7 @@
         <string>Close</string>
        </property>
        <property name="icon">
-        <iconset resource="../../resources/resources.qrc">
+        <iconset resource="../resources.qrc">
          <normaloff>:/16x16/window-close.png</normaloff>:/16x16/window-close.png</iconset>
        </property>
       </widget>
@@ -459,8 +462,8 @@
   </layout>
  </widget>
  <resources>
-  <include location="../../resources/resources.qrc"/>
-  <include location="../../resources/resources.qrc"/>
+  <include location="../resources.qrc"/>
+  <include location="../resources.qrc"/>
  </resources>
  <connections>
   <connection>
