@@ -1282,6 +1282,9 @@ class CarlaAboutW(QDialog):
                                       "</ul>"))
             self.ui.l_vst.setText(self.tr("<p>About 85&#37; complete (missing vst bank/presets and some minor stuff)</p>"))
 
+            #TODO
+            self.ui.l_lv2.setText(self.tr("Not enabled for now"))
+
     def done(self, r):
         QDialog.done(self, r)
         self.close()
@@ -2522,7 +2525,7 @@ class SearchPluginsThread(QThread):
             rdfPadValue = self.fCurPercentValue * checkValue
 
             if self.fCheckNative:
-                self._checkLADSPA(OS, carla_discovery_native)
+                self._checkLADSPA(OS, self.fToolNative)
                 settingsDB.setValue("Plugins/LADSPA_native", self.fLadspaPlugins)
                 settingsDB.sync()
 
@@ -2560,7 +2563,7 @@ class SearchPluginsThread(QThread):
 
         if self.fCheckDSSI:
             if self.fCheckNative:
-                self._checkDSSI(OS, carla_discovery_native)
+                self._checkDSSI(OS, self.fToolNative)
                 settingsDB.setValue("Plugins/DSSI_native", self.fDssiPlugins)
                 settingsDB.sync()
 
@@ -2586,7 +2589,7 @@ class SearchPluginsThread(QThread):
 
         if self.fCheckLV2:
             if self.fCheckNative:
-                self._checkLV2(carla_discovery_native)
+                self._checkLV2(self.fToolNative)
                 settingsDB.setValue("Plugins/LV2_native", self.fLv2Plugins)
                 settingsDB.sync()
 
@@ -2612,7 +2615,7 @@ class SearchPluginsThread(QThread):
 
         if self.fCheckVST:
             if self.fCheckNative:
-                self._checkVST(OS, carla_discovery_native)
+                self._checkVST(OS, self.fToolNative)
                 settingsDB.setValue("Plugins/VST_native", self.fVstPlugins)
                 settingsDB.sync()
 
@@ -2898,6 +2901,9 @@ class PluginRefreshW(QDialog):
                 self.ui.ch_vst.setChecked(False)
                 self.ui.ch_vst.setEnabled(False)
                 self.ui.b_start.setEnabled(False)
+
+        #TODO
+        self.ui.ch_lv2.setChecked(False)
 
         self.connect(self.ui.b_start, SIGNAL("clicked()"), SLOT("slot_start()"))
         self.connect(self.ui.b_skip, SIGNAL("clicked()"), SLOT("slot_skip()"))
