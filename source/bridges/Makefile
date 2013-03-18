@@ -76,7 +76,7 @@ endif
 
 ifeq ($(HAVE_OPENGL),true)
 NATIVE_BUILD_FLAGS += -DWANT_OPENGL
-NATIVE_LINK_FLAGS  += $(shell pkg-config --libs gl)
+NATIVE_LINK_FLAGS  += $(shell pkg-config --libs gl) -lX11
 endif
 
 ifeq ($(HAVE_AF_DEPS),true)

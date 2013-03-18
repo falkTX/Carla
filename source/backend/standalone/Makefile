@@ -47,7 +47,7 @@ LINK_FLAGS += $(shell pkg-config --libs libavcodec libavformat sndfile)
 endif
 
 ifeq ($(HAVE_OPENGL),true)
-LINK_FLAGS += $(shell pkg-config --libs gl)
+LINK_FLAGS += $(shell pkg-config --libs gl) -lX11
 endif
 
 ifeq ($(HAVE_ZYN_DEPS),true)
