@@ -16,8 +16,8 @@ LINK_FLAGS      += $(shell pkg-config --libs QtCore QtGui)
 
 ifeq ($(HAVE_AF_DEPS),true)
 AF_C_FLAGS       = $(BUILD_C_FLAGS)
-AF_C_FLAGS      += $(shell pkg-config --cflags libavcodec libavformat sndfile)
-LINK_FLAGS      += $(shell pkg-config --libs libavcodec libavformat sndfile)
+AF_C_FLAGS      += $(shell pkg-config --cflags libavcodec libavformat libavutil sndfile)
+LINK_FLAGS      += $(shell pkg-config --libs libavcodec libavformat libavutil sndfile)
 endif
 
 ifeq ($(HAVE_OPENGL),true)

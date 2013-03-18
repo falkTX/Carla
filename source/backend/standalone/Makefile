@@ -40,10 +40,8 @@ endif
 # --------------------------------------------------------------
 # Native
 
-LINK_FLAGS += $(shell pkg-config --libs QtGui)
-
 ifeq ($(HAVE_AF_DEPS),true)
-LINK_FLAGS += $(shell pkg-config --libs libavcodec libavformat sndfile)
+LINK_FLAGS += $(shell pkg-config --libs libavcodec libavformat libavutil sndfile)
 endif
 
 ifeq ($(HAVE_OPENGL),true)

@@ -81,7 +81,7 @@ endif
 
 ifeq ($(HAVE_AF_DEPS),true)
 NATIVE_BUILD_FLAGS += -DWANT_AUDIOFILE
-NATIVE_LINK_FLAGS  += $(shell pkg-config --libs libavcodec libavformat sndfile)
+NATIVE_LINK_FLAGS  += $(shell pkg-config --libs libavcodec libavformat libavutil sndfile)
 endif
 
 ifeq ($(HAVE_ZYN_DEPS),true)
