@@ -432,7 +432,7 @@ private:
                     {
                         fUiClosed = 0;
                         fUi = new MasterUI(kMaster, &fUiClosed);
-                        fUi->npartcounter->callback(_npartcounterCallback, this);
+                        //fUi->npartcounter->callback(_npartcounterCallback, this);
                         fUi->showUI();
                     }
                 }
