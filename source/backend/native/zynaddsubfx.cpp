@@ -34,6 +34,7 @@
 #include <FL/Fl_Shared_Image.H>
 #include <FL/Fl_Tiled_Image.H>
 #include <FL/Fl_Dial.H>
+#include <FL/Fl_Theme.H>
 #endif
 
 #include <ctime>
@@ -421,6 +422,8 @@ private:
                         Fl::background(50, 50, 50);
                         Fl::background2(70, 70, 70);
                         Fl::foreground(255, 255, 255);
+
+                        Fl_Theme::set("Cairo");
                     }
 
                     CARLA_ASSERT(fUi == nullptr);
