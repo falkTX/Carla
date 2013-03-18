@@ -337,17 +337,7 @@ protected:
         {
         case CALLBACK_SHOW_GUI:
             if (value1 != 1 && ! isOscControlRegistered())
-#if 1
-            {
-                static int count = 0;
-                count++;
-
-                if (count == 2)
-                    gCloseNow = true;
-            }
-#else
                 gCloseNow = true;
-#endif
             break;
         default:
             break;
@@ -483,38 +473,6 @@ int main(int argc, char* argv[])
 {
     CARLA_BRIDGE_USE_NAMESPACE
 
-#if 1
-    QApplication app(argc, argv, true);
-    app.setQuitOnLastWindowClosed(false);
-
-    // Init Plugin client
-    CarlaPluginClient client("zyn-2-test");
-
-    // Listen for ctrl+c or sigint/sigterm events
-    initSignalHandler();
-
-    if (!carla_add_plugin(CarlaBackend::BINARY_NATIVE, CarlaBackend::PLUGIN_INTERNAL, nullptr, "zyn1", "zynaddsubfx", nullptr))
-    {
-        carla_stderr(carla_get_last_error());
-        return 1;
-    }
-
-    carla_add_plugin(CarlaBackend::BINARY_NATIVE, CarlaBackend::PLUGIN_INTERNAL, nullptr, "zyn2", "zynaddsubfx", nullptr);
-
-    carla_set_active(0, true);
-    carla_set_active(1, true);
-    carla_show_gui(0, true);
-    carla_show_gui(1, true);
-
-    client.ready();
-
-    app.exec();
-
-    carla_remove_plugin(1);
-    carla_remove_plugin(0);
-
-    return 0;
-#else
     if (argc != 6)
     {
         carla_stdout("usage: %s <osc-url|\"null\"> <type> <filename> <name|\"(none)\"> <label>", argv[0]);
@@ -609,7 +567,6 @@ int main(int argc, char* argv[])
         client.oscClose();
 
     return ret;
-#endif
 }
 
 #endif // BRIDGE_PLUGIN
