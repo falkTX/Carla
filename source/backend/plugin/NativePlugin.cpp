@@ -31,7 +31,9 @@ void carla_register_all_plugins()
     carla_register_native_plugin_midiSplit();
     carla_register_native_plugin_midiThrough();
     carla_register_native_plugin_midiTranspose();
+#ifndef CARLA_OS_WIN
     carla_register_native_plugin_nekofilter();
+#endif
 
 #ifdef WANT_AUDIOFILE
     // AudioFile

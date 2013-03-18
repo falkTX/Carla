@@ -15,7 +15,7 @@ LINK_FLAGS      += $(shell pkg-config --libs liblo QtCore QtXml)
 
 ifeq ($(CARLA_RTAUDIO_SUPPORT),true)
 BUILD_CXX_FLAGS += -DHAVE_GETTIMEOFDAY
-BUILD_CXX_FLAGS += -Irtaudio-4.0.11 -Irtmidi-2.0.1
+BUILD_CXX_FLAGS += -Irtaudio-4.0.11 -Irtaudio-4.0.11/include -Irtmidi-2.0.1
 ifeq ($(DEBUG),true)
 BUILD_CXX_FLAGS += -D__RTAUDIO_DEBUG__ -D__RTMIDI_DEBUG__
 endif
@@ -52,6 +52,12 @@ ifeq ($(CARLA_RTAUDIO_SUPPORT),true)
 OBJS += \
 	rtaudio-4.0.11/RtAudio.cpp.o \
 	rtmidi-2.0.1/RtMidi.cpp.o
+
+# OBJS += \
+# 	rtaudio-4.0.11/include/asio.cpp.o \
+# 	rtaudio-4.0.11/include/asiodrivers.cpp.o \
+# 	rtaudio-4.0.11/include/asiolist.cpp.o \
+# 	rtaudio-4.0.11/include/iasiothiscallresolver.cpp.o
 endif
 
 SHARED = ../libcarla_engine.so

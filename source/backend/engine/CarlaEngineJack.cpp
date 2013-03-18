@@ -15,7 +15,7 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#if 1//def WANT_JACK
+#ifdef WANT_JACK
 
 #include "CarlaEngineInternal.hpp"
 #include "CarlaBackendUtils.hpp"

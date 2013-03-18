@@ -1341,7 +1341,7 @@ void do_fluidsynth_check(const char* const filename, const bool init)
         delete_fluid_settings(f_settings);
     }
 
-#if CARLA_OS_WIN
+#ifdef CARLA_OS_WIN
     int sep = '\\';
 #else
     int sep = '/';

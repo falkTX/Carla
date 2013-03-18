@@ -23,6 +23,8 @@
 #include "CarlaMIDI.h"
 #include "CarlaNative.h"
 
+#include <QtGui/QApplication>
+
 #if 0
 extern "C" {
 #include "siginfo.c"
@@ -49,7 +51,17 @@ struct CarlaBackendStandalone {
     CarlaBackendStandalone()
         : callback(nullptr),
           callbackPtr(nullptr),
-          engine(nullptr) {}
+          engine(nullptr)
+    {
+        QApplication* app = qApp;
+
+        if (app == nullptr)
+        {
+            static int    argc = 0;
+            static char** argv = nullptr;
+            app = new QApplication(argc, argv, true);
+        }
+    }
 
 } standalone;
 

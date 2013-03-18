@@ -45,8 +45,14 @@ OBJS  = \
 	midi-sequencer.cpp.o \
 	midi-split.c.o \
 	midi-through.c.o \
-	midi-transpose.c.o \
+	midi-transpose.c.o
+
+# FIXME
+OBJSN = \
 	nekofilter.c.o
+
+OBJS += \
+	$(OBJS_N)
 
 # AudioFile
 ifeq ($(HAVE_AF_DEPS),true)

@@ -7,6 +7,10 @@
 include ../Makefile.mk
 
 # --------------------------------------------------------------
+
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtGui)
+
+# --------------------------------------------------------------
 # Common
 
 LINK_FLAGS += $(shell pkg-config --libs liblo QtCore QtGui QtXml)
@@ -40,12 +44,14 @@ endif
 # --------------------------------------------------------------
 # Native
 
+DGL_LIBS = -lX11
+
 ifeq ($(HAVE_AF_DEPS),true)
 LINK_FLAGS += $(shell pkg-config --libs libavcodec libavformat libavutil sndfile)
 endif
 
 ifeq ($(HAVE_OPENGL),true)
-LINK_FLAGS += $(shell pkg-config --libs gl) -lX11
+LINK_FLAGS += $(shell pkg-config --libs gl) $(DGL_LIBS)
 endif
 
 ifeq ($(HAVE_ZYN_DEPS),true)
@@ -97,6 +103,9 @@ $(SHARED): $(OBJS) $(LIBS)
 
 $(STATIC): $(OBJS) $(LIBS)
 	$(AR) rs $@ $^
+
+../libcarla_standalone.dll: $(OBJS) $(LIBS)
+	$(CXX) $^ -shared $(LINK_FLAGS) -lcomdlg32 -limm32 -lole32 -lshell32 -luuid -lwinspool -lws2_32 -Wl,--output-def,$@.def -o $@ && $(STRIP) $@
 
 # --------------------------------------------------------------
 
