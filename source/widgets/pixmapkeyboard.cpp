@@ -81,7 +81,11 @@ static const std::map<int, int> kMidiKeyboard2KeyMap = {
     {Qt::Key_U, 71}
 };
 
+#ifdef HAVE_CPP11_SUPPORT
 static const QVector<int> kBlackNotes = {1, 3, 6, 8, 10};
+#else
+static QVector<int> kBlackNotes;
+#endif
 
 PixmapKeyboard::PixmapKeyboard(QWidget* parent)
     : QWidget(parent),
@@ -98,6 +102,17 @@ PixmapKeyboard::PixmapKeyboard(QWidget* parent)
 {
     setCursor(Qt::PointingHandCursor);
     setMode(HORIZONTAL);
+
+#ifndef HAVE_CPP11_SUPPORT
+    if (kBlackNotes.count() == 0)
+    {
+        kBlackNotes << 1;
+        kBlackNotes << 3;
+        kBlackNotes << 6;
+        kBlackNotes << 8;
+        kBlackNotes << 10;
+    }
+#endif
 }
 
 void PixmapKeyboard::allNotesOff()
