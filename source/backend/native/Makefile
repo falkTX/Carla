@@ -52,7 +52,7 @@ OBJSN = \
 	nekofilter.c.o
 
 OBJS += \
-	$(OBJS_N)
+	$(OBJSN)
 
 # AudioFile
 ifeq ($(HAVE_AF_DEPS),true)
