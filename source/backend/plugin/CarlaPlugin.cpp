@@ -506,7 +506,7 @@ const SaveState& CarlaPlugin::getSaveState()
     {
         const ParameterData& paramData = kData->param.data[i];
 
-        if (paramData.type != PARAMETER_INPUT)
+        if ((paramData.hints & PARAMETER_IS_AUTOMABLE) == 0)
             continue;
 
         StateParameter* stateParameter(new StateParameter);

@@ -204,6 +204,7 @@ void carla_register_native_plugin(const PluginDescriptor* desc);
 
 // Simple plugins
 void carla_register_native_plugin_bypass();
+void carla_register_native_plugin_lfo();
 void carla_register_native_plugin_midiSequencer();
 void carla_register_native_plugin_midiSplit();
 void carla_register_native_plugin_midiThrough();

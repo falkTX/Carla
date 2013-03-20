@@ -42,6 +42,7 @@ endif
 # Simple plugins
 OBJS  = \
 	bypass.c.o \
+	lfo.c.o \
 	midi-sequencer.cpp.o \
 	midi-split.c.o \
 	midi-through.c.o \
