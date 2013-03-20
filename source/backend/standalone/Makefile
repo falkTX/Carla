@@ -61,6 +61,8 @@ LINK_FLAGS += $(shell pkg-config --libs ntk ntk_images)
 endif
 endif
 
+LINK_FLAGS += $(EXTRA_LIBS)
+
 # --------------------------------------------------------------
 
 LIBS  = ../libcarla_engine.a

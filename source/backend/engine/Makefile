@@ -53,11 +53,13 @@ OBJS += \
 	rtaudio-4.0.11/RtAudio.cpp.o \
 	rtmidi-2.0.1/RtMidi.cpp.o
 
-# OBJS += \
-# 	rtaudio-4.0.11/include/asio.cpp.o \
-# 	rtaudio-4.0.11/include/asiodrivers.cpp.o \
-# 	rtaudio-4.0.11/include/asiolist.cpp.o \
-# 	rtaudio-4.0.11/include/iasiothiscallresolver.cpp.o
+ifeq ($(WIN32),true)
+OBJS += \
+	rtaudio-4.0.11/include/asio.cpp.o \
+	rtaudio-4.0.11/include/asiodrivers.cpp.o \
+	rtaudio-4.0.11/include/asiolist.cpp.o \
+	rtaudio-4.0.11/include/iasiothiscallresolver.cpp.o
+endif
 endif
 
 SHARED = ../libcarla_engine.so

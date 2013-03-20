@@ -47,20 +47,23 @@ struct CarlaBackendStandalone {
     CarlaString   lastError;
     CarlaString   procName;
     EngineOptions options;
+    
+    QApplication* app;
+    bool    needsIdle;
 
     CarlaBackendStandalone()
         : callback(nullptr),
           callbackPtr(nullptr),
-          engine(nullptr)
+          engine(nullptr),
+          app(qApp),
+          needsIdle(app == nullptr)
     {
-        QApplication* app = qApp;
+        if (app != nullptr)
+            return;
 
-        if (app == nullptr)
-        {
-            static int    argc = 0;
-            static char** argv = nullptr;
-            app = new QApplication(argc, argv, true);
-        }
+        static int    argc = 0;
+        static char** argv = nullptr;
+        app = new QApplication(argc, argv, true);
     }
 
 } standalone;
@@ -316,6 +319,9 @@ bool carla_engine_close()
 void carla_engine_idle()
 {
     CARLA_ASSERT(standalone.engine != nullptr);
+
+    if (standalone.needsIdle)
+        standalone.app->processEvents();
 
     if (standalone.engine != nullptr)
         standalone.engine->idle();

@@ -27,13 +27,13 @@ export WINEPREFIX=~/.winepy3
 
 export PYTHON_EXE="C:\\\\Python33\\\\python.exe"
 
+export CXFREEZE="wine $PYTHON_EXE C:\\\\Python33\\\\Scripts\\\\cxfreeze"
 export PYUIC="wine $PYTHON_EXE C:\\\\Python33\\\\Lib\\\\site-packages\\\\PyQt4\\\\uic\\\\pyuic.py"
 export PYRCC="wine C:\\\\Python33\\\\Lib\\\\site-packages\\\\PyQt4\\\\pyrcc4.exe -py3"
 
 export CFLAGS="-DPTW32_STATIC_LIB -I$MINGW_PATH/include"
-export CXXFLAGS="-DPTW32_STATIC_LIB -D__WINDOWS_ASIO__ -I$MINGW_PATH/include"
-
-# TODO: DirectSound DLLs for -D__WINDOWS_DS__
+export CXXFLAGS="-DPTW32_STATIC_LIB -DFLUIDSYNTH_NOT_A_DLL -D__WINDOWS_ASIO__ -D__WINDOWS_DS__ -D__WINDOWS_MM__ -I$MINGW_PATH/include"
+export EXTRA_LIBS="-lglib-2.0 -lgthread-2.0 -lgig -lsndfile -lFLAC -lvorbisenc -lvorbis -logg -ldsound -lrpcrt4 -lwinmm"
 
 # Clean build
 make clean
@@ -42,16 +42,30 @@ make clean
 make $JOBS UI RES WIDGETS
 
 # Build discovery
-make $JOBS -C source/discovery win32
+make $JOBS -C source/discovery WIN32=true EXTRA_LIBS="$EXTRA_LIBS -lole32 -lws2_32"
+mv source/discovery/carla-discovery-native source/discovery/carla-discovery-win32.exe
 
 # Build backend
-make $JOBS -C source/backend/standalone ../libcarla_standalone.dll CARLA_RTAUDIO_SUPPORT=true CARLA_SAMPLERS_SUPPORT=false DGL_LIBS="" OBJSN=""
+make $JOBS -C source/backend/standalone ../libcarla_standalone.dll CARLA_RTAUDIO_SUPPORT=true WIN32=true \
+  DGL_LIBS="" EXTRA_LIBS="$EXTRA_LIBS" OBJSN=""
 
-if [ ! -f Makefile ]; then
-  cd data/windows
-fi
+rm -rf ./data/windows/Carla
+$CXFREEZE --target-dir=".\\data\\windows\\Carla" ".\\source\\carla.py"
 
-em -f pkg-config
+cd data/windows
+mkdir Carla/backend
+mkdir Carla/bridges
+mkdir Carla/discovery
+cp ../../source/backend/*.dll   Carla/backend/
+cp ../../source/discovery/*.exe Carla/discovery/
+
+cp $WINEPREFIX/drive_c/windows/syswow64/python33.dll Carla/
+cp $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt4/QtCore4.dll   Carla/
+cp $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt4/QtGui4.dll    Carla/
+cp $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt4/QtOpenGL4.dll Carla/
+cp $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt4/QtSvg4.dll    Carla/
+
+rm -f pkg-config
 
 # Testing:
 echo "export WINEPREFIX=~/.winepy3"

@@ -38,6 +38,15 @@ WIN_32BIT_FLAGS   = $(32BIT_FLAGS)
 WIN_64BIT_FLAGS   = $(64BIT_FLAGS)
 WIN_LINK_FLAGS    = $(LINK_FLAGS) -static -mwindows -lole32 -luuid -lws2_32
 
+ifeq ($(WIN32),true)
+NATIVE_BUILD_FLAGS = $(WIN_BUILD_FLAGS)
+NATIVE_LINK_FLAGS  = $(WIN_LINK_FLAGS)
+NATIVE_LINK_FLAGS += $(EXTRA_LIBS)
+else
+NATIVE_BUILD_FLAGS = $(POSIX_BUILD_FLAGS)
+NATIVE_LINK_FLAGS  = $(POSIX_LINK_FLAGS)
+endif
+
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
 LIBS         = ../libs/lilv.a
 LIBS_posix32 = ../libs/lilv.posix32.a
@@ -60,7 +69,7 @@ win64:   carla-discovery-win64.exe
 # --------------------------------------------------------------
 
 carla-discovery-native: $(OBJS) $(LIBS)
-	$(CXX) $^ $(POSIX_BUILD_FLAGS) $(POSIX_LINK_FLAGS) $(NATIVE_FLAGS) -o $@ && $(STRIP) $@
+	$(CXX) $^ $(NATIVE_BUILD_FLAGS) $(NATIVE_FLAGS) $(NATIVE_LINK_FLAGS) -o $@ && $(STRIP) $@
 
 carla-discovery-posix32: $(OBJS) $(LIBS_posix32)
 	$(CXX) $^ $(POSIX_BUILD_FLAGS) $(POSIX_32BIT_FLAGS) $(POSIX_LINK_FLAGS) -o $@ && $(STRIP) $@

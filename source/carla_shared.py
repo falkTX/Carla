@@ -674,6 +674,8 @@ CWD = sys.path[0]
 # make it work with cxfreeze
 if CWD.endswith("%scarla" % os.sep):
     CWD = CWD.rsplit("%scarla" % os.sep, 1)[0]
+elif CWD.endswith("carla.exe"):
+    CWD = CWD.rsplit("carla.exe", 1)[0]
 
 # find carla_library_path
 if os.path.exists(os.path.join(CWD, "backend", carla_libname)):
