@@ -72,6 +72,59 @@ public:
         append(ctrlEvent);
     }
 
+    void addChannelPressure(const uint32_t time, const uint8_t channel, const uint8_t pressure)
+    {
+        RawMidiEvent* pressureEvent(new RawMidiEvent());
+        pressureEvent->data[0] = MIDI_STATUS_AFTERTOUCH | (channel & 0x0F);
+        pressureEvent->data[1] = pressure;
+        pressureEvent->size    = 2;
+        pressureEvent->time    = time;
+
+        append(pressureEvent);
+    }
+
+    void addNote(const uint32_t time, const uint8_t channel, const uint8_t pitch, const uint8_t velocity, const uint32_t duration)
+    {
+        addNoteOn(time, channel, pitch, velocity);
+        addNoteOff(time+duration, channel, pitch, velocity);
+    }
+
+    void addNoteOn(const uint32_t time, const uint8_t channel, const uint8_t pitch, const uint8_t velocity)
+    {
+        RawMidiEvent* noteOnEvent(new RawMidiEvent());
+        noteOnEvent->data[0] = MIDI_STATUS_NOTE_ON | (channel & 0x0F);
+        noteOnEvent->data[1] = pitch;
+        noteOnEvent->data[2] = velocity;
+        noteOnEvent->size    = 3;
+        noteOnEvent->time    = time;
+
+        append(noteOnEvent);
+    }
+
+    void addNoteOff(const uint32_t time, const uint8_t channel, const uint8_t pitch, const uint8_t velocity = 0)
+    {
+        RawMidiEvent* noteOffEvent(new RawMidiEvent());
+        noteOffEvent->data[0] = MIDI_STATUS_NOTE_OFF | (channel & 0x0F);
+        noteOffEvent->data[1] = pitch;
+        noteOffEvent->data[2] = velocity;
+        noteOffEvent->size    = 3;
+        noteOffEvent->time    = time;
+
+        append(noteOffEvent);
+    }
+
+    void addNoteAftertouch(const uint32_t time, const uint8_t channel, const uint8_t pitch, const uint8_t pressure)
+    {
+        RawMidiEvent* noteAfterEvent(new RawMidiEvent());
+        noteAfterEvent->data[0] = MIDI_STATUS_POLYPHONIC_AFTERTOUCH | (channel & 0x0F);
+        noteAfterEvent->data[1] = pitch;
+        noteAfterEvent->data[2] = pressure;
+        noteAfterEvent->size    = 3;
+        noteAfterEvent->time    = time;
+
+        append(noteAfterEvent);
+    }
+
     void addProgram(const uint32_t time, const uint8_t channel, const uint8_t bank, const uint8_t program)
     {
         RawMidiEvent* bankEvent(new RawMidiEvent());
@@ -91,24 +144,27 @@ public:
         append(programEvent);
     }
 
-    void addNote(const uint32_t time, const uint8_t channel, const uint8_t pitch, const uint8_t velocity, const uint32_t duration)
+    void addPitchbend(const uint32_t time, const uint8_t channel, const uint8_t lsb, const uint8_t msb)
     {
-        RawMidiEvent* noteOnEvent(new RawMidiEvent());
-        noteOnEvent->data[0] = MIDI_STATUS_NOTE_ON | (channel & 0x0F);
-        noteOnEvent->data[1] = pitch;
-        noteOnEvent->data[2] = velocity;
-        noteOnEvent->size    = 3;
-        noteOnEvent->time    = time;
+        RawMidiEvent* pressureEvent(new RawMidiEvent());
+        pressureEvent->data[0] = MIDI_STATUS_PITCH_WHEEL_CONTROL | (channel & 0x0F);
+        pressureEvent->data[1] = lsb;
+        pressureEvent->data[2] = msb;
+        pressureEvent->size    = 3;
+        pressureEvent->time    = time;
 
-        RawMidiEvent* noteOffEvent(new RawMidiEvent());
-        noteOffEvent->data[0] = MIDI_STATUS_NOTE_OFF | (channel & 0x0F);
-        noteOffEvent->data[1] = pitch;
-        noteOffEvent->data[2] = velocity;
-        noteOffEvent->size    = 3;
-        noteOffEvent->time    = time+duration;
+        append(pressureEvent);
+    }
 
-        append(noteOnEvent);
-        append(noteOffEvent);
+    void addRaw(const uint32_t time, const uint8_t* data, const uint8_t size)
+    {
+        RawMidiEvent* rawEvent(new RawMidiEvent());
+        rawEvent->size    = size;
+        rawEvent->time    = time;
+
+        carla_copy<uint8_t>(rawEvent->data, data, size);
+
+        append(rawEvent);
     }
 
     void play(uint32_t timePosFrame, uint32_t frames)
@@ -129,6 +185,12 @@ public:
         }
 
         fMutex.unlock();
+    }
+
+    void clear()
+    {
+        const CarlaMutex::ScopedLocker sl(&fMutex);
+        fData.clear();
     }
 
 private:

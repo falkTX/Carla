@@ -20,6 +20,12 @@ AF_C_FLAGS      += $(shell pkg-config --cflags libavcodec libavformat libavutil 
 LINK_FLAGS      += $(shell pkg-config --libs libavcodec libavformat libavutil sndfile)
 endif
 
+ifeq ($(HAVE_MF_DEPS),true)
+MF_CXX_FLAGS     = $(BUILD_CXX_FLAGS)
+MF_CXX_FLAGS    += $(shell pkg-config --cflags smf)
+LINK_FLAGS      += $(shell pkg-config --libs smf)
+endif
+
 ifeq ($(HAVE_OPENGL),true)
 GL_CXX_FLAGS     = $(BUILD_CXX_FLAGS)
 GL_CXX_FLAGS    += $(shell pkg-config --cflags gl)
@@ -59,6 +65,12 @@ OBJS += \
 ifeq ($(HAVE_AF_DEPS),true)
 OBJS += \
 	audiofile.c.o
+endif
+
+# MidiFile
+ifeq ($(HAVE_MF_DEPS),true)
+OBJS += \
+	midi-file.cpp.o
 endif
 
 # DISTRHO plugins (OpenGL)
@@ -172,6 +184,9 @@ distrho-pingpongpan.cpp.o: distrho-pingpongpan.cpp pingpongpan/DistrhoArtworkPin
 
 distrho-notes.cpp.o: distrho-notes.cpp notes/DistrhoPluginNotes.cpp notes/DistrhoUINotes.cpp distrho/DistrhoPluginCarla.cpp moc_DistrhoUINotes.cpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) -Inotes -DDISTRHO_NAMESPACE=DISTRHO_Notes -c -o $@
+
+midi-file.cpp.o: midi-file.cpp
+	$(CXX) $< $(MF_CXX_FLAGS) -c -o $@
 
 zynaddsubfx.cpp.o: zynaddsubfx.cpp $(ZYN_UI_FILES_CPP)
 	$(CXX) $< $(ZYN_CXX_FLAGS) -c -o $@

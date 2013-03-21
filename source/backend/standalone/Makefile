@@ -50,6 +50,10 @@ ifeq ($(HAVE_AF_DEPS),true)
 LINK_FLAGS += $(shell pkg-config --libs libavcodec libavformat libavutil sndfile)
 endif
 
+ifeq ($(HAVE_MF_DEPS),true)
+LINK_FLAGS += $(shell pkg-config --libs smf)
+endif
+
 ifeq ($(HAVE_OPENGL),true)
 LINK_FLAGS += $(shell pkg-config --libs gl) $(DGL_LIBS)
 endif

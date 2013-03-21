@@ -84,6 +84,11 @@ NATIVE_BUILD_FLAGS += -DWANT_AUDIOFILE
 NATIVE_LINK_FLAGS  += $(shell pkg-config --libs libavcodec libavformat libavutil sndfile)
 endif
 
+ifeq ($(HAVE_MF_DEPS),true)
+NATIVE_BUILD_FLAGS += -DWANT_MIDIFILE
+NATIVE_LINK_FLAGS  += $(shell pkg-config --libs smf)
+endif
+
 ifeq ($(HAVE_ZYN_DEPS),true)
 NATIVE_BUILD_FLAGS += -DWANT_ZYNADDSUBFX
 NATIVE_LINK_FLAGS  += $(shell pkg-config --libs fftw3 mxml zlib)

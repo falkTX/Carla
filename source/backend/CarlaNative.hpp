@@ -117,6 +117,26 @@ public:
             kHost->ui_closed(kHost->handle);
     }
 
+    const char* uiOpenFile(const bool isDir, const char* const title, const char* const filter)
+    {
+        CARLA_ASSERT(kHost != nullptr);
+
+        if (kHost != nullptr)
+            return kHost->ui_open_file(kHost->handle, isDir, title, filter);
+
+        return nullptr;
+    }
+
+    const char* uiSaveFile(const bool isDir, const char* const title, const char* const filter)
+    {
+        CARLA_ASSERT(kHost != nullptr);
+
+        if (kHost != nullptr)
+            return kHost->ui_save_file(kHost->handle, isDir, title, filter);
+
+        return nullptr;
+    }
+
 protected:
     // -------------------------------------------------------------------
     // Plugin parameter calls

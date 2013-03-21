@@ -216,6 +216,11 @@ void carla_register_native_plugin_nekofilter();
 void carla_register_native_plugin_audiofile();
 #endif
 
+#ifdef WANT_MIDIFILE
+// MidiFile
+void carla_register_native_plugin_midiFile();
+#endif
+
 #ifdef WANT_OPENGL
 // DISTRHO plugins (OpenGL)
 void carla_register_native_plugin_3BandEQ();

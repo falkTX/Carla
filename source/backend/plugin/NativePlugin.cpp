@@ -41,6 +41,11 @@ void carla_register_all_plugins()
     carla_register_native_plugin_audiofile();
 #endif
 
+#ifdef WANT_MIDIFILE
+    // MidiFile
+    carla_register_native_plugin_midiFile();
+#endif
+
 #ifdef WANT_OPENGL
     // DISTRHO plugins (OpenGL)
     carla_register_native_plugin_3BandEQ();
@@ -1555,9 +1560,9 @@ public:
                 const uint8_t port    = fMidiEvents[k].port;
 
                 if (kData->event.portOut != nullptr)
-                    kData->event.portOut->writeMidiEvent(fMidiEvents[k].time, channel, port, fMidiEvents[k].data, 3);
+                    kData->event.portOut->writeMidiEvent(fMidiEvents[k].time, channel, port, fMidiEvents[k].data, fMidiEvents[k].size);
                 else if (port < fMidiOut.count)
-                    fMidiOut.ports[port]->writeMidiEvent(fMidiEvents[k].time, channel, port, fMidiEvents[k].data, 3);
+                    fMidiOut.ports[port]->writeMidiEvent(fMidiEvents[k].time, channel, port, fMidiEvents[k].data, fMidiEvents[k].size);
             }
 
         } // End of Control and MIDI Output

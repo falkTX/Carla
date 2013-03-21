@@ -47,7 +47,7 @@ struct CarlaBackendStandalone {
     CarlaString   lastError;
     CarlaString   procName;
     EngineOptions options;
-    
+
     QApplication* app;
     bool    needsIdle;
 
@@ -107,6 +107,10 @@ const char* carla_get_extended_license_text()
 # endif
 #endif
 #ifdef WANT_AUDIOFILE
+        // TODO
+        //retText += "<li>ZynAddSubFX plugin code, http://zynaddsubfx.sf.net/</li>";
+#endif
+#ifdef WANT_MIDIFILE
         // TODO
         //retText += "<li>ZynAddSubFX plugin code, http://zynaddsubfx.sf.net/</li>";
 #endif

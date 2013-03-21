@@ -58,6 +58,10 @@ ifeq ($(HAVE_AF_DEPS),true)
 BUILD_CXX_FLAGS += -DWANT_AUDIOFILE
 endif
 
+ifeq ($(HAVE_MF_DEPS),true)
+BUILD_CXX_FLAGS += -DWANT_MIDIFILE
+endif
+
 ifeq ($(HAVE_ZYN_DEPS),true)
 BUILD_CXX_FLAGS += -DWANT_ZYNADDSUBFX
 endif
