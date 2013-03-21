@@ -2164,6 +2164,11 @@ class PluginWidget(QFrame):
         self.fColorTop    = QColor(60, 60, 60)
         self.fColorBottom = QColor(47, 47, 47)
 
+        self.setStyleSheet("""
+        QLabel#label_name {
+            color: white;
+        }""")
+
         # Colorify
         #if self.m_pluginInfo['category'] == PLUGIN_CATEGORY_SYNTH:
             #self.setWidgetColor(PALETTE_COLOR_WHITE)

@@ -28,7 +28,7 @@ all: CPP RES UI WIDGETS
 # -------------------------------------------------------------------------------------------------------------------------------------
 # C++ code
 
-CPP: backend bridges discovery
+CPP: backend discovery
 
 backend:
 	$(MAKE) -C source/backend
@@ -174,18 +174,19 @@ install:
 	# Install binaries
 	install -m 755 \
 		source/backend/*.so \
-		source/bridges/carla-bridge-* \
 		source/discovery/carla-discovery-* \
 		$(DESTDIR)$(PREFIX)/lib/carla/
+
+#	source/bridges/carla-bridge-*
 
 	# Install python code
 	install -m 755 source/*.py $(DESTDIR)$(PREFIX)/share/carla/
 
 	# Adjust PREFIX value in script files
 	sed -i "s/X-PREFIX-X/$(SED_PREFIX)/" \
-		$(DESTDIR)$(PREFIX)/bin/carla \
-		$(DESTDIR)$(PREFIX)/bin/carla-control \
-		$(DESTDIR)$(PREFIX)/bin/carla-single
+		$(DESTDIR)$(PREFIX)/bin/carla
+# 		$(DESTDIR)$(PREFIX)/bin/carla-control \
+# 		$(DESTDIR)$(PREFIX)/bin/carla-single
 
 # -------------------------------------------------------------------------------------------------------------------------------------
 
