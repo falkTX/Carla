@@ -25,8 +25,8 @@
 # define BRIDGE_EXPORT __attribute__ ((visibility("default")))
 #endif
 
-#ifdef __WINE__
-# define GNU_WIN32 // fix jack_native_thread_t
+#ifdef JACKBRIDGE_EXPORT
+# define GNU_WIN32 // fix jack threads, always use pthread
 #endif
 
 #include <jack/jack.h>
