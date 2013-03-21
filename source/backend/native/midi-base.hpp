@@ -1,0 +1,169 @@
+/*
+ * Carla Native Plugins
+ * Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * For a full copy of the GNU General Public License see the GPL.txt file
+ */
+
+#ifndef __MIDI_BASE_HPP__
+#define __MIDI_BASE_HPP__
+
+#include "CarlaMIDI.h"
+#include "CarlaMutex.hpp"
+#include "RtList.hpp"
+
+#define MAX_EVENT_DATA_SIZE          4
+#define MIN_PREALLOCATED_EVENT_COUNT 100
+#define MAX_PREALLOCATED_EVENT_COUNT 1000
+
+struct RawMidiEvent {
+    uint8_t  data[MAX_EVENT_DATA_SIZE];
+    uint8_t  size;
+    uint32_t time;
+
+    RawMidiEvent()
+        : data{0},
+          size(0),
+          time(0) {}
+};
+
+class AbstractMidiPlayer
+{
+public:
+    virtual ~AbstractMidiPlayer() {}
+    virtual void writeMidiEvent(const uint32_t timePosFrame, const RawMidiEvent* const event) = 0;
+};
+
+class MidiPattern
+{
+public:
+    MidiPattern(AbstractMidiPlayer* const player)
+        : kPlayer(player),
+          fStartTime(0),
+          fDuration(0)
+    {
+        CARLA_ASSERT(kPlayer != nullptr);
+    }
+
+    ~MidiPattern()
+    {
+        fData.clear();
+    }
+
+    void addControl(const uint32_t time, const uint8_t channel, const uint8_t control, const uint8_t value)
+    {
+        RawMidiEvent* ctrlEvent(new RawMidiEvent());
+        ctrlEvent->data[0] = MIDI_STATUS_CONTROL_CHANGE | (channel & 0x0F);
+        ctrlEvent->data[1] = control;
+        ctrlEvent->data[2] = value;
+        ctrlEvent->size    = 3;
+        ctrlEvent->time    = time;
+
+        append(ctrlEvent);
+    }
+
+    void addProgram(const uint32_t time, const uint8_t channel, const uint8_t bank, const uint8_t program)
+    {
+        RawMidiEvent* bankEvent(new RawMidiEvent());
+        bankEvent->data[0] = MIDI_STATUS_CONTROL_CHANGE | (channel & 0x0F);
+        bankEvent->data[1] = MIDI_CONTROL_BANK_SELECT;
+        bankEvent->data[2] = bank;
+        bankEvent->size    = 3;
+        bankEvent->time    = time;
+
+        RawMidiEvent* programEvent(new RawMidiEvent());
+        programEvent->data[0] = MIDI_STATUS_PROGRAM_CHANGE | (channel & 0x0F);
+        programEvent->data[1] = program;
+        programEvent->size    = 2;
+        programEvent->time    = time;
+
+        append(bankEvent);
+        append(programEvent);
+    }
+
+    void addNote(const uint32_t time, const uint8_t channel, const uint8_t pitch, const uint8_t velocity, const uint32_t duration)
+    {
+        RawMidiEvent* noteOnEvent(new RawMidiEvent());
+        noteOnEvent->data[0] = MIDI_STATUS_NOTE_ON | (channel & 0x0F);
+        noteOnEvent->data[1] = pitch;
+        noteOnEvent->data[2] = velocity;
+        noteOnEvent->size    = 3;
+        noteOnEvent->time    = time;
+
+        RawMidiEvent* noteOffEvent(new RawMidiEvent());
+        noteOffEvent->data[0] = MIDI_STATUS_NOTE_OFF | (channel & 0x0F);
+        noteOffEvent->data[1] = pitch;
+        noteOffEvent->data[2] = velocity;
+        noteOffEvent->size    = 3;
+        noteOffEvent->time    = time+duration;
+
+        append(noteOnEvent);
+        append(noteOffEvent);
+    }
+
+    void play(uint32_t timePosFrame, uint32_t frames)
+    {
+        if (! fMutex.tryLock())
+            return;
+
+        for (auto it = fData.begin(); it.valid(); it.next())
+        {
+            const RawMidiEvent* const rawMidiEvent(*it);
+
+            if (timePosFrame > rawMidiEvent->time)
+                continue;
+            if (timePosFrame + frames <= rawMidiEvent->time)
+                continue;
+
+            kPlayer->writeMidiEvent(timePosFrame, rawMidiEvent);
+        }
+
+        fMutex.unlock();
+    }
+
+private:
+    AbstractMidiPlayer* const kPlayer;
+
+    uint32_t fStartTime; // unused
+    uint32_t fDuration;  // unused
+
+    CarlaMutex fMutex;
+    NonRtList<const RawMidiEvent*> fData;
+
+    void append(const RawMidiEvent* const event)
+    {
+        if (fData.isEmpty())
+        {
+            const CarlaMutex::ScopedLocker sl(&fMutex);
+            fData.append(event);
+            return;
+        }
+
+        for (auto it = fData.begin(); it.valid(); it.next())
+        {
+            const RawMidiEvent* const oldEvent(*it);
+
+            if (event->time >= oldEvent->time)
+                continue;
+
+            const CarlaMutex::ScopedLocker sl(&fMutex);
+            fData.insertAt(event, it);
+            return;
+        }
+
+        const CarlaMutex::ScopedLocker sl(&fMutex);
+        fData.append(event);
+    }
+};
+
+#endif
