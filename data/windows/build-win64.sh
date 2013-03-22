@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 MINGW=x86_64-w64-mingw32
 MINGW_PATH=/opt/mingw64
 
@@ -51,7 +53,9 @@ make $JOBS -C source/backend/standalone ../libcarla_standalone.dll CARLA_RTAUDIO
   DGL_LIBS="" EXTRA_LIBS="$EXTRA_LIBS $EXTRA_LIBS2" OBJSN=""
 
 rm -rf ./data/windows/Carla
-$CXFREEZE --target-dir=".\\data\\windows\\Carla" ".\\source\\carla.py"
+cp ./source/carla.py ./source/carla.pyw
+$CXFREEZE --target-dir=".\\data\\windows\\Carla" ".\\source\\carla.pyw"
+rm -f ./source/carla.pyw
 
 cd data/windows
 mkdir Carla/backend
@@ -76,13 +80,15 @@ make -C unzipfx-carla -f Makefile.win32
 
 # Create static build
 rm -f Carla.zip
-zip -r Carla.zip Carla
+zip -r -9 Carla.zip Carla
 
 rm -f Carla.exe
 cat unzipfx-carla/unzipfx2cat.exe Carla.zip > Carla.exe
 chmod +x Carla.exe
 
+# Cleanup
 make -C unzipfx-carla -f Makefile.win32 clean
+rm -f Carla.zip
 
 # Testing:
 echo "export WINEPREFIX=~/.winepy3_x64"

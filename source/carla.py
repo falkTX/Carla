@@ -739,7 +739,12 @@ class CarlaMainW(QMainWindow):
 
         settings = QSettings()
 
-        Carla.processMode    = settings.value("Engine/ProcessMode", PROCESS_MODE_MULTIPLE_CLIENTS, type=int)
+        if LINUX:
+            defaultMode = PROCESS_MODE_MULTIPLE_CLIENTS
+        else:
+            defaultMode = PROCESS_MODE_CONTINUOUS_RACK
+
+        Carla.processMode    = settings.value("Engine/ProcessMode", defaultMode, type=int)
         Carla.maxParameters  = settings.value("Engine/MaxParameters", MAX_DEFAULT_PARAMETERS, type=int)
 
         transportMode        = settings.value("Engine/TransportMode", TRANSPORT_MODE_JACK, type=int)

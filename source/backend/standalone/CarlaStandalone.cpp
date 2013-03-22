@@ -80,6 +80,7 @@ struct CarlaBackendStandalone {
         app->quit();
         app->processEvents();
         delete app;
+        app = nullptr;
     }
 
 } standalone;
