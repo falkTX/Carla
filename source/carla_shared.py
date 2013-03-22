@@ -618,19 +618,46 @@ else:
 # ------------------------------------------------------------------------------------------------------------
 # Default Plugin Folders (set)
 
-Carla.LADSPA_PATH = os.getenv("LADSPA_PATH", DEFAULT_LADSPA_PATH).split(splitter)
-Carla.DSSI_PATH = os.getenv("DSSI_PATH", DEFAULT_DSSI_PATH).split(splitter)
-Carla.LV2_PATH = os.getenv("LV2_PATH", DEFAULT_LV2_PATH).split(splitter)
-Carla.VST_PATH = os.getenv("VST_PATH", DEFAULT_VST_PATH).split(splitter)
-Carla.GIG_PATH = os.getenv("GIG_PATH", DEFAULT_GIG_PATH).split(splitter)
-Carla.SF2_PATH = os.getenv("SF2_PATH", DEFAULT_SF2_PATH).split(splitter)
-Carla.SFZ_PATH = os.getenv("SFZ_PATH", DEFAULT_SFZ_PATH).split(splitter)
+readEnvVars = True
 
-if haveLRDF:
-    LADSPA_RDF_PATH_env = os.getenv("LADSPA_RDF_PATH")
-    if LADSPA_RDF_PATH_env:
-        ladspa_rdf.set_rdf_path(LADSPA_RDF_PATH_env.split(splitter))
-    del LADSPA_RDF_PATH_env
+if WINDOWS:
+    # Check if running Wine. If yes, ignore env vars
+    from winreg import ConnectRegistry, OpenKey, CloseKey, HKEY_CURRENT_USER
+    reg = ConnectRegistry(None, HKEY_CURRENT_USER)
+
+    try:
+        key = OpenKey(reg, r"SOFTWARE\Wine")
+        CloseKey(key)
+        readEnvVars = False
+    except:
+        pass
+
+    CloseKey(reg)
+    del reg
+
+if readEnvVars:
+    Carla.LADSPA_PATH = os.getenv("LADSPA_PATH", DEFAULT_LADSPA_PATH).split(splitter)
+    Carla.DSSI_PATH = os.getenv("DSSI_PATH", DEFAULT_DSSI_PATH).split(splitter)
+    Carla.LV2_PATH = os.getenv("LV2_PATH", DEFAULT_LV2_PATH).split(splitter)
+    Carla.VST_PATH = os.getenv("VST_PATH", DEFAULT_VST_PATH).split(splitter)
+    Carla.GIG_PATH = os.getenv("GIG_PATH", DEFAULT_GIG_PATH).split(splitter)
+    Carla.SF2_PATH = os.getenv("SF2_PATH", DEFAULT_SF2_PATH).split(splitter)
+    Carla.SFZ_PATH = os.getenv("SFZ_PATH", DEFAULT_SFZ_PATH).split(splitter)
+
+    if haveLRDF:
+        LADSPA_RDF_PATH_env = os.getenv("LADSPA_RDF_PATH")
+        if LADSPA_RDF_PATH_env:
+            ladspa_rdf.set_rdf_path(LADSPA_RDF_PATH_env.split(splitter))
+        del LADSPA_RDF_PATH_env
+
+else:
+    Carla.LADSPA_PATH = DEFAULT_LADSPA_PATH.split(splitter)
+    Carla.DSSI_PATH = DEFAULT_DSSI_PATH.split(splitter)
+    Carla.LV2_PATH = DEFAULT_LV2_PATH.split(splitter)
+    Carla.VST_PATH = DEFAULT_VST_PATH.split(splitter)
+    Carla.GIG_PATH = DEFAULT_GIG_PATH.split(splitter)
+    Carla.SF2_PATH = DEFAULT_SF2_PATH.split(splitter)
+    Carla.SFZ_PATH = DEFAULT_SFZ_PATH.split(splitter)
 
 # ------------------------------------------------------------------------------------------------------------
 # Search for Carla library and tools
