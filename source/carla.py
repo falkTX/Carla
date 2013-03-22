@@ -81,14 +81,6 @@ class CarlaSettingsW(QDialog):
         self.ui = ui_carla_settings.Ui_CarlaSettingsW()
         self.ui.setupUi(self)
 
-        # TODO
-        self.ui.lw_page.hideRow(TAB_INDEX_CANVAS)
-
-        # -------------------------------------------------------------
-        # Load settings
-
-        self.loadSettings()
-
         # -------------------------------------------------------------
         # Set-up GUI
 
@@ -98,9 +90,18 @@ class CarlaSettingsW(QDialog):
             driverName = cString(Carla.host.get_engine_driver_name(i))
             self.ui.cb_engine_audio_driver.addItem(driverName)
 
-        #if not hasOpenGL:
-            #self.cb_canvas_use_opengl.setChecked(False)
-            #self.cb_canvas_use_opengl.setEnabled(False)
+        # -------------------------------------------------------------
+        # Load settings
+
+        self.loadSettings()
+
+        if not hasGL:
+            self.ui.cb_canvas_use_opengl.setChecked(False)
+            self.ui.cb_canvas_use_opengl.setEnabled(False)
+
+        if WINDOWS:
+            self.ui.ch_engine_dssi_chunks.setChecked(False)
+            self.ui.ch_engine_dssi_chunks.setEnabled(False)
 
         # -------------------------------------------------------------
         # Set-up connections
@@ -130,8 +131,6 @@ class CarlaSettingsW(QDialog):
         self.ui.lw_gig.setCurrentRow(0)
         self.ui.lw_sf2.setCurrentRow(0)
         self.ui.lw_sfz.setCurrentRow(0)
-        #QTimer.singleShot(0, self, )
-        #self.slot_pluginPathTabChanged(self.tw_paths.currentIndex())
 
         self.ui.lw_page.setCurrentCell(0, 0)
 
@@ -152,17 +151,24 @@ class CarlaSettingsW(QDialog):
         self.ui.cb_canvas_render_aa.setCheckState(settings.value("Canvas/Antialiasing", CANVAS_ANTIALIASING_SMALL, type=int))
         self.ui.cb_canvas_render_hq_aa.setChecked(settings.value("Canvas/HighQualityAntialiasing", False, type=bool))
 
-        #themeName = settings.value("Canvas/Theme", getDefaultThemeName(), type=str)
+        themeName = settings.value("Canvas/Theme", patchcanvas.getDefaultThemeName(), type=str)
 
-        #for i in range(Theme.THEME_MAX):
-            #thisThemeName = getThemeName(i)
-            #self.ui.cb_canvas_theme.addItem(thisThemeName)
-            #if thisThemeName == themeName:
-                #self.ui.cb_canvas_theme.setCurrentIndex(i)
+        for i in range(patchcanvas.Theme.THEME_MAX):
+            thisThemeName = patchcanvas.getThemeName(i)
+            self.ui.cb_canvas_theme.addItem(thisThemeName)
+            if thisThemeName == themeName:
+                self.ui.cb_canvas_theme.setCurrentIndex(i)
 
         # --------------------------------------------
 
-        audioDriver = settings.value("Engine/AudioDriver", "JACK", type=str)
+        if WINDOWS:
+            defaultDriver = "DirectSound"
+        elif MACOS:
+            defaultDriver = "CoreAudio"
+        else:
+            defaultDriver = "JACK"
+
+        audioDriver = settings.value("Engine/AudioDriver", defaultDriver, type=str)
         for i in range(self.ui.cb_engine_audio_driver.count()):
             if self.ui.cb_engine_audio_driver.itemText(i) == audioDriver:
                 self.ui.cb_engine_audio_driver.setCurrentIndex(i)
@@ -238,15 +244,15 @@ class CarlaSettingsW(QDialog):
 
         # ---------------------------------------
 
-        #settings.setValue("Canvas/Theme", self.ui.cb_canvas_theme.currentText())
-        #settings.setValue("Canvas/AutoHideGroups", self.ui.cb_canvas_hide_groups.isChecked())
-        #settings.setValue("Canvas/UseBezierLines", self.ui.cb_canvas_bezier_lines.isChecked())
-        #settings.setValue("Canvas/UseOpenGL", self.ui.cb_canvas_use_opengl.isChecked())
-        #settings.setValue("Canvas/HighQualityAntialiasing", self.ui.cb_canvas_render_hq_aa.isChecked())
+        settings.setValue("Canvas/Theme", self.ui.cb_canvas_theme.currentText())
+        settings.setValue("Canvas/AutoHideGroups", self.ui.cb_canvas_hide_groups.isChecked())
+        settings.setValue("Canvas/UseBezierLines", self.ui.cb_canvas_bezier_lines.isChecked())
+        settings.setValue("Canvas/UseOpenGL", self.ui.cb_canvas_use_opengl.isChecked())
+        settings.setValue("Canvas/HighQualityAntialiasing", self.ui.cb_canvas_render_hq_aa.isChecked())
 
-        ## 0, 1, 2 match their enum variants
-        #settings.setValue("Canvas/EyeCandy", self.ui.cb_canvas_eyecandy.checkState())
-        #settings.setValue("Canvas/Antialiasing", self.ui.cb_canvas_render_aa.checkState())
+        # 0, 1, 2 match their enum variants
+        settings.setValue("Canvas/EyeCandy", self.ui.cb_canvas_eyecandy.checkState())
+        settings.setValue("Canvas/Antialiasing", self.ui.cb_canvas_render_aa.checkState())
 
         # --------------------------------------------
 
@@ -390,7 +396,7 @@ class CarlaSettingsW(QDialog):
 
     @pyqtSlot()
     def slot_getAndSetProjectPath(self):
-        pass #getAndSetPath(self, self.le_main_def_folder.text(), self.le_main_def_folder)
+        getAndSetPath(self, self.ui.le_main_def_folder.text(), self.ui.le_main_def_folder)
 
     @pyqtSlot()
     def slot_engineAudioDriverChanged(self):
@@ -765,7 +771,14 @@ class CarlaMainW(QMainWindow):
         # ---------------------------------------------
         # Start
 
-        audioDriver = settings.value("Engine/AudioDriver", "JACK", type=str)
+        if WINDOWS:
+            defaultDriver = "DirectSound"
+        elif MACOS:
+            defaultDriver = "CoreAudio"
+        else:
+            defaultDriver = "JACK"
+
+        audioDriver = settings.value("Engine/AudioDriver", defaultDriver, type=str)
 
         if not Carla.host.engine_init(audioDriver, clientName):
             if self.fFirstEngineInit:
@@ -1322,7 +1335,7 @@ class CarlaMainW(QMainWindow):
         if not haveLRDF:
             return
 
-        settingsDir  = os.path.join(HOME, ".config", "Cadence")
+        settingsDir  = os.path.join(HOME, ".config", "falkTX")
         frLadspaFile = os.path.join(settingsDir, "ladspa_rdf.db")
 
         if os.path.exists(frLadspaFile):
@@ -1552,7 +1565,7 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     app.setApplicationName("Carla")
     app.setApplicationVersion(VERSION)
-    app.setOrganizationName("Cadence")
+    app.setOrganizationName("falkTX")
     app.setWindowIcon(QIcon(":/scalable/carla.svg"))
 
     libPrefix = None

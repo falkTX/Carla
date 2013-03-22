@@ -58,10 +58,9 @@ class QEmbedWidget : public QWidget
 # endif
 {
 public:
-    QEmbedWidget();
+    QEmbedWidget(WId parent);
     ~QEmbedWidget();
 
-    void embedInto(WId id);
     WId containerWinId() const;
 };
 #endif
@@ -284,7 +283,7 @@ public:
         Qt4UI* qt4Ui = (Qt4UI*)kUi;
 
         // create embedable widget
-        qtWidget = new QEmbedWidget;
+        qtWidget = new QEmbedWidget((WId)parent);
 
         // set layout
         qtWidget->setLayout(new QVBoxLayout(qtWidget));
@@ -307,9 +306,6 @@ public:
             qtGrip->raise();
             qtGrip->installEventFilter(this);
         }
-
-        // reparent widget
-        qtWidget->embedInto((WId)parent);
 
         // show it
         qtWidget->show();

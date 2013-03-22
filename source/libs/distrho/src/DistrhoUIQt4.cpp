@@ -21,19 +21,22 @@ START_NAMESPACE_DISTRHO
 // -------------------------------------------------
 // QEmbedWidget
 
-QEmbedWidget::QEmbedWidget()
+QEmbedWidget::QEmbedWidget(WId id)
+#ifdef Q_WS_X11
+    : QX11EmbedWidget()
+#else
+    : QWidget()
+#endif
 {
+#ifdef Q_WS_X11
+    embedInto(id);
+#else
+    create(id, false, false);
+#endif
 }
 
 QEmbedWidget::~QEmbedWidget()
 {
-}
-
-void QEmbedWidget::embedInto(WId id)
-{
-#ifdef Q_WS_X11
-    QX11EmbedWidget::embedInto(id);
-#endif
 }
 
 WId QEmbedWidget::containerWinId() const
@@ -41,7 +44,7 @@ WId QEmbedWidget::containerWinId() const
 #ifdef Q_WS_X11
     return QX11EmbedWidget::containerWinId();
 #else
-    return 0;
+    return winId();
 #endif
 }
 

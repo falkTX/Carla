@@ -49,21 +49,37 @@ struct CarlaBackendStandalone {
     EngineOptions options;
 
     QApplication* app;
-    bool    needsIdle;
+    bool    needsInit;
 
     CarlaBackendStandalone()
         : callback(nullptr),
           callbackPtr(nullptr),
           engine(nullptr),
           app(qApp),
-          needsIdle(app == nullptr)
+          needsInit(app == nullptr) {}
+
+    void init()
     {
+        if (! needsInit)
+            return;
         if (app != nullptr)
             return;
 
         static int    argc = 0;
         static char** argv = nullptr;
         app = new QApplication(argc, argv, true);
+    }
+
+    void close()
+    {
+        if (! needsInit)
+            return;
+        if (app == nullptr)
+            return;
+
+        app->quit();
+        app->processEvents();
+        delete app;
     }
 
 } standalone;
@@ -287,6 +303,7 @@ bool carla_engine_init(const char* driverName, const char* clientName)
     if (initiated)
     {
         standalone.lastError = "no error";
+        standalone.init();
     }
     else
     {
@@ -316,6 +333,7 @@ bool carla_engine_close()
 
     delete standalone.engine;
     standalone.engine = nullptr;
+    standalone.close();
 
     return closed;
 }
@@ -324,7 +342,7 @@ void carla_engine_idle()
 {
     CARLA_ASSERT(standalone.engine != nullptr);
 
-    if (standalone.needsIdle)
+    if (standalone.needsInit && standalone.app != nullptr)
         standalone.app->processEvents();
 
     if (standalone.engine != nullptr)

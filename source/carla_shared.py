@@ -802,6 +802,15 @@ def signalHandler(sig, frame):
         Carla.gui.emit(SIGNAL("SIGUSR1()"))
 
 # ------------------------------------------------------------------------------------------------------------
+# QLineEdit and QPushButton combo
+
+def getAndSetPath(self_, currentPath, lineEdit):
+    newPath = QFileDialog.getExistingDirectory(self_, self_.tr("Set Path"), currentPath, QFileDialog.ShowDirsOnly)
+    if newPath:
+        lineEdit.setText(newPath)
+    return newPath
+
+# ------------------------------------------------------------------------------------------------------------
 # Custom MessageBox
 
 def CustomMessageBox(self_, icon, title, text, extraText="", buttons=QMessageBox.Yes|QMessageBox.No, defButton=QMessageBox.No):

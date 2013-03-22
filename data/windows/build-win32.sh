@@ -34,6 +34,7 @@ export PYRCC="wine C:\\\\Python33\\\\Lib\\\\site-packages\\\\PyQt4\\\\pyrcc4.exe
 export CFLAGS="-DPTW32_STATIC_LIB -I$MINGW_PATH/include"
 export CXXFLAGS="-DPTW32_STATIC_LIB -DFLUIDSYNTH_NOT_A_DLL -D__WINDOWS_ASIO__ -D__WINDOWS_DS__ -D__WINDOWS_MM__ -I$MINGW_PATH/include"
 export EXTRA_LIBS="-lglib-2.0 -lgthread-2.0 -lgig -lsndfile -lFLAC -lvorbisenc -lvorbis -logg -ldsound -lrpcrt4 -lwinmm"
+export EXTRA_LIBS2="$MINGW_PATH/lib/qt4/plugins/imageformats/libqsvg.a $MINGW_PATH/lib/qt4/plugins/iconengines/libqsvgicon.a"
 
 # Clean build
 make clean
@@ -47,7 +48,7 @@ mv source/discovery/carla-discovery-native source/discovery/carla-discovery-win3
 
 # Build backend
 make $JOBS -C source/backend/standalone ../libcarla_standalone.dll CARLA_RTAUDIO_SUPPORT=true WIN32=true \
-  DGL_LIBS="" EXTRA_LIBS="$EXTRA_LIBS" OBJSN=""
+  DGL_LIBS="" EXTRA_LIBS="$EXTRA_LIBS $EXTRA_LIBS2" OBJSN=""
 
 rm -rf ./data/windows/Carla
 $CXFREEZE --target-dir=".\\data\\windows\\Carla" ".\\source\\carla.py"
@@ -64,8 +65,24 @@ cp $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt4/QtCore4.dll   Carla/
 cp $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt4/QtGui4.dll    Carla/
 cp $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt4/QtOpenGL4.dll Carla/
 cp $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt4/QtSvg4.dll    Carla/
+cp $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt4/QtXml4.dll    Carla/
+cp -r $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt4/plugins/imageformats/ Carla/
+cp -r $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt4/plugins/iconengines/ Carla/
 
 rm -f pkg-config
+
+# Build unzipfx
+make -C unzipfx-carla -f Makefile.win32
+
+# Create static build
+rm -f Carla.zip
+zip -r Carla.zip Carla
+
+rm -f Carla.exe
+cat unzipfx-carla/unzipfx2cat.exe Carla.zip > Carla.exe
+chmod +x Carla.exe
+
+make -C unzipfx-carla -f Makefile.win32 clean
 
 # Testing:
 echo "export WINEPREFIX=~/.winepy3"
