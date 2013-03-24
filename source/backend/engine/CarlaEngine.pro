@@ -61,6 +61,7 @@ SOURCES  = \
     CarlaEngine.cpp \
     CarlaEngineOsc.cpp \
     CarlaEngineThread.cpp \
+    CarlaEngineBridge.cpp \
     CarlaEngineJack.cpp \
     CarlaEnginePlugin.cpp \
     CarlaEngineRtAudio.cpp
@@ -72,6 +73,7 @@ HEADERS  = \
 
 HEADERS += \
     ../CarlaBackend.hpp \
+    ../CarlaBridge.hpp \
     ../CarlaEngine.hpp \
     ../CarlaPlugin.hpp
 

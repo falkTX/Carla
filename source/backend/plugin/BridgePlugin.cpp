@@ -17,8 +17,13 @@
 
 #include "CarlaPluginInternal.hpp"
 
-#if 1//ndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE
 
+#include "CarlaBridge.hpp"
+#include "CarlaShmUtils.hpp"
+
+#include <cerrno>
+#include <ctime>
 #include <QtCore/QDir>
 #include <QtCore/QFile>
 #include <QtCore/QStringList>
@@ -49,6 +54,55 @@
 
 CARLA_BACKEND_START_NAMESPACE
 
+// -------------------------------------------------------------------------------------------------------------------
+// Engine Helpers
+
+extern void registerEnginePlugin(CarlaEngine* const engine, const unsigned int id, CarlaPlugin* const plugin);
+
+// -------------------------------------------------------------------------------------------------------------------
+
+shm_t shm_mkstemp(char* const fileBase)
+{
+    static const char charSet[] = "abcdefghijklmnopqrstuvwxyz"
+                                  "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                                  "0123456789";
+
+    const int size = (fileBase != nullptr) ? std::strlen(fileBase) : 0;
+
+    shm_t shm;
+    carla_shm_init(shm);
+
+    if (size < 6)
+    {
+        errno = EINVAL;
+        return shm;
+    }
+
+    if (std::strcmp(fileBase + size - 6, "XXXXXX") != 0)
+    {
+        errno = EINVAL;
+        return shm;
+    }
+
+    std::srand(std::time(NULL));
+
+    while (true)
+    {
+        for (int c = size - 6; c < size; c++)
+        {
+            // Note the -1 to avoid the trailing '\0' in charSet.
+            fileBase[c] = charSet[std::rand() % (sizeof(charSet) - 1)];
+        }
+
+        shm_t shm = carla_shm_create(fileBase);
+
+        if (carla_is_shm_valid(shm) || errno != EEXIST)
+            return shm;
+    }
+}
+
+// -------------------------------------------------------------------------------------------------------------------
+
 struct BridgeParamInfo {
     float value;
     CarlaString name;
@@ -75,7 +129,6 @@ public:
         kData->osc.thread.setMode(CarlaPluginThread::PLUGIN_THREAD_BRIDGE);
     }
 
-#if 0
     ~BridgePlugin()
     {
         carla_debug("BridgePlugin::~BridgePlugin()");
@@ -83,6 +136,7 @@ public:
         kData->singleMutex.lock();
         kData->masterMutex.lock();
 
+#if 0
         if (osc.data.target)
         {
             osc_send_hide(&osc.data);
@@ -103,8 +157,8 @@ public:
         }
 
         info.chunk.clear();
-    }
 #endif
+    }
 
     // -------------------------------------------------------------------
     // Information (base)
@@ -909,11 +963,16 @@ public:
 
         carla_debug("BridgePlugin::delete_buffers() - end");
     }
+#endif
 
     // -------------------------------------------------------------------
 
     bool init(const char* const filename, const char* const name, const char* const label, const char* const bridgeBinary)
     {
+        CARLA_ASSERT(kData->engine != nullptr);
+        CARLA_ASSERT(kData->client == nullptr);
+        CARLA_ASSERT(filename != nullptr);
+
         // ---------------------------------------------------------------
         // first checks
 
@@ -934,46 +993,109 @@ public:
             return false;
         }
 
-        m_filename = strdup(filename);
+        // ---------------------------------------------------------------
+        // set info
 
-        if (name)
-            m_name = x_engine->getUniquePluginName(name);
+        if (name != nullptr)
+            fName = kData->engine->getNewUniquePluginName(name);
+
+        fFilename = filename;
+
+        // ---------------------------------------------------------------
+        // SHM Audio Pool
+        {
+            char tmpFileBase[60];
+
+            std::sprintf(tmpFileBase, "/carla-bridge_shm_XXXXXX");
+
+            fShmAudioPool.shm = shm_mkstemp(tmpFileBase);
+
+            if (! carla_is_shm_valid(fShmAudioPool.shm))
+            {
+                //_cleanup();
+                carla_stdout("Failed to open or create shared memory file #1");
+                return false;
+            }
+
+            fShmAudioPool.filename = tmpFileBase;
+        }
+
+        // ---------------------------------------------------------------
+        // SHM Control
+        {
+            char tmpFileBase[60];
+            std::sprintf(tmpFileBase, "/carla-bridge_shc_XXXXXX");
+
+            fShmControl.shm = shm_mkstemp(tmpFileBase);
+
+            if (! carla_is_shm_valid(fShmControl.shm))
+            {
+                //_cleanup();
+                carla_stdout("Failed to open or create shared memory file #2");
+                return false;
+            }
+
+            fShmControl.filename = tmpFileBase;
+
+            if (! carla_shm_map<BridgeShmControl>(fShmControl.shm, fShmControl.data))
+            {
+                //_cleanup();
+                carla_stdout("Failed to mmap shared memory file");
+                return false;
+            }
+
+            std::memset(fShmControl.data, 0, sizeof(BridgeShmControl));
+
+            if (sem_init(&fShmControl.data->runServer, 1, 0) != 0)
+            {
+                //_cleanup();
+                carla_stdout("Failed to initialize shared memory semaphore #1");
+                return false;
+            }
+
+            if (sem_init(&fShmControl.data->runClient, 1, 0) != 0)
+            {
+                //_cleanup();
+                carla_stdout("Failed to initialize shared memory semaphore #2");
+                return false;
+            }
+        }
 
         // register plugin now so we can receive OSC (and wait for it)
-        x_engine->__bridgePluginRegister(m_id, this);
+        registerEnginePlugin(kData->engine, fId, this);
 
-        osc.thread->setOscData(bridgeBinary, label, getPluginTypeString(m_type));
-        osc.thread->start();
+        kData->osc.thread.setOscData(bridgeBinary, label, getPluginTypeAsString(fPluginType));
+        kData->osc.thread.start();
 
         for (int i=0; i < 200; i++)
         {
-            if (m_initiated || osc.thread->isFinished())
+            if (fInitiated || ! kData->osc.thread.isRunning())
                 break;
             carla_msleep(50);
         }
 
-        if (! m_initiated)
+        if (! fInitiated)
         {
             // unregister so it gets handled properly
-            x_engine->__bridgePluginRegister(m_id, nullptr);
+            registerEnginePlugin(kData->engine, fId, nullptr);
 
-            osc.thread->terminate();
-            x_engine->setLastError("Timeout while waiting for a response from plugin-bridge\n(or the plugin crashed on initialization?)");
+            kData->osc.thread.terminate();
+            kData->engine->setLastError("Timeout while waiting for a response from plugin-bridge\n(or the plugin crashed on initialization?)");
             return false;
         }
-        else if (m_initError)
+        else if (fInitError)
         {
             // unregister so it gets handled properly
-            x_engine->__bridgePluginRegister(m_id, nullptr);
+            registerEnginePlugin(kData->engine, fId, nullptr);
 
-            osc.thread->quit();
+            kData->osc.thread.stop();
             // last error was set before
             return false;
         }
 
         return true;
     }
-#endif
+
 
 private:
     const BinaryType fBinaryType;
@@ -982,6 +1104,33 @@ private:
     bool fInitiated;
     bool fInitError;
     bool fSaved;
+
+    struct BridgeAudioPool {
+        CarlaString filename;
+        float* data;
+        size_t size;
+        shm_t shm;
+
+        BridgeAudioPool()
+            : data(nullptr),
+              size(0)
+        {
+            carla_shm_init(shm);
+        }
+    } fShmAudioPool;
+
+    struct BridgeControl {
+        CarlaString filename;
+        BridgeShmControl* data;
+        shm_t shm;
+
+        BridgeControl()
+            : data(nullptr)
+        {
+            carla_shm_init(shm);
+        }
+
+    } fShmControl;
 
     struct Info {
         uint32_t aIns, aOuts;

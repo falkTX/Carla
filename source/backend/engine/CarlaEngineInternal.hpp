@@ -47,6 +47,8 @@ const char* EngineType2Str(const EngineType type)
         return "kEngineTypeRtAudio";
     case kEngineTypePlugin:
         return "kEngineTypePlugin";
+    case kEngineTypeBridge:
+        return "kEngineTypeBridge";
     }
 
     carla_stderr("CarlaBackend::EngineType2Str(%i) - invalid type", type);
@@ -204,6 +206,16 @@ struct CarlaEngineProtectedData {
         (void)engine;
 #endif
     }
+
+#ifndef BUILD_BRIDGE
+    static void registerEnginePlugin(CarlaEngine* const engine, const unsigned int id, CarlaPlugin* const plugin)
+    {
+        CARLA_ASSERT(id < engine->kData->curPluginCount);
+
+        if (id < engine->kData->curPluginCount)
+            engine->kData->plugins[id].plugin = plugin;
+    }
+#endif
 };
 
 CARLA_BACKEND_END_NAMESPACE

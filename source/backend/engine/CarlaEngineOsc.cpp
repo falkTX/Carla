@@ -21,6 +21,10 @@
 #include "CarlaPlugin.hpp"
 #include "CarlaMIDI.h"
 
+#ifndef BUILD_BRIDGE
+# include "CarlaBridge.hpp"
+#endif
+
 CARLA_BACKEND_START_NAMESPACE
 
 #ifndef BUILD_BRIDGE

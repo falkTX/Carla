@@ -34,34 +34,6 @@ CARLA_BACKEND_START_NAMESPACE
 } // Fix editor indentation
 #endif
 
-#if 1//ndef BUILD_BRIDGE
-/*!
- * TODO.
- */
-enum PluginBridgeInfoType {
-    kPluginBridgeAudioCount,
-    kPluginBridgeMidiCount,
-    kPluginBridgeParameterCount,
-    kPluginBridgeProgramCount,
-    kPluginBridgeMidiProgramCount,
-    kPluginBridgePluginInfo,
-    kPluginBridgeParameterInfo,
-    kPluginBridgeParameterData,
-    kPluginBridgeParameterRanges,
-    kPluginBridgeProgramInfo,
-    kPluginBridgeMidiProgramInfo,
-    kPluginBridgeConfigure,
-    kPluginBridgeSetParameterValue,
-    kPluginBridgeSetDefaultValue,
-    kPluginBridgeSetProgram,
-    kPluginBridgeSetMidiProgram,
-    kPluginBridgeSetCustomData,
-    kPluginBridgeSetChunkData,
-    kPluginBridgeUpdateNow,
-    kPluginBridgeError
-};
-#endif
-
 /*!
  * TODO.
  */

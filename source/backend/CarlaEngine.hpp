@@ -58,7 +58,12 @@ enum EngineType {
     /*!
     * Plugin engine type, used to export the engine as a plugin.
     */
-    kEngineTypePlugin = 3
+    kEngineTypePlugin = 3,
+
+    /*!
+    * TODO.
+    */
+    kEngineTypeBridge = 4
 };
 
 /*!
@@ -1008,6 +1013,9 @@ protected:
 #endif
 
 private:
+#ifdef BUILD_BRIDGE
+    static CarlaEngine* newBridge(const char* const audioBaseName, const char* const controlBaseName);
+#endif
 #ifdef WANT_JACK
     static CarlaEngine* newJack();
 #endif

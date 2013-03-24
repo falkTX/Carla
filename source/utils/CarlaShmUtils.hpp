@@ -35,7 +35,7 @@ typedef int shm_t;
 // shared memory calls
 
 static inline
-bool carla_is_shm_valid(shm_t shm)
+bool carla_is_shm_valid(const shm_t& shm)
 {
 #ifdef CARLA_OS_WIN
     return (shm.shm != nullptr && shm.shm != INVALID_HANDLE_VALUE);
@@ -105,7 +105,7 @@ void carla_shm_close(shm_t& shm)
 }
 
 static inline
-void* carla_shm_map(shm_t shm, const size_t size)
+void* carla_shm_map(shm_t& shm, const size_t size)
 {
     CARLA_ASSERT(carla_is_shm_valid(shm));
     CARLA_ASSERT(size > 0);
@@ -129,12 +129,13 @@ void* carla_shm_map(shm_t shm, const size_t size)
 
     return ptr;
 #else
+    ftruncate(shm, size);
     return mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_SHARED, shm, 0);
 #endif
 }
 
 static inline
-void carla_shm_unmap(const shm_t shm, void* const ptr, const size_t size)
+void carla_shm_unmap(const shm_t& shm, void* const ptr, const size_t size)
 {
     CARLA_ASSERT(carla_is_shm_valid(shm));
     CARLA_ASSERT(ptr != nullptr);
@@ -177,14 +178,15 @@ void carla_shm_unmap(const shm_t shm, void* const ptr, const size_t size)
 
 template<typename T>
 static inline
-void carla_shm_map(shm_t shm, T* value)
+bool carla_shm_map(shm_t& shm, T* value)
 {
-    value = carla_shm_map(shm, sizeof(value));
+    value = (T*)carla_shm_map(shm, sizeof(value));
+    return (value != nullptr);
 }
 
 template<typename T>
 static inline
-void carla_shm_unmap(const shm_t shm, T* value)
+void carla_shm_unmap(const shm_t& shm, T* value)
 {
     carla_shm_unmap(shm, value, sizeof(value));
     value = nullptr;

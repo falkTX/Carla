@@ -35,6 +35,13 @@ CARLA_BACKEND_START_NAMESPACE
     return CarlaEngineProtectedData::getHostWindow(engine);
 }
 
+#ifndef BUILD_BRIDGE
+void registerEnginePlugin(CarlaEngine* const engine, const unsigned int id, CarlaPlugin* const plugin)
+{
+    CarlaEngineProtectedData::registerEnginePlugin(engine, id, plugin);
+}
+#endif
+
 // -------------------------------------------------------------------------------------------------------------------
 // Carla Engine port (Abstract)
 
