@@ -24,6 +24,7 @@
 #include "jackbridge/jackbridge.h"
 
 #include <cmath>
+#include <QtCore/QStringList>
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -34,7 +35,7 @@ CARLA_BACKEND_START_NAMESPACE
 // -------------------------------------------------------------------
 // Plugin Helpers, defined in CarlaPlugin.cpp
 
-extern CarlaEngine* CarlaPluginGetEngine(CarlaPlugin* const plugin);
+extern CarlaEngine*          CarlaPluginGetEngine(CarlaPlugin* const plugin);
 extern CarlaEngineAudioPort* CarlaPluginGetAudioInPort(CarlaPlugin* const plugin, uint32_t index);
 extern CarlaEngineAudioPort* CarlaPluginGetAudioOutPort(CarlaPlugin* const plugin, uint32_t index);
 

@@ -30,7 +30,7 @@ CARLA_BACKEND_START_NAMESPACE
 // -------------------------------------------------------------------------------------------------------------------
 // Engine Helpers
 
-::QMainWindow* getEngineHostWindow(CarlaEngine* const engine)
+QMainWindow* getEngineHostWindow(CarlaEngine* const engine)
 {
     return CarlaEngineProtectedData::getHostWindow(engine);
 }

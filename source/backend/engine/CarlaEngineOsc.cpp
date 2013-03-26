@@ -327,8 +327,6 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
     // Plugin Bridges
     if ((plugin->hints() & PLUGIN_IS_BRIDGE) > 0 && std::strlen(method) > 11 && std::strncmp(method, "bridge_", 7) == 0)
     {
-        if (std::strcmp(method+7, "set_peaks") == 0)
-            return handleMsgBridgeSetPeaks(plugin, argc, argv, types);
         if (std::strcmp(method+7, "audio_count") == 0)
             return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeAudioCount, argc, argv, types);
         if (std::strcmp(method+7, "midi_count") == 0)
@@ -791,24 +789,6 @@ int CarlaEngineOsc::handleMsgNoteOff(CARLA_ENGINE_OSC_HANDLE_ARGS2)
         return 1;
 
     plugin->sendMidiSingleNote(static_cast<uint8_t>(channel), static_cast<uint8_t>(note), 0, true, false, true);
-
-    return 0;
-}
-
-// FIXME - remove once IPC audio is implemented
-int CarlaEngineOsc::handleMsgBridgeSetPeaks(CARLA_ENGINE_OSC_HANDLE_ARGS2)
-{
-    CARLA_ENGINE_OSC_CHECK_OSC_TYPES(4, "ffff");
-
-    const float in1  = argv[0]->f;
-    const float in2  = argv[1]->f;
-    const float out1 = argv[2]->f;
-    const float out2 = argv[3]->f;
-
-    float const inPeaks[CarlaEngine::MAX_PEAKS] = { in1, in2 };
-    float const outPeaks[CarlaEngine::MAX_PEAKS] = { out1, out2 };
-
-    kEngine->setPeaks(plugin->id(), inPeaks, outPeaks);
 
     return 0;
 }

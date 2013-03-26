@@ -136,9 +136,6 @@ private:
     int handleMsgSetMidiProgram(CARLA_ENGINE_OSC_HANDLE_ARGS2);
     int handleMsgNoteOn(CARLA_ENGINE_OSC_HANDLE_ARGS2);
     int handleMsgNoteOff(CARLA_ENGINE_OSC_HANDLE_ARGS2);
-
-    // FIXME - remove once IPC audio is implemented
-    int handleMsgBridgeSetPeaks(CARLA_ENGINE_OSC_HANDLE_ARGS2);
 #endif
 
 #ifdef WANT_LV2

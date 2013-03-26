@@ -24,10 +24,6 @@
 #include "CarlaPlugin.hpp"
 #include "RtList.hpp"
 
-#ifndef BUILD_BRIDGE
-# include <QtCore/QProcessEnvironment>
-#endif
-
 class QMainWindow;
 
 CARLA_BACKEND_START_NAMESPACE
@@ -73,6 +69,23 @@ const char* EnginePortType2Str(const EnginePortType type)
 }
 
 static inline
+const char* EngineEventType2Str(const EngineEventType type)
+{
+    switch (type)
+    {
+    case kEngineEventTypeNull:
+        return "kEngineEventTypeNull";
+    case kEngineEventTypeControl:
+        return "kEngineEventTypeControl";
+    case kEngineEventTypeMidi:
+        return "kEngineEventTypeMidi";
+    }
+
+    carla_stderr("CarlaBackend::EngineEventType2Str(%i) - invalid type", type);
+    return nullptr;
+}
+
+static inline
 const char* EngineControlEventType2Str(const EngineControlEventType type)
 {
     switch (type)
@@ -111,12 +124,10 @@ struct EnginePluginData {
     float insPeak[CarlaEngine::MAX_PEAKS];
     float outsPeak[CarlaEngine::MAX_PEAKS];
 
-#ifndef QTCREATOR_TEST
     EnginePluginData()
         : plugin(nullptr),
           insPeak{0.0f},
           outsPeak{0.0f} {}
-#endif
 };
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -131,15 +142,11 @@ struct CarlaEngineProtectedData {
     void*        callbackPtr;
 
     CarlaString  lastError;
-
-#ifndef BUILD_BRIDGE
-    QProcessEnvironment procEnv;
     QMainWindow* hostWindow;
-#endif
 
     bool aboutToClose;            // don't re-activate thread if true
     unsigned int curPluginCount;  // number of plugins loaded (0...max)
-    unsigned int maxPluginNumber; // number of plugins allowed (0, 16, 99 or 999)
+    unsigned int maxPluginNumber; // number of plugins allowed (0, 16, 99 or 255)
 
     struct NextAction {
         EnginePostAction opcode;
@@ -157,6 +164,7 @@ struct CarlaEngineProtectedData {
         }
     } nextAction;
 
+#ifndef BUILD_BRIDGE
     struct Rack {
         EngineEvent* in;
         EngineEvent* out;
@@ -174,6 +182,7 @@ struct CarlaEngineProtectedData {
             : playing(false),
               frame(0) {}
     } time;
+#endif
 
     EnginePluginData* plugins;
 
@@ -183,9 +192,7 @@ struct CarlaEngineProtectedData {
           oscData(nullptr),
           callback(nullptr),
           callbackPtr(nullptr),
-#ifndef BUILD_BRIDGE
           hostWindow(nullptr),
-#endif
           aboutToClose(false),
           curPluginCount(0),
           maxPluginNumber(0),
@@ -195,16 +202,9 @@ struct CarlaEngineProtectedData {
     CarlaEngineProtectedData(CarlaEngineProtectedData&) = delete;
     CarlaEngineProtectedData(const CarlaEngineProtectedData&) = delete;
 
-    static ::QMainWindow* getHostWindow(CarlaEngine* const engine)
+    static QMainWindow* getHostWindow(CarlaEngine* const engine)
     {
-#ifndef BUILD_BRIDGE
         return engine->kData->hostWindow;
-#else
-        return nullptr;
-
-        // unused
-        (void)engine;
-#endif
     }
 
 #ifndef BUILD_BRIDGE
