@@ -210,9 +210,9 @@ struct CarlaEngineProtectedData {
 #ifndef BUILD_BRIDGE
     static void registerEnginePlugin(CarlaEngine* const engine, const unsigned int id, CarlaPlugin* const plugin)
     {
-        CARLA_ASSERT(id < engine->kData->curPluginCount);
+        CARLA_ASSERT(id == engine->kData->curPluginCount);
 
-        if (id < engine->kData->curPluginCount)
+        if (id == engine->kData->curPluginCount)
             engine->kData->plugins[id].plugin = plugin;
     }
 #endif

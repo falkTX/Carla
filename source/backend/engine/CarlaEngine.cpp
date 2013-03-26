@@ -101,7 +101,7 @@ CarlaEngineEventPort::CarlaEngineEventPort(const bool isInput, const ProcessMode
 {
     carla_debug("CarlaEngineEventPort::CarlaEngineEventPort(%s, %s)", bool2str(isInput), ProcessMode2Str(processMode));
 
-    if (kProcessMode == PROCESS_MODE_PATCHBAY)
+    if (kProcessMode == PROCESS_MODE_PATCHBAY || kProcessMode == PROCESS_MODE_BRIDGE)
         fBuffer = new EngineEvent[PATCHBAY_EVENT_COUNT];
 }
 
@@ -109,7 +109,7 @@ CarlaEngineEventPort::~CarlaEngineEventPort()
 {
     carla_debug("CarlaEngineEventPort::~CarlaEngineEventPort()");
 
-    if (kProcessMode == PROCESS_MODE_PATCHBAY)
+    if (kProcessMode == PROCESS_MODE_PATCHBAY || kProcessMode == PROCESS_MODE_BRIDGE)
     {
         CARLA_ASSERT(fBuffer != nullptr);
 
@@ -128,22 +128,23 @@ void CarlaEngineEventPort::initBuffer(CarlaEngine* const engine)
 #ifndef BUILD_BRIDGE
     if (kProcessMode == PROCESS_MODE_CONTINUOUS_RACK)
         fBuffer = engine->getRackEventBuffer(kIsInput);
-    else if (kProcessMode == PROCESS_MODE_PATCHBAY && ! kIsInput)
-        carla_zeroMem(fBuffer, sizeof(EngineEvent)*PATCHBAY_EVENT_COUNT);
+    else
 #endif
+        if ((kProcessMode == PROCESS_MODE_PATCHBAY || kProcessMode == PROCESS_MODE_BRIDGE) && ! kIsInput)
+            carla_zeroMem(fBuffer, sizeof(EngineEvent)*PATCHBAY_EVENT_COUNT);
 }
 
 uint32_t CarlaEngineEventPort::getEventCount()
 {
     CARLA_ASSERT(kIsInput);
     CARLA_ASSERT(fBuffer != nullptr);
-    CARLA_ASSERT(kProcessMode == PROCESS_MODE_CONTINUOUS_RACK || kProcessMode == PROCESS_MODE_PATCHBAY);
+    CARLA_ASSERT(kProcessMode == PROCESS_MODE_CONTINUOUS_RACK || kProcessMode == PROCESS_MODE_PATCHBAY || kProcessMode == PROCESS_MODE_BRIDGE);
 
     if (! kIsInput)
         return 0;
     if (fBuffer == nullptr)
         return 0;
-    if (kProcessMode != PROCESS_MODE_CONTINUOUS_RACK && kProcessMode != PROCESS_MODE_PATCHBAY)
+    if (kProcessMode != PROCESS_MODE_CONTINUOUS_RACK && kProcessMode != PROCESS_MODE_PATCHBAY && kProcessMode != PROCESS_MODE_BRIDGE)
         return 0;
 
     uint32_t count = 0;
@@ -162,14 +163,14 @@ const EngineEvent& CarlaEngineEventPort::getEvent(const uint32_t index)
 {
     CARLA_ASSERT(kIsInput);
     CARLA_ASSERT(fBuffer != nullptr);
-    CARLA_ASSERT(kProcessMode == PROCESS_MODE_CONTINUOUS_RACK || kProcessMode == PROCESS_MODE_PATCHBAY);
+    CARLA_ASSERT(kProcessMode == PROCESS_MODE_CONTINUOUS_RACK || kProcessMode == PROCESS_MODE_PATCHBAY || kProcessMode == PROCESS_MODE_BRIDGE);
     CARLA_ASSERT(index < kMaxEventCount);
 
     if (! kIsInput)
         return kFallbackEngineEvent;
     if (fBuffer == nullptr)
         return kFallbackEngineEvent;
-    if (kProcessMode != PROCESS_MODE_CONTINUOUS_RACK && kProcessMode != PROCESS_MODE_PATCHBAY)
+    if (kProcessMode != PROCESS_MODE_CONTINUOUS_RACK && kProcessMode != PROCESS_MODE_PATCHBAY && kProcessMode != PROCESS_MODE_BRIDGE)
         return kFallbackEngineEvent;
     if (index >= kMaxEventCount)
         return kFallbackEngineEvent;
@@ -181,7 +182,7 @@ void CarlaEngineEventPort::writeControlEvent(const uint32_t time, const uint8_t 
 {
     CARLA_ASSERT(! kIsInput);
     CARLA_ASSERT(fBuffer != nullptr);
-    CARLA_ASSERT(kProcessMode == PROCESS_MODE_CONTINUOUS_RACK || kProcessMode == PROCESS_MODE_PATCHBAY);
+    CARLA_ASSERT(kProcessMode == PROCESS_MODE_CONTINUOUS_RACK || kProcessMode == PROCESS_MODE_PATCHBAY || kProcessMode == PROCESS_MODE_BRIDGE);
     CARLA_ASSERT(type != kEngineControlEventTypeNull);
     CARLA_ASSERT(channel < MAX_MIDI_CHANNELS);
     CARLA_SAFE_ASSERT(value >= 0.0 && value <= 1.0);
@@ -190,7 +191,7 @@ void CarlaEngineEventPort::writeControlEvent(const uint32_t time, const uint8_t 
         return;
     if (fBuffer == nullptr)
         return;
-    if (kProcessMode != PROCESS_MODE_CONTINUOUS_RACK && kProcessMode != PROCESS_MODE_PATCHBAY)
+    if (kProcessMode != PROCESS_MODE_CONTINUOUS_RACK && kProcessMode != PROCESS_MODE_PATCHBAY && kProcessMode != PROCESS_MODE_BRIDGE)
         return;
     if (type == kEngineControlEventTypeNull)
         return;
@@ -224,7 +225,7 @@ void CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t cha
 {
     CARLA_ASSERT(! kIsInput);
     CARLA_ASSERT(fBuffer != nullptr);
-    CARLA_ASSERT(kProcessMode == PROCESS_MODE_CONTINUOUS_RACK || kProcessMode == PROCESS_MODE_PATCHBAY);
+    CARLA_ASSERT(kProcessMode == PROCESS_MODE_CONTINUOUS_RACK || kProcessMode == PROCESS_MODE_PATCHBAY || kProcessMode == PROCESS_MODE_BRIDGE);
     CARLA_ASSERT(channel < MAX_MIDI_CHANNELS);
     CARLA_ASSERT(data != nullptr);
     CARLA_ASSERT(size > 0);
@@ -233,7 +234,7 @@ void CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t cha
         return;
     if (fBuffer == nullptr)
         return;
-    if (kProcessMode != PROCESS_MODE_CONTINUOUS_RACK && kProcessMode != PROCESS_MODE_PATCHBAY)
+    if (kProcessMode != PROCESS_MODE_CONTINUOUS_RACK && kProcessMode != PROCESS_MODE_PATCHBAY && kProcessMode != PROCESS_MODE_BRIDGE)
         return;
     if (channel >= MAX_MIDI_CHANNELS)
         return;
@@ -641,7 +642,7 @@ bool CarlaEngine::close()
 void CarlaEngine::idle()
 {
     CARLA_ASSERT(kData->plugins != nullptr);
-    CARLA_ASSERT(isRunning());
+    //CARLA_ASSERT(isRunning());
 
     for (unsigned int i=0; i < kData->curPluginCount; i++)
     {
@@ -714,26 +715,10 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
         bridgeBinary = (const char*)fOptions.bridge_native;
 #endif
 
-    if (fOptions.preferPluginBridges && bridgeBinary != nullptr)
+    if (true)
+    //if (fOptions.preferPluginBridges && bridgeBinary != nullptr)
     {
-        // TODO
-        if (fOptions.processMode != PROCESS_MODE_MULTIPLE_CLIENTS)
-        {
-            setLastError("Can only use bridged plugins in JACK Multi-Client mode");
-            return -1;
-        }
-
-        // TODO
-        if (type() != kEngineTypeJack)
-        {
-            setLastError("Can only use bridged plugins with JACK backend");
-            return -1;
-        }
-
-#if 0
         plugin = CarlaPlugin::newBridge(init, btype, ptype, bridgeBinary);
-#endif
-        setLastError("Bridged plugins are not implemented yet");
     }
     else
 #endif // BUILD_BRIDGE
@@ -1207,13 +1192,6 @@ void CarlaEngine::setAboutToClose()
 // -----------------------------------------------------------------------
 // Global options
 
-#ifndef BUILD_BRIDGE
-
-const QProcessEnvironment& CarlaEngine::getOptionsAsProcessEnvironment() const
-{
-    return kData->procEnv;
-}
-
 #define CARLA_ENGINE_SET_OPTION_RUNNING_CHECK \
     if (isRunning()) \
         return carla_stderr("CarlaEngine::setOption(%s, %i, \"%s\") - Cannot set this option while engine is running!", OptionsType2Str(option), value, valueStr);
@@ -1231,7 +1209,7 @@ void CarlaEngine::setOption(const OptionsType option, const int value, const cha
     case OPTION_PROCESS_MODE:
         CARLA_ENGINE_SET_OPTION_RUNNING_CHECK
 
-        if (value < PROCESS_MODE_SINGLE_CLIENT || value > PROCESS_MODE_PATCHBAY)
+        if (value < PROCESS_MODE_SINGLE_CLIENT || value > PROCESS_MODE_BRIDGE)
             return carla_stderr("CarlaEngine::setOption(%s, %i, \"%s\") - invalid value", OptionsType2Str(option), value, valueStr);
 
         fOptions.processMode = static_cast<ProcessMode>(value);
@@ -1240,7 +1218,7 @@ void CarlaEngine::setOption(const OptionsType option, const int value, const cha
     case OPTION_TRANSPORT_MODE:
         // FIXME: Always enable JACK transport for now
 #if 0
-        if (value < CarlaBackend::TRANSPORT_MODE_INTERNAL || value > CarlaBackend::TRANSPORT_MODE_JACK)
+        if (value < CarlaBackend::TRANSPORT_MODE_INTERNAL || value > CarlaBackend::TRANSPORT_MODE_BRIDGE)
             return carla_stderr2("carla_set_engine_option(OPTION_TRANSPORT_MODE, %i, \"%s\") - invalid value", value, valueStr);
 
         fOptions.transportMode = static_cast<CarlaBackend::TransportMode>(value);
@@ -1293,6 +1271,7 @@ void CarlaEngine::setOption(const OptionsType option, const int value, const cha
         fOptions.oscUiTimeout = static_cast<uint>(value);
         break;
 
+#ifndef BUILD_BRIDGE
     case OPTION_PATH_BRIDGE_NATIVE:
         fOptions.bridge_native = valueStr;
         break;
@@ -1308,6 +1287,7 @@ void CarlaEngine::setOption(const OptionsType option, const int value, const cha
     case OPTION_PATH_BRIDGE_WIN64:
         fOptions.bridge_win64 = valueStr;
         break;
+#endif
 
 #ifdef WANT_LV2
     case OPTION_PATH_BRIDGE_LV2_GTK2:
@@ -1346,7 +1326,6 @@ void CarlaEngine::setOption(const OptionsType option, const int value, const cha
 #endif
     }
 }
-#endif
 
 // -----------------------------------------------------------------------
 // OSC Stuff
@@ -2165,21 +2144,6 @@ void CarlaEngine::osc_send_bridge_set_chunk_data(const char* const chunkFile)
         std::strcpy(targetPath, kData->oscData->path);
         std::strcat(targetPath, "/bridge_set_chunk_data");
         lo_send(kData->oscData->target, targetPath, "s", chunkFile);
-    }
-}
-
-void CarlaEngine::osc_send_bridge_set_peaks()
-{
-    CARLA_ASSERT(kData->oscData != nullptr);
-
-    const EnginePluginData& pData = kData->plugins[0];
-
-    if (kData->oscData != nullptr && kData->oscData->target != nullptr)
-    {
-        char targetPath[std::strlen(kData->oscData->path)+22];
-        std::strcpy(targetPath, kData->oscData->path);
-        std::strcat(targetPath, "/bridge_set_peaks");
-        lo_send(kData->oscData->target, targetPath, "ffff", pData.insPeak[0], pData.insPeak[1], pData.outsPeak[0], pData.outsPeak[1]);
     }
 }
 #endif

@@ -64,11 +64,12 @@ void CarlaPluginThread::setMode(const CarlaPluginThread::Mode mode)
     fMode = mode;
 }
 
-void CarlaPluginThread::setOscData(const char* const binary, const char* const label, const char* const extra)
+void CarlaPluginThread::setOscData(const char* const binary, const char* const label, const char* const extra1, const char* const extra2)
 {
     fBinary = binary;
     fLabel  = label;
-    fExtra  = extra;
+    fExtra1 = extra1;
+    fExtra2 = extra2;
 }
 
 void CarlaPluginThread::run()
@@ -84,8 +85,11 @@ void CarlaPluginThread::run()
 #endif
     }
 
-    QString name(kPlugin->name() ? kPlugin->name() : "(none)");
+    QString name(kPlugin->name());
     QStringList arguments;
+
+    if (name.isEmpty())
+        name = "(none)";
 
     switch (fMode)
     {
@@ -93,31 +97,32 @@ void CarlaPluginThread::run()
         break;
 
     case PLUGIN_THREAD_DSSI_GUI:
-        /* osc_url  */ arguments << QString("%1/%2").arg(kEngine->getOscServerPathUDP()).arg(kPlugin->id());
+        /* osc-url  */ arguments << QString("%1/%2").arg(kEngine->getOscServerPathUDP()).arg(kPlugin->id());
         /* filename */ arguments << kPlugin->filename();
         /* label    */ arguments << (const char*)fLabel;
         /* ui-title */ arguments << QString("%1 (GUI)").arg(kPlugin->name());
         break;
 
     case PLUGIN_THREAD_LV2_GUI:
-        /* osc_url  */ arguments << QString("%1/%2").arg(kEngine->getOscServerPathTCP()).arg(kPlugin->id());
+        /* osc-url  */ arguments << QString("%1/%2").arg(kEngine->getOscServerPathTCP()).arg(kPlugin->id());
         /* URI      */ arguments << (const char*)fLabel;
-        /* ui-URI   */ arguments << (const char*)fExtra;
+        /* ui-URI   */ arguments << (const char*)fExtra1;
         /* ui-title */ arguments << QString("%1 (GUI)").arg(kPlugin->name());
         break;
 
     case PLUGIN_THREAD_VST_GUI:
-        /* osc_url  */ arguments << QString("%1/%2").arg(kEngine->getOscServerPathTCP()).arg(kPlugin->id());
+        /* osc-url  */ arguments << QString("%1/%2").arg(kEngine->getOscServerPathTCP()).arg(kPlugin->id());
         /* filename */ arguments << kPlugin->filename();
         /* ui-title */ arguments << QString("%1 (GUI)").arg(kPlugin->name());
         break;
 
     case PLUGIN_THREAD_BRIDGE:
-        /* osc_url  */ arguments << QString("%1/%2").arg(kEngine->getOscServerPathTCP()).arg(kPlugin->id());
-        /* stype    */ arguments << (const char*)fExtra;
+        /* osc-url  */ arguments << QString("%1/%2").arg(kEngine->getOscServerPathTCP()).arg(kPlugin->id());
+        /* stype    */ arguments << (const char*)fExtra1;
         /* filename */ arguments << kPlugin->filename();
         /* name     */ arguments << name;
         /* label    */ arguments << (const char*)fLabel;
+        /* SHM ids  */ arguments << (const char*)fExtra2;
         break;
     }
 

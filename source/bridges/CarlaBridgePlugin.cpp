@@ -115,17 +115,21 @@ class CarlaPluginClient : public CarlaBridgeClient,
                           public QObject
 {
 public:
-    CarlaPluginClient(const char* const name)
+    CarlaPluginClient(const bool useBridge, const char* const driverName, const char* audioBaseName, const char* controlBaseName)
         : CarlaBridgeClient(nullptr),
           QObject(nullptr),
           fEngine(nullptr),
           fPlugin(nullptr),
           fTimerId(0)
     {
-        CARLA_ASSERT(name != nullptr);
-        carla_debug("CarlaPluginClient::CarlaPluginClient()");
+        CARLA_ASSERT(driverName != nullptr);
+        carla_debug("CarlaPluginClient::CarlaPluginClient(%s, \"%s\", %s, %s)", bool2str(useBridge), driverName, audioBaseName, controlBaseName);
 
-        carla_engine_init("JACK", name);
+        if (useBridge)
+            carla_engine_init_bridge(audioBaseName, controlBaseName, driverName);
+        else
+            carla_engine_init("JACK", driverName);
+
         carla_set_engine_callback(callback, this);
     }
 
@@ -136,6 +140,14 @@ public:
 
         carla_set_engine_about_to_close();
         carla_engine_close();
+    }
+
+    void oscInit(const char* const url)
+    {
+        CarlaBridgeClient::oscInit(url);
+
+        fEngine = carla_get_standalone_engine();
+        fEngine->setOscBridgeData(fOscData);
     }
 
     void ready()
@@ -405,9 +417,6 @@ int CarlaBridgeOsc::handleMsgQuit()
     carla_debug("CarlaBridgeOsc::handleMsgQuit()");
     CARLA_ASSERT(kClient != nullptr);
 
-    if (kClient == nullptr)
-        return 1;
-
     gCloseNow = true;
 
     return 0;
@@ -473,7 +482,7 @@ int main(int argc, char* argv[])
 {
     CARLA_BRIDGE_USE_NAMESPACE
 
-    if (argc != 6)
+    if (argc != 6 && argc != 7)
     {
         carla_stdout("usage: %s <osc-url|\"null\"> <type> <filename> <name|\"(none)\"> <label>", argv[0]);
         return 1;
@@ -485,10 +494,20 @@ int main(int argc, char* argv[])
     const char*       name     = argv[4];
     const char* const label    = argv[5];
 
-    const bool useOsc = std::strcmp(oscUrl, "null");
+    const bool useBridge = (argc == 7);
+    const bool useOsc    = std::strcmp(oscUrl, "null");
 
     if (std::strcmp(name, "(none)") == 0)
         name = nullptr;
+
+    char bridgeBaseAudioName[6+1]   = { 0 };
+    char bridgeBaseControlName[6+1] = { 0 };
+
+    if (useBridge)
+    {
+        std::strncpy(bridgeBaseAudioName,   argv[6], 6);
+        std::strncpy(bridgeBaseControlName, argv[6]+6, 6);
+    }
 
     CarlaBackend::PluginType itype;
 
@@ -512,7 +531,7 @@ int main(int argc, char* argv[])
     app.setQuitOnLastWindowClosed(false);
 
     // Init Plugin client
-    CarlaPluginClient client(name ? name : label);
+    CarlaPluginClient client(useBridge, (name != nullptr) ? name : label, bridgeBaseAudioName, bridgeBaseControlName);
 
     // Init OSC
     if (useOsc)
@@ -535,6 +554,10 @@ int main(int argc, char* argv[])
         {
             client.sendOscUpdate();
             client.sendOscBridgeUpdate();
+
+            // TESTING!!
+            carla_set_active(0, true);
+            carla_show_gui(0, true);
         }
         else
         {

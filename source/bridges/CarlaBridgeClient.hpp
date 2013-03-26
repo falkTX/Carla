@@ -140,6 +140,8 @@ private:
     const char* fUiFilename;
     void* fUiLib;
     bool  fUiQuit;
+#else
+    friend class CarlaPluginClient;
 #endif
 
     const CarlaOscData* fOscData;

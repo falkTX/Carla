@@ -27,6 +27,7 @@
 
 #ifdef JACKBRIDGE_EXPORT
 # define GNU_WIN32 // fix jack threads, always use pthread
+# include <sys/time.h>
 #endif
 
 #include <jack/jack.h>
@@ -72,6 +73,10 @@ BRIDGE_EXPORT jack_transport_state_t jackbridge_transport_query(const jack_clien
 BRIDGE_EXPORT void jackbridge_transport_start(jack_client_t* client);
 BRIDGE_EXPORT void jackbridge_transport_stop(jack_client_t* client);
 
+BRIDGE_EXPORT void linux_clock_gettime_rt(struct timespec*);
+BRIDGE_EXPORT int linux_sem_post(void*);
+BRIDGE_EXPORT int linux_sem_timedwait(void*, struct timespec*);
+
 #ifdef __cplusplus
 }
 #endif
@@ -110,6 +115,10 @@ BRIDGE_EXPORT void jackbridge_transport_stop(jack_client_t* client);
 #define jackbridge_transport_query jack_transport_query
 #define jackbridge_transport_start jack_transport_start
 #define jackbridge_transport_stop jack_transport_stop
+
+#define linux_clock_gettime_rt(ts) clock_gettime(CLOCK_REALTIME, ts)
+#define linux_sem_post sem_post
+#define linux_sem_timedwait sem_timedwait
 
 #endif // JACKBRIDGE_EXPORT
 

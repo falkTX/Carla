@@ -46,7 +46,9 @@ struct CarlaBackendStandalone {
     CarlaEngine*  engine;
     CarlaString   lastError;
     CarlaString   procName;
+#ifndef BUILD_BRIDGE
     EngineOptions options;
+#endif
 
     QApplication* app;
     bool    needsInit;
@@ -84,14 +86,6 @@ struct CarlaBackendStandalone {
     }
 
 } standalone;
-
-// -------------------------------------------------------------------------------------------------------------------
-// Helpers
-
-CarlaEngine* carla_get_standalone_engine()
-{
-    return standalone.engine;
-}
 
 // -------------------------------------------------------------------------------------------------------------------
 // API
@@ -232,16 +226,6 @@ bool carla_engine_init(const char* driverName, const char* clientName)
     CARLA_ASSERT(driverName != nullptr);
     CARLA_ASSERT(clientName != nullptr);
 
-#if 0
-    static bool sigInfoInitiated = false;
-
-    if (! sigInfoInitiated)
-    {
-        setup_siginfo();
-        sigInfoInitiated = true;
-    }
-#endif
-
     standalone.engine = CarlaEngine::newDriverByName(driverName);
 
     if (standalone.engine == nullptr)
@@ -377,14 +361,13 @@ void carla_set_engine_callback(CarlaBackend::CallbackFunc func, void* ptr)
         standalone.engine->setCallback(func, ptr);
 }
 
+#ifndef BUILD_BRIDGE
 void carla_set_engine_option(CarlaBackend::OptionsType option, int value, const char* valueStr)
 {
     carla_debug("carla_set_engine_option(%s, %i, \"%s\")", CarlaBackend::OptionsType2Str(option), value, valueStr);
 
-#ifndef BUILD_BRIDGE
     if (standalone.engine != nullptr)
         standalone.engine->setOption(option, value, valueStr);
-#endif
 
     switch (option)
     {
@@ -493,6 +476,7 @@ void carla_set_engine_option(CarlaBackend::OptionsType option, int value, const 
 #endif
     }
 }
+#endif
 
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -1849,6 +1833,65 @@ void carla_nsm_reply_save()
     carlaNSM.replySave();
 }
 
+#endif
+
+// -------------------------------------------------------------------------------------------------------------------
+
+#ifdef BUILD_BRIDGE
+bool carla_engine_init_bridge(const char* audioBaseName, const char* controlBaseName, const char* clientName)
+{
+    carla_debug("carla_engine_init_bridge(\"%s\", \"%s\", \"%s\")", audioBaseName, controlBaseName, clientName);
+    CARLA_ASSERT(standalone.engine == nullptr);
+    CARLA_ASSERT(audioBaseName != nullptr);
+    CARLA_ASSERT(controlBaseName != nullptr);
+    CARLA_ASSERT(clientName != nullptr);
+
+    standalone.engine = CarlaEngine::newBridge(audioBaseName, controlBaseName);
+
+    if (standalone.engine == nullptr)
+    {
+        standalone.lastError = "The seleted audio driver is not available!";
+        return false;
+    }
+
+    if (standalone.callback != nullptr)
+        standalone.engine->setCallback(standalone.callback, nullptr);
+
+    standalone.engine->setOption(CarlaBackend::OPTION_PROCESS_MODE,          CarlaBackend::PROCESS_MODE_BRIDGE,   nullptr);
+    standalone.engine->setOption(CarlaBackend::OPTION_TRANSPORT_MODE,        CarlaBackend::TRANSPORT_MODE_BRIDGE, nullptr);
+    standalone.engine->setOption(CarlaBackend::OPTION_PREFER_PLUGIN_BRIDGES, false, nullptr);
+    standalone.engine->setOption(CarlaBackend::OPTION_PREFER_UI_BRIDGES,     false, nullptr);
+
+    // TODO - read from environment
+#ifndef BUILD_BRIDGE
+    standalone.engine->setOption(CarlaBackend::OPTION_FORCE_STEREO,          standalone.options.forceStereo ? 1 : 0,             nullptr);
+# ifdef WANT_DSSI
+    standalone.engine->setOption(CarlaBackend::OPTION_USE_DSSI_VST_CHUNKS,   standalone.options.useDssiVstChunks ? 1 : 0,        nullptr);
+# endif
+    standalone.engine->setOption(CarlaBackend::OPTION_MAX_PARAMETERS,        static_cast<int>(standalone.options.maxParameters),       nullptr);
+#endif
+
+    const bool initiated = standalone.engine->init(clientName);
+
+    if (initiated)
+    {
+        standalone.lastError = "no error";
+        standalone.init();
+    }
+    else
+    {
+        standalone.lastError = standalone.engine->getLastError();
+        delete standalone.engine;
+        standalone.engine = nullptr;
+    }
+
+    return initiated;
+}
+
+CarlaEngine* carla_get_standalone_engine()
+{
+    return standalone.engine;
+}
 #endif
 
 // -------------------------------------------------------------------------------------------------------------------

@@ -250,6 +250,11 @@ CARLA_EXPORT void carla_nsm_reply_open();
 CARLA_EXPORT void carla_nsm_reply_save();
 #endif
 
+#ifdef BUILD_BRIDGE
+CARLA_EXPORT bool carla_engine_init_bridge(const char* audioBaseName, const char* controlBaseName, const char* clientName);
+CARLA_EXPORT CarlaBackend::CarlaEngine* carla_get_standalone_engine();
+#endif
+
 /**@}*/
 
 #endif // __CARLA_STANDALONE_HPP__

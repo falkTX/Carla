@@ -23,8 +23,6 @@
 
 #ifdef BUILD_BRIDGE
 struct CarlaOscData;
-#else
-class QProcessEnvironment;
 #endif
 
 CARLA_BACKEND_START_NAMESPACE
@@ -913,20 +911,13 @@ public:
      */
     void setAboutToClose();
 
-#ifndef BUILD_BRIDGE
     // -------------------------------------------------------------------
     // Options
-
-    /*!
-     * Get the engine options as process environment.
-     */
-    const QProcessEnvironment& getOptionsAsProcessEnvironment() const;
 
     /*!
      * Set the engine option \a option.
      */
     void setOption(const OptionsType option, const int value, const char* const valueStr);
-#endif
 
     // -------------------------------------------------------------------
     // OSC Stuff
@@ -1013,9 +1004,6 @@ protected:
 #endif
 
 private:
-#ifdef BUILD_BRIDGE
-    static CarlaEngine* newBridge(const char* const audioBaseName, const char* const controlBaseName);
-#endif
 #ifdef WANT_JACK
     static CarlaEngine* newJack();
 #endif
@@ -1038,6 +1026,8 @@ private:
 
 public:
 #ifdef BUILD_BRIDGE
+    static CarlaEngine* newBridge(const char* const audioBaseName, const char* const controlBaseName);
+
     void osc_send_bridge_audio_count(const int32_t ins, const int32_t outs, const int32_t total);
     void osc_send_bridge_midi_count(const int32_t ins, const int32_t outs, const int32_t total);
     void osc_send_bridge_parameter_count(const int32_t ins, const int32_t outs, const int32_t total);

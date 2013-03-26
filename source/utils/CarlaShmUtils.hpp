@@ -21,10 +21,8 @@
 #include "CarlaUtils.hpp"
 
 #ifdef CARLA_OS_WIN
-# include <vector>
 # include <windows.h>
-struct map_t { HANDLE map; void* ptr; };
-struct shm_t { HANDLE shm; std::vector<map_t> maps; };
+struct shm_t { HANDLE shm; HANDLE map; };
 #else
 # include <fcntl.h>
 # include <sys/mman.h>
@@ -49,7 +47,7 @@ void carla_shm_init(shm_t& shm)
 {
 #ifdef CARLA_OS_WIN
     shm.shm = nullptr;
-    shm.maps.clear();
+    shm.map = nullptr;
 #else
     shm = -1;
 #endif
@@ -67,6 +65,7 @@ shm_t carla_shm_attach_linux(const char* const name)
 
     shm_t ret;
     ret.shm = CreateFileA(shmName, GENERIC_READ|GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
+    ret.map = nullptr;
 
     return ret;
 }
@@ -94,7 +93,7 @@ void carla_shm_close(shm_t& shm)
     CARLA_ASSERT(carla_is_shm_valid(shm));
 
 #ifdef CARLA_OS_WIN
-    CARLA_ASSERT(shm.maps.empty());
+    CARLA_ASSERT(shm.map == nullptr);
 
     CloseHandle(shm.shm);
     shm.shm = nullptr;
@@ -111,6 +110,8 @@ void* carla_shm_map(shm_t& shm, const size_t size)
     CARLA_ASSERT(size > 0);
 
 #ifdef CARLA_OS_WIN
+    CARLA_ASSERT(shm.map == nullptr);
+
     HANDLE map = CreateFileMapping(shm.shm, NULL, PAGE_READWRITE, size, size, NULL);
 
     if (map == nullptr)
@@ -119,13 +120,12 @@ void* carla_shm_map(shm_t& shm, const size_t size)
     HANDLE ptr = MapViewOfFile(map, FILE_MAP_COPY, 0, 0, size);
 
     if (ptr == nullptr)
+    {
+        CloseHandle(map);
         return nullptr;
+    }
 
-    map_t newMap;
-    newMap.map = map;
-    newMap.ptr = ptr;
-
-    shm.maps.push_back(newMap);
+    shm.map = map;
 
     return ptr;
 #else
@@ -135,31 +135,18 @@ void* carla_shm_map(shm_t& shm, const size_t size)
 }
 
 static inline
-void carla_shm_unmap(const shm_t& shm, void* const ptr, const size_t size)
+void carla_shm_unmap(shm_t& shm, void* const ptr, const size_t size)
 {
     CARLA_ASSERT(carla_is_shm_valid(shm));
     CARLA_ASSERT(ptr != nullptr);
     CARLA_ASSERT(size > 0);
 
 #ifdef CARLA_OS_WIN
-    CARLA_ASSERT(! shm.maps.empty());
+    CARLA_ASSERT(shm.map != nullptr);
 
-    for (auto it = shm.maps.begin(); it != shm.maps.end(); ++it)
-    {
-        map_t map(*it);
-
-        if (map.ptr == ptr)
-        {
-            UnmapViewOfFile(ptr);
-            CloseHandle(map.map);
-
-            shm.maps.erase(it);
-            break;
-        }
-    }
-
-    CARLA_ASSERT(false);
-
+    UnmapViewOfFile(ptr);
+    CloseHandle(shm.map);
+    shm.map = nullptr;
     return;
 
     // unused
@@ -178,17 +165,17 @@ void carla_shm_unmap(const shm_t& shm, void* const ptr, const size_t size)
 
 template<typename T>
 static inline
-bool carla_shm_map(shm_t& shm, T* value)
+bool carla_shm_map(shm_t& shm, T*& value)
 {
-    value = (T*)carla_shm_map(shm, sizeof(value));
+    value = (T*)carla_shm_map(shm, sizeof(T));
     return (value != nullptr);
 }
 
 template<typename T>
 static inline
-void carla_shm_unmap(const shm_t& shm, T* value)
+void carla_shm_unmap(shm_t& shm, T*& value)
 {
-    carla_shm_unmap(shm, value, sizeof(value));
+    carla_shm_unmap(shm, value, sizeof(T));
     value = nullptr;
 }
 

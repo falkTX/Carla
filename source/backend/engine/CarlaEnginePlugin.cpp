@@ -99,10 +99,7 @@ public:
         fBufferSize = d_bufferSize();
         fSampleRate = d_sampleRate();
 
-        fName = clientName;
-        fName.toBasic();
-
-        CarlaEngine::init(fName);
+        CarlaEngine::init(clientName);
         return true;
     }
 

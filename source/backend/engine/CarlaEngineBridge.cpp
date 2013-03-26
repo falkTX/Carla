@@ -21,8 +21,16 @@
 #include "CarlaBackendUtils.hpp"
 #include "CarlaMIDI.h"
 
-#include "CarlaBridge.hpp"
+#include "../CarlaBridge.hpp"
 #include "CarlaShmUtils.hpp"
+
+#include "jackbridge/jackbridge.h"
+
+#include <ctime>
+
+//#ifdef CARLA_OS_WIN
+//# include <sys/time.h>
+//#endif
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -32,16 +40,22 @@ CARLA_BACKEND_START_NAMESPACE
 
 // -----------------------------------------
 
-class CarlaEngineBridge : public CarlaEngine
+class CarlaEngineBridge : public CarlaEngine,
+                          public CarlaThread
 {
 public:
     CarlaEngineBridge(const char* const audioBaseName, const char* const controlBaseName)
-        : CarlaEngine()
+        : CarlaEngine(),
+          fIsRunning(false),
+          fQuitNow(false)
     {
         carla_debug("CarlaEngineBridge::CarlaEngineBridge()");
 
-        fShmAudioPool.filename = "/carla-bridge_shm_" + audioBaseName;
-        fShmControl.filename   = "/carla-bridge_shc_" + controlBaseName;
+        fShmAudioPool.filename  = "/carla-bridge_shm_";
+        fShmAudioPool.filename += audioBaseName;
+
+        fShmControl.filename    = "/carla-bridge_shc_";
+        fShmControl.filename   += controlBaseName;
     }
 
     ~CarlaEngineBridge()
@@ -56,11 +70,14 @@ public:
     {
         carla_debug("CarlaEngineBridge::init(\"%s\")", clientName);
 
-        char tmpFileBase[60];
-
         // SHM Audio Pool
         {
+#ifdef CARLA_OS_WIN
+            // TESTING!
+            fShmAudioPool.shm = carla_shm_attach_linux((const char*)fShmAudioPool.filename);
+#else
             fShmAudioPool.shm = carla_shm_attach((const char*)fShmAudioPool.filename);
+#endif
 
             if (! carla_is_shm_valid(fShmAudioPool.shm))
             {
@@ -72,7 +89,12 @@ public:
 
         // SHM Control
         {
+#ifdef CARLA_OS_WIN
+            // TESTING!
+            fShmControl.shm = carla_shm_attach_linux((const char*)fShmControl.filename);
+#else
             fShmControl.shm = carla_shm_attach((const char*)fShmControl.filename);
+#endif
 
             if (! carla_is_shm_valid(fShmControl.shm))
             {
@@ -81,7 +103,7 @@ public:
                 return false;
             }
 
-            if (! carla_shm_map<ShmControl>(fShmControl.shm, fShmControl.data))
+            if (! carla_shm_map<BridgeShmControl>(fShmControl.shm, fShmControl.data))
             {
                 _cleanup();
                 carla_stdout("Failed to mmap shared memory file");
@@ -89,7 +111,20 @@ public:
             }
         }
 
-        CarlaEngine::init(fName);
+        // Read values from memory
+        CARLA_ASSERT(rdwr_readOpcode(&fShmControl.data->ringBuffer) == kPluginBridgeOpcodeBufferSize);
+        fBufferSize = rdwr_readInt(&fShmControl.data->ringBuffer);
+        carla_stderr("BufferSize: %i", fBufferSize);
+
+        CARLA_ASSERT(rdwr_readOpcode(&fShmControl.data->ringBuffer) == kPluginBridgeOpcodeSampleRate);
+        fSampleRate = rdwr_readFloat(&fShmControl.data->ringBuffer);
+        carla_stderr("SampleRate: %f", fSampleRate);
+
+        fQuitNow = false;
+        fIsRunning = true;
+
+        CarlaThread::start();
+        CarlaEngine::init(clientName);
         return true;
     }
 
@@ -98,6 +133,9 @@ public:
         carla_debug("CarlaEnginePlugin::close()");
         CarlaEngine::close();
 
+        fQuitNow = true;
+        CarlaThread::stop();
+
         _cleanup();
 
         return true;
@@ -105,7 +143,7 @@ public:
 
     bool isRunning() const
     {
-        return true;
+        return fIsRunning;
     }
 
     bool isOffline() const
@@ -118,16 +156,113 @@ public:
         return kEngineTypeBridge;
     }
 
+    // -------------------------------------
+    // CarlaThread virtual calls
+
+    void run()
+    {
+        // TODO - set RT permissions
+
+        const int timeout = 50;
+
+        while (! fQuitNow)
+        {
+            carla_debug("RUN 001");
+            timespec ts_timeout;
+#if 0//def CARLA_OS_WIN
+            timeval now;
+            gettimeofday(&now, nullptr);
+            ts_timeout.tv_sec = now.tv_sec;
+            ts_timeout.tv_nsec = now.tv_usec * 1000;
+#else
+            linux_clock_gettime_rt(&ts_timeout);
+#endif
+
+            time_t seconds = timeout / 1000;
+            ts_timeout.tv_sec += seconds;
+            ts_timeout.tv_nsec += (timeout - seconds * 1000) * 1000000;
+            if (ts_timeout.tv_nsec >= 1000000000) {
+                ts_timeout.tv_nsec -= 1000000000;
+                ts_timeout.tv_sec++;
+            }
+
+            if (linux_sem_timedwait(&fShmControl.data->runServer, &ts_timeout))
+            {
+                if (errno == ETIMEDOUT)
+                {
+                    continue;
+                }
+                else
+                {
+                    fQuitNow = true;
+                    break;
+                }
+            }
+
+            carla_debug("RUN 004");
+
+            while (rdwr_dataAvailable(&fShmControl.data->ringBuffer))
+            {
+                carla_debug("RUN 005");
+                const PluginBridgeOpcode opcode = rdwr_readOpcode(&fShmControl.data->ringBuffer);
+
+                switch (opcode)
+                {
+                case kPluginBridgeOpcodeNull:
+                    break;
+                case kPluginBridgeOpcodeReadyWait:
+                    fShmAudioPool.data = (float*)carla_shm_map(fShmAudioPool.shm, rdwr_readInt(&fShmControl.data->ringBuffer));
+                    break;
+                case kPluginBridgeOpcodeBufferSize:
+                    bufferSizeChanged(rdwr_readInt(&fShmControl.data->ringBuffer));
+                    break;
+                case kPluginBridgeOpcodeSampleRate:
+                    sampleRateChanged(rdwr_readFloat(&fShmControl.data->ringBuffer));
+                    break;
+                case kPluginBridgeOpcodeProcess:
+                {
+                    CARLA_ASSERT(fShmAudioPool.data != nullptr);
+                    CarlaPlugin* const plugin(getPluginUnchecked(0));
+                    carla_debug("RUN 006");
+
+                    if (plugin != nullptr && plugin->enabled() && plugin->tryLock())
+                    {
+                        const uint32_t inCount  = plugin->audioInCount();
+                        const uint32_t outCount = plugin->audioOutCount();
+
+                        float* inBuffer[inCount];
+                        float* outBuffer[outCount];
+
+                        for (uint32_t i=0; i < inCount; i++)
+                            inBuffer[i] = fShmAudioPool.data + i*fBufferSize;
+                        for (uint32_t i=0; i < outCount; i++)
+                            outBuffer[i] = fShmAudioPool.data + (i+inCount)*fBufferSize;
+
+                        plugin->initBuffers();
+                        plugin->setActive(true, false, false);
+                        plugin->process(inBuffer, outBuffer, fBufferSize);
+                        plugin->unlock();
+                    }
+                    break;
+                }
+                }
+            }
+
+            if (linux_sem_post(&fShmControl.data->runClient) != 0)
+                carla_stderr2("Could not post to semaphore");
+        }
+
+        fIsRunning = false;
+    }
+
 private:
     struct BridgeAudioPool {
         CarlaString filename;
         float* data;
-        size_t size;
         shm_t shm;
 
         BridgeAudioPool()
-            : data(nullptr),
-              size(0)
+            : data(nullptr)
         {
             carla_shm_init(shm);
         }
@@ -135,7 +270,7 @@ private:
 
     struct BridgeControl {
         CarlaString filename;
-        ShmControl* data;
+        BridgeShmControl* data;
         shm_t shm;
 
         BridgeControl()
@@ -146,6 +281,9 @@ private:
 
     } fShmControl;
 
+    bool fIsRunning;
+    bool fQuitNow;
+
     void _cleanup()
     {
         if (fShmAudioPool.filename.isNotEmpty())
@@ -154,11 +292,7 @@ private:
         if (fShmControl.filename.isNotEmpty())
             fShmControl.filename.clear();
 
-        // delete data
         fShmAudioPool.data = nullptr;
-        fShmAudioPool.size = 0;
-
-        // and again
         fShmControl.data = nullptr;
 
         if (carla_is_shm_valid(fShmAudioPool.shm))

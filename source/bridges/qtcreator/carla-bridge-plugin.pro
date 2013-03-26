@@ -28,6 +28,7 @@ SOURCES += \
     ../../backend/engine/CarlaEngine.cpp \
     ../../backend/engine/CarlaEngineOsc.cpp \
     ../../backend/engine/CarlaEngineThread.cpp \
+    ../../backend/engine/CarlaEngineBridge.cpp \
     ../../backend/engine/CarlaEngineJack.cpp \
     ../../backend/engine/CarlaEnginePlugin.cpp \
     ../../backend/engine/CarlaEngineRtAudio.cpp
@@ -88,6 +89,7 @@ HEADERS += \
     ../../utils/CarlaLibUtils.hpp \
     ../../utils/CarlaLv2Utils.hpp \
     ../../utils/CarlaOscUtils.hpp \
+    ../../utils/CarlaShmUtils.hpp \
     ../../utils/CarlaStateUtils.hpp \
     ../../utils/CarlaVstUtils.hpp \
     ../../utils/CarlaUtils.hpp \
@@ -114,7 +116,7 @@ DEFINES += DEBUG
 DEFINES += BUILD_BRIDGE BUILD_BRIDGE_PLUGIN BRIDGE_PLUGIN
 
 DEFINES += WANT_JACK
-DEFINES += WANT_NATIVE WANT_LADSPA WANT_DSSI WANT_LV2 WANT_VST WANT_VST3
+DEFINES += WANT_LADSPA WANT_DSSI WANT_LV2 WANT_VST WANT_VST3
 DEFINES += WANT_FLUIDSYNTH WANT_LINUXSAMPLER
 
 LIBS     = -ldl \

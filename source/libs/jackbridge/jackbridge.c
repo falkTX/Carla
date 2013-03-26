@@ -16,6 +16,11 @@
 
 #include "jackbridge.h"
 
+#ifndef JACKBRIDGE_DUMMY
+# include <time.h>
+# include <semaphore.h>
+#endif
+
 // -----------------------------------------------------------------------------
 
 jack_client_t* jackbridge_client_open(const char* client_name, jack_options_t options, jack_status_t* status, ...)
@@ -277,5 +282,32 @@ void jackbridge_transport_stop(jack_client_t* client)
 {
 #ifndef JACKBRIDGE_DUMMY
     jack_transport_stop(client);
+#endif
+}
+
+// -----------------------------------------------------------------------------
+
+void linux_clock_gettime_rt(struct timespec* ts)
+{
+#ifndef JACKBRIDGE_DUMMY
+    clock_gettime(CLOCK_REALTIME, ts);
+#endif
+}
+
+int linux_sem_post(void* sem)
+{
+#ifndef JACKBRIDGE_DUMMY
+    return sem_post(sem);
+#else
+    return 1;
+#endif
+}
+
+int linux_sem_timedwait(void* sem, struct timespec* ts)
+{
+#ifndef JACKBRIDGE_DUMMY
+    return sem_timedwait(sem, ts);
+#else
+    return 1;
 #endif
 }
