@@ -1,6 +1,6 @@
 /*
- * Carla common utils
- * Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
+ * Carla Thread
+ * Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -175,7 +175,7 @@ public:
         if (fStarted && ! fFinished)
             return true;
 
-        // take the change to clear data
+        // take the chance to clear data
 #ifdef CPP11_THREAD
         if (cthread != nullptr)
         {

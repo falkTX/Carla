@@ -1,5 +1,5 @@
 /*
- * Carla common utils
+ * Carla Mutex
  * Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or

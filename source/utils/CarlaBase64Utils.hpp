@@ -140,7 +140,7 @@ unsigned int carla_base64_decode(const char* const encoded, uint8_t* const raw)
             continue;
         }
 
-        if (padCount)
+        if (padCount > 0)
         {
             carla_debug("Base64-encoded string \"%s\" has invalid pad sequence", encoded);
             return 0;

@@ -26,7 +26,7 @@
 #define CARLA_BACKEND_END_NAMESPACE }
 #define CARLA_BACKEND_USE_NAMESPACE using namespace CarlaBackend;
 
-#define STR_MAX 0xFF+1
+#define STR_MAX 0xFF
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -40,7 +40,7 @@ CARLA_BACKEND_START_NAMESPACE
 
 const unsigned int MAX_DEFAULT_PLUGINS    = 99;  //!< Maximum default number of loadable plugins
 const unsigned int MAX_RACK_PLUGINS       = 16;  //!< Maximum number of loadable plugins in rack mode
-const unsigned int MAX_PATCHBAY_PLUGINS   = 999; //!< Maximum number of loadable plugins in patchbay mode
+const unsigned int MAX_PATCHBAY_PLUGINS   = 255; //!< Maximum number of loadable plugins in patchbay mode
 const unsigned int MAX_DEFAULT_PARAMETERS = 200; //!< Maximum default number of parameters allowed.\see OPTION_MAX_PARAMETERS
 
 /*!
@@ -64,9 +64,8 @@ const unsigned int PLUGIN_CAN_PANNING       = 0x800; //!< Plugin can make use of
 /*!
  * @defgroup PluginOptions Plugin Options
  *
- * Various plugin options.\n
- * ON or OFF defines the default plugin value.
- * \see CarlaPlugin::options()
+ * Various plugin options.
+ * \see CarlaPlugin::availableOptions() and CarlaPlugin::options()
  * @{
  */
 const unsigned int PLUGIN_OPTION_FIXED_BUFFER          = 0x001; //!< Use a constant, fixed-size audio buffer
@@ -77,7 +76,7 @@ const unsigned int PLUGIN_OPTION_SEND_CONTROL_CHANGES  = 0x010; //!< Send MIDI C
 const unsigned int PLUGIN_OPTION_SEND_CHANNEL_PRESSURE = 0x020; //!< Send MIDI channel pressure events
 const unsigned int PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH  = 0x040; //!< Send MIDI note aftertouch events
 const unsigned int PLUGIN_OPTION_SEND_PITCHBEND        = 0x080; //!< Send MIDI pitchbend events
-const unsigned int PLUGIN_OPTION_SEND_ALL_SOUND_OFF    = 0x100; //!< Send MIDI ALL_SOUND_OFF / ALL_NOTES_OFF events
+const unsigned int PLUGIN_OPTION_SEND_ALL_SOUND_OFF    = 0x100; //!< Send MIDI all sounds/notes off events, single-note offs otherwise
 /**@}*/
 
 /*!
@@ -87,13 +86,13 @@ const unsigned int PLUGIN_OPTION_SEND_ALL_SOUND_OFF    = 0x100; //!< Send MIDI A
  * \see CarlaPlugin::parameterData()
  * @{
  */
-const unsigned int PARAMETER_IS_BOOLEAN       = 0x01; //!< Parameter value is always a boolean (always at minimum or maximum range).
-const unsigned int PARAMETER_IS_INTEGER       = 0x02; //!< Parameter value is always an integer.
+const unsigned int PARAMETER_IS_BOOLEAN       = 0x01; //!< Parameter value is a boolean (always at minimum or maximum values).
+const unsigned int PARAMETER_IS_INTEGER       = 0x02; //!< Parameter value is an integer.
 const unsigned int PARAMETER_IS_LOGARITHMIC   = 0x04; //!< Parameter is logarithmic.
 const unsigned int PARAMETER_IS_ENABLED       = 0x08; //!< Parameter is enabled and will be shown in the host built-in editor.
 const unsigned int PARAMETER_IS_AUTOMABLE     = 0x10; //!< Parameter is automable (realtime safe)
 const unsigned int PARAMETER_USES_SAMPLERATE  = 0x20; //!< Parameter needs sample rate to work (value and ranges are multiplied by SR, and must be divided by SR on save).
-const unsigned int PARAMETER_USES_SCALEPOINTS = 0x40; //!< Parameter uses scalepoints to define internal values in a meaninful way.
+const unsigned int PARAMETER_USES_SCALEPOINTS = 0x40; //!< Parameter uses scalepoints to define internal values in a meaningful way.
 const unsigned int PARAMETER_USES_CUSTOM_TEXT = 0x80; //!< Parameter uses custom text for displaying its value.\see CarlaPlugin::getParameterText()
 /**@}*/
 
@@ -159,15 +158,15 @@ enum BinaryType {
  */
 enum PluginType {
     PLUGIN_NONE     = 0, //!< Null plugin type.
-    PLUGIN_INTERNAL = 1, //!< Internal plugin.\see NativePlugin
-    PLUGIN_LADSPA   = 2, //!< LADSPA plugin.\see LadspaPlugin
-    PLUGIN_DSSI     = 3, //!< DSSI plugin.\see DssiPlugin
-    PLUGIN_LV2      = 4, //!< LV2 plugin.\see Lv2Plugin
-    PLUGIN_VST      = 5, //!< VST1/2 plugin.\see VstPlugin
-    PLUGIN_VST3     = 6, //!< VST3 plugin.\see VstPlugin
-    PLUGIN_GIG      = 7, //!< GIG sound kit, implemented via LinuxSampler.\see LinuxSamplerPlugin
-    PLUGIN_SF2      = 8, //!< SF2 sound kit (aka SoundFont), implemented via FluidSynth.\see FluidSynthPlugin
-    PLUGIN_SFZ      = 9  //!< SFZ sound kit, implemented via LinuxSampler.\see LinuxSamplerPlugin
+    PLUGIN_INTERNAL = 1, //!< Internal plugin.
+    PLUGIN_LADSPA   = 2, //!< LADSPA plugin.
+    PLUGIN_DSSI     = 3, //!< DSSI plugin.
+    PLUGIN_LV2      = 4, //!< LV2 plugin.
+    PLUGIN_VST      = 5, //!< VST1/2 plugin.
+    PLUGIN_VST3     = 6, //!< VST3 plugin.
+    PLUGIN_GIG      = 7, //!< GIG sound kit, implemented via LinuxSampler.
+    PLUGIN_SF2      = 8, //!< SF2 sound kit (aka SoundFont), implemented via FluidSynth.
+    PLUGIN_SFZ      = 9  //!< SFZ sound kit, implemented via LinuxSampler.
 };
 
 /*!
@@ -219,7 +218,7 @@ enum InternalParametersIndex {
 
 /*!
  * Options used in the CarlaEngine::setOption() and set_option() calls.\n
- * These options must be set before initiliazing or after closing the engine.
+ * All options except paths must be set before initiliazing or after closing the engine.
  */
 enum OptionsType {
     /*!
@@ -250,8 +249,7 @@ enum OptionsType {
 
     /*!
      * Use plugin bridges whenever possible.\n
-     * Default is no, and not recommended at this point!.
-     * EXPERIMENTAL AND INCOMPLETE!
+     * Default is no, EXPERIMENTAL.
      */
     OPTION_PREFER_PLUGIN_BRIDGES = 4,
 
@@ -391,8 +389,7 @@ enum OptionsType {
 /*!
  * Opcodes sent from the engine callback to the GUI, as defined by CallbackFunc.
  *
- * \see CarlaEngine::setCallback()
- * \see set_callback_function()
+ * \see CarlaEngine::setCallback() and set_callback_function()
  */
 enum CallbackType {
     /*!
@@ -403,6 +400,7 @@ enum CallbackType {
 
     /*!
      * A plugin has been added.
+     * \param valueStr Plugin name
      */
     CALLBACK_PLUGIN_ADDED = 1,
 
@@ -413,6 +411,7 @@ enum CallbackType {
 
     /*!
      * A plugin has been renamed.
+     * \param valueStr New name
      */
     CALLBACK_PLUGIN_RENAMED = 3,
 
@@ -425,10 +424,10 @@ enum CallbackType {
     CALLBACK_PARAMETER_VALUE_CHANGED = 4,
 
     /*!
-     * A parameter default has been changed.
+     * A parameter default has changed.
      *
      * \param value1 Parameter index
-     * \param value3 Default value
+     * \param value3 New default value
      */
     CALLBACK_PARAMETER_DEFAULT_CHANGED = 5,
 
@@ -518,31 +517,32 @@ enum CallbackType {
     /*!
      * Canvas client added
      *
-     * \param value1   Client ID
-     * \param valueStr Client Name
+     * \param value1   Client Id
+     * \param valueStr Client name
      */
     CALLBACK_PATCHBAY_CLIENT_ADDED = 18,
 
     /*!
      * Canvas client removed
      *
-     * \param value1 Client ID
+     * \param value1 Client Id
      */
     CALLBACK_PATCHBAY_CLIENT_REMOVED = 19,
 
     /*!
      * Canvas client renamed
      *
-     * \param value1   Client ID
-     * \param valueStr New Client name
+     * \param value1   Client Id
+     * \param valueStr New client name
      */
     CALLBACK_PATCHBAY_CLIENT_RENAMED = 20,
 
     /*!
      * Canvas port added
      *
-     * \param value1   Client ID
-     * \param value2   Port ID
+     * \param value1   Client Id
+     * \param value2   Port Id
+     * \param value3   Port flags
      * \param valueStr Port name
      */
     CALLBACK_PATCHBAY_PORT_ADDED = 21,
@@ -550,31 +550,31 @@ enum CallbackType {
     /*!
      * Canvas port remvoed
      *
-     * \param value1 Port ID
+     * \param value1 Port Id
      */
     CALLBACK_PATCHBAY_PORT_REMOVED = 22,
 
     /*!
      * Canvas port renamed
      *
-     * \param value1   Port ID
-     * \param valueStr New Port name
+     * \param value1   Port Id
+     * \param valueStr New port name
      */
     CALLBACK_PATCHBAY_PORT_RENAMED = 23,
 
     /*!
      * Canvas port connection added
      *
-     * \param value1 Output port ID
-     * \param value2 Input port ID
+     * \param value1 Output port Id
+     * \param value2 Input port Id
      */
     CALLBACK_PATCHBAY_CONNECTION_ADDED = 24,
 
     /*!
      * Canvas port connection removed
      *
-     * \param value1 Output port ID
-     * \param value2 Input port ID
+     * \param value1 Output port Id
+     * \param value2 Input port Id
      */
     CALLBACK_PATCHBAY_CONNECTION_REMOVED = 25,
 
@@ -617,7 +617,7 @@ enum CallbackType {
 enum ProcessMode {
     PROCESS_MODE_SINGLE_CLIENT    = 0, //!< Single client mode (dynamic input/outputs as needed by plugins)
     PROCESS_MODE_MULTIPLE_CLIENTS = 1, //!< Multiple client mode (1 master client + 1 client per plugin)
-    PROCESS_MODE_CONTINUOUS_RACK  = 2, //!< Single client, 'rack' mode. Processes plugins in order of id, with forced stereo.
+    PROCESS_MODE_CONTINUOUS_RACK  = 2, //!< Single client, 'rack' mode. Processes plugins in order of Id, with forced stereo.
     PROCESS_MODE_PATCHBAY         = 3, //!< Single client, 'patchbay' mode.
     PROCESS_MODE_BRIDGE           = 4  //!< Special mode, used in plugin-bridges only.
 };
@@ -651,7 +651,7 @@ struct ParameterData {
 
     ParameterData()
         : type(PARAMETER_UNKNOWN),
-          index(-1),
+          index(PARAMETER_NULL),
           rindex(-1),
           hints(0x0),
           midiChannel(0),

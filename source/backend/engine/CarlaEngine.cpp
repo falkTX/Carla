@@ -102,7 +102,7 @@ CarlaEngineEventPort::CarlaEngineEventPort(const bool isInput, const ProcessMode
     carla_debug("CarlaEngineEventPort::CarlaEngineEventPort(%s, %s)", bool2str(isInput), ProcessMode2Str(processMode));
 
     if (kProcessMode == PROCESS_MODE_PATCHBAY || kProcessMode == PROCESS_MODE_BRIDGE)
-        fBuffer = new EngineEvent[PATCHBAY_EVENT_COUNT];
+        fBuffer = new EngineEvent[kMaxEventCount];
 }
 
 CarlaEngineEventPort::~CarlaEngineEventPort()
@@ -131,7 +131,7 @@ void CarlaEngineEventPort::initBuffer(CarlaEngine* const engine)
     else
 #endif
         if ((kProcessMode == PROCESS_MODE_PATCHBAY || kProcessMode == PROCESS_MODE_BRIDGE) && ! kIsInput)
-            carla_zeroMem(fBuffer, sizeof(EngineEvent)*PATCHBAY_EVENT_COUNT);
+            carla_zeroStruct<EngineEvent>(fBuffer, kMaxEventCount);
 }
 
 uint32_t CarlaEngineEventPort::getEventCount()
@@ -1064,7 +1064,7 @@ bool CarlaEngine::saveProject(const char* const filename)
     out << "<CARLA-PROJECT VERSION='1.0'>\n";
 
     bool firstPlugin = true;
-    char strBuf[STR_MAX];
+    char strBuf[STR_MAX+1];
 
     for (unsigned int i=0; i < kData->curPluginCount; i++)
     {

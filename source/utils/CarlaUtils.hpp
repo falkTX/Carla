@@ -56,9 +56,13 @@ void carla_debug(const char* const fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
+#ifndef CARLA_OS_WIN
     std::fprintf(stdout, "\x1b[30;1m");
+#endif
     std::vfprintf(stdout, fmt, args);
+#ifndef CARLA_OS_WIN
     std::fprintf(stdout, "\x1b[0m\n");
+#endif
     va_end(args);
 }
 #endif
@@ -88,9 +92,13 @@ void carla_stderr2(const char* const fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
+#ifndef CARLA_OS_WIN
     std::fprintf(stderr, "\x1b[31m");
+#endif
     std::vfprintf(stderr, fmt, args);
+#ifndef CARLA_OS_WIN
     std::fprintf(stderr, "\x1b[0m\n");
+#endif
     va_end(args);
 }
 
@@ -197,7 +205,7 @@ const char* carla_strdup(const char* const strBuf)
     CARLA_ASSERT(strBuf != nullptr);
 
     const size_t bufferLen = (strBuf != nullptr) ? std::strlen(strBuf) : 0;
-    char* const  buffer    = new char [bufferLen+1];
+    char* const  buffer    = new char[bufferLen+1];
 
     std::strcpy(buffer, strBuf);
 
@@ -253,7 +261,7 @@ void carla_copy(T* dataDst, T* dataSrc, const size_t size)
     if (dataDst == nullptr || dataSrc == nullptr || size == 0)
         return;
 
-    for (size_t i=0; i < size; i++)
+    for (size_t i=0; i < size; ++i)
         *dataDst++ = *dataSrc++;
 }
 
@@ -268,7 +276,7 @@ void carla_copy(T* dataDst, const T* dataSrc, const size_t size)
     if (dataDst == nullptr || dataSrc == nullptr || size == 0)
         return;
 
-    for (size_t i=0; i < size; i++)
+    for (size_t i=0; i < size; ++i)
         *dataDst++ = *dataSrc++;
 }
 
@@ -282,7 +290,7 @@ void carla_fill(T* data, const size_t size, const T v)
     if (data == nullptr || size == 0)
         return;
 
-    for (size_t i=0; i < size; i++)
+    for (size_t i=0; i < size; ++i)
         *data++ = v;
 }
 
@@ -344,6 +352,13 @@ static inline
 void carla_zeroStruct(T& structure)
 {
     std::memset(&structure, 0, sizeof(T));
+}
+
+template <typename T>
+static inline
+void carla_zeroStruct(T& structure, const size_t count)
+{
+    std::memset(&structure, 0, sizeof(T)*count);
 }
 
 // -------------------------------------------------

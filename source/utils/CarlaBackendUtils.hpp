@@ -358,7 +358,24 @@ const char* ProcessMode2Str(const ProcessMode& mode)
         return "PROCESS_MODE_BRIDGE";
     }
 
-    carla_stderr("CarlaBackend::ProcessModeType2Str(%i) - invalid type", mode);
+    carla_stderr("CarlaBackend::ProcessMode2Str(%i) - invalid type", mode);
+    return nullptr;
+}
+
+static inline
+const char* TransportMode2Str(const TransportMode& mode)
+{
+    switch (mode)
+    {
+    case TRANSPORT_MODE_INTERNAL:
+        return "TRANSPORT_MODE_INTERNAL";
+    case TRANSPORT_MODE_JACK:
+        return "TRANSPORT_MODE_JACK";
+    case TRANSPORT_MODE_BRIDGE:
+        return "TRANSPORT_MODE_BRIDGE";
+    }
+
+    carla_stderr("CarlaBackend::TransportMode2Str(%i) - invalid type", mode);
     return nullptr;
 }
 

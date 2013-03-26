@@ -1,6 +1,6 @@
 /*
- * Carla Backend utils
- * Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
+ * Carla State utils
+ * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -19,9 +19,10 @@
 #define __CARLA_STATE_UTILS_HPP__
 
 #include "CarlaBackendUtils.hpp"
+#include "CarlaMIDI.h"
 
-#include <QtXml/QDomNode>
 #include <QtCore/QVector>
+#include <QtXml/QDomNode>
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -40,7 +41,7 @@ struct StateParameter {
           name(nullptr),
           symbol(nullptr),
           value(0.0f),
-          midiChannel(1),
+          midiChannel(0),
           midiCC(-1) {}
 
     ~StateParameter()
@@ -97,7 +98,7 @@ struct SaveState {
     int32_t     currentMidiProgram;
     const char* chunk;
 
-    StateParameterVector  parameters;
+    StateParameterVector parameters;
     StateCustomDataVector customData;
 
     SaveState()
@@ -176,13 +177,13 @@ struct SaveState {
 
         for (auto it = parameters.begin(); it != parameters.end(); ++it)
         {
-            StateParameter* stateParameter = *it;
+            StateParameter* const stateParameter(*it);
             delete stateParameter;
         }
 
         for (auto it = customData.begin(); it != customData.end(); ++it)
         {
-            StateCustomData* stateCustomData = *it;
+            StateCustomData* const stateCustomData(*it);
             delete stateCustomData;
         }
 
@@ -231,8 +232,8 @@ const SaveState& getSaveStateDictFromXML(const QDomNode& xmlNode)
 
             while (! xmlInfo.isNull())
             {
-                const QString tag  = xmlInfo.toElement().tagName();
-                const QString text = xmlInfo.toElement().text().trimmed();
+                const QString tag(xmlInfo.toElement().tagName());
+                const QString text(xmlInfo.toElement().text().trimmed());
 
                 if (tag.compare("Type", Qt::CaseInsensitive) == 0)
                     saveState.type = xmlSafeStringChar(text, false);
@@ -262,8 +263,8 @@ const SaveState& getSaveStateDictFromXML(const QDomNode& xmlNode)
 
             while (! xmlData.isNull())
             {
-                const QString tag  = xmlData.toElement().tagName();
-                const QString text = xmlData.toElement().text().trimmed();
+                const QString tag(xmlData.toElement().tagName());
+                const QString text(xmlData.toElement().text().trimmed());
 
                 // ----------------------------------------------
                 // Internal Data
@@ -345,14 +346,14 @@ const SaveState& getSaveStateDictFromXML(const QDomNode& xmlNode)
 
                 else if (tag.compare("Parameter", Qt::CaseInsensitive) == 0)
                 {
-                    StateParameter* stateParameter(new StateParameter);
+                    StateParameter* const stateParameter(new StateParameter());
 
                     QDomNode xmlSubData(xmlData.toElement().firstChild());
 
                     while (! xmlSubData.isNull())
                     {
-                        const QString pTag  = xmlSubData.toElement().tagName();
-                        const QString pText = xmlSubData.toElement().text().trimmed();
+                        const QString pTag(xmlSubData.toElement().tagName());
+                        const QString pText(xmlSubData.toElement().text().trimmed());
 
                         if (pTag.compare("Index", Qt::CaseInsensitive) == 0)
                         {
@@ -378,21 +379,21 @@ const SaveState& getSaveStateDictFromXML(const QDomNode& xmlNode)
                         {
                             bool ok;
                             ushort channel = pText.toUShort(&ok);
-                            if (ok && channel < 16)
-                                stateParameter->midiChannel = static_cast<uint8_t>(channel);
+                            if (ok && channel > 0 && channel < MAX_MIDI_CHANNELS)
+                                stateParameter->midiChannel = static_cast<uint8_t>(channel-1);
                         }
                         else if (pTag.compare("MidiCC", Qt::CaseInsensitive) == 0)
                         {
                             bool ok;
                             int cc = pText.toInt(&ok);
-                            if (ok && cc < INT16_MAX)
+                            if (ok && cc > 0 && cc < INT16_MAX)
                                 stateParameter->midiCC = static_cast<int16_t>(cc);
                         }
 
                         xmlSubData = xmlSubData.nextSibling();
                     }
 
-                    saveState.parameters.push_back(stateParameter);
+                    saveState.parameters.append(stateParameter);
                 }
 
                 // ----------------------------------------------
@@ -400,14 +401,14 @@ const SaveState& getSaveStateDictFromXML(const QDomNode& xmlNode)
 
                 else if (tag.compare("CustomData", Qt::CaseInsensitive) == 0)
                 {
-                    StateCustomData* stateCustomData(new StateCustomData);
+                    StateCustomData* const stateCustomData(new StateCustomData());
 
                     QDomNode xmlSubData(xmlData.toElement().firstChild());
 
                     while (! xmlSubData.isNull())
                     {
-                        const QString cTag  = xmlSubData.toElement().tagName();
-                        const QString cText = xmlSubData.toElement().text().trimmed();
+                        const QString cTag(xmlSubData.toElement().tagName());
+                        const QString cText(xmlSubData.toElement().text().trimmed());
 
                         if (cTag.compare("Type", Qt::CaseInsensitive) == 0)
                             stateCustomData->type = xmlSafeStringChar(cText, false);
@@ -419,7 +420,7 @@ const SaveState& getSaveStateDictFromXML(const QDomNode& xmlNode)
                         xmlSubData = xmlSubData.nextSibling();
                     }
 
-                    saveState.customData.push_back(stateCustomData);
+                    saveState.customData.append(stateCustomData);
                 }
 
                 // ----------------------------------------------
@@ -447,9 +448,10 @@ const SaveState& getSaveStateDictFromXML(const QDomNode& xmlNode)
 // -------------------------------------------------
 
 static inline
-QString getXMLFromSaveState(const SaveState& saveState)
+const QString& getXMLFromSaveState(const SaveState& saveState)
 {
-    QString content;
+    static QString content;
+    content.clear();
 
     {
         QString info("  <Info>\n");
@@ -521,22 +523,22 @@ QString getXMLFromSaveState(const SaveState& saveState)
 
     for (auto it = saveState.parameters.begin(); it != saveState.parameters.end(); ++it)
     {
-        StateParameter* stateParameter = *it;
+        StateParameter* const stateParameter(*it);
 
         QString parameter("\n""   <Parameter>\n");
 
         parameter += QString("    <Index>%1</Index>\n").arg(stateParameter->index);
         parameter += QString("    <Name>%1</Name>\n").arg(xmlSafeString(stateParameter->name, true));
 
-        if (stateParameter->symbol != nullptr && *stateParameter->symbol != 0)
+        if (stateParameter->symbol != nullptr && *stateParameter->symbol != '\0')
             parameter += QString("    <Symbol>%1</Symbol>\n").arg(xmlSafeString(stateParameter->symbol, true));
 
         parameter += QString("    <Value>%1</Value>\n").arg(stateParameter->value);
 
-        if (stateParameter->midiCC > 0)
+        if (stateParameter->midiCC > 0 && stateParameter->midiChannel >= 0)
         {
             parameter += QString("    <MidiCC>%1</MidiCC>\n").arg(stateParameter->midiCC);
-            parameter += QString("    <MidiChannel>%1</MidiChannel>\n").arg(stateParameter->midiChannel);
+            parameter += QString("    <MidiChannel>%1</MidiChannel>\n").arg(stateParameter->midiChannel+1);
         }
 
         parameter += "   </Parameter>\n";
@@ -544,13 +546,21 @@ QString getXMLFromSaveState(const SaveState& saveState)
         content += parameter;
     }
 
-    if (saveState.currentProgramIndex >= 0)
+    if (saveState.currentProgramIndex >= 0 && saveState.currentProgramName != nullptr)
     {
-        QString program("\n");
-        program += QString("   <CurrentProgramIndex>%1</CurrentProgramIndex>\n").arg(saveState.currentProgramIndex+1);
-        program += QString("   <CurrentProgramName>%1</CurrentProgramName>\n").arg(xmlSafeString(saveState.currentProgramName, true));
+        // ignore 'default' program
+#ifdef __USE_GNU
+        if ((saveState.currentProgramIndex > 0 || strcasecmp(saveState.currentProgramName, "Default") != 0))
+#else
+        if ((saveState.currentProgramIndex > 0 || std::strcmp(saveState.currentProgramName, "Default") != 0)
+#endif
+        {
+            QString program("\n");
+            program += QString("   <CurrentProgramIndex>%1</CurrentProgramIndex>\n").arg(saveState.currentProgramIndex+1);
+            program += QString("   <CurrentProgramName>%1</CurrentProgramName>\n").arg(xmlSafeString(saveState.currentProgramName, true));
 
-        content += program;
+            content += program;
+        }
     }
 
     if (saveState.currentMidiBank >= 0 && saveState.currentMidiProgram >= 0)
@@ -564,7 +574,7 @@ QString getXMLFromSaveState(const SaveState& saveState)
 
     for (auto it = saveState.customData.begin(); it != saveState.customData.end(); ++it)
     {
-        StateCustomData* stateCustomData = *it;
+        StateCustomData* const stateCustomData(*it);
 
         QString customData("\n""   <CustomData>\n");
         customData += QString("    <Type>%1</Type>\n").arg(xmlSafeString(stateCustomData->type, true));
@@ -584,7 +594,7 @@ QString getXMLFromSaveState(const SaveState& saveState)
         content += customData;
     }
 
-    if (saveState.chunk != nullptr && *saveState.chunk != 0)
+    if (saveState.chunk != nullptr && *saveState.chunk != '\0')
     {
         QString chunk("\n""   <Chunk>\n");
         chunk += QString("%1\n").arg(saveState.chunk);

@@ -73,7 +73,6 @@ HEADERS  = \
 
 HEADERS += \
     ../CarlaBackend.hpp \
-    ../CarlaBridge.hpp \
     ../CarlaEngine.hpp \
     ../CarlaPlugin.hpp
 
@@ -85,6 +84,7 @@ HEADERS += \
     ../../utils/CarlaThread.hpp \
     ../../utils/CarlaUtils.hpp \
     ../../utils/CarlaBackendUtils.hpp \
+    ../../utils/CarlaBridgeUtils.hpp \
     ../../utils/CarlaJuceUtils.hpp \
     ../../utils/CarlaOscUtils.hpp \
     ../../utils/CarlaStateUtils.hpp

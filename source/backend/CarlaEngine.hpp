@@ -119,7 +119,7 @@ enum EngineControlEventType {
 
     /*!
     * Parameter event type.\n
-    * \note Value uses a range of 0.0<->1.0.
+    * \note Value uses a normalized range of 0.0<->1.0.
     */
     kEngineControlEventTypeParameter = 1,
 
@@ -222,7 +222,7 @@ struct EngineEvent {
 // -----------------------------------------------------------------------
 
 /*!
- * Engine devices
+ * Engine devices (unused).
  */
 struct EngineDevices {
     struct Audio {
@@ -284,18 +284,18 @@ struct EngineOptions {
     CarlaString bridge_win64;
 #endif
 #ifdef WANT_LV2
-    CarlaString bridge_lv2gtk2;
-    CarlaString bridge_lv2gtk3;
-    CarlaString bridge_lv2qt4;
-    CarlaString bridge_lv2qt5;
-    CarlaString bridge_lv2cocoa;
-    CarlaString bridge_lv2win;
-    CarlaString bridge_lv2x11;
+    CarlaString bridge_lv2Gtk2;
+    CarlaString bridge_lv2Gtk3;
+    CarlaString bridge_lv2Qt4;
+    CarlaString bridge_lv2Qt5;
+    CarlaString bridge_lv2Cocoa;
+    CarlaString bridge_lv2Win;
+    CarlaString bridge_lv2X11;
 #endif
 #ifdef WANT_VST
-    CarlaString bridge_vstcocoa;
-    CarlaString bridge_vsthwnd;
-    CarlaString bridge_vstx11;
+    CarlaString bridge_vstCocoa;
+    CarlaString bridge_vstHWND;
+    CarlaString bridge_vstX11;
 #endif
 
     EngineOptions()
