@@ -535,7 +535,7 @@ const QString& getXMLFromSaveState(const SaveState& saveState)
 
         parameter += QString("    <Value>%1</Value>\n").arg(stateParameter->value);
 
-        if (stateParameter->midiCC > 0 && stateParameter->midiChannel >= 0)
+        if (stateParameter->midiCC > 0)
         {
             parameter += QString("    <MidiCC>%1</MidiCC>\n").arg(stateParameter->midiCC);
             parameter += QString("    <MidiChannel>%1</MidiChannel>\n").arg(stateParameter->midiChannel+1);

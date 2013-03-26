@@ -265,18 +265,18 @@ bool carla_engine_init(const char* driverName, const char* clientName)
     standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_WIN32,       0, standalone.options.bridge_win32);
     standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_WIN64,       0, standalone.options.bridge_win64);
 # ifdef WANT_LV2
-    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_LV2_GTK2,    0, standalone.options.bridge_lv2gtk2);
-    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_LV2_GTK3,    0, standalone.options.bridge_lv2gtk3);
-    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_LV2_QT4,     0, standalone.options.bridge_lv2qt4);
-    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_LV2_QT5,     0, standalone.options.bridge_lv2qt5);
-    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_LV2_COCOA,   0, standalone.options.bridge_lv2cocoa);
-    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_LV2_WINDOWS, 0, standalone.options.bridge_lv2win);
-    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_LV2_X11,     0, standalone.options.bridge_lv2qt4);
+    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_LV2_GTK2,    0, standalone.options.bridge_lv2Gtk2);
+    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_LV2_GTK3,    0, standalone.options.bridge_lv2Gtk3);
+    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_LV2_QT4,     0, standalone.options.bridge_lv2Qt4);
+    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_LV2_QT5,     0, standalone.options.bridge_lv2Qt5);
+    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_LV2_COCOA,   0, standalone.options.bridge_lv2Cocoa);
+    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_LV2_WINDOWS, 0, standalone.options.bridge_lv2Win);
+    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_LV2_X11,     0, standalone.options.bridge_lv2X11);
 # endif
 # ifdef WANT_VST
-    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_VST_COCOA,   0, standalone.options.bridge_vstcocoa);
-    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_VST_HWND,    0, standalone.options.bridge_vsthwnd);
-    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_VST_X11,     0, standalone.options.bridge_vstx11);
+    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_VST_COCOA,   0, standalone.options.bridge_vstCocoa);
+    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_VST_HWND,    0, standalone.options.bridge_vstHWND);
+    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_VST_X11,     0, standalone.options.bridge_vstX11);
 # endif
 
     if (standalone.procName.isNotEmpty())
@@ -442,36 +442,36 @@ void carla_set_engine_option(CarlaBackend::OptionsType option, int value, const 
 #endif
 #ifdef WANT_LV2
     case CarlaBackend::OPTION_PATH_BRIDGE_LV2_GTK2:
-        standalone.options.bridge_lv2gtk2 = valueStr;
+        standalone.options.bridge_lv2Gtk2 = valueStr;
         break;
     case CarlaBackend::OPTION_PATH_BRIDGE_LV2_GTK3:
-        standalone.options.bridge_lv2gtk3 = valueStr;
+        standalone.options.bridge_lv2Gtk3 = valueStr;
         break;
     case CarlaBackend::OPTION_PATH_BRIDGE_LV2_QT4:
-        standalone.options.bridge_lv2qt4 = valueStr;
+        standalone.options.bridge_lv2Qt4 = valueStr;
         break;
     case CarlaBackend::OPTION_PATH_BRIDGE_LV2_QT5:
-        standalone.options.bridge_lv2qt5 = valueStr;
+        standalone.options.bridge_lv2Qt5 = valueStr;
         break;
     case CarlaBackend::OPTION_PATH_BRIDGE_LV2_COCOA:
-        standalone.options.bridge_lv2cocoa = valueStr;
+        standalone.options.bridge_lv2Cocoa = valueStr;
         break;
     case CarlaBackend::OPTION_PATH_BRIDGE_LV2_WINDOWS:
-        standalone.options.bridge_lv2win = valueStr;
+        standalone.options.bridge_lv2Win = valueStr;
         break;
     case CarlaBackend::OPTION_PATH_BRIDGE_LV2_X11:
-        standalone.options.bridge_lv2x11 = valueStr;
+        standalone.options.bridge_lv2X11 = valueStr;
         break;
 #endif
 #ifdef WANT_VST
     case CarlaBackend::OPTION_PATH_BRIDGE_VST_COCOA:
-        standalone.options.bridge_vstcocoa = valueStr;
+        standalone.options.bridge_vstCocoa = valueStr;
         break;
     case CarlaBackend::OPTION_PATH_BRIDGE_VST_HWND:
-        standalone.options.bridge_vsthwnd = valueStr;
+        standalone.options.bridge_vstHWND = valueStr;
         break;
     case CarlaBackend::OPTION_PATH_BRIDGE_VST_X11:
-        standalone.options.bridge_vstx11 = valueStr;
+        standalone.options.bridge_vstX11 = valueStr;
         break;
 #endif
     }

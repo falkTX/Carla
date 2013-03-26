@@ -361,6 +361,13 @@ void carla_zeroStruct(T& structure, const size_t count)
     std::memset(&structure, 0, sizeof(T)*count);
 }
 
+template <typename T>
+static inline
+void carla_zeroStruct(T* const structure, const size_t count)
+{
+    std::memset(structure, 0, sizeof(T)*count);
+}
+
 // -------------------------------------------------
 
 #endif // __CARLA_UTILS_HPP__

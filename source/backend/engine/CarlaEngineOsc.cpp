@@ -22,7 +22,7 @@
 #include "CarlaMIDI.h"
 
 #ifndef BUILD_BRIDGE
-# include "CarlaBridge.hpp"
+# include "CarlaBridgeUtils.hpp"
 #endif
 
 CARLA_BACKEND_START_NAMESPACE

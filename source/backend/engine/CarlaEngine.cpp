@@ -1291,37 +1291,37 @@ void CarlaEngine::setOption(const OptionsType option, const int value, const cha
 
 #ifdef WANT_LV2
     case OPTION_PATH_BRIDGE_LV2_GTK2:
-        fOptions.bridge_lv2gtk2 = valueStr;
+        fOptions.bridge_lv2Gtk2 = valueStr;
         break;
     case OPTION_PATH_BRIDGE_LV2_GTK3:
-        fOptions.bridge_lv2gtk3 = valueStr;
+        fOptions.bridge_lv2Gtk3 = valueStr;
         break;
     case OPTION_PATH_BRIDGE_LV2_QT4:
-        fOptions.bridge_lv2qt4 = valueStr;
+        fOptions.bridge_lv2Qt4 = valueStr;
         break;
     case OPTION_PATH_BRIDGE_LV2_QT5:
-        fOptions.bridge_lv2qt5 = valueStr;
+        fOptions.bridge_lv2Qt5 = valueStr;
         break;
     case OPTION_PATH_BRIDGE_LV2_COCOA:
-        fOptions.bridge_lv2cocoa = valueStr;
+        fOptions.bridge_lv2Cocoa = valueStr;
         break;
     case OPTION_PATH_BRIDGE_LV2_WINDOWS:
-        fOptions.bridge_lv2win = valueStr;
+        fOptions.bridge_lv2Win = valueStr;
         break;
     case OPTION_PATH_BRIDGE_LV2_X11:
-        fOptions.bridge_lv2x11 = valueStr;
+        fOptions.bridge_lv2X11 = valueStr;
         break;
 #endif
 
 #ifdef WANT_VST
     case OPTION_PATH_BRIDGE_VST_COCOA:
-        fOptions.bridge_vstcocoa = valueStr;
+        fOptions.bridge_vstCocoa = valueStr;
         break;
     case OPTION_PATH_BRIDGE_VST_HWND:
-        fOptions.bridge_vsthwnd = valueStr;
+        fOptions.bridge_vstHWND = valueStr;
         break;
     case OPTION_PATH_BRIDGE_VST_X11:
-        fOptions.bridge_vstx11 = valueStr;
+        fOptions.bridge_vstX11 = valueStr;
         break;
 #endif
     }

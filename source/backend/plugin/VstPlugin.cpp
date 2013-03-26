@@ -2180,9 +2180,19 @@ public:
         {
             const EngineOptions& engineOptions(kData->engine->getOptions());
 
-            if (engineOptions.preferUiBridges && engineOptions.bridge_vstx11.isNotEmpty() && (fEffect->flags & effFlagsProgramChunks) == 0)
+#ifdef Q_WS_X11
+            CarlaString uiBridgeBinary(engineOptions.bridge_vstX11);
+#elif CARLA_OS_MAC
+            CarlaString uiBridgeBinary(engineOptions.bridge_vstCocoa);
+#elif CARLA_OS_WIN
+            CarlaString uiBridgeBinary(engineOptions.bridge_vstHWND);
+#else
+            CarlaString uiBridgeBinary;
+#endif
+
+            if (engineOptions.preferUiBridges && uiBridgeBinary.isNotEmpty() && (fEffect->flags & effFlagsProgramChunks) == 0)
             {
-                kData->osc.thread.setOscData(engineOptions.bridge_vstx11, nullptr);
+                kData->osc.thread.setOscData(uiBridgeBinary, nullptr);
                 fGui.isOsc = true;
             }
         }
