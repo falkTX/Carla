@@ -2180,11 +2180,11 @@ public:
         {
             const EngineOptions& engineOptions(kData->engine->getOptions());
 
-#ifdef Q_WS_X11
+#if defined(Q_WS_X11)
             CarlaString uiBridgeBinary(engineOptions.bridge_vstX11);
-#elif CARLA_OS_MAC
+#elif defined(CARLA_OS_MAC)
             CarlaString uiBridgeBinary(engineOptions.bridge_vstCocoa);
-#elif CARLA_OS_WIN
+#elif defined(CARLA_OS_WIN)
             CarlaString uiBridgeBinary(engineOptions.bridge_vstHWND);
 #else
             CarlaString uiBridgeBinary;

@@ -61,8 +61,8 @@ public:
             delete cthread;
         }
 #else
-        if (! _isNull())
-            pthread_join(pthreadId, nullptr);
+        //if (! _isNull())
+        //    pthread_join(pthreadId, nullptr);
 
         pthread_attr_destroy(&pthreadAttr);
 #endif
@@ -186,8 +186,8 @@ public:
 #else
         if (! _isNull())
         {
-            pthread_join(pthreadId, nullptr);
-            _zero();
+            //pthread_join(pthreadId, nullptr);
+            //_zero();
         }
 #endif
         return false;

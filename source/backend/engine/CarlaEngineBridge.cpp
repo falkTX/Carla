@@ -1,6 +1,6 @@
 ﻿/*
- * Carla Plugin Engine
- * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
+ * Carla Engine Bridge
+ * Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -28,9 +28,9 @@
 
 #include <ctime>
 
-//#ifdef CARLA_OS_WIN
-//# include <sys/time.h>
-//#endif
+#ifdef CARLA_OS_WIN
+# include <sys/time.h>
+#endif
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -163,19 +163,18 @@ public:
     {
         // TODO - set RT permissions
 
-        const int timeout = 50;
+        const int timeout = 5000;
 
         while (! fQuitNow)
         {
-            carla_debug("RUN 001");
             timespec ts_timeout;
-#if 0//def CARLA_OS_WIN
+#ifdef CARLA_OS_WIN
             timeval now;
             gettimeofday(&now, nullptr);
             ts_timeout.tv_sec = now.tv_sec;
             ts_timeout.tv_nsec = now.tv_usec * 1000;
 #else
-            linux_clock_gettime_rt(&ts_timeout);
+            clock_gettime(CLOCK_REALTIME, &ts_timeout);
 #endif
 
             time_t seconds = timeout / 1000;
@@ -199,11 +198,8 @@ public:
                 }
             }
 
-            carla_debug("RUN 004");
-
             while (rdwr_dataAvailable(&fShmControl.data->ringBuffer))
             {
-                carla_debug("RUN 005");
                 const PluginBridgeOpcode opcode = rdwr_readOpcode(&fShmControl.data->ringBuffer);
 
                 switch (opcode)
@@ -223,7 +219,6 @@ public:
                 {
                     CARLA_ASSERT(fShmAudioPool.data != nullptr);
                     CarlaPlugin* const plugin(getPluginUnchecked(0));
-                    carla_debug("RUN 006");
 
                     if (plugin != nullptr && plugin->enabled() && plugin->tryLock())
                     {

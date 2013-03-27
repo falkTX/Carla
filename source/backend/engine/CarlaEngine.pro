@@ -102,4 +102,9 @@ INCLUDEPATH += rtaudio-4.0.11 rtmidi-2.0.1
 SOURCES     += rtaudio-4.0.11/RtAudio.cpp
 SOURCES     += rtmidi-2.0.1/RtMidi.cpp
 
+# Plugin
+INCLUDEPATH += distrho
+INCLUDEPATH += ../../libs/distrho
+INCLUDEPATH += ../../includes/vst
+
 QMAKE_CXXFLAGS += -std=c++0x

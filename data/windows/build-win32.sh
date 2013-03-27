@@ -35,7 +35,7 @@ export PYRCC="wine C:\\\\Python33\\\\Lib\\\\site-packages\\\\PyQt4\\\\pyrcc4.exe
 
 export CFLAGS="-DPTW32_STATIC_LIB -I$MINGW_PATH/include"
 export CXXFLAGS="-DPTW32_STATIC_LIB -DFLUIDSYNTH_NOT_A_DLL -D__WINDOWS_ASIO__ -D__WINDOWS_DS__ -D__WINDOWS_MM__ -I$MINGW_PATH/include"
-export EXTRA_LIBS="-lglib-2.0 -lgthread-2.0 -lgig -lsndfile -lFLAC -lvorbisenc -lvorbis -logg -ldsound -lrpcrt4 -lwinmm"
+export EXTRA_LIBS1="-lglib-2.0 -lgthread-2.0 -lgig -lsndfile -lFLAC -lvorbisenc -lvorbis -logg"
 export EXTRA_LIBS2="$MINGW_PATH/lib/qt4/plugins/imageformats/libqsvg.a $MINGW_PATH/lib/qt4/plugins/iconengines/libqsvgicon.a"
 
 # Clean build
@@ -45,12 +45,11 @@ make clean
 make $JOBS UI RES WIDGETS
 
 # Build discovery
-make $JOBS -C source/discovery WIN32=true EXTRA_LIBS="$EXTRA_LIBS -lole32 -lws2_32"
+make $JOBS -C source/discovery WIN32=true EXTRA_LIBS="$EXTRA_LIBS1"
 mv source/discovery/carla-discovery-native source/discovery/carla-discovery-win32.exe
 
 # Build backend
-make $JOBS -C source/backend/standalone ../libcarla_standalone.dll CARLA_RTAUDIO_SUPPORT=true WIN32=true \
-  DGL_LIBS="" EXTRA_LIBS="$EXTRA_LIBS $EXTRA_LIBS2" OBJSN=""
+make $JOBS -C source/backend/standalone ../libcarla_standalone.dll CARLA_RTAUDIO_SUPPORT=true WIN32=true EXTRA_LIBS="$EXTRA_LIBS1 $EXTRA_LIBS2"
 
 rm -rf ./data/windows/Carla
 cp ./source/carla.py ./source/carla.pyw

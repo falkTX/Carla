@@ -21,7 +21,6 @@
 #include "CarlaUtils.hpp"
 
 #ifdef CARLA_OS_WIN
-# include <windows.h>
 struct shm_t { HANDLE shm; HANDLE map; };
 #else
 # include <fcntl.h>
@@ -54,6 +53,30 @@ void carla_shm_init(shm_t& shm)
 }
 
 #ifdef CARLA_OS_WIN
+static inline
+shm_t carla_shm_create(const char* const name)
+{
+    CARLA_ASSERT(name != nullptr);
+
+    shm_t ret;
+    ret.shm = nullptr; // TODO
+    ret.map = nullptr;
+
+    return ret;
+}
+
+static inline
+shm_t carla_shm_attach(const char* const name)
+{
+    CARLA_ASSERT(name != nullptr);
+
+    shm_t ret;
+    ret.shm = CreateFileA(name, GENERIC_READ|GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
+    ret.map = nullptr;
+
+    return ret;
+}
+
 static inline
 shm_t carla_shm_attach_linux(const char* const name)
 {

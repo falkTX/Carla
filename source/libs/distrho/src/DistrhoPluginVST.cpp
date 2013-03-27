@@ -28,7 +28,13 @@
 #endif
 
 #define VST_FORCE_DEPRECATED 0
-#include <pluginterfaces/vst2.x/aeffectx.h>
+
+//#if VESTIGE_HEADER
+//# include "vestige/aeffectx.h"
+//# define effSetProgramName 4
+//#else
+#include "vst/aeffectx.h"
+//#endif
 
 START_NAMESPACE_DISTRHO
 
@@ -37,52 +43,45 @@ START_NAMESPACE_DISTRHO
 #if DISTRHO_PLUGIN_HAS_UI
 
 # ifdef DISTRHO_UI_QT4
-static int    qargc = 0;
-static char** qargv = nullptr;
-
 class QStaticScopedAppInit
 {
 public:
     QStaticScopedAppInit()
-    {
-    }
+        : fApp(nullptr),
+          fInitiated(false) {}
 
-    static void idle()
+    void initIfNeeded()
     {
-        if (sApp != nullptr)
-            sApp->processEvents();
-    }
-
-    static void addOne()
-    {
-        if (sCount++ != 0)
+        if (fInitiated)
             return;
 
-        sApp = qApp ? qApp : new QApplication(qargc, qargv, true);
-        sApp->setQuitOnLastWindowClosed(false);
+        fInitiated = true;
+
+        if (qApp != nullptr)
+        {
+            fApp = qApp;
+        }
+        else
+        {
+            static int    qargc = 0;
+            static char** qargv = nullptr;
+            fApp = new QApplication(qargc, qargv, true);
+            fApp->setQuitOnLastWindowClosed(false);
+        }
     }
 
-    static void removeOne()
+    void idle()
     {
-        if (sCount-- != 1)
-            return;
-
-        assert(sApp != nullptr);
-
-        sApp->processEvents();
-        //sApp->quit();
-        //sApp->processEvents();
-        //delete sApp;
-        //sApp = nullptr;
+        initIfNeeded();
+        fApp->processEvents();
     }
 
 private:
-    static QApplication* sApp;
-    static uint32_t      sCount;
+    QApplication* fApp;
+    bool fInitiated;
 };
 
-QApplication* QStaticScopedAppInit::sApp   = nullptr;
-uint32_t      QStaticScopedAppInit::sCount = 0;
+static QStaticScopedAppInit sApp;
 # endif
 
 class UIVst
@@ -329,8 +328,10 @@ public:
                 fCurProgram = value;
                 fPlugin.setProgram(fCurProgram);
 
+#if DISTRHO_PLUGIN_HAS_UI
                 if (fVstUi != nullptr)
                     fVstUi->setProgramFromPlugin(fCurProgram);
+#endif
 
                 ret = 1;
             }
@@ -394,7 +395,7 @@ public:
                 delete fVstUi;
                 fVstUi = nullptr;
 # ifdef DISTRHO_UI_QT4
-                QStaticScopedAppInit::idle();
+                sApp.idle();
 # endif
                 ret = 1;
             }
@@ -404,7 +405,7 @@ public:
             if (fVstUi != nullptr)
                 fVstUi->idle();
 # ifdef DISTRHO_UI_QT4
-            QStaticScopedAppInit::idle();
+            sApp.idle();
 # endif
             break;
 #endif
@@ -438,6 +439,8 @@ public:
             break;
 
         case effCanDo:
+#if DISTRHO_PLUGIN_IS_SYNTH
+#endif
             // TODO
             break;
 

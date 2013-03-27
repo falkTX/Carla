@@ -586,12 +586,15 @@ bool CarlaEngine::init(const char* const clientName)
 #endif
 
 #ifndef BUILD_BRIDGE
-    //if (std::strcmp(clientName, "Carla") != 0)
-    carla_setprocname(clientName);
+    if (type() != kEngineTypePlugin)
+        carla_setprocname(clientName);
 #endif
 
     kData->nextAction.ready();
     kData->thread.startNow();
+
+    if (type() == kEngineTypePlugin)
+        kData->thread.waitForStarted();
 
     return true;
 }
@@ -715,8 +718,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
         bridgeBinary = (const char*)fOptions.bridge_native;
 #endif
 
-    if (true)
-    //if (fOptions.preferPluginBridges && bridgeBinary != nullptr)
+    if (fOptions.preferPluginBridges && bridgeBinary != nullptr)
     {
         plugin = CarlaPlugin::newBridge(init, btype, ptype, bridgeBinary);
     }

@@ -38,16 +38,20 @@ BUILD_CXX_FLAGS += $(shell pkg-config --cflags libpulse-simple) -D__LINUX_PULSE_
 LINK_FLAGS      += $(shell pkg-config --libs libpulse-simple)
 endif
 
+PLUGIN_CXX_FLAGS  = $(BUILD_CXX_FLAGS)
+PLUGIN_CXX_FLAGS += -Idistrho -I../../libs/distrho
+PLUGIN_CXX_FLAGS += -DWANT_PLUGIN
+
 # --------------------------------------------------------------
 
 OBJS  = \
-     CarlaEngine.cpp.o \
-     CarlaEngineBridge.cpp.o \
-     CarlaEngineJack.cpp.o \
-     CarlaEnginePlugin.cpp.o \
-     CarlaEngineRtAudio.cpp.o \
-     CarlaEngineOsc.cpp.o \
-     CarlaEngineThread.cpp.o
+	CarlaEngine.cpp.o \
+	CarlaEngineOsc.cpp.o \
+	CarlaEngineThread.cpp.o \
+	CarlaEngineBridge.cpp.o \
+	CarlaEngineJack.cpp.o \
+	CarlaEnginePlugin.cpp.o \
+	CarlaEngineRtAudio.cpp.o
 
 ifeq ($(CARLA_RTAUDIO_SUPPORT),true)
 OBJS += \
@@ -81,8 +85,17 @@ debug:
 %.cpp.o: %.cpp ../CarlaBackend.hpp ../CarlaEngine.hpp ../CarlaPlugin.hpp CarlaEngineInternal.hpp CarlaEngineOsc.hpp CarlaEngineThread.hpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
+%.cpp.dssi.o: %.cpp ../CarlaBackend.hpp ../CarlaEngine.hpp ../CarlaPlugin.hpp CarlaEngineInternal.hpp CarlaEngineOsc.hpp CarlaEngineThread.hpp
+	$(CXX) $< $(PLUGIN_CXX_FLAGS) -DDISTRHO_PLUGIN_TARGET_DSSI -c -o $@
+
+%.cpp.lv2.o: %.cpp ../CarlaBackend.hpp ../CarlaEngine.hpp ../CarlaPlugin.hpp CarlaEngineInternal.hpp CarlaEngineOsc.hpp CarlaEngineThread.hpp
+	$(CXX) $< $(PLUGIN_CXX_FLAGS) -DDISTRHO_PLUGIN_TARGET_LV2 -c -o $@
+
+%.cpp.vst.o: %.cpp ../CarlaBackend.hpp ../CarlaEngine.hpp ../CarlaPlugin.hpp CarlaEngineInternal.hpp CarlaEngineOsc.hpp CarlaEngineThread.hpp
+	$(CXX) $< $(PLUGIN_CXX_FLAGS) -DDISTRHO_PLUGIN_TARGET_VST -c -o $@
+
 $(SHARED): $(OBJS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
+	$(CXX) $^ -shared $(LINK_FLAGS) -o $@ && $(STRIP) $@
 
 $(STATIC): $(OBJS)
 	$(AR) rs $@ $^

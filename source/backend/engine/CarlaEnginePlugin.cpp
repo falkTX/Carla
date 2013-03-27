@@ -15,13 +15,16 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#if 0 //def CARLA_ENGINE_PLUGIN
+#ifdef WANT_PLUGIN
 
-#include "carla_engine_internal.hpp"
-#include "carla_backend_utils.hpp"
-#include "carla_midi.h"
+#include "CarlaEngineInternal.hpp"
+#include "CarlaBackendUtils.hpp"
+#include "CarlaMIDI.h"
 
-#include "DistrhoPlugin.h"
+#include "DistrhoPlugin.hpp"
+
+using DISTRHO::d_cconst;
+using DISTRHO::d_string;
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -41,6 +44,7 @@ static const unsigned int paramPan     = 8;
 
 static const unsigned int paramCount   = sizeof(paramMap);
 static const unsigned int programCount = 128;
+static const unsigned int stateCount   = MAX_RACK_PLUGINS;
 
 // -----------------------------------------
 
@@ -48,43 +52,37 @@ class CarlaEnginePlugin : public CarlaEngine,
                           public DISTRHO::Plugin
 {
 public:
-    short idZyn;
-
     CarlaEnginePlugin()
         : CarlaEngine(),
-          DISTRHO::Plugin(paramCount, programCount, 0)
+          DISTRHO::Plugin(paramCount, programCount, stateCount),
+          paramBuffers{0.0f},
+          prevParamBuffers{0.0f}
     {
-        qDebug("CarlaEnginePlugin::CarlaEnginePlugin()");
+        carla_debug("CarlaEnginePlugin::CarlaEnginePlugin()");
 
         // init parameters
-        for (unsigned int i=0; i < paramCount; i++)
-            paramBuffers[i] = 0.0f;
-
         paramBuffers[paramVolume]  = 100.0f;
         paramBuffers[paramBalance] = 63.5f;
         paramBuffers[paramPan]     = 63.5f;
 
-        carla_copyFloat(prevParamBuffers, paramBuffers, paramCount);
+        prevParamBuffers[paramVolume]  = 100.0f;
+        prevParamBuffers[paramBalance] = 63.5f;
+        prevParamBuffers[paramPan]     = 63.5f;
 
         // set-up engine
-        fOptions.processMode = PROCESS_MODE_CONTINUOUS_RACK;
-        fOptions.forceStereo = true;
+        fOptions.processMode   = PROCESS_MODE_CONTINUOUS_RACK;
+        fOptions.transportMode = TRANSPORT_MODE_INTERNAL;
+        fOptions.forceStereo   = true;
         fOptions.preferPluginBridges = false;
         fOptions.preferUiBridges = false;
         init("Carla");
-
-        // Force thread start so we get some OSC usage
-        // (liblo locks otherwise)
-        //startCheckThread();
-
-        // testing
-        idZyn = addPlugin(PLUGIN_DSSI, "/usr/lib/dssi/sineshaper.so", nullptr, "ll-sineshaper");
     }
 
     ~CarlaEnginePlugin()
     {
-        qDebug("CarlaEnginePlugin::~CarlaEnginePlugin()");
+        carla_debug("CarlaEnginePlugin::~CarlaEnginePlugin()");
 
+        setAboutToClose();
         removeAllPlugins();
         close();
     }
@@ -94,7 +92,7 @@ public:
 
     bool init(const char* const clientName)
     {
-        qDebug("CarlaEnginePlugin::init(\"%s\")", clientName);
+        carla_debug("CarlaEnginePlugin::init(\"%s\")", clientName);
 
         fBufferSize = d_bufferSize();
         fSampleRate = d_sampleRate();
@@ -105,7 +103,7 @@ public:
 
     bool close()
     {
-        qDebug("CarlaEnginePlugin::close()");
+        carla_debug("CarlaEnginePlugin::close()");
         CarlaEngine::close();
 
         return true;
@@ -123,7 +121,7 @@ public:
 
     EngineType type() const
     {
-        return kEngineTypeRtAudio;
+        return kEngineTypePlugin;
     }
 
 protected:
@@ -147,7 +145,7 @@ protected:
 
     uint32_t d_version() const
     {
-        return 0x0500;
+        return 0x0600;
     }
 
     long d_uniqueId() const
@@ -337,8 +335,7 @@ protected:
 
     void d_initStateKey(uint32_t index, d_string& stateKey)
     {
-        Q_UNUSED(index);
-        Q_UNUSED(stateKey);
+        stateKey = "Plugin #" + d_string(index);
     }
 
     // ---------------------------------------------
@@ -364,22 +361,29 @@ protected:
     {
         if (index >= programCount)
             return;
-        if (maxPluginNumber() == 0)
+        if (kData->curPluginCount == 0)
             return;
 
-#if 0
         if (CarlaPlugin* const plugin = getPlugin(0))
         {
-            if (index > plugin->programCount())
-                plugin->setProgram(index, true, true, false, true);
+            if (plugin->programCount() > 0)
+            {
+                if (index <= plugin->programCount())
+                    plugin->setProgram(index, true, true, false);
+            }
+            else if (plugin->midiProgramCount())
+            {
+                if (index <= plugin->midiProgramCount())
+                    plugin->setMidiProgram(index, true, true, false);
+            }
         }
-#endif
     }
 
     void  d_setState(const char* key, const char* value)
     {
-        Q_UNUSED(key);
-        Q_UNUSED(value);
+        // TODO
+        (void)key;
+        (void)value;
     }
 
     // ---------------------------------------------
@@ -387,80 +391,99 @@ protected:
 
     void d_activate()
     {
-#if 0
-        for (unsigned int i=0; i < fData->curPluginCount; i++)
-        {
-            CarlaPlugin* const plugin = getPluginUnchecked(i);
+        static bool firstTestInit = true;
 
-            if (plugin && plugin->enabled())
+        if (firstTestInit)
+        {
+            firstTestInit = false;
+            if (! addPlugin(PLUGIN_INTERNAL, nullptr, nullptr, "zynaddsubfx"))
+                carla_stderr2("Plugin add zynaddsubfx failed");
+            if (! addPlugin(PLUGIN_INTERNAL, nullptr, nullptr, "PingPongPan"))
+                carla_stderr2("Plugin add Pan failed");
+        }
+
+        for (unsigned int i=0; i < kData->curPluginCount; ++i)
+        {
+            CarlaPlugin* const plugin(getPluginUnchecked(i));
+
+            if (plugin != nullptr && plugin->enabled())
                 plugin->setActive(true, true, false);
         }
-#endif
 
         carla_copyFloat(prevParamBuffers, paramBuffers, paramCount);
     }
 
     void d_deactivate()
     {
-#if 0
-        for (unsigned int i=0; i < fData->curPluginCount; i++)
+        for (unsigned int i=0; i < kData->curPluginCount; ++i)
         {
-            CarlaPlugin* const plugin = getPluginUnchecked(i);
+            CarlaPlugin* const plugin(getPluginUnchecked(i));
 
-            if (plugin && plugin->enabled())
+            if (plugin != nullptr && plugin->enabled())
                 plugin->setActive(false, true, false);
         }
-#endif
     }
 
     void d_run(float** inputs, float** outputs, uint32_t frames, uint32_t midiEventCount, const DISTRHO::MidiEvent* midiEvents)
     {
-        if (maxPluginNumber() == 0)
+        if (kData->curPluginCount == 0)
+        {
+            carla_zeroFloat(outputs[0], frames);
+            carla_zeroFloat(outputs[1], frames);
             return;
+        }
 
         // create audio buffers
         float* inBuf[2]  = { inputs[0], inputs[1] };
         float* outBuf[2] = { outputs[0], outputs[1] };
 
-#if 0
-        // initialize control input
-        std::memset(rackControlEventsIn, 0, sizeof(CarlaEngineControlEvent)*CarlaEngine::MAX_CONTROL_EVENTS);
+        // initialize input events
+        carla_zeroStruct<EngineEvent>(kData->rack.in, RACK_EVENT_COUNT);
         {
-            uint32_t carlaEventIndex = 0;
+            uint32_t engineEventIndex = 0;
 
-            for (unsigned int i=0; i < paramCount; i++)
+            for (unsigned int i=0; i < paramCount && engineEventIndex+midiEventCount < RACK_EVENT_COUNT; ++i)
             {
-                if (prevParamBuffers[i] == paramBuffers[i])
+                if (paramBuffers[i] == prevParamBuffers[i])
                     continue;
 
-                CarlaEngineControlEvent* const carlaEvent = &rackControlEventsIn[carlaEventIndex++];
+                EngineEvent* const engineEvent = &kData->rack.in[engineEventIndex++];
+                engineEvent->clear();
 
-                carlaEvent->type      = CarlaEngineParameterChangeEvent;
-                carlaEvent->parameter = paramMap[i];
-                carlaEvent->value     = paramBuffers[i]/127;
+                engineEvent->type    = kEngineEventTypeControl;
+                engineEvent->time    = 0;
+                engineEvent->channel = 0;
+
+                engineEvent->ctrl.type  = kEngineControlEventTypeParameter;
+                engineEvent->ctrl.param = paramMap[i];
+                engineEvent->ctrl.value = paramBuffers[i]/127.0f;
+
+                prevParamBuffers[i] = paramBuffers[i];
             }
-        }
-        carla_copyFloat(prevParamBuffers, paramBuffers, paramCount);
 
-        // initialize midi input
-        std::memset(rackMidiEventsIn, 0, sizeof(CarlaEngineMidiEvent)*CarlaEngine::MAX_MIDI_EVENTS);
-        {
-            const DISTRHO::MidiEvent* event;
+            const DISTRHO::MidiEvent* midiEvent;
 
-            for (uint32_t i=0, j=0; j < midiEventCount; j++)
+            for (uint32_t i=0; i < midiEventCount && engineEventIndex < RACK_EVENT_COUNT; ++i)
             {
-                if (i == CarlaEngine::MAX_MIDI_EVENTS)
-                    break;
+                midiEvent = &midiEvents[i];
 
-                event = &midiEvents[j];
+                if (midiEvent->size > 4)
+                    continue;
 
-                rackMidiEventsIn[i].time = event->frame;
-                rackMidiEventsIn[i].size = 3;
-                std::memcpy(rackMidiEventsIn[i].data, event->buffer, 3);
-                i += 1;
+                EngineEvent* const engineEvent = &kData->rack.in[engineEventIndex++];
+                engineEvent->clear();
+
+                engineEvent->type    = kEngineEventTypeMidi;
+                engineEvent->time    = midiEvent->frame;
+                engineEvent->channel = MIDI_GET_CHANNEL_FROM_DATA(midiEvent->buf);
+
+                engineEvent->midi.data[0] = MIDI_GET_STATUS_FROM_DATA(midiEvent->buf);
+                engineEvent->midi.data[1] = midiEvent->buf[1];
+                engineEvent->midi.data[2] = midiEvent->buf[2];
+                engineEvent->midi.data[3] = midiEvent->buf[3];
+                engineEvent->midi.size    = midiEvent->size;
             }
         }
-#endif
 
         processRack(inBuf, outBuf, frames);
     }
@@ -470,7 +493,20 @@ protected:
 
     void d_bufferSizeChanged(uint32_t newBufferSize)
     {
+        if (fBufferSize == newBufferSize)
+            return;
+
+        fBufferSize = newBufferSize;
         bufferSizeChanged(newBufferSize);
+    }
+
+    void d_sampleRateChanged(double newSampleRate)
+    {
+        if (fSampleRate == newSampleRate)
+            return;
+
+        fSampleRate = newSampleRate;
+        sampleRateChanged(newSampleRate);
     }
 
     // ---------------------------------------------

@@ -552,7 +552,7 @@ const QString& getXMLFromSaveState(const SaveState& saveState)
 #ifdef __USE_GNU
         if ((saveState.currentProgramIndex > 0 || strcasecmp(saveState.currentProgramName, "Default") != 0))
 #else
-        if ((saveState.currentProgramIndex > 0 || std::strcmp(saveState.currentProgramName, "Default") != 0)
+        if ((saveState.currentProgramIndex > 0 || std::strcmp(saveState.currentProgramName, "Default") != 0))
 #endif
         {
             QString program("\n");

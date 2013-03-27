@@ -24,6 +24,11 @@
 
 #include <cerrno>
 #include <ctime>
+
+#ifdef CARLA_OS_WIN
+# include <sys/time.h>
+#endif
+
 #include <QtCore/QDir>
 #include <QtCore/QFile>
 #include <QtCore/QStringList>
@@ -1383,7 +1388,14 @@ private:
         sem_post(&fShmControl.data->runServer);
 
         timespec ts_timeout;
+#ifdef CARLA_OS_WIN
+        timeval now;
+        gettimeofday(&now, nullptr);
+        ts_timeout.tv_sec = now.tv_sec;
+        ts_timeout.tv_nsec = now.tv_usec * 1000;
+#else
         clock_gettime(CLOCK_REALTIME, &ts_timeout);
+#endif
         ts_timeout.tv_sec += 5;
 
         if (sem_timedwait(&fShmControl.data->runClient, &ts_timeout) != 0)

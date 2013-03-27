@@ -109,7 +109,8 @@ struct Parameter {
 
 struct MidiEvent {
     uint32_t frame;
-    uint8_t  buffer[3];
+    uint8_t  buf[4];
+    uint8_t  size;
 
     MidiEvent()
     {
@@ -118,10 +119,12 @@ struct MidiEvent {
 
     void clear()
     {
-        frame = 0;
-        buffer[0] = 0;
-        buffer[1] = 0;
-        buffer[2] = 0;
+        frame  = 0;
+        buf[0] = 0;
+        buf[1] = 0;
+        buf[2] = 0;
+        buf[3] = 0;
+        size   = 0;
     }
 };
 

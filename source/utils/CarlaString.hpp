@@ -143,7 +143,7 @@ public:
         return (bufferLen != 0);
     }
 
-#if __USE_GNU
+#ifdef __USE_GNU
     bool contains(const char* const strBuf, const bool ignoreCase = false) const
     {
         if (strBuf == nullptr)

@@ -54,12 +54,10 @@ OBJS  = \
 	midi-through.c.o \
 	midi-transpose.c.o
 
-# FIXME
-OBJSN = \
-	nekofilter.c.o
-
+ifneq ($(WIN32),true)
 OBJS += \
-	$(OBJSN)
+	nekofilter.c.o
+endif
 
 # AudioFile
 ifeq ($(HAVE_AF_DEPS),true)

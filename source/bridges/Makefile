@@ -1,6 +1,6 @@
 #!/usr/bin/make -f
 # Makefile for carla-bridges #
-# ---------------------------------------- #
+# -------------------------- #
 # Created by falkTX
 #
 
@@ -57,10 +57,10 @@ WIN_LINK_FLAGS      = $(LINK_PLUGIN_FLAGS) -mwindows -lwinspool -lole32 -luuid -
 # --------------------------------------------------------------
 # Plugin bridges (Native)
 
-NATIVE_BUILD_FLAGS  = $(POSIX_BUILD_FLAGS) -DWANT_JACK
+NATIVE_BUILD_FLAGS  = $(POSIX_BUILD_FLAGS)
 NATIVE_LINK_FLAGS   = $(POSIX_LINK_FLAGS)
 
-NATIVE_BUILD_FLAGS += -DWANT_NATIVE
+NATIVE_BUILD_FLAGS += -DWANT_JACK -DWANT_NATIVE
 
 ifeq ($(HAVE_FLUIDSYNTH),true)
 NATIVE_BUILD_FLAGS += -DWANT_FLUIDSYNTH
@@ -106,29 +106,35 @@ LINK_UI_FLAGS  = $(LINK_FLAGS) -ldl
 BUILD_UI_LV2_FLAGS = $(BUILD_UI_FLAGS) -DBRIDGE_LV2
 BUILD_UI_VST_FLAGS = $(BUILD_UI_FLAGS) -DBRIDGE_VST
 
-BUILD_UI_LV2_GTK2_FLAGS = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_GTK2 -DBRIDGE_LV2_GTK2 $(shell pkg-config --cflags gtk+-2.0)
-LINK_UI_LV2_GTK2_FLAGS  = $(LINK_UI_FLAGS) $(shell pkg-config --libs gtk+-2.0)
+BUILD_UI_LV2_GTK2_FLAGS  = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_GTK2 -DBRIDGE_LV2_GTK2 $(shell pkg-config --cflags gtk+-2.0)
+LINK_UI_LV2_GTK2_FLAGS   = $(LINK_UI_FLAGS) $(shell pkg-config --libs gtk+-2.0)
 
-BUILD_UI_LV2_GTK3_FLAGS = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_GTK3 -DBRIDGE_LV2_GTK3 $(shell pkg-config --cflags gtk+-3.0)
-LINK_UI_LV2_GTK3_FLAGS  = $(LINK_UI_FLAGS) $(shell pkg-config --libs gtk+-3.0)
+BUILD_UI_LV2_GTK3_FLAGS  = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_GTK3 -DBRIDGE_LV2_GTK3 $(shell pkg-config --cflags gtk+-3.0)
+LINK_UI_LV2_GTK3_FLAGS   = $(LINK_UI_FLAGS) $(shell pkg-config --libs gtk+-3.0)
 
-BUILD_UI_LV2_QT4_FLAGS  = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_QT4 -DBRIDGE_LV2_QT4 $(shell pkg-config --cflags QtGui)
-LINK_UI_LV2_QT4_FLAGS   = $(LINK_UI_FLAGS) $(shell pkg-config --libs QtGui)
+BUILD_UI_LV2_QT4_FLAGS   = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_QT4 -DBRIDGE_LV2_QT4 $(shell pkg-config --cflags QtGui)
+LINK_UI_LV2_QT4_FLAGS    = $(LINK_UI_FLAGS) $(shell pkg-config --libs QtGui)
 
-BUILD_UI_LV2_QT5_FLAGS  = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_QT5 -DBRIDGE_LV2_QT5 $(shell pkg-config --cflags QtWidgets)
-LINK_UI_LV2_QT5_FLAGS   = $(LINK_UI_FLAGS) $(shell pkg-config --libs QtWidgets)
+BUILD_UI_LV2_QT5_FLAGS   = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_QT5 -DBRIDGE_LV2_QT5 $(shell pkg-config --cflags QtWidgets)
+LINK_UI_LV2_QT5_FLAGS    = $(LINK_UI_FLAGS) $(shell pkg-config --libs QtWidgets)
 
-BUILD_UI_LV2_HWND_FLAGS = $(BUILD_UI_VST_FLAGS) -DBRIDGE_HWND -DBRIDGE_LV2_HWND $(QT_UI_FLAGS)
-LINK_UI_LV2_HWND_FLAGS  = $(LINK_FLAGS) $(QT_UI_LIBS) -mwindows -static
+BUILD_UI_LV2_COCOA_FLAGS = $(BUILD_UI_VST_FLAGS) -DBRIDGE_COCOA -DBRIDGE_LV2_COCOA $(QT_UI_FLAGS)
+LINK_UI_LV2_COCOA_FLAGS  = $(LINK_FLAGS) $(QT_UI_LIBS)
 
-BUILD_UI_LV2_X11_FLAGS  = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_X11 -DBRIDGE_LV2_X11 $(QT_UI_FLAGS)
-LINK_UI_LV2_X11_FLAGS   = $(LINK_UI_FLAGS) $(QT_UI_LIBS)
+BUILD_UI_LV2_HWND_FLAGS  = $(BUILD_UI_VST_FLAGS) -DBRIDGE_HWND -DBRIDGE_LV2_HWND $(QT_UI_FLAGS)
+LINK_UI_LV2_HWND_FLAGS   = $(LINK_FLAGS) $(QT_UI_LIBS) -mwindows -static
 
-BUILD_UI_VST_HWND_FLAGS = $(BUILD_UI_VST_FLAGS) -DBRIDGE_HWND -DBRIDGE_VST_HWND $(QT_UI_FLAGS)
-LINK_UI_VST_HWND_FLAGS  = $(LINK_FLAGS) $(QT_UI_LIBS) -mwindows -static
+BUILD_UI_LV2_X11_FLAGS   = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_X11 -DBRIDGE_LV2_X11 $(QT_UI_FLAGS)
+LINK_UI_LV2_X11_FLAGS    = $(LINK_UI_FLAGS) $(QT_UI_LIBS)
 
-BUILD_UI_VST_X11_FLAGS  = $(BUILD_UI_VST_FLAGS) -DBRIDGE_X11 -DBRIDGE_VST_X11 $(QT_UI_FLAGS)
-LINK_UI_VST_X11_FLAGS   = $(LINK_UI_FLAGS) $(QT_UI_LIBS)
+BUILD_UI_VST_COCOA_FLAGS = $(BUILD_UI_VST_FLAGS) -DBRIDGE_COCOA -DBRIDGE_VST_COCOA $(QT_UI_FLAGS)
+LINK_UI_VST_COCOA_FLAGS  = $(LINK_FLAGS) $(QT_UI_LIBS)
+
+BUILD_UI_VST_HWND_FLAGS  = $(BUILD_UI_VST_FLAGS) -DBRIDGE_HWND -DBRIDGE_VST_HWND $(QT_UI_FLAGS)
+LINK_UI_VST_HWND_FLAGS   = $(LINK_FLAGS) $(QT_UI_LIBS) -mwindows -static
+
+BUILD_UI_VST_X11_FLAGS   = $(BUILD_UI_VST_FLAGS) -DBRIDGE_X11 -DBRIDGE_VST_X11 $(QT_UI_FLAGS)
+LINK_UI_VST_X11_FLAGS    = $(LINK_UI_FLAGS) $(QT_UI_LIBS)
 
 # --------------------------------------------------------------
 
@@ -155,11 +161,13 @@ ui_lv2-qt4:
 ui_lv2-qt5: carla-bridge-lv2-qt5
 endif
 
-ui_lv2-hwnd: carla-bridge-lv2-hwnd.exe
-ui_lv2-x11:  carla-bridge-lv2-x11
+ui_lv2-cocoa: carla-bridge-lv2-cocoa
+ui_lv2-hwnd:  carla-bridge-lv2-hwnd.exe
+ui_lv2-x11:   carla-bridge-lv2-x11
 
-ui_vst-hwnd: carla-bridge-vst-hwnd.exe
-ui_vst-x11:  carla-bridge-vst-x11
+ui_vst-cocoa: carla-bridge-vst-cocoa
+ui_vst-hwnd:  carla-bridge-vst-hwnd.exe
+ui_vst-x11:   carla-bridge-vst-x11
 
 else # CARLA_PLUGIN_SUPPORT
 all:

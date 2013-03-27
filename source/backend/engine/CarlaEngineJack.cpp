@@ -806,22 +806,20 @@ public:
 protected:
     void handleJackBufferSizeCallback(const uint32_t newBufferSize)
     {
-        if (fBufferSize != newBufferSize)
-        {
-            fBufferSize = newBufferSize;
+        if (fBufferSize == newBufferSize)
+            return;
 
-            bufferSizeChanged(newBufferSize);
-        }
+        fBufferSize = newBufferSize;
+        bufferSizeChanged(newBufferSize);
     }
 
     void handleJackSampleRateCallback(const double newSampleRate)
     {
-        if (fSampleRate != newSampleRate)
-        {
-            fSampleRate = newSampleRate;
+        if (fSampleRate == newSampleRate)
+            return;
 
-            sampleRateChanged(newSampleRate);
-        }
+        fSampleRate = newSampleRate;
+        sampleRateChanged(newSampleRate);
     }
 
     void handleJackFreewheelCallback(const bool isFreewheel)
@@ -945,7 +943,7 @@ protected:
             float* outBuf[2] = { audioOut1, audioOut2 };
 
             // initialize input events
-            carla_zeroMem(kData->rack.in, sizeof(EngineEvent)*RACK_EVENT_COUNT);
+            carla_zeroStruct<EngineEvent>(kData->rack.in, RACK_EVENT_COUNT);
             {
                 uint32_t engineEventIndex = 0;
 
@@ -1009,13 +1007,13 @@ protected:
                         engineEvent->ctrl.param = midiProgram;
                         engineEvent->ctrl.value = 0.0;
                     }
-                    else
+                    else if (jackEvent.size <= 4)
                     {
                         engineEvent->type = kEngineEventTypeMidi;
 
+                        carla_copy<uint8_t>(engineEvent->midi.data, jackEvent.buffer, jackEvent.size);
+
                         engineEvent->midi.data[0] = midiStatus;
-                        engineEvent->midi.data[1] = jackEvent.buffer[1];
-                        engineEvent->midi.data[2] = jackEvent.buffer[2];
                         engineEvent->midi.size    = static_cast<uint8_t>(jackEvent.size);
                     }
 

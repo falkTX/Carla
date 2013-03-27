@@ -29,7 +29,7 @@ CarlaEngineThread::CarlaEngineThread(CarlaEngine* const engine)
       fStopNow(true)
 {
     carla_debug("CarlaEngineThread::CarlaEngineThread(%p)", engine);
-    CARLA_ASSERT(engine);
+    CARLA_ASSERT(engine != nullptr);
 }
 
 CarlaEngineThread::~CarlaEngineThread()
@@ -129,10 +129,10 @@ void CarlaEngineThread::run()
                     }
                 }
 
-#ifndef BUILD_BRIDGE
                 // ---------------------------------------------------
                 // Update OSC control client peaks
 
+#ifndef BUILD_BRIDGE
                 if (oscRegisted)
                     kEngine->osc_send_control_set_peaks(i);
 #endif
@@ -140,7 +140,7 @@ void CarlaEngineThread::run()
         }
 
         kEngine->idleOsc();
-        carla_msleep(oscRegisted ? 40 : 50);
+        carla_msleep(oscRegisted ? 30 : 50);
     }
 }
 

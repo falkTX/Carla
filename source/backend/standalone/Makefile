@@ -44,7 +44,15 @@ endif
 # --------------------------------------------------------------
 # Native
 
-DGL_LIBS = -lX11
+ifeq ($(WIN32),true)
+DGL_LIBS  = -lgdi32
+W32_LIBS  = -lcomdlg32 -ldsound -limm32 -lole32 -luuid -lwinmm -lwinspool -lws2_32
+ifeq ($(HAVE_LINUXSAMPLER),true)
+W32_LIBS += -lrpcrt4
+endif
+else
+DGL_LIBS  = -lX11
+endif
 
 ifeq ($(HAVE_AF_DEPS),true)
 LINK_FLAGS += $(shell pkg-config --libs libavcodec libavformat libavutil sndfile)
@@ -86,8 +94,13 @@ endif
 OBJS  = \
      CarlaStandalone.cpp.o
 
-SHARED = ../libcarla_standalone.so
 STATIC = ../libcarla_standalone.a
+
+ifeq ($(WIN32),true)
+SHARED = ../libcarla_standalone.dll
+else
+SHARED = ../libcarla_standalone.so
+endif
 
 # --------------------------------------------------------------
 
@@ -104,14 +117,14 @@ debug:
 %.cpp.o: %.cpp ../CarlaBackend.hpp ../CarlaEngine.hpp ../CarlaPlugin.hpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
-$(SHARED): $(OBJS) $(LIBS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -o $@ && $(STRIP) $@
-
 $(STATIC): $(OBJS) $(LIBS)
 	$(AR) rs $@ $^
 
 ../libcarla_standalone.dll: $(OBJS) $(LIBS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -lcomdlg32 -limm32 -lole32 -lshell32 -luuid -lwinspool -lws2_32 -Wl,--output-def,$@.def -o $@ && $(STRIP) $@
+	$(CXX) $^ -shared $(LINK_FLAGS) $(W32_LIBS) -Wl,--output-def,$@.def -o $@ && $(STRIP) $@
+
+../libcarla_standalone.so: $(OBJS) $(LIBS)
+	$(CXX) $^ -shared $(LINK_FLAGS) -o $@ && $(STRIP) $@
 
 # --------------------------------------------------------------
 
