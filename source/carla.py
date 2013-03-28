@@ -19,8 +19,9 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from PyQt4.QtCore import Qt, QPointF, QSize
-from PyQt4.QtGui import QApplication, QDialogButtonBox, QMainWindow, QResizeEvent
+from time import sleep
+from PyQt4.QtCore import Qt, QModelIndex, QPointF, QSize
+from PyQt4.QtGui import QApplication, QDialogButtonBox, QFileSystemModel, QMainWindow, QResizeEvent
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom Stuff)
@@ -551,6 +552,8 @@ class CarlaMainW(QMainWindow):
         self.fIdleTimerFast = 0
         self.fIdleTimerSlow = 0
 
+        self.fLastLoadedPluginId = -1
+
         #self._nsmAnnounce2str = ""
         #self._nsmOpen1str = ""
         #self._nsmOpen2str = ""
@@ -559,6 +562,17 @@ class CarlaMainW(QMainWindow):
 
         # -------------------------------------------------------------
         # Set-up GUI stuff
+
+        self.fDirModel = QFileSystemModel(self)
+        self.fDirModel.setNameFilters(cString(Carla.host.get_supported_file_types()).split(";"))
+        self.fDirModel.setRootPath(HOME)
+
+        self.ui.fileTreeView.setModel(self.fDirModel)
+        self.ui.fileTreeView.setRootIndex(self.fDirModel.index(HOME))
+        self.ui.fileTreeView.setColumnHidden(1, True)
+        self.ui.fileTreeView.setColumnHidden(2, True)
+        self.ui.fileTreeView.setColumnHidden(3, True)
+        self.ui.fileTreeView.setHeaderHidden(True)
 
         self.ui.act_engine_start.setEnabled(False)
         self.ui.act_engine_stop.setEnabled(False)
@@ -635,6 +649,7 @@ class CarlaMainW(QMainWindow):
         self.connect(self.ui.b_transport_play, SIGNAL("clicked(bool)"), SLOT("slot_transportPlayPause(bool)"))
         self.connect(self.ui.b_transport_stop, SIGNAL("clicked()"), SLOT("slot_transportStop()"))
 
+        self.connect(self.ui.fileTreeView, SIGNAL("doubleClicked(QModelIndex)"), SLOT("slot_fileTreeDoubleClicked(QModelIndex)"))
         self.connect(self.ui.miniCanvasPreview, SIGNAL("miniCanvasMoved(double, double)"), SLOT("slot_miniCanvasMoved(double, double)"))
 
         self.connect(self.ui.graphicsView.horizontalScrollBar(), SIGNAL("valueChanged(int)"), SLOT("slot_horizontalScrollBarChanged(int)"))
@@ -685,6 +700,46 @@ class CarlaMainW(QMainWindow):
             #Carla.host.nsm_announce(NSM_URL, os.getpid())
         #else:
         QTimer.singleShot(0, self, SLOT("slot_engineStart()"))
+
+    @pyqtSlot(QModelIndex)
+    def slot_fileTreeDoubleClicked(self, modelIndex):
+        filename = self.fDirModel.filePath(modelIndex)
+        print(filename)
+
+        if not os.path.exists(filename):
+            return
+        if not os.path.isfile(filename):
+            return
+
+        extension = filename.rsplit(".", 1)[-1].lower()
+
+        if extension == "carxp":
+            Carla.host.load_project(filename)
+
+        elif extension == "gig":
+            Carla.host.add_plugin(BINARY_NATIVE, PLUGIN_GIG, filename, None, os.path.basename(filename), None)
+
+        elif extension == "sf2":
+            Carla.host.add_plugin(BINARY_NATIVE, PLUGIN_SF2, filename, None, os.path.basename(filename), None)
+
+        elif extension == "sfz":
+            Carla.host.add_plugin(BINARY_NATIVE, PLUGIN_SFZ, filename, None, os.path.basename(filename), None)
+
+        elif extension in ("aac", "flac", "oga", "ogg", "mp3", "wav"):
+            self.fLastLoadedPluginId = -2
+            if Carla.host.add_plugin(BINARY_NATIVE, PLUGIN_INTERNAL, None, None, "audiofile", None):
+                while (self.fLastLoadedPluginId == -2): sleep(0.2)
+                idx = self.fLastLoadedPluginId
+                self.fLastLoadedPluginId = -1
+                Carla.host.set_custom_data(idx, CUSTOM_DATA_STRING, "file00", filename)
+
+        elif extension in ("mid", "midi"):
+            self.fLastLoadedPluginId = -2
+            if Carla.host.add_plugin(BINARY_NATIVE, PLUGIN_INTERNAL, None, None, "midifile", None):
+                while (self.fLastLoadedPluginId == -2): sleep(0.2)
+                idx = self.fLastLoadedPluginId
+                self.fLastLoadedPluginId = -1
+                Carla.host.set_custom_data(idx, CUSTOM_DATA_STRING, "file", filename)
 
     @pyqtSlot(float)
     def slot_canvasScaleChanged(self, scale):
@@ -1051,6 +1106,9 @@ class CarlaMainW(QMainWindow):
 
         if self.fPluginCount == 1:
             self.ui.act_plugin_remove_all.setEnabled(True)
+
+        if self.fLastLoadedPluginId == -2:
+            self.fLastLoadedPluginId = pluginId
 
     @pyqtSlot(int)
     def slot_handlePluginRemovedCallback(self, pluginId):

@@ -151,6 +151,35 @@ const char* carla_get_extended_license_text()
     return retText;
 }
 
+const char* carla_get_supported_file_types()
+{
+    static CarlaString retText;
+
+    if (retText.isEmpty())
+    {
+        // Base type
+        retText = "*.carxp";
+
+        // Sample kits
+#ifdef WANT_FLUIDSYNTH
+        retText += ";*.sf2";
+#endif
+#ifdef WANT_LINUXSAMPLER
+        retText += ";*.gig;*.sfz";
+#endif
+
+        // Special files provided by internal plugins
+#ifdef WANT_AUDIOFILE
+        retText += ";*.aac;*.flac;*.oga;*.ogg;*.mp3;*.wav";
+#endif
+#ifdef WANT_MIDIFILE
+        retText += ";*.mid;*.midi";
+#endif
+    }
+
+    return retText;
+}
+
 // -------------------------------------------------------------------------------------------------------------------
 
 unsigned int carla_get_engine_driver_count()

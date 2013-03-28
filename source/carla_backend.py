@@ -152,6 +152,9 @@ class Host(object):
         self.lib.carla_get_extended_license_text.argtypes = None
         self.lib.carla_get_extended_license_text.restype = c_char_p
 
+        self.lib.carla_get_supported_file_types.argtypes = None
+        self.lib.carla_get_supported_file_types.restype = c_char_p
+
         self.lib.carla_get_engine_driver_count.argtypes = None
         self.lib.carla_get_engine_driver_count.restype = c_uint
 
@@ -375,6 +378,9 @@ class Host(object):
 
     def get_extended_license_text(self):
         return self.lib.carla_get_extended_license_text()
+
+    def get_supported_file_types(self):
+        return self.lib.carla_get_supported_file_types()
 
     def get_engine_driver_count(self):
         return self.lib.carla_get_engine_driver_count()
