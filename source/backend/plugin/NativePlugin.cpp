@@ -43,7 +43,7 @@ void carla_register_all_plugins()
 
 #ifdef WANT_MIDIFILE
     // MidiFile
-    carla_register_native_plugin_midiFile();
+    carla_register_native_plugin_midifile();
 #endif
 
 #ifdef WANT_OPENGL

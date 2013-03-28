@@ -579,8 +579,8 @@ class CarlaMainW(QMainWindow):
         self.ui.act_plugin_remove_all.setEnabled(False)
 
         # FIXME: Qt4 needs this so it properly create & resize the canvas
-        self.ui.tabWidget.setCurrentIndex(1)
-        self.ui.tabWidget.setCurrentIndex(0)
+        self.ui.tabMain.setCurrentIndex(1)
+        self.ui.tabMain.setCurrentIndex(0)
 
         # -------------------------------------------------------------
         # Set-up Canvas
@@ -740,7 +740,7 @@ class CarlaMainW(QMainWindow):
 
         elif extension in ("mid", "midi"):
             self.fLastLoadedPluginId = -2
-            if Carla.host.add_plugin(BINARY_NATIVE, PLUGIN_INTERNAL, None, basename, "midifile", None):
+            if Carla.host.add_plugin(BINARY_NATIVE, PLUGIN_INTERNAL, None, basename, "midiFile", None):
                 while (self.fLastLoadedPluginId == -2): sleep(0.2)
                 idx = self.fLastLoadedPluginId
                 self.fLastLoadedPluginId = -1
@@ -1423,6 +1423,7 @@ class CarlaMainW(QMainWindow):
     def saveSettings(self):
         settings = QSettings()
         settings.setValue("Geometry", self.saveGeometry())
+        settings.setValue("SplitterState", self.ui.splitter.saveState())
         settings.setValue("ShowToolbar", self.ui.toolBar.isVisible())
         #settings.setValue("ShowTransport", self.ui.frame_transport.isVisible())
         settings.setValue("HorizontalScrollBarValue", self.ui.graphicsView.horizontalScrollBar().value())
@@ -1442,6 +1443,11 @@ class CarlaMainW(QMainWindow):
             #self.ui.act_settings_show_transport.setChecked(showTransport)
             #self.ui.frame_transport.setVisible(showTransport)
             self.ui.frame_transport.setVisible(False)
+
+            if settings.contains("SplitterState"):
+                self.ui.splitter.restoreState(settings.value("SplitterState", ""))
+            else:
+                self.ui.splitter.setSizes([99999, 210])
 
         self.fSavedSettings = {
             "Main/DefaultProjectFolder": settings.value("Main/DefaultProjectFolder", HOME, type=str),
@@ -1484,7 +1490,7 @@ class CarlaMainW(QMainWindow):
         os.environ["SFZ_PATH"] = splitter.join(Carla.SFZ_PATH)
 
     def resizeEvent(self, event):
-        if self.ui.tabWidget.currentIndex() == 0:
+        if self.ui.tabMain.currentIndex() == 0:
             # Force update of 2nd tab
             width  = self.ui.tab_plugins.width()-4
             height = self.ui.tab_plugins.height()-4

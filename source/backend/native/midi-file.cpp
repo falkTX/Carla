@@ -216,7 +216,7 @@ private:
 
 // -----------------------------------------------------------------------
 
-static const PluginDescriptor midiFileDesc = {
+static const PluginDescriptor midifileDesc = {
     /* category  */ PLUGIN_CATEGORY_UTILITY,
     /* hints     */ static_cast<PluginHints>(PLUGIN_IS_RTSAFE|PLUGIN_HAS_GUI),
     /* audioIns  */ 0,
@@ -226,7 +226,7 @@ static const PluginDescriptor midiFileDesc = {
     /* paramIns  */ 0,
     /* paramOuts */ 0,
     /* name      */ "MIDI File",
-    /* label     */ "midiFile",
+    /* label     */ "midifile",
     /* maker     */ "falkTX",
     /* copyright */ "GNU GPL v2+",
     PluginDescriptorFILL(MidiFilePlugin)
@@ -234,9 +234,9 @@ static const PluginDescriptor midiFileDesc = {
 
 // -----------------------------------------------------------------------
 
-void carla_register_native_plugin_midiFile()
+void carla_register_native_plugin_midifile()
 {
-    carla_register_native_plugin(&midiFileDesc);
+    carla_register_native_plugin(&midifileDesc);
 }
 
 // -----------------------------------------------------------------------

@@ -218,7 +218,7 @@ void carla_register_native_plugin_audiofile();
 
 #ifdef WANT_MIDIFILE
 // MidiFile
-void carla_register_native_plugin_midiFile();
+void carla_register_native_plugin_midifile();
 #endif
 
 #ifdef WANT_OPENGL
