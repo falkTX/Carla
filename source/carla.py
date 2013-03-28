@@ -740,7 +740,7 @@ class CarlaMainW(QMainWindow):
 
         elif extension in ("mid", "midi"):
             self.fLastLoadedPluginId = -2
-            if Carla.host.add_plugin(BINARY_NATIVE, PLUGIN_INTERNAL, None, basename, "midiFile", None):
+            if Carla.host.add_plugin(BINARY_NATIVE, PLUGIN_INTERNAL, None, basename, "midifile", None):
                 while (self.fLastLoadedPluginId == -2): sleep(0.2)
                 idx = self.fLastLoadedPluginId
                 self.fLastLoadedPluginId = -1

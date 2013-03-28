@@ -370,7 +370,8 @@ static void audiofile_cleanup(PluginHandle handle)
 
 static uint32_t audiofile_get_parameter_count(PluginHandle handle)
 {
-    return 1;
+    // FIXME - loop mode needs fixing
+    return 0;
 
     // unused
     (void)handle;
