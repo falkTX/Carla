@@ -711,35 +711,44 @@ class CarlaMainW(QMainWindow):
         if not os.path.isfile(filename):
             return
 
+        basename  = os.path.basename(filename)
         extension = filename.rsplit(".", 1)[-1].lower()
 
         if extension == "carxp":
             Carla.host.load_project(filename)
 
         elif extension == "gig":
-            Carla.host.add_plugin(BINARY_NATIVE, PLUGIN_GIG, filename, None, os.path.basename(filename), None)
+            Carla.host.add_plugin(BINARY_NATIVE, PLUGIN_GIG, filename, None, basename, None)
 
         elif extension == "sf2":
-            Carla.host.add_plugin(BINARY_NATIVE, PLUGIN_SF2, filename, None, os.path.basename(filename), None)
+            Carla.host.add_plugin(BINARY_NATIVE, PLUGIN_SF2, filename, None, basename, None)
 
         elif extension == "sfz":
-            Carla.host.add_plugin(BINARY_NATIVE, PLUGIN_SFZ, filename, None, os.path.basename(filename), None)
+            Carla.host.add_plugin(BINARY_NATIVE, PLUGIN_SFZ, filename, None, basename, None)
 
         elif extension in ("aac", "flac", "oga", "ogg", "mp3", "wav"):
             self.fLastLoadedPluginId = -2
-            if Carla.host.add_plugin(BINARY_NATIVE, PLUGIN_INTERNAL, None, None, "audiofile", None):
+            if Carla.host.add_plugin(BINARY_NATIVE, PLUGIN_INTERNAL, None, basename, "audiofile", None):
                 while (self.fLastLoadedPluginId == -2): sleep(0.2)
                 idx = self.fLastLoadedPluginId
                 self.fLastLoadedPluginId = -1
                 Carla.host.set_custom_data(idx, CUSTOM_DATA_STRING, "file00", filename)
+            else:
+                self.fLastLoadedPluginId = -1
+                CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"), self.tr("Failed to load plugin"),
+                                 cString(Carla.host.get_last_error()), QMessageBox.Ok, QMessageBox.Ok)
 
         elif extension in ("mid", "midi"):
             self.fLastLoadedPluginId = -2
-            if Carla.host.add_plugin(BINARY_NATIVE, PLUGIN_INTERNAL, None, None, "midifile", None):
+            if Carla.host.add_plugin(BINARY_NATIVE, PLUGIN_INTERNAL, None, basename, "midifile", None):
                 while (self.fLastLoadedPluginId == -2): sleep(0.2)
                 idx = self.fLastLoadedPluginId
                 self.fLastLoadedPluginId = -1
                 Carla.host.set_custom_data(idx, CUSTOM_DATA_STRING, "file", filename)
+            else:
+                self.fLastLoadedPluginId = -1
+                CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"), self.tr("Failed to load plugin"),
+                                 cString(Carla.host.get_last_error()), QMessageBox.Ok, QMessageBox.Ok)
 
     @pyqtSlot(float)
     def slot_canvasScaleChanged(self, scale):

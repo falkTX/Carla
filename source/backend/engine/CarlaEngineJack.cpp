@@ -534,7 +534,7 @@ public:
     // -------------------------------------------------------------------
     // Maximum values
 
-    unsigned int maxClientNameSize()
+    unsigned int maxClientNameSize() const
     {
         if (fOptions.processMode == PROCESS_MODE_SINGLE_CLIENT || fOptions.processMode == PROCESS_MODE_MULTIPLE_CLIENTS)
             return static_cast<unsigned int>(jackbridge_client_name_size());
@@ -542,7 +542,7 @@ public:
         return CarlaEngine::maxClientNameSize();
     }
 
-    unsigned int maxPortNameSize()
+    unsigned int maxPortNameSize() const
     {
         if (fOptions.processMode == PROCESS_MODE_SINGLE_CLIENT || fOptions.processMode == PROCESS_MODE_MULTIPLE_CLIENTS)
             return static_cast<unsigned int>(jackbridge_port_name_size());
