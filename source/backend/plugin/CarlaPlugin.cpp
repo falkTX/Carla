@@ -625,7 +625,7 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
     // ---------------------------------------------------------------------
     // Part 3 - set midi program
 
-    if (saveState.currentMidiBank >= 0 && saveState.currentMidiProgram)
+    if (saveState.currentMidiBank >= 0 && saveState.currentMidiProgram >= 0)
         setMidiProgramById(saveState.currentMidiBank, saveState.currentMidiProgram, true, true, true);
 
     // ---------------------------------------------------------------------
@@ -732,7 +732,7 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
 
             setParameterValue(index, stateParameter->value, true, true, true);
             setParameterMidiCC(index, stateParameter->midiCC, true, true);
-            setParameterMidiChannel(index, stateParameter->midiChannel-1, true, true);
+            setParameterMidiChannel(index, stateParameter->midiChannel, true, true);
         }
         else
             carla_stderr("Could not set parameter data for '%s'", stateParameter->name);
@@ -1092,7 +1092,7 @@ void CarlaPlugin::setParameterValueByRIndex(const int32_t rindex, const float va
 void CarlaPlugin::setParameterMidiChannel(const uint32_t parameterId, uint8_t channel, const bool sendOsc, const bool sendCallback)
 {
     CARLA_ASSERT(parameterId < kData->param.count);
-    CARLA_ASSERT(channel < MAX_MIDI_CHANNELS);
+    CARLA_ASSERT_INT(channel < MAX_MIDI_CHANNELS, channel);
 
     if (channel >= MAX_MIDI_CHANNELS)
         channel = MAX_MIDI_CHANNELS;
@@ -1118,7 +1118,7 @@ void CarlaPlugin::setParameterMidiChannel(const uint32_t parameterId, uint8_t ch
 void CarlaPlugin::setParameterMidiCC(const uint32_t parameterId, int16_t cc, const bool sendOsc, const bool sendCallback)
 {
     CARLA_ASSERT(parameterId < kData->param.count);
-    CARLA_ASSERT(cc >= -1);
+    CARLA_ASSERT_INT(cc >= -1, cc);
 
     if (cc < -1 || cc > 0x5F)
         cc = -1;
