@@ -557,7 +557,7 @@ void carla_patchbay_disconnect(int connectionId)
 
 void carla_patchbay_refresh()
 {
-    carla_debug("carla_patchbay_refresh(%i)", connectionId);
+    carla_debug("carla_patchbay_refresh()");
     CARLA_ASSERT(standalone.engine != nullptr);
 
     if (standalone.engine != nullptr)
