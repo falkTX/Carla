@@ -95,6 +95,10 @@
          <property name="text">
           <string/>
          </property>
+         <property name="icon">
+          <iconset resource="../resources.qrc">
+           <normaloff>:/16x16/media-seek-backward.png</normaloff>:/16x16/media-seek-backward.png</iconset>
+         </property>
         </widget>
        </item>
        <item>
@@ -107,6 +111,10 @@
          </property>
          <property name="text">
           <string/>
+         </property>
+         <property name="icon">
+          <iconset resource="../resources.qrc">
+           <normaloff>:/16x16/media-seek-forward.png</normaloff>:/16x16/media-seek-forward.png</iconset>
          </property>
         </widget>
        </item>
@@ -211,7 +219,7 @@
         </layout>
        </widget>
       </widget>
-      <widget class="QWidget" name="">
+      <widget class="QWidget" name="layoutWidget">
        <layout class="QVBoxLayout" name="verticalLayout_4">
         <item>
          <widget class="QTabWidget" name="tabUtils">
@@ -332,9 +340,31 @@
     <addaction name="separator"/>
     <addaction name="act_settings_configure"/>
    </widget>
+   <widget class="QMenu" name="menu_Canvas">
+    <property name="title">
+     <string>&amp;Canvas</string>
+    </property>
+    <widget class="QMenu" name="menu_Canvas_Zoom">
+     <property name="title">
+      <string>Zoom</string>
+     </property>
+     <addaction name="act_canvas_zoom_fit"/>
+     <addaction name="separator"/>
+     <addaction name="act_canvas_zoom_in"/>
+     <addaction name="act_canvas_zoom_out"/>
+     <addaction name="act_canvas_zoom_100"/>
+    </widget>
+    <addaction name="act_canvas_arrange"/>
+    <addaction name="act_canvas_refresh"/>
+    <addaction name="menu_Canvas_Zoom"/>
+    <addaction name="separator"/>
+    <addaction name="act_canvas_print"/>
+    <addaction name="act_canvas_save_image"/>
+   </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_Engine"/>
    <addaction name="menu_Plugin"/>
+   <addaction name="menu_Canvas"/>
    <addaction name="menu_Settings"/>
    <addaction name="menu_Help"/>
   </widget>
@@ -377,6 +407,9 @@
    <property name="text">
     <string>&amp;Save</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+S</string>
+   </property>
   </action>
   <action name="act_file_save_as">
    <property name="icon">
@@ -385,6 +418,9 @@
    </property>
    <property name="text">
     <string>Save &amp;As...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+S</string>
    </property>
   </action>
   <action name="act_file_new">
@@ -395,6 +431,9 @@
    <property name="text">
     <string>&amp;New</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+N</string>
+   </property>
   </action>
   <action name="act_file_open">
    <property name="icon">
@@ -403,6 +442,9 @@
    </property>
    <property name="text">
     <string>&amp;Open...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+O</string>
    </property>
   </action>
   <action name="act_file_quit">
@@ -413,6 +455,9 @@
    <property name="text">
     <string>&amp;Quit</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+Q</string>
+   </property>
   </action>
   <action name="act_plugin_remove_all">
    <property name="icon">
@@ -421,6 +466,9 @@
    </property>
    <property name="text">
     <string>&amp;Remove All</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+R</string>
    </property>
   </action>
   <action name="act_help_about">
@@ -440,6 +488,9 @@
    </property>
    <property name="text">
     <string>&amp;Add New...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+A</string>
    </property>
   </action>
   <action name="act_settings_show_toolbar">
@@ -467,6 +518,9 @@
    <property name="text">
     <string>&amp;Start</string>
    </property>
+   <property name="shortcut">
+    <string>F5</string>
+   </property>
   </action>
   <action name="act_engine_stop">
    <property name="icon">
@@ -475,6 +529,9 @@
    </property>
    <property name="text">
     <string>St&amp;op</string>
+   </property>
+   <property name="shortcut">
+    <string>F6</string>
    </property>
   </action>
   <action name="act_engine_configure">
@@ -487,6 +544,9 @@
    </property>
    <property name="text">
     <string>Configure Driver</string>
+   </property>
+   <property name="shortcut">
+    <string>F7</string>
    </property>
   </action>
   <action name="act_settings_show_transport">
@@ -501,6 +561,92 @@
    </property>
    <property name="iconText">
     <string>Show Transport bar</string>
+   </property>
+  </action>
+  <action name="act_canvas_arrange">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/view-sort-ascending.png</normaloff>:/16x16/view-sort-ascending.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Arrange</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+G</string>
+   </property>
+  </action>
+  <action name="act_canvas_refresh">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/view-refresh.png</normaloff>:/16x16/view-refresh.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Refresh</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+R</string>
+   </property>
+  </action>
+  <action name="act_canvas_print">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/document-print.png</normaloff>:/16x16/document-print.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Print...</string>
+   </property>
+  </action>
+  <action name="act_canvas_save_image">
+   <property name="text">
+    <string>Save &amp;Image...</string>
+   </property>
+  </action>
+  <action name="act_canvas_zoom_fit">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/zoom-fit-best.png</normaloff>:/16x16/zoom-fit-best.png</iconset>
+   </property>
+   <property name="text">
+    <string>Auto-Fit</string>
+   </property>
+   <property name="shortcut">
+    <string>Home</string>
+   </property>
+  </action>
+  <action name="act_canvas_zoom_in">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/zoom-in.png</normaloff>:/16x16/zoom-in.png</iconset>
+   </property>
+   <property name="text">
+    <string>Zoom In</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl++</string>
+   </property>
+  </action>
+  <action name="act_canvas_zoom_out">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/zoom-out.png</normaloff>:/16x16/zoom-out.png</iconset>
+   </property>
+   <property name="text">
+    <string>Zoom Out</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+-</string>
+   </property>
+  </action>
+  <action name="act_canvas_zoom_100">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/zoom-original.png</normaloff>:/16x16/zoom-original.png</iconset>
+   </property>
+   <property name="text">
+    <string>Zoom 100%</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+1</string>
    </property>
   </action>
  </widget>

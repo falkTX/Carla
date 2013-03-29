@@ -11,17 +11,26 @@
         <file>16x16/dialog-ok-apply.png</file>
         <file>16x16/document-new.png</file>
         <file>16x16/document-open.png</file>
+        <file>16x16/document-print.png</file>
         <file>16x16/document-save.png</file>
         <file>16x16/document-save-as.png</file>
         <file>16x16/edit-delete.png</file>
         <file>16x16/edit-rename.png</file>
         <file>16x16/list-add.png</file>
         <file>16x16/list-remove.png</file>
+        <file>16x16/media-playback-pause.png</file>
         <file>16x16/media-playback-start.png</file>
         <file>16x16/media-playback-stop.png</file>
+        <file>16x16/media-seek-backward.png</file>
+        <file>16x16/media-seek-forward.png</file>
         <file>16x16/network-connect.png</file>
         <file>16x16/view-refresh.png</file>
+        <file>16x16/view-sort-ascending.png</file>
         <file>16x16/window-close.png</file>
+        <file>16x16/zoom-fit-best.png</file>
+        <file>16x16/zoom-in.png</file>
+        <file>16x16/zoom-original.png</file>
+        <file>16x16/zoom-out.png</file>
 
         <file>48x48/carla.png</file>
         <file>48x48/carla-control.png</file>

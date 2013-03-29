@@ -22,6 +22,7 @@
 from time import sleep
 from PyQt4.QtCore import Qt, QModelIndex, QPointF, QSize
 from PyQt4.QtGui import QApplication, QDialogButtonBox, QFileSystemModel, QMainWindow, QResizeEvent
+from PyQt4.QtGui import QImage, QPrinter, QPrintDialog
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom Stuff)
@@ -641,6 +642,16 @@ class CarlaMainW(QMainWindow):
         self.connect(self.ui.act_plugin_add, SIGNAL("triggered()"), SLOT("slot_pluginAdd()"))
         self.connect(self.ui.act_plugin_remove_all, SIGNAL("triggered()"), SLOT("slot_pluginRemoveAll()"))
 
+        self.ui.act_canvas_arrange.setEnabled(False) # TODO, later
+        self.connect(self.ui.act_canvas_arrange, SIGNAL("triggered()"), SLOT("slot_canvasArrange()"))
+        self.connect(self.ui.act_canvas_refresh, SIGNAL("triggered()"), SLOT("slot_canvasRefresh()"))
+        self.connect(self.ui.act_canvas_zoom_fit, SIGNAL("triggered()"), SLOT("slot_canvasZoomFit()"))
+        self.connect(self.ui.act_canvas_zoom_in, SIGNAL("triggered()"), SLOT("slot_canvasZoomIn()"))
+        self.connect(self.ui.act_canvas_zoom_out, SIGNAL("triggered()"), SLOT("slot_canvasZoomOut()"))
+        self.connect(self.ui.act_canvas_zoom_100, SIGNAL("triggered()"), SLOT("slot_canvasZoomReset()"))
+        self.connect(self.ui.act_canvas_print, SIGNAL("triggered()"), SLOT("slot_canvasPrint()"))
+        self.connect(self.ui.act_canvas_save_image, SIGNAL("triggered()"), SLOT("slot_canvasSaveImage()"))
+
         self.connect(self.ui.act_settings_configure, SIGNAL("triggered()"), SLOT("slot_configureCarla()"))
         self.connect(self.ui.act_help_about, SIGNAL("triggered()"), SLOT("slot_aboutCarla()"))
         self.connect(self.ui.act_help_about_qt, SIGNAL("triggered()"), app, SLOT("aboutQt()"))
@@ -700,6 +711,67 @@ class CarlaMainW(QMainWindow):
             #Carla.host.nsm_announce(NSM_URL, os.getpid())
         #else:
         QTimer.singleShot(0, self, SLOT("slot_engineStart()"))
+
+    @pyqtSlot()
+    def slot_canvasArrange(self):
+        patchcanvas.arrange()
+
+    @pyqtSlot()
+    def slot_canvasRefresh(self):
+        patchcanvas.clear()
+        Carla.host.patchbay_refresh()
+
+    @pyqtSlot()
+    def slot_canvasZoomFit(self):
+        self.scene.zoom_fit()
+
+    @pyqtSlot()
+    def slot_canvasZoomIn(self):
+        self.scene.zoom_in()
+
+    @pyqtSlot()
+    def slot_canvasZoomOut(self):
+        self.scene.zoom_out()
+
+    @pyqtSlot()
+    def slot_canvasZoomReset(self):
+        self.scene.zoom_reset()
+
+    @pyqtSlot()
+    def slot_canvasPrint(self):
+        self.scene.clearSelection()
+        self.fExportPrinter = QPrinter()
+        dialog = QPrintDialog(self.fExportPrinter, self)
+
+        if dialog.exec_():
+            painter = QPainter(self.fExportPrinter)
+            painter.setRenderHint(QPainter.Antialiasing)
+            painter.setRenderHint(QPainter.TextAntialiasing)
+            self.scene.render(painter)
+
+    @pyqtSlot()
+    def slot_canvasSaveImage(self):
+        newPath = QFileDialog.getSaveFileName(self, self.tr("Save Image"), filter=self.tr("PNG Image (*.png);;JPEG Image (*.jpg)"))
+
+        if newPath:
+            self.scene.clearSelection()
+
+            # FIXME - must be a better way...
+            if newPath.endswith((".jpg", ".jpG", ".jPG", ".JPG", ".JPg", ".Jpg")):
+                imgFormat = "JPG"
+            elif newPath.endswith((".png", ".pnG", ".pNG", ".PNG", ".PNg", ".Png")):
+                imgFormat = "PNG"
+            else:
+                # File-dialog may not auto-add the extension
+                imgFormat = "PNG"
+                newPath  += ".png"
+
+            self.fExportImage = QImage(self.scene.sceneRect().width(), self.scene.sceneRect().height(), QImage.Format_RGB32)
+            painter = QPainter(self.fExportImage)
+            painter.setRenderHint(QPainter.Antialiasing) # TODO - set true, cleanup this
+            painter.setRenderHint(QPainter.TextAntialiasing)
+            self.scene.render(painter)
+            self.fExportImage.save(newPath, imgFormat, 100)
 
     @pyqtSlot(QModelIndex)
     def slot_fileTreeDoubleClicked(self, modelIndex):
