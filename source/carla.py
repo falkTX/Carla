@@ -773,6 +773,11 @@ class CarlaMainW(QMainWindow):
             self.scene.render(painter)
             self.fExportImage.save(newPath, imgFormat, 100)
 
+    def showLastError(self, isProject):
+        CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"),
+                         self.tr("Failed to load %s" % (self.tr("project") if isProject else self.tr("plugin"))),
+                         cString(Carla.host.get_last_error()), QMessageBox.Ok, QMessageBox.Ok)
+
     @pyqtSlot(QModelIndex)
     def slot_fileTreeDoubleClicked(self, modelIndex):
         filename = self.fDirModel.filePath(modelIndex)
@@ -787,16 +792,20 @@ class CarlaMainW(QMainWindow):
         extension = filename.rsplit(".", 1)[-1].lower()
 
         if extension == "carxp":
-            Carla.host.load_project(filename)
+            if not Carla.host.load_project(filename):
+                self.showLastError(True)
 
         elif extension == "gig":
-            Carla.host.add_plugin(BINARY_NATIVE, PLUGIN_GIG, filename, None, basename, None)
+            if not Carla.host.add_plugin(BINARY_NATIVE, PLUGIN_GIG, filename, None, basename, None):
+                self.showLastError(False)
 
         elif extension == "sf2":
-            Carla.host.add_plugin(BINARY_NATIVE, PLUGIN_SF2, filename, None, basename, None)
+            if not Carla.host.add_plugin(BINARY_NATIVE, PLUGIN_SF2, filename, None, basename, None):
+                self.showLastError(False)
 
         elif extension == "sfz":
-            Carla.host.add_plugin(BINARY_NATIVE, PLUGIN_SFZ, filename, None, basename, None)
+            if not Carla.host.add_plugin(BINARY_NATIVE, PLUGIN_SFZ, filename, None, basename, None):
+                self.showLastError(False)
 
         elif extension in ("aac", "flac", "oga", "ogg", "mp3", "wav"):
             self.fLastLoadedPluginId = -2
@@ -807,8 +816,7 @@ class CarlaMainW(QMainWindow):
                 Carla.host.set_custom_data(idx, CUSTOM_DATA_STRING, "file00", filename)
             else:
                 self.fLastLoadedPluginId = -1
-                CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"), self.tr("Failed to load plugin"),
-                                 cString(Carla.host.get_last_error()), QMessageBox.Ok, QMessageBox.Ok)
+                self.showLastError(False)
 
         elif extension in ("mid", "midi"):
             self.fLastLoadedPluginId = -2
@@ -819,8 +827,7 @@ class CarlaMainW(QMainWindow):
                 Carla.host.set_custom_data(idx, CUSTOM_DATA_STRING, "file", filename)
             else:
                 self.fLastLoadedPluginId = -1
-                CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"), self.tr("Failed to load plugin"),
-                                 cString(Carla.host.get_last_error()), QMessageBox.Ok, QMessageBox.Ok)
+                self.showLastError(False)
 
     @pyqtSlot(float)
     def slot_canvasScaleChanged(self, scale):
