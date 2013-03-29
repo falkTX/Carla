@@ -21,7 +21,7 @@
 
 from time import sleep
 from PyQt4.QtCore import Qt, QModelIndex, QPointF, QSize
-from PyQt4.QtGui import QApplication, QDialogButtonBox, QFileSystemModel, QMainWindow, QResizeEvent
+from PyQt4.QtGui import QApplication, QDialogButtonBox, QFileSystemModel, QLabel, QMainWindow, QResizeEvent
 from PyQt4.QtGui import QImage, QPrinter, QPrintDialog
 
 # ------------------------------------------------------------------------------------------------------------
@@ -564,6 +564,9 @@ class CarlaMainW(QMainWindow):
         # -------------------------------------------------------------
         # Set-up GUI stuff
 
+        self.fInfoLabel = QLabel(self)
+        self.fInfoLabel.setText("")
+
         self.fDirModel = QFileSystemModel(self)
         self.fDirModel.setNameFilters(cString(Carla.host.get_supported_file_types()).split(";"))
         self.fDirModel.setRootPath(HOME)
@@ -660,11 +663,13 @@ class CarlaMainW(QMainWindow):
         self.connect(self.ui.b_transport_play, SIGNAL("clicked(bool)"), SLOT("slot_transportPlayPause(bool)"))
         self.connect(self.ui.b_transport_stop, SIGNAL("clicked()"), SLOT("slot_transportStop()"))
 
-        self.connect(self.ui.fileTreeView, SIGNAL("doubleClicked(QModelIndex)"), SLOT("slot_fileTreeDoubleClicked(QModelIndex)"))
-        self.connect(self.ui.miniCanvasPreview, SIGNAL("miniCanvasMoved(double, double)"), SLOT("slot_miniCanvasMoved(double, double)"))
-
         self.connect(self.ui.graphicsView.horizontalScrollBar(), SIGNAL("valueChanged(int)"), SLOT("slot_horizontalScrollBarChanged(int)"))
         self.connect(self.ui.graphicsView.verticalScrollBar(), SIGNAL("valueChanged(int)"), SLOT("slot_verticalScrollBarChanged(int)"))
+
+        self.connect(self.ui.splitter, SIGNAL("splitterMoved(int, int)"), SLOT("slot_splitterMoved()"))
+
+        self.connect(self.ui.fileTreeView, SIGNAL("doubleClicked(QModelIndex)"), SLOT("slot_fileTreeDoubleClicked(QModelIndex)"))
+        self.connect(self.ui.miniCanvasPreview, SIGNAL("miniCanvasMoved(double, double)"), SLOT("slot_miniCanvasMoved(double, double)"))
 
         self.connect(self.scene, SIGNAL("sceneGroupMoved(int, int, QPointF)"), SLOT("slot_canvasItemMoved(int, int, QPointF)"))
         self.connect(self.scene, SIGNAL("scaleChanged(double)"), SLOT("slot_canvasScaleChanged(double)"))
@@ -711,6 +716,10 @@ class CarlaMainW(QMainWindow):
             #Carla.host.nsm_announce(NSM_URL, os.getpid())
         #else:
         QTimer.singleShot(0, self, SLOT("slot_engineStart()"))
+
+    @pyqtSlot()
+    def slot_splitterMoved(self):
+        self.updateInfoLabelSize()
 
     @pyqtSlot()
     def slot_canvasArrange(self):
@@ -860,6 +869,12 @@ class CarlaMainW(QMainWindow):
         settings = QSettings()
         self.ui.graphicsView.horizontalScrollBar().setValue(settings.value("HorizontalScrollBarValue", DEFAULT_CANVAS_WIDTH / 3, type=int))
         self.ui.graphicsView.verticalScrollBar().setValue(settings.value("VerticalScrollBarValue", DEFAULT_CANVAS_HEIGHT * 3 / 8, type=int))
+
+        tabBar = self.ui.tabMain.tabBar()
+        x = tabBar.width()+20
+        y = tabBar.mapFromParent(self.ui.centralwidget.pos()).y()+tabBar.height()/4
+        self.fInfoLabel.move(x, y)
+        self.fInfoLabel.resize(self.ui.tabMain.width()-x, tabBar.height())
 
     @pyqtSlot(float, float)
     def slot_miniCanvasMoved(self, xp, yp):
@@ -1106,6 +1121,13 @@ class CarlaMainW(QMainWindow):
         self.ui.act_engine_configure.setEnabled(not check)
         self.ui.frame_transport.setEnabled(check)
 
+        if check:
+            bufferSize = Carla.host.get_buffer_size()
+            sampleRate = Carla.host.get_sample_rate()
+            self.fInfoLabel.setText("Engine running, using %g sample rate and %i buffer size" % (sampleRate, bufferSize))
+        else:
+            self.fInfoLabel.setText("Engine failed to start")
+
     @pyqtSlot()
     def slot_engineStop(self):
         self.stopEngine()
@@ -1114,6 +1136,11 @@ class CarlaMainW(QMainWindow):
         self.ui.act_engine_start.setEnabled(not check)
         self.ui.act_engine_stop.setEnabled(check)
         self.ui.frame_transport.setEnabled(check)
+
+        if check:
+            self.fInfoLabel.setText("Engine failed to stop, still running...")
+        else:
+            self.fInfoLabel.setText("Engine stopped")
 
     @pyqtSlot()
     def slot_pluginAdd(self):
@@ -1590,6 +1617,10 @@ class CarlaMainW(QMainWindow):
         os.environ["SF2_PATH"] = splitter.join(Carla.SF2_PATH)
         os.environ["SFZ_PATH"] = splitter.join(Carla.SFZ_PATH)
 
+    def updateInfoLabelSize(self):
+        tabBar = self.ui.tabMain.tabBar()
+        self.fInfoLabel.resize(self.ui.tabMain.width()-tabBar.width()-20, tabBar.height())
+
     def resizeEvent(self, event):
         if self.ui.tabMain.currentIndex() == 0:
             # Force update of 2nd tab
@@ -1598,6 +1629,8 @@ class CarlaMainW(QMainWindow):
             self.ui.miniCanvasPreview.setViewSize(float(width) / DEFAULT_CANVAS_WIDTH, float(height) / DEFAULT_CANVAS_HEIGHT)
         else:
             QTimer.singleShot(0, self, SLOT("slot_miniCanvasCheckSize()"))
+
+        self.updateInfoLabelSize()
 
         QMainWindow.resizeEvent(self, event)
 
