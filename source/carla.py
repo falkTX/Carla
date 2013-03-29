@@ -566,6 +566,7 @@ class CarlaMainW(QMainWindow):
 
         self.fInfoLabel = QLabel(self)
         self.fInfoLabel.setText("")
+        self.fInfoText = ""
 
         self.fDirModel = QFileSystemModel(self)
         self.fDirModel.setNameFilters(cString(Carla.host.get_supported_file_types()).split(";"))
@@ -659,9 +660,10 @@ class CarlaMainW(QMainWindow):
         self.connect(self.ui.act_help_about, SIGNAL("triggered()"), SLOT("slot_aboutCarla()"))
         self.connect(self.ui.act_help_about_qt, SIGNAL("triggered()"), app, SLOT("aboutQt()"))
 
-        self.connect(self.ui.ch_transport, SIGNAL("currentIndexChanged(int)"), SLOT("slot_transportModeChanged(int)"))
-        self.connect(self.ui.b_transport_play, SIGNAL("clicked(bool)"), SLOT("slot_transportPlayPause(bool)"))
-        self.connect(self.ui.b_transport_stop, SIGNAL("clicked()"), SLOT("slot_transportStop()"))
+        self.connect(self.ui.act_transport_play, SIGNAL("triggered(bool)"), SLOT("slot_transportPlayPause(bool)"))
+        self.connect(self.ui.act_transport_stop, SIGNAL("triggered()"), SLOT("slot_transportStop()"))
+        self.connect(self.ui.act_transport_backwards, SIGNAL("triggered()"), SLOT("slot_transportBackwards()"))
+        self.connect(self.ui.act_transport_forwards, SIGNAL("triggered()"), SLOT("slot_transportForwards()"))
 
         self.connect(self.ui.graphicsView.horizontalScrollBar(), SIGNAL("valueChanged(int)"), SLOT("slot_horizontalScrollBarChanged(int)"))
         self.connect(self.ui.graphicsView.verticalScrollBar(), SIGNAL("valueChanged(int)"), SLOT("slot_verticalScrollBarChanged(int)"))
@@ -969,23 +971,15 @@ class CarlaMainW(QMainWindow):
         else:
             maxCount = MAX_DEFAULT_PLUGINS
 
-        self.ui.ch_transport.blockSignals(True)
-        self.ui.ch_transport.addItem(self.tr("Internal"))
-
-        if audioDriver == "JACK":
-            self.ui.ch_transport.addItem(self.tr("JACK"))
-        elif transportMode == TRANSPORT_MODE_JACK:
+        if transportMode == TRANSPORT_MODE_JACK and audioDriver != "JACK":
             transportMode = TRANSPORT_MODE_INTERNAL
-
-        self.ui.ch_transport.setCurrentIndex(transportMode)
-        self.ui.ch_transport.blockSignals(False)
 
         for x in range(maxCount):
             self.fPluginList.append(None)
 
         Carla.host.set_engine_option(OPTION_TRANSPORT_MODE, transportMode, "")
 
-        # Peaks
+        # Peaks and TimeInfo
         self.fIdleTimerFast = self.startTimer(self.fSavedSettings["Main/RefreshInterval"])
         # LEDs and edit dialog parameters
         self.fIdleTimerSlow = self.startTimer(self.fSavedSettings["Main/RefreshInterval"]*2)
@@ -1009,12 +1003,6 @@ class CarlaMainW(QMainWindow):
 
         self.killTimer(self.fIdleTimerFast)
         self.killTimer(self.fIdleTimerSlow)
-
-        settings = QSettings()
-        settings.setValue("Engine/TransportMode", self.ui.ch_transport.currentIndex())
-        self.ui.ch_transport.blockSignals(True)
-        self.ui.ch_transport.clear()
-        self.ui.ch_transport.blockSignals(False)
 
         patchcanvas.clear()
 
@@ -1119,14 +1107,14 @@ class CarlaMainW(QMainWindow):
         self.ui.act_engine_start.setEnabled(not check)
         self.ui.act_engine_stop.setEnabled(check)
         self.ui.act_engine_configure.setEnabled(not check)
-        self.ui.frame_transport.setEnabled(check)
 
         if check:
             bufferSize = Carla.host.get_buffer_size()
             sampleRate = Carla.host.get_sample_rate()
-            self.fInfoLabel.setText("Engine running, using %g sample rate and %i buffer size" % (sampleRate, bufferSize))
-        else:
-            self.fInfoLabel.setText("Engine failed to start")
+            self.fInfoText = "Engine running | SampleRate: %g | BufferSize: %i" % (sampleRate, bufferSize)
+            self.fInfoLabel.setText(self.fInfoText)
+
+        self.menuTransport(check)
 
     @pyqtSlot()
     def slot_engineStop(self):
@@ -1135,12 +1123,12 @@ class CarlaMainW(QMainWindow):
         self.ui.act_file_open.setEnabled(check)
         self.ui.act_engine_start.setEnabled(not check)
         self.ui.act_engine_stop.setEnabled(check)
-        self.ui.frame_transport.setEnabled(check)
 
-        if check:
-            self.fInfoLabel.setText("Engine failed to stop, still running...")
-        else:
+        if not check:
+            self.fInfoText = ""
             self.fInfoLabel.setText("Engine stopped")
+
+        self.menuTransport(check)
 
     @pyqtSlot()
     def slot_pluginAdd(self):
@@ -1157,25 +1145,66 @@ class CarlaMainW(QMainWindow):
     def slot_pluginRemoveAll(self):
         self.removeAllPlugins()
 
-        self.connect(self.ui.ch_transport, SIGNAL("currentIndexChanged(int)"), SLOT("(int)"))
-        self.connect(self.ui.b_transport_play, SIGNAL("clicked(bool)"), SLOT("(bool)"))
-        self.connect(self.ui.b_transport_stop, SIGNAL("clicked()"), SLOT("()"))
+    def menuTransport(self, enabled):
+        self.ui.act_transport_play.setEnabled(enabled)
+        self.ui.act_transport_stop.setEnabled(enabled)
+        self.ui.act_transport_backwards.setEnabled(enabled)
+        self.ui.act_transport_forwards.setEnabled(enabled)
+        self.ui.menu_Transport.setEnabled(enabled)
 
-    @pyqtSlot(int)
-    def slot_transportModeChanged(self, newMode):
-        Carla.host.set_engine_option(OPTION_TRANSPORT_MODE, newMode, "")
+    def refreshTransport(self):
+        if not self.fEngineStarted:
+            return
+
+        time = Carla.host.get_current_transport_frame() / int(Carla.host.get_sample_rate())
+        secs = time % 60
+        mins = (time / 60) % 60
+        hrs  = (time / 3600) % 60
+
+        textTransport = "Transport %s, at %02i:%02i:%02i" % ("<TODO>", hrs, mins, secs)
+        self.fInfoLabel.setText("%s | %s" % (self.fInfoText, textTransport))
 
     @pyqtSlot(bool)
     def slot_transportPlayPause(self, toggled):
+        if not self.fEngineStarted:
+            return
+
         if toggled:
             Carla.host.transport_play()
         else:
             Carla.host.transport_pause()
 
+        self.refreshTransport()
+
     @pyqtSlot()
     def slot_transportStop(self):
+        if not self.fEngineStarted:
+            return
+
         Carla.host.transport_pause()
         Carla.host.transport_relocate(0)
+
+        self.refreshTransport()
+
+    @pyqtSlot()
+    def slot_transportBackwards(self):
+        if not self.fEngineStarted:
+            return
+
+        newFrame = Carla.host.get_current_transport_frame() - 100000
+
+        if newFrame < 0:
+            newFrame = 0
+
+        Carla.host.transport_relocate(newFrame)
+
+    @pyqtSlot()
+    def slot_transportForwards(self):
+        if not self.fEngineStarted:
+            return
+
+        newFrame = Carla.host.get_current_transport_frame() + 100000
+        Carla.host.transport_relocate(newFrame)
 
     @pyqtSlot()
     def slot_aboutCarla(self):
@@ -1553,7 +1582,6 @@ class CarlaMainW(QMainWindow):
         settings.setValue("Geometry", self.saveGeometry())
         settings.setValue("SplitterState", self.ui.splitter.saveState())
         settings.setValue("ShowToolbar", self.ui.toolBar.isVisible())
-        #settings.setValue("ShowTransport", self.ui.frame_transport.isVisible())
         settings.setValue("HorizontalScrollBarValue", self.ui.graphicsView.horizontalScrollBar().value())
         settings.setValue("VerticalScrollBarValue", self.ui.graphicsView.verticalScrollBar().value())
 
@@ -1566,11 +1594,6 @@ class CarlaMainW(QMainWindow):
             showToolbar = settings.value("ShowToolbar", True, type=bool)
             self.ui.act_settings_show_toolbar.setChecked(showToolbar)
             self.ui.toolBar.setVisible(showToolbar)
-
-            #showTransport = settings.value("ShowTransport", True, type=bool)
-            #self.ui.act_settings_show_transport.setChecked(showTransport)
-            #self.ui.frame_transport.setVisible(showTransport)
-            self.ui.frame_transport.setVisible(False)
 
             if settings.contains("SplitterState"):
                 self.ui.splitter.restoreState(settings.value("SplitterState", ""))
@@ -1642,6 +1665,8 @@ class CarlaMainW(QMainWindow):
                 if pwidget is None:
                     break
                 pwidget.idleFast()
+
+            self.refreshTransport()
 
         elif event.timerId() == self.fIdleTimerSlow:
             for pwidget in self.fPluginList:

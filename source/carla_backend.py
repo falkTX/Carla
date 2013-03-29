@@ -212,6 +212,9 @@ class Host(object):
         self.lib.carla_transport_relocate.argtypes = [c_uint32]
         self.lib.carla_transport_relocate.restype = None
 
+        self.lib.carla_get_current_transport_frame.argtypes = None
+        self.lib.carla_get_current_transport_frame.restype = c_uint64
+
         self.lib.carla_add_plugin.argtypes = [c_enum, c_enum, c_char_p, c_char_p, c_char_p, c_void_p]
         self.lib.carla_add_plugin.restype = c_bool
 
@@ -442,6 +445,9 @@ class Host(object):
 
     def transport_relocate(self, frames):
         self.lib.carla_transport_relocate(frames)
+
+    def get_current_transport_frame(self):
+        return self.lib.carla_get_current_transport_frame()
 
     def add_plugin(self, btype, ptype, filename, name, label, extraStuff):
         cfilename = filename.encode("utf-8") if filename else c_nullptr

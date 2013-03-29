@@ -178,6 +178,7 @@ CARLA_EXPORT void carla_patchbay_refresh();
 CARLA_EXPORT void carla_transport_play();
 CARLA_EXPORT void carla_transport_pause();
 CARLA_EXPORT void carla_transport_relocate(uint32_t frames);
+CARLA_EXPORT uint64_t carla_get_current_transport_frame();
 
 CARLA_EXPORT bool carla_add_plugin(CarlaBinaryType btype, CarlaPluginType ptype, const char* filename, const char* name, const char* label, const void* extraPtr);
 CARLA_EXPORT bool carla_remove_plugin(unsigned int pluginId);

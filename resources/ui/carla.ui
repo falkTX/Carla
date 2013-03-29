@@ -16,139 +16,6 @@
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout_5">
     <item>
-     <widget class="QFrame" name="frame_transport">
-      <layout class="QHBoxLayout" name="horizontalLayout">
-       <property name="leftMargin">
-        <number>0</number>
-       </property>
-       <property name="rightMargin">
-        <number>0</number>
-       </property>
-       <property name="bottomMargin">
-        <number>0</number>
-       </property>
-       <item>
-        <widget class="QLabel" name="label">
-         <property name="text">
-          <string>Transport Mode:</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QComboBox" name="ch_transport"/>
-       </item>
-       <item>
-        <widget class="Line" name="line">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QPushButton" name="b_transport_play">
-         <property name="maximumSize">
-          <size>
-           <width>22</width>
-           <height>22</height>
-          </size>
-         </property>
-         <property name="text">
-          <string/>
-         </property>
-         <property name="icon">
-          <iconset resource="../resources.qrc">
-           <normaloff>:/16x16/media-playback-start.png</normaloff>:/16x16/media-playback-start.png</iconset>
-         </property>
-         <property name="checkable">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QPushButton" name="b_transport_stop">
-         <property name="maximumSize">
-          <size>
-           <width>22</width>
-           <height>22</height>
-          </size>
-         </property>
-         <property name="text">
-          <string/>
-         </property>
-         <property name="icon">
-          <iconset resource="../resources.qrc">
-           <normaloff>:/16x16/media-playback-stop.png</normaloff>:/16x16/media-playback-stop.png</iconset>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QPushButton" name="b_transport_back">
-         <property name="maximumSize">
-          <size>
-           <width>22</width>
-           <height>22</height>
-          </size>
-         </property>
-         <property name="text">
-          <string/>
-         </property>
-         <property name="icon">
-          <iconset resource="../resources.qrc">
-           <normaloff>:/16x16/media-seek-backward.png</normaloff>:/16x16/media-seek-backward.png</iconset>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QPushButton" name="b_transport_forward">
-         <property name="maximumSize">
-          <size>
-           <width>22</width>
-           <height>22</height>
-          </size>
-         </property>
-         <property name="text">
-          <string/>
-         </property>
-         <property name="icon">
-          <iconset resource="../resources.qrc">
-           <normaloff>:/16x16/media-seek-forward.png</normaloff>:/16x16/media-seek-forward.png</iconset>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="Line" name="line_2">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="label_time">
-         <property name="text">
-          <string>TIME (TODO)</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <spacer name="horizontalSpacer">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-      </layout>
-     </widget>
-    </item>
-    <item>
      <widget class="QSplitter" name="splitter">
       <property name="orientation">
        <enum>Qt::Horizontal</enum>
@@ -336,7 +203,6 @@
      <string>&amp;Settings</string>
     </property>
     <addaction name="act_settings_show_toolbar"/>
-    <addaction name="act_settings_show_transport"/>
     <addaction name="separator"/>
     <addaction name="act_settings_configure"/>
    </widget>
@@ -361,9 +227,19 @@
     <addaction name="act_canvas_print"/>
     <addaction name="act_canvas_save_image"/>
    </widget>
+   <widget class="QMenu" name="menu_Transport">
+    <property name="title">
+     <string>&amp;Transport</string>
+    </property>
+    <addaction name="act_transport_play"/>
+    <addaction name="act_transport_stop"/>
+    <addaction name="act_transport_backwards"/>
+    <addaction name="act_transport_forwards"/>
+   </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_Engine"/>
    <addaction name="menu_Plugin"/>
+   <addaction name="menu_Transport"/>
    <addaction name="menu_Canvas"/>
    <addaction name="menu_Settings"/>
    <addaction name="menu_Help"/>
@@ -466,9 +342,6 @@
    </property>
    <property name="text">
     <string>&amp;Remove All</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+Shift+R</string>
    </property>
   </action>
   <action name="act_help_about">
@@ -649,6 +522,57 @@
     <string>Ctrl+1</string>
    </property>
   </action>
+  <action name="act_transport_play">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/media-playback-start.png</normaloff>:/16x16/media-playback-start.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Play</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+P</string>
+   </property>
+  </action>
+  <action name="act_transport_stop">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/media-playback-stop.png</normaloff>:/16x16/media-playback-stop.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Stop</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+X</string>
+   </property>
+  </action>
+  <action name="act_transport_backwards">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/media-seek-backward.png</normaloff>:/16x16/media-seek-backward.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Backwards</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+B</string>
+   </property>
+  </action>
+  <action name="act_transport_forwards">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/media-seek-forward.png</normaloff>:/16x16/media-seek-forward.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Forwards</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+F</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>
@@ -691,22 +615,6 @@
     <hint type="destinationlabel">
      <x>354</x>
      <y>35</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>act_settings_show_transport</sender>
-   <signal>triggered(bool)</signal>
-   <receiver>frame_transport</receiver>
-   <slot>setVisible(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>-1</x>
-     <y>-1</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>377</x>
-     <y>65</y>
     </hint>
    </hints>
   </connection>
