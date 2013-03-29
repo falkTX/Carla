@@ -1001,7 +1001,7 @@ def runCarlaDiscovery(itype, stype, filename, tool, isWine=False):
 
             if prop == "name":
                 pinfo['name'] = value if value else fakeLabel
-            elif prop == "label":
+            elif prop in ("label", "uri"):
                 pinfo['label'] = value if value else fakeLabel
             elif prop == "maker":
                 pinfo['maker'] = value

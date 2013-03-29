@@ -1170,6 +1170,10 @@ bool is_lv2_port_supported(const LV2_Property types)
 static inline
 bool is_lv2_feature_supported(const LV2_URI uri)
 {
+    CARLA_ASSERT(uri != nullptr);
+
+    if (uri == nullptr)
+        return false;
     if (std::strcmp(uri, LV2_CORE__hardRTCapable) == 0)
         return true;
     if (std::strcmp(uri, LV2_CORE__inPlaceBroken) == 0)
@@ -1215,6 +1219,10 @@ bool is_lv2_feature_supported(const LV2_URI uri)
 static inline
 bool is_lv2_ui_feature_supported(const LV2_URI uri)
 {
+    CARLA_ASSERT(uri != nullptr);
+
+    if (uri == nullptr)
+        return false;
     if (is_lv2_feature_supported(uri))
         return true;
     if (std::strcmp(uri, LV2_DATA_ACCESS_URI) == 0)

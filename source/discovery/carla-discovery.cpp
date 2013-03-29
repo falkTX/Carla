@@ -111,7 +111,7 @@ intptr_t vstHostCanDo(const char* const feature)
     if (std::strcmp(feature, "acceptIOChanges") == 0)
         return 1;
     if (std::strcmp(feature, "sizeWindow") == 0)
-        return 1;
+        return -1;
     if (std::strcmp(feature, "offline") == 0)
         return -1;
     if (std::strcmp(feature, "openFileSelector") == 0)
@@ -251,7 +251,7 @@ intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t opcode
         break;
 
     default:
-        carla_debug("vstHostCallback(%p, %s, %i, " P_INTPTR ", %p, %f)", effect, vstMasterOpcode2str(opcode), index, value, ptr, opt);
+        carla_stdout("vstHostCallback(%p, %s, %i, " P_INTPTR ", %p, %f)", effect, vstMasterOpcode2str(opcode), index, value, ptr, opt);
         break;
     }
 
@@ -857,9 +857,9 @@ void do_lv2_check(const char* const bundle, const bool init)
     for (int i=0; i < URIs.count(); i++)
     {
         const LV2_RDF_Descriptor* const rdfDescriptor = lv2_rdf_new(URIs.at(i).toUtf8().constData());
-        CARLA_ASSERT(rdfDescriptor && rdfDescriptor->URI);
+        CARLA_ASSERT(rdfDescriptor != nullptr && rdfDescriptor->URI != nullptr);
 
-        if (! (rdfDescriptor && rdfDescriptor->URI))
+        if (rdfDescriptor == nullptr || rdfDescriptor->URI == nullptr)
         {
             DISCOVERY_OUT("error", "Failed to find LV2 plugin '" << URIs.at(i).toUtf8().constData() << "'");
             continue;
@@ -868,25 +868,27 @@ void do_lv2_check(const char* const bundle, const bool init)
         if (init)
         {
             // test if DLL is loadable, twice
-            bool isLoadable = true;
+            void* const libHandle1 = lib_open(rdfDescriptor->Binary);
 
-            for (int j=0; j < 2; j++)
+            if (libHandle1 == nullptr)
             {
-                void* const libHandle = lib_open(rdfDescriptor->Binary);
-
-                if (! libHandle)
-                {
-                    isLoadable = false;
-                    print_lib_error(rdfDescriptor->Binary);
-                    delete rdfDescriptor;
-                    break;
-                }
-
-                lib_close(libHandle);
+                print_lib_error(rdfDescriptor->Binary);
+                delete rdfDescriptor;
+                continue;
             }
 
-            if (! isLoadable)
+            lib_close(libHandle1);
+
+            void* const libHandle2 = lib_open(rdfDescriptor->Binary);
+
+            if (libHandle2 == nullptr)
+            {
+                print_lib_error(rdfDescriptor->Binary);
+                delete rdfDescriptor;
                 continue;
+            }
+
+            lib_close(libHandle2);
         }
 
         // test if we support all required ports and features
@@ -1011,12 +1013,12 @@ void do_lv2_check(const char* const bundle, const bool init)
             hints |= PLUGIN_HAS_GUI;
 
         DISCOVERY_OUT("init", "-----------");
-        DISCOVERY_OUT("label", rdfDescriptor->URI);
-        if (rdfDescriptor->Name)
+        DISCOVERY_OUT("uri", rdfDescriptor->URI);
+        if (rdfDescriptor->Name != nullptr)
             DISCOVERY_OUT("name", rdfDescriptor->Name);
-        if (rdfDescriptor->Author)
+        if (rdfDescriptor->Author != nullptr)
             DISCOVERY_OUT("maker", rdfDescriptor->Author);
-        if (rdfDescriptor->License)
+        if (rdfDescriptor->License != nullptr)
             DISCOVERY_OUT("copyright", rdfDescriptor->License);
         DISCOVERY_OUT("unique_id", rdfDescriptor->UniqueID);
         DISCOVERY_OUT("hints", hints);
@@ -1154,12 +1156,6 @@ void do_vst_check(void* const libHandle, const bool init)
             effect->dispatcher(effect, effSetSampleRate, 0, 0, nullptr, kSampleRate);
             effect->dispatcher(effect, effSetProcessPrecision, 0, kVstProcessPrecision32, nullptr, 0.0f);
 
-            effect->dispatcher(effect, effStopProcess,  0, 0, nullptr, 0.0f);
-            effect->dispatcher(effect, effMainsChanged, 0, 0, nullptr, 0.0f);
-
-            if (gVstNeedsIdle)
-                effect->dispatcher(effect, effIdle, 0, 0, nullptr, 0.0f);
-
             effect->dispatcher(effect, effMainsChanged, 0, 1, nullptr, 0.0f);
             effect->dispatcher(effect, effStartProcess, 0, 0, nullptr, 0.0f);
 
@@ -1192,16 +1188,14 @@ void do_vst_check(void* const libHandle, const bool init)
                 intptr_t reserved;
                 VstEvent* data[2];
 
-#ifndef QTCREATOR_TEST
                 VstEventsFixed()
                     : numEvents(0),
                       reserved(0),
                       data{0} {}
-#endif
             } events;
 
             VstMidiEvent midiEvents[2];
-            carla_zeroMem(midiEvents, sizeof(VstMidiEvent)*2);
+            carla_zeroStruct<VstMidiEvent>(midiEvents, 2);
 
             midiEvents[0].type = kVstMidiType;
             midiEvents[0].byteSize = sizeof(VstMidiEvent);
