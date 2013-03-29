@@ -13,7 +13,7 @@ SORD_VERSION   = 0.12.0
 SRATOM_VERSION = 0.4.2
 LILV_VERSION   = 0.16.0
 
-BUILD_C_FLAGS += -fvisibility=hidden -fPIC
+BUILD_C_FLAGS += -fvisibility=hidden -fPIC -w
 BUILD_C_FLAGS += -Iconfig -I../../includes
 
 OBJS         = serd.c.o         sord.c.o         sratom.c.o         lilv.c.o
