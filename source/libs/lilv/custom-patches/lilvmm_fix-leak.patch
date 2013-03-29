@@ -1,0 +1,12 @@
+diff --git a/source/libs/lilv/lilv-0.16.0/lilv/lilvmm.hpp b/source/libs/lilv/lilv-0.16.0/lilv/lilvmm.hpp
+index 666f466..4215ab8 100644
+--- a/source/libs/lilv/lilv-0.16.0/lilv/lilvmm.hpp
++++ b/source/libs/lilv/lilv-0.16.0/lilv/lilvmm.hpp
+@@ -60,6 +60,7 @@ uri_to_path(const char* uri) {
+ #endif
+ 
+ struct Node {
++	inline Node(LilvNode* node)       : me(node) {}
+ 	inline Node(const LilvNode* node) : me(lilv_node_duplicate(node)) {}
+ 	inline Node(const Node& copy)     : me(lilv_node_duplicate(copy.me)) {}
+ 
