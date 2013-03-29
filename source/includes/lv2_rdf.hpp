@@ -128,27 +128,26 @@ struct LV2_Type {
 #define LV2_PORT_CV                      0x010
 #define LV2_PORT_ATOM                    0x020
 #define LV2_PORT_ATOM_SEQUENCE          (0x040 | LV2_PORT_ATOM)
-#define LV2_PORT_ATOM_URID              (0x080 | LV2_PORT_ATOM)
-#define LV2_PORT_EVENT                   0x100
-#define LV2_PORT_MIDI_LL                 0x200
+#define LV2_PORT_EVENT                   0x080
+#define LV2_PORT_MIDI_LL                 0x100
 
 // Port Data Types
 #define LV2_PORT_DATA_MIDI_EVENT         0x1000
-#define LV2_PORT_DATA_OBJECT             0x2000
-#define LV2_PORT_DATA_PATCH_MESSAGE      0x4000
-#define LV2_PORT_DATA_TIME               0x8000
+#define LV2_PORT_DATA_PATCH_MESSAGE      0x2000
+#define LV2_PORT_DATA_TIME_POSITION      0x4000
 
 #define LV2_IS_PORT_INPUT(x)             ((x) & LV2_PORT_INPUT)
 #define LV2_IS_PORT_OUTPUT(x)            ((x) & LV2_PORT_OUTPUT)
 #define LV2_IS_PORT_CONTROL(x)           ((x) & LV2_PORT_CONTROL)
 #define LV2_IS_PORT_AUDIO(x)             ((x) & LV2_PORT_AUDIO)
-#define LV2_IS_PORT_ATOM_SEQUENCE(x)     ((x) & LV2_PORT_ATOM_SEQUENCE)
 #define LV2_IS_PORT_CV(x)                ((x) & LV2_PORT_CV)
+#define LV2_IS_PORT_ATOM_SEQUENCE(x)     ((x) & LV2_PORT_ATOM_SEQUENCE)
 #define LV2_IS_PORT_EVENT(x)             ((x) & LV2_PORT_EVENT)
 #define LV2_IS_PORT_MIDI_LL(x)           ((x) & LV2_PORT_MIDI_LL)
 
-#define LV2_PORT_SUPPORTS_MIDI_EVENT(x)  ((x) & LV2_PORT_DATA_MIDI_EVENT)
+#define LV2_PORT_SUPPORTS_MIDI_EVENT(x)    ((x) & LV2_PORT_DATA_MIDI_EVENT)
 #define LV2_PORT_SUPPORTS_PATCH_MESSAGE(x) ((x) & LV2_PORT_DATA_PATCH_MESSAGE)
+#define LV2_PORT_SUPPORTS_TIME_POSITION(x) ((x) & LV2_PORT_DATA_TIME_POSITION)
 
 // Port Properties
 #define LV2_PORT_OPTIONAL                0x0001
