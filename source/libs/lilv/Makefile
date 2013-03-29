@@ -9,11 +9,11 @@ include ../../Makefile.mk
 # --------------------------------------------------------------
 
 SERD_VERSION   = 0.18.2
-SORD_VERSION   = 0.10.4
-SRATOM_VERSION = 0.4.0
-LILV_VERSION   = 0.14.4
+SORD_VERSION   = 0.12.0
+SRATOM_VERSION = 0.4.2
+LILV_VERSION   = 0.16.0
 
-BUILD_C_FLAGS += -fvisibility=hidden -fPIC -w
+BUILD_C_FLAGS += -fvisibility=hidden -fPIC
 BUILD_C_FLAGS += -Iconfig -I../../includes
 
 OBJS         = serd.c.o         sord.c.o         sratom.c.o         lilv.c.o

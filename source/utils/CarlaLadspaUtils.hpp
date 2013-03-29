@@ -36,7 +36,7 @@ const LADSPA_RDF_Descriptor* ladspa_rdf_dup(const LADSPA_RDF_Descriptor* const o
     if (oldDescriptor == nullptr)
         return nullptr;
 
-    LADSPA_RDF_Descriptor* const newDescriptor = new LADSPA_RDF_Descriptor;
+    LADSPA_RDF_Descriptor* const newDescriptor(new LADSPA_RDF_Descriptor());
 
     newDescriptor->Type      = oldDescriptor->Type;
     newDescriptor->UniqueID  = oldDescriptor->UniqueID;

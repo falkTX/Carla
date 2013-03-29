@@ -37,6 +37,9 @@ struct LV2_Type {
         if (URI != nullptr)
             delete[] URI;
     }
+
+    LV2_Type(LV2_Type&) = delete;
+    LV2_Type(const LV2_Type&) = delete;
 };
 
 // Port Midi Map Types
@@ -310,6 +313,9 @@ struct LV2_RDF_PortMidiMap {
     LV2_RDF_PortMidiMap()
         : Type(0),
           Number(0) {}
+
+    LV2_RDF_PortMidiMap(LV2_RDF_PortMidiMap&) = delete;
+    LV2_RDF_PortMidiMap(const LV2_RDF_PortMidiMap&) = delete;
 };
 
 // Port Points
@@ -324,6 +330,9 @@ struct LV2_RDF_PortPoints {
           Default(0.0f),
           Minimum(0.0f),
           Maximum(1.0f) {}
+
+    LV2_RDF_PortPoints(LV2_RDF_PortPoints&) = delete;
+    LV2_RDF_PortPoints(const LV2_RDF_PortPoints&) = delete;
 };
 
 // Port Unit
@@ -350,6 +359,9 @@ struct LV2_RDF_PortUnit {
         if (Symbol != nullptr)
             delete[] Symbol;
     }
+
+    LV2_RDF_PortUnit(LV2_RDF_PortUnit&) = delete;
+    LV2_RDF_PortUnit(const LV2_RDF_PortUnit&) = delete;
 };
 
 // Port Scale Point
@@ -366,6 +378,9 @@ struct LV2_RDF_PortScalePoint {
         if (Label != nullptr)
             delete[] Label;
     }
+
+    LV2_RDF_PortScalePoint(LV2_RDF_PortScalePoint&) = delete;
+    LV2_RDF_PortScalePoint(const LV2_RDF_PortScalePoint&) = delete;
 };
 
 // Port
@@ -401,6 +416,9 @@ struct LV2_RDF_Port {
         if (ScalePoints != nullptr)
             delete[] ScalePoints;
     }
+
+    LV2_RDF_Port(LV2_RDF_Port&) = delete;
+    LV2_RDF_Port(const LV2_RDF_Port&) = delete;
 };
 
 // Preset
@@ -419,6 +437,9 @@ struct LV2_RDF_Preset {
         if (Label != nullptr)
             delete[] Label;
     }
+
+    LV2_RDF_Preset(LV2_RDF_Preset&) = delete;
+    LV2_RDF_Preset(const LV2_RDF_Preset&) = delete;
 };
 
 // Feature
@@ -435,6 +456,9 @@ struct LV2_RDF_Feature {
         if (URI != nullptr)
             delete[] URI;
     }
+
+    LV2_RDF_Feature(LV2_RDF_Feature&) = delete;
+    LV2_RDF_Feature(const LV2_RDF_Feature&) = delete;
 };
 
 // UI
@@ -472,6 +496,9 @@ struct LV2_RDF_UI {
         if (Extensions != nullptr)
             delete[] Extensions;
     }
+
+    LV2_RDF_UI(LV2_RDF_UI&) = delete;
+    LV2_RDF_UI(const LV2_RDF_UI&) = delete;
 };
 
 // Plugin
@@ -545,6 +572,9 @@ struct LV2_RDF_Descriptor {
         if (UIs != nullptr)
             delete[] UIs;
     }
+
+    LV2_RDF_Descriptor(LV2_RDF_Descriptor&) = delete;
+    LV2_RDF_Descriptor(const LV2_RDF_Descriptor&) = delete;
 };
 
 #endif // LV2_RDF_INCLUDED

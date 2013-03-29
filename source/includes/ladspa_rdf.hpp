@@ -129,6 +129,9 @@ struct LADSPA_RDF_ScalePoint {
         if (Label != nullptr)
             delete[] Label;
     }
+
+    LADSPA_RDF_ScalePoint(LADSPA_RDF_ScalePoint&) = delete;
+    LADSPA_RDF_ScalePoint(const LADSPA_RDF_ScalePoint&) = delete;
 };
 
 // Port
@@ -158,6 +161,9 @@ struct LADSPA_RDF_Port {
         if (ScalePoints != nullptr)
             delete[] ScalePoints;
     }
+
+    LADSPA_RDF_Port(LADSPA_RDF_Port&) = delete;
+    LADSPA_RDF_Port(const LADSPA_RDF_Port&) = delete;
 };
 
 // Plugin
@@ -187,6 +193,9 @@ struct LADSPA_RDF_Descriptor {
         if (Ports != nullptr)
             delete[] Ports;
     }
+
+    LADSPA_RDF_Descriptor(LADSPA_RDF_Descriptor&) = delete;
+    LADSPA_RDF_Descriptor(const LADSPA_RDF_Descriptor&) = delete;
 };
 
 #endif // LADSPA_RDF_INCLUDED

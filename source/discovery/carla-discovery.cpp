@@ -1500,7 +1500,7 @@ int main(int argc, char* argv[])
 
     const char* const stype    = argv[1];
     const char* const filename = argv[2];
-    const  PluginType type     = getPluginTypeFromString(stype);
+    const PluginType  type     = getPluginTypeFromString(stype);
 
     bool openLib = false;
     void* handle = nullptr;
@@ -1528,9 +1528,13 @@ int main(int argc, char* argv[])
     }
 
     // never do init for dssi-vst, takes too long and it's crashy
-    bool doInit = !QString(filename).endsWith("dssi-vst.so", Qt::CaseInsensitive);
+#ifdef __USE_GNU
+    bool doInit = (strcasestr(filename, "dssi-vst") != nullptr);
+#else
+    bool doInit = (std::strstr(filename, "dssi-vst") != nullptr);
+#endif
 
-    if (doInit && getenv("CARLA_DISCOVERY_NO_PROCESSING_CHECKS"))
+    if (doInit && getenv("CARLA_DISCOVERY_NO_PROCESSING_CHECKS") != nullptr)
         doInit = false;
 
     if (doInit && handle != nullptr)
