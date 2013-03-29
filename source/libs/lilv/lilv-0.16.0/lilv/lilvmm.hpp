@@ -60,6 +60,7 @@ uri_to_path(const char* uri) {
 #endif
 
 struct Node {
+	inline Node(LilvNode* node)       : me(node) {}
 	inline Node(const LilvNode* node) : me(lilv_node_duplicate(node)) {}
 	inline Node(const Node& copy)     : me(lilv_node_duplicate(copy.me)) {}
 
