@@ -41,6 +41,7 @@
 #define LV2_UI__X11UI            LV2_UI_PREFIX "X11UI"
 #define LV2_UI__binary           LV2_UI_PREFIX "binary"
 #define LV2_UI__fixedSize        LV2_UI_PREFIX "fixedSize"
+#define LV2_UI__idleInterface    LV2_UI_PREFIX "idleInterface"
 #define LV2_UI__noUserResize     LV2_UI_PREFIX "noUserResize"
 #define LV2_UI__notifyType       LV2_UI_PREFIX "notifyType"
 #define LV2_UI__parent           LV2_UI_PREFIX "parent"
@@ -336,6 +337,24 @@ typedef struct _LV2UI_Touch {
 	              uint32_t             port_index,
 	              bool                 grabbed);
 } LV2UI_Touch;
+
+/**
+   UI Idle Feature (LV2_UI__idle)
+
+   This feature is an addition to the UI API that provides a callback for the
+   host to call rapidly, e.g. to drive the idle callback of a toolkit.
+*/
+typedef struct _LV2UI_Idle_Interface {
+	/**
+	   Run a single iteration of the UI's idle loop.
+
+	   This will be called "frequently" in the UI thread at a rate appropriate
+	   for a toolkit main loop.  There are no precise timing guarantees.
+
+	   @return 0 on success, or anything else to stop being called.
+	*/
+	int (*idle)(LV2UI_Handle ui);
+} LV2UI_Idle_Interface;
 
 /**
    Peak data for a slice of time, the update format for ui:peakProtocol.

@@ -12,7 +12,7 @@
 
 /**
  * @file lv2_rtmempool.h
- * C header for the LV2 rtmempool extension <http://kxstudio.sf.net/ns/lv2ext/rtmempool>
+ * C header for the LV2 rtmempool extension <http://kxstudio.sf.net/ns/lv2ext/rtmempool>.
  *
  */
 

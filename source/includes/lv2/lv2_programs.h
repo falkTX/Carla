@@ -157,7 +157,10 @@ typedef struct _LV2_Programs_Host {
      * Parameter index is program index to change.
      * When index is -1, host should reload all the programs.
      *
-     * NOTE: The plugin MUST NEVER call this function on a RT context or during run().
+     * The plugin MUST NEVER call this function on a RT context or during run().
+     *
+     * NOTE: This call is to inform the host about a program's bank, program or name change.
+     *       It DOES NOT change the current selected program.
      */
     void (*program_changed)(LV2_Programs_Handle handle,
                             int32_t index);
