@@ -22,7 +22,7 @@
 #include <math.h>
 #include <float.h>
 
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(__MINGW32__)
 #    define isnan(x) _isnan(x)
 #    define isinf(x) (!_finite(x))
 #endif
