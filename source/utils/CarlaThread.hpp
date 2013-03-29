@@ -20,6 +20,8 @@
 
 #include "CarlaJuceUtils.hpp"
 
+#error This class is not ready for usage yet
+
 // #define CPP11_THREAD
 
 #ifdef CPP11_THREAD

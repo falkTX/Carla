@@ -60,7 +60,7 @@ void CarlaEngineThread::stopNow()
 
     const CarlaMutex::ScopedLocker sl(&fMutex);
 
-    if (isRunning() && ! stop(500))
+    if (isRunning() && ! wait(500))
         terminate();
 }
 

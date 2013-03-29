@@ -150,7 +150,7 @@ public:
         kData->osc.data.free();
 
         // Wait a bit first, then force kill
-        if (kData->osc.thread.isRunning() && ! kData->osc.thread.stop(1000)) // kData->engine->getOptions().oscUiTimeout
+        if (kData->osc.thread.isRunning() && ! kData->osc.thread.wait(1000)) // kData->engine->getOptions().oscUiTimeout
         {
             carla_stderr("Failed to properly stop Plugin Bridge thread");
             kData->osc.thread.terminate();
@@ -1242,7 +1242,7 @@ public:
 
             kData->osc.thread.setOscData(bridgeBinary, label, getPluginTypeAsString(fPluginType), shmIdStr);
             kData->osc.thread.start();
-            kData->osc.thread.waitForStarted();
+            //kData->osc.thread.waitForStarted();
         }
 
         for (int i=0; i < 200; i++)
@@ -1268,7 +1268,7 @@ public:
             // unregister so it gets handled properly
             registerEnginePlugin(kData->engine, fId, nullptr);
 
-            kData->osc.thread.stop();
+            kData->osc.thread.quit();
             // last error was set before
             return false;
         }

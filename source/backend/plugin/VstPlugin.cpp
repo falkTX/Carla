@@ -86,7 +86,7 @@ public:
             if (fGui.isOsc)
             {
                 // Wait a bit first, then force kill
-                if (kData->osc.thread.isRunning() && ! kData->osc.thread.stop(kData->engine->getOptions().oscUiTimeout))
+                if (kData->osc.thread.isRunning() && ! kData->osc.thread.wait(kData->engine->getOptions().oscUiTimeout))
                 {
                     carla_stderr("VST GUI thread still running, forcing termination now");
                     kData->osc.thread.terminate();
@@ -352,7 +352,7 @@ public:
                     kData->osc.data.free();
                 }
 
-                if (kData->osc.thread.isRunning() && ! kData->osc.thread.stop(kData->engine->getOptions().oscUiTimeout))
+                if (kData->osc.thread.isRunning() && ! kData->osc.thread.wait(kData->engine->getOptions().oscUiTimeout))
                     kData->osc.thread.terminate();
             }
         }

@@ -20,13 +20,15 @@
 
 #include "CarlaBackend.hpp"
 #include "CarlaString.hpp"
-#include "CarlaThread.hpp"
+
+//#include "CarlaThread.hpp"
+#include <QtCore/QThread>
 
 class QProcess;
 
 CARLA_BACKEND_START_NAMESPACE
 
-class CarlaPluginThread : public CarlaThread
+class CarlaPluginThread : public QThread
 {
 public:
     enum Mode {

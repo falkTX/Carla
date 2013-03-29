@@ -593,8 +593,8 @@ bool CarlaEngine::init(const char* const clientName)
     kData->nextAction.ready();
     kData->thread.startNow();
 
-    if (type() == kEngineTypePlugin)
-        kData->thread.waitForStarted();
+    //if (type() == kEngineTypePlugin)
+    //    kData->thread.waitForStarted();
 
     return true;
 }

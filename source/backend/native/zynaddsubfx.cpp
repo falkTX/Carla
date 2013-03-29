@@ -22,8 +22,10 @@
 #include "CarlaNative.hpp"
 #include "CarlaMIDI.h"
 #include "CarlaString.hpp"
-#include "CarlaThread.hpp"
+//#include "CarlaThread.hpp"
 #include "RtList.hpp"
+
+#include <QtCore/QThread>
 
 #include "zynaddsubfx/Misc/Master.h"
 #include "zynaddsubfx/Misc/Util.h"
@@ -94,7 +96,7 @@ public:
     {
         fThread.start();
         maybeInitPrograms(kMaster);
-        fThread.waitForStarted();
+        //fThread.waitForStarted();
     }
 
     ~ZynAddSubFxPlugin()
@@ -329,7 +331,7 @@ private:
         ProgramInfo(const ProgramInfo&) = delete;
     };
 
-    class ZynThread : public CarlaThread
+    class ZynThread : public QThread
     {
     public:
         ZynThread(Master* const master, const HostDescriptor* const host)
@@ -371,7 +373,7 @@ private:
         void stop()
         {
             fQuit = true;
-            CarlaThread::stop();
+            quit();
         }
 
 #ifdef WANT_ZYNADDSUBFX_UI
