@@ -61,6 +61,7 @@ carla-discovery-native
 carla-discovery-posix32
 carla-discovery-posix64
 
+data/windows/Carla
 source/tests/ANSI
 source/tests/Base64
 source/tests/CarlaString
