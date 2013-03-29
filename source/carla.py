@@ -587,10 +587,10 @@ class CarlaMainW(QMainWindow):
 
         self.scene = patchcanvas.PatchScene(self, self.ui.graphicsView)
         self.ui.graphicsView.setScene(self.scene)
-        #self.ui.graphicsView.setRenderHint(QPainter.Antialiasing, bool(self.fSavedSettings["Canvas/Antialiasing"] == patchcanvas.ANTIALIASING_FULL))
-        #if self.fSavedSettings["Canvas/UseOpenGL"] and hasGL:
-            #self.ui.graphicsView.setViewport(QGLWidget(self.ui.graphicsView))
-            #self.ui.graphicsView.setRenderHint(QPainter.HighQualityAntialiasing, self.fSavedSettings["Canvas/HighQualityAntialiasing"])
+        self.ui.graphicsView.setRenderHint(QPainter.Antialiasing, bool(self.fSavedSettings["Canvas/Antialiasing"] == patchcanvas.ANTIALIASING_FULL))
+        if self.fSavedSettings["Canvas/UseOpenGL"] and hasGL:
+            self.ui.graphicsView.setViewport(QGLWidget(self.ui.graphicsView))
+            self.ui.graphicsView.setRenderHint(QPainter.HighQualityAntialiasing, self.fSavedSettings["Canvas/HighQualityAntialiasing"])
 
         pOptions = patchcanvas.options_t()
         pOptions.theme_name       = self.fSavedSettings["Canvas/Theme"]
@@ -1080,6 +1080,28 @@ class CarlaMainW(QMainWindow):
         dialog = CarlaSettingsW(self)
         if dialog.exec_():
             self.loadSettings(False)
+            patchcanvas.clear()
+
+            pOptions = patchcanvas.options_t()
+            pOptions.theme_name       = self.fSavedSettings["Canvas/Theme"]
+            pOptions.auto_hide_groups = self.fSavedSettings["Canvas/AutoHideGroups"]
+            pOptions.use_bezier_lines = self.fSavedSettings["Canvas/UseBezierLines"]
+            pOptions.antialiasing     = self.fSavedSettings["Canvas/Antialiasing"]
+            pOptions.eyecandy         = self.fSavedSettings["Canvas/EyeCandy"]
+
+            pFeatures = patchcanvas.features_t()
+            pFeatures.group_info   = False
+            pFeatures.group_rename = False
+            pFeatures.port_info    = False
+            pFeatures.port_rename  = False
+            pFeatures.handle_group_pos = True
+
+            patchcanvas.setOptions(pOptions)
+            patchcanvas.setFeatures(pFeatures)
+            patchcanvas.init("Carla", self.scene, canvasCallback, False)
+
+            if self.fEngineStarted:
+                Carla.host.patchbay_refresh()
 
             for pwidget in self.fPluginList:
                 if pwidget is None:

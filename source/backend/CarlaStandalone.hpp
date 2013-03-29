@@ -173,6 +173,7 @@ CARLA_EXPORT bool carla_save_project(const char* filename);
 
 CARLA_EXPORT void carla_patchbay_connect(int portA, int portB);
 CARLA_EXPORT void carla_patchbay_disconnect(int connectionId);
+CARLA_EXPORT void carla_patchbay_refresh();
 
 CARLA_EXPORT void carla_transport_play();
 CARLA_EXPORT void carla_transport_pause();

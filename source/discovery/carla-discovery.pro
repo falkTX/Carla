@@ -1,5 +1,7 @@
 # QtCreator project file
 
+QT = core
+
 TARGET   = carla-discovery-qtcreator
 TEMPLATE = app
 VERSION  = 0.5.0
@@ -7,7 +9,7 @@ VERSION  = 0.5.0
 # -------------------------------------------------------
 
 CONFIG     = debug
-CONFIG    += link_pkgconfig shared warn_on
+CONFIG    += link_pkgconfig qt shared warn_on
 
 DEFINES    = DEBUG
 DEFINES   += QTCREATOR_TEST
@@ -19,8 +21,7 @@ DEFINES   += WANT_VST
 DEFINES   += WANT_FLUIDSYNTH
 DEFINES   += WANT_LINUXSAMPLER
 
-PKGCONFIG  = QtCore
-PKGCONFIG += fluidsynth
+PKGCONFIG  = fluidsynth
 PKGCONFIG += linuxsampler
 
 SOURCES = \
@@ -37,11 +38,13 @@ HEADERS += \
     ../includes/ladspa_rdf.hpp \
     ../includes/lv2_rdf.hpp \
     ../utils/CarlaUtils.hpp \
+    ../utils/CarlaBase64Utils.hpp \
     ../utils/CarlaJuceUtils.hpp \
     ../utils/CarlaLibUtils.hpp \
     ../utils/CarlaLadspaUtils.hpp \
     ../utils/CarlaLv2Utils.hpp \
-    ../utils/CarlaVstUtils.hpp
+    ../utils/CarlaVstUtils.hpp \
+    ../utils/CarlaString.hpp
 
 INCLUDEPATH = \
     ../backend \

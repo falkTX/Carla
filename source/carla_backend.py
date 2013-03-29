@@ -200,6 +200,9 @@ class Host(object):
         self.lib.carla_patchbay_disconnect.argtypes = [c_int]
         self.lib.carla_patchbay_disconnect.restype = None
 
+        self.lib.carla_patchbay_refresh.argtypes = None
+        self.lib.carla_patchbay_refresh.restype = None
+
         self.lib.carla_transport_play.argtypes = None
         self.lib.carla_transport_play.restype = None
 
@@ -427,6 +430,9 @@ class Host(object):
 
     def patchbay_disconnect(self, connectionId):
         self.lib.carla_patchbay_disconnect(connectionId)
+
+    def patchbay_refresh(self):
+        self.lib.carla_patchbay_refresh()
 
     def transport_play(self):
         self.lib.carla_transport_play()

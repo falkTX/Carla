@@ -871,6 +871,11 @@ public:
      */
     virtual void patchbayDisconnect(int connectionId);
 
+    /*!
+     * TODO.
+     */
+    virtual void patchbayRefresh();
+
     // -------------------------------------------------------------------
     // Transport
 

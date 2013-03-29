@@ -746,6 +746,8 @@ public:
 
     void patchbayConnect(int portA, int portB)
     {
+        CARLA_ASSERT(fClient != nullptr);
+
         if (fClient == nullptr)
             return;
 
@@ -757,6 +759,8 @@ public:
 
     void patchbayDisconnect(int connectionId)
     {
+        CARLA_ASSERT(fClient != nullptr);
+
         if (fClient == nullptr)
             return;
 
@@ -771,6 +775,24 @@ public:
                 break;
             }
         }
+    }
+
+    void patchbayRefresh()
+    {
+        CARLA_ASSERT(fClient != nullptr);
+
+        if (fClient == nullptr)
+            return;
+
+        fLastGroupId = 0;
+        fLastPortId  = 0;
+        fLastConnectionId = 0;
+
+        fUsedGroupNames.clear();
+        fUsedPortNames.clear();
+        fUsedConnections.clear();
+
+        initJackPatchbay(jackbridge_get_client_name(fClient));
     }
 #endif
 

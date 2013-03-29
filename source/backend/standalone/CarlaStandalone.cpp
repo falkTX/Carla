@@ -555,6 +555,15 @@ void carla_patchbay_disconnect(int connectionId)
         return standalone.engine->patchbayDisconnect(connectionId);
 }
 
+void carla_patchbay_refresh()
+{
+    carla_debug("carla_patchbay_refresh(%i)", connectionId);
+    CARLA_ASSERT(standalone.engine != nullptr);
+
+    if (standalone.engine != nullptr)
+        return standalone.engine->patchbayRefresh();
+}
+
 // -------------------------------------------------------------------------------------------------------------------
 
 void carla_transport_play()

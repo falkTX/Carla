@@ -1154,6 +1154,11 @@ void CarlaEngine::patchbayDisconnect(int)
     // nothing
 }
 
+void CarlaEngine::patchbayRefresh()
+{
+    // nothing
+}
+
 // -----------------------------------------------------------------------
 // Transport
 
