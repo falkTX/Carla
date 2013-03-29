@@ -85,19 +85,7 @@
 
 struct LV2_Atom_MidiEvent {
     LV2_Atom_Event event;
-    uint8_t data[3];
-};
-
-// FIXME ?
-struct LV2_Atom_Worker_Body {
-    uint32_t    size;
-    const void* data;
-};
-
-// FIXME ?
-struct LV2_Atom_Worker {
-    LV2_Atom atom;
-    LV2_Atom_Worker_Body body;
+    uint8_t data[4];
 };
 
 // -------------------------------------------------
@@ -211,6 +199,7 @@ public:
     // Port Data Types
     Lilv::Node midi_event;
     Lilv::Node patch_message;
+    Lilv::Node time_position;
 
     // MIDI CC
     Lilv::Node mm_defaultControl;
@@ -324,6 +313,7 @@ public:
 
           midi_event         (new_uri(LV2_MIDI__MidiEvent)),
           patch_message      (new_uri(LV2_PATCH__Message)),
+          time_position      (new_uri(LV2_TIME__Position)),
 
           mm_defaultControl  (new_uri(NS_llmm "defaultMidiController")),
           mm_controlType     (new_uri(NS_llmm "controllerType")),
@@ -348,13 +338,13 @@ public:
 
     const LilvPlugin* getPlugin(const LV2_URI uri)
     {
-        CARLA_ASSERT(uri);
+        CARLA_ASSERT(uri != nullptr);
 
         static const Lilv::Plugins lilvPlugins(Lilv::World::get_all_plugins());
 
-        LilvNode* const uriNode = Lilv::World::new_uri(uri);
+        LilvNode* const uriNode(Lilv::World::new_uri(uri));
 
-        if (! uriNode)
+        if (uriNode == nullptr)
         {
             carla_stderr("Lv2WorldClass::getPlugin(\"%s\") - Failed to get node from uri", uri);
             return nullptr;
@@ -390,9 +380,9 @@ extern Lv2WorldClass gLv2World;
 static inline
 const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
 {
-    CARLA_ASSERT(uri);
+    CARLA_ASSERT(uri != nullptr);
 
-    if (! uri)
+    if (uri == nullptr)
     {
         carla_stderr("lv2_rdf_new() - Invalid uri");
         return nullptr;
@@ -400,15 +390,14 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
 
     const LilvPlugin* const cPlugin(gLv2World.getPlugin(uri));
 
-    if (! cPlugin)
+    if (cPlugin == nullptr)
     {
-        // Error already set in getPlugin()
+        // Error already printed in getPlugin()
         return nullptr;
     }
 
-    LV2_RDF_Descriptor* const rdfDescriptor = new LV2_RDF_Descriptor;
-
-    Lilv::Plugin lilvPlugin(gLv2World.getPlugin(uri));
+    Lilv::Plugin lilvPlugin(cPlugin);
+    LV2_RDF_Descriptor* const rdfDescriptor(new LV2_RDF_Descriptor());
 
     // --------------------------------------------------
     // Set Plugin Type
@@ -605,24 +594,51 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
                         carla_stderr("lv2_rdf_new(\"%s\") - port '%s' uses an unknown atom buffer type", uri, rdfPort->Name);
 
                     Lilv::Nodes supportNodes(lilvPort.get_value(gLv2World.atom_supports));
+                    bool supported = false;
 
                     if (supportNodes.contains(gLv2World.midi_event))
+                    {
                         rdfPort->Types |= LV2_PORT_DATA_MIDI_EVENT;
+                        supported = true;
+                    }
                     if (supportNodes.contains(gLv2World.patch_message))
+                    {
                         rdfPort->Types |= LV2_PORT_DATA_PATCH_MESSAGE;
+                        supported = true;
+                    }
+                    if (supportNodes.contains(gLv2World.time_position))
+                    {
+                        rdfPort->Types |= LV2_PORT_DATA_TIME_POSITION;
+                        supported = true;
+                    }
 
-                    if (! (supportNodes.contains(gLv2World.midi_event) || supportNodes.contains(gLv2World.patch_message)))
-                        carla_stderr("lv2_rdf_new(\"%s\") - port '%s' is of atom type but doesn't support MIDI or messages", uri, rdfPort->Name);
+                    if (! supported)
+                        carla_stderr("lv2_rdf_new(\"%s\") - port '%s' is of atom type but has unsupported data", uri, rdfPort->Name);
                 }
 
                 else if (lilvPort.is_a(gLv2World.port_event))
                 {
                     rdfPort->Types |= LV2_PORT_EVENT;
+                    bool supported  = false;
 
                     if (lilvPort.supports_event(gLv2World.midi_event))
+                    {
                         rdfPort->Types |= LV2_PORT_DATA_MIDI_EVENT;
-                    else
-                        carla_stderr("lv2_rdf_new(\"%s\") - port '%s' is of event type but doesn't support MIDI", uri, rdfPort->Name);
+                        supported = true;
+                    }
+                    if (lilvPort.supports_event(gLv2World.patch_message))
+                    {
+                        rdfPort->Types |= LV2_PORT_DATA_PATCH_MESSAGE;
+                        supported = true;
+                    }
+                    if (lilvPort.supports_event(gLv2World.time_position))
+                    {
+                        rdfPort->Types |= LV2_PORT_DATA_TIME_POSITION;
+                        supported = true;
+                    }
+
+                    if (! supported)
+                        carla_stderr("lv2_rdf_new(\"%s\") - port '%s' is of event type but has unsupported data", uri, rdfPort->Name);
                 }
 
                 else if (lilvPort.is_a(gLv2World.port_midi))
@@ -748,7 +764,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
                     }
                 }
 
-                // TODO - check using new official MIDI API too
+                // TODO - also check using new official MIDI API too
             }
 
             // --------------------------------------
@@ -979,6 +995,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
             uint32_t h = 0;
             LILV_FOREACH(nodes, j, lilvFeatureNodes)
             {
+                CARLA_ASSERT(h < rdfDescriptor->FeatureCount);
                 Lilv::Node lilvFeatureNode(lilvFeatureNodes.get(j));
 
                 LV2_RDF_Feature* const rdfFeature = &rdfDescriptor->Features[h++];
@@ -1003,6 +1020,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
             uint32_t h = 0;
             LILV_FOREACH(nodes, j, lilvExtensionDataNodes)
             {
+                CARLA_ASSERT(h < rdfDescriptor->ExtensionCount);
                 Lilv::Node lilvExtensionDataNode(lilvExtensionDataNodes.get(j));
 
                 LV2_URI* const rdfExtension = &rdfDescriptor->Extensions[h++];
@@ -1026,39 +1044,34 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
             uint32_t h = 0;
             LILV_FOREACH(uis, j, lilvUIs)
             {
+                CARLA_ASSERT(h < rdfDescriptor->UICount);
                 Lilv::UI lilvUI(lilvUIs.get(j));
+
                 LV2_RDF_UI* const rdfUI = &rdfDescriptor->UIs[h++];
 
                 // --------------------------------------
                 // Set UI Type
 
-                if (const char* const uiType = lilvUI.get_uri().as_uri())
-                {
-                    // FIXME - uiType is probably wrong
-
-                    rdfUI->Type.URI = carla_strdup(uiType);
-
-                    if (lilvUI.is_a(gLv2World.ui_gtk2))
-                        rdfUI->Type.Value = LV2_UI_GTK2;
-                    else if (lilvUI.is_a(gLv2World.ui_gtk3))
-                        rdfUI->Type.Value = LV2_UI_GTK3;
-                    else if (lilvUI.is_a(gLv2World.ui_qt4))
-                        rdfUI->Type.Value = LV2_UI_QT4;
-                    else if (lilvUI.is_a(gLv2World.ui_qt5))
-                        rdfUI->Type.Value = LV2_UI_QT5;
-                    else if (lilvUI.is_a(gLv2World.ui_cocoa))
-                        rdfUI->Type.Value = LV2_UI_COCOA;
-                    else if (lilvUI.is_a(gLv2World.ui_windows))
-                        rdfUI->Type.Value = LV2_UI_WINDOWS;
-                    else if (lilvUI.is_a(gLv2World.ui_x11))
-                        rdfUI->Type.Value = LV2_UI_X11;
-                    else if (lilvUI.is_a(gLv2World.ui_external))
-                        rdfUI->Type.Value = LV2_UI_EXTERNAL;
-                    else if (lilvUI.is_a(gLv2World.ui_externalOld))
-                        rdfUI->Type.Value = LV2_UI_OLD_EXTERNAL;
-                    else
-                        carla_stderr("lv2_rdf_new(\"%s\") - got unknown UI type '%s'", uri, uiType);
-                }
+                if (lilvUI.is_a(gLv2World.ui_gtk2))
+                    rdfUI->Type = LV2_UI_GTK2;
+                else if (lilvUI.is_a(gLv2World.ui_gtk3))
+                    rdfUI->Type = LV2_UI_GTK3;
+                else if (lilvUI.is_a(gLv2World.ui_qt4))
+                    rdfUI->Type = LV2_UI_QT4;
+                else if (lilvUI.is_a(gLv2World.ui_qt5))
+                    rdfUI->Type = LV2_UI_QT5;
+                else if (lilvUI.is_a(gLv2World.ui_cocoa))
+                    rdfUI->Type = LV2_UI_COCOA;
+                else if (lilvUI.is_a(gLv2World.ui_windows))
+                    rdfUI->Type = LV2_UI_WINDOWS;
+                else if (lilvUI.is_a(gLv2World.ui_x11))
+                    rdfUI->Type = LV2_UI_X11;
+                else if (lilvUI.is_a(gLv2World.ui_external))
+                    rdfUI->Type = LV2_UI_EXTERNAL;
+                else if (lilvUI.is_a(gLv2World.ui_externalOld))
+                    rdfUI->Type = LV2_UI_OLD_EXTERNAL;
+                else
+                    carla_stderr("lv2_rdf_new(\"%s\") - UI '%s' if of unknown type", uri, lilvUI.get_uri().as_uri());
 
                 // --------------------------------------
                 // Set UI Information
@@ -1088,12 +1101,14 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
                         uint32_t x = 0;
                         LILV_FOREACH(nodes, k, lilvFeatureNodes)
                         {
+                            CARLA_ASSERT(x < rdfUI->FeatureCount);
                             Lilv::Node lilvFeatureNode(lilvFeatureNodes.get(k));
 
                             LV2_RDF_Feature* const rdfFeature = &rdfUI->Features[x++];
                             rdfFeature->Type = lilvFeatureNodesR.contains(lilvFeatureNode) ? LV2_FEATURE_REQUIRED : LV2_FEATURE_OPTIONAL;
-                            rdfFeature->URI  = carla_strdup(lilvFeatureNode.as_uri());
-                            // TODO: char check
+
+                            if (const char* const featureURI = lilvFeatureNode.as_uri())
+                                rdfFeature->URI  = carla_strdup(featureURI);
                         }
                     }
                 }
@@ -1111,11 +1126,13 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
                         uint32_t x = 0;
                         LILV_FOREACH(nodes, k, lilvExtensionDataNodes)
                         {
+                            CARLA_ASSERT(x < rdfUI->ExtensionCount);
                             Lilv::Node lilvExtensionDataNode(lilvExtensionDataNodes.get(k));
 
                             LV2_URI* const rdfExtension = &rdfUI->Extensions[x++];
-                            *rdfExtension = carla_strdup(lilvExtensionDataNode.as_uri());
-                            // TODO: char check
+
+                            if (const char* const extURI = lilvExtensionDataNode.as_uri())
+                                *rdfExtension = carla_strdup(extURI);
                         }
                     }
                 }
@@ -1139,7 +1156,7 @@ bool is_lv2_port_supported(const LV2_Property types)
     if (LV2_IS_PORT_ATOM_SEQUENCE(types))
         return true;
     if (LV2_IS_PORT_CV(types))
-        return true; // TODO
+        return false; // TODO
     if (LV2_IS_PORT_EVENT(types))
         return true;
     if (LV2_IS_PORT_MIDI_LL(types))

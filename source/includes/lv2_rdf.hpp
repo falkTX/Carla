@@ -24,24 +24,6 @@
 typedef const char* LV2_URI;
 typedef uint32_t LV2_Property;
 
-struct LV2_Type {
-    LV2_Property Value;
-    LV2_URI URI;
-
-    LV2_Type()
-        : Value(0),
-          URI(nullptr) {}
-
-    ~LV2_Type()
-    {
-        if (URI != nullptr)
-            delete[] URI;
-    }
-
-    LV2_Type(LV2_Type&) = delete;
-    LV2_Type(const LV2_Type&) = delete;
-};
-
 // Port Midi Map Types
 #define LV2_PORT_MIDI_MAP_CC             0x1
 #define LV2_PORT_MIDI_MAP_NRPN           0x2
@@ -462,7 +444,7 @@ struct LV2_RDF_Feature {
 
 // UI
 struct LV2_RDF_UI {
-    LV2_Type Type;
+    LV2_Property Type;
     LV2_URI URI;
     const char* Binary;
     const char* Bundle;
@@ -474,7 +456,8 @@ struct LV2_RDF_UI {
     LV2_URI* Extensions;
 
     LV2_RDF_UI()
-        : URI(nullptr),
+        : Type(0),
+          URI(nullptr),
           Binary(nullptr),
           Bundle(nullptr),
           FeatureCount(0),
