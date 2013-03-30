@@ -178,16 +178,18 @@ class CanvasObject(QObject):
     def AnimationHide(self):
         animation = self.sender()
         if animation:
-            if animation.item():
-                animation.item().hide()
+            item = animation.item()
+            if item:
+                item.hide()
             CanvasRemoveAnimation(animation)
 
     @pyqtSlot()
     def AnimationDestroy(self):
         animation = self.sender()
         if animation:
-            if animation.item():
-                CanvasRemoveItemFX(animation.item())
+            item = animation.item()
+            if item:
+                CanvasRemoveItemFX(item)
             CanvasRemoveAnimation(animation)
 
     @pyqtSlot()
@@ -197,12 +199,11 @@ class CanvasObject(QObject):
     @pyqtSlot()
     def PortContextMenuDisconnect(self):
         try:
-            connection_id = int(self.sender().data())
+            connectionId = int(self.sender().data())
         except:
-            connection_id = None
+            return
 
-        if connection_id != None:
-            CanvasCallback(ACTION_PORTS_DISCONNECT, connection_id, 0, "")
+        CanvasCallback(ACTION_PORTS_DISCONNECT, connectionId, 0, "")
 
 # Global objects
 canvas = Canvas()
@@ -995,9 +996,8 @@ def CanvasRemoveAnimation(f_animation):
 
     for animation in canvas.animation_list:
         if animation.animation == f_animation:
-            # FIXME ?
-            del animation.animation
             canvas.animation_list.remove(animation)
+            del animation.animation
             break
 
 def CanvasPostponedGroups():
@@ -1018,8 +1018,8 @@ def CanvasItemFX(item, show, destroy=False):
     for animation in canvas.animation_list:
         if animation.item == item:
             animation.animation.stop()
-            del animation.animation
             canvas.animation_list.remove(animation)
+            del animation.animation
             break
 
     animation = CanvasFadeAnimation(item, show)
@@ -1052,7 +1052,7 @@ def CanvasRemoveItemFX(item):
         canvas.scene.removeItem(item)
 
     elif item.type() in (CanvasLineType, CanvasBezierLineType):
-        item.deleteFromScene()
+        pass #item.deleteFromScene()
 
     # Force deletion of item if needed
     if item.type() in (CanvasBoxType, CanvasPortType):
