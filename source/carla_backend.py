@@ -386,14 +386,14 @@ class Host(object):
         self.lib.carla_get_host_osc_url.argtypes = None
         self.lib.carla_get_host_osc_url.restype = c_char_p
 
-        #self.lib.nsm_announce.argtypes = [c_char_p, c_int]
-        #self.lib.nsm_announce.restype = None
+        self.lib.carla_nsm_announce.argtypes = [c_char_p, c_int]
+        self.lib.carla_nsm_announce.restype = None
 
-        #self.lib.nsm_reply_open.argtypes = None
-        #self.lib.nsm_reply_open.restype = None
+        self.lib.carla_nsm_reply_open.argtypes = None
+        self.lib.carla_nsm_reply_open.restype = None
 
-        #self.lib.nsm_reply_save.argtypes = None
-        #self.lib.nsm_reply_save.restype = None
+        self.lib.carla_nsm_reply_save.argtypes = None
+        self.lib.carla_nsm_reply_save.restype = None
 
     def get_extended_license_text(self):
         return self.lib.carla_get_extended_license_text()
@@ -624,28 +624,11 @@ class Host(object):
     def get_sample_rate(self):
         return self.lib.carla_get_sample_rate()
 
-    #def nsm_announce(self, url, pid):
-        #self.lib.nsm_announce(url.encode("utf-8"), pid)
+    def nsm_announce(self, url, pid):
+        self.lib.carla_nsm_announce(url.encode("utf-8"), pid)
 
-    #def nsm_reply_open(self):
-        #self.lib.nsm_reply_open()
+    def nsm_reply_open(self):
+        self.lib.carla_nsm_reply_open()
 
-    #def nsm_reply_save(self):
-        #self.lib.nsm_reply_save()
-
-#Carla.host = Host(None)
-
-## Test available drivers
-#driverCount = Carla.host.get_engine_driver_count()
-#driverList  = []
-#for i in range(driverCount):
-    #driver = cString(Carla.host.get_engine_driver_name(i))
-    #if driver:
-        #driverList.append(driver)
-        #print(i, driver)
-
-## Test available internal plugins
-#pluginCount = Carla.host.get_internal_plugin_count()
-#for i in range(pluginCount):
-    #plugin = Carla.host.get_internal_plugin_info(i)
-    #print(plugin)
+    def nsm_reply_save(self):
+        self.lib.carla_nsm_reply_save()

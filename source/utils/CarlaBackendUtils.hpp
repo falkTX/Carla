@@ -329,10 +329,8 @@ const char* CallbackType2Str(const CallbackType& type)
         return "CALLBACK_SAMPLE_RATE_CHANGED";
     case CALLBACK_NSM_ANNOUNCE:
         return "CALLBACK_NSM_ANNOUNCE";
-    case CALLBACK_NSM_OPEN1:
-        return "CALLBACK_NSM_OPEN1";
-    case CALLBACK_NSM_OPEN2:
-        return "CALLBACK_NSM_OPEN2";
+    case CALLBACK_NSM_OPEN:
+        return "CALLBACK_NSM_OPEN";
     case CALLBACK_NSM_SAVE:
         return "CALLBACK_NSM_SAVE";
     case CALLBACK_ERROR:

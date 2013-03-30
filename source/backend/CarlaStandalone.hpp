@@ -283,11 +283,9 @@ CARLA_EXPORT double   carla_get_sample_rate();
 CARLA_EXPORT const char* carla_get_last_error();
 CARLA_EXPORT const char* carla_get_host_osc_url();
 
-#if 0
 CARLA_EXPORT void carla_nsm_announce(const char* url, int pid);
 CARLA_EXPORT void carla_nsm_reply_open();
 CARLA_EXPORT void carla_nsm_reply_save();
-#endif
 
 #ifdef BUILD_BRIDGE
 CARLA_EXPORT bool carla_engine_init_bridge(const char* audioBaseName, const char* controlBaseName, const char* clientName);

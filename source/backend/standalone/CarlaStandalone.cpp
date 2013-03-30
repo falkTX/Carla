@@ -18,6 +18,7 @@
 #include "CarlaStandalone.hpp"
 
 #include "CarlaBackendUtils.hpp"
+#include "CarlaOscUtils.hpp"
 #include "CarlaEngine.hpp"
 #include "CarlaPlugin.hpp"
 #include "CarlaMIDI.h"
@@ -1756,176 +1757,198 @@ const char* carla_get_host_osc_url()
     return standalone.engine->getOscServerPathTCP();
 }
 
-#if 0
 // -------------------------------------------------------------------------------------------------------------------
 
 #define NSM_API_VERSION_MAJOR 1
-#define NSM_API_VERSION_MINOR 0
+#define NSM_API_VERSION_MINOR 2
 
 class CarlaNSM
 {
 public:
     CarlaNSM()
+        : fServerThread(nullptr),
+          fReplyAddr(nullptr),
+          fIsOpened(false),
+          fIsSaved(false)
     {
-        m_controlAddr = nullptr;
-        m_serverThread = nullptr;
-        m_isOpened = false;
-        m_isSaved  = false;
     }
 
     ~CarlaNSM()
     {
-        if (m_controlAddr)
-            lo_address_free(m_controlAddr);
+        if (fReplyAddr != nullptr)
+            lo_address_free(fReplyAddr);
 
-        if (m_serverThread)
+        if (fServerThread != nullptr)
         {
-            lo_server_thread_stop(m_serverThread);
-            lo_server_thread_del_method(m_serverThread, "/reply", "ssss");
-            lo_server_thread_del_method(m_serverThread, "/nsm/client/open", "sss");
-            lo_server_thread_del_method(m_serverThread, "/nsm/client/save", "");
-            lo_server_thread_free(m_serverThread);
+            lo_server_thread_stop(fServerThread);
+            lo_server_thread_del_method(fServerThread, "/reply", "ssss");
+            lo_server_thread_del_method(fServerThread, "/nsm/client/open", "sss");
+            lo_server_thread_del_method(fServerThread, "/nsm/client/save", "");
+            lo_server_thread_free(fServerThread);
         }
     }
 
     void announce(const char* const url, const int pid)
     {
-        lo_address addr = lo_address_new_from_url(url);
-        int proto = lo_address_get_protocol(addr);
+        lo_address const addr = lo_address_new_from_url(url);
 
-        if (! m_serverThread)
+        if (addr == nullptr)
+            return;
+
+        const int proto = lo_address_get_protocol(addr);
+
+        if (fServerThread == nullptr)
         {
             // create new OSC thread
-            m_serverThread = lo_server_thread_new_with_proto(nullptr, proto, error_handler);
+            fServerThread = lo_server_thread_new_with_proto(nullptr, proto, error_handler);
 
             // register message handlers and start OSC thread
-            lo_server_thread_add_method(m_serverThread, "/reply", "ssss", _reply_handler, this);
-            lo_server_thread_add_method(m_serverThread, "/nsm/client/open", "sss", _nsm_open_handler, this);
-            lo_server_thread_add_method(m_serverThread, "/nsm/client/save", "", _nsm_save_handler, this);
-            lo_server_thread_start(m_serverThread);
+            lo_server_thread_add_method(fServerThread, "/reply",           "ssss", _reply_handler, this);
+            lo_server_thread_add_method(fServerThread, "/nsm/client/open", "sss",  _open_handler,  this);
+            lo_server_thread_add_method(fServerThread, "/nsm/client/save", "",     _save_handler,  this);
+            lo_server_thread_start(fServerThread);
         }
 
-        lo_send_from(addr, lo_server_thread_get_server(m_serverThread), LO_TT_IMMEDIATE, "/nsm/server/announce", "sssiii",
-                     "Carla", ":switch:", "carla", NSM_API_VERSION_MAJOR, NSM_API_VERSION_MINOR, pid);
+        lo_send_from(addr, lo_server_thread_get_server(fServerThread), LO_TT_IMMEDIATE, "/nsm/server/announce", "sssiii",
+                    "Carla", ":switch:", "carla", NSM_API_VERSION_MAJOR, NSM_API_VERSION_MINOR, pid);
 
         lo_address_free(addr);
     }
 
     void replyOpen()
     {
-        m_isOpened = true;
+        fIsOpened = true;
     }
 
     void replySave()
     {
-        m_isSaved = true;
+        fIsSaved = true;
     }
 
 protected:
-    int reply_handler(const char* const path, const char* const types, lo_arg** const argv, const int argc, const lo_message msg)
+    int handleReply(const char* const path, const char* const types, lo_arg** const argv, const int argc, const lo_message msg)
     {
-        carla_debug("CarlaNSM::reply_handler(%s, %i, %p, %s, %p)", path, argc, argv, types, msg);
+        carla_debug("CarlaNSM::handleReply(%s, %i, %p, %s, %p)", path, argc, argv, types, msg);
 
-        m_controlAddr = lo_address_new_from_url(lo_address_get_url(lo_message_get_source(msg)));
+        if (fReplyAddr != nullptr)
+            lo_address_free(fReplyAddr);
+
+        fIsOpened = false;
+        fIsSaved  = false;
+
+        char* const url = lo_address_get_url(lo_message_get_source(msg));
+        fReplyAddr      = lo_address_new_from_url(url);
+        std::free(url);
 
         const char* const method = &argv[0]->s;
+        const char* const smName = &argv[2]->s;
 
-        if (std::strcmp(method, "/nsm/server/announce") == 0 && standalone.callback)
-            standalone.callback(nullptr, CarlaBackend::CALLBACK_NSM_ANNOUNCE, 0, 0, 0, 0.0, nullptr); // FIXME?
+        if (std::strcmp(method, "/nsm/server/announce") == 0 && standalone.callback != nullptr)
+            standalone.callback(standalone.callbackPtr, CarlaBackend::CALLBACK_NSM_ANNOUNCE, 0, 0, 0, 0.0f, smName);
 
         return 0;
     }
 
-    int nsm_open_handler(const char* const path, const char* const types, lo_arg** const argv, const int argc, const lo_message msg)
+    int handleOpen(const char* const path, const char* const types, lo_arg** const argv, const int argc, const lo_message msg)
     {
-        carla_debug("CarlaNSM::nsm_open_handler(\"%s\", \"%s\", %p, %i, %p)", path, types, argv, argc, msg);
+        carla_debug("CarlaNSM::handleOpen(\"%s\", \"%s\", %p, %i, %p)", path, types, argv, argc, msg);
 
-        if (! standalone.callback)
+        if (standalone.callback == nullptr)
+            return 1;
+        if (fServerThread == nullptr)
+            return 1;
+        if (fReplyAddr == nullptr)
             return 1;
 
         const char* const projectPath = &argv[0]->s;
         const char* const clientId    = &argv[2]->s;
 
-        standalone.callback(nullptr, CarlaBackend::CALLBACK_NSM_OPEN1, 0, 0, 0, 0.0, clientId);
-        standalone.callback(nullptr, CarlaBackend::CALLBACK_NSM_OPEN2, 0, 0, 0, 0.0, projectPath);
+        char data[std::strlen(projectPath)+std::strlen(clientId)+2];
+        std::strcpy(data, projectPath);
+        std::strcat(data, ":");
+        std::strcat(data, clientId);
 
-        for (int i=0; i < 30 && ! m_isOpened; i++)
+        standalone.callback(nullptr, CarlaBackend::CALLBACK_NSM_OPEN, 0, 0, 0, 0.0f, data);
+
+        for (int i=0; i < 30 && ! fIsOpened; i++)
             carla_msleep(100);
 
-        if (m_controlAddr)
-            lo_send_from(m_controlAddr, lo_server_thread_get_server(m_serverThread), LO_TT_IMMEDIATE, "/reply", "ss", "/nsm/client/open", "OK");
+        if (fIsOpened)
+            lo_send_from(fReplyAddr, lo_server_thread_get_server(fServerThread), LO_TT_IMMEDIATE, "/reply", "ss", "/nsm/client/open", "OK");
 
         return 0;
     }
 
-    int nsm_save_handler(const char* const path, const char* const types, lo_arg** const argv, const int argc, const lo_message msg)
+    int handleSave(const char* const path, const char* const types, lo_arg** const argv, const int argc, const lo_message msg)
     {
-        carla_debug("CarlaNSM::nsm_save_handler(\"%s\", \"%s\", %p, %i, %p)", path, types, argv, argc, msg);
+        carla_debug("CarlaNSM::handleSave(\"%s\", \"%s\", %p, %i, %p)", path, types, argv, argc, msg);
 
-        if (! standalone.callback)
+        if (standalone.callback == nullptr)
+            return 1;
+        if (fServerThread == nullptr)
+            return 1;
+        if (fReplyAddr == nullptr)
             return 1;
 
-        standalone.callback(nullptr, CarlaBackend::CALLBACK_NSM_SAVE, 0, 0, 0, 0.0, nullptr);
+        standalone.callback(nullptr, CarlaBackend::CALLBACK_NSM_SAVE, 0, 0, 0, 0.0f, nullptr);
 
-        for (int i=0; i < 30 && ! m_isSaved; i++)
+        for (int i=0; i < 30 && ! fIsSaved; i++)
             carla_msleep(100);
 
-        if (m_controlAddr)
-            lo_send_from(m_controlAddr, lo_server_thread_get_server(m_serverThread), LO_TT_IMMEDIATE, "/reply", "ss", "/nsm/client/save", "OK");
+        if (fIsSaved)
+            lo_send_from(fReplyAddr, lo_server_thread_get_server(fServerThread), LO_TT_IMMEDIATE, "/reply", "ss", "/nsm/client/save", "OK");
 
         return 0;
     }
 
 private:
-    lo_address m_controlAddr;
-    lo_server_thread m_serverThread;
-    bool m_isOpened, m_isSaved;
+    lo_server_thread fServerThread;
+    lo_address       fReplyAddr;
 
-    static int _reply_handler(const char* const path, const char* const types, lo_arg** const argv, const int argc, const lo_message msg, void* const data)
+    bool fIsOpened;
+    bool fIsSaved;
+
+    #define handlePtr ((CarlaNSM*)data)
+
+    static int _reply_handler(const char* path, const char* types, lo_arg** argv, int argc, lo_message msg, void* data)
     {
-        CARLA_ASSERT(data);
-        CarlaNSM* const _this_ = (CarlaNSM*)data;
-        return _this_->reply_handler(path, types, argv, argc, msg);
+        return handlePtr->handleReply(path, types, argv, argc, msg);
     }
 
-    static int _nsm_open_handler(const char* const path, const char* const types, lo_arg** const argv, const int argc, const lo_message msg, void* const data)
+    static int _open_handler(const char* path, const char* types, lo_arg** argv, int argc, lo_message msg, void* data)
     {
-        CARLA_ASSERT(data);
-        CarlaNSM* const _this_ = (CarlaNSM*)data;
-        return _this_->nsm_open_handler(path, types, argv, argc, msg);
+        return handlePtr->handleOpen(path, types, argv, argc, msg);
     }
 
-    static int _nsm_save_handler(const char* const path, const char* const types, lo_arg** const argv, const int argc, const lo_message msg, void* const data)
+    static int _save_handler(const char* path, const char* types, lo_arg** argv, int argc, lo_message msg, void* data)
     {
-        CARLA_ASSERT(data);
-        CarlaNSM* const _this_ = (CarlaNSM*)data;
-        return _this_->nsm_save_handler(path, types, argv, argc, msg);
+        return handlePtr->handleSave(path, types, argv, argc, msg);
     }
 
-    static void error_handler(const int num, const char* const msg, const char* const path)
+    #undef handlePtr
+
+    static void error_handler(int num, const char* msg, const char* path)
     {
         carla_stderr2("CarlaNSM::error_handler(%i, \"%s\", \"%s\")", num, msg, path);
     }
 };
 
-static CarlaNSM carlaNSM;
+static CarlaNSM gCarlaNSM;
 
 void carla_nsm_announce(const char* url, int pid)
 {
-    carlaNSM.announce(url, pid);
+    gCarlaNSM.announce(url, pid);
 }
 
 void carla_nsm_reply_open()
 {
-    carlaNSM.replyOpen();
+    gCarlaNSM.replyOpen();
 }
 
 void carla_nsm_reply_save()
 {
-    carlaNSM.replySave();
+    gCarlaNSM.replySave();
 }
-
-#endif
 
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -1984,187 +2007,4 @@ CarlaEngine* carla_get_standalone_engine()
 {
     return standalone.engine;
 }
-#endif
-
-// -------------------------------------------------------------------------------------------------------------------
-
-#if 0
-//def QTCREATOR_TEST
-
-#include <QtGui/QApplication>
-#include <QtGui/QDialog>
-
-QDialog* vstGui = nullptr;
-
-void main_callback(void* ptr, CarlaBackend::CallbackType action, unsigned int pluginId, int value1, int value2, double value3)
-{
-    switch (action)
-    {
-    case CarlaBackend::CALLBACK_SHOW_GUI:
-        if (vstGui && ! value1)
-            vstGui->close();
-        break;
-    case CarlaBackend::CALLBACK_RESIZE_GUI:
-        vstGui->setFixedSize(value1, value2);
-        break;
-    default:
-        break;
-    }
-
-    Q_UNUSED(ptr);
-    Q_UNUSED(pluginId);
-    Q_UNUSED(value3);
-}
-
-void run_tests_standalone(short idMax)
-{
-    for (short id = 0; id <= idMax; id++)
-    {
-        carla_debug("------------------- TEST @%i: non-parameter calls --------------------", id);
-        get_plugin_info(id);
-        get_audio_port_count_info(id);
-        get_midi_port_count_info(id);
-        get_parameter_count_info(id);
-        get_gui_info(id);
-        get_chunk_data(id);
-        get_parameter_count(id);
-        get_program_count(id);
-        get_midi_program_count(id);
-        get_custom_data_count(id);
-        get_real_plugin_name(id);
-        get_current_program_index(id);
-        get_current_midi_program_index(id);
-
-        carla_debug("------------------- TEST @%i: parameter calls [-1] --------------------", id);
-        get_parameter_info(id, -1);
-        get_parameter_scalepoint_info(id, -1, -1);
-        get_parameter_data(id, -1);
-        get_parameter_ranges(id, -1);
-        get_midi_program_data(id, -1);
-        get_custom_data(id, -1);
-        get_parameter_text(id, -1);
-        get_program_name(id, -1);
-        get_midi_program_name(id, -1);
-        get_default_parameter_value(id, -1);
-        get_current_parameter_value(id, -1);
-        get_input_peak_value(id, -1);
-        get_output_peak_value(id, -1);
-
-        carla_debug("------------------- TEST @%i: parameter calls [0] --------------------", id);
-        get_parameter_info(id, 0);
-        get_parameter_scalepoint_info(id, 0, -1);
-        get_parameter_scalepoint_info(id, 0, 0);
-        get_parameter_data(id, 0);
-        get_parameter_ranges(id, 0);
-        get_midi_program_data(id, 0);
-        get_custom_data(id, 0);
-        get_parameter_text(id, 0);
-        get_program_name(id, 0);
-        get_midi_program_name(id, 0);
-        get_default_parameter_value(id, 0);
-        get_current_parameter_value(id, 0);
-        get_input_peak_value(id, 0);
-        get_input_peak_value(id, 1);
-        get_input_peak_value(id, 2);
-        get_output_peak_value(id, 0);
-        get_output_peak_value(id, 1);
-        get_output_peak_value(id, 2);
-
-        carla_debug("------------------- TEST @%i: set extra data --------------------", id);
-        set_custom_data(id, CarlaBackend::CUSTOM_DATA_STRING, "", "");
-        set_chunk_data(id, nullptr);
-        set_gui_container(id, (uintptr_t)1);
-
-        carla_debug("------------------- TEST @%i: gui stuff --------------------", id);
-        show_gui(id, false);
-        show_gui(id, true);
-        show_gui(id, true);
-
-        idle_guis();
-        idle_guis();
-        idle_guis();
-
-        carla_debug("------------------- TEST @%i: other --------------------", id);
-        send_midi_note(id, 15,  127,  127);
-        send_midi_note(id,  0,  0,  0);
-
-        prepare_for_save(id);
-        prepare_for_save(id);
-        prepare_for_save(id);
-    }
-}
-
-int main(int argc, char* argv[])
-{
-    using namespace CarlaBackend;
-
-    // Qt app
-    QApplication app(argc, argv);
-
-    // Qt gui (for vst)
-    vstGui = new QDialog(nullptr);
-
-    // set callback and options
-    set_callback_function(main_callback);
-    set_option(OPTION_PREFER_UI_BRIDGES, 0, nullptr);
-    //set_option(OPTION_PROCESS_MODE, PROCESS_MODE_CONTINUOUS_RACK, nullptr);
-
-    // start engine
-    if (! engine_init("JACK", "carla_demo"))
-    {
-        carla_stderr2("failed to start backend engine, reason:\n%s", get_last_error());
-        delete vstGui;
-        return 1;
-    }
-
-    short id_ladspa = add_plugin(BINARY_NATIVE, PLUGIN_LADSPA, "/usr/lib/ladspa/LEET_eqbw2x2.so", "LADSPA plug name, test long name - "
-                                 "------- name ------------ name2 ----------- name3 ------------ name4 ------------ name5 ---------- name6", "leet_equalizer_bw2x2", nullptr);
-
-    short id_dssi   = add_plugin(BINARY_NATIVE, PLUGIN_DSSI, "/usr/lib/dssi/fluidsynth-dssi.so", "DSSI pname, short-utf8 _ \xAE", "FluidSynth-DSSI", (void*)"/usr/lib/dssi/fluidsynth-dssi/FluidSynth-DSSI_gtk");
-    short id_native = add_plugin(BINARY_NATIVE, PLUGIN_INTERNAL, "", "ZynHere", "zynaddsubfx", nullptr);
-
-    //short id_lv2 = add_plugin(BINARY_NATIVE, PLUGIN_LV2, "FILENAME", "HAHA name!!!", "http://studionumbersix.com/foo/lv2/yc20", nullptr);
-
-    //short id_vst = add_plugin(BINARY_NATIVE, PLUGIN_LV2, "FILENAME", "HAHA name!!!", "http://studionumbersix.com/foo/lv2/yc20", nullptr);
-
-    if (id_ladspa < 0 || id_dssi < 0 || id_native < 0)
-    {
-        carla_stderr2("failed to start load plugins, reason:\n%s", get_last_error());
-        delete vstGui;
-        return 1;
-    }
-
-    //const GuiInfo* const guiInfo = get_gui_info(id);
-    //if (guiInfo->type == CarlaBackend::GUI_INTERNAL_QT4 || guiInfo->type == CarlaBackend::GUI_INTERNAL_X11)
-    //{
-    //    set_gui_data(id, 0, (uintptr_t)gui);
-    //gui->show();
-    //}
-
-    // activate
-    set_active(id_ladspa, true);
-    set_active(id_dssi, true);
-    set_active(id_native, true);
-
-    // start guis
-    show_gui(id_dssi, true);
-    carla_sleep(1);
-
-    // do tests
-    run_tests_standalone(id_dssi+1);
-
-    // lock
-    app.exec();
-
-    delete vstGui;
-    vstGui = nullptr;
-
-    remove_plugin(id_ladspa);
-    remove_plugin(id_dssi);
-    remove_plugin(id_native);
-    engine_close();
-
-    return 0;
-}
-
 #endif

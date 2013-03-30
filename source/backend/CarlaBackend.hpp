@@ -594,29 +594,24 @@ enum CallbackType {
     CALLBACK_NSM_ANNOUNCE = 28,
 
     /*!
-     * Non-Session-Manager Open message #1.
+     * Non-Session-Manager Open message.
      */
-    CALLBACK_NSM_OPEN1 = 29,
-
-    /*!
-     * Non-Session-Manager Open message #2.
-     */
-    CALLBACK_NSM_OPEN2 = 30,
+    CALLBACK_NSM_OPEN = 29,
 
     /*!
      * Non-Session-Manager Save message.
      */
-    CALLBACK_NSM_SAVE = 31,
+    CALLBACK_NSM_SAVE = 30,
 
     /*!
      * An error occurred, show \a valueStr as an error to user.
      */
-    CALLBACK_ERROR = 32,
+    CALLBACK_ERROR = 31,
 
     /*!
      * The engine has crashed or malfunctioned and will no longer work.
      */
-    CALLBACK_QUIT = 33
+    CALLBACK_QUIT = 32
 };
 
 /*!

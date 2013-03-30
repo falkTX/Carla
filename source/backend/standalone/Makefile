@@ -8,7 +8,7 @@ include ../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtGui)
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo QtGui)
 
 # --------------------------------------------------------------
 # Common

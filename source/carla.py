@@ -559,11 +559,7 @@ class CarlaMainW(QMainWindow):
         self.fLastLoadedPluginId = -1
         self.fTransportWasPlaying = False
 
-        #self._nsmAnnounce2str = ""
-        #self._nsmOpen1str = ""
-        #self._nsmOpen2str = ""
-        #self.nsm_server = None
-        #self.nsm_url = None
+        self.fSessionManagerName = "LADISH" if os.getenv("LADISH_APP_NAME") else ""
 
         # -------------------------------------------------------------
         # Set-up GUI stuff
@@ -712,19 +708,47 @@ class CarlaMainW(QMainWindow):
         self.connect(self, SIGNAL("PatchbayConnectionRemovedCallback(int)"), SLOT("slot_handlePatchbayConnectionRemovedCallback(int)"))
         self.connect(self, SIGNAL("BufferSizeChangedCallback(int)"), SLOT("slot_handleBufferSizeChangedCallback(int)"))
         self.connect(self, SIGNAL("SampleRateChangedCallback(double)"), SLOT("slot_handleSampleRateChangedCallback(double)"))
-        #self.connect(self, SIGNAL("NSM_AnnounceCallback()"), SLOT("slot_handleNSM_AnnounceCallback()"))
-        #self.connect(self, SIGNAL("NSM_Open1Callback()"), SLOT("slot_handleNSM_Open1Callback()"))
-        #self.connect(self, SIGNAL("NSM_Open2Callback()"), SLOT("slot_handleNSM_Open2Callback()"))
-        #self.connect(self, SIGNAL("NSM_SaveCallback()"), SLOT("slot_handleNSM_SaveCallback()"))
+        self.connect(self, SIGNAL("NSM_AnnounceCallback(QString)"), SLOT("slot_handleNSM_AnnounceCallback(QString)"))
+        self.connect(self, SIGNAL("NSM_OpenCallback(QString)"), SLOT("slot_handleNSM_OpenCallback(QString)"))
+        self.connect(self, SIGNAL("NSM_SaveCallback()"), SLOT("slot_handleNSM_SaveCallback()"))
         self.connect(self, SIGNAL("ErrorCallback(QString)"), SLOT("slot_handleErrorCallback(QString)"))
         self.connect(self, SIGNAL("QuitCallback()"), SLOT("slot_handleQuitCallback()"))
 
-        #NSM_URL = os.getenv("NSM_URL")
+        self.setProperWindowTitle()
 
-        #if NSM_URL:
-            #Carla.host.nsm_announce(NSM_URL, os.getpid())
-        #else:
-        QTimer.singleShot(0, self, SLOT("slot_engineStart()"))
+        NSM_URL = os.getenv("NSM_URL")
+
+        if NSM_URL:
+            Carla.host.nsm_announce(NSM_URL, os.getpid())
+        else:
+            QTimer.singleShot(0, self, SLOT("slot_engineStart()"))
+
+    @pyqtSlot(str)
+    def slot_handleNSM_AnnounceCallback(self, smName):
+        self.fSessionManagerName = smName
+        self.ui.act_file_new.setEnabled(False)
+        self.ui.act_file_open.setEnabled(False)
+        self.ui.act_file_save_as.setEnabled(False)
+
+    @pyqtSlot(str)
+    def slot_handleNSM_OpenCallback(self, data):
+        projectPath, clientId = data.rsplit(":", 1)
+
+        # restart engine
+        if self.fEngineStarted:
+            self.stopEngine()
+
+        self.startEngine(clientId)
+
+        if self.fEngineStarted:
+            self.loadProject(projectPath)
+
+        Carla.host.nsm_reply_open()
+
+    @pyqtSlot()
+    def slot_handleNSM_SaveCallback(self):
+        self.saveProject(self.fProjectFilename)
+        Carla.host.nsm_reply_save()
 
     @pyqtSlot()
     def slot_toolbarShown(self):
@@ -1042,9 +1066,19 @@ class CarlaMainW(QMainWindow):
 
         patchcanvas.clear()
 
+    def setProperWindowTitle(self):
+        title = "%s" % os.getenv("LADISH_APP_NAME", "Carla")
+
+        if self.fProjectFilename:
+            title += " - %s" % os.path.basename(self.fProjectFilename)
+        if self.fSessionManagerName:
+            title += " (%s)" % self.fSessionManagerName
+
+        self.setWindowTitle(title)
+
     def loadProject(self, filename):
         self.fProjectFilename = filename
-        self.setWindowTitle("Carla - %s" % os.path.basename(filename))
+        self.setProperWindowTitle()
 
         self.fProjectLoading = True
         Carla.host.load_project(filename)
@@ -1052,12 +1086,12 @@ class CarlaMainW(QMainWindow):
 
     def loadProjectLater(self, filename):
         self.fProjectFilename = filename
-        self.setWindowTitle("Carla - %s" % os.path.basename(filename))
+        self.setProperWindowTitle()
         QTimer.singleShot(0, self, SLOT("slot_loadProjectLater()"))
 
     def saveProject(self, filename):
         self.fProjectFilename = filename
-        self.setWindowTitle("Carla - %s" % os.path.basename(filename))
+        self.setProperWindowTitle()
         Carla.host.save_project(filename)
 
     def addPlugin(self, btype, ptype, filename, name, label, extraStuff):
@@ -1099,7 +1133,7 @@ class CarlaMainW(QMainWindow):
         self.removeAllPlugins()
         self.fProjectFilename = None
         self.fProjectLoading  = False
-        self.setWindowTitle("Carla")
+        self.setProperWindowTitle()
 
     @pyqtSlot()
     def slot_fileOpen(self):
@@ -1856,17 +1890,12 @@ def engineCallback(ptr, action, pluginId, value1, value2, value3, valueStr):
         Carla.gui.emit(SIGNAL("BufferSizeChangedCallback(int)"), value1)
     elif action == CALLBACK_SAMPLE_RATE_CHANGED:
         Carla.gui.emit(SIGNAL("SampleRateChangedCallback(double)"), value3)
-    #elif action == CALLBACK_NSM_ANNOUNCE:
-        #Carla.gui._nsmAnnounce2str = cString(Carla.host.get_last_error())
-        #Carla.gui.emit(SIGNAL("NSM_AnnounceCallback()"))
-    #elif action == CALLBACK_NSM_OPEN1:
-        #Carla.gui._nsmOpen1str = cString(valueStr)
-        #Carla.gui.emit(SIGNAL("NSM_Open1Callback()"))
-    #elif action == CALLBACK_NSM_OPEN2:
-        #Carla.gui._nsmOpen2str = cString(valueStr)
-        #Carla.gui.emit(SIGNAL("NSM_Open2Callback()"))
-    #elif action == CALLBACK_NSM_SAVE:
-        #Carla.gui.emit(SIGNAL("NSM_SaveCallback()"))
+    elif action == CALLBACK_NSM_ANNOUNCE:
+        Carla.gui.emit(SIGNAL("NSM_AnnounceCallback(QString)"), cString(valueStr))
+    elif action == CALLBACK_NSM_OPEN:
+        Carla.gui.emit(SIGNAL("NSM_OpenCallback(QString)"), cString(valueStr))
+    elif action == CALLBACK_NSM_SAVE:
+        Carla.gui.emit(SIGNAL("NSM_SaveCallback()"))
     elif action == CALLBACK_ERROR:
         Carla.gui.emit(SIGNAL("ErrorCallback(QString)"), cString(valueStr))
     elif action == CALLBACK_QUIT:
@@ -1958,7 +1987,7 @@ if __name__ == '__main__':
     Carla.gui.show()
 
     # Load project file if set
-    if projectFilename:
+    if projectFilename and not os.getenv("NSM_URL"):
         Carla.gui.loadProjectLater(projectFilename)
 
     # App-Loop
