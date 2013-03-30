@@ -87,7 +87,7 @@ void audiofile_read_poll(AudioFileInstance* const handlePtr)
         return;
     }
 
-    if (handlePtr->fileNfo.frames == 0)
+    if (handlePtr->fileNfo.frames == 0 || handlePtr->maxFrame == 0)
     {
         //fprintf(stderr, "R: no song loaded\n");
         handlePtr->needsRead = false;
@@ -204,11 +204,37 @@ void audiofile_read_poll(AudioFileInstance* const handlePtr)
     handlePtr->needsRead = false;
 }
 
+static void audiofile_thread_idle(void* ptr)
+{
+    AudioFileInstance* const handlePtr = (AudioFileInstance*)ptr;
+
+    while (! handlePtr->doQuit)
+    {
+        if (handlePtr->needsRead || handlePtr->lastFrame - handlePtr->pool.startFrame >= handlePtr->pool.size*3/4)
+            audiofile_read_poll(handlePtr);
+        else
+            usleep(50*1000);
+    }
+
+    pthread_exit(NULL);
+}
+
 void audiofile_load_filename(AudioFileInstance* const handlePtr, const char* const filename)
 {
     // wait for jack processing to end
     handlePtr->doProcess = false;
     pthread_mutex_lock(&handlePtr->mutex);
+
+    handlePtr->maxFrame = 0;
+    handlePtr->pool.startFrame = 0;
+
+    // stop thread
+    if (! handlePtr->doQuit)
+    {
+        handlePtr->doQuit = true;
+        pthread_join(handlePtr->thread, NULL);
+    }
+
     pthread_mutex_unlock(&handlePtr->mutex);
 
     // clear old data
@@ -237,6 +263,10 @@ void audiofile_load_filename(AudioFileInstance* const handlePtr, const char* con
             handlePtr->maxFrame = handlePtr->fileNfo.frames;
             audiofile_read_poll(handlePtr);
             handlePtr->doProcess = true;
+
+            // start thread
+            handlePtr->doQuit = false;
+            pthread_create(&handlePtr->thread, NULL, (void*)&audiofile_thread_idle, handlePtr);
         }
         else
         {
@@ -245,21 +275,6 @@ void audiofile_load_filename(AudioFileInstance* const handlePtr, const char* con
             ad_clear_nfo(&handlePtr->fileNfo);
         }
     }
-}
-
-static void audiofile_thread_idle(void* ptr)
-{
-    AudioFileInstance* const handlePtr = (AudioFileInstance*)ptr;
-
-    while (! handlePtr->doQuit)
-    {
-        if (handlePtr->needsRead || handlePtr->lastFrame - handlePtr->pool.startFrame >= handlePtr->pool.size*3/4)
-            audiofile_read_poll(handlePtr);
-        else
-            usleep(50*1000);
-    }
-
-    pthread_exit(NULL);
 }
 
 // ------------------------------------------------------------------------------------------
@@ -295,7 +310,7 @@ static PluginHandle audiofile_instantiate(const PluginDescriptor* _this_, HostDe
     handlePtr->loopMode  = true;
     handlePtr->needsRead = false;
     handlePtr->doProcess = false;
-    handlePtr->doQuit    = false;
+    handlePtr->doQuit    = true;
 
     ad_clear_nfo(&handlePtr->fileNfo);
     pthread_mutex_init(&handlePtr->mutex, NULL);
@@ -327,8 +342,6 @@ static PluginHandle audiofile_instantiate(const PluginDescriptor* _this_, HostDe
     zeroFloat(handlePtr->pool.buffer[0], handlePtr->pool.size);
     zeroFloat(handlePtr->pool.buffer[1], handlePtr->pool.size);
 
-    pthread_create(&handlePtr->thread, NULL, (void*)&audiofile_thread_idle, handlePtr);
-
     return handlePtr;
 
     // unused
@@ -341,10 +354,15 @@ static void audiofile_cleanup(PluginHandle handle)
 
     // wait for processing to end
     handlePtr->doProcess = false;
-    handlePtr->doQuit    = true;
     pthread_mutex_lock(&handlePtr->mutex);
 
-    pthread_join(handlePtr->thread, NULL);
+    // stop thread
+    if (! handlePtr->doQuit)
+    {
+        handlePtr->doQuit = true;
+        pthread_join(handlePtr->thread, NULL);
+    }
+
     pthread_mutex_unlock(&handlePtr->mutex);
     pthread_mutex_destroy(&handlePtr->mutex);
 
@@ -370,8 +388,7 @@ static void audiofile_cleanup(PluginHandle handle)
 
 static uint32_t audiofile_get_parameter_count(PluginHandle handle)
 {
-    // FIXME - loop mode needs fixing
-    return 0;
+    return 1;
 
     // unused
     (void)handle;
