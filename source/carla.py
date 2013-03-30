@@ -1123,7 +1123,7 @@ class CarlaMainW(QMainWindow):
 
         if check:
             self.fInfoText = "Engine running | SampleRate: %g | BufferSize: %i" % (self.fSampleRate, self.fBufferSize)
-            self.refreshTransport()
+            self.refreshTransport(True)
 
         self.menuTransport(check)
 
@@ -1163,7 +1163,7 @@ class CarlaMainW(QMainWindow):
         self.ui.act_transport_forwards.setEnabled(enabled)
         self.ui.menu_Transport.setEnabled(enabled)
 
-    def refreshTransport(self):
+    def refreshTransport(self, forced = False):
         if not self.fEngineStarted:
             return
         if self.fSampleRate == 0.0:
@@ -1180,7 +1180,7 @@ class CarlaMainW(QMainWindow):
         textTransport = "Transport %s, at %02i:%02i:%02i" % ("playing" if playing else "stopped", hrs, mins, secs)
         self.fInfoLabel.setText("%s | %s" % (self.fInfoText, textTransport))
 
-        if playing != self.fTransportWasPlaying:
+        if playing != self.fTransportWasPlaying or forced:
             self.fTransportWasPlaying = playing
 
             if playing:
