@@ -159,7 +159,7 @@ void audiofile_read_poll(AudioFileInstance* const handlePtr)
             }
         }
 
-        if (handlePtr->loopMode && readFrame+j == handlePtr->maxFrame)
+        if (handlePtr->loopMode && i < handlePtr->pool.size)
         {
             while (i < handlePtr->pool.size)
             {
