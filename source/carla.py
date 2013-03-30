@@ -825,8 +825,17 @@ class CarlaMainW(QMainWindow):
                 self.showLastError(False)
 
         elif extension in ("aac", "flac", "oga", "ogg", "mp3", "wav"):
+            # check if last plugin is audiofile
+            if self.fPluginCount > 0:
+                pluginId = self.fPluginCount-1
+                pwidget  = self.fPluginList[pluginId]
+
+                if pwidget is not None and pwidget.fPluginInfo["label"] == "audiofile":
+                    Carla.host.set_custom_data(pluginId, CUSTOM_DATA_STRING, "file00", filename)
+                    return
+
             self.fLastLoadedPluginId = -2
-            if Carla.host.add_plugin(BINARY_NATIVE, PLUGIN_INTERNAL, None, basename, "audiofile", None):
+            if Carla.host.add_plugin(BINARY_NATIVE, PLUGIN_INTERNAL, None, None, "audiofile", None):
                 while (self.fLastLoadedPluginId == -2): sleep(0.2)
                 idx = self.fLastLoadedPluginId
                 self.fLastLoadedPluginId = -1
@@ -836,8 +845,17 @@ class CarlaMainW(QMainWindow):
                 self.showLastError(False)
 
         elif extension in ("mid", "midi"):
+            # check if last plugin is midifile
+            if self.fPluginCount > 0:
+                pluginId = self.fPluginCount-1
+                pwidget  = self.fPluginList[pluginId]
+
+                if pwidget is not None and pwidget.fPluginInfo["label"] == "midifile":
+                    Carla.host.set_custom_data(pluginId, CUSTOM_DATA_STRING, "file", filename)
+                    return
+
             self.fLastLoadedPluginId = -2
-            if Carla.host.add_plugin(BINARY_NATIVE, PLUGIN_INTERNAL, None, basename, "midifile", None):
+            if Carla.host.add_plugin(BINARY_NATIVE, PLUGIN_INTERNAL, None, None, "midifile", None):
                 while (self.fLastLoadedPluginId == -2): sleep(0.2)
                 idx = self.fLastLoadedPluginId
                 self.fLastLoadedPluginId = -1
