@@ -557,6 +557,7 @@ class CarlaMainW(QMainWindow):
         self.fIdleTimerSlow = 0
 
         self.fLastLoadedPluginId = -1
+        self.fTransportWasPlaying = False
 
         #self._nsmAnnounce2str = ""
         #self._nsmOpen1str = ""
@@ -1169,14 +1170,29 @@ class CarlaMainW(QMainWindow):
             return
 
         timeInfo = Carla.host.get_transport_info()
+        playing  = timeInfo['playing']
 
         time = timeInfo['frame'] / self.fSampleRate
         secs = time % 60
         mins = (time / 60) % 60
         hrs  = (time / 3600) % 60
 
-        textTransport = "Transport %s, at %02i:%02i:%02i" % ("playing" if timeInfo['playing'] else "stopped", hrs, mins, secs)
+        textTransport = "Transport %s, at %02i:%02i:%02i" % ("playing" if playing else "stopped", hrs, mins, secs)
         self.fInfoLabel.setText("%s | %s" % (self.fInfoText, textTransport))
+
+        if playing != self.fTransportWasPlaying:
+            self.fTransportWasPlaying = playing
+
+            if playing:
+                icon = getIcon("media-playback-pause")
+                self.ui.act_transport_play.setChecked(True)
+                self.ui.act_transport_play.setIcon(icon)
+                self.ui.act_transport_play.setText(self.tr("&Pause"))
+            else:
+                icon = getIcon("media-playback-start")
+                self.ui.act_transport_play.setChecked(False)
+                self.ui.act_transport_play.setIcon(icon)
+                self.ui.act_transport_play.setText(self.tr("&Play"))
 
     @pyqtSlot(bool)
     def slot_transportPlayPause(self, toggled):
