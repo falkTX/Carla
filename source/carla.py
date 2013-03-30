@@ -650,6 +650,11 @@ class CarlaMainW(QMainWindow):
         self.connect(self.ui.act_plugin_add, SIGNAL("triggered()"), SLOT("slot_pluginAdd()"))
         self.connect(self.ui.act_plugin_remove_all, SIGNAL("triggered()"), SLOT("slot_pluginRemoveAll()"))
 
+        self.connect(self.ui.act_transport_play, SIGNAL("triggered(bool)"), SLOT("slot_transportPlayPause(bool)"))
+        self.connect(self.ui.act_transport_stop, SIGNAL("triggered()"), SLOT("slot_transportStop()"))
+        self.connect(self.ui.act_transport_backwards, SIGNAL("triggered()"), SLOT("slot_transportBackwards()"))
+        self.connect(self.ui.act_transport_forwards, SIGNAL("triggered()"), SLOT("slot_transportForwards()"))
+
         self.ui.act_canvas_arrange.setEnabled(False) # TODO, later
         self.connect(self.ui.act_canvas_arrange, SIGNAL("triggered()"), SLOT("slot_canvasArrange()"))
         self.connect(self.ui.act_canvas_refresh, SIGNAL("triggered()"), SLOT("slot_canvasRefresh()"))
@@ -660,14 +665,10 @@ class CarlaMainW(QMainWindow):
         self.connect(self.ui.act_canvas_print, SIGNAL("triggered()"), SLOT("slot_canvasPrint()"))
         self.connect(self.ui.act_canvas_save_image, SIGNAL("triggered()"), SLOT("slot_canvasSaveImage()"))
 
+        self.connect(self.ui.act_settings_show_toolbar, SIGNAL("triggered(bool)"), SLOT("slot_toolbarShown()"))
         self.connect(self.ui.act_settings_configure, SIGNAL("triggered()"), SLOT("slot_configureCarla()"))
         self.connect(self.ui.act_help_about, SIGNAL("triggered()"), SLOT("slot_aboutCarla()"))
         self.connect(self.ui.act_help_about_qt, SIGNAL("triggered()"), app, SLOT("aboutQt()"))
-
-        self.connect(self.ui.act_transport_play, SIGNAL("triggered(bool)"), SLOT("slot_transportPlayPause(bool)"))
-        self.connect(self.ui.act_transport_stop, SIGNAL("triggered()"), SLOT("slot_transportStop()"))
-        self.connect(self.ui.act_transport_backwards, SIGNAL("triggered()"), SLOT("slot_transportBackwards()"))
-        self.connect(self.ui.act_transport_forwards, SIGNAL("triggered()"), SLOT("slot_transportForwards()"))
 
         self.connect(self.ui.graphicsView.horizontalScrollBar(), SIGNAL("valueChanged(int)"), SLOT("slot_horizontalScrollBarChanged(int)"))
         self.connect(self.ui.graphicsView.verticalScrollBar(), SIGNAL("valueChanged(int)"), SLOT("slot_verticalScrollBarChanged(int)"))
@@ -724,6 +725,10 @@ class CarlaMainW(QMainWindow):
             #Carla.host.nsm_announce(NSM_URL, os.getpid())
         #else:
         QTimer.singleShot(0, self, SLOT("slot_engineStart()"))
+
+    @pyqtSlot()
+    def slot_toolbarShown(self):
+        self.updateInfoLabelPos()
 
     @pyqtSlot()
     def slot_splitterMoved(self):
@@ -1698,9 +1703,18 @@ class CarlaMainW(QMainWindow):
         os.environ["SF2_PATH"] = splitter.join(Carla.SF2_PATH)
         os.environ["SFZ_PATH"] = splitter.join(Carla.SFZ_PATH)
 
+    def updateInfoLabelPos(self):
+        tabBar = self.ui.tabMain.tabBar()
+        y = tabBar.mapFromParent(self.ui.centralwidget.pos()).y()+tabBar.height()/4
+
+        if not self.ui.toolBar.isVisible():
+            y -= self.ui.toolBar.height()
+
+        self.fInfoLabel.move(self.fInfoLabel.x(), y)
+
     def updateInfoLabelSize(self):
         tabBar = self.ui.tabMain.tabBar()
-        self.fInfoLabel.resize(self.ui.tabMain.width()-tabBar.width()-20, tabBar.height())
+        self.fInfoLabel.resize(self.ui.tabMain.width()-tabBar.width()-20, self.fInfoLabel.height())
 
     def resizeEvent(self, event):
         if self.ui.tabMain.currentIndex() == 0:
