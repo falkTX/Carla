@@ -593,7 +593,7 @@ void carla_transport_relocate(uint32_t frames)
         standalone.engine->transportRelocate(frames);
 }
 
-uint64_t carla_get_current_transport_frame()
+uint32_t carla_get_current_transport_frame()
 {
     CARLA_ASSERT(standalone.engine != nullptr);
 
@@ -604,6 +604,47 @@ uint64_t carla_get_current_transport_frame()
     }
 
     return 0;
+}
+
+const CarlaTransportInfo* carla_get_transport_info()
+{
+    CARLA_ASSERT(standalone.engine != nullptr);
+
+    static CarlaTransportInfo info;
+
+    if (standalone.engine != nullptr)
+    {
+        const CarlaBackend::EngineTimeInfo& timeInfo(standalone.engine->getTimeInfo());
+
+        info.playing = timeInfo.playing;
+        info.frame   = timeInfo.frame;
+
+        if (timeInfo.valid & timeInfo.ValidBBT)
+        {
+            info.bar  = timeInfo.bbt.bar;
+            info.beat = timeInfo.bbt.beat;
+            info.tick = timeInfo.bbt.tick;
+            info.bpm  = timeInfo.bbt.beatsPerMinute;
+        }
+        else
+        {
+            info.bar  = 0;
+            info.beat = 0;
+            info.tick = 0;
+            info.bpm  = 0.0;
+        }
+    }
+    else
+    {
+        info.playing = false;
+        info.frame   = 0;
+        info.bar     = 0;
+        info.beat    = 0;
+        info.tick    = 0;
+        info.bpm     = 0.0;
+    }
+
+    return &info;
 }
 
 // -------------------------------------------------------------------------------------------------------------------

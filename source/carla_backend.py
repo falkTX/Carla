@@ -131,6 +131,16 @@ class CarlaScalePointInfo(Structure):
         ("label", c_char_p)
     ]
 
+class CarlaTransportInfo(Structure):
+    _fields_ = [
+        ("playing", c_bool),
+        ("frame", c_uint32),
+        ("bar", c_int32),
+        ("beat", c_int32),
+        ("tick", c_int32),
+        ("bpm", c_double)
+    ]
+
 # ------------------------------------------------------------------------------------------------------------
 # Standalone Python object
 
@@ -213,7 +223,10 @@ class Host(object):
         self.lib.carla_transport_relocate.restype = None
 
         self.lib.carla_get_current_transport_frame.argtypes = None
-        self.lib.carla_get_current_transport_frame.restype = c_uint64
+        self.lib.carla_get_current_transport_frame.restype = c_uint32
+
+        self.lib.carla_get_transport_info.argtypes = None
+        self.lib.carla_get_transport_info.restype = POINTER(CarlaTransportInfo)
 
         self.lib.carla_add_plugin.argtypes = [c_enum, c_enum, c_char_p, c_char_p, c_char_p, c_void_p]
         self.lib.carla_add_plugin.restype = c_bool
@@ -448,6 +461,9 @@ class Host(object):
 
     def get_current_transport_frame(self):
         return self.lib.carla_get_current_transport_frame()
+
+    def get_transport_info(self):
+        return structToDict(self.lib.carla_get_transport_info().contents)
 
     def add_plugin(self, btype, ptype, filename, name, label, extraStuff):
         cfilename = filename.encode("utf-8") if filename else c_nullptr

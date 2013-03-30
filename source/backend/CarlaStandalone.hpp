@@ -71,6 +71,9 @@ struct CarlaPluginInfo {
         if (copyright != nullptr)
             delete[] copyright;
     }
+
+    CarlaPluginInfo(CarlaPluginInfo&) = delete;
+    CarlaPluginInfo(const CarlaPluginInfo&) = delete;
 };
 
 struct CarlaNativePluginInfo {
@@ -100,6 +103,9 @@ struct CarlaNativePluginInfo {
           label(nullptr),
           maker(nullptr),
           copyright(nullptr) {}
+
+    CarlaNativePluginInfo(CarlaNativePluginInfo&) = delete;
+    CarlaNativePluginInfo(const CarlaNativePluginInfo&) = delete;
 };
 
 struct CarlaPortCountInfo {
@@ -111,6 +117,9 @@ struct CarlaPortCountInfo {
         : ins(0),
           outs(0),
           total(0) {}
+
+    CarlaPortCountInfo(CarlaPortCountInfo&) = delete;
+    CarlaPortCountInfo(const CarlaPortCountInfo&) = delete;
 };
 
 struct CarlaParameterInfo {
@@ -134,6 +143,9 @@ struct CarlaParameterInfo {
         if (unit != nullptr)
             delete[] unit;
     }
+
+    CarlaParameterInfo(CarlaParameterInfo&) = delete;
+    CarlaParameterInfo(const CarlaParameterInfo&) = delete;
 };
 
 struct CarlaScalePointInfo {
@@ -149,7 +161,30 @@ struct CarlaScalePointInfo {
         if (label != nullptr)
             delete[] label;
     }
+
+    CarlaScalePointInfo(CarlaScalePointInfo&) = delete;
+    CarlaScalePointInfo(const CarlaScalePointInfo&) = delete;
 };
+
+struct CarlaTransportInfo {
+    bool playing;
+    uint32_t frame;
+    int32_t bar;
+    int32_t beat;
+    int32_t tick;
+    double bpm;
+
+    CarlaTransportInfo()
+        : playing(false),
+          frame(0),
+          bar(0),
+          beat(0),
+          bpm(0.0) {}
+
+    CarlaTransportInfo(CarlaTransportInfo&) = delete;
+    CarlaTransportInfo(const CarlaTransportInfo&) = delete;
+};
+
 
 CARLA_EXPORT const char* carla_get_extended_license_text();
 CARLA_EXPORT const char* carla_get_supported_file_types();
@@ -178,7 +213,8 @@ CARLA_EXPORT void carla_patchbay_refresh();
 CARLA_EXPORT void carla_transport_play();
 CARLA_EXPORT void carla_transport_pause();
 CARLA_EXPORT void carla_transport_relocate(uint32_t frames);
-CARLA_EXPORT uint64_t carla_get_current_transport_frame();
+CARLA_EXPORT uint32_t carla_get_current_transport_frame();
+CARLA_EXPORT const CarlaTransportInfo* carla_get_transport_info();
 
 CARLA_EXPORT bool carla_add_plugin(CarlaBinaryType btype, CarlaPluginType ptype, const char* filename, const char* name, const char* label, const void* extraPtr);
 CARLA_EXPORT bool carla_remove_plugin(unsigned int pluginId);

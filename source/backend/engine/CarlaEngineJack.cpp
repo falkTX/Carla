@@ -889,6 +889,8 @@ protected:
 
     void handleJackProcessCallback(const uint32_t nframes)
     {
+        saveTransportInfo();
+
 #ifndef BUILD_BRIDGE
         if (kData->curPluginCount == 0)
         {
@@ -899,7 +901,7 @@ protected:
                 float* const audioIn2  = (float*)jackbridge_port_get_buffer(fRackPorts[rackPortAudioIn2], nframes);
                 float* const audioOut1 = (float*)jackbridge_port_get_buffer(fRackPorts[rackPortAudioOut1], nframes);
                 float* const audioOut2 = (float*)jackbridge_port_get_buffer(fRackPorts[rackPortAudioOut2], nframes);
-                void* const  eventOut  = jackbridge_port_get_buffer(fRackPorts[rackPortEventOut], nframes);
+                void*  const eventOut  = jackbridge_port_get_buffer(fRackPorts[rackPortEventOut], nframes);
 
                 CARLA_ASSERT(audioIn1 != nullptr);
                 CARLA_ASSERT(audioIn2 != nullptr);
@@ -915,8 +917,6 @@ protected:
             return proccessPendingEvents();
         }
 #endif
-
-        saveTransportInfo();
 
 #ifdef BUILD_BRIDGE
         CarlaPlugin* const plugin = getPluginUnchecked(0);

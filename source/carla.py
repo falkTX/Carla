@@ -541,6 +541,9 @@ class CarlaMainW(QMainWindow):
         # -------------------------------------------------------------
         # Internal stuff
 
+        self.fBufferSize = 0
+        self.fSampleRate = 0.0
+
         self.fEngineStarted   = False
         self.fFirstEngineInit = False
 
@@ -705,6 +708,8 @@ class CarlaMainW(QMainWindow):
         self.connect(self, SIGNAL("PatchbayPortRenamedCallback(int, QString)"), SLOT("slot_handlePatchbayPortRenamedCallback(int, QString)"))
         self.connect(self, SIGNAL("PatchbayConnectionAddedCallback(int, int, int)"), SLOT("slot_handlePatchbayConnectionAddedCallback(int, int, int)"))
         self.connect(self, SIGNAL("PatchbayConnectionRemovedCallback(int)"), SLOT("slot_handlePatchbayConnectionRemovedCallback(int)"))
+        self.connect(self, SIGNAL("BufferSizeChangedCallback(int)"), SLOT("slot_handleBufferSizeChangedCallback(int)"))
+        self.connect(self, SIGNAL("SampleRateChangedCallback(double)"), SLOT("slot_handleSampleRateChangedCallback(double)"))
         #self.connect(self, SIGNAL("NSM_AnnounceCallback()"), SLOT("slot_handleNSM_AnnounceCallback()"))
         #self.connect(self, SIGNAL("NSM_Open1Callback()"), SLOT("slot_handleNSM_Open1Callback()"))
         #self.connect(self, SIGNAL("NSM_Open2Callback()"), SLOT("slot_handleNSM_Open2Callback()"))
@@ -958,6 +963,9 @@ class CarlaMainW(QMainWindow):
                 QMessageBox.critical(self, self.tr("Error"), self.tr("Could not connect to Audio backend '%s'" % audioDriver))
             return
 
+        self.fBufferSize = Carla.host.get_buffer_size()
+        self.fSampleRate = Carla.host.get_sample_rate()
+
         self.fEngineStarted   = True
         self.fFirstEngineInit = False
 
@@ -996,6 +1004,10 @@ class CarlaMainW(QMainWindow):
 
         if Carla.host.is_engine_running() and not Carla.host.engine_close():
             print(cString(Carla.host.get_last_error()))
+            return
+
+        self.fBufferSize = 0
+        self.fSampleRate = 0.0
 
         self.fEngineStarted = False
         self.fPluginCount = 0
@@ -1109,10 +1121,8 @@ class CarlaMainW(QMainWindow):
         self.ui.act_engine_configure.setEnabled(not check)
 
         if check:
-            bufferSize = Carla.host.get_buffer_size()
-            sampleRate = Carla.host.get_sample_rate()
-            self.fInfoText = "Engine running | SampleRate: %g | BufferSize: %i" % (sampleRate, bufferSize)
-            self.fInfoLabel.setText(self.fInfoText)
+            self.fInfoText = "Engine running | SampleRate: %g | BufferSize: %i" % (self.fSampleRate, self.fBufferSize)
+            self.refreshTransport()
 
         self.menuTransport(check)
 
@@ -1155,13 +1165,17 @@ class CarlaMainW(QMainWindow):
     def refreshTransport(self):
         if not self.fEngineStarted:
             return
+        if self.fSampleRate == 0.0:
+            return
 
-        time = Carla.host.get_current_transport_frame() / int(Carla.host.get_sample_rate())
+        timeInfo = Carla.host.get_transport_info()
+
+        time = timeInfo['frame'] / self.fSampleRate
         secs = time % 60
         mins = (time / 60) % 60
         hrs  = (time / 3600) % 60
 
-        textTransport = "Transport %s, at %02i:%02i:%02i" % ("<TODO>", hrs, mins, secs)
+        textTransport = "Transport %s, at %02i:%02i:%02i" % ("playing" if timeInfo['playing'] else "stopped", hrs, mins, secs)
         self.fInfoLabel.setText("%s | %s" % (self.fInfoText, textTransport))
 
     @pyqtSlot(bool)
@@ -1522,6 +1536,16 @@ class CarlaMainW(QMainWindow):
     def slot_handlePatchbayConnectionRemovedCallback(self, connectionId):
         patchcanvas.disconnectPorts(connectionId)
 
+    @pyqtSlot(int)
+    def slot_handleBufferSizeChangedCallback(self, newBufferSize):
+        self.fBufferSize = newBufferSize
+        self.fInfoText   = "Engine running | SampleRate: %g | BufferSize: %i" % (self.fSampleRate, self.fBufferSize)
+
+    @pyqtSlot(float)
+    def slot_handleSampleRateChangedCallback(self, newSampleRate):
+        self.fSampleRate = newSampleRate
+        self.fInfoText   = "Engine running | SampleRate: %g | BufferSize: %i" % (self.fSampleRate, self.fBufferSize)
+
     @pyqtSlot(str)
     def slot_handleErrorCallback(self, error):
         QMessageBox.critical(self, self.tr("Error"), error)
@@ -1780,6 +1804,10 @@ def engineCallback(ptr, action, pluginId, value1, value2, value3, valueStr):
         Carla.gui.emit(SIGNAL("PatchbayConnectionAddedCallback(int, int, int)"), value1, value2, value3)
     elif action == CALLBACK_PATCHBAY_CONNECTION_REMOVED:
         Carla.gui.emit(SIGNAL("PatchbayConnectionRemovedCallback(int)"), value1)
+    elif action == CALLBACK_BUFFER_SIZE_CHANGED:
+        Carla.gui.emit(SIGNAL("BufferSizeChangedCallback(int)"), value1)
+    elif action == CALLBACK_SAMPLE_RATE_CHANGED:
+        Carla.gui.emit(SIGNAL("SampleRateChangedCallback(double)"), value3)
     #elif action == CALLBACK_NSM_ANNOUNCE:
         #Carla.gui._nsmAnnounce2str = cString(Carla.host.get_last_error())
         #Carla.gui.emit(SIGNAL("NSM_AnnounceCallback()"))

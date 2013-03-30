@@ -581,32 +581,42 @@ enum CallbackType {
     /*!
      * Non-Session-Manager Announce message.
      */
-    CALLBACK_NSM_ANNOUNCE = 26,
+    CALLBACK_BUFFER_SIZE_CHANGED = 26,
+
+    /*!
+     * Non-Session-Manager Announce message.
+     */
+    CALLBACK_SAMPLE_RATE_CHANGED = 27,
+
+    /*!
+     * Non-Session-Manager Announce message.
+     */
+    CALLBACK_NSM_ANNOUNCE = 28,
 
     /*!
      * Non-Session-Manager Open message #1.
      */
-    CALLBACK_NSM_OPEN1 = 27,
+    CALLBACK_NSM_OPEN1 = 29,
 
     /*!
      * Non-Session-Manager Open message #2.
      */
-    CALLBACK_NSM_OPEN2 = 28,
+    CALLBACK_NSM_OPEN2 = 30,
 
     /*!
      * Non-Session-Manager Save message.
      */
-    CALLBACK_NSM_SAVE = 29,
+    CALLBACK_NSM_SAVE = 31,
 
     /*!
      * An error occurred, show \a valueStr as an error to user.
      */
-    CALLBACK_ERROR = 30,
+    CALLBACK_ERROR = 32,
 
     /*!
      * The engine has crashed or malfunctioned and will no longer work.
      */
-    CALLBACK_QUIT = 31
+    CALLBACK_QUIT = 33
 };
 
 /*!
