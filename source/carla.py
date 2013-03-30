@@ -1877,7 +1877,7 @@ def engineCallback(ptr, action, pluginId, value1, value2, value3, valueStr):
     elif action == CALLBACK_PATCHBAY_CLIENT_RENAMED:
         Carla.gui.emit(SIGNAL("PatchbayClientRenamedCallback(int, QString)"), value1, cString(valueStr))
     elif action == CALLBACK_PATCHBAY_PORT_ADDED:
-        Carla.gui.emit(SIGNAL("PatchbayPortAddedCallback(int, int, int, QString)"), value1, value2, value3, cString(valueStr))
+        Carla.gui.emit(SIGNAL("PatchbayPortAddedCallback(int, int, int, QString)"), value1, value2, int(value3), cString(valueStr))
     elif action == CALLBACK_PATCHBAY_PORT_REMOVED:
         Carla.gui.emit(SIGNAL("PatchbayPortRemovedCallback(int)"), value1)
     elif action == CALLBACK_PATCHBAY_PORT_RENAMED:

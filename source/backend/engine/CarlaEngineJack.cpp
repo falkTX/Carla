@@ -1332,7 +1332,7 @@ private:
 
     int fLastGroupId;
     int fLastPortId;
-    int fLastConnectionId ;
+    int fLastConnectionId;
 
     QList<GroupNameToId>  fUsedGroupNames;
     QList<PortNameToId>   fUsedPortNames;

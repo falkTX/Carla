@@ -86,7 +86,8 @@ public:
           fAudioOutBuf1(nullptr),
           fAudioOutBuf2(nullptr),
           fMidiIn(getMatchedAudioMidiAPi(api), "Carla"),
-          fMidiOut(getMatchedAudioMidiAPi(api), "Carla")
+          fMidiOut(getMatchedAudioMidiAPi(api), "Carla"),
+          fLastConnectionId(0)
     {
         carla_debug("CarlaEngineRtAudio::CarlaEngineRtAudio(%i)", api);
 
@@ -102,6 +103,9 @@ public:
         CARLA_ASSERT(fAudioInBuf2 == nullptr);
         CARLA_ASSERT(fAudioOutBuf1 == nullptr);
         CARLA_ASSERT(fAudioOutBuf2 == nullptr);
+
+        fUsedPortNames.clear();
+        fUsedConnections.clear();
     }
 
     // -------------------------------------
@@ -186,11 +190,12 @@ public:
         // MIDI
         {
             fMidiIn.setCallback(carla_rtmidi_callback, this);
-            fMidiIn.openVirtualPort("events-in");
-            fMidiOut.openVirtualPort("events-out");
+            fUsedMidiPortIn.clear();
+            fUsedMidiPortOut.clear();
         }
 
         fAudioIsReady = true;
+        patchbayRefresh();
 
         return CarlaEngine::init(clientName);
     }
@@ -225,8 +230,8 @@ public:
         }
 
         fMidiIn.cancelCallback();
-        fMidiIn.closePort();
-        fMidiOut.closePort();
+        disconnectMidiPort(true, false);
+        disconnectMidiPort(false, false);
 
         if (fAudioInBuf1 != nullptr)
         {
@@ -273,7 +278,216 @@ public:
         return kEngineTypeRtAudio;
     }
 
-    // -------------------------------------
+    // -------------------------------------------------------------------
+    // Patchbay
+
+    void patchbayConnect(int portA, int portB)
+    {
+        CARLA_ASSERT(fAudioIsReady);
+        CARLA_ASSERT(portA > PATCHBAY_PORT_MAX);
+        CARLA_ASSERT(portB > PATCHBAY_PORT_MAX);
+
+        if (! fAudioIsReady)
+            return;
+        if (portA < PATCHBAY_PORT_MAX)
+            return;
+        if (portB < PATCHBAY_PORT_MAX)
+            return;
+
+        // only allow connections between Carla and other ports
+        if (portA < 0 && portB < 0)
+            return;
+        if (portA >= 0 && portB >= 0)
+            return;
+
+        const int carlaPort  = (portA < 0) ? portA : portB;
+        const int targetPort = (carlaPort == portA) ? portB : portA;
+        bool makeConnection  = false;
+
+        switch (carlaPort)
+        {
+        case PATCHBAY_PORT_AUDIO_IN1:
+        case PATCHBAY_PORT_AUDIO_IN2:
+        case PATCHBAY_PORT_AUDIO_OUT1:
+        case PATCHBAY_PORT_AUDIO_OUT2:
+            break;
+
+        case PATCHBAY_PORT_MIDI_IN:
+            CARLA_ASSERT(targetPort >= PATCHBAY_GROUP_MIDI_IN*1000);
+            CARLA_ASSERT(targetPort <= PATCHBAY_GROUP_MIDI_IN*1000 + 999);
+            disconnectMidiPort(true, true);
+
+            for (unsigned int i=0, count=fMidiIn.getPortCount(); i < count; ++i)
+            {
+                const char* const portName(fMidiIn.getPortName(i).c_str());
+
+                if (getPatchbayPortId(portName) == targetPort)
+                {
+                    fUsedMidiPortIn = portName;
+                    fMidiIn.openPort(i, "midi-in");
+                    makeConnection = true;
+                    break;
+                }
+            }
+            break;
+
+        case PATCHBAY_PORT_MIDI_OUT:
+            CARLA_ASSERT(targetPort >= PATCHBAY_GROUP_MIDI_OUT*1000);
+            CARLA_ASSERT(targetPort <= PATCHBAY_GROUP_MIDI_OUT*1000 + 999);
+            disconnectMidiPort(false, true);
+
+            for (unsigned int i=0, count=fMidiOut.getPortCount(); i < count; ++i)
+            {
+                const char* const portName(fMidiOut.getPortName(i).c_str());
+
+                if (getPatchbayPortId(portName) == targetPort)
+                {
+                    fUsedMidiPortOut = portName;
+                    fMidiOut.openPort(i, "midi-out");
+                    makeConnection = true;
+                    break;
+                }
+            }
+            break;
+        }
+
+        if (! makeConnection)
+            return;
+
+        ConnectionToId connectionToId;
+        connectionToId.id      = fLastConnectionId;
+        connectionToId.portOut = portA;
+        connectionToId.portIn  = portB;
+
+        fUsedConnections.append(connectionToId);
+        callback(CALLBACK_PATCHBAY_CONNECTION_ADDED, 0, fLastConnectionId, portA, portB, nullptr);
+        fLastConnectionId++;
+    }
+
+    void patchbayDisconnect(int connectionId)
+    {
+        CARLA_ASSERT(fAudioIsReady);
+
+        if (! fAudioIsReady)
+            return;
+
+        for (int i=0, count=fUsedConnections.count(); i < count; ++i)
+        {
+            const ConnectionToId& connection(fUsedConnections.at(i));
+
+            if (connection.id == connectionId)
+            {
+                const int targetPort  = (connection.portOut >= 0) ? connection.portOut : connection.portIn;
+
+                if (targetPort >= PATCHBAY_GROUP_MIDI_OUT*1000)
+                {
+                    fMidiOut.closePort();
+                    fUsedMidiPortOut.clear();
+                }
+                else if (targetPort >= PATCHBAY_GROUP_MIDI_IN*1000)
+                {
+                    fMidiIn.closePort();
+                    fUsedMidiPortIn.clear();
+                }
+
+                callback(CALLBACK_PATCHBAY_CONNECTION_REMOVED, 0, connection.id, 0, 0.0f, nullptr);
+                fUsedConnections.takeAt(i);
+            }
+        }
+    }
+
+    void patchbayRefresh()
+    {
+        CARLA_ASSERT(fAudioIsReady);
+
+        if (! fAudioIsReady)
+            return;
+
+        fLastConnectionId = 0;
+        fUsedPortNames.clear();
+        fUsedConnections.clear();
+
+        // Main
+        callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, PATCHBAY_GROUP_CARLA, 0, 0.0f, "Carla");
+        {
+            callback(CALLBACK_PATCHBAY_PORT_ADDED, 0, PATCHBAY_GROUP_CARLA, PATCHBAY_PORT_AUDIO_IN1,  PATCHBAY_PORT_IS_AUDIO|PATCHBAY_PORT_IS_INPUT,  "audio-in1");
+            callback(CALLBACK_PATCHBAY_PORT_ADDED, 0, PATCHBAY_GROUP_CARLA, PATCHBAY_PORT_AUDIO_IN2,  PATCHBAY_PORT_IS_AUDIO|PATCHBAY_PORT_IS_INPUT,  "audio-in2");
+            callback(CALLBACK_PATCHBAY_PORT_ADDED, 0, PATCHBAY_GROUP_CARLA, PATCHBAY_PORT_AUDIO_OUT1, PATCHBAY_PORT_IS_AUDIO|PATCHBAY_PORT_IS_OUTPUT, "audio-out1");
+            callback(CALLBACK_PATCHBAY_PORT_ADDED, 0, PATCHBAY_GROUP_CARLA, PATCHBAY_PORT_AUDIO_OUT2, PATCHBAY_PORT_IS_AUDIO|PATCHBAY_PORT_IS_OUTPUT, "audio-out2");
+            callback(CALLBACK_PATCHBAY_PORT_ADDED, 0, PATCHBAY_GROUP_CARLA, PATCHBAY_PORT_MIDI_IN,    PATCHBAY_PORT_IS_MIDI|PATCHBAY_PORT_IS_INPUT,   "midi-in");
+            callback(CALLBACK_PATCHBAY_PORT_ADDED, 0, PATCHBAY_GROUP_CARLA, PATCHBAY_PORT_MIDI_OUT,   PATCHBAY_PORT_IS_MIDI|PATCHBAY_PORT_IS_OUTPUT,  "midi-out");
+        }
+
+        // Audio In
+        {
+            // TODO
+        }
+
+        // Audio Out
+        {
+            // TODO
+        }
+
+        // MIDI In
+        callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, PATCHBAY_GROUP_MIDI_IN, 0, 0.0f, "Readable MIDI ports");
+        {
+            const unsigned int portCount = fMidiIn.getPortCount();
+
+            for (unsigned int i=0; i < portCount; ++i)
+            {
+                PortNameToId portNameToId;
+                portNameToId.portId = PATCHBAY_GROUP_MIDI_IN*1000 + i;
+                portNameToId.name   = fMidiIn.getPortName(i).c_str();
+                fUsedPortNames.append(portNameToId);
+
+                const char* const portName(portNameToId.name.toUtf8().constData());
+                callback(CALLBACK_PATCHBAY_PORT_ADDED, 0, PATCHBAY_GROUP_MIDI_IN, portNameToId.portId, PATCHBAY_PORT_IS_MIDI|PATCHBAY_PORT_IS_OUTPUT, portName);
+            }
+        }
+
+        // MIDI Out
+        callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, PATCHBAY_GROUP_MIDI_OUT, 0, 0.0f, "Writable MIDI ports");
+        {
+            const unsigned int portCount = fMidiOut.getPortCount();
+
+            for (unsigned int i=0; i < portCount; ++i)
+            {
+                PortNameToId portNameToId;
+                portNameToId.portId = PATCHBAY_GROUP_MIDI_OUT*1000 + i;
+                portNameToId.name   = fMidiOut.getPortName(i).c_str();
+                fUsedPortNames.append(portNameToId);
+
+                const char* const portName(portNameToId.name.toUtf8().constData());
+                callback(CALLBACK_PATCHBAY_PORT_ADDED, 0, PATCHBAY_GROUP_MIDI_OUT, portNameToId.portId, PATCHBAY_PORT_IS_MIDI|PATCHBAY_PORT_IS_INPUT, portName);
+            }
+        }
+
+        // Connections
+        if (! fUsedMidiPortIn.isEmpty())
+        {
+            ConnectionToId connectionToId;
+            connectionToId.id      = fLastConnectionId;
+            connectionToId.portOut = getPatchbayPortId(fUsedMidiPortIn);
+            connectionToId.portIn  = PATCHBAY_PORT_MIDI_IN;
+
+            fUsedConnections.append(connectionToId);
+            callback(CALLBACK_PATCHBAY_CONNECTION_ADDED, 0, fLastConnectionId, connectionToId.portOut, connectionToId.portIn, nullptr);
+            fLastConnectionId++;
+        }
+        if (! fUsedMidiPortOut.isEmpty())
+        {
+            ConnectionToId connectionToId;
+            connectionToId.id      = fLastConnectionId;
+            connectionToId.portOut = PATCHBAY_PORT_MIDI_OUT;
+            connectionToId.portIn  = getPatchbayPortId(fUsedMidiPortOut);
+
+            fUsedConnections.append(connectionToId);
+            callback(CALLBACK_PATCHBAY_CONNECTION_ADDED, 0, fLastConnectionId, connectionToId.portOut, connectionToId.portIn, nullptr);
+            fLastConnectionId++;
+        }
+    }
+
+    // -------------------------------------------------------------------
 
 protected:
     void handleAudioProcessCallback(void* outputBuffer, void* inputBuffer, unsigned int nframes, double streamTime, RtAudioStreamStatus status)
@@ -457,7 +671,7 @@ protected:
         const size_t messageSize = message->size();
         static uint32_t lastTime = 0;
 
-        if (messageSize == 0 || messageSize > 3)
+        if (messageSize == 0 || messageSize > 4)
             return;
 
         timeStamp /= 2;
@@ -479,6 +693,7 @@ protected:
             midiEvent.data[0] = message->at(0);
             midiEvent.data[1] = 0;
             midiEvent.data[2] = 0;
+            midiEvent.data[3] = 0;
             midiEvent.size    = 1;
         }
         else if (messageSize == 2)
@@ -486,17 +701,95 @@ protected:
             midiEvent.data[0] = message->at(0);
             midiEvent.data[1] = message->at(1);
             midiEvent.data[2] = 0;
+            midiEvent.data[3] = 0;
             midiEvent.size    = 2;
+        }
+        else if (messageSize == 3)
+        {
+            midiEvent.data[0] = message->at(0);
+            midiEvent.data[1] = message->at(1);
+            midiEvent.data[2] = message->at(2);
+            midiEvent.data[3] = 0;
+            midiEvent.size    = 3;
         }
         else
         {
             midiEvent.data[0] = message->at(0);
             midiEvent.data[1] = message->at(1);
             midiEvent.data[2] = message->at(2);
-            midiEvent.size    = 3;
+            midiEvent.data[3] = message->at(3);
+            midiEvent.size    = 4;
         }
 
         fMidiInEvents.append(midiEvent);
+    }
+
+    // -------------------------------------
+
+    void disconnectMidiPort(const bool isInput, const bool doPatchbay)
+    {
+        carla_debug("CarlaEngineRtAudio::disconnectMidiPort(%s, %s)", bool2str(isInput), bool2str(doPatchbay));
+
+        if (isInput)
+        {
+            if (! fUsedMidiPortIn.isEmpty())
+            {
+                fUsedMidiPortIn.clear();
+                fMidiIn.closePort();
+            }
+        }
+        else
+        {
+            if (! fUsedMidiPortOut.isEmpty())
+            {
+                fUsedMidiPortOut.clear();
+                fMidiIn.closePort();
+            }
+        }
+
+        if (! doPatchbay)
+            return;
+
+        for (int i=0, count=fUsedConnections.count(); i < count; ++i)
+        {
+            const ConnectionToId& connection(fUsedConnections.at(i));
+
+            const int targetPort  = (connection.portOut >= 0) ? connection.portOut : connection.portIn;
+
+            if (targetPort >= PATCHBAY_GROUP_MIDI_OUT*1000)
+            {
+                if (isInput)
+                    continue;
+
+                callback(CALLBACK_PATCHBAY_CONNECTION_REMOVED, 0, connection.id, 0, 0.0f, nullptr);
+                fUsedConnections.takeAt(i);
+                break;
+            }
+            else if (targetPort >= PATCHBAY_GROUP_MIDI_IN*1000)
+            {
+                if (! isInput)
+                    continue;
+
+                callback(CALLBACK_PATCHBAY_CONNECTION_REMOVED, 0, connection.id, 0, 0.0f, nullptr);
+                fUsedConnections.takeAt(i);
+                break;
+            }
+        }
+    }
+
+    int getPatchbayPortId(const QString& name)
+    {
+        carla_debug("CarlaEngineRtAudio::getPatchbayPortId(\"%s\")", name.toUtf8().constData());
+
+        for (int i=0, count=fUsedPortNames.count(); i < count; i++)
+        {
+            carla_debug("CarlaEngineRtAudio::getPatchbayPortId(\"%s\") VS \"%s\"", name.toUtf8().constData(), fUsedPortNames[i].name.toUtf8().constData());
+
+            if (fUsedPortNames[i].name == name)
+                return fUsedPortNames[i].portId;
+        }
+
+        return PATCHBAY_PORT_MAX;
     }
 
     // -------------------------------------
@@ -513,9 +806,45 @@ private:
     RtMidiIn  fMidiIn;
     RtMidiOut fMidiOut;
 
+    enum PatchbayGroupIds {
+        PATCHBAY_GROUP_CARLA     = -1,
+        PATCHBAY_GROUP_AUDIO_IN  = 0,
+        PATCHBAY_GROUP_AUDIO_OUT = 1,
+        PATCHBAY_GROUP_MIDI_IN   = 2,
+        PATCHBAY_GROUP_MIDI_OUT  = 3,
+        PATCHBAY_GROUP_MAX       = 4
+    };
+
+    enum PatchbayPortIds {
+        PATCHBAY_PORT_AUDIO_IN1  = -1,
+        PATCHBAY_PORT_AUDIO_IN2  = -2,
+        PATCHBAY_PORT_AUDIO_OUT1 = -3,
+        PATCHBAY_PORT_AUDIO_OUT2 = -4,
+        PATCHBAY_PORT_MIDI_IN    = -5,
+        PATCHBAY_PORT_MIDI_OUT   = -6,
+        PATCHBAY_PORT_MAX        = -7
+    };
+
+    struct PortNameToId {
+        int portId;
+        QString name;
+    };
+
+    struct ConnectionToId {
+        int id;
+        int portOut;
+        int portIn;
+    };
+
+    int fLastConnectionId;
+    QList<PortNameToId>   fUsedPortNames;
+    QList<ConnectionToId> fUsedConnections;
+    QString fUsedMidiPortIn;
+    QString fUsedMidiPortOut;
+
     struct RtMidiEvent {
         uint32_t time;
-        unsigned char data[3];
+        unsigned char data[4];
         unsigned char size;
     };
 
