@@ -36,6 +36,9 @@ void carla_register_all_plugins()
     //carla_register_native_plugin_nekofilter(); // needs UI stuff
 #endif
 
+    // Carla
+    carla_register_native_plugin_carla();
+
 #ifdef WANT_AUDIOFILE
     // AudioFile
     carla_register_native_plugin_audiofile();
@@ -712,6 +715,7 @@ public:
         if (params > 0)
         {
             kData->param.createNew(params);
+            carla_stdout("HAS %i PARAMS", params);
         }
 
         const uint  portNameSize = kData->engine->maxPortNameSize();
@@ -830,6 +834,11 @@ public:
         for (j=0; j < params; j++)
         {
             const ::Parameter* const paramInfo = fDescriptor->get_parameter_info(fHandle, j);
+
+            CARLA_ASSERT(paramInfo != nullptr);
+
+            if (paramInfo == nullptr)
+                continue;
 
             kData->param.data[j].index  = j;
             kData->param.data[j].rindex = j;

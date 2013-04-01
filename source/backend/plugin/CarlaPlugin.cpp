@@ -248,7 +248,7 @@ const MidiProgramData& CarlaPlugin::midiProgramData(const uint32_t index) const
     return (index < kData->midiprog.count) ? kData->midiprog.data[index] : kMidiProgramDataNull;
 }
 
-const CustomData& CarlaPlugin::customData(const size_t index) const
+const CustomData& CarlaPlugin::customData(const uint32_t index) const
 {
     CARLA_ASSERT(index < kData->custom.count());
 
@@ -258,6 +258,7 @@ const CustomData& CarlaPlugin::customData(const size_t index) const
 int32_t CarlaPlugin::chunkData(void** const dataPtr)
 {
     CARLA_ASSERT(dataPtr != nullptr);
+    CARLA_ASSERT(false); // this should never happen
     return 0;
 
     // unused
@@ -269,12 +270,14 @@ int32_t CarlaPlugin::chunkData(void** const dataPtr)
 
 unsigned int CarlaPlugin::availableOptions()
 {
+    CARLA_ASSERT(false); // this should never happen
     return 0x0;
 }
 
 float CarlaPlugin::getParameterValue(const uint32_t parameterId)
 {
     CARLA_ASSERT(parameterId < parameterCount());
+    CARLA_ASSERT(false); // this should never happen
     return 0.0f;
 
     // unused
@@ -285,6 +288,7 @@ float CarlaPlugin::getParameterScalePointValue(const uint32_t parameterId, const
 {
     CARLA_ASSERT(parameterId < parameterCount());
     CARLA_ASSERT(scalePointId < parameterScalePointCount(parameterId));
+    CARLA_ASSERT(false); // this should never happen
     return 0.0f;
 
     // unused
@@ -294,28 +298,28 @@ float CarlaPlugin::getParameterScalePointValue(const uint32_t parameterId, const
 
 void CarlaPlugin::getLabel(char* const strBuf)
 {
-    *strBuf = 0;
+    *strBuf = '\0';
 }
 
 void CarlaPlugin::getMaker(char* const strBuf)
 {
-    *strBuf = 0;
+    *strBuf = '\0';
 }
 
 void CarlaPlugin::getCopyright(char* const strBuf)
 {
-    *strBuf = 0;
+    *strBuf = '\0';
 }
 
 void CarlaPlugin::getRealName(char* const strBuf)
 {
-    *strBuf = 0;
+    *strBuf = '\0';
 }
 
 void CarlaPlugin::getParameterName(const uint32_t parameterId, char* const strBuf)
 {
     CARLA_ASSERT(parameterId < parameterCount());
-    *strBuf = 0;
+    *strBuf = '\0';
     return;
 
     // unused
@@ -325,7 +329,7 @@ void CarlaPlugin::getParameterName(const uint32_t parameterId, char* const strBu
 void CarlaPlugin::getParameterSymbol(const uint32_t parameterId, char* const strBuf)
 {
     CARLA_ASSERT(parameterId < parameterCount());
-    *strBuf = 0;
+    *strBuf = '\0';
     return;
 
     // unused
@@ -335,7 +339,7 @@ void CarlaPlugin::getParameterSymbol(const uint32_t parameterId, char* const str
 void CarlaPlugin::getParameterText(const uint32_t parameterId, char* const strBuf)
 {
     CARLA_ASSERT(parameterId < parameterCount());
-    *strBuf = 0;
+    *strBuf = '\0';
     return;
 
     // unused
@@ -345,7 +349,7 @@ void CarlaPlugin::getParameterText(const uint32_t parameterId, char* const strBu
 void CarlaPlugin::getParameterUnit(const uint32_t parameterId, char* const strBuf)
 {
     CARLA_ASSERT(parameterId < parameterCount());
-    *strBuf = 0;
+    *strBuf = '\0';
     return;
 
     // unused
@@ -356,7 +360,7 @@ void CarlaPlugin::getParameterScalePointLabel(const uint32_t parameterId, const 
 {
     CARLA_ASSERT(parameterId < parameterCount());
     CARLA_ASSERT(scalePointId < parameterScalePointCount(parameterId));
-    *strBuf = 0;
+    *strBuf = '\0';
     return;
 
     // unused
@@ -372,7 +376,7 @@ void CarlaPlugin::getProgramName(const uint32_t index, char* const strBuf)
     if (index < kData->prog.count && kData->prog.names[index])
         std::strncpy(strBuf, kData->prog.names[index], STR_MAX);
     else
-        *strBuf = 0;
+        *strBuf = '\0';
 }
 
 void CarlaPlugin::getMidiProgramName(const uint32_t index, char* const strBuf)
@@ -383,7 +387,7 @@ void CarlaPlugin::getMidiProgramName(const uint32_t index, char* const strBuf)
     if (index < kData->midiprog.count && kData->midiprog.data[index].name)
         std::strncpy(strBuf, kData->midiprog.data[index].name, STR_MAX);
     else
-        *strBuf = 0;
+        *strBuf = '\0';
 }
 
 void CarlaPlugin::getParameterCountInfo(uint32_t* const ins, uint32_t* const outs, uint32_t* const total)
@@ -479,6 +483,26 @@ const SaveState& CarlaPlugin::getSaveState()
     saveState.ctrlChannel  = kData->ctrlChannel;
 
     // ----------------------------
+    // Chunk
+
+    if (fOptions & PLUGIN_OPTION_USE_CHUNKS)
+    {
+        void* data = nullptr;
+        const int32_t dataSize(chunkData(&data));
+
+        if (data != nullptr && dataSize >= 4)
+        {
+            CarlaString chunkStr;
+            chunkStr.importBinaryAsBase64((const uint8_t*)data, static_cast<size_t>(dataSize));
+
+            saveState.chunk = carla_strdup(chunkStr);
+
+            // Don't save anything else if using chunks
+            return saveState;
+        }
+    }
+
+    // ----------------------------
     // Current Program
 
     if (kData->prog.current >= 0)
@@ -492,7 +516,8 @@ const SaveState& CarlaPlugin::getSaveState()
 
     if (kData->midiprog.current >= 0)
     {
-        const MidiProgramData& mpData = kData->midiprog.getCurrent();
+        const MidiProgramData& mpData(kData->midiprog.getCurrent());
+
         saveState.currentMidiBank     = mpData.bank;
         saveState.currentMidiProgram  = mpData.program;
     }
@@ -500,16 +525,16 @@ const SaveState& CarlaPlugin::getSaveState()
     // ----------------------------
     // Parameters
 
-    float sampleRate = kData->engine->getSampleRate();
+    const float sampleRate(kData->engine->getSampleRate());
 
     for (uint32_t i=0, count=kData->param.count; i < count; i++)
     {
-        const ParameterData& paramData = kData->param.data[i];
+        const ParameterData& paramData(kData->param.data[i]);
 
         if ((paramData.hints & PARAMETER_IS_AUTOMABLE) == 0)
             continue;
 
-        StateParameter* stateParameter(new StateParameter);
+        StateParameter* stateParameter(new StateParameter());
 
         stateParameter->index  = paramData.index;
         stateParameter->midiCC = paramData.midiCC;
@@ -539,30 +564,13 @@ const SaveState& CarlaPlugin::getSaveState()
         if (cData.type == nullptr)
             continue;
 
-        StateCustomData* stateCustomData(new StateCustomData);
+        StateCustomData* stateCustomData(new StateCustomData());
 
         stateCustomData->type  = carla_strdup(cData.type);
         stateCustomData->key   = carla_strdup(cData.key);
         stateCustomData->value = carla_strdup(cData.value);
 
         saveState.customData.push_back(stateCustomData);
-    }
-
-    // ----------------------------
-    // Chunk
-
-    if (fOptions & PLUGIN_OPTION_USE_CHUNKS)
-    {
-        void* data = nullptr;
-        const int32_t dataSize = chunkData(&data);
-
-        if (data != nullptr && dataSize >= 4)
-        {
-            CarlaString chunkStr;
-            chunkStr.importBinaryAsBase64((const uint8_t*)data, static_cast<size_t>(dataSize));
-
-            saveState.chunk = carla_strdup(chunkStr);
-        }
     }
 
     return saveState;
@@ -635,10 +643,6 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
         uint32_t index;
         const char* symbol;
 
-        ParamSymbol()
-            : index(0),
-              symbol(nullptr) {}
-
         ParamSymbol(uint32_t index_, const char* symbol_)
             : index(index_),
               symbol(carla_strdup(symbol_)) {}
@@ -651,9 +655,13 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
                 symbol = nullptr;
             }
         }
+
+        ParamSymbol() = delete;
+        ParamSymbol(ParamSymbol&) = delete;
+        ParamSymbol(const ParamSymbol&) = delete;
     };
 
-    QVector<ParamSymbol> paramSymbols;
+    QVector<ParamSymbol*> paramSymbols;
 
     if (type() == PLUGIN_LADSPA || type() == PLUGIN_LV2)
     {
@@ -661,9 +669,9 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
         {
             getParameterSymbol(i, strBuf);
 
-            if (*strBuf != 0)
+            if (*strBuf != '\0')
             {
-                ParamSymbol paramSymbol(i, strBuf);
+                ParamSymbol* const paramSymbol(new ParamSymbol(i, strBuf));
                 paramSymbols.append(paramSymbol);
             }
         }
@@ -672,11 +680,11 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
     // ---------------------------------------------------------------------
     // Part 4b - set parameter values (carefully)
 
-    float sampleRate = kData->engine->getSampleRate();
+    const float sampleRate(kData->engine->getSampleRate());
 
     for (auto it = saveState.parameters.begin(); it != saveState.parameters.end(); ++it)
     {
-        StateParameter* stateParameter = *it;
+        StateParameter* const stateParameter(*it);
 
         int32_t index = -1;
 
@@ -685,11 +693,11 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
             // Try to set by symbol, otherwise use index
             if (stateParameter->symbol != nullptr && *stateParameter->symbol != 0)
             {
-                foreach (const ParamSymbol& paramSymbol, paramSymbols)
+                foreach (const ParamSymbol* paramSymbol, paramSymbols)
                 {
-                    if (std::strcmp(stateParameter->symbol, paramSymbol.symbol) == 0)
+                    if (std::strcmp(stateParameter->symbol, paramSymbol->symbol) == 0)
                     {
-                        index = paramSymbol.index;
+                        index = paramSymbol->index;
                         break;
                     }
                 }
@@ -704,11 +712,11 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
             // Symbol only
             if (stateParameter->symbol != nullptr && *stateParameter->symbol != 0)
             {
-                foreach (const ParamSymbol& paramSymbol, paramSymbols)
+                foreach (const ParamSymbol* paramSymbol, paramSymbols)
                 {
-                    if (std::strcmp(stateParameter->symbol, paramSymbol.symbol) == 0)
+                    if (std::strcmp(stateParameter->symbol, paramSymbol->symbol) == 0)
                     {
-                        index = paramSymbol.index;
+                        index = paramSymbol->index;
                         break;
                     }
                 }
@@ -739,8 +747,13 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
     }
 
     // clear
-    foreach (ParamSymbol paramSymbol, paramSymbols)
-        paramSymbol.free();
+    foreach (ParamSymbol* paramSymbol, paramSymbols)
+    {
+        paramSymbol->free();
+        delete paramSymbol;
+    }
+
+    paramSymbols.clear();
 
     // ---------------------------------------------------------------------
     // Part 5 - set chunk data
@@ -822,17 +835,6 @@ bool CarlaPlugin::loadStateFromFile(const char* const filename)
 void CarlaPlugin::setId(const unsigned int id)
 {
     fId = id;
-
-    if (kData->engine->getProccessMode() == PROCESS_MODE_CONTINUOUS_RACK)
-    {
-        CARLA_ASSERT(id < MAX_RACK_PLUGINS);
-
-        if (id >= MAX_RACK_PLUGINS || kData->ctrlChannel == static_cast<int8_t>(id))
-            return;
-
-        kData->ctrlChannel = id;
-        kData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, PARAMETER_CTRL_CHANNEL, 0, id, nullptr);
-    }
 }
 
 void CarlaPlugin::setOption(const unsigned int option, const bool yesNo)

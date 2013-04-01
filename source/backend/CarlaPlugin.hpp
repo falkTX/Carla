@@ -192,12 +192,12 @@ public:
     /*!
      * Get the number of audio inputs.
      */
-    virtual uint32_t audioInCount() const;
+    uint32_t audioInCount() const;
 
     /*!
      * Get the number of audio outputs.
      */
-    virtual uint32_t audioOutCount() const;
+    uint32_t audioOutCount() const;
 
     /*!
      * Get the number of MIDI inputs.
@@ -280,7 +280,7 @@ public:
      *
      * \see setCustomData()
      */
-    const CustomData& customData(const size_t index) const;
+    const CustomData& customData(const uint32_t index) const;
 
     /*!
      * Get the complete plugin chunk data into \a dataPtr.
