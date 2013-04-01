@@ -46,6 +46,7 @@ PKGCONFIG += linuxsampler
 
 SOURCES  = \
     CarlaPlugin.cpp \
+    CarlaPluginGui.cpp \
     CarlaPluginThread.cpp \
     BridgePlugin.cpp \
     NativePlugin.cpp \

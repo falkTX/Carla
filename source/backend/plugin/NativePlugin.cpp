@@ -185,7 +185,7 @@ public:
             if (fDescriptor->ui_show != nullptr && fIsUiVisible)
                 fDescriptor->ui_show(fHandle, false);
 
-            if (fDescriptor->deactivate != nullptr && kData->activeBefore)
+            if (fDescriptor->deactivate != nullptr && kData->active/*Before*/)
             {
                 if (fHandle != nullptr)
                     fDescriptor->deactivate(fHandle);
@@ -1128,6 +1128,7 @@ public:
             for (i=0; i < kData->audioOut.count; i++)
                 carla_zeroFloat(outBuffer[i], frames);
 
+#if 0
             if (kData->activeBefore)
             {
                 if (fDescriptor->deactivate != nullptr)
@@ -1140,6 +1141,7 @@ public:
             }
 
             kData->activeBefore = kData->active;
+#endif
             return;
         }
 
@@ -1149,7 +1151,7 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Check if not active before
 
-        if (kData->needsReset || ! kData->activeBefore)
+        if (kData->needsReset /*|| ! kData->activeBefore*/)
         {
             if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
             {
@@ -1165,6 +1167,7 @@ public:
                 fMidiEventCount = MAX_MIDI_CHANNELS*2;
             }
 
+#if 0
             if (fDescriptor->activate != nullptr)
             {
                 fDescriptor->activate(fHandle);
@@ -1172,6 +1175,7 @@ public:
                 if (fHandle2 != nullptr)
                     fDescriptor->activate(fHandle2);
             }
+#endif
         }
 
         CARLA_PROCESS_CONTINUE_CHECK;
@@ -1208,7 +1212,7 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Event Input and Processing
 
-        if (kData->event.portIn != nullptr && kData->activeBefore)
+        if (kData->event.portIn != nullptr /*&& kData->activeBefore*/)
         {
             // ----------------------------------------------------------------------------------------------------
             // MIDI Input (External)
@@ -1578,7 +1582,7 @@ public:
 
         // --------------------------------------------------------------------------------------------------------
 
-        kData->activeBefore = kData->active;
+        //kData->activeBefore = kData->active;
     }
 
     bool processSingle(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t timeOffset)

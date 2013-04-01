@@ -21,11 +21,6 @@
 
 #include <QtCore/QFile>
 #include <QtCore/QTextStream>
-#include <QtGui/QCloseEvent>
-
-#ifdef Q_WS_X11
-# include <QtGui/QX11EmbedContainer>
-#endif
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -1061,7 +1056,7 @@ void CarlaPlugin::setParameterValue(const uint32_t parameterId, const float valu
 #endif
 }
 
-void CarlaPlugin::setParameterValueByRIndex(const int32_t rindex, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback)
+void CarlaPlugin::setParameterValueByRealIndex(const int32_t rindex, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback)
 {
     CARLA_ASSERT(rindex > PARAMETER_MAX && rindex != PARAMETER_NULL);
 
@@ -1367,34 +1362,6 @@ void CarlaPlugin::bufferSizeChanged(const uint32_t)
 
 void CarlaPlugin::sampleRateChanged(const double)
 {
-}
-
-void CarlaPlugin::recreateLatencyBuffers()
-{
-    if (kData->latencyBuffers != nullptr)
-    {
-        for (uint32_t i=0; i < kData->audioIn.count; i++)
-        {
-            CARLA_ASSERT(kData->latencyBuffers[i] != nullptr);
-
-            if (kData->latencyBuffers[i] != nullptr)
-                delete[] kData->latencyBuffers[i];
-        }
-
-        delete[] kData->latencyBuffers;
-        kData->latencyBuffers = nullptr;
-    }
-
-    if (kData->audioIn.count > 0 && kData->latency > 0)
-    {
-        kData->latencyBuffers = new float*[kData->audioIn.count];
-
-        for (uint32_t i=0; i < kData->audioIn.count; i++)
-        {
-            kData->latencyBuffers[i] = new float[kData->latency];
-            carla_zeroFloat(kData->latencyBuffers[i], kData->latency);
-        }
-    }
 }
 
 bool CarlaPlugin::tryLock()
@@ -2004,104 +1971,6 @@ CarlaPlugin::ScopedProcessLocker::~ScopedProcessLocker()
 
         kPlugin->kData->singleMutex.unlock();
     }
-}
-
-// -------------------------------------------------------------------
-// CarlaPluginGUI
-
-CarlaPluginGUI::CarlaPluginGUI(QWidget* const parent, Callback* const callback)
-    : QMainWindow(parent),
-      kCallback(callback),
-      fContainer(nullptr),
-      fNextWidth(0),
-      fNextHeight(0)
-{
-    CARLA_ASSERT(callback != nullptr);
-    carla_debug("CarlaPluginGUI::CarlaPluginGUI(%p, %p)", parent, callback);
-}
-
-CarlaPluginGUI::~CarlaPluginGUI()
-{
-    carla_debug("CarlaPluginGUI::~CarlaPluginGUI()");
-
-    closeContainer();
-}
-
-void CarlaPluginGUI::idle()
-{
-    if (fNextWidth > 0 && fNextHeight > 0)
-    {
-        setFixedSize(fNextWidth, fNextHeight);
-        fNextWidth  = 0;
-        fNextHeight = 0;
-    }
-}
-
-void CarlaPluginGUI::resizeLater(int width, int height)
-{
-    CARLA_ASSERT_INT(width > 0, width);
-    CARLA_ASSERT_INT(height > 0, height);
-
-    if (width <= 0)
-        return;
-    if (height <= 0)
-        return;
-
-    fNextWidth  = width;
-    fNextHeight = height;
-}
-
-void* CarlaPluginGUI::getContainerWinId()
-{
-    carla_debug("CarlaPluginGUI::getContainerWinId()");
-
-    if (fContainer == nullptr)
-    {
-#ifdef Q_WS_X11
-        QX11EmbedContainer* container(new QX11EmbedContainer(this));
-#else
-        QWidget* container(new QWidget(this));
-#endif
-        setCentralWidget(container);
-        fContainer = container;
-    }
-
-    return (void*)fContainer->winId();
-}
-
-void  CarlaPluginGUI::closeContainer()
-{
-    carla_debug("CarlaPluginGUI::closeContainer()");
-
-    if (fContainer != nullptr)
-    {
-#ifdef Q_WS_X11
-        delete (QX11EmbedContainer*)fContainer;
-#else
-        delete (QWidget*)fContainer;
-#endif
-        fContainer = nullptr;
-    }
-}
-
-void CarlaPluginGUI::closeEvent(QCloseEvent* const event)
-{
-    carla_debug("CarlaPluginGUI::closeEvent(%p)", event);
-    CARLA_ASSERT(event != nullptr);
-
-    if (event == nullptr)
-        return;
-
-    if (! event->spontaneous())
-    {
-        event->ignore();
-        return;
-    }
-
-    if (kCallback != nullptr)
-        kCallback->guiClosedCallback();
-
-    QMainWindow::closeEvent(event);
 }
 
 // -------------------------------------------------------------------

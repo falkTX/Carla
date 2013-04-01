@@ -38,7 +38,7 @@ const unsigned int PLUGIN_WANTS_MIDI_INPUT      = 0x8000; //!< VST Plugin wants 
 /**@}*/
 
 class VstPlugin : public CarlaPlugin,
-                  public CarlaPluginGUI::Callback
+                  public CarlaPluginGuiCallback
 {
 public:
     VstPlugin(CarlaEngine* const engine, const unsigned short id)
@@ -366,7 +366,8 @@ public:
 #ifdef Q_WS_X11
                 //value = (intptr_t)QX11Info::display();
 #endif
-                void* const ptr = kData->gui->getContainerWinId();
+                // TODO!!
+                void* const ptr = nullptr; //kData->gui->getContainerWinId();
 
                 if (dispatcher(effEditOpen, 0, value, ptr, 0.0f) != 0)
                 {
@@ -379,14 +380,14 @@ public:
                         const int16_t width  = vstRect->right  - vstRect->left;
                         const int16_t height = vstRect->bottom - vstRect->top;
 
-                        if (width > 0 && height > 0)
-                        {
-                            kData->gui->setFixedSize(width, height);
-                        }
+                        //if (width > 0 && height > 0)
+                        //{
+                        //    kData->gui->setFixedSize(width, height);
+                        //}
                     }
 
-                    kData->gui->setWindowTitle(QString("%1 (GUI)").arg((const char*)fName).toUtf8().constData());
-                    kData->gui->show();
+                    //kData->gui->setWindowTitle(QString("%1 (GUI)").arg((const char*)fName).toUtf8().constData());
+                    //kData->gui->show();
                 }
                 else
                 {
@@ -420,7 +421,7 @@ public:
             if (fGui.isVisible && ! fGui.isOsc)
             {
                 dispatcher(effEditIdle, 0, 0, nullptr, 0.0f);
-                kData->gui->idle();
+                //kData->gui->idle();
             }
         }
 
@@ -805,7 +806,7 @@ public:
 #endif
 
             kData->client->setLatency(kData->latency);
-            recreateLatencyBuffers();
+            kData->recreateLatencyBuffers();
         }
 
         // special plugin fixes
@@ -943,7 +944,7 @@ public:
             for (i=0; i < kData->audioOut.count; i++)
                 carla_zeroFloat(outBuffer[i], frames);
 
-            kData->activeBefore = kData->active;
+            //kData->activeBefore = kData->active;
             return;
         }
 
@@ -953,7 +954,7 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Check if not active before
 
-        if (kData->needsReset || ! kData->activeBefore)
+        if (kData->needsReset /*|| ! kData->activeBefore*/)
         {
             if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
             {
@@ -1043,7 +1044,7 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Event Input and Processing
 
-        if (kData->event.portIn != nullptr && kData->activeBefore)
+        if (kData->event.portIn != nullptr /*&& kData->activeBefore*/)
         {
             // ----------------------------------------------------------------------------------------------------
             // MIDI Input (External)
@@ -1373,7 +1374,7 @@ public:
 
         // --------------------------------------------------------------------------------------------------------
 
-        kData->activeBefore = kData->active;
+        //kData->activeBefore = kData->active;
     }
 
     bool processSingle(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t timeOffset)

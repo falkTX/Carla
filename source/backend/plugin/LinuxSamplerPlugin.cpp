@@ -191,7 +191,7 @@ public:
         kData->singleMutex.lock();
         kData->masterMutex.lock();
 
-        if (kData->activeBefore)
+        if (kData->active/*Before*/)
             fAudioOutputDevice->Stop();
 
         if (fEngine != nullptr)
@@ -465,17 +465,17 @@ public:
             for (i=0; i < kData->audioOut.count; i++)
                 carla_zeroFloat(outBuffer[i], frames);
 
-            if (kData->activeBefore)
-                fAudioOutputDevice->Stop();
+            //if (kData->activeBefore)
+            //    fAudioOutputDevice->Stop();
 
-            kData->activeBefore = kData->active;
+            //kData->activeBefore = kData->active;
             return;
         }
 
         // --------------------------------------------------------------------------------------------------------
         // Check if not active before
 
-        if (kData->needsReset || ! kData->activeBefore)
+        if (kData->needsReset /*|| ! kData->activeBefore*/)
         {
             if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
             {
@@ -486,10 +486,10 @@ public:
                 }
             }
 
-            if (kData->activeBefore)
-                fAudioOutputDevice->Stop();
+            //if (kData->activeBefore)
+            //    fAudioOutputDevice->Stop();
 
-            fAudioOutputDevice->Play();
+            //fAudioOutputDevice->Play();
 
             kData->needsReset = false;
         }
@@ -497,7 +497,7 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Event Input and Processing
 
-        if (kData->event.portIn != nullptr && kData->activeBefore)
+        if (kData->event.portIn != nullptr /*&& kData->activeBefore*/)
         {
             // ----------------------------------------------------------------------------------------------------
             // MIDI Input (External)
@@ -804,7 +804,7 @@ public:
 
         // --------------------------------------------------------------------------------------------------------
 
-        kData->activeBefore = kData->active;
+        //kData->activeBefore = kData->active;
     }
 
     bool processSingle(float** const outBuffer, const uint32_t frames, const uint32_t timeOffset)

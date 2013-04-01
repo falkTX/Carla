@@ -48,7 +48,7 @@ public:
 
         if (fDescriptor != nullptr)
         {
-            if (fDescriptor->deactivate != nullptr && kData->activeBefore)
+            if (fDescriptor->deactivate != nullptr && kData->active/*Before*/)
             {
                 if (fHandle != nullptr)
                     fDescriptor->deactivate(fHandle);
@@ -769,7 +769,7 @@ public:
                 {
                     kData->latency = latency;
                     kData->client->setLatency(latency);
-                    recreateLatencyBuffers();
+                    kData->recreateLatencyBuffers();
                 }
 
                 break;
@@ -797,6 +797,7 @@ public:
             for (i=0; i < kData->audioOut.count; i++)
                 carla_zeroFloat(outBuffer[i], frames);
 
+#if 0
             if (kData->activeBefore)
             {
                 if (fDescriptor->deactivate != nullptr)
@@ -809,13 +810,14 @@ public:
             }
 
             kData->activeBefore = kData->active;
+#endif
             return;
         }
 
         // --------------------------------------------------------------------------------------------------------
         // Check if not active before
 
-        if (kData->needsReset || ! kData->activeBefore)
+        if (kData->needsReset /*|| ! kData->activeBefore*/)
         {
             if (kData->latency > 0)
             {
@@ -823,6 +825,7 @@ public:
                     carla_zeroFloat(kData->latencyBuffers[i], kData->latency);
             }
 
+#if 0
             if (kData->activeBefore)
             {
                 if (fDescriptor->deactivate != nullptr)
@@ -841,6 +844,7 @@ public:
                 if (fHandle2 != nullptr)
                     fDescriptor->activate(fHandle2);
             }
+#endif
 
             kData->needsReset = false;
         }
@@ -848,7 +852,7 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Event Input and Processing
 
-        if (kData->event.portIn != nullptr && kData->activeBefore)
+        if (kData->event.portIn != nullptr /*&& kData->activeBefore*/)
         {
             // ----------------------------------------------------------------------------------------------------
             // Event Input (System)
@@ -1080,7 +1084,7 @@ public:
 
         // --------------------------------------------------------------------------------------------------------
 
-        kData->activeBefore = kData->active;
+        //kData->activeBefore = kData->active;
     }
 
     bool processSingle(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t timeOffset)

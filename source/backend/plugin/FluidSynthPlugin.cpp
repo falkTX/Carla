@@ -882,14 +882,14 @@ public:
             for (i=0; i < kData->audioOut.count; i++)
                 carla_zeroFloat(outBuffer[i], frames);
 
-            kData->activeBefore = kData->active;
+            //kData->activeBefore = kData->active;
             return;
         }
 
         // --------------------------------------------------------------------------------------------------------
         // Check if not active before
 
-        if (kData->needsReset || ! kData->activeBefore)
+        if (kData->needsReset /*|| ! kData->activeBefore*/)
         {
             if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
             {
@@ -911,7 +911,7 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Event Input and Processing
 
-        if (kData->activeBefore)
+        //if (kData->activeBefore)
         {
             // ----------------------------------------------------------------------------------------------------
             // MIDI Input (External)
@@ -1233,7 +1233,7 @@ public:
 
         // --------------------------------------------------------------------------------------------------------
 
-        kData->activeBefore = kData->active;
+        //kData->activeBefore = kData->active;
     }
 
     bool processSingle(float** const outBuffer, const uint32_t frames, const uint32_t timeOffset)

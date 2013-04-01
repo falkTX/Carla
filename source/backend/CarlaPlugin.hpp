@@ -451,7 +451,7 @@ public:
      * \param sendOsc Send message change over OSC
      * \param sendCallback Send message change to registered callback
      */
-    void setActive(const bool active, const bool sendOsc, const bool sendCallback);
+    virtual void setActive(const bool active, const bool sendOsc, const bool sendCallback);
 
     /*!
      * Set the plugin's dry/wet signal value to \a value.\n
@@ -539,7 +539,7 @@ public:
      * \see setBalanceLeft()
      * \see setBalanceRight()
      */
-    void setParameterValueByRIndex(const int32_t rindex, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback);
+    void setParameterValueByRealIndex(const int32_t rindex, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback);
 
     /*!
      * Set parameter's \a parameterId MIDI channel to \a channel.\n
@@ -660,11 +660,6 @@ public:
     virtual void sampleRateChanged(const double newSampleRate);
 
     /*!
-     * Recreate latency audio buffers.
-     */
-    void recreateLatencyBuffers();
-
-    /*!
      * TODO.
      */
     bool tryLock();
@@ -711,7 +706,7 @@ public:
 
     /*!
      * Send all midi notes off for the next audio callback.\n
-     * This doesn't send the actual MIDI All-Notes-Off event, but 128 note-offs instead.
+     * This doesn't send the actual MIDI All-Notes-Off event, but 128 note-offs instead (if ctrlChannel is valid).
      * \note RT call
      */
     void sendMidiAllNotesOff();
@@ -731,6 +726,50 @@ public:
      * This function must be called from the main thread (ie, idleGui()) if PLUGIN_USES_SINGLE_THREAD is set.
      */
     void postRtEventsRun();
+
+    // -------------------------------------------------------------------
+    // Plugin initializers
+
+    struct Initializer {
+        CarlaEngine* const engine;
+        const unsigned int id;
+        const char* const filename;
+        const char* const name;
+        const char* const label;
+    };
+
+    static size_t getNativePluginCount();
+    static const PluginDescriptor* getNativePluginDescriptor(const size_t index);
+
+    static CarlaPlugin* newNative(const Initializer& init);
+    static CarlaPlugin* newBridge(const Initializer& init, const BinaryType btype, const PluginType ptype, const char* const bridgeBinary);
+
+    static CarlaPlugin* newLADSPA(const Initializer& init, const LADSPA_RDF_Descriptor* const rdfDescriptor);
+    static CarlaPlugin* newDSSI(const Initializer& init, const char* const guiFilename);
+    static CarlaPlugin* newLV2(const Initializer& init);
+    static CarlaPlugin* newVST(const Initializer& init);
+    static CarlaPlugin* newVST3(const Initializer& init);
+    static CarlaPlugin* newGIG(const Initializer& init, const bool use16Outs);
+    static CarlaPlugin* newSF2(const Initializer& init, const bool use16Outs);
+    static CarlaPlugin* newSFZ(const Initializer& init, const bool use16Outs);
+
+    // -------------------------------------------------------------------
+
+protected:
+    unsigned int fId;      //!< Plugin Id, as passed in the constructor, returned in id(). \see setId()
+    unsigned int fHints;   //!< Hints, as returned in hints().
+    unsigned int fOptions; //!< Defined and currently in-use options, returned in options(). \see availableOptions()
+
+    bool fEnabled; //!< Wherever the plugin is ready for usage
+
+    CarlaString fName;     //!< Plugin name
+    CarlaString fFilename; //!< Plugin filename, if applicable
+
+    friend struct CarlaPluginProtectedData;
+    CarlaPluginProtectedData* const kData; //!< Internal data, for CarlaPlugin subclasses only.
+
+    // -------------------------------------------------------------------
+    // Post-poned UI Stuff
 
     /*!
      * Tell the UI a parameter has changed.
@@ -794,45 +833,7 @@ public:
     const char* libError(const char* const filename);
 
     // -------------------------------------------------------------------
-    // Plugin initializers
-
-    struct Initializer {
-        CarlaEngine* const engine;
-        const unsigned int id;
-        const char* const filename;
-        const char* const name;
-        const char* const label;
-    };
-
-    static size_t getNativePluginCount();
-    static const PluginDescriptor* getNativePluginDescriptor(const size_t index);
-
-    static CarlaPlugin* newNative(const Initializer& init);
-    static CarlaPlugin* newBridge(const Initializer& init, const BinaryType btype, const PluginType ptype, const char* const bridgeBinary);
-
-    static CarlaPlugin* newLADSPA(const Initializer& init, const LADSPA_RDF_Descriptor* const rdfDescriptor);
-    static CarlaPlugin* newDSSI(const Initializer& init, const char* const guiFilename);
-    static CarlaPlugin* newLV2(const Initializer& init);
-    static CarlaPlugin* newVST(const Initializer& init);
-    static CarlaPlugin* newVST3(const Initializer& init);
-    static CarlaPlugin* newGIG(const Initializer& init, const bool use16Outs);
-    static CarlaPlugin* newSF2(const Initializer& init, const bool use16Outs);
-    static CarlaPlugin* newSFZ(const Initializer& init, const bool use16Outs);
-
-    // -------------------------------------------------------------------
-
-protected:
-    unsigned int fId;
-    unsigned int fHints;
-    unsigned int fOptions;
-
-    bool fEnabled;
-
-    CarlaString fName;
-    CarlaString fFilename;
-
-    friend struct CarlaPluginProtectedData;
-    CarlaPluginProtectedData* const kData;
+    // Helper classes
 
     // Fully disable plugin in scope and also its engine client
     // May wait-block on constructor for plugin process to end

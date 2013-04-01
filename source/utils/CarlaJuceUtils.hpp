@@ -35,6 +35,15 @@ private:                                      \
     CARLA_DECLARE_NON_COPYABLE(className)                        \
     CARLA_LEAK_DETECTOR(className)
 
+/** struct versions of the above. */
+#define CARLA_DECLARE_NON_COPY_STRUCT(structName) \
+    structName(structName&) = delete;             \
+    structName(const structName&) = delete;
+
+#define CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(structName) \
+    CARLA_DECLARE_NON_COPY_STRUCT(structName)                        \
+    CARLA_LEAK_DETECTOR(structName)
+
 /** This macro can be added to class definitions to disable the use of new/delete to
     allocate the object on the heap, forcing it to only be used as a stack or member variable.
 */

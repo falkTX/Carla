@@ -18,7 +18,6 @@
 #ifndef __CARLA_PLUGIN_INTERNAL_HPP__
 #define __CARLA_PLUGIN_INTERNAL_HPP__
 
-#include "CarlaBackendUtils.hpp"
 #include "CarlaPluginThread.hpp"
 #include "CarlaPlugin.hpp"
 #include "CarlaEngine.hpp"
@@ -27,16 +26,6 @@
 #include "CarlaMutex.hpp"
 #include "CarlaMIDI.h"
 #include "RtList.hpp"
-
-#include <QtGui/QMainWindow>
-
-#define CARLA_DECLARE_NON_COPY_STRUCT(structName) \
-    structName(structName&) = delete;             \
-    structName(const structName&) = delete;
-
-#define CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(structName) \
-    CARLA_DECLARE_NON_COPY_STRUCT(structName)                        \
-    CARLA_LEAK_DETECTOR(structName)
 
 #define CARLA_PROCESS_CONTINUE_CHECK if (! fEnabled) { kData->engine->callback(CALLBACK_DEBUG, fId, 0, 0, 0.0, nullptr); return; }
 
@@ -368,9 +357,9 @@ struct PluginPostRtEvent {
 // -----------------------------------------------------------------------
 
 struct ExternalMidiNote {
-    int8_t  channel; // invalid = -1
+    int8_t  channel; // invalid == -1
     uint8_t note;
-    uint8_t velo;
+    uint8_t velo; // note-off if 0
 
     ExternalMidiNote()
         : channel(-1),
@@ -386,61 +375,26 @@ struct ExternalMidiNote {
 
 // -----------------------------------------------------------------------
 
-enum CarlaPluginGuiType {
-    PLUGIN_GUI_NULL,
-    PLUGIN_GUI_PARENT,
-    PLUGIN_GUI_QT
-};
+class CarlaPluginGui;
 
-class CarlaPluginGUI : public QMainWindow
+class CarlaPluginGuiCallback
 {
 public:
-    class Callback
-    {
-    public:
-        virtual ~Callback() {}
-        virtual void guiClosedCallback() = 0;
-    };
-
-    CarlaPluginGUI(QWidget* const parent, Callback* const callback);
-    ~CarlaPluginGUI();
-
-    void idle();
-    void resizeLater(int width, int height);
-
-    // Parent UIs
-    void* getContainerWinId();
-    void  closeContainer();
-
-    // Qt4 UIs, TODO
+    virtual ~CarlaPluginGuiCallback() {}
 
 protected:
-    void closeEvent(QCloseEvent* const event);
-
-private:
-    Callback* const kCallback;
-    QWidget* fContainer;
-
-    int fNextWidth;
-    int fNextHeight;
-
-    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginGUI)
+    virtual void guiClosedCallback() = 0;
 };
-
-// -----------------------------------------------------------------------
-// Engine Helpers, defined in CarlaEngine.cpp
-
-extern ::QMainWindow* getEngineHostWindow(CarlaEngine* const engine);
 
 // -----------------------------------------------------------------------
 
 struct CarlaPluginProtectedData {
     CarlaEngine* const engine;
     CarlaEngineClient* client;
-    CarlaPluginGUI* gui;
+    CarlaPluginGui* gui;
 
     bool active;
-    bool activeBefore;
+    //bool activeBefore;
     bool needsReset;
     void* lib;
 
@@ -487,8 +441,7 @@ struct CarlaPluginProtectedData {
             mutex.unlock();
         }
 
-        ExternalNotes(ExternalNotes&) = delete;
-        ExternalNotes(const ExternalNotes&) = delete;
+        CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(ExternalNotes)
 
     } extNotes;
 
@@ -530,8 +483,7 @@ struct CarlaPluginProtectedData {
             mutex.unlock();
         }
 
-        PostRtEvents(PostRtEvents&) = delete;
-        PostRtEvents(const PostRtEvents&) = delete;
+        CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(PostRtEvents)
 
     } postRtEvents;
 
@@ -549,8 +501,7 @@ struct CarlaPluginProtectedData {
               balanceRight(1.0f),
               panning(0.0f) {}
 
-        PostProc(PostProc&) = delete;
-        PostProc(const PostProc&) = delete;
+        CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(PostProc)
 
     } postProc;
 
@@ -564,6 +515,7 @@ struct CarlaPluginProtectedData {
         OSC() = delete;
         OSC(OSC&) = delete;
         OSC(const OSC&) = delete;
+        CARLA_LEAK_DETECTOR(OSC)
 
     } osc;
 
@@ -572,7 +524,7 @@ struct CarlaPluginProtectedData {
           client(nullptr),
           gui(nullptr),
           active(false),
-          activeBefore(false),
+          //activeBefore(false),
           needsReset(false),
           lib(nullptr),
           ctrlChannel(0),
@@ -584,32 +536,50 @@ struct CarlaPluginProtectedData {
     CarlaPluginProtectedData() = delete;
     CarlaPluginProtectedData(CarlaPluginProtectedData&) = delete;
     CarlaPluginProtectedData(const CarlaPluginProtectedData&) = delete;
+    CARLA_LEAK_DETECTOR(CarlaPluginProtectedData)
 
-    void createUiIfNeeded(CarlaPluginGUI::Callback* const callback)
+    ~CarlaPluginProtectedData()
     {
-        if (gui != nullptr)
-            return;
-
-        gui = new CarlaPluginGUI(getEngineHostWindow(engine), callback);
+        CARLA_ASSERT(gui == nullptr);
+        CARLA_ASSERT(! active);
+        CARLA_ASSERT(! needsReset);
+        CARLA_ASSERT(lib == nullptr);
+        CARLA_ASSERT(latency == 0);
+        CARLA_ASSERT(latencyBuffers == nullptr);
     }
 
-    void destroyUiIfNeeded()
+    void recreateLatencyBuffers()
     {
-        if (gui == nullptr)
-            return;
+        if (latencyBuffers != nullptr)
+        {
+            for (uint32_t i=0; i < audioIn.count; i++)
+            {
+                CARLA_ASSERT(latencyBuffers[i] != nullptr);
 
-        gui->close();
-        delete gui;
-        gui = nullptr;
+                if (latencyBuffers[i] != nullptr)
+                    delete[] latencyBuffers[i];
+            }
+
+            delete[] latencyBuffers;
+            latencyBuffers = nullptr;
+        }
+
+        if (audioIn.count > 0 && latency > 0)
+        {
+            latencyBuffers = new float*[audioIn.count];
+
+            for (uint32_t i=0; i < audioIn.count; i++)
+            {
+                latencyBuffers[i] = new float[latency];
+                carla_zeroFloat(latencyBuffers[i], latency);
+            }
+        }
     }
 
-    void resizeUiLater(int width, int height)
-    {
-        if (gui == nullptr)
-            return;
-
-        gui->resizeLater(width, height);
-    }
+    // defined in CarlaPluginGui.cpp
+    void createUiIfNeeded(CarlaPluginGuiCallback* const callback);
+    void destroyUiIfNeeded();
+    void resizeUiLater(int width, int height);
 
     static CarlaEngine* getEngine(CarlaPlugin* const plugin)
     {
@@ -630,8 +600,6 @@ struct CarlaPluginProtectedData {
     {
         return (plugin->kData->extraHints & PLUGIN_HINT_CAN_RUN_RACK);
     }
-
-    CARLA_LEAK_DETECTOR(CarlaPluginProtectedData)
 };
 
 // -----------------------------------------------------------------------
