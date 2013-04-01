@@ -23,6 +23,10 @@
 
 CARLA_BACKEND_START_NAMESPACE
 
+#if 0
+}
+#endif
+
 class LadspaPlugin : public CarlaPlugin
 {
 public:
@@ -48,7 +52,7 @@ public:
 
         if (fDescriptor != nullptr)
         {
-            if (fDescriptor->deactivate != nullptr && kData->active/*Before*/)
+            if (fDescriptor->deactivate != nullptr && kData->active)
             {
                 if (fHandle != nullptr)
                     fDescriptor->deactivate(fHandle);
@@ -343,6 +347,40 @@ public:
         }
 
         CarlaPlugin::getParameterScalePointLabel(parameterId, scalePointId, strBuf);
+    }
+
+    // -------------------------------------------------------------------
+    // Set data (internal stuff)
+
+    void setActive(const bool active, const bool sendOsc, const bool sendCallback)
+    {
+        CARLA_ASSERT(fDescriptor != nullptr);
+
+        if (kData->active == active)
+            return;
+
+        if (active)
+        {
+            if (fDescriptor->activate != nullptr)
+            {
+                fDescriptor->activate(fHandle);
+
+                if (fHandle2 != nullptr)
+                    fDescriptor->activate(fHandle2);
+            }
+        }
+        else
+        {
+            if (fDescriptor->deactivate != nullptr)
+            {
+                fDescriptor->deactivate(fHandle);
+
+                if (fHandle2 != nullptr)
+                    fDescriptor->deactivate(fHandle2);
+            }
+        }
+
+        CarlaPlugin::setActive(active, sendOsc, sendCallback);
     }
 
     // -------------------------------------------------------------------
@@ -797,20 +835,6 @@ public:
             for (i=0; i < kData->audioOut.count; i++)
                 carla_zeroFloat(outBuffer[i], frames);
 
-#if 0
-            if (kData->activeBefore)
-            {
-                if (fDescriptor->deactivate != nullptr)
-                {
-                    fDescriptor->deactivate(fHandle);
-
-                    if (fHandle2 != nullptr)
-                        fDescriptor->deactivate(fHandle2);
-                }
-            }
-
-            kData->activeBefore = kData->active;
-#endif
             return;
         }
 
@@ -824,27 +848,6 @@ public:
                 for (i=0; i < kData->audioIn.count; i++)
                     carla_zeroFloat(kData->latencyBuffers[i], kData->latency);
             }
-
-#if 0
-            if (kData->activeBefore)
-            {
-                if (fDescriptor->deactivate != nullptr)
-                {
-                    fDescriptor->deactivate(fHandle);
-
-                    if (fHandle2 != nullptr)
-                        fDescriptor->deactivate(fHandle2);
-                }
-            }
-
-            if (fDescriptor->activate != nullptr)
-            {
-                fDescriptor->activate(fHandle);
-
-                if (fHandle2 != nullptr)
-                    fDescriptor->activate(fHandle2);
-            }
-#endif
 
             kData->needsReset = false;
         }

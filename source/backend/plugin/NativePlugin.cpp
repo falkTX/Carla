@@ -470,6 +470,40 @@ public:
     }
 
     // -------------------------------------------------------------------
+    // Set data (internal stuff)
+
+    void setActive(const bool active, const bool sendOsc, const bool sendCallback)
+    {
+        CARLA_ASSERT(fDescriptor != nullptr);
+
+        if (kData->active == active)
+            return;
+
+        if (active)
+        {
+            if (fDescriptor->activate != nullptr)
+            {
+                fDescriptor->activate(fHandle);
+
+                if (fHandle2 != nullptr)
+                    fDescriptor->activate(fHandle2);
+            }
+        }
+        else
+        {
+            if (fDescriptor->deactivate != nullptr)
+            {
+                fDescriptor->deactivate(fHandle);
+
+                if (fHandle2 != nullptr)
+                    fDescriptor->deactivate(fHandle2);
+            }
+        }
+
+        CarlaPlugin::setActive(active, sendOsc, sendCallback);
+    }
+
+    // -------------------------------------------------------------------
     // Set data (plugin-specific stuff)
 
     void setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback)
