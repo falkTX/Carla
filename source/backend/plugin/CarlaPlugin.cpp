@@ -425,7 +425,7 @@ const SaveState& CarlaPlugin::getSaveState()
     saveState.reset();
     prepareForSave();
 
-    char strBuf[STR_MAX];
+    char strBuf[STR_MAX+1];
 
     // ----------------------------
     // Basic info
@@ -578,7 +578,7 @@ const SaveState& CarlaPlugin::getSaveState()
 
 void CarlaPlugin::loadSaveState(const SaveState& saveState)
 {
-    char strBuf[STR_MAX];
+    char strBuf[STR_MAX+1];
 
     // ---------------------------------------------------------------------
     // Part 1 - set custom data (except binary/chunks)
@@ -1426,10 +1426,10 @@ void CarlaPlugin::registerToOscClient()
 
     // Base data
     {
-        char bufName[STR_MAX]  = { 0 };
-        char bufLabel[STR_MAX] = { 0 };
-        char bufMaker[STR_MAX] = { 0 };
-        char bufCopyright[STR_MAX] = { 0 };
+        char bufName[STR_MAX+1]  = { 0 };
+        char bufLabel[STR_MAX+1] = { 0 };
+        char bufMaker[STR_MAX+1] = { 0 };
+        char bufCopyright[STR_MAX+1] = { 0 };
         getRealName(bufName);
         getLabel(bufLabel);
         getMaker(bufMaker);
@@ -1459,7 +1459,7 @@ void CarlaPlugin::registerToOscClient()
     // Plugin Parameters
     if (kData->param.count > 0 && kData->param.count < kData->engine->getOptions().maxParameters)
     {
-        char bufName[STR_MAX], bufUnit[STR_MAX];
+        char bufName[STR_MAX+1], bufUnit[STR_MAX+1];
 
         for (uint32_t i=0; i < kData->param.count; i++)
         {

@@ -27,9 +27,13 @@ struct CarlaOscData;
 
 CARLA_BACKEND_START_NAMESPACE
 
-#if 0
-} // Fix editor indentation
-#endif
+/*!
+ * @defgroup CarlaEngineAPI Carla Engine API
+ *
+ * The Carla Engine API.
+ *
+ * @{
+ */
 
 // -----------------------------------------------------------------------
 
@@ -59,7 +63,7 @@ enum EngineType {
     kEngineTypePlugin = 3,
 
     /*!
-    * TODO.
+    * Bridge engine type, used in BridgePlugin class.
     */
     kEngineTypeBridge = 4
 };

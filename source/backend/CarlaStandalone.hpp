@@ -21,9 +21,9 @@
 #include "CarlaBackend.hpp"
 
 /*!
- * @defgroup CarlaBackendStandalone Carla Backend Standalone
+ * @defgroup CarlaStandaloneAPI Carla Standalone API
  *
- * The Carla Backend Standalone API
+ * The Carla  Standalone API
  *
  * @{
  */

@@ -33,7 +33,8 @@ CARLA_BACKEND_START_NAMESPACE
 /*!
  * @defgroup CarlaBackendAPI Carla Backend API
  *
- * The Carla Backend API
+ * The Carla Backend API.\n
+ * This is the base definitions for everything the Carla code.
  *
  * @{
  */
@@ -116,9 +117,9 @@ const unsigned int PATCHBAY_PORT_IS_MIDI   = 0x8; //!< Patchbay port is of MIDI 
  * Types are valid URIs.\n
  * Any non-string, non-simple type (not integral) is saved in a base64 encoded format.
  */
-const char* const CUSTOM_DATA_INVALID = nullptr;                                  //!< Null/Invalid data.
-const char* const CUSTOM_DATA_CHUNK   = "http://kxstudio.sf.net/ns/carla/chunk";  //!< Carla Chunk
-const char* const CUSTOM_DATA_STRING  = "http://kxstudio.sf.net/ns/carla/string"; //!< Carla String
+const char* const CUSTOM_DATA_INVALID = nullptr;                                  //!< Null or Invalid data.
+const char* const CUSTOM_DATA_CHUNK   = "http://kxstudio.sf.net/ns/carla/chunk";  //!< Carla Chunk URI
+const char* const CUSTOM_DATA_STRING  = "http://kxstudio.sf.net/ns/carla/string"; //!< Carla String URI
 /**@}*/
 
 #if 0

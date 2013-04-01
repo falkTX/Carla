@@ -71,12 +71,9 @@ source/tests/Thread
 source/tests/Utils
 
 # Docs
-doc/carla-backend/
-doc/carla-bridge/
-doc/carla-engine/
-doc/carla-native/
-doc/carla-plugin/
-doc/distrho/
+doc/CarlaBackend/
+doc/CarlaBridge/
+doc/DISTRHO/
 
 # CX-Freeze builds
 src/dist/

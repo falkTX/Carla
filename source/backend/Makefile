@@ -24,3 +24,8 @@ clean:
 
 debug:
 	$(MAKE) DEBUG=true
+
+# --------------------------------------------------------------
+
+doc: CarlaBackend.doxygen
+	doxygen $^

@@ -30,9 +30,13 @@ typedef struct _PluginDescriptor PluginDescriptor;
 
 CARLA_BACKEND_START_NAMESPACE
 
-#if 0
-} // Fix editor indentation
-#endif
+/*!
+ * @defgroup CarlaPluginAPI Carla Plugin API
+ *
+ * The Carla Plugin API.
+ *
+ * @{
+ */
 
 /*!
  * TODO.

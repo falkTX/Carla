@@ -73,8 +73,7 @@ HEADERS += \
     ../../utils/CarlaOscUtils.hpp \
     ../../utils/CarlaStateUtils.hpp \
     ../../utils/CarlaMutex.hpp \
-    ../../utils/CarlaString.hpp \
-    ../../utils/CarlaThread.hpp
+    ../../utils/CarlaString.hpp
 
 INCLUDEPATH = . .. \
     ../../includes \
