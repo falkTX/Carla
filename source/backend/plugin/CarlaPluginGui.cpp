@@ -15,10 +15,7 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#include "CarlaPluginInternal.hpp"
-
-#include <QtGui/QMainWindow>
-#include <QtGui/QCloseEvent>
+#include "CarlaPluginGui.hpp"
 
 #ifdef Q_WS_X11
 # include <QtGui/QX11EmbedContainer>
@@ -26,173 +23,133 @@
 
 CARLA_BACKEND_START_NAMESPACE
 
+#include "moc_CarlaPluginGui.cpp"
+
 // -----------------------------------------------------------------------
 // Engine Helpers, defined in CarlaEngine.cpp
 
 extern QMainWindow* getEngineHostWindow(CarlaEngine* const engine);
 
-class CarlaPluginGUI : public QMainWindow
-{
-public:
-    class Callback
-    {
-    public:
-        virtual ~Callback() {}
-        virtual void guiClosedCallback() = 0;
-    };
-
-    CarlaPluginGUI(CarlaEngine* const engine, Callback* const callback);
-    ~CarlaPluginGUI();
-
-    void idle();
-    void resizeLater(int width, int height);
-
-    // Parent UIs
-    void* getContainerWinId();
-    void  closeContainer();
-
-    // Qt4 UIs, TODO
-
-protected:
-    void closeEvent(QCloseEvent* const event);
-
-private:
-    Callback* const kCallback;
-    QWidget* fContainer;
-
-    int fNextWidth;
-    int fNextHeight;
-
-    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginGUI)
-};
-
 // -------------------------------------------------------------------
 // CarlaPluginGUI
 
-CarlaPluginGUI::CarlaPluginGUI(CarlaEngine* const engine, Callback* const callback)
+CarlaPluginGui::CarlaPluginGui(CarlaEngine* const engine, Callback* const callback, const Options& options)
     : QMainWindow(getEngineHostWindow(engine)),
       kCallback(callback),
       fContainer(nullptr),
-      fNextWidth(0),
-      fNextHeight(0)
+      fOptions(options)
 {
     CARLA_ASSERT(callback != nullptr);
-    carla_debug("CarlaPluginGUI::CarlaPluginGUI(%p, %p)", engine, callback);
-}
+    carla_debug("CarlaPluginGui::CarlaPluginGui(%p, %p)", engine, callback);
 
-CarlaPluginGUI::~CarlaPluginGUI()
-{
-    carla_debug("CarlaPluginGUI::~CarlaPluginGUI()");
-
-    closeContainer();
-}
-
-void CarlaPluginGUI::idle()
-{
-    if (fNextWidth > 0 && fNextHeight > 0)
+    if (options.parented)
     {
-        setFixedSize(fNextWidth, fNextHeight);
-        fNextWidth  = 0;
-        fNextHeight = 0;
+#ifdef Q_WS_X11
+        fContainer = new QX11EmbedContainer(this);
+#else
+        fContainer = new QWidget(this);
+#endif
+        setCentralWidget(fContainer);
+    }
+
+#ifdef Q_OS_WIN
+    if (! options.resizable)
+        setWindowFlags(windowFlags() | Qt::MSWindowsFixedSizeDialogHint);
+#endif
+
+    connect(this, SIGNAL(setSizeSafeSignal(int,int)), SLOT(setSizeSafeSlot(int,int)));
+}
+
+CarlaPluginGui::~CarlaPluginGui()
+{
+    carla_debug("CarlaPluginGui::~CarlaPluginGui()");
+
+    if (fOptions.parented)
+    {
+        CARLA_ASSERT(fContainer != nullptr);
+#ifdef Q_WS_X11
+        delete (QX11EmbedContainer*)fContainer;
+#else
+        delete fContainer;
+#endif
+    }
+    else
+    {
+        CARLA_ASSERT(fContainer == nullptr);
     }
 }
 
-void CarlaPluginGUI::resizeLater(int width, int height)
+void CarlaPluginGui::setSize(const int width, const int height)
 {
     CARLA_ASSERT_INT(width > 0, width);
     CARLA_ASSERT_INT(height > 0, height);
+    carla_debug("CarlaPluginGui::setSize(%i, %i)", width, height);
 
     if (width <= 0)
         return;
     if (height <= 0)
         return;
 
-    fNextWidth  = width;
-    fNextHeight = height;
+    emit setSizeSafeSignal(width, height);
 }
 
-void* CarlaPluginGUI::getContainerWinId()
+void* CarlaPluginGui::getContainerWinId()
 {
-    carla_debug("CarlaPluginGUI::getContainerWinId()");
+    CARLA_ASSERT(fContainer != nullptr);
+    carla_debug("CarlaPluginGui::getContainerWinId()");
+
+    return (fContainer != nullptr) ? (void*)fContainer->winId() : nullptr;
+}
+
+void CarlaPluginGui::setWidget(QWidget* const widget)
+{
+    CARLA_ASSERT(fContainer == nullptr);
+    carla_debug("CarlaPluginGui::setWidget(%p)", widget);
+
+    setCentralWidget(widget);
+    widget->setParent(this);
+
+    fContainer = widget;
+}
+
+void CarlaPluginGui::removeWidget()
+{
+    CARLA_ASSERT(fContainer != nullptr);
+    carla_debug("CarlaPluginGui::removeWidget()");
 
     if (fContainer == nullptr)
-    {
-#ifdef Q_WS_X11
-        QX11EmbedContainer* container(new QX11EmbedContainer(this));
-#else
-        QWidget* container(new QWidget(this));
-#endif
-        setCentralWidget(container);
-        fContainer = container;
-    }
+        return;
 
-    return (void*)fContainer->winId();
+    fContainer->setParent(nullptr);
+    setCentralWidget(nullptr);
+
+    fContainer = nullptr;
 }
 
-void  CarlaPluginGUI::closeContainer()
+void CarlaPluginGui::closeEvent(QCloseEvent* const event)
 {
-    carla_debug("CarlaPluginGUI::closeContainer()");
-
-    if (fContainer != nullptr)
-    {
-#ifdef Q_WS_X11
-        delete (QX11EmbedContainer*)fContainer;
-#else
-        delete (QWidget*)fContainer;
-#endif
-        fContainer = nullptr;
-    }
-}
-
-void CarlaPluginGUI::closeEvent(QCloseEvent* const event)
-{
-    carla_debug("CarlaPluginGUI::closeEvent(%p)", event);
     CARLA_ASSERT(event != nullptr);
+    carla_debug("CarlaPluginGui::closeEvent(%p)", event);
 
     if (event == nullptr)
         return;
 
-    if (! event->spontaneous())
-    {
-        event->ignore();
-        return;
-    }
-
-    if (kCallback != nullptr)
+    if (event->spontaneous() && kCallback != nullptr)
         kCallback->guiClosedCallback();
 
     QMainWindow::closeEvent(event);
 }
 
+void CarlaPluginGui::setSizeSafeSlot(int width, int height)
+{
+    carla_debug("CarlaPluginGui::setSizeSafeSlot(%i, %i)", width, height);
+
+    if (fOptions.resizable)
+        resize(width, height);
+    else
+        setFixedSize(width, height);
+}
+
 // -------------------------------------------------------------------
-// CarlaPluginGUI
-
-#if 0
-void createUiIfNeeded(CarlaPluginGUI::Callback* const callback)
-{
-    if (gui != nullptr)
-        return;
-
-    gui = new CarlaPluginGUI(engine, callback);
-}
-
-void destroyUiIfNeeded()
-{
-    if (gui == nullptr)
-        return;
-
-    gui->close();
-    delete gui;
-    gui = nullptr;
-}
-
-void resizeUiLater(int width, int height)
-{
-    if (gui == nullptr)
-        return;
-
-    gui->resizeLater(width, height);
-}
-#endif
 
 CARLA_BACKEND_END_NAMESPACE

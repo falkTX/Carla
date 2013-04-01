@@ -377,24 +377,12 @@ struct ExternalMidiNote {
 
 class CarlaPluginGui;
 
-class CarlaPluginGuiCallback
-{
-public:
-    virtual ~CarlaPluginGuiCallback() {}
-
-protected:
-    virtual void guiClosedCallback() = 0;
-};
-
-// -----------------------------------------------------------------------
-
 struct CarlaPluginProtectedData {
     CarlaEngine* const engine;
     CarlaEngineClient* client;
     CarlaPluginGui* gui;
 
     bool active;
-    //bool activeBefore;
     bool needsReset;
     void* lib;
 
@@ -524,7 +512,6 @@ struct CarlaPluginProtectedData {
           client(nullptr),
           gui(nullptr),
           active(false),
-          //activeBefore(false),
           needsReset(false),
           lib(nullptr),
           ctrlChannel(0),
@@ -575,11 +562,6 @@ struct CarlaPluginProtectedData {
             }
         }
     }
-
-    // defined in CarlaPluginGui.cpp
-    void createUiIfNeeded(CarlaPluginGuiCallback* const callback);
-    void destroyUiIfNeeded();
-    void resizeUiLater(int width, int height);
 
     static CarlaEngine* getEngine(CarlaPlugin* const plugin)
     {

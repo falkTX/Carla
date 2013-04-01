@@ -19,6 +19,7 @@
 
 #ifdef WANT_VST
 
+#include "CarlaPluginGui.hpp"
 #include "CarlaVstUtils.hpp"
 
 //#ifdef Q_WS_X11
@@ -38,7 +39,7 @@ const unsigned int PLUGIN_WANTS_MIDI_INPUT      = 0x8000; //!< VST Plugin wants 
 /**@}*/
 
 class VstPlugin : public CarlaPlugin,
-                  public CarlaPluginGuiCallback
+                  public CarlaPluginGui::Callback
 {
 public:
     VstPlugin(CarlaEngine* const engine, const unsigned short id)
@@ -360,14 +361,20 @@ public:
         {
             if (yesNo)
             {
-                kData->createUiIfNeeded(this);
+                if (kData->gui == nullptr)
+                {
+                    struct CarlaPluginGui::Options guiOptions;
+                    guiOptions.parented  = true;
+                    guiOptions.resizable = false;
+
+                    kData->gui = new CarlaPluginGui(kData->engine, this, guiOptions);
+                }
 
                 int32_t value = 0;
 #ifdef Q_WS_X11
                 //value = (intptr_t)QX11Info::display();
 #endif
-                // TODO!!
-                void* const ptr = nullptr; //kData->gui->getContainerWinId();
+                void* const ptr = kData->gui->getContainerWinId();
 
                 if (dispatcher(effEditOpen, 0, value, ptr, 0.0f) != 0)
                 {
@@ -380,18 +387,22 @@ public:
                         const int16_t width  = vstRect->right  - vstRect->left;
                         const int16_t height = vstRect->bottom - vstRect->top;
 
-                        //if (width > 0 && height > 0)
-                        //{
-                        //    kData->gui->setFixedSize(width, height);
-                        //}
+                        if (width > 0 && height > 0)
+                            kData->gui->setSize(width, height);
                     }
 
-                    //kData->gui->setWindowTitle(QString("%1 (GUI)").arg((const char*)fName).toUtf8().constData());
-                    //kData->gui->show();
+                    kData->gui->setWindowTitle(QString("%1 (GUI)").arg((const char*)fName).toUtf8().constData());
+                    kData->gui->show();
                 }
                 else
                 {
-                    kData->destroyUiIfNeeded();
+                    if (kData->gui != nullptr)
+                    {
+                        kData->gui->close();
+                        delete kData->gui;
+                        kData->gui = nullptr;
+                    }
+
                     kData->engine->callback(CALLBACK_ERROR, fId, 0, 0, 0.0f, "Plugin refused to open its own UI");
                     kData->engine->callback(CALLBACK_SHOW_GUI, fId, 0, 0, 0.0f, nullptr);
                     return;
@@ -400,7 +411,13 @@ public:
             else
             {
                 dispatcher(effEditClose, 0, 0, nullptr, 0.0f);
-                kData->destroyUiIfNeeded();
+
+                if (kData->gui != nullptr)
+                {
+                    kData->gui->close();
+                    delete kData->gui;
+                    kData->gui = nullptr;
+                }
             }
         }
 
@@ -1873,8 +1890,11 @@ protected:
             break;
 
         case audioMasterSizeWindow:
-            kData->resizeUiLater(index, value);
-            ret = 1;
+            if (kData->gui != nullptr)
+            {
+                kData->gui->setSize(index, value);
+                ret = 1;
+            }
             break;
 
         case audioMasterGetSampleRate:

@@ -27,6 +27,7 @@ endif
 
 OBJS = \
 	CarlaPlugin.cpp.o \
+	CarlaPluginGui.cpp.o \
 	CarlaPluginThread.cpp.o \
 	BridgePlugin.cpp.o \
 	NativePlugin.cpp.o \
@@ -53,8 +54,11 @@ debug:
 
 # --------------------------------------------------------------
 
-%.cpp.o: %.cpp ../CarlaBackend.hpp ../CarlaEngine.hpp ../CarlaPlugin.hpp CarlaPluginInternal.hpp CarlaPluginThread.hpp
+%.cpp.o: %.cpp ../CarlaBackend.hpp ../CarlaEngine.hpp ../CarlaPlugin.hpp CarlaPluginGui.hpp CarlaPluginInternal.hpp CarlaPluginThread.hpp moc_CarlaPluginGui.cpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+
+moc_%.cpp: %.hpp
+	$(MOC) $< -DMOC_PARSING -o $@
 
 $(SHARED): $(OBJS)
 	$(CXX) $^ -shared $(LINK_FLAGS) -o $@

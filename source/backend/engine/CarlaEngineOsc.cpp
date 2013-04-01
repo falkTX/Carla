@@ -477,7 +477,7 @@ int CarlaEngineOsc::handleMsgControl(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     const int32_t rindex = argv[0]->i;
     const float   value  = argv[1]->f;
 
-    plugin->setParameterValueByRIndex(rindex, value, false, true, true);
+    plugin->setParameterValueByRealIndex(rindex, value, false, true, true);
 
     return 0;
 }

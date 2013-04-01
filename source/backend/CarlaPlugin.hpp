@@ -660,6 +660,11 @@ public:
     virtual void sampleRateChanged(const double newSampleRate);
 
     /*!
+     * Initialize all RT buffers of the plugin.
+     */
+    virtual void initBuffers();
+
+    /*!
      * TODO.
      */
     bool tryLock();
@@ -728,6 +733,34 @@ public:
     void postRtEventsRun();
 
     // -------------------------------------------------------------------
+    // Post-poned UI Stuff
+
+    /*!
+     * Tell the UI a parameter has changed.
+     */
+    virtual void uiParameterChange(const uint32_t index, const float value);
+
+    /*!
+     * Tell the UI the current program has changed.
+     */
+    virtual void uiProgramChange(const uint32_t index);
+
+    /*!
+     * Tell the UI the current midi program has changed.
+     */
+    virtual void uiMidiProgramChange(const uint32_t index);
+
+    /*!
+     * Tell the UI a note has been pressed.
+     */
+    virtual void uiNoteOn(const uint8_t channel, const uint8_t note, const uint8_t velo);
+
+    /*!
+     * Tell the UI a note has been released.
+     */
+    virtual void uiNoteOff(const uint8_t channel, const uint8_t note);
+
+    // -------------------------------------------------------------------
     // Plugin initializers
 
     struct Initializer {
@@ -769,40 +802,7 @@ protected:
     CarlaPluginProtectedData* const kData; //!< Internal data, for CarlaPlugin subclasses only.
 
     // -------------------------------------------------------------------
-    // Post-poned UI Stuff
-
-    /*!
-     * Tell the UI a parameter has changed.
-     */
-    virtual void uiParameterChange(const uint32_t index, const float value);
-
-    /*!
-     * Tell the UI the current program has changed.
-     */
-    virtual void uiProgramChange(const uint32_t index);
-
-    /*!
-     * Tell the UI the current midi program has changed.
-     */
-    virtual void uiMidiProgramChange(const uint32_t index);
-
-    /*!
-     * Tell the UI a note has been pressed.
-     */
-    virtual void uiNoteOn(const uint8_t channel, const uint8_t note, const uint8_t velo);
-
-    /*!
-     * Tell the UI a note has been released.
-     */
-    virtual void uiNoteOff(const uint8_t channel, const uint8_t note);
-
-    // -------------------------------------------------------------------
     // Cleanup
-
-    /*!
-     * Initialize all RT buffers of the plugin.
-     */
-    virtual void initBuffers();
 
     /*!
      * Delete all temporary buffers of the plugin.

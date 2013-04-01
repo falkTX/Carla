@@ -59,6 +59,7 @@ SOURCES  = \
 
 HEADERS  = \
     CarlaPluginInternal.hpp \
+    CarlaPluginGui.hpp \
     CarlaPluginThread.hpp
 
 HEADERS += \
