@@ -314,7 +314,7 @@ public:
         fParamBuffers[parameterId] = fixedValue;
 
         {
-            const ScopedProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
+            const ScopedSingleProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
 
             switch (parameterId)
             {
@@ -376,7 +376,7 @@ public:
             const uint32_t bank    = kData->midiprog.data[index].bank;
             const uint32_t program = kData->midiprog.data[index].program;
 
-            const ScopedProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
+            const ScopedSingleProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
             fluid_synth_program_select(fSynth, kData->ctrlChannel, fSynthId, bank, program);
         }
 
@@ -1373,7 +1373,7 @@ public:
             fAudio16Buffers = nullptr;
         }
 
-        CarlaPlugin::deleteBuffers();
+        kData->clearBuffers();
 
         carla_debug("FluidSynthPlugin::deleteBuffers() - end");
     }

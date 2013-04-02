@@ -169,6 +169,8 @@ struct EngineControlEvent {
         param = 0;
         value = 0.0f;
     }
+
+    CARLA_DECLARE_NON_COPY_STRUCT(EngineControlEvent)
 };
 
 /*!
@@ -195,6 +197,8 @@ struct EngineMidiEvent {
         data[3] = 0;
         size    = 0;
     }
+
+    CARLA_DECLARE_NON_COPY_STRUCT(EngineMidiEvent)
 };
 
 /*!
@@ -221,44 +225,8 @@ struct EngineEvent {
         time = 0;
         channel = 0;
     }
-};
 
-// -----------------------------------------------------------------------
-
-/*!
- * Engine devices (unused).
- */
-struct EngineDevices {
-    struct Audio {
-        uint32_t     count;
-        int32_t      current;
-        const char** names;
-    } audio;
-
-    struct Midi {
-        uint32_t     count;
-        const char** names;
-        bool*        selected;
-    } midi;
-
-    struct Info {
-        unsigned int* bufferSizes; // valid until 0 value reached
-        unsigned int* sampleRates; // valid until 0 value reached
-    } info;
-
-    EngineDevices()
-    {
-        audio.count   = 0;
-        audio.current = -1;
-        audio.names   = nullptr;
-
-        midi.count    = 0;
-        midi.names    = nullptr;
-        midi.selected = nullptr;
-
-        info.bufferSizes = nullptr;
-        info.sampleRates = nullptr;
-    }
+    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(EngineEvent)
 };
 
 /*!
@@ -315,6 +283,8 @@ struct EngineOptions {
           oscUiTimeout(4000),
           preferredBufferSize(512),
           preferredSampleRate(44100) {}
+
+    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(EngineOptions)
 };
 
 /*!
@@ -341,6 +311,8 @@ struct EngineTimeInfoBBT {
           beatType(0.0f),
           ticksPerBeat(0.0),
           beatsPerMinute(0.0) {}
+
+    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(EngineTimeInfoBBT)
 };
 
 /*!
@@ -367,6 +339,8 @@ struct EngineTimeInfo {
         time    = 0;
         valid   = 0x0;
     }
+
+    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(EngineTimeInfo)
 };
 
 // -----------------------------------------------------------------------

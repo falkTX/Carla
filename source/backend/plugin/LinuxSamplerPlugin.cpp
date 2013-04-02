@@ -311,7 +311,7 @@ public:
         // Safely disable plugin for reload
         const ScopedDisabler sd(this);
 
-        deleteBuffers();
+        kData->clearBuffers();
 
         uint32_t aOuts;
         aOuts  = 2;

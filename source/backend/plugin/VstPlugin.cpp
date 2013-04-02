@@ -312,7 +312,7 @@ public:
         fChunk = QByteArray::fromBase64(QByteArray(stringData));
         //fChunk.toBase64();
 
-        const ScopedProcessLocker spl(this, true);
+        const ScopedSingleProcessLocker spl(this, true);
         dispatcher(effSetChunk, 0 /* bank */, fChunk.size(), fChunk.data(), 0.0f);
     }
 
@@ -328,7 +328,7 @@ public:
 
         if (fEffect != nullptr && index >= 0)
         {
-            const ScopedProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
+            const ScopedSingleProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
 
             dispatcher(effBeginSetProgram, 0, 0, nullptr, 0.0f);
             dispatcher(effSetProgram, 0, index, nullptr, 0.0f);
@@ -469,7 +469,7 @@ public:
         // Safely disable plugin for reload
         const ScopedDisabler sd(this);
 
-        deleteBuffers();
+        kData->clearBuffers();
 
         uint32_t aIns, aOuts, mIns, mOuts, params, j;
 
@@ -2095,20 +2095,20 @@ public:
         // ---------------------------------------------------------------
         // open DLL
 
-        if (! libOpen(filename))
+        if (! kData->libOpen(filename))
         {
-            kData->engine->setLastError(libError(filename));
+            kData->engine->setLastError(kData->libError(filename));
             return false;
         }
 
         // ---------------------------------------------------------------
         // get DLL main entry
 
-        VST_Function vstFn = (VST_Function)libSymbol("VSTPluginMain");
+        VST_Function vstFn = (VST_Function)kData->libSymbol("VSTPluginMain");
 
         if (vstFn == nullptr)
         {
-            vstFn = (VST_Function)libSymbol("main");
+            vstFn = (VST_Function)kData->libSymbol("main");
 
             if (vstFn == nullptr)
             {

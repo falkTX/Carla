@@ -16,8 +16,9 @@
  */
 
 #include "CarlaPluginInternal.hpp"
+
 #include "CarlaLibUtils.hpp"
-#include "CarlaMIDI.h"
+#include "CarlaStateUtils.hpp"
 
 #include <QtCore/QFile>
 #include <QtCore/QTextStream>
@@ -25,12 +26,117 @@
 CARLA_BACKEND_START_NAMESPACE
 
 // -------------------------------------------------------------------
-// fallback data
+// Fallback data
 
-static const ParameterData    kParameterDataNull;
-static const ParameterRanges  kParameterRangesNull;
-static const MidiProgramData  kMidiProgramDataNull;
-static const CustomData       kCustomDataNull;
+static const ParameterData   kParameterDataNull;
+static const ParameterRanges kParameterRangesNull;
+static const MidiProgramData kMidiProgramDataNull;
+static const CustomData      kCustomDataNull;
+
+// -------------------------------------------------------------------
+// Library functions
+
+class LibMap
+{
+public:
+    LibMap() {}
+
+    ~LibMap()
+    {
+        CARLA_ASSERT(libs.isEmpty());
+    }
+
+    void* open(const char* const filename)
+    {
+        CARLA_ASSERT(filename != nullptr);
+
+        if (filename == nullptr)
+            return nullptr;
+
+        for (auto it = libs.begin(); it.valid(); it.next())
+        {
+            Lib& lib(*it);
+
+            if (std::strcmp(lib.filename, filename) == 0)
+            {
+                lib.count++;
+                return lib.lib;
+            }
+        }
+
+        void* const libPtr(lib_open(filename));
+
+        if (libPtr == nullptr)
+            return nullptr;
+
+        Lib lib{libPtr, carla_strdup(filename), 1};
+        libs.append(lib);
+
+        return libPtr;
+    }
+
+    bool close(void* const libPtr)
+    {
+        CARLA_ASSERT(libPtr != nullptr);
+
+        if (libPtr == nullptr)
+            return false;
+
+        for (auto it = libs.begin(); it.valid(); it.next())
+        {
+            Lib& lib(*it);
+
+            if (lib.lib != libPtr)
+                continue;
+
+            lib.count--;
+
+            if (lib.count == 0)
+            {
+                delete[] lib.filename;
+                lib_close(lib.lib);
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+private:
+    struct Lib {
+        void* const lib;
+        const char* const filename;
+        int count;
+    };
+
+    NonRtList<Lib> libs;
+};
+
+static LibMap gLibMap;
+
+bool CarlaPluginProtectedData::libOpen(const char* const filename)
+{
+    lib = gLibMap.open(filename);
+    return (lib != nullptr);
+}
+
+bool CarlaPluginProtectedData::libClose()
+{
+    const bool ret = gLibMap.close(lib);
+    lib = nullptr;
+    return ret;
+}
+
+void* CarlaPluginProtectedData::libSymbol(const char* const symbol)
+{
+    return lib_symbol(lib, symbol);
+}
+
+const char* CarlaPluginProtectedData::libError(const char* const filename)
+{
+    return lib_error(filename);
+}
 
 // -------------------------------------------------------------------
 // Plugin Helpers
@@ -63,6 +169,7 @@ CarlaPlugin::CarlaPlugin(CarlaEngine* const engine, const unsigned int id)
     CARLA_ASSERT(kData != nullptr);
     CARLA_ASSERT(engine != nullptr);
     CARLA_ASSERT(id < engine->maxPluginNumber());
+    CARLA_ASSERT(id == engine->currentPluginCount());
     carla_debug("CarlaPlugin::CarlaPlugin(%p, %i)", engine, id);
 
     switch (engine->getProccessMode())
@@ -93,52 +200,7 @@ CarlaPlugin::~CarlaPlugin()
 {
     carla_debug("CarlaPlugin::~CarlaPlugin()");
 
-    // Remove client and ports
-    if (kData->client != nullptr)
-    {
-        if (kData->client->isActive())
-            kData->client->deactivate();
-
-        // can't call virtual functions in destructor
-        CarlaPlugin::deleteBuffers();
-
-        delete kData->client;
-    }
-
-    if (kData->latencyBuffers != nullptr)
-    {
-        for (uint32_t i=0; i < kData->audioIn.count; i++)
-            delete[] kData->latencyBuffers[i];
-
-        delete[] kData->latencyBuffers;
-    }
-
-    for (auto it = kData->custom.begin(); it.valid(); it.next())
-    {
-        CustomData& cData(*it);
-
-        CARLA_ASSERT(cData.type != nullptr);
-        CARLA_ASSERT(cData.key != nullptr);
-        CARLA_ASSERT(cData.value != nullptr);
-
-        if (cData.type != nullptr)
-            delete[] cData.type;
-        if (cData.key != nullptr)
-            delete[] cData.key;
-        if (cData.value != nullptr)
-            delete[] cData.value;
-    }
-
-    kData->prog.clear();
-    kData->midiprog.clear();
-    kData->custom.clear();
-
-    // MUST have been unlocked before
-    kData->masterMutex.unlock();
-    kData->singleMutex.unlock();
-
-    libClose();
-
+    kData->cleanup();
     delete kData;
 }
 
@@ -314,6 +376,7 @@ void CarlaPlugin::getRealName(char* const strBuf)
 void CarlaPlugin::getParameterName(const uint32_t parameterId, char* const strBuf)
 {
     CARLA_ASSERT(parameterId < parameterCount());
+    CARLA_ASSERT(false); // this should never happen
     *strBuf = '\0';
     return;
 
@@ -334,6 +397,7 @@ void CarlaPlugin::getParameterSymbol(const uint32_t parameterId, char* const str
 void CarlaPlugin::getParameterText(const uint32_t parameterId, char* const strBuf)
 {
     CARLA_ASSERT(parameterId < parameterCount());
+    CARLA_ASSERT(false); // this should never happen
     *strBuf = '\0';
     return;
 
@@ -355,6 +419,7 @@ void CarlaPlugin::getParameterScalePointLabel(const uint32_t parameterId, const 
 {
     CARLA_ASSERT(parameterId < parameterCount());
     CARLA_ASSERT(scalePointId < parameterScalePointCount(parameterId));
+    CARLA_ASSERT(false); // this should never happen
     *strBuf = '\0';
     return;
 
@@ -827,26 +892,10 @@ bool CarlaPlugin::loadStateFromFile(const char* const filename)
 // -------------------------------------------------------------------
 // Set data (internal stuff)
 
-void CarlaPlugin::setId(const unsigned int id)
-{
-    fId = id;
-}
-
-void CarlaPlugin::setOption(const unsigned int option, const bool yesNo)
-{
-    if (yesNo)
-        fOptions |= option;
-    else
-        fOptions &= ~option;
-}
-
-void CarlaPlugin::setEnabled(const bool yesNo)
-{
-    fEnabled = yesNo;
-}
-
 void CarlaPlugin::setActive(const bool active, const bool sendOsc, const bool sendCallback)
 {
+    CARLA_ASSERT(kData->active != active); // subclasses should prevent this
+
     if (kData->active == active)
         return;
 
@@ -1179,8 +1228,6 @@ void CarlaPlugin::setCustomData(const char* const type, const char* const key, c
                 return;
             if (cData.key == nullptr)
                 return;
-            if (cData.value == nullptr)
-                return;
 
             if (std::strcmp(cData.key, key) == 0)
             {
@@ -1362,6 +1409,13 @@ void CarlaPlugin::bufferSizeChanged(const uint32_t)
 
 void CarlaPlugin::sampleRateChanged(const double)
 {
+}
+
+void CarlaPlugin::initBuffers()
+{
+    kData->audioIn.initBuffers(kData->engine);
+    kData->audioOut.initBuffers(kData->engine);
+    kData->event.initBuffers(kData->engine);
 }
 
 bool CarlaPlugin::tryLock()
@@ -1791,6 +1845,9 @@ void CarlaPlugin::postRtEventsRun()
     }
 }
 
+// -------------------------------------------------------------------
+// Post-poned UI Stuff
+
 void CarlaPlugin::uiParameterChange(const uint32_t index, const float value)
 {
     CARLA_ASSERT(index < parameterCount());
@@ -1844,57 +1901,6 @@ void CarlaPlugin::uiNoteOff(const uint8_t channel, const uint8_t note)
 }
 
 // -------------------------------------------------------------------
-// Cleanup
-
-void CarlaPlugin::initBuffers()
-{
-    kData->audioIn.initBuffers(kData->engine);
-    kData->audioOut.initBuffers(kData->engine);
-    kData->event.initBuffers(kData->engine);
-}
-
-void CarlaPlugin::deleteBuffers()
-{
-    carla_debug("CarlaPlugin::deleteBuffers() - start");
-
-    kData->audioIn.clear();
-    kData->audioOut.clear();
-    kData->param.clear();
-    kData->event.clear();
-
-    carla_debug("CarlaPlugin::deleteBuffers() - end");
-}
-
-// -------------------------------------------------------------------
-// Library functions
-
-bool CarlaPlugin::libOpen(const char* const filename)
-{
-    kData->lib = lib_open(filename);
-    return bool(kData->lib);
-}
-
-bool CarlaPlugin::libClose()
-{
-    if (kData->lib == nullptr)
-        return false;
-
-    const bool ret = lib_close(kData->lib);
-    kData->lib = nullptr;
-    return ret;
-}
-
-void* CarlaPlugin::libSymbol(const char* const symbol)
-{
-    return lib_symbol(kData->lib, symbol);
-}
-
-const char* CarlaPlugin::libError(const char* const filename)
-{
-    return lib_error(filename);
-}
-
-// -------------------------------------------------------------------
 // Scoped Disabler
 
 CarlaPlugin::ScopedDisabler::ScopedDisabler(CarlaPlugin* const plugin)
@@ -1943,20 +1949,25 @@ CarlaPlugin::ScopedDisabler::~ScopedDisabler()
 // -------------------------------------------------------------------
 // Scoped Process Locker
 
-CarlaPlugin::ScopedProcessLocker::ScopedProcessLocker(CarlaPlugin* const plugin, const bool block)
+CarlaPlugin::ScopedSingleProcessLocker::ScopedSingleProcessLocker(CarlaPlugin* const plugin, const bool block)
     : kPlugin(plugin),
       kBlock(block)
 {
-    carla_debug("CarlaPlugin::ScopedProcessLocker(%p, %s)", plugin, bool2str(block));
-    CARLA_ASSERT(plugin != nullptr);
+    carla_debug("CarlaPlugin::ScopedSingleProcessLocker(%p, %s)", plugin, bool2str(block));
+    CARLA_ASSERT(kPlugin != nullptr && kPlugin->kData != nullptr);
 
-    if (plugin != nullptr && block)
+    if (kPlugin == nullptr)
+        return;
+    if (kPlugin->kData == nullptr)
+        return;
+
+    if (kBlock)
         plugin->kData->singleMutex.lock();
 }
 
-CarlaPlugin::ScopedProcessLocker::~ScopedProcessLocker()
+CarlaPlugin::ScopedSingleProcessLocker::~ScopedSingleProcessLocker()
 {
-    carla_debug("CarlaPlugin::~ScopedProcessLocker()");
+    carla_debug("CarlaPlugin::~ScopedSingleProcessLocker()");
     CARLA_ASSERT(kPlugin != nullptr && kPlugin->kData != nullptr);
 
     if (kPlugin == nullptr)

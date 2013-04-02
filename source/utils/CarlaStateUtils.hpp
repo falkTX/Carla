@@ -19,6 +19,7 @@
 #define __CARLA_STATE_UTILS_HPP__
 
 #include "CarlaBackendUtils.hpp"
+#include "CarlaJuceUtils.hpp"
 #include "CarlaMIDI.h"
 
 #include <QtCore/QVector>
@@ -52,8 +53,7 @@ struct StateParameter {
             delete[] symbol;
     }
 
-    StateParameter(StateParameter&) = delete;
-    StateParameter(const StateParameter&) = delete;
+    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(StateParameter)
 };
 
 struct StateCustomData {
@@ -76,8 +76,7 @@ struct StateCustomData {
             delete[] value;
     }
 
-    StateCustomData(StateCustomData&) = delete;
-    StateCustomData(const StateCustomData&) = delete;
+    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(StateCustomData)
 };
 
 typedef QVector<StateParameter*> StateParameterVector;
@@ -197,8 +196,7 @@ struct SaveState {
         customData.clear();
     }
 
-    SaveState(SaveState&) = delete;
-    SaveState(const SaveState&) = delete;
+    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(SaveState)
 };
 
 // -------------------------------------------------

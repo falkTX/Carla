@@ -19,6 +19,7 @@
 #define __CARLA_STANDALONE_HPP__
 
 #include "CarlaBackend.hpp"
+#include "CarlaJuceUtils.hpp"
 
 /*!
  * @defgroup CarlaStandaloneAPI Carla Standalone API
@@ -72,8 +73,7 @@ struct CarlaPluginInfo {
             delete[] copyright;
     }
 
-    CarlaPluginInfo(CarlaPluginInfo&) = delete;
-    CarlaPluginInfo(const CarlaPluginInfo&) = delete;
+    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(CarlaPluginInfo)
 };
 
 struct CarlaNativePluginInfo {
@@ -104,8 +104,7 @@ struct CarlaNativePluginInfo {
           maker(nullptr),
           copyright(nullptr) {}
 
-    CarlaNativePluginInfo(CarlaNativePluginInfo&) = delete;
-    CarlaNativePluginInfo(const CarlaNativePluginInfo&) = delete;
+    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(CarlaNativePluginInfo)
 };
 
 struct CarlaPortCountInfo {
@@ -118,8 +117,7 @@ struct CarlaPortCountInfo {
           outs(0),
           total(0) {}
 
-    CarlaPortCountInfo(CarlaPortCountInfo&) = delete;
-    CarlaPortCountInfo(const CarlaPortCountInfo&) = delete;
+    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(CarlaPortCountInfo)
 };
 
 struct CarlaParameterInfo {
@@ -144,8 +142,7 @@ struct CarlaParameterInfo {
             delete[] unit;
     }
 
-    CarlaParameterInfo(CarlaParameterInfo&) = delete;
-    CarlaParameterInfo(const CarlaParameterInfo&) = delete;
+    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(CarlaParameterInfo)
 };
 
 struct CarlaScalePointInfo {
@@ -162,8 +159,7 @@ struct CarlaScalePointInfo {
             delete[] label;
     }
 
-    CarlaScalePointInfo(CarlaScalePointInfo&) = delete;
-    CarlaScalePointInfo(const CarlaScalePointInfo&) = delete;
+    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(CarlaScalePointInfo)
 };
 
 struct CarlaTransportInfo {
@@ -181,10 +177,8 @@ struct CarlaTransportInfo {
           beat(0),
           bpm(0.0) {}
 
-    CarlaTransportInfo(CarlaTransportInfo&) = delete;
-    CarlaTransportInfo(const CarlaTransportInfo&) = delete;
+    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(CarlaTransportInfo)
 };
-
 
 CARLA_EXPORT const char* carla_get_extended_license_text();
 CARLA_EXPORT const char* carla_get_supported_file_types();

@@ -346,7 +346,7 @@ public:
         fChunk = QByteArray::fromBase64(QByteArray(stringData));
         //fChunk.toBase64();
 
-        const ScopedProcessLocker spl(this, true);
+        const ScopedSingleProcessLocker spl(this, true);
         fDssiDescriptor->set_custom_data(fHandle, fChunk.data(), (unsigned long)fChunk.size());
     }
 
@@ -366,7 +366,7 @@ public:
             const uint32_t bank    = kData->midiprog.data[index].bank;
             const uint32_t program = kData->midiprog.data[index].program;
 
-            const ScopedProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
+            const ScopedSingleProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
 
             fDssiDescriptor->select_program(fHandle, bank, program);
 
@@ -1805,7 +1805,7 @@ public:
             fParamBuffers = nullptr;
         }
 
-        CarlaPlugin::deleteBuffers();
+        kData->clearBuffers();
 
         carla_debug("DssiPlugin::deleteBuffers() - end");
     }
@@ -1848,16 +1848,16 @@ public:
         // ---------------------------------------------------------------
         // open DLL
 
-        if (! libOpen(filename))
+        if (! kData->libOpen(filename))
         {
-            kData->engine->setLastError(libError(filename));
+            kData->engine->setLastError(kData->libError(filename));
             return false;
         }
 
         // ---------------------------------------------------------------
         // get DLL main entry
 
-        const DSSI_Descriptor_Function descFn = (DSSI_Descriptor_Function)libSymbol("dssi_descriptor");
+        const DSSI_Descriptor_Function descFn = (DSSI_Descriptor_Function)kData->libSymbol("dssi_descriptor");
 
         if (descFn == nullptr)
         {

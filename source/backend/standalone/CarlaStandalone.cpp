@@ -52,7 +52,7 @@ struct CarlaBackendStandalone {
 #endif
 
     QApplication* app;
-    bool    needsInit;
+    bool needsInit;
 
     CarlaBackendStandalone()
         : callback(nullptr),
@@ -85,6 +85,8 @@ struct CarlaBackendStandalone {
         delete app;
         app = nullptr;
     }
+
+    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(CarlaBackendStandalone)
 
 } standalone;
 

@@ -18,22 +18,23 @@
 #ifndef __CARLA_PLUGIN_INTERNAL_HPP__
 #define __CARLA_PLUGIN_INTERNAL_HPP__
 
-#include "CarlaPluginThread.hpp"
 #include "CarlaPlugin.hpp"
+#include "CarlaPluginThread.hpp"
 #include "CarlaEngine.hpp"
+
+#include "CarlaBackendUtils.hpp"
 #include "CarlaOscUtils.hpp"
-#include "CarlaStateUtils.hpp"
 #include "CarlaMutex.hpp"
 #include "CarlaMIDI.h"
+
 #include "RtList.hpp"
 
-#define CARLA_PROCESS_CONTINUE_CHECK if (! fEnabled) { kData->engine->callback(CALLBACK_DEBUG, fId, 0, 0, 0.0, nullptr); return; }
+#define CARLA_PROCESS_CONTINUE_CHECK if (! fEnabled) { kData->engine->callback(CALLBACK_DEBUG, fId, 0, 0, 0.0f, nullptr); return; }
 
 CARLA_BACKEND_START_NAMESPACE
 
 // -----------------------------------------------------------------------
 
-const unsigned short MAX_RT_EVENTS   = 128;
 const unsigned short MAX_MIDI_EVENTS = 512;
 
 const unsigned int PLUGIN_HINT_HAS_MIDI_IN  = 0x1;
@@ -164,7 +165,7 @@ struct PluginEventData {
 
 struct PluginParameterData {
     uint32_t count;
-    ParameterData*   data;
+    ParameterData* data;
     ParameterRanges* ranges;
 
     PluginParameterData()
@@ -316,6 +317,12 @@ struct PluginMidiProgramData {
     {
         if (data != nullptr)
         {
+            for (uint32_t i=0; i < count; i++)
+            {
+                if (data[i].name != nullptr)
+                    delete[] data[i].name;
+            }
+
             delete[] data;
             data = nullptr;
         }
@@ -440,7 +447,7 @@ struct CarlaPluginProtectedData {
         RtList<PluginPostRtEvent> dataPendingRT;
 
         PostRtEvents()
-            : dataPool(MAX_RT_EVENTS, MAX_RT_EVENTS),
+            : dataPool(128, 128),
               data(&dataPool),
               dataPendingRT(&dataPool) {}
 
@@ -535,6 +542,82 @@ struct CarlaPluginProtectedData {
         CARLA_ASSERT(latencyBuffers == nullptr);
     }
 
+    // -------------------------------------------------------------------
+    // Cleanup
+
+    void cleanup()
+    {
+        {
+            const bool lockMaster(masterMutex.tryLock());
+            const bool lockSingle(singleMutex.tryLock());
+            CARLA_ASSERT(! lockMaster);
+            CARLA_ASSERT(! lockSingle);
+        }
+
+        if (client != nullptr)
+        {
+            if (client->isActive())
+                client->deactivate();
+
+            delete client;
+            client = nullptr;
+        }
+
+        if (latencyBuffers != nullptr)
+        {
+            for (uint32_t i=0; i < audioIn.count; i++)
+            {
+                CARLA_ASSERT(latencyBuffers[i] != nullptr);
+
+                if (latencyBuffers[i] != nullptr)
+                    delete[] latencyBuffers[i];
+            }
+
+            delete[] latencyBuffers;
+            latencyBuffers = nullptr;
+            latency = 0;
+        }
+
+        clearBuffers();
+
+        for (auto it = custom.begin(); it.valid(); it.next())
+        {
+            CustomData& cData(*it);
+
+            CARLA_ASSERT(cData.type != nullptr);
+            CARLA_ASSERT(cData.key != nullptr);
+            CARLA_ASSERT(cData.value != nullptr);
+
+            if (cData.type != nullptr)
+                delete[] cData.type;
+            if (cData.key != nullptr)
+                delete[] cData.key;
+            if (cData.value != nullptr)
+                delete[] cData.value;
+        }
+
+        prog.clear();
+        midiprog.clear();
+        custom.clear();
+
+        // MUST have been unlocked before
+        masterMutex.unlock();
+        singleMutex.unlock();
+
+        libClose();
+    }
+
+    // -------------------------------------------------------------------
+    // Buffer functions
+
+    void clearBuffers()
+    {
+        audioIn.clear();
+        audioOut.clear();
+        param.clear();
+        event.clear();
+    }
+
     void recreateLatencyBuffers()
     {
         if (latencyBuffers != nullptr)
@@ -562,6 +645,17 @@ struct CarlaPluginProtectedData {
             }
         }
     }
+
+    // -------------------------------------------------------------------
+    // Library functions, see CarlaPlugin.cpp
+
+    bool libOpen(const char* const filename);
+    bool libClose();
+    void* libSymbol(const char* const symbol);
+    const char* libError(const char* const filename);
+
+    // -------------------------------------------------------------------
+    // Static helper functions
 
     static CarlaEngine* getEngine(CarlaPlugin* const plugin)
     {

@@ -426,14 +426,23 @@ public:
      *
      * \see id()
      */
-    void setId(const unsigned int id);
+    void setId(const unsigned int id)
+    {
+        fId = id;
+    }
 
     /*!
      * Set a plugin's option.
      *
      * \see options()
      */
-    void setOption(const unsigned int option, const bool yesNo);
+    void setOption(const unsigned int option, const bool yesNo)
+    {
+        if (yesNo)
+            fOptions |= option;
+        else
+            fOptions &= ~option;
+    }
 
     /*!
      * Enable or disable the plugin according to \a yesNo.
@@ -443,7 +452,10 @@ public:
      *
      * \see enabled()
      */
-    void setEnabled(const bool yesNo);
+    void setEnabled(const bool yesNo)
+    {
+        fEnabled = yesNo;
+    }
 
     /*!
      * Set plugin as active according to \a active.
@@ -802,37 +814,6 @@ protected:
     CarlaPluginProtectedData* const kData; //!< Internal data, for CarlaPlugin subclasses only.
 
     // -------------------------------------------------------------------
-    // Cleanup
-
-    /*!
-     * Delete all temporary buffers of the plugin.
-     */
-    virtual void deleteBuffers();
-
-    // -------------------------------------------------------------------
-    // Library functions
-
-    /*!
-     * Open the DLL \a filename.
-     */
-    bool libOpen(const char* const filename);
-
-    /*!
-     * Close the DLL previously loaded in libOpen().
-     */
-    bool libClose();
-
-    /*!
-     * Get the symbol entry \a symbol of the currently loaded DLL.
-     */
-    void* libSymbol(const char* const symbol);
-
-    /*!
-     * Get the last DLL related error.
-     */
-    const char* libError(const char* const filename);
-
-    // -------------------------------------------------------------------
     // Helper classes
 
     // Fully disable plugin in scope and also its engine client
@@ -853,18 +834,18 @@ protected:
     // Lock the plugin's own run/process call
     // Plugin will still work as normal, but output only silence
     // On destructor needsReset flag might be set if the plugin might have missed some events
-    class ScopedProcessLocker
+    class ScopedSingleProcessLocker
     {
     public:
-        ScopedProcessLocker(CarlaPlugin* const plugin, const bool block);
-        ~ScopedProcessLocker();
+        ScopedSingleProcessLocker(CarlaPlugin* const plugin, const bool block);
+        ~ScopedSingleProcessLocker();
 
     private:
         CarlaPlugin* const kPlugin;
         const bool kBlock;
 
         CARLA_PREVENT_HEAP_ALLOCATION
-        CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ScopedProcessLocker)
+        CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ScopedSingleProcessLocker)
     };
 
 private:

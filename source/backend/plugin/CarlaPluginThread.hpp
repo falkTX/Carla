@@ -21,7 +21,6 @@
 #include "CarlaBackend.hpp"
 #include "CarlaString.hpp"
 
-//#include "CarlaThread.hpp"
 #include <QtCore/QThread>
 
 class QProcess;
@@ -58,6 +57,8 @@ private:
     CarlaString fExtra1;
     CarlaString fExtra2;
     QProcess*   fProcess;
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginThread)
 };
 
 CARLA_BACKEND_END_NAMESPACE

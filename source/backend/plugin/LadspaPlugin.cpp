@@ -1323,7 +1323,7 @@ public:
             fParamBuffers = nullptr;
         }
 
-        CarlaPlugin::deleteBuffers();
+        kData->clearBuffers();
 
         carla_debug("LadspaPlugin::deleteBuffers() - end");
     }
@@ -1366,16 +1366,16 @@ public:
         // ---------------------------------------------------------------
         // open DLL
 
-        if (! libOpen(filename))
+        if (! kData->libOpen(filename))
         {
-            kData->engine->setLastError(libError(filename));
+            kData->engine->setLastError(kData->libError(filename));
             return false;
         }
 
         // ---------------------------------------------------------------
         // get DLL main entry
 
-        const LADSPA_Descriptor_Function descFn = (LADSPA_Descriptor_Function)libSymbol("ladspa_descriptor");
+        const LADSPA_Descriptor_Function descFn = (LADSPA_Descriptor_Function)kData->libSymbol("ladspa_descriptor");
 
         if (descFn == nullptr)
         {

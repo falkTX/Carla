@@ -578,7 +578,7 @@ public:
         fChunk = QByteArray::fromBase64(QByteArray(stringData));
         //fChunk.toBase64();
 
-        const ScopedProcessLocker spl(this, true);
+        const ScopedSingleProcessLocker spl(this, true);
         fDescriptor->set_chunk(fHandle, fChunk.data(), fChunk.size());
     }
 
@@ -598,7 +598,7 @@ public:
             const uint32_t bank    = kData->midiprog.data[index].bank;
             const uint32_t program = kData->midiprog.data[index].program;
 
-            const ScopedProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
+            const ScopedSingleProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
 
             fDescriptor->set_midi_program(fHandle, bank, program);
 
@@ -1891,7 +1891,7 @@ public:
         fMidiIn.clear();
         fMidiOut.clear();
 
-        CarlaPlugin::deleteBuffers();
+        kData->clearBuffers();
 
         carla_debug("NativePlugin::deleteBuffers() - end");
     }

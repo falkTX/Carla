@@ -18,7 +18,7 @@
 #ifndef __CARLA_OSC_UTILS_HPP__
 #define __CARLA_OSC_UTILS_HPP__
 
-#include "CarlaUtils.hpp"
+#include "CarlaJuceUtils.hpp"
 
 #include <cstdint>
 #include <lo/lo.h>
@@ -60,6 +60,8 @@ struct CarlaOscData {
             target = nullptr;
         }
     }
+
+    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(CarlaOscData)
 };
 
 // -------------------------------------------------
