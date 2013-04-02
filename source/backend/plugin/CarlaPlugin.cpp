@@ -53,6 +53,8 @@ public:
         if (filename == nullptr)
             return nullptr;
 
+        const CarlaMutex::ScopedLocker sl(&mutex);
+
         for (auto it = libs.begin(); it.valid(); it.next())
         {
             Lib& lib(*it);
@@ -82,6 +84,8 @@ public:
         if (libPtr == nullptr)
             return false;
 
+        const CarlaMutex::ScopedLocker sl(&mutex);
+
         for (auto it = libs.begin(); it.valid(); it.next())
         {
             Lib& lib(*it);
@@ -95,11 +99,14 @@ public:
             {
                 delete[] lib.filename;
                 lib_close(lib.lib);
+
+                libs.remove(it);
             }
 
             return true;
         }
 
+        CARLA_ASSERT(false); // invalid pointer
         return false;
     }
 
@@ -110,20 +117,21 @@ private:
         int count;
     };
 
+    CarlaMutex mutex;
     NonRtList<Lib> libs;
 };
 
-static LibMap gLibMap;
+static LibMap sLibMap;
 
 bool CarlaPluginProtectedData::libOpen(const char* const filename)
 {
-    lib = gLibMap.open(filename);
+    lib = sLibMap.open(filename);
     return (lib != nullptr);
 }
 
 bool CarlaPluginProtectedData::libClose()
 {
-    const bool ret = gLibMap.close(lib);
+    const bool ret = sLibMap.close(lib);
     lib = nullptr;
     return ret;
 }
@@ -894,10 +902,13 @@ bool CarlaPlugin::loadStateFromFile(const char* const filename)
 
 void CarlaPlugin::setActive(const bool active, const bool sendOsc, const bool sendCallback)
 {
-    CARLA_ASSERT(kData->active != active); // subclasses should prevent this
-
     if (kData->active == active)
         return;
+
+    if (active)
+        activate();
+    else
+        deactivate();
 
     kData->active = active;
 
@@ -1399,6 +1410,16 @@ void CarlaPlugin::reloadPrograms(const bool)
 // -------------------------------------------------------------------
 // Plugin processing
 
+void CarlaPlugin::activate()
+{
+    CARLA_ASSERT(! kData->active);
+}
+
+void CarlaPlugin::deactivate()
+{
+    CARLA_ASSERT(kData->active);
+}
+
 void CarlaPlugin::process(float** const, float** const, const uint32_t)
 {
 }
@@ -1558,12 +1579,13 @@ void CarlaPlugin::registerToOscClient()
 
     // Internal Parameters
     {
-        kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_ACTIVE, kData->active ? 1.0 : 0.0);
         kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_DRYWET, kData->postProc.dryWet);
         kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_VOLUME, kData->postProc.volume);
         kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_BALANCE_LEFT, kData->postProc.balanceLeft);
         kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_BALANCE_RIGHT, kData->postProc.balanceRight);
         kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_PANNING, kData->postProc.panning);
+        kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_CTRL_CHANNEL, kData->ctrlChannel);
+        kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_ACTIVE, kData->active ? 1.0f : 0.0f);
     }
 #endif
 }
@@ -1791,7 +1813,7 @@ void CarlaPlugin::postRtEventsRun()
 #endif
 
             // Update Host
-            kData->engine->callback(CALLBACK_PROGRAM_CHANGED, fId, event.value1, 0, 0.0, nullptr);
+            kData->engine->callback(CALLBACK_PROGRAM_CHANGED, fId, event.value1, 0, 0.0f, nullptr);
             break;
 
         case kPluginPostRtEventMidiProgramChange:
@@ -1811,7 +1833,7 @@ void CarlaPlugin::postRtEventsRun()
 #endif
 
             // Update Host
-            kData->engine->callback(CALLBACK_MIDI_PROGRAM_CHANGED, fId, event.value1, 0, 0.0, nullptr);
+            kData->engine->callback(CALLBACK_MIDI_PROGRAM_CHANGED, fId, event.value1, 0, 0.0f, nullptr);
             break;
 
         case kPluginPostRtEventNoteOn:
@@ -1839,7 +1861,7 @@ void CarlaPlugin::postRtEventsRun()
 #endif
 
             // Update Host
-            kData->engine->callback(CALLBACK_NOTE_OFF, fId, event.value1, event.value2, 0.0, nullptr);
+            kData->engine->callback(CALLBACK_NOTE_OFF, fId, event.value1, event.value2, 0.0f, nullptr);
             break;
         }
     }

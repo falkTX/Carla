@@ -463,7 +463,7 @@ public:
      * \param sendOsc Send message change over OSC
      * \param sendCallback Send message change to registered callback
      */
-    virtual void setActive(const bool active, const bool sendOsc, const bool sendCallback);
+    void setActive(const bool active, const bool sendOsc, const bool sendCallback);
 
     /*!
      * Set the plugin's dry/wet signal value to \a value.\n
@@ -657,7 +657,17 @@ public:
     // Plugin processing
 
     /*!
-     * Plugin process callback.
+     * Plugin activate call.
+     */
+    virtual void activate();
+
+    /*!
+     * Plugin activate call.
+     */
+    virtual void deactivate();
+
+    /*!
+     * Plugin process call.
      */
     virtual void process(float** const inBuffer, float** const outBuffer, const uint32_t frames);
 

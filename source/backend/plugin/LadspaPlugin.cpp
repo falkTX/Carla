@@ -50,16 +50,14 @@ public:
         kData->singleMutex.lock();
         kData->masterMutex.lock();
 
+        if (kData->active)
+        {
+            deactivate();
+            kData->active = false;
+        }
+
         if (fDescriptor != nullptr)
         {
-            if (fDescriptor->deactivate != nullptr && kData->active)
-            {
-                if (fHandle != nullptr)
-                    fDescriptor->deactivate(fHandle);
-                if (fHandle2 != nullptr)
-                    fDescriptor->deactivate(fHandle2);
-            }
-
             if (fDescriptor->cleanup != nullptr)
             {
                 if (fHandle != nullptr)
@@ -79,7 +77,7 @@ public:
             fRdfDescriptor = nullptr;
         }
 
-        deleteBuffers();
+        clearBuffers();
     }
 
     // -------------------------------------------------------------------
@@ -170,8 +168,11 @@ public:
         if (! isDssiVst)
             options |= PLUGIN_OPTION_FIXED_BUFFER;
 
-        //if ((kData->audioIns.count() == 1 || kData->audioOuts.count() == 0) || (kData->audioIns.count() == 0 || kData->audioOuts.count() == 1))
-        //    options |= PLUGIN_OPTION_FORCE_STEREO;
+        if (kData->engine->getProccessMode() != PROCESS_MODE_CONTINUOUS_RACK)
+        {
+            if (kData->audioIn.count <= 1 && kData->audioOut.count <= 1 && (kData->audioIn.count != 0 || kData->audioOut.count != 0))
+                options |= PLUGIN_OPTION_FORCE_STEREO;
+        }
 
         return options;
     }
@@ -350,40 +351,6 @@ public:
     }
 
     // -------------------------------------------------------------------
-    // Set data (internal stuff)
-
-    void setActive(const bool active, const bool sendOsc, const bool sendCallback)
-    {
-        CARLA_ASSERT(fDescriptor != nullptr);
-
-        if (kData->active == active)
-            return;
-
-        if (active)
-        {
-            if (fDescriptor->activate != nullptr)
-            {
-                fDescriptor->activate(fHandle);
-
-                if (fHandle2 != nullptr)
-                    fDescriptor->activate(fHandle2);
-            }
-        }
-        else
-        {
-            if (fDescriptor->deactivate != nullptr)
-            {
-                fDescriptor->deactivate(fHandle);
-
-                if (fHandle2 != nullptr)
-                    fDescriptor->deactivate(fHandle2);
-            }
-        }
-
-        CarlaPlugin::setActive(active, sendOsc, sendCallback);
-    }
-
-    // -------------------------------------------------------------------
     // Set data (plugin-specific stuff)
 
     void setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback)
@@ -418,7 +385,10 @@ public:
         // Safely disable plugin for reload
         const ScopedDisabler sd(this);
 
-        deleteBuffers();
+        if (kData->active)
+            deactivate();
+
+        clearBuffers();
 
         const float   sampleRate = (float)kData->engine->getSampleRate();
         const uint32_t portCount = static_cast<uint32_t>(fDescriptor->PortCount);
@@ -438,7 +408,7 @@ public:
             CARLA_ASSERT(fDescriptor->PortRangeHints != nullptr);
             CARLA_ASSERT(fDescriptor->PortNames != nullptr);
 
-            for (uint32_t i=0; i < portCount; i++)
+            for (uint32_t i=0; i < portCount; ++i)
             {
                 const LADSPA_PortDescriptor portType = fDescriptor->PortDescriptors[i];
 
@@ -477,7 +447,7 @@ public:
             kData->audioIn.createNew(aIns);
             fAudioInBuffers = new float*[aIns];
 
-            for (uint32_t i=0; i < aIns; i++)
+            for (uint32_t i=0; i < aIns; ++i)
                 fAudioInBuffers[i] = nullptr;
         }
 
@@ -487,7 +457,7 @@ public:
             fAudioOutBuffers = new float*[aOuts];
             needsCtrlIn = true;
 
-            for (uint32_t i=0; i < aOuts; i++)
+            for (uint32_t i=0; i < aOuts; ++i)
                 fAudioOutBuffers[i] = nullptr;
         }
 
@@ -496,14 +466,14 @@ public:
             kData->param.createNew(params);
             fParamBuffers = new float[params];
 
-            for (uint32_t i=0; i < params; i++)
+            for (uint32_t i=0; i < params; ++i)
                 fParamBuffers[i] = 0.0f;
         }
 
         const uint  portNameSize = kData->engine->maxPortNameSize();
         CarlaString portName;
 
-        for (uint32_t i=0, iAudioIn=0, iAudioOut=0, iCtrl=0; i < portCount; i++)
+        for (uint32_t i=0, iAudioIn=0, iAudioOut=0, iCtrl=0; i < portCount; ++i)
         {
             const LADSPA_PortDescriptor portType      = fDescriptor->PortDescriptors[i];
             const LADSPA_PortRangeHint portRangeHints = fDescriptor->PortRangeHints[i];
@@ -718,7 +688,7 @@ public:
                 portName += ":";
             }
 
-            portName += "event-in";
+            portName += "events-in";
             portName.truncate(portNameSize);
 
             kData->event.portIn = (CarlaEngineEventPort*)kData->client->addPort(kEnginePortTypeEvent, portName, true);
@@ -734,7 +704,7 @@ public:
                 portName += ":";
             }
 
-            portName += "event-out";
+            portName += "events-out";
             portName.truncate(portNameSize);
 
             kData->event.portOut = (CarlaEngineEventPort*)kData->client->addPort(kEnginePortTypeEvent, portName, false);
@@ -767,7 +737,7 @@ public:
         // check latency
         if (fHints & PLUGIN_CAN_DRYWET)
         {
-            for (uint32_t i=0; i < kData->param.count; i++)
+            for (uint32_t i=0; i < kData->param.count; ++i)
             {
                 if (kData->param.data[i].type != PARAMETER_LATENCY)
                     continue;
@@ -777,7 +747,7 @@ public:
                 float tmpIn[aIns][2];
                 float tmpOut[aOuts][2];
 
-                for (j=0; j < aIns; j++)
+                for (j=0; j < aIns; ++j)
                 {
                     tmpIn[j][0] = 0.0f;
                     tmpIn[j][1] = 0.0f;
@@ -785,7 +755,7 @@ public:
                     fDescriptor->connect_port(fHandle, kData->audioIn.ports[j].rindex, tmpIn[j]);
                 }
 
-                for (j=0; j < aOuts; j++)
+                for (j=0; j < aOuts; ++j)
                 {
                     tmpOut[j][0] = 0.0f;
                     tmpOut[j][1] = 0.0f;
@@ -816,11 +786,40 @@ public:
 
         bufferSizeChanged(kData->engine->getBufferSize());
 
+        if (kData->active)
+            activate();
+
         carla_debug("LadspaPlugin::reload() - end");
     }
 
     // -------------------------------------------------------------------
     // Plugin processing
+
+    void activate()
+    {
+        CARLA_ASSERT(fDescriptor != nullptr);
+
+        if (fDescriptor->activate != nullptr)
+        {
+            fDescriptor->activate(fHandle);
+
+            if (fHandle2 != nullptr)
+                fDescriptor->activate(fHandle2);
+        }
+    }
+
+    void deactivate()
+    {
+        CARLA_ASSERT(fDescriptor != nullptr);
+
+        if (fDescriptor->deactivate != nullptr)
+        {
+            fDescriptor->deactivate(fHandle);
+
+            if (fHandle2 != nullptr)
+                fDescriptor->deactivate(fHandle2);
+        }
+    }
 
     void process(float** const inBuffer, float** const outBuffer, const uint32_t frames)
     {
@@ -832,20 +831,20 @@ public:
         if (! kData->active)
         {
             // disable any output sound
-            for (i=0; i < kData->audioOut.count; i++)
+            for (i=0; i < kData->audioOut.count; ++i)
                 carla_zeroFloat(outBuffer[i], frames);
 
             return;
         }
 
         // --------------------------------------------------------------------------------------------------------
-        // Check if not active before
+        // Check if needs reset
 
-        if (kData->needsReset /*|| ! kData->activeBefore*/)
+        if (kData->needsReset)
         {
             if (kData->latency > 0)
             {
-                for (i=0; i < kData->audioIn.count; i++)
+                for (i=0; i < kData->audioIn.count; ++i)
                     carla_zeroFloat(kData->latencyBuffers[i], kData->latency);
             }
 
@@ -855,7 +854,7 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Event Input and Processing
 
-        if (kData->event.portIn != nullptr /*&& kData->activeBefore*/)
+        if (kData->event.portIn != nullptr)
         {
             // ----------------------------------------------------------------------------------------------------
             // Event Input (System)
@@ -865,7 +864,7 @@ public:
             uint32_t time, nEvents = kData->event.portIn->getEventCount();
             uint32_t timeOffset = 0;
 
-            for (i=0; i < nEvents; i++)
+            for (i=0; i < nEvents; ++i)
             {
                 const EngineEvent& event = kData->event.portIn->getEvent(i);
 
@@ -950,7 +949,7 @@ public:
                         }
 
                         // Control plugin parameters
-                        for (k=0; k < kData->param.count; k++)
+                        for (k=0; k < kData->param.count; ++k)
                         {
                             if (kData->param.data[k].midiChannel != event.channel)
                                 continue;
@@ -1039,23 +1038,6 @@ public:
 
         } // End of Plugin processing (no events)
 
-        // --------------------------------------------------------------------------------------------------------
-        // Special Parameters
-
-#if 0
-        CARLA_PROCESS_CONTINUE_CHECK;
-
-        for (k=0; k < param.count; k++)
-        {
-            if (param.data[k].type == PARAMETER_LATENCY)
-            {
-                // TODO
-            }
-        }
-
-        CARLA_PROCESS_CONTINUE_CHECK;
-#endif
-
         CARLA_PROCESS_CONTINUE_CHECK;
 
         // --------------------------------------------------------------------------------------------------------
@@ -1067,7 +1049,7 @@ public:
             uint16_t param;
             float    value;
 
-            for (k=0; k < kData->param.count; k++)
+            for (k=0; k < kData->param.count; ++k)
             {
                 if (kData->param.data[k].type != PARAMETER_OUTPUT)
                     continue;
@@ -1121,9 +1103,9 @@ public:
         }
         else if (! kData->singleMutex.tryLock())
         {
-            for (i=0; i < kData->audioOut.count; i++)
+            for (i=0; i < kData->audioOut.count; ++i)
             {
-                for (k=0; k < frames; k++)
+                for (k=0; k < frames; ++k)
                     outBuffer[i][k+timeOffset] = 0.0f;
             }
 
@@ -1131,11 +1113,11 @@ public:
         }
 
         // --------------------------------------------------------------------------------------------------------
-        // Fill plugin buffers
+        // Reset audio buffers
 
-        for (i=0; i < kData->audioIn.count; i++)
+        for (i=0; i < kData->audioIn.count; ++i)
             carla_copyFloat(fAudioInBuffers[i], inBuffer[i]+timeOffset, frames);
-        for (i=0; i < kData->audioOut.count; i++)
+        for (i=0; i < kData->audioOut.count; ++i)
             carla_zeroFloat(fAudioOutBuffers[i], frames);
 
         // --------------------------------------------------------------------------------------------------------
@@ -1150,17 +1132,18 @@ public:
         // Post-processing (dry/wet, volume and balance)
 
         {
-            const bool doDryWet  = (fHints & PLUGIN_CAN_DRYWET) > 0 && kData->postProc.dryWet != 1.0f;
-            const bool doBalance = (fHints & PLUGIN_CAN_BALANCE) > 0 && (kData->postProc.balanceLeft != -1.0f || kData->postProc.balanceRight != 1.0f);
+            const bool doDryWet  = (fHints & PLUGIN_CAN_DRYWET) != 0 && kData->postProc.dryWet != 1.0f;
+            const bool doBalance = (fHints & PLUGIN_CAN_BALANCE) != 0 && (kData->postProc.balanceLeft != -1.0f || kData->postProc.balanceRight != 1.0f);
 
+            bool isPair;
             float bufValue, oldBufLeft[doBalance ? frames : 1];
 
-            for (i=0; i < kData->audioOut.count; i++)
+            for (i=0; i < kData->audioOut.count; ++i)
             {
                 // Dry/Wet
                 if (doDryWet)
                 {
-                    for (k=0; k < frames; k++)
+                    for (k=0; k < frames; ++k)
                     {
                         // TODO
                         //if (k < kData->latency && kData->latency < frames)
@@ -1176,15 +1159,20 @@ public:
                 // Balance
                 if (doBalance)
                 {
-                    if (i % 2 == 0)
+                    isPair = (i % 2 == 0);
+
+                    if (isPair)
+                    {
+                        CARLA_ASSERT(i+1 < kData->audioOut.count);
                         carla_copyFloat(oldBufLeft, fAudioOutBuffers[i], frames);
+                    }
 
                     float balRangeL = (kData->postProc.balanceLeft  + 1.0f)/2.0f;
                     float balRangeR = (kData->postProc.balanceRight + 1.0f)/2.0f;
 
-                    for (k=0; k < frames; k++)
+                    for (k=0; k < frames; ++k)
                     {
-                        if (i % 2 == 0)
+                        if (isPair)
                         {
                             // left
                             fAudioOutBuffers[i][k]  = oldBufLeft[k]            * (1.0f - balRangeL);
@@ -1201,7 +1189,7 @@ public:
 
                 // Volume (and buffer copy)
                 {
-                    for (k=0; k < frames; k++)
+                    for (k=0; k < frames; ++k)
                         outBuffer[i][k+timeOffset] = fAudioOutBuffers[i][k] * kData->postProc.volume;
                 }
             }
@@ -1210,7 +1198,7 @@ public:
             // Latency, save values for next callback, TODO
             if (kData->latency > 0 && kData->latency < frames)
             {
-                for (i=0; i < kData->audioIn.count; i++)
+                for (i=0; i < kData->audioIn.count; ++i)
                     carla_copyFloat(kData->latencyBuffers[i], inBuffer[i] + (frames - kData->latency), kData->latency);
             }
 #endif
@@ -1226,14 +1214,14 @@ public:
     {
         carla_debug("LadspaPlugin::bufferSizeChanged(%i) - start", newBufferSize);
 
-        for (uint32_t i=0; i < kData->audioIn.count; i++)
+        for (uint32_t i=0; i < kData->audioIn.count; ++i)
         {
             if (fAudioInBuffers[i] != nullptr)
                 delete[] fAudioInBuffers[i];
             fAudioInBuffers[i] = new float[newBufferSize];
         }
 
-        for (uint32_t i=0; i < kData->audioOut.count; i++)
+        for (uint32_t i=0; i < kData->audioOut.count; ++i)
         {
             if (fAudioOutBuffers[i] != nullptr)
                 delete[] fAudioOutBuffers[i];
@@ -1242,13 +1230,13 @@ public:
 
         if (fHandle2 == nullptr)
         {
-            for (uint32_t i=0; i < kData->audioIn.count; i++)
+            for (uint32_t i=0; i < kData->audioIn.count; ++i)
             {
                 CARLA_ASSERT(fAudioInBuffers[i] != nullptr);
                 fDescriptor->connect_port(fHandle, kData->audioIn.ports[i].rindex, fAudioInBuffers[i]);
             }
 
-            for (uint32_t i=0; i < kData->audioOut.count; i++)
+            for (uint32_t i=0; i < kData->audioOut.count; ++i)
             {
                 CARLA_ASSERT(fAudioOutBuffers[i] != nullptr);
                 fDescriptor->connect_port(fHandle, kData->audioOut.ports[i].rindex, fAudioOutBuffers[i]);
@@ -1283,13 +1271,13 @@ public:
     // -------------------------------------------------------------------
     // Cleanup
 
-    void deleteBuffers()
+    void clearBuffers()
     {
-        carla_debug("LadspaPlugin::deleteBuffers() - start");
+        carla_debug("LadspaPlugin::clearBuffers() - start");
 
         if (fAudioInBuffers != nullptr)
         {
-            for (uint32_t i=0; i < kData->audioIn.count; i++)
+            for (uint32_t i=0; i < kData->audioIn.count; ++i)
             {
                 if (fAudioInBuffers[i] != nullptr)
                 {
@@ -1304,7 +1292,7 @@ public:
 
         if (fAudioOutBuffers != nullptr)
         {
-            for (uint32_t i=0; i < kData->audioOut.count; i++)
+            for (uint32_t i=0; i < kData->audioOut.count; ++i)
             {
                 if (fAudioOutBuffers[i] != nullptr)
                 {
@@ -1325,7 +1313,7 @@ public:
 
         kData->clearBuffers();
 
-        carla_debug("LadspaPlugin::deleteBuffers() - end");
+        carla_debug("LadspaPlugin::clearBuffers() - end");
     }
 
     // -------------------------------------------------------------------
@@ -1437,6 +1425,9 @@ public:
             kData->engine->setLastError("Plugin failed to initialize");
             return false;
         }
+
+        // TODO - load settings for options:
+        //fOptions & PLUGIN_OPTION_FORCE_STEREO
 
         return true;
     }

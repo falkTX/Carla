@@ -563,21 +563,6 @@ struct CarlaPluginProtectedData {
             client = nullptr;
         }
 
-        if (latencyBuffers != nullptr)
-        {
-            for (uint32_t i=0; i < audioIn.count; i++)
-            {
-                CARLA_ASSERT(latencyBuffers[i] != nullptr);
-
-                if (latencyBuffers[i] != nullptr)
-                    delete[] latencyBuffers[i];
-            }
-
-            delete[] latencyBuffers;
-            latencyBuffers = nullptr;
-            latency = 0;
-        }
-
         clearBuffers();
 
         for (auto it = custom.begin(); it.valid(); it.next())
@@ -612,6 +597,21 @@ struct CarlaPluginProtectedData {
 
     void clearBuffers()
     {
+        if (latencyBuffers != nullptr)
+        {
+            for (uint32_t i=0; i < audioIn.count; i++)
+            {
+                CARLA_ASSERT(latencyBuffers[i] != nullptr);
+
+                if (latencyBuffers[i] != nullptr)
+                    delete[] latencyBuffers[i];
+            }
+
+            delete[] latencyBuffers;
+            latencyBuffers = nullptr;
+            latency = 0;
+        }
+
         audioIn.clear();
         audioOut.clear();
         param.clear();

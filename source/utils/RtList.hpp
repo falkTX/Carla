@@ -223,6 +223,19 @@ public:
         return _getFirstOrLast(false, remove);
     }
 
+    void remove(Itenerator& it)
+    {
+        CARLA_ASSERT(it.fEntry != nullptr);
+        CARLA_ASSERT(it.fData != nullptr);
+
+        if (it.fEntry != nullptr && it.fData != nullptr)
+        {
+            fCount--;
+            list_del(it.fEntry);
+            _deallocate(it.fData);
+        }
+    }
+
     bool removeOne(const T& value)
     {
         Data* data = nullptr;
