@@ -67,6 +67,10 @@ void carla_register_all_plugins()
 
 CARLA_BACKEND_START_NAMESPACE
 
+#if 0
+}
+#endif
+
 struct NativePluginMidiData {
     uint32_t  count;
     uint32_t* indexes;
@@ -98,10 +102,10 @@ struct NativePluginMidiData {
         indexes = new uint32_t[newCount];
         count   = newCount;
 
-        for (uint32_t i=0; i < newCount; i++)
+        for (uint32_t i=0; i < newCount; ++i)
             ports[i] = nullptr;
 
-        for (uint32_t i=0; i < newCount; i++)
+        for (uint32_t i=0; i < newCount; ++i)
             indexes[i] = 0;
     }
 
@@ -109,7 +113,7 @@ struct NativePluginMidiData {
     {
         if (ports != nullptr)
         {
-            for (uint32_t i=0; i < count; i++)
+            for (uint32_t i=0; i < count; ++i)
             {
                 if (ports[i] != nullptr)
                 {
@@ -133,7 +137,7 @@ struct NativePluginMidiData {
 
     void initBuffers(CarlaEngine* const engine)
     {
-        for (uint32_t i=0; i < count; i++)
+        for (uint32_t i=0; i < count; ++i)
         {
             if (ports[i] != nullptr)
                 ports[i]->initBuffer(engine);
@@ -155,9 +159,12 @@ public:
           fIsUiVisible(false),
           fAudioInBuffers(nullptr),
           fAudioOutBuffers(nullptr),
+          fLastChunk(nullptr),
           fMidiEventCount(0)
     {
         carla_debug("NativePlugin::NativePlugin(%p, %i)", engine, id);
+
+        carla_zeroStruct< ::MidiEvent>(fMidiEvents, MAX_MIDI_EVENTS*2);
 
         fHost.handle = this;
         fHost.get_buffer_size        = carla_host_get_buffer_size;
@@ -169,30 +176,26 @@ public:
         fHost.ui_closed              = carla_host_ui_closed;
         fHost.ui_open_file           = carla_host_ui_open_file;
         fHost.ui_save_file           = carla_host_ui_save_file;
-
-        carla_zeroMem(fMidiEvents, sizeof(::MidiEvent)*MAX_MIDI_EVENTS*2);
     }
 
     ~NativePlugin()
     {
         carla_debug("NativePlugin::~NativePlugin()");
 
+        if (fIsUiVisible && fDescriptor != nullptr && fDescriptor->ui_show != nullptr && fHandle != nullptr)
+            fDescriptor->ui_show(fHandle, false);
+
         kData->singleMutex.lock();
         kData->masterMutex.lock();
 
+        if (kData->active)
+        {
+            deactivate();
+            kData->active = false;
+        }
+
         if (fDescriptor != nullptr)
         {
-            if (fDescriptor->ui_show != nullptr && fIsUiVisible)
-                fDescriptor->ui_show(fHandle, false);
-
-            if (fDescriptor->deactivate != nullptr && kData->active/*Before*/)
-            {
-                if (fHandle != nullptr)
-                    fDescriptor->deactivate(fHandle);
-                if (fHandle2 != nullptr)
-                    fDescriptor->deactivate(fHandle2);
-            }
-
             if (fDescriptor->cleanup != nullptr)
             {
                 if (fHandle != nullptr)
@@ -206,7 +209,13 @@ public:
             fDescriptor = nullptr;
         }
 
-        deleteBuffers();
+        if (fLastChunk != nullptr)
+        {
+            delete[] fLastChunk;
+            fLastChunk = nullptr;
+        }
+
+        clearBuffers();
     }
 
     // -------------------------------------------------------------------
@@ -221,10 +230,7 @@ public:
     {
         CARLA_ASSERT(fDescriptor != nullptr);
 
-        if (fDescriptor != nullptr)
-            return static_cast<PluginCategory>(fDescriptor->category);
-
-        return getPluginCategoryFromName(fName);
+        return static_cast<PluginCategory>(fDescriptor->category);
     }
 
     // -------------------------------------------------------------------
@@ -246,7 +252,7 @@ public:
         CARLA_ASSERT(fHandle != nullptr);
         CARLA_ASSERT(parameterId < kData->param.count);
 
-        if (fDescriptor != nullptr && fHandle != nullptr && parameterId < kData->param.count && fDescriptor->get_parameter_info != nullptr)
+        if (fDescriptor->get_parameter_info != nullptr && parameterId < kData->param.count)
         {
             if (const Parameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId))
                 return param->scalePointCount;
@@ -262,9 +268,12 @@ public:
     {
         CARLA_ASSERT(fOptions & PLUGIN_OPTION_USE_CHUNKS);
         CARLA_ASSERT(fDescriptor != nullptr);
+        CARLA_ASSERT(fDescriptor->get_chunk != nullptr);
         CARLA_ASSERT(fHandle != nullptr);
+        CARLA_ASSERT(fHandle2 == nullptr);
+        CARLA_ASSERT(dataPtr != nullptr);
 
-        if (fDescriptor != nullptr && fHandle != nullptr)
+        if (fDescriptor->get_chunk != nullptr)
             return fDescriptor->get_chunk(fHandle, dataPtr);
 
         return 0;
@@ -282,28 +291,21 @@ public:
 
         unsigned int options = 0x0;
 
-        if (fDescriptor->name != nullptr)
-        {
-//             if (std::strcmp(fDescriptor->name, "ZynAddSubFX") == 0)
-//             {
-//                 // nothing
-//             }
-//             else
-//             {
-
-//             }
-        }
-
         options |= PLUGIN_OPTION_FIXED_BUFFER;
         options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
         if (fDescriptor->hints & ::PLUGIN_USES_CHUNKS)
             options |= PLUGIN_OPTION_USE_CHUNKS;
 
-        //if ((kData->audioIns.count() == 1 || kData->audioOuts.count() == 0) || (kData->audioIns.count() == 0 || kData->audioOuts.count() == 1))
-        //    options |= PLUGIN_OPTION_FORCE_STEREO;
+        if (kData->engine->getProccessMode() != PROCESS_MODE_CONTINUOUS_RACK)
+        {
+            if (fOptions & PLUGIN_OPTION_FORCE_STEREO)
+                options |= PLUGIN_OPTION_FORCE_STEREO;
+            else if (kData->audioIn.count <= 1 && kData->audioOut.count <= 1 && (kData->audioIn.count != 0 || kData->audioOut.count != 0))
+                options |= PLUGIN_OPTION_FORCE_STEREO;
+        }
 
-        if (fMidiIn.count > 0)
+        if (fDescriptor->midiIns > 0)
         {
             options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
             options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
@@ -321,7 +323,7 @@ public:
         CARLA_ASSERT(fHandle != nullptr);
         CARLA_ASSERT(parameterId < kData->param.count);
 
-        if (fDescriptor != nullptr && fHandle != nullptr && parameterId < kData->param.count && fDescriptor->get_parameter_value != nullptr)
+        if (fDescriptor->get_parameter_value != nullptr && parameterId < kData->param.count)
             return fDescriptor->get_parameter_value(fHandle, parameterId);
 
         return 0.0f;
@@ -334,7 +336,7 @@ public:
         CARLA_ASSERT(parameterId < kData->param.count);
         CARLA_ASSERT(scalePointId < parameterScalePointCount(parameterId));
 
-        if (fDescriptor != nullptr && fHandle != nullptr && parameterId < kData->param.count && fDescriptor->get_parameter_info != nullptr)
+        if (fDescriptor->get_parameter_info != nullptr && parameterId < kData->param.count)
         {
             if (const Parameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId))
             {
@@ -351,7 +353,7 @@ public:
     {
         CARLA_ASSERT(fDescriptor != nullptr);
 
-        if (fDescriptor != nullptr && fDescriptor->label != nullptr)
+        if (fDescriptor->label != nullptr)
             std::strncpy(strBuf, fDescriptor->label, STR_MAX);
         else
             CarlaPlugin::getLabel(strBuf);
@@ -361,7 +363,7 @@ public:
     {
         CARLA_ASSERT(fDescriptor != nullptr);
 
-        if (fDescriptor != nullptr && fDescriptor->maker != nullptr)
+        if (fDescriptor->maker != nullptr)
             std::strncpy(strBuf, fDescriptor->maker, STR_MAX);
         else
             CarlaPlugin::getMaker(strBuf);
@@ -371,7 +373,7 @@ public:
     {
         CARLA_ASSERT(fDescriptor != nullptr);
 
-        if (fDescriptor != nullptr && fDescriptor->copyright != nullptr)
+        if (fDescriptor->copyright != nullptr)
             std::strncpy(strBuf, fDescriptor->copyright, STR_MAX);
         else
             CarlaPlugin::getCopyright(strBuf);
@@ -381,7 +383,7 @@ public:
     {
         CARLA_ASSERT(fDescriptor != nullptr);
 
-        if (fDescriptor != nullptr && fDescriptor->name != nullptr)
+        if (fDescriptor->name != nullptr)
             std::strncpy(strBuf, fDescriptor->name, STR_MAX);
         else
             CarlaPlugin::getRealName(strBuf);
@@ -393,7 +395,7 @@ public:
         CARLA_ASSERT(fHandle != nullptr);
         CARLA_ASSERT(parameterId < kData->param.count);
 
-        if (fDescriptor != nullptr && fHandle != nullptr && parameterId < kData->param.count && fDescriptor->get_parameter_info != nullptr)
+        if (fDescriptor->get_parameter_info != nullptr && parameterId < kData->param.count)
         {
             const Parameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId);
 
@@ -413,7 +415,7 @@ public:
         CARLA_ASSERT(fHandle != nullptr);
         CARLA_ASSERT(parameterId < kData->param.count);
 
-        if (fDescriptor != nullptr && fHandle != nullptr && parameterId < kData->param.count && fDescriptor->get_parameter_text != nullptr)
+        if (fDescriptor->get_parameter_text != nullptr && parameterId < kData->param.count)
         {
             if (const char* const text = fDescriptor->get_parameter_text(fHandle, parameterId))
             {
@@ -431,7 +433,7 @@ public:
         CARLA_ASSERT(fHandle != nullptr);
         CARLA_ASSERT(parameterId < kData->param.count);
 
-        if (fDescriptor != nullptr && fHandle != nullptr && parameterId < kData->param.count && fDescriptor->get_parameter_info != nullptr)
+        if (fDescriptor->get_parameter_info != nullptr && parameterId < kData->param.count)
         {
             const Parameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId);
 
@@ -452,7 +454,7 @@ public:
         CARLA_ASSERT(parameterId < kData->param.count);
         CARLA_ASSERT(scalePointId < parameterScalePointCount(parameterId));
 
-        if (fDescriptor != nullptr && fHandle != nullptr && parameterId < kData->param.count && fDescriptor->get_parameter_info != nullptr)
+        if (fDescriptor->get_parameter_info != nullptr && parameterId < kData->param.count)
         {
             if (const Parameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId))
             {
@@ -470,40 +472,6 @@ public:
     }
 
     // -------------------------------------------------------------------
-    // Set data (internal stuff)
-
-    void setActive(const bool active, const bool sendOsc, const bool sendCallback)
-    {
-        CARLA_ASSERT(fDescriptor != nullptr);
-
-        if (kData->active == active)
-            return;
-
-        if (active)
-        {
-            if (fDescriptor->activate != nullptr)
-            {
-                fDescriptor->activate(fHandle);
-
-                if (fHandle2 != nullptr)
-                    fDescriptor->activate(fHandle2);
-            }
-        }
-        else
-        {
-            if (fDescriptor->deactivate != nullptr)
-            {
-                fDescriptor->deactivate(fHandle);
-
-                if (fHandle2 != nullptr)
-                    fDescriptor->deactivate(fHandle2);
-            }
-        }
-
-        CarlaPlugin::setActive(active, sendOsc, sendCallback);
-    }
-
-    // -------------------------------------------------------------------
     // Set data (plugin-specific stuff)
 
     void setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback)
@@ -514,7 +482,7 @@ public:
 
         const float fixedValue = kData->param.fixValue(parameterId, value);
 
-        if (fDescriptor != nullptr && fHandle != nullptr && parameterId < kData->param.count && fDescriptor->set_parameter_value != nullptr)
+        if (fDescriptor->set_parameter_value != nullptr && parameterId < kData->param.count)
         {
             fDescriptor->set_parameter_value(fHandle, parameterId, fixedValue);
 
@@ -532,6 +500,7 @@ public:
         CARLA_ASSERT(type != nullptr);
         CARLA_ASSERT(key != nullptr);
         CARLA_ASSERT(value != nullptr);
+        carla_debug("DssiPlugin::setCustomData(%s, %s, %s, %s)", type, key, value, bool2str(sendGui));
 
         if (type == nullptr)
             return carla_stderr2("NativePlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is not string", type, key, value, bool2str(sendGui));
@@ -545,19 +514,16 @@ public:
         if (value == nullptr)
             return carla_stderr2("Nativelugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - value is null", type, key, value, bool2str(sendGui));
 
-        if (fDescriptor != nullptr && fHandle != nullptr)
+        if (fDescriptor->set_custom_data != nullptr)
         {
-            if (fDescriptor->set_custom_data != nullptr)
-            {
-                fDescriptor->set_custom_data(fHandle, key, value);
+            fDescriptor->set_custom_data(fHandle, key, value);
 
-                if (fHandle2)
-                    fDescriptor->set_custom_data(fHandle2, key, value);
-            }
-
-            if (sendGui && fDescriptor->ui_set_custom_data != nullptr)
-                fDescriptor->ui_set_custom_data(fHandle, key, value);
+            if (fHandle2 != nullptr)
+                fDescriptor->set_custom_data(fHandle2, key, value);
         }
+
+        if (sendGui && fIsUiVisible && fDescriptor->ui_set_custom_data != nullptr)
+            fDescriptor->ui_set_custom_data(fHandle, key, value);
 
         if (std::strlen(key) == 6 && std::strncmp(key, "file", 4) == 0)
         {
@@ -570,16 +536,32 @@ public:
 
     void setChunkData(const char* const stringData)
     {
+        CARLA_ASSERT(fOptions & PLUGIN_OPTION_USE_CHUNKS);
         CARLA_ASSERT(fDescriptor != nullptr);
+        CARLA_ASSERT(fDescriptor->set_chunk != nullptr);
         CARLA_ASSERT(fHandle != nullptr);
+        CARLA_ASSERT(fHandle2 == nullptr);
         CARLA_ASSERT(stringData != nullptr);
 
-        // FIXME
-        fChunk = QByteArray::fromBase64(QByteArray(stringData));
-        //fChunk.toBase64();
+        if (fDescriptor->set_chunk == nullptr)
+            return;
 
-        const ScopedSingleProcessLocker spl(this, true);
-        fDescriptor->set_chunk(fHandle, fChunk.data(), fChunk.size());
+        if (fLastChunk != nullptr)
+        {
+            delete[] fLastChunk;
+            fLastChunk = nullptr;
+        }
+
+        const size_t size(CarlaString(stringData).exportAsBase64Binary(&fLastChunk));
+
+        CARLA_ASSERT(size > 0);
+        CARLA_ASSERT(fLastChunk != nullptr);
+
+        if (size > 0 && fLastChunk != nullptr)
+        {
+            const ScopedSingleProcessLocker spl(this, true);
+            fDescriptor->set_chunk(fHandle, fLastChunk, size);
+        }
     }
 
     void setMidiProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback)
@@ -593,7 +575,7 @@ public:
         else if (index > static_cast<int32_t>(kData->midiprog.count))
             return;
 
-        if (fDescriptor != nullptr && fHandle != nullptr && index >= 0)
+        if (index >= 0)
         {
             const uint32_t bank    = kData->midiprog.data[index].bank;
             const uint32_t program = kData->midiprog.data[index].program;
@@ -617,33 +599,37 @@ public:
         CARLA_ASSERT(fDescriptor != nullptr);
         CARLA_ASSERT(fHandle != nullptr);
 
-        if (fDescriptor != nullptr && fHandle != nullptr && fDescriptor->ui_show != nullptr)
+        if (fDescriptor->ui_show == nullptr)
+            return;
+
+        fDescriptor->ui_show(fHandle, yesNo);
+        fIsUiVisible = yesNo;
+
+        if (yesNo)
         {
-            fIsUiVisible = yesNo;
-
-            fDescriptor->ui_show(fHandle, yesNo);
-
-            if (yesNo)
+            // Update UI values, FIXME? (remove?)
+            if (fDescriptor->ui_set_custom_data != nullptr)
             {
-                // Update UI values
-                if (fDescriptor->ui_set_custom_data != nullptr)
+                for (auto it = kData->custom.begin(); it.valid(); it.next())
                 {
-                    // TODO
-                }
+                    const CustomData& cData(*it);
 
-                if (fDescriptor->ui_set_midi_program != nullptr && kData->midiprog.current >= 0)
-                {
-                    const MidiProgramData& mpData = kData->midiprog.getCurrent();
-                    fDescriptor->ui_set_midi_program(fHandle, mpData.bank, mpData.program);
-                }
+                    CARLA_ASSERT(std::strcmp(cData.type, CUSTOM_DATA_STRING) == 0);
 
-                if (fDescriptor->ui_set_parameter_value != nullptr)
-                {
-                    for (uint32_t i=0; i < kData->param.count; i++)
-                    {
-                        fDescriptor->ui_set_parameter_value(fHandle, i, fDescriptor->get_parameter_value(fHandle, i));
-                    }
+                    fDescriptor->ui_set_custom_data(fHandle, cData.key, cData.value);
                 }
+            }
+
+            if (fDescriptor->ui_set_midi_program != nullptr && kData->midiprog.current >= 0)
+            {
+                const MidiProgramData& mpData = kData->midiprog.getCurrent();
+                fDescriptor->ui_set_midi_program(fHandle, mpData.bank, mpData.program);
+            }
+
+            if (fDescriptor->ui_set_parameter_value != nullptr)
+            {
+                for (uint32_t i=0; i < kData->param.count; ++i)
+                    fDescriptor->ui_set_parameter_value(fHandle, i, fDescriptor->get_parameter_value(fHandle, i));
             }
         }
     }
@@ -653,7 +639,7 @@ public:
         CARLA_ASSERT(fDescriptor != nullptr);
         CARLA_ASSERT(fHandle != nullptr);
 
-        if (fIsUiVisible && fDescriptor != nullptr && fHandle != nullptr && fDescriptor->ui_idle != nullptr)
+        if (fIsUiVisible && fDescriptor->ui_idle != nullptr)
             fDescriptor->ui_idle(fHandle);
     }
 
@@ -679,7 +665,10 @@ public:
         // Safely disable plugin for reload
         const ScopedDisabler sd(this);
 
-        deleteBuffers();
+        if (kData->active)
+            deactivate();
+
+        clearBuffers();
 
         const float sampleRate = (float)kData->engine->getSampleRate();
 
@@ -720,7 +709,7 @@ public:
             kData->audioIn.createNew(aIns);
             fAudioInBuffers = new float*[aIns];
 
-            for (uint32_t i=0; i < aIns; i++)
+            for (uint32_t i=0; i < aIns; ++i)
                 fAudioInBuffers[i] = nullptr;
         }
 
@@ -730,7 +719,7 @@ public:
             fAudioOutBuffers = new float*[aOuts];
             needsCtrlIn = true;
 
-            for (uint32_t i=0; i < aOuts; i++)
+            for (uint32_t i=0; i < aOuts; ++i)
                 fAudioOutBuffers[i] = nullptr;
         }
 
@@ -749,14 +738,13 @@ public:
         if (params > 0)
         {
             kData->param.createNew(params);
-            carla_stdout("HAS %i PARAMS", params);
         }
 
         const uint  portNameSize = kData->engine->maxPortNameSize();
         CarlaString portName;
 
         // Audio Ins
-        for (j=0; j < aIns; j++)
+        for (j=0; j < aIns; ++j)
         {
             portName.clear();
 
@@ -789,7 +777,7 @@ public:
         }
 
         // Audio Outs
-        for (j=0; j < aOuts; j++)
+        for (j=0; j < aOuts; ++j)
         {
             portName.clear();
 
@@ -824,7 +812,7 @@ public:
         // MIDI Input (only if multiple)
         if (mIns > 1)
         {
-            for (j=0; j < mIns; j++)
+            for (j=0; j < mIns; ++j)
             {
                 portName.clear();
 
@@ -846,7 +834,7 @@ public:
         // MIDI Output (only if multiple)
         if (mOuts > 1)
         {
-            for (j=0; j < mOuts; j++)
+            for (j=0; j < mOuts; ++j)
             {
                 portName.clear();
 
@@ -865,7 +853,7 @@ public:
             }
         }
 
-        for (j=0; j < params; j++)
+        for (j=0; j < params; ++j)
         {
             const ::Parameter* const paramInfo = fDescriptor->get_parameter_info(fHandle, j);
 
@@ -982,7 +970,7 @@ public:
                 portName += ":";
             }
 
-            portName += "event-in";
+            portName += "events-in";
             portName.truncate(portNameSize);
 
             kData->event.portIn = (CarlaEngineEventPort*)kData->client->addPort(kEnginePortTypeEvent, portName, true);
@@ -998,11 +986,16 @@ public:
                 portName += ":";
             }
 
-            portName += "event-out";
+            portName += "events-out";
             portName.truncate(portNameSize);
 
             kData->event.portOut = (CarlaEngineEventPort*)kData->client->addPort(kEnginePortTypeEvent, portName, false);
         }
+
+        if (forcedStereoIn || forcedStereoOut)
+            fOptions |= PLUGIN_OPTION_FORCE_STEREO;
+        else
+            fOptions &= ~PLUGIN_OPTION_FORCE_STEREO;
 
         // plugin hints
         fHints = 0x0;
@@ -1032,27 +1025,11 @@ public:
         if (aIns <= 2 && aOuts <= 2 && (aIns == aOuts || aIns == 0 || aOuts == 0) && mIns <= 1 && mOuts <= 1)
             kData->extraHints |= PLUGIN_HINT_CAN_RUN_RACK;
 
-        // plugin options
-        fOptions = 0x0;
-
-        fOptions |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
-
-        if (forcedStereoIn || forcedStereoOut)
-            fOptions |= PLUGIN_OPTION_FORCE_STEREO;
-
-        if (fDescriptor->hints & ::PLUGIN_USES_CHUNKS)
-            fOptions |= PLUGIN_OPTION_USE_CHUNKS;
-
-        if (mIns > 0)
-        {
-            fOptions |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
-            fOptions |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
-            fOptions |= PLUGIN_OPTION_SEND_PITCHBEND;
-            fOptions |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
-        }
-
         bufferSizeChanged(kData->engine->getBufferSize());
         reloadPrograms(true);
+
+        if (kData->active)
+            activate();
 
         carla_debug("NativePlugin::reload() - end");
     }
@@ -1076,7 +1053,7 @@ public:
             kData->midiprog.createNew(count);
 
             // Update data
-            for (i=0; i < count; i++)
+            for (i=0; i < count; ++i)
             {
                 const ::MidiProgram* const mpDesc = fDescriptor->get_midi_program_info(fHandle, i);
                 CARLA_ASSERT(mpDesc != nullptr);
@@ -1094,7 +1071,7 @@ public:
         {
             kData->engine->osc_send_control_set_midi_program_count(fId, count);
 
-            for (i=0; i < count; i++)
+            for (i=0; i < count; ++i)
                 kData->engine->osc_send_control_set_midi_program_data(fId, i, kData->midiprog.data[i].bank, kData->midiprog.data[i].program, kData->midiprog.data[i].name);
         }
 #endif
@@ -1149,6 +1126,32 @@ public:
     // -------------------------------------------------------------------
     // Plugin processing
 
+    void activate()
+    {
+        CARLA_ASSERT(fDescriptor != nullptr);
+
+        if (fDescriptor->activate != nullptr)
+        {
+            fDescriptor->activate(fHandle);
+
+            if (fHandle2 != nullptr)
+                fDescriptor->activate(fHandle2);
+        }
+    }
+
+    void deactivate()
+    {
+        CARLA_ASSERT(fDescriptor != nullptr);
+
+        if (fDescriptor->deactivate != nullptr)
+        {
+            fDescriptor->deactivate(fHandle);
+
+            if (fHandle2 != nullptr)
+                fDescriptor->deactivate(fHandle2);
+        }
+    }
+
     void process(float** const inBuffer, float** const outBuffer, const uint32_t frames)
     {
         uint32_t i, k;
@@ -1159,37 +1162,24 @@ public:
         if (! kData->active)
         {
             // disable any output sound
-            for (i=0; i < kData->audioOut.count; i++)
+            for (i=0; i < kData->audioOut.count; ++i)
                 carla_zeroFloat(outBuffer[i], frames);
 
-#if 0
-            if (kData->activeBefore)
-            {
-                if (fDescriptor->deactivate != nullptr)
-                {
-                    fDescriptor->deactivate(fHandle);
-
-                    if (fHandle2 != nullptr)
-                        fDescriptor->deactivate(fHandle2);
-                }
-            }
-
-            kData->activeBefore = kData->active;
-#endif
             return;
         }
 
         fMidiEventCount = 0;
-        carla_zeroMem(fMidiEvents, sizeof(::MidiEvent)*MAX_MIDI_EVENTS*2);
+        carla_zeroStruct< ::MidiEvent>(fMidiEvents, MAX_MIDI_EVENTS*2);
 
         // --------------------------------------------------------------------------------------------------------
-        // Check if not active before
+        // Check if needs reset
 
-        if (kData->needsReset /*|| ! kData->activeBefore*/)
+        if (kData->needsReset)
         {
+            // TODO!
             if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
             {
-                for (k=0, i=MAX_MIDI_CHANNELS; k < MAX_MIDI_CHANNELS; k++)
+                for (k=0, i=MAX_MIDI_CHANNELS; k < MAX_MIDI_CHANNELS; ++k)
                 {
                     fMidiEvents[k].data[0] = MIDI_STATUS_CONTROL_CHANGE + k;
                     fMidiEvents[k].data[1] = MIDI_CONTROL_ALL_SOUND_OFF;
@@ -1200,16 +1190,11 @@ public:
 
                 fMidiEventCount = MAX_MIDI_CHANNELS*2;
             }
-
-#if 0
-            if (fDescriptor->activate != nullptr)
+            else
             {
-                fDescriptor->activate(fHandle);
-
-                if (fHandle2 != nullptr)
-                    fDescriptor->activate(fHandle2);
             }
-#endif
+
+            kData->needsReset = false;
         }
 
         CARLA_PROCESS_CONTINUE_CHECK;
@@ -1217,7 +1202,7 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Set TimeInfo
 
-        const EngineTimeInfo& timeInfo = kData->engine->getTimeInfo();
+        const EngineTimeInfo& timeInfo(kData->engine->getTimeInfo());
 
         fTimeInfo.playing = timeInfo.playing;
         fTimeInfo.frame   = timeInfo.frame;
@@ -1246,7 +1231,7 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Event Input and Processing
 
-        if (kData->event.portIn != nullptr /*&& kData->activeBefore*/)
+        if (kData->event.portIn != nullptr)
         {
             // ----------------------------------------------------------------------------------------------------
             // MIDI Input (External)
@@ -1287,7 +1272,7 @@ public:
             if (kData->midiprog.current >= 0 && kData->midiprog.count > 0)
                 nextBankId = kData->midiprog.data[kData->midiprog.current].bank;
 
-            for (i=0; i < nEvents; i++)
+            for (i=0; i < nEvents; ++i)
             {
                 const EngineEvent& event = kData->event.portIn->getEvent(i);
 
@@ -1306,9 +1291,14 @@ public:
                         timeOffset = time;
                         nextBankId = 0;
 
+                        if (kData->midiprog.current >= 0 && kData->midiprog.count > 0)
+                            nextBankId = kData->midiprog.data[kData->midiprog.current].bank;
+                        else
+                            nextBankId = 0;
+
                         if (fMidiEventCount > 0)
                         {
-                            //carla_zeroMem(fMidiEvents, sizeof(::MidiEvent)*fMidiEventCount);
+                            carla_zeroStruct< ::MidiEvent>(fMidiEvents, fMidiEventCount);
                             fMidiEventCount = 0;
                         }
                     }
@@ -1336,7 +1326,7 @@ public:
                         // Control backend stuff
                         if (event.channel == kData->ctrlChannel)
                         {
-                            double value;
+                            float value;
 
                             if (MIDI_IS_CONTROL_BREATH_CONTROLLER(ctrlEvent.param) && (fHints & PLUGIN_CAN_DRYWET) > 0)
                             {
@@ -1348,7 +1338,7 @@ public:
 
                             if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (fHints & PLUGIN_CAN_VOLUME) > 0)
                             {
-                                value = ctrlEvent.value*127/100;
+                                value = ctrlEvent.value*127.0f/100.0f;
                                 setVolume(value, false, false);
                                 postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_VOLUME, 0, value);
                                 continue;
@@ -1356,23 +1346,23 @@ public:
 
                             if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (fHints & PLUGIN_CAN_BALANCE) > 0)
                             {
-                                double left, right;
-                                value = ctrlEvent.value/0.5 - 1.0;
+                                float left, right;
+                                value = ctrlEvent.value/0.5f - 1.0f;
 
-                                if (value < 0.0)
+                                if (value < 0.0f)
                                 {
-                                    left  = -1.0;
-                                    right = (value*2)+1.0;
+                                    left  = -1.0f;
+                                    right = (value*2.0f)+1.0f;
                                 }
-                                else if (value > 0.0)
+                                else if (value > 0.0f)
                                 {
-                                    left  = (value*2)-1.0;
-                                    right = 1.0;
+                                    left  = (value*2.0f)-1.0f;
+                                    right = 1.0f;
                                 }
                                 else
                                 {
-                                    left  = -1.0;
-                                    right = 1.0;
+                                    left  = -1.0f;
+                                    right = 1.0f;
                                 }
 
                                 setBalanceLeft(left, false, false);
@@ -1384,7 +1374,7 @@ public:
                         }
 
                         // Control plugin parameters
-                        for (k=0; k < kData->param.count; k++)
+                        for (k=0; k < kData->param.count; ++k)
                         {
                             if (kData->param.data[k].midiChannel != event.channel)
                                 continue;
@@ -1395,7 +1385,7 @@ public:
                             if ((kData->param.data[k].hints & PARAMETER_IS_AUTOMABLE) == 0)
                                 continue;
 
-                            double value;
+                            float value;
 
                             if (kData->param.data[k].hints & PARAMETER_IS_BOOLEAN)
                             {
@@ -1426,7 +1416,7 @@ public:
                         {
                             const uint32_t nextProgramId = ctrlEvent.param;
 
-                            for (k=0; k < kData->midiprog.count; k++)
+                            for (k=0; k < kData->midiprog.count; ++k)
                             {
                                 if (kData->midiprog.data[k].bank == nextBankId && kData->midiprog.data[k].program == nextProgramId)
                                 {
@@ -1443,8 +1433,8 @@ public:
                         {
                             if (! allNotesOffSent)
                             {
-                                allNotesOffSent = true;
                                 sendMidiAllNotesOff();
+                                allNotesOffSent = true;
                             }
 
                             if (fDescriptor->deactivate != nullptr)
@@ -1538,7 +1528,7 @@ public:
 
                     fMidiEvents[fMidiEventCount].port = 0;
                     fMidiEvents[fMidiEventCount].time = sampleAccurate ? startTime : time;
-                    fMidiEvents[fMidiEventCount].size = 3; // FIXME
+                    fMidiEvents[fMidiEventCount].size = midiEvent.size;
 
                     fMidiEvents[fMidiEventCount].data[0] = status + channel;
                     fMidiEvents[fMidiEventCount].data[1] = midiEvent.data[1];
@@ -1582,7 +1572,7 @@ public:
         {
             float value, curValue;
 
-            for (k=0; k < kData->param.count; k++)
+            for (k=0; k < kData->param.count; ++k)
             {
                 if (kData->param.data[k].type != PARAMETER_OUTPUT)
                     continue;
@@ -1598,7 +1588,7 @@ public:
             }
 
             // reverse lookup MIDI events
-            for (k = (MAX_MIDI_EVENTS*2)-1; k >= fMidiEventCount; k--)
+            for (k = (MAX_MIDI_EVENTS*2)-1; k >= fMidiEventCount; --k)
             {
                 if (fMidiEvents[k].data[0] == 0)
                     break;
@@ -1650,19 +1640,25 @@ public:
         }
         else if (! kData->singleMutex.tryLock())
         {
-            for (i=0; i < kData->audioOut.count; i++)
+            for (i=0; i < kData->audioOut.count; ++i)
             {
-                for (k=0; k < frames; k++)
+                for (k=0; k < frames; ++k)
                     outBuffer[i][k+timeOffset] = 0.0f;
             }
 
             return false;
         }
 
-        for (i=0; i < kData->audioIn.count; i++)
+        // --------------------------------------------------------------------------------------------------------
+        // Reset audio buffers
+
+        for (i=0; i < kData->audioIn.count; ++i)
             carla_copyFloat(fAudioInBuffers[i], inBuffer[i]+timeOffset, frames);
-        for (i=0; i < kData->audioOut.count; i++)
+        for (i=0; i < kData->audioOut.count; ++i)
             carla_zeroFloat(fAudioOutBuffers[i], frames);
+
+        // --------------------------------------------------------------------------------------------------------
+        // Run plugin
 
         fIsProcessing = true;
 
@@ -1690,17 +1686,18 @@ public:
         // Post-processing (dry/wet, volume and balance)
 
         {
-            const bool doDryWet  = (fHints & PLUGIN_CAN_DRYWET) > 0 && kData->postProc.dryWet != 1.0f;
-            const bool doBalance = (fHints & PLUGIN_CAN_BALANCE) > 0 && (kData->postProc.balanceLeft != -1.0f || kData->postProc.balanceRight != 1.0f);
+            const bool doDryWet  = (fHints & PLUGIN_CAN_DRYWET) != 0 && kData->postProc.dryWet != 1.0f;
+            const bool doBalance = (fHints & PLUGIN_CAN_BALANCE) != 0 && (kData->postProc.balanceLeft != -1.0f || kData->postProc.balanceRight != 1.0f);
 
+            bool isPair;
             float bufValue, oldBufLeft[doBalance ? frames : 1];
 
-            for (i=0; i < kData->audioOut.count; i++)
+            for (i=0; i < kData->audioOut.count; ++i)
             {
                 // Dry/Wet
                 if (doDryWet)
                 {
-                    for (k=0; k < frames; k++)
+                    for (k=0; k < frames; ++k)
                     {
                         bufValue = fAudioInBuffers[(kData->audioIn.count == 1) ? 0 : i][k];
                         fAudioOutBuffers[i][k] = (fAudioOutBuffers[i][k] * kData->postProc.dryWet) + (bufValue * (1.0f - kData->postProc.dryWet));
@@ -1710,15 +1707,20 @@ public:
                 // Balance
                 if (doBalance)
                 {
-                    if (i % 2 == 0)
+                    isPair = (i % 2 == 0);
+
+                    if (isPair)
+                    {
+                        CARLA_ASSERT(i+1 < kData->audioOut.count);
                         carla_copyFloat(oldBufLeft, fAudioOutBuffers[i], frames);
+                    }
 
                     float balRangeL = (kData->postProc.balanceLeft  + 1.0f)/2.0f;
                     float balRangeR = (kData->postProc.balanceRight + 1.0f)/2.0f;
 
-                    for (k=0; k < frames; k++)
+                    for (k=0; k < frames; ++k)
                     {
-                        if (i % 2 == 0)
+                        if (isPair)
                         {
                             // left
                             fAudioOutBuffers[i][k]  = oldBufLeft[k]            * (1.0f - balRangeL);
@@ -1735,7 +1737,7 @@ public:
 
                 // Volume (and buffer copy)
                 {
-                    for (k=0; k < frames; k++)
+                    for (k=0; k < frames; ++k)
                         outBuffer[i][k+timeOffset] = fAudioOutBuffers[i][k] * kData->postProc.volume;
                 }
             }
@@ -1750,14 +1752,17 @@ public:
 
     void bufferSizeChanged(const uint32_t newBufferSize)
     {
-        for (uint32_t i=0; i < kData->audioIn.count; i++)
+        CARLA_ASSERT_INT(newBufferSize > 0, newBufferSize);
+        carla_debug("NativePlugin::bufferSizeChanged(%i)", newBufferSize);
+
+        for (uint32_t i=0; i < kData->audioIn.count; ++i)
         {
             if (fAudioInBuffers[i] != nullptr)
                 delete[] fAudioInBuffers[i];
             fAudioInBuffers[i] = new float[newBufferSize];
         }
 
-        for (uint32_t i=0; i < kData->audioOut.count; i++)
+        for (uint32_t i=0; i < kData->audioOut.count; ++i)
         {
             if (fAudioOutBuffers[i] != nullptr)
                 delete[] fAudioOutBuffers[i];
@@ -1844,7 +1849,7 @@ public:
     }
 
     // -------------------------------------------------------------------
-    // Cleanup
+    // Plugin buffers
 
     void initBuffers()
     {
@@ -1854,13 +1859,13 @@ public:
         CarlaPlugin::initBuffers();
     }
 
-    void deleteBuffers()
+    void clearBuffers()
     {
-        carla_debug("NativePlugin::deleteBuffers() - start");
+        carla_debug("NativePlugin::clearBuffers() - start");
 
         if (fAudioInBuffers != nullptr)
         {
-            for (uint32_t i=0; i < kData->audioIn.count; i++)
+            for (uint32_t i=0; i < kData->audioIn.count; ++i)
             {
                 if (fAudioInBuffers[i] != nullptr)
                 {
@@ -1875,7 +1880,7 @@ public:
 
         if (fAudioOutBuffers != nullptr)
         {
-            for (uint32_t i=0; i < kData->audioOut.count; i++)
+            for (uint32_t i=0; i < kData->audioOut.count; ++i)
             {
                 if (fAudioOutBuffers[i] != nullptr)
                 {
@@ -1891,9 +1896,9 @@ public:
         fMidiIn.clear();
         fMidiOut.clear();
 
-        kData->clearBuffers();
+        CarlaPlugin::clearBuffers();
 
-        carla_debug("NativePlugin::deleteBuffers() - end");
+        carla_debug("NativePlugin::clearBuffers() - end");
     }
 
     // -------------------------------------------------------------------
@@ -1919,15 +1924,18 @@ protected:
     bool handleWriteMidiEvent(const ::MidiEvent* const event)
     {
         CARLA_ASSERT(fEnabled);
+        CARLA_ASSERT(fIsProcessing);
         CARLA_ASSERT(fMidiOut.count > 0 || kData->event.portOut != nullptr);
         CARLA_ASSERT(event != nullptr);
-        CARLA_ASSERT(fIsProcessing);
+        CARLA_ASSERT(event->data[0] != 0);
 
         if (! fEnabled)
             return false;
         if (fMidiOut.count == 0)
             return false;
         if (event == nullptr)
+            return false;
+        if (event->data[0] == 0)
             return false;
         if (! fIsProcessing)
         {
@@ -1939,7 +1947,7 @@ protected:
             return false;
 
         // reverse-find first free event, and put it there
-        for (uint32_t i=(MAX_MIDI_EVENTS*2)-1; i >= fMidiEventCount; i--)
+        for (uint32_t i=(MAX_MIDI_EVENTS*2)-1; i >= fMidiEventCount; --i)
         {
             if (fMidiEvents[i].data[0] == 0)
             {
@@ -2067,7 +2075,7 @@ public:
         else if (fDescriptor->name != nullptr)
             fName = kData->engine->getNewUniquePluginName(fDescriptor->name);
         else
-            fName = kData->engine->getNewUniquePluginName(fDescriptor->name);
+            fName = kData->engine->getNewUniquePluginName(label);
 
         // ---------------------------------------------------------------
         // register client
@@ -2089,6 +2097,36 @@ public:
         {
             kData->engine->setLastError("Plugin failed to initialize");
             return false;
+        }
+
+        // ---------------------------------------------------------------
+        // load plugin settings
+
+        {
+            // set default options
+            fOptions = 0x0;
+
+            fOptions |= PLUGIN_OPTION_FIXED_BUFFER;
+            fOptions |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+
+            if (kData->engine->getOptions().forceStereo)
+                fOptions |= PLUGIN_OPTION_FORCE_STEREO;
+
+            if (fDescriptor->hints & ::PLUGIN_USES_CHUNKS)
+                fOptions |= PLUGIN_OPTION_USE_CHUNKS;
+
+            if (fDescriptor->midiIns > 0)
+            {
+                fOptions |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
+                fOptions |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
+                fOptions |= PLUGIN_OPTION_SEND_PITCHBEND;
+                fOptions |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+            }
+
+            // load settings
+            kData->idStr  = "Native/";
+            kData->idStr += label;
+            fOptions = kData->loadSettings(fOptions, availableOptions());
         }
 
         return true;
@@ -2120,6 +2158,7 @@ private:
     QByteArray  fChunk;
     float**     fAudioInBuffers;
     float**     fAudioOutBuffers;
+    uint8_t*    fLastChunk;
     uint32_t    fMidiEventCount;
     ::MidiEvent fMidiEvents[MAX_MIDI_EVENTS*2];
 
@@ -2202,31 +2241,25 @@ void carla_register_native_plugin(const PluginDescriptor* desc)
 
 CARLA_BACKEND_START_NAMESPACE
 
+// -----------------------------------------------------------------------
+
+#ifdef WANT_NATIVE
 size_t CarlaPlugin::getNativePluginCount()
 {
-#ifdef WANT_NATIVE
     return NativePlugin::getPluginCount();
-#else
-    return 0;
-#endif
 }
 
 const PluginDescriptor* CarlaPlugin::getNativePluginDescriptor(const size_t index)
 {
-#ifdef WANT_NATIVE
     return NativePlugin::getPluginDescriptor(index);
-#else
-    return nullptr;
-    // unused
-    (void)index;
-#endif
 }
+#endif
 
 // -----------------------------------------------------------------------
 
 CarlaPlugin* CarlaPlugin::newNative(const Initializer& init)
 {
-    carla_debug("CarlaPlugin::newNative(%p, \"%s\", \"%s\", \"%s\")", init.engine, init.filename, init.name, init.label);
+    carla_debug("CarlaPlugin::newNative({%p, \"%s\", \"%s\", \"%s\"})", init.engine, init.filename, init.name, init.label);
 
 #ifdef WANT_NATIVE
     NativePlugin* const plugin = new NativePlugin(init.engine, init.id);

@@ -1352,7 +1352,7 @@ public:
     }
 
     // -------------------------------------------------------------------
-    // Cleanup
+    // Plugin buffers
 
     void deleteBuffers()
     {

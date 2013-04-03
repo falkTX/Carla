@@ -789,8 +789,10 @@ public:
         const char* const label;
     };
 
+#ifdef WANT_NATIVE
     static size_t getNativePluginCount();
     static const PluginDescriptor* getNativePluginDescriptor(const size_t index);
+#endif
 
     static CarlaPlugin* newNative(const Initializer& init);
     static CarlaPlugin* newBridge(const Initializer& init, const BinaryType btype, const PluginType ptype, const char* const bridgeBinary);

@@ -93,7 +93,7 @@ public:
 
         if (fLastChunk != nullptr)
         {
-            std::free(fLastChunk);
+            delete[] fLastChunk;
             fLastChunk = nullptr;
         }
 
@@ -148,7 +148,10 @@ public:
 
     unsigned int availableOptions()
     {
-        CARLA_ASSERT(fDescriptor != nullptr);
+        CARLA_ASSERT(fDssiDescriptor != nullptr);
+
+        if (fDssiDescriptor == nullptr)
+            return 0x0;
 
 #ifdef __USE_GNU
         const bool isDssiVst = fFilename.contains("dssi-vst", true);
@@ -162,7 +165,7 @@ public:
 
         if (isDssiVst)
         {
-            if (fDescriptor != nullptr && fDssiDescriptor->get_custom_data != nullptr && fDssiDescriptor->set_custom_data != nullptr)
+            if (fDssiDescriptor->get_custom_data != nullptr && fDssiDescriptor->set_custom_data != nullptr)
                 options |= PLUGIN_OPTION_USE_CHUNKS;
         }
         else
@@ -201,7 +204,7 @@ public:
     {
         CARLA_ASSERT(fDescriptor != nullptr);
 
-        if (fDescriptor != nullptr && fDescriptor->Label != nullptr)
+        if (fDescriptor->Label != nullptr)
             std::strncpy(strBuf, fDescriptor->Label, STR_MAX);
         else
             CarlaPlugin::getLabel(strBuf);
@@ -211,7 +214,7 @@ public:
     {
         CARLA_ASSERT(fDescriptor != nullptr);
 
-        if (fDescriptor != nullptr && fDescriptor->Maker != nullptr)
+        if (fDescriptor->Maker != nullptr)
             std::strncpy(strBuf, fDescriptor->Maker, STR_MAX);
         else
             CarlaPlugin::getMaker(strBuf);
@@ -221,7 +224,7 @@ public:
     {
         CARLA_ASSERT(fDescriptor != nullptr);
 
-        if (fDescriptor != nullptr && fDescriptor->Copyright != nullptr)
+        if (fDescriptor->Copyright != nullptr)
             std::strncpy(strBuf, fDescriptor->Copyright, STR_MAX);
         else
             CarlaPlugin::getCopyright(strBuf);
@@ -231,7 +234,7 @@ public:
     {
         CARLA_ASSERT(fDescriptor != nullptr);
 
-        if (fDescriptor != nullptr && fDescriptor->Name != nullptr)
+        if (fDescriptor->Name != nullptr)
             std::strncpy(strBuf, fDescriptor->Name, STR_MAX);
         else
             CarlaPlugin::getRealName(strBuf);
@@ -244,7 +247,7 @@ public:
 
         const int32_t rindex = kData->param.data[parameterId].rindex;
 
-        if (fDescriptor != nullptr && rindex < static_cast<int32_t>(fDescriptor->PortCount))
+        if (rindex < static_cast<int32_t>(fDescriptor->PortCount))
             std::strncpy(strBuf, fDescriptor->PortNames[rindex], STR_MAX);
         else
             CarlaPlugin::getParameterName(parameterId, strBuf);
@@ -265,12 +268,12 @@ public:
 
     void setCustomData(const char* const type, const char* const key, const char* const value, const bool sendGui)
     {
-        carla_debug("DssiPlugin::setCustomData(%s, %s, %s, %s)", type, key, value, bool2str(sendGui));
         CARLA_ASSERT(fDescriptor != nullptr);
         CARLA_ASSERT(fHandle != nullptr);
         CARLA_ASSERT(type != nullptr);
         CARLA_ASSERT(key != nullptr);
         CARLA_ASSERT(value != nullptr);
+        carla_debug("DssiPlugin::setCustomData(%s, %s, %s, %s)", type, key, value, bool2str(sendGui));
 
         if (type == nullptr)
             return carla_stderr2("DssiPlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is invalid", type, key, value, bool2str(sendGui));
@@ -318,7 +321,7 @@ public:
 
         if (fLastChunk != nullptr)
         {
-            std::free(fLastChunk);
+            delete[] fLastChunk;
             fLastChunk = nullptr;
         }
 
@@ -345,7 +348,7 @@ public:
         else if (index > static_cast<int32_t>(kData->midiprog.count))
             return;
 
-        if (fDssiDescriptor != nullptr && fHandle != nullptr && index >= 0)
+        if (index >= 0)
         {
             const uint32_t bank    = kData->midiprog.data[index].bank;
             const uint32_t program = kData->midiprog.data[index].program;
@@ -1719,7 +1722,7 @@ public:
     }
 
     // -------------------------------------------------------------------
-    // Cleanup
+    // Plugin buffers
 
     void clearBuffers()
     {
@@ -1913,6 +1916,9 @@ public:
                 fOptions |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
                 fOptions |= PLUGIN_OPTION_SEND_PITCHBEND;
                 fOptions |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+
+                if (fDssiDescriptor->run_synth == nullptr)
+                    carla_stderr2("Plugin can ONLY use run_multiple_synths!");
             }
 
             // load settings

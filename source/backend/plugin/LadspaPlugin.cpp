@@ -213,7 +213,7 @@ public:
     {
         CARLA_ASSERT(fDescriptor != nullptr);
 
-        if (fDescriptor != nullptr && fDescriptor->Label != nullptr)
+        if (fDescriptor->Label != nullptr)
             std::strncpy(strBuf, fDescriptor->Label, STR_MAX);
         else
             CarlaPlugin::getLabel(strBuf);
@@ -225,7 +225,7 @@ public:
 
         if (fRdfDescriptor != nullptr && fRdfDescriptor->Creator != nullptr)
             std::strncpy(strBuf, fRdfDescriptor->Creator, STR_MAX);
-        else if (fDescriptor != nullptr && fDescriptor->Maker != nullptr)
+        else if (fDescriptor->Maker != nullptr)
             std::strncpy(strBuf, fDescriptor->Maker, STR_MAX);
         else
             CarlaPlugin::getMaker(strBuf);
@@ -235,7 +235,7 @@ public:
     {
         CARLA_ASSERT(fDescriptor != nullptr);
 
-        if (fDescriptor != nullptr && fDescriptor->Copyright != nullptr)
+        if (fDescriptor->Copyright != nullptr)
             std::strncpy(strBuf, fDescriptor->Copyright, STR_MAX);
         else
             CarlaPlugin::getCopyright(strBuf);
@@ -247,7 +247,7 @@ public:
 
         if (fRdfDescriptor != nullptr && fRdfDescriptor->Title != nullptr)
             std::strncpy(strBuf, fRdfDescriptor->Title, STR_MAX);
-        else if (fDescriptor != nullptr && fDescriptor->Name != nullptr)
+        else if (fDescriptor->Name != nullptr)
             std::strncpy(strBuf, fDescriptor->Name, STR_MAX);
         else
             CarlaPlugin::getRealName(strBuf);
@@ -260,7 +260,7 @@ public:
 
         const int32_t rindex = kData->param.data[parameterId].rindex;
 
-        if (fDescriptor != nullptr && rindex < static_cast<int32_t>(fDescriptor->PortCount))
+        if (rindex < static_cast<int32_t>(fDescriptor->PortCount))
             std::strncpy(strBuf, fDescriptor->PortNames[rindex], STR_MAX);
         else
             CarlaPlugin::getParameterName(parameterId, strBuf);
