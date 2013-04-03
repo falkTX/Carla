@@ -590,7 +590,8 @@ struct CarlaPluginProtectedData {
         masterMutex.unlock();
         singleMutex.unlock();
 
-        libClose();
+        if (lib != nullptr)
+            libClose();
     }
 
     // -------------------------------------------------------------------

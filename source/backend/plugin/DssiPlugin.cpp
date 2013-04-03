@@ -1927,6 +1927,10 @@ public:
             kData->idStr += "/";
             kData->idStr += label;
             fOptions = kData->loadSettings(fOptions, availableOptions());
+
+            // ignore settings, we need this anyway
+            if (isDssiVst)
+                fOptions |= PLUGIN_OPTION_FIXED_BUFFER;
         }
 
         return true;

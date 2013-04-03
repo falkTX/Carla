@@ -1443,8 +1443,17 @@ public:
         // load plugin settings
 
         {
+#ifdef __USE_GNU
+            const bool isDssiVst = fFilename.contains("dssi-vst", true);
+#else
+            const bool isDssiVst = fFilename.contains("dssi-vst");
+#endif
+
             // set default options
             fOptions = 0x0;
+
+            if (isDssiVst)
+                fOptions |= PLUGIN_OPTION_FIXED_BUFFER;
 
             if (kData->engine->getOptions().forceStereo)
                 fOptions |= PLUGIN_OPTION_FORCE_STEREO;
@@ -1457,6 +1466,10 @@ public:
             kData->idStr += "/";
             kData->idStr += label;
             fOptions = kData->loadSettings(fOptions, availableOptions());
+
+            // ignore settings, we need this anyway
+            if (isDssiVst)
+                fOptions |= PLUGIN_OPTION_FIXED_BUFFER;
         }
 
         return true;

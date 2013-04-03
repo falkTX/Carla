@@ -359,7 +359,7 @@ static inline
 void carla_zeroStruct(T* const structure, const size_t count)
 {
     CARLA_ASSERT(structure != nullptr);
-    CARLA_ASSERT(count > 1);
+    CARLA_ASSERT(count >= 1);
 
     std::memset(structure, 0, sizeof(T)*count);
 }
