@@ -396,6 +396,7 @@ struct CarlaPluginProtectedData {
     // misc
     int8_t       ctrlChannel;
     unsigned int extraHints;
+    CarlaString  idStr;
 
     // latency
     uint32_t latency;
@@ -653,6 +654,12 @@ struct CarlaPluginProtectedData {
     bool libClose();
     void* libSymbol(const char* const symbol);
     const char* libError(const char* const filename);
+
+    // -------------------------------------------------------------------
+    // Settings functions, see CarlaPlugin.cpp
+
+    void saveSetting(const unsigned int option, const bool yesNo);
+    unsigned int loadSettings(const unsigned int options, const unsigned int availOptions);
 
     // -------------------------------------------------------------------
     // Static helper functions

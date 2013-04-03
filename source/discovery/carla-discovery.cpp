@@ -1071,7 +1071,7 @@ void do_vst_check(void* const libHandle, const bool init)
         return;
     }
 
-    char strBuf[STR_MAX] = { 0 };
+    char strBuf[STR_MAX+1] = { 0 };
     CarlaString cName;
     CarlaString cProduct;
     CarlaString cVendor;
@@ -1100,14 +1100,14 @@ void do_vst_check(void* const libHandle, const bool init)
         return;
     }
 
-    carla_zeroMem(strBuf, sizeof(char)*STR_MAX);
+    carla_fill<char>(strBuf, STR_MAX+1, '\0');
 
     if (effect->dispatcher(effect, effGetVendorString, 0, 0, strBuf, 0.0f) == 1)
         cVendor = strBuf;
 
     while (gVstCurrentUniqueId != 0)
     {
-        carla_zeroMem(strBuf, sizeof(char)*STR_MAX);
+        carla_fill<char>(strBuf, STR_MAX+1, '\0');
 
         if (effect->dispatcher(effect, effGetProductString, 0, 0, strBuf, 0.0f) == 1)
             cProduct = strBuf;
@@ -1276,7 +1276,7 @@ void do_vst_check(void* const libHandle, const bool init)
 
         if (vstCategory == kPlugCategShell)
         {
-            carla_zeroMem(strBuf, sizeof(char)*STR_MAX);
+            carla_fill<char>(strBuf, STR_MAX+1, '\0');
 
             if ((gVstCurrentUniqueId = effect->dispatcher(effect, effShellGetNextPlugin, 0, 0, strBuf, 0.0f)) != 0)
                 cName = strBuf;

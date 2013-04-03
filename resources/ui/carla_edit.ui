@@ -302,7 +302,7 @@ Plugin Name
           <item>
            <widget class="QCheckBox" name="ch_force_stereo">
             <property name="text">
-             <string>Force stereo</string>
+             <string>Force stereo (needs restart)</string>
             </property>
            </widget>
           </item>

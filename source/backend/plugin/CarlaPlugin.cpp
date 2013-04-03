@@ -22,6 +22,7 @@
 
 #include <QtCore/QFile>
 #include <QtCore/QTextStream>
+#include <QtCore/QSettings>
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -147,6 +148,86 @@ const char* CarlaPluginProtectedData::libError(const char* const filename)
 }
 
 // -------------------------------------------------------------------
+// Settings functions
+
+void CarlaPluginProtectedData::saveSetting(const unsigned int option, const bool yesNo)
+{
+    QSettings settings("falkTX", "CarlaPluginSettings");
+    settings.beginGroup((const char*)idStr);
+
+    switch (option)
+    {
+    case PLUGIN_OPTION_FIXED_BUFFER:
+        settings.setValue("FixedBuffer", yesNo);
+        break;
+    case PLUGIN_OPTION_FORCE_STEREO:
+        settings.setValue("ForceStereo", yesNo);
+        break;
+    case PLUGIN_OPTION_MAP_PROGRAM_CHANGES:
+        settings.setValue("MapProgramChanges", yesNo);
+        break;
+    case PLUGIN_OPTION_USE_CHUNKS:
+        settings.setValue("UseChunks", yesNo);
+        break;
+    case PLUGIN_OPTION_SEND_CONTROL_CHANGES:
+        settings.setValue("SendControlChanges", yesNo);
+        break;
+    case PLUGIN_OPTION_SEND_CHANNEL_PRESSURE:
+        settings.setValue("SendChannelPressure", yesNo);
+        break;
+    case PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH:
+        settings.setValue("SendNoteAftertouch", yesNo);
+        break;
+    case PLUGIN_OPTION_SEND_PITCHBEND:
+        settings.setValue("SendPitchbend", yesNo);
+        break;
+    case PLUGIN_OPTION_SEND_ALL_SOUND_OFF:
+        settings.setValue("SendAllSoundOff", yesNo);
+        break;
+    default:
+        break;
+    }
+
+    settings.endGroup();
+}
+
+unsigned int CarlaPluginProtectedData::loadSettings(const unsigned int options, const unsigned int availOptions)
+{
+    QSettings settings("falkTX", "CarlaPluginSettings");
+    settings.beginGroup((const char*)idStr);
+
+    unsigned int newOptions = 0x0;
+
+#define CHECK_AND_SET_OPTION(STR, BIT)                                  \
+    if ((availOptions & BIT) != 0 || BIT == PLUGIN_OPTION_FORCE_STEREO) \
+    {                                                                   \
+        if (settings.contains(STR))                                     \
+        {                                                               \
+            if (settings.value(STR, bool(options & BIT)).toBool())      \
+                newOptions |= BIT;                                      \
+        }                                                               \
+        else if (options & BIT)                                         \
+            newOptions |= BIT;                                          \
+    }
+
+    CHECK_AND_SET_OPTION("FixedBuffer", PLUGIN_OPTION_FIXED_BUFFER);
+    CHECK_AND_SET_OPTION("ForceStereo", PLUGIN_OPTION_FORCE_STEREO);
+    CHECK_AND_SET_OPTION("MapProgramChanges", PLUGIN_OPTION_MAP_PROGRAM_CHANGES);
+    CHECK_AND_SET_OPTION("UseChunks", PLUGIN_OPTION_USE_CHUNKS);
+    CHECK_AND_SET_OPTION("SendControlChanges", PLUGIN_OPTION_SEND_CONTROL_CHANGES);
+    CHECK_AND_SET_OPTION("SendChannelPressure", PLUGIN_OPTION_SEND_CHANNEL_PRESSURE);
+    CHECK_AND_SET_OPTION("SendNoteAftertouch", PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH);
+    CHECK_AND_SET_OPTION("SendPitchbend", PLUGIN_OPTION_SEND_PITCHBEND);
+    CHECK_AND_SET_OPTION("SendAllSoundOff", PLUGIN_OPTION_SEND_ALL_SOUND_OFF);
+
+#undef CHECK_AND_SET_OPTION
+
+    settings.endGroup();
+
+    return newOptions;
+}
+
+// -------------------------------------------------------------------
 // Plugin Helpers
 
 CarlaEngine* CarlaPluginGetEngine(CarlaPlugin* const plugin)
@@ -199,9 +280,6 @@ CarlaPlugin::CarlaPlugin(CarlaEngine* const engine, const unsigned int id)
         CARLA_ASSERT(id == 0);
         break;
     }
-
-    if (engine->getOptions().forceStereo)
-        fOptions |= PLUGIN_OPTION_FORCE_STEREO;
 }
 
 CarlaPlugin::~CarlaPlugin()
@@ -900,6 +978,31 @@ bool CarlaPlugin::loadStateFromFile(const char* const filename)
 // -------------------------------------------------------------------
 // Set data (internal stuff)
 
+void CarlaPlugin::setId(const unsigned int id)
+{
+    fId = id;
+}
+
+void CarlaPlugin::setOption(const unsigned int option, const bool yesNo)
+{
+    CARLA_ASSERT(availableOptions() & option);
+
+    if (yesNo)
+        fOptions |= option;
+    else
+        fOptions &= ~option;
+
+    kData->saveSetting(option, yesNo);
+}
+
+void CarlaPlugin::setEnabled(const bool yesNo)
+{
+    fEnabled = yesNo;
+}
+
+// -------------------------------------------------------------------
+// Set data (internal stuff)
+
 void CarlaPlugin::setActive(const bool active, const bool sendOsc, const bool sendCallback)
 {
     if (kData->active == active)
@@ -1432,13 +1535,6 @@ void CarlaPlugin::sampleRateChanged(const double)
 {
 }
 
-void CarlaPlugin::initBuffers()
-{
-    kData->audioIn.initBuffers(kData->engine);
-    kData->audioOut.initBuffers(kData->engine);
-    kData->event.initBuffers(kData->engine);
-}
-
 bool CarlaPlugin::tryLock()
 {
     return kData->masterMutex.tryLock();
@@ -1447,6 +1543,21 @@ bool CarlaPlugin::tryLock()
 void CarlaPlugin::unlock()
 {
     kData->masterMutex.unlock();
+}
+
+// -------------------------------------------------------------------
+// Plugin buffers
+
+void CarlaPlugin::initBuffers()
+{
+    kData->audioIn.initBuffers(kData->engine);
+    kData->audioOut.initBuffers(kData->engine);
+    kData->event.initBuffers(kData->engine);
+}
+
+void CarlaPlugin::clearBuffers()
+{
+    kData->clearBuffers();
 }
 
 // -------------------------------------------------------------------

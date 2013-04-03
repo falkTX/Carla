@@ -170,7 +170,9 @@ public:
 
         if (kData->engine->getProccessMode() != PROCESS_MODE_CONTINUOUS_RACK)
         {
-            if (kData->audioIn.count <= 1 && kData->audioOut.count <= 1 && (kData->audioIn.count != 0 || kData->audioOut.count != 0))
+            if (fOptions & PLUGIN_OPTION_FORCE_STEREO)
+                options |= PLUGIN_OPTION_FORCE_STEREO;
+            else if (kData->audioIn.count <= 1 && kData->audioOut.count <= 1 && (kData->audioIn.count != 0 || kData->audioOut.count != 0))
                 options |= PLUGIN_OPTION_FORCE_STEREO;
         }
 
@@ -710,6 +712,11 @@ public:
             kData->event.portOut = (CarlaEngineEventPort*)kData->client->addPort(kEnginePortTypeEvent, portName, false);
         }
 
+        if (forcedStereoIn || forcedStereoOut)
+            fOptions |= PLUGIN_OPTION_FORCE_STEREO;
+        else
+            fOptions &= ~PLUGIN_OPTION_FORCE_STEREO;
+
         // plugin hints
         fHints = 0x0;
 
@@ -727,12 +734,6 @@ public:
 
         if (aIns <= 2 && aOuts <= 2 && (aIns == aOuts || aIns == 0 || aOuts == 0))
             kData->extraHints |= PLUGIN_HINT_CAN_RUN_RACK;
-
-        // plugin options
-        fOptions = 0x0;
-
-        if (forcedStereoIn || forcedStereoOut)
-            fOptions |= PLUGIN_OPTION_FORCE_STEREO;
 
         // check latency
         if (fHints & PLUGIN_CAN_DRYWET)
@@ -1212,6 +1213,7 @@ public:
 
     void bufferSizeChanged(const uint32_t newBufferSize)
     {
+        CARLA_ASSERT_INT(newBufferSize > 0, newBufferSize);
         carla_debug("LadspaPlugin::bufferSizeChanged(%i) - start", newBufferSize);
 
         for (uint32_t i=0; i < kData->audioIn.count; ++i)
@@ -1268,8 +1270,19 @@ public:
         carla_debug("LadspaPlugin::bufferSizeChanged(%i) - end", newBufferSize);
     }
 
+    void sampleRateChanged(const double newSampleRate)
+    {
+        CARLA_ASSERT_INT(newSampleRate > 0.0, newSampleRate);
+        carla_debug("LadspaPlugin::sampleRateChanged(%i) - start", newSampleRate);
+
+        // TODO
+        (void)newSampleRate;
+
+        carla_debug("LadspaPlugin::sampleRateChanged(%i) - end", newSampleRate);
+    }
+
     // -------------------------------------------------------------------
-    // Cleanup
+    // Plugin buffers
 
     void clearBuffers()
     {
@@ -1311,7 +1324,7 @@ public:
             fParamBuffers = nullptr;
         }
 
-        kData->clearBuffers();
+        CarlaPlugin::clearBuffers();
 
         carla_debug("LadspaPlugin::clearBuffers() - end");
     }
@@ -1426,8 +1439,25 @@ public:
             return false;
         }
 
-        // TODO - load settings for options:
-        //fOptions & PLUGIN_OPTION_FORCE_STEREO
+        // ---------------------------------------------------------------
+        // load plugin settings
+
+        {
+            // set default options
+            fOptions = 0x0;
+
+            if (kData->engine->getOptions().forceStereo)
+                fOptions |= PLUGIN_OPTION_FORCE_STEREO;
+
+            // load settings
+            kData->idStr  = "LADSPA/";
+            kData->idStr += std::strrchr(filename, OS_SEP)+1;
+            kData->idStr += "/";
+            kData->idStr += CarlaString(uniqueId());
+            kData->idStr += "/";
+            kData->idStr += label;
+            fOptions = kData->loadSettings(fOptions, availableOptions());
+        }
 
         return true;
     }

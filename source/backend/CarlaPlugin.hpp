@@ -426,23 +426,14 @@ public:
      *
      * \see id()
      */
-    void setId(const unsigned int id)
-    {
-        fId = id;
-    }
+    void setId(const unsigned int id);
 
     /*!
      * Set a plugin's option.
      *
      * \see options()
      */
-    void setOption(const unsigned int option, const bool yesNo)
-    {
-        if (yesNo)
-            fOptions |= option;
-        else
-            fOptions &= ~option;
-    }
+    void setOption(const unsigned int option, const bool yesNo);
 
     /*!
      * Enable or disable the plugin according to \a yesNo.
@@ -452,10 +443,7 @@ public:
      *
      * \see enabled()
      */
-    void setEnabled(const bool yesNo)
-    {
-        fEnabled = yesNo;
-    }
+    void setEnabled(const bool yesNo);
 
     /*!
      * Set plugin as active according to \a active.
@@ -682,11 +670,6 @@ public:
     virtual void sampleRateChanged(const double newSampleRate);
 
     /*!
-     * Initialize all RT buffers of the plugin.
-     */
-    virtual void initBuffers();
-
-    /*!
      * TODO.
      */
     bool tryLock();
@@ -695,6 +678,19 @@ public:
      * TODO.
      */
     void unlock();
+
+    // -------------------------------------------------------------------
+    // Plugin buffers
+
+    /*!
+     * Initialize all RT buffers of the plugin.
+     */
+    virtual void initBuffers();
+
+    /*!
+     * Delete and clear all RT buffers.
+     */
+    virtual void clearBuffers();
 
     // -------------------------------------------------------------------
     // OSC stuff

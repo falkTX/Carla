@@ -39,7 +39,8 @@ public:
           fDssiDescriptor(nullptr),
           fAudioInBuffers(nullptr),
           fAudioOutBuffers(nullptr),
-          fParamBuffers(nullptr)
+          fParamBuffers(nullptr),
+          fLastChunk(nullptr)
     {
         carla_debug("DssiPlugin::DssiPlugin(%p, %i)", engine, id);
 
@@ -88,6 +89,12 @@ public:
             fHandle2 = nullptr;
             fDescriptor = nullptr;
             fDssiDescriptor = nullptr;
+        }
+
+        if (fLastChunk != nullptr)
+        {
+            std::free(fLastChunk);
+            fLastChunk = nullptr;
         }
 
         clearBuffers();
@@ -145,10 +152,8 @@ public:
 
 #ifdef __USE_GNU
         const bool isDssiVst = fFilename.contains("dssi-vst", true);
-        const bool isZASX    = fFilename.contains("zynaddsubfx", true);
 #else
         const bool isDssiVst = fFilename.contains("dssi-vst");
-        const bool isZASX    = fFilename.contains("zynaddsubfx");
 #endif
 
         unsigned int options = 0x0;
@@ -164,15 +169,16 @@ public:
         {
             if (kData->engine->getProccessMode() != PROCESS_MODE_CONTINUOUS_RACK)
             {
-                if (kData->audioIn.count <= 1 && kData->audioOut.count <= 1 && (kData->audioIn.count != 0 || kData->audioOut.count != 0))
+                if (fOptions & PLUGIN_OPTION_FORCE_STEREO)
+                    options |= PLUGIN_OPTION_FORCE_STEREO;
+                else if (kData->audioIn.count <= 1 && kData->audioOut.count <= 1 && (kData->audioIn.count != 0 || kData->audioOut.count != 0))
                     options |= PLUGIN_OPTION_FORCE_STEREO;
             }
 
-            if (! isZASX)
-                options |= PLUGIN_OPTION_FIXED_BUFFER;
+            options |= PLUGIN_OPTION_FIXED_BUFFER;
         }
 
-        if (kData->extraHints & PLUGIN_HINT_HAS_MIDI_IN)
+        if (fDssiDescriptor->run_synth != nullptr || fDssiDescriptor->run_multiple_synths != nullptr)
         {
             options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
             options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
@@ -310,12 +316,22 @@ public:
         if (fDssiDescriptor->set_custom_data == nullptr)
             return;
 
-        // FIXME
-        fChunk = QByteArray::fromBase64(QByteArray(stringData));
-        //fChunk.toBase64();
+        if (fLastChunk != nullptr)
+        {
+            std::free(fLastChunk);
+            fLastChunk = nullptr;
+        }
 
-        const ScopedSingleProcessLocker spl(this, true);
-        fDssiDescriptor->set_custom_data(fHandle, fChunk.data(), (unsigned long)fChunk.size());
+        const size_t size(CarlaString(stringData).exportAsBase64Binary(&fLastChunk));
+
+        CARLA_ASSERT(size > 0);
+        CARLA_ASSERT(fLastChunk != nullptr);
+
+        if (size > 0 && fLastChunk != nullptr)
+        {
+            const ScopedSingleProcessLocker spl(this, true);
+            fDssiDescriptor->set_custom_data(fHandle, fLastChunk, static_cast<unsigned long>(size));
+        }
     }
 
     void setMidiProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback)
@@ -706,7 +722,7 @@ public:
                 portName += ":";
             }
 
-            portName += "event-in";
+            portName += "events-in";
             portName.truncate(portNameSize);
 
             kData->event.portIn = (CarlaEngineEventPort*)kData->client->addPort(kEnginePortTypeEvent, portName, true);
@@ -722,21 +738,19 @@ public:
                 portName += ":";
             }
 
-            portName += "event-out";
+            portName += "events-out";
             portName.truncate(portNameSize);
 
             kData->event.portOut = (CarlaEngineEventPort*)kData->client->addPort(kEnginePortTypeEvent, portName, false);
         }
 
+        if (forcedStereoIn || forcedStereoOut)
+            fOptions |= PLUGIN_OPTION_FORCE_STEREO;
+        else
+            fOptions &= ~PLUGIN_OPTION_FORCE_STEREO;
+
         // plugin hints
-        const bool hasGUI    = (fHints & PLUGIN_HAS_GUI);
-#ifdef __USE_GNU
-        const bool isDssiVst = fFilename.contains("dssi-vst", true);
-        const bool isZASX    = fFilename.contains("zynaddsubfx", true);
-#else
-        const bool isDssiVst = fFilename.contains("dssi-vst");
-        const bool isZASX    = fFilename.contains("zynaddsubfx");
-#endif
+        const bool hasGUI = (fHints & PLUGIN_HAS_GUI);
 
         fHints = 0x0;
 
@@ -763,34 +777,6 @@ public:
 
         if (aIns <= 2 && aOuts <= 2 && (aIns == aOuts || aIns == 0 || aOuts == 0))
             kData->extraHints |= PLUGIN_HINT_CAN_RUN_RACK;
-
-        // plugin options
-        fOptions = 0x0;
-
-        fOptions |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
-
-        if (forcedStereoIn || forcedStereoOut)
-            fOptions |= PLUGIN_OPTION_FORCE_STEREO;
-
-        if (isDssiVst)
-        {
-            fOptions |= PLUGIN_OPTION_FIXED_BUFFER;
-
-            if (kData->engine->getOptions().useDssiVstChunks && fDssiDescriptor->get_custom_data != nullptr && fDssiDescriptor->set_custom_data != nullptr)
-                fOptions |= PLUGIN_OPTION_USE_CHUNKS;
-        }
-        else if (isZASX)
-        {
-            fOptions |= PLUGIN_OPTION_FIXED_BUFFER;
-        }
-
-        if (mIns > 0)
-        {
-            fOptions |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
-            fOptions |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
-            fOptions |= PLUGIN_OPTION_SEND_PITCHBEND;
-            fOptions |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
-        }
 
         // check latency
         if (fHints & PLUGIN_CAN_DRYWET)
@@ -844,6 +830,9 @@ public:
 
         bufferSizeChanged(kData->engine->getBufferSize());
         reloadPrograms(true);
+
+        if (kData->active)
+            activate();
 
         carla_debug("DssiPlugin::reload() - end");
     }
@@ -988,7 +977,7 @@ public:
         unsigned long midiEventCount = 0;
 
         // --------------------------------------------------------------------------------------------------------
-        // Check if not active before
+        // Check if needs reset
 
         if (kData->needsReset)
         {
@@ -1592,6 +1581,7 @@ public:
 
     void bufferSizeChanged(const uint32_t newBufferSize)
     {
+        CARLA_ASSERT_INT(newBufferSize > 0, newBufferSize);
         carla_debug("DssiPlugin::bufferSizeChanged(%i) - start", newBufferSize);
 
         for (uint32_t i=0; i < kData->audioIn.count; ++i)
@@ -1646,6 +1636,17 @@ public:
         }
 
         carla_debug("DssiPlugin::bufferSizeChanged(%i) - start", newBufferSize);
+    }
+
+    void sampleRateChanged(const double newSampleRate)
+    {
+        CARLA_ASSERT_INT(newSampleRate > 0.0, newSampleRate);
+        carla_debug("DssiPlugin::sampleRateChanged(%i) - start", newSampleRate);
+
+        // TODO
+        (void)newSampleRate;
+
+        carla_debug("DssiPlugin::sampleRateChanged(%i) - end", newSampleRate);
     }
 
     // -------------------------------------------------------------------
@@ -1760,7 +1761,7 @@ public:
             fParamBuffers = nullptr;
         }
 
-        kData->clearBuffers();
+        CarlaPlugin::clearBuffers();
 
         carla_debug("DssiPlugin::clearBuffers() - end");
     }
@@ -1880,8 +1881,47 @@ public:
             fHints |= PLUGIN_HAS_GUI;
         }
 
-        // TODO - load settings for options:
-        //fOptions & PLUGIN_OPTION_FORCE_STEREO
+        // ---------------------------------------------------------------
+        // load plugin settings
+
+        {
+#ifdef __USE_GNU
+            const bool isDssiVst = fFilename.contains("dssi-vst", true);
+#else
+            const bool isDssiVst = fFilename.contains("dssi-vst");
+#endif
+
+            // set default options
+            fOptions = 0x0;
+
+            fOptions |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+
+            if (kData->engine->getOptions().forceStereo)
+                fOptions |= PLUGIN_OPTION_FORCE_STEREO;
+
+            if (isDssiVst)
+            {
+                fOptions |= PLUGIN_OPTION_FIXED_BUFFER;
+
+                if (kData->engine->getOptions().useDssiVstChunks && fDssiDescriptor->get_custom_data != nullptr && fDssiDescriptor->set_custom_data != nullptr)
+                    fOptions |= PLUGIN_OPTION_USE_CHUNKS;
+            }
+
+            if (fDssiDescriptor->run_synth != nullptr || fDssiDescriptor->run_multiple_synths != nullptr)
+            {
+                fOptions |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
+                fOptions |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
+                fOptions |= PLUGIN_OPTION_SEND_PITCHBEND;
+                fOptions |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+            }
+
+            // load settings
+            kData->idStr  = "DSSI/";
+            kData->idStr += std::strrchr(filename, OS_SEP)+1;
+            kData->idStr += "/";
+            kData->idStr += label;
+            fOptions = kData->loadSettings(fOptions, availableOptions());
+        }
 
         return true;
     }
@@ -1892,11 +1932,11 @@ private:
     const LADSPA_Descriptor* fDescriptor;
     const DSSI_Descriptor*   fDssiDescriptor;
 
-    float** fAudioInBuffers;
-    float** fAudioOutBuffers;
-    float*  fParamBuffers;
+    float**  fAudioInBuffers;
+    float**  fAudioOutBuffers;
+    float*   fParamBuffers;
+    uint8_t* fLastChunk;
     snd_seq_event_t fMidiEvents[MAX_MIDI_EVENTS];
-    QByteArray      fChunk;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DssiPlugin)
 };

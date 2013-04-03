@@ -760,9 +760,9 @@ const CarlaPluginInfo* carla_get_plugin_info(unsigned int pluginId)
 
     if (CarlaPlugin* const plugin = standalone.engine->getPlugin(pluginId))
     {
-        char strBufLabel[STR_MAX] = { 0 };
-        char strBufMaker[STR_MAX] = { 0 };
-        char strBufCopyright[STR_MAX] = { 0 };
+        char strBufLabel[STR_MAX+1] = { '\0' };
+        char strBufMaker[STR_MAX+1] = { '\0' };
+        char strBufCopyright[STR_MAX+1] = { '\0' };
 
         info.type     = plugin->type();
         info.category = plugin->category();
@@ -906,9 +906,9 @@ const CarlaParameterInfo* carla_get_parameter_info(unsigned int pluginId, uint32
     {
         if (parameterId < plugin->parameterCount())
         {
-            char strBufName[STR_MAX] = { 0 };
-            char strBufSymbol[STR_MAX] = { 0 };
-            char strBufUnit[STR_MAX] = { 0 };
+            char strBufName[STR_MAX+1] = { '\0' };
+            char strBufSymbol[STR_MAX+1] = { '\0' };
+            char strBufUnit[STR_MAX+1] = { '\0' };
 
             info.scalePointCount = plugin->parameterScalePointCount(parameterId);
 
@@ -957,7 +957,7 @@ const CarlaScalePointInfo* carla_get_parameter_scalepoint_info(unsigned int plug
         {
             if (scalePointId < plugin->parameterScalePointCount(parameterId))
             {
-                char strBufLabel[STR_MAX] = { 0 };
+                char strBufLabel[STR_MAX+1] = { '\0' };
 
                 info.value = plugin->getParameterScalePointValue(parameterId, scalePointId);
 
@@ -1181,8 +1181,8 @@ const char* carla_get_parameter_text(unsigned int pluginId, uint32_t parameterId
     if (standalone.engine == nullptr)
         return nullptr;
 
-    static char textBuf[STR_MAX];
-    carla_zeroMem(textBuf, sizeof(char)*STR_MAX);
+    static char textBuf[STR_MAX+1];
+    carla_fill<char>(textBuf, STR_MAX+1, '\0');
 
     if (CarlaPlugin* const plugin = standalone.engine->getPlugin(pluginId))
     {
@@ -1208,8 +1208,8 @@ const char* carla_get_program_name(unsigned int pluginId, uint32_t programId)
     if (standalone.engine == nullptr)
         return nullptr;
 
-    static char programName[STR_MAX];
-    carla_zeroMem(programName, sizeof(char)*STR_MAX);
+    static char programName[STR_MAX+1];
+    carla_fill<char>(programName, STR_MAX+1, '\0');
 
     if (CarlaPlugin* const plugin = standalone.engine->getPlugin(pluginId))
     {
@@ -1236,8 +1236,8 @@ const char* carla_get_midi_program_name(unsigned int pluginId, uint32_t midiProg
     if (standalone.engine == nullptr)
         return nullptr;
 
-    static char midiProgramName[STR_MAX];
-    carla_zeroMem(midiProgramName, sizeof(char)*STR_MAX);
+    static char midiProgramName[STR_MAX+1];
+    carla_fill<char>(midiProgramName, STR_MAX+1, '\0');
 
     if (CarlaPlugin* const plugin = standalone.engine->getPlugin(pluginId))
     {
@@ -1264,8 +1264,8 @@ const char* carla_get_real_plugin_name(unsigned int pluginId)
     if (standalone.engine == nullptr)
         return nullptr;
 
-    static char realPluginName[STR_MAX];
-    carla_zeroMem(realPluginName, sizeof(char)*STR_MAX);
+    static char realPluginName[STR_MAX+1];
+    carla_fill<char>(realPluginName, STR_MAX+1, '\0');
 
     if (CarlaPlugin* const plugin = standalone.engine->getPlugin(pluginId))
     {

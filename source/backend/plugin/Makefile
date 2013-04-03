@@ -54,7 +54,7 @@ debug:
 
 # --------------------------------------------------------------
 
-%.cpp.o: %.cpp ../CarlaBackend.hpp ../CarlaEngine.hpp ../CarlaPlugin.hpp CarlaPluginGui.hpp CarlaPluginInternal.hpp CarlaPluginThread.hpp moc_CarlaPluginGui.cpp
+%.cpp.o: %.cpp ../CarlaBackend.hpp ../CarlaEngine.hpp ../CarlaPlugin.hpp CarlaPluginGui.hpp CarlaPluginInternal.hpp CarlaPluginThread.hpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 moc_%.cpp: %.hpp
