@@ -467,8 +467,6 @@ public:
 
             //if (kData->activeBefore)
             //    fAudioOutputDevice->Stop();
-
-            //kData->activeBefore = kData->active;
             return;
         }
 
@@ -506,9 +504,9 @@ public:
             {
                 while (! kData->extNotes.data.isEmpty())
                 {
-                    const ExternalMidiNote& note = kData->extNotes.data.getFirst(true);
+                    const ExternalMidiNote& note(kData->extNotes.data.getFirst(true));
 
-                    CARLA_ASSERT(note.channel >= 0);
+                    CARLA_ASSERT(note.channel >= 0 && note.channel < MAX_MIDI_CHANNELS);
 
                     if (note.velo > 0)
                         fMidiInputPort->DispatchNoteOn(note.note, note.velo, note.channel, 0);
@@ -801,10 +799,6 @@ public:
             processSingle(outBuffer, frames, 0);
 
         } // End of Plugin processing (no events)
-
-        // --------------------------------------------------------------------------------------------------------
-
-        //kData->activeBefore = kData->active;
     }
 
     bool processSingle(float** const outBuffer, const uint32_t frames, const uint32_t timeOffset)

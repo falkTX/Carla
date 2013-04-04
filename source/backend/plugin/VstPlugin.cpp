@@ -28,6 +28,10 @@
 
 CARLA_BACKEND_START_NAMESPACE
 
+#if 0
+}
+#endif
+
 /*!
  * @defgroup PluginHints Plugin Hints
  * @{
@@ -42,10 +46,11 @@ class VstPlugin : public CarlaPlugin,
                   public CarlaPluginGui::Callback
 {
 public:
-    VstPlugin(CarlaEngine* const engine, const unsigned short id)
+    VstPlugin(CarlaEngine* const engine, const unsigned int id)
         : CarlaPlugin(engine, id),
           fUnique1(1),
           fEffect(nullptr),
+          fLastChunk(nullptr),
           fMidiEventCount(0),
           fIsProcessing(false),
           fNeedIdle(false),
@@ -53,10 +58,10 @@ public:
     {
         carla_debug("VstPlugin::VstPlugin(%p, %i)", engine, id);
 
-        carla_zeroMem(fMidiEvents, sizeof(VstMidiEvent)*MAX_MIDI_EVENTS*2);
+        carla_zeroStruct<VstMidiEvent>(fMidiEvents, MAX_MIDI_EVENTS*2);
         carla_zeroStruct<VstTimeInfo_R>(fTimeInfo);
 
-        for (unsigned short i=0; i < MAX_MIDI_EVENTS*2; i++)
+        for (unsigned short i=0; i < MAX_MIDI_EVENTS*2; ++i)
             fEvents.data[i] = (VstEvent*)&fMidiEvents[i];
 
         kData->osc.thread.setMode(CarlaPluginThread::PLUGIN_THREAD_VST_GUI);
@@ -69,15 +74,6 @@ public:
     ~VstPlugin()
     {
         carla_debug("VstPlugin::~VstPlugin()");
-
-        kData->singleMutex.lock();
-        kData->masterMutex.lock();
-
-        // make plugin invalid
-        fUnique2 += 1;
-
-        if (fEffect == nullptr)
-            return;
 
         // close UI
         if (fHints & PLUGIN_HAS_GUI)
@@ -93,20 +89,31 @@ public:
                     kData->osc.thread.terminate();
                 }
             }
-            else
-                dispatcher(effEditClose, 0, 0, nullptr, 0.0f);
         }
+
+        kData->singleMutex.lock();
+        kData->masterMutex.lock();
 
         if (kData->active)
         {
-            dispatcher(effStopProcess, 0, 0, nullptr, 0.0f);
-            dispatcher(effMainsChanged, 0, 0, nullptr, 0.0f);
+            deactivate();
             kData->active = false;
         }
 
-        dispatcher(effClose, 0, 0, nullptr, 0.0f);
+        if (fEffect != nullptr)
+        {
+            dispatcher(effClose, 0, 0, nullptr, 0.0f);
+            fEffect = nullptr;
+        }
 
-        fEffect = nullptr;
+        if (fLastChunk != nullptr)
+        {
+            delete[] fLastChunk;
+            fLastChunk = nullptr;
+        }
+
+        // make plugin invalid
+        fUnique2 += 1;
     }
 
     // -------------------------------------------------------------------
@@ -121,7 +128,6 @@ public:
     {
         CARLA_ASSERT(fEffect != nullptr);
 
-        if (fEffect != nullptr)
         {
             const intptr_t category = dispatcher(effGetPlugCategory, 0, 0, nullptr, 0.0f);
 
@@ -164,7 +170,7 @@ public:
         CARLA_ASSERT(fEffect != nullptr);
         CARLA_ASSERT(dataPtr != nullptr);
 
-        return (fEffect != nullptr) ? dispatcher(effGetChunk, 0 /* bank */, 0, dataPtr, 0.0f) : 0;
+        return dispatcher(effGetChunk, 0 /* bank */, 0, dataPtr, 0.0f);
     }
 
     // -------------------------------------------------------------------
@@ -182,13 +188,10 @@ public:
         options |= PLUGIN_OPTION_FIXED_BUFFER;
         options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
-        //if ((kData->audioIns.count() == 2 || kData->audioOuts.count() == 0) || (kData->audioIns.count() == 0 || kData->audioOuts.count() == 2))
-        //    options |= PLUGIN_OPTION_FORCE_STEREO;
-
         if (fEffect->flags & effFlagsProgramChunks)
             options |= PLUGIN_OPTION_USE_CHUNKS;
 
-        if (kData->extraHints & PLUGIN_HINT_HAS_MIDI_IN)
+        if (vstPluginCanDo(fEffect, "receiveVstEvents") || vstPluginCanDo(fEffect, "receiveVstMidiEvent") || (fEffect->flags & effFlagsIsSynth) > 0 || (fHints & PLUGIN_WANTS_MIDI_INPUT))
         {
             options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
             options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
@@ -205,47 +208,35 @@ public:
         CARLA_ASSERT(fEffect != nullptr);
         CARLA_ASSERT(parameterId < kData->param.count);
 
-        return (fEffect != nullptr) ? fEffect->getParameter(fEffect, parameterId) : 0;
+        return fEffect->getParameter(fEffect, parameterId);
     }
 
     void getLabel(char* const strBuf)
     {
         CARLA_ASSERT(fEffect != nullptr);
 
-        if (fEffect != nullptr)
-            dispatcher(effGetProductString, 0, 0, strBuf, 0.0f);
-        else
-            CarlaPlugin::getLabel(strBuf);
+        dispatcher(effGetProductString, 0, 0, strBuf, 0.0f);
     }
 
     void getMaker(char* const strBuf)
     {
         CARLA_ASSERT(fEffect != nullptr);
 
-        if (fEffect != nullptr)
-            dispatcher(effGetVendorString, 0, 0, strBuf, 0.0f);
-        else
-            CarlaPlugin::getMaker(strBuf);
+        dispatcher(effGetVendorString, 0, 0, strBuf, 0.0f);
     }
 
     void getCopyright(char* const strBuf)
     {
         CARLA_ASSERT(fEffect != nullptr);
 
-        if (fEffect != nullptr)
-            dispatcher(effGetVendorString, 0, 0, strBuf, 0.0f);
-        else
-            CarlaPlugin::getCopyright(strBuf);
+        dispatcher(effGetVendorString, 0, 0, strBuf, 0.0f);
     }
 
     void getRealName(char* const strBuf)
     {
         CARLA_ASSERT(fEffect != nullptr);
 
-        if (fEffect != nullptr)
-            dispatcher(effGetEffectName, 0, 0, strBuf, 0.0f);
-        else
-            CarlaPlugin::getRealName(strBuf);
+        dispatcher(effGetEffectName, 0, 0, strBuf, 0.0f);
     }
 
     void getParameterName(const uint32_t parameterId, char* const strBuf)
@@ -253,10 +244,7 @@ public:
         CARLA_ASSERT(fEffect != nullptr);
         CARLA_ASSERT(parameterId < kData->param.count);
 
-        if (fEffect != nullptr)
-            dispatcher(effGetParamName, parameterId, 0, strBuf, 0.0f);
-        else
-            CarlaPlugin::getParameterName(parameterId, strBuf);
+        dispatcher(effGetParamName, parameterId, 0, strBuf, 0.0f);
     }
 
     void getParameterText(const uint32_t parameterId, char* const strBuf)
@@ -264,15 +252,10 @@ public:
         CARLA_ASSERT(fEffect != nullptr);
         CARLA_ASSERT(parameterId < kData->param.count);
 
-        if (fEffect != nullptr)
-        {
-            dispatcher(effGetParamDisplay, parameterId, 0, strBuf, 0.0f);
+        dispatcher(effGetParamDisplay, parameterId, 0, strBuf, 0.0f);
 
-            if (*strBuf == 0)
-                std::sprintf(strBuf, "%f", getParameterValue(parameterId));
-        }
-        else
-            CarlaPlugin::getParameterText(parameterId, strBuf);
+        if (*strBuf == 0)
+            std::sprintf(strBuf, "%f", getParameterValue(parameterId));
     }
 
     void getParameterUnit(const uint32_t parameterId, char* const strBuf)
@@ -280,10 +263,7 @@ public:
         CARLA_ASSERT(fEffect != nullptr);
         CARLA_ASSERT(parameterId < kData->param.count);
 
-        if (fEffect != nullptr)
-            dispatcher(effGetParamLabel, parameterId, 0, strBuf, 0.0f);
-        else
-            CarlaPlugin::getParameterUnit(parameterId, strBuf);
+        dispatcher(effGetParamLabel, parameterId, 0, strBuf, 0.0f);
     }
 
     // -------------------------------------------------------------------
@@ -296,24 +276,33 @@ public:
 
         const float fixedValue = kData->param.fixValue(parameterId, value);
 
-        if (fEffect != nullptr)
-            fEffect->setParameter(fEffect, parameterId, fixedValue);
+        fEffect->setParameter(fEffect, parameterId, fixedValue);
 
         CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
     }
 
     void setChunkData(const char* const stringData)
     {
-        CARLA_ASSERT(fEffect != nullptr);
         CARLA_ASSERT(fOptions & PLUGIN_OPTION_USE_CHUNKS);
+        CARLA_ASSERT(fEffect != nullptr);
         CARLA_ASSERT(stringData != nullptr);
 
-        // FIXME
-        fChunk = QByteArray::fromBase64(QByteArray(stringData));
-        //fChunk.toBase64();
+        if (fLastChunk != nullptr)
+        {
+            delete[] fLastChunk;
+            fLastChunk = nullptr;
+        }
 
-        const ScopedSingleProcessLocker spl(this, true);
-        dispatcher(effSetChunk, 0 /* bank */, fChunk.size(), fChunk.data(), 0.0f);
+        const size_t size(CarlaString(stringData).exportAsBase64Binary(&fLastChunk));
+
+        CARLA_ASSERT(size > 0);
+        CARLA_ASSERT(fLastChunk != nullptr);
+
+        if (size > 0 && fLastChunk != nullptr)
+        {
+            const ScopedSingleProcessLocker spl(this, true);
+            dispatcher(effSetChunk, 0 /* bank */, size, fLastChunk, 0.0f);
+        }
     }
 
     void setProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback)
@@ -326,7 +315,7 @@ public:
         else if (index > static_cast<int32_t>(kData->prog.count))
             return;
 
-        if (fEffect != nullptr && index >= 0)
+        if (index >= 0)
         {
             const ScopedSingleProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
 
@@ -469,7 +458,10 @@ public:
         // Safely disable plugin for reload
         const ScopedDisabler sd(this);
 
-        kData->clearBuffers();
+        if (kData->active)
+            deactivate();
+
+        clearBuffers();
 
         uint32_t aIns, aOuts, mIns, mOuts, params, j;
 
@@ -517,7 +509,7 @@ public:
         CarlaString portName;
 
         // Audio Ins
-        for (j=0; j < aIns; j++)
+        for (j=0; j < aIns; ++j)
         {
             portName.clear();
 
@@ -534,6 +526,7 @@ public:
             }
             else
                 portName += "input";
+
             portName.truncate(portNameSize);
 
             kData->audioIn.ports[j].port   = (CarlaEngineAudioPort*)kData->client->addPort(kEnginePortTypeAudio, portName, true);
@@ -541,7 +534,7 @@ public:
         }
 
         // Audio Outs
-        for (j=0; j < aOuts; j++)
+        for (j=0; j < aOuts; ++j)
         {
             portName.clear();
 
@@ -558,13 +551,14 @@ public:
             }
             else
                 portName += "output";
+
             portName.truncate(portNameSize);
 
             kData->audioOut.ports[j].port   = (CarlaEngineAudioPort*)kData->client->addPort(kEnginePortTypeAudio, portName, false);
             kData->audioOut.ports[j].rindex = j;
         }
 
-        for (j=0; j < params; j++)
+        for (j=0; j < params; ++j)
         {
             kData->param.data[j].type   = PARAMETER_INPUT;
             kData->param.data[j].index  = j;
@@ -716,7 +710,7 @@ public:
                 portName += ":";
             }
 
-            portName += "event-in";
+            portName += "events-in";
             portName.truncate(portNameSize);
 
             kData->event.portIn = (CarlaEngineEventPort*)kData->client->addPort(kEnginePortTypeEvent, portName, true);
@@ -732,7 +726,7 @@ public:
                 portName += ":";
             }
 
-            portName += "event-out";
+            portName += "events-out";
             portName.truncate(portNameSize);
 
             kData->event.portOut = (CarlaEngineEventPort*)kData->client->addPort(kEnginePortTypeEvent, portName, false);
@@ -787,33 +781,10 @@ public:
         if (aIns <= 2 && aOuts <= 2 && (aIns == aOuts || aIns == 0 || aOuts == 0))
             kData->extraHints |= PLUGIN_HINT_CAN_RUN_RACK;
 
-        // plugin options
-        fOptions = 0x0;
-
-        fOptions |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
-
-        if (fEffect->flags & effFlagsProgramChunks)
-            fOptions |= PLUGIN_OPTION_USE_CHUNKS;
-
-#ifdef CARLA_OS_WIN
-        // Most Windows plugins have issues with this
-        fOptions |= PLUGIN_OPTION_FIXED_BUFFER;
-#endif
-
-        if (mIns > 0)
+        // dummy pre-start to get latency and wantEvents() on old plugins
         {
-            fOptions |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
-            fOptions |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
-            fOptions |= PLUGIN_OPTION_SEND_PITCHBEND;
-            fOptions |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
-        }
-
-        // dummy pre-start to catch latency and possible wantEvents() call on old plugins
-        {
-            dispatcher(effMainsChanged, 0, 1, nullptr, 0.0f);
-            dispatcher(effStartProcess, 0, 0, nullptr, 0.0f);
-            dispatcher(effStopProcess, 0, 0, nullptr, 0.0f);
-            dispatcher(effMainsChanged, 0, 0, nullptr, 0.0f);
+            activate();
+            deactivate();
         }
 
         // check latency
@@ -847,9 +818,8 @@ public:
         bufferSizeChanged(kData->engine->getBufferSize());
         reloadPrograms(true);
 
-        // always enabled, FIXME
-        dispatcher(effMainsChanged, 0, 1, nullptr, 0.0f);
-        dispatcher(effStartProcess, 0, 0, nullptr, 0.0f);
+        if (kData->active)
+            activate();
 
         carla_debug("VstPlugin::reload() - end");
     }
@@ -871,7 +841,7 @@ public:
             kData->prog.createNew(count);
 
             // Update names
-            for (i=0; i < count; i++)
+            for (i=0; i < count; ++i)
             {
                 char strBuf[STR_MAX+1] = { 0 };
                 if (dispatcher(effGetProgramNameIndexed, i, 0, strBuf, 0.0f) != 1)
@@ -890,7 +860,7 @@ public:
         {
             kData->engine->osc_send_control_set_program_count(fId, count);
 
-            for (i=0; i < count; i++)
+            for (i=0; i < count; ++i)
                 kData->engine->osc_send_control_set_program_name(fId, i, kData->prog.names[i]);
         }
 #endif
@@ -953,6 +923,18 @@ public:
     // -------------------------------------------------------------------
     // Plugin processing
 
+    void activate()
+    {
+        dispatcher(effMainsChanged, 0, 1, nullptr, 0.0f);
+        dispatcher(effStartProcess, 0, 0, nullptr, 0.0f);
+    }
+
+    void deactivate()
+    {
+        dispatcher(effStopProcess, 0, 0, nullptr, 0.0f);
+        dispatcher(effMainsChanged, 0, 0, nullptr, 0.0f);
+    }
+
     void process(float** const inBuffer, float** const outBuffer, const uint32_t frames)
     {
         uint32_t i, k;
@@ -963,55 +945,57 @@ public:
         if (! kData->active)
         {
             // disable any output sound
-            for (i=0; i < kData->audioOut.count; i++)
+            for (i=0; i < kData->audioOut.count; ++i)
                 carla_zeroFloat(outBuffer[i], frames);
 
-            //kData->activeBefore = kData->active;
             return;
         }
 
         fMidiEventCount = 0;
-        carla_zeroMem(fMidiEvents, sizeof(VstMidiEvent)*MAX_MIDI_EVENTS*2);
+        carla_zeroStruct<VstMidiEvent>(fMidiEvents, MAX_MIDI_EVENTS*2);
 
         // --------------------------------------------------------------------------------------------------------
-        // Check if not active before
+        // Check if needs reset
 
-        if (kData->needsReset /*|| ! kData->activeBefore*/)
+        if (kData->needsReset)
         {
+            // TODO!
             if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
             {
-                for (unsigned char j=0, l=MAX_MIDI_CHANNELS; j < MAX_MIDI_CHANNELS; j++)
+                for (k=0, i=MAX_MIDI_CHANNELS; k < MAX_MIDI_CHANNELS; ++k)
                 {
-                    carla_zeroStruct<VstMidiEvent>(fMidiEvents[j]);
-                    carla_zeroStruct<VstMidiEvent>(fMidiEvents[j+l]);
+                    fMidiEvents[k].type = kVstMidiType;
+                    fMidiEvents[k].byteSize = sizeof(VstMidiEvent);
+                    fMidiEvents[k].midiData[0] = MIDI_STATUS_CONTROL_CHANGE + k;
+                    fMidiEvents[k].midiData[1] = MIDI_CONTROL_ALL_SOUND_OFF;
 
-                    fMidiEvents[j].type = kVstMidiType;
-                    fMidiEvents[j].byteSize = sizeof(VstMidiEvent);
-                    fMidiEvents[j].midiData[0] = MIDI_STATUS_CONTROL_CHANGE + j;
-                    fMidiEvents[j].midiData[1] = MIDI_CONTROL_ALL_SOUND_OFF;
-
-                    fMidiEvents[j+l].type = kVstMidiType;
-                    fMidiEvents[j+l].byteSize = sizeof(VstMidiEvent);
-                    fMidiEvents[j+l].midiData[0] = MIDI_STATUS_CONTROL_CHANGE + j;
-                    fMidiEvents[j+l].midiData[1] = MIDI_CONTROL_ALL_SOUND_OFF;
+                    fMidiEvents[k+i].type = kVstMidiType;
+                    fMidiEvents[k+i].byteSize = sizeof(VstMidiEvent);
+                    fMidiEvents[k+i].midiData[0] = MIDI_STATUS_CONTROL_CHANGE + k;
+                    fMidiEvents[k+i].midiData[1] = MIDI_CONTROL_ALL_SOUND_OFF;
                 }
 
                 fMidiEventCount = MAX_MIDI_CHANNELS*2;
             }
+            else
+            {
+            }
 
             if (kData->latency > 0)
             {
-                for (i=0; i < kData->audioIn.count; i++)
+                for (i=0; i < kData->audioIn.count; ++i)
                     carla_zeroFloat(kData->latencyBuffers[i], kData->latency);
             }
 
             kData->needsReset = false;
         }
 
+        CARLA_PROCESS_CONTINUE_CHECK;
+
         // --------------------------------------------------------------------------------------------------------
         // Set TimeInfo
 
-        const EngineTimeInfo& timeInfo = kData->engine->getTimeInfo();
+        const EngineTimeInfo& timeInfo(kData->engine->getTimeInfo());
 
         fTimeInfo.flags = kVstTransportChanged;
 
@@ -1021,7 +1005,7 @@ public:
         fTimeInfo.samplePos  = timeInfo.frame;
         fTimeInfo.sampleRate = kData->engine->getSampleRate();
 
-        fTimeInfo.nanoSeconds = timeInfo.time*1000;
+        fTimeInfo.nanoSeconds = timeInfo.time/1000;
         fTimeInfo.flags |= kVstNanosValid;
 
         if (timeInfo.valid & EngineTimeInfo::ValidBBT)
@@ -1063,10 +1047,12 @@ public:
             fTimeInfo.barStartPos = 0.0;
         }
 
+        CARLA_PROCESS_CONTINUE_CHECK;
+
         // --------------------------------------------------------------------------------------------------------
         // Event Input and Processing
 
-        if (kData->event.portIn != nullptr /*&& kData->activeBefore*/)
+        if (kData->event.portIn != nullptr)
         {
             // ----------------------------------------------------------------------------------------------------
             // MIDI Input (External)
@@ -1075,9 +1061,9 @@ public:
             {
                 while (fMidiEventCount < MAX_MIDI_EVENTS*2 && ! kData->extNotes.data.isEmpty())
                 {
-                    const ExternalMidiNote& note = kData->extNotes.data.getFirst(true);
+                    const ExternalMidiNote& note(kData->extNotes.data.getFirst(true));
 
-                    carla_zeroStruct<VstMidiEvent>(fMidiEvents[fMidiEventCount]);
+                    CARLA_ASSERT(note.channel >= 0 && note.channel < MAX_MIDI_CHANNELS);
 
                     fMidiEvents[fMidiEventCount].type = kVstMidiType;
                     fMidiEvents[fMidiEventCount].byteSize = sizeof(VstMidiEvent);
@@ -1103,7 +1089,7 @@ public:
             uint32_t startTime  = 0;
             uint32_t timeOffset = 0;
 
-            for (i=0; i < nEvents; i++)
+            for (i=0; i < nEvents; ++i)
             {
                 const EngineEvent& event = kData->event.portIn->getEvent(i);
 
@@ -1123,7 +1109,7 @@ public:
 
                         if (fMidiEventCount > 0)
                         {
-                            //carla_zeroMem(fMidiEvents, sizeof(::MidiEvent)*fMidiEventCount);
+                            carla_zeroStruct<VstMidiEvent>(fMidiEvents, fMidiEventCount);
                             fMidiEventCount = 0;
                         }
                     }
@@ -1151,7 +1137,7 @@ public:
                         // Control backend stuff
                         if (event.channel == kData->ctrlChannel)
                         {
-                            double value;
+                            float value;
 
                             if (MIDI_IS_CONTROL_BREATH_CONTROLLER(ctrlEvent.param) && (fHints & PLUGIN_CAN_DRYWET) > 0)
                             {
@@ -1163,7 +1149,7 @@ public:
 
                             if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (fHints & PLUGIN_CAN_VOLUME) > 0)
                             {
-                                value = ctrlEvent.value*127/100;
+                                value = ctrlEvent.value*127.0f/100.0f;
                                 setVolume(value, false, false);
                                 postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_VOLUME, 0, value);
                                 continue;
@@ -1171,23 +1157,23 @@ public:
 
                             if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (fHints & PLUGIN_CAN_BALANCE) > 0)
                             {
-                                double left, right;
-                                value = ctrlEvent.value/0.5 - 1.0;
+                                float left, right;
+                                value = ctrlEvent.value/0.5f - 1.0f;
 
-                                if (value < 0.0)
+                                if (value < 0.0f)
                                 {
-                                    left  = -1.0;
-                                    right = (value*2)+1.0;
+                                    left  = -1.0f;
+                                    right = (value*2.0f)+1.0f;
                                 }
-                                else if (value > 0.0)
+                                else if (value > 0.0f)
                                 {
-                                    left  = (value*2)-1.0;
-                                    right = 1.0;
+                                    left  = (value*2.0f)-1.0f;
+                                    right = 1.0f;
                                 }
                                 else
                                 {
-                                    left  = -1.0;
-                                    right = 1.0;
+                                    left  = -1.0f;
+                                    right = 1.0f;
                                 }
 
                                 setBalanceLeft(left, false, false);
@@ -1199,7 +1185,7 @@ public:
                         }
 
                         // Control plugin parameters
-                        for (k=0; k < kData->param.count; k++)
+                        for (k=0; k < kData->param.count; ++k)
                         {
                             if (kData->param.data[k].midiChannel != event.channel)
                                 continue;
@@ -1210,7 +1196,7 @@ public:
                             if ((kData->param.data[k].hints & PARAMETER_IS_AUTOMABLE) == 0)
                                 continue;
 
-                            double value;
+                            float value;
 
                             if (kData->param.data[k].hints & PARAMETER_IS_BOOLEAN)
                             {
@@ -1251,8 +1237,8 @@ public:
                         {
                             if (! allNotesOffSent)
                             {
-                                allNotesOffSent = true;
                                 sendMidiAllNotesOff();
+                                allNotesOffSent = true;
                             }
 
                             postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_ACTIVE, 0, 0.0f);
@@ -1377,7 +1363,7 @@ public:
         if (kData->event.portOut != nullptr)
         {
             // reverse lookup MIDI events
-            for (k = (MAX_MIDI_EVENTS*2)-1; k >= fMidiEventCount; k--)
+            for (k = (MAX_MIDI_EVENTS*2)-1; k >= fMidiEventCount; --k)
             {
                 if (fMidiEvents[k].type == 0)
                     break;
@@ -1393,10 +1379,6 @@ public:
             }
 
         } // End of Control and MIDI Output
-
-        // --------------------------------------------------------------------------------------------------------
-
-        //kData->activeBefore = kData->active;
     }
 
     bool processSingle(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t timeOffset)
@@ -1430,9 +1412,9 @@ public:
         }
         else if (! kData->singleMutex.tryLock())
         {
-            for (i=0; i < kData->audioOut.count; i++)
+            for (i=0; i < kData->audioOut.count; ++i)
             {
-                for (k=0; k < frames; k++)
+                for (k=0; k < frames; ++k)
                     outBuffer[i][k+timeOffset] = 0.0f;
             }
 
@@ -1440,7 +1422,18 @@ public:
         }
 
         // --------------------------------------------------------------------------------------------------------
-        // Run plugin
+        // Set audio buffers
+
+        float* vstInBuffer[kData->audioIn.count];
+        float* vstOutBuffer[kData->audioOut.count];
+
+        for (i=0; i < kData->audioIn.count; ++i)
+            vstInBuffer[i] = inBuffer[i]+timeOffset;
+        for (i=0; i < kData->audioOut.count; ++i)
+            vstOutBuffer[i] = outBuffer[i]+timeOffset;
+
+        // --------------------------------------------------------------------------------------------------------
+        // Set MIDI events
 
         if (fMidiEventCount > 0)
         {
@@ -1449,19 +1442,13 @@ public:
             dispatcher(effProcessEvents, 0, 0, &fEvents, 0.0f);
         }
 
-        float* vstInBuffer[kData->audioIn.count];
-        float* vstOutBuffer[kData->audioOut.count];
-
-        for (i=0; i < kData->audioIn.count; i++)
-            vstInBuffer[i] = inBuffer[i]+timeOffset;
-        for (i=0; i < kData->audioOut.count; i++)
-            vstOutBuffer[i] = outBuffer[i]+timeOffset;
+        // --------------------------------------------------------------------------------------------------------
+        // Run plugin
 
         fIsProcessing = true;
 
         if (fHints & PLUGIN_CAN_PROCESS_REPLACING)
         {
-
             fEffect->processReplacing(fEffect,
                                       (kData->audioIn.count > 0) ? vstInBuffer : nullptr,
                                       (kData->audioOut.count > 0) ? vstOutBuffer : nullptr,
@@ -1469,7 +1456,7 @@ public:
         }
         else
         {
-            for (i=0; i < kData->audioOut.count; i++)
+            for (i=0; i < kData->audioOut.count; ++i)
                 carla_zeroFloat(vstOutBuffer[i], frames);
 
 #if ! VST_FORCE_DEPRECATED
@@ -1487,18 +1474,19 @@ public:
         // Post-processing (dry/wet, volume and balance)
 
         {
-            const bool doVolume  = (fHints & PLUGIN_CAN_VOLUME) > 0 && kData->postProc.volume != 1.0f;
-            const bool doDryWet  = (fHints & PLUGIN_CAN_DRYWET) > 0 && kData->postProc.dryWet != 1.0f;
-            const bool doBalance = (fHints & PLUGIN_CAN_BALANCE) > 0 && (kData->postProc.balanceLeft != -1.0f || kData->postProc.balanceRight != 1.0f);
+            const bool doVolume  = (fHints & PLUGIN_CAN_VOLUME) != 0 && kData->postProc.volume != 1.0f;
+            const bool doDryWet  = (fHints & PLUGIN_CAN_DRYWET) != 0 && kData->postProc.dryWet != 1.0f;
+            const bool doBalance = (fHints & PLUGIN_CAN_BALANCE) != 0 && (kData->postProc.balanceLeft != -1.0f || kData->postProc.balanceRight != 1.0f);
 
+            bool isPair;
             float bufValue, oldBufLeft[doBalance ? frames : 1];
 
-            for (i=0; i < kData->audioOut.count; i++)
+            for (i=0; i < kData->audioOut.count; ++i)
             {
                 // Dry/Wet
                 if (doDryWet)
                 {
-                    for (k=0; k < frames; k++)
+                    for (k=0; k < frames; ++k)
                     {
                         bufValue = inBuffer[(kData->audioIn.count == 1) ? 0 : i][k+timeOffset];
                         outBuffer[i][k+timeOffset] = (outBuffer[i][k+timeOffset] * kData->postProc.dryWet) + (bufValue * (1.0f - kData->postProc.dryWet));
@@ -1508,15 +1496,20 @@ public:
                 // Balance
                 if (doBalance)
                 {
-                    if (i % 2 == 0)
+                    isPair = (i % 2 == 0);
+
+                    if (isPair)
+                    {
+                        CARLA_ASSERT(i+1 < kData->audioOut.count);
                         carla_copyFloat(oldBufLeft, outBuffer[i]+timeOffset, frames);
+                    }
 
                     float balRangeL = (kData->postProc.balanceLeft  + 1.0f)/2.0f;
                     float balRangeR = (kData->postProc.balanceRight + 1.0f)/2.0f;
 
-                    for (k=0; k < frames; k++)
+                    for (k=0; k < frames; ++k)
                     {
-                        if (i % 2 == 0)
+                        if (isPair)
                         {
                             // left
                             outBuffer[i][k+timeOffset]  = oldBufLeft[k]                * (1.0f - balRangeL);
@@ -1534,7 +1527,7 @@ public:
                 // Volume
                 if (doVolume)
                 {
-                    for (k=0; k < frames; k++)
+                    for (k=0; k < frames; ++k)
                         outBuffer[i][k+timeOffset] *= kData->postProc.volume;
                 }
             }
@@ -1549,11 +1542,11 @@ public:
 
     void bufferSizeChanged(const uint32_t newBufferSize)
     {
+        CARLA_ASSERT_INT(newBufferSize > 0, newBufferSize);
+        carla_debug("VstPlugin::bufferSizeChanged(%i)", newBufferSize);
+
         if (kData->active)
-        {
-            dispatcher(effStopProcess, 0, 0, nullptr, 0.0f);
-            dispatcher(effMainsChanged, 0, 0, nullptr, 0.0f);
-        }
+            deactivate();
 
 #if ! VST_FORCE_DEPRECATED
         dispatcher(effSetBlockSizeAndSampleRate, 0, newBufferSize, nullptr, kData->engine->getSampleRate());
@@ -1561,19 +1554,16 @@ public:
         dispatcher(effSetBlockSize, 0, newBufferSize, nullptr, 0.0f);
 
         if (kData->active)
-        {
-            dispatcher(effMainsChanged, 0, 1, nullptr, 0.0f);
-            dispatcher(effStartProcess, 0, 0, nullptr, 0.0f);
-        }
+            activate();
     }
 
     void sampleRateChanged(const double newSampleRate)
     {
+        CARLA_ASSERT_INT(newSampleRate > 0.0, newSampleRate);
+        carla_debug("VstPlugin::sampleRateChanged(%g)", newSampleRate);
+
         if (kData->active)
-        {
-            dispatcher(effStopProcess, 0, 0, nullptr, 0.0f);
-            dispatcher(effMainsChanged, 0, 0, nullptr, 0.0f);
-        }
+            deactivate();
 
 #if ! VST_FORCE_DEPRECATED
         dispatcher(effSetBlockSizeAndSampleRate, 0, kData->engine->getBufferSize(), nullptr, newSampleRate);
@@ -1581,10 +1571,7 @@ public:
         dispatcher(effSetSampleRate, 0, 0, nullptr, newSampleRate);
 
         if (kData->active)
-        {
-            dispatcher(effMainsChanged, 0, 1, nullptr, 0.0f);
-            dispatcher(effStartProcess, 0, 0, nullptr, 0.0f);
-        }
+            activate();
     }
 
     // -------------------------------------------------------------------
@@ -1810,7 +1797,7 @@ protected:
                 return 0;
             }
 
-            for (int32_t i=0; i < vstEvents->numEvents && events.numEvents < MAX_MIDI_EVENTS*2; i++)
+            for (int32_t i=0; i < vstEvents->numEvents && events.numEvents < MAX_MIDI_EVENTS*2; ++i)
             {
                 if (! vstEvents->events[i])
                     break;
@@ -2059,13 +2046,6 @@ protected:
 public:
     // -------------------------------------------------------------------
 
-    // FIXME
-    #ifdef _WIN32
-    # define OS_SEP '\\'
-    #else
-    # define OS_SEP '/'
-    #endif
-
     bool init(const char* const filename, const char* const name)
     {
         CARLA_ASSERT(kData->engine != nullptr);
@@ -2153,16 +2133,16 @@ public:
         }
         else
         {
-            char strBuf[STR_MAX+1] = { 0 };
+            char strBuf[STR_MAX+1] = { '\0' };
             dispatcher(effGetEffectName, 0, 0, strBuf, 0.0f);
 
-            if (strBuf[0] != 0)
+            if (strBuf[0] != '\0')
             {
                 fName = kData->engine->getNewUniquePluginName(strBuf);
             }
             else
             {
-                const char* const label = strrchr(filename, OS_SEP)+1;
+                const char* const label = std::strrchr(filename, OS_SEP)+1;
                 fName = kData->engine->getNewUniquePluginName(label);
             }
         }
@@ -2223,6 +2203,35 @@ public:
             }
         }
 
+        // ---------------------------------------------------------------
+        // load plugin settings
+
+        {
+            // set default options
+            fOptions = 0x0;
+
+            fOptions |= PLUGIN_OPTION_FIXED_BUFFER;
+            fOptions |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+
+            if (fEffect->flags & effFlagsProgramChunks)
+                fOptions |= PLUGIN_OPTION_USE_CHUNKS;
+
+            //if (mIns > 0)
+            {
+                fOptions |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
+                fOptions |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
+                fOptions |= PLUGIN_OPTION_SEND_PITCHBEND;
+                fOptions |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+            }
+
+            // load settings
+            kData->idStr  = "VST/";
+            kData->idStr += std::strrchr(filename, OS_SEP)+1;
+            kData->idStr += "/";
+            kData->idStr += CarlaString(uniqueId());
+            fOptions = kData->loadSettings(fOptions, availableOptions());
+        }
+
         return true;
     }
 
@@ -2230,7 +2239,7 @@ private:
     int fUnique1;
     AEffect* fEffect;
 
-    QByteArray    fChunk;
+    uint8_t*      fLastChunk;
     uint32_t      fMidiEventCount;
     VstMidiEvent  fMidiEvents[MAX_MIDI_EVENTS*2];
     VstTimeInfo_R fTimeInfo;
@@ -2240,12 +2249,10 @@ private:
         intptr_t reserved;
         VstEvent* data[MAX_MIDI_EVENTS*2];
 
-#ifndef QTCREATOR_TEST // missing proper C++11 support
         FixedVstEvents()
             : numEvents(0),
               reserved(0),
               data{0} {}
-#endif
     } fEvents;
 
     struct GuiInfo {

@@ -882,7 +882,6 @@ public:
             for (i=0; i < kData->audioOut.count; i++)
                 carla_zeroFloat(outBuffer[i], frames);
 
-            //kData->activeBefore = kData->active;
             return;
         }
 
@@ -920,9 +919,9 @@ public:
             {
                 while (! kData->extNotes.data.isEmpty())
                 {
-                    const ExternalMidiNote& note = kData->extNotes.data.getFirst(true);
+                    const ExternalMidiNote& note(kData->extNotes.data.getFirst(true));
 
-                    CARLA_ASSERT(note.channel >= 0);
+                    CARLA_ASSERT(note.channel >= 0 && note.channel < MAX_MIDI_CHANNELS);
 
                     if (note.velo > 0)
                         fluid_synth_noteon(fSynth, note.channel, note.note, note.velo);
@@ -1230,10 +1229,6 @@ public:
             }
 
         } // End of Control Output
-
-        // --------------------------------------------------------------------------------------------------------
-
-        //kData->activeBefore = kData->active;
     }
 
     bool processSingle(float** const outBuffer, const uint32_t frames, const uint32_t timeOffset)

@@ -1028,11 +1028,9 @@ public:
             {
                 while (midiEventCount < MAX_MIDI_EVENTS && ! kData->extNotes.data.isEmpty())
                 {
-                    const ExternalMidiNote& note = kData->extNotes.data.getFirst(true);
+                    const ExternalMidiNote& note(kData->extNotes.data.getFirst(true));
 
-                    CARLA_ASSERT(note.channel >= 0);
-
-                    carla_zeroStruct<snd_seq_event_t>(fMidiEvents[midiEventCount]);
+                    CARLA_ASSERT(note.channel >= 0 && note.channel < MAX_MIDI_CHANNELS);
 
                     fMidiEvents[midiEventCount].type               = (note.velo > 0) ? SND_SEQ_EVENT_NOTEON : SND_SEQ_EVENT_NOTEOFF;
                     fMidiEvents[midiEventCount].data.note.channel  = note.channel;
@@ -1217,22 +1215,6 @@ public:
                             {
                                 sendMidiAllNotesOff();
                                 allNotesOffSent = true;
-                            }
-
-                            if (fDescriptor->deactivate != nullptr)
-                            {
-                                fDescriptor->deactivate(fHandle);
-
-                                if (fHandle2 != nullptr)
-                                    fDescriptor->deactivate(fHandle2);
-                            }
-
-                            if (fDescriptor->activate != nullptr)
-                            {
-                                fDescriptor->activate(fHandle);
-
-                                if (fHandle2 != nullptr)
-                                    fDescriptor->activate(fHandle2);
                             }
 
                             postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_ACTIVE, 0, 0.0f);
@@ -1420,10 +1402,6 @@ public:
             }
 
         } // End of Control Output
-
-        // --------------------------------------------------------------------------------------------------------
-
-        //kData->activeBefore = kData->active;
     }
 
     bool processSingle(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t timeOffset, const unsigned long midiEventCount)
@@ -1644,12 +1622,12 @@ public:
     void sampleRateChanged(const double newSampleRate)
     {
         CARLA_ASSERT_INT(newSampleRate > 0.0, newSampleRate);
-        carla_debug("DssiPlugin::sampleRateChanged(%i) - start", newSampleRate);
+        carla_debug("DssiPlugin::sampleRateChanged(%g) - start", newSampleRate);
 
         // TODO
         (void)newSampleRate;
 
-        carla_debug("DssiPlugin::sampleRateChanged(%i) - end", newSampleRate);
+        carla_debug("DssiPlugin::sampleRateChanged(%g) - end", newSampleRate);
     }
 
     // -------------------------------------------------------------------

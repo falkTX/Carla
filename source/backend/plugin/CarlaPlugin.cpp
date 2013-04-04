@@ -1005,13 +1005,19 @@ void CarlaPlugin::setEnabled(const bool yesNo)
 
 void CarlaPlugin::setActive(const bool active, const bool sendOsc, const bool sendCallback)
 {
+    CARLA_ASSERT(sendOsc || sendCallback); // never call this from RT
+
     if (kData->active == active)
         return;
 
-    if (active)
-        activate();
-    else
-        deactivate();
+    {
+        const ScopedSingleProcessLocker spl(this, true);
+
+        if (active)
+            activate();
+        else
+            deactivate();
+    }
 
     kData->active = active;
 

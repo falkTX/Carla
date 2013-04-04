@@ -989,22 +989,6 @@ public:
                     case kEngineControlEventTypeAllSoundOff:
                         if (event.channel == kData->ctrlChannel)
                         {
-                            if (fDescriptor->deactivate != nullptr)
-                            {
-                                fDescriptor->deactivate(fHandle);
-
-                                if (fHandle2 != nullptr)
-                                    fDescriptor->deactivate(fHandle2);
-                            }
-
-                            if (fDescriptor->activate != nullptr)
-                            {
-                                fDescriptor->activate(fHandle);
-
-                                if (fHandle2 != nullptr)
-                                    fDescriptor->activate(fHandle2);
-                            }
-
                             postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_ACTIVE, 0, 0.0f);
                             postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_ACTIVE, 0, 1.0f);
                         }
@@ -1067,10 +1051,6 @@ public:
             }
 
         } // End of Control Output
-
-        // --------------------------------------------------------------------------------------------------------
-
-        //kData->activeBefore = kData->active;
     }
 
     bool processSingle(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t timeOffset)
@@ -1273,12 +1253,12 @@ public:
     void sampleRateChanged(const double newSampleRate)
     {
         CARLA_ASSERT_INT(newSampleRate > 0.0, newSampleRate);
-        carla_debug("LadspaPlugin::sampleRateChanged(%i) - start", newSampleRate);
+        carla_debug("LadspaPlugin::sampleRateChanged(%g) - start", newSampleRate);
 
         // TODO
         (void)newSampleRate;
 
-        carla_debug("LadspaPlugin::sampleRateChanged(%i) - end", newSampleRate);
+        carla_debug("LadspaPlugin::sampleRateChanged(%g) - end", newSampleRate);
     }
 
     // -------------------------------------------------------------------

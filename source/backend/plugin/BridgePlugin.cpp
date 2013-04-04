@@ -1007,7 +1007,6 @@ public:
             for (i=0; i < kData->audioOut.count; i++)
                 carla_zeroFloat(outBuffer[i], frames);
 
-            //kData->activeBefore = kData->active;
             return;
         }
 

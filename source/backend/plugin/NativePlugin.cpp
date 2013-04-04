@@ -182,8 +182,12 @@ public:
     {
         carla_debug("NativePlugin::~NativePlugin()");
 
-        if (fIsUiVisible && fDescriptor != nullptr && fDescriptor->ui_show != nullptr && fHandle != nullptr)
-            fDescriptor->ui_show(fHandle, false);
+        // close UI
+        if (fHints & PLUGIN_HAS_GUI)
+        {
+            if (fIsUiVisible && fDescriptor != nullptr && fDescriptor->ui_show != nullptr && fHandle != nullptr)
+                fDescriptor->ui_show(fHandle, false);
+        }
 
         kData->singleMutex.lock();
         kData->masterMutex.lock();
@@ -1183,9 +1187,11 @@ public:
                 {
                     fMidiEvents[k].data[0] = MIDI_STATUS_CONTROL_CHANGE + k;
                     fMidiEvents[k].data[1] = MIDI_CONTROL_ALL_SOUND_OFF;
+                    fMidiEvents[k].size    = 2;
 
                     fMidiEvents[k+i].data[0] = MIDI_STATUS_CONTROL_CHANGE + k;
                     fMidiEvents[k+i].data[1] = MIDI_CONTROL_ALL_NOTES_OFF;
+                    fMidiEvents[k+i].size    = 2;
                 }
 
                 fMidiEventCount = MAX_MIDI_CHANNELS*2;
@@ -1240,12 +1246,10 @@ public:
             {
                 while (fMidiEventCount < MAX_MIDI_EVENTS*2 && ! kData->extNotes.data.isEmpty())
                 {
-                    const ExternalMidiNote& note = kData->extNotes.data.getFirst(true);
+                    const ExternalMidiNote& note(kData->extNotes.data.getFirst(true));
 
-                    CARLA_ASSERT(note.channel >= 0);
+                    CARLA_ASSERT(note.channel >= 0 && note.channel < MAX_MIDI_CHANNELS);
 
-                    fMidiEvents[fMidiEventCount].port = 0;
-                    fMidiEvents[fMidiEventCount].time = 0;
                     fMidiEvents[fMidiEventCount].data[0]  = (note.velo > 0) ? MIDI_STATUS_NOTE_ON : MIDI_STATUS_NOTE_OFF;
                     fMidiEvents[fMidiEventCount].data[0] += note.channel;
                     fMidiEvents[fMidiEventCount].data[1]  = note.note;
@@ -1437,22 +1441,6 @@ public:
                                 allNotesOffSent = true;
                             }
 
-                            if (fDescriptor->deactivate != nullptr)
-                            {
-                                fDescriptor->deactivate(fHandle);
-
-                                if (fHandle2 != nullptr)
-                                    fDescriptor->deactivate(fHandle2);
-                            }
-
-                            if (fDescriptor->activate != nullptr)
-                            {
-                                fDescriptor->activate(fHandle);
-
-                                if (fHandle2 != nullptr)
-                                    fDescriptor->activate(fHandle2);
-                            }
-
                             postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_ACTIVE, 0, 0.0f);
                             postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_ACTIVE, 0, 1.0f);
                         }
@@ -1467,6 +1455,8 @@ public:
                             fMidiEvents[fMidiEventCount].data[0] = MIDI_STATUS_CONTROL_CHANGE + event.channel;
                             fMidiEvents[fMidiEventCount].data[1] = MIDI_CONTROL_ALL_SOUND_OFF;
                             fMidiEvents[fMidiEventCount].data[2] = 0;
+                            fMidiEvents[fMidiEventCount].data[3] = 0;
+                            fMidiEvents[fMidiEventCount].size    = 2;
 
                             fMidiEventCount += 1;
                         }
@@ -1493,6 +1483,8 @@ public:
                             fMidiEvents[fMidiEventCount].data[0] = MIDI_STATUS_CONTROL_CHANGE + event.channel;
                             fMidiEvents[fMidiEventCount].data[1] = MIDI_CONTROL_ALL_NOTES_OFF;
                             fMidiEvents[fMidiEventCount].data[2] = 0;
+                            fMidiEvents[fMidiEventCount].data[3] = 0;
+                            fMidiEvents[fMidiEventCount].size    = 2;
 
                             fMidiEventCount += 1;
                         }
@@ -1603,10 +1595,6 @@ public:
             }
 
         } // End of Control and MIDI Output
-
-        // --------------------------------------------------------------------------------------------------------
-
-        //kData->activeBefore = kData->active;
     }
 
     bool processSingle(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t timeOffset)
