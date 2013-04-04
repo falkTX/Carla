@@ -1790,24 +1790,41 @@ protected:
                 return 0;
             if (ptr == nullptr)
                 return 0;
-#if 0
-            if (! isProcessing)
+            if (! fIsProcessing)
             {
-                carla_stderr2("VstPlugin::handleAudioMasterProcessEvents(%p) - received MIDI out events outside audio thread, ignoring", vstEvents);
+                carla_stderr2("audioMasterProcessEvents(%p) - received MIDI out events outside audio thread, ignoring", ptr);
                 return 0;
             }
 
-            for (int32_t i=0; i < vstEvents->numEvents && events.numEvents < MAX_MIDI_EVENTS*2; ++i)
+            if (fMidiEventCount >= MAX_MIDI_EVENTS*2)
+                return 0;
+
+
+        {
+            const VstEvents* const vstEvents((const VstEvents*)ptr);
+
+            for (int32_t i=0; i < vstEvents->numEvents && i < MAX_MIDI_EVENTS*2; ++i)
             {
-                if (! vstEvents->events[i])
+                if (vstEvents->events[i] == nullptr)
                     break;
 
                 const VstMidiEvent* const vstMidiEvent = (const VstMidiEvent*)vstEvents->events[i];
 
-                if (vstMidiEvent->type == kVstMidiType)
-                    memcpy(&midiEvents[events.numEvents++], vstMidiEvent, sizeof(VstMidiEvent));
+                if (vstMidiEvent->type != kVstMidiType)
+                    continue;
+
+                // reverse-find first free event, and put it there
+                for (uint32_t j=(MAX_MIDI_EVENTS*2)-1; j >= fMidiEventCount; --j)
+                {
+                    if (fMidiEvents[j].type == 0)
+                    {
+                        std::memcpy(&fMidiEvents[j], vstMidiEvent, sizeof(VstMidiEvent));
+                        break;
+                    }
+                }
             }
-#endif
+        }
+
             ret = 1;
             break;
 
@@ -2210,13 +2227,12 @@ public:
             // set default options
             fOptions = 0x0;
 
-            fOptions |= PLUGIN_OPTION_FIXED_BUFFER;
             fOptions |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
             if (fEffect->flags & effFlagsProgramChunks)
                 fOptions |= PLUGIN_OPTION_USE_CHUNKS;
 
-            //if (mIns > 0)
+            if (vstPluginCanDo(fEffect, "receiveVstEvents") || vstPluginCanDo(fEffect, "receiveVstMidiEvent") || (fEffect->flags & effFlagsIsSynth) > 0 || (fHints & PLUGIN_WANTS_MIDI_INPUT))
             {
                 fOptions |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
                 fOptions |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;

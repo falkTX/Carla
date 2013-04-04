@@ -560,11 +560,11 @@ struct CarlaPluginProtectedData {
             if (client->isActive())
                 client->deactivate();
 
+            clearBuffers();
+
             delete client;
             client = nullptr;
         }
-
-        clearBuffers();
 
         for (auto it = custom.begin(); it.valid(); it.next())
         {

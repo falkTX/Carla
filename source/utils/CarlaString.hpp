@@ -50,47 +50,43 @@ public:
 
     explicit CarlaString(const int value)
     {
-        const size_t strBufSize = static_cast<size_t>(std::abs(value/10) + 3);
-        char         strBuf[strBufSize];
-        std::snprintf(strBuf, strBufSize, "%d", value);
+        char strBuf[0xff] = { '\0' };
+        std::snprintf(strBuf, 0xff, "%d", value);
 
         _init();
-        _dup(strBuf, strBufSize);
+        _dup(strBuf);
     }
 
     explicit CarlaString(const unsigned int value, const bool hexadecimal = false)
     {
-        const size_t strBufSize = value/10 + 2 + (hexadecimal ? 2 : 0);
-        char         strBuf[strBufSize];
-        std::snprintf(strBuf, strBufSize, hexadecimal ? "0x%x" : "%u", value);
+        char strBuf[0xff] = { '\0' };
+        std::snprintf(strBuf, 0xff, hexadecimal ? "0x%x" : "%u", value);
 
         _init();
-        _dup(strBuf, strBufSize);
+        _dup(strBuf);
     }
 
     explicit CarlaString(const long int value)
     {
-        const size_t strBufSize = static_cast<size_t>(std::abs(value/10) + 3);
-        char         strBuf[strBufSize];
-        std::snprintf(strBuf, strBufSize, "%ld", value);
+        char strBuf[0xff] = { '\0' };
+        std::snprintf(strBuf, 0xff, "%ld", value);
 
         _init();
-        _dup(strBuf, strBufSize);
+        _dup(strBuf);
     }
 
     explicit CarlaString(const unsigned long int value, const bool hexadecimal = false)
     {
-        const size_t strBufSize = value/10 + 2 + (hexadecimal ? 2 : 0);
-        char         strBuf[strBufSize];
-        std::snprintf(strBuf, strBufSize, hexadecimal ? "0x%lx" : "%lu", value);
+        char strBuf[0xff] = { '\0' };
+        std::snprintf(strBuf, 0xff, hexadecimal ? "0x%lx" : "%lu", value);
 
         _init();
-        _dup(strBuf, strBufSize);
+        _dup(strBuf);
     }
 
     explicit CarlaString(const float value)
     {
-        char strBuf[0xff];
+        char strBuf[0xff] = { '\0' };
         std::snprintf(strBuf, 0xff, "%f", value);
 
         _init();
@@ -99,7 +95,7 @@ public:
 
     explicit CarlaString(const double value)
     {
-        char strBuf[0xff];
+        char strBuf[0xff] = { '\0' };
         std::snprintf(strBuf, 0xff, "%g", value);
 
         _init();
