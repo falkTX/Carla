@@ -105,6 +105,7 @@ public:
         pthread_mutex_lock(&kMaster->mutex);
         pthread_mutex_unlock(&kMaster->mutex);
         fThread.stop();
+        fThread.wait();
 
         delete kMaster;
     }
@@ -289,18 +290,21 @@ protected:
 #endif
 
     // -------------------------------------------------------------------
-    // Plugin chunk calls
+    // Plugin state calls
 
-    size_t getChunk(void** const data)
+    char* getState()
     {
         config.save();
-        return kMaster->getalldata((char**)data);
+
+        char* data = nullptr;
+        kMaster->getalldata(&data);
+        return data;
     }
 
-    void setChunk(void* const data, const size_t size)
+    void setState(const char* const data)
     {
         fThread.stopLoadLater();
-        kMaster->putalldata((char*)data, size);
+        kMaster->putalldata((char*)data, 0);
         kMaster->applyparameters(true);
     }
 
@@ -655,9 +659,9 @@ struct ProgramsDestructor {
 static const PluginDescriptor zynAddSubFxDesc = {
     /* category  */ PLUGIN_CATEGORY_SYNTH,
 #ifdef WANT_ZYNADDSUBFX_UI
-    /* hints     */ static_cast<PluginHints>(PLUGIN_IS_SYNTH | PLUGIN_HAS_GUI | PLUGIN_USES_CHUNKS | PLUGIN_USES_SINGLE_THREAD),
+    /* hints     */ static_cast<PluginHints>(PLUGIN_IS_SYNTH|PLUGIN_HAS_GUI/*|PLUGIN_USES_SINGLE_THREAD*/|PLUGIN_USES_STATE),
 #else
-    /* hints     */ static_cast<PluginHints>(PLUGIN_IS_SYNTH | PLUGIN_USES_CHUNKS),
+    /* hints     */ static_cast<PluginHints>(PLUGIN_IS_SYNTH|PLUGIN_USES_STATE),
 #endif
     /* audioIns  */ 2,
     /* audioOuts */ 2,

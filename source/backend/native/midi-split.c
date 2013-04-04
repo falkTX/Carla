@@ -121,8 +121,8 @@ static const PluginDescriptor midiSplitDesc = {
     .deactivate = NULL,
     .process    = midiSplit_process,
 
-    .get_chunk = NULL,
-    .set_chunk = NULL
+    .get_state = NULL,
+    .set_state = NULL
 };
 
 // -----------------------------------------------------------------------

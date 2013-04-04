@@ -295,8 +295,8 @@ static const PluginDescriptor lfoDesc = {
     .deactivate = NULL,
     .process    = lfo_process,
 
-    .get_chunk = NULL,
-    .set_chunk = NULL
+    .get_state = NULL,
+    .set_state = NULL
 };
 
 // -----------------------------------------------------------------------

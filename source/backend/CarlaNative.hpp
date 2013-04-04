@@ -281,21 +281,20 @@ protected:
     }
 
     // -------------------------------------------------------------------
-    // Plugin chunk calls
+    // Plugin state calls
 
-    virtual size_t getChunk(void** const data)
+    virtual char* getState()
+    {
+        return nullptr;
+    }
+
+    virtual void setState(const char* const data)
     {
         CARLA_ASSERT(data != nullptr);
-        return 0;
+        return;
 
         // unused
         (void)data;
-    }
-
-    virtual void setChunk(void* const data, const size_t size)
-    {
-        CARLA_ASSERT(data != nullptr);
-        CARLA_ASSERT(size > 0);
     }
 
     // -------------------------------------------------------------------
@@ -394,14 +393,14 @@ public:
         return handlePtr->process(inBuffer, outBuffer, frames, midiEventCount, midiEvents);
     }
 
-    static size_t _get_chunk(PluginHandle handle, void** data)
+    static char* _get_state(PluginHandle handle)
     {
-        return handlePtr->getChunk(data);
+        return handlePtr->getState();
     }
 
-    static void _set_chunk(PluginHandle handle, void* data, size_t size)
+    static void _set_state(PluginHandle handle, const char* data)
     {
-        handlePtr->setChunk(data, size);
+        handlePtr->setState(data);
     }
 
     #undef handlePtr
@@ -445,7 +444,7 @@ public:                                                                         
     className::_activate,               \
     className::_deactivate,             \
     className::_process,                \
-    className::_get_chunk,              \
-    className::_set_chunk
+    className::_get_state,              \
+    className::_set_state
 
 #endif // __CARLA_NATIVE_HPP__

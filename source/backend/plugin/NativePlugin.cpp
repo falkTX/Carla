@@ -266,24 +266,6 @@ public:
     }
 
     // -------------------------------------------------------------------
-    // Information (current data)
-
-    int32_t chunkData(void** const dataPtr)
-    {
-        CARLA_ASSERT(fOptions & PLUGIN_OPTION_USE_CHUNKS);
-        CARLA_ASSERT(fDescriptor != nullptr);
-        CARLA_ASSERT(fDescriptor->get_chunk != nullptr);
-        CARLA_ASSERT(fHandle != nullptr);
-        CARLA_ASSERT(fHandle2 == nullptr);
-        CARLA_ASSERT(dataPtr != nullptr);
-
-        if (fDescriptor->get_chunk != nullptr)
-            return fDescriptor->get_chunk(fHandle, dataPtr);
-
-        return 0;
-    }
-
-    // -------------------------------------------------------------------
     // Information (per-plugin data)
 
     unsigned int availableOptions()
@@ -297,9 +279,6 @@ public:
 
         options |= PLUGIN_OPTION_FIXED_BUFFER;
         options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
-
-        if (fDescriptor->hints & ::PLUGIN_USES_CHUNKS)
-            options |= PLUGIN_OPTION_USE_CHUNKS;
 
         if (kData->engine->getProccessMode() != PROCESS_MODE_CONTINUOUS_RACK)
         {
@@ -476,6 +455,26 @@ public:
     }
 
     // -------------------------------------------------------------------
+    // Set data (state)
+
+    void prepareForSave()
+    {
+        CARLA_ASSERT(fDescriptor != nullptr);
+        CARLA_ASSERT(fHandle != nullptr);
+
+        if (fDescriptor->get_state == nullptr)
+            return;
+        if ((fDescriptor->hints & ::PLUGIN_USES_STATE) == 0)
+            return;
+
+        if (char* data = fDescriptor->get_state(fHandle))
+        {
+            CarlaPlugin::setCustomData(CUSTOM_DATA_CHUNK, "State", data, false);
+            std::free(data);
+        }
+    }
+
+    // -------------------------------------------------------------------
     // Set data (plugin-specific stuff)
 
     void setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback)
@@ -507,10 +506,10 @@ public:
         carla_debug("DssiPlugin::setCustomData(%s, %s, %s, %s)", type, key, value, bool2str(sendGui));
 
         if (type == nullptr)
-            return carla_stderr2("NativePlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is not string", type, key, value, bool2str(sendGui));
+            return carla_stderr2("NativePlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is null", type, key, value, bool2str(sendGui));
 
-        if (std::strcmp(type, CUSTOM_DATA_STRING) != 0)
-            return carla_stderr2("NativePlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is not string", type, key, value, bool2str(sendGui));
+        if (std::strcmp(type, CUSTOM_DATA_STRING) != 0 && std::strcmp(type, CUSTOM_DATA_CHUNK) != 0)
+            return carla_stderr2("NativePlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is invalid", type, key, value, bool2str(sendGui));
 
         if (key == nullptr)
             return carla_stderr2("NativePlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - key is null", type, key, value, bool2str(sendGui));
@@ -518,54 +517,39 @@ public:
         if (value == nullptr)
             return carla_stderr2("Nativelugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - value is null", type, key, value, bool2str(sendGui));
 
-        if (fDescriptor->set_custom_data != nullptr)
+        if (std::strcmp(type, CUSTOM_DATA_CHUNK) == 0)
         {
-            fDescriptor->set_custom_data(fHandle, key, value);
+            if (fDescriptor->set_state != nullptr && (fDescriptor->hints & ::PLUGIN_USES_STATE) != 0)
+            {
+                const ScopedSingleProcessLocker spl(this, true);
 
-            if (fHandle2 != nullptr)
-                fDescriptor->set_custom_data(fHandle2, key, value);
+                fDescriptor->set_state(fHandle, value);
+
+                if (fHandle2 != nullptr)
+                    fDescriptor->set_state(fHandle2, value);
+            }
         }
-
-        if (sendGui && fIsUiVisible && fDescriptor->ui_set_custom_data != nullptr)
-            fDescriptor->ui_set_custom_data(fHandle, key, value);
-
-        if (std::strlen(key) == 6 && std::strncmp(key, "file", 4) == 0)
+        else
         {
-            const ScopedDisabler sd(this);
-            reloadPrograms(false);
+            if (fDescriptor->set_custom_data != nullptr)
+            {
+                fDescriptor->set_custom_data(fHandle, key, value);
+
+                if (fHandle2 != nullptr)
+                    fDescriptor->set_custom_data(fHandle2, key, value);
+            }
+
+            if (sendGui && fIsUiVisible && fDescriptor->ui_set_custom_data != nullptr)
+                fDescriptor->ui_set_custom_data(fHandle, key, value);
+
+            if (std::strlen(key) == 6 && std::strncmp(key, "file", 4) == 0)
+            {
+                const ScopedDisabler sd(this);
+                reloadPrograms(false);
+            }
         }
 
         CarlaPlugin::setCustomData(type, key, value, sendGui);
-    }
-
-    void setChunkData(const char* const stringData)
-    {
-        CARLA_ASSERT(fOptions & PLUGIN_OPTION_USE_CHUNKS);
-        CARLA_ASSERT(fDescriptor != nullptr);
-        CARLA_ASSERT(fDescriptor->set_chunk != nullptr);
-        CARLA_ASSERT(fHandle != nullptr);
-        CARLA_ASSERT(fHandle2 == nullptr);
-        CARLA_ASSERT(stringData != nullptr);
-
-        if (fDescriptor->set_chunk == nullptr)
-            return;
-
-        if (fLastChunk != nullptr)
-        {
-            delete[] fLastChunk;
-            fLastChunk = nullptr;
-        }
-
-        const size_t size(CarlaString(stringData).exportAsBase64Binary(&fLastChunk));
-
-        CARLA_ASSERT(size > 0);
-        CARLA_ASSERT(fLastChunk != nullptr);
-
-        if (size > 0 && fLastChunk != nullptr)
-        {
-            const ScopedSingleProcessLocker spl(this, true);
-            fDescriptor->set_chunk(fHandle, fLastChunk, size);
-        }
     }
 
     void setMidiProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback)
@@ -618,9 +602,8 @@ public:
                 {
                     const CustomData& cData(*it);
 
-                    CARLA_ASSERT(std::strcmp(cData.type, CUSTOM_DATA_STRING) == 0);
-
-                    fDescriptor->ui_set_custom_data(fHandle, cData.key, cData.value);
+                    if (std::strcmp(cData.type, CUSTOM_DATA_STRING) == 0)
+                        fDescriptor->ui_set_custom_data(fHandle, cData.key, cData.value);
                 }
             }
 
@@ -2100,9 +2083,6 @@ public:
             if (kData->engine->getOptions().forceStereo)
                 fOptions |= PLUGIN_OPTION_FORCE_STEREO;
 
-            if (fDescriptor->hints & ::PLUGIN_USES_CHUNKS)
-                fOptions |= PLUGIN_OPTION_USE_CHUNKS;
-
             if (fDescriptor->midiIns > 0)
             {
                 fOptions |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
@@ -2143,7 +2123,6 @@ private:
     bool fIsProcessing;
     bool fIsUiVisible;
 
-    QByteArray  fChunk;
     float**     fAudioInBuffers;
     float**     fAudioOutBuffers;
     uint8_t*    fLastChunk;

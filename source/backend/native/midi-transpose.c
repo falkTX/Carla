@@ -184,8 +184,8 @@ static const PluginDescriptor midiTransposeDesc = {
     .deactivate = NULL,
     .process    = midiTranspose_process,
 
-    .get_chunk = NULL,
-    .set_chunk = NULL
+    .get_state = NULL,
+    .set_state = NULL
 };
 
 // -----------------------------------------------------------------------

@@ -85,8 +85,8 @@ static const PluginDescriptor bypassDesc = {
     .deactivate = NULL,
     .process    = bypass_process,
 
-    .get_chunk = NULL,
-    .set_chunk = NULL
+    .get_state = NULL,
+    .set_state = NULL
 };
 
 // -----------------------------------------------------------------------

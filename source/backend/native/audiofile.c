@@ -665,8 +665,8 @@ static const PluginDescriptor audiofileDesc = {
     .deactivate = NULL,
     .process    = audiofile_process,
 
-    .get_chunk = NULL,
-    .set_chunk = NULL
+    .get_state = NULL,
+    .set_state = NULL
 };
 
 // -----------------------------------------------------------------------
