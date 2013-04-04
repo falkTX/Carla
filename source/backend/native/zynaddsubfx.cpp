@@ -352,7 +352,9 @@ private:
         ~ZynThread()
         {
             // must be closed by now
+#ifdef WANT_ZYNADDSUBFX_UI
             CARLA_ASSERT(fUi == nullptr);
+#endif
             CARLA_ASSERT(fQuit);
         }
 
