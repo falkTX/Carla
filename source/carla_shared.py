@@ -118,9 +118,9 @@ else:
     PATH = PATH.split(os.pathsep)
 
 # ------------------------------------------------------------------------------------------------------------
-# Carla Host object
+# Carla object
 
-class CarlaHostObject(object):
+class CarlaObject(object):
     __slots__ = [
         'host',
         'gui',
@@ -137,7 +137,7 @@ class CarlaHostObject(object):
         'SFZ_PATH'
     ]
 
-Carla = CarlaHostObject()
+Carla = CarlaObject()
 Carla.host = None
 Carla.gui  = None
 Carla.isControl = False
@@ -558,6 +558,15 @@ def getIcon(icon, size=16):
 # ------------------------------------------------------------------------------------------------------------
 # Signal handler
 
+def signalHandler(sig, frame):
+    if Carla.gui is None:
+        return
+
+    if sig in (SIGINT, SIGTERM):
+        Carla.gui.emit(SIGNAL("SIGTERM()"))
+    elif sig == SIGUSR1:
+        Carla.gui.emit(SIGNAL("SIGUSR1()"))
+
 def setUpSignals():
     if not haveSignal:
         return
@@ -565,12 +574,6 @@ def setUpSignals():
     signal(SIGINT,  signalHandler)
     signal(SIGTERM, signalHandler)
     signal(SIGUSR1, signalHandler)
-
-def signalHandler(sig, frame):
-    if sig in (SIGINT, SIGTERM):
-        Carla.gui.emit(SIGNAL("SIGTERM()"))
-    elif sig == SIGUSR1:
-        Carla.gui.emit(SIGNAL("SIGUSR1()"))
 
 # ------------------------------------------------------------------------------------------------------------
 # QLineEdit and QPushButton combo
@@ -673,8 +676,8 @@ PLUGIN_QUERY_API_VERSION = 1
 
 PyPluginInfo = {
     'API': PLUGIN_QUERY_API_VERSION,
-    'build': 0, # BINARY_NONE
-    'type': 0, # PLUGIN_NONE
+    'build': BINARY_NONE,
+    'type': PLUGIN_NONE,
     'hints': 0x0,
     'binary': "",
     'name': "",
