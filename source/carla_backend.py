@@ -20,11 +20,42 @@
 # Imports (Global)
 
 from ctypes import *
+from platform import architecture
+from sys import platform, maxsize
 
 # ------------------------------------------------------------------------------------------------------------
-# Imports (Custom)
+# 64bit check
 
-from carla_shared import *
+kIs64bit = bool(architecture()[0] == "64bit" and maxsize > 2**32)
+
+# ------------------------------------------------------------------------------------------------------------
+# Set Platform
+
+if platform == "darwin":
+    HAIKU   = False
+    LINUX   = False
+    MACOS   = True
+    WINDOWS = False
+elif "haiku" in platform:
+    HAIKU   = True
+    LINUX   = False
+    MACOS   = False
+    WINDOWS = False
+elif "linux" in platform:
+    HAIKU   = False
+    LINUX   = True
+    MACOS   = False
+    WINDOWS = False
+elif platform in ("win32", "win64", "cygwin"):
+    HAIKU   = False
+    LINUX   = False
+    MACOS   = False
+    WINDOWS = True
+else:
+    HAIKU   = False
+    LINUX   = False
+    MACOS   = False
+    WINDOWS = False
 
 # ------------------------------------------------------------------------------------------------------------
 # Convert a ctypes struct into a python dict
@@ -32,12 +63,196 @@ from carla_shared import *
 def structToDict(struct):
     return dict((attr, getattr(struct, attr)) for attr, value in struct._fields_)
 
+# ------------------------------------------------------------------------------------------------
+# Backend defines
+
+MAX_DEFAULT_PLUGINS    = 99
+MAX_RACK_PLUGINS       = 16
+MAX_PATCHBAY_PLUGINS   = 999
+MAX_DEFAULT_PARAMETERS = 200
+
+# Plugin Hints
+PLUGIN_IS_BRIDGE         = 0x001
+PLUGIN_IS_RTSAFE         = 0x002
+PLUGIN_IS_SYNTH          = 0x004
+PLUGIN_HAS_GUI           = 0x010
+PLUGIN_HAS_SINGLE_THREAD = 0x020
+PLUGIN_CAN_DRYWET        = 0x100
+PLUGIN_CAN_VOLUME        = 0x200
+PLUGIN_CAN_BALANCE       = 0x400
+PLUGIN_CAN_PANNING       = 0x800
+
+# Plugin Options
+PLUGIN_OPTION_FIXED_BUFFER          = 0x001
+PLUGIN_OPTION_FORCE_STEREO          = 0x002
+PLUGIN_OPTION_MAP_PROGRAM_CHANGES   = 0x004
+PLUGIN_OPTION_USE_CHUNKS            = 0x008
+PLUGIN_OPTION_SEND_CONTROL_CHANGES  = 0x010
+PLUGIN_OPTION_SEND_CHANNEL_PRESSURE = 0x020
+PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH  = 0x040
+PLUGIN_OPTION_SEND_PITCHBEND        = 0x080
+PLUGIN_OPTION_SEND_ALL_SOUND_OFF    = 0x100
+
+# Parameter Hints
+PARAMETER_IS_BOOLEAN       = 0x01
+PARAMETER_IS_INTEGER       = 0x02
+PARAMETER_IS_LOGARITHMIC   = 0x04
+PARAMETER_IS_ENABLED       = 0x08
+PARAMETER_IS_AUTOMABLE     = 0x10
+PARAMETER_USES_SAMPLERATE  = 0x20
+PARAMETER_USES_SCALEPOINTS = 0x40
+PARAMETER_USES_CUSTOM_TEXT = 0x80
+
+# Patchbay Port Hints
+PATCHBAY_PORT_IS_INPUT  = 0x1
+PATCHBAY_PORT_IS_OUTPUT = 0x2
+PATCHBAY_PORT_IS_AUDIO  = 0x4
+PATCHBAY_PORT_IS_MIDI   = 0x8
+
+# Custom Data types
+CUSTOM_DATA_INVALID = None
+CUSTOM_DATA_CHUNK   = "http://kxstudio.sf.net/ns/carla/chunk"
+CUSTOM_DATA_STRING  = "http://kxstudio.sf.net/ns/carla/string"
+
+# Binary Type
+BINARY_NONE    = 0
+BINARY_POSIX32 = 1
+BINARY_POSIX64 = 2
+BINARY_WIN32   = 3
+BINARY_WIN64   = 4
+BINARY_OTHER   = 5
+
+# Plugin Type
+PLUGIN_NONE     = 0
+PLUGIN_INTERNAL = 1
+PLUGIN_LADSPA   = 2
+PLUGIN_DSSI     = 3
+PLUGIN_LV2      = 4
+PLUGIN_VST      = 5
+PLUGIN_VST3     = 6
+PLUGIN_GIG      = 7
+PLUGIN_SF2      = 8
+PLUGIN_SFZ      = 9
+
+# Plugin Category
+PLUGIN_CATEGORY_NONE      = 0
+PLUGIN_CATEGORY_SYNTH     = 1
+PLUGIN_CATEGORY_DELAY     = 2 # also Reverb
+PLUGIN_CATEGORY_EQ        = 3
+PLUGIN_CATEGORY_FILTER    = 4
+PLUGIN_CATEGORY_DYNAMICS  = 5 # Amplifier, Compressor, Gate
+PLUGIN_CATEGORY_MODULATOR = 6 # Chorus, Flanger, Phaser
+PLUGIN_CATEGORY_UTILITY   = 7 # Analyzer, Converter, Mixer
+PLUGIN_CATEGORY_OTHER     = 8 # used to check if a plugin has a category
+
+# Parameter Type
+PARAMETER_UNKNOWN       = 0
+PARAMETER_INPUT         = 1
+PARAMETER_OUTPUT        = 2
+PARAMETER_LATENCY       = 3
+PARAMETER_SAMPLE_RATE   = 4
+PARAMETER_LV2_FREEWHEEL = 5
+PARAMETER_LV2_TIME      = 6
+
+# Internal Parameters Index
+PARAMETER_NULL          = -1
+PARAMETER_ACTIVE        = -2
+PARAMETER_DRYWET        = -3
+PARAMETER_VOLUME        = -4
+PARAMETER_BALANCE_LEFT  = -5
+PARAMETER_BALANCE_RIGHT = -6
+PARAMETER_PANNING       = -7
+PARAMETER_CTRL_CHANNEL  = -8
+PARAMETER_MAX           = -9
+
+# Options Type
+OPTION_PROCESS_NAME            = 0
+OPTION_PROCESS_MODE            = 1
+OPTION_TRANSPORT_MODE          = 2
+OPTION_FORCE_STEREO            = 3
+OPTION_PREFER_PLUGIN_BRIDGES   = 4
+OPTION_PREFER_UI_BRIDGES       = 5
+OPTION_USE_DSSI_VST_CHUNKS     = 6
+OPTION_MAX_PARAMETERS          = 7
+OPTION_OSC_UI_TIMEOUT          = 8
+OPTION_PREFERRED_BUFFER_SIZE   = 9
+OPTION_PREFERRED_SAMPLE_RATE   = 10
+OPTION_PATH_BRIDGE_NATIVE      = 11
+OPTION_PATH_BRIDGE_POSIX32     = 12
+OPTION_PATH_BRIDGE_POSIX64     = 13
+OPTION_PATH_BRIDGE_WIN32       = 14
+OPTION_PATH_BRIDGE_WIN64       = 15
+OPTION_PATH_BRIDGE_LV2_GTK2    = 16
+OPTION_PATH_BRIDGE_LV2_GTK3    = 17
+OPTION_PATH_BRIDGE_LV2_QT4     = 18
+OPTION_PATH_BRIDGE_LV2_QT5     = 19
+OPTION_PATH_BRIDGE_LV2_COCOA   = 20
+OPTION_PATH_BRIDGE_LV2_WINDOWS = 21
+OPTION_PATH_BRIDGE_LV2_X11     = 22
+OPTION_PATH_BRIDGE_VST_COCOA   = 23
+OPTION_PATH_BRIDGE_VST_HWND    = 24
+OPTION_PATH_BRIDGE_VST_X11     = 25
+
+# Callback Type
+CALLBACK_DEBUG          = 0
+CALLBACK_PLUGIN_ADDED   = 1
+CALLBACK_PLUGIN_REMOVED = 2
+CALLBACK_PLUGIN_RENAMED = 3
+CALLBACK_PARAMETER_VALUE_CHANGED        = 4
+CALLBACK_PARAMETER_DEFAULT_CHANGED      = 5
+CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED = 6
+CALLBACK_PARAMETER_MIDI_CC_CHANGED      = 7
+CALLBACK_PROGRAM_CHANGED         = 8
+CALLBACK_MIDI_PROGRAM_CHANGED    = 9
+CALLBACK_NOTE_ON                 = 10
+CALLBACK_NOTE_OFF                = 11
+CALLBACK_SHOW_GUI                = 12
+CALLBACK_UPDATE                  = 13
+CALLBACK_RELOAD_INFO             = 14
+CALLBACK_RELOAD_PARAMETERS       = 15
+CALLBACK_RELOAD_PROGRAMS         = 16
+CALLBACK_RELOAD_ALL              = 17
+CALLBACK_PATCHBAY_CLIENT_ADDED   = 18
+CALLBACK_PATCHBAY_CLIENT_REMOVED = 19
+CALLBACK_PATCHBAY_CLIENT_RENAMED = 20
+CALLBACK_PATCHBAY_PORT_ADDED         = 21
+CALLBACK_PATCHBAY_PORT_REMOVED       = 22
+CALLBACK_PATCHBAY_PORT_RENAMED       = 23
+CALLBACK_PATCHBAY_CONNECTION_ADDED   = 24
+CALLBACK_PATCHBAY_CONNECTION_REMOVED = 25
+CALLBACK_BUFFER_SIZE_CHANGED = 26
+CALLBACK_SAMPLE_RATE_CHANGED = 27
+CALLBACK_NSM_ANNOUNCE = 28
+CALLBACK_NSM_OPEN     = 29
+CALLBACK_NSM_SAVE     = 30
+CALLBACK_ERROR        = 31
+CALLBACK_QUIT         = 32
+
+# Process Mode
+PROCESS_MODE_SINGLE_CLIENT    = 0
+PROCESS_MODE_MULTIPLE_CLIENTS = 1
+PROCESS_MODE_CONTINUOUS_RACK  = 2
+PROCESS_MODE_PATCHBAY         = 3
+PROCESS_MODE_BRIDGE           = 4
+
+# Transport Mode
+TRANSPORT_MODE_INTERNAL = 0
+TRANSPORT_MODE_JACK     = 1
+TRANSPORT_MODE_BRIDGE   = 2
+
+# Set BINARY_NATIVE
+if HAIKU or LINUX or MACOS:
+    BINARY_NATIVE = BINARY_POSIX64 if kIs64bit else BINARY_POSIX32
+elif WINDOWS:
+    BINARY_NATIVE = BINARY_WIN64 if kIs64bit else BINARY_WIN32
+else:
+    BINARY_NATIVE = BINARY_OTHER
+
 # ------------------------------------------------------------------------------------------------------------
 # Backend C++ -> Python variables
 
 c_enum = c_int
 c_nullptr = None
-c_uintptr = c_uint64 if kIs64bit else c_uint32
 
 CallbackFunc = CFUNCTYPE(None, c_void_p, c_enum, c_uint, c_int, c_int, c_float, c_char_p)
 
@@ -145,19 +360,10 @@ class CarlaTransportInfo(Structure):
 # Standalone Python object
 
 class Host(object):
-    def __init__(self, lib_prefix_arg):
+    def __init__(self, libName):
         object.__init__(self)
 
-        global carla_library_path
-
-        if lib_prefix_arg:
-            carla_library_path = os.path.join(lib_prefix_arg, "lib", "carla", carla_libname)
-
-        if not carla_library_path:
-            self.lib = None
-            return
-
-        self.lib = cdll.LoadLibrary(carla_library_path)
+        self.lib = cdll.LoadLibrary(libName)
 
         self.lib.carla_get_extended_license_text.argtypes = None
         self.lib.carla_get_extended_license_text.restype = c_char_p

@@ -21,16 +21,12 @@
 
 import os
 import json
-import platform
 import sys
-from codecs import open as codecopen
 from copy import deepcopy
 from subprocess import Popen, PIPE
 from PyQt4.QtCore import pyqtSlot, qWarning, Qt, QByteArray, QSettings, QThread, QTimer, SIGNAL, SLOT
 from PyQt4.QtGui import QColor, QCursor, QDialog, QIcon, QFileDialog, QFontMetrics, QFrame, QMenu
 from PyQt4.QtGui import QMessageBox, QPainter, QPainterPath, QTableWidgetItem, QVBoxLayout, QWidget
-#from PyQt4.QtGui import QInputDialog, QLinearGradient,
-#from PyQt4.QtXml import QDomDocument
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -41,6 +37,7 @@ import ui_carla_edit
 import ui_carla_parameter
 import ui_carla_plugin
 import ui_carla_refresh
+from carla_backend import *
 
 # ------------------------------------------------------------------------------------------------------------
 # Try Import LADSPA-RDF
@@ -62,36 +59,13 @@ except:
     haveSignal = False
 
 # ------------------------------------------------------------------------------------------------------------
-# Set Platform
+# Platform specific stuff
 
-if sys.platform == "darwin":
+if MACOS:
     from PyQt4.QtGui import qt_mac_set_menubar_icons
     qt_mac_set_menubar_icons(False)
-    HAIKU   = False
-    LINUX   = False
-    MACOS   = True
-    WINDOWS = False
-elif "haiku" in sys.platform:
-    HAIKU   = True
-    LINUX   = False
-    MACOS   = False
-    WINDOWS = False
-elif "linux" in sys.platform:
-    HAIKU   = False
-    LINUX   = True
-    MACOS   = False
-    WINDOWS = False
-elif sys.platform in ("win32", "win64", "cygwin"):
-    WINDIR  = os.getenv("WINDIR")
-    HAIKU   = False
-    LINUX   = False
-    MACOS   = False
-    WINDOWS = True
-else:
-    HAIKU   = False
-    LINUX   = False
-    MACOS   = False
-    WINDOWS = False
+elif WINDOWS:
+    WINDIR = os.getenv("WINDIR")
 
 # ------------------------------------------------------------------------------------------------------------
 # Set Version
@@ -144,196 +118,6 @@ else:
     PATH = PATH.split(os.pathsep)
 
 # ------------------------------------------------------------------------------------------------------------
-# 64bit check
-
-kIs64bit = bool(platform.architecture()[0] == "64bit" and sys.maxsize > 2**32)
-
-# ------------------------------------------------------------------------------------------------
-# Backend defines
-
-MAX_DEFAULT_PLUGINS    = 99
-MAX_RACK_PLUGINS       = 16
-MAX_PATCHBAY_PLUGINS   = 999
-MAX_DEFAULT_PARAMETERS = 200
-
-# Plugin Hints
-PLUGIN_IS_BRIDGE         = 0x001
-PLUGIN_IS_RTSAFE         = 0x002
-PLUGIN_IS_SYNTH          = 0x004
-PLUGIN_HAS_GUI           = 0x010
-PLUGIN_HAS_SINGLE_THREAD = 0x020
-PLUGIN_CAN_DRYWET        = 0x100
-PLUGIN_CAN_VOLUME        = 0x200
-PLUGIN_CAN_BALANCE       = 0x400
-PLUGIN_CAN_PANNING       = 0x800
-
-# Plugin Options
-PLUGIN_OPTION_FIXED_BUFFER          = 0x001
-PLUGIN_OPTION_FORCE_STEREO          = 0x002
-PLUGIN_OPTION_MAP_PROGRAM_CHANGES   = 0x004
-PLUGIN_OPTION_USE_CHUNKS            = 0x008
-PLUGIN_OPTION_SEND_CONTROL_CHANGES  = 0x010
-PLUGIN_OPTION_SEND_CHANNEL_PRESSURE = 0x020
-PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH  = 0x040
-PLUGIN_OPTION_SEND_PITCHBEND        = 0x080
-PLUGIN_OPTION_SEND_ALL_SOUND_OFF    = 0x100
-
-# Parameter Hints
-PARAMETER_IS_BOOLEAN       = 0x01
-PARAMETER_IS_INTEGER       = 0x02
-PARAMETER_IS_LOGARITHMIC   = 0x04
-PARAMETER_IS_ENABLED       = 0x08
-PARAMETER_IS_AUTOMABLE     = 0x10
-PARAMETER_USES_SAMPLERATE  = 0x20
-PARAMETER_USES_SCALEPOINTS = 0x40
-PARAMETER_USES_CUSTOM_TEXT = 0x80
-
-# Patchbay Port Hints
-PATCHBAY_PORT_IS_INPUT  = 0x1
-PATCHBAY_PORT_IS_OUTPUT = 0x2
-PATCHBAY_PORT_IS_AUDIO  = 0x4
-PATCHBAY_PORT_IS_MIDI   = 0x8
-
-# Custom Data types
-CUSTOM_DATA_INVALID = None
-CUSTOM_DATA_CHUNK   = "http://kxstudio.sf.net/ns/carla/chunk"
-CUSTOM_DATA_STRING  = "http://kxstudio.sf.net/ns/carla/string"
-
-# Binary Type
-BINARY_NONE    = 0
-BINARY_POSIX32 = 1
-BINARY_POSIX64 = 2
-BINARY_WIN32   = 3
-BINARY_WIN64   = 4
-BINARY_OTHER   = 5
-
-# Plugin Type
-PLUGIN_NONE     = 0
-PLUGIN_INTERNAL = 1
-PLUGIN_LADSPA   = 2
-PLUGIN_DSSI     = 3
-PLUGIN_LV2      = 4
-PLUGIN_VST      = 5
-PLUGIN_VST3     = 6
-PLUGIN_GIG      = 7
-PLUGIN_SF2      = 8
-PLUGIN_SFZ      = 9
-
-# Plugin Category
-PLUGIN_CATEGORY_NONE      = 0
-PLUGIN_CATEGORY_SYNTH     = 1
-PLUGIN_CATEGORY_DELAY     = 2 # also Reverb
-PLUGIN_CATEGORY_EQ        = 3
-PLUGIN_CATEGORY_FILTER    = 4
-PLUGIN_CATEGORY_DYNAMICS  = 5 # Amplifier, Compressor, Gate
-PLUGIN_CATEGORY_MODULATOR = 6 # Chorus, Flanger, Phaser
-PLUGIN_CATEGORY_UTILITY   = 7 # Analyzer, Converter, Mixer
-PLUGIN_CATEGORY_OTHER     = 8 # used to check if a plugin has a category
-
-# Parameter Type
-PARAMETER_UNKNOWN       = 0
-PARAMETER_INPUT         = 1
-PARAMETER_OUTPUT        = 2
-PARAMETER_LATENCY       = 3
-PARAMETER_SAMPLE_RATE   = 4
-PARAMETER_LV2_FREEWHEEL = 5
-PARAMETER_LV2_TIME      = 6
-
-# Internal Parameters Index
-PARAMETER_NULL          = -1
-PARAMETER_ACTIVE        = -2
-PARAMETER_DRYWET        = -3
-PARAMETER_VOLUME        = -4
-PARAMETER_BALANCE_LEFT  = -5
-PARAMETER_BALANCE_RIGHT = -6
-PARAMETER_PANNING       = -7
-PARAMETER_CTRL_CHANNEL  = -8
-PARAMETER_MAX           = -9
-
-# Options Type
-OPTION_PROCESS_NAME            = 0
-OPTION_PROCESS_MODE            = 1
-OPTION_TRANSPORT_MODE          = 2
-OPTION_FORCE_STEREO            = 3
-OPTION_PREFER_PLUGIN_BRIDGES   = 4
-OPTION_PREFER_UI_BRIDGES       = 5
-OPTION_USE_DSSI_VST_CHUNKS     = 6
-OPTION_MAX_PARAMETERS          = 7
-OPTION_OSC_UI_TIMEOUT          = 8
-OPTION_PREFERRED_BUFFER_SIZE   = 9
-OPTION_PREFERRED_SAMPLE_RATE   = 10
-OPTION_PATH_BRIDGE_NATIVE      = 11
-OPTION_PATH_BRIDGE_POSIX32     = 12
-OPTION_PATH_BRIDGE_POSIX64     = 13
-OPTION_PATH_BRIDGE_WIN32       = 14
-OPTION_PATH_BRIDGE_WIN64       = 15
-OPTION_PATH_BRIDGE_LV2_GTK2    = 16
-OPTION_PATH_BRIDGE_LV2_GTK3    = 17
-OPTION_PATH_BRIDGE_LV2_QT4     = 18
-OPTION_PATH_BRIDGE_LV2_QT5     = 19
-OPTION_PATH_BRIDGE_LV2_COCOA   = 20
-OPTION_PATH_BRIDGE_LV2_WINDOWS = 21
-OPTION_PATH_BRIDGE_LV2_X11     = 22
-OPTION_PATH_BRIDGE_VST_COCOA   = 23
-OPTION_PATH_BRIDGE_VST_HWND    = 24
-OPTION_PATH_BRIDGE_VST_X11     = 25
-
-# Callback Type
-CALLBACK_DEBUG          = 0
-CALLBACK_PLUGIN_ADDED   = 1
-CALLBACK_PLUGIN_REMOVED = 2
-CALLBACK_PLUGIN_RENAMED = 3
-CALLBACK_PARAMETER_VALUE_CHANGED        = 4
-CALLBACK_PARAMETER_DEFAULT_CHANGED      = 5
-CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED = 6
-CALLBACK_PARAMETER_MIDI_CC_CHANGED      = 7
-CALLBACK_PROGRAM_CHANGED         = 8
-CALLBACK_MIDI_PROGRAM_CHANGED    = 9
-CALLBACK_NOTE_ON                 = 10
-CALLBACK_NOTE_OFF                = 11
-CALLBACK_SHOW_GUI                = 12
-CALLBACK_UPDATE                  = 13
-CALLBACK_RELOAD_INFO             = 14
-CALLBACK_RELOAD_PARAMETERS       = 15
-CALLBACK_RELOAD_PROGRAMS         = 16
-CALLBACK_RELOAD_ALL              = 17
-CALLBACK_PATCHBAY_CLIENT_ADDED   = 18
-CALLBACK_PATCHBAY_CLIENT_REMOVED = 19
-CALLBACK_PATCHBAY_CLIENT_RENAMED = 20
-CALLBACK_PATCHBAY_PORT_ADDED         = 21
-CALLBACK_PATCHBAY_PORT_REMOVED       = 22
-CALLBACK_PATCHBAY_PORT_RENAMED       = 23
-CALLBACK_PATCHBAY_CONNECTION_ADDED   = 24
-CALLBACK_PATCHBAY_CONNECTION_REMOVED = 25
-CALLBACK_BUFFER_SIZE_CHANGED = 26
-CALLBACK_SAMPLE_RATE_CHANGED = 27
-CALLBACK_NSM_ANNOUNCE = 28
-CALLBACK_NSM_OPEN     = 29
-CALLBACK_NSM_SAVE     = 30
-CALLBACK_ERROR        = 31
-CALLBACK_QUIT         = 32
-
-# Process Mode
-PROCESS_MODE_SINGLE_CLIENT    = 0
-PROCESS_MODE_MULTIPLE_CLIENTS = 1
-PROCESS_MODE_CONTINUOUS_RACK  = 2
-PROCESS_MODE_PATCHBAY         = 3
-PROCESS_MODE_BRIDGE           = 4
-
-# Transport Mode
-TRANSPORT_MODE_INTERNAL = 0
-TRANSPORT_MODE_JACK     = 1
-TRANSPORT_MODE_BRIDGE   = 2
-
-# Set BINARY_NATIVE
-if HAIKU or LINUX or MACOS:
-    BINARY_NATIVE = BINARY_POSIX64 if kIs64bit else BINARY_POSIX32
-elif WINDOWS:
-    BINARY_NATIVE = BINARY_WIN64 if kIs64bit else BINARY_WIN32
-else:
-    BINARY_NATIVE = BINARY_OTHER
-
-# ------------------------------------------------------------------------------------------------------------
 # Carla Host object
 
 class CarlaHostObject(object):
@@ -378,42 +162,6 @@ PALETTE_COLOR_YELLOW = 5
 PALETTE_COLOR_ORANGE = 6
 PALETTE_COLOR_BROWN  = 7
 PALETTE_COLOR_PINK   = 8
-
-CarlaStateParameter = {
-    'index': 0,
-    'name': "",
-    'symbol': "",
-    'value': 0.0,
-    'midiChannel': 1,
-    'midiCC': -1
-}
-
-CarlaStateCustomData = {
-    'type': "",
-    'key': "",
-    'value': ""
-}
-
-CarlaSaveState = {
-    'type': "",
-    'name': "",
-    'label': "",
-    'binary': "",
-    'uniqueId': 0,
-    'active': False,
-    'dryWet': 1.0,
-    'volume': 1.0,
-    'balanceLeft': -1.0,
-    'balanceRight': 1.0,
-    'pannning': 0.0,
-    'parameterList': [],
-    'currentProgramIndex': -1,
-    'currentProgramName': "",
-    'currentMidiBank': -1,
-    'currentMidiProgram': -1,
-    'customDataList': [],
-    'chunk': None
-}
 
 # ------------------------------------------------------------------------------------------------------------
 # Static MIDI CC list
@@ -802,12 +550,6 @@ def toList(value):
         return value
 
 # ------------------------------------------------------------------------------------------------------------
-# Unicode open
-
-def uopen(filename, mode="r"):
-    return codecopen(filename, encoding="utf-8", mode=mode)
-
-# ------------------------------------------------------------------------------------------------------------
 # Get Icon from user theme, using our own as backup (Oxygen)
 
 def getIcon(icon, size=16):
@@ -1091,154 +833,6 @@ def checkPluginSF2(filename, tool):
 
 def checkPluginSFZ(filename, tool):
     return runCarlaDiscovery(PLUGIN_SFZ, "SFZ", filename, tool)
-
-# ------------------------------------------------------------------------------------------------------------
-# Carla XML helpers
-
-def xmlSafeString(string, toXml):
-    if toXml:
-        return string.replace("&", "&amp;").replace("<","&lt;").replace(">","&gt;").replace("'","&apos;").replace("\"","&quot;")
-    else:
-        return string.replace("&amp;", "&").replace("&lt;","<").replace("&gt;",">").replace("&apos;","'").replace("&quot;","\"")
-
-def getSaveStateDictFromXML(xmlNode):
-    saveState = deepcopy(CarlaSaveState)
-
-    node = xmlNode.firstChild()
-
-    while not node.isNull():
-        # ------------------------------------------------------
-        # Info
-
-        if node.toElement().tagName() == "Info":
-            xmlInfo = node.toElement().firstChild()
-
-            while not xmlInfo.isNull():
-                tag  = xmlInfo.toElement().tagName()
-                text = xmlInfo.toElement().text().strip()
-
-                if tag == "Type":
-                    saveState["type"] = text
-                elif tag == "Name":
-                    saveState["name"] = xmlSafeString(text, False)
-                elif tag in ("Label", "URI"):
-                    saveState["label"] = xmlSafeString(text, False)
-                elif tag == "Binary":
-                    saveState["binary"] = xmlSafeString(text, False)
-                elif tag == "UniqueID":
-                    if text.isdigit(): saveState["uniqueId"] = int(text)
-
-                xmlInfo = xmlInfo.nextSibling()
-
-        # ------------------------------------------------------
-        # Data
-
-        elif node.toElement().tagName() == "Data":
-            xmlData = node.toElement().firstChild()
-
-            while not xmlData.isNull():
-                tag  = xmlData.toElement().tagName()
-                text = xmlData.toElement().text().strip()
-
-                # ----------------------------------------------
-                # Internal Data
-
-                if tag == "Active":
-                    saveState['active'] = bool(text == "Yes")
-                elif tag == "DryWet":
-                    if isNumber(text): saveState["dryWet"] = float(text)
-                elif tag == "Volume":
-                    if isNumber(text): saveState["volume"] = float(text)
-                elif tag == "Balance-Left":
-                    if isNumber(text): saveState["balanceLeft"] = float(text)
-                elif tag == "Balance-Right":
-                    if isNumber(text): saveState["balanceRight"] = float(text)
-                elif tag == "Panning":
-                    if isNumber(text): saveState["pannning"] = float(text)
-
-                # ----------------------------------------------
-                # Program (current)
-
-                elif tag == "CurrentProgramIndex":
-                    if text.isdigit(): saveState["currentProgramIndex"] = int(text)
-                elif tag == "CurrentProgramName":
-                    saveState["currentProgramName"] = xmlSafeString(text, False)
-
-                # ----------------------------------------------
-                # Midi Program (current)
-
-                elif tag == "CurrentMidiBank":
-                    if text.isdigit(): saveState["currentMidiBank"] = int(text)
-                elif tag == "CurrentMidiProgram":
-                    if text.isdigit(): saveState["currentMidiProgram"] = int(text)
-
-                # ----------------------------------------------
-                # Parameters
-
-                elif tag == "Parameter":
-                    stateParameter = deepcopy(CarlaStateParameter)
-
-                    xmlSubData = xmlData.toElement().firstChild()
-
-                    while not xmlSubData.isNull():
-                        pTag  = xmlSubData.toElement().tagName()
-                        pText = xmlSubData.toElement().text().strip()
-
-                        if pTag == "Index":
-                            if pText.isdigit(): stateParameter["index"] = int(pText)
-                        elif pTag == "Name":
-                            stateParameter["name"] = xmlSafeString(pText, False)
-                        elif pTag == "Symbol":
-                            stateParameter["symbol"] = xmlSafeString(pText, False)
-                        elif pTag == "Value":
-                            if isNumber(pText): stateParameter["value"] = float(pText)
-                        elif pTag == "MidiChannel":
-                            if pText.isdigit(): stateParameter["midiChannel"] = int(pText)
-                        elif pTag == "MidiCC":
-                            if pText.isdigit(): stateParameter["midiCC"] = int(pText)
-
-                        xmlSubData = xmlSubData.nextSibling()
-
-                    saveState["parameterList"].append(stateParameter)
-
-                # ----------------------------------------------
-                # Custom Data
-
-                elif tag == "CustomData":
-                    stateCustomData = deepcopy(CarlaStateCustomData)
-
-                    xmlSubData = xmlData.toElement().firstChild()
-
-                    while not xmlSubData.isNull():
-                        cTag  = xmlSubData.toElement().tagName()
-                        cText = xmlSubData.toElement().text().strip()
-
-                        if cTag == "Type":
-                            stateCustomData["type"] = xmlSafeString(cText, False)
-                        elif cTag == "Key":
-                            stateCustomData["key"] = xmlSafeString(cText, False)
-                        elif cTag == "Value":
-                            stateCustomData["value"] = xmlSafeString(cText, False)
-
-                        xmlSubData = xmlSubData.nextSibling()
-
-                    saveState["customDataList"].append(stateCustomData)
-
-                # ----------------------------------------------
-                # Chunk
-
-                elif tag == "Chunk":
-                    saveState["chunk"] = xmlSafeString(text, False)
-
-                # ----------------------------------------------
-
-                xmlData = xmlData.nextSibling()
-
-        # ------------------------------------------------------
-
-        node = node.nextSibling()
-
-    return saveState
 
 # ------------------------------------------------------------------------------------------------------------
 # Carla About dialog
@@ -3438,44 +3032,3 @@ class PluginDatabaseW(QDialog):
     def done(self, r):
         QDialog.done(self, r)
         self.close()
-
-# ------------------------------------------------------------------------------------------------------------
-# TESTING
-
-#from PyQt4.QtGui import QApplication
-
-#Carla.isControl = True
-
-#ptest = {
-    #'index': 0,
-    #'name': "Parameter",
-    #'symbol': "param",
-    #'current': 0.1,
-    #'default': 0.3,
-    #'minimum': 0.0,
-    #'maximum': 1.0,
-    #'midiChannel': 7,
-    #'midiCC': 2,
-    #'type': PARAMETER_INPUT,
-    #'hints': PARAMETER_IS_ENABLED | PARAMETER_IS_AUTOMABLE,
-    #'scalePoints': [],
-    #'step': 0.01,
-    #'stepSmall': 0.001,
-    #'stepLarge': 0.1,
-    #'unit': "un",
-#}
-
-#app  = QApplication(sys.argv)
-#app.setApplicationName("Carla")
-#app.setApplicationVersion(VERSION)
-#app.setOrganizationName("falkTX")
-#gui = CarlaAboutW(None)
-#gui = PluginParameter(None, ptest, 0, 0)
-#gui = PluginEdit(None, 0)
-#gui = PluginWidget(None, 0)
-#gui = PluginDatabaseW(None)
-#gui.show()
-#if gui.exec_():
-    #print(gui.fRetPlugin)
-#gui = PluginRefreshW(None)
-#app.exec_()

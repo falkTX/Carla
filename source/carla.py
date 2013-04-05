@@ -30,7 +30,6 @@ from PyQt4.QtGui import QImage, QPrinter, QPrintDialog
 import patchcanvas
 import ui_carla
 import ui_carla_settings
-from carla_backend import * # FIXME, remove later
 from carla_shared import *
 
 # ------------------------------------------------------------------------------------------------------------
@@ -1923,8 +1922,13 @@ if __name__ == '__main__':
         elif os.path.exists(argument):
             projectFilename = argument
 
+    if libPrefix is not None:
+        libName = os.path.join(libPrefix, "lib", "carla", carla_libname)
+    else:
+        libName = carla_library_path
+
     # Init backend
-    Carla.host = Host(libPrefix)
+    Carla.host = Host(libName)
     Carla.host.set_engine_callback(engineCallback)
     Carla.host.set_engine_option(OPTION_PROCESS_NAME, 0, "carla")
 
