@@ -10,11 +10,12 @@ include ../Makefile.mk
 
 BUILD_CXX_FLAGS += -I. -I../../libs/distrho -I../../widgets
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtCore QtGui)
-LINK_FLAGS      += $(shell pkg-config --libs QtCore QtGui)
+LINK_FLAGS      += $(shell pkg-config --libs QtCore QtGui liblo)
 
 # --------------------------------------------------------------
 
 CARLA_CXX_FLAGS  = $(BUILD_CXX_FLAGS)
+CARLA_CXX_FLAGS += $(shell pkg-config --cflags liblo)
 CARLA_CXX_FLAGS += -I../engine
 
 ifeq ($(HAVE_AF_DEPS),true)
