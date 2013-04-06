@@ -1195,7 +1195,7 @@ public:
 
         fTimeInfo.playing = timeInfo.playing;
         fTimeInfo.frame   = timeInfo.frame;
-        fTimeInfo.time    = timeInfo.time;
+        fTimeInfo.usecs   = timeInfo.usecs;
 
         if (timeInfo.valid & EngineTimeInfo::ValidBBT)
         {

@@ -323,7 +323,7 @@ struct EngineTimeInfo {
 
     bool playing;
     uint32_t frame;
-    uint64_t time; // usecs
+    uint64_t usecs;
     uint32_t valid;
     EngineTimeInfoBBT bbt;
 
@@ -336,7 +336,7 @@ struct EngineTimeInfo {
     {
         playing = false;
         frame   = 0;
-        time    = 0;
+        usecs   = 0;
         valid   = 0x0;
     }
 

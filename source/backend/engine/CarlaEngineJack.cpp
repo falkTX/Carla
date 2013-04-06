@@ -863,7 +863,7 @@ protected:
         if (fTransportPos.unique_1 == fTransportPos.unique_2)
         {
             fTimeInfo.frame = fTransportPos.frame;
-            fTimeInfo.time  = fTransportPos.usecs;
+            fTimeInfo.usecs = fTransportPos.usecs;
 
             if (fTransportPos.valid & JackPositionBBT)
             {
