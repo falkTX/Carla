@@ -25,6 +25,12 @@
 
 CARLA_BACKEND_START_NAMESPACE
 
+#if 0
+}
+#endif
+
+#define FLUID_DEFAULT_POLYPHONY 64
+
 class FluidSynthPlugin : public CarlaPlugin
 {
 public:
@@ -34,12 +40,14 @@ public:
           fSettings(nullptr),
           fSynth(nullptr),
           fSynthId(-1),
-          fAudio16Buffers(nullptr)
+          fAudio16Buffers(nullptr),
+          fParamBuffers{0.0f}
     {
         carla_debug("FluidSynthPlugin::FluidSynthPlugin(%p, %i, %s)", engine, id,  bool2str(use16Outs));
 
         // create settings
         fSettings = new_fluid_settings();
+        CARLA_ASSERT(fSettings != nullptr);
 
         // define settings
         fluid_settings_setint(fSettings, "synth.audio-channels", use16Outs ? 16 : 1);
@@ -49,6 +57,7 @@ public:
 
         // create synth
         fSynth = new_fluid_synth(fSettings);
+        CARLA_ASSERT(fSynth != nullptr);
 
 #ifdef FLUIDSYNTH_VERSION_NEW_API
         fluid_synth_set_sample_rate(fSynth, kData->engine->getSampleRate());
@@ -61,9 +70,9 @@ public:
         fluid_synth_set_chorus_on(fSynth, 0);
         fluid_synth_set_chorus(fSynth, FLUID_CHORUS_DEFAULT_N, FLUID_CHORUS_DEFAULT_LEVEL, FLUID_CHORUS_DEFAULT_SPEED, FLUID_CHORUS_DEFAULT_DEPTH, FLUID_CHORUS_DEFAULT_TYPE);
 
-        fluid_synth_set_polyphony(fSynth, 64);
+        fluid_synth_set_polyphony(fSynth, FLUID_DEFAULT_POLYPHONY);
 
-        for (int i=0; i < 16; i++)
+        for (int i=0; i < MAX_MIDI_CHANNELS; ++i)
             fluid_synth_set_interp_method(fSynth, i, FLUID_INTERP_DEFAULT);
     }
 
@@ -77,7 +86,7 @@ public:
         delete_fluid_synth(fSynth);
         delete_fluid_settings(fSettings);
 
-        deleteBuffers();
+        clearBuffers();
     }
 
     // -------------------------------------------------------------------
@@ -346,7 +355,7 @@ public:
                 break;
 
             case FluidSynthInterpolation:
-                for (int i=0; i < 16; i++)
+                for (int i=0; i < MAX_MIDI_CHANNELS; ++i)
                     fluid_synth_set_interp_method(fSynth, i, value);
                 break;
 
@@ -402,7 +411,10 @@ public:
         // Safely disable plugin for reload
         const ScopedDisabler sd(this);
 
-        deleteBuffers();
+        if (kData->active)
+            deactivate();
+
+        clearBuffers();
 
         uint32_t aOuts, params, j;
         aOuts  = kUses16Outs ? 32 : 2;
@@ -419,7 +431,7 @@ public:
 
         if (kUses16Outs)
         {
-            for (j=0; j < 32; j++)
+            for (j=0; j < 32; ++j)
             {
                 portName.clear();
 
@@ -449,7 +461,7 @@ public:
 
             fAudio16Buffers = new float*[aOuts];
 
-            for (j=0; j < aOuts; j++)
+            for (j=0; j < aOuts; ++j)
                 fAudio16Buffers[j] = nullptr;
         }
         else
@@ -756,18 +768,14 @@ public:
 
         // extra plugin hints
         kData->extraHints  = 0x0;
+        kData->extraHints |= PLUGIN_HINT_HAS_MIDI_IN;
         kData->extraHints |= PLUGIN_HINT_CAN_RUN_RACK;
-
-        // plugin options
-        fOptions  = 0x0;
-        fOptions |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
-        fOptions |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
-        fOptions |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
-        fOptions |= PLUGIN_OPTION_SEND_PITCHBEND;
-        fOptions |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
 
         bufferSizeChanged(kData->engine->getBufferSize());
         reloadPrograms(true);
+
+        if (kData->active)
+            activate();
 
         carla_debug("FluidSynthPlugin::reload() - end");
     }
@@ -814,7 +822,7 @@ public:
             if (kData->midiprog.data[i].bank == 128)
                 hasDrums = true;
 
-            i++;
+            ++i;
         }
 
         //f_sfont->free(f_sfont);
@@ -825,7 +833,7 @@ public:
         {
             kData->engine->osc_send_control_set_midi_program_count(fId, count);
 
-            for (i=0; i < count; i++)
+            for (i=0; i < count; ++i)
                 kData->engine->osc_send_control_set_midi_program_data(fId, i, kData->midiprog.data[i].bank, kData->midiprog.data[i].program, kData->midiprog.data[i].name);
         }
 #endif
@@ -835,7 +843,7 @@ public:
             fluid_synth_program_reset(fSynth);
 
             // select first program, or 128 for ch10
-            for (i=0; i < 16 && i != 9; i++)
+            for (i=0; i < 16 && i != 9; ++i)
             {
                 fluid_synth_program_select(fSynth, i, fSynthId, kData->midiprog.data[0].bank, kData->midiprog.data[0].program);
 #ifdef FLUIDSYNTH_VERSION_NEW_API
@@ -879,17 +887,18 @@ public:
         if (! kData->active)
         {
             // disable any output sound
-            for (i=0; i < kData->audioOut.count; i++)
+            for (i=0; i < kData->audioOut.count; ++i)
                 carla_zeroFloat(outBuffer[i], frames);
 
             return;
         }
 
         // --------------------------------------------------------------------------------------------------------
-        // Check if not active before
+        // Check if needs reset
 
-        if (kData->needsReset /*|| ! kData->activeBefore*/)
+        if (kData->needsReset)
         {
+            // TODO
             if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
             {
                 for (int c=0; c < MAX_MIDI_CHANNELS; c++)
@@ -903,6 +912,9 @@ public:
 #endif
                 }
             }
+            else
+            {
+            }
 
             kData->needsReset = false;
         }
@@ -910,7 +922,6 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Event Input and Processing
 
-        //if (kData->activeBefore)
         {
             // ----------------------------------------------------------------------------------------------------
             // MIDI Input (External)
@@ -946,7 +957,7 @@ public:
             if (kData->midiprog.current >= 0 && kData->midiprog.count > 0 && kData->ctrlChannel >= 0 && kData->ctrlChannel < 16)
                 nextBankIds[kData->ctrlChannel] = kData->midiprog.data[kData->midiprog.current].bank;
 
-            for (i=0; i < nEvents; i++)
+            for (i=0; i < nEvents; ++i)
             {
                 const EngineEvent& event = kData->event.portIn->getEvent(i);
 
@@ -1036,7 +1047,7 @@ public:
                         }
 
                         // Control plugin parameters
-                        for (k=0; k < kData->param.count; k++)
+                        for (k=0; k < kData->param.count; ++k)
                         {
                             if (kData->param.data[k].midiChannel != event.channel)
                                 continue;
@@ -1079,7 +1090,7 @@ public:
                             const uint32_t bankId = nextBankIds[event.channel];
                             const uint32_t progId = ctrlEvent.param;
 
-                            for (k=0; k < kData->midiprog.count; k++)
+                            for (k=0; k < kData->midiprog.count; ++k)
                             {
                                 if (kData->midiprog.data[k].bank == bankId && kData->midiprog.data[k].program == progId)
                                 {
@@ -1102,8 +1113,8 @@ public:
                         {
                             if (! allNotesOffSent)
                             {
-                                allNotesOffSent = true;
                                 sendMidiAllNotesOff();
+                                allNotesOffSent = true;
                             }
 
                             postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_ACTIVE, 0, 0.0f);
@@ -1125,8 +1136,8 @@ public:
                         {
                             if (! allNotesOffSent)
                             {
-                                allNotesOffSent = true;
                                 sendMidiAllNotesOff();
+                                allNotesOffSent = true;
                             }
 
                             if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
@@ -1252,9 +1263,9 @@ public:
         }
         else if (! kData->singleMutex.tryLock())
         {
-            for (i=0; i < kData->audioOut.count; i++)
+            for (i=0; i < kData->audioOut.count; ++i)
             {
-                for (k=0; k < frames; k++)
+                for (k=0; k < frames; ++k)
                     outBuffer[i][k+timeOffset] = 0.0f;
             }
 
@@ -1266,7 +1277,7 @@ public:
 
         if (kUses16Outs)
         {
-            for (i=0; i < kData->audioOut.count; i++)
+            for (i=0; i < kData->audioOut.count; ++i)
                 carla_zeroFloat(fAudio16Buffers[i], frames);
 
             fluid_synth_process(fSynth, frames, 0, nullptr, kData->audioOut.count, fAudio16Buffers);
@@ -1284,7 +1295,7 @@ public:
 
             float oldBufLeft[doBalance ? frames : 1];
 
-            for (i=0; i < kData->audioOut.count; i++)
+            for (i=0; i < kData->audioOut.count; ++i)
             {
                 // Balance
                 if (doBalance)
@@ -1295,7 +1306,7 @@ public:
                     float balRangeL = (kData->postProc.balanceLeft  + 1.0f)/2.0f;
                     float balRangeR = (kData->postProc.balanceRight + 1.0f)/2.0f;
 
-                    for (k=0; k < frames; k++)
+                    for (k=0; k < frames; ++k)
                     {
                         if (i % 2 == 0)
                         {
@@ -1315,12 +1326,12 @@ public:
                 // Volume
                 if (kUses16Outs)
                 {
-                    for (k=0; k < frames; k++)
+                    for (k=0; k < frames; ++k)
                         outBuffer[i][k+timeOffset] = fAudio16Buffers[i][k] * kData->postProc.volume;
                 }
                 else if (doVolume)
                 {
-                    for (k=0; k < frames; k++)
+                    for (k=0; k < frames; ++k)
                         outBuffer[i][k+timeOffset] *= kData->postProc.volume;
                 }
             }
@@ -1338,7 +1349,7 @@ public:
         if (! kUses16Outs)
             return;
 
-        for (uint32_t i=0; i < kData->audioOut.count; i++)
+        for (uint32_t i=0; i < kData->audioOut.count; ++i)
         {
             if (fAudio16Buffers[i] != nullptr)
                 delete[] fAudio16Buffers[i];
@@ -1349,13 +1360,13 @@ public:
     // -------------------------------------------------------------------
     // Plugin buffers
 
-    void deleteBuffers()
+    void clearBuffers()
     {
-        carla_debug("FluidSynthPlugin::deleteBuffers() - start");
+        carla_debug("FluidSynthPlugin::clearBuffers() - start");
 
         if (fAudio16Buffers != nullptr)
         {
-            for (uint32_t i=0; i < kData->audioOut.count; i++)
+            for (uint32_t i=0; i < kData->audioOut.count; ++i)
             {
                 if (fAudio16Buffers[i] != nullptr)
                 {
@@ -1368,9 +1379,9 @@ public:
             fAudio16Buffers = nullptr;
         }
 
-        kData->clearBuffers();
+        CarlaPlugin::clearBuffers();
 
-        carla_debug("FluidSynthPlugin::deleteBuffers() - end");
+        carla_debug("FluidSynthPlugin::clearBuffers() - end");
     }
 
     // -------------------------------------------------------------------
@@ -1446,6 +1457,25 @@ public:
             return false;
         }
 
+        // ---------------------------------------------------------------
+        // load plugin settings
+
+        {
+            // set default options
+            fOptions = 0x0;
+
+            fOptions |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+            fOptions |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
+            fOptions |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
+            fOptions |= PLUGIN_OPTION_SEND_PITCHBEND;
+            fOptions |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+
+            // load settings
+            kData->idStr  = "SF2/";
+            kData->idStr += label;
+            fOptions = kData->loadSettings(fOptions, availableOptions());
+        }
+
         return true;
     }
 
@@ -1477,7 +1507,7 @@ private:
     int fSynthId;
 
     float** fAudio16Buffers;
-    double  fParamBuffers[FluidSynthParametersMax];
+    float   fParamBuffers[FluidSynthParametersMax];
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FluidSynthPlugin)
 };
@@ -1507,7 +1537,7 @@ CarlaPlugin* CarlaPlugin::newSF2(const Initializer& init, const bool use16Outs)
         return nullptr;
     }
 
-    FluidSynthPlugin* const plugin = new FluidSynthPlugin(init.engine, init.id,  use16Outs);
+    FluidSynthPlugin* const plugin(new FluidSynthPlugin(init.engine, init.id,  use16Outs));
 
     if (! plugin->init(init.filename, init.name, init.label))
     {

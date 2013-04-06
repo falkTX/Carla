@@ -1421,7 +1421,7 @@ CarlaPlugin* CarlaPlugin::newBridge(const Initializer& init, BinaryType btype, P
         return nullptr;
     }
 
-    BridgePlugin* const plugin = new BridgePlugin(init.engine, init.id, btype, ptype);
+    BridgePlugin* const plugin(new BridgePlugin(init.engine, init.id, btype, ptype));
 
     if (! plugin->init(init.filename, init.name, init.label, bridgeBinary))
     {

@@ -2229,7 +2229,7 @@ CarlaPlugin* CarlaPlugin::newNative(const Initializer& init)
     carla_debug("CarlaPlugin::newNative({%p, \"%s\", \"%s\", \"%s\"})", init.engine, init.filename, init.name, init.label);
 
 #ifdef WANT_NATIVE
-    NativePlugin* const plugin = new NativePlugin(init.engine, init.id);
+    NativePlugin* const plugin(new NativePlugin(init.engine, init.id));
 
     if (! plugin->init(init.name, init.label))
     {

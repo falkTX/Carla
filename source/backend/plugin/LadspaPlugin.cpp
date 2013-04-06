@@ -1481,7 +1481,7 @@ CarlaPlugin* CarlaPlugin::newLADSPA(const Initializer& init, const LADSPA_RDF_De
     carla_debug("CarlaPlugin::newLADSPA({%p, \"%s\", \"%s\", \"%s\"}, %p)", init.engine, init.filename, init.name, init.label, rdfDescriptor);
 
 #ifdef WANT_LADSPA
-    LadspaPlugin* const plugin = new LadspaPlugin(init.engine, init.id);
+    LadspaPlugin* const plugin(new LadspaPlugin(init.engine, init.id));
 
     if (! plugin->init(init.filename, init.name, init.label, rdfDescriptor))
     {

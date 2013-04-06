@@ -2453,7 +2453,7 @@ CarlaPlugin* CarlaPlugin::newVST(const Initializer& init)
     carla_debug("CarlaPlugin::newVST({%p, \"%s\", \"%s\"})", init.engine, init.filename, init.name);
 
 #ifdef WANT_VST
-    VstPlugin* const plugin = new VstPlugin(init.engine, init.id);
+    VstPlugin* const plugin(new VstPlugin(init.engine, init.id));
 
     if (! plugin->init(init.filename, init.name))
     {

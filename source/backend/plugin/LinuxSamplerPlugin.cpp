@@ -159,6 +159,10 @@ public:
 
 CARLA_BACKEND_START_NAMESPACE
 
+#if 0
+}
+#endif
+
 class LinuxSamplerPlugin : public CarlaPlugin
 {
 public:
@@ -311,10 +315,13 @@ public:
         // Safely disable plugin for reload
         const ScopedDisabler sd(this);
 
-        kData->clearBuffers();
+        if (kData->active)
+            deactivate();
+
+        clearBuffers();
 
         uint32_t aOuts;
-        aOuts  = 2;
+        aOuts = 2;
 
         kData->audioOut.createNew(aOuts);
 
@@ -385,17 +392,14 @@ public:
 
         // extra plugin hints
         kData->extraHints  = 0x0;
+        kData->extraHints |= PLUGIN_HINT_HAS_MIDI_IN;
         kData->extraHints |= PLUGIN_HINT_CAN_RUN_RACK;
-
-        // plugin options
-        fOptions  = 0x0;
-        fOptions |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
-        fOptions |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
-        fOptions |= PLUGIN_OPTION_SEND_PITCHBEND;
-        fOptions |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
 
         bufferSizeChanged(kData->engine->getBufferSize());
         reloadPrograms(true);
+
+        if (kData->active)
+            activate();
 
         carla_debug("LinuxSamplerPlugin::reload() - end");
     }
@@ -419,7 +423,7 @@ public:
         kData->midiprog.createNew(count);
 
         // Update data
-        for (i=0; i < kData->midiprog.count; i++)
+        for (i=0; i < kData->midiprog.count; ++i)
         {
             LinuxSampler::InstrumentManager::instrument_info_t info = fInstrument->GetInstrumentInfo(fInstrumentIds[i]);
 
@@ -434,7 +438,7 @@ public:
         {
             kData->engine->osc_send_control_set_midi_program_count(fId, count);
 
-            for (i=0; i < count; i++)
+            for (i=0; i < count; ++i)
                 kData->engine->osc_send_control_set_midi_program_data(fId, i, kData->midiprog.data[i].bank, kData->midiprog.data[i].program, kData->midiprog.data[i].name);
         }
 #endif
@@ -452,6 +456,20 @@ public:
     // -------------------------------------------------------------------
     // Plugin processing
 
+    void activate()
+    {
+        CARLA_ASSERT(fAudioOutputDevice != nullptr);
+
+        fAudioOutputDevice->Play();
+    }
+
+    void deactivate()
+    {
+        CARLA_ASSERT(fAudioOutputDevice != nullptr);
+
+        fAudioOutputDevice->Stop();
+    }
+
     void process(float** const, float** const outBuffer, const uint32_t frames)
     {
         uint32_t i, k;
@@ -462,32 +480,29 @@ public:
         if (! kData->active)
         {
             // disable any output sound
-            for (i=0; i < kData->audioOut.count; i++)
+            for (i=0; i < kData->audioOut.count; ++i)
                 carla_zeroFloat(outBuffer[i], frames);
 
-            //if (kData->activeBefore)
-            //    fAudioOutputDevice->Stop();
             return;
         }
 
         // --------------------------------------------------------------------------------------------------------
-        // Check if not active before
+        // Check if needs reset
 
-        if (kData->needsReset /*|| ! kData->activeBefore*/)
+        if (kData->needsReset)
         {
+            // TODO
             if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
             {
-                for (k=0, i=MAX_MIDI_CHANNELS; k < MAX_MIDI_CHANNELS; k++)
+                for (k=0, i=MAX_MIDI_CHANNELS; k < MAX_MIDI_CHANNELS; ++k)
                 {
                     fMidiInputPort->DispatchControlChange(MIDI_CONTROL_ALL_SOUND_OFF, 0, k, 0);
                     fMidiInputPort->DispatchControlChange(MIDI_CONTROL_ALL_NOTES_OFF, 0, k, 0);
                 }
             }
-
-            //if (kData->activeBefore)
-            //    fAudioOutputDevice->Stop();
-
-            //fAudioOutputDevice->Play();
+            else
+            {
+            }
 
             kData->needsReset = false;
         }
@@ -495,7 +510,6 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Event Input and Processing
 
-        if (kData->event.portIn != nullptr /*&& kData->activeBefore*/)
         {
             // ----------------------------------------------------------------------------------------------------
             // MIDI Input (External)
@@ -532,7 +546,7 @@ public:
             if (kData->midiprog.current >= 0 && kData->midiprog.count > 0)
                 nextBankId = kData->midiprog.data[kData->midiprog.current].bank;
 
-            for (i=0; i < nEvents; i++)
+            for (i=0; i < nEvents; ++i)
             {
                 const EngineEvent& event = kData->event.portIn->getEvent(i);
 
@@ -627,7 +641,7 @@ public:
                         }
 
                         // Control plugin parameters
-                        for (k=0; k < kData->param.count; k++)
+                        for (k=0; k < kData->param.count; ++k)
                         {
                             if (kData->param.data[k].midiChannel != event.channel)
                                 continue;
@@ -669,7 +683,7 @@ public:
                         {
                             const uint32_t nextProgramId = ctrlEvent.param;
 
-                            for (k=0; k < kData->midiprog.count; k++)
+                            for (k=0; k < kData->midiprog.count; ++k)
                             {
                                 if (kData->midiprog.data[k].bank == nextBankId && kData->midiprog.data[k].program == nextProgramId)
                                 {
@@ -686,12 +700,9 @@ public:
                         {
                             if (! allNotesOffSent)
                             {
-                                allNotesOffSent = true;
                                 sendMidiAllNotesOff();
+                                allNotesOffSent = true;
                             }
-
-                            fAudioOutputDevice->Stop();
-                            fAudioOutputDevice->Play();
 
                             postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_ACTIVE, 0, 0.0f);
                             postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_ACTIVE, 0, 1.0f);
@@ -707,8 +718,8 @@ public:
                         {
                             if (! allNotesOffSent)
                             {
-                                allNotesOffSent = true;
                                 sendMidiAllNotesOff();
+                                allNotesOffSent = true;
                             }
                         }
 
@@ -790,15 +801,6 @@ public:
                 processSingle(outBuffer, frames - timeOffset, timeOffset);
 
         } // End of Event Input and Processing
-
-        // --------------------------------------------------------------------------------------------------------
-        // Plugin processing (no events)
-
-        else
-        {
-            processSingle(outBuffer, frames, 0);
-
-        } // End of Plugin processing (no events)
     }
 
     bool processSingle(float** const outBuffer, const uint32_t frames, const uint32_t timeOffset)
@@ -822,9 +824,9 @@ public:
         }
         else if (! kData->singleMutex.tryLock())
         {
-            for (i=0; i < kData->audioOut.count; i++)
+            for (i=0; i < kData->audioOut.count; ++i)
             {
-                for (k=0; k < frames; k++)
+                for (k=0; k < frames; ++k)
                     outBuffer[i][k+timeOffset] = 0.0f;
             }
 
@@ -848,7 +850,7 @@ public:
 
             float oldBufLeft[doBalance ? frames : 1];
 
-            for (i=0; i < kData->audioOut.count; i++)
+            for (i=0; i < kData->audioOut.count; ++i)
             {
                 // Balance
                 if (doBalance)
@@ -859,7 +861,7 @@ public:
                     float balRangeL = (kData->postProc.balanceLeft  + 1.0f)/2.0f;
                     float balRangeR = (kData->postProc.balanceRight + 1.0f)/2.0f;
 
-                    for (k=0; k < frames; k++)
+                    for (k=0; k < frames; ++k)
                     {
                         if (i % 2 == 0)
                         {
@@ -879,7 +881,7 @@ public:
                 // Volume
                 if (doVolume)
                 {
-                    for (k=0; k < frames; k++)
+                    for (k=0; k < frames; ++k)
                         outBuffer[i][k+timeOffset] *= kData->postProc.volume;
                 }
             }
@@ -941,6 +943,7 @@ public:
 
         // ---------------------------------------------------------------
         // Create the LinuxSampler Engine
+
         const char* const stype = kIsGIG ? "gig" : "sfz";
 
         try {
@@ -955,12 +958,11 @@ public:
         // ---------------------------------------------------------------
         // Get the Engine's Instrument Manager
 
-        try {
-            fInstrument = fEngine->GetInstrumentManager();
-        }
-        catch (LinuxSampler::Exception& e)
+        fInstrument = fEngine->GetInstrumentManager();
+
+        if (fInstrument == nullptr)
         {
-            kData->engine->setLastError(e.what());
+            kData->engine->setLastError("Failed to get LinuxSampler instrument manager");
             LinuxSampler::EngineFactory::Destroy(fEngine);
             return false;
         }
@@ -971,7 +973,7 @@ public:
         try {
             fInstrumentIds = fInstrument->GetInstrumentFileContent(filename);
         }
-        catch (LinuxSampler::Exception& e)
+        catch (const LinuxSampler::InstrumentManagerException& e)
         {
             kData->engine->setLastError(e.what());
             LinuxSampler::EngineFactory::Destroy(fEngine);
@@ -987,20 +989,28 @@ public:
             LinuxSampler::EngineFactory::Destroy(fEngine);
             return false;
         }
-        else
-        {
-            LinuxSampler::InstrumentManager::instrument_info_t info = fInstrument->GetInstrumentInfo(fInstrumentIds[0]);
 
-            fRealName = info.InstrumentName.c_str();
-            fLabel    = info.Product.c_str();
-            fMaker    = info.Artists.c_str();
-            fFilename = filename;
+        LinuxSampler::InstrumentManager::instrument_info_t info;
 
-            if (name != nullptr)
-                fName = kData->engine->getNewUniquePluginName(name);
-            else
-                fName = kData->engine->getNewUniquePluginName((const char*)fRealName);
+        try {
+            info = fInstrument->GetInstrumentInfo(fInstrumentIds[0]);
         }
+        catch (const LinuxSampler::InstrumentManagerException& e)
+        {
+            kData->engine->setLastError(e.what());
+            LinuxSampler::EngineFactory::Destroy(fEngine);
+            return false;
+        }
+
+        fRealName = info.InstrumentName.c_str();
+        fLabel    = info.Product.c_str();
+        fMaker    = info.Artists.c_str();
+        fFilename = filename;
+
+        if (name != nullptr)
+            fName = kData->engine->getNewUniquePluginName(name);
+        else
+            fName = kData->engine->getNewUniquePluginName((const char*)fRealName);
 
         // ---------------------------------------------------------------
         // Register client
@@ -1029,6 +1039,24 @@ public:
 
         fMidiInputPort->Connect(fSamplerChannel->GetEngineChannel(), LinuxSampler::midi_chan_all);
 
+        // ---------------------------------------------------------------
+        // load plugin settings
+
+        {
+            // set default options
+            fOptions = 0x0;
+
+            fOptions |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+            fOptions |= PLUGIN_OPTION_SEND_PITCHBEND;
+            fOptions |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+
+            // load settings
+            kData->idStr  = kIsGIG ? "GIG" : "SFZ";
+            kData->idStr += "/";
+            kData->idStr += label;
+            fOptions = kData->loadSettings(fOptions, availableOptions());
+        }
+
         return true;
     }
 
@@ -1037,7 +1065,7 @@ public:
     static CarlaPlugin* newLinuxSampler(const Initializer& init, bool isGIG, const bool use16Outs);
 
 private:
-    const bool kIsGIG;
+    const bool kIsGIG; // sfz if false
     const bool kUses16Outs;
 
     CarlaString fRealName;
@@ -1064,7 +1092,7 @@ CarlaPlugin* LinuxSamplerPlugin::newLinuxSampler(const Initializer& init, const 
 {
     carla_debug("LinuxSamplerPlugin::newLinuxSampler({%p, \"%s\", \"%s\", \"%s\"}, %s, %s)", init.engine, init.filename, init.name, init.label, bool2str(isGIG), bool2str(use16Outs));
 
-    LinuxSamplerPlugin* const plugin = new LinuxSamplerPlugin(init.engine, init.id, isGIG, use16Outs);
+    LinuxSamplerPlugin* const plugin(new LinuxSamplerPlugin(init.engine, init.id, isGIG, use16Outs));
 
     if (! plugin->init(init.filename, init.name, init.label))
     {

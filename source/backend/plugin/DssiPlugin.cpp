@@ -1942,7 +1942,7 @@ CarlaPlugin* CarlaPlugin::newDSSI(const Initializer& init, const char* const gui
     carla_debug("CarlaPlugin::newDSSI({%p, \"%s\", \"%s\", \"%s\"}, \"%s\")", init.engine, init.filename, init.name, init.label, guiFilename);
 
 #ifdef WANT_DSSI
-    DssiPlugin* const plugin = new DssiPlugin(init.engine, init.id);
+    DssiPlugin* const plugin(new DssiPlugin(init.engine, init.id));
 
     if (! plugin->init(init.filename, init.name, init.label, guiFilename))
     {
