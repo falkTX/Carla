@@ -37,7 +37,7 @@ void carla_register_all_plugins()
 #endif
 
     // Carla
-    carla_register_native_plugin_carla();
+    //carla_register_native_plugin_carla(); // unfinished
 
 #ifdef WANT_AUDIOFILE
     // AudioFile
