@@ -307,11 +307,20 @@ if WINDOWS:
 elif HAIKU:
     splitter = ":"
 
+    DEFAULT_LADSPA_PATH = ":".join((os.path.join(HOME, ".ladspa"),
+                                    os.path.join("/", "usr", "lib", "ladspa"),
+                                    os.path.join("/", "usr", "local", "lib", "ladspa")))
+
+    DEFAULT_DSSI_PATH = ":".join((os.path.join(HOME, ".dssi"),
+                                  os.path.join("/", "boot", "common", "add-ons", "dssi")))
+
+    DEFAULT_LV2_PATH = ":".join((os.path.join(HOME, ".lv2"),
+                                 os.path.join("/", "boot", "common", "add-ons", "lv2")))
+
+    DEFAULT_VST_PATH = ":".join((os.path.join(HOME, ".vst"),
+                                 os.path.join("/", "boot", "common", "add-ons", "vst")))
+
     # TODO
-    DEFAULT_LADSPA_PATH = ""
-    DEFAULT_DSSI_PATH = ""
-    DEFAULT_LV2_PATH = ""
-    DEFAULT_VST_PATH = ""
     DEFAULT_GIG_PATH = ""
     DEFAULT_SF2_PATH = ""
     DEFAULT_SFZ_PATH = ""
@@ -359,8 +368,7 @@ else:
                                  os.path.join("/", "usr", "share", "sounds", "gig")))
 
     DEFAULT_SF2_PATH = ":".join((os.path.join(HOME, ".sounds"),
-                                 os.path.join("/", "usr", "share", "sounds", "sf2"),
-                                 "/home/falktx/Personal/Muzyks/Kits/SF2/"))
+                                 os.path.join("/", "usr", "share", "sounds", "sf2")))
 
     DEFAULT_SFZ_PATH = ":".join((os.path.join(HOME, ".sounds"),
                                  os.path.join("/", "usr", "share", "sounds", "sfz")))
