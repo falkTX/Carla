@@ -35,8 +35,7 @@ public:
         BLUE    = 1,
         GREEN   = 2,
         RED     = 3,
-        YELLOW  = 4,
-        BIG_RED = 5
+        YELLOW  = 4
     };
 
     LEDButton(QWidget* parent);
@@ -45,15 +44,12 @@ public:
     void setColor(Color color);
 
 protected:
-    void setPixmapSize(int size);
-
     void paintEvent(QPaintEvent* event);
 
 private:
-    QPixmap m_pixmap;
-    QRectF  m_pixmap_rect;
-
-    Color m_color;
+    Color   fColor;
+    QPixmap fPixmap;
+    QRectF  fPixmapRect;
 };
 
 #endif // __LEDBUTTON_HPP__

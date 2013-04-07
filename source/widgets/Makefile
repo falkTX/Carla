@@ -8,11 +8,11 @@ include ../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += -fvisibility=hidden -fPIC -I.
+BUILD_CXX_FLAGS += -fvisibility=hidden -I.
 
 ifeq ($(HAVE_QT5),true)
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags Qt5Core Qt5Widgets)
-LINK_FLAGS      += $(shell pkg-config --libs Qt5Core Qt5Widgets)
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags Qt5Core Qt5Gui Qt5Widgets)
+LINK_FLAGS      += $(shell pkg-config --libs Qt5Core Qt5Gui Qt5Widgets)
 else
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtCore QtGui)
 LINK_FLAGS      += $(shell pkg-config --libs QtCore QtGui)

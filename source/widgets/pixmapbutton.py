@@ -26,11 +26,6 @@ from PyQt4.QtGui import QPainter, QPixmap, QPushButton
 # Widget Class
 
 class PixmapButton(QPushButton):
-    STATE_NULL   = 0
-    STATE_NORMAL = 1
-    STATE_DOWN   = 2
-    STATE_HOVER  = 3
-
     def __init__(self, parent):
         QPushButton.__init__(self, parent)
 
@@ -48,13 +43,13 @@ class PixmapButton(QPushButton):
         self.fPixmapDown.load(down)
         self.fPixmapHover.load(hover)
 
-        self.setPixmapSize(self.fPixmapNormal.width())
+        width  = self.fPixmapNormal.width()
+        height = self.fPixmapNormal.height()
 
-    def setPixmapSize(self, size):
-        self.fPixmapRect = QRectF(0, 0, size, size)
+        self.fPixmapRect = QRectF(0, 0, width, height)
 
-        self.setMinimumSize(size, size)
-        self.setMaximumSize(size, size)
+        self.setMinimumSize(width, height)
+        self.setMaximumSize(width, height)
 
     def enterEvent(self, event):
         self.fIsHovered = True

@@ -30,7 +30,6 @@ class LEDButton(QPushButton):
     GREEN   = 2
     RED     = 3
     YELLOW  = 4
-    BIG_RED = 5
 
     def __init__(self, parent):
         QPushButton.__init__(self, parent)
@@ -45,17 +44,8 @@ class LEDButton(QPushButton):
 
     def setColor(self, color):
         self.fColor = color
+        size = 14
 
-        if color in (self.BLUE, self.GREEN, self.RED, self.YELLOW):
-            size = 14
-        elif color == self.BIG_RED:
-            size = 32
-        else:
-            return qCritical("LEDButton::setColor(%i) - Invalid color" % color)
-
-        self.setPixmapSize(size)
-
-    def setPixmapSize(self, size):
         self.fPixmapRect = QRectF(0, 0, size, size)
 
         self.setMinimumSize(size, size)
@@ -74,16 +64,9 @@ class LEDButton(QPushButton):
                 self.fPixmap.load(":/bitmaps/led_red.png")
             elif self.fColor == self.YELLOW:
                 self.fPixmap.load(":/bitmaps/led_yellow.png")
-            elif self.fColor == self.BIG_RED:
-                self.fPixmap.load(":/bitmaps/led-big_on.png")
             else:
                 return
         else:
-            if self.fColor in (self.BLUE, self.GREEN, self.RED, self.YELLOW):
-                self.fPixmap.load(":/bitmaps/led_off.png")
-            elif self.fColor == self.BIG_RED:
-                self.fPixmap.load(":/bitmaps/led-big_off.png")
-            else:
-                return
+            self.fPixmap.load(":/bitmaps/led_off.png")
 
         painter.drawPixmap(self.fPixmapRect, self.fPixmap, self.fPixmapRect)

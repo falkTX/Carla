@@ -18,11 +18,12 @@
 #include "ledbutton.hpp"
 
 #include <QtGui/QPainter>
+#include <QtGui/QPaintEvent>
 
 LEDButton::LEDButton(QWidget* parent):
     QPushButton(parent)
 {
-    m_pixmap_rect = QRectF(0, 0, 0, 0);
+    fPixmapRect = QRectF(0, 0, 0, 0);
 
     setCheckable(true);
     setText("");
@@ -36,22 +37,10 @@ LEDButton::~LEDButton()
 
 void LEDButton::setColor(Color color)
 {
-    m_color = color;
+    fColor = color;
+    int size = 14;
 
-    int size;
-    if (1) //color in (self.BLUE, self.GREEN, self.RED, self.YELLOW):
-        size = 14;
-    else if (color == BIG_RED)
-        size = 64;
-    else
-        return qCritical("LEDButton::setColor(%i) - Invalid color", color);
-
-    setPixmapSize(size);
-}
-
-void LEDButton::setPixmapSize(int size)
-{
-    m_pixmap_rect = QRectF(0, 0, size, size);
+    fPixmapRect = QRectF(0, 0, size, size);
 
     setMinimumWidth(size);
     setMaximumWidth(size);
@@ -59,34 +48,31 @@ void LEDButton::setPixmapSize(int size)
     setMaximumHeight(size);
 }
 
-void LEDButton::paintEvent(QPaintEvent*)
+void LEDButton::paintEvent(QPaintEvent* event)
 {
     QPainter painter(this);
+    event->accept();
 
     if (isChecked())
     {
-        if (m_color == BLUE)
-            m_pixmap.load(":/bitmaps/led_blue.png");
-        else if (m_color == GREEN)
-            m_pixmap.load(":/bitmaps/led_green.png");
-        else if (m_color == RED)
-            m_pixmap.load(":/bitmaps/led_red.png");
-        else if (m_color == YELLOW)
-            m_pixmap.load(":/bitmaps/led_yellow.png");
-        else if (m_color == BIG_RED)
-            m_pixmap.load(":/bitmaps/led-big_on.png");
-        else
+        switch (fColor)
+        {
+        case BLUE:
+            fPixmap.load(":/bitmaps/led_blue.png");
+        case GREEN:
+            fPixmap.load(":/bitmaps/led_green.png");
+        case RED:
+            fPixmap.load(":/bitmaps/led_red.png");
+        case YELLOW:
+            fPixmap.load(":/bitmaps/led_yellow.png");
+        default:
             return;
+        }
     }
     else
     {
-        if (1) //self.m_color in (self.BLUE, self.GREEN, self.RED, self.YELLOW):
-            m_pixmap.load(":/bitmaps/led_off.png");
-        else if (m_color == BIG_RED)
-            m_pixmap.load(":/bitmaps/led-big_off.png");
-        else
-            return;
+        fPixmap.load(":/bitmaps/led_off.png");
     }
 
-    painter.drawPixmap(m_pixmap_rect, m_pixmap, m_pixmap_rect);
+    painter.drawPixmap(fPixmapRect, fPixmap, fPixmapRect);
 }

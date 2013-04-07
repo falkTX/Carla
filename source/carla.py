@@ -1049,14 +1049,17 @@ class CarlaMainW(QMainWindow):
 
             self.removeAllPlugins()
 
+        self.fEngineStarted = False
+
         if Carla.host.is_engine_running() and not Carla.host.engine_close():
             print(cString(Carla.host.get_last_error()))
+            # failed
+            self.fEngineStarted = True
             return
 
         self.fBufferSize = 0
         self.fSampleRate = 0.0
 
-        self.fEngineStarted = False
         self.fPluginCount = 0
         self.fPluginList  = []
 
@@ -1764,6 +1767,9 @@ class CarlaMainW(QMainWindow):
 
     def timerEvent(self, event):
         if event.timerId() == self.fIdleTimerFast:
+            if not self.fEngineStarted:
+                return
+
             Carla.host.engine_idle()
 
             for pwidget in self.fPluginList:
@@ -1774,6 +1780,9 @@ class CarlaMainW(QMainWindow):
             self.refreshTransport()
 
         elif event.timerId() == self.fIdleTimerSlow:
+            if not self.fEngineStarted:
+                return
+
             for pwidget in self.fPluginList:
                 if pwidget is None:
                     break
