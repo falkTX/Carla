@@ -49,10 +49,12 @@ int main()
         int i;
         double d;
         void* ptr;
+        char pad[17];
         int32_t i32;
         int64_t i64;
         bool b;
-    } blob;
+    };
+    Blob blob;
 
     const size_t blobSize = sizeof(Blob);
     carla_zeroStruct<Blob>(blob);
@@ -66,6 +68,7 @@ int main()
     blob.i32  = 32;
     blob.i64  = 64;
     blob.b    = true;
+    blob.pad[11] = 71;
 
     // binary -> base64
     char blobEnc[carla_base64_encoded_len(blobSize) + 1];
@@ -90,6 +93,7 @@ int main()
         assert(blobTest.i32  == 32);
         assert(blobTest.i64  == 64);
         assert(blobTest.b    == true);
+        assert(blobTest.pad[11] == 71);
     }
 
     {
@@ -110,6 +114,7 @@ int main()
         assert(blobNew->i32  == 32);
         assert(blobNew->i64  == 64);
         assert(blobNew->b    == true);
+        assert(blobNew->pad[11] == 71);
 
         delete blobNew;
     }

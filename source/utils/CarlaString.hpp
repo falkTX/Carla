@@ -18,7 +18,6 @@
 #ifndef __CARLA_STRING_HPP__
 #define __CARLA_STRING_HPP__
 
-#include "CarlaBase64Utils.hpp"
 #include "CarlaJuceUtils.hpp"
 
 // -------------------------------------------------
@@ -251,94 +250,24 @@ public:
 
     void toLower()
     {
-        static const char charDiff = 'a' - 'A';
+        static const char kCharDiff = 'a' - 'A';
 
         for (size_t i=0; i < bufferLen; ++i)
         {
             if (buffer[i] >= 'A' && buffer[i] <= 'Z')
-                buffer[i] += charDiff;
+                buffer[i] += kCharDiff;
         }
     }
 
     void toUpper()
     {
-        static const char charDiff = 'a' - 'A';
+        static const char kCharDiff = 'a' - 'A';
 
         for (size_t i=0; i < bufferLen; ++i)
         {
             if (buffer[i] >= 'a' && buffer[i] <= 'z')
-                buffer[i] -= charDiff;
+                buffer[i] -= kCharDiff;
         }
-    }
-
-    void toBase64()
-    {
-        importBinaryAsBase64((const uint8_t*)buffer, bufferLen);
-    }
-
-    void fromBase64()
-    {
-        uint8_t buffer2[carla_base64_decoded_max_len(buffer)];
-
-        if (unsigned int len = carla_base64_decode(buffer, buffer2))
-        {
-            char bufDecoded[len+1];
-            std::strncpy(bufDecoded, (char*)buffer2, len);
-            bufDecoded[len] = '\0';
-            _dup(bufDecoded, len);
-        }
-        else
-            clear();
-    }
-
-    void importBinaryAsBase64(const uint8_t* const raw, const size_t rawLen)
-    {
-        const size_t rawBufferSize = carla_base64_encoded_len(rawLen);
-        char         rawBuffer[rawBufferSize+1];
-        carla_base64_encode(raw, rawLen, rawBuffer);
-
-        _dup(rawBuffer, rawBufferSize);
-    }
-
-    template<typename T>
-    void importBinaryAsBase64(const T* const t)
-    {
-        importBinaryAsBase64((const uint8_t*)t, sizeof(T));
-    }
-
-    size_t exportAsBase64Binary(uint8_t** const rawPtr)
-    {
-        uint8_t binaryBuffer[carla_base64_decoded_max_len(buffer)];
-
-        if (unsigned int len = carla_base64_decode(buffer, binaryBuffer))
-        {
-            uint8_t* const binaryBufferHeap = new uint8_t[len];
-            carla_copy<uint8_t>(binaryBufferHeap, binaryBuffer, len);
-
-            *rawPtr = binaryBufferHeap;
-            return len;
-        }
-
-        *rawPtr = nullptr;
-        return 0;
-    }
-
-    template<typename T>
-    T* exportAsBase64Binary()
-    {
-        uint8_t binaryBuffer[carla_base64_decoded_max_len(buffer)];
-
-        if (unsigned int len = carla_base64_decode(buffer, binaryBuffer))
-        {
-            CARLA_ASSERT_INT2(len == sizeof(T), len, sizeof(T));
-
-            T* const t = new T();
-            std::memcpy(t, binaryBuffer, sizeof(T));
-
-            return t;
-        }
-
-        return nullptr;
     }
 
     // ---------------------------------------------

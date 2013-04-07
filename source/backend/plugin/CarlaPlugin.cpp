@@ -636,12 +636,11 @@ const SaveState& CarlaPlugin::getSaveState()
         void* data = nullptr;
         const int32_t dataSize(chunkData(&data));
 
-        if (data != nullptr && dataSize >= 4)
+        if (data != nullptr && dataSize > 0)
         {
-            CarlaString chunkStr;
-            chunkStr.importBinaryAsBase64((const uint8_t*)data, static_cast<size_t>(dataSize));
+            QByteArray chunk(QByteArray((char*)data, dataSize).toBase64());
 
-            saveState.chunk = carla_strdup(chunkStr);
+            saveState.chunk = carla_strdup(chunk.constData());
 
             // Don't save anything else if using chunks
             return saveState;

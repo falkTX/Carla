@@ -39,8 +39,7 @@ public:
           fDssiDescriptor(nullptr),
           fAudioInBuffers(nullptr),
           fAudioOutBuffers(nullptr),
-          fParamBuffers(nullptr),
-          fLastChunk(nullptr)
+          fParamBuffers(nullptr)
     {
         carla_debug("DssiPlugin::DssiPlugin(%p, %i)", engine, id);
 
@@ -89,12 +88,6 @@ public:
             fHandle2 = nullptr;
             fDescriptor = nullptr;
             fDssiDescriptor = nullptr;
-        }
-
-        if (fLastChunk != nullptr)
-        {
-            delete[] fLastChunk;
-            fLastChunk = nullptr;
         }
 
         clearBuffers();
@@ -319,21 +312,14 @@ public:
         if (fDssiDescriptor->set_custom_data == nullptr)
             return;
 
-        if (fLastChunk != nullptr)
-        {
-            delete[] fLastChunk;
-            fLastChunk = nullptr;
-        }
+        QByteArray chunk(QByteArray::fromBase64(stringData));
 
-        const size_t size(CarlaString(stringData).exportAsBase64Binary(&fLastChunk));
+        CARLA_ASSERT(chunk.size() > 0);
 
-        CARLA_ASSERT(size > 0);
-        CARLA_ASSERT(fLastChunk != nullptr);
-
-        if (size > 0 && fLastChunk != nullptr)
+        if (chunk.size() > 0)
         {
             const ScopedSingleProcessLocker spl(this, true);
-            fDssiDescriptor->set_custom_data(fHandle, fLastChunk, static_cast<unsigned long>(size));
+            fDssiDescriptor->set_custom_data(fHandle, chunk.data(), chunk.size());
         }
     }
 
@@ -1920,10 +1906,9 @@ private:
     const LADSPA_Descriptor* fDescriptor;
     const DSSI_Descriptor*   fDssiDescriptor;
 
-    float**  fAudioInBuffers;
-    float**  fAudioOutBuffers;
-    float*   fParamBuffers;
-    uint8_t* fLastChunk;
+    float** fAudioInBuffers;
+    float** fAudioOutBuffers;
+    float*  fParamBuffers;
     snd_seq_event_t fMidiEvents[MAX_MIDI_EVENTS];
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DssiPlugin)

@@ -1091,9 +1091,10 @@ const char* carla_get_chunk_data(unsigned int pluginId)
             void* data = nullptr;
             const int32_t dataSize = plugin->chunkData(&data);
 
-            if (data != nullptr && dataSize >= 4)
+            if (data != nullptr && dataSize > 0)
             {
-                chunkData.importBinaryAsBase64((const uint8_t*)data, static_cast<size_t>(dataSize));
+                QByteArray chunk(QByteArray((char*)data, dataSize).toBase64());
+                chunkData = chunk.constData();
                 return (const char*)chunkData;
             }
             else

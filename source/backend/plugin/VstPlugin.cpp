@@ -108,7 +108,7 @@ public:
 
         if (fLastChunk != nullptr)
         {
-            delete[] fLastChunk;
+            std::free(fLastChunk);
             fLastChunk = nullptr;
         }
 
@@ -289,19 +289,21 @@ public:
 
         if (fLastChunk != nullptr)
         {
-            delete[] fLastChunk;
+            std::free(fLastChunk);
             fLastChunk = nullptr;
         }
 
-        const size_t size(CarlaString(stringData).exportAsBase64Binary(&fLastChunk));
+        QByteArray chunk(QByteArray::fromBase64(stringData));
 
-        CARLA_ASSERT(size > 0);
-        CARLA_ASSERT(fLastChunk != nullptr);
+        CARLA_ASSERT(chunk.size() > 0);
 
-        if (size > 0 && fLastChunk != nullptr)
+        if (chunk.size() > 0)
         {
+            fLastChunk = std::malloc(chunk.size());
+            std::memcpy(fLastChunk, chunk.constData(), chunk.size());
+
             const ScopedSingleProcessLocker spl(this, true);
-            dispatcher(effSetChunk, 0 /* bank */, size, fLastChunk, 0.0f);
+            dispatcher(effSetChunk, 0 /* bank */, chunk.size(), fLastChunk, 0.0f);
         }
     }
 
@@ -2258,7 +2260,7 @@ private:
     int fUnique1;
     AEffect* fEffect;
 
-    uint8_t*      fLastChunk;
+    void*         fLastChunk;
     uint32_t      fMidiEventCount;
     VstMidiEvent  fMidiEvents[MAX_MIDI_EVENTS*2];
     VstTimeInfo_R fTimeInfo;
