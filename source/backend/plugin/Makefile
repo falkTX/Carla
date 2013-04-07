@@ -19,7 +19,7 @@ LINK_FLAGS      += $(shell pkg-config --libs fluidsynth)
 endif
 
 ifeq ($(HAVE_LINUXSAMPLER),true)
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags linuxsampler)
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags linuxsampler) -DIS_CPP11=1
 LINK_FLAGS      += $(shell pkg-config --libs linuxsampler)
 endif
 

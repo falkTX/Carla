@@ -23,7 +23,7 @@ NATIVE_FLAGS    += $(shell pkg-config --cflags --libs fluidsynth) -DWANT_FLUIDSY
 endif
 
 ifeq ($(HAVE_LINUXSAMPLER),true)
-NATIVE_FLAGS    += $(shell pkg-config --cflags --libs linuxsampler) -DWANT_LINUXSAMPLER
+NATIVE_FLAGS    += $(shell pkg-config --cflags --libs linuxsampler) -DWANT_LINUXSAMPLER -DIS_CPP11=1
 endif
 
 # --------------------------------------------------------------

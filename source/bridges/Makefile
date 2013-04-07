@@ -69,7 +69,7 @@ NATIVE_LINK_FLAGS  += $(shell pkg-config --libs fluidsynth)
 endif
 
 ifeq ($(HAVE_LINUXSAMPLER),true)
-NATIVE_BUILD_FLAGS += -DWANT_LINUXSAMPLER
+NATIVE_BUILD_FLAGS += -DWANT_LINUXSAMPLER -DIS_CPP11=1
 NATIVE_BUILD_FLAGS += $(shell pkg-config --cflags linuxsampler)
 NATIVE_LINK_FLAGS  += $(shell pkg-config --libs linuxsampler)
 endif
