@@ -109,7 +109,7 @@ void DistrhoUINotes::d_stateChanged(const char* key, const char* value)
         int width = QString(value).toInt(&ok);
 
         if (ok && width > 0)
-            setFixedWidth(width);
+            setSize(width, height());
     }
 
     else if (std::strcmp(key, "guiHeight") == 0)
@@ -118,7 +118,7 @@ void DistrhoUINotes::d_stateChanged(const char* key, const char* value)
         int height = QString(value).toInt(&ok);
 
         if (ok && height > 0)
-            setFixedHeight(height);
+            setSize(width(), height);
     }
 
     else if (std::strncmp(key, "pageText #", 10) == 0)
