@@ -9,8 +9,14 @@ include ../Makefile.mk
 # --------------------------------------------------------------
 
 BUILD_CXX_FLAGS += -I../backend -I../includes -I../utils
+
+ifeq ($(HAVE_QT5),true)
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags Qt5Core)
+LINK_FLAGS      += $(shell pkg-config --libs Qt5Core)
+else
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtCore)
 LINK_FLAGS      += $(shell pkg-config --libs QtCore)
+endif
 
 # --------------------------------------------------------------
 
@@ -23,7 +29,7 @@ NATIVE_FLAGS    += $(shell pkg-config --cflags --libs fluidsynth) -DWANT_FLUIDSY
 endif
 
 ifeq ($(HAVE_LINUXSAMPLER),true)
-NATIVE_FLAGS    += $(shell pkg-config --cflags --libs linuxsampler) -DWANT_LINUXSAMPLER -DIS_CPP11=1
+NATIVE_FLAGS    += $(shell pkg-config --cflags --libs linuxsampler) -DWANT_LINUXSAMPLER
 endif
 
 # --------------------------------------------------------------

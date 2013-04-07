@@ -48,7 +48,10 @@
 # endif
 #endif
 
-#ifndef CARLA_PROPER_CPP11_SUPPORT
+#ifdef CARLA_PROPER_CPP11_SUPPORT
+# define IS_CPP11 1
+#else
+# define IS_CPP11 0
 # define noexcept
 # define nullptr (0)
 #endif
