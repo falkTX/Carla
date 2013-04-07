@@ -26,8 +26,8 @@
 // nothing
 #endif
 
-#ifdef DISTRHO_UI_QT4
-# include "src/DistrhoUIQt4.cpp"
+#ifdef DISTRHO_UI_QT
+# include "src/DistrhoUIQt.cpp"
 #else
 # include "src/DistrhoUIOpenGL.cpp"
 #endif

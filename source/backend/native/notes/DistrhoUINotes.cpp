@@ -26,7 +26,7 @@ START_NAMESPACE_DISTRHO
 // -------------------------------------------------
 
 DistrhoUINotes::DistrhoUINotes()
-    : Qt4UI(),
+    : QtUI(),
       fCurPage(1),
       fSaveSizeNowChecker(-1),
       fSaveTextNowChecker(-1),
@@ -61,7 +61,7 @@ DistrhoUINotes::DistrhoUINotes()
     connect(&fProgressBar, SIGNAL(valueChangedFromBar(float)), SLOT(progressBarValueChanged(float)));
     connect(&fTextEdit, SIGNAL(textChanged()), SLOT(textChanged()));
 
-    setFixedSize(300, 200);
+    setSize(300, 200);
 }
 
 DistrhoUINotes::~DistrhoUINotes()
@@ -166,14 +166,12 @@ void DistrhoUINotes::d_uiIdle()
 
     if (fSaveTextNowChecker >= 0)
         fSaveTextNowChecker++;
-
-    Qt4UI::d_uiIdle();
 }
 
 void DistrhoUINotes::resizeEvent(QResizeEvent* event)
 {
     fSaveSizeNowChecker = 0;
-    QWidget::resizeEvent(event);
+    QtUI::resizeEvent(event);
 }
 
 // -------------------------------------------------

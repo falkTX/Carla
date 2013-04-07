@@ -45,10 +45,20 @@ public:
         : QMainWindow(nullptr),
           kHost(host),
           kPlugin(plugin),
+#ifdef DISTRHO_UI_OPENGL
           fWidget(this),
           fUi(this, (intptr_t)fWidget.winId(), editParameterCallback, setParameterCallback, setStateCallback, sendNoteCallback, uiResizeCallback)
+#else
+          fUi(this, 0, editParameterCallback, setParameterCallback, setStateCallback, sendNoteCallback, uiResizeCallback)
+#endif
     {
+#ifdef DISTRHO_UI_OPENGL
         setCentralWidget(&fWidget);
+#else
+        QtUI* const qtUi(fUi.getQtUI());
+        qtUi->setParent(this);
+        setCentralWidget(qtUi);
+#endif
         setWindowTitle(QString("%1 (GUI)").arg(fUi.name()));
 
         uiResize(fUi.width(), fUi.height());
@@ -123,8 +133,15 @@ protected:
 
     void uiResize(unsigned int width, unsigned int height)
     {
+#ifdef DISTRHO_UI_OPENGL
         fWidget.setFixedSize(width, height);
         setFixedSize(width, height);
+#else
+        if (fUi.resizable())
+            resize(width, height);
+        else
+            setFixedSize(width, height);
+#endif
     }
 
     // ---------------------------------------------
@@ -144,8 +161,10 @@ private:
     const HostDescriptor* const kHost;
     PluginInternal* const kPlugin;
 
-    // Qt4 stuff
+#ifdef DISTRHO_UI_OPENGL
+    // Qt stuff, used for GL
     QWidget fWidget;
+#endif
 
     // UI
     UIInternal fUi;

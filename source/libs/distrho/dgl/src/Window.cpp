@@ -284,12 +284,12 @@ public:
         return kApp;
     }
 
-    int getModifiers()
+    int getModifiers() const
     {
         return puglGetModifiers(kView);
     }
 
-    intptr_t getWindowId()
+    intptr_t getWindowId() const
     {
         return puglGetNativeWindow(kView);
     }
@@ -556,12 +556,12 @@ App* Window::getApp() const
     return kPrivate->getApp();
 }
 
-int Window::getModifiers()
+int Window::getModifiers() const
 {
     return kPrivate->getModifiers();
 }
 
-intptr_t Window::getWindowId()
+intptr_t Window::getWindowId() const
 {
     return kPrivate->getWindowId();
 }

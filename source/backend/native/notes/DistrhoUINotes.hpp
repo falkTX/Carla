@@ -18,7 +18,7 @@
 #ifndef __DISTRHO_UI_NOTES_HPP__
 #define __DISTRHO_UI_NOTES_HPP__
 
-#include "DistrhoUIQt4.hpp"
+#include "DistrhoUIQt.hpp"
 #include "paramspinbox.hpp"
 
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
@@ -40,7 +40,7 @@ START_NAMESPACE_DISTRHO
 
 // -------------------------------------------------
 
-class DistrhoUINotes : public Qt4UI
+class DistrhoUINotes : public QtUI
 {
     Q_OBJECT
 

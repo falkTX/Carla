@@ -69,8 +69,8 @@ struct PluginPrivateData {
 #endif
           timePos()
     {
-        assert(d_lastBufferSize != 0);
-        assert(d_lastSampleRate != 0.0);
+        assert(bufferSize != 0);
+        assert(sampleRate != 0.0);
     }
 
     ~PluginPrivateData()
@@ -300,19 +300,19 @@ public:
 
     // ---------------------------------------------
 
-    void setBufferSize(uint32_t bufferSize, bool callback = false)
+    void setBufferSize(uint32_t bufferSize, bool doCallback = false)
     {
         assert(kData != nullptr && kPlugin && bufferSize >= 2);
 
         if (kData != nullptr)
         {
-            if (callback && kData->bufferSize == bufferSize)
-                callback = false;
+            if (doCallback && kData->bufferSize == bufferSize)
+                doCallback = false;
 
             kData->bufferSize = bufferSize;
         }
 
-        if (kPlugin != nullptr && callback)
+        if (kPlugin != nullptr && doCallback)
         {
             kPlugin->d_deactivate();
             kPlugin->d_bufferSizeChanged(bufferSize);
@@ -320,19 +320,19 @@ public:
         }
     }
 
-    void setSampleRate(double sampleRate, bool callback = false)
+    void setSampleRate(double sampleRate, bool doCallback = false)
     {
         assert(kData != nullptr && kPlugin != nullptr && sampleRate > 0.0);
 
         if (kData != nullptr)
         {
-            if (callback && kData->sampleRate == sampleRate)
-                callback = false;
+            if (doCallback && kData->sampleRate == sampleRate)
+                doCallback = false;
 
             kData->sampleRate = sampleRate;
         }
 
-        if (kPlugin != nullptr && callback)
+        if (kPlugin != nullptr && doCallback)
         {
             kPlugin->d_deactivate();
             kPlugin->d_sampleRateChanged(sampleRate);

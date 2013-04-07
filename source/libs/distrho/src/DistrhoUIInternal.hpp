@@ -24,19 +24,7 @@
 # include "../dgl/App.hpp"
 # include "../dgl/Window.hpp"
 #else
-# include "../DistrhoUIQt4.hpp"
-# include <QtGui/QMouseEvent>
-# include <QtGui/QResizeEvent>
-# if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
-#  include <QtWidgets/QSizeGrip>
-#  include <QtWidgets/QVBoxLayout>
-# else
-#  include <QtGui/QSizeGrip>
-#  include <QtGui/QVBoxLayout>
-#  ifdef Q_WS_X11
-#   include <QtGui/QX11EmbedWidget>
-#  endif
-# endif
+# include "../DistrhoUIQt.hpp"
 #endif
 
 #include <cassert>
@@ -52,23 +40,6 @@ typedef void (*sendNoteFunc)  (void* ptr, bool onOff, uint8_t channel, uint8_t n
 typedef void (*uiResizeFunc)  (void* ptr, unsigned int width, unsigned int height);
 
 extern double d_lastUiSampleRate;
-
-// -------------------------------------------------
-
-#ifdef DISTRHO_UI_QT4
-# ifdef Q_WS_X11
-class QEmbedWidget : public QX11EmbedWidget
-# else
-class QEmbedWidget : public QWidget
-# endif
-{
-public:
-    QEmbedWidget(WId parent);
-    ~QEmbedWidget();
-
-    WId containerWinId() const;
-};
-#endif
 
 // -------------------------------------------------
 
@@ -95,7 +66,7 @@ struct UIPrivateData {
           uiResizeCallbackFunc(nullptr),
           ptr(nullptr)
     {
-        assert(d_lastUiSampleRate != 0.0);
+        assert(sampleRate != 0.0);
     }
 
     ~UIPrivateData()
@@ -135,29 +106,35 @@ struct UIPrivateData {
 
 // -------------------------------------------------
 
-#ifdef DISTRHO_UI_QT4
-class UIInternal : public QObject // needed for eventFilter()
-#else
 class UIInternal
-#endif
 {
 public:
     UIInternal(void* ptr, intptr_t winId, editParamFunc editParamCall, setParamFunc setParamCall, setStateFunc setStateCall, sendNoteFunc sendNoteCall, uiResizeFunc uiResizeCall)
-#ifdef DISTRHO_UI_QT4
-        : qtGrip(nullptr),
-          qtWidget(nullptr),
-#else
+#ifdef DISTRHO_UI_OPENGL
         : glApp(),
           glWindow(&glApp, winId),
+#else
+        :
 #endif
           kUi(createUI()),
           kData((kUi != nullptr) ? kUi->pData : nullptr)
     {
         assert(kUi != nullptr);
+
+        if (kUi == nullptr)
+            return;
+
+#ifdef DISTRHO_UI_OPENGL
         assert(winId != 0);
 
-        if (kUi == nullptr || winId == 0)
+        if (winId == 0)
             return;
+#else
+        assert(winId == 0);
+
+        if (winId != 0)
+            return;
+#endif
 
         kData->ptr = ptr;
         kData->editParamCallbackFunc = editParamCall;
@@ -165,21 +142,12 @@ public:
         kData->setStateCallbackFunc  = setStateCall;
         kData->sendNoteCallbackFunc  = sendNoteCall;
         kData->uiResizeCallbackFunc  = uiResizeCall;
-
-#ifdef DISTRHO_UI_QT4
-        createWindow(winId);
-#endif
     }
 
     ~UIInternal()
     {
         if (kUi != nullptr)
-        {
-#ifdef DISTRHO_UI_QT4
-            destroyWindow();
-#endif
             delete kUi;
-        }
     }
 
     // ---------------------------------------------
@@ -246,7 +214,7 @@ public:
 
     void idle()
     {
-#ifdef DISTRHO_UI_QT4
+#ifdef DISTRHO_UI_QT
         assert(kUi != nullptr);
 
         if (kUi != nullptr)
@@ -256,106 +224,27 @@ public:
 #endif
     }
 
+#ifdef DISTRHO_UI_QT
+    QtUI* getQtUI() const
+    {
+        return (QtUI*)kUi;
+    }
+
+    bool resizable() const
+    {
+        return ((QtUI*)kUi)->d_resizable();
+    }
+#else
     intptr_t getWinId()
     {
-#ifdef DISTRHO_UI_QT4
-        assert(qtWidget != nullptr);
-        return (qtWidget != nullptr) ? (intptr_t)qtWidget->winId() : 0;
-#else
         return glWindow.getWindowId();
-#endif
-    }
-
-    // ---------------------------------------------
-
-#ifdef DISTRHO_UI_QT4
-    void createWindow(intptr_t parent)
-    {
-        assert(kUi != nullptr);
-        assert(kData != nullptr);
-        assert(qtGrip == nullptr);
-        assert(qtWidget == nullptr);
-
-        if (kUi == nullptr)
-            return;
-        if (kData == nullptr)
-            return;
-        if (qtGrip != nullptr)
-            return;
-        if (qtWidget != nullptr)
-            return;
-
-        Qt4UI* qt4Ui = (Qt4UI*)kUi;
-
-        // create embedable widget
-        qtWidget = new QEmbedWidget((WId)parent);
-
-        // set layout
-        qtWidget->setLayout(new QVBoxLayout(qtWidget));
-        qtWidget->layout()->addWidget(qt4Ui);
-        qtWidget->layout()->setContentsMargins(0, 0, 0, 0);
-        qtWidget->setFixedSize(kUi->d_width(), kUi->d_height());
-
-        // set resize grip
-        if (qt4Ui->d_resizable())
-        {
-            // listen for resize on the plugin widget
-            qt4Ui->installEventFilter(this);
-
-            // create resize grip on bottom-right
-            qtGrip = new QSizeGrip(qtWidget);
-            qtGrip->resize(qtGrip->sizeHint());
-            qtGrip->setCursor(Qt::SizeFDiagCursor);
-            qtGrip->move(kUi->d_width() - qtGrip->width(), kUi->d_height() - qtGrip->height());
-            qtGrip->show();
-            qtGrip->raise();
-            qtGrip->installEventFilter(this);
-        }
-
-        // show it
-        qtWidget->show();
-    }
-
-    void destroyWindow()
-    {
-        assert(kData != nullptr);
-        assert(qtWidget != nullptr);
-
-        if (kData == nullptr)
-            return;
-        if (qtWidget == nullptr)
-            return;
-
-        Qt4UI* qt4Ui = (Qt4UI*)kUi;
-
-        // remove main widget, to prevent it from being auto-deleted
-        qt4Ui->hide();
-        qtWidget->layout()->removeWidget(qt4Ui);
-        qt4Ui->setParent(nullptr);
-        qt4Ui->close();
-
-        qtWidget->close();
-        qtWidget->removeEventFilter(this);
-
-        if (qtGrip != nullptr)
-        {
-            qtGrip->removeEventFilter(this);
-            delete qtGrip;
-            qtGrip = nullptr;
-        }
-
-        delete qtWidget;
-        qtWidget = nullptr;
     }
 #endif
 
     // ---------------------------------------------
 
 private:
-#ifdef DISTRHO_UI_QT4
-    QSizeGrip*    qtGrip;
-    QEmbedWidget* qtWidget;
-#else
+#ifdef DISTRHO_UI_OPENGL
     App    glApp;
     Window glWindow;
 #endif
@@ -363,66 +252,6 @@ private:
 protected:
     UI* const kUi;
     UIPrivateData* const kData;
-
-#ifdef DISTRHO_UI_QT4
-    bool eventFilter(QObject* obj, QEvent* event)
-    {
-        assert(kUi != nullptr);
-        assert(kData != nullptr);
-        //assert(qtGrip != nullptr);
-        assert(qtWidget != nullptr);
-
-        if (kUi == nullptr)
-            return false;
-        if (kData == nullptr)
-            return false;
-        if (qtGrip == nullptr)
-            return false;
-        if (qtWidget == nullptr)
-            return false;
-
-        Qt4UI* qt4Ui = (Qt4UI*)kUi;
-
-        if (obj == nullptr)
-        {
-            // nothing
-        }
-        else if (obj == qtGrip)
-        {
-            if (event->type() == QEvent::MouseMove)
-            {
-                QMouseEvent* mEvent = (QMouseEvent*)event;
-
-                if (mEvent->button() == Qt::LeftButton)
-                {
-                    unsigned int width  = qt4Ui->d_width()  + mEvent->x() - qtGrip->width();
-                    unsigned int height = qt4Ui->d_height() + mEvent->y() - qtGrip->height();
-
-                    if (width < qt4Ui->d_minimumWidth())
-                        width = qt4Ui->d_minimumWidth();
-                    if (height < qt4Ui->d_minimumHeight())
-                        height = qt4Ui->d_minimumHeight();
-
-                    qt4Ui->setFixedSize(width, height);
-
-                    return true;
-                }
-            }
-        }
-        else if (obj == qt4Ui && event->type() == QEvent::Resize)
-        {
-            QResizeEvent* rEvent = (QResizeEvent*)event;
-            const QSize&  size   = rEvent->size();
-
-            qtWidget->setFixedSize(size.width(), size.height());
-            qtGrip->move(size.width() - qtGrip->width(), size.height() - qtGrip->height());
-
-            kUi->d_uiResize(size.width(), size.height());
-        }
-
-        return QObject::eventFilter(obj, event);
-    }
-#endif
 };
 
 // -------------------------------------------------

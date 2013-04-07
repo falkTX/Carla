@@ -86,7 +86,7 @@
 # define USE_NAMESPACE_DISTRHO
 #endif
 
-#ifndef DISTRHO_UI_QT4
+#ifndef DISTRHO_UI_QT
 # define DISTRHO_UI_OPENGL
 #endif
 

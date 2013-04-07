@@ -45,8 +45,8 @@ public:
     void setWindowTitle(const char* title);
 
     App* getApp() const;
-    int getModifiers();
-    intptr_t getWindowId();
+    int getModifiers() const;
+    intptr_t getWindowId() const;
 
     void addWidget(Widget* widget);
     void removeWidget(Widget* widget);

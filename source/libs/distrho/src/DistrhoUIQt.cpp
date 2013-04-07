@@ -16,57 +16,31 @@
 
 #include "DistrhoUIInternal.hpp"
 
+#include <QtGui/QResizeEvent>
+
 START_NAMESPACE_DISTRHO
-
-// -------------------------------------------------
-// QEmbedWidget
-
-QEmbedWidget::QEmbedWidget(WId id)
-#ifdef Q_WS_X11
-    : QX11EmbedWidget()
-#else
-    : QWidget()
-#endif
-{
-#ifdef Q_WS_X11
-    embedInto(id);
-#else
-    create(id, false, false);
-#endif
-}
-
-QEmbedWidget::~QEmbedWidget()
-{
-}
-
-WId QEmbedWidget::containerWinId() const
-{
-#ifdef Q_WS_X11
-    return QX11EmbedWidget::containerWinId();
-#else
-    return winId();
-#endif
-}
 
 // -------------------------------------------------
 // Qt4UI
 
-Qt4UI::Qt4UI()
+QtUI::QtUI()
     : UI(),
       QWidget(nullptr)
 {
 }
 
-Qt4UI::~Qt4UI()
+QtUI::~QtUI()
 {
 }
 
-// -------------------------------------------------
-// Implement resize internally
-
-void Qt4UI::d_uiResize(unsigned int width, unsigned int height)
+void QtUI::setSize(unsigned int width, unsigned int height)
 {
-    UI::d_uiResize(width, height);
+    if (d_resizable())
+        resize(width, height);
+    else
+        setFixedSize(width, height);
+
+    d_uiResize(width, height);
 }
 
 // -------------------------------------------------
