@@ -20,8 +20,13 @@
 
 #include "CarlaPluginInternal.hpp"
 
-#include <QtGui/QMainWindow>
 #include <QtGui/QCloseEvent>
+
+# if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+# include <QtWidgets/QMainWindow>
+#else
+# include <QtGui/QMainWindow>
+#endif
 
 CARLA_BACKEND_START_NAMESPACE
 

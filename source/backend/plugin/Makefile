@@ -8,8 +8,16 @@ include ../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo QtCore QtGui QtXml)
-LINK_FLAGS      += $(shell pkg-config --libs liblo QtCore QtGui QtXml)
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo)
+LINK_FLAGS      += $(shell pkg-config --libs liblo)
+
+ifeq ($(HAVE_QT5),true)
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags Qt5Core Qt5Xml Qt5Widgets)
+LINK_FLAGS      += $(shell pkg-config --libs Qt5Core Qt5Xml Qt5Widgets)
+else
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtCore QtGui QtXml)
+LINK_FLAGS      += $(shell pkg-config --libs QtCore QtGui QtXml)
+endif
 
 # --------------------------------------------------------------
 
@@ -19,7 +27,7 @@ LINK_FLAGS      += $(shell pkg-config --libs fluidsynth)
 endif
 
 ifeq ($(HAVE_LINUXSAMPLER),true)
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags linuxsampler) -DIS_CPP11=1
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags linuxsampler)
 LINK_FLAGS      += $(shell pkg-config --libs linuxsampler)
 endif
 

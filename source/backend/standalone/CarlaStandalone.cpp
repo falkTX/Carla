@@ -24,12 +24,12 @@
 #include "CarlaMIDI.h"
 #include "CarlaNative.h"
 
-#include <QtGui/QApplication>
+#include <QtCore/Qt>
 
-#if 0
-extern "C" {
-#include "siginfo.c"
-}
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+# include <QtWidgets/QApplication>
+#else
+# include <QtGui/QApplication>
 #endif
 
 using CarlaBackend::CarlaEngine;

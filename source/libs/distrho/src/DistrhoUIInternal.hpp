@@ -27,10 +27,15 @@
 # include "../DistrhoUIQt4.hpp"
 # include <QtGui/QMouseEvent>
 # include <QtGui/QResizeEvent>
-# include <QtGui/QSizeGrip>
-# include <QtGui/QVBoxLayout>
-# ifdef Q_WS_X11
-#  include <QtGui/QX11EmbedWidget>
+# if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+#  include <QtWidgets/QSizeGrip>
+#  include <QtWidgets/QVBoxLayout>
+# else
+#  include <QtGui/QSizeGrip>
+#  include <QtGui/QVBoxLayout>
+#  ifdef Q_WS_X11
+#   include <QtGui/QX11EmbedWidget>
+#  endif
 # endif
 #endif
 

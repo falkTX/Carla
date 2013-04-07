@@ -8,8 +8,16 @@ include ../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo QtCore QtXml)
-LINK_FLAGS      += $(shell pkg-config --libs liblo QtCore QtXml)
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo)
+LINK_FLAGS      += $(shell pkg-config --libs liblo)
+
+ifeq ($(HAVE_QT5),true)
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags Qt5Core Qt5Xml)
+LINK_FLAGS      += $(shell pkg-config --libs Qt5Core Qt5Xml)
+else
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtCore QtXml)
+LINK_FLAGS      += $(shell pkg-config --libs QtCore QtXml)
+endif
 
 # --------------------------------------------------------------
 

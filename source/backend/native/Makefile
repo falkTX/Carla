@@ -9,8 +9,15 @@ include ../Makefile.mk
 # --------------------------------------------------------------
 
 BUILD_CXX_FLAGS += -I. -I../../libs/distrho -I../../widgets
+LINK_FLAGS      += $(shell pkg-config --libs liblo)
+
+ifeq ($(HAVE_QT5),true)
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags Qt5Core Qt5Widgets)
+LINK_FLAGS      += $(shell pkg-config --libs Qt5Core Qt5Widgets)
+else
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtCore QtGui)
-LINK_FLAGS      += $(shell pkg-config --libs QtCore QtGui liblo)
+LINK_FLAGS      += $(shell pkg-config --libs QtCore QtGui)
+endif
 
 # --------------------------------------------------------------
 

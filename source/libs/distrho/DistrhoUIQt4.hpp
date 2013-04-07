@@ -19,7 +19,13 @@
 
 #include "DistrhoUI.hpp"
 
-#include <QtGui/QWidget>
+#include <QtCore/Qt>
+
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+# include <QtWidgets/QWidget>
+#else
+# include <QtGui/QWidget>
+#endif
 
 START_NAMESPACE_DISTRHO
 

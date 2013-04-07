@@ -19,9 +19,15 @@
 
 #include "DistrhoPluginMain.cpp"
 
+#include <QtCore/Qt>
+
 #if DISTRHO_PLUGIN_HAS_UI
-#include <QtGui/QMainWindow>
-#include "DistrhoUIMain.cpp"
+# if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+#  include <QtWidgets/QMainWindow>
+# else
+#  include <QtGui/QMainWindow>
+# endif
+# include "DistrhoUIMain.cpp"
 #endif
 
 // -------------------------------------------------

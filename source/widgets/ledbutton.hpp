@@ -19,7 +19,12 @@
 #define __LEDBUTTON_HPP__
 
 #include <QtGui/QPixmap>
-#include <QtGui/QPushButton>
+
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+# include <QtWidgets/QPushButton>
+#else
+# include <QtGui/QPushButton>
+#endif
 
 class LEDButton : public QPushButton
 {

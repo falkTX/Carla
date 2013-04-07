@@ -21,10 +21,18 @@
 #include "DistrhoUIQt4.hpp"
 #include "paramspinbox.hpp"
 
-#include <QtGui/QGridLayout>
-#include <QtGui/QLabel>
-#include <QtGui/QPushButton>
-#include <QtGui/QTextEdit>
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+# include <QtWidgets/QProgressBar>
+# include <QtWidgets/QGridLayout>
+# include <QtWidgets/QLabel>
+# include <QtWidgets/QPushButton>
+# include <QtWidgets/QTextEdit>
+#else
+# include <QtGui/QGridLayout>
+# include <QtGui/QLabel>
+# include <QtGui/QPushButton>
+# include <QtGui/QTextEdit>
+#endif
 
 class QResizeEvent;
 

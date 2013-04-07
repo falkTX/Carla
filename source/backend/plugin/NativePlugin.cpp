@@ -21,7 +21,13 @@
 
 #include "CarlaNative.h"
 
-#include <QtGui/QFileDialog>
+#include <QtCore/Qt>
+
+# if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+# include <QtWidgets/QFileDialog>
+#else
+# include <QtGui/QFileDialog>
+#endif
 
 void carla_register_all_plugins()
 {
