@@ -24,7 +24,7 @@ LINK_FLAGS += $(shell pkg-config --libs liblo)
 ifeq ($(HAVE_QT5),true)
 LINK_FLAGS += $(shell pkg-config --libs Qt5Core Qt5Xml Qt5Widgets)
 else
-LINK_FLAGS += $(shell pkg-config --libs QtCore QtXml QtWidgets)
+LINK_FLAGS += $(shell pkg-config --libs QtCore QtGui QtXml)
 endif
 
 # --------------------------------------------------------------
@@ -57,8 +57,7 @@ endif
 # Native
 
 ifeq ($(WIN32),true)
-DGL_LIBS  = -lgdi32
-W32_LIBS  = -lcomdlg32 -ldsound -limm32 -lole32 -luuid -lwinmm -lwinspool -lws2_32
+W32_LIBS  = -lcomdlg32 -ldsound -lgdi32 -limm32 -lole32 -luuid -lwinmm -lwinspool -lws2_32
 ifeq ($(HAVE_LINUXSAMPLER),true)
 W32_LIBS += -lrpcrt4
 endif

@@ -146,7 +146,7 @@ Carla.processMode   = PROCESS_MODE_CONTINUOUS_RACK
 Carla.maxParameters = MAX_RACK_PLUGINS
 
 # ------------------------------------------------------------------------------------------------------------
-# Carla GUI stuff
+# Carla GUI defines
 
 ICON_STATE_NULL = 0
 ICON_STATE_WAIT = 1
@@ -308,8 +308,7 @@ elif HAIKU:
     splitter = ":"
 
     DEFAULT_LADSPA_PATH = ":".join((os.path.join(HOME, ".ladspa"),
-                                    os.path.join("/", "usr", "lib", "ladspa"),
-                                    os.path.join("/", "usr", "local", "lib", "ladspa")))
+                                    os.path.join("/", "boot", "common", "add-ons", "ladspa")))
 
     DEFAULT_DSSI_PATH = ":".join((os.path.join(HOME, ".dssi"),
                                   os.path.join("/", "boot", "common", "add-ons", "dssi")))

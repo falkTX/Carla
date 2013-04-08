@@ -34,7 +34,7 @@ export PYUIC="wine $PYTHON_EXE C:\\\\Python33\\\\Lib\\\\site-packages\\\\PyQt4\\
 export PYRCC="wine C:\\\\Python33\\\\Lib\\\\site-packages\\\\PyQt4\\\\pyrcc4.exe -py3"
 
 export CFLAGS="-DPTW32_STATIC_LIB -I$MINGW_PATH/include"
-export CXXFLAGS="-DPTW32_STATIC_LIB -DFLUIDSYNTH_NOT_A_DLL -D__WINDOWS_ASIO__ -D__WINDOWS_DS__ -D__WINDOWS_MM__ -I$MINGW_PATH/include"
+export CXXFLAGS="-DPTW32_STATIC_LIB -DFLUIDSYNTH_NOT_A_DLL -I$MINGW_PATH/include"
 export EXTRA_LIBS1="-lglib-2.0 -lgthread-2.0 -lgig -lsndfile -lFLAC -lvorbisenc -lvorbis -logg"
 export EXTRA_LIBS2="$MINGW_PATH/lib/qt4/plugins/imageformats/libqsvg.a $MINGW_PATH/lib/qt4/plugins/iconengines/libqsvgicon.a"
 

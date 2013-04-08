@@ -46,6 +46,10 @@ BUILD_CXX_FLAGS += $(shell pkg-config --cflags libpulse-simple) -D__LINUX_PULSE_
 LINK_FLAGS      += $(shell pkg-config --libs libpulse-simple)
 endif
 
+ifeq ($(WIN32),true)
+BUILD_CXX_FLAGS += -D__WINDOWS_ASIO__ -D__WINDOWS_DS__ -D__WINDOWS_MM__
+endif
+
 PLUGIN_CXX_FLAGS  = $(BUILD_CXX_FLAGS)
 PLUGIN_CXX_FLAGS += -Idistrho -I../../libs/distrho
 PLUGIN_CXX_FLAGS += -DWANT_PLUGIN
