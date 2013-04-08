@@ -477,7 +477,7 @@ else:
             carla_library_path = os.path.join(path, "carla", carla_libname)
             break
 
-# find any tool
+# find tool
 def findTool(tdir, tname):
     if os.path.exists(os.path.join(CWD, tdir, tname)):
         return os.path.join(CWD, tdir, tname)
@@ -1095,6 +1095,8 @@ class PluginEdit(QDialog):
         self.fTabIconCount  = 0
         self.fTabIconTimers = []
 
+        self.fScrollAreaSetup = False
+
         self.ui.dial_drywet.setPixmap(3)
         self.ui.dial_drywet.setLabel("Dry/Wet")
         self.ui.dial_vol.setPixmap(3)
@@ -1172,7 +1174,7 @@ class PluginEdit(QDialog):
         self.reloadPrograms()
 
         if not self.ui.scrollArea.isEnabled():
-            self.resize(self.width(), self.height()-self.ui.keyboard.height())
+            self.resize(self.width(), self.height()-self.ui.scrollArea.height())
 
     def reloadInfo(self):
         pluginName  = cString(Carla.host.get_real_plugin_name(self.fPluginId))
@@ -1760,6 +1762,15 @@ class PluginEdit(QDialog):
                 self.ui.tabWidget.setTabIcon(tabIndex, self.fTabIconOff)
 
             self.fTabIconTimers.append(ICON_STATE_NULL)
+
+    def showEvent(self, event):
+        if not self.fScrollAreaSetup:
+            self.fScrollAreaSetup = True
+            minHeight = self.ui.scrollArea.height()+4
+            self.ui.scrollArea.setMinimumHeight(minHeight)
+            self.ui.scrollArea.setMaximumHeight(minHeight)
+
+        QDialog.showEvent(self, event)
 
     def done(self, r):
         QDialog.done(self, r)

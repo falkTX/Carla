@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>672</width>
-    <height>553</height>
+    <width>686</width>
+    <height>523</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -113,66 +113,11 @@ Plugin Name
           <string>Information</string>
          </property>
          <layout class="QGridLayout" name="gridLayout">
-          <item row="4" column="0">
-           <widget class="QLabel" name="label_unique_id">
-            <property name="text">
-             <string>Unique ID:</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="1">
-           <widget class="QLineEdit" name="le_copyright">
-            <property name="readOnly">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="1">
-           <widget class="QLineEdit" name="le_maker">
-            <property name="readOnly">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="0">
-           <widget class="QLabel" name="label_label">
-            <property name="text">
-             <string>Label/Product:</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="1">
-           <widget class="QLineEdit" name="le_name">
-            <property name="readOnly">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item row="5" column="0">
-           <widget class="QLabel" name="label_type">
-            <property name="text">
-             <string>Type:</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-            </property>
-           </widget>
-          </item>
-          <item row="8" column="1">
-           <widget class="QLineEdit" name="le_params">
-            <property name="readOnly">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
           <item row="1" column="1">
            <widget class="QLineEdit" name="le_label">
+            <property name="frame">
+             <bool>false</bool>
+            </property>
             <property name="readOnly">
              <bool>true</bool>
             </property>
@@ -188,49 +133,97 @@ Plugin Name
             </property>
            </widget>
           </item>
-          <item row="4" column="1">
-           <widget class="QLineEdit" name="le_unique_id">
+          <item row="6" column="1">
+           <widget class="QLineEdit" name="le_ains">
+            <property name="frame">
+             <bool>false</bool>
+            </property>
             <property name="readOnly">
              <bool>true</bool>
             </property>
            </widget>
           </item>
-          <item row="3" column="0">
-           <widget class="QLabel" name="label_copyright">
+          <item row="4" column="0">
+           <widget class="QLabel" name="label_unique_id">
             <property name="text">
-             <string>Copyright:</string>
+             <string>Unique ID:</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
             </property>
            </widget>
           </item>
-          <item row="0" column="0">
-           <widget class="QLabel" name="label_real_name">
+          <item row="1" column="0">
+           <widget class="QLabel" name="label_label">
             <property name="text">
-             <string>Name:</string>
+             <string>Label/Product:</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
             </property>
            </widget>
           </item>
-          <item row="5" column="1">
-           <widget class="QLineEdit" name="le_type">
+          <item row="0" column="1">
+           <widget class="QLineEdit" name="le_name">
+            <property name="minimumSize">
+             <size>
+              <width>200</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="frame">
+             <bool>false</bool>
+            </property>
             <property name="readOnly">
              <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="8" column="0">
+           <widget class="QLabel" name="label_params">
+            <property name="text">
+             <string>Parameters:</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QLineEdit" name="le_copyright">
+            <property name="frame">
+             <bool>false</bool>
+            </property>
+            <property name="readOnly">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="0">
+           <widget class="QLabel" name="label_type">
+            <property name="text">
+             <string>Type:</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
             </property>
            </widget>
           </item>
           <item row="7" column="1">
            <widget class="QLineEdit" name="le_aouts">
+            <property name="frame">
+             <bool>false</bool>
+            </property>
             <property name="readOnly">
              <bool>true</bool>
             </property>
            </widget>
           </item>
-          <item row="6" column="1">
-           <widget class="QLineEdit" name="le_ains">
+          <item row="8" column="1">
+           <widget class="QLineEdit" name="le_params">
+            <property name="frame">
+             <bool>false</bool>
+            </property>
             <property name="readOnly">
              <bool>true</bool>
             </property>
@@ -256,10 +249,30 @@ Plugin Name
             </property>
            </widget>
           </item>
-          <item row="8" column="0">
-           <widget class="QLabel" name="label_params">
+          <item row="4" column="1">
+           <widget class="QLineEdit" name="le_unique_id">
+            <property name="frame">
+             <bool>false</bool>
+            </property>
+            <property name="readOnly">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="label_copyright">
             <property name="text">
-             <string>Parameters:</string>
+             <string>Copyright:</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_real_name">
+            <property name="text">
+             <string>Name:</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -269,7 +282,7 @@ Plugin Name
           <item row="9" column="0">
            <widget class="QLabel" name="label_latency">
             <property name="text">
-             <string>Latency</string>
+             <string>Latency:</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -278,10 +291,49 @@ Plugin Name
           </item>
           <item row="9" column="1">
            <widget class="QLineEdit" name="le_latency">
+            <property name="frame">
+             <bool>false</bool>
+            </property>
             <property name="readOnly">
              <bool>true</bool>
             </property>
            </widget>
+          </item>
+          <item row="5" column="1">
+           <widget class="QLineEdit" name="le_type">
+            <property name="frame">
+             <bool>false</bool>
+            </property>
+            <property name="readOnly">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QLineEdit" name="le_maker">
+            <property name="frame">
+             <bool>false</bool>
+            </property>
+            <property name="readOnly">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="10" column="0" colspan="2">
+           <spacer name="horizontalSpacer_3">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeType">
+             <enum>QSizePolicy::Expanding</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>250</width>
+              <height>1</height>
+             </size>
+            </property>
+           </spacer>
           </item>
          </layout>
         </widget>
@@ -485,11 +537,37 @@ Plugin Name
                 </widget>
                </item>
                <item>
+                <spacer name="horizontalSpacer_4">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>1</width>
+                   <height>1</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+               <item>
                 <widget class="Line" name="line">
                  <property name="orientation">
                   <enum>Qt::Vertical</enum>
                  </property>
                 </widget>
+               </item>
+               <item>
+                <spacer name="horizontalSpacer_5">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>1</width>
+                   <height>1</height>
+                  </size>
+                 </property>
+                </spacer>
                </item>
                <item>
                 <widget class="QLabel" name="label_ctrl_channel">
@@ -520,34 +598,51 @@ Plugin Name
               </layout>
              </item>
              <item>
-              <widget class="QTabWidget" name="tab_programs">
+              <widget class="QStackedWidget" name="tab_programs">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
                  <horstretch>0</horstretch>
                  <verstretch>0</verstretch>
                 </sizepolicy>
                </property>
-               <property name="tabPosition">
-                <enum>QTabWidget::South</enum>
-               </property>
                <property name="currentIndex">
                 <number>0</number>
                </property>
-               <widget class="QWidget" name="programs">
-                <attribute name="title">
-                 <string>Programs</string>
-                </attribute>
+               <widget class="QWidget" name="tab_programsPage1">
                 <layout class="QHBoxLayout" name="horizontalLayout_3">
+                 <item>
+                  <widget class="QLabel" name="label_programs">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="text">
+                    <string>Program:</string>
+                   </property>
+                  </widget>
+                 </item>
                  <item>
                   <widget class="QComboBox" name="cb_programs"/>
                  </item>
                 </layout>
                </widget>
-               <widget class="QWidget" name="midi_programs">
-                <attribute name="title">
-                 <string>MIDI Programs</string>
-                </attribute>
+               <widget class="QWidget" name="tab_programsPage2">
                 <layout class="QHBoxLayout" name="horizontalLayout_4">
+                 <item>
+                  <widget class="QLabel" name="label_midi_programs">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <property name="text">
+                    <string>MIDI Program:</string>
+                   </property>
+                  </widget>
+                 </item>
                  <item>
                   <widget class="QComboBox" name="cb_midi_programs"/>
                  </item>
@@ -586,20 +681,11 @@ Plugin Name
        <verstretch>0</verstretch>
       </sizepolicy>
      </property>
-     <property name="minimumSize">
-      <size>
-       <width>0</width>
-       <height>84</height>
-      </size>
-     </property>
      <property name="verticalScrollBarPolicy">
       <enum>Qt::ScrollBarAlwaysOff</enum>
      </property>
      <property name="horizontalScrollBarPolicy">
       <enum>Qt::ScrollBarAlwaysOn</enum>
-     </property>
-     <property name="widgetResizable">
-      <bool>true</bool>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>
@@ -610,7 +696,7 @@ Plugin Name
         <x>0</x>
         <y>0</y>
         <width>864</width>
-        <height>64</height>
+        <height>65</height>
        </rect>
       </property>
       <property name="sizePolicy">
@@ -622,16 +708,19 @@ Plugin Name
       <property name="minimumSize">
        <size>
         <width>864</width>
-        <height>64</height>
+        <height>65</height>
        </size>
       </property>
       <property name="maximumSize">
        <size>
         <width>864</width>
-        <height>64</height>
+        <height>65</height>
        </size>
       </property>
       <layout class="QHBoxLayout" name="horizontalLayout_2">
+       <property name="spacing">
+        <number>0</number>
+       </property>
        <property name="margin">
         <number>0</number>
        </property>

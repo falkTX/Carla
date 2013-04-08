@@ -7,16 +7,13 @@
 AR  ?= ar
 CC  ?= gcc
 CXX ?= g++
-MOC ?= $(shell pkg-config --variable=moc_location QtCore)
-RCC ?= $(shell pkg-config --variable=rcc_location QtCore)
-UIC ?= $(shell pkg-config --variable=uic_location QtCore)
 STRIP ?= strip
 
 # --------------------------------------------------------------
 
 DEBUG ?= false
 
-BASE_FLAGS  = -Wall -Wextra -fPIC
+BASE_FLAGS = -Wall -Wextra -fPIC
 
 ifeq ($(DEBUG),true)
 BASE_FLAGS += -O0 -g
@@ -53,7 +50,7 @@ BUILD_CXX_FLAGS += -DVESTIGE_HEADER
 
 HAVE_JACK         = $(shell pkg-config --exists jack && echo true)
 HAVE_OPENGL       = $(shell pkg-config --exists gl && echo true)
-HAVE_QT5          = $(shell pkg-config --exists Qt5Core && echo true)
+HAVE_QT4          = $(shell pkg-config --exists QtCore && echo true)
 
 HAVE_AF_DEPS      = $(shell pkg-config --exists libavcodec libavformat libavutil sndfile && echo true)
 HAVE_MF_DEPS      = $(shell pkg-config --exists smf && echo true)
@@ -75,11 +72,19 @@ HAVE_ALSA         = $(shell pkg-config --exists alsa && echo true)
 HAVE_PULSEAUDIO   = $(shell pkg-config --exists libpulse-simple && echo true)
 endif
 
+ifneq ($(HAVE_QT4),true)
+HAVE_QT5          = $(shell pkg-config --exists Qt5Core && echo true)
+endif
+
 # --------------------------------------------------------------
 
 ifeq ($(HAVE_QT5),true)
 # Qt5 doesn't define these
-MOC = moc
-RCC = rcc
-UIC = uic
+MOC ?= moc
+RCC ?= rcc
+UIC ?= uic
+else
+MOC ?= $(shell pkg-config --variable=moc_location QtCore)
+RCC ?= $(shell pkg-config --variable=rcc_location QtCore)
+UIC ?= $(shell pkg-config --variable=uic_location QtCore)
 endif

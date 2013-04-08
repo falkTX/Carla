@@ -304,8 +304,13 @@ public:
             fLastChunk = std::malloc(chunk.size());
             std::memcpy(fLastChunk, chunk.constData(), chunk.size());
 
-            const ScopedSingleProcessLocker spl(this, true);
-            dispatcher(effSetChunk, 0 /* bank */, chunk.size(), fLastChunk, 0.0f);
+            {
+                const ScopedSingleProcessLocker spl(this, true);
+                dispatcher(effSetChunk, 0 /* bank */, chunk.size(), fLastChunk, 0.0f);
+            }
+
+            // simulate an updateDisplay callback
+            handleAudioMasterCallback(audioMasterUpdateDisplay, 0, 0, nullptr, 0.0f);
         }
     }
 
