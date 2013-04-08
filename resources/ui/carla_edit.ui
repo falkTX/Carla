@@ -696,7 +696,7 @@ Plugin Name
         <x>0</x>
         <y>0</y>
         <width>864</width>
-        <height>65</height>
+        <height>64</height>
        </rect>
       </property>
       <property name="sizePolicy">
@@ -708,13 +708,13 @@ Plugin Name
       <property name="minimumSize">
        <size>
         <width>864</width>
-        <height>65</height>
+        <height>64</height>
        </size>
       </property>
       <property name="maximumSize">
        <size>
         <width>864</width>
-        <height>65</height>
+        <height>64</height>
        </size>
       </property>
       <layout class="QHBoxLayout" name="horizontalLayout_2">

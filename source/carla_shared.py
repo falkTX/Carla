@@ -1412,6 +1412,7 @@ class PluginEdit(QDialog):
 
         if programCount > 0:
             self.ui.cb_programs.setEnabled(True)
+            self.ui.label_programs.setEnabled(True)
 
             for i in range(programCount):
                 pName = cString(Carla.host.get_program_name(self.fPluginId, i))
@@ -1424,6 +1425,7 @@ class PluginEdit(QDialog):
         else:
             self.fCurrentProgram = -1
             self.ui.cb_programs.setEnabled(False)
+            self.ui.label_programs.setEnabled(False)
 
         self.ui.cb_programs.blockSignals(False)
 
@@ -1435,6 +1437,7 @@ class PluginEdit(QDialog):
 
         if midiProgramCount > 0:
             self.ui.cb_midi_programs.setEnabled(True)
+            self.ui.label_midi_programs.setEnabled(True)
 
             for i in range(midiProgramCount):
                 mpData = Carla.host.get_midi_program_data(self.fPluginId, i)
@@ -1451,6 +1454,7 @@ class PluginEdit(QDialog):
         else:
             self.fCurrentMidiProgram = -1
             self.ui.cb_midi_programs.setEnabled(False)
+            self.ui.label_midi_programs.setEnabled(False)
 
         self.ui.cb_midi_programs.blockSignals(False)
 
@@ -1766,7 +1770,7 @@ class PluginEdit(QDialog):
     def showEvent(self, event):
         if not self.fScrollAreaSetup:
             self.fScrollAreaSetup = True
-            minHeight = self.ui.scrollArea.height()+4
+            minHeight = self.ui.scrollArea.height()+2
             self.ui.scrollArea.setMinimumHeight(minHeight)
             self.ui.scrollArea.setMaximumHeight(minHeight)
 
