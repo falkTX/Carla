@@ -25,7 +25,7 @@ import sys
 from copy import deepcopy
 from subprocess import Popen, PIPE
 from PyQt4.QtCore import pyqtSlot, qWarning, Qt, QByteArray, QSettings, QThread, QTimer, SIGNAL, SLOT
-from PyQt4.QtGui import QColor, QCursor, QDialog, QIcon, QFileDialog, QFontMetrics, QFrame, QMenu
+from PyQt4.QtGui import QColor, QCursor, QDialog, QIcon, QInputDialog, QFileDialog, QFontMetrics, QFrame, QMenu
 from PyQt4.QtGui import QMessageBox, QPainter, QPainterPath, QTableWidgetItem, QVBoxLayout, QWidget
 
 # ------------------------------------------------------------------------------------------------------------
@@ -1732,6 +1732,86 @@ class PluginEdit(QDialog):
     def slot_finished(self):
         if self.fRealParent:
             self.fRealParent.editClosed()
+
+    @pyqtSlot()
+    def slot_showCustomDialMenu(self):
+        dialName = self.sender().objectName()
+        if dialName == "dial_drywet":
+            minimum = 0
+            maximum = 100
+            default = 100
+            label   = "Dry/Wet"
+        elif dialName == "dial_vol":
+            minimum = 0
+            maximum = 127
+            default = 100
+            label   = "Volume"
+        elif dialName == "dial_b_left":
+            minimum = -100
+            maximum = 100
+            default = -100
+            label   = "Balance-Left"
+        elif dialName == "dial_b_right":
+            minimum = -100
+            maximum = 100
+            default = 100
+            label   = "Balance-Right"
+        elif dialName == "dial_panning":
+            minimum = -100
+            maximum = 100
+            default = 0
+            label   = "Panning"
+        else:
+            minimum = 0
+            maximum = 100
+            default = 100
+            label   = "Unknown"
+
+        current = self.sender().value() / 10
+
+        menu = QMenu(self)
+        actReset = menu.addAction(self.tr("Reset (%i%%)" % default))
+        menu.addSeparator()
+        actMinimum = menu.addAction(self.tr("Set to Minimum (%i%%)" % minimum))
+        actCenter  = menu.addAction(self.tr("Set to Center"))
+        actMaximum = menu.addAction(self.tr("Set to Maximum (%i%%)" % maximum))
+        menu.addSeparator()
+        actSet = menu.addAction(self.tr("Set value..."))
+
+        if label not in ("Balance-Left", "Balance-Right"):
+            menu.removeAction(actCenter)
+
+        actSelected = menu.exec_(QCursor.pos())
+
+        if actSelected == actSet:
+            valueTry = QInputDialog.getInteger(self, self.tr("Set value"), label, current, minimum, maximum, 1)
+            if valueTry[1]:
+                value = valueTry[0] * 10
+            else:
+                return
+
+        elif actSelected == actMinimum:
+            value = minimum * 10
+        elif actSelected == actMaximum:
+            value = maximum * 10
+        elif actSelected == actReset:
+            value = default * 10
+        elif actSelected == actCenter:
+            value = 0
+        else:
+            return
+
+        if label == "Dry/Wet":
+            self.ui.dial_drywet.setValue(value)
+        elif label == "Volume":
+            self.ui.dial_vol.setValue(value)
+        elif label == "Balance-Left":
+            self.ui.dial_b_left.setValue(value)
+        elif label == "Balance-Right":
+            self.ui.dial_b_right.setValue(value)
+        elif label == "Panning":
+            pass
+            #self.ui.dial_panning.setValue(value)
 
     def _createParameterWidgets(self, paramType, paramListFull, tabPageName):
         i = 1
