@@ -966,7 +966,7 @@ bool CarlaPlugin::loadStateFromFile(const char* const filename)
 
     if (xmlNode.toElement().tagName() != "CARLA-PRESET")
     {
-        carla_stderr2("Not a valid Carla preset file");
+        kData->engine->setLastError("Not a valid Carla preset file");
         return false;
     }
 

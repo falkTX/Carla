@@ -161,7 +161,7 @@ const char* carla_get_supported_file_types()
     if (retText.isEmpty())
     {
         // Base type
-        retText = "*.carxp";
+        retText = "*.carxp;*.carxs";
 
         // Sample kits
 #ifdef WANT_FLUIDSYNTH

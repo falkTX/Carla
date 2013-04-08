@@ -836,7 +836,7 @@ class CarlaMainW(QMainWindow):
         basename  = os.path.basename(filename)
         extension = filename.rsplit(".", 1)[-1].lower()
 
-        if extension == "carxp":
+        if extension in ("carxp", "carxs"):
             if not Carla.host.load_project(filename):
                 self.showLastError(True)
 

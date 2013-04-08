@@ -1014,19 +1014,21 @@ bool CarlaEngine::loadProject(const char* const filename)
 
     QDomNode xmlNode(xml.documentElement());
 
-    if (xmlNode.toElement().tagName() != "CARLA-PROJECT")
+    if (xmlNode.toElement().tagName() != "CARLA-PROJECT" && xmlNode.toElement().tagName() != "CARLA-PRESET")
     {
-        carla_stderr2("Not a valid Carla project file");
+        setLastError("Not a valid Carla project or preset file");
         return false;
     }
+
+    const bool isPreset(xmlNode.toElement().tagName() == "CARLA-PRESET");
 
     QDomNode node(xmlNode.firstChild());
 
     while (! node.isNull())
     {
-        if (node.toElement().tagName() == "Plugin")
+        if (isPreset || node.toElement().tagName() == "Plugin")
         {
-            const SaveState& saveState = getSaveStateDictFromXML(node);
+            const SaveState& saveState = getSaveStateDictFromXML(isPreset ? xmlNode : node);
             CARLA_ASSERT(saveState.type != nullptr);
 
             if (saveState.type == nullptr)
@@ -1044,6 +1046,10 @@ bool CarlaEngine::loadProject(const char* const filename)
                     plugin->loadSaveState(saveState);
             }
         }
+
+        if (isPreset)
+            break;
+
         node = node.nextSibling();
     }
 

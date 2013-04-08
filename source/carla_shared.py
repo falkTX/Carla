@@ -488,7 +488,7 @@ def findTool(tdir, tname):
 
     return ""
 
-# find wine/windows tools
+# find windows tools
 carla_discovery_win32 = findTool("discovery", "carla-discovery-win32.exe")
 carla_discovery_win64 = findTool("discovery", "carla-discovery-win64.exe")
 carla_bridge_win32    = findTool("bridges", "carla-bridge-win32.exe")
@@ -1127,7 +1127,6 @@ class PluginEdit(QDialog):
             self.ui.b_load_state.setEnabled(False)
             self.ui.b_save_state.setEnabled(False)
 
-        # Set options
         self.connect(self.ui.ch_fixed_buffer, SIGNAL("clicked(bool)"), SLOT("slot_optionChanged(bool)"))
         self.connect(self.ui.ch_force_stereo, SIGNAL("clicked(bool)"), SLOT("slot_optionChanged(bool)"))
         self.connect(self.ui.ch_map_program_changes, SIGNAL("clicked(bool)"), SLOT("slot_optionChanged(bool)"))
@@ -1144,10 +1143,10 @@ class PluginEdit(QDialog):
         self.connect(self.ui.dial_b_right, SIGNAL("valueChanged(int)"), SLOT("slot_balanceRightChanged(int)"))
         self.connect(self.ui.sb_ctrl_channel, SIGNAL("valueChanged(int)"), SLOT("slot_ctrlChannelChanged(int)"))
 
-        #self.connect(self.ui.dial_drywet, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_showCustomDialMenu()"))
-        #self.connect(self.ui.dial_vol, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_showCustomDialMenu()"))
-        #self.connect(self.ui.dial_b_left, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_showCustomDialMenu()"))
-        #self.connect(self.ui.dial_b_right, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_showCustomDialMenu()"))
+        self.connect(self.ui.dial_drywet, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_showCustomDialMenu()"))
+        self.connect(self.ui.dial_vol, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_showCustomDialMenu()"))
+        self.connect(self.ui.dial_b_left, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_showCustomDialMenu()"))
+        self.connect(self.ui.dial_b_right, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_showCustomDialMenu()"))
 
         self.connect(self.ui.keyboard, SIGNAL("noteOn(int)"), SLOT("slot_noteOn(int)"))
         self.connect(self.ui.keyboard, SIGNAL("noteOff(int)"), SLOT("slot_noteOff(int)"))
@@ -1195,6 +1194,8 @@ class PluginEdit(QDialog):
             self.ui.le_type.setText("LV2")
         elif pluginType == PLUGIN_VST:
             self.ui.le_type.setText("VST")
+        elif pluginType == PLUGIN_VST3:
+            self.ui.le_type.setText("VST3")
         elif pluginType == PLUGIN_GIG:
             self.ui.le_type.setText("GIG")
         elif pluginType == PLUGIN_SF2:
@@ -1230,7 +1231,6 @@ class PluginEdit(QDialog):
         self.ui.dial_b_left.setEnabled(pluginHints & PLUGIN_CAN_BALANCE)
         self.ui.dial_b_right.setEnabled(pluginHints & PLUGIN_CAN_BALANCE)
 
-        # Set options
         self.ui.ch_fixed_buffer.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_FIXED_BUFFER)
         self.ui.ch_fixed_buffer.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_FIXED_BUFFER)
         self.ui.ch_force_stereo.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_FORCE_STEREO)
@@ -1255,7 +1255,7 @@ class PluginEdit(QDialog):
         self.ui.scrollArea.setEnabled(showKeyboard)
         self.ui.scrollArea.setVisible(showKeyboard)
 
-        # Force-Update parent for new hints (knobs)
+        # Force-Update parent for new hints
         if self.fRealParent:
             self.fRealParent.recheckPluginHints(pluginHints)
 
