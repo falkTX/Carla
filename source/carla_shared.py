@@ -1032,19 +1032,28 @@ class PluginParameter(QWidget):
     def slot_controlSpinboxCustomMenu(self):
         menu = QMenu(self)
 
+        actNone = menu.addAction(self.tr("None"))
+
+        if self.fMidiControl == -1:
+            actNone.setCheckable(True)
+            actNone.setChecked(True)
+
         for cc in MIDI_CC_LIST:
             action = menu.addAction(cc)
 
-            if int(cc.split(" ")[0], 16) == self.fMidiControl:
+            if self.fMidiControl != -1 and int(cc.split(" ")[0], 16) == self.fMidiControl:
                 action.setCheckable(True)
                 action.setChecked(True)
 
         actSel = menu.exec_(QCursor.pos())
 
         if actSel:
-            selControlStr = actSel.text()
-            selControl    = int(selControlStr.split(" ")[0], 16)
-            self.ui.sb_control.setValue(selControl)
+            if actSel == actNone:
+                self.ui.sb_control.setValue(-1)
+            else:
+                selControlStr = actSel.text()
+                selControl    = int(selControlStr.split(" ")[0], 16)
+                self.ui.sb_control.setValue(selControl)
 
     @pyqtSlot(int)
     def slot_controlSpinboxChanged(self, control):
