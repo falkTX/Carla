@@ -765,6 +765,7 @@ class CarlaMainW(QMainWindow):
     def slot_canvasRefresh(self):
         patchcanvas.clear()
         Carla.host.patchbay_refresh()
+        QTimer.singleShot(1000 if self.fSavedSettings['Canvas/EyeCandy'] else 0, self.ui.miniCanvasPreview, SLOT("update()"))
 
     @pyqtSlot()
     def slot_canvasZoomFit(self):
@@ -1568,14 +1569,17 @@ class CarlaMainW(QMainWindow):
     @pyqtSlot(int, str)
     def slot_handlePatchbayClientAddedCallback(self, clientId, clientName):
         patchcanvas.addGroup(clientId, clientName)
+        QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
 
     @pyqtSlot(int)
     def slot_handlePatchbayClientRemovedCallback(self, clientId):
         patchcanvas.removeGroup(clientId)
+        QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
 
     @pyqtSlot(int, str)
     def slot_handlePatchbayClientRenamedCallback(self, clientId, newClientName):
         patchcanvas.renameGroup(clientId, newClientName)
+        QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
 
     @pyqtSlot(int, int, int, str)
     def slot_handlePatchbayPortAddedCallback(self, clientId, portId, portFlags, portName):
@@ -1594,22 +1598,27 @@ class CarlaMainW(QMainWindow):
             portType = patchcanvas.PORT_TYPE_NULL
 
         patchcanvas.addPort(clientId, portId, portName, portMode, portType)
+        QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
 
     @pyqtSlot(int)
     def slot_handlePatchbayPortRemovedCallback(self, portId):
         patchcanvas.removePort(portId)
+        QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
 
     @pyqtSlot(int, str)
     def slot_handlePatchbayPortRenamedCallback(self, portId, newPortName):
         patchcanvas.renamePort(portId, newPortName)
+        QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
 
     @pyqtSlot(int, int, int)
     def slot_handlePatchbayConnectionAddedCallback(self, connectionId, portOutId, portInId):
         patchcanvas.connectPorts(connectionId, portOutId, portInId)
+        QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
 
     @pyqtSlot(int)
     def slot_handlePatchbayConnectionRemovedCallback(self, connectionId):
         patchcanvas.disconnectPorts(connectionId)
+        QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
 
     @pyqtSlot(int)
     def slot_handleBufferSizeChangedCallback(self, newBufferSize):
@@ -1816,10 +1825,12 @@ def canvasCallback(action, value1, value2, valueStr):
     elif action == patchcanvas.ACTION_GROUP_SPLIT:
         groupId = value1
         patchcanvas.splitGroup(groupId)
+        Carla.gui.ui.miniCanvasPreview.update()
 
     elif action == patchcanvas.ACTION_GROUP_JOIN:
         groupId = value1
         patchcanvas.joinGroup(groupId)
+        Carla.gui.ui.miniCanvasPreview.update()
 
     elif action == patchcanvas.ACTION_PORT_INFO:
         pass
