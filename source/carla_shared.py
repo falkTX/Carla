@@ -994,9 +994,10 @@ class PluginParameter(QWidget):
             self.ui.widget.setTextCallback(self._textCallBack)
 
         self.setMidiControl(pInfo['midiCC'])
-        self.setMidiChannel(pInfo['midiChannel'])
+        self.setMidiChannel(pInfo['midiChannel']+1)
 
         self.connect(self.ui.sb_control, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_controlSpinboxCustomMenu()"))
+        self.connect(self.ui.sb_channel, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_channelSpinboxCustomMenu()"))
         self.connect(self.ui.sb_control, SIGNAL("valueChanged(int)"), SLOT("slot_controlSpinboxChanged(int)"))
         self.connect(self.ui.sb_channel, SIGNAL("valueChanged(int)"), SLOT("slot_channelSpinboxChanged(int)"))
         self.connect(self.ui.widget, SIGNAL("valueChanged(double)"), SLOT("slot_widgetValueChanged(double)"))
@@ -1055,19 +1056,34 @@ class PluginParameter(QWidget):
                 selControl    = int(selControlStr.split(" ")[0], 16)
                 self.ui.sb_control.setValue(selControl)
 
+    @pyqtSlot()
+    def slot_channelSpinboxCustomMenu(self):
+        menu = QMenu(self)
+
+        for i in range(1, 16+1):
+            action = menu.addAction("%i" % i)
+
+            if self.fMidiChannel == i:
+                action.setCheckable(True)
+                action.setChecked(True)
+
+        actSel = menu.exec_(QCursor.pos())
+
+        if actSel:
+            selChannel = int(actSel.text())
+            self.ui.sb_channel.setValue(selChannel)
+
     @pyqtSlot(int)
     def slot_controlSpinboxChanged(self, control):
         if self.fMidiControl != control:
             self.emit(SIGNAL("midiControlChanged(int, int)"), self.fParameterId, control)
-
-        self.fMidiControl = control
+            self.fMidiControl = control
 
     @pyqtSlot(int)
     def slot_channelSpinboxChanged(self, channel):
         if self.fMidiChannel != channel:
             self.emit(SIGNAL("midiChannelChanged(int, int)"), self.fParameterId, channel)
-
-        self.fMidiChannel = channel
+            self.fMidiChannel = channel
 
     @pyqtSlot(float)
     def slot_widgetValueChanged(self, value):
