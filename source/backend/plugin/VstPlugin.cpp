@@ -252,10 +252,12 @@ public:
         CARLA_ASSERT(fEffect != nullptr);
         CARLA_ASSERT(parameterId < kData->param.count);
 
+        strBuf[0] = '\0';
+
         dispatcher(effGetParamDisplay, parameterId, 0, strBuf, 0.0f);
 
-        if (*strBuf == 0)
-            std::sprintf(strBuf, "%f", getParameterValue(parameterId));
+        if (strBuf[0] == '\0')
+            std::snprintf(strBuf, STR_MAX, "%f", getParameterValue(parameterId));
     }
 
     void getParameterUnit(const uint32_t parameterId, char* const strBuf)
