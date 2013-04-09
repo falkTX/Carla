@@ -1978,13 +1978,12 @@ class PluginWidget(QFrame):
         self.ui.led_audio_out.setEnabled(False)
 
         self.ui.peak_in.setColor(self.ui.peak_in.GREEN)
+        self.ui.peak_in.setChannels(self.fPeaksInputCount)
         self.ui.peak_in.setOrientation(self.ui.peak_in.HORIZONTAL)
 
         self.ui.peak_out.setColor(self.ui.peak_in.BLUE)
-        self.ui.peak_out.setOrientation(self.ui.peak_out.HORIZONTAL)
-
-        self.ui.peak_in.setChannels(self.fPeaksInputCount)
         self.ui.peak_out.setChannels(self.fPeaksOutputCount)
+        self.ui.peak_out.setOrientation(self.ui.peak_out.HORIZONTAL)
 
         self.ui.label_name.setText(self.fPluginInfo['name'])
 
@@ -1999,8 +1998,8 @@ class PluginWidget(QFrame):
         self.connect(self.ui.b_restore, SIGNAL("clicked()"), SLOT("slot_restoreClicked()"))
         self.connect(self.ui.b_close, SIGNAL("clicked()"), SLOT("slot_closeClicked()"))
 
-        # FIXME
-        #self.setMaximumHeight(32)
+        self.setMinimumHeight(32)
+        self.setMaximumHeight(32)
 
     def idleFast(self):
         # Input peaks
@@ -2118,32 +2117,24 @@ class PluginWidget(QFrame):
         # bottom line
         painter.setPen(self.fColorBottom)
         painter.setBrush(self.fColorBottom)
-        painter.drawRect(0, self.height()-5, areaX, 5)
+        painter.drawRect(0, self.height()-5, areaX+20, 5)
 
         # top line
         painter.drawLine(0, 0, areaX+40, 0)
 
+        # left line
+        painter.drawLine(0, 0, 0, self.height())
+
         # name -> leds arc
         path = QPainterPath()
-        path.moveTo(areaX-80, self.height())
-        path.cubicTo(areaX+40, self.height()-5, areaX-40, 30, areaX+20, 0)
-        path.lineTo(areaX+20, self.height())
+        path.moveTo(areaX-20, self.height()-5)
+        path.cubicTo(areaX+5, self.height()-5, areaX-20, 2, areaX+20, 2)
+        path.lineTo(areaX+20, self.height()-5)
         painter.drawPath(path)
 
         # fill the rest
         painter.drawRect(areaX+20, 0, self.width(), self.height())
 
-        #painter.drawLine(0, 3, self.width(), 3)
-        #painter.drawLine(0, self.height() - 4, self.width(), self.height() - 4)
-        #painter.setPen(self.m_color2)
-        #painter.drawLine(0, 2, self.width(), 2)
-        #painter.drawLine(0, self.height() - 3, self.width(), self.height() - 3)
-        #painter.setPen(self.m_color3)
-        #painter.drawLine(0, 1, self.width(), 1)
-        #painter.drawLine(0, self.height() - 2, self.width(), self.height() - 2)
-        #painter.setPen(self.m_color4)
-        #painter.drawLine(0, 0, self.width(), 0)
-        #painter.drawLine(0, self.height() - 1, self.width(), self.height() - 1)
         QFrame.paintEvent(self, event)
 
     @pyqtSlot(bool)
