@@ -1925,10 +1925,11 @@ class PluginWidget(QFrame):
         # Background
         self.fColorTop    = QColor(60, 60, 60)
         self.fColorBottom = QColor(47, 47, 47)
+        self.fColorSeprtr = QColor(70, 70, 70)
 
         self.setStyleSheet("""
         QLabel#label_name {
-            color: white;
+            color: #BBB;
         }""")
 
         # Colorify
@@ -1954,16 +1955,6 @@ class PluginWidget(QFrame):
         self.ui.b_enable.setPixmaps(":/bitmaps/led_red.png", ":/bitmaps/led_green.png", ":/bitmaps/led_red.png")
         self.ui.b_gui.setPixmaps(":/bitmaps/button_gui.png", ":/bitmaps/button_gui_down.png", ":/bitmaps/button_gui_hover.png")
         self.ui.b_edit.setPixmaps(":/bitmaps/button_edit.png", ":/bitmaps/button_edit_down.png", ":/bitmaps/button_edit_hover.png")
-
-        self.ui.b_up.setPixmaps(":/bitmaps/button_up.png", ":/bitmaps/button_up.png", ":/bitmaps/button_up_hover.png")
-        self.ui.b_down.setPixmaps(":/bitmaps/button_down.png", ":/bitmaps/button_down.png", ":/bitmaps/button_down_hover.png")
-        self.ui.b_restore.setPixmaps(":/bitmaps/button_restore.png", ":/bitmaps/button_restore.png", ":/bitmaps/button_restore_hover.png")
-        self.ui.b_close.setPixmaps(":/bitmaps/button_close.png", ":/bitmaps/button_close_down.png", ":/bitmaps/button_close_hover.png")
-
-        # TODO
-        self.ui.b_up.setEnabled(False)
-        self.ui.b_down.setEnabled(False)
-        self.ui.b_restore.setEnabled(False)
 
         self.ui.led_control.setColor(self.ui.led_control.YELLOW)
         self.ui.led_control.setEnabled(False)
@@ -1993,10 +1984,6 @@ class PluginWidget(QFrame):
         self.connect(self.ui.b_enable, SIGNAL("clicked(bool)"), SLOT("slot_setActive(bool)"))
         self.connect(self.ui.b_gui, SIGNAL("clicked(bool)"), SLOT("slot_guiClicked(bool)"))
         self.connect(self.ui.b_edit, SIGNAL("clicked(bool)"), SLOT("slot_editClicked(bool)"))
-        self.connect(self.ui.b_up, SIGNAL("clicked()"), SLOT("slot_upClicked()"))
-        self.connect(self.ui.b_down, SIGNAL("clicked()"), SLOT("slot_downClicked()"))
-        self.connect(self.ui.b_restore, SIGNAL("clicked()"), SLOT("slot_restoreClicked()"))
-        self.connect(self.ui.b_close, SIGNAL("clicked()"), SLOT("slot_closeClicked()"))
 
         self.setMinimumHeight(32)
         self.setMaximumHeight(32)
@@ -2112,28 +2099,37 @@ class PluginWidget(QFrame):
     def paintEvent(self, event):
         painter = QPainter(self)
 
-        areaX = self.ui.led_control.x()
+        areaX = self.ui.area_right.x()
 
-        # bottom line
-        painter.setPen(self.fColorBottom)
+        painter.setPen(self.fColorSeprtr.lighter(110))
         painter.setBrush(self.fColorBottom)
-        painter.drawRect(0, self.height()-5, areaX+20, 5)
-
-        # top line
-        painter.drawLine(0, 0, areaX+40, 0)
-
-        # left line
-        painter.drawLine(0, 0, 0, self.height())
+        painter.setRenderHint(QPainter.Antialiasing, True)
 
         # name -> leds arc
         path = QPainterPath()
-        path.moveTo(areaX-20, self.height()-5)
-        path.cubicTo(areaX+5, self.height()-5, areaX-20, 2, areaX+20, 2)
+        path.moveTo(areaX-20, self.height()-4)
+        path.cubicTo(areaX+5, self.height()-5, areaX-20, 4.75, areaX+20, 4.75)
         path.lineTo(areaX+20, self.height()-5)
         painter.drawPath(path)
 
+        painter.setPen(self.fColorSeprtr)
+        painter.setRenderHint(QPainter.Antialiasing, False)
+
+        # separator lines
+        painter.drawLine(0, self.height()-5, areaX-20, self.height()-5)
+        painter.drawLine(areaX+20, 4, self.width(), 4)
+
+        painter.setPen(self.fColorBottom)
+        painter.setBrush(self.fColorBottom)
+
+        # top, bottom and left lines
+        painter.drawLine(0, 0, self.width(), 0)
+        painter.drawRect(0, self.height()-4, areaX, 4)
+        painter.drawRoundedRect(areaX-20, self.height()-5, areaX+20, 5, 22, 22)
+        painter.drawLine(0, 0, 0, self.height())
+
         # fill the rest
-        painter.drawRect(areaX+20, 0, self.width(), self.height())
+        painter.drawRect(areaX+19, 5, self.width(), self.height())
 
         QFrame.paintEvent(self, event)
 
