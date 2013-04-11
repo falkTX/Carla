@@ -19,8 +19,13 @@
 #ifndef __CARLA_STYLE_HPP__
 #define __CARLA_STYLE_HPP__
 
-#include <QtGui/QCommonStyle>
-#include <QtGui/QStylePlugin>
+#include <QtCore/Qt>
+
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+# include <QtWidgets/QCommonStyle>
+#else
+# include <QtGui/QCommonStyle>
+#endif
 
 class CarlaStylePrivate;
 
@@ -57,16 +62,6 @@ public:
 private:
     CarlaStylePrivate* const d;
     friend class CarlaStylePrivate;
-};
-
-class CarlaStylePlugin : public QStylePlugin
-{
-    Q_OBJECT
-
-public:
-    CarlaStylePlugin(QObject* parent = nullptr);
-    QStyle* create(const QString& key);
-    QStringList keys() const;
 };
 
 #endif // __CARLA_STYLE_HPP__

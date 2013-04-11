@@ -22,17 +22,36 @@
 #include <QtGui/QPainter>
 #include <QtGui/QPixmapCache>
 
-#include <QtGui/QApplication>
-#include <QtGui/QComboBox>
-#include <QtGui/QGroupBox>
-#include <QtGui/QMainWindow>
-#include <QtGui/QProgressBar>
-#include <QtGui/QPushButton>
-#include <QtGui/QScrollBar>
-#include <QtGui/QSlider>
-#include <QtGui/QSpinBox>
-#include <QtGui/QSplitter>
-#include <QtGui/QWizard>
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+# include <QtWidgets/qdrawutil.h>
+# include <QtWidgets/QApplication>
+# include <QtWidgets/QComboBox>
+# include <QtWidgets/QGroupBox>
+# include <QtWidgets/QMainWindow>
+# include <QtWidgets/QProgressBar>
+# include <QtWidgets/QPushButton>
+# include <QtWidgets/QScrollBar>
+# include <QtWidgets/QSlider>
+# include <QtWidgets/QSpinBox>
+# include <QtWidgets/QSplitter>
+# include <QtWidgets/QWizard>
+#else
+# include <QtGui/QApplication>
+# include <QtGui/QComboBox>
+# include <QtGui/QGroupBox>
+# include <QtGui/QMainWindow>
+# include <QtGui/QProgressBar>
+# include <QtGui/QPushButton>
+# include <QtGui/QScrollBar>
+# include <QtGui/QSlider>
+# include <QtGui/QSpinBox>
+# include <QtGui/QSplitter>
+# include <QtGui/QWizard>
+#endif
+
+#ifdef CARLA_EXPORT_STYLE
+# include <QtGui/QStylePlugin>
+#endif
 
 #define BEGIN_STYLE_PIXMAPCACHE(a) \
     QRect rect = option->rect; \
@@ -3457,21 +3476,28 @@ QRect CarlaStyle::subElementRect(SubElement sr, const QStyleOption *opt, const Q
     return r;
 }
 
-CarlaStylePlugin::CarlaStylePlugin(QObject* parent)
-    : QStylePlugin(parent)
+#ifdef CARLA_EXPORT_STYLE
+# include "resources.cpp"
+
+class CarlaStylePlugin : public QStylePlugin
 {
-}
+    Q_OBJECT
 
-QStyle* CarlaStylePlugin::create(const QString& key)
-{
-    return (key.toLower() == "carla") ? new CarlaStyle : nullptr;
-}
+public:
+    CarlaStylePlugin(QObject* parent = nullptr)
+        : QStylePlugin(parent) {}
 
-QStringList CarlaStylePlugin::keys() const
-{
-    return QStringList() << "carla";
-}
+    QStyle* create(const QString& key)
+    {
+        return (key.toLower() == "Carla") ? new CarlaStyle() : nullptr;
+    }
 
-Q_EXPORT_PLUGIN2(carla, CarlaStylePlugin)
+    QStringList keys() const
+    {
+        return QStringList() << "Carla";
+    }
+};
 
-#include "resources.cpp"
+Q_EXPORT_PLUGIN2(Carla, CarlaStylePlugin)
+
+#endif

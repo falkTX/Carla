@@ -62,6 +62,8 @@ void carla_debug(const char* const fmt, ...)
     std::vfprintf(stdout, fmt, args);
 #ifndef CARLA_OS_WIN
     std::fprintf(stdout, "\x1b[0m\n");
+#else
+    std::fprintf(stdout, "\n");
 #endif
     va_end(args);
 }
@@ -98,6 +100,8 @@ void carla_stderr2(const char* const fmt, ...)
     std::vfprintf(stderr, fmt, args);
 #ifndef CARLA_OS_WIN
     std::fprintf(stderr, "\x1b[0m\n");
+#else
+    std::fprintf(stderr, "\n");
 #endif
     va_end(args);
 }

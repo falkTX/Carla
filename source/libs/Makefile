@@ -60,3 +60,4 @@ clean:
 	$(MAKE) clean -C lilv
 	$(MAKE) clean -C rtmempool
 	$(MAKE) clean -C ../widgets
+	$(MAKE) clean -C ../theme

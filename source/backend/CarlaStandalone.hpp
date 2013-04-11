@@ -183,8 +183,6 @@ struct CarlaTransportInfo {
 CARLA_EXPORT const char* carla_get_extended_license_text();
 CARLA_EXPORT const char* carla_get_supported_file_types();
 
-CARLA_EXPORT void carla_set_up_qt(uintptr_t app);
-
 CARLA_EXPORT unsigned int carla_get_engine_driver_count();
 CARLA_EXPORT const char* carla_get_engine_driver_name(unsigned int index);
 

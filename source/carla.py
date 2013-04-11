@@ -1951,7 +1951,6 @@ if __name__ == '__main__':
     Carla.host = Host(libName)
     Carla.host.set_engine_callback(engineCallback)
     Carla.host.set_engine_option(OPTION_PROCESS_NAME, 0, "carla")
-    Carla.host.set_up_qt(app)
 
     # Set bridge paths
     if carla_bridge_native:

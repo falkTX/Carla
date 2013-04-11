@@ -27,6 +27,7 @@
 *.moc
 moc_*.cpp
 ui_*.h
+resources.cpp
 
 # Python files
 *.pyc

@@ -21,7 +21,6 @@
 
 from ctypes import *
 from platform import architecture
-from sip import unwrapinstance
 from sys import platform, maxsize
 
 # ------------------------------------------------------------------------------------------------------------
@@ -254,7 +253,6 @@ else:
 
 c_enum = c_int
 c_nullptr = None
-c_uintptr = c_uint64 if kIs64bit else c_uint32
 
 CallbackFunc = CFUNCTYPE(None, c_void_p, c_enum, c_uint, c_int, c_int, c_float, c_char_p)
 
@@ -372,9 +370,6 @@ class Host(object):
 
         self.lib.carla_get_supported_file_types.argtypes = None
         self.lib.carla_get_supported_file_types.restype = c_char_p
-
-        self.lib.carla_set_up_qt.argtypes = [c_uintptr]
-        self.lib.carla_set_up_qt.restype = None
 
         self.lib.carla_get_engine_driver_count.argtypes = None
         self.lib.carla_get_engine_driver_count.restype = c_uint
@@ -611,9 +606,6 @@ class Host(object):
 
     def get_supported_file_types(self):
         return self.lib.carla_get_supported_file_types()
-
-    def set_up_qt(self, app):
-        self.lib.carla_set_up_qt(unwrapinstance(app))
 
     def get_engine_driver_count(self):
         return self.lib.carla_get_engine_driver_count()
