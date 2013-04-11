@@ -46,19 +46,12 @@
 #elif defined(__GNUC__) && defined(__GXX_EXPERIMENTAL_CXX0X__)
 # if  (__GNUC__ * 100 + __GNUC_MINOR__) >= 405
 #  define CARLA_PROPER_CPP11_SUPPORT
-#  if  (__GNUC__ * 100 + __GNUC_MINOR__) >= 407
-#    define IS_CPP11 1
-#  endif
 # endif
 #endif
 
 #ifndef CARLA_PROPER_CPP11_SUPPORT
 # define noexcept
 # define nullptr (0)
-#endif
-
-#ifndef IS_CPP11
-# define IS_CPP11 0
 #endif
 
 // Common includes

@@ -30,7 +30,7 @@
 # include "DistrhoUIMain.cpp"
 #endif
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 START_NAMESPACE_DISTRHO
 
@@ -52,6 +52,7 @@ public:
           fUi(this, 0, editParameterCallback, setParameterCallback, setStateCallback, sendNoteCallback, uiResizeCallback)
 #endif
     {
+        setWindowFlags(windowFlags()|Qt::WindowStaysOnTopHint);
 #ifdef DISTRHO_UI_OPENGL
         setCentralWidget(&fWidget);
 #else

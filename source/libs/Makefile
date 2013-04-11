@@ -35,6 +35,9 @@ rtmempool.%.a:
 widgets.a:
 	$(MAKE) -C ../widgets
 
+theme.a:
+	$(MAKE) -C ../theme
+
 # --------------------------------------------------------------
 
 jackbridge-win32.dll:

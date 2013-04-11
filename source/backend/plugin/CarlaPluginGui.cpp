@@ -25,16 +25,11 @@ CARLA_BACKEND_START_NAMESPACE
 
 #include "moc_CarlaPluginGui.cpp"
 
-// -----------------------------------------------------------------------
-// Engine Helpers, defined in CarlaEngine.cpp
-
-extern QMainWindow* getEngineHostWindow(CarlaEngine* const engine);
-
 // -------------------------------------------------------------------
 // CarlaPluginGUI
 
 CarlaPluginGui::CarlaPluginGui(CarlaEngine* const engine, Callback* const callback, const Options& options)
-    : QMainWindow(getEngineHostWindow(engine)),
+    : QMainWindow(nullptr),
       kCallback(callback),
       fContainer(nullptr),
       fOptions(options)
@@ -54,8 +49,10 @@ CarlaPluginGui::CarlaPluginGui(CarlaEngine* const engine, Callback* const callba
 
 #ifdef Q_OS_WIN
     if (! options.resizable)
-        setWindowFlags(windowFlags() | Qt::MSWindowsFixedSizeDialogHint);
+        setWindowFlags(windowFlags()|Qt::MSWindowsFixedSizeDialogHint);
 #endif
+
+    setWindowFlags(windowFlags()|Qt::WindowStaysOnTopHint);
 
     connect(this, SIGNAL(setSizeSafeSignal(int,int)), SLOT(setSizeSafeSlot(int,int)));
 }

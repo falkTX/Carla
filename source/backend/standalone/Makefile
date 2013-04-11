@@ -8,7 +8,7 @@ include ../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo)
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo) -I../../theme
 
 ifeq ($(HAVE_QT5),true)
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags Qt5Core)
@@ -93,6 +93,7 @@ LIBS += ../libcarla_plugin.a
 LIBS += ../libcarla_native.a
 LIBS += ../../libs/rtmempool.a
 LIBS += ../../libs/widgets.a
+LIBS += ../../libs/theme.a
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
 LIBS += ../../libs/lilv.a

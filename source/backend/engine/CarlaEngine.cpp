@@ -30,11 +30,6 @@ CARLA_BACKEND_START_NAMESPACE
 // -------------------------------------------------------------------------------------------------------------------
 // Engine Helpers
 
-QMainWindow* getEngineHostWindow(CarlaEngine* const engine)
-{
-    return CarlaEngineProtectedData::getHostWindow(engine);
-}
-
 #ifndef BUILD_BRIDGE
 void registerEnginePlugin(CarlaEngine* const engine, const unsigned int id, CarlaPlugin* const plugin)
 {

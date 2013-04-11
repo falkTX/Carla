@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>686</width>
-    <height>523</height>
+    <width>749</width>
+    <height>585</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -535,6 +535,12 @@ Plugin Name
                </item>
                <item>
                 <widget class="Line" name="line">
+                 <property name="lineWidth">
+                  <number>0</number>
+                 </property>
+                 <property name="midLineWidth">
+                  <number>1</number>
+                 </property>
                  <property name="orientation">
                   <enum>Qt::Vertical</enum>
                  </property>

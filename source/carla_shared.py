@@ -2098,6 +2098,7 @@ class PluginWidget(QFrame):
 
     def paintEvent(self, event):
         painter = QPainter(self)
+        painter.save()
 
         areaX = self.ui.area_right.x()
 
@@ -2131,6 +2132,11 @@ class PluginWidget(QFrame):
         # fill the rest
         painter.drawRect(areaX+19, 5, self.width(), self.height())
 
+        # bottom 1px line
+        painter.setPen(self.fColorSeprtr)
+        painter.drawLine(0, self.height()-1, self.width(), self.height()-1)
+
+        painter.restore()
         QFrame.paintEvent(self, event)
 
     @pyqtSlot(bool)

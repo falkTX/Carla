@@ -23,6 +23,7 @@
 #include "CarlaPlugin.hpp"
 #include "CarlaMIDI.h"
 #include "CarlaNative.h"
+#include "CarlaStyle.hpp"
 
 #include <QtCore/Qt>
 
@@ -84,6 +85,18 @@ struct CarlaBackendStandalone {
         app->processEvents();
         delete app;
         app = nullptr;
+    }
+
+    void registerThemeIfPossible(QApplication* const hostApp)
+    {
+        if (needsInit)
+            return;
+
+        CARLA_ASSERT(app != nullptr);
+        CARLA_ASSERT(app == hostApp);
+
+        if (app == hostApp)
+            hostApp->setStyle(new CarlaStyle());
     }
 
     CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(CarlaBackendStandalone)
@@ -181,6 +194,21 @@ const char* carla_get_supported_file_types()
     }
 
     return retText;
+}
+
+// -------------------------------------------------------------------------------------------------------------------
+
+void carla_set_up_qt(uintptr_t app)
+{
+    carla_debug("carla_set_up_qt(" P_UINTPTR ")", app);
+
+    CARLA_ASSERT(app != 0);
+
+    if (app == 0)
+        return;
+
+    QApplication* hostApp = (QApplication*)CarlaBackend::getPointerFromAddress(app);
+    standalone.registerThemeIfPossible(hostApp);
 }
 
 // -------------------------------------------------------------------------------------------------------------------

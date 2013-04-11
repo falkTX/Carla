@@ -84,6 +84,9 @@
         <file>bitmaps/canvas/frame_node_header.png</file>
         <file>bitmaps/canvas/frame_port_bg.png</file>
 
+        <file>bitmaps/style/arrow.png</file>
+        <file>bitmaps/style/groupbox.png</file>
+
         <file>scalable/pb_generic.svg</file>
         <file>scalable/pb_hardware.svg</file>
         <file>scalable/pb_audacious.svg</file>

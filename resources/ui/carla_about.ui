@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>484</width>
+    <width>510</width>
     <height>433</height>
    </rect>
   </property>
@@ -49,12 +49,24 @@
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>0</width>
+           <height>0</height>
+          </size>
+         </property>
         </spacer>
        </item>
        <item row="2" column="2">
         <spacer name="horizontalSpacer_2">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>0</width>
+           <height>0</height>
+          </size>
          </property>
         </spacer>
        </item>
@@ -64,7 +76,7 @@
           <string/>
          </property>
          <property name="pixmap">
-          <pixmap resource="../../resources/resources.qrc">:/bitmaps/carla_about.png</pixmap>
+          <pixmap resource="../resources.qrc">:/bitmaps/carla_about.png</pixmap>
          </property>
          <property name="alignment">
           <set>Qt::AlignCenter</set>
@@ -183,6 +195,12 @@
        </item>
        <item row="1" column="0" colspan="2">
         <widget class="Line" name="line">
+         <property name="lineWidth">
+          <number>0</number>
+         </property>
+         <property name="midLineWidth">
+          <number>1</number>
+         </property>
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
@@ -190,6 +208,12 @@
        </item>
        <item row="5" column="0" colspan="2">
         <widget class="Line" name="line_2">
+         <property name="lineWidth">
+          <number>0</number>
+         </property>
+         <property name="midLineWidth">
+          <number>1</number>
+         </property>
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
@@ -197,6 +221,12 @@
        </item>
        <item row="3" column="0" colspan="2">
         <widget class="Line" name="line_3">
+         <property name="lineWidth">
+          <number>0</number>
+         </property>
+         <property name="midLineWidth">
+          <number>1</number>
+         </property>
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
@@ -326,8 +356,8 @@
   </layout>
  </widget>
  <resources>
-  <include location="../../resources/resources.qrc"/>
-  <include location="../../resources/resources.qrc"/>
+  <include location="../resources.qrc"/>
+  <include location="../resources.qrc"/>
  </resources>
  <connections>
   <connection>

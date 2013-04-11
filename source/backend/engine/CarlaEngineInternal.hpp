@@ -202,11 +202,6 @@ struct CarlaEngineProtectedData {
     CarlaEngineProtectedData(CarlaEngineProtectedData&) = delete;
     CarlaEngineProtectedData(const CarlaEngineProtectedData&) = delete;
 
-    static QMainWindow* getHostWindow(CarlaEngine* const engine)
-    {
-        return engine->kData->hostWindow;
-    }
-
 #ifndef BUILD_BRIDGE
     static void registerEnginePlugin(CarlaEngine* const engine, const unsigned int id, CarlaPlugin* const plugin)
     {
