@@ -1048,13 +1048,15 @@ class PluginParameter(QWidget):
 
         actSel = menu.exec_(QCursor.pos())
 
-        if actSel:
-            if actSel == actNone:
-                self.ui.sb_control.setValue(-1)
-            else:
-                selControlStr = actSel.text()
-                selControl    = int(selControlStr.split(" ")[0], 16)
-                self.ui.sb_control.setValue(selControl)
+        if not actSel:
+            return
+
+        if actSel == actNone:
+            self.ui.sb_control.setValue(-1)
+        else:
+            selControlStr = actSel.text()
+            selControl    = int(selControlStr.split(" ")[0], 16)
+            self.ui.sb_control.setValue(selControl)
 
     @pyqtSlot()
     def slot_channelSpinboxCustomMenu(self):
@@ -1981,6 +1983,7 @@ class PluginWidget(QFrame):
         self.ui.edit_dialog = PluginEdit(self, self.fPluginId)
         self.ui.edit_dialog.hide()
 
+        self.connect(self, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_showCustomMenu()"))
         self.connect(self.ui.b_enable, SIGNAL("clicked(bool)"), SLOT("slot_setActive(bool)"))
         self.connect(self.ui.b_gui, SIGNAL("clicked(bool)"), SLOT("slot_guiClicked(bool)"))
         self.connect(self.ui.b_edit, SIGNAL("clicked(bool)"), SLOT("slot_editClicked(bool)"))
@@ -2139,6 +2142,39 @@ class PluginWidget(QFrame):
         painter.restore()
         QFrame.paintEvent(self, event)
 
+    @pyqtSlot()
+    def slot_showCustomMenu(self):
+        menu = QMenu(self)
+
+        actActive = menu.addAction(self.tr("Disable") if self.ui.b_enable.isChecked() else self.tr("Enable"))
+        menu.addSeparator()
+
+        actGui = menu.addAction(self.tr("Show GUI"))
+        actGui.setCheckable(True)
+        actGui.setChecked(self.ui.b_gui.isChecked())
+        actGui.setEnabled(self.ui.b_gui.isEnabled())
+
+        actEdit = menu.addAction(self.tr("Edit"))
+        actEdit.setCheckable(True)
+        actEdit.setChecked(self.ui.b_edit.isChecked())
+
+        menu.addSeparator()
+        actRemove = menu.addAction(self.tr("Remove"))
+
+        actSel = menu.exec_(QCursor.pos())
+
+        if not actSel:
+            return
+
+        if actSel == actActive:
+            self.setActive(not self.ui.b_enable.isChecked(), True, True)
+        elif actSel == actGui:
+            self.ui.b_gui.click()
+        elif actSel == actEdit:
+            self.ui.b_edit.click()
+        elif actSel == actRemove:
+            Carla.host.remove_plugin(self.fPluginId)
+
     @pyqtSlot(bool)
     def slot_setActive(self, yesNo):
         self.setActive(yesNo, False, True)
@@ -2150,22 +2186,6 @@ class PluginWidget(QFrame):
     @pyqtSlot(bool)
     def slot_editClicked(self, show):
         self.ui.edit_dialog.setVisible(show)
-
-    @pyqtSlot()
-    def slot_upClicked(self):
-        pass
-
-    @pyqtSlot()
-    def slot_downClicked(self):
-        pass
-
-    @pyqtSlot()
-    def slot_restoreClicked(self):
-        pass
-
-    @pyqtSlot()
-    def slot_closeClicked(self):
-        Carla.host.remove_plugin(self.fPluginId)
 
 # ------------------------------------------------------------------------------------------------------------
 # Separate Thread for Plugin Search
