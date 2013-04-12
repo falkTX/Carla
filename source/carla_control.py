@@ -19,6 +19,7 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
+from PyQt4.QtCore import QLibrary
 from PyQt4.QtGui import QApplication, QInputDialog, QMainWindow
 from liblo import make_method, Address, ServerError, ServerThread
 from liblo import send as lo_send
@@ -509,7 +510,7 @@ class ControlServer(ServerThread):
 class CarlaControlW(QMainWindow):
     def __init__(self, parent=None):
         QMainWindow.__init__(self, parent)
-        self.ui = ui_carla_control.Ui_CarlaControlW
+        self.ui = ui_carla_control.Ui_CarlaControlW()
         self.ui.setupUi(self)
 
         # -------------------------------------------------------------
@@ -905,6 +906,30 @@ if __name__ == '__main__':
     app.setOrganizationName("Cadence")
     app.setWindowIcon(QIcon(":/scalable/carla-control.svg"))
 
+    libPrefix = None
+
+    for i in range(len(app.arguments())):
+        if i == 0: continue
+        argument = app.arguments()[i]
+
+        if argument.startswith("--with-libprefix="):
+            libPrefix = argument.replace("--with-libprefix=", "")
+
+    if libPrefix is not None:
+        libName = os.path.join(libPrefix, "lib", "carla", carla_libname)
+    else:
+        libName = carla_library_path
+
+    # Load backend DLL, so it registers the theme
+    libDLL = QLibrary()
+    libDLL.setFileName(libName)
+
+    try:
+        libDLL.load()
+    except:
+        pass
+
+    # Init backend (OSC bridge version)
     Carla.host = Host()
 
     # Create GUI
@@ -917,4 +942,12 @@ if __name__ == '__main__':
     Carla.gui.show()
 
     # App-Loop
-    sys.exit(app.exec_())
+    ret = app.exec_()
+
+    # Close backend DLL
+    if libDLL.isLoaded():
+        # Need to destroy app before theme
+        del app
+        libDLL.unload()
+
+    sys.exit(ret)

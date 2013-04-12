@@ -7,4 +7,5 @@ else
 fi
 
 INSTALL_PREFIX="X-PREFIX-X"
-exec $PYTHON $INSTALL_PREFIX/share/carla/carla_control.py "$@"
+export PATH="$INSTALL_PREFIX"/lib/carla:$PATH
+exec $PYTHON $INSTALL_PREFIX/share/carla/carla_control.py --with-libprefix="$INSTALL_PREFIX" "$@"
