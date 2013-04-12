@@ -25,7 +25,7 @@
 #include <cerrno>
 #include <ctime>
 
-#ifdef CARLA_OS_WIN
+#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
 # include <sys/time.h>
 #endif
 
@@ -1386,19 +1386,29 @@ private:
     {
         sem_post(&fShmControl.data->runServer);
 
-        timespec ts_timeout;
-#ifdef CARLA_OS_WIN
+#ifdef CARLA_OS_MAC
+        alarm(5);
+
+        if (sem_wait(&fShmControl.data->runClient) == EINTR)
+        {
+#else
+        timespec timeout;
+
+# ifdef CARLA_OS_WIN
         timeval now;
         gettimeofday(&now, nullptr);
         ts_timeout.tv_sec = now.tv_sec;
         ts_timeout.tv_nsec = now.tv_usec * 1000;
-#else
-        clock_gettime(CLOCK_REALTIME, &ts_timeout);
-#endif
-        ts_timeout.tv_sec += 5;
+# else
+        clock_gettime(CLOCK_REALTIME, &timeout);
+# endif
+        timeout.tv_sec += 5;
 
-        if (sem_timedwait(&fShmControl.data->runClient, &ts_timeout) != 0)
+        if (sem_timedwait(&fShmControl.data->runClient, &timeout) != 0)
+        {
+#endif
             kData->active = false; // TODO
+        }
     }
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(BridgePlugin)

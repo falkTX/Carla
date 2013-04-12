@@ -11,7 +11,7 @@ include ../../../Makefile.mk
 BUILD_C_FLAGS   += -fvisibility=hidden -fPIC
 BUILD_CXX_FLAGS += -fvisibility=hidden -fPIC -I.
 
-OBJS         = \
+OBJS  = \
 	src/App.cpp.o \
 	src/Image.cpp.o \
 	src/ImageAboutWindow.cpp.o \
@@ -22,7 +22,9 @@ OBJS         = \
 	src/Widget.cpp.o \
 	src/Window.cpp.o
 
-OBJSM  = src/pugl/pugl_osx.m.o
+ifeq ($(MACOS),true)
+OBJS += src/pugl/pugl_osx.m.o
+endif
 
 OBJS_posix32 = \
 	src/App.cpp.posix32.o \

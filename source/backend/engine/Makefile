@@ -46,6 +46,10 @@ BUILD_CXX_FLAGS += $(shell pkg-config --cflags libpulse-simple) -D__LINUX_PULSE_
 LINK_FLAGS      += $(shell pkg-config --libs libpulse-simple)
 endif
 
+ifeq ($(MACOS),true)
+BUILD_CXX_FLAGS += -D__MACOSX_CORE__
+endif
+
 ifeq ($(WIN32),true)
 BUILD_CXX_FLAGS += -D__WINDOWS_ASIO__ -D__WINDOWS_DS__ -D__WINDOWS_MM__
 endif

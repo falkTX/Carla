@@ -520,6 +520,9 @@ class CarlaMainW(QMainWindow):
         self.ui =  ui_carla.Ui_CarlaMainW()
         self.ui.setupUi(self)
 
+        if MACOS:
+            self.setUnifiedTitleAndToolBarOnMac(True)
+
         # -------------------------------------------------------------
         # Load Settings
 

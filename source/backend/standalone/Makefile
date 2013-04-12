@@ -135,6 +135,9 @@ $(STATIC): $(OBJS) $(LIBS)
 ../libcarla_standalone.dll: $(OBJS) $(LIBS)
 	$(CXX) $^ -shared $(LINK_FLAGS) $(W32_LIBS) -Wl,--output-def,$@.def -o $@ && $(STRIP) $@
 
+../libcarla_standalone.dylib: $(OBJS) $(LIBS)
+	$(CXX) $^ -dynamiclib $(LINK_FLAGS) -o $@ && $(STRIP) $@
+
 ../libcarla_standalone.so: $(OBJS) $(LIBS)
 	$(CXX) $^ -shared $(LINK_FLAGS) -o $@ && $(STRIP) $@
 
