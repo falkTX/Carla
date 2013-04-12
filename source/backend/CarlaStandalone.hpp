@@ -185,6 +185,7 @@ CARLA_EXPORT const char* carla_get_supported_file_types();
 
 CARLA_EXPORT unsigned int carla_get_engine_driver_count();
 CARLA_EXPORT const char* carla_get_engine_driver_name(unsigned int index);
+CARLA_EXPORT const void* carla_get_engine_driver_options(unsigned int index); // TODO
 
 CARLA_EXPORT unsigned int carla_get_internal_plugin_count();
 CARLA_EXPORT const CarlaNativePluginInfo* carla_get_internal_plugin_info(unsigned int internalPluginId);
@@ -197,6 +198,7 @@ CARLA_EXPORT void carla_set_engine_about_to_close();
 CARLA_EXPORT void carla_set_engine_callback(CarlaCallbackFunc func, void* ptr);
 CARLA_EXPORT void carla_set_engine_option(CarlaOptionsType option, int value, const char* valueStr);
 
+CARLA_EXPORT bool carla_load_filename(const char* filename);
 CARLA_EXPORT bool carla_load_project(const char* filename);
 CARLA_EXPORT bool carla_save_project(const char* filename);
 
@@ -213,6 +215,9 @@ CARLA_EXPORT const CarlaTransportInfo* carla_get_transport_info();
 CARLA_EXPORT bool carla_add_plugin(CarlaBinaryType btype, CarlaPluginType ptype, const char* filename, const char* name, const char* label, const void* extraPtr);
 CARLA_EXPORT bool carla_remove_plugin(unsigned int pluginId);
 CARLA_EXPORT void carla_remove_all_plugins();
+
+CARLA_EXPORT bool carla_clone_plugin(unsigned int pluginId);
+CARLA_EXPORT bool carla_switch_plugins(unsigned int pluginIdA, unsigned int pluginIdB);
 
 CARLA_EXPORT bool carla_load_plugin_state(unsigned int pluginId, const char* filename);
 CARLA_EXPORT bool carla_save_plugin_state(unsigned int pluginId, const char* filename);

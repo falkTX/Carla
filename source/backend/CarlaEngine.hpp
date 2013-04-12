@@ -744,6 +744,13 @@ public:
     // Project management
 
     /*!
+     * Load \a filename of any type.\n
+     * This will try to load a generic file as a plugin,
+     * either by direct handling (GIG, SF2 and SFZ) or by using an internal plugin (Audio and MIDI)
+     */
+    bool loadFilename(const char* const filename);
+
+    /*!
      * Load \a filename session.
      * \note Already loaded plugins are not removed; call removeAllPlugins() first if needed.
      */

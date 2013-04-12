@@ -983,15 +983,18 @@ const char* CarlaEngine::getNewUniquePluginName(const char* const name)
     return (const char*)sname;
 }
 
-#if 0
-void CarlaEngine::__bridgePluginRegister(const unsigned short id, CarlaPlugin* const plugin)
-{
-    data->carlaPlugins[id] = plugin;
-}
-#endif
-
 // -----------------------------------------------------------------------
-// Information (base)
+// Project management
+
+bool CarlaEngine::loadFilename(const char* const filename)
+{
+    carla_debug("CarlaEngine::loadFilename(\"%s\")", filename);
+    CARLA_ASSERT(filename != nullptr);
+
+    // TODO
+    setLastError("Not implemented yet");
+    return false;
+}
 
 bool CarlaEngine::loadProject(const char* const filename)
 {

@@ -377,6 +377,9 @@ class Host(object):
         self.lib.carla_get_engine_driver_name.argtypes = [c_uint]
         self.lib.carla_get_engine_driver_name.restype = c_char_p
 
+        self.lib.carla_get_engine_driver_options.argtypes = [c_uint]
+        self.lib.carla_get_engine_driver_options.restype = c_void_p # TODO
+
         self.lib.carla_get_internal_plugin_count.argtypes = None
         self.lib.carla_get_internal_plugin_count.restype = c_uint
 
@@ -403,6 +406,9 @@ class Host(object):
 
         self.lib.carla_set_engine_option.argtypes = [c_enum, c_int, c_char_p]
         self.lib.carla_set_engine_option.restype = None
+
+        self.lib.carla_load_filename.argtypes = [c_char_p]
+        self.lib.carla_load_filename.restype = c_bool
 
         self.lib.carla_load_project.argtypes = [c_char_p]
         self.lib.carla_load_project.restype = c_bool
@@ -442,6 +448,12 @@ class Host(object):
 
         self.lib.carla_remove_all_plugins.argtypes = None
         self.lib.carla_remove_all_plugins.restype = None
+
+        self.lib.carla_clone_plugin.argtypes = [c_uint]
+        self.lib.carla_clone_plugin.restype = c_bool
+
+        self.lib.carla_switch_plugins.argtypes = [c_uint, c_uint]
+        self.lib.carla_switch_plugins.restype = c_bool
 
         self.lib.carla_load_plugin_state.argtypes = [c_uint, c_char_p]
         self.lib.carla_load_plugin_state.restype = c_bool
@@ -613,6 +625,9 @@ class Host(object):
     def get_engine_driver_name(self, index):
         return self.lib.carla_get_engine_driver_name(index)
 
+    def get_engine_driver_options(self, index):
+        return self.lib.carla_get_engine_driver_options(index)
+
     def get_internal_plugin_count(self):
         return self.lib.carla_get_internal_plugin_count()
 
@@ -640,6 +655,9 @@ class Host(object):
 
     def set_engine_option(self, option, value, valueStr):
         self.lib.carla_set_engine_option(option, value, valueStr.encode("utf-8"))
+
+    def load_filename(self, filename):
+        return self.lib.carla_load_filename(filename.encode("utf-8"))
 
     def load_project(self, filename):
         return self.lib.carla_load_project(filename.encode("utf-8"))
@@ -682,6 +700,12 @@ class Host(object):
 
     def remove_all_plugins(self):
         self.lib.carla_remove_all_plugins()
+
+    def clone_plugin(self, pluginId):
+        return self.lib.carla_clone_plugin(pluginId)
+
+    def switch_plugins(self, pluginIdA, pluginIdB):
+        return self.lib.carla_switch_plugins(pluginIdA, pluginIdB)
 
     def load_plugin_state(self, pluginId, filename):
         return self.lib.carla_load_plugin_state(pluginId, filename.encode("utf-8"))

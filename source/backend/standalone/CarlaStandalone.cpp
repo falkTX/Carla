@@ -106,54 +106,81 @@ const char* carla_get_extended_license_text()
 
     if (retText.isEmpty())
     {
-        retText  = "<p>This current Carla build is using the following features and 3rd-party code:</p>";
-        retText += "<ul>";
+        CarlaString text1, text2;
 
+        text1 += "<p>This current Carla build is using the following features and 3rd-party code:</p>";
+        text1 += "<ul>";
+
+        // Plugin formats
 #ifdef WANT_LADSPA
-        retText += "<li>LADSPA plugin support, http://www.ladspa.org/</li>";
+        text1 += "<li>LADSPA plugin support, http://www.ladspa.org/</li>";
 #endif
 #ifdef WANT_DSSI
-        retText += "<li>DSSI plugin support, http://dssi.sourceforge.net/</li>";
+        text1 += "<li>DSSI plugin support, http://dssi.sourceforge.net/</li>";
 #endif
 #ifdef WANT_LV2
-        retText += "<li>LV2 plugin support, http://lv2plug.in/</li>";
+        text1 += "<li>LV2 plugin support, http://lv2plug.in/</li>";
 #endif
 #ifdef WANT_VST
 # ifdef VESTIGE_HEADER
-        retText += "<li>VST plugin support, using VeSTige header by Javier Serrano Polo</li>";
+        text1 += "<li>VST plugin support, using VeSTige header by Javier Serrano Polo</li>";
 # else
-        retText += "<li>VST plugin support, using official VST SDK 2.4 (trademark of Steinberg Media Technologies GmbH)</li>";
+        text1 += "<li>VST plugin support, using official VST SDK 2.4 (trademark of Steinberg Media Technologies GmbH)</li>";
 # endif
 #endif
+
+        // Sample kit libraries
+#ifdef WANT_FLUIDSYNTH
+        text1 += "<li>FluidSynth library for SF2 support, http://www.fluidsynth.org/</li>";
+#endif
+#ifdef WANT_LINUXSAMPLER
+        text1 += "<li>LinuxSampler library for GIG and SFZ support*, http://www.linuxsampler.org/</li>";
+#endif
+
+        // Internal plugins
+#ifdef WANT_OPENGL
+        text1 += "<li>DISTRHO Mini-Series plugin code, based on LOSER-dev suite by Michael Gruhn</li>";
+#endif
+        text1 += "<li>NekoFilter plugin code, based on lv2fil by Nedko Arnaudov and Fons Adriaensen</li>";
+
 #ifdef WANT_AUDIOFILE
-        // TODO
-        //retText += "<li>ZynAddSubFX plugin code, http://zynaddsubfx.sf.net/</li>";
+        text1 += "<li>AudioDecoder library for Audio file support, by Robin Gareus</li>";
 #endif
 #ifdef WANT_MIDIFILE
-        // TODO
-        //retText += "<li>ZynAddSubFX plugin code, http://zynaddsubfx.sf.net/</li>";
+        text1 += "<li>LibSMF library for MIDI file support, http://libsmf.sourceforge.net/</li>";
 #endif
 #ifdef WANT_ZYNADDSUBFX
-        retText += "<li>ZynAddSubFX plugin code, http://zynaddsubfx.sf.net/</li>";
+        text1 += "<li>ZynAddSubFX plugin code, http://zynaddsubfx.sf.net/</li>";
+# ifdef WANT_ZYNADDSUBFX_UI
+        text1 += "<li>ZynAddSubFX UI using NTK, http://non.tuxfamily.org/wiki/NTK</li>";
+# endif
 #endif
-#ifdef WANT_FLUIDSYNTH
-        retText += "<li>FluidSynth library for SF2 support, http://www.fluidsynth.org/</li>";
-#endif
-#ifdef WANT_LINUXSAMPLER
-        retText += "<li>LinuxSampler library for GIG and SFZ support*, http://www.linuxsampler.org/</li>";
-#endif
-        retText += "<li>liblo library for OSC support, http://liblo.sourceforge.net/</li>";
+
+        // misc libs
+        text1 += "<li>liblo library for OSC support, http://liblo.sourceforge.net/</li>";
 #ifdef WANT_LV2
-        retText += "<li>serd, sord, sratom and lilv libraries for LV2 discovery, http://drobilla.net/software/lilv/</li>";
+        text1 += "<li>serd, sord, sratom and lilv libraries for LV2 discovery, http://drobilla.net/software/lilv/</li>";
 #endif
 #ifdef WANT_RTAUDIO
-        retText += "<li>RtAudio and RtMidi libraries for extra Audio and MIDI support, http://www.music.mcgill.ca/~gary/rtaudio/</li>";
+        text1 += "<li>RtAudio+RtMidi libraries for extra Audio and MIDI support, http://www.music.mcgill.ca/~gary/rtaudio/</li>";
 #endif
-        retText += "</ul>";
+        text1 += "</ul>";
 
+        // code snippets
+        text2  = "<p>Additionally, Carla uses code snippets from the following projects:</p>";
+        text2 += "<ul>";
+        text2 += "<li>Pointer and data leak utils from JUCE, http://www.rawmaterialsoftware.com/juce.php</li>";
+        text2 += "<li>Shared memory utils from dssi-vst, http://www.breakfastquay.com/dssi-vst/</li>";
+        text2 += "<li>Real-time memory pool, by Nedko Arnaudov</li>";
+        text2 += "</ul>";
+
+        // LinuxSampler GPL exception
 #ifdef WANT_LINUXSAMPLER
-        retText += "<p>(*) Using LinuxSampler code in commercial hardware or software products is not allowed without prior written authorization by the authors.</p>";
+        text2 += "<p>(*) Using LinuxSampler code in commercial hardware or software products is not allowed without prior written authorization by the authors.</p>";
 #endif
+
+        retText += text1;
+        retText += text2;
     }
 
     return retText;
@@ -204,13 +231,24 @@ const char* carla_get_engine_driver_name(unsigned int index)
     return CarlaEngine::getDriverName(index);
 }
 
+const void* carla_get_engine_driver_options(unsigned int index)
+{
+    carla_debug("carla_get_engine_driver_options(%i)", index);
+
+    return nullptr;
+}
+
 // -------------------------------------------------------------------------------------------------------------------
 
 unsigned int carla_get_internal_plugin_count()
 {
     carla_debug("carla_get_internal_plugin_count()");
 
+#ifdef WANT_NATIVE
     return static_cast<unsigned int>(CarlaPlugin::getNativePluginCount());
+#else
+    return 0;
+#endif
 }
 
 const CarlaNativePluginInfo* carla_get_internal_plugin_info(unsigned int internalPluginId)
@@ -219,6 +257,7 @@ const CarlaNativePluginInfo* carla_get_internal_plugin_info(unsigned int interna
 
     static CarlaNativePluginInfo info;
 
+#ifdef WANT_NATIVE
     const PluginDescriptor* const nativePlugin = CarlaPlugin::getNativePluginDescriptor(internalPluginId);
 
     // as internal plugin, this must never fail
@@ -250,6 +289,7 @@ const CarlaNativePluginInfo* carla_get_internal_plugin_info(unsigned int interna
      info.label     = nativePlugin->label;
      info.maker     = nativePlugin->maker;
      info.copyright = nativePlugin->copyright;
+#endif
 
     return &info;
 }
@@ -517,6 +557,19 @@ void carla_set_engine_option(CarlaBackend::OptionsType option, int value, const 
 
 // -------------------------------------------------------------------------------------------------------------------
 
+bool carla_load_filename(const char* filename)
+{
+    carla_debug("carla_load_filename(\"%s\")", filename);
+    CARLA_ASSERT(standalone.engine != nullptr);
+    CARLA_ASSERT(filename != nullptr);
+
+    if (standalone.engine != nullptr)
+        return standalone.engine->loadFilename(filename);
+
+    standalone.lastError = "Engine is not started";
+    return false;
+}
+
 bool carla_load_project(const char* filename)
 {
     carla_debug("carla_load_project(\"%s\")", filename);
@@ -689,6 +742,35 @@ void carla_remove_all_plugins()
     if (standalone.engine != nullptr && standalone.engine->isRunning())
         standalone.engine->removeAllPlugins();
 }
+
+
+// -------------------------------------------------------------------------------------------------------------------
+
+bool carla_clone_plugin(unsigned int pluginId)
+{
+    carla_debug("carla_clone_plugin(%i)", pluginId);
+    CARLA_ASSERT(standalone.engine != nullptr);
+
+    if (standalone.engine == nullptr)
+        return false;
+
+    // TODO
+    return false;
+}
+
+bool carla_switch_plugins(unsigned int pluginIdA, unsigned int pluginIdB)
+{
+    carla_debug("carla_switch_plugins(%i, %i)", pluginIdA, pluginIdB);
+    CARLA_ASSERT(standalone.engine != nullptr);
+
+    if (standalone.engine == nullptr)
+        return false;
+
+    // TODO
+    return false;
+}
+
+// -------------------------------------------------------------------------------------------------------------------
 
 bool carla_load_plugin_state(unsigned int pluginId, const char* filename)
 {
