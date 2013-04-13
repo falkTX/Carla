@@ -30,12 +30,23 @@
 #include "zynaddsubfx/Misc/Util.h"
 
 #ifdef WANT_ZYNADDSUBFX_UI
-#include "zynaddsubfx/UI/common.H"
-#include "zynaddsubfx/UI/MasterUI.h"
-#include <FL/Fl_Shared_Image.H>
-#include <FL/Fl_Tiled_Image.H>
-#include <FL/Fl_Dial.H>
-#include <FL/Fl_Theme.H>
+// FIXME
+# ifdef override
+#  define override_hack
+#  undef override
+# endif
+
+# include "zynaddsubfx/UI/common.H"
+# include "zynaddsubfx/UI/MasterUI.h"
+# include <FL/Fl_Shared_Image.H>
+# include <FL/Fl_Tiled_Image.H>
+# include <FL/Fl_Dial.H>
+# include <FL/Fl_Theme.H>
+
+# ifdef override_hack
+#  define override
+#  undef override_hack
+# endif
 #endif
 
 #include <ctime>

@@ -12,6 +12,7 @@ CONFIG     = debug
 CONFIG    += link_pkgconfig qt shared warn_on
 
 DEFINES    = DEBUG
+DEFINES   += HAVE_CPP11_SUPPORT
 DEFINES   += QTCREATOR_TEST
 
 # Shared
