@@ -1,0 +1,192 @@
+/*
+ * Carla Native Plugins
+ * Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * For a full copy of the GNU General Public License see the GPL.txt file
+ */
+
+#include "CarlaNative.hpp"
+
+#ifndef CARLA_OS_WIN
+# include <dlfcn.h>
+#endif
+
+#define SUNVOX_MAIN
+#include "sunvox/sunvox.h"
+
+class SunVoxFilePlugin : public PluginDescriptorClass
+{
+public:
+    SunVoxFilePlugin(const HostDescriptor* const host)
+        : PluginDescriptorClass(host),
+          fSlot(sLastSlot++)
+    {
+        sv_open_slot(fSlot);
+        sv_set_autostop(fSlot, 0);
+
+        // TESTING
+        carla_stdout("sv_load");
+        sv_load(fSlot, "/home/falktx/bin/sunvox/examples/8bit_tales.sunvox");
+        carla_stdout("sv_load - FINISHED");
+        sv_play_from_beginning(fSlot);
+    }
+
+    ~SunVoxFilePlugin()
+    {
+        sv_close_slot(fSlot);
+    }
+
+protected:
+    // -------------------------------------------------------------------
+    // Plugin state calls
+
+    void setCustomData(const char* const key, const char* const value)
+    {
+        CARLA_ASSERT(key != nullptr);
+        CARLA_ASSERT(value != nullptr);
+
+        if (std::strcmp(key, "file") != 0)
+            return;
+
+        //sv_load(fSlot, value);
+    }
+
+    // -------------------------------------------------------------------
+    // Plugin process calls
+
+    void process(float** inBuf, float** outBuf, const uint32_t frames, const uint32_t, const MidiEvent* const)
+    {
+        const TimeInfo* const timePos = getTimeInfo();
+
+        if (timePos->playing)
+        {
+            float svBuffer[frames*2];
+
+            for (uint32_t i=0, j=0; i < frames; ++i)
+            {
+                svBuffer[j++] = outBuf[0][i];
+                svBuffer[j++] = outBuf[1][i];
+            }
+
+            //double tickFrame = double(timePos->frame)*sTicksPerFrame;
+            //int outTime = (timePos->usecs - ) & 0xFFFFFFFF;
+            unsigned int tick = 0; sv_get_ticks()& 0xFFFFFFFF;
+
+            sv_audio_callback(svBuffer, frames, 0, tick);
+
+            printf("Line counter: %d, ticks: %u\n", sv_get_current_line(fSlot), tick);
+        }
+        else
+        {
+           carla_zeroFloat(outBuf[0], frames);
+           carla_zeroFloat(outBuf[1], frames);
+        }
+    }
+
+    // -------------------------------------------------------------------
+    // Plugin UI calls
+
+    void uiShow(const bool show)
+    {
+        if (! show)
+            return;
+
+        if (const char* const filename = uiOpenFile(false, "Open Audio File", "MIDI Files *.mid;*.midi;;"))
+        {
+            uiCustomDataChanged("file", filename);
+        }
+
+        uiClosed();
+    }
+
+private:
+    int fSlot;
+
+    static int sInstanceCount;
+    static int sLastSlot;
+    static double sTicksPerFrame;
+
+public:
+    static PluginHandle _instantiate(const PluginDescriptor*, HostDescriptor* host)
+    {
+        if (sInstanceCount == 0)
+        {
+            CARLA_ASSERT(sLastSlot == 0);
+            CARLA_ASSERT(sTicksPerFrame == 0);
+
+            if (sv_load_dll() != 0)
+                return nullptr;
+
+            const double sampleRate(host->get_sample_rate(host->handle));
+
+            if (sv_init(nullptr, (int)sampleRate, 2, SV_INIT_FLAG_USER_AUDIO_CALLBACK|SV_INIT_FLAG_AUDIO_FLOAT32|SV_INIT_FLAG_ONE_THREAD) == 0)
+                return nullptr;
+
+            sTicksPerFrame = double(sv_get_ticks_per_second())/sampleRate;
+        }
+
+        sInstanceCount++;
+
+        return new SunVoxFilePlugin(host);
+    }
+
+    static void _cleanup(PluginHandle handle)
+    {
+        delete (SunVoxFilePlugin*)handle;
+
+        if (--sInstanceCount == 0)
+        {
+            CARLA_ASSERT(sLastSlot > 0);
+            CARLA_ASSERT(sTicksPerFrame > 0.0);
+
+            sLastSlot = 0;
+            sTicksPerFrame = 0.0;
+
+            sv_deinit();
+            sv_unload_dll();
+        }
+    }
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SunVoxFilePlugin)
+};
+
+int    SunVoxFilePlugin::sInstanceCount = 0;
+int    SunVoxFilePlugin::sLastSlot = 0;
+double SunVoxFilePlugin::sTicksPerFrame = 0.0;
+
+// -----------------------------------------------------------------------
+
+static const PluginDescriptor sunvoxfileDesc = {
+    /* category  */ PLUGIN_CATEGORY_UTILITY,
+    /* hints     */ static_cast<PluginHints>(PLUGIN_HAS_GUI),
+    /* audioIns  */ 0,
+    /* audioOuts */ 2,
+    /* midiIns   */ 0,
+    /* midiOuts  */ 0,
+    /* paramIns  */ 0,
+    /* paramOuts */ 0,
+    /* name      */ "SunVox File",
+    /* label     */ "sunvoxfile",
+    /* maker     */ "falkTX",
+    /* copyright */ "GNU GPL v2+",
+    PluginDescriptorFILL(SunVoxFilePlugin)
+};
+
+// -----------------------------------------------------------------------
+
+void carla_register_native_plugin_sunvoxfile()
+{
+    carla_register_native_plugin(&sunvoxfileDesc);
+}
+
+// -----------------------------------------------------------------------
