@@ -35,7 +35,7 @@ BUILD_CXX_FLAGS += -DWANT_JACK
 endif
 
 ifeq ($(HAVE_JACK_LATENCY),true)
-BUILD_CXX_FLAGS += -DWANT_JACK_LATENCY
+# BUILD_CXX_FLAGS += -DWANT_JACK_LATENCY # unfinished
 endif
 
 ifeq ($(HAVE_JACK2),true)
