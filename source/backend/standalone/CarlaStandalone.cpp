@@ -37,6 +37,7 @@ using CarlaBackend::CarlaEngine;
 using CarlaBackend::CarlaPlugin;
 using CarlaBackend::CallbackFunc;
 using CarlaBackend::EngineOptions;
+using CarlaBackend::EngineTimeInfo;
 
 // -------------------------------------------------------------------------------------------------------------------
 // Single, standalone engine
@@ -467,7 +468,7 @@ void carla_set_engine_callback(CarlaCallbackFunc func, void* ptr)
         standalone.engine->setCallback(func, ptr);
 }
 
-void carla_set_engine_option(CarlaBackend::OptionsType option, int value, const char* valueStr)
+void carla_set_engine_option(CarlaOptionsType option, int value, const char* valueStr)
 {
     carla_debug("carla_set_engine_option(%s, %i, \"%s\")", CarlaBackend::OptionsType2Str(option), value, valueStr);
 
@@ -707,7 +708,7 @@ uint32_t carla_get_current_transport_frame()
 
     if (standalone.engine != nullptr)
     {
-        const CarlaBackend::EngineTimeInfo& timeInfo(standalone.engine->getTimeInfo());
+        const EngineTimeInfo& timeInfo(standalone.engine->getTimeInfo());
         return timeInfo.frame;
     }
 
@@ -722,7 +723,7 @@ const CarlaTransportInfo* carla_get_transport_info()
 
     if (standalone.engine != nullptr)
     {
-        const CarlaBackend::EngineTimeInfo& timeInfo(standalone.engine->getTimeInfo());
+        const EngineTimeInfo& timeInfo(standalone.engine->getTimeInfo());
 
         info.playing = timeInfo.playing;
         info.frame   = timeInfo.frame;
@@ -757,7 +758,7 @@ const CarlaTransportInfo* carla_get_transport_info()
 
 // -------------------------------------------------------------------------------------------------------------------
 
-bool carla_add_plugin(CarlaBackend::BinaryType btype, CarlaBackend::PluginType ptype, const char* filename, const char* const name, const char* label, const void* extraStuff)
+bool carla_add_plugin(CarlaBinaryType btype, CarlaPluginType ptype, const char* filename, const char* const name, const char* label, const void* extraStuff)
 {
     carla_debug("carla_add_plugin(%s, %s, \"%s\", \"%s\", \"%s\", %p)", CarlaBackend::BinaryType2Str(btype), CarlaBackend::PluginType2Str(ptype), filename, name, label, extraStuff);
     CARLA_ASSERT(standalone.engine != nullptr);
@@ -845,8 +846,11 @@ bool carla_load_plugin_state(unsigned int pluginId, const char* filename)
     carla_debug("carla_load_plugin_state(%i, \"%s\")", pluginId, filename);
     CARLA_ASSERT(standalone.engine != nullptr);
 
-    if (standalone.engine == nullptr)
+    if (standalone.engine == nullptr || ! standalone.engine->isRunning())
+    {
+        standalone.lastError = "Engine is not started";
         return false;
+    }
 
     if (CarlaPlugin* const plugin = standalone.engine->getPlugin(pluginId))
         return plugin->loadStateFromFile(filename);
@@ -861,7 +865,10 @@ bool carla_save_plugin_state(unsigned int pluginId, const char* filename)
     CARLA_ASSERT(standalone.engine != nullptr);
 
     if (standalone.engine == nullptr)
+    {
+        standalone.lastError = "Engine is not started";
         return false;
+    }
 
     if (CarlaPlugin* const plugin = standalone.engine->getPlugin(pluginId))
         return plugin->saveStateToFile(filename);
@@ -1372,7 +1379,6 @@ const char* carla_get_program_name(unsigned int pluginId, uint32_t programId)
         if (programId < plugin->programCount())
         {
             plugin->getProgramName(programId, programName);
-
             return programName;
         }
 
@@ -1400,7 +1406,6 @@ const char* carla_get_midi_program_name(unsigned int pluginId, uint32_t midiProg
         if (midiProgramId < plugin->midiProgramCount())
         {
             plugin->getMidiProgramName(midiProgramId, midiProgramName);
-
             return midiProgramName;
         }
 
@@ -1426,7 +1431,6 @@ const char* carla_get_real_plugin_name(unsigned int pluginId)
     if (CarlaPlugin* const plugin = standalone.engine->getPlugin(pluginId))
     {
         plugin->getRealName(realPluginName);
-
         return realPluginName;
     }
 
@@ -1520,17 +1524,7 @@ float carla_get_input_peak_value(unsigned int pluginId, unsigned short portId)
     if (standalone.engine == nullptr)
         return 0.0f;
 
-    if (pluginId >= standalone.engine->currentPluginCount())
-    {
-        carla_stderr2("carla_get_input_peak_value(%i, %i) - invalid plugin value", pluginId, portId);
-        return 0.0f;
-    }
-
-    if (portId == 1 || portId == 2)
-       return standalone.engine->getInputPeak(pluginId, portId);
-
-    carla_stderr2("carla_get_input_peak_value(%i, %i) - invalid port value", pluginId, portId);
-    return 0.0f;
+    return standalone.engine->getInputPeak(pluginId, portId);
 }
 
 float carla_get_output_peak_value(unsigned int pluginId, unsigned short portId)
@@ -1541,17 +1535,7 @@ float carla_get_output_peak_value(unsigned int pluginId, unsigned short portId)
     if (standalone.engine == nullptr)
         return 0.0f;
 
-    if (pluginId >= standalone.engine->currentPluginCount())
-    {
-        carla_stderr2("carla_get_input_peak_value(%i, %i) - invalid plugin value", pluginId, portId);
-        return 0.0f;
-    }
-
-    if (portId == 1 || portId == 2)
-       return standalone.engine->getOutputPeak(pluginId, portId);
-
-    carla_stderr2("carla_get_output_peak_value(%i, %i) - invalid port value", pluginId, portId);
-    return 0.0f;
+    return standalone.engine->getOutputPeak(pluginId, portId);
 }
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -1748,6 +1732,8 @@ void carla_set_parameter_midi_cc(unsigned int pluginId, uint32_t parameterId, in
     carla_stderr2("carla_set_parameter_midi_cc(%i, %i, %i) - could not find plugin", pluginId, parameterId, cc);
 }
 
+// -------------------------------------------------------------------------------------------------------------------
+
 void carla_set_program(unsigned int pluginId, uint32_t programId)
 {
     carla_debug("carla_set_program(%i, %i)", pluginId, programId);
@@ -1910,7 +1896,10 @@ const char* carla_get_host_osc_url()
     CARLA_ASSERT(standalone.engine != nullptr);
 
     if (standalone.engine == nullptr)
+    {
+        standalone.lastError = "Engine is not started";
         return nullptr;
+    }
 
     return standalone.engine->getOscServerPathTCP();
 }

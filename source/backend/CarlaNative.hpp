@@ -298,6 +298,20 @@ protected:
     }
 
     // -------------------------------------------------------------------
+    // Dispatcher
+
+    virtual intptr_t dispatcher(int32_t opcode, int32_t index, intptr_t value, void* ptr)
+    {
+        return 0;
+
+        // unused
+        (void)opcode;
+        (void)index;
+        (void)value;
+        (void)ptr;
+    }
+
+    // -------------------------------------------------------------------
 
 private:
     const HostDescriptor* const kHost;
@@ -403,6 +417,11 @@ public:
         handlePtr->setState(data);
     }
 
+    static intptr_t _dispatcher(PluginHandle handle, int32_t opcode, int32_t index, intptr_t value, void* ptr)
+    {
+        return handlePtr->dispatcher(opcode, index, value, ptr);
+    }
+
     #undef handlePtr
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PluginDescriptorClass)
@@ -445,6 +464,7 @@ public:                                                                         
     className::_deactivate,             \
     className::_process,                \
     className::_get_state,              \
-    className::_set_state
+    className::_set_state,              \
+    className::_dispatcher
 
 #endif // __CARLA_NATIVE_HPP__

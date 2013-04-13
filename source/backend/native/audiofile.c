@@ -666,7 +666,9 @@ static const PluginDescriptor audiofileDesc = {
     .process    = audiofile_process,
 
     .get_state = NULL,
-    .set_state = NULL
+    .set_state = NULL,
+
+    .dispatcher = NULL
 };
 
 // -----------------------------------------------------------------------

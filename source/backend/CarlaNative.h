@@ -195,7 +195,7 @@ typedef struct _PluginDescriptor {
     char* (*get_state)(PluginHandle handle);
     void  (*set_state)(PluginHandle handle, const char* data);
 
-    intptr_t (*dispatcher)(PluginHandle handle, int32_t code, int32_t index, intptr_t value, void* ptr);
+    intptr_t (*dispatcher)(PluginHandle handle, int32_t opcode, int32_t index, intptr_t value, void* ptr);
 
 } PluginDescriptor;
 

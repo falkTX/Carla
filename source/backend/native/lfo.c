@@ -296,7 +296,9 @@ static const PluginDescriptor lfoDesc = {
     .process    = lfo_process,
 
     .get_state = NULL,
-    .set_state = NULL
+    .set_state = NULL,
+
+    .dispatcher = NULL
 };
 
 // -----------------------------------------------------------------------

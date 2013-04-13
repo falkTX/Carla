@@ -65,7 +65,9 @@ static const PluginDescriptor nekofilterDesc = {
     .process    = nekofilter_process,
 
     .get_state = NULL,
-    .set_state = NULL
+    .set_state = NULL,
+
+    .dispatcher = NULL
 };
 
 // -----------------------------------------------------------------------

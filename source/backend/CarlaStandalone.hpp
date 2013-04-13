@@ -308,67 +308,76 @@ CARLA_EXPORT bool carla_is_engine_running();
 CARLA_EXPORT void carla_set_engine_about_to_close();
 
 /*!
- * TODO
+ * Set the engine callback function to \a func.
+ * Use \a ptr to pass a custom pointer to the callback.
  */
 CARLA_EXPORT void carla_set_engine_callback(CarlaCallbackFunc func, void* ptr);
 
 /*!
- * TODO
+ * Set the engine option \a option.\n
+ * With the exception of OPTION_PROCESS_NAME, OPTION_TRANSPORT_MODE and OPTION_PATH_*,
+ * this function should not be called when the engine is running.
  */
 CARLA_EXPORT void carla_set_engine_option(CarlaOptionsType option, int value, const char* valueStr);
 
 /*!
- * TODO
+ * Load \a filename of any type.\n
+ * This will try to load a generic file as a plugin,
+ * either by direct handling (GIG, SF2 and SFZ) or by using an internal plugin (like Audio and MIDI).
+ * \see carla_get_supported_file_types()
  */
 CARLA_EXPORT bool carla_load_filename(const char* filename);
 
 /*!
- * TODO
+ * Load \a filename project file.\n
+ * (project files have *.carxp extension)
+ * \note Already loaded plugins are not removed; call carla_remove_all_plugins() first if needed.
  */
 CARLA_EXPORT bool carla_load_project(const char* filename);
 
 /*!
- * TODO
+ * Save current project to \a filename.\n
+ * (project files have *.carxp extension)
  */
 CARLA_EXPORT bool carla_save_project(const char* filename);
 
 /*!
- * TODO
+ * Connect patchbay ports \a portA and \a portB.
  */
 CARLA_EXPORT bool carla_patchbay_connect(int portA, int portB);
 
 /*!
- * TODO
+ * Disconnect patchbay connection \a connectionId.
  */
 CARLA_EXPORT bool carla_patchbay_disconnect(int connectionId);
 
 /*!
- * TODO
+ * Force the engine to resend all patchbay clients, ports and connections again.
  */
 CARLA_EXPORT void carla_patchbay_refresh();
 
 /*!
- * TODO
+ * Start playback of the engine transport.
  */
 CARLA_EXPORT void carla_transport_play();
 
 /*!
- * TODO
+ * Pause the engine transport.
  */
 CARLA_EXPORT void carla_transport_pause();
 
 /*!
- * TODO
+ * Relocate the engine transport to \a frames.
  */
 CARLA_EXPORT void carla_transport_relocate(uint32_t frames);
 
 /*!
- * TODO
+ * Get the current transport frame.
  */
 CARLA_EXPORT uint32_t carla_get_current_transport_frame();
 
 /*!
- * TODO
+ * Get the engine transport information.
  */
 CARLA_EXPORT const CarlaTransportInfo* carla_get_transport_info();
 
@@ -481,197 +490,208 @@ CARLA_EXPORT const CarlaCustomData* carla_get_custom_data(unsigned int pluginId,
 CARLA_EXPORT const char* carla_get_chunk_data(unsigned int pluginId);
 
 /*!
- * TODO
+ * Get how many parameters a plugin has.
  */
 CARLA_EXPORT uint32_t carla_get_parameter_count(unsigned int pluginId);
 
 /*!
- * TODO
+ * Get how many programs a plugin has.
  */
 CARLA_EXPORT uint32_t carla_get_program_count(unsigned int pluginId);
 
 /*!
- * TODO
+ * Get how many midi programs a plugin has.
  */
 CARLA_EXPORT uint32_t carla_get_midi_program_count(unsigned int pluginId);
 
 /*!
- * TODO
+ * Get how many custom data sets a plugin has.
+ * \see carla_prepare_for_save()
  */
 CARLA_EXPORT uint32_t carla_get_custom_data_count(unsigned int pluginId);
 
 /*!
- * TODO
+ * Get a plugin's custom parameter text display.
+ * \see PARAMETER_USES_CUSTOM_TEXT
  */
 CARLA_EXPORT const char* carla_get_parameter_text(unsigned int pluginId, uint32_t parameterId);
 
 /*!
- * TODO
+ * Get a plugin's program name.
  */
 CARLA_EXPORT const char* carla_get_program_name(unsigned int pluginId, uint32_t programId);
 
 /*!
- * TODO
+ * Get a plugin's midi program name.
  */
 CARLA_EXPORT const char* carla_get_midi_program_name(unsigned int pluginId, uint32_t midiProgramId);
 
 /*!
- * TODO
+ * Get the plugin's real name.\n
+ * This is the name the plugin uses to identify itself; may not be unique.
  */
 CARLA_EXPORT const char* carla_get_real_plugin_name(unsigned int pluginId);
 
 /*!
- * TODO
+ * Get the current plugin's program index.
  */
 CARLA_EXPORT int32_t carla_get_current_program_index(unsigned int pluginId);
 
 /*!
- * TODO
+ * Get the current plugin's midi program index.
  */
 CARLA_EXPORT int32_t carla_get_current_midi_program_index(unsigned int pluginId);
 
 /*!
- * TODO
+ * Get a plugin's default parameter value.
  */
 CARLA_EXPORT float carla_get_default_parameter_value(unsigned int pluginId, uint32_t parameterId);
 
 /*!
- * TODO
+ * Get a plugin's current parameter value.
  */
 CARLA_EXPORT float carla_get_current_parameter_value(unsigned int pluginId, uint32_t parameterId);
 
 /*!
- * TODO
+ * Get a plugin's input peak value.\n
+ * \a portId must only be either 1 or 2
  */
 CARLA_EXPORT float carla_get_input_peak_value(unsigned int pluginId, unsigned short portId);
 
 /*!
- * TODO
+ * Get a plugin's output peak value.\n
+ * \a portId must only be either 1 or 2
  */
 CARLA_EXPORT float carla_get_output_peak_value(unsigned int pluginId, unsigned short portId);
 
 /*!
- * TODO
+ * Enable a plugin's option.
+ * \see PluginOptions
  */
 CARLA_EXPORT void carla_set_option(unsigned int pluginId, unsigned int option, bool yesNo);
 
 /*!
- * TODO
+ * Enable or disable a plugin according to \a onOff.
  */
 CARLA_EXPORT void carla_set_active(unsigned int pluginId, bool onOff);
 
 /*!
- * TODO
+ * Change a plugin's internal drywet value to \a value.
  */
 CARLA_EXPORT void carla_set_drywet(unsigned int pluginId, float value);
 
 /*!
- * TODO
+ * Change a plugin's internal volume value to \a value.
  */
 CARLA_EXPORT void carla_set_volume(unsigned int pluginId, float value);
 
 /*!
- * TODO
+ * Change a plugin's internal balance-left value to \a value.
  */
 CARLA_EXPORT void carla_set_balance_left(unsigned int pluginId, float value);
 
 /*!
- * TODO
+ * Change a plugin's internal balance-right value to \a value.
  */
 CARLA_EXPORT void carla_set_balance_right(unsigned int pluginId, float value);
 
 /*!
- * TODO
+ * Change a plugin's internal panning value to \a value.
  */
 CARLA_EXPORT void carla_set_panning(unsigned int pluginId, float value);
 
 /*!
- * TODO
+ * Change a plugin's internal control channel to \a channel.
  */
 CARLA_EXPORT void carla_set_ctrl_channel(unsigned int pluginId, int8_t channel);
 
 /*!
- * TODO
+ * Set the plugin's parameter \a parameterId to \a value.
  */
 CARLA_EXPORT void carla_set_parameter_value(unsigned int pluginId, uint32_t parameterId, float value);
 
 /*!
- * TODO
+ * Set the plugin's parameter \a parameterId midi channel to \a channel.
  */
 CARLA_EXPORT void carla_set_parameter_midi_channel(unsigned int pluginId, uint32_t parameterId, uint8_t channel);
 
 /*!
- * TODO
+ * Set the plugin's parameter \a parameterId midi cc to \a cc.
  */
 CARLA_EXPORT void carla_set_parameter_midi_cc(unsigned int pluginId, uint32_t parameterId, int16_t cc);
 
 /*!
- * TODO
+ * Change a plugin's program to \a programId.
  */
 CARLA_EXPORT void carla_set_program(unsigned int pluginId, uint32_t programId);
 
 /*!
- * TODO
+ * Change a plugin's midi program to \a midiProgramId.
  */
 CARLA_EXPORT void carla_set_midi_program(unsigned int pluginId, uint32_t midiProgramId);
 
 /*!
- * TODO
+ * Set a plugin's custom data set.
  */
 CARLA_EXPORT void carla_set_custom_data(unsigned int pluginId, const char* type, const char* key, const char* value);
 
 /*!
- * TODO
+ * Set a plugin's chunk data.
  */
 CARLA_EXPORT void carla_set_chunk_data(unsigned int pluginId, const char* chunkData);
 
 /*!
- * TODO
+ * Tell a plugin to prepare for save.\n
+ * This should be called before carla_get_custom_data_count().
  */
 CARLA_EXPORT void carla_prepare_for_save(unsigned int pluginId);
 
 /*!
- * TODO
+ * Send a single note of a plugin.\n
+ * If \a note if 0, note-off is sent; note-on otherwise.
  */
 CARLA_EXPORT void carla_send_midi_note(unsigned int pluginId, uint8_t channel, uint8_t note, uint8_t velocity);
 
 /*!
- * TODO
+ * Tell a plugin to show its own custom UI.
+ * \see PLUGIN_HAS_GUI
  */
 CARLA_EXPORT void carla_show_gui(unsigned int pluginId, bool yesNo);
 
 /*!
- * TODO
+ * Get the current engine buffer size.
  */
 CARLA_EXPORT uint32_t carla_get_buffer_size();
 
 /*!
- * TODO
+ * Get the current engine sample rate.
  */
-CARLA_EXPORT double   carla_get_sample_rate();
+CARLA_EXPORT double carla_get_sample_rate();
 
 /*!
- * TODO
+ * Get the last error.
  */
 CARLA_EXPORT const char* carla_get_last_error();
 
 /*!
- * TODO
+ * Get the current engine OSC URL.
  */
 CARLA_EXPORT const char* carla_get_host_osc_url();
 
 /*!
- * TODO
+ * Send NSM announce message.
  */
 CARLA_EXPORT void carla_nsm_announce(const char* url, int pid);
 
 /*!
- * TODO
+ * Reply to NSM open message.
+ * \see CALLBACK_NSM_OPEN
  */
 CARLA_EXPORT void carla_nsm_reply_open();
 
 /*!
- * TODO
+ * Reply to NSM save message.
+ * \see CALLBACK_NSM_SAVE
  */
 CARLA_EXPORT void carla_nsm_reply_save();
 

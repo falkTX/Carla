@@ -882,6 +882,30 @@ void CarlaEngine::removeAllPlugins()
     carla_debug("CarlaEngine::removeAllPlugins() - END");
 }
 
+const char* CarlaEngine::renamePlugin(const unsigned int id, const char* const newName)
+{
+    setLastError("Not implemented yet");
+    return nullptr;
+}
+
+bool CarlaEngine::clonePlugin(const unsigned int id)
+{
+    setLastError("Not implemented yet");
+    return false;
+}
+
+bool CarlaEngine::replacePlugin(const unsigned int id)
+{
+    setLastError("Not implemented yet");
+    return false;
+}
+
+bool CarlaEngine::switchPlugins(const unsigned int idA, const unsigned int idB)
+{
+    setLastError("Not implemented yet");
+    return false;
+}
+
 CarlaPlugin* CarlaEngine::getPlugin(const unsigned int id) const
 {
     carla_debug("CarlaEngine::getPlugin(%i) [count:%i]", id, kData->curPluginCount);
@@ -1148,14 +1172,16 @@ void CarlaEngine::setCallback(const CallbackFunc func, void* const ptr)
 // -----------------------------------------------------------------------
 // Patchbay
 
-void CarlaEngine::patchbayConnect(int, int)
+bool CarlaEngine::patchbayConnect(int, int)
 {
-    // nothing
+    setLastError("Unsupported operation");
+    return false;
 }
 
-void CarlaEngine::patchbayDisconnect(int)
+bool CarlaEngine::patchbayDisconnect(int)
 {
-    // nothing
+    setLastError("Unsupported operation");
+    return false;
 }
 
 void CarlaEngine::patchbayRefresh()

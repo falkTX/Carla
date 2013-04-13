@@ -744,25 +744,37 @@ public:
     // -------------------------------------------------------------------
     // Patchbay
 
-    void patchbayConnect(int portA, int portB)
+    bool patchbayConnect(int portA, int portB)
     {
         CARLA_ASSERT(fClient != nullptr);
 
         if (fClient == nullptr)
-            return;
+        {
+            setLastError("Invalid JACK client");
+            return false;
+        }
 
         const char* const portNameA = getFullPortName(portA).toUtf8().constData();
         const char* const portNameB = getFullPortName(portB).toUtf8().constData();
 
-        jack_connect(fClient, portNameA, portNameB);
+        if (jack_connect(fClient, portNameA, portNameB) != 0)
+        {
+            setLastError("JACK operation failed");
+            return false;
+        }
+
+        return true;
     }
 
-    void patchbayDisconnect(int connectionId)
+    bool patchbayDisconnect(int connectionId)
     {
         CARLA_ASSERT(fClient != nullptr);
 
         if (fClient == nullptr)
-            return;
+        {
+            setLastError("Invalid JACK client");
+            return false;
+        }
 
         for (int i=0, count=fUsedConnections.count(); i < count; i++)
         {
@@ -771,10 +783,18 @@ public:
                 const char* const portNameA = getFullPortName(fUsedConnections[i].portOut).toUtf8().constData();
                 const char* const portNameB = getFullPortName(fUsedConnections[i].portIn).toUtf8().constData();
 
-                jack_disconnect(fClient, portNameA, portNameB);
-                break;
+                if (jack_disconnect(fClient, portNameA, portNameB) != 0)
+                {
+                    setLastError("JACK operation failed");
+                    return false;
+                }
+
+                return true;
             }
         }
+
+        setLastError("Failed to find the requested connection");
+        return false;
     }
 
     void patchbayRefresh()

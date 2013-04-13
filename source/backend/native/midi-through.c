@@ -103,7 +103,9 @@ static const PluginDescriptor midiThroughDesc = {
     .process    = midiThrough_process,
 
     .get_state = NULL,
-    .set_state = NULL
+    .set_state = NULL,
+
+    .dispatcher = NULL
 };
 
 // -----------------------------------------------------------------------

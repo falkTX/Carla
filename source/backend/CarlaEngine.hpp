@@ -757,6 +757,7 @@ public:
      */
     CarlaPlugin* getPluginUnchecked(const unsigned int id) const;
 
+    // FIXME - this one should not be public
     /*!
      * Get a unique plugin name within the engine.\n
      * Returned variable must NOT be free'd.
@@ -769,18 +770,20 @@ public:
     /*!
      * Load \a filename of any type.\n
      * This will try to load a generic file as a plugin,
-     * either by direct handling (GIG, SF2 and SFZ) or by using an internal plugin (like Audio and MIDI)
+     * either by direct handling (GIG, SF2 and SFZ) or by using an internal plugin (like Audio and MIDI).
      */
     bool loadFilename(const char* const filename);
 
     /*!
-     * Load \a filename session.
+     * Load \a filename project file.\n
+     * (project files have *.carxp extension)
      * \note Already loaded plugins are not removed; call removeAllPlugins() first if needed.
      */
     bool loadProject(const char* const filename);
 
     /*!
-     * Save current session to \a filename.
+     * Save current project to \a filename.\n
+     * (project files have *.carxp extension)
      */
     bool saveProject(const char* const filename);
 
@@ -853,6 +856,7 @@ public:
     // -------------------------------------------------------------------
     // Callback
 
+    // FIXME - this one should not be public
     /*!
      * TODO.
      */
@@ -867,17 +871,17 @@ public:
     // Patchbay
 
     /*!
-     * TODO.
+     * Connect patchbay ports \a portA and \a portB.
      */
     virtual bool patchbayConnect(int portA, int portB);
 
     /*!
-     * TODO.
+     * Disconnect patchbay connection \a connectionId.
      */
     virtual bool patchbayDisconnect(int connectionId);
 
     /*!
-     * TODO.
+     * Force the engine to resend all patchbay clients, ports and connections again.
      */
     virtual void patchbayRefresh();
 
@@ -885,17 +889,17 @@ public:
     // Transport
 
     /*!
-     * TODO.
+     * Start playback of the engine transport.
      */
     virtual void transportPlay();
 
     /*!
-     * TODO.
+     * Pause the engine transport.
      */
     virtual void transportPause();
 
     /*!
-     * TODO.
+     * Relocate the engine transport to \a frames.
      */
     virtual void transportRelocate(const uint32_t frame);
 
@@ -907,6 +911,7 @@ public:
      */
     const char* getLastError() const;
 
+    // FIXME - this one should not be public
     /*!
      * Set last error.
      */
@@ -944,6 +949,7 @@ public:
     bool isOscControlRegistered() const;
 #endif
 
+    // FIXME - this one should not be public
     /*!
      * Idle OSC.
      */
@@ -996,6 +1002,11 @@ protected:
      * TODO.
      */
     void proccessPendingEvents();
+
+    /*!
+     * TODO.
+     */
+    void setPeaks(const unsigned int pluginId, float const inPeaks[MAX_PEAKS], float const outPeaks[MAX_PEAKS]);
 
 #ifndef BUILD_BRIDGE
     // Rack mode data

@@ -185,7 +185,9 @@ static const PluginDescriptor midiTransposeDesc = {
     .process    = midiTranspose_process,
 
     .get_state = NULL,
-    .set_state = NULL
+    .set_state = NULL,
+
+    .dispatcher = NULL
 };
 
 // -----------------------------------------------------------------------

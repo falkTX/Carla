@@ -34,7 +34,7 @@ CARLA_BACKEND_START_NAMESPACE
  * @defgroup CarlaBackendAPI Carla Backend API
  *
  * The Carla Backend API.\n
- * This is the base definitions for everything the Carla code.
+ * This is the base definitions for everything in the Carla code.
  *
  * @{
  */
@@ -737,7 +737,7 @@ struct MidiProgramData {
 };
 
 /*!
- * Custom data, saving key:value 'dictionaries'.
+ * Custom data, saving key:value 'dictionaries'.\n
  * \a type is an URI which defines the \a value type.
  *
  * \see CustomDataTypes
