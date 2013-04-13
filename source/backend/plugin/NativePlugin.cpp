@@ -185,7 +185,7 @@ public:
         fHost.ui_save_file           = carla_host_ui_save_file;
     }
 
-    ~NativePlugin()
+    ~NativePlugin() override
     {
         carla_debug("NativePlugin::~NativePlugin()");
 
@@ -232,12 +232,12 @@ public:
     // -------------------------------------------------------------------
     // Information (base)
 
-    PluginType type() const
+    PluginType type() const override
     {
         return PLUGIN_INTERNAL;
     }
 
-    PluginCategory category()
+    PluginCategory category() override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
 
@@ -247,17 +247,17 @@ public:
     // -------------------------------------------------------------------
     // Information (count)
 
-    uint32_t midiInCount()
+    uint32_t midiInCount() const override
     {
         return fMidiIn.count;
     }
 
-    uint32_t midiOutCount()
+    uint32_t midiOutCount() const override
     {
         return fMidiOut.count;
     }
 
-    uint32_t parameterScalePointCount(const uint32_t parameterId) const
+    uint32_t parameterScalePointCount(const uint32_t parameterId) const override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
         CARLA_ASSERT(fHandle != nullptr);
@@ -275,7 +275,7 @@ public:
     // -------------------------------------------------------------------
     // Information (per-plugin data)
 
-    unsigned int availableOptions()
+    unsigned int availableOptions() override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
 
@@ -307,7 +307,7 @@ public:
         return options;
     }
 
-    float getParameterValue(const uint32_t parameterId)
+    float getParameterValue(const uint32_t parameterId) override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
         CARLA_ASSERT(fHandle != nullptr);
@@ -319,7 +319,7 @@ public:
         return 0.0f;
     }
 
-    float getParameterScalePointValue(const uint32_t parameterId, const uint32_t scalePointId)
+    float getParameterScalePointValue(const uint32_t parameterId, const uint32_t scalePointId) override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
         CARLA_ASSERT(fHandle != nullptr);
@@ -339,7 +339,7 @@ public:
         return 0.0f;
     }
 
-    void getLabel(char* const strBuf)
+    void getLabel(char* const strBuf) override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
 
@@ -349,7 +349,7 @@ public:
             CarlaPlugin::getLabel(strBuf);
     }
 
-    void getMaker(char* const strBuf)
+    void getMaker(char* const strBuf) override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
 
@@ -359,7 +359,7 @@ public:
             CarlaPlugin::getMaker(strBuf);
     }
 
-    void getCopyright(char* const strBuf)
+    void getCopyright(char* const strBuf) override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
 
@@ -369,7 +369,7 @@ public:
             CarlaPlugin::getCopyright(strBuf);
     }
 
-    void getRealName(char* const strBuf)
+    void getRealName(char* const strBuf) override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
 
@@ -379,7 +379,7 @@ public:
             CarlaPlugin::getRealName(strBuf);
     }
 
-    void getParameterName(const uint32_t parameterId, char* const strBuf)
+    void getParameterName(const uint32_t parameterId, char* const strBuf) override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
         CARLA_ASSERT(fHandle != nullptr);
@@ -399,7 +399,7 @@ public:
         CarlaPlugin::getParameterName(parameterId, strBuf);
     }
 
-    void getParameterText(const uint32_t parameterId, char* const strBuf)
+    void getParameterText(const uint32_t parameterId, char* const strBuf) override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
         CARLA_ASSERT(fHandle != nullptr);
@@ -417,7 +417,7 @@ public:
         CarlaPlugin::getParameterText(parameterId, strBuf);
     }
 
-    void getParameterUnit(const uint32_t parameterId, char* const strBuf)
+    void getParameterUnit(const uint32_t parameterId, char* const strBuf) override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
         CARLA_ASSERT(fHandle != nullptr);
@@ -437,7 +437,7 @@ public:
         CarlaPlugin::getParameterUnit(parameterId, strBuf);
     }
 
-    void getParameterScalePointLabel(const uint32_t parameterId, const uint32_t scalePointId, char* const strBuf)
+    void getParameterScalePointLabel(const uint32_t parameterId, const uint32_t scalePointId, char* const strBuf) override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
         CARLA_ASSERT(fHandle != nullptr);
@@ -464,7 +464,7 @@ public:
     // -------------------------------------------------------------------
     // Set data (state)
 
-    void prepareForSave()
+    void prepareForSave() override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
         CARLA_ASSERT(fHandle != nullptr);
@@ -484,7 +484,7 @@ public:
     // -------------------------------------------------------------------
     // Set data (plugin-specific stuff)
 
-    void setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback)
+    void setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
         CARLA_ASSERT(fHandle != nullptr);
@@ -503,7 +503,7 @@ public:
         CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
     }
 
-    void setCustomData(const char* const type, const char* const key, const char* const value, const bool sendGui)
+    void setCustomData(const char* const type, const char* const key, const char* const value, const bool sendGui) override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
         CARLA_ASSERT(fHandle != nullptr);
@@ -559,7 +559,7 @@ public:
         CarlaPlugin::setCustomData(type, key, value, sendGui);
     }
 
-    void setMidiProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback)
+    void setMidiProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
         CARLA_ASSERT(fHandle != nullptr);
@@ -589,7 +589,7 @@ public:
     // -------------------------------------------------------------------
     // Set gui stuff
 
-    void showGui(const bool yesNo)
+    void showGui(const bool yesNo) override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
         CARLA_ASSERT(fHandle != nullptr);
@@ -628,7 +628,7 @@ public:
         }
     }
 
-    void idleGui()
+    void idleGui() override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
         CARLA_ASSERT(fHandle != nullptr);
@@ -640,7 +640,7 @@ public:
     // -------------------------------------------------------------------
     // Plugin state
 
-    void reload()
+    void reload() override
     {
         carla_debug("NativePlugin::reload() - start");
         CARLA_ASSERT(kData->engine != nullptr);
@@ -1028,7 +1028,7 @@ public:
         carla_debug("NativePlugin::reload() - end");
     }
 
-    void reloadPrograms(const bool init)
+    void reloadPrograms(const bool init) override
     {
         carla_debug("NativePlugin::reloadPrograms(%s)", bool2str(init));
         uint32_t i, oldCount  = kData->midiprog.count;
@@ -1120,7 +1120,7 @@ public:
     // -------------------------------------------------------------------
     // Plugin processing
 
-    void activate()
+    void activate() override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
 
@@ -1133,7 +1133,7 @@ public:
         }
     }
 
-    void deactivate()
+    void deactivate() override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
 
@@ -1146,7 +1146,7 @@ public:
         }
     }
 
-    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames)
+    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames) override
     {
         uint32_t i, k;
 
@@ -1728,7 +1728,7 @@ public:
         return true;
     }
 
-    void bufferSizeChanged(const uint32_t newBufferSize)
+    void bufferSizeChanged(const uint32_t newBufferSize) override
     {
         CARLA_ASSERT_INT(newBufferSize > 0, newBufferSize);
         carla_debug("NativePlugin::bufferSizeChanged(%i)", newBufferSize);
@@ -1751,7 +1751,7 @@ public:
     // -------------------------------------------------------------------
     // Post-poned events
 
-    void uiParameterChange(const uint32_t index, const float value)
+    void uiParameterChange(const uint32_t index, const float value) override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
         CARLA_ASSERT(fHandle != nullptr);
@@ -1768,7 +1768,7 @@ public:
             fDescriptor->ui_set_parameter_value(fHandle, index, value);
     }
 
-    void uiMidiProgramChange(const uint32_t index)
+    void uiMidiProgramChange(const uint32_t index) override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
         CARLA_ASSERT(fHandle != nullptr);
@@ -1785,7 +1785,7 @@ public:
             fDescriptor->ui_set_midi_program(fHandle, kData->midiprog.data[index].bank, kData->midiprog.data[index].program);
     }
 
-    void uiNoteOn(const uint8_t channel, const uint8_t note, const uint8_t velo)
+    void uiNoteOn(const uint8_t channel, const uint8_t note, const uint8_t velo) override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
         CARLA_ASSERT(fHandle != nullptr);
@@ -1807,7 +1807,7 @@ public:
         // TODO
     }
 
-    void uiNoteOff(const uint8_t channel, const uint8_t note)
+    void uiNoteOff(const uint8_t channel, const uint8_t note) override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
         CARLA_ASSERT(fHandle != nullptr);
@@ -1829,7 +1829,7 @@ public:
     // -------------------------------------------------------------------
     // Plugin buffers
 
-    void initBuffers()
+    void initBuffers() override
     {
         fMidiIn.initBuffers(kData->engine);
         fMidiOut.initBuffers(kData->engine);
@@ -1837,7 +1837,7 @@ public:
         CarlaPlugin::initBuffers();
     }
 
-    void clearBuffers()
+    void clearBuffers() override
     {
         carla_debug("NativePlugin::clearBuffers() - start");
 

@@ -96,7 +96,7 @@ public:
         fOptions.processMode = PROCESS_MODE_CONTINUOUS_RACK;
     }
 
-    ~CarlaEngineRtAudio()
+    ~CarlaEngineRtAudio() override
     {
         carla_debug("CarlaEngineRtAudio::~CarlaEngineRtAudio()");
         CARLA_ASSERT(fAudioInBuf1 == nullptr);
@@ -110,7 +110,7 @@ public:
 
     // -------------------------------------
 
-    bool init(const char* const clientName)
+    bool init(const char* const clientName) override
     {
         carla_debug("CarlaEngineRtAudio::init(\"%s\")", clientName);
         CARLA_ASSERT(! fAudioIsReady);
@@ -200,7 +200,7 @@ public:
         return CarlaEngine::init(clientName);
     }
 
-    bool close()
+    bool close() override
     {
         carla_debug("CarlaEngineRtAudio::close()");
         CARLA_ASSERT(fAudioIsReady);
@@ -263,17 +263,17 @@ public:
         return true;
     }
 
-    bool isRunning() const
+    bool isRunning() const override
     {
         return fAudio.isStreamRunning();
     }
 
-    bool isOffline() const
+    bool isOffline() const override
     {
         return false;
     }
 
-    EngineType type() const
+    EngineType type() const override
     {
         return kEngineTypeRtAudio;
     }
@@ -281,24 +281,39 @@ public:
     // -------------------------------------------------------------------
     // Patchbay
 
-    void patchbayConnect(int portA, int portB)
+    bool patchbayConnect(int portA, int portB) override
     {
         CARLA_ASSERT(fAudioIsReady);
         CARLA_ASSERT(portA > PATCHBAY_PORT_MAX);
         CARLA_ASSERT(portB > PATCHBAY_PORT_MAX);
 
         if (! fAudioIsReady)
-            return;
+        {
+            setLastError("Engine not ready");
+            return false;
+        }
         if (portA < PATCHBAY_PORT_MAX)
-            return;
+        {
+            setLastError("Invalid output port");
+            return false;
+        }
         if (portB < PATCHBAY_PORT_MAX)
-            return;
+        {
+            setLastError("Invalid input port");
+            return false;
+        }
 
         // only allow connections between Carla and other ports
         if (portA < 0 && portB < 0)
-            return;
+        {
+            setLastError("Invalid connection");
+            return false;
+        }
         if (portA >= 0 && portB >= 0)
-            return;
+        {
+            setLastError("Invalid connection");
+            return false;
+        }
 
         const int carlaPort  = (portA < 0) ? portA : portB;
         const int targetPort = (carlaPort == portA) ? portB : portA;
@@ -351,8 +366,11 @@ public:
             break;
         }
 
-        if (! makeConnection)
-            return;
+        if (makeConnection)
+        {
+            setLastError("Invalid conenction");
+            return false;
+        }
 
         ConnectionToId connectionToId;
         connectionToId.id      = fLastConnectionId;
@@ -362,14 +380,19 @@ public:
         fUsedConnections.append(connectionToId);
         callback(CALLBACK_PATCHBAY_CONNECTION_ADDED, 0, fLastConnectionId, portA, portB, nullptr);
         fLastConnectionId++;
+
+        return true;
     }
 
-    void patchbayDisconnect(int connectionId)
+    bool patchbayDisconnect(int connectionId) override
     {
         CARLA_ASSERT(fAudioIsReady);
 
         if (! fAudioIsReady)
-            return;
+        {
+            setLastError("Engine not ready");
+            return false;
+        }
 
         for (int i=0, count=fUsedConnections.count(); i < count; ++i)
         {
@@ -394,9 +417,11 @@ public:
                 fUsedConnections.takeAt(i);
             }
         }
+
+        return true;
     }
 
-    void patchbayRefresh()
+    void patchbayRefresh() override
     {
         CARLA_ASSERT(fAudioIsReady);
 

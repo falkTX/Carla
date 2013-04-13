@@ -71,7 +71,7 @@ public:
         fUnique1 = fUnique2 = rand();
     }
 
-    ~VstPlugin()
+    ~VstPlugin() override
     {
         carla_debug("VstPlugin::~VstPlugin()");
 
@@ -119,12 +119,12 @@ public:
     // -------------------------------------------------------------------
     // Information (base)
 
-    PluginType type() const
+    PluginType type() const override
     {
         return PLUGIN_VST;
     }
 
-    PluginCategory category()
+    PluginCategory category() override
     {
         CARLA_ASSERT(fEffect != nullptr);
 
@@ -154,7 +154,7 @@ public:
         return getPluginCategoryFromName(fName);
     }
 
-    long uniqueId() const
+    long uniqueId() const override
     {
         CARLA_ASSERT(fEffect != nullptr);
 
@@ -164,7 +164,7 @@ public:
     // -------------------------------------------------------------------
     // Information (current data)
 
-    int32_t chunkData(void** const dataPtr)
+    int32_t chunkData(void** const dataPtr) override
     {
         CARLA_ASSERT(fOptions & PLUGIN_OPTION_USE_CHUNKS);
         CARLA_ASSERT(fEffect != nullptr);
@@ -176,7 +176,7 @@ public:
     // -------------------------------------------------------------------
     // Information (per-plugin data)
 
-    unsigned int availableOptions()
+    unsigned int availableOptions() override
     {
         CARLA_ASSERT(fEffect != nullptr);
 
@@ -203,7 +203,7 @@ public:
         return options;
     }
 
-    float getParameterValue(const uint32_t parameterId)
+    float getParameterValue(const uint32_t parameterId) override
     {
         CARLA_ASSERT(fEffect != nullptr);
         CARLA_ASSERT(parameterId < kData->param.count);
@@ -211,35 +211,35 @@ public:
         return fEffect->getParameter(fEffect, parameterId);
     }
 
-    void getLabel(char* const strBuf)
+    void getLabel(char* const strBuf) override
     {
         CARLA_ASSERT(fEffect != nullptr);
 
         dispatcher(effGetProductString, 0, 0, strBuf, 0.0f);
     }
 
-    void getMaker(char* const strBuf)
+    void getMaker(char* const strBuf) override
     {
         CARLA_ASSERT(fEffect != nullptr);
 
         dispatcher(effGetVendorString, 0, 0, strBuf, 0.0f);
     }
 
-    void getCopyright(char* const strBuf)
+    void getCopyright(char* const strBuf) override
     {
         CARLA_ASSERT(fEffect != nullptr);
 
         dispatcher(effGetVendorString, 0, 0, strBuf, 0.0f);
     }
 
-    void getRealName(char* const strBuf)
+    void getRealName(char* const strBuf) override
     {
         CARLA_ASSERT(fEffect != nullptr);
 
         dispatcher(effGetEffectName, 0, 0, strBuf, 0.0f);
     }
 
-    void getParameterName(const uint32_t parameterId, char* const strBuf)
+    void getParameterName(const uint32_t parameterId, char* const strBuf) override
     {
         CARLA_ASSERT(fEffect != nullptr);
         CARLA_ASSERT(parameterId < kData->param.count);
@@ -247,7 +247,7 @@ public:
         dispatcher(effGetParamName, parameterId, 0, strBuf, 0.0f);
     }
 
-    void getParameterText(const uint32_t parameterId, char* const strBuf)
+    void getParameterText(const uint32_t parameterId, char* const strBuf) override
     {
         CARLA_ASSERT(fEffect != nullptr);
         CARLA_ASSERT(parameterId < kData->param.count);
@@ -260,7 +260,7 @@ public:
             std::snprintf(strBuf, STR_MAX, "%f", getParameterValue(parameterId));
     }
 
-    void getParameterUnit(const uint32_t parameterId, char* const strBuf)
+    void getParameterUnit(const uint32_t parameterId, char* const strBuf) override
     {
         CARLA_ASSERT(fEffect != nullptr);
         CARLA_ASSERT(parameterId < kData->param.count);
@@ -271,7 +271,7 @@ public:
     // -------------------------------------------------------------------
     // Set data (plugin-specific stuff)
 
-    void setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback)
+    void setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) override
     {
         CARLA_ASSERT(fEffect != nullptr);
         CARLA_ASSERT(parameterId < kData->param.count);
@@ -283,7 +283,7 @@ public:
         CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
     }
 
-    void setChunkData(const char* const stringData)
+    void setChunkData(const char* const stringData) override
     {
         CARLA_ASSERT(fOptions & PLUGIN_OPTION_USE_CHUNKS);
         CARLA_ASSERT(fEffect != nullptr);
@@ -314,7 +314,7 @@ public:
         }
     }
 
-    void setProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback)
+    void setProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) override
     {
         CARLA_ASSERT(fEffect != nullptr);
         CARLA_ASSERT(index >= -1 && index < static_cast<int32_t>(kData->prog.count));
@@ -339,7 +339,7 @@ public:
     // -------------------------------------------------------------------
     // Set gui stuff
 
-    void showGui(const bool yesNo)
+    void showGui(const bool yesNo) override
     {
         if (fGui.isOsc)
         {
@@ -427,7 +427,7 @@ public:
         fGui.isVisible = yesNo;
     }
 
-    void idleGui()
+    void idleGui() override
     {
 #ifdef VESTIGE_HEADER
         if (fEffect != nullptr /*&& effect->ptr1*/)
@@ -451,7 +451,7 @@ public:
     // -------------------------------------------------------------------
     // Plugin state
 
-    void reload()
+    void reload() override
     {
         carla_debug("VstPlugin::reload() - start");
         CARLA_ASSERT(kData->engine != nullptr);
@@ -833,7 +833,7 @@ public:
         carla_debug("VstPlugin::reload() - end");
     }
 
-    void reloadPrograms(const bool init)
+    void reloadPrograms(const bool init) override
     {
         carla_debug("VstPlugin::reloadPrograms(%s)", bool2str(init));
         uint32_t i, oldCount  = kData->prog.count;
@@ -932,19 +932,19 @@ public:
     // -------------------------------------------------------------------
     // Plugin processing
 
-    void activate()
+    void activate() override
     {
         dispatcher(effMainsChanged, 0, 1, nullptr, 0.0f);
         dispatcher(effStartProcess, 0, 0, nullptr, 0.0f);
     }
 
-    void deactivate()
+    void deactivate() override
     {
         dispatcher(effStopProcess, 0, 0, nullptr, 0.0f);
         dispatcher(effMainsChanged, 0, 0, nullptr, 0.0f);
     }
 
-    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames)
+    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames) override
     {
         uint32_t i, k;
 
@@ -1552,7 +1552,7 @@ public:
         return true;
     }
 
-    void bufferSizeChanged(const uint32_t newBufferSize)
+    void bufferSizeChanged(const uint32_t newBufferSize) override
     {
         CARLA_ASSERT_INT(newBufferSize > 0, newBufferSize);
         carla_debug("VstPlugin::bufferSizeChanged(%i)", newBufferSize);
@@ -1569,7 +1569,7 @@ public:
             activate();
     }
 
-    void sampleRateChanged(const double newSampleRate)
+    void sampleRateChanged(const double newSampleRate) override
     {
         CARLA_ASSERT_INT(newSampleRate > 0.0, newSampleRate);
         carla_debug("VstPlugin::sampleRateChanged(%g)", newSampleRate);
@@ -1589,7 +1589,7 @@ public:
     // -------------------------------------------------------------------
     // Post-poned events
 
-    void uiParameterChange(const uint32_t index, const double value)
+    void uiParameterChange(const uint32_t index, const float value) override
     {
         CARLA_ASSERT(index < kData->param.count);
 
@@ -1603,7 +1603,7 @@ public:
         osc_send_control(&kData->osc.data, kData->param.data[index].rindex, value);
     }
 
-    void uiProgramChange(const uint32_t index)
+    void uiProgramChange(const uint32_t index) override
     {
         CARLA_ASSERT(index < kData->prog.count);
 
@@ -1617,7 +1617,7 @@ public:
         osc_send_program(&kData->osc.data, index);
     }
 
-    void uiNoteOn(const uint8_t channel, const uint8_t note, const uint8_t velo)
+    void uiNoteOn(const uint8_t channel, const uint8_t note, const uint8_t velo) override
     {
         CARLA_ASSERT(channel < MAX_MIDI_CHANNELS);
         CARLA_ASSERT(note < MAX_MIDI_NOTE);
@@ -1642,7 +1642,7 @@ public:
         osc_send_midi(&kData->osc.data, midiData);
     }
 
-    void uiNoteOff(const uint8_t channel, const uint8_t note)
+    void uiNoteOff(const uint8_t channel, const uint8_t note) override
     {
         CARLA_ASSERT(channel < MAX_MIDI_CHANNELS);
         CARLA_ASSERT(note < MAX_MIDI_NOTE);
@@ -1666,7 +1666,7 @@ public:
     // -------------------------------------------------------------------
 
 protected:
-    void guiClosedCallback()
+    void guiClosedCallback() override
     {
         showGui(false);
         kData->engine->callback(CALLBACK_SHOW_GUI, fId, 0, 0, 0.0f, nullptr);

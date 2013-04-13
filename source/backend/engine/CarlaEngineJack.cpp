@@ -62,7 +62,7 @@ public:
         }
     }
 
-    ~CarlaEngineJackAudioPort()
+    ~CarlaEngineJackAudioPort() override
     {
         carla_debug("CarlaEngineJackAudioPort::~CarlaEngineJackAudioPort()");
 
@@ -70,7 +70,7 @@ public:
             jackbridge_port_unregister(kClient, kPort);
     }
 
-    void initBuffer(CarlaEngine* const engine)
+    void initBuffer(CarlaEngine* const engine) override
     {
         CARLA_ASSERT(engine != nullptr);
 
@@ -124,7 +124,7 @@ public:
         }
     }
 
-    ~CarlaEngineJackEventPort()
+    ~CarlaEngineJackEventPort() override
     {
         carla_debug("CarlaEngineJackEventPort::~CarlaEngineJackEventPort()");
 
@@ -132,7 +132,7 @@ public:
             jackbridge_port_unregister(kClient, kPort);
     }
 
-    void initBuffer(CarlaEngine* const engine)
+    void initBuffer(CarlaEngine* const engine) override
     {
         CARLA_ASSERT(engine != nullptr);
 
@@ -151,7 +151,7 @@ public:
             jackbridge_midi_clear_buffer(fJackBuffer);
     }
 
-    uint32_t getEventCount()
+    uint32_t getEventCount() override
     {
         if (kPort == nullptr)
             return CarlaEngineEventPort::getEventCount();
@@ -167,7 +167,7 @@ public:
         return jackbridge_midi_get_event_count(fJackBuffer);
     }
 
-    const EngineEvent& getEvent(const uint32_t index)
+    const EngineEvent& getEvent(const uint32_t index) override
     {
         if (kPort == nullptr)
             return CarlaEngineEventPort::getEvent(index);
@@ -249,7 +249,7 @@ public:
         return fRetEvent;
     }
 
-    void writeControlEvent(const uint32_t time, const uint8_t channel, const EngineControlEventType type, const uint16_t param, const double value)
+    void writeControlEvent(const uint32_t time, const uint8_t channel, const EngineControlEventType type, const uint16_t param, const double value) override
     {
         if (kPort == nullptr)
             return CarlaEngineEventPort::writeControlEvent(time, channel, type, param, value);
@@ -318,7 +318,7 @@ public:
             jackbridge_midi_event_write(fJackBuffer, time, data, size);
     }
 
-    void writeMidiEvent(const uint32_t time, const uint8_t channel, const uint8_t port, const uint8_t* const data, const uint8_t size)
+    void writeMidiEvent(const uint32_t time, const uint8_t channel, const uint8_t port, const uint8_t* const data, const uint8_t size) override
     {
         if (kPort == nullptr)
             return CarlaEngineEventPort::writeMidiEvent(time, channel, port, data, size);
@@ -381,7 +381,7 @@ public:
         }
     }
 
-    ~CarlaEngineJackClient()
+    ~CarlaEngineJackClient() override
     {
         carla_debug("CarlaEngineClient::~CarlaEngineClient()");
 
@@ -392,7 +392,7 @@ public:
         }
     }
 
-    void activate()
+    void activate() override
     {
         carla_debug("CarlaEngineJackClient::activate()");
 
@@ -407,7 +407,7 @@ public:
         CarlaEngineClient::activate();
     }
 
-    void deactivate()
+    void deactivate() override
     {
         carla_debug("CarlaEngineJackClient::deactivate()");
 
@@ -422,7 +422,7 @@ public:
         CarlaEngineClient::deactivate();
     }
 
-    bool isOk() const
+    bool isOk() const override
     {
         carla_debug("CarlaEngineJackClient::isOk()");
 
@@ -433,7 +433,7 @@ public:
     }
 
 #if WANT_JACK_LATENCY
-    void setLatency(const uint32_t samples)
+    void setLatency(const uint32_t samples) override
     {
         CarlaEngineClient::setLatency(samples);
 
@@ -442,7 +442,7 @@ public:
     }
 #endif
 
-    CarlaEnginePort* addPort(const EnginePortType portType, const char* const name, const bool isInput)
+    CarlaEnginePort* addPort(const EnginePortType portType, const char* const name, const bool isInput) override
     {
         carla_debug("CarlaEngineJackClient::addPort(%s, \"%s\", %s)", EnginePortType2Str(portType), name, bool2str(isInput));
 
@@ -519,7 +519,7 @@ public:
         carla_zeroStruct<jack_position_t>(fTransportPos);
     }
 
-    ~CarlaEngineJack()
+    ~CarlaEngineJack() override
     {
         carla_debug("CarlaEngineJack::~CarlaEngineJack()");
         CARLA_ASSERT(fClient == nullptr);
@@ -534,7 +534,7 @@ public:
     // -------------------------------------------------------------------
     // Maximum values
 
-    unsigned int maxClientNameSize() const
+    unsigned int maxClientNameSize() const override
     {
         if (fOptions.processMode == PROCESS_MODE_SINGLE_CLIENT || fOptions.processMode == PROCESS_MODE_MULTIPLE_CLIENTS)
             return static_cast<unsigned int>(jackbridge_client_name_size());
@@ -542,7 +542,7 @@ public:
         return CarlaEngine::maxClientNameSize();
     }
 
-    unsigned int maxPortNameSize() const
+    unsigned int maxPortNameSize() const override
     {
         if (fOptions.processMode == PROCESS_MODE_SINGLE_CLIENT || fOptions.processMode == PROCESS_MODE_MULTIPLE_CLIENTS)
             return static_cast<unsigned int>(jackbridge_port_name_size());
@@ -553,7 +553,7 @@ public:
     // -------------------------------------------------------------------
     // Virtual, per-engine type calls
 
-    bool init(const char* const clientName)
+    bool init(const char* const clientName) override
     {
         carla_debug("CarlaEngineJack::init(\"%s\")", clientName);
 
@@ -643,7 +643,7 @@ public:
 #endif
     }
 
-    bool close()
+    bool close() override
     {
         carla_debug("CarlaEngineJack::close()");
         CarlaEngine::close();
@@ -685,7 +685,7 @@ public:
         return false;
     }
 
-    bool isRunning() const
+    bool isRunning() const override
     {
 #ifdef BUILD_BRIDGE
         return (fClient != nullptr || ! fHasQuit);
@@ -694,17 +694,17 @@ public:
 #endif
     }
 
-    bool isOffline() const
+    bool isOffline() const override
     {
         return fFreewheel;
     }
 
-    EngineType type() const
+    EngineType type() const override
     {
         return kEngineTypeJack;
     }
 
-    CarlaEngineClient* addClient(CarlaPlugin* const plugin)
+    CarlaEngineClient* addClient(CarlaPlugin* const plugin) override
     {
         jack_client_t* client = nullptr;
 
@@ -744,7 +744,7 @@ public:
     // -------------------------------------------------------------------
     // Patchbay
 
-    bool patchbayConnect(int portA, int portB)
+    bool patchbayConnect(int portA, int portB) override
     {
         CARLA_ASSERT(fClient != nullptr);
 
@@ -766,7 +766,7 @@ public:
         return true;
     }
 
-    bool patchbayDisconnect(int connectionId)
+    bool patchbayDisconnect(int connectionId) override
     {
         CARLA_ASSERT(fClient != nullptr);
 
@@ -797,7 +797,7 @@ public:
         return false;
     }
 
-    void patchbayRefresh()
+    void patchbayRefresh() override
     {
         CARLA_ASSERT(fClient != nullptr);
 
@@ -819,7 +819,7 @@ public:
     // -------------------------------------------------------------------
     // Transport
 
-    void transportPlay()
+    void transportPlay() override
     {
         if (fOptions.transportMode == TRANSPORT_MODE_INTERNAL)
             CarlaEngine::transportPlay();
@@ -827,7 +827,7 @@ public:
             jackbridge_transport_start(fClient);
     }
 
-    void transportPause()
+    void transportPause() override
     {
         if (fOptions.transportMode == TRANSPORT_MODE_INTERNAL)
             CarlaEngine::transportPause();
@@ -835,7 +835,7 @@ public:
             jackbridge_transport_stop(fClient);
     }
 
-    void transportRelocate(const uint32_t frame)
+    void transportRelocate(const uint32_t frame) override
     {
         if (fOptions.transportMode == TRANSPORT_MODE_INTERNAL)
             CarlaEngine::transportRelocate(frame);

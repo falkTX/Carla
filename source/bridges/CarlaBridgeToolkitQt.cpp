@@ -93,7 +93,7 @@ public:
 #endif
     }
 
-    ~CarlaBridgeToolkitQt()
+    ~CarlaBridgeToolkitQt() override
     {
         qDebug("CarlaBridgeToolkitQt::~CarlaBridgeToolkitQt()");
         CARLA_ASSERT(! app);
@@ -101,7 +101,7 @@ public:
         CARLA_ASSERT(! msgTimer);
     }
 
-    void init()
+    void init() override
     {
         qDebug("CarlaBridgeToolkitQt::init()");
         CARLA_ASSERT(! app);
@@ -115,7 +115,7 @@ public:
         window->hide();
     }
 
-    void exec(const bool showGui)
+    void exec(const bool showGui) override
     {
         qDebug("CarlaBridgeToolkitQt::exec(%s)", bool2str(showGui));
         CARLA_ASSERT(app);
@@ -177,7 +177,7 @@ public:
         app->exec();
     }
 
-    void quit()
+    void quit() override
     {
         qDebug("CarlaBridgeToolkitQt::quit()");
         CARLA_ASSERT(app);
@@ -222,7 +222,7 @@ public:
         }
     }
 
-    void show()
+    void show() override
     {
         qDebug("CarlaBridgeToolkitQt::show()");
         CARLA_ASSERT(window);
@@ -231,7 +231,7 @@ public:
             window->show();
     }
 
-    void hide()
+    void hide() override
     {
         qDebug("CarlaBridgeToolkitQt::hide()");
         CARLA_ASSERT(window);
@@ -240,7 +240,7 @@ public:
             window->hide();
     }
 
-    void resize(const int width, const int height)
+    void resize(const int width, const int height) override
     {
         qDebug("CarlaBridgeToolkitQt::resize(%i, %i)", width, height);
         CARLA_ASSERT(window);

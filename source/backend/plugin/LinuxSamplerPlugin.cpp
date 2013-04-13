@@ -52,35 +52,35 @@ public:
     // -------------------------------------------------------------------
     // LinuxSampler virtual methods
 
-    void Play()
+    void Play() override
     {
     }
 
-    bool IsPlaying()
+    bool IsPlaying() override
     {
         return (kEngine->isRunning() && kPlugin->enabled());
     }
 
-    void Stop()
+    void Stop() override
     {
     }
 
-    uint MaxSamplesPerCycle()
+    uint MaxSamplesPerCycle() override
     {
         return kEngine->getBufferSize();
     }
 
-    uint SampleRate()
+    uint SampleRate() override
     {
         return kEngine->getSampleRate();
     }
 
-    String Driver()
+    String Driver() override
     {
         return "AudioOutputDevicePlugin";
     }
 
-    AudioChannel* CreateChannel(uint channelNr)
+    AudioChannel* CreateChannel(uint channelNr) override
     {
         return new AudioChannel(channelNr, nullptr, 0);
     }
@@ -112,20 +112,20 @@ public:
     // -------------------------------------------------------------------
     // LinuxSampler virtual methods
 
-    void Listen()
+    void Listen() override
     {
     }
 
-    void StopListen()
+    void StopListen() override
     {
     }
 
-    String Driver()
+    String Driver() override
     {
         return "MidiInputDevicePlugin";
     }
 
-    MidiInputPort* CreateMidiPort()
+    MidiInputPort* CreateMidiPort() override
     {
         return new MidiInputPortPlugin(this, Ports.size());
     }
@@ -146,9 +146,7 @@ public:
     {
     protected:
         MidiInputPortPlugin(MidiInputDevicePlugin* const device, const int portNumber)
-            : MidiInputPort(device, portNumber)
-        {
-        }
+            : MidiInputPort(device, portNumber) {}
         friend class MidiInputDevicePlugin;
     };
 };
@@ -188,7 +186,7 @@ public:
         fMidiInputPort     = fMidiInputDevice->CreateMidiPort();
     }
 
-    ~LinuxSamplerPlugin()
+    ~LinuxSamplerPlugin() override
     {
         carla_debug("LinuxSamplerPlugin::~LinuxSamplerPlugin()");
 
@@ -223,12 +221,12 @@ public:
     // -------------------------------------------------------------------
     // Information (base)
 
-    PluginType type() const
+    PluginType type() const override
     {
         return kIsGIG ? PLUGIN_GIG : PLUGIN_SFZ;
     }
 
-    PluginCategory category()
+    PluginCategory category() override
     {
         return PLUGIN_CATEGORY_SYNTH;
     }
@@ -236,7 +234,7 @@ public:
     // -------------------------------------------------------------------
     // Information (per-plugin data)
 
-    unsigned int availableOptions()
+    unsigned int availableOptions() override
     {
         unsigned int options = 0x0;
 
@@ -248,22 +246,22 @@ public:
         return options;
     }
 
-    void getLabel(char* const strBuf)
+    void getLabel(char* const strBuf) override
     {
         std::strncpy(strBuf, (const char*)fLabel, STR_MAX);
     }
 
-    void getMaker(char* const strBuf)
+    void getMaker(char* const strBuf) override
     {
         std::strncpy(strBuf, (const char*)fMaker, STR_MAX);
     }
 
-    void getCopyright(char* const strBuf)
+    void getCopyright(char* const strBuf) override
     {
         getMaker(strBuf);
     }
 
-    void getRealName(char* const strBuf)
+    void getRealName(char* const strBuf) override
     {
         std::strncpy(strBuf, (const char*)fRealName, STR_MAX);
     }
@@ -271,7 +269,7 @@ public:
     // -------------------------------------------------------------------
     // Set data (plugin-specific stuff)
 
-    void setMidiProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback)
+    void setMidiProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) override
     {
         CARLA_ASSERT(index >= -1 && index < static_cast<int32_t>(kData->midiprog.count));
 
@@ -299,7 +297,7 @@ public:
     // -------------------------------------------------------------------
     // Plugin state
 
-    void reload()
+    void reload() override
     {
         carla_debug("LinuxSamplerPlugin::reload() - start");
         CARLA_ASSERT(kData->engine != nullptr);
@@ -404,7 +402,7 @@ public:
         carla_debug("LinuxSamplerPlugin::reload() - end");
     }
 
-    void reloadPrograms(bool init)
+    void reloadPrograms(bool init) override
     {
         carla_debug("LinuxSamplerPlugin::reloadPrograms(%s)", bool2str(init));
 
@@ -456,21 +454,21 @@ public:
     // -------------------------------------------------------------------
     // Plugin processing
 
-    void activate()
+    void activate() override
     {
         CARLA_ASSERT(fAudioOutputDevice != nullptr);
 
         fAudioOutputDevice->Play();
     }
 
-    void deactivate()
+    void deactivate() override
     {
         CARLA_ASSERT(fAudioOutputDevice != nullptr);
 
         fAudioOutputDevice->Stop();
     }
 
-    void process(float** const, float** const outBuffer, const uint32_t frames)
+    void process(float** const, float** const outBuffer, const uint32_t frames) override
     {
         uint32_t i, k;
 

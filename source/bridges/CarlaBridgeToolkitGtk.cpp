@@ -59,7 +59,7 @@ public:
         lastHeight = 0;
     }
 
-    ~CarlaToolkitGtk()
+    ~CarlaToolkitGtk() override
     {
         carla_debug("CarlaToolkitGtk::~CarlaToolkitGtk()");
 
@@ -67,7 +67,7 @@ public:
             gtk_widget_destroy(window);
     }
 
-    void init()
+    void init() override
     {
         carla_debug("CarlaToolkitGtk::init()");
         CARLA_ASSERT(! window);
@@ -79,7 +79,7 @@ public:
         gtk_widget_hide(window);
     }
 
-    void exec(const bool showGui)
+    void exec(const bool showGui) override
     {
         carla_debug("CarlaToolkitGtk::exec(%s)", bool2str(showGui));
         CARLA_ASSERT(window);
@@ -132,7 +132,7 @@ public:
         gtk_main();
     }
 
-    void quit()
+    void quit() override
     {
         carla_debug("CarlaToolkitGtk::quit()");
 
@@ -145,7 +145,7 @@ public:
         }
     }
 
-    void show()
+    void show() override
     {
         carla_debug("CarlaToolkitGtk::show()");
         CARLA_ASSERT(window);
@@ -154,7 +154,7 @@ public:
             gtk_widget_show_all(window);
     }
 
-    void hide()
+    void hide() override
     {
         carla_debug("CarlaToolkitGtk::hide()");
         CARLA_ASSERT(window);
@@ -169,7 +169,7 @@ public:
         }
     }
 
-    void resize(int width, int height)
+    void resize(int width, int height) override
     {
         carla_debug("CarlaToolkitGtk::resize(%i, %i)", width, height);
         CARLA_ASSERT(window);

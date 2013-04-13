@@ -123,7 +123,7 @@ enum EngineControlEventType {
 
     /*!
     * Parameter event type.\n
-    * \note Value uses a normalized range of 0.0<->1.0.
+    * \note Value uses a normalized range of 0.0f<->1.0f.
     */
     kEngineControlEventTypeParameter = 1,
 
@@ -153,10 +153,10 @@ enum EngineControlEventType {
  */
 struct EngineControlEvent {
     EngineControlEventType type; //!< Control-Event type.
-    uint16_t param;              //!< Parameter ID, midi bank or midi program.
+    uint16_t param;              //!< Parameter Id, midi bank or midi program.
     float    value;              //!< Parameter value, normalized to 0.0f<->1.0f.
 
-#ifndef CARLA_PROPER_CPP11_SUPPORT
+#ifdef CARLA_PROPER_CPP11_SUPPORT // default constructor of union member
     EngineControlEvent()
     {
         clear();
@@ -181,7 +181,7 @@ struct EngineMidiEvent {
     uint8_t data[4]; //!< MIDI data, without channel bit
     uint8_t size;    //!< Number of bytes used
 
-#ifndef CARLA_PROPER_CPP11_SUPPORT
+#ifdef CARLA_PROPER_CPP11_SUPPORT // default constructor of union member
     EngineMidiEvent()
     {
         clear();
@@ -214,10 +214,12 @@ struct EngineEvent {
         EngineMidiEvent midi;
     };
 
+#ifndef DOXYGEN
     EngineEvent()
     {
         clear();
     }
+#endif
 
     void clear()
     {
@@ -270,21 +272,23 @@ struct EngineOptions {
     CarlaString bridge_vstX11;
 #endif
 
+#ifndef DOXYGEN
     EngineOptions()
         : processMode(PROCESS_MODE_CONTINUOUS_RACK),
           transportMode(TRANSPORT_MODE_INTERNAL),
           forceStereo(false),
           preferPluginBridges(false),
           preferUiBridges(true),
-#ifdef WANT_DSSI
+# ifdef WANT_DSSI
           useDssiVstChunks(false),
-#endif
+# endif
           maxParameters(MAX_DEFAULT_PARAMETERS),
           oscUiTimeout(4000),
           preferredBufferSize(512),
           preferredSampleRate(44100) {}
 
     CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(EngineOptions)
+#endif
 };
 
 /*!
@@ -302,6 +306,7 @@ struct EngineTimeInfoBBT {
     double ticksPerBeat;
     double beatsPerMinute;
 
+#ifndef DOXYGEN
     EngineTimeInfoBBT()
         : bar(0),
           beat(0),
@@ -313,6 +318,7 @@ struct EngineTimeInfoBBT {
           beatsPerMinute(0.0) {}
 
     CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(EngineTimeInfoBBT)
+#endif
 };
 
 /*!
@@ -327,10 +333,12 @@ struct EngineTimeInfo {
     uint32_t valid;
     EngineTimeInfoBBT bbt;
 
+#ifndef DOXYGEN
     EngineTimeInfo()
     {
         clear();
     }
+#endif
 
     void clear()
     {
@@ -340,7 +348,9 @@ struct EngineTimeInfo {
         valid   = 0x0;
     }
 
+#ifndef DOXYGEN
     CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(EngineTimeInfo)
+#endif
 };
 
 // -----------------------------------------------------------------------
@@ -374,12 +384,14 @@ public:
      */
     virtual void initBuffer(CarlaEngine* const engine) = 0;
 
+#ifndef DOXYGEN
 protected:
     const bool kIsInput;
     const ProcessMode kProcessMode;
 
 private:
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEnginePort)
+#endif
 };
 
 // -----------------------------------------------------------------------
@@ -399,12 +411,12 @@ public:
     /*!
      * The destructor.
      */
-    virtual ~CarlaEngineAudioPort();
+    virtual ~CarlaEngineAudioPort() override;
 
     /*!
      * Get the type of the port, in this case CarlaEnginePortTypeAudio.
      */
-    EnginePortType type() const
+    EnginePortType type() const override
     {
         return kEnginePortTypeAudio;
     }
@@ -412,7 +424,7 @@ public:
     /*!
      * Initialize the port's internal buffer for \a engine.
      */
-    virtual void initBuffer(CarlaEngine* const engine);
+    virtual void initBuffer(CarlaEngine* const engine) override;
 
     /*!
      * Direct access to the port's audio buffer.
@@ -422,11 +434,13 @@ public:
         return fBuffer;
     }
 
+#ifndef DOXYGEN
 protected:
     float* fBuffer;
 
 private:
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineAudioPort)
+#endif
 };
 
 // -----------------------------------------------------------------------
@@ -446,12 +460,12 @@ public:
     /*!
      * The destructor.
      */
-    virtual ~CarlaEngineEventPort();
+    virtual ~CarlaEngineEventPort() override;
 
     /*!
      * Get the type of the port, in this case CarlaEnginePortTypeControl.
      */
-    EnginePortType type() const
+    EnginePortType type() const override
     {
         return kEnginePortTypeEvent;
     }
@@ -459,7 +473,7 @@ public:
     /*!
      * Initialize the port's internal buffer for \a engine.
      */
-    virtual void initBuffer(CarlaEngine* const engine);
+    virtual void initBuffer(CarlaEngine* const engine) override;
 
     /*!
      * Get the number of events present in the buffer.
@@ -503,11 +517,13 @@ public:
         writeMidiEvent(time, channel, midi.port, midi.data, midi.size);
     }
 
+#ifndef DOXYGEN
 private:
     const uint32_t kMaxEventCount;
     EngineEvent*   fBuffer;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineEventPort)
+#endif
 };
 
 // -----------------------------------------------------------------------
@@ -572,6 +588,7 @@ public:
      */
     virtual CarlaEnginePort* addPort(const EnginePortType portType, const char* const name, const bool isInput);
 
+#ifndef DOXYGEN
 protected:
     const EngineType  kEngineType;
     const ProcessMode kProcessMode;
@@ -581,6 +598,7 @@ protected:
 
 private:
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineClient)
+#endif
 };
 
 // -----------------------------------------------------------------------
@@ -974,6 +992,7 @@ public:
 
     // -------------------------------------
 
+#ifndef DOXYGEN
 protected:
     uint32_t fBufferSize;
     double   fSampleRate;
@@ -1008,7 +1027,7 @@ protected:
      */
     void setPeaks(const unsigned int pluginId, float const inPeaks[MAX_PEAKS], float const outPeaks[MAX_PEAKS]);
 
-#ifndef BUILD_BRIDGE
+# ifndef BUILD_BRIDGE
     // Rack mode data
     EngineEvent* getRackEventBuffer(const bool isInput);
 
@@ -1022,13 +1041,13 @@ protected:
      * In \a bufCount, [0]=inBufCount and [1]=outBufCount
      */
     void processPatchbay(float** inBuf, float** outBuf, const uint32_t bufCount[2], const uint32_t frames);
-#endif
+# endif
 
 private:
-#ifdef WANT_JACK
+# ifdef WANT_JACK
     static CarlaEngine* newJack();
-#endif
-#ifdef WANT_RTAUDIO
+# endif
+# ifdef WANT_RTAUDIO
     enum RtAudioApi {
         RTAUDIO_DUMMY        = 0,
         RTAUDIO_LINUX_ALSA   = 1,
@@ -1043,10 +1062,10 @@ private:
     static CarlaEngine* newRtAudio(const RtAudioApi api);
     static size_t       getRtAudioApiCount();
     static const char*  getRtAudioApiName(const unsigned int index);
-#endif
+# endif
 
 public:
-#ifdef BUILD_BRIDGE
+# ifdef BUILD_BRIDGE
     static CarlaEngine* newBridge(const char* const audioBaseName, const char* const controlBaseName);
 
     void osc_send_bridge_audio_count(const int32_t ins, const int32_t outs, const int32_t total);
@@ -1068,7 +1087,7 @@ public:
     void osc_send_bridge_set_custom_data(const char* const type, const char* const key, const char* const value);
     void osc_send_bridge_set_chunk_data(const char* const chunkFile);
     void osc_send_bridge_set_peaks();
-#else
+# else
     void osc_send_control_add_plugin_start(const int32_t pluginId, const char* const pluginName);
     void osc_send_control_add_plugin_end(const int32_t pluginId);
     void osc_send_control_remove_plugin(const int32_t pluginId);
@@ -1090,12 +1109,13 @@ public:
     void osc_send_control_note_off(const int32_t pluginId, const int32_t channel, const int32_t note);
     void osc_send_control_set_peaks(const int32_t pluginId);
     void osc_send_control_exit();
-#endif
+# endif
 
 private:
     friend class CarlaEngineEventPort;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngine)
+#endif
 };
 
 // -----------------------------------------------------------------------

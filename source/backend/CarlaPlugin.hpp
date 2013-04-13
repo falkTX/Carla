@@ -778,6 +778,7 @@ public:
      */
     virtual void uiNoteOff(const uint8_t channel, const uint8_t note);
 
+#ifndef DOXYGEN
     // -------------------------------------------------------------------
     // Plugin initializers
 
@@ -789,10 +790,10 @@ public:
         const char* const label;
     };
 
-#ifdef WANT_NATIVE
+# ifdef WANT_NATIVE
     static size_t getNativePluginCount();
     static const PluginDescriptor* getNativePluginDescriptor(const size_t index);
-#endif
+# endif
 
     static CarlaPlugin* newNative(const Initializer& init);
     static CarlaPlugin* newBridge(const Initializer& init, const BinaryType btype, const PluginType ptype, const char* const bridgeBinary);
@@ -858,6 +859,7 @@ protected:
 
 private:
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPlugin)
+#endif
 };
 
 /**@}*/

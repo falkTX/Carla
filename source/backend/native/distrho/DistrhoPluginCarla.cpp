@@ -147,7 +147,7 @@ protected:
 
     // ---------------------------------------------
 
-    void closeEvent(QCloseEvent* event)
+    void closeEvent(QCloseEvent* event) override
     {
         kHost->ui_closed(kHost->handle);
 
@@ -220,7 +220,7 @@ public:
 #endif
     }
 
-    ~PluginCarla()
+    ~PluginCarla() override
     {
 #if DISTRHO_PLUGIN_HAS_UI
         fUiPtr = nullptr;
@@ -231,12 +231,12 @@ protected:
     // -------------------------------------------------------------------
     // Plugin parameter calls
 
-    uint32_t getParameterCount()
+    uint32_t getParameterCount() override
     {
         return fPlugin.parameterCount();
     }
 
-    const ::Parameter* getParameterInfo(const uint32_t index)
+    const ::Parameter* getParameterInfo(const uint32_t index) override
     {
         CARLA_ASSERT(index < getParameterCount());
 
@@ -282,7 +282,7 @@ protected:
         return &param;
     }
 
-    float getParameterValue(const uint32_t index)
+    float getParameterValue(const uint32_t index) override
     {
         CARLA_ASSERT(index < getParameterCount());
 
@@ -295,12 +295,12 @@ protected:
     // Plugin midi-program calls
 
 #if DISTRHO_PLUGIN_WANT_PROGRAMS
-    uint32_t getMidiProgramCount()
+    uint32_t getMidiProgramCount() override
     {
         return fPlugin.programCount();
     }
 
-    const ::MidiProgram* getMidiProgramInfo(const uint32_t index)
+    const ::MidiProgram* getMidiProgramInfo(const uint32_t index) override
     {
         CARLA_ASSERT(index < getMidiProgramCount());
 
@@ -320,7 +320,7 @@ protected:
     // -------------------------------------------------------------------
     // Plugin state calls
 
-    void setParameterValue(const uint32_t index, const float value)
+    void setParameterValue(const uint32_t index, const float value) override
     {
         CARLA_ASSERT(index < getParameterCount());
 
@@ -328,7 +328,7 @@ protected:
     }
 
 #if DISTRHO_PLUGIN_WANT_PROGRAMS
-    void setMidiProgram(const uint32_t bank, const uint32_t program)
+    void setMidiProgram(const uint32_t bank, const uint32_t program) override
     {
         const uint32_t realProgram = bank * 128 + program;
 
@@ -340,7 +340,7 @@ protected:
 #endif
 
 #if DISTRHO_PLUGIN_WANT_STATE
-    void setCustomData(const char* const key, const char* const value)
+    void setCustomData(const char* const key, const char* const value) override
     {
         CARLA_ASSERT(key != nullptr);
         CARLA_ASSERT(value != nullptr);
@@ -352,18 +352,18 @@ protected:
     // -------------------------------------------------------------------
     // Plugin process calls
 
-    void activate()
+    void activate() override
     {
         fPlugin.activate();
     }
 
-    void deactivate()
+    void deactivate() override
     {
         fPlugin.deactivate();
     }
 
 #if DISTRHO_PLUGIN_IS_SYNTH
-    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t midiEventCount, const ::MidiEvent* const midiEvents)
+    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t midiEventCount, const ::MidiEvent* const midiEvents) override
     {
         uint32_t i;
 
@@ -381,7 +381,7 @@ protected:
         fPlugin.run(inBuffer, outBuffer, frames, i, fRealMidiEvents);
     }
 #else
-    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t, const ::MidiEvent* const)
+    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t, const ::MidiEvent* const) override
     {
         fPlugin.run(inBuffer, outBuffer, frames, 0, nullptr);
     }
@@ -391,7 +391,7 @@ protected:
     // Plugin UI calls
 
 #if DISTRHO_PLUGIN_HAS_UI
-    void uiShow(const bool show)
+    void uiShow(const bool show) override
     {
         if (show)
             createUiIfNeeded();
@@ -400,7 +400,7 @@ protected:
             fUiPtr->carla_show(show);
     }
 
-    void uiIdle()
+    void uiIdle() override
     {
         CARLA_ASSERT(fUiPtr != nullptr);
 
@@ -408,7 +408,7 @@ protected:
             fUiPtr->carla_idle();
     }
 
-    void uiSetParameterValue(const uint32_t index, const float value)
+    void uiSetParameterValue(const uint32_t index, const float value) override
     {
         CARLA_ASSERT(fUiPtr != nullptr);
         CARLA_ASSERT(index < getParameterCount());
@@ -418,7 +418,7 @@ protected:
     }
 
 # if DISTRHO_PLUGIN_WANT_PROGRAMS
-    void uiSetMidiProgram(const uint32_t bank, const uint32_t program)
+    void uiSetMidiProgram(const uint32_t bank, const uint32_t program) override
     {
         CARLA_ASSERT(fUiPtr != nullptr);
 
@@ -433,7 +433,7 @@ protected:
 # endif
 
 # if DISTRHO_PLUGIN_WANT_STATE
-    void uiSetCustomData(const char* const key, const char* const value)
+    void uiSetCustomData(const char* const key, const char* const value) override
     {
         CARLA_ASSERT(fUiPtr != nullptr);
         CARLA_ASSERT(key != nullptr);

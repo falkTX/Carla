@@ -78,7 +78,7 @@ public:
         init("Carla");
     }
 
-    ~CarlaEnginePlugin()
+    ~CarlaEnginePlugin() override
     {
         carla_debug("CarlaEnginePlugin::~CarlaEnginePlugin()");
 
@@ -90,7 +90,7 @@ public:
     // -------------------------------------
     // CarlaEngine virtual calls
 
-    bool init(const char* const clientName)
+    bool init(const char* const clientName) override
     {
         carla_debug("CarlaEnginePlugin::init(\"%s\")", clientName);
 
@@ -101,7 +101,7 @@ public:
         return true;
     }
 
-    bool close()
+    bool close() override
     {
         carla_debug("CarlaEnginePlugin::close()");
         CarlaEngine::close();
@@ -109,17 +109,17 @@ public:
         return true;
     }
 
-    bool isRunning() const
+    bool isRunning() const override
     {
         return true;
     }
 
-    bool isOffline() const
+    bool isOffline() const override
     {
         return false;
     }
 
-    EngineType type() const
+    EngineType type() const override
     {
         return kEngineTypePlugin;
     }
@@ -128,27 +128,27 @@ protected:
     // ---------------------------------------------
     // DISTRHO Plugin Information
 
-    const char* d_label() const
+    const char* d_label() const override
     {
         return "Carla";
     }
 
-    const char* d_maker() const
+    const char* d_maker() const override
     {
         return "falkTX";
     }
 
-    const char* d_license() const
+    const char* d_license() const override
     {
         return "GPL v2+";
     }
 
-    uint32_t d_version() const
+    uint32_t d_version() const override
     {
         return 0x0600;
     }
 
-    long d_uniqueId() const
+    long d_uniqueId() const override
     {
         return d_cconst('C', 'r', 'l', 'a');
     }
@@ -156,7 +156,7 @@ protected:
     // ---------------------------------------------
     // DISTRHO Plugin Init
 
-    void d_initParameter(uint32_t index, DISTRHO::Parameter& parameter)
+    void d_initParameter(uint32_t index, DISTRHO::Parameter& parameter) override
     {
         if (index >= paramCount)
             return;
@@ -328,12 +328,12 @@ protected:
         }
     }
 
-    void d_initProgramName(uint32_t index, d_string& programName)
+    void d_initProgramName(uint32_t index, d_string& programName) override
     {
         programName = "Program #" + d_string(index);
     }
 
-    void d_initStateKey(uint32_t index, d_string& stateKey)
+    void d_initStateKey(uint32_t index, d_string& stateKey) override
     {
         stateKey = "Plugin #" + d_string(index);
     }
@@ -341,7 +341,7 @@ protected:
     // ---------------------------------------------
     // DISTRHO Plugin Internal data
 
-    float d_parameterValue(uint32_t index)
+    float d_parameterValue(uint32_t index) override
     {
         if (index >= paramCount)
             return 0.0f;
@@ -349,7 +349,7 @@ protected:
         return paramBuffers[index];
     }
 
-    void d_setParameterValue(uint32_t index, float value)
+    void d_setParameterValue(uint32_t index, float value) override
     {
         if (index >= paramCount)
             return;
@@ -357,7 +357,7 @@ protected:
         paramBuffers[index] = value;
     }
 
-    void d_setProgram(uint32_t index)
+    void d_setProgram(uint32_t index) override
     {
         if (index >= programCount)
             return;
@@ -379,7 +379,7 @@ protected:
         }
     }
 
-    void  d_setState(const char* key, const char* value)
+    void  d_setState(const char* key, const char* value) override
     {
         // TODO
         (void)key;
@@ -389,7 +389,7 @@ protected:
     // ---------------------------------------------
     // DISTRHO Plugin Process
 
-    void d_activate()
+    void d_activate() override
     {
         static bool firstTestInit = true;
 
@@ -413,7 +413,7 @@ protected:
         carla_copyFloat(prevParamBuffers, paramBuffers, paramCount);
     }
 
-    void d_deactivate()
+    void d_deactivate() override
     {
         for (unsigned int i=0; i < kData->curPluginCount; ++i)
         {
@@ -424,7 +424,7 @@ protected:
         }
     }
 
-    void d_run(float** inputs, float** outputs, uint32_t frames, uint32_t midiEventCount, const DISTRHO::MidiEvent* midiEvents)
+    void d_run(float** inputs, float** outputs, uint32_t frames, uint32_t midiEventCount, const DISTRHO::MidiEvent* midiEvents) override
     {
         if (kData->curPluginCount == 0)
         {
@@ -491,7 +491,7 @@ protected:
     // ---------------------------------------------
     // Callbacks
 
-    void d_bufferSizeChanged(uint32_t newBufferSize)
+    void d_bufferSizeChanged(uint32_t newBufferSize) override
     {
         if (fBufferSize == newBufferSize)
             return;
@@ -500,7 +500,7 @@ protected:
         bufferSizeChanged(newBufferSize);
     }
 
-    void d_sampleRateChanged(double newSampleRate)
+    void d_sampleRateChanged(double newSampleRate) override
     {
         if (fSampleRate == newSampleRate)
             return;

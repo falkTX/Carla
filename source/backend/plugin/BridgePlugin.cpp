@@ -132,7 +132,7 @@ public:
         kData->osc.thread.setMode(CarlaPluginThread::PLUGIN_THREAD_BRIDGE);
     }
 
-    ~BridgePlugin()
+    ~BridgePlugin() override
     {
         carla_debug("BridgePlugin::~BridgePlugin()");
 
@@ -162,17 +162,17 @@ public:
     // -------------------------------------------------------------------
     // Information (base)
 
-    PluginType type() const
+    PluginType type() const override
     {
         return fPluginType;
     }
 
-    PluginCategory category()
+    PluginCategory category() override
     {
         return fInfo.category;
     }
 
-    long uniqueId() const
+    long uniqueId() const override
     {
         return fInfo.uniqueId;
     }
@@ -180,22 +180,12 @@ public:
     // -------------------------------------------------------------------
     // Information (count)
 
-    uint32_t audioInCount()
-    {
-        return fInfo.aIns;
-    }
-
-    uint32_t audioOutCount()
-    {
-        return fInfo.aOuts;
-    }
-
-    uint32_t midiInCount()
+    uint32_t midiInCount() const override
     {
         return fInfo.mIns;
     }
 
-    uint32_t midiOutCount()
+    uint32_t midiOutCount() const override
     {
         return fInfo.mOuts;
     }
@@ -204,7 +194,7 @@ public:
     // -------------------------------------------------------------------
     // Information (current data)
 
-    int32_t chunkData(void** const dataPtr)
+    int32_t chunkData(void** const dataPtr) override
     {
         CARLA_ASSERT(dataPtr);
 
@@ -220,7 +210,7 @@ public:
     // -------------------------------------------------------------------
     // Information (per-plugin data)
 
-    double getParameterValue(const uint32_t parameterId)
+    double getParameterValue(const uint32_t parameterId) override
     {
         CARLA_ASSERT(parameterId < param.count);
 
@@ -228,35 +218,35 @@ public:
     }
 #endif
 
-    void getLabel(char* const strBuf)
+    void getLabel(char* const strBuf) override
     {
         std::strncpy(strBuf, (const char*)fInfo.label, STR_MAX);
     }
 
-    void getMaker(char* const strBuf)
+    void getMaker(char* const strBuf) override
     {
         std::strncpy(strBuf, (const char*)fInfo.maker, STR_MAX);
     }
 
-    void getCopyright(char* const strBuf)
+    void getCopyright(char* const strBuf) override
     {
         std::strncpy(strBuf, (const char*)fInfo.copyright, STR_MAX);
     }
 
-    void getRealName(char* const strBuf)
+    void getRealName(char* const strBuf) override
     {
         std::strncpy(strBuf, (const char*)fInfo.name, STR_MAX);
     }
 
 #if 0
-    void getParameterName(const uint32_t parameterId, char* const strBuf)
+    void getParameterName(const uint32_t parameterId, char* const strBuf) override
     {
         CARLA_ASSERT(parameterId < param.count);
 
         strncpy(strBuf, params[parameterId].name.toUtf8().constData(), STR_MAX);
     }
 
-    void getParameterUnit(const uint32_t parameterId, char* const strBuf)
+    void getParameterUnit(const uint32_t parameterId, char* const strBuf) override
     {
         CARLA_ASSERT(parameterId < param.count);
 
@@ -771,7 +761,7 @@ public:
     // -------------------------------------------------------------------
     // Set data (plugin-specific stuff)
 
-    void setParameterValue(const uint32_t parameterId, double value, const bool sendGui, const bool sendOsc, const bool sendCallback)
+    void setParameterValue(const uint32_t parameterId, double value, const bool sendGui, const bool sendOsc, const bool sendCallback) override
     {
         CARLA_ASSERT(parameterId < param.count);
 
@@ -780,7 +770,7 @@ public:
         CarlaPlugin::setParameterValue(parameterId, value, sendGui, sendOsc, sendCallback);
     }
 
-    void setCustomData(const char* const type, const char* const key, const char* const value, const bool sendGui)
+    void setCustomData(const char* const type, const char* const key, const char* const value, const bool sendGui) override
     {
         CARLA_ASSERT(type);
         CARLA_ASSERT(key);
@@ -801,7 +791,7 @@ public:
         CarlaPlugin::setCustomData(type, key, value, sendGui);
     }
 
-    void setChunkData(const char* const stringData)
+    void setChunkData(const char* const stringData) override
     {
         CARLA_ASSERT(m_hints & PLUGIN_USES_CHUNKS);
         CARLA_ASSERT(stringData);
@@ -828,7 +818,7 @@ public:
     // -------------------------------------------------------------------
     // Set gui stuff
 
-    void showGui(const bool yesNo)
+    void showGui(const bool yesNo) override
     {
         if (yesNo)
             osc_send_show(&kData->osc.data);
@@ -836,7 +826,7 @@ public:
             osc_send_hide(&kData->osc.data);
     }
 
-    void idleGui()
+    void idleGui() override
     {
         if (! kData->osc.thread.isRunning())
             carla_stderr2("TESTING: Bridge has closed!");
@@ -847,7 +837,7 @@ public:
     // -------------------------------------------------------------------
     // Plugin state
 
-    void reload()
+    void reload() override
     {
         carla_debug("BridgePlugin::reload() - start");
         CARLA_ASSERT(kData->engine != nullptr);
@@ -972,7 +962,7 @@ public:
     }
 
 #if 0
-    void prepareForSave()
+    void prepareForSave() override
     {
         m_saved = false;
         osc_send_configure(&osc.data, CARLA_BRIDGE_MSG_SAVE_NOW, "");
@@ -994,7 +984,7 @@ public:
     // -------------------------------------------------------------------
     // Plugin processing
 
-    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames)
+    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames) override
     {
         uint32_t i, k;
 
@@ -1025,7 +1015,7 @@ public:
     // -------------------------------------------------------------------
     // Post-poned events
 
-    void uiParameterChange(const uint32_t index, const float value)
+    void uiParameterChange(const uint32_t index, const float value) override
     {
         CARLA_ASSERT(index < kData->param.count);
 
@@ -1037,7 +1027,7 @@ public:
         osc_send_control(&kData->osc.data, kData->param.data[index].rindex, value);
     }
 
-    void uiProgramChange(const uint32_t index)
+    void uiProgramChange(const uint32_t index) override
     {
         CARLA_ASSERT(index < kData->prog.count);
 
@@ -1049,7 +1039,7 @@ public:
         osc_send_program(&kData->osc.data, index);
     }
 
-    void uiMidiProgramChange(const uint32_t index)
+    void uiMidiProgramChange(const uint32_t index) override
     {
         CARLA_ASSERT(index < kData->midiprog.count);
 
@@ -1061,7 +1051,7 @@ public:
         osc_send_midi_program(&kData->osc.data, index);
     }
 
-    void uiNoteOn(const uint8_t channel, const uint8_t note, const uint8_t velo)
+    void uiNoteOn(const uint8_t channel, const uint8_t note, const uint8_t velo) override
     {
         CARLA_ASSERT(channel < MAX_MIDI_CHANNELS);
         CARLA_ASSERT(note < MAX_MIDI_NOTE);
@@ -1084,7 +1074,7 @@ public:
         osc_send_midi(&kData->osc.data, midiData);
     }
 
-    void uiNoteOff(const uint8_t channel, const uint8_t note)
+    void uiNoteOff(const uint8_t channel, const uint8_t note) override
     {
         CARLA_ASSERT(channel < MAX_MIDI_CHANNELS);
         CARLA_ASSERT(note < MAX_MIDI_NOTE);
@@ -1103,7 +1093,7 @@ public:
         osc_send_midi(&kData->osc.data, midiData);
     }
 
-    void bufferSizeChanged(const uint32_t newBufferSize)
+    void bufferSizeChanged(const uint32_t newBufferSize) override
     {
         resizeAudioPool(newBufferSize);
     }

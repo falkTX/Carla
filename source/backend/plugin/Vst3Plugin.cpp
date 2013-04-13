@@ -32,7 +32,7 @@ public:
         carla_debug("Vst3Plugin::Vst3Plugin(%p, %i)", engine, id);
     }
 
-    ~Vst3Plugin()
+    ~Vst3Plugin() override
     {
         carla_debug("Vst3Plugin::~Vst3Plugin()");
 
@@ -43,7 +43,7 @@ public:
     // -------------------------------------------------------------------
     // Information (base)
 
-    PluginType type() const
+    PluginType type() const override
     {
         return PLUGIN_VST3;
     }

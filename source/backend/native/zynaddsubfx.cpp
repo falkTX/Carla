@@ -98,7 +98,7 @@ public:
         //fThread.waitForStarted();
     }
 
-    ~ZynAddSubFxPlugin()
+    ~ZynAddSubFxPlugin() override
     {
         //ensure that everything has stopped
         pthread_mutex_lock(&kMaster->mutex);
@@ -113,12 +113,12 @@ protected:
     // -------------------------------------------------------------------
     // Plugin parameter calls
 
-    uint32_t getParameterCount()
+    uint32_t getParameterCount() override
     {
         return PARAMETER_COUNT;
     }
 
-    const Parameter* getParameterInfo(const uint32_t index)
+    const Parameter* getParameterInfo(const uint32_t index) override
     {
         CARLA_ASSERT(index < getParameterCount());
 
@@ -150,7 +150,7 @@ protected:
         return &param;
     }
 
-    float getParameterValue(const uint32_t index)
+    float getParameterValue(const uint32_t index) override
     {
         CARLA_ASSERT(index < getParameterCount());
 
@@ -168,12 +168,12 @@ protected:
     // -------------------------------------------------------------------
     // Plugin midi-program calls
 
-    uint32_t getMidiProgramCount()
+    uint32_t getMidiProgramCount() override
     {
         return sPrograms.count();
     }
 
-    const MidiProgram* getMidiProgramInfo(const uint32_t index)
+    const MidiProgram* getMidiProgramInfo(const uint32_t index) override
     {
         CARLA_ASSERT(index < getMidiProgramCount());
 
@@ -193,7 +193,7 @@ protected:
     // -------------------------------------------------------------------
     // Plugin state calls
 
-    void setParameterValue(const uint32_t index, const float value)
+    void setParameterValue(const uint32_t index, const float value) override
     {
         CARLA_ASSERT(index < getParameterCount());
 
@@ -207,7 +207,7 @@ protected:
         (void)value;
     }
 
-    void setMidiProgram(const uint32_t bank, const uint32_t program)
+    void setMidiProgram(const uint32_t bank, const uint32_t program) override
     {
         if (bank >= kMaster->bank.banks.size())
             return;
@@ -225,14 +225,14 @@ protected:
     // -------------------------------------------------------------------
     // Plugin process calls
 
-    void activate()
+    void activate() override
     {
         // broken
         //for (int i=0; i < NUM_MIDI_PARTS; i++)
         //    kMaster->setController(0, MIDI_CONTROL_ALL_SOUND_OFF, 0);
     }
 
-    void process(float**, float** const outBuffer, const uint32_t frames, const uint32_t midiEventCount, const MidiEvent* const midiEvents)
+    void process(float**, float** const outBuffer, const uint32_t frames, const uint32_t midiEventCount, const MidiEvent* const midiEvents) override
     {
         if (pthread_mutex_trylock(&kMaster->mutex) != 0)
         {
@@ -279,7 +279,7 @@ protected:
     // -------------------------------------------------------------------
     // Plugin UI calls
 
-    void uiShow(const bool show)
+    void uiShow(const bool show) override
     {
         if (show)
             fThread.uiShow();
@@ -291,7 +291,7 @@ protected:
     // -------------------------------------------------------------------
     // Plugin state calls
 
-    char* getState()
+    char* getState() override
     {
         config.save();
 
@@ -300,7 +300,7 @@ protected:
         return data;
     }
 
-    void setState(const char* const data)
+    void setState(const char* const data) override
     {
         fThread.stopLoadLater();
         kMaster->putalldata((char*)data, 0);

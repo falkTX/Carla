@@ -76,7 +76,7 @@ public:
             fluid_synth_set_interp_method(fSynth, i, FLUID_INTERP_DEFAULT);
     }
 
-    ~FluidSynthPlugin()
+    ~FluidSynthPlugin() override
     {
         carla_debug("FluidSynthPlugin::~FluidSynthPlugin()");
 
@@ -92,12 +92,12 @@ public:
     // -------------------------------------------------------------------
     // Information (base)
 
-    PluginType type() const
+    PluginType type() const override
     {
         return PLUGIN_SF2;
     }
 
-    PluginCategory category()
+    PluginCategory category() override
     {
         return PLUGIN_CATEGORY_SYNTH;
     }
@@ -105,7 +105,7 @@ public:
     // -------------------------------------------------------------------
     // Information (count)
 
-    uint32_t parameterScalePointCount(const uint32_t parameterId) const
+    uint32_t parameterScalePointCount(const uint32_t parameterId) const override
     {
         CARLA_ASSERT(parameterId < kData->param.count);
 
@@ -123,7 +123,7 @@ public:
     // -------------------------------------------------------------------
     // Information (per-plugin data)
 
-    unsigned int availableOptions()
+    unsigned int availableOptions() override
     {
         unsigned int options = 0x0;
 
@@ -136,14 +136,14 @@ public:
         return options;
     }
 
-    float getParameterValue(const uint32_t parameterId)
+    float getParameterValue(const uint32_t parameterId) override
     {
         CARLA_ASSERT(parameterId < kData->param.count);
 
         return fParamBuffers[parameterId];
     }
 
-    float getParameterScalePointValue(const uint32_t parameterId, const uint32_t scalePointId)
+    float getParameterScalePointValue(const uint32_t parameterId, const uint32_t scalePointId) override
     {
         CARLA_ASSERT(parameterId < kData->param.count);
         CARLA_ASSERT(scalePointId < parameterScalePointCount(parameterId));
@@ -179,7 +179,7 @@ public:
         }
     }
 
-    void getLabel(char* const strBuf)
+    void getLabel(char* const strBuf) override
     {
         if (fLabel.isNotEmpty())
             std::strncpy(strBuf, (const char*)fLabel, STR_MAX);
@@ -187,22 +187,22 @@ public:
             CarlaPlugin::getLabel(strBuf);
     }
 
-    void getMaker(char* const strBuf)
+    void getMaker(char* const strBuf) override
     {
         std::strncpy(strBuf, "FluidSynth SF2 engine", STR_MAX);
     }
 
-    void getCopyright(char* const strBuf)
+    void getCopyright(char* const strBuf) override
     {
         std::strncpy(strBuf, "GNU GPL v2+", STR_MAX);
     }
 
-    void getRealName(char* const strBuf)
+    void getRealName(char* const strBuf) override
     {
         getLabel(strBuf);
     }
 
-    void getParameterName(const uint32_t parameterId, char* const strBuf)
+    void getParameterName(const uint32_t parameterId, char* const strBuf) override
     {
         CARLA_ASSERT(parameterId < kData->param.count);
 
@@ -256,7 +256,7 @@ public:
         }
     }
 
-    void getParameterUnit(const uint32_t parameterId, char* const strBuf)
+    void getParameterUnit(const uint32_t parameterId, char* const strBuf) override
     {
         CARLA_ASSERT(parameterId < kData->param.count);
 
@@ -274,7 +274,7 @@ public:
         }
     }
 
-    void getParameterScalePointLabel(const uint32_t parameterId, const uint32_t scalePointId, char* const strBuf)
+    void getParameterScalePointLabel(const uint32_t parameterId, const uint32_t scalePointId, char* const strBuf) override
     {
         CARLA_ASSERT(parameterId < kData->param.count);
         CARLA_ASSERT(scalePointId < parameterScalePointCount(parameterId));
@@ -315,7 +315,7 @@ public:
     // -------------------------------------------------------------------
     // Set data (plugin-specific stuff)
 
-    void setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback)
+    void setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) override
     {
         CARLA_ASSERT(parameterId < kData->param.count);
 
@@ -367,7 +367,7 @@ public:
         CarlaPlugin::setParameterValue(parameterId, value, sendGui, sendOsc, sendCallback);
     }
 
-    void setMidiProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback)
+    void setMidiProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) override
     {
         CARLA_ASSERT(fSynth != nullptr);
         CARLA_ASSERT(index >= -1 && index < static_cast<int32_t>(kData->midiprog.count));
@@ -395,7 +395,7 @@ public:
     // -------------------------------------------------------------------
     // Plugin state
 
-    void reload()
+    void reload() override
     {
         carla_debug("FluidSynthPlugin::reload() - start");
         CARLA_ASSERT(kData->engine != nullptr);
@@ -780,7 +780,7 @@ public:
         carla_debug("FluidSynthPlugin::reload() - end");
     }
 
-    void reloadPrograms(const bool init)
+    void reloadPrograms(const bool init) override
     {
         carla_debug("FluidSynthPlugin::reloadPrograms(%s)", bool2str(init));
 
@@ -877,7 +877,7 @@ public:
     // -------------------------------------------------------------------
     // Plugin processing
 
-    void process(float** const, float** const outBuffer, const uint32_t frames)
+    void process(float** const, float** const outBuffer, const uint32_t frames) override
     {
         uint32_t i, k;
 
@@ -1344,7 +1344,7 @@ public:
         return true;
     }
 
-    void bufferSizeChanged(const uint32_t newBufferSize)
+    void bufferSizeChanged(const uint32_t newBufferSize) override
     {
         if (! kUses16Outs)
             return;
@@ -1360,7 +1360,7 @@ public:
     // -------------------------------------------------------------------
     // Plugin buffers
 
-    void clearBuffers()
+    void clearBuffers() override
     {
         carla_debug("FluidSynthPlugin::clearBuffers() - start");
 

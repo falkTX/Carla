@@ -43,7 +43,7 @@ public:
         carla_debug("LadspaPlugin::LadspaPlugin(%p, %i)", engine, id);
     }
 
-    ~LadspaPlugin()
+    ~LadspaPlugin() override
     {
         carla_debug("LadspaPlugin::~LadspaPlugin()");
 
@@ -83,12 +83,12 @@ public:
     // -------------------------------------------------------------------
     // Information (base)
 
-    PluginType type() const
+    PluginType type() const override
     {
         return PLUGIN_LADSPA;
     }
 
-    PluginCategory category()
+    PluginCategory category() override
     {
         if (fRdfDescriptor != nullptr)
         {
@@ -126,7 +126,7 @@ public:
         return getPluginCategoryFromName(fName);
     }
 
-    long uniqueId() const
+    long uniqueId() const override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
 
@@ -136,7 +136,7 @@ public:
     // -------------------------------------------------------------------
     // Information (count)
 
-    uint32_t parameterScalePointCount(const uint32_t parameterId) const
+    uint32_t parameterScalePointCount(const uint32_t parameterId) const override
     {
         CARLA_ASSERT(parameterId < kData->param.count);
 
@@ -155,7 +155,7 @@ public:
     // -------------------------------------------------------------------
     // Information (per-plugin data)
 
-    unsigned int availableOptions()
+    unsigned int availableOptions() override
     {
 #ifdef __USE_GNU
         const bool isDssiVst = fFilename.contains("dssi-vst", true);
@@ -179,14 +179,14 @@ public:
         return options;
     }
 
-    float getParameterValue(const uint32_t parameterId)
+    float getParameterValue(const uint32_t parameterId) override
     {
         CARLA_ASSERT(parameterId < kData->param.count);
 
         return fParamBuffers[parameterId];
     }
 
-    float getParameterScalePointValue(const uint32_t parameterId, const uint32_t scalePointId)
+    float getParameterScalePointValue(const uint32_t parameterId, const uint32_t scalePointId) override
     {
         CARLA_ASSERT(fRdfDescriptor != nullptr);
         CARLA_ASSERT(parameterId < kData->param.count);
@@ -209,7 +209,7 @@ public:
         return 0.0f;
     }
 
-    void getLabel(char* const strBuf)
+    void getLabel(char* const strBuf) override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
 
@@ -219,7 +219,7 @@ public:
             CarlaPlugin::getLabel(strBuf);
     }
 
-    void getMaker(char* const strBuf)
+    void getMaker(char* const strBuf) override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
 
@@ -231,7 +231,7 @@ public:
             CarlaPlugin::getMaker(strBuf);
     }
 
-    void getCopyright(char* const strBuf)
+    void getCopyright(char* const strBuf) override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
 
@@ -241,7 +241,7 @@ public:
             CarlaPlugin::getCopyright(strBuf);
     }
 
-    void getRealName(char* const strBuf)
+    void getRealName(char* const strBuf) override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
 
@@ -253,7 +253,7 @@ public:
             CarlaPlugin::getRealName(strBuf);
     }
 
-    void getParameterName(const uint32_t parameterId, char* const strBuf)
+    void getParameterName(const uint32_t parameterId, char* const strBuf) override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
         CARLA_ASSERT(parameterId < kData->param.count);
@@ -266,7 +266,7 @@ public:
             CarlaPlugin::getParameterName(parameterId, strBuf);
     }
 
-    void getParameterSymbol(const uint32_t parameterId, char* const strBuf)
+    void getParameterSymbol(const uint32_t parameterId, char* const strBuf) override
     {
         CARLA_ASSERT(parameterId < kData->param.count);
 
@@ -286,7 +286,7 @@ public:
         CarlaPlugin::getParameterSymbol(parameterId, strBuf);
     }
 
-    void getParameterUnit(const uint32_t parameterId, char* const strBuf)
+    void getParameterUnit(const uint32_t parameterId, char* const strBuf) override
     {
         CARLA_ASSERT(parameterId < kData->param.count);
 
@@ -325,7 +325,7 @@ public:
         CarlaPlugin::getParameterUnit(parameterId, strBuf);
     }
 
-    void getParameterScalePointLabel(const uint32_t parameterId, const uint32_t scalePointId, char* const strBuf)
+    void getParameterScalePointLabel(const uint32_t parameterId, const uint32_t scalePointId, char* const strBuf) override
     {
         CARLA_ASSERT(fRdfDescriptor != nullptr);
         CARLA_ASSERT(parameterId < kData->param.count);
@@ -355,7 +355,7 @@ public:
     // -------------------------------------------------------------------
     // Set data (plugin-specific stuff)
 
-    void setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback)
+    void setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) override
     {
         CARLA_ASSERT(parameterId < kData->param.count);
 
@@ -368,7 +368,7 @@ public:
     // -------------------------------------------------------------------
     // Plugin state
 
-    void reload()
+    void reload() override
     {
         carla_debug("LadspaPlugin::reload() - start");
         CARLA_ASSERT(kData->engine != nullptr);
@@ -796,7 +796,7 @@ public:
     // -------------------------------------------------------------------
     // Plugin processing
 
-    void activate()
+    void activate() override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
 
@@ -809,7 +809,7 @@ public:
         }
     }
 
-    void deactivate()
+    void deactivate() override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
 
@@ -822,7 +822,7 @@ public:
         }
     }
 
-    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames)
+    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames) override
     {
         uint32_t i, k;
 
@@ -1191,7 +1191,7 @@ public:
         return true;
     }
 
-    void bufferSizeChanged(const uint32_t newBufferSize)
+    void bufferSizeChanged(const uint32_t newBufferSize) override
     {
         CARLA_ASSERT_INT(newBufferSize > 0, newBufferSize);
         carla_debug("LadspaPlugin::bufferSizeChanged(%i) - start", newBufferSize);
@@ -1250,7 +1250,7 @@ public:
         carla_debug("LadspaPlugin::bufferSizeChanged(%i) - end", newBufferSize);
     }
 
-    void sampleRateChanged(const double newSampleRate)
+    void sampleRateChanged(const double newSampleRate) override
     {
         CARLA_ASSERT_INT(newSampleRate > 0.0, newSampleRate);
         carla_debug("LadspaPlugin::sampleRateChanged(%g) - start", newSampleRate);
@@ -1264,7 +1264,7 @@ public:
     // -------------------------------------------------------------------
     // Plugin buffers
 
-    void clearBuffers()
+    void clearBuffers() override
     {
         carla_debug("LadspaPlugin::clearBuffers() - start");
 

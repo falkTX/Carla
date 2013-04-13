@@ -48,7 +48,7 @@ public:
         kData->osc.thread.setMode(CarlaPluginThread::PLUGIN_THREAD_DSSI_GUI);
     }
 
-    ~DssiPlugin()
+    ~DssiPlugin() override
     {
         carla_debug("DssiPlugin::~DssiPlugin()");
 
@@ -96,12 +96,12 @@ public:
     // -------------------------------------------------------------------
     // Information (base)
 
-    PluginType type() const
+    PluginType type() const override
     {
         return PLUGIN_DSSI;
     }
 
-    PluginCategory category()
+    PluginCategory category() override
     {
         if (fHints & PLUGIN_IS_SYNTH)
             return PLUGIN_CATEGORY_SYNTH;
@@ -109,7 +109,7 @@ public:
         return getPluginCategoryFromName(fName);
     }
 
-    long uniqueId() const
+    long uniqueId() const override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
 
@@ -119,7 +119,7 @@ public:
     // -------------------------------------------------------------------
     // Information (current data)
 
-    int32_t chunkData(void** const dataPtr)
+    int32_t chunkData(void** const dataPtr) override
     {
         CARLA_ASSERT(fOptions & PLUGIN_OPTION_USE_CHUNKS);
         CARLA_ASSERT(fDssiDescriptor != nullptr);
@@ -139,7 +139,7 @@ public:
     // -------------------------------------------------------------------
     // Information (per-plugin data)
 
-    unsigned int availableOptions()
+    unsigned int availableOptions() override
     {
         CARLA_ASSERT(fDssiDescriptor != nullptr);
 
@@ -186,14 +186,14 @@ public:
         return options;
     }
 
-    float getParameterValue(const uint32_t parameterId)
+    float getParameterValue(const uint32_t parameterId) override
     {
         CARLA_ASSERT(parameterId < kData->param.count);
 
         return fParamBuffers[parameterId];
     }
 
-    void getLabel(char* const strBuf)
+    void getLabel(char* const strBuf) override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
 
@@ -203,7 +203,7 @@ public:
             CarlaPlugin::getLabel(strBuf);
     }
 
-    void getMaker(char* const strBuf)
+    void getMaker(char* const strBuf) override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
 
@@ -213,7 +213,7 @@ public:
             CarlaPlugin::getMaker(strBuf);
     }
 
-    void getCopyright(char* const strBuf)
+    void getCopyright(char* const strBuf) override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
 
@@ -223,7 +223,7 @@ public:
             CarlaPlugin::getCopyright(strBuf);
     }
 
-    void getRealName(char* const strBuf)
+    void getRealName(char* const strBuf) override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
 
@@ -233,7 +233,7 @@ public:
             CarlaPlugin::getRealName(strBuf);
     }
 
-    void getParameterName(const uint32_t parameterId, char* const strBuf)
+    void getParameterName(const uint32_t parameterId, char* const strBuf) override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
         CARLA_ASSERT(parameterId < kData->param.count);
@@ -249,7 +249,7 @@ public:
     // -------------------------------------------------------------------
     // Set data (plugin-specific stuff)
 
-    void setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback)
+    void setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) override
     {
         CARLA_ASSERT(parameterId < kData->param.count);
 
@@ -259,7 +259,7 @@ public:
         CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
     }
 
-    void setCustomData(const char* const type, const char* const key, const char* const value, const bool sendGui)
+    void setCustomData(const char* const type, const char* const key, const char* const value, const bool sendGui) override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
         CARLA_ASSERT(fHandle != nullptr);
@@ -300,7 +300,7 @@ public:
         CarlaPlugin::setCustomData(type, key, value, sendGui);
     }
 
-    void setChunkData(const char* const stringData)
+    void setChunkData(const char* const stringData) override
     {
         CARLA_ASSERT(fOptions & PLUGIN_OPTION_USE_CHUNKS);
         CARLA_ASSERT(fDssiDescriptor != nullptr);
@@ -323,7 +323,7 @@ public:
         }
     }
 
-    void setMidiProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback)
+    void setMidiProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) override
     {
         CARLA_ASSERT(fDssiDescriptor != nullptr);
         CARLA_ASSERT(fHandle != nullptr);
@@ -353,7 +353,7 @@ public:
     // -------------------------------------------------------------------
     // Set gui stuff
 
-    void showGui(const bool yesNo)
+    void showGui(const bool yesNo) override
     {
         if (yesNo)
         {
@@ -376,7 +376,7 @@ public:
     // -------------------------------------------------------------------
     // Plugin state
 
-    void reload()
+    void reload() override
     {
         carla_debug("DssiPlugin::reload() - start");
         CARLA_ASSERT(kData->engine != nullptr);
@@ -826,7 +826,7 @@ public:
         carla_debug("DssiPlugin::reload() - end");
     }
 
-    void reloadPrograms(const bool init)
+    void reloadPrograms(const bool init) override
     {
         carla_debug("DssiPlugin::reloadPrograms(%s)", bool2str(init));
         uint32_t i, oldCount  = kData->midiprog.count;
@@ -921,7 +921,7 @@ public:
     // -------------------------------------------------------------------
     // Plugin processing
 
-    void activate()
+    void activate() override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
 
@@ -934,7 +934,7 @@ public:
         }
     }
 
-    void deactivate()
+    void deactivate() override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
 
@@ -947,7 +947,7 @@ public:
         }
     }
 
-    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames)
+    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames) override
     {
         uint32_t i, k;
 
@@ -1546,7 +1546,7 @@ public:
         return true;
     }
 
-    void bufferSizeChanged(const uint32_t newBufferSize)
+    void bufferSizeChanged(const uint32_t newBufferSize) override
     {
         CARLA_ASSERT_INT(newBufferSize > 0, newBufferSize);
         carla_debug("DssiPlugin::bufferSizeChanged(%i) - start", newBufferSize);
@@ -1605,7 +1605,7 @@ public:
         carla_debug("DssiPlugin::bufferSizeChanged(%i) - start", newBufferSize);
     }
 
-    void sampleRateChanged(const double newSampleRate)
+    void sampleRateChanged(const double newSampleRate) override
     {
         CARLA_ASSERT_INT(newSampleRate > 0.0, newSampleRate);
         carla_debug("DssiPlugin::sampleRateChanged(%g) - start", newSampleRate);
@@ -1619,7 +1619,7 @@ public:
     // -------------------------------------------------------------------
     // Post-poned events
 
-    void uiParameterChange(const uint32_t index, const float value)
+    void uiParameterChange(const uint32_t index, const float value) override
     {
         CARLA_ASSERT(index < kData->param.count);
 
@@ -1631,7 +1631,7 @@ public:
         osc_send_control(&kData->osc.data, kData->param.data[index].rindex, value);
     }
 
-    void uiMidiProgramChange(const uint32_t index)
+    void uiMidiProgramChange(const uint32_t index) override
     {
         CARLA_ASSERT(index < kData->midiprog.count);
 
@@ -1643,7 +1643,7 @@ public:
         osc_send_program(&kData->osc.data, kData->midiprog.data[index].bank, kData->midiprog.data[index].program);
     }
 
-    void uiNoteOn(const uint8_t channel, const uint8_t note, const uint8_t velo)
+    void uiNoteOn(const uint8_t channel, const uint8_t note, const uint8_t velo) override
     {
         CARLA_ASSERT(channel < MAX_MIDI_CHANNELS);
         CARLA_ASSERT(note < MAX_MIDI_NOTE);
@@ -1666,7 +1666,7 @@ public:
         osc_send_midi(&kData->osc.data, midiData);
     }
 
-    void uiNoteOff(const uint8_t channel, const uint8_t note)
+    void uiNoteOff(const uint8_t channel, const uint8_t note) override
     {
         CARLA_ASSERT(channel < MAX_MIDI_CHANNELS);
         CARLA_ASSERT(note < MAX_MIDI_NOTE);
@@ -1688,7 +1688,7 @@ public:
     // -------------------------------------------------------------------
     // Plugin buffers
 
-    void clearBuffers()
+    void clearBuffers() override
     {
         carla_debug("DssiPlugin::clearBuffers() - start");
 

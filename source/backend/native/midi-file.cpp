@@ -31,7 +31,7 @@ public:
     {
     }
 
-    ~MidiFilePlugin()
+    ~MidiFilePlugin() override
     {
     }
 
@@ -39,7 +39,7 @@ protected:
     // -------------------------------------------------------------------
     // Plugin state calls
 
-    void setCustomData(const char* const key, const char* const value)
+    void setCustomData(const char* const key, const char* const value) override
     {
         CARLA_ASSERT(key != nullptr);
         CARLA_ASSERT(value != nullptr);
@@ -53,7 +53,7 @@ protected:
     // -------------------------------------------------------------------
     // Plugin process calls
 
-    void process(float**, float**, const uint32_t frames, const uint32_t, const MidiEvent* const)
+    void process(float**, float**, const uint32_t frames, const uint32_t, const MidiEvent* const) override
     {
         const TimeInfo* const timePos = getTimeInfo();
 
@@ -86,7 +86,7 @@ protected:
     // -------------------------------------------------------------------
     // Plugin UI calls
 
-    void uiShow(const bool show)
+    void uiShow(const bool show) override
     {
         if (! show)
             return;
@@ -102,7 +102,7 @@ protected:
     // -------------------------------------------------------------------
     // AbstractMidiPlayer calls
 
-    void writeMidiEvent(const uint32_t timePosFrame, const RawMidiEvent* const event)
+    void writeMidiEvent(const uint32_t timePosFrame, const RawMidiEvent* const event) override
     {
         MidiEvent midiEvent;
 

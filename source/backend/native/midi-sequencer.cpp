@@ -120,7 +120,7 @@ public:
         fMidiOut.addNote(3456*m, 0, 62, 90, 325*m);
     }
 
-    ~MidiSequencerPlugin()
+    ~MidiSequencerPlugin() override
     {
     }
 
@@ -128,15 +128,15 @@ protected:
     // -------------------------------------------------------------------
     // Plugin process calls
 
-    void activate()
+    void activate() override
     {
     }
 
-    void deactivate()
+    void deactivate() override
     {
     }
 
-    void process(float**, float**, const uint32_t frames, const uint32_t midiEventCount, const MidiEvent* const midiEvents)
+    void process(float**, float**, const uint32_t frames, const uint32_t midiEventCount, const MidiEvent* const midiEvents) override
     {
         const TimeInfo* const timePos = getTimeInfo();
 
@@ -172,7 +172,7 @@ protected:
     // -------------------------------------------------------------------
     // Plugin process calls
 
-    void writeMidiEvent(const uint32_t timePosFrame, const RawMidiEvent* const event)
+    void writeMidiEvent(const uint32_t timePosFrame, const RawMidiEvent* const event) override
     {
         MidiEvent midiEvent;
 
