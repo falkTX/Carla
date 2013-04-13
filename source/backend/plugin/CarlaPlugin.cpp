@@ -1584,10 +1584,10 @@ void CarlaPlugin::registerToOscClient()
 
     // Base data
     {
-        char bufName[STR_MAX+1]  = { 0 };
-        char bufLabel[STR_MAX+1] = { 0 };
-        char bufMaker[STR_MAX+1] = { 0 };
-        char bufCopyright[STR_MAX+1] = { 0 };
+        char bufName[STR_MAX+1]  = { '\0' };
+        char bufLabel[STR_MAX+1] = { '\0' };
+        char bufMaker[STR_MAX+1] = { '\0' };
+        char bufCopyright[STR_MAX+1] = { '\0' };
         getRealName(bufName);
         getLabel(bufLabel);
         getMaker(bufMaker);
@@ -1621,6 +1621,9 @@ void CarlaPlugin::registerToOscClient()
 
         for (uint32_t i=0; i < kData->param.count; i++)
         {
+            carla_fill<char>(bufName, STR_MAX, '\0');
+            carla_fill<char>(bufUnit, STR_MAX, '\0');
+
             getParameterName(i, bufName);
             getParameterUnit(i, bufUnit);
 

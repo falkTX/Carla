@@ -8,7 +8,7 @@ include ../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += -I../backend -I../includes -I../libs -I../utils -Wall -Wextra
+BUILD_CXX_FLAGS += -I../backend -I../includes -I../libs -I../theme -I../utils -Wall -Wextra
 # BUILD_CXX_FLAGS += -isystem ../libs/juce
 # BUILD_CXX_FLAGS += -DWANT_JACK -DWANT_LADSPA -DWANT_DSSI
 BUILD_CXX_FLAGS += -isystem /usr/include/qt4
@@ -20,7 +20,7 @@ ANSI_CXX_FLAGS  += -Wcast-qual -Wconversion -Wsign-conversion -Wlogical-op -Wagg
 ANSI_CXX_FLAGS  += -std=c++11 -Wzero-as-null-pointer-constant
 ANSI_CXX_FLAGS  += -DVESTIGE_HEADER -fPIC
 
-TARGETS = ANSI Base64 CarlaString RtList Thread Print Utils
+TARGETS = ANSI CarlaString RtList Thread Print Utils
 
 all: $(TARGETS) RUN
 
@@ -28,9 +28,6 @@ all: $(TARGETS) RUN
 
 ANSI: ANSI.cpp
 	$(CXX) $^ $(BUILD_CXX_FLAGS) $(ANSI_CXX_FLAGS) $(LINK_FLAGS) -o $@
-
-Base64: Base64.cpp
-	$(CXX) $^ $(BUILD_CXX_FLAGS) $(LINK_FLAGS) -o $@
 
 CarlaString: CarlaString.cpp
 	$(CXX) $^ $(BUILD_CXX_FLAGS) $(LINK_FLAGS) -o $@

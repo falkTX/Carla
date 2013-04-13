@@ -41,6 +41,7 @@ void carla_register_all_plugins()
 #ifndef CARLA_OS_WIN
     //carla_register_native_plugin_nekofilter(); // needs UI stuff
 #endif
+    //carla_register_native_plugin_sunvoxfile(); // unfinished
 
     // Carla
     //carla_register_native_plugin_carla(); // unfinished

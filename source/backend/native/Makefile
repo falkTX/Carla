@@ -63,7 +63,8 @@ OBJS  = \
 	midi-sequencer.cpp.o \
 	midi-split.c.o \
 	midi-through.c.o \
-	midi-transpose.c.o
+	midi-transpose.c.o \
+	sunvox-file.cpp.o
 
 ifneq ($(WIN32),true)
 OBJS += \

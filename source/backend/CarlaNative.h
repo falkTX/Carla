@@ -195,6 +195,8 @@ typedef struct _PluginDescriptor {
     char* (*get_state)(PluginHandle handle);
     void  (*set_state)(PluginHandle handle, const char* data);
 
+    intptr_t (*dispatcher)(PluginHandle handle, int32_t code, int32_t index, intptr_t value, void* ptr);
+
 } PluginDescriptor;
 
 // -----------------------------------------------------------------------
@@ -210,6 +212,7 @@ void carla_register_native_plugin_midiSplit();
 void carla_register_native_plugin_midiThrough();
 void carla_register_native_plugin_midiTranspose();
 void carla_register_native_plugin_nekofilter();
+void carla_register_native_plugin_sunvoxfile();
 
 // Carla
 void carla_register_native_plugin_carla();

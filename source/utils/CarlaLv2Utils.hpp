@@ -758,7 +758,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
                                 else
                                     carla_stderr("lv2_rdf_new(\"%s\") - got unknown port Midi-Map type '%s'", uri, midiMapType);
 
-                                rdfPort->MidiMap.Number = midiMapNumberNodes.get_first().as_int();
+                                rdfPort->MidiMap.Number = static_cast<uint32_t>(midiMapNumberNodes.get_first().as_int());
                             }
                         }
                     }
@@ -942,7 +942,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
             presetListURIs.sort();
 
             // create presets with unique URIs
-            rdfDescriptor->PresetCount = presetListURIs.count();
+            rdfDescriptor->PresetCount = static_cast<uint32_t>(presetListURIs.count());
             rdfDescriptor->Presets = new LV2_RDF_Preset[rdfDescriptor->PresetCount];
 
             // set preset data

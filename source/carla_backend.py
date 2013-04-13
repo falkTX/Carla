@@ -417,10 +417,10 @@ class Host(object):
         self.lib.carla_save_project.restype = c_bool
 
         self.lib.carla_patchbay_connect.argtypes = [c_int, c_int]
-        self.lib.carla_patchbay_connect.restype = None
+        self.lib.carla_patchbay_connect.restype = c_bool
 
         self.lib.carla_patchbay_disconnect.argtypes = [c_int]
-        self.lib.carla_patchbay_disconnect.restype = None
+        self.lib.carla_patchbay_disconnect.restype = c_bool
 
         self.lib.carla_patchbay_refresh.argtypes = None
         self.lib.carla_patchbay_refresh.restype = None
@@ -449,8 +449,14 @@ class Host(object):
         self.lib.carla_remove_all_plugins.argtypes = None
         self.lib.carla_remove_all_plugins.restype = None
 
+        self.lib.carla_rename_plugin.argtypes = [c_uint, c_char_p]
+        self.lib.carla_rename_plugin.restype = c_char_p
+
         self.lib.carla_clone_plugin.argtypes = [c_uint]
         self.lib.carla_clone_plugin.restype = c_bool
+
+        self.lib.carla_replace_plugin.argtypes = [c_uint]
+        self.lib.carla_replace_plugin.restype = c_bool
 
         self.lib.carla_switch_plugins.argtypes = [c_uint, c_uint]
         self.lib.carla_switch_plugins.restype = c_bool
@@ -666,10 +672,10 @@ class Host(object):
         return self.lib.carla_save_project(filename.encode("utf-8"))
 
     def patchbay_connect(self, portIdA, portIdB):
-        self.lib.carla_patchbay_connect(portIdA, portIdB)
+        return self.lib.carla_patchbay_connect(portIdA, portIdB)
 
     def patchbay_disconnect(self, connectionId):
-        self.lib.carla_patchbay_disconnect(connectionId)
+        return self.lib.carla_patchbay_disconnect(connectionId)
 
     def patchbay_refresh(self):
         self.lib.carla_patchbay_refresh()
@@ -701,8 +707,14 @@ class Host(object):
     def remove_all_plugins(self):
         self.lib.carla_remove_all_plugins()
 
+    def rename_plugin(self, pluginId, newName):
+        return self.lib.carla_rename_plugin(pluginId, newName)
+
     def clone_plugin(self, pluginId):
         return self.lib.carla_clone_plugin(pluginId)
+
+    def replace_plugin(self, pluginId):
+        return self.lib.carla_replace_plugin(pluginId)
 
     def switch_plugins(self, pluginIdA, pluginIdB):
         return self.lib.carla_switch_plugins(pluginIdA, pluginIdB)

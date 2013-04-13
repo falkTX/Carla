@@ -35,13 +35,12 @@
 
 using CarlaBackend::CarlaEngine;
 using CarlaBackend::CarlaPlugin;
-
 using CarlaBackend::CallbackFunc;
 using CarlaBackend::EngineOptions;
 
 // -------------------------------------------------------------------------------------------------------------------
-
 // Single, standalone engine
+
 struct CarlaBackendStandalone {
     CallbackFunc  callback;
     void*         callbackPtr;
@@ -64,6 +63,11 @@ struct CarlaBackendStandalone {
     {
         if (app != nullptr)
             app->setStyle(new CarlaStyle());
+    }
+
+    ~CarlaBackendStandalone()
+    {
+        CARLA_ASSERT(engine == nullptr);
     }
 
     void init()
@@ -142,6 +146,7 @@ const char* carla_get_extended_license_text()
         text1 += "<li>DISTRHO Mini-Series plugin code, based on LOSER-dev suite by Michael Gruhn</li>";
 #endif
         text1 += "<li>NekoFilter plugin code, based on lv2fil by Nedko Arnaudov and Fons Adriaensen</li>";
+        text1 += "<li>SunVox library file support, http://www.warmplace.ru/soft/sunvox/</li>";
 
 #ifdef WANT_AUDIOFILE
         text1 += "<li>AudioDecoder library for Audio file support, by Robin Gareus</li>";
@@ -167,7 +172,7 @@ const char* carla_get_extended_license_text()
         text1 += "</ul>";
 
         // code snippets
-        text2  = "<p>Additionally, Carla uses code snippets from the following projects:</p>";
+        text2 += "<p>Additionally, Carla uses code snippets from the following projects:</p>";
         text2 += "<ul>";
         text2 += "<li>Pointer and data leak utils from JUCE, http://www.rawmaterialsoftware.com/juce.php</li>";
         text2 += "<li>Shared memory utils from dssi-vst, http://www.breakfastquay.com/dssi-vst/</li>";
@@ -188,12 +193,14 @@ const char* carla_get_extended_license_text()
 
 const char* carla_get_supported_file_types()
 {
+    carla_debug("carla_get_supported_file_types()");
+
     static CarlaString retText;
 
     if (retText.isEmpty())
     {
-        // Base type
-        retText = "*.carxp;*.carxs";
+        // Base types
+        retText += "*.carxp;*.carxs";
 
         // Sample kits
 #ifdef WANT_FLUIDSYNTH
@@ -203,12 +210,17 @@ const char* carla_get_supported_file_types()
         retText += ";*.gig;*.sfz";
 #endif
 
-        // Special files provided by internal plugins
+        // Files provided by internal plugins
 #ifdef WANT_AUDIOFILE
-        retText += ";*.aac;*.flac;*.oga;*.ogg;*.mp3;*.wav";
+        retText += "*.3g2;*.3gp;*.aac;*.ac3;*.aiff;*.amr;*.ape;*.flac;*.mp2;*.mp3;*.mpc;*.oga;*.ogg;*.w64;*.wav;*.wma;";
 #endif
 #ifdef WANT_MIDIFILE
         retText += ";*.mid;*.midi";
+#endif
+
+        // Plugin presets
+#ifdef WANT_ZYNADDSUBFX
+        retText += ";*.xmz";
 #endif
     }
 
@@ -236,6 +248,9 @@ const void* carla_get_engine_driver_options(unsigned int index)
     carla_debug("carla_get_engine_driver_options(%i)", index);
 
     return nullptr;
+
+    // unused
+    (void)index;
 }
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -246,9 +261,9 @@ unsigned int carla_get_internal_plugin_count()
 
 #ifdef WANT_NATIVE
     return static_cast<unsigned int>(CarlaPlugin::getNativePluginCount());
-#else
-    return 0;
 #endif
+
+    return 0;
 }
 
 const CarlaNativePluginInfo* carla_get_internal_plugin_info(unsigned int internalPluginId)
@@ -258,7 +273,7 @@ const CarlaNativePluginInfo* carla_get_internal_plugin_info(unsigned int interna
     static CarlaNativePluginInfo info;
 
 #ifdef WANT_NATIVE
-    const PluginDescriptor* const nativePlugin = CarlaPlugin::getNativePluginDescriptor(internalPluginId);
+    const PluginDescriptor* const nativePlugin(CarlaPlugin::getNativePluginDescriptor(internalPluginId));
 
     // as internal plugin, this must never fail
     CARLA_ASSERT(nativePlugin != nullptr);
@@ -266,8 +281,8 @@ const CarlaNativePluginInfo* carla_get_internal_plugin_info(unsigned int interna
     if (nativePlugin == nullptr)
         return nullptr;
 
-     info.category  = static_cast<CarlaPluginCategory>(nativePlugin->category);
-     info.hints     = 0x0;
+     info.category = static_cast<CarlaPluginCategory>(nativePlugin->category);
+     info.hints    = 0x0;
 
     if (nativePlugin->hints & PLUGIN_IS_RTSAFE)
          info.hints |= CarlaBackend::PLUGIN_IS_RTSAFE;
@@ -292,6 +307,11 @@ const CarlaNativePluginInfo* carla_get_internal_plugin_info(unsigned int interna
 #endif
 
     return &info;
+
+#ifndef WANT_NATIVE
+    // unused
+    (void)internalPluginId;
+#endif
 }
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -302,6 +322,12 @@ bool carla_engine_init(const char* driverName, const char* clientName)
     CARLA_ASSERT(standalone.engine == nullptr);
     CARLA_ASSERT(driverName != nullptr);
     CARLA_ASSERT(clientName != nullptr);
+
+    if (standalone.engine != nullptr)
+    {
+        standalone.lastError = "Engine is already running";
+        return false;
+    }
 
     standalone.engine = CarlaEngine::newDriverByName(driverName);
 
@@ -325,7 +351,9 @@ bool carla_engine_init(const char* driverName, const char* clientName)
 
 #ifndef BUILD_BRIDGE
     standalone.engine->setOption(CarlaBackend::OPTION_PROCESS_MODE,               static_cast<int>(standalone.options.processMode),   nullptr);
+# if 0 // disabled for now
     standalone.engine->setOption(CarlaBackend::OPTION_TRANSPORT_MODE,             static_cast<int>(standalone.options.transportMode), nullptr);
+# endif
     standalone.engine->setOption(CarlaBackend::OPTION_FORCE_STEREO,               standalone.options.forceStereo ? 1 : 0,             nullptr);
     standalone.engine->setOption(CarlaBackend::OPTION_PREFER_PLUGIN_BRIDGES,      standalone.options.preferPluginBridges ? 1 : 0,     nullptr);
     standalone.engine->setOption(CarlaBackend::OPTION_PREFER_UI_BRIDGES,          standalone.options.preferUiBridges ? 1 : 0,         nullptr);
@@ -336,45 +364,43 @@ bool carla_engine_init(const char* driverName, const char* clientName)
     standalone.engine->setOption(CarlaBackend::OPTION_PREFERRED_BUFFER_SIZE,      static_cast<int>(standalone.options.preferredBufferSize), nullptr);
     standalone.engine->setOption(CarlaBackend::OPTION_PREFERRED_SAMPLE_RATE,      static_cast<int>(standalone.options.preferredSampleRate), nullptr);
     standalone.engine->setOption(CarlaBackend::OPTION_OSC_UI_TIMEOUT,             static_cast<int>(standalone.options.oscUiTimeout),        nullptr);
-    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_NATIVE,      0, standalone.options.bridge_native);
-    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_POSIX32,     0, standalone.options.bridge_posix32);
-    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_POSIX64,     0, standalone.options.bridge_posix64);
-    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_WIN32,       0, standalone.options.bridge_win32);
-    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_WIN64,       0, standalone.options.bridge_win64);
+    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_NATIVE,      0, (const char*)standalone.options.bridge_native);
+    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_POSIX32,     0, (const char*)standalone.options.bridge_posix32);
+    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_POSIX64,     0, (const char*)standalone.options.bridge_posix64);
+    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_WIN32,       0, (const char*)standalone.options.bridge_win32);
+    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_WIN64,       0, (const char*)standalone.options.bridge_win64);
 # ifdef WANT_LV2
-    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_LV2_GTK2,    0, standalone.options.bridge_lv2Gtk2);
-    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_LV2_GTK3,    0, standalone.options.bridge_lv2Gtk3);
-    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_LV2_QT4,     0, standalone.options.bridge_lv2Qt4);
-    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_LV2_QT5,     0, standalone.options.bridge_lv2Qt5);
-    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_LV2_COCOA,   0, standalone.options.bridge_lv2Cocoa);
-    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_LV2_WINDOWS, 0, standalone.options.bridge_lv2Win);
-    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_LV2_X11,     0, standalone.options.bridge_lv2X11);
+    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_LV2_GTK2,    0, (const char*)standalone.options.bridge_lv2Gtk2);
+    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_LV2_GTK3,    0, (const char*)standalone.options.bridge_lv2Gtk3);
+    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_LV2_QT4,     0, (const char*)standalone.options.bridge_lv2Qt4);
+    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_LV2_QT5,     0, (const char*)standalone.options.bridge_lv2Qt5);
+    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_LV2_COCOA,   0, (const char*)standalone.options.bridge_lv2Cocoa);
+    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_LV2_WINDOWS, 0, (const char*)standalone.options.bridge_lv2Win);
+    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_LV2_X11,     0, (const char*)standalone.options.bridge_lv2X11);
 # endif
 # ifdef WANT_VST
-    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_VST_COCOA,   0, standalone.options.bridge_vstCocoa);
-    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_VST_HWND,    0, standalone.options.bridge_vstHWND);
-    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_VST_X11,     0, standalone.options.bridge_vstX11);
+    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_VST_COCOA,   0, (const char*)standalone.options.bridge_vstCocoa);
+    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_VST_HWND,    0, (const char*)standalone.options.bridge_vstHWND);
+    standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_VST_X11,     0, (const char*)standalone.options.bridge_vstX11);
 # endif
 
     if (standalone.procName.isNotEmpty())
-        standalone.engine->setOption(CarlaBackend::OPTION_PROCESS_NAME, 0, standalone.procName);
+        standalone.engine->setOption(CarlaBackend::OPTION_PROCESS_NAME,        0, (const char*)standalone.procName);
 #endif
 
-    const bool initiated = standalone.engine->init(clientName);
-
-    if (initiated)
+    if (standalone.engine->init(clientName))
     {
         standalone.lastError = "no error";
         standalone.init();
+        return true;
     }
     else
     {
         standalone.lastError = standalone.engine->getLastError();
         delete standalone.engine;
         standalone.engine = nullptr;
+        return false;
     }
-
-    return initiated;
 }
 
 bool carla_engine_close()
@@ -391,7 +417,10 @@ bool carla_engine_close()
     standalone.engine->setAboutToClose();
     standalone.engine->removeAllPlugins();
 
-    const bool closed = standalone.engine->close();
+    const bool closed(standalone.engine->close());
+
+    if (! closed)
+        standalone.lastError = standalone.engine->getLastError();
 
     delete standalone.engine;
     standalone.engine = nullptr;
@@ -427,7 +456,7 @@ void carla_set_engine_about_to_close()
         standalone.engine->setAboutToClose();
 }
 
-void carla_set_engine_callback(CarlaBackend::CallbackFunc func, void* ptr)
+void carla_set_engine_callback(CarlaCallbackFunc func, void* ptr)
 {
     carla_debug("carla_set_engine_callback(%p)", func);
 
@@ -438,13 +467,9 @@ void carla_set_engine_callback(CarlaBackend::CallbackFunc func, void* ptr)
         standalone.engine->setCallback(func, ptr);
 }
 
-#ifndef BUILD_BRIDGE
 void carla_set_engine_option(CarlaBackend::OptionsType option, int value, const char* valueStr)
 {
     carla_debug("carla_set_engine_option(%s, %i, \"%s\")", CarlaBackend::OptionsType2Str(option), value, valueStr);
-
-    if (standalone.engine != nullptr)
-        standalone.engine->setOption(option, value, valueStr);
 
     switch (option)
     {
@@ -460,10 +485,12 @@ void carla_set_engine_option(CarlaBackend::OptionsType option, int value, const 
         break;
 
     case CarlaBackend::OPTION_TRANSPORT_MODE:
+#if 0 // disabled for now
         if (value < CarlaBackend::TRANSPORT_MODE_INTERNAL || value > CarlaBackend::TRANSPORT_MODE_JACK)
             return carla_stderr2("carla_set_engine_option(OPTION_TRANSPORT_MODE, %i, \"%s\") - invalid value", value, valueStr);
 
         standalone.options.transportMode = static_cast<CarlaBackend::TransportMode>(value);
+#endif
         break;
 
     case CarlaBackend::OPTION_FORCE_STEREO:
@@ -485,18 +512,30 @@ void carla_set_engine_option(CarlaBackend::OptionsType option, int value, const 
 #endif
 
     case CarlaBackend::OPTION_MAX_PARAMETERS:
-        standalone.options.maxParameters = (value > 0) ? static_cast<unsigned int>(value) : CarlaBackend::MAX_DEFAULT_PARAMETERS;
+        if (value <= 0)
+            return carla_stderr2("carla_set_engine_option(OPTION_MAX_PARAMETERS, %i, \"%s\") - invalid value", value, valueStr);
+
+        standalone.options.maxParameters = static_cast<unsigned int>(value);
         break;
 
     case CarlaBackend::OPTION_OSC_UI_TIMEOUT:
+        if (value <= 0)
+            return carla_stderr2("carla_set_engine_option(OPTION_OSC_UI_TIMEOUT, %i, \"%s\") - invalid value", value, valueStr);
+
         standalone.options.oscUiTimeout = static_cast<unsigned int>(value);
         break;
 
     case CarlaBackend::OPTION_PREFERRED_BUFFER_SIZE:
+        if (value <= 0)
+            return carla_stderr2("carla_set_engine_option(OPTION_PREFERRED_BUFFER_SIZE, %i, \"%s\") - invalid value", value, valueStr);
+
         standalone.options.preferredBufferSize = static_cast<unsigned int>(value);
         break;
 
     case CarlaBackend::OPTION_PREFERRED_SAMPLE_RATE:
+        if (value <= 0)
+            return carla_stderr2("carla_set_engine_option(OPTION_PREFERRED_SAMPLE_RATE, %i, \"%s\") - invalid value", value, valueStr);
+
         standalone.options.preferredSampleRate = static_cast<unsigned int>(value);
         break;
 
@@ -552,8 +591,10 @@ void carla_set_engine_option(CarlaBackend::OptionsType option, int value, const 
         break;
 #endif
     }
+
+    if (standalone.engine != nullptr)
+        standalone.engine->setOption(option, value, valueStr);
 }
-#endif
 
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -563,7 +604,7 @@ bool carla_load_filename(const char* filename)
     CARLA_ASSERT(standalone.engine != nullptr);
     CARLA_ASSERT(filename != nullptr);
 
-    if (standalone.engine != nullptr)
+    if (standalone.engine != nullptr && standalone.engine->isRunning())
         return standalone.engine->loadFilename(filename);
 
     standalone.lastError = "Engine is not started";
@@ -576,7 +617,7 @@ bool carla_load_project(const char* filename)
     CARLA_ASSERT(standalone.engine != nullptr);
     CARLA_ASSERT(filename != nullptr);
 
-    if (standalone.engine != nullptr)
+    if (standalone.engine != nullptr && standalone.engine->isRunning())
         return standalone.engine->loadProject(filename);
 
     standalone.lastError = "Engine is not started";
@@ -589,7 +630,7 @@ bool carla_save_project(const char* filename)
     CARLA_ASSERT(standalone.engine != nullptr);
     CARLA_ASSERT(filename != nullptr);
 
-    if (standalone.engine != nullptr)
+    if (standalone.engine != nullptr) // allow to save even if engine stopped
         return standalone.engine->saveProject(filename);
 
     standalone.lastError = "Engine is not started";
@@ -598,22 +639,28 @@ bool carla_save_project(const char* filename)
 
 // -------------------------------------------------------------------------------------------------------------------
 
-void carla_patchbay_connect(int portA, int portB)
+bool carla_patchbay_connect(int portA, int portB)
 {
     carla_debug("carla_patchbay_connect(%i, %i)", portA, portB);
     CARLA_ASSERT(standalone.engine != nullptr);
 
-    if (standalone.engine != nullptr)
+    if (standalone.engine != nullptr && standalone.engine->isRunning())
         return standalone.engine->patchbayConnect(portA, portB);
+
+    standalone.lastError = "Engine is not started";
+    return false;
 }
 
-void carla_patchbay_disconnect(int connectionId)
+bool carla_patchbay_disconnect(int connectionId)
 {
     carla_debug("carla_patchbay_disconnect(%i)", connectionId);
     CARLA_ASSERT(standalone.engine != nullptr);
 
-    if (standalone.engine != nullptr)
+    if (standalone.engine != nullptr && standalone.engine->isRunning())
         return standalone.engine->patchbayDisconnect(connectionId);
+
+    standalone.lastError = "Engine is not started";
+    return false;
 }
 
 void carla_patchbay_refresh()
@@ -621,8 +668,8 @@ void carla_patchbay_refresh()
     carla_debug("carla_patchbay_refresh()");
     CARLA_ASSERT(standalone.engine != nullptr);
 
-    if (standalone.engine != nullptr)
-        return standalone.engine->patchbayRefresh();
+    if (standalone.engine != nullptr && standalone.engine->isRunning())
+        standalone.engine->patchbayRefresh();
 }
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -632,7 +679,7 @@ void carla_transport_play()
     carla_debug("carla_transport_play()");
     CARLA_ASSERT(standalone.engine != nullptr);
 
-    if (standalone.engine != nullptr)
+    if (standalone.engine != nullptr && standalone.engine->isRunning())
         standalone.engine->transportPlay();
 }
 
@@ -641,7 +688,7 @@ void carla_transport_pause()
     carla_debug("carla_transport_pause()");
     CARLA_ASSERT(standalone.engine != nullptr);
 
-    if (standalone.engine != nullptr)
+    if (standalone.engine != nullptr && standalone.engine->isRunning())
         standalone.engine->transportPause();
 }
 
@@ -650,7 +697,7 @@ void carla_transport_relocate(uint32_t frames)
     carla_debug("carla_transport_relocate(%i)", frames);
     CARLA_ASSERT(standalone.engine != nullptr);
 
-    if (standalone.engine != nullptr)
+    if (standalone.engine != nullptr && standalone.engine->isRunning())
         standalone.engine->transportRelocate(frames);
 }
 
@@ -743,18 +790,39 @@ void carla_remove_all_plugins()
         standalone.engine->removeAllPlugins();
 }
 
+const char* carla_rename_plugin(unsigned int pluginId, const char* newName)
+{
+    carla_debug("carla_rename_plugin(%i, \"%s\")", pluginId, newName);
+    CARLA_ASSERT(standalone.engine != nullptr);
 
-// -------------------------------------------------------------------------------------------------------------------
+    if (standalone.engine != nullptr && standalone.engine->isRunning())
+        return standalone.engine->renamePlugin(pluginId, newName);
+
+    standalone.lastError = "Engine is not started";
+    return nullptr;
+}
 
 bool carla_clone_plugin(unsigned int pluginId)
 {
     carla_debug("carla_clone_plugin(%i)", pluginId);
     CARLA_ASSERT(standalone.engine != nullptr);
 
-    if (standalone.engine == nullptr)
-        return false;
+    if (standalone.engine != nullptr && standalone.engine->isRunning())
+        return standalone.engine->clonePlugin(pluginId);
 
-    // TODO
+    standalone.lastError = "Engine is not started";
+    return false;
+}
+
+bool carla_replace_plugin(unsigned int pluginId)
+{
+    carla_debug("carla_replace_plugin(%i)", pluginId);
+    CARLA_ASSERT(standalone.engine != nullptr);
+
+    if (standalone.engine != nullptr && standalone.engine->isRunning())
+        return standalone.engine->replacePlugin(pluginId);
+
+    standalone.lastError = "Engine is not started";
     return false;
 }
 
@@ -763,10 +831,10 @@ bool carla_switch_plugins(unsigned int pluginIdA, unsigned int pluginIdB)
     carla_debug("carla_switch_plugins(%i, %i)", pluginIdA, pluginIdB);
     CARLA_ASSERT(standalone.engine != nullptr);
 
-    if (standalone.engine == nullptr)
-        return false;
+    if (standalone.engine != nullptr && standalone.engine->isRunning())
+        return standalone.engine->switchPlugins(pluginIdA, pluginIdB);
 
-    // TODO
+    standalone.lastError = "Engine is not started";
     return false;
 }
 
@@ -1066,12 +1134,12 @@ const CarlaScalePointInfo* carla_get_parameter_scalepoint_info(unsigned int plug
 
 // -------------------------------------------------------------------------------------------------------------------
 
-const CarlaBackend::ParameterData* carla_get_parameter_data(unsigned int pluginId, uint32_t parameterId)
+const CarlaParameterData* carla_get_parameter_data(unsigned int pluginId, uint32_t parameterId)
 {
     carla_debug("carla_get_parameter_data(%i, %i)", pluginId, parameterId);
     CARLA_ASSERT(standalone.engine != nullptr);
 
-    static CarlaBackend::ParameterData data;
+    static CarlaParameterData data;
 
     if (standalone.engine == nullptr)
         return &data;
@@ -1089,12 +1157,12 @@ const CarlaBackend::ParameterData* carla_get_parameter_data(unsigned int pluginI
     return &data;
 }
 
-const CarlaBackend::ParameterRanges* carla_get_parameter_ranges(unsigned int pluginId, uint32_t parameterId)
+const CarlaParameterRanges* carla_get_parameter_ranges(unsigned int pluginId, uint32_t parameterId)
 {
     carla_debug("carla_get_parameter_ranges(%i, %i)", pluginId, parameterId);
     CARLA_ASSERT(standalone.engine != nullptr);
 
-    static CarlaBackend::ParameterRanges ranges;
+    static CarlaParameterRanges ranges;
 
     if (standalone.engine == nullptr)
         return &ranges;
@@ -1112,12 +1180,12 @@ const CarlaBackend::ParameterRanges* carla_get_parameter_ranges(unsigned int plu
     return &ranges;
 }
 
-const CarlaBackend::MidiProgramData* carla_get_midi_program_data(unsigned int pluginId, uint32_t midiProgramId)
+const CarlaMidiProgramData* carla_get_midi_program_data(unsigned int pluginId, uint32_t midiProgramId)
 {
     carla_debug("carla_get_midi_program_data(%i, %i)", pluginId, midiProgramId);
     CARLA_ASSERT(standalone.engine != nullptr);
 
-    static CarlaBackend::MidiProgramData data;
+    static CarlaMidiProgramData data;
 
     if (standalone.engine == nullptr)
         return &data;
@@ -1135,12 +1203,12 @@ const CarlaBackend::MidiProgramData* carla_get_midi_program_data(unsigned int pl
     return &data;
 }
 
-const CarlaBackend::CustomData* carla_get_custom_data(unsigned int pluginId, uint32_t customDataId)
+const CarlaCustomData* carla_get_custom_data(unsigned int pluginId, uint32_t customDataId)
 {
     carla_debug("carla_get_custom_data(%i, %i)", pluginId, customDataId);
     CARLA_ASSERT(standalone.engine != nullptr);
 
-    static CarlaBackend::CustomData data;
+    static CarlaCustomData data;
 
     if (standalone.engine == nullptr)
         return &data;
@@ -1937,6 +2005,13 @@ protected:
             standalone.callback(standalone.callbackPtr, CarlaBackend::CALLBACK_NSM_ANNOUNCE, 0, 0, 0, 0.0f, smName);
 
         return 0;
+
+#ifndef DEBUG
+        // unused
+        (void)path;
+        (void)types;
+        (void)argc;
+#endif
     }
 
     int handleOpen(const char* const path, const char* const types, lo_arg** const argv, const int argc, const lo_message msg)
@@ -1967,6 +2042,14 @@ protected:
             lo_send_from(fReplyAddr, lo_server_thread_get_server(fServerThread), LO_TT_IMMEDIATE, "/reply", "ss", "/nsm/client/open", "OK");
 
         return 0;
+
+#ifndef DEBUG
+        // unused
+        (void)path;
+        (void)types;
+        (void)argc;
+        (void)msg;
+#endif
     }
 
     int handleSave(const char* const path, const char* const types, lo_arg** const argv, const int argc, const lo_message msg)
@@ -1989,6 +2072,15 @@ protected:
             lo_send_from(fReplyAddr, lo_server_thread_get_server(fServerThread), LO_TT_IMMEDIATE, "/reply", "ss", "/nsm/client/save", "OK");
 
         return 0;
+
+#ifndef DEBUG
+        // unused
+        (void)path;
+        (void)types;
+        (void)argv;
+        (void)argc;
+        (void)msg;
+#endif
     }
 
 private:
@@ -2043,6 +2135,11 @@ void carla_nsm_reply_save()
 // -------------------------------------------------------------------------------------------------------------------
 
 #ifdef BUILD_BRIDGE
+CarlaEngine* carla_get_standalone_engine()
+{
+    return standalone.engine;
+}
+
 bool carla_engine_init_bridge(const char* audioBaseName, const char* controlBaseName, const char* clientName)
 {
     carla_debug("carla_engine_init_bridge(\"%s\", \"%s\", \"%s\")", audioBaseName, controlBaseName, clientName);
@@ -2091,10 +2188,5 @@ bool carla_engine_init_bridge(const char* audioBaseName, const char* controlBase
     }
 
     return initiated;
-}
-
-CarlaEngine* carla_get_standalone_engine()
-{
-    return standalone.engine;
 }
 #endif

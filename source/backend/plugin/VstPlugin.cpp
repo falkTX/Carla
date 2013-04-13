@@ -815,7 +815,7 @@ public:
         // 1. IL Harmless - disable threaded processing
         if (fEffect->uniqueID == 1229484653)
         {
-            char strBuf[STR_MAX+1] = { 0 };
+            char strBuf[STR_MAX+1] = { '\0' };
             getLabel(strBuf);
 
             if (std::strcmp(strBuf, "IL Harmless") == 0)
@@ -852,7 +852,7 @@ public:
             // Update names
             for (i=0; i < count; ++i)
             {
-                char strBuf[STR_MAX+1] = { 0 };
+                char strBuf[STR_MAX+1] = { '\0' };
                 if (dispatcher(effGetProgramNameIndexed, i, 0, strBuf, 0.0f) != 1)
                 {
                     // program will be [re-]changed later
@@ -2017,7 +2017,7 @@ protected:
 
                 if (current >= 0 && current < static_cast<int32_t>(kData->prog.count))
                 {
-                    char strBuf[STR_MAX+1]  = { 0 };
+                    char strBuf[STR_MAX+1]  = { '\0' };
                     dispatcher(effGetProgramName, 0, 0, strBuf, 0.0f);
 
                     if (kData->prog.names[current] != nullptr)

@@ -22,7 +22,6 @@
 #include "CarlaNative.hpp"
 #include "CarlaMIDI.h"
 #include "CarlaString.hpp"
-//#include "CarlaThread.hpp"
 #include "RtList.hpp"
 
 #include <QtCore/QThread>

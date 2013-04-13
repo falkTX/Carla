@@ -1071,7 +1071,7 @@ void do_vst_check(void* const libHandle, const bool init)
         return;
     }
 
-    char strBuf[STR_MAX+1] = { 0 };
+    char strBuf[STR_MAX+1] = { '\0' };
     CarlaString cName;
     CarlaString cProduct;
     CarlaString cVendor;

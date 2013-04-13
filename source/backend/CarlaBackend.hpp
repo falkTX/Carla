@@ -655,6 +655,7 @@ struct ParameterData {
     uint8_t  midiChannel;
     int16_t  midiCC;
 
+#ifndef DOXYGEN
     ParameterData()
         : type(PARAMETER_UNKNOWN),
           index(PARAMETER_NULL),
@@ -662,6 +663,7 @@ struct ParameterData {
           hints(0x0),
           midiChannel(0),
           midiCC(-1) {}
+#endif
 };
 
 /*!
@@ -675,6 +677,7 @@ struct ParameterRanges {
     float stepSmall;
     float stepLarge;
 
+#ifndef DOXYGEN
     ParameterRanges()
         : def(0.0f),
           min(0.0f),
@@ -682,6 +685,7 @@ struct ParameterRanges {
           step(0.01f),
           stepSmall(0.0001f),
           stepLarge(0.1f) {}
+#endif
 
     void fixDefault()
     {
@@ -724,10 +728,12 @@ struct MidiProgramData {
     uint32_t program;
     const char* name;
 
+#ifndef DOXYGEN
     MidiProgramData()
         : bank(0),
           program(0),
           name(nullptr) {}
+#endif
 };
 
 /*!
@@ -741,10 +747,12 @@ struct CustomData {
     const char* key;
     const char* value;
 
+#ifndef DOXYGEN
     CustomData()
         : type(nullptr),
           key(nullptr),
           value(nullptr) {}
+#endif
 };
 
 /**@}*/

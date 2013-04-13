@@ -1057,9 +1057,6 @@ class CarlaMainW(QMainWindow):
 
         if Carla.host.is_engine_running() and not Carla.host.engine_close():
             print(cString(Carla.host.get_last_error()))
-            # failed
-            self.fEngineStarted = True
-            return
 
         self.fBufferSize = 0
         self.fSampleRate = 0.0
@@ -1803,9 +1800,6 @@ class CarlaMainW(QMainWindow):
         QMainWindow.timerEvent(self, event)
 
     def closeEvent(self, event):
-        #if self.nsm_server:
-            #self.nsm_server.stop()
-
         self.saveSettings()
 
         if Carla.host.is_engine_running():
@@ -1954,6 +1948,8 @@ if __name__ == '__main__':
     Carla.host = Host(libName)
     Carla.host.set_engine_callback(engineCallback)
     Carla.host.set_engine_option(OPTION_PROCESS_NAME, 0, "carla")
+
+    print(app.palette())
 
     # Set bridge paths
     if carla_bridge_native:

@@ -236,15 +236,16 @@ PERLMOD_MAKEVAR_PREFIX =
 # Configuration options related to the preprocessor
 #---------------------------------------------------------------------------
 ENABLE_PREPROCESSING   = YES
-MACRO_EXPANSION        = NO
-EXPAND_ONLY_PREDEF     = NO
+MACRO_EXPANSION        = YES
+EXPAND_ONLY_PREDEF     = YES
 SEARCH_INCLUDES        = YES
 INCLUDE_PATH           =
 INCLUDE_FILE_PATTERNS  =
 PREDEFINED             = DOXYGEN \
-                         WANT_LADSPA WANT_DSSI WANT_LV2 WANT_VST WANT_FLUIDSYNTH WANT_LINUXSAMPLER \
+                         WANT_NATIVE WANT_LADSPA WANT_DSSI WANT_LV2 WANT_VST WANT_FLUIDSYNTH WANT_LINUXSAMPLER \
                          WANT_JACK WANT_JACK_LATENCY WANT_JACK_PORT_RENAME WANT_RTAUDIO \
-                         WANT_AUDIOFILE WANT_MIDIFILE WANT_OPENGL WANT_ZYNADDSUBFX WANT_ZYNADDSUBFX_UI
+                         WANT_OPENGL WANT_AUDIOFILE WANT_MIDIFILE WANT_ZYNADDSUBFX WANT_ZYNADDSUBFX_UI \
+                         CARLA_EXPORT=
 EXPAND_AS_DEFINED      =
 SKIP_FUNCTION_MACROS   = YES
 #---------------------------------------------------------------------------

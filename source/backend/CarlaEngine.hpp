@@ -725,6 +725,29 @@ public:
     void removeAllPlugins();
 
     /*!
+     * Rename plugin with id \a id to \a newName.\n
+     * Returns the new name, or nullptr if the operation failed.
+     */
+    const char* renamePlugin(const unsigned int id, const char* const newName);
+
+    /*!
+     * Clone plugin with id \a id.
+     */
+    bool clonePlugin(const unsigned int id);
+
+    /*!
+     * Prepare replace of plugin with id \a id.\n
+     * The next call to addPlugin() will use this id, replacing the current plugin.
+     * \note This function requires addPlugin() to be called afterwards as soon as possible.
+     */
+    bool replacePlugin(const unsigned int id);
+
+    /*!
+     * Switch plugins with id \a idA and \a idB.
+     */
+    bool switchPlugins(const unsigned int idA, const unsigned int idB);
+
+    /*!
      * Get plugin with id \a id.
      */
     CarlaPlugin* getPlugin(const unsigned int id) const;
@@ -746,7 +769,7 @@ public:
     /*!
      * Load \a filename of any type.\n
      * This will try to load a generic file as a plugin,
-     * either by direct handling (GIG, SF2 and SFZ) or by using an internal plugin (Audio and MIDI)
+     * either by direct handling (GIG, SF2 and SFZ) or by using an internal plugin (like Audio and MIDI)
      */
     bool loadFilename(const char* const filename);
 
@@ -827,9 +850,6 @@ public:
      */
     float getOutputPeak(const unsigned int pluginId, const unsigned short id) const;
 
-    // FIXME - remove once IPC audio is implemented
-    void setPeaks(const unsigned int pluginId, float const inPeaks[MAX_PEAKS], float const outPeaks[MAX_PEAKS]);
-
     // -------------------------------------------------------------------
     // Callback
 
@@ -849,12 +869,12 @@ public:
     /*!
      * TODO.
      */
-    virtual void patchbayConnect(int portA, int portB);
+    virtual bool patchbayConnect(int portA, int portB);
 
     /*!
      * TODO.
      */
-    virtual void patchbayDisconnect(int connectionId);
+    virtual bool patchbayDisconnect(int connectionId);
 
     /*!
      * TODO.
