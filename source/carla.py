@@ -543,17 +543,6 @@ class CarlaMainW(QMainWindow):
         self.loadSettings(True)
         self.loadRDFs()
 
-        self.setStyleSheet("""
-          QWidget#w_plugins {
-            background-color: qlineargradient(spread:pad,
-                x1:0.0, y1:0.0,
-                x2:0.2, y2:1.0,
-                stop:0 rgb( 7,  7,  7),
-                stop:1 rgb(28, 28, 28)
-            );
-          }
-        """)
-
         # -------------------------------------------------------------
         # Internal stuff
 
@@ -1721,6 +1710,22 @@ class CarlaMainW(QMainWindow):
                 self.ui.splitter.restoreState(settings.value("SplitterState", ""))
             else:
                 self.ui.splitter.setSizes([99999, 210])
+
+            pal1 = app.palette().base().color()
+            pal2 = app.palette().button().color()
+            col1 = "stop:0 rgb(%i, %i, %i)" % (pal1.red(), pal1.green(), pal1.blue())
+            col2 = "stop:1 rgb(%i, %i, %i)" % (pal2.red(), pal2.green(), pal2.blue())
+
+            self.setStyleSheet("""
+              QWidget#w_plugins {
+                background-color: qlineargradient(spread:pad,
+                    x1:0.0, y1:0.0,
+                    x2:0.2, y2:1.0,
+                    %s,
+                    %s
+                );
+              }
+            """ % (col1, col2))
 
         self.fSavedSettings = {
             "Main/DefaultProjectFolder": settings.value("Main/DefaultProjectFolder", HOME, type=str),
