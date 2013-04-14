@@ -186,9 +186,9 @@ bool rdwr_dataAvailable(BridgeRingBuffer* const ringbuf)
 static inline
 PluginBridgeOpcode rdwr_readOpcode(BridgeRingBuffer* const ringbuf)
 {
-    PluginBridgeOpcode code = kPluginBridgeOpcodeNull;
-    rdwr_tryRead(ringbuf, &code, sizeof(PluginBridgeOpcode));
-    return code;
+    int i = kPluginBridgeOpcodeNull;
+    rdwr_tryRead(ringbuf, &i, sizeof(int));
+    return static_cast<PluginBridgeOpcode>(i);
 }
 
 static inline
@@ -212,7 +212,8 @@ float rdwr_readFloat(BridgeRingBuffer* const ringbuf)
 static inline
 void rdwr_writeOpcode(BridgeRingBuffer* const ringbuf, const PluginBridgeOpcode opcode)
 {
-    rdwr_tryWrite(ringbuf, &opcode, sizeof(PluginBridgeOpcode));
+    const int i = opcode;
+    rdwr_tryWrite(ringbuf, &i, sizeof(int));
 }
 
 static inline

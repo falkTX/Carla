@@ -2160,6 +2160,7 @@ class PluginWidget(QFrame):
         actEdit.setChecked(self.ui.b_edit.isChecked())
 
         menu.addSeparator()
+        actClone  = menu.addAction(self.tr("Clone"))
         actRemove = menu.addAction(self.tr("Remove"))
 
         actSel = menu.exec_(QCursor.pos())
@@ -2173,6 +2174,11 @@ class PluginWidget(QFrame):
             self.ui.b_gui.click()
         elif actSel == actEdit:
             self.ui.b_edit.click()
+        elif actSel == actClone:
+            if not Carla.host.clone_plugin(self.fPluginId):
+                CustomMessageBox(self, QMessageBox.Warning, self.tr("Error"), self.tr("Operation failed"),
+                                       cString(Carla.host.get_last_error()), QMessageBox.Ok, QMessageBox.Ok)
+
         elif actSel == actRemove:
             Carla.host.remove_plugin(self.fPluginId)
 

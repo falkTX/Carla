@@ -28,6 +28,11 @@
 CARLA_BACKEND_START_NAMESPACE
 
 // -------------------------------------------------------------------------------------------------------------------
+// Fallback data
+
+static const EngineEvent kFallbackEngineEvent;
+
+// -------------------------------------------------------------------------------------------------------------------
 // Engine Helpers
 
 #ifndef BUILD_BRIDGE
@@ -86,8 +91,6 @@ void CarlaEngineAudioPort::initBuffer(CarlaEngine* const)
 
 // -------------------------------------------------------------------------------------------------------------------
 // Carla Engine Event port
-
-static const EngineEvent kFallbackEngineEvent;
 
 CarlaEngineEventPort::CarlaEngineEventPort(const bool isInput, const ProcessMode processMode)
     : CarlaEnginePort(isInput, processMode),
@@ -173,14 +176,14 @@ const EngineEvent& CarlaEngineEventPort::getEvent(const uint32_t index)
     return fBuffer[index];
 }
 
-void CarlaEngineEventPort::writeControlEvent(const uint32_t time, const uint8_t channel, const EngineControlEventType type, const uint16_t param, const double value)
+void CarlaEngineEventPort::writeControlEvent(const uint32_t time, const uint8_t channel, const EngineControlEventType type, const uint16_t param, const float value)
 {
     CARLA_ASSERT(! kIsInput);
     CARLA_ASSERT(fBuffer != nullptr);
     CARLA_ASSERT(kProcessMode == PROCESS_MODE_CONTINUOUS_RACK || kProcessMode == PROCESS_MODE_PATCHBAY || kProcessMode == PROCESS_MODE_BRIDGE);
     CARLA_ASSERT(type != kEngineControlEventTypeNull);
     CARLA_ASSERT(channel < MAX_MIDI_CHANNELS);
-    CARLA_SAFE_ASSERT(value >= 0.0 && value <= 1.0);
+    CARLA_SAFE_ASSERT(value >= 0.0f && value <= 1.0f);
 
     if (kIsInput)
         return;
@@ -208,7 +211,7 @@ void CarlaEngineEventPort::writeControlEvent(const uint32_t time, const uint8_t 
 
         fBuffer[i].ctrl.type  = type;
         fBuffer[i].ctrl.param = param;
-        fBuffer[i].ctrl.value = carla_fixValue<double>(0.0, 1.0, value);
+        fBuffer[i].ctrl.value = carla_fixValue<float>(0.0f, 1.0f, value);
 
         return;
     }
@@ -890,7 +893,50 @@ const char* CarlaEngine::renamePlugin(const unsigned int id, const char* const n
 
 bool CarlaEngine::clonePlugin(const unsigned int id)
 {
-    setLastError("Not implemented yet");
+    carla_debug("CarlaEngine::clonePlugin(%i)", id);
+    CARLA_ASSERT(kData->curPluginCount > 0);
+    CARLA_ASSERT(id < kData->curPluginCount);
+    CARLA_ASSERT(kData->plugins != nullptr);
+
+    if (kData->plugins == nullptr)
+    {
+        setLastError("Critical error: no plugins are currently loaded!");
+        return false;
+    }
+
+    CarlaPlugin* const plugin = kData->plugins[id].plugin;
+
+    CARLA_ASSERT(plugin != nullptr);
+
+    if (plugin != nullptr)
+    {
+        CARLA_ASSERT(plugin->id() == id);
+
+        const SaveState& saveState(plugin->getSaveState());
+
+        char label[STR_MAX+1] = { '\0' };
+        plugin->getLabel(label);
+
+        const unsigned int pluginsBefore(kData->curPluginCount);
+
+        // TODO: detect bridges
+        // TODO: handle extraStuff
+        if (! addPlugin(plugin->type(), plugin->filename(), plugin->name(), label, nullptr))
+            return false;
+
+        CARLA_ASSERT(pluginsBefore+1 == kData->curPluginCount);
+
+        CarlaPlugin* const newPlugin = kData->plugins[kData->curPluginCount-1].plugin;
+
+        CARLA_ASSERT(newPlugin != nullptr);
+
+        newPlugin->loadSaveState(saveState);
+
+        return true;
+    }
+
+    carla_stderr("CarlaEngine::clonePlugin(%i) - could not find plugin", id);
+    setLastError("Could not find plugin to clone");
     return false;
 }
 

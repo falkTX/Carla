@@ -249,7 +249,7 @@ public:
         return fRetEvent;
     }
 
-    void writeControlEvent(const uint32_t time, const uint8_t channel, const EngineControlEventType type, const uint16_t param, const double value) override
+    void writeControlEvent(const uint32_t time, const uint8_t channel, const EngineControlEventType type, const uint16_t param, const float value) override
     {
         if (kPort == nullptr)
             return CarlaEngineEventPort::writeControlEvent(time, channel, type, param, value);
@@ -259,7 +259,7 @@ public:
         CARLA_ASSERT(type != kEngineControlEventTypeNull);
         CARLA_ASSERT(channel < MAX_MIDI_CHANNELS);
         CARLA_ASSERT(param < MAX_MIDI_VALUE);
-        CARLA_SAFE_ASSERT(value >= 0.0 && value <= 1.0);
+        CARLA_SAFE_ASSERT(value >= 0.0f && value <= 1.0f);
 
         if (kIsInput)
             return;
@@ -276,9 +276,9 @@ public:
             CARLA_ASSERT(! MIDI_IS_CONTROL_BANK_SELECT(param));
         }
 
-        const double fixedValue = carla_fixValue<double>(0.0, 1.0, value);
+        const float fixedValue = carla_fixValue<float>(0.0f, 1.0f, value);
 
-        uint8_t data[3] = { 0 };
+        uint8_t data[4] = { 0 };
         uint8_t size    = 0;
 
         switch (type)
@@ -288,7 +288,7 @@ public:
         case kEngineControlEventTypeParameter:
             data[0] = MIDI_STATUS_CONTROL_CHANGE + channel;
             data[1] = static_cast<uint8_t>(param);
-            data[2] = uint8_t(fixedValue * 127.0);
+            data[2] = uint8_t(fixedValue * 127.0f);
             size    = 3;
             break;
         case kEngineControlEventTypeMidiBank:

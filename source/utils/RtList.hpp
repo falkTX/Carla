@@ -436,7 +436,7 @@ public:
         CARLA_ASSERT(kMemPool != nullptr);
     }
 
-    ~RtList()
+    ~RtList() override
     {
     }
 
@@ -484,7 +484,7 @@ public:
 private:
     Pool* const kMemPool;
 
-    typename List<T>::Data* _allocate()
+    typename List<T>::Data* _allocate() override
     {
         return _allocate_atomic();
     }
@@ -499,7 +499,7 @@ private:
         return (typename List<T>::Data*)kMemPool->allocate_sleepy();
     }
 
-    void _deallocate(typename List<T>::Data* const dataPtr)
+    void _deallocate(typename List<T>::Data* const dataPtr) override
     {
         kMemPool->deallocate(dataPtr);
     }
@@ -523,14 +523,14 @@ public:
     }
 
 private:
-    typename List<T>::Data* _allocate()
+    typename List<T>::Data* _allocate() override
     {
-        return (typename List<T>::Data*)malloc(this->kDataSize);
+        return (typename List<T>::Data*)std::malloc(this->kDataSize);
     }
 
-    void _deallocate(typename List<T>::Data* const dataPtr)
+    void _deallocate(typename List<T>::Data* const dataPtr) override
     {
-        free(dataPtr);
+        std::free(dataPtr);
     }
 
     LIST_DECLARATIONS(NonRtList)
@@ -547,17 +547,17 @@ public:
     {
     }
 
-    ~NonRtListNew()
+    ~NonRtListNew() override
     {
     }
 
 private:
-    typename List<T>::Data* _allocate()
+    typename List<T>::Data* _allocate() override
     {
         return new typename List<T>::Data;
     }
 
-    void _deallocate(typename List<T>::Data* const dataPtr)
+    void _deallocate(typename List<T>::Data* const dataPtr) override
     {
         delete dataPtr;
     }

@@ -156,13 +156,6 @@ struct EngineControlEvent {
     uint16_t param;              //!< Parameter Id, midi bank or midi program.
     float    value;              //!< Parameter value, normalized to 0.0f<->1.0f.
 
-#ifdef CARLA_PROPER_CPP11_SUPPORT // default constructor of union member
-    EngineControlEvent()
-    {
-        clear();
-    }
-#endif
-
     void clear()
     {
         type  = kEngineControlEventTypeNull;
@@ -180,13 +173,6 @@ struct EngineMidiEvent {
     uint8_t port;    //!< Port offset (usually 0)
     uint8_t data[4]; //!< MIDI data, without channel bit
     uint8_t size;    //!< Number of bytes used
-
-#ifdef CARLA_PROPER_CPP11_SUPPORT // default constructor of union member
-    EngineMidiEvent()
-    {
-        clear();
-    }
-#endif
 
     void clear()
     {
@@ -389,7 +375,6 @@ protected:
     const bool kIsInput;
     const ProcessMode kProcessMode;
 
-private:
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEnginePort)
 #endif
 };
@@ -438,7 +423,6 @@ public:
 protected:
     float* fBuffer;
 
-private:
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineAudioPort)
 #endif
 };
@@ -492,7 +476,7 @@ public:
      * Arguments are the same as in the EngineControlEvent struct.
      * \note You must only call this for output ports.
      */
-    virtual void writeControlEvent(const uint32_t time, const uint8_t channel, const EngineControlEventType type, const uint16_t param, const double value = 0.0);
+    virtual void writeControlEvent(const uint32_t time, const uint8_t channel, const EngineControlEventType type, const uint16_t param, const float value = 0.0f);
 
     /*!
      * Write a control event into the buffer, overloaded call.
