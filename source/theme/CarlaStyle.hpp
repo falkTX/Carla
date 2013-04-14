@@ -1,5 +1,5 @@
 /*
- * Carla Qt4 Style, based on Qt5 fusion style
+ * Carla Style, based on Qt5 fusion style
  * Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
  * Copyright (C) 2012 Digia Plc and/or its subsidiary(-ies)
  *

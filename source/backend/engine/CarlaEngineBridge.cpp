@@ -228,9 +228,9 @@ public:
                         float* inBuffer[inCount];
                         float* outBuffer[outCount];
 
-                        for (uint32_t i=0; i < inCount; i++)
+                        for (uint32_t i=0; i < inCount; ++i)
                             inBuffer[i] = fShmAudioPool.data + i*fBufferSize;
-                        for (uint32_t i=0; i < outCount; i++)
+                        for (uint32_t i=0; i < outCount; ++i)
                             outBuffer[i] = fShmAudioPool.data + (i+inCount)*fBufferSize;
 
                         plugin->initBuffers();

@@ -34,7 +34,7 @@ static const EngineEvent kFallbackEngineEvent;
 
 #ifndef BUILD_BRIDGE
 // -------------------------------------------------------------------------------------------------------------------
-// Bridge Helper, defined in plugin/CarlaBlugin.cpp
+// Bridge Helper, defined in CarlaPlugin.cpp
 
 extern BinaryType CarlaPluginGetBridgeBinaryType(CarlaPlugin* const plugin);
 
@@ -153,7 +153,7 @@ uint32_t CarlaEngineEventPort::getEventCount()
     uint32_t count = 0;
     const EngineEvent* const events = fBuffer;
 
-    for (uint32_t i=0; i < kMaxEventCount; i++, count++)
+    for (uint32_t i=0; i < kMaxEventCount; ++i, ++count)
     {
         if (events[i].type == kEngineEventTypeNull)
             break;
@@ -205,7 +205,7 @@ void CarlaEngineEventPort::writeControlEvent(const uint32_t time, const uint8_t 
         CARLA_ASSERT(! MIDI_IS_CONTROL_BANK_SELECT(param));
     }
 
-    for (uint32_t i=0; i < kMaxEventCount; i++)
+    for (uint32_t i=0; i < kMaxEventCount; ++i)
     {
         if (fBuffer[i].type != kEngineEventTypeNull)
             continue;
@@ -245,10 +245,10 @@ void CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t cha
         return;
     if (size == 0)
         return;
-    if (size > 3)
+    if (size > 4)
         return;
 
-    for (uint32_t i=0; i < kMaxEventCount; i++)
+    for (uint32_t i=0; i < kMaxEventCount; ++i)
     {
         if (fBuffer[i].type != kEngineEventTypeNull)
             continue;
@@ -257,11 +257,10 @@ void CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t cha
         fBuffer[i].time    = time;
         fBuffer[i].channel = channel;
 
-        fBuffer[i].midi.port    = port;
-        fBuffer[i].midi.data[0] = data[0];
-        fBuffer[i].midi.data[1] = data[1];
-        fBuffer[i].midi.data[2] = data[2];
-        fBuffer[i].midi.size    = size;
+        fBuffer[i].midi.port = port;
+        fBuffer[i].midi.size = size;
+
+        carla_copy<uint8_t>(fBuffer[i].midi.data, data, size);
 
         return;
     }
@@ -380,7 +379,7 @@ void doPluginRemove(CarlaEngineProtectedData* const kData, const bool unlock)
     CarlaPlugin* plugin;
 
     // move all plugins 1 spot backwards
-    for (unsigned int i=id; i < kData->curPluginCount; i++)
+    for (unsigned int i=id; i < kData->curPluginCount; ++i)
     {
         plugin = kData->plugins[i+1].plugin;
 
@@ -650,7 +649,7 @@ void CarlaEngine::idle()
     CARLA_ASSERT(kData->plugins != nullptr);
     //CARLA_ASSERT(isRunning());
 
-    for (unsigned int i=0; i < kData->curPluginCount; i++)
+    for (unsigned int i=0; i < kData->curPluginCount; ++i)
     {
         CarlaPlugin* const plugin = kData->plugins[i].plugin;
 
@@ -865,7 +864,7 @@ void CarlaEngine::removeAllPlugins()
 
         kData->curPluginCount = 0;
 
-        for (unsigned int i=0; i < oldCount; i++)
+        for (unsigned int i=0; i < oldCount; ++i)
         {
             CarlaPlugin* const plugin = kData->plugins[i].plugin;
 
@@ -999,7 +998,7 @@ const char* CarlaEngine::getNewUniquePluginName(const char* const name)
     sname.truncate(maxClientNameSize()-5-1); // 5 = strlen(" (10)")
     sname.replace(':', '.'); // ':' is used in JACK1 to split client/port names
 
-    for (unsigned short i=0; i < kData->curPluginCount; i++)
+    for (unsigned short i=0; i < kData->curPluginCount; ++i)
     {
         CARLA_ASSERT(kData->plugins[i].plugin);
 
@@ -1152,7 +1151,7 @@ bool CarlaEngine::saveProject(const char* const filename)
     bool firstPlugin = true;
     char strBuf[STR_MAX+1];
 
-    for (unsigned int i=0; i < kData->curPluginCount; i++)
+    for (unsigned int i=0; i < kData->curPluginCount; ++i)
     {
         CarlaPlugin* const plugin = kData->plugins[i].plugin;
 
@@ -1464,7 +1463,7 @@ void CarlaEngine::bufferSizeChanged(const uint32_t newBufferSize)
 {
     carla_debug("CarlaEngine::bufferSizeChanged(%i)", newBufferSize);
 
-    for (unsigned int i=0; i < kData->curPluginCount; i++)
+    for (unsigned int i=0; i < kData->curPluginCount; ++i)
     {
         CarlaPlugin* const plugin = kData->plugins[i].plugin;
 
@@ -1479,7 +1478,7 @@ void CarlaEngine::sampleRateChanged(const double newSampleRate)
 {
     carla_debug("CarlaEngine::sampleRateChanged(%g)", newSampleRate);
 
-    for (unsigned int i=0; i < kData->curPluginCount; i++)
+    for (unsigned int i=0; i < kData->curPluginCount; ++i)
     {
         CarlaPlugin* const plugin = kData->plugins[i].plugin;
 
@@ -1512,7 +1511,7 @@ void CarlaEngine::proccessPendingEvents()
         fTimeInfo.frame   = kData->time.frame;
     }
 
-    for (unsigned int i=0; i < kData->curPluginCount; i++)
+    for (unsigned int i=0; i < kData->curPluginCount; ++i)
     {
         // TODO - peak values?
     }
@@ -1548,7 +1547,7 @@ void CarlaEngine::processRack(float* inBuf[2], float* outBuf[2], const uint32_t 
     bool processed = false;
 
     // process plugins
-    for (unsigned int i=0; i < kData->curPluginCount; i++)
+    for (unsigned int i=0; i < kData->curPluginCount; ++i)
     {
         CarlaPlugin* const plugin = kData->plugins[i].plugin;
 
@@ -1577,7 +1576,7 @@ void CarlaEngine::processRack(float* inBuf[2], float* outBuf[2], const uint32_t 
         // if plugin has no audio inputs, add previous buffers
         if (plugin->audioInCount() == 0)
         {
-            for (uint32_t j=0; j < frames; j++)
+            for (uint32_t j=0; j < frames; ++j)
             {
                 outBuf[0][j] += inBuf[0][j];
                 outBuf[1][j] += inBuf[1][j];
@@ -1586,7 +1585,7 @@ void CarlaEngine::processRack(float* inBuf[2], float* outBuf[2], const uint32_t 
         // if plugin has no midi output, add previous events
         if (plugin->midiOutCount() == 0)
         {
-            for (uint32_t j=0, k=0; j < frames; j++)
+            for (uint32_t j=0, k=0; j < frames; ++j)
             {
 
             }
@@ -1601,7 +1600,7 @@ void CarlaEngine::processRack(float* inBuf[2], float* outBuf[2], const uint32_t 
             float outPeak1 = 0.0f;
             float outPeak2 = 0.0f;
 
-            for (uint32_t k=0; k < frames; k++)
+            for (uint32_t k=0; k < frames; ++k)
             {
                 setValueIfHigher(inPeak1,  std::fabs(inBuf[0][k]));
                 setValueIfHigher(inPeak2,  std::fabs(inBuf[1][k]));

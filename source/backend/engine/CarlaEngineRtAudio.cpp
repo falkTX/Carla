@@ -543,7 +543,7 @@ protected:
         // initialize audio input
         if (fAudioIsInterleaved)
         {
-            for (unsigned int i=0; i < nframes*2; i++)
+            for (unsigned int i=0; i < nframes*2; ++i)
             {
                 if (i % 2 == 0)
                     fAudioInBuf1[i/2] = insPtr[i];
@@ -662,7 +662,7 @@ protected:
         // output audio
         if (fAudioIsInterleaved)
         {
-            for (unsigned int i=0; i < nframes*2; i++)
+            for (unsigned int i=0; i < nframes*2; ++i)
             {
                 if (i % 2 == 0)
                     outsPtr[i] = fAudioOutBuf1[i/2];
@@ -806,7 +806,7 @@ protected:
     {
         carla_debug("CarlaEngineRtAudio::getPatchbayPortId(\"%s\")", name.toUtf8().constData());
 
-        for (int i=0, count=fUsedPortNames.count(); i < count; i++)
+        for (int i=0, count=fUsedPortNames.count(); i < count; ++i)
         {
             carla_debug("CarlaEngineRtAudio::getPatchbayPortId(\"%s\") VS \"%s\"", name.toUtf8().constData(), fUsedPortNames[i].name.toUtf8().constData());
 

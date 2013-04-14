@@ -47,7 +47,6 @@ PKGCONFIG += alsa
 
 # JACK
 DEFINES   += __UNIX_JACK__
-PKGCONFIG += jack
 
 # PulseAudio
 DEFINES   += __LINUX_PULSE__

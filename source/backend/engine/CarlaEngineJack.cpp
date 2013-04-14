@@ -21,7 +21,7 @@
 #include "CarlaBackendUtils.hpp"
 #include "CarlaMIDI.h"
 
-#include "jackbridge/jackbridge.h"
+#include "jackbridge/JackBridge.cpp"
 
 #include <cmath>
 #include <QtCore/QStringList>
@@ -591,15 +591,10 @@ public:
 
             initJackPatchbay(jackClientName);
 
-            // TODO - update jackbridge
-            jack_set_client_registration_callback(fClient, carla_jack_client_registration_callback, this);
-            jack_set_port_registration_callback(fClient, carla_jack_port_registration_callback, this);
-            jack_set_port_connect_callback(fClient, carla_jack_port_connect_callback, this);
-
-#ifdef WANT_JACK_PORT_RENAME
-            if (jack_set_port_rename_callback)
-                jack_set_port_rename_callback(fClient, carla_jack_port_rename_callback, this);
-#endif
+            jackbridge_set_client_registration_callback(fClient, carla_jack_client_registration_callback, this);
+            jackbridge_set_port_registration_callback(fClient, carla_jack_port_registration_callback, this);
+            jackbridge_set_port_connect_callback(fClient, carla_jack_port_connect_callback, this);
+            jackbridge_set_port_rename_callback(fClient, carla_jack_port_rename_callback, this);
 
             if (fOptions.processMode == PROCESS_MODE_CONTINUOUS_RACK)
             {
@@ -776,7 +771,7 @@ public:
             return false;
         }
 
-        for (int i=0, count=fUsedConnections.count(); i < count; i++)
+        for (int i=0, count=fUsedConnections.count(); i < count; ++i)
         {
             if (fUsedConnections[i].id == connectionId)
             {
@@ -950,7 +945,7 @@ protected:
 #else
         if (fOptions.processMode == PROCESS_MODE_SINGLE_CLIENT)
         {
-            for (unsigned int i=0; i < kData->curPluginCount; i++)
+            for (unsigned int i=0; i < kData->curPluginCount; ++i)
             {
                 CarlaPlugin* const plugin = getPluginUnchecked(i);
 
@@ -992,7 +987,7 @@ protected:
                 jack_midi_event_t jackEvent;
                 const uint32_t jackEventCount = jackbridge_midi_get_event_count(eventIn);
 
-                for (uint32_t jackEventIndex=0; jackEventIndex < jackEventCount; jackEventIndex++)
+                for (uint32_t jackEventIndex=0; jackEventIndex < jackEventCount; ++jackEventIndex)
                 {
                     if (jackbridge_midi_event_get(&jackEvent, eventIn, jackEventIndex) != 0)
                         continue;
@@ -1071,7 +1066,7 @@ protected:
             {
                 jackbridge_midi_clear_buffer(eventOut);
 
-                for (unsigned short i=0; i < RACK_EVENT_COUNT; i++)
+                for (unsigned short i=0; i < RACK_EVENT_COUNT; ++i)
                 {
                     EngineEvent* const engineEvent = &kData->rack.out[i];
 
@@ -1158,7 +1153,7 @@ protected:
         if (fOptions.processMode != PROCESS_MODE_SINGLE_CLIENT)
             return;
 
-        for (unsigned int i=0; i < kData->curPluginCount; i++)
+        for (unsigned int i=0; i < kData->curPluginCount; ++i)
         {
             CarlaPlugin* const plugin = getPluginUnchecked(i);
 
@@ -1183,7 +1178,7 @@ protected:
         }
         else
         {
-            for (int i=0, count=fUsedGroupNames.count(); i < count; i++)
+            for (int i=0, count=fUsedGroupNames.count(); i < count; ++i)
             {
                 if (fUsedGroupNames[i].name == name)
                 {
@@ -1226,7 +1221,7 @@ protected:
         }
         else
         {
-            for (int i=0, count=fUsedPortNames.count(); i < count; i++)
+            for (int i=0, count=fUsedPortNames.count(); i < count; ++i)
             {
                 if (fUsedPortNames[i].groupId == groupId && fUsedPortNames[i].name == portName)
                 {
@@ -1259,7 +1254,7 @@ protected:
         }
         else
         {
-            for (int i=0, count=fUsedConnections.count(); i < count; i++)
+            for (int i=0, count=fUsedConnections.count(); i < count; ++i)
             {
                 if (fUsedConnections[i].portOut == portIdA && fUsedConnections[i].portIn == portIdB)
                 {
@@ -1281,7 +1276,7 @@ protected:
 
         const char* portName = jack_port_short_name(jackPort);
 
-        for (int i=0, count=fUsedPortNames.count(); i < count; i++)
+        for (int i=0, count=fUsedPortNames.count(); i < count; ++i)
         {
             if (fUsedPortNames[i].groupId == groupId && fUsedPortNames[i].name == portName)
             {
@@ -1295,7 +1290,7 @@ protected:
 
     void handleJackShutdownCallback()
     {
-        for (unsigned int i=0; i < kData->curPluginCount; i++)
+        for (unsigned int i=0; i < kData->curPluginCount; ++i)
         {
             //CarlaPlugin* const plugin = getPluginUnchecked(i);
 
@@ -1360,7 +1355,7 @@ private:
 
     int getGroupId(QString groupName)
     {
-        for (int i=0, count=fUsedGroupNames.count(); i < count; i++)
+        for (int i=0, count=fUsedGroupNames.count(); i < count; ++i)
         {
             if (fUsedGroupNames[i].name == groupName)
             {
@@ -1377,7 +1372,7 @@ private:
 
         int groupId = getGroupId(groupName);
 
-        for (int i=0, count=fUsedPortNames.count(); i < count; i++)
+        for (int i=0, count=fUsedPortNames.count(); i < count; ++i)
         {
             if (fUsedPortNames[i].groupId == groupId && fUsedPortNames[i].name == portName)
             {
@@ -1392,7 +1387,7 @@ private:
     {
         static QString fallbackString;
 
-        for (int i=0, count=fUsedPortNames.count(); i < count; i++)
+        for (int i=0, count=fUsedPortNames.count(); i < count; ++i)
         {
             if (fUsedPortNames[i].portId == portId)
             {
@@ -1423,7 +1418,7 @@ private:
 
         if (const char** ports = jack_get_ports(fClient, nullptr, nullptr, 0))
         {
-            for (int i=0; ports[i] != nullptr; i++)
+            for (int i=0; ports[i] != nullptr; ++i)
             {
                 jack_port_t* jackPort = jack_port_by_name(fClient, ports[i]);
                 const char* portName  = jack_port_short_name(jackPort);
@@ -1477,7 +1472,7 @@ private:
         // query connections, after all ports are in place
         if (const char** ports = jack_get_ports(fClient, nullptr, nullptr, JackPortIsOutput))
         {
-            for (int i=0; ports[i] != nullptr; i++)
+            for (int i=0; ports[i] != nullptr; ++i)
             {
                 jack_port_t* jackPort = jack_port_by_name(fClient, ports[i]);
 
@@ -1485,7 +1480,7 @@ private:
 
                 if (const char** jackConnections = jack_port_get_connections(jackPort))
                 {
-                    for (int j=0; jackConnections[j] != nullptr; j++)
+                    for (int j=0; jackConnections[j] != nullptr; ++j)
                     {
                         int targetPortId = getPortId(QString(jackConnections[j]));
 
@@ -1526,21 +1521,21 @@ private:
         if (outCount > 0)
             carla_zeroFloat(outPeaks, outCount);
 
-        for (uint32_t i=0; i < inCount; i++)
+        for (uint32_t i=0; i < inCount; ++i)
         {
             CarlaEngineAudioPort* const port = CarlaPluginGetAudioInPort(plugin, i);
             inBuffer[i] = port->getBuffer();
         }
 
-        for (uint32_t i=0; i < outCount; i++)
+        for (uint32_t i=0; i < outCount; ++i)
         {
             CarlaEngineAudioPort* const port = CarlaPluginGetAudioOutPort(plugin, i);
             outBuffer[i] = port->getBuffer();
         }
 
-        for (uint32_t i=0; i < inCount; i++)
+        for (uint32_t i=0; i < inCount; ++i)
         {
-            for (uint32_t j=0; j < nframes; j++)
+            for (uint32_t j=0; j < nframes; ++j)
             {
                 const float absV = std::fabs(inBuffer[i][j]);
 
@@ -1551,9 +1546,9 @@ private:
 
         plugin->process(inBuffer, outBuffer, nframes);
 
-        for (uint32_t i=0; i < outCount; i++)
+        for (uint32_t i=0; i < outCount; ++i)
         {
-            for (uint32_t j=0; j < nframes; j++)
+            for (uint32_t j=0; j < nframes; ++j)
             {
                 const float absV = std::fabs(outBuffer[i][j]);
 
@@ -1579,7 +1574,7 @@ private:
 
         if (mode == JackCaptureLatency)
         {
-            for (uint32_t i=0; i < inCount; i++)
+            for (uint32_t i=0; i < inCount; ++i)
             {
                 uint32_t aOutI = (i >= outCount) ? outCount : i;
                 jack_port_t* const portIn  = ((CarlaEngineJackAudioPort*)CarlaPluginGetAudioInPort(plugin, i))->kPort;
@@ -1593,7 +1588,7 @@ private:
         }
         else
         {
-            for (uint32_t i=0; i < outCount; i++)
+            for (uint32_t i=0; i < outCount; ++i)
             {
                 uint32_t aInI = (i >= inCount) ? inCount : i;
                 jack_port_t* const portIn  = ((CarlaEngineJackAudioPort*)CarlaPluginGetAudioInPort(plugin, aInI))->kPort;

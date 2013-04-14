@@ -85,7 +85,7 @@ void CarlaEngineThread::run()
         oscRegisted = kEngine->isOscControlRegistered();
 #endif
 
-        for (i=0, count = kEngine->currentPluginCount(); i < count; i++)
+        for (i=0, count = kEngine->currentPluginCount(); i < count; ++i)
         {
             CarlaPlugin* const plugin = kEngine->getPluginUnchecked(i);
 
@@ -107,7 +107,7 @@ void CarlaEngineThread::run()
                 // ---------------------------------------------------
                 // Update parameter outputs
 
-                for (uint32_t j=0; j < plugin->parameterCount(); j++)
+                for (uint32_t j=0; j < plugin->parameterCount(); ++j)
                 {
                     if (! plugin->parameterIsOutput(j))
                         continue;

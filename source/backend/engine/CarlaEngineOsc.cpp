@@ -29,7 +29,7 @@ CARLA_BACKEND_START_NAMESPACE
 
 #ifndef BUILD_BRIDGE
 // -------------------------------------------------------------------
-// Bridge Helper, defined in plugin/CarlaBlugin.cpp
+// Bridge Helper, defined in CarlaPlugin.cpp
 
 extern int CarlaPluginSetOscBridgeInfo(CarlaPlugin* const plugin, const PluginBridgeInfoType type,
                                        const int argc, const lo_arg* const* const argv, const char* const types);
@@ -416,7 +416,7 @@ int CarlaEngineOsc::handleMsgRegister(const bool isTCP, const int argc, const lo
         std::free(port);
     }
 
-    for (unsigned short i=0; i < kEngine->currentPluginCount(); i++)
+    for (unsigned short i=0; i < kEngine->currentPluginCount(); ++i)
     {
         CarlaPlugin* const plugin = kEngine->getPluginUnchecked(i);
 
