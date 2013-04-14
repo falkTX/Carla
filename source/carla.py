@@ -141,7 +141,17 @@ class CarlaSettingsW(QDialog):
         # ---------------------------------------
 
         self.ui.le_main_def_folder.setText(settings.value("Main/DefaultProjectFolder", HOME, type=str))
+        self.ui.ch_theme_pro.setChecked(settings.value("Main/UseProTheme", True, type=bool))
         self.ui.sb_gui_refresh.setValue(settings.value("Main/RefreshInterval", 50, type=int))
+
+        themeColor = settings.value("Main/ProThemeColor", "Black", type=str)
+
+        if themeColor == "Blue":
+            self.ui.cb_theme_color.setCurrentIndex(1)
+        elif themeColor == "System":
+            self.ui.cb_theme_color.setCurrentIndex(2)
+        else:
+            self.ui.cb_theme_color.setCurrentIndex(0)
 
         # ---------------------------------------
 
@@ -152,12 +162,12 @@ class CarlaSettingsW(QDialog):
         self.ui.cb_canvas_render_aa.setCheckState(settings.value("Canvas/Antialiasing", CANVAS_ANTIALIASING_SMALL, type=int))
         self.ui.cb_canvas_render_hq_aa.setChecked(settings.value("Canvas/HighQualityAntialiasing", False, type=bool))
 
-        themeName = settings.value("Canvas/Theme", patchcanvas.getDefaultThemeName(), type=str)
+        canvasThemeName = settings.value("Canvas/Theme", patchcanvas.getDefaultThemeName(), type=str)
 
         for i in range(patchcanvas.Theme.THEME_MAX):
             thisThemeName = patchcanvas.getThemeName(i)
             self.ui.cb_canvas_theme.addItem(thisThemeName)
-            if thisThemeName == themeName:
+            if thisThemeName == canvasThemeName:
                 self.ui.cb_canvas_theme.setCurrentIndex(i)
 
         # --------------------------------------------
@@ -240,8 +250,10 @@ class CarlaSettingsW(QDialog):
 
         # ---------------------------------------
 
-        settings.setValue("Main/RefreshInterval", self.ui.sb_gui_refresh.value())
         settings.setValue("Main/DefaultProjectFolder", self.ui.le_main_def_folder.text())
+        settings.setValue("Main/UseProTheme", self.ui.ch_theme_pro.isChecked())
+        settings.setValue("Main/ProThemeColor", self.ui.cb_theme_color.currentText())
+        settings.setValue("Main/RefreshInterval", self.ui.sb_gui_refresh.value())
 
         # ---------------------------------------
 
@@ -317,6 +329,8 @@ class CarlaSettingsW(QDialog):
     def slot_resetSettings(self):
         if self.ui.lw_page.currentRow() == TAB_INDEX_MAIN:
             self.ui.le_main_def_folder.setText(HOME)
+            self.ui.ch_theme_pro.setChecked(True)
+            self.ui.cb_theme_color.setCurrentIndex(0)
             self.ui.sb_gui_refresh.setValue(50)
 
         elif self.ui.lw_page.currentRow() == TAB_INDEX_CANVAS:

@@ -25,7 +25,7 @@
 #include "CarlaNative.h"
 #include "CarlaStyle.hpp"
 
-#include <QtCore/Qt>
+#include <QtCore/QSettings>
 
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 # include <QtWidgets/QApplication>
@@ -63,7 +63,25 @@ struct CarlaBackendStandalone {
           needsInit(app == nullptr)
     {
         if (app != nullptr)
-            app->setStyle(new CarlaStyle());
+        {
+            QSettings settings;
+
+            if (settings.value("Main/UseProTheme", true).toBool())
+            {
+                CarlaStyle* const style(new CarlaStyle());
+                app->setStyle(style);
+                style->ready(app);
+
+                QString color(settings.value("Main/ProThemeColor", "Black").toString());
+
+                if (color == "Blue")
+                    style->setColorScheme(CarlaStyle::COLOR_BLUE);
+                else if (color == "System")
+                    pass(); //style->setColorScheme(CarlaStyle::COLOR_SYSTEM);
+                else
+                    style->setColorScheme(CarlaStyle::COLOR_BLACK);
+            }
+        }
     }
 
     ~CarlaBackendStandalone()

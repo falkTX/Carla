@@ -18,6 +18,8 @@
 
 #include "CarlaStylePrivate.hpp"
 
+#include <QtCore/QDebug>
+
 #include <QtCore/QStringBuilder>
 #include <QtGui/QPainter>
 #include <QtGui/QPixmapCache>
@@ -342,6 +344,124 @@ CarlaStyle::CarlaStyle()
 
 CarlaStyle::~CarlaStyle()
 {
+}
+
+void CarlaStyle::setColorScheme(ColorScheme color)
+{
+    switch (color)
+    {
+    case COLOR_BLACK:
+        qApp->setPalette(fPalBlack);
+        break;
+    case COLOR_BLUE:
+        qApp->setPalette(fPalBlue);
+        break;
+    case COLOR_SYSTEM:
+        qApp->setPalette(fPalSystem);
+        break;
+    }
+}
+
+void printPalette(const QPalette& pal)
+{
+#define PAL "fPalBlue"
+
+#define PAL_PRINT(ROLE) \
+{ \
+    QColor color1(pal.color(QPalette::Disabled, ROLE)); \
+    QColor color2(pal.color(QPalette::Active,   ROLE)); \
+    QColor color3(pal.color(QPalette::Inactive, ROLE)); \
+    printf(PAL ".setColor(QPalette::Disabled, " #ROLE ", QColor(%i, %i, %i));\n", color1.red(), color1.green(), color1.blue()); \
+    printf(PAL ".setColor(QPalette::Active,   " #ROLE ", QColor(%i, %i, %i));\n", color2.red(), color2.green(), color2.blue()); \
+    printf(PAL ".setColor(QPalette::Inactive, " #ROLE ", QColor(%i, %i, %i));\n", color3.red(), color3.green(), color3.blue()); \
+}
+
+    PAL_PRINT(QPalette::Window)
+    PAL_PRINT(QPalette::WindowText)
+    PAL_PRINT(QPalette::WindowText)
+    PAL_PRINT(QPalette::Base)
+    PAL_PRINT(QPalette::AlternateBase)
+    PAL_PRINT(QPalette::ToolTipBase)
+    PAL_PRINT(QPalette::ToolTipText)
+    PAL_PRINT(QPalette::Text)
+    PAL_PRINT(QPalette::Button)
+    PAL_PRINT(QPalette::ButtonText)
+    PAL_PRINT(QPalette::BrightText)
+
+#undef PAL
+}
+
+void CarlaStyle::ready(QApplication* app)
+{
+    fPalSystem = app->palette();
+
+    fPalBlack.setColor(QPalette::Disabled, QPalette::Window, QColor(14, 14, 14));
+    fPalBlack.setColor(QPalette::Active,   QPalette::Window, QColor(17, 17, 17));
+    fPalBlack.setColor(QPalette::Inactive, QPalette::Window, QColor(17, 17, 17));
+    fPalBlack.setColor(QPalette::Disabled, QPalette::WindowText, QColor(83, 83, 83));
+    fPalBlack.setColor(QPalette::Active,   QPalette::WindowText, QColor(240, 240, 240));
+    fPalBlack.setColor(QPalette::Inactive, QPalette::WindowText, QColor(240, 240, 240));
+    fPalBlack.setColor(QPalette::Disabled, QPalette::WindowText, QColor(83, 83, 83));
+    fPalBlack.setColor(QPalette::Active,   QPalette::WindowText, QColor(240, 240, 240));
+    fPalBlack.setColor(QPalette::Inactive, QPalette::WindowText, QColor(240, 240, 240));
+    fPalBlack.setColor(QPalette::Disabled, QPalette::Base, QColor(6, 6, 6));
+    fPalBlack.setColor(QPalette::Active,   QPalette::Base, QColor(7, 7, 7));
+    fPalBlack.setColor(QPalette::Inactive, QPalette::Base, QColor(7, 7, 7));
+    fPalBlack.setColor(QPalette::Disabled, QPalette::AlternateBase, QColor(12, 12, 12));
+    fPalBlack.setColor(QPalette::Active,   QPalette::AlternateBase, QColor(14, 14, 14));
+    fPalBlack.setColor(QPalette::Inactive, QPalette::AlternateBase, QColor(14, 14, 14));
+    fPalBlack.setColor(QPalette::Disabled, QPalette::ToolTipBase, QColor(4, 4, 4));
+    fPalBlack.setColor(QPalette::Active,   QPalette::ToolTipBase, QColor(4, 4, 4));
+    fPalBlack.setColor(QPalette::Inactive, QPalette::ToolTipBase, QColor(4, 4, 4));
+    fPalBlack.setColor(QPalette::Disabled, QPalette::ToolTipText, QColor(230, 230, 230));
+    fPalBlack.setColor(QPalette::Active,   QPalette::ToolTipText, QColor(230, 230, 230));
+    fPalBlack.setColor(QPalette::Inactive, QPalette::ToolTipText, QColor(230, 230, 230));
+    fPalBlack.setColor(QPalette::Disabled, QPalette::Text, QColor(74, 74, 74));
+    fPalBlack.setColor(QPalette::Active,   QPalette::Text, QColor(230, 230, 230));
+    fPalBlack.setColor(QPalette::Inactive, QPalette::Text, QColor(230, 230, 230));
+    fPalBlack.setColor(QPalette::Disabled, QPalette::Button, QColor(24, 24, 24));
+    fPalBlack.setColor(QPalette::Active,   QPalette::Button, QColor(28, 28, 28));
+    fPalBlack.setColor(QPalette::Inactive, QPalette::Button, QColor(28, 28, 28));
+    fPalBlack.setColor(QPalette::Disabled, QPalette::ButtonText, QColor(90, 90, 90));
+    fPalBlack.setColor(QPalette::Active,   QPalette::ButtonText, QColor(240, 240, 240));
+    fPalBlack.setColor(QPalette::Inactive, QPalette::ButtonText, QColor(240, 240, 240));
+    fPalBlack.setColor(QPalette::Disabled, QPalette::BrightText, QColor(255, 255, 255));
+    fPalBlack.setColor(QPalette::Active,   QPalette::BrightText, QColor(255, 255, 255));
+    fPalBlack.setColor(QPalette::Inactive, QPalette::BrightText, QColor(255, 255, 255));
+
+    fPalBlue.setColor(QPalette::Disabled, QPalette::Window, QColor(32, 35, 39));
+    fPalBlue.setColor(QPalette::Active,   QPalette::Window, QColor(37, 40, 45));
+    fPalBlue.setColor(QPalette::Inactive, QPalette::Window, QColor(37, 40, 45));
+    fPalBlue.setColor(QPalette::Disabled, QPalette::WindowText, QColor(89, 95, 104));
+    fPalBlue.setColor(QPalette::Active,   QPalette::WindowText, QColor(223, 237, 255));
+    fPalBlue.setColor(QPalette::Inactive, QPalette::WindowText, QColor(223, 237, 255));
+    fPalBlue.setColor(QPalette::Disabled, QPalette::WindowText, QColor(89, 95, 104));
+    fPalBlue.setColor(QPalette::Active,   QPalette::WindowText, QColor(223, 237, 255));
+    fPalBlue.setColor(QPalette::Inactive, QPalette::WindowText, QColor(223, 237, 255));
+    fPalBlue.setColor(QPalette::Disabled, QPalette::Base, QColor(48, 53, 60));
+    fPalBlue.setColor(QPalette::Active,   QPalette::Base, QColor(55, 61, 69));
+    fPalBlue.setColor(QPalette::Inactive, QPalette::Base, QColor(55, 61, 69));
+    fPalBlue.setColor(QPalette::Disabled, QPalette::AlternateBase, QColor(60, 64, 67));
+    fPalBlue.setColor(QPalette::Active,   QPalette::AlternateBase, QColor(69, 73, 77));
+    fPalBlue.setColor(QPalette::Inactive, QPalette::AlternateBase, QColor(69, 73, 77));
+    fPalBlue.setColor(QPalette::Disabled, QPalette::ToolTipBase, QColor(182, 193, 208));
+    fPalBlue.setColor(QPalette::Active,   QPalette::ToolTipBase, QColor(182, 193, 208));
+    fPalBlue.setColor(QPalette::Inactive, QPalette::ToolTipBase, QColor(182, 193, 208));
+    fPalBlue.setColor(QPalette::Disabled, QPalette::ToolTipText, QColor(42, 44, 48));
+    fPalBlue.setColor(QPalette::Active,   QPalette::ToolTipText, QColor(42, 44, 48));
+    fPalBlue.setColor(QPalette::Inactive, QPalette::ToolTipText, QColor(42, 44, 48));
+    fPalBlue.setColor(QPalette::Disabled, QPalette::Text, QColor(96, 103, 113));
+    fPalBlue.setColor(QPalette::Active,   QPalette::Text, QColor(210, 222, 240));
+    fPalBlue.setColor(QPalette::Inactive, QPalette::Text, QColor(210, 222, 240));
+    fPalBlue.setColor(QPalette::Disabled, QPalette::Button, QColor(51, 55, 62));
+    fPalBlue.setColor(QPalette::Active,   QPalette::Button, QColor(59, 63, 71));
+    fPalBlue.setColor(QPalette::Inactive, QPalette::Button, QColor(59, 63, 71));
+    fPalBlue.setColor(QPalette::Disabled, QPalette::ButtonText, QColor(98, 104, 114));
+    fPalBlue.setColor(QPalette::Active,   QPalette::ButtonText, QColor(210, 222, 240));
+    fPalBlue.setColor(QPalette::Inactive, QPalette::ButtonText, QColor(210, 222, 240));
+    fPalBlue.setColor(QPalette::Disabled, QPalette::BrightText, QColor(255, 255, 255));
+    fPalBlue.setColor(QPalette::Active,   QPalette::BrightText, QColor(255, 255, 255));
+    fPalBlue.setColor(QPalette::Inactive, QPalette::BrightText, QColor(255, 255, 255));
 }
 
 /*!

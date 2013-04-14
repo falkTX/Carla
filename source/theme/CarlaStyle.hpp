@@ -37,6 +37,15 @@ public:
     CarlaStyle();
     ~CarlaStyle();
 
+    enum ColorScheme {
+        COLOR_BLACK  = 0,
+        COLOR_BLUE   = 1,
+        COLOR_SYSTEM = 2
+    };
+
+    void ready(QApplication* app);
+    void setColorScheme(ColorScheme color);
+
     QPalette standardPalette() const;
     void drawPrimitive(PrimitiveElement elem,
                        const QStyleOption *option,
@@ -60,6 +69,10 @@ public:
     void unpolish(QWidget *widget);
 
 private:
+    QPalette fPalBlack;
+    QPalette fPalBlue;
+    QPalette fPalSystem;
+
     CarlaStylePrivate* const d;
     friend class CarlaStylePrivate;
 };
