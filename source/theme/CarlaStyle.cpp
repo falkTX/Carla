@@ -403,8 +403,6 @@ void CarlaStyle::ready(QApplication* app)
 {
     fPalSystem = app->palette();
 
-    printPalette(fPalSystem);
-
     fPalBlack.setColor(QPalette::Disabled, QPalette::Window, QColor(14, 14, 14));
     fPalBlack.setColor(QPalette::Active,   QPalette::Window, QColor(17, 17, 17));
     fPalBlack.setColor(QPalette::Inactive, QPalette::Window, QColor(17, 17, 17));

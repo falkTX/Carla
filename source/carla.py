@@ -1968,8 +1968,6 @@ if __name__ == '__main__':
     Carla.host.set_engine_callback(engineCallback)
     Carla.host.set_engine_option(OPTION_PROCESS_NAME, 0, "carla")
 
-    print(app.palette())
-
     # Set bridge paths
     if carla_bridge_native:
         Carla.host.set_engine_option(OPTION_PATH_BRIDGE_NATIVE, 0, carla_bridge_native)
