@@ -442,6 +442,8 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon=ICON_APPLICATION):
             horizontal = bool(icon == ICON_HARDWARE or icon == ICON_LADISH_ROOM)
             group_box.setPos(CanvasGetNewGroupPos(horizontal))
 
+    group_box.checkItemPos()
+
     canvas.last_z_value += 1
     group_box.setZValue(canvas.last_z_value)
 

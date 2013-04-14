@@ -632,11 +632,6 @@ class CarlaMainW(QMainWindow):
         self.ui.miniCanvasPreview.init(self.scene, DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT)
         QTimer.singleShot(100, self, SLOT("slot_miniCanvasInit()"))
 
-        #self.m_fakeEdit = PluginEdit(self, -1)
-        #self.m_curEdit  = self.m_fakeEdit
-        #self.w_edit.layout().addWidget(self.m_curEdit)
-        #self.w_edit.layout().addStretch()
-
         # -------------------------------------------------------------
         # Connect actions to functions
 
