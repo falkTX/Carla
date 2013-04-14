@@ -21,10 +21,10 @@
 #include "CarlaBackendUtils.hpp"
 #include "CarlaMIDI.h"
 
-#include "../CarlaBridge.hpp"
+#include "CarlaBridgeUtils.hpp"
 #include "CarlaShmUtils.hpp"
 
-#include "jackbridge/jackbridge.h"
+#include "jackbridge/JackBridge.hpp"
 
 #include <ctime>
 
@@ -41,7 +41,7 @@ CARLA_BACKEND_START_NAMESPACE
 // -----------------------------------------
 
 class CarlaEngineBridge : public CarlaEngine,
-                          public CarlaThread
+                          public QThread
 {
 public:
     CarlaEngineBridge(const char* const audioBaseName, const char* const controlBaseName)
@@ -123,7 +123,7 @@ public:
         fQuitNow = false;
         fIsRunning = true;
 
-        CarlaThread::start();
+        QThread::start();
         CarlaEngine::init(clientName);
         return true;
     }
@@ -134,7 +134,7 @@ public:
         CarlaEngine::close();
 
         fQuitNow = true;
-        CarlaThread::stop();
+        QThread::wait();
 
         _cleanup();
 
@@ -185,7 +185,7 @@ public:
                 ts_timeout.tv_sec++;
             }
 
-            if (linux_sem_timedwait(&fShmControl.data->runServer, &ts_timeout))
+            //if (linux_sem_timedwait(&fShmControl.data->runServer, &ts_timeout))
             {
                 if (errno == ETIMEDOUT)
                 {
@@ -243,8 +243,8 @@ public:
                 }
             }
 
-            if (linux_sem_post(&fShmControl.data->runClient) != 0)
-                carla_stderr2("Could not post to semaphore");
+            //if (linux_sem_post(&fShmControl.data->runClient) != 0)
+            //    carla_stderr2("Could not post to semaphore");
         }
 
         fIsRunning = false;

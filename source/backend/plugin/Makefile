@@ -9,26 +9,21 @@ include ../Makefile.mk
 # --------------------------------------------------------------
 
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo)
-LINK_FLAGS      += $(shell pkg-config --libs liblo)
 
 ifeq ($(HAVE_QT5),true)
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags Qt5Core Qt5Xml Qt5Widgets)
-LINK_FLAGS      += $(shell pkg-config --libs Qt5Core Qt5Xml Qt5Widgets)
 else
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtCore QtGui QtXml)
-LINK_FLAGS      += $(shell pkg-config --libs QtCore QtGui QtXml)
 endif
 
 # --------------------------------------------------------------
 
 ifeq ($(HAVE_FLUIDSYNTH),true)
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags fluidsynth)
-LINK_FLAGS      += $(shell pkg-config --libs fluidsynth)
 endif
 
 ifeq ($(HAVE_LINUXSAMPLER),true)
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags linuxsampler)
-LINK_FLAGS      += $(shell pkg-config --libs linuxsampler)
 endif
 
 # --------------------------------------------------------------
@@ -47,15 +42,14 @@ OBJS = \
 	FluidSynthPlugin.cpp.o \
 	LinuxSamplerPlugin.cpp.o
 
-SHARED = ../libcarla_plugin.so
-STATIC = ../libcarla_plugin.a
+TARGET = ../libcarla_plugin.a
 
 # --------------------------------------------------------------
 
-all: $(STATIC)
+all: $(TARGET)
 
 clean:
-	rm -f $(OBJS) $(SHARED) $(STATIC)
+	rm -f $(OBJS) $(TARGET)
 
 debug:
 	$(MAKE) DEBUG=true
@@ -68,8 +62,5 @@ debug:
 moc_%.cpp: %.hpp
 	$(MOC) $< -DMOC_PARSING -o $@
 
-$(SHARED): $(OBJS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
-
-$(STATIC): $(OBJS)
+$(TARGET): $(OBJS)
 	$(AR) rs $@ $^

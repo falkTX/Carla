@@ -444,11 +444,8 @@ unsigned int CarlaEngine::getDriverCount()
 {
     carla_debug("CarlaEngine::getDriverCount()");
 
-    unsigned int count = 0;
+    unsigned int count = 1;
 
-#ifdef WANT_JACK
-    count += 1;
-#endif
 #ifdef WANT_RTAUDIO
     count += getRtAudioApiCount();
 #endif
@@ -460,12 +457,10 @@ const char* CarlaEngine::getDriverName(unsigned int index)
 {
     carla_debug("CarlaEngine::getDriverName(%i)", index);
 
-#ifdef WANT_JACK
     if (index == 0)
         return "JACK";
     else
         index -= 1;
-#endif
 
 #ifdef WANT_RTAUDIO
     if (index < getRtAudioApiCount())
@@ -480,10 +475,8 @@ CarlaEngine* CarlaEngine::newDriverByName(const char* const driverName)
 {
     carla_debug("CarlaEngine::newDriverByName(\"%s\")", driverName);
 
-#ifdef WANT_JACK
     if (std::strcmp(driverName, "JACK") == 0)
         return newJack();
-#endif
 
 #ifdef WANT_RTAUDIO
 # ifdef __LINUX_ALSA__
@@ -558,6 +551,9 @@ bool CarlaEngine::init(const char* const clientName)
     kData->aboutToClose = false;
     kData->curPluginCount = 0;
 
+#ifdef BUILD_BRIDGE
+    kData->maxPluginNumber = 1;
+#else
     switch (fOptions.processMode)
     {
     case PROCESS_MODE_CONTINUOUS_RACK:
@@ -568,13 +564,11 @@ bool CarlaEngine::init(const char* const clientName)
     case PROCESS_MODE_PATCHBAY:
         kData->maxPluginNumber = MAX_PATCHBAY_PLUGINS;
         break;
-    case PROCESS_MODE_BRIDGE:
-        kData->maxPluginNumber = 1;
-        break;
     default:
         kData->maxPluginNumber = MAX_DEFAULT_PLUGINS;
         break;
     }
+#endif
 
     //kData->pluginsPool.resize(maxPluginNumber, 999);
     kData->plugins = new EnginePluginData[kData->maxPluginNumber];
@@ -627,6 +621,7 @@ bool CarlaEngine::close()
         kData->plugins = nullptr;
     }
 
+#ifndef BUILD_BRIDGE
     if (kData->rack.in != nullptr)
     {
         delete[] kData->rack.in;
@@ -638,6 +633,7 @@ bool CarlaEngine::close()
         delete[] kData->rack.out;
         kData->rack.out = nullptr;
     }
+#endif
 
     fName.clear();
 

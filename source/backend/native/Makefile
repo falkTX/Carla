@@ -9,14 +9,11 @@ include ../Makefile.mk
 # --------------------------------------------------------------
 
 BUILD_CXX_FLAGS += -I. -I../../libs/distrho -I../../widgets
-LINK_FLAGS      += $(shell pkg-config --libs liblo)
 
 ifeq ($(HAVE_QT5),true)
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags Qt5Core Qt5Widgets)
-LINK_FLAGS      += $(shell pkg-config --libs Qt5Core Qt5Widgets)
 else
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtCore QtGui)
-LINK_FLAGS      += $(shell pkg-config --libs QtCore QtGui)
 endif
 
 # --------------------------------------------------------------
@@ -28,29 +25,24 @@ CARLA_CXX_FLAGS += -I../engine
 ifeq ($(HAVE_AF_DEPS),true)
 AF_C_FLAGS       = $(BUILD_C_FLAGS)
 AF_C_FLAGS      += $(shell pkg-config --cflags libavcodec libavformat libavutil sndfile)
-LINK_FLAGS      += $(shell pkg-config --libs libavcodec libavformat libavutil sndfile)
 endif
 
 ifeq ($(HAVE_MF_DEPS),true)
 MF_CXX_FLAGS     = $(BUILD_CXX_FLAGS)
 MF_CXX_FLAGS    += $(shell pkg-config --cflags smf)
-LINK_FLAGS      += $(shell pkg-config --libs smf)
 endif
 
 ifeq ($(HAVE_OPENGL),true)
 GL_CXX_FLAGS     = $(BUILD_CXX_FLAGS)
 GL_CXX_FLAGS    += $(shell pkg-config --cflags gl)
-LINK_FLAGS      += $(shell pkg-config --cflags gl)
 endif
 
 ifeq ($(HAVE_ZYN_DEPS),true)
 ZYN_CXX_FLAGS    = $(BUILD_CXX_FLAGS)
 ZYN_CXX_FLAGS   += $(shell pkg-config --cflags fftw3 mxml zlib)
-LINK_FLAGS      += $(shell pkg-config --libs fftw3 mxml zlib)
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
 ZYN_CXX_FLAGS   += -DNTK_GUI
 ZYN_CXX_FLAGS   += $(shell pkg-config --cflags ntk ntk_images)
-LINK_FLAGS      += $(shell pkg-config --libs ntk ntk_images)
 endif
 endif
 
@@ -146,21 +138,14 @@ ZYN_UI_FILES_H = \
 endif
 endif
 
-SHARED = ../libcarla_native.so
-STATIC = ../libcarla_native.a
-
-LIBS  = ../../libs/widgets.a
-
-ifeq ($(HAVE_OPENGL),true)
-LIBS += ../../libs/dgl.a
-endif
+TARGET = ../libcarla_native.a
 
 # --------------------------------------------------------------
 
-all: $(STATIC)
+all: $(TARGET)
 
 clean:
-	rm -f $(OBJS) $(SHARED) $(STATIC)
+	rm -f $(OBJS) $(TARGET)
 	rm -f $(ZYN_UI_FILES_CPP)
 	rm -f $(ZYN_UI_FILES_H)
 	rm -f moc_*.cpp
@@ -176,10 +161,7 @@ debug:
 %.cpp.o: %.cpp ../CarlaNative.h ../CarlaNative.hpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
-$(SHARED): $(OBJS) $(LIBS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
-
-$(STATIC): $(OBJS)
+$(TARGET): $(OBJS)
 	$(AR) rs $@ $^
 
 # --------------------------------------------------------------

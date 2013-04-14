@@ -11,9 +11,9 @@ include ../Makefile.mk
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo) -I../../theme
 
 ifeq ($(HAVE_QT5),true)
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags Qt5Core)
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags Qt5Core Qt5Widgets)
 else
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtCore)
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtCore QtGui)
 endif
 
 # --------------------------------------------------------------
@@ -22,7 +22,7 @@ endif
 LINK_FLAGS += $(shell pkg-config --libs liblo)
 
 ifeq ($(HAVE_QT5),true)
-LINK_FLAGS += $(shell pkg-config --libs Qt5Core Qt5Xml Qt5Widgets)
+LINK_FLAGS += $(shell pkg-config --libs Qt5Core Qt5Gui Qt5Xml Qt5Widgets)
 else
 LINK_FLAGS += $(shell pkg-config --libs QtCore QtGui QtXml)
 endif
@@ -34,16 +34,12 @@ ifeq ($(HAVE_ALSA),true)
 LINK_FLAGS += $(shell pkg-config --libs alsa)
 endif
 
-ifeq ($(HAVE_JACK),true)
-LINK_FLAGS += $(shell pkg-config --libs jack)
-endif
-
 ifeq ($(HAVE_PULSEAUDIO),true)
 LINK_FLAGS += $(shell pkg-config --libs libpulse-simple)
 endif
 
 # --------------------------------------------------------------
-# Plugin
+# Samplers
 
 ifeq ($(HAVE_FLUIDSYNTH),true)
 LINK_FLAGS += $(shell pkg-config --libs fluidsynth)
@@ -106,20 +102,22 @@ endif
 OBJS  = \
      CarlaStandalone.cpp.o
 
-STATIC = ../libcarla_standalone.a
-
 ifeq ($(WIN32),true)
-SHARED = ../libcarla_standalone.dll
+TARGET = ../libcarla_standalone.dll
 else
-SHARED = ../libcarla_standalone.so
+ifeq ($(MACOS),true)
+TARGET = ../libcarla_standalone.dylib
+else
+TARGET = ../libcarla_standalone.so
+endif
 endif
 
 # --------------------------------------------------------------
 
-all: $(SHARED)
+all: $(TARGET)
 
 clean:
-	rm -f $(OBJS) $(SHARED) $(STATIC)
+	rm -f $(OBJS) $(TARGET)
 
 debug:
 	$(MAKE) DEBUG=true
@@ -128,9 +126,6 @@ debug:
 
 %.cpp.o: %.cpp ../CarlaBackend.hpp ../CarlaEngine.hpp ../CarlaPlugin.hpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
-
-$(STATIC): $(OBJS) $(LIBS)
-	$(AR) rs $@ $^
 
 ../libcarla_standalone.dll: $(OBJS) $(LIBS)
 	$(CXX) $^ -shared $(LINK_FLAGS) $(W32_LIBS) -Wl,--output-def,$@.def -o $@ && $(STRIP) $@

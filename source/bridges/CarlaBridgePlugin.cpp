@@ -298,7 +298,7 @@ public:
         CARLA_ASSERT(fPlugin != nullptr);
 
         if (fPlugin != nullptr)
-            fPlugin->setParameterValueByRIndex(rindex, value, true, true, false);
+            fPlugin->setParameterValueByRealIndex(rindex, value, true, true, false);
     }
 
     void setProgram(const uint32_t index)

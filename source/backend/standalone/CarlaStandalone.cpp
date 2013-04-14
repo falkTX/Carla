@@ -23,7 +23,10 @@
 #include "CarlaPlugin.hpp"
 #include "CarlaMIDI.h"
 #include "CarlaNative.h"
-#include "CarlaStyle.hpp"
+
+#ifndef BUILD_BRIDGE
+# include "CarlaStyle.hpp"
+#endif
 
 #include <QtCore/QSettings>
 
@@ -48,9 +51,7 @@ struct CarlaBackendStandalone {
     CarlaEngine*  engine;
     CarlaString   lastError;
     CarlaString   procName;
-#ifndef BUILD_BRIDGE
     EngineOptions options;
-#endif
 
     QApplication* app;
     bool needsInit;
@@ -62,6 +63,7 @@ struct CarlaBackendStandalone {
           app(qApp),
           needsInit(app == nullptr)
     {
+#ifndef BUILD_BRIDGE
         if (app != nullptr)
         {
             QSettings settings;
@@ -82,6 +84,7 @@ struct CarlaBackendStandalone {
                     style->setColorScheme(CarlaStyle::COLOR_BLACK);
             }
         }
+#endif
     }
 
     ~CarlaBackendStandalone()

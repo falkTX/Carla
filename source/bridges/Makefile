@@ -30,9 +30,9 @@ LINK_FLAGS      += $(shell pkg-config --libs liblo QtCore)
 # Plugin bridges
 
 BUILD_PLUGIN_FLAGS  = $(BUILD_CXX_FLAGS)
-BUILD_PLUGIN_FLAGS += -DBUILD_BRIDGE_PLUGIN -DBRIDGE_PLUGIN
+BUILD_PLUGIN_FLAGS += -DBUILD_BRIDGE_PLUGIN -DBRIDGE_PLUGIN -DWANT_JACK
 BUILD_PLUGIN_FLAGS += -DWANT_LADSPA -DWANT_DSSI -DWANT_LV2 -DWANT_VST
-BUILD_PLUGIN_FLAGS += -I../backend/engine -I../backend/plugin -I../libs
+BUILD_PLUGIN_FLAGS += -I../backend/engine -I../backend/plugin -I../libs -I../theme
 BUILD_PLUGIN_FLAGS += $(QT_UI_FLAGS) $(shell pkg-config --cflags QtXml)
 
 LINK_PLUGIN_FLAGS   = $(LINK_FLAGS)
@@ -60,7 +60,7 @@ WIN_LINK_FLAGS      = $(LINK_PLUGIN_FLAGS) -mwindows -lwinspool -lole32 -luuid -
 NATIVE_BUILD_FLAGS  = $(POSIX_BUILD_FLAGS)
 NATIVE_LINK_FLAGS   = $(POSIX_LINK_FLAGS)
 
-NATIVE_BUILD_FLAGS += -DWANT_JACK -DWANT_NATIVE
+NATIVE_BUILD_FLAGS += -DWANT_NATIVE
 
 ifeq ($(HAVE_FLUIDSYNTH),true)
 NATIVE_BUILD_FLAGS += -DWANT_FLUIDSYNTH
@@ -302,6 +302,7 @@ OBJS_NATIVE += \
 # carla-plugin
 OBJS_NATIVE += \
 	../backend/plugin/CarlaPlugin__native.o \
+	../backend/plugin/CarlaPluginGui__native.o \
 	../backend/plugin/CarlaPluginThread__native.o \
 	../backend/plugin/NativePlugin__native.o \
 	../backend/plugin/LadspaPlugin__native.o \
@@ -347,6 +348,7 @@ OBJS_POSIX32 += \
 # carla-plugin
 OBJS_POSIX32 += \
 	../backend/plugin/CarlaPlugin__posix32.o \
+	../backend/plugin/CarlaPluginGui__posix32.o \
 	../backend/plugin/CarlaPluginThread__posix32.o \
 	../backend/plugin/NativePlugin__posix32.o \
 	../backend/plugin/LadspaPlugin__posix32.o \
@@ -390,6 +392,7 @@ OBJS_POSIX64 += \
 # carla-plugin
 OBJS_POSIX64 += \
 	../backend/plugin/CarlaPlugin__posix64.o \
+	../backend/plugin/CarlaPluginGui__posix64.o \
 	../backend/plugin/CarlaPluginThread__posix64.o \
 	../backend/plugin/NativePlugin__posix64.o \
 	../backend/plugin/LadspaPlugin__posix64.o \
@@ -427,11 +430,13 @@ OBJS_WIN32 += \
 	../backend/engine/CarlaEngine__win32.o \
 	../backend/engine/CarlaEngineOsc__win32.o \
 	../backend/engine/CarlaEngineThread__win32.o \
-	../backend/engine/CarlaEngineBridge__win32.o
+	../backend/engine/CarlaEngineBridge__win32.o \
+	../backend/engine/CarlaEngineJack__win32.o
 
 # carla-plugin
 OBJS_WIN32 += \
 	../backend/plugin/CarlaPlugin__win32.o \
+	../backend/plugin/CarlaPluginGui__win32.o \
 	../backend/plugin/CarlaPluginThread__win32.o \
 	../backend/plugin/NativePlugin__win32.o \
 	../backend/plugin/LadspaPlugin__win32.o \
@@ -469,11 +474,13 @@ OBJS_WIN64 += \
 	../backend/engine/CarlaEngine__win64.o \
 	../backend/engine/CarlaEngineOsc__win64.o \
 	../backend/engine/CarlaEngineThread__win64.o \
-	../backend/engine/CarlaEngineBridge__win64.o
+	../backend/engine/CarlaEngineBridge__win64.o \
+	../backend/engine/CarlaEngineJack__win64.o
 
 # carla-plugin
 OBJS_WIN64 += \
 	../backend/plugin/CarlaPlugin__win64.o \
+	../backend/plugin/CarlaPluginGui__win64.o \
 	../backend/plugin/CarlaPluginThread__win64.o \
 	../backend/plugin/NativePlugin__win64.o \
 	../backend/plugin/LadspaPlugin__win64.o \

@@ -44,11 +44,7 @@ ifeq ($(HAVE_ALSA),true)
 else
 	@echo "ALSA:      $(ANS_NO)"
 endif
-ifeq ($(HAVE_JACK),true)
 	@echo "JACK:      $(ANS_YES)"
-else
-	@echo "JACK:      $(ANS_NO)"
-endif
 ifeq ($(HAVE_PULSEAUDIO),true)
 	@echo "PulseAudio:$(ANS_YES)"
 else

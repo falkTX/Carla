@@ -10,6 +10,7 @@ include ../../Makefile.mk
 
 WINECXX ?= wineg++
 
+BUILD_CXX_FLAGS += -DJACKBRIDGE_EXPORT
 BUILD_CXX_FLAGS += -I. -I../../includes -I../../utils
 
 ifeq ($(MACOS),true)

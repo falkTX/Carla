@@ -15,13 +15,15 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#ifdef WANT_JACK
-
 #include "CarlaEngineInternal.hpp"
 #include "CarlaBackendUtils.hpp"
 #include "CarlaMIDI.h"
 
-#include "jackbridge/JackBridge.cpp"
+#ifdef BUILD_BRIDGE
+# include "jackbridge/JackBridge.hpp"
+#else
+# include "jackbridge/JackBridge.cpp"
+#endif
 
 #include <cmath>
 #include <QtCore/QStringList>
@@ -182,7 +184,7 @@ public:
 
         jack_midi_event_t jackEvent;
 
-        if (jackbridge_midi_event_get(&jackEvent, fJackBuffer, index) != 0 || jackEvent.size > 3)
+        if ((! jackbridge_midi_event_get(&jackEvent, fJackBuffer, index)) || jackEvent.size > 4)
             return kFallbackJackEngineEvent;
 
         fRetEvent.clear();
@@ -204,19 +206,19 @@ public:
 
                 fRetEvent.ctrl.type  = kEngineControlEventTypeMidiBank;
                 fRetEvent.ctrl.param = midiBank;
-                fRetEvent.ctrl.value = 0.0;
+                fRetEvent.ctrl.value = 0.0f;
             }
             else if (midiControl == MIDI_CONTROL_ALL_SOUND_OFF)
             {
                 fRetEvent.ctrl.type  = kEngineControlEventTypeAllSoundOff;
                 fRetEvent.ctrl.param = 0;
-                fRetEvent.ctrl.value = 0.0;
+                fRetEvent.ctrl.value = 0.0f;
             }
             else if (midiControl == MIDI_CONTROL_ALL_NOTES_OFF)
             {
                 fRetEvent.ctrl.type  = kEngineControlEventTypeAllNotesOff;
                 fRetEvent.ctrl.param = 0;
-                fRetEvent.ctrl.value = 0.0;
+                fRetEvent.ctrl.value = 0.0f;
             }
             else
             {
@@ -224,7 +226,7 @@ public:
 
                 fRetEvent.ctrl.type  = kEngineControlEventTypeParameter;
                 fRetEvent.ctrl.param = midiControl;
-                fRetEvent.ctrl.value = double(midiValue)/127.0;
+                fRetEvent.ctrl.value = float(midiValue)/127.0f;
             }
         }
         else if (MIDI_IS_STATUS_PROGRAM_CHANGE(midiStatus))
@@ -234,7 +236,7 @@ public:
 
             fRetEvent.ctrl.type  = kEngineControlEventTypeMidiProgram;
             fRetEvent.ctrl.param = midiProgram;
-            fRetEvent.ctrl.value = 0.0;
+            fRetEvent.ctrl.value = 0.0f;
         }
         else
         {
@@ -432,7 +434,7 @@ public:
         return CarlaEngineClient::isOk();
     }
 
-#if WANT_JACK_LATENCY
+#if 0
     void setLatency(const uint32_t samples) override
     {
         CarlaEngineClient::setLatency(samples);
@@ -583,7 +585,7 @@ public:
             jackbridge_set_freewheel_callback(fClient, carla_jack_freewheel_callback, this);
             jackbridge_set_process_callback(fClient, carla_jack_process_callback, this);
             jackbridge_on_shutdown(fClient, carla_jack_shutdown_callback, this);
-# if WANT_JACK_LATENCY
+# if 0
             jackbridge_set_latency_callback(fClient, carla_jack_latency_callback, this);
 # endif
 
@@ -606,7 +608,7 @@ public:
                 fRackPorts[rackPortEventOut]  = jackbridge_port_register(fClient, "events-out", JACK_DEFAULT_MIDI_TYPE, JackPortIsOutput, 0);
             }
 
-            if (jackbridge_activate(fClient) == 0)
+            if (jackbridge_activate(fClient))
             {
                 return CarlaEngine::init(jackClientName);
             }
@@ -648,7 +650,7 @@ public:
         fHasQuit = true;
         return true;
 #else
-        if (jackbridge_deactivate(fClient) == 0)
+        if (jackbridge_deactivate(fClient))
         {
             if (fOptions.processMode == PROCESS_MODE_CONTINUOUS_RACK)
             {
@@ -660,7 +662,7 @@ public:
                 jackbridge_port_unregister(fClient, fRackPorts[rackPortEventOut]);
             }
 
-            if (jackbridge_client_close(fClient) == 0)
+            if (jackbridge_client_close(fClient))
             {
                 fClient = nullptr;
                 return true;
@@ -714,7 +716,7 @@ public:
         jackbridge_set_freewheel_callback(client, carla_jack_freewheel_callback, this);
         jackbridge_set_process_callback(client, carla_jack_process_callback, this);
         jackbridge_on_shutdown(client, carla_jack_shutdown_callback, this);
-# if WANT_JACK_LATENCY
+# if 0
         jackbridge_set_latency_callback(client, carla_jack_latency_callback, this);
 # endif
 #else
@@ -726,7 +728,7 @@ public:
         {
             client = jackbridge_client_open(plugin->name(), JackNullOption, nullptr);
             jackbridge_set_process_callback(client, carla_jack_process_callback_plugin, plugin);
-# if WANT_JACK_LATENCY
+# if 0
             jackbridge_set_latency_callback(client, carla_jack_latency_callback_plugin, plugin);
 # endif
         }
@@ -752,7 +754,7 @@ public:
         const char* const portNameA = getFullPortName(portA).toUtf8().constData();
         const char* const portNameB = getFullPortName(portB).toUtf8().constData();
 
-        if (jack_connect(fClient, portNameA, portNameB) != 0)
+        if (! jackbridge_connect(fClient, portNameA, portNameB))
         {
             setLastError("JACK operation failed");
             return false;
@@ -778,7 +780,7 @@ public:
                 const char* const portNameA = getFullPortName(fUsedConnections[i].portOut).toUtf8().constData();
                 const char* const portNameB = getFullPortName(fUsedConnections[i].portIn).toUtf8().constData();
 
-                if (jack_disconnect(fClient, portNameA, portNameB) != 0)
+                if (! jackbridge_disconnect(fClient, portNameA, portNameB))
                 {
                     setLastError("JACK operation failed");
                     return false;
@@ -1147,7 +1149,7 @@ protected:
         proccessPendingEvents();
     }
 
-#if WANT_JACK_LATENCY
+#if 0
     void handleJackLatencyCallback(const jack_latency_callback_mode_t mode)
     {
         if (fOptions.processMode != PROCESS_MODE_SINGLE_CLIENT)
@@ -1192,18 +1194,18 @@ protected:
 
     void handleJackPortRegistrationCallback(jack_port_id_t port, bool reg)
     {
-        jack_port_t* jackPort = jack_port_by_id(fClient, port);
+        jack_port_t* jackPort = jackbridge_port_by_id(fClient, port);
 
-        QString fullName(jack_port_name(jackPort));
+        QString fullName(jackbridge_port_name(jackPort));
         QString groupName = fullName.split(":").at(0);
         int     groupId   = getGroupId(groupName);
 
-        const char* portName = jack_port_short_name(jackPort);
+        const char* portName = jackbridge_port_short_name(jackPort);
 
         if (reg)
         {
-            bool portIsInput = (jack_port_flags(jackPort) & JackPortIsInput);
-            bool portIsAudio = (std::strcmp(jack_port_type(jackPort), JACK_DEFAULT_AUDIO_TYPE) == 0);
+            bool portIsInput = (jackbridge_port_flags(jackPort) & JackPortIsInput);
+            bool portIsAudio = (std::strcmp(jackbridge_port_type(jackPort), JACK_DEFAULT_AUDIO_TYPE) == 0);
 
             unsigned int portFlags = 0x0;
             portFlags |= portIsInput ? PATCHBAY_PORT_IS_INPUT : PATCHBAY_PORT_IS_OUTPUT;
@@ -1235,11 +1237,11 @@ protected:
 
     void handleJackPortConnectCallback(jack_port_id_t a, jack_port_id_t b, bool connect)
     {
-        jack_port_t* jackPortA = jack_port_by_id(fClient, a);
-        jack_port_t* jackPortB = jack_port_by_id(fClient, b);
+        jack_port_t* jackPortA = jackbridge_port_by_id(fClient, a);
+        jack_port_t* jackPortB = jackbridge_port_by_id(fClient, b);
 
-        int portIdA = getPortId(QString(jack_port_name(jackPortA)));
-        int portIdB = getPortId(QString(jack_port_name(jackPortB)));
+        int portIdA = getPortId(QString(jackbridge_port_name(jackPortA)));
+        int portIdB = getPortId(QString(jackbridge_port_name(jackPortB)));
 
         if (connect)
         {
@@ -1268,13 +1270,13 @@ protected:
 
     void handleJackPortRenameCallback(jack_port_id_t port, const char* oldName, const char* newName)
     {
-        jack_port_t* jackPort = jack_port_by_id(fClient, port);
+        jack_port_t* jackPort = jackbridge_port_by_id(fClient, port);
 
         QString fullName(oldName);
         QString groupName = fullName.split(":").at(0);
         int     groupId   = getGroupId(groupName);
 
-        const char* portName = jack_port_short_name(jackPort);
+        const char* portName = jackbridge_port_short_name(jackPort);
 
         for (int i=0, count=fUsedPortNames.count(); i < count; ++i)
         {
@@ -1416,12 +1418,12 @@ private:
             parsedGroups.append(QString(ourName));
         }
 
-        if (const char** ports = jack_get_ports(fClient, nullptr, nullptr, 0))
+        if (const char** ports = jackbridge_get_ports(fClient, nullptr, nullptr, 0))
         {
             for (int i=0; ports[i] != nullptr; ++i)
             {
-                jack_port_t* jackPort = jack_port_by_name(fClient, ports[i]);
-                const char* portName  = jack_port_short_name(jackPort);
+                jack_port_t* jackPort = jackbridge_port_by_name(fClient, ports[i]);
+                const char* portName  = jackbridge_port_short_name(jackPort);
 
                 QString fullName(ports[i]);
                 QString groupName(fullName.split(":").at(0));
@@ -1448,8 +1450,8 @@ private:
                     callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, groupId, 0, 0.0f, groupName.toUtf8().constData());
                 }
 
-                bool portIsInput = (jack_port_flags(jackPort) & JackPortIsInput);
-                bool portIsAudio = (std::strcmp(jack_port_type(jackPort), JACK_DEFAULT_AUDIO_TYPE) == 0);
+                bool portIsInput = (jackbridge_port_flags(jackPort) & JackPortIsInput);
+                bool portIsAudio = (std::strcmp(jackbridge_port_type(jackPort), JACK_DEFAULT_AUDIO_TYPE) == 0);
 
                 unsigned int portFlags = 0x0;
                 portFlags |= portIsInput ? PATCHBAY_PORT_IS_INPUT : PATCHBAY_PORT_IS_OUTPUT;
@@ -1466,19 +1468,19 @@ private:
                 fLastPortId++;
             }
 
-            jack_free(ports);
+            jackbridge_free(ports);
         }
 
         // query connections, after all ports are in place
-        if (const char** ports = jack_get_ports(fClient, nullptr, nullptr, JackPortIsOutput))
+        if (const char** ports = jackbridge_get_ports(fClient, nullptr, nullptr, JackPortIsOutput))
         {
             for (int i=0; ports[i] != nullptr; ++i)
             {
-                jack_port_t* jackPort = jack_port_by_name(fClient, ports[i]);
+                jack_port_t* jackPort = jackbridge_port_by_name(fClient, ports[i]);
 
                 int thisPortId = getPortId(QString(ports[i]));
 
-                if (const char** jackConnections = jack_port_get_connections(jackPort))
+                if (const char** jackConnections = jackbridge_port_get_connections(jackPort))
                 {
                     for (int j=0; jackConnections[j] != nullptr; ++j)
                     {
@@ -1494,11 +1496,11 @@ private:
                         fLastConnectionId++;
                     }
 
-                    jack_free(jackConnections);
+                    jackbridge_free(jackConnections);
                 }
             }
 
-            jack_free(ports);
+            jackbridge_free(ports);
         }
     }
 #endif
@@ -1560,7 +1562,7 @@ private:
         setPeaks(plugin->id(), inPeaks, outPeaks);
     }
 
-#if WANT_JACK_LATENCY
+#if 0
     void latencyPlugin(CarlaPlugin* const plugin, jack_latency_callback_mode_t mode)
     {
         const uint32_t inCount  = plugin->audioInCount();
@@ -1630,7 +1632,7 @@ private:
         return 0;
     }
 
-#if WANT_JACK_LATENCY
+#if 0
     static void carla_jack_latency_callback(jack_latency_callback_mode_t mode, void* arg)
     {
         handlePtr->handleJackLatencyCallback(mode);
@@ -1689,7 +1691,7 @@ private:
         return 0;
     }
 
-# if WANT_JACK_LATENCY
+# if 0
     static void carla_jack_latency_callback_plugin(jack_latency_callback_mode_t mode, void* arg)
     {
         CarlaPlugin* const plugin = (CarlaPlugin*)arg;
@@ -1717,5 +1719,3 @@ CarlaEngine* CarlaEngine::newJack()
 // -----------------------------------------
 
 CARLA_BACKEND_END_NAMESPACE
-
-#endif // CARLA_ENGINE_JACK

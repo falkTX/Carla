@@ -173,6 +173,7 @@ struct CarlaEngineProtectedData {
             : in(nullptr),
               out(nullptr) {}
     } rack;
+#endif
 
     struct Time {
         bool playing;
@@ -182,7 +183,6 @@ struct CarlaEngineProtectedData {
             : playing(false),
               frame(0) {}
     } time;
-#endif
 
     EnginePluginData* plugins;
 

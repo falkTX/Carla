@@ -48,7 +48,6 @@ BUILD_CXX_FLAGS += -DVESTIGE_HEADER
 
 # --------------------------------------------------------------
 
-HAVE_JACK         = $(shell pkg-config --exists jack && echo true)
 HAVE_OPENGL       = $(shell pkg-config --exists gl && echo true)
 HAVE_QT4          = $(shell pkg-config --exists QtCore && echo true)
 
@@ -56,11 +55,6 @@ HAVE_AF_DEPS      = $(shell pkg-config --exists libavcodec libavformat libavutil
 HAVE_MF_DEPS      = $(shell pkg-config --exists smf && echo true)
 HAVE_ZYN_DEPS     = $(shell pkg-config --exists fftw3 mxml zlib && echo true)
 HAVE_ZYN_UI_DEPS  = $(shell pkg-config --exists ntk ntk_images && echo true)
-
-ifeq ($(HAVE_JACK),true)
-HAVE_JACK_LATENCY = $(shell pkg-config --atleast-version=0.121.0 jack && echo true)
-HAVE_JACK2        = $(shell pkg-config --atleast-version=1.9.0 jack && echo true)
-endif
 
 ifeq ($(CARLA_SAMPLERS_SUPPORT),true)
 HAVE_FLUIDSYNTH   = $(shell pkg-config --exists fluidsynth && echo true)

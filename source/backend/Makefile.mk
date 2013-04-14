@@ -30,18 +30,6 @@ endif
 
 # --------------------------------------------------------------
 
-ifeq ($(HAVE_JACK),true)
-BUILD_CXX_FLAGS += -DWANT_JACK
-endif
-
-ifeq ($(HAVE_JACK_LATENCY),true)
-# BUILD_CXX_FLAGS += -DWANT_JACK_LATENCY # unfinished
-endif
-
-ifeq ($(HAVE_JACK2),true)
-BUILD_CXX_FLAGS += -DWANT_JACK_PORT_RENAME
-endif
-
 ifeq ($(HAVE_FLUIDSYNTH),true)
 BUILD_CXX_FLAGS += -DWANT_FLUIDSYNTH
 endif

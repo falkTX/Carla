@@ -1028,9 +1028,7 @@ protected:
 # endif
 
 private:
-# ifdef WANT_JACK
     static CarlaEngine* newJack();
-# endif
 # ifdef WANT_RTAUDIO
     enum RtAudioApi {
         RTAUDIO_DUMMY        = 0,
