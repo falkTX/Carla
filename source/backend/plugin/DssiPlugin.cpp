@@ -739,11 +739,9 @@ public:
             fOptions &= ~PLUGIN_OPTION_FORCE_STEREO;
 
         // plugin hints
-        const bool hasGUI = (fHints & PLUGIN_HAS_GUI);
-
         fHints = 0x0;
 
-        if (hasGUI)
+        if (fGuiFilename.isNotEmpty())
             fHints |= PLUGIN_HAS_GUI;
 
         if (mIns == 1 && aIns == 0 && aOuts > 0)
@@ -1735,6 +1733,11 @@ public:
 
     // -------------------------------------------------------------------
 
+    const void* getExtraStuff() override
+    {
+        return (const char*)fGuiFilename;
+    }
+
     bool init(const char* const filename, const char* const name, const char* const label, const char* const guiFilename)
     {
         CARLA_ASSERT(kData->engine != nullptr);
@@ -1844,8 +1847,8 @@ public:
 
         if (guiFilename != nullptr)
         {
+            fGuiFilename = guiFilename;
             kData->osc.thread.setOscData(guiFilename, fDescriptor->Label);
-            fHints |= PLUGIN_HAS_GUI;
         }
 
         // ---------------------------------------------------------------
@@ -1905,6 +1908,8 @@ private:
     LADSPA_Handle fHandle2;
     const LADSPA_Descriptor* fDescriptor;
     const DSSI_Descriptor*   fDssiDescriptor;
+
+    CarlaString fGuiFilename;
 
     float** fAudioInBuffers;
     float** fAudioOutBuffers;

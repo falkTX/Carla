@@ -177,6 +177,11 @@ public:
         return fInfo.uniqueId;
     }
 
+    BinaryType binaryType() const
+    {
+        return fBinaryType;
+    }
+
     // -------------------------------------------------------------------
     // Information (count)
 
@@ -1100,6 +1105,11 @@ public:
 
     // -------------------------------------------------------------------
 
+    const void* getExtraStuff() override
+    {
+        return (const char*)fBridgeBinary;
+    }
+
     bool init(const char* const filename, const char* const name, const char* const label, const char* const bridgeBinary)
     {
         CARLA_ASSERT(kData->engine != nullptr);
@@ -1262,6 +1272,8 @@ public:
             return false;
         }
 
+        fBridgeBinary = bridgeBinary;
+
         resizeAudioPool(kData->engine->getBufferSize());
 
         rdwr_writeOpcode(&fShmControl.data->ringBuffer, kPluginBridgeOpcodeReadyWait);
@@ -1279,6 +1291,8 @@ private:
     bool fInitiated;
     bool fInitError;
     bool fSaved;
+
+    CarlaString fBridgeBinary;
 
     struct BridgeAudioPool {
         CarlaString filename;
@@ -1449,6 +1463,11 @@ int CarlaPluginSetOscBridgeInfo(CarlaPlugin* const plugin, const PluginBridgeInf
                                 const int argc, const lo_arg* const* const argv, const char* const types)
 {
     return ((BridgePlugin*)plugin)->setOscPluginBridgeInfo(type, argc, argv, types);
+}
+
+BinaryType CarlaPluginGetBridgeBinaryType(CarlaPlugin* const plugin)
+{
+    return ((BridgePlugin*)plugin)->binaryType();
 }
 #endif
 

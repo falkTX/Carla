@@ -1311,6 +1311,11 @@ public:
 
     // -------------------------------------------------------------------
 
+    const void* getExtraStuff() override
+    {
+        return fRdfDescriptor;
+    }
+
     bool init(const char* const filename, const char* const name, const char* const label, const LADSPA_RDF_Descriptor* const rdfDescriptor)
     {
         CARLA_ASSERT(kData->engine != nullptr);

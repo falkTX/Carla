@@ -32,10 +32,15 @@ CARLA_BACKEND_START_NAMESPACE
 
 static const EngineEvent kFallbackEngineEvent;
 
+#ifndef BUILD_BRIDGE
+// -------------------------------------------------------------------------------------------------------------------
+// Bridge Helper, defined in plugin/CarlaBlugin.cpp
+
+extern BinaryType CarlaPluginGetBridgeBinaryType(CarlaPlugin* const plugin);
+
 // -------------------------------------------------------------------------------------------------------------------
 // Engine Helpers
 
-#ifndef BUILD_BRIDGE
 void registerEnginePlugin(CarlaEngine* const engine, const unsigned int id, CarlaPlugin* const plugin)
 {
     CarlaEngineProtectedData::registerEnginePlugin(engine, id, plugin);
@@ -917,11 +922,16 @@ bool CarlaEngine::clonePlugin(const unsigned int id)
         char label[STR_MAX+1] = { '\0' };
         plugin->getLabel(label);
 
+        BinaryType binaryType = BINARY_NATIVE;
+
+#ifndef BUILD_BRIDGE
+        if (plugin->hints() & PLUGIN_IS_BRIDGE)
+            binaryType = CarlaPluginGetBridgeBinaryType(plugin);
+#endif
+
         const unsigned int pluginsBefore(kData->curPluginCount);
 
-        // TODO: detect bridges
-        // TODO: handle extraStuff
-        if (! addPlugin(plugin->type(), plugin->filename(), plugin->name(), label, nullptr))
+        if (! addPlugin(binaryType, plugin->type(), plugin->filename(), plugin->name(), label, plugin->getExtraStuff()))
             return false;
 
         CARLA_ASSERT(pluginsBefore+1 == kData->curPluginCount);

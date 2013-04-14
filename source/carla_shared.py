@@ -2180,7 +2180,9 @@ class PluginWidget(QFrame):
                                        cString(Carla.host.get_last_error()), QMessageBox.Ok, QMessageBox.Ok)
 
         elif actSel == actRemove:
-            Carla.host.remove_plugin(self.fPluginId)
+            if not Carla.host.remove_plugin(self.fPluginId):
+                CustomMessageBox(self, QMessageBox.Warning, self.tr("Error"), self.tr("Operation failed"),
+                                       cString(Carla.host.get_last_error()), QMessageBox.Ok, QMessageBox.Ok)
 
     @pyqtSlot(bool)
     def slot_setActive(self, yesNo):

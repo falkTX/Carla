@@ -894,6 +894,11 @@ public:
 
     // -------------------------------------------------------------------
 
+    const void* getExtraStuff() override
+    {
+        return kUses16Outs ? (const void*)0x1 : nullptr;
+    }
+
     bool init(const char* filename, const char* const name, const char* label)
     {
         CARLA_ASSERT(kData->engine != nullptr);

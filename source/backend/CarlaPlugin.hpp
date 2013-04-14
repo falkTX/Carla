@@ -790,6 +790,12 @@ public:
         const char* const label;
     };
 
+    // used in CarlaEngine::clonePlugin()
+    virtual const void* getExtraStuff()
+    {
+        return nullptr;
+    }
+
 # ifdef WANT_NATIVE
     static size_t getNativePluginCount();
     static const PluginDescriptor* getNativePluginDescriptor(const size_t index);

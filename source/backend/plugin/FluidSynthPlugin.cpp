@@ -1386,6 +1386,11 @@ public:
 
     // -------------------------------------------------------------------
 
+    const void* getExtraStuff() override
+    {
+        return kUses16Outs ? (const void*)0x1 : nullptr;
+    }
+
     bool init(const char* const filename, const char* const name, const char* const label)
     {
         CARLA_ASSERT(fSynth != nullptr);
