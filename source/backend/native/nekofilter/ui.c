@@ -499,7 +499,7 @@ fail_free_control:
   free(control_ptr);
 
 fail:
-  fprintf(stderr, "lv2fil UI launch failed\n");
+  fprintf(stderr, "nekofilter UI launch failed\n");
   return NULL;
 }
 

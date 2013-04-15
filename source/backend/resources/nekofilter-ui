@@ -893,7 +893,7 @@ class filter_ui:
             self.send_pipe = os.fdopen(self.send_pipe_fd, 'w')
 
         self.port_base = 0
-        self.nekologo = gtk.gdk.pixbuf_new_from_file(os.path.join(sys.path[0], "nekofilter", "lv2logo.png"))
+        #self.nekologo = gtk.gdk.pixbuf_new_from_file(os.path.join(sys.path[0], "nekofilter", "lv2logo.png"))
 
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
         #self.window.set_size_request(600, 400)
@@ -947,9 +947,9 @@ class filter_ui:
         master_frame.add(master_box)
         misc_box.pack_start(master_frame, False, False)
 
-        logo = gtk.Image()
-        logo.set_from_pixbuf(self.nekologo)
-        misc_box.pack_start(logo, True, True)
+        #logo = gtk.Image()
+        #logo.set_from_pixbuf(self.nekologo)
+        #misc_box.pack_start(logo, True, True)
 
         button_box = gtk.VBox()
 
@@ -1031,7 +1031,7 @@ class filter_ui:
                            "Nedko Arnaudov - Original LV2 plugin and GUI",
                            "Fons Adriaensen - DSP code"])
         #about.set_artists(["LV2 logo has been designed by Thorsten Wilms, based on a concept from Peter Shorthose."])
-        about.set_logo(self.nekologo)
+        #about.set_logo(self.nekologo)
         about.show()
         about.run()
         about.hide()
