@@ -771,7 +771,7 @@ class CarlaMainW(QMainWindow):
         if self.fEngineStarted:
             self.stopEngine()
 
-        self.startEngine(clientId)
+        self.slot_engineStart(clientId)
 
         if self.fEngineStarted:
             self.loadProject(projectPath)
@@ -1204,8 +1204,8 @@ class CarlaMainW(QMainWindow):
         self.fProjectLoading = False
 
     @pyqtSlot()
-    def slot_engineStart(self):
-        self.startEngine()
+    def slot_engineStart(self, clientName = "Carla"):
+        self.startEngine(clientName)
         check = Carla.host.is_engine_running()
         self.ui.act_engine_start.setEnabled(not check)
         self.ui.act_engine_stop.setEnabled(check)
