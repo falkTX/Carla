@@ -767,7 +767,6 @@ public:
         // JACK client rename
         if (fOptions.processMode == PROCESS_MODE_MULTIPLE_CLIENTS)
         {
-            // not supported yet in the JACK API
             if (bridge.client_rename_ptr != nullptr)
             {
                 jack_client_t* const client = ((CarlaEngineJackClient*)CarlaPluginGetEngineClient(plugin))->kClient;

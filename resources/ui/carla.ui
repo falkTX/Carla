@@ -248,8 +248,6 @@
     </property>
     <addaction name="act_engine_start"/>
     <addaction name="act_engine_stop"/>
-    <addaction name="separator"/>
-    <addaction name="act_engine_configure"/>
    </widget>
    <widget class="QMenu" name="menu_Settings">
     <property name="title">
@@ -323,7 +321,6 @@
    <addaction name="separator"/>
    <addaction name="act_engine_start"/>
    <addaction name="act_engine_stop"/>
-   <addaction name="act_engine_configure"/>
    <addaction name="separator"/>
    <addaction name="act_plugin_add"/>
    <addaction name="act_plugin_remove_all"/>
@@ -458,21 +455,6 @@
    </property>
    <property name="shortcut">
     <string>F6</string>
-   </property>
-  </action>
-  <action name="act_engine_configure">
-   <property name="enabled">
-    <bool>true</bool>
-   </property>
-   <property name="icon">
-    <iconset resource="../resources.qrc">
-     <normaloff>:/16x16/configure.png</normaloff>:/16x16/configure.png</iconset>
-   </property>
-   <property name="text">
-    <string>Configure Driver</string>
-   </property>
-   <property name="shortcut">
-    <string>F7</string>
    </property>
   </action>
   <action name="act_settings_show_transport">
