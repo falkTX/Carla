@@ -16,7 +16,7 @@
 //  ctl: CCXX. CC - number of controller. XX - std effect;
 //  ctl_val: value of controller.
 
-struct sunvox_note
+typedef struct
 {
     unsigned char	note;           //0 - nothing; 1..127 - note num; 128 - note off; 129, 130... - see NOTECMD_xxx defines
     unsigned char       vel;            //Velocity 1..129; 0 - default
@@ -24,7 +24,7 @@ struct sunvox_note
     unsigned char       nothing;
     unsigned short      ctl;            //CCXX. CC - number of controller. XX - std effect
     unsigned short      ctl_val;        //Value of controller
-};
+} sunvox_note;
 
 #define SV_INIT_FLAG_NO_DEBUG_OUTPUT 		( 1 << 0 )
 #define SV_INIT_FLAG_USER_AUDIO_CALLBACK 	( 1 << 1 ) /* Interaction with sound card is on the user side */
@@ -85,6 +85,7 @@ typedef int (*tsv_deinit)( void ) SUNVOX_FN_ATTR;
 //Use it to get the scope buffer type from get_module_scope() function.
 typedef int (*tsv_get_sample_type)( void ) SUNVOX_FN_ATTR;
 typedef int (*tsv_load)( int slot, const char* name ) SUNVOX_FN_ATTR;
+typedef int (*tsv_load_from_memory)( int slot, void* data, unsigned int data_size ) SUNVOX_FN_ATTR;
 typedef int (*tsv_play)( int slot ) SUNVOX_FN_ATTR;
 typedef int (*tsv_play_from_beginning)( int slot ) SUNVOX_FN_ATTR;
 typedef int (*tsv_stop)( int slot ) SUNVOX_FN_ATTR;
@@ -129,13 +130,19 @@ typedef unsigned int (*tsv_get_ticks_per_second)( void ) SUNVOX_FN_ATTR;
 
 #ifdef WIN
 #define IMPORT( Handle, Type, Function, Store ) \
-    Store = (Type)GetProcAddress( Handle, Function );
+    { \
+	Store = (Type)GetProcAddress( Handle, Function ); \
+	if( Store == 0 ) { fn_not_found = Function; break; } \
+    }
 #define ERROR_MSG( msg ) MessageBox( 0, TEXT("msg"), TEXT("Error"), MB_OK );
 #endif
 
 #ifdef UNIX
 #define IMPORT( Handle, Type, Function, Store ) \
-    Store = (Type)dlsym( Handle, Function );
+    { \
+	Store = (Type)dlsym( Handle, Function ); \
+	if( Store == 0 ) { fn_not_found = Function; break; } \
+    }
 #define ERROR_MSG( msg ) printf( "ERROR: %s\n", msg );
 #endif
 
@@ -148,6 +155,7 @@ tsv_init sv_init = 0;
 tsv_deinit sv_deinit = 0;
 tsv_get_sample_type sv_get_sample_type = 0;
 tsv_load sv_load = 0;
+tsv_load_from_memory sv_load_from_memory = 0;
 tsv_play sv_play = 0;
 tsv_play_from_beginning sv_play_from_beginning = 0;
 tsv_stop sv_stop = 0;
@@ -207,101 +215,59 @@ int sv_load_dll( void )
         return 1;
     }
 #endif
-    IMPORT( g_sv_dll, tsv_audio_callback, "sv_audio_callback", sv_audio_callback );
-    IMPORT( g_sv_dll, tsv_open_slot, "sv_open_slot", sv_open_slot );
-    IMPORT( g_sv_dll, tsv_close_slot, "sv_close_slot", sv_close_slot );
-    IMPORT( g_sv_dll, tsv_lock_slot, "sv_lock_slot", sv_lock_slot );
-    IMPORT( g_sv_dll, tsv_unlock_slot, "sv_unlock_slot", sv_unlock_slot );
-    IMPORT( g_sv_dll, tsv_init, "sv_init", sv_init );
-    IMPORT( g_sv_dll, tsv_deinit, "sv_deinit", sv_deinit );
-    IMPORT( g_sv_dll, tsv_get_sample_type, "sv_get_sample_type", sv_get_sample_type );
-    IMPORT( g_sv_dll, tsv_load, "sv_load", sv_load );
-    IMPORT( g_sv_dll, tsv_play, "sv_play", sv_play );
-    IMPORT( g_sv_dll, tsv_play_from_beginning, "sv_play_from_beginning", sv_play_from_beginning );
-    IMPORT( g_sv_dll, tsv_stop, "sv_stop", sv_stop );
-    IMPORT( g_sv_dll, tsv_set_autostop, "sv_set_autostop", sv_set_autostop );
-    IMPORT( g_sv_dll, tsv_end_of_song, "sv_end_of_song", sv_end_of_song );
-    IMPORT( g_sv_dll, tsv_rewind, "sv_rewind", sv_rewind );
-    IMPORT( g_sv_dll, tsv_volume, "sv_volume", sv_volume );
-    IMPORT( g_sv_dll, tsv_send_event, "sv_send_event", sv_send_event );
-    IMPORT( g_sv_dll, tsv_get_current_line, "sv_get_current_line", sv_get_current_line );
-    IMPORT( g_sv_dll, tsv_get_current_signal_level, "sv_get_current_signal_level", sv_get_current_signal_level );
-    IMPORT( g_sv_dll, tsv_get_song_name, "sv_get_song_name", sv_get_song_name );
-    IMPORT( g_sv_dll, tsv_get_song_bpm, "sv_get_song_bpm", sv_get_song_bpm );
-    IMPORT( g_sv_dll, tsv_get_song_tpl, "sv_get_song_tpl", sv_get_song_tpl );
-    IMPORT( g_sv_dll, tsv_get_song_length_frames, "sv_get_song_length_frames", sv_get_song_length_frames );
-    IMPORT( g_sv_dll, tsv_get_song_length_lines, "sv_get_song_length_lines", sv_get_song_length_lines );
-    IMPORT( g_sv_dll, tsv_get_number_of_modules, "sv_get_number_of_modules", sv_get_number_of_modules );
-    IMPORT( g_sv_dll, tsv_get_module_flags, "sv_get_module_flags", sv_get_module_flags );
-    IMPORT( g_sv_dll, tsv_get_module_inputs, "sv_get_module_inputs", sv_get_module_inputs );
-    IMPORT( g_sv_dll, tsv_get_module_outputs, "sv_get_module_outputs", sv_get_module_outputs );
-    IMPORT( g_sv_dll, tsv_get_module_name, "sv_get_module_name", sv_get_module_name );
-    IMPORT( g_sv_dll, tsv_get_module_xy, "sv_get_module_xy", sv_get_module_xy );
-    IMPORT( g_sv_dll, tsv_get_module_color, "sv_get_module_color", sv_get_module_color );
-    IMPORT( g_sv_dll, tsv_get_module_scope, "sv_get_module_scope", sv_get_module_scope );
-    IMPORT( g_sv_dll, tsv_get_number_of_patterns, "sv_get_number_of_patterns", sv_get_number_of_patterns );
-    IMPORT( g_sv_dll, tsv_get_pattern_x, "sv_get_pattern_x", sv_get_pattern_x );
-    IMPORT( g_sv_dll, tsv_get_pattern_y, "sv_get_pattern_y", sv_get_pattern_y );
-    IMPORT( g_sv_dll, tsv_get_pattern_tracks, "sv_get_pattern_tracks", sv_get_pattern_tracks );
-    IMPORT( g_sv_dll, tsv_get_pattern_lines, "sv_get_pattern_lines", sv_get_pattern_lines );
-    IMPORT( g_sv_dll, tsv_get_pattern_data, "sv_get_pattern_data", sv_get_pattern_data );
-    IMPORT( g_sv_dll, tsv_pattern_mute, "sv_pattern_mute", sv_pattern_mute );
-    IMPORT( g_sv_dll, tsv_get_ticks, "sv_get_ticks", sv_get_ticks );
-    IMPORT( g_sv_dll, tsv_get_ticks_per_second, "sv_get_ticks_per_second", sv_get_ticks_per_second );
-
-    int nf = 0;
+    const char* fn_not_found = 0;
     while( 1 )
     {
-	if( sv_audio_callback == 0 ) break; nf++;
-	if( sv_open_slot == 0 ) break; nf++;
-	if( sv_close_slot == 0 ) break; nf++;
-	if( sv_lock_slot == 0 ) break; nf++;
-	if( sv_unlock_slot == 0 ) break; nf++;
-	if( sv_init == 0 ) break; nf++;
-	if( sv_deinit == 0 ) break; nf++;
-	if( sv_get_sample_type == 0 ) break; nf++;
-	if( sv_load == 0 ) break; nf++;
-	if( sv_play == 0 ) break; nf++;
-	if( sv_play_from_beginning == 0 ) break; nf++;
-	if( sv_stop == 0 ) break; nf++;
-	if( sv_set_autostop == 0 ) break; nf++;
-	if( sv_end_of_song == 0 ) break; nf++;
-	if( sv_rewind == 0 ) break; nf++;
-	if( sv_volume == 0 ) break; nf++;
-	if( sv_send_event == 0 ) break; nf++;
-	if( sv_get_song_name == 0 ) break; nf++;
-	if( sv_get_song_bpm == 0 ) break; nf++;
-	if( sv_get_song_tpl == 0 ) break; nf++;
-	if( sv_get_song_length_frames == 0 ) break; nf++;
-	if( sv_get_song_length_lines == 0 ) break; nf++;
-	if( sv_get_number_of_modules == 0 ) break; nf++;
-	if( sv_get_module_flags == 0 ) break; nf++;
-	if( sv_get_module_inputs == 0 ) break; nf++;
-	if( sv_get_module_outputs == 0 ) break; nf++;
-	if( sv_get_module_name == 0 ) break; nf++;
-	if( sv_get_module_xy == 0 ) break; nf++;
-	if( sv_get_module_color == 0 ) break; nf++;
-	if( sv_get_module_scope == 0 ) break; nf++;
-	if( sv_get_number_of_patterns == 0 ) break; nf++;
-	if( sv_get_pattern_x == 0 ) break; nf++;
-	if( sv_get_pattern_y == 0 ) break; nf++;
-	if( sv_get_pattern_tracks == 0 ) break; nf++;
-	if( sv_get_pattern_lines == 0 ) break; nf++;
-	if( sv_get_pattern_data == 0 ) break; nf++;
-	if( sv_pattern_mute == 0 ) break; nf++;
-	if( sv_get_current_line == 0 ) break; nf++;
-	if( sv_get_current_signal_level == 0 ) break; nf++;
-	if( sv_get_ticks == 0 ) break; nf++;
-	if( sv_get_ticks_per_second == 0 ) break; nf++;
-	nf = 0;
+	IMPORT( g_sv_dll, tsv_audio_callback, "sv_audio_callback", sv_audio_callback );
+	IMPORT( g_sv_dll, tsv_open_slot, "sv_open_slot", sv_open_slot );
+	IMPORT( g_sv_dll, tsv_close_slot, "sv_close_slot", sv_close_slot );
+	IMPORT( g_sv_dll, tsv_lock_slot, "sv_lock_slot", sv_lock_slot );
+	IMPORT( g_sv_dll, tsv_unlock_slot, "sv_unlock_slot", sv_unlock_slot );
+	IMPORT( g_sv_dll, tsv_init, "sv_init", sv_init );
+	IMPORT( g_sv_dll, tsv_deinit, "sv_deinit", sv_deinit );
+	IMPORT( g_sv_dll, tsv_get_sample_type, "sv_get_sample_type", sv_get_sample_type );
+	IMPORT( g_sv_dll, tsv_load, "sv_load", sv_load );
+	IMPORT( g_sv_dll, tsv_load_from_memory, "sv_load_from_memory", sv_load_from_memory );
+	IMPORT( g_sv_dll, tsv_play, "sv_play", sv_play );
+	IMPORT( g_sv_dll, tsv_play_from_beginning, "sv_play_from_beginning", sv_play_from_beginning );
+	IMPORT( g_sv_dll, tsv_stop, "sv_stop", sv_stop );
+	IMPORT( g_sv_dll, tsv_set_autostop, "sv_set_autostop", sv_set_autostop );
+	IMPORT( g_sv_dll, tsv_end_of_song, "sv_end_of_song", sv_end_of_song );
+	IMPORT( g_sv_dll, tsv_rewind, "sv_rewind", sv_rewind );
+	IMPORT( g_sv_dll, tsv_volume, "sv_volume", sv_volume );
+	IMPORT( g_sv_dll, tsv_send_event, "sv_send_event", sv_send_event );
+	IMPORT( g_sv_dll, tsv_get_current_line, "sv_get_current_line", sv_get_current_line );
+	IMPORT( g_sv_dll, tsv_get_current_signal_level, "sv_get_current_signal_level", sv_get_current_signal_level );
+	IMPORT( g_sv_dll, tsv_get_song_name, "sv_get_song_name", sv_get_song_name );
+	IMPORT( g_sv_dll, tsv_get_song_bpm, "sv_get_song_bpm", sv_get_song_bpm );
+	IMPORT( g_sv_dll, tsv_get_song_tpl, "sv_get_song_tpl", sv_get_song_tpl );
+	IMPORT( g_sv_dll, tsv_get_song_length_frames, "sv_get_song_length_frames", sv_get_song_length_frames );
+	IMPORT( g_sv_dll, tsv_get_song_length_lines, "sv_get_song_length_lines", sv_get_song_length_lines );
+	IMPORT( g_sv_dll, tsv_get_number_of_modules, "sv_get_number_of_modules", sv_get_number_of_modules );
+	IMPORT( g_sv_dll, tsv_get_module_flags, "sv_get_module_flags", sv_get_module_flags );
+	IMPORT( g_sv_dll, tsv_get_module_inputs, "sv_get_module_inputs", sv_get_module_inputs );
+	IMPORT( g_sv_dll, tsv_get_module_outputs, "sv_get_module_outputs", sv_get_module_outputs );
+	IMPORT( g_sv_dll, tsv_get_module_name, "sv_get_module_name", sv_get_module_name );
+	IMPORT( g_sv_dll, tsv_get_module_xy, "sv_get_module_xy", sv_get_module_xy );
+	IMPORT( g_sv_dll, tsv_get_module_color, "sv_get_module_color", sv_get_module_color );
+	IMPORT( g_sv_dll, tsv_get_module_scope, "sv_get_module_scope", sv_get_module_scope );
+	IMPORT( g_sv_dll, tsv_get_number_of_patterns, "sv_get_number_of_patterns", sv_get_number_of_patterns );
+	IMPORT( g_sv_dll, tsv_get_pattern_x, "sv_get_pattern_x", sv_get_pattern_x );
+	IMPORT( g_sv_dll, tsv_get_pattern_y, "sv_get_pattern_y", sv_get_pattern_y );
+	IMPORT( g_sv_dll, tsv_get_pattern_tracks, "sv_get_pattern_tracks", sv_get_pattern_tracks );
+	IMPORT( g_sv_dll, tsv_get_pattern_lines, "sv_get_pattern_lines", sv_get_pattern_lines );
+	IMPORT( g_sv_dll, tsv_get_pattern_data, "sv_get_pattern_data", sv_get_pattern_data );
+	IMPORT( g_sv_dll, tsv_pattern_mute, "sv_pattern_mute", sv_pattern_mute );
+	IMPORT( g_sv_dll, tsv_get_ticks, "sv_get_ticks", sv_get_ticks );
+	IMPORT( g_sv_dll, tsv_get_ticks_per_second, "sv_get_ticks_per_second", sv_get_ticks_per_second );
 	break;
     }
-    if( nf )
+    if( fn_not_found )
     {
 	char ts[ 256 ];
-	sprintf( ts, "sunvox lib: some functions not found (%d)", nf );
+	sprintf( ts, "sunvox lib: %s() not found", fn_not_found );
 	ERROR_MSG( ts );
-	return nf;
+	return -1;
     }
     
     return 0;
