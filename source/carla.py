@@ -589,6 +589,7 @@ class CarlaMainW(QMainWindow):
         self.fLastLoadedPluginId = -1
         self.fTransportWasPlaying = False
 
+        self.fClientName = "Carla"
         self.fSessionManagerName = "LADISH" if os.getenv("LADISH_APP_NAME") else ""
 
         # -------------------------------------------------------------
@@ -766,12 +767,13 @@ class CarlaMainW(QMainWindow):
     @pyqtSlot(str)
     def slot_handleNSM_OpenCallback(self, data):
         projectPath, clientId = data.rsplit(":", 1)
+        self.fClientName = clientId
 
         # restart engine
         if self.fEngineStarted:
             self.stopEngine()
 
-        self.slot_engineStart(clientId)
+        self.slot_engineStart()
 
         if self.fEngineStarted:
             self.loadProject(projectPath)
@@ -980,7 +982,7 @@ class CarlaMainW(QMainWindow):
     def slot_miniCanvasCheckSize(self):
         self.ui.miniCanvasPreview.setViewSize(float(self.ui.graphicsView.width()) / DEFAULT_CANVAS_WIDTH, float(self.ui.graphicsView.height()) / DEFAULT_CANVAS_HEIGHT)
 
-    def startEngine(self, clientName = "Carla"):
+    def startEngine(self):
         # ---------------------------------------------
         # Engine settings
 
@@ -1032,7 +1034,7 @@ class CarlaMainW(QMainWindow):
 
         audioDriver = settings.value("Engine/AudioDriver", defaultDriver, type=str)
 
-        if not Carla.host.engine_init(audioDriver, clientName):
+        if not Carla.host.engine_init(audioDriver, self.fClientName):
             if self.fFirstEngineInit:
                 self.fFirstEngineInit = False
                 return
@@ -1204,8 +1206,8 @@ class CarlaMainW(QMainWindow):
         self.fProjectLoading = False
 
     @pyqtSlot()
-    def slot_engineStart(self, clientName = "Carla"):
-        self.startEngine(clientName)
+    def slot_engineStart(self):
+        self.startEngine()
         check = Carla.host.is_engine_running()
         self.ui.act_engine_start.setEnabled(not check)
         self.ui.act_engine_stop.setEnabled(check)
