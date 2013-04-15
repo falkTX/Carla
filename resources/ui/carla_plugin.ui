@@ -42,13 +42,13 @@
        <number>0</number>
       </property>
       <property name="topMargin">
-       <number>0</number>
+       <number>1</number>
       </property>
       <property name="rightMargin">
        <number>0</number>
       </property>
       <property name="bottomMargin">
-       <number>5</number>
+       <number>4</number>
       </property>
       <item>
        <widget class="PixmapButton" name="b_enable">
@@ -85,14 +85,14 @@
        <widget class="PixmapButton" name="b_gui">
         <property name="minimumSize">
          <size>
-          <width>24</width>
-          <height>24</height>
+          <width>22</width>
+          <height>22</height>
          </size>
         </property>
         <property name="maximumSize">
          <size>
-          <width>24</width>
-          <height>24</height>
+          <width>22</width>
+          <height>22</height>
          </size>
         </property>
         <property name="text">
@@ -120,14 +120,14 @@
        <widget class="PixmapButton" name="b_edit">
         <property name="minimumSize">
          <size>
-          <width>24</width>
-          <height>24</height>
+          <width>22</width>
+          <height>22</height>
          </size>
         </property>
         <property name="maximumSize">
          <size>
-          <width>24</width>
-          <height>24</height>
+          <width>22</width>
+          <height>22</height>
          </size>
         </property>
         <property name="text">
@@ -153,6 +153,11 @@
       </item>
       <item>
        <widget class="QLabel" name="label_name">
+        <property name="font">
+         <font>
+          <pointsize>8</pointsize>
+         </font>
+        </property>
         <property name="text">
          <string>Plugin Name</string>
         </property>
@@ -184,13 +189,13 @@
        <number>4</number>
       </property>
       <property name="topMargin">
-       <number>5</number>
+       <number>4</number>
       </property>
       <property name="rightMargin">
        <number>0</number>
       </property>
       <property name="bottomMargin">
-       <number>0</number>
+       <number>1</number>
       </property>
       <item>
        <widget class="LEDButton" name="led_control">
