@@ -1,0 +1,34 @@
+diff --git a/source/libs/lilv/lilv-0.16.0/src/util.c b/source/libs/lilv/lilv-0.16.0/src/util.c
+index 6286446..f21383b 100644
+--- a/source/libs/lilv/lilv-0.16.0/src/util.c
++++ b/source/libs/lilv/lilv-0.16.0/src/util.c
+@@ -29,7 +29,6 @@
+ #include <string.h>
+ 
+ #ifdef _WIN32
+-#    define _WIN32_WINNT 0x0600  /* for CreateSymbolicLink */
+ #    include <windows.h>
+ #    include <direct.h>
+ #    include <io.h>
+@@ -426,7 +425,7 @@ lilv_symlink(const char* oldpath, const char* newpath)
+ 	int ret = 0;
+ 	if (strcmp(oldpath, newpath)) {
+ #ifdef _WIN32
+-		ret = !CreateSymbolicLink(newpath, oldpath, 0);
++		ret = 0;
+ #else
+ 		ret = symlink(oldpath, newpath);
+ #endif
+diff --git a/source/libs/lilv/serd-0.18.2/src/node.c b/source/libs/lilv/serd-0.18.2/src/node.c
+index 065ff87..63730c1 100644
+--- a/source/libs/lilv/serd-0.18.2/src/node.c
++++ b/source/libs/lilv/serd-0.18.2/src/node.c
+@@ -22,7 +22,7 @@
+ #include <math.h>
+ #include <float.h>
+ 
+-#ifdef _WIN32
++#if defined(_WIN32) && !defined(__MINGW32__)
+ #    define isnan(x) _isnan(x)
+ #    define isinf(x) (!_finite(x))
+ #endif
