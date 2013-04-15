@@ -1975,7 +1975,7 @@ if __name__ == '__main__':
         argument = app.arguments()[i]
 
         if argument.startswith("--with-appname="):
-            appName = argument.replace("--with-appname=", "")
+            appName = os.path.basename(argument.replace("--with-appname=", ""))
 
         elif argument.startswith("--with-libprefix="):
             libPrefix = argument.replace("--with-libprefix=", "")

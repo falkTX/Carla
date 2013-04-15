@@ -610,7 +610,7 @@ class Host(object):
         self.lib.carla_get_host_osc_url.argtypes = None
         self.lib.carla_get_host_osc_url.restype = c_char_p
 
-        self.lib.carla_nsm_announce.argtypes = [c_char_p, c_int]
+        self.lib.carla_nsm_announce.argtypes = [c_char_p, c_char_p, c_int]
         self.lib.carla_nsm_announce.restype = None
 
         self.lib.carla_nsm_reply_open.argtypes = None

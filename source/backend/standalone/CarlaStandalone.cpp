@@ -2114,7 +2114,7 @@ public:
         }
 
         lo_send_from(addr, lo_server_thread_get_server(fServerThread), LO_TT_IMMEDIATE, "/nsm/server/announce", "sssiii",
-                    "Carla", ":switch:", appName, NSM_API_VERSION_MAJOR, NSM_API_VERSION_MINOR, pid);
+                     "Carla", ":switch:", appName, NSM_API_VERSION_MAJOR, NSM_API_VERSION_MINOR, pid);
 
         lo_address_free(addr);
     }
