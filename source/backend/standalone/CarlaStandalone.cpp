@@ -2092,7 +2092,7 @@ public:
         }
     }
 
-    void announce(const char* const url, const int pid)
+    void announce(const char* const url, const char* appName, const int pid)
     {
         lo_address const addr = lo_address_new_from_url(url);
 
@@ -2114,7 +2114,7 @@ public:
         }
 
         lo_send_from(addr, lo_server_thread_get_server(fServerThread), LO_TT_IMMEDIATE, "/nsm/server/announce", "sssiii",
-                    "Carla", ":switch:", "carla", NSM_API_VERSION_MAJOR, NSM_API_VERSION_MINOR, pid);
+                    "Carla", ":switch:", appName, NSM_API_VERSION_MAJOR, NSM_API_VERSION_MINOR, pid);
 
         lo_address_free(addr);
     }
@@ -2263,9 +2263,9 @@ private:
 
 static CarlaNSM gCarlaNSM;
 
-void carla_nsm_announce(const char* url, int pid)
+void carla_nsm_announce(const char* url, const char* appName, int pid)
 {
-    gCarlaNSM.announce(url, pid);
+    gCarlaNSM.announce(url, appName, pid);
 }
 
 void carla_nsm_reply_open()

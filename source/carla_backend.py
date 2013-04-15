@@ -866,8 +866,8 @@ class Host(object):
     def get_sample_rate(self):
         return self.lib.carla_get_sample_rate()
 
-    def nsm_announce(self, url, pid):
-        self.lib.carla_nsm_announce(url.encode("utf-8"), pid)
+    def nsm_announce(self, url, appName, pid):
+        self.lib.carla_nsm_announce(url.encode("utf-8"), appName.encode("utf-8"), pid)
 
     def nsm_reply_open(self):
         self.lib.carla_nsm_reply_open()

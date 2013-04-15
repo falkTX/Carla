@@ -681,7 +681,7 @@ CARLA_EXPORT const char* carla_get_host_osc_url();
 /*!
  * Send NSM announce message.
  */
-CARLA_EXPORT void carla_nsm_announce(const char* url, int pid);
+CARLA_EXPORT void carla_nsm_announce(const char* url, const char* appName, int pid);
 
 /*!
  * Reply to NSM open message.

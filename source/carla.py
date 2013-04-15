@@ -74,6 +74,13 @@ CANVAS_ANTIALIASING_SMALL = 1
 CANVAS_EYECANDY_SMALL     = 1
 
 # ------------------------------------------------------------------------------------------------------------
+# Global Variables
+
+appName = sys.argv[0]
+libPrefix = None
+projectFilename = None
+
+# ------------------------------------------------------------------------------------------------------------
 # Log Syntax Highlighter
 
 class LogSyntaxHighlighter(QSyntaxHighlighter):
@@ -743,7 +750,7 @@ class CarlaMainW(QMainWindow):
         NSM_URL = os.getenv("NSM_URL")
 
         if NSM_URL:
-            Carla.host.nsm_announce(NSM_URL, os.getpid())
+            Carla.host.nsm_announce(NSM_URL, appName, os.getpid())
         else:
             QTimer.singleShot(0, self, SLOT("slot_engineStart()"))
 
@@ -1201,7 +1208,6 @@ class CarlaMainW(QMainWindow):
         self.ui.act_file_open.setEnabled(check)
         self.ui.act_engine_start.setEnabled(not check)
         self.ui.act_engine_stop.setEnabled(check)
-        self.ui.act_engine_configure.setEnabled(not check)
 
         if check:
             self.fInfoText = "Engine running | SampleRate: %g | BufferSize: %i" % (self.fSampleRate, self.fBufferSize)
@@ -1964,14 +1970,14 @@ if __name__ == '__main__':
     app.setOrganizationName("falkTX")
     app.setWindowIcon(QIcon(":/scalable/carla.svg"))
 
-    libPrefix = None
-    projectFilename = None
-
     for i in range(len(app.arguments())):
         if i == 0: continue
         argument = app.arguments()[i]
 
-        if argument.startswith("--with-libprefix="):
+        if argument.startswith("--with-appname="):
+            appName = argument.replace("--with-appname=", "")
+
+        elif argument.startswith("--with-libprefix="):
             libPrefix = argument.replace("--with-libprefix=", "")
 
         elif os.path.exists(argument):
