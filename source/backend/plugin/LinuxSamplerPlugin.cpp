@@ -1036,11 +1036,13 @@ public:
 
         fEngineChannel = fSamplerChannel->GetEngineChannel();
         fEngineChannel->Connect(fAudioOutputDevice);
-        fEngineChannel->PrepareLoadInstrument(filename, 0); // todo - find instrument from label
-        fEngineChannel->LoadInstrument();
+        //fEngineChannel->PrepareLoadInstrument(filename, 0); // todo - find instrument from label
+        //fEngineChannel->LoadInstrument();
         fEngineChannel->Volume(LinuxSampler::VOLUME_MAX);
 
         fMidiInputPort->Connect(fSamplerChannel->GetEngineChannel(), LinuxSampler::midi_chan_all);
+
+        fInstrument->LoadInstrumentInBackground(fInstrumentIds[0], fEngineChannel);
 
         // ---------------------------------------------------------------
         // load plugin settings

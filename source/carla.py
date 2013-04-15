@@ -1367,7 +1367,7 @@ class CarlaMainW(QMainWindow):
 
     @pyqtSlot(int, int, int, float, str)
     def slot_handleDebugCallback(self, pluginId, value1, value2, value3, valueStr):
-        self.ui.pte_log.appendPlainText(valueStr.replace("[30;1m", "DEBUG: ").replace("[0m", "").replace("\n", ""))
+        self.ui.pte_log.appendPlainText(valueStr.replace("[30;1m", "DEBUG: ").replace("[31m", "ERROR: ").replace("[0m", "").replace("\n", ""))
 
     @pyqtSlot(int)
     def slot_handlePluginAddedCallback(self, pluginId):
