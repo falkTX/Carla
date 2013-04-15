@@ -138,6 +138,9 @@ install:
 	# Create directories
 	install -d $(DESTDIR)$(PREFIX)/bin/
 	install -d $(DESTDIR)$(PREFIX)/lib/carla/
+	install -d $(DESTDIR)$(PREFIX)/lib/carla/resources/
+	install -d $(DESTDIR)$(PREFIX)/lib/carla/resources/nekofilter/
+	install -d $(DESTDIR)$(PREFIX)/lib/carla/resources/zynaddsubfx/
 	install -d $(DESTDIR)$(PREFIX)/share/applications/
 	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/16x16/apps/
 	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/48x48/apps/
@@ -186,6 +189,11 @@ install:
 
 	# Install python code
 	install -m 755 source/*.py $(DESTDIR)$(PREFIX)/share/carla/
+
+	# Install resources
+	install -m 644 source/backend/resources/nekofilter-ui     $(DESTDIR)$(PREFIX)/lib/carla/resources/
+	install -m 644 source/backend/resources/nekofilter/*.png  $(DESTDIR)$(PREFIX)/lib/carla/resources/nekofilter/
+	install -m 644 source/backend/resources/zynaddsubfx/*.png $(DESTDIR)$(PREFIX)/lib/carla/resources/zynaddsubfx/
 
 	# Adjust PREFIX value in script files
 	sed -i "s/X-PREFIX-X/$(SED_PREFIX)/" \
