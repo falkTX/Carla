@@ -1992,14 +1992,19 @@ if __name__ == '__main__':
             projectFilename = argument
 
     if libPrefix is not None:
-        libName = os.path.join(libPrefix, "lib", "carla", carla_libname)
+        libPath = os.path.join(libPrefix, "lib", "carla")
+        libName = os.path.join(libPath, carla_libname)
     else:
+        libPath = carla_library_path.replace(carla_libname, "")
         libName = carla_library_path
 
     # Init backend
     Carla.host = Host(libName)
     Carla.host.set_engine_callback(engineCallback)
     Carla.host.set_engine_option(OPTION_PROCESS_NAME, 0, "carla")
+
+    # Change dir to where DLL and resources are
+    os.chdir(libPath)
 
     # Set bridge paths
     if carla_bridge_native:

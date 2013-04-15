@@ -75,8 +75,7 @@ namespace Nio {
 SYNTH_T* synth = nullptr;
 
 #ifdef WANT_ZYNADDSUBFX_UI
-#define PIXMAP_PATH "/usr/share/zynaddsubfx/pixmaps"
-#define SOURCE_DIR "/usr/share/zynaddsubfx/examples"
+#define PIXMAP_PATH "./resources/zynaddsubfx/"
 
 static Fl_Tiled_Image* gModuleBackdrop = nullptr;
 
@@ -86,8 +85,10 @@ void set_module_parameters(Fl_Widget* o)
     o->box(FL_DOWN_FRAME);
     o->align(o->align() | FL_ALIGN_IMAGE_BACKDROP);
     o->color(FL_BLACK);
-    o->image(gModuleBackdrop);
     o->labeltype(FL_SHADOW_LABEL);
+
+    if (gModuleBackdrop != nullptr)
+        o->image(gModuleBackdrop);
 }
 #endif
 
@@ -422,20 +423,14 @@ private:
 
                         Fl_Dial::default_style(Fl_Dial::PIXMAP_DIAL);
 
-                        if(Fl_Shared_Image *img = Fl_Shared_Image::get(PIXMAP_PATH "/knob.png"))
+                        if (Fl_Shared_Image* const img = Fl_Shared_Image::get(PIXMAP_PATH "knob.png"))
                             Fl_Dial::default_image(img);
-                        else
-                            Fl_Dial::default_image(Fl_Shared_Image::get(SOURCE_DIR "/../pixmaps/knob.png"));
 
-                        if(Fl_Shared_Image *img = Fl_Shared_Image::get(PIXMAP_PATH "/window_backdrop.png"))
+                        if (Fl_Shared_Image* const img = Fl_Shared_Image::get(PIXMAP_PATH "window_backdrop.png"))
                             Fl::scheme_bg(new Fl_Tiled_Image(img));
-                        else
-                            Fl::scheme_bg(new Fl_Tiled_Image(Fl_Shared_Image::get(SOURCE_DIR "/../pixmaps/window_backdrop.png")));
 
-                        if(Fl_Shared_Image *img = Fl_Shared_Image::get(PIXMAP_PATH "/module_backdrop.png"))
+                        if(Fl_Shared_Image* const img = Fl_Shared_Image::get(PIXMAP_PATH "module_backdrop.png"))
                             gModuleBackdrop = new Fl_Tiled_Image(img);
-                        else
-                            gModuleBackdrop = new Fl_Tiled_Image(Fl_Shared_Image::get(SOURCE_DIR "/../pixmaps/module_backdrop.png"));
 
                         Fl::background(50, 50, 50);
                         Fl::background2(70, 70, 70);

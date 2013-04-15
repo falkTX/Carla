@@ -23,7 +23,7 @@
  *
  *****************************************************************************/
 
-#define UI_EXECUTABLE "ui.py"
+#define UI_EXECUTABLE "nekofilter-ui"
 
 #define WAIT_START_TIMEOUT  3000 /* ms */
 #define WAIT_ZOMBIE_TIMEOUT 3000 /* ms */
@@ -268,7 +268,7 @@ nekoui_quit(
 {
   write(control_ptr->send_pipe, "quit\n", 5);
   control_ptr->visible = false;
-  
+
   /* for a while wait child to exit, we dont like zombie processes */
   if (!wait_child(control_ptr->pid))
   {
@@ -364,8 +364,7 @@ nekoui_instantiate(
   snprintf(ui_recv_pipe, sizeof(ui_recv_pipe), "%d", pipe1[0]); /* [0] means reading end */
   snprintf(ui_send_pipe, sizeof(ui_send_pipe), "%d", pipe2[1]); /* [1] means writting end */
 
-  // FIXME
-  const char* bundle_path = "/home/falktx/Personal/FOSS/GIT/Carla/source/backend/native/nekofilter/";
+  const char* bundle_path = "./resources/";
 
   filename = malloc(strlen(bundle_path) + strlen(UI_EXECUTABLE) + 1);
   if (filename == NULL)
@@ -375,7 +374,7 @@ nekoui_instantiate(
 
   strcpy(filename, bundle_path);
   strcat(filename, UI_EXECUTABLE);
-  
+
   char sample_rate_str[12] = { 0 };
   snprintf(sample_rate_str, 12, "%g", host->get_sample_rate(host->handle));
 
@@ -384,7 +383,7 @@ nekoui_instantiate(
 
   control_ptr->pid = -1;
 
-  argv[0] = "python";
+  argv[0] = "python2";
   argv[1] = filename;
   argv[2] = sample_rate_str;
   argv[3] = ui_recv_pipe;       /* reading end */
