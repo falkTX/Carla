@@ -760,6 +760,8 @@ class CarlaMainW(QMainWindow):
         self.ui.act_file_new.setEnabled(False)
         self.ui.act_file_open.setEnabled(False)
         self.ui.act_file_save_as.setEnabled(False)
+        self.ui.act_engine_start.setEnabled(True)
+        self.ui.act_engine_stop.setEnabled(False)
 
     @pyqtSlot(str)
     def slot_handleNSM_OpenCallback(self, data):
@@ -1205,9 +1207,11 @@ class CarlaMainW(QMainWindow):
     def slot_engineStart(self):
         self.startEngine()
         check = Carla.host.is_engine_running()
-        self.ui.act_file_open.setEnabled(check)
         self.ui.act_engine_start.setEnabled(not check)
         self.ui.act_engine_stop.setEnabled(check)
+
+        if self.fSessionManagerName != "Non Session Manager":
+            self.ui.act_file_open.setEnabled(check)
 
         if check:
             self.fInfoText = "Engine running | SampleRate: %g | BufferSize: %i" % (self.fSampleRate, self.fBufferSize)
@@ -1219,9 +1223,11 @@ class CarlaMainW(QMainWindow):
     def slot_engineStop(self):
         self.stopEngine()
         check = Carla.host.is_engine_running()
-        self.ui.act_file_open.setEnabled(check)
         self.ui.act_engine_start.setEnabled(not check)
         self.ui.act_engine_stop.setEnabled(check)
+
+        if self.fSessionManagerName != "Non Session Manager":
+            self.ui.act_file_open.setEnabled(check)
 
         if not check:
             self.fInfoText = ""
