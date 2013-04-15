@@ -354,7 +354,8 @@ void nekofilter_ui_show(
   {
     if (nekofilter_ptr->ui == NULL)
       nekofilter_ptr->ui = nekoui_instantiate(nekofilter_ptr->host);
-    nekoui_show(nekofilter_ptr->ui);
+    if (nekofilter_ptr->ui != NULL)
+      nekoui_show(nekofilter_ptr->ui);
   }
   else if (nekofilter_ptr->ui != NULL)
     nekoui_hide(nekofilter_ptr->ui);
