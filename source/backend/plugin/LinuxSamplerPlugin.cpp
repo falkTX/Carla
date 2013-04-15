@@ -193,8 +193,11 @@ public:
         kData->singleMutex.lock();
         kData->masterMutex.lock();
 
-        if (kData->active/*Before*/)
-            fAudioOutputDevice->Stop();
+        if (kData->active)
+        {
+            deactivate();
+            kData->active = false;
+        }
 
         if (fEngine != nullptr)
         {

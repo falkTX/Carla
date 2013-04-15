@@ -83,6 +83,12 @@ public:
         kData->singleMutex.lock();
         kData->masterMutex.lock();
 
+        if (kData->active)
+        {
+            deactivate();
+            kData->active = false;
+        }
+
         delete_fluid_synth(fSynth);
         delete_fluid_settings(fSettings);
 
