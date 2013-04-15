@@ -29,6 +29,7 @@
 #endif
 
 #include <QtCore/QSettings>
+#include <QtCore/QThread>
 
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 # include <QtWidgets/QApplication>
@@ -36,11 +37,124 @@
 # include <QtGui/QApplication>
 #endif
 
+#include <fcntl.h>
+
 using CarlaBackend::CarlaEngine;
 using CarlaBackend::CarlaPlugin;
 using CarlaBackend::CallbackFunc;
 using CarlaBackend::EngineOptions;
 using CarlaBackend::EngineTimeInfo;
+
+#ifdef NDEBUG
+// -------------------------------------------------------------------------------------------------------------------
+// Log thread
+
+class LogThread : public QThread
+{
+public:
+    LogThread()
+        : fStop(false),
+          fCallback(nullptr),
+          fCallbackPtr(nullptr)
+    {
+        pipe(fPipe);
+
+        fflush(stdout);
+        fflush(stderr);
+
+        //pipefd[1] = ::dup(STDOUT_FILENO);
+        //pipefd[1] = ::dup(STDERR_FILENO);
+        dup2(fPipe[1], STDOUT_FILENO);
+        dup2(fPipe[1], STDERR_FILENO);
+
+        fcntl(fPipe[0], F_SETFL, O_NONBLOCK);
+    }
+
+    ~LogThread()
+    {
+        fflush(stdout);
+        fflush(stderr);
+
+        close(fPipe[0]);
+        close(fPipe[1]);
+    }
+
+    void ready(CallbackFunc callback, void* callbackPtr)
+    {
+        CARLA_ASSERT(callback != nullptr);
+
+        fCallback    = callback;
+        fCallbackPtr = callbackPtr;
+
+        start();
+    }
+
+    void stop()
+    {
+        fStop = true;
+
+        if (isRunning())
+            wait();
+    }
+
+protected:
+    void run()
+    {
+        if (fCallback == nullptr)
+            return;
+
+        while (! fStop)
+        {
+            int i, r, lastRead;
+
+            static char bufTemp[1024+1] = { '\0' };
+            static char bufRead[1024+1];
+            static char bufSend[2048+1];
+
+            while ((r = read(fPipe[0], bufRead, sizeof(char)*1024)) > 0)
+            {
+                bufRead[r] = '\0';
+                lastRead = 0;
+
+                for (i=0; i < r; ++i)
+                {
+                    CARLA_ASSERT(bufRead[i] != '\0');
+
+                    if (bufRead[i] == '\n')
+                    {
+                        std::strcpy(bufSend, bufTemp);
+                        std::strncat(bufSend, bufRead+lastRead, i-lastRead);
+                        bufSend[std::strlen(bufTemp)+i-lastRead] = '\0';
+
+                        lastRead = i;
+                        bufTemp[0] = '\0';
+
+                        fCallback(fCallbackPtr, CarlaBackend::CALLBACK_DEBUG, 0, 0, 0, 0.0f, bufSend);
+                    }
+                }
+
+                CARLA_ASSERT(i == r);
+                CARLA_ASSERT(lastRead < r);
+
+                if (lastRead > 0 && lastRead < r-1)
+                {
+                    std::strncpy(bufTemp, bufRead+lastRead, r-lastRead);
+                    bufTemp[r-lastRead] = '\0';
+                }
+            }
+
+            carla_msleep(20);
+        }
+    }
+
+private:
+    int  fPipe[2];
+    bool fStop;
+
+    CallbackFunc fCallback;
+    void*        fCallbackPtr;
+};
+#endif
 
 // -------------------------------------------------------------------------------------------------------------------
 // Single, standalone engine
@@ -55,6 +169,10 @@ struct CarlaBackendStandalone {
 
     QApplication* app;
     bool needsInit;
+
+#ifdef NDEBUG
+    LogThread logThread;
+#endif
 
     CarlaBackendStandalone()
         : callback(nullptr),
@@ -90,6 +208,10 @@ struct CarlaBackendStandalone {
     ~CarlaBackendStandalone()
     {
         CARLA_ASSERT(engine == nullptr);
+
+#ifdef NDEBUG
+        logThread.stop();
+#endif
     }
 
     void init()
@@ -345,6 +467,16 @@ bool carla_engine_init(const char* driverName, const char* clientName)
     CARLA_ASSERT(driverName != nullptr);
     CARLA_ASSERT(clientName != nullptr);
 
+#ifndef NDEBUG
+    static bool showWarning = true;
+
+    if (showWarning && standalone.callback != nullptr)
+    {
+        standalone.callback(standalone.callbackPtr, CarlaBackend::CALLBACK_DEBUG, 0, 0, 0, 0.0f, "Debug builds don't use this, check the console instead");
+        showWarning = false;
+    }
+#endif
+
     if (standalone.engine != nullptr)
     {
         standalone.lastError = "Engine is already running";
@@ -484,6 +616,10 @@ void carla_set_engine_callback(CarlaCallbackFunc func, void* ptr)
 
     standalone.callback    = func;
     standalone.callbackPtr = ptr;
+
+#ifdef NDEBUG
+    standalone.logThread.ready(func, ptr);
+#endif
 
     if (standalone.engine != nullptr)
         standalone.engine->setCallback(func, ptr);

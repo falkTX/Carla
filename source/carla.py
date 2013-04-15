@@ -22,7 +22,7 @@
 from time import sleep
 from PyQt4.QtCore import Qt, QModelIndex, QPointF, QSize
 from PyQt4.QtGui import QApplication, QDialogButtonBox, QFileSystemModel, QLabel, QMainWindow, QResizeEvent
-from PyQt4.QtGui import QImage, QPrinter, QPrintDialog
+from PyQt4.QtGui import QImage, QPalette, QPrinter, QPrintDialog, QSyntaxHighlighter
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom Stuff)
@@ -72,6 +72,24 @@ CARLA_DEFAULT_DISABLE_CHECKS         = False
 # PatchCanvas defines
 CANVAS_ANTIALIASING_SMALL = 1
 CANVAS_EYECANDY_SMALL     = 1
+
+# ------------------------------------------------------------------------------------------------------------
+# Log Syntax Highlighter
+
+class LogSyntaxHighlighter(QSyntaxHighlighter):
+    def __init__(self, parent):
+        QSyntaxHighlighter.__init__(self, parent)
+
+        palette = parent.palette()
+
+        self.fColorDebug = palette.color(QPalette.Disabled, QPalette.WindowText)
+        self.fColorError = Qt.red
+
+    def highlightBlock(self, text):
+        if text.startswith("DEBUG:"):
+            self.setFormat(0, len(text), self.fColorDebug)
+        elif text.startswith("ERROR:"):
+            self.setFormat(0, len(text), self.fColorError)
 
 # ------------------------------------------------------------------------------------------------------------
 # Settings Dialog
@@ -577,6 +595,12 @@ class CarlaMainW(QMainWindow):
         self.fDirModel.setNameFilters(cString(Carla.host.get_supported_file_types()).split(";"))
         self.fDirModel.setRootPath(HOME)
 
+        if not WINDOWS:
+            self.fSyntaxLog = LogSyntaxHighlighter(self.ui.pte_log)
+            self.fSyntaxLog.setDocument(self.ui.pte_log.document())
+        #else:
+            #self.ui.tabMain.setT
+
         self.ui.fileTreeView.setModel(self.fDirModel)
         self.ui.fileTreeView.setRootIndex(self.fDirModel.index(HOME))
         self.ui.fileTreeView.setColumnHidden(1, True)
@@ -588,7 +612,7 @@ class CarlaMainW(QMainWindow):
         self.ui.act_engine_stop.setEnabled(False)
         self.ui.act_plugin_remove_all.setEnabled(False)
 
-        # FIXME: Qt4 needs this so it properly create & resize the canvas
+        # FIXME: Qt4 needs this so it properly creates & resizes the canvas
         self.ui.tabMain.setCurrentIndex(1)
         self.ui.tabMain.setCurrentIndex(0)
 
@@ -1343,7 +1367,7 @@ class CarlaMainW(QMainWindow):
 
     @pyqtSlot(int, int, int, float, str)
     def slot_handleDebugCallback(self, pluginId, value1, value2, value3, valueStr):
-        print("DEBUG :: %i, %i, %i, %f, \"%s\")" % (pluginId, value1, value2, value3, valueStr))
+        self.ui.pte_log.appendPlainText(valueStr.replace("[30;1m", "DEBUG: ").replace("[0m", "").replace("\n", ""))
 
     @pyqtSlot(int)
     def slot_handlePluginAddedCallback(self, pluginId):

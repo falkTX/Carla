@@ -129,10 +129,10 @@ void CarlaEngineThread::run()
                     }
                 }
 
+#ifndef BUILD_BRIDGE
                 // ---------------------------------------------------
                 // Update OSC control client peaks
 
-#ifndef BUILD_BRIDGE
                 if (oscRegisted)
                     kEngine->osc_send_control_set_peaks(i);
 #endif

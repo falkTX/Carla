@@ -543,6 +543,11 @@ bool CarlaEngine::init(const char* const clientName)
     carla_debug("CarlaEngine::init(\"%s\")", clientName);
     CARLA_ASSERT(kData->plugins == nullptr);
 
+#ifndef BUILD_BRIDGE
+    CARLA_ASSERT(kData->rack.in  == nullptr);
+    CARLA_ASSERT(kData->rack.out == nullptr);
+#endif
+
     fName = clientName;
     fName.toBasic();
 
@@ -570,7 +575,6 @@ bool CarlaEngine::init(const char* const clientName)
     }
 #endif
 
-    //kData->pluginsPool.resize(maxPluginNumber, 999);
     kData->plugins = new EnginePluginData[kData->maxPluginNumber];
 
     kData->osc.init(clientName);
@@ -589,9 +593,6 @@ bool CarlaEngine::init(const char* const clientName)
     kData->nextAction.ready();
     kData->thread.startNow();
 
-    //if (type() == kEngineTypePlugin)
-    //    kData->thread.waitForStarted();
-
     return true;
 }
 
@@ -600,8 +601,8 @@ bool CarlaEngine::close()
     carla_debug("CarlaEngine::close()");
     CARLA_ASSERT(kData->plugins != nullptr);
 
-    kData->nextAction.ready();
     kData->thread.stopNow();
+    kData->nextAction.ready();
 
 #ifndef BUILD_BRIDGE
     osc_send_control_exit();
@@ -614,7 +615,6 @@ bool CarlaEngine::close()
     kData->curPluginCount = 0;
     kData->maxPluginNumber = 0;
 
-    //kData->plugins.clear();
     if (kData->plugins != nullptr)
     {
         delete[] kData->plugins;
@@ -643,7 +643,6 @@ bool CarlaEngine::close()
 void CarlaEngine::idle()
 {
     CARLA_ASSERT(kData->plugins != nullptr);
-    //CARLA_ASSERT(isRunning());
 
     for (unsigned int i=0; i < kData->curPluginCount; ++i)
     {
@@ -653,9 +652,6 @@ void CarlaEngine::idle()
             plugin->idleGui();
     }
 }
-
-// -----------------------------------------------------------------------
-// Virtual, per-engine type calls
 
 CarlaEngineClient* CarlaEngine::addClient(CarlaPlugin* const)
 {
@@ -716,7 +712,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
         bridgeBinary = (const char*)fOptions.bridge_native;
 #endif
 
-    if (fOptions.preferPluginBridges && bridgeBinary != nullptr)
+    if (bridgeBinary != nullptr && (btype != BINARY_NATIVE || fOptions.preferPluginBridges))
     {
         plugin = CarlaPlugin::newBridge(init, btype, ptype, bridgeBinary);
     }
@@ -779,9 +775,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
 
     kData->curPluginCount += 1;
 
-    // FIXME
-    callback(CALLBACK_PLUGIN_ADDED, id, 0, 0, 0.0f, nullptr);
-
+    callback(CALLBACK_PLUGIN_ADDED, id, 0, 0, 0.0f, plugin->name());
     return true;
 }
 
@@ -800,52 +794,48 @@ bool CarlaEngine::removePlugin(const unsigned int id)
 
     CarlaPlugin* const plugin = kData->plugins[id].plugin;
 
-    CARLA_ASSERT(plugin != nullptr);
-
-    if (plugin != nullptr)
+    if (plugin == nullptr)
     {
-        CARLA_ASSERT(plugin->id() == id);
-
-        kData->thread.stopNow();
-
-        kData->nextAction.pluginId = id;
-        kData->nextAction.opcode   = EnginePostActionRemovePlugin;
-
-        kData->nextAction.mutex.lock();
-
-        if (isRunning())
-        {
-            carla_stderr("CarlaEngine::removePlugin(%i) - remove blocking START", id);
-            // block wait for unlock on proccessing side
-            kData->nextAction.mutex.lock();
-            carla_stderr("CarlaEngine::removePlugin(%i) - remove blocking DONE", id);
-        }
-        else
-        {
-            doPluginRemove(kData, false);
-        }
-
-#ifndef BUILD_BRIDGE
-        if (isOscControlRegistered())
-            osc_send_control_remove_plugin(id);
-#endif
-
-        delete plugin;
-
-        kData->nextAction.mutex.unlock();
-
-        if (isRunning() && ! kData->aboutToClose)
-            kData->thread.startNow();
-
-        // FIXME
-        callback(CALLBACK_PLUGIN_REMOVED, id, 0, 0, 0.0f, nullptr);
-
-        return true;
+        carla_stderr("CarlaEngine::removePlugin(%i) - could not find plugin", id);
+        setLastError("Could not find plugin to remove");
+        return false;
     }
 
-    carla_stderr("CarlaEngine::removePlugin(%i) - could not find plugin", id);
-    setLastError("Could not find plugin to remove");
-    return false;
+    CARLA_ASSERT(plugin->id() == id);
+
+    kData->thread.stopNow();
+
+    kData->nextAction.pluginId = id;
+    kData->nextAction.opcode   = EnginePostActionRemovePlugin;
+
+    kData->nextAction.mutex.lock();
+
+    if (isRunning())
+    {
+        carla_stderr("CarlaEngine::removePlugin(%i) - remove blocking START", id);
+        // block wait for unlock on proccessing side
+        kData->nextAction.mutex.lock();
+        carla_stderr("CarlaEngine::removePlugin(%i) - remove blocking DONE", id);
+    }
+    else
+    {
+        doPluginRemove(kData, false);
+    }
+
+#ifndef BUILD_BRIDGE
+    if (isOscControlRegistered())
+        osc_send_control_remove_plugin(id);
+#endif
+
+    delete plugin;
+
+    kData->nextAction.mutex.unlock();
+
+    if (isRunning() && ! kData->aboutToClose)
+        kData->thread.startNow();
+
+    callback(CALLBACK_PLUGIN_REMOVED, id, 0, 0, 0.0f, nullptr);
+    return true;
 }
 
 void CarlaEngine::removeAllPlugins()

@@ -1014,19 +1014,19 @@ protected:
 
                             engineEvent->ctrl.type  = kEngineControlEventTypeMidiBank;
                             engineEvent->ctrl.param = midiBank;
-                            engineEvent->ctrl.value = 0.0;
+                            engineEvent->ctrl.value = 0.0f;
                         }
                         else if (midiControl == MIDI_CONTROL_ALL_SOUND_OFF)
                         {
                             engineEvent->ctrl.type  = kEngineControlEventTypeAllSoundOff;
                             engineEvent->ctrl.param = 0;
-                            engineEvent->ctrl.value = 0.0;
+                            engineEvent->ctrl.value = 0.0f;
                         }
                         else if (midiControl == MIDI_CONTROL_ALL_NOTES_OFF)
                         {
                             engineEvent->ctrl.type  = kEngineControlEventTypeAllNotesOff;
                             engineEvent->ctrl.param = 0;
-                            engineEvent->ctrl.value = 0.0;
+                            engineEvent->ctrl.value = 0.0f;
                         }
                         else
                         {
@@ -1034,7 +1034,7 @@ protected:
 
                             engineEvent->ctrl.type  = kEngineControlEventTypeParameter;
                             engineEvent->ctrl.param = midiControl;
-                            engineEvent->ctrl.value = double(midiValue)/127.0;
+                            engineEvent->ctrl.value = float(midiValue)/127.0f;
                         }
                     }
                     else if (MIDI_IS_STATUS_PROGRAM_CHANGE(midiStatus))
@@ -1044,7 +1044,7 @@ protected:
 
                         engineEvent->ctrl.type  = kEngineControlEventTypeMidiProgram;
                         engineEvent->ctrl.param = midiProgram;
-                        engineEvent->ctrl.value = 0.0;
+                        engineEvent->ctrl.value = 0.0f;
                     }
                     else if (jackEvent.size <= 4)
                     {
@@ -1089,7 +1089,7 @@ protected:
                             // FIXME?
                             ctrlEvent->type  = kEngineControlEventTypeMidiBank;
                             ctrlEvent->param = ctrlEvent->value;
-                            ctrlEvent->value = 0.0;
+                            ctrlEvent->value = 0.0f;
                         }
 
                         switch (ctrlEvent->type)
@@ -1099,7 +1099,7 @@ protected:
                         case kEngineControlEventTypeParameter:
                             data[0] = MIDI_STATUS_CONTROL_CHANGE + engineEvent->channel;
                             data[1] = static_cast<uint8_t>(ctrlEvent->param);
-                            data[2] = uint8_t(ctrlEvent->value * 127.0);
+                            data[2] = uint8_t(ctrlEvent->value * 127.0f);
                             size    = 3;
                             break;
                         case kEngineControlEventTypeMidiBank:
