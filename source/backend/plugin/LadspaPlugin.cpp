@@ -1392,13 +1392,13 @@ public:
             fRdfDescriptor = ladspa_rdf_dup(rdfDescriptor);
 
         if (name != nullptr)
-            fName = kData->engine->getNewUniquePluginName(name);
+            fName = kData->engine->getUniquePluginName(name);
         else if (fRdfDescriptor != nullptr && fRdfDescriptor->Title != nullptr)
-            fName = kData->engine->getNewUniquePluginName(fRdfDescriptor->Title);
+            fName = kData->engine->getUniquePluginName(fRdfDescriptor->Title);
         else if (fDescriptor->Name != nullptr)
-            fName = kData->engine->getNewUniquePluginName(fDescriptor->Name);
+            fName = kData->engine->getUniquePluginName(fDescriptor->Name);
         else
-            fName = kData->engine->getNewUniquePluginName(fDescriptor->Label);
+            fName = kData->engine->getUniquePluginName(fDescriptor->Label);
 
         fFilename = filename;
 

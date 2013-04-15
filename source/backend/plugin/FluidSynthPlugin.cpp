@@ -1447,9 +1447,9 @@ public:
         fLabel    = label;
 
         if (name != nullptr)
-            fName = kData->engine->getNewUniquePluginName(name);
+            fName = kData->engine->getUniquePluginName(name);
         else
-            fName = kData->engine->getNewUniquePluginName(label);
+            fName = kData->engine->getUniquePluginName(label);
 
         // ---------------------------------------------------------------
         // register client

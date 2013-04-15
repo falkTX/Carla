@@ -708,7 +708,7 @@ class Host(object):
         self.lib.carla_remove_all_plugins()
 
     def rename_plugin(self, pluginId, newName):
-        return self.lib.carla_rename_plugin(pluginId, newName)
+        return self.lib.carla_rename_plugin(pluginId, newName.encode("utf-8"))
 
     def clone_plugin(self, pluginId):
         return self.lib.carla_clone_plugin(pluginId)

@@ -2049,11 +2049,11 @@ public:
         // get info
 
         if (name != nullptr)
-            fName = kData->engine->getNewUniquePluginName(name);
+            fName = kData->engine->getUniquePluginName(name);
         else if (fDescriptor->name != nullptr)
-            fName = kData->engine->getNewUniquePluginName(fDescriptor->name);
+            fName = kData->engine->getUniquePluginName(fDescriptor->name);
         else
-            fName = kData->engine->getNewUniquePluginName(label);
+            fName = kData->engine->getUniquePluginName(label);
 
         // ---------------------------------------------------------------
         // register client

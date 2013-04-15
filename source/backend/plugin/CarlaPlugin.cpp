@@ -235,6 +235,11 @@ CarlaEngine* CarlaPluginGetEngine(CarlaPlugin* const plugin)
     return CarlaPluginProtectedData::getEngine(plugin);
 }
 
+CarlaEngineClient* CarlaPluginGetEngineClient(CarlaPlugin* const plugin)
+{
+    return CarlaPluginProtectedData::getEngineClient(plugin);
+}
+
 CarlaEngineAudioPort* CarlaPluginGetAudioInPort(CarlaPlugin* const plugin, const uint32_t index)
 {
     return CarlaPluginProtectedData::getAudioInPort(plugin, index);
@@ -977,9 +982,14 @@ bool CarlaPlugin::loadStateFromFile(const char* const filename)
 // -------------------------------------------------------------------
 // Set data (internal stuff)
 
-void CarlaPlugin::setId(const unsigned int id)
+void CarlaPlugin::setId(const unsigned int newId)
 {
-    fId = id;
+    fId = newId;
+}
+
+void CarlaPlugin::setName(const char* const newName)
+{
+    fName = newName;
 }
 
 void CarlaPlugin::setOption(const unsigned int option, const bool yesNo)

@@ -35,6 +35,7 @@
 
 typedef const char*    (*jacksym_get_version_string)();
 typedef jack_client_t* (*jacksym_client_open)(const char*, jack_options_t, jack_status_t*, ...);
+typedef const char*    (*jacksym_client_rename)(jack_client_t* client, const char* new_name);
 
 typedef int   (*jacksym_client_close)(jack_client_t*);
 typedef int   (*jacksym_client_name_size)();
@@ -98,6 +99,7 @@ struct JackBridge {
 
     jacksym_get_version_string get_version_string_ptr;
     jacksym_client_open client_open_ptr;
+    jacksym_client_rename client_rename_ptr;
     jacksym_client_close client_close_ptr;
     jacksym_client_name_size client_name_size_ptr;
     jacksym_get_client_name get_client_name_ptr;
@@ -150,6 +152,7 @@ struct JackBridge {
         : lib(nullptr),
           get_version_string_ptr(nullptr),
           client_open_ptr(nullptr),
+          client_rename_ptr(nullptr),
           client_close_ptr(nullptr),
           client_name_size_ptr(nullptr),
           get_client_name_ptr(nullptr),
@@ -197,19 +200,18 @@ struct JackBridge {
           transport_query_ptr(nullptr)
     {
 #if defined(CARLA_OS_MAC)
-        lib = lib_open("libjack.dylib");
-        fprintf(stderr, "load JACK DLL FOR MAC\n");
+        const char* const filename = "libjack.dylib";
 #elif defined(CARLA_OS_WIN) && ! defined(__WINE__)
-        lib = lib_open("libjack.dll");
-        fprintf(stderr, "load JACK DLL FOR WINDOWS\n");
+        const char* const filename = "libjack.dll";
 #else
-        lib = lib_open("libjack.so");
-        fprintf(stderr, "load JACK DLL FOR LINUX\n");
+        const char* const filename = "libjack.so.0";
 #endif
+
+        lib = lib_open(filename);
 
         if (lib == nullptr)
         {
-            fprintf(stderr, "Failed to load JACK DLL\n");
+            fprintf(stderr, "Failed to load JACK DLL, reason:\n%s\n", lib_error(filename));
             return;
         }
 
@@ -218,6 +220,7 @@ struct JackBridge {
 
         LIB_SYMBOL(get_version_string)
         LIB_SYMBOL(client_open)
+        LIB_SYMBOL(client_rename)
         LIB_SYMBOL(client_close)
         LIB_SYMBOL(client_name_size)
         LIB_SYMBOL(get_client_name)
@@ -292,6 +295,13 @@ jack_client_t* jackbridge_client_open(const char* client_name, jack_options_t op
 {
     if (bridge.client_open_ptr != nullptr)
         return bridge.client_open_ptr(client_name, options, status);
+    return nullptr;
+}
+
+const char* jackbridge_client_rename(jack_client_t* client, const char* new_name)
+{
+    if (bridge.client_rename_ptr != nullptr)
+        return bridge.client_rename_ptr(client, new_name);
     return nullptr;
 }
 

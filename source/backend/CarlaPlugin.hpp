@@ -422,11 +422,18 @@ public:
     // Set data (internal stuff)
 
     /*!
-     * Set the plugin's id to \a id.
+     * Set the plugin's id to \a newId.
      *
      * \see id()
      */
-    void setId(const unsigned int id);
+    void setId(const unsigned int newId);
+
+    /*!
+     * Set the plugin's name to \a newName.
+     *
+     * \see name()
+     */
+    void setName(const char* const newName);
 
     /*!
      * Set a plugin's option.

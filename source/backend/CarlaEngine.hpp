@@ -730,7 +730,7 @@ public:
      * Rename plugin with id \a id to \a newName.\n
      * Returns the new name, or nullptr if the operation failed.
      */
-    const char* renamePlugin(const unsigned int id, const char* const newName);
+    virtual const char* renamePlugin(const unsigned int id, const char* const newName);
 
     /*!
      * Clone plugin with id \a id.
@@ -764,7 +764,7 @@ public:
      * Get a unique plugin name within the engine.\n
      * Returned variable must NOT be free'd.
      */
-    const char* getNewUniquePluginName(const char* const name);
+    const char* getUniquePluginName(const char* const name);
 
     // -------------------------------------------------------------------
     // Project management

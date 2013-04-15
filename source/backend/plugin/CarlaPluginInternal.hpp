@@ -670,6 +670,11 @@ struct CarlaPluginProtectedData {
         return plugin->kData->engine;
     }
 
+    static CarlaEngineClient* getEngineClient(CarlaPlugin* const plugin)
+    {
+        return plugin->kData->client;
+    }
+
     static CarlaEngineAudioPort* getAudioInPort(CarlaPlugin* const plugin, const uint32_t index)
     {
         return plugin->kData->audioIn.ports[index].port;

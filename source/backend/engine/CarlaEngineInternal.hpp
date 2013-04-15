@@ -116,7 +116,8 @@ const unsigned short RACK_EVENT_COUNT     = 512;
 
 enum EnginePostAction {
     EnginePostActionNull,
-    EnginePostActionRemovePlugin
+    EnginePostActionRemovePlugin,
+    EnginePostActionSwitchPlugins
 };
 
 struct EnginePluginData {
@@ -151,11 +152,18 @@ struct CarlaEngineProtectedData {
     struct NextAction {
         EnginePostAction opcode;
         unsigned int     pluginId;
+        unsigned int     value;
         CarlaMutex       mutex;
 
         NextAction()
             : opcode(EnginePostActionNull),
-              pluginId(0) {}
+              pluginId(0),
+              value(0) {}
+
+        ~NextAction()
+        {
+            CARLA_ASSERT(opcode == EnginePostActionNull);
+        }
 
         void ready()
         {

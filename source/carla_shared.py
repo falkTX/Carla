@@ -26,7 +26,7 @@ from copy import deepcopy
 from subprocess import Popen, PIPE
 from PyQt4.QtCore import pyqtSlot, qWarning, Qt, QByteArray, QSettings, QThread, QTimer, SIGNAL, SLOT
 from PyQt4.QtGui import QColor, QCursor, QDialog, QIcon, QInputDialog, QFileDialog, QFontMetrics, QFrame, QMenu
-from PyQt4.QtGui import QMessageBox, QPainter, QPainterPath, QTableWidgetItem, QVBoxLayout, QWidget
+from PyQt4.QtGui import QLineEdit, QMessageBox, QPainter, QPainterPath, QTableWidgetItem, QVBoxLayout, QWidget
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -2161,6 +2161,7 @@ class PluginWidget(QFrame):
 
         menu.addSeparator()
         actClone  = menu.addAction(self.tr("Clone"))
+        actRename = menu.addAction(self.tr("Rename..."))
         actRemove = menu.addAction(self.tr("Remove"))
 
         actSel = menu.exec_(QCursor.pos())
@@ -2176,6 +2177,24 @@ class PluginWidget(QFrame):
             self.ui.b_edit.click()
         elif actSel == actClone:
             if not Carla.host.clone_plugin(self.fPluginId):
+                CustomMessageBox(self, QMessageBox.Warning, self.tr("Error"), self.tr("Operation failed"),
+                                       cString(Carla.host.get_last_error()), QMessageBox.Ok, QMessageBox.Ok)
+
+        elif actSel == actRename:
+            oldName    = self.fPluginInfo['name']
+            newNameTry = QInputDialog.getText(self, self.tr("Rename Plugin"), self.tr("New plugin name:"), QLineEdit.Normal, oldName)
+
+            if not (newNameTry[1] and newNameTry[0] and oldName != newNameTry[0]):
+                return
+
+            newName = newNameTry[0]
+
+            if Carla.host.rename_plugin(self.fPluginId, newName):
+                self.fPluginInfo['name'] = newName
+                self.ui.edit_dialog.fPluginInfo["name"] = newName
+                self.ui.edit_dialog.reloadInfo()
+                self.ui.label_name.setText(newName)
+            else:
                 CustomMessageBox(self, QMessageBox.Warning, self.tr("Error"), self.tr("Operation failed"),
                                        cString(Carla.host.get_last_error()), QMessageBox.Ok, QMessageBox.Ok)
 

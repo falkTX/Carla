@@ -164,6 +164,7 @@ typedef void (*JackShutdownCallback)(void *arg);
 
 CARLA_EXPORT const char*    jackbridge_get_version_string();
 CARLA_EXPORT jack_client_t* jackbridge_client_open(const char* client_name, jack_options_t options, jack_status_t* status, ...);
+CARLA_EXPORT const char*    jackbridge_client_rename(jack_client_t* client, const char* new_name);
 
 CARLA_EXPORT bool  jackbridge_client_close(jack_client_t* client);
 CARLA_EXPORT int   jackbridge_client_name_size();

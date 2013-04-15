@@ -2158,7 +2158,7 @@ public:
 
         if (name != nullptr)
         {
-            fName = kData->engine->getNewUniquePluginName(name);
+            fName = kData->engine->getUniquePluginName(name);
         }
         else
         {
@@ -2167,12 +2167,12 @@ public:
 
             if (strBuf[0] != '\0')
             {
-                fName = kData->engine->getNewUniquePluginName(strBuf);
+                fName = kData->engine->getUniquePluginName(strBuf);
             }
             else
             {
                 const char* const label = std::strrchr(filename, OS_SEP)+1;
-                fName = kData->engine->getNewUniquePluginName(label);
+                fName = kData->engine->getUniquePluginName(label);
             }
         }
 

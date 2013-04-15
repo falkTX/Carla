@@ -1011,9 +1011,9 @@ public:
         fFilename = filename;
 
         if (name != nullptr)
-            fName = kData->engine->getNewUniquePluginName(name);
+            fName = kData->engine->getUniquePluginName(name);
         else
-            fName = kData->engine->getNewUniquePluginName((const char*)fRealName);
+            fName = kData->engine->getUniquePluginName((const char*)fRealName);
 
         // ---------------------------------------------------------------
         // Register client

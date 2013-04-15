@@ -449,7 +449,7 @@ public:
             fInfo.copyright = copyright;
 
             if (fName.isEmpty())
-                fName = kData->engine->getNewUniquePluginName(name);
+                fName = kData->engine->getUniquePluginName(name);
 
             break;
         }
@@ -1140,7 +1140,7 @@ public:
         // set info
 
         if (name != nullptr)
-            fName = kData->engine->getNewUniquePluginName(name);
+            fName = kData->engine->getUniquePluginName(name);
 
         fFilename = filename;
 

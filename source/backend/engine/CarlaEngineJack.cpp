@@ -38,6 +38,7 @@ CARLA_BACKEND_START_NAMESPACE
 // Plugin Helpers, defined in CarlaPlugin.cpp
 
 extern CarlaEngine*          CarlaPluginGetEngine(CarlaPlugin* const plugin);
+extern CarlaEngineClient*    CarlaPluginGetEngineClient(CarlaPlugin* const plugin);
 extern CarlaEngineAudioPort* CarlaPluginGetAudioInPort(CarlaPlugin* const plugin, uint32_t index);
 extern CarlaEngineAudioPort* CarlaPluginGetAudioOutPort(CarlaPlugin* const plugin, uint32_t index);
 
@@ -485,6 +486,7 @@ private:
     jack_client_t* const kClient;
     const bool           kUseClient;
 
+    friend class CarlaEngineJack;
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineJackClient)
 };
 
@@ -735,6 +737,64 @@ public:
 #endif
 
         return new CarlaEngineJackClient(kEngineTypeJack, fOptions.processMode, client);
+    }
+
+    const char* renamePlugin(const unsigned int id, const char* const newName) override
+    {
+        CARLA_ASSERT(kData->curPluginCount > 0);
+        CARLA_ASSERT(id < kData->curPluginCount);
+        CARLA_ASSERT(kData->plugins != nullptr);
+        CARLA_ASSERT(newName != nullptr);
+
+        if (kData->plugins == nullptr)
+        {
+            setLastError("Critical error: no plugins are currently loaded!");
+            return nullptr;
+        }
+
+        CarlaPlugin* const plugin = kData->plugins[id].plugin;
+
+        if (plugin == nullptr)
+        {
+            carla_stderr("CarlaEngine::clonePlugin(%i) - could not find plugin", id);
+            return nullptr;
+        }
+
+        CARLA_ASSERT(plugin->id() == id);
+
+        const char* name = getUniquePluginName(newName);
+
+        // JACK client rename
+        if (fOptions.processMode == PROCESS_MODE_MULTIPLE_CLIENTS)
+        {
+            // not supported yet in the JACK API
+            if (bridge.client_rename_ptr != nullptr)
+            {
+                jack_client_t* const client = ((CarlaEngineJackClient*)CarlaPluginGetEngineClient(plugin))->kClient;
+                name = bridge.client_rename_ptr(client, name);
+            }
+            else
+            {
+                setLastError("Your current JACK version does not allow renaming of clients");
+                return nullptr;
+            }
+        }
+
+        if (name == nullptr)
+            return nullptr;
+
+        // Rename
+        plugin->setName(name);
+
+        if (fOptions.processMode == PROCESS_MODE_SINGLE_CLIENT)
+        {
+            // reload plugin to recreate its ports
+            const SaveState& saveState(plugin->getSaveState());
+            plugin->reload();
+            plugin->loadSaveState(saveState);
+        }
+
+        return name;
     }
 
 #ifndef BUILD_BRIDGE
