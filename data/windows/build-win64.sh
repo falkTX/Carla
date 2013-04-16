@@ -88,6 +88,7 @@ chmod +x Carla.exe
 # Cleanup
 make -C unzipfx-carla -f Makefile.win32 clean
 rm -f Carla.zip
+rm -f unzipfx-*/*.exe
 
 # Testing:
 echo "export WINEPREFIX=~/.winepy3_x64"
