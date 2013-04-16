@@ -41,7 +41,7 @@ void carla_register_all_plugins()
 #ifndef CARLA_OS_WIN
     carla_register_native_plugin_nekofilter();
 #endif
-    //carla_register_native_plugin_sunvoxfile(); // unfinished
+    carla_register_native_plugin_sunvoxfile(); // unfinished
 
     // Carla
     //carla_register_native_plugin_carla(); // unfinished
@@ -510,7 +510,7 @@ public:
         CARLA_ASSERT(type != nullptr);
         CARLA_ASSERT(key != nullptr);
         CARLA_ASSERT(value != nullptr);
-        carla_debug("DssiPlugin::setCustomData(%s, %s, %s, %s)", type, key, value, bool2str(sendGui));
+        carla_debug("NativePlugin::setCustomData(%s, %s, %s, %s)", type, key, value, bool2str(sendGui));
 
         if (type == nullptr)
             return carla_stderr2("NativePlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is null", type, key, value, bool2str(sendGui));

@@ -33,12 +33,6 @@ public:
     {
         sv_open_slot(fSlot);
         sv_set_autostop(fSlot, 0);
-
-        // TESTING
-        carla_stdout("sv_load");
-        sv_load(fSlot, "/home/falktx/bin/sunvox/examples/8bit_tales.sunvox");
-        carla_stdout("sv_load - FINISHED");
-        sv_play_from_beginning(fSlot);
     }
 
     ~SunVoxFilePlugin() override
@@ -58,13 +52,14 @@ protected:
         if (std::strcmp(key, "file") != 0)
             return;
 
-        //sv_load(fSlot, value);
+        sv_load(fSlot, value);
+        sv_play_from_beginning(fSlot);
     }
 
     // -------------------------------------------------------------------
     // Plugin process calls
 
-    void process(float** inBuf, float** outBuf, const uint32_t frames, const uint32_t, const MidiEvent* const) override
+    void process(float**, float** outBuf, const uint32_t frames, const uint32_t, const MidiEvent* const) override
     {
         const TimeInfo* const timePos = getTimeInfo();
 
@@ -78,13 +73,10 @@ protected:
                 svBuffer[j++] = outBuf[1][i];
             }
 
-            //double tickFrame = double(timePos->frame)*sTicksPerFrame;
-            //int outTime = (timePos->usecs - ) & 0xFFFFFFFF;
-            unsigned int tick = 0; sv_get_ticks()& 0xFFFFFFFF;
+            unsigned int ticks = sv_get_ticks();
+            ticks += timePos->frame * sTicksPerFrame;
 
-            sv_audio_callback(svBuffer, frames, 0, tick);
-
-            printf("Line counter: %d, ticks: %u\n", sv_get_current_line(fSlot), tick);
+            sv_audio_callback(svBuffer, frames, 0, ticks+10000);
         }
         else
         {
