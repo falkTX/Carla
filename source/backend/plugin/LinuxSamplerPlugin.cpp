@@ -1100,6 +1100,12 @@ CarlaPlugin* LinuxSamplerPlugin::newLinuxSampler(const Initializer& init, const 
 {
     carla_debug("LinuxSamplerPlugin::newLinuxSampler({%p, \"%s\", \"%s\", \"%s\"}, %s, %s)", init.engine, init.filename, init.name, init.label, bool2str(isGIG), bool2str(use16Outs));
 
+    if (init.engine->getProccessMode() == PROCESS_MODE_CONTINUOUS_RACK && use16Outs)
+    {
+        init.engine->setLastError("Carla's rack mode can only work with Stereo modules, please choose the 2-channel only sample-library version");
+        return nullptr;
+    }
+
     LinuxSamplerPlugin* const plugin(new LinuxSamplerPlugin(init.engine, init.id, isGIG, use16Outs));
 
     if (! plugin->init(init.filename, init.name, init.label))

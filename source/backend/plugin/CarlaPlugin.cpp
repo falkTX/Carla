@@ -130,6 +130,12 @@ bool CarlaPluginProtectedData::libOpen(const char* const filename)
     return (lib != nullptr);
 }
 
+bool CarlaPluginProtectedData::uiLibOpen(const char* const filename)
+{
+    uiLib = sLibMap.open(filename);
+    return (uiLib != nullptr);
+}
+
 bool CarlaPluginProtectedData::libClose()
 {
     const bool ret = sLibMap.close(lib);
@@ -137,9 +143,21 @@ bool CarlaPluginProtectedData::libClose()
     return ret;
 }
 
+bool CarlaPluginProtectedData::uiLibClose()
+{
+    const bool ret = sLibMap.close(uiLib);
+    uiLib = nullptr;
+    return ret;
+}
+
 void* CarlaPluginProtectedData::libSymbol(const char* const symbol)
 {
     return lib_symbol(lib, symbol);
+}
+
+void* CarlaPluginProtectedData::uiLibSymbol(const char* const symbol)
+{
+    return lib_symbol(uiLib, symbol);
 }
 
 const char* CarlaPluginProtectedData::libError(const char* const filename)

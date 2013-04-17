@@ -392,6 +392,7 @@ struct CarlaPluginProtectedData {
     bool active;
     bool needsReset;
     void* lib;
+    void* uiLib;
 
     // misc
     int8_t       ctrlChannel;
@@ -522,6 +523,7 @@ struct CarlaPluginProtectedData {
           active(false),
           needsReset(false),
           lib(nullptr),
+          uiLib(nullptr),
           ctrlChannel(0),
           extraHints(0x0),
           latency(0),
@@ -539,6 +541,7 @@ struct CarlaPluginProtectedData {
         CARLA_ASSERT(! active);
         CARLA_ASSERT(! needsReset);
         CARLA_ASSERT(lib == nullptr);
+        CARLA_ASSERT(uiLib == nullptr);
         CARLA_ASSERT(latency == 0);
         CARLA_ASSERT(latencyBuffers == nullptr);
     }
@@ -652,8 +655,11 @@ struct CarlaPluginProtectedData {
     // Library functions, see CarlaPlugin.cpp
 
     bool libOpen(const char* const filename);
+    bool uiLibOpen(const char* const filename);
     bool libClose();
+    bool uiLibClose();
     void* libSymbol(const char* const symbol);
+    void* uiLibSymbol(const char* const symbol);
     const char* libError(const char* const filename);
 
     // -------------------------------------------------------------------

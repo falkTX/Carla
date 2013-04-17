@@ -433,7 +433,7 @@ public:
      *
      * \see name()
      */
-    void setName(const char* const newName);
+    virtual void setName(const char* const newName);
 
     /*!
      * Set a plugin's option.

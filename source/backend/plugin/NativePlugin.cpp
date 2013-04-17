@@ -173,7 +173,8 @@ public:
 
         carla_zeroStruct< ::MidiEvent>(fMidiEvents, MAX_MIDI_EVENTS*2);
 
-        fHost.handle = this;
+        fHost.handle  = this;
+        fHost.ui_name = nullptr;
         fHost.get_buffer_size        = carla_host_get_buffer_size;
         fHost.get_sample_rate        = carla_host_get_sample_rate;
         fHost.get_time_info          = carla_host_get_time_info;

@@ -136,6 +136,7 @@ typedef struct _TimeInfo {
 
 typedef struct _HostDescriptor {
     HostHandle handle;
+    const char* ui_name;
 
     uint32_t        (*get_buffer_size)(HostHandle handle);
     double          (*get_sample_rate)(HostHandle handle);

@@ -1107,7 +1107,7 @@ public:
 
     const void* getExtraStuff() override
     {
-        return (const char*)fBridgeBinary;
+        return fBridgeBinary.isNotEmpty() ? (const char*)fBridgeBinary : nullptr;
     }
 
     bool init(const char* const filename, const char* const name, const char* const label, const char* const bridgeBinary)
@@ -1445,6 +1445,13 @@ CarlaPlugin* CarlaPlugin::newBridge(const Initializer& init, BinaryType btype, P
 
     plugin->reload();
 
+    if (init.engine->getProccessMode() == PROCESS_MODE_CONTINUOUS_RACK && ! CarlaPluginProtectedData::canRunInRack(plugin))
+    {
+        init.engine->setLastError("Carla's rack mode can only work with Mono or Stereo Bridged plugins, sorry!");
+        delete plugin;
+        return nullptr;
+    }
+
     return plugin;
 #else
     init.engine->setLastError("Plugin bridge support not available");
@@ -1462,11 +1469,13 @@ CarlaPlugin* CarlaPlugin::newBridge(const Initializer& init, BinaryType btype, P
 int CarlaPluginSetOscBridgeInfo(CarlaPlugin* const plugin, const PluginBridgeInfoType type,
                                 const int argc, const lo_arg* const* const argv, const char* const types)
 {
+    CARLA_ASSERT(plugin != nullptr && (plugin->hints() & PLUGIN_IS_BRIDGE) != 0);
     return ((BridgePlugin*)plugin)->setOscPluginBridgeInfo(type, argc, argv, types);
 }
 
 BinaryType CarlaPluginGetBridgeBinaryType(CarlaPlugin* const plugin)
 {
+    CARLA_ASSERT(plugin != nullptr && (plugin->hints() & PLUGIN_IS_BRIDGE) != 0);
     return ((BridgePlugin*)plugin)->binaryType();
 }
 #endif
