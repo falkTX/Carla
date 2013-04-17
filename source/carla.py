@@ -65,13 +65,17 @@ CARLA_DEFAULT_MAX_PARAMETERS         = 200
 CARLA_DEFAULT_FORCE_STEREO           = False
 CARLA_DEFAULT_USE_DSSI_VST_CHUNKS    = False
 CARLA_DEFAULT_PREFER_PLUGIN_BRIDGES  = False
+CARLA_DEFAULT_UIS_ALWAYS_ON_TOP      = True
 CARLA_DEFAULT_PREFER_UI_BRIDGES      = True
 CARLA_DEFAULT_OSC_UI_TIMEOUT         = 4000
 CARLA_DEFAULT_DISABLE_CHECKS         = False
 
-# PatchCanvas defines
-CANVAS_ANTIALIASING_SMALL = 1
-CANVAS_EYECANDY_SMALL     = 1
+if WINDOWS:
+    CARLA_DEFAULT_AUDIO_DRIVER = "DirectSound"
+elif MACOS:
+    CARLA_DEFAULT_AUDIO_DRIVER = "CoreAudio"
+else:
+    CARLA_DEFAULT_AUDIO_DRIVER = "JACK"
 
 # ------------------------------------------------------------------------------------------------------------
 # Global Variables
@@ -182,9 +186,9 @@ class CarlaSettingsW(QDialog):
 
         self.ui.cb_canvas_hide_groups.setChecked(settings.value("Canvas/AutoHideGroups", False, type=bool))
         self.ui.cb_canvas_bezier_lines.setChecked(settings.value("Canvas/UseBezierLines", True, type=bool))
-        self.ui.cb_canvas_eyecandy.setCheckState(settings.value("Canvas/EyeCandy", CANVAS_EYECANDY_SMALL, type=int))
+        self.ui.cb_canvas_eyecandy.setCheckState(settings.value("Canvas/EyeCandy", patchcanvas.EYECANDY_SMALL, type=int))
         self.ui.cb_canvas_use_opengl.setChecked(settings.value("Canvas/UseOpenGL", False, type=bool))
-        self.ui.cb_canvas_render_aa.setCheckState(settings.value("Canvas/Antialiasing", CANVAS_ANTIALIASING_SMALL, type=int))
+        self.ui.cb_canvas_render_aa.setCheckState(settings.value("Canvas/Antialiasing", patchcanvas.ANTIALIASING_SMALL, type=int))
         self.ui.cb_canvas_render_hq_aa.setChecked(settings.value("Canvas/HighQualityAntialiasing", False, type=bool))
 
         canvasThemeName = settings.value("Canvas/Theme", patchcanvas.getDefaultThemeName(), type=str)
@@ -197,14 +201,8 @@ class CarlaSettingsW(QDialog):
 
         # --------------------------------------------
 
-        if WINDOWS:
-            defaultDriver = "DirectSound"
-        elif MACOS:
-            defaultDriver = "CoreAudio"
-        else:
-            defaultDriver = "JACK"
+        audioDriver = settings.value("Engine/AudioDriver", CARLA_DEFAULT_AUDIO_DRIVER, type=str)
 
-        audioDriver = settings.value("Engine/AudioDriver", defaultDriver, type=str)
         for i in range(self.ui.cb_engine_audio_driver.count()):
             if self.ui.cb_engine_audio_driver.itemText(i) == audioDriver:
                 self.ui.cb_engine_audio_driver.setCurrentIndex(i)
@@ -223,6 +221,7 @@ class CarlaSettingsW(QDialog):
             self.ui.sw_engine_process_mode.setCurrentIndex(1)
 
         self.ui.sb_engine_max_params.setValue(settings.value("Engine/MaxParameters", CARLA_DEFAULT_MAX_PARAMETERS, type=int))
+        self.ui.ch_engine_uis_always_on_top.setChecked(settings.value("Engine/UIsAlwaysOnTop", CARLA_DEFAULT_UIS_ALWAYS_ON_TOP, type=bool))
         self.ui.ch_engine_prefer_ui_bridges.setChecked(settings.value("Engine/PreferUiBridges", CARLA_DEFAULT_PREFER_UI_BRIDGES, type=bool))
         self.ui.sb_engine_oscgui_timeout.setValue(settings.value("Engine/OscUiTimeout", CARLA_DEFAULT_OSC_UI_TIMEOUT, type=int))
         self.ui.ch_engine_disable_checks.setChecked(settings.value("Engine/DisableChecks", CARLA_DEFAULT_DISABLE_CHECKS, type=bool))
@@ -295,14 +294,17 @@ class CarlaSettingsW(QDialog):
         # --------------------------------------------
 
         audioDriver = self.ui.cb_engine_audio_driver.currentText()
-        settings.setValue("Engine/AudioDriver", audioDriver)
 
-        if audioDriver == "JACK":
-            settings.setValue("Engine/ProcessMode", self.ui.cb_engine_process_mode_jack.currentIndex())
-        else:
-            settings.setValue("Engine/ProcessMode", self.ui.cb_engine_process_mode_other.currentIndex()+PROCESS_MODE_NON_JACK_PADDING)
+        if audioDriver:
+            settings.setValue("Engine/AudioDriver", audioDriver)
+
+            if audioDriver == "JACK":
+                settings.setValue("Engine/ProcessMode", self.ui.cb_engine_process_mode_jack.currentIndex())
+            else:
+                settings.setValue("Engine/ProcessMode", self.ui.cb_engine_process_mode_other.currentIndex()+PROCESS_MODE_NON_JACK_PADDING)
 
         settings.setValue("Engine/MaxParameters", self.ui.sb_engine_max_params.value())
+        settings.setValue("Engine/UIsAlwaysOnTop", self.ui.ch_engine_uis_always_on_top.isChecked())
         settings.setValue("Engine/PreferUiBridges", self.ui.ch_engine_prefer_ui_bridges.isChecked())
         settings.setValue("Engine/OscUiTimeout", self.ui.sb_engine_oscgui_timeout.value())
         settings.setValue("Engine/DisableChecks", self.ui.ch_engine_disable_checks.isChecked())
@@ -312,7 +314,6 @@ class CarlaSettingsW(QDialog):
 
         # --------------------------------------------
 
-        # FIXME - find a cleaner way to do this, *.items() ?
         ladspas = []
         dssis = []
         lv2s = []
@@ -370,6 +371,7 @@ class CarlaSettingsW(QDialog):
         elif self.ui.lw_page.currentRow() == TAB_INDEX_CARLA_ENGINE:
             self.ui.cb_engine_audio_driver.setCurrentIndex(0)
             self.ui.sb_engine_max_params.setValue(CARLA_DEFAULT_MAX_PARAMETERS)
+            self.ui.ch_engine_uis_always_on_top.setChecked(CARLA_DEFAULT_UIS_ALWAYS_ON_TOP)
             self.ui.ch_engine_prefer_ui_bridges.setChecked(CARLA_DEFAULT_PREFER_UI_BRIDGES)
             self.ui.sb_engine_oscgui_timeout.setValue(CARLA_DEFAULT_OSC_UI_TIMEOUT)
             self.ui.ch_engine_disable_checks.setChecked(CARLA_DEFAULT_DISABLE_CHECKS)
@@ -501,6 +503,7 @@ class CarlaSettingsW(QDialog):
             currentPath = ""
 
         newPath = QFileDialog.getExistingDirectory(self, self.tr("Add Path"), currentPath, QFileDialog.ShowDirsOnly)
+
         if newPath:
             if self.ui.tw_paths.currentIndex() == 0:
                 self.ui.lw_ladspa.currentItem().setText(newPath)
@@ -575,7 +578,7 @@ class CarlaMainW(QMainWindow):
         self.fSampleRate = 0.0
 
         self.fEngineStarted   = False
-        self.fFirstEngineInit = False
+        self.fFirstEngineInit = True
 
         self.fProjectFilename = None
         self.fProjectLoading  = False
@@ -676,6 +679,7 @@ class CarlaMainW(QMainWindow):
         self.connect(self.ui.act_engine_stop, SIGNAL("triggered()"), SLOT("slot_engineStop()"))
 
         self.connect(self.ui.act_plugin_add, SIGNAL("triggered()"), SLOT("slot_pluginAdd()"))
+        #self.connect(self.ui.act_plugin_refresh, SIGNAL("triggered()"), SLOT("slot_pluginRefresh()"))
         self.connect(self.ui.act_plugin_remove_all, SIGNAL("triggered()"), SLOT("slot_pluginRemoveAll()"))
 
         self.connect(self.ui.act_transport_play, SIGNAL("triggered(bool)"), SLOT("slot_transportPlayPause(bool)"))
@@ -698,13 +702,13 @@ class CarlaMainW(QMainWindow):
         self.connect(self.ui.act_help_about, SIGNAL("triggered()"), SLOT("slot_aboutCarla()"))
         self.connect(self.ui.act_help_about_qt, SIGNAL("triggered()"), app, SLOT("aboutQt()"))
 
-        self.connect(self.ui.graphicsView.horizontalScrollBar(), SIGNAL("valueChanged(int)"), SLOT("slot_horizontalScrollBarChanged(int)"))
-        self.connect(self.ui.graphicsView.verticalScrollBar(), SIGNAL("valueChanged(int)"), SLOT("slot_verticalScrollBarChanged(int)"))
-
         self.connect(self.ui.splitter, SIGNAL("splitterMoved(int, int)"), SLOT("slot_splitterMoved()"))
 
         self.connect(self.ui.fileTreeView, SIGNAL("doubleClicked(QModelIndex)"), SLOT("slot_fileTreeDoubleClicked(QModelIndex)"))
         self.connect(self.ui.miniCanvasPreview, SIGNAL("miniCanvasMoved(double, double)"), SLOT("slot_miniCanvasMoved(double, double)"))
+
+        self.connect(self.ui.graphicsView.horizontalScrollBar(), SIGNAL("valueChanged(int)"), SLOT("slot_horizontalScrollBarChanged(int)"))
+        self.connect(self.ui.graphicsView.verticalScrollBar(), SIGNAL("valueChanged(int)"), SLOT("slot_verticalScrollBarChanged(int)"))
 
         self.connect(self.scene, SIGNAL("sceneGroupMoved(int, int, QPointF)"), SLOT("slot_canvasItemMoved(int, int, QPointF)"))
         self.connect(self.scene, SIGNAL("scaleChanged(double)"), SLOT("slot_canvasScaleChanged(double)"))
@@ -1025,14 +1029,7 @@ class CarlaMainW(QMainWindow):
         # ---------------------------------------------
         # Start
 
-        if WINDOWS:
-            defaultDriver = "DirectSound"
-        elif MACOS:
-            defaultDriver = "CoreAudio"
-        else:
-            defaultDriver = "JACK"
-
-        audioDriver = settings.value("Engine/AudioDriver", defaultDriver, type=str)
+        audioDriver = settings.value("Engine/AudioDriver", CARLA_DEFAULT_AUDIO_DRIVER, type=str)
 
         if not Carla.host.engine_init(audioDriver, self.fClientName):
             if self.fFirstEngineInit:

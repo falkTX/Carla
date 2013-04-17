@@ -661,7 +661,7 @@ You can disable these checks to get a faster scanning time (at your own risk).</
                </sizepolicy>
               </property>
               <property name="currentIndex">
-               <number>0</number>
+               <number>1</number>
               </property>
               <widget class="QWidget" name="page_engine_process_mode_jack">
                <layout class="QHBoxLayout" name="horizontalLayout_4">
@@ -772,19 +772,6 @@ You can disable these checks to get a faster scanning time (at your own risk).</
             <item row="0" column="2">
              <widget class="QComboBox" name="cb_engine_audio_driver"/>
             </item>
-            <item row="0" column="4">
-             <spacer name="horizontalSpacer_14">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>40</width>
-                <height>20</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
             <item row="0" column="0">
              <spacer name="horizontalSpacer_11">
               <property name="orientation">
@@ -798,16 +785,32 @@ You can disable these checks to get a faster scanning time (at your own risk).</
               </property>
              </spacer>
             </item>
+            <item row="1" column="3">
+             <spacer name="horizontalSpacer_14">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeType">
+               <enum>QSizePolicy::Fixed</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>100</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
            </layout>
           </widget>
          </item>
          <item>
           <widget class="QGroupBox" name="groupBox_8">
            <property name="title">
-            <string>GUIs</string>
+            <string>Plugin UIs</string>
            </property>
            <layout class="QGridLayout" name="gridLayout_8">
-            <item row="1" column="0">
+            <item row="4" column="0">
              <widget class="QLabel" name="label_12">
               <property name="toolTip">
                <string>How much time to wait for OSC GUIs to ping back the host</string>
@@ -820,7 +823,7 @@ You can disable these checks to get a faster scanning time (at your own risk).</
               </property>
              </widget>
             </item>
-            <item row="1" column="1">
+            <item row="4" column="1">
              <widget class="QSpinBox" name="sb_engine_oscgui_timeout">
               <property name="toolTip">
                <string>How much time to wait for OSC GUIs to ping back the host</string>
@@ -833,7 +836,7 @@ You can disable these checks to get a faster scanning time (at your own risk).</
               </property>
              </widget>
             </item>
-            <item row="1" column="2">
+            <item row="4" column="2">
              <spacer name="horizontalSpacer_9">
               <property name="orientation">
                <enum>Qt::Horizontal</enum>
@@ -843,13 +846,13 @@ You can disable these checks to get a faster scanning time (at your own risk).</
               </property>
               <property name="sizeHint" stdset="0">
                <size>
-                <width>40</width>
+                <width>100</width>
                 <height>10</height>
                </size>
               </property>
              </spacer>
             </item>
-            <item row="0" column="0" colspan="3">
+            <item row="1" column="0" colspan="3">
              <widget class="QCheckBox" name="ch_engine_prefer_ui_bridges">
               <property name="enabled">
                <bool>false</bool>
@@ -859,6 +862,13 @@ You can disable these checks to get a faster scanning time (at your own risk).</
               </property>
               <property name="text">
                <string>Use UI bridges instead of direct handling when possible</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="0">
+             <widget class="QCheckBox" name="ch_engine_uis_always_on_top">
+              <property name="text">
+               <string>Make UIs always-on-top</string>
               </property>
              </widget>
             </item>
