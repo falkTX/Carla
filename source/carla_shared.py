@@ -2709,9 +2709,6 @@ class PluginRefreshW(QDialog):
                 self.ui.ch_vst.setEnabled(False)
                 self.ui.b_start.setEnabled(False)
 
-        #TODO
-        self.ui.ch_lv2.setChecked(False)
-
         self.connect(self.ui.b_start, SIGNAL("clicked()"), SLOT("slot_start()"))
         self.connect(self.ui.b_skip, SIGNAL("clicked()"), SLOT("slot_skip()"))
         self.connect(self.fThread, SIGNAL("PluginLook(int, QString)"), SLOT("slot_handlePluginLook(int, QString)"))
