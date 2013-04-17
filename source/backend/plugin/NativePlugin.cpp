@@ -269,6 +269,11 @@ public:
     }
 
     // -------------------------------------------------------------------
+    // Information (current data)
+
+    // nothing
+
+    // -------------------------------------------------------------------
     // Information (per-plugin data)
 
     unsigned int availableOptions() override

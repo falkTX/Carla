@@ -85,7 +85,7 @@ public:
                 // Wait a bit first, then force kill
                 if (kData->osc.thread.isRunning() && ! kData->osc.thread.wait(kData->engine->getOptions().oscUiTimeout))
                 {
-                    carla_stderr("VST GUI thread still running, forcing termination now");
+                    carla_stderr("VST OSC-GUI thread still running, forcing termination now");
                     kData->osc.thread.terminate();
                 }
             }
@@ -116,6 +116,8 @@ public:
             std::free(fLastChunk);
             fLastChunk = nullptr;
         }
+
+        clearBuffers();
     }
 
     // -------------------------------------------------------------------
@@ -130,28 +132,26 @@ public:
     {
         CARLA_ASSERT(fEffect != nullptr);
 
+        const intptr_t category(dispatcher(effGetPlugCategory, 0, 0, nullptr, 0.0f));
+
+        switch (category)
         {
-            const intptr_t category = dispatcher(effGetPlugCategory, 0, 0, nullptr, 0.0f);
-
-            switch (category)
-            {
-            case kPlugCategSynth:
-                return PLUGIN_CATEGORY_SYNTH;
-            case kPlugCategAnalysis:
-                return PLUGIN_CATEGORY_UTILITY;
-            case kPlugCategMastering:
-                return PLUGIN_CATEGORY_DYNAMICS;
-            case kPlugCategRoomFx:
-                return PLUGIN_CATEGORY_DELAY;
-            case kPlugCategRestoration:
-                return PLUGIN_CATEGORY_UTILITY;
-            case kPlugCategGenerator:
-                return PLUGIN_CATEGORY_SYNTH;
-            }
-
-            if (fEffect->flags & effFlagsIsSynth)
-                return PLUGIN_CATEGORY_SYNTH;
+        case kPlugCategSynth:
+            return PLUGIN_CATEGORY_SYNTH;
+        case kPlugCategAnalysis:
+            return PLUGIN_CATEGORY_UTILITY;
+        case kPlugCategMastering:
+            return PLUGIN_CATEGORY_DYNAMICS;
+        case kPlugCategRoomFx:
+            return PLUGIN_CATEGORY_DELAY;
+        case kPlugCategRestoration:
+            return PLUGIN_CATEGORY_UTILITY;
+        case kPlugCategGenerator:
+            return PLUGIN_CATEGORY_SYNTH;
         }
+
+        if (fEffect->flags & effFlagsIsSynth)
+            return PLUGIN_CATEGORY_SYNTH;
 
         return getPluginCategoryFromName(fName);
     }
@@ -160,8 +160,13 @@ public:
     {
         CARLA_ASSERT(fEffect != nullptr);
 
-        return (fEffect != nullptr) ? fEffect->uniqueID : 0;
+        return fEffect->uniqueID;
     }
+
+    // -------------------------------------------------------------------
+    // Information (count)
+
+    // nothing
 
     // -------------------------------------------------------------------
     // Information (current data)

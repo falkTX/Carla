@@ -57,7 +57,7 @@ endif
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
 	@echo "LADSPA:  $(ANS_YES)"
 	@echo "DSSI:    $(ANS_YES)"
-	@echo "LV2:     $(ANS_NO) (to be re-implemented soon)"
+	@echo "LV2:     $(ANS_YES)"
 	@echo "VST:     $(ANS_YES)"
 else
 	@echo "LADSPA:  $(ANS_NO)"

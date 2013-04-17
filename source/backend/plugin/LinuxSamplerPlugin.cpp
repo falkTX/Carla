@@ -168,22 +168,16 @@ public:
         : CarlaPlugin(engine, id),
           kIsGIG(isGIG),
           kUses16Outs(use16Outs),
-          fSampler(nullptr),
+          fSampler(new LinuxSampler::Sampler()),
           fSamplerChannel(nullptr),
           fEngine(nullptr),
           fEngineChannel(nullptr),
-          fAudioOutputDevice(nullptr),
-          fMidiInputDevice(nullptr),
-          fMidiInputPort(nullptr),
+          fAudioOutputDevice(new LinuxSampler::AudioOutputDevicePlugin(engine, this)),
+          fMidiInputDevice(new LinuxSampler::MidiInputDevicePlugin(fSampler)),
+          fMidiInputPort(fMidiInputDevice->CreateMidiPort()),
           fInstrument(nullptr)
     {
         carla_debug("LinuxSamplerPlugin::LinuxSamplerPlugin(%p, %i, %s)", engine, id, bool2str(isGIG));
-
-        fSampler = new LinuxSampler::Sampler;
-
-        fAudioOutputDevice = new LinuxSampler::AudioOutputDevicePlugin(engine, this);
-        fMidiInputDevice   = new LinuxSampler::MidiInputDevicePlugin(fSampler);
-        fMidiInputPort     = fMidiInputDevice->CreateMidiPort();
     }
 
     ~LinuxSamplerPlugin() override
@@ -219,6 +213,8 @@ public:
         delete fSampler;
 
         fInstrumentIds.clear();
+
+        clearBuffers();
     }
 
     // -------------------------------------------------------------------
@@ -233,6 +229,16 @@ public:
     {
         return PLUGIN_CATEGORY_SYNTH;
     }
+
+    // -------------------------------------------------------------------
+    // Information (count)
+
+    // nothing
+
+    // -------------------------------------------------------------------
+    // Information (current data)
+
+    // nothing
 
     // -------------------------------------------------------------------
     // Information (per-plugin data)

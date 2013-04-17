@@ -92,7 +92,7 @@ public:
     {
         if (fRdfDescriptor != nullptr)
         {
-            const LADSPA_PluginType category = fRdfDescriptor->Type;
+            const LADSPA_PluginType category(fRdfDescriptor->Type);
 
             // Specific Types
             if (category & (LADSPA_PLUGIN_DELAY|LADSPA_PLUGIN_REVERB))
@@ -130,7 +130,7 @@ public:
     {
         CARLA_ASSERT(fDescriptor != nullptr);
 
-        return (fDescriptor != nullptr) ? static_cast<long>(fDescriptor->UniqueID) : 0;
+        return fDescriptor->UniqueID;
     }
 
     // -------------------------------------------------------------------
@@ -140,17 +140,21 @@ public:
     {
         CARLA_ASSERT(parameterId < kData->param.count);
 
-        const int32_t rindex = kData->param.data[parameterId].rindex;
+        const int32_t rindex(kData->param.data[parameterId].rindex);
 
         if (fRdfDescriptor != nullptr && rindex < static_cast<int32_t>(fRdfDescriptor->PortCount))
         {
-            const LADSPA_RDF_Port& port = fRdfDescriptor->Ports[rindex];
-
-            return static_cast<uint32_t>(port.ScalePointCount);
+            const LADSPA_RDF_Port& port(fRdfDescriptor->Ports[rindex]);
+            return port.ScalePointCount;
         }
 
         return 0;
     }
+
+    // -------------------------------------------------------------------
+    // Information (current data)
+
+    // nothing
 
     // -------------------------------------------------------------------
     // Information (per-plugin data)
@@ -181,6 +185,7 @@ public:
 
     float getParameterValue(const uint32_t parameterId) override
     {
+        CARLA_ASSERT(fParamBuffers != nullptr);
         CARLA_ASSERT(parameterId < kData->param.count);
 
         return fParamBuffers[parameterId];

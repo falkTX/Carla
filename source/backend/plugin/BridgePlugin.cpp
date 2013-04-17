@@ -139,7 +139,11 @@ public:
         kData->singleMutex.lock();
         kData->masterMutex.lock();
 
-        _cleanup();
+        if (kData->active)
+        {
+            deactivate();
+            kData->active = false;
+        }
 
         if (kData->osc.data.target != nullptr)
         {
@@ -150,17 +154,24 @@ public:
         kData->osc.data.free();
 
         // Wait a bit first, then force kill
-        if (kData->osc.thread.isRunning() && ! kData->osc.thread.wait(1000)) // kData->engine->getOptions().oscUiTimeout
+        if (kData->osc.thread.isRunning() && ! kData->osc.thread.wait(kData->engine->getOptions().oscUiTimeout))
         {
             carla_stderr("Failed to properly stop Plugin Bridge thread");
             kData->osc.thread.terminate();
         }
+
+        _cleanup();
 
         //info.chunk.clear();
     }
 
     // -------------------------------------------------------------------
     // Information (base)
+
+    BinaryType binaryType() const
+    {
+        return fBinaryType;
+    }
 
     PluginType type() const override
     {
@@ -177,11 +188,6 @@ public:
         return fInfo.uniqueId;
     }
 
-    BinaryType binaryType() const
-    {
-        return fBinaryType;
-    }
-
     // -------------------------------------------------------------------
     // Information (count)
 
@@ -195,19 +201,21 @@ public:
         return fInfo.mOuts;
     }
 
-#if 0
     // -------------------------------------------------------------------
     // Information (current data)
 
     int32_t chunkData(void** const dataPtr) override
     {
-        CARLA_ASSERT(dataPtr);
+        CARLA_ASSERT(fOptions & PLUGIN_OPTION_USE_CHUNKS);
+        CARLA_ASSERT(dataPtr != nullptr);
 
+#if 0
         if (! info.chunk.isEmpty())
         {
             *dataPtr = info.chunk.data();
             return info.chunk.size();
         }
+#endif
 
         return 0;
     }
@@ -215,6 +223,22 @@ public:
     // -------------------------------------------------------------------
     // Information (per-plugin data)
 
+    unsigned int availableOptions() override
+    {
+        unsigned int options = 0x0;
+
+        options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+        options |= PLUGIN_OPTION_USE_CHUNKS;
+        options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
+        options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
+        options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
+        options |= PLUGIN_OPTION_SEND_PITCHBEND;
+        options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+
+        return options;
+    }
+
+#if 0
     double getParameterValue(const uint32_t parameterId) override
     {
         CARLA_ASSERT(parameterId < param.count);
@@ -1447,7 +1471,7 @@ CarlaPlugin* CarlaPlugin::newBridge(const Initializer& init, BinaryType btype, P
 
     if (init.engine->getProccessMode() == PROCESS_MODE_CONTINUOUS_RACK && ! CarlaPluginProtectedData::canRunInRack(plugin))
     {
-        init.engine->setLastError("Carla's rack mode can only work with Mono or Stereo Bridged plugins, sorry!");
+        init.engine->setLastError("Carla's rack mode can only work with Stereo Bridged plugins, sorry!");
         delete plugin;
         return nullptr;
     }

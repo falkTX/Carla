@@ -113,8 +113,13 @@ public:
     {
         CARLA_ASSERT(fDescriptor != nullptr);
 
-        return (fDescriptor != nullptr) ? static_cast<long>(fDescriptor->UniqueID) : 0;
+        return fDescriptor->UniqueID;
     }
+
+    // -------------------------------------------------------------------
+    // Information (count)
+
+    // nothing
 
     // -------------------------------------------------------------------
     // Information (current data)
@@ -158,7 +163,7 @@ public:
 
         if (isDssiVst)
         {
-            if (fDssiDescriptor->get_custom_data != nullptr && fDssiDescriptor->set_custom_data != nullptr)
+            if (kData->engine->getOptions().useDssiVstChunks && fDssiDescriptor->get_custom_data != nullptr && fDssiDescriptor->set_custom_data != nullptr)
                 options |= PLUGIN_OPTION_USE_CHUNKS;
         }
         else
@@ -188,6 +193,7 @@ public:
 
     float getParameterValue(const uint32_t parameterId) override
     {
+        CARLA_ASSERT(fParamBuffers != nullptr);
         CARLA_ASSERT(parameterId < kData->param.count);
 
         return fParamBuffers[parameterId];
