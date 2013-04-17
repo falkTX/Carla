@@ -166,7 +166,6 @@ public:
           fIsUiVisible(false),
           fAudioInBuffers(nullptr),
           fAudioOutBuffers(nullptr),
-          fLastChunk(nullptr),
           fMidiEventCount(0)
     {
         carla_debug("NativePlugin::NativePlugin(%p, %i)", engine, id);
@@ -200,6 +199,8 @@ public:
         kData->singleMutex.lock();
         kData->masterMutex.lock();
 
+        CARLA_ASSERT(! fIsProcessing);
+
         if (kData->active)
         {
             deactivate();
@@ -219,12 +220,6 @@ public:
             fHandle  = nullptr;
             fHandle2 = nullptr;
             fDescriptor = nullptr;
-        }
-
-        if (fLastChunk != nullptr)
-        {
-            delete[] fLastChunk;
-            fLastChunk = nullptr;
         }
 
         clearBuffers();
@@ -2133,7 +2128,6 @@ private:
 
     float**     fAudioInBuffers;
     float**     fAudioOutBuffers;
-    uint8_t*    fLastChunk;
     uint32_t    fMidiEventCount;
     ::MidiEvent fMidiEvents[MAX_MIDI_EVENTS*2];
 

@@ -94,6 +94,8 @@ public:
         kData->singleMutex.lock();
         kData->masterMutex.lock();
 
+        CARLA_ASSERT(! fIsProcessing);
+
         if (kData->active)
         {
             deactivate();
@@ -106,14 +108,14 @@ public:
             fEffect = nullptr;
         }
 
+        // make plugin invalid
+        fUnique2 += 1;
+
         if (fLastChunk != nullptr)
         {
             std::free(fLastChunk);
             fLastChunk = nullptr;
         }
-
-        // make plugin invalid
-        fUnique2 += 1;
     }
 
     // -------------------------------------------------------------------
@@ -2072,9 +2074,9 @@ protected:
         return ret;
     }
 
-public:
     // -------------------------------------------------------------------
 
+public:
     bool init(const char* const filename, const char* const name)
     {
         CARLA_ASSERT(kData->engine != nullptr);
@@ -2280,7 +2282,7 @@ private:
         FixedVstEvents()
             : numEvents(0),
               reserved(0),
-              data{0} {}
+              data{nullptr} {}
     } fEvents;
 
     struct GuiInfo {

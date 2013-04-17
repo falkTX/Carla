@@ -19,8 +19,8 @@
 
 #ifdef WANT_LV2
 
+#include "CarlaPluginGui.hpp"
 #include "CarlaLv2Utils.hpp"
-#include "CarlaLibUtils.hpp"
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -28,7 +28,8 @@ CARLA_BACKEND_START_NAMESPACE
 }
 #endif
 
-class Lv2Plugin : public CarlaPlugin
+class Lv2Plugin : public CarlaPlugin,
+                  public CarlaPluginGui::Callback
 {
 public:
     Lv2Plugin(CarlaEngine* const engine, const unsigned int id)
@@ -50,6 +51,16 @@ public:
 
     // -------------------------------------------------------------------
 
+protected:
+    void guiClosedCallback() override
+    {
+        showGui(false);
+        kData->engine->callback(CALLBACK_SHOW_GUI, fId, 0, 0, 0.0f, nullptr);
+    }
+
+    // -------------------------------------------------------------------
+
+public:
     bool init(const char* const bundle, const char* const name, const char* const uri)
     {
         CARLA_ASSERT(kData->engine != nullptr);
