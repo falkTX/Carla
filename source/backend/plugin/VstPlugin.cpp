@@ -536,7 +536,7 @@ public:
             needsCtrlIn = true;
         }
 
-        const uint  portNameSize = kData->engine->maxPortNameSize();
+        const uint portNameSize(kData->engine->maxPortNameSize());
         CarlaString portName;
 
         // Audio Ins

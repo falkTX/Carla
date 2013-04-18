@@ -757,7 +757,7 @@ public:
             kData->param.createNew(params);
         }
 
-        const uint  portNameSize = kData->engine->maxPortNameSize();
+        const uint portNameSize(kData->engine->maxPortNameSize());
         CarlaString portName;
 
         // Audio Ins

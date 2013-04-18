@@ -350,7 +350,7 @@ public:
         else if (index > static_cast<int32_t>(kData->midiprog.count))
             return;
 
-        if (index >= 0)
+        if (index >= 0 && fDssiDescriptor != nullptr && fDssiDescriptor->select_program != nullptr)
         {
             const uint32_t bank    = kData->midiprog.data[index].bank;
             const uint32_t program = kData->midiprog.data[index].program;
@@ -505,7 +505,7 @@ public:
                 fParamBuffers[i] = 0.0f;
         }
 
-        const uint  portNameSize = kData->engine->maxPortNameSize();
+        const uint portNameSize(kData->engine->maxPortNameSize());
         CarlaString portName;
 
         for (uint32_t i=0, iAudioIn=0, iAudioOut=0, iCtrl=0; i < portCount; ++i)

@@ -426,7 +426,7 @@ public:
         if (fInfo.mOuts > 0)
             needsCtrlOut = true;
 
-        const uint  portNameSize = kData->engine->maxPortNameSize();
+        const uint portNameSize(kData->engine->maxPortNameSize());
         CarlaString portName;
 
         // Audio Ins

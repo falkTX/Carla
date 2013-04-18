@@ -312,8 +312,8 @@ struct LV2_RDF_PortPoints {
           Minimum(0.0f),
           Maximum(1.0f) {}
 
-    LV2_RDF_PortPoints(LV2_RDF_PortPoints&) = delete;
-    LV2_RDF_PortPoints(const LV2_RDF_PortPoints&) = delete;
+    //LV2_RDF_PortPoints(LV2_RDF_PortPoints&) = delete;
+    //LV2_RDF_PortPoints(const LV2_RDF_PortPoints&) = delete;
 };
 
 // Port Unit

@@ -491,7 +491,7 @@ public:
                 fParamBuffers[i] = 0.0f;
         }
 
-        const uint  portNameSize = kData->engine->maxPortNameSize();
+        const uint portNameSize(kData->engine->maxPortNameSize());
         CarlaString portName;
 
         for (uint32_t i=0, iAudioIn=0, iAudioOut=0, iCtrl=0; i < portCount; ++i)
