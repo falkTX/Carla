@@ -148,7 +148,34 @@ struct Lv2EventData {
 
     ~Lv2EventData()
     {
-        CARLA_ASSERT(port == nullptr);
+        if (port != nullptr)
+            delete port;
+
+        if (type & CARLA_EVENT_DATA_ATOM)
+        {
+            CARLA_ASSERT(atom != nullptr);
+
+            if (atom != nullptr)
+                std::free(atom);
+        }
+        else if (type & CARLA_EVENT_DATA_EVENT)
+        {
+            CARLA_ASSERT(event != nullptr);
+
+            if (event != nullptr)
+                std::free(event);
+        }
+        else if (type & CARLA_EVENT_DATA_MIDI_LL)
+        {
+            CARLA_ASSERT(midi != nullptr && midi->data != nullptr);
+
+            if (midi != nullptr)
+            {
+                if (midi->data != nullptr)
+                    delete[] midi->data;
+                delete midi;
+            }
+        }
     }
 
     CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(Lv2EventData)
@@ -185,15 +212,6 @@ struct Lv2PluginEventData {
     {
         if (data != nullptr)
         {
-            for (uint32_t i=0; i < count; ++i)
-            {
-                if (data[i].port != nullptr)
-                {
-                    delete data[i].port;
-                    data[i].port = nullptr;
-                }
-            }
-
             delete[] data;
             data = nullptr;
         }
@@ -238,6 +256,9 @@ public:
         carla_debug("Lv2Plugin::Lv2Plugin(%p, %i)", engine, id);
 
         kData->osc.thread.setMode(CarlaPluginThread::PLUGIN_THREAD_LV2_GUI);
+
+        for (uint32_t i=0; i < CARLA_URI_MAP_ID_COUNT; ++i)
+            fCustomURIDs.append(nullptr);
     }
 
     ~Lv2Plugin() override
@@ -320,8 +341,23 @@ public:
             fRdfDescriptor = nullptr;
         }
 
+        if (fFeatures[kFeatureIdEvent] != nullptr && fFeatures[kFeatureIdEvent]->data != nullptr)
+            delete (LV2_Event_Feature*)fFeatures[kFeatureIdEvent]->data;
+
+        if (fFeatures[kFeatureIdLogs] != nullptr && fFeatures[kFeatureIdLogs]->data != nullptr)
+            delete (LV2_Log_Log*)fFeatures[kFeatureIdLogs]->data;
+
+        if (fFeatures[kFeatureIdStateMakePath] != nullptr && fFeatures[kFeatureIdStateMakePath]->data != nullptr)
+            delete (LV2_State_Make_Path*)fFeatures[kFeatureIdStateMakePath]->data;
+
+        if (fFeatures[kFeatureIdStateMapPath] != nullptr && fFeatures[kFeatureIdStateMapPath]->data != nullptr)
+            delete (LV2_State_Map_Path*)fFeatures[kFeatureIdStateMapPath]->data;
+
         if (fFeatures[kFeatureIdPrograms] != nullptr && fFeatures[kFeatureIdPrograms]->data != nullptr)
             delete (LV2_Programs_Host*)fFeatures[kFeatureIdPrograms]->data;
+
+        if (fFeatures[kFeatureIdRtMemPool] != nullptr && fFeatures[kFeatureIdRtMemPool]->data != nullptr)
+            delete (LV2_RtMemPool_Pool*)fFeatures[kFeatureIdRtMemPool]->data;
 
         if (fFeatures[kFeatureIdUriMap] != nullptr && fFeatures[kFeatureIdUriMap]->data != nullptr)
             delete (LV2_URI_Map_Feature*)fFeatures[kFeatureIdUriMap]->data;
@@ -340,6 +376,16 @@ public:
             if (fFeatures[i] != nullptr)
                 delete fFeatures[i];
         }
+
+        for (auto it = fCustomURIDs.begin(); it.valid(); it.next())
+        {
+            const char* const uri(*it);
+
+            if (uri != nullptr)
+                delete uri;
+        }
+
+        fCustomURIDs.clear();
 
         clearBuffers();
     }
@@ -704,10 +750,10 @@ public:
 
         if (fExt.state != nullptr && fExt.state->save != nullptr)
         {
-            //fExt.state->save(handle, carla_lv2_state_store, this, LV2_STATE_IS_POD, features);
+            fExt.state->save(fHandle, carla_lv2_state_store, this, LV2_STATE_IS_POD, fFeatures);
 
-            //if (fHandle2)
-            //    fExt.state->save(h2, carla_lv2_state_store, this, LV2_STATE_IS_POD, features);
+            if (fHandle2 != nullptr)
+                fExt.state->save(fHandle2, carla_lv2_state_store, this, LV2_STATE_IS_POD, fFeatures);
         }
     }
 
@@ -912,6 +958,14 @@ public:
     // -------------------------------------------------------------------
     // Plugin buffers
 
+    void initBuffers() override
+    {
+        fEventsIn.initBuffers(kData->engine);
+        fEventsOut.initBuffers(kData->engine);
+
+        CarlaPlugin::initBuffers();
+    }
+
     void clearBuffers() override
     {
         carla_debug("Lv2Plugin::clearBuffers() - start");
@@ -952,6 +1006,9 @@ public:
             fParamBuffers = nullptr;
         }
 
+        fEventsIn.clear();
+        fEventsOut.clear();
+
         CarlaPlugin::clearBuffers();
 
         carla_debug("Lv2Plugin::clearBuffers() - end");
@@ -967,6 +1024,252 @@ protected:
     {
         showGui(false);
         kData->engine->callback(CALLBACK_SHOW_GUI, fId, 0, 0, 0.0f, nullptr);
+    }
+
+    // -------------------------------------------------------------------
+
+    uint32_t getCustomURID(const char* const uri)
+    {
+        CARLA_ASSERT(uri != nullptr);
+        carla_debug("Lv2Plugin::getCustomURID(%s)", uri);
+
+        if (uri == nullptr)
+            return CARLA_URI_MAP_ID_NULL;
+
+        for (size_t i=0; i < fCustomURIDs.count(); ++i)
+        {
+            const char* const thisUri(fCustomURIDs.getAt(i));
+            if (thisUri != nullptr && std::strcmp(thisUri, uri) == 0)
+                return i;
+        }
+
+        fCustomURIDs.append(carla_strdup(uri));
+
+        return fCustomURIDs.count()-1;
+    }
+
+    const char* getCustomURIString(const LV2_URID urid)
+    {
+        CARLA_ASSERT(urid > CARLA_URI_MAP_ID_NULL);
+        carla_debug("Lv2Plugin::getCustomURIString(%i)", urid);
+
+        if (urid == CARLA_URI_MAP_ID_NULL)
+            return nullptr;
+        if (urid < fCustomURIDs.count())
+            return fCustomURIDs.getAt(urid);
+
+        return nullptr;
+    }
+
+    // -------------------------------------------------------------------
+
+    void handleProgramChanged(const int32_t index)
+    {
+        if (index == -1)
+        {
+            const CarlaPlugin::ScopedDisabler m(this);
+            return reloadPrograms(false);
+        }
+
+        if (index >= 0 && index < static_cast<int32_t>(kData->midiprog.count) && fExt.programs != nullptr && fExt.programs->get_program != nullptr)
+        {
+            if (const LV2_Program_Descriptor* progDesc = fExt.programs->get_program(fHandle, index))
+            {
+                CARLA_ASSERT(progDesc->name != nullptr);
+
+                if (kData->midiprog.data[index].name != nullptr)
+                    delete[] kData->midiprog.data[index].name;
+
+                kData->midiprog.data[index].name = carla_strdup(progDesc->name ? progDesc->name : "");
+
+                if (index == kData->midiprog.current)
+                    kData->engine->callback(CALLBACK_UPDATE, fId, 0, 0, 0.0, nullptr);
+                else
+                    kData->engine->callback(CALLBACK_RELOAD_PROGRAMS, fId, 0, 0, 0.0, nullptr);
+            }
+        }
+    }
+
+    // -------------------------------------------------------------------
+
+    LV2_State_Status handleStateStore(const uint32_t key, const void* const value, const size_t size, const uint32_t type, const uint32_t flags)
+    {
+        CARLA_ASSERT(key != CARLA_URI_MAP_ID_NULL);
+        CARLA_ASSERT(value != nullptr);
+
+        // basic checks
+        if (key == CARLA_URI_MAP_ID_NULL)
+        {
+            carla_stderr2("Lv2Plugin::handleStateStore(%i, %p, " P_SIZE ", %i, %i) - invalid key", key, value, size, type, flags);
+            return LV2_STATE_ERR_NO_PROPERTY;
+        }
+
+        if (value == nullptr || size == 0)
+        {
+            carla_stderr2("Lv2Plugin::handleStateStore(%i, %p, " P_SIZE ", %i, %i) - invalid value", key, value, size, type, flags);
+            return LV2_STATE_ERR_NO_PROPERTY;
+        }
+
+        if ((flags & LV2_STATE_IS_POD) == 0)
+        {
+            carla_stderr2("Lv2Plugin::handleStateStore(%i, %p, " P_SIZE ", %i, %i) - invalid flags", key, value, size, type, flags);
+            return LV2_STATE_ERR_BAD_FLAGS;
+        }
+
+        const char* const stype(getCustomURIString(type));
+
+        if (stype == nullptr)
+        {
+            carla_stderr2("Lv2Plugin::handleStateStore(%i, %p, " P_SIZE ", %i, %i) - invalid type", key, value, size, type, flags);
+            return LV2_STATE_ERR_BAD_TYPE;
+        }
+
+        const char* const uriKey(getCustomURIString(key));
+
+        if (uriKey == nullptr)
+        {
+            carla_stderr2("Lv2Plugin::handleStateStore(%i, %p, " P_SIZE ", %i, %i) - invalid key URI", key, value, size, type, flags);
+            return LV2_STATE_ERR_NO_PROPERTY;
+        }
+
+        // Check if we already have this key
+        for (auto it = kData->custom.begin(); it.valid(); it.next())
+        {
+            CustomData& data(*it);
+
+            if (std::strcmp(data.key, uriKey) == 0)
+            {
+                if (data.value != nullptr)
+                    delete[] data.value;
+
+                if (std::strcmp(stype, LV2_ATOM__String) == 0 || std::strcmp(stype, LV2_ATOM__Path) == 0)
+                    data.value = carla_strdup((const char*)value);
+                else
+                    data.value = carla_strdup(QByteArray((const char*)value, size).toBase64().constData());
+
+                return LV2_STATE_SUCCESS;
+            }
+        }
+
+        // Otherwise store it
+        CustomData newData;
+        newData.type = carla_strdup(stype);
+        newData.key  = carla_strdup(uriKey);
+
+        if (std::strcmp(stype, LV2_ATOM__String) == 0 || std::strcmp(stype, LV2_ATOM__Path) == 0)
+            newData.value = carla_strdup((const char*)value);
+        else
+            newData.value = carla_strdup(QByteArray((const char*)value, size).toBase64().constData());
+
+        kData->custom.append(newData);
+
+        return LV2_STATE_SUCCESS;
+    }
+
+    const void* handleStateRetrieve(const uint32_t key, size_t* const size, uint32_t* const type, uint32_t* const flags)
+    {
+        CARLA_ASSERT(key != CARLA_URI_MAP_ID_NULL);
+
+        // basic checks
+        if (key == CARLA_URI_MAP_ID_NULL)
+        {
+            carla_stderr2("Lv2Plugin::handleStateRetrieve(%i, %p, %p, %p) - invalid key", key, size, type, flags);
+            return nullptr;
+        }
+
+        if (size == nullptr || type == nullptr || flags == nullptr)
+        {
+            carla_stderr2("Lv2Plugin::handleStateRetrieve(%i, %p, %p, %p) - invalid data", key, size, type, flags);
+            return nullptr;
+        }
+
+        const char* const uriKey(getCustomURIString(key));
+
+        if (uriKey == nullptr)
+        {
+            carla_stderr2("Lv2Plugin::handleStateRetrieve(%i, %p, %p, %p) - failed to find key", key, size, type, flags);
+            return nullptr;
+        }
+
+        const char* stype = nullptr;
+        const char* stringData = nullptr;
+
+        for (auto it = kData->custom.begin(); it.valid(); it.next())
+        {
+            CustomData& data(*it);
+
+            if (std::strcmp(data.key, uriKey) == 0)
+            {
+                stype      = data.type;
+                stringData = data.value;
+                break;
+            }
+        }
+
+        if (stringData == nullptr)
+        {
+            carla_stderr2("Lv2Plugin::handleStateRetrieve(%i, %p, %p, %p) - invalid key '%s'", key, size, type, flags, uriKey);
+            return nullptr;
+        }
+
+        *size  = 0;
+        *type  = key;
+        *flags = LV2_STATE_IS_POD;
+
+        if (std::strcmp(stype, LV2_ATOM__String) == 0 || std::strcmp(stype, LV2_ATOM__Path) == 0)
+        {
+            *size = std::strlen(stringData);
+            return stringData;
+        }
+        else
+        {
+            static QByteArray chunk;
+            chunk = QByteArray::fromBase64(stringData);
+            *size = chunk.size();
+            return chunk.constData();
+        }
+    }
+
+    // -------------------------------------------------------------------
+
+    void handleExternalUiClosed()
+    {
+        if (fUi.handle != nullptr && fUi.descriptor != nullptr && fUi.descriptor->cleanup != nullptr)
+            fUi.descriptor->cleanup(fUi.handle);
+
+        fUi.handle = nullptr;
+        kData->engine->callback(CALLBACK_SHOW_GUI, fId, 0, 0, 0.0, nullptr);
+    }
+
+    uint32_t handleUiPortMap(const char* const symbol)
+    {
+        CARLA_ASSERT(symbol != nullptr);
+
+        if (symbol == nullptr)
+            return LV2UI_INVALID_PORT_INDEX;
+
+        for (uint32_t i=0; i < fRdfDescriptor->PortCount; ++i)
+        {
+            if (std::strcmp(fRdfDescriptor->Ports[i].Symbol, symbol) == 0)
+                return i;
+        }
+
+        return LV2UI_INVALID_PORT_INDEX;
+    }
+
+    int handleUiResize(const int width, const int height)
+    {
+        CARLA_ASSERT(kData->gui != nullptr);
+        CARLA_ASSERT(width > 0);
+        CARLA_ASSERT(height > 0);
+
+        if (width <= 0 || height <= 0)
+            return 1;
+
+        if (kData->gui != nullptr)
+            kData->gui->setSize(width, height);
+
+        return 0;
     }
 
     // -------------------------------------------------------------------
@@ -1075,9 +1378,9 @@ public:
         // ---------------------------------------------------------------
         // initialize features (part 2)
 
-        fFeatures[kFeatureIdBufSizeBounded]       = new LV2_Feature;
-        fFeatures[kFeatureIdBufSizeBounded]->URI  = LV2_BUF_SIZE__boundedBlockLength;
-        fFeatures[kFeatureIdBufSizeBounded]->data = nullptr;
+        fFeatures[kFeatureIdBufSizeBounded]        = new LV2_Feature;
+        fFeatures[kFeatureIdBufSizeBounded]->URI   = LV2_BUF_SIZE__boundedBlockLength;
+        fFeatures[kFeatureIdBufSizeBounded]->data  = nullptr;
 
         fFeatures[kFeatureIdBufSizeFixed]          = new LV2_Feature;
         fFeatures[kFeatureIdBufSizeFixed]->URI     = LV2_BUF_SIZE__fixedBlockLength;
@@ -1328,6 +1631,8 @@ private:
     Lv2PluginEventData fEventsIn;
     Lv2PluginEventData fEventsOut;
 
+    NonRtList<const char*> fCustomURIDs;
+
     struct Extensions {
         const LV2_State_Interface* state;
         const LV2_Worker_Interface* worker;
@@ -1476,7 +1781,7 @@ private:
         if (handle == nullptr)
             return;
 
-        //((Lv2Plugin*)handle)->handleProgramChanged(index);
+        ((Lv2Plugin*)handle)->handleProgramChanged(index);
     }
 
     // -------------------------------------------------------------------
@@ -1530,8 +1835,7 @@ private:
         if (handle == nullptr)
             return LV2_STATE_ERR_UNKNOWN;
 
-        //return ((Lv2Plugin*)handle)->handleStateStore(key, value, size, type, flags);
-        return LV2_STATE_ERR_UNKNOWN;
+        return ((Lv2Plugin*)handle)->handleStateStore(key, value, size, type, flags);
     }
 
     static const void* carla_lv2_state_retrieve(LV2_State_Handle handle, uint32_t key, size_t* size, uint32_t* type, uint32_t* flags)
@@ -1542,8 +1846,7 @@ private:
         if (handle == nullptr)
             return nullptr;
 
-        //return ((Lv2Plugin*)handle)->handleStateRetrieve(key, size, type, flags);
-        return nullptr;
+        return ((Lv2Plugin*)handle)->handleStateRetrieve(key, size, type, flags);
     }
 
     // -------------------------------------------------------------------
@@ -1615,8 +1918,7 @@ private:
             return CARLA_URI_MAP_ID_NULL;
 
         // Custom types
-        //return ((Lv2Plugin*)handle)->getCustomURID(uri);
-        return 0;
+        return ((Lv2Plugin*)handle)->getCustomURID(uri);
     }
 
     static const char* carla_lv2_urid_unmap(LV2_URID_Map_Handle handle, LV2_URID urid)
@@ -1676,8 +1978,7 @@ private:
             return nullptr;
 
         // Custom types
-        //return ((Lv2Plugin*)handle)->getCustomURIString(urid);
-        return nullptr;
+        return ((Lv2Plugin*)handle)->getCustomURIString(urid);
     }
 
     // -------------------------------------------------------------------
@@ -1718,8 +2019,7 @@ private:
         if (handle == nullptr)
             return LV2UI_INVALID_PORT_INDEX;
 
-        //return ((Lv2Plugin*)handle)->handleUiPortMap(symbol);
-        return LV2UI_INVALID_PORT_INDEX;
+        return ((Lv2Plugin*)handle)->handleUiPortMap(symbol);
     }
 
     // -------------------------------------------------------------------
@@ -1733,8 +2033,7 @@ private:
         if (handle == nullptr)
             return 1;
 
-        //return ((Lv2Plugin*)handle)->handleUiResize(width, height);
-        return 1;
+        return ((Lv2Plugin*)handle)->handleUiResize(width, height);
     }
 
     // -------------------------------------------------------------------
@@ -1748,7 +2047,7 @@ private:
         if (controller == nullptr)
             return;
 
-        //((Lv2Plugin*)handle)->handleExternalUiClosed();
+        ((Lv2Plugin*)controller)->handleExternalUiClosed();
     }
 
     // -------------------------------------------------------------------
