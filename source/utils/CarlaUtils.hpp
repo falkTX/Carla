@@ -56,15 +56,15 @@ void carla_debug(const char* const fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
-#ifndef CARLA_OS_WIN
+# ifndef CARLA_OS_WIN
     std::fprintf(stdout, "\x1b[30;1m");
-#endif
+# endif
     std::vfprintf(stdout, fmt, args);
-#ifndef CARLA_OS_WIN
+# ifndef CARLA_OS_WIN
     std::fprintf(stdout, "\x1b[0m\n");
-#else
+# else
     std::fprintf(stdout, "\n");
-#endif
+# endif
     va_end(args);
 }
 #endif
