@@ -59,9 +59,6 @@
           </item>
           <item>
            <widget class="QCheckBox" name="ch_lv2">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
             <property name="text">
              <string>LV2</string>
             </property>

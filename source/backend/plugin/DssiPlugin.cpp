@@ -244,7 +244,7 @@ public:
         CARLA_ASSERT(fDescriptor != nullptr);
         CARLA_ASSERT(parameterId < kData->param.count);
 
-        const int32_t rindex = kData->param.data[parameterId].rindex;
+        const int32_t rindex(kData->param.data[parameterId].rindex);
 
         if (rindex < static_cast<int32_t>(fDescriptor->PortCount))
             std::strncpy(strBuf, fDescriptor->PortNames[rindex], STR_MAX);
@@ -253,13 +253,23 @@ public:
     }
 
     // -------------------------------------------------------------------
+    // Set data (state)
+
+    // nothing
+
+    // -------------------------------------------------------------------
+    // Set data (internal stuff)
+
+    // nothing
+
+    // -------------------------------------------------------------------
     // Set data (plugin-specific stuff)
 
     void setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) override
     {
         CARLA_ASSERT(parameterId < kData->param.count);
 
-        const float fixedValue = kData->param.fixValue(parameterId, value);
+        const float fixedValue(kData->param.fixValue(parameterId, value));
         fParamBuffers[parameterId] = fixedValue;
 
         CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
@@ -1621,7 +1631,55 @@ public:
     }
 
     // -------------------------------------------------------------------
-    // Post-poned events
+    // Plugin buffers
+
+    void clearBuffers() override
+    {
+        carla_debug("DssiPlugin::clearBuffers() - start");
+
+        if (fAudioInBuffers != nullptr)
+        {
+            for (uint32_t i=0; i < kData->audioIn.count; ++i)
+            {
+                if (fAudioInBuffers[i] != nullptr)
+                {
+                    delete[] fAudioInBuffers[i];
+                    fAudioInBuffers[i] = nullptr;
+                }
+            }
+
+            delete[] fAudioInBuffers;
+            fAudioInBuffers = nullptr;
+        }
+
+        if (fAudioOutBuffers != nullptr)
+        {
+            for (uint32_t i=0; i < kData->audioOut.count; ++i)
+            {
+                if (fAudioOutBuffers[i] != nullptr)
+                {
+                    delete[] fAudioOutBuffers[i];
+                    fAudioOutBuffers[i] = nullptr;
+                }
+            }
+
+            delete[] fAudioOutBuffers;
+            fAudioOutBuffers = nullptr;
+        }
+
+        if (fParamBuffers != nullptr)
+        {
+            delete[] fParamBuffers;
+            fParamBuffers = nullptr;
+        }
+
+        CarlaPlugin::clearBuffers();
+
+        carla_debug("DssiPlugin::clearBuffers() - end");
+    }
+
+    // -------------------------------------------------------------------
+    // Post-poned UI Stuff
 
     void uiParameterChange(const uint32_t index, const float value) override
     {
@@ -1687,54 +1745,6 @@ public:
         midiData[2] = note;
 
         osc_send_midi(&kData->osc.data, midiData);
-    }
-
-    // -------------------------------------------------------------------
-    // Plugin buffers
-
-    void clearBuffers() override
-    {
-        carla_debug("DssiPlugin::clearBuffers() - start");
-
-        if (fAudioInBuffers != nullptr)
-        {
-            for (uint32_t i=0; i < kData->audioIn.count; ++i)
-            {
-                if (fAudioInBuffers[i] != nullptr)
-                {
-                    delete[] fAudioInBuffers[i];
-                    fAudioInBuffers[i] = nullptr;
-                }
-            }
-
-            delete[] fAudioInBuffers;
-            fAudioInBuffers = nullptr;
-        }
-
-        if (fAudioOutBuffers != nullptr)
-        {
-            for (uint32_t i=0; i < kData->audioOut.count; ++i)
-            {
-                if (fAudioOutBuffers[i] != nullptr)
-                {
-                    delete[] fAudioOutBuffers[i];
-                    fAudioOutBuffers[i] = nullptr;
-                }
-            }
-
-            delete[] fAudioOutBuffers;
-            fAudioOutBuffers = nullptr;
-        }
-
-        if (fParamBuffers != nullptr)
-        {
-            delete[] fParamBuffers;
-            fParamBuffers = nullptr;
-        }
-
-        CarlaPlugin::clearBuffers();
-
-        carla_debug("DssiPlugin::clearBuffers() - end");
     }
 
     // -------------------------------------------------------------------

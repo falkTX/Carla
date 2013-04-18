@@ -222,6 +222,7 @@ public:
     {
         CARLA_ASSERT(fEffect != nullptr);
 
+        strBuf[0] = '\0';
         dispatcher(effGetProductString, 0, 0, strBuf, 0.0f);
     }
 
@@ -229,6 +230,7 @@ public:
     {
         CARLA_ASSERT(fEffect != nullptr);
 
+        strBuf[0] = '\0';
         dispatcher(effGetVendorString, 0, 0, strBuf, 0.0f);
     }
 
@@ -236,6 +238,7 @@ public:
     {
         CARLA_ASSERT(fEffect != nullptr);
 
+        strBuf[0] = '\0';
         dispatcher(effGetVendorString, 0, 0, strBuf, 0.0f);
     }
 
@@ -243,6 +246,7 @@ public:
     {
         CARLA_ASSERT(fEffect != nullptr);
 
+        strBuf[0] = '\0';
         dispatcher(effGetEffectName, 0, 0, strBuf, 0.0f);
     }
 
@@ -251,6 +255,7 @@ public:
         CARLA_ASSERT(fEffect != nullptr);
         CARLA_ASSERT(parameterId < kData->param.count);
 
+        strBuf[0] = '\0';
         dispatcher(effGetParamName, parameterId, 0, strBuf, 0.0f);
     }
 
@@ -260,7 +265,6 @@ public:
         CARLA_ASSERT(parameterId < kData->param.count);
 
         strBuf[0] = '\0';
-
         dispatcher(effGetParamDisplay, parameterId, 0, strBuf, 0.0f);
 
         if (strBuf[0] == '\0')
@@ -272,8 +276,19 @@ public:
         CARLA_ASSERT(fEffect != nullptr);
         CARLA_ASSERT(parameterId < kData->param.count);
 
+        strBuf[0] = '\0';
         dispatcher(effGetParamLabel, parameterId, 0, strBuf, 0.0f);
     }
+
+    // -------------------------------------------------------------------
+    // Set data (state)
+
+    // nothing
+
+    // -------------------------------------------------------------------
+    // Set data (internal stuff)
+
+    // nothing
 
     // -------------------------------------------------------------------
     // Set data (plugin-specific stuff)
@@ -283,7 +298,7 @@ public:
         CARLA_ASSERT(fEffect != nullptr);
         CARLA_ASSERT(parameterId < kData->param.count);
 
-        const float fixedValue = kData->param.fixValue(parameterId, value);
+        const float fixedValue(kData->param.fixValue(parameterId, value));
 
         fEffect->setParameter(fEffect, parameterId, fixedValue);
 
@@ -373,7 +388,7 @@ public:
             {
                 if (kData->gui == nullptr)
                 {
-                    struct CarlaPluginGui::Options guiOptions;
+                    CarlaPluginGui::Options guiOptions;
                     guiOptions.parented  = true;
                     guiOptions.resizable = false;
 
@@ -1594,7 +1609,12 @@ public:
     }
 
     // -------------------------------------------------------------------
-    // Post-poned events
+    // Plugin buffers
+
+    // nothing
+
+    // -------------------------------------------------------------------
+    // Post-poned UI Stuff
 
     void uiParameterChange(const uint32_t index, const float value) override
     {

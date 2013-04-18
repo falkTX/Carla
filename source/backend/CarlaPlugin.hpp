@@ -409,12 +409,12 @@ public:
     void loadSaveState(const SaveState& saveState);
 
     /*!
-     * TODO
+     * Save the current plugin state to \a filename.
      */
     bool saveStateToFile(const char* const filename);
 
     /*!
-     * TODO
+     * Save the plugin state from \a filename.
      */
     bool loadStateFromFile(const char* const filename);
 

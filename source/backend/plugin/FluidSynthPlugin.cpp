@@ -324,13 +324,23 @@ public:
     }
 
     // -------------------------------------------------------------------
+    // Set data (state)
+
+    // nothing
+
+    // -------------------------------------------------------------------
+    // Set data (internal stuff)
+
+    // nothing
+
+    // -------------------------------------------------------------------
     // Set data (plugin-specific stuff)
 
     void setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) override
     {
         CARLA_ASSERT(parameterId < kData->param.count);
 
-        const float fixedValue = kData->param.fixValue(parameterId, value);
+        const float fixedValue(kData->param.fixValue(parameterId, value));
         fParamBuffers[parameterId] = fixedValue;
 
         {
@@ -388,7 +398,7 @@ public:
         else if (index > static_cast<int32_t>(kData->midiprog.count))
             return;
 
-        if (kData->ctrlChannel < 0 || kData->ctrlChannel >= 16)
+        if (kData->ctrlChannel < 0 || kData->ctrlChannel >= MAX_MIDI_CHANNELS)
             return;
 
         if (index >= 0)
@@ -396,12 +406,17 @@ public:
             const uint32_t bank    = kData->midiprog.data[index].bank;
             const uint32_t program = kData->midiprog.data[index].program;
 
-            const ScopedSingleProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
+            //const ScopedSingleProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
             fluid_synth_program_select(fSynth, kData->ctrlChannel, fSynthId, bank, program);
         }
 
         CarlaPlugin::setMidiProgram(index, sendGui, sendOsc, sendCallback);
     }
+
+    // -------------------------------------------------------------------
+    // Set gui stuff
+
+    // nothing
 
     // -------------------------------------------------------------------
     // Plugin state

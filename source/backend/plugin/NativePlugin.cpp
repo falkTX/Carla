@@ -222,6 +222,12 @@ public:
             fDescriptor = nullptr;
         }
 
+        if (fHost.ui_name != nullptr)
+        {
+            delete[] fHost.ui_name;
+            fHost.ui_name = nullptr;
+        }
+
         clearBuffers();
     }
 
@@ -331,8 +337,7 @@ public:
         {
             if (const Parameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId))
             {
-                const ParameterScalePoint& scalePoint = param->scalePoints[scalePointId];
-
+                const ParameterScalePoint& scalePoint(param->scalePoints[scalePointId]);
                 return scalePoint.value;
             }
         }
@@ -388,7 +393,7 @@ public:
 
         if (fDescriptor->get_parameter_info != nullptr && parameterId < kData->param.count)
         {
-            const Parameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId);
+            const Parameter* const param(fDescriptor->get_parameter_info(fHandle, parameterId));
 
             if (param != nullptr && param->name != nullptr)
             {
@@ -426,7 +431,7 @@ public:
 
         if (fDescriptor->get_parameter_info != nullptr && parameterId < kData->param.count)
         {
-            const Parameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId);
+            const Parameter* const param(fDescriptor->get_parameter_info(fHandle, parameterId));
 
             if (param != nullptr && param->unit != nullptr)
             {
@@ -449,7 +454,7 @@ public:
         {
             if (const Parameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId))
             {
-                const ParameterScalePoint& scalePoint = param->scalePoints[scalePointId];
+                const ParameterScalePoint& scalePoint(param->scalePoints[scalePointId]);
 
                 if (scalePoint.label != nullptr)
                 {
@@ -483,6 +488,23 @@ public:
     }
 
     // -------------------------------------------------------------------
+    // Set data (internal stuff)
+
+    void setName(const char* const newName) override
+    {
+        char uiName[std::strlen(newName)+6+1];
+        std::strcpy(uiName, newName);
+        std::strcat(uiName, " (GUI)");
+
+        if (fHost.ui_name != nullptr)
+            delete[] fHost.ui_name;
+
+        fHost.ui_name = carla_strdup(uiName);
+
+        CarlaPlugin::setName(newName);
+    }
+
+    // -------------------------------------------------------------------
     // Set data (plugin-specific stuff)
 
     void setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) override
@@ -491,7 +513,7 @@ public:
         CARLA_ASSERT(fHandle != nullptr);
         CARLA_ASSERT(parameterId < kData->param.count);
 
-        const float fixedValue = kData->param.fixValue(parameterId, value);
+        const float fixedValue(kData->param.fixValue(parameterId, value));
 
         if (fDescriptor->set_parameter_value != nullptr && parameterId < kData->param.count)
         {
@@ -1750,7 +1772,60 @@ public:
     }
 
     // -------------------------------------------------------------------
-    // Post-poned events
+    // Plugin buffers
+
+    void initBuffers() override
+    {
+        fMidiIn.initBuffers(kData->engine);
+        fMidiOut.initBuffers(kData->engine);
+
+        CarlaPlugin::initBuffers();
+    }
+
+    void clearBuffers() override
+    {
+        carla_debug("NativePlugin::clearBuffers() - start");
+
+        if (fAudioInBuffers != nullptr)
+        {
+            for (uint32_t i=0; i < kData->audioIn.count; ++i)
+            {
+                if (fAudioInBuffers[i] != nullptr)
+                {
+                    delete[] fAudioInBuffers[i];
+                    fAudioInBuffers[i] = nullptr;
+                }
+            }
+
+            delete[] fAudioInBuffers;
+            fAudioInBuffers = nullptr;
+        }
+
+        if (fAudioOutBuffers != nullptr)
+        {
+            for (uint32_t i=0; i < kData->audioOut.count; ++i)
+            {
+                if (fAudioOutBuffers[i] != nullptr)
+                {
+                    delete[] fAudioOutBuffers[i];
+                    fAudioOutBuffers[i] = nullptr;
+                }
+            }
+
+            delete[] fAudioOutBuffers;
+            fAudioOutBuffers = nullptr;
+        }
+
+        fMidiIn.clear();
+        fMidiOut.clear();
+
+        CarlaPlugin::clearBuffers();
+
+        carla_debug("NativePlugin::clearBuffers() - end");
+    }
+
+    // -------------------------------------------------------------------
+    // Post-poned UI Stuff
 
     void uiParameterChange(const uint32_t index, const float value) override
     {
@@ -1825,59 +1900,6 @@ public:
             return;
 
         // TODO
-    }
-
-    // -------------------------------------------------------------------
-    // Plugin buffers
-
-    void initBuffers() override
-    {
-        fMidiIn.initBuffers(kData->engine);
-        fMidiOut.initBuffers(kData->engine);
-
-        CarlaPlugin::initBuffers();
-    }
-
-    void clearBuffers() override
-    {
-        carla_debug("NativePlugin::clearBuffers() - start");
-
-        if (fAudioInBuffers != nullptr)
-        {
-            for (uint32_t i=0; i < kData->audioIn.count; ++i)
-            {
-                if (fAudioInBuffers[i] != nullptr)
-                {
-                    delete[] fAudioInBuffers[i];
-                    fAudioInBuffers[i] = nullptr;
-                }
-            }
-
-            delete[] fAudioInBuffers;
-            fAudioInBuffers = nullptr;
-        }
-
-        if (fAudioOutBuffers != nullptr)
-        {
-            for (uint32_t i=0; i < kData->audioOut.count; ++i)
-            {
-                if (fAudioOutBuffers[i] != nullptr)
-                {
-                    delete[] fAudioOutBuffers[i];
-                    fAudioOutBuffers[i] = nullptr;
-                }
-            }
-
-            delete[] fAudioOutBuffers;
-            fAudioOutBuffers = nullptr;
-        }
-
-        fMidiIn.clear();
-        fMidiOut.clear();
-
-        CarlaPlugin::clearBuffers();
-
-        carla_debug("NativePlugin::clearBuffers() - end");
     }
 
     // -------------------------------------------------------------------
@@ -1974,6 +1996,8 @@ protected:
         return retStr.isNotEmpty() ? (const char*)retStr : nullptr;
     }
 
+    // -------------------------------------------------------------------
+
 public:
     static size_t getPluginCount()
     {
@@ -2055,6 +2079,16 @@ public:
             fName = kData->engine->getUniquePluginName(fDescriptor->name);
         else
             fName = kData->engine->getUniquePluginName(label);
+
+        {
+            CARLA_ASSERT(fHost.ui_name == nullptr);
+
+            char uiName[fName.length()+6+1];
+            std::strcpy(uiName, (const char*)fName);
+            std::strcat(uiName, " (GUI)");
+
+            fHost.ui_name = carla_strdup(uiName);
+        }
 
         // ---------------------------------------------------------------
         // register client

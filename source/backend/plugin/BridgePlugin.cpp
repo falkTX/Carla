@@ -160,7 +160,7 @@ public:
             kData->osc.thread.terminate();
         }
 
-        _cleanup();
+        cleanup();
 
         //info.chunk.clear();
     }
@@ -284,7 +284,360 @@ public:
 #endif
 
     // -------------------------------------------------------------------
+    // Set data (state)
+
+    void prepareForSave() override
+    {
+#if 0
+        m_saved = false;
+        osc_send_configure(&osc.data, CARLA_BRIDGE_MSG_SAVE_NOW, "");
+
+        for (int i=0; i < 200; i++)
+        {
+            if (m_saved)
+                break;
+            carla_msleep(50);
+        }
+
+        if (! m_saved)
+            carla_stderr("BridgePlugin::prepareForSave() - Timeout while requesting save state");
+        else
+            carla_debug("BridgePlugin::prepareForSave() - success!");
+#endif
+    }
+
+    // -------------------------------------------------------------------
     // Set data (internal stuff)
+
+    // nothing
+
+    // -------------------------------------------------------------------
+    // Set data (plugin-specific stuff)
+
+#if 0
+    void setParameterValue(const uint32_t parameterId, double value, const bool sendGui, const bool sendOsc, const bool sendCallback) override
+    {
+        CARLA_ASSERT(parameterId < param.count);
+
+        params[parameterId].value = fixParameterValue(value, param.ranges[parameterId]);
+
+        CarlaPlugin::setParameterValue(parameterId, value, sendGui, sendOsc, sendCallback);
+    }
+
+    void setCustomData(const char* const type, const char* const key, const char* const value, const bool sendGui) override
+    {
+        CARLA_ASSERT(type);
+        CARLA_ASSERT(key);
+        CARLA_ASSERT(value);
+
+        if (sendGui)
+        {
+            // TODO - if type is chunk|binary, store it in a file and send path instead
+            QString cData;
+            cData  = type;
+            cData += "·";
+            cData += key;
+            cData += "·";
+            cData += value;
+            osc_send_configure(&osc.data, CARLA_BRIDGE_MSG_SET_CUSTOM, cData.toUtf8().constData());
+        }
+
+        CarlaPlugin::setCustomData(type, key, value, sendGui);
+    }
+
+    void setChunkData(const char* const stringData) override
+    {
+        CARLA_ASSERT(m_hints & PLUGIN_USES_CHUNKS);
+        CARLA_ASSERT(stringData);
+
+        QString filePath;
+        filePath  = QDir::tempPath();
+        filePath += "/.CarlaChunk_";
+        filePath += m_name;
+
+        filePath = QDir::toNativeSeparators(filePath);
+
+        QFile file(filePath);
+
+        if (file.open(QIODevice::WriteOnly | QIODevice::Text))
+        {
+            QTextStream out(&file);
+            out << stringData;
+            file.close();
+            osc_send_configure(&osc.data, CARLA_BRIDGE_MSG_SET_CHUNK, filePath.toUtf8().constData());
+        }
+    }
+#endif
+
+    // -------------------------------------------------------------------
+    // Set gui stuff
+
+    void showGui(const bool yesNo) override
+    {
+        if (yesNo)
+            osc_send_show(&kData->osc.data);
+        else
+            osc_send_hide(&kData->osc.data);
+    }
+
+    void idleGui() override
+    {
+        if (! kData->osc.thread.isRunning())
+            carla_stderr2("TESTING: Bridge has closed!");
+
+        CarlaPlugin::idleGui();
+    }
+
+    // -------------------------------------------------------------------
+    // Plugin state
+
+    void reload() override
+    {
+        carla_debug("BridgePlugin::reload() - start");
+        CARLA_ASSERT(kData->engine != nullptr);
+
+        if (kData->engine == nullptr)
+            return;
+
+        const ProcessMode processMode(kData->engine->getProccessMode());
+
+        // Safely disable plugin for reload
+        const ScopedDisabler sd(this);
+
+        kData->clearBuffers();
+
+        bool needsCtrlIn, needsCtrlOut;
+        needsCtrlIn = needsCtrlOut = false;
+
+        if (fInfo.aIns > 0)
+        {
+            kData->audioIn.createNew(fInfo.aIns);
+        }
+
+        if (fInfo.aOuts > 0)
+        {
+            kData->audioOut.createNew(fInfo.aOuts);
+            needsCtrlIn = true;
+        }
+
+        if (fInfo.mIns > 0)
+            needsCtrlIn = true;
+
+        if (fInfo.mOuts > 0)
+            needsCtrlOut = true;
+
+        const uint  portNameSize = kData->engine->maxPortNameSize();
+        CarlaString portName;
+
+        // Audio Ins
+        for (uint32_t j=0; j < fInfo.aIns; j++)
+        {
+            portName.clear();
+
+            if (processMode == PROCESS_MODE_SINGLE_CLIENT)
+            {
+                portName  = fName;
+                portName += ":";
+            }
+
+            if (fInfo.aIns > 1)
+            {
+                portName += "input_";
+                portName += CarlaString(j+1);
+            }
+            else
+                portName += "input";
+            portName.truncate(portNameSize);
+
+            kData->audioIn.ports[j].port   = (CarlaEngineAudioPort*)kData->client->addPort(kEnginePortTypeAudio, portName, true);
+            kData->audioIn.ports[j].rindex = j;
+        }
+
+        // Audio Outs
+        for (uint32_t j=0; j < fInfo.aOuts; j++)
+        {
+            portName.clear();
+
+            if (processMode == PROCESS_MODE_SINGLE_CLIENT)
+            {
+                portName  = fName;
+                portName += ":";
+            }
+
+            if (fInfo.aOuts > 1)
+            {
+                portName += "output_";
+                portName += CarlaString(j+1);
+            }
+            else
+                portName += "output";
+            portName.truncate(portNameSize);
+
+            kData->audioOut.ports[j].port   = (CarlaEngineAudioPort*)kData->client->addPort(kEnginePortTypeAudio, portName, false);
+            kData->audioOut.ports[j].rindex = j;
+        }
+
+        if (needsCtrlIn)
+        {
+            portName.clear();
+
+            if (processMode == PROCESS_MODE_SINGLE_CLIENT)
+            {
+                portName  = fName;
+                portName += ":";
+            }
+
+            portName += "event-in";
+            portName.truncate(portNameSize);
+
+            kData->event.portIn = (CarlaEngineEventPort*)kData->client->addPort(kEnginePortTypeEvent, portName, true);
+        }
+
+        if (needsCtrlOut)
+        {
+            portName.clear();
+
+            if (processMode == PROCESS_MODE_SINGLE_CLIENT)
+            {
+                portName  = fName;
+                portName += ":";
+            }
+
+            portName += "event-out";
+            portName.truncate(portNameSize);
+
+            kData->event.portOut = (CarlaEngineEventPort*)kData->client->addPort(kEnginePortTypeEvent, portName, false);
+        }
+
+        //bufferSizeChanged(kData->engine->getBufferSize());
+        //reloadPrograms(true);
+
+        carla_debug("BridgePlugin::reload() - end");
+    }
+
+    // -------------------------------------------------------------------
+    // Plugin processing
+
+    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames) override
+    {
+        uint32_t i, k;
+
+        // --------------------------------------------------------------------------------------------------------
+        // Check if active
+
+        if (! kData->active)
+        {
+            // disable any output sound
+            for (i=0; i < kData->audioOut.count; i++)
+                carla_zeroFloat(outBuffer[i], frames);
+
+            return;
+        }
+
+        for (i=0; i < fInfo.aIns; ++i)
+            carla_copyFloat(fShmAudioPool.data + i * frames, inBuffer[i], frames);
+
+        rdwr_writeOpcode(&fShmControl.data->ringBuffer, kPluginBridgeOpcodeProcess);
+        rdwr_commitWrite(&fShmControl.data->ringBuffer);
+
+        waitForServer();
+
+        for (i=0; i < fInfo.aOuts; ++i)
+            carla_copyFloat(outBuffer[i], fShmAudioPool.data + (i+fInfo.aIns) * frames, frames);
+    }
+
+    // -------------------------------------------------------------------
+    // Plugin buffers
+
+    // nothing
+
+    // -------------------------------------------------------------------
+    // Post-poned UI Stuff
+
+    void uiParameterChange(const uint32_t index, const float value) override
+    {
+        CARLA_ASSERT(index < kData->param.count);
+
+        if (index >= kData->param.count)
+            return;
+        if (kData->osc.data.target == nullptr)
+            return;
+
+        osc_send_control(&kData->osc.data, kData->param.data[index].rindex, value);
+    }
+
+    void uiProgramChange(const uint32_t index) override
+    {
+        CARLA_ASSERT(index < kData->prog.count);
+
+        if (index >= kData->prog.count)
+            return;
+        if (kData->osc.data.target == nullptr)
+            return;
+
+        osc_send_program(&kData->osc.data, index);
+    }
+
+    void uiMidiProgramChange(const uint32_t index) override
+    {
+        CARLA_ASSERT(index < kData->midiprog.count);
+
+        if (index >= kData->midiprog.count)
+            return;
+        if (kData->osc.data.target == nullptr)
+            return;
+
+        osc_send_midi_program(&kData->osc.data, index);
+    }
+
+    void uiNoteOn(const uint8_t channel, const uint8_t note, const uint8_t velo) override
+    {
+        CARLA_ASSERT(channel < MAX_MIDI_CHANNELS);
+        CARLA_ASSERT(note < MAX_MIDI_NOTE);
+        CARLA_ASSERT(velo > 0 && velo < MAX_MIDI_VALUE);
+
+        if (channel >= MAX_MIDI_CHANNELS)
+            return;
+        if (note >= MAX_MIDI_NOTE)
+            return;
+        if (velo >= MAX_MIDI_VALUE)
+            return;
+        if (kData->osc.data.target == nullptr)
+            return;
+
+        uint8_t midiData[4] = { 0 };
+        midiData[1] = MIDI_STATUS_NOTE_ON + channel;
+        midiData[2] = note;
+        midiData[3] = velo;
+
+        osc_send_midi(&kData->osc.data, midiData);
+    }
+
+    void uiNoteOff(const uint8_t channel, const uint8_t note) override
+    {
+        CARLA_ASSERT(channel < MAX_MIDI_CHANNELS);
+        CARLA_ASSERT(note < MAX_MIDI_NOTE);
+
+        if (channel >= MAX_MIDI_CHANNELS)
+            return;
+        if (note >= MAX_MIDI_NOTE)
+            return;
+        if (kData->osc.data.target == nullptr)
+            return;
+
+        uint8_t midiData[4] = { 0 };
+        midiData[1] = MIDI_STATUS_NOTE_OFF + channel;
+        midiData[2] = note;
+
+        osc_send_midi(&kData->osc.data, midiData);
+    }
+
+    void bufferSizeChanged(const uint32_t newBufferSize) override
+    {
+        resizeAudioPool(newBufferSize);
+    }
+
+    // -------------------------------------------------------------------
 
     int setOscPluginBridgeInfo(const PluginBridgeInfoType type, const int argc, const lo_arg* const* const argv, const char* const types)
     {
@@ -786,347 +1139,6 @@ public:
         return 0;
     }
 
-#if 0
-    // -------------------------------------------------------------------
-    // Set data (plugin-specific stuff)
-
-    void setParameterValue(const uint32_t parameterId, double value, const bool sendGui, const bool sendOsc, const bool sendCallback) override
-    {
-        CARLA_ASSERT(parameterId < param.count);
-
-        params[parameterId].value = fixParameterValue(value, param.ranges[parameterId]);
-
-        CarlaPlugin::setParameterValue(parameterId, value, sendGui, sendOsc, sendCallback);
-    }
-
-    void setCustomData(const char* const type, const char* const key, const char* const value, const bool sendGui) override
-    {
-        CARLA_ASSERT(type);
-        CARLA_ASSERT(key);
-        CARLA_ASSERT(value);
-
-        if (sendGui)
-        {
-            // TODO - if type is chunk|binary, store it in a file and send path instead
-            QString cData;
-            cData  = type;
-            cData += "·";
-            cData += key;
-            cData += "·";
-            cData += value;
-            osc_send_configure(&osc.data, CARLA_BRIDGE_MSG_SET_CUSTOM, cData.toUtf8().constData());
-        }
-
-        CarlaPlugin::setCustomData(type, key, value, sendGui);
-    }
-
-    void setChunkData(const char* const stringData) override
-    {
-        CARLA_ASSERT(m_hints & PLUGIN_USES_CHUNKS);
-        CARLA_ASSERT(stringData);
-
-        QString filePath;
-        filePath  = QDir::tempPath();
-        filePath += "/.CarlaChunk_";
-        filePath += m_name;
-
-        filePath = QDir::toNativeSeparators(filePath);
-
-        QFile file(filePath);
-
-        if (file.open(QIODevice::WriteOnly | QIODevice::Text))
-        {
-            QTextStream out(&file);
-            out << stringData;
-            file.close();
-            osc_send_configure(&osc.data, CARLA_BRIDGE_MSG_SET_CHUNK, filePath.toUtf8().constData());
-        }
-    }
-#endif
-
-    // -------------------------------------------------------------------
-    // Set gui stuff
-
-    void showGui(const bool yesNo) override
-    {
-        if (yesNo)
-            osc_send_show(&kData->osc.data);
-        else
-            osc_send_hide(&kData->osc.data);
-    }
-
-    void idleGui() override
-    {
-        if (! kData->osc.thread.isRunning())
-            carla_stderr2("TESTING: Bridge has closed!");
-
-        CarlaPlugin::idleGui();
-    }
-
-    // -------------------------------------------------------------------
-    // Plugin state
-
-    void reload() override
-    {
-        carla_debug("BridgePlugin::reload() - start");
-        CARLA_ASSERT(kData->engine != nullptr);
-
-        if (kData->engine == nullptr)
-            return;
-
-        const ProcessMode processMode(kData->engine->getProccessMode());
-
-        // Safely disable plugin for reload
-        const ScopedDisabler sd(this);
-
-        kData->clearBuffers();
-
-        bool needsCtrlIn, needsCtrlOut;
-        needsCtrlIn = needsCtrlOut = false;
-
-        if (fInfo.aIns > 0)
-        {
-            kData->audioIn.createNew(fInfo.aIns);
-        }
-
-        if (fInfo.aOuts > 0)
-        {
-            kData->audioOut.createNew(fInfo.aOuts);
-            needsCtrlIn = true;
-        }
-
-        if (fInfo.mIns > 0)
-            needsCtrlIn = true;
-
-        if (fInfo.mOuts > 0)
-            needsCtrlOut = true;
-
-        const uint  portNameSize = kData->engine->maxPortNameSize();
-        CarlaString portName;
-
-        // Audio Ins
-        for (uint32_t j=0; j < fInfo.aIns; j++)
-        {
-            portName.clear();
-
-            if (processMode == PROCESS_MODE_SINGLE_CLIENT)
-            {
-                portName  = fName;
-                portName += ":";
-            }
-
-            if (fInfo.aIns > 1)
-            {
-                portName += "input_";
-                portName += CarlaString(j+1);
-            }
-            else
-                portName += "input";
-            portName.truncate(portNameSize);
-
-            kData->audioIn.ports[j].port   = (CarlaEngineAudioPort*)kData->client->addPort(kEnginePortTypeAudio, portName, true);
-            kData->audioIn.ports[j].rindex = j;
-        }
-
-        // Audio Outs
-        for (uint32_t j=0; j < fInfo.aOuts; j++)
-        {
-            portName.clear();
-
-            if (processMode == PROCESS_MODE_SINGLE_CLIENT)
-            {
-                portName  = fName;
-                portName += ":";
-            }
-
-            if (fInfo.aOuts > 1)
-            {
-                portName += "output_";
-                portName += CarlaString(j+1);
-            }
-            else
-                portName += "output";
-            portName.truncate(portNameSize);
-
-            kData->audioOut.ports[j].port   = (CarlaEngineAudioPort*)kData->client->addPort(kEnginePortTypeAudio, portName, false);
-            kData->audioOut.ports[j].rindex = j;
-        }
-
-        if (needsCtrlIn)
-        {
-            portName.clear();
-
-            if (processMode == PROCESS_MODE_SINGLE_CLIENT)
-            {
-                portName  = fName;
-                portName += ":";
-            }
-
-            portName += "event-in";
-            portName.truncate(portNameSize);
-
-            kData->event.portIn = (CarlaEngineEventPort*)kData->client->addPort(kEnginePortTypeEvent, portName, true);
-        }
-
-        if (needsCtrlOut)
-        {
-            portName.clear();
-
-            if (processMode == PROCESS_MODE_SINGLE_CLIENT)
-            {
-                portName  = fName;
-                portName += ":";
-            }
-
-            portName += "event-out";
-            portName.truncate(portNameSize);
-
-            kData->event.portOut = (CarlaEngineEventPort*)kData->client->addPort(kEnginePortTypeEvent, portName, false);
-        }
-
-        //bufferSizeChanged(kData->engine->getBufferSize());
-        //reloadPrograms(true);
-
-        carla_debug("BridgePlugin::reload() - end");
-    }
-
-#if 0
-    void prepareForSave() override
-    {
-        m_saved = false;
-        osc_send_configure(&osc.data, CARLA_BRIDGE_MSG_SAVE_NOW, "");
-
-        for (int i=0; i < 200; i++)
-        {
-            if (m_saved)
-                break;
-            carla_msleep(50);
-        }
-
-        if (! m_saved)
-            carla_stderr("BridgePlugin::prepareForSave() - Timeout while requesting save state");
-        else
-            carla_debug("BridgePlugin::prepareForSave() - success!");
-    }
-#endif
-
-    // -------------------------------------------------------------------
-    // Plugin processing
-
-    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames) override
-    {
-        uint32_t i, k;
-
-        // --------------------------------------------------------------------------------------------------------
-        // Check if active
-
-        if (! kData->active)
-        {
-            // disable any output sound
-            for (i=0; i < kData->audioOut.count; i++)
-                carla_zeroFloat(outBuffer[i], frames);
-
-            return;
-        }
-
-        for (i=0; i < fInfo.aIns; ++i)
-            carla_copyFloat(fShmAudioPool.data + i * frames, inBuffer[i], frames);
-
-        rdwr_writeOpcode(&fShmControl.data->ringBuffer, kPluginBridgeOpcodeProcess);
-        rdwr_commitWrite(&fShmControl.data->ringBuffer);
-
-        waitForServer();
-
-        for (i=0; i < fInfo.aOuts; ++i)
-            carla_copyFloat(outBuffer[i], fShmAudioPool.data + (i+fInfo.aIns) * frames, frames);
-    }
-
-    // -------------------------------------------------------------------
-    // Post-poned events
-
-    void uiParameterChange(const uint32_t index, const float value) override
-    {
-        CARLA_ASSERT(index < kData->param.count);
-
-        if (index >= kData->param.count)
-            return;
-        if (kData->osc.data.target == nullptr)
-            return;
-
-        osc_send_control(&kData->osc.data, kData->param.data[index].rindex, value);
-    }
-
-    void uiProgramChange(const uint32_t index) override
-    {
-        CARLA_ASSERT(index < kData->prog.count);
-
-        if (index >= kData->prog.count)
-            return;
-        if (kData->osc.data.target == nullptr)
-            return;
-
-        osc_send_program(&kData->osc.data, index);
-    }
-
-    void uiMidiProgramChange(const uint32_t index) override
-    {
-        CARLA_ASSERT(index < kData->midiprog.count);
-
-        if (index >= kData->midiprog.count)
-            return;
-        if (kData->osc.data.target == nullptr)
-            return;
-
-        osc_send_midi_program(&kData->osc.data, index);
-    }
-
-    void uiNoteOn(const uint8_t channel, const uint8_t note, const uint8_t velo) override
-    {
-        CARLA_ASSERT(channel < MAX_MIDI_CHANNELS);
-        CARLA_ASSERT(note < MAX_MIDI_NOTE);
-        CARLA_ASSERT(velo > 0 && velo < MAX_MIDI_VALUE);
-
-        if (channel >= MAX_MIDI_CHANNELS)
-            return;
-        if (note >= MAX_MIDI_NOTE)
-            return;
-        if (velo >= MAX_MIDI_VALUE)
-            return;
-        if (kData->osc.data.target == nullptr)
-            return;
-
-        uint8_t midiData[4] = { 0 };
-        midiData[1] = MIDI_STATUS_NOTE_ON + channel;
-        midiData[2] = note;
-        midiData[3] = velo;
-
-        osc_send_midi(&kData->osc.data, midiData);
-    }
-
-    void uiNoteOff(const uint8_t channel, const uint8_t note) override
-    {
-        CARLA_ASSERT(channel < MAX_MIDI_CHANNELS);
-        CARLA_ASSERT(note < MAX_MIDI_NOTE);
-
-        if (channel >= MAX_MIDI_CHANNELS)
-            return;
-        if (note >= MAX_MIDI_NOTE)
-            return;
-        if (kData->osc.data.target == nullptr)
-            return;
-
-        uint8_t midiData[4] = { 0 };
-        midiData[1] = MIDI_STATUS_NOTE_OFF + channel;
-        midiData[2] = note;
-
-        osc_send_midi(&kData->osc.data, midiData);
-    }
-
-    void bufferSizeChanged(const uint32_t newBufferSize) override
-    {
-        resizeAudioPool(newBufferSize);
-    }
-
     // -------------------------------------------------------------------
 
     const void* getExtraStuff() override
@@ -1367,7 +1379,7 @@ private:
 
     BridgeParamInfo* fParams;
 
-    void _cleanup()
+    void cleanup()
     {
         if (fShmAudioPool.filename.isNotEmpty())
             fShmAudioPool.filename.clear();

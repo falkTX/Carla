@@ -276,6 +276,16 @@ public:
     }
 
     // -------------------------------------------------------------------
+    // Set data (state)
+
+    // nothing
+
+    // -------------------------------------------------------------------
+    // Set data (internal stuff)
+
+    // nothing
+
+    // -------------------------------------------------------------------
     // Set data (plugin-specific stuff)
 
     void setMidiProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) override
@@ -900,6 +910,11 @@ public:
         kData->singleMutex.unlock();
         return true;
     }
+
+    // -------------------------------------------------------------------
+    // Plugin buffers
+
+    // nothing
 
     // -------------------------------------------------------------------
 

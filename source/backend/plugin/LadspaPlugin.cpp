@@ -197,16 +197,15 @@ public:
         CARLA_ASSERT(parameterId < kData->param.count);
         CARLA_ASSERT(scalePointId < parameterScalePointCount(parameterId));
 
-        const int32_t rindex = kData->param.data[parameterId].rindex;
+        const int32_t rindex(kData->param.data[parameterId].rindex);
 
         if (fRdfDescriptor != nullptr && rindex < static_cast<int32_t>(fRdfDescriptor->PortCount))
         {
-            const LADSPA_RDF_Port& port = fRdfDescriptor->Ports[rindex];
+            const LADSPA_RDF_Port& port(fRdfDescriptor->Ports[rindex]);
 
             if (scalePointId < port.ScalePointCount)
             {
-                const LADSPA_RDF_ScalePoint& scalePoint = port.ScalePoints[scalePointId];
-
+                const LADSPA_RDF_ScalePoint& scalePoint(port.ScalePoints[scalePointId]);
                 return scalePoint.Value;
             }
         }
@@ -263,7 +262,7 @@ public:
         CARLA_ASSERT(fDescriptor != nullptr);
         CARLA_ASSERT(parameterId < kData->param.count);
 
-        const int32_t rindex = kData->param.data[parameterId].rindex;
+        const int32_t rindex(kData->param.data[parameterId].rindex);
 
         if (rindex < static_cast<int32_t>(fDescriptor->PortCount))
             std::strncpy(strBuf, fDescriptor->PortNames[rindex], STR_MAX);
@@ -275,7 +274,7 @@ public:
     {
         CARLA_ASSERT(parameterId < kData->param.count);
 
-        const int32_t rindex = kData->param.data[parameterId].rindex;
+        const int32_t rindex(kData->param.data[parameterId].rindex);
 
         if (fRdfDescriptor != nullptr && rindex < static_cast<int32_t>(fRdfDescriptor->PortCount))
         {
@@ -295,11 +294,11 @@ public:
     {
         CARLA_ASSERT(parameterId < kData->param.count);
 
-        const int32_t rindex = kData->param.data[parameterId].rindex;
+        const int32_t rindex(kData->param.data[parameterId].rindex);
 
         if (fRdfDescriptor != nullptr && rindex < static_cast<int32_t>(fRdfDescriptor->PortCount))
         {
-            const LADSPA_RDF_Port& port = fRdfDescriptor->Ports[rindex];
+            const LADSPA_RDF_Port& port(fRdfDescriptor->Ports[rindex]);
 
             if (LADSPA_PORT_HAS_UNIT(port.Hints))
             {
@@ -336,15 +335,15 @@ public:
         CARLA_ASSERT(parameterId < kData->param.count);
         CARLA_ASSERT(scalePointId < parameterScalePointCount(parameterId));
 
-        const int32_t rindex = kData->param.data[parameterId].rindex;
+        const int32_t rindex(kData->param.data[parameterId].rindex);
 
         if (fRdfDescriptor != nullptr && rindex < static_cast<int32_t>(fRdfDescriptor->PortCount))
         {
-            const LADSPA_RDF_Port& port = fRdfDescriptor->Ports[rindex];
+            const LADSPA_RDF_Port& port(fRdfDescriptor->Ports[rindex]);
 
             if (scalePointId < port.ScalePointCount)
             {
-                const LADSPA_RDF_ScalePoint& scalePoint = port.ScalePoints[scalePointId];
+                const LADSPA_RDF_ScalePoint& scalePoint(port.ScalePoints[scalePointId]);
 
                 if (scalePoint.Label != nullptr)
                 {
@@ -358,6 +357,16 @@ public:
     }
 
     // -------------------------------------------------------------------
+    // Set data (state)
+
+    // nothing
+
+    // -------------------------------------------------------------------
+    // Set data (internal stuff)
+
+    // nothing
+
+    // -------------------------------------------------------------------
     // Set data (plugin-specific stuff)
 
     void setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) override
@@ -369,6 +378,11 @@ public:
 
         CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
     }
+
+    // -------------------------------------------------------------------
+    // Set gui stuff
+
+    // nothing
 
     // -------------------------------------------------------------------
     // Plugin state
