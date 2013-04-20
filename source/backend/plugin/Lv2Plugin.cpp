@@ -353,30 +353,32 @@ public:
                     kData->osc.thread.terminate();
                 }
             }
-
-            if (fFeatures[kFeatureIdUiDataAccess] != nullptr && fFeatures[kFeatureIdUiDataAccess]->data != nullptr)
-                delete (LV2_Extension_Data_Feature*)fFeatures[kFeatureIdUiDataAccess]->data;
-
-            if (fFeatures[kFeatureIdUiPortMap] != nullptr && fFeatures[kFeatureIdUiPortMap]->data != nullptr)
-                delete (LV2UI_Port_Map*)fFeatures[kFeatureIdUiPortMap]->data;
-
-            if (fFeatures[kFeatureIdUiResize] != nullptr && fFeatures[kFeatureIdUiResize]->data != nullptr)
-                delete (LV2UI_Resize*)fFeatures[kFeatureIdUiResize]->data;
-
-            if (fFeatures[kFeatureIdExternalUi] != nullptr && fFeatures[kFeatureIdExternalUi]->data != nullptr)
+            else
             {
-                const LV2_External_UI_Host* const uiHost((const LV2_External_UI_Host*)fFeatures[kFeatureIdExternalUi]->data);
+                if (fFeatures[kFeatureIdUiDataAccess] != nullptr && fFeatures[kFeatureIdUiDataAccess]->data != nullptr)
+                    delete (LV2_Extension_Data_Feature*)fFeatures[kFeatureIdUiDataAccess]->data;
 
-                if (uiHost->plugin_human_id != nullptr)
-                    delete[] uiHost->plugin_human_id;
+                if (fFeatures[kFeatureIdUiPortMap] != nullptr && fFeatures[kFeatureIdUiPortMap]->data != nullptr)
+                    delete (LV2UI_Port_Map*)fFeatures[kFeatureIdUiPortMap]->data;
 
-                delete uiHost;
+                if (fFeatures[kFeatureIdUiResize] != nullptr && fFeatures[kFeatureIdUiResize]->data != nullptr)
+                    delete (LV2UI_Resize*)fFeatures[kFeatureIdUiResize]->data;
+
+                if (fFeatures[kFeatureIdExternalUi] != nullptr && fFeatures[kFeatureIdExternalUi]->data != nullptr)
+                {
+                    const LV2_External_UI_Host* const uiHost((const LV2_External_UI_Host*)fFeatures[kFeatureIdExternalUi]->data);
+
+                    if (uiHost->plugin_human_id != nullptr)
+                        delete[] uiHost->plugin_human_id;
+
+                    delete uiHost;
+                }
+
+                fUi.descriptor = nullptr;
+                kData->uiLibClose();
             }
 
-            fUi.descriptor = nullptr;
             fUi.rdfDescriptor = nullptr;
-
-            kData->uiLibClose();
         }
 
         kData->singleMutex.lock();
@@ -3307,6 +3309,31 @@ protected:
 
     // -------------------------------------------------------------------
 
+    const char* getUiBridgePath(const LV2_Property type)
+    {
+        const EngineOptions& options(kData->engine->getOptions());
+
+        switch (type)
+        {
+        case LV2_UI_GTK2:
+            return options.bridge_lv2Gtk2;
+        case LV2_UI_GTK3:
+            return options.bridge_lv2Gtk3;
+        case LV2_UI_QT4:
+            return options.bridge_lv2Qt4;
+        case LV2_UI_QT5:
+            return options.bridge_lv2Qt5;
+        case LV2_UI_COCOA:
+            return options.bridge_lv2Cocoa;
+        case LV2_UI_WINDOWS:
+            return options.bridge_lv2Win;
+        case LV2_UI_X11:
+            return options.bridge_lv2X11;
+        default:
+            return nullptr;
+        }
+    }
+
     bool isUiBridgeable(const uint32_t uiId)
     {
         const LV2_RDF_UI& rdfUi(fRdfDescriptor->UIs[uiId]);
@@ -3725,13 +3752,11 @@ public:
         int eQt4, eQt5, eCocoa, eWindows, eX11, eGtk2, eGtk3, iCocoa, iWindows, iX11, iQt4, iQt5, iExt, iFinal;
         eQt4 = eQt5 = eCocoa = eWindows = eX11 = eGtk2 = eGtk3 = iQt4 = iQt5 = iCocoa = iWindows = iX11 = iExt = iFinal = -1;
 
-//#ifdef BUILD_BRIDGE
-//        const bool preferUiBridges(kData->engine->getOptions().preferUiBridges);
-//#else
-//        const bool preferUiBridges(kData->engine->getOptions().preferUiBridges && (fHints & PLUGIN_IS_BRIDGE) == 0);
-//#endif
-        // TODO
-        const bool preferUiBridges(false);
+#ifdef BUILD_BRIDGE
+        const bool preferUiBridges(kData->engine->getOptions().preferUiBridges);
+#else
+        const bool preferUiBridges(kData->engine->getOptions().preferUiBridges && (fHints & PLUGIN_IS_BRIDGE) == 0);
+#endif
 
         for (uint32_t i=0; i < fRdfDescriptor->UICount; ++i)
         {
@@ -3844,9 +3869,6 @@ public:
         else if (iExt >= 0)
             iFinal = iExt;
 
-        // TODO
-        const bool isBridged(false);
-
         if (iFinal < 0)
         {
             carla_stderr("Failed to find an appropriate LV2 UI for this plugin");
@@ -3876,65 +3898,64 @@ public:
             return true;
         }
 
-        // -------------------------------------------------------
-        // open UI DLL
-
-        if (! kData->uiLibOpen(fUi.rdfDescriptor->Binary))
-        {
-            carla_stderr2("Could not load UI library, error was:\n%s", kData->libError(fUi.rdfDescriptor->Binary));
-            fUi.rdfDescriptor = nullptr;
-            return true;
-        }
-
-        // -------------------------------------------------------
-        // get UI DLL main entry
-
-        LV2UI_DescriptorFunction uiDescFn = (LV2UI_DescriptorFunction)kData->uiLibSymbol("lv2ui_descriptor");
-
-        if (uiDescFn == nullptr)
-        {
-            carla_stderr2("Could not find the LV2UI Descriptor in the UI library");
-            kData->uiLibClose();
-            fUi.rdfDescriptor = nullptr;
-            return true;
-        }
-
-        // -------------------------------------------------------
-        // get UI descriptor that matches UI URI
-
-        uint32_t i = 0;
-        while ((fUi.descriptor = uiDescFn(i++)))
-        {
-            if (std::strcmp(fUi.descriptor->URI, fUi.rdfDescriptor->URI) == 0)
-                break;
-        }
-
-        if (fUi.descriptor == nullptr)
-        {
-            carla_stderr2("Could not find the requested GUI in the plugin UI library");
-            kData->uiLibClose();
-            fUi.rdfDescriptor = nullptr;
-            return true;
-        }
-
         // -----------------------------------------------------------
         // initialize ui according to type
 
         const LV2_Property uiType(fUi.rdfDescriptor->Type);
 
-        if (isBridged)
+        if (iFinal == eQt4 || iFinal == eQt5 || iFinal == eCocoa || iFinal == eWindows || iFinal == eX11 || iFinal == eGtk2 || iFinal == eGtk3)
         {
             // -------------------------------------------------------
             // initialize ui bridge
 
-            if (const char* const oscBinary = nullptr /*getUiBridgePath(uiType)*/)
+            if (const char* const oscBinary = getUiBridgePath(uiType))
             {
                 fUi.type = PLUGIN_UI_OSC;
-                kData->osc.thread.setOscData(oscBinary, fDescriptor->URI, fUi.descriptor->URI);
+                kData->osc.thread.setOscData(oscBinary, fDescriptor->URI, fUi.rdfDescriptor->URI);
             }
         }
         else
         {
+            // -------------------------------------------------------
+            // open UI DLL
+
+            if (! kData->uiLibOpen(fUi.rdfDescriptor->Binary))
+            {
+                carla_stderr2("Could not load UI library, error was:\n%s", kData->libError(fUi.rdfDescriptor->Binary));
+                fUi.rdfDescriptor = nullptr;
+                return true;
+            }
+
+            // -------------------------------------------------------
+            // get UI DLL main entry
+
+            LV2UI_DescriptorFunction uiDescFn = (LV2UI_DescriptorFunction)kData->uiLibSymbol("lv2ui_descriptor");
+
+            if (uiDescFn == nullptr)
+            {
+                carla_stderr2("Could not find the LV2UI Descriptor in the UI library");
+                kData->uiLibClose();
+                fUi.rdfDescriptor = nullptr;
+                return true;
+            }
+
+            // -------------------------------------------------------
+            // get UI descriptor that matches UI URI
+
+            uint32_t i = 0;
+            while ((fUi.descriptor = uiDescFn(i++)))
+            {
+                if (std::strcmp(fUi.descriptor->URI, fUi.rdfDescriptor->URI) == 0)
+                    break;
+            }
+
+            if (fUi.descriptor == nullptr)
+            {
+                carla_stderr2("Could not find the requested GUI in the plugin UI library");
+                kData->uiLibClose();
+                fUi.rdfDescriptor = nullptr;
+                return true;
+            }
 
             // -------------------------------------------------------
             // check if ui is usable

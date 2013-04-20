@@ -15,15 +15,7 @@ PYRCC ?= pyrcc4 -py3
 
 # -------------------------------------------------------------------------------------------------------------------------------------
 
-# HAVE_LIBS = $(shell pkg-config --exists freetype2 x11 && echo true)
-
-# ifneq ($(HAVE_LIBS),true)
-# all
-# 	@echo Error Missing libraries or pkg-config, cannot build
-# 	@exit 1
-# else
 all: CPP RES UI WIDGETS
-# endif
 
 # -------------------------------------------------------------------------------------------------------------------------------------
 # C++ code
@@ -182,10 +174,9 @@ install:
 	# Install binaries
 	install -m 755 \
 		source/backend/*.so \
+		source/bridges/carla-bridge-* \
 		source/discovery/carla-discovery-* \
 		$(DESTDIR)$(PREFIX)/lib/carla/
-
-#	source/bridges/carla-bridge-*
 
 	# Install python code
 	install -m 755 source/*.py $(DESTDIR)$(PREFIX)/share/carla/

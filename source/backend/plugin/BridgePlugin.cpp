@@ -130,6 +130,8 @@ public:
         carla_debug("BridgePlugin::BridgePlugin(%p, %i, %s, %s)", engine, id, BinaryType2Str(btype), PluginType2Str(ptype));
 
         kData->osc.thread.setMode(CarlaPluginThread::PLUGIN_THREAD_BRIDGE);
+
+        fHints |= PLUGIN_IS_BRIDGE;
     }
 
     ~BridgePlugin() override

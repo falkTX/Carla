@@ -19,7 +19,7 @@
 #include "CarlaBackendUtils.hpp"
 #include "CarlaMIDI.h"
 
-#ifdef BUILD_BRIDGE
+#ifdef JACKBRIDGE_EXPORT
 # include "jackbridge/JackBridge.hpp"
 #else
 # include "jackbridge/JackBridge.cpp"
@@ -739,6 +739,7 @@ public:
         return new CarlaEngineJackClient(kEngineTypeJack, fOptions.processMode, client);
     }
 
+#ifndef BUILD_BRIDGE
     const char* renamePlugin(const unsigned int id, const char* const newName) override
     {
         CARLA_ASSERT(kData->curPluginCount > 0);
@@ -796,7 +797,6 @@ public:
         return name;
     }
 
-#ifndef BUILD_BRIDGE
     // -------------------------------------------------------------------
     // Patchbay
 
