@@ -90,7 +90,7 @@ struct PluginAudioData {
     {
         if (ports != nullptr)
         {
-            for (uint32_t i=0; i < count; i++)
+            for (uint32_t i=0; i < count; ++i)
             {
                 if (ports[i].port != nullptr)
                 {
@@ -108,7 +108,7 @@ struct PluginAudioData {
 
     void initBuffers(CarlaEngine* const engine)
     {
-        for (uint32_t i=0; i < count; i++)
+        for (uint32_t i=0; i < count; ++i)
         {
             if (ports[i].port != nullptr)
                 ports[i].port->initBuffer(engine);
@@ -255,7 +255,7 @@ struct PluginProgramData {
         names = new ProgramName[newCount];
         count = newCount;
 
-        for (uint32_t i=0; i < newCount; i++)
+        for (uint32_t i=0; i < newCount; ++i)
             names[i] = nullptr;
     }
 
@@ -263,7 +263,7 @@ struct PluginProgramData {
     {
         if (names != nullptr)
         {
-            for (uint32_t i=0; i < count; i++)
+            for (uint32_t i=0; i < count; ++i)
             {
                 if (names[i] != nullptr)
                     delete[] names[i];
@@ -317,7 +317,7 @@ struct PluginMidiProgramData {
     {
         if (data != nullptr)
         {
-            for (uint32_t i=0; i < count; i++)
+            for (uint32_t i=0; i < count; ++i)
             {
                 if (data[i].name != nullptr)
                     delete[] data[i].name;
@@ -604,7 +604,7 @@ struct CarlaPluginProtectedData {
     {
         if (latencyBuffers != nullptr)
         {
-            for (uint32_t i=0; i < audioIn.count; i++)
+            for (uint32_t i=0; i < audioIn.count; ++i)
             {
                 CARLA_ASSERT(latencyBuffers[i] != nullptr);
 
@@ -627,7 +627,7 @@ struct CarlaPluginProtectedData {
     {
         if (latencyBuffers != nullptr)
         {
-            for (uint32_t i=0; i < audioIn.count; i++)
+            for (uint32_t i=0; i < audioIn.count; ++i)
             {
                 CARLA_ASSERT(latencyBuffers[i] != nullptr);
 
@@ -643,7 +643,7 @@ struct CarlaPluginProtectedData {
         {
             latencyBuffers = new float*[audioIn.count];
 
-            for (uint32_t i=0; i < audioIn.count; i++)
+            for (uint32_t i=0; i < audioIn.count; ++i)
             {
                 latencyBuffers[i] = new float[latency];
                 carla_zeroFloat(latencyBuffers[i], latency);

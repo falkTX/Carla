@@ -294,7 +294,7 @@ public:
         m_saved = false;
         osc_send_configure(&osc.data, CARLA_BRIDGE_MSG_SAVE_NOW, "");
 
-        for (int i=0; i < 200; i++)
+        for (int i=0; i < 200; ++i)
         {
             if (m_saved)
                 break;
@@ -432,7 +432,7 @@ public:
         CarlaString portName;
 
         // Audio Ins
-        for (uint32_t j=0; j < fInfo.aIns; j++)
+        for (uint32_t j=0; j < fInfo.aIns; ++j)
         {
             portName.clear();
 
@@ -456,7 +456,7 @@ public:
         }
 
         // Audio Outs
-        for (uint32_t j=0; j < fInfo.aOuts; j++)
+        for (uint32_t j=0; j < fInfo.aOuts; ++j)
         {
             portName.clear();
 
@@ -530,7 +530,7 @@ public:
         if (! kData->active)
         {
             // disable any output sound
-            for (i=0; i < kData->audioOut.count; i++)
+            for (i=0; i < kData->audioOut.count; ++i)
                 carla_zeroFloat(outBuffer[i], frames);
 
             return;
@@ -743,7 +743,7 @@ public:
             // delete old programs
             if (prog.count > 0)
             {
-                for (uint32_t i=0; i < prog.count; i++)
+                for (uint32_t i=0; i < prog.count; ++i)
                 {
                     if (prog.names[i])
                         free((void*)prog.names[i]);
@@ -759,7 +759,7 @@ public:
             {
                 prog.names = new const char* [prog.count];
 
-                for (uint32_t i=0; i < prog.count; i++)
+                for (uint32_t i=0; i < prog.count; ++i)
                     prog.names[i] = nullptr;
             }
             else
@@ -777,7 +777,7 @@ public:
             // delete old programs
             if (midiprog.count > 0)
             {
-                for (uint32_t i=0; i < midiprog.count; i++)
+                for (uint32_t i=0; i < midiprog.count; ++i)
                 {
                     if (midiprog.data[i].name)
                         free((void*)midiprog.data[i].name);
@@ -1282,7 +1282,7 @@ public:
             //kData->osc.thread.waitForStarted();
         }
 
-        for (int i=0; i < 200; i++)
+        for (int i=0; i < 200; ++i)
         {
             if (fInitiated || ! kData->osc.thread.isRunning())
                 break;

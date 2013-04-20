@@ -572,7 +572,7 @@ void CarlaPlugin::getParameterCountInfo(uint32_t* const ins, uint32_t* const out
     *outs  = 0;
     *total = kData->param.count;
 
-    for (uint32_t i=0; i < kData->param.count; i++)
+    for (uint32_t i=0; i < kData->param.count; ++i)
     {
         if (kData->param.data[i].type == PARAMETER_INPUT)
             *ins += 1;
@@ -695,7 +695,7 @@ const SaveState& CarlaPlugin::getSaveState()
 
     const float sampleRate(kData->engine->getSampleRate());
 
-    for (uint32_t i=0, count=kData->param.count; i < count; i++)
+    for (uint32_t i=0, count=kData->param.count; i < count; ++i)
     {
         const ParameterData& paramData(kData->param.data[i]);
 
@@ -781,7 +781,7 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
         // index not valid, try to find by name
         else
         {
-            for (uint32_t i=0; i < kData->prog.count; i++)
+            for (uint32_t i=0; i < kData->prog.count; ++i)
             {
                 getProgramName(i, strBuf);
 
@@ -833,7 +833,7 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
 
     if (type() == PLUGIN_LADSPA || type() == PLUGIN_LV2)
     {
-        for (uint32_t i=0; i < kData->param.count; i++)
+        for (uint32_t i=0; i < kData->param.count; ++i)
         {
             getParameterSymbol(i, strBuf);
 
@@ -1275,7 +1275,7 @@ void CarlaPlugin::setParameterValueByRealIndex(const int32_t rindex, const float
     if (rindex == PARAMETER_CTRL_CHANNEL)
         return setCtrlChannel(int8_t(value), sendOsc, sendCallback);
 
-    for (uint32_t i=0; i < kData->param.count; i++)
+    for (uint32_t i=0; i < kData->param.count; ++i)
     {
         if (kData->param.data[i].rindex == rindex)
             return setParameterValue(i, value, sendGui, sendOsc, sendCallback);
@@ -1421,7 +1421,7 @@ void CarlaPlugin::setProgram(int32_t index, const bool sendGui, const bool sendO
         if (sendGui)
             uiProgramChange(fixedIndex);
 
-        for (uint32_t i=0; i < kData->param.count; i++)
+        for (uint32_t i=0; i < kData->param.count; ++i)
         {
             // FIXME?
             kData->param.ranges[i].def = getParameterValue(i);
@@ -1467,7 +1467,7 @@ void CarlaPlugin::setMidiProgram(int32_t index, const bool sendGui, const bool s
         if (type() != PLUGIN_GIG && type() != PLUGIN_SF2 && type() != PLUGIN_SFZ)
 #endif
         {
-            for (uint32_t i=0; i < kData->param.count; i++)
+            for (uint32_t i=0; i < kData->param.count; ++i)
             {
                 // FIXME?
                 kData->param.ranges[i].def = getParameterValue(i);
@@ -1495,7 +1495,7 @@ void CarlaPlugin::setMidiProgram(int32_t index, const bool sendGui, const bool s
 
 void CarlaPlugin::setMidiProgramById(const uint32_t bank, const uint32_t program, const bool sendGui, const bool sendOsc, const bool sendCallback)
 {
-    for (uint32_t i=0; i < kData->midiprog.count; i++)
+    for (uint32_t i=0; i < kData->midiprog.count; ++i)
     {
         if (kData->midiprog.data[i].bank == bank && kData->midiprog.data[i].program == program)
             return setMidiProgram(i, sendGui, sendOsc, sendCallback);
@@ -1524,7 +1524,7 @@ void CarlaPlugin::idleGui()
         postRtEventsRun();
 
         // Update parameter outputs
-        for (uint32_t i=0; i < kData->param.count; i++)
+        for (uint32_t i=0; i < kData->param.count; ++i)
         {
             if (kData->param.data[i].type == PARAMETER_OUTPUT)
                 uiParameterChange(i, getParameterValue(i));
@@ -1647,7 +1647,7 @@ void CarlaPlugin::registerToOscClient()
     {
         char bufName[STR_MAX+1], bufUnit[STR_MAX+1];
 
-        for (uint32_t i=0; i < kData->param.count; i++)
+        for (uint32_t i=0; i < kData->param.count; ++i)
         {
             carla_fill<char>(bufName, STR_MAX, '\0');
             carla_fill<char>(bufUnit, STR_MAX, '\0');
@@ -1679,14 +1679,14 @@ void CarlaPlugin::registerToOscClient()
 #ifdef BUILD_BRIDGE
         kData->engine->osc_send_bridge_program_count(kData->prog.count);
 
-        for (uint32_t i=0; i < kData->prog.count; i++)
+        for (uint32_t i=0; i < kData->prog.count; ++i)
             kData->engine->osc_send_bridge_program_info(i, kData->prog.names[i]);
 
         kData->engine->osc_send_bridge_set_program(kData->prog.current);
 #else
         kData->engine->osc_send_control_set_program_count(fId, kData->prog.count);
 
-        for (uint32_t i=0; i < kData->prog.count; i++)
+        for (uint32_t i=0; i < kData->prog.count; ++i)
             kData->engine->osc_send_control_set_program_name(fId, i, kData->prog.names[i]);
 
         kData->engine->osc_send_control_set_program(fId, kData->prog.current);
@@ -1699,7 +1699,7 @@ void CarlaPlugin::registerToOscClient()
 #ifdef BUILD_BRIDGE
         kData->engine->osc_send_bridge_midi_program_count(kData->midiprog.count);
 
-        for (uint32_t i=0; i < kData->midiprog.count; i++)
+        for (uint32_t i=0; i < kData->midiprog.count; ++i)
         {
             const MidiProgramData& mpData(kData->midiprog.data[i]);
 
@@ -1710,7 +1710,7 @@ void CarlaPlugin::registerToOscClient()
 #else
         kData->engine->osc_send_control_set_midi_program_count(fId, kData->midiprog.count);
 
-        for (uint32_t i=0; i < kData->midiprog.count; i++)
+        for (uint32_t i=0; i < kData->midiprog.count; ++i)
         {
             const MidiProgramData& mpData(kData->midiprog.data[i]);
 
@@ -1802,7 +1802,7 @@ void CarlaPlugin::updateOscData(const lo_address& source, const char* const url)
             osc_send_midi_program(&kData->osc.data, curMidiProg.bank, curMidiProg.program);
     }
 
-    for (uint32_t i=0; i < kData->param.count; i++)
+    for (uint32_t i=0; i < kData->param.count; ++i)
         osc_send_control(&kData->osc.data, kData->param.data[i].rindex, getParameterValue(i));
 
     carla_stdout("CarlaPlugin::updateOscData() - done");
@@ -1890,7 +1890,7 @@ void CarlaPlugin::sendMidiAllNotesOff()
     postEvent.value2 = 0;
     postEvent.value3 = 0.0f;
 
-    for (unsigned short i=0; i < MAX_MIDI_NOTE; i++)
+    for (unsigned short i=0; i < MAX_MIDI_NOTE; ++i)
     {
         postEvent.value2 = i;
         kData->postRtEvents.appendRT(postEvent);
@@ -1954,7 +1954,7 @@ void CarlaPlugin::postRtEventsRun()
             {
                 kData->engine->osc_send_control_set_program(fId, event.value1);
 
-                for (uint32_t j=0; j < kData->param.count; j++)
+                for (uint32_t j=0; j < kData->param.count; ++j)
                     kData->engine->osc_send_control_set_default_value(fId, j, kData->param.ranges[j].def);
             }
 #endif
@@ -1974,7 +1974,7 @@ void CarlaPlugin::postRtEventsRun()
             {
                 kData->engine->osc_send_control_set_midi_program(fId, event.value1);
 
-                for (uint32_t j=0; j < kData->param.count; j++)
+                for (uint32_t j=0; j < kData->param.count; ++j)
                     kData->engine->osc_send_control_set_default_value(fId, j, kData->param.ranges[j].def);
             }
 #endif
