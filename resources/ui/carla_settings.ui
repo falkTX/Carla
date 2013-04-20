@@ -854,9 +854,6 @@ You can disable these checks to get a faster scanning time (at your own risk).</
             </item>
             <item row="1" column="0" colspan="3">
              <widget class="QCheckBox" name="ch_engine_prefer_ui_bridges">
-              <property name="enabled">
-               <bool>false</bool>
-              </property>
               <property name="toolTip">
                <string>Use OSC-GUI bridges when possible, this way separating the UI from DSP code</string>
               </property>

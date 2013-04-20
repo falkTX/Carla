@@ -19,7 +19,7 @@
 
 #include "DistrhoPluginMain.cpp"
 
-#include <QtCore/Qt>
+#include <QtCore/QSettings>
 
 #if DISTRHO_PLUGIN_HAS_UI
 # if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
@@ -52,7 +52,6 @@ public:
           fUi(this, 0, editParameterCallback, setParameterCallback, setStateCallback, sendNoteCallback, uiResizeCallback)
 #endif
     {
-        setWindowFlags(windowFlags()|Qt::WindowStaysOnTopHint);
 #ifdef DISTRHO_UI_OPENGL
         setCentralWidget(&fWidget);
 #else
@@ -63,6 +62,13 @@ public:
         setWindowTitle(QString("%1 (GUI)").arg(fUi.name()));
 
         uiResize(fUi.width(), fUi.height());
+
+        {
+            QSettings settings;
+
+            if (settings.value("Engine/UIsAlwaysOnTop", true).toBool())
+                setWindowFlags(windowFlags()|Qt::WindowStaysOnTopHint);
+        }
     }
 
     ~UICarla()

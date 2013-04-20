@@ -17,6 +17,8 @@
 
 #include "CarlaPluginGui.hpp"
 
+# include <QtCore/QSettings>
+
 #ifdef Q_WS_X11
 # include <QtGui/QX11EmbedContainer>
 #endif
@@ -52,9 +54,14 @@ CarlaPluginGui::CarlaPluginGui(CarlaEngine* const engine, Callback* const callba
         setWindowFlags(windowFlags()|Qt::MSWindowsFixedSizeDialogHint);
 #endif
 
-    setWindowFlags(windowFlags()|Qt::WindowStaysOnTopHint);
-
     connect(this, SIGNAL(setSizeSafeSignal(int,int)), SLOT(setSizeSafeSlot(int,int)));
+
+    {
+        QSettings settings;
+
+        if (settings.value("Engine/UIsAlwaysOnTop", true).toBool())
+            setWindowFlags(windowFlags()|Qt::WindowStaysOnTopHint);
+    }
 }
 
 CarlaPluginGui::~CarlaPluginGui()

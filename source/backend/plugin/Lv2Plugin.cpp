@@ -3239,6 +3239,45 @@ protected:
 
     // -------------------------------------------------------------------
 
+    LV2_Worker_Status handleWorkerSchedule(const uint32_t size, const void* const data)
+    {
+        carla_stdout("Lv2Plugin::handleWorkerSchedule(%i, %p)", size, data);
+
+#if 0
+        if (! ext.worker)
+        {
+            carla_stderr("Lv2Plugin::handleWorkerSchedule(%i, %p) - plugin has no worker", size, data);
+            return LV2_WORKER_ERR_UNKNOWN;
+        }
+
+        if (x_engine->isOffline())
+            ext.worker->work(handle, carla_lv2_worker_respond, this, size, data);
+        else
+            postponeEvent(PluginPostEventCustom, size, 0, 0.0, data);
+#endif
+
+        return LV2_WORKER_SUCCESS;
+    }
+
+    LV2_Worker_Status handleWorkerRespond(const uint32_t size, const void* const data)
+    {
+        carla_stdout("Lv2Plugin::handleWorkerRespond(%i, %p)", size, data);
+
+#if 0
+        LV2_Atom_Worker workerAtom;
+        workerAtom.atom.type = CARLA_URI_MAP_ID_ATOM_WORKER;
+        workerAtom.atom.size = sizeof(LV2_Atom_Worker_Body);
+        workerAtom.body.size = size;
+        workerAtom.body.data = data;
+
+        atomQueueIn.put(0, (const LV2_Atom*)&workerAtom);
+#endif
+
+        return LV2_WORKER_SUCCESS;
+    }
+
+    // -------------------------------------------------------------------
+
     void handleExternalUiClosed()
     {
         CARLA_ASSERT(fUi.type == PLUGIN_UI_EXTERNAL);
@@ -3594,6 +3633,9 @@ public:
         fFeatures[kFeatureIdWorker]           = new LV2_Feature;
         fFeatures[kFeatureIdWorker]->URI      = LV2_WORKER__schedule;
         fFeatures[kFeatureIdWorker]->data     = workerFt;
+
+        if (! needsFixedBuffer())
+            fFeatures[kFeatureIdBufSizeFixed]->URI = LV2_BUF_SIZE__boundedBlockLength;
 
         // ---------------------------------------------------------------
         // get DLL main entry
@@ -4475,12 +4517,7 @@ private:
         if (handle == nullptr)
             return LV2_WORKER_ERR_UNKNOWN;
 
-        //return ((Lv2Plugin*)handle)->handleWorkerSchedule(size, data);
-        return LV2_WORKER_ERR_UNKNOWN;
-
-        // todo
-        (void)size;
-        (void)data;
+        return ((Lv2Plugin*)handle)->handleWorkerSchedule(size, data);
     }
 
     static LV2_Worker_Status carla_lv2_worker_respond(LV2_Worker_Respond_Handle handle, uint32_t size, const void* data)
@@ -4491,12 +4528,7 @@ private:
         if (handle == nullptr)
             return LV2_WORKER_ERR_UNKNOWN;
 
-        //return ((Lv2Plugin*)handle)->handleWorkerRespond(size, data);
-        return LV2_WORKER_ERR_UNKNOWN;
-
-        // todo
-        (void)size;
-        (void)data;
+        return ((Lv2Plugin*)handle)->handleWorkerRespond(size, data);
     }
 
     // -------------------------------------------------------------------
