@@ -80,6 +80,7 @@ LINK_FLAGS += $(shell pkg-config --libs ntk ntk_images)
 endif
 endif
 
+EXTRA_LIBS  = -ldl -lrt
 LINK_FLAGS += $(EXTRA_LIBS)
 
 # --------------------------------------------------------------
