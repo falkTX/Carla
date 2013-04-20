@@ -1070,7 +1070,7 @@ void CarlaPlugin::setDryWet(const float value, const bool sendOsc, const bool se
 {
     CARLA_ASSERT(value >= 0.0f && value <= 1.0f);
 
-    const float fixedValue = carla_fixValue<float>(0.0f, 1.0f, value);
+    const float fixedValue(carla_fixValue<float>(0.0f, 1.0f, value));
 
     if (kData->postProc.dryWet == fixedValue)
         return;
@@ -1097,7 +1097,7 @@ void CarlaPlugin::setVolume(const float value, const bool sendOsc, const bool se
 {
     CARLA_ASSERT(value >= 0.0f && value <= 1.27f);
 
-    const float fixedValue = carla_fixValue<float>(0.0f, 1.27f, value);
+    const float fixedValue(carla_fixValue<float>(0.0f, 1.27f, value));
 
     if (kData->postProc.volume == fixedValue)
         return;
@@ -1124,7 +1124,7 @@ void CarlaPlugin::setBalanceLeft(const float value, const bool sendOsc, const bo
 {
     CARLA_ASSERT(value >= -1.0f && value <= 1.0f);
 
-    const float fixedValue = carla_fixValue<float>(-1.0f, 1.0f, value);
+    const float fixedValue(carla_fixValue<float>(-1.0f, 1.0f, value));
 
     if (kData->postProc.balanceLeft == fixedValue)
         return;
@@ -1151,7 +1151,7 @@ void CarlaPlugin::setBalanceRight(const float value, const bool sendOsc, const b
 {
     CARLA_ASSERT(value >= -1.0f && value <= 1.0f);
 
-    const float fixedValue = carla_fixValue<float>(-1.0f, 1.0f, value);
+    const float fixedValue(carla_fixValue<float>(-1.0f, 1.0f, value));
 
     if (kData->postProc.balanceRight == fixedValue)
         return;
@@ -1178,7 +1178,7 @@ void CarlaPlugin::setPanning(const float value, const bool sendOsc, const bool s
 {
     CARLA_ASSERT(value >= -1.0f && value <= 1.0f);
 
-    const float fixedValue = carla_fixValue<float>(-1.0f, 1.0f, value);
+    const float fixedValue(carla_fixValue<float>(-1.0f, 1.0f, value));
 
     if (kData->postProc.panning == fixedValue)
         return;

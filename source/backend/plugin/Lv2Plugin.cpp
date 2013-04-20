@@ -573,8 +573,6 @@ public:
 
     unsigned int availableOptions() override
     {
-        CARLA_ASSERT(fRdfDescriptor != nullptr);
-
         unsigned int options = 0x0;
 
         options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
@@ -1596,7 +1594,7 @@ public:
                 j = iCtrl++;
                 kData->param.data[j].index  = j;
                 kData->param.data[j].rindex = i;
-                kData->param.data[j].hints  = 0;
+                kData->param.data[j].hints  = 0x0;
                 kData->param.data[j].midiChannel = 0;
                 kData->param.data[j].midiCC = -1;
 
@@ -1628,7 +1626,7 @@ public:
 
                 if (max - min == 0.0f)
                 {
-                    carla_stderr("Broken plugin parameter: max - min == 0");
+                    carla_stderr2("WARNING - Broken plugin parameter '%s': max - min == 0.0f", fRdfDescriptor->Ports[i].Name);
                     max = min + 0.1f;
                 }
 
@@ -1764,7 +1762,7 @@ public:
                 else
                 {
                     kData->param.data[j].type = PARAMETER_UNKNOWN;
-                    carla_stderr("WARNING - Got a broken Port (Control, but not input or output)");
+                    carla_stderr2("WARNING - Got a broken Port (Control, but not input or output)");
                 }
 
                 // extra parameter hints
@@ -2663,6 +2661,9 @@ public:
             carla_copyFloat(fAudioInBuffers[i], inBuffer[i]+timeOffset, frames);
         for (i=0; i < kData->audioOut.count; ++i)
             carla_zeroFloat(fAudioOutBuffers[i], frames);
+
+        // --------------------------------------------------------------------------------------------------------
+        // Run plugin
 
         fDescriptor->run(fHandle, frames);
 

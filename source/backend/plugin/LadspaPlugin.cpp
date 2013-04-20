@@ -373,7 +373,7 @@ public:
     {
         CARLA_ASSERT(parameterId < kData->param.count);
 
-        const float fixedValue = kData->param.fixValue(parameterId, value);
+        const float fixedValue(kData->param.fixValue(parameterId, value));
         fParamBuffers[parameterId] = fixedValue;
 
         CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);

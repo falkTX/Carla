@@ -1767,7 +1767,7 @@ protected:
             else if (fIsProcessing)
             {
                 // Called from engine
-                const float fixedValue = kData->param.fixValue(index, opt);
+                const float fixedValue(kData->param.fixValue(index, opt));
 
                 if (kData->engine->isOffline())
                 {

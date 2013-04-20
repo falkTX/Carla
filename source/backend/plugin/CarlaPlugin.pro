@@ -12,7 +12,7 @@ CONFIG     = debug
 CONFIG    += link_pkgconfig qt shared warn_on
 
 DEFINES    = DEBUG
-DEFINES   += QTCREATOR_TEST
+DEFINES   += QTCREATOR_TEST MOC_PARSING
 
 # Shared
 DEFINES   += WANT_NATIVE
