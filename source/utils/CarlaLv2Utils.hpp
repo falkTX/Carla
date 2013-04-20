@@ -1071,7 +1071,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
                 else if (lilvUI.is_a(gLv2World.ui_externalOld))
                     rdfUI->Type = LV2_UI_OLD_EXTERNAL;
                 else
-                    carla_stderr("lv2_rdf_new(\"%s\") - UI '%s' if of unknown type", uri, lilvUI.get_uri().as_uri());
+                    carla_stderr("lv2_rdf_new(\"%s\") - UI '%s' is of unknown type", uri, lilvUI.get_uri().as_uri());
 
                 // --------------------------------------
                 // Set UI Information
