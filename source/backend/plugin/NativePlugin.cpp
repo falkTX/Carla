@@ -1146,6 +1146,7 @@ public:
     void activate() override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
+        CARLA_ASSERT(fHandle != nullptr);
 
         if (fDescriptor->activate != nullptr)
         {
@@ -1159,6 +1160,7 @@ public:
     void deactivate() override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
+        CARLA_ASSERT(fHandle != nullptr);
 
         if (fDescriptor->deactivate != nullptr)
         {

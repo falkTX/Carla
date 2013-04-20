@@ -864,7 +864,7 @@ public:
             // Update data
             for (i=0; i < count; ++i)
             {
-                const DSSI_Program_Descriptor* const pdesc = fDssiDescriptor->get_program(fHandle, i);
+                const DSSI_Program_Descriptor* const pdesc(fDssiDescriptor->get_program(fHandle, i));
                 CARLA_ASSERT(pdesc != nullptr);
                 CARLA_ASSERT(pdesc->Name != nullptr);
 
@@ -938,6 +938,7 @@ public:
     void activate() override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
+        CARLA_ASSERT(fHandle != nullptr);
 
         if (fDescriptor->activate != nullptr)
         {
@@ -951,6 +952,7 @@ public:
     void deactivate() override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
+        CARLA_ASSERT(fHandle != nullptr);
 
         if (fDescriptor->deactivate != nullptr)
         {

@@ -409,14 +409,14 @@ public:
 
                     if (vstRect != nullptr)
                     {
-                        const int16_t width  = vstRect->right  - vstRect->left;
-                        const int16_t height = vstRect->bottom - vstRect->top;
+                        const int16_t width(vstRect->right  - vstRect->left);
+                        const int16_t height(vstRect->bottom - vstRect->top);
 
                         if (width > 0 && height > 0)
                             kData->gui->setSize(width, height);
                     }
 
-                    kData->gui->setWindowTitle(QString("%1 (GUI)").arg((const char*)fName).toUtf8().constData());
+                    kData->gui->setWindowTitle(QString("%1 (GUI)").arg((const char*)fName));
                     kData->gui->show();
                 }
                 else
@@ -429,7 +429,7 @@ public:
                     }
 
                     kData->engine->callback(CALLBACK_ERROR, fId, 0, 0, 0.0f, "Plugin refused to open its own UI");
-                    kData->engine->callback(CALLBACK_SHOW_GUI, fId, 0, 0, 0.0f, nullptr);
+                    kData->engine->callback(CALLBACK_SHOW_GUI, fId, -1, 0, 0.0f, nullptr);
                     return;
                 }
             }

@@ -45,10 +45,10 @@ CARLA_BACKEND_START_NAMESPACE
  * @defgroup PluginHints Plugin Hints
  * @{
  */
-const unsigned int PLUGIN_HAS_EXTENSION_OPTIONS  = 0x1000; //!< LV2 Plugin has Options extension
-const unsigned int PLUGIN_HAS_EXTENSION_PROGRAMS = 0x2000; //!< LV2 Plugin has Programs extension
-const unsigned int PLUGIN_HAS_EXTENSION_STATE    = 0x4000; //!< LV2 Plugin has State extension
-const unsigned int PLUGIN_HAS_EXTENSION_WORKER   = 0x8000; //!< LV2 Plugin has Worker extension
+const unsigned int PLUGIN_HAS_EXTENSION_OPTIONS  = 0x100; //!< LV2 Plugin has Options extension
+const unsigned int PLUGIN_HAS_EXTENSION_PROGRAMS = 0x200; //!< LV2 Plugin has Programs extension
+const unsigned int PLUGIN_HAS_EXTENSION_STATE    = 0x400; //!< LV2 Plugin has State extension
+const unsigned int PLUGIN_HAS_EXTENSION_WORKER   = 0x800; //!< LV2 Plugin has Worker extension
 /**@}*/
 
 /*!
@@ -133,6 +133,14 @@ const uint32_t kFeatureCount              = 22;
 /**@}*/
 
 const unsigned int MAX_EVENT_BUFFER = 8192; // 0x2000
+
+enum Lv2PluginGuiType {
+    PLUGIN_UI_NULL,
+    PLUGIN_UI_OSC,
+    PLUGIN_UI_QT,
+    PLUGIN_UI_PARENT,
+    PLUGIN_UI_EXTERNAL
+};
 
 struct Lv2EventData {
     uint32_t type;
@@ -332,11 +340,11 @@ public:
         carla_debug("Lv2Plugin::~Lv2Plugin()");
 
         // close UI
-        if (fHints & PLUGIN_HAS_GUI)
+        if (fUi.type != PLUGIN_UI_NULL)
         {
             showGui(false);
 
-            //if (fGui.isOsc)
+            if (fUi.type == PLUGIN_UI_OSC)
             {
                 // Wait a bit first, then force kill
                 if (kData->osc.thread.isRunning() && ! kData->osc.thread.wait(kData->engine->getOptions().oscUiTimeout))
@@ -448,7 +456,7 @@ public:
             const char* const uri(*it);
 
             if (uri != nullptr)
-                delete uri;
+                delete[] uri;
         }
 
         fCustomURIDs.clear();
@@ -870,7 +878,7 @@ public:
 
                 status = fExt.state->restore(fHandle, carla_lv2_state_retrieve, this, 0, fFeatures);
 
-                if (fHandle2)
+                if (fHandle2 != nullptr)
                     fExt.state->restore(fHandle, carla_lv2_state_retrieve, this, 0, fFeatures);
             }
 
@@ -939,7 +947,10 @@ public:
 
     void showGui(const bool yesNo) override
     {
-        if (true)
+        if (fUi.type == PLUGIN_UI_NULL)
+            return;
+
+        if (fUi.type == PLUGIN_UI_OSC)
         {
             if (yesNo)
             {
@@ -957,8 +968,73 @@ public:
                 if (kData->osc.thread.isRunning() && ! kData->osc.thread.wait(kData->engine->getOptions().oscUiTimeout))
                     kData->osc.thread.terminate();
             }
+
+            return;
+        }
+
+        // take some precautions
+        CARLA_ASSERT(fUi.descriptor != nullptr);
+        CARLA_ASSERT(fUi.rdfDescriptor == nullptr);
+
+        if (fUi.descriptor == nullptr)
+            return;
+        if (fUi.rdfDescriptor == nullptr)
+            return;
+
+        if (yesNo)
+        {
+            CARLA_ASSERT(fUi.descriptor->instantiate != nullptr);
+
+            if (fUi.descriptor->instantiate == nullptr)
+                return;
         }
         else
+        {
+            CARLA_ASSERT(fUi.handle != nullptr);
+            CARLA_ASSERT(fUi.descriptor->cleanup != nullptr);
+
+            if (fUi.handle == nullptr)
+                return;
+            if (fUi.descriptor->cleanup == nullptr)
+                return;
+        }
+
+        if (fUi.type == PLUGIN_UI_EXTERNAL)
+        {
+            if (yesNo)
+            {
+                fUi.widget = nullptr;
+
+                if (fUi.handle == nullptr)
+                    fUi.handle = fUi.descriptor->instantiate(fUi.descriptor, fRdfDescriptor->URI, fUi.rdfDescriptor->Bundle,
+                                                             carla_lv2_ui_write_function, this, &fUi.widget, fFeatures);
+
+                CARLA_ASSERT(fUi.handle != nullptr);
+                CARLA_ASSERT(fUi.widget != nullptr);
+
+                if (fUi.handle == nullptr || fUi.widget == nullptr)
+                {
+                    fUi.handle = nullptr;
+                    fUi.widget = nullptr;
+                    kData->engine->callback(CALLBACK_ERROR, fId, 0, 0, 0.0f, "Plugin refused to open its own UI");
+                    kData->engine->callback(CALLBACK_SHOW_GUI, fId, 0, 0, 0.0f, nullptr);
+                    return;
+                }
+
+                LV2_EXTERNAL_UI_SHOW((LV2_External_UI_Widget*)fUi.widget);
+            }
+            else
+            {
+                CARLA_ASSERT(fUi.widget != nullptr);
+
+                if (fUi.widget != nullptr)
+                    LV2_EXTERNAL_UI_HIDE((LV2_External_UI_Widget*)fUi.widget);
+
+                fUi.descriptor->cleanup(fUi.handle);
+                fUi.handle = nullptr;
+            }
+        }
+        else // means PLUGIN_UI_PARENT || PLUGIN_UI_QT
         {
             if (yesNo)
             {
@@ -966,37 +1042,48 @@ public:
                 {
                     // TODO
                     CarlaPluginGui::Options guiOptions;
-                    guiOptions.parented  = false;
+                    guiOptions.parented  = (fUi.type == PLUGIN_UI_PARENT);
                     guiOptions.resizable = true;
 
                     kData->gui = new CarlaPluginGui(kData->engine, this, guiOptions);
                 }
 
-                //void* const ptr = kData->gui->getContainerWinId();
-
-                // open
-                if (true)
+                if (fUi.type == PLUGIN_UI_PARENT)
                 {
-                    kData->gui->setWindowTitle(QString("%1 (GUI)").arg((const char*)fName).toUtf8().constData());
-                    kData->gui->show();
+                    fFeatures[kFeatureIdUiParent]->data = kData->gui->getContainerWinId();
+                    fFeatures[kFeatureIdUiParent]->URI  = LV2_UI__parent;
                 }
-                else
+
+                fUi.widget = nullptr;
+
+                if (fUi.handle == nullptr)
+                    fUi.handle = fUi.descriptor->instantiate(fUi.descriptor, fRdfDescriptor->URI, fUi.rdfDescriptor->Bundle,
+                                                             carla_lv2_ui_write_function, this, &fUi.widget, fFeatures);
+
+                CARLA_ASSERT(fUi.handle != nullptr);
+                CARLA_ASSERT(fUi.widget != nullptr);
+
+                if (fUi.handle == nullptr || fUi.widget == nullptr)
                 {
-                    if (kData->gui != nullptr)
-                    {
-                        kData->gui->close();
-                        delete kData->gui;
-                        kData->gui = nullptr;
-                    }
+                    fUi.handle = nullptr;
+                    fUi.widget = nullptr;
+
+                    kData->gui->close();
+                    delete kData->gui;
+                    kData->gui = nullptr;
 
                     kData->engine->callback(CALLBACK_ERROR, fId, 0, 0, 0.0f, "Plugin refused to open its own UI");
-                    kData->engine->callback(CALLBACK_SHOW_GUI, fId, 0, 0, 0.0f, nullptr);
+                    kData->engine->callback(CALLBACK_SHOW_GUI, fId, -1, 0, 0.0f, nullptr);
                     return;
                 }
+
+                kData->gui->setWindowTitle(QString("%1 (GUI)").arg((const char*)fName));
+                kData->gui->show();
             }
             else
             {
-                // close here
+                fUi.descriptor->cleanup(fUi.handle);
+                fUi.handle = nullptr;
 
                 if (kData->gui != nullptr)
                 {
@@ -1006,12 +1093,25 @@ public:
                 }
             }
         }
-
-        //fGui.isVisible = yesNo;
     }
 
     void idleGui() override
     {
+        if (fUi.handle != nullptr && fUi.descriptor != nullptr)
+        {
+            if (fUi.type == PLUGIN_UI_EXTERNAL && fUi.widget != nullptr)
+                LV2_EXTERNAL_UI_RUN((LV2_External_UI_Widget*)fUi.widget);
+
+            if (fExt.uiidle != nullptr)
+            {
+                if (fExt.uiidle->idle(fUi.handle) != 0)
+                {
+                    showGui(false);
+                    kData->engine->callback(CALLBACK_SHOW_GUI, fId, 0, 0, 0.0f, nullptr);
+                }
+            }
+        }
+
         CarlaPlugin::idleGui();
     }
 
@@ -1182,7 +1282,7 @@ public:
                 {
                     fEventsIn.data[j].type = CARLA_EVENT_DATA_ATOM;
                     fEventsIn.data[j].atom = (LV2_Atom_Sequence*)std::malloc(sizeof(LV2_Atom_Sequence) + MAX_EVENT_BUFFER);
-                    fEventsIn.data[j].atom->atom.size = sizeof(LV2_Atom_Sequence_Body);
+                    fEventsIn.data[j].atom->atom.size = 0;
                     fEventsIn.data[j].atom->atom.type = CARLA_URI_MAP_ID_ATOM_SEQUENCE;
                     fEventsIn.data[j].atom->body.unit = CARLA_URI_MAP_ID_NULL;
                     fEventsIn.data[j].atom->body.pad  = 0;
@@ -1216,7 +1316,7 @@ public:
                 {
                     fEventsOut.data[j].type = CARLA_EVENT_DATA_ATOM;
                     fEventsOut.data[j].atom = (LV2_Atom_Sequence*)std::malloc(sizeof(LV2_Atom_Sequence) + MAX_EVENT_BUFFER);
-                    fEventsOut.data[j].atom->atom.size = sizeof(LV2_Atom_Sequence_Body);
+                    fEventsOut.data[j].atom->atom.size = 0;
                     fEventsOut.data[j].atom->atom.type = CARLA_URI_MAP_ID_ATOM_SEQUENCE;
                     fEventsOut.data[j].atom->body.unit = CARLA_URI_MAP_ID_NULL;
                     fEventsOut.data[j].atom->body.pad  = 0;
@@ -1683,7 +1783,7 @@ public:
 
                 fDescriptor->connect_port(fHandle, i, &fParamBuffers[j]);
 
-                if (fHandle2)
+                if (fHandle2 != nullptr)
                     fDescriptor->connect_port(fHandle2, i, &fParamBuffers[j]);
             }
             else
@@ -1691,7 +1791,7 @@ public:
                 // Port Type not supported, but it's optional anyway
                 fDescriptor->connect_port(fHandle, i, nullptr);
 
-                if (fHandle2)
+                if (fHandle2 != nullptr)
                     fDescriptor->connect_port(fHandle2, i, nullptr);
             }
         }
@@ -1774,12 +1874,105 @@ public:
         carla_debug("Lv2Plugin::reload() - end");
     }
 
+    void reloadPrograms(const bool init) override
+    {
+        carla_debug("DssiPlugin::reloadPrograms(%s)", bool2str(init));
+        uint32_t i, oldCount  = kData->midiprog.count;
+        const int32_t current = kData->midiprog.current;
+
+        // Delete old programs
+        kData->midiprog.clear();
+
+        // Query new programs
+        uint32_t count = 0;
+        if (fExt.programs != nullptr && fExt.programs->get_program != nullptr && fExt.programs->select_program != nullptr)
+        {
+            while (fExt.programs->get_program(fHandle, count))
+                count++;
+        }
+
+        if (count > 0)
+        {
+            kData->midiprog.createNew(count);
+
+            // Update data
+            for (i=0; i < count; ++i)
+            {
+                const LV2_Program_Descriptor* const pdesc(fExt.programs->get_program(fHandle, i));
+                CARLA_ASSERT(pdesc != nullptr);
+                CARLA_ASSERT(pdesc->name != nullptr);
+
+                kData->midiprog.data[i].bank    = static_cast<uint32_t>(pdesc->bank);
+                kData->midiprog.data[i].program = static_cast<uint32_t>(pdesc->program);
+                kData->midiprog.data[i].name    = carla_strdup(pdesc->name);
+            }
+        }
+
+#ifndef BUILD_BRIDGE
+        // Update OSC Names
+        if (kData->engine->isOscControlRegistered())
+        {
+            kData->engine->osc_send_control_set_midi_program_count(fId, count);
+
+            for (i=0; i < count; ++i)
+                kData->engine->osc_send_control_set_midi_program_data(fId, i, kData->midiprog.data[i].bank, kData->midiprog.data[i].program, kData->midiprog.data[i].name);
+        }
+#endif
+
+        if (init)
+        {
+            if (count > 0)
+                setMidiProgram(0, false, false, false);
+        }
+        else
+        {
+            // Check if current program is invalid
+            bool programChanged = false;
+
+            if (count == oldCount+1)
+            {
+                // one midi program added, probably created by user
+                kData->midiprog.current = oldCount;
+                programChanged = true;
+            }
+            else if (current < 0 && count > 0)
+            {
+                // programs exist now, but not before
+                kData->midiprog.current = 0;
+                programChanged = true;
+            }
+            else if (current >= 0 && count == 0)
+            {
+                // programs existed before, but not anymore
+                kData->midiprog.current = -1;
+                programChanged = true;
+            }
+            else if (current >= static_cast<int32_t>(count))
+            {
+                // current midi program > count
+                kData->midiprog.current = 0;
+                programChanged = true;
+            }
+            else
+            {
+                // no change
+                kData->midiprog.current = current;
+            }
+
+            if (programChanged)
+                setMidiProgram(kData->midiprog.current, true, true, true);
+
+            kData->engine->callback(CALLBACK_RELOAD_PROGRAMS, fId, 0, 0, 0.0f, nullptr);
+        }
+    }
+
     // -------------------------------------------------------------------
     // Plugin processing
 
     void activate() override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
+        CARLA_ASSERT(fHandle != nullptr);
 
         if (fDescriptor->activate != nullptr)
         {
@@ -1793,6 +1986,7 @@ public:
     void deactivate() override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
+        CARLA_ASSERT(fHandle != nullptr);
 
         if (fDescriptor->deactivate != nullptr)
         {
@@ -1936,7 +2130,6 @@ public:
                     case LV2_PORT_DESIGNATION_TIME_SPEED:
                         setParameterValue(k, timeInfo.playing ? 1.0f : 0.0f, false, false, false);
                         break;
-
                     // BBT
                     case LV2_PORT_DESIGNATION_TIME_BAR:
                         if (timeInfo.valid & EngineTimeInfo::ValidBBT)
@@ -1970,31 +2163,436 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Event Input and Processing
 
-        //if (kData->event.portIn != nullptr)
+        if (kData->event.portIn != nullptr)
         {
-        }
+            // ----------------------------------------------------------------------------------------------------
+            // MIDI Input (External)
+
+            if (kData->extNotes.mutex.tryLock())
+            {
+                while (midiEventCount < MAX_MIDI_EVENTS && ! kData->extNotes.data.isEmpty())
+                {
+                    const ExternalMidiNote& note(kData->extNotes.data.getFirst(true));
+
+                    CARLA_ASSERT(note.channel >= 0 && note.channel < MAX_MIDI_CHANNELS);
+
+                    uint8_t midiEvent[3] = { 0 };
+                    midiEvent[0]  = (note.velo > 0) ? MIDI_STATUS_NOTE_ON : MIDI_STATUS_NOTE_OFF;
+                    midiEvent[0] += note.channel;
+                    midiEvent[1]  = note.note;
+                    midiEvent[2]  = note.velo;
+
+                    // send to first midi input
+                    for (k=0; k < fEventsIn.count; ++k)
+                    {
+                        if (fEventsIn.data[k].type & CARLA_EVENT_TYPE_MIDI)
+                        {
+                            if (fEventsIn.data[k].type & CARLA_EVENT_DATA_ATOM)
+                            {
+                                const uint32_t evInPadSize(lv2_atom_pad_size(sizeof(LV2_Atom_Event) + 3));
+
+                                if (evInAtomOffsets[k] + evInPadSize >= MAX_EVENT_BUFFER)
+                                    continue;
+
+                                LV2_Atom_Event* const aev = getLv2AtomEvent(fEventsIn.data[k].atom, evInAtomOffsets[k]);
+                                aev->time.frames = 0;
+                                aev->body.type   = CARLA_URI_MAP_ID_MIDI_EVENT;
+                                aev->body.size   = 3;
+                                std::memcpy(LV2_ATOM_BODY(&aev->body), midiEvent, 3);
+
+                                evInAtomOffsets[k] += evInPadSize;
+                                fEventsIn.data[k].atom->atom.size = evInAtomOffsets[k];
+                            }
+                            else if (fEventsIn.data[k].type & CARLA_EVENT_DATA_EVENT)
+                            {
+                                lv2_event_write(&evInEventIters[k], 0, 0, CARLA_URI_MAP_ID_MIDI_EVENT, 3, midiEvent);
+                            }
+                            else if (fEventsIn.data[k].type & CARLA_EVENT_DATA_MIDI_LL)
+                            {
+                                lv2midi_put_event(&evInMidiStates[k], 0, 3, midiEvent);
+                            }
+
+                            break;
+                        }
+                    }
+
+                    midiEventCount += 1;
+                }
+
+                kData->extNotes.mutex.unlock();
+
+            } // End of MIDI Input (External)
+
+            // ----------------------------------------------------------------------------------------------------
+            // Event Input (System)
+
+            bool allNotesOffSent = false;
+            bool sampleAccurate  = (fOptions & PLUGIN_OPTION_FIXED_BUFFER) == 0;
+
+            uint32_t time, nEvents = kData->event.portIn->getEventCount();
+            uint32_t startTime  = 0;
+            uint32_t timeOffset = 0;
+
+            uint32_t nextBankId = 0;
+            if (kData->midiprog.current >= 0 && kData->midiprog.count > 0)
+                nextBankId = kData->midiprog.data[kData->midiprog.current].bank;
+
+            for (i=0; i < nEvents; ++i)
+            {
+                const EngineEvent& event = kData->event.portIn->getEvent(i);
+
+                time = event.time;
+
+                if (time >= frames)
+                    continue;
+
+                CARLA_ASSERT_INT2(time >= timeOffset, time, timeOffset);
+
+                if (time > timeOffset && sampleAccurate)
+                {
+                    if (processSingle(inBuffer, outBuffer, time - timeOffset, timeOffset))
+                    {
+                        startTime  = 0;
+                        timeOffset = time;
+                        midiEventCount = 0;
+
+                        if (kData->midiprog.current >= 0 && kData->midiprog.count > 0)
+                            nextBankId = kData->midiprog.data[kData->midiprog.current].bank;
+                        else
+                            nextBankId = 0;
+
+                        // reset iters
+                        for (i=0; i < fEventsIn.count; ++i)
+                        {
+                            if (fEventsIn.data[i].type & CARLA_EVENT_DATA_ATOM)
+                            {
+                                evInAtomOffsets[i] = 0;
+                                fEventsIn.data[i].atom->atom.size = 0;
+                            }
+                            else if (fEventsIn.data[i].type & CARLA_EVENT_DATA_EVENT)
+                            {
+                                lv2_event_buffer_reset(fEventsIn.data[i].event, LV2_EVENT_AUDIO_STAMP, (uint8_t*)(fEventsIn.data[i].event + 1));
+                                lv2_event_begin(&evInEventIters[i], fEventsIn.data[i].event);
+                            }
+                            else if (fEventsIn.data[i].type & CARLA_EVENT_DATA_MIDI_LL)
+                            {
+                                evInMidiStates[i].position = 0;
+                                evInMidiStates[i].midi->event_count = 0;
+                                evInMidiStates[i].midi->size = 0;
+                            }
+                        }
+                    }
+                    else
+                        startTime += timeOffset;
+                }
+
+                // Control change
+                switch (event.type)
+                {
+                case kEngineEventTypeNull:
+                    break;
+
+                case kEngineEventTypeControl:
+                {
+                    const EngineControlEvent& ctrlEvent = event.ctrl;
+
+                    switch (ctrlEvent.type)
+                    {
+                    case kEngineControlEventTypeNull:
+                        break;
+
+                    case kEngineControlEventTypeParameter:
+                    {
+                        // Control backend stuff
+                        if (event.channel == kData->ctrlChannel)
+                        {
+                            float value;
+
+                            if (MIDI_IS_CONTROL_BREATH_CONTROLLER(ctrlEvent.param) && (fHints & PLUGIN_CAN_DRYWET) > 0)
+                            {
+                                value = ctrlEvent.value;
+                                setDryWet(value, false, false);
+                                postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_DRYWET, 0, value);
+                                continue;
+                            }
+
+                            if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (fHints & PLUGIN_CAN_VOLUME) > 0)
+                            {
+                                value = ctrlEvent.value*127.0f/100.0f;
+                                setVolume(value, false, false);
+                                postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_VOLUME, 0, value);
+                                continue;
+                            }
+
+                            if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (fHints & PLUGIN_CAN_BALANCE) > 0)
+                            {
+                                float left, right;
+                                value = ctrlEvent.value/0.5f - 1.0f;
+
+                                if (value < 0.0f)
+                                {
+                                    left  = -1.0f;
+                                    right = (value*2.0f)+1.0f;
+                                }
+                                else if (value > 0.0f)
+                                {
+                                    left  = (value*2.0f)-1.0f;
+                                    right = 1.0f;
+                                }
+                                else
+                                {
+                                    left  = -1.0f;
+                                    right = 1.0f;
+                                }
+
+                                setBalanceLeft(left, false, false);
+                                setBalanceRight(right, false, false);
+                                postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_LEFT, 0, left);
+                                postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_RIGHT, 0, right);
+                                continue;
+                            }
+                        }
+
+                        // Control plugin parameters
+                        for (k=0; k < kData->param.count; ++k)
+                        {
+                            if (kData->param.data[k].midiChannel != event.channel)
+                                continue;
+                            if (kData->param.data[k].midiCC != ctrlEvent.param)
+                                continue;
+                            if (kData->param.data[k].type != PARAMETER_INPUT)
+                                continue;
+                            if ((kData->param.data[k].hints & PARAMETER_IS_AUTOMABLE) == 0)
+                                continue;
+
+                            float value;
+
+                            if (kData->param.data[k].hints & PARAMETER_IS_BOOLEAN)
+                            {
+                                value = (ctrlEvent.value < 0.5f) ? kData->param.ranges[k].min : kData->param.ranges[k].max;
+                            }
+                            else
+                            {
+                                value = kData->param.ranges[i].unnormalizeValue(ctrlEvent.value);
+
+                                if (kData->param.data[k].hints & PARAMETER_IS_INTEGER)
+                                    value = std::rint(value);
+                            }
+
+                            setParameterValue(k, value, false, false, false);
+                            postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 0, value);
+                        }
+
+                        break;
+                    }
+
+                    case kEngineControlEventTypeMidiBank:
+                        if (event.channel == kData->ctrlChannel && (fOptions & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
+                            nextBankId = ctrlEvent.param;
+                        break;
+
+                    case kEngineControlEventTypeMidiProgram:
+                        if (event.channel == kData->ctrlChannel && (fOptions & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
+                        {
+                            const uint32_t nextProgramId = ctrlEvent.param;
+
+                            for (k=0; k < kData->midiprog.count; ++k)
+                            {
+                                if (kData->midiprog.data[k].bank == nextBankId && kData->midiprog.data[k].program == nextProgramId)
+                                {
+                                    setMidiProgram(k, false, false, false);
+                                    postponeRtEvent(kPluginPostRtEventMidiProgramChange, k, 0, 0.0f);
+                                    break;
+                                }
+                            }
+                        }
+                        break;
+
+                    case kEngineControlEventTypeAllSoundOff:
+                        if (event.channel == kData->ctrlChannel)
+                        {
+                            if (! allNotesOffSent)
+                            {
+                                sendMidiAllNotesOff();
+                                allNotesOffSent = true;
+                            }
+
+                            postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_ACTIVE, 0, 0.0f);
+                            postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_ACTIVE, 0, 1.0f);
+                        }
+
+                        if (midiEventCount >= MAX_MIDI_EVENTS)
+                            continue;
+
+                        if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
+                        {
+                            // TODO
+
+                            midiEventCount += 1;
+                        }
+
+                        break;
+
+                    case kEngineControlEventTypeAllNotesOff:
+                        if (event.channel == kData->ctrlChannel)
+                        {
+                            if (! allNotesOffSent)
+                            {
+                                allNotesOffSent = true;
+                                sendMidiAllNotesOff();
+                            }
+                        }
+
+                        if (midiEventCount >= MAX_MIDI_EVENTS)
+                            continue;
+
+                        if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
+                        {
+                            // TODO
+
+                            midiEventCount += 1;
+                        }
+
+                        break;
+                    }
+
+                    break;
+                }
+
+                case kEngineEventTypeMidi:
+                {
+                    if (midiEventCount >= MAX_MIDI_EVENTS)
+                        continue;
+
+                    const EngineMidiEvent& midiEvent = event.midi;
+
+                    uint8_t status  = MIDI_GET_STATUS_FROM_DATA(midiEvent.data);
+                    uint8_t channel = event.channel;
+                    uint32_t time   = sampleAccurate ? startTime : time;
+
+                    if (MIDI_IS_STATUS_AFTERTOUCH(status) && (fOptions & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE) == 0)
+                        continue;
+                    if (MIDI_IS_STATUS_CONTROL_CHANGE(status) && (fOptions & PLUGIN_OPTION_SEND_CONTROL_CHANGES) == 0)
+                        continue;
+                    if (MIDI_IS_STATUS_POLYPHONIC_AFTERTOUCH(status) && (fOptions & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH) == 0)
+                        continue;
+                    if (MIDI_IS_STATUS_PITCH_WHEEL_CONTROL(status) && (fOptions & PLUGIN_OPTION_SEND_PITCHBEND) == 0)
+                        continue;
+
+                    // Fix bad note-off
+                    if (status == MIDI_STATUS_NOTE_ON && midiEvent.data[2] == 0)
+                        status -= 0x10;
+
+                    for (k=0; k < fEventsIn.count; ++k)
+                    {
+                        if (midiEvent.port != k)
+                            continue;
+
+                        if (fEventsIn.data[k].type & CARLA_EVENT_TYPE_MIDI)
+                        {
+                            if (fEventsIn.data[k].type & CARLA_EVENT_DATA_ATOM)
+                            {
+                                const uint32_t evInPadSize(lv2_atom_pad_size(sizeof(LV2_Atom_Event) + midiEvent.size));
+
+                                if (evInAtomOffsets[k] + evInPadSize >= MAX_EVENT_BUFFER)
+                                    continue;
+
+                                LV2_Atom_Event* const aev = getLv2AtomEvent(fEventsIn.data[k].atom, evInAtomOffsets[k]);
+                                aev->time.frames = time;
+                                aev->body.type   = CARLA_URI_MAP_ID_MIDI_EVENT;
+                                aev->body.size   = midiEvent.size;
+                                std::memcpy(LV2_ATOM_BODY(&aev->body), midiEvent.data, midiEvent.size);
+
+                                evInAtomOffsets[k] += evInPadSize;
+                                fEventsIn.data[k].atom->atom.size = evInAtomOffsets[k];
+                            }
+                            else if (fEventsIn.data[k].type & CARLA_EVENT_DATA_EVENT)
+                            {
+                                lv2_event_write(&evInEventIters[k], time, 0, CARLA_URI_MAP_ID_MIDI_EVENT, midiEvent.size, midiEvent.data);
+                            }
+                            else if (fEventsIn.data[k].type & CARLA_EVENT_DATA_MIDI_LL)
+                            {
+                                lv2midi_put_event(&evInMidiStates[k], time, midiEvent.size, midiEvent.data);
+                            }
+
+                            break;
+                        }
+                    }
+
+                    midiEventCount += 1;
+
+                    if (status == MIDI_STATUS_NOTE_ON)
+                        postponeRtEvent(kPluginPostRtEventNoteOn, channel, midiEvent.data[1], midiEvent.data[2]);
+                    else if (status == MIDI_STATUS_NOTE_OFF)
+                        postponeRtEvent(kPluginPostRtEventNoteOff, channel, midiEvent.data[1], 0.0f);
+
+                    break;
+                }
+                }
+            }
+
+            kData->postRtEvents.trySplice();
+
+            if (frames > timeOffset)
+                processSingle(inBuffer, outBuffer, frames - timeOffset, timeOffset);
+
+        } // End of Event Input and Processing
 
         // --------------------------------------------------------------------------------------------------------
         // Plugin processing (no events)
 
-        //else
+        else
         {
-            processSingle(inBuffer, outBuffer, frames, 0, midiEventCount);
+            processSingle(inBuffer, outBuffer, frames, 0);
 
         } // End of Plugin processing (no events)
 
         CARLA_PROCESS_CONTINUE_CHECK;
 
+        // --------------------------------------------------------------------------------------------------------
+        // Control Output
+
+        if (kData->event.portOut != nullptr)
+        {
+            uint8_t  channel;
+            uint16_t param;
+            float    value;
+
+            for (k=0; k < kData->param.count; ++k)
+            {
+                if (kData->param.data[k].type != PARAMETER_OUTPUT)
+                    continue;
+
+                kData->param.ranges[k].fixValue(fParamBuffers[k]);
+
+                if (kData->param.data[k].midiCC > 0)
+                {
+                    channel = kData->param.data[k].midiChannel;
+                    param   = static_cast<uint16_t>(kData->param.data[k].midiCC);
+                    value   = kData->param.ranges[k].normalizeValue(fParamBuffers[k]);
+                    kData->event.portOut->writeControlEvent(0, channel, kEngineControlEventTypeParameter, param, value);
+                }
+            }
+
+        } // End of Control Output
+
+        CARLA_PROCESS_CONTINUE_CHECK;
+
+        // --------------------------------------------------------------------------------------------------------
+        // Final work
+
         if (fExt.worker != nullptr && fExt.worker->end_run != nullptr)
         {
             fExt.worker->end_run(fHandle);
 
-            if (fHandle2)
+            if (fHandle2 != nullptr)
                 fExt.worker->end_run(fHandle2);
         }
+
+        // --------------------------------------------------------------------------------------------------------
     }
 
-    bool processSingle(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t timeOffset, const unsigned long midiEventCount)
+    bool processSingle(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t timeOffset)
     {
         CARLA_ASSERT(frames > 0);
 
@@ -2044,7 +2642,7 @@ public:
 
         fDescriptor->run(fHandle, frames);
 
-        if (fHandle2)
+        if (fHandle2 != nullptr)
             fDescriptor->run(fHandle2, frames);
 
         // --------------------------------------------------------------------------------------------------------
@@ -2185,6 +2783,20 @@ public:
             }
         }
 
+        if (fLv2Options.maxBufferSize != static_cast<int>(newBufferSize) || (fLv2Options.minBufferSize > 1 && fLv2Options.minBufferSize != static_cast<int>(newBufferSize)))
+        {
+            fLv2Options.maxBufferSize = newBufferSize;
+
+            if (fLv2Options.minBufferSize > 1)
+                fLv2Options.minBufferSize = newBufferSize;
+
+            if (fExt.options != nullptr && fExt.options->set != nullptr)
+            {
+                fExt.options->set(fHandle, &fLv2Options.optMinBlockLenth);
+                fExt.options->set(fHandle, &fLv2Options.optMaxBlockLenth);
+            }
+        }
+
         carla_debug("Lv2Plugin::bufferSizeChanged(%i) - end", newBufferSize);
     }
 
@@ -2193,8 +2805,13 @@ public:
         CARLA_ASSERT_INT(newSampleRate > 0.0, newSampleRate);
         carla_debug("Lv2Plugin::sampleRateChanged(%g) - start", newSampleRate);
 
-        // TODO
-        (void)newSampleRate;
+        if (fLv2Options.sampleRate != newSampleRate)
+        {
+            fLv2Options.sampleRate = newSampleRate;
+
+            if (fExt.options != nullptr && fExt.options->set != nullptr)
+                fExt.options->set(fHandle, &fLv2Options.optSampleRate);
+        }
 
         carla_debug("Lv2Plugin::sampleRateChanged(%g) - end", newSampleRate);
     }
@@ -2294,7 +2911,7 @@ protected:
 
     const char* getCustomURIString(const LV2_URID urid)
     {
-        CARLA_ASSERT(urid > CARLA_URI_MAP_ID_NULL);
+        CARLA_ASSERT(urid != CARLA_URI_MAP_ID_NULL);
         carla_debug("Lv2Plugin::getCustomURIString(%i)", urid);
 
         if (urid == CARLA_URI_MAP_ID_NULL)
@@ -2340,6 +2957,7 @@ protected:
     {
         CARLA_ASSERT(key != CARLA_URI_MAP_ID_NULL);
         CARLA_ASSERT(value != nullptr);
+        CARLA_ASSERT(size > 0);
 
         // basic checks
         if (key == CARLA_URI_MAP_ID_NULL)
@@ -2456,7 +3074,6 @@ protected:
             return nullptr;
         }
 
-        *size  = 0;
         *type  = key;
         *flags = LV2_STATE_IS_POD;
 
@@ -2478,6 +3095,8 @@ protected:
 
     void handleExternalUiClosed()
     {
+        CARLA_ASSERT(fUi.type == PLUGIN_UI_EXTERNAL);
+
         if (fUi.handle != nullptr && fUi.descriptor != nullptr && fUi.descriptor->cleanup != nullptr)
             fUi.descriptor->cleanup(fUi.handle);
 
@@ -2883,6 +3502,7 @@ private:
         const LV2_State_Interface* state;
         const LV2_Worker_Interface* worker;
         const LV2_Programs_Interface* programs;
+        const LV2UI_Idle_Interface* uiidle;
         const LV2_Programs_UI_Interface* uiprograms;
 
         Extensions()
@@ -2890,17 +3510,20 @@ private:
               state(nullptr),
               worker(nullptr),
               programs(nullptr),
+              uiidle(nullptr),
               uiprograms(nullptr) {}
     } fExt;
 
     struct UI {
+        Lv2PluginGuiType type;
         LV2UI_Handle handle;
         LV2UI_Widget widget;
         const LV2UI_Descriptor* descriptor;
         const LV2_RDF_UI*       rdfDescriptor;
 
         UI()
-            : handle(nullptr),
+            : type(PLUGIN_UI_NULL),
+              handle(nullptr),
               widget(nullptr),
               descriptor(nullptr),
               rdfDescriptor(nullptr) {}
