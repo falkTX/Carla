@@ -285,7 +285,7 @@ void* CarlaBridgeClient::getContainerId()
 bool CarlaBridgeClient::uiLibOpen(const char* const filename)
 {
     CARLA_ASSERT(fUiLib == nullptr);
-    CARLA_ASSERT(fUiFilename != nullptr);
+    CARLA_ASSERT(fUiFilename == nullptr);
 
     if (fUiFilename != nullptr)
         delete[] fUiFilename;

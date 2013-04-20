@@ -2492,7 +2492,7 @@ public:
 
                     uint8_t status  = MIDI_GET_STATUS_FROM_DATA(midiEvent.data);
                     uint8_t channel = event.channel;
-                    uint32_t time   = sampleAccurate ? startTime : time;
+                    uint32_t mtime  = sampleAccurate ? startTime : time;
 
                     if (MIDI_IS_STATUS_AFTERTOUCH(status) && (fOptions & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE) == 0)
                         continue;
@@ -2522,7 +2522,7 @@ public:
                                     continue;
 
                                 LV2_Atom_Event* const aev = getLv2AtomEvent(fEventsIn.data[k].atom, evInAtomOffsets[k]);
-                                aev->time.frames = time;
+                                aev->time.frames = mtime;
                                 aev->body.type   = CARLA_URI_MAP_ID_MIDI_EVENT;
                                 aev->body.size   = midiEvent.size;
                                 std::memcpy(LV2_ATOM_BODY(&aev->body), midiEvent.data, midiEvent.size);
@@ -2532,11 +2532,11 @@ public:
                             }
                             else if (fEventsIn.data[k].type & CARLA_EVENT_DATA_EVENT)
                             {
-                                lv2_event_write(&evInEventIters[k], time, 0, CARLA_URI_MAP_ID_MIDI_EVENT, midiEvent.size, midiEvent.data);
+                                lv2_event_write(&evInEventIters[k], mtime, 0, CARLA_URI_MAP_ID_MIDI_EVENT, midiEvent.size, midiEvent.data);
                             }
                             else if (fEventsIn.data[k].type & CARLA_EVENT_DATA_MIDI_LL)
                             {
-                                lv2midi_put_event(&evInMidiStates[k], time, midiEvent.size, midiEvent.data);
+                                lv2midi_put_event(&evInMidiStates[k], mtime, midiEvent.size, midiEvent.data);
                             }
 
                             break;
@@ -3056,6 +3056,7 @@ protected:
     const char* getCustomURIString(const LV2_URID urid)
     {
         CARLA_ASSERT(urid != CARLA_URI_MAP_ID_NULL);
+        CARLA_ASSERT_INT2(urid < fCustomURIDs.count(), urid, fCustomURIDs.count());
         carla_debug("Lv2Plugin::getCustomURIString(%i)", urid);
 
         if (urid == CARLA_URI_MAP_ID_NULL)
@@ -3122,7 +3123,7 @@ protected:
             return LV2_STATE_ERR_BAD_FLAGS;
         }
 
-        const char* const stype(getCustomURIString(type));
+        const char* const stype(carla_lv2_urid_unmap(this, type));
 
         if (stype == nullptr)
         {
@@ -3130,7 +3131,7 @@ protected:
             return LV2_STATE_ERR_BAD_TYPE;
         }
 
-        const char* const uriKey(getCustomURIString(key));
+        const char* const uriKey(carla_lv2_urid_unmap(this, key));
 
         if (uriKey == nullptr)
         {
@@ -3189,7 +3190,7 @@ protected:
             return nullptr;
         }
 
-        const char* const uriKey(getCustomURIString(key));
+        const char* const uriKey(carla_lv2_urid_unmap(this, key));
 
         if (uriKey == nullptr)
         {
@@ -4334,6 +4335,9 @@ private:
     {
         carla_debug("carla_lv2_uri_to_id(%p, \"%s\", \"%s\")", data, map, uri);
         return carla_lv2_urid_map((LV2_URID_Map_Handle*)data, uri);
+
+        // unused
+        (void)map;
     }
 
     // -------------------------------------------------------------------
@@ -4472,6 +4476,10 @@ private:
 
         //return ((Lv2Plugin*)handle)->handleWorkerSchedule(size, data);
         return LV2_WORKER_ERR_UNKNOWN;
+
+        // todo
+        (void)size;
+        (void)data;
     }
 
     static LV2_Worker_Status carla_lv2_worker_respond(LV2_Worker_Respond_Handle handle, uint32_t size, const void* data)
@@ -4484,6 +4492,10 @@ private:
 
         //return ((Lv2Plugin*)handle)->handleWorkerRespond(size, data);
         return LV2_WORKER_ERR_UNKNOWN;
+
+        // todo
+        (void)size;
+        (void)data;
     }
 
     // -------------------------------------------------------------------
