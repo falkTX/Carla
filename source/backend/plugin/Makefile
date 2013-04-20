@@ -42,6 +42,9 @@ OBJS = \
 	FluidSynthPlugin.cpp.o \
 	LinuxSamplerPlugin.cpp.o
 
+FILES = \
+	moc_CarlaPluginGui.cpp
+
 TARGET = ../libcarla_plugin.a
 
 # --------------------------------------------------------------
@@ -49,7 +52,7 @@ TARGET = ../libcarla_plugin.a
 all: $(TARGET)
 
 clean:
-	rm -f $(OBJS) $(TARGET)
+	rm -f $(OBJS) $(FILES) $(TARGET)
 
 debug:
 	$(MAKE) DEBUG=true

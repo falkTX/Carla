@@ -11,7 +11,7 @@ include ../Makefile.mk
 BUILD_CXX_FLAGS += -I. -I../../libs/distrho -I../../widgets
 
 ifeq ($(HAVE_QT5),true)
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags Qt5Core Qt5Widgets)
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags Qt5Core Qt5Gui Qt5Widgets)
 else
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtCore QtGui)
 endif
@@ -187,7 +187,7 @@ distrho-notes.cpp.o: distrho-notes.cpp notes/DistrhoPluginNotes.cpp notes/Distrh
 midi-file.cpp.o: midi-file.cpp
 	$(CXX) $< $(MF_CXX_FLAGS) -c -o $@
 
-zynaddsubfx.cpp.o: zynaddsubfx.cpp $(ZYN_UI_FILES_CPP)
+zynaddsubfx.cpp.o: zynaddsubfx.cpp $(ZYN_UI_FILES_H)
 	$(CXX) $< $(ZYN_CXX_FLAGS) -c -o $@
 
 zynaddsubfx-src.cpp.o: zynaddsubfx-src.cpp
@@ -202,6 +202,9 @@ moc_DistrhoUINotes.cpp: notes/DistrhoUINotes.hpp
 	$(MOC) $< -o $@
 
 zynaddsubfx/UI/%.cpp: zynaddsubfx/UI/%.fl
+	ntk-fluid -c -o zynaddsubfx/UI/$*.cpp -h zynaddsubfx/UI/$*.h $<
+
+zynaddsubfx/UI/%.h: zynaddsubfx/UI/%.fl
 	ntk-fluid -c -o zynaddsubfx/UI/$*.cpp -h zynaddsubfx/UI/$*.h $<
 
 # --------------------------------------------------------------

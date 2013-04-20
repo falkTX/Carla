@@ -30,7 +30,7 @@ LINK_FLAGS      += $(shell pkg-config --libs liblo QtCore)
 # Plugin bridges
 
 BUILD_PLUGIN_FLAGS  = $(BUILD_CXX_FLAGS)
-BUILD_PLUGIN_FLAGS += -DBUILD_BRIDGE_PLUGIN -DBRIDGE_PLUGIN -DWANT_JACK
+BUILD_PLUGIN_FLAGS += -DBUILD_BRIDGE_PLUGIN -DBRIDGE_PLUGIN
 BUILD_PLUGIN_FLAGS += -DWANT_LADSPA -DWANT_DSSI -DWANT_LV2 -DWANT_VST
 BUILD_PLUGIN_FLAGS += -I../backend/engine -I../backend/plugin -I../libs -I../theme
 BUILD_PLUGIN_FLAGS += $(QT_UI_FLAGS) $(shell pkg-config --cflags QtXml)
@@ -286,6 +286,12 @@ carla-bridge-vst-x11: $(OBJS_UI_VST_X11)
 	$(CXX) $< $(BUILD_UI_VST_X11_FLAGS) -c -o $@
 
 # --------------------------------------------------------------
+# plugin common
+
+FILES = \
+	../backend/plugin/moc_CarlaPluginGui.cpp
+
+# --------------------------------------------------------------
 # native
 
 OBJS_NATIVE  = CarlaBridgePlugin__native.o \
@@ -325,8 +331,8 @@ OBJS_NATIVE += \
 	../libs/rtmempool.a \
 	../libs/widgets.a
 
-carla-bridge-native: $(OBJS_NATIVE)
-	$(CXX) $^ $(NATIVE_LINK_FLAGS) -o $@ && $(STRIP) $@
+carla-bridge-native: $(FILES) $(OBJS_NATIVE)
+	$(CXX) $(OBJS_NATIVE) $(NATIVE_LINK_FLAGS) -o $@ && $(STRIP) $@
 
 %__native.o: %.cpp
 	$(CXX) $< $(NATIVE_BUILD_FLAGS) -c -o $@
@@ -369,8 +375,8 @@ OBJS_POSIX32 += \
 	../libs/lilv.posix32.a \
 	../libs/rtmempool.posix32.a
 
-carla-bridge-posix32: $(OBJS_POSIX32)
-	$(CXX) $^ $(POSIX_LINK_FLAGS) $(POSIX_32BIT_FLAGS) -o $@ && $(STRIP) $@
+carla-bridge-posix32: $(FILES) $(OBJS_POSIX32)
+	$(CXX) $(OBJS_POSIX32) $(POSIX_LINK_FLAGS) $(POSIX_32BIT_FLAGS) -o $@ && $(STRIP) $@
 
 %__posix32.o: %.cpp
 	$(CXX) $< $(POSIX_BUILD_FLAGS) $(POSIX_32BIT_FLAGS) -c -o $@
@@ -413,8 +419,8 @@ OBJS_POSIX64 += \
 	../libs/lilv.posix64.a \
 	../libs/rtmempool.posix64.a
 
-carla-bridge-posix64: $(OBJS_POSIX64)
-	$(CXX) $^ $(POSIX_LINK_FLAGS) $(POSIX_64BIT_FLAGS) -o $@ && $(STRIP) $@
+carla-bridge-posix64: $(FILES) $(OBJS_POSIX64)
+	$(CXX) $(OBJS_POSIX64) $(POSIX_LINK_FLAGS) $(POSIX_64BIT_FLAGS) -o $@ && $(STRIP) $@
 
 %__posix64.o: %.cpp
 	$(CXX) $< $(POSIX_BUILD_FLAGS) $(POSIX_64BIT_FLAGS) -c -o $@
@@ -457,7 +463,7 @@ OBJS_WIN32 += \
 	../libs/lilv.win32.a \
 	../libs/rtmempool.win32.a
 
-carla-bridge-win32.exe: $(OBJS_WIN32)  ../libs/jackbridge-win32.dll
+carla-bridge-win32.exe: $(FILES) $(OBJS_WIN32)  ../libs/jackbridge-win32.dll
 	$(CXX) $(OBJS_WIN32) $(WIN_32BIT_FLAGS) $(WIN_LINK_FLAGS) -ljackbridge-win32 -o $@ && $(STRIP) $@
 
 %__win32.o: %.cpp
@@ -501,11 +507,16 @@ OBJS_WIN64 += \
 	../libs/lilv.win64.a \
 	../libs/rtmempool.win64.a
 
-carla-bridge-win64.exe: $(OBJS_WIN64) ../libs/jackbridge-win64.dll
+carla-bridge-win64.exe: $(FILES) $(OBJS_WIN64) ../libs/jackbridge-win64.dll
 	$(CXX) $(OBJS_WIN64) $(WIN_64BIT_FLAGS) $(WIN_LINK_FLAGS) -ljackbridge-win64 -o $@ && $(STRIP) $@
 
 %__win64.o: %.cpp
 	$(CXX) $< $(WIN_BUILD_FLAGS) $(WIN_64BIT_FLAGS) -c -o $@
+
+# --------------------------------------------------------------
+
+../backend/plugin/moc_%.cpp: ../backend/plugin/%.hpp
+	$(MOC) $< -DMOC_PARSING -o $@
 
 # --------------------------------------------------------------
 
