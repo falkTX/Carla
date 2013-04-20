@@ -70,10 +70,6 @@ CarlaPluginGui::~CarlaPluginGui()
         delete fContainer;
 #endif
     }
-    else
-    {
-        CARLA_ASSERT(fContainer == nullptr);
-    }
 }
 
 void CarlaPluginGui::setSize(const int width, const int height)
@@ -107,20 +103,6 @@ void CarlaPluginGui::setWidget(QWidget* const widget)
     widget->setParent(this);
 
     fContainer = widget;
-}
-
-void CarlaPluginGui::removeWidget()
-{
-    CARLA_ASSERT(fContainer != nullptr);
-    carla_debug("CarlaPluginGui::removeWidget()");
-
-    if (fContainer == nullptr)
-        return;
-
-    fContainer->setParent(nullptr);
-    setCentralWidget(nullptr);
-
-    fContainer = nullptr;
 }
 
 void CarlaPluginGui::closeEvent(QCloseEvent* const event)

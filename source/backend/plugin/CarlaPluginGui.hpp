@@ -57,7 +57,6 @@ public:
 
     // Qt UIs
     void setWidget(QWidget* widget);
-    void removeWidget();
 
 protected:
     void closeEvent(QCloseEvent* const event);
