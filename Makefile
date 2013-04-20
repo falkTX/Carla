@@ -20,7 +20,7 @@ all: CPP RES UI WIDGETS
 # -------------------------------------------------------------------------------------------------------------------------------------
 # C++ code
 
-CPP: backend discovery
+CPP: backend bridges discovery
 
 backend:
 	$(MAKE) -C source/backend
