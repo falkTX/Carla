@@ -80,9 +80,26 @@ void CarlaPluginThread::run()
     {
        fProcess = new QProcess(nullptr);
        fProcess->setProcessChannelMode(QProcess::ForwardedChannels);
-#ifndef BUILD_BRIDGE
-       //fProcess->setProcessEnvironment(kEngine->getOptionsAsProcessEnvironment());
-#endif
+    }
+    else if (fProcess->state() == QProcess::Running)
+    {
+        carla_stderr("CarlaPluginThread::run() - already running, giving up...");
+
+        switch (fMode)
+        {
+        case PLUGIN_THREAD_NULL:
+            break;
+
+        case PLUGIN_THREAD_DSSI_GUI:
+        case PLUGIN_THREAD_LV2_GUI:
+        case PLUGIN_THREAD_VST_GUI:
+            fProcess->terminate();
+            kEngine->callback(CarlaBackend::CALLBACK_SHOW_GUI, kPlugin->id(), -1, 0, 0.0f, nullptr);
+            return;
+
+        case PLUGIN_THREAD_BRIDGE:
+            break;
+        }
     }
 
     QString name(kPlugin->name());
@@ -151,20 +168,31 @@ void CarlaPluginThread::run()
             {
                 // Kill
                 kEngine->callback(CarlaBackend::CALLBACK_SHOW_GUI, kPlugin->id(), -1, 0, 0.0f, nullptr);
-                carla_stderr("CarlaPluginThread::run() - GUI crashed");
+                carla_stderr("CarlaPluginThread::run() - GUI crashed while running");
             }
         }
         else
         {
-            carla_debug("CarlaPluginThread::run() - GUI timeout");
-            kEngine->callback(CarlaBackend::CALLBACK_SHOW_GUI, kPlugin->id(), 0, 0, 0.0f, nullptr);
+            fProcess->close();
+            CARLA_ASSERT(fProcess->state() == QProcess::NotRunning);
+
+            if (fProcess->exitCode() != 0 || fProcess->exitStatus() == QProcess::CrashExit)
+            {
+                kEngine->callback(CarlaBackend::CALLBACK_SHOW_GUI, kPlugin->id(), -1, 0, 0.0f, nullptr);
+                carla_stderr("CarlaPluginThread::run() - GUI crashed while opening");
+            }
+            else
+            {
+                kEngine->callback(CarlaBackend::CALLBACK_SHOW_GUI, kPlugin->id(), 0, 0, 0.0f, nullptr);
+                carla_debug("CarlaPluginThread::run() - GUI timeout");
+            }
         }
         break;
 
     case PLUGIN_THREAD_BRIDGE:
         fProcess->waitForFinished(-1);
 
-        if (fProcess->exitCode() != 0)
+        if (fProcess->exitCode() != 0 || fProcess->exitStatus() == QProcess::CrashExit)
         {
             carla_stderr("CarlaPluginThread::run() - bridge crashed");
 

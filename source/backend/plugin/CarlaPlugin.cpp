@@ -1819,7 +1819,7 @@ bool CarlaPlugin::waitForOscGuiShow()
     uint i=0, oscUiTimeout = kData->engine->getOptions().oscUiTimeout;
 
     // wait for UI 'update' call
-    for (; i < oscUiTimeout; i++)
+    for (; i < oscUiTimeout/100; ++i)
     {
         if (kData->osc.data.target != nullptr)
         {

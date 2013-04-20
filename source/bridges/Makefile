@@ -12,8 +12,8 @@ HAVE_GTK2        = $(shell pkg-config --exists gtk+-2.0 && echo true)
 HAVE_GTK3        = $(shell pkg-config --exists gtk+-3.0 && echo true)
 
 ifeq ($(HAVE_QT5),true)
-QT_UI_FLAGS      = $(shell pkg-config --cflags QtWidgets)
-QT_UI_LIBS       = $(shell pkg-config --libs QtWidgets)
+QT_UI_FLAGS      = $(shell pkg-config --cflags Qt5Gui Qt5Widgets)
+QT_UI_LIBS       = $(shell pkg-config --libs Qt5Gui Qt5Widgets)
 else
 QT_UI_FLAGS      = $(shell pkg-config --cflags QtGui)
 QT_UI_LIBS       = $(shell pkg-config --libs QtGui)
@@ -23,8 +23,16 @@ endif
 
 BUILD_CXX_FLAGS += -DBUILD_BRIDGE
 BUILD_CXX_FLAGS += -I. -I../backend -I../includes -I../utils
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo QtCore)
-LINK_FLAGS      += $(shell pkg-config --libs liblo QtCore)
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo)
+LINK_FLAGS      += $(shell pkg-config --libs liblo)
+
+ifeq ($(HAVE_QT5),true)
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags Qt5Core)
+LINK_FLAGS      += $(shell pkg-config --libs Qt5Core)
+else
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtCore)
+LINK_FLAGS      += $(shell pkg-config --libs QtCore)
+endif
 
 # --------------------------------------------------------------
 # Plugin bridges
@@ -33,10 +41,15 @@ BUILD_PLUGIN_FLAGS  = $(BUILD_CXX_FLAGS)
 BUILD_PLUGIN_FLAGS += -DBUILD_BRIDGE_PLUGIN -DBRIDGE_PLUGIN
 BUILD_PLUGIN_FLAGS += -DWANT_LADSPA -DWANT_DSSI -DWANT_LV2 -DWANT_VST
 BUILD_PLUGIN_FLAGS += -I../backend/engine -I../backend/plugin -I../libs -I../theme
-BUILD_PLUGIN_FLAGS += $(QT_UI_FLAGS) $(shell pkg-config --cflags QtXml)
+LINK_PLUGIN_FLAGS   = $(LINK_FLAGS) -lpthread
 
-LINK_PLUGIN_FLAGS   = $(LINK_FLAGS)
-LINK_PLUGIN_FLAGS  += $(QT_UI_LIBS) $(shell pkg-config --libs QtXml) -lpthread
+ifeq ($(HAVE_QT5),true)
+BUILD_PLUGIN_FLAGS += $(shell pkg-config --cflags Qt5Gui Qt5Widgets Qt5Xml)
+LINK_PLUGIN_FLAGS  += $(shell pkg-config --libs Qt5Gui Qt5Widgets Qt5Xml)
+else
+BUILD_PLUGIN_FLAGS += $(shell pkg-config --cflags QtGui QtXml)
+LINK_PLUGIN_FLAGS  += $(shell pkg-config --libs QtGui QtXml)
+endif
 
 # --------------------------------------------------------------
 # Plugin bridges (POSIX)
@@ -69,7 +82,7 @@ NATIVE_LINK_FLAGS  += $(shell pkg-config --libs fluidsynth)
 endif
 
 ifeq ($(HAVE_LINUXSAMPLER),true)
-NATIVE_BUILD_FLAGS += -DWANT_LINUXSAMPLER -DIS_CPP11=1
+NATIVE_BUILD_FLAGS += -DWANT_LINUXSAMPLER
 NATIVE_BUILD_FLAGS += $(shell pkg-config --cflags linuxsampler)
 NATIVE_LINK_FLAGS  += $(shell pkg-config --libs linuxsampler)
 endif
@@ -115,8 +128,8 @@ LINK_UI_LV2_GTK3_FLAGS   = $(LINK_UI_FLAGS) $(shell pkg-config --libs gtk+-3.0)
 BUILD_UI_LV2_QT4_FLAGS   = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_QT4 -DBRIDGE_LV2_QT4 $(shell pkg-config --cflags QtGui)
 LINK_UI_LV2_QT4_FLAGS    = $(LINK_UI_FLAGS) $(shell pkg-config --libs QtGui)
 
-BUILD_UI_LV2_QT5_FLAGS   = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_QT5 -DBRIDGE_LV2_QT5 $(shell pkg-config --cflags QtWidgets)
-LINK_UI_LV2_QT5_FLAGS    = $(LINK_UI_FLAGS) $(shell pkg-config --libs QtWidgets)
+BUILD_UI_LV2_QT5_FLAGS   = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_QT5 -DBRIDGE_LV2_QT5 $(shell pkg-config --cflags Qt5Gui Qt5Widgets)
+LINK_UI_LV2_QT5_FLAGS    = $(LINK_UI_FLAGS) $(shell pkg-config --libs Qt5Gui Qt5Widgets)
 
 BUILD_UI_LV2_COCOA_FLAGS = $(BUILD_UI_VST_FLAGS) -DBRIDGE_COCOA -DBRIDGE_LV2_COCOA $(QT_UI_FLAGS)
 LINK_UI_LV2_COCOA_FLAGS  = $(LINK_FLAGS) $(QT_UI_LIBS)

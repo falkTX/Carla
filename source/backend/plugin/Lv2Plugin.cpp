@@ -515,11 +515,15 @@ public:
 
     uint32_t midiInCount() const override
     {
+        CARLA_ASSERT(fRdfDescriptor != nullptr);
+
         uint32_t i, count = 0;
 
-        for (i=0; i < fEventsIn.count; ++i)
+        for (i=0; i < fRdfDescriptor->PortCount; ++i)
         {
-            if (fEventsIn.data[i].type & CARLA_EVENT_TYPE_MIDI)
+            const LV2_Property portTypes(fRdfDescriptor->Ports[i].Types);
+
+            if (LV2_IS_PORT_INPUT(portTypes) && LV2_PORT_SUPPORTS_MIDI_EVENT(portTypes))
                 count += 1;
         }
 
@@ -528,11 +532,15 @@ public:
 
     uint32_t midiOutCount() const override
     {
+        CARLA_ASSERT(fRdfDescriptor != nullptr);
+
         uint32_t i, count = 0;
 
-        for (i=0; i < fEventsOut.count; ++i)
+        for (i=0; i < fRdfDescriptor->PortCount; ++i)
         {
-            if (fEventsOut.data[i].type & CARLA_EVENT_TYPE_MIDI)
+            const LV2_Property portTypes(fRdfDescriptor->Ports[i].Types);
+
+            if (LV2_IS_PORT_OUTPUT(portTypes) && LV2_PORT_SUPPORTS_MIDI_EVENT(portTypes))
                 count += 1;
         }
 
@@ -565,10 +573,14 @@ public:
 
     unsigned int availableOptions() override
     {
+        CARLA_ASSERT(fRdfDescriptor != nullptr);
+
         unsigned int options = 0x0;
 
-        options |= PLUGIN_OPTION_FIXED_BUFFER;
         options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+
+        if (! needsFixedBuffer())
+            options |= PLUGIN_OPTION_FIXED_BUFFER;
 
         if (kData->engine->getProccessMode() != PROCESS_MODE_CONTINUOUS_RACK)
         {
@@ -578,7 +590,7 @@ public:
                 options |= PLUGIN_OPTION_FORCE_STEREO;
         }
 
-        //if (fDescriptor->midiIns > 0)
+        if (midiInCount() > 0)
         {
             options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
             options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
@@ -3309,6 +3321,21 @@ protected:
 
     // -------------------------------------------------------------------
 
+    bool needsFixedBuffer()
+    {
+        CARLA_ASSERT(fRdfDescriptor != nullptr);
+
+        for (uint32_t i=0; i < fRdfDescriptor->FeatureCount; ++i)
+        {
+            if (std::strcmp(fRdfDescriptor->Features[i].URI, LV2_BUF_SIZE__fixedBlockLength) == 0)
+                return true;
+        }
+
+        return false;
+    }
+
+    // -------------------------------------------------------------------
+
     const char* getUiBridgePath(const LV2_Property type)
     {
         const EngineOptions& options(kData->engine->getOptions());
@@ -3716,13 +3743,15 @@ public:
             // set default options
             fOptions = 0x0;
 
-            fOptions |= PLUGIN_OPTION_FIXED_BUFFER;
             fOptions |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+
+            if (needsFixedBuffer())
+                fOptions |= PLUGIN_OPTION_FIXED_BUFFER;
 
             if (kData->engine->getOptions().forceStereo)
                 fOptions |= PLUGIN_OPTION_FORCE_STEREO;
 
-            //if (fDescriptor->midiIns > 0)
+            if (midiInCount() > 0)
             {
                 fOptions |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
                 fOptions |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
@@ -3734,6 +3763,10 @@ public:
             kData->idStr  = "LV2/";
             kData->idStr += uri;
             fOptions = kData->loadSettings(fOptions, availableOptions());
+
+            // ignore settings, we need this anyway
+            if (needsFixedBuffer())
+                fOptions |= PLUGIN_OPTION_FIXED_BUFFER;
         }
 
         // ---------------------------------------------------------------
