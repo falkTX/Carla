@@ -3338,10 +3338,6 @@ protected:
     {
         const LV2_RDF_UI& rdfUi(fRdfDescriptor->UIs[uiId]);
 
-        // Calf Analyzer is useless without instance-data
-        if (std::strcmp(rdfUi.URI, "http://calf.sourceforge.net/plugins/Analyzer") == 0)
-            return false;
-
         for (uint32_t i=0; i < rdfUi.FeatureCount; ++i)
         {
             if (std::strcmp(rdfUi.Features[i].URI, LV2_INSTANCE_ACCESS_URI) == 0)
@@ -3832,9 +3828,7 @@ public:
 
             case LV2_UI_EXTERNAL:
             case LV2_UI_OLD_EXTERNAL:
-                // Calf Analyzer is useless using external-ui
-                if (std::strcmp(fRdfDescriptor->URI, "http://calf.sourceforge.net/plugins/Analyzer") != 0)
-                    iExt = i;
+                iExt = i;
                 break;
 
             default:
@@ -3852,10 +3846,6 @@ public:
             iFinal = eWindows;
         else if (eX11 >= 0)
             iFinal = eX11;
-        else if (eGtk2 >= 0)
-            iFinal = eGtk2;
-        else if (eGtk3 >= 0)
-            iFinal = eGtk3;
         else if (iQt4 >= 0)
             iFinal = iQt4;
         else if (iQt5 >= 0)
@@ -3868,6 +3858,10 @@ public:
             iFinal = iX11;
         else if (iExt >= 0)
             iFinal = iExt;
+        else if (eGtk2 >= 0)
+            iFinal = eGtk2;
+        else if (eGtk3 >= 0)
+            iFinal = eGtk3;
 
         if (iFinal < 0)
         {
