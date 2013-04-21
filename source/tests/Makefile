@@ -18,7 +18,7 @@ BUILD_CXX_FLAGS += -isystem /usr/include/qt4
 ANSI_CXX_FLAGS   = -ansi -pedantic -pedantic-errors -Wunused-parameter -Wuninitialized -Wno-vla
 ANSI_CXX_FLAGS  += -Wcast-qual -Wconversion -Wsign-conversion -Wlogical-op -Waggregate-return
 ANSI_CXX_FLAGS  += -std=c++11 -Wzero-as-null-pointer-constant
-ANSI_CXX_FLAGS  += -DVESTIGE_HEADER -fPIC
+ANSI_CXX_FLAGS  += -DBUILD_ANSI_TEST -DVESTIGE_HEADER -fPIC
 
 TARGETS = ANSI CarlaString RtList Print Utils
 
@@ -32,8 +32,8 @@ ANSI: ANSI.cpp
 CarlaString: CarlaString.cpp
 	$(CXX) $^ $(BUILD_CXX_FLAGS) $(LINK_FLAGS) -o $@
 
-RtList: RtList.cpp ../libs/rtmempool.a
-	$(CXX) $^ $(BUILD_CXX_FLAGS) $(LINK_FLAGS) -pthread -lpthread -o $@
+RtList: RtList.cpp ../libs/rtmempool.a ../utils/RtList.hpp
+	$(CXX) RtList.cpp ../libs/rtmempool.a $(BUILD_CXX_FLAGS) $(LINK_FLAGS) -pthread -lpthread -o $@
 
 Print: Print.cpp
 	$(CXX) $^ $(BUILD_CXX_FLAGS) $(LINK_FLAGS) -o $@

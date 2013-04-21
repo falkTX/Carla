@@ -20,7 +20,7 @@
 // #include "CarlaPlugin.hpp"
 // #include "CarlaNative.h"
 // #include "CarlaNative.hpp"
-#include "standalone/CarlaStandalone.cpp"
+//#include "standalone/CarlaStandalone.cpp"
 
 // #include "CarlaMutex.hpp"
 // #include "CarlaString.hpp"

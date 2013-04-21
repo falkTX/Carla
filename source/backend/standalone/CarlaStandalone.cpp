@@ -2113,8 +2113,10 @@ public:
             lo_server_thread_start(fServerThread);
         }
 
+#ifndef BUILD_ANSI_TEST
         lo_send_from(addr, lo_server_thread_get_server(fServerThread), LO_TT_IMMEDIATE, "/nsm/server/announce", "sssiii",
                      "Carla", ":switch:", appName, NSM_API_VERSION_MAJOR, NSM_API_VERSION_MINOR, pid);
+#endif
 
         lo_address_free(addr);
     }
@@ -2184,8 +2186,10 @@ protected:
         for (int i=0; i < 30 && ! fIsOpened; i++)
             carla_msleep(100);
 
+#ifndef BUILD_ANSI_TEST
         if (fIsOpened)
             lo_send_from(fReplyAddr, lo_server_thread_get_server(fServerThread), LO_TT_IMMEDIATE, "/reply", "ss", "/nsm/client/open", "OK");
+#endif
 
         return 0;
 
@@ -2214,8 +2218,10 @@ protected:
         for (int i=0; i < 30 && ! fIsSaved; i++)
             carla_msleep(100);
 
+#ifndef BUILD_ANSI_TEST
         if (fIsSaved)
             lo_send_from(fReplyAddr, lo_server_thread_get_server(fServerThread), LO_TT_IMMEDIATE, "/reply", "ss", "/nsm/client/save", "OK");
+#endif
 
         return 0;
 

@@ -192,10 +192,12 @@ struct Lv2EventData {
             if (midi != nullptr)
             {
                 if (midi->data != nullptr)
+                {
                     delete[] midi->data;
-                delete midi;
+                    midi->data = nullptr;
+                }
 
-                midi->data = nullptr;
+                delete midi;
                 midi = nullptr;
             }
         }

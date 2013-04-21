@@ -52,21 +52,23 @@ protected:
         Itenerator(k_list_head* queue)
             : kQueue(queue),
               fEntry(queue->next),
+              fEntry2(fEntry->next),
               fData(nullptr)
         {
             CARLA_ASSERT(kQueue != nullptr);
             CARLA_ASSERT(fEntry != nullptr);
+            CARLA_ASSERT(fEntry2 != nullptr);
         }
 
         bool valid()
         {
-            prefetch(fEntry->next);
             return (fEntry != kQueue);
         }
 
         void next()
         {
-            fEntry = fEntry->next;
+            fEntry  = fEntry2;
+            fEntry2 = fEntry->next;
         }
 
         T& operator*()
@@ -79,6 +81,7 @@ protected:
     private:
         k_list_head* const kQueue;
         k_list_head* fEntry;
+        k_list_head* fEntry2;
         Data* fData;
 
         friend class List;
@@ -107,8 +110,9 @@ public:
         if (fCount != 0)
         {
             k_list_head* entry;
+            k_list_head* entry2;
 
-            list_for_each(entry, &fQueue)
+            list_for_each_safe(entry, entry2, &fQueue)
             {
                 if (Data* data = list_entry(entry, Data, siblings))
                     _deallocate(data);
@@ -188,8 +192,9 @@ public:
         size_t i = 0;
         Data* data = nullptr;
         k_list_head* entry;
+        k_list_head* entry2;
 
-        list_for_each(entry, &fQueue)
+        list_for_each_safe(entry, entry2, &fQueue)
         {
             if (index != i++)
                 continue;
@@ -240,8 +245,9 @@ public:
     {
         Data* data = nullptr;
         k_list_head* entry;
+        k_list_head* entry2;
 
-        list_for_each(entry, &fQueue)
+        list_for_each_safe(entry, entry2, &fQueue)
         {
             data = list_entry(entry, Data, siblings);
 
@@ -412,6 +418,8 @@ public:
 
         void resize(const size_t minPreallocated, const size_t maxPreallocated)
         {
+            CARLA_ASSERT(this->fCount == 0);
+
             if (fHandle != nullptr)
             {
                 rtsafe_memory_pool_destroy(fHandle);
@@ -530,6 +538,7 @@ private:
 
     void _deallocate(typename List<T>::Data* const dataPtr) override
     {
+        CARLA_ASSERT(dataPtr != nullptr);
         std::free(dataPtr);
     }
 
@@ -559,6 +568,7 @@ private:
 
     void _deallocate(typename List<T>::Data* const dataPtr) override
     {
+        CARLA_ASSERT(dataPtr != nullptr);
         delete dataPtr;
     }
 

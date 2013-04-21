@@ -175,5 +175,32 @@ int main()
     assert(postRtEvents.dataPendingRT.count() == 0);
     assert(postRtEvents.dataPendingRT.isEmpty());
 
+    // test non-rt
+    const unsigned int CARLA_EVENT_DATA_ATOM    = 0x01;
+    const unsigned int CARLA_EVENT_DATA_MIDI_LL = 0x04;
+
+    NonRtList<uint32_t> evIns, evOuts;
+    evIns.append(CARLA_EVENT_DATA_ATOM);
+    evOuts.append(CARLA_EVENT_DATA_ATOM);
+    evOuts.append(CARLA_EVENT_DATA_MIDI_LL);
+
+    if (evIns.count() > 0)
+    {
+        const size_t count(evIns.count());
+
+        for (uint32_t j=0; j < count; ++j)
+        {
+            const uint32_t& type(evIns.getAt(j));
+
+            if (type == CARLA_EVENT_DATA_ATOM)
+                pass();
+            else if (type == CARLA_EVENT_DATA_MIDI_LL)
+                pass();
+        }
+    }
+
+    evIns.clear();
+    evOuts.clear();
+
     return 0;
 }
