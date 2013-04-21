@@ -78,6 +78,7 @@
 #define LV2_MIDI_LL__MidiPort "http://ll-plugins.nongnu.org/lv2/ext/MidiPort"
 
 #define LV2_UI__Qt5UI         LV2_UI_PREFIX "Qt5UI"
+#define LV2_UI__idle          LV2_UI_PREFIX "idle"
 #define LV2_UI__makeResident  LV2_UI_PREFIX "makeResident"
 
 // -------------------------------------------------
@@ -1230,6 +1231,8 @@ bool is_lv2_ui_feature_supported(const LV2_URI uri)
     if (std::strcmp(uri, LV2_DATA_ACCESS_URI) == 0)
         return true;
     if (std::strcmp(uri, LV2_INSTANCE_ACCESS_URI) == 0)
+        return true;
+    if (std::strcmp(uri, LV2_UI__idle) == 0)
         return true;
     if (std::strcmp(uri, LV2_UI__fixedSize) == 0)
         return true;
