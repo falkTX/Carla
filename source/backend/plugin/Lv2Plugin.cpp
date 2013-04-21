@@ -261,6 +261,12 @@ struct Lv2PluginEventData {
     {
         if (data != nullptr)
         {
+            for (uint32_t i=0; i < count; ++i)
+            {
+                if (data[i].port != nullptr && ctrl != nullptr && data[i].port == ctrl->port)
+                    data[i].port = nullptr;
+            }
+
             delete[] data;
             data = nullptr;
         }
@@ -1619,7 +1625,7 @@ public:
                         }
                         else
                         {
-                            fEventsOut.data[j].port  = (CarlaEngineEventPort*)kData->client->addPort(kEnginePortTypeEvent, portName, false);
+                            fEventsOut.data[j].port = (CarlaEngineEventPort*)kData->client->addPort(kEnginePortTypeEvent, portName, false);
 
                             if (LV2_IS_PORT_DESIGNATION_CONTROL(fRdfDescriptor->Ports[i].Designation))
                             {
