@@ -757,6 +757,9 @@ public:
         // plugin hints
         fHints = 0x0;
 
+        if (LADSPA_IS_HARD_RT_CAPABLE(fDescriptor->Properties))
+            fHints |= PLUGIN_IS_RTSAFE;
+
         if (fGuiFilename.isNotEmpty())
             fHints |= PLUGIN_HAS_GUI;
 

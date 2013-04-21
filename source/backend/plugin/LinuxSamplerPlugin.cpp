@@ -402,7 +402,6 @@ public:
 
         // plugin hints
         fHints  = 0x0;
-        fHints |= PLUGIN_IS_RTSAFE;
         fHints |= PLUGIN_IS_SYNTH;
         fHints |= PLUGIN_CAN_VOLUME;
         fHints |= PLUGIN_CAN_BALANCE;

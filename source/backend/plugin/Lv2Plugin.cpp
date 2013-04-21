@@ -1970,6 +1970,9 @@ public:
         // plugin hints
         fHints = 0x0;
 
+        if (isRealtimeSafe())
+            fHints |= PLUGIN_IS_RTSAFE;
+
         if (fUi.type != PLUGIN_UI_NULL)
         {
             fHints |= PLUGIN_HAS_GUI;
@@ -3491,7 +3494,20 @@ protected:
 
     // -------------------------------------------------------------------
 
-    bool needsFixedBuffer()
+    bool isRealtimeSafe() const
+    {
+        CARLA_ASSERT(fRdfDescriptor != nullptr);
+
+        for (uint32_t i=0; i < fRdfDescriptor->FeatureCount; ++i)
+        {
+            if (std::strcmp(fRdfDescriptor->Features[i].URI, LV2_CORE__hardRTCapable) == 0)
+                return true;
+        }
+
+        return false;
+    }
+
+    bool needsFixedBuffer() const
     {
         CARLA_ASSERT(fRdfDescriptor != nullptr);
 
@@ -3506,7 +3522,7 @@ protected:
 
     // -------------------------------------------------------------------
 
-    const char* getUiBridgePath(const LV2_Property type)
+    const char* getUiBridgePath(const LV2_Property type) const
     {
         const EngineOptions& options(kData->engine->getOptions());
 
@@ -3531,7 +3547,7 @@ protected:
         }
     }
 
-    bool isUiBridgeable(const uint32_t uiId)
+    bool isUiBridgeable(const uint32_t uiId) const
     {
         const LV2_RDF_UI& rdfUi(fRdfDescriptor->UIs[uiId]);
 
@@ -3546,7 +3562,7 @@ protected:
         return true;
     }
 
-    bool isUiResizable()
+    bool isUiResizable() const
     {
         for (uint32_t i=0; i < fUi.rdfDescriptor->FeatureCount; ++i)
         {

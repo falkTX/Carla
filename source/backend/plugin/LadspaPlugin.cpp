@@ -739,6 +739,9 @@ public:
         // plugin hints
         fHints = 0x0;
 
+        if (LADSPA_IS_HARD_RT_CAPABLE(fDescriptor->Properties))
+            fHints |= PLUGIN_IS_RTSAFE;
+
         if (aOuts > 0 && (aIns == aOuts || aIns == 1))
             fHints |= PLUGIN_CAN_DRYWET;
 
