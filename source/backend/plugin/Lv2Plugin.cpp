@@ -3411,7 +3411,11 @@ protected:
             for (uint32_t i=0; i < kData->param.count; ++i)
             {
                 if (kData->param.data[i].rindex == static_cast<int32_t>(rindex))
-                    return setParameterValue(i, value, false, true, true);
+                {
+                    if (fParamBuffers[i] != value)
+                        setParameterValue(i, value, false, true, true);
+                    break;
+                }
             }
         }
         else if (format == CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM)

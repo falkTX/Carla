@@ -1278,7 +1278,11 @@ void CarlaPlugin::setParameterValueByRealIndex(const int32_t rindex, const float
     for (uint32_t i=0; i < kData->param.count; ++i)
     {
         if (kData->param.data[i].rindex == rindex)
-            return setParameterValue(i, value, sendGui, sendOsc, sendCallback);
+        {
+            if (getParameterValue(i) != value)
+                setParameterValue(i, value, sendGui, sendOsc, sendCallback);
+            break;
+        }
     }
 }
 
