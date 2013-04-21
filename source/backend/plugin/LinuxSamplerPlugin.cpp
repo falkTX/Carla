@@ -24,8 +24,6 @@
 
 #include <QtCore/QFileInfo>
 
-// TODO - setMidiProgram()
-
 namespace LinuxSampler {
 
 // -----------------------------------------------------------------------
@@ -302,12 +300,21 @@ public:
 
         if (index >= 0)
         {
-            // TODO
-            //const uint32_t bank    = kData->midiprog.data[index].bank;
-            //const uint32_t program = kData->midiprog.data[index].program;
+            const uint32_t bank    = kData->midiprog.data[index].bank;
+            const uint32_t program = kData->midiprog.data[index].program;
+            const uint32_t rIndex  = bank*128 + program;
 
-            //const ScopedProcessLocker spl(this);
-            //fluid_synth_program_select(fSynth, kData->ctrlChannel, fSynthId, bank, program);
+            const ScopedSingleProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
+
+            if (kData->engine->isOffline())
+            {
+                fEngineChannel->PrepareLoadInstrument((const char*)fFilename, rIndex);
+                fEngineChannel->LoadInstrument();
+            }
+            else
+            {
+                fInstrument->LoadInstrumentInBackground(fInstrumentIds[rIndex], fEngineChannel);
+            }
         }
 
         CarlaPlugin::setMidiProgram(index, sendGui, sendOsc, sendCallback);
@@ -428,24 +435,32 @@ public:
         kData->midiprog.clear();
 
         // Query new programs
-        uint32_t i, count = 0; fInstrumentIds.size();
+        uint32_t i, count = fInstrumentIds.size();
 
         // sound kits must always have at least 1 midi-program
-        CARLA_SAFE_ASSERT(count > 0); // FIXME
+        CARLA_ASSERT(count > 0);
 
         if (count == 0)
             return;
 
         kData->midiprog.createNew(count);
 
-        // Update data
+        LinuxSampler::InstrumentManager::instrument_info_t info;
+
         for (i=0; i < kData->midiprog.count; ++i)
         {
-            LinuxSampler::InstrumentManager::instrument_info_t info = fInstrument->GetInstrumentInfo(fInstrumentIds[i]);
-
             kData->midiprog.data[i].bank    = i / 128;
             kData->midiprog.data[i].program = i % 128;
-            kData->midiprog.data[i].name    = carla_strdup(info.InstrumentName.c_str());
+
+            try {
+                info = fInstrument->GetInstrumentInfo(fInstrumentIds[i]);
+            }
+            catch (const LinuxSampler::InstrumentManagerException&)
+            {
+                continue;
+            }
+
+            kData->midiprog.data[i].name = carla_strdup(info.InstrumentName.c_str());
         }
 
 #ifndef BUILD_BRIDGE
@@ -1064,13 +1079,9 @@ public:
 
         fEngineChannel = fSamplerChannel->GetEngineChannel();
         fEngineChannel->Connect(fAudioOutputDevice);
-        //fEngineChannel->PrepareLoadInstrument(filename, 0); // todo - find instrument from label
-        //fEngineChannel->LoadInstrument();
         fEngineChannel->Volume(LinuxSampler::VOLUME_MAX);
 
         fMidiInputPort->Connect(fSamplerChannel->GetEngineChannel(), LinuxSampler::midi_chan_all);
-
-        fInstrument->LoadInstrumentInBackground(fInstrumentIds[0], fEngineChannel);
 
         // ---------------------------------------------------------------
         // load plugin settings
