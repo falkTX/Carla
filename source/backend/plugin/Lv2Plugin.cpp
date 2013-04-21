@@ -121,6 +121,7 @@ const uint32_t kFeatureIdStrictBounds     = 10;
 const uint32_t kFeatureIdUriMap           = 11;
 const uint32_t kFeatureIdUridMap          = 12;
 const uint32_t kFeatureIdUridUnmap        = 13;
+#if 0
 const uint32_t kFeatureIdWorker           = 14;
 const uint32_t kFeatureIdUiDataAccess     = 15;
 const uint32_t kFeatureIdUiInstanceAccess = 16;
@@ -130,6 +131,16 @@ const uint32_t kFeatureIdUiResize         = 19;
 const uint32_t kFeatureIdExternalUi       = 20;
 const uint32_t kFeatureIdExternalUiOld    = 21;
 const uint32_t kFeatureCount              = 22;
+#else
+const uint32_t kFeatureIdUiDataAccess     = 14;
+const uint32_t kFeatureIdUiInstanceAccess = 15;
+const uint32_t kFeatureIdUiParent         = 16;
+const uint32_t kFeatureIdUiPortMap        = 17;
+const uint32_t kFeatureIdUiResize         = 18;
+const uint32_t kFeatureIdExternalUi       = 19;
+const uint32_t kFeatureIdExternalUiOld    = 20;
+const uint32_t kFeatureCount              = 21;
+#endif
 /**@}*/
 
 const unsigned int MAX_EVENT_BUFFER = 8192; // 0x2000
@@ -468,8 +479,10 @@ public:
         if (fFeatures[kFeatureIdUridUnmap] != nullptr && fFeatures[kFeatureIdUridUnmap]->data != nullptr)
             delete (LV2_URID_Unmap*)fFeatures[kFeatureIdUridUnmap]->data;
 
+#if 0
         if (fFeatures[kFeatureIdWorker] != nullptr && fFeatures[kFeatureIdWorker]->data != nullptr)
             delete (LV2_Worker_Schedule*)fFeatures[kFeatureIdWorker]->data;
+#endif
 
         for (uint32_t i=0; i < kFeatureCount; ++i)
         {
@@ -2676,6 +2689,7 @@ public:
 
         CARLA_PROCESS_CONTINUE_CHECK;
 
+#if 0
         // --------------------------------------------------------------------------------------------------------
         // Final work
 
@@ -2686,6 +2700,7 @@ public:
             if (fHandle2 != nullptr)
                 fExt.worker->end_run(fHandle2);
         }
+#endif
 
         // --------------------------------------------------------------------------------------------------------
     }
@@ -3313,13 +3328,13 @@ protected:
         }
     }
 
+#if 0
     // -------------------------------------------------------------------
 
     LV2_Worker_Status handleWorkerSchedule(const uint32_t size, const void* const data)
     {
         carla_stdout("Lv2Plugin::handleWorkerSchedule(%i, %p)", size, data);
 
-#if 0
         if (! ext.worker)
         {
             carla_stderr("Lv2Plugin::handleWorkerSchedule(%i, %p) - plugin has no worker", size, data);
@@ -3330,7 +3345,6 @@ protected:
             ext.worker->work(handle, carla_lv2_worker_respond, this, size, data);
         else
             postponeEvent(PluginPostEventCustom, size, 0, 0.0, data);
-#endif
 
         return LV2_WORKER_SUCCESS;
     }
@@ -3339,7 +3353,6 @@ protected:
     {
         carla_stdout("Lv2Plugin::handleWorkerRespond(%i, %p)", size, data);
 
-#if 0
         LV2_Atom_Worker workerAtom;
         workerAtom.atom.type = CARLA_URI_MAP_ID_ATOM_WORKER;
         workerAtom.atom.size = sizeof(LV2_Atom_Worker_Body);
@@ -3347,10 +3360,10 @@ protected:
         workerAtom.body.data = data;
 
         atomQueueIn.put(0, (const LV2_Atom*)&workerAtom);
-#endif
 
         return LV2_WORKER_SUCCESS;
     }
+#endif
 
     // -------------------------------------------------------------------
 
@@ -3647,9 +3660,11 @@ public:
         uridUnmapFt->handle                 = this;
         uridUnmapFt->unmap                  = carla_lv2_urid_unmap;
 
+#if 0
         LV2_Worker_Schedule* const workerFt = new LV2_Worker_Schedule;
         workerFt->handle                    = this;
         workerFt->schedule_work             = carla_lv2_worker_schedule;
+#endif
 
         // ---------------------------------------------------------------
         // initialize features (part 2)
@@ -3710,9 +3725,11 @@ public:
         fFeatures[kFeatureIdUridUnmap]->URI  = LV2_URID__unmap;
         fFeatures[kFeatureIdUridUnmap]->data = uridUnmapFt;
 
+#if 0
         fFeatures[kFeatureIdWorker]           = new LV2_Feature;
         fFeatures[kFeatureIdWorker]->URI      = LV2_WORKER__schedule;
         fFeatures[kFeatureIdWorker]->data     = workerFt;
+#endif
 
         if (! needsFixedBuffer())
             fFeatures[kFeatureIdBufSizeFixed]->URI = LV2_BUF_SIZE__boundedBlockLength;
@@ -4586,6 +4603,7 @@ private:
         return ((Lv2Plugin*)handle)->getCustomURIString(urid);
     }
 
+#if 0
     // -------------------------------------------------------------------
     // Worker Feature
 
@@ -4610,6 +4628,7 @@ private:
 
         return ((Lv2Plugin*)handle)->handleWorkerRespond(size, data);
     }
+#endif
 
     // -------------------------------------------------------------------
     // UI Port-Map Feature

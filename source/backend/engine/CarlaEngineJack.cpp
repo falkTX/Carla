@@ -591,7 +591,7 @@ public:
             jackbridge_set_latency_callback(fClient, carla_jack_latency_callback, this);
 # endif
 
-            const char* const jackClientName = jackbridge_get_client_name(fClient);
+            const char* const jackClientName(jackbridge_get_client_name(fClient));
 
             initJackPatchbay(jackClientName);
 
@@ -1488,8 +1488,8 @@ private:
                 QString groupName(fullName.split(":").at(0));
                 int     groupId   = -1;
 
-                if (groupName == ourName)
-                    continue;
+                //if (groupName == ourName)
+                //    continue;
 
                 if (parsedGroups.contains(groupName))
                 {

@@ -1211,7 +1211,7 @@ bool is_lv2_feature_supported(const LV2_URI uri)
     if (std::strcmp(uri, LV2_URID__unmap) == 0)
         return true;
     if (std::strcmp(uri, LV2_WORKER__schedule) == 0)
-        return true;
+        return false; // TODO
     return false;
 }
 
