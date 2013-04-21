@@ -990,6 +990,7 @@ public:
         {
             kData->engine->setLastError("Failed to get LinuxSampler instrument manager");
             LinuxSampler::EngineFactory::Destroy(fEngine);
+            fEngine = nullptr;
             return false;
         }
 
@@ -1003,6 +1004,7 @@ public:
         {
             kData->engine->setLastError(e.what());
             LinuxSampler::EngineFactory::Destroy(fEngine);
+            fEngine = nullptr;
             return false;
         }
 
@@ -1013,6 +1015,7 @@ public:
         {
             kData->engine->setLastError("Failed to find any instruments");
             LinuxSampler::EngineFactory::Destroy(fEngine);
+            fEngine = nullptr;
             return false;
         }
 
@@ -1025,6 +1028,7 @@ public:
         {
             kData->engine->setLastError(e.what());
             LinuxSampler::EngineFactory::Destroy(fEngine);
+            fEngine = nullptr;
             return false;
         }
 
@@ -1047,6 +1051,7 @@ public:
         {
             kData->engine->setLastError("Failed to register plugin client");
             LinuxSampler::EngineFactory::Destroy(fEngine);
+            fEngine = nullptr;
             return false;
         }
 
