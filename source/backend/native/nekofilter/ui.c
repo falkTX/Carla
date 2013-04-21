@@ -343,6 +343,15 @@ nekoui_instantiate(
   int i;
   char ch;
 
+  if (access("/usr/bin/python2", F_OK) != -1)
+    argv[0] = "/usr/bin/python2";
+  else if (access("/usr/bin/python2.7", F_OK) != -1)
+    argv[0] = "/usr/bin/python2.7";
+  else if (access("/usr/bin/python2.6", F_OK) != -1)
+    argv[0] = "/usr/bin/python2.6";
+  else
+    goto fail;
+
   control_ptr = malloc(sizeof(struct control));
   if (control_ptr == NULL)
   {
@@ -383,7 +392,6 @@ nekoui_instantiate(
 
   control_ptr->pid = -1;
 
-  argv[0] = "python2";
   argv[1] = filename;
   argv[2] = sample_rate_str;
   argv[3] = ui_recv_pipe;       /* reading end */
@@ -420,7 +428,7 @@ nekoui_instantiate(
 
     execvp(argv[0], (char **)argv);
     fprintf(stderr, "exec of UI failed: %s\n", strerror(errno));
-    exit(1);
+    goto fail_free_control;
   case -1:
     fprintf(stderr, "fork() failed to create new process for plugin UI\n");
     goto fail_free_control;
