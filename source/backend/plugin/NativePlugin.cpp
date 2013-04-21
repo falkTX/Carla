@@ -771,7 +771,7 @@ public:
                 portName += ":";
             }
 
-            if (aIns > 1)
+            if (aIns > 1 && ! forcedStereoIn)
             {
                 portName += "input_";
                 portName += CarlaString(j+1);
@@ -804,7 +804,7 @@ public:
                 portName += ":";
             }
 
-            if (aOuts > 1)
+            if (aOuts > 1 && ! forcedStereoOut)
             {
                 portName += "output_";
                 portName += CarlaString(j+1);
