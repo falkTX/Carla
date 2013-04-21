@@ -1062,7 +1062,7 @@ public:
 
             for (i=0; i < nEvents; ++i)
             {
-                const EngineEvent& event = kData->event.portIn->getEvent(i);
+                const EngineEvent& event(kData->event.portIn->getEvent(i));
 
                 time = event.time;
 

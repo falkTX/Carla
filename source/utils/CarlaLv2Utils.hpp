@@ -697,7 +697,9 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
                 {
                     if (const char* const designation = designationNodes.get_first().as_string())
                     {
-                        if (std::strcmp(designation, LV2_CORE__freeWheeling) == 0)
+                        if (std::strcmp(designation, LV2_CORE__control) == 0)
+                            rdfPort->Designation = LV2_PORT_DESIGNATION_CONTROL;
+                        else if (std::strcmp(designation, LV2_CORE__freeWheeling) == 0)
                             rdfPort->Designation = LV2_PORT_DESIGNATION_FREEWHEELING;
                         else if (std::strcmp(designation, LV2_CORE__latency) == 0)
                             rdfPort->Designation = LV2_PORT_DESIGNATION_LATENCY;
