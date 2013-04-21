@@ -1722,12 +1722,14 @@ public:
         if (kData->osc.data.target == nullptr)
             return;
 
+#if 0
         uint8_t midiData[4] = { 0 };
         midiData[1] = MIDI_STATUS_NOTE_ON + channel;
         midiData[2] = note;
         midiData[3] = velo;
 
         osc_send_midi(&kData->osc.data, midiData);
+#endif
     }
 
     void uiNoteOff(const uint8_t channel, const uint8_t note) override
@@ -1742,11 +1744,13 @@ public:
         if (kData->osc.data.target == nullptr)
             return;
 
+#if 0
         uint8_t midiData[4] = { 0 };
         midiData[1] = MIDI_STATUS_NOTE_OFF + channel;
         midiData[2] = note;
 
         osc_send_midi(&kData->osc.data, midiData);
+#endif
     }
 
     // -------------------------------------------------------------------
