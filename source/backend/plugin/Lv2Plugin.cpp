@@ -201,6 +201,8 @@ struct Lv2EventData {
                 midi = nullptr;
             }
         }
+
+        type = 0x0;
     }
 
     CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(Lv2EventData)
@@ -262,7 +264,7 @@ struct Lv2PluginEventData {
     {
         for (uint32_t i=0; i < count; ++i)
         {
-            if (data[i].port != nullptr)
+            if (data[i].port != nullptr && (ctrl == nullptr || data[i].port != ctrl->port))
                 data[i].port->initBuffer(engine);
         }
     }
