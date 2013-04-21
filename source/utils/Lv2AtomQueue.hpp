@@ -18,7 +18,7 @@
 #ifndef __LV2_ATOM_QUEUE_HPP__
 #define __LV2_ATOM_QUEUE_HPP__
 
-#include "CarlaUtils.hpp"
+#include "CarlaMutex.hpp"
 
 #include <cstring> // memcpy, memset
 #include "lv2/atom.h"
@@ -32,7 +32,7 @@ public:
         empty = true;
         full  = false;
 
-        ::memset(dataPool, 0, sizeof(unsigned char)*MAX_POOL_SIZE);
+        std::memset(dataPool, 0, sizeof(unsigned char)*MAX_POOL_SIZE);
     }
 
     void copyDataFrom(Lv2AtomQueue* const queue)
@@ -42,8 +42,8 @@ public:
         lock();
 
         // copy data from queue
-        ::memcpy(data, queue->data, sizeof(datatype)*MAX_SIZE);
-        ::memcpy(dataPool, queue->dataPool, sizeof(unsigned char)*MAX_POOL_SIZE);
+        std::memcpy(data, queue->data, sizeof(datatype)*MAX_SIZE);
+        std::memcpy(dataPool, queue->dataPool, sizeof(unsigned char)*MAX_POOL_SIZE);
         index = queue->index;
         indexPool = queue->indexPool;
         empty = queue->empty;
@@ -53,8 +53,8 @@ public:
         unlock();
 
         // reset queque
-        ::memset(queue->data, 0, sizeof(datatype)*MAX_SIZE);
-        ::memset(queue->dataPool, 0, sizeof(unsigned char)*MAX_POOL_SIZE);
+        std::memset(queue->data, 0, sizeof(datatype)*MAX_SIZE);
+        std::memset(queue->dataPool, 0, sizeof(unsigned char)*MAX_POOL_SIZE);
         queue->index = queue->indexPool = 0;
         queue->empty = true;
         queue->full  = false;
@@ -106,7 +106,7 @@ public:
                 data[i].size       = atom->size;
                 data[i].type       = atom->type;
                 data[i].poolOffset = indexPool;
-                ::memcpy(dataPool + indexPool, (const unsigned char*)LV2_ATOM_BODY_CONST(atom), atom->size);
+                std::memcpy(dataPool + indexPool, (const unsigned char*)LV2_ATOM_BODY_CONST(atom), atom->size);
                 empty = false;
                 full  = (i == MAX_SIZE-1);
                 indexPool += atom->size;
@@ -117,14 +117,12 @@ public:
         unlock();
     }
 
+    // needs to be locked first!
     bool get(uint32_t* const portIndex, const LV2_Atom** const atom)
     {
         CARLA_ASSERT(portIndex && atom);
 
         if (empty || ! (portIndex && atom))
-            return false;
-
-        if (! tryLock())
             return false;
 
         full = false;
@@ -140,7 +138,7 @@ public:
 
         retAtom.atom.size = data[index].size;
         retAtom.atom.type = data[index].type;
-        ::memcpy(retAtom.data, dataPool + data[index].poolOffset, data[index].size);
+        std::memcpy(retAtom.data, dataPool + data[index].poolOffset, data[index].size);
 
         *portIndex = data[index].portIndex;
         *atom      = (LV2_Atom*)&retAtom;
@@ -152,7 +150,6 @@ public:
         index++;
         empty = false;
 
-        unlock();
         return true;
     }
 

@@ -78,6 +78,7 @@ HEADERS += \
     ../../utils/CarlaString.hpp
 
 INCLUDEPATH = . .. \
+    ../engine \
     ../../includes \
     ../../libs \
     ../../utils

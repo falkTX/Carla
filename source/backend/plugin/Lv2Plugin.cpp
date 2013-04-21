@@ -22,6 +22,9 @@
 #include "CarlaPluginGui.hpp"
 #include "CarlaLv2Utils.hpp"
 
+#include "CarlaEngineOsc.hpp"
+#include "Lv2AtomQueue.hpp"
+
 #include <QtCore/QDir>
 
 extern "C" {
@@ -121,7 +124,6 @@ const uint32_t kFeatureIdStrictBounds     = 10;
 const uint32_t kFeatureIdUriMap           = 11;
 const uint32_t kFeatureIdUridMap          = 12;
 const uint32_t kFeatureIdUridUnmap        = 13;
-#if 0
 const uint32_t kFeatureIdWorker           = 14;
 const uint32_t kFeatureIdUiDataAccess     = 15;
 const uint32_t kFeatureIdUiInstanceAccess = 16;
@@ -131,16 +133,6 @@ const uint32_t kFeatureIdUiResize         = 19;
 const uint32_t kFeatureIdExternalUi       = 20;
 const uint32_t kFeatureIdExternalUiOld    = 21;
 const uint32_t kFeatureCount              = 22;
-#else
-const uint32_t kFeatureIdUiDataAccess     = 14;
-const uint32_t kFeatureIdUiInstanceAccess = 15;
-const uint32_t kFeatureIdUiParent         = 16;
-const uint32_t kFeatureIdUiPortMap        = 17;
-const uint32_t kFeatureIdUiResize         = 18;
-const uint32_t kFeatureIdExternalUi       = 19;
-const uint32_t kFeatureIdExternalUiOld    = 20;
-const uint32_t kFeatureCount              = 21;
-#endif
 /**@}*/
 
 const unsigned int MAX_EVENT_BUFFER = 8192; // 0x2000
@@ -485,10 +477,8 @@ public:
         if (fFeatures[kFeatureIdUridUnmap] != nullptr && fFeatures[kFeatureIdUridUnmap]->data != nullptr)
             delete (LV2_URID_Unmap*)fFeatures[kFeatureIdUridUnmap]->data;
 
-#if 0
         if (fFeatures[kFeatureIdWorker] != nullptr && fFeatures[kFeatureIdWorker]->data != nullptr)
             delete (LV2_Worker_Schedule*)fFeatures[kFeatureIdWorker]->data;
-#endif
 
         for (uint32_t i=0; i < kFeatureCount; ++i)
         {
@@ -2315,6 +2305,46 @@ public:
         if (fEventsIn.ctrl != nullptr && fEventsIn.ctrl->port != nullptr)
         {
             // ----------------------------------------------------------------------------------------------------
+            // Message Input
+
+            if (fAtomQueueIn.tryLock())
+            {
+                if (! fAtomQueueIn.isEmpty())
+                {
+                    uint32_t portIndex;
+                    const LV2_Atom* atom;
+
+                    k = fEventsIn.ctrlIndex;
+
+                    while (fAtomQueueIn.get(&portIndex, &atom))
+                    {
+                        const uint32_t evInPadSize(lv2_atom_pad_size(sizeof(LV2_Atom_Event) + atom->size));
+
+                        if (evInAtomOffsets[k] + evInPadSize >= MAX_EVENT_BUFFER)
+                            break;
+
+                        //if (atom->type == CARLA_URI_MAP_ID_ATOM_WORKER)
+                        //{
+                        //    const LV2_Atom_Worker* const atomWorker = (const LV2_Atom_Worker*)atom;
+                        //    fExt.worker->work_response(fHandle, atomWorker->body.size, atomWorker->body.data);
+                        //    continue;
+                        //}
+
+                        LV2_Atom_Event* const aev(getLv2AtomEvent(fEventsIn.ctrl->atom, evInAtomOffsets[k]));
+                        aev->time.frames = 0;
+                        aev->body.type   = atom->type;
+                        aev->body.size   = atom->size;
+                        std::memcpy(LV2_ATOM_BODY(&aev->body), LV2_ATOM_BODY(atom), atom->size);
+
+                        evInAtomOffsets[k] += evInPadSize;
+                        fEventsIn.ctrl->atom->atom.size = evInAtomOffsets[k];
+                    }
+                }
+
+                fAtomQueueIn.unlock();
+            }
+
+            // ----------------------------------------------------------------------------------------------------
             // MIDI Input (External)
 
             if (kData->extNotes.mutex.tryLock())
@@ -2340,7 +2370,7 @@ public:
                             const uint32_t evInPadSize(lv2_atom_pad_size(sizeof(LV2_Atom_Event) + 3));
 
                             if (evInAtomOffsets[k] + evInPadSize >= MAX_EVENT_BUFFER)
-                                continue;
+                                break;
 
                             LV2_Atom_Event* const aev = getLv2AtomEvent(fEventsIn.ctrl->atom, evInAtomOffsets[k]);
                             aev->time.frames = 0;
@@ -3334,23 +3364,22 @@ protected:
         }
     }
 
-#if 0
     // -------------------------------------------------------------------
 
     LV2_Worker_Status handleWorkerSchedule(const uint32_t size, const void* const data)
     {
         carla_stdout("Lv2Plugin::handleWorkerSchedule(%i, %p)", size, data);
 
-        if (! ext.worker)
+        if (fExt.worker == nullptr || fExt.worker->work == nullptr)
         {
             carla_stderr("Lv2Plugin::handleWorkerSchedule(%i, %p) - plugin has no worker", size, data);
             return LV2_WORKER_ERR_UNKNOWN;
         }
 
-        if (x_engine->isOffline())
-            ext.worker->work(handle, carla_lv2_worker_respond, this, size, data);
-        else
-            postponeEvent(PluginPostEventCustom, size, 0, 0.0, data);
+        //if (kData->engine->isOffline())
+        fExt.worker->work(fHandle, carla_lv2_worker_respond, this, size, data);
+        //else
+        //    postponeEvent(PluginPostEventCustom, size, 0, 0.0, data);
 
         return LV2_WORKER_SUCCESS;
     }
@@ -3359,6 +3388,7 @@ protected:
     {
         carla_stdout("Lv2Plugin::handleWorkerRespond(%i, %p)", size, data);
 
+#if 0
         LV2_Atom_Worker workerAtom;
         workerAtom.atom.type = CARLA_URI_MAP_ID_ATOM_WORKER;
         workerAtom.atom.size = sizeof(LV2_Atom_Worker_Body);
@@ -3366,10 +3396,10 @@ protected:
         workerAtom.body.data = data;
 
         atomQueueIn.put(0, (const LV2_Atom*)&workerAtom);
+#endif
 
         return LV2_WORKER_SUCCESS;
     }
-#endif
 
     // -------------------------------------------------------------------
 
@@ -3381,7 +3411,7 @@ protected:
             fUi.descriptor->cleanup(fUi.handle);
 
         fUi.handle = nullptr;
-        kData->engine->callback(CALLBACK_SHOW_GUI, fId, 0, 0, 0.0, nullptr);
+        kData->engine->callback(CALLBACK_SHOW_GUI, fId, 0, 0, 0.0f, nullptr);
     }
 
     uint32_t handleUiPortMap(const char* const symbol)
@@ -3444,8 +3474,8 @@ protected:
             if (buffer == nullptr)
                 return;
 
-            //const LV2_Atom* const atom = (const LV2_Atom*)buffer;
-            //handleTransferAtom(rindex, atom);
+            const LV2_Atom* const atom = (const LV2_Atom*)buffer;
+            fAtomQueueIn.put(rindex, atom);
         }
         else if (format == CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT)
         {
@@ -3454,8 +3484,8 @@ protected:
             if (buffer == nullptr)
                 return;
 
-            //const LV2_Atom* const atom = (const LV2_Atom*)buffer;
-            //handleTransferEvent(rindex, atom);
+            const LV2_Atom* const atom = (const LV2_Atom*)buffer;
+            fAtomQueueIn.put(rindex, atom);
         }
     }
 
@@ -3666,11 +3696,9 @@ public:
         uridUnmapFt->handle                 = this;
         uridUnmapFt->unmap                  = carla_lv2_urid_unmap;
 
-#if 0
         LV2_Worker_Schedule* const workerFt = new LV2_Worker_Schedule;
         workerFt->handle                    = this;
         workerFt->schedule_work             = carla_lv2_worker_schedule;
-#endif
 
         // ---------------------------------------------------------------
         // initialize features (part 2)
@@ -3731,11 +3759,9 @@ public:
         fFeatures[kFeatureIdUridUnmap]->URI  = LV2_URID__unmap;
         fFeatures[kFeatureIdUridUnmap]->data = uridUnmapFt;
 
-#if 0
         fFeatures[kFeatureIdWorker]           = new LV2_Feature;
         fFeatures[kFeatureIdWorker]->URI      = LV2_WORKER__schedule;
         fFeatures[kFeatureIdWorker]->data     = workerFt;
-#endif
 
         if (! needsFixedBuffer())
             fFeatures[kFeatureIdBufSizeFixed]->URI = LV2_BUF_SIZE__boundedBlockLength;
@@ -4244,6 +4270,34 @@ public:
         return true;
     }
 
+    // -------------------------------------------------------------------
+
+    void handleTransferAtom(const int32_t portIndex, const char* const typeStr, LV2_Atom* const atom)
+    {
+        CARLA_ASSERT(portIndex >= 0);
+        CARLA_ASSERT(atom != nullptr);
+        CARLA_ASSERT(typeStr != nullptr);
+        carla_debug("Lv2Plugin::handleTransferAtom(%i, %s, %p)", portIndex, typeStr, atom);
+
+        atom->type = carla_lv2_urid_map(this, typeStr);
+
+        fAtomQueueIn.put(portIndex, atom);
+    }
+
+    void handleTransferEvent(const int32_t portIndex, const char* const typeStr, LV2_Atom* const atom)
+    {
+        CARLA_ASSERT(portIndex >= 0);
+        CARLA_ASSERT(atom != nullptr);
+        CARLA_ASSERT(typeStr != nullptr);
+        carla_debug("Lv2Plugin::handleTransferEvent(%i, %s, %p)", portIndex, typeStr, atom);
+
+        atom->type = carla_lv2_urid_map(this, typeStr);
+
+        fAtomQueueIn.put(portIndex, atom);
+    }
+
+    // -------------------------------------------------------------------
+
 private:
     LV2_Handle   fHandle;
     LV2_Handle   fHandle2;
@@ -4254,6 +4308,9 @@ private:
     float** fAudioInBuffers;
     float** fAudioOutBuffers;
     float*  fParamBuffers;
+
+    Lv2AtomQueue fAtomQueueIn;
+    Lv2AtomQueue fAtomQueueOut;
 
     Lv2PluginEventData fEventsIn;
     Lv2PluginEventData fEventsOut;
@@ -4609,14 +4666,13 @@ private:
         return ((Lv2Plugin*)handle)->getCustomURIString(urid);
     }
 
-#if 0
     // -------------------------------------------------------------------
     // Worker Feature
 
     static LV2_Worker_Status carla_lv2_worker_schedule(LV2_Worker_Schedule_Handle handle, uint32_t size, const void* data)
     {
-        carla_debug("carla_lv2_worker_schedule(%p, %i, %p)", handle, size, data);
         CARLA_ASSERT(handle != nullptr);
+        carla_debug("carla_lv2_worker_schedule(%p, %i, %p)", handle, size, data);
 
         if (handle == nullptr)
             return LV2_WORKER_ERR_UNKNOWN;
@@ -4626,15 +4682,14 @@ private:
 
     static LV2_Worker_Status carla_lv2_worker_respond(LV2_Worker_Respond_Handle handle, uint32_t size, const void* data)
     {
-        carla_debug("carla_lv2_worker_respond(%p, %i, %p)", handle, size, data);
         CARLA_ASSERT(handle != nullptr);
+        carla_debug("carla_lv2_worker_respond(%p, %i, %p)", handle, size, data);
 
         if (handle == nullptr)
             return LV2_WORKER_ERR_UNKNOWN;
 
         return ((Lv2Plugin*)handle)->handleWorkerRespond(size, data);
     }
-#endif
 
     // -------------------------------------------------------------------
     // UI Port-Map Feature
@@ -4696,6 +4751,46 @@ private:
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Lv2Plugin)
 };
+
+// -------------------------------------------------------------------------------------------------------------------
+
+int CarlaEngineOsc::handleMsgLv2AtomTransfer(CARLA_ENGINE_OSC_HANDLE_ARGS2)
+{
+    carla_debug("CarlaOsc::handleMsgLv2AtomTransfer()");
+    CARLA_ENGINE_OSC_CHECK_OSC_TYPES(3, "iss");
+
+    const int32_t portIndex   = argv[0]->i;
+    const char* const typeStr = (const char*)&argv[1]->s;
+    const char* const atomBuf = (const char*)&argv[2]->s;
+
+    QByteArray chunk;
+    chunk = QByteArray::fromBase64(atomBuf);
+
+    LV2_Atom* const atom = (LV2_Atom*)chunk.data();
+
+    ((Lv2Plugin*)plugin)->handleTransferAtom(portIndex, typeStr, atom);
+
+    return 0;
+}
+
+int CarlaEngineOsc::handleMsgLv2EventTransfer(CARLA_ENGINE_OSC_HANDLE_ARGS2)
+{
+    carla_debug("CarlaOsc::handleMsgLv2EventTransfer()");
+    CARLA_ENGINE_OSC_CHECK_OSC_TYPES(3, "iss");
+
+    const int32_t portIndex   = argv[0]->i;
+    const char* const typeStr = (const char*)&argv[1]->s;
+    const char* const atomBuf = (const char*)&argv[2]->s;
+
+    QByteArray chunk;
+    chunk = QByteArray::fromBase64(atomBuf);
+
+    LV2_Atom* const atom = (LV2_Atom*)chunk.data();
+
+    ((Lv2Plugin*)plugin)->handleTransferEvent(portIndex, typeStr, atom);
+
+    return 0;
+}
 
 CARLA_BACKEND_END_NAMESPACE
 
