@@ -3100,7 +3100,7 @@ public:
         }
         else
         {
-            if (fUi.handle != nullptr && fUi.descriptor != nullptr && fUi.descriptor->port_event != nullptr)
+            if (fUi.handle != nullptr && fUi.descriptor != nullptr && fUi.descriptor->port_event != nullptr && fEventsIn.ctrl != nullptr)
             {
                 LV2_Atom_MidiEvent midiEv;
                 midiEv.event.time.frames = 0;
@@ -3110,7 +3110,7 @@ public:
                 midiEv.data[1] = note;
                 midiEv.data[2] = velo;
 
-                fUi.descriptor->port_event(fUi.handle, 0, 3, CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM, &midiEv);
+                fUi.descriptor->port_event(fUi.handle, fEventsIn.ctrl->rindex, 3, CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM, &midiEv);
             }
         }
     }
@@ -3137,7 +3137,7 @@ public:
         }
         else
         {
-            if (fUi.handle != nullptr && fUi.descriptor != nullptr && fUi.descriptor->port_event != nullptr)
+            if (fUi.handle != nullptr && fUi.descriptor != nullptr && fUi.descriptor->port_event != nullptr && fEventsIn.ctrl != nullptr)
             {
                 LV2_Atom_MidiEvent midiEv;
                 midiEv.event.time.frames = 0;
@@ -3147,7 +3147,7 @@ public:
                 midiEv.data[1] = note;
                 midiEv.data[2] = 0;
 
-                fUi.descriptor->port_event(fUi.handle, 0, 3, CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM, &midiEv);
+                fUi.descriptor->port_event(fUi.handle, fEventsIn.ctrl->rindex, 3, CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM, &midiEv);
             }
         }
     }
