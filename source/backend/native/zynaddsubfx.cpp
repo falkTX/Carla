@@ -27,6 +27,7 @@
 #include <QtCore/QThread>
 
 #include "zynaddsubfx/Misc/Master.h"
+#include "zynaddsubfx/Misc/Part.h"
 #include "zynaddsubfx/Misc/Util.h"
 
 #ifdef WANT_ZYNADDSUBFX_UI
@@ -232,6 +233,17 @@ protected:
             loadProgram(kMaster, bank, program);
         else
             fThread.loadLater(bank, program);
+    }
+
+    void setCustomData(const char* const key, const char* const value)
+    {
+        CARLA_ASSERT(key != nullptr);
+        CARLA_ASSERT(value != nullptr);
+
+        if (std::strcmp(key, "CarlaAlternateFile1") == 0) // xmz
+            kMaster->loadXML(value);
+        if (std::strcmp(key, "CarlaAlternateFile2") == 0) // xiz
+            kMaster->part[0]->loadXMLinstrument(value);
     }
 
     // -------------------------------------------------------------------

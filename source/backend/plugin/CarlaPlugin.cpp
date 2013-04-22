@@ -1358,7 +1358,7 @@ void CarlaPlugin::setCustomData(const char* const type, const char* const key, c
     if (std::strcmp(type, CUSTOM_DATA_STRING) == 0)
     {
         // Ignore some keys
-        if (std::strncmp(key, "OSC:", 4) == 0 || std::strcmp(key, "guiVisible") == 0)
+        if (std::strncmp(key, "OSC:", 4) == 0 || std::strncmp(key, "CarlaAlternateFile", 18) == 0 || std::strcmp(key, "guiVisible") == 0)
             saveData = false;
         //else if (std::strcmp(key, CARLA_BRIDGE_MSG_SAVE_NOW) == 0 || std::strcmp(key, CARLA_BRIDGE_MSG_SET_CHUNK) == 0 || std::strcmp(key, CARLA_BRIDGE_MSG_SET_CUSTOM) == 0)
         //    saveData = false;

@@ -32,7 +32,7 @@
 #endif
 
 #if defined(NDEBUG) && ! defined(BUILD_BRIDGE)
-# WANT_LOGS
+# define WANT_LOGS
 # include <fcntl.h>
 # include <QtCore/QThread>
 #endif
@@ -380,7 +380,7 @@ const char* carla_get_supported_file_types()
 
         // Plugin presets
 #ifdef WANT_ZYNADDSUBFX
-        retText += ";*.xmz";
+        retText += ";*.xmz;*.xiz";
 #endif
     }
 

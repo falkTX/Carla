@@ -1143,8 +1143,127 @@ bool CarlaEngine::loadFilename(const char* const filename)
     CARLA_ASSERT(filename != nullptr);
     carla_debug("CarlaEngine::loadFilename(\"%s\")", filename);
 
-    // TODO
-    setLastError("Not implemented yet");
+    QFileInfo fileInfo(filename);
+
+    if (! fileInfo.exists())
+    {
+        setLastError("File does not exist");
+        return false;
+    }
+
+    if (! fileInfo.isFile())
+    {
+        setLastError("Not a file");
+        return false;
+    }
+
+    if (! fileInfo.isReadable())
+    {
+        setLastError("File is not readable");
+        return false;
+    }
+
+    QString baseName(fileInfo.baseName());
+    QString extension(fileInfo.suffix());
+
+    const char* const baseNameStr(baseName.toUtf8().constData());
+
+    // -------------------------------------------------------------------
+
+    if (extension == "carxp" || extension ==  "carxs")
+        return loadProject(filename);
+
+    // -------------------------------------------------------------------
+
+    if (extension == "gig")
+        return addPlugin(PLUGIN_GIG, filename, baseNameStr, nullptr);
+
+    if (extension == "sf2")
+        return addPlugin(PLUGIN_SF2, filename, baseNameStr, nullptr);
+
+    if (extension == "sfz")
+        return addPlugin(PLUGIN_SFZ, filename, baseNameStr, nullptr);
+
+    // -------------------------------------------------------------------
+
+    if (extension == "aiff" || extension == "flac" || extension == "oga" || extension == "ogg" || extension == "w64" || extension == "wav")
+    {
+#ifdef WANT_AUDIOFILE
+        if (addPlugin(PLUGIN_INTERNAL, nullptr, baseNameStr, "audiofile"))
+        {
+            if (CarlaPlugin* const plugin = getPlugin(kData->curPluginCount-1))
+                plugin->setCustomData(CUSTOM_DATA_STRING, "file00", filename, true);
+            return true;
+        }
+        return false;
+#else
+        setLastError("This Carla build does not have Audio file support");
+        return false;
+#endif
+    }
+
+    if (extension == "3g2" || extension == "3gp" || extension == "aac" || extension == "ac3" || extension == "amr" || extension == "ape" ||
+        extension == "mp2" || extension == "mp3" || extension == "mpc" || extension == "wma")
+    {
+#ifdef WANT_AUDIOFILE
+# ifdef HAVE_FFMPEG
+        if (addPlugin(PLUGIN_INTERNAL, nullptr, baseNameStr, "audiofile"))
+        {
+            if (CarlaPlugin* const plugin = getPlugin(kData->curPluginCount-1))
+                plugin->setCustomData(CUSTOM_DATA_STRING, "file00", filename, true);
+            return true;
+        }
+        return false;
+# else
+        setLastError("This Carla build has Audio file support, but not libav/ffmpeg");
+        return false;
+# endif
+#else
+        setLastError("This Carla build does not have Audio file support");
+        return false;
+#endif
+    }
+
+    // -------------------------------------------------------------------
+
+    if (extension == "mid" || extension == "midi")
+    {
+#ifdef WANT_MIDIFILE
+        if (addPlugin(PLUGIN_INTERNAL, nullptr, baseNameStr, "midifile"))
+        {
+            if (CarlaPlugin* const plugin = getPlugin(kData->curPluginCount-1))
+                plugin->setCustomData(CUSTOM_DATA_STRING, "file", filename, true);
+            return true;
+        }
+        return false;
+#else
+        setLastError("This Carla build does not have MIDI file support");
+        return false;
+#endif
+    }
+
+    // -------------------------------------------------------------------
+    // ZynAddSubFX
+
+    if (extension == "xmz" || extension == "xiz")
+    {
+#ifdef WANT_ZYNADDSUBFX
+        if (addPlugin(PLUGIN_INTERNAL, nullptr, baseNameStr, "zynaddsubfx"))
+        {
+            if (CarlaPlugin* const plugin = getPlugin(kData->curPluginCount-1))
+                plugin->setCustomData(CUSTOM_DATA_STRING, (extension == "xmz") ? "CarlaAlternateFile1" : "CarlaAlternateFile2", filename, true);
+            return true;
+        }
+        return false;
+#else
+        setLastError("This Carla build does not have ZynAddSubFX support");
+        return false;
+#endif
+    }
+
+    // -------------------------------------------------------------------
+
+    setLastError("Unknown file extension");
     return false;
 }
 

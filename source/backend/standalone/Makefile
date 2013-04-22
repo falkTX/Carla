@@ -10,10 +10,6 @@ include ../Makefile.mk
 
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo) -I../../theme
 
-ifeq ($(HAVE_FFMPEG),true)
-BUILD_CXX_FLAGS += -DHAVE_FFMPEG
-endif
-
 ifeq ($(HAVE_QT5),true)
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags Qt5Core Qt5Widgets)
 else

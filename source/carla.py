@@ -859,79 +859,14 @@ class CarlaMainW(QMainWindow):
             self.scene.render(painter)
             self.fExportImage.save(newPath, imgFormat, 100)
 
-    def showLastError(self, isProject):
-        CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"),
-                         self.tr("Failed to load %s" % (self.tr("project") if isProject else self.tr("plugin"))),
-                         cString(Carla.host.get_last_error()), QMessageBox.Ok, QMessageBox.Ok)
-
     @pyqtSlot(QModelIndex)
     def slot_fileTreeDoubleClicked(self, modelIndex):
         filename = self.fDirModel.filePath(modelIndex)
-        print(filename)
 
-        if not os.path.exists(filename):
-            return
-        if not os.path.isfile(filename):
-            return
-
-        basename  = os.path.basename(filename)
-        extension = filename.rsplit(".", 1)[-1].lower()
-
-        if extension in ("carxp", "carxs"):
-            if not Carla.host.load_project(filename):
-                self.showLastError(True)
-
-        elif extension == "gig":
-            if not Carla.host.add_plugin(BINARY_NATIVE, PLUGIN_GIG, filename, None, basename, None):
-                self.showLastError(False)
-
-        elif extension == "sf2":
-            if not Carla.host.add_plugin(BINARY_NATIVE, PLUGIN_SF2, filename, None, basename, None):
-                self.showLastError(False)
-
-        elif extension == "sfz":
-            if not Carla.host.add_plugin(BINARY_NATIVE, PLUGIN_SFZ, filename, None, basename, None):
-                self.showLastError(False)
-
-        elif extension in ("aac", "flac", "oga", "ogg", "mp3", "wav"):
-            # check if last plugin is audiofile
-            if self.fPluginCount > 0:
-                pluginId = self.fPluginCount-1
-                pwidget  = self.fPluginList[pluginId]
-
-                if pwidget is not None and pwidget.fPluginInfo["label"] == "audiofile":
-                    Carla.host.set_custom_data(pluginId, CUSTOM_DATA_STRING, "file00", filename)
-                    return
-
-            self.fLastLoadedPluginId = -2
-            if Carla.host.add_plugin(BINARY_NATIVE, PLUGIN_INTERNAL, None, None, "audiofile", None):
-                while (self.fLastLoadedPluginId == -2): sleep(0.2)
-                idx = self.fLastLoadedPluginId
-                self.fLastLoadedPluginId = -1
-                Carla.host.set_custom_data(idx, CUSTOM_DATA_STRING, "file00", filename)
-            else:
-                self.fLastLoadedPluginId = -1
-                self.showLastError(False)
-
-        elif extension in ("mid", "midi"):
-            # check if last plugin is midifile
-            if self.fPluginCount > 0:
-                pluginId = self.fPluginCount-1
-                pwidget  = self.fPluginList[pluginId]
-
-                if pwidget is not None and pwidget.fPluginInfo["label"] == "midifile":
-                    Carla.host.set_custom_data(pluginId, CUSTOM_DATA_STRING, "file", filename)
-                    return
-
-            self.fLastLoadedPluginId = -2
-            if Carla.host.add_plugin(BINARY_NATIVE, PLUGIN_INTERNAL, None, None, "midifile", None):
-                while (self.fLastLoadedPluginId == -2): sleep(0.2)
-                idx = self.fLastLoadedPluginId
-                self.fLastLoadedPluginId = -1
-                Carla.host.set_custom_data(idx, CUSTOM_DATA_STRING, "file", filename)
-            else:
-                self.fLastLoadedPluginId = -1
-                self.showLastError(False)
+        if not Carla.host.load_filename(filename):
+            CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"),
+                             self.tr("Failed to load file"),
+                             cString(Carla.host.get_last_error()), QMessageBox.Ok, QMessageBox.Ok)
 
     @pyqtSlot(float)
     def slot_canvasScaleChanged(self, scale):
