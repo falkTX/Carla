@@ -686,8 +686,8 @@ const SaveState& CarlaPlugin::getSaveState()
     {
         const MidiProgramData& mpData(kData->midiprog.getCurrent());
 
-        saveState.currentMidiBank     = mpData.bank;
-        saveState.currentMidiProgram  = mpData.program;
+        saveState.currentMidiBank    = mpData.bank;
+        saveState.currentMidiProgram = mpData.program;
     }
 
     // ----------------------------

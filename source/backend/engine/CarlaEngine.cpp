@@ -1171,7 +1171,7 @@ bool CarlaEngine::loadProject(const char* const filename)
     {
         if (isPreset || node.toElement().tagName() == "Plugin")
         {
-            const SaveState& saveState = getSaveStateDictFromXML(isPreset ? xmlNode : node);
+            const SaveState& saveState(getSaveStateDictFromXML(isPreset ? xmlNode : node));
             CARLA_ASSERT(saveState.type != nullptr);
 
             if (saveState.type == nullptr)

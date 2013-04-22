@@ -20,9 +20,8 @@
 #ifdef WANT_LV2
 
 #include "CarlaPluginGui.hpp"
-#include "CarlaLv2Utils.hpp"
-
 #include "CarlaEngineOsc.hpp"
+#include "CarlaLv2Utils.hpp"
 #include "Lv2AtomQueue.hpp"
 
 #include <QtCore/QDir>
@@ -3202,6 +3201,9 @@ protected:
 
     void handleProgramChanged(const int32_t index)
     {
+        CARLA_ASSERT_INT(index >= -1, index);
+        carla_debug("Lv2Plugin::handleProgramChanged(%i)", index);
+
         if (index == -1)
         {
             const CarlaPlugin::ScopedDisabler m(this);
@@ -3234,6 +3236,7 @@ protected:
         CARLA_ASSERT(key != CARLA_URI_MAP_ID_NULL);
         CARLA_ASSERT(value != nullptr);
         CARLA_ASSERT(size > 0);
+        carla_debug("Lv2Plugin::handleStateStore(%i, %p, " P_SIZE ", %i, %i)", key, value, size, type, flags);
 
         // basic checks
         if (key == CARLA_URI_MAP_ID_NULL)
@@ -3307,6 +3310,7 @@ protected:
     const void* handleStateRetrieve(const uint32_t key, size_t* const size, uint32_t* const type, uint32_t* const flags)
     {
         CARLA_ASSERT(key != CARLA_URI_MAP_ID_NULL);
+        carla_debug("Lv2Plugin::handleStateRetrieve(%i, %p, %p, %p)", key, size, type, flags);
 
         // basic checks
         if (key == CARLA_URI_MAP_ID_NULL)
@@ -3350,7 +3354,7 @@ protected:
             return nullptr;
         }
 
-        *type  = key;
+        *type  = carla_lv2_urid_map(this, stype);
         *flags = LV2_STATE_IS_POD;
 
         if (std::strcmp(stype, LV2_ATOM__String) == 0 || std::strcmp(stype, LV2_ATOM__Path) == 0)

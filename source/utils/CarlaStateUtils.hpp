@@ -590,7 +590,7 @@ const QString& getXMLFromSaveState(const SaveState& saveState)
         customData += QString("    <Type>%1</Type>\n").arg(xmlSafeString(stateCustomData->type, true));
         customData += QString("    <Key>%1</Key>\n").arg(xmlSafeString(stateCustomData->key, true));
 
-        if (std::strcmp(stateCustomData->type, CUSTOM_DATA_CHUNK) == 0)
+        if (std::strcmp(stateCustomData->type, CUSTOM_DATA_CHUNK) == 0 || std::strlen(stateCustomData->value) >= 128)
         {
             customData += "    <Value>\n";
             customData += QString("%1\n").arg(xmlSafeString(stateCustomData->value, true));
