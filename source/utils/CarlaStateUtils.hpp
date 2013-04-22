@@ -226,6 +226,9 @@ const SaveState& getSaveStateDictFromXML(const QDomNode& xmlNode)
     static SaveState saveState;
     saveState.reset();
 
+    if (xmlNode.isNull())
+        return saveState;
+
     QDomNode node(xmlNode.firstChild());
 
     while (! node.isNull())
