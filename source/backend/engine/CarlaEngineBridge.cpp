@@ -28,10 +28,6 @@
 
 #include <ctime>
 
-#ifdef CARLA_OS_WIN
-# include <sys/time.h>
-#endif
-
 CARLA_BACKEND_START_NAMESPACE
 
 #if 0
@@ -163,35 +159,11 @@ public:
     {
         // TODO - set RT permissions
 
-        const int timeout = 5000;
-
         while (! fQuitNow)
         {
-            timespec ts_timeout;
-#ifdef CARLA_OS_WIN
-            timeval now;
-            gettimeofday(&now, nullptr);
-            ts_timeout.tv_sec = now.tv_sec;
-            ts_timeout.tv_nsec = now.tv_usec * 1000;
-#else
-            clock_gettime(CLOCK_REALTIME, &ts_timeout);
-#endif
-
-            time_t seconds = timeout / 1000;
-            ts_timeout.tv_sec += seconds;
-            ts_timeout.tv_nsec += (timeout - seconds * 1000) * 1000000;
-            if (ts_timeout.tv_nsec >= 1000000000) {
-                ts_timeout.tv_nsec -= 1000000000;
-                ts_timeout.tv_sec++;
-            }
-
-            //if (linux_sem_timedwait(&fShmControl.data->runServer, &ts_timeout))
+            if (! jackbridge_sem_timedwait(&fShmControl.data->runServer, 5))
             {
-                if (errno == ETIMEDOUT)
-                {
-                    continue;
-                }
-                else
+                if (errno != ETIMEDOUT)
                 {
                     fQuitNow = true;
                     break;
@@ -200,7 +172,7 @@ public:
 
             while (rdwr_dataAvailable(&fShmControl.data->ringBuffer))
             {
-                const PluginBridgeOpcode opcode = rdwr_readOpcode(&fShmControl.data->ringBuffer);
+                const PluginBridgeOpcode opcode(rdwr_readOpcode(&fShmControl.data->ringBuffer));
 
                 switch (opcode)
                 {
@@ -243,8 +215,8 @@ public:
                 }
             }
 
-            //if (linux_sem_post(&fShmControl.data->runClient) != 0)
-            //    carla_stderr2("Could not post to semaphore");
+            if (jackbridge_sem_post(&fShmControl.data->runClient) != 0)
+                carla_stderr2("Could not post to semaphore");
         }
 
         fIsRunning = false;

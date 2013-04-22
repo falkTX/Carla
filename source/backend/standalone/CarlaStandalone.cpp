@@ -26,10 +26,16 @@
 
 #ifndef BUILD_BRIDGE
 # include "CarlaStyle.hpp"
+# include <QtCore/QSettings>
+#else
+# include <QtCore/Qt>
 #endif
 
-#include <QtCore/QSettings>
-#include <QtCore/QThread>
+#if defined(NDEBUG) && ! defined(BUILD_BRIDGE)
+# WANT_LOGS
+# include <fcntl.h>
+# include <QtCore/QThread>
+#endif
 
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 # include <QtWidgets/QApplication>
@@ -37,15 +43,13 @@
 # include <QtGui/QApplication>
 #endif
 
-#include <fcntl.h>
-
 using CarlaBackend::CarlaEngine;
 using CarlaBackend::CarlaPlugin;
 using CarlaBackend::CallbackFunc;
 using CarlaBackend::EngineOptions;
 using CarlaBackend::EngineTimeInfo;
 
-#ifdef NDEBUG
+#ifdef WANT_LOGS
 // -------------------------------------------------------------------------------------------------------------------
 // Log thread
 
@@ -170,7 +174,7 @@ struct CarlaBackendStandalone {
     QApplication* app;
     bool needsInit;
 
-#ifdef NDEBUG
+#ifdef WANT_LOGS
     LogThread logThread;
 #endif
 
@@ -209,7 +213,7 @@ struct CarlaBackendStandalone {
     {
         CARLA_ASSERT(engine == nullptr);
 
-#ifdef NDEBUG
+#ifdef WANT_LOGS
         logThread.stop();
 #endif
     }
@@ -220,6 +224,15 @@ struct CarlaBackendStandalone {
             return;
         if (app != nullptr)
             return;
+
+        // try again, app might be registered now
+        app = qApp;
+
+        if (app != nullptr)
+        {
+            needsInit = false;
+            return;
+        }
 
         static int    argc = 0;
         static char** argv = nullptr;
@@ -2317,7 +2330,7 @@ bool carla_engine_init_bridge(const char* audioBaseName, const char* controlBase
     standalone.engine->setOption(CarlaBackend::OPTION_PREFER_UI_BRIDGES,     false, nullptr);
 
     // TODO - read from environment
-#ifndef BUILD_BRIDGE
+#if 0
     standalone.engine->setOption(CarlaBackend::OPTION_FORCE_STEREO,          standalone.options.forceStereo ? 1 : 0,             nullptr);
 # ifdef WANT_DSSI
     standalone.engine->setOption(CarlaBackend::OPTION_USE_DSSI_VST_CHUNKS,   standalone.options.useDssiVstChunks ? 1 : 0,        nullptr);
@@ -2325,20 +2338,18 @@ bool carla_engine_init_bridge(const char* audioBaseName, const char* controlBase
     standalone.engine->setOption(CarlaBackend::OPTION_MAX_PARAMETERS,        static_cast<int>(standalone.options.maxParameters),       nullptr);
 #endif
 
-    const bool initiated = standalone.engine->init(clientName);
-
-    if (initiated)
+    if (standalone.engine->init(clientName))
     {
         standalone.lastError = "no error";
         standalone.init();
+        return true;
     }
     else
     {
         standalone.lastError = standalone.engine->getLastError();
         delete standalone.engine;
         standalone.engine = nullptr;
+        return false;
     }
-
-    return initiated;
 }
 #endif

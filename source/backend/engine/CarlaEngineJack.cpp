@@ -430,7 +430,7 @@ public:
         carla_debug("CarlaEngineJackClient::isOk()");
 
         if (kUseClient)
-            return bool(kClient);
+            return (kClient != nullptr);
 
         return CarlaEngineClient::isOk();
     }

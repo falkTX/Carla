@@ -19,16 +19,16 @@
 #define __CARLA_DEFINES_HPP__
 
 // Check OS
-#if defined(__APPLE__)
+#if defined(WIN64) || defined(_WIN64) || defined(__WIN64__)
+# define CARLA_OS_WIN64
+#elif defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
+# define CARLA_OS_WIN32
+#elif defined(__APPLE__)
 # define CARLA_OS_MAC
 #elif defined(__HAIKU__)
 # define CARLA_OS_HAIKU
 #elif defined(__linux__) || defined(__linux)
 # define CARLA_OS_LINUX
-#elif defined(WIN64) || defined(_WIN64) || defined(__WIN64__)
-# define CARLA_OS_WIN64
-#elif defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
-# define CARLA_OS_WIN32
 #else
 # warning Unsupported platform!
 #endif

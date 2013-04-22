@@ -19,16 +19,22 @@
 
 #include "CarlaDefines.hpp"
 
+#ifndef JACKBRIDGE_EXPORT
+# undef CARLA_EXPORT
+# define CARLA_EXPORT
+#endif
+
+#ifdef JACKBRIDGE_DIRECT
+# include <jack/jack.h>
+# include <jack/midiport.h>
+# include <jack/transport.h>
+#else
+
 #define PRE_PACKED_STRUCTURE
 #define POST_PACKED_STRUCTURE __attribute__((__packed__))
 
 #define JACK_DEFAULT_AUDIO_TYPE "32 bit float mono audio"
 #define JACK_DEFAULT_MIDI_TYPE  "8 bit raw midi"
-
-#ifndef JACKBRIDGE_EXPORT
-# undef CARLA_EXPORT
-# define CARLA_EXPORT
-#endif
 
 #include <cstddef>
 #include <cstdint>
@@ -161,6 +167,8 @@ typedef void (*JackPortConnectCallback)(jack_port_id_t a, jack_port_id_t b, int 
 typedef int  (*JackPortRenameCallback)(jack_port_id_t port, const char* old_name, const char* new_name, void *arg);
 typedef void (*JackFreewheelCallback)(int starting, void *arg);
 typedef void (*JackShutdownCallback)(void *arg);
+
+#endif // ! JACKBRIDGE_DIRECT
 
 CARLA_EXPORT const char*    jackbridge_get_version_string();
 CARLA_EXPORT jack_client_t* jackbridge_client_open(const char* client_name, jack_options_t options, jack_status_t* status, ...);

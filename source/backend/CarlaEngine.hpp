@@ -759,7 +759,6 @@ public:
      */
     CarlaPlugin* getPluginUnchecked(const unsigned int id) const;
 
-    // FIXME - this one should not be public
     /*!
      * Get a unique plugin name within the engine.\n
      * Returned variable must NOT be free'd.
@@ -825,7 +824,7 @@ public:
     }
 
     /*!
-     * TODO.
+     * Get the engine proccess mode.
      */
     ProcessMode getProccessMode() const
     {
@@ -858,7 +857,6 @@ public:
     // -------------------------------------------------------------------
     // Callback
 
-    // FIXME - this one should not be public
     /*!
      * TODO.
      */
@@ -913,7 +911,6 @@ public:
      */
     const char* getLastError() const;
 
-    // FIXME - this one should not be public
     /*!
      * Set last error.
      */
@@ -951,7 +948,6 @@ public:
     bool isOscControlRegistered() const;
 #endif
 
-    // FIXME - this one should not be public
     /*!
      * Idle OSC.
      */

@@ -60,6 +60,18 @@ PKGCONFIG += fluidsynth
 # LinuxSampler
 PKGCONFIG += linuxsampler
 
+# AudioFile
+PKGCONFIG += libavcodec libavformat libavutil sndfile
+
+# MidiFile
+PKGCONFIG += smf
+
+# OpenGL
+PKGCONFIG += gl
+
+# ZynAddSubFX
+PKGCONFIG += fftw3 mxml zlib ntk ntk_images
+
 # -----------------------------------------------------------
 
 SOURCES = \

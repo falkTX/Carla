@@ -20,9 +20,7 @@
 
 #include "CarlaUtils.hpp"
 
-#if defined(CARLA_OS_WIN) && ! defined(__WINE__)
-# define CARLA_LIB_WINDOWS
-#else
+#ifndef CARLA_OS_WIN
 # include <dlfcn.h>
 #endif
 
@@ -34,7 +32,7 @@ void* lib_open(const char* const filename)
 {
     CARLA_ASSERT(filename != nullptr);
 
-#ifdef CARLA_LIB_WINDOWS
+#ifdef CARLA_OS_WIN
     return (void*)LoadLibraryA(filename);
 #else
     return dlopen(filename, RTLD_NOW|RTLD_LOCAL);
@@ -49,7 +47,7 @@ bool lib_close(void* const lib)
     if (lib == nullptr)
         return false;
 
-#ifdef CARLA_LIB_WINDOWS
+#ifdef CARLA_OS_WIN
     return FreeLibrary((HMODULE)lib);
 #else
     return (dlclose(lib) == 0);
@@ -65,7 +63,7 @@ void* lib_symbol(void* const lib, const char* const symbol)
     if (lib == nullptr && symbol == nullptr)
         return nullptr;
 
-#ifdef CARLA_LIB_WINDOWS
+#ifdef CARLA_OS_WIN
     return (void*)GetProcAddress((HMODULE)lib, symbol);
 #else
     return dlsym(lib, symbol);
@@ -77,7 +75,7 @@ const char* lib_error(const char* const filename)
 {
     CARLA_ASSERT(filename != nullptr);
 
-#ifdef CARLA_LIB_WINDOWS
+#ifdef CARLA_OS_WIN
     static char libError[2048];
     carla_zeroMem(libError, sizeof(char)*2048);
 

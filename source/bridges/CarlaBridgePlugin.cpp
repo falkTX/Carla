@@ -15,8 +15,6 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#ifdef BRIDGE_PLUGIN
-
 #include "CarlaBridgeClient.hpp"
 #include "CarlaBridgeToolkit.hpp"
 
@@ -591,5 +589,3 @@ int main(int argc, char* argv[])
 
     return ret;
 }
-
-#endif // BRIDGE_PLUGIN
