@@ -39,9 +39,12 @@ endif
 
 BUILD_PLUGIN_FLAGS  = $(BUILD_CXX_FLAGS)
 BUILD_PLUGIN_FLAGS += -DBUILD_BRIDGE_PLUGIN -DBRIDGE_PLUGIN
-BUILD_PLUGIN_FLAGS += -DWANT_LADSPA -DWANT_DSSI -DWANT_LV2 -DWANT_VST
 BUILD_PLUGIN_FLAGS += -I../backend/engine -I../backend/plugin -I../libs -I../theme
 LINK_PLUGIN_FLAGS   = $(LINK_FLAGS) -lpthread
+
+ifeq ($(CARLA_PLUGIN_SUPPORT),true)
+BUILD_PLUGIN_FLAGS += -DWANT_LADSPA -DWANT_DSSI -DWANT_LV2 -DWANT_VST
+endif
 
 ifeq ($(HAVE_QT5),true)
 BUILD_PLUGIN_FLAGS += $(shell pkg-config --cflags Qt5Gui Qt5Widgets Qt5Xml)
@@ -70,6 +73,8 @@ WIN_LINK_FLAGS      = $(LINK_PLUGIN_FLAGS) -mwindows -lwinspool -lole32 -luuid -
 # --------------------------------------------------------------
 # Plugin bridges (Native)
 
+DGL_LIBS = -lX11
+
 NATIVE_BUILD_FLAGS  = $(POSIX_BUILD_FLAGS)
 NATIVE_LINK_FLAGS   = $(POSIX_LINK_FLAGS)
 
@@ -87,11 +92,6 @@ NATIVE_BUILD_FLAGS += $(shell pkg-config --cflags linuxsampler)
 NATIVE_LINK_FLAGS  += $(shell pkg-config --libs linuxsampler)
 endif
 
-ifeq ($(HAVE_OPENGL),true)
-NATIVE_BUILD_FLAGS += -DWANT_OPENGL
-NATIVE_LINK_FLAGS  += $(shell pkg-config --libs gl) -lX11
-endif
-
 ifeq ($(HAVE_AF_DEPS),true)
 NATIVE_BUILD_FLAGS += -DWANT_AUDIOFILE
 NATIVE_LINK_FLAGS  += $(shell pkg-config --libs libavcodec libavformat libavutil sndfile)
@@ -100,6 +100,11 @@ endif
 ifeq ($(HAVE_MF_DEPS),true)
 NATIVE_BUILD_FLAGS += -DWANT_MIDIFILE
 NATIVE_LINK_FLAGS  += $(shell pkg-config --libs smf)
+endif
+
+ifeq ($(HAVE_OPENGL),true)
+NATIVE_BUILD_FLAGS += -DWANT_OPENGL
+NATIVE_LINK_FLAGS  += $(shell pkg-config --libs gl) $(DGL_LIBS)
 endif
 
 ifeq ($(HAVE_ZYN_DEPS),true)
@@ -151,28 +156,31 @@ LINK_UI_VST_X11_FLAGS    = $(LINK_UI_FLAGS) $(QT_UI_LIBS)
 
 # --------------------------------------------------------------
 
+TARGETS = native
+
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-all: native ui_lv2-gtk2 ui_lv2-gtk3 ui_lv2-qt4 ui_lv2-qt5 ui_lv2-x11 ui_vst-x11
-
 ifeq ($(HAVE_GTK2),true)
-ui_lv2-gtk2: carla-bridge-lv2-gtk2
-else
-ui_lv2-gtk2:
+TARGETS += ui_lv2-gtk2
 endif
-
 ifeq ($(HAVE_GTK3),true)
-ui_lv2-gtk3: carla-bridge-lv2-gtk3
-else
-ui_lv2-gtk3:
+TARGETS += ui_lv2-gtk3
+endif
+ifeq ($(HAVE_QT4),true)
+TARGETS += ui_lv2-qt4
+endif
+ifeq ($(HAVE_QT5),true)
+TARGETS += ui_lv2-qt5
+endif
+TARGETS += ui_lv2-x11
+TARGETS += ui_vst-x11
 endif
 
-ifneq ($(HAVE_QT5),true)
-ui_lv2-qt4: carla-bridge-lv2-qt4
-ui_lv2-qt5:
-else
-ui_lv2-qt4:
-ui_lv2-qt5: carla-bridge-lv2-qt5
-endif
+all: $(TARGETS)
+
+ui_lv2-gtk2: carla-bridge-lv2-gtk2
+ui_lv2-gtk3: carla-bridge-lv2-gtk3
+ui_lv2-qt4:  carla-bridge-lv2-qt4
+ui_lv2-qt5:  carla-bridge-lv2-qt5
 
 ui_lv2-cocoa: carla-bridge-lv2-cocoa
 ui_lv2-hwnd:  carla-bridge-lv2-hwnd.exe
@@ -181,10 +189,6 @@ ui_lv2-x11:   carla-bridge-lv2-x11
 ui_vst-cocoa: carla-bridge-vst-cocoa
 ui_vst-hwnd:  carla-bridge-vst-hwnd.exe
 ui_vst-x11:   carla-bridge-vst-x11
-
-else # CARLA_PLUGIN_SUPPORT
-all:
-endif
 
 # --------------------------------------------------------------
 
@@ -340,9 +344,13 @@ OBJS_NATIVE += \
 OBJS_NATIVE += \
 	../backend/libcarla_native.a \
 	../libs/dgl.a \
-	../libs/lilv.a \
 	../libs/rtmempool.a \
 	../libs/widgets.a
+
+ifeq ($(CARLA_PLUGIN_SUPPORT),true)
+OBJS_NATIVE += \
+	../libs/lilv.a
+endif
 
 carla-bridge-native: $(FILES) $(OBJS_NATIVE)
 	$(CXX) $(OBJS_NATIVE) $(NATIVE_LINK_FLAGS) -o $@ && $(STRIP) $@
@@ -384,7 +392,6 @@ OBJS_POSIX32 += \
 
 # libs
 OBJS_POSIX32 += \
-	../libs/dgl.posix32.a \
 	../libs/lilv.posix32.a \
 	../libs/rtmempool.posix32.a
 
@@ -428,7 +435,6 @@ OBJS_POSIX64 += \
 
 # libs
 OBJS_POSIX64 += \
-	../libs/dgl.posix64.a \
 	../libs/lilv.posix64.a \
 	../libs/rtmempool.posix64.a
 
@@ -472,11 +478,10 @@ OBJS_WIN32 += \
 
 # libs
 OBJS_WIN32 += \
-	../libs/dgl.win32.a \
 	../libs/lilv.win32.a \
 	../libs/rtmempool.win32.a
 
-carla-bridge-win32.exe: $(FILES) $(OBJS_WIN32)  ../libs/jackbridge-win32.dll
+carla-bridge-win32.exe: $(FILES) $(OBJS_WIN32) ../libs/jackbridge-win32.dll
 	$(CXX) $(OBJS_WIN32) $(WIN_32BIT_FLAGS) $(WIN_LINK_FLAGS) -ljackbridge-win32 -o $@ && $(STRIP) $@
 
 %__win32.o: %.cpp
@@ -516,7 +521,6 @@ OBJS_WIN64 += \
 
 # libs
 OBJS_WIN64 += \
-	../libs/dgl.win64.a \
 	../libs/lilv.win64.a \
 	../libs/rtmempool.win64.a
 
@@ -544,6 +548,8 @@ carla-bridge-win64.exe: $(FILES) $(OBJS_WIN64) ../libs/jackbridge-win64.dll
 doxygen: carla_bridge.doxygen
 	doxygen $<
 
+# --------------------------------------------------------------
+
 clean:
 	rm -f *.o *.dll *.so *.exe
 	rm -f $(OBJS_NATIVE)
@@ -554,3 +560,8 @@ clean:
 	rm -f carla-bridge-lv2-gtk2 carla-bridge-lv2-gtk3 carla-bridge-lv2-qt4 carla-bridge-lv2-qt5 carla-bridge-lv2-x11
 	rm -f carla-bridge-vst-x11
 	rm -f carla-bridge-native carla-bridge-posix32 carla-bridge-posix64
+
+# --------------------------------------------------------------
+
+debug:
+	$(MAKE) DEBUG=true
