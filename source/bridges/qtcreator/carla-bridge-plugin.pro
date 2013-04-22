@@ -1,13 +1,64 @@
 # QtCreator project file
 
-QT = core gui xml
-
-CONFIG    = debug link_pkgconfig qt warn_on
-PKGCONFIG = jack liblo fluidsynth linuxsampler
-
 TARGET   = carla-bridge-qtcreator
 TEMPLATE = app
-VERSION  = 0.5.0
+VERSION  = 1.0
+
+# -------------------------------------------------------
+
+QT = core gui xml
+
+CONFIG     = debug
+CONFIG    += link_pkgconfig qt shared warn_on
+
+DEFINES    = DEBUG
+DEFINES   += HAVE_CPP11_SUPPORT
+DEFINES   += QTCREATOR_TEST
+
+DEFINES   += BUILD_BRIDGE BUILD_BRIDGE_PLUGIN BRIDGE_PLUGIN
+
+# Shared
+DEFINES   += WANT_NATIVE
+DEFINES   += WANT_LADSPA
+DEFINES   += WANT_DSSI
+DEFINES   += WANT_LV2
+DEFINES   += WANT_VST
+#DEFINES   += WANT_PLUGIN
+#DEFINES   += WANT_RTAUDIO
+DEFINES   += WANT_FLUIDSYNTH
+DEFINES   += WANT_LINUXSAMPLER
+DEFINES   += WANT_OPENGL
+DEFINES   += WANT_AUDIOFILE
+DEFINES   += WANT_MIDIFILE
+DEFINES   += WANT_ZYNADDSUBFX
+DEFINES   += WANT_ZYNADDSUBFX_UI
+
+# Engine
+PKGCONFIG += liblo
+
+# RtAudio
+DEFINES   += HAVE_GETTIMEOFDAY
+DEFINES   += __RTAUDIO_DEBUG__ __RTMIDI_DEBUG__
+
+# ALSA
+DEFINES   += __LINUX_ALSA__ __LINUX_ALSASEQ__
+PKGCONFIG += alsa
+
+# JACK
+DEFINES   += __UNIX_JACK__
+
+# PulseAudio
+DEFINES   += __LINUX_PULSE__
+PKGCONFIG += libpulse-simple
+
+# DISTRHO Plugin
+DEFINES   += DISTRHO_PLUGIN_TARGET_VST
+
+# FluidSynth
+PKGCONFIG += fluidsynth
+
+# LinuxSampler
+PKGCONFIG += linuxsampler
 
 # -----------------------------------------------------------
 
@@ -23,7 +74,7 @@ HEADERS = \
 
 # -----------------------------------------------------------
 
-# carla-engine
+# Engine
 SOURCES += \
     ../../backend/engine/CarlaEngine.cpp \
     ../../backend/engine/CarlaEngineOsc.cpp \
@@ -33,9 +84,10 @@ SOURCES += \
     ../../backend/engine/CarlaEnginePlugin.cpp \
     ../../backend/engine/CarlaEngineRtAudio.cpp
 
-# carla-plugin
+# Plugin
 SOURCES += \
     ../../backend/plugin/CarlaPlugin.cpp \
+    ../../backend/plugin/CarlaPluginGui.cpp \
     ../../backend/plugin/CarlaPluginThread.cpp \
     ../../backend/plugin/BridgePlugin.cpp \
     ../../backend/plugin/NativePlugin.cpp \
@@ -47,7 +99,7 @@ SOURCES += \
     ../../backend/plugin/FluidSynthPlugin.cpp \
     ../../backend/plugin/LinuxSamplerPlugin.cpp
 
-# carla-standalone
+# Standalone
 SOURCES += \
     ../../backend/standalone/CarlaStandalone.cpp
 
@@ -110,17 +162,11 @@ INCLUDEPATH = .. \
 
 # -----------------------------------------------------------
 
-DEFINES  = QTCREATOR_TEST HAVE_CPP11_SUPPORT
-DEFINES += DEBUG
-#DEFINES += VESTIGE_HEADER
-DEFINES += BUILD_BRIDGE BUILD_BRIDGE_PLUGIN BRIDGE_PLUGIN
-
-DEFINES += WANT_JACK
-DEFINES += WANT_LADSPA WANT_DSSI WANT_LV2 WANT_VST WANT_VST3
-DEFINES += WANT_FLUIDSYNTH WANT_LINUXSAMPLER
-
-LIBS     = -ldl \
+LIBS = -ldl \
+    ../../backend/libcarla_native.a \
+    ../../libs/dgl.a \
     ../../libs/lilv.a \
-    ../../libs/rtmempool.a
+    ../../libs/rtmempool.a \
+    ../../libs/widgets.a
 
 QMAKE_CXXFLAGS *= -std=gnu++0x
