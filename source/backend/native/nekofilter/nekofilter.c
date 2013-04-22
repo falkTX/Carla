@@ -69,7 +69,7 @@ nekofilter_instantiate(
     goto fail_destroy_filter;
   }
 
-  nekofilter_ptr->params_global[GLOBAL_PARAMETER_ACTIVE] = 0.0f;
+  nekofilter_ptr->params_global[GLOBAL_PARAMETER_ACTIVE] = 1.0f;
   nekofilter_ptr->params_global[GLOBAL_PARAMETER_GAIN]   = 0.0f;
 
   filter_connect_global_parameter(nekofilter_ptr->filter,

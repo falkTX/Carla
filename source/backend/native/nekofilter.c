@@ -26,7 +26,7 @@
 
 static const PluginDescriptor nekofilterDesc = {
     .category  = PLUGIN_CATEGORY_FILTER,
-#if defined(__linux__)
+#if defined(__linux__) || defined(__linux)
     .hints     = PLUGIN_IS_RTSAFE|PLUGIN_HAS_GUI,
 #else
     .hints     = PLUGIN_IS_RTSAFE,

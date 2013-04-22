@@ -303,7 +303,7 @@ const char* carla_get_extended_license_text()
         text1 += "<li>DISTRHO Mini-Series plugin code, based on LOSER-dev suite by Michael Gruhn</li>";
 #endif
         text1 += "<li>NekoFilter plugin code, based on lv2fil by Nedko Arnaudov and Fons Adriaensen</li>";
-        text1 += "<li>SunVox library file support, http://www.warmplace.ru/soft/sunvox/</li>";
+        //text1 += "<li>SunVox library file support, http://www.warmplace.ru/soft/sunvox/</li>"; // unfinished
 
 #ifdef WANT_AUDIOFILE
         text1 += "<li>AudioDecoder library for Audio file support, by Robin Gareus</li>";
