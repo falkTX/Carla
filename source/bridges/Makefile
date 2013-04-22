@@ -94,7 +94,11 @@ endif
 
 ifeq ($(HAVE_AF_DEPS),true)
 NATIVE_BUILD_FLAGS += -DWANT_AUDIOFILE
-NATIVE_LINK_FLAGS  += $(shell pkg-config --libs libavcodec libavformat libavutil sndfile)
+NATIVE_LINK_FLAGS  += $(shell pkg-config --libs sndfile)
+ifeq ($(HAVE_FFMPEG),true)
+NATIVE_BUILD_FLAGS += -DHAVE_FFMPEG
+NATIVE_LINK_FLAGS  += $(shell pkg-config --libs libavcodec libavformat libavutil)
+endif
 endif
 
 ifeq ($(HAVE_MF_DEPS),true)

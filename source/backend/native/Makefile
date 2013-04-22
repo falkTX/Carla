@@ -24,7 +24,11 @@ CARLA_CXX_FLAGS += -I../engine
 
 ifeq ($(HAVE_AF_DEPS),true)
 AF_C_FLAGS       = $(BUILD_C_FLAGS)
-AF_C_FLAGS      += $(shell pkg-config --cflags libavcodec libavformat libavutil sndfile)
+AF_C_FLAGS      += $(shell pkg-config --cflags sndfile)
+ifeq ($(HAVE_FFMPEG),true)
+AF_C_FLAGS      += -DHAVE_FFMPEG
+AF_C_FLAGS      += $(shell pkg-config --cflags libavcodec libavformat libavutil)
+endif
 endif
 
 ifeq ($(HAVE_MF_DEPS),true)

@@ -10,6 +10,10 @@ include ../Makefile.mk
 
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo) -I../../theme
 
+ifeq ($(HAVE_FFMPEG),true)
+BUILD_CXX_FLAGS += -DHAVE_FFMPEG
+endif
+
 ifeq ($(HAVE_QT5),true)
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags Qt5Core Qt5Widgets)
 else
@@ -62,7 +66,10 @@ DGL_LIBS  = -lX11
 endif
 
 ifeq ($(HAVE_AF_DEPS),true)
-LINK_FLAGS += $(shell pkg-config --libs libavcodec libavformat libavutil sndfile)
+LINK_FLAGS += $(shell pkg-config --libs sndfile)
+ifeq ($(HAVE_FFMPEG),true)
+LINK_FLAGS += $(shell pkg-config --libs libavcodec libavformat libavutil)
+endif
 endif
 
 ifeq ($(HAVE_MF_DEPS),true)

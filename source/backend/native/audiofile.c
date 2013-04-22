@@ -307,7 +307,7 @@ static PluginHandle audiofile_instantiate(const PluginDescriptor* _this_, HostDe
     handlePtr->pool.size = 0;
     handlePtr->programs.current = 0;
 
-    handlePtr->loopMode  = true;
+    handlePtr->loopMode  = false;
     handlePtr->needsRead = false;
     handlePtr->doProcess = false;
     handlePtr->doQuit    = true;
@@ -388,7 +388,7 @@ static void audiofile_cleanup(PluginHandle handle)
 
 static uint32_t audiofile_get_parameter_count(PluginHandle handle)
 {
-    return 1;
+    return 0; // FIXME - loop mode needs work
 
     // unused
     (void)handle;
@@ -396,6 +396,9 @@ static uint32_t audiofile_get_parameter_count(PluginHandle handle)
 
 static const Parameter* audiofile_get_parameter_info(PluginHandle handle, uint32_t index)
 {
+    // FIXME - loop mode needs work
+    return NULL;
+
     if (index != 0)
         return NULL;
 
@@ -421,6 +424,9 @@ static const Parameter* audiofile_get_parameter_info(PluginHandle handle, uint32
 
 static float audiofile_get_parameter_value(PluginHandle handle, uint32_t index)
 {
+    // FIXME - loop mode needs work
+    return 0.0f;
+
     AudioFileInstance* const handlePtr = (AudioFileInstance*)handle;
 
     if (index != 0)
@@ -461,6 +467,9 @@ const MidiProgram* audiofile_get_program_info(PluginHandle handle, uint32_t inde
 
 static void audiofile_set_parameter_value(PluginHandle handle, uint32_t index, float value)
 {
+    // FIXME - loop mode needs work
+    return;
+
     AudioFileInstance* const handlePtr = (AudioFileInstance*)handle;
 
     if (index != 0)

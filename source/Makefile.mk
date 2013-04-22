@@ -48,10 +48,11 @@ BUILD_CXX_FLAGS += -DVESTIGE_HEADER
 
 # --------------------------------------------------------------
 
+HAVE_FFMPEG       = $(shell pkg-config --exists libavcodec libavformat libavutil && echo true)
 HAVE_OPENGL       = $(shell pkg-config --exists gl && echo true)
 HAVE_QT4          = $(shell pkg-config --exists QtCore && echo true)
 
-HAVE_AF_DEPS      = $(shell pkg-config --exists libavcodec libavformat libavutil sndfile && echo true)
+HAVE_AF_DEPS      = $(shell pkg-config --exists sndfile && echo true)
 HAVE_MF_DEPS      = $(shell pkg-config --exists smf && echo true)
 HAVE_ZYN_DEPS     = $(shell pkg-config --exists fftw3 mxml zlib && echo true)
 HAVE_ZYN_UI_DEPS  = $(shell pkg-config --exists ntk ntk_images && echo true)

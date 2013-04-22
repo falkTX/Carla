@@ -46,7 +46,7 @@
 # if  (__GNUC__ * 100 + __GNUC_MINOR__) >= 405
 #  define CARLA_PROPER_CPP11_SUPPORT
 #  if  (__GNUC__ * 100 + __GNUC_MINOR__) < 407
-#   define override // gcc4.7+
+#   define override // gcc4.7+ only
 #  endif
 # endif
 #endif
