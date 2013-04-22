@@ -277,28 +277,28 @@ CarlaEngineClient::CarlaEngineClient(const EngineType engineType, const ProcessM
       fActive(false),
       fLatency(0)
 {
-    carla_debug("CarlaEngineClient::CarlaEngineClient(%s, %s)", EngineType2Str(engineType), ProcessMode2Str(processMode));
     CARLA_ASSERT(engineType != kEngineTypeNull);
+    carla_debug("CarlaEngineClient::CarlaEngineClient(%s, %s)", EngineType2Str(engineType), ProcessMode2Str(processMode));
 }
 
 CarlaEngineClient::~CarlaEngineClient()
 {
-    carla_debug("CarlaEngineClient::~CarlaEngineClient()");
     CARLA_ASSERT(! fActive);
+    carla_debug("CarlaEngineClient::~CarlaEngineClient()");
 }
 
 void CarlaEngineClient::activate()
 {
-    carla_debug("CarlaEngineClient::activate()");
     CARLA_ASSERT(! fActive);
+    carla_debug("CarlaEngineClient::activate()");
 
     fActive = true;
 }
 
 void CarlaEngineClient::deactivate()
 {
-    carla_debug("CarlaEngineClient::deactivate()");
     CARLA_ASSERT(fActive);
+    carla_debug("CarlaEngineClient::deactivate()");
 
     fActive = false;
 }
@@ -557,8 +557,8 @@ unsigned int CarlaEngine::maxPluginNumber() const
 
 bool CarlaEngine::init(const char* const clientName)
 {
-    carla_debug("CarlaEngine::init(\"%s\")", clientName);
     CARLA_ASSERT(kData->plugins == nullptr);
+    carla_debug("CarlaEngine::init(\"%s\")", clientName);
 
 #ifndef BUILD_BRIDGE
     CARLA_ASSERT(kData->rack.in  == nullptr);
@@ -615,8 +615,8 @@ bool CarlaEngine::init(const char* const clientName)
 
 bool CarlaEngine::close()
 {
-    carla_debug("CarlaEngine::close()");
     CARLA_ASSERT(kData->plugins != nullptr);
+    carla_debug("CarlaEngine::close()");
 
     kData->thread.stopNow();
     kData->nextAction.ready();
@@ -680,9 +680,9 @@ CarlaEngineClient* CarlaEngine::addClient(CarlaPlugin* const)
 
 bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, const char* const filename, const char* const name, const char* const label, const void* const extra)
 {
-    carla_debug("CarlaEngine::addPlugin(%s, %s, \"%s\", \"%s\", \"%s\", %p)", BinaryType2Str(btype), PluginType2Str(ptype), filename, name, label, extra);
     CARLA_ASSERT(btype != BINARY_NONE);
     CARLA_ASSERT(ptype != PLUGIN_NONE);
+    carla_debug("CarlaEngine::addPlugin(%s, %s, \"%s\", \"%s\", \"%s\", %p)", BinaryType2Str(btype), PluginType2Str(ptype), filename, name, label, extra);
 
     if (kData->curPluginCount == kData->maxPluginNumber)
     {
@@ -798,10 +798,10 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
 
 bool CarlaEngine::removePlugin(const unsigned int id)
 {
-    carla_debug("CarlaEngine::removePlugin(%i)", id);
     CARLA_ASSERT(kData->curPluginCount > 0);
     CARLA_ASSERT(id < kData->curPluginCount);
     CARLA_ASSERT(kData->plugins != nullptr);
+    carla_debug("CarlaEngine::removePlugin(%i)", id);
 
     if (kData->plugins == nullptr)
     {
@@ -897,6 +897,7 @@ const char* CarlaEngine::renamePlugin(const unsigned int id, const char* const n
     CARLA_ASSERT(id < kData->curPluginCount);
     CARLA_ASSERT(kData->plugins != nullptr);
     CARLA_ASSERT(newName != nullptr);
+    carla_debug("CarlaEngine::renamePlugin(%i, \"%s\")", id, newName);
 
     if (kData->plugins == nullptr)
     {
@@ -926,10 +927,10 @@ const char* CarlaEngine::renamePlugin(const unsigned int id, const char* const n
 
 bool CarlaEngine::clonePlugin(const unsigned int id)
 {
-    carla_debug("CarlaEngine::clonePlugin(%i)", id);
     CARLA_ASSERT(kData->curPluginCount > 0);
     CARLA_ASSERT(id < kData->curPluginCount);
     CARLA_ASSERT(kData->plugins != nullptr);
+    carla_debug("CarlaEngine::clonePlugin(%i)", id);
 
     if (kData->plugins == nullptr)
     {
@@ -977,6 +978,11 @@ bool CarlaEngine::clonePlugin(const unsigned int id)
 
 bool CarlaEngine::replacePlugin(const unsigned int id)
 {
+    CARLA_ASSERT(kData->curPluginCount > 0);
+    CARLA_ASSERT(id < kData->curPluginCount);
+    CARLA_ASSERT(kData->plugins != nullptr);
+    carla_debug("CarlaEngine::replacePlugin(%i)", id);
+
     setLastError("Not implemented yet");
     return false;
 }
@@ -987,6 +993,7 @@ bool CarlaEngine::switchPlugins(const unsigned int idA, const unsigned int idB)
     CARLA_ASSERT(idA < kData->curPluginCount);
     CARLA_ASSERT(idB < kData->curPluginCount);
     CARLA_ASSERT(kData->plugins != nullptr);
+    carla_debug("CarlaEngine::switchPlugins(%i)", idA, idB);
 
     if (kData->plugins == nullptr)
     {
@@ -1029,10 +1036,10 @@ bool CarlaEngine::switchPlugins(const unsigned int idA, const unsigned int idB)
 
 CarlaPlugin* CarlaEngine::getPlugin(const unsigned int id) const
 {
-    carla_debug("CarlaEngine::getPlugin(%i) [count:%i]", id, kData->curPluginCount);
     CARLA_ASSERT(kData->curPluginCount > 0);
     CARLA_ASSERT(id < kData->curPluginCount);
     CARLA_ASSERT(kData->plugins != nullptr);
+    carla_debug("CarlaEngine::getPlugin(%i) [count:%i]", id, kData->curPluginCount);
 
     if (id < kData->curPluginCount && kData->plugins != nullptr)
         return kData->plugins[id].plugin;
@@ -1047,10 +1054,10 @@ CarlaPlugin* CarlaEngine::getPluginUnchecked(const unsigned int id) const
 
 const char* CarlaEngine::getUniquePluginName(const char* const name)
 {
-    carla_debug("CarlaEngine::getUniquePluginName(\"%s\")", name);
     CARLA_ASSERT(kData->maxPluginNumber > 0);
     CARLA_ASSERT(kData->plugins != nullptr);
     CARLA_ASSERT(name != nullptr);
+    carla_debug("CarlaEngine::getUniquePluginName(\"%s\")", name);
 
     static CarlaString sname;
     sname = name;
@@ -1133,8 +1140,8 @@ const char* CarlaEngine::getUniquePluginName(const char* const name)
 
 bool CarlaEngine::loadFilename(const char* const filename)
 {
-    carla_debug("CarlaEngine::loadFilename(\"%s\")", filename);
     CARLA_ASSERT(filename != nullptr);
+    carla_debug("CarlaEngine::loadFilename(\"%s\")", filename);
 
     // TODO
     setLastError("Not implemented yet");
@@ -1143,8 +1150,8 @@ bool CarlaEngine::loadFilename(const char* const filename)
 
 bool CarlaEngine::loadProject(const char* const filename)
 {
-    carla_debug("CarlaEngine::loadProject(\"%s\")", filename);
     CARLA_ASSERT(filename != nullptr);
+    carla_debug("CarlaEngine::loadProject(\"%s\")", filename);
 
     QFile file(filename);
 
@@ -1204,8 +1211,8 @@ bool CarlaEngine::loadProject(const char* const filename)
 
 bool CarlaEngine::saveProject(const char* const filename)
 {
-    carla_debug("CarlaEngine::saveProject(\"%s\")", filename);
     CARLA_ASSERT(filename != nullptr);
+    carla_debug("CarlaEngine::saveProject(\"%s\")", filename);
 
     QFile file(filename);
 
@@ -1286,8 +1293,8 @@ void CarlaEngine::callback(const CallbackType action, const unsigned int pluginI
 
 void CarlaEngine::setCallback(const CallbackFunc func, void* const ptr)
 {
+    CARLA_ASSERT(func != nullptr);
     carla_debug("CarlaEngine::setCallback(%p, %p)", func, ptr);
-    CARLA_ASSERT(func);
 
     kData->callback    = func;
     kData->callbackPtr = ptr;
@@ -1709,10 +1716,10 @@ void CarlaEngine::processPatchbay(float** inBuf, float** outBuf, const uint32_t 
 #ifndef BUILD_BRIDGE
 void CarlaEngine::osc_send_control_add_plugin_start(const int32_t pluginId, const char* const pluginName)
 {
-    carla_debug("CarlaEngine::osc_send_control_add_plugin_start(%i, \"%s\")", pluginId, pluginName);
     CARLA_ASSERT(kData->oscData != nullptr);
     CARLA_ASSERT(pluginId >= 0 && pluginId < (int32_t)kData->curPluginCount);
     CARLA_ASSERT(pluginName);
+    carla_debug("CarlaEngine::osc_send_control_add_plugin_start(%i, \"%s\")", pluginId, pluginName);
 
     if (kData->oscData != nullptr && kData->oscData->target != nullptr)
     {
