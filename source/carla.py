@@ -781,6 +781,8 @@ class CarlaMainW(QMainWindow):
         newPath = QFileDialog.getExistingDirectory(self, self.tr("New Folder"), "", QFileDialog.ShowDirsOnly)
 
         if newPath:
+            if newPath[-1] == os.sep:
+                newPath = newPath[:-1]
             self.ui.cb_disk.addItem(os.path.basename(newPath), newPath)
             self.ui.cb_disk.setCurrentIndex(self.ui.cb_disk.count()-1)
             self.ui.b_disk_remove.setEnabled(True)
