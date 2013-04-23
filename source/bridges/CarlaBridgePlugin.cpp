@@ -345,9 +345,21 @@ protected:
 
         switch (action)
         {
+        case CALLBACK_PARAMETER_VALUE_CHANGED:
+            sendOscControl(value1, value3);
+            break;
+
         case CALLBACK_SHOW_GUI:
-            if (value1 != 1 && ! isOscControlRegistered())
-                gCloseNow = true;
+            if (! isOscControlRegistered())
+            {
+                if (value1 != 1)
+                    gCloseNow = true;
+            }
+            else
+            {
+                // hide gui
+                //sendOscConfigure();
+            }
             break;
         default:
             break;
@@ -553,9 +565,8 @@ int main(int argc, char* argv[])
             client.sendOscUpdate();
             client.sendOscBridgeUpdate();
 
-            // TESTING!!
+            // test
             carla_set_active(0, true);
-            carla_show_gui(0, true);
         }
         else
         {

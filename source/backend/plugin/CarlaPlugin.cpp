@@ -1054,20 +1054,16 @@ void CarlaPlugin::setActive(const bool active, const bool sendOsc, const bool se
 
     const float value = active ? 1.0f : 0.0f;
 
-#ifndef BUILD_BRIDGE
+#ifdef BUILD_BRIDGE
+    if (fHints & PLUGIN_IS_BRIDGE)
+        osc_send_control(&kData->osc.data, PARAMETER_ACTIVE, value);
+#else
     if (sendOsc)
         kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_ACTIVE, value);
-#else
-    // unused
-    (void)sendOsc;
 #endif
 
     if (sendCallback)
         kData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, PARAMETER_ACTIVE, 0, value, nullptr);
-#ifndef BUILD_BRIDGE
-    else if (fHints & PLUGIN_IS_BRIDGE)
-        osc_send_control(&kData->osc.data, PARAMETER_ACTIVE, value);
-#endif
 }
 
 void CarlaPlugin::setDryWet(const float value, const bool sendOsc, const bool sendCallback)
@@ -1081,20 +1077,19 @@ void CarlaPlugin::setDryWet(const float value, const bool sendOsc, const bool se
 
     kData->postProc.dryWet = fixedValue;
 
-#ifndef BUILD_BRIDGE
-    if (sendOsc)
-        kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_DRYWET, fixedValue);
+    if (sendOsc || sendCallback)
+    {
+#ifdef BUILD_BRIDGE
+        if (fHints & PLUGIN_IS_BRIDGE)
+            osc_send_control(&kData->osc.data, PARAMETER_DRYWET, fixedValue);
 #else
-    // unused
-    (void)sendOsc;
+        if (sendOsc)
+            kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_DRYWET, fixedValue);
 #endif
 
-    if (sendCallback)
-        kData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, PARAMETER_DRYWET, 0, fixedValue, nullptr);
-#ifndef BUILD_BRIDGE
-    else if (fHints & PLUGIN_IS_BRIDGE)
-        osc_send_control(&kData->osc.data, PARAMETER_DRYWET, fixedValue);
-#endif
+        if (sendCallback)
+            kData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, PARAMETER_DRYWET, 0, fixedValue, nullptr);
+    }
 }
 
 void CarlaPlugin::setVolume(const float value, const bool sendOsc, const bool sendCallback)
@@ -1108,20 +1103,19 @@ void CarlaPlugin::setVolume(const float value, const bool sendOsc, const bool se
 
     kData->postProc.volume = fixedValue;
 
-#ifndef BUILD_BRIDGE
-    if (sendOsc)
-        kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_VOLUME, fixedValue);
+    if (sendOsc || sendCallback)
+    {
+#ifdef BUILD_BRIDGE
+        if (fHints & PLUGIN_IS_BRIDGE)
+            osc_send_control(&kData->osc.data, PARAMETER_VOLUME, fixedValue);
 #else
-    // unused
-    (void)sendOsc;
+        if (sendOsc)
+            kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_VOLUME, fixedValue);
 #endif
 
-    if (sendCallback)
-        kData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, PARAMETER_VOLUME, 0, fixedValue, nullptr);
-#ifndef BUILD_BRIDGE
-    else if (fHints & PLUGIN_IS_BRIDGE)
-        osc_send_control(&kData->osc.data, PARAMETER_VOLUME, fixedValue);
-#endif
+        if (sendCallback)
+            kData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, PARAMETER_VOLUME, 0, fixedValue, nullptr);
+    }
 }
 
 void CarlaPlugin::setBalanceLeft(const float value, const bool sendOsc, const bool sendCallback)
@@ -1135,20 +1129,19 @@ void CarlaPlugin::setBalanceLeft(const float value, const bool sendOsc, const bo
 
     kData->postProc.balanceLeft = fixedValue;
 
-#ifndef BUILD_BRIDGE
-    if (sendOsc)
-        kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_BALANCE_LEFT, fixedValue);
+    if (sendOsc || sendCallback)
+    {
+#ifdef BUILD_BRIDGE
+        if (fHints & PLUGIN_IS_BRIDGE)
+            osc_send_control(&kData->osc.data, PARAMETER_BALANCE_LEFT, fixedValue);
 #else
-    // unused
-    (void)sendOsc;
+        if (sendOsc)
+            kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_BALANCE_LEFT, fixedValue);
 #endif
 
-    if (sendCallback)
-        kData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, PARAMETER_BALANCE_LEFT, 0, fixedValue, nullptr);
-#ifndef BUILD_BRIDGE
-    else if (fHints & PLUGIN_IS_BRIDGE)
-        osc_send_control(&kData->osc.data, PARAMETER_BALANCE_LEFT, fixedValue);
-#endif
+        if (sendCallback)
+            kData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, PARAMETER_BALANCE_LEFT, 0, fixedValue, nullptr);
+    }
 }
 
 void CarlaPlugin::setBalanceRight(const float value, const bool sendOsc, const bool sendCallback)
@@ -1162,20 +1155,19 @@ void CarlaPlugin::setBalanceRight(const float value, const bool sendOsc, const b
 
     kData->postProc.balanceRight = fixedValue;
 
-#ifndef BUILD_BRIDGE
-    if (sendOsc)
-        kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_BALANCE_RIGHT, fixedValue);
+    if (sendOsc || sendCallback)
+    {
+#ifdef BUILD_BRIDGE
+        if (fHints & PLUGIN_IS_BRIDGE)
+            osc_send_control(&kData->osc.data, PARAMETER_BALANCE_RIGHT, fixedValue);
 #else
-    // unused
-    (void)sendOsc;
+        if (sendOsc)
+            kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_BALANCE_RIGHT, fixedValue);
 #endif
 
-    if (sendCallback)
-        kData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, PARAMETER_BALANCE_RIGHT, 0, fixedValue, nullptr);
-#ifndef BUILD_BRIDGE
-    else if (fHints & PLUGIN_IS_BRIDGE)
-        osc_send_control(&kData->osc.data, PARAMETER_BALANCE_RIGHT, fixedValue);
-#endif
+        if (sendCallback)
+            kData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, PARAMETER_BALANCE_RIGHT, 0, fixedValue, nullptr);
+    }
 }
 
 void CarlaPlugin::setPanning(const float value, const bool sendOsc, const bool sendCallback)
@@ -1189,20 +1181,19 @@ void CarlaPlugin::setPanning(const float value, const bool sendOsc, const bool s
 
     kData->postProc.panning = fixedValue;
 
-#ifndef BUILD_BRIDGE
-    if (sendOsc)
-        kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_PANNING, fixedValue);
+    if (sendOsc || sendCallback)
+    {
+#ifdef BUILD_BRIDGE
+        if (fHints & PLUGIN_IS_BRIDGE)
+            osc_send_control(&kData->osc.data, PARAMETER_PANNING, fixedValue);
 #else
-    // unused
-    (void)sendOsc;
+        if (sendOsc)
+            kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_PANNING, fixedValue);
 #endif
 
-    if (sendCallback)
-        kData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, PARAMETER_PANNING, 0, fixedValue, nullptr);
-#ifndef BUILD_BRIDGE
-    else if (fHints & PLUGIN_IS_BRIDGE)
-        osc_send_control(&kData->osc.data, PARAMETER_PANNING, fixedValue);
-#endif
+        if (sendCallback)
+            kData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, PARAMETER_PANNING, 0, fixedValue, nullptr);
+    }
 }
 
 void CarlaPlugin::setCtrlChannel(const int8_t channel, const bool sendOsc, const bool sendCallback)
@@ -1212,22 +1203,21 @@ void CarlaPlugin::setCtrlChannel(const int8_t channel, const bool sendOsc, const
 
     kData->ctrlChannel = channel;
 
-#ifndef BUILD_BRIDGE
-    const float ctrlf = channel;
+    if (sendOsc || sendCallback)
+    {
+        const float ctrlf = channel;
 
-    if (sendOsc)
-        kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_CTRL_CHANNEL, ctrlf);
+#ifdef BUILD_BRIDGE
+        if (fHints & PLUGIN_IS_BRIDGE)
+            osc_send_control(&kData->osc.data, PARAMETER_CTRL_CHANNEL, ctrlf);
 #else
-    // unused
-    (void)sendOsc;
+        if (sendOsc)
+            kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_CTRL_CHANNEL, ctrlf);
 #endif
 
-    if (sendCallback)
-        kData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, PARAMETER_CTRL_CHANNEL, 0, channel, nullptr);
-#ifndef BUILD_BRIDGE
-    else if (fHints & PLUGIN_IS_BRIDGE)
-        osc_send_control(&kData->osc.data, PARAMETER_CTRL_CHANNEL, ctrlf);
-#endif
+        if (sendCallback)
+            kData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, PARAMETER_CTRL_CHANNEL, 0, ctrlf, nullptr);
+    }
 }
 
 // -------------------------------------------------------------------
@@ -1651,7 +1641,7 @@ void CarlaPlugin::registerToOscClient()
     }
 
     // Plugin Parameters
-    if (kData->param.count > 0 && kData->param.count < kData->engine->getOptions().maxParameters)
+    if (kData->param.count > 0 /*&& kData->param.count < kData->engine->getOptions().maxParameters*/)
     {
         char bufName[STR_MAX+1], bufUnit[STR_MAX+1];
 

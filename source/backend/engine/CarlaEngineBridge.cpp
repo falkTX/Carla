@@ -108,18 +108,18 @@ public:
         }
 
         // Read values from memory
-        CARLA_ASSERT(rdwr_readOpcode(&fShmControl.data->ringBuffer) == kPluginBridgeOpcodeBufferSize);
+        CARLA_ASSERT(rdwr_readOpcode(&fShmControl.data->ringBuffer) == kPluginBridgeOpcodeSetBufferSize);
         fBufferSize = rdwr_readInt(&fShmControl.data->ringBuffer);
         carla_stderr("BufferSize: %i", fBufferSize);
 
-        CARLA_ASSERT(rdwr_readOpcode(&fShmControl.data->ringBuffer) == kPluginBridgeOpcodeSampleRate);
+        CARLA_ASSERT(rdwr_readOpcode(&fShmControl.data->ringBuffer) == kPluginBridgeOpcodeSetSampleRate);
         fSampleRate = rdwr_readFloat(&fShmControl.data->ringBuffer);
         carla_stderr("SampleRate: %f", fSampleRate);
 
         fQuitNow = false;
         fIsRunning = true;
 
-        QThread::start();
+        QThread::start(QThread::TimeCriticalPriority);
         CarlaEngine::init(clientName);
         return true;
     }
@@ -164,10 +164,10 @@ public:
             if (! jackbridge_sem_timedwait(&fShmControl.data->runServer, 5))
             {
                 if (errno != ETIMEDOUT)
-                {
-                    fQuitNow = true;
-                    break;
-                }
+                    continue;
+
+                fQuitNow = true;
+                return;
             }
 
             while (rdwr_dataAvailable(&fShmControl.data->ringBuffer))
@@ -178,15 +178,41 @@ public:
                 {
                 case kPluginBridgeOpcodeNull:
                     break;
+
                 case kPluginBridgeOpcodeReadyWait:
-                    fShmAudioPool.data = (float*)carla_shm_map(fShmAudioPool.shm, rdwr_readInt(&fShmControl.data->ringBuffer));
+                {
+                    const int size = rdwr_readInt(&fShmControl.data->ringBuffer);
+                    fShmAudioPool.data = (float*)carla_shm_map(fShmAudioPool.shm, size);
                     break;
-                case kPluginBridgeOpcodeBufferSize:
-                    bufferSizeChanged(rdwr_readInt(&fShmControl.data->ringBuffer));
+                }
+
+                case kPluginBridgeOpcodeSetBufferSize:
+                {
+                    const int bufferSize = rdwr_readInt(&fShmControl.data->ringBuffer);
+                    bufferSizeChanged(bufferSize);
                     break;
-                case kPluginBridgeOpcodeSampleRate:
-                    sampleRateChanged(rdwr_readFloat(&fShmControl.data->ringBuffer));
+                }
+
+                case kPluginBridgeOpcodeSetSampleRate:
+                {
+                    const float sampleRate = rdwr_readFloat(&fShmControl.data->ringBuffer);
+                    sampleRateChanged(sampleRate);
                     break;
+                }
+
+                case kPluginBridgeOpcodeSetParameter:
+                {
+                    const int   index = rdwr_readInt(&fShmControl.data->ringBuffer);
+                    const float value = rdwr_readFloat(&fShmControl.data->ringBuffer);
+
+                    CarlaPlugin* const plugin(getPluginUnchecked(0));
+
+                    if (plugin != nullptr && plugin->enabled())
+                        plugin->setParameterValueByRealIndex(index, value, false, false, false);
+
+                    break;
+                }
+
                 case kPluginBridgeOpcodeProcess:
                 {
                     CARLA_ASSERT(fShmAudioPool.data != nullptr);
@@ -206,17 +232,20 @@ public:
                             outBuffer[i] = fShmAudioPool.data + (i+inCount)*fBufferSize;
 
                         plugin->initBuffers();
-                        plugin->setActive(true, false, false);
                         plugin->process(inBuffer, outBuffer, fBufferSize);
                         plugin->unlock();
                     }
                     break;
                 }
+
+                case kPluginBridgeOpcodeQuit:
+                    fQuitNow = true;
+                    break;
                 }
             }
 
             if (jackbridge_sem_post(&fShmControl.data->runClient) != 0)
-                carla_stderr2("Could not post to semaphore");
+                pass(); //carla_stderr2("Could not post to semaphore");
         }
 
         fIsRunning = false;

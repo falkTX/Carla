@@ -149,6 +149,7 @@ HEADERS += \
 # utils
 HEADERS += \
     ../../utils/CarlaBackendUtils.hpp \
+    ../../utils/CarlaBridgeUtils.hpp \
     ../../utils/CarlaJuceUtils.hpp \
     ../../utils/CarlaLadspaUtils.hpp \
     ../../utils/CarlaLibUtils.hpp \
@@ -161,7 +162,7 @@ HEADERS += \
     ../../utils/CarlaMutex.hpp \
     ../../utils/CarlaString.hpp \
     ../../utils/CarlaThread.hpp \
-    ../../utils/lv2_atom_queue.hpp \
+    ../../utils/Lv2AtomQueue.hpp \
     ../../utils/RtList.hpp
 
 INCLUDEPATH = .. \

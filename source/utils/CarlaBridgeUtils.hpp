@@ -25,7 +25,6 @@
 
 #define BRIDGE_SHM_RING_BUFFER_SIZE 2048
 
-#ifndef BUILD_BRIDGE
 /*!
  * TODO.
  */
@@ -51,14 +50,15 @@ enum PluginBridgeInfoType {
     kPluginBridgeUpdateNow,
     kPluginBridgeError
 };
-#endif
 
 enum PluginBridgeOpcode {
-    kPluginBridgeOpcodeNull       = 0,
-    kPluginBridgeOpcodeReadyWait  = 1,
-    kPluginBridgeOpcodeBufferSize = 2,
-    kPluginBridgeOpcodeSampleRate = 3,
-    kPluginBridgeOpcodeProcess    = 4
+    kPluginBridgeOpcodeNull          = 0,
+    kPluginBridgeOpcodeReadyWait     = 1,
+    kPluginBridgeOpcodeSetBufferSize = 2,
+    kPluginBridgeOpcodeSetSampleRate = 3,
+    kPluginBridgeOpcodeSetParameter  = 4,
+    kPluginBridgeOpcodeProcess       = 5,
+    kPluginBridgeOpcodeQuit          = 6
 };
 
 /*!
@@ -89,12 +89,63 @@ struct BridgeShmControl {
     BridgeRingBuffer ringBuffer;
 };
 
+static inline
+const char* PluginBridgeInfoType2str(const PluginBridgeInfoType type)
+{
+    switch (type)
+    {
+    case kPluginBridgeAudioCount:
+        return "kPluginBridgeAudioCount";
+    case kPluginBridgeMidiCount:
+        return "kPluginBridgeMidiCount";
+    case kPluginBridgeParameterCount:
+        return "kPluginBridgeParameterCount";
+    case kPluginBridgeProgramCount:
+        return "kPluginBridgeProgramCount";
+    case kPluginBridgeMidiProgramCount:
+        return "kPluginBridgeMidiProgramCount";
+    case kPluginBridgePluginInfo:
+        return "kPluginBridgePluginInfo";
+    case kPluginBridgeParameterInfo:
+        return "kPluginBridgeParameterInfo";
+    case kPluginBridgeParameterData:
+        return "kPluginBridgeParameterData";
+    case kPluginBridgeParameterRanges:
+        return "kPluginBridgeParameterRanges";
+    case kPluginBridgeProgramInfo:
+        return "kPluginBridgeProgramInfo";
+    case kPluginBridgeMidiProgramInfo:
+        return "kPluginBridgeMidiProgramInfo";
+    case kPluginBridgeConfigure:
+        return "kPluginBridgeConfigure";
+    case kPluginBridgeSetParameterValue:
+        return "kPluginBridgeSetParameterValue";
+    case kPluginBridgeSetDefaultValue:
+        return "kPluginBridgeSetDefaultValue";
+    case kPluginBridgeSetProgram:
+        return "kPluginBridgeSetProgram";
+    case kPluginBridgeSetMidiProgram:
+        return "kPluginBridgeSetMidiProgram";
+    case kPluginBridgeSetCustomData:
+        return "kPluginBridgeSetCustomData";
+    case kPluginBridgeSetChunkData:
+        return "kPluginBridgeSetChunkData";
+    case kPluginBridgeUpdateNow:
+        return "kPluginBridgeUpdateNow";
+    case kPluginBridgeError:
+        return "kPluginBridgeError";
+    }
+
+    carla_stderr("CarlaBackend::PluginBridgeInfoType2str(%i) - invalid type", type);
+    return nullptr;
+}
+
 // ---------------------------------------------------------------------------------------------
 
 static inline
 void rdwr_tryRead(BridgeRingBuffer* const ringbuf, void* const buf, const size_t size)
 {
-    char* const charbuf = static_cast<char*>(buf);
+    char* const charbuf(static_cast<char*>(buf));
 
     size_t tail = ringbuf->tail;
     size_t head = ringbuf->head;
@@ -127,7 +178,7 @@ void rdwr_tryRead(BridgeRingBuffer* const ringbuf, void* const buf, const size_t
 static inline
 void rdwr_tryWrite(BridgeRingBuffer* const ringbuf, const void* const buf, const size_t size)
 {
-    const char* const charbuf = static_cast<const char*>(buf);
+    const char* const charbuf(static_cast<const char*>(buf));
 
     size_t written = ringbuf->written;
     size_t tail = ringbuf->tail;
@@ -139,7 +190,7 @@ void rdwr_tryWrite(BridgeRingBuffer* const ringbuf, const void* const buf, const
     }
     if (tail - written + wrap < size)
     {
-        carla_stderr2("Operation ring buffer full! Dropping events.");
+        carla_stderr2("Ring buffer full! Dropping events.");
         ringbuf->invalidateCommit = true;
         return;
     }

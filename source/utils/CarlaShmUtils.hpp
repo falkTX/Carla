@@ -152,7 +152,9 @@ void* carla_shm_map(shm_t& shm, const size_t size)
 
     return ptr;
 #else
-    ftruncate(shm, size);
+    if (ftruncate(shm, size) != 0)
+        return nullptr;
+
     return mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_SHARED, shm, 0);
 #endif
 }
