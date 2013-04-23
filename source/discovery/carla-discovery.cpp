@@ -448,11 +448,22 @@ void do_ladspa_check(void* const libHandle, const bool init)
             // -----------------------------------------------------------------------
             // start crash-free plugin test
 
-            const LADSPA_Handle handle = descriptor->instantiate(descriptor, kSampleRate);
+            LADSPA_Handle handle = descriptor->instantiate(descriptor, kSampleRate);
 
             if (handle == nullptr)
             {
                 DISCOVERY_OUT("error", "Failed to init LADSPA plugin");
+                continue;
+            }
+
+            // Test quick init and cleanup
+            descriptor->cleanup(handle);
+
+            handle = descriptor->instantiate(descriptor, kSampleRate);
+
+            if (handle == nullptr)
+            {
+                DISCOVERY_OUT("error", "Failed to init LADSPA plugin #2");
                 continue;
             }
 
@@ -662,11 +673,22 @@ void do_dssi_check(void* const libHandle, const bool init)
             // -----------------------------------------------------------------------
             // start crash-free plugin test
 
-            const LADSPA_Handle handle = ldescriptor->instantiate(ldescriptor, kSampleRate);
+            LADSPA_Handle handle = ldescriptor->instantiate(ldescriptor, kSampleRate);
 
             if (handle == nullptr)
             {
                 DISCOVERY_OUT("error", "Failed to init DSSI plugin");
+                continue;
+            }
+
+            // Test quick init and cleanup
+            ldescriptor->cleanup(handle);
+
+            handle = ldescriptor->instantiate(ldescriptor, kSampleRate);
+
+            if (handle == nullptr)
+            {
+                DISCOVERY_OUT("error", "Failed to init DSSI plugin #2");
                 continue;
             }
 
