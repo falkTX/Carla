@@ -1748,7 +1748,7 @@ class CarlaMainW(QMainWindow):
     def dragEnterEvent(self, event):
         if event.source() == self.ui.fileTreeView:
             event.accept()
-        elif self.ui.tabMain.currentIndex() == 0 and self.ui.tab_plugins.contentsRect().contains(event.pos()):
+        elif self.ui.tabMain.contentsRect().contains(event.pos()):
             event.accept()
         else:
             QMainWindow.dragEnterEvent(self, event)
@@ -1763,8 +1763,8 @@ class CarlaMainW(QMainWindow):
 
             if not Carla.host.load_filename(filename):
                 CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"),
-                                self.tr("Failed to load file"),
-                                cString(Carla.host.get_last_error()), QMessageBox.Ok, QMessageBox.Ok)
+                                 self.tr("Failed to load file"),
+                                 cString(Carla.host.get_last_error()), QMessageBox.Ok, QMessageBox.Ok)
 
     def resizeEvent(self, event):
         if self.ui.tabMain.currentIndex() == 0:

@@ -20,10 +20,16 @@
    <layout class="QVBoxLayout" name="verticalLayout_5">
     <item>
      <widget class="QSplitter" name="splitter">
+      <property name="acceptDrops">
+       <bool>false</bool>
+      </property>
       <property name="orientation">
        <enum>Qt::Horizontal</enum>
       </property>
       <widget class="QTabWidget" name="tabMain">
+       <property name="acceptDrops">
+        <bool>true</bool>
+       </property>
        <property name="currentIndex">
         <number>0</number>
        </property>
@@ -149,6 +155,9 @@
             <height>0</height>
            </size>
           </property>
+          <property name="acceptDrops">
+           <bool>false</bool>
+          </property>
           <property name="tabPosition">
            <enum>QTabWidget::East</enum>
           </property>
@@ -156,6 +165,9 @@
            <number>0</number>
           </property>
           <widget class="QWidget" name="disk">
+           <property name="acceptDrops">
+            <bool>false</bool>
+           </property>
            <attribute name="title">
             <string>Disk</string>
            </attribute>
@@ -177,8 +189,14 @@
             </property>
             <item>
              <widget class="QTreeView" name="fileTreeView">
+              <property name="editTriggers">
+               <set>QAbstractItemView::NoEditTriggers</set>
+              </property>
               <property name="dragEnabled">
                <bool>true</bool>
+              </property>
+              <property name="dragDropMode">
+               <enum>QAbstractItemView::DragDrop</enum>
               </property>
              </widget>
             </item>
@@ -199,6 +217,9 @@
             <width>210</width>
             <height>162</height>
            </size>
+          </property>
+          <property name="acceptDrops">
+           <bool>false</bool>
           </property>
           <property name="frameShape">
            <enum>QFrame::StyledPanel</enum>
