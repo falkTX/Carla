@@ -1164,7 +1164,7 @@ bool CarlaEngine::loadFilename(const char* const filename)
     }
 
     QString baseName(fileInfo.baseName());
-    QString extension(fileInfo.suffix());
+    QString extension(fileInfo.suffix().toLower());
 
     const char* const baseNameStr(baseName.toUtf8().constData());
 

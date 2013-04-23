@@ -1723,6 +1723,8 @@ class CarlaMainW(QMainWindow):
 
             diskFolders = toList(settings.value("DiskFolders", [HOME]))
 
+            self.ui.cb_disk.setItemData(0, HOME)
+
             for i in range(len(diskFolders)):
                 if i == 0: continue
                 folder = diskFolders[i]
