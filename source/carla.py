@@ -1745,6 +1745,25 @@ class CarlaMainW(QMainWindow):
         tabBar = self.ui.tabMain.tabBar()
         self.fInfoLabel.resize(self.ui.tabMain.width()-tabBar.width()-20, self.fInfoLabel.height())
 
+    def dragEnterEvent(self, event):
+        if self.ui.tabMain.currentIndex() == 0 and self.ui.tab_plugins.contentsRect().contains(event.pos()):
+            event.accept()
+        else:
+            QMainWindow.dragEnterEvent(self, event)
+
+    def dropEvent(self, event):
+        event.accept()
+
+        urls = event.mimeData().urls()
+
+        for url in urls:
+            filename = url.toLocalFile()
+
+            if not Carla.host.load_filename(filename):
+                CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"),
+                                self.tr("Failed to load file"),
+                                cString(Carla.host.get_last_error()), QMessageBox.Ok, QMessageBox.Ok)
+
     def resizeEvent(self, event):
         if self.ui.tabMain.currentIndex() == 0:
             # Force update of 2nd tab
