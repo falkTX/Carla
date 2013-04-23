@@ -633,7 +633,7 @@ void carla_set_engine_callback(CarlaCallbackFunc func, void* ptr)
     standalone.callback    = func;
     standalone.callbackPtr = ptr;
 
-#ifdef NDEBUG
+#ifdef WANT_LOGS
     standalone.logThread.ready(func, ptr);
 #endif
 
