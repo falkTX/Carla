@@ -1746,7 +1746,9 @@ class CarlaMainW(QMainWindow):
         self.fInfoLabel.resize(self.ui.tabMain.width()-tabBar.width()-20, self.fInfoLabel.height())
 
     def dragEnterEvent(self, event):
-        if self.ui.tabMain.currentIndex() == 0 and self.ui.tab_plugins.contentsRect().contains(event.pos()):
+        if event.source() == self.ui.fileTreeView:
+            event.accept()
+        elif self.ui.tabMain.currentIndex() == 0 and self.ui.tab_plugins.contentsRect().contains(event.pos()):
             event.accept()
         else:
             QMainWindow.dragEnterEvent(self, event)
