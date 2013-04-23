@@ -1182,7 +1182,7 @@ public:
 
                 case kEngineEventTypeMidi:
                 {
-                    const EngineMidiEvent& midiEvent = event.midi;
+                    const EngineMidiEvent& midiEvent(event.midi);
 
                     uint8_t status  = MIDI_GET_STATUS_FROM_DATA(midiEvent.data);
                     uint8_t channel = event.channel;
@@ -1260,7 +1260,7 @@ public:
 
             if (kData->param.data[k].midiCC > 0)
             {
-                double value = kData->param.ranges[k].normalizeValue(fParamBuffers[k]);
+                float value(kData->param.ranges[k].normalizeValue(fParamBuffers[k]));
                 kData->event.portOut->writeControlEvent(0, kData->param.data[k].midiChannel, kEngineControlEventTypeParameter, kData->param.data[k].midiCC, value);
             }
 

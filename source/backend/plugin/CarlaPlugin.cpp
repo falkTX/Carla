@@ -994,6 +994,10 @@ bool CarlaPlugin::loadStateFromFile(const char* const filename)
     }
 
     loadSaveState(getSaveStateDictFromXML(xmlNode));
+
+    // prevent wrong leak detection on close
+    getSaveStateDictFromXML(QDomNode());
+
     return true;
 }
 
