@@ -1176,13 +1176,13 @@ bool CarlaEngine::loadFilename(const char* const filename)
     // -------------------------------------------------------------------
 
     if (extension == "gig")
-        return addPlugin(PLUGIN_GIG, filename, baseNameStr, nullptr);
+        return addPlugin(PLUGIN_GIG, filename, baseNameStr, baseNameStr);
 
     if (extension == "sf2")
-        return addPlugin(PLUGIN_SF2, filename, baseNameStr, nullptr);
+        return addPlugin(PLUGIN_SF2, filename, baseNameStr, baseNameStr);
 
     if (extension == "sfz")
-        return addPlugin(PLUGIN_SFZ, filename, baseNameStr, nullptr);
+        return addPlugin(PLUGIN_SFZ, filename, baseNameStr, baseNameStr);
 
     // -------------------------------------------------------------------
 

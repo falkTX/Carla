@@ -704,6 +704,9 @@ class CarlaMainW(QMainWindow):
 
         self.connect(self.ui.splitter, SIGNAL("splitterMoved(int, int)"), SLOT("slot_splitterMoved()"))
 
+        self.connect(self.ui.cb_disk, SIGNAL("currentIndexChanged(int)"), SLOT("slot_diskFolderChanged(int)"))
+        self.connect(self.ui.b_disk_add, SIGNAL("clicked()"), SLOT("slot_diskFolderAdd()"))
+        self.connect(self.ui.b_disk_remove, SIGNAL("clicked()"), SLOT("slot_diskFolderRemove()"))
         self.connect(self.ui.fileTreeView, SIGNAL("doubleClicked(QModelIndex)"), SLOT("slot_fileTreeDoubleClicked(QModelIndex)"))
         self.connect(self.ui.miniCanvasPreview, SIGNAL("miniCanvasMoved(double, double)"), SLOT("slot_miniCanvasMoved(double, double)"))
 
@@ -758,6 +761,41 @@ class CarlaMainW(QMainWindow):
             Carla.host.nsm_announce(NSM_URL, appName, os.getpid())
         else:
             QTimer.singleShot(0, self, SLOT("slot_engineStart()"))
+
+    @pyqtSlot(int)
+    def slot_diskFolderChanged(self, index):
+        if index < 0:
+            return
+        elif index == 0:
+            filename = HOME
+            self.ui.b_disk_remove.setEnabled(False)
+        else:
+            filename = self.ui.cb_disk.itemData(index)
+            self.ui.b_disk_remove.setEnabled(True)
+
+        self.fDirModel.setRootPath(filename)
+        self.ui.fileTreeView.setRootIndex(self.fDirModel.index(filename))
+
+    @pyqtSlot()
+    def slot_diskFolderAdd(self):
+        newPath = QFileDialog.getExistingDirectory(self, self.tr("New Folder"), "", QFileDialog.ShowDirsOnly)
+
+        if newPath:
+            self.ui.cb_disk.addItem(os.path.basename(newPath), newPath)
+            self.ui.cb_disk.setCurrentIndex(self.ui.cb_disk.count()-1)
+            self.ui.b_disk_remove.setEnabled(True)
+
+    @pyqtSlot()
+    def slot_diskFolderRemove(self):
+        index = self.ui.cb_disk.currentIndex()
+
+        if index <= 0:
+            return
+
+        self.ui.cb_disk.removeItem(index)
+
+        if self.ui.cb_disk.currentIndex() == 0:
+            self.ui.b_disk_remove.setEnabled(False)
 
     @pyqtSlot(str)
     def slot_handleNSM_AnnounceCallback(self, smName):
@@ -1661,6 +1699,13 @@ class CarlaMainW(QMainWindow):
         settings.setValue("HorizontalScrollBarValue", self.ui.graphicsView.horizontalScrollBar().value())
         settings.setValue("VerticalScrollBarValue", self.ui.graphicsView.verticalScrollBar().value())
 
+        diskFolders = []
+
+        for i in range(self.ui.cb_disk.count()):
+            diskFolders.append(self.ui.cb_disk.itemData(i))
+
+        settings.setValue("DiskFolders", diskFolders)
+
     def loadSettings(self, geometry):
         settings = QSettings()
 
@@ -1675,6 +1720,13 @@ class CarlaMainW(QMainWindow):
                 self.ui.splitter.restoreState(settings.value("SplitterState", ""))
             else:
                 self.ui.splitter.setSizes([99999, 210])
+
+            diskFolders = toList(settings.value("DiskFolders", [HOME]))
+
+            for i in range(len(diskFolders)):
+                if i == 0: continue
+                folder = diskFolders[i]
+                self.ui.cb_disk.addItem(os.path.basename(folder), folder)
 
             pal1 = app.palette().base().color()
             pal2 = app.palette().button().color()

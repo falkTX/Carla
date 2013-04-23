@@ -188,6 +188,44 @@
              <number>1</number>
             </property>
             <item>
+             <layout class="QHBoxLayout" name="horizontalLayout">
+              <item>
+               <widget class="QComboBox" name="cb_disk">
+                <item>
+                 <property name="text">
+                  <string>Home</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+              <item>
+               <widget class="QToolButton" name="b_disk_add">
+                <property name="text">
+                 <string/>
+                </property>
+                <property name="icon">
+                 <iconset resource="../resources.qrc">
+                  <normaloff>:/16x16/list-add.png</normaloff>:/16x16/list-add.png</iconset>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QToolButton" name="b_disk_remove">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
+                <property name="text">
+                 <string/>
+                </property>
+                <property name="icon">
+                 <iconset resource="../resources.qrc">
+                  <normaloff>:/16x16/list-remove.png</normaloff>:/16x16/list-remove.png</iconset>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
              <widget class="QTreeView" name="fileTreeView">
               <property name="editTriggers">
                <set>QAbstractItemView::NoEditTriggers</set>
