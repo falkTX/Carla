@@ -1163,10 +1163,8 @@ bool CarlaEngine::loadFilename(const char* const filename)
         return false;
     }
 
-    QString baseName(fileInfo.baseName());
-    QString extension(fileInfo.suffix().toLower());
-
-    const char* const baseNameStr(baseName.toUtf8().constData());
+    CarlaString baseName(fileInfo.baseName().toUtf8().constData());
+    CarlaString extension(fileInfo.suffix().toLower().toUtf8().constData());
 
     // -------------------------------------------------------------------
 
@@ -1176,20 +1174,20 @@ bool CarlaEngine::loadFilename(const char* const filename)
     // -------------------------------------------------------------------
 
     if (extension == "gig")
-        return addPlugin(PLUGIN_GIG, filename, baseNameStr, baseNameStr);
+        return addPlugin(PLUGIN_GIG, filename, baseName, baseName);
 
     if (extension == "sf2")
-        return addPlugin(PLUGIN_SF2, filename, baseNameStr, baseNameStr);
+        return addPlugin(PLUGIN_SF2, filename, baseName, baseName);
 
     if (extension == "sfz")
-        return addPlugin(PLUGIN_SFZ, filename, baseNameStr, baseNameStr);
+        return addPlugin(PLUGIN_SFZ, filename, baseName, baseName);
 
     // -------------------------------------------------------------------
 
     if (extension == "aiff" || extension == "flac" || extension == "oga" || extension == "ogg" || extension == "w64" || extension == "wav")
     {
 #ifdef WANT_AUDIOFILE
-        if (addPlugin(PLUGIN_INTERNAL, nullptr, baseNameStr, "audiofile"))
+        if (addPlugin(PLUGIN_INTERNAL, nullptr, baseName, "audiofile"))
         {
             if (CarlaPlugin* const plugin = getPlugin(kData->curPluginCount-1))
                 plugin->setCustomData(CUSTOM_DATA_STRING, "file00", filename, true);
@@ -1207,7 +1205,7 @@ bool CarlaEngine::loadFilename(const char* const filename)
     {
 #ifdef WANT_AUDIOFILE
 # ifdef HAVE_FFMPEG
-        if (addPlugin(PLUGIN_INTERNAL, nullptr, baseNameStr, "audiofile"))
+        if (addPlugin(PLUGIN_INTERNAL, nullptr, baseName, "audiofile"))
         {
             if (CarlaPlugin* const plugin = getPlugin(kData->curPluginCount-1))
                 plugin->setCustomData(CUSTOM_DATA_STRING, "file00", filename, true);
@@ -1229,7 +1227,7 @@ bool CarlaEngine::loadFilename(const char* const filename)
     if (extension == "mid" || extension == "midi")
     {
 #ifdef WANT_MIDIFILE
-        if (addPlugin(PLUGIN_INTERNAL, nullptr, baseNameStr, "midifile"))
+        if (addPlugin(PLUGIN_INTERNAL, nullptr, baseName, "midifile"))
         {
             if (CarlaPlugin* const plugin = getPlugin(kData->curPluginCount-1))
                 plugin->setCustomData(CUSTOM_DATA_STRING, "file", filename, true);
@@ -1248,7 +1246,7 @@ bool CarlaEngine::loadFilename(const char* const filename)
     if (extension == "xmz" || extension == "xiz")
     {
 #ifdef WANT_ZYNADDSUBFX
-        if (addPlugin(PLUGIN_INTERNAL, nullptr, baseNameStr, "zynaddsubfx"))
+        if (addPlugin(PLUGIN_INTERNAL, nullptr, baseName, "zynaddsubfx"))
         {
             if (CarlaPlugin* const plugin = getPlugin(kData->curPluginCount-1))
                 plugin->setCustomData(CUSTOM_DATA_STRING, (extension == "xmz") ? "CarlaAlternateFile1" : "CarlaAlternateFile2", filename, true);
