@@ -31,7 +31,7 @@
 # include <QtCore/Qt>
 #endif
 
-#if defined(NDEBUG) && ! defined(BUILD_BRIDGE)
+#if defined(NDEBUG) && ! (defined(CARLA_OS_WIN) || defined(BUILD_BRIDGE))
 # define WANT_LOGS
 # include <fcntl.h>
 # include <QtCore/QThread>

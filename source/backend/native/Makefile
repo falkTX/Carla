@@ -60,12 +60,8 @@ OBJS  = \
 	midi-split.c.o \
 	midi-through.c.o \
 	midi-transpose.c.o \
+	nekofilter.c.o \
 	sunvox-file.cpp.o
-
-ifneq ($(WIN32),true)
-OBJS += \
-	nekofilter.c.o
-endif
 
 # Carla
 OBJS += \

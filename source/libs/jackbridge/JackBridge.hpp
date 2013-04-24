@@ -107,6 +107,7 @@ typedef uint32_t jack_port_id_t;
 typedef uint64_t jack_time_t;
 typedef uint64_t jack_unique_t;
 typedef unsigned char jack_midi_data_t;
+typedef float jack_default_audio_sample_t;
 
 typedef enum JackOptions jack_options_t;
 typedef enum JackStatus jack_status_t;
@@ -166,6 +167,7 @@ typedef void (*JackClientRegistrationCallback)(const char* name, int register_, 
 typedef void (*JackPortConnectCallback)(jack_port_id_t a, jack_port_id_t b, int connect, void* arg);
 typedef int  (*JackPortRenameCallback)(jack_port_id_t port, const char* old_name, const char* new_name, void *arg);
 typedef void (*JackFreewheelCallback)(int starting, void *arg);
+typedef int  (*JackXRunCallback)(void* arg);
 typedef void (*JackShutdownCallback)(void *arg);
 
 #endif // ! JACKBRIDGE_DIRECT
@@ -190,6 +192,7 @@ CARLA_EXPORT bool jackbridge_set_port_registration_callback (jack_client_t* clie
 CARLA_EXPORT bool jackbridge_set_port_connect_callback (jack_client_t* client, JackPortConnectCallback connect_callback, void* arg);
 CARLA_EXPORT bool jackbridge_set_port_rename_callback (jack_client_t* client, JackPortRenameCallback rename_callback, void* arg);
 CARLA_EXPORT bool jackbridge_set_latency_callback(jack_client_t* client, JackLatencyCallback latency_callback, void* arg);
+CARLA_EXPORT bool jackbridge_set_xrun_callback(jack_client_t* client, JackXRunCallback xrun_callback, void* arg);
 
 CARLA_EXPORT jack_nframes_t jackbridge_get_sample_rate(jack_client_t* client);
 CARLA_EXPORT jack_nframes_t jackbridge_get_buffer_size(jack_client_t* client);

@@ -32,7 +32,9 @@
 #define LOG_LEVEL LOG_LEVEL_ERROR
 #include "log.h"
 
-#include "ui.c"
+#if defined(__linux__) || defined(__linux)
+# include "ui.c"
+#endif
 
 #define BANDS_COUNT 4
 
@@ -42,7 +44,9 @@ struct nekofilter
   float params_global[GLOBAL_PARAMETERS_COUNT];
   float params_bands[BAND_PARAMETERS_COUNT*BANDS_COUNT];
   HostDescriptor* host;
+#if defined(__linux__) || defined(__linux)
   struct control* ui;
+#endif
 };
 
 PluginHandle
@@ -62,7 +66,9 @@ nekofilter_instantiate(
   }
 
   nekofilter_ptr->host = host;
+#if defined(__linux__) || defined(__linux)
   nekofilter_ptr->ui   = NULL;
+#endif
 
   if (!filter_create(host->get_sample_rate(host->handle), BANDS_COUNT, &nekofilter_ptr->filter))
   {
@@ -346,6 +352,7 @@ nekofilter_process(
   (void)midiEvents;
 }
 
+#if defined(__linux__) || defined(__linux)
 void nekofilter_ui_show(
   PluginHandle handle,
   bool show)
@@ -376,16 +383,19 @@ void nekofilter_ui_set_parameter_value(
   if (nekofilter_ptr->ui != NULL)
     nekoui_set_parameter_value(nekofilter_ptr->ui, index, value);
 }
+#endif
 
 void
 nekofilter_cleanup(
   PluginHandle handle)
 {
+#if defined(__linux__) || defined(__linux)
   if (nekofilter_ptr->ui != NULL)
   {
     nekoui_quit(nekofilter_ptr->ui);
     nekoui_cleanup(nekofilter_ptr->ui);
   }
+#endif
 
   filter_destroy(nekofilter_ptr->filter);
   free(nekofilter_ptr);

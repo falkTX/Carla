@@ -1818,9 +1818,10 @@ const char* RtApiCore :: getErrorCode( OSStatus code )
 // devices are available (i.e., the JACK server is not running), a
 // stream cannot be opened.
 
-#include <jack/jack.h>
+#include "jackbridge/JackBridge.hpp"
 #include <unistd.h>
 #include <cstdio>
+#include <pthread.h>
 
 // A structure to hold various information related to the Jack API
 // implementation.
@@ -1842,7 +1843,7 @@ static void jackSilentError( const char * ) {};
 RtApiJack :: RtApiJack()
 {
   // Nothing to do here.
-#if !defined(__RTAUDIO_DEBUG__)
+#if 0
   // Turn off Jack's internal error reporting.
   jack_set_error_function( &jackSilentError );
 #endif
@@ -1858,13 +1859,13 @@ unsigned int RtApiJack :: getDeviceCount( void )
   // See if we can become a jack client.
   jack_options_t options = (jack_options_t) ( JackNoStartServer ); //JackNullOption;
   jack_status_t *status = NULL;
-  jack_client_t *client = jack_client_open( "RtApiJackCount", options, status );
+  jack_client_t *client = jackbridge_client_open( "RtApiJackCount", options, status );
   if ( client == 0 ) return 0;
 
   const char **ports;
   std::string port, previousPort;
   unsigned int nChannels = 0, nDevices = 0;
-  ports = jack_get_ports( client, NULL, NULL, 0 );
+  ports = jackbridge_get_ports( client, NULL, NULL, 0 );
   if ( ports ) {
     // Parse the port names up to the first colon (:).
     size_t iColon = 0;
@@ -1882,7 +1883,7 @@ unsigned int RtApiJack :: getDeviceCount( void )
     free( ports );
   }
 
-  jack_client_close( client );
+  jackbridge_client_close( client );
   return nDevices;
 }
 
@@ -1893,7 +1894,7 @@ RtAudio::DeviceInfo RtApiJack :: getDeviceInfo( unsigned int device )
 
   jack_options_t options = (jack_options_t) ( JackNoStartServer ); //JackNullOption
   jack_status_t *status = NULL;
-  jack_client_t *client = jack_client_open( "RtApiJackInfo", options, status );
+  jack_client_t *client = jackbridge_client_open( "RtApiJackInfo", options, status );
   if ( client == 0 ) {
     errorText_ = "RtApiJack::getDeviceInfo: Jack server not found or connection error!";
     error( RtError::WARNING );
@@ -1903,7 +1904,7 @@ RtAudio::DeviceInfo RtApiJack :: getDeviceInfo( unsigned int device )
   const char **ports;
   std::string port, previousPort;
   unsigned int nPorts = 0, nDevices = 0;
-  ports = jack_get_ports( client, NULL, NULL, 0 );
+  ports = jackbridge_get_ports( client, NULL, NULL, 0 );
   if ( ports ) {
     // Parse the port names up to the first colon (:).
     size_t iColon = 0;
@@ -1923,7 +1924,7 @@ RtAudio::DeviceInfo RtApiJack :: getDeviceInfo( unsigned int device )
   }
 
   if ( device >= nDevices ) {
-    jack_client_close( client );
+    jackbridge_client_close( client );
     errorText_ = "RtApiJack::getDeviceInfo: device ID is invalid!";
     error( RtError::INVALID_USE );
     return info;
@@ -1931,12 +1932,12 @@ RtAudio::DeviceInfo RtApiJack :: getDeviceInfo( unsigned int device )
 
   // Get the current jack server sample rate.
   info.sampleRates.clear();
-  info.sampleRates.push_back( jack_get_sample_rate( client ) );
+  info.sampleRates.push_back( jackbridge_get_sample_rate( client ) );
 
   // Count the available ports containing the client name as device
   // channels.  Jack "input ports" equal RtAudio output channels.
   unsigned int nChannels = 0;
-  ports = jack_get_ports( client, info.name.c_str(), NULL, JackPortIsInput );
+  ports = jackbridge_get_ports( client, info.name.c_str(), NULL, JackPortIsInput );
   if ( ports ) {
     while ( ports[ nChannels ] ) nChannels++;
     free( ports );
@@ -1945,7 +1946,7 @@ RtAudio::DeviceInfo RtApiJack :: getDeviceInfo( unsigned int device )
 
   // Jack "output ports" equal RtAudio input channels.
   nChannels = 0;
-  ports = jack_get_ports( client, info.name.c_str(), NULL, JackPortIsOutput );
+  ports = jackbridge_get_ports( client, info.name.c_str(), NULL, JackPortIsOutput );
   if ( ports ) {
     while ( ports[ nChannels ] ) nChannels++;
     free( ports );
@@ -1953,7 +1954,7 @@ RtAudio::DeviceInfo RtApiJack :: getDeviceInfo( unsigned int device )
   }
 
   if ( info.outputChannels == 0 && info.inputChannels == 0 ) {
-    jack_client_close(client);
+    jackbridge_client_close(client);
     errorText_ = "RtApiJack::getDeviceInfo: error determining Jack input/output channels!";
     error( RtError::WARNING );
     return info;
@@ -1972,7 +1973,7 @@ RtAudio::DeviceInfo RtApiJack :: getDeviceInfo( unsigned int device )
   if ( device == 0 && info.inputChannels > 0 )
     info.isDefaultInput = true;
 
-  jack_client_close(client);
+  jackbridge_client_close(client);
   info.probed = true;
   return info;
 }
@@ -1999,6 +2000,9 @@ static void *jackCloseStream( void *ptr )
   object->closeStream();
 
   pthread_exit( NULL );
+#ifdef CARLA_OS_WIN
+  return NULL;
+#endif
 }
 static void jackShutdown( void *infoPointer )
 {
@@ -2012,7 +2016,7 @@ static void jackShutdown( void *infoPointer )
   // other problem occurred and we should close the stream.
   if ( object->isStreamRunning() == false ) return;
 
-  ThreadHandle threadId;
+  pthread_t threadId;
   pthread_create( &threadId, NULL, jackCloseStream, info );
   std::cerr << "\nRtApiJack: the Jack server is shutting down this client ... stream stopped and closed!!\n" << std::endl;
 }
@@ -2040,9 +2044,9 @@ bool RtApiJack :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigne
     jack_options_t jackoptions = (jack_options_t) ( JackNoStartServer ); //JackNullOption;
     jack_status_t *status = NULL;
     if ( options && !options->streamName.empty() )
-      client = jack_client_open( options->streamName.c_str(), jackoptions, status );
+      client = jackbridge_client_open( options->streamName.c_str(), jackoptions, status );
     else
-      client = jack_client_open( "RtApiJack", jackoptions, status );
+      client = jackbridge_client_open( "RtApiJack", jackoptions, status );
     if ( client == 0 ) {
       errorText_ = "RtApiJack::probeDeviceOpen: Jack server not found or connection error!";
       error( RtError::WARNING );
@@ -2057,7 +2061,7 @@ bool RtApiJack :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigne
   const char **ports;
   std::string port, previousPort, deviceName;
   unsigned int nPorts = 0, nDevices = 0;
-  ports = jack_get_ports( client, NULL, NULL, 0 );
+  ports = jackbridge_get_ports( client, NULL, NULL, 0 );
   if ( ports ) {
     // Parse the port names up to the first colon (:).
     size_t iColon = 0;
@@ -2086,7 +2090,7 @@ bool RtApiJack :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigne
   unsigned int nChannels = 0;
   unsigned long flag = JackPortIsInput;
   if ( mode == INPUT ) flag = JackPortIsOutput;
-  ports = jack_get_ports( client, deviceName.c_str(), NULL, flag );
+  ports = jackbridge_get_ports( client, deviceName.c_str(), NULL, flag );
   if ( ports ) {
     while ( ports[ nChannels ] ) nChannels++;
     free( ports );
@@ -2100,9 +2104,9 @@ bool RtApiJack :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigne
   }
 
   // Check the jack server sample rate.
-  unsigned int jackRate = jack_get_sample_rate( client );
+  unsigned int jackRate = jackbridge_get_sample_rate( client );
   if ( sampleRate != jackRate ) {
-    jack_client_close( client );
+    jackbridge_client_close( client );
     errorStream_ << "RtApiJack::probeDeviceOpen: the requested sample rate (" << sampleRate << ") is different than the JACK server rate (" << jackRate << ").";
     errorText_ = errorStream_.str();
     return FAILURE;
@@ -2110,17 +2114,17 @@ bool RtApiJack :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigne
   stream_.sampleRate = jackRate;
 
   // Get the latency of the JACK port.
-  ports = jack_get_ports( client, deviceName.c_str(), NULL, flag );
+  ports = jackbridge_get_ports( client, deviceName.c_str(), NULL, flag );
   if ( ports[ firstChannel ] ) {
     // Added by Ge Wang
     jack_latency_callback_mode_t cbmode = (mode == INPUT ? JackCaptureLatency : JackPlaybackLatency);
     // the range (usually the min and max are equal)
     jack_latency_range_t latrange; latrange.min = latrange.max = 0;
     // get the latency range
-    jack_port_get_latency_range( jack_port_by_name( client, ports[firstChannel] ), cbmode, &latrange );
+    jackbridge_port_get_latency_range( jackbridge_port_by_name( client, ports[firstChannel] ), cbmode, &latrange );
     // be optimistic, use the min!
     stream_.latency[mode] = latrange.min;
-    //stream_.latency[mode] = jack_port_get_latency( jack_port_by_name( client, ports[ firstChannel ] ) );
+    //stream_.latency[mode] = jackbridge_port_get_latency( jackbridge_port_by_name( client, ports[ firstChannel ] ) );
   }
   free( ports );
 
@@ -2139,7 +2143,7 @@ bool RtApiJack :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigne
 
   // Get the buffer size.  The buffer size and number of buffers
   // (periods) is set when the jack server is started.
-  stream_.bufferSize = (int) jack_get_buffer_size( client );
+  stream_.bufferSize = (int) jackbridge_get_buffer_size( client );
   *bufferSize = stream_.bufferSize;
 
   stream_.nDeviceChannels[mode] = channels;
@@ -2222,9 +2226,9 @@ bool RtApiJack :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigne
     stream_.mode = DUPLEX;
   else {
     stream_.mode = mode;
-    jack_set_process_callback( handle->client, jackCallbackHandler, (void *) &stream_.callbackInfo );
-    jack_set_xrun_callback( handle->client, jackXrun, (void *) &handle );
-    jack_on_shutdown( handle->client, jackShutdown, (void *) &stream_.callbackInfo );
+    jackbridge_set_process_callback( handle->client, jackCallbackHandler, (void *) &stream_.callbackInfo );
+    jackbridge_set_xrun_callback( handle->client, jackXrun, (void *) &handle );
+    jackbridge_on_shutdown( handle->client, jackShutdown, (void *) &stream_.callbackInfo );
   }
 
   // Register our ports.
@@ -2232,14 +2236,14 @@ bool RtApiJack :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigne
   if ( mode == OUTPUT ) {
     for ( unsigned int i=0; i<stream_.nUserChannels[0]; i++ ) {
       snprintf( label, 64, "outport %d", i );
-      handle->ports[0][i] = jack_port_register( handle->client, (const char *)label,
+      handle->ports[0][i] = jackbridge_port_register( handle->client, (const char *)label,
                                                 JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0 );
     }
   }
   else {
     for ( unsigned int i=0; i<stream_.nUserChannels[1]; i++ ) {
       snprintf( label, 64, "inport %d", i );
-      handle->ports[1][i] = jack_port_register( handle->client, (const char *)label,
+      handle->ports[1][i] = jackbridge_port_register( handle->client, (const char *)label,
                                                 JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0 );
     }
   }
@@ -2254,7 +2258,7 @@ bool RtApiJack :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigne
  error:
   if ( handle ) {
     pthread_cond_destroy( &handle->condition );
-    jack_client_close( handle->client );
+    jackbridge_client_close( handle->client );
 
     if ( handle->ports[0] ) free( handle->ports[0] );
     if ( handle->ports[1] ) free( handle->ports[1] );
@@ -2290,9 +2294,9 @@ void RtApiJack :: closeStream( void )
   if ( handle ) {
 
     if ( stream_.state == STREAM_RUNNING )
-      jack_deactivate( handle->client );
+      jackbridge_deactivate( handle->client );
 
-    jack_client_close( handle->client );
+    jackbridge_client_close( handle->client );
   }
 
   if ( handle ) {
@@ -2329,7 +2333,7 @@ void RtApiJack :: startStream( void )
   }
 
   JackHandle *handle = (JackHandle *) stream_.apiHandle;
-  int result = jack_activate( handle->client );
+  int result = jackbridge_activate( handle->client );
   if ( result ) {
     errorText_ = "RtApiJack::startStream(): unable to activate JACK client!";
     goto unlock;
@@ -2340,7 +2344,7 @@ void RtApiJack :: startStream( void )
   // Get the list of available ports.
   if ( stream_.mode == OUTPUT || stream_.mode == DUPLEX ) {
     result = 1;
-    ports = jack_get_ports( handle->client, handle->deviceName[0].c_str(), NULL, JackPortIsInput);
+    ports = jackbridge_get_ports( handle->client, handle->deviceName[0].c_str(), NULL, JackPortIsInput);
     if ( ports == NULL) {
       errorText_ = "RtApiJack::startStream(): error determining available JACK input ports!";
       goto unlock;
@@ -2352,7 +2356,7 @@ void RtApiJack :: startStream( void )
     for ( unsigned int i=0; i<stream_.nUserChannels[0]; i++ ) {
       result = 1;
       if ( ports[ stream_.channelOffset[0] + i ] )
-        result = jack_connect( handle->client, jack_port_name( handle->ports[0][i] ), ports[ stream_.channelOffset[0] + i ] );
+        result = jackbridge_connect( handle->client, jackbridge_port_name( handle->ports[0][i] ), ports[ stream_.channelOffset[0] + i ] );
       if ( result ) {
         free( ports );
         errorText_ = "RtApiJack::startStream(): error connecting output ports!";
@@ -2364,7 +2368,7 @@ void RtApiJack :: startStream( void )
 
   if ( stream_.mode == INPUT || stream_.mode == DUPLEX ) {
     result = 1;
-    ports = jack_get_ports( handle->client, handle->deviceName[1].c_str(), NULL, JackPortIsOutput );
+    ports = jackbridge_get_ports( handle->client, handle->deviceName[1].c_str(), NULL, JackPortIsOutput );
     if ( ports == NULL) {
       errorText_ = "RtApiJack::startStream(): error determining available JACK output ports!";
       goto unlock;
@@ -2374,7 +2378,7 @@ void RtApiJack :: startStream( void )
     for ( unsigned int i=0; i<stream_.nUserChannels[1]; i++ ) {
       result = 1;
       if ( ports[ stream_.channelOffset[1] + i ] )
-        result = jack_connect( handle->client, ports[ stream_.channelOffset[1] + i ], jack_port_name( handle->ports[1][i] ) );
+        result = jackbridge_connect( handle->client, ports[ stream_.channelOffset[1] + i ], jackbridge_port_name( handle->ports[1][i] ) );
       if ( result ) {
         free( ports );
         errorText_ = "RtApiJack::startStream(): error connecting input ports!";
@@ -2407,11 +2411,15 @@ void RtApiJack :: stopStream( void )
 
     if ( handle->drainCounter == 0 ) {
       handle->drainCounter = 2;
+#ifdef CARLA_OS_WIN // FIXME
+      Sleep(500); //ms
+#else
       pthread_cond_wait( &handle->condition, &stream_.mutex ); // block until signaled
+#endif
     }
   }
 
-  jack_deactivate( handle->client );
+  jackbridge_deactivate( handle->client );
   stream_.state = STREAM_STOPPED;
 }
 
@@ -2433,7 +2441,7 @@ void RtApiJack :: abortStream( void )
 // This function will be called by a spawned thread when the user
 // callback function signals that the stream should be stopped or
 // aborted.  It is necessary to handle it this way because the
-// callbackEvent() function must return before the jack_deactivate()
+// callbackEvent() function must return before the jackbridge_deactivate()
 // function will return.
 static void *jackStopStream( void *ptr )
 {
@@ -2442,6 +2450,9 @@ static void *jackStopStream( void *ptr )
 
   object->stopStream();
   pthread_exit( NULL );
+#ifdef CARLA_OS_WIN
+  return NULL;
+#endif
 }
 
 bool RtApiJack :: callbackEvent( unsigned long nframes )
@@ -2463,7 +2474,7 @@ bool RtApiJack :: callbackEvent( unsigned long nframes )
 
   // Check if we were draining the stream and signal is finished.
   if ( handle->drainCounter > 3 ) {
-    ThreadHandle threadId;
+    pthread_t threadId;
 
     stream_.state = STREAM_STOPPING;
     if ( handle->internalDrain == true )
@@ -2491,7 +2502,7 @@ bool RtApiJack :: callbackEvent( unsigned long nframes )
     if ( cbReturnValue == 2 ) {
       stream_.state = STREAM_STOPPING;
       handle->drainCounter = 2;
-      ThreadHandle id;
+      pthread_t id;
       pthread_create( &id, NULL, jackStopStream, info );
       return SUCCESS;
     }
@@ -2508,7 +2519,7 @@ bool RtApiJack :: callbackEvent( unsigned long nframes )
     if ( handle->drainCounter > 1 ) { // write zeros to the output stream
 
       for ( unsigned int i=0; i<stream_.nDeviceChannels[0]; i++ ) {
-        jackbuffer = (jack_default_audio_sample_t *) jack_port_get_buffer( handle->ports[0][i], (jack_nframes_t) nframes );
+        jackbuffer = (jack_default_audio_sample_t *) jackbridge_port_get_buffer( handle->ports[0][i], (jack_nframes_t) nframes );
         memset( jackbuffer, 0, bufferBytes );
       }
 
@@ -2518,13 +2529,13 @@ bool RtApiJack :: callbackEvent( unsigned long nframes )
       convertBuffer( stream_.deviceBuffer, stream_.userBuffer[0], stream_.convertInfo[0] );
 
       for ( unsigned int i=0; i<stream_.nDeviceChannels[0]; i++ ) {
-        jackbuffer = (jack_default_audio_sample_t *) jack_port_get_buffer( handle->ports[0][i], (jack_nframes_t) nframes );
+        jackbuffer = (jack_default_audio_sample_t *) jackbridge_port_get_buffer( handle->ports[0][i], (jack_nframes_t) nframes );
         memcpy( jackbuffer, &stream_.deviceBuffer[i*bufferBytes], bufferBytes );
       }
     }
     else { // no buffer conversion
       for ( unsigned int i=0; i<stream_.nUserChannels[0]; i++ ) {
-        jackbuffer = (jack_default_audio_sample_t *) jack_port_get_buffer( handle->ports[0][i], (jack_nframes_t) nframes );
+        jackbuffer = (jack_default_audio_sample_t *) jackbridge_port_get_buffer( handle->ports[0][i], (jack_nframes_t) nframes );
         memcpy( jackbuffer, &stream_.userBuffer[0][i*bufferBytes], bufferBytes );
       }
     }
@@ -2539,14 +2550,14 @@ bool RtApiJack :: callbackEvent( unsigned long nframes )
 
     if ( stream_.doConvertBuffer[1] ) {
       for ( unsigned int i=0; i<stream_.nDeviceChannels[1]; i++ ) {
-        jackbuffer = (jack_default_audio_sample_t *) jack_port_get_buffer( handle->ports[1][i], (jack_nframes_t) nframes );
+        jackbuffer = (jack_default_audio_sample_t *) jackbridge_port_get_buffer( handle->ports[1][i], (jack_nframes_t) nframes );
         memcpy( &stream_.deviceBuffer[i*bufferBytes], jackbuffer, bufferBytes );
       }
       convertBuffer( stream_.userBuffer[1], stream_.deviceBuffer, stream_.convertInfo[1] );
     }
     else { // no buffer conversion
       for ( unsigned int i=0; i<stream_.nUserChannels[1]; i++ ) {
-        jackbuffer = (jack_default_audio_sample_t *) jack_port_get_buffer( handle->ports[1][i], (jack_nframes_t) nframes );
+        jackbuffer = (jack_default_audio_sample_t *) jackbridge_port_get_buffer( handle->ports[1][i], (jack_nframes_t) nframes );
         memcpy( &stream_.userBuffer[1][i*bufferBytes], jackbuffer, bufferBytes );
       }
     }

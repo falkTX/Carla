@@ -57,12 +57,21 @@ static const PluginDescriptor nekofilterDesc = {
     .set_midi_program    = NULL,
     .set_custom_data     = NULL,
 
+#if defined(__linux__) || defined(__linux)
     .ui_show = nekofilter_ui_show,
     .ui_idle = nekofilter_ui_idle,
 
     .ui_set_parameter_value = nekofilter_ui_set_parameter_value,
     .ui_set_midi_program    = NULL,
     .ui_set_custom_data     = NULL,
+#else
+    .ui_show = NULL,
+    .ui_idle = NULL,
+
+    .ui_set_parameter_value = NULL,
+    .ui_set_midi_program    = NULL,
+    .ui_set_custom_data     = NULL,
+#endif
 
     .activate   = NULL,
     .deactivate = NULL,

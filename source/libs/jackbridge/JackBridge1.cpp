@@ -42,6 +42,7 @@ typedef int  (*jacksym_set_port_registration_callback)(jack_client_t*, JackPortR
 typedef int  (*jacksym_set_port_connect_callback)(jack_client_t*, JackPortConnectCallback, void*);
 typedef int  (*jacksym_set_port_rename_callback)(jack_client_t*, JackPortRenameCallback, void*);
 typedef int  (*jacksym_set_latency_callback)(jack_client_t*, JackLatencyCallback, void*);
+typedef int  (*jacksym_set_xrun_callback)(jack_client_t*, JackXRunCallback, void*);
 
 typedef jack_nframes_t (*jacksym_get_sample_rate)(jack_client_t*);
 typedef jack_nframes_t (*jacksym_get_buffer_size)(jack_client_t*);
@@ -104,6 +105,7 @@ struct JackBridge {
     jacksym_set_port_connect_callback set_port_connect_callback_ptr;
     jacksym_set_port_rename_callback set_port_rename_callback_ptr;
     jacksym_set_latency_callback set_latency_callback_ptr;
+    jacksym_set_xrun_callback set_xrun_callback_ptr;
     jacksym_get_sample_rate get_sample_rate_ptr;
     jacksym_get_buffer_size get_buffer_size_ptr;
     jacksym_port_register port_register_ptr;
@@ -157,6 +159,7 @@ struct JackBridge {
           set_port_connect_callback_ptr(nullptr),
           set_port_rename_callback_ptr(nullptr),
           set_latency_callback_ptr(nullptr),
+          set_xrun_callback_ptr(nullptr),
           get_sample_rate_ptr(nullptr),
           get_buffer_size_ptr(nullptr),
           port_register_ptr(nullptr),
@@ -229,6 +232,7 @@ struct JackBridge {
         LIB_SYMBOL(set_port_connect_callback)
         LIB_SYMBOL(set_port_rename_callback)
         LIB_SYMBOL(set_latency_callback)
+        LIB_SYMBOL(set_xrun_callback)
         LIB_SYMBOL(get_sample_rate)
         LIB_SYMBOL(get_buffer_size)
         LIB_SYMBOL(port_register)
@@ -516,6 +520,19 @@ bool jackbridge_set_latency_callback(jack_client_t* client, JackLatencyCallback 
 #else
     if (bridge.set_latency_callback_ptr != nullptr)
         return (bridge.set_latency_callback_ptr(client, latency_callback, arg) == 0);
+    return false;
+#endif
+}
+
+bool jackbridge_set_xrun_callback(jack_client_t* client, JackXRunCallback xrun_callback, void* arg)
+{
+#if JACKBRIDGE_DUMMY
+    return false;
+#elif JACKBRIDGE_DIRECT
+    return (jack_set_xrun_callback(client, xrun_callback, arg) == 0);
+#else
+    if (bridge.set_xrun_callback_ptr != nullptr)
+        return (bridge.set_xrun_callback_ptr(client, xrun_callback, arg) == 0);
     return false;
 #endif
 }
