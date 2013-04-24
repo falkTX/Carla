@@ -21,7 +21,7 @@ endif
 
 ifeq ($(CARLA_RTAUDIO_SUPPORT),true)
 BUILD_CXX_FLAGS += -DHAVE_GETTIMEOFDAY
-BUILD_CXX_FLAGS += -Irtaudio-4.0.11 -Irtaudio-4.0.11/include -Irtmidi-2.0.1
+BUILD_CXX_FLAGS += -Irtaudio-4.0.12 -Irtaudio-4.0.12/include -Irtmidi-2.0.1
 ifeq ($(DEBUG),true)
 BUILD_CXX_FLAGS += -D__RTAUDIO_DEBUG__ -D__RTMIDI_DEBUG__
 endif
@@ -62,15 +62,15 @@ OBJS  = \
 
 ifeq ($(CARLA_RTAUDIO_SUPPORT),true)
 OBJS += \
-	rtaudio-4.0.11/RtAudio.cpp.o \
+	rtaudio-4.0.12/RtAudio.cpp.o \
 	rtmidi-2.0.1/RtMidi.cpp.o
 
 ifeq ($(WIN32),true)
 OBJS += \
-	rtaudio-4.0.11/include/asio.cpp.o \
-	rtaudio-4.0.11/include/asiodrivers.cpp.o \
-	rtaudio-4.0.11/include/asiolist.cpp.o \
-	rtaudio-4.0.11/include/iasiothiscallresolver.cpp.o
+	rtaudio-4.0.12/include/asio.cpp.o \
+	rtaudio-4.0.12/include/asiodrivers.cpp.o \
+	rtaudio-4.0.12/include/asiolist.cpp.o \
+	rtaudio-4.0.12/include/iasiothiscallresolver.cpp.o
 endif
 endif
 

@@ -1,0 +1,51 @@
+/*! \mainpage The RtAudio Home Page
+
+RtAudio is a set of C++ classes that provide a common API (Application Programming Interface) for realtime audio input/output across Linux, Macintosh OS-X and Windows operating systems.  RtAudio significantly simplifies the process of interacting with computer audio hardware.  It was designed with the following objectives:
+
+<UL>
+  <LI>object-oriented C++ design</LI>
+  <LI>simple, common API across all supported platforms</LI>
+  <LI>only one source and two header files for easy inclusion in programming projects</LI>
+  <LI>allow simultaneous multi-api support</LI>
+  <LI>support dynamic connection of devices</LI>
+  <LI>provide extensive audio device parameter control</LI>
+  <LI>allow audio device capability probing</LI>
+  <LI>automatic internal conversion for data format, channel number compensation, (de)interleaving, and byte-swapping</LI>
+</UL>
+
+RtAudio incorporates the concept of audio streams, which represent audio output (playback) and/or input (recording).  Available audio devices and their capabilities can be enumerated and then specified when opening a stream.  Where applicable, multiple API support can be compiled and a particular API specified when creating an RtAudio instance.  See the \ref apinotes section for information specific to each of the supported audio APIs.
+
+\section whatsnew Latest Updates (Version 4.0.12)
+
+- new functionality to allow error reporting via a client-supplied function (thanks to Pavel Mogilevskiy)
+- new function to return the version number
+- updated RtAudio.cpp and ASIO files for UNICODE support (thanks to Renaud Schoonbroodt)
+- updates to PulseAudio API support (thanks to Peter Meerwald and Tristan Matthews)
+- updates for pkg-config support in configure script
+- 24-bit format changed to true 24-bit format, not sub-bytes of 32-bits (thanks to Marc Britton)
+- bug fixes to make sure stream status is closed if error during probeDeviceOpen
+- updates / fixes to SCHED_RR code in ALSA (thanks to Marc Lindahl)
+- various changes to avoid global variables (thanks to Martin Koegler)
+
+\section download Download
+
+Latest Release (16 April 2013): <A href="http://www.music.mcgill.ca/~gary/rtaudio/release/rtaudio-4.0.12.tar.gz">Version 4.0.12</A>
+
+\section documentation Documentation Links
+
+-# \ref errors
+-# \ref probe
+-# \ref settings
+-# \ref playback
+-# \ref recording
+-# \ref duplex
+-# \ref multi
+-# \ref compiling
+-# \ref apinotes
+-# \ref acknowledge
+-# \ref license
+-# <A href="bugs.html">Bug Tracker</A>
+-# <A href="updates.html">Possible Updates</A>
+-# <A href="http://sourceforge.net/projects/rtaudio">RtAudio at SourceForge</A>
+
+*/
