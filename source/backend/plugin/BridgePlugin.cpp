@@ -1278,7 +1278,6 @@ public:
     {
         CARLA_ASSERT(kData->engine != nullptr);
         CARLA_ASSERT(kData->client == nullptr);
-        CARLA_ASSERT(filename != nullptr);
 
         // ---------------------------------------------------------------
         // first checks
@@ -1291,12 +1290,6 @@ public:
         if (kData->client != nullptr)
         {
             kData->engine->setLastError("Plugin client is already registered");
-            return false;
-        }
-
-        if (filename == nullptr)
-        {
-            kData->engine->setLastError("null filename");
             return false;
         }
 

@@ -887,9 +887,6 @@ You can disable these checks to get a faster scanning time (at your own risk).</
             </item>
             <item>
              <widget class="QCheckBox" name="ch_engine_prefer_plugin_bridges">
-              <property name="enabled">
-               <bool>false</bool>
-              </property>
               <property name="toolTip">
                <string>Whenever possible, run the plugins in bridge mode.</string>
               </property>

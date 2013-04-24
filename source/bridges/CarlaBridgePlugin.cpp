@@ -545,9 +545,6 @@ int main(int argc, char* argv[])
         {
             client.sendOscUpdate();
             client.sendOscBridgeUpdate();
-
-            // test
-            carla_set_active(0, true);
         }
         else
         {
