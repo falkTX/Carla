@@ -101,7 +101,9 @@ private:
     int handleMsgControl(CARLA_BRIDGE_OSC_HANDLE_ARGS);
     int handleMsgProgram(CARLA_BRIDGE_OSC_HANDLE_ARGS);
     int handleMsgMidiProgram(CARLA_BRIDGE_OSC_HANDLE_ARGS);
+#ifndef BUILD_BRIDGE_PLUGIN
     int handleMsgMidi(CARLA_BRIDGE_OSC_HANDLE_ARGS);
+#endif
     int handleMsgShow();
     int handleMsgHide();
     int handleMsgQuit();

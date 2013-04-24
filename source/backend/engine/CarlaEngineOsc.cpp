@@ -532,6 +532,14 @@ int CarlaEngineOsc::handleMsgMidi(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     carla_debug("CarlaEngineOsc::handleMsgMidi()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(1, "m");
 
+#ifdef BUILD_BRIDGE
+    CARLA_ASSERT(false); // this should never happen
+    return 1;
+
+    // unused
+    (void)plugin;
+    (void)argv;
+#else
     if (plugin->midiInCount() == 0)
     {
         carla_stderr("CarlaEngineOsc::handleMsgMidi() - recived midi when plugin has no midi inputs");
@@ -574,6 +582,7 @@ int CarlaEngineOsc::handleMsgMidi(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     }
 
     return 0;
+#endif
 }
 
 int CarlaEngineOsc::handleMsgExiting(CARLA_ENGINE_OSC_HANDLE_ARGS1)

@@ -923,6 +923,7 @@ public:
 
                     case kEngineControlEventTypeParameter:
                     {
+#ifndef BUILD_BRIDGE
                         // Control backend stuff
                         if (event.channel == kData->ctrlChannel)
                         {
@@ -972,6 +973,7 @@ public:
                                 continue;
                             }
                         }
+#endif
 
                         // Control plugin parameters
                         for (k=0; k < kData->param.count; ++k)
@@ -1011,11 +1013,13 @@ public:
                         break;
 
                     case kEngineControlEventTypeAllSoundOff:
+#ifndef BUILD_BRIDGE
                         if (event.channel == kData->ctrlChannel)
                         {
                             postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_ACTIVE, 0, 0.0f);
                             postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_ACTIVE, 0, 1.0f);
                         }
+#endif
                         break;
 
                     case kEngineControlEventTypeAllNotesOff:
@@ -1133,6 +1137,7 @@ public:
         if (fHandle2 != nullptr)
             fDescriptor->run(fHandle2, frames);
 
+#ifndef BUILD_BRIDGE
         // --------------------------------------------------------------------------------------------------------
         // Post-processing (dry/wet, volume and balance)
 
@@ -1208,6 +1213,7 @@ public:
             }
 #endif
         } // End of Post-processing
+#endif
 
         // --------------------------------------------------------------------------------------------------------
 

@@ -317,25 +317,6 @@ public:
             fPlugin->setMidiProgram(index, true, true, false);
     }
 
-    void noteOn(const uint8_t channel, const uint8_t note, const uint8_t velo)
-    {
-        carla_debug("CarlaPluginClient::noteOn(%i, %i, %i)", channel, note, velo);
-        CARLA_ASSERT(fPlugin != nullptr);
-        CARLA_ASSERT(velo > 0);
-
-        if (fPlugin != nullptr)
-            fPlugin->sendMidiSingleNote(channel, note, velo, true, true, false);
-    }
-
-    void noteOff(const uint8_t channel, const uint8_t note)
-    {
-        carla_debug("CarlaPluginClient::noteOff(%i, %i)", channel, note);
-        CARLA_ASSERT(fPlugin != nullptr);
-
-        if (fPlugin != nullptr)
-            fPlugin->sendMidiSingleNote(channel, note, 0, true, true, false);
-    }
-
 protected:
     void handleCallback(const CarlaBackend::CallbackType action, const int value1, const int value2, const float value3, const char* const valueStr)
     {

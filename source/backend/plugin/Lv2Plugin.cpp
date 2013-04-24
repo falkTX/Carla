@@ -2476,6 +2476,7 @@ public:
 
                     case kEngineControlEventTypeParameter:
                     {
+#ifndef BUILD_BRIDGE
                         // Control backend stuff
                         if (event.channel == kData->ctrlChannel)
                         {
@@ -2525,6 +2526,7 @@ public:
                                 continue;
                             }
                         }
+#endif
 
                         // Control plugin parameters
                         for (k=0; k < kData->param.count; ++k)
@@ -2586,7 +2588,7 @@ public:
                         {
                             if (! allNotesOffSent)
                             {
-                                sendMidiAllNotesOff();
+                                sendMidiAllNotesOffToCallback();
                                 allNotesOffSent = true;
                             }
 
@@ -2598,7 +2600,6 @@ public:
                         {
                             // TODO
                         }
-
                         break;
 
                     case kEngineControlEventTypeAllNotesOff:
@@ -2607,7 +2608,7 @@ public:
                             if (! allNotesOffSent)
                             {
                                 allNotesOffSent = true;
-                                sendMidiAllNotesOff();
+                                sendMidiAllNotesOffToCallback();
                             }
                         }
 
@@ -2615,7 +2616,6 @@ public:
                         {
                             // TODO
                         }
-
                         break;
                     }
 
@@ -2624,7 +2624,7 @@ public:
 
                 case kEngineEventTypeMidi:
                 {
-                    const EngineMidiEvent& midiEvent = event.midi;
+                    const EngineMidiEvent& midiEvent(event.midi);
 
                     uint8_t status  = MIDI_GET_STATUS_FROM_DATA(midiEvent.data);
                     uint8_t channel = event.channel;
@@ -2799,6 +2799,7 @@ public:
         if (fHandle2 != nullptr)
             fDescriptor->run(fHandle2, frames);
 
+#ifndef BUILD_BRIDGE
         // --------------------------------------------------------------------------------------------------------
         // Post-processing (dry/wet, volume and balance)
 
@@ -2874,6 +2875,7 @@ public:
             }
 #endif
         } // End of Post-processing
+#endif
 
         // --------------------------------------------------------------------------------------------------------
 

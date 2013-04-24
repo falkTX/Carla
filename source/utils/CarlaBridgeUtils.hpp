@@ -52,14 +52,35 @@ enum PluginBridgeInfoType {
 };
 
 enum PluginBridgeOpcode {
-    kPluginBridgeOpcodeNull          = 0,
-    kPluginBridgeOpcodeReadyWait     = 1,
-    kPluginBridgeOpcodeSetBufferSize = 2,
-    kPluginBridgeOpcodeSetSampleRate = 3,
-    kPluginBridgeOpcodeSetParameter  = 4,
-    kPluginBridgeOpcodeProcess       = 5,
-    kPluginBridgeOpcodeQuit          = 6
+    kPluginBridgeOpcodeNull           = 0,
+    kPluginBridgeOpcodeReadyWait      = 1,
+    kPluginBridgeOpcodeSetBufferSize  = 2,
+    kPluginBridgeOpcodeSetSampleRate  = 3,
+    kPluginBridgeOpcodeSetParameter   = 4,
+    kPluginBridgeOpcodeSetProgram     = 5,
+    kPluginBridgeOpcodeSetMidiProgram = 6,
+    kPluginBridgeOpcodeProcess        = 7,
+    kPluginBridgeOpcodeQuit           = 8
 };
+
+/*!
+ * @defgroup BridgeMessages Bridge Messages
+ *
+ * Various bridge related messages, used as configure(<message>, value).
+ * \note This is for internal use only.
+ *
+ * TODO: Review these, may not be needed anymore
+ * @{
+ */
+const char* const CARLA_BRIDGE_MSG_HIDE_GUI   = "CarlaBridgeHideGUI";   //!< Plugin -> Host call, tells host GUI is now hidden
+const char* const CARLA_BRIDGE_MSG_SAVED      = "CarlaBridgeSaved";     //!< Plugin -> Host call, tells host state is saved
+#if 0
+const char* const CARLA_BRIDGE_MSG_SAVE_NOW   = "CarlaBridgeSaveNow";   //!< Host -> Plugin call, tells plugin to save state now
+const char* const CARLA_BRIDGE_MSG_SET_CHUNK  = "CarlaBridgeSetChunk";  //!< Host -> Plugin call, tells plugin to set chunk in file \a value
+const char* const CARLA_BRIDGE_MSG_SET_CUSTOM = "CarlaBridgeSetCustom"; //!< Host -> Plugin call, tells plugin to set a custom data set using \a value ("type·key·rvalue").
+//If \a type is 'chunk' or 'binary' \a rvalue refers to chunk file.
+#endif
+/**@}*/
 
 /*!
  * TODO.

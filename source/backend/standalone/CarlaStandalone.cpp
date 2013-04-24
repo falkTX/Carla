@@ -1741,6 +1741,7 @@ void carla_set_active(unsigned int pluginId, bool onOff)
     carla_stderr2("carla_set_active(%i, %s) - could not find plugin", pluginId, bool2str(onOff));
 }
 
+#ifndef BUILD_BRIDGE
 void carla_set_drywet(unsigned int pluginId, float value)
 {
     carla_debug("carla_set_drywet(%i, %f)", pluginId, value);
@@ -1810,6 +1811,7 @@ void carla_set_panning(unsigned int pluginId, float value)
 
     carla_stderr2("carla_set_panning(%i, %f) - could not find plugin", pluginId, value);
 }
+#endif
 
 void carla_set_ctrl_channel(unsigned int pluginId, int8_t channel)
 {
@@ -1847,6 +1849,7 @@ void carla_set_parameter_value(unsigned int pluginId, uint32_t parameterId, floa
     carla_stderr2("carla_set_parameter_value(%i, %i, %f) - could not find plugin", pluginId, parameterId, value);
 }
 
+#ifndef BUILD_BRIDGE
 void carla_set_parameter_midi_channel(unsigned int pluginId, uint32_t parameterId, uint8_t channel)
 {
     carla_debug("carla_set_parameter_midi_channel(%i, %i, %i)", pluginId, parameterId, channel);
@@ -1904,6 +1907,7 @@ void carla_set_parameter_midi_cc(unsigned int pluginId, uint32_t parameterId, in
 
     carla_stderr2("carla_set_parameter_midi_cc(%i, %i, %i) - could not find plugin", pluginId, parameterId, cc);
 }
+#endif
 
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -1999,6 +2003,7 @@ void carla_prepare_for_save(unsigned int pluginId)
     carla_stderr2("carla_prepare_for_save(%i) - could not find plugin", pluginId);
 }
 
+#ifndef BUILD_BRIDGE
 void carla_send_midi_note(unsigned int pluginId, uint8_t channel, uint8_t note, uint8_t velocity)
 {
     carla_debug("carla_send_midi_note(%i, %i, %i, %i)", pluginId, channel, note, velocity);
@@ -2012,6 +2017,7 @@ void carla_send_midi_note(unsigned int pluginId, uint8_t channel, uint8_t note, 
 
     carla_stderr2("carla_send_midi_note(%i, %i, %i, %i) - could not find plugin", pluginId, channel, note, velocity);
 }
+#endif
 
 void carla_show_gui(unsigned int pluginId, bool yesno)
 {

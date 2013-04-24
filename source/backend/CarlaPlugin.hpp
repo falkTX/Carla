@@ -460,6 +460,7 @@ public:
      */
     void setActive(const bool active, const bool sendOsc, const bool sendCallback);
 
+#ifndef BUILD_BRIDGE
     /*!
      * Set the plugin's dry/wet signal value to \a value.\n
      * \a value must be between 0.0 and 1.0.
@@ -510,6 +511,7 @@ public:
      * \note Force-Stereo plugins only!
      */
     void setPanning(const float value, const bool sendOsc, const bool sendCallback);
+#endif
 
     /*!
      * Set the plugin's midi control channel.
@@ -548,6 +550,7 @@ public:
      */
     void setParameterValueByRealIndex(const int32_t rindex, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback);
 
+#ifndef BUILD_BRIDGE
     /*!
      * Set parameter's \a parameterId MIDI channel to \a channel.\n
      * \a channel must be between 0 and 15.
@@ -559,6 +562,7 @@ public:
      * \a cc must be between 0 and 95 (0x5F), or -1 for invalid.
      */
     void setParameterMidiCC(const uint32_t parameterId, int16_t cc, const bool sendOsc, const bool sendCallback);
+#endif
 
     /*!
      * Add a custom data set.\n
@@ -727,19 +731,21 @@ public:
     // -------------------------------------------------------------------
     // MIDI events
 
+#ifndef BUILD_BRIDGE
     /*!
      * Send a single midi note to be processed in the next audio callback.\n
      * A note with 0 velocity means note-off.
      * \note Non-RT call
      */
     void sendMidiSingleNote(const uint8_t channel, const uint8_t note, const uint8_t velo, const bool sendGui, const bool sendOsc, const bool sendCallback);
+#endif
 
     /*!
-     * Send all midi notes off for the next audio callback.\n
+     * Send all midi notes off to the host callback.\n
      * This doesn't send the actual MIDI All-Notes-Off event, but 128 note-offs instead (if ctrlChannel is valid).
      * \note RT call
      */
-    void sendMidiAllNotesOff();
+    void sendMidiAllNotesOffToCallback();
 
     // -------------------------------------------------------------------
     // Post-poned events

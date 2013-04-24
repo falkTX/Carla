@@ -17,7 +17,7 @@
 
 #include "CarlaPluginInternal.hpp"
 
-#if 1//ndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE
 
 #include "CarlaBridgeUtils.hpp"
 #include "CarlaShmUtils.hpp"
@@ -1103,20 +1103,12 @@ public:
             CARLA_ASSERT(value != nullptr);
 
             if (key == nullptr || value == nullptr)
-            {
-                // invalid
-                pass();
-            }
-#if 0
-            else if (std::strcmp(key, CARLA_BRIDGE_MSG_HIDE_GUI) == 0)
-            {
-                x_engine->callback(CALLBACK_SHOW_GUI, m_id, 0, 0, 0.0, nullptr);
-            }
+                break;
+
+            if (std::strcmp(key, CARLA_BRIDGE_MSG_HIDE_GUI) == 0)
+                kData->engine->callback(CALLBACK_SHOW_GUI, fId, 0, 0, 0.0f, nullptr);
             else if (std::strcmp(key, CARLA_BRIDGE_MSG_SAVED) == 0)
-            {
-                m_saved = true;
-            }
-#endif
+                fSaved = true;
 
             break;
         }
@@ -1128,10 +1120,15 @@ public:
             const int32_t index = argv[0]->i;
             const float   value = argv[1]->f;
 
-            CARLA_ASSERT(index != PARAMETER_NULL);
+            CARLA_ASSERT_INT2(index >= 0 && index < static_cast<int32_t>(kData->param.count), index, kData->param.count);
 
-            // FIXME ?
-            setParameterValueByRealIndex(index, value, false, true, true);
+            if (index >= 0 && static_cast<int32_t>(kData->param.count))
+            {
+                const float fixedValue(kData->param.fixValue(index, value));
+                fParams[index].value = fixedValue;
+
+                CarlaPlugin::setParameterValue(index, fixedValue, false, true, true);
+            }
 
             break;
         }
@@ -1310,6 +1307,7 @@ public:
             fName = kData->engine->getUniquePluginName(name);
 
         fFilename = filename;
+        fBridgeBinary = bridgeBinary;
 
         // ---------------------------------------------------------------
         // SHM Audio Pool
@@ -1443,8 +1441,6 @@ public:
             kData->engine->setLastError("Failed to register plugin client");
             return false;
         }
-
-        fBridgeBinary = bridgeBinary;
 
         return true;
     }

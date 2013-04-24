@@ -72,9 +72,9 @@ public:
     virtual void setMidiProgram(const uint32_t index) = 0;
 #else
     virtual void setMidiProgram(const uint32_t bank, const uint32_t program) = 0;
-#endif
     virtual void noteOn(const uint8_t channel, const uint8_t note, const uint8_t velo) = 0;
     virtual void noteOff(const uint8_t channel, const uint8_t note) = 0;
+#endif
 
     // ---------------------------------------------------------------------
     // osc stuff

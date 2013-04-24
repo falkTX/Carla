@@ -1108,6 +1108,7 @@ public:
 
                     case kEngineControlEventTypeParameter:
                     {
+#ifndef BUILD_BRIDGE
                         // Control backend stuff
                         if (event.channel == kData->ctrlChannel)
                         {
@@ -1187,7 +1188,7 @@ public:
                             setParameterValue(k, value, false, false, false);
                             postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 0, value);
                         }
-
+#endif
                         break;
                     }
 
@@ -1218,7 +1219,7 @@ public:
                         {
                             if (! allNotesOffSent)
                             {
-                                sendMidiAllNotesOff();
+                                sendMidiAllNotesOffToCallback();
                                 allNotesOffSent = true;
                             }
 
@@ -1241,7 +1242,6 @@ public:
 
                             midiEventCount += 1;
                         }
-
                         break;
 
                     case kEngineControlEventTypeAllNotesOff:
@@ -1250,7 +1250,7 @@ public:
                             if (! allNotesOffSent)
                             {
                                 allNotesOffSent = true;
-                                sendMidiAllNotesOff();
+                                sendMidiAllNotesOffToCallback();
                             }
                         }
 
@@ -1269,7 +1269,6 @@ public:
 
                             midiEventCount += 1;
                         }
-
                         break;
                     }
 
@@ -1281,7 +1280,7 @@ public:
                     if (midiEventCount >= MAX_MIDI_EVENTS)
                         continue;
 
-                    const EngineMidiEvent& midiEvent = event.midi;
+                    const EngineMidiEvent& midiEvent(event.midi);
 
                     uint8_t status  = MIDI_GET_STATUS_FROM_DATA(midiEvent.data);
                     uint8_t channel = event.channel;
@@ -1483,6 +1482,7 @@ public:
                 fDescriptor->run(fHandle2, frames);
         }
 
+#ifndef BUILD_BRIDGE
         // --------------------------------------------------------------------------------------------------------
         // Post-processing (dry/wet, volume and balance)
 
@@ -1558,6 +1558,7 @@ public:
             }
 #endif
         } // End of Post-processing
+#endif
 
         // --------------------------------------------------------------------------------------------------------
 

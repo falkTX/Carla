@@ -1021,6 +1021,7 @@ public:
 
                     case kEngineControlEventTypeParameter:
                     {
+#ifndef BUILD_BRIDGE
                         // Control backend stuff
                         if (event.channel == kData->ctrlChannel)
                         {
@@ -1070,6 +1071,7 @@ public:
                                 continue;
                             }
                         }
+#endif
 
                         // Control plugin parameters
                         for (k=0; k < kData->param.count; ++k)
@@ -1138,7 +1140,7 @@ public:
                         {
                             if (! allNotesOffSent)
                             {
-                                sendMidiAllNotesOff();
+                                sendMidiAllNotesOffToCallback();
                                 allNotesOffSent = true;
                             }
 
@@ -1161,7 +1163,7 @@ public:
                         {
                             if (! allNotesOffSent)
                             {
-                                sendMidiAllNotesOff();
+                                sendMidiAllNotesOffToCallback();
                                 allNotesOffSent = true;
                             }
 
@@ -1310,6 +1312,7 @@ public:
         else
             fluid_synth_write_float(fSynth, frames, outBuffer[0] + timeOffset, 0, 1, outBuffer[1] + timeOffset, 0, 1);
 
+#ifndef BUILD_BRIDGE
         // --------------------------------------------------------------------------------------------------------
         // Post-processing (volume and balance)
 
@@ -1362,6 +1365,7 @@ public:
             }
 
         } // End of Post-processing
+#endif
 
         // --------------------------------------------------------------------------------------------------------
 

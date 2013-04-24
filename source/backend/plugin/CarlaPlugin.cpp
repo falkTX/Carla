@@ -644,12 +644,15 @@ const SaveState& CarlaPlugin::getSaveState()
     // Internals
 
     saveState.active = kData->active;
+
+#ifndef BUILD_BRIDGE
     saveState.dryWet = kData->postProc.dryWet;
     saveState.volume = kData->postProc.volume;
     saveState.balanceLeft  = kData->postProc.balanceLeft;
     saveState.balanceRight = kData->postProc.balanceRight;
     saveState.panning      = kData->postProc.panning;
     saveState.ctrlChannel  = kData->ctrlChannel;
+#endif
 
     // ----------------------------
     // Chunk
@@ -907,8 +910,10 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
                 stateParameter->value *= sampleRate;
 
             setParameterValue(index, stateParameter->value, true, true, true);
+#ifndef BUILD_BRIDGE
             setParameterMidiCC(index, stateParameter->midiCC, true, true);
             setParameterMidiChannel(index, stateParameter->midiChannel, true, true);
+#endif
         }
         else
             carla_stderr("Could not set parameter data for '%s'", stateParameter->name);
@@ -940,12 +945,14 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
     // ---------------------------------------------------------------------
     // Part 6 - set internal stuff
 
+#ifndef BUILD_BRIDGE
     setDryWet(saveState.dryWet, true, true);
     setVolume(saveState.volume, true, true);
     setBalanceLeft(saveState.balanceLeft, true, true);
     setBalanceRight(saveState.balanceRight, true, true);
     setPanning(saveState.panning, true, true);
     setCtrlChannel(saveState.ctrlChannel, true, true);
+#endif
 
     setActive(saveState.active, true, true);
 }
@@ -1052,20 +1059,27 @@ void CarlaPlugin::setActive(const bool active, const bool sendOsc, const bool se
 
     kData->active = active;
 
-    const float value = active ? 1.0f : 0.0f;
+#ifndef BUILD_BRIDGE
+    const float value(active ? 1.0f : 0.0f);
 
-#ifdef BUILD_BRIDGE
-    if (fHints & PLUGIN_IS_BRIDGE)
-        osc_send_control(&kData->osc.data, PARAMETER_ACTIVE, value);
-#else
     if (sendOsc)
         kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_ACTIVE, value);
-#endif
 
     if (sendCallback)
         kData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, PARAMETER_ACTIVE, 0, value, nullptr);
+
+    if (fHints & PLUGIN_IS_BRIDGE)
+        osc_send_control(&kData->osc.data, PARAMETER_ACTIVE, value);
+#else
+    return;
+
+    // unused
+    (void)sendOsc;
+    (void)sendCallback;
+#endif
 }
 
+#ifndef BUILD_BRIDGE
 void CarlaPlugin::setDryWet(const float value, const bool sendOsc, const bool sendCallback)
 {
     CARLA_ASSERT(value >= 0.0f && value <= 1.0f);
@@ -1077,19 +1091,11 @@ void CarlaPlugin::setDryWet(const float value, const bool sendOsc, const bool se
 
     kData->postProc.dryWet = fixedValue;
 
-    if (sendOsc || sendCallback)
-    {
-#ifdef BUILD_BRIDGE
-        if (fHints & PLUGIN_IS_BRIDGE)
-            osc_send_control(&kData->osc.data, PARAMETER_DRYWET, fixedValue);
-#else
-        if (sendOsc)
-            kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_DRYWET, fixedValue);
-#endif
+    if (sendOsc)
+        kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_DRYWET, fixedValue);
 
-        if (sendCallback)
-            kData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, PARAMETER_DRYWET, 0, fixedValue, nullptr);
-    }
+    if (sendCallback)
+        kData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, PARAMETER_DRYWET, 0, fixedValue, nullptr);
 }
 
 void CarlaPlugin::setVolume(const float value, const bool sendOsc, const bool sendCallback)
@@ -1103,19 +1109,11 @@ void CarlaPlugin::setVolume(const float value, const bool sendOsc, const bool se
 
     kData->postProc.volume = fixedValue;
 
-    if (sendOsc || sendCallback)
-    {
-#ifdef BUILD_BRIDGE
-        if (fHints & PLUGIN_IS_BRIDGE)
-            osc_send_control(&kData->osc.data, PARAMETER_VOLUME, fixedValue);
-#else
-        if (sendOsc)
-            kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_VOLUME, fixedValue);
-#endif
+    if (sendOsc)
+        kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_VOLUME, fixedValue);
 
-        if (sendCallback)
-            kData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, PARAMETER_VOLUME, 0, fixedValue, nullptr);
-    }
+    if (sendCallback)
+        kData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, PARAMETER_VOLUME, 0, fixedValue, nullptr);
 }
 
 void CarlaPlugin::setBalanceLeft(const float value, const bool sendOsc, const bool sendCallback)
@@ -1129,19 +1127,11 @@ void CarlaPlugin::setBalanceLeft(const float value, const bool sendOsc, const bo
 
     kData->postProc.balanceLeft = fixedValue;
 
-    if (sendOsc || sendCallback)
-    {
-#ifdef BUILD_BRIDGE
-        if (fHints & PLUGIN_IS_BRIDGE)
-            osc_send_control(&kData->osc.data, PARAMETER_BALANCE_LEFT, fixedValue);
-#else
-        if (sendOsc)
-            kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_BALANCE_LEFT, fixedValue);
-#endif
+    if (sendOsc)
+        kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_BALANCE_LEFT, fixedValue);
 
-        if (sendCallback)
-            kData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, PARAMETER_BALANCE_LEFT, 0, fixedValue, nullptr);
-    }
+    if (sendCallback)
+        kData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, PARAMETER_BALANCE_LEFT, 0, fixedValue, nullptr);
 }
 
 void CarlaPlugin::setBalanceRight(const float value, const bool sendOsc, const bool sendCallback)
@@ -1155,19 +1145,11 @@ void CarlaPlugin::setBalanceRight(const float value, const bool sendOsc, const b
 
     kData->postProc.balanceRight = fixedValue;
 
-    if (sendOsc || sendCallback)
-    {
-#ifdef BUILD_BRIDGE
-        if (fHints & PLUGIN_IS_BRIDGE)
-            osc_send_control(&kData->osc.data, PARAMETER_BALANCE_RIGHT, fixedValue);
-#else
-        if (sendOsc)
-            kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_BALANCE_RIGHT, fixedValue);
-#endif
+    if (sendOsc)
+        kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_BALANCE_RIGHT, fixedValue);
 
-        if (sendCallback)
-            kData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, PARAMETER_BALANCE_RIGHT, 0, fixedValue, nullptr);
-    }
+    if (sendCallback)
+        kData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, PARAMETER_BALANCE_RIGHT, 0, fixedValue, nullptr);
 }
 
 void CarlaPlugin::setPanning(const float value, const bool sendOsc, const bool sendCallback)
@@ -1181,43 +1163,42 @@ void CarlaPlugin::setPanning(const float value, const bool sendOsc, const bool s
 
     kData->postProc.panning = fixedValue;
 
-    if (sendOsc || sendCallback)
-    {
-#ifdef BUILD_BRIDGE
-        if (fHints & PLUGIN_IS_BRIDGE)
-            osc_send_control(&kData->osc.data, PARAMETER_PANNING, fixedValue);
-#else
-        if (sendOsc)
-            kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_PANNING, fixedValue);
-#endif
+    if (sendOsc)
+        kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_PANNING, fixedValue);
 
-        if (sendCallback)
-            kData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, PARAMETER_PANNING, 0, fixedValue, nullptr);
-    }
+    if (sendCallback)
+        kData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, PARAMETER_PANNING, 0, fixedValue, nullptr);
 }
+#endif
 
 void CarlaPlugin::setCtrlChannel(const int8_t channel, const bool sendOsc, const bool sendCallback)
 {
+    CARLA_ASSERT(sendOsc || sendCallback); // never call this from RT
+    CARLA_ASSERT_INT(channel >= -1 && channel < MAX_MIDI_CHANNELS, channel);
+
     if (kData->ctrlChannel == channel)
         return;
 
     kData->ctrlChannel = channel;
 
-    if (sendOsc || sendCallback)
-    {
-        const float ctrlf = channel;
+#ifndef BUILD_BRIDGE
+    const float ctrlf(channel);
 
-#ifdef BUILD_BRIDGE
-        if (fHints & PLUGIN_IS_BRIDGE)
-            osc_send_control(&kData->osc.data, PARAMETER_CTRL_CHANNEL, ctrlf);
+    if (sendOsc)
+        kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_CTRL_CHANNEL, ctrlf);
+
+    if (sendCallback)
+        kData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, PARAMETER_CTRL_CHANNEL, 0, ctrlf, nullptr);
+
+    if (fHints & PLUGIN_IS_BRIDGE)
+        osc_send_control(&kData->osc.data, PARAMETER_CTRL_CHANNEL, ctrlf);
 #else
-        if (sendOsc)
-            kData->engine->osc_send_control_set_parameter_value(fId, PARAMETER_CTRL_CHANNEL, ctrlf);
-#endif
+    return;
 
-        if (sendCallback)
-            kData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, PARAMETER_CTRL_CHANNEL, 0, ctrlf, nullptr);
-    }
+    // unused
+    (void)sendOsc;
+    (void)sendCallback;
+#endif
 }
 
 // -------------------------------------------------------------------
@@ -1226,23 +1207,27 @@ void CarlaPlugin::setCtrlChannel(const int8_t channel, const bool sendOsc, const
 void CarlaPlugin::setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback)
 {
     CARLA_ASSERT(parameterId < kData->param.count);
+#ifdef BUILD_BRIDGE
+    CARLA_ASSERT(! sendGui); // this should never happen
+#endif
 
+#ifndef BUILD_BRIDGE
     if (sendGui)
         uiParameterChange(parameterId, value);
 
-#ifndef BUILD_BRIDGE
     if (sendOsc)
         kData->engine->osc_send_control_set_parameter_value(fId, parameterId, value);
-#else
-    // unused
-    (void)sendOsc;
 #endif
 
     if (sendCallback)
         kData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, parameterId, 0, value, nullptr);
-#ifndef BUILD_BRIDGE
-    else if (fHints & PLUGIN_IS_BRIDGE)
-        osc_send_control(&kData->osc.data, parameterId, value);
+
+#ifdef BUILD_BRIDGE
+    return;
+
+    // unused
+    (void)sendGui;
+    (void)sendOsc;
 #endif
 }
 
@@ -1256,6 +1241,10 @@ void CarlaPlugin::setParameterValueByRealIndex(const int32_t rindex, const float
         return;
     if (rindex == PARAMETER_ACTIVE)
         return setActive((value > 0.0f), sendOsc, sendCallback);
+    if (rindex == PARAMETER_CTRL_CHANNEL)
+        return setCtrlChannel(int8_t(value), sendOsc, sendCallback);
+
+#ifndef BUILD_BRIDGE
     if (rindex == PARAMETER_DRYWET)
         return setDryWet(value, sendOsc, sendCallback);
     if (rindex == PARAMETER_VOLUME)
@@ -1266,8 +1255,7 @@ void CarlaPlugin::setParameterValueByRealIndex(const int32_t rindex, const float
         return setBalanceRight(value, sendOsc, sendCallback);
     if (rindex == PARAMETER_PANNING)
         return setPanning(value, sendOsc, sendCallback);
-    if (rindex == PARAMETER_CTRL_CHANNEL)
-        return setCtrlChannel(int8_t(value), sendOsc, sendCallback);
+#endif
 
     for (uint32_t i=0; i < kData->param.count; ++i)
     {
@@ -1280,8 +1268,10 @@ void CarlaPlugin::setParameterValueByRealIndex(const int32_t rindex, const float
     }
 }
 
+#ifndef BUILD_BRIDGE
 void CarlaPlugin::setParameterMidiChannel(const uint32_t parameterId, uint8_t channel, const bool sendOsc, const bool sendCallback)
 {
+    CARLA_ASSERT(sendOsc || sendCallback); // never call this from RT
     CARLA_ASSERT(parameterId < kData->param.count);
     CARLA_ASSERT_INT(channel < MAX_MIDI_CHANNELS, channel);
 
@@ -1293,23 +1283,26 @@ void CarlaPlugin::setParameterMidiChannel(const uint32_t parameterId, uint8_t ch
 #ifndef BUILD_BRIDGE
     if (sendOsc)
         kData->engine->osc_send_control_set_parameter_midi_channel(fId, parameterId, channel);
-#else
-    // unused
-    (void)sendOsc;
-#endif
 
     if (sendCallback)
         kData->engine->callback(CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED, fId, parameterId, channel, 0.0f, nullptr);
-#ifndef BUILD_BRIDGE
-    else if (fHints & PLUGIN_IS_BRIDGE)
-         {} // TODO
+
+    if (fHints & PLUGIN_IS_BRIDGE)
+        {} // TODO
+#else
+    return;
+
+    // unused
+    (void)sendOsc;
+    (void)sendCallback;
 #endif
 }
 
 void CarlaPlugin::setParameterMidiCC(const uint32_t parameterId, int16_t cc, const bool sendOsc, const bool sendCallback)
 {
+    CARLA_ASSERT(sendOsc || sendCallback); // never call this from RT
     CARLA_ASSERT(parameterId < kData->param.count);
-    CARLA_ASSERT_INT(cc >= -1, cc);
+    CARLA_ASSERT_INT(cc >= -1 && cc <= 0x5F, cc);
 
     if (cc < -1 || cc > 0x5F)
         cc = -1;
@@ -1319,24 +1312,30 @@ void CarlaPlugin::setParameterMidiCC(const uint32_t parameterId, int16_t cc, con
 #ifndef BUILD_BRIDGE
     if (sendOsc)
         kData->engine->osc_send_control_set_parameter_midi_cc(fId, parameterId, cc);
-#else
-    // unused
-    (void)sendOsc;
-#endif
 
     if (sendCallback)
         kData->engine->callback(CALLBACK_PARAMETER_MIDI_CC_CHANGED, fId, parameterId, cc, 0.0f, nullptr);
-#ifndef BUILD_BRIDGE
-    else if (fHints & PLUGIN_IS_BRIDGE)
-         {} // TODO
+
+    if (fHints & PLUGIN_IS_BRIDGE)
+        {} // TODO
+#else
+    return;
+
+    // unused
+    (void)sendOsc;
+    (void)sendCallback;
 #endif
 }
+#endif
 
 void CarlaPlugin::setCustomData(const char* const type, const char* const key, const char* const value, const bool sendGui)
 {
     CARLA_ASSERT(type != nullptr);
     CARLA_ASSERT(key != nullptr);
     CARLA_ASSERT(value != nullptr);
+#ifdef BUILD_BRIDGE
+    CARLA_ASSERT(! sendGui); // this should never happen
+#endif
 
     if (type == nullptr)
         return carla_stderr2("CarlaPlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is null", type, key, value, bool2str(sendGui));
@@ -1358,44 +1357,45 @@ void CarlaPlugin::setCustomData(const char* const type, const char* const key, c
         //    saveData = false;
     }
 
-    if (saveData)
+    if (! saveData)
+        return;
+
+    // Check if we already have this key
+    for (auto it = kData->custom.begin(); it.valid(); it.next())
     {
-        // Check if we already have this key
-        for (auto it = kData->custom.begin(); it.valid(); it.next())
+        CustomData& cData(*it);
+
+        CARLA_ASSERT(cData.type != nullptr);
+        CARLA_ASSERT(cData.key != nullptr);
+        CARLA_ASSERT(cData.value != nullptr);
+
+        if (cData.type == nullptr)
+            return;
+        if (cData.key == nullptr)
+            return;
+
+        if (std::strcmp(cData.key, key) == 0)
         {
-            CustomData& cData(*it);
+            if (cData.value != nullptr)
+                delete[] cData.value;
 
-            CARLA_ASSERT(cData.type != nullptr);
-            CARLA_ASSERT(cData.key != nullptr);
-            CARLA_ASSERT(cData.value != nullptr);
-
-            if (cData.type == nullptr)
-                return;
-            if (cData.key == nullptr)
-                return;
-
-            if (std::strcmp(cData.key, key) == 0)
-            {
-                if (cData.value != nullptr)
-                    delete[] cData.value;
-
-                cData.value = carla_strdup(value);
-                return;
-            }
+            cData.value = carla_strdup(value);
+            return;
         }
-
-        // Otherwise store it
-        CustomData newData;
-        newData.type  = carla_strdup(type);
-        newData.key   = carla_strdup(key);
-        newData.value = carla_strdup(value);
-        kData->custom.append(newData);
     }
+
+    // Otherwise store it
+    CustomData newData;
+    newData.type  = carla_strdup(type);
+    newData.key   = carla_strdup(key);
+    newData.value = carla_strdup(value);
+    kData->custom.append(newData);
 }
 
 void CarlaPlugin::setChunkData(const char* const stringData)
 {
     CARLA_ASSERT(stringData != nullptr);
+    CARLA_ASSERT(false); // this should never happen
     return;
 
     // unused
@@ -1405,6 +1405,9 @@ void CarlaPlugin::setChunkData(const char* const stringData)
 void CarlaPlugin::setProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback)
 {
     CARLA_ASSERT(index >= -1 && index < static_cast<int32_t>(kData->prog.count));
+#ifdef BUILD_BRIDGE
+    CARLA_ASSERT(! sendGui); // this should never happen
+#endif
 
     if (index > static_cast<int32_t>(kData->prog.count))
         return;
@@ -1416,8 +1419,10 @@ void CarlaPlugin::setProgram(int32_t index, const bool sendGui, const bool sendO
     // Change default parameter values
     if (fixedIndex >= 0)
     {
+#ifndef BUILD_BRIDGE
         if (sendGui)
             uiProgramChange(fixedIndex);
+#endif
 
         for (uint32_t i=0; i < kData->param.count; ++i)
         {
@@ -1425,13 +1430,13 @@ void CarlaPlugin::setProgram(int32_t index, const bool sendGui, const bool sendO
             kData->param.ranges[i].def = getParameterValue(i);
             kData->param.ranges[i].fixDefault();
 
+#ifndef BUILD_BRIDGE
             if (sendOsc)
             {
-#ifndef BUILD_BRIDGE
                 kData->engine->osc_send_control_set_default_value(fId, i, kData->param.ranges[i].def);
                 kData->engine->osc_send_control_set_parameter_value(fId, i, kData->param.ranges[i].def);
-#endif
             }
+#endif
         }
     }
 
@@ -1442,11 +1447,22 @@ void CarlaPlugin::setProgram(int32_t index, const bool sendGui, const bool sendO
 
     if (sendCallback)
         kData->engine->callback(CALLBACK_PROGRAM_CHANGED, fId, fixedIndex, 0, 0.0f, nullptr);
+
+#ifdef BUILD_BRIDGE
+    return;
+
+    // unused
+    (void)sendGui;
+    (void)sendOsc;
+#endif
 }
 
 void CarlaPlugin::setMidiProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback)
 {
     CARLA_ASSERT(index >= -1 && index < static_cast<int32_t>(kData->midiprog.count));
+#ifdef BUILD_BRIDGE
+    CARLA_ASSERT(! sendGui); // this should never happen
+#endif
 
     if (index > static_cast<int32_t>(kData->midiprog.count))
         return;
@@ -1457,13 +1473,13 @@ void CarlaPlugin::setMidiProgram(int32_t index, const bool sendGui, const bool s
 
     if (fixedIndex >= 0)
     {
+#ifndef BUILD_BRIDGE
         if (sendGui)
             uiMidiProgramChange(fixedIndex);
+#endif
 
         // Change default parameter values (sound banks never change defaults)
-#ifndef BUILD_BRIDGE // FIXME
         if (type() != PLUGIN_GIG && type() != PLUGIN_SF2 && type() != PLUGIN_SFZ)
-#endif
         {
             for (uint32_t i=0; i < kData->param.count; ++i)
             {
@@ -1471,13 +1487,13 @@ void CarlaPlugin::setMidiProgram(int32_t index, const bool sendGui, const bool s
                 kData->param.ranges[i].def = getParameterValue(i);
                 kData->param.ranges[i].fixDefault();
 
+#ifndef BUILD_BRIDGE
                 if (sendOsc)
                 {
-#ifndef BUILD_BRIDGE
                     kData->engine->osc_send_control_set_default_value(fId, i, kData->param.ranges[i].def);
                     kData->engine->osc_send_control_set_parameter_value(fId, i, kData->param.ranges[i].def);
-#endif
                 }
+#endif
             }
         }
     }
@@ -1489,6 +1505,14 @@ void CarlaPlugin::setMidiProgram(int32_t index, const bool sendGui, const bool s
 
     if (sendCallback)
         kData->engine->callback(CALLBACK_MIDI_PROGRAM_CHANGED, fId, fixedIndex, 0, 0.0f, nullptr);
+
+#ifdef BUILD_BRIDGE
+    return;
+
+    // unused
+    (void)sendGui;
+    (void)sendOsc;
+#endif
 }
 
 void CarlaPlugin::setMidiProgramById(const uint32_t bank, const uint32_t program, const bool sendGui, const bool sendOsc, const bool sendCallback)
@@ -1505,6 +1529,7 @@ void CarlaPlugin::setMidiProgramById(const uint32_t bank, const uint32_t program
 
 void CarlaPlugin::showGui(const bool yesNo)
 {
+    CARLA_ASSERT(false);
     return;
 
     // unused
@@ -1836,6 +1861,7 @@ bool CarlaPlugin::waitForOscGuiShow()
 // -------------------------------------------------------------------
 // MIDI events
 
+#ifndef BUILD_BRIDGE
 void CarlaPlugin::sendMidiSingleNote(const uint8_t channel, const uint8_t note, const uint8_t velo, const bool sendGui, const bool sendOsc, const bool sendCallback)
 {
     CARLA_ASSERT(channel < MAX_MIDI_CHANNELS);
@@ -1860,7 +1886,6 @@ void CarlaPlugin::sendMidiSingleNote(const uint8_t channel, const uint8_t note, 
             uiNoteOff(channel, note);
     }
 
-#ifndef BUILD_BRIDGE
     if (sendOsc)
     {
         if (velo > 0)
@@ -1868,16 +1893,13 @@ void CarlaPlugin::sendMidiSingleNote(const uint8_t channel, const uint8_t note, 
         else
             kData->engine->osc_send_control_note_off(fId, channel, note);
     }
-#else
-    // unused
-    (void)sendOsc;
-#endif
 
     if (sendCallback)
         kData->engine->callback((velo > 0) ? CALLBACK_NOTE_ON : CALLBACK_NOTE_OFF, fId, channel, note, velo, nullptr);
 }
+#endif
 
-void CarlaPlugin::sendMidiAllNotesOff()
+void CarlaPlugin::sendMidiAllNotesOffToCallback()
 {
     if (kData->ctrlChannel < 0 || kData->ctrlChannel >= MAX_MIDI_CHANNELS)
         return;

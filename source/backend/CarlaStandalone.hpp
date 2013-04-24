@@ -575,6 +575,7 @@ CARLA_EXPORT void carla_set_option(unsigned int pluginId, unsigned int option, b
  */
 CARLA_EXPORT void carla_set_active(unsigned int pluginId, bool onOff);
 
+#ifndef BUILD_BRIDGE
 /*!
  * Change a plugin's internal drywet value to \a value.
  */
@@ -599,6 +600,7 @@ CARLA_EXPORT void carla_set_balance_right(unsigned int pluginId, float value);
  * Change a plugin's internal panning value to \a value.
  */
 CARLA_EXPORT void carla_set_panning(unsigned int pluginId, float value);
+#endif
 
 /*!
  * Change a plugin's internal control channel to \a channel.
@@ -610,6 +612,7 @@ CARLA_EXPORT void carla_set_ctrl_channel(unsigned int pluginId, int8_t channel);
  */
 CARLA_EXPORT void carla_set_parameter_value(unsigned int pluginId, uint32_t parameterId, float value);
 
+#ifndef BUILD_BRIDGE
 /*!
  * Set the plugin's parameter \a parameterId midi channel to \a channel.
  */
@@ -619,6 +622,7 @@ CARLA_EXPORT void carla_set_parameter_midi_channel(unsigned int pluginId, uint32
  * Set the plugin's parameter \a parameterId midi cc to \a cc.
  */
 CARLA_EXPORT void carla_set_parameter_midi_cc(unsigned int pluginId, uint32_t parameterId, int16_t cc);
+#endif
 
 /*!
  * Change a plugin's program to \a programId.
@@ -646,11 +650,13 @@ CARLA_EXPORT void carla_set_chunk_data(unsigned int pluginId, const char* chunkD
  */
 CARLA_EXPORT void carla_prepare_for_save(unsigned int pluginId);
 
+#ifndef BUILD_BRIDGE
 /*!
  * Send a single note of a plugin.\n
  * If \a note if 0, note-off is sent; note-on otherwise.
  */
 CARLA_EXPORT void carla_send_midi_note(unsigned int pluginId, uint8_t channel, uint8_t note, uint8_t velocity);
+#endif
 
 /*!
  * Tell a plugin to show its own custom UI.

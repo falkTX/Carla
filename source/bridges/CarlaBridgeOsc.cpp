@@ -166,8 +166,10 @@ int CarlaBridgeOsc::handleMessage(const char* const path, const int argc, const 
         return handleMsgProgram(argc, argv, types);
     if (std::strcmp(method, "midi-program") == 0)
         return handleMsgMidiProgram(argc, argv, types);
+#ifndef BUILD_BRIDGE_PLUGIN
     if (std::strcmp(method, "midi") == 0)
         return handleMsgMidi(argc, argv, types);
+#endif
     if (std::strcmp(method, "sample-rate") == 0)
         return 0; // unused
     if (std::strcmp(method, "show") == 0)
@@ -311,7 +313,6 @@ int CarlaBridgeOsc::handleMsgMidiProgram(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 
     return 0;
 }
-#endif
 
 int CarlaBridgeOsc::handleMsgMidi(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 {
@@ -359,6 +360,7 @@ int CarlaBridgeOsc::handleMsgMidi(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 
     return 0;
 }
+#endif
 
 #ifdef BUILD_BRIDGE_UI
 int CarlaBridgeOsc::handleMsgShow()

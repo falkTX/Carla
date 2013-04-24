@@ -621,6 +621,7 @@ public:
 
                     case kEngineControlEventTypeParameter:
                     {
+#ifndef BUILD_BRIDGE
                         // Control backend stuff
                         if (event.channel == kData->ctrlChannel)
                         {
@@ -670,6 +671,7 @@ public:
                                 continue;
                             }
                         }
+#endif
 
                         // Control plugin parameters
                         for (k=0; k < kData->param.count; ++k)
@@ -731,7 +733,7 @@ public:
                         {
                             if (! allNotesOffSent)
                             {
-                                sendMidiAllNotesOff();
+                                sendMidiAllNotesOffToCallback();
                                 allNotesOffSent = true;
                             }
 
@@ -741,7 +743,6 @@ public:
 
                         if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                             fMidiInputPort->DispatchControlChange(MIDI_CONTROL_ALL_SOUND_OFF, 0, k, sampleAccurate ? startTime : time);
-
                         break;
 
                     case kEngineControlEventTypeAllNotesOff:
@@ -749,14 +750,13 @@ public:
                         {
                             if (! allNotesOffSent)
                             {
-                                sendMidiAllNotesOff();
+                                sendMidiAllNotesOffToCallback();
                                 allNotesOffSent = true;
                             }
                         }
 
                         if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                             fMidiInputPort->DispatchControlChange(MIDI_CONTROL_ALL_NOTES_OFF, 0, k, sampleAccurate ? startTime : time);
-
                         break;
                     }
 
@@ -765,7 +765,7 @@ public:
 
                 case kEngineEventTypeMidi:
                 {
-                    const EngineMidiEvent& midiEvent = event.midi;
+                    const EngineMidiEvent& midiEvent(event.midi);
 
                     uint8_t status  = MIDI_GET_STATUS_FROM_DATA(midiEvent.data);
                     uint8_t channel = event.channel;
@@ -872,6 +872,7 @@ public:
         // QUESTION: Need to clear it before?
         fAudioOutputDevice->Render(frames);
 
+#ifndef BUILD_BRIDGE
         // --------------------------------------------------------------------------------------------------------
         // Post-processing (dry/wet, volume and balance)
 
@@ -918,6 +919,7 @@ public:
             }
 
         } // End of Post-processing
+#endif
 
         // --------------------------------------------------------------------------------------------------------
 

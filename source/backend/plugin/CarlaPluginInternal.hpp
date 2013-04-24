@@ -29,7 +29,7 @@
 
 #include "RtList.hpp"
 
-#define CARLA_PROCESS_CONTINUE_CHECK if (! fEnabled) { kData->engine->callback(CALLBACK_DEBUG, fId, 0, 0, 0.0f, nullptr); return; }
+#define CARLA_PROCESS_CONTINUE_CHECK if (! fEnabled) { kData->engine->callback(CALLBACK_DEBUG, fId, 0, 0, 0.0f, "Processing while plugin is disabled!!"); return; }
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -214,7 +214,7 @@ struct PluginParameterData {
 
     float fixValue(const uint32_t parameterId, const float& value)
     {
-        CARLA_ASSERT(parameterId < count);
+        CARLA_ASSERT_INT2(parameterId < count, parameterId, count);
         return ranges[parameterId].fixValue(value);
     }
 
@@ -266,7 +266,10 @@ struct PluginProgramData {
             for (uint32_t i=0; i < count; ++i)
             {
                 if (names[i] != nullptr)
+                {
                     delete[] names[i];
+                    names[i] = nullptr;
+                }
             }
 
             delete[] names;
@@ -320,7 +323,10 @@ struct PluginMidiProgramData {
             for (uint32_t i=0; i < count; ++i)
             {
                 if (data[i].name != nullptr)
+                {
                     delete[] data[i].name;
+                    data[i].name = nullptr;
+                }
             }
 
             delete[] data;
@@ -333,7 +339,7 @@ struct PluginMidiProgramData {
 
     const MidiProgramData& getCurrent() const
     {
-        CARLA_ASSERT(current >= 0 && current < static_cast<int32_t>(count));
+        CARLA_ASSERT_INT2(current >= 0 && current < static_cast<int32_t>(count), current, count);
         return data[current];
     }
 
@@ -484,6 +490,7 @@ struct CarlaPluginProtectedData {
 
     } postRtEvents;
 
+#ifndef BUILD_BRIDGE
     struct PostProc {
         float dryWet;
         float volume;
@@ -501,6 +508,7 @@ struct CarlaPluginProtectedData {
         CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(PostProc)
 
     } postProc;
+#endif
 
     struct OSC {
         CarlaOscData data;
@@ -538,6 +546,7 @@ struct CarlaPluginProtectedData {
     ~CarlaPluginProtectedData()
     {
         CARLA_ASSERT(gui == nullptr);
+        CARLA_ASSERT(client == nullptr);
         CARLA_ASSERT(! active);
         CARLA_ASSERT(! needsReset);
         CARLA_ASSERT(lib == nullptr);
@@ -578,18 +587,29 @@ struct CarlaPluginProtectedData {
             CARLA_ASSERT(cData.value != nullptr);
 
             if (cData.type != nullptr)
+            {
                 delete[] cData.type;
+                cData.type = nullptr;
+            }
+
             if (cData.key != nullptr)
+            {
                 delete[] cData.key;
+                cData.key = nullptr;
+            }
+
             if (cData.value != nullptr)
+            {
                 delete[] cData.value;
+                cData.value = nullptr;
+            }
         }
 
         prog.clear();
         midiprog.clear();
         custom.clear();
 
-        // MUST have been unlocked before
+        // MUST have been locked before
         masterMutex.unlock();
         singleMutex.unlock();
 
@@ -609,7 +629,10 @@ struct CarlaPluginProtectedData {
                 CARLA_ASSERT(latencyBuffers[i] != nullptr);
 
                 if (latencyBuffers[i] != nullptr)
+                {
                     delete[] latencyBuffers[i];
+                    latencyBuffers[i] = nullptr;
+                }
             }
 
             delete[] latencyBuffers;
@@ -632,7 +655,10 @@ struct CarlaPluginProtectedData {
                 CARLA_ASSERT(latencyBuffers[i] != nullptr);
 
                 if (latencyBuffers[i] != nullptr)
+                {
                     delete[] latencyBuffers[i];
+                    latencyBuffers[i] = nullptr;
+                }
             }
 
             delete[] latencyBuffers;
