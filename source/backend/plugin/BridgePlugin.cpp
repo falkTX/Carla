@@ -340,6 +340,54 @@ public:
         CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
     }
 
+    void setProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) override
+    {
+        CARLA_ASSERT(index >= -1 && index < static_cast<int32_t>(kData->prog.count));
+
+        if (index < -1)
+            index = -1;
+        else if (index > static_cast<int32_t>(kData->prog.count))
+            return;
+
+        const bool doLock(sendGui || sendOsc || sendCallback);
+
+        if (doLock)
+            kData->singleMutex.lock();
+
+        rdwr_writeOpcode(&fShmControl.data->ringBuffer, kPluginBridgeOpcodeSetProgram);
+        rdwr_writeInt(&fShmControl.data->ringBuffer, index);
+        rdwr_commitWrite(&fShmControl.data->ringBuffer);
+
+        if (doLock)
+            kData->singleMutex.unlock();
+
+        CarlaPlugin::setProgram(index, sendGui, sendOsc, sendCallback);
+    }
+
+    void setMidiProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) override
+    {
+        CARLA_ASSERT(index >= -1 && index < static_cast<int32_t>(kData->midiprog.count));
+
+        if (index < -1)
+            index = -1;
+        else if (index > static_cast<int32_t>(kData->midiprog.count))
+            return;
+
+        const bool doLock(sendGui || sendOsc || sendCallback);
+
+        if (doLock)
+            kData->singleMutex.lock();
+
+        rdwr_writeOpcode(&fShmControl.data->ringBuffer, kPluginBridgeOpcodeSetMidiProgram);
+        rdwr_writeInt(&fShmControl.data->ringBuffer, index);
+        rdwr_commitWrite(&fShmControl.data->ringBuffer);
+
+        if (doLock)
+            kData->singleMutex.unlock();
+
+        CarlaPlugin::setMidiProgram(index, sendGui, sendOsc, sendCallback);
+    }
+
 #if 0
     void setCustomData(const char* const type, const char* const key, const char* const value, const bool sendGui) override
     {
@@ -533,6 +581,24 @@ public:
     // -------------------------------------------------------------------
     // Plugin processing
 
+    void activate() override
+    {
+        rdwr_writeOpcode(&fShmControl.data->ringBuffer, kPluginBridgeOpcodeSetParameter);
+        rdwr_writeInt(&fShmControl.data->ringBuffer, PARAMETER_ACTIVE);
+        rdwr_writeFloat(&fShmControl.data->ringBuffer, 1.0f);
+        rdwr_commitWrite(&fShmControl.data->ringBuffer);
+        waitForServer();
+    }
+
+    void deactivate() override
+    {
+        rdwr_writeOpcode(&fShmControl.data->ringBuffer, kPluginBridgeOpcodeSetParameter);
+        rdwr_writeInt(&fShmControl.data->ringBuffer, PARAMETER_ACTIVE);
+        rdwr_writeFloat(&fShmControl.data->ringBuffer, 0.0f);
+        rdwr_commitWrite(&fShmControl.data->ringBuffer);
+        waitForServer();
+    }
+
     void process(float** const inBuffer, float** const outBuffer, const uint32_t frames) override
     {
         uint32_t i/*, k*/;
@@ -693,6 +759,23 @@ public:
         return true;
     }
 
+    void bufferSizeChanged(const uint32_t newBufferSize) override
+    {
+        resizeAudioPool(newBufferSize);
+
+        rdwr_writeOpcode(&fShmControl.data->ringBuffer, kPluginBridgeOpcodeSetBufferSize);
+        rdwr_writeInt(&fShmControl.data->ringBuffer, newBufferSize);
+        rdwr_commitWrite(&fShmControl.data->ringBuffer);
+
+    }
+
+    void sampleRateChanged(const double newSampleRate) override
+    {
+        rdwr_writeOpcode(&fShmControl.data->ringBuffer, kPluginBridgeOpcodeSetSampleRate);
+        rdwr_writeFloat(&fShmControl.data->ringBuffer, newSampleRate);
+        rdwr_commitWrite(&fShmControl.data->ringBuffer);
+    }
+
     // -------------------------------------------------------------------
     // Plugin buffers
 
@@ -710,102 +793,7 @@ public:
     // -------------------------------------------------------------------
     // Post-poned UI Stuff
 
-    void uiParameterChange(const uint32_t index, const float value) override
-    {
-        CARLA_ASSERT(index < kData->param.count);
-
-        if (index >= kData->param.count)
-            return;
-        if (kData->osc.data.target == nullptr)
-            return;
-
-        osc_send_control(&kData->osc.data, kData->param.data[index].rindex, value);
-    }
-
-    void uiProgramChange(const uint32_t index) override
-    {
-        CARLA_ASSERT(index < kData->prog.count);
-
-        if (index >= kData->prog.count)
-            return;
-        if (kData->osc.data.target == nullptr)
-            return;
-
-        osc_send_program(&kData->osc.data, index);
-    }
-
-    void uiMidiProgramChange(const uint32_t index) override
-    {
-        CARLA_ASSERT(index < kData->midiprog.count);
-
-        if (index >= kData->midiprog.count)
-            return;
-        if (kData->osc.data.target == nullptr)
-            return;
-
-        osc_send_midi_program(&kData->osc.data, index);
-    }
-
-    void uiNoteOn(const uint8_t channel, const uint8_t note, const uint8_t velo) override
-    {
-        CARLA_ASSERT(channel < MAX_MIDI_CHANNELS);
-        CARLA_ASSERT(note < MAX_MIDI_NOTE);
-        CARLA_ASSERT(velo > 0 && velo < MAX_MIDI_VALUE);
-
-        if (channel >= MAX_MIDI_CHANNELS)
-            return;
-        if (note >= MAX_MIDI_NOTE)
-            return;
-        if (velo >= MAX_MIDI_VALUE)
-            return;
-        if (kData->osc.data.target == nullptr)
-            return;
-
-        uint8_t midiData[4] = { 0 };
-        midiData[1] = MIDI_STATUS_NOTE_ON + channel;
-        midiData[2] = note;
-        midiData[3] = velo;
-
-        osc_send_midi(&kData->osc.data, midiData);
-    }
-
-    void uiNoteOff(const uint8_t channel, const uint8_t note) override
-    {
-        CARLA_ASSERT(channel < MAX_MIDI_CHANNELS);
-        CARLA_ASSERT(note < MAX_MIDI_NOTE);
-
-        if (channel >= MAX_MIDI_CHANNELS)
-            return;
-        if (note >= MAX_MIDI_NOTE)
-            return;
-        if (kData->osc.data.target == nullptr)
-            return;
-
-        uint8_t midiData[4] = { 0 };
-        midiData[1] = MIDI_STATUS_NOTE_OFF + channel;
-        midiData[2] = note;
-
-        osc_send_midi(&kData->osc.data, midiData);
-    }
-
-    void bufferSizeChanged(const uint32_t newBufferSize) override
-    {
-        resizeAudioPool(newBufferSize);
-
-        rdwr_writeOpcode(&fShmControl.data->ringBuffer, kPluginBridgeOpcodeSetBufferSize);
-        rdwr_writeInt(&fShmControl.data->ringBuffer, newBufferSize);
-
-        rdwr_commitWrite(&fShmControl.data->ringBuffer);
-
-    }
-
-    void sampleRateChanged(const double newSampleRate) override
-    {
-        rdwr_writeOpcode(&fShmControl.data->ringBuffer, kPluginBridgeOpcodeSetSampleRate);
-        rdwr_writeFloat(&fShmControl.data->ringBuffer, newSampleRate);
-
-        rdwr_commitWrite(&fShmControl.data->ringBuffer);
-    }
+    // nothing
 
     // -------------------------------------------------------------------
 

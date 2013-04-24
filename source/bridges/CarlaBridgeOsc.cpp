@@ -162,11 +162,11 @@ int CarlaBridgeOsc::handleMessage(const char* const path, const int argc, const 
         return handleMsgConfigure(argc, argv, types);
     if (std::strcmp(method, "control") == 0)
         return handleMsgControl(argc, argv, types);
+#ifndef BUILD_BRIDGE_PLUGIN
     if (std::strcmp(method, "program") == 0)
         return handleMsgProgram(argc, argv, types);
     if (std::strcmp(method, "midi-program") == 0)
         return handleMsgMidiProgram(argc, argv, types);
-#ifndef BUILD_BRIDGE_PLUGIN
     if (std::strcmp(method, "midi") == 0)
         return handleMsgMidi(argc, argv, types);
 #endif
@@ -246,6 +246,7 @@ int CarlaBridgeOsc::handleMsgControl(CARLA_BRIDGE_OSC_HANDLE_ARGS)
     return 0;
 }
 
+#ifndef BUILD_BRIDGE_PLUGIN
 int CarlaBridgeOsc::handleMsgProgram(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 {
     carla_debug("CarlaBridgeOsc::handleMsgProgram()");
@@ -267,28 +268,6 @@ int CarlaBridgeOsc::handleMsgProgram(CARLA_BRIDGE_OSC_HANDLE_ARGS)
     return 0;
 }
 
-#ifdef BUILD_BRIDGE_PLUGIN
-int CarlaBridgeOsc::handleMsgMidiProgram(CARLA_BRIDGE_OSC_HANDLE_ARGS)
-{
-    carla_debug("CarlaBridgeOsc::handleMsgMidiProgram()");
-    CARLA_ASSERT(kClient != nullptr);
-    CARLA_BRIDGE_OSC_CHECK_OSC_TYPES(1, "i");
-
-    if (kClient == nullptr)
-        return 1;
-
-    const int32_t index = argv[0]->i;
-
-    CARLA_SAFE_ASSERT_INT(index >= 0, index);
-
-    if (index < 0)
-        return 1;
-
-    kClient->setMidiProgram(static_cast<uint32_t>(index));
-
-    return 0;
-}
-#else
 int CarlaBridgeOsc::handleMsgMidiProgram(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 {
     carla_debug("CarlaBridgeOsc::handleMsgMidiProgram()");

@@ -18,6 +18,7 @@
 #include "CarlaBridgeClient.hpp"
 #include "CarlaBridgeToolkit.hpp"
 
+#include "CarlaBridgeUtils.hpp"
 #include "CarlaStandalone.hpp"
 #include "CarlaEngine.hpp"
 #include "CarlaPlugin.hpp"
@@ -212,7 +213,7 @@ public:
 
         for (uint32_t i=0; i < fPlugin->customDataCount(); i++)
         {
-            const CarlaBackend::CustomData& cdata = fPlugin->customData(i);
+            const CarlaBackend::CustomData& cdata(fPlugin->customData(i));
             fEngine->osc_send_bridge_set_custom_data(cdata.type, cdata.key, cdata.value);
         }
 
@@ -244,7 +245,7 @@ public:
             }
         }
 
-        //engine->osc_send_bridge_configure(CarlaBackend::CARLA_BRIDGE_MSG_SAVED, "");
+        fEngine->osc_send_bridge_configure(CARLA_BRIDGE_MSG_SAVED, "");
     }
 
     void setCustomData(const char* const type, const char* const key, const char* const value)
@@ -299,24 +300,6 @@ public:
             fPlugin->setParameterValueByRealIndex(rindex, value, true, true, false);
     }
 
-    void setProgram(const uint32_t index)
-    {
-        carla_debug("CarlaPluginClient::setProgram(%i)", index);
-        CARLA_ASSERT(fPlugin != nullptr);
-
-        if (fPlugin != nullptr)
-            fPlugin->setProgram(index, true, true, false);
-    }
-
-    void setMidiProgram(const uint32_t index)
-    {
-        carla_debug("CarlaPluginClient::setMidiProgram(%i)", index);
-        CARLA_ASSERT(fPlugin != nullptr);
-
-        if (fPlugin != nullptr)
-            fPlugin->setMidiProgram(index, true, true, false);
-    }
-
 protected:
     void handleCallback(const CarlaBackend::CallbackType action, const int value1, const int value2, const float value3, const char* const valueStr)
     {
@@ -340,6 +323,7 @@ protected:
             {
                 // hide gui
                 //sendOscConfigure();
+                fEngine->osc_send_bridge_configure(CARLA_BRIDGE_MSG_HIDE_GUI, "");
             }
             break;
         default:

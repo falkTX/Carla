@@ -99,9 +99,9 @@ private:
 
     int handleMsgConfigure(CARLA_BRIDGE_OSC_HANDLE_ARGS);
     int handleMsgControl(CARLA_BRIDGE_OSC_HANDLE_ARGS);
+#ifndef BUILD_BRIDGE_PLUGIN
     int handleMsgProgram(CARLA_BRIDGE_OSC_HANDLE_ARGS);
     int handleMsgMidiProgram(CARLA_BRIDGE_OSC_HANDLE_ARGS);
-#ifndef BUILD_BRIDGE_PLUGIN
     int handleMsgMidi(CARLA_BRIDGE_OSC_HANDLE_ARGS);
 #endif
     int handleMsgShow();

@@ -181,34 +181,67 @@ public:
 
                 case kPluginBridgeOpcodeReadyWait:
                 {
-                    const int size = rdwr_readInt(&fShmControl.data->ringBuffer);
+                    const int size(rdwr_readInt(&fShmControl.data->ringBuffer));
                     fShmAudioPool.data = (float*)carla_shm_map(fShmAudioPool.shm, size);
                     break;
                 }
 
                 case kPluginBridgeOpcodeSetBufferSize:
                 {
-                    const int bufferSize = rdwr_readInt(&fShmControl.data->ringBuffer);
+                    const int bufferSize(rdwr_readInt(&fShmControl.data->ringBuffer));
                     bufferSizeChanged(bufferSize);
                     break;
                 }
 
                 case kPluginBridgeOpcodeSetSampleRate:
                 {
-                    const float sampleRate = rdwr_readFloat(&fShmControl.data->ringBuffer);
+                    const float sampleRate(rdwr_readFloat(&fShmControl.data->ringBuffer));
                     sampleRateChanged(sampleRate);
                     break;
                 }
 
                 case kPluginBridgeOpcodeSetParameter:
                 {
-                    const int   index = rdwr_readInt(&fShmControl.data->ringBuffer);
-                    const float value = rdwr_readFloat(&fShmControl.data->ringBuffer);
+                    const int   index(rdwr_readInt(&fShmControl.data->ringBuffer));
+                    const float value(rdwr_readFloat(&fShmControl.data->ringBuffer));
 
                     CarlaPlugin* const plugin(getPluginUnchecked(0));
 
                     if (plugin != nullptr && plugin->enabled())
+                    {
                         plugin->setParameterValueByRealIndex(index, value, false, false, false);
+                        plugin->postponeRtEvent(kPluginPostRtEventParameterChange, index, 0, value);
+                    }
+
+                    break;
+                }
+
+                case kPluginBridgeOpcodeSetProgram:
+                {
+                    const int index(rdwr_readInt(&fShmControl.data->ringBuffer));
+
+                    CarlaPlugin* const plugin(getPluginUnchecked(0));
+
+                    if (plugin != nullptr && plugin->enabled())
+                    {
+                        plugin->setProgram(index, false, false, false);
+                        plugin->postponeRtEvent(kPluginPostRtEventProgramChange, index, 0, 0.0f);
+                    }
+
+                    break;
+                }
+
+                case kPluginBridgeOpcodeSetMidiProgram:
+                {
+                    const int index(rdwr_readInt(&fShmControl.data->ringBuffer));
+
+                    CarlaPlugin* const plugin(getPluginUnchecked(0));
+
+                    if (plugin != nullptr && plugin->enabled())
+                    {
+                        plugin->setMidiProgram(index, false, false, false);
+                        plugin->postponeRtEvent(kPluginPostRtEventMidiProgramChange, index, 0, 0.0f);
+                    }
 
                     break;
                 }
@@ -220,8 +253,8 @@ public:
 
                     if (plugin != nullptr && plugin->enabled() && plugin->tryLock())
                     {
-                        const uint32_t inCount  = plugin->audioInCount();
-                        const uint32_t outCount = plugin->audioOutCount();
+                        const uint32_t inCount(plugin->audioInCount());
+                        const uint32_t outCount(plugin->audioOutCount());
 
                         float* inBuffer[inCount];
                         float* outBuffer[outCount];

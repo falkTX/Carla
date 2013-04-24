@@ -1043,7 +1043,9 @@ void CarlaPlugin::setEnabled(const bool yesNo)
 
 void CarlaPlugin::setActive(const bool active, const bool sendOsc, const bool sendCallback)
 {
+#ifndef BUILD_BRIDGE
     CARLA_ASSERT(sendOsc || sendCallback); // never call this from RT
+#endif
 
     if (kData->active == active)
         return;
@@ -1067,9 +1069,6 @@ void CarlaPlugin::setActive(const bool active, const bool sendOsc, const bool se
 
     if (sendCallback)
         kData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, PARAMETER_ACTIVE, 0, value, nullptr);
-
-    if (fHints & PLUGIN_IS_BRIDGE)
-        osc_send_control(&kData->osc.data, PARAMETER_ACTIVE, value);
 #else
     return;
 
@@ -1173,7 +1172,9 @@ void CarlaPlugin::setPanning(const float value, const bool sendOsc, const bool s
 
 void CarlaPlugin::setCtrlChannel(const int8_t channel, const bool sendOsc, const bool sendCallback)
 {
+#ifndef BUILD_BRIDGE
     CARLA_ASSERT(sendOsc || sendCallback); // never call this from RT
+#endif
     CARLA_ASSERT_INT(channel >= -1 && channel < MAX_MIDI_CHANNELS, channel);
 
     if (kData->ctrlChannel == channel)
@@ -1666,7 +1667,7 @@ void CarlaPlugin::registerToOscClient()
     }
 
     // Plugin Parameters
-    if (kData->param.count > 0 /*&& kData->param.count < kData->engine->getOptions().maxParameters*/)
+    if (kData->param.count > 0 && kData->param.count < kData->engine->getOptions().maxParameters)
     {
         char bufName[STR_MAX+1], bufUnit[STR_MAX+1];
 
@@ -1937,7 +1938,7 @@ void CarlaPlugin::postRtEventsRun()
 
     while (! kData->postRtEvents.data.isEmpty())
     {
-        const PluginPostRtEvent& event = kData->postRtEvents.data.getFirst(true);
+        const PluginPostRtEvent& event(kData->postRtEvents.data.getFirst(true));
 
         switch (event.type)
         {
@@ -1945,7 +1946,9 @@ void CarlaPlugin::postRtEventsRun()
             break;
 
         case kPluginPostRtEventDebug:
+#ifndef BUILD_BRIDGE
             kData->engine->callback(CALLBACK_DEBUG, fId, event.value1, event.value2, event.value3, nullptr);
+#endif
             break;
 
         case kPluginPostRtEventParameterChange:
@@ -1957,10 +1960,10 @@ void CarlaPlugin::postRtEventsRun()
             // Update OSC control client
             if (kData->engine->isOscControlRegistered())
                 kData->engine->osc_send_control_set_parameter_value(fId, event.value1, event.value3);
-#endif
 
             // Update Host
             kData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, event.value1, 0, event.value3, nullptr);
+#endif
             break;
 
         case kPluginPostRtEventProgramChange:
@@ -1977,10 +1980,10 @@ void CarlaPlugin::postRtEventsRun()
                 for (uint32_t j=0; j < kData->param.count; ++j)
                     kData->engine->osc_send_control_set_default_value(fId, j, kData->param.ranges[j].def);
             }
-#endif
 
             // Update Host
             kData->engine->callback(CALLBACK_PROGRAM_CHANGED, fId, event.value1, 0, 0.0f, nullptr);
+#endif
             break;
 
         case kPluginPostRtEventMidiProgramChange:
@@ -1997,10 +2000,10 @@ void CarlaPlugin::postRtEventsRun()
                 for (uint32_t j=0; j < kData->param.count; ++j)
                     kData->engine->osc_send_control_set_default_value(fId, j, kData->param.ranges[j].def);
             }
-#endif
 
             // Update Host
             kData->engine->callback(CALLBACK_MIDI_PROGRAM_CHANGED, fId, event.value1, 0, 0.0f, nullptr);
+#endif
             break;
 
         case kPluginPostRtEventNoteOn:
@@ -2011,10 +2014,10 @@ void CarlaPlugin::postRtEventsRun()
             // Update OSC control client
             if (kData->engine->isOscControlRegistered())
                 kData->engine->osc_send_control_note_on(fId, event.value1, event.value2, int(event.value3));
-#endif
 
             // Update Host
             kData->engine->callback(CALLBACK_NOTE_ON, fId, event.value1, event.value2, int(event.value3), nullptr);
+#endif
             break;
 
         case kPluginPostRtEventNoteOff:
@@ -2025,10 +2028,10 @@ void CarlaPlugin::postRtEventsRun()
             // Update OSC control client
             if (kData->engine->isOscControlRegistered())
                 kData->engine->osc_send_control_note_off(fId, event.value1, event.value2);
-#endif
 
             // Update Host
             kData->engine->callback(CALLBACK_NOTE_OFF, fId, event.value1, event.value2, 0.0f, nullptr);
+#endif
             break;
         }
     }
@@ -2166,8 +2169,10 @@ CarlaPlugin::ScopedSingleProcessLocker::~ScopedSingleProcessLocker()
 
     if (kBlock)
     {
+#ifndef BUILD_BRIDGE
         if (kPlugin->kData->singleMutex.wasTryLockCalled())
             kPlugin->kData->needsReset = true;
+#endif
 
         kPlugin->kData->singleMutex.unlock();
     }
