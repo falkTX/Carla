@@ -22,7 +22,8 @@
 #ifdef JACKBRIDGE_EXPORT
 # include "jackbridge/JackBridge.hpp"
 #else
-# include "jackbridge/JackBridge.cpp"
+# include "jackbridge/JackBridge1.cpp"
+# include "jackbridge/JackBridge2.cpp"
 #endif
 
 #include <cmath>

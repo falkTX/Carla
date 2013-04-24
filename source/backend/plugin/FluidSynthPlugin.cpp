@@ -1365,6 +1365,15 @@ public:
             }
 
         } // End of Post-processing
+#else
+        if (kUses16Outs)
+        {
+            for (i=0; i < kData->audioOut.count; ++i)
+            {
+                for (k=0; k < frames; ++k)
+                    outBuffer[i][k+timeOffset] = fAudio16Buffers[i][k];
+            }
+        }
 #endif
 
         // --------------------------------------------------------------------------------------------------------

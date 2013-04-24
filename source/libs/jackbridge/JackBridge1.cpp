@@ -1,5 +1,5 @@
 /*
- * JackBridge
+ * JackBridge (Part 1, JACK functions)
  * Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
@@ -16,22 +16,7 @@
 
 #include "JackBridge.hpp"
 
-#include <stdlib.h>
-#include <stdio.h>
-
-#ifndef JACKBRIDGE_DUMMY
-# include <semaphore.h>
-# include <sys/time.h>
-#endif
-
-#ifdef __WINE__
-struct timespec {  // FIXME!
-    __time_t tv_sec;  /* Seconds.  */
-    long int tv_nsec; /* Nanoseconds.  */
-};
-#endif
-
-#ifndef JACKBRIDGE_DIRECT
+#if ! (defined(JACKBRIDGE_DIRECT) || defined(JACKBRIDGE_DUMMY))
 
 #include "CarlaLibUtils.hpp"
 
@@ -203,13 +188,13 @@ struct JackBridge {
           transport_stop_ptr(nullptr),
           transport_query_ptr(nullptr)
     {
-#if defined(CARLA_OS_MAC)
-        const char* const filename = "libjack.dylib";
-#elif defined(CARLA_OS_WIN)
-        const char* const filename = "libjack.dll";
-#else
-        const char* const filename = "libjack.so.0";
-#endif
+# if defined(CARLA_OS_MAC)
+        const char* const filename("libjack.dylib");
+# elif defined(CARLA_OS_WIN)
+        const char* const filename("libjack.dll");
+# else
+        const char* const filename("libjack.so.0");
+# endif
 
         lib = lib_open(filename);
 
@@ -296,7 +281,9 @@ static JackBridge bridge;
 
 const char* jackbridge_get_version_string()
 {
-#ifdef JACKBRIDGE_DIRECT
+#if JACKBRIDGE_DUMMY
+    return nullptr;
+#elif JACKBRIDGE_DIRECT
     return jack_get_version_string();
 #else
     if (bridge.get_version_string_ptr != nullptr)
@@ -307,7 +294,9 @@ const char* jackbridge_get_version_string()
 
 jack_client_t* jackbridge_client_open(const char* client_name, jack_options_t options, jack_status_t* status, ...)
 {
-#ifdef JACKBRIDGE_DIRECT
+#if JACKBRIDGE_DUMMY
+    return nullptr;
+#elif JACKBRIDGE_DIRECT
     return jack_client_open(client_name, options, status);
 #else
     if (bridge.client_open_ptr != nullptr)
@@ -318,9 +307,13 @@ jack_client_t* jackbridge_client_open(const char* client_name, jack_options_t op
 
 const char* jackbridge_client_rename(jack_client_t* client, const char* new_name)
 {
-#ifdef JACKBRIDGE_DIRECT
+#if JACKBRIDGE_DUMMY
+    return nullptr;
+#elif JACKBRIDGE_DIRECT
     //return jack_client_rename(client, new_name);
     return nullptr;
+
+    // unused, for now
     (void)client;
     (void)new_name;
 #else
@@ -334,7 +327,9 @@ const char* jackbridge_client_rename(jack_client_t* client, const char* new_name
 
 bool jackbridge_client_close(jack_client_t* client)
 {
-#ifdef JACKBRIDGE_DIRECT
+#if JACKBRIDGE_DUMMY
+    return false;
+#elif JACKBRIDGE_DIRECT
     return (jack_client_close(client) == 0);
 #else
     if (bridge.client_close_ptr != nullptr)
@@ -345,7 +340,9 @@ bool jackbridge_client_close(jack_client_t* client)
 
 int jackbridge_client_name_size()
 {
-#ifdef JACKBRIDGE_DIRECT
+#if JACKBRIDGE_DUMMY
+    return 0;
+#elif JACKBRIDGE_DIRECT
     return jack_client_name_size();
 #else
     if (bridge.client_name_size_ptr != nullptr)
@@ -356,7 +353,9 @@ int jackbridge_client_name_size()
 
 char* jackbridge_get_client_name(jack_client_t* client)
 {
-#ifdef JACKBRIDGE_DIRECT
+#if JACKBRIDGE_DUMMY
+    return nullptr;
+#elif JACKBRIDGE_DIRECT
     return jack_get_client_name(client);
 #else
     if (bridge.get_client_name_ptr != nullptr)
@@ -369,7 +368,9 @@ char* jackbridge_get_client_name(jack_client_t* client)
 
 bool jackbridge_activate(jack_client_t* client)
 {
-#ifdef JACKBRIDGE_DIRECT
+#if JACKBRIDGE_DUMMY
+    return false;
+#elif JACKBRIDGE_DIRECT
     return (jack_activate(client) == 0);
 #else
     if (bridge.activate_ptr != nullptr)
@@ -380,7 +381,9 @@ bool jackbridge_activate(jack_client_t* client)
 
 bool jackbridge_deactivate(jack_client_t* client)
 {
-#ifdef JACKBRIDGE_DIRECT
+#if JACKBRIDGE_DUMMY
+    return false;
+#elif JACKBRIDGE_DIRECT
     return (jack_deactivate(client) == 0);
 #else
     if (bridge.deactivate_ptr != nullptr)
@@ -391,7 +394,8 @@ bool jackbridge_deactivate(jack_client_t* client)
 
 void jackbridge_on_shutdown(jack_client_t* client, JackShutdownCallback shutdown_callback, void* arg)
 {
-#ifdef JACKBRIDGE_DIRECT
+#if JACKBRIDGE_DUMMY
+#elif JACKBRIDGE_DIRECT
     jack_on_shutdown(client, shutdown_callback, arg);
 #else
     if (bridge.on_shutdown_ptr != nullptr)
@@ -401,7 +405,9 @@ void jackbridge_on_shutdown(jack_client_t* client, JackShutdownCallback shutdown
 
 bool jackbridge_set_process_callback(jack_client_t* client, JackProcessCallback process_callback, void* arg)
 {
-#ifdef JACKBRIDGE_DIRECT
+#if JACKBRIDGE_DUMMY
+    return false;
+#elif JACKBRIDGE_DIRECT
     return (jack_set_process_callback(client, process_callback, arg) == 0);
 #else
     if (bridge.set_process_callback_ptr != nullptr)
@@ -412,7 +418,9 @@ bool jackbridge_set_process_callback(jack_client_t* client, JackProcessCallback 
 
 bool jackbridge_set_freewheel_callback(jack_client_t* client, JackFreewheelCallback freewheel_callback, void* arg)
 {
-#ifdef JACKBRIDGE_DIRECT
+#if JACKBRIDGE_DUMMY
+    return false;
+#elif JACKBRIDGE_DIRECT
     return (jack_set_freewheel_callback(client, freewheel_callback, arg) == 0);
 #else
     if (bridge.set_freewheel_callback_ptr != nullptr)
@@ -423,7 +431,9 @@ bool jackbridge_set_freewheel_callback(jack_client_t* client, JackFreewheelCallb
 
 bool jackbridge_set_buffer_size_callback(jack_client_t* client, JackBufferSizeCallback bufsize_callback, void* arg)
 {
-#ifdef JACKBRIDGE_DIRECT
+#if JACKBRIDGE_DUMMY
+    return false;
+#elif JACKBRIDGE_DIRECT
     return (jack_set_buffer_size_callback(client, bufsize_callback, arg) == 0);
 #else
     if (bridge.set_buffer_size_callback_ptr != nullptr)
@@ -434,7 +444,9 @@ bool jackbridge_set_buffer_size_callback(jack_client_t* client, JackBufferSizeCa
 
 bool jackbridge_set_sample_rate_callback(jack_client_t* client, JackSampleRateCallback srate_callback, void* arg)
 {
-#ifdef JACKBRIDGE_DIRECT
+#if JACKBRIDGE_DUMMY
+    return false;
+#elif JACKBRIDGE_DIRECT
     return (jack_set_sample_rate_callback(client, srate_callback, arg) == 0);
 #else
     if (bridge.set_sample_rate_callback_ptr != nullptr)
@@ -445,7 +457,9 @@ bool jackbridge_set_sample_rate_callback(jack_client_t* client, JackSampleRateCa
 
 bool jackbridge_set_client_registration_callback(jack_client_t* client, JackClientRegistrationCallback registration_callback, void* arg)
 {
-#ifdef JACKBRIDGE_DIRECT
+#if JACKBRIDGE_DUMMY
+    return false;
+#elif JACKBRIDGE_DIRECT
     return (jack_set_client_registration_callback(client, registration_callback, arg) == 0);
 #else
     if (bridge.set_client_registration_callback_ptr != nullptr)
@@ -454,9 +468,11 @@ bool jackbridge_set_client_registration_callback(jack_client_t* client, JackClie
 #endif
 }
 
-bool jackbridge_set_port_registration_callback (jack_client_t* client, JackPortRegistrationCallback registration_callback, void *arg)
+bool jackbridge_set_port_registration_callback(jack_client_t* client, JackPortRegistrationCallback registration_callback, void *arg)
 {
-#ifdef JACKBRIDGE_DIRECT
+#if JACKBRIDGE_DUMMY
+    return false;
+#elif JACKBRIDGE_DIRECT
     return (jack_set_port_registration_callback(client, registration_callback, arg) == 0);
 #else
     if (bridge.set_port_registration_callback_ptr != nullptr)
@@ -465,9 +481,11 @@ bool jackbridge_set_port_registration_callback (jack_client_t* client, JackPortR
 #endif
 }
 
-bool jackbridge_set_port_connect_callback (jack_client_t* client, JackPortConnectCallback connect_callback, void* arg)
+bool jackbridge_set_port_connect_callback(jack_client_t* client, JackPortConnectCallback connect_callback, void* arg)
 {
-#ifdef JACKBRIDGE_DIRECT
+#if JACKBRIDGE_DUMMY
+    return false;
+#elif JACKBRIDGE_DIRECT
     return (jack_set_port_connect_callback(client, connect_callback, arg) == 0);
 #else
     if (bridge.set_port_connect_callback_ptr != nullptr)
@@ -476,9 +494,11 @@ bool jackbridge_set_port_connect_callback (jack_client_t* client, JackPortConnec
 #endif
 }
 
-bool jackbridge_set_port_rename_callback (jack_client_t* client, JackPortRenameCallback rename_callback, void* arg)
+bool jackbridge_set_port_rename_callback(jack_client_t* client, JackPortRenameCallback rename_callback, void* arg)
 {
-#ifdef JACKBRIDGE_DIRECT
+#if JACKBRIDGE_DUMMY
+    return false;
+#elif JACKBRIDGE_DIRECT
     return (jack_set_port_rename_callback(client, rename_callback, arg) == 0);
 #else
     if (bridge.set_port_rename_callback_ptr != nullptr)
@@ -489,7 +509,9 @@ bool jackbridge_set_port_rename_callback (jack_client_t* client, JackPortRenameC
 
 bool jackbridge_set_latency_callback(jack_client_t* client, JackLatencyCallback latency_callback, void* arg)
 {
-#ifdef JACKBRIDGE_DIRECT
+#if JACKBRIDGE_DUMMY
+    return false;
+#elif JACKBRIDGE_DIRECT
     return (jack_set_latency_callback(client, latency_callback, arg) == 0);
 #else
     if (bridge.set_latency_callback_ptr != nullptr)
@@ -502,7 +524,9 @@ bool jackbridge_set_latency_callback(jack_client_t* client, JackLatencyCallback 
 
 jack_nframes_t jackbridge_get_sample_rate(jack_client_t* client)
 {
-#ifdef JACKBRIDGE_DIRECT
+#if JACKBRIDGE_DUMMY
+    return 0;
+#elif JACKBRIDGE_DIRECT
     return jack_get_sample_rate(client);
 #else
     if (bridge.get_sample_rate_ptr != nullptr)
@@ -513,7 +537,9 @@ jack_nframes_t jackbridge_get_sample_rate(jack_client_t* client)
 
 jack_nframes_t jackbridge_get_buffer_size(jack_client_t* client)
 {
-#ifdef JACKBRIDGE_DIRECT
+#if JACKBRIDGE_DUMMY
+    return 0;
+#elif JACKBRIDGE_DIRECT
     return jack_get_buffer_size(client);
 #else
     if (bridge.get_buffer_size_ptr != nullptr)
@@ -524,7 +550,9 @@ jack_nframes_t jackbridge_get_buffer_size(jack_client_t* client)
 
 jack_port_t* jackbridge_port_register(jack_client_t* client, const char* port_name, const char* port_type, unsigned long flags, unsigned long buffer_size)
 {
-#ifdef JACKBRIDGE_DIRECT
+#if JACKBRIDGE_DUMMY
+    return nullptr;
+#elif JACKBRIDGE_DIRECT
     return jack_port_register(client, port_name, port_type, flags, buffer_size);
 #else
     if (bridge.port_register_ptr != nullptr)
@@ -535,7 +563,9 @@ jack_port_t* jackbridge_port_register(jack_client_t* client, const char* port_na
 
 bool jackbridge_port_unregister(jack_client_t* client, jack_port_t* port)
 {
-#ifdef JACKBRIDGE_DIRECT
+#if JACKBRIDGE_DUMMY
+    return false;
+#elif JACKBRIDGE_DIRECT
     return (jack_port_unregister(client, port) == 0);
 #else
     if (bridge.port_unregister_ptr != nullptr)
@@ -546,7 +576,9 @@ bool jackbridge_port_unregister(jack_client_t* client, jack_port_t* port)
 
 void* jackbridge_port_get_buffer(jack_port_t* port, jack_nframes_t nframes)
 {
-#ifdef JACKBRIDGE_DIRECT
+#if JACKBRIDGE_DUMMY
+    return nullptr;
+#elif JACKBRIDGE_DIRECT
     return jack_port_get_buffer(port, nframes);
 #else
     if (bridge.port_get_buffer_ptr != nullptr)
@@ -559,7 +591,9 @@ void* jackbridge_port_get_buffer(jack_port_t* port, jack_nframes_t nframes)
 
 const char* jackbridge_port_name(const jack_port_t* port)
 {
-#ifdef JACKBRIDGE_DIRECT
+#if JACKBRIDGE_DUMMY
+    return nullptr;
+#elif JACKBRIDGE_DIRECT
     return jack_port_name(port);
 #else
     if (bridge.port_name_ptr != nullptr)
@@ -570,7 +604,9 @@ const char* jackbridge_port_name(const jack_port_t* port)
 
 const char* jackbridge_port_short_name(const jack_port_t* port)
 {
-#ifdef JACKBRIDGE_DIRECT
+#if JACKBRIDGE_DUMMY
+    return nullptr;
+#elif JACKBRIDGE_DIRECT
     return jack_port_short_name(port);
 #else
     if (bridge.port_short_name_ptr != nullptr)
@@ -581,7 +617,9 @@ const char* jackbridge_port_short_name(const jack_port_t* port)
 
 int jackbridge_port_flags(const jack_port_t* port)
 {
-#ifdef JACKBRIDGE_DIRECT
+#if JACKBRIDGE_DUMMY
+    return 0;
+#elif JACKBRIDGE_DIRECT
     return jack_port_flags(port);
 #else
     if (bridge.port_flags_ptr != nullptr)
@@ -592,7 +630,9 @@ int jackbridge_port_flags(const jack_port_t* port)
 
 const char* jackbridge_port_type(const jack_port_t* port)
 {
-#ifdef JACKBRIDGE_DIRECT
+#if JACKBRIDGE_DUMMY
+    return nullptr;
+#elif JACKBRIDGE_DIRECT
     return jack_port_type(port);
 #else
     if (bridge.port_type_ptr != nullptr)
@@ -603,7 +643,9 @@ const char* jackbridge_port_type(const jack_port_t* port)
 
 const char** jackbridge_port_get_connections(const jack_port_t* port)
 {
-#ifdef JACKBRIDGE_DIRECT
+#if JACKBRIDGE_DUMMY
+    return nullptr;
+#elif JACKBRIDGE_DIRECT
     return jack_port_get_connections(port);
 #else
     if (bridge.port_get_connections_ptr != nullptr)
@@ -616,7 +658,9 @@ const char** jackbridge_port_get_connections(const jack_port_t* port)
 
 bool jackbridge_port_set_name(jack_port_t* port, const char* port_name)
 {
-#ifdef JACKBRIDGE_DIRECT
+#if JACKBRIDGE_DUMMY
+    return false;
+#elif JACKBRIDGE_DIRECT
     return (jack_port_set_name(port, port_name) == 0);
 #else
     if (bridge.port_set_name_ptr != nullptr)
@@ -627,7 +671,9 @@ bool jackbridge_port_set_name(jack_port_t* port, const char* port_name)
 
 bool jackbridge_connect(jack_client_t* client, const char* source_port, const char* destination_port)
 {
-#ifdef JACKBRIDGE_DIRECT
+#if JACKBRIDGE_DUMMY
+    return false;
+#elif JACKBRIDGE_DIRECT
     return (jack_connect(client, source_port, destination_port) == 0);
 #else
     if (bridge.connect_ptr != nullptr)
@@ -638,7 +684,9 @@ bool jackbridge_connect(jack_client_t* client, const char* source_port, const ch
 
 bool jackbridge_disconnect(jack_client_t* client, const char* source_port, const char* destination_port)
 {
-#ifdef JACKBRIDGE_DIRECT
+#if JACKBRIDGE_DUMMY
+    return false;
+#elif JACKBRIDGE_DIRECT
     return (jack_disconnect(client, source_port, destination_port) == 0);
 #else
     if (bridge.disconnect_ptr != nullptr)
@@ -649,7 +697,9 @@ bool jackbridge_disconnect(jack_client_t* client, const char* source_port, const
 
 int jackbridge_port_name_size()
 {
-#ifdef JACKBRIDGE_DIRECT
+#if JACKBRIDGE_DUMMY
+    return 0;
+#elif JACKBRIDGE_DIRECT
     return jack_port_name_size();
 #else
     if (bridge.port_name_size_ptr != nullptr)
@@ -660,7 +710,8 @@ int jackbridge_port_name_size()
 
 void jackbridge_port_get_latency_range(jack_port_t* port, jack_latency_callback_mode_t mode, jack_latency_range_t* range)
 {
-#ifdef JACKBRIDGE_DIRECT
+#if JACKBRIDGE_DUMMY
+#elif JACKBRIDGE_DIRECT
     return jack_port_get_latency_range(port, mode, range);
 #else
     if (bridge.port_get_latency_range_ptr != nullptr)
@@ -670,7 +721,8 @@ void jackbridge_port_get_latency_range(jack_port_t* port, jack_latency_callback_
 
 void jackbridge_port_set_latency_range(jack_port_t* port, jack_latency_callback_mode_t mode, jack_latency_range_t* range)
 {
-#ifdef JACKBRIDGE_DIRECT
+#if JACKBRIDGE_DUMMY
+#elif JACKBRIDGE_DIRECT
     return jack_port_set_latency_range(port, mode, range);
 #else
     if (bridge.port_set_latency_range_ptr != nullptr)
@@ -680,7 +732,9 @@ void jackbridge_port_set_latency_range(jack_port_t* port, jack_latency_callback_
 
 bool jackbridge_recompute_total_latencies(jack_client_t* client)
 {
-#ifdef JACKBRIDGE_DIRECT
+#if JACKBRIDGE_DUMMY
+    return false;
+#elif JACKBRIDGE_DIRECT
     return (jack_recompute_total_latencies(client) == 0);
 #else
     if (bridge.recompute_total_latencies_ptr != nullptr)
@@ -691,7 +745,9 @@ bool jackbridge_recompute_total_latencies(jack_client_t* client)
 
 const char** jackbridge_get_ports(jack_client_t* client, const char* port_name_pattern, const char* type_name_pattern, unsigned long flags)
 {
-#ifdef JACKBRIDGE_DIRECT
+#if JACKBRIDGE_DUMMY
+    return nullptr;
+#elif JACKBRIDGE_DIRECT
     return jack_get_ports(client, port_name_pattern, type_name_pattern, flags);
 #else
     if (bridge.get_ports_ptr != nullptr)
@@ -702,7 +758,9 @@ const char** jackbridge_get_ports(jack_client_t* client, const char* port_name_p
 
 jack_port_t* jackbridge_port_by_name(jack_client_t* client, const char* port_name)
 {
-#ifdef JACKBRIDGE_DIRECT
+#if JACKBRIDGE_DUMMY
+    return nullptr;
+#elif JACKBRIDGE_DIRECT
     return jack_port_by_name(client, port_name);
 #else
     if (bridge.port_by_name_ptr != nullptr)
@@ -713,7 +771,9 @@ jack_port_t* jackbridge_port_by_name(jack_client_t* client, const char* port_nam
 
 jack_port_t* jackbridge_port_by_id(jack_client_t* client, jack_port_id_t port_id)
 {
-#ifdef JACKBRIDGE_DIRECT
+#if JACKBRIDGE_DUMMY
+    return nullptr;
+#elif JACKBRIDGE_DIRECT
     return jack_port_by_id(client, port_id);
 #else
     if (bridge.port_by_id_ptr != nullptr)
@@ -726,14 +786,15 @@ jack_port_t* jackbridge_port_by_id(jack_client_t* client, jack_port_id_t port_id
 
 void jackbridge_free(void* ptr)
 {
-#ifdef JACKBRIDGE_DIRECT
+#if JACKBRIDGE_DUMMY
+#elif JACKBRIDGE_DIRECT
     return jack_free(ptr);
 #else
     if (bridge.free_ptr != nullptr)
         return bridge.free_ptr(ptr);
 
     // just in case
-    free(ptr);
+    std::free(ptr);
 #endif
 }
 
@@ -741,7 +802,9 @@ void jackbridge_free(void* ptr)
 
 uint32_t jackbridge_midi_get_event_count(void* port_buffer)
 {
-#ifdef JACKBRIDGE_DIRECT
+#if JACKBRIDGE_DUMMY
+    return 0;
+#elif JACKBRIDGE_DIRECT
     return jack_midi_get_event_count(port_buffer);
 #else
     if (bridge.midi_get_event_count_ptr != nullptr)
@@ -752,7 +815,9 @@ uint32_t jackbridge_midi_get_event_count(void* port_buffer)
 
 bool jackbridge_midi_event_get(jack_midi_event_t* event, void* port_buffer, uint32_t event_index)
 {
-#ifdef JACKBRIDGE_DIRECT
+#if JACKBRIDGE_DUMMY
+    return false;
+#elif JACKBRIDGE_DIRECT
     return (jack_midi_event_get(event, port_buffer, event_index) == 0);
 #else
     if (bridge.midi_event_get_ptr != nullptr)
@@ -763,7 +828,8 @@ bool jackbridge_midi_event_get(jack_midi_event_t* event, void* port_buffer, uint
 
 void jackbridge_midi_clear_buffer(void* port_buffer)
 {
-#ifdef JACKBRIDGE_DIRECT
+#if JACKBRIDGE_DUMMY
+#elif JACKBRIDGE_DIRECT
     return jack_midi_clear_buffer(port_buffer);
 #else
     if (bridge.midi_clear_buffer_ptr != nullptr)
@@ -773,7 +839,9 @@ void jackbridge_midi_clear_buffer(void* port_buffer)
 
 bool jackbridge_midi_event_write(void* port_buffer, jack_nframes_t time, const jack_midi_data_t* data, size_t data_size)
 {
-#ifdef JACKBRIDGE_DIRECT
+#if JACKBRIDGE_DUMMY
+    return false;
+#elif JACKBRIDGE_DIRECT
     return (jack_midi_event_write(port_buffer, time, data, data_size) == 0);
 #else
     if (bridge.midi_event_write_ptr != nullptr)
@@ -784,7 +852,9 @@ bool jackbridge_midi_event_write(void* port_buffer, jack_nframes_t time, const j
 
 jack_midi_data_t* jackbridge_midi_event_reserve(void* port_buffer, jack_nframes_t time, size_t data_size)
 {
-#ifdef JACKBRIDGE_DIRECT
+#if JACKBRIDGE_DUMMY
+    return nullptr;
+#elif JACKBRIDGE_DIRECT
     return jack_midi_event_reserve(port_buffer, time, data_size);
 #else
     if (bridge.midi_event_reserve_ptr != nullptr)
@@ -797,7 +867,9 @@ jack_midi_data_t* jackbridge_midi_event_reserve(void* port_buffer, jack_nframes_
 
 int jackbridge_transport_locate(jack_client_t* client, jack_nframes_t frame)
 {
-#ifdef JACKBRIDGE_DIRECT
+#if JACKBRIDGE_DUMMY
+    return 0;
+#elif JACKBRIDGE_DIRECT
     return (jack_transport_locate(client, frame) == 0);
 #else
     if (bridge.transport_locate_ptr != nullptr)
@@ -808,7 +880,8 @@ int jackbridge_transport_locate(jack_client_t* client, jack_nframes_t frame)
 
 void jackbridge_transport_start(jack_client_t* client)
 {
-#ifdef JACKBRIDGE_DIRECT
+#if JACKBRIDGE_DUMMY
+#elif JACKBRIDGE_DIRECT
     jack_transport_start(client);
 #else
     if (bridge.transport_start_ptr != nullptr)
@@ -818,7 +891,8 @@ void jackbridge_transport_start(jack_client_t* client)
 
 void jackbridge_transport_stop(jack_client_t* client)
 {
-#ifdef JACKBRIDGE_DIRECT
+#if JACKBRIDGE_DUMMY
+#elif JACKBRIDGE_DIRECT
     jack_transport_stop(client);
 #else
     if (bridge.transport_stop_ptr != nullptr)
@@ -828,7 +902,9 @@ void jackbridge_transport_stop(jack_client_t* client)
 
 jack_transport_state_t jackbridge_transport_query(const jack_client_t* client, jack_position_t* pos)
 {
-#ifdef JACKBRIDGE_DIRECT
+#if JACKBRIDGE_DUMMY
+    return JackTransportStopped;
+#elif JACKBRIDGE_DIRECT
     return jack_transport_query(client, pos);
 #else
     if (bridge.transport_query_ptr != nullptr)
@@ -838,43 +914,3 @@ jack_transport_state_t jackbridge_transport_query(const jack_client_t* client, j
 }
 
 // -----------------------------------------------------------------------------
-
-#ifdef JACKBRIDGE_DUMMY
-bool jackbridge_sem_post(void* sem)
-{
-    return false;
-}
-
-bool jackbridge_sem_timedwait(void* sem, int secs)
-{
-    return false;
-}
-#else
-bool jackbridge_sem_post(void* sem)
-{
-    return (sem_post((sem_t*)sem) == 0);
-}
-
-bool jackbridge_sem_timedwait(void* sem, int secs)
-{
-# ifdef CARLA_OS_MAC
-        alarm(secs);
-        return (sem_wait((sem_t*)sem) == 0);
-# else
-        timespec timeout;
-
-#  ifdef CARLA_OS_WIN
-        timeval now;
-        gettimeofday(&now, nullptr);
-        timeout.tv_sec  = now.tv_sec;
-        timeout.tv_nsec = now.tv_usec * 1000;
-#  else
-        clock_gettime(CLOCK_REALTIME, &timeout);
-#  endif
-
-        timeout.tv_sec += secs;
-
-        return (sem_timedwait((sem_t*)sem, &timeout) == 0);
-# endif
-}
-#endif

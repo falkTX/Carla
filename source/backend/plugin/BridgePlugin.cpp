@@ -866,7 +866,7 @@ public:
                 fParams = nullptr;
             }
 
-            CARLA_SAFE_ASSERT_INT2(pTotal < (int32_t)kData->engine->getOptions().maxParameters, pTotal, kData->engine->getOptions().maxParameters);
+            CARLA_SAFE_ASSERT_INT2(pTotal < static_cast<int32_t>(kData->engine->getOptions().maxParameters), pTotal, kData->engine->getOptions().maxParameters);
 
             const int32_t count(carla_min<int32_t>(pTotal, kData->engine->getOptions().maxParameters, 0));
 

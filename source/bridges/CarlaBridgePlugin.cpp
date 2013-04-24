@@ -18,6 +18,7 @@
 #include "CarlaBridgeClient.hpp"
 #include "CarlaBridgeToolkit.hpp"
 
+#include "CarlaBackendUtils.hpp"
 #include "CarlaBridgeUtils.hpp"
 #include "CarlaStandalone.hpp"
 #include "CarlaEngine.hpp"
@@ -321,8 +322,7 @@ protected:
             }
             else
             {
-                // hide gui
-                //sendOscConfigure();
+                // show-gui button
                 fEngine->osc_send_bridge_configure(CARLA_BRIDGE_MSG_HIDE_GUI, "");
             }
             break;
@@ -484,19 +484,9 @@ int main(int argc, char* argv[])
         std::strncpy(bridgeBaseControlName, argv[6]+6, 6);
     }
 
-    CarlaBackend::PluginType itype;
+    CarlaBackend::PluginType itype(CarlaBackend::getPluginTypeFromString(stype));
 
-    if (std::strcmp(stype, "LADSPA") == 0)
-        itype = CarlaBackend::PLUGIN_LADSPA;
-    else if (std::strcmp(stype, "DSSI") == 0)
-        itype = CarlaBackend::PLUGIN_DSSI;
-    else if (std::strcmp(stype, "LV2") == 0)
-        itype = CarlaBackend::PLUGIN_LV2;
-    else if (std::strcmp(stype, "VST") == 0)
-        itype = CarlaBackend::PLUGIN_VST;
-    else if (std::strcmp(stype, "VST3") == 0)
-        itype = CarlaBackend::PLUGIN_VST3;
-    else
+    if (itype == CarlaBackend::PLUGIN_NONE)
     {
         carla_stderr("Invalid plugin type '%s'", stype);
         return 1;

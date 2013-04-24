@@ -19,17 +19,17 @@ else
 LINK_FLAGS += -shared
 endif
 
-WIN_BUILD_FLAGS  = $(BUILD_CXX_FLAGS) -DJACKBRIDGE_DUMMY -w
+WIN_BUILD_FLAGS  = $(BUILD_CXX_FLAGS) -DJACKBRIDGE_DUMMY=1 -w
 WIN_32BIT_FLAGS  = $(32BIT_FLAGS)
 WIN_64BIT_FLAGS  = $(64BIT_FLAGS)
 WIN_LINK_FLAGS   = $(LINK_FLAGS)
 
-WINE_BUILD_FLAGS = $(BUILD_CXX_FLAGS) -DJACKBRIDGE_DIRECT -fPIC
+WINE_BUILD_FLAGS = $(BUILD_CXX_FLAGS) -DJACKBRIDGE_DIRECT=1 -fPIC
 WINE_32BIT_FLAGS = $(32BIT_FLAGS) -L/usr/lib32/wine -L/usr/lib/i386-linux-gnu/wine
 WINE_64BIT_FLAGS = $(64BIT_FLAGS) -L/usr/lib64/wine -L/usr/lib/x86_64-linux-gnu/wine
 WINE_LINK_FLAGS  = $(LINK_FLAGS) -ldl -lrt -lpthread -ljack
 
-OBJS = JackBridge.cpp
+OBJS = JackBridge2.cpp JackBridge1.cpp
 
 # --------------------------------------------------------------
 

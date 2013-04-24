@@ -2228,9 +2228,6 @@ public:
         dispatcher(effSetBlockSize, 0, kData->engine->getBufferSize(), nullptr, 0.0f);
         dispatcher(effSetProcessPrecision, 0, kVstProcessPrecision32, nullptr, 0.0f);
 
-        dispatcher(effStopProcess, 0, 0, nullptr, 0.0f);
-        dispatcher(effMainsChanged, 0, 0, nullptr, 0.0f);
-
         if (dispatcher(effGetVstVersion, 0, 0, nullptr, 0.0f) < kVstVersion)
             fHints |= PLUGIN_USES_OLD_VSTSDK;
 
@@ -2283,7 +2280,7 @@ public:
 
             // load settings
             kData->idStr  = "VST/";
-            kData->idStr += std::strrchr(filename, OS_SEP)+1;
+            kData->idStr += std::strrchr(filename, OS_SEP)+1; // FIXME!
             kData->idStr += "/";
             kData->idStr += CarlaString(uniqueId());
             fOptions = kData->loadSettings(fOptions, availableOptions());

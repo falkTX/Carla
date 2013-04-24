@@ -1745,6 +1745,12 @@ public:
             }
 
         } // End of Post-processing
+#else
+        for (i=0; i < kData->audioOut.count; ++i)
+        {
+            for (k=0; k < frames; ++k)
+                outBuffer[i][k+timeOffset] = fAudioOutBuffers[i][k];
+        }
 #endif
 
         // --------------------------------------------------------------------------------------------------------
