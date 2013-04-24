@@ -20,8 +20,7 @@
 # Imports (Global)
 
 from PyQt4.QtCore import pyqtSlot, Qt, QTimer, SIGNAL, SLOT
-from PyQt4.QtGui import QAbstractSpinBox, QComboBox, QCursor, QDialog, QMenu, QProgressBar
-#from PyQt4.QtGui import QStyleFactory
+from PyQt4.QtGui import QAbstractSpinBox, QApplication, QComboBox, QCursor, QDialog, QMenu, QProgressBar
 from math import isnan
 
 # ------------------------------------------------------------------------------------------------------------
@@ -40,8 +39,6 @@ def fixValue(value, minimum, maximum):
         print("Parameter too high! - %f/%f" % (value, maximum))
         return maximum
     return value
-
-#QPlastiqueStyle = QStyleFactory.create("Plastique")
 
 # ------------------------------------------------------------------------------------------------------------
 # Custom InputDialog with Scale Points support
@@ -198,9 +195,6 @@ class ParamSpinBox(QAbstractSpinBox):
         self.connect(self.fBar, SIGNAL("valueChanged(double)"), SLOT("slot_progressBarValueChanged(double)"))
 
         QTimer.singleShot(0, self, SLOT("slot_updateProgressBarGeometry()"))
-
-    #def force_plastique_style(self):
-        #self.setStyle(QPlastiqueStyle)
 
     def setDefault(self, value):
         value = fixValue(value, self.fMinimum, self.fMaximum)
@@ -359,12 +353,22 @@ class ParamSpinBox(QAbstractSpinBox):
         menu     = QMenu(self)
         actReset = menu.addAction(self.tr("Reset (%f)" % self.fDefault))
         menu.addSeparator()
-        actCopy = menu.addAction(self.tr("Copy (%f)" % self.fValue))
+        actCopy  = menu.addAction(self.tr("Copy (%f)" % self.fValue))
 
-        if True or self.fReadOnly:
+        clipboard  = QApplication.instance().clipboard()
+        pasteText  = clipboard.text()
+        pasteValue = None
+
+        if pasteText:
+            try:
+                pasteValue = float(pasteText)
+            except:
+                pass
+
+        if pasteValue is None:
             actPaste = menu.addAction(self.tr("Paste"))
         else:
-            actPaste = menu.addAction(self.tr("Paste (%s)" % "TODO"))
+            actPaste = menu.addAction(self.tr("Paste (%s)" % pasteValue))
 
         menu.addSeparator()
 
@@ -375,9 +379,6 @@ class ParamSpinBox(QAbstractSpinBox):
             actPaste.setEnabled(False)
             actSet.setEnabled(False)
 
-        # TODO - NOT IMPLEMENTED YET
-        actCopy.setEnabled(False)
-
         actSel = menu.exec_(QCursor.pos())
 
         if actSel == actSet:
@@ -387,10 +388,10 @@ class ParamSpinBox(QAbstractSpinBox):
                 self.setValue(value)
 
         elif actSel == actCopy:
-            pass
+            clipboard.setText("%f" % self.fValue)
 
         elif actSel == actPaste:
-            pass
+            self.setValue(pasteValue)
 
         elif actSel == actReset:
             self.setValue(self.fDefault)
