@@ -16,7 +16,7 @@
 
 #include "CarlaDefines.hpp"
 
-// don't include the whole JACK deal in this file
+// don't include the whole JACK API in this file
 CARLA_EXPORT bool jackbridge_sem_post(void* sem);
 CARLA_EXPORT bool jackbridge_sem_timedwait(void* sem, int secs);
 
@@ -80,3 +80,5 @@ bool jackbridge_sem_timedwait(void* sem, int secs)
 # endif
 }
 #endif
+
+// -----------------------------------------------------------------------------

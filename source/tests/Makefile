@@ -41,6 +41,9 @@ Print: Print.cpp
 Utils: Utils.cpp
 	$(CXX) $^ $(BUILD_CXX_FLAGS) $(LINK_FLAGS) -o $@
 
+Rewire.exe: Rewire.cpp
+	$(CXX) $^ $(BUILD_CXX_FLAGS) $(LINK_FLAGS) -lversion -o $@
+
 RUN: $(TARGETS)
 # 	valgrind ./Base64
 # 	./ANSI

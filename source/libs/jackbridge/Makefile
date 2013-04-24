@@ -29,7 +29,7 @@ WINE_32BIT_FLAGS = $(32BIT_FLAGS) -L/usr/lib32/wine -L/usr/lib/i386-linux-gnu/wi
 WINE_64BIT_FLAGS = $(64BIT_FLAGS) -L/usr/lib64/wine -L/usr/lib/x86_64-linux-gnu/wine
 WINE_LINK_FLAGS  = $(LINK_FLAGS) -ldl -lrt -lpthread -ljack
 
-OBJS = JackBridge2.cpp JackBridge1.cpp
+OBJS = JackBridge1.cpp JackBridge2.cpp
 
 # --------------------------------------------------------------
 
