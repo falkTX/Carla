@@ -78,6 +78,7 @@ UIs = \
 	source/ui_carla_plugin.py \
 	source/ui_carla_refresh.py \
 	source/ui_carla_settings.py \
+	source/ui_carla_settings_driver.py \
 	source/ui_inputdialog_value.py
 
 UI: $(UIs)

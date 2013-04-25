@@ -30,6 +30,7 @@ from PyQt4.QtGui import QImage, QPalette, QPrinter, QPrintDialog, QSyntaxHighlig
 import patchcanvas
 import ui_carla
 import ui_carla_settings
+import ui_carla_settings_driver
 from carla_shared import *
 
 # ------------------------------------------------------------------------------------------------------------
@@ -69,6 +70,8 @@ CARLA_DEFAULT_UIS_ALWAYS_ON_TOP      = True
 CARLA_DEFAULT_PREFER_UI_BRIDGES      = True
 CARLA_DEFAULT_OSC_UI_TIMEOUT         = 4000
 CARLA_DEFAULT_DISABLE_CHECKS         = False
+CARLA_DEFAULT_RTAUDIO_BUFFER_SIZE    = 1024
+CARLA_DEFAULT_RTAUDIO_SAMPLE_RATE    = 44100
 
 if WINDOWS:
     CARLA_DEFAULT_AUDIO_DRIVER = "DirectSound"
@@ -76,6 +79,9 @@ elif MACOS:
     CARLA_DEFAULT_AUDIO_DRIVER = "CoreAudio"
 else:
     CARLA_DEFAULT_AUDIO_DRIVER = "JACK"
+
+BUFFER_SIZES = (16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192)
+SAMPLE_RATES = (22050, 32000, 44100, 48000, 88200, 96000, 176400, 192000)
 
 # ------------------------------------------------------------------------------------------------------------
 # Global Variables
@@ -104,6 +110,74 @@ class LogSyntaxHighlighter(QSyntaxHighlighter):
 
 # ------------------------------------------------------------------------------------------------------------
 # Settings Dialog
+
+class DriverSettingsW(QDialog):
+    def __init__(self, parent, driverIndex, driverName):
+        QDialog.__init__(self, parent)
+        self.ui = ui_carla_settings_driver.Ui_DriverSettingsW()
+        self.ui.setupUi(self)
+        self.ui.stackedWidget.setCurrentIndex(0 if (driverName == "JACK") else 1)
+
+        self.fDriverIndex = driverIndex
+        self.fDriverName  = driverName
+
+        self.loadSettings()
+
+        self.connect(self, SIGNAL("accepted()"), SLOT("slot_saveSettings()"))
+
+    def loadSettings(self):
+        settings = QSettings()
+
+        if self.fDriverName == "JACK":
+            self.ui.cb_jack_autoconnect.setChecked(settings.value("Engine/JackAutoConnect", False, type=bool))
+            self.ui.cb_jack_timemaster.setChecked(settings.value("Engine/JackTimeMaster", False, type=bool))
+
+        else:
+            deviceNames = Carla.host.get_engine_driver_device_names(self.fDriverIndex)
+
+            for name in deviceNames:
+                self.ui.cb_rtaudio_device.addItem(name)
+
+            for bsize in BUFFER_SIZES:
+                self.ui.cb_rtaudio_buffersize.addItem(str(bsize))
+
+            for srate in SAMPLE_RATES:
+                self.ui.cb_rtaudio_samplerate.addItem(str(srate))
+
+            rtaudioDevice     = settings.value("Engine/RtAudioDevice", "", type=str)
+            rtaudioBufferSize = settings.value("Engine/RtAudioBufferSize", CARLA_DEFAULT_RTAUDIO_BUFFER_SIZE, type=int)
+            rtaudioSampleRate = settings.value("Engine/RtAudioSampleRate", CARLA_DEFAULT_RTAUDIO_SAMPLE_RATE, type=int)
+
+            if rtaudioDevice and rtaudioDevice in deviceNames:
+                self.ui.cb_rtaudio_device.setCurrentIndex(deviceNames.index(rtaudioDevice))
+            else:
+                self.ui.cb_rtaudio_device.setCurrentIndex(-1)
+
+            if rtaudioBufferSize and rtaudioBufferSize in BUFFER_SIZES:
+                self.ui.cb_rtaudio_buffersize.setCurrentIndex(BUFFER_SIZES.index(rtaudioBufferSize))
+            else:
+                self.ui.cb_rtaudio_buffersize.setCurrentIndex(BUFFER_SIZES.index(CARLA_DEFAULT_RTAUDIO_BUFFER_SIZE))
+
+            if rtaudioSampleRate and rtaudioSampleRate in SAMPLE_RATES:
+                self.ui.cb_rtaudio_samplerate.setCurrentIndex(SAMPLE_RATES.index(rtaudioSampleRate))
+            else:
+                self.ui.cb_rtaudio_samplerate.setCurrentIndex(SAMPLE_RATES.index(CARLA_DEFAULT_RTAUDIO_SAMPLE_RATE))
+
+    @pyqtSlot()
+    def slot_saveSettings(self):
+        settings = QSettings()
+
+        if self.fDriverName == "JACK":
+            settings.setValue("Engine/JackAutoConnect", self.ui.cb_jack_autoconnect.isChecked())
+            settings.setValue("Engine/JackTimeMaster", self.ui.cb_jack_timemaster.isChecked())
+        else:
+            settings.setValue("Engine/RtAudioDevice", self.ui.cb_rtaudio_device.currentText())
+            settings.setValue("Engine/RtAudioBufferSize", self.ui.cb_rtaudio_buffersize.currentText())
+            settings.setValue("Engine/RtAudioSampleRate", self.ui.cb_rtaudio_samplerate.currentText())
+
+    def done(self, r):
+        QDialog.done(self, r)
+        self.close()
 
 class CarlaSettingsW(QDialog):
     def __init__(self, parent):
@@ -141,6 +215,7 @@ class CarlaSettingsW(QDialog):
 
         self.connect(self.ui.b_main_def_folder_open, SIGNAL("clicked()"), SLOT("slot_getAndSetProjectPath()"))
         self.connect(self.ui.cb_engine_audio_driver, SIGNAL("currentIndexChanged(int)"), SLOT("slot_engineAudioDriverChanged()"))
+        self.connect(self.ui.tb_engine_driver_config, SIGNAL("clicked()"), SLOT("slot_showAudioDriverSettings()"))
         self.connect(self.ui.b_paths_add, SIGNAL("clicked()"), SLOT("slot_addPluginPath()"))
         self.connect(self.ui.b_paths_remove, SIGNAL("clicked()"), SLOT("slot_removePluginPath()"))
         self.connect(self.ui.b_paths_change, SIGNAL("clicked()"), SLOT("slot_changePluginPath()"))
@@ -446,6 +521,12 @@ class CarlaSettingsW(QDialog):
             self.ui.sw_engine_process_mode.setCurrentIndex(0)
         else:
             self.ui.sw_engine_process_mode.setCurrentIndex(1)
+
+    @pyqtSlot()
+    def slot_showAudioDriverSettings(self):
+        driverIndex = self.ui.cb_engine_audio_driver.currentIndex()
+        driverName  = self.ui.cb_engine_audio_driver.currentText()
+        DriverSettingsW(self, driverIndex, driverName).exec_()
 
     @pyqtSlot()
     def slot_addPluginPath(self):
@@ -1006,8 +1087,8 @@ class CarlaMainW(QMainWindow):
             Carla.host.set_engine_option(OPTION_JACK_TIMEMASTER, jackTimeMaster, "")
 
         else:
-            rtaudioBufferSize = settings.value("Engine/RtAudioBufferSize", 512, type=int)
-            rtaudioSampleRate = settings.value("Engine/RtAudioSampleRate", 44100, type=int)
+            rtaudioBufferSize = settings.value("Engine/RtAudioBufferSize", CARLA_DEFAULT_RTAUDIO_BUFFER_SIZE, type=int)
+            rtaudioSampleRate = settings.value("Engine/RtAudioSampleRate", CARLA_DEFAULT_RTAUDIO_SAMPLE_RATE, type=int)
             rtaudioDevice     = settings.value("Engine/RtAudioDevice", "", type=str)
 
             Carla.host.set_engine_option(OPTION_RTAUDIO_BUFFER_SIZE, rtaudioBufferSize, "")
