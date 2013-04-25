@@ -1093,7 +1093,7 @@ class CarlaMainW(QMainWindow):
 
             Carla.host.set_engine_option(OPTION_RTAUDIO_BUFFER_SIZE, rtaudioBufferSize, "")
             Carla.host.set_engine_option(OPTION_RTAUDIO_SAMPLE_RATE, rtaudioSampleRate, "")
-            Carla.host.set_engine_option(OPTION_RTAUDIO_SAMPLE_RATE, 0, rtaudioDevice)
+            Carla.host.set_engine_option(OPTION_RTAUDIO_DEVICE, 0, rtaudioDevice)
 
         # ---------------------------------------------
         # Start

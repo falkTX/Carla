@@ -149,13 +149,37 @@ public:
 
         fBufferSize = fOptions.rtaudioBufferSize;
 
+        carla_stdout("Open RtAudio with device \"%s\"", (const char*)fOptions.rtaudioDevice);
+
         // Audio
         {
             RtAudio::StreamParameters iParams, oParams;
-            iParams.deviceId = fAudio.getDefaultInputDevice();
-            oParams.deviceId = fAudio.getDefaultOutputDevice();
-            iParams.nChannels = 2;
-            oParams.nChannels = 2;
+            iParams.nChannels = 2; // todo
+            oParams.nChannels = 2; // todo
+
+            bool deviceSet = false;
+
+            if (fOptions.rtaudioDevice.isNotEmpty())
+            {
+                for (unsigned int i=0, count=fAudio.getDeviceCount(); i < count; ++i)
+                {
+                    RtAudio::DeviceInfo devInfo(fAudio.getDeviceInfo(i));
+
+                    if (devInfo.probed && devInfo.outputChannels > 0 && devInfo.name == (const char*)fOptions.rtaudioDevice)
+                    {
+                        deviceSet = true;
+                        iParams.deviceId = i;
+                        oParams.deviceId = i;
+                        break;
+                    }
+                }
+            }
+
+            if (! deviceSet)
+            {
+                iParams.deviceId = fAudio.getDefaultInputDevice();
+                oParams.deviceId = fAudio.getDefaultOutputDevice();
+            }
 
             RtAudio::StreamOptions rtOptions;
             rtOptions.flags = RTAUDIO_MINIMIZE_LATENCY | RTAUDIO_HOG_DEVICE | RTAUDIO_SCHEDULE_REALTIME;
@@ -168,7 +192,7 @@ public:
                 rtOptions.flags |= RTAUDIO_NONINTERLEAVED;
                 fAudioIsInterleaved = false;
 
-                if (fAudio.getCurrentApi() == RtAudio::LINUX_ALSA)
+                if (fAudio.getCurrentApi() == RtAudio::LINUX_ALSA && ! deviceSet)
                     rtOptions.flags |= RTAUDIO_ALSA_USE_DEFAULT;
             }
             else

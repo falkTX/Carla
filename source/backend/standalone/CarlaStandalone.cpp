@@ -712,14 +712,14 @@ void carla_set_engine_option(CarlaOptionsType option, int value, const char* val
 #ifdef WANT_RTAUDIO
     case CarlaBackend::OPTION_RTAUDIO_BUFFER_SIZE:
         if (value <= 0)
-            return carla_stderr2("carla_set_engine_option(OPTION_PREFERRED_BUFFER_SIZE, %i, \"%s\") - invalid value", value, valueStr);
+            return carla_stderr2("carla_set_engine_option(OPTION_RTAUDIO_BUFFER_SIZE, %i, \"%s\") - invalid value", value, valueStr);
 
         standalone.options.rtaudioBufferSize = static_cast<unsigned int>(value);
         break;
 
     case CarlaBackend::OPTION_RTAUDIO_SAMPLE_RATE:
         if (value <= 0)
-            return carla_stderr2("carla_set_engine_option(OPTION_PREFERRED_SAMPLE_RATE, %i, \"%s\") - invalid value", value, valueStr);
+            return carla_stderr2("carla_set_engine_option(OPTION_RTAUDIO_SAMPLE_RATE, %i, \"%s\") - invalid value", value, valueStr);
 
         standalone.options.rtaudioSampleRate = static_cast<unsigned int>(value);
         break;
