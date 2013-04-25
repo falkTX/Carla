@@ -2333,8 +2333,8 @@ void RtApiJack :: startStream( void )
   }
 
   JackHandle *handle = (JackHandle *) stream_.apiHandle;
-  int result = jackbridge_activate( handle->client );
-  if ( result ) {
+  bool result = jackbridge_activate( handle->client );
+  if ( ! result ) {
     errorText_ = "RtApiJack::startStream(): unable to activate JACK client!";
     goto unlock;
   }
@@ -2343,7 +2343,7 @@ void RtApiJack :: startStream( void )
 
   // Get the list of available ports.
   if ( stream_.mode == OUTPUT || stream_.mode == DUPLEX ) {
-    result = 1;
+    result = false;
     ports = jackbridge_get_ports( handle->client, handle->deviceName[0].c_str(), NULL, JackPortIsInput);
     if ( ports == NULL) {
       errorText_ = "RtApiJack::startStream(): error determining available JACK input ports!";
@@ -2354,10 +2354,10 @@ void RtApiJack :: startStream( void )
     // allow the user to select particular channels of a device, we'll
     // just open the first "nChannels" ports with offset.
     for ( unsigned int i=0; i<stream_.nUserChannels[0]; i++ ) {
-      result = 1;
+      result = false;
       if ( ports[ stream_.channelOffset[0] + i ] )
         result = jackbridge_connect( handle->client, jackbridge_port_name( handle->ports[0][i] ), ports[ stream_.channelOffset[0] + i ] );
-      if ( result ) {
+      if ( ! result ) {
         free( ports );
         errorText_ = "RtApiJack::startStream(): error connecting output ports!";
         goto unlock;
@@ -2367,7 +2367,7 @@ void RtApiJack :: startStream( void )
   }
 
   if ( stream_.mode == INPUT || stream_.mode == DUPLEX ) {
-    result = 1;
+    result = false;
     ports = jackbridge_get_ports( handle->client, handle->deviceName[1].c_str(), NULL, JackPortIsOutput );
     if ( ports == NULL) {
       errorText_ = "RtApiJack::startStream(): error determining available JACK output ports!";
@@ -2376,10 +2376,10 @@ void RtApiJack :: startStream( void )
 
     // Now make the port connections.  See note above.
     for ( unsigned int i=0; i<stream_.nUserChannels[1]; i++ ) {
-      result = 1;
+      result = false;
       if ( ports[ stream_.channelOffset[1] + i ] )
         result = jackbridge_connect( handle->client, ports[ stream_.channelOffset[1] + i ], jackbridge_port_name( handle->ports[1][i] ) );
-      if ( result ) {
+      if ( ! result ) {
         free( ports );
         errorText_ = "RtApiJack::startStream(): error connecting input ports!";
         goto unlock;
@@ -2393,7 +2393,7 @@ void RtApiJack :: startStream( void )
   stream_.state = STREAM_RUNNING;
 
  unlock:
-  if ( result == 0 ) return;
+  if ( result ) return;
   error( RtError::SYSTEM_ERROR );
 }
 
