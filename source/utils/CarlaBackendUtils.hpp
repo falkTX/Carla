@@ -220,8 +220,8 @@ const char* OptionsType2Str(const OptionsType& type)
         return "OPTION_MAX_PARAMETERS";
     case OPTION_OSC_UI_TIMEOUT:
         return "OPTION_OSC_UI_TIMEOUT";
-    case OPTION_JACK_AUTOCONENCT:
-        return "OPTION_JACK_AUTOCONENCT";
+    case OPTION_JACK_AUTOCONNECT:
+        return "OPTION_JACK_AUTOCONNECT";
     case OPTION_JACK_TIMEMASTER:
         return "OPTION_JACK_TIMEMASTER";
 #ifdef WANT_RTAUDIO

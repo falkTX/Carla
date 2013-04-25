@@ -58,6 +58,27 @@ else:
     WINDOWS = False
 
 # ------------------------------------------------------------------------------------------------------------
+# Convert a ctypes char** into a python string list
+
+def charStringList(charPtr):
+    i = 0
+    retList = []
+
+    if not charPtr:
+        return retList
+
+    while True:
+        char_p = charPtr[i]
+
+        if not char_p:
+            break
+
+        retList.append(char_p.decode("utf-8", errors="ignore"))
+        i += 1
+
+    return retList
+
+# ------------------------------------------------------------------------------------------------------------
 # Convert a ctypes struct into a python dict
 
 def structToDict(struct):
@@ -175,7 +196,7 @@ OPTION_PREFER_UI_BRIDGES       = 5
 OPTION_USE_DSSI_VST_CHUNKS     = 6
 OPTION_MAX_PARAMETERS          = 7
 OPTION_OSC_UI_TIMEOUT          = 8
-OPTION_JACK_AUTOCONENCT        = 9
+OPTION_JACK_AUTOCONNECT        = 9
 OPTION_JACK_TIMEMASTER         = 10
 OPTION_RTAUDIO_BUFFER_SIZE     = 11
 OPTION_RTAUDIO_SAMPLE_RATE     = 12
@@ -635,8 +656,7 @@ class Host(object):
         return self.lib.carla_get_engine_driver_name(index)
 
     def get_engine_driver_device_names(self, index):
-        # FIXME
-        return self.lib.carla_get_engine_driver_device_names(index)
+        return charStringList(self.lib.carla_get_engine_driver_device_names(index))
 
     def get_internal_plugin_count(self):
         return self.lib.carla_get_internal_plugin_count()

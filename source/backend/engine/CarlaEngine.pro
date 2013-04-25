@@ -95,8 +95,8 @@ INCLUDEPATH = . .. plugin \
     ../../utils
 
 # RtAudio/RtMidi
-INCLUDEPATH += rtaudio-4.0.11 rtmidi-2.0.1
-SOURCES     += rtaudio-4.0.11/RtAudio.cpp
+INCLUDEPATH += rtaudio-4.0.12 rtmidi-2.0.1
+SOURCES     += rtaudio-4.0.12/RtAudio.cpp
 SOURCES     += rtmidi-2.0.1/RtMidi.cpp
 
 # Plugin

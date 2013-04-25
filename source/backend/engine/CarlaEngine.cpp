@@ -1564,7 +1564,7 @@ void CarlaEngine::setOption(const OptionsType option, const int value, const cha
         fOptions.oscUiTimeout = static_cast<uint>(value);
         break;
 
-    case OPTION_JACK_AUTOCONENCT:
+    case OPTION_JACK_AUTOCONNECT:
         CARLA_ENGINE_SET_OPTION_RUNNING_CHECK
         fOptions.jackAutoConnect = (value != 0);
         break;

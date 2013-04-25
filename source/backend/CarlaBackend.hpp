@@ -264,7 +264,7 @@ enum OptionsType {
     /*!
      * JACK auto-connect to hardware ports.
      */
-    OPTION_JACK_AUTOCONENCT = 9,
+    OPTION_JACK_AUTOCONNECT = 9,
 
     /*!
      * JACK Transport master.

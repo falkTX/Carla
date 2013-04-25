@@ -529,7 +529,7 @@ bool carla_engine_init(const char* driverName, const char* clientName)
 # endif
     standalone.engine->setOption(CarlaBackend::OPTION_MAX_PARAMETERS,             static_cast<int>(standalone.options.maxParameters), nullptr);
     standalone.engine->setOption(CarlaBackend::OPTION_OSC_UI_TIMEOUT,             static_cast<int>(standalone.options.oscUiTimeout),  nullptr);
-    standalone.engine->setOption(CarlaBackend::OPTION_JACK_AUTOCONENCT,           standalone.options.jackAutoConnect ? 1 : 0,         nullptr);
+    standalone.engine->setOption(CarlaBackend::OPTION_JACK_AUTOCONNECT,           standalone.options.jackAutoConnect ? 1 : 0,         nullptr);
     standalone.engine->setOption(CarlaBackend::OPTION_JACK_TIMEMASTER,            standalone.options.jackTimeMaster  ? 1 : 0,         nullptr);
 # ifdef WANT_RTAUDIO
     standalone.engine->setOption(CarlaBackend::OPTION_RTAUDIO_BUFFER_SIZE,        static_cast<int>(standalone.options.rtaudioBufferSize), nullptr);
@@ -701,7 +701,7 @@ void carla_set_engine_option(CarlaOptionsType option, int value, const char* val
         standalone.options.oscUiTimeout = static_cast<unsigned int>(value);
         break;
 
-    case CarlaBackend::OPTION_JACK_AUTOCONENCT:
+    case CarlaBackend::OPTION_JACK_AUTOCONNECT:
         standalone.options.jackAutoConnect = (value != 0);
         break;
 

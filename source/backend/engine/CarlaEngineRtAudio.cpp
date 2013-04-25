@@ -33,6 +33,21 @@ CARLA_BACKEND_START_NAMESPACE
 
 // -------------------------------------------------------------------------------------------------------------------
 
+static const char** gRetNames = nullptr;
+static std::vector<RtAudio::Api> gRtAudioApis;
+
+static void initRtApis()
+{
+    static bool initiated = false;
+
+    if (! initiated)
+    {
+        initiated = true;
+
+        RtAudio::getCompiledApi(gRtAudioApis);
+    }
+}
+
 RtMidi::Api getMatchedAudioMidiAPi(const RtAudio::Api rtApi)
 {
     switch (rtApi)
@@ -106,6 +121,12 @@ public:
 
         fUsedPortNames.clear();
         fUsedConnections.clear();
+
+        if (gRetNames != nullptr)
+        {
+            delete[] gRetNames;
+            gRetNames = nullptr;
+        }
     }
 
     // -------------------------------------
@@ -933,20 +954,6 @@ private:
 
 // -----------------------------------------
 
-static std::vector<RtAudio::Api> sRtAudioApis;
-
-static void initRtApis()
-{
-    static bool initiated = false;
-
-    if (! initiated)
-    {
-        initiated = true;
-
-        RtAudio::getCompiledApi(sRtAudioApis);
-    }
-}
-
 CarlaEngine* CarlaEngine::newRtAudio(RtAudioApi api)
 {
     RtAudio::Api rtApi(RtAudio::UNSPECIFIED);
@@ -986,16 +993,16 @@ size_t CarlaEngine::getRtAudioApiCount()
 {
     initRtApis();
 
-    return sRtAudioApis.size();
+    return gRtAudioApis.size();
 }
 
 const char* CarlaEngine::getRtAudioApiName(const unsigned int index)
 {
     initRtApis();
 
-    if (index < sRtAudioApis.size())
+    if (index < gRtAudioApis.size())
     {
-        const RtAudio::Api& api(sRtAudioApis[index]);
+        const RtAudio::Api& api(gRtAudioApis[index]);
 
         switch (api)
         {
@@ -1035,11 +1042,47 @@ const char** CarlaEngine::getRtAudioApiDeviceNames(const unsigned int index)
 {
     initRtApis();
 
-    if (index < sRtAudioApis.size())
+    if (index < gRtAudioApis.size())
     {
-        const RtAudio::Api& api(sRtAudioApis[index]);
+        const RtAudio::Api& api(gRtAudioApis[index]);
 
         RtAudio rtAudio(api);
+
+        if (gRetNames != nullptr)
+        {
+            int i=0;
+            while (gRetNames[i] != nullptr)
+                delete[] gRetNames[i++];
+            delete[] gRetNames;
+            gRetNames = nullptr;
+        }
+
+        const unsigned int devCount(rtAudio.getDeviceCount());
+
+        if (devCount > 0)
+        {
+            NonRtList<const char*> devNames;
+
+            for (unsigned int i=0; i < devCount; ++i)
+            {
+                RtAudio::DeviceInfo devInfo(rtAudio.getDeviceInfo(i));
+
+                if (devInfo.probed && devInfo.outputChannels > 0 /*&& (devInfo.nativeFormats & RTAUDIO_FLOAT32) != 0*/)
+                    devNames.append(carla_strdup(devInfo.name.c_str()));
+            }
+
+            const unsigned int realDevCount(devNames.count());
+
+            gRetNames = new const char*[realDevCount+1];
+
+            for (unsigned int i=0; i < realDevCount; ++i)
+                gRetNames[i] = devNames.getAt(i);
+
+            gRetNames[realDevCount] = nullptr;
+            devNames.clear();
+
+            return gRetNames;
+        }
     }
 
     return nullptr;

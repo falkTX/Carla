@@ -972,18 +972,17 @@ class CarlaMainW(QMainWindow):
         else:
             defaultMode = PROCESS_MODE_CONTINUOUS_RACK
 
-        Carla.processMode    = settings.value("Engine/ProcessMode", defaultMode, type=int)
-        Carla.maxParameters  = settings.value("Engine/MaxParameters", MAX_DEFAULT_PARAMETERS, type=int)
+        audioDriver         = settings.value("Engine/AudioDriver", CARLA_DEFAULT_AUDIO_DRIVER, type=str)
 
-        transportMode        = settings.value("Engine/TransportMode", TRANSPORT_MODE_JACK, type=int)
-        forceStereo          = settings.value("Engine/ForceStereo", False, type=bool)
-        preferPluginBridges  = settings.value("Engine/PreferPluginBridges", False, type=bool)
-        preferUiBridges      = settings.value("Engine/PreferUiBridges", True, type=bool)
-        useDssiVstChunks     = settings.value("Engine/UseDssiVstChunks", False, type=bool)
+        transportMode       = settings.value("Engine/TransportMode", TRANSPORT_MODE_JACK, type=int)
+        forceStereo         = settings.value("Engine/ForceStereo", False, type=bool)
+        preferPluginBridges = settings.value("Engine/PreferPluginBridges", False, type=bool)
+        preferUiBridges     = settings.value("Engine/PreferUiBridges", True, type=bool)
+        useDssiVstChunks    = settings.value("Engine/UseDssiVstChunks", False, type=bool)
+        oscUiTimeout        = settings.value("Engine/OscUiTimeout", 40, type=int)
 
-        oscUiTimeout         = settings.value("Engine/OscUiTimeout", 40, type=int)
-        preferredBufferSize  = settings.value("Engine/PreferredBufferSize", 512, type=int)
-        preferredSampleRate  = settings.value("Engine/PreferredSampleRate", 44100, type=int)
+        Carla.processMode   = settings.value("Engine/ProcessMode", defaultMode, type=int)
+        Carla.maxParameters = settings.value("Engine/MaxParameters", MAX_DEFAULT_PARAMETERS, type=int)
 
         if Carla.processMode == PROCESS_MODE_CONTINUOUS_RACK:
             forceStereo = True
@@ -998,13 +997,25 @@ class CarlaMainW(QMainWindow):
         Carla.host.set_engine_option(OPTION_PREFER_UI_BRIDGES, preferUiBridges, "")
         Carla.host.set_engine_option(OPTION_USE_DSSI_VST_CHUNKS, useDssiVstChunks, "")
         Carla.host.set_engine_option(OPTION_OSC_UI_TIMEOUT, oscUiTimeout, "")
-        Carla.host.set_engine_option(OPTION_PREFERRED_BUFFER_SIZE, preferredBufferSize, "")
-        Carla.host.set_engine_option(OPTION_PREFERRED_SAMPLE_RATE, preferredSampleRate, "")
+
+        if audioDriver == "JACK":
+            jackAutoConnect = settings.value("Engine/JackAutoConnect", False, type=bool)
+            jackTimeMaster  = settings.value("Engine/JackTimeMaster", False, type=bool)
+
+            Carla.host.set_engine_option(OPTION_JACK_AUTOCONNECT, jackAutoConnect, "")
+            Carla.host.set_engine_option(OPTION_JACK_TIMEMASTER, jackTimeMaster, "")
+
+        else:
+            rtaudioBufferSize = settings.value("Engine/RtAudioBufferSize", 512, type=int)
+            rtaudioSampleRate = settings.value("Engine/RtAudioSampleRate", 44100, type=int)
+            rtaudioDevice     = settings.value("Engine/RtAudioDevice", "", type=str)
+
+            Carla.host.set_engine_option(OPTION_RTAUDIO_BUFFER_SIZE, rtaudioBufferSize, "")
+            Carla.host.set_engine_option(OPTION_RTAUDIO_SAMPLE_RATE, rtaudioSampleRate, "")
+            Carla.host.set_engine_option(OPTION_RTAUDIO_SAMPLE_RATE, 0, rtaudioDevice)
 
         # ---------------------------------------------
         # Start
-
-        audioDriver = settings.value("Engine/AudioDriver", CARLA_DEFAULT_AUDIO_DRIVER, type=str)
 
         if not Carla.host.engine_init(audioDriver, self.fClientName):
             if self.fFirstEngineInit:
