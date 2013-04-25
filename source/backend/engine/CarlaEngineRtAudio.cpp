@@ -122,9 +122,8 @@ public:
         CARLA_ASSERT(! fAudioIsReady);
         carla_debug("CarlaEngineRtAudio::~CarlaEngineRtAudio()");
 
-#if 0
-        fUsedPortNames.clear();
-#endif
+        fUsedMidiIns.clear();
+        fUsedMidiOuts.clear();
         fUsedConnections.clear();
 
         if (gRetNames != nullptr)
@@ -165,7 +164,8 @@ public:
 
                 if (devInfo.probed && devInfo.outputChannels > 0 && devInfo.name == (const char*)fOptions.rtaudioDevice)
                 {
-                    deviceSet = true;
+                    deviceSet    = true;
+                    fConnectName = devInfo.name.c_str();
                     iParams.deviceId  = i;
                     oParams.deviceId  = i;
                     iParams.nChannels = devInfo.inputChannels;
@@ -296,10 +296,6 @@ public:
             }
         }
 
-        //fMidiIn.cancelCallback();
-        //disconnectMidiPort(true, false);
-        //disconnectMidiPort(false, false);
-
         if (fAudioBufIn != nullptr)
         {
             CARLA_ASSERT(fAudioCountIn > 0);
@@ -335,8 +331,30 @@ public:
         fConnectedAudioOuts[0].clear();
         fConnectedAudioOuts[1].clear();
 
-        //fMidiInEvents.clear();
-        //fMidiOutEvents.clear();
+        fConnectName.clear();
+
+        for (auto it = fMidiIns.begin(); it.valid(); it.next())
+        {
+            MidiPort& port(*it);
+            RtMidiIn* const midiInPort((RtMidiIn*)port.rtmidi);
+
+            midiInPort->cancelCallback();
+            delete midiInPort;
+        }
+
+        for (auto it = fMidiOuts.begin(); it.valid(); it.next())
+        {
+            MidiPort& port(*it);
+            RtMidiOut* const midiOutPort((RtMidiOut*)port.rtmidi);
+
+            delete midiOutPort;
+        }
+
+        fMidiIns.clear();
+        fMidiOuts.clear();
+
+        fMidiInEvents.clear();
+        fMidiOutEvents.clear();
 
         return true;
     }
@@ -438,43 +456,13 @@ public:
         case PATCHBAY_PORT_MIDI_IN:
             CARLA_ASSERT(targetPort >= PATCHBAY_GROUP_MIDI_IN*1000);
             CARLA_ASSERT(targetPort <= PATCHBAY_GROUP_MIDI_IN*1000 + 999);
-#if 0
-            disconnectMidiPort(true, true);
-
-            for (unsigned int i=0, count=fMidiIn.getPortCount(); i < count; ++i)
-            {
-                const char* const portName(fMidiIn.getPortName(i).c_str());
-
-                if (getPatchbayPortId(portName) == targetPort)
-                {
-                    fUsedMidiPortIn = portName;
-                    fMidiIn.openPort(i, "midi-in");
-                    makeConnection = true;
-                    break;
-                }
-            }
-#endif
+            makeConnection = connectMidiInPort(targetPort - PATCHBAY_GROUP_MIDI_IN*1000);
             break;
 
         case PATCHBAY_PORT_MIDI_OUT:
             CARLA_ASSERT(targetPort >= PATCHBAY_GROUP_MIDI_OUT*1000);
             CARLA_ASSERT(targetPort <= PATCHBAY_GROUP_MIDI_OUT*1000 + 999);
-#if 0
-            disconnectMidiPort(false, true);
-
-            for (unsigned int i=0, count=fMidiOut.getPortCount(); i < count; ++i)
-            {
-                const char* const portName(fMidiOut.getPortName(i).c_str());
-
-                if (getPatchbayPortId(portName) == targetPort)
-                {
-                    fUsedMidiPortOut = portName;
-                    fMidiOut.openPort(i, "midi-out");
-                    makeConnection = true;
-                    break;
-                }
-            }
-#endif
+            makeConnection = connectMidiOutPort(targetPort - PATCHBAY_GROUP_MIDI_OUT*1000);
             break;
         }
 
@@ -524,13 +512,42 @@ public:
 
                 if (targetPort >= PATCHBAY_GROUP_MIDI_OUT*1000)
                 {
-                    //fMidiOut.closePort();
-                    //fUsedMidiPortOut.clear();
+                    int portId = targetPort-PATCHBAY_GROUP_MIDI_IN*1000;
+
+                    for (auto it=fMidiOuts.begin(); it.valid(); it.next())
+                    {
+                        MidiPort& midiPort(*it);
+
+                        if (midiPort.portId == portId)
+                        {
+                            RtMidiOut* const midiOutPort((RtMidiOut*)midiPort.rtmidi);
+
+                            delete midiOutPort;
+
+                            fMidiOuts.remove(it);
+                            break;
+                        }
+                    }
                 }
                 else if (targetPort >= PATCHBAY_GROUP_MIDI_IN*1000)
                 {
-                    //fMidiIn.closePort();
-                    //fUsedMidiPortIn.clear();
+                    int portId = targetPort-PATCHBAY_GROUP_MIDI_IN*1000;
+
+                    for (auto it=fMidiIns.begin(); it.valid(); it.next())
+                    {
+                        MidiPort& midiPort(*it);
+
+                        if (midiPort.portId == portId)
+                        {
+                            RtMidiIn* const midiInPort((RtMidiIn*)midiPort.rtmidi);
+
+                            midiInPort->cancelCallback();
+                            delete midiInPort;
+
+                            fMidiIns.remove(it);
+                            break;
+                        }
+                    }
                 }
                 else if (targetPort >= PATCHBAY_GROUP_AUDIO_OUT*1000)
                 {
@@ -566,10 +583,11 @@ public:
                 callback(CALLBACK_PATCHBAY_CONNECTION_REMOVED, 0, connection.id, 0, 0.0f, nullptr);
 
                 fUsedConnections.remove(it);
+                break;
             }
         }
 
-        return false;
+        return true;
     }
 
     void patchbayRefresh() override
@@ -579,14 +597,17 @@ public:
         if (! fAudioIsReady)
             return;
 
-        char strBuf[STR_MAX];
+        char strBuf[STR_MAX+1];
 
         fLastConnectionId = 0;
+        fUsedMidiIns.clear();
+        fUsedMidiOuts.clear();
         fUsedConnections.clear();
 
         // Main
-        callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, PATCHBAY_GROUP_CARLA, 0, 0.0f, getName());
         {
+            callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, PATCHBAY_GROUP_CARLA, 0, 0.0f, getName());
+
             callback(CALLBACK_PATCHBAY_PORT_ADDED, 0, PATCHBAY_GROUP_CARLA, PATCHBAY_PORT_AUDIO_IN1,  PATCHBAY_PORT_IS_AUDIO|PATCHBAY_PORT_IS_INPUT,  "audio-in1");
             callback(CALLBACK_PATCHBAY_PORT_ADDED, 0, PATCHBAY_GROUP_CARLA, PATCHBAY_PORT_AUDIO_IN2,  PATCHBAY_PORT_IS_AUDIO|PATCHBAY_PORT_IS_INPUT,  "audio-in2");
             callback(CALLBACK_PATCHBAY_PORT_ADDED, 0, PATCHBAY_GROUP_CARLA, PATCHBAY_PORT_AUDIO_OUT1, PATCHBAY_PORT_IS_AUDIO|PATCHBAY_PORT_IS_OUTPUT, "audio-out1");
@@ -596,42 +617,66 @@ public:
         }
 
         // Audio In
-        callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, PATCHBAY_GROUP_AUDIO_IN, 0, 0.0f, "Capture");
-
-        for (unsigned int i=0; i < fAudioCountIn; ++i)
         {
-            std::sprintf(strBuf, "capture_%i", i+1);
-            callback(CALLBACK_PATCHBAY_PORT_ADDED, 0, PATCHBAY_GROUP_AUDIO_IN, PATCHBAY_GROUP_AUDIO_IN*1000 + i, PATCHBAY_PORT_IS_AUDIO|PATCHBAY_PORT_IS_OUTPUT, strBuf);
+            if (fConnectName.isNotEmpty())
+                std::snprintf(strBuf, STR_MAX, "Capture (%s)", (const char*)fConnectName);
+            else
+                std::strncpy(strBuf, "Capture", STR_MAX);
+
+            callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, PATCHBAY_GROUP_AUDIO_IN, 0, 0.0f, strBuf);
+
+            for (unsigned int i=0; i < fAudioCountIn; ++i)
+            {
+                std::snprintf(strBuf, STR_MAX, "capture_%i", i+1);
+                callback(CALLBACK_PATCHBAY_PORT_ADDED, 0, PATCHBAY_GROUP_AUDIO_IN, PATCHBAY_GROUP_AUDIO_IN*1000 + i, PATCHBAY_PORT_IS_AUDIO|PATCHBAY_PORT_IS_OUTPUT, strBuf);
+            }
         }
 
         // Audio Out
-        callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, PATCHBAY_GROUP_AUDIO_OUT, 0, 0.0f, "Playback");
-
-        for (unsigned int i=0; i < fAudioCountOut; ++i)
         {
-            std::sprintf(strBuf, "playback_%i", i+1);
-            callback(CALLBACK_PATCHBAY_PORT_ADDED, 0, PATCHBAY_GROUP_AUDIO_OUT, PATCHBAY_GROUP_AUDIO_OUT*1000 + i, PATCHBAY_PORT_IS_AUDIO|PATCHBAY_PORT_IS_INPUT, strBuf);
+            if (fConnectName.isNotEmpty())
+                std::snprintf(strBuf, STR_MAX, "Playback (%s)", (const char*)fConnectName);
+            else
+                std::strncpy(strBuf, "Playback", STR_MAX);
+
+            callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, PATCHBAY_GROUP_AUDIO_OUT, 0, 0.0f, strBuf);
+
+            for (unsigned int i=0; i < fAudioCountOut; ++i)
+            {
+                std::snprintf(strBuf, STR_MAX, "playback_%i", i+1);
+                callback(CALLBACK_PATCHBAY_PORT_ADDED, 0, PATCHBAY_GROUP_AUDIO_OUT, PATCHBAY_GROUP_AUDIO_OUT*1000 + i, PATCHBAY_PORT_IS_AUDIO|PATCHBAY_PORT_IS_INPUT, strBuf);
+            }
         }
 
         // MIDI In
-        callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, PATCHBAY_GROUP_MIDI_IN, 0, 0.0f, "Readable MIDI ports");
         {
-            const unsigned int portCount(fDummyMidiIn.getPortCount());
+            callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, PATCHBAY_GROUP_MIDI_IN, 0, 0.0f, "Readable MIDI ports");
 
-            for (unsigned int i=0; i < portCount; ++i)
+            for (unsigned int i=0, count=fDummyMidiIn.getPortCount(); i < count; ++i)
             {
-                //PortNameToId portNameToId;
-                //portNameToId.portId = PATCHBAY_GROUP_MIDI_IN*1000 + i;
-                //portNameToId.name   = fMidiIn.getPortName(i).c_str();
-                //fUsedPortNames.append(portNameToId);
+                PortNameToId portNameToId;
+                portNameToId.portId = PATCHBAY_GROUP_MIDI_IN*1000 + i;
+                std::strncpy(portNameToId.name, fDummyMidiIn.getPortName(i).c_str(), STR_MAX);
+                fUsedMidiIns.append(portNameToId);
 
-                const char* const portName(fDummyMidiIn.getPortName(i).c_str());//portNameToId.name.toUtf8().constData());
-                callback(CALLBACK_PATCHBAY_PORT_ADDED, 0, PATCHBAY_GROUP_MIDI_IN, PATCHBAY_GROUP_MIDI_IN*1000 + i/*portNameToId.portId*/, PATCHBAY_PORT_IS_MIDI|PATCHBAY_PORT_IS_OUTPUT, portName);
+                callback(CALLBACK_PATCHBAY_PORT_ADDED, 0, PATCHBAY_GROUP_MIDI_IN, portNameToId.portId, PATCHBAY_PORT_IS_MIDI|PATCHBAY_PORT_IS_OUTPUT, portNameToId.name);
             }
         }
 
         // MIDI Out
-        callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, PATCHBAY_GROUP_MIDI_OUT, 0, 0.0f, "Writable MIDI ports");
+        {
+            callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, PATCHBAY_GROUP_MIDI_OUT, 0, 0.0f, "Writable MIDI ports");
+
+            for (unsigned int i=0, count=fDummyMidiOut.getPortCount(); i < count; ++i)
+            {
+                PortNameToId portNameToId;
+                portNameToId.portId = PATCHBAY_GROUP_MIDI_OUT*1000 + i;
+                std::strncpy(portNameToId.name, fDummyMidiOut.getPortName(i).c_str(), STR_MAX);
+                fUsedMidiOuts.append(portNameToId);
+
+                callback(CALLBACK_PATCHBAY_PORT_ADDED, 0, PATCHBAY_GROUP_MIDI_OUT, portNameToId.portId, PATCHBAY_PORT_IS_MIDI|PATCHBAY_PORT_IS_INPUT, portNameToId.name);
+            }
+        }
 
         // Connections
         fConnectAudioLock.lock();
@@ -702,54 +747,35 @@ public:
 
         fConnectAudioLock.unlock();
 
-#if 0
-        fUsedPortNames.clear();
-
-        // MIDI In
-        callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, PATCHBAY_GROUP_MIDI_IN, 0, 0.0f, "Readable MIDI ports");
-
-
-        // MIDI Out
-        callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, PATCHBAY_GROUP_MIDI_OUT, 0, 0.0f, "Writable MIDI ports");
+        for (auto it=fMidiIns.begin(); it.valid(); it.next())
         {
-            const unsigned int portCount = fMidiOut.getPortCount();
+            const MidiPort& midiPort(*it);
 
-            for (unsigned int i=0; i < portCount; ++i)
-            {
-                PortNameToId portNameToId;
-                portNameToId.portId = PATCHBAY_GROUP_MIDI_OUT*1000 + i;
-                portNameToId.name   = fMidiOut.getPortName(i).c_str();
-                fUsedPortNames.append(portNameToId);
-
-                const char* const portName(portNameToId.name.toUtf8().constData());
-                callback(CALLBACK_PATCHBAY_PORT_ADDED, 0, PATCHBAY_GROUP_MIDI_OUT, portNameToId.portId, PATCHBAY_PORT_IS_MIDI|PATCHBAY_PORT_IS_INPUT, portName);
-            }
-        }
-
-        // Connections
-        if (! fUsedMidiPortIn.isEmpty())
-        {
             ConnectionToId connectionToId;
             connectionToId.id      = fLastConnectionId;
-            connectionToId.portOut = getPatchbayPortId(fUsedMidiPortIn);
+            connectionToId.portOut = midiPort.portId;
             connectionToId.portIn  = PATCHBAY_PORT_MIDI_IN;
 
-            fUsedConnections.append(connectionToId);
             callback(CALLBACK_PATCHBAY_CONNECTION_ADDED, 0, fLastConnectionId, connectionToId.portOut, connectionToId.portIn, nullptr);
+
+            fUsedConnections.append(connectionToId);
             fLastConnectionId++;
         }
-        if (! fUsedMidiPortOut.isEmpty())
+
+        for (auto it=fMidiOuts.begin(); it.valid(); it.next())
         {
+            const MidiPort& midiPort(*it);
+
             ConnectionToId connectionToId;
             connectionToId.id      = fLastConnectionId;
             connectionToId.portOut = PATCHBAY_PORT_MIDI_OUT;
-            connectionToId.portIn  = getPatchbayPortId(fUsedMidiPortOut);
+            connectionToId.portIn  = midiPort.portId;
+
+            callback(CALLBACK_PATCHBAY_CONNECTION_ADDED, 0, fLastConnectionId, connectionToId.portOut, connectionToId.portIn, nullptr);
 
             fUsedConnections.append(connectionToId);
-            callback(CALLBACK_PATCHBAY_CONNECTION_ADDED, 0, fLastConnectionId, connectionToId.portOut, connectionToId.portIn, nullptr);
             fLastConnectionId++;
         }
-#endif
     }
 
     // -------------------------------------------------------------------
@@ -798,7 +824,6 @@ protected:
         // initialize input events
         carla_zeroMem(kData->rack.in, sizeof(EngineEvent)*RACK_EVENT_COUNT);
 
-#if 0
         if (fMidiInEvents.mutex.tryLock())
         {
             uint32_t engineEventIndex = 0;
@@ -806,79 +831,80 @@ protected:
 
             while (! fMidiInEvents.data.isEmpty())
             {
-                const RtMidiEvent& midiEvent = fMidiInEvents.data.getFirst(true);
+                const RtMidiEvent& midiEvent(fMidiInEvents.data.getFirst(true));
 
-                EngineEvent* const engineEvent = &kData->rack.in[engineEventIndex++];
-                engineEvent->clear();
+                EngineEvent& engineEvent(kData->rack.in[engineEventIndex++]);
+                engineEvent.clear();
 
                 const uint8_t midiStatus  = MIDI_GET_STATUS_FROM_DATA(midiEvent.data);
                 const uint8_t midiChannel = MIDI_GET_CHANNEL_FROM_DATA(midiEvent.data);
 
-                engineEvent->channel = midiChannel;
+                engineEvent.channel = midiChannel;
 
                 if (midiEvent.time < fTimeInfo.frame)
-                    engineEvent->time = 0;
+                    engineEvent.time = 0;
                 else if (midiEvent.time >= fTimeInfo.frame + nframes)
                 {
-                    engineEvent->time = fTimeInfo.frame + nframes-1;
-                    carla_stderr("MIDI Event in the future!, %i vs %i", engineEvent->time, fTimeInfo.frame);
+                    engineEvent.time = fTimeInfo.frame + nframes-1;
+                    carla_stderr("MIDI Event in the future!, %i vs %i", engineEvent.time, fTimeInfo.frame);
                 }
                 else
-                    engineEvent->time = midiEvent.time - fTimeInfo.frame;
+                    engineEvent.time = midiEvent.time - fTimeInfo.frame;
 
-                //carla_stdout("Got midi, time %f vs %i", midiEvent.time, engineEvent->time);
+                carla_stdout("Got midi, time %f vs %i", midiEvent.time, engineEvent.time);
 
                 if (MIDI_IS_STATUS_CONTROL_CHANGE(midiStatus))
                 {
                     const uint8_t midiControl = midiEvent.data[1];
-                    engineEvent->type         = kEngineEventTypeControl;
+                    engineEvent.type          = kEngineEventTypeControl;
 
                     if (MIDI_IS_CONTROL_BANK_SELECT(midiControl))
                     {
                         const uint8_t midiBank  = midiEvent.data[2];
 
-                        engineEvent->ctrl.type  = kEngineControlEventTypeMidiBank;
-                        engineEvent->ctrl.param = midiBank;
-                        engineEvent->ctrl.value = 0.0;
+                        engineEvent.ctrl.type  = kEngineControlEventTypeMidiBank;
+                        engineEvent.ctrl.param = midiBank;
+                        engineEvent.ctrl.value = 0.0f;
                     }
                     else if (midiControl == MIDI_CONTROL_ALL_SOUND_OFF)
                     {
-                        engineEvent->ctrl.type  = kEngineControlEventTypeAllSoundOff;
-                        engineEvent->ctrl.param = 0;
-                        engineEvent->ctrl.value = 0.0;
+                        engineEvent.ctrl.type  = kEngineControlEventTypeAllSoundOff;
+                        engineEvent.ctrl.param = 0;
+                        engineEvent.ctrl.value = 0.0f;
                     }
                     else if (midiControl == MIDI_CONTROL_ALL_NOTES_OFF)
                     {
-                        engineEvent->ctrl.type  = kEngineControlEventTypeAllNotesOff;
-                        engineEvent->ctrl.param = 0;
-                        engineEvent->ctrl.value = 0.0;
+                        engineEvent.ctrl.type  = kEngineControlEventTypeAllNotesOff;
+                        engineEvent.ctrl.param = 0;
+                        engineEvent.ctrl.value = 0.0f;
                     }
                     else
                     {
                         const uint8_t midiValue = midiEvent.data[2];
 
-                        engineEvent->ctrl.type  = kEngineControlEventTypeParameter;
-                        engineEvent->ctrl.param = midiControl;
-                        engineEvent->ctrl.value = double(midiValue)/127.0;
+                        engineEvent.ctrl.type  = kEngineControlEventTypeParameter;
+                        engineEvent.ctrl.param = midiControl;
+                        engineEvent.ctrl.value = float(midiValue)/127.0f;
                     }
                 }
                 else if (MIDI_IS_STATUS_PROGRAM_CHANGE(midiStatus))
                 {
                     const uint8_t midiProgram = midiEvent.data[1];
-                    engineEvent->type         = kEngineEventTypeControl;
+                    engineEvent.type          = kEngineEventTypeControl;
 
-                    engineEvent->ctrl.type  = kEngineControlEventTypeMidiProgram;
-                    engineEvent->ctrl.param = midiProgram;
-                    engineEvent->ctrl.value = 0.0;
+                    engineEvent.ctrl.type  = kEngineControlEventTypeMidiProgram;
+                    engineEvent.ctrl.param = midiProgram;
+                    engineEvent.ctrl.value = 0.0f;
                 }
                 else
                 {
-                    engineEvent->type = kEngineEventTypeMidi;
+                    engineEvent.type = kEngineEventTypeMidi;
 
-                    engineEvent->midi.data[0] = midiStatus;
-                    engineEvent->midi.data[1] = midiEvent.data[1];
-                    engineEvent->midi.data[2] = midiEvent.data[2];
-                    engineEvent->midi.size    = midiEvent.size;
+                    engineEvent.midi.data[0] = midiStatus;
+                    engineEvent.midi.data[1] = midiEvent.data[1];
+                    engineEvent.midi.data[2] = midiEvent.data[2];
+                    engineEvent.midi.data[3] = midiEvent.data[3];
+                    engineEvent.midi.size    = midiEvent.size;
                 }
 
                 if (engineEventIndex >= RACK_EVENT_COUNT)
@@ -887,7 +913,6 @@ protected:
 
             fMidiInEvents.mutex.unlock();
         }
-#endif
 
         // connect input buffers
         if (fConnectedAudioIns[0].count() == 0)
@@ -991,9 +1016,11 @@ protected:
         (void)status;
     }
 
-#if 0
     void handleMidiCallback(double timeStamp, std::vector<unsigned char>* const message)
     {
+        if (! fAudioIsReady)
+            return;
+
         const size_t messageSize = message->size();
         static uint32_t lastTime = 0;
 
@@ -1004,10 +1031,12 @@ protected:
 
         if (timeStamp > 0.95)
             timeStamp = 0.95;
+        else if (timeStamp < 0.0)
+            timeStamp = 0.0;
 
         RtMidiEvent midiEvent;
         midiEvent.time = fTimeInfo.frame + (timeStamp*(double)fBufferSize);
-        carla_stdout("Put midi, frame:%09i/%09i, stamp:%g", fTimeInfo.frame, midiEvent.time, timeStamp);
+        carla_stdout("Put midi, frame:%09i/%09i, stamp:%f", fTimeInfo.frame, midiEvent.time, timeStamp);
 
         if (midiEvent.time < lastTime)
             midiEvent.time = lastTime;
@@ -1050,74 +1079,103 @@ protected:
         fMidiInEvents.append(midiEvent);
     }
 
-    // -------------------------------------
-
-    void disconnectMidiPort(const bool isInput, const bool doPatchbay)
+    bool connectMidiInPort(const int portId)
     {
-        carla_debug("CarlaEngineRtAudio::disconnectMidiPort(%s, %s)", bool2str(isInput), bool2str(doPatchbay));
+        const char* portName = nullptr;
 
-        if (isInput)
+        for (auto it = fUsedMidiIns.begin(); it.valid(); it.next())
         {
-            if (! fUsedMidiPortIn.isEmpty())
+            const PortNameToId& portNameId(*it);
+
+            if (portNameId.portId == portId)
             {
-                fUsedMidiPortIn.clear();
-                fMidiIn.closePort();
-            }
-        }
-        else
-        {
-            if (! fUsedMidiPortOut.isEmpty())
-            {
-                fUsedMidiPortOut.clear();
-                fMidiIn.closePort();
-            }
-        }
-
-        if (! doPatchbay)
-            return;
-
-        for (int i=0, count=fUsedConnections.count(); i < count; ++i)
-        {
-            const ConnectionToId& connection(fUsedConnections.at(i));
-
-            const int targetPort  = (connection.portOut >= 0) ? connection.portOut : connection.portIn;
-
-            if (targetPort >= PATCHBAY_GROUP_MIDI_OUT*1000)
-            {
-                if (isInput)
-                    continue;
-
-                callback(CALLBACK_PATCHBAY_CONNECTION_REMOVED, 0, connection.id, 0, 0.0f, nullptr);
-                fUsedConnections.takeAt(i);
-                break;
-            }
-            else if (targetPort >= PATCHBAY_GROUP_MIDI_IN*1000)
-            {
-                if (! isInput)
-                    continue;
-
-                callback(CALLBACK_PATCHBAY_CONNECTION_REMOVED, 0, connection.id, 0, 0.0f, nullptr);
-                fUsedConnections.takeAt(i);
+                portName = portNameId.name;
                 break;
             }
         }
-    }
 
-    int getPatchbayPortId(const QString& name)
-    {
-        carla_debug("CarlaEngineRtAudio::getPatchbayPortId(\"%s\")", name.toUtf8().constData());
+        if (portName == nullptr)
+            return false;
 
-        for (int i=0, count=fUsedPortNames.count(); i < count; ++i)
+        int rtMidiPortIndex = -1;
+
+        RtMidiIn* const rtMidiIn(new RtMidiIn(getMatchedAudioMidiAPi(fAudio.getCurrentApi()), getName(), 512));
+        rtMidiIn->ignoreTypes();
+        rtMidiIn->setCallback(carla_rtmidi_callback, this);
+
+        for (unsigned int i=0, count=rtMidiIn->getPortCount(); i < count; ++i)
         {
-            carla_debug("CarlaEngineRtAudio::getPatchbayPortId(\"%s\") VS \"%s\"", name.toUtf8().constData(), fUsedPortNames[i].name.toUtf8().constData());
-
-            if (fUsedPortNames[i].name == name)
-                return fUsedPortNames[i].portId;
+            if (rtMidiIn->getPortName(i) == portName)
+            {
+                rtMidiPortIndex = i;
+                break;
+            }
         }
 
-        return PATCHBAY_PORT_MAX;
+        if (rtMidiPortIndex == -1)
+        {
+            delete rtMidiIn;
+            return false;
+        }
+
+        rtMidiIn->openPort(rtMidiPortIndex, "in");
+
+        MidiPort midiPort;
+        midiPort.portId = portId;
+        midiPort.rtmidi = rtMidiIn;
+
+        fMidiIns.append(midiPort);
+
+        return true;
     }
-#endif
+
+    bool connectMidiOutPort(const int portId)
+    {
+        const char* portName = nullptr;
+
+        for (auto it = fUsedMidiOuts.begin(); it.valid(); it.next())
+        {
+            const PortNameToId& portNameId(*it);
+
+            if (portNameId.portId == portId)
+            {
+                portName = portNameId.name;
+                break;
+            }
+        }
+
+        if (portName == nullptr)
+            return false;
+
+        int rtMidiPortIndex = -1;
+
+        RtMidiOut* const rtMidiOut(new RtMidiOut(getMatchedAudioMidiAPi(fAudio.getCurrentApi()), getName()));
+
+        for (unsigned int i=0, count=rtMidiOut->getPortCount(); i < count; ++i)
+        {
+            if (rtMidiOut->getPortName(i) == portName)
+            {
+                rtMidiPortIndex = i;
+                break;
+            }
+        }
+
+        if (rtMidiPortIndex == -1)
+        {
+            delete rtMidiOut;
+            return false;
+        }
+
+        rtMidiOut->openPort(rtMidiPortIndex, "in");
+
+        MidiPort midiPort;
+        midiPort.portId = portId;
+        midiPort.rtmidi = rtMidiOut;
+
+        fMidiOuts.append(midiPort);
+
+        return true;
+    }
 
     // -------------------------------------
 
@@ -1136,6 +1194,7 @@ private:
     NonRtList<uint> fConnectedAudioIns[2];
     NonRtList<uint> fConnectedAudioOuts[2];
     CarlaMutex      fConnectAudioLock;
+    CarlaString     fConnectName;
 
     RtMidiIn  fDummyMidiIn;
     RtMidiOut fDummyMidiOut;
@@ -1165,21 +1224,23 @@ private:
         int portIn;
     };
 
-    int fLastConnectionId;
-    NonRtList<ConnectionToId> fUsedConnections;
-
-#if 0
-    NonRtList<RtMidiIn*>  fMidiIns;
-    NonRtList<RtMidiOut*> fMidiOuts;
-
     struct PortNameToId {
         int portId;
-        QString name;
+        char name[STR_MAX+1];
     };
 
-    QList<PortNameToId>   fUsedPortNames;
-    QString fUsedMidiPortIn;
-    QString fUsedMidiPortOut;
+    int fLastConnectionId;
+    NonRtList<PortNameToId> fUsedMidiIns;
+    NonRtList<PortNameToId> fUsedMidiOuts;
+    NonRtList<ConnectionToId> fUsedConnections;
+
+    struct MidiPort {
+        RtMidi* rtmidi;
+        int portId;
+    };
+
+    NonRtList<MidiPort> fMidiIns;
+    NonRtList<MidiPort> fMidiOuts;
 
     struct RtMidiEvent {
         uint32_t time;
@@ -1226,7 +1287,6 @@ private:
 
     RtMidiEvents fMidiInEvents;
     RtMidiEvents fMidiOutEvents;
-#endif
 
     #define handlePtr ((CarlaEngineRtAudio*)userData)
 
@@ -1236,12 +1296,10 @@ private:
         return 0;
     }
 
-#if 0
     static void carla_rtmidi_callback(double timeStamp, std::vector<unsigned char>* message, void* userData)
     {
         handlePtr->handleMidiCallback(timeStamp, message);
     }
-#endif
 
     #undef handlePtr
 
