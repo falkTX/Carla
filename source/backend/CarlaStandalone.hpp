@@ -262,10 +262,10 @@ CARLA_EXPORT unsigned int carla_get_engine_driver_count();
 CARLA_EXPORT const char* carla_get_engine_driver_name(unsigned int index);
 
 /*!
- * Get the engine driver options \a index.
- * \note This call is not implemented yet and does nothing for now.
+ * Get the device names of the engine driver at \a index (for use in non-JACK drivers).\n
+ * May return NULL.
  */
-CARLA_EXPORT const void* carla_get_engine_driver_options(unsigned int index); // TODO
+CARLA_EXPORT const char** carla_get_engine_driver_device_names(unsigned int index);
 
 /*!
  * Get how many internal plugins are available to use.

@@ -461,7 +461,7 @@ unsigned int CarlaEngine::getDriverCount()
 {
     carla_debug("CarlaEngine::getDriverCount()");
 
-    unsigned int count = 1;
+    unsigned int count = 1; // JACK
 
 #ifdef WANT_RTAUDIO
     count += getRtAudioApiCount();
@@ -485,6 +485,24 @@ const char* CarlaEngine::getDriverName(unsigned int index)
 #endif
 
     carla_stderr("CarlaEngine::getDriverName(%i) - invalid index", index);
+    return nullptr;
+}
+
+const char** CarlaEngine::getDriverDeviceNames(unsigned int index)
+{
+    carla_debug("CarlaEngine::getDriverDeviceNames(%i)", index);
+
+    if (index == 0)
+        return nullptr;
+    else
+        index -= 1;
+
+#ifdef WANT_RTAUDIO
+    if (index < getRtAudioApiCount())
+        return getRtAudioApiDeviceNames(index);
+#endif
+
+    carla_stderr("CarlaEngine::getDriverDeviceNames(%i) - invalid index", index);
     return nullptr;
 }
 
@@ -1519,16 +1537,6 @@ void CarlaEngine::setOption(const OptionsType option, const int value, const cha
         fOptions.maxParameters = static_cast<uint>(value);
         break;
 
-    case OPTION_PREFERRED_BUFFER_SIZE:
-        CARLA_ENGINE_SET_OPTION_RUNNING_CHECK
-        fOptions.preferredBufferSize = static_cast<uint>(value);
-        break;
-
-    case OPTION_PREFERRED_SAMPLE_RATE:
-        CARLA_ENGINE_SET_OPTION_RUNNING_CHECK
-        fOptions.preferredSampleRate = static_cast<uint>(value);
-        break;
-
     case OPTION_FORCE_STEREO:
         CARLA_ENGINE_SET_OPTION_RUNNING_CHECK
         fOptions.forceStereo = (value != 0);
@@ -1555,6 +1563,33 @@ void CarlaEngine::setOption(const OptionsType option, const int value, const cha
         CARLA_ENGINE_SET_OPTION_RUNNING_CHECK
         fOptions.oscUiTimeout = static_cast<uint>(value);
         break;
+
+    case OPTION_JACK_AUTOCONENCT:
+        CARLA_ENGINE_SET_OPTION_RUNNING_CHECK
+        fOptions.jackAutoConnect = (value != 0);
+        break;
+
+    case OPTION_JACK_TIMEMASTER:
+        CARLA_ENGINE_SET_OPTION_RUNNING_CHECK
+        fOptions.jackTimeMaster = (value != 0);
+        break;
+
+#ifdef WANT_RTAUDIO
+    case OPTION_RTAUDIO_BUFFER_SIZE:
+        CARLA_ENGINE_SET_OPTION_RUNNING_CHECK
+        fOptions.rtaudioBufferSize = static_cast<uint>(value);
+        break;
+
+    case OPTION_RTAUDIO_SAMPLE_RATE:
+        CARLA_ENGINE_SET_OPTION_RUNNING_CHECK
+        fOptions.rtaudioSampleRate = static_cast<uint>(value);
+        break;
+
+    case OPTION_RTAUDIO_DEVICE:
+        CARLA_ENGINE_SET_OPTION_RUNNING_CHECK
+        fOptions.rtaudioDevice = valueStr;
+        break;
+#endif
 
 #ifndef BUILD_BRIDGE
     case OPTION_PATH_BRIDGE_NATIVE:

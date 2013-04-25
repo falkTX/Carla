@@ -67,3 +67,5 @@ moc_%.cpp: %.hpp
 
 $(TARGET): $(OBJS)
 	$(AR) rs $@ $^
+
+.PRECIOUS: moc_%.cpp

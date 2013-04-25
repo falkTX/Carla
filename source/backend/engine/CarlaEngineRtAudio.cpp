@@ -126,7 +126,7 @@ public:
             return false;
         }
 
-        fBufferSize = fOptions.preferredBufferSize;
+        fBufferSize = fOptions.rtaudioBufferSize;
 
         // Audio
         {
@@ -154,7 +154,7 @@ public:
                 fAudioIsInterleaved = true;
 
             try {
-                fAudio.openStream(&oParams, &iParams, RTAUDIO_FLOAT32, fOptions.preferredSampleRate, &fBufferSize, carla_rtaudio_process_callback, this, &rtOptions);
+                fAudio.openStream(&oParams, &iParams, RTAUDIO_FLOAT32, fOptions.rtaudioSampleRate, &fBufferSize, carla_rtaudio_process_callback, this, &rtOptions);
             }
             catch (RtError& e)
             {
@@ -949,7 +949,7 @@ static void initRtApis()
 
 CarlaEngine* CarlaEngine::newRtAudio(RtAudioApi api)
 {
-    RtAudio::Api rtApi = RtAudio::UNSPECIFIED;
+    RtAudio::Api rtApi(RtAudio::UNSPECIFIED);
 
     switch (api)
     {
@@ -1026,6 +1026,20 @@ const char* CarlaEngine::getRtAudioApiName(const unsigned int index)
         case RtAudio::RTAUDIO_DUMMY:
             return "Dummy";
         }
+    }
+
+    return nullptr;
+}
+
+const char** CarlaEngine::getRtAudioApiDeviceNames(const unsigned int index)
+{
+    initRtApis();
+
+    if (index < sRtAudioApis.size())
+    {
+        const RtAudio::Api& api(sRtAudioApis[index]);
+
+        RtAudio rtAudio(api);
     }
 
     return nullptr;

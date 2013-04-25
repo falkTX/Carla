@@ -175,23 +175,26 @@ OPTION_PREFER_UI_BRIDGES       = 5
 OPTION_USE_DSSI_VST_CHUNKS     = 6
 OPTION_MAX_PARAMETERS          = 7
 OPTION_OSC_UI_TIMEOUT          = 8
-OPTION_PREFERRED_BUFFER_SIZE   = 9
-OPTION_PREFERRED_SAMPLE_RATE   = 10
-OPTION_PATH_BRIDGE_NATIVE      = 11
-OPTION_PATH_BRIDGE_POSIX32     = 12
-OPTION_PATH_BRIDGE_POSIX64     = 13
-OPTION_PATH_BRIDGE_WIN32       = 14
-OPTION_PATH_BRIDGE_WIN64       = 15
-OPTION_PATH_BRIDGE_LV2_GTK2    = 16
-OPTION_PATH_BRIDGE_LV2_GTK3    = 17
-OPTION_PATH_BRIDGE_LV2_QT4     = 18
-OPTION_PATH_BRIDGE_LV2_QT5     = 19
-OPTION_PATH_BRIDGE_LV2_COCOA   = 20
-OPTION_PATH_BRIDGE_LV2_WINDOWS = 21
-OPTION_PATH_BRIDGE_LV2_X11     = 22
-OPTION_PATH_BRIDGE_VST_COCOA   = 23
-OPTION_PATH_BRIDGE_VST_HWND    = 24
-OPTION_PATH_BRIDGE_VST_X11     = 25
+OPTION_JACK_AUTOCONENCT        = 9
+OPTION_JACK_TIMEMASTER         = 10
+OPTION_RTAUDIO_BUFFER_SIZE     = 11
+OPTION_RTAUDIO_SAMPLE_RATE     = 12
+OPTION_RTAUDIO_DEVICE          = 13
+OPTION_PATH_BRIDGE_NATIVE      = 14
+OPTION_PATH_BRIDGE_POSIX32     = 15
+OPTION_PATH_BRIDGE_POSIX64     = 16
+OPTION_PATH_BRIDGE_WIN32       = 17
+OPTION_PATH_BRIDGE_WIN64       = 18
+OPTION_PATH_BRIDGE_LV2_GTK2    = 19
+OPTION_PATH_BRIDGE_LV2_GTK3    = 20
+OPTION_PATH_BRIDGE_LV2_QT4     = 21
+OPTION_PATH_BRIDGE_LV2_QT5     = 22
+OPTION_PATH_BRIDGE_LV2_COCOA   = 23
+OPTION_PATH_BRIDGE_LV2_WINDOWS = 24
+OPTION_PATH_BRIDGE_LV2_X11     = 25
+OPTION_PATH_BRIDGE_VST_COCOA   = 26
+OPTION_PATH_BRIDGE_VST_HWND    = 27
+OPTION_PATH_BRIDGE_VST_X11     = 28
 
 # Callback Type
 CALLBACK_DEBUG          = 0
@@ -377,8 +380,8 @@ class Host(object):
         self.lib.carla_get_engine_driver_name.argtypes = [c_uint]
         self.lib.carla_get_engine_driver_name.restype = c_char_p
 
-        self.lib.carla_get_engine_driver_options.argtypes = [c_uint]
-        self.lib.carla_get_engine_driver_options.restype = c_void_p # TODO
+        self.lib.carla_get_engine_driver_device_names.argtypes = [c_uint]
+        self.lib.carla_get_engine_driver_device_names.restype = POINTER(c_char_p)
 
         self.lib.carla_get_internal_plugin_count.argtypes = None
         self.lib.carla_get_internal_plugin_count.restype = c_uint
@@ -631,8 +634,9 @@ class Host(object):
     def get_engine_driver_name(self, index):
         return self.lib.carla_get_engine_driver_name(index)
 
-    def get_engine_driver_options(self, index):
-        return self.lib.carla_get_engine_driver_options(index)
+    def get_engine_driver_device_names(self, index):
+        # FIXME
+        return self.lib.carla_get_engine_driver_device_names(index)
 
     def get_internal_plugin_count(self):
         return self.lib.carla_get_internal_plugin_count()

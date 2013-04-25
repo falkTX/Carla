@@ -233,8 +233,15 @@ struct EngineOptions {
 
     unsigned int maxParameters;
     unsigned int oscUiTimeout;
-    unsigned int preferredBufferSize;
-    unsigned int preferredSampleRate;
+
+    bool jackAutoConnect;
+    bool jackTimeMaster;
+
+#ifdef WANT_RTAUDIO
+    unsigned int rtaudioBufferSize;
+    unsigned int rtaudioSampleRate;
+    CarlaString  rtaudioDevice;
+#endif
 
 #ifndef BUILD_BRIDGE
     CarlaString bridge_native;
@@ -258,6 +265,8 @@ struct EngineOptions {
     CarlaString bridge_vstX11;
 #endif
 
+    int _d; //ignore
+
 #ifndef DOXYGEN
     EngineOptions()
         : processMode(PROCESS_MODE_CONTINUOUS_RACK),
@@ -270,8 +279,13 @@ struct EngineOptions {
 # endif
           maxParameters(MAX_DEFAULT_PARAMETERS),
           oscUiTimeout(4000),
-          preferredBufferSize(512),
-          preferredSampleRate(44100) {}
+          jackAutoConnect(false),
+          jackTimeMaster(false),
+# ifdef WANT_RTAUDIO
+          rtaudioBufferSize(512),
+          rtaudioSampleRate(44100),
+# endif
+          _d(0) {}
 
     CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(EngineOptions)
 #endif
@@ -630,6 +644,12 @@ public:
      * Get the name of the engine driver at \a index.
      */
     static const char* getDriverName(unsigned int index);
+
+    /*!
+     * Get the device names of driver at \a index (for use in non-JACK drivers).\n
+     * May return NULL.
+     */
+    static const char** getDriverDeviceNames(unsigned int index);
 
     /*!
      * Create a new engine, using driver \a driverName.\n
@@ -1040,6 +1060,7 @@ private:
     static CarlaEngine* newRtAudio(const RtAudioApi api);
     static size_t       getRtAudioApiCount();
     static const char*  getRtAudioApiName(const unsigned int index);
+    static const char** getRtAudioApiDeviceNames(const unsigned int index);
 # endif
 
 public:

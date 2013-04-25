@@ -403,14 +403,11 @@ const char* carla_get_engine_driver_name(unsigned int index)
     return CarlaEngine::getDriverName(index);
 }
 
-const void* carla_get_engine_driver_options(unsigned int index)
+const char** carla_get_engine_driver_device_names(unsigned int index)
 {
-    carla_debug("carla_get_engine_driver_options(%i)", index);
+    carla_debug("carla_get_engine_driver_device_names(%i)", index);
 
-    return nullptr;
-
-    // unused
-    (void)index;
+    return CarlaEngine::getDriverDeviceNames(index);
 }
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -530,10 +527,15 @@ bool carla_engine_init(const char* driverName, const char* clientName)
 # ifdef WANT_DSSI
     standalone.engine->setOption(CarlaBackend::OPTION_USE_DSSI_VST_CHUNKS,        standalone.options.useDssiVstChunks ? 1 : 0,        nullptr);
 # endif
-    standalone.engine->setOption(CarlaBackend::OPTION_MAX_PARAMETERS,             static_cast<int>(standalone.options.maxParameters),       nullptr);
-    standalone.engine->setOption(CarlaBackend::OPTION_PREFERRED_BUFFER_SIZE,      static_cast<int>(standalone.options.preferredBufferSize), nullptr);
-    standalone.engine->setOption(CarlaBackend::OPTION_PREFERRED_SAMPLE_RATE,      static_cast<int>(standalone.options.preferredSampleRate), nullptr);
-    standalone.engine->setOption(CarlaBackend::OPTION_OSC_UI_TIMEOUT,             static_cast<int>(standalone.options.oscUiTimeout),        nullptr);
+    standalone.engine->setOption(CarlaBackend::OPTION_MAX_PARAMETERS,             static_cast<int>(standalone.options.maxParameters), nullptr);
+    standalone.engine->setOption(CarlaBackend::OPTION_OSC_UI_TIMEOUT,             static_cast<int>(standalone.options.oscUiTimeout),  nullptr);
+    standalone.engine->setOption(CarlaBackend::OPTION_JACK_AUTOCONENCT,           standalone.options.jackAutoConnect ? 1 : 0,         nullptr);
+    standalone.engine->setOption(CarlaBackend::OPTION_JACK_TIMEMASTER,            standalone.options.jackTimeMaster  ? 1 : 0,         nullptr);
+# ifdef WANT_RTAUDIO
+    standalone.engine->setOption(CarlaBackend::OPTION_RTAUDIO_BUFFER_SIZE,        static_cast<int>(standalone.options.rtaudioBufferSize), nullptr);
+    standalone.engine->setOption(CarlaBackend::OPTION_RTAUDIO_SAMPLE_RATE,        static_cast<int>(standalone.options.rtaudioSampleRate), nullptr);
+    standalone.engine->setOption(CarlaBackend::OPTION_RTAUDIO_DEVICE,          0, (const char*)standalone.options.rtaudioDevice);
+# endif
     standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_NATIVE,      0, (const char*)standalone.options.bridge_native);
     standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_POSIX32,     0, (const char*)standalone.options.bridge_posix32);
     standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_POSIX64,     0, (const char*)standalone.options.bridge_posix64);
@@ -699,19 +701,33 @@ void carla_set_engine_option(CarlaOptionsType option, int value, const char* val
         standalone.options.oscUiTimeout = static_cast<unsigned int>(value);
         break;
 
-    case CarlaBackend::OPTION_PREFERRED_BUFFER_SIZE:
+    case CarlaBackend::OPTION_JACK_AUTOCONENCT:
+        standalone.options.jackAutoConnect = (value != 0);
+        break;
+
+    case CarlaBackend::OPTION_JACK_TIMEMASTER:
+        standalone.options.jackTimeMaster = (value != 0);
+        break;
+
+#ifdef WANT_RTAUDIO
+    case CarlaBackend::OPTION_RTAUDIO_BUFFER_SIZE:
         if (value <= 0)
             return carla_stderr2("carla_set_engine_option(OPTION_PREFERRED_BUFFER_SIZE, %i, \"%s\") - invalid value", value, valueStr);
 
-        standalone.options.preferredBufferSize = static_cast<unsigned int>(value);
+        standalone.options.rtaudioBufferSize = static_cast<unsigned int>(value);
         break;
 
-    case CarlaBackend::OPTION_PREFERRED_SAMPLE_RATE:
+    case CarlaBackend::OPTION_RTAUDIO_SAMPLE_RATE:
         if (value <= 0)
             return carla_stderr2("carla_set_engine_option(OPTION_PREFERRED_SAMPLE_RATE, %i, \"%s\") - invalid value", value, valueStr);
 
-        standalone.options.preferredSampleRate = static_cast<unsigned int>(value);
+        standalone.options.rtaudioSampleRate = static_cast<unsigned int>(value);
         break;
+
+    case CarlaBackend::OPTION_RTAUDIO_DEVICE:
+        standalone.options.rtaudioDevice = valueStr;
+        break;
+#endif
 
 #ifndef BUILD_BRIDGE
     case CarlaBackend::OPTION_PATH_BRIDGE_NATIVE:
