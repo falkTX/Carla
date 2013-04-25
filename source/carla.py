@@ -194,6 +194,9 @@ class CarlaSettingsW(QDialog):
             driverName = cString(Carla.host.get_engine_driver_name(i))
             self.ui.cb_engine_audio_driver.addItem(driverName)
 
+        # TODO in backend
+        self.ui.tb_engine_driver_config.setEnabled(False)
+
         # -------------------------------------------------------------
         # Load settings
 
