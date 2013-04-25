@@ -928,7 +928,8 @@ class CarlaMainW(QMainWindow):
     @pyqtSlot()
     def slot_canvasRefresh(self):
         patchcanvas.clear()
-        Carla.host.patchbay_refresh()
+        if Carla.host.is_engine_running():
+            Carla.host.patchbay_refresh()
         QTimer.singleShot(1000 if self.fSavedSettings['Canvas/EyeCandy'] else 0, self.ui.miniCanvasPreview, SLOT("update()"))
 
     @pyqtSlot()
