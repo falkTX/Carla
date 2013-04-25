@@ -43,6 +43,17 @@ CARLA_BACKEND_START_NAMESPACE
 }
 #endif
 
+// non-void versions
+#define LV2NV_ATOM_CONTENTS(type, atom) \
+    ((uint8_t*)(atom) + sizeof(type))
+
+#define LV2NV_ATOM_CONTENTS_CONST(type, atom) \
+    ((const uint8_t*)(atom) + sizeof(type))
+
+#define LV2NV_ATOM_BODY(atom) LV2NV_ATOM_CONTENTS(LV2_Atom, atom)
+
+#define LV2NV_ATOM_BODY_CONST(atom) LV2NV_ATOM_CONTENTS_CONST(LV2_Atom, atom)
+
 /*!
  * @defgroup PluginHints Plugin Hints
  * @{
@@ -81,26 +92,35 @@ const unsigned int CARLA_EVENT_TYPE_TIME    = 0x40;
  * Static index list of the internal LV2 URI Map Ids.
  * @{
  */
-const uint32_t CARLA_URI_MAP_ID_NULL                = 0;
-const uint32_t CARLA_URI_MAP_ID_ATOM_CHUNK          = 1;
-const uint32_t CARLA_URI_MAP_ID_ATOM_DOUBLE         = 2;
-const uint32_t CARLA_URI_MAP_ID_ATOM_INT            = 3;
-const uint32_t CARLA_URI_MAP_ID_ATOM_PATH           = 4;
-const uint32_t CARLA_URI_MAP_ID_ATOM_SEQUENCE       = 5;
-const uint32_t CARLA_URI_MAP_ID_ATOM_STRING         = 6;
-const uint32_t CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM  = 7;
-const uint32_t CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT = 8;
-const uint32_t CARLA_URI_MAP_ID_BUF_MAX_LENGTH      = 9;
-const uint32_t CARLA_URI_MAP_ID_BUF_MIN_LENGTH      = 10;
-const uint32_t CARLA_URI_MAP_ID_BUF_SEQUENCE_SIZE   = 11;
-const uint32_t CARLA_URI_MAP_ID_LOG_ERROR           = 12;
-const uint32_t CARLA_URI_MAP_ID_LOG_NOTE            = 13;
-const uint32_t CARLA_URI_MAP_ID_LOG_TRACE           = 14;
-const uint32_t CARLA_URI_MAP_ID_LOG_WARNING         = 15;
-const uint32_t CARLA_URI_MAP_ID_MIDI_EVENT          = 16;
-const uint32_t CARLA_URI_MAP_ID_PARAM_SAMPLE_RATE   = 17;
-const uint32_t CARLA_URI_MAP_ID_TIME_POSITION       = 18;
-const uint32_t CARLA_URI_MAP_ID_COUNT               = 19;
+const uint32_t CARLA_URI_MAP_ID_NULL                   =  0;
+const uint32_t CARLA_URI_MAP_ID_ATOM_CHUNK             =  1;
+const uint32_t CARLA_URI_MAP_ID_ATOM_DOUBLE            =  2;
+const uint32_t CARLA_URI_MAP_ID_ATOM_INT               =  3;
+const uint32_t CARLA_URI_MAP_ID_ATOM_PATH              =  4;
+const uint32_t CARLA_URI_MAP_ID_ATOM_SEQUENCE          =  5;
+const uint32_t CARLA_URI_MAP_ID_ATOM_STRING            =  6;
+const uint32_t CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM     =  7;
+const uint32_t CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT    =  8;
+const uint32_t CARLA_URI_MAP_ID_BUF_MAX_LENGTH         =  9;
+const uint32_t CARLA_URI_MAP_ID_BUF_MIN_LENGTH         = 10;
+const uint32_t CARLA_URI_MAP_ID_BUF_SEQUENCE_SIZE      = 11;
+const uint32_t CARLA_URI_MAP_ID_LOG_ERROR              = 12;
+const uint32_t CARLA_URI_MAP_ID_LOG_NOTE               = 13;
+const uint32_t CARLA_URI_MAP_ID_LOG_TRACE              = 14;
+const uint32_t CARLA_URI_MAP_ID_LOG_WARNING            = 15;
+const uint32_t CARLA_URI_MAP_ID_TIME_POSITION          = 16; // base type
+const uint32_t CARLA_URI_MAP_ID_TIME_BAR               = 17; // values
+const uint32_t CARLA_URI_MAP_ID_TIME_BAR_BEAT          = 18;
+const uint32_t CARLA_URI_MAP_ID_TIME_BEAT              = 19;
+const uint32_t CARLA_URI_MAP_ID_TIME_BEAT_UNIT         = 20;
+const uint32_t CARLA_URI_MAP_ID_TIME_BEATS_PER_BAR     = 21;
+const uint32_t CARLA_URI_MAP_ID_TIME_BEATS_PER_MINUTE  = 22;
+const uint32_t CARLA_URI_MAP_ID_TIME_FRAME             = 23;
+const uint32_t CARLA_URI_MAP_ID_TIME_FRAMES_PER_SECOND = 24;
+const uint32_t CARLA_URI_MAP_ID_TIME_SPEED             = 25;
+const uint32_t CARLA_URI_MAP_ID_MIDI_EVENT             = 26;
+const uint32_t CARLA_URI_MAP_ID_PARAM_SAMPLE_RATE      = 27;
+const uint32_t CARLA_URI_MAP_ID_COUNT                  = 28;
 /**@}*/
 
 /*!
@@ -149,15 +169,17 @@ struct Lv2EventData {
     uint32_t rindex;
     CarlaEngineEventPort* port;
     union {
-        LV2_Atom_Sequence* atom;
+        LV2_Atom_Buffer* atom;
         LV2_Event_Buffer* event;
         LV2_MIDI* midi;
+        void* _ptr; // value checking
     };
 
     Lv2EventData()
         : type(0x0),
           rindex(0),
-          port(nullptr) {}
+          port(nullptr),
+          _ptr(nullptr) {}
 
     ~Lv2EventData()
     {
@@ -204,6 +226,8 @@ struct Lv2EventData {
             }
         }
 
+        CARLA_ASSERT(_ptr == nullptr);
+
         type = 0x0;
     }
 
@@ -213,7 +237,7 @@ struct Lv2EventData {
 struct Lv2PluginEventData {
     uint32_t count;
     Lv2EventData* data;
-    Lv2EventData* ctrl; // default port
+    Lv2EventData* ctrl; // default port, either \a data[x] or PluginEventData.portIn/Out
     uint32_t ctrlIndex;
 
     Lv2PluginEventData()
@@ -243,9 +267,6 @@ struct Lv2PluginEventData {
 
         data  = new Lv2EventData[newCount];
         count = newCount;
-
-        ctrl      = nullptr;
-        ctrlIndex = 0;
     }
 
     void clear()
@@ -962,6 +983,25 @@ public:
         }
     }
 
+    void setProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) override
+    {
+        CARLA_ASSERT(index >= -1 && index < static_cast<int32_t>(kData->prog.count));
+
+        if (index < -1)
+            index = -1;
+        else if (index > static_cast<int32_t>(kData->prog.count))
+            return;
+
+        if (index >= 0)
+        {
+            const ScopedSingleProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
+
+            // TODO
+        }
+
+        CarlaPlugin::setProgram(index, sendGui, sendOsc, sendCallback);
+    }
+
     void setMidiProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
@@ -1336,11 +1376,7 @@ public:
                 if (type == CARLA_EVENT_DATA_ATOM)
                 {
                     fEventsIn.data[j].type = CARLA_EVENT_DATA_ATOM;
-                    fEventsIn.data[j].atom = (LV2_Atom_Sequence*)std::malloc(sizeof(LV2_Atom_Sequence) + MAX_EVENT_BUFFER);
-                    fEventsIn.data[j].atom->atom.size = 0;
-                    fEventsIn.data[j].atom->atom.type = CARLA_URI_MAP_ID_ATOM_SEQUENCE;
-                    fEventsIn.data[j].atom->body.unit = CARLA_URI_MAP_ID_NULL;
-                    fEventsIn.data[j].atom->body.pad  = 0;
+                    fEventsIn.data[j].atom = lv2_atom_buffer_new(MAX_EVENT_BUFFER, CARLA_URI_MAP_ID_ATOM_SEQUENCE, true);
                 }
                 else if (type == CARLA_EVENT_DATA_EVENT)
                 {
@@ -1351,8 +1387,10 @@ public:
                 {
                     fEventsIn.data[j].type = CARLA_EVENT_DATA_MIDI_LL;
                     fEventsIn.data[j].midi = new LV2_MIDI;
-                    fEventsIn.data[j].midi->capacity = MAX_EVENT_BUFFER;
-                    fEventsIn.data[j].midi->data     = new unsigned char[MAX_EVENT_BUFFER];
+                    fEventsIn.data[j].midi->event_count = 0;
+                    fEventsIn.data[j].midi->capacity    = MAX_EVENT_BUFFER;
+                    fEventsIn.data[j].midi->size        = 0;
+                    fEventsIn.data[j].midi->data        = new unsigned char[MAX_EVENT_BUFFER];
                 }
             }
         }
@@ -1370,11 +1408,7 @@ public:
                 if (type == CARLA_EVENT_DATA_ATOM)
                 {
                     fEventsOut.data[j].type = CARLA_EVENT_DATA_ATOM;
-                    fEventsOut.data[j].atom = (LV2_Atom_Sequence*)std::malloc(sizeof(LV2_Atom_Sequence) + MAX_EVENT_BUFFER);
-                    fEventsOut.data[j].atom->atom.size = 0;
-                    fEventsOut.data[j].atom->atom.type = CARLA_URI_MAP_ID_ATOM_SEQUENCE;
-                    fEventsOut.data[j].atom->body.unit = CARLA_URI_MAP_ID_NULL;
-                    fEventsOut.data[j].atom->body.pad  = 0;
+                    fEventsOut.data[j].atom = lv2_atom_buffer_new(MAX_EVENT_BUFFER, CARLA_URI_MAP_ID_ATOM_SEQUENCE, false);
                 }
                 else if (type == CARLA_EVENT_DATA_EVENT)
                 {
@@ -1385,8 +1419,10 @@ public:
                 {
                     fEventsOut.data[j].type = CARLA_EVENT_DATA_MIDI_LL;
                     fEventsOut.data[j].midi = new LV2_MIDI;
-                    fEventsOut.data[j].midi->capacity = MAX_EVENT_BUFFER;
-                    fEventsOut.data[j].midi->data     = new unsigned char[MAX_EVENT_BUFFER];
+                    fEventsOut.data[j].midi->event_count = 0;
+                    fEventsOut.data[j].midi->capacity    = MAX_EVENT_BUFFER;
+                    fEventsOut.data[j].midi->size        = 0;
+                    fEventsOut.data[j].midi->data        = new unsigned char[MAX_EVENT_BUFFER];
                 }
             }
         }
@@ -1467,10 +1503,10 @@ public:
                 {
                     j = iEvIn++;
 
-                    fDescriptor->connect_port(fHandle, i, fEventsIn.data[j].atom);
+                    fDescriptor->connect_port(fHandle, i, &fEventsIn.data[j].atom->atoms);
 
                     if (fHandle2 != nullptr)
-                        fDescriptor->connect_port(fHandle2, i, fEventsIn.data[j].atom);
+                        fDescriptor->connect_port(fHandle2, i, &fEventsIn.data[j].atom->atoms);
 
                     fEventsIn.data[j].rindex = i;
 
@@ -1508,10 +1544,10 @@ public:
                 {
                     j = iEvOut++;
 
-                    fDescriptor->connect_port(fHandle, i, fEventsOut.data[j].atom);
+                    fDescriptor->connect_port(fHandle, i, &fEventsOut.data[j].atom->atoms);
 
                     if (fHandle2 != nullptr)
-                        fDescriptor->connect_port(fHandle2, i, fEventsOut.data[j].atom);
+                        fDescriptor->connect_port(fHandle2, i, &fEventsOut.data[j].atom->atoms);
 
                     fEventsOut.data[j].rindex = i;
 
@@ -2125,6 +2161,8 @@ public:
             if (fHandle2 != nullptr)
                 fDescriptor->activate(fHandle2);
         }
+
+        fFirstActive = true;
     }
 
     void deactivate() override
@@ -2158,32 +2196,29 @@ public:
         }
 
         // handle events from different APIs
-        uint32_t           evInAtomOffsets[fEventsIn.count];
-        LV2_Event_Iterator evInEventIters[fEventsIn.count];
-        LV2_MIDIState      evInMidiStates[fEventsIn.count];
+        LV2_Atom_Buffer_Iterator evInAtomIters[fEventsIn.count];
+        LV2_Event_Iterator       evInEventIters[fEventsIn.count];
+        LV2_MIDIState            evInMidiStates[fEventsIn.count];
 
         for (i=0; i < fEventsIn.count; ++i)
         {
             if (fEventsIn.data[i].type & CARLA_EVENT_DATA_ATOM)
             {
-                evInAtomOffsets[i] = 0;
-                fEventsIn.data[i].atom->atom.size = 0;
-                fEventsIn.data[i].atom->atom.type = CARLA_URI_MAP_ID_ATOM_SEQUENCE;
-                fEventsIn.data[i].atom->body.unit = CARLA_URI_MAP_ID_NULL;
-                fEventsIn.data[i].atom->body.pad  = 0;
+                lv2_atom_buffer_reset(fEventsIn.data[i].atom, true);
+                lv2_atom_buffer_begin(&evInAtomIters[i], fEventsIn.data[i].atom);
             }
             else if (fEventsIn.data[i].type & CARLA_EVENT_DATA_EVENT)
             {
-                lv2_event_buffer_reset(fEventsIn.data[i].event, LV2_EVENT_AUDIO_STAMP, (uint8_t*)(fEventsIn.data[i].event + 1));
+                lv2_event_buffer_reset(fEventsIn.data[i].event, LV2_EVENT_AUDIO_STAMP, fEventsIn.data[i].event->data);
                 lv2_event_begin(&evInEventIters[i], fEventsIn.data[i].event);
             }
             else if (fEventsIn.data[i].type & CARLA_EVENT_DATA_MIDI_LL)
             {
+                fEventsIn.data[i].midi->event_count = 0;
+                fEventsIn.data[i].midi->size        = 0;
                 evInMidiStates[i].midi = fEventsIn.data[i].midi;
                 evInMidiStates[i].frame_count = frames;
-                evInMidiStates[i].position = 0;
-                evInMidiStates[i].midi->event_count = 0;
-                evInMidiStates[i].midi->size = 0;
+                evInMidiStates[i].position    = 0;
             }
         }
 
@@ -2191,14 +2226,11 @@ public:
         {
             if (fEventsOut.data[i].type & CARLA_EVENT_DATA_ATOM)
             {
-                fEventsOut.data[i].atom->atom.size = 0;
-                fEventsOut.data[i].atom->atom.type = CARLA_URI_MAP_ID_ATOM_SEQUENCE;
-                fEventsOut.data[i].atom->body.unit = CARLA_URI_MAP_ID_NULL;
-                fEventsOut.data[i].atom->body.pad  = 0;
+                lv2_atom_buffer_reset(fEventsOut.data[i].atom, false);
             }
             else if (fEventsOut.data[i].type & CARLA_EVENT_DATA_EVENT)
             {
-                lv2_event_buffer_reset(fEventsOut.data[i].event, LV2_EVENT_AUDIO_STAMP, (uint8_t*)(fEventsOut.data[i].event + 1));
+                lv2_event_buffer_reset(fEventsOut.data[i].event, LV2_EVENT_AUDIO_STAMP, fEventsOut.data[i].event->data);
             }
             else if (fEventsOut.data[i].type & CARLA_EVENT_DATA_MIDI_LL)
             {
@@ -2236,7 +2268,7 @@ public:
         CARLA_PROCESS_CONTINUE_CHECK;
 
         // --------------------------------------------------------------------------------------------------------
-        // Special Parameters
+        // Special Parameters and TimeInfo
 
         {
             int32_t rindex;
@@ -2265,9 +2297,6 @@ public:
                         break;
                     case LV2_PORT_DESIGNATION_TIME_FRAMES_PER_SECOND:
                         break;
-                    //case LV2_PORT_DESIGNATION_TIME_POSITION:
-                    //    setParameterValue(k, timeInfo.usecs, false, false, false);
-                    //    break;
                     case LV2_PORT_DESIGNATION_TIME_SPEED:
                         setParameterValue(k, timeInfo.playing ? 1.0f : 0.0f, false, false, false);
                         break;
@@ -2299,6 +2328,43 @@ public:
                     }
                 }
             }
+
+            // find first port to send time info into
+            for (i = 0; i < fEventsIn.count; ++i)
+            {
+                if ((fEventsIn.data[i].type & CARLA_EVENT_DATA_ATOM) == 0 || (fEventsIn.data[i].type & CARLA_EVENT_DATA_ATOM) == 0)
+                    continue;
+
+                if (fFirstActive)
+                {
+                    if (timeInfo.valid & EngineTimeInfo::ValidBBT)
+                    {
+                        //LV2_Atom_Float;
+                        //lv2_atom_buffer_write(&evInAtomIters[i], 0, 0, CARLA_URI_MAP_ID_TIME_BEATS_PER_MINUTE, sizeof(float), timeInfo.bbt.beatsPerMinute);
+                    }
+                }
+                else
+                {
+
+                }
+                break;
+
+                //if (atom->type == CARLA_URI_MAP_ID_ATOM_WORKER)
+                //{
+                //    const LV2_Atom_Worker* const atomWorker = (const LV2_Atom_Worker*)atom;
+                //    fExt.worker->work_response(fHandle, atomWorker->body.size, atomWorker->body.data);
+                //    continue;
+                //}
+
+//                LV2_Atom_Event* const aev(getLv2AtomEvent(fEventsIn.ctrl->atom, evInAtomOffsets[k]));
+//                aev->time.frames = 0;
+//                aev->body.type   = atom->type;
+//                aev->body.size   = atom->size;
+//                std::memcpy(LV2_ATOM_BODY(&aev->body), LV2_ATOM_BODY(atom), atom->size);
+
+//                evInAtomOffsets[k] += evInPadSize;
+//                fEventsIn.ctrl->atom->atom.size = evInAtomOffsets[k];
+            }
         }
 
         // --------------------------------------------------------------------------------------------------------
@@ -2318,13 +2384,8 @@ public:
 
                     k = fEventsIn.ctrlIndex;
 
-                    while (fAtomQueueIn.get(&portIndex, &atom))
+                    while (lv2_atom_buffer_is_valid(&evInAtomIters[k]) && fAtomQueueIn.get(&portIndex, &atom))
                     {
-                        const uint32_t evInPadSize(lv2_atom_pad_size(sizeof(LV2_Atom_Event) + atom->size));
-
-                        if (evInAtomOffsets[k] + evInPadSize >= MAX_EVENT_BUFFER)
-                            break;
-
                         //if (atom->type == CARLA_URI_MAP_ID_ATOM_WORKER)
                         //{
                         //    const LV2_Atom_Worker* const atomWorker = (const LV2_Atom_Worker*)atom;
@@ -2332,14 +2393,7 @@ public:
                         //    continue;
                         //}
 
-                        LV2_Atom_Event* const aev(getLv2AtomEvent(fEventsIn.ctrl->atom, evInAtomOffsets[k]));
-                        aev->time.frames = 0;
-                        aev->body.type   = atom->type;
-                        aev->body.size   = atom->size;
-                        std::memcpy(LV2_ATOM_BODY(&aev->body), LV2_ATOM_BODY(atom), atom->size);
-
-                        evInAtomOffsets[k] += evInPadSize;
-                        fEventsIn.ctrl->atom->atom.size = evInAtomOffsets[k];
+                        lv2_atom_buffer_write(&evInAtomIters[k], 0, 0, atom->type, atom->size, LV2NV_ATOM_BODY_CONST(atom));
                     }
                 }
 
@@ -2368,29 +2422,13 @@ public:
                     if (fEventsIn.ctrl->type & CARLA_EVENT_TYPE_MIDI)
                     {
                         if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_ATOM)
-                        {
-                            const uint32_t evInPadSize(lv2_atom_pad_size(sizeof(LV2_Atom_Event) + 3));
+                            lv2_atom_buffer_write(&evInAtomIters[k], 0, 0, CARLA_URI_MAP_ID_MIDI_EVENT, 3, midiEvent);
 
-                            if (evInAtomOffsets[k] + evInPadSize >= MAX_EVENT_BUFFER)
-                                break;
-
-                            LV2_Atom_Event* const aev = getLv2AtomEvent(fEventsIn.ctrl->atom, evInAtomOffsets[k]);
-                            aev->time.frames = 0;
-                            aev->body.type   = CARLA_URI_MAP_ID_MIDI_EVENT;
-                            aev->body.size   = 3;
-                            std::memcpy(LV2_ATOM_BODY(&aev->body), midiEvent, 3);
-
-                            evInAtomOffsets[k] += evInPadSize;
-                            fEventsIn.ctrl->atom->atom.size = evInAtomOffsets[k];
-                        }
                         else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_EVENT)
-                        {
                             lv2_event_write(&evInEventIters[k], 0, 0, CARLA_URI_MAP_ID_MIDI_EVENT, 3, midiEvent);
-                        }
+
                         else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_MIDI_LL)
-                        {
                             lv2midi_put_event(&evInMidiStates[k], 0, 3, midiEvent);
-                        }
                     }
                 }
 
@@ -2440,19 +2478,19 @@ public:
 
                         if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_ATOM)
                         {
-                            evInAtomOffsets[k] = 0;
-                            fEventsIn.ctrl->atom->atom.size = 0;
+                            lv2_atom_buffer_reset(fEventsIn.data[k].atom, true);
+                            lv2_atom_buffer_begin(&evInAtomIters[k], fEventsIn.data[i].atom);
                         }
                         else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_EVENT)
                         {
-                            lv2_event_buffer_reset(fEventsIn.ctrl->event, LV2_EVENT_AUDIO_STAMP, (uint8_t*)(fEventsIn.ctrl->event + 1));
+                            lv2_event_buffer_reset(fEventsIn.ctrl->event, LV2_EVENT_AUDIO_STAMP, fEventsIn.ctrl->event->data);
                             lv2_event_begin(&evInEventIters[k], fEventsIn.ctrl->event);
                         }
                         else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_MIDI_LL)
                         {
-                            evInMidiStates[k].position = 0;
-                            evInMidiStates[k].midi->event_count = 0;
-                            evInMidiStates[k].midi->size = 0;
+                            fEventsIn.data[k].midi->event_count = 0;
+                            fEventsIn.data[k].midi->size        = 0;
+                            evInMidiStates[k].position = time;
                         }
                     }
                     else
@@ -2646,29 +2684,13 @@ public:
                     k = fEventsIn.ctrlIndex;
 
                     if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_ATOM)
-                    {
-                        const uint32_t evInPadSize(lv2_atom_pad_size(sizeof(LV2_Atom_Event) + midiEvent.size));
+                        lv2_atom_buffer_write(&evInAtomIters[k], mtime, 0, CARLA_URI_MAP_ID_MIDI_EVENT, midiEvent.size, midiEvent.data);
 
-                        if (evInAtomOffsets[k] + evInPadSize >= MAX_EVENT_BUFFER)
-                            continue;
-
-                        LV2_Atom_Event* const aev(getLv2AtomEvent(fEventsIn.ctrl->atom, evInAtomOffsets[k]));
-                        aev->time.frames = mtime;
-                        aev->body.type   = CARLA_URI_MAP_ID_MIDI_EVENT;
-                        aev->body.size   = midiEvent.size;
-                        std::memcpy(LV2_ATOM_BODY(&aev->body), midiEvent.data, midiEvent.size);
-
-                        evInAtomOffsets[k] += evInPadSize;
-                        fEventsIn.ctrl->atom->atom.size = evInAtomOffsets[k];
-                    }
                     else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_EVENT)
-                    {
                         lv2_event_write(&evInEventIters[k], mtime, 0, CARLA_URI_MAP_ID_MIDI_EVENT, midiEvent.size, midiEvent.data);
-                    }
+
                     else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_MIDI_LL)
-                    {
                         lv2midi_put_event(&evInMidiStates[k], mtime, midiEvent.size, midiEvent.data);
-                    }
 
                     if (status == MIDI_STATUS_NOTE_ON)
                         postponeRtEvent(kPluginPostRtEventNoteOn, channel, midiEvent.data[1], midiEvent.data[2]);
@@ -2739,6 +2761,8 @@ public:
                 fExt.worker->end_run(fHandle2);
         }
 #endif
+
+        fFirstActive = false;
 
         // --------------------------------------------------------------------------------------------------------
     }
@@ -3171,7 +3195,7 @@ protected:
 
     // -------------------------------------------------------------------
 
-    uint32_t getCustomURID(const char* const uri)
+    LV2_URID getCustomURID(const char* const uri)
     {
         CARLA_ASSERT(uri != nullptr);
         carla_debug("Lv2Plugin::getCustomURID(\"%s\")", uri);
@@ -4346,6 +4370,9 @@ private:
 
     NonRtList<const char*> fCustomURIDs;
 
+    bool fFirstActive; // first process() call after activate()
+    EngineTimeInfo fLastTimeInfo;
+
     struct Extensions {
         const LV2_Options_Interface* options;
         const LV2_State_Interface* state;
@@ -4619,13 +4646,33 @@ private:
         if (std::strcmp(uri, LV2_LOG__Warning) == 0)
             return CARLA_URI_MAP_ID_LOG_WARNING;
 
+        // Time types
+        if (std::strcmp(uri, LV2_TIME__Position) == 0)
+            return CARLA_URI_MAP_ID_TIME_POSITION;
+        if (std::strcmp(uri, LV2_TIME__bar) == 0)
+            return CARLA_URI_MAP_ID_TIME_BAR;
+        if (std::strcmp(uri, LV2_TIME__barBeat) == 0)
+            return CARLA_URI_MAP_ID_TIME_BAR_BEAT;
+        if (std::strcmp(uri, LV2_TIME__beat) == 0)
+            return CARLA_URI_MAP_ID_TIME_BEAT;
+        if (std::strcmp(uri, LV2_TIME__beatUnit) == 0)
+            return CARLA_URI_MAP_ID_TIME_BEAT_UNIT;
+        if (std::strcmp(uri, LV2_TIME__beatsPerBar) == 0)
+            return CARLA_URI_MAP_ID_TIME_BEATS_PER_BAR;
+        if (std::strcmp(uri, LV2_TIME__beatsPerMinute) == 0)
+            return CARLA_URI_MAP_ID_TIME_BEATS_PER_MINUTE;
+        if (std::strcmp(uri, LV2_TIME__frame) == 0)
+            return CARLA_URI_MAP_ID_TIME_FRAME;
+        if (std::strcmp(uri, LV2_TIME__framesPerSecond) == 0)
+            return CARLA_URI_MAP_ID_TIME_FRAMES_PER_SECOND;
+        if (std::strcmp(uri, LV2_TIME__speed) == 0)
+            return CARLA_URI_MAP_ID_TIME_SPEED;
+
         // Others
         if (std::strcmp(uri, LV2_MIDI__MidiEvent) == 0)
             return CARLA_URI_MAP_ID_MIDI_EVENT;
         if (std::strcmp(uri, LV2_PARAMETERS__sampleRate) == 0)
             return CARLA_URI_MAP_ID_PARAM_SAMPLE_RATE;
-        if (std::strcmp(uri, LV2_TIME__Position) == 0)
-            return CARLA_URI_MAP_ID_TIME_POSITION;
 
         if (handle == nullptr)
             return CARLA_URI_MAP_ID_NULL;
@@ -4679,13 +4726,33 @@ private:
         if (urid == CARLA_URI_MAP_ID_LOG_WARNING)
             return LV2_LOG__Warning;
 
+        // Time types
+        if (urid == CARLA_URI_MAP_ID_TIME_POSITION)
+            return LV2_TIME__Position;
+        if (urid == CARLA_URI_MAP_ID_TIME_BAR)
+            return LV2_TIME__bar;
+        if (urid == CARLA_URI_MAP_ID_TIME_BAR_BEAT)
+            return LV2_TIME__barBeat;
+        if (urid == CARLA_URI_MAP_ID_TIME_BEAT)
+            return LV2_TIME__beat;
+        if (urid == CARLA_URI_MAP_ID_TIME_BEAT_UNIT)
+            return LV2_TIME__beatUnit;
+        if (urid == CARLA_URI_MAP_ID_TIME_BEATS_PER_BAR)
+            return LV2_TIME__beatsPerBar;
+        if (urid == CARLA_URI_MAP_ID_TIME_BEATS_PER_MINUTE)
+            return LV2_TIME__beatsPerMinute;
+        if (urid == CARLA_URI_MAP_ID_TIME_FRAME)
+            return LV2_TIME__frame;
+        if (urid == CARLA_URI_MAP_ID_TIME_FRAMES_PER_SECOND)
+            return LV2_TIME__framesPerSecond;
+        if (urid == CARLA_URI_MAP_ID_TIME_SPEED)
+            return LV2_TIME__speed;
+
         // Others
         if (urid == CARLA_URI_MAP_ID_MIDI_EVENT)
             return LV2_MIDI__MidiEvent;
         if (urid == CARLA_URI_MAP_ID_PARAM_SAMPLE_RATE)
             return LV2_PARAMETERS__sampleRate;
-        if (urid == CARLA_URI_MAP_ID_TIME_POSITION)
-            return LV2_TIME__Position;
 
         if (handle == nullptr)
             return nullptr;

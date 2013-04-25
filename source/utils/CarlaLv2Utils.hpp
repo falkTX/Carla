@@ -23,6 +23,7 @@
 #include "lv2/lv2.h"
 #include "lv2/atom.h"
 #include "lv2/atom-forge.h"
+#include "lv2/atom-helpers.h"
 #include "lv2/atom-util.h"
 #include "lv2/buf-size.h"
 #include "lv2/data-access.h"
@@ -722,8 +723,6 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
                             rdfPort->Designation = LV2_PORT_DESIGNATION_TIME_FRAME;
                         else if (std::strcmp(designation, LV2_TIME__framesPerSecond) == 0)
                             rdfPort->Designation = LV2_PORT_DESIGNATION_TIME_FRAMES_PER_SECOND;
-                        else if (std::strcmp(designation, LV2_TIME__position) == 0)
-                            rdfPort->Designation = LV2_PORT_DESIGNATION_TIME_POSITION;
                         else if (std::strcmp(designation, LV2_TIME__speed) == 0)
                             rdfPort->Designation = LV2_PORT_DESIGNATION_TIME_SPEED;
                         else if (std::strncmp(designation, LV2_PARAMETERS_PREFIX, std::strlen(LV2_PARAMETERS_PREFIX)) == 0)
