@@ -94,14 +94,16 @@ public:
     CarlaEngineRtAudio(const RtAudio::Api api)
         : CarlaEngine(),
           fAudio(api),
+          fAudioBufIn(nullptr),
+          fAudioBufOut(nullptr),
+          fAudioBufRackIn{nullptr},
+          fAudioBufRackOut{nullptr},
+          fAudioCountIn(0),
+          fAudioCountOut(0),
           fAudioIsInterleaved(false),
           fAudioIsReady(false),
-          fAudioInBuf1(nullptr),
-          fAudioInBuf2(nullptr),
-          fAudioOutBuf1(nullptr),
-          fAudioOutBuf2(nullptr),
-          fMidiIn(getMatchedAudioMidiAPi(api), "Carla"),
-          fMidiOut(getMatchedAudioMidiAPi(api), "Carla"),
+          fDummyMidiIn(getMatchedAudioMidiAPi(api), "Carla-Probe-In"),
+          fDummyMidiOut(getMatchedAudioMidiAPi(api), "Carla-Probe-Out"),
           fLastConnectionId(0)
     {
         carla_debug("CarlaEngineRtAudio::CarlaEngineRtAudio(%i)", api);
@@ -113,13 +115,16 @@ public:
 
     ~CarlaEngineRtAudio() override
     {
+        CARLA_ASSERT(fAudioBufIn == nullptr);
+        CARLA_ASSERT(fAudioBufOut == nullptr);
+        CARLA_ASSERT(fAudioCountIn == 0);
+        CARLA_ASSERT(fAudioCountOut == 0);
+        CARLA_ASSERT(! fAudioIsReady);
         carla_debug("CarlaEngineRtAudio::~CarlaEngineRtAudio()");
-        CARLA_ASSERT(fAudioInBuf1 == nullptr);
-        CARLA_ASSERT(fAudioInBuf2 == nullptr);
-        CARLA_ASSERT(fAudioOutBuf1 == nullptr);
-        CARLA_ASSERT(fAudioOutBuf2 == nullptr);
 
+#if 0
         fUsedPortNames.clear();
+#endif
         fUsedConnections.clear();
 
         if (gRetNames != nullptr)
@@ -133,137 +138,147 @@ public:
 
     bool init(const char* const clientName) override
     {
-        carla_debug("CarlaEngineRtAudio::init(\"%s\")", clientName);
+        CARLA_ASSERT(fAudioBufIn == nullptr);
+        CARLA_ASSERT(fAudioBufOut == nullptr);
+        CARLA_ASSERT(fAudioCountIn == 0);
+        CARLA_ASSERT(fAudioCountOut == 0);
         CARLA_ASSERT(! fAudioIsReady);
-        CARLA_ASSERT(fAudioInBuf1 == nullptr);
-        CARLA_ASSERT(fAudioInBuf2 == nullptr);
-        CARLA_ASSERT(fAudioOutBuf1 == nullptr);
-        CARLA_ASSERT(fAudioOutBuf2 == nullptr);
         CARLA_ASSERT(clientName != nullptr);
+        carla_debug("CarlaEngineRtAudio::init(\"%s\")", clientName);
 
-        if (fAudio.getDeviceCount() == 0)
+        RtAudio::StreamParameters iParams, oParams;
+        bool deviceSet = false;
+
+        const unsigned int devCount(fAudio.getDeviceCount());
+
+        if (devCount == 0)
         {
             setLastError("No audio devices available for this driver");
             return false;
         }
 
-        fBufferSize = fOptions.rtaudioBufferSize;
-
-        carla_stdout("Open RtAudio with device \"%s\"", (const char*)fOptions.rtaudioDevice);
-
-        // Audio
+        if (fOptions.rtaudioDevice.isNotEmpty())
         {
-            RtAudio::StreamParameters iParams, oParams;
-            iParams.nChannels = 2; // todo
-            oParams.nChannels = 2; // todo
-
-            bool deviceSet = false;
-
-            if (fOptions.rtaudioDevice.isNotEmpty())
+            for (unsigned int i=0; i < devCount; ++i)
             {
-                for (unsigned int i=0, count=fAudio.getDeviceCount(); i < count; ++i)
-                {
-                    RtAudio::DeviceInfo devInfo(fAudio.getDeviceInfo(i));
+                RtAudio::DeviceInfo devInfo(fAudio.getDeviceInfo(i));
 
-                    if (devInfo.probed && devInfo.outputChannels > 0 && devInfo.name == (const char*)fOptions.rtaudioDevice)
-                    {
-                        deviceSet = true;
-                        iParams.deviceId = i;
-                        oParams.deviceId = i;
-                        break;
-                    }
+                if (devInfo.probed && devInfo.outputChannels > 0 && devInfo.name == (const char*)fOptions.rtaudioDevice)
+                {
+                    deviceSet = true;
+                    iParams.deviceId  = i;
+                    oParams.deviceId  = i;
+                    iParams.nChannels = devInfo.inputChannels;
+                    oParams.nChannels = devInfo.outputChannels;
+                    break;
                 }
             }
-
-            if (! deviceSet)
-            {
-                iParams.deviceId = fAudio.getDefaultInputDevice();
-                oParams.deviceId = fAudio.getDefaultOutputDevice();
-            }
-
-            RtAudio::StreamOptions rtOptions;
-            rtOptions.flags = RTAUDIO_MINIMIZE_LATENCY | RTAUDIO_HOG_DEVICE | RTAUDIO_SCHEDULE_REALTIME;
-            rtOptions.numberOfBuffers = 2;
-            rtOptions.streamName = clientName;
-            rtOptions.priority = 85;
-
-            if (fAudio.getCurrentApi() != RtAudio::LINUX_PULSE)
-            {
-                rtOptions.flags |= RTAUDIO_NONINTERLEAVED;
-                fAudioIsInterleaved = false;
-
-                if (fAudio.getCurrentApi() == RtAudio::LINUX_ALSA && ! deviceSet)
-                    rtOptions.flags |= RTAUDIO_ALSA_USE_DEFAULT;
-            }
-            else
-                fAudioIsInterleaved = true;
-
-            try {
-                fAudio.openStream(&oParams, &iParams, RTAUDIO_FLOAT32, fOptions.rtaudioSampleRate, &fBufferSize, carla_rtaudio_process_callback, this, &rtOptions);
-            }
-            catch (RtError& e)
-            {
-                carla_stderr2("RtAudio::openStream() failed");
-                if (e.getType() == RtError::SYSTEM_ERROR)
-                    setLastError("Stream cannot be opened with the specified parameters");
-                else if (e.getType() == RtError::INVALID_USE)
-                    setLastError("Invalid device ID");
-                else
-                    setLastError("Unknown error");
-                return false;
-            }
-
-            try {
-                fAudio.startStream();
-            }
-            catch (RtError& e)
-            {
-                carla_stderr2("RtAudio::startStream() failed");
-                setLastError(e.what());
-                fAudio.closeStream();
-                return false;
-            }
-
-            fAudioInBuf1  = new float[fBufferSize];
-            fAudioInBuf2  = new float[fBufferSize];
-            fAudioOutBuf1 = new float[fBufferSize];
-            fAudioOutBuf2 = new float[fBufferSize];
-
-            fSampleRate = fAudio.getStreamSampleRate();
         }
 
-        // MIDI
+        if (! deviceSet)
         {
-            fMidiIn.setCallback(carla_rtmidi_callback, this);
-            fUsedMidiPortIn.clear();
-            fUsedMidiPortOut.clear();
+            iParams.deviceId  = fAudio.getDefaultInputDevice();
+            oParams.deviceId  = fAudio.getDefaultOutputDevice();
+            iParams.nChannels = 2;
+            oParams.nChannels = 2;
         }
+
+        RtAudio::StreamOptions rtOptions;
+        rtOptions.flags = RTAUDIO_MINIMIZE_LATENCY | RTAUDIO_HOG_DEVICE | RTAUDIO_SCHEDULE_REALTIME;
+        rtOptions.streamName = clientName;
+        rtOptions.priority = 85;
+
+        if (fAudio.getCurrentApi() != RtAudio::LINUX_PULSE)
+        {
+            rtOptions.flags |= RTAUDIO_NONINTERLEAVED;
+            fAudioIsInterleaved = false;
+
+            if (fAudio.getCurrentApi() == RtAudio::LINUX_ALSA && ! deviceSet)
+                rtOptions.flags |= RTAUDIO_ALSA_USE_DEFAULT;
+        }
+        else
+            fAudioIsInterleaved = true;
+
+        fBufferSize = fOptions.rtaudioBufferSize;
+
+        try {
+            fAudio.openStream(&oParams, &iParams, RTAUDIO_FLOAT32, fOptions.rtaudioSampleRate, &fBufferSize, carla_rtaudio_process_callback, this, &rtOptions);
+        }
+        catch (RtError& e)
+        {
+            setLastError(e.what());
+            return false;
+        }
+
+        try {
+            fAudio.startStream();
+        }
+        catch (RtError& e)
+        {
+            setLastError(e.what());
+            fAudio.closeStream();
+            return false;
+        }
+
+        fAudioCountIn  = iParams.nChannels;
+        fAudioCountOut = oParams.nChannels;
+        fSampleRate    = fAudio.getStreamSampleRate();
+
+        CARLA_ASSERT(fAudioCountOut > 0);
+
+        if (fAudioCountIn > 0)
+        {
+            fAudioBufIn  = new float*[fAudioCountIn];
+
+            for (uint i=0; i < fAudioCountIn; ++i)
+                fAudioBufIn[i] = new float[fBufferSize];
+        }
+
+        if (fAudioCountOut > 0)
+        {
+            fAudioBufOut = new float*[fAudioCountOut];
+
+            for (uint i=0; i < fAudioCountOut; ++i)
+                fAudioBufOut[i] = new float[fBufferSize];
+        }
+
+        fAudioBufRackIn[0]  = new float[fBufferSize];
+        fAudioBufRackIn[1]  = new float[fBufferSize];
+        fAudioBufRackOut[0] = new float[fBufferSize];
+        fAudioBufRackOut[1] = new float[fBufferSize];
 
         fAudioIsReady = true;
+
+        CarlaEngine::init(clientName);
         patchbayRefresh();
 
-        return CarlaEngine::init(clientName);
+        return true;
     }
 
     bool close() override
     {
         carla_debug("CarlaEngineRtAudio::close()");
+        CARLA_ASSERT(fAudioBufOut != nullptr);
+        CARLA_ASSERT(fAudioCountOut > 0);
         CARLA_ASSERT(fAudioIsReady);
-        CARLA_ASSERT(fAudioInBuf1 != nullptr);
-        CARLA_ASSERT(fAudioInBuf2 != nullptr);
-        CARLA_ASSERT(fAudioOutBuf1 != nullptr);
-        CARLA_ASSERT(fAudioOutBuf2 != nullptr);
-
-        CarlaEngine::close();
 
         fAudioIsReady = false;
+
+        bool hasError = !CarlaEngine::close();
 
         if (fAudio.isStreamRunning())
         {
             try {
                 fAudio.stopStream();
             }
-            catch (...) {}
+            catch (RtError& e)
+            {
+                if (! hasError)
+                {
+                    setLastError(e.what());
+                    hasError = true;
+                }
+            }
         }
 
         if (fAudio.isStreamOpen())
@@ -271,39 +286,57 @@ public:
             try {
                 fAudio.closeStream();
             }
-            catch (...) {}
+            catch (RtError& e)
+            {
+                if (! hasError)
+                {
+                    setLastError(e.what());
+                    hasError = true;
+                }
+            }
         }
 
-        fMidiIn.cancelCallback();
-        disconnectMidiPort(true, false);
-        disconnectMidiPort(false, false);
+        //fMidiIn.cancelCallback();
+        //disconnectMidiPort(true, false);
+        //disconnectMidiPort(false, false);
 
-        if (fAudioInBuf1 != nullptr)
+        if (fAudioBufIn != nullptr)
         {
-            delete[] fAudioInBuf1;
-            fAudioInBuf1 = nullptr;
+            CARLA_ASSERT(fAudioCountIn > 0);
+
+            for (uint i=0; i < fAudioCountIn; ++i)
+                delete[] fAudioBufIn[i];
+
+            delete[] fAudioBufIn;
+            fAudioBufIn = nullptr;
         }
 
-        if (fAudioInBuf2 != nullptr)
+        if (fAudioBufOut != nullptr)
         {
-            delete[] fAudioInBuf2;
-            fAudioInBuf2 = nullptr;
+            CARLA_ASSERT(fAudioCountOut > 0);
+
+            for (uint i=0; i < fAudioCountOut; ++i)
+                delete[] fAudioBufOut[i];
+
+            delete[] fAudioBufOut;
+            fAudioBufOut = nullptr;
         }
 
-        if (fAudioOutBuf1 != nullptr)
-        {
-            delete[] fAudioOutBuf1;
-            fAudioOutBuf1 = nullptr;
-        }
+        delete[] fAudioBufRackIn[0];
+        delete[] fAudioBufRackIn[1];
+        delete[] fAudioBufRackOut[0];
+        delete[] fAudioBufRackOut[1];
 
-        if (fAudioOutBuf2 != nullptr)
-        {
-            delete[] fAudioOutBuf2;
-            fAudioOutBuf2 = nullptr;
-        }
+        fAudioCountIn  = 0;
+        fAudioCountOut = 0;
 
-        fMidiInEvents.clear();
-        fMidiOutEvents.clear();
+        fConnectedAudioIns[0].clear();
+        fConnectedAudioIns[1].clear();
+        fConnectedAudioOuts[0].clear();
+        fConnectedAudioOuts[1].clear();
+
+        //fMidiInEvents.clear();
+        //fMidiOutEvents.clear();
 
         return true;
     }
@@ -367,14 +400,45 @@ public:
         switch (carlaPort)
         {
         case PATCHBAY_PORT_AUDIO_IN1:
+            CARLA_ASSERT(targetPort >= PATCHBAY_GROUP_AUDIO_IN*1000);
+            CARLA_ASSERT(targetPort <= PATCHBAY_GROUP_AUDIO_IN*1000+999);
+            fConnectAudioLock.lock();
+            fConnectedAudioIns[0].append(targetPort - PATCHBAY_GROUP_AUDIO_IN*1000);
+            fConnectAudioLock.unlock();
+            makeConnection = true;
+            break;
+
         case PATCHBAY_PORT_AUDIO_IN2:
+            CARLA_ASSERT(targetPort >= PATCHBAY_GROUP_AUDIO_IN*1000);
+            CARLA_ASSERT(targetPort <= PATCHBAY_GROUP_AUDIO_IN*1000+999);
+            fConnectAudioLock.lock();
+            fConnectedAudioIns[1].append(targetPort - PATCHBAY_GROUP_AUDIO_IN*1000);
+            fConnectAudioLock.unlock();
+            makeConnection = true;
+            break;
+
         case PATCHBAY_PORT_AUDIO_OUT1:
+            CARLA_ASSERT(targetPort >= PATCHBAY_GROUP_AUDIO_OUT*1000);
+            CARLA_ASSERT(targetPort <= PATCHBAY_GROUP_AUDIO_OUT*1000+999);
+            fConnectAudioLock.lock();
+            fConnectedAudioOuts[0].append(targetPort - PATCHBAY_GROUP_AUDIO_OUT*1000);
+            fConnectAudioLock.unlock();
+            makeConnection = true;
+            break;
+
         case PATCHBAY_PORT_AUDIO_OUT2:
+            CARLA_ASSERT(targetPort >= PATCHBAY_GROUP_AUDIO_OUT*1000);
+            CARLA_ASSERT(targetPort <= PATCHBAY_GROUP_AUDIO_OUT*1000+999);
+            fConnectAudioLock.lock();
+            fConnectedAudioOuts[1].append(targetPort - PATCHBAY_GROUP_AUDIO_OUT*1000);
+            fConnectAudioLock.unlock();
+            makeConnection = true;
             break;
 
         case PATCHBAY_PORT_MIDI_IN:
             CARLA_ASSERT(targetPort >= PATCHBAY_GROUP_MIDI_IN*1000);
             CARLA_ASSERT(targetPort <= PATCHBAY_GROUP_MIDI_IN*1000 + 999);
+#if 0
             disconnectMidiPort(true, true);
 
             for (unsigned int i=0, count=fMidiIn.getPortCount(); i < count; ++i)
@@ -389,11 +453,13 @@ public:
                     break;
                 }
             }
+#endif
             break;
 
         case PATCHBAY_PORT_MIDI_OUT:
             CARLA_ASSERT(targetPort >= PATCHBAY_GROUP_MIDI_OUT*1000);
             CARLA_ASSERT(targetPort <= PATCHBAY_GROUP_MIDI_OUT*1000 + 999);
+#if 0
             disconnectMidiPort(false, true);
 
             for (unsigned int i=0, count=fMidiOut.getPortCount(); i < count; ++i)
@@ -408,12 +474,13 @@ public:
                     break;
                 }
             }
+#endif
             break;
         }
 
-        if (makeConnection)
+        if (! makeConnection)
         {
-            setLastError("Invalid conenction");
+            setLastError("Invalid connection");
             return false;
         }
 
@@ -422,8 +489,9 @@ public:
         connectionToId.portOut = portA;
         connectionToId.portIn  = portB;
 
-        fUsedConnections.append(connectionToId);
         callback(CALLBACK_PATCHBAY_CONNECTION_ADDED, 0, fLastConnectionId, portA, portB, nullptr);
+
+        fUsedConnections.append(connectionToId);
         fLastConnectionId++;
 
         return true;
@@ -432,38 +500,76 @@ public:
     bool patchbayDisconnect(int connectionId) override
     {
         CARLA_ASSERT(fAudioIsReady);
+        CARLA_ASSERT(fUsedConnections.count() > 0);
 
         if (! fAudioIsReady)
         {
             setLastError("Engine not ready");
             return false;
         }
-
-        for (int i=0, count=fUsedConnections.count(); i < count; ++i)
+        if (fUsedConnections.count() == 0)
         {
-            const ConnectionToId& connection(fUsedConnections.at(i));
+            setLastError("No connections available");
+            return false;
+        }
+
+        for (auto it=fUsedConnections.begin(); it.valid(); it.next())
+        {
+            const ConnectionToId& connection(*it);
 
             if (connection.id == connectionId)
             {
-                const int targetPort  = (connection.portOut >= 0) ? connection.portOut : connection.portIn;
+                const int targetPort((connection.portOut >= 0) ? connection.portOut : connection.portIn);
+                const int carlaPort((targetPort == connection.portOut) ? connection.portIn : connection.portOut);
 
                 if (targetPort >= PATCHBAY_GROUP_MIDI_OUT*1000)
                 {
-                    fMidiOut.closePort();
-                    fUsedMidiPortOut.clear();
+                    //fMidiOut.closePort();
+                    //fUsedMidiPortOut.clear();
                 }
                 else if (targetPort >= PATCHBAY_GROUP_MIDI_IN*1000)
                 {
-                    fMidiIn.closePort();
-                    fUsedMidiPortIn.clear();
+                    //fMidiIn.closePort();
+                    //fUsedMidiPortIn.clear();
+                }
+                else if (targetPort >= PATCHBAY_GROUP_AUDIO_OUT*1000)
+                {
+                    CARLA_ASSERT(carlaPort == PATCHBAY_PORT_AUDIO_OUT1 || carlaPort == PATCHBAY_PORT_AUDIO_OUT2);
+
+                    fConnectAudioLock.lock();
+
+                    if (carlaPort == PATCHBAY_PORT_AUDIO_OUT1)
+                        fConnectedAudioOuts[0].removeAll(targetPort-PATCHBAY_GROUP_AUDIO_OUT*1000);
+                    else
+                        fConnectedAudioOuts[1].removeAll(targetPort-PATCHBAY_GROUP_AUDIO_OUT*1000);
+
+                    fConnectAudioLock.unlock();
+                }
+                else if (targetPort >= PATCHBAY_GROUP_AUDIO_IN*1000)
+                {
+                    CARLA_ASSERT(carlaPort == PATCHBAY_PORT_AUDIO_IN1 || carlaPort == PATCHBAY_PORT_AUDIO_IN2);
+
+                    fConnectAudioLock.lock();
+
+                    if (carlaPort == PATCHBAY_PORT_AUDIO_IN1)
+                        fConnectedAudioIns[0].removeAll(targetPort-PATCHBAY_GROUP_AUDIO_IN*1000);
+                    else
+                        fConnectedAudioIns[1].removeAll(targetPort-PATCHBAY_GROUP_AUDIO_IN*1000);
+
+                    fConnectAudioLock.unlock();
+                }
+                else
+                {
+                    CARLA_ASSERT(false);
                 }
 
                 callback(CALLBACK_PATCHBAY_CONNECTION_REMOVED, 0, connection.id, 0, 0.0f, nullptr);
-                fUsedConnections.takeAt(i);
+
+                fUsedConnections.remove(it);
             }
         }
 
-        return true;
+        return false;
     }
 
     void patchbayRefresh() override
@@ -473,12 +579,13 @@ public:
         if (! fAudioIsReady)
             return;
 
+        char strBuf[STR_MAX];
+
         fLastConnectionId = 0;
-        fUsedPortNames.clear();
         fUsedConnections.clear();
 
         // Main
-        callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, PATCHBAY_GROUP_CARLA, 0, 0.0f, "Carla");
+        callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, PATCHBAY_GROUP_CARLA, 0, 0.0f, getName());
         {
             callback(CALLBACK_PATCHBAY_PORT_ADDED, 0, PATCHBAY_GROUP_CARLA, PATCHBAY_PORT_AUDIO_IN1,  PATCHBAY_PORT_IS_AUDIO|PATCHBAY_PORT_IS_INPUT,  "audio-in1");
             callback(CALLBACK_PATCHBAY_PORT_ADDED, 0, PATCHBAY_GROUP_CARLA, PATCHBAY_PORT_AUDIO_IN2,  PATCHBAY_PORT_IS_AUDIO|PATCHBAY_PORT_IS_INPUT,  "audio-in2");
@@ -489,31 +596,118 @@ public:
         }
 
         // Audio In
+        callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, PATCHBAY_GROUP_AUDIO_IN, 0, 0.0f, "Capture");
+
+        for (unsigned int i=0; i < fAudioCountIn; ++i)
         {
-            // TODO
+            std::sprintf(strBuf, "capture_%i", i+1);
+            callback(CALLBACK_PATCHBAY_PORT_ADDED, 0, PATCHBAY_GROUP_AUDIO_IN, PATCHBAY_GROUP_AUDIO_IN*1000 + i, PATCHBAY_PORT_IS_AUDIO|PATCHBAY_PORT_IS_OUTPUT, strBuf);
         }
 
         // Audio Out
+        callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, PATCHBAY_GROUP_AUDIO_OUT, 0, 0.0f, "Playback");
+
+        for (unsigned int i=0; i < fAudioCountOut; ++i)
         {
-            // TODO
+            std::sprintf(strBuf, "playback_%i", i+1);
+            callback(CALLBACK_PATCHBAY_PORT_ADDED, 0, PATCHBAY_GROUP_AUDIO_OUT, PATCHBAY_GROUP_AUDIO_OUT*1000 + i, PATCHBAY_PORT_IS_AUDIO|PATCHBAY_PORT_IS_INPUT, strBuf);
         }
 
         // MIDI In
         callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, PATCHBAY_GROUP_MIDI_IN, 0, 0.0f, "Readable MIDI ports");
         {
-            const unsigned int portCount = fMidiIn.getPortCount();
+            const unsigned int portCount(fDummyMidiIn.getPortCount());
 
             for (unsigned int i=0; i < portCount; ++i)
             {
-                PortNameToId portNameToId;
-                portNameToId.portId = PATCHBAY_GROUP_MIDI_IN*1000 + i;
-                portNameToId.name   = fMidiIn.getPortName(i).c_str();
-                fUsedPortNames.append(portNameToId);
+                //PortNameToId portNameToId;
+                //portNameToId.portId = PATCHBAY_GROUP_MIDI_IN*1000 + i;
+                //portNameToId.name   = fMidiIn.getPortName(i).c_str();
+                //fUsedPortNames.append(portNameToId);
 
-                const char* const portName(portNameToId.name.toUtf8().constData());
-                callback(CALLBACK_PATCHBAY_PORT_ADDED, 0, PATCHBAY_GROUP_MIDI_IN, portNameToId.portId, PATCHBAY_PORT_IS_MIDI|PATCHBAY_PORT_IS_OUTPUT, portName);
+                const char* const portName(fDummyMidiIn.getPortName(i).c_str());//portNameToId.name.toUtf8().constData());
+                callback(CALLBACK_PATCHBAY_PORT_ADDED, 0, PATCHBAY_GROUP_MIDI_IN, PATCHBAY_GROUP_MIDI_IN*1000 + i/*portNameToId.portId*/, PATCHBAY_PORT_IS_MIDI|PATCHBAY_PORT_IS_OUTPUT, portName);
             }
         }
+
+        // MIDI Out
+        callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, PATCHBAY_GROUP_MIDI_OUT, 0, 0.0f, "Writable MIDI ports");
+
+        // Connections
+        fConnectAudioLock.lock();
+
+        for (auto it = fConnectedAudioIns[0].begin(); it.valid(); it.next())
+        {
+            const uint& port(*it);
+            CARLA_ASSERT(port < fAudioCountIn);
+
+            ConnectionToId connectionToId;
+            connectionToId.id      = fLastConnectionId;
+            connectionToId.portOut = PATCHBAY_GROUP_AUDIO_IN*1000 + port;
+            connectionToId.portIn  = PATCHBAY_PORT_AUDIO_IN1;
+
+            callback(CALLBACK_PATCHBAY_CONNECTION_ADDED, 0, fLastConnectionId, connectionToId.portOut, connectionToId.portIn, nullptr);
+
+            fUsedConnections.append(connectionToId);
+            fLastConnectionId++;
+        }
+
+        for (auto it = fConnectedAudioIns[1].begin(); it.valid(); it.next())
+        {
+            const uint& port(*it);
+            CARLA_ASSERT(port < fAudioCountIn);
+
+            ConnectionToId connectionToId;
+            connectionToId.id      = fLastConnectionId;
+            connectionToId.portOut = PATCHBAY_GROUP_AUDIO_IN*1000 + port;
+            connectionToId.portIn  = PATCHBAY_PORT_AUDIO_IN2;
+
+            callback(CALLBACK_PATCHBAY_CONNECTION_ADDED, 0, fLastConnectionId, connectionToId.portOut, connectionToId.portIn, nullptr);
+
+            fUsedConnections.append(connectionToId);
+            fLastConnectionId++;
+        }
+
+        for (auto it = fConnectedAudioOuts[0].begin(); it.valid(); it.next())
+        {
+            const uint& port(*it);
+            CARLA_ASSERT(port < fAudioCountOut);
+
+            ConnectionToId connectionToId;
+            connectionToId.id      = fLastConnectionId;
+            connectionToId.portOut = PATCHBAY_PORT_AUDIO_OUT1;
+            connectionToId.portIn  = PATCHBAY_GROUP_AUDIO_OUT*1000 + port;
+
+            callback(CALLBACK_PATCHBAY_CONNECTION_ADDED, 0, fLastConnectionId, connectionToId.portOut, connectionToId.portIn, nullptr);
+
+            fUsedConnections.append(connectionToId);
+            fLastConnectionId++;
+        }
+
+        for (auto it = fConnectedAudioOuts[1].begin(); it.valid(); it.next())
+        {
+            const uint& port(*it);
+            CARLA_ASSERT(port < fAudioCountOut);
+
+            ConnectionToId connectionToId;
+            connectionToId.id      = fLastConnectionId;
+            connectionToId.portOut = PATCHBAY_PORT_AUDIO_OUT2;
+            connectionToId.portIn  = PATCHBAY_GROUP_AUDIO_OUT*1000 + port;
+
+            callback(CALLBACK_PATCHBAY_CONNECTION_ADDED, 0, fLastConnectionId, connectionToId.portOut, connectionToId.portIn, nullptr);
+
+            fUsedConnections.append(connectionToId);
+            fLastConnectionId++;
+        }
+
+        fConnectAudioLock.unlock();
+
+#if 0
+        fUsedPortNames.clear();
+
+        // MIDI In
+        callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, PATCHBAY_GROUP_MIDI_IN, 0, 0.0f, "Readable MIDI ports");
+
 
         // MIDI Out
         callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, PATCHBAY_GROUP_MIDI_OUT, 0, 0.0f, "Writable MIDI ports");
@@ -555,6 +749,7 @@ public:
             callback(CALLBACK_PATCHBAY_CONNECTION_ADDED, 0, fLastConnectionId, connectionToId.portOut, connectionToId.portIn, nullptr);
             fLastConnectionId++;
         }
+#endif
     }
 
     // -------------------------------------------------------------------
@@ -567,48 +762,43 @@ protected:
         float* outsPtr = (float*)outputBuffer;
 
         // assert buffers
-        CARLA_ASSERT(insPtr != nullptr);
+        CARLA_ASSERT(nframes == fBufferSize);
         CARLA_ASSERT(outsPtr != nullptr);
 
-        if (! fAudioIsReady)
+        if (kData->curPluginCount == 0 || ! (fAudioIsReady && fConnectAudioLock.tryLock()))
         {
-            carla_zeroFloat(outsPtr, nframes*2);
-            return proccessPendingEvents();
-        }
-
-        if (kData->curPluginCount == 0)
-        {
-            // pass-through
-            if (fOptions.processMode == PROCESS_MODE_CONTINUOUS_RACK)
-                carla_copyFloat(outsPtr, insPtr, nframes*2);
-
+            carla_zeroFloat(outsPtr, nframes*fAudioCountOut);
             return proccessPendingEvents();
         }
 
         // initialize audio input
         if (fAudioIsInterleaved)
         {
-            for (unsigned int i=0; i < nframes*2; ++i)
+            for (unsigned int i=0, j=0; i < nframes*fAudioCountIn; ++i)
             {
-                if (i % 2 == 0)
-                    fAudioInBuf1[i/2] = insPtr[i];
-                else
-                    fAudioInBuf2[i/2] = insPtr[i];
+                fAudioBufIn[i/fAudioCountIn][j] = insPtr[i];
+
+                if ((i+1) % fAudioCountIn == 0)
+                    j += 1;
             }
         }
         else
         {
-            carla_copyFloat(fAudioInBuf1, insPtr, nframes);
-            carla_copyFloat(fAudioInBuf2, insPtr+nframes, nframes);
+            for (unsigned int i=0; i < fAudioCountIn; ++i)
+                carla_copyFloat(fAudioBufIn[i], insPtr+(nframes*i), nframes);
         }
 
         // initialize audio output
-        carla_zeroFloat(fAudioOutBuf1, fBufferSize);
-        carla_zeroFloat(fAudioOutBuf2, fBufferSize);
+        for (unsigned int i=0; i < fAudioCountOut; ++i)
+            carla_zeroFloat(fAudioBufOut[i], nframes);
+
+        carla_zeroFloat(fAudioBufRackOut[0], nframes);
+        carla_zeroFloat(fAudioBufRackOut[1], nframes);
 
         // initialize input events
         carla_zeroMem(kData->rack.in, sizeof(EngineEvent)*RACK_EVENT_COUNT);
 
+#if 0
         if (fMidiInEvents.mutex.tryLock())
         {
             uint32_t engineEventIndex = 0;
@@ -697,28 +887,93 @@ protected:
 
             fMidiInEvents.mutex.unlock();
         }
+#endif
 
-        // create audio buffers
-        float* inBuf[2]  = { fAudioInBuf1, fAudioInBuf2 };
-        float* outBuf[2] = { fAudioOutBuf1, fAudioOutBuf2 };
+        // connect input buffers
+        if (fConnectedAudioIns[0].count() == 0)
+        {
+            carla_zeroFloat(fAudioBufRackIn[0], nframes);
+        }
+        else
+        {
+            bool first = true;
 
-        processRack(inBuf, outBuf, nframes);
+            for (auto it = fConnectedAudioIns[0].begin(); it.valid(); it.next())
+            {
+                const uint& port(*it);
+                CARLA_ASSERT(port < fAudioCountIn);
+
+                if (first)
+                {
+                    carla_copyFloat(fAudioBufRackIn[0], fAudioBufIn[port], nframes);
+                    first = false;
+                }
+                else
+                    carla_addFloat(fAudioBufRackIn[0], fAudioBufIn[port], nframes);
+            }
+
+            if (first)
+                carla_zeroFloat(fAudioBufRackIn[0], nframes);
+        }
+
+        if (fConnectedAudioIns[1].count() == 0)
+        {
+            carla_zeroFloat(fAudioBufRackIn[1], nframes);
+        }
+        else
+        {
+            bool first = true;
+
+            for (auto it = fConnectedAudioIns[1].begin(); it.valid(); it.next())
+            {
+                const uint& port(*it);
+                CARLA_ASSERT(port < fAudioCountIn);
+
+                if (first)
+                {
+                    carla_copyFloat(fAudioBufRackIn[1], fAudioBufIn[port], nframes);
+                    first = false;
+                }
+                else
+                    carla_addFloat(fAudioBufRackIn[1], fAudioBufIn[port], nframes);
+            }
+
+            if (first)
+                carla_zeroFloat(fAudioBufRackIn[1], nframes);
+        }
+
+        // process
+        processRack(fAudioBufRackIn, fAudioBufRackOut, nframes);
+
+        // connect output buffers
+        if (fConnectedAudioOuts[0].count() != 0)
+        {
+            for (auto it = fConnectedAudioOuts[0].begin(); it.valid(); it.next())
+            {
+                const uint& port(*it);
+                CARLA_ASSERT(port < fAudioCountOut);
+
+                carla_addFloat(fAudioBufOut[port], fAudioBufRackOut[0], nframes);
+            }
+        }
+
+        fConnectAudioLock.unlock();
 
         // output audio
         if (fAudioIsInterleaved)
         {
-            for (unsigned int i=0; i < nframes*2; ++i)
+            for (unsigned int i=0, j=0; i < nframes*fAudioCountOut; ++i)
             {
-                if (i % 2 == 0)
-                    outsPtr[i] = fAudioOutBuf1[i/2];
-                else
-                    outsPtr[i] = fAudioOutBuf2[i/2];
+                outsPtr[i] = fAudioBufOut[i/fAudioCountOut][j];
+
+                if ((i+1) % fAudioCountOut == 0)
+                    j += 1;
             }
         }
         else
         {
-            carla_copyFloat(outsPtr, fAudioOutBuf1, nframes);
-            carla_copyFloat(outsPtr+nframes, fAudioOutBuf2, nframes);
+            for (unsigned int i=0; i < fAudioCountOut; ++i)
+                carla_copyFloat(outsPtr+(nframes*i), fAudioBufOut[i], nframes);
         }
 
         // output events
@@ -736,6 +991,7 @@ protected:
         (void)status;
     }
 
+#if 0
     void handleMidiCallback(double timeStamp, std::vector<unsigned char>* const message)
     {
         const size_t messageSize = message->size();
@@ -861,20 +1117,28 @@ protected:
 
         return PATCHBAY_PORT_MAX;
     }
+#endif
 
     // -------------------------------------
 
 private:
     RtAudio fAudio;
-    bool    fAudioIsInterleaved;
-    bool    fAudioIsReady;
-    float*  fAudioInBuf1;
-    float*  fAudioInBuf2;
-    float*  fAudioOutBuf1;
-    float*  fAudioOutBuf2;
+    float** fAudioBufIn;
+    float** fAudioBufOut;
+    float*  fAudioBufRackIn[2];
+    float*  fAudioBufRackOut[2];
 
-    RtMidiIn  fMidiIn;
-    RtMidiOut fMidiOut;
+    uint fAudioCountIn;
+    uint fAudioCountOut;
+    bool fAudioIsInterleaved;
+    bool fAudioIsReady;
+
+    NonRtList<uint> fConnectedAudioIns[2];
+    NonRtList<uint> fConnectedAudioOuts[2];
+    CarlaMutex      fConnectAudioLock;
+
+    RtMidiIn  fDummyMidiIn;
+    RtMidiOut fDummyMidiOut;
 
     enum PatchbayGroupIds {
         PATCHBAY_GROUP_CARLA     = -1,
@@ -895,11 +1159,6 @@ private:
         PATCHBAY_PORT_MAX        = -7
     };
 
-    struct PortNameToId {
-        int portId;
-        QString name;
-    };
-
     struct ConnectionToId {
         int id;
         int portOut;
@@ -907,8 +1166,18 @@ private:
     };
 
     int fLastConnectionId;
+    NonRtList<ConnectionToId> fUsedConnections;
+
+#if 0
+    NonRtList<RtMidiIn*>  fMidiIns;
+    NonRtList<RtMidiOut*> fMidiOuts;
+
+    struct PortNameToId {
+        int portId;
+        QString name;
+    };
+
     QList<PortNameToId>   fUsedPortNames;
-    QList<ConnectionToId> fUsedConnections;
     QString fUsedMidiPortIn;
     QString fUsedMidiPortOut;
 
@@ -957,6 +1226,7 @@ private:
 
     RtMidiEvents fMidiInEvents;
     RtMidiEvents fMidiOutEvents;
+#endif
 
     #define handlePtr ((CarlaEngineRtAudio*)userData)
 
@@ -966,10 +1236,12 @@ private:
         return 0;
     }
 
+#if 0
     static void carla_rtmidi_callback(double timeStamp, std::vector<unsigned char>* message, void* userData)
     {
         handlePtr->handleMidiCallback(timeStamp, message);
     }
+#endif
 
     #undef handlePtr
 

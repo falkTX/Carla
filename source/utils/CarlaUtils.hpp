@@ -256,6 +256,36 @@ const T& carla_fixValue(const T& min, const T& max, const T& value)
 
 template<typename T>
 static inline
+void carla_add(T* dataDst, T* dataSrc, const size_t size)
+{
+    CARLA_ASSERT(dataDst != nullptr);
+    CARLA_ASSERT(dataSrc != nullptr);
+    CARLA_ASSERT(size > 0);
+
+    if (dataDst == nullptr || dataSrc == nullptr || size == 0)
+        return;
+
+    for (size_t i=0; i < size; ++i)
+        *dataDst++ += *dataSrc++;
+}
+
+template<typename T>
+static inline
+void carla_add(T* dataDst, const T* dataSrc, const size_t size)
+{
+    CARLA_ASSERT(dataDst != nullptr);
+    CARLA_ASSERT(dataSrc != nullptr);
+    CARLA_ASSERT(size > 0);
+
+    if (dataDst == nullptr || dataSrc == nullptr || size == 0)
+        return;
+
+    for (size_t i=0; i < size; ++i)
+        *dataDst++ += *dataSrc++;
+}
+
+template<typename T>
+static inline
 void carla_copy(T* dataDst, T* dataSrc, const size_t size)
 {
     CARLA_ASSERT(dataDst != nullptr);
@@ -296,6 +326,18 @@ void carla_fill(T* data, const size_t size, const T v)
 
     for (size_t i=0; i < size; ++i)
         *data++ = v;
+}
+
+static inline
+void carla_addDouble(double* const dataDst, double* const dataSrc, const size_t size)
+{
+    carla_add<double>(dataDst, dataSrc, size);
+}
+
+static inline
+void carla_addFloat(float* const dataDst, float* const dataSrc, const size_t size)
+{
+    carla_add<float>(dataDst, dataSrc, size);
 }
 
 static inline
