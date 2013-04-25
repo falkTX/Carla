@@ -51,10 +51,6 @@
 # include <QtGui/QWizard>
 #endif
 
-#ifdef CARLA_EXPORT_STYLE
-# include <QtGui/QStylePlugin>
-#endif
-
 #define BEGIN_STYLE_PIXMAPCACHE(a) \
     QRect rect = option->rect; \
     QPixmap internalPixmapCache; \
@@ -3838,28 +3834,22 @@ QRect CarlaStyle::subElementRect(SubElement sr, const QStyleOption *opt, const Q
     return r;
 }
 
+CarlaStylePlugin::CarlaStylePlugin(QObject* parent)
+    : QStylePlugin(parent)
+{
+}
+
+QStyle* CarlaStylePlugin::create(const QString& key)
+{
+    return (key.toLower() == "carla") ? new CarlaStyle() : nullptr;
+}
+
+QStringList CarlaStylePlugin::keys() const
+{
+    return QStringList() << "Carla";
+}
+
 #ifdef CARLA_EXPORT_STYLE
 # include "resources.cpp"
-
-class CarlaStylePlugin : public QStylePlugin
-{
-    Q_OBJECT
-
-public:
-    CarlaStylePlugin(QObject* parent = nullptr)
-        : QStylePlugin(parent) {}
-
-    QStyle* create(const QString& key)
-    {
-        return (key.toLower() == "Carla") ? new CarlaStyle() : nullptr;
-    }
-
-    QStringList keys() const
-    {
-        return QStringList() << "Carla";
-    }
-};
-
 Q_EXPORT_PLUGIN2(Carla, CarlaStylePlugin)
-
 #endif

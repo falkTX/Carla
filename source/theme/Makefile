@@ -25,32 +25,48 @@ FILES = \
 	resources.cpp
 
 OBJS = \
-	CarlaStyle.cpp.o \
 	moc_CarlaStyle.cpp.o \
 	moc_CarlaStyleAnimations.cpp.o \
 	moc_CarlaStylePrivate.cpp.o
 
-TARGET = ../libs/theme.a
+OBJS_shared = $(OBJS) \
+	CarlaStyle.export.cpp.o
+
+OBJS_static = $(OBJS) \
+	CarlaStyle.cpp.o
+
+SHARED = carlastyle.so
+STATIC = ../libs/theme.a
 
 # --------------------------------------------------------------
 
-all: $(TARGET)
+all: $(STATIC)
 
 clean:
-	rm -f $(FILES) $(OBJS) $(TARGET)
+	rm -f $(FILES) $(OBJS_shared) $(OBJS_static) $(SHARED) $(STATIC)
 
 debug:
 	$(MAKE) DEBUG=true
 
+install: $(SHARED)
+	# FIXME - find a way to get a proper install path
+	install -m 644 $(SHARED) /usr/lib/x86_64-linux-gnu/qt4/plugins/styles/
+
 # --------------------------------------------------------------
 
-$(TARGET): $(FILES) $(OBJS)
-	$(AR) rs $@ $(OBJS)
+$(SHARED): $(FILES) $(OBJS_shared)
+	$(CXX) $(OBJS_shared) $(LINK_FLAGS) -shared -o $@ && $(STRIP) $@
+
+$(STATIC): $(FILES) $(OBJS_static)
+	$(AR) rs $@ $(OBJS_static)
 
 # --------------------------------------------------------------
 
 %.cpp.o: %.cpp CarlaStyle.hpp moc_CarlaStyle.cpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+
+%.export.cpp.o: %.cpp CarlaStyle.hpp moc_CarlaStyle.cpp
+	$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_EXPORT_STYLE -c -o $@
 
 moc_%.cpp: %.hpp
 	$(MOC) $< -o $@
