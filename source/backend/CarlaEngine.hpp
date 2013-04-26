@@ -338,6 +338,24 @@ struct EngineTimeInfo {
     {
         clear();
     }
+
+    // quick operator, doesn't check all values
+    bool operator==(const EngineTimeInfo& timeInfo) const
+    {
+        if (timeInfo.playing != playing || timeInfo.frame != frame)
+            return false;
+        if ((timeInfo.valid & ValidBBT) != (valid & ValidBBT))
+            return false;
+        if (timeInfo.bbt.beatsPerMinute != bbt.beatsPerMinute)
+            return false;
+        return true;
+    }
+
+    bool operator!=(const EngineTimeInfo& timeInfo) const
+    {
+        return !operator==(timeInfo);
+    }
+
 #endif
 
     void clear()

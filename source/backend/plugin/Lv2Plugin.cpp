@@ -392,6 +392,24 @@ public:
 
         for (uint32_t i=0; i < CARLA_URI_MAP_ID_COUNT; ++i)
             fCustomURIDs.append(nullptr);
+
+        fAtomForge.Blank    = carla_lv2_urid_map(this, LV2_ATOM__Blank);
+        fAtomForge.Bool     = carla_lv2_urid_map(this, LV2_ATOM__Bool);
+        fAtomForge.Chunk    = carla_lv2_urid_map(this, LV2_ATOM__Chunk);
+        fAtomForge.Double   = carla_lv2_urid_map(this, LV2_ATOM__Double);
+        fAtomForge.Float    = carla_lv2_urid_map(this, LV2_ATOM__Float);
+        fAtomForge.Int      = carla_lv2_urid_map(this, LV2_ATOM__Int);
+        fAtomForge.Long     = carla_lv2_urid_map(this, LV2_ATOM__Long);
+        fAtomForge.Literal  = carla_lv2_urid_map(this, LV2_ATOM__Literal);
+        fAtomForge.Path     = carla_lv2_urid_map(this, LV2_ATOM__Path);
+        fAtomForge.Property = carla_lv2_urid_map(this, LV2_ATOM__Property);
+        fAtomForge.Resource = carla_lv2_urid_map(this, LV2_ATOM__Resource);
+        fAtomForge.Sequence = carla_lv2_urid_map(this, LV2_ATOM__Sequence);
+        fAtomForge.String   = carla_lv2_urid_map(this, LV2_ATOM__String);
+        fAtomForge.Tuple    = carla_lv2_urid_map(this, LV2_ATOM__Tuple);
+        fAtomForge.URI      = carla_lv2_urid_map(this, LV2_ATOM__URI);
+        fAtomForge.URID     = carla_lv2_urid_map(this, LV2_ATOM__URID);
+        fAtomForge.Vector   = carla_lv2_urid_map(this, LV2_ATOM__Vector);
     }
 
     ~Lv2Plugin() override
@@ -2295,8 +2313,6 @@ public:
                     case LV2_PORT_DESIGNATION_TIME_FRAME:
                         setParameterValue(k, timeInfo.frame, false, false, false);
                         break;
-                    case LV2_PORT_DESIGNATION_TIME_FRAMES_PER_SECOND:
-                        break;
                     case LV2_PORT_DESIGNATION_TIME_SPEED:
                         setParameterValue(k, timeInfo.playing ? 1.0f : 0.0f, false, false, false);
                         break;
@@ -2307,7 +2323,7 @@ public:
                         break;
                     case LV2_PORT_DESIGNATION_TIME_BAR_BEAT:
                         if (timeInfo.valid & EngineTimeInfo::ValidBBT)
-                            setParameterValue(k, float(timeInfo.bbt.beat - 1) + (float(timeInfo.bbt.tick) / timeInfo.bbt.ticksPerBeat), false, false, false);
+                            setParameterValue(k, timeInfo.bbt.beat - 1 + (double(timeInfo.bbt.tick) / timeInfo.bbt.ticksPerBeat), false, false, false);
                         break;
                     case LV2_PORT_DESIGNATION_TIME_BEAT:
                         if (timeInfo.valid & EngineTimeInfo::ValidBBT)
@@ -2332,21 +2348,43 @@ public:
             // find first port to send time info into
             for (i = 0; i < fEventsIn.count; ++i)
             {
-                if ((fEventsIn.data[i].type & CARLA_EVENT_DATA_ATOM) == 0 || (fEventsIn.data[i].type & CARLA_EVENT_DATA_ATOM) == 0)
+                if ((fEventsIn.data[i].type & CARLA_EVENT_DATA_ATOM) == 0 || (fEventsIn.data[i].type & CARLA_EVENT_TYPE_TIME) == 0)
                     continue;
 
-                if (fFirstActive)
+                if (fFirstActive || fLastTimeInfo != timeInfo)
                 {
+                    uint8_t timeInfoBuf[256] = { 0 };
+                    lv2_atom_forge_set_buffer(&fAtomForge, timeInfoBuf, sizeof(timeInfoBuf));
+
+                    LV2_Atom_Forge_Frame forgeFrame;
+                    lv2_atom_forge_blank(&fAtomForge, &forgeFrame, 1, CARLA_URI_MAP_ID_TIME_POSITION);
+                    lv2_atom_forge_property_head(&fAtomForge, CARLA_URI_MAP_ID_TIME_SPEED, 0);
+                    lv2_atom_forge_float(&fAtomForge, timeInfo.playing ? 1.0f : 0.0f);
+                    lv2_atom_forge_property_head(&fAtomForge, CARLA_URI_MAP_ID_TIME_FRAME, 0);
+                    lv2_atom_forge_long(&fAtomForge, timeInfo.frame);
+
                     if (timeInfo.valid & EngineTimeInfo::ValidBBT)
                     {
-                        //LV2_Atom_Float;
-                        //lv2_atom_buffer_write(&evInAtomIters[i], 0, 0, CARLA_URI_MAP_ID_TIME_BEATS_PER_MINUTE, sizeof(float), timeInfo.bbt.beatsPerMinute);
+                        lv2_atom_forge_property_head(&fAtomForge, CARLA_URI_MAP_ID_TIME_BAR, 0);
+                        lv2_atom_forge_long(&fAtomForge, timeInfo.bbt.bar - 1);
+                        lv2_atom_forge_property_head(&fAtomForge, CARLA_URI_MAP_ID_TIME_BAR_BEAT, 0);
+                        lv2_atom_forge_float(&fAtomForge, timeInfo.bbt.beat - 1 + (double(timeInfo.bbt.tick) / timeInfo.bbt.ticksPerBeat));
+                        lv2_atom_forge_property_head(&fAtomForge, CARLA_URI_MAP_ID_TIME_BEAT, 0);
+                        lv2_atom_forge_long(&fAtomForge, timeInfo.bbt.beat -1);
+                        lv2_atom_forge_property_head(&fAtomForge, CARLA_URI_MAP_ID_TIME_BEAT_UNIT, 0);
+                        lv2_atom_forge_float(&fAtomForge, timeInfo.bbt.beatType);
+                        lv2_atom_forge_property_head(&fAtomForge, CARLA_URI_MAP_ID_TIME_BEATS_PER_BAR, 0);
+                        lv2_atom_forge_float(&fAtomForge, timeInfo.bbt.beatsPerBar);
+                        lv2_atom_forge_property_head(&fAtomForge, CARLA_URI_MAP_ID_TIME_BEATS_PER_MINUTE, 0);
+                        lv2_atom_forge_float(&fAtomForge, timeInfo.bbt.beatsPerMinute);
                     }
-                }
-                else
-                {
 
+                    LV2_Atom* atom = (LV2_Atom*)timeInfoBuf;
+                    lv2_atom_buffer_write(&evInAtomIters[i], 0, 0, atom->type, atom->size, LV2NV_ATOM_BODY_CONST(atom));
+
+                    std::memcpy(&fLastTimeInfo, &timeInfo, sizeof(EngineTimeInfo));
                 }
+
                 break;
 
                 //if (atom->type == CARLA_URI_MAP_ID_ATOM_WORKER)
@@ -4361,8 +4399,9 @@ private:
     float** fAudioOutBuffers;
     float*  fParamBuffers;
 
-    Lv2AtomQueue fAtomQueueIn;
-    Lv2AtomQueue fAtomQueueOut;
+    Lv2AtomQueue   fAtomQueueIn;
+    Lv2AtomQueue   fAtomQueueOut;
+    LV2_Atom_Forge fAtomForge;
 
     Lv2PluginEventData fEventsIn;
     Lv2PluginEventData fEventsOut;
