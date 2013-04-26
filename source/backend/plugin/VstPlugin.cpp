@@ -363,6 +363,9 @@ public:
 
     void showGui(const bool yesNo) override
     {
+        if (fGui.isVisible == yesNo)
+            return;
+
         if (fGui.isOsc)
         {
             if (yesNo)
@@ -386,6 +389,8 @@ public:
         {
             if (yesNo)
             {
+                CARLA_ASSERT(kData->gui == nullptr);
+
                 if (kData->gui == nullptr)
                 {
                     CarlaPluginGui::Options guiOptions;
@@ -439,6 +444,8 @@ public:
             }
             else
             {
+                CARLA_ASSERT(kData->gui != nullptr);
+
                 dispatcher(effEditClose, 0, 0, nullptr, 0.0f);
 
                 if (kData->gui != nullptr)
