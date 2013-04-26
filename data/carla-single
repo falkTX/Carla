@@ -18,12 +18,17 @@ Possible archs:
   - \"win64\"
 
 Possible modes:
+  - \"internal\"
   - \"ladspa\"
   - \"dssi\"
   - \"lv2\"
   - \"vst\"
+  - \"gig\"
+  - \"sf2\"
+  - \"sfz\"
 
 Examples:
+  $0 native internal \"midiSplit\"
   $0 native dssi \"/usr/lib/dssi/hexter.so\" \"hexter\"
   $0 native lv2 \"/usr/lib/lv2/calf/\" \"http://calf.sourceforge.net/plugins/Compressor\"
   $0 native vst \"/usr/lib/vst/TAL-NoiseMaker.so\"
@@ -78,12 +83,15 @@ fi
 # ----------------------------------------------------------------------
 # Check mode
 
-if [ "$RUN_MODE"x == "ladspa"x ]; then
+if [ "$RUN_MODE"x == "internal"x ]; then
+  RUN_MODE="INTERNAL"
+  RUN_LABEL="$RUN_FILE"
+elif [ "$RUN_MODE"x == "ladspa"x ]; then
   if [ "$RUN_LABEL"x == ""x ]; then
     echo "$0: LADSPA needs label"
     exit
   fi
-  RUN_MODE="DSSI"
+  RUN_MODE="LADSPA"
 elif [ "$RUN_MODE"x == "dssi"x ]; then
   if [ "$RUN_LABEL"x == ""x ]; then
     echo "$0: DSSI needs label"
@@ -98,6 +106,12 @@ elif [ "$RUN_MODE"x == "lv2"x ]; then
   RUN_MODE="LV2"
 elif [ "$RUN_MODE"x == "vst"x ]; then
   RUN_MODE="VST"
+elif [ "$RUN_MODE"x == "gig"x ]; then
+  RUN_MODE="GIG"
+elif [ "$RUN_MODE"x == "sf2"x ]; then
+  RUN_MODE="SF2"
+elif [ "$RUN_MODE"x == "sfz"x ]; then
+  RUN_MODE="SFZ"
 else
   echo "$0: Invalid mode"
   exit
