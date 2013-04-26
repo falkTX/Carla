@@ -412,8 +412,12 @@ public:
                         const int16_t width(vstRect->right  - vstRect->left);
                         const int16_t height(vstRect->bottom - vstRect->top);
 
-                        if (width > 0 && height > 0)
+                        CARLA_SAFE_ASSERT_INT2(width > 1 && height > 1, width, height);
+
+                        if (width > 1 && height > 1)
                             kData->gui->setSize(width, height);
+                        else if (fGui.lastWidth > 1 && fGui.lastHeight > 1)
+                            kData->gui->setSize(fGui.lastWidth, fGui.lastHeight);
                     }
 
                     kData->gui->setWindowTitle(QString("%1 (GUI)").arg((const char*)fName));
@@ -435,6 +439,9 @@ public:
             }
             else
             {
+                fGui.lastWidth  = kData->gui->width();
+                fGui.lastHeight = kData->gui->height();
+
                 dispatcher(effEditClose, 0, 0, nullptr, 0.0f);
 
                 if (kData->gui != nullptr)
@@ -1942,7 +1949,9 @@ protected:
         case audioMasterSizeWindow:
             if (kData->gui != nullptr)
             {
-                kData->gui->setSize(index, value);
+                CARLA_SAFE_ASSERT(fGui.isVisible);
+                if (fGui.isVisible)
+                    kData->gui->setSize(index, value);
                 ret = 1;
             }
             break;
@@ -2312,10 +2321,14 @@ private:
     struct GuiInfo {
         bool isOsc;
         bool isVisible;
+        int  lastWidth;
+        int  lastHeight;
 
         GuiInfo()
             : isOsc(false),
-              isVisible(false) {}
+              isVisible(false),
+              lastWidth(0),
+              lastHeight(0) {}
     } fGui;
 
     bool fIsProcessing;
