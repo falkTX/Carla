@@ -2479,12 +2479,12 @@ public:
                         if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_ATOM)
                         {
                             lv2_atom_buffer_reset(fEventsIn.data[k].atom, true);
-                            lv2_atom_buffer_begin(&evInAtomIters[k], fEventsIn.data[i].atom);
+                            lv2_atom_buffer_begin(&evInAtomIters[k], fEventsIn.data[k].atom);
                         }
                         else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_EVENT)
                         {
-                            lv2_event_buffer_reset(fEventsIn.ctrl->event, LV2_EVENT_AUDIO_STAMP, fEventsIn.ctrl->event->data);
-                            lv2_event_begin(&evInEventIters[k], fEventsIn.ctrl->event);
+                            lv2_event_buffer_reset(fEventsIn.data[k].event, LV2_EVENT_AUDIO_STAMP, fEventsIn.data[k].event->data);
+                            lv2_event_begin(&evInEventIters[k], fEventsIn.data[k].event);
                         }
                         else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_MIDI_LL)
                         {
