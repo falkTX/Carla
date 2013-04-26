@@ -686,6 +686,9 @@ public:
         CARLA_ASSERT(fParamBuffers != nullptr);
         CARLA_ASSERT(parameterId < kData->param.count);
 
+        if (kData->param.data[parameterId].hints & PARAMETER_IS_STRICT_BOUNDS)
+            kData->param.ranges[parameterId].fixValue(fParamBuffers[parameterId]);
+
         return fParamBuffers[parameterId];
     }
 
@@ -2805,7 +2808,8 @@ public:
                 if (kData->param.data[k].type != PARAMETER_OUTPUT)
                     continue;
 
-                kData->param.ranges[k].fixValue(fParamBuffers[k]);
+                if (kData->param.data[k].hints & PARAMETER_IS_STRICT_BOUNDS)
+                    kData->param.ranges[k].fixValue(fParamBuffers[k]);
 
                 if (kData->param.data[k].midiCC > 0)
                 {
@@ -2893,6 +2897,26 @@ public:
 
         if (fHandle2 != nullptr)
             fDescriptor->run(fHandle2, frames);
+
+        // --------------------------------------------------------------------------------------------------------
+        // Special Parameters
+
+        for (k=0; k < kData->param.count; ++k)
+        {
+            if (kData->param.data[k].type != PARAMETER_INPUT)
+                continue;
+
+            if (kData->param.data[k].hints & PARAMETER_IS_TRIGGER)
+            {
+                if (fParamBuffers[k] != kData->param.ranges[k].def)
+                {
+                    fParamBuffers[k] = kData->param.ranges[k].def;
+                    postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 0, fParamBuffers[k]);
+                }
+            }
+        }
+
+        kData->postRtEvents.trySplice();
 
 #ifndef BUILD_BRIDGE
         // --------------------------------------------------------------------------------------------------------
