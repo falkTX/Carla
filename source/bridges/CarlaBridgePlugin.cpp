@@ -157,6 +157,11 @@ public:
         fEngine = carla_get_standalone_engine();
         fPlugin = fEngine->getPlugin(0);
 
+        fProjFileName  = fPlugin->name();
+        fProjFileName += ".carxp";
+
+        fEngine->loadProject(fProjFileName);
+
         fTimerId = startTimer(50);
     }
 
@@ -169,12 +174,18 @@ public:
 
         if (gSaveNow)
         {
-            // TODO
             gSaveNow = false;
+
+            CARLA_ASSERT(fEngine != nullptr);
+
+            if (fEngine != nullptr && fProjFileName.isNotEmpty())
+                fEngine->saveProject(fProjFileName);
         }
 
         if (gCloseNow)
         {
+            gCloseNow = false;
+
             if (fTimerId != 0)
             {
                 killTimer(fTimerId);
@@ -340,6 +351,7 @@ private:
     CarlaBackend::CarlaEngine* fEngine;
     CarlaBackend::CarlaPlugin* fPlugin;
 
+    CarlaString fProjFileName;
     int fTimerId;
 
     void timerEvent(QTimerEvent* const event)
