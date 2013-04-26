@@ -150,17 +150,20 @@ public:
         fEngine->setOscBridgeData(fOscData);
     }
 
-    void ready()
+    void ready(const bool doSaveLoad)
     {
         CARLA_ASSERT(fTimerId == 0);
 
         fEngine = carla_get_standalone_engine();
         fPlugin = fEngine->getPlugin(0);
 
-        fProjFileName  = fPlugin->name();
-        fProjFileName += ".carxp";
+        if (doSaveLoad)
+        {
+            fProjFileName  = fPlugin->name();
+            fProjFileName += ".carxs";
 
-        fEngine->loadProject(fProjFileName);
+            fPlugin->loadStateFromFile(fProjFileName);
+        }
 
         fTimerId = startTimer(50);
     }
@@ -176,10 +179,10 @@ public:
         {
             gSaveNow = false;
 
-            CARLA_ASSERT(fEngine != nullptr);
+            CARLA_ASSERT(fPlugin != nullptr);
 
-            if (fEngine != nullptr && fProjFileName.isNotEmpty())
-                fEngine->saveProject(fProjFileName);
+            if (fPlugin != nullptr && fProjFileName.isNotEmpty())
+                fPlugin->saveStateToFile(fProjFileName);
         }
 
         if (gCloseNow)
@@ -322,7 +325,8 @@ protected:
         switch (action)
         {
         case CALLBACK_PARAMETER_VALUE_CHANGED:
-            sendOscControl(value1, value3);
+            if (isOscControlRegistered())
+                sendOscControl(value1, value3);
             break;
 
         case CALLBACK_SHOW_GUI:
@@ -557,7 +561,7 @@ int main(int argc, char* argv[])
             }
         }
 
-        client.ready();
+        client.ready(!useOsc);
 
         ret = app.exec();
 
