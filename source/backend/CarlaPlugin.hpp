@@ -44,7 +44,7 @@ CARLA_BACKEND_START_NAMESPACE
 enum PluginPostRtEventType {
     kPluginPostRtEventNull,
     kPluginPostRtEventDebug,
-    kPluginPostRtEventParameterChange,   // param, N, value
+    kPluginPostRtEventParameterChange,   // param, SP*, value (SP: if 1, don't report change to Callback and OSC)
     kPluginPostRtEventProgramChange,     // index
     kPluginPostRtEventMidiProgramChange, // index
     kPluginPostRtEventNoteOn,            // channel, note, velo

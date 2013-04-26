@@ -384,7 +384,8 @@ public:
           fRdfDescriptor(nullptr),
           fAudioInBuffers(nullptr),
           fAudioOutBuffers(nullptr),
-          fParamBuffers(nullptr)
+          fParamBuffers(nullptr),
+          fParamFreewheel(0.0f)
     {
         carla_debug("Lv2Plugin::Lv2Plugin(%p, %i)", engine, id);
 
@@ -1959,13 +1960,24 @@ public:
                 kData->param.ranges[j].stepSmall = stepSmall;
                 kData->param.ranges[j].stepLarge = stepLarge;
 
-                // Start parameters in their default values
-                fParamBuffers[j] = def;
+                if (kData->param.data[j].type != PARAMETER_LV2_FREEWHEEL)
+                {
+                    // Start parameters in their default values
+                    fParamBuffers[j] = def;
 
-                fDescriptor->connect_port(fHandle, i, &fParamBuffers[j]);
+                    fDescriptor->connect_port(fHandle, i, &fParamBuffers[j]);
 
-                if (fHandle2 != nullptr)
-                    fDescriptor->connect_port(fHandle2, i, &fParamBuffers[j]);
+                    if (fHandle2 != nullptr)
+                        fDescriptor->connect_port(fHandle2, i, &fParamBuffers[j]);
+                }
+                else
+                {
+                    // freewheel param
+                    fDescriptor->connect_port(fHandle, i, &fParamFreewheel);
+
+                    if (fHandle2 != nullptr)
+                        fDescriptor->connect_port(fHandle2, i, &fParamFreewheel);
+                }
             }
             else
             {
@@ -2286,73 +2298,108 @@ public:
         CARLA_PROCESS_CONTINUE_CHECK;
 
         // --------------------------------------------------------------------------------------------------------
-        // Special Parameters and TimeInfo
+        // Special Parameters
 
         {
+            // TODO - there should be a callback for this
+            fParamFreewheel = kData->engine->isOffline() ? 1.0f : 0.0f;
+        }
+
+        // --------------------------------------------------------------------------------------------------------
+        // TimeInfo
+
+        {
+            bool doPostRt;
             int32_t rindex;
             const EngineTimeInfo& timeInfo(kData->engine->getTimeInfo());
 
-            for (k=0; k < kData->param.count; ++k)
+            if (fFirstActive || fLastTimeInfo != timeInfo)
             {
-                if (kData->param.data[k].type == PARAMETER_LATENCY)
+                // update input ports
+                for (k=0; k < kData->param.count; ++k)
                 {
-                    // nothing
-                }
-                else if (kData->param.data[k].type == PARAMETER_LV2_FREEWHEEL)
-                {
-                    setParameterValue(k, kData->engine->isOffline() ? 1.0f : 0.0f, false, false, false);
-                }
-                else if (kData->param.data[k].type == PARAMETER_LV2_TIME)
-                {
+                    if (kData->param.data[k].type != PARAMETER_LV2_TIME)
+                        continue;
+
+                    doPostRt = false;
                     rindex = kData->param.data[k].rindex;
+
                     CARLA_ASSERT(rindex >= 0 && rindex < static_cast<int32_t>(fRdfDescriptor->PortCount));
 
                     switch (fRdfDescriptor->Ports[rindex].Designation)
                     {
                     // Non-BBT
-                    case LV2_PORT_DESIGNATION_TIME_FRAME:
-                        setParameterValue(k, timeInfo.frame, false, false, false);
-                        break;
                     case LV2_PORT_DESIGNATION_TIME_SPEED:
-                        setParameterValue(k, timeInfo.playing ? 1.0f : 0.0f, false, false, false);
+                        if (fLastTimeInfo.playing != timeInfo.playing)
+                        {
+                            fParamBuffers[k] = timeInfo.playing ? 1.0f : 0.0f;
+                            doPostRt = true;
+                        }
                         break;
-                    // BBT
+                    case LV2_PORT_DESIGNATION_TIME_FRAME:
+                        if (fLastTimeInfo.frame != timeInfo.frame)
+                        {
+                            fParamBuffers[k] = timeInfo.frame;
+                            doPostRt = true;
+                        }
+                        break;
+                    case LV2_PORT_DESIGNATION_TIME_FRAMES_PER_SECOND:
+                        break;
+                        // BBT
                     case LV2_PORT_DESIGNATION_TIME_BAR:
-                        if (timeInfo.valid & EngineTimeInfo::ValidBBT)
-                            setParameterValue(k, timeInfo.bbt.bar - 1, false, false, false);
+                        if ((timeInfo.valid & EngineTimeInfo::ValidBBT) != 0 && fLastTimeInfo.bbt.bar != timeInfo.bbt.bar)
+                        {
+                            fParamBuffers[k] = timeInfo.bbt.bar - 1;
+                            doPostRt = true;
+                        }
                         break;
                     case LV2_PORT_DESIGNATION_TIME_BAR_BEAT:
-                        if (timeInfo.valid & EngineTimeInfo::ValidBBT)
-                            setParameterValue(k, timeInfo.bbt.beat - 1 + (double(timeInfo.bbt.tick) / timeInfo.bbt.ticksPerBeat), false, false, false);
+                        if ((timeInfo.valid & EngineTimeInfo::ValidBBT) != 0 && (fLastTimeInfo.bbt.tick != timeInfo.bbt.tick ||
+                                                                                 fLastTimeInfo.bbt.ticksPerBeat != timeInfo.bbt.ticksPerBeat))
+                        {
+                            fParamBuffers[k] = timeInfo.bbt.beat - 1 + (double(timeInfo.bbt.tick) / timeInfo.bbt.ticksPerBeat);
+                            doPostRt = true;
+                        }
                         break;
                     case LV2_PORT_DESIGNATION_TIME_BEAT:
-                        if (timeInfo.valid & EngineTimeInfo::ValidBBT)
-                            setParameterValue(k, timeInfo.bbt.beat - 1, false, false, false);
+                        if ((timeInfo.valid & EngineTimeInfo::ValidBBT) != 0 && fLastTimeInfo.bbt.beat != timeInfo.bbt.beat)
+                        {
+                            fParamBuffers[k] = timeInfo.bbt.beat - 1;
+                            doPostRt = true;
+                        }
                         break;
                     case LV2_PORT_DESIGNATION_TIME_BEAT_UNIT:
-                        if (timeInfo.valid & EngineTimeInfo::ValidBBT)
-                            setParameterValue(k, timeInfo.bbt.beatType, false, false, false);
+                        if ((timeInfo.valid & EngineTimeInfo::ValidBBT) != 0 && fLastTimeInfo.bbt.beatType != timeInfo.bbt.beatType)
+                        {
+                            fParamBuffers[k] = timeInfo.bbt.beatType;
+                            doPostRt = true;
+                        }
                         break;
                     case LV2_PORT_DESIGNATION_TIME_BEATS_PER_BAR:
-                        if (timeInfo.valid & EngineTimeInfo::ValidBBT)
-                            setParameterValue(k, timeInfo.bbt.beatsPerBar, false, false, false);
+                        if ((timeInfo.valid & EngineTimeInfo::ValidBBT) != 0 && fLastTimeInfo.bbt.beatsPerBar != timeInfo.bbt.beatsPerBar)
+                        {
+                            fParamBuffers[k] = timeInfo.bbt.beatsPerBar;
+                            doPostRt = true;
+                        }
                         break;
                     case LV2_PORT_DESIGNATION_TIME_BEATS_PER_MINUTE:
-                        if (timeInfo.valid & EngineTimeInfo::ValidBBT)
-                            setParameterValue(k, timeInfo.bbt.beatsPerMinute, false, false, false);
+                        if ((timeInfo.valid & EngineTimeInfo::ValidBBT) != 0 && fLastTimeInfo.bbt.beatsPerMinute != timeInfo.bbt.beatsPerMinute)
+                        {
+                            fParamBuffers[k] = timeInfo.bbt.beatsPerMinute;
+                            doPostRt = true;
+                        }
                         break;
                     }
+
+                    if (doPostRt)
+                        postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 1, fParamBuffers[k]);
                 }
-            }
 
-            // find first port to send time info into
-            for (i = 0; i < fEventsIn.count; ++i)
-            {
-                if ((fEventsIn.data[i].type & CARLA_EVENT_DATA_ATOM) == 0 || (fEventsIn.data[i].type & CARLA_EVENT_TYPE_TIME) == 0)
-                    continue;
-
-                if (fFirstActive || fLastTimeInfo != timeInfo)
+                for (i = 0; i < fEventsIn.count; ++i)
                 {
+                    if ((fEventsIn.data[i].type & CARLA_EVENT_DATA_ATOM) == 0 || (fEventsIn.data[i].type & CARLA_EVENT_TYPE_TIME) == 0)
+                        continue;
+
                     uint8_t timeInfoBuf[256] = { 0 };
                     lv2_atom_forge_set_buffer(&fAtomForge, timeInfoBuf, sizeof(timeInfoBuf));
 
@@ -2382,26 +2429,12 @@ public:
                     LV2_Atom* atom = (LV2_Atom*)timeInfoBuf;
                     lv2_atom_buffer_write(&evInAtomIters[i], 0, 0, atom->type, atom->size, LV2NV_ATOM_BODY_CONST(atom));
 
-                    std::memcpy(&fLastTimeInfo, &timeInfo, sizeof(EngineTimeInfo));
+                    CARLA_ASSERT(atom->size < 256);
                 }
 
-                break;
+                kData->postRtEvents.trySplice();
 
-                //if (atom->type == CARLA_URI_MAP_ID_ATOM_WORKER)
-                //{
-                //    const LV2_Atom_Worker* const atomWorker = (const LV2_Atom_Worker*)atom;
-                //    fExt.worker->work_response(fHandle, atomWorker->body.size, atomWorker->body.data);
-                //    continue;
-                //}
-
-//                LV2_Atom_Event* const aev(getLv2AtomEvent(fEventsIn.ctrl->atom, evInAtomOffsets[k]));
-//                aev->time.frames = 0;
-//                aev->body.type   = atom->type;
-//                aev->body.size   = atom->size;
-//                std::memcpy(LV2_ATOM_BODY(&aev->body), LV2_ATOM_BODY(atom), atom->size);
-
-//                evInAtomOffsets[k] += evInPadSize;
-//                fEventsIn.ctrl->atom->atom.size = evInAtomOffsets[k];
+                std::memcpy(&fLastTimeInfo, &timeInfo, sizeof(EngineTimeInfo));
             }
         }
 
@@ -3488,6 +3521,7 @@ protected:
             fUi.descriptor->cleanup(fUi.handle);
 
         fUi.handle = nullptr;
+        fUi.widget = nullptr;
         kData->engine->callback(CALLBACK_SHOW_GUI, fId, 0, 0, 0.0f, nullptr);
     }
 
@@ -4398,6 +4432,7 @@ private:
     float** fAudioInBuffers;
     float** fAudioOutBuffers;
     float*  fParamBuffers;
+    float   fParamFreewheel;
 
     Lv2AtomQueue   fAtomQueueIn;
     Lv2AtomQueue   fAtomQueueOut;

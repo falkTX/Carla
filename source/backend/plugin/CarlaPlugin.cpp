@@ -1957,12 +1957,15 @@ void CarlaPlugin::postRtEventsRun()
                 uiParameterChange(event.value1, event.value3);
 
 #ifndef BUILD_BRIDGE
-            // Update OSC control client
-            if (kData->engine->isOscControlRegistered())
-                kData->engine->osc_send_control_set_parameter_value(fId, event.value1, event.value3);
+            if (event.value2 != 1)
+            {
+                // Update OSC control client
+                if (kData->engine->isOscControlRegistered())
+                    kData->engine->osc_send_control_set_parameter_value(fId, event.value1, event.value3);
 
-            // Update Host
-            kData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, event.value1, 0, event.value3, nullptr);
+                // Update Host
+                kData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, event.value1, 0, event.value3, nullptr);
+            }
 #endif
             break;
 
