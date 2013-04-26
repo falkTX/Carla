@@ -467,13 +467,16 @@ int main(int argc, char* argv[])
     const char* const stype    = argv[2];
     const char* const filename = argv[3];
     const char*       name     = argv[4];
-    const char* const label    = argv[5];
+    const char*       label    = argv[5];
 
     const bool useBridge = (argc == 7);
     const bool useOsc    = std::strcmp(oscUrl, "null");
 
     if (std::strcmp(name, "(none)") == 0)
         name = nullptr;
+
+    if (std::strlen(label) == 0)
+        label = nullptr;
 
     char bridgeBaseAudioName[6+1]   = { 0 };
     char bridgeBaseControlName[6+1] = { 0 };
@@ -495,8 +498,19 @@ int main(int argc, char* argv[])
     QApplication app(argc, argv, true);
     app.setQuitOnLastWindowClosed(false);
 
+    CarlaString clientName((name != nullptr) ? name : label);
+
+    if (clientName.isEmpty())
+    {
+        QFileInfo fileinfo(filename);
+        clientName = fileinfo.baseName().toUtf8().constData();
+    }
+
+    if (itype >= CarlaBackend::PLUGIN_GIG && itype <= CarlaBackend::PLUGIN_SFZ && label == nullptr)
+        label = clientName;
+
     // Init Plugin client
-    CarlaPluginClient client(useBridge, (name != nullptr) ? name : label, bridgeBaseAudioName, bridgeBaseControlName);
+    CarlaPluginClient client(useBridge, (const char*)clientName, bridgeBaseAudioName, bridgeBaseControlName);
 
     // Init OSC
     if (useOsc)
