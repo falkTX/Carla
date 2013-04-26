@@ -439,13 +439,13 @@ public:
             }
             else
             {
-                fGui.lastWidth  = kData->gui->width();
-                fGui.lastHeight = kData->gui->height();
-
                 dispatcher(effEditClose, 0, 0, nullptr, 0.0f);
 
                 if (kData->gui != nullptr)
                 {
+                    fGui.lastWidth  = kData->gui->width();
+                    fGui.lastHeight = kData->gui->height();
+
                     kData->gui->close();
                     delete kData->gui;
                     kData->gui = nullptr;
