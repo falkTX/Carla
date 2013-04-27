@@ -86,7 +86,7 @@ SAMPLE_RATES = (22050, 32000, 44100, 48000, 88200, 96000, 176400, 192000)
 # ------------------------------------------------------------------------------------------------------------
 # Global Variables
 
-appName = os.path.basename(__file__) if os.path.dirname(__file__) in os.environ["PATH"] else sys.argv[0]
+appName = os.path.basename(__file__) if os.path.dirname(__file__) in PATH else sys.argv[0]
 libPrefix = None
 projectFilename = None
 
