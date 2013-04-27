@@ -554,11 +554,9 @@ class Host(object):
         self.lib.carla_get_current_midi_program_index.argtypes = [c_uint]
         self.lib.carla_get_current_midi_program_index.restype = c_int32
 
-        # TODO - consider removal
         self.lib.carla_get_default_parameter_value.argtypes = [c_uint, c_uint32]
         self.lib.carla_get_default_parameter_value.restype = c_float
 
-        # TODO - consider removal
         self.lib.carla_get_current_parameter_value.argtypes = [c_uint, c_uint32]
         self.lib.carla_get_current_parameter_value.restype = c_float
 

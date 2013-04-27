@@ -548,11 +548,11 @@ struct CarlaPluginProtectedData {
         CARLA_ASSERT(gui == nullptr);
         CARLA_ASSERT(client == nullptr);
         CARLA_ASSERT(! active);
-        CARLA_ASSERT(! needsReset);
         CARLA_ASSERT(lib == nullptr);
         CARLA_ASSERT(uiLib == nullptr);
         CARLA_ASSERT(latency == 0);
         CARLA_ASSERT(latencyBuffers == nullptr);
+        CARLA_SAFE_ASSERT(! needsReset);
     }
 
     // -------------------------------------------------------------------

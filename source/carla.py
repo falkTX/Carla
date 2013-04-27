@@ -673,7 +673,6 @@ class CarlaMainW(QMainWindow):
         self.fIdleTimerFast = 0
         self.fIdleTimerSlow = 0
 
-        self.fLastLoadedPluginId = -1
         self.fTransportWasPlaying = False
 
         self.fClientName = "Carla"
@@ -1221,14 +1220,13 @@ class CarlaMainW(QMainWindow):
             if pwidget is None:
                 break
 
-            self.fPluginList[i] = None
-
             pwidget.ui.edit_dialog.close()
             pwidget.close()
             pwidget.deleteLater()
             del pwidget
 
         self.fPluginCount = 0
+        self.fPluginList  = []
 
         Carla.host.remove_all_plugins()
 
@@ -1467,9 +1465,6 @@ class CarlaMainW(QMainWindow):
         if self.fPluginCount == 1:
             self.ui.act_plugin_remove_all.setEnabled(True)
 
-        if self.fLastLoadedPluginId == -2:
-            self.fLastLoadedPluginId = pluginId
-
     @pyqtSlot(int)
     def slot_handlePluginRemovedCallback(self, pluginId):
         if pluginId >= self.fPluginCount:
@@ -1479,7 +1474,7 @@ class CarlaMainW(QMainWindow):
         if pwidget is None:
             return
 
-        self.fPluginList[pluginId] = None
+        self.fPluginList.pop(pluginId)
         self.fPluginCount -= 1
 
         self.ui.w_plugins.layout().removeWidget(pwidget)
@@ -1491,7 +1486,6 @@ class CarlaMainW(QMainWindow):
 
         # push all plugins 1 slot back
         for i in range(pluginId, self.fPluginCount):
-            self.fPluginList[i] = self.fPluginList[i+1]
             self.fPluginList[i].setId(i)
 
         if self.fPluginCount == 0:

@@ -1692,7 +1692,6 @@ void CarlaPlugin::registerToOscClient()
             kData->engine->osc_send_control_set_parameter_ranges(fId, i, paramRanges.min, paramRanges.max, paramRanges.def, paramRanges.step, paramRanges.stepSmall, paramRanges.stepLarge);
             kData->engine->osc_send_control_set_parameter_midi_cc(fId, i, paramData.midiCC);
             kData->engine->osc_send_control_set_parameter_midi_channel(fId, i, paramData.midiChannel);
-            kData->engine->osc_send_control_set_parameter_value(fId, i, getParameterValue(i));
 #endif
         }
     }
