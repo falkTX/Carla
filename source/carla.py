@@ -1133,9 +1133,6 @@ class CarlaMainW(QMainWindow):
         if transportMode == TRANSPORT_MODE_JACK and audioDriver != "JACK":
             transportMode = TRANSPORT_MODE_INTERNAL
 
-        for x in range(maxCount):
-            self.fPluginList.append(None)
-
         Carla.host.set_engine_option(OPTION_TRANSPORT_MODE, transportMode, "")
 
         # Peaks and TimeInfo
@@ -1456,8 +1453,8 @@ class CarlaMainW(QMainWindow):
 
         self.ui.w_plugins.layout().addWidget(pwidget)
 
+        self.fPluginList.append(pwidget)
         self.fPluginCount += 1
-        self.fPluginList[pluginId] = pwidget
 
         if not self.fProjectLoading:
             pwidget.setActive(True, True, True)
@@ -1474,8 +1471,8 @@ class CarlaMainW(QMainWindow):
         if pwidget is None:
             return
 
-        self.fPluginList.pop(pluginId)
         self.fPluginCount -= 1
+        self.fPluginList.pop(pluginId)
 
         self.ui.w_plugins.layout().removeWidget(pwidget)
 
