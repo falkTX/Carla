@@ -1483,8 +1483,7 @@ class PluginEdit(QDialog):
 
         self.ui.cb_midi_programs.blockSignals(False)
 
-        # Automatically change to Midi Programs tab
-        if midiProgramCount > 0 and programCount == 0:
+        if self.fPluginInfo['type'] != PLUGIN_VST:
             self.ui.tab_programs.setCurrentIndex(1)
 
     def updateInfo(self):

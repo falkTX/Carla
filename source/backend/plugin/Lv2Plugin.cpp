@@ -2310,9 +2310,9 @@ public:
             {
                 if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                 {
-                    for (k=0, i=MAX_MIDI_CHANNELS; k < MAX_MIDI_CHANNELS; ++k)
+                    for (i=0; i < MAX_MIDI_CHANNELS; ++i)
                     {
-                        midiData[0] = MIDI_STATUS_CONTROL_CHANGE + k;
+                        midiData[0] = MIDI_STATUS_CONTROL_CHANGE + i;
                         midiData[1] = MIDI_CONTROL_ALL_NOTES_OFF;
 
                         if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_ATOM)
@@ -2324,7 +2324,7 @@ public:
                         else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_MIDI_LL)
                             lv2midi_put_event(&evInMidiStates[k], 0, 3, midiData);
 
-                        midiData[0] = MIDI_STATUS_CONTROL_CHANGE + k;
+                        midiData[0] = MIDI_STATUS_CONTROL_CHANGE + i;
                         midiData[1] = MIDI_CONTROL_ALL_SOUND_OFF;
 
                         if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_ATOM)
