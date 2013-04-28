@@ -399,29 +399,17 @@ lilv_state_new_from_instance(const LilvPlugin*          plugin,
 LILV_API
 void
 lilv_state_restore(const LilvState*           state,
-                   LilvInstance*              instance,
+                   const LV2_State_Interface* iface,
+                   LV2_Handle                 handle,
                    LilvSetPortValueFunc       set_value,
                    void*                      user_data,
                    uint32_t                   flags,
                    const LV2_Feature *const * features)
 {
-	LV2_State_Map_Path map_path = {
-		(LilvState*)state, abstract_path, absolute_path };
-	LV2_Feature map_feature = { LV2_STATE__mapPath, &map_path };
-
-	const LV2_Feature** sfeatures = add_features(features, &map_feature, NULL);
-
-	const LV2_Descriptor*      desc  = instance->lv2_descriptor;
-	const LV2_State_Interface* iface = (desc->extension_data)
-		? (LV2_State_Interface*)desc->extension_data(LV2_STATE__interface)
-		: NULL;
-
 	if (iface) {
-		iface->restore(instance->lv2_handle, retrieve_callback,
-		               (LV2_State_Handle)state, flags, sfeatures);
+		iface->restore(handle, retrieve_callback,
+		               (LV2_State_Handle)state, flags, features);
 	}
-
-	free(sfeatures);
 
 	if (set_value) {
 		for (uint32_t i = 0; i < state->num_values; ++i) {

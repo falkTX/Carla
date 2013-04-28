@@ -27,6 +27,7 @@
 #include <stdio.h>
 
 #include "lv2/lv2.h"
+#include "lv2/state.h"
 #include "lv2/urid.h"
 
 #ifdef LILV_SHARED
@@ -1415,7 +1416,8 @@ typedef void (*LilvSetPortValueFunc)(const char* port_symbol,
 LILV_API
 void
 lilv_state_restore(const LilvState*           state,
-                   LilvInstance*              instance,
+                   const LV2_State_Interface* iface,
+                   LV2_Handle                 handle,
                    LilvSetPortValueFunc       set_value,
                    void*                      user_data,
                    uint32_t                   flags,

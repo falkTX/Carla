@@ -1010,6 +1010,7 @@ public:
     {
         CARLA_ASSERT(fRdfDescriptor != nullptr);
         CARLA_ASSERT(index >= -1 && index < static_cast<int32_t>(fRdfDescriptor->PresetCount));
+        CARLA_ASSERT(sendGui || sendOsc || sendCallback); // never call this from RT
 
         if (index < -1)
             index = -1;
@@ -1018,10 +1019,15 @@ public:
 
         if (index >= 0 && index < static_cast<int32_t>(fRdfDescriptor->PresetCount))
         {
-            const ScopedSingleProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
+            const ScopedDisabler sd(this);
 
             if (const LilvState* state = gLv2World.getState(fRdfDescriptor->Presets[index].URI, (LV2_URID_Map*)fFeatures[kFeatureIdUridMap]->data))
-                lilv_state_restore(state, nullptr, carla_lilv_set_port_value, this, 0, fFeatures);
+            {
+                lilv_state_restore(state, fExt.state, fHandle, carla_lilv_set_port_value, this, 0, fFeatures);
+
+                if (fHandle2 != nullptr)
+                    lilv_state_restore(state, fExt.state, fHandle2, carla_lilv_set_port_value, this, 0, fFeatures);
+            }
         }
 
         CarlaPlugin::setProgram(index, sendGui, sendOsc, sendCallback);
