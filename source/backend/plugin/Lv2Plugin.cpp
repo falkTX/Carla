@@ -95,32 +95,33 @@ const unsigned int CARLA_EVENT_TYPE_TIME    = 0x40;
 const uint32_t CARLA_URI_MAP_ID_NULL                   =  0;
 const uint32_t CARLA_URI_MAP_ID_ATOM_CHUNK             =  1;
 const uint32_t CARLA_URI_MAP_ID_ATOM_DOUBLE            =  2;
-const uint32_t CARLA_URI_MAP_ID_ATOM_INT               =  3;
-const uint32_t CARLA_URI_MAP_ID_ATOM_PATH              =  4;
-const uint32_t CARLA_URI_MAP_ID_ATOM_SEQUENCE          =  5;
-const uint32_t CARLA_URI_MAP_ID_ATOM_STRING            =  6;
-const uint32_t CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM     =  7;
-const uint32_t CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT    =  8;
-const uint32_t CARLA_URI_MAP_ID_BUF_MAX_LENGTH         =  9;
-const uint32_t CARLA_URI_MAP_ID_BUF_MIN_LENGTH         = 10;
-const uint32_t CARLA_URI_MAP_ID_BUF_SEQUENCE_SIZE      = 11;
-const uint32_t CARLA_URI_MAP_ID_LOG_ERROR              = 12;
-const uint32_t CARLA_URI_MAP_ID_LOG_NOTE               = 13;
-const uint32_t CARLA_URI_MAP_ID_LOG_TRACE              = 14;
-const uint32_t CARLA_URI_MAP_ID_LOG_WARNING            = 15;
-const uint32_t CARLA_URI_MAP_ID_TIME_POSITION          = 16; // base type
-const uint32_t CARLA_URI_MAP_ID_TIME_BAR               = 17; // values
-const uint32_t CARLA_URI_MAP_ID_TIME_BAR_BEAT          = 18;
-const uint32_t CARLA_URI_MAP_ID_TIME_BEAT              = 19;
-const uint32_t CARLA_URI_MAP_ID_TIME_BEAT_UNIT         = 20;
-const uint32_t CARLA_URI_MAP_ID_TIME_BEATS_PER_BAR     = 21;
-const uint32_t CARLA_URI_MAP_ID_TIME_BEATS_PER_MINUTE  = 22;
-const uint32_t CARLA_URI_MAP_ID_TIME_FRAME             = 23;
-const uint32_t CARLA_URI_MAP_ID_TIME_FRAMES_PER_SECOND = 24;
-const uint32_t CARLA_URI_MAP_ID_TIME_SPEED             = 25;
-const uint32_t CARLA_URI_MAP_ID_MIDI_EVENT             = 26;
-const uint32_t CARLA_URI_MAP_ID_PARAM_SAMPLE_RATE      = 27;
-const uint32_t CARLA_URI_MAP_ID_COUNT                  = 28;
+const uint32_t CARLA_URI_MAP_ID_ATOM_FLOAT             =  3;
+const uint32_t CARLA_URI_MAP_ID_ATOM_INT               =  4;
+const uint32_t CARLA_URI_MAP_ID_ATOM_PATH              =  5;
+const uint32_t CARLA_URI_MAP_ID_ATOM_SEQUENCE          =  6;
+const uint32_t CARLA_URI_MAP_ID_ATOM_STRING            =  7;
+const uint32_t CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM     =  8;
+const uint32_t CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT    =  9;
+const uint32_t CARLA_URI_MAP_ID_BUF_MAX_LENGTH         = 10;
+const uint32_t CARLA_URI_MAP_ID_BUF_MIN_LENGTH         = 11;
+const uint32_t CARLA_URI_MAP_ID_BUF_SEQUENCE_SIZE      = 12;
+const uint32_t CARLA_URI_MAP_ID_LOG_ERROR              = 13;
+const uint32_t CARLA_URI_MAP_ID_LOG_NOTE               = 14;
+const uint32_t CARLA_URI_MAP_ID_LOG_TRACE              = 15;
+const uint32_t CARLA_URI_MAP_ID_LOG_WARNING            = 16;
+const uint32_t CARLA_URI_MAP_ID_TIME_POSITION          = 17; // base type
+const uint32_t CARLA_URI_MAP_ID_TIME_BAR               = 18; // values
+const uint32_t CARLA_URI_MAP_ID_TIME_BAR_BEAT          = 19;
+const uint32_t CARLA_URI_MAP_ID_TIME_BEAT              = 20;
+const uint32_t CARLA_URI_MAP_ID_TIME_BEAT_UNIT         = 21;
+const uint32_t CARLA_URI_MAP_ID_TIME_BEATS_PER_BAR     = 22;
+const uint32_t CARLA_URI_MAP_ID_TIME_BEATS_PER_MINUTE  = 23;
+const uint32_t CARLA_URI_MAP_ID_TIME_FRAME             = 24;
+const uint32_t CARLA_URI_MAP_ID_TIME_FRAMES_PER_SECOND = 25;
+const uint32_t CARLA_URI_MAP_ID_TIME_SPEED             = 26;
+const uint32_t CARLA_URI_MAP_ID_MIDI_EVENT             = 27;
+const uint32_t CARLA_URI_MAP_ID_PARAM_SAMPLE_RATE      = 28;
+const uint32_t CARLA_URI_MAP_ID_COUNT                  = 29;
 /**@}*/
 
 /*!
@@ -1007,18 +1008,20 @@ public:
 
     void setProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) override
     {
-        CARLA_ASSERT(index >= -1 && index < static_cast<int32_t>(kData->prog.count));
+        CARLA_ASSERT(fRdfDescriptor != nullptr);
+        CARLA_ASSERT(index >= -1 && index < static_cast<int32_t>(fRdfDescriptor->PresetCount));
 
         if (index < -1)
             index = -1;
-        else if (index > static_cast<int32_t>(kData->prog.count))
+        else if (index > static_cast<int32_t>(fRdfDescriptor->PresetCount))
             return;
 
-        if (index >= 0)
+        if (index >= 0 && index < static_cast<int32_t>(fRdfDescriptor->PresetCount))
         {
             const ScopedSingleProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
 
-            // TODO
+            if (const LilvState* state = gLv2World.getState(fRdfDescriptor->Presets[index].URI, (LV2_URID_Map*)fFeatures[kFeatureIdUridMap]->data))
+                lilv_state_restore(state, nullptr, carla_lilv_set_port_value, this, 0, fFeatures);
         }
 
         CarlaPlugin::setProgram(index, sendGui, sendOsc, sendCallback);
@@ -2093,6 +2096,22 @@ public:
         uint32_t i, oldCount  = kData->midiprog.count;
         const int32_t current = kData->midiprog.current;
 
+        // special LV2 programs handling
+        if (init)
+        {
+            kData->prog.clear();
+
+            uint32_t count = fRdfDescriptor->PresetCount;
+
+            if (count > 0)
+            {
+                kData->prog.createNew(count);
+
+                for (i=0; i < count; ++i)
+                    kData->prog.names[i] = carla_strdup(fRdfDescriptor->Presets[i].Label);
+            }
+        }
+
         // Delete old programs
         kData->midiprog.clear();
 
@@ -2115,8 +2134,8 @@ public:
                 CARLA_ASSERT(pdesc != nullptr);
                 CARLA_ASSERT(pdesc->name != nullptr);
 
-                kData->midiprog.data[i].bank    = static_cast<uint32_t>(pdesc->bank);
-                kData->midiprog.data[i].program = static_cast<uint32_t>(pdesc->program);
+                kData->midiprog.data[i].bank    = pdesc->bank;
+                kData->midiprog.data[i].program = pdesc->program;
                 kData->midiprog.data[i].name    = carla_strdup(pdesc->name);
             }
         }
@@ -3666,6 +3685,42 @@ protected:
         }
     }
 
+    void handleLilvSetPortValue(const char* const portSymbol, const void* const value, uint32_t size, uint32_t type)
+    {
+        CARLA_ASSERT(portSymbol != nullptr);
+        CARLA_ASSERT(value != nullptr);
+        CARLA_ASSERT(size > 0);
+        CARLA_ASSERT(type != CARLA_URI_MAP_ID_NULL);
+
+        if (portSymbol == nullptr)
+            return;
+        if (value == nullptr)
+            return;
+        if (size == 0)
+            return;
+        if (type == CARLA_URI_MAP_ID_NULL)
+            return;
+
+        const int32_t rindex(handleUiPortMap(portSymbol));
+
+        if (rindex < 0)
+            return;
+
+        if (size == sizeof(float) && type == CARLA_URI_MAP_ID_ATOM_FLOAT)
+        {
+            const float valuef(*(const float*)value);
+
+            for (uint32_t i=0; i < kData->param.count; ++i)
+            {
+                if (kData->param.data[i].rindex == rindex)
+                {
+                    setParameterValue(i, valuef, true, true, true);
+                    break;
+                }
+            }
+        }
+    }
+
     // -------------------------------------------------------------------
 
     bool isRealtimeSafe() const
@@ -4755,6 +4810,8 @@ private:
             return CARLA_URI_MAP_ID_ATOM_CHUNK;
         if (std::strcmp(uri, LV2_ATOM__Double) == 0)
             return CARLA_URI_MAP_ID_ATOM_DOUBLE;
+        if (std::strcmp(uri, LV2_ATOM__Float) == 0)
+            return CARLA_URI_MAP_ID_ATOM_FLOAT;
         if (std::strcmp(uri, LV2_ATOM__Int) == 0)
             return CARLA_URI_MAP_ID_ATOM_INT;
         if (std::strcmp(uri, LV2_ATOM__Path) == 0)
@@ -4835,6 +4892,8 @@ private:
             return LV2_ATOM__Chunk;
         if (urid == CARLA_URI_MAP_ID_ATOM_DOUBLE)
             return LV2_ATOM__Double;
+        if (urid == CARLA_URI_MAP_ID_ATOM_FLOAT)
+            return LV2_ATOM__Float;
         if (urid == CARLA_URI_MAP_ID_ATOM_INT)
             return LV2_ATOM__Int;
         if (urid == CARLA_URI_MAP_ID_ATOM_PATH)
@@ -4973,13 +5032,27 @@ private:
 
     static void carla_lv2_ui_write_function(LV2UI_Controller controller, uint32_t port_index, uint32_t buffer_size, uint32_t format, const void* buffer)
     {
-        carla_debug("carla_lv2_ui_write_function(%p, %i, %i, %i, %p)", controller, port_index, buffer_size, format, buffer);
         CARLA_ASSERT(controller != nullptr);
+        carla_debug("carla_lv2_ui_write_function(%p, %i, %i, %i, %p)", controller, port_index, buffer_size, format, buffer);
 
         if (controller == nullptr)
             return;
 
         ((Lv2Plugin*)controller)->handleUiWrite(port_index, buffer_size, format, buffer);
+    }
+
+    // -------------------------------------------------------------------
+    // Lilv State
+
+    static void carla_lilv_set_port_value(const char* port_symbol, void* user_data, const void* value, uint32_t size, uint32_t type)
+    {
+        CARLA_ASSERT(user_data != nullptr);
+        carla_debug("carla_lilv_set_port_value(\"%s\", %p, %p, %i, %i", port_symbol, user_data, value, size, type);
+
+        if (user_data == nullptr)
+            return;
+
+        ((Lv2Plugin*)user_data)->handleLilvSetPortValue(port_symbol, value, size, type);
     }
 
     // -------------------------------------------------------------------

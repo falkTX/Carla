@@ -365,6 +365,31 @@ public:
         }
     }
 
+    const LilvState* getState(const LV2_URI uri, LV2_URID_Map* const uridMap)
+    {
+        CARLA_ASSERT(uri != nullptr);
+
+        LilvNode* const uriNode(Lilv::World::new_uri(uri));
+
+        if (uriNode == nullptr)
+        {
+            carla_stderr("Lv2WorldClass::getState(\"%s\", %p) - Failed to get node from uri", uri, uridMap);
+            return nullptr;
+        }
+
+        if (const LilvState* state = lilv_state_new_from_world(this->me, uridMap, uriNode))
+        {
+            lilv_node_free(uriNode);
+            return state;
+        }
+        else
+        {
+            carla_stderr("Lv2WorldClass::getState(\"%s\", %p) - Failed to get state", uri, uridMap);
+            lilv_node_free(uriNode);
+            return nullptr;
+        }
+    }
+
 private:
     bool needInit;
 
