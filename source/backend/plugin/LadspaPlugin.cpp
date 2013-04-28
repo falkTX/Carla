@@ -411,8 +411,8 @@ public:
 
         clearBuffers();
 
-        const float   sampleRate = (float)kData->engine->getSampleRate();
-        const uint32_t portCount = static_cast<uint32_t>(fDescriptor->PortCount);
+        const float sampleRate(static_cast<float>(kData->engine->getSampleRate()));
+        const uint32_t portCount(static_cast<uint32_t>(fDescriptor->PortCount));
 
         uint32_t aIns, aOuts, params, j;
         aIns = aOuts = params = 0;

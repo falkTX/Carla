@@ -419,8 +419,8 @@ public:
 
         clearBuffers();
 
-        const float   sampleRate = (float)kData->engine->getSampleRate();
-        const uint32_t portCount = static_cast<uint32_t>(fDescriptor->PortCount);
+        const float sampleRate(static_cast<float>(kData->engine->getSampleRate()));
+        const uint32_t portCount(static_cast<uint32_t>(fDescriptor->PortCount));
 
         uint32_t aIns, aOuts, mIns, params, j;
         aIns = aOuts = mIns = params = 0;
@@ -989,7 +989,6 @@ public:
 
         if (kData->needsReset)
         {
-            // TODO!
             if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
             {
                 for (unsigned char j=0, l=MAX_MIDI_CHANNELS; j < MAX_MIDI_CHANNELS; ++j)
@@ -999,17 +998,27 @@ public:
 
                     fMidiEvents[j].type = SND_SEQ_EVENT_CONTROLLER;
                     fMidiEvents[j].data.control.channel = j;
-                    fMidiEvents[j].data.control.param   = MIDI_CONTROL_ALL_SOUND_OFF;
+                    fMidiEvents[j].data.control.param   = MIDI_CONTROL_ALL_NOTES_OFF;
 
                     fMidiEvents[j+l].type = SND_SEQ_EVENT_CONTROLLER;
                     fMidiEvents[j+l].data.control.channel = j;
-                    fMidiEvents[j+l].data.control.param   = MIDI_CONTROL_ALL_NOTES_OFF;
+                    fMidiEvents[j+l].data.control.param   = MIDI_CONTROL_ALL_SOUND_OFF;
                 }
 
                 midiEventCount = MAX_MIDI_CHANNELS*2;
             }
-            else
+            else if (kData->ctrlChannel >= 0 && kData->ctrlChannel < MAX_MIDI_CHANNELS)
             {
+                for (unsigned char j=0; j < MAX_MIDI_NOTE; ++j)
+                {
+                    carla_zeroStruct<snd_seq_event_t>(fMidiEvents[j]);
+
+                    fMidiEvents[j].type = SND_SEQ_EVENT_NOTEOFF;
+                    fMidiEvents[j].data.note.channel = kData->ctrlChannel;
+                    fMidiEvents[j].data.note.note    = j;
+                }
+
+                midiEventCount = MAX_MIDI_NOTE;
             }
 
             if (kData->latency > 0)
@@ -1219,8 +1228,8 @@ public:
                         {
                             if (! allNotesOffSent)
                             {
-                                sendMidiAllNotesOffToCallback();
                                 allNotesOffSent = true;
+                                sendMidiAllNotesOffToCallback();
                             }
 
                             postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_ACTIVE, 0, 0.0f);

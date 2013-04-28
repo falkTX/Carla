@@ -1004,7 +1004,6 @@ public:
 
         if (kData->needsReset)
         {
-            // TODO!
             if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
             {
                 for (k=0, i=MAX_MIDI_CHANNELS; k < MAX_MIDI_CHANNELS; ++k)
@@ -1012,7 +1011,7 @@ public:
                     fMidiEvents[k].type = kVstMidiType;
                     fMidiEvents[k].byteSize = sizeof(VstMidiEvent);
                     fMidiEvents[k].midiData[0] = MIDI_STATUS_CONTROL_CHANGE + k;
-                    fMidiEvents[k].midiData[1] = MIDI_CONTROL_ALL_SOUND_OFF;
+                    fMidiEvents[k].midiData[1] = MIDI_CONTROL_ALL_NOTES_OFF;
 
                     fMidiEvents[k+i].type = kVstMidiType;
                     fMidiEvents[k+i].byteSize = sizeof(VstMidiEvent);
@@ -1022,8 +1021,17 @@ public:
 
                 fMidiEventCount = MAX_MIDI_CHANNELS*2;
             }
-            else
+            else if (kData->ctrlChannel >= 0 && kData->ctrlChannel < MAX_MIDI_CHANNELS)
             {
+                for (k=0; k < MAX_MIDI_NOTE; ++k)
+                {
+                    fMidiEvents[k].type = kVstMidiType;
+                    fMidiEvents[k].byteSize = sizeof(VstMidiEvent);
+                    fMidiEvents[k].midiData[0] = MIDI_STATUS_NOTE_OFF + kData->ctrlChannel;
+                    fMidiEvents[k].midiData[1] = k;
+                }
+
+                fMidiEventCount = MAX_MIDI_NOTE;
             }
 
             if (kData->latency > 0)
@@ -1287,8 +1295,8 @@ public:
                         {
                             if (! allNotesOffSent)
                             {
-                                sendMidiAllNotesOffToCallback();
                                 allNotesOffSent = true;
+                                sendMidiAllNotesOffToCallback();
                             }
 
                             postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_ACTIVE, 0, 0.0f);

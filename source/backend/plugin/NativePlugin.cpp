@@ -1193,24 +1193,34 @@ public:
 
         if (kData->needsReset)
         {
-            // TODO!
             if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
             {
                 for (k=0, i=MAX_MIDI_CHANNELS; k < MAX_MIDI_CHANNELS; ++k)
                 {
                     fMidiEvents[k].data[0] = MIDI_STATUS_CONTROL_CHANGE + k;
-                    fMidiEvents[k].data[1] = MIDI_CONTROL_ALL_SOUND_OFF;
-                    fMidiEvents[k].size    = 2;
+                    fMidiEvents[k].data[1] = MIDI_CONTROL_ALL_NOTES_OFF;
+                    fMidiEvents[k].data[2] = 0;
+                    fMidiEvents[k].size    = 3;
 
                     fMidiEvents[k+i].data[0] = MIDI_STATUS_CONTROL_CHANGE + k;
-                    fMidiEvents[k+i].data[1] = MIDI_CONTROL_ALL_NOTES_OFF;
-                    fMidiEvents[k+i].size    = 2;
+                    fMidiEvents[k+i].data[1] = MIDI_CONTROL_ALL_SOUND_OFF;
+                    fMidiEvents[k+i].data[2] = 0;
+                    fMidiEvents[k+i].size    = 3;
                 }
 
                 fMidiEventCount = MAX_MIDI_CHANNELS*2;
             }
-            else
+            else if (kData->ctrlChannel >= 0 && kData->ctrlChannel < MAX_MIDI_CHANNELS)
             {
+                for (k=0; k < MAX_MIDI_NOTE; ++k)
+                {
+                    fMidiEvents[k].data[0] = MIDI_STATUS_NOTE_OFF + kData->ctrlChannel;
+                    fMidiEvents[k].data[1] = k;
+                    fMidiEvents[k].data[2] = 0;
+                    fMidiEvents[k].size    = 3;
+                }
+
+                fMidiEventCount = MAX_MIDI_NOTE;
             }
 
             kData->needsReset = false;
@@ -1452,8 +1462,8 @@ public:
                         {
                             if (! allNotesOffSent)
                             {
-                                sendMidiAllNotesOffToCallback();
                                 allNotesOffSent = true;
+                                sendMidiAllNotesOffToCallback();
                             }
 
                             postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_ACTIVE, 0, 0.0f);

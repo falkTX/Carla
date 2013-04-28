@@ -54,13 +54,14 @@ enum PluginBridgeInfoType {
 enum PluginBridgeOpcode {
     kPluginBridgeOpcodeNull           = 0,
     kPluginBridgeOpcodeReadyWait      = 1,
-    kPluginBridgeOpcodeSetBufferSize  = 2,
-    kPluginBridgeOpcodeSetSampleRate  = 3,
-    kPluginBridgeOpcodeSetParameter   = 4,
-    kPluginBridgeOpcodeSetProgram     = 5,
-    kPluginBridgeOpcodeSetMidiProgram = 6,
-    kPluginBridgeOpcodeProcess        = 7,
-    kPluginBridgeOpcodeQuit           = 8
+    kPluginBridgeOpcodeSetBufferSize  = 2, // int
+    kPluginBridgeOpcodeSetSampleRate  = 3, // float
+    kPluginBridgeOpcodeSetParameter   = 4, // int, float
+    kPluginBridgeOpcodeSetProgram     = 5, // int
+    kPluginBridgeOpcodeSetMidiProgram = 6, // int
+    kPluginBridgeOpcodeMidiEvent      = 7, // int, char, ... (int = size, max 4)
+    kPluginBridgeOpcodeProcess        = 8,
+    kPluginBridgeOpcodeQuit           = 9
 };
 
 /*!

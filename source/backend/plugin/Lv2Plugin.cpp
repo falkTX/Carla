@@ -1262,8 +1262,8 @@ public:
 
         clearBuffers();
 
-        const float   sampleRate = (float)kData->engine->getSampleRate();
-        const uint32_t portCount = fRdfDescriptor->PortCount;
+        const float sampleRate(static_cast<float>(kData->engine->getSampleRate()));
+        const uint32_t portCount(static_cast<uint32_t>(fRdfDescriptor->PortCount));
 
         uint32_t aIns, aOuts, cvIns, cvOuts, params, j;
         aIns = aOuts = cvIns = cvOuts = params = 0;
@@ -2278,15 +2278,57 @@ public:
 
         if (kData->needsReset)
         {
-            // TODO!
-            if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
+            k = fEventsIn.ctrlIndex;
+            uint8_t midiData[3] = { 0 };
+
+            if (fEventsIn.ctrl->type & CARLA_EVENT_TYPE_MIDI)
             {
-                //for (unsigned char j=0, l=MAX_MIDI_CHANNELS; j < MAX_MIDI_CHANNELS; ++j)
+                if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                 {
+                    for (k=0, i=MAX_MIDI_CHANNELS; k < MAX_MIDI_CHANNELS; ++k)
+                    {
+                        midiData[0] = MIDI_STATUS_CONTROL_CHANGE + k;
+                        midiData[1] = MIDI_CONTROL_ALL_NOTES_OFF;
+
+                        if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_ATOM)
+                            lv2_atom_buffer_write(&evInAtomIters[k], 0, 0, CARLA_URI_MAP_ID_MIDI_EVENT, 3, midiData);
+
+                        else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_EVENT)
+                            lv2_event_write(&evInEventIters[k], 0, 0, CARLA_URI_MAP_ID_MIDI_EVENT, 3, midiData);
+
+                        else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_MIDI_LL)
+                            lv2midi_put_event(&evInMidiStates[k], 0, 3, midiData);
+
+                        midiData[0] = MIDI_STATUS_CONTROL_CHANGE + k;
+                        midiData[1] = MIDI_CONTROL_ALL_SOUND_OFF;
+
+                        if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_ATOM)
+                            lv2_atom_buffer_write(&evInAtomIters[k], 0, 0, CARLA_URI_MAP_ID_MIDI_EVENT, 3, midiData);
+
+                        else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_EVENT)
+                            lv2_event_write(&evInEventIters[k], 0, 0, CARLA_URI_MAP_ID_MIDI_EVENT, 3, midiData);
+
+                        else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_MIDI_LL)
+                            lv2midi_put_event(&evInMidiStates[k], 0, 3, midiData);
+                    }
                 }
-            }
-            else
-            {
+                else if (kData->ctrlChannel >= 0 && kData->ctrlChannel < MAX_MIDI_CHANNELS)
+                {
+                    for (k=0; k < MAX_MIDI_NOTE; ++k)
+                    {
+                        midiData[0] = MIDI_STATUS_NOTE_OFF + kData->ctrlChannel;
+                        midiData[1] = k;
+
+                        if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_ATOM)
+                            lv2_atom_buffer_write(&evInAtomIters[k], 0, 0, CARLA_URI_MAP_ID_MIDI_EVENT, 3, midiData);
+
+                        else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_EVENT)
+                            lv2_event_write(&evInEventIters[k], 0, 0, CARLA_URI_MAP_ID_MIDI_EVENT, 3, midiData);
+
+                        else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_MIDI_LL)
+                            lv2midi_put_event(&evInMidiStates[k], 0, 3, midiData);
+                    }
+                }
             }
 
             if (kData->latency > 0)
@@ -2487,7 +2529,7 @@ public:
 
                     CARLA_ASSERT(note.channel >= 0 && note.channel < MAX_MIDI_CHANNELS);
 
-                    uint8_t midiEvent[3] = { 0 };
+                    uint8_t midiEvent[3];
                     midiEvent[0]  = (note.velo > 0) ? MIDI_STATUS_NOTE_ON : MIDI_STATUS_NOTE_OFF;
                     midiEvent[0] += note.channel;
                     midiEvent[1]  = note.note;
@@ -2700,8 +2742,8 @@ public:
                         {
                             if (! allNotesOffSent)
                             {
-                                sendMidiAllNotesOffToCallback();
                                 allNotesOffSent = true;
+                                sendMidiAllNotesOffToCallback();
                             }
 
                             postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_ACTIVE, 0, 0.0f);

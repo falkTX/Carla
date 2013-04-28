@@ -522,17 +522,18 @@ public:
 
         if (kData->needsReset)
         {
-            // TODO
             if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
             {
                 for (k=0, i=MAX_MIDI_CHANNELS; k < MAX_MIDI_CHANNELS; ++k)
                 {
-                    fMidiInputPort->DispatchControlChange(MIDI_CONTROL_ALL_SOUND_OFF, 0, k, 0);
-                    fMidiInputPort->DispatchControlChange(MIDI_CONTROL_ALL_NOTES_OFF, 0, k, 0);
+                    fMidiInputPort->DispatchControlChange(MIDI_CONTROL_ALL_NOTES_OFF, 0, k);
+                    fMidiInputPort->DispatchControlChange(MIDI_CONTROL_ALL_SOUND_OFF, 0, k);
                 }
             }
-            else
+            else if (kData->ctrlChannel >= 0 && kData->ctrlChannel < MAX_MIDI_CHANNELS)
             {
+                for (k=0; k < MAX_MIDI_NOTE; ++k)
+                    fMidiInputPort->DispatchNoteOff(k, 0, kData->ctrlChannel);
             }
 
             kData->needsReset = false;
@@ -733,8 +734,8 @@ public:
                         {
                             if (! allNotesOffSent)
                             {
-                                sendMidiAllNotesOffToCallback();
                                 allNotesOffSent = true;
+                                sendMidiAllNotesOffToCallback();
                             }
 
                             postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_ACTIVE, 0, 0.0f);
@@ -750,8 +751,8 @@ public:
                         {
                             if (! allNotesOffSent)
                             {
-                                sendMidiAllNotesOffToCallback();
                                 allNotesOffSent = true;
+                                sendMidiAllNotesOffToCallback();
                             }
                         }
 

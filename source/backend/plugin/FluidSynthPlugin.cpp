@@ -923,22 +923,23 @@ public:
 
         if (kData->needsReset)
         {
-            // TODO
             if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
             {
-                for (int c=0; c < MAX_MIDI_CHANNELS; c++)
+                for (int c=0; c < MAX_MIDI_CHANNELS; ++c)
                 {
 #ifdef FLUIDSYNTH_VERSION_NEW_API
                     fluid_synth_all_notes_off(fSynth, c);
                     fluid_synth_all_sounds_off(fSynth, c);
 #else
-                    fluid_synth_cc(f_synth, c, MIDI_CONTROL_ALL_SOUND_OFF, 0);
-                    fluid_synth_cc(f_synth, c, MIDI_CONTROL_ALL_NOTES_OFF, 0);
+                    fluid_synth_cc(fSynth, c, MIDI_CONTROL_ALL_SOUND_OFF, 0);
+                    fluid_synth_cc(fSynth, c, MIDI_CONTROL_ALL_NOTES_OFF, 0);
 #endif
                 }
             }
-            else
+            else if (kData->ctrlChannel >= 0 && kData->ctrlChannel < MAX_MIDI_CHANNELS)
             {
+                for (k=0; k < MAX_MIDI_NOTE; ++k)
+                    fluid_synth_noteoff(fSynth, kData->ctrlChannel, k);
             }
 
             kData->needsReset = false;
@@ -1140,8 +1141,8 @@ public:
                         {
                             if (! allNotesOffSent)
                             {
-                                sendMidiAllNotesOffToCallback();
                                 allNotesOffSent = true;
+                                sendMidiAllNotesOffToCallback();
                             }
 
                             postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_ACTIVE, 0, 0.0f);
@@ -1163,8 +1164,8 @@ public:
                         {
                             if (! allNotesOffSent)
                             {
-                                sendMidiAllNotesOffToCallback();
                                 allNotesOffSent = true;
+                                sendMidiAllNotesOffToCallback();
                             }
 
                             if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
