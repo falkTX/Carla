@@ -1197,6 +1197,9 @@ class PluginEdit(QDialog):
         self.reloadParameters()
         self.reloadPrograms()
 
+        if self.fPluginInfo['type'] == PLUGIN_LV2:
+            self.ui.b_save_state.setEnabled(False)
+
         if not self.ui.scrollArea.isEnabled():
             self.resize(self.width(), self.height()-self.ui.scrollArea.height())
 
@@ -1486,6 +1489,9 @@ class PluginEdit(QDialog):
         if self.fPluginInfo['type'] != PLUGIN_VST:
             self.ui.tab_programs.setCurrentIndex(1)
 
+            if self.fPluginInfo['type'] == PLUGIN_LV2:
+                self.ui.b_load_state.setEnabled(programCount > 0)
+
     def updateInfo(self):
         # Update current program text
         if self.ui.cb_programs.count() > 0:
@@ -1628,6 +1634,9 @@ class PluginEdit(QDialog):
 
     @pyqtSlot()
     def slot_saveState(self):
+        if self.fPluginInfo['type'] == PLUGIN_LV2:
+            return
+
         if self.fCurrentStateFilename:
             askTry = QMessageBox.question(self, self.tr("Overwrite?"), self.tr("Overwrite previously created file?"), QMessageBox.Ok|QMessageBox.Cancel)
 
@@ -1648,6 +1657,20 @@ class PluginEdit(QDialog):
 
     @pyqtSlot()
     def slot_loadState(self):
+        if self.fPluginInfo['type'] == PLUGIN_LV2:
+            presetList = []
+
+            for i in range(Carla.host.get_program_count(self.fPluginId)):
+                presetList.append("%03i - %s" % (i+1, cString(Carla.host.get_program_name(self.fPluginId, i))))
+
+            ret = QInputDialog.getItem(self, self.tr("Open LV2 Preset"), self.tr("Select an LV2 Preset:"), presetList, 0, False)
+
+            if ret[1]:
+                index = int(ret[0].split(" - ", 1)[0])-1
+                Carla.host.set_program(self.fPluginId, index)
+
+            return
+
         fileFilter  = self.tr("Carla State File (*.carxs)")
         filenameTry = QFileDialog.getOpenFileName(self, self.tr("Open Plugin State File"), filter=fileFilter)
 
