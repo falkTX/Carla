@@ -192,8 +192,10 @@ public:
 
         unsigned int options = 0x0;
 
-        options |= PLUGIN_OPTION_FIXED_BUFFER;
         options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+
+        if (midiInCount() == 0)
+            options |= PLUGIN_OPTION_FIXED_BUFFER;
 
         if (fEffect->flags & effFlagsProgramChunks)
             options |= PLUGIN_OPTION_USE_CHUNKS;
@@ -2291,6 +2293,9 @@ public:
 
             fOptions |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
+            if (midiInCount() > 0)
+                fOptions |= PLUGIN_OPTION_FIXED_BUFFER;
+
             if (fEffect->flags & effFlagsProgramChunks)
                 fOptions |= PLUGIN_OPTION_USE_CHUNKS;
 
@@ -2308,6 +2313,10 @@ public:
             kData->idStr += "/";
             kData->idStr += CarlaString(uniqueId());
             fOptions = kData->loadSettings(fOptions, availableOptions());
+
+            // ignore settings, we need this anyway
+            if (midiInCount() > 0)
+                fOptions |= PLUGIN_OPTION_FIXED_BUFFER;
         }
 
         return true;

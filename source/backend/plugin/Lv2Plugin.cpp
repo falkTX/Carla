@@ -659,7 +659,7 @@ public:
 
         options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
-        if (! needsFixedBuffer())
+        if (midiInCount() == 0 || ! needsFixedBuffer())
             options |= PLUGIN_OPTION_FIXED_BUFFER;
 
         if (kData->engine->getProccessMode() != PROCESS_MODE_CONTINUOUS_RACK)
@@ -4169,7 +4169,7 @@ public:
 
             fOptions |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
-            if (needsFixedBuffer())
+            if (midiInCount() > 0 || needsFixedBuffer())
                 fOptions |= PLUGIN_OPTION_FIXED_BUFFER;
 
             if (kData->engine->getOptions().forceStereo)
@@ -4189,7 +4189,7 @@ public:
             fOptions = kData->loadSettings(fOptions, availableOptions());
 
             // ignore settings, we need this anyway
-            if (needsFixedBuffer())
+            if (midiInCount() > 0 || needsFixedBuffer())
                 fOptions |= PLUGIN_OPTION_FIXED_BUFFER;
         }
 

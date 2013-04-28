@@ -289,8 +289,10 @@ public:
 
         unsigned int options = 0x0;
 
-        options |= PLUGIN_OPTION_FIXED_BUFFER;
         options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+
+        if (midiInCount() == 0)
+            options |= PLUGIN_OPTION_FIXED_BUFFER;
 
         if (kData->engine->getProccessMode() != PROCESS_MODE_CONTINUOUS_RACK)
         {
@@ -2137,8 +2139,10 @@ public:
             // set default options
             fOptions = 0x0;
 
-            fOptions |= PLUGIN_OPTION_FIXED_BUFFER;
             fOptions |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+
+            if (midiInCount() > 0)
+                fOptions |= PLUGIN_OPTION_FIXED_BUFFER;
 
             if (kData->engine->getOptions().forceStereo)
                 fOptions |= PLUGIN_OPTION_FORCE_STEREO;
@@ -2155,6 +2159,10 @@ public:
             kData->idStr  = "Native/";
             kData->idStr += label;
             fOptions = kData->loadSettings(fOptions, availableOptions());
+
+            // ignore settings, we need this anyway
+            if (midiInCount() > 0)
+                fOptions |= PLUGIN_OPTION_FIXED_BUFFER;
         }
 
         return true;
