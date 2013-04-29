@@ -929,8 +929,20 @@ public:
     {
         CarlaPlugin::setName(newName);
 
+        QString guiTitle(QString("%1 (GUI)").arg((const char*)fName));
+
         if (kData->gui != nullptr)
-            kData->gui->setWindowTitle(QString("%1 (GUI)").arg((const char*)fName));
+            kData->gui->setWindowTitle(guiTitle);
+
+        if (fFeatures[kFeatureIdExternalUi] != nullptr && fFeatures[kFeatureIdExternalUi]->data != nullptr)
+        {
+            LV2_External_UI_Host* const uiHost((LV2_External_UI_Host*)fFeatures[kFeatureIdExternalUi]->data);
+
+            if (uiHost->plugin_human_id != nullptr)
+                delete[] uiHost->plugin_human_id;
+
+            uiHost->plugin_human_id = carla_strdup(guiTitle.toUtf8().constData());
+        }
     }
 
     // -------------------------------------------------------------------
