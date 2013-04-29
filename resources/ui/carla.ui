@@ -401,12 +401,11 @@
    <addaction name="act_file_save"/>
    <addaction name="act_file_save_as"/>
    <addaction name="separator"/>
-   <addaction name="act_engine_start"/>
-   <addaction name="act_engine_stop"/>
-   <addaction name="separator"/>
-   <addaction name="act_plugin_add"/>
+   <addaction name="act_plugin_add2"/>
    <addaction name="act_plugin_remove_all"/>
    <addaction name="act_plugins_panic"/>
+   <addaction name="separator"/>
+   <addaction name="act_settings_configure"/>
   </widget>
   <action name="act_file_save">
    <property name="icon">
@@ -722,6 +721,18 @@
    </property>
    <property name="toolTip">
     <string>Panic</string>
+   </property>
+  </action>
+  <action name="act_plugin_add2">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/list-add.png</normaloff>:/16x16/list-add.png</iconset>
+   </property>
+   <property name="text">
+    <string>Add New Plugin...</string>
+   </property>
+   <property name="toolTip">
+    <string>Add New Plugin</string>
    </property>
   </action>
  </widget>

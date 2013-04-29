@@ -3080,14 +3080,14 @@ public:
                 }
             }
 
-#if 0
+# if 0
             // Latency, save values for next callback, TODO
             if (kData->latency > 0 && kData->latency < frames)
             {
                 for (i=0; i < kData->audioIn.count; ++i)
                     carla_copyFloat(kData->latencyBuffers[i], inBuffer[i] + (frames - kData->latency), kData->latency);
             }
-#endif
+# endif
         } // End of Post-processing
 #else
         for (i=0; i < kData->audioOut.count; ++i)
