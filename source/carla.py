@@ -765,6 +765,14 @@ class CarlaMainW(QMainWindow):
         #self.connect(self.ui.act_plugin_refresh, SIGNAL("triggered()"), SLOT("slot_pluginRefresh()"))
         self.connect(self.ui.act_plugin_remove_all, SIGNAL("triggered()"), SLOT("slot_pluginRemoveAll()"))
 
+        self.connect(self.ui.act_plugins_enable, SIGNAL("triggered()"), SLOT("slot_pluginsEnable()"))
+        self.connect(self.ui.act_plugins_volume100, SIGNAL("triggered()"), SLOT("slot_pluginsVolume100()"))
+        self.connect(self.ui.act_plugins_wet100, SIGNAL("triggered()"), SLOT("slot_pluginsWet100()"))
+        self.connect(self.ui.act_plugins_center, SIGNAL("triggered()"), SLOT("slot_pluginsCenter()"))
+        self.connect(self.ui.act_plugins_disable, SIGNAL("triggered()"), SLOT("slot_pluginsDisable()"))
+        self.connect(self.ui.act_plugins_mute, SIGNAL("triggered()"), SLOT("slot_pluginsMute()"))
+        self.connect(self.ui.act_plugins_bypass, SIGNAL("triggered()"), SLOT("slot_pluginsBypass()"))
+
         self.connect(self.ui.act_transport_play, SIGNAL("triggered(bool)"), SLOT("slot_transportPlayPause(bool)"))
         self.connect(self.ui.act_transport_stop, SIGNAL("triggered()"), SLOT("slot_transportStop()"))
         self.connect(self.ui.act_transport_backwards, SIGNAL("triggered()"), SLOT("slot_transportBackwards()"))
@@ -844,6 +852,109 @@ class CarlaMainW(QMainWindow):
             Carla.host.nsm_announce(NSM_URL, appName, os.getpid())
         else:
             QTimer.singleShot(0, self, SLOT("slot_engineStart()"))
+
+    @pyqtSlot()
+    def slot_pluginsEnable(self):
+        if not self.fEngineStarted:
+            return
+
+        for i in range(self.fPluginCount):
+            pwidget = self.fPluginList[i]
+
+            if pwidget is None:
+                break
+
+            pwidget.setActive(True, True, True)
+
+    @pyqtSlot()
+    def slot_pluginsVolume100(self):
+        if not self.fEngineStarted:
+            return
+
+        for i in range(self.fPluginCount):
+            pwidget = self.fPluginList[i]
+
+            if pwidget is None:
+                break
+
+            if pwidget.fPluginInfo["hints"] & PLUGIN_CAN_VOLUME:
+                pwidget.ui.edit_dialog.setParameterValue(PARAMETER_VOLUME, 1.0)
+                Carla.host.set_volume(i, 1.0)
+
+    @pyqtSlot()
+    def slot_pluginsWet100(self):
+        if not self.fEngineStarted:
+            return
+
+        for i in range(self.fPluginCount):
+            pwidget = self.fPluginList[i]
+
+            if pwidget is None:
+                break
+
+            if pwidget.fPluginInfo["hints"] & PLUGIN_CAN_DRYWET:
+                pwidget.ui.edit_dialog.setParameterValue(PARAMETER_DRYWET, 1.0)
+                Carla.host.set_drywet(i, 1.0)
+
+    @pyqtSlot()
+    def slot_pluginsCenter(self):
+        if not self.fEngineStarted:
+            return
+
+        for i in range(self.fPluginCount):
+            pwidget = self.fPluginList[i]
+
+            if pwidget is None:
+                break
+
+            if pwidget.fPluginInfo["hints"] & PLUGIN_CAN_BALANCE:
+                pwidget.ui.edit_dialog.setParameterValue(PARAMETER_BALANCE_LEFT, -1.0)
+                pwidget.ui.edit_dialog.setParameterValue(PARAMETER_BALANCE_RIGHT, 1.0)
+                Carla.host.set_balance_left(i, -1.0)
+                Carla.host.set_balance_right(i, 1.0)
+
+    @pyqtSlot()
+    def slot_pluginsDisable(self):
+        if not self.fEngineStarted:
+            return
+
+        for i in range(self.fPluginCount):
+            pwidget = self.fPluginList[i]
+
+            if pwidget is None:
+                break
+
+            pwidget.setActive(False, True, True)
+
+    @pyqtSlot()
+    def slot_pluginsMute(self):
+        if not self.fEngineStarted:
+            return
+
+        for i in range(self.fPluginCount):
+            pwidget = self.fPluginList[i]
+
+            if pwidget is None:
+                break
+
+            if pwidget.fPluginInfo["hints"] & PLUGIN_CAN_VOLUME:
+                pwidget.ui.edit_dialog.setParameterValue(PARAMETER_VOLUME, 0.0)
+                Carla.host.set_volume(i, 0.0)
+
+    @pyqtSlot()
+    def slot_pluginsBypass(self):
+        if not self.fEngineStarted:
+            return
+
+        for i in range(self.fPluginCount):
+            pwidget = self.fPluginList[i]
+
+            if pwidget is None:
+                break
+
+            if pwidget.fPluginInfo["hints"] & PLUGIN_CAN_DRYWET:
+                pwidget.ui.edit_dialog.setParameterValue(PARAMETER_DRYWET, 0.0)
+                Carla.host.set_drywet(i, 0.0)
 
     @pyqtSlot(int)
     def slot_diskFolderChanged(self, index):

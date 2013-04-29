@@ -2165,6 +2165,8 @@ void CarlaStyle::drawControl(ControlElement element, const QStyleOption *option,
                 x2 = y2;
                 y2 = temp;
             }
+#else
+            Q_UNUSED(flip);
 #endif
 
             painter->setRenderHint(QPainter::Antialiasing, true);

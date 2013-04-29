@@ -297,9 +297,23 @@
     <property name="title">
      <string>&amp;Plugin</string>
     </property>
+    <widget class="QMenu" name="menu_PluginMacros">
+     <property name="title">
+      <string>Macros (all plugins)</string>
+     </property>
+     <addaction name="act_plugins_enable"/>
+     <addaction name="act_plugins_volume100"/>
+     <addaction name="act_plugins_wet100"/>
+     <addaction name="act_plugins_center"/>
+     <addaction name="separator"/>
+     <addaction name="act_plugins_disable"/>
+     <addaction name="act_plugins_mute"/>
+     <addaction name="act_plugins_bypass"/>
+    </widget>
     <addaction name="act_plugin_add"/>
-    <addaction name="separator"/>
     <addaction name="act_plugin_remove_all"/>
+    <addaction name="separator"/>
+    <addaction name="menu_PluginMacros"/>
    </widget>
    <widget class="QMenu" name="menu_Help">
     <property name="title">
@@ -672,6 +686,41 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+Shift+F</string>
+   </property>
+  </action>
+  <action name="act_plugins_enable">
+   <property name="text">
+    <string>Enable</string>
+   </property>
+  </action>
+  <action name="act_plugins_disable">
+   <property name="text">
+    <string>Disable</string>
+   </property>
+  </action>
+  <action name="act_plugins_bypass">
+   <property name="text">
+    <string>Bypass</string>
+   </property>
+  </action>
+  <action name="act_plugins_wet100">
+   <property name="text">
+    <string>100% Wet</string>
+   </property>
+  </action>
+  <action name="act_plugins_mute">
+   <property name="text">
+    <string>Mute</string>
+   </property>
+  </action>
+  <action name="act_plugins_volume100">
+   <property name="text">
+    <string>100% Volume</string>
+   </property>
+  </action>
+  <action name="act_plugins_center">
+   <property name="text">
+    <string>Center Balance</string>
    </property>
   </action>
  </widget>

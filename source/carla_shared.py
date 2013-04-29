@@ -2070,7 +2070,7 @@ class PluginWidget(QFrame):
         self.ui.b_edit.setChecked(False)
 
     def recheckPluginHints(self, hints):
-        self.fPluginInfo['hints'] = hints
+        self.fPluginInfo["hints"] = hints
         self.ui.b_gui.setEnabled(hints & PLUGIN_HAS_GUI)
 
     def setActive(self, active, sendGui=False, sendCallback=True):
