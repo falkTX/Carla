@@ -501,6 +501,8 @@ public:
 
         fHost.ui_name = carla_strdup(uiName);
 
+        // TODO - send callback to plugin, reporting name change
+
         CarlaPlugin::setName(newName);
     }
 

@@ -925,7 +925,13 @@ public:
     // -------------------------------------------------------------------
     // Set data (internal stuff)
 
-    // nothing
+    void setName(const char* const newName) override
+    {
+        CarlaPlugin::setName(newName);
+
+        if (kData->gui != nullptr)
+            kData->gui->setWindowTitle(QString("%1 (GUI)").arg((const char*)fName));
+    }
 
     // -------------------------------------------------------------------
     // Set data (plugin-specific stuff)
