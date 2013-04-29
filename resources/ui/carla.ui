@@ -302,13 +302,15 @@
       <string>Macros (all plugins)</string>
      </property>
      <addaction name="act_plugins_enable"/>
-     <addaction name="act_plugins_volume100"/>
-     <addaction name="act_plugins_wet100"/>
-     <addaction name="act_plugins_center"/>
-     <addaction name="separator"/>
      <addaction name="act_plugins_disable"/>
+     <addaction name="separator"/>
+     <addaction name="act_plugins_volume100"/>
      <addaction name="act_plugins_mute"/>
+     <addaction name="separator"/>
+     <addaction name="act_plugins_wet100"/>
      <addaction name="act_plugins_bypass"/>
+     <addaction name="separator"/>
+     <addaction name="act_plugins_center"/>
     </widget>
     <addaction name="act_plugin_add"/>
     <addaction name="act_plugin_remove_all"/>
@@ -700,7 +702,7 @@
   </action>
   <action name="act_plugins_bypass">
    <property name="text">
-    <string>Bypass</string>
+    <string>0% Wet (Bypass)</string>
    </property>
   </action>
   <action name="act_plugins_wet100">
@@ -710,7 +712,7 @@
   </action>
   <action name="act_plugins_mute">
    <property name="text">
-    <string>Mute</string>
+    <string>0% Volume (Mute)</string>
    </property>
   </action>
   <action name="act_plugins_volume100">

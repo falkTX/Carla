@@ -1832,7 +1832,7 @@ void CarlaStyle::drawControl(ControlElement element, const QStyleOption *option,
                                           QPalette::Text);
                     w = menuItem->fontMetrics.width(menuItem->text) + 5;
                 }
-                painter->setPen(shadow.lighter(106));
+                painter->setPen(highlight);
                 bool reverse = menuItem->direction == Qt::RightToLeft;
                 painter->drawLine(menuItem->rect.left() + 5 + (reverse ? 0 : w), menuItem->rect.center().y(),
                                   menuItem->rect.right() - 5 - (reverse ? w : 0), menuItem->rect.center().y());
