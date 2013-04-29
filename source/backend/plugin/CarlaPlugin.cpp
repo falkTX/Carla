@@ -1036,6 +1036,12 @@ void CarlaPlugin::setOption(const unsigned int option, const bool yesNo)
 void CarlaPlugin::setEnabled(const bool yesNo)
 {
     fEnabled = yesNo;
+
+    if (! yesNo)
+    {
+        kData->masterMutex.lock();
+        kData->masterMutex.unlock();
+    }
 }
 
 // -------------------------------------------------------------------

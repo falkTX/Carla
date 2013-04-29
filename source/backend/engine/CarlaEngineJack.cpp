@@ -764,20 +764,41 @@ public:
 
         CARLA_ASSERT(plugin->id() == id);
 
+        bool needsReinit = (fOptions.processMode == PROCESS_MODE_SINGLE_CLIENT);
         const char* name = getUniquePluginName(newName);
 
         // JACK client rename
         if (fOptions.processMode == PROCESS_MODE_MULTIPLE_CLIENTS)
         {
+            CarlaEngineJackClient* const client((CarlaEngineJackClient*)CarlaPluginGetEngineClient(plugin));
+
             if (bridge.client_rename_ptr != nullptr)
             {
-                jack_client_t* const client = ((CarlaEngineJackClient*)CarlaPluginGetEngineClient(plugin))->kClient;
-                name = bridge.client_rename_ptr(client, name);
+                name = bridge.client_rename_ptr(client->kClient, name);
             }
             else
             {
-                setLastError("Your current JACK version does not allow renaming of clients");
-                return nullptr;
+                // we should not be able to do this, jack really needs to allow client rename
+                needsReinit = true;
+
+                plugin->setEnabled(false);
+
+                if (client->isActive())
+                    client->deactivate();
+
+                plugin->clearBuffers();
+
+                jackbridge_client_close(client->kClient);
+
+                jack_client_t* jclient = jackbridge_client_open(name, JackNullOption, nullptr);
+                name = jackbridge_get_client_name(jclient);
+
+                jackbridge_set_process_callback(jclient, carla_jack_process_callback_plugin, plugin);
+# if 0
+                jackbridge_set_latency_callback(jclient, carla_jack_latency_callback_plugin, plugin);
+# endif
+
+                std::memcpy((jack_client_t**)&client->kClient, &jclient, sizeof(jack_client_t**));
             }
         }
 
@@ -787,7 +808,7 @@ public:
         // Rename
         plugin->setName(name);
 
-        if (fOptions.processMode == PROCESS_MODE_SINGLE_CLIENT)
+        if (needsReinit)
         {
             // reload plugin to recreate its ports
             const SaveState& saveState(plugin->getSaveState());
