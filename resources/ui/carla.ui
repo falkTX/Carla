@@ -406,6 +406,7 @@
    <addaction name="separator"/>
    <addaction name="act_plugin_add"/>
    <addaction name="act_plugin_remove_all"/>
+   <addaction name="act_plugins_panic"/>
   </widget>
   <action name="act_file_save">
    <property name="icon">
@@ -709,6 +710,18 @@
   <action name="act_plugins_center">
    <property name="text">
     <string>Center Balance</string>
+   </property>
+  </action>
+  <action name="act_plugins_panic">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/dialog-warning.png</normaloff>:/16x16/dialog-warning.png</iconset>
+   </property>
+   <property name="text">
+    <string>Panic</string>
+   </property>
+   <property name="toolTip">
+    <string>Panic</string>
    </property>
   </action>
  </widget>

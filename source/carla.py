@@ -773,12 +773,13 @@ class CarlaMainW(QMainWindow):
         self.connect(self.ui.act_plugin_remove_all, SIGNAL("triggered()"), SLOT("slot_pluginRemoveAll()"))
 
         self.connect(self.ui.act_plugins_enable, SIGNAL("triggered()"), SLOT("slot_pluginsEnable()"))
-        self.connect(self.ui.act_plugins_volume100, SIGNAL("triggered()"), SLOT("slot_pluginsVolume100()"))
-        self.connect(self.ui.act_plugins_wet100, SIGNAL("triggered()"), SLOT("slot_pluginsWet100()"))
-        self.connect(self.ui.act_plugins_center, SIGNAL("triggered()"), SLOT("slot_pluginsCenter()"))
         self.connect(self.ui.act_plugins_disable, SIGNAL("triggered()"), SLOT("slot_pluginsDisable()"))
+        self.connect(self.ui.act_plugins_panic, SIGNAL("triggered()"), SLOT("slot_pluginsDisable()"))
+        self.connect(self.ui.act_plugins_volume100, SIGNAL("triggered()"), SLOT("slot_pluginsVolume100()"))
         self.connect(self.ui.act_plugins_mute, SIGNAL("triggered()"), SLOT("slot_pluginsMute()"))
+        self.connect(self.ui.act_plugins_wet100, SIGNAL("triggered()"), SLOT("slot_pluginsWet100()"))
         self.connect(self.ui.act_plugins_bypass, SIGNAL("triggered()"), SLOT("slot_pluginsBypass()"))
+        self.connect(self.ui.act_plugins_center, SIGNAL("triggered()"), SLOT("slot_pluginsCenter()"))
 
         self.connect(self.ui.act_transport_play, SIGNAL("triggered(bool)"), SLOT("slot_transportPlayPause(bool)"))
         self.connect(self.ui.act_transport_stop, SIGNAL("triggered()"), SLOT("slot_transportStop()"))
