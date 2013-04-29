@@ -978,9 +978,9 @@ public:
             uint32_t time, nEvents = kData->event.portIn->getEventCount();
             uint32_t timeOffset = 0;
 
-            uint32_t nextBankIds[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 128, 0, 0, 0, 0, 0, 0 };
+            uint32_t nextBankIds[MAX_MIDI_CHANNELS] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 128, 0, 0, 0, 0, 0, 0 };
 
-            if (kData->midiprog.current >= 0 && kData->midiprog.count > 0 && kData->ctrlChannel >= 0 && kData->ctrlChannel < 16)
+            if (kData->midiprog.current >= 0 && kData->midiprog.count > 0 && kData->ctrlChannel >= 0 && kData->ctrlChannel < MAX_MIDI_CHANNELS)
                 nextBankIds[kData->ctrlChannel] = kData->midiprog.data[kData->midiprog.current].bank;
 
             for (i=0; i < nEvents; ++i)
@@ -1108,27 +1108,24 @@ public:
                     }
 
                     case kEngineControlEventTypeMidiBank:
-                        if (event.channel < 16 && (fOptions & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
+                        if (event.channel < MAX_MIDI_CHANNELS && (fOptions & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
                             nextBankIds[event.channel] = ctrlEvent.param;
                         break;
 
                     case kEngineControlEventTypeMidiProgram:
-                        if (event.channel < 16 && (fOptions & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
+                        if (event.channel < MAX_MIDI_CHANNELS && (fOptions & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
                         {
-                            const uint32_t bankId = nextBankIds[event.channel];
-                            const uint32_t progId = ctrlEvent.param;
+                            const uint32_t bankId(nextBankIds[event.channel]);
+                            const uint32_t progId(ctrlEvent.param);
 
                             for (k=0; k < kData->midiprog.count; ++k)
                             {
                                 if (kData->midiprog.data[k].bank == bankId && kData->midiprog.data[k].program == progId)
                                 {
+                                    fluid_synth_program_select(fSynth, event.channel, fSynthId, bankId, progId);
+
                                     if (event.channel == kData->ctrlChannel)
-                                    {
-                                        setMidiProgram(k, false, false, false);
                                         postponeRtEvent(kPluginPostRtEventMidiProgramChange, k, 0, 0.0f);
-                                    }
-                                    else
-                                        fluid_synth_program_select(fSynth, event.channel, fSynthId, bankId, progId);
 
                                     break;
                                 }
@@ -1137,45 +1134,30 @@ public:
                         break;
 
                     case kEngineControlEventTypeAllSoundOff:
-                        if (event.channel == kData->ctrlChannel)
+                        if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                         {
-                            if (! allNotesOffSent)
-                            {
-                                allNotesOffSent = true;
-                                sendMidiAllNotesOffToCallback();
-                            }
-
-                            postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_ACTIVE, 0, 0.0f);
-                            postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_ACTIVE, 0, 1.0f);
-
-                            if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
-                            {
 #ifdef FLUIDSYNTH_VERSION_NEW_API
-                                fluid_synth_all_sounds_off(fSynth, event.channel);
+                            fluid_synth_all_sounds_off(fSynth, event.channel);
 #else
-                                fluid_synth_cc(f_synth, event.channel, MIDI_CONTROL_ALL_SOUND_OFF, 0);
+                            fluid_synth_cc(fSynth, event.channel, MIDI_CONTROL_ALL_SOUND_OFF, 0);
 #endif
-                            }
                         }
                         break;
 
                     case kEngineControlEventTypeAllNotesOff:
-                        if (event.channel == kData->ctrlChannel)
+                        if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                         {
-                            if (! allNotesOffSent)
+                            if (event.channel == kData->ctrlChannel && ! allNotesOffSent)
                             {
                                 allNotesOffSent = true;
                                 sendMidiAllNotesOffToCallback();
                             }
 
-                            if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
-                            {
 #ifdef FLUIDSYNTH_VERSION_NEW_API
-                                fluid_synth_all_notes_off(fSynth, event.channel);
+                            fluid_synth_all_notes_off(fSynth, event.channel);
 #else
-                                fluid_synth_cc(f_synth, event.channel, MIDI_CONTROL_ALL_NOTES_OFF, 0);
+                            fluid_synth_cc(fSynth, event.channel, MIDI_CONTROL_ALL_NOTES_OFF, 0);
 #endif
-                            }
                         }
                         break;
                     }

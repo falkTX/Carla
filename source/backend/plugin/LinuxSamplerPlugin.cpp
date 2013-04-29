@@ -573,8 +573,8 @@ public:
             uint32_t time, nEvents = kData->event.portIn->getEventCount();
             uint32_t startTime  = 0;
             uint32_t timeOffset = 0;
-
             uint32_t nextBankId = 0;
+
             if (kData->midiprog.current >= 0 && kData->midiprog.count > 0)
                 nextBankId = kData->midiprog.data[kData->midiprog.current].bank;
 
@@ -730,34 +730,23 @@ public:
                         break;
 
                     case kEngineControlEventTypeAllSoundOff:
-                        if (event.channel == kData->ctrlChannel)
-                        {
-                            if (! allNotesOffSent)
-                            {
-                                allNotesOffSent = true;
-                                sendMidiAllNotesOffToCallback();
-                            }
-
-                            postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_ACTIVE, 0, 0.0f);
-                            postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_ACTIVE, 0, 1.0f);
-                        }
-
                         if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
-                            fMidiInputPort->DispatchControlChange(MIDI_CONTROL_ALL_SOUND_OFF, 0, k, sampleAccurate ? startTime : time);
+                        {
+                            fMidiInputPort->DispatchControlChange(MIDI_CONTROL_ALL_SOUND_OFF, 0, event.channel, sampleAccurate ? startTime : time);
+                        }
                         break;
 
                     case kEngineControlEventTypeAllNotesOff:
-                        if (event.channel == kData->ctrlChannel)
+                        if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                         {
-                            if (! allNotesOffSent)
+                            if (event.channel == kData->ctrlChannel && ! allNotesOffSent)
                             {
                                 allNotesOffSent = true;
                                 sendMidiAllNotesOffToCallback();
                             }
-                        }
 
-                        if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
-                            fMidiInputPort->DispatchControlChange(MIDI_CONTROL_ALL_NOTES_OFF, 0, k, sampleAccurate ? startTime : time);
+                            fMidiInputPort->DispatchControlChange(MIDI_CONTROL_ALL_NOTES_OFF, 0, event.channel, sampleAccurate ? startTime : time);
+                        }
                         break;
                     }
 

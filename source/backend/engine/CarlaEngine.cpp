@@ -1783,6 +1783,9 @@ void setValueIfHigher(float& value, const float& compare)
 
 void CarlaEngine::processRack(float* inBuf[2], float* outBuf[2], const uint32_t frames)
 {
+    CARLA_ASSERT(kData->rack.in != nullptr);
+    CARLA_ASSERT(kData->rack.out != nullptr);
+
     // initialize outputs (zero)
     carla_zeroFloat(outBuf[0], frames);
     carla_zeroFloat(outBuf[1], frames);

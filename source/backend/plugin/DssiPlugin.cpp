@@ -1067,8 +1067,8 @@ public:
             uint32_t time, nEvents = kData->event.portIn->getEventCount();
             uint32_t startTime  = 0;
             uint32_t timeOffset = 0;
-
             uint32_t nextBankId = 0;
+
             if (kData->midiprog.current >= 0 && kData->midiprog.count > 0)
                 nextBankId = kData->midiprog.data[kData->midiprog.current].bank;
 
@@ -1167,6 +1167,7 @@ public:
                                 continue;
                             }
                         }
+#endif
 
                         // Control plugin parameters
                         for (k=0; k < kData->param.count; ++k)
@@ -1197,7 +1198,6 @@ public:
                             setParameterValue(k, value, false, false, false);
                             postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 0, value);
                         }
-#endif
                         break;
                     }
 
@@ -1224,23 +1224,11 @@ public:
                         break;
 
                     case kEngineControlEventTypeAllSoundOff:
-                        if (event.channel == kData->ctrlChannel)
-                        {
-                            if (! allNotesOffSent)
-                            {
-                                allNotesOffSent = true;
-                                sendMidiAllNotesOffToCallback();
-                            }
-
-                            postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_ACTIVE, 0, 0.0f);
-                            postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_ACTIVE, 0, 1.0f);
-                        }
-
-                        if (midiEventCount >= MAX_MIDI_EVENTS)
-                            continue;
-
                         if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                         {
+                            if (midiEventCount >= MAX_MIDI_EVENTS)
+                                continue;
+
                             carla_zeroStruct<snd_seq_event_t>(fMidiEvents[midiEventCount]);
 
                             fMidiEvents[midiEventCount].time.tick = sampleAccurate ? startTime : time;
@@ -1254,20 +1242,17 @@ public:
                         break;
 
                     case kEngineControlEventTypeAllNotesOff:
-                        if (event.channel == kData->ctrlChannel)
+                        if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                         {
-                            if (! allNotesOffSent)
+                            if (event.channel == kData->ctrlChannel && ! allNotesOffSent)
                             {
                                 allNotesOffSent = true;
                                 sendMidiAllNotesOffToCallback();
                             }
-                        }
 
-                        if (midiEventCount >= MAX_MIDI_EVENTS)
-                            continue;
+                            if (midiEventCount >= MAX_MIDI_EVENTS)
+                                continue;
 
-                        if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
-                        {
                             carla_zeroStruct<snd_seq_event_t>(fMidiEvents[midiEventCount]);
 
                             fMidiEvents[midiEventCount].time.tick = sampleAccurate ? startTime : time;

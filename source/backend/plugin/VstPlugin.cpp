@@ -1299,23 +1299,11 @@ public:
                         break;
 
                     case kEngineControlEventTypeAllSoundOff:
-                        if (event.channel == kData->ctrlChannel)
-                        {
-                            if (! allNotesOffSent)
-                            {
-                                allNotesOffSent = true;
-                                sendMidiAllNotesOffToCallback();
-                            }
-
-                            postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_ACTIVE, 0, 0.0f);
-                            postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_ACTIVE, 0, 1.0f);
-                        }
-
-                        if (fMidiEventCount >= MAX_MIDI_EVENTS*2)
-                            continue;
-
                         if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                         {
+                            if (fMidiEventCount >= MAX_MIDI_EVENTS*2)
+                                continue;
+
                             carla_zeroStruct<VstMidiEvent>(fMidiEvents[fMidiEventCount]);
 
                             fMidiEvents[fMidiEventCount].type = kVstMidiType;
@@ -1329,20 +1317,17 @@ public:
                         break;
 
                     case kEngineControlEventTypeAllNotesOff:
-                        if (event.channel == kData->ctrlChannel)
+                        if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                         {
-                            if (! allNotesOffSent)
+                            if (event.channel == kData->ctrlChannel && ! allNotesOffSent)
                             {
                                 allNotesOffSent = true;
                                 sendMidiAllNotesOffToCallback();
                             }
-                        }
 
-                        if (fMidiEventCount >= MAX_MIDI_EVENTS*2)
-                            continue;
+                            if (fMidiEventCount >= MAX_MIDI_EVENTS*2)
+                                continue;
 
-                        if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
-                        {
                             carla_zeroStruct<VstMidiEvent>(fMidiEvents[fMidiEventCount]);
 
                             fMidiEvents[fMidiEventCount].type = kVstMidiType;

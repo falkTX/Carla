@@ -2154,6 +2154,7 @@ void CarlaStyle::drawControl(ControlElement element, const QStyleOption *option,
                 return;
             }
 
+#if 0 // code does nothing?
             if (flip) {
                 QRect tmp = rect;
                 rect = QRect(tmp.y(), tmp.x(), tmp.height(), tmp.width());
@@ -2164,6 +2165,7 @@ void CarlaStyle::drawControl(ControlElement element, const QStyleOption *option,
                 x2 = y2;
                 y2 = temp;
             }
+#endif
 
             painter->setRenderHint(QPainter::Antialiasing, true);
             painter->translate(0.5, 0.5);

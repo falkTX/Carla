@@ -2605,8 +2605,8 @@ public:
             uint32_t time, nEvents = fEventsIn.ctrl->port->getEventCount();
             uint32_t startTime  = 0;
             uint32_t timeOffset = 0;
-
             uint32_t nextBankId = 0;
+
             if (kData->midiprog.current >= 0 && kData->midiprog.count > 0)
                 nextBankId = kData->midiprog.data[kData->midiprog.current].bank;
 
@@ -2782,37 +2782,46 @@ public:
                         break;
 
                     case kEngineControlEventTypeAllSoundOff:
-                        if (event.channel == kData->ctrlChannel)
-                        {
-                            if (! allNotesOffSent)
-                            {
-                                allNotesOffSent = true;
-                                sendMidiAllNotesOffToCallback();
-                            }
-
-                            postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_ACTIVE, 0, 0.0f);
-                            postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_ACTIVE, 0, 1.0f);
-                        }
-
                         if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                         {
-                            // TODO
+                            uint8_t midiData[3];
+                            midiData[0] = MIDI_STATUS_CONTROL_CHANGE + i;
+                            midiData[1] = MIDI_CONTROL_ALL_SOUND_OFF;
+                            midiData[2] = 0;
+
+                            if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_ATOM)
+                                lv2_atom_buffer_write(&evInAtomIters[fEventsIn.ctrlIndex], 0, 0, CARLA_URI_MAP_ID_MIDI_EVENT, 3, midiData);
+
+                            else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_EVENT)
+                                lv2_event_write(&evInEventIters[fEventsIn.ctrlIndex], 0, 0, CARLA_URI_MAP_ID_MIDI_EVENT, 3, midiData);
+
+                            else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_MIDI_LL)
+                                lv2midi_put_event(&evInMidiStates[fEventsIn.ctrlIndex], 0, 3, midiData);
                         }
                         break;
 
                     case kEngineControlEventTypeAllNotesOff:
-                        if (event.channel == kData->ctrlChannel)
+                        if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                         {
-                            if (! allNotesOffSent)
+                            if (event.channel == kData->ctrlChannel && ! allNotesOffSent)
                             {
                                 allNotesOffSent = true;
                                 sendMidiAllNotesOffToCallback();
                             }
-                        }
 
-                        if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
-                        {
-                            // TODO
+                            uint8_t midiData[3];
+                            midiData[0] = MIDI_STATUS_CONTROL_CHANGE + i;
+                            midiData[1] = MIDI_CONTROL_ALL_NOTES_OFF;
+                            midiData[2] = 0;
+
+                            if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_ATOM)
+                                lv2_atom_buffer_write(&evInAtomIters[fEventsIn.ctrlIndex], 0, 0, CARLA_URI_MAP_ID_MIDI_EVENT, 3, midiData);
+
+                            else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_EVENT)
+                                lv2_event_write(&evInEventIters[fEventsIn.ctrlIndex], 0, 0, CARLA_URI_MAP_ID_MIDI_EVENT, 3, midiData);
+
+                            else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_MIDI_LL)
+                                lv2midi_put_event(&evInMidiStates[fEventsIn.ctrlIndex], 0, 3, midiData);
                         }
                         break;
                     }

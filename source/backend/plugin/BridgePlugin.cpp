@@ -1514,14 +1514,8 @@ private:
             carla_shm_close(fShmControl.shm);
     }
 
-    void resizeAudioPool(uint32_t bufferSize = 0, double sampleRate = 0.0)
+    void resizeAudioPool(uint32_t bufferSize)
     {
-        if (bufferSize == 0)
-            bufferSize = kData->engine->getBufferSize();
-
-        if (sampleRate == 0.0)
-            sampleRate = kData->engine->getSampleRate();
-
         if (fShmAudioPool.data != nullptr)
             carla_shm_unmap(fShmAudioPool.shm, fShmAudioPool.data, fShmAudioPool.size);
 

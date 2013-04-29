@@ -1010,18 +1010,7 @@ public:
 
                     case kEngineControlEventTypeMidiBank:
                     case kEngineControlEventTypeMidiProgram:
-                        break;
-
                     case kEngineControlEventTypeAllSoundOff:
-#ifndef BUILD_BRIDGE
-                        if (event.channel == kData->ctrlChannel)
-                        {
-                            postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_ACTIVE, 0, 0.0f);
-                            postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_ACTIVE, 0, 1.0f);
-                        }
-#endif
-                        break;
-
                     case kEngineControlEventTypeAllNotesOff:
                         break;
                     }
