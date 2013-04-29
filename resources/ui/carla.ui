@@ -539,20 +539,6 @@
     <string>F6</string>
    </property>
   </action>
-  <action name="act_settings_show_transport">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
-   <property name="text">
-    <string>Show Transport bar</string>
-   </property>
-   <property name="iconText">
-    <string>Show Transport bar</string>
-   </property>
-  </action>
   <action name="act_canvas_arrange">
    <property name="icon">
     <iconset resource="../resources.qrc">

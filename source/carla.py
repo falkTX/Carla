@@ -466,52 +466,59 @@ class CarlaSettingsW(QDialog):
 
         elif self.ui.lw_page.currentRow() == TAB_INDEX_CARLA_PATHS:
             if self.ui.tw_paths.currentIndex() == 0:
-                Carla.LADSPA_PATH.sort()
+                paths = DEFAULT_LADSPA_PATH.split(splitter)
+                paths.sort()
                 self.ui.lw_ladspa.clear()
 
-                for ladspa in Carla.LADSPA_PATH:
+                for ladspa in Carla.paths:
                     self.ui.lw_ladspa.addItem(ladspa)
 
             elif self.ui.tw_paths.currentIndex() == 1:
-                Carla.DSSI_PATH.sort()
+                paths = DEFAULT_DSSI_PATH.split(splitter)
+                paths.sort()
                 self.ui.lw_dssi.clear()
 
-                for dssi in Carla.DSSI_PATH:
+                for dssi in paths:
                     self.ui.lw_dssi.addItem(dssi)
 
             elif self.ui.tw_paths.currentIndex() == 2:
-                Carla.LV2_PATH.sort()
+                paths = DEFAULT_LV2_PATH.split(splitter)
+                paths.sort()
                 self.ui.lw_lv2.clear()
 
-                for lv2 in Carla.LV2_PATH:
+                for lv2 in paths:
                     self.ui.lw_lv2.addItem(lv2)
 
             elif self.ui.tw_paths.currentIndex() == 3:
-                Carla.VST_PATH.sort()
+                paths = DEFAULT_VST_PATH.split(splitter)
+                paths.sort()
                 self.ui.lw_vst.clear()
 
-                for vst in Carla.VST_PATH:
+                for vst in paths:
                     self.ui.lw_vst.addItem(vst)
 
             elif self.ui.tw_paths.currentIndex() == 4:
-                Carla.GIG_PATH.sort()
+                paths = DEFAULT_GIG_PATH.split(splitter)
+                paths.sort()
                 self.ui.lw_gig.clear()
 
-                for gig in Carla.GIG_PATH:
+                for gig in paths:
                     self.ui.lw_gig.addItem(gig)
 
             elif self.ui.tw_paths.currentIndex() == 5:
-                Carla.SF2_PATH.sort()
+                paths = DEFAULT_SF2_PATH.split(splitter)
+                paths.sort()
                 self.ui.lw_sf2.clear()
 
-                for sf2 in Carla.SF2_PATH:
+                for sf2 in paths:
                     self.ui.lw_sf2.addItem(sf2)
 
             elif self.ui.tw_paths.currentIndex() == 6:
-                Carla.SFZ_PATH.sort()
+                paths = DEFAULT_SFZ_PATH.split(splitter)
+                paths.sort()
                 self.ui.lw_sfz.clear()
 
-                for sfz in Carla.SFZ_PATH:
+                for sfz in paths:
                     self.ui.lw_sfz.addItem(sfz)
 
     @pyqtSlot()
