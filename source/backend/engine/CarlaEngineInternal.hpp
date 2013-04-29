@@ -115,9 +115,10 @@ const unsigned short PATCHBAY_EVENT_COUNT = 512;
 const unsigned short RACK_EVENT_COUNT     = 512;
 
 enum EnginePostAction {
-    EnginePostActionNull,
-    EnginePostActionRemovePlugin,
-    EnginePostActionSwitchPlugins
+    kEnginePostActionNull,
+    kEnginePostActionIdle,
+    kEnginePostActionRemovePlugin,
+    kEnginePostActionSwitchPlugins
 };
 
 struct EnginePluginData {
@@ -156,13 +157,13 @@ struct CarlaEngineProtectedData {
         CarlaMutex       mutex;
 
         NextAction()
-            : opcode(EnginePostActionNull),
+            : opcode(kEnginePostActionNull),
               pluginId(0),
               value(0) {}
 
         ~NextAction()
         {
-            CARLA_ASSERT(opcode == EnginePostActionNull);
+            CARLA_ASSERT(opcode == kEnginePostActionNull);
         }
 
         void ready()

@@ -366,6 +366,16 @@ CarlaEngine::~CarlaEngine()
 // -----------------------------------------------------------------------
 // Helpers
 
+void doPluginIdle(CarlaEngineProtectedData* const kData, const bool unlock)
+{
+    CARLA_ASSERT(kData->curPluginCount > 0);
+
+    kData->nextAction.opcode = kEnginePostActionNull;
+
+    if (unlock)
+        kData->nextAction.mutex.unlock();
+}
+
 void doPluginRemove(CarlaEngineProtectedData* const kData, const bool unlock)
 {
     CARLA_ASSERT(kData->curPluginCount > 0);
@@ -383,7 +393,7 @@ void doPluginRemove(CarlaEngineProtectedData* const kData, const bool unlock)
     {
         plugin = kData->plugins[i+1].plugin;
 
-        CARLA_ASSERT(plugin);
+        CARLA_ASSERT(plugin != nullptr);
 
         if (plugin == nullptr)
             break;
@@ -397,7 +407,7 @@ void doPluginRemove(CarlaEngineProtectedData* const kData, const bool unlock)
         kData->plugins[i].outsPeak[1] = 0.0f;
     }
 
-    kData->nextAction.opcode = EnginePostActionNull;
+    kData->nextAction.opcode = kEnginePostActionNull;
 
     if (unlock)
         kData->nextAction.mutex.unlock();
@@ -414,7 +424,7 @@ void doPluginsSwitch(CarlaEngineProtectedData* const kData, const bool unlock)
     kData->plugins[idA].plugin = kData->plugins[idB].plugin;
     kData->plugins[idB].plugin = tmp;
 
-    kData->nextAction.opcode = EnginePostActionNull;
+    kData->nextAction.opcode = kEnginePostActionNull;
 
     if (unlock)
         kData->nextAction.mutex.unlock();
@@ -840,7 +850,7 @@ bool CarlaEngine::removePlugin(const unsigned int id)
     kData->thread.stopNow();
 
     kData->nextAction.pluginId = id;
-    kData->nextAction.opcode   = EnginePostActionRemovePlugin;
+    kData->nextAction.opcode   = kEnginePostActionRemovePlugin;
 
     kData->nextAction.mutex.lock();
 
@@ -1023,7 +1033,7 @@ bool CarlaEngine::switchPlugins(const unsigned int idA, const unsigned int idB)
 
     kData->nextAction.pluginId = idA;
     kData->nextAction.value    = idB;
-    kData->nextAction.opcode   = EnginePostActionSwitchPlugins;
+    kData->nextAction.opcode   = kEnginePostActionSwitchPlugins;
 
     kData->nextAction.mutex.lock();
 
@@ -1723,12 +1733,15 @@ void CarlaEngine::proccessPendingEvents()
 
     switch (kData->nextAction.opcode)
     {
-    case EnginePostActionNull:
+    case kEnginePostActionNull:
         break;
-    case EnginePostActionRemovePlugin:
+    case kEnginePostActionIdle:
+        doPluginIdle(kData, true);
+        break;
+    case kEnginePostActionRemovePlugin:
         doPluginRemove(kData, true);
         break;
-    case EnginePostActionSwitchPlugins:
+    case kEnginePostActionSwitchPlugins:
         doPluginsSwitch(kData, true);
         break;
     }

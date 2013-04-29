@@ -2303,11 +2303,12 @@ public:
 
         if (kData->needsReset)
         {
-            k = fEventsIn.ctrlIndex;
             uint8_t midiData[3] = { 0 };
 
-            if (fEventsIn.ctrl->type & CARLA_EVENT_TYPE_MIDI)
+            if (fEventsIn.ctrl != nullptr && (fEventsIn.ctrl->type & CARLA_EVENT_TYPE_MIDI) != 0)
             {
+                k = fEventsIn.ctrlIndex;
+
                 if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                 {
                     for (i=0; i < MAX_MIDI_CHANNELS; ++i)
