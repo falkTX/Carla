@@ -253,10 +253,8 @@ class CarlaSettingsW(QDialog):
 
         themeColor = settings.value("Main/ProThemeColor", "Black", type=str)
 
-        if themeColor == "Blue":
+        if themeColor == "System":
             self.ui.cb_theme_color.setCurrentIndex(1)
-        elif themeColor == "System":
-            self.ui.cb_theme_color.setCurrentIndex(2)
         else:
             self.ui.cb_theme_color.setCurrentIndex(0)
 

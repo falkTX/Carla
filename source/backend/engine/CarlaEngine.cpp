@@ -1348,9 +1348,6 @@ bool CarlaEngine::loadProject(const char* const filename)
         node = node.nextSibling();
     }
 
-    // prevent wrong leak detection on close
-    getSaveStateDictFromXML(QDomNode());
-
     return true;
 }
 

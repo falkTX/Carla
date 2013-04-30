@@ -198,9 +198,7 @@ struct CarlaBackendStandalone {
 
                 QString color(settings.value("Main/ProThemeColor", "Black").toString());
 
-                if (color == "Blue")
-                    style->setColorScheme(CarlaStyle::COLOR_BLUE);
-                else if (color == "System")
+                if (color == "System")
                     pass(); //style->setColorScheme(CarlaStyle::COLOR_SYSTEM);
                 else
                     style->setColorScheme(CarlaStyle::COLOR_BLACK);

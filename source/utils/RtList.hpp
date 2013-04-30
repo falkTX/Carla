@@ -49,7 +49,7 @@ protected:
 
     class Itenerator {
     public:
-        Itenerator(k_list_head* queue)
+        Itenerator(const k_list_head* queue)
             : kQueue(queue),
               fEntry(queue->next),
               fEntry2(fEntry->next),
@@ -79,7 +79,7 @@ protected:
         }
 
     private:
-        k_list_head* const kQueue;
+        const k_list_head* const kQueue;
         k_list_head* fEntry;
         k_list_head* fEntry2;
         Data* fData;
@@ -100,7 +100,7 @@ public:
         CARLA_ASSERT(fCount == 0);
     }
 
-    Itenerator begin()
+    Itenerator begin() const
     {
         return Itenerator(&fQueue);
     }

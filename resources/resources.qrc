@@ -53,6 +53,8 @@
         <file>bitmaps/button_gui.png</file>
         <file>bitmaps/button_gui_down.png</file>
         <file>bitmaps/button_gui_hover.png</file>
+        <file>bitmaps/button_off.png</file>
+        <file>bitmaps/button_on.png</file>
         <file>bitmaps/dial_01.png</file>
         <file>bitmaps/dial_01d.png</file>
         <file>bitmaps/dial_02.png</file>

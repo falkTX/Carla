@@ -19,10 +19,10 @@
 #define __CARLA_STATE_UTILS_HPP__
 
 #include "CarlaBackendUtils.hpp"
-#include "CarlaJuceUtils.hpp"
 #include "CarlaMIDI.h"
 
-#include <QtCore/QVector>
+#include "RtList.hpp"
+
 #include <QtXml/QDomNode>
 
 CARLA_BACKEND_START_NAMESPACE
@@ -53,7 +53,7 @@ struct StateParameter {
             delete[] symbol;
     }
 
-    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(StateParameter)
+    CARLA_DECLARE_NON_COPY_STRUCT(StateParameter)
 };
 
 struct StateCustomData {
@@ -76,11 +76,11 @@ struct StateCustomData {
             delete[] value;
     }
 
-    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(StateCustomData)
+    CARLA_DECLARE_NON_COPY_STRUCT(StateCustomData)
 };
 
-typedef QVector<StateParameter*> StateParameterVector;
-typedef QVector<StateCustomData*> StateCustomDataVector;
+typedef NonRtList<StateParameter*> StateParameterList;
+typedef NonRtList<StateCustomData*> StateCustomDataList;
 
 struct SaveState {
     const char* type;
@@ -103,8 +103,8 @@ struct SaveState {
     int32_t     currentMidiProgram;
     const char* chunk;
 
-    StateParameterVector parameters;
-    StateCustomDataVector customData;
+    StateParameterList parameters;
+    StateCustomDataList customData;
 
     SaveState()
         : type(nullptr),
@@ -180,13 +180,13 @@ struct SaveState {
         currentMidiBank     = -1;
         currentMidiProgram  = -1;
 
-        for (auto it = parameters.begin(); it != parameters.end(); ++it)
+        for (auto it = parameters.begin(); it.valid(); it.next())
         {
             StateParameter* const stateParameter(*it);
             delete stateParameter;
         }
 
-        for (auto it = customData.begin(); it != customData.end(); ++it)
+        for (auto it = customData.begin(); it.valid(); it.next())
         {
             StateCustomData* const stateCustomData(*it);
             delete stateCustomData;
@@ -534,7 +534,7 @@ const QString& getXMLFromSaveState(const SaveState& saveState)
         content += data;
     }
 
-    for (auto it = saveState.parameters.begin(); it != saveState.parameters.end(); ++it)
+    for (auto it = saveState.parameters.begin(); it.valid(); it.next())
     {
         StateParameter* const stateParameter(*it);
 
@@ -585,7 +585,7 @@ const QString& getXMLFromSaveState(const SaveState& saveState)
         content += midiProgram;
     }
 
-    for (auto it = saveState.customData.begin(); it != saveState.customData.end(); ++it)
+    for (auto it = saveState.customData.begin(); it.valid(); it.next())
     {
         StateCustomData* const stateCustomData(*it);
 

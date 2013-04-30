@@ -722,7 +722,7 @@ const SaveState& CarlaPlugin::getSaveState()
         if (paramData.hints & PARAMETER_USES_SAMPLERATE)
             stateParameter->value /= sampleRate;
 
-        saveState.parameters.push_back(stateParameter);
+        saveState.parameters.append(stateParameter);
     }
 
     // ----------------------------
@@ -741,7 +741,7 @@ const SaveState& CarlaPlugin::getSaveState()
         stateCustomData->key   = carla_strdup(cData.key);
         stateCustomData->value = carla_strdup(cData.value);
 
-        saveState.customData.push_back(stateCustomData);
+        saveState.customData.append(stateCustomData);
     }
 
     return saveState;
@@ -754,7 +754,7 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
     // ---------------------------------------------------------------------
     // Part 1 - set custom data (except binary/chunks)
 
-    for (auto it = saveState.customData.begin(); it != saveState.customData.end(); ++it)
+    for (auto it = saveState.customData.begin(); it.valid(); it.next())
     {
         const StateCustomData* const stateCustomData(*it);
 
@@ -832,7 +832,7 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
         ParamSymbol(const ParamSymbol&) = delete;
     };
 
-    QVector<ParamSymbol*> paramSymbols;
+    NonRtList<ParamSymbol*> paramSymbols;
 
     if (type() == PLUGIN_LADSPA || type() == PLUGIN_LV2)
     {
@@ -853,7 +853,7 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
 
     const float sampleRate(kData->engine->getSampleRate());
 
-    for (auto it = saveState.parameters.begin(); it != saveState.parameters.end(); ++it)
+    for (auto it = saveState.parameters.begin(); it.valid(); it.next())
     {
         StateParameter* const stateParameter(*it);
 
@@ -864,8 +864,10 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
             // Try to set by symbol, otherwise use index
             if (stateParameter->symbol != nullptr && *stateParameter->symbol != 0)
             {
-                foreach (const ParamSymbol* paramSymbol, paramSymbols)
+                for (auto it = paramSymbols.begin(); it.valid(); it.next())
                 {
+                    ParamSymbol* const paramSymbol(*it);
+
                     if (std::strcmp(stateParameter->symbol, paramSymbol->symbol) == 0)
                     {
                         index = paramSymbol->index;
@@ -883,8 +885,10 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
             // Symbol only
             if (stateParameter->symbol != nullptr && *stateParameter->symbol != 0)
             {
-                foreach (const ParamSymbol* paramSymbol, paramSymbols)
+                for (auto it = paramSymbols.begin(); it.valid(); it.next())
                 {
+                    ParamSymbol* const paramSymbol(*it);
+
                     if (std::strcmp(stateParameter->symbol, paramSymbol->symbol) == 0)
                     {
                         index = paramSymbol->index;
@@ -920,8 +924,9 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
     }
 
     // clear
-    foreach (ParamSymbol* paramSymbol, paramSymbols)
+    for (auto it = paramSymbols.begin(); it.valid(); it.next())
     {
+        ParamSymbol* const paramSymbol(*it);
         paramSymbol->free();
         delete paramSymbol;
     }
@@ -931,7 +936,7 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
     // ---------------------------------------------------------------------
     // Part 5 - set chunk data
 
-    for (auto it = saveState.customData.begin(); it != saveState.customData.end(); ++it)
+    for (auto it = saveState.customData.begin(); it.valid(); it.next())
     {
         const StateCustomData* const stateCustomData(*it);
 
@@ -1001,9 +1006,6 @@ bool CarlaPlugin::loadStateFromFile(const char* const filename)
     }
 
     loadSaveState(getSaveStateDictFromXML(xmlNode));
-
-    // prevent wrong leak detection on close
-    getSaveStateDictFromXML(QDomNode());
 
     return true;
 }

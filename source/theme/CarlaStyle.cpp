@@ -902,7 +902,7 @@ void CarlaStyle::drawPrimitive(PrimitiveElement elem,
         const int margin = 6;
         if (option->state & State_Horizontal) {
             const int offset = rect.width()/2;
-            painter->setPen(QPen(option->palette.background().color().darker(110)));
+            painter->setPen(QPen(highlightedOutline));
             painter->drawLine(rect.bottomLeft().x() + offset,
                               rect.bottomLeft().y() - margin,
                               rect.topLeft().x() + offset,
@@ -914,7 +914,7 @@ void CarlaStyle::drawPrimitive(PrimitiveElement elem,
                               rect.topLeft().y() + margin);
         } else { //Draw vertical separator
             const int offset = rect.height()/2;
-            painter->setPen(QPen(option->palette.background().color().darker(110)));
+            painter->setPen(QPen(highlightedOutline));
             painter->drawLine(rect.topLeft().x() + margin ,
                               rect.topLeft().y() + offset,
                               rect.topRight().x() - margin,
