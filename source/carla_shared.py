@@ -1949,10 +1949,17 @@ class PluginWidget(QFrame):
         self.fColorBottom = QColor(47, 47, 47)
         self.fColorSeprtr = QColor(70, 70, 70)
 
+        if self.palette().window().color().lightness() > 100:
+            # Light background
+            labelColor = "333"
+        else:
+            # Dark background
+            labelColor = "BBB"
+
         self.setStyleSheet("""
         QLabel#label_name {
-            color: #BBB;
-        }""")
+            color: #%s;
+        }""" % labelColor)
 
         # Colorify
         #if self.m_pluginInfo['category'] == PLUGIN_CATEGORY_SYNTH:
