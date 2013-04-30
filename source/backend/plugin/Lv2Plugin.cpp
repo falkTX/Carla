@@ -2890,6 +2890,74 @@ public:
         CARLA_PROCESS_CONTINUE_CHECK;
 
         // --------------------------------------------------------------------------------------------------------
+        // MIDI Output
+
+        if (fEventsOut.ctrl != nullptr && fEventsOut.ctrl->port != nullptr)
+        {
+            if (fEventsOut.ctrl->type & CARLA_EVENT_DATA_ATOM)
+            {
+                const LV2_Atom_Event* ev;
+                LV2_Atom_Buffer_Iterator iter;
+
+                uint8_t* data;
+                lv2_atom_buffer_begin(&iter, fEventsOut.ctrl->atom);
+
+                while (true)
+                {
+                    data = nullptr;
+                    ev = lv2_atom_buffer_get(&iter, &data);
+
+                    if (ev == nullptr || data == nullptr)
+                        break;
+
+                    if (ev->body.type == CARLA_URI_MAP_ID_MIDI_EVENT)
+                        fEventsOut.ctrl->port->writeMidiEvent(ev->time.frames, data, ev->body.size);
+
+                    lv2_atom_buffer_increment(&iter);
+                }
+            }
+            else if (fEventsOut.ctrl->type & CARLA_EVENT_DATA_EVENT)
+            {
+                const LV2_Event* ev;
+                LV2_Event_Iterator iter;
+
+                uint8_t* data;
+                lv2_event_begin(&iter, fEventsOut.ctrl->event);
+
+                while (true)
+                {
+                    data = nullptr;
+                    ev = lv2_event_get(&iter, &data);
+
+                    if (ev == nullptr || data == nullptr)
+                        break;
+
+                    if (ev->type == CARLA_URI_MAP_ID_MIDI_EVENT)
+                        fEventsOut.ctrl->port->writeMidiEvent(ev->frames, data, ev->size);
+
+                    lv2_event_increment(&iter);
+                }
+            }
+            else if (fEventsOut.ctrl->type & CARLA_EVENT_DATA_MIDI_LL)
+            {
+                LV2_MIDIState state = { fEventsOut.ctrl->midi, frames, 0 };
+
+                uint32_t eventSize;
+                double   eventTime;
+                unsigned char* eventData;
+
+                while (lv2midi_get_event(&state, &eventTime, &eventSize, &eventData) < frames)
+                {
+                    if (eventData == nullptr || eventSize == 0)
+                        break;
+
+                    fEventsOut.ctrl->port->writeMidiEvent(eventTime, eventData, eventSize);
+                    lv2midi_step(&state);
+                }
+            }
+        }
+
+        // --------------------------------------------------------------------------------------------------------
         // Control Output
 
         if (kData->event.portOut != nullptr)

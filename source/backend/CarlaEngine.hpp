@@ -19,6 +19,7 @@
 #define __CARLA_ENGINE_HPP__
 
 #include "CarlaBackend.hpp"
+#include "CarlaMIDI.h"
 #include "CarlaString.hpp"
 
 #ifdef BUILD_BRIDGE
@@ -524,6 +525,14 @@ public:
      ** \note You must only call this for output ports.
      */
     virtual void writeMidiEvent(const uint32_t time, const uint8_t channel, const uint8_t port, const uint8_t* const data, const uint8_t size);
+
+    /*!
+     * Write a MIDI event into the buffer, overloaded call.
+     */
+    void writeMidiEvent(const uint32_t time, const uint8_t* const data, const uint8_t size)
+    {
+        writeMidiEvent(time, MIDI_GET_CHANNEL_FROM_DATA(data), 0, data, size);
+    }
 
     /*!
      * Write a MIDI event into the buffer, overloaded call.

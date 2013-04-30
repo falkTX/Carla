@@ -911,7 +911,7 @@ class CarlaAboutW(QDialog):
                                           #"<li>http://lv2plug.in/ns/ext/patch</li>"
                                           #"<li>http://lv2plug.in/ns/ext/port-groups</li>"
                                           #"<li>http://lv2plug.in/ns/ext/port-props</li>"
-                                          #"<li>http://lv2plug.in/ns/ext/presets</li>"
+                                          "<li>http://lv2plug.in/ns/ext/presets</li>"
                                           "<li>http://lv2plug.in/ns/ext/state</li>"
                                           "<li>http://lv2plug.in/ns/ext/time</li>"
                                           "<li>http://lv2plug.in/ns/ext/uri-map</li>"
