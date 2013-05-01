@@ -301,7 +301,7 @@ public:
 
     static intptr_t hostCanDo(const char* const feature)
     {
-        qDebug("CarlaVstClient::hostCanDo(\"%s\")", feature);
+        carla_debug("CarlaVstClient::hostCanDo(\"%s\")", feature);
 
         if (std::strcmp(feature, "supplyIdle") == 0)
             return 1;
@@ -346,7 +346,7 @@ public:
     static intptr_t VSTCALLBACK hostCallback(AEffect* const effect, const int32_t opcode, const int32_t index, const intptr_t value, void* const ptr, const float opt)
     {
 #if DEBUG
-        qDebug("CarlaVstClient::hostCallback(%p, %s, %i, " P_INTPTR ", %p, %f", effect, vstMasterOpcode2str(opcode), index, value, ptr, opt);
+        carla_debug("CarlaVstClient::hostCallback(%p, %s, %i, " P_INTPTR ", %p, %f", effect, vstMasterOpcode2str(opcode), index, value, ptr, opt);
 #endif
 
         // Check if 'resvd1' points to this client, or register ourselfs if possible
@@ -493,7 +493,7 @@ public:
 
         default:
 #ifdef DEBUG
-            qDebug("CarlaVstClient::hostCallback(%p, %s, %i, " P_INTPTR ", %p, %f", effect, vstMasterOpcode2str(opcode), index, value, ptr, opt);
+            carla_debug("CarlaVstClient::hostCallback(%p, %s, %i, " P_INTPTR ", %p, %f", effect, vstMasterOpcode2str(opcode), index, value, ptr, opt);
 #endif
             break;
         }
@@ -573,7 +573,7 @@ int main(int argc, char* argv[])
     }
     else
     {
-        qCritical("Failed to load VST UI");
+        carla_stderr("Failed to load VST UI");
         ret = 1;
     }
 

@@ -217,7 +217,7 @@ public:
 
     void saveNow()
     {
-        qDebug("CarlaPluginClient::saveNow()");
+        carla_debug("CarlaPluginClient::saveNow()");
         CARLA_ASSERT(fEngine != nullptr);
         CARLA_ASSERT(fPlugin != nullptr);
 

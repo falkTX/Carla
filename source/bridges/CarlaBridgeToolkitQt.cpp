@@ -77,7 +77,7 @@ public:
           QObject(nullptr),
           settings("falkTX", appName)
     {
-        qDebug("CarlaBridgeToolkitQt::CarlaBridgeToolkitQt(%p, \"%s\")", client, uiTitle);
+        carla_debug("CarlaBridgeToolkitQt::CarlaBridgeToolkitQt(%p, \"%s\")", client, uiTitle);
 
         app = nullptr;
         window = nullptr;
@@ -95,7 +95,7 @@ public:
 
     ~CarlaBridgeToolkitQt() override
     {
-        qDebug("CarlaBridgeToolkitQt::~CarlaBridgeToolkitQt()");
+        carla_debug("CarlaBridgeToolkitQt::~CarlaBridgeToolkitQt()");
         CARLA_ASSERT(! app);
         CARLA_ASSERT(! window);
         CARLA_ASSERT(! msgTimer);
@@ -103,7 +103,7 @@ public:
 
     void init() override
     {
-        qDebug("CarlaBridgeToolkitQt::init()");
+        carla_debug("CarlaBridgeToolkitQt::init()");
         CARLA_ASSERT(! app);
         CARLA_ASSERT(! window);
         CARLA_ASSERT(! msgTimer);
@@ -117,7 +117,7 @@ public:
 
     void exec(const bool showGui) override
     {
-        qDebug("CarlaBridgeToolkitQt::exec(%s)", bool2str(showGui));
+        carla_debug("CarlaBridgeToolkitQt::exec(%s)", bool2str(showGui));
         CARLA_ASSERT(app);
         CARLA_ASSERT(window);
         CARLA_ASSERT(kClient);
@@ -179,7 +179,7 @@ public:
 
     void quit() override
     {
-        qDebug("CarlaBridgeToolkitQt::quit()");
+        carla_debug("CarlaBridgeToolkitQt::quit()");
         CARLA_ASSERT(app);
 
         if (msgTimer != 0)
@@ -224,7 +224,7 @@ public:
 
     void show() override
     {
-        qDebug("CarlaBridgeToolkitQt::show()");
+        carla_debug("CarlaBridgeToolkitQt::show()");
         CARLA_ASSERT(window);
 
         if (window)
@@ -233,7 +233,7 @@ public:
 
     void hide() override
     {
-        qDebug("CarlaBridgeToolkitQt::hide()");
+        carla_debug("CarlaBridgeToolkitQt::hide()");
         CARLA_ASSERT(window);
 
         if (window)
@@ -242,7 +242,7 @@ public:
 
     void resize(const int width, const int height) override
     {
-        qDebug("CarlaBridgeToolkitQt::resize(%i, %i)", width, height);
+        carla_debug("CarlaBridgeToolkitQt::resize(%i, %i)", width, height);
         CARLA_ASSERT(window);
 
         if (app->thread() != QThread::currentThread())
@@ -265,7 +265,7 @@ public:
 #ifdef BRIDGE_CONTAINER
     void* getContainerId()
     {
-        qDebug("CarlaBridgeToolkitQt::getContainerId()");
+        carla_debug("CarlaBridgeToolkitQt::getContainerId()");
         CARLA_ASSERT(window);
 
         if (! embedContainer)
