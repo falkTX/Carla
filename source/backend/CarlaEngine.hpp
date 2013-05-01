@@ -493,6 +493,11 @@ public:
     virtual void initBuffer(CarlaEngine* const engine) override;
 
     /*!
+     * Clear the port's internal buffer.
+     */
+    virtual void clearBuffer();
+
+    /*!
      * Get the number of events present in the buffer.
      * \note You must only call this for input ports.
      */

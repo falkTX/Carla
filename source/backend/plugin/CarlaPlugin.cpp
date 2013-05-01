@@ -2103,6 +2103,14 @@ void CarlaPlugin::uiNoteOff(const uint8_t channel, const uint8_t note)
 }
 
 // -------------------------------------------------------------------
+// Helpers
+
+CarlaEngineEventPort* CarlaPlugin::getDefaultEventInPort() const
+{
+    return kData->event.portIn;
+}
+
+// -------------------------------------------------------------------
 // Scoped Disabler
 
 CarlaPlugin::ScopedDisabler::ScopedDisabler(CarlaPlugin* const plugin)

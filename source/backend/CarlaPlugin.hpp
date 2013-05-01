@@ -30,6 +30,10 @@ typedef struct _PluginDescriptor PluginDescriptor;
 
 CARLA_BACKEND_START_NAMESPACE
 
+#ifndef DOXYGEN
+class CarlaEngineEventPort;
+#endif
+
 /*!
  * @defgroup CarlaPluginAPI Carla Plugin API
  *
@@ -838,11 +842,15 @@ protected:
     CarlaString fName;     //!< Plugin name
     CarlaString fFilename; //!< Plugin filename, if applicable
 
+    friend class CarlaEngineBridge;
     friend struct CarlaPluginProtectedData;
     CarlaPluginProtectedData* const kData; //!< Internal data, for CarlaPlugin subclasses only.
 
     // -------------------------------------------------------------------
     // Helper classes
+
+    // Get default event input port
+    virtual CarlaEngineEventPort* getDefaultEventInPort() const;
 
     // Fully disable plugin in scope and also its engine client
     // May wait-block on constructor for plugin process to end

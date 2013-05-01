@@ -137,6 +137,17 @@ void CarlaEngineEventPort::initBuffer(CarlaEngine* const engine)
             carla_zeroStruct<EngineEvent>(fBuffer, kMaxEventCount);
 }
 
+void CarlaEngineEventPort::clearBuffer()
+{
+    CARLA_ASSERT(fBuffer != nullptr);
+
+    if (fBuffer == nullptr)
+        return;
+
+    if (kProcessMode == PROCESS_MODE_PATCHBAY || kProcessMode == PROCESS_MODE_BRIDGE)
+        carla_zeroStruct<EngineEvent>(fBuffer, kMaxEventCount);
+}
+
 uint32_t CarlaEngineEventPort::getEventCount()
 {
     CARLA_ASSERT(kIsInput);
@@ -226,15 +237,19 @@ void CarlaEngineEventPort::writeControlEvent(const uint32_t time, const uint8_t 
 
 void CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t channel, const uint8_t port, const uint8_t* const data, const uint8_t size)
 {
+#ifndef BUILD_BRIDGE
     CARLA_ASSERT(! kIsInput);
+#endif
     CARLA_ASSERT(fBuffer != nullptr);
     CARLA_ASSERT(kProcessMode == PROCESS_MODE_CONTINUOUS_RACK || kProcessMode == PROCESS_MODE_PATCHBAY || kProcessMode == PROCESS_MODE_BRIDGE);
     CARLA_ASSERT(channel < MAX_MIDI_CHANNELS);
     CARLA_ASSERT(data != nullptr);
     CARLA_ASSERT(size > 0);
 
+#ifndef BUILD_BRIDGE
     if (kIsInput)
         return;
+#endif
     if (fBuffer == nullptr)
         return;
     if (kProcessMode != PROCESS_MODE_CONTINUOUS_RACK && kProcessMode != PROCESS_MODE_PATCHBAY && kProcessMode != PROCESS_MODE_BRIDGE)
@@ -2052,7 +2067,7 @@ void CarlaEngine::osc_send_control_set_parameter_value(const int32_t pluginId, c
 void CarlaEngine::osc_send_control_set_default_value(const int32_t pluginId, const int32_t index, const float value)
 {
     CARLA_ASSERT(kData->oscData != nullptr);
-    CARLA_ASSERT(pluginId >= 0 && pluginId < static_cast<int32_t>(kData->curPluginCount));
+    CARLA_ASSERT(pluginId >= 0 && pluginId < static_cast<int32_t>(kData->maxPluginNumber));
     CARLA_ASSERT(index >= 0);
     carla_debug("CarlaEngine::osc_send_control_set_default_value(%i, %i, %f)", pluginId, index, value);
 

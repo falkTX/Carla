@@ -53,13 +53,13 @@ enum PluginBridgeInfoType {
 
 enum PluginBridgeOpcode {
     kPluginBridgeOpcodeNull           = 0,
-    kPluginBridgeOpcodeReadyWait      = 1,
+    kPluginBridgeOpcodeSetAudioPool   = 1, // int
     kPluginBridgeOpcodeSetBufferSize  = 2, // int
     kPluginBridgeOpcodeSetSampleRate  = 3, // float
     kPluginBridgeOpcodeSetParameter   = 4, // int, float
     kPluginBridgeOpcodeSetProgram     = 5, // int
     kPluginBridgeOpcodeSetMidiProgram = 6, // int
-    kPluginBridgeOpcodeMidiEvent      = 7, // int, char, ... (int = size, max 4)
+    kPluginBridgeOpcodeMidiEvent      = 7, // long, int, char, ... (long = timeFrame, int = size max 4)
     kPluginBridgeOpcodeProcess        = 8,
     kPluginBridgeOpcodeQuit           = 9
 };
@@ -102,11 +102,11 @@ struct BridgeShmControl {
     // Let's make sure there's plenty of room for either one.
     union {
         sem_t runServer;
-        char _alignServer[32];
+        char _alignServer[128];
     };
     union {
         sem_t runClient;
-        char _alignClient[32];
+        char _alignClient[128];
     };
     BridgeRingBuffer ringBuffer;
 };
@@ -167,6 +167,11 @@ const char* PluginBridgeInfoType2str(const PluginBridgeInfoType type)
 static inline
 void rdwr_tryRead(BridgeRingBuffer* const ringbuf, void* const buf, const size_t size)
 {
+    CARLA_ASSERT(buf != nullptr);
+
+    if (buf == nullptr)
+        return;
+
     char* const charbuf(static_cast<char*>(buf));
 
     size_t tail = ringbuf->tail;
@@ -200,6 +205,11 @@ void rdwr_tryRead(BridgeRingBuffer* const ringbuf, void* const buf, const size_t
 static inline
 void rdwr_tryWrite(BridgeRingBuffer* const ringbuf, const void* const buf, const size_t size)
 {
+    CARLA_ASSERT(buf != nullptr);
+
+    if (buf == nullptr)
+        return;
+
     const char* const charbuf(static_cast<const char*>(buf));
 
     size_t written = ringbuf->written;
@@ -259,9 +269,17 @@ bool rdwr_dataAvailable(BridgeRingBuffer* const ringbuf)
 static inline
 PluginBridgeOpcode rdwr_readOpcode(BridgeRingBuffer* const ringbuf)
 {
-    int i = kPluginBridgeOpcodeNull;
+    int i = static_cast<int>(kPluginBridgeOpcodeNull);
     rdwr_tryRead(ringbuf, &i, sizeof(int));
     return static_cast<PluginBridgeOpcode>(i);
+}
+
+static inline
+char rdwr_readChar(BridgeRingBuffer* const ringbuf)
+{
+    char c = 0;
+    rdwr_tryRead(ringbuf, &c, sizeof(char));
+    return c;
 }
 
 static inline
@@ -270,6 +288,14 @@ int rdwr_readInt(BridgeRingBuffer* const ringbuf)
     int i = 0;
     rdwr_tryRead(ringbuf, &i, sizeof(int));
     return i;
+}
+
+static inline
+long rdwr_readLong(BridgeRingBuffer* const ringbuf)
+{
+    long l = 0;
+    rdwr_tryRead(ringbuf, &l, sizeof(long));
+    return l;
 }
 
 static inline
@@ -285,14 +311,26 @@ float rdwr_readFloat(BridgeRingBuffer* const ringbuf)
 static inline
 void rdwr_writeOpcode(BridgeRingBuffer* const ringbuf, const PluginBridgeOpcode opcode)
 {
-    const int i = opcode;
-    rdwr_tryWrite(ringbuf, &i, sizeof(int));
+    const int intcode(static_cast<int>(opcode));
+    rdwr_tryWrite(ringbuf, &intcode, sizeof(int));
+}
+
+static inline
+void rdwr_writeChar(BridgeRingBuffer* const ringbuf, const char value)
+{
+    rdwr_tryWrite(ringbuf, &value, sizeof(char));
 }
 
 static inline
 void rdwr_writeInt(BridgeRingBuffer* const ringbuf, const int value)
 {
     rdwr_tryWrite(ringbuf, &value, sizeof(int));
+}
+
+static inline
+void rdwr_writeLong(BridgeRingBuffer* const ringbuf, const long value)
+{
+    rdwr_tryWrite(ringbuf, &value, sizeof(long));
 }
 
 static inline

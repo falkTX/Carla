@@ -88,7 +88,7 @@ shm_t shm_mkstemp(char* const fileBase)
 
     while (true)
     {
-        for (int c = size - 6; c < size; c++)
+        for (int c = size - 6; c < size; ++c)
         {
             // Note the -1 to avoid the trailing '\0' in charSet.
             fileBase[c] = charSet[std::rand() % (sizeof(charSet) - 1)];
@@ -110,6 +110,8 @@ struct BridgeParamInfo {
 
     BridgeParamInfo()
         : value(0.0f) {}
+
+    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(BridgeParamInfo)
 };
 
 class BridgePlugin : public CarlaPlugin
@@ -332,10 +334,12 @@ public:
         rdwr_writeOpcode(&fShmControl.data->ringBuffer, kPluginBridgeOpcodeSetParameter);
         rdwr_writeInt(&fShmControl.data->ringBuffer, parameterId);
         rdwr_writeFloat(&fShmControl.data->ringBuffer, value);
-        rdwr_commitWrite(&fShmControl.data->ringBuffer);
 
         if (doLock)
+        {
+            rdwr_commitWrite(&fShmControl.data->ringBuffer);
             kData->singleMutex.unlock();
+        }
 
         CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
     }
@@ -356,10 +360,12 @@ public:
 
         rdwr_writeOpcode(&fShmControl.data->ringBuffer, kPluginBridgeOpcodeSetProgram);
         rdwr_writeInt(&fShmControl.data->ringBuffer, index);
-        rdwr_commitWrite(&fShmControl.data->ringBuffer);
 
         if (doLock)
+        {
+            rdwr_commitWrite(&fShmControl.data->ringBuffer);
             kData->singleMutex.unlock();
+        }
 
         CarlaPlugin::setProgram(index, sendGui, sendOsc, sendCallback);
     }
@@ -380,10 +386,12 @@ public:
 
         rdwr_writeOpcode(&fShmControl.data->ringBuffer, kPluginBridgeOpcodeSetMidiProgram);
         rdwr_writeInt(&fShmControl.data->ringBuffer, index);
-        rdwr_commitWrite(&fShmControl.data->ringBuffer);
 
         if (doLock)
+        {
+            rdwr_commitWrite(&fShmControl.data->ringBuffer);
             kData->singleMutex.unlock();
+        }
 
         CarlaPlugin::setMidiProgram(index, sendGui, sendOsc, sendCallback);
     }
@@ -583,6 +591,7 @@ public:
 
     void activate() override
     {
+        // already locked before
         rdwr_writeOpcode(&fShmControl.data->ringBuffer, kPluginBridgeOpcodeSetParameter);
         rdwr_writeInt(&fShmControl.data->ringBuffer, PARAMETER_ACTIVE);
         rdwr_writeFloat(&fShmControl.data->ringBuffer, 1.0f);
@@ -592,6 +601,7 @@ public:
 
     void deactivate() override
     {
+        // already locked before
         rdwr_writeOpcode(&fShmControl.data->ringBuffer, kPluginBridgeOpcodeSetParameter);
         rdwr_writeInt(&fShmControl.data->ringBuffer, PARAMETER_ACTIVE);
         rdwr_writeFloat(&fShmControl.data->ringBuffer, 0.0f);
@@ -601,7 +611,7 @@ public:
 
     void process(float** const inBuffer, float** const outBuffer, const uint32_t frames) override
     {
-        uint32_t i/*, k*/;
+        uint32_t i, k;
 
         // --------------------------------------------------------------------------------------------------------
         // Check if active
@@ -626,13 +636,204 @@ public:
         }
 
         // --------------------------------------------------------------------------------------------------------
-        // Plugin processing (no events)
+        // Event Input
 
-        //else
+        if (kData->event.portIn != nullptr)
         {
-            processSingle(inBuffer, outBuffer, frames);
+            // ----------------------------------------------------------------------------------------------------
+            // MIDI Input (External)
 
-        } // End of Plugin processing (no events)
+            if (kData->extNotes.mutex.tryLock())
+            {
+                while (! kData->extNotes.data.isEmpty())
+                {
+                    const ExternalMidiNote& note(kData->extNotes.data.getFirst(true));
+
+                    CARLA_ASSERT(note.channel >= 0 && note.channel < MAX_MIDI_CHANNELS);
+
+                    char data1, data2, data3;
+                    data1  = (note.velo > 0) ? MIDI_STATUS_NOTE_ON : MIDI_STATUS_NOTE_OFF;
+                    data1 += note.channel;
+                    data2  = note.note;
+                    data3  = note.velo;
+
+                    rdwr_writeOpcode(&fShmControl.data->ringBuffer, kPluginBridgeOpcodeMidiEvent);
+                    rdwr_writeLong(&fShmControl.data->ringBuffer, 0);
+                    rdwr_writeInt(&fShmControl.data->ringBuffer, 3);
+                    rdwr_writeChar(&fShmControl.data->ringBuffer, data1);
+                    rdwr_writeChar(&fShmControl.data->ringBuffer, data2);
+                    rdwr_writeChar(&fShmControl.data->ringBuffer, data3);
+                }
+
+                kData->extNotes.mutex.unlock();
+
+            } // End of MIDI Input (External)
+
+            // ----------------------------------------------------------------------------------------------------
+            // Event Input (System)
+
+            bool allNotesOffSent = false;
+
+            uint32_t nEvents = kData->event.portIn->getEventCount();
+            uint32_t nextBankId = 0;
+
+            if (kData->midiprog.current >= 0 && kData->midiprog.count > 0)
+                nextBankId = kData->midiprog.data[kData->midiprog.current].bank;
+
+            for (i=0; i < nEvents; ++i)
+            {
+                const EngineEvent& event(kData->event.portIn->getEvent(i));
+
+                // Control change
+                switch (event.type)
+                {
+                case kEngineEventTypeNull:
+                    break;
+
+                case kEngineEventTypeControl:
+                {
+                    const EngineControlEvent& ctrlEvent = event.ctrl;
+
+                    switch (ctrlEvent.type)
+                    {
+                    case kEngineControlEventTypeNull:
+                        break;
+
+                    case kEngineControlEventTypeParameter:
+                    {
+                        // Control plugin parameters
+                        for (k=0; k < kData->param.count; ++k)
+                        {
+                            if (kData->param.data[k].midiChannel != event.channel)
+                                continue;
+                            if (kData->param.data[k].midiCC != ctrlEvent.param)
+                                continue;
+                            if (kData->param.data[k].type != PARAMETER_INPUT)
+                                continue;
+                            if ((kData->param.data[k].hints & PARAMETER_IS_AUTOMABLE) == 0)
+                                continue;
+
+                            float value;
+
+                            if (kData->param.data[k].hints & PARAMETER_IS_BOOLEAN)
+                            {
+                                value = (ctrlEvent.value < 0.5f) ? kData->param.ranges[k].min : kData->param.ranges[k].max;
+                            }
+                            else
+                            {
+                                value = kData->param.ranges[i].unnormalizeValue(ctrlEvent.value);
+
+                                if (kData->param.data[k].hints & PARAMETER_IS_INTEGER)
+                                    value = std::rint(value);
+                            }
+
+                            setParameterValue(k, value, false, false, false);
+                            postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 0, value);
+                        }
+
+                        break;
+                    }
+
+                    case kEngineControlEventTypeMidiBank:
+                        if (event.channel == kData->ctrlChannel && (fOptions & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
+                            nextBankId = ctrlEvent.param;
+                        break;
+
+                    case kEngineControlEventTypeMidiProgram:
+                        if (event.channel == kData->ctrlChannel && (fOptions & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
+                        {
+                            const uint32_t nextProgramId(ctrlEvent.param);
+
+                            if (kData->midiprog.count > 0)
+                            {
+                                for (k=0; k < kData->midiprog.count; ++k)
+                                {
+                                    if (kData->midiprog.data[k].bank == nextBankId && kData->midiprog.data[k].program == nextProgramId)
+                                    {
+                                        setMidiProgram(k, false, false, false);
+                                        postponeRtEvent(kPluginPostRtEventMidiProgramChange, k, 0, 0.0f);
+                                        break;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                            }
+                        }
+                        break;
+
+                    case kEngineControlEventTypeAllSoundOff:
+                        if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
+                        {
+                            // TODO
+                        }
+                        break;
+
+                    case kEngineControlEventTypeAllNotesOff:
+                        if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
+                        {
+                            if (event.channel == kData->ctrlChannel && ! allNotesOffSent)
+                            {
+                                allNotesOffSent = true;
+                                sendMidiAllNotesOffToCallback();
+                            }
+
+                            // TODO
+                        }
+                        break;
+                    }
+
+                    break;
+                }
+
+                case kEngineEventTypeMidi:
+                {
+                    const EngineMidiEvent& midiEvent(event.midi);
+
+                    uint8_t status  = MIDI_GET_STATUS_FROM_DATA(midiEvent.data);
+                    uint8_t channel = event.channel;
+
+                    if (MIDI_IS_STATUS_AFTERTOUCH(status) && (fOptions & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE) == 0)
+                        continue;
+                    if (MIDI_IS_STATUS_CONTROL_CHANGE(status) && (fOptions & PLUGIN_OPTION_SEND_CONTROL_CHANGES) == 0)
+                        continue;
+                    if (MIDI_IS_STATUS_POLYPHONIC_AFTERTOUCH(status) && (fOptions & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH) == 0)
+                        continue;
+                    if (MIDI_IS_STATUS_PITCH_WHEEL_CONTROL(status) && (fOptions & PLUGIN_OPTION_SEND_PITCHBEND) == 0)
+                        continue;
+
+                    // Fix bad note-off
+                    if (status == MIDI_STATUS_NOTE_ON && midiEvent.data[2] == 0)
+                        status -= 0x10;
+
+                    char data[4];
+                    data[0] = status + channel;
+                    data[1] = midiEvent.data[1];
+                    data[2] = midiEvent.data[2];
+                    data[3] = midiEvent.data[3];
+
+                    rdwr_writeOpcode(&fShmControl.data->ringBuffer, kPluginBridgeOpcodeMidiEvent);
+                    rdwr_writeLong(&fShmControl.data->ringBuffer, event.time);
+                    rdwr_writeInt(&fShmControl.data->ringBuffer, midiEvent.size);
+
+                    for (uint8_t j=0; j < midiEvent.size && j < 4; ++j)
+                        rdwr_writeChar(&fShmControl.data->ringBuffer, data[j]);
+
+                    if (status == MIDI_STATUS_NOTE_ON)
+                        postponeRtEvent(kPluginPostRtEventNoteOn, channel, midiEvent.data[1], midiEvent.data[2]);
+                    else if (status == MIDI_STATUS_NOTE_OFF)
+                        postponeRtEvent(kPluginPostRtEventNoteOff, channel, midiEvent.data[1], 0.0f);
+
+                    break;
+                }
+                }
+            }
+
+            kData->postRtEvents.trySplice();
+
+        } // End of Event Input
+
+        processSingle(inBuffer, outBuffer, frames);
     }
 
     bool processSingle(float** const inBuffer, float** const outBuffer, const uint32_t frames)
@@ -684,7 +885,11 @@ public:
         rdwr_writeOpcode(&fShmControl.data->ringBuffer, kPluginBridgeOpcodeProcess);
         rdwr_commitWrite(&fShmControl.data->ringBuffer);
 
-        waitForServer();
+        if (! waitForServer())
+        {
+            kData->singleMutex.unlock();
+            return true;
+        }
 
         for (i=0; i < fInfo.aOuts; ++i)
             carla_copyFloat(outBuffer[i], fShmAudioPool.data + ((i + fInfo.aIns) * frames), frames);
@@ -1385,7 +1590,7 @@ public:
             carla_msleep(50);
         }
 
-        if (! fInitiated)
+        if (fInitError || ! fInitiated)
         {
             // unregister so it gets handled properly
             registerEnginePlugin(kData->engine, fId, nullptr);
@@ -1395,20 +1600,9 @@ public:
             if (kData->osc.thread.isRunning())
                 kData->osc.thread.terminate();
 
-            kData->engine->setLastError("Timeout while waiting for a response from plugin-bridge\n(or the plugin crashed on initialization?)");
-            return false;
-        }
-        else if (fInitError)
-        {
-            // unregister so it gets handled properly
-            registerEnginePlugin(kData->engine, fId, nullptr);
+            if (! fInitError)
+                kData->engine->setLastError("Timeout while waiting for a response from plugin-bridge\n(or the plugin crashed on initialization?)");
 
-            kData->osc.thread.quit();
-
-            if (kData->osc.thread.isRunning())
-                kData->osc.thread.terminate();
-
-            // last error was set before
             return false;
         }
 
@@ -1526,14 +1720,14 @@ private:
 
         fShmAudioPool.data = (float*)carla_shm_map(fShmAudioPool.shm, fShmAudioPool.size);
 
-        rdwr_writeOpcode(&fShmControl.data->ringBuffer, kPluginBridgeOpcodeReadyWait);
+        rdwr_writeOpcode(&fShmControl.data->ringBuffer, kPluginBridgeOpcodeSetAudioPool);
         rdwr_writeInt(&fShmControl.data->ringBuffer, fShmAudioPool.size);
         rdwr_commitWrite(&fShmControl.data->ringBuffer);
 
         waitForServer();
     }
 
-    void waitForServer()
+    bool waitForServer()
     {
         sem_post(&fShmControl.data->runServer);
 
@@ -1541,7 +1735,10 @@ private:
         {
             carla_stderr("waitForServer() timeout");
             kData->active = false; // TODO
+            return false;
         }
+
+        return true;
     }
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(BridgePlugin)

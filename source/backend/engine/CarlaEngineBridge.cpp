@@ -34,7 +34,7 @@ CARLA_BACKEND_START_NAMESPACE
 } // Fix editor indentation
 #endif
 
-// -----------------------------------------
+// -------------------------------------------------------------------
 
 class CarlaEngineBridge : public CarlaEngine,
                           public QThread
@@ -43,7 +43,8 @@ public:
     CarlaEngineBridge(const char* const audioBaseName, const char* const controlBaseName)
         : CarlaEngine(),
           fIsRunning(false),
-          fQuitNow(false)
+          fQuitNow(false),
+          fEventsInPort(nullptr)
     {
         carla_debug("CarlaEngineBridge::CarlaEngineBridge()");
 
@@ -179,10 +180,18 @@ public:
                 case kPluginBridgeOpcodeNull:
                     break;
 
-                case kPluginBridgeOpcodeReadyWait:
+                case kPluginBridgeOpcodeSetAudioPool:
                 {
-                    const int size(rdwr_readInt(&fShmControl.data->ringBuffer));
-                    fShmAudioPool.data = (float*)carla_shm_map(fShmAudioPool.shm, size);
+                    const int poolSize(rdwr_readInt(&fShmControl.data->ringBuffer));
+                    fShmAudioPool.data = (float*)carla_shm_map(fShmAudioPool.shm, poolSize);
+
+                    fEventsInPort = nullptr;
+
+                    CarlaPlugin* const plugin(getPluginUnchecked(0));
+
+                    if (plugin != nullptr && plugin->enabled())
+                        fEventsInPort = plugin->getDefaultEventInPort();
+
                     break;
                 }
 
@@ -246,6 +255,25 @@ public:
                     break;
                 }
 
+                case kPluginBridgeOpcodeMidiEvent:
+                {
+                    uint8_t data[4] = { 0 };
+                    const long time(rdwr_readLong(&fShmControl.data->ringBuffer));
+                    const int  dataSize(rdwr_readInt(&fShmControl.data->ringBuffer));
+
+                    CARLA_ASSERT_INT(dataSize >= 1 && dataSize <= 4, dataSize);
+
+                    for (int i=0; i < dataSize && i < 4; ++i)
+                        data[i] = rdwr_readChar(&fShmControl.data->ringBuffer);
+
+                    CARLA_ASSERT(fEventsInPort != nullptr);
+
+                    if (fEventsInPort != nullptr)
+                        fEventsInPort->writeMidiEvent(time, data, dataSize);
+
+                    break;
+                }
+
                 case kPluginBridgeOpcodeProcess:
                 {
                     CARLA_ASSERT(fShmAudioPool.data != nullptr);
@@ -267,6 +295,9 @@ public:
                         plugin->initBuffers();
                         plugin->process(inBuffer, outBuffer, fBufferSize);
                         plugin->unlock();
+
+                        if (fEventsInPort != nullptr)
+                            fEventsInPort->clearBuffer();
                     }
                     break;
                 }
@@ -312,6 +343,8 @@ private:
 
     bool fIsRunning;
     bool fQuitNow;
+
+    CarlaEngineEventPort* fEventsInPort;
 
     void _cleanup()
     {
