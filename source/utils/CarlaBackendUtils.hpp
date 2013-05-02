@@ -448,7 +448,7 @@ static inline
 PluginType getPluginTypeFromString(const char* const stype)
 {
     CARLA_ASSERT(stype != nullptr);
-    carla_debug("CarlaBackend::getPluginTypeFromString(%s)", stype);
+    carla_debug("CarlaBackend::getPluginTypeFromString(\"%s\")", stype);
 
     if (stype == nullptr)
     {
@@ -477,7 +477,7 @@ PluginType getPluginTypeFromString(const char* const stype)
     if (std::strcmp(stype, "SFZ") == 0)
         return PLUGIN_SFZ;
 
-    carla_stderr("CarlaBackend::getPluginTypeFromString(%s) - invalid string type", stype);
+    carla_stderr("CarlaBackend::getPluginTypeFromString(\"%s\") - invalid string type", stype);
     return PLUGIN_NONE;
 }
 

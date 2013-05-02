@@ -752,7 +752,7 @@ class CarlaMainW(QMainWindow):
 
         self.ui.miniCanvasPreview.setRealParent(self)
         self.ui.miniCanvasPreview.setViewTheme(patchcanvas.canvas.theme.canvas_bg, patchcanvas.canvas.theme.rubberband_brush, patchcanvas.canvas.theme.rubberband_pen.color())
-        self.ui.miniCanvasPreview.init(self.scene, DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT)
+        self.ui.miniCanvasPreview.init(self.scene, DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT, self.fSavedSettings["UseCustomMiniCanvasPaint"])
         QTimer.singleShot(100, self, SLOT("slot_miniCanvasInit()"))
 
         # -------------------------------------------------------------
@@ -1953,6 +1953,9 @@ class CarlaMainW(QMainWindow):
               }
             """ % (col1, col2))
 
+        useCustomMiniCanvasPaint = bool(settings.value("Main/UseProTheme", True, type=bool) and
+                                        settings.value("Main/ProThemeColor", "Black", type=str) == "Black")
+
         self.fSavedSettings = {
             "Main/DefaultProjectFolder": settings.value("Main/DefaultProjectFolder", HOME, type=str),
             "Main/RefreshInterval": settings.value("Main/RefreshInterval", 50, type=int),
@@ -1962,7 +1965,8 @@ class CarlaMainW(QMainWindow):
             "Canvas/EyeCandy": settings.value("Canvas/EyeCandy", patchcanvas.EYECANDY_SMALL, type=int),
             "Canvas/UseOpenGL": settings.value("Canvas/UseOpenGL", False, type=bool),
             "Canvas/Antialiasing": settings.value("Canvas/Antialiasing", patchcanvas.ANTIALIASING_SMALL, type=int),
-            "Canvas/HighQualityAntialiasing": settings.value("Canvas/HighQualityAntialiasing", False, type=bool)
+            "Canvas/HighQualityAntialiasing": settings.value("Canvas/HighQualityAntialiasing", False, type=bool),
+            "UseCustomMiniCanvasPaint": useCustomMiniCanvasPaint
         }
 
         # ---------------------------------------------

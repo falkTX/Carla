@@ -141,6 +141,9 @@
       </widget>
       <widget class="QWidget" name="layoutWidget">
        <layout class="QVBoxLayout" name="verticalLayout_4">
+        <property name="spacing">
+         <number>1</number>
+        </property>
         <item>
          <widget class="QTabWidget" name="tabUtils">
           <property name="sizePolicy">

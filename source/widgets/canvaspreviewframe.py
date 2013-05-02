@@ -37,6 +37,8 @@ class CanvasPreviewFrame(QFrame):
     def __init__(self, parent):
         QFrame.__init__(self, parent)
 
+        self.fUseCustomPaint = False
+
         self.fMouseDown = False
 
         self.fViewBg    = QColor(0, 0, 0)
@@ -56,7 +58,7 @@ class CanvasPreviewFrame(QFrame):
         self.fViewPadY = 0.0
         self.fViewRect = [0.0, 0.0, 10.0, 10.0]
 
-    def init(self, scene, realWidth, realHeight):
+    def init(self, scene, realWidth, realHeight, useCustomPaint):
         padding = 6
 
         self.fScene = scene
@@ -68,6 +70,10 @@ class CanvasPreviewFrame(QFrame):
 
         self.fRenderTarget.setWidth(realWidth)
         self.fRenderTarget.setHeight(realHeight)
+
+        if self.fUseCustomPaint != useCustomPaint:
+            self.fUseCustomPaint = useCustomPaint
+            self.repaint()
 
     def setRealParent(self, parent):
         self.fRealParent = parent
@@ -154,9 +160,23 @@ class CanvasPreviewFrame(QFrame):
     def paintEvent(self, event):
         painter = QPainter(self)
 
-        painter.setBrush(self.fViewBg)
-        painter.setPen(self.fViewBg)
-        painter.drawRoundRect(2, 2, self.width()-6, self.height()-6, 3, 3)
+        if self.fUseCustomPaint:
+            painter.setBrush(self.fViewBg)
+            painter.setPen(QColor(12, 12, 12))
+            painter.drawRect(0, 0, self.width(), self.height()-2)
+
+            painter.setBrush(QColor(36, 36, 36))
+            painter.setPen(QColor(62, 62, 62))
+            painter.drawRect(1, 1, self.width()-2, self.height()-4)
+
+            painter.setBrush(self.fViewBg)
+            painter.setPen(self.fViewBg)
+            painter.drawRect(2, 3, self.width()-5, self.height()-7)
+
+        else:
+            painter.setBrush(self.fViewBg)
+            painter.setPen(self.fViewBg)
+            painter.drawRoundRect(2, 2, self.width()-6, self.height()-6, 3, 3)
 
         self.fScene.render(painter, self.fRenderSource, self.fRenderTarget, Qt.KeepAspectRatio)
 
@@ -172,7 +192,10 @@ class CanvasPreviewFrame(QFrame):
         painter.setPen(self.fViewPen)
         painter.drawRect(self.fViewRect[iX], self.fViewRect[iY], maxWidth, maxHeight)
 
-        QFrame.paintEvent(self, event)
+        if self.fUseCustomPaint:
+            event.accept()
+        else:
+            QFrame.paintEvent(self, event)
 
     def resizeEvent(self, event):
         self.fRenderSource = self.getRenderSource()

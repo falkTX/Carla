@@ -38,14 +38,8 @@ static std::vector<RtAudio::Api> gRtAudioApis;
 
 static void initRtApis()
 {
-    static bool initiated = false;
-
-    if (! initiated)
-    {
-        initiated = true;
-
+    if (gRtAudioApis.size() == 0)
         RtAudio::getCompiledApi(gRtAudioApis);
-    }
 }
 
 RtMidi::Api getMatchedAudioMidiAPi(const RtAudio::Api rtApi)
@@ -791,7 +785,7 @@ protected:
         CARLA_ASSERT(nframes == fBufferSize);
         CARLA_ASSERT(outsPtr != nullptr);
 
-        if (kData->curPluginCount == 0 || ! (fAudioIsReady && fConnectAudioLock.tryLock()))
+        if (kData->curPluginCount == 0 || ! fAudioIsReady)
         {
             carla_zeroFloat(outsPtr, nframes*fAudioCountOut);
             return proccessPendingEvents();
@@ -842,7 +836,9 @@ protected:
                 engineEvent.channel = midiChannel;
 
                 if (midiEvent.time < fTimeInfo.frame)
+                {
                     engineEvent.time = 0;
+                }
                 else if (midiEvent.time >= fTimeInfo.frame + nframes)
                 {
                     engineEvent.time = fTimeInfo.frame + nframes-1;
@@ -850,8 +846,6 @@ protected:
                 }
                 else
                     engineEvent.time = midiEvent.time - fTimeInfo.frame;
-
-                carla_stdout("Got midi, time %f vs %i", midiEvent.time, engineEvent.time);
 
                 if (MIDI_IS_STATUS_CONTROL_CHANGE(midiStatus))
                 {
@@ -913,6 +907,8 @@ protected:
 
             fMidiInEvents.mutex.unlock();
         }
+
+        fConnectAudioLock.lock();
 
         // connect input buffers
         if (fConnectedAudioIns[0].count() == 0)
@@ -982,6 +978,17 @@ protected:
             }
         }
 
+        if (fConnectedAudioOuts[1].count() != 0)
+        {
+            for (auto it = fConnectedAudioOuts[1].begin(); it.valid(); it.next())
+            {
+                const uint& port(*it);
+                CARLA_ASSERT(port < fAudioCountOut);
+
+                carla_addFloat(fAudioBufOut[port], fAudioBufRackOut[1], nframes);
+            }
+        }
+
         fConnectAudioLock.unlock();
 
         // output audio
@@ -1008,7 +1015,6 @@ protected:
         }
 
         proccessPendingEvents();
-
         return;
 
         // unused
