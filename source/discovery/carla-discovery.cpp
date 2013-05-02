@@ -238,7 +238,7 @@ intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t opcode
         break;
 
     case audioMasterGetVendorVersion:
-        ret = 0x1000; // 1.0.0
+        ret = 0x080; // 0.8.0
         break;
 
     case audioMasterCanDo:
