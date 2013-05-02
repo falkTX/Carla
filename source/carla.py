@@ -2109,12 +2109,14 @@ def canvasCallback(action, value1, value2, valueStr):
         portIdA = value1
         portIdB = value2
 
-        Carla.host.patchbay_connect(portIdA, portIdB)
+        if not Carla.host.patchbay_connect(portIdA, portIdB):
+            print("Connection failed,", cString(Carla.host.get_last_error()))
 
     elif action == patchcanvas.ACTION_PORTS_DISCONNECT:
         connectionId = value1
 
-        Carla.host.patchbay_disconnect(connectionId)
+        if not Carla.host.patchbay_disconnect(connectionId):
+            print("Disconnect failed,", cString(Carla.host.get_last_error()))
 
 def engineCallback(ptr, action, pluginId, value1, value2, value3, valueStr):
     if pluginId < 0 or not Carla.gui:
