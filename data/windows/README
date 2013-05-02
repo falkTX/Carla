@@ -1,0 +1,8 @@
+# ---  README for Carla - Windows build ---
+
+Carla is an audio plugin host, with support for many audio drivers and plugin formats.
+It has some nice features like automation of parameters via MIDI CC and full OSC control.
+Currently supports LADSPA, DSSI, LV2, and VST plugin formats, and GIG, SF2 and SFZ sounds banks.
+
+For a complete and updated description of Carla, please check:
+http://kxstudio.sourceforge.net/KXStudio:Applications:Carla
