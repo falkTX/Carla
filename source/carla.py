@@ -194,9 +194,6 @@ class CarlaSettingsW(QDialog):
             driverName = cString(Carla.host.get_engine_driver_name(i))
             self.ui.cb_engine_audio_driver.addItem(driverName)
 
-        # TODO in backend
-        self.ui.tb_engine_driver_config.setEnabled(False)
-
         # -------------------------------------------------------------
         # Load settings
 
@@ -207,6 +204,8 @@ class CarlaSettingsW(QDialog):
             self.ui.cb_canvas_use_opengl.setEnabled(False)
 
         if WINDOWS:
+            self.ui.group_theme.setEnabled(False)
+            self.ui.ch_theme_pro.setChecked(False)
             self.ui.ch_engine_dssi_chunks.setChecked(False)
             self.ui.ch_engine_dssi_chunks.setEnabled(False)
 
@@ -697,8 +696,8 @@ class CarlaMainW(QMainWindow):
         if not WINDOWS:
             self.fSyntaxLog = LogSyntaxHighlighter(self.ui.pte_log)
             self.fSyntaxLog.setDocument(self.ui.pte_log.document())
-        #else:
-            #self.ui.tabMain.setT
+        else:
+            self.ui.tabMain.removeTab(2)
 
         self.ui.fileTreeView.setModel(self.fDirModel)
         self.ui.fileTreeView.setRootIndex(self.fDirModel.index(HOME))
@@ -2110,13 +2109,13 @@ def canvasCallback(action, value1, value2, valueStr):
         portIdB = value2
 
         if not Carla.host.patchbay_connect(portIdA, portIdB):
-            print("Connection failed,", cString(Carla.host.get_last_error()))
+            print("Connection failed:", cString(Carla.host.get_last_error()))
 
     elif action == patchcanvas.ACTION_PORTS_DISCONNECT:
         connectionId = value1
 
         if not Carla.host.patchbay_disconnect(connectionId):
-            print("Disconnect failed,", cString(Carla.host.get_last_error()))
+            print("Disconnect failed:", cString(Carla.host.get_last_error()))
 
 def engineCallback(ptr, action, pluginId, value1, value2, value3, valueStr):
     if pluginId < 0 or not Carla.gui:

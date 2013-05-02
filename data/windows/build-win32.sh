@@ -49,7 +49,7 @@ make $JOBS -C source/discovery WIN32=true EXTRA_LIBS="$EXTRA_LIBS1"
 mv source/discovery/carla-discovery-native source/discovery/carla-discovery-win32.exe
 
 # Build backend
-make $JOBS -C source/backend/standalone ../libcarla_standalone.dll CARLA_RTAUDIO_SUPPORT=true WIN32=true EXTRA_LIBS="$EXTRA_LIBS1 $EXTRA_LIBS2"
+make $JOBS -C source/backend/standalone ../libcarla_standalone.dll WIN32=true EXTRA_LIBS="$EXTRA_LIBS1 $EXTRA_LIBS2"
 
 rm -rf ./data/windows/Carla
 cp ./source/carla.py ./source/carla.pyw

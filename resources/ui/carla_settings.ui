@@ -268,7 +268,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QGroupBox" name="groupBox_6">
+          <widget class="QGroupBox" name="group_theme">
            <property name="title">
             <string>Theme</string>
            </property>

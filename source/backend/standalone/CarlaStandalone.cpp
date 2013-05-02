@@ -488,6 +488,17 @@ bool carla_engine_init(const char* driverName, const char* clientName)
     }
 #endif
 
+#ifdef Q_OS_WIN
+    carla_setenv("WINEASIO_CLIENT_NAME", clientName);
+#endif
+
+    // TODO: make this an option, put somewhere else
+    if (getenv("WINE_RT") == nullptr)
+    {
+        carla_setenv("WINE_RT", "15");
+        carla_setenv("WINE_SVR_RT", "10");
+    }
+
     if (standalone.engine != nullptr)
     {
         standalone.lastError = "Engine is already running";
@@ -501,15 +512,6 @@ bool carla_engine_init(const char* driverName, const char* clientName)
         standalone.lastError = "The seleted audio driver is not available!";
         return false;
     }
-
-#ifndef Q_OS_WIN
-    // TODO: make this an option, put somewhere else
-    if (getenv("WINE_RT") == nullptr)
-    {
-        carla_setenv("WINE_RT", "15");
-        carla_setenv("WINE_SVR_RT", "10");
-    }
-#endif
 
     if (standalone.callback != nullptr)
         standalone.engine->setCallback(standalone.callback, nullptr);
