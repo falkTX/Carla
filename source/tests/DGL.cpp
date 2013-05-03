@@ -15,44 +15,12 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#include "dgl/App.hpp"
 #include "dgl/Image.hpp"
-#include "dgl/Widget.hpp"
-#include "dgl/Window.hpp"
+#include "dgl/StandaloneWindow.hpp"
 
 #include "DGL_Artwork.hpp"
 
 USE_NAMESPACE_DGL;
-
-class StandaloneWindow
-{
-public:
-    StandaloneWindow()
-        : fApp(),
-          fWindow(&fApp)
-    {
-    }
-
-    App* getApp()
-    {
-        return &fApp;
-    }
-
-    Window* getWindow()
-    {
-        return &fWindow;
-    }
-
-    void exec()
-    {
-        fWindow.show();
-        fApp.exec();
-    }
-
-private:
-    App fApp;
-    Window fWindow;
-};
 
 class MyWidget : public Widget
 {
