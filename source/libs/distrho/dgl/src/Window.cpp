@@ -205,6 +205,16 @@ public:
         return fVisible;
     }
 
+    void setResizable(bool yesNo)
+    {
+        if (fResizable == yesNo)
+            return;
+
+        fResizable = yesNo;
+
+        //setSize();
+    }
+
     void setVisible(bool yesNo)
     {
         if (fVisible == yesNo)
@@ -254,6 +264,7 @@ public:
         SetWindowPos(hwnd, 0, 0, 0, wr.right-wr.left, wr.bottom-wr.top, SWP_NOACTIVATE|SWP_NOMOVE|SWP_NOOWNERZORDER|SWP_NOZORDER);
         UpdateWindow(hwnd);
 #elif DGL_OS_LINUX
+        // TODO - handle fResizable
         XSizeHints sizeHints;
         memset(&sizeHints, 0, sizeof(sizeHints));
 
@@ -534,6 +545,11 @@ void Window::repaint()
 bool Window::isVisible()
 {
     return kPrivate->isVisible();
+}
+
+void Window::setResizable(bool yesNo)
+{
+    kPrivate->setResizable(yesNo);
 }
 
 void Window::setVisible(bool yesNo)

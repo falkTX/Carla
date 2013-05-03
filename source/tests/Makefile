@@ -20,7 +20,7 @@ ANSI_CXX_FLAGS  += -Wcast-qual -Wconversion -Wsign-conversion -Wlogical-op -Wagg
 ANSI_CXX_FLAGS  += -std=c++11 -Wzero-as-null-pointer-constant
 ANSI_CXX_FLAGS  += -DBUILD_ANSI_TEST -DVESTIGE_HEADER -fPIC
 
-TARGETS = ANSI CarlaString RtList Print Utils
+TARGETS = ANSI CarlaString DGL RtList Print Utils
 
 all: $(TARGETS) RUN
 
@@ -32,7 +32,10 @@ ANSI: ANSI.cpp
 CarlaString: CarlaString.cpp
 	$(CXX) $^ $(BUILD_CXX_FLAGS) $(LINK_FLAGS) -o $@
 
-RtList: RtList.cpp ../libs/rtmempool.a ../utils/RtList.hpp
+DGL: DGL.cpp DGL_Artwork.cpp ../libs/dgl.a
+	$(CXX) $^ $(BUILD_CXX_FLAGS) $(LINK_FLAGS) -lGL -lX11 -o $@
+
+RtList: RtList.cpp ../utils/RtList.hpp ../libs/rtmempool.a
 	$(CXX) RtList.cpp ../libs/rtmempool.a $(BUILD_CXX_FLAGS) $(LINK_FLAGS) -pthread -lpthread -o $@
 
 Print: Print.cpp

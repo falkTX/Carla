@@ -55,6 +55,8 @@
 
 // -------------------------------------------------
 
+START_NAMESPACE_DGL
+
 enum Char {
     DGL_CHAR_BACKSPACE = 0x08,
     DGL_CHAR_ESCAPE    = 0x1B,
@@ -95,6 +97,10 @@ enum Modifier {
     DGL_MODIFIER_ALT   = 1 << 2, /**< Alt/Option key */
     DGL_MODIFIER_SUPER = 1 << 3  /**< Mod4/Command/Windows key */
 };
+
+END_NAMESPACE_DGL
+
+// -------------------------------------------------
 
 static inline
 void dgl_sleep(unsigned int secs)

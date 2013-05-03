@@ -64,12 +64,10 @@ carla-discovery-posix64
 
 data/windows/Carla
 source/tests/ANSI
-source/tests/Base64
 source/tests/CarlaString
+source/tests/DGL
 source/tests/Print
-source/tests/Rewire.cpp
 source/tests/RtList
-source/tests/Thread
 source/tests/Utils
 
 # Docs
