@@ -21,6 +21,8 @@
 
 #include <fluidsynth.h>
 
+#include <QtCore/QStringList>
+
 #define FLUIDSYNTH_VERSION_NEW_API (FLUIDSYNTH_VERSION_MAJOR >= 1 && FLUIDSYNTH_VERSION_MINOR >= 1 && FLUIDSYNTH_VERSION_MICRO >= 4)
 
 CARLA_BACKEND_START_NAMESPACE
@@ -41,7 +43,8 @@ public:
           fSynth(nullptr),
           fSynthId(-1),
           fAudio16Buffers(nullptr),
-          fParamBuffers{0.0f}
+          fParamBuffers{0.0f},
+          fCurMidiProgs{0}
     {
         carla_debug("FluidSynthPlugin::FluidSynthPlugin(%p, %i, %s)", engine, id,  bool2str(use16Outs));
 
@@ -71,6 +74,7 @@ public:
         fluid_synth_set_chorus(fSynth, FLUID_CHORUS_DEFAULT_N, FLUID_CHORUS_DEFAULT_LEVEL, FLUID_CHORUS_DEFAULT_SPEED, FLUID_CHORUS_DEFAULT_DEPTH, FLUID_CHORUS_DEFAULT_TYPE);
 
         fluid_synth_set_polyphony(fSynth, FLUID_DEFAULT_POLYPHONY);
+        fluid_synth_set_gain(fSynth, 1.0f);
 
         for (int i=0; i < MAX_MIDI_CHANNELS; ++i)
             fluid_synth_set_interp_method(fSynth, i, FLUID_INTERP_DEFAULT);
@@ -326,12 +330,29 @@ public:
     // -------------------------------------------------------------------
     // Set data (state)
 
-    // nothing
+    void prepareForSave() override
+    {
+        CARLA_ASSERT(fSynth != nullptr);
+
+        char strBuf[STR_MAX+1];
+        std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i", fCurMidiProgs[0],  fCurMidiProgs[1],  fCurMidiProgs[2],  fCurMidiProgs[3],
+                                                                                          fCurMidiProgs[4],  fCurMidiProgs[5],  fCurMidiProgs[6],  fCurMidiProgs[7],
+                                                                                          fCurMidiProgs[8],  fCurMidiProgs[9],  fCurMidiProgs[10], fCurMidiProgs[11],
+                                                                                          fCurMidiProgs[12], fCurMidiProgs[13], fCurMidiProgs[14], fCurMidiProgs[15]);
+
+        CarlaPlugin::setCustomData(CUSTOM_DATA_STRING, "midiPrograms", strBuf, false);
+    }
 
     // -------------------------------------------------------------------
     // Set data (internal stuff)
 
-    // nothing
+    void setCtrlChannel(const int8_t channel, const bool sendOsc, const bool sendCallback) override
+    {
+        if (channel < MAX_MIDI_CHANNELS)
+            kData->midiprog.current = fCurMidiProgs[channel];
+
+        CarlaPlugin::setCtrlChannel(channel, sendOsc, sendCallback);
+    }
 
     // -------------------------------------------------------------------
     // Set data (plugin-specific stuff)
@@ -388,6 +409,58 @@ public:
         CarlaPlugin::setParameterValue(parameterId, value, sendGui, sendOsc, sendCallback);
     }
 
+    void setCustomData(const char* const type, const char* const key, const char* const value, const bool sendGui) override
+    {
+        CARLA_ASSERT(fSynth != nullptr);
+        CARLA_ASSERT(type != nullptr);
+        CARLA_ASSERT(key != nullptr);
+        CARLA_ASSERT(value != nullptr);
+        carla_debug("DssiPlugin::setCustomData(%s, %s, %s, %s)", type, key, value, bool2str(sendGui));
+
+        if (type == nullptr)
+            return carla_stderr2("DssiPlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is invalid", type, key, value, bool2str(sendGui));
+
+        if (std::strcmp(type, CUSTOM_DATA_STRING) != 0)
+            return carla_stderr2("DssiPlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is not string", type, key, value, bool2str(sendGui));
+
+        if (key == nullptr)
+            return carla_stderr2("DssiPlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - key is null", type, key, value, bool2str(sendGui));
+
+        if (std::strcmp(key, "midiPrograms") != 0)
+            return carla_stderr2("DssiPlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is not string", type, key, value, bool2str(sendGui));
+
+        if (value == nullptr)
+            return carla_stderr2("DssiPlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - value is null", type, key, value, bool2str(sendGui));
+
+        QStringList midiProgramList(QString(value).split(":", QString::SkipEmptyParts));
+
+        if (midiProgramList.count() == MAX_MIDI_CHANNELS)
+        {
+            uint i = 0;
+            foreach (const QString& midiProg, midiProgramList)
+            {
+                bool ok;
+                uint index = midiProg.toUInt(&ok);
+
+                if (ok && index < kData->midiprog.count)
+                {
+                    const uint32_t bank    = kData->midiprog.data[index].bank;
+                    const uint32_t program = kData->midiprog.data[index].program;
+
+                    fluid_synth_program_select(fSynth, i, fSynthId, bank, program);
+                    fCurMidiProgs[i] = index;
+
+                    if (kData->ctrlChannel == static_cast<int32_t>(i))
+                        kData->engine->callback(CALLBACK_MIDI_PROGRAM_CHANGED, fId, index, 0, 0.0f, nullptr);
+                }
+
+                ++i;
+            }
+        }
+
+        CarlaPlugin::setCustomData(type, key, value, sendGui);
+    }
+
     void setMidiProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) override
     {
         CARLA_ASSERT(fSynth != nullptr);
@@ -408,6 +481,7 @@ public:
 
             //const ScopedSingleProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
             fluid_synth_program_select(fSynth, kData->ctrlChannel, fSynthId, bank, program);
+            fCurMidiProgs[kData->ctrlChannel] = index;
         }
 
         CarlaPlugin::setMidiProgram(index, sendGui, sendOsc, sendCallback);
@@ -816,7 +890,9 @@ public:
         uint32_t count = 0;
         fluid_sfont_t* f_sfont;
         fluid_preset_t f_preset;
+
         bool hasDrums = false;
+        uint32_t drumIndex, drumProg;
 
         f_sfont = fluid_synth_get_sfont_by_id(fSynth, fSynthId);
 
@@ -844,8 +920,12 @@ public:
             kData->midiprog.data[i].program = f_preset.get_num(&f_preset);
             kData->midiprog.data[i].name    = carla_strdup(f_preset.get_name(&f_preset));
 
-            if (kData->midiprog.data[i].bank == 128)
-                hasDrums = true;
+            if (kData->midiprog.data[i].bank == 128 && ! hasDrums)
+            {
+                hasDrums  = true;
+                drumIndex = i;
+                drumProg  = kData->midiprog.data[i].program;
+            }
 
             ++i;
         }
@@ -868,27 +948,33 @@ public:
             fluid_synth_program_reset(fSynth);
 
             // select first program, or 128 for ch10
-            for (i=0; i < 16 && i != 9; ++i)
+            for (i=0; i < MAX_MIDI_CHANNELS && i != 9; ++i)
             {
-                fluid_synth_program_select(fSynth, i, fSynthId, kData->midiprog.data[0].bank, kData->midiprog.data[0].program);
 #ifdef FLUIDSYNTH_VERSION_NEW_API
                 fluid_synth_set_channel_type(fSynth, i, CHANNEL_TYPE_MELODIC);
 #endif
+                fluid_synth_program_select(fSynth, i, fSynthId, kData->midiprog.data[0].bank, kData->midiprog.data[0].program);
+
+                fCurMidiProgs[i] = 0;
             }
 
             if (hasDrums)
             {
-                fluid_synth_program_select(fSynth, 9, fSynthId, 128, 0);
 #ifdef FLUIDSYNTH_VERSION_NEW_API
                 fluid_synth_set_channel_type(fSynth, 9, CHANNEL_TYPE_DRUM);
 #endif
+                fluid_synth_program_select(fSynth, 9, fSynthId, 128, drumProg);
+
+                fCurMidiProgs[9] = drumIndex;
             }
             else
             {
-                fluid_synth_program_select(fSynth, 9, fSynthId, kData->midiprog.data[0].bank, kData->midiprog.data[0].program);
 #ifdef FLUIDSYNTH_VERSION_NEW_API
                 fluid_synth_set_channel_type(fSynth, 9, CHANNEL_TYPE_MELODIC);
 #endif
+                fluid_synth_program_select(fSynth, 9, fSynthId, kData->midiprog.data[0].bank, kData->midiprog.data[0].program);
+
+                fCurMidiProgs[9] = 0;
             }
 
             setMidiProgram(0, false, false, false);
@@ -1123,6 +1209,7 @@ public:
                                 if (kData->midiprog.data[k].bank == bankId && kData->midiprog.data[k].program == progId)
                                 {
                                     fluid_synth_program_select(fSynth, event.channel, fSynthId, bankId, progId);
+                                    fCurMidiProgs[event.channel] = k;
 
                                     if (event.channel == kData->ctrlChannel)
                                         postponeRtEvent(kPluginPostRtEventMidiProgramChange, k, 0, 0.0f);
@@ -1534,6 +1621,8 @@ private:
 
     float** fAudio16Buffers;
     float   fParamBuffers[FluidSynthParametersMax];
+
+    int32_t fCurMidiProgs[MAX_MIDI_CHANNELS];
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FluidSynthPlugin)
 };

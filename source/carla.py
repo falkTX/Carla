@@ -883,7 +883,7 @@ class CarlaMainW(QMainWindow):
             if pwidget is None:
                 break
 
-            if pwidget.fPluginInfo["hints"] & PLUGIN_CAN_VOLUME:
+            if pwidget.fPluginInfo['hints'] & PLUGIN_CAN_VOLUME:
                 pwidget.ui.edit_dialog.setParameterValue(PARAMETER_VOLUME, 1.0)
                 Carla.host.set_volume(i, 1.0)
 
@@ -898,7 +898,7 @@ class CarlaMainW(QMainWindow):
             if pwidget is None:
                 break
 
-            if pwidget.fPluginInfo["hints"] & PLUGIN_CAN_DRYWET:
+            if pwidget.fPluginInfo['hints'] & PLUGIN_CAN_DRYWET:
                 pwidget.ui.edit_dialog.setParameterValue(PARAMETER_DRYWET, 1.0)
                 Carla.host.set_drywet(i, 1.0)
 
@@ -913,7 +913,7 @@ class CarlaMainW(QMainWindow):
             if pwidget is None:
                 break
 
-            if pwidget.fPluginInfo["hints"] & PLUGIN_CAN_BALANCE:
+            if pwidget.fPluginInfo['hints'] & PLUGIN_CAN_BALANCE:
                 pwidget.ui.edit_dialog.setParameterValue(PARAMETER_BALANCE_LEFT, -1.0)
                 pwidget.ui.edit_dialog.setParameterValue(PARAMETER_BALANCE_RIGHT, 1.0)
                 Carla.host.set_balance_left(i, -1.0)
@@ -943,7 +943,7 @@ class CarlaMainW(QMainWindow):
             if pwidget is None:
                 break
 
-            if pwidget.fPluginInfo["hints"] & PLUGIN_CAN_VOLUME:
+            if pwidget.fPluginInfo['hints'] & PLUGIN_CAN_VOLUME:
                 pwidget.ui.edit_dialog.setParameterValue(PARAMETER_VOLUME, 0.0)
                 Carla.host.set_volume(i, 0.0)
 
@@ -958,7 +958,7 @@ class CarlaMainW(QMainWindow):
             if pwidget is None:
                 break
 
-            if pwidget.fPluginInfo["hints"] & PLUGIN_CAN_DRYWET:
+            if pwidget.fPluginInfo['hints'] & PLUGIN_CAN_DRYWET:
                 pwidget.ui.edit_dialog.setParameterValue(PARAMETER_DRYWET, 0.0)
                 Carla.host.set_drywet(i, 0.0)
 

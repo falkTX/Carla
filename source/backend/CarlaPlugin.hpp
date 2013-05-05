@@ -523,7 +523,7 @@ public:
      * \param sendOsc Send message change over OSC
      * \param sendCallback Send message change to registered callback
      */
-    void setCtrlChannel(const int8_t channel, const bool sendOsc, const bool sendCallback);
+    virtual void setCtrlChannel(const int8_t channel, const bool sendOsc, const bool sendCallback);
 
     // -------------------------------------------------------------------
     // Set data (plugin-specific stuff)

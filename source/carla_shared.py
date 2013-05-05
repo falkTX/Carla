@@ -1590,6 +1590,7 @@ class PluginEdit(QDialog):
                 self.ui.sb_ctrl_channel.setValue(self.fControlChannel+1)
                 self.ui.sb_ctrl_channel.blockSignals(False)
                 self.ui.keyboard.allNotesOff()
+                self._updateCtrlMidiProgram()
 
             elif index >= 0:
                 for paramType, paramId, paramWidget in self.fParameterList:
@@ -1719,11 +1720,7 @@ class PluginEdit(QDialog):
         self.fControlChannel = value-1
         Carla.host.set_ctrl_channel(self.fPluginId, self.fControlChannel)
         self.ui.keyboard.allNotesOff()
-
-        mpIndex = Carla.host.get_current_midi_program_index()
-
-        if self.ui.cb_midi_programs.currentIndex() != mpIndex:
-            self.setMidiProgram(mpIndex)
+        self._updateCtrlMidiProgram()
 
     @pyqtSlot(int, float)
     def slot_parameterValueChanged(self, parameterId, value):
@@ -1902,6 +1899,21 @@ class PluginEdit(QDialog):
 
             self.fTabIconTimers.append(ICON_STATE_NULL)
 
+    def _updateCtrlMidiProgram(self):
+        if self.fPluginInfo['type'] != PLUGIN_SF2:
+            return
+
+        if self.fControlChannel == -1:
+            self.ui.cb_midi_programs.setEnabled(False)
+            return
+
+        self.ui.cb_midi_programs.setEnabled(True)
+
+        mpIndex = Carla.host.get_current_midi_program_index(self.fPluginId)
+
+        if self.ui.cb_midi_programs.currentIndex() != mpIndex:
+            self.setMidiProgram(mpIndex)
+
     def showEvent(self, event):
         if not self.fScrollAreaSetup:
             self.fScrollAreaSetup = True
@@ -2071,7 +2083,7 @@ class PluginWidget(QFrame):
         self.ui.b_edit.setChecked(False)
 
     def recheckPluginHints(self, hints):
-        self.fPluginInfo["hints"] = hints
+        self.fPluginInfo['hints'] = hints
         self.ui.b_gui.setEnabled(hints & PLUGIN_HAS_GUI)
 
     def setActive(self, active, sendGui=False, sendCallback=True):
@@ -2213,7 +2225,7 @@ class PluginWidget(QFrame):
 
             if Carla.host.rename_plugin(self.fPluginId, newName):
                 self.fPluginInfo['name'] = newName
-                self.ui.edit_dialog.fPluginInfo["name"] = newName
+                self.ui.edit_dialog.fPluginInfo['name'] = newName
                 self.ui.edit_dialog.reloadInfo()
                 self.ui.label_name.setText(newName)
             else:

@@ -804,7 +804,7 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
     // ---------------------------------------------------------------------
     // Part 3 - set midi program
 
-    if (saveState.currentMidiBank >= 0 && saveState.currentMidiProgram >= 0)
+    if (saveState.currentMidiBank >= 0 && saveState.currentMidiProgram >= 0 && type() != PLUGIN_SF2)
         setMidiProgramById(saveState.currentMidiBank, saveState.currentMidiProgram, true, true, true);
 
     // ---------------------------------------------------------------------
