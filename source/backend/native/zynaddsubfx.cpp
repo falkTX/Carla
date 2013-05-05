@@ -104,11 +104,14 @@ public:
         : PluginDescriptorClass(host),
           kMaster(new Master()),
           kSampleRate(getSampleRate()),
+          fIsActive(false),
           fThread(kMaster, host)
     {
         fThread.start();
         maybeInitPrograms(kMaster);
-        //fThread.waitForStarted();
+
+        for (int i = 0; i < NUM_MIDI_PARTS; ++i)
+            kMaster->partonoff(i, 1);
     }
 
     ~ZynAddSubFxPlugin() override
@@ -229,13 +232,13 @@ protected:
 
         bool isOffline = false;
 
-        if (isOffline)
+        if (isOffline || ! fIsActive)
             loadProgram(kMaster, channel, bank, program);
         else
             fThread.loadLater(channel, bank, program);
     }
 
-    void setCustomData(const char* const key, const char* const value)
+    void setCustomData(const char* const key, const char* const value) override
     {
         CARLA_ASSERT(key != nullptr);
         CARLA_ASSERT(value != nullptr);
@@ -254,6 +257,13 @@ protected:
         // broken
         //for (int i=0; i < NUM_MIDI_PARTS; i++)
         //    kMaster->setController(0, MIDI_CONTROL_ALL_SOUND_OFF, 0);
+
+        fIsActive = true;
+    }
+
+    void deactivate() override
+    {
+        fIsActive = false;
     }
 
     void process(float**, float** const outBuffer, const uint32_t frames, const uint32_t midiEventCount, const MidiEvent* const midiEvents) override
@@ -371,6 +381,7 @@ private:
 #endif
               fQuit(false),
               fChangeProgram(false),
+              fNextChannel(0),
               fNextBank(0),
               fNextProgram(0)
         {
@@ -387,7 +398,7 @@ private:
 
         void loadLater(const uint8_t channel, const uint32_t bank, const uint32_t program)
         {
-            // TODO
+            fNextChannel = channel;
             fNextBank    = bank;
             fNextProgram = program;
             fChangeProgram = true;
@@ -396,6 +407,7 @@ private:
         void stopLoadLater()
         {
             fChangeProgram = false;
+            fNextChannel = 0;
             fNextBank    = 0;
             fNextProgram = 0;
         }
@@ -489,12 +501,17 @@ private:
                 if (fChangeProgram)
                 {
                     fChangeProgram = false;
-                    loadProgram(kMaster, 0, fNextBank, fNextProgram); // TODO
+                    loadProgram(kMaster, fNextChannel, fNextBank, fNextProgram);
+                    fNextChannel = 0;
                     fNextBank    = 0;
                     fNextProgram = 0;
-                }
 
-                carla_msleep(15);
+                    carla_msleep(15);
+                }
+                else
+                {
+                    carla_msleep(30);
+                }
             }
 
 #ifdef WANT_ZYNADDSUBFX_UI
@@ -533,12 +550,14 @@ private:
 
         bool     fQuit;
         bool     fChangeProgram;
+        uint8_t  fNextChannel;
         uint32_t fNextBank;
         uint32_t fNextProgram;
     };
 
     Master* const  kMaster;
     const unsigned kSampleRate;
+    bool fIsActive;
 
     ZynThread fThread;
 
@@ -601,26 +620,28 @@ public:
             return;
         doSearch = false;
 
+        sPrograms.append(new ProgramInfo(0, 0, "default"));
+
         pthread_mutex_lock(&master->mutex);
 
         // refresh banks
         master->bank.rescanforbanks();
 
-        for (uint32_t i=0, size = master->bank.banks.size(); i < size; i++)
+        for (uint32_t i=0, size = master->bank.banks.size(); i < size; ++i)
         {
             if (master->bank.banks[i].dir.empty())
                 continue;
 
             master->bank.loadbank(master->bank.banks[i].dir);
 
-            for (unsigned int instrument = 0; instrument < BANK_SIZE; instrument++)
+            for (unsigned int instrument = 0; instrument < BANK_SIZE; ++instrument)
             {
                 const std::string insName(master->bank.getname(instrument));
 
                 if (insName.empty() || insName[0] == '\0' || insName[0] == ' ')
                     continue;
 
-                sPrograms.append(new ProgramInfo(i, instrument, insName.c_str()));
+                sPrograms.append(new ProgramInfo(i+1, instrument, insName.c_str()));
             }
         }
 
@@ -629,16 +650,31 @@ public:
 
     static void loadProgram(Master* const master, const uint8_t channel, const uint32_t bank, const uint32_t program)
     {
-        const std::string& bankdir(master->bank.banks[bank].dir);
+        if (bank == 0)
+        {
+            pthread_mutex_lock(&master->mutex);
+
+            master->part[channel]->defaults();
+            master->part[channel]->applyparameters(false);
+            master->partonoff(channel, 1);
+
+            pthread_mutex_unlock(&master->mutex);
+
+            return;
+        }
+
+        const std::string& bankdir(master->bank.banks[bank-1].dir);
 
         if (! bankdir.empty())
         {
             pthread_mutex_lock(&master->mutex);
 
+            master->partonoff(channel, 1);
+
             master->bank.loadbank(bankdir);
             master->bank.loadfromslot(program, master->part[channel]);
 
-            master->applyparameters(false);
+            master->part[channel]->applyparameters(false);
 
             pthread_mutex_unlock(&master->mutex);
         }

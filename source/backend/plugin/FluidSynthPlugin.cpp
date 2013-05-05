@@ -451,7 +451,10 @@ public:
                     fCurMidiProgs[i] = index;
 
                     if (kData->ctrlChannel == static_cast<int32_t>(i))
+                    {
+                        kData->midiprog.current = index;
                         kData->engine->callback(CALLBACK_MIDI_PROGRAM_CHANGED, fId, index, 0, 0.0f, nullptr);
+                    }
                 }
 
                 ++i;
@@ -977,7 +980,7 @@ public:
                 fCurMidiProgs[9] = 0;
             }
 
-            setMidiProgram(0, false, false, false);
+            kData->midiprog.current = 0;
         }
         else
         {

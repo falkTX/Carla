@@ -172,7 +172,8 @@ public:
           fIsUiVisible(false),
           fAudioInBuffers(nullptr),
           fAudioOutBuffers(nullptr),
-          fMidiEventCount(0)
+          fMidiEventCount(0),
+          fCurMidiProgs{0}
     {
         carla_debug("NativePlugin::NativePlugin(%p, %i)", engine, id);
 
@@ -483,9 +484,19 @@ public:
         CARLA_ASSERT(fDescriptor != nullptr);
         CARLA_ASSERT(fHandle != nullptr);
 
-        if (fDescriptor->get_state == nullptr)
-            return;
-        if ((fDescriptor->hints & ::PLUGIN_USES_STATE) == 0)
+        if (kData->midiprog.count > 0 && (fHints & PLUGIN_IS_SYNTH) != 0)
+        {
+            char strBuf[STR_MAX+1];
+            std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i",
+                          fCurMidiProgs[0],  fCurMidiProgs[1],  fCurMidiProgs[2],  fCurMidiProgs[3],
+                          fCurMidiProgs[4],  fCurMidiProgs[5],  fCurMidiProgs[6],  fCurMidiProgs[7],
+                          fCurMidiProgs[8],  fCurMidiProgs[9],  fCurMidiProgs[10], fCurMidiProgs[11],
+                          fCurMidiProgs[12], fCurMidiProgs[13], fCurMidiProgs[14], fCurMidiProgs[15]);
+
+            CarlaPlugin::setCustomData(CUSTOM_DATA_STRING, "midiPrograms", strBuf, false);
+        }
+
+        if (fDescriptor->get_state == nullptr || (fDescriptor->hints & ::PLUGIN_USES_STATE) == 0)
             return;
 
         if (char* data = fDescriptor->get_state(fHandle))
@@ -512,6 +523,14 @@ public:
         // TODO - send callback to plugin, reporting name change
 
         CarlaPlugin::setName(newName);
+    }
+
+    void setCtrlChannel(const int8_t channel, const bool sendOsc, const bool sendCallback) override
+    {
+        if (channel < MAX_MIDI_CHANNELS)
+            kData->midiprog.current = fCurMidiProgs[channel];
+
+        CarlaPlugin::setCtrlChannel(channel, sendOsc, sendCallback);
     }
 
     // -------------------------------------------------------------------
@@ -569,6 +588,41 @@ public:
                     fDescriptor->set_state(fHandle2, value);
             }
         }
+        else if (std::strcmp(key, "midiPrograms") == 0 && fDescriptor->set_midi_program != nullptr)
+        {
+            QStringList midiProgramList(QString(value).split(":", QString::SkipEmptyParts));
+
+            if (midiProgramList.count() == MAX_MIDI_CHANNELS)
+            {
+                uint i = 0;
+                foreach (const QString& midiProg, midiProgramList)
+                {
+                    bool ok;
+                    uint index = midiProg.toUInt(&ok);
+
+                    if (ok && index < kData->midiprog.count)
+                    {
+                        const uint32_t bank    = kData->midiprog.data[index].bank;
+                        const uint32_t program = kData->midiprog.data[index].program;
+
+                        fDescriptor->set_midi_program(fHandle, i, bank, program);
+
+                        if (fHandle2 != nullptr)
+                            fDescriptor->set_midi_program(fHandle2, i, bank, program);
+
+                        fCurMidiProgs[i] = index;
+
+                        if (kData->ctrlChannel == static_cast<int32_t>(i))
+                        {
+                            kData->midiprog.current = index;
+                            kData->engine->callback(CALLBACK_MIDI_PROGRAM_CHANGED, fId, index, 0, 0.0f, nullptr);
+                        }
+                    }
+
+                    ++i;
+                }
+            }
+        }
         else
         {
             if (fDescriptor->set_custom_data != nullptr)
@@ -603,17 +657,23 @@ public:
         else if (index > static_cast<int32_t>(kData->midiprog.count))
             return;
 
+        if ((fHints & PLUGIN_IS_SYNTH) != 0 && (kData->ctrlChannel < 0 || kData->ctrlChannel >= MAX_MIDI_CHANNELS))
+            return;
+
         if (index >= 0)
         {
+            const uint8_t  channel = (kData->ctrlChannel >= 0 || kData->ctrlChannel < MAX_MIDI_CHANNELS) ? kData->ctrlChannel : 0;
             const uint32_t bank    = kData->midiprog.data[index].bank;
             const uint32_t program = kData->midiprog.data[index].program;
 
             const ScopedSingleProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
 
-            fDescriptor->set_midi_program(fHandle, 0, bank, program); // TODO
+            fDescriptor->set_midi_program(fHandle, channel, bank, program);
 
             if (fHandle2 != nullptr)
-                fDescriptor->set_midi_program(fHandle2, 0, bank, program); // TODO
+                fDescriptor->set_midi_program(fHandle2, channel, bank, program);
+
+            fCurMidiProgs[channel] = index;
         }
 
         CarlaPlugin::setMidiProgram(index, sendGui, sendOsc, sendCallback);
@@ -1072,7 +1132,7 @@ public:
 
         // Query new programs
         uint32_t count = 0;
-        if (fDescriptor->get_midi_program_count != nullptr && fDescriptor->get_midi_program_info != nullptr)
+        if (fDescriptor->get_midi_program_count != nullptr && fDescriptor->get_midi_program_info != nullptr && fDescriptor->set_midi_program != nullptr)
             count = fDescriptor->get_midi_program_count(fHandle);
 
         if (count > 0)
@@ -1452,16 +1512,24 @@ public:
                         break;
 
                     case kEngineControlEventTypeMidiProgram:
-                        if (event.channel == kData->ctrlChannel && (fOptions & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
+                        if (event.channel < MAX_MIDI_CHANNELS && (fOptions & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
                         {
-                            const uint32_t nextProgramId = ctrlEvent.param;
+                            const uint32_t nextProgramId(ctrlEvent.param);
 
                             for (k=0; k < kData->midiprog.count; ++k)
                             {
                                 if (kData->midiprog.data[k].bank == nextBankId && kData->midiprog.data[k].program == nextProgramId)
                                 {
-                                    setMidiProgram(k, false, false, false);
-                                    postponeRtEvent(kPluginPostRtEventMidiProgramChange, k, 0, 0.0f);
+                                    fDescriptor->set_midi_program(fHandle, event.channel, nextBankId, nextProgramId);
+
+                                    if (fHandle2 != nullptr)
+                                        fDescriptor->set_midi_program(fHandle2, event.channel, nextBankId, nextProgramId);
+
+                                    fCurMidiProgs[event.channel] = k;
+
+                                    if (event.channel == kData->ctrlChannel)
+                                        postponeRtEvent(kPluginPostRtEventMidiProgramChange, k, 0, 0.0f);
+
                                     break;
                                 }
                             }
@@ -2187,6 +2255,8 @@ private:
     float**     fAudioOutBuffers;
     uint32_t    fMidiEventCount;
     ::MidiEvent fMidiEvents[MAX_MIDI_EVENTS*2];
+
+    int32_t fCurMidiProgs[MAX_MIDI_CHANNELS];
 
     NativePluginMidiData fMidiIn;
     NativePluginMidiData fMidiOut;

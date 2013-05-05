@@ -1900,7 +1900,9 @@ class PluginEdit(QDialog):
             self.fTabIconTimers.append(ICON_STATE_NULL)
 
     def _updateCtrlMidiProgram(self):
-        if self.fPluginInfo['type'] != PLUGIN_SF2:
+        if self.fPluginInfo['type'] not in (PLUGIN_INTERNAL, PLUGIN_SF2):
+            return
+        elif not self.fPluginInfo['hints'] & PLUGIN_IS_SYNTH:
             return
 
         if self.fControlChannel == -1:
