@@ -1183,7 +1183,7 @@ public:
                     guiOptions.parented  = (fUi.type == PLUGIN_UI_PARENT);
                     guiOptions.resizable = isUiResizable();
 
-                    kData->gui = new CarlaPluginGui(kData->engine, this, guiOptions);
+                    kData->gui = new CarlaPluginGui(kData->engine, this, guiOptions, kData->guiGeometry);
                 }
 
                 if (fUi.type == PLUGIN_UI_PARENT)
@@ -1206,6 +1206,7 @@ public:
                     fUi.handle = nullptr;
                     fUi.widget = nullptr;
 
+                    kData->guiGeometry = kData->gui->saveGeometry();
                     kData->gui->close();
                     delete kData->gui;
                     kData->gui = nullptr;
@@ -1231,6 +1232,7 @@ public:
 
                 if (kData->gui != nullptr)
                 {
+                    kData->guiGeometry = kData->gui->saveGeometry();
                     kData->gui->close();
                     delete kData->gui;
                     kData->gui = nullptr;

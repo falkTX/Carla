@@ -47,7 +47,7 @@ public:
         bool resizable;
     };
 
-    CarlaPluginGui(CarlaEngine* const engine, Callback* const callback, const Options& options);
+    CarlaPluginGui(CarlaEngine* const engine, Callback* const callback, const Options& options, const QByteArray& lastGeometry);
     ~CarlaPluginGui();
 
     void setSize(const int width, const int height);

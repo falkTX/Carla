@@ -401,6 +401,8 @@ protected:
     {
         if (show)
             createUiIfNeeded();
+        else if (fUiPtr != nullptr)
+            fUiGeometry = fUiPtr->saveGeometry();
 
         if (fUiPtr != nullptr)
             fUiPtr->carla_show(show);
@@ -463,6 +465,7 @@ private:
 #if DISTRHO_PLUGIN_HAS_UI
     // UI
     ScopedPointer<UICarla> fUiPtr;
+    QByteArray fUiGeometry;
 
     void createUiIfNeeded()
     {
@@ -470,6 +473,9 @@ private:
         {
             d_lastUiSampleRate = getSampleRate();
             fUiPtr = new UICarla(getHostHandle(), &fPlugin);
+
+            if (! fUiGeometry.isNull())
+                fUiPtr->restoreGeometry(fUiGeometry);
         }
     }
 #endif

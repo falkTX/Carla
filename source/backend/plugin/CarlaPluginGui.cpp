@@ -30,7 +30,7 @@ CARLA_BACKEND_START_NAMESPACE
 // -------------------------------------------------------------------
 // CarlaPluginGUI
 
-CarlaPluginGui::CarlaPluginGui(CarlaEngine* const engine, Callback* const callback, const Options& options)
+CarlaPluginGui::CarlaPluginGui(CarlaEngine* const engine, Callback* const callback, const Options& options, const QByteArray& lastGeometry)
     : QMainWindow(nullptr),
       kCallback(callback),
       fContainer(nullptr),
@@ -61,6 +61,9 @@ CarlaPluginGui::CarlaPluginGui(CarlaEngine* const engine, Callback* const callba
 
         if (settings.value("Engine/UIsAlwaysOnTop", true).toBool())
             setWindowFlags(windowFlags()|Qt::WindowStaysOnTopHint);
+
+        if (! lastGeometry.isNull())
+            restoreGeometry(lastGeometry);
     }
 }
 

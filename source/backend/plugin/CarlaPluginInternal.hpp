@@ -394,6 +394,7 @@ struct CarlaPluginProtectedData {
     CarlaEngine* const engine;
     CarlaEngineClient* client;
     CarlaPluginGui* gui;
+    QByteArray guiGeometry;
 
     bool active;
     bool needsReset;

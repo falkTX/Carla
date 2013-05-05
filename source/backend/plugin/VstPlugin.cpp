@@ -405,7 +405,7 @@ public:
                     guiOptions.parented  = true;
                     guiOptions.resizable = false;
 
-                    kData->gui = new CarlaPluginGui(kData->engine, this, guiOptions);
+                    kData->gui = new CarlaPluginGui(kData->engine, this, guiOptions, kData->guiGeometry);
                 }
 
                 int32_t value = 0;
@@ -440,6 +440,7 @@ public:
                 {
                     if (kData->gui != nullptr)
                     {
+                        kData->guiGeometry = kData->gui->saveGeometry();
                         kData->gui->close();
                         delete kData->gui;
                         kData->gui = nullptr;
@@ -461,6 +462,7 @@ public:
                     fGui.lastWidth  = kData->gui->width();
                     fGui.lastHeight = kData->gui->height();
 
+                    kData->guiGeometry = kData->gui->saveGeometry();
                     kData->gui->close();
                     delete kData->gui;
                     kData->gui = nullptr;
