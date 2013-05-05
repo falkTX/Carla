@@ -568,6 +568,9 @@ Plugin Name
                </item>
                <item>
                 <widget class="QSpinBox" name="sb_ctrl_channel">
+                 <property name="contextMenuPolicy">
+                  <enum>Qt::CustomContextMenu</enum>
+                 </property>
                  <property name="alignment">
                   <set>Qt::AlignCenter</set>
                  </property>

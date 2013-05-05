@@ -58,7 +58,7 @@ class CanvasPreviewFrame(QFrame):
         self.fViewPadY = 0.0
         self.fViewRect = [0.0, 0.0, 10.0, 10.0]
 
-    def init(self, scene, realWidth, realHeight, useCustomPaint):
+    def init(self, scene, realWidth, realHeight, useCustomPaint = False):
         padding = 6
 
         self.fScene = scene

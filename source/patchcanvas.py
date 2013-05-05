@@ -1389,8 +1389,10 @@ class CanvasLine(QGraphicsLineItem):
         self.setPen(QPen(port_gradient, 2))
 
     def paint(self, painter, option, widget):
+        painter.save()
         painter.setRenderHint(QPainter.Antialiasing, bool(options.antialiasing))
         QGraphicsLineItem.paint(self, painter, option, widget)
+        painter.restore()
 
 # ------------------------------------------------------------------------------
 # canvasbezierline.cpp
@@ -1494,8 +1496,10 @@ class CanvasBezierLine(QGraphicsPathItem):
         self.setPen(QPen(port_gradient, 2))
 
     def paint(self, painter, option, widget):
+        painter.save()
         painter.setRenderHint(QPainter.Antialiasing, bool(options.antialiasing))
         QGraphicsPathItem.paint(self, painter, option, widget)
+        painter.restore()
 
 # ------------------------------------------------------------------------------
 # canvaslivemov.cpp
@@ -1549,8 +1553,10 @@ class CanvasLineMov(QGraphicsLineItem):
         return CanvasLineMovType
 
     def paint(self, painter, option, widget):
+        painter.save()
         painter.setRenderHint(QPainter.Antialiasing, bool(options.antialiasing))
         QGraphicsLineItem.paint(self, painter, option, widget)
+        painter.restore()
 
 # ------------------------------------------------------------------------------
 # canvasbezierlinemov.cpp
@@ -1611,8 +1617,10 @@ class CanvasBezierLineMov(QGraphicsPathItem):
         return CanvasBezierLineMovType
 
     def paint(self, painter, option, widget):
+        painter.save()
         painter.setRenderHint(QPainter.Antialiasing, bool(options.antialiasing))
         QGraphicsPathItem.paint(self, painter, option, widget)
+        painter.restore()
 
 # ------------------------------------------------------------------------------
 # canvasport.cpp
@@ -1832,6 +1840,7 @@ class CanvasPort(QGraphicsItem):
         return QRectF(0, 0, self.m_port_width + 12, self.m_port_height)
 
     def paint(self, painter, option, widget):
+        painter.save()
         painter.setRenderHint(QPainter.Antialiasing, bool(options.antialiasing == ANTIALIASING_FULL))
 
         poly_locx = [0, 0, 0, 0, 0]
@@ -1940,6 +1949,8 @@ class CanvasPort(QGraphicsItem):
             painter.drawRect(connRect)
 
         self.m_last_selected_state = self.isSelected()
+
+        painter.restore()
 
 # ------------------------------------------------------------------------------
 # canvasbox.cpp
@@ -2428,6 +2439,7 @@ class CanvasBox(QGraphicsItem):
         return QRectF(0, 0, self.p_width, self.p_height)
 
     def paint(self, painter, option, widget):
+        painter.save()
         painter.setRenderHint(QPainter.Antialiasing, False)
 
         # Draw rectangle
@@ -2474,6 +2486,8 @@ class CanvasBox(QGraphicsItem):
         painter.drawText(textPos, self.m_group_name)
 
         self.repaintLines()
+
+        painter.restore()
 
 # ------------------------------------------------------------------------------
 # canvasicon.cpp
@@ -2544,9 +2558,11 @@ class CanvasIcon(QGraphicsSvgItem):
 
     def paint(self, painter, option, widget):
         if self.m_renderer:
+            painter.save()
             painter.setRenderHint(QPainter.Antialiasing, False)
             painter.setRenderHint(QPainter.TextAntialiasing, False)
             self.m_renderer.render(painter, self.p_size)
+            painter.restore()
         else:
             QGraphicsSvgItem.paint(self, painter, option, widget)
 

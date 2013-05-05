@@ -164,9 +164,11 @@ class PixmapDial(QDial):
         QDial.leaveEvent(self, event)
 
     def paintEvent(self, event):
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.Antialiasing, True)
         event.accept()
+
+        painter = QPainter(self)
+        painter.save()
+        painter.setRenderHint(QPainter.Antialiasing, True)
 
         if self.fLabel:
             if self.fCustomPaint == self.CUSTOM_PAINT_NULL:
@@ -282,6 +284,8 @@ class PixmapDial(QDial):
         else: # isEnabled()
             target = QRectF(0.0, 0.0, self.fSize, self.fSize)
             painter.drawPixmap(target, self.fPixmap, target)
+
+        painter.restore()
 
     def resizeEvent(self, event):
         self.updateSizes()

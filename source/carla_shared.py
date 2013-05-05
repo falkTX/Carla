@@ -118,7 +118,7 @@ else:
     PATH = PATH.split(os.pathsep)
 
 # ------------------------------------------------------------------------------------------------------------
-# Carla object
+# Global Carla object
 
 class CarlaObject(object):
     __slots__ = [
@@ -148,10 +148,10 @@ Carla.maxParameters = MAX_RACK_PLUGINS
 # ------------------------------------------------------------------------------------------------------------
 # Carla GUI defines
 
-ICON_STATE_NULL = 0
-ICON_STATE_WAIT = 1
-ICON_STATE_OFF  = 2
-ICON_STATE_ON   = 3
+ICON_STATE_NULL  = 0
+ICON_STATE_OFF   = 1
+ICON_STATE_WAIT  = 2
+ICON_STATE_ON    = 3
 
 PALETTE_COLOR_NONE   = 0
 PALETTE_COLOR_WHITE  = 1
@@ -167,13 +167,11 @@ PALETTE_COLOR_PINK   = 8
 # Static MIDI CC list
 
 MIDI_CC_LIST = (
-    #"0x00 Bank Select",
     "0x01 Modulation",
     "0x02 Breath",
     "0x03 (Undefined)",
     "0x04 Foot",
     "0x05 Portamento",
-    #"0x06 (Data Entry MSB)",
     "0x07 Volume",
     "0x08 Balance",
     "0x09 (Undefined)",
@@ -199,44 +197,6 @@ MIDI_CC_LIST = (
     "0x1D (Undefined)",
     "0x1E (Undefined)",
     "0x1F (Undefined)",
-    #"0x20 *Bank Select",
-    #"0x21 *Modulation",
-    #"0x22 *Breath",
-    #"0x23 *(Undefined)",
-    #"0x24 *Foot",
-    #"0x25 *Portamento",
-    #"0x26 *(Data Entry MSB)",
-    #"0x27 *Volume",
-    #"0x28 *Balance",
-    #"0x29 *(Undefined)",
-    #"0x2A *Pan",
-    #"0x2B *Expression",
-    #"0x2C *FX *Control 1",
-    #"0x2D *FX *Control 2",
-    #"0x2E *(Undefined)",
-    #"0x2F *(Undefined)",
-    #"0x30 *General Purpose 1",
-    #"0x31 *General Purpose 2",
-    #"0x32 *General Purpose 3",
-    #"0x33 *General Purpose 4",
-    #"0x34 *(Undefined)",
-    #"0x35 *(Undefined)",
-    #"0x36 *(Undefined)",
-    #"0x37 *(Undefined)",
-    #"0x38 *(Undefined)",
-    #"0x39 *(Undefined)",
-    #"0x3A *(Undefined)",
-    #"0x3B *(Undefined)",
-    #"0x3C *(Undefined)",
-    #"0x3D *(Undefined)",
-    #"0x3E *(Undefined)",
-    #"0x3F *(Undefined)",
-    #"0x40 Damper On/Off", # <63 off, >64 on
-    #"0x41 Portamento On/Off", # <63 off, >64 on
-    #"0x42 Sostenuto On/Off", # <63 off, >64 on
-    #"0x43 Soft Pedal On/Off", # <63 off, >64 on
-    #"0x44 Legato Footswitch", # <63 Normal, >64 Legato
-    #"0x45 Hold 2", # <63 off, >64 on
     "0x46 Control 1 [Variation]",
     "0x47 Control 2 [Timbre]",
     "0x48 Control 3 [Release]",
@@ -519,11 +479,8 @@ else:
     carla_bridge_lv2_gtk3 = findTool("bridges", "carla-bridge-lv2-gtk3")
     carla_bridge_lv2_qt4  = findTool("bridges", "carla-bridge-lv2-qt4")
     carla_bridge_lv2_qt5  = findTool("bridges", "carla-bridge-lv2-qt5")
-
-# find linux only tools
-if LINUX:
-    carla_bridge_lv2_x11 = os.path.join("bridges", "carla-bridge-lv2-x11")
-    carla_bridge_vst_x11 = os.path.join("bridges", "carla-bridge-vst-x11")
+    carla_bridge_lv2_x11  = findTool("bridges", "carla-bridge-lv2-x11")
+    carla_bridge_vst_x11  = findTool("bridges", "carla-bridge-vst-x11")
 
 # ------------------------------------------------------------------------------------------------------------
 # Convert a ctypes c_char_p into a python string
@@ -615,10 +572,10 @@ def findBinaries(bPATH, OS):
     elif OS == "MACOS":
         extensions = (".dylib", ".so")
     else:
-        extensions = (".so", ".sO", ".SO", ".So")
+        extensions = (".so",)
 
     for root, dirs, files in os.walk(bPATH):
-        for name in [name for name in files if name.endswith(extensions)]:
+        for name in [name for name in files if name.lower().endswith(extensions)]:
             binaries.append(os.path.join(root, name))
 
     return binaries
@@ -636,16 +593,16 @@ def findSoundKits(bPATH, stype):
     soundfonts = []
 
     if stype == "gig":
-        extensions = (".gig", ".giG", ".gIG", ".GIG", ".GIg", ".Gig") if not WINDOWS else (".gig",)
+        extensions = (".gig",)
     elif stype == "sf2":
-        extensions = (".sf2", ".sF2", ".SF2", ".Sf2") if not WINDOWS else (".sf2",)
+        extensions = (".sf2",)
     elif stype == "sfz":
-        extensions = (".sfz", ".sfZ", ".sFZ", ".SFZ", ".SFz", ".Sfz") if not WINDOWS else (".sfz",)
+        extensions = (".sfz",)
     else:
         return []
 
     for root, dirs, files in os.walk(bPATH):
-        for name in [name for name in files if name.endswith(extensions)]:
+        for name in [name for name in files if name.lower().endswith(extensions)]:
             soundfonts.append(os.path.join(root, name))
 
     return soundfonts
@@ -991,6 +948,8 @@ class PluginParameter(QWidget):
         if pHints & PARAMETER_USES_CUSTOM_TEXT:
             self.ui.widget.setTextCallback(self._textCallBack)
 
+        self.ui.widget.updateAll()
+
         self.setMidiControl(pInfo['midiCC'])
         self.setMidiChannel(pInfo['midiChannel']+1)
 
@@ -999,8 +958,6 @@ class PluginParameter(QWidget):
         self.connect(self.ui.sb_control, SIGNAL("valueChanged(int)"), SLOT("slot_controlSpinboxChanged(int)"))
         self.connect(self.ui.sb_channel, SIGNAL("valueChanged(int)"), SLOT("slot_channelSpinboxChanged(int)"))
         self.connect(self.ui.widget, SIGNAL("valueChanged(double)"), SLOT("slot_widgetValueChanged(double)"))
-
-        self.ui.widget.updateAll()
 
     def setDefault(self, value):
         self.ui.widget.setDefault(value)
@@ -1023,6 +980,9 @@ class PluginParameter(QWidget):
     def setLabelWidth(self, width):
         self.ui.label.setMinimumWidth(width)
         self.ui.label.setMaximumWidth(width)
+
+    def pluginId(self):
+        return self.fPluginId
 
     def tabIndex(self):
         return self.fTabIndex
@@ -1047,9 +1007,8 @@ class PluginParameter(QWidget):
         actSel = menu.exec_(QCursor.pos())
 
         if not actSel:
-            return
-
-        if actSel == actNone:
+            pass
+        elif actSel == actNone:
             self.ui.sb_control.setValue(-1)
         else:
             selControlStr = actSel.text()
@@ -1110,31 +1069,34 @@ class PluginEdit(QDialog):
         self.fCurrentMidiProgram = -1
         self.fCurrentStateFilename = None
         self.fControlChannel = 0
+        self.fScrollAreaSetup = False
 
         self.fParameterCount = 0
         self.fParameterList  = []     # (type, id, widget)
         self.fParametersToUpdate = [] # (id, value)
+
+        self.fPlayingNotes = [] # (channel, note)
 
         self.fTabIconOff = QIcon(":/bitmaps/led_off.png")
         self.fTabIconOn  = QIcon(":/bitmaps/led_yellow.png")
         self.fTabIconCount  = 0
         self.fTabIconTimers = []
 
-        self.fScrollAreaSetup = False
-
+        self.ui.dial_drywet.setCustomPaint(self.ui.dial_drywet.CUSTOM_PAINT_CARLA_WET)
         self.ui.dial_drywet.setPixmap(3)
         self.ui.dial_drywet.setLabel("Dry/Wet")
+
+        self.ui.dial_vol.setCustomPaint(self.ui.dial_vol.CUSTOM_PAINT_CARLA_VOL)
         self.ui.dial_vol.setPixmap(3)
         self.ui.dial_vol.setLabel("Volume")
+
+        self.ui.dial_b_left.setCustomPaint(self.ui.dial_b_left.CUSTOM_PAINT_CARLA_L)
         self.ui.dial_b_left.setPixmap(4)
         self.ui.dial_b_left.setLabel("L")
+
+        self.ui.dial_b_right.setCustomPaint(self.ui.dial_b_right.CUSTOM_PAINT_CARLA_R)
         self.ui.dial_b_right.setPixmap(4)
         self.ui.dial_b_right.setLabel("R")
-
-        self.ui.dial_drywet.setCustomPaint(self.ui.dial_drywet.CUSTOM_PAINT_CARLA_WET)
-        self.ui.dial_vol.setCustomPaint(self.ui.dial_vol.CUSTOM_PAINT_CARLA_VOL)
-        self.ui.dial_b_left.setCustomPaint(self.ui.dial_b_left.CUSTOM_PAINT_CARLA_L)
-        self.ui.dial_b_right.setCustomPaint(self.ui.dial_b_right.CUSTOM_PAINT_CARLA_R)
 
         self.ui.keyboard.setMode(self.ui.keyboard.HORIZONTAL)
         self.ui.keyboard.setOctaves(6)
@@ -1152,6 +1114,8 @@ class PluginEdit(QDialog):
             self.ui.b_load_state.setEnabled(False)
             self.ui.b_save_state.setEnabled(False)
 
+        self.reloadAll()
+
         self.connect(self.ui.ch_fixed_buffer, SIGNAL("clicked(bool)"), SLOT("slot_optionChanged(bool)"))
         self.connect(self.ui.ch_force_stereo, SIGNAL("clicked(bool)"), SLOT("slot_optionChanged(bool)"))
         self.connect(self.ui.ch_map_program_changes, SIGNAL("clicked(bool)"), SLOT("slot_optionChanged(bool)"))
@@ -1168,30 +1132,27 @@ class PluginEdit(QDialog):
         self.connect(self.ui.dial_b_right, SIGNAL("valueChanged(int)"), SLOT("slot_balanceRightChanged(int)"))
         self.connect(self.ui.sb_ctrl_channel, SIGNAL("valueChanged(int)"), SLOT("slot_ctrlChannelChanged(int)"))
 
-        self.connect(self.ui.dial_drywet, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_showCustomDialMenu()"))
-        self.connect(self.ui.dial_vol, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_showCustomDialMenu()"))
-        self.connect(self.ui.dial_b_left, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_showCustomDialMenu()"))
-        self.connect(self.ui.dial_b_right, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_showCustomDialMenu()"))
+        self.connect(self.ui.dial_drywet, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_knobCustomMenu()"))
+        self.connect(self.ui.dial_vol, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_knobCustomMenu()"))
+        self.connect(self.ui.dial_b_left, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_knobCustomMenu()"))
+        self.connect(self.ui.dial_b_right, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_knobCustomMenu()"))
+        self.connect(self.ui.sb_ctrl_channel, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_channelCustomMenu()"))
 
         self.connect(self.ui.keyboard, SIGNAL("noteOn(int)"), SLOT("slot_noteOn(int)"))
         self.connect(self.ui.keyboard, SIGNAL("noteOff(int)"), SLOT("slot_noteOff(int)"))
-        self.connect(self.ui.keyboard, SIGNAL("notesOn()"), SLOT("slot_notesOn()"))
-        self.connect(self.ui.keyboard, SIGNAL("notesOff()"), SLOT("slot_notesOff()"))
 
         self.connect(self.ui.cb_programs, SIGNAL("currentIndexChanged(int)"), SLOT("slot_programIndexChanged(int)"))
         self.connect(self.ui.cb_midi_programs, SIGNAL("currentIndexChanged(int)"), SLOT("slot_midiProgramIndexChanged(int)"))
 
         self.connect(self, SIGNAL("finished(int)"), SLOT("slot_finished()"))
 
-        self.reloadAll()
-
     def reloadAll(self):
         self.fPluginInfo = Carla.host.get_plugin_info(self.fPluginId)
-        self.fPluginInfo["binary"]    = cString(self.fPluginInfo["binary"])
-        self.fPluginInfo["name"]      = cString(self.fPluginInfo["name"])
-        self.fPluginInfo["label"]     = cString(self.fPluginInfo["label"])
-        self.fPluginInfo["maker"]     = cString(self.fPluginInfo["maker"])
-        self.fPluginInfo["copyright"] = cString(self.fPluginInfo["copyright"])
+        self.fPluginInfo['binary']    = cString(self.fPluginInfo['binary'])
+        self.fPluginInfo['name']      = cString(self.fPluginInfo['name'])
+        self.fPluginInfo['label']     = cString(self.fPluginInfo['label'])
+        self.fPluginInfo['maker']     = cString(self.fPluginInfo['maker'])
+        self.fPluginInfo['copyright'] = cString(self.fPluginInfo['copyright'])
 
         self.reloadInfo()
         self.reloadParameters()
@@ -1278,6 +1239,9 @@ class PluginEdit(QDialog):
         self.ui.ch_send_all_sound_off.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
         self.ui.ch_send_all_sound_off.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
 
+        if self.fPluginInfo['type'] != PLUGIN_VST:
+            self.ui.tab_programs.setCurrentIndex(1)
+
         # Show/hide keyboard
         showKeyboard = (pluginHints & PLUGIN_IS_SYNTH) != 0 or (midiCountInfo['ins'] > 0 < midiCountInfo['outs'])
         self.ui.scrollArea.setEnabled(showKeyboard)
@@ -1319,6 +1283,7 @@ class PluginEdit(QDialog):
                 paramInfo   = Carla.host.get_parameter_info(self.fPluginId, i)
                 paramData   = Carla.host.get_parameter_data(self.fPluginId, i)
                 paramRanges = Carla.host.get_parameter_ranges(self.fPluginId, i)
+                paramValue  = Carla.host.get_current_parameter_value(self.fPluginId, i)
 
                 if paramData['type'] not in (PARAMETER_INPUT, PARAMETER_OUTPUT):
                     continue
@@ -1340,20 +1305,18 @@ class PluginEdit(QDialog):
                     'midiCC':    paramData['midiCC'],
                     'midiChannel': paramData['midiChannel'],
 
-                    'current': Carla.host.get_current_parameter_value(self.fPluginId, i)
+                    'current': paramValue
                 }
 
                 for j in range(paramInfo['scalePointCount']):
                     scalePointInfo  = Carla.host.get_parameter_scalepoint_info(self.fPluginId, i, j)
-                    scalePointLabel = cString(scalePointInfo['label'])
-                    scalePointLabel = scalePointLabel[:50] + (scalePointLabel[50:] and "...")
 
                     parameter['scalePoints'].append({
                         'value': scalePointInfo['value'],
                         'label': cString(scalePointInfo['label'])
                     })
 
-                parameter['name'] = parameter['name'][:30] + (parameter['name'][30:] and "...")
+                #parameter['name'] = parameter['name'][:30] + (parameter['name'][30:] and "...")
 
                 # -----------------------------------------------------------------
                 # Get width values, in packs of 10
@@ -1394,7 +1357,7 @@ class PluginEdit(QDialog):
                     paramOutputListFull.append((paramOutputList, paramOutputWidth))
 
             # -----------------------------------------------------------------
-            # Create parameter widgets
+            # Create parameter tabs + widgets
 
             self._createParameterWidgets(PARAMETER_INPUT,  paramInputListFull,  self.tr("Parameters"))
             self._createParameterWidgets(PARAMETER_OUTPUT, paramOutputListFull, self.tr("Outputs"))
@@ -1414,12 +1377,12 @@ class PluginEdit(QDialog):
                 'scalePoints': [],
 
                 'index':   0,
-                'default': 0,
-                'minimum': 0,
-                'maximum': 0,
-                'step':     0,
-                'stepSmall': 0,
-                'stepLarge': 0,
+                'default': 0.0,
+                'minimum': 0.0,
+                'maximum': 0.0,
+                'step':    0.0,
+                'stepSmall': 0.0,
+                'stepLarge': 0.0,
                 'midiCC':   -1,
                 'midiChannel': 0,
 
@@ -1444,7 +1407,7 @@ class PluginEdit(QDialog):
 
             for i in range(programCount):
                 pName = cString(Carla.host.get_program_name(self.fPluginId, i))
-                pName = pName[:40] + (pName[40:] and "...")
+                #pName = pName[:40] + (pName[40:] and "...")
                 self.ui.cb_programs.addItem(pName)
 
             self.fCurrentProgram = Carla.host.get_current_program_index(self.fPluginId)
@@ -1472,7 +1435,7 @@ class PluginEdit(QDialog):
                 mpBank = int(mpData['bank'])
                 mpProg = int(mpData['program'])
                 mpName = cString(mpData['name'])
-                mpName = mpName[:40] + (mpName[40:] and "...")
+                #mpName = mpName[:40] + (mpName[40:] and "...")
 
                 self.ui.cb_midi_programs.addItem("%03i:%03i - %s" % (mpBank+1, mpProg+1, mpName))
 
@@ -1486,18 +1449,15 @@ class PluginEdit(QDialog):
 
         self.ui.cb_midi_programs.blockSignals(False)
 
-        if self.fPluginInfo['type'] != PLUGIN_VST:
-            self.ui.tab_programs.setCurrentIndex(1)
-
-            if self.fPluginInfo['type'] == PLUGIN_LV2:
-                self.ui.b_load_state.setEnabled(programCount > 0)
+        if self.fPluginInfo['type'] == PLUGIN_LV2:
+            self.ui.b_load_state.setEnabled(programCount > 0)
 
     def updateInfo(self):
         # Update current program text
         if self.ui.cb_programs.count() > 0:
             pIndex = self.ui.cb_programs.currentIndex()
             pName  = cString(Carla.host.get_program_name(self.fPluginId, pIndex))
-            pName  = pName[:40] + (pName[40:] and "...")
+            #pName  = pName[:40] + (pName[40:] and "...")
             self.ui.cb_programs.setItemText(pIndex, pName)
 
         # Update current midi program text
@@ -1507,13 +1467,15 @@ class PluginEdit(QDialog):
             mpBank  = int(mpData['bank'])
             mpProg  = int(mpData['program'])
             mpName  = cString(mpData['name'])
-            mpName  = mpName[:40] + (mpName[40:] and "...")
+            #mpName  = mpName[:40] + (mpName[40:] and "...")
             self.ui.cb_midi_programs.setItemText(mpIndex, "%03i:%03i - %s" % (mpBank+1, mpProg+1, mpName))
 
         # Update all parameter values
         for paramType, paramId, paramWidget in self.fParameterList:
             paramWidget.setValue(Carla.host.get_current_parameter_value(self.fPluginId, paramId), False)
             paramWidget.update()
+
+        self.fParametersToUpdate = []
 
     def setParameterValue(self, parameterId, value):
         for paramItem in self.fParametersToUpdate:
@@ -1555,9 +1517,25 @@ class PluginEdit(QDialog):
         if self.fControlChannel == channel:
             self.ui.keyboard.sendNoteOn(note, False)
 
+        if len(self.fPlayingNotes) == 0 and self.fRealParent:
+            self.fRealParent.ui.led_midi.setChecked(True)
+
+        playItem = (channel, note)
+
+        if playItem not in self.fPlayingNotes:
+            self.fPlayingNotes.append(playItem)
+
     def sendNoteOff(self, channel, note):
         if self.fControlChannel == channel:
             self.ui.keyboard.sendNoteOff(note, False)
+
+        if len(self.fPlayingNotes) == 1 and self.fRealParent:
+            self.fRealParent.ui.led_midi.setChecked(False)
+
+        playItem = (channel, note)
+
+        if playItem in self.fPlayingNotes:
+            self.fPlayingNotes.remove(playItem)
 
     def setVisible(self, yesNo):
         if yesNo:
@@ -1585,43 +1563,50 @@ class PluginEdit(QDialog):
                 self.ui.dial_drywet.blockSignals(True)
                 self.ui.dial_drywet.setValue(value * 1000)
                 self.ui.dial_drywet.blockSignals(False)
+
             elif index == PARAMETER_VOLUME:
                 self.ui.dial_vol.blockSignals(True)
                 self.ui.dial_vol.setValue(value * 1000)
                 self.ui.dial_vol.blockSignals(False)
+
             elif index == PARAMETER_BALANCE_LEFT:
                 self.ui.dial_b_left.blockSignals(True)
                 self.ui.dial_b_left.setValue(value * 1000)
                 self.ui.dial_b_left.blockSignals(False)
+
             elif index == PARAMETER_BALANCE_RIGHT:
                 self.ui.dial_b_right.blockSignals(True)
                 self.ui.dial_b_right.setValue(value * 1000)
                 self.ui.dial_b_right.blockSignals(False)
-            elif index == PARAMETER_PANNING:
-                pass
+
+            #elif index == PARAMETER_PANNING:
                 #self.ui.dial_pan.blockSignals(True)
                 #self.ui.dial_pan.setValue(value * 1000, True, False)
                 #self.ui.dial_pan.blockSignals(False)
+
             elif index == PARAMETER_CTRL_CHANNEL:
                 self.fControlChannel = int(value)
                 self.ui.sb_ctrl_channel.blockSignals(True)
                 self.ui.sb_ctrl_channel.setValue(self.fControlChannel+1)
                 self.ui.sb_ctrl_channel.blockSignals(False)
                 self.ui.keyboard.allNotesOff()
+
             elif index >= 0:
                 for paramType, paramId, paramWidget in self.fParameterList:
-                    if paramId == index:
-                        paramWidget.setValue(value, False)
+                    if paramId != index:
+                        continue
 
-                        if paramType == PARAMETER_INPUT:
-                            tabIndex = paramWidget.tabIndex()
+                    paramWidget.setValue(value, False)
 
-                            if self.fTabIconTimers[tabIndex-1] == ICON_STATE_NULL:
-                                self.ui.tabWidget.setTabIcon(tabIndex, self.fTabIconOn)
+                    if paramType == PARAMETER_INPUT:
+                        tabIndex = paramWidget.tabIndex()
 
-                            self.fTabIconTimers[tabIndex-1] = ICON_STATE_ON
+                        if self.fTabIconTimers[tabIndex-1] == ICON_STATE_NULL:
+                            self.ui.tabWidget.setTabIcon(tabIndex, self.fTabIconOn)
 
-                        break
+                        self.fTabIconTimers[tabIndex-1] = ICON_STATE_ON
+
+                    break
 
         # Clear all parameters
         self.fParametersToUpdate = []
@@ -1635,6 +1620,7 @@ class PluginEdit(QDialog):
     @pyqtSlot()
     def slot_saveState(self):
         if self.fPluginInfo['type'] == PLUGIN_LV2:
+            # TODO
             return
 
         if self.fCurrentStateFilename:
@@ -1642,6 +1628,7 @@ class PluginEdit(QDialog):
 
             if askTry == QMessageBox.Ok:
                 Carla.host.save_plugin_state(self.fPluginId, self.fCurrentStateFilename)
+                return
 
             self.fCurrentStateFilename = None
 
@@ -1649,7 +1636,7 @@ class PluginEdit(QDialog):
         filenameTry = QFileDialog.getSaveFileName(self, self.tr("Save Plugin State File"), filter=fileFilter)
 
         if filenameTry:
-            if not filenameTry.endswith(".carxs"):
+            if not filenameTry.lower().endswith(".carxs"):
                 filenameTry += ".carxs"
 
             self.fCurrentStateFilename = filenameTry
@@ -1667,7 +1654,9 @@ class PluginEdit(QDialog):
 
             if ret[1]:
                 index = int(ret[0].split(" - ", 1)[0])-1
+                Carla.host.set_midi_program(self.fPluginId, -1)
                 Carla.host.set_program(self.fPluginId, index)
+                self.setMidiProgram(-1)
 
             return
 
@@ -1731,6 +1720,11 @@ class PluginEdit(QDialog):
         Carla.host.set_ctrl_channel(self.fPluginId, self.fControlChannel)
         self.ui.keyboard.allNotesOff()
 
+        mpIndex = Carla.host.get_current_midi_program_index()
+
+        if self.ui.cb_midi_programs.currentIndex() != mpIndex:
+            self.setMidiProgram(mpIndex)
+
     @pyqtSlot(int, float)
     def slot_parameterValueChanged(self, parameterId, value):
         Carla.host.set_parameter_value(self.fPluginId, parameterId, value)
@@ -1745,15 +1739,13 @@ class PluginEdit(QDialog):
 
     @pyqtSlot(int)
     def slot_programIndexChanged(self, index):
-        if self.fCurrentProgram != index:
-            self.fCurrentProgram = index
-            Carla.host.set_program(self.fPluginId, index)
+        self.fCurrentProgram = index
+        Carla.host.set_program(self.fPluginId, index)
 
     @pyqtSlot(int)
     def slot_midiProgramIndexChanged(self, index):
-        if self.fCurrentMidiProgram != index:
-            self.fCurrentMidiProgram = index
-            Carla.host.set_midi_program(self.fPluginId, index)
+        self.fCurrentMidiProgram = index
+        Carla.host.set_midi_program(self.fPluginId, index)
 
     @pyqtSlot(int)
     def slot_noteOn(self, note):
@@ -1766,22 +1758,12 @@ class PluginEdit(QDialog):
             Carla.host.send_midi_note(self.fPluginId, self.fControlChannel, note, 0)
 
     @pyqtSlot()
-    def slot_notesOn(self):
-        if self.fRealParent:
-            self.fRealParent.ui.led_midi.setChecked(True)
-
-    @pyqtSlot()
-    def slot_notesOff(self):
-        if self.fRealParent:
-            self.fRealParent.ui.led_midi.setChecked(False)
-
-    @pyqtSlot()
     def slot_finished(self):
         if self.fRealParent:
             self.fRealParent.editClosed()
 
     @pyqtSlot()
-    def slot_showCustomDialMenu(self):
+    def slot_knobCustomMenu(self):
         dialName = self.sender().objectName()
         if dialName == "dial_drywet":
             minimum = 0
@@ -1856,9 +1838,35 @@ class PluginEdit(QDialog):
             self.ui.dial_b_left.setValue(value)
         elif label == "Balance-Right":
             self.ui.dial_b_right.setValue(value)
-        elif label == "Panning":
-            pass
+        #elif label == "Panning":
             #self.ui.dial_panning.setValue(value)
+
+    @pyqtSlot()
+    def slot_channelCustomMenu(self):
+        menu = QMenu(self)
+
+        actNone = menu.addAction(self.tr("None"))
+
+        if self.fControlChannel+1 == 0:
+            actNone.setCheckable(True)
+            actNone.setChecked(True)
+
+        for i in range(1, 16+1):
+            action = menu.addAction("%i" % i)
+
+            if self.fControlChannel+1 == i:
+                action.setCheckable(True)
+                action.setChecked(True)
+
+        actSel = menu.exec_(QCursor.pos())
+
+        if not actSel:
+            pass
+        elif actSel == actNone:
+            self.ui.sb_ctrl_channel.setValue(0)
+        elif actSel:
+            selChannel = int(actSel.text())
+            self.ui.sb_ctrl_channel.setValue(selChannel)
 
     def _createParameterWidgets(self, paramType, paramListFull, tabPageName):
         i = 1
@@ -1923,15 +1931,17 @@ class PluginWidget(QFrame):
 
         self.fPluginId   = pluginId
         self.fPluginInfo = Carla.host.get_plugin_info(self.fPluginId)
-        self.fPluginInfo["binary"]    = cString(self.fPluginInfo["binary"])
-        self.fPluginInfo["name"]      = cString(self.fPluginInfo["name"])
-        self.fPluginInfo["label"]     = cString(self.fPluginInfo["label"])
-        self.fPluginInfo["maker"]     = cString(self.fPluginInfo["maker"])
-        self.fPluginInfo["copyright"] = cString(self.fPluginInfo["copyright"])
+
+        self.fPluginInfo['binary']    = cString(self.fPluginInfo['binary'])
+        self.fPluginInfo['name']      = cString(self.fPluginInfo['name'])
+        self.fPluginInfo['label']     = cString(self.fPluginInfo['label'])
+        self.fPluginInfo['maker']     = cString(self.fPluginInfo['maker'])
+        self.fPluginInfo['copyright'] = cString(self.fPluginInfo['copyright'])
 
         if Carla.processMode == PROCESS_MODE_CONTINUOUS_RACK:
             self.fPeaksInputCount  = 2
             self.fPeaksOutputCount = 2
+
         else:
             audioCountInfo = Carla.host.get_audio_port_count_info(self.fPluginId)
 
@@ -1944,42 +1954,26 @@ class PluginWidget(QFrame):
             if self.fPeaksOutputCount > 2:
                 self.fPeaksOutputCount = 2
 
-        # Background
-        self.fColorTop    = QColor(60, 60, 60)
-        self.fColorBottom = QColor(47, 47, 47)
-        self.fColorSeprtr = QColor(70, 70, 70)
-
         if self.palette().window().color().lightness() > 100:
             # Light background
             labelColor = "333"
+
+            self.fColorTop    = QColor(60, 60, 60)
+            self.fColorBottom = QColor(47, 47, 47)
+            self.fColorSeprtr = QColor(70, 70, 70)
+
         else:
             # Dark background
             labelColor = "BBB"
+
+            self.fColorTop    = QColor(60, 60, 60)
+            self.fColorBottom = QColor(47, 47, 47)
+            self.fColorSeprtr = QColor(70, 70, 70)
 
         self.setStyleSheet("""
         QLabel#label_name {
             color: #%s;
         }""" % labelColor)
-
-        # Colorify
-        #if self.m_pluginInfo['category'] == PLUGIN_CATEGORY_SYNTH:
-            #self.setWidgetColor(PALETTE_COLOR_WHITE)
-        #elif self.m_pluginInfo['category'] == PLUGIN_CATEGORY_DELAY:
-            #self.setWidgetColor(PALETTE_COLOR_ORANGE)
-        #elif self.m_pluginInfo['category'] == PLUGIN_CATEGORY_EQ:
-            #self.setWidgetColor(PALETTE_COLOR_GREEN)
-        #elif self.m_pluginInfo['category'] == PLUGIN_CATEGORY_FILTER:
-            #self.setWidgetColor(PALETTE_COLOR_BLUE)
-        #elif self.m_pluginInfo['category'] == PLUGIN_CATEGORY_DYNAMICS:
-            #self.setWidgetColor(PALETTE_COLOR_PINK)
-        #elif self.m_pluginInfo['category'] == PLUGIN_CATEGORY_MODULATOR:
-            #self.setWidgetColor(PALETTE_COLOR_RED)
-        #elif self.m_pluginInfo['category'] == PLUGIN_CATEGORY_UTILITY:
-            #self.setWidgetColor(PALETTE_COLOR_YELLOW)
-        #elif self.m_pluginInfo['category'] == PLUGIN_CATEGORY_OTHER:
-            #self.setWidgetColor(PALETTE_COLOR_BROWN)
-        #else:
-            #self.setWidgetColor(PALETTE_COLOR_NONE)
 
         self.ui.b_enable.setPixmaps(":/bitmaps/button_off.png", ":/bitmaps/button_on.png", ":/bitmaps/button_off.png")
         self.ui.b_gui.setPixmaps(":/bitmaps/button_gui.png", ":/bitmaps/button_gui_down.png", ":/bitmaps/button_gui_hover.png")
@@ -2010,13 +2004,13 @@ class PluginWidget(QFrame):
         self.ui.edit_dialog = PluginEdit(self, self.fPluginId)
         self.ui.edit_dialog.hide()
 
-        self.connect(self, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_showCustomMenu()"))
-        self.connect(self.ui.b_enable, SIGNAL("clicked(bool)"), SLOT("slot_setActive(bool)"))
-        self.connect(self.ui.b_gui, SIGNAL("clicked(bool)"), SLOT("slot_guiClicked(bool)"))
-        self.connect(self.ui.b_edit, SIGNAL("clicked(bool)"), SLOT("slot_editClicked(bool)"))
-
         self.setMinimumHeight(32)
         self.setMaximumHeight(32)
+
+        self.connect(self, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_showCustomMenu()"))
+        self.connect(self.ui.b_enable, SIGNAL("clicked(bool)"), SLOT("slot_enableClicked(bool)"))
+        self.connect(self.ui.b_gui, SIGNAL("clicked(bool)"), SLOT("slot_guiClicked(bool)"))
+        self.connect(self.ui.b_edit, SIGNAL("clicked(bool)"), SLOT("slot_editClicked(bool)"))
 
     def idleFast(self):
         # Input peaks
@@ -2085,7 +2079,9 @@ class PluginWidget(QFrame):
         if sendCallback: Carla.host.set_active(self.fPluginId, active)
 
         if active:
+            self.ui.edit_dialog.fPlayingNotes = []
             self.ui.edit_dialog.ui.keyboard.allNotesOff()
+            self.ui.led_midi.setChecked(False)
 
     def setParameterDefault(self, parameterId, value):
         self.ui.edit_dialog.setParameterDefault(parameterId, value)
@@ -2230,7 +2226,7 @@ class PluginWidget(QFrame):
                                        cString(Carla.host.get_last_error()), QMessageBox.Ok, QMessageBox.Ok)
 
     @pyqtSlot(bool)
-    def slot_setActive(self, yesNo):
+    def slot_enableClicked(self, yesNo):
         self.setActive(yesNo, False, True)
 
     @pyqtSlot(bool)
@@ -2268,6 +2264,12 @@ class SearchPluginsThread(QThread):
         self.fCurPercentValue = 0
         self.fLastCheckValue  = 0
         self.fSomethingChanged = False
+
+        self.fLadspaPlugins = []
+        self.fDssiPlugins = []
+        self.fLv2Plugins = []
+        self.fVstPlugins = []
+        self.fKitPlugins = []
 
     def somethingChanged(self):
         return self.fSomethingChanged
@@ -2621,7 +2623,7 @@ class SearchPluginsThread(QThread):
         self.fLastCheckValue += self.fCurPercentValue
 
     def _pluginLook(self, percent, plugin):
-        self.emit(SIGNAL("PluginLook(int, QString)"), percent, plugin)
+        self.emit(SIGNAL("pluginLook(int, QString)"), percent, plugin)
 
 # ------------------------------------------------------------------------------------------------------------
 # Plugin Refresh Dialog
@@ -2632,7 +2634,7 @@ class PluginRefreshW(QDialog):
         self.ui = ui_carla_refresh.Ui_PluginRefreshW()
         self.ui.setupUi(self)
 
-        self._loadSettings()
+        self.loadSettings()
 
         self.ui.b_skip.setVisible(False)
 
@@ -2740,7 +2742,7 @@ class PluginRefreshW(QDialog):
 
         self.connect(self.ui.b_start, SIGNAL("clicked()"), SLOT("slot_start()"))
         self.connect(self.ui.b_skip, SIGNAL("clicked()"), SLOT("slot_skip()"))
-        self.connect(self.fThread, SIGNAL("PluginLook(int, QString)"), SLOT("slot_handlePluginLook(int, QString)"))
+        self.connect(self.fThread, SIGNAL("pluginLook(int, QString)"), SLOT("slot_handlePluginLook(int, QString)"))
         self.connect(self.fThread, SIGNAL("finished()"), SLOT("slot_handlePluginThreadFinished()"))
 
     @pyqtSlot()
@@ -2779,22 +2781,7 @@ class PluginRefreshW(QDialog):
         self.ui.b_skip.setVisible(False)
         self.ui.b_close.setVisible(True)
 
-    def _saveSettings(self):
-        settings = QSettings()
-        settings.setValue("PluginDatabase/SearchLADSPA", self.ui.ch_ladspa.isChecked())
-        settings.setValue("PluginDatabase/SearchDSSI", self.ui.ch_dssi.isChecked())
-        settings.setValue("PluginDatabase/SearchLV2", self.ui.ch_lv2.isChecked())
-        settings.setValue("PluginDatabase/SearchVST", self.ui.ch_vst.isChecked())
-        settings.setValue("PluginDatabase/SearchGIG", self.ui.ch_gig.isChecked())
-        settings.setValue("PluginDatabase/SearchSF2", self.ui.ch_sf2.isChecked())
-        settings.setValue("PluginDatabase/SearchSFZ", self.ui.ch_sfz.isChecked())
-        settings.setValue("PluginDatabase/SearchNative", self.ui.ch_native.isChecked())
-        settings.setValue("PluginDatabase/SearchPOSIX32", self.ui.ch_posix32.isChecked())
-        settings.setValue("PluginDatabase/SearchPOSIX64", self.ui.ch_posix64.isChecked())
-        settings.setValue("PluginDatabase/SearchWin32", self.ui.ch_win32.isChecked())
-        settings.setValue("PluginDatabase/SearchWin64", self.ui.ch_win64.isChecked())
-
-    def _loadSettings(self):
+    def loadSettings(self):
         settings = QSettings()
         self.ui.ch_ladspa.setChecked(settings.value("PluginDatabase/SearchLADSPA", True, type=bool))
         self.ui.ch_dssi.setChecked(settings.value("PluginDatabase/SearchDSSI", True, type=bool))
@@ -2809,11 +2796,27 @@ class PluginRefreshW(QDialog):
         self.ui.ch_win32.setChecked(settings.value("PluginDatabase/SearchWin32", False, type=bool))
         self.ui.ch_win64.setChecked(settings.value("PluginDatabase/SearchWin64", False, type=bool))
 
+    def saveSettings(self):
+        settings = QSettings()
+        settings.setValue("PluginDatabase/SearchLADSPA", self.ui.ch_ladspa.isChecked())
+        settings.setValue("PluginDatabase/SearchDSSI", self.ui.ch_dssi.isChecked())
+        settings.setValue("PluginDatabase/SearchLV2", self.ui.ch_lv2.isChecked())
+        settings.setValue("PluginDatabase/SearchVST", self.ui.ch_vst.isChecked())
+        settings.setValue("PluginDatabase/SearchGIG", self.ui.ch_gig.isChecked())
+        settings.setValue("PluginDatabase/SearchSF2", self.ui.ch_sf2.isChecked())
+        settings.setValue("PluginDatabase/SearchSFZ", self.ui.ch_sfz.isChecked())
+        settings.setValue("PluginDatabase/SearchNative", self.ui.ch_native.isChecked())
+        settings.setValue("PluginDatabase/SearchPOSIX32", self.ui.ch_posix32.isChecked())
+        settings.setValue("PluginDatabase/SearchPOSIX64", self.ui.ch_posix64.isChecked())
+        settings.setValue("PluginDatabase/SearchWin32", self.ui.ch_win32.isChecked())
+        settings.setValue("PluginDatabase/SearchWin64", self.ui.ch_win64.isChecked())
+
     def closeEvent(self, event):
         if self.fThread.isRunning():
             self.fThread.terminate()
             self.fThread.wait()
-        self._saveSettings()
+
+        self.saveSettings()
 
         if self.fThread.somethingChanged():
             self.accept()
@@ -2850,7 +2853,7 @@ class PluginDatabaseW(QDialog):
             self.ui.ch_bridged_wine.setChecked(False)
             self.ui.ch_bridged_wine.setEnabled(False)
 
-        self._loadSettings()
+        self.loadSettings()
 
         self.connect(self.ui.b_add, SIGNAL("clicked()"), SLOT("slot_addPlugin()"))
         self.connect(self.ui.b_refresh, SIGNAL("clicked()"), SLOT("slot_refreshPlugins()"))
@@ -3003,8 +3006,7 @@ class PluginDatabaseW(QDialog):
     def _reAddPlugins(self):
         settingsDB = QSettings("falkTX", "CarlaPlugins")
 
-        rowCount = self.ui.tableWidget.rowCount()
-        for x in range(rowCount):
+        for x in range(self.ui.tableWidget.rowCount()):
             self.ui.tableWidget.removeRow(0)
 
         self.fLastTableIndex = 0
@@ -3139,9 +3141,16 @@ class PluginDatabaseW(QDialog):
 
         if plugin['build'] == BINARY_NATIVE:
             bridgeText = self.tr("No")
+
         else:
-            typeText = self.tr("Unknown")
             if LINUX or MACOS:
+                if plugin['build'] == BINARY_WIN32:
+                    typeText = "32bit"
+                elif plugin['build'] == BINARY_WIN64:
+                    typeText = "64bit"
+                else:
+                    typeText = self.tr("Unknown")
+            else:
                 if plugin['build'] == BINARY_POSIX32:
                     typeText = "32bit"
                 elif plugin['build'] == BINARY_POSIX64:
@@ -3150,11 +3159,9 @@ class PluginDatabaseW(QDialog):
                     typeText = "Windows 32bit"
                 elif plugin['build'] == BINARY_WIN64:
                     typeText = "Windows 64bit"
-            elif WINDOWS:
-                if plugin['build'] == BINARY_WIN32:
-                    typeText = "32bit"
-                elif plugin['build'] == BINARY_WIN64:
-                    typeText = "64bit"
+                else:
+                    typeText = self.tr("Unknown")
+
             bridgeText = self.tr("Yes (%s)" % typeText)
 
         self.ui.tableWidget.insertRow(index)
@@ -3173,30 +3180,10 @@ class PluginDatabaseW(QDialog):
         self.ui.tableWidget.setItem(index, 12, QTableWidgetItem(ptype))
         self.ui.tableWidget.setItem(index, 13, QTableWidgetItem(str(plugin['binary'])))
         self.ui.tableWidget.item(self.fLastTableIndex, 0).pluginData = plugin
+
         self.fLastTableIndex += 1
 
-    def _saveSettings(self):
-        settings = QSettings()
-        settings.setValue("PluginDatabase/Geometry", self.saveGeometry())
-        settings.setValue("PluginDatabase/TableGeometry", self.ui.tableWidget.horizontalHeader().saveState())
-        settings.setValue("PluginDatabase/ShowFilters", (self.ui.tb_filters.arrowType() == Qt.UpArrow))
-        settings.setValue("PluginDatabase/ShowEffects", self.ui.ch_effects.isChecked())
-        settings.setValue("PluginDatabase/ShowInstruments", self.ui.ch_instruments.isChecked())
-        settings.setValue("PluginDatabase/ShowMIDI", self.ui.ch_midi.isChecked())
-        settings.setValue("PluginDatabase/ShowOther", self.ui.ch_other.isChecked())
-        settings.setValue("PluginDatabase/ShowInternal", self.ui.ch_internal.isChecked())
-        settings.setValue("PluginDatabase/ShowLADSPA", self.ui.ch_ladspa.isChecked())
-        settings.setValue("PluginDatabase/ShowDSSI", self.ui.ch_dssi.isChecked())
-        settings.setValue("PluginDatabase/ShowLV2", self.ui.ch_lv2.isChecked())
-        settings.setValue("PluginDatabase/ShowVST", self.ui.ch_vst.isChecked())
-        settings.setValue("PluginDatabase/ShowKits", self.ui.ch_kits.isChecked())
-        settings.setValue("PluginDatabase/ShowNative", self.ui.ch_native.isChecked())
-        settings.setValue("PluginDatabase/ShowBridged", self.ui.ch_bridged.isChecked())
-        settings.setValue("PluginDatabase/ShowBridgedWine", self.ui.ch_bridged_wine.isChecked())
-        settings.setValue("PluginDatabase/ShowHasGUI", self.ui.ch_gui.isChecked())
-        settings.setValue("PluginDatabase/ShowStereoOnly", self.ui.ch_stereo.isChecked())
-
-    def _loadSettings(self):
+    def loadSettings(self):
         settings = QSettings()
         self.restoreGeometry(settings.value("PluginDatabase/Geometry", ""))
         self.ui.tableWidget.horizontalHeader().restoreState(settings.value("PluginDatabase/TableGeometry", ""))
@@ -3219,8 +3206,29 @@ class PluginDatabaseW(QDialog):
         self._showFilters(settings.value("PluginDatabase/ShowFilters", False, type=bool))
         self._reAddPlugins()
 
+    def saveSettings(self):
+        settings = QSettings()
+        settings.setValue("PluginDatabase/Geometry", self.saveGeometry())
+        settings.setValue("PluginDatabase/TableGeometry", self.ui.tableWidget.horizontalHeader().saveState())
+        settings.setValue("PluginDatabase/ShowFilters", (self.ui.tb_filters.arrowType() == Qt.UpArrow))
+        settings.setValue("PluginDatabase/ShowEffects", self.ui.ch_effects.isChecked())
+        settings.setValue("PluginDatabase/ShowInstruments", self.ui.ch_instruments.isChecked())
+        settings.setValue("PluginDatabase/ShowMIDI", self.ui.ch_midi.isChecked())
+        settings.setValue("PluginDatabase/ShowOther", self.ui.ch_other.isChecked())
+        settings.setValue("PluginDatabase/ShowInternal", self.ui.ch_internal.isChecked())
+        settings.setValue("PluginDatabase/ShowLADSPA", self.ui.ch_ladspa.isChecked())
+        settings.setValue("PluginDatabase/ShowDSSI", self.ui.ch_dssi.isChecked())
+        settings.setValue("PluginDatabase/ShowLV2", self.ui.ch_lv2.isChecked())
+        settings.setValue("PluginDatabase/ShowVST", self.ui.ch_vst.isChecked())
+        settings.setValue("PluginDatabase/ShowKits", self.ui.ch_kits.isChecked())
+        settings.setValue("PluginDatabase/ShowNative", self.ui.ch_native.isChecked())
+        settings.setValue("PluginDatabase/ShowBridged", self.ui.ch_bridged.isChecked())
+        settings.setValue("PluginDatabase/ShowBridgedWine", self.ui.ch_bridged_wine.isChecked())
+        settings.setValue("PluginDatabase/ShowHasGUI", self.ui.ch_gui.isChecked())
+        settings.setValue("PluginDatabase/ShowStereoOnly", self.ui.ch_stereo.isChecked())
+
     def closeEvent(self, event):
-        self._saveSettings()
+        self.saveSettings()
         QDialog.closeEvent(self, event)
 
     def done(self, r):
