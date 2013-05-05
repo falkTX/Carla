@@ -45,6 +45,11 @@ void registerEnginePlugin(CarlaEngine* const engine, const unsigned int id, Carl
 {
     CarlaEngineProtectedData::registerEnginePlugin(engine, id, plugin);
 }
+
+void registerEngineNativePlugin()
+{
+    CarlaEngine::registerNativePlugin();
+}
 #endif
 
 // -------------------------------------------------------------------------------------------------------------------

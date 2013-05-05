@@ -381,6 +381,8 @@ const char* TransportMode2Str(const TransportMode& mode)
         return "TRANSPORT_MODE_INTERNAL";
     case TRANSPORT_MODE_JACK:
         return "TRANSPORT_MODE_JACK";
+    case TRANSPORT_MODE_PLUGIN:
+        return "TRANSPORT_MODE_PLUGIN";
     case TRANSPORT_MODE_BRIDGE:
         return "TRANSPORT_MODE_BRIDGE";
     }

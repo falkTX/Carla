@@ -215,9 +215,6 @@ void carla_register_native_plugin_midiTranspose();
 void carla_register_native_plugin_nekofilter();
 void carla_register_native_plugin_sunvoxfile();
 
-// Carla
-void carla_register_native_plugin_carla();
-
 #ifdef WANT_AUDIOFILE
 // AudioFile
 void carla_register_native_plugin_audiofile();

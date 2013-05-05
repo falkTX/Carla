@@ -18,10 +18,6 @@ endif
 
 # --------------------------------------------------------------
 
-CARLA_CXX_FLAGS  = $(BUILD_CXX_FLAGS)
-CARLA_CXX_FLAGS += $(shell pkg-config --cflags liblo)
-CARLA_CXX_FLAGS += -I../engine
-
 ifeq ($(HAVE_AF_DEPS),true)
 AF_C_FLAGS       = $(BUILD_C_FLAGS)
 AF_C_FLAGS      += $(shell pkg-config --cflags sndfile)
@@ -62,10 +58,6 @@ OBJS  = \
 	midi-transpose.c.o \
 	nekofilter.c.o \
 	sunvox-file.cpp.o
-
-# Carla
-OBJS += \
-	carla.cpp.o
 
 # AudioFile
 ifeq ($(HAVE_AF_DEPS),true)
@@ -168,9 +160,6 @@ $(TARGET): $(OBJS)
 
 audiofile.c.o: audiofile.c
 	$(CC) $< $(AF_C_FLAGS) -c -o $@
-
-carla.cpp.o: carla.cpp
-	$(CXX) $< $(CARLA_CXX_FLAGS) -c -o $@
 
 distrho-3bandeq.cpp.o: distrho-3bandeq.cpp 3bandeq/DistrhoArtwork3BandEQ.cpp 3bandeq/DistrhoPlugin3BandEQ.cpp 3bandeq/DistrhoUI3BandEQ.cpp distrho/DistrhoPluginCarla.cpp
 	$(CXX) $< $(GL_CXX_FLAGS) -I3bandeq -DDISTRHO_NAMESPACE=DISTRHO_3BandEQ -c -o $@

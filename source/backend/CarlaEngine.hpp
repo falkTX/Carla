@@ -1119,6 +1119,8 @@ public:
     void osc_send_bridge_set_chunk_data(const char* const chunkFile);
     void osc_send_bridge_set_peaks();
 # else
+    static void registerNativePlugin();
+
     void osc_send_control_add_plugin_start(const int32_t pluginId, const char* const pluginName);
     void osc_send_control_add_plugin_end(const int32_t pluginId);
     void osc_send_control_remove_plugin(const int32_t pluginId);

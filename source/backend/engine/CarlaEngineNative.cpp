@@ -1,0 +1,539 @@
+/*
+ * Carla Plugin Engine (Native)
+ * Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * For a full copy of the GNU General Public License see the GPL.txt file
+ */
+
+#ifndef BUILD_BRIDGE
+
+#include "CarlaEngineInternal.hpp"
+#include "CarlaStateUtils.hpp"
+
+#include "CarlaNative.hpp"
+
+#include <QtCore/QTextStream>
+
+CARLA_BACKEND_START_NAMESPACE
+
+// -----------------------------------------------------------------------
+
+class CarlaEngineNative : public PluginDescriptorClass,
+                          public CarlaEngine
+{
+public:
+    CarlaEngineNative(const HostDescriptor* const host)
+        : PluginDescriptorClass(host),
+          CarlaEngine()
+    {
+        carla_debug("CarlaEngineNative::CarlaEngineNative()");
+
+        // set-up engine
+        fOptions.processMode   = PROCESS_MODE_CONTINUOUS_RACK;
+        fOptions.transportMode = TRANSPORT_MODE_PLUGIN;
+        fOptions.forceStereo   = true;
+        fOptions.preferPluginBridges = false;
+        fOptions.preferUiBridges = false;
+        init("Carla-Plugin");
+
+//         if (! addPlugin(PLUGIN_INTERNAL, nullptr, nullptr, "PingPongPan"))
+//             carla_stderr2("Plugin add Pan failed");
+    }
+
+    ~CarlaEngineNative() override
+    {
+        carla_debug("CarlaEngineNative::~CarlaEngineNative()");
+
+        setAboutToClose();
+        removeAllPlugins();
+        close();
+    }
+
+protected:
+    // -------------------------------------
+    // CarlaEngine virtual calls
+
+    bool init(const char* const clientName) override
+    {
+        carla_debug("CarlaEngineNative::init(\"%s\")", clientName);
+
+        fBufferSize = PluginDescriptorClass::getBufferSize();
+        fSampleRate = PluginDescriptorClass::getSampleRate();
+
+        CarlaEngine::init(clientName);
+        return true;
+    }
+
+    bool close() override
+    {
+        carla_debug("CarlaEngineNative::close()");
+        CarlaEngine::close();
+
+        return true;
+    }
+
+    bool isRunning() const override
+    {
+        return true;
+    }
+
+    bool isOffline() const override
+    {
+        return false;
+    }
+
+    EngineType type() const override
+    {
+        return kEngineTypePlugin;
+    }
+
+    // -------------------------------------------------------------------
+    // Plugin parameter calls
+
+    uint32_t getParameterCount() override
+    {
+        if (kData->curPluginCount == 0 || kData->plugins == nullptr)
+            return 0;
+
+        CarlaPlugin* const plugin(kData->plugins[0].plugin);
+
+        if (plugin == nullptr || ! plugin->enabled())
+            return 0;
+
+        return kData->plugins[0].plugin->parameterCount();
+    }
+
+    const Parameter* getParameterInfo(const uint32_t index) override
+    {
+        if (index >= getParameterCount())
+            return nullptr;
+
+        CarlaPlugin* const plugin(kData->plugins[0].plugin);
+
+        if (plugin == nullptr || ! plugin->enabled())
+            return nullptr;
+
+        static ::Parameter param;
+        static char strBufName[STR_MAX+1];
+        static char strBufUnit[STR_MAX+1];
+
+        const ParameterData& paramData(plugin->parameterData(index));
+        const ParameterRanges& paramRanges(plugin->parameterRanges(index));
+
+        plugin->getParameterName(index, strBufName);
+        plugin->getParameterUnit(index, strBufUnit);
+
+        unsigned int hints = 0x0;
+
+        if (paramData.hints & PARAMETER_IS_BOOLEAN)
+            hints |= ::PARAMETER_IS_BOOLEAN;
+        if (paramData.hints & PARAMETER_IS_INTEGER)
+            hints |= ::PARAMETER_IS_INTEGER;
+        if (paramData.hints & PARAMETER_IS_LOGARITHMIC)
+            hints |= ::PARAMETER_IS_LOGARITHMIC;
+        if (paramData.hints & PARAMETER_IS_AUTOMABLE)
+            hints |= ::PARAMETER_IS_AUTOMABLE;
+        if (paramData.hints & PARAMETER_USES_SAMPLERATE)
+            hints |= ::PARAMETER_USES_SAMPLE_RATE;
+        if (paramData.hints & PARAMETER_USES_SCALEPOINTS)
+            hints |= ::PARAMETER_USES_SCALEPOINTS;
+        if (paramData.hints & PARAMETER_USES_CUSTOM_TEXT)
+            hints |= ::PARAMETER_USES_CUSTOM_TEXT;
+
+        if (paramData.type == PARAMETER_INPUT || paramData.type == PARAMETER_OUTPUT)
+        {
+            if (paramData.hints & PARAMETER_IS_ENABLED)
+                hints |= ::PARAMETER_IS_ENABLED;
+            if (paramData.type == PARAMETER_OUTPUT)
+                hints |= ::PARAMETER_IS_OUTPUT;
+        }
+
+        param.hints = static_cast< ::ParameterHints>(hints);
+        param.name  = strBufName;
+        param.unit  = strBufUnit;
+        param.ranges.def = paramRanges.def;
+        param.ranges.min = paramRanges.min;
+        param.ranges.max = paramRanges.max;
+        param.ranges.step = paramRanges.step;
+        param.ranges.stepSmall = paramRanges.stepSmall;
+        param.ranges.stepLarge = paramRanges.stepLarge;
+        param.scalePointCount = 0; // TODO
+        param.scalePoints = nullptr;
+
+        return &param;
+    }
+
+    float getParameterValue(const uint32_t index) override
+    {
+        if (index >= getParameterCount())
+            return 0.0f;
+
+        CarlaPlugin* const plugin(kData->plugins[0].plugin);
+
+        if (plugin == nullptr || ! plugin->enabled())
+            return 0.0f;
+
+        return plugin->getParameterValue(index);
+    }
+
+    const char* getParameterText(const uint32_t index) override
+    {
+        if (index >= getParameterCount())
+            return nullptr;
+
+        CarlaPlugin* const plugin(kData->plugins[0].plugin);
+
+        if (plugin == nullptr || ! plugin->enabled())
+            return nullptr;
+
+        static char strBuf[STR_MAX+1];
+
+        plugin->getParameterText(index, strBuf);
+
+        return strBuf;
+    }
+
+    // -------------------------------------------------------------------
+    // Plugin midi-program calls
+
+    uint32_t getMidiProgramCount() override
+    {
+        if (kData->curPluginCount == 0 || kData->plugins == nullptr)
+            return 0;
+
+        CarlaPlugin* const plugin(kData->plugins[0].plugin);
+
+        if (plugin == nullptr || ! plugin->enabled())
+            return 0.0f;
+
+        return plugin->midiProgramCount();
+    }
+
+    const MidiProgram* getMidiProgramInfo(const uint32_t index) override
+    {
+        if (index >= getMidiProgramCount())
+            return nullptr;
+
+        CarlaPlugin* const plugin(kData->plugins[0].plugin);
+
+        if (plugin == nullptr || ! plugin->enabled())
+            return nullptr;
+
+        static ::MidiProgram midiProg;
+
+        {
+            const MidiProgramData& midiProgData(plugin->midiProgramData(index));
+
+            midiProg.bank    = midiProgData.bank;
+            midiProg.program = midiProgData.program;
+            midiProg.name    = midiProgData.name;
+        }
+
+        return &midiProg;
+    }
+
+    // -------------------------------------------------------------------
+    // Plugin state calls
+
+    void setParameterValue(const uint32_t index, const float value) override
+    {
+        if (index >= getParameterCount())
+            return;
+
+        CarlaPlugin* const plugin(kData->plugins[0].plugin);
+
+        if (plugin == nullptr || ! plugin->enabled())
+            return;
+
+        plugin->setParameterValue(index, value, false, false, false);
+    }
+
+    void setMidiProgram(const uint32_t bank, const uint32_t program) override
+    {
+        if (kData->curPluginCount == 0 || kData->plugins == nullptr)
+            return;
+
+        CarlaPlugin* const plugin(kData->plugins[0].plugin);
+
+        if (plugin == nullptr || ! plugin->enabled())
+            return;
+
+        plugin->setMidiProgramById(bank, program, false, false, false);
+    }
+
+    void setCustomData(const char* const key, const char* const value) override
+    {
+        CARLA_ASSERT(key != nullptr);
+        CARLA_ASSERT(value != nullptr);
+        return;
+
+        // TODO
+
+        // unused
+        (void)key;
+        (void)value;
+    }
+
+    // -------------------------------------------------------------------
+    // Plugin process calls
+
+    void activate() override
+    {
+        for (uint32_t i=0; i < kData->curPluginCount; ++i)
+        {
+            CarlaPlugin* const plugin(kData->plugins[i].plugin);
+
+            if (plugin == nullptr || ! plugin->enabled())
+                continue;
+
+            plugin->setActive(true, true, false);
+        }
+    }
+
+    void deactivate() override
+    {
+        for (uint32_t i=0; i < kData->curPluginCount; ++i)
+        {
+            CarlaPlugin* const plugin(kData->plugins[i].plugin);
+
+            if (plugin == nullptr || ! plugin->enabled())
+                continue;
+
+            plugin->setActive(false, true, false);
+        }
+    }
+
+    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t midiEventCount, const MidiEvent* const midiEvents) override
+    {
+        // ---------------------------------------------------------------
+        // Time Info
+
+        const ::TimeInfo* timeInfo(PluginDescriptorClass::getTimeInfo());
+
+        fTimeInfo.playing = timeInfo->playing;
+        fTimeInfo.frame   = timeInfo->frame;
+        fTimeInfo.usecs   = timeInfo->usecs;
+        fTimeInfo.valid   = 0x0;
+
+        if (timeInfo->bbt.valid)
+        {
+            fTimeInfo.valid |= EngineTimeInfo::ValidBBT;
+
+            fTimeInfo.bbt.bar = timeInfo->bbt.bar;
+            fTimeInfo.bbt.beat = timeInfo->bbt.beat;
+            fTimeInfo.bbt.tick = timeInfo->bbt.tick;
+            fTimeInfo.bbt.barStartTick = timeInfo->bbt.barStartTick;
+
+            fTimeInfo.bbt.beatsPerBar = timeInfo->bbt.beatsPerBar;
+            fTimeInfo.bbt.beatType = timeInfo->bbt.beatType;
+
+            fTimeInfo.bbt.ticksPerBeat = timeInfo->bbt.ticksPerBeat;
+            fTimeInfo.bbt.beatsPerMinute = timeInfo->bbt.beatsPerMinute;
+        }
+
+        // ---------------------------------------------------------------
+        // Initial checks
+
+        if (kData->curPluginCount == 0)
+        {
+            carla_zeroFloat(outBuffer[0], frames);
+            carla_zeroFloat(outBuffer[1], frames);
+            return CarlaEngine::proccessPendingEvents();
+        }
+
+        // create audio buffers
+        float* inBuf[2]  = { inBuffer[0],  inBuffer[1] };
+        float* outBuf[2] = { outBuffer[0], outBuffer[1] };
+
+        // process
+        CarlaEngine::processRack(inBuf, outBuf, frames);
+
+        CarlaEngine::proccessPendingEvents();
+        return;
+
+        // unused
+        (void)midiEventCount;
+        (void)midiEvents;
+    }
+
+    // -------------------------------------------------------------------
+    // Plugin UI calls
+
+    void uiShow(const bool show) override
+    {
+        return;
+
+        // TODO
+
+        // unused
+        (void)show;
+    }
+
+    void uiIdle() override
+    {
+        CarlaEngine::idle();
+    }
+
+    void uiSetParameterValue(const uint32_t index, const float value) override
+    {
+        CARLA_ASSERT(index < getParameterCount());
+        return;
+
+        // TODO
+
+        // unused
+        (void)value;
+    }
+
+    void uiSetMidiProgram(const uint32_t bank, const uint32_t program) override
+    {
+        return;
+
+        // TODO
+
+        // unused
+        (void)bank;
+        (void)program;
+    }
+
+    void uiSetCustomData(const char* const key, const char* const value) override
+    {
+        CARLA_ASSERT(key != nullptr);
+        CARLA_ASSERT(value != nullptr);
+        return;
+
+        // TODO
+
+        // unused
+        (void)key;
+        (void)value;
+    }
+
+    // -------------------------------------------------------------------
+    // Plugin state calls
+
+    char* getState() override
+    {
+        QString string;
+        QTextStream out(&string);
+
+        out << "<?xml version='1.0' encoding='UTF-8'?>\n";
+        out << "<!DOCTYPE CARLA-PROJECT>\n";
+        out << "<CARLA-PROJECT VERSION='1.0'>\n";
+
+        bool firstPlugin = true;
+        char strBuf[STR_MAX+1];
+
+        for (unsigned int i=0; i < kData->curPluginCount; ++i)
+        {
+            CarlaPlugin* const plugin = kData->plugins[i].plugin;
+
+            if (plugin != nullptr && plugin->enabled())
+            {
+                if (! firstPlugin)
+                    out << "\n";
+
+                plugin->getRealName(strBuf);
+
+                if (*strBuf != 0)
+                    out << QString(" <!-- %1 -->\n").arg(xmlSafeString(strBuf, true));
+
+                out << " <Plugin>\n";
+                out << getXMLFromSaveState(plugin->getSaveState());
+                out << " </Plugin>\n";
+
+                firstPlugin = false;
+            }
+        }
+
+        out << "</CARLA-PROJECT>\n";
+
+        return strdup(string.toUtf8().constData());
+    }
+
+    void setState(const char* const data) override
+    {
+        QDomDocument xml;
+        xml.setContent(QString(data));
+
+        QDomNode xmlNode(xml.documentElement());
+
+        if (xmlNode.toElement().tagName() != "CARLA-PROJECT")
+        {
+            carla_stderr2("Not a valid Carla project");
+            return;
+        }
+
+        QDomNode node(xmlNode.firstChild());
+
+        while (! node.isNull())
+        {
+            if (node.toElement().tagName() == "Plugin")
+            {
+                const SaveState& saveState(getSaveStateDictFromXML(node));
+                CARLA_ASSERT(saveState.type != nullptr);
+
+                if (saveState.type == nullptr)
+                    continue;
+
+                const void* extraStuff = nullptr;
+
+                // FIXME
+                //if (std::strcmp(saveState.type, "DSSI") == 0)
+                //    extraStuff = findDSSIGUI(saveState.binary, saveState.label);
+
+                // TODO - proper find&load plugins
+                if (addPlugin(getPluginTypeFromString(saveState.type), saveState.binary, saveState.name, saveState.label, extraStuff))
+                {
+                    if (CarlaPlugin* plugin = getPlugin(kData->curPluginCount-1))
+                        plugin->loadSaveState(saveState);
+                }
+            }
+
+            node = node.nextSibling();
+        }
+    }
+
+private:
+    PluginDescriptorClassEND(CarlaEngineNative)
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineNative)
+};
+
+// -----------------------------------------------------------------------
+
+static const PluginDescriptor carlaDesc = {
+    /* category  */ ::PLUGIN_CATEGORY_OTHER,
+    /* hints     */ static_cast< ::PluginHints>(::PLUGIN_IS_SYNTH|::PLUGIN_USES_SINGLE_THREAD|::PLUGIN_USES_STATE),
+    /* audioIns  */ 2,
+    /* audioOuts */ 2,
+    /* midiIns   */ 1,
+    /* midiOuts  */ 1,
+    /* paramIns  */ 0,
+    /* paramOuts */ 0,
+    /* name      */ "Carla-Plugin",
+    /* label     */ "carla",
+    /* maker     */ "falkTX",
+    /* copyright */ "GNU GPL v2+",
+    PluginDescriptorFILL(CarlaEngineNative)
+};
+
+void CarlaEngine::registerNativePlugin()
+{
+    carla_register_native_plugin(&carlaDesc);
+}
+
+CARLA_BACKEND_END_NAMESPACE
+
+// -----------------------------------------------------------------------
+
+#endif // ! BUILD_BRIDGE

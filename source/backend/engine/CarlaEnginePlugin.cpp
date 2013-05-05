@@ -1,5 +1,5 @@
 ﻿/*
- * Carla Plugin Engine
+ * Carla Plugin Engine (DISTRHO)
  * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
@@ -87,6 +87,7 @@ public:
         close();
     }
 
+protected:
     // -------------------------------------
     // CarlaEngine virtual calls
 
@@ -124,7 +125,6 @@ public:
         return kEngineTypePlugin;
     }
 
-protected:
     // ---------------------------------------------
     // DISTRHO Plugin Information
 
@@ -379,7 +379,7 @@ protected:
         }
     }
 
-    void  d_setState(const char* key, const char* value) override
+    void d_setState(const char* key, const char* value) override
     {
         // TODO
         (void)key;
@@ -430,7 +430,7 @@ protected:
         {
             carla_zeroFloat(outputs[0], frames);
             carla_zeroFloat(outputs[1], frames);
-            return;
+            return proccessPendingEvents();
         }
 
         // create audio buffers

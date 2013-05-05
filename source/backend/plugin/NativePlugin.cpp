@@ -29,6 +29,12 @@
 # include <QtGui/QFileDialog>
 #endif
 
+#ifndef BUILD_BRIDGE
+CARLA_BACKEND_START_NAMESPACE
+extern void registerEngineNativePlugin();
+CARLA_BACKEND_END_NAMESPACE
+#endif
+
 void carla_register_all_plugins()
 {
     // Simple plugins
@@ -41,8 +47,10 @@ void carla_register_all_plugins()
     carla_register_native_plugin_nekofilter();
     //carla_register_native_plugin_sunvoxfile(); // unfinished
 
+#ifndef BUILD_BRIDGE
     // Carla
-    //carla_register_native_plugin_carla(); // unfinished
+    CarlaBackend::registerEngineNativePlugin();
+#endif
 
 #ifdef WANT_AUDIOFILE
     // AudioFile
@@ -874,7 +882,7 @@ public:
 
         for (j=0; j < params; ++j)
         {
-            const ::Parameter* const paramInfo = fDescriptor->get_parameter_info(fHandle, j);
+            const ::Parameter* const paramInfo(fDescriptor->get_parameter_info(fHandle, j));
 
             CARLA_ASSERT(paramInfo != nullptr);
 

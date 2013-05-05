@@ -57,6 +57,7 @@ OBJS  = \
 	CarlaEngineThread.cpp.o \
 	CarlaEngineBridge.cpp.o \
 	CarlaEngineJack.cpp.o \
+	CarlaEngineNative.cpp.o \
 	CarlaEnginePlugin.cpp.o \
 	CarlaEngineRtAudio.cpp.o
 

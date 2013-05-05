@@ -632,7 +632,8 @@ enum ProcessMode {
 enum TransportMode {
     TRANSPORT_MODE_INTERNAL = 0, //!< Internal transport mode.
     TRANSPORT_MODE_JACK     = 1, //!< JACK transport, only available if driver name is "JACK"
-    TRANSPORT_MODE_BRIDGE   = 2  //!< Special mode, used in plugin-bridges only.
+    TRANSPORT_MODE_PLUGIN   = 2, //!< Plugin transport from host, used when Carla is a plugin
+    TRANSPORT_MODE_BRIDGE   = 3  //!< Special mode, used in plugin-bridges only.
 };
 
 /*!
