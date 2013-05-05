@@ -610,10 +610,10 @@ public:
 
             const ScopedSingleProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
 
-            fDescriptor->set_midi_program(fHandle, bank, program);
+            fDescriptor->set_midi_program(fHandle, 0, bank, program); // TODO
 
             if (fHandle2 != nullptr)
-                fDescriptor->set_midi_program(fHandle2, bank, program);
+                fDescriptor->set_midi_program(fHandle2, 0, bank, program); // TODO
         }
 
         CarlaPlugin::setMidiProgram(index, sendGui, sendOsc, sendCallback);
@@ -650,7 +650,7 @@ public:
             if (fDescriptor->ui_set_midi_program != nullptr && kData->midiprog.current >= 0)
             {
                 const MidiProgramData& mpData = kData->midiprog.getCurrent();
-                fDescriptor->ui_set_midi_program(fHandle, mpData.bank, mpData.program);
+                fDescriptor->ui_set_midi_program(fHandle, 0, mpData.bank, mpData.program); // TODO
             }
 
             if (fDescriptor->ui_set_parameter_value != nullptr)
@@ -1869,8 +1869,8 @@ public:
         if (index >= kData->midiprog.count)
             return;
 
-        if (fDescriptor->ui_set_midi_program != nullptr)
-            fDescriptor->ui_set_midi_program(fHandle, kData->midiprog.data[index].bank, kData->midiprog.data[index].program);
+        if (fDescriptor->ui_set_midi_program != nullptr) // TODO
+            fDescriptor->ui_set_midi_program(fHandle, 0, kData->midiprog.data[index].bank, kData->midiprog.data[index].program);
     }
 
     void uiNoteOn(const uint8_t channel, const uint8_t note, const uint8_t velo) override

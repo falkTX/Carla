@@ -334,7 +334,7 @@ protected:
     }
 
 #if DISTRHO_PLUGIN_WANT_PROGRAMS
-    void setMidiProgram(const uint32_t bank, const uint32_t program) override
+    void setMidiProgram(const uint8_t, const uint32_t bank, const uint32_t program) override
     {
         const uint32_t realProgram = bank * 128 + program;
 
@@ -426,7 +426,7 @@ protected:
     }
 
 # if DISTRHO_PLUGIN_WANT_PROGRAMS
-    void uiSetMidiProgram(const uint32_t bank, const uint32_t program) override
+    void uiSetMidiProgram(const uint8_t, const uint32_t bank, const uint32_t program) override
     {
         CARLA_ASSERT(fUiPtr != nullptr);
 

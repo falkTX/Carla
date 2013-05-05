@@ -479,7 +479,7 @@ static void audiofile_set_parameter_value(PluginHandle handle, uint32_t index, f
     handlePtr->needsRead = true;
 }
 
-static void audiofile_set_program(PluginHandle handle, uint32_t bank, uint32_t program)
+static void audiofile_set_program(PluginHandle handle, uint8_t channel, uint32_t bank, uint32_t program)
 {
     AudioFileInstance* const handlePtr = (AudioFileInstance*)handle;
 
@@ -491,6 +491,11 @@ static void audiofile_set_program(PluginHandle handle, uint32_t bank, uint32_t p
         audiofile_load_filename(handlePtr, handlePtr->programs.fullNames[program]);
         handlePtr->programs.current = program;
     }
+
+    return;
+
+    // unused
+    (void)channel;
 }
 
 static void audiofile_set_custom_data(PluginHandle handle, const char* key, const char* value)

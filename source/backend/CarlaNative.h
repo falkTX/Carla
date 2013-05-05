@@ -179,14 +179,14 @@ typedef struct _PluginDescriptor {
     const MidiProgram* (*get_midi_program_info)(PluginHandle handle, uint32_t index);
 
     void (*set_parameter_value)(PluginHandle handle, uint32_t index, float value);
-    void (*set_midi_program)(PluginHandle handle, uint32_t bank, uint32_t program);
+    void (*set_midi_program)(PluginHandle handle, uint8_t channel, uint32_t bank, uint32_t program);
     void (*set_custom_data)(PluginHandle handle, const char* key, const char* value);
 
     void (*ui_show)(PluginHandle handle, bool show);
     void (*ui_idle)(PluginHandle handle);
 
     void (*ui_set_parameter_value)(PluginHandle handle, uint32_t index, float value);
-    void (*ui_set_midi_program)(PluginHandle handle, uint32_t bank, uint32_t program);
+    void (*ui_set_midi_program)(PluginHandle handle, uint8_t channel, uint32_t bank, uint32_t program);
     void (*ui_set_custom_data)(PluginHandle handle, const char* key, const char* value);
 
     void (*activate)(PluginHandle handle);

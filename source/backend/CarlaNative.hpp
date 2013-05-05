@@ -19,6 +19,7 @@
 #define __CARLA_NATIVE_HPP__
 
 #include "CarlaNative.h"
+#include "CarlaMIDI.h"
 #include "CarlaJuceUtils.hpp"
 
 /*!
@@ -203,11 +204,13 @@ protected:
         (void)value;
     }
 
-    virtual void setMidiProgram(const uint32_t bank, const uint32_t program)
+    virtual void setMidiProgram(const uint8_t channel, const uint32_t bank, const uint32_t program)
     {
+        CARLA_ASSERT(channel < MAX_MIDI_CHANNELS);
         return;
 
         // unused
+        (void)channel;
         (void)bank;
         (void)program;
     }
@@ -260,11 +263,13 @@ protected:
         (void)value;
     }
 
-    virtual void uiSetMidiProgram(const uint32_t bank, const uint32_t program)
+    virtual void uiSetMidiProgram(const uint8_t channel, const uint32_t bank, const uint32_t program)
     {
+        CARLA_ASSERT(channel < MAX_MIDI_CHANNELS);
         return;
 
         // unused
+        (void)channel;
         (void)bank;
         (void)program;
     }
@@ -357,9 +362,9 @@ public:
         return handlePtr->setParameterValue(index, value);
     }
 
-    static void _set_midi_program(PluginHandle handle, uint32_t bank, uint32_t program)
+    static void _set_midi_program(PluginHandle handle, uint8_t channel, uint32_t bank, uint32_t program)
     {
-        return handlePtr->setMidiProgram(bank, program);
+        return handlePtr->setMidiProgram(channel, bank, program);
     }
 
     static void _set_custom_data(PluginHandle handle, const char* key, const char* value)
@@ -382,9 +387,9 @@ public:
         return handlePtr->uiSetParameterValue(index, value);
     }
 
-    static void _ui_set_midi_program(PluginHandle handle, uint32_t bank, uint32_t program)
+    static void _ui_set_midi_program(PluginHandle handle, uint8_t channel, uint32_t bank, uint32_t program)
     {
-        return handlePtr->uiSetMidiProgram(bank, program);
+        return handlePtr->uiSetMidiProgram(channel, bank, program);
     }
 
     static void _ui_set_custom_data(PluginHandle handle, const char* key, const char* value)

@@ -220,7 +220,7 @@ protected:
         (void)value;
     }
 
-    void setMidiProgram(const uint32_t bank, const uint32_t program) override
+    void setMidiProgram(const uint8_t channel, const uint32_t bank, const uint32_t program) override
     {
         if (bank >= kMaster->bank.banks.size())
             return;
@@ -230,9 +230,9 @@ protected:
         bool isOffline = false;
 
         if (isOffline)
-            loadProgram(kMaster, bank, program);
+            loadProgram(kMaster, channel, bank, program);
         else
-            fThread.loadLater(bank, program);
+            fThread.loadLater(channel, bank, program);
     }
 
     void setCustomData(const char* const key, const char* const value)
@@ -385,8 +385,9 @@ private:
             CARLA_ASSERT(fQuit);
         }
 
-        void loadLater(const uint32_t bank, const uint32_t program)
+        void loadLater(const uint8_t channel, const uint32_t bank, const uint32_t program)
         {
+            // TODO
             fNextBank    = bank;
             fNextProgram = program;
             fChangeProgram = true;
@@ -488,7 +489,7 @@ private:
                 if (fChangeProgram)
                 {
                     fChangeProgram = false;
-                    loadProgram(kMaster, fNextBank, fNextProgram);
+                    loadProgram(kMaster, 0, fNextBank, fNextProgram); // TODO
                     fNextBank    = 0;
                     fNextProgram = 0;
                 }
@@ -626,7 +627,7 @@ public:
         pthread_mutex_unlock(&master->mutex);
     }
 
-    static void loadProgram(Master* const master, const uint32_t bank, const uint32_t program)
+    static void loadProgram(Master* const master, const uint8_t channel, const uint32_t bank, const uint32_t program)
     {
         const std::string& bankdir(master->bank.banks[bank].dir);
 
@@ -635,9 +636,7 @@ public:
             pthread_mutex_lock(&master->mutex);
 
             master->bank.loadbank(bankdir);
-
-            for (int i=0; i < NUM_MIDI_PARTS; i++)
-                master->bank.loadfromslot(program, master->part[i]);
+            master->bank.loadfromslot(program, master->part[channel]);
 
             master->applyparameters(false);
 
