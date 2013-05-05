@@ -2377,27 +2377,22 @@ class SearchPluginsThread(QThread):
             if self.fCheckNative:
                 self._checkLADSPA(OS, self.fToolNative)
                 settingsDB.setValue("Plugins/LADSPA_native", self.fLadspaPlugins)
-                settingsDB.sync()
 
             if self.fCheckPosix32:
                 self._checkLADSPA(OS, carla_discovery_posix32)
                 settingsDB.setValue("Plugins/LADSPA_posix32", self.fLadspaPlugins)
-                settingsDB.sync()
 
             if self.fCheckPosix64:
                 self._checkLADSPA(OS, carla_discovery_posix64)
                 settingsDB.setValue("Plugins/LADSPA_posix64", self.fLadspaPlugins)
-                settingsDB.sync()
 
             if self.fCheckWin32:
                 self._checkLADSPA("WINDOWS", carla_discovery_win32, not WINDOWS)
                 settingsDB.setValue("Plugins/LADSPA_win32", self.fLadspaPlugins)
-                settingsDB.sync()
 
             if self.fCheckWin64:
                 self._checkLADSPA("WINDOWS", carla_discovery_win64, not WINDOWS)
                 settingsDB.setValue("Plugins/LADSPA_win64", self.fLadspaPlugins)
-                settingsDB.sync()
 
             if haveLRDF and checkValue > 0:
                 startValue = self.fLastCheckValue - rdfPadValue
@@ -2415,94 +2410,78 @@ class SearchPluginsThread(QThread):
             if self.fCheckNative:
                 self._checkDSSI(OS, self.fToolNative)
                 settingsDB.setValue("Plugins/DSSI_native", self.fDssiPlugins)
-                settingsDB.sync()
 
             if self.fCheckPosix32:
                 self._checkDSSI(OS, carla_discovery_posix32)
                 settingsDB.setValue("Plugins/DSSI_posix32", self.fDssiPlugins)
-                settingsDB.sync()
 
             if self.fCheckPosix64:
                 self._checkDSSI(OS, carla_discovery_posix64)
                 settingsDB.setValue("Plugins/DSSI_posix64", self.fDssiPlugins)
-                settingsDB.sync()
 
             if self.fCheckWin32:
                 self._checkDSSI("WINDOWS", carla_discovery_win32, not WINDOWS)
                 settingsDB.setValue("Plugins/DSSI_win32", self.fDssiPlugins)
-                settingsDB.sync()
 
             if self.fCheckWin64:
                 self._checkDSSI("WINDOWS", carla_discovery_win64, not WINDOWS)
                 settingsDB.setValue("Plugins/DSSI_win64", self.fDssiPlugins)
-                settingsDB.sync()
 
         if self.fCheckLV2:
             if self.fCheckNative:
                 self._checkLV2(self.fToolNative)
                 settingsDB.setValue("Plugins/LV2_native", self.fLv2Plugins)
-                settingsDB.sync()
 
             if self.fCheckPosix32:
                 self._checkLV2(carla_discovery_posix32)
                 settingsDB.setValue("Plugins/LV2_posix32", self.fLv2Plugins)
-                settingsDB.sync()
 
             if self.fCheckPosix64:
                 self._checkLV2(carla_discovery_posix64)
                 settingsDB.setValue("Plugins/LV2_posix64", self.fLv2Plugins)
-                settingsDB.sync()
 
             if self.fCheckWin32:
                 self._checkLV2(carla_discovery_win32, not WINDOWS)
                 settingsDB.setValue("Plugins/LV2_win32", self.fLv2Plugins)
-                settingsDB.sync()
 
             if self.fCheckWin64:
                 self._checkLV2(carla_discovery_win64, not WINDOWS)
                 settingsDB.setValue("Plugins/LV2_win64", self.fLv2Plugins)
-                settingsDB.sync()
 
         if self.fCheckVST:
             if self.fCheckNative:
                 self._checkVST(OS, self.fToolNative)
                 settingsDB.setValue("Plugins/VST_native", self.fVstPlugins)
-                settingsDB.sync()
 
             if self.fCheckPosix32:
                 self._checkVST(OS, carla_discovery_posix32)
                 settingsDB.setValue("Plugins/VST_posix32", self.fVstPlugins)
-                settingsDB.sync()
 
             if self.fCheckPosix64:
                 self._checkVST(OS, carla_discovery_posix64)
                 settingsDB.setValue("Plugins/VST_posix64", self.fVstPlugins)
-                settingsDB.sync()
 
             if self.fCheckWin32:
                 self._checkVST("WINDOWS", carla_discovery_win32, not WINDOWS)
                 settingsDB.setValue("Plugins/VST_win32", self.fVstPlugins)
-                settingsDB.sync()
 
             if self.fCheckWin64:
                 self._checkVST("WINDOWS", carla_discovery_win64, not WINDOWS)
                 settingsDB.setValue("Plugins/VST_win64", self.fVstPlugins)
-                settingsDB.sync()
 
         if self.fCheckGIG:
             self._checkKIT(Carla.GIG_PATH, "gig")
             settingsDB.setValue("Plugins/GIG", self.fKitPlugins)
-            settingsDB.sync()
 
         if self.fCheckSF2:
             self._checkKIT(Carla.SF2_PATH, "sf2")
             settingsDB.setValue("Plugins/SF2", self.fKitPlugins)
-            settingsDB.sync()
 
         if self.fCheckSFZ:
             self._checkKIT(Carla.SFZ_PATH, "sfz")
             settingsDB.setValue("Plugins/SFZ", self.fKitPlugins)
-            settingsDB.sync()
+
+        settingsDB.sync()
 
     def _checkLADSPA(self, OS, tool, isWine=False):
         ladspaBinaries = []
@@ -2893,7 +2872,7 @@ class PluginDatabaseW(QDialog):
     @pyqtSlot()
     def slot_addPlugin(self):
         if self.ui.tableWidget.currentRow() >= 0:
-            self.fRetPlugin = self.ui.tableWidget.item(self.ui.tableWidget.currentRow(), 0).pluginData
+            self.fRetPlugin = self.ui.tableWidget.item(self.ui.tableWidget.currentRow(), 0).data(Qt.UserRole)
             self.accept()
         else:
             self.reject()
@@ -2955,7 +2934,7 @@ class PluginDatabaseW(QDialog):
         for i in range(rowCount):
             self.ui.tableWidget.showRow(i)
 
-            plugin = self.ui.tableWidget.item(i, 0).pluginData
+            plugin = self.ui.tableWidget.item(i, 0).data(Qt.UserRole)
             aIns   = plugin['audio.ins']
             aOuts  = plugin['audio.outs']
             mIns   = plugin['midi.ins']
@@ -3191,7 +3170,7 @@ class PluginDatabaseW(QDialog):
         self.ui.tableWidget.setItem(index, 11, QTableWidgetItem(bridgeText))
         self.ui.tableWidget.setItem(index, 12, QTableWidgetItem(ptype))
         self.ui.tableWidget.setItem(index, 13, QTableWidgetItem(str(plugin['binary'])))
-        self.ui.tableWidget.item(self.fLastTableIndex, 0).pluginData = plugin
+        self.ui.tableWidget.item(self.fLastTableIndex, 0).setData(Qt.UserRole, plugin)
 
         self.fLastTableIndex += 1
 
