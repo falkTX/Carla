@@ -258,7 +258,7 @@ protected:
         plugin->setParameterValue(index, value, false, false, false);
     }
 
-    void setMidiProgram(const uint32_t bank, const uint32_t program) override
+    void setMidiProgram(const uint8_t channel, const uint32_t bank, const uint32_t program) override
     {
         if (kData->curPluginCount == 0 || kData->plugins == nullptr)
             return;
@@ -395,7 +395,7 @@ protected:
         (void)value;
     }
 
-    void uiSetMidiProgram(const uint32_t bank, const uint32_t program) override
+    void uiSetMidiProgram(const uint8_t channel, const uint32_t bank, const uint32_t program) override
     {
         return;
 
