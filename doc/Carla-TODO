@@ -1,43 +1,40 @@
 # Carla TODO
 
-CODE CLEANUP:
- - Smarter audio/midi port names (count == 1: "audio-in" else: "audio-in-x")
-
 GENERAL:
  - add direct program access on ui-dialogs (needed for standalone bridges), maybe add extra buttons too (reset plugin, fix ui size)
  - implement osc-based uis in bridge mode
  - implement midi-learn (new dialog)
  - implement midi-cc automation special rules (invert, half, logarithmic, etc)
  - allow to change position of plugins (up/down)
+ - add control-out rate/freq option in frames (or just a regular block-size option?)
+ - control/midi-out in singleProcess() calls, use timeoutFrames var
 
 ENGINE:
- - complete RtAudio+RtMidi support
+ - complete RtAudio+RtMidi support (only MIDI out missing + save&restore)
  - implement Haiku Media support (based from JACK?)
  - implement latency in continuous-rack mode
  - DSSI/LV2/VST version (needs add-new support on control side)
  - Handle sample-rate changes in JACK (made possible by switch-master)
 
+Native:
+ - Cleanup API
+ - Document API
+
 LADSPA:
- - on reload() only set def,min,max after all changes, apply to dssi and lv2
 
 DSSI:
 
 LV2:
- - implement lv2-preset support
- - implement lv2-time messages support
  - complete lv2-atom messages support
  - complete lv2-worker support
 
 VST:
  - add support for old X11 UIs
  - implement cockos extensions
- - compare with dssi-vst code
-
-LinuxSampler:
- - implement midi-program changes
 
 FluidSynth:
+ - per-channel volume control
 
-Native:
- - Cleanup API
- - Document API
+LinuxSampler:
+ - multi-program
+ - 16outs (depends on multi-program)
