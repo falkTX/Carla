@@ -190,8 +190,8 @@ install:
 	# Adjust PREFIX value in script files
 	sed -i "s/X-PREFIX-X/$(SED_PREFIX)/" \
 		$(DESTDIR)$(PREFIX)/bin/carla \
+		$(DESTDIR)$(PREFIX)/bin/carla-control \
 		$(DESTDIR)$(PREFIX)/bin/carla-single
-# 		$(DESTDIR)$(PREFIX)/bin/carla-control \
 
 # -------------------------------------------------------------------------------------------------------------------------------------
 
