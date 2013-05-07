@@ -215,7 +215,7 @@ static void lfo_process(PluginHandle handle, float** inBuffer, float** outBuffer
     const float bpm = timeInfo->bbt.valid ? timeInfo->bbt.beatsPerMinute : 120.0;
     const float SR  = host->get_sample_rate(host->handle);
 
-    const float rate = handlePtr->speed/(bpm/60.0f/SR);
+    const float rate  = handlePtr->speed/(bpm/60.0f/SR);
     const uint  rateI = rate;
 
     float value = 0.0f;
@@ -228,17 +228,14 @@ static void lfo_process(PluginHandle handle, float** inBuffer, float** outBuffer
     case 2: // Sawtooth
         value = (float)(timeInfo->frame % rateI)/rate;
         break;
-    case 3: // Sawtooth (inverted) -- TODO!
-        value = 0.0f;
+    case 3: // Sawtooth (inverted)
+        value = 1.0f - (float)(timeInfo->frame % rateI)/rate;
         break;
     case 4: // Sine -- TODO!
         value = 0.0f;
         break;
     case 5: // Square
-        if (timeInfo->frame % rateI <= rateI/2)
-            value = 1.0f;
-        else
-            value = 0.0f;
+        value = (timeInfo->frame % rateI <= rateI/2) ? 1.0f : 0.0f;
         break;
     }
 

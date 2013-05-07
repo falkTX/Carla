@@ -472,7 +472,7 @@ private:
         if (fUiPtr == nullptr)
         {
             d_lastUiSampleRate = getSampleRate();
-            fUiPtr = new UICarla(getHostHandle(), &fPlugin);
+            fUiPtr = new UICarla(hostHandle(), &fPlugin);
 
             if (! fUiGeometry.isNull())
                 fUiPtr->restoreGeometry(fUiGeometry);

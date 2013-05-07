@@ -26,7 +26,7 @@
 
 static const PluginDescriptor nekofilterDesc = {
     .category  = PLUGIN_CATEGORY_FILTER,
-#if defined(__linux__) || defined(__linux)
+#ifdef WANT_UI
     .hints     = PLUGIN_IS_RTSAFE|PLUGIN_HAS_GUI,
 #else
     .hints     = PLUGIN_IS_RTSAFE,
@@ -57,7 +57,7 @@ static const PluginDescriptor nekofilterDesc = {
     .set_midi_program    = NULL,
     .set_custom_data     = NULL,
 
-#if defined(__linux__) || defined(__linux)
+#ifdef WANT_UI
     .ui_show = nekofilter_ui_show,
     .ui_idle = nekofilter_ui_idle,
 

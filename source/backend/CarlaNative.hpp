@@ -156,7 +156,7 @@ protected:
         if (kHost != nullptr)
             return kHost->dispatcher(kHost->handle, opcode, index, value, ptr);
 
-        return nullptr;
+        return 0;
     }
 
     // -------------------------------------------------------------------

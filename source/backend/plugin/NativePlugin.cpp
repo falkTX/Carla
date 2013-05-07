@@ -184,6 +184,7 @@ public:
         fHost.ui_closed              = carla_host_ui_closed;
         fHost.ui_open_file           = carla_host_ui_open_file;
         fHost.ui_save_file           = carla_host_ui_save_file;
+        fHost.dispatcher             = carla_host_dispatcher;
     }
 
     ~NativePlugin() override
@@ -2070,6 +2071,12 @@ protected:
         return retStr.isNotEmpty() ? (const char*)retStr : nullptr;
     }
 
+    intptr_t handleDispatcher(HostDispatcherOpcode opcode, int32_t index, intptr_t value, void* ptr)
+    {
+        // TODO
+        return 0;
+    }
+
     // -------------------------------------------------------------------
 
 public:
@@ -2306,6 +2313,11 @@ private:
     static const char* carla_host_ui_save_file(HostHandle handle, bool isDir, const char* title, const char* filter)
     {
         return handlePtr->handleUiSaveFile(isDir, title, filter);
+    }
+
+    static intptr_t carla_host_dispatcher(HostHandle handle, HostDispatcherOpcode opcode, int32_t index, intptr_t value, void* ptr)
+    {
+        return handlePtr->handleDispatcher(opcode, index, value, ptr);
     }
 
     #undef handlePtr

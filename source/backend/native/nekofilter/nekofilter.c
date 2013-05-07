@@ -19,20 +19,24 @@
  *
  *****************************************************************************/
 
+#if defined(__linux__) || defined(__linux)
+# define WANT_UI
+#endif
+
+#define LOG_LEVEL LOG_LEVEL_ERROR
+
+#include <assert.h>
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <assert.h>
-#include <math.h>
-#include <stdbool.h>
+
 #include "CarlaNative.h"
 
-//#include "nekofilter.h"
 #include "filter.h"
-#define LOG_LEVEL LOG_LEVEL_ERROR
 #include "log.h"
 
-#if defined(__linux__) || defined(__linux)
+#ifdef WANT_UI
 # include "ui.c"
 #endif
 
@@ -44,7 +48,7 @@ struct nekofilter
   float params_global[GLOBAL_PARAMETERS_COUNT];
   float params_bands[BAND_PARAMETERS_COUNT*BANDS_COUNT];
   HostDescriptor* host;
-#if defined(__linux__) || defined(__linux)
+#ifdef WANT_UI
   struct control* ui;
 #endif
 };
@@ -66,7 +70,7 @@ nekofilter_instantiate(
   }
 
   nekofilter_ptr->host = host;
-#if defined(__linux__) || defined(__linux)
+#ifdef WANT_UI
   nekofilter_ptr->ui   = NULL;
 #endif
 
@@ -86,7 +90,7 @@ nekofilter_instantiate(
                                   GLOBAL_PARAMETER_GAIN,
                                   &nekofilter_ptr->params_global[GLOBAL_PARAMETER_GAIN]);
 
-  for (i=0; i < BANDS_COUNT; i++)
+  for (i=0; i < BANDS_COUNT; ++i)
   {
     nekofilter_ptr->params_bands[i*BAND_PARAMETERS_COUNT + BAND_PARAMETER_ACTIVE]    = 0.0f;
     nekofilter_ptr->params_bands[i*BAND_PARAMETERS_COUNT + BAND_PARAMETER_FREQUENCY] = 0.0f;
@@ -352,7 +356,7 @@ nekofilter_process(
   (void)midiEvents;
 }
 
-#if defined(__linux__) || defined(__linux)
+#ifdef WANT_UI
 void nekofilter_ui_show(
   PluginHandle handle,
   bool show)
@@ -363,6 +367,8 @@ void nekofilter_ui_show(
       nekofilter_ptr->ui = nekoui_instantiate(nekofilter_ptr->host);
     if (nekofilter_ptr->ui != NULL)
       nekoui_show(nekofilter_ptr->ui);
+    else
+      nekofilter_ptr->host->dispatcher(nekofilter_ptr->host->handle, HOST_OPCODE_UI_UNAVAILABLE, 0, 0, NULL);
   }
   else if (nekofilter_ptr->ui != NULL)
     nekoui_hide(nekofilter_ptr->ui);
@@ -389,7 +395,7 @@ void
 nekofilter_cleanup(
   PluginHandle handle)
 {
-#if defined(__linux__) || defined(__linux)
+#ifdef WANT_UI
   if (nekofilter_ptr->ui != NULL)
   {
     nekoui_quit(nekofilter_ptr->ui);

@@ -36,34 +36,34 @@
 //#define USE_CLONE2
 
 #if defined(USE_VFORK)
-#define FORK vfork
-#define FORK_STR "vfork"
+# define FORK vfork
+# define FORK_STR "vfork"
 #elif defined(USE_CLONE)
-#define FORK_STR "clone"
+# define FORK_STR "clone"
 #elif defined(USE_CLONE2)
-#define FORK_STR "clone2"
+# define FORK_STR "clone2"
 #else
-#define FORK fork
-#define FORK_STR "fork"
+# define FORK fork
+# define FORK_STR "fork"
 #endif
 
-#include <stdbool.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <unistd.h>
+
 #if defined(FORK_TIME_MEASURE)
 # include <sys/time.h>
 #endif
-#include <unistd.h>
+
 #if defined(USE_CLONE) || defined(USE_CLONE2)
 # include <sched.h>
 #endif
-#include <fcntl.h>
-#include <locale.h>
-#include <errno.h>
 
 #include "CarlaNative.h"
 
@@ -71,11 +71,11 @@ struct control
 {
   HostDescriptor* host;
 
-  bool running;              /* true if UI launched and 'exiting' not received */
-  bool visible;              /* true if 'show' sent */
+  bool running;  /* true if UI launched and 'exiting' not received */
+  bool visible;  /* true if 'show' sent */
 
-  int send_pipe;             /* the pipe end that is used for sending messages to UI */
-  int recv_pipe;             /* the pipe end that is used for receiving messages from UI */
+  int send_pipe; /* the pipe end that is used for sending messages to UI */
+  int recv_pipe; /* the pipe end that is used for receiving messages from UI */
 
   pid_t pid;
 };
@@ -156,7 +156,7 @@ wait_child(
     stderr,
     "we have waited for child with pid %d to exit for %.1f seconds and we are giving up\n",
     (int)pid,
-    (float)((float)WAIT_START_TIMEOUT / 1000));
+    (float)WAIT_START_TIMEOUT / 1000.0f);
 
   return false;
 }
