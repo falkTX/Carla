@@ -17,10 +17,32 @@
 
 #ifndef BUILD_BRIDGE
 
+#define WANT_LV2
+
 #include "CarlaEngineInternal.hpp"
 #include "CarlaStateUtils.hpp"
 
 #include "CarlaNative.hpp"
+
+#ifdef WANT_LV2
+# include "lv2/lv2.h"
+# include "lv2/atom.h"
+struct Lv2HostDescriptor {
+    uint32_t bufferSize;
+    double   sampleRate;
+    TimeInfo timeInfo;
+    float* audioPorts[4];
+    LV2_Atom_Sequence* atomPort;
+
+    Lv2HostDescriptor()
+        : bufferSize(0),
+          sampleRate(0.0),
+          audioPorts{nullptr},
+          atomPort(nullptr) {}
+};
+#else
+struct Lv2HostDescriptor;
+#endif
 
 #include <QtCore/QTextStream>
 
@@ -32,9 +54,10 @@ class CarlaEngineNative : public PluginDescriptorClass,
                           public CarlaEngine
 {
 public:
-    CarlaEngineNative(const HostDescriptor* const host)
+    CarlaEngineNative(const HostDescriptor* const host, Lv2HostDescriptor* const lv2Host = nullptr)
         : PluginDescriptorClass(host),
-          CarlaEngine()
+          CarlaEngine(),
+          fLv2Host(lv2Host)
     {
         carla_debug("CarlaEngineNative::CarlaEngineNative()");
 
@@ -54,6 +77,14 @@ public:
         setAboutToClose();
         removeAllPlugins();
         close();
+
+#ifdef WANT_LV2
+        if (fLv2Host != nullptr)
+        {
+            delete fLv2Host;
+            delete hostHandle();
+        }
+#endif
     }
 
 protected:
@@ -74,9 +105,9 @@ protected:
     bool close() override
     {
         carla_debug("CarlaEngineNative::close()");
-        CarlaEngine::close();
 
-        return true;
+        proccessPendingEvents();
+        return CarlaEngine::close();
     }
 
     bool isRunning() const override
@@ -308,10 +339,20 @@ protected:
 
             plugin->setActive(false, true, false);
         }
+
+        // just in case
+        proccessPendingEvents();
     }
 
-    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t midiEventCount, const MidiEvent* const midiEvents) override
+    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t midiEventCount, const ::MidiEvent* const midiEvents) override
     {
+        if (kData->curPluginCount == 0)
+        {
+            carla_zeroFloat(outBuffer[0], frames);
+            carla_zeroFloat(outBuffer[1], frames);
+            return CarlaEngine::proccessPendingEvents();
+        }
+
         // ---------------------------------------------------------------
         // Time Info
 
@@ -339,28 +380,77 @@ protected:
         }
 
         // ---------------------------------------------------------------
-        // Initial checks
+        // initialize input events
 
-        if (kData->curPluginCount == 0)
+        carla_zeroStruct<EngineEvent>(kData->rack.in, RACK_EVENT_COUNT);
         {
-            carla_zeroFloat(outBuffer[0], frames);
-            carla_zeroFloat(outBuffer[1], frames);
-            return CarlaEngine::proccessPendingEvents();
+            uint32_t engineEventIndex = 0;
+
+            for (uint32_t i=0; i < midiEventCount && engineEventIndex < RACK_EVENT_COUNT; ++i)
+            {
+                const ::MidiEvent& midiEvent(midiEvents[i]);
+
+                if (midiEvent.size > 4)
+                    continue;
+
+                const uint8_t status  = MIDI_GET_STATUS_FROM_DATA(midiEvent.data);
+                const uint8_t channel = MIDI_GET_CHANNEL_FROM_DATA(midiEvent.data);
+
+                // we don't want some events
+                if (status == MIDI_STATUS_PROGRAM_CHANGE)
+                    continue;
+
+                // handle note/sound off properly
+                if (status == MIDI_STATUS_CONTROL_CHANGE)
+                {
+                    const uint8_t control = midiEvent.data[1];
+
+                    if (MIDI_IS_CONTROL_BANK_SELECT(control))
+                        continue;
+
+                    if (control == MIDI_CONTROL_ALL_SOUND_OFF || control == MIDI_CONTROL_ALL_NOTES_OFF)
+                    {
+                        EngineEvent& engineEvent(kData->rack.in[engineEventIndex++]);
+                        engineEvent.clear();
+
+                        engineEvent.type    = kEngineEventTypeControl;
+                        engineEvent.time    = midiEvent.time;
+                        engineEvent.channel = channel;
+
+                        engineEvent.ctrl.type  = (control == MIDI_CONTROL_ALL_SOUND_OFF) ? kEngineControlEventTypeAllSoundOff : kEngineControlEventTypeAllNotesOff;
+                        engineEvent.ctrl.param = 0;
+                        engineEvent.ctrl.value = 0.0f;
+
+                        continue;
+                    }
+                }
+
+                EngineEvent& engineEvent(kData->rack.in[engineEventIndex++]);
+                engineEvent.clear();
+
+                engineEvent.type    = kEngineEventTypeMidi;
+                engineEvent.time    = midiEvent.time;
+                engineEvent.channel = channel;
+
+                engineEvent.midi.data[0] = MIDI_GET_STATUS_FROM_DATA(midiEvent.data);
+                engineEvent.midi.data[1] = midiEvent.data[1];
+                engineEvent.midi.data[2] = midiEvent.data[2];
+                engineEvent.midi.data[3] = midiEvent.data[3];
+                engineEvent.midi.size    = midiEvent.size;
+            }
         }
 
+        // ---------------------------------------------------------------
         // create audio buffers
+
         float* inBuf[2]  = { inBuffer[0],  inBuffer[1] };
         float* outBuf[2] = { outBuffer[0], outBuffer[1] };
 
+        // ---------------------------------------------------------------
         // process
+
         CarlaEngine::processRack(inBuf, outBuf, frames);
-
         CarlaEngine::proccessPendingEvents();
-        return;
-
-        // unused
-        (void)midiEventCount;
-        (void)midiEvents;
     }
 
     // -------------------------------------------------------------------
@@ -383,13 +473,15 @@ protected:
 
     void uiSetParameterValue(const uint32_t index, const float value) override
     {
-        CARLA_ASSERT(index < getParameterCount());
-        return;
+        if (index >= getParameterCount())
+            return;
 
-        // TODO
+        CarlaPlugin* const plugin(kData->plugins[0].plugin);
 
-        // unused
-        (void)value;
+        if (plugin == nullptr || ! plugin->enabled())
+            return;
+
+        plugin->uiParameterChange(index, value);
     }
 
     void uiSetMidiProgram(const uint8_t channel, const uint32_t bank, const uint32_t program) override
@@ -501,6 +593,120 @@ protected:
         }
     }
 
+    // -------------------------------------------------------------------
+
+#ifdef WANT_LV2
+    Lv2HostDescriptor* const fLv2Host;
+
+    // -------------------------------------------------------------------
+
+public:
+    #define handlePtr ((Lv2HostDescriptor*)handle)
+
+    static uint32_t lv2host_get_buffer_size(HostHandle handle)
+    {
+        return handlePtr->bufferSize;
+    }
+
+    static double lv2host_get_sample_rate(HostHandle handle)
+    {
+        return handlePtr->sampleRate;
+    }
+
+    static const TimeInfo* lv2host_get_time_info(HostHandle handle)
+    {
+        return &handlePtr->timeInfo;
+    }
+
+    static bool lv2host_write_midi_event(HostHandle, const MidiEvent*)
+    {
+        // MIDI Out not supported yet
+        return false;
+    }
+
+    static void lv2host_ui_parameter_changed(HostHandle, uint32_t, float) {}
+    static void lv2host_ui_midi_program_changed(HostHandle, uint8_t, uint32_t, uint32_t) {}
+    static void lv2host_ui_custom_data_changed(HostHandle, const char*, const char*) {}
+    static void lv2host_ui_closed(HostHandle) {}
+    static const char* lv2host_ui_open_file(HostHandle, bool, const char*, const char*) { return nullptr; }
+    static const char* lv2host_ui_save_file(HostHandle, bool, const char*, const char*) { return nullptr; }
+    static intptr_t lv2host_dispatcher(HostHandle, HostDispatcherOpcode, int32_t, intptr_t, void*) { return 0; }
+
+    #undef handlePtr
+
+    // -------------------------------------------------------------------
+
+    #define handlePtr ((CarlaEngineNative*)handle)
+
+    static LV2_Handle lv2_instantiate(const LV2_Descriptor*, double sampleRate, const char*, const LV2_Feature* const* /*features*/)
+    {
+        Lv2HostDescriptor* const lv2Host(new Lv2HostDescriptor());
+        lv2Host->bufferSize = 1024; // TODO
+        lv2Host->sampleRate = sampleRate;
+        lv2Host->timeInfo.frame = 0;
+        lv2Host->timeInfo.usecs = 0;
+        lv2Host->timeInfo.playing = false;
+        lv2Host->timeInfo.bbt.valid = false;
+
+        HostDescriptor* const host(new HostDescriptor);
+        host->handle  = lv2Host;
+        host->ui_name = nullptr;
+
+        host->get_buffer_size        = lv2host_get_buffer_size;
+        host->get_sample_rate        = lv2host_get_sample_rate;
+        host->get_time_info          = lv2host_get_time_info;
+        host->write_midi_event       = lv2host_write_midi_event;
+        host->ui_parameter_changed   = lv2host_ui_parameter_changed;
+        host->ui_custom_data_changed = lv2host_ui_custom_data_changed;
+        host->ui_closed              = lv2host_ui_closed;
+        host->ui_open_file           = lv2host_ui_open_file;
+        host->ui_save_file           = lv2host_ui_save_file;
+        host->dispatcher             = lv2host_dispatcher;
+
+        return new CarlaEngineNative(host, lv2Host);
+    }
+
+    static void lv2_connect_port(LV2_Handle handle, uint32_t port, void* dataLocation)
+    {
+        if (port < 4)
+            handlePtr->fLv2Host->audioPorts[port] = (float*)dataLocation;
+        else if (port == 4)
+            handlePtr->fLv2Host->atomPort = (LV2_Atom_Sequence*)dataLocation;
+    }
+
+    static void lv2_activate(LV2_Handle handle)
+    {
+        handlePtr->activate();
+    }
+
+    static void lv2_run(LV2_Handle handle, uint32_t sampleCount)
+    {
+        float* inBuffer[2]  = { handlePtr->fLv2Host->audioPorts[0], handlePtr->fLv2Host->audioPorts[1] };
+        float* outBuffer[2] = { handlePtr->fLv2Host->audioPorts[2], handlePtr->fLv2Host->audioPorts[3] };
+
+        // TODO - get midiEvents and timePos from atomPort
+
+        handlePtr->process(inBuffer, outBuffer, sampleCount, 0, nullptr);
+    }
+
+    static void lv2_deactivate(LV2_Handle handle)
+    {
+        handlePtr->deactivate();
+    }
+
+    static void lv2_cleanup(LV2_Handle handle)
+    {
+        delete handlePtr;
+    }
+
+    static const void* lv2_extension_data(const char* /*uri*/)
+    {
+        return nullptr;
+    }
+
+    #undef handlePtr
+#endif
+
 private:
     PluginDescriptorClassEND(CarlaEngineNative)
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineNative)
@@ -524,12 +730,36 @@ static const PluginDescriptor carlaDesc = {
     PluginDescriptorFILL(CarlaEngineNative)
 };
 
+#ifdef WANT_LV2
+static const LV2_Descriptor carlaLv2Desc = {
+    /* URI            */ "http://kxstudio.sf.net/carla",
+    /* instantiate    */ CarlaEngineNative::lv2_instantiate,
+    /* connect_port   */ CarlaEngineNative::lv2_connect_port,
+    /* activate       */ CarlaEngineNative::lv2_activate,
+    /* run            */ CarlaEngineNative::lv2_run,
+    /* deactivate     */ CarlaEngineNative::lv2_deactivate,
+    /* cleanup        */ CarlaEngineNative::lv2_cleanup,
+    /* extension_data */ CarlaEngineNative::lv2_extension_data
+};
+#endif
+
 void CarlaEngine::registerNativePlugin()
 {
     carla_register_native_plugin(&carlaDesc);
 }
 
 CARLA_BACKEND_END_NAMESPACE
+
+// -----------------------------------------------------------------------
+
+#ifdef WANT_LV2
+CARLA_EXPORT
+const LV2_Descriptor* lv2_descriptor(uint32_t index)
+{
+    CARLA_BACKEND_USE_NAMESPACE;
+    return (index == 0) ? &carlaLv2Desc : nullptr;
+}
+#endif
 
 // -----------------------------------------------------------------------
 

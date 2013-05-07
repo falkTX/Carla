@@ -18,8 +18,7 @@
 #ifdef WANT_PLUGIN
 
 #include "CarlaEngineInternal.hpp"
-#include "CarlaBackendUtils.hpp"
-#include "CarlaMIDI.h"
+#include "CarlaStateUtils.hpp"
 
 #include "DistrhoPlugin.hpp"
 
@@ -31,47 +30,47 @@ CARLA_BACKEND_START_NAMESPACE
 // -----------------------------------------
 // Parameters
 
-static const unsigned char paramMap[] = {
+static const unsigned char kParamMap[] = {
     0x01, 0x02, 0x03, 0x04, 0x05, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
     0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F,
     0x46, 0x47, 0x48, 0x49, 0x4A, 0x4B, 0x4C, 0x4D, 0x4E, 0x4F,
     0x50, 0x51, 0x52, 0x53, 0x54, 0x5B, 0x5C, 0x5D, 0x5E, 0x5F
 };
 
-static const unsigned int paramVolume  = 5;
-static const unsigned int paramBalance = 6;
-static const unsigned int paramPan     = 8;
+static const unsigned int kParamVolume  = 5;
+static const unsigned int kParamBalance = 6;
+static const unsigned int kParamPan     = 8;
 
-static const unsigned int paramCount   = sizeof(paramMap);
-static const unsigned int programCount = 128;
-static const unsigned int stateCount   = MAX_RACK_PLUGINS;
+static const unsigned int kParamCount   = sizeof(paramMap);
+static const unsigned int kProgramCount = 128;
+static const unsigned int kStateCount   = MAX_RACK_PLUGINS;
 
 // -----------------------------------------
 
-class CarlaEnginePlugin : public CarlaEngine,
-                          public DISTRHO::Plugin
+class CarlaEnginePlugin : public DISTRHO::Plugin,
+                          public CarlaEngine
 {
 public:
     CarlaEnginePlugin()
-        : CarlaEngine(),
-          DISTRHO::Plugin(paramCount, programCount, stateCount),
-          paramBuffers{0.0f},
-          prevParamBuffers{0.0f}
+        : DISTRHO::Plugin(kParamCount, kProgramCount, kStateCount),
+          CarlaEngine(),
+          fParamBuffers{0.0f},
+          fPrevParamBuffers{0.0f}
     {
         carla_debug("CarlaEnginePlugin::CarlaEnginePlugin()");
 
         // init parameters
-        paramBuffers[paramVolume]  = 100.0f;
-        paramBuffers[paramBalance] = 63.5f;
-        paramBuffers[paramPan]     = 63.5f;
+        fParamBuffers[kParamVolume]  = 100.0f;
+        fParamBuffers[kParamBalance] = 63.5f;
+        fParamBuffers[kParamPan]     = 63.5f;
 
-        prevParamBuffers[paramVolume]  = 100.0f;
-        prevParamBuffers[paramBalance] = 63.5f;
-        prevParamBuffers[paramPan]     = 63.5f;
+        fPrevParamBuffers[kParamVolume]  = 100.0f;
+        fPrevParamBuffers[kParamBalance] = 63.5f;
+        fPrevParamBuffers[kParamPan]     = 63.5f;
 
         // set-up engine
         fOptions.processMode   = PROCESS_MODE_CONTINUOUS_RACK;
-        fOptions.transportMode = TRANSPORT_MODE_INTERNAL;
+        fOptions.transportMode = TRANSPORT_MODE_PLUGIN;
         fOptions.forceStereo   = true;
         fOptions.preferPluginBridges = false;
         fOptions.preferUiBridges = false;
@@ -89,7 +88,7 @@ public:
 
 protected:
     // -------------------------------------
-    // CarlaEngine virtual calls
+    // Carla Engine virtual calls
 
     bool init(const char* const clientName) override
     {
@@ -105,9 +104,9 @@ protected:
     bool close() override
     {
         carla_debug("CarlaEnginePlugin::close()");
-        CarlaEngine::close();
 
-        return true;
+        proccessPendingEvents();
+        return CarlaEngine::close();
     }
 
     bool isRunning() const override
@@ -158,7 +157,7 @@ protected:
 
     void d_initParameter(uint32_t index, DISTRHO::Parameter& parameter) override
     {
-        if (index >= paramCount)
+        if (index >= kParamCount)
             return;
 
         parameter.hints = DISTRHO::PARAMETER_IS_AUTOMABLE;
@@ -166,14 +165,7 @@ protected:
         parameter.ranges.min = 0.0f;
         parameter.ranges.max = 127.0f;
 
-        if (index == paramVolume)
-            parameter.ranges.def = 100.0f;
-        else if (index == paramBalance)
-            parameter.ranges.def = 63.5f;
-        else if (index == paramPan)
-            parameter.ranges.def = 63.5f;
-
-        switch (paramMap[index])
+        switch (kParamMap[index])
         {
         case 0x01:
             parameter.name = "0x01 Modulation";
@@ -192,15 +184,18 @@ protected:
             break;
         case 0x07:
             parameter.name = "0x07 Volume";
+            parameter.ranges.def = 100.0f;
             break;
         case 0x08:
             parameter.name = "0x08 Balance";
+            parameter.ranges.def = 63.5f;
             break;
         case 0x09:
             parameter.name = "0x09 (Undefined)";
             break;
         case 0x0A:
             parameter.name = "0x0A Pan";
+            parameter.ranges.def = 63.5f;
             break;
         case 0x0B:
             parameter.name = "0x0B Expression";
@@ -325,6 +320,9 @@ protected:
         case 0x5F:
             parameter.name = "0x5F FX 5 Depth [Phaser]";
             break;
+        default:
+            parameter.name = "";
+            break;
         }
     }
 
@@ -343,39 +341,41 @@ protected:
 
     float d_parameterValue(uint32_t index) override
     {
-        if (index >= paramCount)
+        if (index >= kParamCount)
             return 0.0f;
 
-        return paramBuffers[index];
+        return fParamBuffers[index];
     }
 
     void d_setParameterValue(uint32_t index, float value) override
     {
-        if (index >= paramCount)
+        if (index >= kParamCount)
             return;
 
-        paramBuffers[index] = value;
+        fParamBuffers[index] = value;
     }
 
     void d_setProgram(uint32_t index) override
     {
-        if (index >= programCount)
+        if (index >= kProgramCount)
             return;
-        if (kData->curPluginCount == 0)
+        if (kData->curPluginCount == 0 || kData->plugins == nullptr)
             return;
 
-        if (CarlaPlugin* const plugin = getPlugin(0))
+        CarlaPlugin* const plugin(kData->plugins[0].plugin);
+
+        if (plugin == nullptr || ! plugin->enabled())
+            return;
+
+        if (plugin->midiProgramCount() > 0)
         {
-            if (plugin->programCount() > 0)
-            {
-                if (index <= plugin->programCount())
-                    plugin->setProgram(index, true, true, false);
-            }
-            else if (plugin->midiProgramCount())
-            {
-                if (index <= plugin->midiProgramCount())
-                    plugin->setMidiProgram(index, true, true, false);
-            }
+            if (index <= plugin->midiProgramCount())
+                plugin->setMidiProgram(index, true, true, false);
+        }
+        else if (plugin->programCount() > 0 && plugin->type() != PLUGIN_LV2)
+        {
+            if (index <= plugin->programCount())
+                plugin->setProgram(index, true, true, false);
         }
     }
 
@@ -391,17 +391,6 @@ protected:
 
     void d_activate() override
     {
-        static bool firstTestInit = true;
-
-        if (firstTestInit)
-        {
-            firstTestInit = false;
-            if (! addPlugin(PLUGIN_INTERNAL, nullptr, nullptr, "zynaddsubfx"))
-                carla_stderr2("Plugin add zynaddsubfx failed");
-            if (! addPlugin(PLUGIN_INTERNAL, nullptr, nullptr, "PingPongPan"))
-                carla_stderr2("Plugin add Pan failed");
-        }
-
         for (unsigned int i=0; i < kData->curPluginCount; ++i)
         {
             CarlaPlugin* const plugin(getPluginUnchecked(i));
@@ -410,7 +399,7 @@ protected:
                 plugin->setActive(true, true, false);
         }
 
-        carla_copyFloat(prevParamBuffers, paramBuffers, paramCount);
+        carla_copyFloat(fPrevParamBuffers, fParamBuffers, kParamCount);
     }
 
     void d_deactivate() override
@@ -422,6 +411,9 @@ protected:
             if (plugin != nullptr && plugin->enabled())
                 plugin->setActive(false, true, false);
         }
+
+        // just in case
+        proccessPendingEvents();
     }
 
     void d_run(float** inputs, float** outputs, uint32_t frames, uint32_t midiEventCount, const DISTRHO::MidiEvent* midiEvents) override
@@ -433,59 +425,97 @@ protected:
             return proccessPendingEvents();
         }
 
+        // ---------------------------------------------------------------
         // create audio buffers
+
         float* inBuf[2]  = { inputs[0], inputs[1] };
         float* outBuf[2] = { outputs[0], outputs[1] };
 
+        // ---------------------------------------------------------------
         // initialize input events
+
         carla_zeroStruct<EngineEvent>(kData->rack.in, RACK_EVENT_COUNT);
         {
             uint32_t engineEventIndex = 0;
 
-            for (unsigned int i=0; i < paramCount && engineEventIndex+midiEventCount < RACK_EVENT_COUNT; ++i)
+            for (unsigned int i=0; i < kParamCount && engineEventIndex+midiEventCount < RACK_EVENT_COUNT; ++i)
             {
-                if (paramBuffers[i] == prevParamBuffers[i])
+                if (fParamBuffers[i] == fPrevParamBuffers[i])
                     continue;
 
-                EngineEvent* const engineEvent = &kData->rack.in[engineEventIndex++];
-                engineEvent->clear();
+                EngineEvent& engineEvent(kData->rack.in[engineEventIndex++]);
+                engineEvent.clear();
 
-                engineEvent->type    = kEngineEventTypeControl;
-                engineEvent->time    = 0;
-                engineEvent->channel = 0;
+                engineEvent.type    = kEngineEventTypeControl;
+                engineEvent.time    = 0;
+                engineEvent.channel = 0;
 
-                engineEvent->ctrl.type  = kEngineControlEventTypeParameter;
-                engineEvent->ctrl.param = paramMap[i];
-                engineEvent->ctrl.value = paramBuffers[i]/127.0f;
+                engineEvent.ctrl.type  = kEngineControlEventTypeParameter;
+                engineEvent.ctrl.param = kParamMap[i];
+                engineEvent.ctrl.value = fParamBuffers[i]/127.0f;
 
-                prevParamBuffers[i] = paramBuffers[i];
+                fPrevParamBuffers[i] = fParamBuffers[i];
             }
-
-            const DISTRHO::MidiEvent* midiEvent;
 
             for (uint32_t i=0; i < midiEventCount && engineEventIndex < RACK_EVENT_COUNT; ++i)
             {
-                midiEvent = &midiEvents[i];
+                const DISTRHO::MidiEvent& midiEvent(midiEvents[i]);
 
-                if (midiEvent->size > 4)
+                if (midiEvent.size > 4)
                     continue;
 
-                EngineEvent* const engineEvent = &kData->rack.in[engineEventIndex++];
-                engineEvent->clear();
+                const uint8_t status  = MIDI_GET_STATUS_FROM_DATA(midiEvent.buf);
+                const uint8_t channel = MIDI_GET_CHANNEL_FROM_DATA(midiEvent.buf);
 
-                engineEvent->type    = kEngineEventTypeMidi;
-                engineEvent->time    = midiEvent->frame;
-                engineEvent->channel = MIDI_GET_CHANNEL_FROM_DATA(midiEvent->buf);
+                // we don't want some events
+                if (status == MIDI_STATUS_PROGRAM_CHANGE)
+                    continue;
 
-                engineEvent->midi.data[0] = MIDI_GET_STATUS_FROM_DATA(midiEvent->buf);
-                engineEvent->midi.data[1] = midiEvent->buf[1];
-                engineEvent->midi.data[2] = midiEvent->buf[2];
-                engineEvent->midi.data[3] = midiEvent->buf[3];
-                engineEvent->midi.size    = midiEvent->size;
+                // handle note/sound off properly
+                if (status == MIDI_STATUS_CONTROL_CHANGE)
+                {
+                    const uint8_t control = midiEvent.buf[1];
+
+                    if (MIDI_IS_CONTROL_BANK_SELECT(control))
+                        continue;
+
+                    if (control == MIDI_CONTROL_ALL_SOUND_OFF || control == MIDI_CONTROL_ALL_NOTES_OFF)
+                    {
+                        EngineEvent& engineEvent(kData->rack.in[engineEventIndex++]);
+                        engineEvent.clear();
+
+                        engineEvent.type    = kEngineEventTypeControl;
+                        engineEvent.time    = midiEvent.frame;
+                        engineEvent.channel = channel;
+
+                        engineEvent.ctrl.type  = (control == MIDI_CONTROL_ALL_SOUND_OFF) ? kEngineControlEventTypeAllSoundOff : kEngineControlEventTypeAllNotesOff;
+                        engineEvent.ctrl.param = 0;
+                        engineEvent.ctrl.value = 0.0f;
+
+                        continue;
+                    }
+                }
+
+                EngineEvent& engineEvent(kData->rack.in[engineEventIndex++]);
+                engineEvent.clear();
+
+                engineEvent.type    = kEngineEventTypeMidi;
+                engineEvent.time    = midiEvent.frame;
+                engineEvent.channel = channel;
+
+                engineEvent.midi.data[0] = MIDI_GET_STATUS_FROM_DATA(midiEvent.buf);
+                engineEvent.midi.data[1] = midiEvent.buf[1];
+                engineEvent.midi.data[2] = midiEvent.buf[2];
+                engineEvent.midi.data[3] = midiEvent.buf[3];
+                engineEvent.midi.size    = midiEvent.size;
             }
         }
 
+        // ---------------------------------------------------------------
+        // process
+
         processRack(inBuf, outBuf, frames);
+        proccessPendingEvents();
     }
 
     // ---------------------------------------------
@@ -512,8 +542,8 @@ protected:
     // ---------------------------------------------
 
 private:
-    float paramBuffers[paramCount];
-    float prevParamBuffers[paramCount];
+    float fParamBuffers[kParamCount];
+    float fPrevParamBuffers[kParamCount];
 };
 
 CARLA_BACKEND_END_NAMESPACE
@@ -533,4 +563,4 @@ END_NAMESPACE_DISTRHO
 
 #include "DistrhoPluginMain.cpp"
 
-#endif // CARLA_ENGINE_PLUGIN
+#endif // WANT_PLUGIN

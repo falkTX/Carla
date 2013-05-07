@@ -350,7 +350,7 @@ public:
         fMidiInEvents.clear();
         //fMidiOutEvents.clear();
 
-        return true;
+        return (! hasError);
     }
 
     bool isRunning() const override

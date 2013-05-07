@@ -761,6 +761,7 @@ class CarlaMainW(QMainWindow):
         self.connect(self.ui.act_file_open, SIGNAL("triggered()"), SLOT("slot_fileOpen()"))
         self.connect(self.ui.act_file_save, SIGNAL("triggered()"), SLOT("slot_fileSave()"))
         self.connect(self.ui.act_file_save_as, SIGNAL("triggered()"), SLOT("slot_fileSaveAs()"))
+        self.connect(self.ui.act_file_export_lv2, SIGNAL("triggered()"), SLOT("slot_fileExportLv2Preset()"))
 
         self.connect(self.ui.act_engine_start, SIGNAL("triggered()"), SLOT("slot_engineStart()"))
         self.connect(self.ui.act_engine_stop, SIGNAL("triggered()"), SLOT("slot_engineStop()"))
@@ -1361,7 +1362,7 @@ class CarlaMainW(QMainWindow):
         filenameTry = QFileDialog.getOpenFileName(self, self.tr("Open Carla Project File"), self.fSavedSettings["Main/DefaultProjectFolder"], filter=fileFilter)
 
         if filenameTry:
-            # FIXME - show dialog to user
+            # FIXME - show dialog to user (remove all plugins?)
             self.removeAllPlugins()
             self.loadProject(filenameTry)
 
@@ -1373,15 +1374,69 @@ class CarlaMainW(QMainWindow):
         fileFilter  = self.tr("Carla Project File (*.carxp)")
         filenameTry = QFileDialog.getSaveFileName(self, self.tr("Save Carla Project File"), self.fSavedSettings["Main/DefaultProjectFolder"], filter=fileFilter)
 
-        if filenameTry:
-            if not filenameTry.endswith(".carxp"):
-                filenameTry += ".carxp"
+        if not filenameTry:
+            return
 
-            self.saveProject(filenameTry)
+        if not filenameTry.endswith(".carxp"):
+            filenameTry += ".carxp"
+
+        self.saveProject(filenameTry)
 
     @pyqtSlot()
     def slot_fileSaveAs(self):
         self.slot_fileSave(True)
+
+    @pyqtSlot()
+    def slot_fileExportLv2Preset(self):
+        fileFilter  = self.tr("LV2 Preset (*.lv2)")
+        filenameTry = QFileDialog.getSaveFileName(self, self.tr("Save Carla Project File"), self.fSavedSettings["Main/DefaultProjectFolder"], filter=fileFilter)
+
+        if not filenameTry:
+            return
+
+        if not filenameTry.endswith(".lv2"):
+            filenameTry += ".lv2"
+
+        if os.path.exists(filenameTry) and not os.path.isdir(filenameTry):
+            # TODO - error
+            return
+
+        # Save current project to a tmp file, and read it
+        tmpFile = os.path.join(TMP, "carla-plugin-export.carxp")
+
+        if not Carla.host.save_project(tmpFile):
+            # TODO - error
+            return
+
+        tmpFileFd = open(tmpFile, "r")
+        presetContents = tmpFileFd.read()
+        tmpFileFd.close()
+        os.remove(tmpFile)
+
+        # Create LV2 Preset
+        os.mkdir(filenameTry)
+
+        manifestPath = os.path.join(filenameTry, "manifest.ttl")
+
+        manifestFd = open(manifestPath, "w")
+        manifestFd.write("""# LV2 Preset for the Carla LV2 Plugin
+@prefix lv2:   <http://lv2plug.in/ns/lv2core#> .
+@prefix pset:  <http://lv2plug.in/ns/ext/presets#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix state: <http://lv2plug.in/ns/ext/state#> .
+
+<file://%s>
+    a pset:Preset ;
+    lv2:appliesTo <http://kxstudio.sf.net/carla> ;
+    rdfs:label "%s" ;
+    state:state [
+        <http://kxstudio.sf.net/ns/carla/string>
+\"\"\"
+%s
+\"\"\"
+    ] .
+""" % (manifestPath, os.path.basename(filenameTry), presetContents))
+        manifestFd.close()
 
     @pyqtSlot()
     def slot_loadProjectLater(self):

@@ -293,6 +293,7 @@
     <addaction name="act_file_open"/>
     <addaction name="act_file_save"/>
     <addaction name="act_file_save_as"/>
+    <addaction name="act_file_export_lv2"/>
     <addaction name="separator"/>
     <addaction name="act_file_quit"/>
    </widget>
@@ -736,6 +737,11 @@
    </property>
    <property name="toolTip">
     <string>Add New Plugin</string>
+   </property>
+  </action>
+  <action name="act_file_export_lv2">
+   <property name="text">
+    <string>Export LV2 Plugin State...</string>
    </property>
   </action>
  </widget>

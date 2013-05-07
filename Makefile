@@ -134,6 +134,7 @@ install:
 	install -d $(DESTDIR)$(PREFIX)/lib/carla/resources/
 	install -d $(DESTDIR)$(PREFIX)/lib/carla/resources/nekofilter/
 	install -d $(DESTDIR)$(PREFIX)/lib/carla/resources/zynaddsubfx/
+	install -d $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/
 	install -d $(DESTDIR)$(PREFIX)/share/applications/
 	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/16x16/apps/
 	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/48x48/apps/
@@ -181,6 +182,10 @@ install:
 
 	# Install python code
 	install -m 755 source/*.py $(DESTDIR)$(PREFIX)/share/carla/
+
+	# Install LV2 plugin
+	install -m 644 data/lv2/*.ttl $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/
+	$(LINK) $(PREFIX)/lib/carla/libcarla_standalone.so $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/carla.so
 
 	# Install resources
 	install -m 644 source/backend/resources/nekofilter-ui     $(DESTDIR)$(PREFIX)/lib/carla/resources/
