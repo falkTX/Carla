@@ -71,6 +71,19 @@ typedef enum _ParameterHints {
     PARAMETER_USES_CUSTOM_TEXT = 1 << 8
 } ParameterHints;
 
+typedef enum _PluginDispatcherOpcode {
+    PLUGIN_OPCODE_NULL                = 0, // nothing
+    PLUGIN_OPCODE_BUFFER_SIZE_CHANGED = 1, // nothing
+    PLUGIN_OPCODE_SAMPLE_RATE_CHANGED = 2, // nothing
+    PLUGIN_OPCODE_UI_NAME_CHANGED     = 3  // nothing
+} PluginDispatcherOpcode;
+
+typedef enum _HostDispatcherOpcode {
+    HOST_OPCODE_NULL                  = 0, // nothing
+    HOST_OPCODE_SET_PROCESS_PRECISION = 1, // uses value
+    HOST_OPCODE_UI_UNAVAILABLE        = 2  // nothing
+} HostDispatcherOpcode;
+
 typedef struct _ParameterScalePoint {
     const char* label;
     float value;
@@ -144,12 +157,14 @@ typedef struct _HostDescriptor {
     bool            (*write_midi_event)(HostHandle handle, const MidiEvent* event);
 
     void (*ui_parameter_changed)(HostHandle handle, uint32_t index, float value);
-    void (*ui_midi_program_changed)(HostHandle handle, uint32_t bank, uint32_t program);
+    void (*ui_midi_program_changed)(HostHandle handle, uint8_t channel, uint32_t bank, uint32_t program);
     void (*ui_custom_data_changed)(HostHandle handle, const char* key, const char* value);
     void (*ui_closed)(HostHandle handle);
 
     const char* (*ui_open_file)(HostHandle handle, bool isDir, const char* title, const char* filter);
     const char* (*ui_save_file)(HostHandle handle, bool isDir, const char* title, const char* filter);
+
+    intptr_t (*dispatcher)(HostHandle handle, HostDispatcherOpcode opcode, int32_t index, intptr_t value, void* ptr);
 
 } HostDescriptor;
 
@@ -196,7 +211,7 @@ typedef struct _PluginDescriptor {
     char* (*get_state)(PluginHandle handle);
     void  (*set_state)(PluginHandle handle, const char* data);
 
-    intptr_t (*dispatcher)(PluginHandle handle, int32_t opcode, int32_t index, intptr_t value, void* ptr);
+    intptr_t (*dispatcher)(PluginHandle handle, PluginDispatcherOpcode opcode, int32_t index, intptr_t value, void* ptr);
 
 } PluginDescriptor;
 
@@ -214,6 +229,11 @@ void carla_register_native_plugin_midiThrough();
 void carla_register_native_plugin_midiTranspose();
 void carla_register_native_plugin_nekofilter();
 void carla_register_native_plugin_sunvoxfile();
+
+#ifndef BUILD_BRIDGE
+// Carla
+void carla_register_native_plugin_carla();
+#endif
 
 #ifdef WANT_AUDIOFILE
 // AudioFile

@@ -29,14 +29,12 @@ static PluginHandle midiTranspose_instantiate(const PluginDescriptor* _this_, Ho
 {
     MidiTransposeHandle* const handle = (MidiTransposeHandle*)malloc(sizeof(MidiTransposeHandle));
 
-    if (handle != NULL)
-    {
-        handle->host    = host;
-        handle->octaves = 0;
-        return handle;
-    }
+    if (handle == NULL)
+        return NULL;
 
-    return NULL;
+    handle->host    = host;
+    handle->octaves = 0;
+    return handle;
 
     // unused
     (void)_this_;
@@ -104,7 +102,7 @@ static void midiTranspose_process(PluginHandle handle, float** inBuffer, float**
     const int octaves = handlePtr->octaves;
     MidiEvent tmpEvent;
 
-    for (uint32_t i=0; i < midiEventCount; i++)
+    for (uint32_t i=0; i < midiEventCount; ++i)
     {
         const MidiEvent* const midiEvent = &midiEvents[i];
 
@@ -112,16 +110,16 @@ static void midiTranspose_process(PluginHandle handle, float** inBuffer, float**
 
         if (status == MIDI_STATUS_NOTE_OFF || status == MIDI_STATUS_NOTE_ON)
         {
-            int note  = midiEvent->data[1];
-            int rnote = note + octaves*12;
+            int oldnote = midiEvent->data[1];
+            int newnote = oldnote + octaves*12;
 
-            if (rnote < 0 || rnote >= MAX_MIDI_NOTE)
+            if (newnote < 0 || newnote >= MAX_MIDI_NOTE)
                 continue;
 
             tmpEvent.port    = midiEvent->port;
             tmpEvent.time    = midiEvent->time;
             tmpEvent.data[0] = midiEvent->data[0];
-            tmpEvent.data[1] = rnote;
+            tmpEvent.data[1] = newnote;
             tmpEvent.data[2] = midiEvent->data[2];
             tmpEvent.data[3] = midiEvent->data[3];
             tmpEvent.size    = midiEvent->size;
@@ -129,7 +127,7 @@ static void midiTranspose_process(PluginHandle handle, float** inBuffer, float**
             host->write_midi_event(host->handle, &tmpEvent);
         }
         else
-            host->write_midi_event(host->handle, &midiEvents[i]);
+            host->write_midi_event(host->handle, midiEvent);
     }
 
     return;
@@ -145,7 +143,7 @@ static void midiTranspose_process(PluginHandle handle, float** inBuffer, float**
 // -----------------------------------------------------------------------
 
 static const PluginDescriptor midiTransposeDesc = {
-    .category  = PLUGIN_CATEGORY_NONE,
+    .category  = PLUGIN_CATEGORY_UTILITY,
     .hints     = PLUGIN_IS_RTSAFE,
     .audioIns  = 0,
     .audioOuts = 0,

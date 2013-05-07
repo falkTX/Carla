@@ -28,29 +28,29 @@ static PluginHandle midiSplit_instantiate(const PluginDescriptor* _this_, HostDe
 {
     MidiSplitHandle* const handle = (MidiSplitHandle*)malloc(sizeof(MidiSplitHandle));
 
-    if (handle != NULL)
-    {
-        handle->host = host;
-        return handle;
-    }
+    if (handle == NULL)
+        return NULL;
 
-    return NULL;
+    handle->host = host;
+    return handle;
 
     // unused
     (void)_this_;
 }
 
+#define handlePtr ((MidiSplitHandle*)handle)
+
 static void midiSplit_cleanup(PluginHandle handle)
 {
-    free((MidiSplitHandle*)handle);
+    free(handlePtr);
 }
 
 static void midiSplit_process(PluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, uint32_t midiEventCount, const MidiEvent* midiEvents)
 {
-    HostDescriptor* const host = ((MidiSplitHandle*)handle)->host;
+    HostDescriptor* const host = handlePtr->host;
     MidiEvent tmpEvent;
 
-    for (uint32_t i=0; i < midiEventCount; i++)
+    for (uint32_t i=0; i < midiEventCount; ++i)
     {
         const MidiEvent* const midiEvent = &midiEvents[i];
 
@@ -78,6 +78,8 @@ static void midiSplit_process(PluginHandle handle, float** inBuffer, float** out
     (void)outBuffer;
     (void)frames;
 }
+
+#undef handlePtr
 
 // -----------------------------------------------------------------------
 

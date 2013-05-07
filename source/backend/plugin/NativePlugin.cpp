@@ -29,12 +29,6 @@
 # include <QtGui/QFileDialog>
 #endif
 
-#ifndef BUILD_BRIDGE
-CARLA_BACKEND_START_NAMESPACE
-extern void registerEngineNativePlugin();
-CARLA_BACKEND_END_NAMESPACE
-#endif
-
 void carla_register_all_plugins()
 {
     // Simple plugins
@@ -49,7 +43,7 @@ void carla_register_all_plugins()
 
 #ifndef BUILD_BRIDGE
     // Carla
-    CarlaBackend::registerEngineNativePlugin();
+    carla_register_native_plugin_carla();
 #endif
 
 #ifdef WANT_AUDIOFILE

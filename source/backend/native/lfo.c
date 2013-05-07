@@ -27,7 +27,7 @@ typedef enum _LfoParams {
     PARAM_MULTIPLIER = 2,
     PARAM_BASE_START = 3,
     PARAM_LFO_OUT    = 4,
-    PARAM_COUNT
+    PARAM_COUNT      = 5
 } LfoParams;
 
 typedef struct _LfoHandle {
@@ -43,18 +43,18 @@ static PluginHandle lfo_instantiate(const PluginDescriptor* _this_, HostDescript
 {
     LfoHandle* const handle = (LfoHandle*)malloc(sizeof(LfoHandle));
 
-    if (handle != NULL)
-    {
-        handle->host       = host;
-        handle->mode       = 1;
-        handle->speed      = 1.0f;
-        handle->multiplier = 1.0f;
-        handle->baseStart  = 0.0f;
-        handle->value      = 0.0f;
-        return handle;
-    }
+    if (handle == NULL)
+        return NULL;
 
-    return NULL;
+    host->dispatcher(host->handle, HOST_OPCODE_SET_PROCESS_PRECISION, 0, 32, NULL);
+
+    handle->host       = host;
+    handle->mode       = 1;
+    handle->speed      = 1.0f;
+    handle->multiplier = 1.0f;
+    handle->baseStart  = 0.0f;
+    handle->value      = 0.0f;
+    return handle;
 
     // unused
     (void)_this_;
@@ -77,19 +77,27 @@ static uint32_t lfo_get_parameter_count(PluginHandle handle)
 
 const Parameter* lfo_get_parameter_info(PluginHandle handle, uint32_t index)
 {
+    if (index > PARAM_COUNT)
+        return NULL;
+
     static Parameter param;
-    static ParameterScalePoint paramModes[3];
+    static ParameterScalePoint paramModes[5];
 
     param.hints = PARAMETER_IS_ENABLED|PARAMETER_IS_AUTOMABLE;
     param.scalePointCount = 0;
     param.scalePoints     = NULL;
 
-    paramModes[0].label = "Type 1";
-    paramModes[1].label = "Type 2";
-    paramModes[2].label = "Type 3";
+    paramModes[0].label = "Triangle";
+    paramModes[1].label = "Sawtooth";
+    paramModes[2].label = "Sawtooth (inverted)";
+    paramModes[3].label = "Sine (TODO)";
+    paramModes[4].label = "Square";
+
     paramModes[0].value = 1.0f;
     paramModes[1].value = 2.0f;
     paramModes[2].value = 3.0f;
+    paramModes[3].value = 4.0f;
+    paramModes[4].value = 5.0f;
 
     switch (index)
     {
@@ -103,7 +111,7 @@ const Parameter* lfo_get_parameter_info(PluginHandle handle, uint32_t index)
         param.ranges.step = 1.0f;
         param.ranges.stepSmall = 1.0f;
         param.ranges.stepLarge = 1.0f;
-        param.scalePointCount = 3;
+        param.scalePointCount = 5;
         param.scalePoints = paramModes;
         break;
     case PARAM_SPEED:
@@ -130,7 +138,7 @@ const Parameter* lfo_get_parameter_info(PluginHandle handle, uint32_t index)
         param.name = "Start value";
         param.unit = NULL;
         param.ranges.def = -1.0f;
-        param.ranges.min = 0.0f;
+        param.ranges.min = -1.0f;
         param.ranges.max = 1.0f;
         param.ranges.step = 0.01f;
         param.ranges.stepSmall = 0.0001f;
@@ -208,22 +216,25 @@ static void lfo_process(PluginHandle handle, float** inBuffer, float** outBuffer
     const float SR  = host->get_sample_rate(host->handle);
 
     const float rate = handlePtr->speed/(bpm/60.0f/SR);
-    const int  rateI = rate;
+    const uint  rateI = rate;
 
     float value = 0.0f;
 
     switch (handlePtr->mode)
     {
-    case 1:
-        /* wave: /\/\ */
+    case 1: // Triangle
         value = fabs(1.0f-(float)(timeInfo->frame % rateI)/(rate/2.0f));
         break;
-    case 2:
-        /* wave: /|/|/ */
+    case 2: // Sawtooth
         value = (float)(timeInfo->frame % rateI)/rate;
         break;
-    case 3:
-        // wave: square
+    case 3: // Sawtooth (inverted) -- TODO!
+        value = 0.0f;
+        break;
+    case 4: // Sine -- TODO!
+        value = 0.0f;
+        break;
+    case 5: // Square
         if (timeInfo->frame % rateI <= rateI/2)
             value = 1.0f;
         else
@@ -256,7 +267,7 @@ static void lfo_process(PluginHandle handle, float** inBuffer, float** outBuffer
 // -----------------------------------------------------------------------
 
 static const PluginDescriptor lfoDesc = {
-    .category  = PLUGIN_CATEGORY_NONE,
+    .category  = PLUGIN_CATEGORY_UTILITY,
     .hints     = PLUGIN_IS_RTSAFE,
     .audioIns  = 0,
     .audioOuts = 0,

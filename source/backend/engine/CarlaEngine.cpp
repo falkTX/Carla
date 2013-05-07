@@ -41,14 +41,14 @@ extern BinaryType CarlaPluginGetBridgeBinaryType(CarlaPlugin* const plugin);
 // -------------------------------------------------------------------------------------------------------------------
 // Engine Helpers
 
+void carla_register_native_plugin_carla()
+{
+    CarlaEngine::registerNativePlugin();
+}
+
 void registerEnginePlugin(CarlaEngine* const engine, const unsigned int id, CarlaPlugin* const plugin)
 {
     CarlaEngineProtectedData::registerEnginePlugin(engine, id, plugin);
-}
-
-void registerEngineNativePlugin()
-{
-    CarlaEngine::registerNativePlugin();
 }
 #endif
 

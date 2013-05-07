@@ -44,12 +44,22 @@ protected:
     // -------------------------------------------------------------------
     // Host calls
 
-    const HostDescriptor* getHostHandle() const
+    const HostDescriptor* hostHandle() const
     {
         return kHost;
     }
 
-    uint32_t getBufferSize() const
+    const char* hostUiName() const
+    {
+        CARLA_ASSERT(kHost != nullptr);
+
+        if (kHost != nullptr)
+            return kHost->ui_name;
+
+        return nullptr;
+    }
+
+    uint32_t getBufferSize()
     {
         CARLA_ASSERT(kHost != nullptr);
 
@@ -59,7 +69,7 @@ protected:
         return 0;
     }
 
-    double getSampleRate() const
+    double getSampleRate()
     {
         CARLA_ASSERT(kHost != nullptr);
 
@@ -69,7 +79,7 @@ protected:
         return 0.0;
     }
 
-    const TimeInfo* getTimeInfo() const
+    const TimeInfo* getTimeInfo()
     {
         CARLA_ASSERT(kHost != nullptr);
 
@@ -95,12 +105,12 @@ protected:
             kHost->ui_parameter_changed(kHost->handle, index, value);
     }
 
-    void uiMidiProgramChanged(const uint32_t bank, const uint32_t program)
+    void uiMidiProgramChanged(const uint8_t channel, const uint32_t bank, const uint32_t program)
     {
         CARLA_ASSERT(kHost != nullptr);
 
         if (kHost != nullptr)
-            kHost->ui_midi_program_changed(kHost->handle, bank, program);
+            kHost->ui_midi_program_changed(kHost->handle, channel, bank, program);
     }
 
     void uiCustomDataChanged(const char* const key, const char* const value)
@@ -135,6 +145,16 @@ protected:
 
         if (kHost != nullptr)
             return kHost->ui_save_file(kHost->handle, isDir, title, filter);
+
+        return nullptr;
+    }
+
+    intptr_t hostDispatcher(const HostDispatcherOpcode opcode, const int32_t index, const intptr_t value, void* const ptr)
+    {
+        CARLA_ASSERT(kHost != nullptr);
+
+        if (kHost != nullptr)
+            return kHost->dispatcher(kHost->handle, opcode, index, value, ptr);
 
         return nullptr;
     }
@@ -303,9 +323,9 @@ protected:
     }
 
     // -------------------------------------------------------------------
-    // Dispatcher
+    // Plugin dispatcher
 
-    virtual intptr_t dispatcher(int32_t opcode, int32_t index, intptr_t value, void* ptr)
+    virtual intptr_t pluginDispatcher(const PluginDispatcherOpcode opcode, const int32_t index, const intptr_t value, void* const ptr)
     {
         return 0;
 
@@ -422,9 +442,9 @@ public:
         handlePtr->setState(data);
     }
 
-    static intptr_t _dispatcher(PluginHandle handle, int32_t opcode, int32_t index, intptr_t value, void* ptr)
+    static intptr_t _dispatcher(PluginHandle handle, PluginDispatcherOpcode opcode, int32_t index, intptr_t value, void* ptr)
     {
-        return handlePtr->dispatcher(opcode, index, value, ptr);
+        return handlePtr->pluginDispatcher(opcode, index, value, ptr);
     }
 
     #undef handlePtr

@@ -28,28 +28,28 @@ static PluginHandle midiThrough_instantiate(const PluginDescriptor* _this_, Host
 {
     MidiThroughHandle* const handle = (MidiThroughHandle*)malloc(sizeof(MidiThroughHandle));
 
-    if (handle != NULL)
-    {
-        handle->host = host;
-        return handle;
-    }
+    if (handle == NULL)
+        return NULL;
 
-    return NULL;
+    handle->host = host;
+    return handle;
 
     // unused
     (void)_this_;
 }
 
+#define handlePtr ((MidiThroughHandle*)handle)
+
 static void midiThrough_cleanup(PluginHandle handle)
 {
-    free((MidiThroughHandle*)handle);
+    free(handlePtr);
 }
 
 static void midiThrough_process(PluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, uint32_t midiEventCount, const MidiEvent* midiEvents)
 {
-    HostDescriptor* const host = ((MidiThroughHandle*)handle)->host;
+    HostDescriptor* const host = handlePtr->host;
 
-    for (uint32_t i=0; i < midiEventCount; i++)
+    for (uint32_t i=0; i < midiEventCount; ++i)
         host->write_midi_event(host->handle, &midiEvents[i]);
 
     return;
@@ -60,10 +60,12 @@ static void midiThrough_process(PluginHandle handle, float** inBuffer, float** o
     (void)frames;
 }
 
+#undef handlePtr
+
 // -----------------------------------------------------------------------
 
 static const PluginDescriptor midiThroughDesc = {
-    .category  = PLUGIN_CATEGORY_NONE,
+    .category  = PLUGIN_CATEGORY_UTILITY,
     .hints     = PLUGIN_IS_RTSAFE,
     .audioIns  = 0,
     .audioOuts = 0,

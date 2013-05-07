@@ -20,7 +20,7 @@
 static PluginHandle bypass_instantiate(const PluginDescriptor* _this_, HostDescriptor* host)
 {
     // dummy, return non-NULL
-    return (PluginHandle)1;
+    return (PluginHandle)0x1;
 
     // unused
     (void)_this_;
@@ -32,7 +32,7 @@ static void bypass_process(PluginHandle handle, float** inBuffer, float** outBuf
     float* in  = inBuffer[0];
     float* out = outBuffer[0];
 
-    for (uint32_t i=0; i < frames; i++)
+    for (uint32_t i=0; i < frames; ++i)
         *out++ = *in++;
 
     return;
