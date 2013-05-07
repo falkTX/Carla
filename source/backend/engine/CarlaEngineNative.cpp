@@ -45,9 +45,6 @@ public:
         fOptions.preferPluginBridges = false;
         fOptions.preferUiBridges = false;
         init("Carla-Plugin");
-
-//         if (! addPlugin(PLUGIN_INTERNAL, nullptr, nullptr, "PingPongPan"))
-//             carla_stderr2("Plugin add Pan failed");
     }
 
     ~CarlaEngineNative() override

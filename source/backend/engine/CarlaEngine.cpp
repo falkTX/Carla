@@ -25,6 +25,21 @@
 #include <QtCore/QFileInfo>
 #include <QtCore/QTextStream>
 
+// -------------------------------------------------------------------------------------------------------------------
+// Register native engine plugin
+
+#ifndef BUILD_BRIDGE
+# include "CarlaNative.h"
+
+void carla_register_native_plugin_carla()
+{
+    CARLA_BACKEND_USE_NAMESPACE;
+    CarlaEngine::registerNativePlugin();
+}
+#endif
+
+// -------------------------------------------------------------------------------------------------------------------
+
 CARLA_BACKEND_START_NAMESPACE
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -40,11 +55,6 @@ extern BinaryType CarlaPluginGetBridgeBinaryType(CarlaPlugin* const plugin);
 
 // -------------------------------------------------------------------------------------------------------------------
 // Engine Helpers
-
-void carla_register_native_plugin_carla()
-{
-    CarlaEngine::registerNativePlugin();
-}
 
 void registerEnginePlugin(CarlaEngine* const engine, const unsigned int id, CarlaPlugin* const plugin)
 {
