@@ -2061,8 +2061,6 @@ class PluginWidget(QFrame):
         self.connect(self.ui.b_gui, SIGNAL("clicked(bool)"), SLOT("slot_guiClicked(bool)"))
         self.connect(self.ui.b_edit, SIGNAL("clicked(bool)"), SLOT("slot_editClicked(bool)"))
 
-        self.iii = 0
-
         # -------------------------------------------------------------
 
     def idleFast(self):
@@ -2245,9 +2243,6 @@ class PluginWidget(QFrame):
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.save()
-
-        print("painted", self.iii)
-        self.iii += 1
 
         areaX = self.ui.area_right.x()
 
