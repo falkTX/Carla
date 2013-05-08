@@ -703,7 +703,8 @@ class CarlaMainW(QMainWindow):
         self.fIdleTimerFast = 0
         self.fIdleTimerSlow = 0
 
-        self.fTransportWasPlaying = False
+        self.fLastTransportFrame = 0
+        self.fLastTransportState = False
 
         self.fClientName = "Carla"
         self.fSessionManagerName = "LADISH" if os.getenv("LADISH_APP_NAME") else ""
@@ -1010,16 +1011,6 @@ class CarlaMainW(QMainWindow):
 
         patchcanvas.clear()
 
-    def setProperWindowTitle(self):
-        title = "%s" % os.getenv("LADISH_APP_NAME", "Carla")
-
-        if self.fProjectFilename:
-            title += " - %s" % os.path.basename(self.fProjectFilename)
-        if self.fSessionManagerName:
-            title += " (%s)" % self.fSessionManagerName
-
-        self.setWindowTitle(title)
-
     def loadProject(self, filename):
         self.fProjectFilename = filename
         self.setProperWindowTitle()
@@ -1071,312 +1062,124 @@ class CarlaMainW(QMainWindow):
 
         Carla.host.remove_all_plugins()
 
-    @pyqtSlot()
-    def slot_pluginsEnable(self):
+    def getExtraStuff(self, plugin):
+        ptype = plugin['type']
+
+        if ptype == PLUGIN_LADSPA:
+            uniqueId = plugin['uniqueId']
+
+            self.loadRDFs()
+
+            for rdfItem in self.fLadspaRdfList:
+                if rdfItem.UniqueID == uniqueId:
+                    return pointer(rdfItem)
+
+        elif ptype == PLUGIN_DSSI:
+            if plugin['hints'] & PLUGIN_HAS_GUI:
+                gui = findDSSIGUI(plugin['binary'], plugin['name'], plugin['label'])
+                if gui:
+                    return gui.encode("utf-8")
+
+        elif ptype in (PLUGIN_GIG, PLUGIN_SF2, PLUGIN_SFZ):
+            if plugin['name'].endswith(" (16 outputs)"):
+                # return a dummy non-null pointer
+                INTPOINTER = POINTER(c_int)
+                ptr  = c_int(0x1)
+                addr = addressof(ptr)
+                return cast(addr, INTPOINTER)
+
+        return c_nullptr
+
+    def loadRDFs(self):
+        if not self.fLadspaRdfNeedsUpdate:
+            return
+
+        self.fLadspaRdfList = []
+        self.fLadspaRdfNeedsUpdate = False
+
+        if not haveLRDF:
+            return
+
+        settingsDir  = os.path.join(HOME, ".config", "falkTX")
+        frLadspaFile = os.path.join(settingsDir, "ladspa_rdf.db")
+
+        if os.path.exists(frLadspaFile):
+            frLadspa = open(frLadspaFile, 'r')
+
+            try:
+                self.fLadspaRdfList = ladspa_rdf.get_c_ladspa_rdfs(json.load(frLadspa))
+            except:
+                pass
+
+            frLadspa.close()
+
+    def loadRDFsNeeded(self):
+        self.fLadspaRdfNeedsUpdate = True
+
+    def menuTransport(self, enabled):
+        self.ui.act_transport_play.setEnabled(enabled)
+        self.ui.act_transport_stop.setEnabled(enabled)
+        self.ui.act_transport_backwards.setEnabled(enabled)
+        self.ui.act_transport_forwards.setEnabled(enabled)
+        self.ui.menu_Transport.setEnabled(enabled)
+
+    def refreshTransport(self, forced = False):
         if not self.fEngineStarted:
             return
-
-        for i in range(self.fPluginCount):
-            pwidget = self.fPluginList[i]
-
-            if pwidget is None:
-                break
-
-            pwidget.setActive(True, True, True)
-
-    @pyqtSlot()
-    def slot_pluginsVolume100(self):
-        if not self.fEngineStarted:
+        if self.fSampleRate == 0.0:
             return
 
-        for i in range(self.fPluginCount):
-            pwidget = self.fPluginList[i]
+        timeInfo = Carla.host.get_transport_info()
+        playing  = bool(timeInfo['playing'])
+        frame    = int(timeInfo['frame'])
 
-            if pwidget is None:
-                break
-
-            if pwidget.fPluginInfo['hints'] & PLUGIN_CAN_VOLUME:
-                pwidget.ui.edit_dialog.setParameterValue(PARAMETER_VOLUME, 1.0)
-                Carla.host.set_volume(i, 1.0)
-
-    @pyqtSlot()
-    def slot_pluginsWet100(self):
-        if not self.fEngineStarted:
-            return
-
-        for i in range(self.fPluginCount):
-            pwidget = self.fPluginList[i]
-
-            if pwidget is None:
-                break
-
-            if pwidget.fPluginInfo['hints'] & PLUGIN_CAN_DRYWET:
-                pwidget.ui.edit_dialog.setParameterValue(PARAMETER_DRYWET, 1.0)
-                Carla.host.set_drywet(i, 1.0)
-
-    @pyqtSlot()
-    def slot_pluginsCenter(self):
-        if not self.fEngineStarted:
-            return
-
-        for i in range(self.fPluginCount):
-            pwidget = self.fPluginList[i]
-
-            if pwidget is None:
-                break
-
-            if pwidget.fPluginInfo['hints'] & PLUGIN_CAN_BALANCE:
-                pwidget.ui.edit_dialog.setParameterValue(PARAMETER_BALANCE_LEFT, -1.0)
-                pwidget.ui.edit_dialog.setParameterValue(PARAMETER_BALANCE_RIGHT, 1.0)
-                Carla.host.set_balance_left(i, -1.0)
-                Carla.host.set_balance_right(i, 1.0)
-
-    @pyqtSlot()
-    def slot_pluginsDisable(self):
-        if not self.fEngineStarted:
-            return
-
-        for i in range(self.fPluginCount):
-            pwidget = self.fPluginList[i]
-
-            if pwidget is None:
-                break
-
-            pwidget.setActive(False, True, True)
-
-    @pyqtSlot()
-    def slot_pluginsMute(self):
-        if not self.fEngineStarted:
-            return
-
-        for i in range(self.fPluginCount):
-            pwidget = self.fPluginList[i]
-
-            if pwidget is None:
-                break
-
-            if pwidget.fPluginInfo['hints'] & PLUGIN_CAN_VOLUME:
-                pwidget.ui.edit_dialog.setParameterValue(PARAMETER_VOLUME, 0.0)
-                Carla.host.set_volume(i, 0.0)
-
-    @pyqtSlot()
-    def slot_pluginsBypass(self):
-        if not self.fEngineStarted:
-            return
-
-        for i in range(self.fPluginCount):
-            pwidget = self.fPluginList[i]
-
-            if pwidget is None:
-                break
-
-            if pwidget.fPluginInfo['hints'] & PLUGIN_CAN_DRYWET:
-                pwidget.ui.edit_dialog.setParameterValue(PARAMETER_DRYWET, 0.0)
-                Carla.host.set_drywet(i, 0.0)
-
-    @pyqtSlot(int)
-    def slot_diskFolderChanged(self, index):
-        if index < 0:
-            return
-        elif index == 0:
-            filename = HOME
-            self.ui.b_disk_remove.setEnabled(False)
-        else:
-            filename = self.ui.cb_disk.itemData(index)
-            self.ui.b_disk_remove.setEnabled(True)
-
-        self.fDirModel.setRootPath(filename)
-        self.ui.fileTreeView.setRootIndex(self.fDirModel.index(filename))
-
-    @pyqtSlot()
-    def slot_diskFolderAdd(self):
-        newPath = QFileDialog.getExistingDirectory(self, self.tr("New Folder"), "", QFileDialog.ShowDirsOnly)
-
-        if newPath:
-            if newPath[-1] == os.sep:
-                newPath = newPath[:-1]
-            self.ui.cb_disk.addItem(os.path.basename(newPath), newPath)
-            self.ui.cb_disk.setCurrentIndex(self.ui.cb_disk.count()-1)
-            self.ui.b_disk_remove.setEnabled(True)
-
-    @pyqtSlot()
-    def slot_diskFolderRemove(self):
-        index = self.ui.cb_disk.currentIndex()
-
-        if index <= 0:
-            return
-
-        self.ui.cb_disk.removeItem(index)
-
-        if self.ui.cb_disk.currentIndex() == 0:
-            self.ui.b_disk_remove.setEnabled(False)
-
-    @pyqtSlot(str)
-    def slot_handleNSM_AnnounceCallback(self, smName):
-        self.fSessionManagerName = smName
-        self.ui.act_file_new.setEnabled(False)
-        self.ui.act_file_open.setEnabled(False)
-        self.ui.act_file_save_as.setEnabled(False)
-        self.ui.act_engine_start.setEnabled(True)
-        self.ui.act_engine_stop.setEnabled(False)
-
-    @pyqtSlot(str)
-    def slot_handleNSM_OpenCallback(self, data):
-        projectPath, clientId = data.rsplit(":", 1)
-        self.fClientName = clientId
-
-        # restart engine
-        if self.fEngineStarted:
-            self.stopEngine()
-
-        self.slot_engineStart()
-
-        if self.fEngineStarted:
-            self.loadProject(projectPath)
-
-        Carla.host.nsm_reply_open()
-
-    @pyqtSlot()
-    def slot_handleNSM_SaveCallback(self):
-        self.saveProject(self.fProjectFilename)
-        Carla.host.nsm_reply_save()
-
-    @pyqtSlot()
-    def slot_toolbarShown(self):
-        self.updateInfoLabelPos()
-
-    @pyqtSlot()
-    def slot_splitterMoved(self):
-        self.updateInfoLabelSize()
-
-    @pyqtSlot()
-    def slot_canvasArrange(self):
-        patchcanvas.arrange()
-
-    @pyqtSlot()
-    def slot_canvasRefresh(self):
-        patchcanvas.clear()
-        if Carla.host.is_engine_running():
-            Carla.host.patchbay_refresh()
-        QTimer.singleShot(1000 if self.fSavedSettings['Canvas/EyeCandy'] else 0, self.ui.miniCanvasPreview, SLOT("update()"))
-
-    @pyqtSlot()
-    def slot_canvasZoomFit(self):
-        self.scene.zoom_fit()
-
-    @pyqtSlot()
-    def slot_canvasZoomIn(self):
-        self.scene.zoom_in()
-
-    @pyqtSlot()
-    def slot_canvasZoomOut(self):
-        self.scene.zoom_out()
-
-    @pyqtSlot()
-    def slot_canvasZoomReset(self):
-        self.scene.zoom_reset()
-
-    @pyqtSlot()
-    def slot_canvasPrint(self):
-        self.scene.clearSelection()
-        self.fExportPrinter = QPrinter()
-        dialog = QPrintDialog(self.fExportPrinter, self)
-
-        if dialog.exec_():
-            painter = QPainter(self.fExportPrinter)
-            painter.save()
-            painter.setRenderHint(QPainter.Antialiasing)
-            painter.setRenderHint(QPainter.TextAntialiasing)
-            self.scene.render(painter)
-            painter.restore()
-
-    @pyqtSlot()
-    def slot_canvasSaveImage(self):
-        newPath = QFileDialog.getSaveFileName(self, self.tr("Save Image"), filter=self.tr("PNG Image (*.png);;JPEG Image (*.jpg)"))
-
-        if newPath:
-            self.scene.clearSelection()
-
-            # FIXME - must be a better way...
-            if newPath.endswith((".jpg", ".jpG", ".jPG", ".JPG", ".JPg", ".Jpg")):
-                imgFormat = "JPG"
-            elif newPath.endswith((".png", ".pnG", ".pNG", ".PNG", ".PNg", ".Png")):
-                imgFormat = "PNG"
+        if playing != self.fLastTransportState or forced:
+            if playing:
+                icon = getIcon("media-playback-pause")
+                self.ui.act_transport_play.setChecked(True)
+                self.ui.act_transport_play.setIcon(icon)
+                self.ui.act_transport_play.setText(self.tr("&Pause"))
             else:
-                # File-dialog may not auto-add the extension
-                imgFormat = "PNG"
-                newPath  += ".png"
+                icon = getIcon("media-playback-start")
+                self.ui.act_transport_play.setChecked(False)
+                self.ui.act_transport_play.setIcon(icon)
+                self.ui.act_transport_play.setText(self.tr("&Play"))
 
-            self.fExportImage = QImage(self.scene.sceneRect().width(), self.scene.sceneRect().height(), QImage.Format_RGB32)
-            painter = QPainter(self.fExportImage)
-            painter.save()
-            painter.setRenderHint(QPainter.Antialiasing) # TODO - set true, cleanup this
-            painter.setRenderHint(QPainter.TextAntialiasing)
-            self.scene.render(painter)
-            self.fExportImage.save(newPath, imgFormat, 100)
-            painter.restore()
+            self.fLastTransportState = playing
 
-    @pyqtSlot(QModelIndex)
-    def slot_fileTreeDoubleClicked(self, modelIndex):
-        filename = self.fDirModel.filePath(modelIndex)
+        if frame != self.fLastTransportFrame or forced:
+            time = frame / self.fSampleRate
+            secs = time % 60
+            mins = (time / 60) % 60
+            hrs  = (time / 3600) % 60
 
-        if not Carla.host.load_filename(filename):
-            CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"),
-                             self.tr("Failed to load file"),
-                             cString(Carla.host.get_last_error()), QMessageBox.Ok, QMessageBox.Ok)
+            textTransport = "Transport %s, at %02i:%02i:%02i" % ("playing" if playing else "stopped", hrs, mins, secs)
+            self.fInfoLabel.setText("%s | %s" % (self.fInfoText, textTransport))
 
-    @pyqtSlot(float)
-    def slot_canvasScaleChanged(self, scale):
-        self.ui.miniCanvasPreview.setViewScale(scale)
+            self.fLastTransportFrame = frame
 
-    @pyqtSlot(int, int, QPointF)
-    def slot_canvasItemMoved(self, group_id, split_mode, pos):
-        self.ui.miniCanvasPreview.update()
+    def setProperWindowTitle(self):
+        title = "%s" % os.getenv("LADISH_APP_NAME", "Carla")
 
-    @pyqtSlot(int)
-    def slot_horizontalScrollBarChanged(self, value):
-        maximum = self.ui.graphicsView.horizontalScrollBar().maximum()
-        if maximum == 0:
-            xp = 0
-        else:
-            xp = float(value) / maximum
-        self.ui.miniCanvasPreview.setViewPosX(xp)
+        if self.fProjectFilename:
+            title += " - %s" % os.path.basename(self.fProjectFilename)
+        if self.fSessionManagerName:
+            title += " (%s)" % self.fSessionManagerName
 
-    @pyqtSlot(int)
-    def slot_verticalScrollBarChanged(self, value):
-        maximum = self.ui.graphicsView.verticalScrollBar().maximum()
-        if maximum == 0:
-            yp = 0
-        else:
-            yp = float(value) / maximum
-        self.ui.miniCanvasPreview.setViewPosY(yp)
+        self.setWindowTitle(title)
 
-    @pyqtSlot()
-    def slot_miniCanvasInit(self):
-        settings = QSettings()
-        self.ui.graphicsView.horizontalScrollBar().setValue(settings.value("HorizontalScrollBarValue", DEFAULT_CANVAS_WIDTH / 3, type=int))
-        self.ui.graphicsView.verticalScrollBar().setValue(settings.value("VerticalScrollBarValue", DEFAULT_CANVAS_HEIGHT * 3 / 8, type=int))
-
+    def updateInfoLabelPos(self):
         tabBar = self.ui.tabMain.tabBar()
-        x = tabBar.width()+20
         y = tabBar.mapFromParent(self.ui.centralwidget.pos()).y()+tabBar.height()/4
-        self.fInfoLabel.move(x, y)
-        self.fInfoLabel.resize(self.ui.tabMain.width()-x, tabBar.height())
 
-    @pyqtSlot(float, float)
-    def slot_miniCanvasMoved(self, xp, yp):
-        self.ui.graphicsView.horizontalScrollBar().setValue(xp * DEFAULT_CANVAS_WIDTH)
-        self.ui.graphicsView.verticalScrollBar().setValue(yp * DEFAULT_CANVAS_HEIGHT)
+        if not self.ui.toolBar.isVisible():
+            y -= self.ui.toolBar.height()
 
-    @pyqtSlot()
-    def slot_miniCanvasCheckAll(self):
-        self.slot_miniCanvasCheckSize()
-        self.slot_horizontalScrollBarChanged(self.ui.graphicsView.horizontalScrollBar().value())
-        self.slot_verticalScrollBarChanged(self.ui.graphicsView.verticalScrollBar().value())
+        self.fInfoLabel.move(self.fInfoLabel.x(), y)
 
-    @pyqtSlot()
-    def slot_miniCanvasCheckSize(self):
-        self.ui.miniCanvasPreview.setViewSize(float(self.ui.graphicsView.width()) / DEFAULT_CANVAS_WIDTH, float(self.ui.graphicsView.height()) / DEFAULT_CANVAS_HEIGHT)
+    def updateInfoLabelSize(self):
+        tabBar = self.ui.tabMain.tabBar()
+        self.fInfoLabel.resize(self.ui.tabMain.width()-tabBar.width()-20, self.fInfoLabel.height())
 
     @pyqtSlot()
     def slot_fileNew(self):
@@ -1520,43 +1323,108 @@ class CarlaMainW(QMainWindow):
     def slot_pluginRemoveAll(self):
         self.removeAllPlugins()
 
-    def menuTransport(self, enabled):
-        self.ui.act_transport_play.setEnabled(enabled)
-        self.ui.act_transport_stop.setEnabled(enabled)
-        self.ui.act_transport_backwards.setEnabled(enabled)
-        self.ui.act_transport_forwards.setEnabled(enabled)
-        self.ui.menu_Transport.setEnabled(enabled)
-
-    def refreshTransport(self, forced = False):
+    @pyqtSlot()
+    def slot_pluginsEnable(self):
         if not self.fEngineStarted:
             return
-        if self.fSampleRate == 0.0:
+
+        for i in range(self.fPluginCount):
+            pwidget = self.fPluginList[i]
+
+            if pwidget is None:
+                break
+
+            pwidget.setActive(True, True, True)
+
+    @pyqtSlot()
+    def slot_pluginsDisable(self):
+        if not self.fEngineStarted:
             return
 
-        timeInfo = Carla.host.get_transport_info()
-        playing  = timeInfo['playing']
+        for i in range(self.fPluginCount):
+            pwidget = self.fPluginList[i]
 
-        time = timeInfo['frame'] / self.fSampleRate
-        secs = time % 60
-        mins = (time / 60) % 60
-        hrs  = (time / 3600) % 60
+            if pwidget is None:
+                break
 
-        textTransport = "Transport %s, at %02i:%02i:%02i" % ("playing" if playing else "stopped", hrs, mins, secs)
-        self.fInfoLabel.setText("%s | %s" % (self.fInfoText, textTransport))
+            pwidget.setActive(False, True, True)
 
-        if playing != self.fTransportWasPlaying or forced:
-            self.fTransportWasPlaying = playing
+    @pyqtSlot()
+    def slot_pluginsVolume100(self):
+        if not self.fEngineStarted:
+            return
 
-            if playing:
-                icon = getIcon("media-playback-pause")
-                self.ui.act_transport_play.setChecked(True)
-                self.ui.act_transport_play.setIcon(icon)
-                self.ui.act_transport_play.setText(self.tr("&Pause"))
-            else:
-                icon = getIcon("media-playback-start")
-                self.ui.act_transport_play.setChecked(False)
-                self.ui.act_transport_play.setIcon(icon)
-                self.ui.act_transport_play.setText(self.tr("&Play"))
+        for i in range(self.fPluginCount):
+            pwidget = self.fPluginList[i]
+
+            if pwidget is None:
+                break
+
+            if pwidget.fPluginInfo['hints'] & PLUGIN_CAN_VOLUME:
+                pwidget.ui.edit_dialog.setParameterValue(PARAMETER_VOLUME, 1.0)
+                Carla.host.set_volume(i, 1.0)
+
+    @pyqtSlot()
+    def slot_pluginsMute(self):
+        if not self.fEngineStarted:
+            return
+
+        for i in range(self.fPluginCount):
+            pwidget = self.fPluginList[i]
+
+            if pwidget is None:
+                break
+
+            if pwidget.fPluginInfo['hints'] & PLUGIN_CAN_VOLUME:
+                pwidget.ui.edit_dialog.setParameterValue(PARAMETER_VOLUME, 0.0)
+                Carla.host.set_volume(i, 0.0)
+
+    @pyqtSlot()
+    def slot_pluginsWet100(self):
+        if not self.fEngineStarted:
+            return
+
+        for i in range(self.fPluginCount):
+            pwidget = self.fPluginList[i]
+
+            if pwidget is None:
+                break
+
+            if pwidget.fPluginInfo['hints'] & PLUGIN_CAN_DRYWET:
+                pwidget.ui.edit_dialog.setParameterValue(PARAMETER_DRYWET, 1.0)
+                Carla.host.set_drywet(i, 1.0)
+
+    @pyqtSlot()
+    def slot_pluginsBypass(self):
+        if not self.fEngineStarted:
+            return
+
+        for i in range(self.fPluginCount):
+            pwidget = self.fPluginList[i]
+
+            if pwidget is None:
+                break
+
+            if pwidget.fPluginInfo['hints'] & PLUGIN_CAN_DRYWET:
+                pwidget.ui.edit_dialog.setParameterValue(PARAMETER_DRYWET, 0.0)
+                Carla.host.set_drywet(i, 0.0)
+
+    @pyqtSlot()
+    def slot_pluginsCenter(self):
+        if not self.fEngineStarted:
+            return
+
+        for i in range(self.fPluginCount):
+            pwidget = self.fPluginList[i]
+
+            if pwidget is None:
+                break
+
+            if pwidget.fPluginInfo['hints'] & PLUGIN_CAN_BALANCE:
+                pwidget.ui.edit_dialog.setParameterValue(PARAMETER_BALANCE_LEFT, -1.0)
+                pwidget.ui.edit_dialog.setParameterValue(PARAMETER_BALANCE_RIGHT, 1.0)
+                Carla.host.set_balance_left(i, -1.0)
+                Carla.host.set_balance_right(i, 1.0)
 
     @pyqtSlot(bool)
     def slot_transportPlayPause(self, toggled):
@@ -1601,8 +1469,75 @@ class CarlaMainW(QMainWindow):
         Carla.host.transport_relocate(newFrame)
 
     @pyqtSlot()
-    def slot_aboutCarla(self):
-        CarlaAboutW(self).exec_()
+    def slot_canvasArrange(self):
+        patchcanvas.arrange()
+
+    @pyqtSlot()
+    def slot_canvasRefresh(self):
+        patchcanvas.clear()
+        if Carla.host.is_engine_running():
+            Carla.host.patchbay_refresh()
+        QTimer.singleShot(1000 if self.fSavedSettings['Canvas/EyeCandy'] else 0, self.ui.miniCanvasPreview, SLOT("update()"))
+
+    @pyqtSlot()
+    def slot_canvasZoomFit(self):
+        self.scene.zoom_fit()
+
+    @pyqtSlot()
+    def slot_canvasZoomIn(self):
+        self.scene.zoom_in()
+
+    @pyqtSlot()
+    def slot_canvasZoomOut(self):
+        self.scene.zoom_out()
+
+    @pyqtSlot()
+    def slot_canvasZoomReset(self):
+        self.scene.zoom_reset()
+
+    @pyqtSlot()
+    def slot_canvasPrint(self):
+        self.scene.clearSelection()
+        self.fExportPrinter = QPrinter()
+        dialog = QPrintDialog(self.fExportPrinter, self)
+
+        if dialog.exec_():
+            painter = QPainter(self.fExportPrinter)
+            painter.save()
+            painter.setRenderHint(QPainter.Antialiasing)
+            painter.setRenderHint(QPainter.TextAntialiasing)
+            self.scene.render(painter)
+            painter.restore()
+
+    @pyqtSlot()
+    def slot_canvasSaveImage(self):
+        newPath = QFileDialog.getSaveFileName(self, self.tr("Save Image"), filter=self.tr("PNG Image (*.png);;JPEG Image (*.jpg)"))
+
+        if newPath:
+            self.scene.clearSelection()
+
+            # FIXME - must be a better way...
+            if newPath.endswith((".jpg", ".jpG", ".jPG", ".JPG", ".JPg", ".Jpg")):
+                imgFormat = "JPG"
+            elif newPath.endswith((".png", ".pnG", ".pNG", ".PNG", ".PNg", ".Png")):
+                imgFormat = "PNG"
+            else:
+                # File-dialog may not auto-add the extension
+                imgFormat = "PNG"
+                newPath  += ".png"
+
+            self.fExportImage = QImage(self.scene.sceneRect().width(), self.scene.sceneRect().height(), QImage.Format_RGB32)
+            painter = QPainter(self.fExportImage)
+            painter.save()
+            painter.setRenderHint(QPainter.Antialiasing) # TODO - set true, cleanup this
+            painter.setRenderHint(QPainter.TextAntialiasing)
+            self.scene.render(painter)
+            self.fExportImage.save(newPath, imgFormat, 100)
+            painter.restore()
+
+    @pyqtSlot()
+    def slot_toolbarShown(self):
+        self.updateInfoLabelPos()
 
     @pyqtSlot()
     def slot_configureCarla(self):
@@ -1633,6 +1568,91 @@ class CarlaMainW(QMainWindow):
                 Carla.host.patchbay_refresh()
 
     @pyqtSlot()
+    def slot_aboutCarla(self):
+        CarlaAboutW(self).exec_()
+
+    @pyqtSlot()
+    def slot_splitterMoved(self):
+        self.updateInfoLabelSize()
+
+    @pyqtSlot(int)
+    def slot_diskFolderChanged(self, index):
+        if index < 0:
+            return
+        elif index == 0:
+            filename = HOME
+            self.ui.b_disk_remove.setEnabled(False)
+        else:
+            filename = self.ui.cb_disk.itemData(index)
+            self.ui.b_disk_remove.setEnabled(True)
+
+        self.fDirModel.setRootPath(filename)
+        self.ui.fileTreeView.setRootIndex(self.fDirModel.index(filename))
+
+    @pyqtSlot()
+    def slot_diskFolderAdd(self):
+        newPath = QFileDialog.getExistingDirectory(self, self.tr("New Folder"), "", QFileDialog.ShowDirsOnly)
+
+        if newPath:
+            if newPath[-1] == os.sep:
+                newPath = newPath[:-1]
+            self.ui.cb_disk.addItem(os.path.basename(newPath), newPath)
+            self.ui.cb_disk.setCurrentIndex(self.ui.cb_disk.count()-1)
+            self.ui.b_disk_remove.setEnabled(True)
+
+    @pyqtSlot()
+    def slot_diskFolderRemove(self):
+        index = self.ui.cb_disk.currentIndex()
+
+        if index <= 0:
+            return
+
+        self.ui.cb_disk.removeItem(index)
+
+        if self.ui.cb_disk.currentIndex() == 0:
+            self.ui.b_disk_remove.setEnabled(False)
+
+    @pyqtSlot(QModelIndex)
+    def slot_fileTreeDoubleClicked(self, modelIndex):
+        filename = self.fDirModel.filePath(modelIndex)
+
+        if not Carla.host.load_filename(filename):
+            CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"),
+                             self.tr("Failed to load file"),
+                             cString(Carla.host.get_last_error()), QMessageBox.Ok, QMessageBox.Ok)
+
+    @pyqtSlot(float, float)
+    def slot_miniCanvasMoved(self, xp, yp):
+        self.ui.graphicsView.horizontalScrollBar().setValue(xp * DEFAULT_CANVAS_WIDTH)
+        self.ui.graphicsView.verticalScrollBar().setValue(yp * DEFAULT_CANVAS_HEIGHT)
+
+    @pyqtSlot(int)
+    def slot_horizontalScrollBarChanged(self, value):
+        maximum = self.ui.graphicsView.horizontalScrollBar().maximum()
+        if maximum == 0:
+            xp = 0
+        else:
+            xp = float(value) / maximum
+        self.ui.miniCanvasPreview.setViewPosX(xp)
+
+    @pyqtSlot(int)
+    def slot_verticalScrollBarChanged(self, value):
+        maximum = self.ui.graphicsView.verticalScrollBar().maximum()
+        if maximum == 0:
+            yp = 0
+        else:
+            yp = float(value) / maximum
+        self.ui.miniCanvasPreview.setViewPosY(yp)
+
+    @pyqtSlot(int, int, QPointF)
+    def slot_canvasItemMoved(self, group_id, split_mode, pos):
+        self.ui.miniCanvasPreview.update()
+
+    @pyqtSlot(float)
+    def slot_canvasScaleChanged(self, scale):
+        self.ui.miniCanvasPreview.setViewScale(scale)
+
+    @pyqtSlot()
     def slot_handleSIGUSR1(self):
         print("Got SIGUSR1 -> Saving project now")
         QTimer.singleShot(0, self, SLOT("slot_fileSave()"))
@@ -1641,6 +1661,28 @@ class CarlaMainW(QMainWindow):
     def slot_handleSIGTERM(self):
         print("Got SIGTERM -> Closing now")
         self.close()
+
+    @pyqtSlot()
+    def slot_miniCanvasInit(self):
+        settings = QSettings()
+        self.ui.graphicsView.horizontalScrollBar().setValue(settings.value("HorizontalScrollBarValue", DEFAULT_CANVAS_WIDTH / 3, type=int))
+        self.ui.graphicsView.verticalScrollBar().setValue(settings.value("VerticalScrollBarValue", DEFAULT_CANVAS_HEIGHT * 3 / 8, type=int))
+
+        tabBar = self.ui.tabMain.tabBar()
+        x = tabBar.width()+20
+        y = tabBar.mapFromParent(self.ui.centralwidget.pos()).y()+tabBar.height()/4
+        self.fInfoLabel.move(x, y)
+        self.fInfoLabel.resize(self.ui.tabMain.width()-x, tabBar.height())
+
+    @pyqtSlot()
+    def slot_miniCanvasCheckAll(self):
+        self.slot_miniCanvasCheckSize()
+        self.slot_horizontalScrollBarChanged(self.ui.graphicsView.horizontalScrollBar().value())
+        self.slot_verticalScrollBarChanged(self.ui.graphicsView.verticalScrollBar().value())
+
+    @pyqtSlot()
+    def slot_miniCanvasCheckSize(self):
+        self.ui.miniCanvasPreview.setViewSize(float(self.ui.graphicsView.width()) / DEFAULT_CANVAS_WIDTH, float(self.ui.graphicsView.height()) / DEFAULT_CANVAS_HEIGHT)
 
     @pyqtSlot(int, int, int, float, str)
     def slot_handleDebugCallback(self, pluginId, value1, value2, value3, valueStr):
@@ -1925,6 +1967,36 @@ class CarlaMainW(QMainWindow):
         self.fInfoText   = "Engine running | SampleRate: %g | BufferSize: %i" % (self.fSampleRate, self.fBufferSize)
 
     @pyqtSlot(str)
+    def slot_handleNSM_AnnounceCallback(self, smName):
+        self.fSessionManagerName = smName
+        self.ui.act_file_new.setEnabled(False)
+        self.ui.act_file_open.setEnabled(False)
+        self.ui.act_file_save_as.setEnabled(False)
+        self.ui.act_engine_start.setEnabled(True)
+        self.ui.act_engine_stop.setEnabled(False)
+
+    @pyqtSlot(str)
+    def slot_handleNSM_OpenCallback(self, data):
+        projectPath, clientId = data.rsplit(":", 1)
+        self.fClientName = clientId
+
+        # restart engine
+        if self.fEngineStarted:
+            self.stopEngine()
+
+        self.slot_engineStart()
+
+        if self.fEngineStarted:
+            self.loadProject(projectPath)
+
+        Carla.host.nsm_reply_open()
+
+    @pyqtSlot()
+    def slot_handleNSM_SaveCallback(self):
+        self.saveProject(self.fProjectFilename)
+        Carla.host.nsm_reply_save()
+
+    @pyqtSlot(str)
     def slot_handleErrorCallback(self, error):
         QMessageBox.critical(self, self.tr("Error"), error)
 
@@ -1933,75 +2005,6 @@ class CarlaMainW(QMainWindow):
         CustomMessageBox(self, QMessageBox.Warning, self.tr("Warning"),
             self.tr("Engine has been stopped or crashed.\nPlease restart Carla"),
             self.tr("You may want to save your session now..."), QMessageBox.Ok, QMessageBox.Ok)
-
-    def getExtraStuff(self, plugin):
-        ptype = plugin['type']
-
-        if ptype == PLUGIN_LADSPA:
-            uniqueId = plugin['uniqueId']
-
-            self.loadRDFs()
-
-            for rdfItem in self.fLadspaRdfList:
-                if rdfItem.UniqueID == uniqueId:
-                    return pointer(rdfItem)
-
-        elif ptype == PLUGIN_DSSI:
-            if plugin['hints'] & PLUGIN_HAS_GUI:
-                gui = findDSSIGUI(plugin['binary'], plugin['name'], plugin['label'])
-                if gui:
-                    return gui.encode("utf-8")
-
-        elif ptype in (PLUGIN_GIG, PLUGIN_SF2, PLUGIN_SFZ):
-            if plugin['name'].endswith(" (16 outputs)"):
-                # return a dummy non-null pointer
-                INTPOINTER = POINTER(c_int)
-                ptr  = c_int(0x1)
-                addr = addressof(ptr)
-                return cast(addr, INTPOINTER)
-
-        return c_nullptr
-
-    def loadRDFs(self):
-        if not self.fLadspaRdfNeedsUpdate:
-            return
-
-        self.fLadspaRdfList = []
-        self.fLadspaRdfNeedsUpdate = False
-
-        if not haveLRDF:
-            return
-
-        settingsDir  = os.path.join(HOME, ".config", "falkTX")
-        frLadspaFile = os.path.join(settingsDir, "ladspa_rdf.db")
-
-        if os.path.exists(frLadspaFile):
-            frLadspa = open(frLadspaFile, 'r')
-
-            try:
-                self.fLadspaRdfList = ladspa_rdf.get_c_ladspa_rdfs(json.load(frLadspa))
-            except:
-                pass
-
-            frLadspa.close()
-
-    def loadRDFsNeeded(self):
-        self.fLadspaRdfNeedsUpdate = True
-
-    def saveSettings(self):
-        settings = QSettings()
-        settings.setValue("Geometry", self.saveGeometry())
-        settings.setValue("SplitterState", self.ui.splitter.saveState())
-        settings.setValue("ShowToolbar", self.ui.toolBar.isVisible())
-        settings.setValue("HorizontalScrollBarValue", self.ui.graphicsView.horizontalScrollBar().value())
-        settings.setValue("VerticalScrollBarValue", self.ui.graphicsView.verticalScrollBar().value())
-
-        diskFolders = []
-
-        for i in range(self.ui.cb_disk.count()):
-            diskFolders.append(self.ui.cb_disk.itemData(i))
-
-        settings.setValue("DiskFolders", diskFolders)
 
     def loadSettings(self, geometry):
         settings = QSettings()
@@ -2087,18 +2090,20 @@ class CarlaMainW(QMainWindow):
         os.environ["SF2_PATH"] = splitter.join(Carla.SF2_PATH)
         os.environ["SFZ_PATH"] = splitter.join(Carla.SFZ_PATH)
 
-    def updateInfoLabelPos(self):
-        tabBar = self.ui.tabMain.tabBar()
-        y = tabBar.mapFromParent(self.ui.centralwidget.pos()).y()+tabBar.height()/4
+    def saveSettings(self):
+        settings = QSettings()
+        settings.setValue("Geometry", self.saveGeometry())
+        settings.setValue("SplitterState", self.ui.splitter.saveState())
+        settings.setValue("ShowToolbar", self.ui.toolBar.isVisible())
+        settings.setValue("HorizontalScrollBarValue", self.ui.graphicsView.horizontalScrollBar().value())
+        settings.setValue("VerticalScrollBarValue", self.ui.graphicsView.verticalScrollBar().value())
 
-        if not self.ui.toolBar.isVisible():
-            y -= self.ui.toolBar.height()
+        diskFolders = []
 
-        self.fInfoLabel.move(self.fInfoLabel.x(), y)
+        for i in range(self.ui.cb_disk.count()):
+            diskFolders.append(self.ui.cb_disk.itemData(i))
 
-    def updateInfoLabelSize(self):
-        tabBar = self.ui.tabMain.tabBar()
-        self.fInfoLabel.resize(self.ui.tabMain.width()-tabBar.width()-20, self.fInfoLabel.height())
+        settings.setValue("DiskFolders", diskFolders)
 
     def dragEnterEvent(self, event):
         if event.source() == self.ui.fileTreeView:
@@ -2162,11 +2167,10 @@ class CarlaMainW(QMainWindow):
     def closeEvent(self, event):
         self.saveSettings()
 
-        if Carla.host.is_engine_running():
+        if self.fEngineStarted:
             Carla.host.set_engine_about_to_close()
             self.removeAllPlugins()
-
-        self.stopEngine()
+            self.stopEngine()
 
         QMainWindow.closeEvent(self, event)
 

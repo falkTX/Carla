@@ -143,7 +143,7 @@ Carla.gui  = None
 Carla.isControl = False
 Carla.isLocal   = True
 Carla.processMode   = PROCESS_MODE_CONTINUOUS_RACK
-Carla.maxParameters = MAX_RACK_PLUGINS
+Carla.maxParameters = MAX_DEFAULT_PARAMETERS
 
 # ------------------------------------------------------------------------------------------------------------
 # Carla GUI defines
@@ -1285,7 +1285,7 @@ class PluginEdit(QDialog):
         self.fTabIconTimers = []
 
         # Remove all previous parameters
-        for i in range(self.ui.tabWidget.count()-1):
+        for x in range(self.ui.tabWidget.count()-1):
             self.ui.tabWidget.widget(1).deleteLater()
             self.ui.tabWidget.removeTab(1)
 
@@ -1645,7 +1645,7 @@ class PluginEdit(QDialog):
                 paramWidget.setValue(value, False)
 
     @pyqtSlot()
-    def slot_saveState(self):
+    def slot_stateSave(self):
         if self.fPluginInfo['type'] == PLUGIN_LV2:
             # TODO
             return
@@ -1670,7 +1670,7 @@ class PluginEdit(QDialog):
             Carla.host.save_plugin_state(self.fPluginId, self.fCurrentStateFilename)
 
     @pyqtSlot()
-    def slot_loadState(self):
+    def slot_stateLoad(self):
         if self.fPluginInfo['type'] == PLUGIN_LV2:
             presetList = []
 

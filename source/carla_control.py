@@ -609,11 +609,6 @@ class CarlaControlW(QMainWindow):
             self.setUnifiedTitleAndToolBarOnMac(True)
 
         # -------------------------------------------------------------
-        # Load Settings
-
-        self.loadSettings()
-
-        # -------------------------------------------------------------
         # Internal stuff
 
         self.fProjectFilename = None
@@ -629,6 +624,11 @@ class CarlaControlW(QMainWindow):
 
         self.lo_address = ""
         self.lo_server  = None
+
+        # -------------------------------------------------------------
+        # Load Settings
+
+        self.loadSettings()
 
         # -------------------------------------------------------------
         # Set-up GUI stuff

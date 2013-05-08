@@ -53,14 +53,21 @@ class DigitalPeakMeter(QWidget):
         if not isinstance(level, float):
             return qCritical("DigitalPeakMeter::displayMeter(%i, %f) - meter value must be float" % (meter, level))
 
-        if level < 0.0:
-            level = -level
-        elif level > 1.0:
-            level = 1.0
+        i = meter - 1
 
-        if self.fChannelsData[meter-1] != level:
-            self.fChannelsData[meter-1] = level
+        if self.fSmoothMultiplier > 0:
+            level = (self.fLastValueData[i] * self.fSmoothMultiplier + level) / float(self.fSmoothMultiplier + 1)
+
+        if level < 0.001:
+            level = 0.0 if level < 0.001 else -level
+        elif level > 0.999:
+            level = 1.0 if level > 0.999 else level
+
+        if self.fChannelsData[i] != level:
+            self.fChannelsData[i] = level
             self.update()
+
+        self.fLastValueData[i] = level
 
     def setChannels(self, channels):
         if channels < 0:
@@ -156,9 +163,6 @@ class DigitalPeakMeter(QWidget):
         for i in range(self.fChannels):
             level = self.fChannelsData[i]
 
-            if level == self.fLastValueData[i]:
-                continue
-
             if self.fOrientation == self.HORIZONTAL:
                 value = level * float(self.fWidth)
             elif self.fOrientation == self.VERTICAL:
@@ -166,18 +170,12 @@ class DigitalPeakMeter(QWidget):
             else:
                 value = 0.0
 
-            if value < 0.0:
-                value = 0.0
-            elif self.fSmoothMultiplier > 0:
-                value = (self.fLastValueData[i] * self.fSmoothMultiplier + value) / float(self.fSmoothMultiplier + 1)
-
             if self.fOrientation == self.HORIZONTAL:
                 painter.drawRect(0, meterX, int(value), self.fSizeMeter)
             elif self.fOrientation == self.VERTICAL:
                 painter.drawRect(meterX, int(value), self.fSizeMeter, self.fHeight)
 
             meterX += self.fSizeMeter
-            self.fLastValueData[i] = value
 
         painter.setBrush(Qt.black)
 
