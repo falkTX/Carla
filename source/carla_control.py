@@ -655,7 +655,6 @@ class CarlaControlW(QMainWindow):
         self.connect(self.ui.act_help_about, SIGNAL("triggered()"), SLOT("slot_aboutCarlaControl()"))
         self.connect(self.ui.act_help_about_qt, SIGNAL("triggered()"), app, SLOT("aboutQt()"))
 
-        self.connect(self, SIGNAL("SIGUSR1()"), SLOT("slot_handleSIGUSR1()"))
         self.connect(self, SIGNAL("SIGTERM()"), SLOT("slot_handleSIGTERM()"))
 
         self.connect(self, SIGNAL("AddPluginStart(int, QString)"), SLOT("slot_handleAddPluginStart(int, QString)"))
@@ -703,6 +702,11 @@ class CarlaControlW(QMainWindow):
 
         self.fIdleTimerFast = self.startTimer(60)
         self.fIdleTimerSlow = self.startTimer(60*2)
+
+    @pyqtSlot()
+    def slot_handleSIGTERM(self):
+        print("Got SIGTERM -> Closing now")
+        self.close()
 
     @pyqtSlot()
     def slot_fileConnect(self):
@@ -757,7 +761,6 @@ class CarlaControlW(QMainWindow):
     @pyqtSlot(int)
     def slot_handleAddPluginEnd(self, pluginId):
         pwidget = PluginWidget(self, pluginId)
-        pwidget.setRefreshRate(60)
 
         self.ui.w_plugins.layout().addWidget(pwidget)
 
@@ -863,6 +866,9 @@ class CarlaControlW(QMainWindow):
         if parameterId >= 0:
             Carla.host._set_parameterValueS(pluginId, parameterId, value)
 
+        if pluginId >= self.fPluginCount:
+            return
+
         pwidget = self.fPluginList[pluginId]
         if pwidget is None:
             return
@@ -872,6 +878,9 @@ class CarlaControlW(QMainWindow):
     @pyqtSlot(int, int, float)
     def slot_handleSetDefaultValue(self, pluginId, parameterId, value):
         Carla.host._set_parameterDefaultValue(pluginId, parameterId, value)
+
+        if pluginId >= self.fPluginCount:
+            return
 
         pwidget = self.fPluginList[pluginId]
         if pwidget is None:
@@ -883,6 +892,9 @@ class CarlaControlW(QMainWindow):
     def slot_handleSetParameterMidiCC(self, pluginId, index, cc):
         Carla.host._set_parameterMidiCC(pluginId, index, cc)
 
+        if pluginId >= self.fPluginCount:
+            return
+
         pwidget = self.fPluginList[pluginId]
         if pwidget is None:
             return
@@ -893,6 +905,9 @@ class CarlaControlW(QMainWindow):
     def slot_handleSetParameterMidiChannel(self, pluginId, index, channel):
         Carla.host._set_parameterMidiChannel(pluginId, index, channel)
 
+        if pluginId >= self.fPluginCount:
+            return
+
         pwidget = self.fPluginList[pluginId]
         if pwidget is None:
             return
@@ -902,6 +917,9 @@ class CarlaControlW(QMainWindow):
     @pyqtSlot(int, int)
     def slot_handleSetProgram(self, pluginId, index):
         Carla.host._set_currentProgram(pluginId, index)
+
+        if pluginId >= self.fPluginCount:
+            return
 
         pwidget = self.fPluginList[pluginId]
         if pwidget is None:
@@ -920,6 +938,9 @@ class CarlaControlW(QMainWindow):
     @pyqtSlot(int, int)
     def slot_handleSetMidiProgram(self, pluginId, index):
         Carla.host._set_currentMidiProgram(pluginId, index)
+
+        if pluginId >= self.fPluginCount:
+            return
 
         pwidget = self.fPluginList[pluginId]
         if pwidget is None:
@@ -949,6 +970,9 @@ class CarlaControlW(QMainWindow):
 
     @pyqtSlot(int, int, int, int)
     def slot_handleNoteOn(self, pluginId, channel, note, velo):
+        if pluginId >= self.fPluginCount:
+            return
+
         pwidget = self.fPluginList[pluginId]
         if pwidget is None:
             return
@@ -957,6 +981,9 @@ class CarlaControlW(QMainWindow):
 
     @pyqtSlot(int, int, int)
     def slot_handleNoteOff(self, pluginId, channel, note):
+        if pluginId >= self.fPluginCount:
+            return
+
         pwidget = self.fPluginList[pluginId]
         if pwidget is None:
             return

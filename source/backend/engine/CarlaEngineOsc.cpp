@@ -167,13 +167,13 @@ bool isDigit(const char c)
 
 int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, const int argc, const lo_arg* const* const argv, const char* const types, const lo_message msg)
 {
-    carla_debug("CarlaEngineOsc::handleMessage(%s, \"%s\", %i, %p, \"%s\", %p)", bool2str(isTCP), path, argc, argv, types, msg);
     CARLA_ASSERT(fName.isNotEmpty());
     CARLA_ASSERT(fServerPathTCP.isNotEmpty());
     CARLA_ASSERT(fServerPathUDP.isNotEmpty());
     CARLA_ASSERT(fServerTCP != nullptr);
     CARLA_ASSERT(fServerUDP != nullptr);
     CARLA_ASSERT(path != nullptr);
+    carla_debug("CarlaEngineOsc::handleMessage(%s, \"%s\", %i, %p, \"%s\", %p)", bool2str(isTCP), path, argc, argv, types, msg);
 
     if (path == nullptr)
     {
