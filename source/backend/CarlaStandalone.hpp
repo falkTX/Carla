@@ -680,9 +680,14 @@ CARLA_EXPORT double carla_get_sample_rate();
 CARLA_EXPORT const char* carla_get_last_error();
 
 /*!
- * Get the current engine OSC URL.
+ * Get the current engine OSC URL (TCP).
  */
-CARLA_EXPORT const char* carla_get_host_osc_url();
+CARLA_EXPORT const char* carla_get_host_osc_url_tcp();
+
+/*!
+ * Get the current engine OSC URL (UDP).
+ */
+CARLA_EXPORT const char* carla_get_host_osc_url_udp();
 
 /*!
  * Send NSM announce message.

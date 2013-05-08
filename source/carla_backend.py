@@ -630,8 +630,11 @@ class Host(object):
         self.lib.carla_get_last_error.argtypes = None
         self.lib.carla_get_last_error.restype = c_char_p
 
-        self.lib.carla_get_host_osc_url.argtypes = None
-        self.lib.carla_get_host_osc_url.restype = c_char_p
+        self.lib.carla_get_host_osc_url_tcp.argtypes = None
+        self.lib.carla_get_host_osc_url_tcp.restype = c_char_p
+
+        self.lib.carla_get_host_osc_url_udp.argtypes = None
+        self.lib.carla_get_host_osc_url_udp.restype = c_char_p
 
         self.lib.carla_nsm_announce.argtypes = [c_char_p, c_char_p, c_int]
         self.lib.carla_nsm_announce.restype = None
@@ -880,8 +883,11 @@ class Host(object):
     def get_last_error(self):
         return self.lib.carla_get_last_error()
 
-    def get_host_osc_url(self):
-        return self.lib.carla_get_host_osc_url()
+    def get_host_osc_url_tcp(self):
+        return self.lib.carla_get_host_osc_url_tcp()
+
+    def get_host_osc_url_udp(self):
+        return self.lib.carla_get_host_osc_url_udp()
 
     def get_buffer_size(self):
         return self.lib.carla_get_buffer_size()

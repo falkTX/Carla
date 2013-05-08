@@ -829,7 +829,13 @@ class CarlaAboutW(QDialog):
 
         else:
             self.ui.l_extended.setText(cString(Carla.host.get_extended_license_text()))
-            self.ui.le_osc_url.setText(cString(Carla.host.get_host_osc_url()) if Carla.host.is_engine_running() else self.tr("(Engine not running)"))
+
+            if Carla.host.is_engine_running():
+                self.ui.le_osc_url_tcp.setText(cString(Carla.host.get_host_osc_url_tcp()))
+                self.ui.le_osc_url_udp.setText(cString(Carla.host.get_host_osc_url_udp()))
+            else:
+                self.ui.le_osc_url_tcp.setText(self.tr("(Engine not running)"))
+                self.ui.le_osc_url_udp.setText(self.tr("(Engine not running)"))
 
             self.ui.l_osc_cmds.setText(""
                                        " /set_active                 <i-value>\n"

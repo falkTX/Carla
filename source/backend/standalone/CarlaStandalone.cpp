@@ -2085,9 +2085,9 @@ const char* carla_get_last_error()
     return standalone.lastError;
 }
 
-const char* carla_get_host_osc_url()
+const char* carla_get_host_osc_url_tcp()
 {
-    carla_debug("carla_get_host_osc_url()");
+    carla_debug("carla_get_host_osc_url_tcp()");
     CARLA_ASSERT(standalone.engine != nullptr);
 
     if (standalone.engine == nullptr)
@@ -2097,6 +2097,20 @@ const char* carla_get_host_osc_url()
     }
 
     return standalone.engine->getOscServerPathTCP();
+}
+
+const char* carla_get_host_osc_url_udp()
+{
+    carla_debug("carla_get_host_osc_url_udp()");
+    CARLA_ASSERT(standalone.engine != nullptr);
+
+    if (standalone.engine == nullptr)
+    {
+        standalone.lastError = "Engine is not started";
+        return nullptr;
+    }
+
+    return standalone.engine->getOscServerPathUDP();
 }
 
 // -------------------------------------------------------------------------------------------------------------------

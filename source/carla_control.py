@@ -24,6 +24,7 @@ from PyQt4.QtGui import QApplication, QInputDialog, QMainWindow
 from liblo import make_method, Address, ServerError, ServerThread
 from liblo import send as lo_send
 from liblo import TCP as LO_TCP
+from liblo import UDP as LO_UDP
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -480,8 +481,8 @@ class Host(object):
 # OSC Control server
 
 class ControlServer(ServerThread):
-    def __init__(self, parent):
-        ServerThread.__init__(self, 8087, LO_TCP)
+    def __init__(self, parent, mode):
+        ServerThread.__init__(self, 8087, mode)
 
         self.fParent = parent
 
@@ -730,7 +731,7 @@ class CarlaControlW(QMainWindow):
         print("Connecting to \"%s\" as '%s'..." % (self.lo_address, lo_targetName))
 
         try:
-            self.lo_server = ControlServer(self)
+            self.lo_server = ControlServer(self, LO_UDP if self.lo_address.startswith("osc.udp") else LO_TCP)
         except: # ServerError, err:
             print("Connecting error!")
             #print str(err)
