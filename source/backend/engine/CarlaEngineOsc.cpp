@@ -221,7 +221,7 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
         {
             if (isDigit(path[nameSize+5]))
             {
-                carla_stderr2("CarlaEngineOsc::handleMessage() - invalid plugin id, over 999? (value: \"%s\")", path+nameSize);
+                carla_stderr2("CarlaEngineOsc::handleMessage() - invalid plugin id, over 999? (value: \"%s\")", path+nameSize+1);
                 return 1;
             }
             else if (isDigit(path[nameSize+4]))
