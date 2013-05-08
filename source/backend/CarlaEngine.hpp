@@ -228,6 +228,7 @@ struct EngineOptions {
     bool forceStereo;
     bool preferPluginBridges;
     bool preferUiBridges;
+    bool uisAlwaysOnTop;
 #ifdef WANT_DSSI
     bool useDssiVstChunks;
 #endif
@@ -270,11 +271,17 @@ struct EngineOptions {
 
 #ifndef DOXYGEN
     EngineOptions()
+# if defined(CARLA_OS_WIN) || defined(CARLA_OS_MAC)
         : processMode(PROCESS_MODE_CONTINUOUS_RACK),
           transportMode(TRANSPORT_MODE_INTERNAL),
+# else
+        : processMode(PROCESS_MODE_MULTIPLE_CLIENTS),
+          transportMode(TRANSPORT_MODE_JACK),
+# endif
           forceStereo(false),
           preferPluginBridges(false),
           preferUiBridges(true),
+          uisAlwaysOnTop(true),
 # ifdef WANT_DSSI
           useDssiVstChunks(false),
 # endif
@@ -283,7 +290,7 @@ struct EngineOptions {
           jackAutoConnect(false),
           jackTimeMaster(false),
 # ifdef WANT_RTAUDIO
-          rtaudioBufferSize(512),
+          rtaudioBufferSize(1024),
           rtaudioSampleRate(44100),
 # endif
           _d(0) {}

@@ -45,6 +45,7 @@ except:
 # ------------------------------------------------------------------------------------------------------------
 # Static Variables
 
+# Canvas size
 DEFAULT_CANVAS_WIDTH  = 3100
 DEFAULT_CANVAS_HEIGHT = 2400
 
@@ -61,15 +62,16 @@ TAB_INDEX_NONE         = 4
 PROCESS_MODE_NON_JACK_PADDING = 2
 
 # Carla defaults
-CARLA_DEFAULT_PROCESS_HIGH_PRECISION = False
-CARLA_DEFAULT_MAX_PARAMETERS         = 200
-CARLA_DEFAULT_FORCE_STEREO           = False
-CARLA_DEFAULT_USE_DSSI_VST_CHUNKS    = False
-CARLA_DEFAULT_PREFER_PLUGIN_BRIDGES  = False
-CARLA_DEFAULT_UIS_ALWAYS_ON_TOP      = True
-CARLA_DEFAULT_PREFER_UI_BRIDGES      = True
-CARLA_DEFAULT_OSC_UI_TIMEOUT         = 4000
 CARLA_DEFAULT_DISABLE_CHECKS         = False
+CARLA_DEFAULT_FORCE_STEREO           = False
+CARLA_DEFAULT_PREFER_PLUGIN_BRIDGES  = False
+CARLA_DEFAULT_PREFER_UI_BRIDGES      = True
+CARLA_DEFAULT_UIS_ALWAYS_ON_TOP      = True
+CARLA_DEFAULT_USE_DSSI_VST_CHUNKS    = False
+CARLA_DEFAULT_MAX_PARAMETERS         = MAX_DEFAULT_PARAMETERS
+CARLA_DEFAULT_OSC_UI_TIMEOUT         = 4000
+CARLA_DEFAULT_JACK_AUTOCONNECT       = False
+CARLA_DEFAULT_JACK_TIMEMASTER        = False
 CARLA_DEFAULT_RTAUDIO_BUFFER_SIZE    = 1024
 CARLA_DEFAULT_RTAUDIO_SAMPLE_RATE    = 44100
 
@@ -79,6 +81,13 @@ elif MACOS:
     CARLA_DEFAULT_AUDIO_DRIVER = "CoreAudio"
 else:
     CARLA_DEFAULT_AUDIO_DRIVER = "JACK"
+
+if WINDOWS or MACOS:
+    CARLA_DEFAULT_PROCESS_MODE   = PROCESS_MODE_CONTINUOUS_RACK
+    CARLA_DEFAULT_TRANSPORT_MODE = TRANSPORT_MODE_INTERNAL
+else:
+    CARLA_DEFAULT_PROCESS_MODE   = PROCESS_MODE_MULTIPLE_CLIENTS
+    CARLA_DEFAULT_TRANSPORT_MODE = TRANSPORT_MODE_JACK
 
 BUFFER_SIZES = (16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192)
 SAMPLE_RATES = (22050, 32000, 44100, 48000, 88200, 96000, 176400, 192000)
@@ -116,7 +125,7 @@ class DriverSettingsW(QDialog):
         QDialog.__init__(self, parent)
         self.ui = ui_carla_settings_driver.Ui_DriverSettingsW()
         self.ui.setupUi(self)
-        self.ui.stackedWidget.setCurrentIndex(0 if (driverName == "JACK") else 1)
+        self.ui.stackedWidget.setCurrentIndex(0 if driverName == "JACK" else 1)
 
         self.fDriverIndex = driverIndex
         self.fDriverName  = driverName
@@ -129,8 +138,11 @@ class DriverSettingsW(QDialog):
         settings = QSettings()
 
         if self.fDriverName == "JACK":
-            self.ui.cb_jack_autoconnect.setChecked(settings.value("Engine/JackAutoConnect", False, type=bool))
-            self.ui.cb_jack_timemaster.setChecked(settings.value("Engine/JackTimeMaster", False, type=bool))
+            jackAutoConnect = settings.value("Engine/JackAutoConnect", CARLA_DEFAULT_JACK_AUTOCONNECT, type=bool)
+            jackTimeMaster  = settings.value("Engine/JackTimeMaster", CARLA_DEFAULT_JACK_TIMEMASTER, type=bool)
+
+            self.ui.cb_jack_autoconnect.setChecked(jackAutoConnect)
+            self.ui.cb_jack_timemaster.setChecked(jackTimeMaster)
 
         else:
             deviceNames = Carla.host.get_engine_driver_device_names(self.fDriverIndex)
@@ -797,6 +809,7 @@ class CarlaMainW(QMainWindow):
 
         self.connect(self.ui.act_settings_show_toolbar, SIGNAL("triggered(bool)"), SLOT("slot_toolbarShown()"))
         self.connect(self.ui.act_settings_configure, SIGNAL("triggered()"), SLOT("slot_configureCarla()"))
+
         self.connect(self.ui.act_help_about, SIGNAL("triggered()"), SLOT("slot_aboutCarla()"))
         self.connect(self.ui.act_help_about_qt, SIGNAL("triggered()"), app, SLOT("aboutQt()"))
 
@@ -859,6 +872,182 @@ class CarlaMainW(QMainWindow):
             Carla.host.nsm_announce(NSM_URL, appName, os.getpid())
         else:
             QTimer.singleShot(0, self, SLOT("slot_engineStart()"))
+
+    def startEngine(self):
+        # ---------------------------------------------
+        # Engine settings
+
+        settings = QSettings()
+
+        audioDriver         = settings.value("Engine/AudioDriver", CARLA_DEFAULT_AUDIO_DRIVER, type=str)
+        transportMode       = settings.value("Engine/TransportMode", TRANSPORT_MODE_JACK, type=int)
+        forceStereo         = settings.value("Engine/ForceStereo", CARLA_DEFAULT_FORCE_STEREO, type=bool)
+        preferPluginBridges = settings.value("Engine/PreferPluginBridges", CARLA_DEFAULT_PREFER_PLUGIN_BRIDGES, type=bool)
+        preferUiBridges     = settings.value("Engine/PreferUiBridges", CARLA_DEFAULT_PREFER_UI_BRIDGES, type=bool)
+        useDssiVstChunks    = settings.value("Engine/UseDssiVstChunks", CARLA_DEFAULT_USE_DSSI_VST_CHUNKS, type=bool)
+        oscUiTimeout        = settings.value("Engine/OscUiTimeout", CARLA_DEFAULT_OSC_UI_TIMEOUT, type=int)
+
+        Carla.processMode   = settings.value("Engine/ProcessMode", CARLA_DEFAULT_PROCESS_MODE, type=int)
+        Carla.maxParameters = settings.value("Engine/MaxParameters", CARLA_DEFAULT_MAX_PARAMETERS, type=int)
+
+        if Carla.processMode == PROCESS_MODE_CONTINUOUS_RACK:
+            forceStereo = True
+        elif Carla.processMode == PROCESS_MODE_MULTIPLE_CLIENTS and os.getenv("LADISH_APP_NAME"):
+            print("LADISH detected but using multiple clients (not allowed), forcing single client now")
+            Carla.processMode = PROCESS_MODE_SINGLE_CLIENT
+
+        Carla.host.set_engine_option(OPTION_PROCESS_MODE, Carla.processMode, "")
+        Carla.host.set_engine_option(OPTION_MAX_PARAMETERS, Carla.maxParameters, "")
+        Carla.host.set_engine_option(OPTION_FORCE_STEREO, forceStereo, "")
+        Carla.host.set_engine_option(OPTION_PREFER_PLUGIN_BRIDGES, preferPluginBridges, "")
+        Carla.host.set_engine_option(OPTION_PREFER_UI_BRIDGES, preferUiBridges, "")
+        Carla.host.set_engine_option(OPTION_USE_DSSI_VST_CHUNKS, useDssiVstChunks, "")
+        Carla.host.set_engine_option(OPTION_OSC_UI_TIMEOUT, oscUiTimeout, "")
+
+        if audioDriver == "JACK":
+            jackAutoConnect = settings.value("Engine/JackAutoConnect", CARLA_DEFAULT_JACK_AUTOCONNECT, type=bool)
+            jackTimeMaster  = settings.value("Engine/JackTimeMaster", CARLA_DEFAULT_JACK_TIMEMASTER, type=bool)
+
+            Carla.host.set_engine_option(OPTION_JACK_AUTOCONNECT, jackAutoConnect, "")
+            Carla.host.set_engine_option(OPTION_JACK_TIMEMASTER, jackTimeMaster, "")
+
+        else:
+            rtaudioBufferSize = settings.value("Engine/RtAudioBufferSize", CARLA_DEFAULT_RTAUDIO_BUFFER_SIZE, type=int)
+            rtaudioSampleRate = settings.value("Engine/RtAudioSampleRate", CARLA_DEFAULT_RTAUDIO_SAMPLE_RATE, type=int)
+            rtaudioDevice     = settings.value("Engine/RtAudioDevice", "", type=str)
+
+            Carla.host.set_engine_option(OPTION_RTAUDIO_BUFFER_SIZE, rtaudioBufferSize, "")
+            Carla.host.set_engine_option(OPTION_RTAUDIO_SAMPLE_RATE, rtaudioSampleRate, "")
+            Carla.host.set_engine_option(OPTION_RTAUDIO_DEVICE, 0, rtaudioDevice)
+
+        # ---------------------------------------------
+        # Start
+
+        if not Carla.host.engine_init(audioDriver, self.fClientName):
+            if self.fFirstEngineInit:
+                self.fFirstEngineInit = False
+                return
+
+            audioError = cString(Carla.host.get_last_error())
+
+            if audioError:
+                QMessageBox.critical(self, self.tr("Error"), self.tr("Could not connect to Audio backend '%s', possible reasons:\n%s" % (audioDriver, audioError)))
+            else:
+                QMessageBox.critical(self, self.tr("Error"), self.tr("Could not connect to Audio backend '%s'" % audioDriver))
+            return
+
+        self.fBufferSize = Carla.host.get_buffer_size()
+        self.fSampleRate = Carla.host.get_sample_rate()
+
+        self.fEngineStarted   = True
+        self.fFirstEngineInit = False
+
+        self.fPluginCount = 0
+        self.fPluginList  = []
+
+        if Carla.processMode == PROCESS_MODE_CONTINUOUS_RACK:
+            maxCount = MAX_RACK_PLUGINS
+        elif Carla.processMode == PROCESS_MODE_PATCHBAY:
+            maxCount = MAX_PATCHBAY_PLUGINS
+        else:
+            maxCount = MAX_DEFAULT_PLUGINS
+
+        if transportMode == TRANSPORT_MODE_JACK and audioDriver != "JACK":
+            transportMode = TRANSPORT_MODE_INTERNAL
+
+        Carla.host.set_engine_option(OPTION_TRANSPORT_MODE, transportMode, "")
+
+        # Peaks and TimeInfo
+        self.fIdleTimerFast = self.startTimer(self.fSavedSettings["Main/RefreshInterval"])
+        # LEDs and edit dialog parameters
+        self.fIdleTimerSlow = self.startTimer(self.fSavedSettings["Main/RefreshInterval"]*2)
+
+    def stopEngine(self):
+        if self.fPluginCount > 0:
+            ask = QMessageBox.question(self, self.tr("Warning"), self.tr("There are still some plugins loaded, you need to remove them to stop the engine.\n"
+                                                                         "Do you want to do this now?"),
+                                                                         QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+            if ask != QMessageBox.Yes:
+                return
+
+            self.removeAllPlugins()
+
+        self.fEngineStarted = False
+
+        if Carla.host.is_engine_running() and not Carla.host.engine_close():
+            print(cString(Carla.host.get_last_error()))
+
+        self.fBufferSize = 0
+        self.fSampleRate = 0.0
+
+        self.fPluginCount = 0
+        self.fPluginList  = []
+
+        self.killTimer(self.fIdleTimerFast)
+        self.killTimer(self.fIdleTimerSlow)
+
+        patchcanvas.clear()
+
+    def setProperWindowTitle(self):
+        title = "%s" % os.getenv("LADISH_APP_NAME", "Carla")
+
+        if self.fProjectFilename:
+            title += " - %s" % os.path.basename(self.fProjectFilename)
+        if self.fSessionManagerName:
+            title += " (%s)" % self.fSessionManagerName
+
+        self.setWindowTitle(title)
+
+    def loadProject(self, filename):
+        self.fProjectFilename = filename
+        self.setProperWindowTitle()
+
+        self.fProjectLoading = True
+        Carla.host.load_project(filename)
+        self.fProjectLoading = False
+
+    def loadProjectLater(self, filename):
+        self.fProjectFilename = filename
+        self.setProperWindowTitle()
+        QTimer.singleShot(0, self, SLOT("slot_loadProjectLater()"))
+
+    def saveProject(self, filename):
+        self.fProjectFilename = filename
+        self.setProperWindowTitle()
+        Carla.host.save_project(filename)
+
+    def addPlugin(self, btype, ptype, filename, name, label, extraStuff):
+        if not self.fEngineStarted:
+            QMessageBox.warning(self, self.tr("Warning"), self.tr("Cannot add new plugins while engine is stopped"))
+            return False
+
+        if not Carla.host.add_plugin(btype, ptype, filename, name, label, extraStuff):
+            CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"), self.tr("Failed to load plugin"), cString(Carla.host.get_last_error()), QMessageBox.Ok, QMessageBox.Ok)
+            return False
+
+        return True
+
+    def removeAllPlugins(self):
+        while (self.ui.w_plugins.layout().takeAt(0)):
+            pass
+
+        self.ui.act_plugin_remove_all.setEnabled(False)
+
+        for i in range(self.fPluginCount):
+            pwidget = self.fPluginList[i]
+
+            if pwidget is None:
+                break
+
+            pwidget.ui.edit_dialog.close()
+            pwidget.close()
+            pwidget.deleteLater()
+            del pwidget
+
+        self.fPluginCount = 0
+        self.fPluginList  = []
+
+        Carla.host.remove_all_plugins()
 
     @pyqtSlot()
     def slot_pluginsEnable(self):
@@ -1166,188 +1355,6 @@ class CarlaMainW(QMainWindow):
     @pyqtSlot()
     def slot_miniCanvasCheckSize(self):
         self.ui.miniCanvasPreview.setViewSize(float(self.ui.graphicsView.width()) / DEFAULT_CANVAS_WIDTH, float(self.ui.graphicsView.height()) / DEFAULT_CANVAS_HEIGHT)
-
-    def startEngine(self):
-        # ---------------------------------------------
-        # Engine settings
-
-        settings = QSettings()
-
-        if LINUX:
-            defaultMode = PROCESS_MODE_MULTIPLE_CLIENTS
-        else:
-            defaultMode = PROCESS_MODE_CONTINUOUS_RACK
-
-        audioDriver         = settings.value("Engine/AudioDriver", CARLA_DEFAULT_AUDIO_DRIVER, type=str)
-
-        transportMode       = settings.value("Engine/TransportMode", TRANSPORT_MODE_JACK, type=int)
-        forceStereo         = settings.value("Engine/ForceStereo", False, type=bool)
-        preferPluginBridges = settings.value("Engine/PreferPluginBridges", False, type=bool)
-        preferUiBridges     = settings.value("Engine/PreferUiBridges", True, type=bool)
-        useDssiVstChunks    = settings.value("Engine/UseDssiVstChunks", False, type=bool)
-        oscUiTimeout        = settings.value("Engine/OscUiTimeout", 40, type=int)
-
-        Carla.processMode   = settings.value("Engine/ProcessMode", defaultMode, type=int)
-        Carla.maxParameters = settings.value("Engine/MaxParameters", MAX_DEFAULT_PARAMETERS, type=int)
-
-        if Carla.processMode == PROCESS_MODE_CONTINUOUS_RACK:
-            forceStereo = True
-        elif Carla.processMode == PROCESS_MODE_MULTIPLE_CLIENTS and os.getenv("LADISH_APP_NAME"):
-            print("LADISH detected but using multiple clients (not allowed), forcing single client now")
-            Carla.processMode = PROCESS_MODE_SINGLE_CLIENT
-
-        Carla.host.set_engine_option(OPTION_PROCESS_MODE, Carla.processMode, "")
-        Carla.host.set_engine_option(OPTION_MAX_PARAMETERS, Carla.maxParameters, "")
-        Carla.host.set_engine_option(OPTION_FORCE_STEREO, forceStereo, "")
-        Carla.host.set_engine_option(OPTION_PREFER_PLUGIN_BRIDGES, preferPluginBridges, "")
-        Carla.host.set_engine_option(OPTION_PREFER_UI_BRIDGES, preferUiBridges, "")
-        Carla.host.set_engine_option(OPTION_USE_DSSI_VST_CHUNKS, useDssiVstChunks, "")
-        Carla.host.set_engine_option(OPTION_OSC_UI_TIMEOUT, oscUiTimeout, "")
-
-        if audioDriver == "JACK":
-            jackAutoConnect = settings.value("Engine/JackAutoConnect", False, type=bool)
-            jackTimeMaster  = settings.value("Engine/JackTimeMaster", False, type=bool)
-
-            Carla.host.set_engine_option(OPTION_JACK_AUTOCONNECT, jackAutoConnect, "")
-            Carla.host.set_engine_option(OPTION_JACK_TIMEMASTER, jackTimeMaster, "")
-
-        else:
-            rtaudioBufferSize = settings.value("Engine/RtAudioBufferSize", CARLA_DEFAULT_RTAUDIO_BUFFER_SIZE, type=int)
-            rtaudioSampleRate = settings.value("Engine/RtAudioSampleRate", CARLA_DEFAULT_RTAUDIO_SAMPLE_RATE, type=int)
-            rtaudioDevice     = settings.value("Engine/RtAudioDevice", "", type=str)
-
-            Carla.host.set_engine_option(OPTION_RTAUDIO_BUFFER_SIZE, rtaudioBufferSize, "")
-            Carla.host.set_engine_option(OPTION_RTAUDIO_SAMPLE_RATE, rtaudioSampleRate, "")
-            Carla.host.set_engine_option(OPTION_RTAUDIO_DEVICE, 0, rtaudioDevice)
-
-        # ---------------------------------------------
-        # Start
-
-        if not Carla.host.engine_init(audioDriver, self.fClientName):
-            if self.fFirstEngineInit:
-                self.fFirstEngineInit = False
-                return
-
-            audioError = cString(Carla.host.get_last_error())
-
-            if audioError:
-                QMessageBox.critical(self, self.tr("Error"), self.tr("Could not connect to Audio backend '%s', possible reasons:\n%s" % (audioDriver, audioError)))
-            else:
-                QMessageBox.critical(self, self.tr("Error"), self.tr("Could not connect to Audio backend '%s'" % audioDriver))
-            return
-
-        self.fBufferSize = Carla.host.get_buffer_size()
-        self.fSampleRate = Carla.host.get_sample_rate()
-
-        self.fEngineStarted   = True
-        self.fFirstEngineInit = False
-
-        self.fPluginCount = 0
-        self.fPluginList  = []
-
-        if Carla.processMode == PROCESS_MODE_CONTINUOUS_RACK:
-            maxCount = MAX_RACK_PLUGINS
-        elif Carla.processMode == PROCESS_MODE_PATCHBAY:
-            maxCount = MAX_PATCHBAY_PLUGINS
-        else:
-            maxCount = MAX_DEFAULT_PLUGINS
-
-        if transportMode == TRANSPORT_MODE_JACK and audioDriver != "JACK":
-            transportMode = TRANSPORT_MODE_INTERNAL
-
-        Carla.host.set_engine_option(OPTION_TRANSPORT_MODE, transportMode, "")
-
-        # Peaks and TimeInfo
-        self.fIdleTimerFast = self.startTimer(self.fSavedSettings["Main/RefreshInterval"])
-        # LEDs and edit dialog parameters
-        self.fIdleTimerSlow = self.startTimer(self.fSavedSettings["Main/RefreshInterval"]*2)
-
-    def stopEngine(self):
-        if self.fPluginCount > 0:
-            ask = QMessageBox.question(self, self.tr("Warning"), self.tr("There are still some plugins loaded, you need to remove them to stop the engine.\n"
-                                                                         "Do you want to do this now?"),
-                                                                         QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-            if ask != QMessageBox.Yes:
-                return
-
-            self.removeAllPlugins()
-
-        self.fEngineStarted = False
-
-        if Carla.host.is_engine_running() and not Carla.host.engine_close():
-            print(cString(Carla.host.get_last_error()))
-
-        self.fBufferSize = 0
-        self.fSampleRate = 0.0
-
-        self.fPluginCount = 0
-        self.fPluginList  = []
-
-        self.killTimer(self.fIdleTimerFast)
-        self.killTimer(self.fIdleTimerSlow)
-
-        patchcanvas.clear()
-
-    def setProperWindowTitle(self):
-        title = "%s" % os.getenv("LADISH_APP_NAME", "Carla")
-
-        if self.fProjectFilename:
-            title += " - %s" % os.path.basename(self.fProjectFilename)
-        if self.fSessionManagerName:
-            title += " (%s)" % self.fSessionManagerName
-
-        self.setWindowTitle(title)
-
-    def loadProject(self, filename):
-        self.fProjectFilename = filename
-        self.setProperWindowTitle()
-
-        self.fProjectLoading = True
-        Carla.host.load_project(filename)
-        self.fProjectLoading = False
-
-    def loadProjectLater(self, filename):
-        self.fProjectFilename = filename
-        self.setProperWindowTitle()
-        QTimer.singleShot(0, self, SLOT("slot_loadProjectLater()"))
-
-    def saveProject(self, filename):
-        self.fProjectFilename = filename
-        self.setProperWindowTitle()
-        Carla.host.save_project(filename)
-
-    def addPlugin(self, btype, ptype, filename, name, label, extraStuff):
-        if not self.fEngineStarted:
-            QMessageBox.warning(self, self.tr("Warning"), self.tr("Cannot add new plugins while engine is stopped"))
-            return False
-
-        if not Carla.host.add_plugin(btype, ptype, filename, name, label, extraStuff):
-            CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"), self.tr("Failed to load plugin"), cString(Carla.host.get_last_error()), QMessageBox.Ok, QMessageBox.Ok)
-            return False
-
-        return True
-
-    def removeAllPlugins(self):
-        while (self.ui.w_plugins.layout().takeAt(0)):
-            pass
-
-        self.ui.act_plugin_remove_all.setEnabled(False)
-
-        for i in range(self.fPluginCount):
-            pwidget = self.fPluginList[i]
-
-            if pwidget is None:
-                break
-
-            pwidget.ui.edit_dialog.close()
-            pwidget.close()
-            pwidget.deleteLater()
-            del pwidget
-
-        self.fPluginCount = 0
-        self.fPluginList  = []
-
-        Carla.host.remove_all_plugins()
 
     @pyqtSlot()
     def slot_fileNew(self):

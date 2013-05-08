@@ -605,29 +605,19 @@ class CarlaControlW(QMainWindow):
         self.ui = ui_carla_control.Ui_CarlaControlW()
         self.ui.setupUi(self)
 
+        if MACOS:
+            self.setUnifiedTitleAndToolBarOnMac(True)
+
         # -------------------------------------------------------------
         # Load Settings
 
         self.loadSettings()
 
-        self.setStyleSheet("""
-          QWidget#centralwidget {
-            background-color: qlineargradient(spread:pad,
-                x1:0.0, y1:0.0,
-                x2:0.2, y2:1.0,
-                stop:0 rgb( 7,  7,  7),
-                stop:1 rgb(28, 28, 28)
-            );
-          }
-        """)
-
         # -------------------------------------------------------------
         # Internal stuff
 
-        self.lo_address = ""
-        self.lo_server  = None
-
-        self.fLastPluginName = ""
+        self.fProjectFilename = None
+        self.fProjectLoading  = False
 
         self.fPluginCount = 0
         self.fPluginList  = []
@@ -635,10 +625,16 @@ class CarlaControlW(QMainWindow):
         self.fIdleTimerFast = 0
         self.fIdleTimerSlow = 0
 
+        self.fLastPluginName = ""
+
+        self.lo_address = ""
+        self.lo_server  = None
+
         # -------------------------------------------------------------
         # Set-up GUI stuff
 
         self.ui.act_file_refresh.setEnabled(False)
+        #self.ui.act_plugin_remove_all.setEnabled(False)
 
         self.resize(self.width(), 0)
 
@@ -648,8 +644,19 @@ class CarlaControlW(QMainWindow):
         self.connect(self.ui.act_file_connect, SIGNAL("triggered()"), SLOT("slot_fileConnect()"))
         self.connect(self.ui.act_file_refresh, SIGNAL("triggered()"), SLOT("slot_fileRefresh()"))
 
+        #self.connect(self.ui.act_plugin_add, SIGNAL("triggered()"), SLOT("slot_pluginAdd()"))
+        #self.connect(self.ui.act_plugin_add2, SIGNAL("triggered()"), SLOT("slot_pluginAdd()"))
+        #self.connect(self.ui.act_plugin_refresh, SIGNAL("triggered()"), SLOT("slot_pluginRefresh()"))
+        #self.connect(self.ui.act_plugin_remove_all, SIGNAL("triggered()"), SLOT("slot_pluginRemoveAll()"))
+
+        #self.connect(self.ui.act_settings_show_toolbar, SIGNAL("triggered(bool)"), SLOT("slot_toolbarShown()"))
+        #self.connect(self.ui.act_settings_configure, SIGNAL("triggered()"), SLOT("slot_configureCarla()"))
+
         self.connect(self.ui.act_help_about, SIGNAL("triggered()"), SLOT("slot_aboutCarlaControl()"))
         self.connect(self.ui.act_help_about_qt, SIGNAL("triggered()"), app, SLOT("aboutQt()"))
+
+        self.connect(self, SIGNAL("SIGUSR1()"), SLOT("slot_handleSIGUSR1()"))
+        self.connect(self, SIGNAL("SIGTERM()"), SLOT("slot_handleSIGTERM()"))
 
         self.connect(self, SIGNAL("AddPluginStart(int, QString)"), SLOT("slot_handleAddPluginStart(int, QString)"))
         self.connect(self, SIGNAL("AddPluginEnd(int)"), SLOT("slot_handleAddPluginEnd(int)"))
@@ -672,11 +679,6 @@ class CarlaControlW(QMainWindow):
         self.connect(self, SIGNAL("NoteOff(int, int, int)"), SLOT("slot_handleNoteOff(int, int, int)"))
         self.connect(self, SIGNAL("SetPeaks(int, double, double, double, double)"), SLOT("slot_handleSetPeaks(int, double, double, double, double)"))
         self.connect(self, SIGNAL("Exit()"), SLOT("slot_handleExit()"))
-
-        # Peaks
-        self.fIdleTimerFast = self.startTimer(60)
-        # LEDs and edit dialog parameters
-        self.fIdleTimerSlow = self.startTimer(60*2)
 
     def removeAll(self):
         self.killTimer(self.fIdleTimerFast)
