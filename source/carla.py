@@ -1909,6 +1909,7 @@ class CarlaMainW(QMainWindow):
 
     @pyqtSlot(int)
     def slot_handlePatchbayClientRemovedCallback(self, clientId):
+        if not self.fEngineStarted: return
         patchcanvas.removeGroup(clientId)
         QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
 
@@ -1938,6 +1939,7 @@ class CarlaMainW(QMainWindow):
 
     @pyqtSlot(int)
     def slot_handlePatchbayPortRemovedCallback(self, portId):
+        if not self.fEngineStarted: return
         patchcanvas.removePort(portId)
         QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
 
@@ -1953,6 +1955,7 @@ class CarlaMainW(QMainWindow):
 
     @pyqtSlot(int)
     def slot_handlePatchbayConnectionRemovedCallback(self, connectionId):
+        if not self.fEngineStarted: return
         patchcanvas.disconnectPorts(connectionId)
         QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
 

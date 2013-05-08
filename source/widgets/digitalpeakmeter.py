@@ -59,9 +59,9 @@ class DigitalPeakMeter(QWidget):
             level = (self.fLastValueData[i] * self.fSmoothMultiplier + level) / float(self.fSmoothMultiplier + 1)
 
         if level < 0.001:
-            level = 0.0 if level < 0.001 else -level
+            level = 0.0
         elif level > 0.999:
-            level = 1.0 if level > 0.999 else level
+            level = 1.0
 
         if self.fChannelsData[i] != level:
             self.fChannelsData[i] = level
