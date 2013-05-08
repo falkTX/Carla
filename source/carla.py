@@ -62,18 +62,18 @@ TAB_INDEX_NONE         = 4
 PROCESS_MODE_NON_JACK_PADDING = 2
 
 # Carla defaults
-CARLA_DEFAULT_DISABLE_CHECKS         = False
-CARLA_DEFAULT_FORCE_STEREO           = False
-CARLA_DEFAULT_PREFER_PLUGIN_BRIDGES  = False
-CARLA_DEFAULT_PREFER_UI_BRIDGES      = True
-CARLA_DEFAULT_UIS_ALWAYS_ON_TOP      = True
-CARLA_DEFAULT_USE_DSSI_VST_CHUNKS    = False
-CARLA_DEFAULT_MAX_PARAMETERS         = MAX_DEFAULT_PARAMETERS
-CARLA_DEFAULT_OSC_UI_TIMEOUT         = 4000
-CARLA_DEFAULT_JACK_AUTOCONNECT       = False
-CARLA_DEFAULT_JACK_TIMEMASTER        = False
-CARLA_DEFAULT_RTAUDIO_BUFFER_SIZE    = 1024
-CARLA_DEFAULT_RTAUDIO_SAMPLE_RATE    = 44100
+CARLA_DEFAULT_DISABLE_CHECKS        = False
+CARLA_DEFAULT_FORCE_STEREO          = False
+CARLA_DEFAULT_PREFER_PLUGIN_BRIDGES = False
+CARLA_DEFAULT_PREFER_UI_BRIDGES     = True
+CARLA_DEFAULT_UIS_ALWAYS_ON_TOP     = True
+CARLA_DEFAULT_USE_DSSI_VST_CHUNKS   = False
+CARLA_DEFAULT_MAX_PARAMETERS        = MAX_DEFAULT_PARAMETERS
+CARLA_DEFAULT_OSC_UI_TIMEOUT        = 4000
+CARLA_DEFAULT_JACK_AUTOCONNECT      = False
+CARLA_DEFAULT_JACK_TIMEMASTER       = False
+CARLA_DEFAULT_RTAUDIO_BUFFER_SIZE   = 1024
+CARLA_DEFAULT_RTAUDIO_SAMPLE_RATE   = 44100
 
 if WINDOWS:
     CARLA_DEFAULT_AUDIO_DRIVER = "DirectSound"
@@ -111,6 +111,8 @@ class LogSyntaxHighlighter(QSyntaxHighlighter):
         self.fColorDebug = palette.color(QPalette.Disabled, QPalette.WindowText)
         self.fColorError = Qt.red
 
+        # -------------------------------------------------------------
+
     def highlightBlock(self, text):
         if text.startswith("DEBUG:"):
             self.setFormat(0, len(text), self.fColorDebug)
@@ -118,7 +120,7 @@ class LogSyntaxHighlighter(QSyntaxHighlighter):
             self.setFormat(0, len(text), self.fColorError)
 
 # ------------------------------------------------------------------------------------------------------------
-# Settings Dialog
+# Driver Settings
 
 class DriverSettingsW(QDialog):
     def __init__(self, parent, driverIndex, driverName):
@@ -127,12 +129,38 @@ class DriverSettingsW(QDialog):
         self.ui.setupUi(self)
         self.ui.stackedWidget.setCurrentIndex(0 if driverName == "JACK" else 1)
 
+        # -------------------------------------------------------------
+        # Internal stuff
+
         self.fDriverIndex = driverIndex
         self.fDriverName  = driverName
 
+        # -------------------------------------------------------------
+        # Set-up GUI
+
+        if driverName != "JACK":
+            self.fDeviceNames = Carla.host.get_engine_driver_device_names(driverIndex)
+
+            for name in self.fDeviceNames:
+                self.ui.cb_rtaudio_device.addItem(name)
+
+            for bsize in BUFFER_SIZES:
+                self.ui.cb_rtaudio_buffersize.addItem(str(bsize))
+
+            for srate in SAMPLE_RATES:
+                self.ui.cb_rtaudio_samplerate.addItem(str(srate))
+
+        # -------------------------------------------------------------
+        # Load settings
+
         self.loadSettings()
 
+        # -------------------------------------------------------------
+        # Set-up connections
+
         self.connect(self, SIGNAL("accepted()"), SLOT("slot_saveSettings()"))
+
+        # -------------------------------------------------------------
 
     def loadSettings(self):
         settings = QSettings()
@@ -145,23 +173,12 @@ class DriverSettingsW(QDialog):
             self.ui.cb_jack_timemaster.setChecked(jackTimeMaster)
 
         else:
-            deviceNames = Carla.host.get_engine_driver_device_names(self.fDriverIndex)
-
-            for name in deviceNames:
-                self.ui.cb_rtaudio_device.addItem(name)
-
-            for bsize in BUFFER_SIZES:
-                self.ui.cb_rtaudio_buffersize.addItem(str(bsize))
-
-            for srate in SAMPLE_RATES:
-                self.ui.cb_rtaudio_samplerate.addItem(str(srate))
-
             rtaudioDevice     = settings.value("Engine/RtAudioDevice", "", type=str)
             rtaudioBufferSize = settings.value("Engine/RtAudioBufferSize", CARLA_DEFAULT_RTAUDIO_BUFFER_SIZE, type=int)
             rtaudioSampleRate = settings.value("Engine/RtAudioSampleRate", CARLA_DEFAULT_RTAUDIO_SAMPLE_RATE, type=int)
 
-            if rtaudioDevice and rtaudioDevice in deviceNames:
-                self.ui.cb_rtaudio_device.setCurrentIndex(deviceNames.index(rtaudioDevice))
+            if rtaudioDevice and rtaudioDevice in self.fDeviceNames:
+                self.ui.cb_rtaudio_device.setCurrentIndex(self.fDeviceNames.index(rtaudioDevice))
             else:
                 self.ui.cb_rtaudio_device.setCurrentIndex(-1)
 
@@ -190,6 +207,9 @@ class DriverSettingsW(QDialog):
     def done(self, r):
         QDialog.done(self, r)
         self.close()
+
+# ------------------------------------------------------------------------------------------------------------
+# Settings Dialog
 
 class CarlaSettingsW(QDialog):
     def __init__(self, parent):
@@ -666,12 +686,6 @@ class CarlaMainW(QMainWindow):
             self.setUnifiedTitleAndToolBarOnMac(True)
 
         # -------------------------------------------------------------
-        # Load Settings
-
-        self.loadSettings(True)
-        self.loadRDFs()
-
-        # -------------------------------------------------------------
         # Internal stuff
 
         self.fBufferSize = 0
@@ -693,6 +707,14 @@ class CarlaMainW(QMainWindow):
 
         self.fClientName = "Carla"
         self.fSessionManagerName = "LADISH" if os.getenv("LADISH_APP_NAME") else ""
+
+        self.fLadspaRdfNeedsUpdate = True
+        self.fLadspaRdfList = []
+
+        # -------------------------------------------------------------
+        # Load Settings
+
+        self.loadSettings(True)
 
         # -------------------------------------------------------------
         # Set-up GUI stuff
@@ -1610,11 +1632,6 @@ class CarlaMainW(QMainWindow):
             if self.fEngineStarted:
                 Carla.host.patchbay_refresh()
 
-            for pwidget in self.fPluginList:
-                if pwidget is None:
-                    return
-                pwidget.setRefreshRate(self.fSavedSettings["Main/RefreshInterval"])
-
     @pyqtSlot()
     def slot_handleSIGUSR1(self):
         print("Got SIGUSR1 -> Saving project now")
@@ -1632,7 +1649,6 @@ class CarlaMainW(QMainWindow):
     @pyqtSlot(int)
     def slot_handlePluginAddedCallback(self, pluginId):
         pwidget = PluginWidget(self, pluginId)
-        pwidget.setRefreshRate(self.fSavedSettings["Main/RefreshInterval"])
 
         self.ui.w_plugins.layout().addWidget(pwidget)
 
@@ -1923,12 +1939,15 @@ class CarlaMainW(QMainWindow):
 
         if ptype == PLUGIN_LADSPA:
             uniqueId = plugin['uniqueId']
+
+            self.loadRDFs()
+
             for rdfItem in self.fLadspaRdfList:
                 if rdfItem.UniqueID == uniqueId:
                     return pointer(rdfItem)
 
         elif ptype == PLUGIN_DSSI:
-            if (plugin['hints'] & PLUGIN_HAS_GUI):
+            if plugin['hints'] & PLUGIN_HAS_GUI:
                 gui = findDSSIGUI(plugin['binary'], plugin['name'], plugin['label'])
                 if gui:
                     return gui.encode("utf-8")
@@ -1944,8 +1963,11 @@ class CarlaMainW(QMainWindow):
         return c_nullptr
 
     def loadRDFs(self):
-        # Save RDF info for later
+        if not self.fLadspaRdfNeedsUpdate:
+            return
+
         self.fLadspaRdfList = []
+        self.fLadspaRdfNeedsUpdate = False
 
         if not haveLRDF:
             return
@@ -1962,6 +1984,9 @@ class CarlaMainW(QMainWindow):
                 pass
 
             frLadspa.close()
+
+    def loadRDFsNeeded(self):
+        self.fLadspaRdfNeedsUpdate = True
 
     def saveSettings(self):
         settings = QSettings()

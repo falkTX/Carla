@@ -47,21 +47,20 @@ class DigitalPeakMeter(QWidget):
         self.setChannels(0)
         self.setColor(self.GREEN)
 
-        self.fPaintTimer = QTimer(self)
-        self.fPaintTimer.setInterval(60)
-        self.fPaintTimer.timeout.connect(self.update)
-        self.fPaintTimer.start()
-
     def displayMeter(self, meter, level):
         if meter <= 0 or meter > self.fChannels:
             return qCritical("DigitalPeakMeter::displayMeter(%i, %f) - invalid meter number" % (meter, level))
+        if not isinstance(level, float):
+            return qCritical("DigitalPeakMeter::displayMeter(%i, %f) - meter value must be float" % (meter, level))
 
         if level < 0.0:
             level = -level
         elif level > 1.0:
             level = 1.0
 
-        self.fChannelsData[meter-1] = float(level)
+        if self.fChannelsData[meter-1] != level:
+            self.fChannelsData[meter-1] = level
+            self.update()
 
     def setChannels(self, channels):
         if channels < 0:
@@ -110,11 +109,6 @@ class DigitalPeakMeter(QWidget):
             return qCritical("DigitalPeakMeter::setOrientation(%i) - invalid orientation" % orientation)
 
         self.updateSizes()
-
-    def setRefreshRate(self, rate):
-        self.fPaintTimer.stop()
-        self.fPaintTimer.setInterval(rate)
-        self.fPaintTimer.start()
 
     def setSmoothRelease(self, value):
         if value < 0:

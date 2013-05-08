@@ -897,14 +897,20 @@ class PluginParameter(QWidget):
         self.ui = ui_carla_parameter.Ui_PluginParameter()
         self.ui.setupUi(self)
 
-        pType  = pInfo['type']
-        pHints = pInfo['hints']
+        # -------------------------------------------------------------
+        # Internal stuff
 
         self.fMidiControl = -1
         self.fMidiChannel = 1
         self.fParameterId = pInfo['index']
         self.fPluginId    = pluginId
         self.fTabIndex    = tabIndex
+
+        # -------------------------------------------------------------
+        # Set-up GUI
+
+        pType  = pInfo['type']
+        pHints = pInfo['hints']
 
         self.ui.label.setText(pInfo['name'])
         self.ui.widget.setName(pInfo['name'])
@@ -953,11 +959,22 @@ class PluginParameter(QWidget):
         self.setMidiControl(pInfo['midiCC'])
         self.setMidiChannel(pInfo['midiChannel']+1)
 
+        # -------------------------------------------------------------
+        # Set-up connections
+
         self.connect(self.ui.sb_control, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_controlSpinboxCustomMenu()"))
         self.connect(self.ui.sb_channel, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_channelSpinboxCustomMenu()"))
         self.connect(self.ui.sb_control, SIGNAL("valueChanged(int)"), SLOT("slot_controlSpinboxChanged(int)"))
         self.connect(self.ui.sb_channel, SIGNAL("valueChanged(int)"), SLOT("slot_channelSpinboxChanged(int)"))
         self.connect(self.ui.widget, SIGNAL("valueChanged(double)"), SLOT("slot_widgetValueChanged(double)"))
+
+        # -------------------------------------------------------------
+
+    def pluginId(self):
+        return self.fPluginId
+
+    def tabIndex(self):
+        return self.fTabIndex
 
     def setDefault(self, value):
         self.ui.widget.setDefault(value)
@@ -980,12 +997,6 @@ class PluginParameter(QWidget):
     def setLabelWidth(self, width):
         self.ui.label.setMinimumWidth(width)
         self.ui.label.setMaximumWidth(width)
-
-    def pluginId(self):
-        return self.fPluginId
-
-    def tabIndex(self):
-        return self.fTabIndex
 
     @pyqtSlot()
     def slot_controlSpinboxCustomMenu(self):
@@ -1060,6 +1071,9 @@ class PluginEdit(QDialog):
         self.ui = ui_carla_edit.Ui_PluginEdit()
         self.ui.setupUi(self)
 
+        # -------------------------------------------------------------
+        # Internal stuff
+
         self.fGeometry   = QByteArray()
         self.fPluginId   = pluginId
         self.fPuginInfo  = None
@@ -1081,6 +1095,9 @@ class PluginEdit(QDialog):
         self.fTabIconOn  = QIcon(":/bitmaps/led_yellow.png")
         self.fTabIconCount  = 0
         self.fTabIconTimers = []
+
+        # -------------------------------------------------------------
+        # Set-up GUI
 
         self.ui.dial_drywet.setCustomPaint(self.ui.dial_drywet.CUSTOM_PAINT_CARLA_WET)
         self.ui.dial_drywet.setPixmap(3)
@@ -1107,14 +1124,12 @@ class PluginEdit(QDialog):
         self.ui.scrollArea.setEnabled(False)
         self.ui.scrollArea.setVisible(False)
 
-        if Carla.isLocal:
-            self.connect(self.ui.b_save_state, SIGNAL("clicked()"), SLOT("slot_saveState()"))
-            self.connect(self.ui.b_load_state, SIGNAL("clicked()"), SLOT("slot_loadState()"))
-        else:
-            self.ui.b_load_state.setEnabled(False)
-            self.ui.b_save_state.setEnabled(False)
-
         self.reloadAll()
+
+        # -------------------------------------------------------------
+        # Set-up connections
+
+        self.connect(self, SIGNAL("finished(int)"), SLOT("slot_finished()"))
 
         self.connect(self.ui.ch_fixed_buffer, SIGNAL("clicked(bool)"), SLOT("slot_optionChanged(bool)"))
         self.connect(self.ui.ch_force_stereo, SIGNAL("clicked(bool)"), SLOT("slot_optionChanged(bool)"))
@@ -1144,7 +1159,14 @@ class PluginEdit(QDialog):
         self.connect(self.ui.cb_programs, SIGNAL("currentIndexChanged(int)"), SLOT("slot_programIndexChanged(int)"))
         self.connect(self.ui.cb_midi_programs, SIGNAL("currentIndexChanged(int)"), SLOT("slot_midiProgramIndexChanged(int)"))
 
-        self.connect(self, SIGNAL("finished(int)"), SLOT("slot_finished()"))
+        if Carla.isLocal:
+            self.connect(self.ui.b_save_state, SIGNAL("clicked()"), SLOT("slot_stateSave()"))
+            self.connect(self.ui.b_load_state, SIGNAL("clicked()"), SLOT("slot_stateLoad()"))
+        else:
+            self.ui.b_load_state.setEnabled(False)
+            self.ui.b_save_state.setEnabled(False)
+
+        # -------------------------------------------------------------
 
     def reloadAll(self):
         self.fPluginInfo = Carla.host.get_plugin_info(self.fPluginId)
@@ -1476,6 +1498,10 @@ class PluginEdit(QDialog):
             paramWidget.update()
 
         self.fParametersToUpdate = []
+
+    def clearNotes(self):
+         self.fPlayingNotes = []
+         self.ui.keyboard.allNotesOff()
 
     def setParameterValue(self, parameterId, value):
         for paramItem in self.fParametersToUpdate:
@@ -1938,10 +1964,8 @@ class PluginWidget(QFrame):
         self.ui = ui_carla_plugin.Ui_PluginWidget()
         self.ui.setupUi(self)
 
-        self.fLastGreenLedState = False
-        self.fLastBlueLedState  = False
-
-        self.fParameterIconTimer = ICON_STATE_NULL
+        # -------------------------------------------------------------
+        # Internal stuff
 
         self.fPluginId   = pluginId
         self.fPluginInfo = Carla.host.get_plugin_info(self.fPluginId)
@@ -1951,6 +1975,11 @@ class PluginWidget(QFrame):
         self.fPluginInfo['label']     = cString(self.fPluginInfo['label'])
         self.fPluginInfo['maker']     = cString(self.fPluginInfo['maker'])
         self.fPluginInfo['copyright'] = cString(self.fPluginInfo['copyright'])
+
+        self.fLastGreenLedState = False
+        self.fLastBlueLedState  = False
+
+        self.fParameterIconTimer = ICON_STATE_NULL
 
         if Carla.processMode == PROCESS_MODE_CONTINUOUS_RACK:
             self.fPeaksInputCount  = 2
@@ -1983,6 +2012,9 @@ class PluginWidget(QFrame):
             self.fColorTop    = QColor(60, 60, 60)
             self.fColorBottom = QColor(47, 47, 47)
             self.fColorSeprtr = QColor(70, 70, 70)
+
+        # -------------------------------------------------------------
+        # Set-up GUI
 
         self.setStyleSheet("""
         QLabel#label_name {
@@ -2021,10 +2053,17 @@ class PluginWidget(QFrame):
         self.setMinimumHeight(32)
         self.setMaximumHeight(32)
 
+        # -------------------------------------------------------------
+        # Set-up connections
+
         self.connect(self, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_showCustomMenu()"))
         self.connect(self.ui.b_enable, SIGNAL("clicked(bool)"), SLOT("slot_enableClicked(bool)"))
         self.connect(self.ui.b_gui, SIGNAL("clicked(bool)"), SLOT("slot_guiClicked(bool)"))
         self.connect(self.ui.b_edit, SIGNAL("clicked(bool)"), SLOT("slot_editClicked(bool)"))
+
+        self.iii = 0
+
+        # -------------------------------------------------------------
 
     def idleFast(self):
         # Input peaks
@@ -2093,8 +2132,7 @@ class PluginWidget(QFrame):
         if sendCallback: Carla.host.set_active(self.fPluginId, active)
 
         if active:
-            self.ui.edit_dialog.fPlayingNotes = []
-            self.ui.edit_dialog.ui.keyboard.allNotesOff()
+            self.ui.edit_dialog.clearNotes()
             self.ui.led_midi.setChecked(False)
 
     def setParameterDefault(self, parameterId, value):
@@ -2131,53 +2169,6 @@ class PluginWidget(QFrame):
     def setId(self, idx):
         self.fPluginId = idx
         self.ui.edit_dialog.fPluginId = idx
-
-    def setRefreshRate(self, rate):
-        self.ui.peak_in.setRefreshRate(rate)
-        self.ui.peak_out.setRefreshRate(rate)
-
-    def paintEvent(self, event):
-        painter = QPainter(self)
-        painter.save()
-
-        areaX = self.ui.area_right.x()
-
-        painter.setPen(self.fColorSeprtr.lighter(110))
-        painter.setBrush(self.fColorBottom)
-        painter.setRenderHint(QPainter.Antialiasing, True)
-
-        # name -> leds arc
-        path = QPainterPath()
-        path.moveTo(areaX-20, self.height()-4)
-        path.cubicTo(areaX+5, self.height()-5, areaX-20, 4.75, areaX+20, 4.75)
-        path.lineTo(areaX+20, self.height()-5)
-        painter.drawPath(path)
-
-        painter.setPen(self.fColorSeprtr)
-        painter.setRenderHint(QPainter.Antialiasing, False)
-
-        # separator lines
-        painter.drawLine(0, self.height()-5, areaX-20, self.height()-5)
-        painter.drawLine(areaX+20, 4, self.width(), 4)
-
-        painter.setPen(self.fColorBottom)
-        painter.setBrush(self.fColorBottom)
-
-        # top, bottom and left lines
-        painter.drawLine(0, 0, self.width(), 0)
-        painter.drawRect(0, self.height()-4, areaX, 4)
-        painter.drawRoundedRect(areaX-20, self.height()-5, areaX+20, 5, 22, 22)
-        painter.drawLine(0, 0, 0, self.height())
-
-        # fill the rest
-        painter.drawRect(areaX+19, 5, self.width(), self.height())
-
-        # bottom 1px line
-        painter.setPen(self.fColorSeprtr)
-        painter.drawLine(0, self.height()-1, self.width(), self.height()-1)
-
-        painter.restore()
-        QFrame.paintEvent(self, event)
 
     @pyqtSlot()
     def slot_showCustomMenu(self):
@@ -2251,6 +2242,52 @@ class PluginWidget(QFrame):
     def slot_editClicked(self, show):
         self.ui.edit_dialog.setVisible(show)
 
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.save()
+
+        print("painted", self.iii)
+        self.iii += 1
+
+        areaX = self.ui.area_right.x()
+
+        painter.setPen(self.fColorSeprtr.lighter(110))
+        painter.setBrush(self.fColorBottom)
+        painter.setRenderHint(QPainter.Antialiasing, True)
+
+        # name -> leds arc
+        path = QPainterPath()
+        path.moveTo(areaX-20, self.height()-4)
+        path.cubicTo(areaX+5, self.height()-5, areaX-20, 4.75, areaX+20, 4.75)
+        path.lineTo(areaX+20, self.height()-5)
+        painter.drawPath(path)
+
+        painter.setPen(self.fColorSeprtr)
+        painter.setRenderHint(QPainter.Antialiasing, False)
+
+        # separator lines
+        painter.drawLine(0, self.height()-5, areaX-20, self.height()-5)
+        painter.drawLine(areaX+20, 4, self.width(), 4)
+
+        painter.setPen(self.fColorBottom)
+        painter.setBrush(self.fColorBottom)
+
+        # top, bottom and left lines
+        painter.drawLine(0, 0, self.width(), 0)
+        painter.drawRect(0, self.height()-4, areaX, 4)
+        painter.drawRoundedRect(areaX-20, self.height()-5, areaX+20, 5, 22, 22)
+        painter.drawLine(0, 0, 0, self.height())
+
+        # fill the rest
+        painter.drawRect(areaX+19, 5, self.width(), self.height())
+
+        # bottom 1px line
+        painter.setPen(self.fColorSeprtr)
+        painter.drawLine(0, self.height()-1, self.width(), self.height()-1)
+
+        painter.restore()
+        QFrame.paintEvent(self, event)
+
 # ------------------------------------------------------------------------------------------------------------
 # Separate Thread for Plugin Search
 
@@ -2284,6 +2321,8 @@ class SearchPluginsThread(QThread):
         self.fLv2Plugins = []
         self.fVstPlugins = []
         self.fKitPlugins = []
+
+        # -------------------------------------------------------------
 
     def somethingChanged(self):
         return self.fSomethingChanged
@@ -2627,7 +2666,16 @@ class PluginRefreshW(QDialog):
         self.ui = ui_carla_refresh.Ui_PluginRefreshW()
         self.ui.setupUi(self)
 
-        self.loadSettings()
+        # -------------------------------------------------------------
+        # Internal stuff
+
+        self.fThread = SearchPluginsThread(self)
+
+        # -------------------------------------------------------------
+        # Set-up GUI
+
+        self.fIconYes = getIcon("dialog-ok-apply").pixmap(16, 16)
+        self.fIconNo  = getIcon("dialog-error").pixmap(16, 16)
 
         self.ui.b_skip.setVisible(False)
 
@@ -2641,40 +2689,38 @@ class PluginRefreshW(QDialog):
             self.ui.ch_posix32.setText("MacOS 32bit")
             self.ui.ch_posix64.setText("MacOS 64bit")
 
-        self.fThread = SearchPluginsThread(self)
-
         if carla_discovery_posix32 and not WINDOWS:
-            self.ui.ico_posix32.setPixmap(getIcon("dialog-ok-apply").pixmap(16, 16))
+            self.ui.ico_posix32.setPixmap(self.fIconYes)
         else:
-            self.ui.ico_posix32.setPixmap(getIcon("dialog-error").pixmap(16, 16))
+            self.ui.ico_posix32.setPixmap()
             self.ui.ch_posix32.setChecked(False)
             self.ui.ch_posix32.setEnabled(False)
 
         if carla_discovery_posix64 and not WINDOWS:
-            self.ui.ico_posix64.setPixmap(getIcon("dialog-ok-apply").pixmap(16, 16))
+            self.ui.ico_posix64.setPixmap(self.fIconYes)
         else:
-            self.ui.ico_posix64.setPixmap(getIcon("dialog-error").pixmap(16, 16))
+            self.ui.ico_posix64.setPixmap(self.fIconNo)
             self.ui.ch_posix64.setChecked(False)
             self.ui.ch_posix64.setEnabled(False)
 
         if carla_discovery_win32:
-            self.ui.ico_win32.setPixmap(getIcon("dialog-ok-apply").pixmap(16, 16))
+            self.ui.ico_win32.setPixmap(self.fIconYes)
         else:
-            self.ui.ico_win32.setPixmap(getIcon("dialog-error").pixmap(16, 16))
+            self.ui.ico_win32.setPixmap(self.fIconNo)
             self.ui.ch_win32.setChecked(False)
             self.ui.ch_win32.setEnabled(False)
 
         if carla_discovery_win64:
-            self.ui.ico_win64.setPixmap(getIcon("dialog-ok-apply").pixmap(16, 16))
+            self.ui.ico_win64.setPixmap(self.fIconYes)
         else:
-            self.ui.ico_win64.setPixmap(getIcon("dialog-error").pixmap(16, 16))
+            self.ui.ico_win64.setPixmap(self.fIconNo)
             self.ui.ch_win64.setChecked(False)
             self.ui.ch_win64.setEnabled(False)
 
         if haveLRDF:
-            self.ui.ico_rdflib.setPixmap(getIcon("dialog-ok-apply").pixmap(16, 16))
+            self.ui.ico_rdflib.setPixmap(self.fIconYes)
         else:
-            self.ui.ico_rdflib.setPixmap(getIcon("dialog-error").pixmap(16, 16))
+            self.ui.ico_rdflib.setPixmap(self.fIconNo)
 
         hasNative = bool(carla_discovery_native)
         hasNonNative = False
@@ -2711,9 +2757,9 @@ class PluginRefreshW(QDialog):
                 self.ui.label_posix32.setVisible(False)
 
         if hasNative:
-            self.ui.ico_native.setPixmap(getIcon("dialog-ok-apply").pixmap(16, 16))
+            self.ui.ico_native.setPixmap(self.fIconYes)
         else:
-            self.ui.ico_native.setPixmap(getIcon("dialog-error").pixmap(16, 16))
+            self.ui.ico_native.setPixmap(self.fIconNo)
             self.ui.ch_native.setChecked(False)
             self.ui.ch_native.setEnabled(False)
             self.ui.ch_gig.setChecked(False)
@@ -2733,10 +2779,20 @@ class PluginRefreshW(QDialog):
                 self.ui.ch_vst.setEnabled(False)
                 self.ui.b_start.setEnabled(False)
 
+        # -------------------------------------------------------------
+        # Load settings
+
+        self.loadSettings()
+
+        # -------------------------------------------------------------
+        # Set-up connections
+
         self.connect(self.ui.b_start, SIGNAL("clicked()"), SLOT("slot_start()"))
         self.connect(self.ui.b_skip, SIGNAL("clicked()"), SLOT("slot_skip()"))
         self.connect(self.fThread, SIGNAL("pluginLook(int, QString)"), SLOT("slot_handlePluginLook(int, QString)"))
         self.connect(self.fThread, SIGNAL("finished()"), SLOT("slot_handlePluginThreadFinished()"))
+
+        # -------------------------------------------------------------
 
     @pyqtSlot()
     def slot_start(self):
@@ -2805,11 +2861,11 @@ class PluginRefreshW(QDialog):
         settings.setValue("PluginDatabase/SearchWin64", self.ui.ch_win64.isChecked())
 
     def closeEvent(self, event):
+        self.saveSettings()
+
         if self.fThread.isRunning():
             self.fThread.terminate()
             self.fThread.wait()
-
-        self.saveSettings()
 
         if self.fThread.somethingChanged():
             self.accept()
@@ -2831,9 +2887,15 @@ class PluginDatabaseW(QDialog):
         self.ui = ui_carla_database.Ui_PluginDatabaseW()
         self.ui.setupUi(self)
 
+        # -------------------------------------------------------------
+        # Internal stuff
+
         self.fLastTableIndex = 0
         self.fRetPlugin  = None
         self.fRealParent = parent
+
+        # -------------------------------------------------------------
+        # Set-up GUI
 
         self.ui.b_add.setEnabled(False)
 
@@ -2846,15 +2908,21 @@ class PluginDatabaseW(QDialog):
             self.ui.ch_bridged_wine.setChecked(False)
             self.ui.ch_bridged_wine.setEnabled(False)
 
+        # -------------------------------------------------------------
+        # Load settings
+
         self.loadSettings()
+
+        # -------------------------------------------------------------
+        # Set-up connections
 
         self.connect(self.ui.b_add, SIGNAL("clicked()"), SLOT("slot_addPlugin()"))
         self.connect(self.ui.b_refresh, SIGNAL("clicked()"), SLOT("slot_refreshPlugins()"))
         self.connect(self.ui.tb_filters, SIGNAL("clicked()"), SLOT("slot_maybeShowFilters()"))
+        self.connect(self.ui.lineEdit, SIGNAL("textChanged(QString)"), SLOT("slot_checkFilters()"))
         self.connect(self.ui.tableWidget, SIGNAL("currentCellChanged(int, int, int, int)"), SLOT("slot_checkPlugin(int)"))
         self.connect(self.ui.tableWidget, SIGNAL("cellDoubleClicked(int, int)"), SLOT("slot_addPlugin()"))
 
-        self.connect(self.ui.lineEdit, SIGNAL("textChanged(QString)"), SLOT("slot_checkFilters()"))
         self.connect(self.ui.ch_effects, SIGNAL("clicked()"), SLOT("slot_checkFilters()"))
         self.connect(self.ui.ch_instruments, SIGNAL("clicked()"), SLOT("slot_checkFilters()"))
         self.connect(self.ui.ch_midi, SIGNAL("clicked()"), SLOT("slot_checkFilters()"))
@@ -2870,6 +2938,8 @@ class PluginDatabaseW(QDialog):
         self.connect(self.ui.ch_bridged_wine, SIGNAL("clicked()"), SLOT("slot_checkFilters()"))
         self.connect(self.ui.ch_gui, SIGNAL("clicked()"), SLOT("slot_checkFilters()"))
         self.connect(self.ui.ch_stereo, SIGNAL("clicked()"), SLOT("slot_checkFilters()"))
+
+        # -------------------------------------------------------------
 
     @pyqtSlot()
     def slot_addPlugin(self):
@@ -2897,7 +2967,7 @@ class PluginDatabaseW(QDialog):
             self._reAddPlugins()
 
             if self.fRealParent:
-                self.fRealParent.loadRDFs()
+                self.fRealParent.loadRDFsNeeded()
 
     def _checkFilters(self):
         text = self.ui.lineEdit.text().lower()
@@ -2995,6 +3065,53 @@ class PluginDatabaseW(QDialog):
     def _showFilters(self, yesNo):
         self.ui.tb_filters.setArrowType(Qt.UpArrow if yesNo else Qt.DownArrow)
         self.ui.frame.setVisible(yesNo)
+
+    def _addPluginToTable(self, plugin, ptype):
+        index = self.fLastTableIndex
+
+        if plugin['build'] == BINARY_NATIVE:
+            bridgeText = self.tr("No")
+
+        else:
+            if LINUX or MACOS:
+                if plugin['build'] == BINARY_WIN32:
+                    typeText = "32bit"
+                elif plugin['build'] == BINARY_WIN64:
+                    typeText = "64bit"
+                else:
+                    typeText = self.tr("Unknown")
+            else:
+                if plugin['build'] == BINARY_POSIX32:
+                    typeText = "32bit"
+                elif plugin['build'] == BINARY_POSIX64:
+                    typeText = "64bit"
+                elif plugin['build'] == BINARY_WIN32:
+                    typeText = "Windows 32bit"
+                elif plugin['build'] == BINARY_WIN64:
+                    typeText = "Windows 64bit"
+                else:
+                    typeText = self.tr("Unknown")
+
+            bridgeText = self.tr("Yes (%s)" % typeText)
+
+        self.ui.tableWidget.insertRow(index)
+        self.ui.tableWidget.setItem(index, 0, QTableWidgetItem(str(plugin['name'])))
+        self.ui.tableWidget.setItem(index, 1, QTableWidgetItem(str(plugin['label'])))
+        self.ui.tableWidget.setItem(index, 2, QTableWidgetItem(str(plugin['maker'])))
+        self.ui.tableWidget.setItem(index, 3, QTableWidgetItem(str(plugin['uniqueId'])))
+        self.ui.tableWidget.setItem(index, 4, QTableWidgetItem(str(plugin['audio.ins'])))
+        self.ui.tableWidget.setItem(index, 5, QTableWidgetItem(str(plugin['audio.outs'])))
+        self.ui.tableWidget.setItem(index, 6, QTableWidgetItem(str(plugin['parameters.ins'])))
+        self.ui.tableWidget.setItem(index, 7, QTableWidgetItem(str(plugin['parameters.outs'])))
+        self.ui.tableWidget.setItem(index, 8, QTableWidgetItem(str(plugin['programs.total'])))
+        self.ui.tableWidget.setItem(index, 9, QTableWidgetItem(self.tr("Yes") if (plugin['hints'] & PLUGIN_HAS_GUI) else self.tr("No")))
+        self.ui.tableWidget.setItem(index, 10, QTableWidgetItem(self.tr("Yes") if (plugin['hints'] & PLUGIN_IS_SYNTH) else self.tr("No")))
+        self.ui.tableWidget.setItem(index, 11, QTableWidgetItem(bridgeText))
+        self.ui.tableWidget.setItem(index, 12, QTableWidgetItem(ptype))
+        self.ui.tableWidget.setItem(index, 13, QTableWidgetItem(str(plugin['binary'])))
+        self.ui.tableWidget.item(index, 0).setData(Qt.UserRole, plugin)
+
+        self.fLastTableIndex += 1
 
     def _reAddPlugins(self):
         settingsDB = QSettings("falkTX", "CarlaPlugins")
@@ -3128,53 +3245,6 @@ class PluginDatabaseW(QDialog):
         self.ui.label.setText(self.tr("Have %i Internal, %i LADSPA, %i DSSI, %i LV2, %i VST and %i Sound Kits" % (internalCount, ladspaCount, dssiCount, lv2Count, vstCount, kitCount)))
 
         self._checkFilters()
-
-    def _addPluginToTable(self, plugin, ptype):
-        index = self.fLastTableIndex
-
-        if plugin['build'] == BINARY_NATIVE:
-            bridgeText = self.tr("No")
-
-        else:
-            if LINUX or MACOS:
-                if plugin['build'] == BINARY_WIN32:
-                    typeText = "32bit"
-                elif plugin['build'] == BINARY_WIN64:
-                    typeText = "64bit"
-                else:
-                    typeText = self.tr("Unknown")
-            else:
-                if plugin['build'] == BINARY_POSIX32:
-                    typeText = "32bit"
-                elif plugin['build'] == BINARY_POSIX64:
-                    typeText = "64bit"
-                elif plugin['build'] == BINARY_WIN32:
-                    typeText = "Windows 32bit"
-                elif plugin['build'] == BINARY_WIN64:
-                    typeText = "Windows 64bit"
-                else:
-                    typeText = self.tr("Unknown")
-
-            bridgeText = self.tr("Yes (%s)" % typeText)
-
-        self.ui.tableWidget.insertRow(index)
-        self.ui.tableWidget.setItem(index, 0, QTableWidgetItem(str(plugin['name'])))
-        self.ui.tableWidget.setItem(index, 1, QTableWidgetItem(str(plugin['label'])))
-        self.ui.tableWidget.setItem(index, 2, QTableWidgetItem(str(plugin['maker'])))
-        self.ui.tableWidget.setItem(index, 3, QTableWidgetItem(str(plugin['uniqueId'])))
-        self.ui.tableWidget.setItem(index, 4, QTableWidgetItem(str(plugin['audio.ins'])))
-        self.ui.tableWidget.setItem(index, 5, QTableWidgetItem(str(plugin['audio.outs'])))
-        self.ui.tableWidget.setItem(index, 6, QTableWidgetItem(str(plugin['parameters.ins'])))
-        self.ui.tableWidget.setItem(index, 7, QTableWidgetItem(str(plugin['parameters.outs'])))
-        self.ui.tableWidget.setItem(index, 8, QTableWidgetItem(str(plugin['programs.total'])))
-        self.ui.tableWidget.setItem(index, 9, QTableWidgetItem(self.tr("Yes") if (plugin['hints'] & PLUGIN_HAS_GUI) else self.tr("No")))
-        self.ui.tableWidget.setItem(index, 10, QTableWidgetItem(self.tr("Yes") if (plugin['hints'] & PLUGIN_IS_SYNTH) else self.tr("No")))
-        self.ui.tableWidget.setItem(index, 11, QTableWidgetItem(bridgeText))
-        self.ui.tableWidget.setItem(index, 12, QTableWidgetItem(ptype))
-        self.ui.tableWidget.setItem(index, 13, QTableWidgetItem(str(plugin['binary'])))
-        self.ui.tableWidget.item(self.fLastTableIndex, 0).setData(Qt.UserRole, plugin)
-
-        self.fLastTableIndex += 1
 
     def loadSettings(self):
         settings = QSettings()
