@@ -367,9 +367,9 @@ const char* carla_get_supported_file_types()
 
         // Files provided by internal plugins
 #ifdef WANT_AUDIOFILE
-        retText += "*.aiff;*.flac;*.oga;*.ogg;*.w64;*.wav;";
+        retText += ";*.aiff;*.flac;*.oga;*.ogg;*.w64;*.wav";
 # ifdef HAVE_FFMPEG
-        retText += "*.3g2;*.3gp;*.aac;*.ac3;*.amr;*.ape;*.mp2;*.mp3;*.mpc;*.wma;";
+        retText += ";*.3g2;*.3gp;*.aac;*.ac3;*.amr;*.ape;*.mp2;*.mp3;*.mpc;*.wma";
 # endif
 #endif
 #ifdef WANT_MIDIFILE
