@@ -968,13 +968,6 @@ class CarlaMainW(QMainWindow):
         self.fPluginCount = 0
         self.fPluginList  = []
 
-        if Carla.processMode == PROCESS_MODE_CONTINUOUS_RACK:
-            maxCount = MAX_RACK_PLUGINS
-        elif Carla.processMode == PROCESS_MODE_PATCHBAY:
-            maxCount = MAX_PATCHBAY_PLUGINS
-        else:
-            maxCount = MAX_DEFAULT_PLUGINS
-
         if transportMode == TRANSPORT_MODE_JACK and audioDriver != "JACK":
             transportMode = TRANSPORT_MODE_INTERNAL
 
