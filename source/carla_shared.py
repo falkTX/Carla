@@ -2693,7 +2693,7 @@ class PluginRefreshW(QDialog):
         if carla_discovery_posix32 and not WINDOWS:
             self.ui.ico_posix32.setPixmap(self.fIconYes)
         else:
-            self.ui.ico_posix32.setPixmap()
+            self.ui.ico_posix32.setPixmap(self.fIconNo)
             self.ui.ch_posix32.setChecked(False)
             self.ui.ch_posix32.setEnabled(False)
 
