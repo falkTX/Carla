@@ -2124,6 +2124,7 @@ public:
     CarlaNSM()
         : fServerThread(nullptr),
           fReplyAddr(nullptr),
+          fIsReady(false),
           fIsOpened(false),
           fIsSaved(false)
     {
@@ -2171,6 +2172,11 @@ public:
 #endif
 
         lo_address_free(addr);
+    }
+
+    void ready()
+    {
+        fIsReady = true;
     }
 
     void replyOpen()
@@ -2233,9 +2239,11 @@ protected:
         std::strcat(data, ":");
         std::strcat(data, clientId);
 
-        // wait max 6 secs for engine to start
-        for (int i=0; i < 60 && standalone.engine == nullptr; ++i)
+        // wait max 6 secs for host to init
+        for (int i=0; i < 60 && ! fIsReady; ++i)
             carla_msleep(100);
+
+        fIsOpened = false;
 
         standalone.callback(nullptr, CarlaBackend::CALLBACK_NSM_OPEN, 0, 0, 0, 0.0f, data);
 
@@ -2270,10 +2278,12 @@ protected:
         if (fReplyAddr == nullptr)
             return 1;
 
+        fIsSaved = false;
+
         standalone.callback(nullptr, CarlaBackend::CALLBACK_NSM_SAVE, 0, 0, 0, 0.0f, nullptr);
 
         // wait max 10 secs to save
-        for (int i=0; i < 100 && ! fIsOpened; ++i)
+        for (int i=0; i < 100 && ! fIsSaved; ++i)
             carla_msleep(100);
 
 #ifndef BUILD_ANSI_TEST
@@ -2297,6 +2307,7 @@ private:
     lo_server_thread fServerThread;
     lo_address       fReplyAddr;
 
+    bool fIsReady; // used to startup, only once
     bool fIsOpened;
     bool fIsSaved;
 
@@ -2330,6 +2341,11 @@ static CarlaNSM gCarlaNSM;
 void carla_nsm_announce(const char* url, const char* appName, int pid)
 {
     gCarlaNSM.announce(url, appName, pid);
+}
+
+void carla_nsm_ready()
+{
+    gCarlaNSM.ready();
 }
 
 void carla_nsm_reply_open()

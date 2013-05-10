@@ -695,6 +695,11 @@ CARLA_EXPORT const char* carla_get_host_osc_url_udp();
 CARLA_EXPORT void carla_nsm_announce(const char* url, const char* appName, int pid);
 
 /*!
+ * Ready for handling NSM messages.
+ */
+CARLA_EXPORT void carla_nsm_ready();
+
+/*!
  * Reply to NSM open message.
  * \see CALLBACK_NSM_OPEN
  */

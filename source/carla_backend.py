@@ -639,6 +639,9 @@ class Host(object):
         self.lib.carla_nsm_announce.argtypes = [c_char_p, c_char_p, c_int]
         self.lib.carla_nsm_announce.restype = None
 
+        self.lib.carla_nsm_ready.argtypes = None
+        self.lib.carla_nsm_ready.restype = None
+
         self.lib.carla_nsm_reply_open.argtypes = None
         self.lib.carla_nsm_reply_open.restype = None
 
@@ -897,6 +900,9 @@ class Host(object):
 
     def nsm_announce(self, url, appName_, pid):
         self.lib.carla_nsm_announce(url.encode("utf-8"), appName_.encode("utf-8"), pid)
+
+    def nsm_ready(self):
+        self.lib.carla_nsm_ready()
 
     def nsm_reply_open(self):
         self.lib.carla_nsm_reply_open()

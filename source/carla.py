@@ -891,7 +891,10 @@ class CarlaMainW(QMainWindow):
 
         self.setProperWindowTitle()
 
-        QTimer.singleShot(0, self, SLOT("slot_engineStart()"))
+        if NSM_URL:
+            Carla.host.nsm_ready()
+        else:
+            QTimer.singleShot(0, self, SLOT("slot_engineStart()"))
 
     def startEngine(self):
         # ---------------------------------------------
