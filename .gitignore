@@ -10,6 +10,7 @@
 *.bak
 
 # Binary files
+*.7z
 *.a
 *.o
 *.dll
@@ -63,6 +64,7 @@ carla-discovery-posix32
 carla-discovery-posix64
 
 data/windows/Carla
+data/windows/CarlaControl
 source/tests/ANSI
 source/tests/CarlaString
 source/tests/DGL
