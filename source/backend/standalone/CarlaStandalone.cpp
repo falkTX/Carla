@@ -2233,9 +2233,14 @@ protected:
         std::strcat(data, ":");
         std::strcat(data, clientId);
 
+        // wait max 6 secs for engine to start
+        for (int i=0; i < 60 && standalone.engine == nullptr; i++)
+            carla_msleep(100);
+
         standalone.callback(nullptr, CarlaBackend::CALLBACK_NSM_OPEN, 0, 0, 0, 0.0f, data);
 
-        for (int i=0; i < 30 && ! fIsOpened; i++)
+        // wait max 10 secs to open
+        for (int i=0; i < 100 && ! fIsOpened; i++)
             carla_msleep(100);
 
 #ifndef BUILD_ANSI_TEST
@@ -2267,7 +2272,8 @@ protected:
 
         standalone.callback(nullptr, CarlaBackend::CALLBACK_NSM_SAVE, 0, 0, 0, 0.0f, nullptr);
 
-        for (int i=0; i < 30 && ! fIsSaved; i++)
+        // wait max 10 secs to save
+        for (int i=0; i < 100 && ! fIsOpened; i++)
             carla_msleep(100);
 
 #ifndef BUILD_ANSI_TEST

@@ -92,6 +92,8 @@ else:
 BUFFER_SIZES = (16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192)
 SAMPLE_RATES = (22050, 32000, 44100, 48000, 88200, 96000, 176400, 192000)
 
+NSM_URL = os.getenv("NSM_URL")
+
 # ------------------------------------------------------------------------------------------------------------
 # Global Variables
 
@@ -889,12 +891,7 @@ class CarlaMainW(QMainWindow):
 
         self.setProperWindowTitle()
 
-        NSM_URL = os.getenv("NSM_URL")
-
-        if NSM_URL:
-            Carla.host.nsm_announce(NSM_URL, appName, os.getpid())
-        else:
-            QTimer.singleShot(0, self, SLOT("slot_engineStart()"))
+        QTimer.singleShot(0, self, SLOT("slot_engineStart()"))
 
     def startEngine(self):
         # ---------------------------------------------
@@ -2311,7 +2308,11 @@ if __name__ == '__main__':
     # Init backend
     Carla.host = Host(libName)
     Carla.host.set_engine_callback(engineCallback)
-    Carla.host.set_engine_option(OPTION_PROCESS_NAME, 0, "carla")
+
+    if NSM_URL:
+        Carla.host.nsm_announce(NSM_URL, appName, os.getpid())
+    else:
+        Carla.host.set_engine_option(OPTION_PROCESS_NAME, 0, "carla")
 
     # Change dir to where DLL and resources are
     os.chdir(libPath)
@@ -2375,7 +2376,7 @@ if __name__ == '__main__':
     Carla.gui.show()
 
     # Load project file if set
-    if projectFilename and not os.getenv("NSM_URL"):
+    if projectFilename and not NSM_URL:
         Carla.gui.loadProjectLater(projectFilename)
 
     # App-Loop
