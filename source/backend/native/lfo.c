@@ -21,6 +21,10 @@
 #include <math.h>
 #include <stdlib.h>
 
+#ifdef __MINGW32__
+# define uint unsigned int
+#endif
+
 typedef enum _LfoParams {
     PARAM_MODE       = 0,
     PARAM_SPEED      = 1,

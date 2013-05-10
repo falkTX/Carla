@@ -56,12 +56,18 @@ cp ./source/carla.py ./source/carla.pyw
 $CXFREEZE --target-dir=".\\data\\windows\\Carla" ".\\source\\carla.pyw"
 rm -f ./source/carla.pyw
 
+rm -rf ./data/windows/CarlaControl
+cp ./source/carla_control.py ./source/carla_control.pyw
+$CXFREEZE --target-dir=".\\data\\windows\\CarlaControl" ".\\source\\carla_control.pyw"
+rm -f ./source/carla_control.pyw
+
 cd data/windows
 mkdir Carla/backend
 mkdir Carla/bridges
 mkdir Carla/discovery
 cp ../../source/backend/*.dll   Carla/backend/
 cp ../../source/discovery/*.exe Carla/discovery/
+mv CarlaControl/carla_control.exe CarlaControl/CarlaControl.exe
 
 cp $WINEPREFIX/drive_c/windows/syswow64/python33.dll Carla/
 cp $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt4/QtCore4.dll   Carla/
@@ -72,22 +78,33 @@ cp $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt4/QtXml4.dll    Carla/
 cp -r $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt4/plugins/imageformats/ Carla/
 cp -r $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt4/plugins/iconengines/ Carla/
 
+cp $WINEPREFIX/drive_c/windows/syswow64/python33.dll CarlaControl/
+cp $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt4/QtCore4.dll   CarlaControl/
+cp $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt4/QtGui4.dll    CarlaControl/
+cp -r $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt4/plugins/imageformats/ CarlaControl/
+cp -r $WINEPREFIX/drive_c/Python33/Lib/site-packages/PyQt4/plugins/iconengines/ CarlaControl/
+
 rm -f pkg-config
 
 # Build unzipfx
 make -C unzipfx-carla -f Makefile.win32
+make -C unzipfx-carla-control -f Makefile.win32
 
 # Create static build
-rm -f Carla.zip
+rm -f Carla.zip CarlaControl.zip
 zip -r -9 Carla.zip Carla
+zip -r -9 CarlaControl.zip CarlaControl
 
-rm -f Carla.exe
+rm -f Carla.exe CarlaControl.exe
 cat unzipfx-carla/unzipfx2cat.exe Carla.zip > Carla.exe
+cat unzipfx-carla-control/unzipfx2cat.exe CarlaControl.zip > CarlaControl.exe
 chmod +x Carla.exe
+chmod +x CarlaControl.exe
 
 # Cleanup
 make -C unzipfx-carla -f Makefile.win32 clean
-rm -f Carla.zip
+make -C unzipfx-carla-control -f Makefile.win32 clean
+rm -f Carla.zip CarlaControl.zip
 rm -f unzipfx-*/*.exe
 
 # Testing:

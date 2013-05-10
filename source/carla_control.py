@@ -978,7 +978,7 @@ class CarlaControlW(QMainWindow):
         if pwidget is None:
             return
 
-        pwidget.sendNoteOn(note)
+        pwidget.sendNoteOn(channel, note)
 
     @pyqtSlot(int, int, int)
     def slot_handleNoteOff(self, pluginId, channel, note):
@@ -989,7 +989,7 @@ class CarlaControlW(QMainWindow):
         if pwidget is None:
             return
 
-        pwidget.sendNoteOff(note)
+        pwidget.sendNoteOff(channel, note)
 
     @pyqtSlot(int, float, float, float, float)
     def slot_handleSetPeaks(self, pluginId, in1, in2, out1, out2):
