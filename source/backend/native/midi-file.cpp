@@ -73,7 +73,7 @@ protected:
             midiEvent.data[3] = 0;
             midiEvent.size    = 2;
 
-            for (int i=0; i < MAX_MIDI_CHANNELS; i++)
+            for (int i=0; i < MAX_MIDI_CHANNELS; ++i)
             {
                 midiEvent.data[0] += i;
                 PluginDescriptorClass::writeMidiEvent(&midiEvent);

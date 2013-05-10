@@ -571,7 +571,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
         rdfDescriptor->PortCount = lilvPlugin.get_num_ports();
         rdfDescriptor->Ports = new LV2_RDF_Port[rdfDescriptor->PortCount];
 
-        for (uint32_t j = 0; j < rdfDescriptor->PortCount; j++)
+        for (uint32_t j = 0; j < rdfDescriptor->PortCount; ++j)
         {
             Lilv::Port lilvPort(lilvPlugin.get_port_by_index(j));
             LV2_RDF_Port* const rdfPort = &rdfDescriptor->Ports[j];

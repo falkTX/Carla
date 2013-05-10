@@ -87,7 +87,7 @@ void DigitalPeakMeter::setChannels(int channels)
         fChannelsData  = new float[channels];
         fLastValueData = new float[channels];
 
-        for (int i=0; i < channels; i++)
+        for (int i=0; i < channels; ++i)
         {
             fChannelsData[i]  = 0.0f;
             fLastValueData[i] = 0.0f;
@@ -212,7 +212,7 @@ void DigitalPeakMeter::paintEvent(QPaintEvent* event)
     painter.setPen(fColorBackground);
     painter.setBrush(fGradientMeter);
 
-    for (int i=0; i < fChannels; i++)
+    for (int i=0; i < fChannels; ++i)
     {
         float value, level = fChannelsData[i];
 

@@ -261,7 +261,7 @@ public:
         if (isOscControlRegistered())
             return 1;
 
-        for (int32_t i=0; i < vstEvents->numEvents; i++)
+        for (int32_t i=0; i < vstEvents->numEvents; ++i)
         {
             if (! vstEvents->events[i])
                 break;

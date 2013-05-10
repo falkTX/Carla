@@ -34,7 +34,7 @@ App::~App()
 
 void App::idle()
 {
-    for (std::list<Window*>::iterator it = kPrivate->fWindows.begin(); it != kPrivate->fWindows.end(); it++)
+    for (std::list<Window*>::iterator it = kPrivate->fWindows.begin(); it != kPrivate->fWindows.end(); ++it)
     {
         Window* window = *it;
         window->idle();

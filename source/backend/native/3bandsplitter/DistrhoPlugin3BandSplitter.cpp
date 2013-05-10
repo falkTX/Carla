@@ -235,7 +235,7 @@ void DistrhoPlugin3BandSplitter::d_run(float** inputs, float** outputs, uint32_t
     float* out5 = outputs[4];
     float* out6 = outputs[5];
 
-    for (uint32_t i=0; i < frames; i++)
+    for (uint32_t i=0; i < frames; ++i)
     {
         tmp1LP = a0LP * in1[i] - b1LP * tmp1LP + cfDC_ADD;
         tmp2LP = a0LP * in2[i] - b1LP * tmp2LP + cfDC_ADD;

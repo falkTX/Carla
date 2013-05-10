@@ -114,7 +114,7 @@ int main()
 
         carla_zeroMem(data2, sizeof(float)*500);
 
-        for (int i=0; i < 500; i++)
+        for (int i=0; i < 500; ++i)
         {
             assert(data0[i] == 0.0f);
             assert(data1[i] == 6.41f);

@@ -418,7 +418,7 @@ void do_ladspa_check(void* const libHandle, const bool init)
         if (LADSPA_IS_HARD_RT_CAPABLE(descriptor->Properties))
             hints |= PLUGIN_IS_RTSAFE;
 
-        for (unsigned long j=0; j < descriptor->PortCount; j++)
+        for (unsigned long j=0; j < descriptor->PortCount; ++j)
         {
             CARLA_ASSERT(descriptor->PortNames[j] != nullptr);
             const LADSPA_PortDescriptor portDescriptor = descriptor->PortDescriptors[j];
@@ -471,7 +471,7 @@ void do_ladspa_check(void* const libHandle, const bool init)
             LADSPA_Data bufferParams[parametersTotal];
             LADSPA_Data min, max, def;
 
-            for (unsigned long j=0, iA=0, iC=0; j < descriptor->PortCount; j++)
+            for (unsigned long j=0, iA=0, iC=0; j < descriptor->PortCount; ++j)
             {
                 const LADSPA_PortDescriptor portDescriptor = descriptor->PortDescriptors[j];
                 const LADSPA_PortRangeHint  portRangeHints = descriptor->PortRangeHints[j];
@@ -637,7 +637,7 @@ void do_dssi_check(void* const libHandle, const bool init)
         if (LADSPA_IS_HARD_RT_CAPABLE(ldescriptor->Properties))
             hints |= PLUGIN_IS_RTSAFE;
 
-        for (unsigned long j=0; j < ldescriptor->PortCount; j++)
+        for (unsigned long j=0; j < ldescriptor->PortCount; ++j)
         {
             CARLA_ASSERT(ldescriptor->PortNames[j] != nullptr);
             const LADSPA_PortDescriptor portDescriptor = ldescriptor->PortDescriptors[j];
@@ -702,7 +702,7 @@ void do_dssi_check(void* const libHandle, const bool init)
             LADSPA_Data bufferParams[parametersTotal];
             LADSPA_Data min, max, def;
 
-            for (unsigned long j=0, iA=0, iC=0; j < ldescriptor->PortCount; j++)
+            for (unsigned long j=0, iA=0, iC=0; j < ldescriptor->PortCount; ++j)
             {
                 const LADSPA_PortDescriptor portDescriptor = ldescriptor->PortDescriptors[j];
                 const LADSPA_PortRangeHint  portRangeHints = ldescriptor->PortRangeHints[j];
@@ -876,7 +876,7 @@ void do_lv2_check(const char* const bundle, const bool init)
     }
 
     // Get & check every plugin-instance
-    for (int i=0; i < URIs.count(); i++)
+    for (int i=0; i < URIs.count(); ++i)
     {
         const LV2_RDF_Descriptor* const rdfDescriptor = lv2_rdf_new(URIs.at(i).toUtf8().constData());
         CARLA_ASSERT(rdfDescriptor != nullptr && rdfDescriptor->URI != nullptr);
@@ -917,7 +917,7 @@ void do_lv2_check(const char* const bundle, const bool init)
         {
             bool supported = true;
 
-            for (uint32_t j=0; j < rdfDescriptor->PortCount && supported; j++)
+            for (uint32_t j=0; j < rdfDescriptor->PortCount && supported; ++j)
             {
                 const LV2_RDF_Port* const rdfPort = &rdfDescriptor->Ports[j];
 
@@ -933,7 +933,7 @@ void do_lv2_check(const char* const bundle, const bool init)
                 }
             }
 
-            for (uint32_t j=0; j < rdfDescriptor->FeatureCount && supported; j++)
+            for (uint32_t j=0; j < rdfDescriptor->FeatureCount && supported; ++j)
             {
                 const LV2_RDF_Feature* const rdfFeature = &rdfDescriptor->Features[j];
 
@@ -968,7 +968,7 @@ void do_lv2_check(const char* const bundle, const bool init)
         int parametersTotal = 0;
         int programsTotal = rdfDescriptor->PresetCount;
 
-        for (uint32_t j=0; j < rdfDescriptor->FeatureCount; j++)
+        for (uint32_t j=0; j < rdfDescriptor->FeatureCount; ++j)
         {
             const LV2_RDF_Feature* const rdfFeature = &rdfDescriptor->Features[j];
 
@@ -976,7 +976,7 @@ void do_lv2_check(const char* const bundle, const bool init)
                 hints |= PLUGIN_IS_RTSAFE;
         }
 
-        for (uint32_t j=0; j < rdfDescriptor->PortCount; j++)
+        for (uint32_t j=0; j < rdfDescriptor->PortCount; ++j)
         {
             const LV2_RDF_Port* const rdfPort = &rdfDescriptor->Ports[j];
 
@@ -1192,14 +1192,14 @@ void do_vst_check(void* const libHandle, const bool init)
             }
 
             float* bufferAudioIn[audioIns];
-            for (int j=0; j < audioIns; j++)
+            for (int j=0; j < audioIns; ++j)
             {
                 bufferAudioIn[j] = new float[kBufferSize];
                 carla_zeroFloat(bufferAudioIn[j], kBufferSize);
             }
 
             float* bufferAudioOut[audioOuts];
-            for (int j=0; j < audioOuts; j++)
+            for (int j=0; j < audioOuts; ++j)
             {
                 bufferAudioOut[j] = new float[kBufferSize];
                 carla_zeroFloat(bufferAudioOut[j], kBufferSize);
@@ -1268,9 +1268,9 @@ void do_vst_check(void* const libHandle, const bool init)
             if (gVstNeedsIdle)
                 effect->dispatcher(effect, effIdle, 0, 0, nullptr, 0.0f);
 
-            for (int j=0; j < audioIns; j++)
+            for (int j=0; j < audioIns; ++j)
                 delete[] bufferAudioIn[j];
-            for (int j=0; j < audioOuts; j++)
+            for (int j=0; j < audioOuts; ++j)
                 delete[] bufferAudioOut[j];
         }
 

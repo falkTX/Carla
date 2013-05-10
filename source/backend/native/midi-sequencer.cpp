@@ -144,7 +144,7 @@ protected:
         {
             RawMidiEvent rawMidiEvent;
 
-            for (uint32_t i=0; i < midiEventCount; i++)
+            for (uint32_t i=0; i < midiEventCount; ++i)
             {
                 const MidiEvent* const midiEvent = &midiEvents[i];
 

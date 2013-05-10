@@ -110,7 +110,7 @@ void run5Tests()
     assert(postRtEvents.dataPendingRT.isEmpty());
 
     // Handle events now
-    for (unsigned short i=0; i < k; i++)
+    for (unsigned short i=0; i < k; ++i)
     {
         const MyData& my = allMyData[i];
 

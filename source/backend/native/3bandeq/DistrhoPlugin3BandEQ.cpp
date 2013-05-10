@@ -231,7 +231,7 @@ void DistrhoPlugin3BandEQ::d_run(float** inputs, float** outputs, uint32_t frame
     float* out1 = outputs[0];
     float* out2 = outputs[1];
 
-    for (uint32_t i=0; i < frames; i++)
+    for (uint32_t i=0; i < frames; ++i)
     {
         tmp1LP = a0LP * in1[i] - b1LP * tmp1LP + cfDC_ADD;
         tmp2LP = a0LP * in2[i] - b1LP * tmp2LP + cfDC_ADD;

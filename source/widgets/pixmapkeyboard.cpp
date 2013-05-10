@@ -350,7 +350,7 @@ void PixmapKeyboard::paintEvent(QPaintEvent* event)
     // -------------------------------------------------------------
     // Paint clean keys (as background)
 
-    for (int octave=0; octave < fOctaves; octave++)
+    for (int octave=0; octave < fOctaves; ++octave)
     {
         QRectF target;
 
@@ -370,7 +370,7 @@ void PixmapKeyboard::paintEvent(QPaintEvent* event)
 
     bool paintedWhite = false;
 
-    for (int i=0, count=fEnabledKeys.count(); i < count; i++)
+    for (int i=0, count=fEnabledKeys.count(); i < count; ++i)
     {
         int octave, note = fEnabledKeys[i];
         const QRectF& pos(_getRectFromMidiNote(note));
@@ -428,7 +428,7 @@ void PixmapKeyboard::paintEvent(QPaintEvent* event)
 
     if (paintedWhite)
     {
-        for (int octave=0; octave < fOctaves; octave++)
+        for (int octave=0; octave < fOctaves; ++octave)
         {
             foreach (int note, kBlackNotes)
             {
@@ -456,7 +456,7 @@ void PixmapKeyboard::paintEvent(QPaintEvent* event)
     // -------------------------------------------------------------
     // Paint (black) pressed keys
 
-    for (int i=0, count=fEnabledKeys.count(); i < count; i++)
+    for (int i=0, count=fEnabledKeys.count(); i < count; ++i)
     {
         int octave, note = fEnabledKeys[i];
         const QRectF& pos(_getRectFromMidiNote(note));
@@ -512,7 +512,7 @@ void PixmapKeyboard::paintEvent(QPaintEvent* event)
     painter.setFont(fFont);
     painter.setPen(Qt::black);
 
-    for (int i=0; i < fOctaves; i++)
+    for (int i=0; i < fOctaves; ++i)
     {
         if (fPixmapMode == HORIZONTAL)
             painter.drawText(i * 144, 48, 18, 18, Qt::AlignCenter, QString("C%1").arg(i + 2));

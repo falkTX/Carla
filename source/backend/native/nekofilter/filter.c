@@ -171,7 +171,7 @@ filter_create(
   filter_ptr->fade = 0;
   filter_ptr->gain = 1.0;
 
-  for (j = 0; j < bands_count; j++)
+  for (j = 0; j < bands_count; ++j)
   {
     param_sect_init(filter_ptr->sect + j);
   }
@@ -246,7 +246,7 @@ filter_run(
 
   fgain = exp2ap(0.1661 * *filter_ptr->global_parameters[GLOBAL_PARAMETER_GAIN]);
 
-  for (j = 0; j < bands_count; j++)
+  for (j = 0; j < bands_count; ++j)
   {
     t = *filter_ptr->band_parameters[BAND_PARAMETERS_COUNT * j + BAND_PARAMETER_FREQUENCY] / filter_ptr->sample_rate;
     if (t < 0.0002)
@@ -289,13 +289,13 @@ filter_run(
 
     filter_ptr->gain = t;
     d = (t - g) / k;
-    for (i = 0; i < k; i++)
+    for (i = 0; i < k; ++i)
     {
       g += d;
       sig[i] = g * input_buffer[i];
     }
 
-    for (j = 0; j < bands_count; j++)
+    for (j = 0; j < bands_count; ++j)
     {
       param_sect_proc(filter_ptr->sect + j, k, sig, sfreq[j], sband[j], sgain[j]);
     }
@@ -336,7 +336,7 @@ filter_run(
     else
     {
       d = (j / 16.0 - g) / k;
-      for (i = 0; i < k; i++)
+      for (i = 0; i < k; ++i)
       {
         g += d;
         output_buffer[i] = g * sig[i] + (1 - g) * input_buffer[i];

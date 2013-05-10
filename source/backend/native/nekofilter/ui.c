@@ -124,7 +124,7 @@ wait_child(
     return false;
   }
 
-  for (i = 0; i < WAIT_ZOMBIE_TIMEOUT / WAIT_STEP; i++)
+  for (i = 0; i < WAIT_ZOMBIE_TIMEOUT / WAIT_STEP; ++i)
   {
     //printf("waitpid(%d): %d\n", (int)pid, i);
 

@@ -102,7 +102,7 @@ public:
             fParameterChecks = new bool[paramCount];
             fParameterValues = new float[paramCount];
 
-            for (uint32_t i=0; i < paramCount; i++)
+            for (uint32_t i=0; i < paramCount; ++i)
             {
                 fParameterChecks[i] = false;
                 fParameterValues[i] = 0.0f;
@@ -139,7 +139,7 @@ public:
         }
 #endif
 
-        for (uint32_t i=0, count = kPlugin->parameterCount(); i < count; i++)
+        for (uint32_t i=0, count = kPlugin->parameterCount(); i < count; ++i)
         {
             if (fParameterChecks[i])
             {
@@ -181,7 +181,7 @@ public:
         fNextProgram = index;
 
         // set previous parameters invalid
-        for (uint32_t i=0, count = kPlugin->parameterCount(); i < count; i++)
+        for (uint32_t i=0, count = kPlugin->parameterCount(); i < count; ++i)
             fParameterChecks[i] = false;
     }
 #endif
@@ -532,7 +532,7 @@ private:
                 fVstUi->setProgramFromPlugin(fCurProgram);
 # endif
 
-            for (uint32_t i=0, count = fPlugin.parameterCount(); i < count; i++)
+            for (uint32_t i=0, count = fPlugin.parameterCount(); i < count; ++i)
                 fVstUi->setParameterValueFromPlugin(i, fPlugin.parameterValue(i));
         }
     }

@@ -98,7 +98,7 @@ public:
 
         lock();
 
-        for (unsigned short i=0; i < MAX_SIZE; i++)
+        for (unsigned short i=0; i < MAX_SIZE; ++i)
         {
             if (data[i].size == 0)
             {

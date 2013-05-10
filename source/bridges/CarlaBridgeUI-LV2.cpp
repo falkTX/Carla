@@ -124,10 +124,10 @@ public:
         m_resizable = true;
 #endif
 
-        for (uint32_t i=0; i < CARLA_URI_MAP_ID_COUNT; i++)
+        for (uint32_t i=0; i < CARLA_URI_MAP_ID_COUNT; ++i)
             customURIDs.push_back(nullptr);
 
-        for (uint32_t i=0; i < lv2_feature_count+1; i++)
+        for (uint32_t i=0; i < lv2_feature_count+1; ++i)
             features[i] = nullptr;
 
         // -----------------------------------------------------------------
@@ -310,13 +310,13 @@ public:
         delete (LV2UI_Port_Map*)features[lv2_feature_id_ui_port_map]->data;
         delete (LV2UI_Resize*)features[lv2_feature_id_ui_resize]->data;
 
-        for (uint32_t i=0; i < lv2_feature_count; i++)
+        for (uint32_t i=0; i < lv2_feature_count; ++i)
         {
             if (features[i])
                 delete features[i];
         }
 
-        for (size_t i=0; i < customURIDs.size(); i++)
+        for (size_t i=0; i < customURIDs.size(); ++i)
         {
             if (customURIDs[i])
                 free((void*)customURIDs[i]);
@@ -347,7 +347,7 @@ public:
         // -----------------------------------------------------------------
         // find requested UI
 
-        for (uint32_t i=0; i < rdf_descriptor->UICount; i++)
+        for (uint32_t i=0; i < rdf_descriptor->UICount; ++i)
         {
             if (std::strcmp(rdf_descriptor->UIs[i].URI, uiURI) == 0)
             {
@@ -398,7 +398,7 @@ public:
         // check if not resizable
 
 #ifndef BRIDGE_LV2_X11
-        for (uint32_t i=0; i < rdf_ui_descriptor->FeatureCount; i++)
+        for (uint32_t i=0; i < rdf_ui_descriptor->FeatureCount; ++i)
         {
             if (std::strcmp(rdf_ui_descriptor->Features[i].URI, LV2_UI__fixedSize) == 0 || std::strcmp(rdf_ui_descriptor->Features[i].URI, LV2_UI__noUserResize) == 0)
             {
@@ -411,7 +411,7 @@ public:
         // -----------------------------------------------------------
         // check for known extensions
 
-        for (uint32_t i=0; descriptor->extension_data && i < rdf_ui_descriptor->ExtensionCount; i++)
+        for (uint32_t i=0; descriptor->extension_data && i < rdf_ui_descriptor->ExtensionCount; ++i)
         {
             if (std::strcmp(rdf_ui_descriptor->Extensions[i], LV2_PROGRAMS__UIInterface) == 0)
             {
@@ -532,7 +532,7 @@ public:
         if (! uri)
             return CARLA_URI_MAP_ID_NULL;
 
-        for (size_t i=0; i < customURIDs.size(); i++)
+        for (size_t i=0; i < customURIDs.size(); ++i)
         {
             if (customURIDs[i] && std::strcmp(customURIDs[i], uri) == 0)
                 return i;
@@ -634,7 +634,7 @@ public:
         if (! symbol)
             return LV2UI_INVALID_PORT_INDEX;
 
-        for (uint32_t i=0; i < rdf_descriptor->PortCount; i++)
+        for (uint32_t i=0; i < rdf_descriptor->PortCount; ++i)
         {
             if (std::strcmp(rdf_descriptor->Ports[i].Symbol, symbol) == 0)
                 return i;

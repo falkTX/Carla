@@ -104,16 +104,16 @@ public:
         if (kPlugin == nullptr)
             return;
 
-        for (uint32_t i=0, count=kData->parameterCount; i < count; i++)
+        for (uint32_t i=0, count=kData->parameterCount; i < count; ++i)
             kPlugin->d_initParameter(i, kData->parameters[i]);
 
 #if DISTRHO_PLUGIN_WANT_PROGRAMS
-        for (uint32_t i=0, count=kData->programCount; i < count; i++)
+        for (uint32_t i=0, count=kData->programCount; i < count; ++i)
             kPlugin->d_initProgramName(i, kData->programNames[i]);
 #endif
 
 #if DISTRHO_PLUGIN_WANT_STATE
-        for (uint32_t i=0, count=kData->stateCount; i < count; i++)
+        for (uint32_t i=0, count=kData->stateCount; i < count; ++i)
             kPlugin->d_initStateKey(i, kData->stateKeys[i]);
 #endif
     }

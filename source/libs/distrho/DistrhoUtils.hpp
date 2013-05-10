@@ -251,7 +251,7 @@ public:
 
     size_t find(const char c)
     {
-        for (size_t i=0; i < bufferLen; i++)
+        for (size_t i=0; i < bufferLen; ++i)
         {
             if (buffer[i] == c)
                 return i;
@@ -264,7 +264,7 @@ public:
     {
         size_t pos = 0;
 
-        for (size_t i=0; i < bufferLen; i++)
+        for (size_t i=0; i < bufferLen; ++i)
         {
             if (buffer[i] == c)
                 pos = i;
@@ -278,7 +278,7 @@ public:
         if (after == '\0')
             return;
 
-        for (size_t i=0; i < bufferLen; i++)
+        for (size_t i=0; i < bufferLen; ++i)
         {
             if (buffer[i] == before)
                 buffer[i] = after;
@@ -292,7 +292,7 @@ public:
         if (n >= bufferLen)
             return;
 
-        for (size_t i=n; i < bufferLen; i++)
+        for (size_t i=n; i < bufferLen; ++i)
             buffer[i] = '\0';
 
         bufferLen = n;
@@ -300,7 +300,7 @@ public:
 
     void toBasic()
     {
-        for (size_t i=0; i < bufferLen; i++)
+        for (size_t i=0; i < bufferLen; ++i)
         {
             if (buffer[i] >= '0' && buffer[i] <= '9')
                 continue;
@@ -319,7 +319,7 @@ public:
     {
         static const char charDiff = 'a' - 'A';
 
-        for (size_t i=0; i < bufferLen; i++)
+        for (size_t i=0; i < bufferLen; ++i)
         {
             if (buffer[i] >= 'A' && buffer[i] <= 'Z')
                 buffer[i] += charDiff;
@@ -330,7 +330,7 @@ public:
     {
         static const char charDiff = 'a' - 'A';
 
-        for (size_t i=0; i < bufferLen; i++)
+        for (size_t i=0; i < bufferLen; ++i)
         {
             if (buffer[i] >= 'a' && buffer[i] <= 'z')
                 buffer[i] -= charDiff;

@@ -137,7 +137,7 @@ void audiofile_read_poll(AudioFileInstance* const handlePtr)
         // lock, and put data asap
         pthread_mutex_lock(&handlePtr->mutex);
 
-        for (; i < handlePtr->pool.size && j < rv; j++)
+        for (; i < handlePtr->pool.size && j < rv; ++j)
         {
             if (handlePtr->fileNfo.channels == 1)
             {
@@ -163,7 +163,7 @@ void audiofile_read_poll(AudioFileInstance* const handlePtr)
         {
             while (i < handlePtr->pool.size)
             {
-                for (j=0; i < handlePtr->pool.size && j < rv; j++)
+                for (j=0; i < handlePtr->pool.size && j < rv; ++j)
                 {
                     if (handlePtr->fileNfo.channels == 1)
                     {
@@ -188,7 +188,7 @@ void audiofile_read_poll(AudioFileInstance* const handlePtr)
         }
         else
         {
-            for (; i < handlePtr->pool.size; i++)
+            for (; i < handlePtr->pool.size; ++i)
             {
                 handlePtr->pool.buffer[0][i] = 0.0f;
                 handlePtr->pool.buffer[1][i] = 0.0f;
@@ -315,7 +315,7 @@ static PluginHandle audiofile_instantiate(const PluginDescriptor* _this_, HostDe
     ad_clear_nfo(&handlePtr->fileNfo);
     pthread_mutex_init(&handlePtr->mutex, NULL);
 
-    for (uint32_t i=0; i < PROGRAM_COUNT; i++)
+    for (uint32_t i=0; i < PROGRAM_COUNT; ++i)
     {
         handlePtr->programs.fullNames[i]  = NULL;
         handlePtr->programs.shortNames[i] = NULL;
@@ -375,7 +375,7 @@ static void audiofile_cleanup(PluginHandle handle)
     if (handlePtr->pool.buffer[1] != NULL)
         free(handlePtr->pool.buffer[1]);
 
-    for (uint32_t i=0; i < PROGRAM_COUNT; i++)
+    for (uint32_t i=0; i < PROGRAM_COUNT; ++i)
     {
         if (handlePtr->programs.fullNames[i] != NULL)
             free((void*)handlePtr->programs.fullNames[i]);
@@ -608,7 +608,7 @@ static void audiofile_process(PluginHandle handle, float** inBuffer, float** out
     int64_t poolFrame = (int64_t)timePos->frame - handlePtr->pool.startFrame;
     int64_t poolSize  = handlePtr->pool.size;
 
-    for (uint32_t i=0; i < frames; i++, poolFrame++)
+    for (uint32_t i=0; i < frames; ++i, ++poolFrame)
     {
         if (poolFrame >= 0 && poolFrame < poolSize)
         {

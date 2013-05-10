@@ -255,7 +255,7 @@ protected:
     void activate() override
     {
         // broken
-        //for (int i=0; i < NUM_MIDI_PARTS; i++)
+        //for (int i=0; i < NUM_MIDI_PARTS; ++i)
         //    kMaster->setController(0, MIDI_CONTROL_ALL_SOUND_OFF, 0);
 
         fIsActive = true;
@@ -275,7 +275,7 @@ protected:
             return;
         }
 
-        for (uint32_t i=0; i < midiEventCount; i++)
+        for (uint32_t i=0; i < midiEventCount; ++i)
         {
             const MidiEvent* const midiEvent = &midiEvents[i];
 
@@ -584,7 +584,7 @@ public:
 
             sprng(std::time(nullptr));
             denormalkillbuf = new float[synth->buffersize];
-            for (int i=0; i < synth->buffersize; i++)
+            for (int i=0; i < synth->buffersize; ++i)
                 denormalkillbuf[i] = (RND - 0.5f) * 1e-16;
 
             Master::getInstance();

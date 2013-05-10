@@ -226,7 +226,7 @@ public:
 
         fPlugin->prepareForSave();
 
-        for (uint32_t i=0; i < fPlugin->customDataCount(); i++)
+        for (uint32_t i=0; i < fPlugin->customDataCount(); ++i)
         {
             const CarlaBackend::CustomData& cdata(fPlugin->customData(i));
             fEngine->osc_send_bridge_set_custom_data(cdata.type, cdata.key, cdata.value);

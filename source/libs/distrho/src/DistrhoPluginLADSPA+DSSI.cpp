@@ -48,7 +48,7 @@ public:
           portAudioIns{nullptr},
           portAudioOuts{nullptr}
     {
-        for (uint32_t i=0, count=plugin.parameterCount(); i < count; i++)
+        for (uint32_t i=0, count=plugin.parameterCount(); i < count; ++i)
         {
             lastControlValues.push_back(plugin.parameterValue(i));
             portControls.push_back(nullptr);
@@ -74,7 +74,7 @@ public:
     {
         unsigned long i, count, index = 0;
 
-        for (i=0; i < DISTRHO_PLUGIN_NUM_INPUTS; i++)
+        for (i=0; i < DISTRHO_PLUGIN_NUM_INPUTS; ++i)
         {
             if (port == index++)
             {
@@ -83,7 +83,7 @@ public:
             }
         }
 
-        for (i=0; i < DISTRHO_PLUGIN_NUM_OUTPUTS; i++)
+        for (i=0; i < DISTRHO_PLUGIN_NUM_OUTPUTS; ++i)
         {
             if (port == index++)
             {
@@ -108,7 +108,7 @@ public:
         }
 #endif
 
-        for (i=0, count=plugin.parameterCount(); i < count; i++)
+        for (i=0, count=plugin.parameterCount(); i < count; ++i)
         {
             if (port == index++)
             {
@@ -159,7 +159,7 @@ public:
         plugin.setProgram(realProgram);
 
         // Update parameters
-        for (uint32_t i=0, count=plugin.parameterCount(); i < count; i++)
+        for (uint32_t i=0, count=plugin.parameterCount(); i < count; ++i)
         {
             if (! plugin.parameterIsOutput(i))
             {
@@ -199,7 +199,7 @@ public:
         // Check for updated parameters
         float curValue;
 
-        for (uint32_t i=0, count=plugin.parameterCount(); i < count; i++)
+        for (uint32_t i=0, count=plugin.parameterCount(); i < count; ++i)
         {
             curValue = *portControls[i];
 
@@ -215,7 +215,7 @@ public:
         // Get MIDI Events
         uint32_t midiEventCount = 0;
 
-        for (uint32_t i=0, j; i < eventCount && midiEventCount < MAX_MIDI_EVENTS; i++)
+        for (uint32_t i=0, j; i < eventCount && midiEventCount < MAX_MIDI_EVENTS; ++i)
         {
             snd_seq_event_t* event = &events[i];
 
@@ -314,7 +314,7 @@ private:
 
     void updateParameterOutputs()
     {
-        for (uint32_t i=0, count=plugin.parameterCount(); i < count; i++)
+        for (uint32_t i=0, count=plugin.parameterCount(); i < count; ++i)
         {
             if (plugin.parameterIsOutput(i))
             {
@@ -509,7 +509,7 @@ public:
         LADSPA_PortRangeHint*  portRangeHints  = new LADSPA_PortRangeHint  [portCount];
 
         // Set ports
-        for (i=0; i < DISTRHO_PLUGIN_NUM_INPUTS; i++, port++)
+        for (i=0; i < DISTRHO_PLUGIN_NUM_INPUTS; ++i, ++port)
         {
             char portName[24] = { 0 };
             sprintf(portName, "Audio Input %lu", i+1);
@@ -522,7 +522,7 @@ public:
             portRangeHints[port].UpperBound = 1.0f;
         }
 
-        for (i=0; i < DISTRHO_PLUGIN_NUM_OUTPUTS; i++, port++)
+        for (i=0; i < DISTRHO_PLUGIN_NUM_OUTPUTS; ++i, ++port)
         {
             char portName[24] = { 0 };
             sprintf(portName, "Audio Output %lu", i+1);
@@ -555,7 +555,7 @@ public:
         port++;
 #endif
 
-        for (i=0; i < plugin.parameterCount(); i++, port++)
+        for (i=0; i < plugin.parameterCount(); ++i, ++port)
         {
             portNames[port]       = strdup((const char*)plugin.parameterName(i));
             portDescriptors[port] = LADSPA_PORT_CONTROL;
@@ -646,7 +646,7 @@ public:
 
         if (ldescriptor.PortNames != nullptr)
         {
-            for (unsigned long i=0; i < ldescriptor.PortCount; i++)
+            for (unsigned long i=0; i < ldescriptor.PortCount; ++i)
             {
                 if (ldescriptor.PortNames[i] != nullptr)
                     free((void*)ldescriptor.PortNames[i]);

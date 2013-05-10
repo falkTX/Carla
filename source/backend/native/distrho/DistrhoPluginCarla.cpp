@@ -373,7 +373,7 @@ protected:
     {
         uint32_t i;
 
-        for (i=0; i < midiEventCount && i < MAX_MIDI_EVENTS; i++)
+        for (i=0; i < midiEventCount && i < MAX_MIDI_EVENTS; ++i)
         {
             const ::MidiEvent* const midiEvent = &midiEvents[i];
             MidiEvent* const realMidiEvent = &fRealMidiEvents[i];

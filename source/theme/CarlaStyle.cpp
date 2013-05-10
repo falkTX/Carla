@@ -395,7 +395,7 @@ static QPixmap colorizedImage(const QString &fileName, const QColor &color, int 
         for (int y = 0; y < height; ++y)
         {
             QRgb *data = (QRgb*) image.scanLine(y);
-            for (int x = 0 ; x < width ; x++) {
+            for (int x = 0 ; x < width ; ++x) {
                 QRgb col = data[x];
                 unsigned int colorDiff = (qBlue(col) - qRed(col));
                 unsigned char gray = qGreen(col);

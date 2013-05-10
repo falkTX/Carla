@@ -141,7 +141,7 @@ void DistrhoPluginPingPongPan::d_run(float** inputs, float** outputs, uint32_t f
     float* out1 = outputs[0];
     float* out2 = outputs[1];
 
-    for (uint32_t i=0; i < frames; i++)
+    for (uint32_t i=0; i < frames; ++i)
     {
         pan = std::fmin(std::fmax(std::sin(wavePos) * (fWidth/100.0f), -1.0f), 1.0f);
 
