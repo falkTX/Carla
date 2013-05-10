@@ -149,6 +149,7 @@ typedef struct _TimeInfo {
 
 typedef struct _HostDescriptor {
     HostHandle handle;
+    const char* resource_dir;
     const char* ui_name;
 
     uint32_t        (*get_buffer_size)(HostHandle handle);

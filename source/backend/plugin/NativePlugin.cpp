@@ -173,8 +173,10 @@ public:
 
         carla_zeroStruct< ::MidiEvent>(fMidiEvents, MAX_MIDI_EVENTS*2);
 
-        fHost.handle  = this;
-        fHost.ui_name = nullptr;
+        fHost.handle       = this;
+        fHost.resource_dir = carla_strdup((const char*)engine->getOptions().resourceDir);
+        fHost.ui_name      = nullptr;
+
         fHost.get_buffer_size        = carla_host_get_buffer_size;
         fHost.get_sample_rate        = carla_host_get_sample_rate;
         fHost.get_time_info          = carla_host_get_time_info;
@@ -222,6 +224,12 @@ public:
             fHandle  = nullptr;
             fHandle2 = nullptr;
             fDescriptor = nullptr;
+        }
+
+        if (fHost.resource_dir != nullptr)
+        {
+            delete[] fHost.resource_dir;
+            fHost.resource_dir = nullptr;
         }
 
         if (fHost.ui_name != nullptr)

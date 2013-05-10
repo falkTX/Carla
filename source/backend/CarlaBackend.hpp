@@ -288,36 +288,44 @@ enum OptionsType {
     OPTION_RTAUDIO_DEVICE = 13,
 #endif
 
+    /*!
+     * Set path to the backend resource files.\n
+     * Default unset.
+     *
+     * \note Must be set for some internal plugins to work!
+     */
+    OPTION_PATH_RESOURCES = 14,
+
 #ifndef BUILD_BRIDGE
     /*!
      * Set path to the native plugin bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_NATIVE = 14,
+    OPTION_PATH_BRIDGE_NATIVE = 15,
 
     /*!
      * Set path to the POSIX 32bit plugin bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_POSIX32 = 15,
+    OPTION_PATH_BRIDGE_POSIX32 = 16,
 
     /*!
      * Set path to the POSIX 64bit plugin bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_POSIX64 = 16,
+    OPTION_PATH_BRIDGE_POSIX64 = 17,
 
     /*!
      * Set path to the Windows 32bit plugin bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_WIN32 = 17,
+    OPTION_PATH_BRIDGE_WIN32 = 18,
 
     /*!
      * Set path to the Windows 64bit plugin bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_WIN64 = 18,
+    OPTION_PATH_BRIDGE_WIN64 = 19,
 #endif
 
 #ifdef WANT_LV2
@@ -325,43 +333,43 @@ enum OptionsType {
      * Set path to the LV2 Gtk2 UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_GTK2 = 19,
+    OPTION_PATH_BRIDGE_LV2_GTK2 = 20,
 
     /*!
      * Set path to the LV2 Gtk3 UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_GTK3 = 20,
+    OPTION_PATH_BRIDGE_LV2_GTK3 = 21,
 
     /*!
      * Set path to the LV2 Qt4 UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_QT4 = 21,
+    OPTION_PATH_BRIDGE_LV2_QT4 = 22,
 
     /*!
      * Set path to the LV2 Qt5 UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_QT5 = 22,
+    OPTION_PATH_BRIDGE_LV2_QT5 = 23,
 
     /*!
      * Set path to the LV2 Cocoa UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_COCOA = 23,
+    OPTION_PATH_BRIDGE_LV2_COCOA = 24,
 
     /*!
      * Set path to the LV2 Windows UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_WINDOWS = 24,
+    OPTION_PATH_BRIDGE_LV2_WINDOWS = 25,
 
     /*!
      * Set path to the LV2 X11 UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_X11 = 25,
+    OPTION_PATH_BRIDGE_LV2_X11 = 26,
 #endif
 
 #ifdef WANT_VST
@@ -369,19 +377,19 @@ enum OptionsType {
      * Set path to the VST Cocoa UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_VST_COCOA = 26,
+    OPTION_PATH_BRIDGE_VST_COCOA = 27,
 
     /*!
      * Set path to the VST HWND UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_VST_HWND = 27,
+    OPTION_PATH_BRIDGE_VST_HWND = 28,
 
     /*!
      * Set path to the VST X11 UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_VST_X11 = 28
+    OPTION_PATH_BRIDGE_VST_X11 = 29
 #endif
 };
 

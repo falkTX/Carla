@@ -245,6 +245,8 @@ struct EngineOptions {
     CarlaString  rtaudioDevice;
 #endif
 
+    CarlaString resourceDir;
+
 #ifndef BUILD_BRIDGE
     CarlaString bridge_native;
     CarlaString bridge_posix32;

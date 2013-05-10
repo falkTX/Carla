@@ -232,6 +232,8 @@ const char* OptionsType2Str(const OptionsType& type)
     case OPTION_RTAUDIO_DEVICE:
         return "OPTION_RTAUDIO_DEVICE";
 #endif
+    case OPTION_PATH_RESOURCES:
+        return "OPTION_PATH_RESOURCES";
 #ifndef BUILD_BRIDGE
     case OPTION_PATH_BRIDGE_NATIVE:
         return "OPTION_PATH_BRIDGE_NATIVE";

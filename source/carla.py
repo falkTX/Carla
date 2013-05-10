@@ -2317,8 +2317,7 @@ if __name__ == '__main__':
     else:
         Carla.host.set_engine_option(OPTION_PROCESS_NAME, 0, "carla")
 
-    # Change dir to where DLL and resources are
-    os.chdir(libPath)
+    Carla.host.set_engine_option(OPTION_PATH_RESOURCES, 0, libPath)
 
     # Set bridge paths
     if carla_bridge_native:

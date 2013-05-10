@@ -1628,6 +1628,10 @@ void CarlaEngine::setOption(const OptionsType option, const int value, const cha
         break;
 #endif
 
+    case OPTION_PATH_RESOURCES:
+        fOptions.resourceDir = valueStr;
+        break;
+
 #ifndef BUILD_BRIDGE
     case OPTION_PATH_BRIDGE_NATIVE:
         fOptions.bridge_native = valueStr;

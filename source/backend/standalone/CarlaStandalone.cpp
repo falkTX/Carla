@@ -536,6 +536,7 @@ bool carla_engine_init(const char* driverName, const char* clientName)
     standalone.engine->setOption(CarlaBackend::OPTION_RTAUDIO_SAMPLE_RATE,        static_cast<int>(standalone.options.rtaudioSampleRate), nullptr);
     standalone.engine->setOption(CarlaBackend::OPTION_RTAUDIO_DEVICE,          0, (const char*)standalone.options.rtaudioDevice);
 # endif
+    standalone.engine->setOption(CarlaBackend::OPTION_PATH_RESOURCES,          0, (const char*)standalone.options.resourceDir);
     standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_NATIVE,      0, (const char*)standalone.options.bridge_native);
     standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_POSIX32,     0, (const char*)standalone.options.bridge_posix32);
     standalone.engine->setOption(CarlaBackend::OPTION_PATH_BRIDGE_POSIX64,     0, (const char*)standalone.options.bridge_posix64);
@@ -728,6 +729,10 @@ void carla_set_engine_option(CarlaOptionsType option, int value, const char* val
         standalone.options.rtaudioDevice = valueStr;
         break;
 #endif
+
+    case CarlaBackend::OPTION_PATH_RESOURCES:
+        standalone.options.resourceDir = valueStr;
+        break;
 
 #ifndef BUILD_BRIDGE
     case CarlaBackend::OPTION_PATH_BRIDGE_NATIVE:
