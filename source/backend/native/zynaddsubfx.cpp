@@ -76,9 +76,11 @@ namespace Nio {
 SYNTH_T* synth = nullptr;
 
 #ifdef WANT_ZYNADDSUBFX_UI
-#define PIXMAP_PATH "./resources/zynaddsubfx/"
+#define PIXMAP_PATH "/resources/zynaddsubfx/"
 
 static Fl_Tiled_Image* gModuleBackdrop = nullptr;
+static CarlaString gPixmapPath;
+extern CarlaString gUiPixmapPath;
 
 void set_module_parameters(Fl_Widget* o)
 {
@@ -448,13 +450,13 @@ private:
 
                         Fl_Dial::default_style(Fl_Dial::PIXMAP_DIAL);
 
-                        if (Fl_Shared_Image* const img = Fl_Shared_Image::get(PIXMAP_PATH "knob.png"))
+                        if (Fl_Shared_Image* const img = Fl_Shared_Image::get(gPixmapPath + "knob.png"))
                             Fl_Dial::default_image(img);
 
-                        if (Fl_Shared_Image* const img = Fl_Shared_Image::get(PIXMAP_PATH "window_backdrop.png"))
+                        if (Fl_Shared_Image* const img = Fl_Shared_Image::get(gPixmapPath + "window_backdrop.png"))
                             Fl::scheme_bg(new Fl_Tiled_Image(img));
 
-                        if(Fl_Shared_Image* const img = Fl_Shared_Image::get(PIXMAP_PATH "module_backdrop.png"))
+                        if(Fl_Shared_Image* const img = Fl_Shared_Image::get(gPixmapPath + "module_backdrop.png"))
                             gModuleBackdrop = new Fl_Tiled_Image(img);
 
                         Fl::background(50, 50, 50);
@@ -588,6 +590,15 @@ public:
                 denormalkillbuf[i] = (RND - 0.5f) * 1e-16;
 
             Master::getInstance();
+
+#ifdef WANT_ZYNADDSUBFX_UI
+            if (gPixmapPath.isEmpty())
+            {
+                gPixmapPath  = host->resource_dir;
+                gPixmapPath += PIXMAP_PATH;
+                gUiPixmapPath = gPixmapPath;
+            }
+#endif
         }
 
         return new ZynAddSubFxPlugin(host);

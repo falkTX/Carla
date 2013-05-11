@@ -15,9 +15,13 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#define PIXMAP_PATH "./resources/zynaddsubfx/"
-#define SOURCE_DIR "/usr/share/zynaddsubfx/examples"
 #define PLUGINVERSION
+#define SOURCE_DIR "/usr/share/zynaddsubfx/examples"
+
+#include "CarlaString.hpp"
+#undef override
+
+CarlaString gUiPixmapPath;
 
 // zynaddsubfx ui includes
 #include "zynaddsubfx/UI/NioUI.cpp"
