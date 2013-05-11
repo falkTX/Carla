@@ -1248,13 +1248,10 @@ public:
             if (fUi.type == PLUGIN_UI_EXTERNAL && fUi.widget != nullptr)
                 LV2_EXTERNAL_UI_RUN((LV2_External_UI_Widget*)fUi.widget);
 
-            if (fExt.uiidle != nullptr)
+            if (fExt.uiidle != nullptr && fExt.uiidle->idle(fUi.handle) != 0)
             {
-                if (fExt.uiidle->idle(fUi.handle) != 0)
-                {
-                    showGui(false);
-                    kData->engine->callback(CALLBACK_SHOW_GUI, fId, 0, 0, 0.0f, nullptr);
-                }
+                showGui(false);
+                kData->engine->callback(CALLBACK_SHOW_GUI, fId, 0, 0, 0.0f, nullptr);
             }
         }
 
