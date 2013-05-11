@@ -2212,6 +2212,10 @@ protected:
         const char* const method = &argv[0]->s;
         const char* const smName = &argv[2]->s;
 
+        // wait max 6 secs for host to init
+        for (int i=0; i < 60 && ! fIsReady; ++i)
+            carla_msleep(100);
+
         if (std::strcmp(method, "/nsm/server/announce") == 0 && standalone.callback != nullptr)
             standalone.callback(standalone.callbackPtr, CarlaBackend::CALLBACK_NSM_ANNOUNCE, 0, 0, 0, 0.0f, smName);
 
@@ -2243,10 +2247,6 @@ protected:
         std::strcpy(data, projectPath);
         std::strcat(data, ":");
         std::strcat(data, clientId);
-
-        // wait max 6 secs for host to init
-        for (int i=0; i < 60 && ! fIsReady; ++i)
-            carla_msleep(100);
 
         fIsOpened = false;
 
