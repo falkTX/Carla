@@ -1122,11 +1122,11 @@ class PluginEdit(QDialog):
         self.ui.dial_b_right.setLabel("R")
 
         self.ui.keyboard.setMode(self.ui.keyboard.HORIZONTAL)
-        self.ui.keyboard.setOctaves(6)
+        self.ui.keyboard.setOctaves(10)
 
         self.ui.sb_ctrl_channel.setValue(self.fControlChannel+1)
 
-        self.ui.scrollArea.ensureVisible(self.ui.keyboard.width() / 5, 0)
+        self.ui.scrollArea.ensureVisible(self.ui.keyboard.width() / 3, 0)
         self.ui.scrollArea.setEnabled(False)
         self.ui.scrollArea.setVisible(False)
 

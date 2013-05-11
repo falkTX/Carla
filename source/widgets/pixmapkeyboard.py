@@ -106,7 +106,7 @@ class PixmapKeyboard(QWidget):
         self.fNeedsUpdate = False
         self.fEnabledKeys = []
 
-        self.fFont   = QFont("Monospace", 8, QFont.Normal)
+        self.fFont   = QFont("Monospace", 7, QFont.Normal)
         self.fPixmap = QPixmap("")
 
         self.setCursor(Qt.PointingHandCursor)
@@ -117,7 +117,7 @@ class PixmapKeyboard(QWidget):
         self.fNeedsUpdate = True
 
         self.emit(SIGNAL("notesOff()"))
-        QTimer.singleShot(0, self, SLOT("slot_updateOnce()"))
+        self.update()
 
     def sendNoteOn(self, note, sendSignal=True):
         if 0 <= note <= 127 and note not in self.fEnabledKeys:
@@ -126,8 +126,7 @@ class PixmapKeyboard(QWidget):
             if sendSignal:
                 self.emit(SIGNAL("noteOn(int)"), note)
 
-            self.fNeedsUpdate = True
-            QTimer.singleShot(0, self, SLOT("slot_updateOnce()"))
+            self.update()
 
         if len(self.fEnabledKeys) == 1:
             self.emit(SIGNAL("notesOn()"))
@@ -139,8 +138,7 @@ class PixmapKeyboard(QWidget):
             if sendSignal:
                 self.emit(SIGNAL("noteOff(int)"), note)
 
-            self.fNeedsUpdate = True
-            QTimer.singleShot(0, self, SLOT("slot_updateOnce()"))
+            self.update()
 
         if len(self.fEnabledKeys) == 0:
             self.emit(SIGNAL("notesOff()"))
@@ -175,8 +173,8 @@ class PixmapKeyboard(QWidget):
     def setOctaves(self, octaves):
         if octaves < 1:
             octaves = 1
-        elif octaves > 8:
-            octaves = 8
+        elif octaves > 10:
+            octaves = 10
 
         self.fOctaves = octaves
 
@@ -204,8 +202,6 @@ class PixmapKeyboard(QWidget):
             keyPos = QPointF(pos.x(), posY % self.fHeight)
         else:
             return
-
-        octave += 3
 
         if self.fMidiMap['1'].contains(keyPos):   # C#
             note = 1
@@ -299,32 +295,34 @@ class PixmapKeyboard(QWidget):
 
         paintedWhite = False
 
-        for i in range(len(self.fEnabledKeys)):
-            note = self.fEnabledKeys[i]
-            pos  = self._getRectFromMidiNote(note)
+        for note in self.fEnabledKeys:
+            pos = self._getRectFromMidiNote(note)
 
             if self._isNoteBlack(note):
                 continue
 
-            if note < 36:
-                # cannot paint this note
-                continue
-            elif note < 48:
+            if note < 12:
                 octave = 0
-            elif note < 60:
+            elif note < 24:
                 octave = 1
-            elif note < 72:
+            elif note < 36:
                 octave = 2
-            elif note < 84:
+            elif note < 48:
                 octave = 3
-            elif note < 96:
+            elif note < 60:
                 octave = 4
-            elif note < 108:
+            elif note < 72:
                 octave = 5
-            elif note < 120:
+            elif note < 84:
                 octave = 6
-            elif note < 132:
+            elif note < 96:
                 octave = 7
+            elif note < 108:
+                octave = 8
+            elif note < 120:
+                octave = 9
+            elif note < 132:
+                octave = 10
             else:
                 # cannot paint this note either
                 continue
@@ -366,32 +364,34 @@ class PixmapKeyboard(QWidget):
         # -------------------------------------------------------------
         # Paint (black) pressed keys
 
-        for i in range(len(self.fEnabledKeys)):
-            note = self.fEnabledKeys[i]
-            pos  = self._getRectFromMidiNote(note)
+        for note in self.fEnabledKeys:
+            pos = self._getRectFromMidiNote(note)
 
             if not self._isNoteBlack(note):
                 continue
 
-            if note < 36:
-                # cannot paint this note
-                continue
-            elif note < 48:
+            if note < 12:
                 octave = 0
-            elif note < 60:
+            elif note < 24:
                 octave = 1
-            elif note < 72:
+            elif note < 36:
                 octave = 2
-            elif note < 84:
+            elif note < 48:
                 octave = 3
-            elif note < 96:
+            elif note < 60:
                 octave = 4
-            elif note < 108:
+            elif note < 72:
                 octave = 5
-            elif note < 120:
+            elif note < 84:
                 octave = 6
-            elif note < 132:
+            elif note < 96:
                 octave = 7
+            elif note < 108:
+                octave = 8
+            elif note < 120:
+                octave = 9
+            elif note < 132:
+                octave = 10
             else:
                 # cannot paint this note either
                 continue
@@ -416,15 +416,9 @@ class PixmapKeyboard(QWidget):
 
         for i in range(self.fOctaves):
             if self.fPixmapMode == self.HORIZONTAL:
-                painter.drawText(i * 144, 48, 18, 18, Qt.AlignCenter, "C%i" % int(i + 2))
+                painter.drawText(i * 144, 48, 18, 18, Qt.AlignCenter, "C%i" % (i-1))
             elif self.fPixmapMode == self.VERTICAL:
-                painter.drawText(45, (self.fOctaves * 144) - (i * 144) - 16, 18, 18, Qt.AlignCenter, "C%i" % int(i + 2))
-
-    @pyqtSlot()
-    def slot_updateOnce(self):
-        if self.fNeedsUpdate:
-            self.update()
-            self.fNeedsUpdate = False
+                painter.drawText(45, (self.fOctaves * 144) - (i * 144) - 16, 18, 18, Qt.AlignCenter, "C%i" % (i-1))
 
     def _isNoteBlack(self, note):
         baseNote = note % 12

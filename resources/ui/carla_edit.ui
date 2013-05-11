@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>749</width>
+    <width>741</width>
     <height>585</height>
    </rect>
   </property>
@@ -688,7 +688,7 @@ Plugin Name
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>864</width>
+        <width>1440</width>
         <height>64</height>
        </rect>
       </property>
@@ -700,13 +700,13 @@ Plugin Name
       </property>
       <property name="minimumSize">
        <size>
-        <width>864</width>
+        <width>1440</width>
         <height>64</height>
        </size>
       </property>
       <property name="maximumSize">
        <size>
-        <width>864</width>
+        <width>1440</width>
         <height>64</height>
        </size>
       </property>
@@ -727,13 +727,13 @@ Plugin Name
          </property>
          <property name="minimumSize">
           <size>
-           <width>864</width>
+           <width>1440</width>
            <height>64</height>
           </size>
          </property>
          <property name="maximumSize">
           <size>
-           <width>864</width>
+           <width>1440</width>
            <height>64</height>
           </size>
          </property>

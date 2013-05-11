@@ -1352,6 +1352,7 @@ public:
                     fMidiEvents[fMidiEventCount].data[0] += note.channel;
                     fMidiEvents[fMidiEventCount].data[1]  = note.note;
                     fMidiEvents[fMidiEventCount].data[2]  = note.velo;
+                    fMidiEvents[fMidiEventCount].size     = 3;
 
                     fMidiEventCount += 1;
                 }
