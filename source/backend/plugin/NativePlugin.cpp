@@ -2081,8 +2081,26 @@ protected:
 
     intptr_t handleDispatcher(HostDispatcherOpcode opcode, int32_t index, intptr_t value, void* ptr)
     {
-        // TODO
-        return 0;
+        intptr_t ret = 0;
+
+        switch (opcode)
+        {
+        case HOST_OPCODE_NULL:
+            break;
+        case HOST_OPCODE_SET_PROCESS_PRECISION:
+            // TODO
+            break;
+        case HOST_OPCODE_UI_UNAVAILABLE:
+            kData->engine->callback(CALLBACK_SHOW_GUI, fId, -1, 0, 0.0f, nullptr);
+            break;
+        }
+
+        return ret;
+
+        // unused for now
+        (void)index;
+        (void)value;
+        (void)ptr;
     }
 
     // -------------------------------------------------------------------

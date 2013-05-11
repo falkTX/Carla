@@ -23,7 +23,7 @@
  *
  *****************************************************************************/
 
-#define UI_EXECUTABLE "nekofilter-ui"
+#define UI_EXECUTABLE "/resources/nekofilter-ui"
 
 #define WAIT_START_TIMEOUT  3000 /* ms */
 #define WAIT_ZOMBIE_TIMEOUT 3000 /* ms */
@@ -373,15 +373,13 @@ nekoui_instantiate(
   snprintf(ui_recv_pipe, sizeof(ui_recv_pipe), "%d", pipe1[0]); /* [0] means reading end */
   snprintf(ui_send_pipe, sizeof(ui_send_pipe), "%d", pipe2[1]); /* [1] means writting end */
 
-  const char* bundle_path = "./resources/";
-
-  filename = malloc(strlen(bundle_path) + strlen(UI_EXECUTABLE) + 1);
+  filename = malloc(strlen(host->resource_dir) + strlen(UI_EXECUTABLE) + 1);
   if (filename == NULL)
   {
     goto fail_free_control;
   }
 
-  strcpy(filename, bundle_path);
+  strcpy(filename, host->resource_dir);
   strcat(filename, UI_EXECUTABLE);
 
   char sample_rate_str[12] = { 0 };
