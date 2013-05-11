@@ -2180,7 +2180,20 @@ public:
         if (init)
         {
             if (count > 0)
+            {
                 setMidiProgram(0, false, false, false);
+            }
+            else
+            {
+                // load default state
+                if (const LilvState* state = gLv2World.getState(fDescriptor->URI, (LV2_URID_Map*)fFeatures[kFeatureIdUridMap]->data))
+                {
+                    lilv_state_restore(state, fExt.state, fHandle, carla_lilv_set_port_value, this, 0, fFeatures);
+
+                    if (fHandle2 != nullptr)
+                        lilv_state_restore(state, fExt.state, fHandle2, carla_lilv_set_port_value, this, 0, fFeatures);
+                }
+            }
         }
         else
         {
