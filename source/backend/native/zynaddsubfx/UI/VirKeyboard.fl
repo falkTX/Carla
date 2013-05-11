@@ -76,10 +76,10 @@ rndvelocity=0;} {}
     code {int ox=x(),oy=y(),lx=w(),ly=h()-1,i;
 
 \#ifdef NTK_GUI
- Fl_Image *white_up = Fl_Shared_Image::get( PIXMAP_PATH "white_key.png" );
- Fl_Image *white_down = Fl_Shared_Image::get( PIXMAP_PATH "white_key_pressed.png" );
- Fl_Image *black_up = Fl_Shared_Image::get( PIXMAP_PATH "black_key.png" );
- Fl_Image *black_down = Fl_Shared_Image::get( PIXMAP_PATH "black_key_pressed.png" );
+ Fl_Image *white_up = Fl_Shared_Image::get( gUiPixmapPath + "white_key.png" );
+ Fl_Image *white_down = Fl_Shared_Image::get( gUiPixmapPath + "white_key_pressed.png" );
+ Fl_Image *black_up = Fl_Shared_Image::get( gUiPixmapPath + "black_key.png" );
+ Fl_Image *black_down = Fl_Shared_Image::get( gUiPixmapPath + "black_key_pressed.png" );
 
 
 //On error fetch everything from source directory
