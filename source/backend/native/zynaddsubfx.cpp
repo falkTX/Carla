@@ -433,7 +433,7 @@ private:
 #endif
 
     protected:
-        void run()
+        void run() override
         {
             while (! fQuit)
             {
@@ -566,63 +566,6 @@ private:
     static int sInstanceCount;
     static NonRtList<ProgramInfo*> sPrograms;
 
-public:
-    static PluginHandle _instantiate(const PluginDescriptor*, HostDescriptor* host)
-    {
-        if (sInstanceCount++ == 0)
-        {
-            CARLA_ASSERT(synth == nullptr);
-            CARLA_ASSERT(denormalkillbuf == nullptr);
-
-            synth = new SYNTH_T();
-            synth->buffersize = host->get_buffer_size(host->handle);
-            synth->samplerate = host->get_sample_rate(host->handle);
-            synth->alias();
-
-            config.init();
-            config.cfg.SoundBufferSize = synth->buffersize;
-            config.cfg.SampleRate      = synth->samplerate;
-            config.cfg.GzipCompression = 0;
-
-            sprng(std::time(nullptr));
-            denormalkillbuf = new float[synth->buffersize];
-            for (int i=0; i < synth->buffersize; ++i)
-                denormalkillbuf[i] = (RND - 0.5f) * 1e-16;
-
-            Master::getInstance();
-
-#ifdef WANT_ZYNADDSUBFX_UI
-            if (gPixmapPath.isEmpty())
-            {
-                gPixmapPath  = host->resource_dir;
-                gPixmapPath += PIXMAP_PATH;
-                gUiPixmapPath = gPixmapPath;
-            }
-#endif
-        }
-
-        return new ZynAddSubFxPlugin(host);
-    }
-
-    static void _cleanup(PluginHandle handle)
-    {
-        delete (ZynAddSubFxPlugin*)handle;
-
-        if (--sInstanceCount == 0)
-        {
-            CARLA_ASSERT(synth != nullptr);
-            CARLA_ASSERT(denormalkillbuf != nullptr);
-
-            Master::deleteInstance();
-
-            delete[] denormalkillbuf;
-            denormalkillbuf = nullptr;
-
-            delete synth;
-            synth = nullptr;
-        }
-    }
-
     static void maybeInitPrograms(Master* const master)
     {
         static bool doSearch = true;
@@ -691,7 +634,64 @@ public:
         }
     }
 
-    static void clearPrograms()
+public:
+    static PluginHandle _instantiate(const PluginDescriptor*, HostDescriptor* host)
+    {
+        if (sInstanceCount++ == 0)
+        {
+            CARLA_ASSERT(synth == nullptr);
+            CARLA_ASSERT(denormalkillbuf == nullptr);
+
+            synth = new SYNTH_T();
+            synth->buffersize = host->get_buffer_size(host->handle);
+            synth->samplerate = host->get_sample_rate(host->handle);
+            synth->alias();
+
+            config.init();
+            config.cfg.SoundBufferSize = synth->buffersize;
+            config.cfg.SampleRate      = synth->samplerate;
+            config.cfg.GzipCompression = 0;
+
+            sprng(std::time(nullptr));
+            denormalkillbuf = new float[synth->buffersize];
+            for (int i=0; i < synth->buffersize; ++i)
+                denormalkillbuf[i] = (RND - 0.5f) * 1e-16;
+
+            Master::getInstance();
+
+#ifdef WANT_ZYNADDSUBFX_UI
+            if (gPixmapPath.isEmpty())
+            {
+                gPixmapPath  = host->resource_dir;
+                gPixmapPath += PIXMAP_PATH;
+                gUiPixmapPath = gPixmapPath;
+            }
+#endif
+        }
+
+        return new ZynAddSubFxPlugin(host);
+    }
+
+    static void _cleanup(PluginHandle handle)
+    {
+        delete (ZynAddSubFxPlugin*)handle;
+
+        if (--sInstanceCount == 0)
+        {
+            CARLA_ASSERT(synth != nullptr);
+            CARLA_ASSERT(denormalkillbuf != nullptr);
+
+            Master::deleteInstance();
+
+            delete[] denormalkillbuf;
+            denormalkillbuf = nullptr;
+
+            delete synth;
+            synth = nullptr;
+        }
+    }
+
+    static void _clearPrograms()
     {
         for (auto it = sPrograms.begin(); it.valid(); it.next())
         {
@@ -709,11 +709,9 @@ private:
 int ZynAddSubFxPlugin::sInstanceCount = 0;
 NonRtList<ZynAddSubFxPlugin::ProgramInfo*> ZynAddSubFxPlugin::sPrograms;
 
-struct ProgramsDestructor {
-    ProgramsDestructor() {}
-    ~ProgramsDestructor()
-    {
-        ZynAddSubFxPlugin::clearPrograms();
+static const struct ProgramsDestructor {
+    ~ProgramsDestructor() {
+        ZynAddSubFxPlugin::_clearPrograms();
     }
 } programsDestructor;
 

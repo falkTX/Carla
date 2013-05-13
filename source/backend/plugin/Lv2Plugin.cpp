@@ -4181,6 +4181,7 @@ public:
             uint32_t i = 0;
             while ((fDescriptor = descFn(i++)))
             {
+                carla_debug("LV2 Init @%i => '%s' vs '%s'", i, fDescriptor->URI, uri);
                 if (std::strcmp(fDescriptor->URI, uri) == 0)
                     break;
             }

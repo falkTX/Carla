@@ -30,8 +30,8 @@ START_NAMESPACE_DISTRHO
 // -----------------------------------------------------------------------
 
 static const PluginDescriptor tBandEqDesc = {
-    /* category  */ ::PLUGIN_CATEGORY_EQ,
-    /* hints     */ static_cast<PluginHints>(::PLUGIN_IS_RTSAFE | ::PLUGIN_HAS_GUI),
+    /* category  */ PLUGIN_CATEGORY_EQ,
+    /* hints     */ static_cast<PluginHints>(PLUGIN_IS_RTSAFE|PLUGIN_HAS_GUI),
     /* audioIns  */ DISTRHO_PLUGIN_NUM_INPUTS,
     /* audioOuts */ DISTRHO_PLUGIN_NUM_OUTPUTS,
     /* midiIns   */ 0,

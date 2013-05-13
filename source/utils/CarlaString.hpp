@@ -195,15 +195,13 @@ public:
 
     size_t rfind(const char c) const
     {
-        size_t pos = 0;
-
-        for (size_t i=0; i < bufferLen; ++i)
+        for (size_t i=bufferLen; i > 0; --i)
         {
-            if (buffer[i] == c)
-                pos = i;
+            if (buffer[i-1] == c)
+                return i-1;
         }
 
-        return pos;
+        return 0;
     }
 
     void replace(const char before, const char after)

@@ -87,7 +87,11 @@ endif
 
 	@echo "\033[33m||| Internal plugins: \033[0m"
 ifeq ($(HAVE_AF_DEPS),true)
-	@echo "AudioFile:  $(ANS_YES)"
+ifeq ($(HAVE_FFMPEG),true)
+	@echo "AudioFile:  $(ANS_YES) (with ffmpeg)"
+else
+	@echo "AudioFIle:  $(ANS_YES) (without ffmpeg)"
+endif
 else
 	@echo "AudioFIle:  $(ANS_NO)"
 endif

@@ -6,7 +6,7 @@ VERSION  = 1.0
 
 # -------------------------------------------------------
 
-QT = core gui xml
+QT = core gui
 
 CONFIG     = debug
 CONFIG    += link_pkgconfig qt shared warn_on
@@ -31,40 +31,51 @@ DEFINES   += WANT_MIDIFILE
 DEFINES   += WANT_ZYNADDSUBFX
 DEFINES   += WANT_ZYNADDSUBFX_UI
 
-# Plugin
-PKGCONFIG += liblo
+# Audio file
+DEFINES   += HAVE_FFMPEG
+PKGCONFIG += sndfile libavcodec libavformat libavutil
 
-# FluidSynth
-PKGCONFIG += fluidsynth
+# MIDI file
+PKGCONFIG += smf
 
-# LinuxSampler
-PKGCONFIG += linuxsampler
+# DISTRHO
+PKGCONFIG += gl
+
+# ZynAddSubFX
+DEFINES   += NTK_GUI
+PKGCONFIG += fftw3 mxml zlib ntk ntk_images
 
 # -------------------------------------------------------
 
 SOURCES  = \
-    CarlaPlugin.cpp \
-    CarlaPluginGui.cpp \
-    CarlaPluginThread.cpp \
-    BridgePlugin.cpp \
-    NativePlugin.cpp \
-    LadspaPlugin.cpp \
-    DssiPlugin.cpp \
-    Lv2Plugin.cpp \
-    VstPlugin.cpp \
-    FluidSynthPlugin.cpp \
-    LinuxSamplerPlugin.cpp
+    bypass.c \
+    lfo.c \
+    midi-split.c \
+    midi-through.c \
+    midi-transpose.c \
+    nekofilter.c
+
+SOURCES += \
+    audio-file.cpp \
+    midi-file.cpp \
+    midi-sequencer.cpp \
+    sunvox-file.cpp \
+    zynaddsubfx.cpp \
+    zynaddsubfx-src.cpp \
+    zynaddsubfx-ui.cpp
+
+SOURCES += \
+    distrho-3bandeq.cpp
 
 HEADERS  = \
-    CarlaPluginInternal.hpp \
-    CarlaPluginGui.hpp \
-    CarlaPluginThread.hpp
+    midi-base.hpp
 
 HEADERS += \
-    ../CarlaBackend.hpp \
-    ../CarlaEngine.hpp \
     ../CarlaNative.h \
-    ../CarlaPlugin.hpp
+    ../CarlaNative.hpp
+
+HEADERS += \
+    distrho/DistrhoPluginCarla.cpp
 
 HEADERS += \
     ../../utils/CarlaUtils.hpp \
@@ -76,8 +87,11 @@ HEADERS += \
     ../../utils/CarlaString.hpp
 
 INCLUDEPATH = . .. \
+    3bandeq distrho \
     ../../includes \
-    ../../libs \
-    ../../utils
+    ../../libs/distrho \
+    ../../utils \
+    ../../widgets
 
-QMAKE_CXXFLAGS += -std=c++0x
+QMAKE_CFLAGS   *= -std=c99
+QMAKE_CXXFLAGS *= -std=c++0x

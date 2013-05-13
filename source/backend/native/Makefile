@@ -62,7 +62,10 @@ OBJS  = \
 # AudioFile
 ifeq ($(HAVE_AF_DEPS),true)
 OBJS += \
-	audiofile.c.o
+	audio-file.cpp.o \
+	audio_decoder/ad_ffmpeg.c.o \
+	audio_decoder/ad_plugin.c.o \
+	audio_decoder/ad_soundfile.c.o
 endif
 
 # MidiFile
@@ -147,10 +150,13 @@ debug:
 
 # --------------------------------------------------------------
 
-%.c.o: %.c ../CarlaNative.h
+CDEPS   = ../CarlaNative.h
+CXXDEPS = ../CarlaNative.h ../CarlaNative.hpp
+
+%.c.o: %.c $(CDEPS)
 	$(CC) $< $(BUILD_C_FLAGS) -c -o $@
 
-%.cpp.o: %.cpp ../CarlaNative.h ../CarlaNative.hpp
+%.cpp.o: %.cpp $(CXXDEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 $(TARGET): $(OBJS)
@@ -158,37 +164,46 @@ $(TARGET): $(OBJS)
 
 # --------------------------------------------------------------
 
-audiofile.c.o: audiofile.c
+audio_decoder/%.c.o: audio_decoder/%.c
 	$(CC) $< $(AF_C_FLAGS) -c -o $@
 
-distrho-3bandeq.cpp.o: distrho-3bandeq.cpp 3bandeq/DistrhoArtwork3BandEQ.cpp 3bandeq/DistrhoPlugin3BandEQ.cpp 3bandeq/DistrhoUI3BandEQ.cpp distrho/DistrhoPluginCarla.cpp
+audio-file.cpp.o: audio-file.cpp $(CXXDEPS)
+	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+
+distrho-3bandeq.cpp.o: distrho-3bandeq.cpp 3bandeq/*.cpp 3bandeq/*.h 3bandeq/*.hpp distrho/DistrhoPluginCarla.cpp $(CXXDEPS)
 	$(CXX) $< $(GL_CXX_FLAGS) -I3bandeq -DDISTRHO_NAMESPACE=DISTRHO_3BandEQ -c -o $@
 
-distrho-3bandsplitter.cpp.o: distrho-3bandsplitter.cpp 3bandsplitter/DistrhoArtwork3BandSplitter.cpp 3bandsplitter/DistrhoPlugin3BandSplitter.cpp 3bandsplitter/DistrhoUI3BandSplitter.cpp distrho/DistrhoPluginCarla.cpp
+distrho-3bandsplitter.cpp.o: distrho-3bandsplitter.cpp 3bandsplitter/*.cpp 3bandsplitter/*.h 3bandsplitter/*.hpp distrho/DistrhoPluginCarla.cpp $(CXXDEPS)
 	$(CXX) $< $(GL_CXX_FLAGS) -I3bandsplitter -DDISTRHO_NAMESPACE=DISTRHO_3BandSplitter -c -o $@
 
-distrho-pingpongpan.cpp.o: distrho-pingpongpan.cpp pingpongpan/DistrhoArtworkPingPongPan.cpp pingpongpan/DistrhoPluginPingPongPan.cpp pingpongpan/DistrhoUIPingPongPan.cpp distrho/DistrhoPluginCarla.cpp
+distrho-pingpongpan.cpp.o: distrho-pingpongpan.cpp pingpongpan/*.cpp pingpongpan/*.h pingpongpan/*.hpp distrho/DistrhoPluginCarla.cpp $(CXXDEPS)
 	$(CXX) $< $(GL_CXX_FLAGS) -Ipingpongpan -DDISTRHO_NAMESPACE=DISTRHO_PingPongPan -c -o $@
 
-distrho-notes.cpp.o: distrho-notes.cpp notes/DistrhoPluginNotes.cpp notes/DistrhoUINotes.cpp distrho/DistrhoPluginCarla.cpp moc_DistrhoUINotes.cpp
+distrho-notes.cpp.o: distrho-notes.cpp notes/moc_DistrhoUINotes.cpp notes/*.cpp notes/*.h notes/*.hpp distrho/DistrhoPluginCarla.cpp $(CXXDEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -Inotes -DDISTRHO_NAMESPACE=DISTRHO_Notes -c -o $@
 
-midi-file.cpp.o: midi-file.cpp
+midi-file.cpp.o: midi-file.cpp midi-base.hpp $(CXXDEPS)
 	$(CXX) $< $(MF_CXX_FLAGS) -c -o $@
 
-zynaddsubfx.cpp.o: zynaddsubfx.cpp $(ZYN_UI_FILES_H)
+midi-sequencer.cpp.o: midi-sequencer.cpp midi-base.hpp $(CXXDEPS)
+	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+
+nekofilter.c.o: nekofilter.c nekofilter/*.c nekofilter/*.h $(CDEPS)
+	$(CC) $< $(BUILD_C_FLAGS) -c -o $@
+
+zynaddsubfx.cpp.o: zynaddsubfx.cpp $(CXXDEPS) $(ZYN_UI_FILES_H)
 	$(CXX) $< $(ZYN_CXX_FLAGS) -c -o $@
 
-zynaddsubfx-src.cpp.o: zynaddsubfx-src.cpp
+zynaddsubfx-src.cpp.o: zynaddsubfx-src.cpp $(ZYN_UI_FILES_CPP)
 	$(CXX) $< $(ZYN_CXX_FLAGS) -c -o $@
 
-zynaddsubfx-ui.cpp.o: zynaddsubfx-ui.cpp $(ZYN_UI_FILES_CPP)
+zynaddsubfx-ui.cpp.o: zynaddsubfx-ui.cpp $(ZYN_UI_FILES_H)
 	$(CXX) $< $(ZYN_CXX_FLAGS) -c -o $@
 
 # --------------------------------------------------------------
 
-moc_DistrhoUINotes.cpp: notes/DistrhoUINotes.hpp
-	$(MOC) $< -o $@
+moc_%.cpp: %.hpp
+	$(MOC) $< -DMOC_PARSING -o $@
 
 zynaddsubfx/UI/%.cpp: zynaddsubfx/UI/%.fl
 	ntk-fluid -c -o zynaddsubfx/UI/$*.cpp -h zynaddsubfx/UI/$*.h $<
