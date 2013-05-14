@@ -53,7 +53,7 @@ struct AudioFilePool {
         CARLA_ASSERT(startFrame == 0);
         CARLA_ASSERT(size == 0);
 
-        size = sampleRate * 6;
+        size = sampleRate * 2;
 
         buffer[0] = new float[size];
         buffer[1] = new float[size];

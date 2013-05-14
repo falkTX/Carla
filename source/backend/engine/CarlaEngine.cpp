@@ -1248,7 +1248,7 @@ bool CarlaEngine::loadFilename(const char* const filename)
         if (addPlugin(PLUGIN_INTERNAL, nullptr, baseName, "audiofile"))
         {
             if (CarlaPlugin* const plugin = getPlugin(kData->curPluginCount-1))
-                plugin->setCustomData(CUSTOM_DATA_STRING, "file00", filename, true);
+                plugin->setCustomData(CUSTOM_DATA_STRING, "file", filename, true);
             return true;
         }
         return false;
@@ -1266,7 +1266,7 @@ bool CarlaEngine::loadFilename(const char* const filename)
         if (addPlugin(PLUGIN_INTERNAL, nullptr, baseName, "audiofile"))
         {
             if (CarlaPlugin* const plugin = getPlugin(kData->curPluginCount-1))
-                plugin->setCustomData(CUSTOM_DATA_STRING, "file00", filename, true);
+                plugin->setCustomData(CUSTOM_DATA_STRING, "file", filename, true);
             return true;
         }
         return false;
