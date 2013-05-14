@@ -183,7 +183,7 @@ protected:
 
         if (! fDoProcess)
         {
-            carla_stderr("P: no process");
+            //carla_stderr("P: no process");
             fLastFrame = timePos->frame;
             carla_zeroFloat(out1, frames);
             carla_zeroFloat(out2, frames);
@@ -193,7 +193,7 @@ protected:
         // not playing
         if (! timePos->playing)
         {
-            carla_stderr("P: not playing");
+            //carla_stderr("P: not playing");
             fLastFrame = timePos->frame;
 
             if (timePos->frame == 0 && fLastFrame > 0)
@@ -209,7 +209,7 @@ protected:
         // out of reach
         if (timePos->frame + frames < fPool.startFrame || timePos->frame >= fMaxFrame) /*&& ! loopMode)*/
         {
-            carla_stderr("P: out of reach");
+            //carla_stderr("P: out of reach");
             fLastFrame = timePos->frame;
 
             fThread.setNeedsRead();
@@ -294,14 +294,12 @@ private:
 
         if (fThread.loadFilename(filename))
         {
-            carla_stdout("AudioFilePlugin::loadFilename(\"%s\") - sucess", filename);
             fThread.startNow();
             fMaxFrame = fThread.getMaxFrame();
             fDoProcess = true;
         }
         else
         {
-            carla_stderr("AudioFilePlugin::loadFilename(\"%s\") - failed", filename);
             fDoProcess = false;
             fMaxFrame = 0;
         }
