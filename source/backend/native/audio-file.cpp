@@ -55,7 +55,7 @@ protected:
 
     uint32_t getParameterCount() override
     {
-        return 1;
+        return 0; // TODO - loopMode
     }
 
     const Parameter* getParameterInfo(const uint32_t index) override
@@ -320,7 +320,7 @@ static const PluginDescriptor audiofileDesc = {
     /* audioOuts */ 2,
     /* midiIns   */ 0,
     /* midiOuts  */ 0,
-    /* paramIns  */ 1,
+    /* paramIns  */ 0, // TODO - loopMode
     /* paramOuts */ 0,
     /* name      */ "Audio File",
     /* label     */ "audiofile",

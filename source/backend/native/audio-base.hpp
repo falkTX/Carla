@@ -89,15 +89,6 @@ struct AudioFilePool {
         carla_zeroFloat(buffer[0], size);
         carla_zeroFloat(buffer[1], size);
     }
-
-    void operator=(AudioFilePool& pool)
-    {
-        CARLA_ASSERT(pool.size == size);
-
-        pool.startFrame = startFrame;
-        carla_copyFloat(pool.buffer[0], buffer[0], size);
-        carla_copyFloat(pool.buffer[1], buffer[1], size);
-    }
 };
 
 class AbstractAudioPlayer
@@ -121,7 +112,7 @@ public:
 
         static bool adInitiated = false;
 
-        //if (! adInitiated)
+        if (! adInitiated)
         {
             ad_init();
             adInitiated = true;
@@ -145,6 +136,8 @@ public:
 
     void startNow()
     {
+        fNeedsRead = true;
+        fQuitNow = false;
         start(IdlePriority);
     }
 
@@ -183,8 +176,6 @@ public:
 
         ad_clear_nfo(&fFileNfo);
 
-        ad_init();
-
         // open new
         fFilePtr = ad_open(filename, &fFileNfo);
 
@@ -214,10 +205,16 @@ public:
 
     void tryPutData(AudioFilePool& pool)
     {
+        CARLA_ASSERT(pool.size == fPool.size);
+
+        if (pool.size != fPool.size)
+            return;
         if (! fMutex.tryLock())
             return;
 
-        pool = fPool;
+        pool.startFrame = fPool.startFrame;
+        carla_copyFloat(pool.buffer[0], fPool.buffer[0], fPool.size);
+        carla_copyFloat(pool.buffer[1], fPool.buffer[1], fPool.size);
 
         fMutex.unlock();
     }
