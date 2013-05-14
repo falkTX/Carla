@@ -638,12 +638,6 @@ public:
 
             if (sendGui && fIsUiVisible && fDescriptor->ui_set_custom_data != nullptr)
                 fDescriptor->ui_set_custom_data(fHandle, key, value);
-
-            if (std::strlen(key) == 6 && std::strncmp(key, "file", 4) == 0)
-            {
-                const ScopedDisabler sd(this);
-                reloadPrograms(false);
-            }
         }
 
         CarlaPlugin::setCustomData(type, key, value, sendGui);

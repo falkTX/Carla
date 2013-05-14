@@ -85,6 +85,8 @@ struct AudioFilePool {
 
     void reset()
     {
+        CARLA_ASSERT(size != 0);
+
         startFrame = 0;
         carla_zeroFloat(buffer[0], size);
         carla_zeroFloat(buffer[1], size);

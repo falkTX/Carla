@@ -89,28 +89,6 @@ protected:
     }
 
     // -------------------------------------------------------------------
-    // Plugin midi-program calls
-
-    uint32_t getMidiProgramCount() override
-    {
-        return PROGRAM_COUNT;
-    }
-
-    const MidiProgram* getMidiProgramInfo(const uint32_t index) override
-    {
-        if (index >= PROGRAM_COUNT)
-            return NULL;
-
-        static MidiProgram midiProgram;
-
-        midiProgram.bank    = 0;
-        midiProgram.program = index;
-        midiProgram.name    = (const char*)fPrograms.shortNames[index];
-
-        return &midiProgram;
-    }
-
-    // -------------------------------------------------------------------
     // Plugin state calls
 
     void setParameterValue(const uint32_t index, const float value) override
@@ -127,48 +105,12 @@ protected:
         fThread.setNeedsRead();
     }
 
-    void setMidiProgram(const uint8_t, const uint32_t bank, const uint32_t program) override
-    {
-        if (bank != 0 || program >= PROGRAM_COUNT)
-            return;
-
-        if (fPrograms.current != program)
-        {
-            loadFilename(fPrograms.fullNames[program]);
-            fPrograms.current = program;
-        }
-    }
-
     void setCustomData(const char* const key, const char* const value) override
     {
-        if (std::strlen(key) != 6)
-            return;
-        if (std::strncmp(key, "file", 4) != 0)
-            return;
-        if (key[4] < '0' || key[4] > '9')
-            return;
-        if (key[5] < '0' || key[5] > '9')
+        if (std::strcmp(key, "file") != 0)
             return;
 
-        uint8_t tens = key[4]-'0';
-        uint8_t nums = key[5]-'0';
-
-        uint32_t program = tens*10 + nums;
-
-        if (program >= PROGRAM_COUNT)
-            return;
-
-        fPrograms.fullNames[program] = value;
-
-        if (const char* const shortName = std::strrchr(value, OS_SEP))
-            fPrograms.shortNames[program] = shortName+1;
-        else
-            fPrograms.shortNames[program] = value;
-
-        fPrograms.shortNames[program].truncate(fPrograms.shortNames[program].rfind('.'));
-
-        if (fPrograms.current == program)
-            loadFilename(value);
+        loadFilename(value);
     }
 
     // -------------------------------------------------------------------
@@ -253,13 +195,7 @@ protected:
             return;
 
         if (const char* const filename = uiOpenFile(false, "Open Audio File", ""))
-        {
-            char fileStr[] = { 'f', 'i', 'l', 'e', '\0', '\0', '\0' };
-            fileStr[4] = '0' + (fPrograms.current / 10);
-            fileStr[5] = '0' + (fPrograms.current % 10);
-
-            uiCustomDataChanged(fileStr, filename);
-        }
+            uiCustomDataChanged("file", filename);
 
         uiClosed();
     }
@@ -273,15 +209,6 @@ private:
 
     AudioFilePool   fPool;
     AudioFileThread fThread;
-
-    struct Programs {
-        uint32_t    current;
-        CarlaString fullNames[PROGRAM_COUNT];
-        CarlaString shortNames[PROGRAM_COUNT];
-
-        Programs()
-            : current(0) {}
-    } fPrograms;
 
     void loadFilename(const char* const filename)
     {
