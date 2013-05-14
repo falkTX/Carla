@@ -228,4 +228,4 @@ private:
     }
 };
 
-#endif
+#endif // __MIDI_BASE_HPP__

@@ -68,6 +68,7 @@ SOURCES += \
     distrho-3bandeq.cpp
 
 HEADERS  = \
+    audio-base.hpp \
     midi-base.hpp
 
 HEADERS += \

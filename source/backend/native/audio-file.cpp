@@ -16,54 +16,37 @@
  */
 
 #include "CarlaNative.hpp"
-#include "CarlaMutex.hpp"
 #include "CarlaString.hpp"
 
-#include <QtCore/QThread>
-
-extern "C" {
-#include "audio_decoder/ad.h"
-}
+#include "audio-base.hpp"
 
 #define PROGRAM_COUNT 16
 
-typedef struct adinfo ADInfo;
-
-class AudioFilePlugin : public PluginDescriptorClass
+class AudioFilePlugin : public PluginDescriptorClass,
+                        public AbstractAudioPlayer
 {
 public:
     AudioFilePlugin(const HostDescriptor* const host)
         : PluginDescriptorClass(host),
-          filePtr(nullptr),
-          lastFrame(0),
-          maxFrame(0),
-          loopMode(false),
-          doProcess(false)
+          AbstractAudioPlayer(),
+          fLoopMode(false),
+          fDoProcess(false),
+          fLastFrame(0),
+          fMaxFrame(0),
+          fThread(this, getSampleRate())
     {
-        static bool adInitiated = false;
-
-        if (! adInitiated)
-        {
-            ad_init();
-            adInitiated = true;
-        }
-
-        ad_clear_nfo(&fileNfo);
-
-        pool.create(getSampleRate());
-        thread.setPoolSize(pool.size);
+        fPool.create(getSampleRate());
     }
 
     ~AudioFilePlugin() override
     {
-        doProcess = false;
+        fPool.destroy();
+        fThread.stopNow();
+    }
 
-        thread.stopNow();
-
-        if (filePtr != nullptr)
-            ad_close(filePtr);
-
-        pool.destroy();
+    uint32_t getLastFrame() const override
+    {
+        return fLastFrame;
     }
 
 protected:
@@ -72,14 +55,11 @@ protected:
 
     uint32_t getParameterCount() override
     {
-        return 0; // FIXME
         return 1;
     }
 
     const Parameter* getParameterInfo(const uint32_t index) override
     {
-        return nullptr; // FIXME - loop mode needs work
-
         if (index != 0)
             return nullptr;
 
@@ -105,7 +85,7 @@ protected:
         if (index != 0)
             return 0.0f;
 
-        return loopMode ? 1.0f : 0.0f;
+        return fLoopMode ? 1.0f : 0.0f;
     }
 
     // -------------------------------------------------------------------
@@ -125,7 +105,7 @@ protected:
 
         midiProgram.bank    = 0;
         midiProgram.program = index;
-        midiProgram.name    = (const char*)programs.shortNames[index];
+        midiProgram.name    = (const char*)fPrograms.shortNames[index];
 
         return &midiProgram;
     }
@@ -140,11 +120,11 @@ protected:
 
         bool b = (value > 0.5f);
 
-        if (b == loopMode)
+        if (b == fLoopMode)
             return;
 
-        loopMode = b;
-        thread.setNeedsRead();
+        fLoopMode = b;
+        fThread.setNeedsRead();
     }
 
     void setMidiProgram(const uint8_t, const uint32_t bank, const uint32_t program) override
@@ -152,10 +132,10 @@ protected:
         if (bank != 0 || program >= PROGRAM_COUNT)
             return;
 
-        if (programs.current != program)
+        if (fPrograms.current != program)
         {
-            loadFilename(programs.fullNames[program]);
-            programs.current = program;
+            loadFilename(fPrograms.fullNames[program]);
+            fPrograms.current = program;
         }
     }
 
@@ -178,16 +158,16 @@ protected:
         if (program >= PROGRAM_COUNT)
             return;
 
-        programs.fullNames[program] = value;
+        fPrograms.fullNames[program] = value;
 
-        if (const char* shortName = std::strrchr(value, OS_SEP))
-            programs.shortNames[program] = shortName+1;
+        if (const char* const shortName = std::strrchr(value, OS_SEP))
+            fPrograms.shortNames[program] = shortName+1;
         else
-            programs.shortNames[program] = value;
+            fPrograms.shortNames[program] = value;
 
-        programs.shortNames[program].truncate(programs.shortNames[program].rfind('.'));
+        fPrograms.shortNames[program].truncate(fPrograms.shortNames[program].rfind('.'));
 
-        if (programs.current == program)
+        if (fPrograms.current == program)
             loadFilename(value);
     }
 
@@ -201,10 +181,10 @@ protected:
         float* out1 = outBuffer[0];
         float* out2 = outBuffer[1];
 
-        if (! doProcess)
+        if (! fDoProcess)
         {
-            lastFrame = timePos->frame;
-
+            carla_stderr("P: no process");
+            fLastFrame = timePos->frame;
             carla_zeroFloat(out1, frames);
             carla_zeroFloat(out2, frames);
             return;
@@ -213,42 +193,45 @@ protected:
         // not playing
         if (! timePos->playing)
         {
-            if (timePos->frame == 0 && lastFrame > 0)
-                thread.setNeedsRead();
+            carla_stderr("P: not playing");
+            fLastFrame = timePos->frame;
 
-            lastFrame = timePos->frame;
+            if (timePos->frame == 0 && fLastFrame > 0)
+                fThread.setNeedsRead();
 
             carla_zeroFloat(out1, frames);
             carla_zeroFloat(out2, frames);
             return;
         }
 
-        const CarlaMutex::ScopedLocker sl(&mutex);
+        fThread.tryPutData(fPool);
 
         // out of reach
-        if (timePos->frame + frames < pool.startFrame || timePos->frame >= maxFrame) /*&& ! loopMode)*/
+        if (timePos->frame + frames < fPool.startFrame || timePos->frame >= fMaxFrame) /*&& ! loopMode)*/
         {
-            lastFrame = timePos->frame;
-            thread.setNeedsRead();
+            carla_stderr("P: out of reach");
+            fLastFrame = timePos->frame;
+
+            fThread.setNeedsRead();
 
             carla_zeroFloat(out1, frames);
             carla_zeroFloat(out2, frames);
             return;
         }
 
-        int64_t poolFrame = (int64_t)timePos->frame - pool.startFrame;
-        int64_t poolSize  = pool.size;
+        int64_t poolFrame = (int64_t)timePos->frame - fPool.startFrame;
+        int64_t poolSize  = fPool.size;
 
         for (uint32_t i=0; i < frames; ++i, ++poolFrame)
         {
             if (poolFrame >= 0 && poolFrame < poolSize)
             {
-                out1[i] = pool.buffer[0][poolFrame];
-                out2[i] = pool.buffer[1][poolFrame];
+                out1[i] = fPool.buffer[0][poolFrame];
+                out2[i] = fPool.buffer[1][poolFrame];
 
                 // reset
-                pool.buffer[0][poolFrame] = 0.0f;
-                pool.buffer[1][poolFrame] = 0.0f;
+                fPool.buffer[0][poolFrame] = 0.0f;
+                fPool.buffer[1][poolFrame] = 0.0f;
             }
             else
             {
@@ -257,7 +240,7 @@ protected:
             }
         }
 
-        lastFrame = timePos->frame;
+        fLastFrame = timePos->frame;
     }
 
     // -------------------------------------------------------------------
@@ -271,8 +254,8 @@ protected:
         if (const char* const filename = uiOpenFile(false, "Open Audio File", ""))
         {
             char fileStr[] = { 'f', 'i', 'l', 'e', '\0', '\0', '\0' };
-            fileStr[4] = '0' + (programs.current / 10);
-            fileStr[5] = '0' + (programs.current % 10);
+            fileStr[4] = '0' + (fPrograms.current / 10);
+            fileStr[5] = '0' + (fPrograms.current % 10);
 
             uiCustomDataChanged(fileStr, filename);
         }
@@ -281,62 +264,14 @@ protected:
     }
 
 private:
-    struct Pool {
-        float*   buffer[2];
-        uint32_t startFrame;
-        uint32_t size;
+    bool fLoopMode;
+    bool fDoProcess;
 
-        Pool()
-            : buffer{nullptr},
-              startFrame(0),
-              size(0) {}
+    uint32_t fLastFrame;
+    uint32_t fMaxFrame;
 
-        ~Pool()
-        {
-            CARLA_ASSERT(buffer[0] == nullptr);
-            CARLA_ASSERT(buffer[1] == nullptr);
-            CARLA_ASSERT(startFrame == 0);
-            CARLA_ASSERT(size == 0);
-        }
-
-        void create(const uint32_t sampleRate)
-        {
-            CARLA_ASSERT(buffer[0] == nullptr);
-            CARLA_ASSERT(buffer[1] == nullptr);
-            CARLA_ASSERT(startFrame == 0);
-            CARLA_ASSERT(size == 0);
-
-            size = sampleRate * 6;
-
-            buffer[0] = new float[size];
-            buffer[1] = new float[size];
-
-            carla_zeroFloat(buffer[0], size);
-            carla_zeroFloat(buffer[1], size);
-        }
-
-        void destroy()
-        {
-            CARLA_ASSERT(buffer[0] != nullptr);
-            CARLA_ASSERT(buffer[1] != nullptr);
-            CARLA_ASSERT(size != 0);
-
-            if (buffer[0] != nullptr)
-            {
-                delete[] buffer[0];
-                buffer[0] = nullptr;
-            }
-
-            if (buffer[1] != nullptr)
-            {
-                delete[] buffer[1];
-                buffer[1] = nullptr;
-            }
-
-            startFrame = 0;
-            size = 0;
-        }
-    };
+    AudioFilePool   fPool;
+    AudioFileThread fThread;
 
     struct Programs {
         uint32_t    current;
@@ -345,146 +280,30 @@ private:
 
         Programs()
             : current(0) {}
-    };
-
-    class AudioFileThread : public QThread
-    {
-    public:
-        AudioFileThread()
-            : QThread(nullptr),
-              fNeedsRead(false),
-              fQuitNow(true),
-              fLastFrame(0),
-              fPoolStartFrame(0),
-              fPoolSize(0)
-        {
-        }
-
-        ~AudioFileThread()
-        {
-            CARLA_ASSERT(fQuitNow == true);
-            CARLA_ASSERT(! isRunning());
-        }
-
-        void stopNow()
-        {
-            fNeedsRead = false;
-            fQuitNow = true;
-
-            if (isRunning() && ! wait(1000))
-                terminate();
-        }
-
-        void readPoll()
-        {
-        }
-
-        void setNeedsRead()
-        {
-            fNeedsRead = true;
-        }
-
-        void setLastFrame(const uint32_t lastFrame)
-        {
-            fLastFrame = lastFrame;
-        }
-
-        void setPoolStart(const uint32_t poolStartFrame)
-        {
-            fPoolStartFrame = poolStartFrame;
-        }
-
-        void setPoolSize(const uint32_t  poolSize)
-        {
-            fPoolSize = poolSize;
-        }
-
-    protected:
-        void run() override
-        {
-            while (! fQuitNow)
-            {
-                if (fNeedsRead || (fLastFrame >= fPoolStartFrame && fLastFrame - fPoolStartFrame >= fPoolSize*3/4))
-                    readPoll();
-                else
-                    carla_msleep(50);
-            }
-        }
-
-    private:
-        bool fNeedsRead;
-        bool fQuitNow;
-
-        uint32_t fLastFrame;
-        uint32_t fPoolStartFrame;
-        uint32_t fPoolSize;
-    };
-
-    void*  filePtr;
-    ADInfo fileNfo;
-
-    uint32_t lastFrame;
-    uint32_t maxFrame;
-
-    bool loopMode;
-    bool doProcess;
-
-    Pool     pool;
-    Programs programs;
-
-    CarlaMutex      mutex;
-    AudioFileThread thread;
+    } fPrograms;
 
     void loadFilename(const char* const filename)
     {
-        // wait for jack processing to end
-        doProcess = false;
-
-        {
-            const CarlaMutex::ScopedLocker sl(&mutex);
-
-            maxFrame = 0;
-            pool.startFrame = 0;
-
-            thread.stopNow();
-        }
-
-        // clear old data
-        if (filePtr != nullptr)
-        {
-            ad_close(filePtr);
-            filePtr = nullptr;
-        }
-
-        ad_clear_nfo(&fileNfo);
+        CARLA_ASSERT(filename != nullptr);
+        carla_debug("AudioFilePlugin::loadFilename(\"%s\")", filename);
 
         if (filename == nullptr)
             return;
 
-        // open new
-        filePtr = ad_open(filename, &fileNfo);
+        fThread.stopNow();
 
-        if (filePtr == nullptr)
-            return;
-
-        ad_dump_nfo(99, &fileNfo);
-
-        if (fileNfo.frames == 0)
-            carla_stderr("L: filename \"%s\" has 0 frames", filename);
-
-        if ((fileNfo.channels == 1 || fileNfo.channels == 2) && fileNfo.frames > 0)
+        if (fThread.loadFilename(filename))
         {
-            maxFrame = fileNfo.frames;
-            thread.readPoll();
-            doProcess = true;
-
-            thread.start();
+            carla_stdout("AudioFilePlugin::loadFilename(\"%s\") - sucess", filename);
+            fThread.startNow();
+            fMaxFrame = fThread.getMaxFrame();
+            fDoProcess = true;
         }
         else
         {
-            ad_clear_nfo(&fileNfo);
-            ad_close(filePtr);
-            filePtr = nullptr;
+            carla_stderr("AudioFilePlugin::loadFilename(\"%s\") - failed", filename);
+            fDoProcess = false;
+            fMaxFrame = 0;
         }
     }
 
@@ -496,7 +315,7 @@ private:
 
 static const PluginDescriptor audiofileDesc = {
     /* category  */ PLUGIN_CATEGORY_UTILITY,
-    /* hints     */ static_cast<PluginHints>(PLUGIN_HAS_GUI),
+    /* hints     */ static_cast<PluginHints>(PLUGIN_IS_RTSAFE|PLUGIN_HAS_GUI),
     /* audioIns  */ 0,
     /* audioOuts */ 2,
     /* midiIns   */ 0,

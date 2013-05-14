@@ -153,12 +153,6 @@ debug:
 CDEPS   = ../CarlaNative.h
 CXXDEPS = ../CarlaNative.h ../CarlaNative.hpp
 
-%.c.o: %.c $(CDEPS)
-	$(CC) $< $(BUILD_C_FLAGS) -c -o $@
-
-%.cpp.o: %.cpp $(CXXDEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
-
 $(TARGET): $(OBJS)
 	$(AR) rs $@ $^
 
@@ -167,7 +161,7 @@ $(TARGET): $(OBJS)
 audio_decoder/%.c.o: audio_decoder/%.c
 	$(CC) $< $(AF_C_FLAGS) -c -o $@
 
-audio-file.cpp.o: audio-file.cpp $(CXXDEPS)
+audio-file.cpp.o: audio-file.cpp audio-base.hpp $(CXXDEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 distrho-3bandeq.cpp.o: distrho-3bandeq.cpp 3bandeq/*.cpp 3bandeq/*.h 3bandeq/*.hpp distrho/DistrhoPluginCarla.cpp $(CXXDEPS)
@@ -201,6 +195,12 @@ zynaddsubfx-ui.cpp.o: zynaddsubfx-ui.cpp $(ZYN_UI_FILES_H)
 	$(CXX) $< $(ZYN_CXX_FLAGS) -c -o $@
 
 # --------------------------------------------------------------
+
+%.c.o: %.c $(CDEPS)
+	$(CC) $< $(BUILD_C_FLAGS) -c -o $@
+
+%.cpp.o: %.cpp $(CXXDEPS)
+	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 moc_%.cpp: %.hpp
 	$(MOC) $< -DMOC_PARSING -o $@
