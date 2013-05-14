@@ -148,6 +148,9 @@ public:
 
         if (isRunning() && ! wait(1000))
             terminate();
+
+        const CarlaMutex::ScopedLocker sl(&fMutex);
+        fPool.reset();
     }
 
     uint32_t getMaxFrame() const
@@ -212,9 +215,12 @@ public:
         if (! fMutex.tryLock())
             return;
 
-        pool.startFrame = fPool.startFrame;
-        carla_copyFloat(pool.buffer[0], fPool.buffer[0], fPool.size);
-        carla_copyFloat(pool.buffer[1], fPool.buffer[1], fPool.size);
+        //if (pool.startFrame != fPool.startFrame || pool.buffer[0] != fPool.buffer[0] || pool.buffer[1] != fPool.buffer[1])
+        {
+            pool.startFrame = fPool.startFrame;
+            carla_copyFloat(pool.buffer[0], fPool.buffer[0], fPool.size);
+            carla_copyFloat(pool.buffer[1], fPool.buffer[1], fPool.size);
+        }
 
         fMutex.unlock();
     }
@@ -349,7 +355,7 @@ protected:
         {
             const uint32_t lastFrame(kPlayer->getLastFrame());
 
-            if (fNeedsRead || lastFrame < fPool.startFrame || lastFrame - fPool.startFrame >= fPool.size*3/4)
+            if (fNeedsRead || lastFrame < fPool.startFrame || (lastFrame - fPool.startFrame >= fPool.size*3/4 && lastFrame < fFileNfo.frames))
                 readPoll();
             else
                 carla_msleep(50);

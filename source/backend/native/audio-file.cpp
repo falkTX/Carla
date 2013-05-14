@@ -212,7 +212,8 @@ protected:
             //carla_stderr("P: out of reach");
             fLastFrame = timePos->frame;
 
-            fThread.setNeedsRead();
+            if (timePos->frame + frames < fPool.startFrame)
+                fThread.setNeedsRead();
 
             carla_zeroFloat(out1, frames);
             carla_zeroFloat(out2, frames);
@@ -287,10 +288,14 @@ private:
         CARLA_ASSERT(filename != nullptr);
         carla_debug("AudioFilePlugin::loadFilename(\"%s\")", filename);
 
-        if (filename == nullptr)
-            return;
-
         fThread.stopNow();
+
+        if (filename == nullptr || *filename == '\0')
+        {
+            fDoProcess = false;
+            fMaxFrame = 0;
+            return;
+        }
 
         if (fThread.loadFilename(filename))
         {

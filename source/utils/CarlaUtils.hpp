@@ -260,7 +260,7 @@ void carla_add(T* dataDst, T* dataSrc, const size_t size)
 {
     CARLA_ASSERT(dataDst != nullptr);
     CARLA_ASSERT(dataSrc != nullptr);
-    CARLA_ASSERT(size > 0);
+    CARLA_ASSERT(size != 0);
 
     if (dataDst == nullptr || dataSrc == nullptr || size == 0)
         return;
@@ -275,7 +275,7 @@ void carla_add(T* dataDst, const T* dataSrc, const size_t size)
 {
     CARLA_ASSERT(dataDst != nullptr);
     CARLA_ASSERT(dataSrc != nullptr);
-    CARLA_ASSERT(size > 0);
+    CARLA_ASSERT(size != 0);
 
     if (dataDst == nullptr || dataSrc == nullptr || size == 0)
         return;
@@ -290,7 +290,7 @@ void carla_copy(T* dataDst, T* dataSrc, const size_t size)
 {
     CARLA_ASSERT(dataDst != nullptr);
     CARLA_ASSERT(dataSrc != nullptr);
-    CARLA_ASSERT(size > 0);
+    CARLA_ASSERT(size != 0);
 
     if (dataDst == nullptr || dataSrc == nullptr || size == 0)
         return;
@@ -305,7 +305,7 @@ void carla_copy(T* dataDst, const T* dataSrc, const size_t size)
 {
     CARLA_ASSERT(dataDst != nullptr);
     CARLA_ASSERT(dataSrc != nullptr);
-    CARLA_ASSERT(size > 0);
+    CARLA_ASSERT(size != 0);
 
     if (dataDst == nullptr || dataSrc == nullptr || size == 0)
         return;
@@ -319,7 +319,7 @@ static inline
 void carla_fill(T* data, const size_t size, const T v)
 {
     CARLA_ASSERT(data != nullptr);
-    CARLA_ASSERT(size > 0);
+    CARLA_ASSERT(size != 0);
 
     if (data == nullptr || size == 0)
         return;
@@ -343,13 +343,21 @@ void carla_addFloat(float* const dataDst, float* const dataSrc, const size_t siz
 static inline
 void carla_copyDouble(double* const dataDst, double* const dataSrc, const size_t size)
 {
-    carla_copy<double>(dataDst, dataSrc, size);
+    CARLA_ASSERT(dataDst != nullptr);
+    CARLA_ASSERT(dataSrc != nullptr);
+    CARLA_ASSERT(size > 0);
+
+    std::memcpy(dataDst, dataSrc, size*sizeof(double));
 }
 
 static inline
 void carla_copyFloat(float* const dataDst, float* const dataSrc, const size_t size)
 {
-    carla_copy<float>(dataDst, dataSrc, size);
+    CARLA_ASSERT(dataDst != nullptr);
+    CARLA_ASSERT(dataSrc != nullptr);
+    CARLA_ASSERT(size > 0);
+
+    std::memcpy(dataDst, dataSrc, size*sizeof(float));
 }
 
 static inline
@@ -385,7 +393,7 @@ static inline
 void carla_zeroMem(void* const memory, const size_t numBytes)
 {
     CARLA_ASSERT(memory != nullptr);
-    CARLA_ASSERT(numBytes > 0);
+    CARLA_ASSERT(numBytes != 0);
 
     if (memory == nullptr || numBytes == 0)
         return;
