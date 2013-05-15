@@ -8,7 +8,7 @@ include ../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo) -I../engine
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo)
 
 ifeq ($(HAVE_QT5),true)
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags Qt5Core Qt5Xml Qt5Widgets)

@@ -626,50 +626,47 @@ public:
                         // Control backend stuff
                         if (event.channel == kData->ctrlChannel)
                         {
-                            double value;
+                            float value;
 
                             if (MIDI_IS_CONTROL_BREATH_CONTROLLER(ctrlEvent.param) && (fHints & PLUGIN_CAN_DRYWET) > 0)
                             {
                                 value = ctrlEvent.value;
                                 setDryWet(value, false, false);
                                 postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_DRYWET, 0, value);
-                                continue;
                             }
 
                             if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (fHints & PLUGIN_CAN_VOLUME) > 0)
                             {
-                                value = ctrlEvent.value*127/100;
+                                value = ctrlEvent.value*127.0f/100.0f;
                                 setVolume(value, false, false);
                                 postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_VOLUME, 0, value);
-                                continue;
                             }
 
                             if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (fHints & PLUGIN_CAN_BALANCE) > 0)
                             {
-                                double left, right;
-                                value = ctrlEvent.value/0.5 - 1.0;
+                                float left, right;
+                                value = ctrlEvent.value/0.5f - 1.0f;
 
-                                if (value < 0.0)
+                                if (value < 0.0f)
                                 {
-                                    left  = -1.0;
-                                    right = (value*2)+1.0;
+                                    left  = -1.0f;
+                                    right = (value*2.0f)+1.0f;
                                 }
-                                else if (value > 0.0)
+                                else if (value > 0.0f)
                                 {
-                                    left  = (value*2)-1.0;
-                                    right = 1.0;
+                                    left  = (value*2.0f)-1.0f;
+                                    right = 1.0f;
                                 }
                                 else
                                 {
-                                    left  = -1.0;
-                                    right = 1.0;
+                                    left  = -1.0f;
+                                    right = 1.0f;
                                 }
 
                                 setBalanceLeft(left, false, false);
                                 setBalanceRight(right, false, false);
                                 postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_LEFT, 0, left);
                                 postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_RIGHT, 0, right);
-                                continue;
                             }
                         }
 #endif

@@ -934,7 +934,6 @@ public:
                                 value = ctrlEvent.value;
                                 setDryWet(value, false, false);
                                 postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_DRYWET, 0, value);
-                                continue;
                             }
 
                             if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (fHints & PLUGIN_CAN_VOLUME) > 0)
@@ -942,7 +941,6 @@ public:
                                 value = ctrlEvent.value*127.0f/100.0f;
                                 setVolume(value, false, false);
                                 postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_VOLUME, 0, value);
-                                continue;
                             }
 
                             if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (fHints & PLUGIN_CAN_BALANCE) > 0)
@@ -970,7 +968,6 @@ public:
                                 setBalanceRight(right, false, false);
                                 postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_LEFT, 0, left);
                                 postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_RIGHT, 0, right);
-                                continue;
                             }
                         }
 #endif
