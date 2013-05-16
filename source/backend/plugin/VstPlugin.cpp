@@ -1279,6 +1279,23 @@ public:
                             postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 0, value);
                         }
 
+                        if ((fOptions & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param <= 0x5F)
+                        {
+                            if (fMidiEventCount >= MAX_MIDI_EVENTS*2)
+                                continue;
+
+                            carla_zeroStruct<VstMidiEvent>(fMidiEvents[fMidiEventCount]);
+
+                            fMidiEvents[fMidiEventCount].type = kVstMidiType;
+                            fMidiEvents[fMidiEventCount].byteSize = sizeof(VstMidiEvent);
+                            fMidiEvents[fMidiEventCount].midiData[0] = MIDI_STATUS_CONTROL_CHANGE + event.channel;
+                            fMidiEvents[fMidiEventCount].midiData[1] = ctrlEvent.param;
+                            fMidiEvents[fMidiEventCount].midiData[2] = ctrlEvent.value*127.0f;
+                            fMidiEvents[fMidiEventCount].deltaFrames = sampleAccurate ? startTime : time;
+
+                            fMidiEventCount += 1;
+                        }
+
                         break;
                     }
 

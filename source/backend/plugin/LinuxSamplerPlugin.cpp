@@ -701,6 +701,11 @@ public:
                             postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 0, value);
                         }
 
+                        if ((fOptions & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param <= 0x5F)
+                        {
+                            fMidiInputPort->DispatchControlChange(ctrlEvent.param, ctrlEvent.value*127.0f, event.channel, sampleAccurate ? startTime : time);
+                        }
+
                         break;
                     }
 

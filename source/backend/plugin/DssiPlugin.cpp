@@ -1196,6 +1196,23 @@ public:
                             postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 0, value);
                         }
 
+                        if ((fOptions & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param <= 0x5F)
+                        {
+                            if (midiEventCount >= MAX_MIDI_EVENTS)
+                                continue;
+
+                            carla_zeroStruct<snd_seq_event_t>(fMidiEvents[midiEventCount]);
+
+                            fMidiEvents[midiEventCount].time.tick = sampleAccurate ? startTime : time;
+
+                            fMidiEvents[midiEventCount].type = SND_SEQ_EVENT_CONTROLLER;
+                            fMidiEvents[midiEventCount].data.control.channel = event.channel;
+                            fMidiEvents[midiEventCount].data.control.param   = ctrlEvent.param;
+                            fMidiEvents[midiEventCount].data.control.value   = ctrlEvent.value*127.0f;
+
+                            midiEventCount += 1;
+                        }
+
                         break;
                     }
 

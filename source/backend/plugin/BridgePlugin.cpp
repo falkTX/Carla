@@ -778,6 +778,16 @@ public:
                             postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 0, value);
                         }
 
+                        if ((fOptions & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param <= 0x5F)
+                        {
+                            rdwr_writeOpcode(&fShmControl.data->ringBuffer, kPluginBridgeOpcodeMidiEvent);
+                            rdwr_writeLong(&fShmControl.data->ringBuffer, event.time);
+                            rdwr_writeInt(&fShmControl.data->ringBuffer, 3);
+                            rdwr_writeChar(&fShmControl.data->ringBuffer, MIDI_STATUS_CONTROL_CHANGE + event.channel);
+                            rdwr_writeChar(&fShmControl.data->ringBuffer, ctrlEvent.param);
+                            rdwr_writeChar(&fShmControl.data->ringBuffer, ctrlEvent.value*127.0f);
+                        }
+
                         break;
                     }
 

@@ -1498,6 +1498,21 @@ public:
                             postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 0, value);
                         }
 
+                        if ((fOptions & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param <= 0x5F)
+                        {
+                            if (fMidiEventCount >= MAX_MIDI_EVENTS*2)
+                                continue;
+
+                            fMidiEvents[fMidiEventCount].port = 0;
+                            fMidiEvents[fMidiEventCount].time = sampleAccurate ? startTime : time;
+                            fMidiEvents[fMidiEventCount].data[0] = MIDI_STATUS_CONTROL_CHANGE + event.channel;
+                            fMidiEvents[fMidiEventCount].data[1] = ctrlEvent.param;
+                            fMidiEvents[fMidiEventCount].data[2] = ctrlEvent.value*127.0f;
+                            fMidiEvents[fMidiEventCount].size    = 3;
+
+                            fMidiEventCount += 1;
+                        }
+
                         break;
                     }
 
