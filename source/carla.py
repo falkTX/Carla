@@ -92,6 +92,7 @@ else:
 BUFFER_SIZES = (16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192)
 SAMPLE_RATES = (22050, 32000, 44100, 48000, 88200, 96000, 176400, 192000)
 
+LADISH_APP_NAME = os.getenv("LADISH_APP_NAME")
 NSM_URL = os.getenv("NSM_URL")
 
 # ------------------------------------------------------------------------------------------------------------
@@ -709,7 +710,7 @@ class CarlaMainW(QMainWindow):
         self.fLastTransportState = False
 
         self.fClientName = "Carla"
-        self.fSessionManagerName = "LADISH" if os.getenv("LADISH_APP_NAME") else ""
+        self.fSessionManagerName = "LADISH" if LADISH_APP_NAME else ""
 
         self.fLadspaRdfNeedsUpdate = True
         self.fLadspaRdfList = []
@@ -915,7 +916,7 @@ class CarlaMainW(QMainWindow):
 
         if Carla.processMode == PROCESS_MODE_CONTINUOUS_RACK:
             forceStereo = True
-        elif Carla.processMode == PROCESS_MODE_MULTIPLE_CLIENTS and os.getenv("LADISH_APP_NAME"):
+        elif Carla.processMode == PROCESS_MODE_MULTIPLE_CLIENTS and LADISH_APP_NAME:
             print("LADISH detected but using multiple clients (not allowed), forcing single client now")
             Carla.processMode = PROCESS_MODE_SINGLE_CLIENT
 
@@ -930,6 +931,10 @@ class CarlaMainW(QMainWindow):
         if audioDriver == "JACK":
             jackAutoConnect = settings.value("Engine/JackAutoConnect", CARLA_DEFAULT_JACK_AUTOCONNECT, type=bool)
             jackTimeMaster  = settings.value("Engine/JackTimeMaster", CARLA_DEFAULT_JACK_TIMEMASTER, type=bool)
+
+            if jackAutoConnect and LADISH_APP_NAME:
+                print("LADISH detected but using JACK auto-connect (not desired), disabling auto-connect now")
+                jackAutoConnect = False
 
             Carla.host.set_engine_option(OPTION_JACK_AUTOCONNECT, jackAutoConnect, "")
             Carla.host.set_engine_option(OPTION_JACK_TIMEMASTER, jackTimeMaster, "")
@@ -1152,7 +1157,7 @@ class CarlaMainW(QMainWindow):
             self.fLastTransportFrame = frame
 
     def setProperWindowTitle(self):
-        title = "%s" % os.getenv("LADISH_APP_NAME", "Carla")
+        title = LADISH_APP_NAME if LADISH_APP_NAME else "Carla"
 
         if self.fProjectFilename:
             title += " - %s" % os.path.basename(self.fProjectFilename)
