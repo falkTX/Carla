@@ -734,6 +734,10 @@ class CarlaMainW(QMainWindow):
         if not WINDOWS:
             self.fSyntaxLog = LogSyntaxHighlighter(self.ui.pte_log)
             self.fSyntaxLog.setDocument(self.ui.pte_log.document())
+
+            if LADISH_APP_NAME:
+                self.ui.miniCanvasPreview.setVisible(False)
+                self.ui.tabMain.removeTab(1)
         else:
             self.ui.tabMain.removeTab(2)
 
