@@ -114,7 +114,11 @@
 #define CARLA_SAFE_ASSERT_INT(cond, value) ((!(cond)) ? carla_assert_int(#cond, __FILE__, __LINE__, value) : pass())
 #define CARLA_SAFE_ASSERT_INT2(cond, v1, v2) ((!(cond)) ? carla_assert_int2(#cond, __FILE__, __LINE__, v1, v2) : pass())
 
-#ifdef NDEBUG
+#if defined(CARLA_NO_ASSERTS)
+# define CARLA_ASSERT(cond)
+# define CARLA_ASSERT_INT(cond, value)
+# define CARLA_ASSERT_INT2(cond, v1, v2)
+#elif defined(NDEBUG)
 # define CARLA_ASSERT CARLA_SAFE_ASSERT
 # define CARLA_ASSERT_INT CARLA_SAFE_ASSERT_INT
 # define CARLA_ASSERT_INT2 CARLA_SAFE_ASSERT_INT2

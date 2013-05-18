@@ -110,9 +110,8 @@ const char* EngineControlEventType2Str(const EngineControlEventType type)
 
 // -------------------------------------------------------------------------------------------------------------------
 
+const unsigned short INTERNAL_EVENT_COUNT = 512;
 const uint32_t       PATCHBAY_BUFFER_SIZE = 128;
-const unsigned short PATCHBAY_EVENT_COUNT = 512;
-const unsigned short RACK_EVENT_COUNT     = 512;
 
 enum EnginePostAction {
     kEnginePostActionNull,
@@ -150,6 +149,15 @@ struct CarlaEngineProtectedData {
     unsigned int curPluginCount;  // number of plugins loaded (0...max)
     unsigned int maxPluginNumber; // number of plugins allowed (0, 16, 99 or 255)
 
+    struct InternalEventBuffer {
+        EngineEvent* in;
+        EngineEvent* out;
+
+        InternalEventBuffer()
+            : in(nullptr),
+              out(nullptr) {}
+    } bufEvent;
+
     struct NextAction {
         EnginePostAction opcode;
         unsigned int     pluginId;
@@ -172,17 +180,6 @@ struct CarlaEngineProtectedData {
             mutex.unlock();
         }
     } nextAction;
-
-#ifndef BUILD_BRIDGE
-    struct Rack {
-        EngineEvent* in;
-        EngineEvent* out;
-
-        Rack()
-            : in(nullptr),
-              out(nullptr) {}
-    } rack;
-#endif
 
     struct Time {
         bool playing;

@@ -43,8 +43,7 @@ public:
     CarlaEngineBridge(const char* const audioBaseName, const char* const controlBaseName)
         : CarlaEngine(),
           fIsRunning(false),
-          fQuitNow(false),
-          fEventsInPort(nullptr)
+          fQuitNow(false)
     {
         carla_debug("CarlaEngineBridge::CarlaEngineBridge()");
 
@@ -109,11 +108,15 @@ public:
         }
 
         // Read values from memory
-        CARLA_ASSERT(rdwr_readOpcode(&fShmControl.data->ringBuffer) == kPluginBridgeOpcodeSetBufferSize);
+        PluginBridgeOpcode opcode;
+
+        opcode = rdwr_readOpcode(&fShmControl.data->ringBuffer);
+        CARLA_ASSERT(opcode == kPluginBridgeOpcodeSetBufferSize);
         fBufferSize = rdwr_readInt(&fShmControl.data->ringBuffer);
         carla_stderr("BufferSize: %i", fBufferSize);
 
-        CARLA_ASSERT(rdwr_readOpcode(&fShmControl.data->ringBuffer) == kPluginBridgeOpcodeSetSampleRate);
+        opcode = rdwr_readOpcode(&fShmControl.data->ringBuffer);
+        CARLA_ASSERT(opcode == kPluginBridgeOpcodeSetSampleRate);
         fSampleRate = rdwr_readFloat(&fShmControl.data->ringBuffer);
         carla_stderr("SampleRate: %f", fSampleRate);
 
@@ -184,14 +187,6 @@ public:
                 {
                     const int poolSize(rdwr_readInt(&fShmControl.data->ringBuffer));
                     fShmAudioPool.data = (float*)carla_shm_map(fShmAudioPool.shm, poolSize);
-
-                    fEventsInPort = nullptr;
-
-                    CarlaPlugin* const plugin(getPluginUnchecked(0));
-
-                    if (plugin != nullptr && plugin->enabled())
-                        fEventsInPort = plugin->getDefaultEventInPort();
-
                     break;
                 }
 
@@ -266,10 +261,12 @@ public:
                     for (int i=0; i < dataSize && i < 4; ++i)
                         data[i] = rdwr_readChar(&fShmControl.data->ringBuffer);
 
-                    CARLA_ASSERT(fEventsInPort != nullptr);
+                    CARLA_ASSERT(kData->bufEvent.in != nullptr);
 
-                    if (fEventsInPort != nullptr)
-                        fEventsInPort->writeMidiEvent(time, data, dataSize);
+                    if (kData->bufEvent.in != nullptr)
+                    {
+                        // TODO
+                    }
 
                     break;
                 }
@@ -295,9 +292,6 @@ public:
                         plugin->initBuffers();
                         plugin->process(inBuffer, outBuffer, fBufferSize);
                         plugin->unlock();
-
-                        if (fEventsInPort != nullptr)
-                            fEventsInPort->clearBuffer();
                     }
                     break;
                 }
@@ -343,8 +337,6 @@ private:
 
     bool fIsRunning;
     bool fQuitNow;
-
-    CarlaEngineEventPort* fEventsInPort;
 
     void _cleanup()
     {

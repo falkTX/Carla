@@ -849,9 +849,6 @@ protected:
     // -------------------------------------------------------------------
     // Helper classes
 
-    // Get default event input port
-    virtual CarlaEngineEventPort* getDefaultEventInPort() const;
-
     // Fully disable plugin in scope and also its engine client
     // May wait-block on constructor for plugin process to end
     class ScopedDisabler

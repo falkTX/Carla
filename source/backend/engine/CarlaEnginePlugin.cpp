@@ -41,7 +41,7 @@ static const unsigned int kParamVolume  = 5;
 static const unsigned int kParamBalance = 6;
 static const unsigned int kParamPan     = 8;
 
-static const unsigned int kParamCount   = sizeof(paramMap);
+static const unsigned int kParamCount   = sizeof(kParamMap);
 static const unsigned int kProgramCount = 128;
 static const unsigned int kStateCount   = MAX_RACK_PLUGINS;
 
@@ -434,16 +434,16 @@ protected:
         // ---------------------------------------------------------------
         // initialize input events
 
-        carla_zeroStruct<EngineEvent>(kData->rack.in, RACK_EVENT_COUNT);
+        carla_zeroStruct<EngineEvent>(kData->bufEvent.in, INTERNAL_EVENT_COUNT);
         {
             uint32_t engineEventIndex = 0;
 
-            for (unsigned int i=0; i < kParamCount && engineEventIndex+midiEventCount < RACK_EVENT_COUNT; ++i)
+            for (unsigned int i=0; i < kParamCount && engineEventIndex+midiEventCount < INTERNAL_EVENT_COUNT; ++i)
             {
                 if (fParamBuffers[i] == fPrevParamBuffers[i])
                     continue;
 
-                EngineEvent& engineEvent(kData->rack.in[engineEventIndex++]);
+                EngineEvent& engineEvent(kData->bufEvent.in[engineEventIndex++]);
                 engineEvent.clear();
 
                 engineEvent.type    = kEngineEventTypeControl;
@@ -457,7 +457,7 @@ protected:
                 fPrevParamBuffers[i] = fParamBuffers[i];
             }
 
-            for (uint32_t i=0; i < midiEventCount && engineEventIndex < RACK_EVENT_COUNT; ++i)
+            for (uint32_t i=0; i < midiEventCount && engineEventIndex < INTERNAL_EVENT_COUNT; ++i)
             {
                 const DISTRHO::MidiEvent& midiEvent(midiEvents[i]);
 
@@ -481,7 +481,7 @@ protected:
 
                     if (control == MIDI_CONTROL_ALL_SOUND_OFF || control == MIDI_CONTROL_ALL_NOTES_OFF)
                     {
-                        EngineEvent& engineEvent(kData->rack.in[engineEventIndex++]);
+                        EngineEvent& engineEvent(kData->bufEvent.in[engineEventIndex++]);
                         engineEvent.clear();
 
                         engineEvent.type    = kEngineEventTypeControl;
@@ -496,7 +496,7 @@ protected:
                     }
                 }
 
-                EngineEvent& engineEvent(kData->rack.in[engineEventIndex++]);
+                EngineEvent& engineEvent(kData->bufEvent.in[engineEventIndex++]);
                 engineEvent.clear();
 
                 engineEvent.type    = kEngineEventTypeMidi;

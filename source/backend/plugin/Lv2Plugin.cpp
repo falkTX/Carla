@@ -3452,14 +3452,6 @@ public:
     }
 
     // -------------------------------------------------------------------
-    // Helpers
-
-    CarlaEngineEventPort* getDefaultEventInPort() const override
-    {
-        return (fEventsIn.ctrl != nullptr) ? fEventsIn.ctrl->port : nullptr;
-    }
-
-    // -------------------------------------------------------------------
 
 protected:
     void guiClosedCallback() override

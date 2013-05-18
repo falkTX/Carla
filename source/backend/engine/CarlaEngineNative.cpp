@@ -17,8 +17,6 @@
 
 #ifndef BUILD_BRIDGE
 
-#define WANT_LV2
-
 #include "CarlaEngineInternal.hpp"
 #include "CarlaStateUtils.hpp"
 
@@ -286,7 +284,7 @@ protected:
         plugin->setParameterValue(index, value, false, false, false);
     }
 
-    void setMidiProgram(const uint8_t channel, const uint32_t bank, const uint32_t program) override
+    void setMidiProgram(const uint8_t, const uint32_t bank, const uint32_t program) override
     {
         if (kData->curPluginCount == 0 || kData->plugins == nullptr)
             return;
@@ -382,11 +380,11 @@ protected:
         // ---------------------------------------------------------------
         // initialize input events
 
-        carla_zeroStruct<EngineEvent>(kData->rack.in, RACK_EVENT_COUNT);
+        carla_zeroStruct<EngineEvent>(kData->bufEvent.in, INTERNAL_EVENT_COUNT);
         {
             uint32_t engineEventIndex = 0;
 
-            for (uint32_t i=0; i < midiEventCount && engineEventIndex < RACK_EVENT_COUNT; ++i)
+            for (uint32_t i=0; i < midiEventCount && engineEventIndex < INTERNAL_EVENT_COUNT; ++i)
             {
                 const ::MidiEvent& midiEvent(midiEvents[i]);
 
@@ -410,7 +408,7 @@ protected:
 
                     if (control == MIDI_CONTROL_ALL_SOUND_OFF || control == MIDI_CONTROL_ALL_NOTES_OFF)
                     {
-                        EngineEvent& engineEvent(kData->rack.in[engineEventIndex++]);
+                        EngineEvent& engineEvent(kData->bufEvent.in[engineEventIndex++]);
                         engineEvent.clear();
 
                         engineEvent.type    = kEngineEventTypeControl;
@@ -425,7 +423,7 @@ protected:
                     }
                 }
 
-                EngineEvent& engineEvent(kData->rack.in[engineEventIndex++]);
+                EngineEvent& engineEvent(kData->bufEvent.in[engineEventIndex++]);
                 engineEvent.clear();
 
                 engineEvent.type    = kEngineEventTypeMidi;
@@ -491,6 +489,7 @@ protected:
         // TODO
 
         // unused
+        (void)channel;
         (void)bank;
         (void)program;
     }

@@ -114,20 +114,19 @@ void CarlaEngineAudioPort::initBuffer(CarlaEngine* const)
 
 CarlaEngineEventPort::CarlaEngineEventPort(const bool isInput, const ProcessMode processMode)
     : CarlaEnginePort(isInput, processMode),
-      kMaxEventCount(processMode == PROCESS_MODE_CONTINUOUS_RACK ? RACK_EVENT_COUNT : PATCHBAY_EVENT_COUNT),
       fBuffer(nullptr)
 {
     carla_debug("CarlaEngineEventPort::CarlaEngineEventPort(%s, %s)", bool2str(isInput), ProcessMode2Str(processMode));
 
-    if (kProcessMode == PROCESS_MODE_PATCHBAY || kProcessMode == PROCESS_MODE_BRIDGE)
-        fBuffer = new EngineEvent[kMaxEventCount];
+    if (kProcessMode == PROCESS_MODE_PATCHBAY)
+        fBuffer = new EngineEvent[INTERNAL_EVENT_COUNT];
 }
 
 CarlaEngineEventPort::~CarlaEngineEventPort()
 {
     carla_debug("CarlaEngineEventPort::~CarlaEngineEventPort()");
 
-    if (kProcessMode == PROCESS_MODE_PATCHBAY || kProcessMode == PROCESS_MODE_BRIDGE)
+    if (kProcessMode == PROCESS_MODE_PATCHBAY)
     {
         CARLA_ASSERT(fBuffer != nullptr);
 
@@ -141,67 +140,58 @@ void CarlaEngineEventPort::initBuffer(CarlaEngine* const engine)
     CARLA_ASSERT(engine != nullptr);
 
     if (engine == nullptr)
+    {
+        fBuffer = nullptr;
         return;
+    }
 
-#ifndef BUILD_BRIDGE
-    if (kProcessMode == PROCESS_MODE_CONTINUOUS_RACK)
-        fBuffer = engine->getRackEventBuffer(kIsInput);
-    else
-#endif
-        if ((kProcessMode == PROCESS_MODE_PATCHBAY || kProcessMode == PROCESS_MODE_BRIDGE) && ! kIsInput)
-            carla_zeroStruct<EngineEvent>(fBuffer, kMaxEventCount);
+    if (kProcessMode == PROCESS_MODE_CONTINUOUS_RACK || kProcessMode == PROCESS_MODE_BRIDGE)
+    {
+        fBuffer = engine->getInternalEventBuffer(kIsInput);
+        return;
+    }
+
+    if (kProcessMode == PROCESS_MODE_PATCHBAY && ! kIsInput)
+        carla_zeroStruct<EngineEvent>(fBuffer, INTERNAL_EVENT_COUNT);
 }
 
-void CarlaEngineEventPort::clearBuffer()
-{
-    CARLA_ASSERT(fBuffer != nullptr);
-
-    if (fBuffer == nullptr)
-        return;
-
-    if (kProcessMode == PROCESS_MODE_PATCHBAY || kProcessMode == PROCESS_MODE_BRIDGE)
-        carla_zeroStruct<EngineEvent>(fBuffer, kMaxEventCount);
-}
-
-uint32_t CarlaEngineEventPort::getEventCount()
+uint32_t CarlaEngineEventPort::getEventCount() const
 {
     CARLA_ASSERT(kIsInput);
     CARLA_ASSERT(fBuffer != nullptr);
-    CARLA_ASSERT(kProcessMode == PROCESS_MODE_CONTINUOUS_RACK || kProcessMode == PROCESS_MODE_PATCHBAY || kProcessMode == PROCESS_MODE_BRIDGE);
+    CARLA_ASSERT(kProcessMode != PROCESS_MODE_SINGLE_CLIENT && kProcessMode != PROCESS_MODE_MULTIPLE_CLIENTS);
 
     if (! kIsInput)
         return 0;
     if (fBuffer == nullptr)
         return 0;
-    if (kProcessMode != PROCESS_MODE_CONTINUOUS_RACK && kProcessMode != PROCESS_MODE_PATCHBAY && kProcessMode != PROCESS_MODE_BRIDGE)
+    if (kProcessMode == PROCESS_MODE_SINGLE_CLIENT || kProcessMode == PROCESS_MODE_MULTIPLE_CLIENTS)
         return 0;
 
-    uint32_t count = 0;
-    const EngineEvent* const events = fBuffer;
-
-    for (uint32_t i=0; i < kMaxEventCount; ++i, ++count)
+    for (uint32_t i=0; i < INTERNAL_EVENT_COUNT; ++i)
     {
-        if (events[i].type == kEngineEventTypeNull)
-            break;
+        if (fBuffer[i].type == kEngineEventTypeNull)
+            return i;
     }
 
-    return count;
+    CARLA_ASSERT(false); // should never happen
+    return 0;
 }
 
 const EngineEvent& CarlaEngineEventPort::getEvent(const uint32_t index)
 {
     CARLA_ASSERT(kIsInput);
     CARLA_ASSERT(fBuffer != nullptr);
-    CARLA_ASSERT(kProcessMode == PROCESS_MODE_CONTINUOUS_RACK || kProcessMode == PROCESS_MODE_PATCHBAY || kProcessMode == PROCESS_MODE_BRIDGE);
-    CARLA_ASSERT(index < kMaxEventCount);
+    CARLA_ASSERT(kProcessMode != PROCESS_MODE_SINGLE_CLIENT && kProcessMode != PROCESS_MODE_MULTIPLE_CLIENTS);
+    CARLA_ASSERT(index < INTERNAL_EVENT_COUNT);
 
     if (! kIsInput)
         return kFallbackEngineEvent;
     if (fBuffer == nullptr)
         return kFallbackEngineEvent;
-    if (kProcessMode != PROCESS_MODE_CONTINUOUS_RACK && kProcessMode != PROCESS_MODE_PATCHBAY && kProcessMode != PROCESS_MODE_BRIDGE)
+    if (kProcessMode == PROCESS_MODE_SINGLE_CLIENT || kProcessMode == PROCESS_MODE_MULTIPLE_CLIENTS)
         return kFallbackEngineEvent;
-    if (index >= kMaxEventCount)
+    if (index >= INTERNAL_EVENT_COUNT)
         return kFallbackEngineEvent;
 
     return fBuffer[index];
@@ -211,7 +201,7 @@ void CarlaEngineEventPort::writeControlEvent(const uint32_t time, const uint8_t 
 {
     CARLA_ASSERT(! kIsInput);
     CARLA_ASSERT(fBuffer != nullptr);
-    CARLA_ASSERT(kProcessMode == PROCESS_MODE_CONTINUOUS_RACK || kProcessMode == PROCESS_MODE_PATCHBAY || kProcessMode == PROCESS_MODE_BRIDGE);
+    CARLA_ASSERT(kProcessMode != PROCESS_MODE_SINGLE_CLIENT && kProcessMode != PROCESS_MODE_MULTIPLE_CLIENTS);
     CARLA_ASSERT(type != kEngineControlEventTypeNull);
     CARLA_ASSERT(channel < MAX_MIDI_CHANNELS);
     CARLA_SAFE_ASSERT(value >= 0.0f && value <= 1.0f);
@@ -220,7 +210,7 @@ void CarlaEngineEventPort::writeControlEvent(const uint32_t time, const uint8_t 
         return;
     if (fBuffer == nullptr)
         return;
-    if (kProcessMode != PROCESS_MODE_CONTINUOUS_RACK && kProcessMode != PROCESS_MODE_PATCHBAY && kProcessMode != PROCESS_MODE_BRIDGE)
+    if (kProcessMode == PROCESS_MODE_SINGLE_CLIENT || kProcessMode == PROCESS_MODE_MULTIPLE_CLIENTS)
         return;
     if (type == kEngineControlEventTypeNull)
         return;
@@ -231,7 +221,7 @@ void CarlaEngineEventPort::writeControlEvent(const uint32_t time, const uint8_t 
         CARLA_ASSERT(! MIDI_IS_CONTROL_BANK_SELECT(param));
     }
 
-    for (uint32_t i=0; i < kMaxEventCount; ++i)
+    for (uint32_t i=0; i < INTERNAL_EVENT_COUNT; ++i)
     {
         if (fBuffer[i].type != kEngineEventTypeNull)
             continue;
@@ -243,7 +233,6 @@ void CarlaEngineEventPort::writeControlEvent(const uint32_t time, const uint8_t 
         fBuffer[i].ctrl.type  = type;
         fBuffer[i].ctrl.param = param;
         fBuffer[i].ctrl.value = carla_fixValue<float>(0.0f, 1.0f, value);
-
         return;
     }
 
@@ -252,33 +241,27 @@ void CarlaEngineEventPort::writeControlEvent(const uint32_t time, const uint8_t 
 
 void CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t channel, const uint8_t port, const uint8_t* const data, const uint8_t size)
 {
-#ifndef BUILD_BRIDGE
     CARLA_ASSERT(! kIsInput);
-#endif
     CARLA_ASSERT(fBuffer != nullptr);
-    CARLA_ASSERT(kProcessMode == PROCESS_MODE_CONTINUOUS_RACK || kProcessMode == PROCESS_MODE_PATCHBAY || kProcessMode == PROCESS_MODE_BRIDGE);
+    CARLA_ASSERT(kProcessMode != PROCESS_MODE_SINGLE_CLIENT && kProcessMode != PROCESS_MODE_MULTIPLE_CLIENTS);
     CARLA_ASSERT(channel < MAX_MIDI_CHANNELS);
     CARLA_ASSERT(data != nullptr);
     CARLA_ASSERT(size > 0);
 
-#ifndef BUILD_BRIDGE
     if (kIsInput)
         return;
-#endif
     if (fBuffer == nullptr)
         return;
-    if (kProcessMode != PROCESS_MODE_CONTINUOUS_RACK && kProcessMode != PROCESS_MODE_PATCHBAY && kProcessMode != PROCESS_MODE_BRIDGE)
+    if (kProcessMode == PROCESS_MODE_SINGLE_CLIENT || kProcessMode == PROCESS_MODE_MULTIPLE_CLIENTS)
         return;
     if (channel >= MAX_MIDI_CHANNELS)
         return;
     if (data == nullptr)
         return;
-    if (size == 0)
-        return;
-    if (size > 4)
+    if (size == 0 || size > 4)
         return;
 
-    for (uint32_t i=0; i < kMaxEventCount; ++i)
+    for (uint32_t i=0; i < INTERNAL_EVENT_COUNT; ++i)
     {
         if (fBuffer[i].type != kEngineEventTypeNull)
             continue;
@@ -292,6 +275,8 @@ void CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t cha
 
         carla_copy<uint8_t>(fBuffer[i].midi.data, data, size);
 
+        // strip MIDI channel from 1st byte
+        fBuffer[i].midi.data[0] = MIDI_GET_STATUS_FROM_DATA(fBuffer[i].midi.data);
         return;
     }
 
@@ -615,13 +600,12 @@ unsigned int CarlaEngine::maxPluginNumber() const
 
 bool CarlaEngine::init(const char* const clientName)
 {
+    CARLA_ASSERT(kData->oscData == nullptr);
     CARLA_ASSERT(kData->plugins == nullptr);
     carla_debug("CarlaEngine::init(\"%s\")", clientName);
 
-#ifndef BUILD_BRIDGE
-    CARLA_ASSERT(kData->rack.in  == nullptr);
-    CARLA_ASSERT(kData->rack.out == nullptr);
-#endif
+    CARLA_ASSERT(kData->bufEvent.in  == nullptr);
+    CARLA_ASSERT(kData->bufEvent.out == nullptr);
 
     fName = clientName;
     fName.toBasic();
@@ -630,25 +614,31 @@ bool CarlaEngine::init(const char* const clientName)
 
     kData->aboutToClose = false;
     kData->curPluginCount = 0;
+    kData->maxPluginNumber = 0;
 
-#ifdef BUILD_BRIDGE
-    kData->maxPluginNumber = 1;
-#else
     switch (fOptions.processMode)
     {
+    case PROCESS_MODE_SINGLE_CLIENT:
+    case PROCESS_MODE_MULTIPLE_CLIENTS:
+        kData->maxPluginNumber = MAX_DEFAULT_PLUGINS;
+        break;
+
     case PROCESS_MODE_CONTINUOUS_RACK:
         kData->maxPluginNumber = MAX_RACK_PLUGINS;
-        kData->rack.in  = new EngineEvent[RACK_EVENT_COUNT];
-        kData->rack.out = new EngineEvent[RACK_EVENT_COUNT];
+        kData->bufEvent.in  = new EngineEvent[INTERNAL_EVENT_COUNT];
+        kData->bufEvent.out = new EngineEvent[INTERNAL_EVENT_COUNT];
         break;
+
     case PROCESS_MODE_PATCHBAY:
         kData->maxPluginNumber = MAX_PATCHBAY_PLUGINS;
         break;
-    default:
-        kData->maxPluginNumber = MAX_DEFAULT_PLUGINS;
+
+    case PROCESS_MODE_BRIDGE:
+        kData->maxPluginNumber = 1;
+        kData->bufEvent.in  = new EngineEvent[INTERNAL_EVENT_COUNT];
+        kData->bufEvent.out = new EngineEvent[INTERNAL_EVENT_COUNT];
         break;
     }
-#endif
 
     kData->plugins = new EnginePluginData[kData->maxPluginNumber];
 
@@ -656,14 +646,10 @@ bool CarlaEngine::init(const char* const clientName)
 
 #ifndef BUILD_BRIDGE
     kData->oscData = kData->osc.getControlData();
-#else
-    kData->oscData = nullptr; // set later in setOscBridgeData()
 #endif
 
-#ifndef BUILD_BRIDGE
     if (type() != kEngineTypePlugin)
         carla_setprocname(clientName);
-#endif
 
     kData->nextAction.ready();
     kData->thread.startNow();
@@ -696,19 +682,17 @@ bool CarlaEngine::close()
         kData->plugins = nullptr;
     }
 
-#ifndef BUILD_BRIDGE
-    if (kData->rack.in != nullptr)
+    if (kData->bufEvent.in != nullptr)
     {
-        delete[] kData->rack.in;
-        kData->rack.in = nullptr;
+        delete[] kData->bufEvent.in;
+        kData->bufEvent.in = nullptr;
     }
 
-    if (kData->rack.out != nullptr)
+    if (kData->bufEvent.out != nullptr)
     {
-        delete[] kData->rack.out;
-        kData->rack.out = nullptr;
+        delete[] kData->bufEvent.out;
+        kData->bufEvent.out = nullptr;
     }
-#endif
 
     fName.clear();
 
@@ -1800,12 +1784,12 @@ void CarlaEngine::setPeaks(const unsigned int pluginId, float const inPeaks[MAX_
     kData->plugins[pluginId].outsPeak[1] = outPeaks[1];
 }
 
-#ifndef BUILD_BRIDGE
-EngineEvent* CarlaEngine::getRackEventBuffer(const bool isInput)
+EngineEvent* CarlaEngine::getInternalEventBuffer(const bool isInput) const
 {
-    return isInput ? kData->rack.in : kData->rack.out;
+    return isInput ? kData->bufEvent.in : kData->bufEvent.out;
 }
 
+#ifndef BUILD_BRIDGE
 void setValueIfHigher(float& value, const float& compare)
 {
     if (value < compare)
@@ -1814,13 +1798,13 @@ void setValueIfHigher(float& value, const float& compare)
 
 void CarlaEngine::processRack(float* inBuf[2], float* outBuf[2], const uint32_t frames)
 {
-    CARLA_ASSERT(kData->rack.in != nullptr);
-    CARLA_ASSERT(kData->rack.out != nullptr);
+    CARLA_ASSERT(kData->bufEvent.in != nullptr);
+    CARLA_ASSERT(kData->bufEvent.out != nullptr);
 
     // initialize outputs (zero)
     carla_zeroFloat(outBuf[0], frames);
     carla_zeroFloat(outBuf[1], frames);
-    carla_zeroMem(kData->rack.out, sizeof(EngineEvent)*RACK_EVENT_COUNT);
+    carla_zeroMem(kData->bufEvent.out, sizeof(EngineEvent)*INTERNAL_EVENT_COUNT);
 
     bool processed = false;
 
@@ -1837,12 +1821,12 @@ void CarlaEngine::processRack(float* inBuf[2], float* outBuf[2], const uint32_t 
             // initialize inputs (from previous outputs)
             carla_copyFloat(inBuf[0], outBuf[0], frames);
             carla_copyFloat(inBuf[1], outBuf[1], frames);
-            std::memcpy(kData->rack.in, kData->rack.out, sizeof(EngineEvent)*RACK_EVENT_COUNT);
+            std::memcpy(kData->bufEvent.in, kData->bufEvent.out, sizeof(EngineEvent)*INTERNAL_EVENT_COUNT);
 
             // initialize outputs (zero)
             carla_zeroFloat(outBuf[0], frames);
             carla_zeroFloat(outBuf[1], frames);
-            carla_zeroMem(kData->rack.out, sizeof(EngineEvent)*RACK_EVENT_COUNT);
+            carla_zeroMem(kData->bufEvent.out, sizeof(EngineEvent)*INTERNAL_EVENT_COUNT);
         }
 
         // process

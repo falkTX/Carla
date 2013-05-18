@@ -348,7 +348,17 @@ struct EngineTimeInfo {
     {
         clear();
     }
+#endif
 
+    void clear()
+    {
+        playing = false;
+        frame   = 0;
+        usecs   = 0;
+        valid   = 0x0;
+    }
+
+#ifndef DOXYGEN
     // quick operator, doesn't check all values
     bool operator==(const EngineTimeInfo& timeInfo) const
     {
@@ -366,17 +376,6 @@ struct EngineTimeInfo {
         return !operator==(timeInfo);
     }
 
-#endif
-
-    void clear()
-    {
-        playing = false;
-        frame   = 0;
-        usecs   = 0;
-        valid   = 0x0;
-    }
-
-#ifndef DOXYGEN
     CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(EngineTimeInfo)
 #endif
 };
@@ -393,7 +392,7 @@ public:
     /*!
      * The contructor.\n
      * Param \a isInput defines wherever this is an input port or not (output otherwise).\n
-     * Input/output state and process mode are constant for the lifetime of the port.
+     * Input/output and process mode are constant for the lifetime of the port.
      */
     CarlaEnginePort(const bool isInput, const ProcessMode processMode);
 
@@ -502,15 +501,10 @@ public:
     virtual void initBuffer(CarlaEngine* const engine) override;
 
     /*!
-     * Clear the port's internal buffer.
-     */
-    virtual void clearBuffer();
-
-    /*!
      * Get the number of events present in the buffer.
      * \note You must only call this for input ports.
      */
-    virtual uint32_t getEventCount();
+    virtual uint32_t getEventCount() const;
 
     /*!
      * Get the event at \a index.
@@ -558,8 +552,7 @@ public:
 
 #ifndef DOXYGEN
 private:
-    const uint32_t kMaxEventCount;
-    EngineEvent*   fBuffer;
+    EngineEvent* fBuffer;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineEventPort)
 #endif
@@ -1068,10 +1061,10 @@ protected:
      */
     void setPeaks(const unsigned int pluginId, float const inPeaks[MAX_PEAKS], float const outPeaks[MAX_PEAKS]);
 
-# ifndef BUILD_BRIDGE
-    // Rack mode data
-    EngineEvent* getRackEventBuffer(const bool isInput);
+    // Internal data, used in Rack and Bridge modes
+    EngineEvent* getInternalEventBuffer(const bool isInput) const;
 
+# ifndef BUILD_BRIDGE
     /*!
      * Proccess audio buffer in rack mode.
      */

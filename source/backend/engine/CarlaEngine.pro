@@ -60,6 +60,7 @@ SOURCES  = \
     CarlaEngineThread.cpp \
     CarlaEngineBridge.cpp \
     CarlaEngineJack.cpp \
+    CarlaEngineNative.cpp \
     CarlaEnginePlugin.cpp \
     CarlaEngineRtAudio.cpp
 

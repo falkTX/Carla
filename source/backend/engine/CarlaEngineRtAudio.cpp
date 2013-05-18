@@ -824,7 +824,7 @@ protected:
         carla_zeroFloat(fAudioBufRackOut[1], nframes);
 
         // initialize input events
-        carla_zeroMem(kData->rack.in, sizeof(EngineEvent)*RACK_EVENT_COUNT);
+        carla_zeroMem(kData->bufEvent.in, sizeof(EngineEvent)*INTERNAL_EVENT_COUNT);
 
         if (fMidiInEvents.mutex.tryLock())
         {
@@ -835,7 +835,7 @@ protected:
             {
                 const RtMidiEvent& midiEvent(fMidiInEvents.data.getFirst(true));
 
-                EngineEvent& engineEvent(kData->rack.in[engineEventIndex++]);
+                EngineEvent& engineEvent(kData->bufEvent.in[engineEventIndex++]);
                 engineEvent.clear();
 
                 const uint8_t midiStatus  = MIDI_GET_STATUS_FROM_DATA(midiEvent.data);
@@ -909,7 +909,7 @@ protected:
                     engineEvent.midi.size    = midiEvent.size;
                 }
 
-                if (engineEventIndex >= RACK_EVENT_COUNT)
+                if (engineEventIndex >= INTERNAL_EVENT_COUNT)
                     break;
             }
 
