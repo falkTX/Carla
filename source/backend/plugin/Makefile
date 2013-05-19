@@ -11,7 +11,7 @@ include ../Makefile.mk
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo)
 
 ifeq ($(HAVE_QT5),true)
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags Qt5Core Qt5Xml Qt5Widgets)
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags Qt5Core Qt5Gui Qt5Xml Qt5Widgets)
 else
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtCore QtGui QtXml)
 endif

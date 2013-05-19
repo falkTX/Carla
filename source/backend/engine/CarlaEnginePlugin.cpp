@@ -15,8 +15,6 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#ifdef WANT_PLUGIN
-
 #include "CarlaEngineInternal.hpp"
 #include "CarlaStateUtils.hpp"
 
@@ -25,7 +23,22 @@
 using DISTRHO::d_cconst;
 using DISTRHO::d_string;
 
+// -----------------------------------------
+// needed symbols
+
+#include "jackbridge/JackBridge.hpp"
+#include "jackbridge/JackBridge2.cpp"
+
 CARLA_BACKEND_START_NAMESPACE
+
+CarlaEngine* CarlaEngine::newJack() { return nullptr; }
+
+#ifdef WANT_RTAUDIO
+CarlaEngine* CarlaEngine::newRtAudio(RtAudioApi) { return nullptr; }
+size_t       CarlaEngine::getRtAudioApiCount()   { return 0; }
+const char*  CarlaEngine::getRtAudioApiName(const unsigned int)        { return nullptr; }
+const char** CarlaEngine::getRtAudioApiDeviceNames(const unsigned int) { return nullptr; }
+#endif
 
 // -----------------------------------------
 // Parameters
@@ -562,5 +575,3 @@ END_NAMESPACE_DISTRHO
 // -------------------------------------------------
 
 #include "DistrhoPluginMain.cpp"
-
-#endif // WANT_PLUGIN

@@ -51,14 +51,15 @@ PLUGIN_CXX_FLAGS += -DWANT_PLUGIN
 
 # --------------------------------------------------------------
 
-OBJS  = \
+OBJSp = \
 	CarlaEngine.cpp.o \
 	CarlaEngineOsc.cpp.o \
 	CarlaEngineThread.cpp.o \
+	CarlaEngineNative.cpp.o
+
+OBJS  = $(OBJSp) \
 	CarlaEngineBridge.cpp.o \
 	CarlaEngineJack.cpp.o \
-	CarlaEngineNative.cpp.o \
-	CarlaEnginePlugin.cpp.o \
 	CarlaEngineRtAudio.cpp.o
 
 ifeq ($(CARLA_RTAUDIO_SUPPORT),true)
@@ -75,11 +76,12 @@ OBJS += \
 endif
 endif
 
-TARGET = ../libcarla_engine.a
+TARGET  = ../libcarla_engine.a
+TARGETp = ../libcarla_engine_plugin.a
 
 # --------------------------------------------------------------
 
-all: $(TARGET)
+all: $(TARGET) $(TARGETp)
 
 clean:
 	rm -f $(OBJS) $(TARGET)
@@ -89,17 +91,24 @@ debug:
 
 # --------------------------------------------------------------
 
-%.cpp.o: %.cpp ../CarlaBackend.hpp ../CarlaEngine.hpp ../CarlaPlugin.hpp CarlaEngineInternal.hpp CarlaEngineOsc.hpp CarlaEngineThread.hpp
+HEADERS = \
+	../CarlaBackend.hpp ../CarlaEngine.hpp ../CarlaPlugin.hpp \
+	CarlaEngineInternal.hpp CarlaEngineOsc.hpp CarlaEngineThread.hpp
+
+%.cpp.o: %.cpp $(HEADERS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
-%.cpp.dssi.o: %.cpp ../CarlaBackend.hpp ../CarlaEngine.hpp ../CarlaPlugin.hpp CarlaEngineInternal.hpp CarlaEngineOsc.hpp CarlaEngineThread.hpp
+%.cpp.dssi.o: %.cpp $(HEADERS)
 	$(CXX) $< $(PLUGIN_CXX_FLAGS) -DDISTRHO_PLUGIN_TARGET_DSSI -c -o $@
 
-%.cpp.lv2.o: %.cpp ../CarlaBackend.hpp ../CarlaEngine.hpp ../CarlaPlugin.hpp CarlaEngineInternal.hpp CarlaEngineOsc.hpp CarlaEngineThread.hpp
+%.cpp.lv2.o: %.cpp $(HEADERS)
 	$(CXX) $< $(PLUGIN_CXX_FLAGS) -DDISTRHO_PLUGIN_TARGET_LV2 -c -o $@
 
-%.cpp.vst.o: %.cpp ../CarlaBackend.hpp ../CarlaEngine.hpp ../CarlaPlugin.hpp CarlaEngineInternal.hpp CarlaEngineOsc.hpp CarlaEngineThread.hpp
+%.cpp.vst.o: %.cpp $(HEADERS)
 	$(CXX) $< $(PLUGIN_CXX_FLAGS) -DDISTRHO_PLUGIN_TARGET_VST -c -o $@
 
 $(TARGET): $(OBJS)
+	$(AR) rs $@ $^
+
+$(TARGETp): $(OBJSp)
 	$(AR) rs $@ $^

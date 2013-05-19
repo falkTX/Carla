@@ -16,9 +16,11 @@
 
 #include "CarlaDefines.hpp"
 
+#ifndef __JACKBRIDGE_HPP__
 // don't include the whole JACK API in this file
 CARLA_EXPORT bool jackbridge_sem_post(void* sem);
 CARLA_EXPORT bool jackbridge_sem_timedwait(void* sem, int secs);
+#endif
 
 // -----------------------------------------------------------------------------
 
@@ -41,8 +43,8 @@ bool jackbridge_sem_timedwait(void*, int)
 # define _SYS_SELECT_H   1
 # include <bits/types.h>
 struct timespec {
-    __time_t tv_sec;  /* Seconds.  */
-    long int tv_nsec; /* Nanoseconds.  */
+    __time_t tv_sec;  /* Seconds.     */
+    long int tv_nsec; /* Nanoseconds. */
 };
 #endif
 
