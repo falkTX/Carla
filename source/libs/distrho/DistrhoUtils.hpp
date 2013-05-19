@@ -112,47 +112,43 @@ public:
 
     explicit d_string(const int value)
     {
-        const size_t strBufSize = std::abs(value/10) + 3;
-        char         strBuf[strBufSize];
-        std::snprintf(strBuf, strBufSize, "%d", value);
+        char strBuf[0xff] = { '\0' };
+        std::snprintf(strBuf, 0xff, "%d", value);
 
         _init();
-        _dup(strBuf, strBufSize);
+        _dup(strBuf);
     }
 
     explicit d_string(const unsigned int value, const bool hexadecimal = false)
     {
-        const size_t strBufSize = value/10 + 2 + (hexadecimal ? 2 : 0);
-        char         strBuf[strBufSize];
-        std::snprintf(strBuf, strBufSize, hexadecimal ? "0x%x" : "%u", value);
+        char strBuf[0xff] = { '\0' };
+        std::snprintf(strBuf, 0xff, hexadecimal ? "0x%x" : "%u", value);
 
         _init();
-        _dup(strBuf, strBufSize);
+        _dup(strBuf);
     }
 
     explicit d_string(const long int value)
     {
-        const size_t strBufSize = std::abs(value/10) + 3;
-        char         strBuf[strBufSize];
-        std::snprintf(strBuf, strBufSize, "%ld", value);
+        char strBuf[0xff] = { '\0' };
+        std::snprintf(strBuf, 0xff, "%ld", value);
 
         _init();
-        _dup(strBuf, strBufSize);
+        _dup(strBuf);
     }
 
     explicit d_string(const unsigned long int value, const bool hexadecimal = false)
     {
-        const size_t strBufSize = value/10 + 2 + (hexadecimal ? 2 : 0);
-        char         strBuf[strBufSize];
-        std::snprintf(strBuf, strBufSize, hexadecimal ? "0x%lx" : "%lu", value);
+        char strBuf[0xff] = { '\0' };
+        std::snprintf(strBuf, 0xff, hexadecimal ? "0x%lx" : "%lu", value);
 
         _init();
-        _dup(strBuf, strBufSize);
+        _dup(strBuf);
     }
 
     explicit d_string(const float value)
     {
-        char strBuf[0xff];
+        char strBuf[0xff] = { '\0' };
         std::snprintf(strBuf, 0xff, "%f", value);
 
         _init();
@@ -161,7 +157,7 @@ public:
 
     explicit d_string(const double value)
     {
-        char strBuf[0xff];
+        char strBuf[0xff] = { '\0' };
         std::snprintf(strBuf, 0xff, "%g", value);
 
         _init();
@@ -205,7 +201,7 @@ public:
         return (bufferLen != 0);
     }
 
-#if __USE_GNU
+#ifdef __USE_GNU
     bool contains(const char* const strBuf, const bool ignoreCase = false) const
     {
         if (strBuf == nullptr)
@@ -249,7 +245,7 @@ public:
         truncate(0);
     }
 
-    size_t find(const char c)
+    size_t find(const char c) const
     {
         for (size_t i=0; i < bufferLen; ++i)
         {
@@ -260,17 +256,15 @@ public:
         return 0;
     }
 
-    size_t rfind(const char c)
+    size_t rfind(const char c) const
     {
-        size_t pos = 0;
-
-        for (size_t i=0; i < bufferLen; ++i)
+        for (size_t i=bufferLen; i > 0; --i)
         {
-            if (buffer[i] == c)
-                pos = i;
+            if (buffer[i-1] == c)
+                return i-1;
         }
 
-        return pos;
+        return 0;
     }
 
     void replace(const char before, const char after)
@@ -317,23 +311,23 @@ public:
 
     void toLower()
     {
-        static const char charDiff = 'a' - 'A';
+        static const char kCharDiff = 'a' - 'A';
 
         for (size_t i=0; i < bufferLen; ++i)
         {
             if (buffer[i] >= 'A' && buffer[i] <= 'Z')
-                buffer[i] += charDiff;
+                buffer[i] += kCharDiff;
         }
     }
 
     void toUpper()
     {
-        static const char charDiff = 'a' - 'A';
+        static const char kCharDiff = 'a' - 'A';
 
         for (size_t i=0; i < bufferLen; ++i)
         {
             if (buffer[i] >= 'a' && buffer[i] <= 'z')
-                buffer[i] -= charDiff;
+                buffer[i] -= kCharDiff;
         }
     }
 
@@ -479,6 +473,19 @@ private:
 };
 
 // -------------------------------------------------
+
+static inline
+d_string operator+(const d_string& strBefore, const char* const strBufAfter)
+{
+    const char* const strBufBefore = (const char*)strBefore;
+    const size_t newBufSize = strBefore.length() + ((strBufAfter != nullptr) ? std::strlen(strBufAfter) : 0) + 1;
+    char newBuf[newBufSize];
+
+    std::strcpy(newBuf, strBufBefore);
+    std::strcat(newBuf, strBufAfter);
+
+    return d_string(newBuf);
+}
 
 static inline
 d_string operator+(const char* const strBufBefore, const d_string& strAfter)
