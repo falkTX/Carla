@@ -21,7 +21,7 @@
 START_NAMESPACE_DISTRHO
 
 // -------------------------------------------------
-// Qt4UI
+// Qt UI
 
 QtUI::QtUI()
     : UI(),
@@ -32,6 +32,8 @@ QtUI::QtUI()
 QtUI::~QtUI()
 {
 }
+
+// -------------------------------------------------
 
 void QtUI::setSize(unsigned int width, unsigned int height)
 {

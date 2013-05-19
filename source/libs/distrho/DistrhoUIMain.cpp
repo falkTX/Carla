@@ -26,8 +26,10 @@
 // nothing
 #endif
 
-#ifdef DISTRHO_UI_QT
-# include "src/DistrhoUIQt.cpp"
-#else
+#if defined(DISTRHO_UI_EXTERNAL)
+# include "src/DistrhoUIExternal.cpp"
+#elif defined(DISTRHO_UI_OPENGL)
 # include "src/DistrhoUIOpenGL.cpp"
+#else
+# include "src/DistrhoUIQt.cpp"
 #endif

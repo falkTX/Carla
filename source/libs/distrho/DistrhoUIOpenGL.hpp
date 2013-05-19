@@ -33,33 +33,33 @@ class OpenGLUI : public UI,
 {
 public:
     OpenGLUI();
-    virtual ~OpenGLUI();
+    virtual ~OpenGLUI() override;
 
 protected:
     // ---------------------------------------------
     // Information
 
-    virtual unsigned int d_width() const = 0;
-    virtual unsigned int d_height() const = 0;
+    virtual unsigned int d_width() const override = 0;
+    virtual unsigned int d_height() const override = 0;
 
     // ---------------------------------------------
     // DSP Callbacks
 
-    virtual void d_parameterChanged(uint32_t index, float value) = 0;
+    virtual void d_parameterChanged(uint32_t index, float value) override = 0;
 #if DISTRHO_PLUGIN_WANT_PROGRAMS
-    virtual void d_programChanged(uint32_t index) = 0;
+    virtual void d_programChanged(uint32_t index) override = 0;
 #endif
 #if DISTRHO_PLUGIN_WANT_STATE
-    virtual void d_stateChanged(const char* key, const char* value) = 0;
+    virtual void d_stateChanged(const char* key, const char* value) override = 0;
 #endif
 #if DISTRHO_PLUGIN_IS_SYNTH
-    virtual void d_noteReceived(bool onOff, uint8_t channel, uint8_t note, uint8_t velocity) = 0;
+    virtual void d_noteReceived(bool onOff, uint8_t channel, uint8_t note, uint8_t velocity) override = 0;
 #endif
 
     // ---------------------------------------------
     // UI Callbacks
 
-    virtual void d_uiIdle() {}
+    virtual void d_uiIdle() override {}
 
 private:
     friend class UIInternal;

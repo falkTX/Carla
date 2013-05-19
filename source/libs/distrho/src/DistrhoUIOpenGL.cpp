@@ -23,7 +23,7 @@ END_NAMESPACE_DGL
 START_NAMESPACE_DISTRHO
 
 // -------------------------------------------------
-// OpenGLUI
+// OpenGL UI
 
 OpenGLUI::OpenGLUI()
     : UI(),

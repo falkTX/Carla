@@ -37,7 +37,12 @@ class QtUI : public UI,
 {
 public:
     QtUI();
-    virtual ~QtUI();
+    virtual ~QtUI() override;
+
+    // ---------------------------------------------
+    // UI Helpers
+
+    void setSize(unsigned int width, unsigned int height);
 
 protected:
     // ---------------------------------------------
@@ -50,32 +55,27 @@ protected:
     // ---------------------------------------------
     // DSP Callbacks
 
-    virtual void d_parameterChanged(uint32_t index, float value) = 0;
+    virtual void d_parameterChanged(uint32_t index, float value) override = 0;
 #if DISTRHO_PLUGIN_WANT_PROGRAMS
-    virtual void d_programChanged(uint32_t index) = 0;
+    virtual void d_programChanged(uint32_t index) override = 0;
 #endif
 #if DISTRHO_PLUGIN_WANT_STATE
-    virtual void d_stateChanged(const char* key, const char* value) = 0;
+    virtual void d_stateChanged(const char* key, const char* value) override = 0;
 #endif
 #if DISTRHO_PLUGIN_IS_SYNTH
-    virtual void d_noteReceived(bool onOff, uint8_t channel, uint8_t note, uint8_t velocity) = 0;
+    virtual void d_noteReceived(bool onOff, uint8_t channel, uint8_t note, uint8_t velocity) override = 0;
 #endif
 
     // ---------------------------------------------
     // UI Callbacks
 
-    virtual void d_uiIdle() {}
-
-    // ---------------------------------------------
-    // UI Helpers
-
-    void setSize(unsigned int width, unsigned int height);
+    virtual void d_uiIdle() override {}
 
 private:
     friend class UIInternal;
 
-    unsigned int d_width() const { return width(); }
-    unsigned int d_height() const { return height(); }
+    unsigned int d_width() const override { return width(); }
+    unsigned int d_height() const override { return height(); }
 };
 
 // -------------------------------------------------
