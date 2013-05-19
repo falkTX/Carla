@@ -31,4 +31,6 @@
 
 #define DISTRHO_PLUGIN_URI "http://distrho.sf.net/plugins/3BandSplitter"
 
+#define DISTRHO_UI_OPENGL
+
 #endif // __DISTRHO_PLUGIN_INFO_H__

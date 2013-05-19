@@ -338,7 +338,7 @@ struct EngineTimeInfo {
     static const uint32_t ValidBBT = 0x1;
 
     bool playing;
-    uint32_t frame;
+    uint64_t frame;
     uint64_t usecs;
     uint32_t valid;
     EngineTimeInfoBBT bbt;

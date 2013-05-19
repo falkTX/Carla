@@ -28,7 +28,7 @@ START_NAMESPACE_DISTRHO
 extern uint32_t d_lastBufferSize;
 extern double   d_lastSampleRate;
 
-struct PluginPrivateData {
+struct Plugin::PrivateData {
     uint32_t bufferSize;
     double   sampleRate;
 
@@ -49,9 +49,9 @@ struct PluginPrivateData {
     uint32_t latency;
 #endif
 
-    TimePos  timePos;
+    TimePos timePos;
 
-    PluginPrivateData()
+    PrivateData()
         : bufferSize(d_lastBufferSize),
           sampleRate(d_lastSampleRate),
           parameterCount(0),
@@ -73,7 +73,7 @@ struct PluginPrivateData {
         assert(sampleRate != 0.0);
     }
 
-    ~PluginPrivateData()
+    ~PrivateData()
     {
         if (parameterCount > 0 && parameters != nullptr)
             delete[] parameters;
@@ -344,7 +344,7 @@ public:
 
 protected:
     Plugin* const kPlugin;
-    PluginPrivateData* const kData;
+    Plugin::PrivateData* const kData;
 
 private:
     static const d_string        sFallbackString;

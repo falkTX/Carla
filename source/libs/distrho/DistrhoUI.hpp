@@ -26,8 +26,6 @@ START_NAMESPACE_DISTRHO
 // -------------------------------------------------
 // UI
 
-struct UIPrivateData;
-
 class UI
 {
 public:
@@ -82,7 +80,8 @@ protected:
     // ---------------------------------------------
 
 private:
-    UIPrivateData* const pData;
+    struct PrivateData;
+    PrivateData* const pData;
     friend class UIInternal;
 };
 

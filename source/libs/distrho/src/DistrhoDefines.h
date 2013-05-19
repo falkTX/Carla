@@ -51,6 +51,12 @@
 # error DISTRHO_PLUGIN_WANT_STATE undefined!
 #endif
 
+#if DISTRHO_PLUGIN_HAS_UI
+# if ! (defined(DISTRHO_UI_EXTERNAL) || defined(DISTRHO_UI_OPENGL) || defined(DISTRHO_UI_QT))
+#  error DISTRHO_PLUGIN_HAS_UI is defined but not its type; please define one of DISTRHO_UI_EXTERNAL, DISTRHO_UI_OPENGL or DISTRHO_UI_QT
+# endif
+#endif
+
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
 # define DISTRHO_PLUGIN_EXPORT extern "C" __declspec (dllexport)
 # define DISTRHO_OS_WINDOWS    1
@@ -84,10 +90,6 @@
 # define START_NAMESPACE_DISTRHO
 # define END_NAMESPACE_DISTRHO
 # define USE_NAMESPACE_DISTRHO
-#endif
-
-#ifndef DISTRHO_UI_QT
-# define DISTRHO_UI_OPENGL
 #endif
 
 #define DISTRHO_UI_URI DISTRHO_PLUGIN_URI "#UI"

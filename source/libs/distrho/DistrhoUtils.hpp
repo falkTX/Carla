@@ -62,16 +62,6 @@ void d_msleep(unsigned int msecs)
 #endif
 }
 
-static inline
-void d_usleep(unsigned int usecs)
-{
-#ifdef DISTRHO_OS_WINDOWS
-    Sleep(usecs / 1000);
-#else
-    usleep(usecs);
-#endif
-}
-
 // -------------------------------------------------
 
 static inline
@@ -504,4 +494,4 @@ d_string operator+(const char* const strBufBefore, const d_string& strAfter)
 
 END_NAMESPACE_DISTRHO
 
-#endif // __UTILS_HPP__
+#endif // __DISTRHO_UTILS_HPP__

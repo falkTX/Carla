@@ -19,7 +19,10 @@
 
 #include "DistrhoDefines.h"
 
-#ifdef DISTRHO_UI_OPENGL
+#if defined(DISTRHO_UI_EXTERNAL)
+# include "../DistrhoUI.hpp"
+// TODO
+#elif defined(DISTRHO_UI_OPENGL)
 # include "../DistrhoUIOpenGL.hpp"
 # include "../dgl/App.hpp"
 # include "../dgl/Window.hpp"
@@ -43,7 +46,7 @@ extern double d_lastUiSampleRate;
 
 // -------------------------------------------------
 
-struct UIPrivateData {
+struct UI::PrivateData {
     // DSP
     double   sampleRate;
     uint32_t parameterOffset;
@@ -56,7 +59,7 @@ struct UIPrivateData {
     uiResizeFunc  uiResizeCallbackFunc;
     void*         ptr;
 
-    UIPrivateData()
+    PrivateData()
         : sampleRate(d_lastUiSampleRate),
           parameterOffset(0),
           editParamCallbackFunc(nullptr),
@@ -69,7 +72,7 @@ struct UIPrivateData {
         assert(sampleRate != 0.0);
     }
 
-    ~UIPrivateData()
+    ~PrivateData()
     {
     }
 
@@ -214,17 +217,26 @@ public:
 
     void idle()
     {
-#ifdef DISTRHO_UI_QT
+#if defined(DISTRHO_UI_EXTERNAL)
+        // TODO - idle OSC
+#elif defined(DISTRHO_UI_OPENGL)
+        glApp.idle();
+#else
         assert(kUi != nullptr);
 
         if (kUi != nullptr)
             kUi->d_uiIdle();
-#else
-        glApp.idle();
 #endif
     }
 
-#ifdef DISTRHO_UI_QT
+#if defined(DISTRHO_UI_EXTERNAL)
+    // needed?
+#elif defined(DISTRHO_UI_OPENGL)
+    intptr_t getWinId()
+    {
+        return glWindow.getWindowId();
+    }
+#else
     QtUI* getQtUI() const
     {
         return (QtUI*)kUi;
@@ -234,24 +246,19 @@ public:
     {
         return ((QtUI*)kUi)->d_resizable();
     }
-#else
-    intptr_t getWinId()
-    {
-        return glWindow.getWindowId();
-    }
 #endif
 
     // ---------------------------------------------
 
-private:
 #ifdef DISTRHO_UI_OPENGL
+private:
     App    glApp;
     Window glWindow;
 #endif
 
 protected:
     UI* const kUi;
-    UIPrivateData* const kData;
+    UI::PrivateData* const kData;
 };
 
 // -------------------------------------------------

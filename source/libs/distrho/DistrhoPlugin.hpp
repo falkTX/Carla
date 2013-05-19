@@ -79,9 +79,25 @@ struct ParameterRanges {
             value = max;
     }
 
+    float fixValue(const float& value) const
+    {
+        if (value < min)
+            return min;
+        else if (value > max)
+            return max;
+        return value;
+    }
+
     float normalizeValue(const float& value) const
     {
-        return (value - min) / (max - min);
+        float newValue = (value - min) / (max - min);
+
+        if (newValue < 0.0f)
+            newValue = 0.0f;
+        else if (newValue > 1.0f)
+            newValue = 1.0f;
+
+        return newValue;
     }
 
     float unnormalizeValue(const float& value) const
@@ -132,16 +148,18 @@ struct MidiEvent {
 // TimePos
 
 struct TimePos {
+    bool playing;
+    uint64_t frame;
     double bpm;
 
     TimePos()
-        : bpm(120.0) {}
+        : playing(false),
+          frame(0),
+          bpm(120.0) {}
 };
 
 // -------------------------------------------------
 // Plugin
-
-struct PluginPrivateData;
 
 class Plugin
 {
@@ -209,7 +227,8 @@ protected:
     // ---------------------------------------------
 
 private:
-    PluginPrivateData* const pData;
+    struct PrivateData;
+    PrivateData* const pData;
     friend class PluginInternal;
 };
 

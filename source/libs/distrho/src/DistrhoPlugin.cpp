@@ -34,7 +34,7 @@ const ParameterRanges PluginInternal::sFallbackRanges;
 // Plugin
 
 Plugin::Plugin(uint32_t parameterCount, uint32_t programCount, uint32_t stateCount)
-    : pData(new PluginPrivateData)
+    : pData(new PrivateData())
 {
     if (parameterCount > 0)
     {

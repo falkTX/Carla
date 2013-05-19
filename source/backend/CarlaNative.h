@@ -142,8 +142,8 @@ typedef struct _TimeInfoBBT {
 
 typedef struct _TimeInfo {
     bool playing;
-    uint32_t frame;
-    uint32_t usecs;
+    uint64_t frame;
+    uint64_t usecs;
     TimeInfoBBT bbt;
 } TimeInfo;
 

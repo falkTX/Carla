@@ -722,7 +722,7 @@ struct ParameterRanges {
 
         if (newValue < 0.0f)
             newValue = 0.0f;
-        else if (newValue < 1.0f)
+        else if (newValue > 1.0f)
             newValue = 1.0f;
 
         return newValue;

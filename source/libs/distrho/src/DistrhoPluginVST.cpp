@@ -223,6 +223,13 @@ protected:
 #if DISTRHO_PLUGIN_IS_SYNTH
         // TODO
 #endif
+        return;
+
+        // unused
+        (void)onOff;
+        (void)channel;
+        (void)note;
+        (void)velocity;
     }
 
     void uiResize(unsigned int width, unsigned int height)

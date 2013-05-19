@@ -23,6 +23,9 @@
 using DISTRHO::d_cconst;
 using DISTRHO::d_string;
 
+#ifdef QTCREATOR_TEST
+CARLA_BACKEND_START_NAMESPACE
+#else
 // -----------------------------------------
 // needed symbols
 
@@ -33,11 +36,12 @@ CARLA_BACKEND_START_NAMESPACE
 
 CarlaEngine* CarlaEngine::newJack() { return nullptr; }
 
-#ifdef WANT_RTAUDIO
+# ifdef WANT_RTAUDIO
 CarlaEngine* CarlaEngine::newRtAudio(RtAudioApi) { return nullptr; }
 size_t       CarlaEngine::getRtAudioApiCount()   { return 0; }
 const char*  CarlaEngine::getRtAudioApiName(const unsigned int)        { return nullptr; }
 const char** CarlaEngine::getRtAudioApiDeviceNames(const unsigned int) { return nullptr; }
+# endif
 #endif
 
 // -----------------------------------------
