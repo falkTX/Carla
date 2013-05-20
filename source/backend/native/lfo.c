@@ -21,7 +21,7 @@
 #include <math.h>
 #include <stdlib.h>
 
-#ifdef __MINGW32__
+#ifndef __linux__
 # define uint unsigned int
 #endif
 

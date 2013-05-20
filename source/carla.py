@@ -685,9 +685,6 @@ class CarlaMainW(QMainWindow):
         self.ui =  ui_carla.Ui_CarlaMainW()
         self.ui.setupUi(self)
 
-        if MACOS:
-            self.setUnifiedTitleAndToolBarOnMac(True)
-
         # -------------------------------------------------------------
         # Internal stuff
 
@@ -2050,6 +2047,9 @@ class CarlaMainW(QMainWindow):
                 );
               }
             """ % (col1, col2))
+
+            if MACOS and not settings.value("Main/UseProTheme", True, type=bool):
+                self.setUnifiedTitleAndToolBarOnMac(True)
 
         useCustomMiniCanvasPaint = bool(settings.value("Main/UseProTheme", True, type=bool) and
                                         settings.value("Main/ProThemeColor", "Black", type=str) == "Black")

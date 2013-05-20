@@ -135,7 +135,7 @@ debug:
 	$(CXX) $^ -shared $(LINK_FLAGS) $(W32_LIBS) -Wl,--output-def,$@.def -o $@ && $(STRIP) $@
 
 ../libcarla_standalone.dylib: $(OBJS) $(LIBS)
-	$(CXX) $^ -dynamiclib $(LINK_FLAGS) -o $@ && $(STRIP) $@
+	$(CXX) $^ -dynamiclib $(LINK_FLAGS) -framework CoreAudio -framework CoreMidi -framework CoreFoundation -o $@
 
 ../libcarla_standalone.so: $(OBJS) $(LIBS)
 	$(CXX) $^ -shared $(LINK_FLAGS) -o $@ && $(STRIP) $@

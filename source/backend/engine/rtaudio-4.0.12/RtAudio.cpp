@@ -403,6 +403,8 @@ unsigned int RtApi :: getStreamSampleRate( void )
 
 #if defined(__MACOSX_CORE__)
 
+#include <unistd.h>
+
 // The OS X CoreAudio API is designed to use a separate callback
 // procedure for each of its audio devices.  A single RtAudio duplex
 // stream using two different devices is supported here, though it
