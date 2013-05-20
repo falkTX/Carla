@@ -29,13 +29,6 @@ double d_lastUiSampleRate = 0.0;
 UI::UI()
     : pData(new PrivateData())
 {
-#if (defined(DISTRHO_PLUGIN_TARGET_DSSI) || defined(DISTRHO_PLUGIN_TARGET_LV2))
-    pData->parameterOffset = DISTRHO_PLUGIN_NUM_INPUTS + DISTRHO_PLUGIN_NUM_OUTPUTS;
-# if DISTRHO_PLUGIN_WANT_LATENCY
-    pData->parameterOffset += 1; // latency
-# endif
-    pData->parameterOffset += 1; // sample-rate
-#endif
 }
 
 UI::~UI()

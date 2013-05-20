@@ -20,8 +20,7 @@
 #include "DistrhoDefines.h"
 
 #if defined(DISTRHO_UI_EXTERNAL)
-# include "../DistrhoUI.hpp"
-// TODO
+# include "../DistrhoUIExternal.hpp"
 #elif defined(DISTRHO_UI_OPENGL)
 # include "../DistrhoUIOpenGL.hpp"
 # include "../dgl/App.hpp"
@@ -70,6 +69,14 @@ struct UI::PrivateData {
           ptr(nullptr)
     {
         assert(sampleRate != 0.0);
+
+#if defined(DISTRHO_PLUGIN_TARGET_DSSI) || defined(DISTRHO_PLUGIN_TARGET_LV2)
+        parameterOffset += DISTRHO_PLUGIN_NUM_INPUTS + DISTRHO_PLUGIN_NUM_OUTPUTS;
+# if DISTRHO_PLUGIN_WANT_LATENCY
+        parameterOffset += 1; // latency
+# endif
+        parameterOffset += 1; // sample-rate
+#endif
     }
 
     ~PrivateData()
@@ -116,10 +123,10 @@ public:
 #ifdef DISTRHO_UI_OPENGL
         : glApp(),
           glWindow(&glApp, winId),
-#else
-        :
-#endif
           kUi(createUI()),
+#else
+        : kUi(createUI()),
+#endif
           kData((kUi != nullptr) ? kUi->pData : nullptr)
     {
         assert(kUi != nullptr);
@@ -161,13 +168,13 @@ public:
         return (kUi != nullptr) ? kUi->d_name() : "";
     }
 
-    unsigned int width()
+    unsigned int width() const
     {
         assert(kUi != nullptr);
         return (kUi != nullptr) ? kUi->d_width() : 0;
     }
 
-    unsigned int height()
+    unsigned int height() const
     {
         assert(kUi != nullptr);
         return (kUi != nullptr) ? kUi->d_height() : 0;
@@ -218,7 +225,7 @@ public:
     void idle()
     {
 #if defined(DISTRHO_UI_EXTERNAL)
-        // TODO - idle OSC
+        // needed?
 #elif defined(DISTRHO_UI_OPENGL)
         glApp.idle();
 #else

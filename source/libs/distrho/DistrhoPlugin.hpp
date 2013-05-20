@@ -222,7 +222,7 @@ protected:
     // Callbacks (optional)
 
     virtual void d_bufferSizeChanged(uint32_t newBufferSize);
-    virtual void d_sampleRateChanged(double   newSampleRate);
+    virtual void d_sampleRateChanged(double newSampleRate);
 
     // ---------------------------------------------
 

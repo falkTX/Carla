@@ -14,8 +14,6 @@
  * For a full copy of the license see the LGPL.txt file
  */
 
-#if defined(DISTRHO_PLUGIN_TARGET_LADSPA) || defined(DISTRHO_PLUGIN_TARGET_DSSI)
-
 #include "DistrhoPluginInternal.hpp"
 
 #ifdef DISTRHO_PLUGIN_TARGET_DSSI
@@ -28,6 +26,10 @@
 # if DISTRHO_PLUGIN_WANT_STATE
 #  warning LADSPA cannot handle states
 # endif
+#endif
+
+#if defined(DISTRHO_PLUGIN_TARGET_DSSI) && DISTRHO_PLUGIN_HAS_UI
+# define DISTRHO_PLUGIN_WANT_SAMPLE_RATE 1
 #endif
 
 #include <vector>
@@ -57,7 +59,7 @@ public:
 #if DISTRHO_PLUGIN_WANT_LATENCY
         portLatency = nullptr;
 #endif
-#if defined(DISTRHO_PLUGIN_TARGET_DSSI) && DISTRHO_PLUGIN_HAS_UI
+#if DISTRHO_PLUGIN_WANT_SAMPLE_RATE
         portSampleRate = nullptr;
 #endif
     }
@@ -430,7 +432,7 @@ static void dssi_run_synth(LADSPA_Handle instance, unsigned long sampleCount, sn
 
 // -------------------------------------------------
 
-static LADSPA_Descriptor ldescriptor = {
+static LADSPA_Descriptor sLadspaDescriptor = {
     /* UniqueID   */ 0,
     /* Label      */ nullptr,
     /* Properties */ LADSPA_PROPERTY_REALTIME | LADSPA_PROPERTY_HARD_RT_CAPABLE,
@@ -453,9 +455,9 @@ static LADSPA_Descriptor ldescriptor = {
 };
 
 #ifdef DISTRHO_PLUGIN_TARGET_DSSI
-static DSSI_Descriptor descriptor = {
+static DSSI_Descriptor sDssiDescriptor = {
     1,
-    &ldescriptor,
+    &sLadspaDescriptor,
 # if DISTRHO_PLUGIN_WANT_STATE
     dssi_configure,
 # else
@@ -501,8 +503,8 @@ public:
 #if DISTRHO_PLUGIN_WANT_LATENCY
         portCount += 1;
 #endif
-#if defined(DISTRHO_PLUGIN_TARGET_DSSI) && DISTRHO_PLUGIN_HAS_UI
-        portCount += 1; // sample-rate
+#if DISTRHO_PLUGIN_WANT_SAMPLE_RATE
+        portCount += 1;
 #endif
         const char** const portNames = new const char* [portCount];
         LADSPA_PortDescriptor* portDescriptors = new LADSPA_PortDescriptor [portCount];
@@ -511,7 +513,7 @@ public:
         // Set ports
         for (i=0; i < DISTRHO_PLUGIN_NUM_INPUTS; ++i, ++port)
         {
-            char portName[24] = { 0 };
+            char portName[24] = { '\0' };
             sprintf(portName, "Audio Input %lu", i+1);
 
             portNames[port]       = strdup(portName);
@@ -524,7 +526,7 @@ public:
 
         for (i=0; i < DISTRHO_PLUGIN_NUM_OUTPUTS; ++i, ++port)
         {
-            char portName[24] = { 0 };
+            char portName[24] = { '\0' };
             sprintf(portName, "Audio Output %lu", i+1);
 
             portNames[port]       = strdup(portName);
@@ -542,17 +544,17 @@ public:
         portRangeHints[port].HintDescriptor = LADSPA_HINT_SAMPLE_RATE;
         portRangeHints[port].LowerBound     = 0.0f;
         portRangeHints[port].UpperBound     = 1.0f;
-        port++;
+        ++port;
 #endif
 
-#if defined(DISTRHO_PLUGIN_TARGET_DSSI) && DISTRHO_PLUGIN_HAS_UI
+#if DISTRHO_PLUGIN_WANT_SAMPLE_RATE
         // Set sample-rate port
         portNames[port]       = strdup("_sample-rate");
         portDescriptors[port] = LADSPA_PORT_CONTROL | LADSPA_PORT_OUTPUT;
         portRangeHints[port].HintDescriptor = LADSPA_HINT_BOUNDED_BELOW | LADSPA_HINT_BOUNDED_ABOVE;
         portRangeHints[port].LowerBound     = 0.0f;
         portRangeHints[port].UpperBound     = 512000.0f;
-        port++;
+        ++port;
 #endif
 
         for (i=0; i < plugin.parameterCount(); ++i, ++port)
@@ -566,7 +568,7 @@ public:
                 portDescriptors[port] |= LADSPA_PORT_INPUT;
 
             {
-                const ParameterRanges& ranges = plugin.parameterRanges(i);
+                const ParameterRanges& ranges(plugin.parameterRanges(i));
                 const float defValue = ranges.def;
 
                 portRangeHints[port].HintDescriptor = LADSPA_HINT_BOUNDED_BELOW | LADSPA_HINT_BOUNDED_ABOVE;
@@ -601,7 +603,7 @@ public:
             }
 
             {
-                const uint32_t hints = plugin.parameterHints(i);
+                const uint32_t hints(plugin.parameterHints(i));
 
                 if (hints & PARAMETER_IS_BOOLEAN)
                     portRangeHints[port].HintDescriptor |= LADSPA_HINT_TOGGLED;
@@ -613,51 +615,51 @@ public:
         }
 
         // Set data
-        ldescriptor.UniqueID  = plugin.uniqueId();
-        ldescriptor.Label     = strdup(plugin.label());
-        ldescriptor.Name      = strdup(plugin.name());
-        ldescriptor.Maker     = strdup(plugin.maker());
-        ldescriptor.Copyright = strdup(plugin.license());
-        ldescriptor.PortCount = portCount;
-        ldescriptor.PortNames = portNames;
-        ldescriptor.PortDescriptors = portDescriptors;
-        ldescriptor.PortRangeHints  = portRangeHints;
+        sLadspaDescriptor.UniqueID  = plugin.uniqueId();
+        sLadspaDescriptor.Label     = strdup(plugin.label());
+        sLadspaDescriptor.Name      = strdup(plugin.name());
+        sLadspaDescriptor.Maker     = strdup(plugin.maker());
+        sLadspaDescriptor.Copyright = strdup(plugin.license());
+        sLadspaDescriptor.PortCount = portCount;
+        sLadspaDescriptor.PortNames = portNames;
+        sLadspaDescriptor.PortDescriptors = portDescriptors;
+        sLadspaDescriptor.PortRangeHints  = portRangeHints;
     }
 
     ~DescriptorInitializer()
     {
-        if (ldescriptor.Label != nullptr)
-            free((void*)ldescriptor.Label);
+        if (sLadspaDescriptor.Label != nullptr)
+            free((void*)sLadspaDescriptor.Label);
 
-        if (ldescriptor.Name != nullptr)
-            free((void*)ldescriptor.Name);
+        if (sLadspaDescriptor.Name != nullptr)
+            free((void*)sLadspaDescriptor.Name);
 
-        if (ldescriptor.Maker != nullptr)
-            free((void*)ldescriptor.Maker);
+        if (sLadspaDescriptor.Maker != nullptr)
+            free((void*)sLadspaDescriptor.Maker);
 
-        if (ldescriptor.Copyright != nullptr)
-            free((void*)ldescriptor.Copyright);
+        if (sLadspaDescriptor.Copyright != nullptr)
+            free((void*)sLadspaDescriptor.Copyright);
 
-        if (ldescriptor.PortDescriptors != nullptr)
-            delete[] ldescriptor.PortDescriptors;
+        if (sLadspaDescriptor.PortDescriptors != nullptr)
+            delete[] sLadspaDescriptor.PortDescriptors;
 
-        if (ldescriptor.PortRangeHints != nullptr)
-            delete[] ldescriptor.PortRangeHints;
+        if (sLadspaDescriptor.PortRangeHints != nullptr)
+            delete[] sLadspaDescriptor.PortRangeHints;
 
-        if (ldescriptor.PortNames != nullptr)
+        if (sLadspaDescriptor.PortNames != nullptr)
         {
-            for (unsigned long i=0; i < ldescriptor.PortCount; ++i)
+            for (unsigned long i=0; i < sLadspaDescriptor.PortCount; ++i)
             {
-                if (ldescriptor.PortNames[i] != nullptr)
-                    free((void*)ldescriptor.PortNames[i]);
+                if (sLadspaDescriptor.PortNames[i] != nullptr)
+                    free((void*)sLadspaDescriptor.PortNames[i]);
             }
 
-            delete[] ldescriptor.PortNames;
+            delete[] sLadspaDescriptor.PortNames;
         }
     }
 };
 
-static DescriptorInitializer init;
+static DescriptorInitializer sInit;
 
 END_NAMESPACE_DISTRHO
 
@@ -667,7 +669,7 @@ DISTRHO_PLUGIN_EXPORT
 const LADSPA_Descriptor* ladspa_descriptor(unsigned long index)
 {
     USE_NAMESPACE_DISTRHO
-    return (index == 0) ? &ldescriptor : nullptr;
+    return (index == 0) ? &sLadspaDescriptor : nullptr;
 }
 
 #ifdef DISTRHO_PLUGIN_TARGET_DSSI
@@ -675,10 +677,6 @@ DISTRHO_PLUGIN_EXPORT
 const DSSI_Descriptor* dssi_descriptor(unsigned long index)
 {
     USE_NAMESPACE_DISTRHO
-    return (index == 0) ? &descriptor : nullptr;
+    return (index == 0) ? &sDssiDescriptor : nullptr;
 }
 #endif
-
-// -------------------------------------------------
-
-#endif // DISTRHO_PLUGIN_TARGET_LADSPA || DISTRHO_PLUGIN_TARGET_DSSI

@@ -186,8 +186,7 @@ public:
 
     bool parameterIsOutput(uint32_t index) const
     {
-        uint32_t hints = parameterHints(index);
-        return (hints & PARAMETER_IS_OUTPUT);
+        return (parameterHints(index) & PARAMETER_IS_OUTPUT);
     }
 
     const d_string& parameterName(uint32_t index) const
@@ -265,9 +264,9 @@ public:
 
     void setState(const char* key, const char* value)
     {
-        assert(kPlugin && key && value);
+        assert(kPlugin != nullptr && key != nullptr && value != nullptr);
 
-        if (kPlugin && key && value)
+        if (kPlugin != nullptr && key != nullptr && value != nullptr)
             kPlugin->d_setState(key, value);
     }
 #endif
@@ -302,7 +301,7 @@ public:
 
     void setBufferSize(uint32_t bufferSize, bool doCallback = false)
     {
-        assert(kData != nullptr && kPlugin && bufferSize >= 2);
+        assert(kData != nullptr && kPlugin != nullptr && bufferSize >= 2);
 
         if (kData != nullptr)
         {
