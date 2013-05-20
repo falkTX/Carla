@@ -57,6 +57,12 @@
 # endif
 #endif
 
+#if defined(__GNUC__) && defined(__GXX_EXPERIMENTAL_CXX0X__)
+# if (__GNUC__ * 100 + __GNUC_MINOR__) < 407
+#  define override // gcc4.7+ only
+# endif
+#endif
+
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
 # define DISTRHO_PLUGIN_EXPORT extern "C" __declspec (dllexport)
 # define DISTRHO_OS_WINDOWS    1

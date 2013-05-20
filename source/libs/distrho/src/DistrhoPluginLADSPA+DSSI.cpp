@@ -102,7 +102,7 @@ public:
         }
 #endif
 
-#if defined(DISTRHO_PLUGIN_TARGET_DSSI) && DISTRHO_PLUGIN_HAS_UI
+#if DISTRHO_PLUGIN_WANT_SAMPLE_RATE
         if (port == index++)
         {
             portSampleRate = dataLocation;
@@ -308,7 +308,7 @@ private:
 #if DISTRHO_PLUGIN_WANT_LATENCY
     LADSPA_DataPtr       portLatency;
 #endif
-#if defined(DISTRHO_PLUGIN_TARGET_DSSI) && DISTRHO_PLUGIN_HAS_UI
+#if DISTRHO_PLUGIN_WANT_SAMPLE_RATE
     LADSPA_DataPtr       portSampleRate;
 #endif
 
@@ -322,18 +322,18 @@ private:
             {
                 lastControlValues[i] = plugin.parameterValue(i);
 
-                if (portControls[i])
+                if (portControls[i] != nullptr)
                     *portControls[i] = lastControlValues[i];
             }
         }
 
 #if DISTRHO_PLUGIN_WANT_LATENCY
-        if (portLatency)
+        if (portLatency != nullptr)
             *portLatency = plugin.latency();
 #endif
 
-#if defined(DISTRHO_PLUGIN_TARGET_DSSI) && DISTRHO_PLUGIN_HAS_UI
-        if (portSampleRate)
+#if DISTRHO_PLUGIN_WANT_SAMPLE_RATE
+        if (portSampleRate != nullptr)
             *portSampleRate = lastSampleRate;
 #endif
     }
@@ -350,85 +350,62 @@ static LADSPA_Handle ladspa_instantiate(const LADSPA_Descriptor*, unsigned long 
     return new PluginLadspaDssi(sampleRate);
 }
 
+#define instancePtr ((PluginLadspaDssi*)instance)
+
 static void ladspa_connect_port(LADSPA_Handle instance, unsigned long port, LADSPA_Data* dataLocation)
 {
-    PluginLadspaDssi* plugin = (PluginLadspaDssi*)instance;
-    assert(plugin);
-
-    plugin->ladspa_connect_port(port, dataLocation);
+    instancePtr->ladspa_connect_port(port, dataLocation);
 }
 
 static void ladspa_activate(LADSPA_Handle instance)
 {
-    PluginLadspaDssi* plugin = (PluginLadspaDssi*)instance;
-    assert(plugin);
-
-    plugin->ladspa_activate();
+    instancePtr->ladspa_activate();
 }
 
 static void ladspa_run(LADSPA_Handle instance, unsigned long sampleCount)
 {
-    PluginLadspaDssi* plugin = (PluginLadspaDssi*)instance;
-    assert(plugin);
-
-    plugin->ladspa_run(sampleCount);
+    instancePtr->ladspa_run(sampleCount);
 }
 
 static void ladspa_deactivate(LADSPA_Handle instance)
 {
-    PluginLadspaDssi* plugin = (PluginLadspaDssi*)instance;
-    assert(plugin);
-
-    plugin->ladspa_deactivate();
+    instancePtr->ladspa_deactivate();
 }
 
 static void ladspa_cleanup(LADSPA_Handle instance)
 {
-    PluginLadspaDssi* plugin = (PluginLadspaDssi*)instance;
-    assert(plugin);
-
-    delete plugin;
+    delete instancePtr;
 }
 
 #ifdef DISTRHO_PLUGIN_TARGET_DSSI
 # if DISTRHO_PLUGIN_WANT_STATE
 static char* dssi_configure(LADSPA_Handle instance, const char* key, const char* value)
 {
-    PluginLadspaDssi* plugin = (PluginLadspaDssi*)instance;
-    assert(plugin);
-
-    return plugin->dssi_configure(key, value);
+    return instancePtr->dssi_configure(key, value);
 }
 # endif
 
 # if DISTRHO_PLUGIN_WANT_PROGRAMS
 static const DSSI_Program_Descriptor* dssi_get_program(LADSPA_Handle instance, unsigned long index)
 {
-    PluginLadspaDssi* plugin = (PluginLadspaDssi*)instance;
-    assert(plugin);
-
-    return plugin->dssi_get_program(index);
+    return instancePtr->dssi_get_program(index);
 }
 
 static void dssi_select_program(LADSPA_Handle instance, unsigned long bank, unsigned long program)
 {
-    PluginLadspaDssi* plugin = (PluginLadspaDssi*)instance;
-    assert(plugin);
-
-    plugin->dssi_select_program(bank, program);
+    instancePtr->dssi_select_program(bank, program);
 }
 # endif
 
 # if DISTRHO_PLUGIN_IS_SYNTH
 static void dssi_run_synth(LADSPA_Handle instance, unsigned long sampleCount, snd_seq_event_t* events, unsigned long eventCount)
 {
-    PluginLadspaDssi* plugin = (PluginLadspaDssi*)instance;
-    assert(plugin);
-
-    plugin->dssi_run_synth(sampleCount, events, eventCount);
+    instancePtr->dssi_run_synth(sampleCount, events, eventCount);
 }
 # endif
 #endif
+
+#undef instancePtr
 
 // -------------------------------------------------
 
