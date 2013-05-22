@@ -28,10 +28,6 @@
 # endif
 #endif
 
-#if defined(DISTRHO_PLUGIN_TARGET_DSSI) && DISTRHO_PLUGIN_HAS_UI
-# define DISTRHO_PLUGIN_WANT_SAMPLE_RATE 1
-#endif
-
 #include <vector>
 
 typedef LADSPA_Data*                LADSPA_DataPtr;
@@ -45,34 +41,32 @@ START_NAMESPACE_DISTRHO
 class PluginLadspaDssi
 {
 public:
-    PluginLadspaDssi(const double sampleRate)
-        : lastSampleRate(sampleRate),
-          portAudioIns{nullptr},
-          portAudioOuts{nullptr}
+    PluginLadspaDssi()
+        : fPortAudioIns{nullptr},
+          fPortAudioOuts{nullptr}
     {
-        for (uint32_t i=0, count=plugin.parameterCount(); i < count; ++i)
-        {
-            lastControlValues.push_back(plugin.parameterValue(i));
-            portControls.push_back(nullptr);
-        }
+        const uint32_t count(fPlugin.parameterCount());
+
+        fPortControls.resize(count, nullptr);
+        fLastControlValues.resize(count, 0.0f);
+
+        for (uint32_t i=0; i < count; ++i)
+            fLastControlValues[i] = fPlugin.parameterValue(i);
 
 #if DISTRHO_PLUGIN_WANT_LATENCY
-        portLatency = nullptr;
-#endif
-#if DISTRHO_PLUGIN_WANT_SAMPLE_RATE
-        portSampleRate = nullptr;
+        fPortLatency = nullptr;
 #endif
     }
 
     ~PluginLadspaDssi()
     {
-        lastControlValues.clear();
-        portControls.clear();
+        fLastControlValues.clear();
+        fPortControls.clear();
     }
 
     // ---------------------------------------------
 
-    void ladspa_connect_port(unsigned long port, LADSPA_DataPtr dataLocation)
+    void ladspa_connect_port(const unsigned long port, const LADSPA_DataPtr dataLocation)
     {
         unsigned long i, count, index = 0;
 
@@ -80,7 +74,7 @@ public:
         {
             if (port == index++)
             {
-                portAudioIns[i] = dataLocation;
+                fPortAudioIns[i] = dataLocation;
                 return;
             }
         }
@@ -89,7 +83,7 @@ public:
         {
             if (port == index++)
             {
-                portAudioOuts[i] = dataLocation;
+                fPortAudioOuts[i] = dataLocation;
                 return;
             }
         }
@@ -97,24 +91,16 @@ public:
 #if DISTRHO_PLUGIN_WANT_LATENCY
         if (port == index++)
         {
-            portLatency = dataLocation;
+            fPortLatency = dataLocation;
             return;
         }
 #endif
 
-#if DISTRHO_PLUGIN_WANT_SAMPLE_RATE
-        if (port == index++)
-        {
-            portSampleRate = dataLocation;
-            return;
-        }
-#endif
-
-        for (i=0, count=plugin.parameterCount(); i < count; ++i)
+        for (i=0, count=fPlugin.parameterCount(); i < count; ++i)
         {
             if (port == index++)
             {
-                portControls[i] = dataLocation;
+                fPortControls[i] = dataLocation;
                 return;
             }
         }
@@ -124,51 +110,51 @@ public:
 
 #ifdef DISTRHO_PLUGIN_TARGET_DSSI
 # if DISTRHO_PLUGIN_WANT_STATE
-    char* dssi_configure(const char* key, const char* value)
+    char* dssi_configure(const char* const key, const char* const value)
     {
         if (strncmp(key, DSSI_RESERVED_CONFIGURE_PREFIX, strlen(DSSI_RESERVED_CONFIGURE_PREFIX) == 0))
             return nullptr;
         if (strncmp(key, DSSI_GLOBAL_CONFIGURE_PREFIX, strlen(DSSI_GLOBAL_CONFIGURE_PREFIX) == 0))
             return nullptr;
 
-        plugin.setState(key, value);
+        fPlugin.setState(key, value);
         return nullptr;
     }
 # endif
 
 # if DISTRHO_PLUGIN_WANT_PROGRAMS
-    const DSSI_Program_Descriptor* dssi_get_program(unsigned long index)
+    const DSSI_Program_Descriptor* dssi_get_program(const unsigned long index)
     {
-        if (index >= plugin.programCount())
+        if (index >= fPlugin.programCount())
             return nullptr;
 
         static DSSI_Program_Descriptor desc;
 
         desc.Bank    = index / 128;
         desc.Program = index % 128;
-        desc.Name    = plugin.programName(index);
+        desc.Name    = fPlugin.programName(index);
 
         return &desc;
     }
 
-    void dssi_select_program(unsigned long bank, unsigned long program)
+    void dssi_select_program(const unsigned long bank, const unsigned long program)
     {
-        const unsigned long realProgram = bank * 128 + program;
+        const unsigned long realProgram(bank * 128 + program);
 
-        if (realProgram >= plugin.programCount())
+        if (realProgram >= fPlugin.programCount())
             return;
 
-        plugin.setProgram(realProgram);
+        fPlugin.setProgram(realProgram);
 
         // Update parameters
-        for (uint32_t i=0, count=plugin.parameterCount(); i < count; ++i)
+        for (uint32_t i=0, count=fPlugin.parameterCount(); i < count; ++i)
         {
-            if (! plugin.parameterIsOutput(i))
+            if (! fPlugin.parameterIsOutput(i))
             {
-                lastControlValues[i] = plugin.parameterValue(i);
+                fLastControlValues[i] = fPlugin.parameterValue(i);
 
-                if (portControls[i])
-                    *portControls[i] = lastControlValues[i];
+                if (fPortControls[i])
+                    *fPortControls[i] = fLastControlValues[i];
             }
         }
     }
@@ -179,36 +165,36 @@ public:
 
     void ladspa_activate()
     {
-        plugin.activate();
+        fPlugin.activate();
     }
 
     void ladspa_deactivate()
     {
-        plugin.deactivate();
+        fPlugin.deactivate();
     }
 
 #ifdef DISTRHO_PLUGIN_TARGET_DSSI
-    void ladspa_run(unsigned long bufferSize)
+    void ladspa_run(const unsigned long bufferSize)
     {
         dssi_run_synth(bufferSize, nullptr, 0);
     }
 
-    void dssi_run_synth(unsigned long bufferSize, snd_seq_event_t* events, unsigned long eventCount)
+    void dssi_run_synth(const unsigned long bufferSize, snd_seq_event_t* const events, const unsigned long eventCount)
 #else
-    void ladspa_run(unsigned long bufferSize)
+    void ladspa_run(const unsigned long bufferSize)
 #endif
     {
         // Check for updated parameters
         float curValue;
 
-        for (uint32_t i=0, count=plugin.parameterCount(); i < count; ++i)
+        for (uint32_t i=0, count=fPlugin.parameterCount(); i < count; ++i)
         {
-            curValue = *portControls[i];
+            curValue = *fPortControls[i];
 
-            if (lastControlValues[i] != curValue && ! plugin.parameterIsOutput(i))
+            if (fLastControlValues[i] != curValue && ! fPlugin.parameterIsOutput(i))
             {
-                lastControlValues[i] = curValue;
-                plugin.setParameterValue(i, curValue);
+                fLastControlValues[i] = curValue;
+                fPlugin.setParameterValue(i, curValue);
             }
         }
 
@@ -219,59 +205,71 @@ public:
 
         for (uint32_t i=0, j; i < eventCount && midiEventCount < MAX_MIDI_EVENTS; ++i)
         {
-            snd_seq_event_t* event = &events[i];
+            const snd_seq_event_t& seqEvent(events[i]);
 
-            if (event->type == SND_SEQ_EVENT_NOTEON)
+            if (seqEvent.data.note.channel > 0xF)
+                continue;
+
+            switch (seqEvent.type)
             {
+            case SND_SEQ_EVENT_NOTEON:
                 j = midiEventCount++;
-                midiEvents[j].frame  = event->time.tick;
-                midiEvents[j].buf[0] = 0x90 + event->data.note.channel;
-                midiEvents[j].buf[1] = event->data.note.note;
-                midiEvents[j].buf[2] = event->data.note.velocity;
-            }
-            else if (event->type == SND_SEQ_EVENT_NOTEOFF)
-            {
+                fMidiEvents[j].frame  = seqEvent.time.tick;
+                fMidiEvents[j].buf[0] = 0x90 + seqEvent.data.note.channel;
+                fMidiEvents[j].buf[1] = seqEvent.data.note.note;
+                fMidiEvents[j].buf[2] = seqEvent.data.note.velocity;
+                fMidiEvents[j].buf[3] = 0;
+                fMidiEvents[j].size   = 3;
+                break;
+            case SND_SEQ_EVENT_NOTEOFF:
                 j = midiEventCount++;
-                midiEvents[j].frame  = event->time.tick;
-                midiEvents[j].buf[0] = 0x80 + event->data.note.channel;
-                midiEvents[j].buf[1] = event->data.note.note;
-                midiEvents[j].buf[2] = 0;
-            }
-            else if (event->type == SND_SEQ_EVENT_KEYPRESS)
-            {
+                fMidiEvents[j].frame  = seqEvent.time.tick;
+                fMidiEvents[j].buf[0] = 0x80 + seqEvent.data.note.channel;
+                fMidiEvents[j].buf[1] = seqEvent.data.note.note;
+                fMidiEvents[j].buf[2] = 0;
+                fMidiEvents[j].buf[3] = 0;
+                fMidiEvents[j].size   = 3;
+                break;
+            case SND_SEQ_EVENT_KEYPRESS:
                 j = midiEventCount++;
-                midiEvents[j].frame  = event->time.tick;
-                midiEvents[j].buf[0] = 0xA0 + event->data.note.channel;
-                midiEvents[j].buf[1] = event->data.note.note;
-                midiEvents[j].buf[2] = event->data.note.velocity;
-            }
-            else if (event->type == SND_SEQ_EVENT_CONTROLLER)
-            {
+                fMidiEvents[j].frame  = seqEvent.time.tick;
+                fMidiEvents[j].buf[0] = 0xA0 + seqEvent.data.note.channel;
+                fMidiEvents[j].buf[1] = seqEvent.data.note.note;
+                fMidiEvents[j].buf[2] = seqEvent.data.note.velocity;
+                fMidiEvents[j].buf[3] = 0;
+                fMidiEvents[j].size   = 3;
+                break;
+            case SND_SEQ_EVENT_CONTROLLER:
                 j = midiEventCount++;
-                midiEvents[j].frame  = event->time.tick;
-                midiEvents[j].buf[0] = 0xB0 + event->data.control.channel;
-                midiEvents[j].buf[1] = event->data.control.param;
-                midiEvents[j].buf[2] = event->data.control.value;
-            }
-            else if (event->type == SND_SEQ_EVENT_CHANPRESS)
-            {
+                fMidiEvents[j].frame  = seqEvent.time.tick;
+                fMidiEvents[j].buf[0] = 0xB0 + seqEvent.data.control.channel;
+                fMidiEvents[j].buf[1] = seqEvent.data.control.param;
+                fMidiEvents[j].buf[2] = seqEvent.data.control.value;
+                fMidiEvents[j].buf[3] = 0;
+                fMidiEvents[j].size   = 3;
+                break;
+            case SND_SEQ_EVENT_CHANPRESS:
                 j = midiEventCount++;
-                midiEvents[j].frame  = event->time.tick;
-                midiEvents[j].buf[0] = 0xD0 + event->data.control.channel;
-                midiEvents[j].buf[1] = event->data.control.value;
-                midiEvents[j].buf[2] = 0;
-            }
-            else if (event->type == SND_SEQ_EVENT_PITCHBEND)
-            {
-                // TODO
-                //j = midiEventCount++;
-                //midiEvents[j].frame     = event->time.tick;
-                //midiEvents[j].buffer[0] = 0xE0 + event->data.control.channel;
-                //midiEvents[j].buffer[1] = 0;
-                //midiEvents[j].buffer[2] = 0;
+                fMidiEvents[j].frame  = seqEvent.time.tick;
+                fMidiEvents[j].buf[0] = 0xD0 + seqEvent.data.control.channel;
+                fMidiEvents[j].buf[1] = seqEvent.data.control.value;
+                fMidiEvents[j].buf[2] = 0;
+                fMidiEvents[j].buf[3] = 0;
+                fMidiEvents[j].size   = 2;
+                break;
+            case SND_SEQ_EVENT_PITCHBEND: // TODO
+                j = midiEventCount++;
+                fMidiEvents[j].frame  = seqEvent.time.tick;
+                fMidiEvents[j].buf[0] = 0xE0 + seqEvent.data.control.channel;
+                fMidiEvents[j].buf[1] = 0;
+                fMidiEvents[j].buf[2] = 0;
+                fMidiEvents[j].buf[3] = 0;
+                fMidiEvents[j].size   = 3;
+                break;
             }
         }
 # else
+        return;
         // unused
         (void)events;
         (void)eventCount;
@@ -280,9 +278,9 @@ public:
 
         // Run plugin for this cycle
 #if DISTRHO_PLUGIN_IS_SYNTH
-        plugin.run(portAudioIns, portAudioOuts, bufferSize, midiEventCount, midiEvents);
+        fPlugin.run(fPortAudioIns, fPortAudioOuts, bufferSize, midiEventCount, fMidiEvents);
 #else
-        plugin.run(portAudioIns, portAudioOuts, bufferSize, 0, nullptr);
+        fPlugin.run(fPortAudioIns, fPortAudioOuts, bufferSize, 0, nullptr);
 #endif
 
         updateParameterOutputs();
@@ -291,50 +289,39 @@ public:
     // ---------------------------------------------
 
 private:
-    PluginInternal plugin;
+    PluginInternal fPlugin;
 
-    // Temporary data
-    const double      lastSampleRate;
-    LADSPA_DataVector lastControlValues;
+    LADSPA_DataPtr       fPortAudioIns[DISTRHO_PLUGIN_NUM_INPUTS];
+    LADSPA_DataPtr       fPortAudioOuts[DISTRHO_PLUGIN_NUM_INPUTS];
+    LADSPA_DataPtrVector fPortControls;
+#if DISTRHO_PLUGIN_WANT_LATENCY
+    LADSPA_DataPtr       fPortLatency;
+#endif
 
 #if DISTRHO_PLUGIN_IS_SYNTH
-    MidiEvent midiEvents[MAX_MIDI_EVENTS];
+    MidiEvent fMidiEvents[MAX_MIDI_EVENTS];
 #endif
 
-    // LADSPA ports
-    LADSPA_DataPtr       portAudioIns[DISTRHO_PLUGIN_NUM_INPUTS];
-    LADSPA_DataPtr       portAudioOuts[DISTRHO_PLUGIN_NUM_INPUTS];
-    LADSPA_DataPtrVector portControls;
-#if DISTRHO_PLUGIN_WANT_LATENCY
-    LADSPA_DataPtr       portLatency;
-#endif
-#if DISTRHO_PLUGIN_WANT_SAMPLE_RATE
-    LADSPA_DataPtr       portSampleRate;
-#endif
+    LADSPA_DataVector fLastControlValues;
 
     // ---------------------------------------------
 
     void updateParameterOutputs()
     {
-        for (uint32_t i=0, count=plugin.parameterCount(); i < count; ++i)
+        for (uint32_t i=0, count=fPlugin.parameterCount(); i < count; ++i)
         {
-            if (plugin.parameterIsOutput(i))
+            if (fPlugin.parameterIsOutput(i))
             {
-                lastControlValues[i] = plugin.parameterValue(i);
+                fLastControlValues[i] = fPlugin.parameterValue(i);
 
-                if (portControls[i] != nullptr)
-                    *portControls[i] = lastControlValues[i];
+                if (fPortControls[i] != nullptr)
+                    *fPortControls[i] = fLastControlValues[i];
             }
         }
 
 #if DISTRHO_PLUGIN_WANT_LATENCY
-        if (portLatency != nullptr)
-            *portLatency = plugin.latency();
-#endif
-
-#if DISTRHO_PLUGIN_WANT_SAMPLE_RATE
-        if (portSampleRate != nullptr)
-            *portSampleRate = lastSampleRate;
+        if (fPortLatency != nullptr)
+            *fPortLatency = fPlugin.latency();
 #endif
     }
 };
@@ -347,7 +334,7 @@ static LADSPA_Handle ladspa_instantiate(const LADSPA_Descriptor*, unsigned long 
         d_lastBufferSize = 2048;
     d_lastSampleRate = sampleRate;
 
-    return new PluginLadspaDssi(sampleRate);
+    return new PluginLadspaDssi();
 }
 
 #define instancePtr ((PluginLadspaDssi*)instance)
@@ -480,9 +467,6 @@ public:
 #if DISTRHO_PLUGIN_WANT_LATENCY
         portCount += 1;
 #endif
-#if DISTRHO_PLUGIN_WANT_SAMPLE_RATE
-        portCount += 1;
-#endif
         const char** const portNames = new const char* [portCount];
         LADSPA_PortDescriptor* portDescriptors = new LADSPA_PortDescriptor [portCount];
         LADSPA_PortRangeHint*  portRangeHints  = new LADSPA_PortRangeHint  [portCount];
@@ -521,16 +505,6 @@ public:
         portRangeHints[port].HintDescriptor = LADSPA_HINT_SAMPLE_RATE;
         portRangeHints[port].LowerBound     = 0.0f;
         portRangeHints[port].UpperBound     = 1.0f;
-        ++port;
-#endif
-
-#if DISTRHO_PLUGIN_WANT_SAMPLE_RATE
-        // Set sample-rate port
-        portNames[port]       = strdup("_sample-rate");
-        portDescriptors[port] = LADSPA_PORT_CONTROL | LADSPA_PORT_OUTPUT;
-        portRangeHints[port].HintDescriptor = LADSPA_HINT_BOUNDED_BELOW | LADSPA_HINT_BOUNDED_ABOVE;
-        portRangeHints[port].LowerBound     = 0.0f;
-        portRangeHints[port].UpperBound     = 512000.0f;
         ++port;
 #endif
 

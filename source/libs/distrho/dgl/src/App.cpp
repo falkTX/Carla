@@ -36,7 +36,7 @@ void App::idle()
 {
     for (std::list<Window*>::iterator it = kPrivate->fWindows.begin(); it != kPrivate->fWindows.end(); ++it)
     {
-        Window* window = *it;
+        Window* const window(*it);
         window->idle();
     }
 }
@@ -48,6 +48,16 @@ void App::exec()
         idle();
         dgl_msleep(10);
     }
+}
+
+void App::quit()
+{
+    kPrivate->fDoLoop = false;
+}
+
+bool App::isQuiting() const
+{
+    return !kPrivate->fDoLoop;
 }
 
 // -------------------------------------------------

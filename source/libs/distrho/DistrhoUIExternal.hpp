@@ -36,33 +36,24 @@ protected:
     const char* d_externalFilename() const = 0;
 
 private:
-    lo_server loServer;
     friend class UIInternal;
 
     // ---------------------------------------------
-    // Information
+    // not needed for external UIs
 
     unsigned int d_width() const override { return 0; }
     unsigned int d_height() const override { return 0; }
-
-    // ---------------------------------------------
-    // DSP Callbacks
-
-    void d_parameterChanged(uint32_t index, float value) override;
+    void d_parameterChanged(uint32_t, float) override {}
 #if DISTRHO_PLUGIN_WANT_PROGRAMS
-    void d_programChanged(uint32_t index) override;
+    void d_programChanged(uint32_t) override {}
 #endif
 #if DISTRHO_PLUGIN_WANT_STATE
-    void d_stateChanged(const char* key, const char* value) override;
+    void d_stateChanged(const char*, const char*) override {}
 #endif
 #if DISTRHO_PLUGIN_IS_SYNTH
-    void d_noteReceived(bool onOff, uint8_t channel, uint8_t note, uint8_t velocity) override;
+    void d_noteReceived(bool, uint8_t, uint8_t, uint8_t) override {}
 #endif
-
-    // ---------------------------------------------
-    // UI Callbacks
-
-    void d_uiIdle() override;
+    void d_uiIdle() override {}
 };
 
 // -------------------------------------------------

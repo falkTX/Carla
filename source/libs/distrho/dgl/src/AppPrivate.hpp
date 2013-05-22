@@ -55,12 +55,12 @@ public:
 
     void oneShown()
     {
-        fVisibleWindows++;
+        ++fVisibleWindows;
     }
 
     void oneHidden()
     {
-        fVisibleWindows--;
+        --fVisibleWindows;
 
         if (fVisibleWindows == 0)
             fDoLoop = false;

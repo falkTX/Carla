@@ -200,6 +200,11 @@ public:
         setVisible(false);
     }
 
+    void close()
+    {
+        setVisible(false, true);
+    }
+
     bool isVisible()
     {
         return fVisible;
@@ -215,7 +220,7 @@ public:
         //setSize();
     }
 
-    void setVisible(bool yesNo)
+    void setVisible(bool yesNo, bool closed = false)
     {
         if (fVisible == yesNo)
             return;
@@ -246,7 +251,7 @@ public:
 
         if (yesNo)
             kAppPriv->oneShown();
-        else
+        else if (closed)
             kAppPriv->oneHidden();
     }
 
@@ -430,7 +435,7 @@ protected:
             widget->onClose();
         }
 
-        hide();
+        close();
     }
 
 private:
@@ -590,6 +595,21 @@ void Window::addWidget(Widget* widget)
 void Window::removeWidget(Widget* widget)
 {
     kPrivate->removeWidget(widget);
+}
+
+void Window::show()
+{
+    setVisible(true);
+}
+
+void Window::hide()
+{
+    setVisible(false);
+}
+
+void Window::close()
+{
+    kPrivate->close();
 }
 
 // -------------------------------------------------

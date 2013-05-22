@@ -75,7 +75,6 @@ struct UI::PrivateData {
 # if DISTRHO_PLUGIN_WANT_LATENCY
         parameterOffset += 1; // latency
 # endif
-        parameterOffset += 1; // sample-rate
 #endif
     }
 
@@ -135,10 +134,10 @@ public:
             return;
 
 #ifdef DISTRHO_UI_OPENGL
-        assert(winId != 0);
+        //assert(winId != 0);
 
-        if (winId == 0)
-            return;
+        //if (winId == 0)
+        //    return;
 #else
         assert(winId == 0);
 
@@ -239,7 +238,17 @@ public:
 #if defined(DISTRHO_UI_EXTERNAL)
     // needed?
 #elif defined(DISTRHO_UI_OPENGL)
-    intptr_t getWinId()
+    App& getApp()
+    {
+        return glApp;
+    }
+
+    Window& getWindow()
+    {
+        return glWindow;
+    }
+
+    intptr_t getWindowId() const
     {
         return glWindow.getWindowId();
     }

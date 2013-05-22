@@ -31,6 +31,8 @@ public:
 
     void idle();
     void exec();
+    void quit();
+    bool isQuiting() const;
 
 private:
     class Private;

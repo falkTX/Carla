@@ -51,15 +51,9 @@ public:
     void addWidget(Widget* widget);
     void removeWidget(Widget* widget);
 
-    void show()
-    {
-        setVisible(true);
-    }
-
-    void hide()
-    {
-        setVisible(false);
-    }
+    void show();
+    void hide();
+    void close();
 
 private:
     class Private;

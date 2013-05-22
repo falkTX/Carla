@@ -20,6 +20,7 @@
 #include "src/DistrhoDefines.h"
 
 #include <cassert>
+#include <cstdarg>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -38,6 +39,66 @@ static inline
 long d_cconst(int a, int b, int c, int d)
 {
     return (a << 24) | (b << 16) | (c << 8) | (d << 0);
+}
+
+// -------------------------------------------------
+
+#ifndef DEBUG
+# define d_debug(...)
+#else
+static inline
+void d_debug(const char* const fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+# ifndef DISTRHO_OS_WINDOWS
+    std::fprintf(stdout, "\x1b[30;1m");
+# endif
+    std::vfprintf(stdout, fmt, args);
+# ifndef DISTRHO_OS_WINDOWS
+    std::fprintf(stdout, "\x1b[0m\n");
+# else
+    std::fprintf(stdout, "\n");
+# endif
+    va_end(args);
+}
+#endif
+
+static inline
+void d_stdout(const char* const fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    std::vfprintf(stdout, fmt, args);
+    std::fprintf(stdout, "\n");
+    va_end(args);
+}
+
+static inline
+void d_stderr(const char* const fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    std::vfprintf(stderr, fmt, args);
+    std::fprintf(stderr, "\n");
+    va_end(args);
+}
+
+static inline
+void d_stderr2(const char* const fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+#ifndef DISTRHO_OS_WINDOWS
+    std::fprintf(stderr, "\x1b[31m");
+#endif
+    std::vfprintf(stderr, fmt, args);
+#ifndef DISTRHO_OS_WINDOWS
+    std::fprintf(stderr, "\x1b[0m\n");
+#else
+    std::fprintf(stderr, "\n");
+#endif
+    va_end(args);
 }
 
 // -------------------------------------------------
