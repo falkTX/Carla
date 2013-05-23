@@ -43,17 +43,6 @@ CARLA_BACKEND_START_NAMESPACE
 }
 #endif
 
-// non-void versions
-#define LV2NV_ATOM_CONTENTS(type, atom) \
-    ((uint8_t*)(atom) + sizeof(type))
-
-#define LV2NV_ATOM_CONTENTS_CONST(type, atom) \
-    ((const uint8_t*)(atom) + sizeof(type))
-
-#define LV2NV_ATOM_BODY(atom) LV2NV_ATOM_CONTENTS(LV2_Atom, atom)
-
-#define LV2NV_ATOM_BODY_CONST(atom) LV2NV_ATOM_CONTENTS_CONST(LV2_Atom, atom)
-
 /*!
  * @defgroup PluginHints Plugin Hints
  * @{
@@ -93,35 +82,36 @@ const unsigned int CARLA_EVENT_TYPE_TIME    = 0x40;
  * @{
  */
 const uint32_t CARLA_URI_MAP_ID_NULL                   =  0;
-const uint32_t CARLA_URI_MAP_ID_ATOM_CHUNK             =  1;
-const uint32_t CARLA_URI_MAP_ID_ATOM_DOUBLE            =  2;
-const uint32_t CARLA_URI_MAP_ID_ATOM_FLOAT             =  3;
-const uint32_t CARLA_URI_MAP_ID_ATOM_INT               =  4;
-const uint32_t CARLA_URI_MAP_ID_ATOM_PATH              =  5;
-const uint32_t CARLA_URI_MAP_ID_ATOM_SEQUENCE          =  6;
-const uint32_t CARLA_URI_MAP_ID_ATOM_STRING            =  7;
-const uint32_t CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM     =  8;
-const uint32_t CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT    =  9;
-const uint32_t CARLA_URI_MAP_ID_BUF_MAX_LENGTH         = 10;
-const uint32_t CARLA_URI_MAP_ID_BUF_MIN_LENGTH         = 11;
-const uint32_t CARLA_URI_MAP_ID_BUF_SEQUENCE_SIZE      = 12;
-const uint32_t CARLA_URI_MAP_ID_LOG_ERROR              = 13;
-const uint32_t CARLA_URI_MAP_ID_LOG_NOTE               = 14;
-const uint32_t CARLA_URI_MAP_ID_LOG_TRACE              = 15;
-const uint32_t CARLA_URI_MAP_ID_LOG_WARNING            = 16;
-const uint32_t CARLA_URI_MAP_ID_TIME_POSITION          = 17; // base type
-const uint32_t CARLA_URI_MAP_ID_TIME_BAR               = 18; // values
-const uint32_t CARLA_URI_MAP_ID_TIME_BAR_BEAT          = 19;
-const uint32_t CARLA_URI_MAP_ID_TIME_BEAT              = 20;
-const uint32_t CARLA_URI_MAP_ID_TIME_BEAT_UNIT         = 21;
-const uint32_t CARLA_URI_MAP_ID_TIME_BEATS_PER_BAR     = 22;
-const uint32_t CARLA_URI_MAP_ID_TIME_BEATS_PER_MINUTE  = 23;
-const uint32_t CARLA_URI_MAP_ID_TIME_FRAME             = 24;
-const uint32_t CARLA_URI_MAP_ID_TIME_FRAMES_PER_SECOND = 25;
-const uint32_t CARLA_URI_MAP_ID_TIME_SPEED             = 26;
-const uint32_t CARLA_URI_MAP_ID_MIDI_EVENT             = 27;
-const uint32_t CARLA_URI_MAP_ID_PARAM_SAMPLE_RATE      = 28;
-const uint32_t CARLA_URI_MAP_ID_COUNT                  = 29;
+const uint32_t CARLA_URI_MAP_ID_ATOM_BLANK             =  1;
+const uint32_t CARLA_URI_MAP_ID_ATOM_CHUNK             =  2;
+const uint32_t CARLA_URI_MAP_ID_ATOM_DOUBLE            =  3;
+const uint32_t CARLA_URI_MAP_ID_ATOM_FLOAT             =  4;
+const uint32_t CARLA_URI_MAP_ID_ATOM_INT               =  5;
+const uint32_t CARLA_URI_MAP_ID_ATOM_PATH              =  6;
+const uint32_t CARLA_URI_MAP_ID_ATOM_SEQUENCE          =  7;
+const uint32_t CARLA_URI_MAP_ID_ATOM_STRING            =  8;
+const uint32_t CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM     =  9;
+const uint32_t CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT    = 10;
+const uint32_t CARLA_URI_MAP_ID_BUF_MAX_LENGTH         = 11;
+const uint32_t CARLA_URI_MAP_ID_BUF_MIN_LENGTH         = 12;
+const uint32_t CARLA_URI_MAP_ID_BUF_SEQUENCE_SIZE      = 13;
+const uint32_t CARLA_URI_MAP_ID_LOG_ERROR              = 14;
+const uint32_t CARLA_URI_MAP_ID_LOG_NOTE               = 15;
+const uint32_t CARLA_URI_MAP_ID_LOG_TRACE              = 16;
+const uint32_t CARLA_URI_MAP_ID_LOG_WARNING            = 17;
+const uint32_t CARLA_URI_MAP_ID_TIME_POSITION          = 18; // base type
+const uint32_t CARLA_URI_MAP_ID_TIME_BAR               = 19; // values
+const uint32_t CARLA_URI_MAP_ID_TIME_BAR_BEAT          = 20;
+const uint32_t CARLA_URI_MAP_ID_TIME_BEAT              = 21;
+const uint32_t CARLA_URI_MAP_ID_TIME_BEAT_UNIT         = 22;
+const uint32_t CARLA_URI_MAP_ID_TIME_BEATS_PER_BAR     = 23;
+const uint32_t CARLA_URI_MAP_ID_TIME_BEATS_PER_MINUTE  = 24;
+const uint32_t CARLA_URI_MAP_ID_TIME_FRAME             = 25;
+const uint32_t CARLA_URI_MAP_ID_TIME_FRAMES_PER_SECOND = 26;
+const uint32_t CARLA_URI_MAP_ID_TIME_SPEED             = 27;
+const uint32_t CARLA_URI_MAP_ID_MIDI_EVENT             = 28;
+const uint32_t CARLA_URI_MAP_ID_PARAM_SAMPLE_RATE      = 29;
+const uint32_t CARLA_URI_MAP_ID_COUNT                  = 30;
 /**@}*/
 
 /*!
@@ -395,19 +385,19 @@ public:
         for (uint32_t i=0; i < CARLA_URI_MAP_ID_COUNT; ++i)
             fCustomURIDs.append(nullptr);
 
-        fAtomForge.Blank    = carla_lv2_urid_map(this, LV2_ATOM__Blank);
+        fAtomForge.Blank    = CARLA_URI_MAP_ID_ATOM_BLANK;
         fAtomForge.Bool     = carla_lv2_urid_map(this, LV2_ATOM__Bool);
-        fAtomForge.Chunk    = carla_lv2_urid_map(this, LV2_ATOM__Chunk);
-        fAtomForge.Double   = carla_lv2_urid_map(this, LV2_ATOM__Double);
-        fAtomForge.Float    = carla_lv2_urid_map(this, LV2_ATOM__Float);
-        fAtomForge.Int      = carla_lv2_urid_map(this, LV2_ATOM__Int);
+        fAtomForge.Chunk    = CARLA_URI_MAP_ID_ATOM_CHUNK;
+        fAtomForge.Double   = CARLA_URI_MAP_ID_ATOM_DOUBLE;
+        fAtomForge.Float    = CARLA_URI_MAP_ID_ATOM_FLOAT;
+        fAtomForge.Int      = CARLA_URI_MAP_ID_ATOM_INT;
         fAtomForge.Long     = carla_lv2_urid_map(this, LV2_ATOM__Long);
         fAtomForge.Literal  = carla_lv2_urid_map(this, LV2_ATOM__Literal);
         fAtomForge.Path     = carla_lv2_urid_map(this, LV2_ATOM__Path);
         fAtomForge.Property = carla_lv2_urid_map(this, LV2_ATOM__Property);
         fAtomForge.Resource = carla_lv2_urid_map(this, LV2_ATOM__Resource);
-        fAtomForge.Sequence = carla_lv2_urid_map(this, LV2_ATOM__Sequence);
-        fAtomForge.String   = carla_lv2_urid_map(this, LV2_ATOM__String);
+        fAtomForge.Sequence = CARLA_URI_MAP_ID_ATOM_SEQUENCE;
+        fAtomForge.String   = CARLA_URI_MAP_ID_ATOM_STRING;
         fAtomForge.Tuple    = carla_lv2_urid_map(this, LV2_ATOM__Tuple);
         fAtomForge.URI      = carla_lv2_urid_map(this, LV2_ATOM__URI);
         fAtomForge.URID     = carla_lv2_urid_map(this, LV2_ATOM__URID);
@@ -1243,6 +1233,50 @@ public:
 
     void idleGui() override
     {
+        //if (fUi.type == PLUGIN_UI_NULL)
+        //    return CarlaPlugin::idleGui();
+
+        if (! fAtomQueueOut.isEmpty())
+        {
+            Lv2AtomQueue tmpQueue;
+            tmpQueue.copyDataFrom(&fAtomQueueOut);
+
+            uint32_t portIndex;
+            const LV2_Atom* atom;
+            const bool hasPortEvent(fUi.handle != nullptr && fUi.descriptor != nullptr && fUi.descriptor->port_event != nullptr);
+
+            while (tmpQueue.get(&portIndex, &atom))
+            {
+                //carla_stdout("OUTPUT message IN GUI REMOVED FROM BUFFER");
+
+                if (fUi.type == PLUGIN_UI_OSC)
+                {
+                    if (kData->osc.data.target != nullptr)
+                    {
+                        QByteArray chunk((const char*)atom, lv2_atom_total_size(atom));
+
+                        const char* typeStr = carla_lv2_urid_unmap(this, atom->type);
+                        const char* bodyStr = "";
+
+                        if (atom->type == CARLA_URI_MAP_ID_ATOM_BLANK)
+                        {
+                            const LV2_Atom_Object* const obj((const LV2_Atom_Object*)atom);
+
+                            if (obj->body.otype != CARLA_URI_MAP_ID_NULL)
+                                bodyStr = carla_lv2_urid_unmap(this, obj->body.otype);
+                        }
+
+                        osc_send_lv2_transfer_event(&kData->osc.data, portIndex, typeStr, bodyStr, chunk.toBase64().constData());
+                    }
+                }
+                else if (fUi.type != PLUGIN_UI_NULL)
+                {
+                    if (hasPortEvent)
+                        fUi.descriptor->port_event(fUi.handle, portIndex, lv2_atom_total_size(atom), CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT, atom);
+                }
+            }
+        }
+
         if (fUi.handle != nullptr && fUi.descriptor != nullptr)
         {
             if (fUi.type == PLUGIN_UI_EXTERNAL && fUi.widget != nullptr)
@@ -1559,33 +1593,30 @@ public:
                     fEventsIn.data[j].rindex = i;
 
                     if (portTypes & LV2_PORT_DATA_MIDI_EVENT)
-                    {
                         fEventsIn.data[j].type |= CARLA_EVENT_TYPE_MIDI;
+                    if (portTypes & LV2_PORT_DATA_PATCH_MESSAGE)
+                        fEventsIn.data[j].type |= CARLA_EVENT_TYPE_MESSAGE;
+                    if (portTypes & LV2_PORT_DATA_TIME_POSITION)
+                        fEventsIn.data[j].type |= CARLA_EVENT_TYPE_TIME;
 
-                        if (evIns.count() == 1)
-                        {
+                    if (evIns.count() == 1)
+                    {
+                        fEventsIn.ctrl = &fEventsIn.data[j];
+                        fEventsIn.ctrlIndex = j;
+
+                        if (portTypes & LV2_PORT_DATA_MIDI_EVENT)
                             needsCtrlIn = true;
+                    }
+                    else
+                    {
+                        if (portTypes & LV2_PORT_DATA_MIDI_EVENT)
+                            fEventsIn.data[j].port = (CarlaEngineEventPort*)kData->client->addPort(kEnginePortTypeEvent, portName, true);
+
+                        if (LV2_IS_PORT_DESIGNATION_CONTROL(fRdfDescriptor->Ports[i].Designation))
+                        {
                             fEventsIn.ctrl = &fEventsIn.data[j];
                             fEventsIn.ctrlIndex = j;
                         }
-                        else
-                        {
-                            fEventsIn.data[j].port = (CarlaEngineEventPort*)kData->client->addPort(kEnginePortTypeEvent, portName, true);
-
-                            if (LV2_IS_PORT_DESIGNATION_CONTROL(fRdfDescriptor->Ports[i].Designation))
-                            {
-                                fEventsIn.ctrl = &fEventsIn.data[j];
-                                fEventsIn.ctrlIndex = j;
-                            }
-                        }
-                    }
-                    if (portTypes & LV2_PORT_DATA_PATCH_MESSAGE)
-                    {
-                        fEventsIn.data[j].type |= CARLA_EVENT_TYPE_MESSAGE;
-                    }
-                    if (portTypes & LV2_PORT_DATA_TIME_POSITION)
-                    {
-                        fEventsIn.data[j].type |= CARLA_EVENT_TYPE_TIME;
                     }
                 }
                 else if (LV2_IS_PORT_OUTPUT(portTypes))
@@ -1600,33 +1631,30 @@ public:
                     fEventsOut.data[j].rindex = i;
 
                     if (portTypes & LV2_PORT_DATA_MIDI_EVENT)
-                    {
                         fEventsOut.data[j].type |= CARLA_EVENT_TYPE_MIDI;
+                    if (portTypes & LV2_PORT_DATA_PATCH_MESSAGE)
+                        fEventsOut.data[j].type |= CARLA_EVENT_TYPE_MESSAGE;
+                    if (portTypes & LV2_PORT_DATA_TIME_POSITION)
+                        fEventsOut.data[j].type |= CARLA_EVENT_TYPE_TIME;
 
-                        if (evOuts.count() == 1)
-                        {
+                    if (evOuts.count() == 1)
+                    {
+                        fEventsOut.ctrl = &fEventsOut.data[j];
+                        fEventsOut.ctrlIndex = j;
+
+                        if (portTypes & LV2_PORT_DATA_MIDI_EVENT)
                             needsCtrlOut = true;
+                    }
+                    else
+                    {
+                        if (portTypes & LV2_PORT_DATA_MIDI_EVENT)
+                            fEventsOut.data[j].port = (CarlaEngineEventPort*)kData->client->addPort(kEnginePortTypeEvent, portName, false);
+
+                        if (LV2_IS_PORT_DESIGNATION_CONTROL(fRdfDescriptor->Ports[i].Designation))
+                        {
                             fEventsOut.ctrl = &fEventsOut.data[j];
                             fEventsOut.ctrlIndex = j;
                         }
-                        else
-                        {
-                            fEventsOut.data[j].port = (CarlaEngineEventPort*)kData->client->addPort(kEnginePortTypeEvent, portName, false);
-
-                            if (LV2_IS_PORT_DESIGNATION_CONTROL(fRdfDescriptor->Ports[i].Designation))
-                            {
-                                fEventsOut.ctrl = &fEventsOut.data[j];
-                                fEventsOut.ctrlIndex = j;
-                            }
-                        }
-                    }
-                    if (portTypes & LV2_PORT_DATA_PATCH_MESSAGE)
-                    {
-                        fEventsOut.data[j].type |= CARLA_EVENT_TYPE_MESSAGE;
-                    }
-                    if (portTypes & LV2_PORT_DATA_TIME_POSITION)
-                    {
-                        fEventsOut.data[j].type |= CARLA_EVENT_TYPE_TIME;
                     }
                 }
                 else
@@ -1646,33 +1674,30 @@ public:
                     fEventsIn.data[j].rindex = i;
 
                     if (portTypes & LV2_PORT_DATA_MIDI_EVENT)
-                    {
                         fEventsIn.data[j].type |= CARLA_EVENT_TYPE_MIDI;
+                    if (portTypes & LV2_PORT_DATA_PATCH_MESSAGE)
+                        fEventsIn.data[j].type |= CARLA_EVENT_TYPE_MESSAGE;
+                    if (portTypes & LV2_PORT_DATA_TIME_POSITION)
+                        fEventsIn.data[j].type |= CARLA_EVENT_TYPE_TIME;
 
-                        if (evIns.count() == 1)
-                        {
+                    if (evIns.count() == 1)
+                    {
+                        fEventsIn.ctrl = &fEventsIn.data[j];
+                        fEventsIn.ctrlIndex = j;
+
+                        if (portTypes & LV2_PORT_DATA_MIDI_EVENT)
                             needsCtrlIn = true;
+                    }
+                    else
+                    {
+                        if (portTypes & LV2_PORT_DATA_MIDI_EVENT)
+                            fEventsIn.data[j].port = (CarlaEngineEventPort*)kData->client->addPort(kEnginePortTypeEvent, portName, true);
+
+                        if (LV2_IS_PORT_DESIGNATION_CONTROL(fRdfDescriptor->Ports[i].Designation))
+                        {
                             fEventsIn.ctrl = &fEventsIn.data[j];
                             fEventsIn.ctrlIndex = j;
                         }
-                        else
-                        {
-                            fEventsIn.data[j].port = (CarlaEngineEventPort*)kData->client->addPort(kEnginePortTypeEvent, portName, true);
-
-                            if (LV2_IS_PORT_DESIGNATION_CONTROL(fRdfDescriptor->Ports[i].Designation))
-                            {
-                                fEventsIn.ctrl = &fEventsIn.data[j];
-                                fEventsIn.ctrlIndex = j;
-                            }
-                        }
-                    }
-                    if (portTypes & LV2_PORT_DATA_PATCH_MESSAGE)
-                    {
-                        fEventsIn.data[j].type |= CARLA_EVENT_TYPE_MESSAGE;
-                    }
-                    if (portTypes & LV2_PORT_DATA_TIME_POSITION)
-                    {
-                        fEventsIn.data[j].type |= CARLA_EVENT_TYPE_TIME;
                     }
                 }
                 else if (LV2_IS_PORT_OUTPUT(portTypes))
@@ -1687,33 +1712,30 @@ public:
                     fEventsOut.data[j].rindex = i;
 
                     if (portTypes & LV2_PORT_DATA_MIDI_EVENT)
-                    {
                         fEventsOut.data[j].type |= CARLA_EVENT_TYPE_MIDI;
+                    if (portTypes & LV2_PORT_DATA_PATCH_MESSAGE)
+                        fEventsOut.data[j].type |= CARLA_EVENT_TYPE_MESSAGE;
+                    if (portTypes & LV2_PORT_DATA_TIME_POSITION)
+                        fEventsOut.data[j].type |= CARLA_EVENT_TYPE_TIME;
 
-                        if (evOuts.count() == 1)
-                        {
+                    if (evOuts.count() == 1)
+                    {
+                        fEventsOut.ctrl = &fEventsOut.data[j];
+                        fEventsOut.ctrlIndex = j;
+
+                        if (portTypes & LV2_PORT_DATA_MIDI_EVENT)
                             needsCtrlOut = true;
+                    }
+                    else
+                    {
+                        if (portTypes & LV2_PORT_DATA_MIDI_EVENT)
+                            fEventsOut.data[j].port = (CarlaEngineEventPort*)kData->client->addPort(kEnginePortTypeEvent, portName, false);
+
+                        if (LV2_IS_PORT_DESIGNATION_CONTROL(fRdfDescriptor->Ports[i].Designation))
+                        {
                             fEventsOut.ctrl = &fEventsOut.data[j];
                             fEventsOut.ctrlIndex = j;
                         }
-                        else
-                        {
-                            fEventsOut.data[j].port = (CarlaEngineEventPort*)kData->client->addPort(kEnginePortTypeEvent, portName, false);
-
-                            if (LV2_IS_PORT_DESIGNATION_CONTROL(fRdfDescriptor->Ports[i].Designation))
-                            {
-                                fEventsOut.ctrl = &fEventsOut.data[j];
-                                fEventsOut.ctrlIndex = j;
-                            }
-                        }
-                    }
-                    if (portTypes & LV2_PORT_DATA_PATCH_MESSAGE)
-                    {
-                        fEventsOut.data[j].type |= CARLA_EVENT_TYPE_MESSAGE;
-                    }
-                    if (portTypes & LV2_PORT_DATA_TIME_POSITION)
-                    {
-                        fEventsOut.data[j].type |= CARLA_EVENT_TYPE_TIME;
                     }
                 }
                 else
@@ -1780,7 +1802,7 @@ public:
                     }
                 }
                 else
-                    carla_stderr("WARNING - Got a broken Port (Midi, but not input or output)");
+                    carla_stderr("WARNING - Got a broken Port (MIDI, but not input or output)");
             }
             else if (LV2_IS_PORT_CONTROL(portTypes))
             {
@@ -2542,7 +2564,7 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Event Input and Processing
 
-        if (fEventsIn.ctrl != nullptr && fEventsIn.ctrl->port != nullptr)
+        if (fEventsIn.ctrl != nullptr)
         {
             // ----------------------------------------------------------------------------------------------------
             // Message Input
@@ -2556,16 +2578,18 @@ public:
 
                     k = fEventsIn.ctrlIndex;
 
-                    while (lv2_atom_buffer_is_valid(&evInAtomIters[k]) && fAtomQueueIn.get(&portIndex, &atom))
+                    while (fAtomQueueIn.get(&portIndex, &atom))
                     {
-                        //if (atom->type == CARLA_URI_MAP_ID_ATOM_WORKER)
-                        //{
-                        //    const LV2_Atom_Worker* const atomWorker = (const LV2_Atom_Worker*)atom;
-                        //    fExt.worker->work_response(fHandle, atomWorker->body.size, atomWorker->body.data);
-                        //    continue;
-                        //}
+                        carla_stdout("Event input message sent to plugin DSP, type %i:\"%s\", size:%i/%i",
+                                     atom->type, carla_lv2_urid_unmap(this, atom->type),
+                                     atom->size, lv2_atom_total_size(atom)
+                                     );
 
-                        lv2_atom_buffer_write(&evInAtomIters[k], 0, 0, atom->type, atom->size, LV2NV_ATOM_BODY_CONST(atom));
+                        if (! lv2_atom_buffer_write(&evInAtomIters[k], 0, 0, atom->type, atom->size, LV2NV_ATOM_BODY_CONST(atom)))
+                        {
+                            carla_stdout("Event input buffer full, 1 message lost");
+                            break;
+                        }
                     }
                 }
 
@@ -2614,7 +2638,7 @@ public:
             bool allNotesOffSent = false;
             bool sampleAccurate  = (fOptions & PLUGIN_OPTION_FIXED_BUFFER) == 0;
 
-            uint32_t time, nEvents = fEventsIn.ctrl->port->getEventCount();
+            uint32_t time, nEvents = (fEventsIn.ctrl->port != nullptr) ? fEventsIn.ctrl->port->getEventCount() : 0;
             uint32_t startTime  = 0;
             uint32_t timeOffset = 0;
             uint32_t nextBankId = 0;
@@ -2901,10 +2925,11 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // MIDI Output
 
-        if (fEventsOut.ctrl != nullptr && fEventsOut.ctrl->port != nullptr)
+        if (fEventsOut.ctrl != nullptr)
         {
             if (fEventsOut.ctrl->type & CARLA_EVENT_DATA_ATOM)
             {
+                const uint32_t rindex(fEventsOut.ctrl->rindex);
                 const LV2_Atom_Event* ev;
                 LV2_Atom_Buffer_Iterator iter;
 
@@ -2919,13 +2944,19 @@ public:
                     if (ev == nullptr || data == nullptr)
                         break;
 
-                    if (ev->body.type == CARLA_URI_MAP_ID_MIDI_EVENT)
+                    if (ev->body.type == CARLA_URI_MAP_ID_MIDI_EVENT && fEventsOut.ctrl->port != nullptr)
                         fEventsOut.ctrl->port->writeMidiEvent(ev->time.frames, data, ev->body.size);
+                    else if (ev->body.type == CARLA_URI_MAP_ID_ATOM_BLANK)
+                    {
+                        //carla_stdout("Event OUTPUT message TO BE SENT TO UI, type blank");
+
+                        fAtomQueueOut.put(rindex, &ev->body);
+                    }
 
                     lv2_atom_buffer_increment(&iter);
                 }
             }
-            else if (fEventsOut.ctrl->type & CARLA_EVENT_DATA_EVENT)
+            else if ((fEventsOut.ctrl->type & CARLA_EVENT_DATA_EVENT) != 0 && fEventsOut.ctrl->port != nullptr)
             {
                 const LV2_Event* ev;
                 LV2_Event_Iterator iter;
@@ -2947,7 +2978,7 @@ public:
                     lv2_event_increment(&iter);
                 }
             }
-            else if (fEventsOut.ctrl->type & CARLA_EVENT_DATA_MIDI_LL)
+            else if ((fEventsOut.ctrl->type & CARLA_EVENT_DATA_MIDI_LL) != 0 && fEventsOut.ctrl->port != nullptr)
             {
                 LV2_MIDIState state = { fEventsOut.ctrl->midi, frames, 0 };
 
@@ -3781,8 +3812,7 @@ protected:
             if (buffer == nullptr)
                 return;
 
-            const LV2_Atom* const atom = (const LV2_Atom*)buffer;
-            fAtomQueueIn.put(rindex, atom);
+            fAtomQueueIn.put(rindex, (const LV2_Atom*)buffer);
         }
         else if (format == CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT)
         {
@@ -3791,8 +3821,14 @@ protected:
             if (buffer == nullptr)
                 return;
 
-            const LV2_Atom* const atom = (const LV2_Atom*)buffer;
-            fAtomQueueIn.put(rindex, atom);
+            fAtomQueueIn.put(rindex, (const LV2_Atom*)buffer);
+
+            const LV2_Atom* atom((const LV2_Atom*)buffer);
+            carla_stdout("UI WRITE DATA: %i | size:%i, realSize:%i, type:\"%s\"", rindex, atom->size, lv2_atom_total_size(atom), carla_lv2_urid_unmap(this, atom->type));
+        }
+        else
+        {
+            carla_stdout("Lv2Plugin::handleUiWrite(%i, %i, %i:\"%s\", %p) - unknown format", rindex, bufferSize, format, carla_lv2_urid_unmap(this, format), buffer);
         }
     }
 
@@ -4634,21 +4670,32 @@ public:
         CARLA_ASSERT(portIndex >= 0);
         CARLA_ASSERT(atom != nullptr);
         CARLA_ASSERT(typeStr != nullptr);
-        carla_debug("Lv2Plugin::handleTransferAtom(%i, %s, %p)", portIndex, typeStr, atom);
+        carla_debug("Lv2Plugin::handleTransferAtom(%i, \"%s\", %p)", portIndex, typeStr, atom);
 
         atom->type = carla_lv2_urid_map(this, typeStr);
 
         fAtomQueueIn.put(portIndex, atom);
     }
 
-    void handleTransferEvent(const int32_t portIndex, const char* const typeStr, LV2_Atom* const atom)
+    void handleTransferEvent(const int32_t portIndex, const char* const typeStr, const char* const bodyStr, LV2_Atom* const atom)
     {
         CARLA_ASSERT(portIndex >= 0);
-        CARLA_ASSERT(atom != nullptr);
         CARLA_ASSERT(typeStr != nullptr);
-        carla_debug("Lv2Plugin::handleTransferEvent(%i, %s, %p)", portIndex, typeStr, atom);
+        CARLA_ASSERT(bodyStr != nullptr);
+        CARLA_ASSERT(atom != nullptr);
+        carla_debug("Lv2Plugin::handleTransferEvent(%i, \"%s\", \"%s\", %p)", portIndex, typeStr, bodyStr, atom);
 
         atom->type = carla_lv2_urid_map(this, typeStr);
+
+        if (atom->type == CARLA_URI_MAP_ID_ATOM_BLANK)
+        {
+            LV2_Atom_Object* const obj((LV2_Atom_Object*)atom);
+
+            if (obj->body.otype != CARLA_URI_MAP_ID_NULL)
+                obj->body.otype = carla_lv2_urid_map(this, bodyStr);
+        }
+
+        carla_stdout("FROM OSC UI WRITE DATA: %i | size:%i, realSize:%i, type:\"%s\"", portIndex, atom->size, lv2_atom_total_size(atom), carla_lv2_urid_unmap(this, atom->type));
 
         fAtomQueueIn.put(portIndex, atom);
     }
@@ -4918,6 +4965,8 @@ private:
             return CARLA_URI_MAP_ID_NULL;
 
         // Atom types
+        if (std::strcmp(uri, LV2_ATOM__Blank) == 0)
+            return CARLA_URI_MAP_ID_ATOM_BLANK;
         if (std::strcmp(uri, LV2_ATOM__Chunk) == 0)
             return CARLA_URI_MAP_ID_ATOM_CHUNK;
         if (std::strcmp(uri, LV2_ATOM__Double) == 0)
@@ -5000,6 +5049,8 @@ private:
             return nullptr;
 
         // Atom types
+        if (urid == CARLA_URI_MAP_ID_ATOM_BLANK)
+            return LV2_ATOM__Blank;
         if (urid == CARLA_URI_MAP_ID_ATOM_CHUNK)
             return LV2_ATOM__Chunk;
         if (urid == CARLA_URI_MAP_ID_ATOM_DOUBLE)
@@ -5174,6 +5225,8 @@ private:
 
 // -------------------------------------------------------------------------------------------------------------------
 
+#define lv2PluginPtr ((Lv2Plugin*)plugin)
+
 int CarlaEngineOsc::handleMsgLv2AtomTransfer(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 {
     carla_debug("CarlaOsc::handleMsgLv2AtomTransfer()");
@@ -5187,30 +5240,29 @@ int CarlaEngineOsc::handleMsgLv2AtomTransfer(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     chunk = QByteArray::fromBase64(atomBuf);
 
     LV2_Atom* const atom = (LV2_Atom*)chunk.data();
-
-    ((Lv2Plugin*)plugin)->handleTransferAtom(portIndex, typeStr, atom);
-
+    lv2PluginPtr->handleTransferAtom(portIndex, typeStr, atom);
     return 0;
 }
 
 int CarlaEngineOsc::handleMsgLv2EventTransfer(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 {
     carla_debug("CarlaOsc::handleMsgLv2EventTransfer()");
-    CARLA_ENGINE_OSC_CHECK_OSC_TYPES(3, "iss");
+    CARLA_ENGINE_OSC_CHECK_OSC_TYPES(4, "isss");
 
     const int32_t portIndex   = argv[0]->i;
     const char* const typeStr = (const char*)&argv[1]->s;
-    const char* const atomBuf = (const char*)&argv[2]->s;
+    const char* const bodyStr = (const char*)&argv[2]->s;
+    const char* const atomBuf = (const char*)&argv[3]->s;
 
     QByteArray chunk;
     chunk = QByteArray::fromBase64(atomBuf);
 
     LV2_Atom* const atom = (LV2_Atom*)chunk.data();
-
-    ((Lv2Plugin*)plugin)->handleTransferEvent(portIndex, typeStr, atom);
-
+    lv2PluginPtr->handleTransferEvent(portIndex, typeStr, bodyStr, atom);
     return 0;
 }
+
+#undef lv2PluginPtr
 
 CARLA_BACKEND_END_NAMESPACE
 

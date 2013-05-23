@@ -188,7 +188,7 @@ public:
             msgTimer = 0;
         }
 
-        if (window)
+        if (window != nullptr)
         {
             settings.setValue(QString("%1/pos_x").arg(kUiTitle), window->x());
             settings.setValue(QString("%1/pos_y").arg(kUiTitle), window->y());
@@ -197,13 +197,10 @@ public:
             settings.sync();
 
             window->close();
-
-            delete window;
-            window = nullptr;
         }
 
 #ifdef BRIDGE_CONTAINER
-        if (embedContainer)
+        if (embedContainer != nullptr)
         {
             embedContainer->close();
 
@@ -211,6 +208,12 @@ public:
             embedContainer = nullptr;
         }
 #endif
+
+        if (window != nullptr)
+        {
+            delete window;
+            window = nullptr;
+        }
 
         if (app)
         {
@@ -266,9 +269,9 @@ public:
     void* getContainerId()
     {
         carla_debug("CarlaBridgeToolkitQt::getContainerId()");
-        CARLA_ASSERT(window);
+        CARLA_ASSERT(window != nullptr);
 
-        if (! embedContainer)
+        if (embedContainer == nullptr)
         {
             embedContainer = new QEmbedContainer(window);
 

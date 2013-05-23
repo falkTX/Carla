@@ -1058,9 +1058,15 @@ if __name__ == '__main__':
 
     libPrefix = None
 
-    for i in range(len(app.arguments())):
+    argv = app.arguments()
+    argc = len(argv)
+
+    #print(argc)
+    #print(argv)
+
+    for i in range(argc):
         if i == 0: continue
-        argument = app.arguments()[i]
+        argument = argv[i]
 
         if argument.startswith("--with-libprefix="):
             libPrefix = argument.replace("--with-libprefix=", "")

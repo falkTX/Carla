@@ -332,20 +332,21 @@ void osc_send_lv2_transfer_atom(const CarlaOscData* const oscData, const int32_t
 }
 
 static inline
-void osc_send_lv2_transfer_event(const CarlaOscData* const oscData, const int32_t portIndex, const char* const typeStr, const char* const atomBuf)
+void osc_send_lv2_transfer_event(const CarlaOscData* const oscData, const int32_t portIndex, const char* const typeStr, const char* const bodyStr, const char* const atomBuf)
 {
     CARLA_ASSERT(oscData != nullptr && oscData->path != nullptr);
     CARLA_ASSERT(portIndex >= 0);
     CARLA_ASSERT(typeStr != nullptr);
+    CARLA_ASSERT(bodyStr != nullptr);
     CARLA_ASSERT(atomBuf != nullptr);
-    carla_debug("osc_send_lv2_transfer_event(path:\"%s\", %i, \"%s\", <atomBuf:%p>)", oscData->path, portIndex, typeStr, atomBuf);
+    carla_debug("osc_send_lv2_transfer_event(path:\"%s\", %i, \"%s\", \"%s\", <atomBuf:%p>)", oscData->path, portIndex, typeStr, bodyStr, atomBuf);
 
-    if (oscData != nullptr && oscData->path != nullptr && oscData->target != nullptr && portIndex >= 0 && typeStr != nullptr && atomBuf != nullptr)
+    if (oscData != nullptr && oscData->path != nullptr && oscData->target != nullptr && portIndex >= 0 && typeStr != nullptr && bodyStr != nullptr && atomBuf != nullptr)
     {
         char targetPath[std::strlen(oscData->path)+20];
         std::strcpy(targetPath, oscData->path);
         std::strcat(targetPath, "/lv2_event_transfer");
-        lo_send(oscData->target, targetPath, "iss", portIndex, typeStr, atomBuf);
+        lo_send(oscData->target, targetPath, "isss", portIndex, typeStr, bodyStr, atomBuf);
     }
 }
 #endif

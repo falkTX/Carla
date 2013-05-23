@@ -115,7 +115,7 @@ protected:
 
 #ifdef BRIDGE_LV2
     void sendOscLv2TransferAtom(const int32_t portIndex, const char* const typeStr, const char* const atomBuf);
-    void sendOscLv2TransferEvent(const int32_t portIndex, const char* const typeStr, const char* const atomBuf);
+    void sendOscLv2TransferEvent(const int32_t portIndex, const char* const typeStr, const char* const bodyStr, const char* const atomBuf);
 #endif
 
     // ---------------------------------------------------------------------

@@ -18,10 +18,8 @@
 #ifndef __LV2_ATOM_QUEUE_HPP__
 #define __LV2_ATOM_QUEUE_HPP__
 
+#include "CarlaLv2Utils.hpp"
 #include "CarlaMutex.hpp"
-
-#include <cstring> // memcpy, memset
-#include "lv2/atom.h"
 
 class Lv2AtomQueue
 {
@@ -90,7 +88,7 @@ public:
 
     void put(const uint32_t portIndex, const LV2_Atom* const atom)
     {
-        CARLA_ASSERT(atom && atom->size > 0);
+        CARLA_ASSERT(atom != nullptr && atom->size > 0);
         CARLA_ASSERT(indexPool + atom->size < MAX_POOL_SIZE); //  overflow
 
         if (full || atom->size == 0 || indexPool + atom->size >= MAX_POOL_SIZE)
@@ -106,7 +104,7 @@ public:
                 data[i].size       = atom->size;
                 data[i].type       = atom->type;
                 data[i].poolOffset = indexPool;
-                std::memcpy(dataPool + indexPool, (const unsigned char*)LV2_ATOM_BODY_CONST(atom), atom->size);
+                std::memcpy(dataPool + indexPool, LV2NV_ATOM_BODY_CONST(atom), atom->size);
                 empty = false;
                 full  = (i == MAX_SIZE-1);
                 indexPool += atom->size;
@@ -120,9 +118,9 @@ public:
     // needs to be locked first!
     bool get(uint32_t* const portIndex, const LV2_Atom** const atom)
     {
-        CARLA_ASSERT(portIndex && atom);
+        CARLA_ASSERT(portIndex != nullptr && atom != nullptr);
 
-        if (empty || ! (portIndex && atom))
+        if (empty || portIndex == nullptr || atom == nullptr)
             return false;
 
         full = false;

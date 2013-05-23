@@ -15,8 +15,6 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#ifdef BRIDGE_LV2
-
 #include "CarlaBridgeClient.hpp"
 #include "CarlaLv2Utils.hpp"
 #include "CarlaMIDI.h"
@@ -63,25 +61,26 @@ const uint32_t lv2_feature_count               = 17;
 
 // pre-set uri[d] map ids
 const uint32_t CARLA_URI_MAP_ID_NULL                = 0;
-const uint32_t CARLA_URI_MAP_ID_ATOM_CHUNK          = 1;
-const uint32_t CARLA_URI_MAP_ID_ATOM_DOUBLE         = 2;
-const uint32_t CARLA_URI_MAP_ID_ATOM_INT            = 3;
-const uint32_t CARLA_URI_MAP_ID_ATOM_PATH           = 4;
-const uint32_t CARLA_URI_MAP_ID_ATOM_SEQUENCE       = 5;
-const uint32_t CARLA_URI_MAP_ID_ATOM_STRING         = 6;
-const uint32_t CARLA_URI_MAP_ID_ATOM_WORKER         = 7;
-const uint32_t CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM  = 8;
-const uint32_t CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT = 9;
-const uint32_t CARLA_URI_MAP_ID_BUF_MAX_LENGTH      = 10;
-const uint32_t CARLA_URI_MAP_ID_BUF_MIN_LENGTH      = 11;
-const uint32_t CARLA_URI_MAP_ID_BUF_SEQUENCE_SIZE   = 12;
-const uint32_t CARLA_URI_MAP_ID_LOG_ERROR           = 13;
-const uint32_t CARLA_URI_MAP_ID_LOG_NOTE            = 14;
-const uint32_t CARLA_URI_MAP_ID_LOG_TRACE           = 15;
-const uint32_t CARLA_URI_MAP_ID_LOG_WARNING         = 16;
-const uint32_t CARLA_URI_MAP_ID_MIDI_EVENT          = 17;
-const uint32_t CARLA_URI_MAP_ID_PARAM_SAMPLE_RATE   = 18;
-const uint32_t CARLA_URI_MAP_ID_COUNT               = 19;
+const uint32_t CARLA_URI_MAP_ID_ATOM_BLANK          = 1;
+const uint32_t CARLA_URI_MAP_ID_ATOM_CHUNK          = 2;
+const uint32_t CARLA_URI_MAP_ID_ATOM_DOUBLE         = 3;
+const uint32_t CARLA_URI_MAP_ID_ATOM_INT            = 4;
+const uint32_t CARLA_URI_MAP_ID_ATOM_PATH           = 5;
+const uint32_t CARLA_URI_MAP_ID_ATOM_SEQUENCE       = 6;
+const uint32_t CARLA_URI_MAP_ID_ATOM_STRING         = 7;
+const uint32_t CARLA_URI_MAP_ID_ATOM_WORKER         = 8;
+const uint32_t CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM  = 9;
+const uint32_t CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT = 10;
+const uint32_t CARLA_URI_MAP_ID_BUF_MAX_LENGTH      = 11;
+const uint32_t CARLA_URI_MAP_ID_BUF_MIN_LENGTH      = 12;
+const uint32_t CARLA_URI_MAP_ID_BUF_SEQUENCE_SIZE   = 13;
+const uint32_t CARLA_URI_MAP_ID_LOG_ERROR           = 14;
+const uint32_t CARLA_URI_MAP_ID_LOG_NOTE            = 15;
+const uint32_t CARLA_URI_MAP_ID_LOG_TRACE           = 16;
+const uint32_t CARLA_URI_MAP_ID_LOG_WARNING         = 17;
+const uint32_t CARLA_URI_MAP_ID_MIDI_EVENT          = 18;
+const uint32_t CARLA_URI_MAP_ID_PARAM_SAMPLE_RATE   = 19;
+const uint32_t CARLA_URI_MAP_ID_COUNT               = 20;
 
 // -------------------------------------------------------------------------
 
@@ -261,33 +260,29 @@ public:
         features[lv2_feature_id_strict_bounds]->URI    = LV2_PORT_PROPS__supportsStrictBounds;
         features[lv2_feature_id_strict_bounds]->data   = nullptr;
 
-        features[lv2_feature_id_uri_map]          = new LV2_Feature;
-        features[lv2_feature_id_uri_map]->URI     = LV2_URI_MAP_URI;
-        features[lv2_feature_id_uri_map]->data    = uriMapFt;
+        features[lv2_feature_id_uri_map]           = new LV2_Feature;
+        features[lv2_feature_id_uri_map]->URI      = LV2_URI_MAP_URI;
+        features[lv2_feature_id_uri_map]->data     = uriMapFt;
 
-        features[lv2_feature_id_urid_map]         = new LV2_Feature;
-        features[lv2_feature_id_urid_map]->URI    = LV2_URID__map;
-        features[lv2_feature_id_urid_map]->data   = uridMapFt;
+        features[lv2_feature_id_urid_map]          = new LV2_Feature;
+        features[lv2_feature_id_urid_map]->URI     = LV2_URID__map;
+        features[lv2_feature_id_urid_map]->data    = uridMapFt;
 
-        features[lv2_feature_id_urid_unmap]       = new LV2_Feature;
-        features[lv2_feature_id_urid_unmap]->URI  = LV2_URID__unmap;
-        features[lv2_feature_id_urid_unmap]->data = uridUnmapFt;
+        features[lv2_feature_id_urid_unmap]        = new LV2_Feature;
+        features[lv2_feature_id_urid_unmap]->URI   = LV2_URID__unmap;
+        features[lv2_feature_id_urid_unmap]->data  = uridUnmapFt;
 
         features[lv2_feature_id_ui_parent]         = new LV2_Feature;
         features[lv2_feature_id_ui_parent]->URI    = LV2_UI__parent;
-#ifdef BRIDGE_LV2_X11
-        features[lv2_feature_id_ui_parent]->data   = getContainerId();
-#else
         features[lv2_feature_id_ui_parent]->data   = nullptr;
-#endif
 
-        features[lv2_feature_id_ui_port_map]           = new LV2_Feature;
-        features[lv2_feature_id_ui_port_map]->URI      = LV2_UI__portMap;
-        features[lv2_feature_id_ui_port_map]->data     = uiPortMapFt;
+        features[lv2_feature_id_ui_port_map]       = new LV2_Feature;
+        features[lv2_feature_id_ui_port_map]->URI  = LV2_UI__portMap;
+        features[lv2_feature_id_ui_port_map]->data = uiPortMapFt;
 
-        features[lv2_feature_id_ui_resize]             = new LV2_Feature;
-        features[lv2_feature_id_ui_resize]->URI        = LV2_UI__resize;
-        features[lv2_feature_id_ui_resize]->data       = uiResizeFt;
+        features[lv2_feature_id_ui_resize]         = new LV2_Feature;
+        features[lv2_feature_id_ui_resize]->URI    = LV2_UI__resize;
+        features[lv2_feature_id_ui_resize]->data   = uiResizeFt;
     }
 
     ~CarlaLv2Client()
@@ -388,6 +383,10 @@ public:
 
         // -----------------------------------------------------------
         // initialize UI
+
+#ifdef BRIDGE_LV2_X11
+        features[lv2_feature_id_ui_parent]->data = getContainerId();
+#endif
 
         handle = descriptor->instantiate(descriptor, pluginURI, rdf_ui_descriptor->Bundle, carla_lv2_ui_write_function, this, &widget, features);
 
@@ -562,61 +561,20 @@ public:
     {
         carla_debug("CarlaLv2Client::handleTransferEvent(%i, %p)", portIndex, atom);
         CARLA_ASSERT(portIndex >= 0);
-        CARLA_ASSERT(atom);
+        CARLA_ASSERT(atom != nullptr);
 
-        if (atom && handle && descriptor && descriptor->port_event)
-            descriptor->port_event(handle, portIndex, atom->size, CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM, atom);
+        if (atom != nullptr && handle != nullptr && descriptor != nullptr && descriptor->port_event != nullptr)
+            descriptor->port_event(handle, portIndex, lv2_atom_total_size(atom), CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM, atom);
     }
 
     void handleTransferEvent(const int32_t portIndex, const LV2_Atom* const atom)
     {
         carla_debug("CarlaLv2Client::handleTransferEvent(%i, %p)", portIndex, atom);
         CARLA_ASSERT(portIndex >= 0);
-        CARLA_ASSERT(atom);
+        CARLA_ASSERT(atom != nullptr);
 
-        if (atom && handle && descriptor && descriptor->port_event)
-            descriptor->port_event(handle, portIndex, atom->size, CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT, atom);
-#if 0
-        if (handle && descriptor && descriptor->port_event)
-        {
-            LV2_URID_Map* const URID_Map = (LV2_URID_Map*)features[lv2_feature_id_urid_map]->data;
-            const LV2_URID uridPatchSet  = getCustomURID(LV2_PATCH__Set);
-            const LV2_URID uridPatchBody = getCustomURID(LV2_PATCH__body);
-
-            Sratom*   sratom = sratom_new(URID_Map);
-            SerdChunk chunk  = { nullptr, 0 };
-
-            LV2_Atom_Forge forge;
-            lv2_atom_forge_init(&forge, URID_Map);
-            lv2_atom_forge_set_sink(&forge, sratom_forge_sink, sratom_forge_deref, &chunk);
-
-            LV2_Atom_Forge_Frame refFrame, bodyFrame;
-            LV2_Atom_Forge_Ref   ref = lv2_atom_forge_blank(&forge, &refFrame, 1, uridPatchSet);
-
-            lv2_atom_forge_property_head(&forge, uridPatchBody, CARLA_URI_MAP_ID_NULL);
-            lv2_atom_forge_blank(&forge, &bodyFrame, 2, CARLA_URI_MAP_ID_NULL);
-
-            //lv2_atom_forge_property_head(&forge, getCustomURID(key), CARLA_URI_MAP_ID_NULL);
-
-            if (std::strcmp(type, "string") == 0)
-                lv2_atom_forge_string(&forge, value, std::strlen(value));
-            else if (std::strcmp(type, "path") == 0)
-                lv2_atom_forge_path(&forge, value, std::strlen(value));
-            else if (std::strcmp(type, "chunk") == 0)
-                lv2_atom_forge_literal(&forge, value, std::strlen(value), CARLA_URI_MAP_ID_ATOM_CHUNK, CARLA_URI_MAP_ID_NULL);
-            //else
-            //    lv2_atom_forge_literal(&forge, value, std::strlen(value), getCustomURID(key), CARLA_URI_MAP_ID_NULL);
-
-            lv2_atom_forge_pop(&forge, &bodyFrame);
-            lv2_atom_forge_pop(&forge, &refFrame);
-
-            const LV2_Atom* const atom = lv2_atom_forge_deref(&forge, ref);
-            descriptor->port_event(handle, 0, atom->size, CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT, atom);
-
-            free((void*)chunk.buf);
-            sratom_free(sratom);
-        }
-#endif
+        if (atom != nullptr && handle != nullptr && descriptor != nullptr && descriptor->port_event != nullptr)
+            descriptor->port_event(handle, portIndex, lv2_atom_total_size(atom), CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT, atom);
     }
 
     // ---------------------------------------------------------------------
@@ -659,35 +617,69 @@ public:
 
     void handleUiWrite(uint32_t portIndex, uint32_t bufferSize, uint32_t format, const void* buffer)
     {
-        if (! (buffer && isOscControlRegistered()))
+#ifdef DEBUG
+        if (format == CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT)
+        {
+            const LV2_Atom* const atom((const LV2_Atom*)buffer);
+            carla_stdout("OSC UI WRITE DATA: %i | size:%i, realSize:%i, bufferSize:%i, type:\"%s\"", portIndex, atom->size, lv2_atom_total_size(atom), bufferSize, carla_lv2_urid_unmap(this, atom->type));
+        }
+#endif
+
+        if (buffer == nullptr || ! isOscControlRegistered())
             return;
 
         if (format == 0)
         {
-            CARLA_ASSERT(buffer);
             CARLA_ASSERT(bufferSize == sizeof(float));
 
             if (bufferSize != sizeof(float))
                 return;
 
-            float value = *(float*)buffer;
+            const float value(*(const float*)buffer);
+
             sendOscControl(portIndex, value);
         }
         else if (format == CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM)
         {
-            CARLA_ASSERT(buffer);
-            const LV2_Atom* const atom = (const LV2_Atom*)buffer;
+            CARLA_ASSERT(bufferSize != 0);
+
+            if (bufferSize == 0)
+                return;
+
+            const LV2_Atom* const atom((const LV2_Atom*)buffer);
+            const char*     const typeStr(carla_lv2_urid_unmap(this, atom->type));
 
             QByteArray chunk((const char*)buffer, bufferSize);
-            sendOscLv2TransferAtom(portIndex, getCustomURIString(atom->type), chunk.toBase64().constData());
+            sendOscLv2TransferAtom(portIndex, typeStr, chunk.toBase64().constData());
         }
         else if (format == CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT)
         {
-            CARLA_ASSERT(buffer);
-            const LV2_Atom* const atom = (const LV2_Atom*)buffer;
+            CARLA_ASSERT(bufferSize != 0);
+
+            if (bufferSize == 0)
+                return;
+
+            const LV2_Atom* const atom((const LV2_Atom*)buffer);
+
+            const char* typeStr = carla_lv2_urid_unmap(this, atom->type);
+            const char* bodyStr = "";
+
+            if (atom->type == CARLA_URI_MAP_ID_ATOM_BLANK)
+            {
+                const LV2_Atom_Object* const obj((const LV2_Atom_Object*)atom);
+                carla_stdout("OSC UI WRITE DATA: IS BLANK! %i", obj->body.otype);
+
+                carla_stdout("OSC UI WRITE DATA: TEST %i", carla_lv2_urid_map(this, "http://gareus.org/oss/lv2/balance#meteron"));
+
+                if (obj->body.otype != CARLA_URI_MAP_ID_NULL)
+                {
+                    bodyStr = carla_lv2_urid_unmap(this, obj->body.otype);
+                    carla_stdout("OSC UI WRITE DATA: IS BLANK! AND BODY STR:\"%s\"", bodyStr);
+                }
+            }
 
             QByteArray chunk((const char*)buffer, bufferSize);
-            sendOscLv2TransferEvent(portIndex, getCustomURIString(atom->type), chunk.toBase64().constData());
+            sendOscLv2TransferEvent(portIndex, typeStr, bodyStr, chunk.toBase64().constData());
         }
     }
 
@@ -846,6 +838,8 @@ public:
             return CARLA_URI_MAP_ID_NULL;
 
         // Atom types
+        if (std::strcmp(uri, LV2_ATOM__Blank) == 0)
+            return CARLA_URI_MAP_ID_ATOM_BLANK;
         if (std::strcmp(uri, LV2_ATOM__Chunk) == 0)
             return CARLA_URI_MAP_ID_ATOM_CHUNK;
         if (std::strcmp(uri, LV2_ATOM__Double) == 0)
@@ -905,6 +899,8 @@ public:
             return nullptr;
 
         // Atom types
+        if (urid == CARLA_URI_MAP_ID_ATOM_BLANK)
+            return LV2_ATOM__Blank;
         if (urid == CARLA_URI_MAP_ID_ATOM_CHUNK)
             return LV2_ATOM__Chunk;
         if (urid == CARLA_URI_MAP_ID_ATOM_DOUBLE)
@@ -1020,7 +1016,7 @@ int CarlaBridgeOsc::handleMsgLv2TransferAtom(CARLA_BRIDGE_OSC_HANDLE_ARGS)
     if (! kClient)
         return 1;
 
-    const int32_t portIndex   = argv[0]->i;
+    const int32_t   portIndex = argv[0]->i;
     const char* const typeStr = (const char*)&argv[1]->s;
     const char* const atomBuf = (const char*)&argv[2]->s;
 
@@ -1030,7 +1026,7 @@ int CarlaBridgeOsc::handleMsgLv2TransferAtom(CARLA_BRIDGE_OSC_HANDLE_ARGS)
     LV2_Atom* const atom = (LV2_Atom*)chunk.constData();
     CarlaLv2Client* const lv2Client = (CarlaLv2Client*)kClient;
 
-    atom->type = lv2Client->getCustomURID(typeStr);
+    atom->type = CarlaLv2Client::carla_lv2_urid_map(lv2Client, typeStr);
     lv2Client->handleTransferAtom(portIndex, atom);
 
     return 0;
@@ -1039,14 +1035,15 @@ int CarlaBridgeOsc::handleMsgLv2TransferAtom(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 int CarlaBridgeOsc::handleMsgLv2TransferEvent(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 {
     carla_debug("CarlaBridgeOsc::handleMsgLv2TransferEvent()");
-    CARLA_BRIDGE_OSC_CHECK_OSC_TYPES(3, "iss");
+    CARLA_BRIDGE_OSC_CHECK_OSC_TYPES(4, "isss");
 
     if (! kClient)
         return 1;
 
-    const int32_t portIndex   = argv[0]->i;
+    const int32_t   portIndex = argv[0]->i;
     const char* const typeStr = (const char*)&argv[1]->s;
-    const char* const atomBuf = (const char*)&argv[2]->s;
+    const char* const bodyStr = (const char*)&argv[2]->s;
+    const char* const atomBuf = (const char*)&argv[3]->s;
 
     QByteArray chunk;
     chunk = QByteArray::fromBase64(atomBuf);
@@ -1054,7 +1051,16 @@ int CarlaBridgeOsc::handleMsgLv2TransferEvent(CARLA_BRIDGE_OSC_HANDLE_ARGS)
     LV2_Atom* const atom = (LV2_Atom*)chunk.constData();
     CarlaLv2Client* const lv2Client = (CarlaLv2Client*)kClient;
 
-    atom->type = lv2Client->getCustomURID(typeStr);
+    atom->type = CarlaLv2Client::carla_lv2_urid_map(lv2Client, typeStr);
+
+    if (atom->type == CARLA_URI_MAP_ID_ATOM_BLANK)
+    {
+        LV2_Atom_Object* const obj((LV2_Atom_Object*)atom);
+
+        if (obj->body.otype != CARLA_URI_MAP_ID_NULL)
+            obj->body.otype = CarlaLv2Client::carla_lv2_urid_map(this, bodyStr);
+    }
+
     lv2Client->handleTransferEvent(portIndex, atom);
 
     return 0;
@@ -1080,9 +1086,7 @@ int main(int argc, char* argv[])
     const bool useOsc = std::strcmp(oscUrl, "null");
 
     // try to get sampleRate value
-    const char* const sampleRateStr = getenv("CARLA_SAMPLE_RATE");
-
-    if (sampleRateStr)
+    if (const char* const sampleRateStr = getenv("CARLA_SAMPLE_RATE"))
         sampleRate = atof(sampleRateStr);
 
     // Init LV2 client
@@ -1115,5 +1119,3 @@ int main(int argc, char* argv[])
 
     return ret;
 }
-
-#endif // BRIDGE_LV2

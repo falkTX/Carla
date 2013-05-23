@@ -83,6 +83,19 @@
 #define LV2_UI__makeResident  LV2_UI_PREFIX "makeResident"
 
 // -------------------------------------------------
+// Non-void versions
+
+#define LV2NV_ATOM_CONTENTS(type, atom) \
+    ((uint8_t*)(atom) + sizeof(type))
+
+#define LV2NV_ATOM_CONTENTS_CONST(type, atom) \
+    ((const uint8_t*)(atom) + sizeof(type))
+
+#define LV2NV_ATOM_BODY(atom) LV2NV_ATOM_CONTENTS(LV2_Atom, atom)
+
+#define LV2NV_ATOM_BODY_CONST(atom) LV2NV_ATOM_CONTENTS_CONST(LV2_Atom, atom)
+
+// -------------------------------------------------
 // Custom Atom types
 
 struct LV2_Atom_MidiEvent {

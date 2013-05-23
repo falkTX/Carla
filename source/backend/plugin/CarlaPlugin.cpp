@@ -1813,13 +1813,8 @@ void CarlaPlugin::updateOscData(const lo_address& source, const char* const url)
         CARLA_ASSERT(cData.key != nullptr);
         CARLA_ASSERT(cData.value != nullptr);
 
-#ifdef WANT_LV2
-        if (type() == PLUGIN_LV2)
-            osc_send_lv2_transfer_event(&kData->osc.data, 0, cData.type, cData.value);
-        else
-#endif
-            if (std::strcmp(cData.type, CUSTOM_DATA_STRING) == 0)
-                osc_send_configure(&kData->osc.data, cData.key, cData.value);
+        if (std::strcmp(cData.type, CUSTOM_DATA_STRING) == 0)
+            osc_send_configure(&kData->osc.data, cData.key, cData.value);
     }
 
     if (kData->prog.current >= 0)

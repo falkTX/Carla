@@ -264,13 +264,13 @@ void CarlaBridgeClient::sendOscLv2TransferAtom(const int32_t portIndex, const ch
         osc_send_lv2_transfer_atom(fOscData, portIndex, typeStr, atomBuf);
 }
 
-void CarlaBridgeClient::sendOscLv2TransferEvent(const int32_t portIndex, const char* const typeStr, const char* const atomBuf)
+void CarlaBridgeClient::sendOscLv2TransferEvent(const int32_t portIndex, const char* const typeStr, const char* const bodyStr, const char* const atomBuf)
 {
-    carla_debug("CarlaBridgeClient::sendOscLv2TransferEvent(%i, \"%s\", \"%s\")", portIndex, typeStr, atomBuf);
+    carla_debug("CarlaBridgeClient::sendOscLv2TransferEvent(%i, \"%s\", \"%s\", \"%s\")", portIndex, typeStr, bodyStr, atomBuf);
     CARLA_ASSERT(fOscData != nullptr);
 
     if (fOscData != nullptr && fOscData->target != nullptr)
-        osc_send_lv2_transfer_event(fOscData, portIndex, typeStr, atomBuf);
+        osc_send_lv2_transfer_event(fOscData, portIndex, typeStr, bodyStr, atomBuf);
 }
 #endif
 
