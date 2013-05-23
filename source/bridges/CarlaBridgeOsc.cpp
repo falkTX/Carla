@@ -29,25 +29,25 @@ CarlaBridgeOsc::CarlaBridgeOsc(CarlaBridgeClient* const client)
     : kClient(client),
       fServer(nullptr)
 {
-    carla_debug("CarlaBridgeOsc::CarlaBridgeOsc(%p)", client);
     CARLA_ASSERT(client != nullptr);
+    carla_debug("CarlaBridgeOsc::CarlaBridgeOsc(%p)", client);
 }
 
 CarlaBridgeOsc::~CarlaBridgeOsc()
 {
-    carla_debug("CarlaBridgeOsc::~CarlaBridgeOsc()");
     CARLA_ASSERT(fName.isEmpty());
     CARLA_ASSERT(fServerPath.isEmpty());
     CARLA_ASSERT(fServer == nullptr);
+    carla_debug("CarlaBridgeOsc::~CarlaBridgeOsc()");
 }
 
 void CarlaBridgeOsc::init(const char* const url)
 {
-    carla_debug("CarlaBridgeOsc::init(\"%s\")", url);
     CARLA_ASSERT(fName.isEmpty());
     CARLA_ASSERT(fServerPath.isEmpty());
     CARLA_ASSERT(fServer == nullptr);
     CARLA_ASSERT(url != nullptr);
+    carla_debug("CarlaBridgeOsc::init(\"%s\")", url);
 
 #ifdef BUILD_BRIDGE_PLUGIN
     fName = "carla-bridge-plugin";
@@ -94,10 +94,10 @@ void CarlaBridgeOsc::idle()
 
 void CarlaBridgeOsc::close()
 {
-    carla_debug("CarlaBridgeOsc::close()");
     CARLA_ASSERT(fName.isNotEmpty());
     CARLA_ASSERT(fServerPath.isNotEmpty());
     CARLA_ASSERT(fServer != nullptr);
+    carla_debug("CarlaBridgeOsc::close()");
 
     fName.clear();
 
@@ -120,11 +120,11 @@ void CarlaBridgeOsc::close()
 
 int CarlaBridgeOsc::handleMessage(const char* const path, const int argc, const lo_arg* const* const argv, const char* const types, const lo_message msg)
 {
-    carla_debug("CarlaBridgeOsc::handleMessage(\"%s\", %i, %p, \"%s\", %p)", path, argc, argv, types, msg);
     CARLA_ASSERT(fName.isNotEmpty());
     CARLA_ASSERT(fServerPath.isNotEmpty());
     CARLA_ASSERT(fServer != nullptr);
     CARLA_ASSERT(path != nullptr);
+    carla_debug("CarlaBridgeOsc::handleMessage(\"%s\", %i, %p, \"%s\", %p)", path, argc, argv, types, msg);
 
     if (path == nullptr)
     {
@@ -182,9 +182,9 @@ int CarlaBridgeOsc::handleMessage(const char* const path, const int argc, const 
 #ifdef BRIDGE_LV2
     // LV2 UI methods
     if (std::strcmp(method, "lv2_atom_transfer") == 0)
-        return handleMsgLv2TransferAtom(argc, argv, types);
-    if (std::strcmp(method, "lv2_event_transfer") == 0)
-        return handleMsgLv2TransferEvent(argc, argv, types);
+        return handleMsgLv2AtomTransfer(argc, argv, types);
+    if (std::strcmp(method, "lv2_urid_map") == 0)
+        return handleMsgLv2UridMap(argc, argv, types);
 #endif
 
 #ifdef BUILD_BRIDGE_PLUGIN
@@ -210,9 +210,9 @@ int CarlaBridgeOsc::handleMessage(const char* const path, const int argc, const 
 
 int CarlaBridgeOsc::handleMsgConfigure(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 {
-    carla_debug("CarlaBridgeOsc::handleMsgConfigure()");
     CARLA_ASSERT(kClient != nullptr);
     CARLA_BRIDGE_OSC_CHECK_OSC_TYPES(2, "ss");
+    carla_debug("CarlaBridgeOsc::handleMsgConfigure()");
 
     if (kClient == nullptr)
         return 1;
@@ -226,9 +226,9 @@ int CarlaBridgeOsc::handleMsgConfigure(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 
 int CarlaBridgeOsc::handleMsgControl(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 {
-    carla_debug("CarlaBridgeOsc::handleMsgControl()");
     CARLA_ASSERT(kClient != nullptr);
     CARLA_BRIDGE_OSC_CHECK_OSC_TYPES(2, "if");
+    carla_debug("CarlaBridgeOsc::handleMsgControl()");
 
     if (kClient == nullptr)
         return 1;
@@ -249,9 +249,9 @@ int CarlaBridgeOsc::handleMsgControl(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 #ifndef BUILD_BRIDGE_PLUGIN
 int CarlaBridgeOsc::handleMsgProgram(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 {
-    carla_debug("CarlaBridgeOsc::handleMsgProgram()");
     CARLA_ASSERT(kClient != nullptr);
     CARLA_BRIDGE_OSC_CHECK_OSC_TYPES(1, "i");
+    carla_debug("CarlaBridgeOsc::handleMsgProgram()");
 
     if (kClient == nullptr)
         return 1;
@@ -270,9 +270,9 @@ int CarlaBridgeOsc::handleMsgProgram(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 
 int CarlaBridgeOsc::handleMsgMidiProgram(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 {
-    carla_debug("CarlaBridgeOsc::handleMsgMidiProgram()");
     CARLA_ASSERT(kClient != nullptr);
     CARLA_BRIDGE_OSC_CHECK_OSC_TYPES(2, "ii");
+    carla_debug("CarlaBridgeOsc::handleMsgMidiProgram()");
 
     if (kClient == nullptr)
         return 1;
@@ -295,9 +295,9 @@ int CarlaBridgeOsc::handleMsgMidiProgram(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 
 int CarlaBridgeOsc::handleMsgMidi(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 {
-    carla_debug("CarlaBridgeOsc::handleMsgMidi()");
     CARLA_ASSERT(kClient != nullptr);
     CARLA_BRIDGE_OSC_CHECK_OSC_TYPES(1, "m");
+    carla_debug("CarlaBridgeOsc::handleMsgMidi()");
 
     if (kClient == nullptr)
         return 1;
@@ -344,8 +344,8 @@ int CarlaBridgeOsc::handleMsgMidi(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 #ifdef BUILD_BRIDGE_UI
 int CarlaBridgeOsc::handleMsgShow()
 {
-    carla_debug("CarlaBridgeOsc::handleMsgShow()");
     CARLA_ASSERT(kClient != nullptr);
+    carla_debug("CarlaBridgeOsc::handleMsgShow()");
 
     if (kClient == nullptr)
         return 1;
@@ -357,8 +357,8 @@ int CarlaBridgeOsc::handleMsgShow()
 
 int CarlaBridgeOsc::handleMsgHide()
 {
-    carla_debug("CarlaBridgeOsc::handleMsgHide()");
     CARLA_ASSERT(kClient != nullptr);
+    carla_debug("CarlaBridgeOsc::handleMsgHide()");
 
     if (kClient == nullptr)
         return 1;
@@ -370,8 +370,8 @@ int CarlaBridgeOsc::handleMsgHide()
 
 int CarlaBridgeOsc::handleMsgQuit()
 {
-    carla_debug("CarlaBridgeOsc::handleMsgQuit()");
     CARLA_ASSERT(kClient != nullptr);
+    carla_debug("CarlaBridgeOsc::handleMsgQuit()");
 
     if (kClient == nullptr)
         return 1;

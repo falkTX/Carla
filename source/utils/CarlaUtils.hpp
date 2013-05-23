@@ -211,7 +211,8 @@ const char* carla_strdup(const char* const strBuf)
     const size_t bufferLen = (strBuf != nullptr) ? std::strlen(strBuf) : 0;
     char* const  buffer    = new char[bufferLen+1];
 
-    std::strcpy(buffer, strBuf);
+    if (strBuf != nullptr && bufferLen > 0)
+        std::strcpy(buffer, strBuf);
 
     buffer[bufferLen] = '\0';
 

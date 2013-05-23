@@ -19,6 +19,7 @@
 #define __CARLA_BRIDGE_CLIENT_HPP__
 
 #include "CarlaBridgeOsc.hpp"
+#include "CarlaBridgeToolkit.hpp"
 
 CARLA_BRIDGE_START_NAMESPACE
 
@@ -107,15 +108,13 @@ protected:
     void sendOscConfigure(const char* const key, const char* const value);
     void sendOscControl(const int32_t index, const float value);
     void sendOscProgram(const int32_t index);
-#ifdef BUILD_BRIDGE_PLUGIN
     void sendOscMidiProgram(const int32_t index);
-#endif
     void sendOscMidi(const uint8_t midiBuf[4]);
     void sendOscExiting();
 
 #ifdef BRIDGE_LV2
-    void sendOscLv2TransferAtom(const int32_t portIndex, const char* const typeStr, const char* const atomBuf);
-    void sendOscLv2TransferEvent(const int32_t portIndex, const char* const typeStr, const char* const bodyStr, const char* const atomBuf);
+    void sendOscLv2AtomTransfer(const int32_t portIndex, const char* const atomBuf);
+    void sendOscLv2UridMap(const uint32_t urid, const char* const uri);
 #endif
 
     // ---------------------------------------------------------------------
@@ -134,11 +133,35 @@ private:
     CarlaBridgeOsc kOsc;
 
 #ifdef BUILD_BRIDGE_UI
-    CarlaBridgeToolkit* const kUiToolkit;
+    struct UI {
+        CarlaBridgeToolkit* const toolkit;
+        CarlaString filename;
+        void* lib;
+        bool quit;
 
-    const char* fUiFilename;
-    void* fUiLib;
-    bool  fUiQuit;
+        UI(CarlaBridgeToolkit* const toolkit_)
+            : toolkit(toolkit_),
+              lib(nullptr),
+              quit(false) {}
+
+        ~UI()
+        {
+            delete toolkit;
+        }
+
+        void init()
+        {
+            toolkit->init();
+            quit = false;
+        }
+
+        void close()
+        {
+            quit = true;
+            toolkit->quit();
+        }
+
+    } fUI;
 #else
     friend class CarlaPluginClient;
 #endif

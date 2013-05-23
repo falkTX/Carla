@@ -37,8 +37,7 @@ endif
 # --------------------------------------------------------------
 # Plugin bridges
 
-BUILD_PLUGIN_FLAGS  = $(BUILD_CXX_FLAGS)
-BUILD_PLUGIN_FLAGS += -DBUILD_BRIDGE_PLUGIN -DBRIDGE_PLUGIN
+BUILD_PLUGIN_FLAGS  = $(BUILD_CXX_FLAGS) -DBUILD_BRIDGE_PLUGIN
 BUILD_PLUGIN_FLAGS += -I../backend/engine -I../backend/plugin -I../libs -I../theme
 LINK_PLUGIN_FLAGS   = $(LINK_FLAGS) -lpthread
 
@@ -248,7 +247,7 @@ OBJS_UI_LV2_QT4 = CarlaBridgeUI-LV2__lv2-qt4.o \
 	CarlaBridgeClient__lv2.o CarlaBridgeOsc__lv2.o \
 	CarlaBridgeToolkit__lv2.o CarlaBridgeToolkitQt__lv2-qt4.o
 
-carla-bridge-lv2-qt4: $(OBJS_UI_LV2_QT4) $(OBJS_UI_LV2_LIBS)
+carla-bridge-lv2-qt4: $(OBJS_UI_LV2_QT4) $(OBJS_UI_LV2_LIBS) ../libs/theme.a
 	$(CXX) $^ $(LINK_UI_LV2_QT4_FLAGS) -o $@ && $(STRIP) $@
 
 %__lv2-qt4.o: %.cpp
@@ -261,7 +260,7 @@ OBJS_UI_LV2_QT5 = CarlaBridgeUI-LV2__lv2-qt5.o \
 	CarlaBridgeClient__lv2.o CarlaBridgeOsc__lv2.o \
 	CarlaBridgeToolkit__lv2.o CarlaBridgeToolkitQt__lv2-qt5.o
 
-carla-bridge-lv2-qt5: $(OBJS_UI_LV2_QT5) $(OBJS_UI_LV2_LIBS)
+carla-bridge-lv2-qt5: $(OBJS_UI_LV2_QT5) $(OBJS_UI_LV2_LIBS) ../libs/theme.a
 	$(CXX) $^ $(LINK_UI_LV2_QT5_FLAGS) -o $@ && $(STRIP) $@
 
 %__lv2-qt5.o: %.cpp

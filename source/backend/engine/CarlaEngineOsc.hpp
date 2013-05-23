@@ -140,7 +140,7 @@ private:
 
 #ifdef WANT_LV2
     int handleMsgLv2AtomTransfer(CARLA_ENGINE_OSC_HANDLE_ARGS2);
-    int handleMsgLv2EventTransfer(CARLA_ENGINE_OSC_HANDLE_ARGS2);
+    int handleMsgLv2UridMap(CARLA_ENGINE_OSC_HANDLE_ARGS2);
 #endif
 
     // -----------------------------------------------------------------------

@@ -17,6 +17,7 @@
 
 #include "CarlaBridgeClient.hpp"
 #include "CarlaBridgeToolkit.hpp"
+#include "CarlaStyle.hpp"
 
 #include <QtCore/QSettings>
 #include <QtCore/QThread>
@@ -109,6 +110,24 @@ public:
         CARLA_ASSERT(! msgTimer);
 
         app = new QApplication(qargc, qargv);
+
+        {
+            QSettings settings("falkTX", "Carla");
+
+            if (settings.value("Main/UseProTheme", true).toBool())
+            {
+                CarlaStyle* const style(new CarlaStyle());
+                app->setStyle(style);
+                style->ready(app);
+
+                QString color(settings.value("Main/ProThemeColor", "Black").toString());
+
+                if (color == "System")
+                    pass(); //style->setColorScheme(CarlaStyle::COLOR_SYSTEM);
+                else
+                    style->setColorScheme(CarlaStyle::COLOR_BLACK);
+            }
+        }
 
         window = new QMainWindow(nullptr);
         window->resize(30, 30);

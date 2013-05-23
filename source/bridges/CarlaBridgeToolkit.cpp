@@ -24,9 +24,9 @@ CarlaBridgeToolkit::CarlaBridgeToolkit(CarlaBridgeClient* const client, const ch
     : kClient(client),
       kUiTitle(carla_strdup((uiTitle != nullptr) ? uiTitle : "(null)"))
 {
-    carla_debug("CarlaBridgeToolkit::CarlaBridgeToolkit(%p, \"%s\")", client, uiTitle);
     CARLA_ASSERT(client != nullptr);
     CARLA_ASSERT(uiTitle != nullptr);
+    carla_debug("CarlaBridgeToolkit::CarlaBridgeToolkit(%p, \"%s\")", client, uiTitle);
 }
 
 CarlaBridgeToolkit::~CarlaBridgeToolkit()

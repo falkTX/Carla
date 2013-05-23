@@ -1,21 +1,21 @@
 # QtCreator project file
 
+QT = core gui xml
+
 TARGET   = carla-bridge-qtcreator
 TEMPLATE = app
-VERSION  = 1.0
 
 # -------------------------------------------------------
 
-QT = core gui xml
-
 CONFIG     = debug
-CONFIG    += link_pkgconfig qt shared warn_on
+CONFIG    += link_pkgconfig qt warn_on
 
 DEFINES    = DEBUG
 DEFINES   += HAVE_CPP11_SUPPORT
 DEFINES   += QTCREATOR_TEST
 
-DEFINES   += BUILD_BRIDGE BUILD_BRIDGE_PLUGIN BRIDGE_PLUGIN
+DEFINES   += BUILD_BRIDGE
+DEFINES   += BUILD_BRIDGE_PLUGIN
 
 # Shared
 DEFINES   += WANT_NATIVE
@@ -34,7 +34,7 @@ DEFINES   += WANT_ZYNADDSUBFX
 DEFINES   += WANT_ZYNADDSUBFX_UI
 
 # Engine
-PKGCONFIG += liblo
+PKGCONFIG  = liblo
 
 # RtAudio
 DEFINES   += HAVE_GETTIMEOFDAY
@@ -52,7 +52,7 @@ DEFINES   += __LINUX_PULSE__
 PKGCONFIG += libpulse-simple
 
 # DISTRHO Plugin
-DEFINES   += DISTRHO_PLUGIN_TARGET_VST
+DEFINES   += DISTRHO_PLUGIN_TARGET_DSSI
 
 # FluidSynth
 PKGCONFIG += fluidsynth
@@ -161,7 +161,6 @@ HEADERS += \
     ../../utils/CarlaUtils.hpp \
     ../../utils/CarlaMutex.hpp \
     ../../utils/CarlaString.hpp \
-    ../../utils/CarlaThread.hpp \
     ../../utils/Lv2AtomQueue.hpp \
     ../../utils/RtList.hpp
 
@@ -176,11 +175,12 @@ INCLUDEPATH = .. \
 
 # -----------------------------------------------------------
 
-LIBS = -ldl \
-    ../../backend/libcarla_native.a \
-    ../../libs/dgl.a \
-    ../../libs/lilv.a \
-    ../../libs/rtmempool.a \
-    ../../libs/widgets.a
+LIBS  = -ldl
+LIBS += ../../backend/libcarla_native.a
+LIBS += ../../libs/dgl.a
+LIBS += ../../libs/lilv.a
+LIBS += ../../libs/rtmempool.a
+LIBS += ../../libs/theme.a
+LIBS += ../../libs/widgets.a
 
 QMAKE_CXXFLAGS *= -std=gnu++0x

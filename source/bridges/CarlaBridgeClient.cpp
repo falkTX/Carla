@@ -29,26 +29,17 @@ CARLA_BRIDGE_START_NAMESPACE
 CarlaBridgeClient::CarlaBridgeClient(const char* const uiTitle)
     : kOsc(this),
 #ifdef BUILD_BRIDGE_UI
-      kUiToolkit(CarlaBridgeToolkit::createNew(this, uiTitle)),
-      fUiFilename(nullptr),
-      fUiLib(nullptr),
-      fUiQuit(false),
+      fUI(CarlaBridgeToolkit::createNew(this, uiTitle)),
 #endif
       fOscData(nullptr)
 {
+    CARLA_ASSERT(uiTitle != nullptr);
     carla_debug("CarlaBridgeClient::CarlaBridgeClient(\"%s\")", uiTitle);
 }
 
 CarlaBridgeClient::~CarlaBridgeClient()
 {
     carla_debug("CarlaBridgeClient::~CarlaBridgeClient()");
-
-#ifdef BUILD_BRIDGE_UI
-    if (fUiFilename != nullptr)
-        delete[] fUiFilename;
-
-    delete kUiToolkit;
-#endif
 }
 
 #ifdef BUILD_BRIDGE_UI
@@ -66,8 +57,7 @@ bool CarlaBridgeClient::uiInit(const char* const, const char* const)
         initiated = true;
     }
 
-    fUiQuit = false;
-    kUiToolkit->init();
+    fUI.init();
 
     return false;
 }
@@ -76,15 +66,10 @@ void CarlaBridgeClient::uiClose()
 {
     carla_debug("CarlaBridgeClient::uiClose()");
 
-    if (! fUiQuit)
-    {
-        fUiQuit = true;
+    if (isOscControlRegistered() && ! fUI.quit)
+        sendOscExiting();
 
-        if (isOscControlRegistered())
-            sendOscExiting();
-    }
-
-    kUiToolkit->quit();
+    fUI.close();
 }
 #endif
 
@@ -104,7 +89,7 @@ bool CarlaBridgeClient::oscIdle()
     kOsc.idle();
 
 #ifdef BUILD_BRIDGE_UI
-    return ! fUiQuit;
+    return ! fUI.quit;
 #else
     return true;
 #endif
@@ -112,11 +97,11 @@ bool CarlaBridgeClient::oscIdle()
 
 void CarlaBridgeClient::oscClose()
 {
-    carla_debug("CarlaBridgeClient::oscClose()");
     CARLA_ASSERT(fOscData != nullptr);
+    carla_debug("CarlaBridgeClient::oscClose()");
 
-    kOsc.close();
     fOscData = nullptr;
+    kOsc.close();
 }
 
 bool CarlaBridgeClient::isOscControlRegistered() const
@@ -126,8 +111,8 @@ bool CarlaBridgeClient::isOscControlRegistered() const
 
 void CarlaBridgeClient::sendOscUpdate()
 {
-    carla_debug("CarlaBridgeClient::sendOscUpdate()");
     CARLA_ASSERT(fOscData != nullptr);
+    carla_debug("CarlaBridgeClient::sendOscUpdate()");
 
     if (fOscData != nullptr && fOscData->target != nullptr)
         osc_send_update(fOscData, kOsc.getServerPath());
@@ -136,9 +121,9 @@ void CarlaBridgeClient::sendOscUpdate()
 #ifdef BUILD_BRIDGE_PLUGIN
 void CarlaBridgeClient::sendOscBridgeUpdate()
 {
-    carla_debug("CarlaBridgeClient::sendOscBridgeUpdate()");
     CARLA_ASSERT(fOscData != nullptr);
     CARLA_ASSERT(fOscData->target != nullptr && fOscData->path != nullptr);
+    carla_debug("CarlaBridgeClient::sendOscBridgeUpdate()");
 
     if (fOscData != nullptr && fOscData->target != nullptr && fOscData->path != nullptr)
         osc_send_bridge_update(fOscData, fOscData->path);
@@ -146,9 +131,9 @@ void CarlaBridgeClient::sendOscBridgeUpdate()
 
 void CarlaBridgeClient::sendOscBridgeError(const char* const error)
 {
-    carla_debug("CarlaBridgeClient::sendOscBridgeError(\"%s\")", error);
     CARLA_ASSERT(fOscData != nullptr);
     CARLA_ASSERT(error != nullptr);
+    carla_debug("CarlaBridgeClient::sendOscBridgeError(\"%s\")", error);
 
     if (fOscData != nullptr && fOscData->target != nullptr && error != nullptr)
         osc_send_bridge_error(fOscData, error);
@@ -163,36 +148,35 @@ void CarlaBridgeClient::toolkitShow()
 {
     carla_debug("CarlaBridgeClient::toolkitShow()");
 
-    kUiToolkit->show();
+    fUI.toolkit->show();
 }
 
 void CarlaBridgeClient::toolkitHide()
 {
     carla_debug("CarlaBridgeClient::toolkitHide()");
 
-    kUiToolkit->hide();
+    fUI.toolkit->hide();
 }
 
 void CarlaBridgeClient::toolkitResize(const int width, const int height)
 {
     carla_debug("CarlaBridgeClient::toolkitResize(%i, %i)", width, height);
 
-    kUiToolkit->resize(width, height);
+    fUI.toolkit->resize(width, height);
 }
 
 void CarlaBridgeClient::toolkitExec(const bool showGui)
 {
     carla_debug("CarlaBridgeClient::toolkitExec(%s)", bool2str(showGui));
 
-    kUiToolkit->exec(showGui);
+    fUI.toolkit->exec(showGui);
 }
 
 void CarlaBridgeClient::toolkitQuit()
 {
     carla_debug("CarlaBridgeClient::toolkitQuit()");
 
-    fUiQuit = true;
-    kUiToolkit->quit();
+    fUI.close();
 }
 #endif
 
@@ -200,8 +184,8 @@ void CarlaBridgeClient::toolkitQuit()
 
 void CarlaBridgeClient::sendOscConfigure(const char* const key, const char* const value)
 {
-    carla_debug("CarlaBridgeClient::sendOscConfigure(\"%s\", \"%s\")", key, value);
     CARLA_ASSERT(fOscData != nullptr);
+    carla_debug("CarlaBridgeClient::sendOscConfigure(\"%s\", \"%s\")", key, value);
 
     if (fOscData != nullptr && fOscData->target != nullptr)
         osc_send_configure(fOscData, key, value);
@@ -209,8 +193,8 @@ void CarlaBridgeClient::sendOscConfigure(const char* const key, const char* cons
 
 void CarlaBridgeClient::sendOscControl(const int32_t index, const float value)
 {
-    carla_debug("CarlaBridgeClient::sendOscControl(%i, %f)", index, value);
     CARLA_ASSERT(fOscData != nullptr);
+    carla_debug("CarlaBridgeClient::sendOscControl(%i, %f)", index, value);
 
     if (fOscData != nullptr && fOscData->target != nullptr)
         osc_send_control(fOscData, index, value);
@@ -218,28 +202,26 @@ void CarlaBridgeClient::sendOscControl(const int32_t index, const float value)
 
 void CarlaBridgeClient::sendOscProgram(const int32_t index)
 {
-    carla_debug("CarlaBridgeClient::sendOscProgram(%i)", index);
     CARLA_ASSERT(fOscData != nullptr);
+    carla_debug("CarlaBridgeClient::sendOscProgram(%i)", index);
 
     if (fOscData != nullptr && fOscData->target != nullptr)
         osc_send_program(fOscData, index);
 }
 
-#ifdef BUILD_BRIDGE_PLUGIN
 void CarlaBridgeClient::sendOscMidiProgram(const int32_t index)
 {
-    carla_debug("CarlaBridgeClient::sendOscMidiProgram(%i)", index);
     CARLA_ASSERT(fOscData != nullptr);
+    carla_debug("CarlaBridgeClient::sendOscMidiProgram(%i)", index);
 
     if (fOscData != nullptr && fOscData->target != nullptr)
         osc_send_midi_program(fOscData, index);
 }
-#endif
 
 void CarlaBridgeClient::sendOscMidi(const uint8_t midiBuf[4])
 {
-    carla_debug("CarlaBridgeClient::sendOscMidi(%p)", midiBuf);
     CARLA_ASSERT(fOscData != nullptr);
+    carla_debug("CarlaBridgeClient::sendOscMidi(%p)", midiBuf);
 
     if (fOscData != nullptr && fOscData->target != nullptr)
         osc_send_midi(fOscData, midiBuf);
@@ -247,30 +229,30 @@ void CarlaBridgeClient::sendOscMidi(const uint8_t midiBuf[4])
 
 void CarlaBridgeClient::sendOscExiting()
 {
-    carla_debug("CarlaBridgeClient::sendOscExiting()");
     CARLA_ASSERT(fOscData != nullptr);
+    carla_debug("CarlaBridgeClient::sendOscExiting()");
 
     if (fOscData != nullptr && fOscData->target != nullptr)
         osc_send_exiting(fOscData);
 }
 
 #ifdef BRIDGE_LV2
-void CarlaBridgeClient::sendOscLv2TransferAtom(const int32_t portIndex, const char* const typeStr, const char* const atomBuf)
+void CarlaBridgeClient::sendOscLv2AtomTransfer(const int32_t portIndex, const char* const atomBuf)
 {
-    carla_debug("CarlaBridgeClient::sendOscLv2TransferAtom(%i, \"%s\", \"%s\")", portIndex, typeStr, atomBuf);
     CARLA_ASSERT(fOscData != nullptr);
+    carla_debug("CarlaBridgeClient::sendOscLv2TransferAtom(%i, \"%s\")", portIndex, atomBuf);
 
     if (fOscData != nullptr && fOscData->target != nullptr)
-        osc_send_lv2_transfer_atom(fOscData, portIndex, typeStr, atomBuf);
+        osc_send_lv2_atom_transfer(fOscData, portIndex, atomBuf);
 }
 
-void CarlaBridgeClient::sendOscLv2TransferEvent(const int32_t portIndex, const char* const typeStr, const char* const bodyStr, const char* const atomBuf)
+void CarlaBridgeClient::sendOscLv2UridMap(const uint32_t urid, const char* const uri)
 {
-    carla_debug("CarlaBridgeClient::sendOscLv2TransferEvent(%i, \"%s\", \"%s\", \"%s\")", portIndex, typeStr, bodyStr, atomBuf);
     CARLA_ASSERT(fOscData != nullptr);
+    carla_debug("CarlaBridgeClient::sendOscLv2UridMap(%i, \"%s\")", urid, uri);
 
     if (fOscData != nullptr && fOscData->target != nullptr)
-        osc_send_lv2_transfer_event(fOscData, portIndex, typeStr, bodyStr, atomBuf);
+        osc_send_lv2_urid_map(fOscData, urid, uri);
 }
 #endif
 
@@ -279,50 +261,45 @@ void CarlaBridgeClient::sendOscLv2TransferEvent(const int32_t portIndex, const c
 #ifdef BUILD_BRIDGE_UI
 void* CarlaBridgeClient::getContainerId()
 {
-    return kUiToolkit->getContainerId();
+    return fUI.toolkit->getContainerId();
 }
 
 bool CarlaBridgeClient::uiLibOpen(const char* const filename)
 {
-    CARLA_ASSERT(fUiLib == nullptr);
-    CARLA_ASSERT(fUiFilename == nullptr);
+    CARLA_ASSERT(fUI.lib == nullptr);
+    CARLA_ASSERT(filename != nullptr);
 
-    if (fUiFilename != nullptr)
-        delete[] fUiFilename;
+    fUI.lib      = lib_open(filename);
+    fUI.filename = filename;
 
-    fUiLib = lib_open(filename);
-    fUiFilename = carla_strdup(filename ? filename : "");
-
-    return (fUiLib != nullptr);
+    return (fUI.lib != nullptr);
 }
 
 bool CarlaBridgeClient::uiLibClose()
 {
-    CARLA_ASSERT(fUiLib != nullptr);
+    CARLA_ASSERT(fUI.lib != nullptr);
 
-    if (fUiLib != nullptr)
-    {
-        const bool closed = lib_close(fUiLib);
-        fUiLib = nullptr;
-        return closed;
-    }
+    if (fUI.lib == nullptr)
+        return false;
 
-    return false;
+    const bool closed = lib_close(fUI.lib);
+    fUI.lib = nullptr;
+    return closed;
 }
 
 void* CarlaBridgeClient::uiLibSymbol(const char* const symbol)
 {
-    CARLA_ASSERT(fUiLib != nullptr);
+    CARLA_ASSERT(fUI.lib != nullptr);
 
-    if (fUiLib != nullptr)
-        return lib_symbol(fUiLib, symbol);
+    if (fUI.lib == nullptr)
+        return nullptr;
 
-    return nullptr;
+    return lib_symbol(fUI.lib, symbol);
 }
 
 const char* CarlaBridgeClient::uiLibError()
 {
-    return lib_error(fUiFilename);
+    return lib_error(fUI.filename);
 }
 #endif
 

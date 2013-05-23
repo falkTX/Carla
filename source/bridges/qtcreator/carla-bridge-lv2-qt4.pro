@@ -2,42 +2,58 @@
 
 QT = core gui
 
-CONFIG    = debug link_pkgconfig qt warn_on
-PKGCONFIG = liblo
-
 TARGET   = carla-bridge-lv2-qt4
 TEMPLATE = app
-VERSION  = 0.5.0
+
+# -------------------------------------------------------
+
+CONFIG    = debug
+CONFIG   += link_pkgconfig qt warn_on
+
+DEFINES   = DEBUG
+DEFINES  += HAVE_CPP11_SUPPORT
+DEFINES  += QTCREATOR_TEST
+
+DEFINES  += BUILD_BRIDGE
+DEFINES  += BUILD_BRIDGE_UI
+DEFINES  += BRIDGE_LV2
+DEFINES  += BRIDGE_QT4
+DEFINES  += BRIDGE_LV2_QT4
+
+PKGCONFIG = liblo
 
 SOURCES = \
-    ../carla_bridge_client.cpp \
-    ../carla_bridge_osc.cpp \
-    ../carla_bridge_toolkit.cpp \
-    ../carla_bridge_toolkit-qt.cpp \
-    ../carla_bridge_ui-lv2.cpp
+    ../CarlaBridgeClient.cpp \
+    ../CarlaBridgeOsc.cpp \
+    ../CarlaBridgeToolkit.cpp \
+    ../CarlaBridgeToolkitQt.cpp \
+    ../CarlaBridgeUI-LV2.cpp
 
 HEADERS = \
-    ../carla_bridge.hpp \
-    ../carla_bridge_client.hpp \
-    ../carla_bridge_osc.hpp \
-    ../carla_bridge_toolkit.hpp \
-    ../../carla-includes/carla_defines.hpp \
-    ../../carla-includes/carla_midi.h \
-    ../../carla-includes/lv2_rdf.hpp \
-    ../../carla-utils/carla_lib_utils.hpp \
-    ../../carla-utils/carla_osc_utils.hpp \
-    ../../carla-utils/carla_lv2_utils.hpp
+    ../CarlaBridge.hpp \
+    ../CarlaBridgeClient.hpp \
+    ../CarlaBridgeOsc.hpp \
+    ../CarlaBridgeToolkit.hpp \
+    ../../includes/CarlaDefines.hpp \
+    ../../includes/CarlaMIDI.h \
+    ../../includes/lv2_rdf.hpp \
+    ../../utils/CarlaJuceUtils.hpp \
+    ../../utils/CarlaLibUtils.hpp \
+    ../../utils/CarlaLv2Utils.hpp \
+    ../../utils/CarlaOscUtils.hpp \
+    ../../utils/CarlaUtils.hpp \
+    ../../utils/CarlaString.hpp \
+    ../../utils/RtList.hpp
 
 INCLUDEPATH = .. \
-    ../../carla-includes \
-    ../../carla-utils
+    ../../includes \
+    ../../libs \
+    ../../theme \
+    ../../utils
 
-LIBS    = \
-    ../../carla-lilv/carla_lilv.a \
-    ../../carla-rtmempool/carla_rtmempool.a
-
-DEFINES  = QTCREATOR_TEST
-DEFINES += DEBUG
-DEFINES += BUILD_BRIDGE BUILD_BRIDGE_UI BRIDGE_LV2 BRIDGE_QT4 BRIDGE_LV2_QT4
+LIBS  = -ldl
+LIBS += ../../libs/lilv.a
+LIBS += ../../libs/rtmempool.a
+LIBS += ../../libs/theme.a
 
 QMAKE_CXXFLAGS *= -std=c++0x

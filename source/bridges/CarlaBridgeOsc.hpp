@@ -25,27 +25,27 @@
 
 #define CARLA_BRIDGE_OSC_HANDLE_ARGS const int argc, const lo_arg* const* const argv, const char* const types
 
-#define CARLA_BRIDGE_OSC_CHECK_OSC_TYPES(/* argc, types, */ argcToCompare, typesToCompare)                                  \
-    /* check argument count */                                                                                              \
-    if (argc != argcToCompare)                                                                                              \
-    {                                                                                                                       \
+#define CARLA_BRIDGE_OSC_CHECK_OSC_TYPES(/* argc, types, */ argcToCompare, typesToCompare)                                     \
+    /* check argument count */                                                                                                 \
+    if (argc != argcToCompare)                                                                                                 \
+    {                                                                                                                          \
         carla_stderr("CarlaBridgeOsc::%s() - argument count mismatch: %i != %i", __FUNCTION__, argc, argcToCompare);           \
-        return 1;                                                                                                           \
-    }                                                                                                                       \
-    if (argc > 0)                                                                                                           \
-    {                                                                                                                       \
-        /* check for nullness */                                                                                            \
-        if (! (types && typesToCompare))                                                                                    \
-        {                                                                                                                   \
+        return 1;                                                                                                              \
+    }                                                                                                                          \
+    if (argc > 0)                                                                                                              \
+    {                                                                                                                          \
+        /* check for nullness */                                                                                               \
+        if (types == nullptr || typesToCompare == nullptr)                                                                     \
+        {                                                                                                                      \
             carla_stderr("CarlaBridgeOsc::%s() - argument types are null", __FUNCTION__);                                      \
-            return 1;                                                                                                       \
-        }                                                                                                                   \
-        /* check argument types */                                                                                          \
-        if (std::strcmp(types, typesToCompare) != 0)                                                                        \
-        {                                                                                                                   \
+            return 1;                                                                                                          \
+        }                                                                                                                      \
+        /* check argument types */                                                                                             \
+        if (std::strcmp(types, typesToCompare) != 0)                                                                           \
+        {                                                                                                                      \
             carla_stderr("CarlaBridgeOsc::%s() - argument types mismatch: '%s' != '%s'", __FUNCTION__, types, typesToCompare); \
-            return 1;                                                                                                       \
-        }                                                                                                                   \
+            return 1;                                                                                                          \
+        }                                                                                                                      \
     }
 
 CARLA_BRIDGE_START_NAMESPACE
@@ -109,8 +109,8 @@ private:
     int handleMsgQuit();
 
 #ifdef BRIDGE_LV2
-    int handleMsgLv2TransferAtom(CARLA_BRIDGE_OSC_HANDLE_ARGS);
-    int handleMsgLv2TransferEvent(CARLA_BRIDGE_OSC_HANDLE_ARGS);
+    int handleMsgLv2AtomTransfer(CARLA_BRIDGE_OSC_HANDLE_ARGS);
+    int handleMsgLv2UridMap(CARLA_BRIDGE_OSC_HANDLE_ARGS);
 #endif
 
 #ifdef BUILD_BRIDGE_PLUGIN

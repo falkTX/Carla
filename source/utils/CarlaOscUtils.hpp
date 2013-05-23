@@ -314,39 +314,36 @@ void osc_send_bridge_error(const CarlaOscData* const oscData, const char* const 
 
 #if defined(BRIDGE_LV2) || defined(WANT_LV2)
 static inline
-void osc_send_lv2_transfer_atom(const CarlaOscData* const oscData, const int32_t portIndex, const char* const typeStr, const char* const atomBuf)
+void osc_send_lv2_atom_transfer(const CarlaOscData* const oscData, const int32_t portIndex, const char* const atomBuf)
 {
     CARLA_ASSERT(oscData != nullptr && oscData->path != nullptr);
     CARLA_ASSERT(portIndex >= 0);
-    CARLA_ASSERT(typeStr != nullptr);
     CARLA_ASSERT(atomBuf != nullptr);
-    carla_debug("osc_send_lv2_transfer_atom(path:\"%s\", %i, \"%s\", <atomBuf:%p>)", oscData->path, portIndex, typeStr, atomBuf);
+    carla_debug("osc_send_lv2_atom_transfer(path:\"%s\", %i, <atomBuf:%p>)", oscData->path, portIndex, atomBuf);
 
-    if (oscData != nullptr && oscData->path != nullptr && oscData->target != nullptr && portIndex >= 0 && typeStr != nullptr && atomBuf != nullptr)
+    if (oscData != nullptr && oscData->path != nullptr && oscData->target != nullptr && portIndex >= 0 && atomBuf != nullptr)
     {
         char targetPath[std::strlen(oscData->path)+19];
         std::strcpy(targetPath, oscData->path);
         std::strcat(targetPath, "/lv2_atom_transfer");
-        lo_send(oscData->target, targetPath, "iss", portIndex, typeStr, atomBuf);
+        lo_send(oscData->target, targetPath, "is", portIndex, atomBuf);
     }
 }
 
 static inline
-void osc_send_lv2_transfer_event(const CarlaOscData* const oscData, const int32_t portIndex, const char* const typeStr, const char* const bodyStr, const char* const atomBuf)
+void osc_send_lv2_urid_map(const CarlaOscData* const oscData, const uint32_t urid, const char* const uri)
 {
     CARLA_ASSERT(oscData != nullptr && oscData->path != nullptr);
-    CARLA_ASSERT(portIndex >= 0);
-    CARLA_ASSERT(typeStr != nullptr);
-    CARLA_ASSERT(bodyStr != nullptr);
-    CARLA_ASSERT(atomBuf != nullptr);
-    carla_debug("osc_send_lv2_transfer_event(path:\"%s\", %i, \"%s\", \"%s\", <atomBuf:%p>)", oscData->path, portIndex, typeStr, bodyStr, atomBuf);
+    CARLA_ASSERT(urid > 0);
+    CARLA_ASSERT(uri != nullptr);
+    carla_debug("osc_send_lv2_urid_map(path:\"%s\", %i, \"%s\")", oscData->path, urid, uri);
 
-    if (oscData != nullptr && oscData->path != nullptr && oscData->target != nullptr && portIndex >= 0 && typeStr != nullptr && bodyStr != nullptr && atomBuf != nullptr)
+    if (oscData != nullptr && oscData->path != nullptr && oscData->target != nullptr && urid > 0 && uri != nullptr)
     {
-        char targetPath[std::strlen(oscData->path)+20];
+        char targetPath[std::strlen(oscData->path)+14];
         std::strcpy(targetPath, oscData->path);
-        std::strcat(targetPath, "/lv2_event_transfer");
-        lo_send(oscData->target, targetPath, "isss", portIndex, typeStr, bodyStr, atomBuf);
+        std::strcat(targetPath, "/lv2_urid_map");
+        lo_send(oscData->target, targetPath, "is", urid, uri);
     }
 }
 #endif

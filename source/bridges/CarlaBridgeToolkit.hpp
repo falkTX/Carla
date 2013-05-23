@@ -19,6 +19,7 @@
 #define __CARLA_BRIDGE_TOOLKIT_HPP__
 
 #include "CarlaBridge.hpp"
+#include "CarlaJuceUtils.hpp"
 
 CARLA_BRIDGE_START_NAMESPACE
 
@@ -53,7 +54,9 @@ public:
 
 protected:
     CarlaBridgeClient* const kClient;
-    const char* kUiTitle;
+    const char* const kUiTitle;
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaBridgeToolkit)
 };
 
 /**@}*/

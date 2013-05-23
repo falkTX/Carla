@@ -28,9 +28,7 @@ CARLA_BRIDGE_START_NAMESPACE
 
 // forward declarations of commonly used Carla-Bridge classes
 class CarlaBridgeClient;
-#ifdef BUILD_BRIDGE_UI
 class CarlaBridgeToolkit;
-#endif
 
 CARLA_BRIDGE_END_NAMESPACE
 

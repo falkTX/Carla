@@ -18,13 +18,16 @@
 #include "CarlaBridgeClient.hpp"
 #include "CarlaLv2Utils.hpp"
 #include "CarlaMIDI.h"
+#include "RtList.hpp"
+
+#include <QtCore/QDir>
 
 extern "C" {
 #include "rtmempool/rtmempool-lv2.h"
 }
 
-#include <vector>
-#include <QtCore/QDir>
+// -----------------------------------------------------
+// Our LV2 World class object
 
 Lv2WorldClass gLv2World;
 
@@ -33,74 +36,154 @@ CARLA_BRIDGE_START_NAMESPACE
 // -------------------------------------------------------------------------
 
 // fake values
-uint32_t bufferSize = 512;
-double   sampleRate = 44100.0;
+static uint32_t gBufferSize = 1024;
+static double   gSampleRate = 44100.0;
 
 // static max values
 const unsigned int MAX_EVENT_BUFFER = 8192; // 0x2000
 
-// feature ids
-const uint32_t lv2_feature_id_bufsize_bounded  =  0;
-const uint32_t lv2_feature_id_bufsize_fixed    =  1;
-const uint32_t lv2_feature_id_bufsize_powerof2 =  2;
-const uint32_t lv2_feature_id_event            =  3;
-const uint32_t lv2_feature_id_logs             =  4;
-const uint32_t lv2_feature_id_options          =  5;
-const uint32_t lv2_feature_id_programs         =  6;
-const uint32_t lv2_feature_id_rtmempool        =  7;
-const uint32_t lv2_feature_id_state_make_path  =  8;
-const uint32_t lv2_feature_id_state_map_path   =  9;
-const uint32_t lv2_feature_id_strict_bounds    = 10;
-const uint32_t lv2_feature_id_uri_map          = 11;
-const uint32_t lv2_feature_id_urid_map         = 12;
-const uint32_t lv2_feature_id_urid_unmap       = 13;
-const uint32_t lv2_feature_id_ui_parent        = 14;
-const uint32_t lv2_feature_id_ui_port_map      = 15;
-const uint32_t lv2_feature_id_ui_resize        = 16;
-const uint32_t lv2_feature_count               = 17;
+// LV2 URI Map Ids
+const uint32_t CARLA_URI_MAP_ID_NULL                   =  0;
+const uint32_t CARLA_URI_MAP_ID_ATOM_BLANK             =  1;
+const uint32_t CARLA_URI_MAP_ID_ATOM_BOOL              =  2;
+const uint32_t CARLA_URI_MAP_ID_ATOM_CHUNK             =  3;
+const uint32_t CARLA_URI_MAP_ID_ATOM_DOUBLE            =  4;
+const uint32_t CARLA_URI_MAP_ID_ATOM_FLOAT             =  5;
+const uint32_t CARLA_URI_MAP_ID_ATOM_INT               =  6;
+const uint32_t CARLA_URI_MAP_ID_ATOM_LITERAL           =  7;
+const uint32_t CARLA_URI_MAP_ID_ATOM_LONG              =  8;
+const uint32_t CARLA_URI_MAP_ID_ATOM_PATH              =  9;
+const uint32_t CARLA_URI_MAP_ID_ATOM_PROPERTY          = 10;
+const uint32_t CARLA_URI_MAP_ID_ATOM_RESOURCE          = 11;
+const uint32_t CARLA_URI_MAP_ID_ATOM_SEQUENCE          = 12;
+const uint32_t CARLA_URI_MAP_ID_ATOM_STRING            = 13;
+const uint32_t CARLA_URI_MAP_ID_ATOM_TUPLE             = 14;
+const uint32_t CARLA_URI_MAP_ID_ATOM_URI               = 15;
+const uint32_t CARLA_URI_MAP_ID_ATOM_URID              = 16;
+const uint32_t CARLA_URI_MAP_ID_ATOM_VECTOR            = 17;
+const uint32_t CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM     = 18;
+const uint32_t CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT    = 19;
+const uint32_t CARLA_URI_MAP_ID_BUF_MAX_LENGTH         = 20;
+const uint32_t CARLA_URI_MAP_ID_BUF_MIN_LENGTH         = 21;
+const uint32_t CARLA_URI_MAP_ID_BUF_SEQUENCE_SIZE      = 22;
+const uint32_t CARLA_URI_MAP_ID_LOG_ERROR              = 23;
+const uint32_t CARLA_URI_MAP_ID_LOG_NOTE               = 24;
+const uint32_t CARLA_URI_MAP_ID_LOG_TRACE              = 25;
+const uint32_t CARLA_URI_MAP_ID_LOG_WARNING            = 26;
+const uint32_t CARLA_URI_MAP_ID_TIME_POSITION          = 27; // base type
+const uint32_t CARLA_URI_MAP_ID_TIME_BAR               = 28; // values
+const uint32_t CARLA_URI_MAP_ID_TIME_BAR_BEAT          = 29;
+const uint32_t CARLA_URI_MAP_ID_TIME_BEAT              = 30;
+const uint32_t CARLA_URI_MAP_ID_TIME_BEAT_UNIT         = 31;
+const uint32_t CARLA_URI_MAP_ID_TIME_BEATS_PER_BAR     = 32;
+const uint32_t CARLA_URI_MAP_ID_TIME_BEATS_PER_MINUTE  = 33;
+const uint32_t CARLA_URI_MAP_ID_TIME_FRAME             = 34;
+const uint32_t CARLA_URI_MAP_ID_TIME_FRAMES_PER_SECOND = 35;
+const uint32_t CARLA_URI_MAP_ID_TIME_SPEED             = 36;
+const uint32_t CARLA_URI_MAP_ID_MIDI_EVENT             = 37;
+const uint32_t CARLA_URI_MAP_ID_PARAM_SAMPLE_RATE      = 38;
+const uint32_t CARLA_URI_MAP_ID_COUNT                  = 39;
 
-// pre-set uri[d] map ids
-const uint32_t CARLA_URI_MAP_ID_NULL                = 0;
-const uint32_t CARLA_URI_MAP_ID_ATOM_BLANK          = 1;
-const uint32_t CARLA_URI_MAP_ID_ATOM_CHUNK          = 2;
-const uint32_t CARLA_URI_MAP_ID_ATOM_DOUBLE         = 3;
-const uint32_t CARLA_URI_MAP_ID_ATOM_INT            = 4;
-const uint32_t CARLA_URI_MAP_ID_ATOM_PATH           = 5;
-const uint32_t CARLA_URI_MAP_ID_ATOM_SEQUENCE       = 6;
-const uint32_t CARLA_URI_MAP_ID_ATOM_STRING         = 7;
-const uint32_t CARLA_URI_MAP_ID_ATOM_WORKER         = 8;
-const uint32_t CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM  = 9;
-const uint32_t CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT = 10;
-const uint32_t CARLA_URI_MAP_ID_BUF_MAX_LENGTH      = 11;
-const uint32_t CARLA_URI_MAP_ID_BUF_MIN_LENGTH      = 12;
-const uint32_t CARLA_URI_MAP_ID_BUF_SEQUENCE_SIZE   = 13;
-const uint32_t CARLA_URI_MAP_ID_LOG_ERROR           = 14;
-const uint32_t CARLA_URI_MAP_ID_LOG_NOTE            = 15;
-const uint32_t CARLA_URI_MAP_ID_LOG_TRACE           = 16;
-const uint32_t CARLA_URI_MAP_ID_LOG_WARNING         = 17;
-const uint32_t CARLA_URI_MAP_ID_MIDI_EVENT          = 18;
-const uint32_t CARLA_URI_MAP_ID_PARAM_SAMPLE_RATE   = 19;
-const uint32_t CARLA_URI_MAP_ID_COUNT               = 20;
+// LV2 Feature Ids
+const uint32_t kFeatureIdBufSizeBounded   =  0;
+const uint32_t kFeatureIdBufSizeFixed     =  1;
+const uint32_t kFeatureIdBufSizePowerOf2  =  2;
+const uint32_t kFeatureIdEvent            =  3;
+const uint32_t kFeatureIdHardRtCapable    =  4;
+const uint32_t kFeatureIdInPlaceBroken    =  5;
+const uint32_t kFeatureIdIsLive           =  6;
+const uint32_t kFeatureIdLogs             =  7;
+const uint32_t kFeatureIdOptions          =  8;
+const uint32_t kFeatureIdPrograms         =  9;
+const uint32_t kFeatureIdRtMemPool        = 10;
+const uint32_t kFeatureIdStateMakePath    = 11;
+const uint32_t kFeatureIdStateMapPath     = 12;
+const uint32_t kFeatureIdStrictBounds     = 13;
+const uint32_t kFeatureIdUriMap           = 14;
+const uint32_t kFeatureIdUridMap          = 15;
+const uint32_t kFeatureIdUridUnmap        = 16;
+const uint32_t kFeatureIdWorker           = 17;
+const uint32_t kFeatureIdUiDataAccess     = 18;
+const uint32_t kFeatureIdUiInstanceAccess = 19;
+const uint32_t kFeatureIdUiIdle           = 20;
+const uint32_t kFeatureIdUiFixedSize      = 21;
+const uint32_t kFeatureIdUiMakeResident   = 22;
+const uint32_t kFeatureIdUiNoUserResize   = 23;
+const uint32_t kFeatureIdUiParent         = 24;
+const uint32_t kFeatureIdUiPortMap        = 25;
+const uint32_t kFeatureIdUiPortSubscribe  = 26;
+const uint32_t kFeatureIdUiResize         = 27;
+const uint32_t kFeatureIdUiTouch          = 28;
+const uint32_t kFeatureIdExternalUi       = 29;
+const uint32_t kFeatureIdExternalUiOld    = 30;
+const uint32_t kFeatureCount              = 31;
 
 // -------------------------------------------------------------------------
 
 struct Lv2PluginOptions {
-    uint32_t eventSize;
-    uint32_t bufferSize;
-    double   sampleRate;
-    LV2_Options_Option oNull;
-    LV2_Options_Option oMaxBlockLenth;
-    LV2_Options_Option oMinBlockLenth;
-    LV2_Options_Option oSequenceSize;
-    LV2_Options_Option oSampleRate;
+    int maxBufferSize;
+    int minBufferSize;
+    int sequenceSize;
+    double sampleRate;
+    LV2_Options_Option optMaxBlockLenth;
+    LV2_Options_Option optMinBlockLenth;
+    LV2_Options_Option optSequenceSize;
+    LV2_Options_Option optSampleRate;
+    LV2_Options_Option optNull;
+    LV2_Options_Option* opts[5];
 
     Lv2PluginOptions()
-        : eventSize(MAX_EVENT_BUFFER),
-          bufferSize(0),
-          sampleRate(0.0) {}
+        : maxBufferSize(0),
+          minBufferSize(0),
+          sequenceSize(MAX_EVENT_BUFFER),
+          sampleRate(0.0)
+    {
+        optMaxBlockLenth.context = LV2_OPTIONS_INSTANCE;
+        optMaxBlockLenth.subject = 0;
+        optMaxBlockLenth.key     = CARLA_URI_MAP_ID_BUF_MAX_LENGTH;
+        optMaxBlockLenth.size    = sizeof(int);
+        optMaxBlockLenth.type    = CARLA_URI_MAP_ID_ATOM_INT;
+        optMaxBlockLenth.value   = &maxBufferSize;
+
+        optMinBlockLenth.context = LV2_OPTIONS_INSTANCE;
+        optMinBlockLenth.subject = 0;
+        optMinBlockLenth.key     = CARLA_URI_MAP_ID_BUF_MIN_LENGTH;
+        optMinBlockLenth.size    = sizeof(int);
+        optMinBlockLenth.type    = CARLA_URI_MAP_ID_ATOM_INT;
+        optMinBlockLenth.value   = &minBufferSize;
+
+        optSequenceSize.context = LV2_OPTIONS_INSTANCE;
+        optSequenceSize.subject = 0;
+        optSequenceSize.key     = CARLA_URI_MAP_ID_BUF_SEQUENCE_SIZE;
+        optSequenceSize.size    = sizeof(int);
+        optSequenceSize.type    = CARLA_URI_MAP_ID_ATOM_INT;
+        optSequenceSize.value   = &sequenceSize;
+
+        optSampleRate.context = LV2_OPTIONS_INSTANCE;
+        optSampleRate.subject = 0;
+        optSampleRate.key     = CARLA_URI_MAP_ID_PARAM_SAMPLE_RATE;
+        optSampleRate.size    = sizeof(double);
+        optSampleRate.type    = CARLA_URI_MAP_ID_ATOM_DOUBLE;
+        optSampleRate.value   = &sampleRate;
+
+        optNull.context = LV2_OPTIONS_INSTANCE;
+        optNull.subject = 0;
+        optNull.key     = CARLA_URI_MAP_ID_NULL;
+        optNull.size    = 0;
+        optNull.type    = CARLA_URI_MAP_ID_NULL;
+        optNull.value   = nullptr;
+
+        opts[0] = &optMinBlockLenth;
+        opts[1] = &optMaxBlockLenth;
+        opts[2] = &optSequenceSize;
+        opts[3] = &optSampleRate;
+        opts[4] = &optNull;
+    }
+
+    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(Lv2PluginOptions)
 };
 
-Lv2PluginOptions lv2Options;
+// -------------------------------------------------------------------------
 
 class CarlaLv2Client : public CarlaBridgeClient
 {
@@ -126,39 +209,8 @@ public:
         for (uint32_t i=0; i < CARLA_URI_MAP_ID_COUNT; ++i)
             customURIDs.push_back(nullptr);
 
-        for (uint32_t i=0; i < lv2_feature_count+1; ++i)
+        for (uint32_t i=0; i < kFeatureCount+1; ++i)
             features[i] = nullptr;
-
-        // -----------------------------------------------------------------
-        // initialize options
-
-        lv2Options.bufferSize = bufferSize;
-        lv2Options.sampleRate = sampleRate;
-
-        lv2Options.oNull.key   = CARLA_URI_MAP_ID_NULL;
-        lv2Options.oNull.size  = 0;
-        lv2Options.oNull.type  = CARLA_URI_MAP_ID_NULL;
-        lv2Options.oNull.value = nullptr;
-
-        lv2Options.oMaxBlockLenth.key   = CARLA_URI_MAP_ID_BUF_MAX_LENGTH;
-        lv2Options.oMaxBlockLenth.size  = sizeof(uint32_t);
-        lv2Options.oMaxBlockLenth.type  = CARLA_URI_MAP_ID_ATOM_INT;
-        lv2Options.oMaxBlockLenth.value = &lv2Options.bufferSize;
-
-        lv2Options.oMinBlockLenth.key   = CARLA_URI_MAP_ID_BUF_MIN_LENGTH;
-        lv2Options.oMinBlockLenth.size  = sizeof(uint32_t);
-        lv2Options.oMinBlockLenth.type  = CARLA_URI_MAP_ID_ATOM_INT;
-        lv2Options.oMinBlockLenth.value = &lv2Options.bufferSize;
-
-        lv2Options.oSequenceSize.key   = CARLA_URI_MAP_ID_BUF_SEQUENCE_SIZE;
-        lv2Options.oSequenceSize.size  = sizeof(uint32_t);
-        lv2Options.oSequenceSize.type  = CARLA_URI_MAP_ID_ATOM_INT;
-        lv2Options.oSequenceSize.value = &lv2Options.eventSize;
-
-        lv2Options.oSampleRate.key     = CARLA_URI_MAP_ID_PARAM_SAMPLE_RATE;
-        lv2Options.oSampleRate.size    = sizeof(double);
-        lv2Options.oSampleRate.type    = CARLA_URI_MAP_ID_ATOM_DOUBLE;
-        lv2Options.oSampleRate.value   = &lv2Options.sampleRate;
 
         // -----------------------------------------------------------------
         // initialize features
@@ -209,13 +261,7 @@ public:
         uiResizeFt->handle                  = this;
         uiResizeFt->ui_resize               = carla_lv2_ui_resize;
 
-        LV2_Options_Option* const optionsFt = new LV2_Options_Option [5];
-        optionsFt[0] = lv2Options.oMaxBlockLenth;
-        optionsFt[1] = lv2Options.oMinBlockLenth;
-        optionsFt[2] = lv2Options.oSequenceSize;
-        optionsFt[3] = lv2Options.oSampleRate;
-        optionsFt[4] = lv2Options.oNull;
-
+#if 0
         features[lv2_feature_id_bufsize_bounded]        = new LV2_Feature;
         features[lv2_feature_id_bufsize_bounded]->URI   = LV2_BUF_SIZE__boundedBlockLength;
         features[lv2_feature_id_bufsize_bounded]->data  = nullptr;
@@ -283,6 +329,7 @@ public:
         features[lv2_feature_id_ui_resize]         = new LV2_Feature;
         features[lv2_feature_id_ui_resize]->URI    = LV2_UI__resize;
         features[lv2_feature_id_ui_resize]->data   = uiResizeFt;
+#endif
     }
 
     ~CarlaLv2Client()
@@ -290,6 +337,7 @@ public:
         if (rdf_descriptor)
             delete rdf_descriptor;
 
+#if 0
         const LV2_Options_Option* const options = (const LV2_Options_Option*)features[lv2_feature_id_options]->data;
         delete[] options;
 
@@ -304,10 +352,11 @@ public:
         delete (LV2_URID_Unmap*)features[lv2_feature_id_urid_unmap]->data;
         delete (LV2UI_Port_Map*)features[lv2_feature_id_ui_port_map]->data;
         delete (LV2UI_Resize*)features[lv2_feature_id_ui_resize]->data;
+#endif
 
-        for (uint32_t i=0; i < lv2_feature_count; ++i)
+        for (uint32_t i=0; i < kFeatureCount; ++i)
         {
-            if (features[i])
+            if (features[i] != nullptr)
                 delete features[i];
         }
 
@@ -557,24 +606,22 @@ public:
 
     // ---------------------------------------------------------------------
 
-    void handleTransferAtom(const int32_t portIndex, const LV2_Atom* const atom)
+    void handleAtomTransfer(const uint32_t portIndex, const LV2_Atom* const atom)
     {
-        carla_debug("CarlaLv2Client::handleTransferEvent(%i, %p)", portIndex, atom);
-        CARLA_ASSERT(portIndex >= 0);
         CARLA_ASSERT(atom != nullptr);
+        carla_debug("CarlaLv2Client::handleTransferEvent(%i, %p)", portIndex, atom);
 
         if (atom != nullptr && handle != nullptr && descriptor != nullptr && descriptor->port_event != nullptr)
             descriptor->port_event(handle, portIndex, lv2_atom_total_size(atom), CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM, atom);
     }
 
-    void handleTransferEvent(const int32_t portIndex, const LV2_Atom* const atom)
+    void handleUridMap(const LV2_URID urid, const char* const uri)
     {
-        carla_debug("CarlaLv2Client::handleTransferEvent(%i, %p)", portIndex, atom);
-        CARLA_ASSERT(portIndex >= 0);
-        CARLA_ASSERT(atom != nullptr);
+        CARLA_ASSERT(urid != CARLA_URI_MAP_ID_NULL);
+        CARLA_ASSERT(uri != nullptr);
+        carla_debug("CarlaLv2Client::handleUridMap(%i, \"%s\")", urid, uri);
 
-        if (atom != nullptr && handle != nullptr && descriptor != nullptr && descriptor->port_event != nullptr)
-            descriptor->port_event(handle, portIndex, lv2_atom_total_size(atom), CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT, atom);
+        // TODO
     }
 
     // ---------------------------------------------------------------------
@@ -617,14 +664,6 @@ public:
 
     void handleUiWrite(uint32_t portIndex, uint32_t bufferSize, uint32_t format, const void* buffer)
     {
-#ifdef DEBUG
-        if (format == CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT)
-        {
-            const LV2_Atom* const atom((const LV2_Atom*)buffer);
-            carla_stdout("OSC UI WRITE DATA: %i | size:%i, realSize:%i, bufferSize:%i, type:\"%s\"", portIndex, atom->size, lv2_atom_total_size(atom), bufferSize, carla_lv2_urid_unmap(this, atom->type));
-        }
-#endif
-
         if (buffer == nullptr || ! isOscControlRegistered())
             return;
 
@@ -639,47 +678,15 @@ public:
 
             sendOscControl(portIndex, value);
         }
-        else if (format == CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM)
+        else if (format == CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM || CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT)
         {
             CARLA_ASSERT(bufferSize != 0);
 
             if (bufferSize == 0)
                 return;
 
-            const LV2_Atom* const atom((const LV2_Atom*)buffer);
-            const char*     const typeStr(carla_lv2_urid_unmap(this, atom->type));
-
             QByteArray chunk((const char*)buffer, bufferSize);
-            sendOscLv2TransferAtom(portIndex, typeStr, chunk.toBase64().constData());
-        }
-        else if (format == CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT)
-        {
-            CARLA_ASSERT(bufferSize != 0);
-
-            if (bufferSize == 0)
-                return;
-
-            const LV2_Atom* const atom((const LV2_Atom*)buffer);
-
-            const char* typeStr = carla_lv2_urid_unmap(this, atom->type);
-            const char* bodyStr = "";
-
-            if (atom->type == CARLA_URI_MAP_ID_ATOM_BLANK)
-            {
-                const LV2_Atom_Object* const obj((const LV2_Atom_Object*)atom);
-                carla_stdout("OSC UI WRITE DATA: IS BLANK! %i", obj->body.otype);
-
-                carla_stdout("OSC UI WRITE DATA: TEST %i", carla_lv2_urid_map(this, "http://gareus.org/oss/lv2/balance#meteron"));
-
-                if (obj->body.otype != CARLA_URI_MAP_ID_NULL)
-                {
-                    bodyStr = carla_lv2_urid_unmap(this, obj->body.otype);
-                    carla_stdout("OSC UI WRITE DATA: IS BLANK! AND BODY STR:\"%s\"", bodyStr);
-                }
-            }
-
-            QByteArray chunk((const char*)buffer, bufferSize);
-            sendOscLv2TransferEvent(portIndex, typeStr, bodyStr, chunk.toBase64().constData());
+            sendOscLv2AtomTransfer(portIndex, chunk.toBase64().constData());
         }
     }
 
@@ -997,7 +1004,7 @@ private:
     LV2UI_Handle handle;
     LV2UI_Widget widget;
     const LV2UI_Descriptor* descriptor;
-    LV2_Feature* features[lv2_feature_count+1];
+    LV2_Feature* features[kFeatureCount+1];
 
     const LV2_RDF_Descriptor* rdf_descriptor;
     const LV2_RDF_UI* rdf_ui_descriptor;
@@ -1008,63 +1015,50 @@ private:
     std::vector<const char*> customURIDs;
 };
 
-int CarlaBridgeOsc::handleMsgLv2TransferAtom(CARLA_BRIDGE_OSC_HANDLE_ARGS)
-{
-    carla_debug("CarlaBridgeOsc::handleMsgLv2TransferAtom()");
-    CARLA_BRIDGE_OSC_CHECK_OSC_TYPES(3, "iss");
+#define lv2ClientPtr ((CarlaLv2Client*)kClient)
 
-    if (! kClient)
+int CarlaBridgeOsc::handleMsgLv2AtomTransfer(CARLA_BRIDGE_OSC_HANDLE_ARGS)
+{
+    CARLA_BRIDGE_OSC_CHECK_OSC_TYPES(2, "is");
+    carla_debug("CarlaBridgeOsc::handleMsgLv2AtomTransfer()");
+
+    if (kClient == nullptr)
         return 1;
 
     const int32_t   portIndex = argv[0]->i;
-    const char* const typeStr = (const char*)&argv[1]->s;
-    const char* const atomBuf = (const char*)&argv[2]->s;
+    const char* const atomBuf = (const char*)&argv[1]->s;
+
+    if (portIndex < 0)
+        return 0;
 
     QByteArray chunk;
     chunk = QByteArray::fromBase64(atomBuf);
 
     LV2_Atom* const atom = (LV2_Atom*)chunk.constData();
-    CarlaLv2Client* const lv2Client = (CarlaLv2Client*)kClient;
 
-    atom->type = CarlaLv2Client::carla_lv2_urid_map(lv2Client, typeStr);
-    lv2Client->handleTransferAtom(portIndex, atom);
-
+    lv2ClientPtr->handleAtomTransfer(portIndex, atom);
     return 0;
 }
 
-int CarlaBridgeOsc::handleMsgLv2TransferEvent(CARLA_BRIDGE_OSC_HANDLE_ARGS)
+int CarlaBridgeOsc::handleMsgLv2UridMap(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 {
-    carla_debug("CarlaBridgeOsc::handleMsgLv2TransferEvent()");
-    CARLA_BRIDGE_OSC_CHECK_OSC_TYPES(4, "isss");
+    CARLA_BRIDGE_OSC_CHECK_OSC_TYPES(2, "is");
+    carla_debug("CarlaBridgeOsc::handleMsgLv2UridMap()");
 
-    if (! kClient)
+    if (kClient == nullptr)
         return 1;
 
-    const int32_t   portIndex = argv[0]->i;
-    const char* const typeStr = (const char*)&argv[1]->s;
-    const char* const bodyStr = (const char*)&argv[2]->s;
-    const char* const atomBuf = (const char*)&argv[3]->s;
+    const int32_t    urid = argv[0]->i;
+    const char* const uri = (const char*)&argv[1]->s;
 
-    QByteArray chunk;
-    chunk = QByteArray::fromBase64(atomBuf);
+    if (urid <= 0)
+        return 0;
 
-    LV2_Atom* const atom = (LV2_Atom*)chunk.constData();
-    CarlaLv2Client* const lv2Client = (CarlaLv2Client*)kClient;
-
-    atom->type = CarlaLv2Client::carla_lv2_urid_map(lv2Client, typeStr);
-
-    if (atom->type == CARLA_URI_MAP_ID_ATOM_BLANK)
-    {
-        LV2_Atom_Object* const obj((LV2_Atom_Object*)atom);
-
-        if (obj->body.otype != CARLA_URI_MAP_ID_NULL)
-            obj->body.otype = CarlaLv2Client::carla_lv2_urid_map(this, bodyStr);
-    }
-
-    lv2Client->handleTransferEvent(portIndex, atom);
-
+    lv2ClientPtr->handleUridMap(urid, uri);
     return 0;
 }
+
+#undef lv2ClientPtr
 
 CARLA_BRIDGE_END_NAMESPACE
 
@@ -1087,7 +1081,7 @@ int main(int argc, char* argv[])
 
     // try to get sampleRate value
     if (const char* const sampleRateStr = getenv("CARLA_SAMPLE_RATE"))
-        sampleRate = atof(sampleRateStr);
+        gSampleRate = atof(sampleRateStr);
 
     // Init LV2 client
     CarlaLv2Client client(uiTitle);
