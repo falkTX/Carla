@@ -24,6 +24,10 @@
 
 CARLA_BRIDGE_START_NAMESPACE
 
+#if 0
+} // Fix editor indentation
+#endif
+
 // ---------------------------------------------------------------------
 
 CarlaBridgeClient::CarlaBridgeClient(const char* const uiTitle)

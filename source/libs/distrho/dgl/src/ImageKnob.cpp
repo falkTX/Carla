@@ -120,6 +120,8 @@ void ImageKnob::onDisplay()
     int imageDataSize   = layerDataSize * fImgLayerCount;
     int imageDataOffset = imageDataSize - layerDataSize - (layerDataSize * int(normValue * float(fImgLayerCount-1)));
 
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
     glRasterPos2i(getX(), getY()+getHeight());
     glDrawPixels(fImgLayerSize, fImgLayerSize, fImage.getFormat(), fImage.getType(), fImage.getRawData() + imageDataOffset);
 }

@@ -20,7 +20,11 @@
 # error DSSI always uses external UI, no wrapper neeed!
 #endif
 
+#define TEST_ONLY
+
+#ifndef TEST_ONLY
 #include <lo/lo.h>
+#endif
 
 #ifdef DISTRHO_UI_QT
 # include <QtGui/QApplication>
@@ -34,6 +38,9 @@ START_NAMESPACE_DISTRHO
 
 // -------------------------------------------------
 
+#ifdef TEST_ONLY
+struct OscData {};
+#else
 struct OscData {
     lo_address  addr;
     const char* path;
@@ -79,6 +86,7 @@ void osc_send_exiting(const OscData* oscData)
     strcat(targetPath, "/exiting");
     lo_send(oscData->addr, targetPath, "");
 }
+#endif
 
 // -------------------------------------------------
 
@@ -137,8 +145,10 @@ public:
             qtTimer = 0;
         }
 #endif
+#ifndef TEST_ONLY
         if (kOscData->server && ! fHostClosed)
             osc_send_exiting(kOscData);
+#endif
     }
 
 #ifndef DISTRHO_UI_QT
@@ -146,10 +156,12 @@ public:
     {
         while (! glApp.isQuiting())
         {
+#ifndef TEST_ONLY
             if (kOscData->server != nullptr)
             {
                 while (lo_server_recv_noblock(kOscData->server, 0) != 0) {}
             }
+#endif
 
             glApp.idle();
 
@@ -242,6 +254,7 @@ public:
     // ---------------------------------------------
 
 protected:
+#ifndef TEST_ONLY
     void setParameterValue(uint32_t rindex, float value)
     {
         if (kOscData->server == nullptr)
@@ -270,6 +283,7 @@ protected:
 
         osc_send_midi(kOscData, mdata);
     }
+#endif
 
     void uiResize(unsigned int width, unsigned int height)
     {
@@ -317,17 +331,23 @@ private:
 
     static void setParameterCallback(void* ptr, uint32_t rindex, float value)
     {
+#ifndef TEST_ONLY
         uiPtr->setParameterValue(rindex, value);
+#endif
     }
 
     static void setStateCallback(void* ptr, const char* key, const char* value)
     {
+#ifndef TEST_ONLY
         uiPtr->setState(key, value);
+#endif
     }
 
     static void uiSendNoteCallback(void* ptr, bool onOff, uint8_t channel, uint8_t note, uint8_t velocity)
     {
+#ifndef TEST_ONLY
         uiPtr->uiSendNote(onOff, channel, note, velocity);
+#endif
     }
 
     static void uiResizeCallback(void* ptr, unsigned int width, unsigned int height)
@@ -341,7 +361,11 @@ private:
 // -------------------------------------------------
 
 static UIDssi*     globalUI = nullptr;
+#ifdef TEST_ONLY
+static OscData     gOscData;
+#else
 static OscData     gOscData = { nullptr, nullptr, nullptr };
+#endif
 static const char* gUiTitle = nullptr;
 
 static void initUiIfNeeded()
@@ -357,6 +381,7 @@ static void initUiIfNeeded()
 
 // -------------------------------------------------
 
+#ifndef TEST_ONLY
 int osc_debug_handler(const char* path, const char*, lo_arg**, int, lo_message, void*)
 {
     d_debug("osc_debug_handler(\"%s\")", path);
@@ -478,6 +503,7 @@ int osc_quit_handler(const char*, const char*, lo_arg**, int, lo_message, void*)
 
     return 0;
 }
+#endif
 
 END_NAMESPACE_DISTRHO
 
@@ -485,8 +511,10 @@ int main(int argc, char* argv[])
 {
     USE_NAMESPACE_DISTRHO
 
+#ifndef TEST_ONLY
     // dummy test mode
     if (argc == 1)
+#endif
     {
 #ifdef DISTRHO_UI_QT
         QApplication app(argc, argv, true);
@@ -508,6 +536,7 @@ int main(int argc, char* argv[])
         return 0;
     }
 
+#ifndef TEST_ONLY
     if (argc != 5)
     {
         fprintf(stderr, "Usage: %s <osc-url> <plugin-dll> <plugin-label> <instance-name>\n", argv[0]);
@@ -645,4 +674,5 @@ int main(int argc, char* argv[])
     lo_server_free(oscServer);
 
     return ret;
+#endif
 }

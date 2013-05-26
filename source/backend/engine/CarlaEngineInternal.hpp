@@ -125,10 +125,19 @@ struct EnginePluginData {
     float insPeak[CarlaEngine::MAX_PEAKS];
     float outsPeak[CarlaEngine::MAX_PEAKS];
 
+#ifdef CARLA_PROPER_CPP11_SUPPORT
     EnginePluginData()
         : plugin(nullptr),
           insPeak{0.0f},
           outsPeak{0.0f} {}
+#else
+    EnginePluginData()
+        : plugin(nullptr)
+    {
+        insPeak[0] = insPeak[1] = nullptr;
+        outsPeak[0] = outsPeak[1] = nullptr;
+    }
+#endif
 };
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -204,9 +213,11 @@ struct CarlaEngineProtectedData {
           maxPluginNumber(0),
           plugins(nullptr) {}
 
+#ifdef CARLA_PROPER_CPP11_SUPPORT
     CarlaEngineProtectedData() = delete;
     CarlaEngineProtectedData(CarlaEngineProtectedData&) = delete;
     CarlaEngineProtectedData(const CarlaEngineProtectedData&) = delete;
+#endif
 
 #ifndef BUILD_BRIDGE
     static void registerEnginePlugin(CarlaEngine* const engine, const unsigned int id, CarlaPlugin* const plugin)

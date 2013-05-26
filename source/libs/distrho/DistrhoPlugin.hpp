@@ -19,8 +19,6 @@
 
 #include "DistrhoUtils.hpp"
 
-#include <cstdint>
-
 START_NAMESPACE_DISTRHO
 
 // -------------------------------------------------

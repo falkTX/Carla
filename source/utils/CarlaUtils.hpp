@@ -26,6 +26,12 @@
 #include <cstdlib>
 #include <cstring>
 
+#ifdef CARLA_PROPER_CPP11_SUPPORT
+# include <cstdint>
+#else
+# include <stdint.h>
+#endif
+
 #if defined(CARLA_OS_HAIKU)
 # include <kernel/OS.h>
 #elif defined(CARLA_OS_LINUX)
@@ -375,15 +381,18 @@ void carla_zeroFloat(float* const data, const size_t size)
 
 #ifdef CARLA_OS_MAC
 namespace std {
-inline float
-  fmin(float __x, float __y)
-  { return __builtin_fminf(__x, __y); }
-inline float
-  fmax(float __x, float __y)
-  { return __builtin_fmaxf(__x, __y); }
-inline float
-  rint(float __x)
-  { return __builtin_rintf(__x); }
+// inline float
+//   fabs(float __x)
+//   { return __builtin_fabsf(__x); }
+// inline float
+//   fmin(float __x, float __y)
+//   { return __builtin_fminf(__x, __y); }
+// inline float
+//   fmax(float __x, float __y)
+//   { return __builtin_fmaxf(__x, __y); }
+// inline float
+//   rint(float __x)
+//   { return __builtin_rintf(__x); }
 }
 #endif
 

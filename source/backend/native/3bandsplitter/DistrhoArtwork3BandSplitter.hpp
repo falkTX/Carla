@@ -6,19 +6,19 @@
 namespace DistrhoArtwork3BandSplitter
 {
     extern const char* aboutData;
-    const unsigned int aboutDataSize = 230280;
+    const unsigned int aboutDataSize = 172710;
     const unsigned int aboutWidth    = 303;
     const unsigned int aboutHeight   = 190;
 
     extern const char* aboutButtonHoverData;
-    const unsigned int aboutButtonHoverDataSize = 11600;
-    const unsigned int aboutButtonHoverWidth    = 100;
-    const unsigned int aboutButtonHoverHeight   = 29;
+    const unsigned int aboutButtonHoverDataSize = 7600;
+    const unsigned int aboutButtonHoverWidth    = 95;
+    const unsigned int aboutButtonHoverHeight   = 20;
 
     extern const char* aboutButtonNormalData;
-    const unsigned int aboutButtonNormalDataSize = 11600;
-    const unsigned int aboutButtonNormalWidth    = 100;
-    const unsigned int aboutButtonNormalHeight   = 29;
+    const unsigned int aboutButtonNormalDataSize = 7600;
+    const unsigned int aboutButtonNormalWidth    = 95;
+    const unsigned int aboutButtonNormalHeight   = 20;
 
     extern const char* backgroundData;
     const unsigned int backgroundDataSize = 437472;

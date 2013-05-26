@@ -717,10 +717,10 @@ static const struct ProgramsDestructor {
 
 // -----------------------------------------------------------------------
 
-static const PluginDescriptor zynAddSubFxDesc = {
+static const PluginDescriptor zynaddsubfxDesc = {
     /* category  */ PLUGIN_CATEGORY_SYNTH,
 #ifdef WANT_ZYNADDSUBFX_UI
-    /* hints     */ static_cast<PluginHints>(PLUGIN_IS_SYNTH|PLUGIN_HAS_GUI/*|PLUGIN_USES_SINGLE_THREAD*/|PLUGIN_USES_STATE),
+    /* hints     */ static_cast<PluginHints>(PLUGIN_IS_SYNTH|PLUGIN_HAS_GUI|PLUGIN_USES_STATE),
 #else
     /* hints     */ static_cast<PluginHints>(PLUGIN_IS_SYNTH|PLUGIN_USES_STATE),
 #endif
@@ -741,7 +741,7 @@ static const PluginDescriptor zynAddSubFxDesc = {
 
 void carla_register_native_plugin_zynaddsubfx()
 {
-    carla_register_native_plugin(&zynAddSubFxDesc);
+    carla_register_native_plugin(&zynaddsubfxDesc);
 }
 
 // -----------------------------------------------------------------------

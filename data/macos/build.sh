@@ -8,26 +8,34 @@ if [ ! -f Makefile ]; then
   cd ../..
 fi
 
-export CC="gcc-mp-4.7"
-export CXX="g++-mp-4.7"
-export LDFLAGS="-L/usr/local/lib/"
-export PYUIC="pyuic4-3.3"
-export PYRCC="pyrcc4-3.3 -py3"
+if [ -d /dev/shm ]; then
+  # Linux
+  export CC="i686-apple-darwin10-gcc"
+  export CXX="i686-apple-darwin10-g++"
+  export PATH=/usr/i686-apple-darwin10/bin/:$PATH
+else
+  # MacOS
+  export CC="gcc-mp-4.7"
+  export CXX="g++-mp-4.7"
+  export LDFLAGS="-L/usr/local/lib/"
+  export PYUIC="pyuic4-3.3"
+  export PYRCC="pyrcc4-3.3 -py3"
+fi
 
 # Clean build
 make clean
 
 # Build PyQt4 resources
-make $JOBS UI RES WIDGETS
+# make $JOBS UI RES WIDGETS
 
 # Build discovery
-make $JOBS -C source/discovery MACOS=true
+# make $JOBS -C source/discovery MACOS=true
 
 # Build backend
-make $JOBS -C source/backend/standalone ../libcarla_standalone.dylib EXTRA_LIBS="-ldl" MACOS=true
+# make $JOBS -C source/backend/standalone ../libcarla_standalone.dylib EXTRA_LIBS="-ldl" MACOS=true
 # DGL_LIBS="-framework OpenGL -framework Cocoa" HAVE_OPENGL=true
 
-rm -rf ./data/macos/build
+# rm -rf ./data/macos/build
 
 # Build Mac App
 # cd data/macos

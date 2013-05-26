@@ -19,6 +19,8 @@ QT_UI_FLAGS      = $(shell pkg-config --cflags QtGui)
 QT_UI_LIBS       = $(shell pkg-config --libs QtGui)
 endif
 
+QT_UI_FLAGS     += -I../theme
+
 # --------------------------------------------------------------
 
 BUILD_CXX_FLAGS += -DBUILD_BRIDGE
@@ -133,10 +135,10 @@ LINK_UI_LV2_GTK2_FLAGS   = $(LINK_UI_FLAGS) $(shell pkg-config --libs gtk+-2.0)
 BUILD_UI_LV2_GTK3_FLAGS  = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_GTK3 -DBRIDGE_LV2_GTK3 $(shell pkg-config --cflags gtk+-3.0)
 LINK_UI_LV2_GTK3_FLAGS   = $(LINK_UI_FLAGS) $(shell pkg-config --libs gtk+-3.0)
 
-BUILD_UI_LV2_QT4_FLAGS   = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_QT4 -DBRIDGE_LV2_QT4 $(shell pkg-config --cflags QtGui)
+BUILD_UI_LV2_QT4_FLAGS   = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_QT4 -DBRIDGE_LV2_QT4 $(shell pkg-config --cflags QtGui) -I../theme
 LINK_UI_LV2_QT4_FLAGS    = $(LINK_UI_FLAGS) $(shell pkg-config --libs QtGui)
 
-BUILD_UI_LV2_QT5_FLAGS   = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_QT5 -DBRIDGE_LV2_QT5 $(shell pkg-config --cflags Qt5Gui Qt5Widgets)
+BUILD_UI_LV2_QT5_FLAGS   = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_QT5 -DBRIDGE_LV2_QT5 $(shell pkg-config --cflags Qt5Gui Qt5Widgets) -I../theme
 LINK_UI_LV2_QT5_FLAGS    = $(LINK_UI_FLAGS) $(shell pkg-config --libs Qt5Gui Qt5Widgets)
 
 BUILD_UI_LV2_COCOA_FLAGS = $(BUILD_UI_VST_FLAGS) -DBRIDGE_COCOA -DBRIDGE_LV2_COCOA $(QT_UI_FLAGS)
@@ -273,7 +275,7 @@ OBJS_UI_LV2_X11 = CarlaBridgeUI-LV2__lv2-x11.o \
 	CarlaBridgeClient__lv2.o CarlaBridgeOsc__lv2.o \
 	CarlaBridgeToolkit__lv2.o CarlaBridgeToolkitQt__lv2-x11.o
 
-carla-bridge-lv2-x11: $(OBJS_UI_LV2_X11) $(OBJS_UI_LV2_LIBS)
+carla-bridge-lv2-x11: $(OBJS_UI_LV2_X11) $(OBJS_UI_LV2_LIBS) ../libs/theme.a
 	$(CXX) $^ $(LINK_UI_LV2_X11_FLAGS) -o $@ && $(STRIP) $@
 
 %__lv2-x11.o: %.cpp
@@ -286,7 +288,7 @@ OBJS_UI_VST_HWND = CarlaBridgeUI-VST__vst-hwnd.o \
 	CarlaBridgeClient__vst.o CarlaBridgeOsc__vst.o \
 	CarlaBridgeToolkit__vst.o CarlaBridgeToolkitQt__vst-hwnd.o
 
-carla-bridge-vst-hwnd.exe: $(OBJS_UI_VST_HWND)
+carla-bridge-vst-hwnd.exe: $(OBJS_UI_VST_HWND) ../libs/theme.a
 	$(CXX) $^ $(LINK_UI_VST_HWND_FLAGS) -o $@ && $(STRIP) $@
 
 %__vst-hwnd.o: %.cpp
@@ -299,7 +301,7 @@ OBJS_UI_VST_X11 = CarlaBridgeUI-VST__vst-x11.o \
 	CarlaBridgeClient__vst.o CarlaBridgeOsc__vst.o \
 	CarlaBridgeToolkit__vst.o CarlaBridgeToolkitQt__vst-x11.o
 
-carla-bridge-vst-x11: $(OBJS_UI_VST_X11)
+carla-bridge-vst-x11: $(OBJS_UI_VST_X11) ../libs/theme.a
 	$(CXX) $^ $(LINK_UI_VST_X11_FLAGS) -o $@ && $(STRIP) $@
 
 %__vst-x11.o: %.cpp

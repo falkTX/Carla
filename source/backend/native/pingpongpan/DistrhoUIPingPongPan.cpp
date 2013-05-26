@@ -28,7 +28,7 @@ DistrhoUIPingPongPan::DistrhoUIPingPongPan()
     Window* win = getParent();
 
     // background
-    fImgBackground = Image(DistrhoArtworkPingPongPan::backgroundData, DistrhoArtworkPingPongPan::backgroundWidth, DistrhoArtworkPingPongPan::backgroundHeight, GL_BGRA);
+    fImgBackground = Image(DistrhoArtworkPingPongPan::backgroundData, DistrhoArtworkPingPongPan::backgroundWidth, DistrhoArtworkPingPongPan::backgroundHeight, GL_BGR);
 
     // knobs
     Image knobImage(DistrhoArtworkPingPongPan::knobData, DistrhoArtworkPingPongPan::knobWidth, DistrhoArtworkPingPongPan::knobHeight);
@@ -96,7 +96,7 @@ void DistrhoUIPingPongPan::imageButtonClicked(ImageButton* button, int)
     if (button != fButtonAbout)
         return;
 
-    Image imageAbout(DistrhoArtworkPingPongPan::aboutData, DistrhoArtworkPingPongPan::aboutWidth, DistrhoArtworkPingPongPan::aboutHeight, GL_BGRA);
+    Image imageAbout(DistrhoArtworkPingPongPan::aboutData, DistrhoArtworkPingPongPan::aboutWidth, DistrhoArtworkPingPongPan::aboutHeight, GL_BGR);
     ImageAboutWindow aboutWindow(getApp(), getParent(), imageAbout);
     aboutWindow.exec();
 }

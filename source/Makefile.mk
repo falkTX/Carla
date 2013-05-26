@@ -28,8 +28,13 @@ endif
 64BIT_FLAGS = -m64
 
 BUILD_C_FLAGS   = $(BASE_FLAGS) -std=gnu99 $(CFLAGS)
-BUILD_CXX_FLAGS = $(BASE_FLAGS) -std=gnu++0x $(CXXFLAGS)
 LINK_FLAGS      = $(LDFLAGS)
+
+ifeq ($(MACOS),true)
+BUILD_CXX_FLAGS = $(BASE_FLAGS) $(CXXFLAGS)
+else
+BUILD_CXX_FLAGS = $(BASE_FLAGS) -std=gnu++0x $(CXXFLAGS)
+endif
 
 # --------------------------------------------------------------
 # Modify to enable/disable specific features

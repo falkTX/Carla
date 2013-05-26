@@ -55,10 +55,14 @@ public:
         : kApp(app),
           kAppPriv(appPriv),
           kSelf(self),
-          kView(puglCreate(parentId, "Window", 600, 500, (parentId != 0), (parentId != 0))),
+          kView(puglCreate(parentId, "Window", 600, 500, false, (parentId != 0))),
           fParent(parent),
           fChildFocus(nullptr),
+#if DGL_OS_MAC
+          fVisible(true),
+#else
           fVisible((parentId != 0)),
+#endif
           fClosed(false),
           fResizable(false),
 #if DGL_OS_WINDOWS
@@ -107,6 +111,11 @@ public:
 #endif
 
         kAppPriv->addWindow(kSelf);
+
+#if DGL_OS_MAC
+        // TODO
+        kAppPriv->oneShown();
+#endif
     }
 
     ~Private()
@@ -162,9 +171,7 @@ public:
         fClosed = true;
 
         if (fParent != nullptr)
-        {
             fParent->fChildFocus = nullptr;
-        }
     }
 
     void focus()
@@ -222,6 +229,14 @@ public:
 
     void setVisible(bool yesNo, bool closed = false)
     {
+#if DGL_OS_MAC
+        // TODO
+        if (closed && ! yesNo)
+            kAppPriv->oneHidden();
+
+        return;
+#endif
+
         if (fVisible == yesNo)
             return;
 

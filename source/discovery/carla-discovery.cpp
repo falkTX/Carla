@@ -1212,8 +1212,15 @@ void do_vst_check(void* const libHandle, const bool init)
 
                 VstEventsFixed()
                     : numEvents(0),
+#ifdef CARLA_PROPER_CPP11_SUPPORT
                       reserved(0),
                       data{0} {}
+#else
+                      reserved(0)
+                {
+                    data[0] = data[1] = nullptr;
+                }
+#endif
             } events;
 
             VstMidiEvent midiEvents[2];

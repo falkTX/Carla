@@ -20,7 +20,6 @@
 
 #include "CarlaUtils.hpp"
 
-#include <cstdint>
 #include <cstring>
 
 // -------------------------------------------------

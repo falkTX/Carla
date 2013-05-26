@@ -516,10 +516,10 @@ public:
 #ifdef BUILD_BRIDGE
           fHasQuit(false)
 #else
-# ifndef QTCREATOR_TEST
+# ifdef CARLA_PROPER_CPP11_SUPPORT
           fRackPorts{nullptr},
-          fLastGroupId(0),
 # endif
+          fLastGroupId(0),
           fLastPortId(0),
           fLastConnectionId(0)
 #endif
@@ -527,8 +527,13 @@ public:
         carla_debug("CarlaEngineJack::CarlaEngineJack()");
 
 #ifdef BUILD_BRIDGE
-        fOptions.processMode   = PROCESS_MODE_MULTIPLE_CLIENTS;
+        fOptions.processMode = PROCESS_MODE_MULTIPLE_CLIENTS;
+#else
+# ifndef CARLA_PROPER_CPP11_SUPPORT
+        carla_zeroStruct<jack_port_t*>(fRackPorts, rackPortCount);
+# endif
 #endif
+
         // FIXME: Always enable JACK transport for now
         fOptions.transportMode = TRANSPORT_MODE_JACK;
 

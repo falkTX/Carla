@@ -79,7 +79,8 @@ ifeq ($(HAVE_OPENGL),true)
 OBJS += \
 	distrho-3bandeq.cpp.o \
 	distrho-3bandsplitter.cpp.o \
-	distrho-pingpongpan.cpp.o
+	distrho-pingpongpan.cpp.o \
+	distrho-stereoenhancer.cpp.o
 endif
 
 # DISTRHO plugins (Qt)
@@ -172,6 +173,9 @@ distrho-3bandsplitter.cpp.o: distrho-3bandsplitter.cpp 3bandsplitter/*.cpp 3band
 
 distrho-pingpongpan.cpp.o: distrho-pingpongpan.cpp pingpongpan/*.cpp pingpongpan/*.h pingpongpan/*.hpp distrho/DistrhoPluginCarla.cpp $(CXXDEPS)
 	$(CXX) $< $(GL_CXX_FLAGS) -Ipingpongpan -DDISTRHO_NAMESPACE=DISTRHO_PingPongPan -c -o $@
+
+distrho-stereoenhancer.cpp.o: distrho-stereoenhancer.cpp stereoenhancer/*.cpp stereoenhancer/*.h stereoenhancer/*.hpp distrho/DistrhoPluginCarla.cpp $(CXXDEPS)
+	$(CXX) $< $(GL_CXX_FLAGS) -Istereoenhancer -DDISTRHO_NAMESPACE=DISTRHO_StereoEnhancer -c -o $@
 
 distrho-notes.cpp.o: distrho-notes.cpp notes/moc_DistrhoUINotes.cpp notes/*.cpp notes/*.h notes/*.hpp distrho/DistrhoPluginCarla.cpp $(CXXDEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -Inotes -DDISTRHO_NAMESPACE=DISTRHO_Notes -c -o $@

@@ -434,7 +434,7 @@ public:
         // initialize UI
 
 #ifdef BRIDGE_LV2_X11
-        features[lv2_feature_id_ui_parent]->data = getContainerId();
+        //features[lv2_feature_id_ui_parent]->data = getContainerId();
 #endif
 
         handle = descriptor->instantiate(descriptor, pluginURI, rdf_ui_descriptor->Bundle, carla_lv2_ui_write_function, this, &widget, features);

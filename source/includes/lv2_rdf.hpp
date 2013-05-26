@@ -18,7 +18,11 @@
 #ifndef LV2_RDF_INCLUDED
 #define LV2_RDF_INCLUDED
 
-#include <cstdint>
+#ifdef CARLA_PROPER_CPP11_SUPPORT
+# include <cstdint>
+#else
+# include <stdint.h>
+#endif
 
 // Base Types
 typedef const char* LV2_URI;
@@ -295,8 +299,10 @@ struct LV2_RDF_PortMidiMap {
         : Type(0),
           Number(0) {}
 
+#ifdef CARLA_PROPER_CPP11_SUPPORT
     LV2_RDF_PortMidiMap(LV2_RDF_PortMidiMap&) = delete;
     LV2_RDF_PortMidiMap(const LV2_RDF_PortMidiMap&) = delete;
+#endif
 };
 
 // Port Points
@@ -312,8 +318,10 @@ struct LV2_RDF_PortPoints {
           Minimum(0.0f),
           Maximum(1.0f) {}
 
-    //LV2_RDF_PortPoints(LV2_RDF_PortPoints&) = delete;
-    //LV2_RDF_PortPoints(const LV2_RDF_PortPoints&) = delete;
+#if 0 // def CARLA_PROPER_CPP11_SUPPORT FIXME!
+    LV2_RDF_PortPoints(LV2_RDF_PortPoints&) = delete;
+    LV2_RDF_PortPoints(const LV2_RDF_PortPoints&) = delete;
+#endif
 };
 
 // Port Unit
@@ -341,8 +349,10 @@ struct LV2_RDF_PortUnit {
             delete[] Symbol;
     }
 
+#ifdef CARLA_PROPER_CPP11_SUPPORT
     LV2_RDF_PortUnit(LV2_RDF_PortUnit&) = delete;
     LV2_RDF_PortUnit(const LV2_RDF_PortUnit&) = delete;
+#endif
 };
 
 // Port Scale Point
@@ -360,8 +370,10 @@ struct LV2_RDF_PortScalePoint {
             delete[] Label;
     }
 
+#ifdef CARLA_PROPER_CPP11_SUPPORT
     LV2_RDF_PortScalePoint(LV2_RDF_PortScalePoint&) = delete;
     LV2_RDF_PortScalePoint(const LV2_RDF_PortScalePoint&) = delete;
+#endif
 };
 
 // Port
@@ -398,8 +410,10 @@ struct LV2_RDF_Port {
             delete[] ScalePoints;
     }
 
+#ifdef CARLA_PROPER_CPP11_SUPPORT
     LV2_RDF_Port(LV2_RDF_Port&) = delete;
     LV2_RDF_Port(const LV2_RDF_Port&) = delete;
+#endif
 };
 
 // Preset
@@ -419,8 +433,10 @@ struct LV2_RDF_Preset {
             delete[] Label;
     }
 
+#ifdef CARLA_PROPER_CPP11_SUPPORT
     LV2_RDF_Preset(LV2_RDF_Preset&) = delete;
     LV2_RDF_Preset(const LV2_RDF_Preset&) = delete;
+#endif
 };
 
 // Feature
@@ -438,8 +454,10 @@ struct LV2_RDF_Feature {
             delete[] URI;
     }
 
+#ifdef CARLA_PROPER_CPP11_SUPPORT
     LV2_RDF_Feature(LV2_RDF_Feature&) = delete;
     LV2_RDF_Feature(const LV2_RDF_Feature&) = delete;
+#endif
 };
 
 // UI
@@ -479,8 +497,10 @@ struct LV2_RDF_UI {
             delete[] Extensions;
     }
 
+#ifdef CARLA_PROPER_CPP11_SUPPORT
     LV2_RDF_UI(LV2_RDF_UI&) = delete;
     LV2_RDF_UI(const LV2_RDF_UI&) = delete;
+#endif
 };
 
 // Plugin
@@ -510,8 +530,12 @@ struct LV2_RDF_Descriptor {
     LV2_RDF_UI* UIs;
 
     LV2_RDF_Descriptor()
+#ifdef CARLA_PROPER_CPP11_SUPPORT
         : Type{0x0},
           URI(nullptr),
+#else
+        : URI(nullptr),
+#endif
           Name(nullptr),
           Author(nullptr),
           License(nullptr),
@@ -527,7 +551,12 @@ struct LV2_RDF_Descriptor {
           ExtensionCount(0),
           Extensions(nullptr),
           UICount(0),
-          UIs(nullptr) {}
+          UIs(nullptr)
+      {
+#ifdef CARLA_PROPER_CPP11_SUPPORT
+          Type[0] = Type[1] = 0x0;
+#endif
+      }
 
     ~LV2_RDF_Descriptor()
     {
@@ -555,8 +584,10 @@ struct LV2_RDF_Descriptor {
             delete[] UIs;
     }
 
+#ifdef CARLA_PROPER_CPP11_SUPPORT
     LV2_RDF_Descriptor(LV2_RDF_Descriptor&) = delete;
     LV2_RDF_Descriptor(const LV2_RDF_Descriptor&) = delete;
+#endif
 };
 
 #endif // LV2_RDF_INCLUDED

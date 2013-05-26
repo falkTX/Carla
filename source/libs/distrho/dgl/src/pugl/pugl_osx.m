@@ -300,7 +300,7 @@ getModifiers(PuglView* view, NSEvent* ev)
 - (void) flagsChanged:(NSEvent*)event
 {
 	if (puglview->specialFunc) {
-		const unsigned mods = getModifiers(puglview, [event modifierFlags]);
+		const unsigned mods = getModifiers(puglview, event);
 		if ((mods & PUGL_MOD_SHIFT) != (puglview->mods & PUGL_MOD_SHIFT)) {
 			puglview->specialFunc(puglview, mods & PUGL_MOD_SHIFT, PUGL_KEY_SHIFT);
 		} else if ((mods & PUGL_MOD_CTRL) != (puglview->mods & PUGL_MOD_CTRL)) {

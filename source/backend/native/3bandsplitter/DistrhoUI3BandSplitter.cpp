@@ -150,7 +150,7 @@ void DistrhoUI3BandSplitter::imageButtonClicked(ImageButton* button, int)
     if (button != fButtonAbout)
         return;
 
-    Image imageAbout(DistrhoArtwork3BandSplitter::aboutData, DistrhoArtwork3BandSplitter::aboutWidth, DistrhoArtwork3BandSplitter::aboutHeight, GL_BGRA);
+    Image imageAbout(DistrhoArtwork3BandSplitter::aboutData, DistrhoArtwork3BandSplitter::aboutWidth, DistrhoArtwork3BandSplitter::aboutHeight, GL_BGR);
     ImageAboutWindow aboutWindow(getApp(), getParent(), imageAbout);
     aboutWindow.exec();
 }

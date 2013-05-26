@@ -150,7 +150,7 @@ void DistrhoUI3BandEQ::imageButtonClicked(ImageButton* button, int)
     if (button != fButtonAbout)
         return;
 
-    Image imageAbout(DistrhoArtwork3BandEQ::aboutData, DistrhoArtwork3BandEQ::aboutWidth, DistrhoArtwork3BandEQ::aboutHeight, GL_BGRA);
+    Image imageAbout(DistrhoArtwork3BandEQ::aboutData, DistrhoArtwork3BandEQ::aboutWidth, DistrhoArtwork3BandEQ::aboutHeight, GL_BGR);
     ImageAboutWindow aboutWindow(getApp(), getParent(), imageAbout);
     aboutWindow.exec();
 }

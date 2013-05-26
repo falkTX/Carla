@@ -105,6 +105,8 @@ void Image::draw(int x, int y)
     if (! isValid())
         return;
 
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
     glRasterPos2i(x, fSize.getHeight()+y);
     glDrawPixels(fSize.getWidth(), fSize.getHeight(), fFormat, fType, fRawData);
 }

@@ -19,14 +19,12 @@
 #define __CARLA_NATIVE_H__
 
 #ifdef __cplusplus
-# include <cstddef>
-# include <cstdint>
 extern "C" {
-#else
-# include <stdbool.h>
-# include <stddef.h>
-# include <stdint.h>
 #endif
+
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 /*!
  * @defgroup CarlaNativeAPI Carla Native API
@@ -250,7 +248,9 @@ void carla_register_native_plugin_midifile();
 // DISTRHO plugins (OpenGL)
 void carla_register_native_plugin_3BandEQ();
 void carla_register_native_plugin_3BandSplitter();
+void carla_register_native_plugin_Nekobi();
 void carla_register_native_plugin_PingPongPan();
+void carla_register_native_plugin_StereoEnhancer();
 #endif
 
 // DISTRHO plugins (Qt)

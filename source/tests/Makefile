@@ -11,7 +11,7 @@ include ../Makefile.mk
 BUILD_CXX_FLAGS += -I../backend -I../includes -I../libs -I../theme -I../utils -Wall -Wextra
 # BUILD_CXX_FLAGS += -isystem ../libs/juce
 # BUILD_CXX_FLAGS += -DWANT_JACK -DWANT_LADSPA -DWANT_DSSI
-BUILD_CXX_FLAGS += -isystem /usr/include/qt4
+# BUILD_CXX_FLAGS += -isystem /usr/include/qt4
 # BUILD_CXX_FLAGS += -isystem ../backend/engine/rtaudio-4.0.11
 # BUILD_CXX_FLAGS += -I/opt/mingw32/include
 
@@ -20,7 +20,17 @@ ANSI_CXX_FLAGS  += -Wcast-qual -Wconversion -Wsign-conversion -Wlogical-op -Wagg
 ANSI_CXX_FLAGS  += -std=c++11 -Wzero-as-null-pointer-constant
 ANSI_CXX_FLAGS  += -DBUILD_ANSI_TEST -DVESTIGE_HEADER -fPIC
 
-TARGETS = ANSI CarlaString DGL RtList Print Utils
+ifeq ($(MACOS),true)
+DGL_LIBS = -framework OpenGL -framework Cocoa
+else
+DGL_LIBS = -lGL -lX11
+endif
+
+ifeq ($(MACOS),true)
+TARGETS = CarlaString DGL Print
+else
+TARGETS = ANSI CarlaString DGL Print RtList Utils
+endif
 
 all: $(TARGETS) RUN
 
@@ -33,7 +43,10 @@ CarlaString: CarlaString.cpp
 	$(CXX) $^ $(BUILD_CXX_FLAGS) $(LINK_FLAGS) -o $@
 
 DGL: DGL.cpp DGL_Artwork.cpp ../libs/dgl.a
-	$(CXX) $^ $(BUILD_CXX_FLAGS) $(LINK_FLAGS) -lGL -lX11 -o $@
+	$(CXX) $^ $(BUILD_CXX_FLAGS) $(LINK_FLAGS) $(DGL_LIBS) -o $@
+
+MacTest: MacTest.cpp
+	$(CXX) MacTest.cpp -o $@
 
 RtList: RtList.cpp ../utils/RtList.hpp ../libs/rtmempool.a
 	$(CXX) RtList.cpp ../libs/rtmempool.a $(BUILD_CXX_FLAGS) $(LINK_FLAGS) -pthread -lpthread -o $@
@@ -43,9 +56,6 @@ Print: Print.cpp
 
 Utils: Utils.cpp
 	$(CXX) $^ $(BUILD_CXX_FLAGS) $(LINK_FLAGS) -o $@
-
-Rewire.exe: Rewire.cpp
-	$(CXX) $^ $(BUILD_CXX_FLAGS) $(LINK_FLAGS) -lversion -o $@
 
 RUN: $(TARGETS)
 # 	valgrind ./Base64

@@ -82,6 +82,9 @@ struct StateCustomData {
 typedef NonRtList<StateParameter*> StateParameterList;
 typedef NonRtList<StateCustomData*> StateCustomDataList;
 
+typedef NonRtList<StateParameter*>::Itenerator StateParameterItenerator;
+typedef NonRtList<StateCustomData*>::Itenerator StateCustomDataItenerator;
+
 struct SaveState {
     const char* type;
     const char* name;
@@ -180,13 +183,13 @@ struct SaveState {
         currentMidiBank     = -1;
         currentMidiProgram  = -1;
 
-        for (auto it = parameters.begin(); it.valid(); it.next())
+        for (StateParameterItenerator it = parameters.begin(); it.valid(); it.next())
         {
             StateParameter* const stateParameter(*it);
             delete stateParameter;
         }
 
-        for (auto it = customData.begin(); it.valid(); it.next())
+        for (StateCustomDataItenerator it = customData.begin(); it.valid(); it.next())
         {
             StateCustomData* const stateCustomData(*it);
             delete stateCustomData;
@@ -534,7 +537,7 @@ const QString& getXMLFromSaveState(const SaveState& saveState)
         content += data;
     }
 
-    for (auto it = saveState.parameters.begin(); it.valid(); it.next())
+    for (StateParameterItenerator it = saveState.parameters.begin(); it.valid(); it.next())
     {
         StateParameter* const stateParameter(*it);
 
@@ -585,7 +588,7 @@ const QString& getXMLFromSaveState(const SaveState& saveState)
         content += midiProgram;
     }
 
-    for (auto it = saveState.customData.begin(); it.valid(); it.next())
+    for (StateCustomDataItenerator it = saveState.customData.begin(); it.valid(); it.next())
     {
         StateCustomData* const stateCustomData(*it);
 

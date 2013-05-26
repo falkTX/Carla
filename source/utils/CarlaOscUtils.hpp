@@ -20,7 +20,6 @@
 
 #include "CarlaJuceUtils.hpp"
 
-#include <cstdint>
 #include <lo/lo.h>
 
 // -------------------------------------------------

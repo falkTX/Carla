@@ -29,7 +29,7 @@ START_NAMESPACE_DISTRHO
 
 // -----------------------------------------------------------------------
 
-static PluginDescriptor tBandEqDesc = {
+static PluginDescriptor pppDesc = {
     /* category  */ PLUGIN_CATEGORY_UTILITY,
     /* hints     */ static_cast<PluginHints>(PLUGIN_IS_RTSAFE|PLUGIN_HAS_GUI),
     /* audioIns  */ DISTRHO_PLUGIN_NUM_INPUTS,
@@ -52,7 +52,7 @@ END_NAMESPACE_DISTRHO
 void carla_register_native_plugin_PingPongPan()
 {
     USE_NAMESPACE_DISTRHO
-    carla_register_native_plugin(&tBandEqDesc);
+    carla_register_native_plugin(&pppDesc);
 }
 
 // -----------------------------------------------------------------------

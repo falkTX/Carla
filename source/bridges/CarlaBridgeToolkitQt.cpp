@@ -75,8 +75,7 @@ class CarlaBridgeToolkitQt: public CarlaBridgeToolkit,
 public:
     CarlaBridgeToolkitQt(CarlaBridgeClient* const client, const char* const uiTitle)
         : CarlaBridgeToolkit(client, uiTitle),
-          QObject(nullptr),
-          settings("falkTX", appName)
+          QObject(nullptr)
     {
         carla_debug("CarlaBridgeToolkitQt::CarlaBridgeToolkitQt(%p, \"%s\")", client, uiTitle);
 
@@ -96,18 +95,18 @@ public:
 
     ~CarlaBridgeToolkitQt() override
     {
-        carla_debug("CarlaBridgeToolkitQt::~CarlaBridgeToolkitQt()");
         CARLA_ASSERT(! app);
         CARLA_ASSERT(! window);
         CARLA_ASSERT(! msgTimer);
+        carla_debug("CarlaBridgeToolkitQt::~CarlaBridgeToolkitQt()");
     }
 
     void init() override
     {
-        carla_debug("CarlaBridgeToolkitQt::init()");
         CARLA_ASSERT(! app);
         CARLA_ASSERT(! window);
         CARLA_ASSERT(! msgTimer);
+        carla_debug("CarlaBridgeToolkitQt::init()");
 
         app = new QApplication(qargc, qargv);
 
@@ -136,10 +135,10 @@ public:
 
     void exec(const bool showGui) override
     {
-        carla_debug("CarlaBridgeToolkitQt::exec(%s)", bool2str(showGui));
         CARLA_ASSERT(app);
         CARLA_ASSERT(window);
         CARLA_ASSERT(kClient);
+        carla_debug("CarlaBridgeToolkitQt::exec(%s)", bool2str(showGui));
 
 #if defined(BRIDGE_QT4) || defined(BRIDGE_QT5)
         QWidget* const widget = (QWidget*)kClient->getWidget();
@@ -161,23 +160,27 @@ public:
 
         window->setWindowTitle(kUiTitle);
 
-        if (settings.contains(QString("%1/pos_x").arg(kUiTitle)))
         {
-            bool hasX, hasY;
-            int posX = settings.value(QString("%1/pos_x").arg(kUiTitle), window->x()).toInt(&hasX);
-            int posY = settings.value(QString("%1/pos_y").arg(kUiTitle), window->y()).toInt(&hasY);
+            QSettings settings("falkTX", appName);
 
-            if (hasX && hasY)
-                window->move(posX, posY);
-
-            if (kClient->isResizable())
+            if (settings.contains(QString("%1/pos_x").arg(kUiTitle)))
             {
-                bool hasWidth, hasHeight;
-                int width  = settings.value(QString("%1/width").arg(kUiTitle), window->width()).toInt(&hasWidth);
-                int height = settings.value(QString("%1/height").arg(kUiTitle), window->height()).toInt(&hasHeight);
+                bool hasX, hasY;
+                int posX = settings.value(QString("%1/pos_x").arg(kUiTitle), window->x()).toInt(&hasX);
+                int posY = settings.value(QString("%1/pos_y").arg(kUiTitle), window->y()).toInt(&hasY);
 
-                if (hasWidth && hasHeight)
-                    window->resize(width, height);
+                if (hasX && hasY)
+                    window->move(posX, posY);
+
+                if (kClient->isResizable())
+                {
+                    bool hasWidth, hasHeight;
+                    int width  = settings.value(QString("%1/width").arg(kUiTitle), window->width()).toInt(&hasWidth);
+                    int height = settings.value(QString("%1/height").arg(kUiTitle), window->height()).toInt(&hasHeight);
+
+                    if (hasWidth && hasHeight)
+                        window->resize(width, height);
+                }
             }
         }
 
@@ -198,8 +201,8 @@ public:
 
     void quit() override
     {
-        carla_debug("CarlaBridgeToolkitQt::quit()");
         CARLA_ASSERT(app);
+        carla_debug("CarlaBridgeToolkitQt::quit()");
 
         if (msgTimer != 0)
         {
@@ -209,6 +212,7 @@ public:
 
         if (window != nullptr)
         {
+            QSettings settings("falkTX", appName);
             settings.setValue(QString("%1/pos_x").arg(kUiTitle), window->x());
             settings.setValue(QString("%1/pos_y").arg(kUiTitle), window->y());
             settings.setValue(QString("%1/width").arg(kUiTitle), window->width());
@@ -246,8 +250,8 @@ public:
 
     void show() override
     {
-        carla_debug("CarlaBridgeToolkitQt::show()");
         CARLA_ASSERT(window);
+        carla_debug("CarlaBridgeToolkitQt::show()");
 
         if (window)
             window->show();
@@ -255,8 +259,8 @@ public:
 
     void hide() override
     {
-        carla_debug("CarlaBridgeToolkitQt::hide()");
         CARLA_ASSERT(window);
+        carla_debug("CarlaBridgeToolkitQt::hide()");
 
         if (window)
             window->hide();
@@ -264,8 +268,8 @@ public:
 
     void resize(const int width, const int height) override
     {
-        carla_debug("CarlaBridgeToolkitQt::resize(%i, %i)", width, height);
         CARLA_ASSERT(window);
+        carla_debug("CarlaBridgeToolkitQt::resize(%i, %i)", width, height);
 
         if (app->thread() != QThread::currentThread())
         {
@@ -287,8 +291,8 @@ public:
 #ifdef BRIDGE_CONTAINER
     void* getContainerId()
     {
-        carla_debug("CarlaBridgeToolkitQt::getContainerId()");
         CARLA_ASSERT(window != nullptr);
+        carla_debug("CarlaBridgeToolkitQt::getContainerId()");
 
         if (embedContainer == nullptr)
         {
@@ -308,7 +312,6 @@ public:
 protected:
     QApplication* app;
     QMainWindow* window;
-    QSettings settings;
     int msgTimer;
 
     bool needsResize;

@@ -47,6 +47,19 @@ protected:
         k_list_head siblings;
     };
 
+    List()
+        : kDataSize(sizeof(Data)),
+          fCount(0)
+    {
+        _init();
+    }
+
+    virtual ~List()
+    {
+        CARLA_ASSERT(fCount == 0);
+    }
+
+public:
     class Itenerator {
     public:
         Itenerator(const k_list_head* queue)
@@ -86,19 +99,6 @@ protected:
 
         friend class List;
     };
-
-    List()
-        : kDataSize(sizeof(Data)),
-          fCount(0)
-    {
-        _init();
-    }
-
-public:
-    virtual ~List()
-    {
-        CARLA_ASSERT(fCount == 0);
-    }
 
     Itenerator begin() const
     {

@@ -130,8 +130,10 @@ struct LADSPA_RDF_ScalePoint {
             delete[] Label;
     }
 
+#ifdef CARLA_PROPER_CPP11_SUPPORT
     LADSPA_RDF_ScalePoint(LADSPA_RDF_ScalePoint&) = delete;
     LADSPA_RDF_ScalePoint(const LADSPA_RDF_ScalePoint&) = delete;
+#endif
 };
 
 // Port
@@ -162,8 +164,10 @@ struct LADSPA_RDF_Port {
             delete[] ScalePoints;
     }
 
+#ifdef CARLA_PROPER_CPP11_SUPPORT
     LADSPA_RDF_Port(LADSPA_RDF_Port&) = delete;
     LADSPA_RDF_Port(const LADSPA_RDF_Port&) = delete;
+#endif
 };
 
 // Plugin
@@ -194,8 +198,10 @@ struct LADSPA_RDF_Descriptor {
             delete[] Ports;
     }
 
+#ifdef CARLA_PROPER_CPP11_SUPPORT
     LADSPA_RDF_Descriptor(LADSPA_RDF_Descriptor&) = delete;
     LADSPA_RDF_Descriptor(const LADSPA_RDF_Descriptor&) = delete;
+#endif
 };
 
 #endif // LADSPA_RDF_INCLUDED

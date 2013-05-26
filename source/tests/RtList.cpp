@@ -34,8 +34,10 @@ struct MyData {
         : str(id),
           idStr(id) {}
 
+#ifdef PROPER_CPP11_SUPPORT
     MyData(MyData&) = delete;
     MyData(const MyData&) = delete;
+#endif
 };
 
 struct PostRtEvents {
@@ -150,7 +152,7 @@ int main()
 
     for (auto it = postRtEvents.data.begin(); it.valid(); it.next())
     {
-        MyData& my = *it;
+        MyData& my(*it);
 
         printf("FOR DATA!!!: %i %s\n", my.idStr, (const char*)my.str);
 

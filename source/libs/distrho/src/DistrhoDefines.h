@@ -57,12 +57,6 @@
 # endif
 #endif
 
-#if defined(__GNUC__) && defined(__GXX_EXPERIMENTAL_CXX0X__)
-# if (__GNUC__ * 100 + __GNUC_MINOR__) < 407
-#  define override // gcc4.7+ only
-# endif
-#endif
-
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
 # define DISTRHO_PLUGIN_EXPORT extern "C" __declspec (dllexport)
 # define DISTRHO_OS_WINDOWS    1
@@ -83,6 +77,23 @@
 
 #ifndef DISTRHO_DLL_EXTENSION
 # define DISTRHO_DLL_EXTENSION "so"
+#endif
+
+#if defined(HAVE_CPP11_SUPPORT)
+# define PROPER_CPP11_SUPPORT
+#elif defined(__GNUC__) && defined(__GXX_EXPERIMENTAL_CXX0X__)
+# if  (__GNUC__ * 100 + __GNUC_MINOR__) >= 405
+#  define PROPER_CPP11_SUPPORT
+#  if  (__GNUC__ * 100 + __GNUC_MINOR__) < 407
+#   define override // gcc4.7+ only
+#  endif
+# endif
+#endif
+
+#ifndef PROPER_CPP11_SUPPORT
+# define override
+# define noexcept
+# define nullptr (0)
 #endif
 
 #ifndef DISTRHO_NO_NAMESPACE

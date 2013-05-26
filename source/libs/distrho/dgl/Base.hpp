@@ -27,6 +27,23 @@
 # define DGL_OS_LINUX   1
 #endif
 
+#if defined(HAVE_CPP11_SUPPORT)
+# define PROPER_CPP11_SUPPORT
+#elif defined(__GNUC__) && defined(__GXX_EXPERIMENTAL_CXX0X__)
+# if  (__GNUC__ * 100 + __GNUC_MINOR__) >= 405
+#  define PROPER_CPP11_SUPPORT
+#  if  (__GNUC__ * 100 + __GNUC_MINOR__) < 407
+#   define override // gcc4.7+ only
+#  endif
+# endif
+#endif
+
+#ifndef PROPER_CPP11_SUPPORT
+# define override
+# define noexcept
+# define nullptr (0)
+#endif
+
 #define DGL_NAMESPACE DGL
 
 #define START_NAMESPACE_DGL namespace DGL_NAMESPACE {

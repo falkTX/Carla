@@ -90,8 +90,10 @@ public:
           fAudio(api),
           fAudioBufIn(nullptr),
           fAudioBufOut(nullptr),
+#ifdef CARLA_PROPER_CPP11_SUPPORT
           fAudioBufRackIn{nullptr},
           fAudioBufRackOut{nullptr},
+#endif
           fAudioCountIn(0),
           fAudioCountOut(0),
           fAudioIsInterleaved(false),
@@ -101,6 +103,11 @@ public:
           fLastConnectionId(0)
     {
         carla_debug("CarlaEngineRtAudio::CarlaEngineRtAudio(%i)", api);
+
+#ifndef CARLA_PROPER_CPP11_SUPPORT
+        fAudioBufRackIn[0] = fAudioBufRackIn[1] = nullptr;
+        fAudioBufRackOut[0] = fAudioBufRackOut[1] = nullptr;
+#endif
 
         // just to make sure
         fOptions.forceStereo = true;

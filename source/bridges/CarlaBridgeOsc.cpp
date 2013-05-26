@@ -16,12 +16,15 @@
  */
 
 #include "CarlaBridgeOsc.hpp"
-
 #include "CarlaBridgeClient.hpp"
 #include "CarlaMIDI.h"
 #include "CarlaUtils.hpp"
 
 CARLA_BRIDGE_START_NAMESPACE
+
+#if 0
+} // Fix editor indentation
+#endif
 
 // -----------------------------------------------------------------------
 
@@ -138,7 +141,7 @@ int CarlaBridgeOsc::handleMessage(const char* const path, const int argc, const 
         return 1;
     }
 
-    const size_t nameSize = fName.length();
+    const size_t nameSize(fName.length());
 
     // Check if message is for this client
     if (std::strlen(path) <= nameSize || std::strncmp(path+1, (const char*)fName, nameSize) != 0)
@@ -191,17 +194,15 @@ int CarlaBridgeOsc::handleMessage(const char* const path, const int argc, const 
     // Plugin methods
     if (std::strcmp(method, "plugin_save_now") == 0)
         return handleMsgPluginSaveNow();
+    // TODO:
+    //if (std::strcmp(method, "plugin_set_parameter_midi_channel") == 0)
+    //    return handleMsgPluginSetParameterMidiChannel(argv);
+    //if (std::strcmp(method, "plugin_set_parameter_midi_cc") == 0)
+    //    return handleMsgPluginSetParameterMidiCC(argv);
     if (std::strcmp(method, "plugin_set_chunk") == 0)
         return handleMsgPluginSetChunk(argc, argv, types);
     if (std::strcmp(method, "plugin_set_custom_data") == 0)
         return handleMsgPluginSetCustomData(argc, argv, types);
-#if 0
-    // TODO
-    if (std::strcmp(method, "set_parameter_midi_channel") == 0)
-        return osc_set_parameter_midi_channel_handler(argv);
-    if (std::strcmp(method, "set_parameter_midi_cc") == 0)
-        return osc_set_parameter_midi_channel_handler(argv);
-#endif
 #endif
 
     carla_stderr("CarlaBridgeOsc::handleMessage(\"%s\", ...) - received unsupported OSC method '%s'", path, method);

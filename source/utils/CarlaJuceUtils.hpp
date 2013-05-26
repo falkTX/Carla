@@ -59,6 +59,11 @@ private:                                \
 #define CARLA_JOIN_MACRO_HELPER(a, b) a ## b
 #define CARLA_JOIN_MACRO(item1, item2)  CARLA_JOIN_MACRO_HELPER (item1, item2)
 
+/** Remove unsupported macros */
+#ifndef CARLA_PROPER_CPP11_SUPPORT
+# undef CARLA_DECLARE_NON_COPY_STRUCT
+# define CARLA_DECLARE_NON_COPY_STRUCT(...)
+#endif
 
 //==============================================================================
 /**

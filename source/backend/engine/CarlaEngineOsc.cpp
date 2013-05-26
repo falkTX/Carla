@@ -374,8 +374,8 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
 #ifdef WANT_LV2
     if (std::strcmp(method, "lv2_atom_transfer") == 0)
         return handleMsgLv2AtomTransfer(plugin, argc, argv, types);
-    if (std::strcmp(method, "lv2_event_transfer") == 0)
-        return handleMsgLv2EventTransfer(plugin, argc, argv, types);
+    if (std::strcmp(method, "lv2_urid_map") == 0)
+        return handleMsgLv2UridMap(plugin, argc, argv, types);
 #endif
 
     carla_stderr("CarlaEngineOsc::handleMessage() - unsupported OSC method '%s'", method);

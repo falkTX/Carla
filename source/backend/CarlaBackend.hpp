@@ -20,7 +20,11 @@
 
 #include "CarlaDefines.hpp"
 
-#include <cstdint>
+#ifdef CARLA_PROPER_CPP11_SUPPORT
+# include <cstdint>
+#else
+# include <stdint.h>
+#endif
 
 #define CARLA_BACKEND_START_NAMESPACE namespace CarlaBackend {
 #define CARLA_BACKEND_END_NAMESPACE }

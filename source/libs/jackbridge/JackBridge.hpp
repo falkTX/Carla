@@ -37,7 +37,12 @@
 #define JACK_DEFAULT_MIDI_TYPE  "8 bit raw midi"
 
 #include <cstddef>
-#include <cstdint>
+
+#ifdef CARLA_PROPER_CPP11_SUPPORT
+# include <cstdint>
+#else
+# include <stdint.h>
+#endif
 
 enum JackOptions {
     JackNullOption    = 0x00,
