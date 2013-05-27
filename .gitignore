@@ -81,8 +81,8 @@ doc/DISTRHO/
 src/dist/
 
 # QtCreator builds
-*-build-*Debug/
-*-build-*Release/
+*build-*Debug/
+*build-*Release/
 
 # ZynAddSubFX UI
 source/backend/native/zynaddsubfx/UI/ADnoteUI.cpp
