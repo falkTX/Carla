@@ -67,10 +67,12 @@ data/windows/Carla
 data/windows/CarlaControl
 source/tests/ANSI
 source/tests/CarlaString
-source/tests/DGL
+source/tests/DGL1
+source/tests/DGL2
 source/tests/Print
 source/tests/RtList
 source/tests/Utils
+source/tests/dgl-neko-test*
 
 # Docs
 doc/CarlaBackend/
