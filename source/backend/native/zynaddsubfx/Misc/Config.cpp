@@ -59,6 +59,7 @@ void Config::init()
 
     cfg.Interpolation = 0;
     cfg.CheckPADsynth = 1;
+    cfg.IgnoreProgramChange = 0;
 
     cfg.UserInterfaceMode = 0;
     cfg.VirKeybLayout     = 1;
@@ -185,6 +186,11 @@ void Config::readConfig(const char *filename)
                                           0,
                                           1);
 
+        cfg.IgnoreProgramChange = xmlcfg.getpar("ignore_program_change",
+                                          cfg.IgnoreProgramChange,
+                                          0,
+                                          1);
+
 
         cfg.UserInterfaceMode = xmlcfg.getpar("user_interface_mode",
                                               cfg.UserInterfaceMode,
@@ -252,6 +258,7 @@ void Config::saveConfig(const char *filename)
     xmlcfg->addpar("gzip_compression", cfg.GzipCompression);
 
     xmlcfg->addpar("check_pad_synth", cfg.CheckPADsynth);
+    xmlcfg->addpar("ignore_program_change", cfg.IgnoreProgramChange);
 
     xmlcfg->addparstr("bank_current", cfg.currentBankDir);
 

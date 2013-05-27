@@ -18,6 +18,7 @@
 #define __DISTRHO_UI_3BANDEQ_HPP__
 
 #include "DistrhoUIOpenGL.hpp"
+#include "dgl/ImageAboutWindow.hpp"
 #include "dgl/ImageButton.hpp"
 #include "dgl/ImageKnob.hpp"
 #include "dgl/ImageSlider.hpp"
@@ -73,6 +74,7 @@ protected:
 
 private:
     Image fImgBackground;
+    ImageAboutWindow fAboutWindow;
 
     ImageSlider* fSliderLow;
     ImageSlider* fSliderMid;

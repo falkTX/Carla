@@ -29,6 +29,21 @@ ImageAboutWindow::ImageAboutWindow(App* app, Window* parent, const Image& image)
     Window::setWindowTitle("About");
 }
 
+ImageAboutWindow::ImageAboutWindow(Widget* widget, const Image& image)
+    : Window(widget->getApp(), widget->getParent()),
+      Widget(this),
+      fImgBackground(image)
+{
+    Window::setSize(image.getWidth(), image.getHeight());
+    Window::setWindowTitle("About");
+}
+
+void ImageAboutWindow::setImage(const Image& image)
+{
+    fImgBackground = image;
+    Window::setSize(image.getWidth(), image.getHeight());
+}
+
 void ImageAboutWindow::onDisplay()
 {
     fImgBackground.draw();
@@ -38,7 +53,7 @@ bool ImageAboutWindow::onMouse(int, bool press, int, int)
 {
     if (press)
     {
-        Window::hide();
+        Window::close();
         return true;
     }
 
@@ -49,7 +64,7 @@ bool ImageAboutWindow::onKeyboard(bool press, uint32_t key)
 {
     if (press && key == DGL_CHAR_ESCAPE)
     {
-        Window::hide();
+        Window::close();
         return true;
     }
 

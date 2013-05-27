@@ -16,14 +16,13 @@
 
 #include "DistrhoUI3BandEQ.hpp"
 
-#include "dgl/ImageAboutWindow.hpp"
-
 START_NAMESPACE_DISTRHO
 
 // -------------------------------------------------
 
 DistrhoUI3BandEQ::DistrhoUI3BandEQ()
-    : OpenGLUI()
+    : OpenGLUI(),
+      fAboutWindow(this)
 {
     Window* win = getParent();
 
@@ -151,8 +150,8 @@ void DistrhoUI3BandEQ::imageButtonClicked(ImageButton* button, int)
         return;
 
     Image imageAbout(DistrhoArtwork3BandEQ::aboutData, DistrhoArtwork3BandEQ::aboutWidth, DistrhoArtwork3BandEQ::aboutHeight, GL_BGR);
-    ImageAboutWindow aboutWindow(getApp(), getParent(), imageAbout);
-    aboutWindow.exec();
+    fAboutWindow.setImage(imageAbout);
+    fAboutWindow.exec();
 }
 
 void DistrhoUI3BandEQ::imageKnobDragStarted(ImageKnob* knob)

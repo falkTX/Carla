@@ -46,7 +46,7 @@ bool Widget::isVisible()
 
 void Widget::setVisible(bool yesNo)
 {
-    if (yesNo == fVisible)
+    if (fVisible == yesNo)
         return;
 
     fVisible = yesNo;

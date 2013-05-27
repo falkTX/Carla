@@ -29,6 +29,10 @@ mark_as_advanced(DSSI_LIBRARIES)
 pkg_search_module(LIBLO liblo>=0.26)
 mark_as_advanced(LIBLO_LIBRARIES)
 
+execute_process(COMMAND echo fistpl 0
+                COMMAND as -
+                ERROR_VARIABLE AVOID_ASM)
+
 ######### Settings ###########
 # NOTE: These cache variables should normally not be changed in this
 # file, but either in in CMakeCache.txt before compile, or by passing
@@ -180,11 +184,14 @@ endif()
 include_directories(${ZLIB_INCLUDE_DIRS} ${MXML_INCLUDE_DIRS})
 
 add_definitions(
-	 -DASM_F2I_YES
 	 -g #TODO #todo put in a better location
 	 -Wall
 	 -Wextra
 	 )
+if(NOT AVOID_ASM)
+	message(STATUS "Compiling with x86 opcode support")
+    add_definitions(-DASM_F2I_YES)
+endif()
 
 if (BuildForDebug)
 	set (CMAKE_BUILD_TYPE "Debug")

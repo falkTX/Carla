@@ -50,6 +50,19 @@ public:
         fApp.exec();
     }
 
+    // ----------------------------------------------------
+    // helpers
+
+    void setSize(unsigned int width, unsigned int height)
+    {
+        fWindow.setSize(width, height);
+    }
+
+    void setWindowTitle(const char* title)
+    {
+        fWindow.setWindowTitle(title);
+    }
+
 private:
     App fApp;
     Window fWindow;

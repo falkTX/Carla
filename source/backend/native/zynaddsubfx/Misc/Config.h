@@ -47,6 +47,7 @@ class Config
             std::string bankRootDirList[MAX_BANK_ROOT_DIRS], currentBankDir;
             std::string presetsDirList[MAX_BANK_ROOT_DIRS];
             int CheckPADsynth;
+            int IgnoreProgramChange;
             int UserInterfaceMode;
             int VirKeybLayout;
             std::string LinuxALSAaudioDev;

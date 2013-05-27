@@ -31,6 +31,7 @@ public:
     Image(const char* rawData, const Size<int>& size, GLenum format = GL_BGRA, GLenum type = GL_UNSIGNED_BYTE);
     Image(const Image& image);
 
+    void loadFromMemory(const char* rawData, int width, int height, GLenum format = GL_BGRA, GLenum type = GL_UNSIGNED_BYTE);
     void loadFromMemory(const char* rawData, const Size<int>& size, GLenum format = GL_BGRA, GLenum type = GL_UNSIGNED_BYTE);
 
     bool isValid() const;
@@ -43,11 +44,13 @@ public:
     GLenum getFormat() const;
     GLenum getType() const;
 
-    void draw();
-    void draw(int x, int y);
-    void draw(const Point<int>& pos);
+    void draw() const;
+    void draw(int x, int y) const;
+    void draw(const Point<int>& pos) const;
 
     Image& operator=(const Image& image);
+    bool operator==(const Image& image) const;
+    bool operator!=(const Image& image) const;
 
 private:
     const char* fRawData;

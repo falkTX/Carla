@@ -14,7 +14,7 @@
 using namespace std;
 
 NioUI::NioUI()
-    :Fl_Window(400, 400, "New IO Controls")
+    :Fl_Window(200, 100, 400, 400, "New IO Controls")
 {
     //hm, I appear to be leaking memory
     Fl_Group *settings = new Fl_Group(0, 20, 400, 400 - 35, "Settings");

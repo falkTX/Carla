@@ -56,6 +56,9 @@ public:
     void oneShown()
     {
         ++fVisibleWindows;
+
+        if (fVisibleWindows == 1)
+            fDoLoop = true;
     }
 
     void oneHidden()

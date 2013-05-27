@@ -52,6 +52,11 @@ Image::Image(const Image& image)
 {
 }
 
+void Image::loadFromMemory(const char* rawData, int width, int height, GLenum format, GLenum type)
+{
+    loadFromMemory(rawData, Size<int>(width, height), format, type);
+}
+
 void Image::loadFromMemory(const char* rawData, const Size<int>& size, GLenum format, GLenum type)
 {
     fRawData = rawData;
@@ -95,12 +100,12 @@ GLenum Image::getType() const
     return fType;
 }
 
-void Image::draw()
+void Image::draw() const
 {
     draw(0, 0);
 }
 
-void Image::draw(int x, int y)
+void Image::draw(int x, int y) const
 {
     if (! isValid())
         return;
@@ -111,7 +116,7 @@ void Image::draw(int x, int y)
     glDrawPixels(fSize.getWidth(), fSize.getHeight(), fFormat, fType, fRawData);
 }
 
-void Image::draw(const Point<int>& pos)
+void Image::draw(const Point<int>& pos) const
 {
     draw(pos.getX(), pos.getY());
 }
@@ -123,6 +128,16 @@ Image& Image::operator=(const Image& image)
     fFormat  = image.fFormat;
     fType    = image.fType;
     return *this;
+}
+
+bool Image::operator==(const Image& image) const
+{
+    return (fRawData == image.fRawData);
+}
+
+bool Image::operator!=(const Image& image) const
+{
+    return (fRawData != image.fRawData);
 }
 
 // -------------------------------------------------

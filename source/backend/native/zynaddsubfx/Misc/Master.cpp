@@ -235,6 +235,9 @@ void Master::setController(char chan, int type, int par)
 
 void Master::setProgram(char chan, unsigned int pgm)
 {
+    if(config.cfg.IgnoreProgramChange)
+        return;
+
     for(int npart = 0; npart < NUM_MIDI_PARTS; ++npart)
         if(chan == part[npart]->Prcvchn) {
             bank.loadfromslot(pgm, part[npart]);

@@ -53,6 +53,12 @@ void App::exec()
 void App::quit()
 {
     kPrivate->fDoLoop = false;
+
+    for (std::list<Window*>::iterator it = kPrivate->fWindows.begin(); it != kPrivate->fWindows.end(); ++it)
+    {
+        Window* const window(*it);
+        window->close();
+    }
 }
 
 bool App::isQuiting() const

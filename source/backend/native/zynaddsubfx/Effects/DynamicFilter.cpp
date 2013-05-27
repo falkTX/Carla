@@ -65,7 +65,7 @@ void DynamicFilter::out(const Stereo<float *> &smp)
         efxoutl[i] = smp.l[i];
         efxoutr[i] = smp.r[i];
 
-        const float x = (fabsf(smp.l[i]) + fabsf(smp.l[i])) * 0.5f;
+        const float x = (fabsf(smp.l[i]) + fabsf(smp.r[i])) * 0.5f;
         ms1 = ms1 * (1.0f - ampsmooth) + x * ampsmooth + 1e-10;
     }
 

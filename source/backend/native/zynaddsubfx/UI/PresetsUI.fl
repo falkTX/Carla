@@ -207,8 +207,5 @@ for (unsigned int i=0;i<presetsstore.presets.size();i++){
   }
 } 
 
-decl {extern __thread PresetsUI *presetsui;} {public
-}
-
-decl {__thread PresetsUI *presetsui;} {private
+decl {PresetsUI *presetsui;} {public
 } 

@@ -430,7 +430,7 @@ protected:
     {
         CARLA_ASSERT(fUiPtr != nullptr);
 
-        uint32_t realProgram = bank * 128 + program;
+        const uint32_t realProgram(bank * 128 + program);
 
         if (realProgram >= fPlugin.programCount())
             return;

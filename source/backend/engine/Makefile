@@ -84,7 +84,7 @@ TARGETp = ../libcarla_engine_plugin.a
 all: $(TARGET) $(TARGETp)
 
 clean:
-	rm -f $(OBJS) $(TARGET)
+	rm -f $(OBJS) $(OBJSp) $(TARGET) $(TARGETp)
 
 debug:
 	$(MAKE) DEBUG=true

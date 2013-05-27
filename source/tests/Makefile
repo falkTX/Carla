@@ -11,7 +11,7 @@ include ../Makefile.mk
 BUILD_CXX_FLAGS += -I../backend -I../includes -I../libs -I../theme -I../utils -Wall -Wextra
 # BUILD_CXX_FLAGS += -isystem ../libs/juce
 # BUILD_CXX_FLAGS += -DWANT_JACK -DWANT_LADSPA -DWANT_DSSI
-# BUILD_CXX_FLAGS += -isystem /usr/include/qt4
+BUILD_CXX_FLAGS += -isystem /usr/include/qt4
 # BUILD_CXX_FLAGS += -isystem ../backend/engine/rtaudio-4.0.11
 # BUILD_CXX_FLAGS += -I/opt/mingw32/include
 
@@ -23,13 +23,14 @@ ANSI_CXX_FLAGS  += -DBUILD_ANSI_TEST -DVESTIGE_HEADER -fPIC
 ifeq ($(MACOS),true)
 DGL_LIBS = -framework OpenGL -framework Cocoa
 else
-DGL_LIBS = -lGL -lX11
+# DGL_LIBS = -lQtCore -lopengl32 -lgdi32 -lole32 -luuid -lws2_32
+DGL_LIBS = -lQtCore -lGL -lX11
 endif
 
 ifeq ($(MACOS),true)
-TARGETS = CarlaString DGL Print
+TARGETS = CarlaString DGL1 DGL2 Print
 else
-TARGETS = ANSI CarlaString DGL Print RtList Utils
+TARGETS = ANSI CarlaString DGL1 DGL2 Print RtList Utils
 endif
 
 all: $(TARGETS) RUN
@@ -42,8 +43,11 @@ ANSI: ANSI.cpp
 CarlaString: CarlaString.cpp
 	$(CXX) $^ $(BUILD_CXX_FLAGS) $(LINK_FLAGS) -o $@
 
-DGL: DGL.cpp DGL_Artwork.cpp ../libs/dgl.a
+DGL1: DGL1.cpp DGL1_Artwork.cpp ../libs/dgl.a
 	$(CXX) $^ $(BUILD_CXX_FLAGS) $(LINK_FLAGS) $(DGL_LIBS) -o $@
+
+DGL2: DGL2.cpp NekoArtwork.cpp ../libs/dgl.a
+	$(CXX) $^ $(BUILD_CXX_FLAGS) $(LINK_FLAGS) $(DGL_LIBS) -o $@ && $(STRIP) $@
 
 MacTest: MacTest.cpp
 	$(CXX) MacTest.cpp -o $@

@@ -33,7 +33,7 @@ public:
     Window(App* app, intptr_t parentId);
     virtual ~Window();
 
-    void exec();
+    void exec(bool lock = false);
     void focus();
     void idle();
     void repaint();

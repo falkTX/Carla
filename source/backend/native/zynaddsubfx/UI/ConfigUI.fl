@@ -1,33 +1,35 @@
 # data file for the Fltk User Interface Designer (fluid)
-version 1.0107 
+version 1.0300 
 header_name {.h} 
 code_name {.cc}
-decl {//Copyright (c) 2002-2005 Nasca Octavian Paul} {} 
-
-decl {//License: GNU GPL version 2 or later} {} 
-
-decl {\#include <stdio.h>} {public
+decl {//Copyright (c) 2002-2005 Nasca Octavian Paul} {private local
 } 
 
-decl {\#include <math.h>} {public
+decl {//License: GNU GPL version 2 or later} {private local
 } 
 
-decl {\#include <stdlib.h>} {public
+decl {\#include <stdio.h>} {public local
 } 
 
-decl {\#include <FL/Fl_File_Chooser.H>} {public
+decl {\#include <math.h>} {public local
 } 
 
-decl {\#include "../globals.h"} {public
+decl {\#include <stdlib.h>} {public local
 } 
 
-decl {\#include "../Misc/Util.h"} {public
+decl {\#include <FL/Fl_File_Chooser.H>} {public local
 } 
 
-decl {\#include "../Misc/Dump.h"} {public
+decl {\#include "../globals.h"} {public local
 } 
 
-decl {extern Dump dump;} {public
+decl {\#include "../Misc/Util.h"} {public local
+} 
+
+decl {\#include "../Misc/Dump.h"} {public local
+} 
+
+decl {extern Dump dump;} {public local
 } 
 
 class ConfigUI {} {
@@ -36,14 +38,14 @@ class ConfigUI {} {
       label {ZynAddSubFX Settings}
       callback {writebankcfg();
 o->hide();}
-      xywh {88 313 510 340} type Double hide
+      xywh {554 443 510 370} type Double visible
     } {
       Fl_Tabs {} {
-        xywh {5 5 500 305}
+        xywh {5 5 500 330}
       } {
         Fl_Group {} {
           label {Main settings}
-          xywh {5 25 500 285}
+          xywh {5 25 500 310}
         } {
           Fl_Group {} {
             label {Sample Rate}
@@ -157,18 +159,18 @@ config.cfg.SoundBufferSize=strtoul(o->value(),&tmp,10);}
           }
           Fl_Box {} {
             label {Most settings has effect only after ZynAddSubFX is restarted.}
-            xywh {15 275 235 30} labelfont 1 labelsize 11 align 128
+            xywh {10 300 235 30} labelfont 1 labelsize 11 align 128
           }
           Fl_Box {} {
             label {Read the Readme.txt for other settings}
-            xywh {10 255 240 20} labelfont 1 labelsize 11 align 128
+            xywh {10 280 240 15} labelfont 1 labelsize 11 align 128
           }
           Fl_Group {} {
             xywh {15 125 230 85} box ENGRAVED_BOX
           } {
             Fl_File_Input {} {
               label {Dump File}
-              callback {config.cfg.DumpFile = o->value();} selected
+              callback {config.cfg.DumpFile = o->value();}
               xywh {20 170 220 35} align 5
               code0 {o->insert(config.cfg.DumpFile.c_str());}
             }
@@ -277,6 +279,12 @@ midiinputnamebox->label(config.winmididevices[config.cfg.WindowsMidiInId].name);
               xywh {45 45 100 20} labelfont 1 labelsize 11
             }
           }
+          Fl_Check_Button {} {
+            label {Ignore MIDI Program Change}
+            callback {config.cfg.IgnoreProgramChange=(int) o->value();}
+            xywh {10 255 230 20} down_box DOWN_BOX
+            code0 {o->value(config.cfg.IgnoreProgramChange);}
+          }
         }
         Fl_Group {} {
           label {Bank root dirs}
@@ -364,7 +372,7 @@ activatebutton_presetdir(true);}
         callback {configwindow->hide();
 writebankcfg();
 writepresetcfg();}
-        xywh {200 315 105 20} box THIN_UP_BOX
+        xywh {200 345 105 20} box THIN_UP_BOX
       }
     }
   }
