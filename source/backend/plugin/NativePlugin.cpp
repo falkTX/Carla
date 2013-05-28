@@ -60,6 +60,7 @@ void carla_register_all_plugins()
     // DISTRHO plugins (OpenGL)
     carla_register_native_plugin_3BandEQ();
     carla_register_native_plugin_3BandSplitter();
+    carla_register_native_plugin_Nekobi();
     carla_register_native_plugin_PingPongPan();
     carla_register_native_plugin_StereoEnhancer();
 #endif

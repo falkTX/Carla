@@ -69,6 +69,16 @@ struct ParameterRanges {
         this->stepLarge = stepLarge;
     }
 
+    void clear()
+    {
+        def = 0.0f;
+        min = 0.0f;
+        max = 1.0f;
+        step = 0.001f;
+        stepSmall = 0.00001f;
+        stepLarge = 0.01f;
+    }
+
     void fixValue(float& value) const
     {
         if (value < min)
@@ -116,6 +126,15 @@ struct Parameter {
 
     Parameter()
         : hints(0x0) {}
+
+    void clear()
+    {
+        hints  = 0x0;
+        name   = "";
+        symbol = "";
+        unit   = "";
+        ranges.clear();
+    }
 };
 
 // -------------------------------------------------

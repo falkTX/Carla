@@ -227,12 +227,11 @@ public:
         // needed?
 #elif defined(DISTRHO_UI_OPENGL)
         glApp.idle();
-#else
+#endif
         assert(kUi != nullptr);
 
         if (kUi != nullptr)
             kUi->d_uiIdle();
-#endif
     }
 
 #if defined(DISTRHO_UI_EXTERNAL)

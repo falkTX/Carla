@@ -378,10 +378,10 @@ protected:
             const ::MidiEvent* const midiEvent = &midiEvents[i];
             MidiEvent* const realMidiEvent = &fRealMidiEvents[i];
 
-            realMidiEvent->buffer[0] = midiEvent->data[0];
-            realMidiEvent->buffer[1] = midiEvent->data[1];
-            realMidiEvent->buffer[2] = midiEvent->data[2];
-            realMidiEvent->frame     = midiEvent->time;
+            realMidiEvent->frame = midiEvent->time;
+            realMidiEvent->size  = midiEvent->size;
+
+            carla_copy<uint8_t>(realMidiEvent->buf, midiEvent->data, midiEvent->size);
         }
 
         fPlugin.run(inBuffer, outBuffer, frames, i, fRealMidiEvents);

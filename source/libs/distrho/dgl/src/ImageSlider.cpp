@@ -62,10 +62,20 @@ void ImageSlider::setStartPos(const Point<int>& startPos)
     _recheckArea();
 }
 
+void ImageSlider::setStartPos(int x, int y)
+{
+    setStartPos(Point<int>(x, y));
+}
+
 void ImageSlider::setEndPos(const Point<int>& endPos)
 {
     fEndPos = endPos;
     _recheckArea();
+}
+
+void ImageSlider::setEndPos(int x, int y)
+{
+    setEndPos(Point<int>(x, y));
 }
 
 void ImageSlider::setRange(float min, float max)
