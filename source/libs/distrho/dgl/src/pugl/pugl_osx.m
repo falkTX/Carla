@@ -359,8 +359,11 @@ puglCreate(PuglNativeWindow parent,
 	[window setContentView:impl->glview];
 	[NSApp activateIgnoringOtherApps:YES];
 	[window makeFirstResponder:impl->glview];
-
 	[window makeKeyAndOrderFront:window];
+
+	if (! addToDesktop) {
+		[window setIsVisible:NO];
+	}
 
 	return view;
 }
@@ -380,6 +383,24 @@ PuglStatus
 puglProcessEvents(PuglView* view)
 {
 	[view->impl->glview setNeedsDisplay: YES];
+
+	NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
+	NSEvent* event;
+
+	for (;;) {
+		event = [view->impl->window
+			   nextEventMatchingMask:NSAnyEventMask
+			               untilDate:[NSDate distantPast]
+			                  inMode:NSDefaultRunLoopMode
+			                 dequeue:YES];
+
+		if (event == nil)
+			break;
+
+		[view->impl->window sendEvent: event];
+	}
+	
+	[pool release];
 
 	return PUGL_SUCCESS;
 }
