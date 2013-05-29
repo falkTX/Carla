@@ -26,6 +26,7 @@
 
 #include "jackbridge/JackBridge.hpp"
 
+#include <cerrno>
 #include <ctime>
 
 CARLA_BACKEND_START_NAMESPACE

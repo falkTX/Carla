@@ -18,6 +18,8 @@
 #ifndef __PARAMSPINBOX_HPP__
 #define __PARAMSPINBOX_HPP__
 
+#include "CarlaDefines.hpp"
+
 #include <QtCore/Qt>
 
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))

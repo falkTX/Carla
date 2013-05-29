@@ -32,9 +32,17 @@ struct RawMidiEvent {
     uint32_t time;
 
     RawMidiEvent()
+#ifdef CARLA_PROPER_CPP11_SUPPORT
         : data{0},
           size(0),
           time(0) {}
+#else
+        : size(0),
+          time(0)
+    {
+        carla_fill<uint8_t>(data, MAX_EVENT_DATA_SIZE, 0);
+    }
+#endif
 };
 
 class AbstractMidiPlayer
@@ -172,7 +180,7 @@ public:
         if (! fMutex.tryLock())
             return;
 
-        for (auto it = fData.begin(); it.valid(); it.next())
+        for (NonRtList<const RawMidiEvent*>::Itenerator it = fData.begin(); it.valid(); it.next())
         {
             const RawMidiEvent* const rawMidiEvent(*it);
 
@@ -211,7 +219,7 @@ private:
             return;
         }
 
-        for (auto it = fData.begin(); it.valid(); it.next())
+        for (NonRtList<const RawMidiEvent*>::Itenerator it = fData.begin(); it.valid(); it.next())
         {
             const RawMidiEvent* const oldEvent(*it);
 

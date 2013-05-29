@@ -58,7 +58,11 @@ ifeq ($(HAVE_LINUXSAMPLER),true)
 W32_LIBS += -lrpcrt4
 endif
 else
+ifeq ($(MACOS),true)
+DGL_LIBS  = -framework Cocoa
+else
 DGL_LIBS  = -lX11
+endif
 endif
 
 ifeq ($(HAVE_AF_DEPS),true)
@@ -83,8 +87,12 @@ LINK_FLAGS += $(shell pkg-config --libs ntk ntk_images)
 endif
 endif
 
-EXTRA_LIBS  = -ldl -lrt
+EXTRA_LIBS  = -ldl
 LINK_FLAGS += $(EXTRA_LIBS)
+
+ifneq ($(MACOS),true)
+EXTRA_LIBS += -lrt
+endif
 
 # --------------------------------------------------------------
 
@@ -135,7 +143,7 @@ debug:
 	$(CXX) $^ -shared $(LINK_FLAGS) $(W32_LIBS) -Wl,--output-def,$@.def -o $@ && $(STRIP) $@
 
 ../libcarla_standalone.dylib: $(OBJS) $(LIBS)
-	$(CXX) $^ -dynamiclib $(LINK_FLAGS) -framework CoreAudio -framework CoreMidi -framework CoreFoundation -o $@
+	$(CXX) $^ -dynamiclib $(LINK_FLAGS) -framework CoreAudio -framework CoreMIDI -framework CoreFoundation -o $@
 
 ../libcarla_standalone.so: $(OBJS) $(LIBS)
 	$(CXX) $^ -shared $(LINK_FLAGS) -o $@ && $(STRIP) $@

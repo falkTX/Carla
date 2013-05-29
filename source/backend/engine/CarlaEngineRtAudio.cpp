@@ -334,7 +334,7 @@ public:
 
         fConnectName.clear();
 
-        for (auto it = fMidiIns.begin(); it.valid(); it.next())
+        for (NonRtList<MidiPort>::Itenerator it = fMidiIns.begin(); it.valid(); it.next())
         {
             MidiPort& port(*it);
             RtMidiIn* const midiInPort((RtMidiIn*)port.rtmidi);
@@ -343,7 +343,7 @@ public:
             delete midiInPort;
         }
 
-        for (auto it = fMidiOuts.begin(); it.valid(); it.next())
+        for (NonRtList<MidiPort>::Itenerator it = fMidiOuts.begin(); it.valid(); it.next())
         {
             MidiPort& port(*it);
             RtMidiOut* const midiOutPort((RtMidiOut*)port.rtmidi);
@@ -504,7 +504,7 @@ public:
             return false;
         }
 
-        for (auto it=fUsedConnections.begin(); it.valid(); it.next())
+        for (NonRtList<ConnectionToId>::Itenerator it=fUsedConnections.begin(); it.valid(); it.next())
         {
             const ConnectionToId& connection(*it);
 
@@ -517,7 +517,7 @@ public:
                 {
                     const int portId(targetPort-PATCHBAY_GROUP_MIDI_OUT*1000);
 
-                    for (auto it=fMidiOuts.begin(); it.valid(); it.next())
+                    for (NonRtList<MidiPort>::Itenerator it=fMidiOuts.begin(); it.valid(); it.next())
                     {
                         MidiPort& midiPort(*it);
 
@@ -536,7 +536,7 @@ public:
                 {
                     const int portId(targetPort-PATCHBAY_GROUP_MIDI_IN*1000);
 
-                    for (auto it=fMidiIns.begin(); it.valid(); it.next())
+                    for (NonRtList<MidiPort>::Itenerator it=fMidiIns.begin(); it.valid(); it.next())
                     {
                         MidiPort& midiPort(*it);
 
@@ -690,7 +690,7 @@ public:
         // Connections
         fConnectAudioLock.lock();
 
-        for (auto it = fConnectedAudioIns[0].begin(); it.valid(); it.next())
+        for (NonRtList<uint>::Itenerator it = fConnectedAudioIns[0].begin(); it.valid(); it.next())
         {
             const uint& port(*it);
             CARLA_ASSERT(port < fAudioCountIn);
@@ -706,7 +706,7 @@ public:
             fLastConnectionId++;
         }
 
-        for (auto it = fConnectedAudioIns[1].begin(); it.valid(); it.next())
+        for (NonRtList<uint>::Itenerator it = fConnectedAudioIns[1].begin(); it.valid(); it.next())
         {
             const uint& port(*it);
             CARLA_ASSERT(port < fAudioCountIn);
@@ -722,7 +722,7 @@ public:
             fLastConnectionId++;
         }
 
-        for (auto it = fConnectedAudioOuts[0].begin(); it.valid(); it.next())
+        for (NonRtList<uint>::Itenerator it = fConnectedAudioOuts[0].begin(); it.valid(); it.next())
         {
             const uint& port(*it);
             CARLA_ASSERT(port < fAudioCountOut);
@@ -738,7 +738,7 @@ public:
             fLastConnectionId++;
         }
 
-        for (auto it = fConnectedAudioOuts[1].begin(); it.valid(); it.next())
+        for (NonRtList<uint>::Itenerator it = fConnectedAudioOuts[1].begin(); it.valid(); it.next())
         {
             const uint& port(*it);
             CARLA_ASSERT(port < fAudioCountOut);
@@ -756,7 +756,7 @@ public:
 
         fConnectAudioLock.unlock();
 
-        for (auto it=fMidiIns.begin(); it.valid(); it.next())
+        for (NonRtList<MidiPort>::Itenerator it=fMidiIns.begin(); it.valid(); it.next())
         {
             const MidiPort& midiPort(*it);
 
@@ -771,7 +771,7 @@ public:
             fLastConnectionId++;
         }
 
-        for (auto it=fMidiOuts.begin(); it.valid(); it.next())
+        for (NonRtList<MidiPort>::Itenerator it=fMidiOuts.begin(); it.valid(); it.next())
         {
             const MidiPort& midiPort(*it);
 
@@ -934,7 +934,7 @@ protected:
         {
             bool first = true;
 
-            for (auto it = fConnectedAudioIns[0].begin(); it.valid(); it.next())
+            for (NonRtList<uint>::Itenerator it = fConnectedAudioIns[0].begin(); it.valid(); it.next())
             {
                 const uint& port(*it);
                 CARLA_ASSERT(port < fAudioCountIn);
@@ -960,7 +960,7 @@ protected:
         {
             bool first = true;
 
-            for (auto it = fConnectedAudioIns[1].begin(); it.valid(); it.next())
+            for (NonRtList<uint>::Itenerator it = fConnectedAudioIns[1].begin(); it.valid(); it.next())
             {
                 const uint& port(*it);
                 CARLA_ASSERT(port < fAudioCountIn);
@@ -984,7 +984,7 @@ protected:
         // connect output buffers
         if (fConnectedAudioOuts[0].count() != 0)
         {
-            for (auto it = fConnectedAudioOuts[0].begin(); it.valid(); it.next())
+            for (NonRtList<uint>::Itenerator it = fConnectedAudioOuts[0].begin(); it.valid(); it.next())
             {
                 const uint& port(*it);
                 CARLA_ASSERT(port < fAudioCountOut);
@@ -995,7 +995,7 @@ protected:
 
         if (fConnectedAudioOuts[1].count() != 0)
         {
-            for (auto it = fConnectedAudioOuts[1].begin(); it.valid(); it.next())
+            for (NonRtList<uint>::Itenerator it = fConnectedAudioOuts[1].begin(); it.valid(); it.next())
             {
                 const uint& port(*it);
                 CARLA_ASSERT(port < fAudioCountOut);

@@ -139,7 +139,7 @@ struct HexString
 
 // specialization to enable fast concatenating of our string tokens to a string
 template <typename T>
-struct QConcatenable<HexString<T>>
+struct QConcatenable<HexString<T> >
 {
     typedef HexString<T> type;
     enum { ExactSize = true };

@@ -20,6 +20,9 @@
 #include "CarlaMIDI.h"
 #include "RtList.hpp"
 
+// TODO - remove
+#include <vector>
+
 #include <QtCore/QDir>
 
 extern "C" {

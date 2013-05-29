@@ -357,7 +357,9 @@ public:
         : CarlaPlugin(engine, id),
           fHandle(nullptr),
           fHandle2(nullptr),
+#ifdef CARLA_PROPER_CPP11_SUPPORT
           fFeatures{nullptr},
+#endif
           fDescriptor(nullptr),
           fRdfDescriptor(nullptr),
           fAudioInBuffers(nullptr),
@@ -366,6 +368,10 @@ public:
           fParamFreewheel(0.0f)
     {
         carla_debug("Lv2Plugin::Lv2Plugin(%p, %i)", engine, id);
+
+#ifndef CARLA_PROPER_CPP11_SUPPORT
+        carla_fill<LV2_Feature*>(fFeatures, kFeatureCount+1, nullptr);
+#endif
 
         kData->osc.thread.setMode(CarlaPluginThread::PLUGIN_THREAD_LV2_GUI);
 
@@ -503,7 +509,7 @@ public:
                 delete fFeatures[i];
         }
 
-        for (auto it = fCustomURIDs.begin(); it.valid(); it.next())
+        for (NonRtList<const char*>::Itenerator it = fCustomURIDs.begin(); it.valid(); it.next())
         {
             const char*& uri(*it);
 
@@ -3584,7 +3590,7 @@ protected:
         }
 
         // Check if we already have this key
-        for (auto it = kData->custom.begin(); it.valid(); it.next())
+        for (NonRtList<CustomData>::Itenerator it = kData->custom.begin(); it.valid(); it.next())
         {
             CustomData& data(*it);
 
@@ -3646,7 +3652,7 @@ protected:
         const char* stype = nullptr;
         const char* stringData = nullptr;
 
-        for (auto it = kData->custom.begin(); it.valid(); it.next())
+        for (NonRtList<CustomData>::Itenerator it = kData->custom.begin(); it.valid(); it.next())
         {
             CustomData& data(*it);
 

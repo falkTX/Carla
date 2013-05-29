@@ -20,6 +20,8 @@
 #include "CarlaStateUtils.hpp"
 #include "CarlaMIDI.h"
 
+#include <cmath>
+
 #include <QtCore/QDir>
 #include <QtCore/QFile>
 #include <QtCore/QFileInfo>

@@ -24,6 +24,8 @@
 
 #include "jackbridge/JackBridge.hpp"
 
+#include <cerrno>
+#include <cmath>
 #include <ctime>
 
 #include <QtCore/QDir>

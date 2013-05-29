@@ -19,6 +19,8 @@
 #ifndef __CARLA_STYLE_HPP__
 #define __CARLA_STYLE_HPP__
 
+#include "CarlaDefines.hpp"
+
 #include <QtGui/QStylePlugin>
 
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))

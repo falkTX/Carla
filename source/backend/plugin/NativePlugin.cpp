@@ -168,10 +168,18 @@ public:
           fIsUiVisible(false),
           fAudioInBuffers(nullptr),
           fAudioOutBuffers(nullptr),
+#ifdef CARLA_PROPER_CPP11_SUPPORT
           fMidiEventCount(0),
           fCurMidiProgs{0}
+#else
+          fMidiEventCount(0)
+#endif
     {
         carla_debug("NativePlugin::NativePlugin(%p, %i)", engine, id);
+
+#ifndef CARLA_PROPER_CPP11_SUPPORT
+        carla_fill<int32_t>(fCurMidiProgs, MAX_MIDI_CHANNELS, 0);
+#endif
 
         carla_zeroStruct< ::MidiEvent>(fMidiEvents, MAX_MIDI_EVENTS*2);
 
@@ -697,7 +705,7 @@ public:
             // Update UI values, FIXME? (remove?)
             if (fDescriptor->ui_set_custom_data != nullptr)
             {
-                for (auto it = kData->custom.begin(); it.valid(); it.next())
+                for (NonRtList<CustomData>::Itenerator it = kData->custom.begin(); it.valid(); it.next())
                 {
                     const CustomData& cData(*it);
 
@@ -2166,7 +2174,7 @@ public:
         // ---------------------------------------------------------------
         // get descriptor that matches label
 
-        for (auto it = sPluginDescriptors.begin(); it.valid(); it.next())
+        for (NonRtList<const PluginDescriptor*>::Itenerator it = sPluginDescriptors.begin(); it.valid(); it.next())
         {
             fDescriptor = *it;
 

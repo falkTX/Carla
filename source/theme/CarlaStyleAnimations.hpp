@@ -19,6 +19,8 @@
 #ifndef __CARLA_STYLE_ANIMATIONS_HPP__
 #define __CARLA_STYLE_ANIMATIONS_HPP__
 
+#include "CarlaStyle.hpp"
+
 #include <QtCore/QAbstractAnimation>
 #include <QtCore/QCoreApplication>
 #include <QtCore/QDateTime>

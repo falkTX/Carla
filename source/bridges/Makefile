@@ -61,7 +61,11 @@ endif
 POSIX_BUILD_FLAGS   = $(BUILD_PLUGIN_FLAGS)
 POSIX_32BIT_FLAGS   = $(32BIT_FLAGS) -L/usr/lib32 -L/usr/lib/i386-linux-gnu
 POSIX_64BIT_FLAGS   = $(64BIT_FLAGS) -L/usr/lib64 -L/usr/lib/x86_64-linux-gnu
-POSIX_LINK_FLAGS    = $(LINK_PLUGIN_FLAGS) -ldl -lrt
+POSIX_LINK_FLAGS    = $(LINK_PLUGIN_FLAGS) -ldl
+
+ifneq ($(MACOS),true)
+POSIX_LINK_FLAGS   += -lrt
+endif
 
 # --------------------------------------------------------------
 # Plugin bridges (Windows)
@@ -74,7 +78,11 @@ WIN_LINK_FLAGS      = $(LINK_PLUGIN_FLAGS) -mwindows -lwinspool -lole32 -luuid -
 # --------------------------------------------------------------
 # Plugin bridges (Native)
 
+ifeq ($(MACOS),true)
+DGL_LIBS = -framework Cocoa
+else
 DGL_LIBS = -lX11
+endif
 
 NATIVE_BUILD_FLAGS  = $(POSIX_BUILD_FLAGS)
 NATIVE_LINK_FLAGS   = $(POSIX_LINK_FLAGS)

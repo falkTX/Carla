@@ -25,16 +25,30 @@
 #include <cstdlib>
 #include <cstring>
 
+#ifdef PROPER_CPP11_SUPPORT
+# include <cstdint>
+#else
+# include <stdint.h>
+#endif
+
 #ifdef DISTRHO_OS_WINDOWS
 # include <windows.h>
 #else
 # include <unistd.h>
 #endif
 
-#ifdef PROPER_CPP11_SUPPORT
-# include <cstdint>
-#else
-# include <stdint.h>
+#if defined(DISTRHO_OS_MAC) && ! defined(CARLA_OS_MAC)
+namespace std {
+inline float
+  fmin(float __x, float __y)
+  { return __builtin_fminf(__x, __y); }
+inline float
+  fmax(float __x, float __y)
+  { return __builtin_fmaxf(__x, __y); }
+inline float
+  rint(float __x)
+  { return __builtin_rintf(__x); }
+}
 #endif
 
 START_NAMESPACE_DISTRHO

@@ -42,11 +42,20 @@ public:
           fSettings(nullptr),
           fSynth(nullptr),
           fSynthId(-1),
+#ifdef CARLA_PROPER_CPP11_SUPPORT
           fAudio16Buffers(nullptr),
           fParamBuffers{0.0f},
           fCurMidiProgs{0}
+#else
+          fAudio16Buffers(nullptr)
+#endif
     {
         carla_debug("FluidSynthPlugin::FluidSynthPlugin(%p, %i, %s)", engine, id,  bool2str(use16Outs));
+
+#ifndef CARLA_PROPER_CPP11_SUPPORT
+        carla_zeroFloat(fParamBuffers, FluidSynthParametersMax);
+        carla_fill<int32_t>(fCurMidiProgs, MAX_MIDI_CHANNELS, 0);
+#endif
 
         // create settings
         fSettings = new_fluid_settings();

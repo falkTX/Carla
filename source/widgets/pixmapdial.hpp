@@ -18,6 +18,8 @@
 #ifndef __PIXMAPDIAL_HPP__
 #define __PIXMAPDIAL_HPP__
 
+#include "CarlaDefines.hpp"
+
 #include <QtGui/QPixmap>
 
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))

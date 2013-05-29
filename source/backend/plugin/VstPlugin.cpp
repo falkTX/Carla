@@ -2345,8 +2345,15 @@ private:
 
         FixedVstEvents()
             : numEvents(0),
+#ifdef CARLA_PROPER_CPP11_SUPPORT
               reserved(0),
               data{nullptr} {}
+#else
+              reserved(0)
+        {
+            carla_fill<VstEvent*>(data, MAX_MIDI_EVENTS*2, nullptr);
+        }
+#endif
     } fEvents;
 
     struct GuiInfo {

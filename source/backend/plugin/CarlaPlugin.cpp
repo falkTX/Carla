@@ -56,7 +56,7 @@ public:
 
         const CarlaMutex::ScopedLocker sl(&mutex);
 
-        for (auto it = libs.begin(); it.valid(); it.next())
+        for (NonRtList<Lib>::Itenerator it = libs.begin(); it.valid(); it.next())
         {
             Lib& lib(*it);
 
@@ -72,7 +72,11 @@ public:
         if (libPtr == nullptr)
             return nullptr;
 
+#ifdef CARLA_PROPER_CPP11_SUPPORT
         Lib lib{libPtr, carla_strdup(filename), 1};
+#else
+        Lib lib(libPtr, carla_strdup(filename));
+#endif
         libs.append(lib);
 
         return libPtr;
@@ -87,7 +91,7 @@ public:
 
         const CarlaMutex::ScopedLocker sl(&mutex);
 
-        for (auto it = libs.begin(); it.valid(); it.next())
+        for (NonRtList<Lib>::Itenerator it = libs.begin(); it.valid(); it.next())
         {
             Lib& lib(*it);
 
@@ -116,6 +120,13 @@ private:
         void* const lib;
         const char* const filename;
         int count;
+
+#ifndef CARLA_PROPER_CPP11_SUPPORT
+        Lib(void* const lib_, const char* const filename_)
+            : lib(lib_),
+              filename(filename_),
+              count(1) {}
+#endif
     };
 
     CarlaMutex mutex;
@@ -728,7 +739,7 @@ const SaveState& CarlaPlugin::getSaveState()
     // ----------------------------
     // Custom Data
 
-    for (auto it = kData->custom.begin(); it.valid(); it.next())
+    for (NonRtList<CustomData>::Itenerator it = kData->custom.begin(); it.valid(); it.next())
     {
         const CustomData& cData(*it);
 
@@ -747,6 +758,31 @@ const SaveState& CarlaPlugin::getSaveState()
     return saveState;
 }
 
+
+struct ParamSymbol {
+    uint32_t index;
+    const char* symbol;
+
+    ParamSymbol(uint32_t index_, const char* symbol_)
+        : index(index_),
+          symbol(carla_strdup(symbol_)) {}
+
+    void free()
+    {
+        if (symbol != nullptr)
+        {
+            delete[] symbol;
+            symbol = nullptr;
+        }
+    }
+
+#ifdef CARLA_PROPER_CPP11_SUPPORT
+    ParamSymbol() = delete;
+    ParamSymbol(ParamSymbol&) = delete;
+    ParamSymbol(const ParamSymbol&) = delete;
+#endif
+};
+
 void CarlaPlugin::loadSaveState(const SaveState& saveState)
 {
     char strBuf[STR_MAX+1];
@@ -754,7 +790,7 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
     // ---------------------------------------------------------------------
     // Part 1 - set custom data (except binary/chunks)
 
-    for (auto it = saveState.customData.begin(); it.valid(); it.next())
+    for (NonRtList<StateCustomData*>::Itenerator it = saveState.customData.begin(); it.valid(); it.next())
     {
         const StateCustomData* const stateCustomData(*it);
 
@@ -812,28 +848,6 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
     // ---------------------------------------------------------------------
     // Part 4a - get plugin parameter symbols
 
-    struct ParamSymbol {
-        uint32_t index;
-        const char* symbol;
-
-        ParamSymbol(uint32_t index_, const char* symbol_)
-            : index(index_),
-              symbol(carla_strdup(symbol_)) {}
-
-        void free()
-        {
-            if (symbol != nullptr)
-            {
-                delete[] symbol;
-                symbol = nullptr;
-            }
-        }
-
-        ParamSymbol() = delete;
-        ParamSymbol(ParamSymbol&) = delete;
-        ParamSymbol(const ParamSymbol&) = delete;
-    };
-
     NonRtList<ParamSymbol*> paramSymbols;
 
     if (type() == PLUGIN_LADSPA || type() == PLUGIN_LV2)
@@ -855,7 +869,7 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
 
     const float sampleRate(kData->engine->getSampleRate());
 
-    for (auto it = saveState.parameters.begin(); it.valid(); it.next())
+    for (NonRtList<StateParameter*>::Itenerator it = saveState.parameters.begin(); it.valid(); it.next())
     {
         StateParameter* const stateParameter(*it);
 
@@ -866,7 +880,7 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
             // Try to set by symbol, otherwise use index
             if (stateParameter->symbol != nullptr && *stateParameter->symbol != 0)
             {
-                for (auto it = paramSymbols.begin(); it.valid(); it.next())
+                for (NonRtList<ParamSymbol*>::Itenerator it = paramSymbols.begin(); it.valid(); it.next())
                 {
                     ParamSymbol* const paramSymbol(*it);
 
@@ -887,7 +901,7 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
             // Symbol only
             if (stateParameter->symbol != nullptr && *stateParameter->symbol != 0)
             {
-                for (auto it = paramSymbols.begin(); it.valid(); it.next())
+                for (NonRtList<ParamSymbol*>::Itenerator it = paramSymbols.begin(); it.valid(); it.next())
                 {
                     ParamSymbol* const paramSymbol(*it);
 
@@ -926,7 +940,7 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
     }
 
     // clear
-    for (auto it = paramSymbols.begin(); it.valid(); it.next())
+    for (NonRtList<ParamSymbol*>::Itenerator it = paramSymbols.begin(); it.valid(); it.next())
     {
         ParamSymbol* const paramSymbol(*it);
         paramSymbol->free();
@@ -938,7 +952,7 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
     // ---------------------------------------------------------------------
     // Part 5 - set chunk data
 
-    for (auto it = saveState.customData.begin(); it.valid(); it.next())
+    for (NonRtList<StateCustomData*>::Itenerator it = saveState.customData.begin(); it.valid(); it.next())
     {
         const StateCustomData* const stateCustomData(*it);
 
@@ -1372,7 +1386,7 @@ void CarlaPlugin::setCustomData(const char* const type, const char* const key, c
         return;
 
     // Check if we already have this key
-    for (auto it = kData->custom.begin(); it.valid(); it.next())
+    for (NonRtList<CustomData>::Itenerator it = kData->custom.begin(); it.valid(); it.next())
     {
         CustomData& cData(*it);
 
@@ -1805,7 +1819,7 @@ void CarlaPlugin::updateOscData(const lo_address& source, const char* const url)
 
     osc_send_sample_rate(&kData->osc.data, kData->engine->getSampleRate());
 
-    for (auto it = kData->custom.begin(); it.valid(); it.next())
+    for (NonRtList<CustomData>::Itenerator it = kData->custom.begin(); it.valid(); it.next())
     {
         const CustomData& cData(*it);
 

@@ -379,20 +379,17 @@ void carla_zeroFloat(float* const data, const size_t size)
     carla_fill<float>(data, size, 0.0f);
 }
 
-#ifdef CARLA_OS_MAC
+#if defined(CARLA_OS_MAC) && ! defined(DISTRHO_OS_MAC)
 namespace std {
-// inline float
-//   fabs(float __x)
-//   { return __builtin_fabsf(__x); }
-// inline float
-//   fmin(float __x, float __y)
-//   { return __builtin_fminf(__x, __y); }
-// inline float
-//   fmax(float __x, float __y)
-//   { return __builtin_fmaxf(__x, __y); }
-// inline float
-//   rint(float __x)
-//   { return __builtin_rintf(__x); }
+inline float
+  fmin(float __x, float __y)
+  { return __builtin_fminf(__x, __y); }
+inline float
+  fmax(float __x, float __y)
+  { return __builtin_fmaxf(__x, __y); }
+inline float
+  rint(float __x)
+  { return __builtin_rintf(__x); }
 }
 #endif
 

@@ -518,9 +518,11 @@ struct CarlaPluginProtectedData {
         OSC(CarlaEngine* const engine, CarlaPlugin* const plugin)
             : thread(engine, plugin) {}
 
+#ifdef CARLA_PROPER_CPP11_SUPPORT
         OSC() = delete;
         OSC(OSC&) = delete;
         OSC(const OSC&) = delete;
+#endif
         CARLA_LEAK_DETECTOR(OSC)
 
     } osc;
@@ -539,9 +541,11 @@ struct CarlaPluginProtectedData {
           latencyBuffers(nullptr),
           osc(engine, plugin) {}
 
+#ifdef CARLA_PROPER_CPP11_SUPPORT
     CarlaPluginProtectedData() = delete;
     CarlaPluginProtectedData(CarlaPluginProtectedData&) = delete;
     CarlaPluginProtectedData(const CarlaPluginProtectedData&) = delete;
+#endif
     CARLA_LEAK_DETECTOR(CarlaPluginProtectedData)
 
     ~CarlaPluginProtectedData()
@@ -579,7 +583,7 @@ struct CarlaPluginProtectedData {
             client = nullptr;
         }
 
-        for (auto it = custom.begin(); it.valid(); it.next())
+        for (NonRtList<CustomData>::Itenerator it = custom.begin(); it.valid(); it.next())
         {
             CustomData& cData(*it);
 

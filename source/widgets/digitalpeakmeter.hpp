@@ -18,6 +18,8 @@
 #ifndef __DIGITALPEAKMETER_HPP__
 #define __DIGITALPEAKMETER_HPP__
 
+#include "CarlaDefines.hpp"
+
 #include <QtCore/QTimer>
 
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))

@@ -18,6 +18,8 @@
 #ifndef __PIXMAPKEYBOARD_HPP__
 #define __PIXMAPKEYBOARD_HPP__
 
+#include "CarlaDefines.hpp"
+
 #include <map>
 #include <QtGui/QPixmap>
 

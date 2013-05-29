@@ -22,7 +22,10 @@
 #include <QtGui/QMouseEvent>
 #include <QtGui/QPainter>
 
-static std::map<int, QRectF> kMidiKey2RectMapHorizontal = {
+#ifndef HAVE_CPP11_SUPPORT
+static std::map<int, QRectF> kMidiKey2RectMapHorizontal;
+#else
+static const std::map<int, QRectF> kMidiKey2RectMapHorizontal = {
     {0,  QRectF(0,   0, 18, 64)}, // C
     {1,  QRectF(13,  0, 11, 42)},  // C#
     {2,  QRectF(18,  0, 25, 64)}, // D
@@ -36,8 +39,12 @@ static std::map<int, QRectF> kMidiKey2RectMapHorizontal = {
     {10, QRectF(121, 0, 11, 42)}, // A#
     {11, QRectF(126, 0, 18, 64)}  // B
 };
+#endif
 
-static std::map<int, QRectF> kMidiKey2RectMapVertical = {
+#ifndef HAVE_CPP11_SUPPORT
+static std::map<int, QRectF> kMidiKey2RectMapVertical;
+#else
+static const std::map<int, QRectF> kMidiKey2RectMapVertical = {
     {11, QRectF(0,  0,  64, 18)}, // B
     {10, QRectF(0, 14,  42,  7)}, // A#
     {9,  QRectF(0, 18,  64, 24)}, // A
@@ -51,7 +58,11 @@ static std::map<int, QRectF> kMidiKey2RectMapVertical = {
     {1,  QRectF(0, 122, 42,  7)}, // C#
     {0,  QRectF(0, 126, 64, 18)}  // C
 };
+#endif
 
+#ifndef HAVE_CPP11_SUPPORT
+static std::map<int, int> kMidiKeyboard2KeyMap;
+#else
 static const std::map<int, int> kMidiKeyboard2KeyMap = {
     // 3th octave
     {Qt::Key_Z, 48},
@@ -80,11 +91,12 @@ static const std::map<int, int> kMidiKeyboard2KeyMap = {
     {Qt::Key_7, 70},
     {Qt::Key_U, 71}
 };
+#endif
 
-#ifdef HAVE_CPP11_SUPPORT
-static const QVector<int> kBlackNotes = {1, 3, 6, 8, 10};
-#else
+#ifndef HAVE_CPP11_SUPPORT
 static QVector<int> kBlackNotes;
+#else
+static const QVector<int> kBlackNotes = {1, 3, 6, 8, 10};
 #endif
 
 PixmapKeyboard::PixmapKeyboard(QWidget* parent)
@@ -106,6 +118,7 @@ PixmapKeyboard::PixmapKeyboard(QWidget* parent)
 #ifndef HAVE_CPP11_SUPPORT
     if (kBlackNotes.count() == 0)
     {
+        // TODO - rest of data
         kBlackNotes << 1;
         kBlackNotes << 3;
         kBlackNotes << 6;

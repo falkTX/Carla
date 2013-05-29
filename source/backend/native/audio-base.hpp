@@ -33,10 +33,19 @@ struct AudioFilePool {
     uint32_t startFrame;
     uint32_t size;
 
+#ifdef CARLA_PROPER_CPP11_SUPPORT
     AudioFilePool()
         : buffer{nullptr},
           startFrame(0),
           size(0) {}
+#else
+    AudioFilePool()
+        : startFrame(0),
+          size(0)
+    {
+        buffer[0] = buffer[1] = nullptr;
+    }
+#endif
 
     ~AudioFilePool()
     {
