@@ -35,15 +35,17 @@ public:
     };
 
     ImageButton(Window* parent, const Image& image);
+    ImageButton(Widget* widget, const Image& image);
     ImageButton(Window* parent, const Image& imageNormal, const Image& imageHover, const Image& imageDown);
+    ImageButton(Widget* widget, const Image& imageNormal, const Image& imageHover, const Image& imageDown);
     ImageButton(const ImageButton& imageButton);
 
     void setCallback(Callback* callback);
 
 protected:
-     void onDisplay();
-     bool onMouse(int button, bool press, int x, int y);
-     bool onMotion(int x, int y);
+     void onDisplay() override;
+     bool onMouse(int button, bool press, int x, int y) override;
+     bool onMotion(int x, int y) override;
 
 private:
     Image  fImageNormal;

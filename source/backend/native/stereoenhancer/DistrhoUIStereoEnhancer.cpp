@@ -23,29 +23,32 @@ START_NAMESPACE_DISTRHO
 // -------------------------------------------------
 
 DistrhoUIStereoEnhancer::DistrhoUIStereoEnhancer()
-    : OpenGLUI()
+    : OpenGLUI(),
+      fAboutWindow(this)
 {
-    Window* win = getParent();
-
     // background
     fImgBackground = Image(DistrhoArtworkStereoEnhancer::backgroundData, DistrhoArtworkStereoEnhancer::backgroundWidth, DistrhoArtworkStereoEnhancer::backgroundHeight, GL_BGR);
+
+    // TODO - about png
+    Image imageAbout(DistrhoArtworkStereoEnhancer::aboutButtonHoverData, DistrhoArtworkStereoEnhancer::aboutButtonHoverWidth, DistrhoArtworkStereoEnhancer::aboutButtonHoverHeight, GL_BGRA);
+    fAboutWindow.setImage(imageAbout);
 
     // knobs
     Image knobImage(DistrhoArtworkStereoEnhancer::knobData, DistrhoArtworkStereoEnhancer::knobWidth, DistrhoArtworkStereoEnhancer::knobHeight);
 
-    fKnobWidthLows = new ImageKnob(win, knobImage);
+    fKnobWidthLows = new ImageKnob(this, knobImage);
     fKnobWidthLows->setPos(140, 35);
     fKnobWidthLows->setRange(0.0f, 200.0f);
     fKnobWidthLows->setValue(100.0f);
     fKnobWidthLows->setCallback(this);
 
-    fKnobWidthHighs = new ImageKnob(win, knobImage);
+    fKnobWidthHighs = new ImageKnob(this, knobImage);
     fKnobWidthHighs->setPos(362, 35);
     fKnobWidthHighs->setRange(0.0f, 200.0f);
     fKnobWidthHighs->setValue(100.0f);
     fKnobWidthHighs->setCallback(this);
 
-    fKnobCrossover = new ImageKnob(win, knobImage);
+    fKnobCrossover = new ImageKnob(this, knobImage);
     fKnobCrossover->setPos(253, 35);
     fKnobCrossover->setRange(0.0f, 100.0f);
     fKnobCrossover->setValue(27.51604f);
@@ -54,7 +57,7 @@ DistrhoUIStereoEnhancer::DistrhoUIStereoEnhancer()
     // about button
     Image aboutImageNormal(DistrhoArtworkStereoEnhancer::aboutButtonNormalData, DistrhoArtworkStereoEnhancer::aboutButtonNormalWidth, DistrhoArtworkStereoEnhancer::aboutButtonNormalHeight);
     Image aboutImageHover(DistrhoArtworkStereoEnhancer::aboutButtonHoverData, DistrhoArtworkStereoEnhancer::aboutButtonHoverWidth, DistrhoArtworkStereoEnhancer::aboutButtonHoverHeight);
-    fButtonAbout = new ImageButton(win, aboutImageNormal, aboutImageHover, aboutImageHover);
+    fButtonAbout = new ImageButton(this, aboutImageNormal, aboutImageHover, aboutImageHover);
     fButtonAbout->setPos(346, 3);
     fButtonAbout->setCallback(this);
 }
@@ -105,10 +108,7 @@ void DistrhoUIStereoEnhancer::imageButtonClicked(ImageButton* button, int)
     if (button != fButtonAbout)
         return;
 
-    // TODO
-    //Image imageAbout(DistrhoArtworkStereoEnhancer::aboutData, DistrhoArtworkStereoEnhancer::aboutWidth, DistrhoArtworkStereoEnhancer::aboutHeight, GL_BGR);
-    //ImageAboutWindow aboutWindow(getApp(), getParent(), imageAbout);
-    //aboutWindow.exec();
+    fAboutWindow.exec();
 }
 
 void DistrhoUIStereoEnhancer::imageKnobDragStarted(ImageKnob* knob)

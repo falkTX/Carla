@@ -41,9 +41,9 @@ public:
     void setImage(const Image& image);
 
 protected:
-    void onDisplay();
-    bool onMouse(int button, bool press, int x, int y);
-    bool onKeyboard(bool press, uint32_t key);
+    void onDisplay() override;
+    bool onMouse(int button, bool press, int x, int y) override;
+    bool onKeyboard(bool press, uint32_t key) override;
 
 private:
     Image fImgBackground;

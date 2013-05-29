@@ -74,8 +74,24 @@ def png2rgba(namespace, filenames):
                     fdC.write(" %3u, %3u, %3u," % (b, g, r))
                 else:
                     r, g, b, a = data
-                    #a -= 100
-                    #if a < 0: a = 0
+
+                    if filename in ("artwork/claw1.png",
+                                    "artwork/claw2.png",
+                                    "artwork/run1.png",
+                                    "artwork/run2.png",
+                                    "artwork/run3.png",
+                                    "artwork/run4.png",
+                                    "artwork/scratch1.png",
+                                    "artwork/scratch2.png",
+                                    "artwork/sit.png",
+                                    "artwork/tail.png"):
+                        if r == 255:
+                            a -= 38
+                            if a < 0: a = 0
+                            #a = 0
+                        #else:
+                            #r = g = b = 255
+
                     fdC.write(" %3u, %3u, %3u, %3u," % (b, g, r, a))
 
                 if curColumn > 20:

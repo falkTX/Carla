@@ -5,6 +5,16 @@
 
 namespace DistrhoArtworkNekobi
 {
+    extern const char* aboutButtonHoverData;
+    const unsigned int aboutButtonHoverDataSize = 7600;
+    const unsigned int aboutButtonHoverWidth    = 95;
+    const unsigned int aboutButtonHoverHeight   = 20;
+
+    extern const char* aboutButtonNormalData;
+    const unsigned int aboutButtonNormalDataSize = 7600;
+    const unsigned int aboutButtonNormalWidth    = 95;
+    const unsigned int aboutButtonNormalHeight   = 20;
+
     extern const char* backgroundData;
     const unsigned int backgroundDataSize = 206064;
     const unsigned int backgroundWidth    = 636;
@@ -21,9 +31,9 @@ namespace DistrhoArtworkNekobi
     const unsigned int claw2Height   = 32;
 
     extern const char* knobData;
-    const unsigned int knobDataSize = 288444;
-    const unsigned int knobWidth    = 43;
-    const unsigned int knobHeight   = 1677;
+    const unsigned int knobDataSize = 390000;
+    const unsigned int knobWidth    = 50;
+    const unsigned int knobHeight   = 1950;
 
     extern const char* run1Data;
     const unsigned int run1DataSize = 4096;
@@ -61,9 +71,9 @@ namespace DistrhoArtworkNekobi
     const unsigned int sitHeight   = 32;
 
     extern const char* sliderData;
-    const unsigned int sliderDataSize = 4624;
-    const unsigned int sliderWidth    = 34;
-    const unsigned int sliderHeight   = 34;
+    const unsigned int sliderDataSize = 6084;
+    const unsigned int sliderWidth    = 39;
+    const unsigned int sliderHeight   = 39;
 
     extern const char* tailData;
     const unsigned int tailDataSize = 4096;

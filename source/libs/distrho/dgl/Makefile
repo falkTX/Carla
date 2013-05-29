@@ -22,10 +22,6 @@ OBJS  = \
 	src/Widget.cpp.o \
 	src/Window.cpp.o
 
-ifeq ($(MACOS),true)
-OBJS += src/pugl/pugl_osx.m.o
-endif
-
 OBJS_posix32 = \
 	src/App.cpp.posix32.o \
 	src/Image.cpp.posix32.o \
@@ -70,6 +66,12 @@ OBJS_win64   = \
 	src/Widget.cpp.win64.o \
 	src/Window.cpp.win64.o
 
+ifeq ($(MACOS),true)
+OBJS += src/pugl/pugl_osx_extended.m.o
+OBJS_posix32 += src/pugl/pugl_osx_extended.m.posix32.o
+OBJS_posix64 += src/pugl/pugl_osx_extended.m.posix64.o
+endif
+
 # --------------------------------------------------------------
 
 all: ../../dgl.a
@@ -100,10 +102,10 @@ win64:   ../../dgl.win64.a
 	$(CXX) $^ -shared $(LINK_FLAGS) -lopengl32 -lgdi32 -o $@
 
 ../../dgl.dylib: $(OBJS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -framework Cocoa -framework OpenGL -o $@
+	$(CXX) $^ -shared $(LINK_FLAGS) -framework OpenGL -framework Cocoa -o $@
 
 ../../dgl.so: $(OBJS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -lX11 -lGL -lGLU -o $@
+	$(CXX) $^ -shared $(LINK_FLAGS) -lGL -lX11 -o $@
 
 # --------------------------------------------------------------
 

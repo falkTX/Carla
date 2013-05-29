@@ -48,9 +48,9 @@ protected:
     // ---------------------------------------------
     // Information
 
-    virtual bool d_resizable() { return false; }
-    virtual uint d_minimumWidth() { return 100; }
-    virtual uint d_minimumHeight() { return 100; }
+    virtual bool d_resizable() const { return false; }
+    virtual uint d_minimumWidth() const { return 100; }
+    virtual uint d_minimumHeight() const { return 100; }
 
     // ---------------------------------------------
     // DSP Callbacks

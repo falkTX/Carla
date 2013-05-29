@@ -46,23 +46,23 @@ class DistrhoUINotes : public QtUI
 
 public:
     DistrhoUINotes();
-    ~DistrhoUINotes();
+    ~DistrhoUINotes() override;
 
 protected:
     // ---------------------------------------------
     // Information
 
-    bool d_resizable()
+    bool d_resizable() const override
     {
         return true;
     }
 
-    uint d_minimumWidth()
+    uint d_minimumWidth() const override
     {
         return 180;
     }
 
-    uint d_minimumHeight()
+    uint d_minimumHeight() const override
     {
         return 150;
     }
@@ -70,18 +70,18 @@ protected:
     // ---------------------------------------------
     // DSP Callbacks
 
-    void d_parameterChanged(uint32_t index, float value);
-    void d_stateChanged(const char* key, const char* value);
+    void d_parameterChanged(uint32_t index, float value) override;
+    void d_stateChanged(const char* key, const char* value) override;
 
     // ---------------------------------------------
     // UI Callbacks
 
-    void d_uiIdle();
+    void d_uiIdle() override;
 
     // ---------------------------------------------
     // listen for resize events
 
-    void resizeEvent(QResizeEvent*);
+    void resizeEvent(QResizeEvent*) override;
 
 private slots:
     void buttonClicked(bool click);

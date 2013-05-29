@@ -18,6 +18,7 @@
 #define __DISTRHO_UI_3BANDEQ_HPP__
 
 #include "DistrhoUIOpenGL.hpp"
+
 #include "dgl/ImageAboutWindow.hpp"
 #include "dgl/ImageButton.hpp"
 #include "dgl/ImageKnob.hpp"
@@ -37,18 +38,18 @@ class DistrhoUI3BandEQ : public OpenGLUI,
 {
 public:
     DistrhoUI3BandEQ();
-    ~DistrhoUI3BandEQ();
+    ~DistrhoUI3BandEQ() override;
 
 protected:
     // ---------------------------------------------
     // Information
 
-    unsigned int d_width() const
+    unsigned int d_width() const override
     {
         return DistrhoArtwork3BandEQ::backgroundWidth;
     }
 
-    unsigned int d_height() const
+    unsigned int d_height() const override
     {
         return DistrhoArtwork3BandEQ::backgroundHeight;
     }
@@ -56,21 +57,21 @@ protected:
     // ---------------------------------------------
     // DSP Callbacks
 
-    void d_parameterChanged(uint32_t index, float value);
-    void d_programChanged(uint32_t index);
+    void d_parameterChanged(uint32_t index, float value) override;
+    void d_programChanged(uint32_t index) override;
 
     // ---------------------------------------------
     // Widget Callbacks
 
-    void imageButtonClicked(ImageButton* button, int);
-    void imageKnobDragStarted(ImageKnob* knob);
-    void imageKnobDragFinished(ImageKnob* knob);
-    void imageKnobValueChanged(ImageKnob* knob, float value);
-    void imageSliderDragStarted(ImageSlider* slider);
-    void imageSliderDragFinished(ImageSlider* slider);
-    void imageSliderValueChanged(ImageSlider* slider, float value);
+    void imageButtonClicked(ImageButton* button, int) override;
+    void imageKnobDragStarted(ImageKnob* knob) override;
+    void imageKnobDragFinished(ImageKnob* knob) override;
+    void imageKnobValueChanged(ImageKnob* knob, float value) override;
+    void imageSliderDragStarted(ImageSlider* slider) override;
+    void imageSliderDragFinished(ImageSlider* slider) override;
+    void imageSliderValueChanged(ImageSlider* slider, float value) override;
 
-    void onDisplay();
+    void onDisplay() override;
 
 private:
     Image fImgBackground;

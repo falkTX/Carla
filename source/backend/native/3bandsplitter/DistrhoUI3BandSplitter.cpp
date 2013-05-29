@@ -16,19 +16,20 @@
 
 #include "DistrhoUI3BandSplitter.hpp"
 
-#include "dgl/ImageAboutWindow.hpp"
-
 START_NAMESPACE_DISTRHO
 
 // -------------------------------------------------
 
 DistrhoUI3BandSplitter::DistrhoUI3BandSplitter()
-    : OpenGLUI()
+    : OpenGLUI(),
+      fAboutWindow(this)
 {
-    Window* win = getParent();
-
     // background
     fImgBackground = Image(DistrhoArtwork3BandSplitter::backgroundData, DistrhoArtwork3BandSplitter::backgroundWidth, DistrhoArtwork3BandSplitter::backgroundHeight, GL_BGR);
+
+    // about
+    Image imageAbout(DistrhoArtwork3BandSplitter::aboutData, DistrhoArtwork3BandSplitter::aboutWidth, DistrhoArtwork3BandSplitter::aboutHeight, GL_BGR);
+    fAboutWindow.setImage(imageAbout);
 
     // sliders
     Image sliderImage(DistrhoArtwork3BandSplitter::sliderData, DistrhoArtwork3BandSplitter::sliderWidth, DistrhoArtwork3BandSplitter::sliderHeight);
@@ -36,7 +37,7 @@ DistrhoUI3BandSplitter::DistrhoUI3BandSplitter()
     Point<int> sliderPosEnd(57, 43 + 160);
 
     // slider Low
-    fSliderLow = new ImageSlider(win, sliderImage);
+    fSliderLow = new ImageSlider(this, sliderImage);
     fSliderLow->setStartPos(sliderPosStart);
     fSliderLow->setEndPos(sliderPosEnd);
     fSliderLow->setRange(-24.0f, 24.0f);
@@ -68,14 +69,14 @@ DistrhoUI3BandSplitter::DistrhoUI3BandSplitter()
     Image knobImage(DistrhoArtwork3BandSplitter::knobData, DistrhoArtwork3BandSplitter::knobWidth, DistrhoArtwork3BandSplitter::knobHeight);
 
     // knob Low-Mid
-    fKnobLowMid = new ImageKnob(win, knobImage);
+    fKnobLowMid = new ImageKnob(this, knobImage);
     fKnobLowMid->setPos(66, 270);
     fKnobLowMid->setRange(0.0f, 1000.0f);
     fKnobLowMid->setValue(220.0f);
     fKnobLowMid->setCallback(this);
 
     // knob Mid-High
-    fKnobMidHigh = new ImageKnob(win, knobImage);
+    fKnobMidHigh = new ImageKnob(this, knobImage);
     fKnobMidHigh->setPos(160, 270);
     fKnobMidHigh->setRange(1000.0f, 20000.0f);
     fKnobMidHigh->setValue(2000.0f);
@@ -84,7 +85,7 @@ DistrhoUI3BandSplitter::DistrhoUI3BandSplitter()
     // about button
     Image aboutImageNormal(DistrhoArtwork3BandSplitter::aboutButtonNormalData, DistrhoArtwork3BandSplitter::aboutButtonNormalWidth, DistrhoArtwork3BandSplitter::aboutButtonNormalHeight);
     Image aboutImageHover(DistrhoArtwork3BandSplitter::aboutButtonHoverData, DistrhoArtwork3BandSplitter::aboutButtonHoverWidth, DistrhoArtwork3BandSplitter::aboutButtonHoverHeight);
-    fButtonAbout = new ImageButton(win, aboutImageNormal, aboutImageHover, aboutImageHover);
+    fButtonAbout = new ImageButton(this, aboutImageNormal, aboutImageHover, aboutImageHover);
     fButtonAbout->setPos(264, 300);
     fButtonAbout->setCallback(this);
 }
@@ -150,9 +151,7 @@ void DistrhoUI3BandSplitter::imageButtonClicked(ImageButton* button, int)
     if (button != fButtonAbout)
         return;
 
-    Image imageAbout(DistrhoArtwork3BandSplitter::aboutData, DistrhoArtwork3BandSplitter::aboutWidth, DistrhoArtwork3BandSplitter::aboutHeight, GL_BGR);
-    ImageAboutWindow aboutWindow(getApp(), getParent(), imageAbout);
-    aboutWindow.exec();
+    fAboutWindow.exec();
 }
 
 void DistrhoUI3BandSplitter::imageKnobDragStarted(ImageKnob* knob)
@@ -170,7 +169,6 @@ void DistrhoUI3BandSplitter::imageKnobDragFinished(ImageKnob* knob)
     else if (knob == fKnobMidHigh)
         d_editParameter(DistrhoPlugin3BandSplitter::paramMidHighFreq, false);
 }
-
 
 void DistrhoUI3BandSplitter::imageKnobValueChanged(ImageKnob* knob, float value)
 {

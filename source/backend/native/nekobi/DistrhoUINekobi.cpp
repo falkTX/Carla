@@ -24,21 +24,25 @@ START_NAMESPACE_DISTRHO
 // -------------------------------------------------
 
 DistrhoUINekobi::DistrhoUINekobi()
-    : OpenGLUI()
+    : OpenGLUI(),
+      fAboutWindow(this)
 {
-    Window* win = getParent();
-
+    // FIXME
     fNeko.setTimerSpeed(4);
 
     // background
     fImgBackground = Image(DistrhoArtworkNekobi::backgroundData, DistrhoArtworkNekobi::backgroundWidth, DistrhoArtworkNekobi::backgroundHeight, GL_BGR);
 
+    // TODO - about png
+    Image imageAbout(DistrhoArtworkNekobi::aboutButtonHoverData, DistrhoArtworkNekobi::aboutButtonHoverWidth, DistrhoArtworkNekobi::aboutButtonHoverHeight, GL_BGRA);
+    fAboutWindow.setImage(imageAbout);
+
     // slider
     Image sliderImage(DistrhoArtworkNekobi::sliderData, DistrhoArtworkNekobi::sliderWidth, DistrhoArtworkNekobi::sliderHeight);
 
-    fSliderWaveform = new ImageSlider(win, sliderImage);
-    fSliderWaveform->setStartPos(135, 39);
-    fSliderWaveform->setEndPos(135, 65);
+    fSliderWaveform = new ImageSlider(this, sliderImage);
+    fSliderWaveform->setStartPos(133, 38);
+    fSliderWaveform->setEndPos(133, 64);
     fSliderWaveform->setRange(0.0f, 1.0f);
     fSliderWaveform->setValue(0.0f);
     fSliderWaveform->setCallback(this);
@@ -47,53 +51,60 @@ DistrhoUINekobi::DistrhoUINekobi()
     Image knobImage(DistrhoArtworkNekobi::knobData, DistrhoArtworkNekobi::knobWidth, DistrhoArtworkNekobi::knobHeight);
 
     // knob Tuning
-    fKnobTuning = new ImageKnob(win, knobImage);
-    fKnobTuning->setPos(44, 46);
+    fKnobTuning = new ImageKnob(this, knobImage);
+    fKnobTuning->setPos(42, 45);
     fKnobTuning->setRange(-12.0f, 12.0f);
     fKnobTuning->setValue(0.0f);
     fKnobTuning->setCallback(this);
 
     // knob Cutoff
-    fKnobCutoff = new ImageKnob(win, knobImage);
-    fKnobCutoff->setPos(187, 46);
+    fKnobCutoff = new ImageKnob(this, knobImage);
+    fKnobCutoff->setPos(185, 45);
     fKnobCutoff->setRange(0.0f, 100.0f);
     fKnobCutoff->setValue(25.0f);
     fKnobCutoff->setCallback(this);
 
     // knob Resonance
-    fKnobResonance = new ImageKnob(win, knobImage);
-    fKnobResonance->setPos(260, 46);
+    fKnobResonance = new ImageKnob(this, knobImage);
+    fKnobResonance->setPos(258, 45);
     fKnobResonance->setRange(0.0f, 95.0f);
     fKnobResonance->setValue(25.0f);
     fKnobResonance->setCallback(this);
 
     // knob Env Mod
-    fKnobEnvMod = new ImageKnob(win, knobImage);
-    fKnobEnvMod->setPos(332, 46);
+    fKnobEnvMod = new ImageKnob(this, knobImage);
+    fKnobEnvMod->setPos(330, 45);
     fKnobEnvMod->setRange(0.0f, 100.0f);
     fKnobEnvMod->setValue(50.0f);
     fKnobEnvMod->setCallback(this);
 
     // knob Decay
-    fKnobDecay = new ImageKnob(win, knobImage);
-    fKnobDecay->setPos(404, 46);
+    fKnobDecay = new ImageKnob(this, knobImage);
+    fKnobDecay->setPos(402, 45);
     fKnobDecay->setRange(0.0f, 100.0f);
     fKnobDecay->setValue(75.0f);
     fKnobDecay->setCallback(this);
 
     // knob Accent
-    fKnobAccent = new ImageKnob(win, knobImage);
-    fKnobAccent->setPos(476, 46);
+    fKnobAccent = new ImageKnob(this, knobImage);
+    fKnobAccent->setPos(474, 45);
     fKnobAccent->setRange(0.0f, 100.0f);
     fKnobAccent->setValue(25.0f);
     fKnobAccent->setCallback(this);
 
     // knob Volume
-    fKnobVolume = new ImageKnob(win, knobImage);
-    fKnobVolume->setPos(548, 46);
+    fKnobVolume = new ImageKnob(this, knobImage);
+    fKnobVolume->setPos(546, 45);
     fKnobVolume->setRange(0.0f, 100.0f);
     fKnobVolume->setValue(75.0f);
     fKnobVolume->setCallback(this);
+
+    // about button
+    Image aboutImageNormal(DistrhoArtworkNekobi::aboutButtonNormalData, DistrhoArtworkNekobi::aboutButtonNormalWidth, DistrhoArtworkNekobi::aboutButtonNormalHeight);
+    Image aboutImageHover(DistrhoArtworkNekobi::aboutButtonHoverData, DistrhoArtworkNekobi::aboutButtonHoverWidth, DistrhoArtworkNekobi::aboutButtonHoverHeight);
+    fButtonAbout = new ImageButton(this, aboutImageNormal, aboutImageHover, aboutImageHover);
+    fButtonAbout->setPos(500, 5);
+    fButtonAbout->setCallback(this);
 }
 
 DistrhoUINekobi::~DistrhoUINekobi()
@@ -106,6 +117,7 @@ DistrhoUINekobi::~DistrhoUINekobi()
     delete fKnobDecay;
     delete fKnobAccent;
     delete fKnobVolume;
+    delete fButtonAbout;
 }
 
 // -------------------------------------------------
@@ -155,7 +167,7 @@ void DistrhoUINekobi::d_programChanged(uint32_t index)
     fKnobEnvMod->setValue(50.0f);
     fKnobDecay->setValue(75.0f);
     fKnobAccent->setValue(25.0f);
-    fKnobVolume->setValue(50.0f);
+    fKnobVolume->setValue(75.0f);
 }
 
 void DistrhoUINekobi::d_noteReceived(bool onOff, uint8_t, uint8_t note, uint8_t)
@@ -180,7 +192,10 @@ void DistrhoUINekobi::d_uiIdle()
 
 void DistrhoUINekobi::imageButtonClicked(ImageButton* button, int)
 {
-    (void)button;
+    if (button != fButtonAbout)
+        return;
+
+    fAboutWindow.exec();
 }
 
 void DistrhoUINekobi::imageKnobDragStarted(ImageKnob* knob)

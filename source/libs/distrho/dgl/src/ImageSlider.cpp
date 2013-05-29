@@ -34,6 +34,20 @@ ImageSlider::ImageSlider(Window* parent, const Image& image)
     setSize(fImage.getSize());
 }
 
+ImageSlider::ImageSlider(Widget* widget, const Image& image)
+    : Widget(widget->getParent()),
+      fImage(image),
+      fMinimum(0.0f),
+      fMaximum(1.0f),
+      fValue(0.5f),
+      fDragging(false),
+      fStartedX(0),
+      fStartedY(0),
+      fCallback(nullptr)
+{
+    setSize(fImage.getSize());
+}
+
 ImageSlider::ImageSlider(const ImageSlider& imageSlider)
     : Widget(imageSlider.getParent()),
       fImage(imageSlider.fImage),

@@ -39,6 +39,25 @@ ImageKnob::ImageKnob(Window* parent, const Image& image, Orientation orientation
     setSize(fImgLayerSize, fImgLayerSize);
 }
 
+ImageKnob::ImageKnob(Widget* widget, const Image& image, Orientation orientation)
+    : Widget(widget->getParent()),
+      fImage(image),
+      fMinimum(0.0f),
+      fMaximum(1.0f),
+      fValue(0.5f),
+      fOrientation(orientation),
+      fDragging(false),
+      fLastX(0),
+      fLastY(0),
+      fCallback(nullptr),
+      fIsImgVertical(image.getHeight() > image.getWidth()),
+      fImgLayerSize(fIsImgVertical ? image.getWidth() : image.getHeight()),
+      fImgLayerCount(fIsImgVertical ? image.getHeight()/fImgLayerSize : image.getWidth()/fImgLayerSize),
+      fKnobArea(0, 0, fImgLayerSize, fImgLayerSize)
+{
+    setSize(fImgLayerSize, fImgLayerSize);
+}
+
 ImageKnob::ImageKnob(const ImageKnob& imageKnob)
     : Widget(imageKnob.getParent()),
       fImage(imageKnob.fImage),

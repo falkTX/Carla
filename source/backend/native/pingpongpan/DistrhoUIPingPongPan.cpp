@@ -23,26 +23,29 @@ START_NAMESPACE_DISTRHO
 // -------------------------------------------------
 
 DistrhoUIPingPongPan::DistrhoUIPingPongPan()
-    : OpenGLUI()
+    : OpenGLUI(),
+      fAboutWindow(this)
 {
-    Window* win = getParent();
-
     // background
     fImgBackground = Image(DistrhoArtworkPingPongPan::backgroundData, DistrhoArtworkPingPongPan::backgroundWidth, DistrhoArtworkPingPongPan::backgroundHeight, GL_BGR);
+
+    // TODO - about png
+    Image imageAbout(DistrhoArtworkPingPongPan::aboutButtonHoverData, DistrhoArtworkPingPongPan::aboutButtonHoverWidth, DistrhoArtworkPingPongPan::aboutButtonHoverHeight, GL_BGRA);
+    fAboutWindow.setImage(imageAbout);
 
     // knobs
     Image knobImage(DistrhoArtworkPingPongPan::knobData, DistrhoArtworkPingPongPan::knobWidth, DistrhoArtworkPingPongPan::knobHeight);
 
     // knob Low-Mid
-    fKnobFreq = new ImageKnob(win, knobImage);
-    fKnobFreq->setPos(136, 30);
+    fKnobFreq = new ImageKnob(this, knobImage);
+    fKnobFreq->setPos(61, 59);
     fKnobFreq->setRange(0.0f, 100.0f);
     fKnobFreq->setValue(50.0f);
     fKnobFreq->setCallback(this);
 
     // knob Mid-High
-    fKnobWidth = new ImageKnob(win, knobImage);
-    fKnobWidth->setPos(258, 30);
+    fKnobWidth = new ImageKnob(this, knobImage);
+    fKnobWidth->setPos(183, 59);
     fKnobWidth->setRange(0.0f, 100.0f);
     fKnobWidth->setValue(75.0f);
     fKnobWidth->setCallback(this);
@@ -50,8 +53,8 @@ DistrhoUIPingPongPan::DistrhoUIPingPongPan()
     // about button
     Image aboutImageNormal(DistrhoArtworkPingPongPan::aboutButtonNormalData, DistrhoArtworkPingPongPan::aboutButtonNormalWidth, DistrhoArtworkPingPongPan::aboutButtonNormalHeight);
     Image aboutImageHover(DistrhoArtworkPingPongPan::aboutButtonHoverData, DistrhoArtworkPingPongPan::aboutButtonHoverWidth, DistrhoArtworkPingPongPan::aboutButtonHoverHeight);
-    fButtonAbout = new ImageButton(win, aboutImageNormal, aboutImageHover, aboutImageHover);
-    fButtonAbout->setPos(25, 23);
+    fButtonAbout = new ImageButton(this, aboutImageNormal, aboutImageHover, aboutImageHover);
+    fButtonAbout->setPos(183, 8);
     fButtonAbout->setCallback(this);
 }
 
@@ -96,9 +99,7 @@ void DistrhoUIPingPongPan::imageButtonClicked(ImageButton* button, int)
     if (button != fButtonAbout)
         return;
 
-    Image imageAbout(DistrhoArtworkPingPongPan::aboutData, DistrhoArtworkPingPongPan::aboutWidth, DistrhoArtworkPingPongPan::aboutHeight, GL_BGR);
-    ImageAboutWindow aboutWindow(getApp(), getParent(), imageAbout);
-    aboutWindow.exec();
+    fAboutWindow.exec();
 }
 
 void DistrhoUIPingPongPan::imageKnobDragStarted(ImageKnob* knob)

@@ -24,7 +24,9 @@
 #if DGL_OS_WINDOWS
 # include "pugl/pugl_win.cpp"
 #elif DGL_OS_MAC
-// compiled separately
+extern "C" {
+# include "pugl/pugl_osx_extended.h"
+}
 #elif DGL_OS_LINUX
 extern "C" {
 # include "pugl/pugl_x11.c"
@@ -191,6 +193,8 @@ public:
         SetForegroundWindow(hwnd);
         SetActiveWindow(hwnd);
         SetFocus(hwnd);
+#elif DGL_OS_MAC
+		puglImplFocus(kView);
 #elif DGL_OS_LINUX
         XRaiseWindow(xDisplay, xWindow);
         XSetInputFocus(xDisplay, xWindow, RevertToPointerRoot, CurrentTime);
@@ -261,6 +265,8 @@ public:
         }
 
         UpdateWindow(hwnd);
+#elif DGL_OS_MAC
+		puglImplSetVisible(kView, yesNo);
 #elif DGL_OS_LINUX
         if (yesNo)
             XMapRaised(xDisplay, xWindow);
@@ -297,6 +303,8 @@ public:
 
         SetWindowPos(hwnd, 0, 0, 0, wr.right-wr.left, wr.bottom-wr.top, SWP_NOACTIVATE|SWP_NOMOVE|SWP_NOOWNERZORDER|SWP_NOZORDER);
         UpdateWindow(hwnd);
+#elif DGL_OS_MAC
+		puglImplSetSize(kView, width, height);
 #elif DGL_OS_LINUX
         // TODO - handle fResizable
         XSizeHints sizeHints;
@@ -318,6 +326,8 @@ public:
     {
 #if DGL_OS_WINDOWS
         SetWindowTextA(hwnd, title);
+#elif DGL_OS_MAC
+		puglImplSetTitle(kView, title);
 #elif DGL_OS_LINUX
         XStoreName(xDisplay, xWindow, title);
         XFlush(xDisplay);
