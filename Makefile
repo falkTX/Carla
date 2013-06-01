@@ -4,6 +4,10 @@
 # Created by falkTX
 #
 
+include source/Makefile.mk
+
+# --------------------------------------------------------------
+
 PREFIX  = /usr/local
 DESTDIR =
 
@@ -13,14 +17,14 @@ LINK   = ln -sf
 PYUIC ?= pyuic4
 PYRCC ?= pyrcc4 -py3
 
-# -------------------------------------------------------------------------------------------------------------------------------------
+# --------------------------------------------------------------
 
-all: CPP RES UI WIDGETS
+all: CXX RES UI WIDGETS
 
-# -------------------------------------------------------------------------------------------------------------------------------------
+# --------------------------------------------------------------
 # C++ code
 
-CPP: backend bridges discovery
+CXX: backend bridges discovery
 
 backend:
 	$(MAKE) -C source/backend
@@ -30,6 +34,15 @@ bridges:
 
 discovery:
 	$(MAKE) -C source/discovery
+
+plugin:
+	$(MAKE) -C source/plugin
+
+theme:
+	$(MAKE) -C source/theme
+
+widgets:
+	$(MAKE) -C source/widgets
 
 posix32:
 	$(MAKE) -C source/bridges posix32
@@ -55,7 +68,7 @@ wine64:
 	$(MAKE) -C source/libs jackbridge-win64.dll.so
 	$(LINK) ../libs/jackbridge-win64.dll.so source/bridges/jackbridge-win64.dll
 
-# -------------------------------------------------------------------------------------------------------------------------------------
+# --------------------------------------------------------------
 # Resources
 
 RES = source/resources_rc.py
@@ -65,7 +78,7 @@ RES: $(RES)
 source/%_rc.py: resources/%.qrc
 	$(PYRCC) $< -o $@
 
-# -------------------------------------------------------------------------------------------------------------------------------------
+# --------------------------------------------------------------
 # UI code
 
 UIs = \
@@ -86,7 +99,7 @@ UI: $(UIs)
 source/ui_%.py: resources/ui/%.ui
 	$(PYUIC) $< -o $@
 
-# -------------------------------------------------------------------------------------------------------------------------------------
+# --------------------------------------------------------------
 # Widgets
 
 WIDGETS = \
@@ -103,29 +116,28 @@ WIDGETS: $(WIDGETS)
 source/%.py: source/widgets/%.py
 	$(LINK) widgets/$*.py $@
 
-# -------------------------------------------------------------------------------------------------------------------------------------
+# --------------------------------------------------------------
 
 clean:
 	$(MAKE) clean -C source/backend
 	$(MAKE) clean -C source/bridges
 	$(MAKE) clean -C source/discovery
 	$(MAKE) clean -C source/libs
+	$(MAKE) clean -C source/plugin
+	$(MAKE) clean -C source/tests
+	$(MAKE) clean -C source/theme
+	$(MAKE) clean -C source/widgets
 	rm -f $(RES)
 	rm -f $(UIs)
 	rm -f $(WIDGETS)
 	rm -f *~ source/*~ source/*.pyc source/*_rc.py source/ui_*.py
 
-# -------------------------------------------------------------------------------------------------------------------------------------
-
-config:
-	$(MAKE) config -C source/backend
-
-# -------------------------------------------------------------------------------------------------------------------------------------
+# --------------------------------------------------------------
 
 debug:
 	$(MAKE) DEBUG=true
 
-# -------------------------------------------------------------------------------------------------------------------------------------
+# --------------------------------------------------------------
 
 install:
 	# Create directories
@@ -134,7 +146,12 @@ install:
 	install -d $(DESTDIR)$(PREFIX)/lib/carla/resources/
 	install -d $(DESTDIR)$(PREFIX)/lib/carla/resources/nekofilter/
 	install -d $(DESTDIR)$(PREFIX)/lib/carla/resources/zynaddsubfx/
+ifeq ($(CARLA_PLUGIN_SUPPORT),true)
+	install -d $(DESTDIR)$(PREFIX)/lib/dssi/
+	install -d $(DESTDIR)$(PREFIX)/lib/lv2/
 	install -d $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/
+	install -d $(DESTDIR)$(PREFIX)/lib/vst/
+endif
 	install -d $(DESTDIR)$(PREFIX)/share/applications/
 	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/16x16/apps/
 	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/48x48/apps/
@@ -183,14 +200,17 @@ install:
 	# Install python code
 	install -m 755 source/*.py $(DESTDIR)$(PREFIX)/share/carla/
 
-	# Install LV2 plugin
-	install -m 644 data/lv2/*.ttl $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/
-	$(LINK) $(PREFIX)/lib/carla/libcarla_standalone.so $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/carla.so
-
 	# Install resources
 	install -m 644 source/backend/resources/nekofilter-ui     $(DESTDIR)$(PREFIX)/lib/carla/resources/
 	install -m 644 source/backend/resources/nekofilter/*.png  $(DESTDIR)$(PREFIX)/lib/carla/resources/nekofilter/
 	install -m 644 source/backend/resources/zynaddsubfx/*.png $(DESTDIR)$(PREFIX)/lib/carla/resources/zynaddsubfx/
+
+ifeq ($(CARLA_PLUGIN_SUPPORT),true)
+	# Install plugin
+	install -m 644 source/plugin/carla-dssi.so $(DESTDIR)$(PREFIX)/lib/dssi/
+	install -m 644 source/plugin/carla-vst.so  $(DESTDIR)$(PREFIX)/lib/vst/
+	install -m 644 source/plugin/carla.lv2/*   $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/
+endif
 
 	# Adjust PREFIX value in script files
 	sed -i "s/X-PREFIX-X/$(SED_PREFIX)/" \
@@ -198,7 +218,7 @@ install:
 		$(DESTDIR)$(PREFIX)/bin/carla-control \
 		$(DESTDIR)$(PREFIX)/bin/carla-single
 
-# -------------------------------------------------------------------------------------------------------------------------------------
+# --------------------------------------------------------------
 
 uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/bin/carla*
@@ -208,5 +228,175 @@ uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/share/icons/hicolor/*/apps/carla-control.png
 	rm -f $(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/carla.svg
 	rm -f $(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/carla-control.svg
+	rm -f $(DESTDIR)$(PREFIX)/lib/dssi/carla-dssi.so
+	rm -f $(DESTDIR)$(PREFIX)/lib/vst/carla-vst.so
 	rm -rf $(DESTDIR)$(PREFIX)/lib/carla/
+	rm -rf $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/
 	rm -rf $(DESTDIR)$(PREFIX)/share/carla/
+
+# --------------------------------------------------------------
+
+ANS_NO=\033[31m NO \033[0m
+ANS_YES=\033[32m YES \033[0m
+mS=\033[33m[
+mE=]\033[0m
+
+features:
+ifeq ($(MACOS),true)
+# --- MacOS ---
+	@echo "\033[36m---> Engine drivers: (MacOS)\033[0m"
+	@echo "JACK:     $(ANS_YES)"
+ifeq ($(CARLA_RTAUDIO_SUPPORT),true)
+	@echo "CoreAudio:$(ANS_YES)"
+else
+	@echo "CoreAudio:$(ANS_NO) $(mS)RtAudio disabled$(mE)"
+endif
+# --- MacOS ---
+else
+# --- Win32 ---
+ifeq ($(WIN32),true)
+	@echo "\033[36m---> Engine drivers: (Windows)\033[0m"
+	@echo "JACK:       $(ANS_YES)"
+ifeq ($(CARLA_RTAUDIO_SUPPORT),true)
+	@echo "ASIO:       $(ANS_YES)"
+	@echo "DirectSound:$(ANS_YES)"
+else
+	@echo "ASIO:       $(ANS_NO) $(mS)RtAudio disabled$(mE)"
+	@echo "DirectSound:$(ANS_NO) $(mS)RtAudio disabled$(mE)"
+endif
+# --- Win32 ---
+else
+# --- Others ---
+	@echo "\033[36m---> Engine drivers: \033[0m"
+	@echo "JACK:      $(ANS_YES)"
+ifeq ($(CARLA_RTAUDIO_SUPPORT),true)
+ifeq ($(HAVE_ALSA),true)
+	@echo "ALSA:      $(ANS_YES)"
+else
+	@echo "ALSA:      $(ANS_NO) $(mS)Missing ALSA$(mE)"
+endif
+ifeq ($(HAVE_PULSEAUDIO),true)
+	@echo "PulseAudio:$(ANS_YES)"
+else
+	@echo "PulseAudio:$(ANS_NO) $(mS)Missing PulseAudio$(mE)"
+endif
+else
+	@echo "ALSA:      $(ANS_NO) $(mS)RtAudio disabled$(mE)"
+	@echo "PulseAudio:$(ANS_NO) $(mS)RtAudio disabled$(mE)"
+endif
+# --- Others ---
+endif
+	@echo ""
+endif
+
+	@echo "\033[36m---> Plugin formats: \033[0m"
+	@echo "Internal:$(ANS_YES)"
+ifeq ($(CARLA_PLUGIN_SUPPORT),true)
+	@echo "LADSPA:  $(ANS_YES)"
+	@echo "DSSI:    $(ANS_YES)"
+	@echo "LV2:     $(ANS_YES)"
+	@echo "VST:     $(ANS_YES)"
+else
+	@echo "LADSPA:  $(ANS_NO) $(mS)Plugins disabled$(mE)"
+	@echo "DSSI:    $(ANS_NO) $(mS)Plugins disabled$(mE)"
+	@echo "LV2:     $(ANS_NO) $(mS)Plugins disabled$(mE)"
+	@echo "VST:     $(ANS_NO) $(mS)Plugins disabled$(mE)"
+endif
+	@echo ""
+
+ifeq ($(CARLA_PLUGIN_SUPPORT),true)
+	@echo "\033[36m---> LV2 UI toolkit support: \033[0m"
+ifeq ($(MACOS),true)
+# --- MacOS ---
+	@echo "Cocoa:$(ANS_YES)"
+# --- MacOS ---
+else
+# --- Win32 ---
+ifeq ($(WIN32),true)
+# --- Win32 ---
+	@echo "Windows:$(ANS_YES)"
+else
+# --- Others ---
+ifeq ($(HAVE_GTK2),true)
+	@echo "Gtk2:$(ANS_YES)"
+else
+	@echo "Gtk2:$(ANS_NO) $(mS)Gtk2 missing$(mE)"
+endif
+ifeq ($(HAVE_GTK3),true)
+	@echo "Gtk3:$(ANS_YES)"
+else
+	@echo "Gtk3:$(ANS_NO) $(mS)Gtk3 missing$(mE)"
+endif
+ifeq ($(HAVE_QT4),true)
+	@echo "Qt4: $(ANS_YES)"
+else
+	@echo "Qt4: $(ANS_NO) $(mS)Qt4 missing$(mE)"
+endif
+ifeq ($(HAVE_QT5),true)
+	@echo "Qt5: $(ANS_YES)"
+else
+	@echo "Qt5: $(ANS_NO) $(mS)Qt5 missing$(mE)"
+endif
+	@echo "X11: $(ANS_YES)"
+endif
+# --- Others ---
+endif
+	@echo ""
+endif
+
+	@echo "\033[36m---> Sample formats: \033[0m"
+ifeq ($(CARLA_SAMPLERS_SUPPORT),true)
+ifeq ($(HAVE_LINUXSAMPLER),true)
+	@echo "GIG:$(ANS_YES)"
+else
+	@echo "GIG:$(ANS_NO) $(mS)LinuxSampler missing$(mE)"
+endif
+ifeq ($(HAVE_FLUIDSYNTH),true)
+	@echo "SF2:$(ANS_YES)"
+else
+	@echo "SF2:$(ANS_NO) $(mS)FluidSynth missing$(mE)"
+endif
+ifeq ($(HAVE_LINUXSAMPLER),true)
+	@echo "SFZ:$(ANS_YES)"
+else
+	@echo "SFZ:$(ANS_NO) $(mS)LinuxSampler missing$(mE)"
+endif
+else
+	@echo "GIG:$(ANS_NO) $(mS)Samplers disabled$(mE)"
+	@echo "SF2:$(ANS_NO) $(mS)Samplers disabled$(mE)"
+	@echo "SFZ:$(ANS_NO) $(mS)Samplers disabled$(mE)"
+endif
+	@echo ""
+
+	@echo "\033[36m---> Internal plugins: \033[0m"
+ifeq ($(HAVE_AF_DEPS),true)
+ifeq ($(HAVE_FFMPEG),true)
+	@echo "AudioFile:  $(ANS_YES) (with ffmpeg)"
+else
+	@echo "AudioFIle:  $(ANS_YES) (without ffmpeg) $(mS)ffmpeg/libav missing$(mE)"
+endif
+else
+	@echo "AudioFIle:  $(ANS_NO) $(mS)libsndfile missing$(mE)"
+endif
+
+ifeq ($(HAVE_MF_DEPS),true)
+	@echo "MidiFile:   $(ANS_YES)"
+else
+	@echo "MidiFile:   $(ANS_NO) $(mS)libsmf missing$(mE)"
+endif
+
+ifeq ($(HAVE_OPENGL),true)
+	@echo "DISTRHO:    $(ANS_YES)"
+else
+	@echo "DISTRHO:    $(ANS_NO) $(mS)OpenGL missing$(mE)"
+endif
+
+ifeq ($(HAVE_ZYN_DEPS),true)
+ifeq ($(HAVE_ZYN_UI_DEPS),true)
+	@echo "ZynAddSubFX:$(ANS_YES) (with UI)"
+else
+	@echo "ZynAddSubFX:$(ANS_YES) (without UI) $(mS)NTK missing$(mE)"
+endif
+else
+	@echo "ZynAddSubFX:$(ANS_NO) $(mS)fftw-3, mxml or zlib missing$(mE)"
+endif

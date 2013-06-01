@@ -11,10 +11,10 @@ include ../Makefile.mk
 
 LINK_FLAGS += $(shell pkg-config --libs liblo)
 
-ifeq ($(HAVE_QT5),true)
-LINK_FLAGS += $(shell pkg-config --libs Qt5Core Qt5Gui Qt5Xml Qt5Widgets)
-else
+ifeq ($(HAVE_QT4),true)
 LINK_FLAGS += $(shell pkg-config --libs QtCore QtGui QtXml)
+else
+LINK_FLAGS += $(shell pkg-config --libs Qt5Core Qt5Gui Qt5Xml Qt5Widgets)
 endif
 
 # --------------------------------------------------------------
@@ -79,19 +79,28 @@ all: dssi vst
 # all: dssi lv2 vst
 
 dssi: carla-dssi.so
-lv2:  carla-lv2.so
 vst:  carla-vst.so
+lv2:  carla.lv2/carla-lv2.so
 
 # --------------------------------------------------------------
 
 carla-dssi.so: ../backend/engine/CarlaEnginePlugin.cpp.dssi.o $(LIBS)
 	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
 
-carla-lv2.so: ../backend/engine/CarlaEnginePlugin.cpp.lv2.o $(LIBS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
-
 carla-vst.so: ../backend/engine/CarlaEnginePlugin.cpp.vst.o $(LIBS)
 	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
+
+carla.lv2/carla-lv2.so: ../backend/engine/CarlaEnginePlugin.cpp.lv2.o $(LIBS)
+	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
+
+# --------------------------------------------------------------
+
+clean:
+	rm -f *.dll *.dylib *.so
+	rm -f carla.lv2/*.dll carla.lv2/*.dylib carla.lv2/*.so
+
+debug:
+	$(MAKE) DEBUG=true
 
 # --------------------------------------------------------------
 

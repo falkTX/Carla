@@ -18,7 +18,7 @@
 #ifndef __PARAMSPINBOX_HPP__
 #define __PARAMSPINBOX_HPP__
 
-#include "CarlaDefines.hpp"
+#include "CarlaJuceUtils.hpp"
 
 #include <QtCore/Qt>
 
@@ -67,6 +67,8 @@ private:
     QString m_preLabel;
 
     TextCallback* m_textCall;
+
+    CARLA_LEAK_DETECTOR(ParamProgressBar)
 };
 
 #endif // #define __PARAMSPINBOX_HPP__

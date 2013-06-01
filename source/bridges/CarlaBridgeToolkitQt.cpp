@@ -17,7 +17,7 @@
 
 #include "CarlaBridgeClient.hpp"
 #include "CarlaBridgeToolkit.hpp"
-#include "CarlaStyle.hpp"
+//#include "CarlaStyle.hpp"
 
 #include <QtCore/QSettings>
 #include <QtCore/QThread>
@@ -110,6 +110,7 @@ public:
 
         app = new QApplication(qargc, qargv);
 
+#if 0
         {
             QSettings settings("falkTX", "Carla");
 
@@ -127,6 +128,7 @@ public:
                     style->setColorScheme(CarlaStyle::COLOR_BLACK);
             }
         }
+#endif
 
         window = new QMainWindow(nullptr);
         window->resize(30, 30);

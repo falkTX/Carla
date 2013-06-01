@@ -8,15 +8,12 @@ include ../Makefile.mk
 
 # --------------------------------------------------------------
 
-HAVE_GTK2        = $(shell pkg-config --exists gtk+-2.0 && echo true)
-HAVE_GTK3        = $(shell pkg-config --exists gtk+-3.0 && echo true)
-
-ifeq ($(HAVE_QT5),true)
-QT_UI_FLAGS      = $(shell pkg-config --cflags Qt5Gui Qt5Widgets)
-QT_UI_LIBS       = $(shell pkg-config --libs Qt5Gui Qt5Widgets)
-else
+ifeq ($(HAVE_QT4),true)
 QT_UI_FLAGS      = $(shell pkg-config --cflags QtGui)
 QT_UI_LIBS       = $(shell pkg-config --libs QtGui)
+else
+QT_UI_FLAGS      = $(shell pkg-config --cflags Qt5Gui Qt5Widgets)
+QT_UI_LIBS       = $(shell pkg-config --libs Qt5Gui Qt5Widgets)
 endif
 
 QT_UI_FLAGS     += -I../theme
@@ -28,12 +25,12 @@ BUILD_CXX_FLAGS += -I. -I../backend -I../includes -I../utils
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo)
 LINK_FLAGS      += $(shell pkg-config --libs liblo)
 
-ifeq ($(HAVE_QT5),true)
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags Qt5Core)
-LINK_FLAGS      += $(shell pkg-config --libs Qt5Core)
-else
+ifeq ($(HAVE_QT4),true)
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtCore)
 LINK_FLAGS      += $(shell pkg-config --libs QtCore)
+else
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags Qt5Core)
+LINK_FLAGS      += $(shell pkg-config --libs Qt5Core)
 endif
 
 # --------------------------------------------------------------
@@ -45,14 +42,17 @@ LINK_PLUGIN_FLAGS   = $(LINK_FLAGS) -lpthread
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
 BUILD_PLUGIN_FLAGS += -DWANT_LADSPA -DWANT_DSSI -DWANT_LV2 -DWANT_VST
+ifeq ($(CARLA_VESTIGE_HEADER),true)
+BUILD_PLUGIN_FLAGS += -DVESTIGE_HEADER
+endif
 endif
 
-ifeq ($(HAVE_QT5),true)
-BUILD_PLUGIN_FLAGS += $(shell pkg-config --cflags Qt5Gui Qt5Widgets Qt5Xml)
-LINK_PLUGIN_FLAGS  += $(shell pkg-config --libs Qt5Gui Qt5Widgets Qt5Xml)
-else
+ifeq ($(HAVE_QT4),true)
 BUILD_PLUGIN_FLAGS += $(shell pkg-config --cflags QtGui QtXml)
 LINK_PLUGIN_FLAGS  += $(shell pkg-config --libs QtGui QtXml)
+else
+BUILD_PLUGIN_FLAGS += $(shell pkg-config --cflags Qt5Gui Qt5Widgets Qt5Xml)
+LINK_PLUGIN_FLAGS  += $(shell pkg-config --libs Qt5Gui Qt5Widgets Qt5Xml)
 endif
 
 # --------------------------------------------------------------
@@ -143,10 +143,10 @@ LINK_UI_LV2_GTK2_FLAGS   = $(LINK_UI_FLAGS) $(shell pkg-config --libs gtk+-2.0)
 BUILD_UI_LV2_GTK3_FLAGS  = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_GTK3 -DBRIDGE_LV2_GTK3 $(shell pkg-config --cflags gtk+-3.0)
 LINK_UI_LV2_GTK3_FLAGS   = $(LINK_UI_FLAGS) $(shell pkg-config --libs gtk+-3.0)
 
-BUILD_UI_LV2_QT4_FLAGS   = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_QT4 -DBRIDGE_LV2_QT4 $(shell pkg-config --cflags QtGui) -I../theme
+BUILD_UI_LV2_QT4_FLAGS   = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_QT4 -DBRIDGE_LV2_QT4 $(shell pkg-config --cflags QtGui)
 LINK_UI_LV2_QT4_FLAGS    = $(LINK_UI_FLAGS) $(shell pkg-config --libs QtGui)
 
-BUILD_UI_LV2_QT5_FLAGS   = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_QT5 -DBRIDGE_LV2_QT5 $(shell pkg-config --cflags Qt5Gui Qt5Widgets) -I../theme
+BUILD_UI_LV2_QT5_FLAGS   = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_QT5 -DBRIDGE_LV2_QT5 $(shell pkg-config --cflags Qt5Gui Qt5Widgets)
 LINK_UI_LV2_QT5_FLAGS    = $(LINK_UI_FLAGS) $(shell pkg-config --libs Qt5Gui Qt5Widgets)
 
 BUILD_UI_LV2_COCOA_FLAGS = $(BUILD_UI_VST_FLAGS) -DBRIDGE_COCOA -DBRIDGE_LV2_COCOA $(QT_UI_FLAGS)
@@ -166,6 +166,20 @@ LINK_UI_VST_HWND_FLAGS   = $(LINK_FLAGS) $(QT_UI_LIBS) -mwindows -static
 
 BUILD_UI_VST_X11_FLAGS   = $(BUILD_UI_VST_FLAGS) -DBRIDGE_X11 -DBRIDGE_VST_X11 $(QT_UI_FLAGS)
 LINK_UI_VST_X11_FLAGS    = $(LINK_UI_FLAGS) $(QT_UI_LIBS)
+
+ifeq ($(HAVE_QT4),true)
+BUILD_UI_LV2_QT4_FLAGS += -I../theme
+LINK_UI_LV2_QT4_FLAGS  += ../libs/theme.a
+else
+BUILD_UI_LV2_QT5_FLAGS += -I../theme
+LINK_UI_LV2_QT5_FLAGS  += ../libs/theme.a
+endif
+
+ifeq ($(CARLA_VESTIGE_HEADER),true)
+BUILD_UI_VST_COCOA_FLAGS += -DVESTIGE_HEADER
+BUILD_UI_VST_HWND_FLAGS  += -DVESTIGE_HEADER
+BUILD_UI_VST_X11_FLAGS   += -DVESTIGE_HEADER
+endif
 
 # --------------------------------------------------------------
 
@@ -187,6 +201,8 @@ endif
 TARGETS += ui_lv2-x11
 TARGETS += ui_vst-x11
 endif
+
+# --------------------------------------------------------------
 
 all: $(TARGETS)
 
@@ -257,7 +273,7 @@ OBJS_UI_LV2_QT4 = CarlaBridgeUI-LV2__lv2-qt4.o \
 	CarlaBridgeClient__lv2.o CarlaBridgeOsc__lv2.o \
 	CarlaBridgeToolkit__lv2.o CarlaBridgeToolkitQt__lv2-qt4.o
 
-carla-bridge-lv2-qt4: $(OBJS_UI_LV2_QT4) $(OBJS_UI_LV2_LIBS) ../libs/theme.a
+carla-bridge-lv2-qt4: $(OBJS_UI_LV2_QT4) $(OBJS_UI_LV2_LIBS)
 	$(CXX) $^ $(LINK_UI_LV2_QT4_FLAGS) -o $@ && $(STRIP) $@
 
 %__lv2-qt4.o: %.cpp
@@ -270,7 +286,7 @@ OBJS_UI_LV2_QT5 = CarlaBridgeUI-LV2__lv2-qt5.o \
 	CarlaBridgeClient__lv2.o CarlaBridgeOsc__lv2.o \
 	CarlaBridgeToolkit__lv2.o CarlaBridgeToolkitQt__lv2-qt5.o
 
-carla-bridge-lv2-qt5: $(OBJS_UI_LV2_QT5) $(OBJS_UI_LV2_LIBS) ../libs/theme.a
+carla-bridge-lv2-qt5: $(OBJS_UI_LV2_QT5) $(OBJS_UI_LV2_LIBS)
 	$(CXX) $^ $(LINK_UI_LV2_QT5_FLAGS) -o $@ && $(STRIP) $@
 
 %__lv2-qt5.o: %.cpp
@@ -553,8 +569,10 @@ carla-bridge-win64.exe: $(FILES) $(OBJS_WIN64) ../libs/jackbridge-win64.dll
 ../backend/libcarla_native.a:
 	$(MAKE) -C ../backend/native
 
-../libs/%:
-	$(MAKE) -C ../libs $*
+../libs/widgets.a:
+	$(MAKE) -C ../libs widgets
+
+.PHONY: ../backend/libcarla_native.a ../libs/widgets.a
 
 # --------------------------------------------------------------
 

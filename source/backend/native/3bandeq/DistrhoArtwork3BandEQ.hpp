@@ -11,14 +11,14 @@ namespace DistrhoArtwork3BandEQ
     const unsigned int aboutHeight   = 190;
 
     extern const char* aboutButtonHoverData;
-    const unsigned int aboutButtonHoverDataSize = 7600;
-    const unsigned int aboutButtonHoverWidth    = 95;
-    const unsigned int aboutButtonHoverHeight   = 20;
+    const unsigned int aboutButtonHoverDataSize = 5888;
+    const unsigned int aboutButtonHoverWidth    = 92;
+    const unsigned int aboutButtonHoverHeight   = 16;
 
     extern const char* aboutButtonNormalData;
-    const unsigned int aboutButtonNormalDataSize = 7600;
-    const unsigned int aboutButtonNormalWidth    = 95;
-    const unsigned int aboutButtonNormalHeight   = 20;
+    const unsigned int aboutButtonNormalDataSize = 5888;
+    const unsigned int aboutButtonNormalWidth    = 92;
+    const unsigned int aboutButtonNormalHeight   = 16;
 
     extern const char* backgroundData;
     const unsigned int backgroundDataSize = 437472;

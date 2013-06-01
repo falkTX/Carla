@@ -11,10 +11,10 @@ include ../Makefile.mk
 BUILD_CXX_FLAGS += -D__UNIX_JACK__
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo)
 
-ifeq ($(HAVE_QT5),true)
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags Qt5Core Qt5Xml)
-else
+ifeq ($(HAVE_QT4),true)
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtCore QtXml)
+else
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags Qt5Core Qt5Xml)
 endif
 
 # --------------------------------------------------------------

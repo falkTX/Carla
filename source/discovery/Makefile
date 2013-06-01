@@ -10,26 +10,27 @@ include ../Makefile.mk
 
 BUILD_CXX_FLAGS += -I../backend -I../includes -I../utils
 
-ifeq ($(HAVE_QT5),true)
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags Qt5Core)
-LINK_FLAGS      += $(shell pkg-config --libs Qt5Core)
-else
+ifeq ($(HAVE_QT4),true)
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtCore)
 LINK_FLAGS      += $(shell pkg-config --libs QtCore)
+else
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags Qt5Core)
+LINK_FLAGS      += $(shell pkg-config --libs Qt5Core)
 endif
-
-# --------------------------------------------------------------
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
 BUILD_CXX_FLAGS += -DWANT_LADSPA -DWANT_DSSI -DWANT_LV2 -DWANT_VST
+ifeq ($(CARLA_VESTIGE_HEADER),true)
+BUILD_CXX_FLAGS += -DVESTIGE_HEADER
+endif
 endif
 
 ifeq ($(HAVE_FLUIDSYNTH),true)
-NATIVE_FLAGS    += $(shell pkg-config --cflags --libs fluidsynth) -DWANT_FLUIDSYNTH
+NATIVE_FLAGS += $(shell pkg-config --cflags --libs fluidsynth) -DWANT_FLUIDSYNTH
 endif
 
 ifeq ($(HAVE_LINUXSAMPLER),true)
-NATIVE_FLAGS    += $(shell pkg-config --cflags --libs linuxsampler) -DWANT_LINUXSAMPLER
+NATIVE_FLAGS += $(shell pkg-config --cflags --libs linuxsampler) -DWANT_LINUXSAMPLER
 endif
 
 # --------------------------------------------------------------
@@ -42,7 +43,7 @@ POSIX_LINK_FLAGS  = $(LINK_FLAGS) -ldl
 WIN_BUILD_FLAGS   = $(BUILD_CXX_FLAGS)
 WIN_32BIT_FLAGS   = $(32BIT_FLAGS)
 WIN_64BIT_FLAGS   = $(64BIT_FLAGS)
-WIN_LINK_FLAGS    = $(LINK_FLAGS) -static -mwindows $(EXTRA_LIBS) -lole32 -luuid -lws2_32
+WIN_LINK_FLAGS    = $(LINK_FLAGS) $(EXTRA_LIBS) -lole32 -luuid -lws2_32 -static
 
 ifeq ($(HAVE_FLUIDSYNTH),true)
 WIN_LINK_FLAGS   += -ldsound -lwinmm
@@ -98,13 +99,13 @@ carla-discovery-win64.exe: $(OBJS) $(LIBS_win64)
 
 # --------------------------------------------------------------
 
-../libs/%:
-	$(MAKE) -C ../libs $*
-
-# --------------------------------------------------------------
-
 clean:
 	rm -f carla-discovery-*
 
 debug:
 	$(MAKE) DEBUG=true
+
+# --------------------------------------------------------------
+
+../libs/%:
+	$(MAKE) -C ../libs $*

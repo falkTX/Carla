@@ -18,7 +18,7 @@
 #ifndef __PIXMAPDIAL_HPP__
 #define __PIXMAPDIAL_HPP__
 
-#include "CarlaDefines.hpp"
+#include "CarlaJuceUtils.hpp"
 
 #include <QtGui/QPixmap>
 
@@ -91,6 +91,8 @@ private:
     QColor m_colorT[2];
 
     int p_width, p_height, p_size, p_count;
+
+    CARLA_LEAK_DETECTOR(PixmapDial)
 };
 
 #endif // __PIXMAPDIAL_HPP__

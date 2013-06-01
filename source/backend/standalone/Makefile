@@ -10,10 +10,10 @@ include ../Makefile.mk
 
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo) -I../../theme
 
-ifeq ($(HAVE_QT5),true)
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags Qt5Core Qt5Widgets)
-else
+ifeq ($(HAVE_QT4),true)
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtCore QtGui)
+else
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags Qt5Core Qt5Widgets)
 endif
 
 # --------------------------------------------------------------
@@ -21,10 +21,10 @@ endif
 
 LINK_FLAGS += $(shell pkg-config --libs liblo)
 
-ifeq ($(HAVE_QT5),true)
-LINK_FLAGS += $(shell pkg-config --libs Qt5Core Qt5Gui Qt5Xml Qt5Widgets)
-else
+ifeq ($(HAVE_QT4),true)
 LINK_FLAGS += $(shell pkg-config --libs QtCore QtGui QtXml)
+else
+LINK_FLAGS += $(shell pkg-config --libs Qt5Core Qt5Gui Qt5Xml Qt5Widgets)
 endif
 
 # --------------------------------------------------------------
@@ -150,8 +150,10 @@ debug:
 
 # --------------------------------------------------------------
 
-../libcarla_%.a:
-	$(MAKE) -C ../$* $@
+../libcarla_native.a:
+	$(MAKE) -C ../native
 
-../../libs/%.a:
-	$(MAKE) -C ../../libs/ $*.a
+../../libs/widgets.a:
+	$(MAKE) -C ../../libs widgets
+
+.PHONY: ../libcarla_native.a ../../libs/widgets.a

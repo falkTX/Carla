@@ -27,6 +27,10 @@ ifeq ($(CARLA_RTAUDIO_SUPPORT),true)
 BUILD_CXX_FLAGS += -DWANT_RTAUDIO
 endif
 
+ifeq ($(CARLA_VESTIGE_HEADER),true)
+BUILD_CXX_FLAGS += -DVESTIGE_HEADER
+endif
+
 # --------------------------------------------------------------
 
 ifeq ($(HAVE_FLUIDSYNTH),true)

@@ -18,7 +18,7 @@
 #ifndef __PIXMAPKEYBOARD_HPP__
 #define __PIXMAPKEYBOARD_HPP__
 
-#include "CarlaDefines.hpp"
+#include "CarlaJuceUtils.hpp"
 
 #include <map>
 #include <QtGui/QPixmap>
@@ -89,6 +89,8 @@ private:
 
     bool _isNoteBlack(int note) const;
     const QRectF& _getRectFromMidiNote(int note) const;
+
+    CARLA_LEAK_DETECTOR(PixmapKeyboard)
 };
 
 #endif // __PIXMAPKEYBOARD_HPP__

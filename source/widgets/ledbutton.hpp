@@ -18,7 +18,7 @@
 #ifndef __LEDBUTTON_HPP__
 #define __LEDBUTTON_HPP__
 
-#include "CarlaDefines.hpp"
+#include "CarlaJuceUtils.hpp"
 
 #include <QtGui/QPixmap>
 
@@ -52,6 +52,8 @@ private:
     Color   fColor;
     QPixmap fPixmap;
     QRectF  fPixmapRect;
+
+    CARLA_LEAK_DETECTOR(LEDButton)
 };
 
 #endif // __LEDBUTTON_HPP__

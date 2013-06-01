@@ -18,7 +18,7 @@
 #ifndef __DIGITALPEAKMETER_HPP__
 #define __DIGITALPEAKMETER_HPP__
 
-#include "CarlaDefines.hpp"
+#include "CarlaJuceUtils.hpp"
 
 #include <QtCore/QTimer>
 
@@ -76,6 +76,8 @@ private:
     float* fLastValueData;
 
     QTimer fPaintTimer;
+
+    CARLA_LEAK_DETECTOR(DigitalPeakMeter)
 };
 
 #endif // __DIGITALPEAKMETER_HPP__

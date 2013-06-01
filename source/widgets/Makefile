@@ -8,14 +8,14 @@ include ../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += -I. -I../includes
+BUILD_CXX_FLAGS += -I. -I../includes -I../utils
 
-ifeq ($(HAVE_QT5),true)
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags Qt5Core Qt5Gui Qt5Widgets)
-LINK_FLAGS      += $(shell pkg-config --libs Qt5Core Qt5Gui Qt5Widgets)
-else
+ifeq ($(HAVE_QT4),true)
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtCore QtGui)
 LINK_FLAGS      += $(shell pkg-config --libs QtCore QtGui)
+else
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags Qt5Core Qt5Gui Qt5Widgets)
+LINK_FLAGS      += $(shell pkg-config --libs Qt5Core Qt5Gui Qt5Widgets)
 endif
 
 FILES = \
@@ -50,7 +50,10 @@ $(TARGET): $(FILES) $(OBJS)
 
 # --------------------------------------------------------------
 
-%.cpp.o: %.cpp
+%.cpp.o: %.cpp %.hpp
+	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+
+moc_%.cpp.o: %.cpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 moc_%.cpp: %.hpp

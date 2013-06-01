@@ -8,48 +8,53 @@ all:
 
 # --------------------------------------------------------------
 
-dgl.a:
+dgl:
 	$(MAKE) -C distrho/dgl
 
-dgl.%.a:
+dgl_%:
 	$(MAKE) -C distrho/dgl $*
 
 # --------------------------------------------------------------
 
-lilv.a:
+lilv:
 	$(MAKE) -C lilv
 
-lilv.%.a:
+lilv_%:
 	$(MAKE) -C lilv $*
 
 # --------------------------------------------------------------
 
-rtmempool.a:
+rtmempool:
 	$(MAKE) -C rtmempool
 
-rtmempool.%.a:
+rtmempool_%:
 	$(MAKE) -C rtmempool $*
 
 # --------------------------------------------------------------
 
-widgets.a:
-	$(MAKE) -C ../widgets
-
-theme.a:
+theme:
 	$(MAKE) -C ../theme
+
+theme_%:
+	$(MAKE) -C ../theme $*
 
 # --------------------------------------------------------------
 
-jackbridge-win32.dll:
+widgets:
+	$(MAKE) -C ../widgets
+
+# --------------------------------------------------------------
+
+jackbridge-win32:
 	$(MAKE) -C jackbridge win32
 
-jackbridge-win64.dll:
+jackbridge-win64:
 	$(MAKE) -C jackbridge win64
 
-jackbridge-win32.dll.so:
+jackbridge-wine32:
 	$(MAKE) -C jackbridge wine32
 
-jackbridge-win64.dll.so:
+jackbridge-wine64:
 	$(MAKE) -C jackbridge wine64
 
 # --------------------------------------------------------------
@@ -59,5 +64,5 @@ clean:
 	$(MAKE) clean -C distrho/dgl
 	$(MAKE) clean -C lilv
 	$(MAKE) clean -C rtmempool
-	$(MAKE) clean -C ../widgets
 	$(MAKE) clean -C ../theme
+	$(MAKE) clean -C ../widgets
