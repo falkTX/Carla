@@ -143,16 +143,16 @@ enum BinaryType {
  * Some plugin classes might provide more than 1 plugin type.
  */
 enum PluginType {
-    PLUGIN_NONE     = 0, //!< Null plugin type.
-    PLUGIN_INTERNAL = 1, //!< Internal plugin.
-    PLUGIN_LADSPA   = 2, //!< LADSPA plugin.
-    PLUGIN_DSSI     = 3, //!< DSSI plugin.
-    PLUGIN_LV2      = 4, //!< LV2 plugin.
-    PLUGIN_VST      = 5, //!< VST1/2 plugin.
-    PLUGIN_VST3     = 6, //!< VST3 plugin.
-    PLUGIN_GIG      = 7, //!< GIG sound kit, implemented via LinuxSampler.
-    PLUGIN_SF2      = 8, //!< SF2 sound kit (aka SoundFont), implemented via FluidSynth.
-    PLUGIN_SFZ      = 9  //!< SFZ sound kit, implemented via LinuxSampler.
+    PLUGIN_NONE     = 0, //!< Null plugin type
+    PLUGIN_INTERNAL = 1, //!< Internal plugin
+    PLUGIN_LADSPA   = 2, //!< LADSPA plugin
+    PLUGIN_DSSI     = 3, //!< DSSI plugin
+    PLUGIN_LV2      = 4, //!< LV2 plugin
+    PLUGIN_VST      = 5, //!< VST1/2 plugin
+    PLUGIN_VST3     = 6, //!< VST3 plugin
+    PLUGIN_GIG      = 7, //!< GIG sound kit
+    PLUGIN_SF2      = 8, //!< SF2 sound kit (aka SoundFont)
+    PLUGIN_SFZ      = 9  //!< SFZ sound kit
 };
 
 /*!
@@ -493,7 +493,7 @@ enum CallbackType {
     /*!
      * The plugin's custom GUI state has changed.
      *
-     * \param value1 State, as follows:.\n
+     * \param value1 State, as follows:\n
      *                0: GUI has been closed or hidden\n
      *                1: GUI has been shown\n
      *               -1: GUI has crashed and should not be shown again
@@ -590,39 +590,47 @@ enum CallbackType {
     CALLBACK_PATCHBAY_CONNECTION_REMOVED = 25,
 
     /*!
-     * Non-Session-Manager Announce message.
+     * Engine buffer-size changed.
      */
     CALLBACK_BUFFER_SIZE_CHANGED = 26,
 
     /*!
-     * Non-Session-Manager Announce message.
+     * Engine sample-rate changed.
      */
     CALLBACK_SAMPLE_RATE_CHANGED = 27,
 
     /*!
+     * Engine process mode changed.
+     *
+     * \param value1 New process mode
+     * \see ProcessMode
+     */
+    CALLBACK_PROCESS_MODE_CHANGED = 28,
+
+    /*!
      * Non-Session-Manager Announce message.
      */
-    CALLBACK_NSM_ANNOUNCE = 28,
+    CALLBACK_NSM_ANNOUNCE = 29,
 
     /*!
      * Non-Session-Manager Open message.
      */
-    CALLBACK_NSM_OPEN = 29,
+    CALLBACK_NSM_OPEN = 30,
 
     /*!
      * Non-Session-Manager Save message.
      */
-    CALLBACK_NSM_SAVE = 30,
+    CALLBACK_NSM_SAVE = 31,
 
     /*!
      * An error occurred, show \a valueStr as an error to user.
      */
-    CALLBACK_ERROR = 31,
+    CALLBACK_ERROR = 32,
 
     /*!
      * The engine has crashed or malfunctioned and will no longer work.
      */
-    CALLBACK_QUIT = 32
+    CALLBACK_QUIT = 33
 };
 
 /*!
@@ -643,8 +651,8 @@ enum ProcessMode {
  */
 enum TransportMode {
     TRANSPORT_MODE_INTERNAL = 0, //!< Internal transport mode.
-    TRANSPORT_MODE_JACK     = 1, //!< JACK transport, only available if driver name is "JACK"
-    TRANSPORT_MODE_PLUGIN   = 2, //!< Plugin transport from host, used when Carla is a plugin
+    TRANSPORT_MODE_JACK     = 1, //!< Transport from JACK, only available if driver name is "JACK"
+    TRANSPORT_MODE_PLUGIN   = 2, //!< Transport from host, used when Carla is a plugin
     TRANSPORT_MODE_BRIDGE   = 3  //!< Special mode, used in plugin-bridges only.
 };
 
@@ -674,6 +682,8 @@ struct ParameterData {
           hints(0x0),
           midiChannel(0),
           midiCC(-1) {}
+
+    CARLA_LEAK_DETECTOR(ParameterData)
 #endif
 };
 
@@ -696,6 +706,8 @@ struct ParameterRanges {
           step(0.01f),
           stepSmall(0.0001f),
           stepLarge(0.1f) {}
+
+    CARLA_LEAK_DETECTOR(ParameterRanges)
 #endif
 
     void fixDefault()
@@ -751,6 +763,8 @@ struct MidiProgramData {
         : bank(0),
           program(0),
           name(nullptr) {}
+
+    CARLA_LEAK_DETECTOR(MidiProgramData)
 #endif
 };
 
@@ -770,6 +784,8 @@ struct CustomData {
         : type(nullptr),
           key(nullptr),
           value(nullptr) {}
+
+    CARLA_LEAK_DETECTOR(CustomData)
 #endif
 };
 

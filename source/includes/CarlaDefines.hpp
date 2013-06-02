@@ -109,11 +109,12 @@
 # define BINARY_NATIVE BINARY_OTHER
 #endif
 
-// Define CARLA_ASSERT*
+// Define CARLA_SAFE_ASSERT*
 #define CARLA_SAFE_ASSERT(cond) ((!(cond)) ? carla_assert(#cond, __FILE__, __LINE__) : pass())
 #define CARLA_SAFE_ASSERT_INT(cond, value) ((!(cond)) ? carla_assert_int(#cond, __FILE__, __LINE__, value) : pass())
 #define CARLA_SAFE_ASSERT_INT2(cond, v1, v2) ((!(cond)) ? carla_assert_int2(#cond, __FILE__, __LINE__, v1, v2) : pass())
 
+// Define CARLA_ASSERT*
 #if defined(CARLA_NO_ASSERTS)
 # define CARLA_ASSERT(cond)
 # define CARLA_ASSERT_INT(cond, value)

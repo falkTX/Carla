@@ -111,7 +111,7 @@
 #define MIDI_CONTROL_OMNI_MODE_OFF                     0x7C // 0 (+ all notes off)
 #define MIDI_CONTROL_OMNI_MODE_ON                      0x7D // 0 (+ all notes off)
 #define MIDI_CONTROL_MONO_MODE_ON                      0x7E // ...
-#define MIDI_CONTROL_POLY_MODE_ON                      0x7F // 0 ( + mono off, + all notes off)
+#define MIDI_CONTROL_POLY_MODE_ON                      0x7F // 0 (+ mono off, + all notes off)
 
 #define MIDI_CONTROL_SOUND_VARIATION                   MIDI_CONTROL_SOUND_CONTROLLER_1
 #define MIDI_CONTROL_TIMBRE                            MIDI_CONTROL_SOUND_CONTROLLER_2

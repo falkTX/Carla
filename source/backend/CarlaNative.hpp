@@ -49,6 +49,16 @@ protected:
         return kHost;
     }
 
+    const char* hostResourceDir() const
+    {
+        CARLA_ASSERT(kHost != nullptr);
+
+        if (kHost != nullptr)
+            return kHost->resource_dir;
+
+        return nullptr;
+    }
+
     const char* hostUiName() const
     {
         CARLA_ASSERT(kHost != nullptr);

@@ -43,7 +43,7 @@ POSIX_LINK_FLAGS  = $(LINK_FLAGS) -ldl
 WIN_BUILD_FLAGS   = $(BUILD_CXX_FLAGS)
 WIN_32BIT_FLAGS   = $(32BIT_FLAGS)
 WIN_64BIT_FLAGS   = $(64BIT_FLAGS)
-WIN_LINK_FLAGS    = $(LINK_FLAGS) $(EXTRA_LIBS) -lole32 -luuid -lws2_32 -static
+WIN_LINK_FLAGS    = $(LINK_FLAGS) $(EXTRA_LIBS) -lole32 -luuid -lws2_32
 
 ifeq ($(HAVE_FLUIDSYNTH),true)
 WIN_LINK_FLAGS   += -ldsound -lwinmm
@@ -51,14 +51,6 @@ endif
 
 ifeq ($(HAVE_LINUXSAMPLER),true)
 WIN_LINK_FLAGS   += -lrpcrt4
-endif
-
-ifeq ($(WIN32),true)
-NATIVE_BUILD_FLAGS = $(WIN_BUILD_FLAGS)
-NATIVE_LINK_FLAGS  = $(WIN_LINK_FLAGS)
-else
-NATIVE_BUILD_FLAGS = $(POSIX_BUILD_FLAGS)
-NATIVE_LINK_FLAGS  = $(POSIX_LINK_FLAGS)
 endif
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
@@ -73,7 +65,11 @@ OBJS = carla-discovery.cpp
 
 # --------------------------------------------------------------
 
+ifeq ($(WIN32),true)
+all: carla-discovery-native.exe
+else
 all: carla-discovery-native
+endif
 
 posix32: carla-discovery-posix32
 posix64: carla-discovery-posix64
@@ -83,7 +79,10 @@ win64:   carla-discovery-win64.exe
 # --------------------------------------------------------------
 
 carla-discovery-native: $(OBJS) $(LIBS)
-	$(CXX) $^ $(NATIVE_BUILD_FLAGS) $(NATIVE_FLAGS) $(NATIVE_LINK_FLAGS) -o $@ && $(STRIP) $@
+	$(CXX) $^ $(POSIX_BUILD_FLAGS) $(NATIVE_FLAGS) $(POSIX_LINK_FLAGS) -o $@ && $(STRIP) $@
+
+carla-discovery-native.exe: $(OBJS) $(LIBS)
+	$(CXX) $^ $(WIN_BUILD_FLAGS) $(NATIVE_FLAGS) $(WIN_LINK_FLAGS) -o $@ && $(STRIP) $@
 
 carla-discovery-posix32: $(OBJS) $(LIBS_posix32)
 	$(CXX) $^ $(POSIX_BUILD_FLAGS) $(POSIX_32BIT_FLAGS) $(POSIX_LINK_FLAGS) -o $@ && $(STRIP) $@
@@ -107,5 +106,21 @@ debug:
 
 # --------------------------------------------------------------
 
-../libs/%:
-	$(MAKE) -C ../libs $*
+../libs/lilv.a:
+	$(MAKE) -C ../libs lilv
+
+../libs/lilv.posix32.a:
+	$(MAKE) -C ../libs lilv_posix32
+
+../libs/lilv.posix64.a:
+	$(MAKE) -C ../libs lilv_posix32
+
+../libs/lilv.win32.a:
+	$(MAKE) -C ../libs lilv_win32
+
+../libs/lilv.win64.a:
+	$(MAKE) -C ../libs lilv_win64
+
+.PHONY: ../libs/lilv.a \
+	../libs/lilv.posix32.a ../libs/lilv.posix64.a \
+	../libs/lilv.win32.a ../libs/lilv.win64.a

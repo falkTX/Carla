@@ -662,8 +662,8 @@ public:
 #ifdef WANT_ZYNADDSUBFX_UI
             if (gPixmapPath.isEmpty())
             {
-                gPixmapPath  = host->resource_dir;
-                gPixmapPath += PIXMAP_PATH;
+                gPixmapPath   = host->resource_dir;
+                gPixmapPath  += PIXMAP_PATH;
                 gUiPixmapPath = gPixmapPath;
             }
 #endif
@@ -710,10 +710,11 @@ int ZynAddSubFxPlugin::sInstanceCount = 0;
 NonRtList<ZynAddSubFxPlugin::ProgramInfo*> ZynAddSubFxPlugin::sPrograms;
 
 static const struct ProgramsDestructor {
+    ProgramsDestructor() {}
     ~ProgramsDestructor() {
         ZynAddSubFxPlugin::_clearPrograms();
     }
-} programsDestructor;
+} _programsDestructor;
 
 // -----------------------------------------------------------------------
 

@@ -29,8 +29,8 @@ typedef const char* LV2_URI;
 typedef uint32_t LV2_Property;
 
 // Port Midi Map Types
-#define LV2_PORT_MIDI_MAP_CC             0x1
-#define LV2_PORT_MIDI_MAP_NRPN           0x2
+#define LV2_PORT_MIDI_MAP_CC             1
+#define LV2_PORT_MIDI_MAP_NRPN           2
 
 #define LV2_IS_PORT_MIDI_MAP_CC(x)       ((x) == LV2_PORT_MIDI_MAP_CC)
 #define LV2_IS_PORT_MIDI_MAP_NRPN(x)     ((x) == LV2_PORT_MIDI_MAP_NRPN)
@@ -56,30 +56,30 @@ typedef uint32_t LV2_Property;
 #define LV2_HAVE_PORT_UNIT_UNIT(x)       ((x) & LV2_PORT_UNIT_UNIT)
 
 // Port Unit Unit
-#define LV2_PORT_UNIT_BAR                0x01
-#define LV2_PORT_UNIT_BEAT               0x02
-#define LV2_PORT_UNIT_BPM                0x03
-#define LV2_PORT_UNIT_CENT               0x04
-#define LV2_PORT_UNIT_CM                 0x05
-#define LV2_PORT_UNIT_COEF               0x06
-#define LV2_PORT_UNIT_DB                 0x07
-#define LV2_PORT_UNIT_DEGREE             0x08
-#define LV2_PORT_UNIT_FRAME              0x09
-#define LV2_PORT_UNIT_HZ                 0x0A
-#define LV2_PORT_UNIT_INCH               0x0B
-#define LV2_PORT_UNIT_KHZ                0x0C
-#define LV2_PORT_UNIT_KM                 0x0D
-#define LV2_PORT_UNIT_M                  0x0E
-#define LV2_PORT_UNIT_MHZ                0x0F
-#define LV2_PORT_UNIT_MIDINOTE           0x10
-#define LV2_PORT_UNIT_MILE               0x11
-#define LV2_PORT_UNIT_MIN                0x12
-#define LV2_PORT_UNIT_MM                 0x13
-#define LV2_PORT_UNIT_MS                 0x14
-#define LV2_PORT_UNIT_OCT                0x15
-#define LV2_PORT_UNIT_PC                 0x16
-#define LV2_PORT_UNIT_S                  0x17
-#define LV2_PORT_UNIT_SEMITONE           0x18
+#define LV2_PORT_UNIT_BAR                1
+#define LV2_PORT_UNIT_BEAT               2
+#define LV2_PORT_UNIT_BPM                3
+#define LV2_PORT_UNIT_CENT               4
+#define LV2_PORT_UNIT_CM                 5
+#define LV2_PORT_UNIT_COEF               6
+#define LV2_PORT_UNIT_DB                 7
+#define LV2_PORT_UNIT_DEGREE             8
+#define LV2_PORT_UNIT_FRAME              9
+#define LV2_PORT_UNIT_HZ                 10
+#define LV2_PORT_UNIT_INCH               11
+#define LV2_PORT_UNIT_KHZ                12
+#define LV2_PORT_UNIT_KM                 13
+#define LV2_PORT_UNIT_M                  14
+#define LV2_PORT_UNIT_MHZ                15
+#define LV2_PORT_UNIT_MIDINOTE           16
+#define LV2_PORT_UNIT_MILE               17
+#define LV2_PORT_UNIT_MIN                18
+#define LV2_PORT_UNIT_MM                 19
+#define LV2_PORT_UNIT_MS                 20
+#define LV2_PORT_UNIT_OCT                21
+#define LV2_PORT_UNIT_PC                 22
+#define LV2_PORT_UNIT_S                  23
+#define LV2_PORT_UNIT_SEMITONE           24
 
 #define LV2_IS_PORT_UNIT_BAR(x)          ((x) == LV2_PORT_UNIT_BAR)
 #define LV2_IS_PORT_UNIT_BEAT(x)         ((x) == LV2_PORT_UNIT_BEAT)
@@ -167,19 +167,19 @@ typedef uint32_t LV2_Property;
 #define LV2_IS_PORT_TRIGGER(x)           ((x) & LV2_PORT_TRIGGER)
 
 // Port Designation
-#define LV2_PORT_DESIGNATION_CONTROL                 0x1
-#define LV2_PORT_DESIGNATION_FREEWHEELING            0x2
-#define LV2_PORT_DESIGNATION_LATENCY                 0x3
-#define LV2_PORT_DESIGNATION_SAMPLE_RATE             0x4
-#define LV2_PORT_DESIGNATION_TIME_BAR                0x5
-#define LV2_PORT_DESIGNATION_TIME_BAR_BEAT           0x6
-#define LV2_PORT_DESIGNATION_TIME_BEAT               0x7
-#define LV2_PORT_DESIGNATION_TIME_BEAT_UNIT          0x8
-#define LV2_PORT_DESIGNATION_TIME_BEATS_PER_BAR      0x9
-#define LV2_PORT_DESIGNATION_TIME_BEATS_PER_MINUTE   0xA
-#define LV2_PORT_DESIGNATION_TIME_FRAME              0xB
-#define LV2_PORT_DESIGNATION_TIME_FRAMES_PER_SECOND  0xC
-#define LV2_PORT_DESIGNATION_TIME_SPEED              0xD
+#define LV2_PORT_DESIGNATION_CONTROL                 1
+#define LV2_PORT_DESIGNATION_FREEWHEELING            2
+#define LV2_PORT_DESIGNATION_LATENCY                 3
+#define LV2_PORT_DESIGNATION_SAMPLE_RATE             4
+#define LV2_PORT_DESIGNATION_TIME_BAR                5
+#define LV2_PORT_DESIGNATION_TIME_BAR_BEAT           6
+#define LV2_PORT_DESIGNATION_TIME_BEAT               7
+#define LV2_PORT_DESIGNATION_TIME_BEAT_UNIT          8
+#define LV2_PORT_DESIGNATION_TIME_BEATS_PER_BAR      9
+#define LV2_PORT_DESIGNATION_TIME_BEATS_PER_MINUTE   10
+#define LV2_PORT_DESIGNATION_TIME_FRAME              11
+#define LV2_PORT_DESIGNATION_TIME_FRAMES_PER_SECOND  12
+#define LV2_PORT_DESIGNATION_TIME_SPEED              13
 
 #define LV2_IS_PORT_DESIGNATION_CONTROL(x)           ((x) == LV2_PORT_DESIGNATION_CONTROL)
 #define LV2_IS_PORT_DESIGNATION_FREEWHEELING(x)      ((x) == LV2_PORT_DESIGNATION_FREEWHEELING)
@@ -197,22 +197,22 @@ typedef uint32_t LV2_Property;
 #define LV2_IS_PORT_DESIGNATION_TIME(x)                   ((x) >= LV2_PORT_DESIGNATION_TIME_BAR && (x) <= LV2_PORT_DESIGNATION_TIME_SPEED)
 
 // Feature Types
-#define LV2_FEATURE_OPTIONAL             0x1
-#define LV2_FEATURE_REQUIRED             0x2
+#define LV2_FEATURE_OPTIONAL             1
+#define LV2_FEATURE_REQUIRED             2
 
 #define LV2_IS_FEATURE_OPTIONAL(x)       ((x) == LV2_FEATURE_OPTIONAL)
 #define LV2_IS_FEATURE_REQUIRED(x)       ((x) == LV2_FEATURE_REQUIRED)
 
 // UI Types
-#define LV2_UI_GTK2                      0x1
-#define LV2_UI_GTK3                      0x2
-#define LV2_UI_QT4                       0x3
-#define LV2_UI_QT5                       0x4
-#define LV2_UI_COCOA                     0x5
-#define LV2_UI_WINDOWS                   0x6
-#define LV2_UI_X11                       0x7
-#define LV2_UI_EXTERNAL                  0x8
-#define LV2_UI_OLD_EXTERNAL              0x9
+#define LV2_UI_GTK2                      1
+#define LV2_UI_GTK3                      2
+#define LV2_UI_QT4                       3
+#define LV2_UI_QT5                       4
+#define LV2_UI_COCOA                     5
+#define LV2_UI_WINDOWS                   6
+#define LV2_UI_X11                       7
+#define LV2_UI_EXTERNAL                  8
+#define LV2_UI_OLD_EXTERNAL              9
 
 #define LV2_IS_UI_GTK2(x)                ((x) == LV2_UI_GTK2)
 #define LV2_IS_UI_GTK3(x)                ((x) == LV2_UI_GTK3)
@@ -299,10 +299,7 @@ struct LV2_RDF_PortMidiMap {
         : Type(0),
           Number(0) {}
 
-#ifdef CARLA_PROPER_CPP11_SUPPORT
-    LV2_RDF_PortMidiMap(LV2_RDF_PortMidiMap&) = delete;
-    LV2_RDF_PortMidiMap(const LV2_RDF_PortMidiMap&) = delete;
-#endif
+    CARLA_LEAK_DETECTOR(LV2_RDF_PortMidiMap)
 };
 
 // Port Points
@@ -318,10 +315,7 @@ struct LV2_RDF_PortPoints {
           Minimum(0.0f),
           Maximum(1.0f) {}
 
-#if 0 // def CARLA_PROPER_CPP11_SUPPORT FIXME!
-    LV2_RDF_PortPoints(LV2_RDF_PortPoints&) = delete;
-    LV2_RDF_PortPoints(const LV2_RDF_PortPoints&) = delete;
-#endif
+    CARLA_LEAK_DETECTOR(LV2_RDF_PortPoints)
 };
 
 // Port Unit
@@ -342,17 +336,23 @@ struct LV2_RDF_PortUnit {
     ~LV2_RDF_PortUnit()
     {
         if (Name != nullptr)
+        {
             delete[] Name;
+            Name = nullptr;
+        }
         if (Render != nullptr)
+        {
             delete[] Render;
+            Render = nullptr;
+        }
         if (Symbol != nullptr)
+        {
             delete[] Symbol;
+            Symbol = nullptr;
+        }
     }
 
-#ifdef CARLA_PROPER_CPP11_SUPPORT
-    LV2_RDF_PortUnit(LV2_RDF_PortUnit&) = delete;
-    LV2_RDF_PortUnit(const LV2_RDF_PortUnit&) = delete;
-#endif
+    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(LV2_RDF_PortUnit)
 };
 
 // Port Scale Point
@@ -367,13 +367,13 @@ struct LV2_RDF_PortScalePoint {
     ~LV2_RDF_PortScalePoint()
     {
         if (Label != nullptr)
+        {
             delete[] Label;
+            Label = nullptr;
+        }
     }
 
-#ifdef CARLA_PROPER_CPP11_SUPPORT
-    LV2_RDF_PortScalePoint(LV2_RDF_PortScalePoint&) = delete;
-    LV2_RDF_PortScalePoint(const LV2_RDF_PortScalePoint&) = delete;
-#endif
+    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(LV2_RDF_PortScalePoint)
 };
 
 // Port
@@ -403,17 +403,23 @@ struct LV2_RDF_Port {
     ~LV2_RDF_Port()
     {
         if (Name != nullptr)
+        {
             delete[] Name;
+            Name = nullptr;
+        }
         if (Symbol != nullptr)
+        {
             delete[] Symbol;
+            Symbol = nullptr;
+        }
         if (ScalePoints != nullptr)
+        {
             delete[] ScalePoints;
+            ScalePoints = nullptr;
+        }
     }
 
-#ifdef CARLA_PROPER_CPP11_SUPPORT
-    LV2_RDF_Port(LV2_RDF_Port&) = delete;
-    LV2_RDF_Port(const LV2_RDF_Port&) = delete;
-#endif
+    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(LV2_RDF_Port)
 };
 
 // Preset
@@ -428,15 +434,18 @@ struct LV2_RDF_Preset {
     ~LV2_RDF_Preset()
     {
         if (URI != nullptr)
+        {
             delete[] URI;
+            URI = nullptr;
+        }
         if (Label != nullptr)
+        {
             delete[] Label;
+            Label = nullptr;
+        }
     }
 
-#ifdef CARLA_PROPER_CPP11_SUPPORT
-    LV2_RDF_Preset(LV2_RDF_Preset&) = delete;
-    LV2_RDF_Preset(const LV2_RDF_Preset&) = delete;
-#endif
+    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(LV2_RDF_Preset)
 };
 
 // Feature
@@ -451,13 +460,13 @@ struct LV2_RDF_Feature {
     ~LV2_RDF_Feature()
     {
         if (URI != nullptr)
+        {
             delete[] URI;
+            URI = nullptr;
+        }
     }
 
-#ifdef CARLA_PROPER_CPP11_SUPPORT
-    LV2_RDF_Feature(LV2_RDF_Feature&) = delete;
-    LV2_RDF_Feature(const LV2_RDF_Feature&) = delete;
-#endif
+    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(LV2_RDF_Feature)
 };
 
 // UI
@@ -486,21 +495,33 @@ struct LV2_RDF_UI {
     ~LV2_RDF_UI()
     {
         if (URI != nullptr)
+        {
             delete[] URI;
+            URI = nullptr;
+        }
         if (Binary != nullptr)
+        {
             delete[] Binary;
+            Binary = nullptr;
+        }
         if (Bundle != nullptr)
+        {
             delete[] Bundle;
+            Bundle = nullptr;
+        }
         if (Features != nullptr)
+        {
             delete[] Features;
+            Features = nullptr;
+        }
         if (Extensions != nullptr)
+        {
             delete[] Extensions;
+            Extensions = nullptr;
+        }
     }
 
-#ifdef CARLA_PROPER_CPP11_SUPPORT
-    LV2_RDF_UI(LV2_RDF_UI&) = delete;
-    LV2_RDF_UI(const LV2_RDF_UI&) = delete;
-#endif
+    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(LV2_RDF_UI)
 };
 
 // Plugin
@@ -561,33 +582,63 @@ struct LV2_RDF_Descriptor {
     ~LV2_RDF_Descriptor()
     {
         if (URI != nullptr)
+        {
             delete[] URI;
+            URI = nullptr;
+        }
         if (Name != nullptr)
+        {
             delete[] Name;
+            Name = nullptr;
+        }
         if (Author != nullptr)
+        {
             delete[] Author;
+            Author = nullptr;
+        }
         if (License != nullptr)
+        {
             delete[] License;
+            License = nullptr;
+        }
         if (Binary != nullptr)
+        {
             delete[] Binary;
+            Binary = nullptr;
+        }
         if (Bundle != nullptr)
+        {
             delete[] Bundle;
+            Bundle = nullptr;
+        }
         if (Ports != nullptr)
+        {
             delete[] Ports;
+            Ports = nullptr;
+        }
         if (Presets != nullptr)
+        {
             delete[] Presets;
+            Presets = nullptr;
+        }
         if (Features != nullptr)
+        {
             delete[] Features;
+            Features = nullptr;
+        }
         if (Extensions != nullptr)
+        {
             delete[] Extensions;
+            Extensions = nullptr;
+        }
         if (UIs != nullptr)
+        {
             delete[] UIs;
+            UIs = nullptr;
+        }
     }
 
-#ifdef CARLA_PROPER_CPP11_SUPPORT
-    LV2_RDF_Descriptor(LV2_RDF_Descriptor&) = delete;
-    LV2_RDF_Descriptor(const LV2_RDF_Descriptor&) = delete;
-#endif
+    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(LV2_RDF_Descriptor)
 };
 
 #endif // LV2_RDF_INCLUDED

@@ -1,5 +1,8 @@
 # Carla TODO
 
+MAKEFILE:
+ - "strip" usage
+
 GENERAL:
  - add direct program access on ui-dialogs (needed for standalone bridges), maybe add extra buttons too (reset plugin, fix ui size)
  - implement osc-based uis in bridge mode

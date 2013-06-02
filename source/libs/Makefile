@@ -66,3 +66,7 @@ clean:
 	$(MAKE) clean -C rtmempool
 	$(MAKE) clean -C ../theme
 	$(MAKE) clean -C ../widgets
+
+# --------------------------------------------------------------
+
+.PHONY: lilv rtmempool

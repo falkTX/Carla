@@ -53,7 +53,7 @@ posix64:
 	$(MAKE) -C source/discovery posix64
 
 win32:
-	$(MAKE) -C source/bridges win32
+# 	$(MAKE) -C source/bridges win32
 	$(MAKE) -C source/discovery win32
 
 win64:
@@ -286,8 +286,8 @@ else
 endif
 # --- Others ---
 endif
-	@echo ""
 endif
+	@echo ""
 
 	@echo "\033[36m---> Plugin formats: \033[0m"
 	@echo "Internal:$(ANS_YES)"
@@ -306,38 +306,43 @@ endif
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
 	@echo "\033[36m---> LV2 UI toolkit support: \033[0m"
+	@echo "ExternalUI:$(ANS_YES) (direct)"
 ifeq ($(MACOS),true)
 # --- MacOS ---
-	@echo "Cocoa:$(ANS_YES)"
+	@echo "CocoaUI:   $(ANS_YES) (direct+bridge)"
 # --- MacOS ---
 else
 # --- Win32 ---
 ifeq ($(WIN32),true)
 # --- Win32 ---
-	@echo "Windows:$(ANS_YES)"
+	@echo "WindowsUI: $(ANS_YES) (direct+bridge)"
 else
 # --- Others ---
 ifeq ($(HAVE_GTK2),true)
-	@echo "Gtk2:$(ANS_YES)"
+	@echo "GtkUI:     $(ANS_YES) (bridge)"
 else
-	@echo "Gtk2:$(ANS_NO) $(mS)Gtk2 missing$(mE)"
+	@echo "GtkUI:     $(ANS_NO) $(mS)Gtk2 missing$(mE)"
 endif
 ifeq ($(HAVE_GTK3),true)
-	@echo "Gtk3:$(ANS_YES)"
+	@echo "Gtk3UI:    $(ANS_YES) (bridge)"
 else
-	@echo "Gtk3:$(ANS_NO) $(mS)Gtk3 missing$(mE)"
+	@echo "Gtk3UI:    $(ANS_NO) $(mS)Gtk3 missing$(mE)"
 endif
 ifeq ($(HAVE_QT4),true)
-	@echo "Qt4: $(ANS_YES)"
+	@echo "Qt4UI:     $(ANS_YES) (direct+bridge)"
 else
-	@echo "Qt4: $(ANS_NO) $(mS)Qt4 missing$(mE)"
+	@echo "Qt4UI:     $(ANS_NO) $(mS)Qt4 missing$(mE)"
 endif
 ifeq ($(HAVE_QT5),true)
-	@echo "Qt5: $(ANS_YES)"
+ifeq ($(HAVE_QT4),true)
+	@echo "Qt5UI:     $(ANS_YES) (bridge)"
 else
-	@echo "Qt5: $(ANS_NO) $(mS)Qt5 missing$(mE)"
+	@echo "Qt5UI:     $(ANS_YES) (direct+bridge)"
 endif
-	@echo "X11: $(ANS_YES)"
+else
+	@echo "Qt5UI:     $(ANS_NO) $(mS)Qt5 missing$(mE)"
+endif
+	@echo "X11UI:     $(ANS_YES) (direct+bridge)"
 endif
 # --- Others ---
 endif
@@ -373,10 +378,10 @@ ifeq ($(HAVE_AF_DEPS),true)
 ifeq ($(HAVE_FFMPEG),true)
 	@echo "AudioFile:  $(ANS_YES) (with ffmpeg)"
 else
-	@echo "AudioFIle:  $(ANS_YES) (without ffmpeg) $(mS)ffmpeg/libav missing$(mE)"
+	@echo "AudioFile:  $(ANS_YES) (without ffmpeg) $(mS)ffmpeg/libav missing$(mE)"
 endif
 else
-	@echo "AudioFIle:  $(ANS_NO) $(mS)libsndfile missing$(mE)"
+	@echo "AudioFile:  $(ANS_NO) $(mS)libsndfile missing$(mE)"
 endif
 
 ifeq ($(HAVE_MF_DEPS),true)

@@ -127,13 +127,13 @@ struct LADSPA_RDF_ScalePoint {
     ~LADSPA_RDF_ScalePoint()
     {
         if (Label != nullptr)
+        {
             delete[] Label;
+            Label = nullptr;
+        }
     }
 
-#ifdef CARLA_PROPER_CPP11_SUPPORT
-    LADSPA_RDF_ScalePoint(LADSPA_RDF_ScalePoint&) = delete;
-    LADSPA_RDF_ScalePoint(const LADSPA_RDF_ScalePoint&) = delete;
-#endif
+    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(LADSPA_RDF_ScalePoint)
 };
 
 // Port
@@ -159,15 +159,18 @@ struct LADSPA_RDF_Port {
     ~LADSPA_RDF_Port()
     {
         if (Label != nullptr)
+        {
             delete[] Label;
+            Label = nullptr;
+        }
         if (ScalePoints != nullptr)
+        {
             delete[] ScalePoints;
+            ScalePoints = nullptr;
+        }
     }
 
-#ifdef CARLA_PROPER_CPP11_SUPPORT
-    LADSPA_RDF_Port(LADSPA_RDF_Port&) = delete;
-    LADSPA_RDF_Port(const LADSPA_RDF_Port&) = delete;
-#endif
+    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(LADSPA_RDF_Port)
 };
 
 // Plugin
@@ -191,17 +194,23 @@ struct LADSPA_RDF_Descriptor {
     ~LADSPA_RDF_Descriptor()
     {
         if (Title != nullptr)
+        {
             delete[] Title;
+            Title = nullptr;
+        }
         if (Creator != nullptr)
+        {
             delete[] Creator;
+            Creator = nullptr;
+        }
         if (Ports != nullptr)
+        {
             delete[] Ports;
+            Ports = nullptr;
+        }
     }
 
-#ifdef CARLA_PROPER_CPP11_SUPPORT
-    LADSPA_RDF_Descriptor(LADSPA_RDF_Descriptor&) = delete;
-    LADSPA_RDF_Descriptor(const LADSPA_RDF_Descriptor&) = delete;
-#endif
+    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(LADSPA_RDF_Descriptor)
 };
 
 #endif // LADSPA_RDF_INCLUDED

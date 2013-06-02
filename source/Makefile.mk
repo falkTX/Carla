@@ -33,7 +33,7 @@ BASE_FLAGS = -Wall -Wextra -fPIC -pipe
 BASE_OPTS  = -O2 -ffast-math -mtune=generic -msse -mfpmath=sse
 
 ifeq ($(RASPPI),true)
-# RaspberryPi build flags
+# Raspberry-Pi optimization flags
 BASE_OPTS  = -O2 -ffast-math -march=armv6 -mfpu=vfp -mfloat-abi=hard
 endif
 
@@ -41,6 +41,7 @@ ifeq ($(DEBUG),true)
 BASE_FLAGS += -DDEBUG -O0 -g
 else
 BASE_FLAGS += -DNDEBUG $(BASE_OPTS) -fvisibility=hidden
+# BASE_FLAGS += -DCARLA_NO_ASSERTS
 endif
 
 32BIT_FLAGS = -m32
@@ -61,7 +62,7 @@ HAVE_FFMPEG       = $(shell pkg-config --exists libavcodec libavformat libavutil
 HAVE_OPENGL       = $(shell pkg-config --exists gl && echo true)
 HAVE_GTK2         = $(shell pkg-config --exists gtk+-2.0 && echo true)
 HAVE_GTK3         = $(shell pkg-config --exists gtk+-3.0 && echo true)
-HAVE_QT4          = $(shell pkg-config --exists QtCore && echo true)
+# HAVE_QT4          = $(shell pkg-config --exists QtCore && echo true)
 HAVE_QT5          = $(shell pkg-config --exists Qt5Core && echo true)
 
 HAVE_AF_DEPS      = $(shell pkg-config --exists sndfile && echo true)

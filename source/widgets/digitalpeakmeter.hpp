@@ -42,23 +42,22 @@ public:
     };
 
     DigitalPeakMeter(QWidget* parent);
-    ~DigitalPeakMeter();
+    ~DigitalPeakMeter() override;
 
     void displayMeter(int meter, float level);
     void setChannels(int channels);
     void setColor(Color color);
     void setOrientation(Orientation orientation);
-    void setRefreshRate(int rate);
     void setSmoothRelease(int value);
 
-    QSize minimumSizeHint() const;
-    QSize sizeHint() const;
+    QSize minimumSizeHint() const override;
+    QSize sizeHint() const override;
 
 protected:
     void updateSizes();
 
-    void paintEvent(QPaintEvent* event);
-    void resizeEvent(QResizeEvent* event);
+    void paintEvent(QPaintEvent* event) override;
+    void resizeEvent(QResizeEvent* event) override;
 
 private:
     int fChannels;
@@ -74,8 +73,6 @@ private:
 
     float* fChannelsData;
     float* fLastValueData;
-
-    QTimer fPaintTimer;
 
     CARLA_LEAK_DETECTOR(DigitalPeakMeter)
 };
