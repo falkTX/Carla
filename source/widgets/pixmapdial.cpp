@@ -21,44 +21,40 @@
 
 #include <QtCore/QTimer>
 #include <QtGui/QPainter>
+#include <QtGui/QPaintEvent>
 
 PixmapDial::PixmapDial(QWidget* parent)
-    : QDial(parent)
+    : QDial(parent),
+      fPixmap(":/bitmaps/dial_01d.png"),
+      fPixmapNum("01"),
+      fCustomPaint(CUSTOM_PAINT_NULL),
+      fOrientation(fPixmap.width() > fPixmap.height() ? HORIZONTAL : VERTICAL),
+      fHovered(false),
+      fHoverStep(HOVER_MIN),
+      fLabel(""),
+      fLabelPos(0.0f, 0.0f),
+      fLabelWidth(0),
+      fLabelHeight(0),
+      fLabelGradient(0, 0, 0, 1)
 {
-    m_pixmap.load(":/bitmaps/dial_01d.png");
-    m_pixmap_n_str = "01";
-    m_custom_paint = CUSTOM_PAINT_NULL;
-
-    m_hovered    = false;
-    m_hover_step = HOVER_MIN;
-
-    if (m_pixmap.width() > m_pixmap.height())
-        m_orientation = HORIZONTAL;
-    else
-        m_orientation = VERTICAL;
-
-    m_label = "";
-    m_label_pos = QPointF(0.0f, 0.0f);
-    m_label_width  = 0;
-    m_label_height = 0;
-    m_label_gradient = QLinearGradient(0, 0, 0, 1);
+    fLabelFont.setPointSize(6);
 
     if (palette().window().color().lightness() > 100)
     {
         // Light background
-        QColor c = palette().dark().color();
-        m_color1 = c;
-        m_color2 = QColor(c.red(), c.green(), c.blue(), 0);
-        m_colorT[0] = palette().buttonText().color();
-        m_colorT[1] = palette().mid().color();
+        const QColor c(palette().dark().color());
+        fColor1    = c;
+        fColor2    = QColor(c.red(), c.green(), c.blue(), 0);
+        fColorT[0] = palette().buttonText().color();
+        fColorT[1] = palette().mid().color();
     }
     else
     {
         // Dark background
-        m_color1 = QColor(0, 0, 0, 255);
-        m_color2 = QColor(0, 0, 0, 0);
-        m_colorT[0] = Qt::white;
-        m_colorT[1] = Qt::darkGray;
+        fColor1    = QColor(0, 0, 0, 255);
+        fColor2    = QColor(0, 0, 0, 0);
+        fColorT[0] = Qt::white;
+        fColorT[1] = Qt::darkGray;
     }
 
     updateSizes();
@@ -66,12 +62,13 @@ PixmapDial::PixmapDial(QWidget* parent)
 
 int PixmapDial::getSize() const
 {
-    return p_size;
+    return fSize;
 }
 
 void PixmapDial::setCustomPaint(CustomPaint paint)
 {
-    m_custom_paint = paint;
+    fCustomPaint = paint;
+    fLabelPos.setY(fSize + fLabelHeight/2);
     update();
 }
 
@@ -79,7 +76,7 @@ void PixmapDial::setEnabled(bool enabled)
 {
     if (isEnabled() != enabled)
     {
-        m_pixmap.load(QString(":/dial_%1%2.png").arg(m_pixmap_n_str).arg(enabled ? "" : "d"));
+        fPixmap.load(QString(":/bitmaps/dial_%1%2.png").arg(fPixmapNum).arg(enabled ? "" : "d"));
         updateSizes();
         update();
     }
@@ -88,34 +85,34 @@ void PixmapDial::setEnabled(bool enabled)
 
 void PixmapDial::setLabel(QString label)
 {
-    m_label = label;
+    fLabel = label;
 
-    m_label_width  = QFontMetrics(font()).width(label);
-    m_label_height = QFontMetrics(font()).height();
+    fLabelWidth  = QFontMetrics(font()).width(label);
+    fLabelHeight = QFontMetrics(font()).height();
 
-    m_label_pos.setX(float(p_size)/2 - float(m_label_width)/2);
-    m_label_pos.setY(p_size + m_label_height);
+    fLabelPos.setX(float(fSize)/2.0f - float(fLabelWidth)/2.0f);
+    fLabelPos.setY(fSize + fLabelHeight);
 
-    m_label_gradient.setColorAt(0.0f, m_color1);
-    m_label_gradient.setColorAt(0.6f, m_color1);
-    m_label_gradient.setColorAt(1.0f, m_color2);
+    fLabelGradient.setColorAt(0.0f, fColor1);
+    fLabelGradient.setColorAt(0.6f, fColor1);
+    fLabelGradient.setColorAt(1.0f, fColor2);
 
-    m_label_gradient.setStart(0, float(p_size)/2);
-    m_label_gradient.setFinalStop(0, p_size+m_label_height+5);
+    fLabelGradient.setStart(0, float(fSize)/2.0f);
+    fLabelGradient.setFinalStop(0, fSize + fLabelHeight + 5);
 
-    m_label_gradient_rect = QRectF(float(p_size)/8, float(p_size)/2, float(p_size*6)/8, p_size+m_label_height+5);
+    fLabelGradientRect = QRectF(float(fSize)/8.0f, float(fSize)/2.0f, float(fSize*6)/8.0f, fSize+fLabelHeight+5);
     update();
 }
 
 void PixmapDial::setPixmap(int pixmapId)
 {
-    m_pixmap_n_str.sprintf("%02i", pixmapId);
-    m_pixmap.load(QString(":/bitmaps/dial_%1%2.png").arg(m_pixmap_n_str).arg(isEnabled() ? "" : "d"));
+    fPixmapNum.sprintf("%02i", pixmapId);
+    fPixmap.load(QString(":/bitmaps/dial_%1%2.png").arg(fPixmapNum).arg(isEnabled() ? "" : "d"));
 
-    if (m_pixmap.width() > m_pixmap.height())
-        m_orientation = HORIZONTAL;
+    if (fPixmap.width() > fPixmap.height())
+        fOrientation = HORIZONTAL;
     else
-        m_orientation = VERTICAL;
+        fOrientation = VERTICAL;
 
     updateSizes();
     update();
@@ -123,68 +120,76 @@ void PixmapDial::setPixmap(int pixmapId)
 
 QSize PixmapDial::minimumSizeHint() const
 {
-    return QSize(p_size, p_size);
+    return QSize(fSize, fSize);
 }
 
 QSize PixmapDial::sizeHint() const
 {
-    return QSize(p_size, p_size);
+    return QSize(fSize, fSize);
 }
 
 void PixmapDial::updateSizes()
 {
-    p_width  = m_pixmap.width();
-    p_height = m_pixmap.height();
+    fWidth  = fPixmap.width();
+    fHeight = fPixmap.height();
 
-    if (p_width < 1)
-        p_width = 1;
+    if (fWidth < 1)
+        fWidth = 1;
 
-    if (p_height < 1)
-        p_height = 1;
+    if (fHeight < 1)
+        fHeight = 1;
 
-    if (m_orientation == HORIZONTAL)
+    if (fOrientation == HORIZONTAL)
     {
-        p_size  = p_height;
-        p_count = p_width/p_height;
+        fSize  = fHeight;
+        fCount = fWidth/fHeight;
     }
     else
     {
-        p_size  = p_width;
-        p_count = p_height/p_width;
+        fSize  = fWidth;
+        fCount = fHeight/fWidth;
     }
 
-    setMinimumSize(p_size, p_size + m_label_height + 5);
-    setMaximumSize(p_size, p_size + m_label_height + 5);
+    setMinimumSize(fSize, fSize + fLabelHeight + 5);
+    setMaximumSize(fSize, fSize + fLabelHeight + 5);
 }
 
 void PixmapDial::enterEvent(QEvent* event)
 {
-    m_hovered = true;
-    if (m_hover_step == HOVER_MIN)
-        m_hover_step += 1;
+    fHovered = true;
+    if (fHoverStep == HOVER_MIN)
+        fHoverStep = HOVER_MIN + 1;
     QDial::enterEvent(event);
 }
 
 void PixmapDial::leaveEvent(QEvent* event)
 {
-    m_hovered = false;
-    if (m_hover_step == HOVER_MAX)
-        m_hover_step -= 1;
+    fHovered = false;
+    if (fHoverStep == HOVER_MAX)
+        fHoverStep = HOVER_MAX - 1;
     QDial::leaveEvent(event);
 }
 
-void PixmapDial::paintEvent(QPaintEvent*)
+void PixmapDial::paintEvent(QPaintEvent* event)
 {
+    event->accept();
+
     QPainter painter(this);
+    painter.save();
+    painter.setRenderHint(QPainter::Antialiasing, true);
 
-    if (! m_label.isEmpty())
+    if (! fLabel.isEmpty())
     {
-        painter.setPen(m_color2);
-        painter.setBrush(m_label_gradient);
-        painter.drawRect(m_label_gradient_rect);
+        if (fCustomPaint == CUSTOM_PAINT_NULL)
+        {
+            painter.setPen(fColor2);
+            painter.setBrush(fLabelGradient);
+            painter.drawRect(fLabelGradientRect);
+        }
 
-        painter.setPen(m_colorT[isEnabled() ? 0 : 1]);
-        painter.drawText(m_label_pos, m_label);
+        painter.setFont(fLabelFont);
+        painter.setPen(fColorT[isEnabled() ? 0 : 1]);
+        painter.drawText(fLabelPos, fLabel);
     }
 
     if (isEnabled())
@@ -196,57 +201,57 @@ void PixmapDial::paintEvent(QPaintEvent*)
             return;
 
         float value = current/divider;
-        QRectF source, target(0.0f, 0.0f, p_size, p_size);
+        QRectF source, target(0.0f, 0.0f, fSize, fSize);
 
-        int xpos, ypos, per = (p_count-1)*value;
+        int xpos, ypos, per = (fCount-1)*value;
 
-        if (m_orientation == HORIZONTAL)
+        if (fOrientation == HORIZONTAL)
         {
-            xpos = p_size*per;
+            xpos = fSize*per;
             ypos = 0.0f;
         }
         else
         {
             xpos = 0.0f;
-            ypos = p_size*per;
+            ypos = fSize*per;
         }
 
-        source = QRectF(xpos, ypos, p_size, p_size);
-        painter.drawPixmap(target, m_pixmap, source);
+        source = QRectF(xpos, ypos, fSize, fSize);
+        painter.drawPixmap(target, fPixmap, source);
 
         // Custom knobs (Dry/Wet and Volume)
-        if (m_custom_paint == CUSTOM_PAINT_CARLA_WET || m_custom_paint == CUSTOM_PAINT_CARLA_VOL)
+        if (fCustomPaint == CUSTOM_PAINT_CARLA_WET || fCustomPaint == CUSTOM_PAINT_CARLA_VOL)
         {
             // knob color
-            QColor colorGreen(0x5D, 0xE7, 0x3D, 191 + m_hover_step*7);
-            QColor colorBlue(0x3E, 0xB8, 0xBE, 191 + m_hover_step*7);
+            QColor colorGreen(0x5D, 0xE7, 0x3D, 191 + fHoverStep*7);
+            QColor colorBlue(0x3E, 0xB8, 0xBE, 191 + fHoverStep*7);
 
             // draw small circle
-            QRectF ballRect(8.0, 8.0, 15.0, 15.0);
+            QRectF ballRect(8.0f, 8.0f, 15.0f, 15.0f);
             QPainterPath ballPath;
             ballPath.addEllipse(ballRect);
             //painter.drawRect(ballRect);
             float tmpValue  = (0.375f + 0.75f*value);
-            float ballValue = tmpValue - floorf(tmpValue);
+            float ballValue = tmpValue - std::floor(tmpValue);
             QPointF ballPoint(ballPath.pointAtPercent(ballValue));
 
             // draw arc
             int startAngle = 216*16;
             int spanAngle  = -252*16*value;
 
-            if (m_custom_paint == CUSTOM_PAINT_CARLA_WET)
+            if (fCustomPaint == CUSTOM_PAINT_CARLA_WET)
             {
                 painter.setBrush(colorBlue);
                 painter.setPen(QPen(colorBlue, 0));
-                painter.drawEllipse(QRectF(ballPoint.x(), ballPoint.y(), 2.2, 2.2));
+                painter.drawEllipse(QRectF(ballPoint.x(), ballPoint.y(), 2.2f, 2.2f));
 
-                QConicalGradient gradient(15.5, 15.5, -45);
-                gradient.setColorAt(0.0,   colorBlue);
-                gradient.setColorAt(0.125, colorBlue);
-                gradient.setColorAt(0.625, colorGreen);
-                gradient.setColorAt(0.75,  colorGreen);
-                gradient.setColorAt(0.76,  colorGreen);
-                gradient.setColorAt(1.0,   colorGreen);
+                QConicalGradient gradient(15.5f, 15.5f, -45);
+                gradient.setColorAt(0.0f,   colorBlue);
+                gradient.setColorAt(0.125f, colorBlue);
+                gradient.setColorAt(0.625f, colorGreen);
+                gradient.setColorAt(0.75f,  colorGreen);
+                gradient.setColorAt(0.76f,  colorGreen);
+                gradient.setColorAt(1.0f,   colorGreen);
                 painter.setBrush(gradient);
                 painter.setPen(QPen(gradient, 3));
             }
@@ -254,27 +259,27 @@ void PixmapDial::paintEvent(QPaintEvent*)
             {
                 painter.setBrush(colorBlue);
                 painter.setPen(QPen(colorBlue, 0));
-                painter.drawEllipse(QRectF(ballPoint.x(), ballPoint.y(), 2.2, 2.2));
+                painter.drawEllipse(QRectF(ballPoint.x(), ballPoint.y(), 2.2f, 2.2f));
 
                 painter.setBrush(colorBlue);
                 painter.setPen(QPen(colorBlue, 3));
             }
 
-            painter.drawArc(4.0, 4.0, 26.0, 26.0, startAngle, spanAngle);
+            painter.drawArc(4.0f, 4.0f, 26.0f, 26.0f, startAngle, spanAngle);
         }
         // Custom knobs (L and R)
-        else if (m_custom_paint == CUSTOM_PAINT_CARLA_L || m_custom_paint == CUSTOM_PAINT_CARLA_R)
+        else if (fCustomPaint == CUSTOM_PAINT_CARLA_L || fCustomPaint == CUSTOM_PAINT_CARLA_R)
         {
             // knob color
-            QColor color(0xAD + m_hover_step*5, 0xD5 + m_hover_step*4, 0x4B + m_hover_step*5);
+            QColor color(0xAD + fHoverStep*5, 0xD5 + fHoverStep*4, 0x4B + fHoverStep*5);
 
             // draw small circle
-            QRectF ballRect(7.0, 8.0, 11.0, 12.0);
+            QRectF ballRect(7.0f, 8.0f, 11.0f, 12.0f);
             QPainterPath ballPath;
             ballPath.addEllipse(ballRect);
             //painter.drawRect(ballRect);
             float tmpValue  = (0.375f + 0.75f*value);
-            float ballValue = tmpValue - floorf(tmpValue);
+            float ballValue = tmpValue - std::floor(tmpValue);
             QPointF ballPoint(ballPath.pointAtPercent(ballValue));
 
             painter.setBrush(color);
@@ -284,12 +289,12 @@ void PixmapDial::paintEvent(QPaintEvent*)
             int startAngle, spanAngle;
 
             // draw arc
-            if (m_custom_paint == CUSTOM_PAINT_CARLA_L)
+            if (fCustomPaint == CUSTOM_PAINT_CARLA_L)
             {
                 startAngle = 216*16;
                 spanAngle  = -252.0*16*value;
             }
-            else if (m_custom_paint == CUSTOM_PAINT_CARLA_R)
+            else if (fCustomPaint == CUSTOM_PAINT_CARLA_R)
             {
                 startAngle = 324.0*16;
                 spanAngle  = 252.0*16*(1.0-value);
@@ -298,26 +303,28 @@ void PixmapDial::paintEvent(QPaintEvent*)
                 return;
 
             painter.setPen(QPen(color, 2));
-            painter.drawArc(3.5, 4.5, 22.0, 22.0, startAngle, spanAngle);
+            painter.drawArc(3.5f, 4.5f, 22.0f, 22.0f, startAngle, spanAngle);
 
-            if (HOVER_MIN < m_hover_step && m_hover_step < HOVER_MAX)
+            if (HOVER_MIN < fHoverStep && fHoverStep < HOVER_MAX)
             {
-                m_hover_step += m_hovered ? 1 : -1;
+                fHoverStep += fHovered ? 1 : -1;
                 QTimer::singleShot(20, this, SLOT(update()));
             }
         }
 
-        if (HOVER_MIN < m_hover_step && m_hover_step < HOVER_MAX)
+        if (HOVER_MIN < fHoverStep && fHoverStep < HOVER_MAX)
         {
-            m_hover_step += m_hovered ? 1 : -1;
+            fHoverStep += fHovered ? 1 : -1;
             QTimer::singleShot(20, this, SLOT(update()));
         }
     }
     else
     {
-        QRectF target(0.0, 0.0, p_size, p_size);
-        painter.drawPixmap(target, m_pixmap, target);
+        QRectF target(0.0f, 0.0f, fSize, fSize);
+        painter.drawPixmap(target, fPixmap, target);
     }
+
+    painter.restore();
 }
 
 void PixmapDial::resizeEvent(QResizeEvent* event)

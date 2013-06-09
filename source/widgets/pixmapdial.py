@@ -28,16 +28,16 @@ from PyQt4.QtGui import QLinearGradient, QPainter, QPainterPath, QPen, QPixmap
 # Widget Class
 
 class PixmapDial(QDial):
-    # enum Orientation
-    HORIZONTAL = 0
-    VERTICAL   = 1
-
     # enum CustomPaint
     CUSTOM_PAINT_NULL      = 0
     CUSTOM_PAINT_CARLA_WET = 1
     CUSTOM_PAINT_CARLA_VOL = 2
     CUSTOM_PAINT_CARLA_L   = 3
     CUSTOM_PAINT_CARLA_R   = 4
+
+    # enum Orientation
+    HORIZONTAL = 0
+    VERTICAL   = 1
 
     HOVER_MIN = 0
     HOVER_MAX = 9
@@ -100,17 +100,17 @@ class PixmapDial(QDial):
         self.fLabelWidth  = QFontMetrics(self.fLabelFont).width(label)
         self.fLabelHeight = QFontMetrics(self.fLabelFont).height()
 
-        self.fLabelPos.setX(float(self.fSize)/2 - float(self.fLabelWidth)/2)
+        self.fLabelPos.setX(float(self.fSize)/2.0 - float(self.fLabelWidth)/2.0)
         self.fLabelPos.setY(self.fSize + self.fLabelHeight)
 
         self.fLabelGradient.setColorAt(0.0, self.fColor1)
         self.fLabelGradient.setColorAt(0.6, self.fColor1)
         self.fLabelGradient.setColorAt(1.0, self.fColor2)
 
-        self.fLabelGradient.setStart(0, float(self.fSize)/2)
+        self.fLabelGradient.setStart(0, float(self.fSize)/2.0)
         self.fLabelGradient.setFinalStop(0, self.fSize + self.fLabelHeight + 5)
 
-        self.fLabelGradientRect = QRectF(float(self.fSize)/8, float(self.fSize)/2, float(self.fSize)*6/8, self.fSize+self.fLabelHeight+5)
+        self.fLabelGradientRect = QRectF(float(self.fSize)/8.0, float(self.fSize)/2.0, float(self.fSize*6)/8.0, self.fSize+self.fLabelHeight+5)
         self.update()
 
     def setPixmap(self, pixmapId):
@@ -153,14 +153,14 @@ class PixmapDial(QDial):
 
     def enterEvent(self, event):
         self.fHovered = True
-        if self.fHoverStep  == self.HOVER_MIN:
-            self.fHoverStep += 1
+        if self.fHoverStep == self.HOVER_MIN:
+            self.fHoverStep = self.HOVER_MIN + 1
         QDial.enterEvent(self, event)
 
     def leaveEvent(self, event):
         self.fHovered = False
-        if self.fHoverStep  == self.HOVER_MAX:
-            self.fHoverStep -= 1
+        if self.fHoverStep == self.HOVER_MAX:
+            self.fHoverStep = self.HOVER_MAX - 1
         QDial.leaveEvent(self, event)
 
     def paintEvent(self, event):

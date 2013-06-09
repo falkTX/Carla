@@ -47,8 +47,8 @@ public:
     void setLabel(QString label);
     void setPixmap(int pixmapId);
 
-    QSize minimumSizeHint() const;
-    QSize sizeHint() const;
+    QSize minimumSizeHint() const override;
+    QSize sizeHint() const override;
 
 protected:
     void updateSizes();
@@ -69,28 +69,29 @@ private:
 
     // -------------------------------------
 
-    QPixmap m_pixmap;
-    QString m_pixmap_n_str;
+    QPixmap fPixmap;
+    QString fPixmapNum;
 
-    CustomPaint m_custom_paint;
-    Orientation m_orientation;
+    CustomPaint fCustomPaint;
+    Orientation fOrientation;
 
-    bool m_hovered;
-    unsigned short m_hover_step;
+    bool fHovered;
+    unsigned short fHoverStep;
 
-    QString m_label;
-    QPointF m_label_pos;
-    int     m_label_width;
-    int     m_label_height;
+    QString fLabel;
+    QPointF fLabelPos;
+    QFont   fLabelFont;
+    int     fLabelWidth;
+    int     fLabelHeight;
 
-    QLinearGradient m_label_gradient;
-    QRectF m_label_gradient_rect;
+    QLinearGradient fLabelGradient;
+    QRectF fLabelGradientRect;
 
-    QColor m_color1;
-    QColor m_color2;
-    QColor m_colorT[2];
+    QColor fColor1;
+    QColor fColor2;
+    QColor fColorT[2];
 
-    int p_width, p_height, p_size, p_count;
+    int fWidth, fHeight, fSize, fCount;
 
     CARLA_LEAK_DETECTOR(PixmapDial)
 };
