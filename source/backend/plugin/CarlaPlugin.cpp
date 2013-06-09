@@ -54,7 +54,7 @@ public:
         if (filename == nullptr)
             return nullptr;
 
-        const CarlaMutex::ScopedLocker sl(&mutex);
+        const CarlaMutex::ScopedLocker sl(mutex);
 
         for (NonRtList<Lib>::Itenerator it = libs.begin(); it.valid(); it.next())
         {
@@ -89,7 +89,7 @@ public:
         if (libPtr == nullptr)
             return false;
 
-        const CarlaMutex::ScopedLocker sl(&mutex);
+        const CarlaMutex::ScopedLocker sl(mutex);
 
         for (NonRtList<Lib>::Itenerator it = libs.begin(); it.valid(); it.next())
         {
@@ -1952,7 +1952,7 @@ void CarlaPlugin::postponeRtEvent(const PluginPostRtEventType type, const int32_
 
 void CarlaPlugin::postRtEventsRun()
 {
-    const CarlaMutex::ScopedLocker sl(&kData->postRtEvents.mutex);
+    const CarlaMutex::ScopedLocker sl(kData->postRtEvents.mutex);
 
     while (! kData->postRtEvents.data.isEmpty())
     {

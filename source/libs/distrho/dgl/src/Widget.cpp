@@ -39,7 +39,7 @@ Widget::~Widget()
     fParent->removeWidget(this);
 }
 
-bool Widget::isVisible()
+bool Widget::isVisible() const
 {
     return fVisible;
 }

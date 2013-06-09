@@ -429,7 +429,7 @@ struct CarlaPluginProtectedData {
 
         ExternalNotes()
             : dataPool(32, 152),
-              data(&dataPool) {}
+              data(dataPool) {}
 
         ~ExternalNotes()
         {
@@ -457,8 +457,8 @@ struct CarlaPluginProtectedData {
 
         PostRtEvents()
             : dataPool(128, 128),
-              data(&dataPool),
-              dataPendingRT(&dataPool) {}
+              data(dataPool),
+              dataPendingRT(dataPool) {}
 
         ~PostRtEvents()
         {

@@ -38,7 +38,7 @@ public:
     Widget(Window* parent);
     virtual ~Widget();
 
-    bool isVisible();
+    bool isVisible() const;
     void setVisible(bool yesNo);
 
     void show()

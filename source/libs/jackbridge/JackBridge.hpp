@@ -163,17 +163,17 @@ typedef struct _jack_latency_range jack_latency_range_t;
 typedef struct _jack_position jack_position_t;
 typedef struct _jack_midi_event jack_midi_event_t;
 
-typedef void (*JackLatencyCallback)(jack_latency_callback_mode_t mode, void *arg);
-typedef int  (*JackProcessCallback)(jack_nframes_t nframes, void *arg);
-typedef int  (*JackBufferSizeCallback)(jack_nframes_t nframes, void *arg);
-typedef int  (*JackSampleRateCallback)(jack_nframes_t nframes, void *arg);
-typedef void (*JackPortRegistrationCallback)(jack_port_id_t port, int register_, void *arg);
-typedef void (*JackClientRegistrationCallback)(const char* name, int register_, void *arg);
+typedef void (*JackLatencyCallback)(jack_latency_callback_mode_t mode, void* arg);
+typedef int  (*JackProcessCallback)(jack_nframes_t nframes, void* arg);
+typedef int  (*JackBufferSizeCallback)(jack_nframes_t nframes, void* arg);
+typedef int  (*JackSampleRateCallback)(jack_nframes_t nframes, void* arg);
+typedef void (*JackPortRegistrationCallback)(jack_port_id_t port, int register_, void* arg);
+typedef void (*JackClientRegistrationCallback)(const char* name, int register_, void* arg);
 typedef void (*JackPortConnectCallback)(jack_port_id_t a, jack_port_id_t b, int connect, void* arg);
-typedef int  (*JackPortRenameCallback)(jack_port_id_t port, const char* old_name, const char* new_name, void *arg);
-typedef void (*JackFreewheelCallback)(int starting, void *arg);
+typedef int  (*JackPortRenameCallback)(jack_port_id_t port, const char* old_name, const char* new_name, void* arg);
+typedef void (*JackFreewheelCallback)(int starting, void* arg);
 typedef int  (*JackXRunCallback)(void* arg);
-typedef void (*JackShutdownCallback)(void *arg);
+typedef void (*JackShutdownCallback)(void* arg);
 
 #endif // ! JACKBRIDGE_DIRECT
 

@@ -58,7 +58,7 @@ void CarlaEngineThread::stopNow()
 
     fStopNow = true;
 
-    const CarlaMutex::ScopedLocker sl(&fMutex);
+    const CarlaMutex::ScopedLocker sl(fMutex);
 
     if (isRunning() && ! wait(500))
         terminate();
@@ -77,7 +77,7 @@ void CarlaEngineThread::run()
 
     while (kEngine->isRunning() && ! fStopNow)
     {
-        const CarlaMutex::ScopedLocker sl(&fMutex);
+        const CarlaMutex::ScopedLocker sl(fMutex);
 
 #ifdef BUILD_BRIDGE
         oscRegisted = kEngine->isOscBridgeRegistered();

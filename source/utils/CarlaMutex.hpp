@@ -1,6 +1,6 @@
 /*
  * Carla Mutex
- * Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -35,7 +35,7 @@ class CarlaMutex
 {
 public:
     CarlaMutex()
-        : fTryLockCalled(false)
+        : fTryLockWasCalled(false)
     {
 #ifndef CPP11_MUTEX
         pthread_mutex_init(&pmutex, nullptr);
@@ -60,7 +60,7 @@ public:
 
     bool tryLock()
     {
-        fTryLockCalled = true;
+        fTryLockWasCalled = true;
 
 #ifdef CPP11_MUTEX
         return cmutex.try_lock();
@@ -80,27 +80,27 @@ public:
 
     bool wasTryLockCalled()
     {
-        const bool ret = fTryLockCalled;
-        fTryLockCalled = false;
+        const bool ret = fTryLockWasCalled;
+        fTryLockWasCalled = false;
         return ret;
     }
 
     class ScopedLocker
     {
     public:
-        ScopedLocker(CarlaMutex* const mutex)
+        ScopedLocker(CarlaMutex& mutex)
             : fMutex(mutex)
         {
-            fMutex->lock();
+            fMutex.lock();
         }
 
         ~ScopedLocker()
         {
-            fMutex->unlock();
+            fMutex.unlock();
         }
 
     private:
-        CarlaMutex* const fMutex;
+        CarlaMutex& fMutex;
 
         CARLA_PREVENT_HEAP_ALLOCATION
         CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ScopedLocker)
@@ -112,7 +112,7 @@ private:
 #else
     pthread_mutex_t pmutex;
 #endif
-    bool fTryLockCalled;
+    bool fTryLockWasCalled;
 
     CARLA_PREVENT_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaMutex)

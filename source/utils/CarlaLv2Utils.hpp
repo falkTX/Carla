@@ -390,10 +390,10 @@ public:
             return nullptr;
         }
 
-        if (const LilvState* state = lilv_state_new_from_world(this->me, uridMap, uriNode))
+        if (const LilvState* cState = lilv_state_new_from_world(this->me, uridMap, uriNode))
         {
             lilv_node_free(uriNode);
-            return state;
+            return cState;
         }
         else
         {
@@ -567,7 +567,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
                     const QString replaceId(replaceURI.split(":").last());
 
                     bool ok;
-                    ulong uniqueId = replaceId.toULong(&ok);
+                    const ulong uniqueId(replaceId.toULong(&ok));
 
                     if (ok && uniqueId != 0)
                         rdfDescriptor->UniqueID = uniqueId;
@@ -587,7 +587,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
         for (uint32_t j = 0; j < rdfDescriptor->PortCount; ++j)
         {
             Lilv::Port lilvPort(lilvPlugin.get_port_by_index(j));
-            LV2_RDF_Port* const rdfPort = &rdfDescriptor->Ports[j];
+            LV2_RDF_Port* const rdfPort(&rdfDescriptor->Ports[j]);
 
             // --------------------------------------
             // Set Port Information
@@ -605,23 +605,24 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
                 // Input or Output
                 if (lilvPort.is_a(gLv2World.port_input))
                     rdfPort->Types |= LV2_PORT_INPUT;
-
                 else if (lilvPort.is_a(gLv2World.port_output))
                     rdfPort->Types |= LV2_PORT_OUTPUT;
-
                 else
                     carla_stderr("lv2_rdf_new(\"%s\") - port '%s' is not input or output", uri, rdfPort->Name);
 
                 // Data Type
                 if (lilvPort.is_a(gLv2World.port_control))
+                {
                     rdfPort->Types |= LV2_PORT_CONTROL;
-
+                }
                 else if (lilvPort.is_a(gLv2World.port_audio))
+                {
                     rdfPort->Types |= LV2_PORT_AUDIO;
-
+                }
                 else if (lilvPort.is_a(gLv2World.port_cv))
+                {
                     rdfPort->Types |= LV2_PORT_CV;
-
+                }
                 else if (lilvPort.is_a(gLv2World.port_atom))
                 {
                     rdfPort->Types |= LV2_PORT_ATOM;
@@ -655,7 +656,6 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
                     if (! supported)
                         carla_stderr("lv2_rdf_new(\"%s\") - port '%s' is of atom type but has unsupported data", uri, rdfPort->Name);
                 }
-
                 else if (lilvPort.is_a(gLv2World.port_event))
                 {
                     rdfPort->Types |= LV2_PORT_EVENT;
@@ -680,13 +680,11 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
                     if (! supported)
                         carla_stderr("lv2_rdf_new(\"%s\") - port '%s' is of event type but has unsupported data", uri, rdfPort->Name);
                 }
-
                 else if (lilvPort.is_a(gLv2World.port_midi))
                 {
                     rdfPort->Types |= LV2_PORT_MIDI_LL;
                     rdfPort->Types |= LV2_PORT_DATA_MIDI_EVENT;
                 }
-
                 else
                     carla_stderr("lv2_rdf_new(\"%s\") - port '%s' is of unkown data type", uri, rdfPort->Name);
             }
@@ -726,6 +724,66 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
 
                 if (lilvPort.has_property(gLv2World.reportsLatency))
                     rdfPort->Designation = LV2_PORT_DESIGNATION_LATENCY;
+
+                // no port properties, check if port uses old ones
+                if (rdfPort->Properties == 0x0)
+                {
+                    static const Lilv::Node oldPropArtifacts(gLv2World.new_uri("http://lv2plug.in/ns/dev/extportinfo#causesArtifacts"));
+                    static const Lilv::Node oldPropContinuousCV(gLv2World.new_uri("http://lv2plug.in/ns/dev/extportinfo#continuousCV"));
+                    static const Lilv::Node oldPropDiscreteCV(gLv2World.new_uri("http://lv2plug.in/ns/dev/extportinfo#discreteCV"));
+                    static const Lilv::Node oldPropExpensive(gLv2World.new_uri("http://lv2plug.in/ns/dev/extportinfo#expensive"));
+                    static const Lilv::Node oldPropStrictBounds(gLv2World.new_uri("http://lv2plug.in/ns/dev/extportinfo#hasStrictBounds"));
+                    static const Lilv::Node oldPropLogarithmic(gLv2World.new_uri("http://lv2plug.in/ns/dev/extportinfo#logarithmic"));
+                    static const Lilv::Node oldPropNotAutomatic(gLv2World.new_uri("http://lv2plug.in/ns/dev/extportinfo#notAutomatic"));
+                    static const Lilv::Node oldPropNotOnGUI(gLv2World.new_uri("http://lv2plug.in/ns/dev/extportinfo#notOnGUI"));
+                    static const Lilv::Node oldPropTrigger(gLv2World.new_uri("http://lv2plug.in/ns/dev/extportinfo#trigger"));
+
+                    if (lilvPort.has_property(oldPropArtifacts))
+                    {
+                        rdfPort->Properties |= LV2_PORT_CAUSES_ARTIFACTS;
+                        carla_stderr("lv2_rdf_new(\"%s\") - port '%s' uses old/broken LV2 property for 'causesArtifacts'", uri, rdfPort->Name);
+                    }
+                    if (lilvPort.has_property(oldPropContinuousCV))
+                    {
+                        rdfPort->Properties |= LV2_PORT_CONTINUOUS_CV;
+                        carla_stderr("lv2_rdf_new(\"%s\") - port '%s' uses old/broken LV2 property for 'continuousCV'", uri, rdfPort->Name);
+                    }
+                    if (lilvPort.has_property(oldPropDiscreteCV))
+                    {
+                        rdfPort->Properties |= LV2_PORT_DISCRETE_CV;
+                        carla_stderr("lv2_rdf_new(\"%s\") - port '%s' uses old/broken LV2 property for 'discreteCV'", uri, rdfPort->Name);
+                    }
+                    if (lilvPort.has_property(oldPropExpensive))
+                    {
+                        rdfPort->Properties |= LV2_PORT_EXPENSIVE;
+                        carla_stderr("lv2_rdf_new(\"%s\") - port '%s' uses old/broken LV2 property for 'expensive'", uri, rdfPort->Name);
+                    }
+                    if (lilvPort.has_property(oldPropStrictBounds))
+                    {
+                        rdfPort->Properties |= LV2_PORT_STRICT_BOUNDS;
+                        carla_stderr("lv2_rdf_new(\"%s\") - port '%s' uses old/broken LV2 property for 'hasStrictBounds'", uri, rdfPort->Name);
+                    }
+                    if (lilvPort.has_property(oldPropLogarithmic))
+                    {
+                        rdfPort->Properties |= LV2_PORT_LOGARITHMIC;
+                        carla_stderr("lv2_rdf_new(\"%s\") - port '%s' uses old/broken LV2 property for 'logarithmic'", uri, rdfPort->Name);
+                    }
+                    if (lilvPort.has_property(oldPropNotAutomatic))
+                    {
+                        rdfPort->Properties |= LV2_PORT_NOT_AUTOMATIC;
+                        carla_stderr("lv2_rdf_new(\"%s\") - port '%s' uses old/broken LV2 property for 'notAutomatic'", uri, rdfPort->Name);
+                    }
+                    if (lilvPort.has_property(oldPropNotOnGUI))
+                    {
+                        rdfPort->Properties |= LV2_PORT_NOT_ON_GUI;
+                        carla_stderr("lv2_rdf_new(\"%s\") - port '%s' uses old/broken LV2 property for 'notOnGUI'", uri, rdfPort->Name);
+                    }
+                    if (lilvPort.has_property(oldPropTrigger))
+                    {
+                        rdfPort->Properties |= LV2_PORT_TRIGGER;
+                        carla_stderr("lv2_rdf_new(\"%s\") - port '%s' uses old/broken LV2 property for 'trigger'", uri, rdfPort->Name);
+                    }
+                }
             }
 
             // --------------------------------------
@@ -946,8 +1004,10 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
                 uint32_t h = 0;
                 LILV_FOREACH(scale_points, j, lilvScalePoints)
                 {
+                    CARLA_ASSERT(h < rdfPort->ScalePointCount);
+
                     Lilv::ScalePoint lilvScalePoint(lilvScalePoints.get(j));
-                    LV2_RDF_PortScalePoint* const rdfScalePoint = &rdfPort->ScalePoints[h++];
+                    LV2_RDF_PortScalePoint* const rdfScalePoint(&rdfPort->ScalePoints[h++]);
 
                     if (const char* const label = Lilv::Node(lilvScalePoint.get_label()).as_string())
                         rdfScalePoint->Label = carla_strdup(label);
@@ -971,7 +1031,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
             LILV_FOREACH(nodes, j, presetNodes)
             {
                 Lilv::Node presetNode(presetNodes.get(j));
-                // FIXME - check appliesTo
+                // FIXME - check appliesTo?
 
                 QString presetURI(presetNode.as_uri());
 
@@ -995,12 +1055,14 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
 
                 if (const char* const presetURI = presetNode.as_uri())
                 {
-                    int32_t index = presetListURIs.indexOf(QString(presetURI));
+                    const int index(presetListURIs.indexOf(QString(presetURI)));
+
+                    CARLA_ASSERT(index >= 0);
 
                     if (index < 0)
                         continue;
 
-                    LV2_RDF_Preset* const rdfPreset = &rdfDescriptor->Presets[index];
+                    LV2_RDF_Preset* const rdfPreset(&rdfDescriptor->Presets[index]);
 
                     // --------------------------------------
                     // Set Preset Information
@@ -1036,9 +1098,10 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
             LILV_FOREACH(nodes, j, lilvFeatureNodes)
             {
                 CARLA_ASSERT(h < rdfDescriptor->FeatureCount);
-                Lilv::Node lilvFeatureNode(lilvFeatureNodes.get(j));
 
-                LV2_RDF_Feature* const rdfFeature = &rdfDescriptor->Features[h++];
+                Lilv::Node lilvFeatureNode(lilvFeatureNodes.get(j));
+                LV2_RDF_Feature* const rdfFeature(&rdfDescriptor->Features[h++]);
+
                 rdfFeature->Type = lilvFeatureNodesR.contains(lilvFeatureNode) ? LV2_FEATURE_REQUIRED : LV2_FEATURE_OPTIONAL;
 
                 if (const char* const featureURI = lilvFeatureNode.as_uri())
@@ -1061,9 +1124,9 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
             LILV_FOREACH(nodes, j, lilvExtensionDataNodes)
             {
                 CARLA_ASSERT(h < rdfDescriptor->ExtensionCount);
-                Lilv::Node lilvExtensionDataNode(lilvExtensionDataNodes.get(j));
 
-                LV2_URI* const rdfExtension = &rdfDescriptor->Extensions[h++];
+                Lilv::Node lilvExtensionDataNode(lilvExtensionDataNodes.get(j));
+                LV2_URI* const rdfExtension(&rdfDescriptor->Extensions[h++]);
 
                 if (const char* const extURI = lilvExtensionDataNode.as_uri())
                     *rdfExtension = carla_strdup(extURI);
@@ -1085,9 +1148,9 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
             LILV_FOREACH(uis, j, lilvUIs)
             {
                 CARLA_ASSERT(h < rdfDescriptor->UICount);
-                Lilv::UI lilvUI(lilvUIs.get(j));
 
-                LV2_RDF_UI* const rdfUI = &rdfDescriptor->UIs[h++];
+                Lilv::UI lilvUI(lilvUIs.get(j));
+                LV2_RDF_UI* const rdfUI(&rdfDescriptor->UIs[h++]);
 
                 // --------------------------------------
                 // Set UI Type
@@ -1142,9 +1205,10 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
                         LILV_FOREACH(nodes, k, lilvFeatureNodes)
                         {
                             CARLA_ASSERT(x < rdfUI->FeatureCount);
-                            Lilv::Node lilvFeatureNode(lilvFeatureNodes.get(k));
 
-                            LV2_RDF_Feature* const rdfFeature = &rdfUI->Features[x++];
+                            Lilv::Node lilvFeatureNode(lilvFeatureNodes.get(k));
+                            LV2_RDF_Feature* const rdfFeature(&rdfUI->Features[x++]);
+
                             rdfFeature->Type = lilvFeatureNodesR.contains(lilvFeatureNode) ? LV2_FEATURE_REQUIRED : LV2_FEATURE_OPTIONAL;
 
                             if (const char* const featureURI = lilvFeatureNode.as_uri())
@@ -1167,9 +1231,9 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
                         LILV_FOREACH(nodes, k, lilvExtensionDataNodes)
                         {
                             CARLA_ASSERT(x < rdfUI->ExtensionCount);
-                            Lilv::Node lilvExtensionDataNode(lilvExtensionDataNodes.get(k));
 
-                            LV2_URI* const rdfExtension = &rdfUI->Extensions[x++];
+                            Lilv::Node lilvExtensionDataNode(lilvExtensionDataNodes.get(k));
+                            LV2_URI* const rdfExtension(&rdfUI->Extensions[x++]);
 
                             if (const char* const extURI = lilvExtensionDataNode.as_uri())
                                 *rdfExtension = carla_strdup(extURI);
@@ -1269,9 +1333,9 @@ bool is_lv2_ui_feature_supported(const LV2_URI uri)
         return true;
     if (std::strcmp(uri, LV2_INSTANCE_ACCESS_URI) == 0)
         return true;
-    if (std::strcmp(uri, LV2_UI__idle) == 0)
-        return true;
     if (std::strcmp(uri, LV2_UI__fixedSize) == 0)
+        return true;
+    if (std::strcmp(uri, LV2_UI__idle) == 0)
         return true;
     if (std::strcmp(uri, LV2_UI__makeResident) == 0)
         return true;

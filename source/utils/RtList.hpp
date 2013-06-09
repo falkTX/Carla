@@ -138,7 +138,7 @@ public:
         {
             std::memcpy(&data->value, &value, sizeof(T));
             list_add_tail(&data->siblings, &fQueue);
-            fCount++;
+            ++fCount;
             return true;
         }
 
@@ -151,7 +151,7 @@ public:
         {
             std::memcpy(&data->value, &value, sizeof(T));
             list_add_tail(&data->siblings, it.fEntry->next);
-            fCount++;
+            ++fCount;
             return true;
         }
 
@@ -164,7 +164,7 @@ public:
         {
             std::memcpy(&data->value, &value, sizeof(T));
             list_add(&data->siblings, &fQueue);
-            fCount++;
+            ++fCount;
             return true;
         }
 
@@ -177,7 +177,7 @@ public:
         {
             std::memcpy(&data->value, &value, sizeof(T));
             list_add(&data->siblings, it.fEntry->prev);
-            fCount++;
+            ++fCount;
             return true;
         }
 
@@ -203,7 +203,7 @@ public:
 
             if (remove)
             {
-                fCount--;
+                --fCount;
                 list_del(entry);
 
                 if (data != nullptr)
@@ -235,7 +235,7 @@ public:
 
         if (it.fEntry != nullptr && it.fData != nullptr)
         {
-            fCount--;
+            --fCount;
             list_del(it.fEntry);
             _deallocate(it.fData);
         }
@@ -255,7 +255,7 @@ public:
 
             if (data != nullptr && data->value == value)
             {
-                fCount--;
+                --fCount;
                 list_del(entry);
                 _deallocate(data);
                 break;
@@ -269,9 +269,9 @@ public:
     {
         Data* data;
         k_list_head* entry;
-        k_list_head* tmp;
+        k_list_head* entry2;
 
-        list_for_each_safe(entry, tmp, &fQueue)
+        list_for_each_safe(entry, entry2, &fQueue)
         {
             data = list_entry(entry, Data, siblings);
 
@@ -279,14 +279,14 @@ public:
 
             if (data != nullptr && data->value == value)
             {
-                fCount--;
+                --fCount;
                 list_del(entry);
                 _deallocate(data);
             }
         }
     }
 
-    virtual void spliceAppend(List& list, const bool init = false)
+    void spliceAppend(List& list, const bool init = false)
     {
         if (init)
         {
@@ -301,7 +301,7 @@ public:
         }
     }
 
-    virtual void spliceInsert(List& list, const bool init = false)
+    void spliceInsert(List& list, const bool init = false)
     {
         if (init)
         {
@@ -348,7 +348,7 @@ private:
 
         if (data != nullptr && remove)
         {
-            fCount--;
+            --fCount;
             list_del(entry);
             _deallocate(data);
         }
@@ -358,7 +358,6 @@ private:
 
     T& _getEmpty()
     {
-        // FIXME ?
         static T value;
         static bool reset = true;
 
@@ -391,14 +390,16 @@ public:
             : fHandle(nullptr),
               kDataSize(sizeof(typename List<T>::Data))
         {
-            rtsafe_memory_pool_create(&fHandle, nullptr, kDataSize, minPreallocated, maxPreallocated);
-            CARLA_ASSERT(fHandle != nullptr);
+            resize(minPreallocated, maxPreallocated);
         }
 
         ~Pool()
         {
             if (fHandle != nullptr)
+            {
                 rtsafe_memory_pool_destroy(fHandle);
+                fHandle = nullptr;
+            }
         }
 
         void* allocate_atomic()
@@ -418,8 +419,6 @@ public:
 
         void resize(const size_t minPreallocated, const size_t maxPreallocated)
         {
-            CARLA_ASSERT(this->fCount == 0);
-
             if (fHandle != nullptr)
             {
                 rtsafe_memory_pool_destroy(fHandle);
@@ -430,6 +429,16 @@ public:
             CARLA_ASSERT(fHandle != nullptr);
         }
 
+        bool operator==(const Pool& pool) const
+        {
+            return (fHandle == pool.fHandle && kDataSize == pool.kDataSize);
+        }
+
+        bool operator!=(const Pool& pool) const
+        {
+            return (fHandle != pool.fHandle || kDataSize != pool.kDataSize);
+        }
+
     private:
         RtMemPool_Handle fHandle;
         const size_t     kDataSize;
@@ -438,10 +447,9 @@ public:
     // -------------------------------------------------------------------
     // Now the actual list code
 
-    RtList(Pool* const memPool)
-        : kMemPool(memPool)
+    RtList(Pool& memPool)
+        : fMemPool(memPool)
     {
-        CARLA_ASSERT(kMemPool != nullptr);
     }
 
     ~RtList() override
@@ -454,7 +462,7 @@ public:
         {
             std::memcpy(&data->value, &value, sizeof(T));
             list_add_tail(&data->siblings, &this->fQueue);
-            this->fCount++;
+            ++this->fCount;
         }
     }
 
@@ -464,7 +472,7 @@ public:
         {
             std::memcpy(&data->value, &value, sizeof(T));
             list_add(&data->siblings, &this->fQueue);
-            this->fCount++;
+            ++this->fCount;
         }
     }
 
@@ -472,25 +480,25 @@ public:
     {
         this->clear();
 
-        kMemPool->resize(minPreallocated, maxPreallocated);
+        fMemPool.resize(minPreallocated, maxPreallocated);
     }
 
     void spliceAppend(RtList& list, const bool init = false)
     {
-        CARLA_ASSERT(kMemPool == list.kMemPool);
+        CARLA_ASSERT(fMemPool == list.fMemPool);
 
         List<T>::spliceAppend(list, init);
     }
 
     void spliceInsert(RtList& list, const bool init = false)
     {
-        CARLA_ASSERT(kMemPool == list.kMemPool);
+        CARLA_ASSERT(fMemPool == list.fMemPool);
 
         List<T>::spliceInsert(list, init);
     }
 
 private:
-    Pool* const kMemPool;
+    Pool& fMemPool;
 
     typename List<T>::Data* _allocate() override
     {
@@ -499,17 +507,17 @@ private:
 
     typename List<T>::Data* _allocate_atomic()
     {
-        return (typename List<T>::Data*)kMemPool->allocate_atomic();
+        return (typename List<T>::Data*)fMemPool.allocate_atomic();
     }
 
     typename List<T>::Data* _allocate_sleepy()
     {
-        return (typename List<T>::Data*)kMemPool->allocate_sleepy();
+        return (typename List<T>::Data*)fMemPool.allocate_sleepy();
     }
 
     void _deallocate(typename List<T>::Data* const dataPtr) override
     {
-        kMemPool->deallocate(dataPtr);
+        fMemPool.deallocate(dataPtr);
     }
 
     LIST_DECLARATIONS(RtList)
@@ -526,7 +534,7 @@ public:
     {
     }
 
-    ~NonRtList()
+    ~NonRtList() override
     {
     }
 

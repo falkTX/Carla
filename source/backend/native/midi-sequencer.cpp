@@ -198,8 +198,8 @@ private:
 
         InRtEvents()
             : dataPool(MIN_PREALLOCATED_EVENT_COUNT, MAX_PREALLOCATED_EVENT_COUNT),
-              data(&dataPool),
-              dataPendingRT(&dataPool) {}
+              data(dataPool),
+              dataPendingRT(dataPool) {}
 
         ~InRtEvents()
         {

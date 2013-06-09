@@ -2,7 +2,7 @@
 #ifndef _LILV_CONFIG_H_
 #define _LILV_CONFIG_H_
 
-#define LILV_VERSION "0.14.4"
+#define LILV_VERSION "0.16.0"
 #define LILV_NEW_LV2 1
 
 #define HAVE_LV2    1

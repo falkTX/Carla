@@ -197,7 +197,7 @@ public:
 
     void clear()
     {
-        const CarlaMutex::ScopedLocker sl(&fMutex);
+        const CarlaMutex::ScopedLocker sl(fMutex);
         fData.clear();
     }
 
@@ -214,7 +214,7 @@ private:
     {
         if (fData.isEmpty())
         {
-            const CarlaMutex::ScopedLocker sl(&fMutex);
+            const CarlaMutex::ScopedLocker sl(fMutex);
             fData.append(event);
             return;
         }
@@ -226,12 +226,12 @@ private:
             if (event->time >= oldEvent->time)
                 continue;
 
-            const CarlaMutex::ScopedLocker sl(&fMutex);
+            const CarlaMutex::ScopedLocker sl(fMutex);
             fData.insertAt(event, it);
             return;
         }
 
-        const CarlaMutex::ScopedLocker sl(&fMutex);
+        const CarlaMutex::ScopedLocker sl(fMutex);
         fData.append(event);
     }
 };

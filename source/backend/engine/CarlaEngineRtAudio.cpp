@@ -1270,8 +1270,8 @@ private:
 
         RtMidiEvents()
             : dataPool(512, 512),
-              data(&dataPool),
-              dataPending(&dataPool) {}
+              data(dataPool),
+              dataPending(dataPool) {}
 
         ~RtMidiEvents()
         {

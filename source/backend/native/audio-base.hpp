@@ -160,7 +160,7 @@ public:
         if (isRunning() && ! wait(1000))
             terminate();
 
-        const CarlaMutex::ScopedLocker sl(&fMutex);
+        const CarlaMutex::ScopedLocker sl(fMutex);
         fPool.reset();
     }
 
@@ -290,7 +290,7 @@ public:
             i = j = 0;
 
             // lock, and put data asap
-            const CarlaMutex::ScopedLocker sl(&fMutex);
+            const CarlaMutex::ScopedLocker sl(fMutex);
 
             for (; i < fPool.size && j < rv; ++j)
             {

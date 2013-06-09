@@ -54,8 +54,8 @@ const LADSPA_RDF_Descriptor* ladspa_rdf_dup(const LADSPA_RDF_Descriptor* const o
 
         for (unsigned long i=0; i < newDescriptor->PortCount; ++i)
         {
-            LADSPA_RDF_Port* const oldPort = &oldDescriptor->Ports[i];
-            LADSPA_RDF_Port* const newPort = &newDescriptor->Ports[i];
+            LADSPA_RDF_Port* const oldPort(&oldDescriptor->Ports[i]);
+            LADSPA_RDF_Port* const newPort(&newDescriptor->Ports[i]);
 
             newPort->Type    = oldPort->Type;
             newPort->Hints   = oldPort->Hints;
@@ -72,8 +72,8 @@ const LADSPA_RDF_Descriptor* ladspa_rdf_dup(const LADSPA_RDF_Descriptor* const o
 
                 for (unsigned long j=0; j < oldPort->ScalePointCount; ++j)
                 {
-                    LADSPA_RDF_ScalePoint* const oldScalePoint = &oldPort->ScalePoints[j];
-                    LADSPA_RDF_ScalePoint* const newScalePoint = &newPort->ScalePoints[j];
+                    LADSPA_RDF_ScalePoint* const oldScalePoint(&oldPort->ScalePoints[j]);
+                    LADSPA_RDF_ScalePoint* const newScalePoint(&newPort->ScalePoints[j]);
 
                     newScalePoint->Value = oldScalePoint->Value;
 
