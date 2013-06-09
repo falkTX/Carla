@@ -1,5 +1,5 @@
 /*
- * Pixmap Button, a custom Qt4 widget
+ * LED Button, a custom Qt4 widget
  * Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
@@ -34,22 +34,23 @@ class LEDButton : public QPushButton
 
 public:
     enum Color {
-        BLUE    = 1,
-        GREEN   = 2,
-        RED     = 3,
-        YELLOW  = 4
+        OFF    = 0,
+        BLUE   = 1,
+        GREEN  = 2,
+        RED    = 3,
+        YELLOW = 4
     };
 
     LEDButton(QWidget* parent);
-    ~LEDButton();
 
     void setColor(Color color);
 
 protected:
-    void paintEvent(QPaintEvent* event);
+    void paintEvent(QPaintEvent* event) override;
 
 private:
     Color   fColor;
+    Color   fLastColor;
     QPixmap fPixmap;
     QRectF  fPixmapRect;
 

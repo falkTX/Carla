@@ -100,8 +100,8 @@ LIBS  = ../libcarla_engine.a
 LIBS += ../libcarla_plugin.a
 LIBS += ../libcarla_native.a
 LIBS += ../../libs/rtmempool.a
-LIBS += ../../libs/widgets.a
 LIBS += ../../libs/theme.a
+LIBS += ../../libs/widgets.a
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
 LIBS += ../../libs/lilv.a
@@ -150,10 +150,35 @@ debug:
 
 # --------------------------------------------------------------
 
+../libcarla_engine.a:
+	$(MAKE) -C ../engine
+
+../libcarla_plugin.a:
+	$(MAKE) -C ../plugin
+
 ../libcarla_native.a:
 	$(MAKE) -C ../native
+
+../../libs/dgl.a:
+	$(MAKE) -C ../../libs dgl
+
+../../libs/lilv.a:
+	$(MAKE) -C ../../libs lilv
+
+../../libs/rtmempool.a:
+	$(MAKE) -C ../../libs rtmempool
+
+../../libs/theme.a:
+	$(MAKE) -C ../../libs theme
 
 ../../libs/widgets.a:
 	$(MAKE) -C ../../libs widgets
 
-.PHONY: ../libcarla_native.a ../../libs/widgets.a
+.PHONY: ../libcarla_engine.a \
+	../libcarla_plugin.a \
+	../libcarla_native.a \
+	../../libs/dgl.a \
+	../../libs/lilv.a \
+	../../libs/rtmempool.a \
+	../../libs/theme.a \
+	../../libs/widgets.a

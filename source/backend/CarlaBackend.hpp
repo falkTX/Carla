@@ -682,8 +682,6 @@ struct ParameterData {
           hints(0x0),
           midiChannel(0),
           midiCC(-1) {}
-
-    CARLA_LEAK_DETECTOR(ParameterData)
 #endif
 };
 
@@ -706,8 +704,6 @@ struct ParameterRanges {
           step(0.01f),
           stepSmall(0.0001f),
           stepLarge(0.1f) {}
-
-    CARLA_LEAK_DETECTOR(ParameterRanges)
 #endif
 
     void fixDefault()
@@ -763,8 +759,6 @@ struct MidiProgramData {
         : bank(0),
           program(0),
           name(nullptr) {}
-
-    CARLA_LEAK_DETECTOR(MidiProgramData)
 #endif
 };
 
@@ -784,8 +778,6 @@ struct CustomData {
         : type(nullptr),
           key(nullptr),
           value(nullptr) {}
-
-    CARLA_LEAK_DETECTOR(CustomData)
 #endif
 };
 

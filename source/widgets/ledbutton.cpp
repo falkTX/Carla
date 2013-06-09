@@ -1,5 +1,5 @@
 /*
- * Pixmap Button, a custom Qt4 widget
+ * LED Button, a custom Qt4 widget
  * Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
@@ -21,18 +21,18 @@
 #include <QtGui/QPaintEvent>
 
 LEDButton::LEDButton(QWidget* parent):
-    QPushButton(parent)
+    QPushButton(parent),
+    fColor(OFF),
+    fLastColor(OFF),
+    fPixmapRect(0, 0, 0, 0)
 {
-    fPixmapRect = QRectF(0, 0, 0, 0);
-
     setCheckable(true);
     setText("");
 
     setColor(BLUE);
-}
 
-LEDButton::~LEDButton()
-{
+    // matching fLastColor
+    fPixmap.load(":/bitmaps/led_off.png");
 }
 
 void LEDButton::setColor(Color color)
@@ -42,10 +42,8 @@ void LEDButton::setColor(Color color)
 
     fPixmapRect = QRectF(0, 0, size, size);
 
-    setMinimumWidth(size);
-    setMaximumWidth(size);
-    setMinimumHeight(size);
-    setMaximumHeight(size);
+    setMinimumSize(size, size);
+    setMaximumSize(size, size);
 }
 
 void LEDButton::paintEvent(QPaintEvent* event)
@@ -55,23 +53,36 @@ void LEDButton::paintEvent(QPaintEvent* event)
 
     if (isChecked())
     {
-        switch (fColor)
+        if (fLastColor != fColor)
         {
-        case BLUE:
-            fPixmap.load(":/bitmaps/led_blue.png");
-        case GREEN:
-            fPixmap.load(":/bitmaps/led_green.png");
-        case RED:
-            fPixmap.load(":/bitmaps/led_red.png");
-        case YELLOW:
-            fPixmap.load(":/bitmaps/led_yellow.png");
-        default:
-            return;
+            switch (fColor)
+            {
+            case OFF:
+                fPixmap.load(":/bitmaps/led_off.png");
+                break;
+            case BLUE:
+                fPixmap.load(":/bitmaps/led_blue.png");
+                break;
+            case GREEN:
+                fPixmap.load(":/bitmaps/led_green.png");
+                break;
+            case RED:
+                fPixmap.load(":/bitmaps/led_red.png");
+                break;
+            case YELLOW:
+                fPixmap.load(":/bitmaps/led_yellow.png");
+                break;
+            default:
+                return;
+            }
+
+            fLastColor = fColor;
         }
     }
-    else
+    else if (fLastColor != OFF)
     {
         fPixmap.load(":/bitmaps/led_off.png");
+        fLastColor = OFF;
     }
 
     painter.drawPixmap(fPixmapRect, fPixmap, fPixmapRect);

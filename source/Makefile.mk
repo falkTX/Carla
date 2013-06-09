@@ -62,7 +62,7 @@ HAVE_FFMPEG       = $(shell pkg-config --exists libavcodec libavformat libavutil
 HAVE_OPENGL       = $(shell pkg-config --exists gl && echo true)
 HAVE_GTK2         = $(shell pkg-config --exists gtk+-2.0 && echo true)
 HAVE_GTK3         = $(shell pkg-config --exists gtk+-3.0 && echo true)
-# HAVE_QT4          = $(shell pkg-config --exists QtCore && echo true)
+HAVE_QT4          = $(shell pkg-config --exists QtCore && echo true)
 HAVE_QT5          = $(shell pkg-config --exists Qt5Core && echo true)
 
 HAVE_AF_DEPS      = $(shell pkg-config --exists sndfile && echo true)

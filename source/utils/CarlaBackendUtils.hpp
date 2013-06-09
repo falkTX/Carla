@@ -337,6 +337,8 @@ const char* CallbackType2Str(const CallbackType& type)
         return "CALLBACK_BUFFER_SIZE_CHANGED";
     case CALLBACK_SAMPLE_RATE_CHANGED:
         return "CALLBACK_SAMPLE_RATE_CHANGED";
+    case CALLBACK_PROCESS_MODE_CHANGED:
+        return "CALLBACK_PROCESS_MODE_CHANGED";
     case CALLBACK_NSM_ANNOUNCE:
         return "CALLBACK_NSM_ANNOUNCE";
     case CALLBACK_NSM_OPEN:

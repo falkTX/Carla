@@ -53,10 +53,10 @@ public:
 protected:
     void updateSizes();
 
-    void enterEvent(QEvent* event);
-    void leaveEvent(QEvent* event);
-    void paintEvent(QPaintEvent* event);
-    void resizeEvent(QResizeEvent* event);
+    void enterEvent(QEvent* event) override;
+    void leaveEvent(QEvent* event) override;
+    void paintEvent(QPaintEvent* event) override;
+    void resizeEvent(QResizeEvent* event) override;
 
 private:
     enum Orientation {

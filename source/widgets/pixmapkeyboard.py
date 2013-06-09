@@ -103,7 +103,6 @@ class PixmapKeyboard(QWidget):
         self.fOctaves = 6
         self.fLastMouseNote = -1
 
-        self.fNeedsUpdate = False
         self.fEnabledKeys = []
 
         self.fFont   = QFont("Monospace", 7, QFont.Normal)
@@ -114,7 +113,6 @@ class PixmapKeyboard(QWidget):
 
     def allNotesOff(self):
         self.fEnabledKeys = []
-        self.fNeedsUpdate = True
 
         self.emit(SIGNAL("notesOff()"))
         self.update()
@@ -264,7 +262,7 @@ class PixmapKeyboard(QWidget):
 
     def mouseMoveEvent(self, event):
         self.handleMousePos(event.pos())
-        QWidget.mousePressEvent(self, event)
+        QWidget.mouseMoveEvent(self, event)
 
     def mouseReleaseEvent(self, event):
         if self.fLastMouseNote != -1:
@@ -324,7 +322,7 @@ class PixmapKeyboard(QWidget):
             elif note < 132:
                 octave = 10
             else:
-                # cannot paint this note either
+                # cannot paint this note
                 continue
 
             if self.fPixmapMode == self.VERTICAL:
@@ -393,7 +391,7 @@ class PixmapKeyboard(QWidget):
             elif note < 132:
                 octave = 10
             else:
-                # cannot paint this note either
+                # cannot paint this note
                 continue
 
             if self.fPixmapMode == self.VERTICAL:
@@ -425,4 +423,5 @@ class PixmapKeyboard(QWidget):
         return bool(baseNote in kBlackNotes)
 
     def _getRectFromMidiNote(self, note):
-        return self.fMidiMap.get(str(note % 12))
+        baseNote = note % 12
+        return self.fMidiMap.get(str(baseNote))

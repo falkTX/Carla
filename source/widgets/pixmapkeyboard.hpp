@@ -61,15 +61,13 @@ signals:
 
 protected:
     void handleMousePos(const QPoint&);
-    void keyPressEvent(QKeyEvent*);
-    void keyReleaseEvent(QKeyEvent*);
-    void mousePressEvent(QMouseEvent*);
-    void mouseMoveEvent(QMouseEvent*);
-    void mouseReleaseEvent(QMouseEvent*);
-    void paintEvent(QPaintEvent*);
 
-private Q_SLOTS:
-    void updateOnce();
+    void keyPressEvent(QKeyEvent*) override;
+    void keyReleaseEvent(QKeyEvent*) override;
+    void mousePressEvent(QMouseEvent*) override;
+    void mouseMoveEvent(QMouseEvent*) override;
+    void mouseReleaseEvent(QMouseEvent*) override;
+    void paintEvent(QPaintEvent*) override;
 
 private:
     QPixmap     fPixmap;
@@ -83,7 +81,6 @@ private:
     int fWidth;
     int fHeight;
 
-    bool fNeedsUpdate;
     QList<int> fEnabledKeys;
     std::map<int, QRectF>& fMidiMap;
 

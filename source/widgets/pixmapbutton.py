@@ -64,11 +64,16 @@ class PixmapButton(QPushButton):
         event.accept()
 
         if not self.isEnabled():
+            painter.save()
             painter.setOpacity(0.2)
             painter.drawPixmap(self.fPixmapRect, self.fPixmapNormal, self.fPixmapRect)
+            painter.restore()
+
         elif self.isChecked() or self.isDown():
             painter.drawPixmap(self.fPixmapRect, self.fPixmapDown, self.fPixmapRect)
+
         elif self.fIsHovered:
             painter.drawPixmap(self.fPixmapRect, self.fPixmapHover, self.fPixmapRect)
+
         else:
             painter.drawPixmap(self.fPixmapRect, self.fPixmapNormal, self.fPixmapRect)

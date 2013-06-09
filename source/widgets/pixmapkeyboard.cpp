@@ -25,9 +25,9 @@
 #ifndef HAVE_CPP11_SUPPORT
 static std::map<int, QRectF> kMidiKey2RectMapHorizontal;
 #else
-static const std::map<int, QRectF> kMidiKey2RectMapHorizontal = {
+static std::map<int, QRectF> kMidiKey2RectMapHorizontal = {
     {0,  QRectF(0,   0, 18, 64)}, // C
-    {1,  QRectF(13,  0, 11, 42)},  // C#
+    {1,  QRectF(13,  0, 11, 42)}, // C#
     {2,  QRectF(18,  0, 25, 64)}, // D
     {3,  QRectF(37,  0, 11, 42)}, // D#
     {4,  QRectF(42,  0, 18, 64)}, // E
@@ -44,7 +44,7 @@ static const std::map<int, QRectF> kMidiKey2RectMapHorizontal = {
 #ifndef HAVE_CPP11_SUPPORT
 static std::map<int, QRectF> kMidiKey2RectMapVertical;
 #else
-static const std::map<int, QRectF> kMidiKey2RectMapVertical = {
+static std::map<int, QRectF> kMidiKey2RectMapVertical = {
     {11, QRectF(0,  0,  64, 18)}, // B
     {10, QRectF(0, 14,  42,  7)}, // A#
     {9,  QRectF(0, 18,  64, 24)}, // A
@@ -99,42 +99,96 @@ static QVector<int> kBlackNotes;
 static const QVector<int> kBlackNotes = {1, 3, 6, 8, 10};
 #endif
 
-PixmapKeyboard::PixmapKeyboard(QWidget* parent)
-    : QWidget(parent),
-      fPixmap(""),
-      fPixmapMode(HORIZONTAL),
-      fColorStr("orange"),
-      fFont("Monospace", 8, QFont::Normal),
-      fOctaves(6),
-      fLastMouseNote(-1),
-      fWidth(0),
-      fHeight(0),
-      fNeedsUpdate(false),
-      fMidiMap(kMidiKey2RectMapHorizontal)
-{
-    setCursor(Qt::PointingHandCursor);
-    setMode(HORIZONTAL);
-
 #ifndef HAVE_CPP11_SUPPORT
-    if (kBlackNotes.count() == 0)
-    {
-        // TODO - rest of data
+static const struct PixmapKeyboardInit {
+    PixmapKeyboardInit() {
+        // kMidiKey2RectMapHorizontal
+        kMidiKey2RectMapHorizontal[0]  = QRectF(0,   0, 18, 64); // C
+        kMidiKey2RectMapHorizontal[1]  = QRectF(13,  0, 11, 42); // C#
+        kMidiKey2RectMapHorizontal[2]  = QRectF(18,  0, 25, 64); // D
+        kMidiKey2RectMapHorizontal[3]  = QRectF(37,  0, 11, 42); // D#
+        kMidiKey2RectMapHorizontal[4]  = QRectF(42,  0, 18, 64); // E
+        kMidiKey2RectMapHorizontal[5]  = QRectF(60,  0, 18, 64); // F
+        kMidiKey2RectMapHorizontal[6]  = QRectF(73,  0, 11, 42); // F#
+        kMidiKey2RectMapHorizontal[7]  = QRectF(78,  0, 25, 64); // G
+        kMidiKey2RectMapHorizontal[8]  = QRectF(97,  0, 11, 42); // G#
+        kMidiKey2RectMapHorizontal[9]  = QRectF(102, 0, 25, 64); // A
+        kMidiKey2RectMapHorizontal[10] = QRectF(121, 0, 11, 42); // A#
+        kMidiKey2RectMapHorizontal[11] = QRectF(126, 0, 18, 64); // B
+
+        // kMidiKey2RectMapVertical
+        kMidiKey2RectMapVertical[11] = QRectF(0,  0,  64, 18); // B
+        kMidiKey2RectMapVertical[10] = QRectF(0, 14,  42,  7); // A#
+        kMidiKey2RectMapVertical[9]  = QRectF(0, 18,  64, 24); // A
+        kMidiKey2RectMapVertical[8]  = QRectF(0, 38,  42,  7); // G#
+        kMidiKey2RectMapVertical[7]  = QRectF(0, 42,  64, 24); // G
+        kMidiKey2RectMapVertical[6]  = QRectF(0, 62,  42,  7); // F#
+        kMidiKey2RectMapVertical[5]  = QRectF(0, 66,  64, 18); // F
+        kMidiKey2RectMapVertical[4]  = QRectF(0, 84,  64, 18); // E
+        kMidiKey2RectMapVertical[3]  = QRectF(0, 98,  42,  7); // D#
+        kMidiKey2RectMapVertical[2]  = QRectF(0, 102, 64, 24); // D
+        kMidiKey2RectMapVertical[1]  = QRectF(0, 122, 42,  7); // C#
+        kMidiKey2RectMapVertical[0]  = QRectF(0, 126, 64, 18); // C
+
+        // kMidiKeyboard2KeyMap, 3th octave
+        kMidiKeyboard2KeyMap[Qt::Key_Z] = 48;
+        kMidiKeyboard2KeyMap[Qt::Key_S] = 49;
+        kMidiKeyboard2KeyMap[Qt::Key_X] = 50;
+        kMidiKeyboard2KeyMap[Qt::Key_D] = 51;
+        kMidiKeyboard2KeyMap[Qt::Key_C] = 52;
+        kMidiKeyboard2KeyMap[Qt::Key_V] = 53;
+        kMidiKeyboard2KeyMap[Qt::Key_G] = 54;
+        kMidiKeyboard2KeyMap[Qt::Key_B] = 55;
+        kMidiKeyboard2KeyMap[Qt::Key_H] = 56;
+        kMidiKeyboard2KeyMap[Qt::Key_N] = 57;
+        kMidiKeyboard2KeyMap[Qt::Key_J] = 58;
+        kMidiKeyboard2KeyMap[Qt::Key_M] = 59;
+        // kMidiKeyboard2KeyMap, 4th octave
+        kMidiKeyboard2KeyMap[Qt::Key_Q] = 60;
+        kMidiKeyboard2KeyMap[Qt::Key_2] = 61;
+        kMidiKeyboard2KeyMap[Qt::Key_W] = 62;
+        kMidiKeyboard2KeyMap[Qt::Key_3] = 63;
+        kMidiKeyboard2KeyMap[Qt::Key_E] = 64;
+        kMidiKeyboard2KeyMap[Qt::Key_R] = 65;
+        kMidiKeyboard2KeyMap[Qt::Key_5] = 66;
+        kMidiKeyboard2KeyMap[Qt::Key_T] = 67;
+        kMidiKeyboard2KeyMap[Qt::Key_6] = 68;
+        kMidiKeyboard2KeyMap[Qt::Key_Y] = 69;
+        kMidiKeyboard2KeyMap[Qt::Key_7] = 70;
+        kMidiKeyboard2KeyMap[Qt::Key_U] = 71;
+
+        // kBlackNotes
         kBlackNotes << 1;
         kBlackNotes << 3;
         kBlackNotes << 6;
         kBlackNotes << 8;
         kBlackNotes << 10;
     }
+} _pixmapKeyboardInitInit;
 #endif
+
+PixmapKeyboard::PixmapKeyboard(QWidget* parent)
+    : QWidget(parent),
+      fPixmap(""),
+      fPixmapMode(HORIZONTAL),
+      fColorStr("orange"),
+      fFont("Monospace", 7, QFont::Normal),
+      fOctaves(6),
+      fLastMouseNote(-1),
+      fWidth(0),
+      fHeight(0),
+      fMidiMap(kMidiKey2RectMapHorizontal)
+{
+    setCursor(Qt::PointingHandCursor);
+    setMode(HORIZONTAL);
 }
 
 void PixmapKeyboard::allNotesOff()
 {
     fEnabledKeys.clear();
-    fNeedsUpdate = true;
 
     emit notesOff();
-    QTimer::singleShot(0, this, SLOT(updateOnce()));
+    update();
 }
 
 void PixmapKeyboard::sendNoteOn(int note, bool sendSignal)
@@ -146,8 +200,7 @@ void PixmapKeyboard::sendNoteOn(int note, bool sendSignal)
         if (sendSignal)
             emit noteOn(note);
 
-        fNeedsUpdate = true;
-        QTimer::singleShot(0, this, SLOT(updateOnce()));
+        update();
     }
 
     if (fEnabledKeys.count() == 1)
@@ -163,8 +216,7 @@ void PixmapKeyboard::sendNoteOff(int note, bool sendSignal)
         if (sendSignal)
             emit noteOff(note);
 
-        fNeedsUpdate = true;
-        QTimer::singleShot(0, this, SLOT(updateOnce()));
+        update();
     }
 
     if (fEnabledKeys.count() == 0)
@@ -214,12 +266,12 @@ void PixmapKeyboard::setMode(Orientation mode, Color color)
 
 void PixmapKeyboard::setOctaves(int octaves)
 {
-    Q_ASSERT(octaves >= 1 && octaves <= 8);
+    Q_ASSERT(octaves >= 1 && octaves <= 10);
 
     if (octaves < 1)
         octaves = 1;
-    else if (octaves > 8)
-        octaves = 8;
+    else if (octaves > 10)
+        octaves = 10;
 
     fOctaves = octaves;
 
@@ -239,8 +291,7 @@ void PixmapKeyboard::setOctaves(int octaves)
 
 void PixmapKeyboard::handleMousePos(const QPoint& pos)
 {
-    int note;
-    int octave;
+    int note, octave;
     QPointF keyPos;
 
     if (fPixmapMode == HORIZONTAL)
@@ -261,8 +312,6 @@ void PixmapKeyboard::handleMousePos(const QPoint& pos)
     }
     else
         return;
-
-    octave += 3;
 
     if (fMidiMap[1].contains(keyPos))      // C#
         note = 1;
@@ -342,7 +391,7 @@ void PixmapKeyboard::mousePressEvent(QMouseEvent* event)
 void PixmapKeyboard::mouseMoveEvent(QMouseEvent* event)
 {
     handleMousePos(event->pos());
-    QWidget::mousePressEvent(event);
+    QWidget::mouseMoveEvent(event);
 }
 
 void PixmapKeyboard::mouseReleaseEvent(QMouseEvent* event)
@@ -391,27 +440,30 @@ void PixmapKeyboard::paintEvent(QPaintEvent* event)
         if (_isNoteBlack(note))
             continue;
 
-        if (note < 36)
-            // cannot paint this note
-            continue;
-        else if (note < 48)
+        if (note < 12)
             octave = 0;
-        else if (note < 60)
+        else if (note < 24)
             octave = 1;
-        else if (note < 72)
+        else if (note < 36)
             octave = 2;
-        else if (note < 84)
+        else if (note < 48)
             octave = 3;
-        else if (note < 96)
+        else if (note < 60)
             octave = 4;
-        else if (note < 108)
+        else if (note < 72)
             octave = 5;
-        else if (note < 120)
+        else if (note < 84)
             octave = 6;
-        else if (note < 132)
+        else if (note < 96)
             octave = 7;
+        else if (note < 108)
+            octave = 8;
+        else if (note < 120)
+            octave = 9;
+        else if (note < 132)
+            octave = 10;
         else
-            // cannot paint this note either
+            // cannot paint this note
             continue;
 
         if (fPixmapMode == VERTICAL)
@@ -477,27 +529,30 @@ void PixmapKeyboard::paintEvent(QPaintEvent* event)
         if (! _isNoteBlack(note))
             continue;
 
-        if (note < 36)
-            // cannot paint this note
-            continue;
-        else if (note < 48)
+        if (note < 12)
             octave = 0;
-        else if (note < 60)
+        else if (note < 24)
             octave = 1;
-        else if (note < 72)
+        else if (note < 36)
             octave = 2;
-        else if (note < 84)
+        else if (note < 48)
             octave = 3;
-        else if (note < 96)
+        else if (note < 60)
             octave = 4;
-        else if (note < 108)
+        else if (note < 72)
             octave = 5;
-        else if (note < 120)
+        else if (note < 84)
             octave = 6;
-        else if (note < 132)
+        else if (note < 96)
             octave = 7;
+        else if (note < 108)
+            octave = 8;
+        else if (note < 120)
+            octave = 9;
+        else if (note < 132)
+            octave = 10;
         else
-            // cannot paint this note either
+            // cannot paint this note
             continue;
 
         if (fPixmapMode == VERTICAL)
@@ -528,28 +583,20 @@ void PixmapKeyboard::paintEvent(QPaintEvent* event)
     for (int i=0; i < fOctaves; ++i)
     {
         if (fPixmapMode == HORIZONTAL)
-            painter.drawText(i * 144, 48, 18, 18, Qt::AlignCenter, QString("C%1").arg(i + 2));
+            painter.drawText(i * 144, 48, 18, 18, Qt::AlignCenter, QString("C%1").arg(i-1));
         else if (fPixmapMode == VERTICAL)
-            painter.drawText(45, (fOctaves * 144) - (i * 144) - 16, 18, 18, Qt::AlignCenter, QString("C%1").arg(i + 2));
-    }
-}
-
-void PixmapKeyboard::updateOnce()
-{
-    if (fNeedsUpdate)
-    {
-        update();
-        fNeedsUpdate = false;
+            painter.drawText(45, (fOctaves * 144) - (i * 144) - 16, 18, 18, Qt::AlignCenter, QString("C%1").arg(i-1));
     }
 }
 
 bool PixmapKeyboard::_isNoteBlack(int note) const
 {
-    int baseNote = note % 12;
+    const int baseNote = note % 12;
     return kBlackNotes.contains(baseNote);
 }
 
 const QRectF& PixmapKeyboard::_getRectFromMidiNote(int note) const
 {
-    return fMidiMap[note % 12];
+    const int baseNote = note % 12;
+    return fMidiMap[baseNote];
 }
