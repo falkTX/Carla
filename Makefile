@@ -38,6 +38,9 @@ discovery:
 plugin:
 	$(MAKE) -C source/plugin
 
+tests:
+	$(MAKE) -C source/tests
+
 theme:
 	$(MAKE) -C source/theme
 

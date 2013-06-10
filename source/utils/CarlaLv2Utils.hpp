@@ -725,7 +725,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool fillPresets 
                 if (lilvPort.has_property(gLv2World.reportsLatency))
                     rdfPort->Designation = LV2_PORT_DESIGNATION_LATENCY;
 
-                // no port properties, check if port uses old ones
+                // no port properties set, check if using old/invalid ones
                 if (rdfPort->Properties == 0x0)
                 {
                     static const Lilv::Node oldPropArtifacts(gLv2World.new_uri("http://lv2plug.in/ns/dev/extportinfo#causesArtifacts"));
@@ -741,47 +741,47 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool fillPresets 
                     if (lilvPort.has_property(oldPropArtifacts))
                     {
                         rdfPort->Properties |= LV2_PORT_CAUSES_ARTIFACTS;
-                        carla_stderr("lv2_rdf_new(\"%s\") - port '%s' uses old/broken LV2 property for 'causesArtifacts'", uri, rdfPort->Name);
+                        carla_stderr("lv2_rdf_new(\"%s\") - port '%s' uses old/invalid LV2 property for 'causesArtifacts'", uri, rdfPort->Name);
                     }
                     if (lilvPort.has_property(oldPropContinuousCV))
                     {
                         rdfPort->Properties |= LV2_PORT_CONTINUOUS_CV;
-                        carla_stderr("lv2_rdf_new(\"%s\") - port '%s' uses old/broken LV2 property for 'continuousCV'", uri, rdfPort->Name);
+                        carla_stderr("lv2_rdf_new(\"%s\") - port '%s' uses old/invalid LV2 property for 'continuousCV'", uri, rdfPort->Name);
                     }
                     if (lilvPort.has_property(oldPropDiscreteCV))
                     {
                         rdfPort->Properties |= LV2_PORT_DISCRETE_CV;
-                        carla_stderr("lv2_rdf_new(\"%s\") - port '%s' uses old/broken LV2 property for 'discreteCV'", uri, rdfPort->Name);
+                        carla_stderr("lv2_rdf_new(\"%s\") - port '%s' uses old/invalid LV2 property for 'discreteCV'", uri, rdfPort->Name);
                     }
                     if (lilvPort.has_property(oldPropExpensive))
                     {
                         rdfPort->Properties |= LV2_PORT_EXPENSIVE;
-                        carla_stderr("lv2_rdf_new(\"%s\") - port '%s' uses old/broken LV2 property for 'expensive'", uri, rdfPort->Name);
+                        carla_stderr("lv2_rdf_new(\"%s\") - port '%s' uses old/invalid LV2 property for 'expensive'", uri, rdfPort->Name);
                     }
                     if (lilvPort.has_property(oldPropStrictBounds))
                     {
                         rdfPort->Properties |= LV2_PORT_STRICT_BOUNDS;
-                        carla_stderr("lv2_rdf_new(\"%s\") - port '%s' uses old/broken LV2 property for 'hasStrictBounds'", uri, rdfPort->Name);
+                        carla_stderr("lv2_rdf_new(\"%s\") - port '%s' uses old/invalid LV2 property for 'hasStrictBounds'", uri, rdfPort->Name);
                     }
                     if (lilvPort.has_property(oldPropLogarithmic))
                     {
                         rdfPort->Properties |= LV2_PORT_LOGARITHMIC;
-                        carla_stderr("lv2_rdf_new(\"%s\") - port '%s' uses old/broken LV2 property for 'logarithmic'", uri, rdfPort->Name);
+                        carla_stderr("lv2_rdf_new(\"%s\") - port '%s' uses old/invalid LV2 property for 'logarithmic'", uri, rdfPort->Name);
                     }
                     if (lilvPort.has_property(oldPropNotAutomatic))
                     {
                         rdfPort->Properties |= LV2_PORT_NOT_AUTOMATIC;
-                        carla_stderr("lv2_rdf_new(\"%s\") - port '%s' uses old/broken LV2 property for 'notAutomatic'", uri, rdfPort->Name);
+                        carla_stderr("lv2_rdf_new(\"%s\") - port '%s' uses old/invalid LV2 property for 'notAutomatic'", uri, rdfPort->Name);
                     }
                     if (lilvPort.has_property(oldPropNotOnGUI))
                     {
                         rdfPort->Properties |= LV2_PORT_NOT_ON_GUI;
-                        carla_stderr("lv2_rdf_new(\"%s\") - port '%s' uses old/broken LV2 property for 'notOnGUI'", uri, rdfPort->Name);
+                        carla_stderr("lv2_rdf_new(\"%s\") - port '%s' uses old/invalid LV2 property for 'notOnGUI'", uri, rdfPort->Name);
                     }
                     if (lilvPort.has_property(oldPropTrigger))
                     {
                         rdfPort->Properties |= LV2_PORT_TRIGGER;
-                        carla_stderr("lv2_rdf_new(\"%s\") - port '%s' uses old/broken LV2 property for 'trigger'", uri, rdfPort->Name);
+                        carla_stderr("lv2_rdf_new(\"%s\") - port '%s' uses old/invalid LV2 property for 'trigger'", uri, rdfPort->Name);
                     }
                 }
             }

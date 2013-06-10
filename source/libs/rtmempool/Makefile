@@ -8,7 +8,7 @@ include ../../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_C_FLAGS += -fvisibility=hidden -fPIC -pthread
+BUILD_C_FLAGS += -pthread
 BUILD_C_FLAGS += -I. -I../../includes
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
@@ -50,13 +50,13 @@ win64:   ../rtmempool.win64.a
 	$(AR) rs $@ $^
 
 ../rtmempool.dll: $(OBJS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
+	$(CXX) $^ -shared $(LINK_FLAGS) -o $@ $(CMD_STRIP) $@
 
 ../rtmempool.dylib: $(OBJS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
+	$(CXX) $^ -dynamiclib $(LINK_FLAGS) -o $@ $(CMD_STRIP) $@
 
 ../rtmempool.so: $(OBJS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
+	$(CXX) $^ -shared $(LINK_FLAGS) -o $@ $(CMD_STRIP) $@
 
 # --------------------------------------------------------------
 

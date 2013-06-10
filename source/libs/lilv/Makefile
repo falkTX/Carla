@@ -13,7 +13,7 @@ SORD_VERSION   = 0.12.0
 SRATOM_VERSION = 0.4.2
 LILV_VERSION   = 0.16.0
 
-BUILD_C_FLAGS += -fvisibility=hidden -fPIC -w
+BUILD_C_FLAGS += -w
 BUILD_C_FLAGS += -Iconfig -I../../includes
 
 OBJS         = serd.c.o         sord.c.o         sratom.c.o         lilv.c.o
@@ -49,13 +49,13 @@ win64:   ../lilv.win64.a
 	$(AR) rs $@ $^
 
 ../lilv.dll: $(OBJS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
+	$(CXX) $^ -shared $(LINK_FLAGS) -o $@ $(CMD_STRIP) $@
 
 ../lilv.dylib: $(OBJS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
+	$(CXX) $^ -dynamiclib $(LINK_FLAGS) -o $@ $(CMD_STRIP) $@
 
 ../lilv.so: $(OBJS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
+	$(CXX) $^ -shared $(LINK_FLAGS) -o $@ $(CMD_STRIP) $@
 
 # --------------------------------------------------------------
 

@@ -42,7 +42,6 @@ BASE_FLAGS += -DDEBUG -O0 -g
 CMD_STRIP   = \# no-strip
 else
 BASE_FLAGS += -DNDEBUG $(BASE_OPTS) -fvisibility=hidden
-# BASE_FLAGS += -DCARLA_NO_ASSERTS
 CMD_STRIP   = && $(STRIP)
 endif
 
@@ -54,7 +53,8 @@ BUILD_CXX_FLAGS = $(BASE_FLAGS) -std=gnu++0x $(CXXFLAGS)
 LINK_FLAGS      = $(LDFLAGS)
 
 ifeq ($(MACOS),true)
-# No C++11 support, force 32bit per default
+# No C++11 support; force 32bit per default
+BUILD_C_FLAGS   = $(BASE_FLAGS) $(32BIT_FLAGS) -std=gnu99 $(CFLAGS)
 BUILD_CXX_FLAGS = $(BASE_FLAGS) $(32BIT_FLAGS) $(CXXFLAGS)
 endif
 

@@ -18,6 +18,8 @@ BUILD_CXX_FLAGS += $(shell pkg-config --cflags Qt5Core Qt5Gui Qt5Widgets)
 LINK_FLAGS      += $(shell pkg-config --libs Qt5Core Qt5Gui Qt5Widgets)
 endif
 
+# --------------------------------------------------------------
+
 FILES = \
 	moc_paramspinbox.cpp \
 	moc_pixmapkeyboard.cpp
@@ -38,7 +40,7 @@ TARGET = ../libs/widgets.a
 all: $(TARGET)
 
 clean:
-	rm -f $(FILES) $(OBJS) $(TARGET)
+	rm -f $(FILES) $(TARGET) $(OBJS)
 
 debug:
 	$(MAKE) DEBUG=true

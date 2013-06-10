@@ -60,7 +60,7 @@ jackbridge-wine64:
 # --------------------------------------------------------------
 
 clean:
-	rm -f *~ *.a *.def *.dll *.dylib *.so
+	rm -f *.a *.def *.dll *.dylib *.so
 	$(MAKE) clean -C distrho/dgl
 	$(MAKE) clean -C lilv
 	$(MAKE) clean -C rtmempool

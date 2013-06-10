@@ -46,15 +46,15 @@ test: $(OBJS)
 	$(CXX) $^ $(WINE_BUILD_FLAGS) $(WINE_LINK_FLAGS) -o $@
 
 ../jackbridge-win32.dll: $(OBJS)
-	$(CXX) $^ $(WIN_BUILD_FLAGS) $(WIN_32BIT_FLAGS) $(WIN_LINK_FLAGS) -Wl,--output-def,$@.def,--out-implib,$@.a -o $@ && $(STRIP) $@
+	$(CXX) $^ $(WIN_BUILD_FLAGS) $(WIN_32BIT_FLAGS) $(WIN_LINK_FLAGS) -Wl,--output-def,$@.def,--out-implib,$@.a -o $@ $(CMD_STRIP) $@
 
 ../jackbridge-win64.dll: $(OBJS)
-	$(CXX) $^ $(WIN_BUILD_FLAGS) $(WIN_64BIT_FLAGS) $(WIN_LINK_FLAGS) -Wl,--output-def,$@.def,--out-implib,$@.a -o $@ && $(STRIP) $@
+	$(CXX) $^ $(WIN_BUILD_FLAGS) $(WIN_64BIT_FLAGS) $(WIN_LINK_FLAGS) -Wl,--output-def,$@.def,--out-implib,$@.a -o $@ $(CMD_STRIP) $@
 
 ../jackbridge-win32.dll.so: $(OBJS) ../jackbridge-win32.dll.def
-	$(WINECXX) $^ $(WINE_BUILD_FLAGS) $(WINE_32BIT_FLAGS) $(WINE_LINK_FLAGS) -mno-cygwin -o $@ && $(STRIP) $@
+	$(WINECXX) $^ $(WINE_BUILD_FLAGS) $(WINE_32BIT_FLAGS) $(WINE_LINK_FLAGS) -mno-cygwin -o $@ $(CMD_STRIP) $@
 
 ../jackbridge-win64.dll.so: $(OBJS) ../jackbridge-win64.dll.def
-	$(WINECXX) $^ $(WINE_BUILD_FLAGS) $(WINE_64BIT_FLAGS) $(WINE_LINK_FLAGS) -mno-cygwin -o $@ && $(STRIP) $@
+	$(WINECXX) $^ $(WINE_BUILD_FLAGS) $(WINE_64BIT_FLAGS) $(WINE_LINK_FLAGS) -mno-cygwin -o $@ $(CMD_STRIP) $@
 
 # --------------------------------------------------------------

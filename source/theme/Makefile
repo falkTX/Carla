@@ -18,6 +18,8 @@ BUILD_CXX_FLAGS += $(shell pkg-config --cflags Qt5Core Qt5Gui Qt5Widgets)
 LINK_FLAGS      += $(shell pkg-config --libs Qt5Core Qt5Gui Qt5Widgets)
 endif
 
+# --------------------------------------------------------------
+
 FILES = \
 	moc_CarlaStyle.cpp \
 	moc_CarlaStylePrivate.cpp \
@@ -41,6 +43,18 @@ OBJS_posix64 = \
 	moc_CarlaStylePrivate.cpp.posix64.o \
 	CarlaStyle.cpp.posix64.o
 
+OBJS_win32 = \
+	moc_CarlaStyle.cpp.win32.o \
+	moc_CarlaStyleAnimations.cpp.win32.o \
+	moc_CarlaStylePrivate.cpp.win32.o \
+	CarlaStyle.cpp.win32.o
+
+OBJS_win64 = \
+	moc_CarlaStyle.cpp.win64.o \
+	moc_CarlaStyleAnimations.cpp.win64.o \
+	moc_CarlaStylePrivate.cpp.win64.o \
+	CarlaStyle.cpp.win64.o
+
 OBJS_shared = $(OBJS) \
 	CarlaStyle.export.cpp.o
 
@@ -54,7 +68,7 @@ TARGET = ../libs/theme.a
 all: $(TARGET)
 
 clean:
-	rm -f $(FILES) $(OBJS_shared) $(OBJS_static) $(TARGET)
+	rm -f $(FILES) $(TARGET) *.o
 
 debug:
 	$(MAKE) DEBUG=true
@@ -62,25 +76,16 @@ debug:
 # --------------------------------------------------------------
 
 $(TARGET): $(FILES) $(OBJS_static)
-	$(AR) crs $@ $(OBJS_static)
+	$(AR) rs $@ $(OBJS_static)
 
 carlastyle.dll: $(FILES) $(OBJS_shared)
-	$(CXX) $(OBJS_shared) $(LINK_FLAGS) -shared -o $@
-ifneq ($(DEBUG),true)
-	$(STRIP) $@
-endif
+	$(CXX) $(OBJS_shared) $(LINK_FLAGS) -shared -o $@ $(CMD_STRIP) $@
 
 carlastyle.dynlib: $(FILES) $(OBJS_shared)
-	$(CXX) $(OBJS_shared) $(LINK_FLAGS) -dynamiclib -o $@
-ifneq ($(DEBUG),true)
-	$(STRIP) $@
-endif
+	$(CXX) $(OBJS_shared) $(LINK_FLAGS) -dynamiclib -o $@ $(CMD_STRIP) $@
 
 carlastyle.so: $(FILES) $(OBJS_shared)
-	$(CXX) $(OBJS_shared) $(LINK_FLAGS) -shared -o $@
-ifneq ($(DEBUG),true)
-	$(STRIP) $@
-endif
+	$(CXX) $(OBJS_shared) $(LINK_FLAGS) -shared -o $@ $(CMD_STRIP) $@
 
 # --------------------------------------------------------------
 
