@@ -1,7 +1,7 @@
 /*
  * Carla Bridge utils imported from dssi-vst code
- * Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
  * Copyright (C) 2004-2010 Chris Cannam <cannam@all-day-breakfast.com>
+ * Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -25,9 +25,8 @@
 
 #define BRIDGE_SHM_RING_BUFFER_SIZE 2048
 
-/*!
- * TODO.
- */
+// ---------------------------------------------------------------------------------------------
+
 enum PluginBridgeInfoType {
     kPluginBridgeAudioCount,
     kPluginBridgeMidiCount,
@@ -59,20 +58,11 @@ enum PluginBridgeOpcode {
     kPluginBridgeOpcodeSetParameter   = 4, // int, float
     kPluginBridgeOpcodeSetProgram     = 5, // int
     kPluginBridgeOpcodeSetMidiProgram = 6, // int
-    kPluginBridgeOpcodeMidiEvent      = 7, // long, int, char, ... (long = timeFrame, int = size max 4)
+    kPluginBridgeOpcodeMidiEvent      = 7, // long, int, char[] (long = timeFrame, int = size max 4)
     kPluginBridgeOpcodeProcess        = 8,
     kPluginBridgeOpcodeQuit           = 9
 };
 
-/*!
- * @defgroup BridgeMessages Bridge Messages
- *
- * Various bridge related messages, used as configure(<message>, value).
- * \note This is for internal use only.
- *
- * TODO: Review these, may not be needed anymore
- * @{
- */
 const char* const CARLA_BRIDGE_MSG_HIDE_GUI   = "CarlaBridgeHideGUI";   //!< Plugin -> Host call, tells host GUI is now hidden
 const char* const CARLA_BRIDGE_MSG_SAVED      = "CarlaBridgeSaved";     //!< Plugin -> Host call, tells host state is saved
 #if 0
@@ -81,22 +71,15 @@ const char* const CARLA_BRIDGE_MSG_SET_CHUNK  = "CarlaBridgeSetChunk";  //!< Hos
 const char* const CARLA_BRIDGE_MSG_SET_CUSTOM = "CarlaBridgeSetCustom"; //!< Host -> Plugin call, tells plugin to set a custom data set using \a value ("type·key·rvalue").
 //If \a type is 'chunk' or 'binary' \a rvalue refers to chunk file.
 #endif
-/**@}*/
 
-/*!
- * TODO.
- */
+// ---------------------------------------------------------------------------------------------
+
 struct BridgeRingBuffer {
-    int head;
-    int tail;
-    int written;
+    int head, tail, written;
     bool invalidateCommit;
     char buf[BRIDGE_SHM_RING_BUFFER_SIZE];
 };
 
-/*!
- * TODO.
- */
 struct BridgeShmControl {
     // 32 and 64-bit binaries align semaphores differently.
     // Let's make sure there's plenty of room for either one.
@@ -110,6 +93,8 @@ struct BridgeShmControl {
     };
     BridgeRingBuffer ringBuffer;
 };
+
+// ---------------------------------------------------------------------------------------------
 
 static inline
 const char* PluginBridgeInfoType2str(const PluginBridgeInfoType type)

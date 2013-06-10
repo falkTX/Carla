@@ -79,22 +79,22 @@ win64:   carla-discovery-win64.exe
 # --------------------------------------------------------------
 
 carla-discovery-native: $(OBJS) $(LIBS)
-	$(CXX) $^ $(POSIX_BUILD_FLAGS) $(NATIVE_FLAGS) $(POSIX_LINK_FLAGS) -o $@ && $(STRIP) $@
+	$(CXX) $^ $(POSIX_BUILD_FLAGS) $(NATIVE_FLAGS) $(POSIX_LINK_FLAGS) -o $@ $(CMD_STRIP) $@
 
 carla-discovery-native.exe: $(OBJS) $(LIBS)
-	$(CXX) $^ $(WIN_BUILD_FLAGS) $(NATIVE_FLAGS) $(WIN_LINK_FLAGS) -o $@ && $(STRIP) $@
+	$(CXX) $^ $(WIN_BUILD_FLAGS) $(NATIVE_FLAGS) $(WIN_LINK_FLAGS) -o $@ $(CMD_STRIP) $@
 
 carla-discovery-posix32: $(OBJS) $(LIBS_posix32)
-	$(CXX) $^ $(POSIX_BUILD_FLAGS) $(POSIX_32BIT_FLAGS) $(POSIX_LINK_FLAGS) -o $@ && $(STRIP) $@
+	$(CXX) $^ $(POSIX_BUILD_FLAGS) $(POSIX_32BIT_FLAGS) $(POSIX_LINK_FLAGS) -o $@ $(CMD_STRIP) $@
 
 carla-discovery-posix64: $(OBJS) $(LIBS_posix64)
-	$(CXX) $^ $(POSIX_BUILD_FLAGS) $(POSIX_64BIT_FLAGS) $(POSIX_LINK_FLAGS) -o $@ && $(STRIP) $@
+	$(CXX) $^ $(POSIX_BUILD_FLAGS) $(POSIX_64BIT_FLAGS) $(POSIX_LINK_FLAGS) -o $@ $(CMD_STRIP) $@
 
 carla-discovery-win32.exe: $(OBJS) $(LIBS_win32)
-	$(CXX) $^ $(WIN_BUILD_FLAGS) $(WIN_32BIT_FLAGS) $(WIN_LINK_FLAGS) -o $@ && $(STRIP) $@
+	$(CXX) $^ $(WIN_BUILD_FLAGS) $(WIN_32BIT_FLAGS) $(WIN_LINK_FLAGS) -o $@ $(CMD_STRIP) $@
 
 carla-discovery-win64.exe: $(OBJS) $(LIBS_win64)
-	$(CXX) $^ $(WIN_BUILD_FLAGS) $(WIN_64BIT_FLAGS) $(WIN_LINK_FLAGS) -o $@ && $(STRIP) $@
+	$(CXX) $^ $(WIN_BUILD_FLAGS) $(WIN_64BIT_FLAGS) $(WIN_LINK_FLAGS) -o $@ $(CMD_STRIP) $@
 
 # --------------------------------------------------------------
 
@@ -106,21 +106,11 @@ debug:
 
 # --------------------------------------------------------------
 
-../libs/lilv.a:
+.FORCE:
+.PHONY: .FORCE
+
+../libs/lilv.a: .FORCE
 	$(MAKE) -C ../libs lilv
 
-../libs/lilv.posix32.a:
-	$(MAKE) -C ../libs lilv_posix32
-
-../libs/lilv.posix64.a:
-	$(MAKE) -C ../libs lilv_posix32
-
-../libs/lilv.win32.a:
-	$(MAKE) -C ../libs lilv_win32
-
-../libs/lilv.win64.a:
-	$(MAKE) -C ../libs lilv_win64
-
-.PHONY: ../libs/lilv.a \
-	../libs/lilv.posix32.a ../libs/lilv.posix64.a \
-	../libs/lilv.win32.a ../libs/lilv.win64.a
+../libs/lilv.%.a: .FORCE
+	$(MAKE) -C ../libs lilv_$*

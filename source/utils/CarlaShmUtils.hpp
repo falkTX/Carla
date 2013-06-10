@@ -98,7 +98,7 @@ shm_t carla_shm_create(const char* const name)
 {
     CARLA_ASSERT(name != nullptr);
 
-    return shm_open(name, O_RDWR | O_CREAT | O_EXCL, 0600);
+    return shm_open(name, O_RDWR|O_CREAT|O_EXCL, 0600);
 }
 
 static inline
@@ -155,7 +155,7 @@ void* carla_shm_map(shm_t& shm, const size_t size)
     if (ftruncate(shm, size) != 0)
         return nullptr;
 
-    return mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_SHARED, shm, 0);
+    return mmap(nullptr, size, PROT_READ|PROT_WRITE, MAP_SHARED, shm, 0);
 #endif
 }
 

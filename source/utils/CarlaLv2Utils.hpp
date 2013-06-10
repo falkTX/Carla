@@ -418,7 +418,7 @@ extern Lv2WorldClass gLv2World;
 // Create new RDF object (using lilv)
 
 static inline
-const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
+const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool fillPresets = true)
 {
     CARLA_ASSERT(uri != nullptr);
 
@@ -1020,6 +1020,8 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri)
 
     // --------------------------------------------------
     // Set Plugin Presets
+
+    if (fillPresets)
     {
         Lilv::Nodes presetNodes(lilvPlugin.get_related(gLv2World.preset_preset));
 

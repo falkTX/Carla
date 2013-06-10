@@ -878,7 +878,7 @@ void do_lv2_check(const char* const bundle, const bool init)
     // Get & check every plugin-instance
     for (int i=0; i < URIs.count(); ++i)
     {
-        const LV2_RDF_Descriptor* const rdfDescriptor = lv2_rdf_new(URIs.at(i).toUtf8().constData());
+        const LV2_RDF_Descriptor* const rdfDescriptor = lv2_rdf_new(URIs.at(i).toUtf8().constData(), false);
         CARLA_ASSERT(rdfDescriptor != nullptr && rdfDescriptor->URI != nullptr);
 
         if (rdfDescriptor == nullptr || rdfDescriptor->URI == nullptr)

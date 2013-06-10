@@ -20,7 +20,6 @@
 
 #include "CarlaBackendUtils.hpp"
 #include "CarlaMIDI.h"
-
 #include "RtList.hpp"
 
 #include <QtXml/QDomNode>
@@ -48,9 +47,15 @@ struct StateParameter {
     ~StateParameter()
     {
         if (name != nullptr)
+        {
             delete[] name;
+            name = nullptr;
+        }
         if (symbol != nullptr)
+        {
             delete[] symbol;
+            symbol = nullptr;
+        }
     }
 
     CARLA_DECLARE_NON_COPY_STRUCT(StateParameter)
@@ -69,11 +74,20 @@ struct StateCustomData {
     ~StateCustomData()
     {
         if (type != nullptr)
+        {
             delete[] type;
+            type = nullptr;
+        }
         if (key != nullptr)
+        {
             delete[] key;
+            key = nullptr;
+        }
         if (value != nullptr)
+        {
             delete[] value;
+            value = nullptr;
+        }
     }
 
     CARLA_DECLARE_NON_COPY_STRUCT(StateCustomData)
@@ -140,31 +154,26 @@ struct SaveState {
             delete[] type;
             type = nullptr;
         }
-
         if (name != nullptr)
         {
             delete[] name;
             name = nullptr;
         }
-
         if (label != nullptr)
         {
             delete[] label;
             label = nullptr;
         }
-
         if (binary != nullptr)
         {
             delete[] binary;
             binary = nullptr;
         }
-
         if (currentProgramName != nullptr)
         {
             delete[] currentProgramName;
             currentProgramName = nullptr;
         }
-
         if (chunk != nullptr)
         {
             delete[] chunk;
@@ -259,7 +268,7 @@ const SaveState& getSaveStateDictFromXML(const QDomNode& xmlNode)
                 else if (tag.compare("UniqueID", Qt::CaseInsensitive) == 0)
                 {
                     bool ok;
-                    long uniqueID = text.toLong(&ok);
+                    const long uniqueID(text.toLong(&ok));
                     if (ok) saveState.uniqueID = uniqueID;
                 }
 
@@ -289,37 +298,37 @@ const SaveState& getSaveStateDictFromXML(const QDomNode& xmlNode)
                 else if (tag.compare("DryWet", Qt::CaseInsensitive) == 0)
                 {
                     bool ok;
-                    float value = text.toFloat(&ok);
+                    const float value(text.toFloat(&ok));
                     if (ok) saveState.dryWet = value;
                 }
                 else if (tag.compare("Volume", Qt::CaseInsensitive) == 0)
                 {
                     bool ok;
-                    float value = text.toFloat(&ok);
+                    const float value(text.toFloat(&ok));
                     if (ok) saveState.volume = value;
                 }
                 else if (tag.compare("Balance-Left", Qt::CaseInsensitive) == 0)
                 {
                     bool ok;
-                    float value = text.toFloat(&ok);
+                    const float value(text.toFloat(&ok));
                     if (ok) saveState.balanceLeft = value;
                 }
                 else if (tag.compare("Balance-Right", Qt::CaseInsensitive) == 0)
                 {
                     bool ok;
-                    float value = text.toFloat(&ok);
+                    const float value(text.toFloat(&ok));
                     if (ok) saveState.balanceRight = value;
                 }
                 else if (tag.compare("Panning", Qt::CaseInsensitive) == 0)
                 {
                     bool ok;
-                    float value = text.toFloat(&ok);
+                    const float value(text.toFloat(&ok));
                     if (ok) saveState.panning = value;
                 }
                 else if (tag.compare("ControlChannel", Qt::CaseInsensitive) == 0)
                 {
                     bool ok;
-                    short value = text.toShort(&ok);
+                    const short value(text.toShort(&ok));
                     if (ok && value >= 1 && value < INT8_MAX)
                         saveState.ctrlChannel = static_cast<int8_t>(value-1);
                 }
@@ -330,7 +339,7 @@ const SaveState& getSaveStateDictFromXML(const QDomNode& xmlNode)
                 else if (tag.compare("CurrentProgramIndex", Qt::CaseInsensitive) == 0)
                 {
                     bool ok;
-                    int value = text.toInt(&ok);
+                    const int value(text.toInt(&ok));
                     if (ok && value >= 1)
                         saveState.currentProgramIndex = value-1;
                 }
@@ -345,14 +354,14 @@ const SaveState& getSaveStateDictFromXML(const QDomNode& xmlNode)
                 else if (tag.compare("CurrentMidiBank", Qt::CaseInsensitive) == 0)
                 {
                     bool ok;
-                    int value = text.toInt(&ok);
+                    const int value(text.toInt(&ok));
                     if (ok && value >= 1)
                         saveState.currentMidiBank = value-1;
                 }
                 else if (tag.compare("CurrentMidiProgram", Qt::CaseInsensitive) == 0)
                 {
                     bool ok;
-                    int value = text.toInt(&ok);
+                    const int value(text.toInt(&ok));
                     if (ok && value >= 1)
                         saveState.currentMidiProgram = value-1;
                 }
@@ -374,7 +383,7 @@ const SaveState& getSaveStateDictFromXML(const QDomNode& xmlNode)
                         if (pTag.compare("Index", Qt::CaseInsensitive) == 0)
                         {
                             bool ok;
-                            uint index = pText.toUInt(&ok);
+                            const uint index(pText.toUInt(&ok));
                             if (ok) stateParameter->index = index;
                         }
                         else if (pTag.compare("Name", Qt::CaseInsensitive) == 0)
@@ -388,20 +397,20 @@ const SaveState& getSaveStateDictFromXML(const QDomNode& xmlNode)
                         else if (pTag.compare("Value", Qt::CaseInsensitive) == 0)
                         {
                             bool ok;
-                            float value = pText.toFloat(&ok);
+                            const float value(pText.toFloat(&ok));
                             if (ok) stateParameter->value = value;
                         }
                         else if (pTag.compare("MidiChannel", Qt::CaseInsensitive) == 0)
                         {
                             bool ok;
-                            ushort channel = pText.toUShort(&ok);
+                            const ushort channel(pText.toUShort(&ok));
                             if (ok && channel >= 1 && channel < MAX_MIDI_CHANNELS)
                                 stateParameter->midiChannel = static_cast<uint8_t>(channel-1);
                         }
                         else if (pTag.compare("MidiCC", Qt::CaseInsensitive) == 0)
                         {
                             bool ok;
-                            int cc = pText.toInt(&ok);
+                            const int cc(pText.toInt(&ok));
                             if (ok && cc >= 1 && cc < INT16_MAX)
                                 stateParameter->midiCC = static_cast<int16_t>(cc);
                         }
@@ -566,7 +575,7 @@ const QString& getXMLFromSaveState(const SaveState& saveState)
     {
         // ignore 'default' program
 #ifdef __USE_GNU
-        if ((saveState.currentProgramIndex > 0 || strcasecmp(saveState.currentProgramName, "Default") != 0))
+        if ((saveState.currentProgramIndex > 0 || strcasecmp(saveState.currentProgramName, "default") != 0))
 #else
         if ((saveState.currentProgramIndex > 0 || std::strcmp(saveState.currentProgramName, "Default") != 0))
 #endif

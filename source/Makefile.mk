@@ -39,9 +39,11 @@ endif
 
 ifeq ($(DEBUG),true)
 BASE_FLAGS += -DDEBUG -O0 -g
+CMD_STRIP   = \# no-strip
 else
 BASE_FLAGS += -DNDEBUG $(BASE_OPTS) -fvisibility=hidden
 # BASE_FLAGS += -DCARLA_NO_ASSERTS
+CMD_STRIP   = && $(STRIP)
 endif
 
 32BIT_FLAGS = -m32

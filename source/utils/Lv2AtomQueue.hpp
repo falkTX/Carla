@@ -25,12 +25,12 @@ class Lv2AtomQueue
 {
 public:
     Lv2AtomQueue()
+        : fIndex(0),
+          fIndexPool(0),
+          fEmpty(true),
+          fFull(false)
     {
-        index = indexPool = 0;
-        empty = true;
-        full  = false;
-
-        std::memset(dataPool, 0, sizeof(unsigned char)*MAX_POOL_SIZE);
+        std::memset(fDataPool, 0, sizeof(unsigned char)*MAX_POOL_SIZE);
     }
 
     void copyDataFrom(Lv2AtomQueue* const queue)
@@ -40,79 +40,86 @@ public:
         lock();
 
         // copy data from queue
-        std::memcpy(data, queue->data, sizeof(datatype)*MAX_SIZE);
-        std::memcpy(dataPool, queue->dataPool, sizeof(unsigned char)*MAX_POOL_SIZE);
-        index = queue->index;
-        indexPool = queue->indexPool;
-        empty = queue->empty;
-        full  = queue->full;
+        std::memcpy(fData, queue->fData, sizeof(DataType)*MAX_SIZE);
+        std::memcpy(fDataPool, queue->fDataPool, sizeof(unsigned char)*MAX_POOL_SIZE);
+        fIndex = queue->fIndex;
+        fIndexPool = queue->fIndexPool;
+        fEmpty = queue->fEmpty;
+        fFull  = queue->fFull;
 
         // unlock our mutex, no longer needed
         unlock();
 
         // reset queque
-        std::memset(queue->data, 0, sizeof(datatype)*MAX_SIZE);
-        std::memset(queue->dataPool, 0, sizeof(unsigned char)*MAX_POOL_SIZE);
-        queue->index = queue->indexPool = 0;
-        queue->empty = true;
-        queue->full  = false;
+        std::memset(queue->fData, 0, sizeof(DataType)*MAX_SIZE);
+        std::memset(queue->fDataPool, 0, sizeof(unsigned char)*MAX_POOL_SIZE);
+        queue->fIndex = queue->fIndexPool = 0;
+        queue->fEmpty = true;
+        queue->fFull  = false;
 
         // unlock queque mutex
         queue->unlock();
     }
 
-    bool isEmpty()
+    bool isEmpty() const
     {
-        return empty;
+        return fEmpty;
     }
 
-    bool isFull()
+    bool isFull() const
     {
-        return full;
+        return fFull;
     }
 
     void lock()
     {
-        mutex.lock();
+        fMutex.lock();
     }
 
     bool tryLock()
     {
-        return mutex.tryLock();
+        return fMutex.tryLock();
     }
 
     void unlock()
     {
-        mutex.unlock();
+        fMutex.unlock();
     }
 
-    void put(const uint32_t portIndex, const LV2_Atom* const atom)
+    bool put(const uint32_t portIndex, const LV2_Atom* const atom)
     {
         CARLA_ASSERT(atom != nullptr && atom->size > 0);
-        CARLA_ASSERT(indexPool + atom->size < MAX_POOL_SIZE); //  overflow
+        CARLA_ASSERT(fIndexPool + atom->size < MAX_POOL_SIZE); // overflow
 
-        if (full || atom->size == 0 || indexPool + atom->size >= MAX_POOL_SIZE)
-            return;
+        if (fFull || atom == nullptr || fIndexPool + atom->size >= MAX_POOL_SIZE)
+            return false;
+        if (atom->size == 0)
+            return true;
+
+        bool ret = false;
 
         lock();
 
         for (unsigned short i=0; i < MAX_SIZE; ++i)
         {
-            if (data[i].size == 0)
+            if (fData[i].size == 0)
             {
-                data[i].portIndex  = portIndex;
-                data[i].size       = atom->size;
-                data[i].type       = atom->type;
-                data[i].poolOffset = indexPool;
-                std::memcpy(dataPool + indexPool, LV2NV_ATOM_BODY_CONST(atom), atom->size);
-                empty = false;
-                full  = (i == MAX_SIZE-1);
-                indexPool += atom->size;
+                fData[i].portIndex  = portIndex;
+                fData[i].size       = atom->size;
+                fData[i].type       = atom->type;
+                fData[i].poolOffset = fIndexPool;
+                std::memcpy(fDataPool + fIndexPool, LV2NV_ATOM_BODY_CONST(atom), atom->size);
+                fEmpty = false;
+                fFull  = (i == MAX_SIZE-1);
+                fIndexPool += atom->size;
+                ret = true;
                 break;
             }
         }
 
         unlock();
+
+        return ret;
     }
 
     // needs to be locked first!
@@ -120,45 +127,45 @@ public:
     {
         CARLA_ASSERT(portIndex != nullptr && atom != nullptr);
 
-        if (empty || portIndex == nullptr || atom == nullptr)
+        if (fEmpty || portIndex == nullptr || atom == nullptr)
             return false;
 
-        full = false;
+        fFull = false;
 
-        if (data[index].size == 0)
+        if (fData[fIndex].size == 0)
         {
-            index = indexPool = 0;
-            empty = true;
+            fIndex = fIndexPool = 0;
+            fEmpty = true;
 
             unlock();
             return false;
         }
 
-        retAtom.atom.size = data[index].size;
-        retAtom.atom.type = data[index].type;
-        std::memcpy(retAtom.data, dataPool + data[index].poolOffset, data[index].size);
+        fRetAtom.atom.size = fData[fIndex].size;
+        fRetAtom.atom.type = fData[fIndex].type;
+        std::memcpy(fRetAtom.data, fDataPool + fData[fIndex].poolOffset, fData[fIndex].size);
 
-        *portIndex = data[index].portIndex;
-        *atom      = (LV2_Atom*)&retAtom;
+        *portIndex = fData[index].portIndex;
+        *atom      = (LV2_Atom*)&fRetAtom;
 
-        data[index].portIndex  = 0;
-        data[index].size       = 0;
-        data[index].type       = 0;
-        data[index].poolOffset = 0;
-        index++;
-        empty = false;
+        fData[fIndex].portIndex  = 0;
+        fData[fIndex].size       = 0;
+        fData[fIndex].type       = 0;
+        fData[fIndex].poolOffset = 0;
+        fEmpty = false;
+        ++fIndex;
 
         return true;
     }
 
 private:
-    struct datatype {
+    struct DataType {
         size_t   size;
         uint32_t type;
         uint32_t portIndex;
         uint32_t poolOffset;
 
-        datatype()
+        DataType()
             : size(0),
               type(0),
               portIndex(0),
@@ -168,18 +175,23 @@ private:
     static const unsigned short MAX_SIZE = 128;
     static const unsigned short MAX_POOL_SIZE = 8192;
 
-    datatype data[MAX_SIZE];
-    unsigned char dataPool[MAX_POOL_SIZE];
+    DataType fData[MAX_SIZE];
+    unsigned char fDataPool[MAX_POOL_SIZE];
 
-    struct {
+    struct RetAtom {
         LV2_Atom atom;
         unsigned char data[MAX_POOL_SIZE];
-    } retAtom;
+#ifdef CARLA_PROPER_CPP11_SUPPORT
+        RetAtom() = delete;
+        RetAtom(RetAtom&) = delete;
+        RetAtom(const RetAtom&) = delete;
+#endif
+    } fRetAtom;
 
-    unsigned short index, indexPool;
-    bool empty, full;
+    unsigned short fIndex, fIndexPool;
+    bool fEmpty, fFull;
 
-    CarlaMutex mutex;
+    CarlaMutex fMutex;
 };
 
 #endif // __LV2_ATOM_QUEUE_HPP__
