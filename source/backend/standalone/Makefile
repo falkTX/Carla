@@ -8,7 +8,8 @@ include ../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo) -I../../theme
+BUILD_CXX_FLAGS += -I../../theme
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo)
 
 ifeq ($(HAVE_QT4),true)
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtCore QtGui)
@@ -39,7 +40,7 @@ LINK_FLAGS += $(shell pkg-config --libs libpulse-simple)
 endif
 
 # --------------------------------------------------------------
-# Samplers
+# Plugin
 
 ifeq ($(HAVE_FLUIDSYNTH),true)
 LINK_FLAGS += $(shell pkg-config --libs fluidsynth)
@@ -59,9 +60,9 @@ W32_LIBS += -lrpcrt4
 endif
 else
 ifeq ($(MACOS),true)
-DGL_LIBS  = -framework Cocoa
+DGL_LIBS = -framework Cocoa
 else
-DGL_LIBS  = -lX11
+DGL_LIBS = -lX11
 endif
 endif
 
@@ -140,45 +141,21 @@ debug:
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 ../libcarla_standalone.dll: $(OBJS) $(LIBS)
-	$(CXX) $^ -shared $(LINK_FLAGS) $(W32_LIBS) -Wl,--output-def,$@.def -o $@ && $(STRIP) $@
+	$(CXX) $^ -shared $(LINK_FLAGS) $(W32_LIBS) -Wl,--output-def,$@.def -o $@ $(CMD_STRIP) $@
 
 ../libcarla_standalone.dylib: $(OBJS) $(LIBS)
-	$(CXX) $^ -dynamiclib $(LINK_FLAGS) -framework CoreAudio -framework CoreMIDI -framework CoreFoundation -o $@
+	$(CXX) $^ -dynamiclib $(LINK_FLAGS) -framework CoreAudio -framework CoreMIDI -framework CoreFoundation -o $@ $(CMD_STRIP) $@
 
 ../libcarla_standalone.so: $(OBJS) $(LIBS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -o $@ && $(STRIP) $@
+	$(CXX) $^ -shared $(LINK_FLAGS) -o $@ $(CMD_STRIP) $@
 
 # --------------------------------------------------------------
 
-../libcarla_engine.a:
-	$(MAKE) -C ../engine
+.FORCE:
+.PHONY: .FORCE
 
-../libcarla_plugin.a:
-	$(MAKE) -C ../plugin
+../libcarla_%.a: .FORCE
+	$(MAKE) -C ../$*
 
-../libcarla_native.a:
-	$(MAKE) -C ../native
-
-../../libs/dgl.a:
-	$(MAKE) -C ../../libs dgl
-
-../../libs/lilv.a:
-	$(MAKE) -C ../../libs lilv
-
-../../libs/rtmempool.a:
-	$(MAKE) -C ../../libs rtmempool
-
-../../libs/theme.a:
-	$(MAKE) -C ../../libs theme
-
-../../libs/widgets.a:
-	$(MAKE) -C ../../libs widgets
-
-.PHONY: ../libcarla_engine.a \
-	../libcarla_plugin.a \
-	../libcarla_native.a \
-	../../libs/dgl.a \
-	../../libs/lilv.a \
-	../../libs/rtmempool.a \
-	../../libs/theme.a \
-	../../libs/widgets.a
+../../libs/%.a: .FORCE
+	$(MAKE) -C ../../libs $*

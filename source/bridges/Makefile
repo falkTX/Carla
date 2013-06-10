@@ -8,15 +8,15 @@ include ../Makefile.mk
 
 # --------------------------------------------------------------
 
-ifeq ($(HAVE_QT4),true)
-QT_UI_FLAGS      = $(shell pkg-config --cflags QtGui)
-QT_UI_LIBS       = $(shell pkg-config --libs QtGui)
-else
-QT_UI_FLAGS      = $(shell pkg-config --cflags Qt5Gui Qt5Widgets)
-QT_UI_LIBS       = $(shell pkg-config --libs Qt5Gui Qt5Widgets)
-endif
+QT_UI_FLAGS  = -I../theme
 
-QT_UI_FLAGS     += -I../theme
+ifeq ($(HAVE_QT4),true)
+QT_UI_FLAGS += $(shell pkg-config --cflags QtGui)
+QT_UI_LIBS   = $(shell pkg-config --libs QtGui)
+else
+QT_UI_FLAGS += $(shell pkg-config --cflags Qt5Gui Qt5Widgets)
+QT_UI_LIBS   = $(shell pkg-config --libs Qt5Gui Qt5Widgets)
+endif
 
 # --------------------------------------------------------------
 
@@ -248,7 +248,7 @@ OBJS_UI_LV2_GTK2 = CarlaBridgeUI-LV2__lv2-gtk2.o \
 	CarlaBridgeToolkit__lv2.o CarlaBridgeToolkitGtk__lv2-gtk2.o
 
 carla-bridge-lv2-gtk2: $(OBJS_UI_LV2_GTK2) $(OBJS_UI_LV2_LIBS)
-	$(CXX) $^ $(LINK_UI_LV2_GTK2_FLAGS) -o $@ && $(STRIP) $@
+	$(CXX) $^ $(LINK_UI_LV2_GTK2_FLAGS) -o $@ $(CMD_STRIP) $@
 
 %__lv2-gtk2.o: %.cpp
 	$(CXX) $< $(BUILD_UI_LV2_GTK2_FLAGS) -c -o $@
@@ -261,7 +261,7 @@ OBJS_UI_LV2_GTK3 = CarlaBridgeUI-LV2__lv2-gtk3.o \
 	CarlaBridgeToolkit__lv2.o CarlaBridgeToolkitGtk__lv2-gtk3.o
 
 carla-bridge-lv2-gtk3: $(OBJS_UI_LV2_GTK3) $(OBJS_UI_LV2_LIBS)
-	$(CXX) $^ $(LINK_UI_LV2_GTK3_FLAGS) -o $@ && $(STRIP) $@
+	$(CXX) $^ $(LINK_UI_LV2_GTK3_FLAGS) -o $@ $(CMD_STRIP) $@
 
 %__lv2-gtk3.o: %.cpp
 	$(CXX) $< $(BUILD_UI_LV2_GTK3_FLAGS) -c -o $@
@@ -274,7 +274,7 @@ OBJS_UI_LV2_QT4 = CarlaBridgeUI-LV2__lv2-qt4.o \
 	CarlaBridgeToolkit__lv2.o CarlaBridgeToolkitQt__lv2-qt4.o
 
 carla-bridge-lv2-qt4: $(OBJS_UI_LV2_QT4) $(OBJS_UI_LV2_LIBS)
-	$(CXX) $^ $(LINK_UI_LV2_QT4_FLAGS) -o $@ && $(STRIP) $@
+	$(CXX) $^ $(LINK_UI_LV2_QT4_FLAGS) -o $@ $(CMD_STRIP) $@
 
 %__lv2-qt4.o: %.cpp
 	$(CXX) $< $(BUILD_UI_LV2_QT4_FLAGS) -c -o $@
@@ -287,7 +287,7 @@ OBJS_UI_LV2_QT5 = CarlaBridgeUI-LV2__lv2-qt5.o \
 	CarlaBridgeToolkit__lv2.o CarlaBridgeToolkitQt__lv2-qt5.o
 
 carla-bridge-lv2-qt5: $(OBJS_UI_LV2_QT5) $(OBJS_UI_LV2_LIBS)
-	$(CXX) $^ $(LINK_UI_LV2_QT5_FLAGS) -o $@ && $(STRIP) $@
+	$(CXX) $^ $(LINK_UI_LV2_QT5_FLAGS) -o $@ $(CMD_STRIP) $@
 
 %__lv2-qt5.o: %.cpp
 	$(CXX) $< $(BUILD_UI_LV2_QT5_FLAGS) -c -o $@
@@ -300,7 +300,7 @@ OBJS_UI_LV2_X11 = CarlaBridgeUI-LV2__lv2-x11.o \
 	CarlaBridgeToolkit__lv2.o CarlaBridgeToolkitQt__lv2-x11.o
 
 carla-bridge-lv2-x11: $(OBJS_UI_LV2_X11) $(OBJS_UI_LV2_LIBS) ../libs/theme.a
-	$(CXX) $^ $(LINK_UI_LV2_X11_FLAGS) -o $@ && $(STRIP) $@
+	$(CXX) $^ $(LINK_UI_LV2_X11_FLAGS) -o $@ $(CMD_STRIP) $@
 
 %__lv2-x11.o: %.cpp
 	$(CXX) $< $(BUILD_UI_LV2_X11_FLAGS) -c -o $@
@@ -313,7 +313,7 @@ OBJS_UI_VST_HWND = CarlaBridgeUI-VST__vst-hwnd.o \
 	CarlaBridgeToolkit__vst.o CarlaBridgeToolkitQt__vst-hwnd.o
 
 carla-bridge-vst-hwnd.exe: $(OBJS_UI_VST_HWND) ../libs/theme.a
-	$(CXX) $^ $(LINK_UI_VST_HWND_FLAGS) -o $@ && $(STRIP) $@
+	$(CXX) $^ $(LINK_UI_VST_HWND_FLAGS) -o $@ $(CMD_STRIP) $@
 
 %__vst-hwnd.o: %.cpp
 	$(CXX) $< $(BUILD_UI_VST_HWND_FLAGS) -c -o $@
@@ -326,7 +326,7 @@ OBJS_UI_VST_X11 = CarlaBridgeUI-VST__vst-x11.o \
 	CarlaBridgeToolkit__vst.o CarlaBridgeToolkitQt__vst-x11.o
 
 carla-bridge-vst-x11: $(OBJS_UI_VST_X11) ../libs/theme.a
-	$(CXX) $^ $(LINK_UI_VST_X11_FLAGS) -o $@ && $(STRIP) $@
+	$(CXX) $^ $(LINK_UI_VST_X11_FLAGS) -o $@ $(CMD_STRIP) $@
 
 %__vst-x11.o: %.cpp
 	$(CXX) $< $(BUILD_UI_VST_X11_FLAGS) -c -o $@
@@ -382,7 +382,7 @@ OBJS_NATIVE += \
 endif
 
 carla-bridge-native: $(FILES) $(OBJS_NATIVE)
-	$(CXX) $(OBJS_NATIVE) $(NATIVE_LINK_FLAGS) -o $@ && $(STRIP) $@
+	$(CXX) $(OBJS_NATIVE) $(NATIVE_LINK_FLAGS) -o $@ $(CMD_STRIP) $@
 
 %__native.o: %.cpp
 	$(CXX) $< $(NATIVE_BUILD_FLAGS) -c -o $@
@@ -425,7 +425,7 @@ OBJS_POSIX32 += \
 	../libs/rtmempool.posix32.a
 
 carla-bridge-posix32: $(FILES) $(OBJS_POSIX32)
-	$(CXX) $(OBJS_POSIX32) $(POSIX_LINK_FLAGS) $(POSIX_32BIT_FLAGS) -o $@ && $(STRIP) $@
+	$(CXX) $(OBJS_POSIX32) $(POSIX_LINK_FLAGS) $(POSIX_32BIT_FLAGS) -o $@ $(CMD_STRIP) $@
 
 %__posix32.o: %.cpp
 	$(CXX) $< $(POSIX_BUILD_FLAGS) $(POSIX_32BIT_FLAGS) -c -o $@
@@ -468,7 +468,7 @@ OBJS_POSIX64 += \
 	../libs/rtmempool.posix64.a
 
 carla-bridge-posix64: $(FILES) $(OBJS_POSIX64)
-	$(CXX) $(OBJS_POSIX64) $(POSIX_LINK_FLAGS) $(POSIX_64BIT_FLAGS) -o $@ && $(STRIP) $@
+	$(CXX) $(OBJS_POSIX64) $(POSIX_LINK_FLAGS) $(POSIX_64BIT_FLAGS) -o $@ $(CMD_STRIP) $@
 
 %__posix64.o: %.cpp
 	$(CXX) $< $(POSIX_BUILD_FLAGS) $(POSIX_64BIT_FLAGS) -c -o $@
@@ -511,7 +511,7 @@ OBJS_WIN32 += \
 	../libs/rtmempool.win32.a
 
 carla-bridge-win32.exe: $(FILES) $(OBJS_WIN32) ../libs/jackbridge-win32.dll
-	$(CXX) $(OBJS_WIN32) $(WIN_32BIT_FLAGS) $(WIN_LINK_FLAGS) -ljackbridge-win32 -o $@ && $(STRIP) $@
+	$(CXX) $(OBJS_WIN32) $(WIN_32BIT_FLAGS) $(WIN_LINK_FLAGS) -ljackbridge-win32 -o $@ $(CMD_STRIP) $@
 
 %__win32.o: %.cpp
 	$(CXX) $< $(WIN_BUILD_FLAGS) $(WIN_32BIT_FLAGS) -c -o $@
@@ -554,7 +554,7 @@ OBJS_WIN64 += \
 	../libs/rtmempool.win64.a
 
 carla-bridge-win64.exe: $(FILES) $(OBJS_WIN64) ../libs/jackbridge-win64.dll
-	$(CXX) $(OBJS_WIN64) $(WIN_64BIT_FLAGS) $(WIN_LINK_FLAGS) -ljackbridge-win64 -o $@ && $(STRIP) $@
+	$(CXX) $(OBJS_WIN64) $(WIN_64BIT_FLAGS) $(WIN_LINK_FLAGS) -ljackbridge-win64 -o $@ $(CMD_STRIP) $@
 
 %__win64.o: %.cpp
 	$(CXX) $< $(WIN_BUILD_FLAGS) $(WIN_64BIT_FLAGS) -c -o $@
@@ -566,13 +566,14 @@ carla-bridge-win64.exe: $(FILES) $(OBJS_WIN64) ../libs/jackbridge-win64.dll
 
 # --------------------------------------------------------------
 
-../backend/libcarla_native.a:
+.FORCE:
+.PHONY: .FORCE
+
+../backend/libcarla_native.a: .FORCE
 	$(MAKE) -C ../backend/native
 
-../libs/widgets.a:
-	$(MAKE) -C ../libs widgets
-
-.PHONY: ../backend/libcarla_native.a ../libs/widgets.a
+../libs/%.a: .FORCE
+	$(MAKE) -C ../libs $*
 
 # --------------------------------------------------------------
 

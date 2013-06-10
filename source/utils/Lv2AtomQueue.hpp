@@ -145,7 +145,7 @@ public:
         fRetAtom.atom.type = fData[fIndex].type;
         std::memcpy(fRetAtom.data, fDataPool + fData[fIndex].poolOffset, fData[fIndex].size);
 
-        *portIndex = fData[index].portIndex;
+        *portIndex = fData[fIndex].portIndex;
         *atom      = (LV2_Atom*)&fRetAtom;
 
         fData[fIndex].portIndex  = 0;
@@ -181,11 +181,6 @@ private:
     struct RetAtom {
         LV2_Atom atom;
         unsigned char data[MAX_POOL_SIZE];
-#ifdef CARLA_PROPER_CPP11_SUPPORT
-        RetAtom() = delete;
-        RetAtom(RetAtom&) = delete;
-        RetAtom(const RetAtom&) = delete;
-#endif
     } fRetAtom;
 
     unsigned short fIndex, fIndexPool;

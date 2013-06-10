@@ -8,8 +8,7 @@ include ../../Makefile.mk
 
 # --------------------------------------------------------------
 
-BACKEND_FLAGS    = -fvisibility=hidden -fPIC
-BACKEND_FLAGS   += -I. -I.. -I../../includes -I../../libs -I../../utils
+BACKEND_FLAGS    = -I. -I.. -I../../includes -I../../libs -I../../utils
 
 BUILD_C_FLAGS   += $(BACKEND_FLAGS)
 BUILD_CXX_FLAGS += $(BACKEND_FLAGS)
@@ -19,16 +18,14 @@ BUILD_CXX_FLAGS += $(BACKEND_FLAGS)
 BUILD_CXX_FLAGS += -DWANT_NATIVE
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-BUILD_C_FLAGS   += -DWANT_LV2
 BUILD_CXX_FLAGS += -DWANT_LADSPA -DWANT_DSSI -DWANT_LV2 -DWANT_VST
+ifeq ($(CARLA_VESTIGE_HEADER),true)
+BUILD_CXX_FLAGS += -DVESTIGE_HEADER
+endif
 endif
 
 ifeq ($(CARLA_RTAUDIO_SUPPORT),true)
 BUILD_CXX_FLAGS += -DWANT_RTAUDIO
-endif
-
-ifeq ($(CARLA_VESTIGE_HEADER),true)
-BUILD_CXX_FLAGS += -DVESTIGE_HEADER
 endif
 
 # --------------------------------------------------------------
@@ -58,8 +55,7 @@ endif
 
 ifeq ($(HAVE_ZYN_DEPS),true)
 BUILD_CXX_FLAGS += -DWANT_ZYNADDSUBFX
-endif
-
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
 BUILD_CXX_FLAGS += -DWANT_ZYNADDSUBFX_UI
+endif
 endif
