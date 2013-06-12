@@ -628,9 +628,14 @@ enum CallbackType {
     CALLBACK_ERROR = 32,
 
     /*!
+     * Show \a valueStr as info to user.
+     */
+    CALLBACK_INFO = 33,
+
+    /*!
      * The engine has crashed or malfunctioned and will no longer work.
      */
-    CALLBACK_QUIT = 33
+    CALLBACK_QUIT = 34
 };
 
 /*!

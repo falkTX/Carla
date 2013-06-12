@@ -347,6 +347,8 @@ const char* CallbackType2Str(const CallbackType& type)
         return "CALLBACK_NSM_SAVE";
     case CALLBACK_ERROR:
         return "CALLBACK_ERROR";
+    case CALLBACK_INFO:
+        return "CALLBACK_INFO";
     case CALLBACK_QUIT:
         return "CALLBACK_QUIT";
     }
