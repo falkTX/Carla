@@ -831,7 +831,7 @@ protected:
         carla_zeroFloat(fAudioBufRackOut[1], nframes);
 
         // initialize input events
-        carla_zeroMem(kData->bufEvent.in, sizeof(EngineEvent)*INTERNAL_EVENT_COUNT);
+        carla_zeroMem(kData->bufEvents.in, sizeof(EngineEvent)*INTERNAL_EVENT_COUNT);
 
         if (fMidiInEvents.mutex.tryLock())
         {
@@ -842,7 +842,7 @@ protected:
             {
                 const RtMidiEvent& midiEvent(fMidiInEvents.data.getFirst(true));
 
-                EngineEvent& engineEvent(kData->bufEvent.in[engineEventIndex++]);
+                EngineEvent& engineEvent(kData->bufEvents.in[engineEventIndex++]);
                 engineEvent.clear();
 
                 const uint8_t midiStatus  = MIDI_GET_STATUS_FROM_DATA(midiEvent.data);

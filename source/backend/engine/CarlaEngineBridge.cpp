@@ -262,9 +262,9 @@ public:
                     for (int i=0; i < dataSize && i < 4; ++i)
                         data[i] = rdwr_readChar(&fShmControl.data->ringBuffer);
 
-                    CARLA_ASSERT(kData->bufEvent.in != nullptr);
+                    CARLA_ASSERT(kData->bufEvents.in != nullptr);
 
-                    if (kData->bufEvent.in != nullptr)
+                    if (kData->bufEvents.in != nullptr)
                     {
                         // TODO
                     }

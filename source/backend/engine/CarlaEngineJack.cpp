@@ -779,6 +779,8 @@ public:
         bool needsReinit = (fOptions.processMode == PROCESS_MODE_SINGLE_CLIENT);
         const char* name = getUniquePluginName(newName);
 
+        // TODO - use rename port if single-client
+
         // JACK client rename
         if (fOptions.processMode == PROCESS_MODE_MULTIPLE_CLIENTS)
         {
@@ -793,24 +795,29 @@ public:
                 // we should not be able to do this, jack really needs to allow client rename
                 needsReinit = true;
 
-                plugin->setEnabled(false);
+                if (jack_client_t* jclient = jackbridge_client_open(name, JackNullOption, nullptr))
+                {
+                    // close old client
+                    plugin->setEnabled(false);
 
-                if (client->isActive())
-                    client->deactivate();
+                    if (client->isActive())
+                        client->deactivate();
 
-                plugin->clearBuffers();
+                    plugin->clearBuffers();
 
-                jackbridge_client_close(client->kClient);
+                    jackbridge_client_close(client->kClient);
 
-                jack_client_t* jclient = jackbridge_client_open(name, JackNullOption, nullptr);
-                name = jackbridge_get_client_name(jclient);
+                    // set new client data
+                    name = jackbridge_get_client_name(jclient);
 
-                jackbridge_set_process_callback(jclient, carla_jack_process_callback_plugin, plugin);
+                    jackbridge_set_process_callback(jclient, carla_jack_process_callback_plugin, plugin);
 # if 0
-                jackbridge_set_latency_callback(jclient, carla_jack_latency_callback_plugin, plugin);
+                    jackbridge_set_latency_callback(jclient, carla_jack_latency_callback_plugin, plugin);
 # endif
 
-                std::memcpy((jack_client_t**)&client->kClient, &jclient, sizeof(jack_client_t**));
+                    // this is supposed to be constant...
+                    std::memcpy((jack_client_t**)&client->kClient, &jclient, sizeof(jack_client_t**));
+                }
             }
         }
 
@@ -1031,7 +1038,7 @@ protected:
 #ifdef BUILD_BRIDGE
         CarlaPlugin* const plugin(getPluginUnchecked(0));
 
-        if (plugin && plugin->enabled() && plugin->tryLock())
+        if (plugin != nullptr && plugin->enabled() && plugin->tryLock())
         {
             plugin->initBuffers();
             processPlugin(plugin, nframes);
@@ -1044,7 +1051,7 @@ protected:
             {
                 CarlaPlugin* const plugin(getPluginUnchecked(i));
 
-                if (plugin && plugin->enabled() && plugin->tryLock())
+                if (plugin != nullptr && plugin->enabled() && plugin->tryLock())
                 {
                     plugin->initBuffers();
                     processPlugin(plugin, nframes);
@@ -1602,19 +1609,14 @@ private:
 
     void processPlugin(CarlaPlugin* const plugin, const uint32_t nframes)
     {
-        const uint32_t inCount  = plugin->audioInCount();
-        const uint32_t outCount = plugin->audioOutCount();
+        const uint32_t inCount(plugin->audioInCount());
+        const uint32_t outCount(plugin->audioOutCount());
 
         float* inBuffer[inCount];
         float* outBuffer[outCount];
 
-        float inPeaks[inCount];
-        float outPeaks[outCount];
-
-        if (inCount > 0)
-            carla_zeroFloat(inPeaks, inCount);
-        if (outCount > 0)
-            carla_zeroFloat(outPeaks, outCount);
+        float inPeaks[2] = { 0.0f };
+        float outPeaks[2] = { 0.0f };
 
         for (uint32_t i=0; i < inCount; ++i)
         {
@@ -1628,11 +1630,11 @@ private:
             outBuffer[i] = port->getBuffer();
         }
 
-        for (uint32_t i=0; i < inCount; ++i)
+        for (uint32_t i=0; i < inCount && i < 2; ++i)
         {
             for (uint32_t j=0; j < nframes; ++j)
             {
-                const float absV = std::abs(inBuffer[i][j]);
+                const float absV(std::abs(inBuffer[i][j]));
 
                 if (absV > inPeaks[i])
                     inPeaks[i] = absV;
@@ -1641,11 +1643,11 @@ private:
 
         plugin->process(inBuffer, outBuffer, nframes);
 
-        for (uint32_t i=0; i < outCount; ++i)
+        for (uint32_t i=0; i < outCount && i < 2; ++i)
         {
             for (uint32_t j=0; j < nframes; ++j)
             {
-                const float absV = std::abs(outBuffer[i][j]);
+                const float absV(std::abs(outBuffer[i][j]));
 
                 if (absV > outPeaks[i])
                     outPeaks[i] = absV;

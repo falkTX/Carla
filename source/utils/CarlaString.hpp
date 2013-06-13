@@ -118,6 +118,7 @@ public:
         CARLA_ASSERT(buffer != nullptr);
 
         delete[] buffer;
+        buffer = nullptr;
     }
 
     // ---------------------------------------------

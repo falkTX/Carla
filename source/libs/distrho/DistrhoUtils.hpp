@@ -252,6 +252,7 @@ public:
         assert(buffer != nullptr);
 
         delete[] buffer;
+        buffer = nullptr;
     }
 
     // ---------------------------------------------

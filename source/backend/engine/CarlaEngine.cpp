@@ -383,76 +383,6 @@ CarlaEngine::~CarlaEngine()
 // -----------------------------------------------------------------------
 // Helpers
 
-void doPluginIdle(CarlaEngineProtectedData* const kData, const bool unlock)
-{
-    CARLA_ASSERT(kData->curPluginCount > 0);
-
-    kData->nextAction.opcode = kEnginePostActionNull;
-
-    if (unlock)
-        kData->nextAction.mutex.unlock();
-}
-
-void doPluginRemove(CarlaEngineProtectedData* const kData, const bool unlock)
-{
-    CARLA_ASSERT(kData->curPluginCount > 0);
-    --kData->curPluginCount;
-
-    const unsigned int id(kData->nextAction.pluginId);
-
-    // reset current plugin
-    kData->plugins[id].plugin = nullptr;
-
-    CarlaPlugin* plugin;
-
-    // move all plugins 1 spot backwards
-    for (unsigned int i=id; i < kData->curPluginCount; ++i)
-    {
-        plugin = kData->plugins[i+1].plugin;
-
-        CARLA_ASSERT(plugin != nullptr);
-
-        if (plugin == nullptr)
-            break;
-
-        plugin->setId(i);
-
-        kData->plugins[i].plugin      = plugin;
-        kData->plugins[i].insPeak[0]  = 0.0f;
-        kData->plugins[i].insPeak[1]  = 0.0f;
-        kData->plugins[i].outsPeak[0] = 0.0f;
-        kData->plugins[i].outsPeak[1] = 0.0f;
-    }
-
-    kData->nextAction.opcode = kEnginePostActionNull;
-
-    if (unlock)
-        kData->nextAction.mutex.unlock();
-}
-
-void doPluginsSwitch(CarlaEngineProtectedData* const kData, const bool unlock)
-{
-    CARLA_ASSERT(kData->curPluginCount >= 2);
-
-    const unsigned int idA(kData->nextAction.pluginId);
-    const unsigned int idB(kData->nextAction.value);
-
-    CARLA_ASSERT(idA < kData->curPluginCount);
-    CARLA_ASSERT(idB < kData->curPluginCount);
-
-    CarlaPlugin* const tmp(kData->plugins[idA].plugin);
-
-    CARLA_ASSERT(tmp != nullptr);
-
-    kData->plugins[idA].plugin = kData->plugins[idB].plugin;
-    kData->plugins[idB].plugin = tmp;
-
-    kData->nextAction.opcode = kEnginePostActionNull;
-
-    if (unlock)
-        kData->nextAction.mutex.unlock();
-}
-
 // returned value must be deleted
 const char* findDSSIGUI(const char* const filename, const char* const label)
 {
@@ -608,20 +538,17 @@ unsigned int CarlaEngine::maxPluginNumber() const
 
 bool CarlaEngine::init(const char* const clientName)
 {
+    CARLA_ASSERT(fName.isEmpty());
     CARLA_ASSERT(kData->oscData == nullptr);
     CARLA_ASSERT(kData->plugins == nullptr);
     CARLA_ASSERT(kData->bufEvents.in  == nullptr);
     CARLA_ASSERT(kData->bufEvents.out == nullptr);
     carla_debug("CarlaEngine::init(\"%s\")", clientName);
 
-    fName = clientName;
-    fName.toBasic();
-
-    fTimeInfo.clear();
-
     kData->aboutToClose = false;
     kData->curPluginCount = 0;
     kData->maxPluginNumber = 0;
+    kData->nextPluginId = 0;
 
     switch (fOptions.processMode)
     {
@@ -650,6 +577,13 @@ bool CarlaEngine::init(const char* const clientName)
     if (kData->maxPluginNumber == 0)
         return false;
 
+    kData->nextPluginId = kData->maxPluginNumber;
+
+    fName = clientName;
+    fName.toBasic();
+
+    fTimeInfo.clear();
+
     kData->plugins = new EnginePluginData[kData->maxPluginNumber];
 
     kData->osc.init(clientName);
@@ -668,8 +602,11 @@ bool CarlaEngine::init(const char* const clientName)
 
 bool CarlaEngine::close()
 {
+    CARLA_ASSERT(fName.isNotEmpty());
     CARLA_ASSERT(kData->oscData != nullptr);
     CARLA_ASSERT(kData->plugins != nullptr);
+    CARLA_ASSERT(kData->nextAction.opcode == kEnginePostActionNull);
+    CARLA_ASSERT(kData->nextPluginId == kData->maxPluginNumber);
     carla_debug("CarlaEngine::close()");
 
     kData->thread.stopNow();
@@ -684,6 +621,7 @@ bool CarlaEngine::close()
     kData->aboutToClose = true;
     kData->curPluginCount = 0;
     kData->maxPluginNumber = 0;
+    kData->nextPluginId = 0;
 
     if (kData->plugins != nullptr)
     {
@@ -711,6 +649,8 @@ bool CarlaEngine::close()
 void CarlaEngine::idle()
 {
     CARLA_ASSERT(kData->plugins != nullptr);
+    CARLA_ASSERT(kData->nextAction.opcode == kEnginePostActionNull); // TESTING, remove later
+    CARLA_ASSERT(kData->nextPluginId == kData->maxPluginNumber);     // TESTING, remove later
 
     for (unsigned int i=0; i < kData->curPluginCount; ++i)
     {
@@ -734,15 +674,29 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
     CARLA_ASSERT(btype != BINARY_NONE);
     CARLA_ASSERT(ptype != PLUGIN_NONE);
     CARLA_ASSERT(kData->plugins != nullptr);
+    CARLA_ASSERT(kData->nextAction.opcode == kEnginePostActionNull);
     carla_debug("CarlaEngine::addPlugin(%s, %s, \"%s\", \"%s\", \"%s\", %p)", BinaryType2Str(btype), PluginType2Str(ptype), filename, name, label, extra);
 
-    if (kData->curPluginCount == kData->maxPluginNumber)
-    {
-        setLastError("Maximum number of plugins reached");
-        return false;
-    }
+    unsigned int id;
 
-    const unsigned int id(kData->curPluginCount);
+    if (kData->nextPluginId < kData->curPluginCount)
+    {
+        id = kData->nextPluginId;
+        kData->nextPluginId = kData->maxPluginNumber;
+        CARLA_ASSERT(kData->plugins[id].plugin != nullptr);
+    }
+    else
+    {
+        id = kData->curPluginCount;
+
+        if (id == kData->maxPluginNumber)
+        {
+            setLastError("Maximum number of plugins reached");
+            return false;
+        }
+
+        CARLA_ASSERT(kData->plugins[id].plugin == nullptr);
+    }
 
     CarlaPlugin::Initializer init = {
         this,
@@ -850,13 +804,13 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
 
 bool CarlaEngine::removePlugin(const unsigned int id)
 {
-    CARLA_ASSERT(kData->curPluginCount > 0);
+    CARLA_ASSERT(kData->curPluginCount != 0);
     CARLA_ASSERT(id < kData->curPluginCount);
     CARLA_ASSERT(kData->plugins != nullptr);
     CARLA_ASSERT(kData->nextAction.opcode == kEnginePostActionNull);
     carla_debug("CarlaEngine::removePlugin(%i)", id);
 
-    if (kData->plugins == nullptr)
+    if (kData->plugins == nullptr || kData->curPluginCount == 0)
     {
         setLastError("Critical error: no plugins are currently loaded!");
         return false;
@@ -874,22 +828,8 @@ bool CarlaEngine::removePlugin(const unsigned int id)
 
     kData->thread.stopNow();
 
-    kData->nextAction.pluginId = id;
-    kData->nextAction.opcode   = kEnginePostActionRemovePlugin;
-
-    kData->nextAction.mutex.lock();
-
-    if (isRunning() && fOptions.processMode != PROCESS_MODE_MULTIPLE_CLIENTS)
-    {
-        carla_stdout("CarlaEngine::removePlugin(%i) - remove blocking START", id);
-        // block wait for unlock on proccessing side
-        kData->nextAction.mutex.lock();
-        carla_stdout("CarlaEngine::removePlugin(%i) - remove blocking DONE", id);
-    }
-    else
-    {
-        doPluginRemove(kData, false);
-    }
+    const bool lockWait(isRunning() && fOptions.processMode != PROCESS_MODE_MULTIPLE_CLIENTS);
+    const CarlaEngineProtectedData::ScopedPluginAction spa(kData, kEnginePostActionRemovePlugin, id, 0, lockWait);
 
 #ifndef BUILD_BRIDGE
     if (isOscControlRegistered())
@@ -897,8 +837,6 @@ bool CarlaEngine::removePlugin(const unsigned int id)
 #endif
 
     delete plugin;
-
-    kData->nextAction.mutex.unlock();
 
     if (isRunning() && ! kData->aboutToClose)
         kData->thread.startNow();
@@ -910,33 +848,31 @@ bool CarlaEngine::removePlugin(const unsigned int id)
 void CarlaEngine::removeAllPlugins()
 {
     CARLA_ASSERT(kData->plugins != nullptr);
+    CARLA_ASSERT(kData->nextAction.opcode == kEnginePostActionNull);
     carla_debug("CarlaEngine::removeAllPlugins() - START");
+
+    if (kData->plugins == nullptr || kData->curPluginCount == 0)
+        return;
 
     kData->thread.stopNow();
 
-    if (kData->curPluginCount > 0)
+    const bool lockWait(isRunning());
+    const CarlaEngineProtectedData::ScopedPluginAction spa(kData, kEnginePostActionZeroCount, 0, 0, lockWait);
+
+    for (unsigned int i=0; i < kData->maxPluginNumber; ++i)
     {
-        const unsigned int oldCount(kData->curPluginCount);
+        CarlaPlugin* const plugin(kData->plugins[i].plugin);
 
-        kData->curPluginCount = 0;
+        kData->plugins[i].plugin = nullptr;
 
-        for (unsigned int i=0; i < oldCount; ++i)
-        {
-            CarlaPlugin* const plugin(kData->plugins[i].plugin);
+        if (plugin != nullptr)
+            delete plugin;
 
-            CARLA_ASSERT(plugin != nullptr);
-
-            kData->plugins[i].plugin = nullptr;
-
-            if (plugin != nullptr)
-                delete plugin;
-
-            // clear this plugin
-            kData->plugins[i].insPeak[0]  = 0.0f;
-            kData->plugins[i].insPeak[1]  = 0.0f;
-            kData->plugins[i].outsPeak[0] = 0.0f;
-            kData->plugins[i].outsPeak[1] = 0.0f;
-        }
+        // clear this plugin
+        kData->plugins[i].insPeak[0]  = 0.0f;
+        kData->plugins[i].insPeak[1]  = 0.0f;
+        kData->plugins[i].outsPeak[0] = 0.0f;
+        kData->plugins[i].outsPeak[1] = 0.0f;
     }
 
     if (isRunning() && ! kData->aboutToClose)
@@ -947,13 +883,14 @@ void CarlaEngine::removeAllPlugins()
 
 const char* CarlaEngine::renamePlugin(const unsigned int id, const char* const newName)
 {
-    CARLA_ASSERT(kData->curPluginCount > 0);
+    CARLA_ASSERT(kData->curPluginCount != 0);
     CARLA_ASSERT(id < kData->curPluginCount);
     CARLA_ASSERT(kData->plugins != nullptr);
+    CARLA_ASSERT(kData->nextAction.opcode == kEnginePostActionNull);
     CARLA_ASSERT(newName != nullptr);
     carla_debug("CarlaEngine::renamePlugin(%i, \"%s\")", id, newName);
 
-    if (kData->plugins == nullptr)
+    if (kData->plugins == nullptr || kData->curPluginCount == 0)
     {
         setLastError("Critical error: no plugins are currently loaded!");
         return nullptr;
@@ -986,7 +923,7 @@ bool CarlaEngine::clonePlugin(const unsigned int id)
     CARLA_ASSERT(kData->nextAction.opcode == kEnginePostActionNull);
     carla_debug("CarlaEngine::clonePlugin(%i)", id);
 
-    if (kData->plugins == nullptr)
+    if (kData->plugins == nullptr || kData->curPluginCount == 0)
     {
         setLastError("Critical error: no plugins are currently loaded!");
         return false;
@@ -1012,14 +949,14 @@ bool CarlaEngine::clonePlugin(const unsigned int id)
         binaryType = CarlaPluginGetBridgeBinaryType(plugin);
 #endif
 
-    const unsigned int pluginsBefore(kData->curPluginCount);
+    const unsigned int pluginCountBefore(kData->curPluginCount);
 
     if (! addPlugin(binaryType, plugin->type(), plugin->filename(), plugin->name(), label, plugin->getExtraStuff()))
         return false;
 
-    CARLA_ASSERT(pluginsBefore+1 == kData->curPluginCount);
+    CARLA_ASSERT(pluginCountBefore+1 == kData->curPluginCount);
 
-    if (CarlaPlugin* const newPlugin = kData->plugins[kData->curPluginCount-1].plugin)
+    if (CarlaPlugin* const newPlugin = kData->plugins[pluginCountBefore].plugin)
         newPlugin->loadSaveState(plugin->getSaveState());
 
     return true;
@@ -1030,21 +967,26 @@ bool CarlaEngine::replacePlugin(const unsigned int id)
     CARLA_ASSERT(kData->curPluginCount > 0);
     CARLA_ASSERT(id < kData->curPluginCount);
     CARLA_ASSERT(kData->plugins != nullptr);
+    CARLA_ASSERT(kData->nextAction.opcode == kEnginePostActionNull);
     carla_debug("CarlaEngine::replacePlugin(%i)", id);
 
-    setLastError("Not implemented yet");
+    if (id < kData->curPluginCount)
+        kData->nextPluginId = id;
+
     return false;
 }
 
 bool CarlaEngine::switchPlugins(const unsigned int idA, const unsigned int idB)
 {
-    CARLA_ASSERT(kData->curPluginCount > 0);
+    CARLA_ASSERT(kData->curPluginCount >= 2);
+    CARLA_ASSERT(kData->plugins != nullptr);
+    CARLA_ASSERT(kData->nextAction.opcode == kEnginePostActionNull);
+    CARLA_ASSERT(idA != idB);
     CARLA_ASSERT(idA < kData->curPluginCount);
     CARLA_ASSERT(idB < kData->curPluginCount);
-    CARLA_ASSERT(kData->plugins != nullptr);
     carla_debug("CarlaEngine::switchPlugins(%i)", idA, idB);
 
-    if (kData->plugins == nullptr)
+    if (kData->plugins == nullptr || kData->curPluginCount == 0)
     {
         setLastError("Critical error: no plugins are currently loaded!");
         return false;
@@ -1052,30 +994,13 @@ bool CarlaEngine::switchPlugins(const unsigned int idA, const unsigned int idB)
 
     kData->thread.stopNow();
 
-    kData->nextAction.pluginId = idA;
-    kData->nextAction.value    = idB;
-    kData->nextAction.opcode   = kEnginePostActionSwitchPlugins;
-
-    kData->nextAction.mutex.lock();
-
-    if (isRunning() && fOptions.processMode != PROCESS_MODE_MULTIPLE_CLIENTS)
-    {
-        carla_stderr("CarlaEngine::switchPlugins(%i, %i) - switch blocking START", idA, idB);
-        // block wait for unlock on proccessing side
-        kData->nextAction.mutex.lock();
-        carla_stderr("CarlaEngine::switchPlugins(%i, %i) - switch blocking DONE", idA, idB);
-    }
-    else
-    {
-        doPluginsSwitch(kData, false);
-    }
+    const bool lockWait(isRunning() && fOptions.processMode != PROCESS_MODE_MULTIPLE_CLIENTS);
+    const CarlaEngineProtectedData::ScopedPluginAction spa(kData, kEnginePostActionSwitchPlugins, idA, idB, lockWait);
 
 #ifndef BUILD_BRIDGE // TODO
     //if (isOscControlRegistered())
-    //    osc_send_control_remove_plugin(id);
+    //    osc_send_control_switch_plugins(idA, idB);
 #endif
-
-    kData->nextAction.mutex.unlock();
 
     if (isRunning() && ! kData->aboutToClose)
         kData->thread.startNow();
@@ -1085,9 +1010,10 @@ bool CarlaEngine::switchPlugins(const unsigned int idA, const unsigned int idB)
 
 CarlaPlugin* CarlaEngine::getPlugin(const unsigned int id) const
 {
-    CARLA_ASSERT(kData->curPluginCount > 0);
+    CARLA_ASSERT(kData->curPluginCount != 0);
     CARLA_ASSERT(id < kData->curPluginCount);
     CARLA_ASSERT(kData->plugins != nullptr);
+    CARLA_ASSERT(kData->nextAction.opcode == kEnginePostActionNull); // TESTING, remove later
     carla_debug("CarlaEngine::getPlugin(%i) [count:%i]", id, kData->curPluginCount);
 
     if (id < kData->curPluginCount && kData->plugins != nullptr)
@@ -1103,26 +1029,30 @@ CarlaPlugin* CarlaEngine::getPluginUnchecked(const unsigned int id) const
 
 const char* CarlaEngine::getUniquePluginName(const char* const name)
 {
-    CARLA_ASSERT(kData->maxPluginNumber > 0);
+    CARLA_ASSERT(kData->maxPluginNumber != 0);
     CARLA_ASSERT(kData->plugins != nullptr);
+    CARLA_ASSERT(kData->nextAction.opcode == kEnginePostActionNull);
     CARLA_ASSERT(name != nullptr);
     carla_debug("CarlaEngine::getUniquePluginName(\"%s\")", name);
 
     static CarlaString sname;
     sname = name;
 
-    if (sname.isEmpty() || kData->plugins == nullptr)
+    if (sname.isEmpty())
     {
         sname = "(No name)";
         return (const char*)sname;
     }
+
+    if (kData->plugins == nullptr || kData->maxPluginNumber == 0)
+        return (const char*)sname;
 
     sname.truncate(maxClientNameSize()-5-1); // 5 = strlen(" (10)")
     sname.replace(':', '.'); // ':' is used in JACK1 to split client/port names
 
     for (unsigned short i=0; i < kData->curPluginCount; ++i)
     {
-        CARLA_ASSERT(kData->plugins[i].plugin);
+        CARLA_ASSERT(kData->plugins[i].plugin != nullptr);
 
         if (kData->plugins[i].plugin == nullptr)
             break;
@@ -1727,7 +1657,7 @@ void CarlaEngine::bufferSizeChanged(const uint32_t newBufferSize)
 
     for (unsigned int i=0; i < kData->curPluginCount; ++i)
     {
-        CarlaPlugin* const plugin = kData->plugins[i].plugin;
+        CarlaPlugin* const plugin(kData->plugins[i].plugin);
 
         if (plugin != nullptr && plugin->enabled())
             plugin->bufferSizeChanged(newBufferSize);
@@ -1742,7 +1672,7 @@ void CarlaEngine::sampleRateChanged(const double newSampleRate)
 
     for (unsigned int i=0; i < kData->curPluginCount; ++i)
     {
-        CarlaPlugin* const plugin = kData->plugins[i].plugin;
+        CarlaPlugin* const plugin(kData->plugins[i].plugin);
 
         if (plugin != nullptr && plugin->enabled())
             plugin->sampleRateChanged(newSampleRate);
@@ -1755,20 +1685,7 @@ void CarlaEngine::proccessPendingEvents()
 {
     //carla_stderr("proccessPendingEvents(%i)", kData->nextAction.opcode);
 
-    switch (kData->nextAction.opcode)
-    {
-    case kEnginePostActionNull:
-        break;
-    case kEnginePostActionIdle:
-        doPluginIdle(kData, true);
-        break;
-    case kEnginePostActionRemovePlugin:
-        doPluginRemove(kData, true);
-        break;
-    case kEnginePostActionSwitchPlugins:
-        doPluginsSwitch(kData, true);
-        break;
-    }
+    kData->doNextPluginAction(true);
 
     if (kData->time.playing)
         kData->time.frame += fBufferSize;

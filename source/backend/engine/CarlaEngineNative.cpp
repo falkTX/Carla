@@ -351,7 +351,7 @@ protected:
         // ---------------------------------------------------------------
         // initialize input events
 
-        carla_zeroStruct<EngineEvent>(kData->bufEvent.in, INTERNAL_EVENT_COUNT);
+        carla_zeroStruct<EngineEvent>(kData->bufEvents.in, INTERNAL_EVENT_COUNT);
         {
             uint32_t engineEventIndex = 0;
 
@@ -379,7 +379,7 @@ protected:
 
                     if (control == MIDI_CONTROL_ALL_SOUND_OFF || control == MIDI_CONTROL_ALL_NOTES_OFF)
                     {
-                        EngineEvent& engineEvent(kData->bufEvent.in[engineEventIndex++]);
+                        EngineEvent& engineEvent(kData->bufEvents.in[engineEventIndex++]);
                         engineEvent.clear();
 
                         engineEvent.type    = kEngineEventTypeControl;
@@ -394,7 +394,7 @@ protected:
                     }
                 }
 
-                EngineEvent& engineEvent(kData->bufEvent.in[engineEventIndex++]);
+                EngineEvent& engineEvent(kData->bufEvents.in[engineEventIndex++]);
                 engineEvent.clear();
 
                 engineEvent.type    = kEngineEventTypeMidi;
