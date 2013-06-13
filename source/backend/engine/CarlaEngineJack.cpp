@@ -84,18 +84,17 @@ public:
         CARLA_ASSERT(engine != nullptr);
 
         if (engine == nullptr)
-        {
-            fBuffer = nullptr;
             return;
-        }
 
         if (kPort == nullptr)
             return CarlaEngineAudioPort::initBuffer(engine);
 
-        fBuffer = (float*)jackbridge_port_get_buffer(kPort, engine->getBufferSize());
+        const uint32_t bufferSize(engine->getBufferSize());
+
+        fBuffer = (float*)jackbridge_port_get_buffer(kPort, bufferSize);
 
         if (! kIsInput)
-           carla_zeroFloat(fBuffer, engine->getBufferSize());
+           carla_zeroFloat(fBuffer, bufferSize);
     }
 
 private:
@@ -144,10 +143,7 @@ public:
         CARLA_ASSERT(engine != nullptr);
 
         if (engine == nullptr)
-        {
-            fJackBuffer = nullptr;
             return;
-        }
 
         if (kPort == nullptr)
             return CarlaEngineEventPort::initBuffer(engine);
@@ -345,7 +341,7 @@ public:
         CARLA_ASSERT(fJackBuffer != nullptr);
         CARLA_ASSERT(channel < MAX_MIDI_CHANNELS);
         CARLA_ASSERT(data != nullptr);
-        CARLA_ASSERT(size > 0);
+        CARLA_ASSERT(size != 0);
 
         if (kIsInput)
             return;
@@ -770,7 +766,7 @@ public:
             return nullptr;
         }
 
-        CarlaPlugin* const plugin = kData->plugins[id].plugin;
+        CarlaPlugin* const plugin(kData->plugins[id].plugin);
 
         if (plugin == nullptr)
         {
@@ -1033,7 +1029,7 @@ protected:
 #endif
 
 #ifdef BUILD_BRIDGE
-        CarlaPlugin* const plugin = getPluginUnchecked(0);
+        CarlaPlugin* const plugin(getPluginUnchecked(0));
 
         if (plugin && plugin->enabled() && plugin->tryLock())
         {
@@ -1046,7 +1042,7 @@ protected:
         {
             for (unsigned int i=0; i < kData->curPluginCount; ++i)
             {
-                CarlaPlugin* const plugin = getPluginUnchecked(i);
+                CarlaPlugin* const plugin(getPluginUnchecked(i));
 
                 if (plugin && plugin->enabled() && plugin->tryLock())
                 {
@@ -1079,7 +1075,7 @@ protected:
             float* outBuf[2] = { audioOut1, audioOut2 };
 
             // initialize input events
-            carla_zeroStruct<EngineEvent>(kData->bufEvent.in, INTERNAL_EVENT_COUNT);
+            carla_zeroStruct<EngineEvent>(kData->bufEvents.in, INTERNAL_EVENT_COUNT);
             {
                 uint32_t engineEventIndex = 0;
 
@@ -1091,7 +1087,7 @@ protected:
                     if (jackbridge_midi_event_get(&jackEvent, eventIn, jackEventIndex) != 0)
                         continue;
 
-                    EngineEvent* const engineEvent = &kData->bufEvent.in[engineEventIndex++];
+                    EngineEvent* const engineEvent = &kData->bufEvents.in[engineEventIndex++];
                     engineEvent->clear();
 
                     const uint8_t midiStatus  = MIDI_GET_STATUS_FROM_DATA(jackEvent.buffer);
@@ -1167,7 +1163,7 @@ protected:
 
                 for (unsigned short i=0; i < INTERNAL_EVENT_COUNT; ++i)
                 {
-                    EngineEvent* const engineEvent = &kData->bufEvent.out[i];
+                    EngineEvent* const engineEvent = &kData->bufEvents.out[i];
 
                     uint8_t data[3] = { 0 };
                     uint8_t size    = 0;
@@ -1622,13 +1618,13 @@ private:
 
         for (uint32_t i=0; i < inCount; ++i)
         {
-            CarlaEngineAudioPort* const port = CarlaPluginGetAudioInPort(plugin, i);
+            CarlaEngineAudioPort* const port(CarlaPluginGetAudioInPort(plugin, i));
             inBuffer[i] = port->getBuffer();
         }
 
         for (uint32_t i=0; i < outCount; ++i)
         {
-            CarlaEngineAudioPort* const port = CarlaPluginGetAudioOutPort(plugin, i);
+            CarlaEngineAudioPort* const port(CarlaPluginGetAudioOutPort(plugin, i));
             outBuffer[i] = port->getBuffer();
         }
 
@@ -1636,7 +1632,7 @@ private:
         {
             for (uint32_t j=0; j < nframes; ++j)
             {
-                const float absV = std::fabs(inBuffer[i][j]);
+                const float absV = std::abs(inBuffer[i][j]);
 
                 if (absV > inPeaks[i])
                     inPeaks[i] = absV;
@@ -1649,7 +1645,7 @@ private:
         {
             for (uint32_t j=0; j < nframes; ++j)
             {
-                const float absV = std::fabs(outBuffer[i][j]);
+                const float absV = std::abs(outBuffer[i][j]);
 
                 if (absV > outPeaks[i])
                     outPeaks[i] = absV;

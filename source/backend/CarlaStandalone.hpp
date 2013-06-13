@@ -89,11 +89,20 @@ struct CarlaPluginInfo {
     ~CarlaPluginInfo()
     {
         if (label != nullptr)
+        {
             delete[] label;
+            label = nullptr;
+        }
         if (maker != nullptr)
+        {
             delete[] maker;
+            maker = nullptr;
+        }
         if (copyright != nullptr)
+        {
             delete[] copyright;
+            copyright = nullptr;
+        }
     }
 
     CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(CarlaPluginInfo)
@@ -178,11 +187,20 @@ struct CarlaParameterInfo {
     ~CarlaParameterInfo()
     {
         if (name != nullptr)
+        {
             delete[] name;
+            name = nullptr;
+        }
         if (symbol != nullptr)
+        {
             delete[] symbol;
+            symbol = nullptr;
+        }
         if (unit != nullptr)
+        {
             delete[] unit;
+            unit = nullptr;
+        }
     }
 
     CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(CarlaParameterInfo)
@@ -205,7 +223,10 @@ struct CarlaScalePointInfo {
     ~CarlaScalePointInfo()
     {
         if (label != nullptr)
+        {
             delete[] label;
+            label = nullptr;
+        }
     }
 
     CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(CarlaScalePointInfo)
@@ -246,7 +267,7 @@ CARLA_EXPORT const char* carla_get_extended_license_text();
  * Get the supported file types in carla_load_filename().\n
  * Returned string uses this syntax:
  * \code
- * "*.file1;*.file2;*.file3"
+ * "*.ext1;*.ext2;*.ext3"
  * \endcode
  */
 CARLA_EXPORT const char* carla_get_supported_file_types();
@@ -398,7 +419,7 @@ CARLA_EXPORT bool carla_remove_plugin(unsigned int pluginId);
 CARLA_EXPORT void carla_remove_all_plugins();
 
 /*!
- * Rename plugin with id \a pluginId to \a newName.\n
+ * Rename plugin with id \a pluginId to \a newName. \n
  * Returns the new name, or NULL if the operation failed.
  */
 CARLA_EXPORT const char* carla_rename_plugin(unsigned int pluginId, const char* newName);
@@ -409,7 +430,7 @@ CARLA_EXPORT const char* carla_rename_plugin(unsigned int pluginId, const char* 
 CARLA_EXPORT bool carla_clone_plugin(unsigned int pluginId);
 
 /*!
- * Prepare replace of plugin with id \a pluginId.\n
+ * Prepare replace of plugin with id \a pluginId. \n
  * The next call to carla_add_plugin() will use this id, replacing the current plugin.
  * \note This function requires carla_add_plugin() to be called afterwards as soon as possible.
  */

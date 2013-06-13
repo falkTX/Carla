@@ -926,7 +926,7 @@ public:
 
     // -------------------------------------------------------------------
 
-    const void* getExtraStuff() override
+    const void* getExtraStuff() const override
     {
         return kUses16Outs ? (const void*)0x1 : nullptr;
     }

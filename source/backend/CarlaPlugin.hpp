@@ -30,10 +30,6 @@ typedef struct _PluginDescriptor PluginDescriptor;
 
 CARLA_BACKEND_START_NAMESPACE
 
-#ifndef DOXYGEN
-class CarlaEngineEventPort;
-#endif
-
 /*!
  * @defgroup CarlaPluginAPI Carla Plugin API
  *
@@ -54,8 +50,6 @@ enum PluginPostRtEventType {
     kPluginPostRtEventNoteOn,            // channel, note, velo
     kPluginPostRtEventNoteOff            // channel, note
 };
-
-// -----------------------------------------------------------------------
 
 /*!
  * Save state data.
@@ -746,7 +740,7 @@ public:
 
     /*!
      * Send all midi notes off to the host callback.\n
-     * This doesn't send the actual MIDI All-Notes-Off event, but 128 note-offs instead (if ctrlChannel is valid).
+     * This doesn't send the actual MIDI All-Notes-Off event, but 128 note-offs instead (ONLY IF ctrlChannel is valid).
      * \note RT call
      */
     void sendMidiAllNotesOffToCallback();
@@ -808,7 +802,7 @@ public:
     };
 
     // used in CarlaEngine::clonePlugin()
-    virtual const void* getExtraStuff()
+    virtual const void* getExtraStuff() const
     {
         return nullptr;
     }

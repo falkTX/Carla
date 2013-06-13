@@ -1333,7 +1333,7 @@ public:
 
     // -------------------------------------------------------------------
 
-    const void* getExtraStuff() override
+    const void* getExtraStuff() const override
     {
         return fRdfDescriptor;
     }

@@ -1774,7 +1774,7 @@ public:
 
     // -------------------------------------------------------------------
 
-    const void* getExtraStuff() override
+    const void* getExtraStuff() const override
     {
         return fGuiFilename.isNotEmpty() ? (const char*)fGuiFilename : nullptr;
     }

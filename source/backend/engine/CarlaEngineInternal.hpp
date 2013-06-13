@@ -18,9 +18,10 @@
 #ifndef __CARLA_ENGINE_INTERNAL_HPP__
 #define __CARLA_ENGINE_INTERNAL_HPP__
 
+#include "CarlaEngine.hpp"
 #include "CarlaEngineOsc.hpp"
 #include "CarlaEngineThread.hpp"
-#include "CarlaEngine.hpp"
+
 #include "CarlaPlugin.hpp"
 #include "RtList.hpp"
 
@@ -122,8 +123,8 @@ enum EnginePostAction {
 
 struct EnginePluginData {
     CarlaPlugin* plugin;
-    float insPeak[CarlaEngine::MAX_PEAKS];
-    float outsPeak[CarlaEngine::MAX_PEAKS];
+    float insPeak[2];
+    float outsPeak[2];
 
 #ifdef CARLA_PROPER_CPP11_SUPPORT
     EnginePluginData()
@@ -150,13 +151,13 @@ struct CarlaEngineProtectedData {
 
     CallbackFunc callback;
     void*        callbackPtr;
-
     CarlaString  lastError;
-    QMainWindow* hostWindow;
 
     bool aboutToClose;            // don't re-activate thread if true
     unsigned int curPluginCount;  // number of plugins loaded (0...max)
     unsigned int maxPluginNumber; // number of plugins allowed (0, 16, 99 or 255)
+
+    EnginePluginData* plugins;
 
     struct InternalEventBuffer {
         EngineEvent* in;
@@ -165,7 +166,7 @@ struct CarlaEngineProtectedData {
         InternalEventBuffer()
             : in(nullptr),
               out(nullptr) {}
-    } bufEvent;
+    } bufEvents;
 
     struct NextAction {
         EnginePostAction opcode;
@@ -199,15 +200,12 @@ struct CarlaEngineProtectedData {
               frame(0) {}
     } time;
 
-    EnginePluginData* plugins;
-
     CarlaEngineProtectedData(CarlaEngine* const engine)
         : osc(engine),
           thread(engine),
           oscData(nullptr),
           callback(nullptr),
           callbackPtr(nullptr),
-          hostWindow(nullptr),
           aboutToClose(false),
           curPluginCount(0),
           maxPluginNumber(0),

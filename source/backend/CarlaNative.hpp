@@ -467,39 +467,39 @@ public:
 
 // -----------------------------------------------------------------------
 
-#define PluginDescriptorClassEND(className)                                         \
+#define PluginDescriptorClassEND(ClassName)                                         \
 public:                                                                             \
     static PluginHandle _instantiate(const PluginDescriptor*, HostDescriptor* host) \
     {                                                                               \
-        return new className(host);                                                 \
+        return new ClassName(host);                                                 \
     }                                                                               \
     static void _cleanup(PluginHandle handle)                                       \
     {                                                                               \
-        delete (className*)handle;                                                  \
+        delete (ClassName*)handle;                                                  \
     }
 
-#define PluginDescriptorFILL(className) \
-    className::_instantiate,            \
-    className::_cleanup,                \
-    className::_get_parameter_count,    \
-    className::_get_parameter_info,     \
-    className::_get_parameter_value,    \
-    className::_get_parameter_text,     \
-    className::_get_midi_program_count, \
-    className::_get_midi_program_info,  \
-    className::_set_parameter_value,    \
-    className::_set_midi_program,       \
-    className::_set_custom_data,        \
-    className::_ui_show,                \
-    className::_ui_idle,                \
-    className::_ui_set_parameter_value, \
-    className::_ui_set_midi_program,    \
-    className::_ui_set_custom_data,     \
-    className::_activate,               \
-    className::_deactivate,             \
-    className::_process,                \
-    className::_get_state,              \
-    className::_set_state,              \
-    className::_dispatcher
+#define PluginDescriptorFILL(ClassName) \
+    ClassName::_instantiate,            \
+    ClassName::_cleanup,                \
+    ClassName::_get_parameter_count,    \
+    ClassName::_get_parameter_info,     \
+    ClassName::_get_parameter_value,    \
+    ClassName::_get_parameter_text,     \
+    ClassName::_get_midi_program_count, \
+    ClassName::_get_midi_program_info,  \
+    ClassName::_set_parameter_value,    \
+    ClassName::_set_midi_program,       \
+    ClassName::_set_custom_data,        \
+    ClassName::_ui_show,                \
+    ClassName::_ui_idle,                \
+    ClassName::_ui_set_parameter_value, \
+    ClassName::_ui_set_midi_program,    \
+    ClassName::_ui_set_custom_data,     \
+    ClassName::_activate,               \
+    ClassName::_deactivate,             \
+    ClassName::_process,                \
+    ClassName::_get_state,              \
+    ClassName::_set_state,              \
+    ClassName::_dispatcher
 
 #endif // __CARLA_NATIVE_HPP__

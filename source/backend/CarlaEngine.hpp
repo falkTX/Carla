@@ -36,8 +36,6 @@ CARLA_BACKEND_START_NAMESPACE
  * @{
  */
 
-// -----------------------------------------------------------------------
-
 /*!
  * The type of an engine.
  */
@@ -215,7 +213,11 @@ struct EngineEvent {
         channel = 0;
     }
 
+#ifndef DEBUG
+    CARLA_DECLARE_NON_COPY_STRUCT(EngineEvent)
+#else
     CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(EngineEvent)
+#endif
 };
 
 /*!
@@ -269,8 +271,6 @@ struct EngineOptions {
     CarlaString bridge_vstX11;
 #endif
 
-    int _d; //ignore
-
 #ifndef DOXYGEN
     EngineOptions()
 # if defined(CARLA_OS_WIN) || defined(CARLA_OS_MAC)
@@ -295,7 +295,7 @@ struct EngineOptions {
           rtaudioBufferSize(1024),
           rtaudioSampleRate(44100),
 # endif
-          _d(0) {}
+          resourceDir() {}
 
     CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(EngineOptions)
 #endif
@@ -327,7 +327,11 @@ struct EngineTimeInfoBBT {
           ticksPerBeat(0.0),
           beatsPerMinute(0.0) {}
 
+# ifndef DEBUG
+    CARLA_DECLARE_NON_COPY_STRUCT(EngineTimeInfoBBT)
+# else
     CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(EngineTimeInfoBBT)
+# endif
 #endif
 };
 
@@ -376,7 +380,11 @@ struct EngineTimeInfo {
         return !operator==(timeInfo);
     }
 
+# ifndef DEBUG
+    CARLA_DECLARE_NON_COPY_STRUCT(EngineTimeInfo)
+# else
     CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(EngineTimeInfo)
+# endif
 #endif
 };
 
@@ -530,7 +538,7 @@ public:
     /*!
      * Write a MIDI event into the buffer.\n
      * Arguments are the same as in the EngineMidiEvent struct.
-     ** \note You must only call this for output ports.
+     * \note You must only call this for output ports.
      */
     virtual void writeMidiEvent(const uint32_t time, const uint8_t channel, const uint8_t port, const uint8_t* const data, const uint8_t size);
 
@@ -552,7 +560,7 @@ public:
 
 #ifndef DOXYGEN
 private:
-    EngineEvent* fBuffer;
+    EngineEvent* pBuffer;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineEventPort)
 #endif
@@ -628,7 +636,6 @@ protected:
     bool     fActive;
     uint32_t fLatency;
 
-private:
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineClient)
 #endif
 };
@@ -662,12 +669,7 @@ public:
     virtual ~CarlaEngine();
 
     // -------------------------------------------------------------------
-    // Static values and calls
-
-    /*!
-     * TODO.
-     */
-    static const unsigned short MAX_PEAKS = 2;
+    // Static calls
 
     /*!
      * Get the number of available engine drivers.
@@ -677,13 +679,13 @@ public:
     /*!
      * Get the name of the engine driver at \a index.
      */
-    static const char* getDriverName(unsigned int index);
+    static const char* getDriverName(const unsigned int index);
 
     /*!
      * Get the device names of driver at \a index (for use in non-JACK drivers).\n
      * May return NULL.
      */
-    static const char** getDriverDeviceNames(unsigned int index);
+    static const char** getDriverDeviceNames(const unsigned int index);
 
     /*!
      * Create a new engine, using driver \a driverName.\n
@@ -793,8 +795,8 @@ public:
 
     /*!
      * Prepare replace of plugin with id \a id.\n
-     * The next call to addPlugin() will use this id, replacing the current plugin.
-     * \note This function requires addPlugin() to be called afterwards as soon as possible.
+     * The next call to addPlugin() will use this id, replacing the selected plugin.
+     * \note This function requires addPlugin() to be called afterwards, as soon as possible.
      */
     bool replacePlugin(const unsigned int id);
 
@@ -1059,7 +1061,7 @@ protected:
     /*!
      * TODO.
      */
-    void setPeaks(const unsigned int pluginId, float const inPeaks[MAX_PEAKS], float const outPeaks[MAX_PEAKS]);
+    void setPeaks(const unsigned int pluginId, float const inPeaks[2], float const outPeaks[2]);
 
     // Internal data, used in Rack and Bridge modes
     EngineEvent* getInternalEventBuffer(const bool isInput) const;

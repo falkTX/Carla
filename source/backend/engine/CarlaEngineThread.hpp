@@ -21,7 +21,6 @@
 #include "CarlaBackend.hpp"
 #include "CarlaMutex.hpp"
 
-//#include "CarlaThread.hpp"
 #include <QtCore/QThread>
 
 CARLA_BACKEND_START_NAMESPACE

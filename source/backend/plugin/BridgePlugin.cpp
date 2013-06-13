@@ -1521,7 +1521,7 @@ public:
 
     // -------------------------------------------------------------------
 
-    const void* getExtraStuff() override
+    const void* getExtraStuff() const override
     {
         return fBridgeBinary.isNotEmpty() ? (const char*)fBridgeBinary : nullptr;
     }
