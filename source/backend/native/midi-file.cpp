@@ -55,7 +55,7 @@ protected:
 
     void process(float**, float**, const uint32_t frames, const uint32_t, const MidiEvent* const) override
     {
-        const TimeInfo* const timePos = getTimeInfo();
+        const TimeInfo* const timePos(getTimeInfo());
 
         if (timePos->playing)
         {
@@ -66,18 +66,20 @@ protected:
             MidiEvent midiEvent;
 
             midiEvent.port    = 0;
-            midiEvent.time    = timePos->frame;
+            midiEvent.time    = 0;
             midiEvent.data[0] = MIDI_STATUS_CONTROL_CHANGE;
             midiEvent.data[1] = MIDI_CONTROL_ALL_NOTES_OFF;
             midiEvent.data[2] = 0;
             midiEvent.data[3] = 0;
-            midiEvent.size    = 2;
+            midiEvent.size    = 3;
 
             for (int i=0; i < MAX_MIDI_CHANNELS; ++i)
             {
-                midiEvent.data[0] += i;
+                midiEvent.data[0] = MIDI_STATUS_CONTROL_CHANGE+i;
                 PluginDescriptorClass::writeMidiEvent(&midiEvent);
             }
+
+            carla_stdout("WAS PLAYING BEFORE, NOW STOPPED");
         }
 
         fWasPlayingBefore = timePos->playing;
@@ -128,7 +130,7 @@ private:
         if (smf_t* const smf = smf_load(filename))
         {
             smf_event_t* event;
-            const double sampleRate = getSampleRate();
+            const double sampleRate(getSampleRate());
 
             while ((event = smf_get_next_event(smf)) != nullptr)
             {
@@ -143,7 +145,7 @@ private:
                 if (event->midi_buffer_length <= 0 || event->midi_buffer_length > MAX_EVENT_DATA_SIZE)
                     continue;
 
-                const uint32_t time = event->time_seconds*sampleRate;
+                const uint32_t time(event->time_seconds*sampleRate);
 
 #if 1
                 fMidiOut.addRaw(time, event->midi_buffer, event->midi_buffer_length);

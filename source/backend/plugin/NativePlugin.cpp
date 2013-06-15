@@ -543,7 +543,7 @@ public:
 
     void setCtrlChannel(const int8_t channel, const bool sendOsc, const bool sendCallback) override
     {
-        if (channel < MAX_MIDI_CHANNELS)
+        if (channel < MAX_MIDI_CHANNELS && kData->midiprog.count > 0)
             kData->midiprog.current = fCurMidiProgs[channel];
 
         CarlaPlugin::setCtrlChannel(channel, sendOsc, sendCallback);
@@ -719,7 +719,7 @@ public:
 
             if (fDescriptor->ui_set_midi_program != nullptr && kData->midiprog.current >= 0)
             {
-                const MidiProgramData& mpData = kData->midiprog.getCurrent();
+                const MidiProgramData& mpData(kData->midiprog.getCurrent());
                 fDescriptor->ui_set_midi_program(fHandle, 0, mpData.bank, mpData.program); // TODO
             }
 

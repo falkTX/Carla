@@ -15,7 +15,6 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#define WANT_LV2
 #include "CarlaPluginInternal.hpp"
 
 #ifdef WANT_LV2
@@ -511,7 +510,10 @@ public:
         for (uint32_t i=0; i < kFeatureCount; ++i)
         {
             if (fFeatures[i] != nullptr)
+            {
                 delete fFeatures[i];
+                fFeatures[i] = nullptr;
+            }
         }
 
         for (NonRtList<const char*>::Itenerator it = fCustomURIDs.begin(); it.valid(); it.next())
@@ -2301,7 +2303,9 @@ public:
             return;
         }
 
-        // handle events from different APIs
+        // --------------------------------------------------------------------------------------------------------
+        // Handle events from different APIs
+
         LV2_Atom_Buffer_Iterator evInAtomIters[fEventsIn.count];
         LV2_Event_Iterator       evInEventIters[fEventsIn.count];
         LV2_MIDIState            evInMidiStates[fEventsIn.count];
@@ -2405,16 +2409,16 @@ public:
                 }
             }
 
-            if (kData->latency > 0)
+            //if (kData->latency > 0)
             {
                 //for (i=0; i < kData->audioIn.count; ++i)
                 //    carla_zeroFloat(kData->latencyBuffers[i], kData->latency);
             }
 
             kData->needsReset = false;
-        }
 
-        CARLA_PROCESS_CONTINUE_CHECK;
+            CARLA_PROCESS_CONTINUE_CHECK;
+        }
 
         // --------------------------------------------------------------------------------------------------------
         // Special Parameters
@@ -2427,134 +2431,136 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // TimeInfo
 
+        const EngineTimeInfo& timeInfo(kData->engine->getTimeInfo());
+
+        if (fFirstActive || fLastTimeInfo != timeInfo)
         {
             bool doPostRt;
             int32_t rindex;
-            const EngineTimeInfo& timeInfo(kData->engine->getTimeInfo());
 
-            if (fFirstActive || fLastTimeInfo != timeInfo)
+            // update input ports
+            for (k=0; k < kData->param.count; ++k)
             {
-                // update input ports
-                for (k=0; k < kData->param.count; ++k)
+                if (kData->param.data[k].type != PARAMETER_LV2_TIME)
+                    continue;
+
+                doPostRt = false;
+                rindex = kData->param.data[k].rindex;
+
+                CARLA_ASSERT(rindex >= 0 && rindex < static_cast<int32_t>(fRdfDescriptor->PortCount));
+
+                switch (fRdfDescriptor->Ports[rindex].Designation)
                 {
-                    if (kData->param.data[k].type != PARAMETER_LV2_TIME)
-                        continue;
-
-                    doPostRt = false;
-                    rindex = kData->param.data[k].rindex;
-
-                    CARLA_ASSERT(rindex >= 0 && rindex < static_cast<int32_t>(fRdfDescriptor->PortCount));
-
-                    switch (fRdfDescriptor->Ports[rindex].Designation)
+                // Non-BBT
+                case LV2_PORT_DESIGNATION_TIME_SPEED:
+                    if (fLastTimeInfo.playing != timeInfo.playing)
                     {
-                    // Non-BBT
-                    case LV2_PORT_DESIGNATION_TIME_SPEED:
-                        if (fLastTimeInfo.playing != timeInfo.playing)
-                        {
-                            fParamBuffers[k] = timeInfo.playing ? 1.0f : 0.0f;
-                            doPostRt = true;
-                        }
-                        break;
-                    case LV2_PORT_DESIGNATION_TIME_FRAME:
-                        if (fLastTimeInfo.frame != timeInfo.frame)
-                        {
-                            fParamBuffers[k] = timeInfo.frame;
-                            doPostRt = true;
-                        }
-                        break;
-                    case LV2_PORT_DESIGNATION_TIME_FRAMES_PER_SECOND:
-                        break;
-                        // BBT
-                    case LV2_PORT_DESIGNATION_TIME_BAR:
-                        if ((timeInfo.valid & EngineTimeInfo::ValidBBT) != 0 && fLastTimeInfo.bbt.bar != timeInfo.bbt.bar)
-                        {
-                            fParamBuffers[k] = timeInfo.bbt.bar - 1;
-                            doPostRt = true;
-                        }
-                        break;
-                    case LV2_PORT_DESIGNATION_TIME_BAR_BEAT:
-                        if ((timeInfo.valid & EngineTimeInfo::ValidBBT) != 0 && (fLastTimeInfo.bbt.tick != timeInfo.bbt.tick ||
-                                                                                 fLastTimeInfo.bbt.ticksPerBeat != timeInfo.bbt.ticksPerBeat))
-                        {
-                            fParamBuffers[k] = timeInfo.bbt.beat - 1 + (double(timeInfo.bbt.tick) / timeInfo.bbt.ticksPerBeat);
-                            doPostRt = true;
-                        }
-                        break;
-                    case LV2_PORT_DESIGNATION_TIME_BEAT:
-                        if ((timeInfo.valid & EngineTimeInfo::ValidBBT) != 0 && fLastTimeInfo.bbt.beat != timeInfo.bbt.beat)
-                        {
-                            fParamBuffers[k] = timeInfo.bbt.beat - 1;
-                            doPostRt = true;
-                        }
-                        break;
-                    case LV2_PORT_DESIGNATION_TIME_BEAT_UNIT:
-                        if ((timeInfo.valid & EngineTimeInfo::ValidBBT) != 0 && fLastTimeInfo.bbt.beatType != timeInfo.bbt.beatType)
-                        {
-                            fParamBuffers[k] = timeInfo.bbt.beatType;
-                            doPostRt = true;
-                        }
-                        break;
-                    case LV2_PORT_DESIGNATION_TIME_BEATS_PER_BAR:
-                        if ((timeInfo.valid & EngineTimeInfo::ValidBBT) != 0 && fLastTimeInfo.bbt.beatsPerBar != timeInfo.bbt.beatsPerBar)
-                        {
-                            fParamBuffers[k] = timeInfo.bbt.beatsPerBar;
-                            doPostRt = true;
-                        }
-                        break;
-                    case LV2_PORT_DESIGNATION_TIME_BEATS_PER_MINUTE:
-                        if ((timeInfo.valid & EngineTimeInfo::ValidBBT) != 0 && fLastTimeInfo.bbt.beatsPerMinute != timeInfo.bbt.beatsPerMinute)
-                        {
-                            fParamBuffers[k] = timeInfo.bbt.beatsPerMinute;
-                            doPostRt = true;
-                        }
-                        break;
+                        fParamBuffers[k] = timeInfo.playing ? 1.0f : 0.0f;
+                        doPostRt = true;
                     }
+                    break;
+                case LV2_PORT_DESIGNATION_TIME_FRAME:
+                    if (fLastTimeInfo.frame != timeInfo.frame)
+                    {
+                        fParamBuffers[k] = timeInfo.frame;
+                        doPostRt = true;
+                    }
+                    break;
+                case LV2_PORT_DESIGNATION_TIME_FRAMES_PER_SECOND:
+                    break;
 
-                    if (doPostRt)
-                        postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 1, fParamBuffers[k]);
+                // BBT
+                case LV2_PORT_DESIGNATION_TIME_BAR:
+                    if ((timeInfo.valid & EngineTimeInfo::ValidBBT) != 0 && fLastTimeInfo.bbt.bar != timeInfo.bbt.bar)
+                    {
+                        fParamBuffers[k] = timeInfo.bbt.bar - 1;
+                        doPostRt = true;
+                    }
+                    break;
+                case LV2_PORT_DESIGNATION_TIME_BAR_BEAT:
+                    if ((timeInfo.valid & EngineTimeInfo::ValidBBT) != 0 && (fLastTimeInfo.bbt.tick != timeInfo.bbt.tick ||
+                                                                              fLastTimeInfo.bbt.ticksPerBeat != timeInfo.bbt.ticksPerBeat))
+                    {
+                        fParamBuffers[k] = timeInfo.bbt.beat - 1 + (double(timeInfo.bbt.tick) / timeInfo.bbt.ticksPerBeat);
+                        doPostRt = true;
+                    }
+                    break;
+                case LV2_PORT_DESIGNATION_TIME_BEAT:
+                    if ((timeInfo.valid & EngineTimeInfo::ValidBBT) != 0 && fLastTimeInfo.bbt.beat != timeInfo.bbt.beat)
+                    {
+                        fParamBuffers[k] = timeInfo.bbt.beat - 1;
+                        doPostRt = true;
+                    }
+                    break;
+                case LV2_PORT_DESIGNATION_TIME_BEAT_UNIT:
+                    if ((timeInfo.valid & EngineTimeInfo::ValidBBT) != 0 && fLastTimeInfo.bbt.beatType != timeInfo.bbt.beatType)
+                    {
+                        fParamBuffers[k] = timeInfo.bbt.beatType;
+                        doPostRt = true;
+                    }
+                    break;
+                case LV2_PORT_DESIGNATION_TIME_BEATS_PER_BAR:
+                    if ((timeInfo.valid & EngineTimeInfo::ValidBBT) != 0 && fLastTimeInfo.bbt.beatsPerBar != timeInfo.bbt.beatsPerBar)
+                    {
+                        fParamBuffers[k] = timeInfo.bbt.beatsPerBar;
+                        doPostRt = true;
+                    }
+                    break;
+                case LV2_PORT_DESIGNATION_TIME_BEATS_PER_MINUTE:
+                    if ((timeInfo.valid & EngineTimeInfo::ValidBBT) != 0 && fLastTimeInfo.bbt.beatsPerMinute != timeInfo.bbt.beatsPerMinute)
+                    {
+                        fParamBuffers[k] = timeInfo.bbt.beatsPerMinute;
+                        doPostRt = true;
+                    }
+                    break;
                 }
 
-                for (i = 0; i < fEventsIn.count; ++i)
-                {
-                    if ((fEventsIn.data[i].type & CARLA_EVENT_DATA_ATOM) == 0 || (fEventsIn.data[i].type & CARLA_EVENT_TYPE_TIME) == 0)
-                        continue;
-
-                    uint8_t timeInfoBuf[256] = { 0 };
-                    lv2_atom_forge_set_buffer(&fAtomForge, timeInfoBuf, sizeof(timeInfoBuf));
-
-                    LV2_Atom_Forge_Frame forgeFrame;
-                    lv2_atom_forge_blank(&fAtomForge, &forgeFrame, 1, CARLA_URI_MAP_ID_TIME_POSITION);
-                    lv2_atom_forge_property_head(&fAtomForge, CARLA_URI_MAP_ID_TIME_SPEED, 0);
-                    lv2_atom_forge_float(&fAtomForge, timeInfo.playing ? 1.0f : 0.0f);
-                    lv2_atom_forge_property_head(&fAtomForge, CARLA_URI_MAP_ID_TIME_FRAME, 0);
-                    lv2_atom_forge_long(&fAtomForge, timeInfo.frame);
-
-                    if (timeInfo.valid & EngineTimeInfo::ValidBBT)
-                    {
-                        lv2_atom_forge_property_head(&fAtomForge, CARLA_URI_MAP_ID_TIME_BAR, 0);
-                        lv2_atom_forge_long(&fAtomForge, timeInfo.bbt.bar - 1);
-                        lv2_atom_forge_property_head(&fAtomForge, CARLA_URI_MAP_ID_TIME_BAR_BEAT, 0);
-                        lv2_atom_forge_float(&fAtomForge, timeInfo.bbt.beat - 1 + (double(timeInfo.bbt.tick) / timeInfo.bbt.ticksPerBeat));
-                        lv2_atom_forge_property_head(&fAtomForge, CARLA_URI_MAP_ID_TIME_BEAT, 0);
-                        lv2_atom_forge_long(&fAtomForge, timeInfo.bbt.beat -1);
-                        lv2_atom_forge_property_head(&fAtomForge, CARLA_URI_MAP_ID_TIME_BEAT_UNIT, 0);
-                        lv2_atom_forge_float(&fAtomForge, timeInfo.bbt.beatType);
-                        lv2_atom_forge_property_head(&fAtomForge, CARLA_URI_MAP_ID_TIME_BEATS_PER_BAR, 0);
-                        lv2_atom_forge_float(&fAtomForge, timeInfo.bbt.beatsPerBar);
-                        lv2_atom_forge_property_head(&fAtomForge, CARLA_URI_MAP_ID_TIME_BEATS_PER_MINUTE, 0);
-                        lv2_atom_forge_float(&fAtomForge, timeInfo.bbt.beatsPerMinute);
-                    }
-
-                    LV2_Atom* atom = (LV2_Atom*)timeInfoBuf;
-                    lv2_atom_buffer_write(&evInAtomIters[i], 0, 0, atom->type, atom->size, LV2NV_ATOM_BODY_CONST(atom));
-
-                    CARLA_ASSERT(atom->size < 256);
-                }
-
-                kData->postRtEvents.trySplice();
-
-                std::memcpy(&fLastTimeInfo, &timeInfo, sizeof(EngineTimeInfo));
+                if (doPostRt)
+                    postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 1, fParamBuffers[k]);
             }
+
+            for (i = 0; i < fEventsIn.count; ++i)
+            {
+                if ((fEventsIn.data[i].type & CARLA_EVENT_DATA_ATOM) == 0 || (fEventsIn.data[i].type & CARLA_EVENT_TYPE_TIME) == 0)
+                    continue;
+
+                uint8_t timeInfoBuf[256] = { 0 };
+                lv2_atom_forge_set_buffer(&fAtomForge, timeInfoBuf, sizeof(timeInfoBuf));
+
+                LV2_Atom_Forge_Frame forgeFrame;
+                lv2_atom_forge_blank(&fAtomForge, &forgeFrame, 1, CARLA_URI_MAP_ID_TIME_POSITION);
+                lv2_atom_forge_property_head(&fAtomForge, CARLA_URI_MAP_ID_TIME_SPEED, 0);
+                lv2_atom_forge_float(&fAtomForge, timeInfo.playing ? 1.0f : 0.0f);
+                lv2_atom_forge_property_head(&fAtomForge, CARLA_URI_MAP_ID_TIME_FRAME, 0);
+                lv2_atom_forge_long(&fAtomForge, timeInfo.frame);
+
+                if (timeInfo.valid & EngineTimeInfo::ValidBBT)
+                {
+                    lv2_atom_forge_property_head(&fAtomForge, CARLA_URI_MAP_ID_TIME_BAR, 0);
+                    lv2_atom_forge_long(&fAtomForge, timeInfo.bbt.bar - 1);
+                    lv2_atom_forge_property_head(&fAtomForge, CARLA_URI_MAP_ID_TIME_BAR_BEAT, 0);
+                    lv2_atom_forge_float(&fAtomForge, timeInfo.bbt.beat - 1 + (double(timeInfo.bbt.tick) / timeInfo.bbt.ticksPerBeat));
+                    lv2_atom_forge_property_head(&fAtomForge, CARLA_URI_MAP_ID_TIME_BEAT, 0);
+                    lv2_atom_forge_long(&fAtomForge, timeInfo.bbt.beat -1);
+                    lv2_atom_forge_property_head(&fAtomForge, CARLA_URI_MAP_ID_TIME_BEAT_UNIT, 0);
+                    lv2_atom_forge_float(&fAtomForge, timeInfo.bbt.beatType);
+                    lv2_atom_forge_property_head(&fAtomForge, CARLA_URI_MAP_ID_TIME_BEATS_PER_BAR, 0);
+                    lv2_atom_forge_float(&fAtomForge, timeInfo.bbt.beatsPerBar);
+                    lv2_atom_forge_property_head(&fAtomForge, CARLA_URI_MAP_ID_TIME_BEATS_PER_MINUTE, 0);
+                    lv2_atom_forge_float(&fAtomForge, timeInfo.bbt.beatsPerMinute);
+                }
+
+                LV2_Atom* const atom((LV2_Atom*)timeInfoBuf);
+                lv2_atom_buffer_write(&evInAtomIters[i], 0, 0, atom->type, atom->size, LV2NV_ATOM_BODY_CONST(atom));
+
+                CARLA_ASSERT(atom->size < 256);
+            }
+
+            kData->postRtEvents.trySplice();
+
+            std::memcpy(&fLastTimeInfo, &timeInfo, sizeof(EngineTimeInfo));
+
+            CARLA_PROCESS_CONTINUE_CHECK;
         }
 
         // --------------------------------------------------------------------------------------------------------
@@ -2576,10 +2582,10 @@ public:
 
                     while (fAtomQueueIn.get(&portIndex, &atom))
                     {
-                        carla_stdout("Event input message sent to plugin DSP, type %i:\"%s\", size:%i/%i",
-                                     atom->type, carla_lv2_urid_unmap(this, atom->type),
-                                     atom->size, lv2_atom_total_size(atom)
-                                     );
+                        carla_debug("Event input message sent to plugin DSP, type %i:\"%s\", size:%i/%i",
+                                    atom->type, carla_lv2_urid_unmap(this, atom->type),
+                                    atom->size, lv2_atom_total_size(atom)
+                                    );
 
                         if (! lv2_atom_buffer_write(&evInAtomIters[k], 0, 0, atom->type, atom->size, LV2NV_ATOM_BODY_CONST(atom)))
                         {
@@ -2597,22 +2603,27 @@ public:
 
             if (kData->extNotes.mutex.tryLock())
             {
-                k = fEventsIn.ctrlIndex;
-
-                while (! kData->extNotes.data.isEmpty())
+                if ((fEventsIn.ctrl->type & CARLA_EVENT_TYPE_MIDI) == 0)
                 {
-                    const ExternalMidiNote& note(kData->extNotes.data.getFirst(true));
+                    // does not handle MIDI
+                    kData->extNotes.data.clear();
+                }
+                else
+                {
+                    k = fEventsIn.ctrlIndex;
 
-                    CARLA_ASSERT(note.channel >= 0 && note.channel < MAX_MIDI_CHANNELS);
-
-                    uint8_t midiEvent[3];
-                    midiEvent[0]  = (note.velo > 0) ? MIDI_STATUS_NOTE_ON : MIDI_STATUS_NOTE_OFF;
-                    midiEvent[0] += note.channel;
-                    midiEvent[1]  = note.note;
-                    midiEvent[2]  = note.velo;
-
-                    if (fEventsIn.ctrl->type & CARLA_EVENT_TYPE_MIDI)
+                    while (! kData->extNotes.data.isEmpty())
                     {
+                        const ExternalMidiNote& note(kData->extNotes.data.getFirst(true));
+
+                        CARLA_ASSERT(note.channel >= 0 && note.channel < MAX_MIDI_CHANNELS);
+
+                        uint8_t midiEvent[3];
+                        midiEvent[0]  = (note.velo > 0) ? MIDI_STATUS_NOTE_ON : MIDI_STATUS_NOTE_OFF;
+                        midiEvent[0] += note.channel;
+                        midiEvent[1]  = note.note;
+                        midiEvent[2]  = note.velo;
+
                         if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_ATOM)
                             lv2_atom_buffer_write(&evInAtomIters[k], 0, 0, CARLA_URI_MAP_ID_MIDI_EVENT, 3, midiEvent);
 
@@ -2697,7 +2708,7 @@ public:
 
                 case kEngineEventTypeControl:
                 {
-                    const EngineControlEvent& ctrlEvent = event.ctrl;
+                    const EngineControlEvent& ctrlEvent(event.ctrl);
 
                     switch (ctrlEvent.type)
                     {
@@ -2941,10 +2952,12 @@ public:
                         break;
 
                     if (ev->body.type == CARLA_URI_MAP_ID_MIDI_EVENT && fEventsOut.ctrl->port != nullptr)
+                    {
                         fEventsOut.ctrl->port->writeMidiEvent(ev->time.frames, data, ev->body.size);
+                    }
                     else if (ev->body.type == CARLA_URI_MAP_ID_ATOM_BLANK)
                     {
-                        //carla_stdout("Event OUTPUT message TO BE SENT TO UI, type blank");
+                        carla_debug("Event OUTPUT message TO BE SENT TO UI, type blank");
 
                         fAtomQueueOut.put(rindex, &ev->body);
                     }
@@ -3291,6 +3304,15 @@ public:
 
             if (fExt.options != nullptr && fExt.options->set != nullptr)
                 fExt.options->set(fHandle, &fLv2Options.optSampleRate);
+        }
+
+        for (uint32_t k=0; k < kData->param.count; ++k)
+        {
+            if (kData->param.data[k].type == PARAMETER_SAMPLE_RATE)
+            {
+                fParamBuffers[k] = newSampleRate;
+                postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 1, fParamBuffers[k]);
+            }
         }
 
         carla_debug("Lv2Plugin::sampleRateChanged(%g) - end", newSampleRate);
@@ -4084,66 +4106,64 @@ public:
         // ---------------------------------------------------------------
         // initialize features (part 2)
 
-        fFeatures[kFeatureIdBufSizeBounded]        = new LV2_Feature;
+        for (uint32_t i=0; i < kFeatureIdWorker+1; ++i)
+            fFeatures[i] = new LV2_Feature;
+
         fFeatures[kFeatureIdBufSizeBounded]->URI   = LV2_BUF_SIZE__boundedBlockLength;
         fFeatures[kFeatureIdBufSizeBounded]->data  = nullptr;
 
-        fFeatures[kFeatureIdBufSizeFixed]          = new LV2_Feature;
         fFeatures[kFeatureIdBufSizeFixed]->URI     = LV2_BUF_SIZE__fixedBlockLength;
         fFeatures[kFeatureIdBufSizeFixed]->data    = nullptr;
 
-        fFeatures[kFeatureIdBufSizePowerOf2]       = new LV2_Feature;
         fFeatures[kFeatureIdBufSizePowerOf2]->URI  = LV2_BUF_SIZE__powerOf2BlockLength;
         fFeatures[kFeatureIdBufSizePowerOf2]->data = nullptr;
 
-        fFeatures[kFeatureIdEvent]          = new LV2_Feature;
-        fFeatures[kFeatureIdEvent]->URI     = LV2_EVENT_URI;
-        fFeatures[kFeatureIdEvent]->data    = eventFt;
+        fFeatures[kFeatureIdEvent]->URI          = LV2_EVENT_URI;
+        fFeatures[kFeatureIdEvent]->data         = eventFt;
 
-        fFeatures[kFeatureIdLogs]           = new LV2_Feature;
-        fFeatures[kFeatureIdLogs]->URI      = LV2_LOG__log;
-        fFeatures[kFeatureIdLogs]->data     = logFt;
+        fFeatures[kFeatureIdHardRtCapable]->URI  = LV2_CORE__hardRTCapable;
+        fFeatures[kFeatureIdHardRtCapable]->data = nullptr;
 
-        fFeatures[kFeatureIdOptions]        = new LV2_Feature;
-        fFeatures[kFeatureIdOptions]->URI   = LV2_OPTIONS__options;
-        fFeatures[kFeatureIdOptions]->data  = fLv2Options.opts;
+        fFeatures[kFeatureIdInPlaceBroken]->URI  = LV2_CORE__inPlaceBroken;
+        fFeatures[kFeatureIdInPlaceBroken]->data = nullptr;
 
-        fFeatures[kFeatureIdPrograms]       = new LV2_Feature;
-        fFeatures[kFeatureIdPrograms]->URI  = LV2_PROGRAMS__Host;
-        fFeatures[kFeatureIdPrograms]->data = programsFt;
+        fFeatures[kFeatureIdIsLive]->URI         = LV2_CORE__isLive;
+        fFeatures[kFeatureIdIsLive]->data        = nullptr;
 
-        fFeatures[kFeatureIdRtMemPool]       = new LV2_Feature;
+        fFeatures[kFeatureIdLogs]->URI       = LV2_LOG__log;
+        fFeatures[kFeatureIdLogs]->data      = logFt;
+
+        fFeatures[kFeatureIdOptions]->URI    = LV2_OPTIONS__options;
+        fFeatures[kFeatureIdOptions]->data   = fLv2Options.opts;
+
+        fFeatures[kFeatureIdPrograms]->URI   = LV2_PROGRAMS__Host;
+        fFeatures[kFeatureIdPrograms]->data  = programsFt;
+
         fFeatures[kFeatureIdRtMemPool]->URI  = LV2_RTSAFE_MEMORY_POOL__Pool;
         fFeatures[kFeatureIdRtMemPool]->data = rtMemPoolFt;
 
-        fFeatures[kFeatureIdStateMakePath]       = new LV2_Feature;
         fFeatures[kFeatureIdStateMakePath]->URI  = LV2_STATE__makePath;
         fFeatures[kFeatureIdStateMakePath]->data = stateMakePathFt;
 
-        fFeatures[kFeatureIdStateMapPath]        = new LV2_Feature;
         fFeatures[kFeatureIdStateMapPath]->URI   = LV2_STATE__mapPath;
         fFeatures[kFeatureIdStateMapPath]->data  = stateMapPathFt;
 
-        fFeatures[kFeatureIdStrictBounds]         = new LV2_Feature;
-        fFeatures[kFeatureIdStrictBounds]->URI    = LV2_PORT_PROPS__supportsStrictBounds;
-        fFeatures[kFeatureIdStrictBounds]->data   = nullptr;
+        fFeatures[kFeatureIdStrictBounds]->URI   = LV2_PORT_PROPS__supportsStrictBounds;
+        fFeatures[kFeatureIdStrictBounds]->data  = nullptr;
 
-        fFeatures[kFeatureIdUriMap]          = new LV2_Feature;
         fFeatures[kFeatureIdUriMap]->URI     = LV2_URI_MAP_URI;
         fFeatures[kFeatureIdUriMap]->data    = uriMapFt;
 
-        fFeatures[kFeatureIdUridMap]         = new LV2_Feature;
         fFeatures[kFeatureIdUridMap]->URI    = LV2_URID__map;
         fFeatures[kFeatureIdUridMap]->data   = uridMapFt;
 
-        fFeatures[kFeatureIdUridUnmap]       = new LV2_Feature;
         fFeatures[kFeatureIdUridUnmap]->URI  = LV2_URID__unmap;
         fFeatures[kFeatureIdUridUnmap]->data = uridUnmapFt;
 
-        fFeatures[kFeatureIdWorker]           = new LV2_Feature;
-        fFeatures[kFeatureIdWorker]->URI      = LV2_WORKER__schedule;
-        fFeatures[kFeatureIdWorker]->data     = workerFt;
+        fFeatures[kFeatureIdWorker]->URI     = LV2_WORKER__schedule;
+        fFeatures[kFeatureIdWorker]->data    = workerFt;
 
+        // check if it's possible to use non-fixed buffer size
         if (! needsFixedBuffer())
             fFeatures[kFeatureIdBufSizeFixed]->URI = LV2_BUF_SIZE__boundedBlockLength;
 
@@ -4601,7 +4621,7 @@ public:
             }
 
             // -------------------------------------------------------
-            // initialize ui features
+            // initialize ui features (part 1)
 
             QString guiTitle(QString("%1 (GUI)").arg((const char*)fName));
 
@@ -4620,31 +4640,48 @@ public:
             uiExternalHostFt->ui_closed                  = carla_lv2_external_ui_closed;
             uiExternalHostFt->plugin_human_id            = carla_strdup(guiTitle.toUtf8().constData());
 
-            fFeatures[kFeatureIdUiDataAccess]           = new LV2_Feature;
+            // -------------------------------------------------------
+            // initialize ui features (part 2)
+
+            for (uint32_t i=kFeatureIdUiDataAccess; i < kFeatureCount; ++i)
+                fFeatures[i] = new LV2_Feature;
+
             fFeatures[kFeatureIdUiDataAccess]->URI      = LV2_DATA_ACCESS_URI;
             fFeatures[kFeatureIdUiDataAccess]->data     = uiDataFt;
 
-            fFeatures[kFeatureIdUiInstanceAccess]       = new LV2_Feature;
             fFeatures[kFeatureIdUiInstanceAccess]->URI  = LV2_INSTANCE_ACCESS_URI;
             fFeatures[kFeatureIdUiInstanceAccess]->data = fHandle;
 
-            fFeatures[kFeatureIdUiParent]             = new LV2_Feature;
-            fFeatures[kFeatureIdUiParent]->URI        = LV2_UI__parent;
-            fFeatures[kFeatureIdUiParent]->data       = nullptr;
+            fFeatures[kFeatureIdUiIdle]->URI           = LV2_UI__idle;
+            fFeatures[kFeatureIdUiIdle]->data          = nullptr;
 
-            fFeatures[kFeatureIdUiPortMap]           = new LV2_Feature;
-            fFeatures[kFeatureIdUiPortMap]->URI      = LV2_UI__portMap;
-            fFeatures[kFeatureIdUiPortMap]->data     = uiPortMapFt;
+            fFeatures[kFeatureIdUiFixedSize]->URI      = LV2_UI__fixedSize;
+            fFeatures[kFeatureIdUiFixedSize]->data     = nullptr;
 
-            fFeatures[kFeatureIdUiResize]             = new LV2_Feature;
-            fFeatures[kFeatureIdUiResize]->URI        = LV2_UI__resize;
-            fFeatures[kFeatureIdUiResize]->data       = uiResizeFt;
+            fFeatures[kFeatureIdUiMakeResident]->URI   = LV2_UI__makeResident;
+            fFeatures[kFeatureIdUiMakeResident]->data  = nullptr;
 
-            fFeatures[kFeatureIdExternalUi]           = new LV2_Feature;
-            fFeatures[kFeatureIdExternalUi]->URI      = LV2_EXTERNAL_UI__Host;
-            fFeatures[kFeatureIdExternalUi]->data     = uiExternalHostFt;
+            fFeatures[kFeatureIdUiNoUserResize]->URI   = LV2_UI__noUserResize;
+            fFeatures[kFeatureIdUiNoUserResize]->data  = nullptr;
 
-            fFeatures[kFeatureIdExternalUiOld]       = new LV2_Feature;
+            fFeatures[kFeatureIdUiParent]->URI         = LV2_UI__parent;
+            fFeatures[kFeatureIdUiParent]->data        = nullptr;
+
+            fFeatures[kFeatureIdUiPortMap]->URI        = LV2_UI__portMap;
+            fFeatures[kFeatureIdUiPortMap]->data       = uiPortMapFt;
+
+            fFeatures[kFeatureIdUiPortSubscribe]->URI  = LV2_UI__portSubscribe;
+            fFeatures[kFeatureIdUiPortSubscribe]->data = nullptr;
+
+            fFeatures[kFeatureIdUiResize]->URI       = LV2_UI__resize;
+            fFeatures[kFeatureIdUiResize]->data      = uiResizeFt;
+
+            fFeatures[kFeatureIdUiTouch]->URI        = LV2_UI__touch;
+            fFeatures[kFeatureIdUiTouch]->data       = nullptr;
+
+            fFeatures[kFeatureIdExternalUi]->URI     = LV2_EXTERNAL_UI__Host;
+            fFeatures[kFeatureIdExternalUi]->data    = uiExternalHostFt;
+
             fFeatures[kFeatureIdExternalUiOld]->URI  = LV2_EXTERNAL_UI_DEPRECATED_URI;
             fFeatures[kFeatureIdExternalUiOld]->data = uiExternalHostFt;
         }

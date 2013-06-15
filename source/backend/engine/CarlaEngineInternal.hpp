@@ -232,19 +232,11 @@ struct CarlaEngineProtectedData {
     void doPluginRemove()
     {
         CARLA_ASSERT(curPluginCount > 0);
+        CARLA_ASSERT(nextAction.pluginId < curPluginCount);
         --curPluginCount;
 
-        const unsigned int id(nextAction.pluginId);
-
-        // reset current plugin
-        plugins[id].plugin      = nullptr;
-        plugins[id].insPeak[0]  = 0.0f;
-        plugins[id].insPeak[1]  = 0.0f;
-        plugins[id].outsPeak[0] = 0.0f;
-        plugins[id].outsPeak[1] = 0.0f;
-
         // move all plugins 1 spot backwards
-        for (unsigned int i=id; i < curPluginCount; ++i)
+        for (unsigned int i=nextAction.pluginId; i < curPluginCount; ++i)
         {
             CarlaPlugin* const plugin(plugins[i+1].plugin);
 
@@ -261,6 +253,15 @@ struct CarlaEngineProtectedData {
             plugins[i].outsPeak[0] = 0.0f;
             plugins[i].outsPeak[1] = 0.0f;
         }
+
+        const unsigned int id(curPluginCount);
+
+        // reset now last plugin
+        plugins[id].plugin      = nullptr;
+        plugins[id].insPeak[0]  = 0.0f;
+        plugins[id].insPeak[1]  = 0.0f;
+        plugins[id].outsPeak[0] = 0.0f;
+        plugins[id].outsPeak[1] = 0.0f;
     }
 
     void doPluginsSwitch()
