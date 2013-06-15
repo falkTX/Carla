@@ -555,9 +555,9 @@ new_state_from_model(LilvWorld*       world,
 
 LILV_API
 LilvState*
-lilv_state_new_from_world(LilvWorld*      world,
-                          LV2_URID_Map*   map,
-                          const LilvNode* node)
+lilv_state_new_from_world(LilvWorld*          world,
+                          const LV2_URID_Map* map,
+                          const LilvNode*     node)
 {
 	if (!lilv_node_is_uri(node) && !lilv_node_is_blank(node)) {
 		LILV_ERRORF("Subject `%s' is not a URI or blank node.\n",
@@ -573,10 +573,10 @@ lilv_state_new_from_world(LilvWorld*      world,
 
 LILV_API
 LilvState*
-lilv_state_new_from_file(LilvWorld*      world,
-                         LV2_URID_Map*   map,
-                         const LilvNode* subject,
-                         const char*     path)
+lilv_state_new_from_file(LilvWorld*          world,
+                         const LV2_URID_Map* map,
+                         const LilvNode*     subject,
+                         const char*         path)
 {
 	if (subject && !lilv_node_is_uri(subject)
 	    && !lilv_node_is_blank(subject)) {
@@ -627,9 +627,9 @@ set_prefixes(SerdEnv* env)
 
 LILV_API
 LilvState*
-lilv_state_new_from_string(LilvWorld*    world,
-                           LV2_URID_Map* map,
-                           const char*   str)
+lilv_state_new_from_string(LilvWorld*          world,
+                           const LV2_URID_Map* map,
+                           const char*         str)
 {
 	if (!str) {
 		return NULL;

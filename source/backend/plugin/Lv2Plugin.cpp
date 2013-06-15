@@ -15,9 +15,9 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
+#define WANT_LV2
 #include "CarlaPluginInternal.hpp"
 
-#define WANT_LV2
 #ifdef WANT_LV2
 
 #include "CarlaPluginGui.hpp"
@@ -587,9 +587,9 @@ public:
     {
         CARLA_ASSERT(fRdfDescriptor != nullptr);
 
-        uint32_t i, count = 0;
+        uint32_t count = 0;
 
-        for (i=0; i < fRdfDescriptor->PortCount; ++i)
+        for (uint32_t i=0; i < fRdfDescriptor->PortCount; ++i)
         {
             const LV2_Property portTypes(fRdfDescriptor->Ports[i].Types);
 
@@ -604,9 +604,9 @@ public:
     {
         CARLA_ASSERT(fRdfDescriptor != nullptr);
 
-        uint32_t i, count = 0;
+        uint32_t count = 0;
 
-        for (i=0; i < fRdfDescriptor->PortCount; ++i)
+        for (uint32_t i=0; i < fRdfDescriptor->PortCount; ++i)
         {
             const LV2_Property portTypes(fRdfDescriptor->Ports[i].Types);
 
@@ -643,11 +643,13 @@ public:
 
     unsigned int availableOptions() override
     {
+        const uint32_t hasMidiIn(midiInCount() > 0);
+
         unsigned int options = 0x0;
 
         options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
-        if (midiInCount() == 0 || ! needsFixedBuffer())
+        if (! (hasMidiIn || needsFixedBuffer()))
             options |= PLUGIN_OPTION_FIXED_BUFFER;
 
         if (kData->engine->getProccessMode() != PROCESS_MODE_CONTINUOUS_RACK)
@@ -658,7 +660,7 @@ public:
                 options |= PLUGIN_OPTION_FORCE_STEREO;
         }
 
-        if (midiInCount() > 0)
+        if (hasMidiIn)
         {
             options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
             options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
@@ -765,7 +767,7 @@ public:
         const int32_t rindex(kData->param.data[parameterId].rindex);
 
         if (rindex < static_cast<int32_t>(fRdfDescriptor->PortCount))
-            strncpy(strBuf, fRdfDescriptor->Ports[rindex].Symbol, STR_MAX);
+            std::strncpy(strBuf, fRdfDescriptor->Ports[rindex].Symbol, STR_MAX);
         else
             CarlaPlugin::getParameterSymbol(parameterId, strBuf);
     }
@@ -781,9 +783,11 @@ public:
         {
             const LV2_RDF_Port& port(fRdfDescriptor->Ports[rindex]);
 
-            if (LV2_HAVE_PORT_UNIT_SYMBOL(port.Unit.Hints) && port.Unit.Symbol)
+            if (LV2_HAVE_PORT_UNIT_SYMBOL(port.Unit.Hints) && port.Unit.Symbol != nullptr)
+            {
                 std::strncpy(strBuf, port.Unit.Symbol, STR_MAX);
-
+                return;
+            }
             else if (LV2_HAVE_PORT_UNIT_UNIT(port.Unit.Hints))
             {
                 switch (port.Unit.Unit)
@@ -966,6 +970,8 @@ public:
 
         CarlaPlugin::setCustomData(type, key, value, sendGui);
 
+        // FIXME - we should only call this once, after all data is stored
+
         if (fExt.state != nullptr)
         {
             LV2_State_Status status;
@@ -1025,10 +1031,10 @@ public:
 
         if (index >= 0 && index < static_cast<int32_t>(fRdfDescriptor->PresetCount))
         {
-            const ScopedDisabler sd(this);
-
-            if (const LilvState* state = gLv2World.getState(fRdfDescriptor->Presets[index].URI, (LV2_URID_Map*)fFeatures[kFeatureIdUridMap]->data))
+            if (const LilvState* state = gLv2World.getState(fRdfDescriptor->Presets[index].URI, (const LV2_URID_Map*)fFeatures[kFeatureIdUridMap]->data))
             {
+                const ScopedDisabler sd(this);
+
                 lilv_state_restore(state, fExt.state, fHandle, carla_lilv_set_port_value, this, 0, fFeatures);
 
                 if (fHandle2 != nullptr)
@@ -1052,8 +1058,8 @@ public:
 
         if (index >= 0 && fExt.programs != nullptr && fExt.programs->select_program != nullptr)
         {
-            const uint32_t bank    = kData->midiprog.data[index].bank;
-            const uint32_t program = kData->midiprog.data[index].program;
+            const uint32_t bank(kData->midiprog.data[index].bank);
+            const uint32_t program(kData->midiprog.data[index].program);
 
             const ScopedSingleProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
 
@@ -1126,11 +1132,12 @@ public:
         {
             if (yesNo)
             {
-                fUi.widget = nullptr;
-
                 if (fUi.handle == nullptr)
+                {
+                    fUi.widget = nullptr;
                     fUi.handle = fUi.descriptor->instantiate(fUi.descriptor, fRdfDescriptor->URI, fUi.rdfDescriptor->Bundle,
                                                              carla_lv2_ui_write_function, this, &fUi.widget, fFeatures);
+                }
 
                 CARLA_ASSERT(fUi.handle != nullptr);
                 CARLA_ASSERT(fUi.widget != nullptr);
@@ -1180,11 +1187,12 @@ public:
                     fFeatures[kFeatureIdUiParent]->URI  = LV2_UI__parent;
                 }
 
-                fUi.widget = nullptr;
-
                 if (fUi.handle == nullptr)
+                {
+                    fUi.widget = nullptr;
                     fUi.handle = fUi.descriptor->instantiate(fUi.descriptor, fRdfDescriptor->URI, fUi.rdfDescriptor->Bundle,
                                                              carla_lv2_ui_write_function, this, &fUi.widget, fFeatures);
+                }
 
                 CARLA_ASSERT(fUi.handle != nullptr);
                 CARLA_ASSERT(fUi.widget != nullptr);
@@ -1313,7 +1321,7 @@ public:
 
         uint32_t aIns, aOuts, cvIns, cvOuts, params, j;
         aIns = aOuts = cvIns = cvOuts = params = 0;
-        NonRtList<uint32_t> evIns, evOuts;
+        NonRtList<unsigned int> evIns, evOuts;
 
         bool forcedStereoIn, forcedStereoOut;
         forcedStereoIn = forcedStereoOut = false;
@@ -1644,7 +1652,7 @@ public:
                     }
                 }
                 else
-                    carla_stderr("WARNING - Got a broken Port (Atom Sequence, but not input or output)");
+                    carla_stderr("WARNING - Got a broken Port (Atom-Sequence, but not input or output)");
             }
             else if (LV2_IS_PORT_EVENT(portTypes))
             {
@@ -1910,7 +1918,7 @@ public:
                     }
                     else
                     {
-                        kData->param.data[j].type = PARAMETER_INPUT;
+                        kData->param.data[j].type   = PARAMETER_INPUT;
                         kData->param.data[j].hints |= PARAMETER_IS_ENABLED;
                         kData->param.data[j].hints |= PARAMETER_IS_AUTOMABLE;
                         needsCtrlIn = true;
@@ -1918,6 +1926,7 @@ public:
 
                     // MIDI CC value
                     const LV2_RDF_PortMidiMap& portMidiMap(fRdfDescriptor->Ports[i].MidiMap);
+
                     if (LV2_IS_PORT_MIDI_MAP_CC(portMidiMap.Type))
                     {
                         if (! MIDI_IS_CONTROL_BANK_SELECT(portMidiMap.Number))
@@ -1936,7 +1945,7 @@ public:
                         stepLarge = 1.0f;
 
                         kData->param.data[j].type  = PARAMETER_LATENCY;
-                        kData->param.data[j].hints = 0;
+                        kData->param.data[j].hints = 0x0;
                     }
                     else if (LV2_IS_PORT_DESIGNATION_SAMPLE_RATE(portDesignation))
                     {
@@ -1946,7 +1955,7 @@ public:
                         stepLarge = 1.0f;
 
                         kData->param.data[j].type  = PARAMETER_SAMPLE_RATE;
-                        kData->param.data[j].hints = 0;
+                        kData->param.data[j].hints = 0x0;
                     }
                     else if (LV2_IS_PORT_DESIGNATION_FREEWHEELING(portDesignation))
                     {
@@ -1985,9 +1994,10 @@ public:
 
                 // check if parameter is not enabled or automable
                 if (LV2_IS_PORT_NOT_ON_GUI(portProps))
-                    kData->param.data[j].hints &= ~PARAMETER_IS_ENABLED;
-
-                if (LV2_IS_PORT_CAUSES_ARTIFACTS(portProps) || LV2_IS_PORT_EXPENSIVE(portProps) || LV2_IS_PORT_NOT_AUTOMATIC(portProps))
+                {
+                    kData->param.data[j].hints &= ~(PARAMETER_IS_ENABLED|PARAMETER_IS_AUTOMABLE);
+                }
+                else if (LV2_IS_PORT_CAUSES_ARTIFACTS(portProps) || LV2_IS_PORT_EXPENSIVE(portProps) || LV2_IS_PORT_NOT_AUTOMATIC(portProps))
                     kData->param.data[j].hints &= ~PARAMETER_IS_AUTOMABLE;
 
                 kData->param.ranges[j].min = min;
@@ -1997,11 +2007,11 @@ public:
                 kData->param.ranges[j].stepSmall = stepSmall;
                 kData->param.ranges[j].stepLarge = stepLarge;
 
+                // Start parameters in their default values
+                fParamBuffers[j] = def;
+
                 if (kData->param.data[j].type != PARAMETER_LV2_FREEWHEEL)
                 {
-                    // Start parameters in their default values
-                    fParamBuffers[j] = def;
-
                     fDescriptor->connect_port(fHandle, i, &fParamBuffers[j]);
 
                     if (fHandle2 != nullptr)
@@ -2132,7 +2142,7 @@ public:
         {
             kData->prog.clear();
 
-            uint32_t count = fRdfDescriptor->PresetCount;
+            const uint32_t count(fRdfDescriptor->PresetCount);
 
             if (count > 0)
             {
@@ -2151,7 +2161,7 @@ public:
         if (fExt.programs != nullptr && fExt.programs->get_program != nullptr && fExt.programs->select_program != nullptr)
         {
             while (fExt.programs->get_program(fHandle, count))
-                count++;
+                ++count;
         }
 
         if (count > 0)
@@ -2191,7 +2201,7 @@ public:
             else
             {
                 // load default state
-                if (const LilvState* state = gLv2World.getState(fDescriptor->URI, (LV2_URID_Map*)fFeatures[kFeatureIdUridMap]->data))
+                if (const LilvState* state = gLv2World.getState(fDescriptor->URI, (const LV2_URID_Map*)fFeatures[kFeatureIdUridMap]->data))
                 {
                     lilv_state_restore(state, fExt.state, fHandle, carla_lilv_set_port_value, this, 0, fFeatures);
 

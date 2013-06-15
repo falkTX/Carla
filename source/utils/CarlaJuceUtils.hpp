@@ -331,7 +331,8 @@ private:
        It's probably best to use the latter form when writing your object declarations anyway, as
        this is a better representation of the code that you actually want the compiler to produce.
     */
-    CARLA_DECLARE_NON_COPYABLE(ScopedPointer)
+    ScopedPointer(const ScopedPointer&);
+    ScopedPointer& operator=(const ScopedPointer&);
 #endif
 };
 

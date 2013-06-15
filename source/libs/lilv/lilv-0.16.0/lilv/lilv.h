@@ -1215,9 +1215,9 @@ lilv_port_get_scale_points(const LilvPlugin* plugin,
 */
 LILV_API
 LilvState*
-lilv_state_new_from_world(LilvWorld*      world,
-                          LV2_URID_Map*   map,
-                          const LilvNode* subject);
+lilv_state_new_from_world(LilvWorld*          world,
+                          const LV2_URID_Map* map,
+                          const LilvNode*     subject);
 
 /**
    Load a state snapshot from a file.
@@ -1234,19 +1234,19 @@ lilv_state_new_from_world(LilvWorld*      world,
 */
 LILV_API
 LilvState*
-lilv_state_new_from_file(LilvWorld*      world,
-                         LV2_URID_Map*   map,
-                         const LilvNode* subject,
-                         const char*     path);
+lilv_state_new_from_file(LilvWorld*          world,
+                         const LV2_URID_Map* map,
+                         const LilvNode*     subject,
+                         const char*         path);
 
 /**
    Load a state snapshot from a string made by lilv_state_to_string().
 */
 LILV_API
 LilvState*
-lilv_state_new_from_string(LilvWorld*    world,
-                           LV2_URID_Map* map,
-                           const char*   str);
+lilv_state_new_from_string(LilvWorld*          world,
+                           const LV2_URID_Map* map,
+                           const char*         str);
 
 /**
    Function to get a port value.

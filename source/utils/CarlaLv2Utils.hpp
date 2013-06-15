@@ -378,7 +378,7 @@ public:
         }
     }
 
-    const LilvState* getState(const LV2_URI uri, LV2_URID_Map* const uridMap)
+    const LilvState* getState(const LV2_URI uri, const LV2_URID_Map* const uridMap)
     {
         CARLA_ASSERT(uri != nullptr);
 

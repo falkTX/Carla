@@ -1036,6 +1036,8 @@ void CarlaPlugin::setId(const unsigned int newId)
 
 void CarlaPlugin::setName(const char* const newName)
 {
+    CARLA_ASSERT(newName != nullptr);
+
     fName = newName;
 }
 
