@@ -22,26 +22,28 @@
 
 #include <algorithm>
 
-#define CARLA_DECLARE_NON_COPYABLE(className) \
+#define CARLA_DECLARE_NON_COPYABLE(ClassName) \
 private:                                      \
-    className (const className&);             \
-    className& operator= (const className&);
+    ClassName(ClassName&);                    \
+    ClassName(const ClassName&);              \
+    ClassName& operator=(const ClassName&);
 
 /** This is a shorthand way of writing both a CARLA_DECLARE_NON_COPYABLE and
     CARLA_LEAK_DETECTOR macro for a class.
 */
-#define CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(className) \
-    CARLA_DECLARE_NON_COPYABLE(className)                        \
-    CARLA_LEAK_DETECTOR(className)
+#define CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ClassName) \
+    CARLA_DECLARE_NON_COPYABLE(ClassName)                        \
+    CARLA_LEAK_DETECTOR(ClassName)
 
 /** struct versions of the above. */
-#define CARLA_DECLARE_NON_COPY_STRUCT(structName) \
-    structName(structName&) = delete;             \
-    structName(const structName&) = delete;
+#define CARLA_DECLARE_NON_COPY_STRUCT(StructName) \
+    StructName(StructName&) = delete;             \
+    StructName(const StructName&) = delete;       \
+    StructName& operator=(const StructName&) = delete;
 
-#define CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(structName) \
-    CARLA_DECLARE_NON_COPY_STRUCT(structName)                        \
-    CARLA_LEAK_DETECTOR(structName)
+#define CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(StructName) \
+    CARLA_DECLARE_NON_COPY_STRUCT(StructName)                        \
+    CARLA_LEAK_DETECTOR(StructName)
 
 /** This macro can be added to class definitions to disable the use of new/delete to
     allocate the object on the heap, forcing it to only be used as a stack or member variable.

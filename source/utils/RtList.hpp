@@ -26,9 +26,10 @@ extern "C" {
 }
 
 // Declare non copyable and prevent heap allocation
-#define LIST_DECLARATIONS(className)                       \
-    className(const className&);                           \
-    className& operator= (const className&);               \
+#define LIST_DECLARATIONS(ClassName)                       \
+    ClassName(ClassName&);                                 \
+    ClassName(const ClassName&);                           \
+    ClassName& operator=(const ClassName&);                \
     static void* operator new (size_t) { return nullptr; } \
     static void operator delete (void*) {}
 
