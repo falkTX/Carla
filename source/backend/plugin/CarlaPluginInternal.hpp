@@ -360,10 +360,10 @@ struct PluginPostRtEvent {
           value2(-1),
           value3(0.0f) {}
 
-#if 1//def DEBUG
-    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(PluginPostRtEvent)
-#else
+#ifndef DEBUG
     CARLA_DECLARE_NON_COPY_STRUCT(PluginPostRtEvent)
+#else
+    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(PluginPostRtEvent)
 #endif
 };
 
@@ -379,10 +379,10 @@ struct ExternalMidiNote {
           note(0),
           velo(0) {}
 
-#if 1//def DEBUG
-    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(ExternalMidiNote)
-#else
+#ifndef DEBUG
     CARLA_DECLARE_NON_COPY_STRUCT(ExternalMidiNote)
+#else
+    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(ExternalMidiNote)
 #endif
 };
 
@@ -574,6 +574,8 @@ struct CarlaPluginProtectedData {
 
         if (client != nullptr)
         {
+            CARLA_ASSERT(! client->isActive());
+
             if (client->isActive())
                 client->deactivate();
 

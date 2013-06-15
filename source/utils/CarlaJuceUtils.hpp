@@ -1,19 +1,18 @@
 /*
  * Carla misc utils imported from Juce source code
- * Copyright (C) 2004-11 Raw Material Software Ltd.
+ * Copyright (c) 2013 Raw Material Software Ltd.
  * Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or any later version.
+ * Permission to use, copy, modify, and/or distribute this software for any purpose with
+ * or without fee is hereby granted, provided that the above copyright notice and this
+ * permission notice appear in all copies.
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD
+ * TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN
+ * NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
+ * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER
+ * IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
 #ifndef __CARLA_JUCE_UTILS_HPP__
@@ -75,7 +74,7 @@ private:                                \
     it can check whether there are any left-over instances that may have been leaked.
 
     To use it, use the CARLA_LEAK_DETECTOR macro as a simple way to put one in your
-    class declaration. Have a look through the juce codebase for examples, it's used
+    class declaration. Have a look through the carla codebase for examples, it's used
     in most of the classes.
 */
 template <class OwnerClass>
@@ -83,15 +82,8 @@ class LeakedObjectDetector
 {
 public:
     //==============================================================================
-    LeakedObjectDetector()
-    {
-        ++(getCounter().numObjects);
-    }
-
-    LeakedObjectDetector(const LeakedObjectDetector&)
-    {
-        ++(getCounter().numObjects);
-    }
+    LeakedObjectDetector() noexcept                                 { ++(getCounter().numObjects); }
+    LeakedObjectDetector (const LeakedObjectDetector&) noexcept     { ++(getCounter().numObjects); }
 
     ~LeakedObjectDetector()
     {
@@ -119,7 +111,7 @@ private:
     class LeakCounter
     {
     public:
-        LeakCounter()
+        LeakCounter() noexcept
         {
             numObjects = 0;
         }
@@ -141,7 +133,7 @@ private:
             }
         }
 
-        int numObjects;
+        volatile int numObjects;
     };
 
     static const char* getLeakedObjectClassName()
@@ -149,7 +141,7 @@ private:
         return OwnerClass::getLeakedObjectClassName();
     }
 
-    static LeakCounter& getCounter()
+    static LeakCounter& getCounter() noexcept
     {
         static LeakCounter counter;
         return counter;
@@ -158,7 +150,7 @@ private:
 
 #define CARLA_LEAK_DETECTOR(OwnerClass) \
     friend class LeakedObjectDetector<OwnerClass>; \
-    static const char* getLeakedObjectClassName() { return #OwnerClass; } \
+    static const char* getLeakedObjectClassName() noexcept { return #OwnerClass; } \
     LeakedObjectDetector<OwnerClass> CARLA_JOIN_MACRO (leakDetector, __LINE__);
 
 
@@ -205,13 +197,13 @@ class ScopedPointer
 public:
     //==============================================================================
     /** Creates a ScopedPointer containing a null pointer. */
-    ScopedPointer()
+    ScopedPointer() noexcept
         : object(nullptr)
     {
     }
 
     /** Creates a ScopedPointer that owns the specified object. */
-    ScopedPointer(ObjectType* const objectToTakePossessionOf)
+    ScopedPointer(ObjectType* const objectToTakePossessionOf) noexcept
         : object(objectToTakePossessionOf)
     {
     }
@@ -222,7 +214,7 @@ public:
         the pointer from the other object to this one, and the other object is reset to
         be a null pointer.
     */
-    ScopedPointer(ScopedPointer& objectToTransferFrom)
+    ScopedPointer(ScopedPointer& objectToTransferFrom) noexcept
         : object(objectToTransferFrom.object)
     {
         objectToTransferFrom.object = nullptr;
@@ -283,33 +275,28 @@ public:
 
     //==============================================================================
     /** Returns the object that this ScopedPointer refers to. */
-    operator ObjectType*() const   { return object; }
+    operator ObjectType*() const noexcept   { return object; }
 
     /** Returns the object that this ScopedPointer refers to. */
-    ObjectType* get() const        { return object; }
+    ObjectType* get() const noexcept        { return object; }
 
     /** Returns the object that this ScopedPointer refers to. */
-    ObjectType& operator*() const  { return *object; }
+    ObjectType& operator*() const noexcept  { return *object; }
 
     /** Lets you access methods and properties of the object that this ScopedPointer refers to. */
-    ObjectType* operator->() const { return object; }
+    ObjectType* operator->() const noexcept { return object; }
 
     //==============================================================================
     /** Removes the current object from this ScopedPointer without deleting it.
         This will return the current object, and set the ScopedPointer to a null pointer.
     */
-    ObjectType* release()
-    {
-        ObjectType* const o = object;
-        object = nullptr;
-        return o;
-    }
+    ObjectType* release() noexcept          { ObjectType* const o = object; object = nullptr; return o; }
 
     //==============================================================================
     /** Swaps this object with that of another ScopedPointer.
         The two objects simply exchange their pointers.
     */
-    void swapWith(ScopedPointer<ObjectType>& other)
+    void swapWith(ScopedPointer<ObjectType>& other) noexcept
     {
         // Two ScopedPointers should never be able to refer to the same object - if
         // this happens, you must have done something dodgy!
@@ -323,17 +310,14 @@ private:
     ObjectType* object;
 
     // (Required as an alternative to the overloaded & operator).
-    const ScopedPointer* getAddress() const
-    {
-        return this;
-    }
+    const ScopedPointer* getAddress() const { return this; }
 
 #if ! defined(CARLA_CC_MSVC)  // (MSVC can't deal with multiple copy constructors)
-    /* These are private to stop people accidentally copying a const ScopedPointer (the compiler
-       would let you do so by implicitly casting the source to its raw object pointer).
+    /* The copy constructors are private to stop people accidentally copying a const ScopedPointer
+       (the compiler would let you do so by implicitly casting the source to its raw object pointer).
 
-       A side effect of this is that you may hit a puzzling compiler error when you write something
-       like this:
+       A side effect of this is that in a compiler that doesn't support C++11, you may hit an
+       error when you write something like this:
 
           ScopedPointer<MyClass> m = new MyClass();  // Compile error: copy constructor is private.
 
@@ -342,12 +326,10 @@ private:
 
           ScopedPointer<MyClass> m (new MyClass());  // Compiles OK
 
-       It's good practice to always use the latter form when writing your object declarations anyway,
-       rather than writing them as assignments and assuming (or hoping) that the compiler will be
-       smart enough to replace your construction + assignment with a single constructor.
+       It's probably best to use the latter form when writing your object declarations anyway, as
+       this is a better representation of the code that you actually want the compiler to produce.
     */
-    ScopedPointer(const ScopedPointer&);
-    ScopedPointer& operator=(const ScopedPointer&);
+    CARLA_DECLARE_NON_COPYABLE(ScopedPointer)
 #endif
 };
 

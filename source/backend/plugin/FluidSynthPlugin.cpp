@@ -96,6 +96,9 @@ public:
         kData->singleMutex.lock();
         kData->masterMutex.lock();
 
+        if (kData->client != nullptr && kData->client->isActive())
+            kData->client->deactivate();
+
         if (kData->active)
         {
             deactivate();

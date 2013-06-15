@@ -227,7 +227,7 @@ unsigned int CarlaPluginProtectedData::loadSettings(const unsigned int options, 
 
     unsigned int newOptions = 0x0;
 
-#define CHECK_AND_SET_OPTION(STR, BIT)                                  \
+    #define CHECK_AND_SET_OPTION(STR, BIT)                              \
     if ((availOptions & BIT) != 0 || BIT == PLUGIN_OPTION_FORCE_STEREO) \
     {                                                                   \
         if (settings.contains(STR))                                     \
@@ -249,7 +249,7 @@ unsigned int CarlaPluginProtectedData::loadSettings(const unsigned int options, 
     CHECK_AND_SET_OPTION("SendPitchbend", PLUGIN_OPTION_SEND_PITCHBEND);
     CHECK_AND_SET_OPTION("SendAllSoundOff", PLUGIN_OPTION_SEND_ALL_SOUND_OFF);
 
-#undef CHECK_AND_SET_OPTION
+    #undef CHECK_AND_SET_OPTION
 
     settings.endGroup();
 

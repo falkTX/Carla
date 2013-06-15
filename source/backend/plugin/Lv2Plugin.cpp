@@ -17,12 +17,14 @@
 
 #include "CarlaPluginInternal.hpp"
 
+#define WANT_LV2
 #ifdef WANT_LV2
 
 #include "CarlaPluginGui.hpp"
-#include "../engine/CarlaEngineOsc.hpp"
 #include "CarlaLv2Utils.hpp"
 #include "Lv2AtomQueue.hpp"
+
+#include "../engine/CarlaEngineOsc.hpp"
 
 #include <QtCore/QDir>
 
@@ -234,7 +236,7 @@ struct Lv2PluginEventData {
         CARLA_ASSERT_INT(count == 0, count);
         CARLA_ASSERT(data == nullptr);
         CARLA_ASSERT(ctrl == nullptr);
-        CARLA_ASSERT(ctrlIndex == 0);
+        CARLA_ASSERT_INT(ctrlIndex == 0, ctrlIndex);
     }
 
     void createNew(const uint32_t newCount)
@@ -242,7 +244,7 @@ struct Lv2PluginEventData {
         CARLA_ASSERT_INT(count == 0, count);
         CARLA_ASSERT(data == nullptr);
         CARLA_ASSERT(ctrl == nullptr);
-        CARLA_ASSERT(ctrlIndex == 0);
+        CARLA_ASSERT_INT(ctrlIndex == 0, ctrlIndex);
         CARLA_ASSERT_INT(newCount > 0, newCount);
 
         if (data != nullptr || newCount == 0)
@@ -445,6 +447,9 @@ public:
 
         kData->singleMutex.lock();
         kData->masterMutex.lock();
+
+        if (kData->client != nullptr && kData->client->isActive())
+            kData->client->deactivate();
 
         if (kData->active)
         {

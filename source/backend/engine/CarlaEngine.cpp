@@ -648,7 +648,7 @@ bool CarlaEngine::close()
 
 void CarlaEngine::idle()
 {
-    CARLA_ASSERT(kData->plugins != nullptr);
+    CARLA_ASSERT(kData->plugins != nullptr); // this one too maybe
     CARLA_ASSERT(kData->nextAction.opcode == kEnginePostActionNull); // TESTING, remove later
     CARLA_ASSERT(kData->nextPluginId == kData->maxPluginNumber);     // TESTING, remove later
 
