@@ -39,10 +39,15 @@
 
 #if defined(BRIDGE_COCOA) || defined(BRIDGE_HWND) || defined(BRIDGE_X11)
 # define BRIDGE_CONTAINER
-# ifdef Q_WS_X11
-typedef QX11EmbedContainer QEmbedContainer;
-# else
+# ifndef BRIDGE_X11
 typedef QWidget QEmbedContainer;
+# else
+#  ifdef Q_WS_X11
+typedef QX11EmbedContainer QEmbedContainer;
+#  else
+#   warning Using X11 UI bridge without QX11EmbedContainer
+typedef QWidget QEmbedContainer;
+#  endif
 # endif
 #endif
 
@@ -155,6 +160,8 @@ public:
 #endif
         }
 
+        fWindow->setWindowTitle(kUiTitle);
+
         {
             QSettings settings("falkTX", appName);
 
@@ -181,8 +188,6 @@ public:
             if (settings.value("Engine/UIsAlwaysOnTop", true).toBool())
                 fWindow->setWindowFlags(fWindow->windowFlags() | Qt::WindowStaysOnTopHint);
         }
-
-        fWindow->setWindowTitle(kUiTitle);
 
         if (showGui)
             show();
@@ -314,7 +319,7 @@ protected:
         if (kClient == nullptr)
             return;
 
-        if (kClient->isOscControlRegistered() && ! kClient->oscIdle())
+        if (! kClient->oscIdle())
         {
             killTimer(fMsgTimer);
             fMsgTimer = 0;
