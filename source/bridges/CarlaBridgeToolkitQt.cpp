@@ -319,6 +319,8 @@ protected:
         if (kClient == nullptr)
             return;
 
+        kClient->uiIdle();
+
         if (! kClient->oscIdle())
         {
             killTimer(fMsgTimer);
@@ -341,7 +343,7 @@ signals:
 private slots:
     void setSizeSafeSlot(int width, int height)
     {
-        CARLA_ASSERT(kClient != nullptr && kClient->isResizable());
+        CARLA_ASSERT(kClient != nullptr && ! kClient->isResizable());
         CARLA_ASSERT(fWindow != nullptr);
 
         if (kClient == nullptr || fWindow == nullptr)

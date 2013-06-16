@@ -105,21 +105,16 @@ const uint32_t kFeatureIdStrictBounds     = 13;
 const uint32_t kFeatureIdUriMap           = 14;
 const uint32_t kFeatureIdUridMap          = 15;
 const uint32_t kFeatureIdUridUnmap        = 16;
-const uint32_t kFeatureIdWorker           = 17;
-const uint32_t kFeatureIdUiDataAccess     = 18;
-const uint32_t kFeatureIdUiInstanceAccess = 19;
-const uint32_t kFeatureIdUiIdle           = 20;
-const uint32_t kFeatureIdUiFixedSize      = 21;
-const uint32_t kFeatureIdUiMakeResident   = 22;
-const uint32_t kFeatureIdUiNoUserResize   = 23;
-const uint32_t kFeatureIdUiParent         = 24;
-const uint32_t kFeatureIdUiPortMap        = 25;
-const uint32_t kFeatureIdUiPortSubscribe  = 26;
-const uint32_t kFeatureIdUiResize         = 27;
-const uint32_t kFeatureIdUiTouch          = 28;
-const uint32_t kFeatureIdExternalUi       = 29;
-const uint32_t kFeatureIdExternalUiOld    = 30;
-const uint32_t kFeatureCount              = 31;
+const uint32_t kFeatureIdUiIdle           = 17;
+const uint32_t kFeatureIdUiFixedSize      = 18;
+const uint32_t kFeatureIdUiMakeResident   = 19;
+const uint32_t kFeatureIdUiNoUserResize   = 20;
+const uint32_t kFeatureIdUiParent         = 21;
+const uint32_t kFeatureIdUiPortMap        = 22;
+const uint32_t kFeatureIdUiPortSubscribe  = 23;
+const uint32_t kFeatureIdUiResize         = 24;
+const uint32_t kFeatureIdUiTouch          = 25;
+const uint32_t kFeatureCount              = 26;
 
 // -------------------------------------------------------------------------
 
@@ -192,31 +187,37 @@ class CarlaLv2Client : public CarlaBridgeClient
 {
 public:
     CarlaLv2Client(const char* const uiTitle)
-        : CarlaBridgeClient(uiTitle)
-    {
-        handle = nullptr;
-        widget = nullptr;
-        descriptor = nullptr;
-
-        rdf_descriptor = nullptr;
-        rdf_ui_descriptor = nullptr;
-
-        programs = nullptr;
-
-#ifdef BRIDGE_LV2_X11
-        m_resizable = false;
+        : CarlaBridgeClient(uiTitle),
+          fHandle(nullptr),
+          fWidget(nullptr),
+#ifdef CARLA_PROPER_CPP11_SUPPORT
+          fFeatures{nullptr},
+#endif
+          fDescriptor(nullptr),
+          fRdfDescriptor(nullptr),
+          fRdfUiDescriptor(nullptr),
+#if defined(BRIDGE_COCOA) || defined(BRIDGE_HWND) || defined(BRIDGE_X11)
+          fIsResizable(false)
 #else
-        m_resizable = true;
+          fIsResizable(true)
+#endif
+    {
+#ifndef CARLA_PROPER_CPP11_SUPPORT
+        carla_fill<LV2_Feature*>(fFeatures, kFeatureCount+1, nullptr);
 #endif
 
         for (uint32_t i=0; i < CARLA_URI_MAP_ID_COUNT; ++i)
-            customURIDs.push_back(nullptr);
+            fCustomURIDs.append(nullptr);
 
-        for (uint32_t i=0; i < kFeatureCount+1; ++i)
-            features[i] = nullptr;
+        // ---------------------------------------------------------------
+        // initialize options
 
-        // -----------------------------------------------------------------
-        // initialize features
+        fOptions.minBufferSize = gBufferSize;
+        fOptions.maxBufferSize = gBufferSize;
+        fOptions.sampleRate    = gSampleRate;
+
+        // ---------------------------------------------------------------
+        // initialize features (part 1)
 
         LV2_Event_Feature* const eventFt = new LV2_Event_Feature;
         eventFt->callback_data           = this;
@@ -228,13 +229,6 @@ public:
         logFt->printf                    = carla_lv2_log_printf;
         logFt->vprintf                   = carla_lv2_log_vprintf;
 
-        LV2_Programs_Host* const programsFt        = new LV2_Programs_Host;
-        programsFt->handle                         = this;
-        programsFt->program_changed                = carla_lv2_program_changed;
-
-        LV2_RtMemPool_Pool* const rtMemPoolFt      = new LV2_RtMemPool_Pool;
-        lv2_rtmempool_init(rtMemPoolFt);
-
         LV2_State_Make_Path* const stateMakePathFt = new LV2_State_Make_Path;
         stateMakePathFt->handle                    = this;
         stateMakePathFt->path                      = carla_lv2_state_make_path;
@@ -243,6 +237,13 @@ public:
         stateMapPathFt->handle                     = this;
         stateMapPathFt->abstract_path              = carla_lv2_state_map_abstract_path;
         stateMapPathFt->absolute_path              = carla_lv2_state_map_absolute_path;
+
+        LV2_Programs_Host* const programsFt   = new LV2_Programs_Host;
+        programsFt->handle                    = this;
+        programsFt->program_changed           = carla_lv2_program_changed;
+
+        LV2_RtMemPool_Pool* const rtMemPoolFt = new LV2_RtMemPool_Pool;
+        lv2_rtmempool_init(rtMemPoolFt);
 
         LV2_URI_Map_Feature* const uriMapFt = new LV2_URI_Map_Feature;
         uriMapFt->callback_data             = this;
@@ -256,126 +257,143 @@ public:
         uridUnmapFt->handle                 = this;
         uridUnmapFt->unmap                  = carla_lv2_urid_unmap;
 
-        LV2UI_Port_Map* const uiPortMapFt   = new LV2UI_Port_Map;
-        uiPortMapFt->handle                 = this;
-        uiPortMapFt->port_index             = carla_lv2_ui_port_map;
+        LV2UI_Port_Map* const uiPortMapFt = new LV2UI_Port_Map;
+        uiPortMapFt->handle               = this;
+        uiPortMapFt->port_index           = carla_lv2_ui_port_map;
 
-        LV2UI_Resize* const uiResizeFt      = new LV2UI_Resize;
-        uiResizeFt->handle                  = this;
-        uiResizeFt->ui_resize               = carla_lv2_ui_resize;
+        LV2UI_Resize* const uiResizeFt    = new LV2UI_Resize;
+        uiResizeFt->handle                = this;
+        uiResizeFt->ui_resize             = carla_lv2_ui_resize;
 
-#if 0
-        features[lv2_feature_id_bufsize_bounded]        = new LV2_Feature;
-        features[lv2_feature_id_bufsize_bounded]->URI   = LV2_BUF_SIZE__boundedBlockLength;
-        features[lv2_feature_id_bufsize_bounded]->data  = nullptr;
+        // ---------------------------------------------------------------
+        // initialize features (part 2)
 
-        features[lv2_feature_id_bufsize_fixed]          = new LV2_Feature;
-        features[lv2_feature_id_bufsize_fixed]->URI     = LV2_BUF_SIZE__fixedBlockLength;
-        features[lv2_feature_id_bufsize_fixed]->data    = nullptr;
+        for (uint32_t i=0; i < kFeatureCount; ++i)
+            fFeatures[i] = new LV2_Feature;
 
-        features[lv2_feature_id_bufsize_powerof2]       = new LV2_Feature;
-        features[lv2_feature_id_bufsize_powerof2]->URI  = LV2_BUF_SIZE__powerOf2BlockLength;
-        features[lv2_feature_id_bufsize_powerof2]->data = nullptr;
+        fFeatures[kFeatureIdBufSizeBounded]->URI   = LV2_BUF_SIZE__boundedBlockLength;
+        fFeatures[kFeatureIdBufSizeBounded]->data  = nullptr;
 
-        features[lv2_feature_id_event]          = new LV2_Feature;
-        features[lv2_feature_id_event]->URI     = LV2_EVENT_URI;
-        features[lv2_feature_id_event]->data    = eventFt;
+        fFeatures[kFeatureIdBufSizeFixed]->URI     = LV2_BUF_SIZE__fixedBlockLength;
+        fFeatures[kFeatureIdBufSizeFixed]->data    = nullptr;
 
-        features[lv2_feature_id_logs]           = new LV2_Feature;
-        features[lv2_feature_id_logs]->URI      = LV2_LOG__log;
-        features[lv2_feature_id_logs]->data     = logFt;
+        fFeatures[kFeatureIdBufSizePowerOf2]->URI  = LV2_BUF_SIZE__powerOf2BlockLength;
+        fFeatures[kFeatureIdBufSizePowerOf2]->data = nullptr;
 
-        features[lv2_feature_id_options]        = new LV2_Feature;
-        features[lv2_feature_id_options]->URI   = LV2_OPTIONS__options;
-        features[lv2_feature_id_options]->data  = optionsFt;
+        fFeatures[kFeatureIdEvent]->URI          = LV2_EVENT_URI;
+        fFeatures[kFeatureIdEvent]->data         = eventFt;
 
-        features[lv2_feature_id_programs]       = new LV2_Feature;
-        features[lv2_feature_id_programs]->URI  = LV2_PROGRAMS__Host;
-        features[lv2_feature_id_programs]->data = programsFt;
+        fFeatures[kFeatureIdHardRtCapable]->URI  = LV2_CORE__hardRTCapable;
+        fFeatures[kFeatureIdHardRtCapable]->data = nullptr;
 
-        features[lv2_feature_id_rtmempool]       = new LV2_Feature;
-        features[lv2_feature_id_rtmempool]->URI  = LV2_RTSAFE_MEMORY_POOL__Pool;
-        features[lv2_feature_id_rtmempool]->data = rtMemPoolFt;
+        fFeatures[kFeatureIdInPlaceBroken]->URI  = LV2_CORE__inPlaceBroken;
+        fFeatures[kFeatureIdInPlaceBroken]->data = nullptr;
 
-        features[lv2_feature_id_state_make_path]       = new LV2_Feature;
-        features[lv2_feature_id_state_make_path]->URI  = LV2_STATE__makePath;
-        features[lv2_feature_id_state_make_path]->data = stateMakePathFt;
+        fFeatures[kFeatureIdIsLive]->URI         = LV2_CORE__isLive;
+        fFeatures[kFeatureIdIsLive]->data        = nullptr;
 
-        features[lv2_feature_id_state_map_path]        = new LV2_Feature;
-        features[lv2_feature_id_state_map_path]->URI   = LV2_STATE__mapPath;
-        features[lv2_feature_id_state_map_path]->data  = stateMapPathFt;
+        fFeatures[kFeatureIdLogs]->URI       = LV2_LOG__log;
+        fFeatures[kFeatureIdLogs]->data      = logFt;
 
-        features[lv2_feature_id_strict_bounds]         = new LV2_Feature;
-        features[lv2_feature_id_strict_bounds]->URI    = LV2_PORT_PROPS__supportsStrictBounds;
-        features[lv2_feature_id_strict_bounds]->data   = nullptr;
+        fFeatures[kFeatureIdOptions]->URI    = LV2_OPTIONS__options;
+        fFeatures[kFeatureIdOptions]->data   = fOptions.opts;
 
-        features[lv2_feature_id_uri_map]           = new LV2_Feature;
-        features[lv2_feature_id_uri_map]->URI      = LV2_URI_MAP_URI;
-        features[lv2_feature_id_uri_map]->data     = uriMapFt;
+        fFeatures[kFeatureIdPrograms]->URI   = LV2_PROGRAMS__Host;
+        fFeatures[kFeatureIdPrograms]->data  = programsFt;
 
-        features[lv2_feature_id_urid_map]          = new LV2_Feature;
-        features[lv2_feature_id_urid_map]->URI     = LV2_URID__map;
-        features[lv2_feature_id_urid_map]->data    = uridMapFt;
+        fFeatures[kFeatureIdRtMemPool]->URI  = LV2_RTSAFE_MEMORY_POOL__Pool;
+        fFeatures[kFeatureIdRtMemPool]->data = rtMemPoolFt;
 
-        features[lv2_feature_id_urid_unmap]        = new LV2_Feature;
-        features[lv2_feature_id_urid_unmap]->URI   = LV2_URID__unmap;
-        features[lv2_feature_id_urid_unmap]->data  = uridUnmapFt;
+        fFeatures[kFeatureIdStateMakePath]->URI  = LV2_STATE__makePath;
+        fFeatures[kFeatureIdStateMakePath]->data = stateMakePathFt;
 
-        features[lv2_feature_id_ui_parent]         = new LV2_Feature;
-        features[lv2_feature_id_ui_parent]->URI    = LV2_UI__parent;
-        features[lv2_feature_id_ui_parent]->data   = nullptr;
+        fFeatures[kFeatureIdStateMapPath]->URI   = LV2_STATE__mapPath;
+        fFeatures[kFeatureIdStateMapPath]->data  = stateMapPathFt;
 
-        features[lv2_feature_id_ui_port_map]       = new LV2_Feature;
-        features[lv2_feature_id_ui_port_map]->URI  = LV2_UI__portMap;
-        features[lv2_feature_id_ui_port_map]->data = uiPortMapFt;
+        fFeatures[kFeatureIdStrictBounds]->URI   = LV2_PORT_PROPS__supportsStrictBounds;
+        fFeatures[kFeatureIdStrictBounds]->data  = nullptr;
 
-        features[lv2_feature_id_ui_resize]         = new LV2_Feature;
-        features[lv2_feature_id_ui_resize]->URI    = LV2_UI__resize;
-        features[lv2_feature_id_ui_resize]->data   = uiResizeFt;
-#endif
+        fFeatures[kFeatureIdUriMap]->URI     = LV2_URI_MAP_URI;
+        fFeatures[kFeatureIdUriMap]->data    = uriMapFt;
+
+        fFeatures[kFeatureIdUridMap]->URI    = LV2_URID__map;
+        fFeatures[kFeatureIdUridMap]->data   = uridMapFt;
+
+        fFeatures[kFeatureIdUridUnmap]->URI  = LV2_URID__unmap;
+        fFeatures[kFeatureIdUridUnmap]->data = uridUnmapFt;
+
+        fFeatures[kFeatureIdUiIdle]->URI           = LV2_UI__idle;
+        fFeatures[kFeatureIdUiIdle]->data          = nullptr;
+
+        fFeatures[kFeatureIdUiFixedSize]->URI      = LV2_UI__fixedSize;
+        fFeatures[kFeatureIdUiFixedSize]->data     = nullptr;
+
+        fFeatures[kFeatureIdUiMakeResident]->URI   = LV2_UI__makeResident;
+        fFeatures[kFeatureIdUiMakeResident]->data  = nullptr;
+
+        fFeatures[kFeatureIdUiNoUserResize]->URI   = LV2_UI__noUserResize;
+        fFeatures[kFeatureIdUiNoUserResize]->data  = nullptr;
+
+        fFeatures[kFeatureIdUiParent]->URI         = LV2_UI__parent;
+        fFeatures[kFeatureIdUiParent]->data        = nullptr;
+
+        fFeatures[kFeatureIdUiPortMap]->URI        = LV2_UI__portMap;
+        fFeatures[kFeatureIdUiPortMap]->data       = uiPortMapFt;
+
+        fFeatures[kFeatureIdUiPortSubscribe]->URI  = LV2_UI__portSubscribe;
+        fFeatures[kFeatureIdUiPortSubscribe]->data = nullptr;
+
+        fFeatures[kFeatureIdUiResize]->URI       = LV2_UI__resize;
+        fFeatures[kFeatureIdUiResize]->data      = uiResizeFt;
+
+        fFeatures[kFeatureIdUiTouch]->URI        = LV2_UI__touch;
+        fFeatures[kFeatureIdUiTouch]->data       = nullptr;
     }
 
-    ~CarlaLv2Client()
+    ~CarlaLv2Client() override
     {
-        if (rdf_descriptor)
-            delete rdf_descriptor;
+        if (fRdfDescriptor != nullptr)
+            delete fRdfDescriptor;
 
-#if 0
-        const LV2_Options_Option* const options = (const LV2_Options_Option*)features[lv2_feature_id_options]->data;
-        delete[] options;
-
-        delete (LV2_Event_Feature*)features[lv2_feature_id_event]->data;
-        delete (LV2_Log_Log*)features[lv2_feature_id_logs]->data;
-        delete (LV2_Programs_Host*)features[lv2_feature_id_programs]->data;
-        delete (LV2_RtMemPool_Pool*)features[lv2_feature_id_rtmempool]->data;
-        delete (LV2_State_Make_Path*)features[lv2_feature_id_state_make_path]->data;
-        delete (LV2_State_Map_Path*)features[lv2_feature_id_state_map_path]->data;
-        delete (LV2_URI_Map_Feature*)features[lv2_feature_id_uri_map]->data;
-        delete (LV2_URID_Map*)features[lv2_feature_id_urid_map]->data;
-        delete (LV2_URID_Unmap*)features[lv2_feature_id_urid_unmap]->data;
-        delete (LV2UI_Port_Map*)features[lv2_feature_id_ui_port_map]->data;
-        delete (LV2UI_Resize*)features[lv2_feature_id_ui_resize]->data;
-#endif
+        delete (LV2_Event_Feature*)fFeatures[kFeatureIdEvent]->data;
+        delete (LV2_Log_Log*)fFeatures[kFeatureIdLogs]->data;
+        delete (LV2_State_Make_Path*)fFeatures[kFeatureIdStateMakePath]->data;
+        delete (LV2_State_Map_Path*)fFeatures[kFeatureIdStateMapPath]->data;
+        delete (LV2_Programs_Host*)fFeatures[kFeatureIdPrograms]->data;
+        delete (LV2_RtMemPool_Pool*)fFeatures[kFeatureIdRtMemPool]->data;
+        delete (LV2_URI_Map_Feature*)fFeatures[kFeatureIdUriMap]->data;
+        delete (LV2_URID_Map*)fFeatures[kFeatureIdUridMap]->data;
+        delete (LV2_URID_Unmap*)fFeatures[kFeatureIdUridUnmap]->data;
+        delete (LV2UI_Port_Map*)fFeatures[kFeatureIdUiPortMap]->data;
+        delete (LV2UI_Resize*)fFeatures[kFeatureIdUiResize]->data;
 
         for (uint32_t i=0; i < kFeatureCount; ++i)
         {
-            if (features[i] != nullptr)
-                delete features[i];
+            if (fFeatures[i] != nullptr)
+            {
+                delete fFeatures[i];
+                fFeatures[i] = nullptr;
+            }
         }
 
-        for (size_t i=0; i < customURIDs.size(); ++i)
+        for (NonRtList<const char*>::Itenerator it = fCustomURIDs.begin(); it.valid(); it.next())
         {
-            if (customURIDs[i])
-                free((void*)customURIDs[i]);
+            const char*& uri(*it);
+
+            if (uri != nullptr)
+            {
+                delete[] uri;
+                uri = nullptr;
+            }
         }
 
-        customURIDs.clear();
+        fCustomURIDs.clear();
     }
 
     // ---------------------------------------------------------------------
     // ui initialization
 
-    bool uiInit(const char* pluginURI, const char* uiURI)
+    bool uiInit(const char* pluginURI, const char* uiURI) override
     {
         // -----------------------------------------------------------------
         // init
@@ -386,30 +404,30 @@ public:
         // get plugin from lv2_rdf (lilv)
 
         gLv2World.init();
-        rdf_descriptor = lv2_rdf_new(pluginURI);
+        fRdfDescriptor = lv2_rdf_new(pluginURI);
 
-        if (! rdf_descriptor)
+        if (fRdfDescriptor == nullptr)
             return false;
 
         // -----------------------------------------------------------------
         // find requested UI
 
-        for (uint32_t i=0; i < rdf_descriptor->UICount; ++i)
+        for (uint32_t i=0; i < fRdfDescriptor->UICount; ++i)
         {
-            if (std::strcmp(rdf_descriptor->UIs[i].URI, uiURI) == 0)
+            if (std::strcmp(fRdfDescriptor->UIs[i].URI, uiURI) == 0)
             {
-                rdf_ui_descriptor = &rdf_descriptor->UIs[i];
+                fRdfUiDescriptor = &fRdfDescriptor->UIs[i];
                 break;
             }
         }
 
-        if (! rdf_ui_descriptor)
+        if (fRdfUiDescriptor == nullptr)
             return false;
 
         // -----------------------------------------------------------------
         // open DLL
 
-        if (! uiLibOpen(rdf_ui_descriptor->Binary))
+        if (! uiLibOpen(fRdfUiDescriptor->Binary))
             return false;
 
         // -----------------------------------------------------------------
@@ -417,74 +435,84 @@ public:
 
         const LV2UI_DescriptorFunction ui_descFn = (LV2UI_DescriptorFunction)uiLibSymbol("lv2ui_descriptor");
 
-        if (! ui_descFn)
+        if (ui_descFn == nullptr)
             return false;
 
         // -----------------------------------------------------------
         // get descriptor that matches URI
 
         uint32_t i = 0;
-        while ((descriptor = ui_descFn(i++)))
+        while ((fDescriptor = ui_descFn(i++)))
         {
-            if (std::strcmp(descriptor->URI, uiURI) == 0)
+            if (std::strcmp(fDescriptor->URI, uiURI) == 0)
                 break;
         }
 
-        if (! descriptor)
+        if (fDescriptor == nullptr)
             return false;
 
         // -----------------------------------------------------------
         // initialize UI
 
-#ifdef BRIDGE_LV2_X11
-        //features[lv2_feature_id_ui_parent]->data = getContainerId();
+#if defined(BRIDGE_COCOA) || defined(BRIDGE_HWND) || defined(BRIDGE_X11)
+        fFeatures[kFeatureIdUiParent]->data = getContainerId();
 #endif
 
-        handle = descriptor->instantiate(descriptor, pluginURI, rdf_ui_descriptor->Bundle, carla_lv2_ui_write_function, this, &widget, features);
+        fHandle = fDescriptor->instantiate(fDescriptor, pluginURI, fRdfUiDescriptor->Bundle, carla_lv2_ui_write_function, this, &fWidget, fFeatures);
 
-        if (! handle)
+        if (fHandle == nullptr)
             return false;
 
         // -----------------------------------------------------------
         // check if not resizable
 
-#ifndef BRIDGE_LV2_X11
-        for (uint32_t i=0; i < rdf_ui_descriptor->FeatureCount; ++i)
+        for (uint32_t i=0; i < fRdfUiDescriptor->FeatureCount && fIsResizable; ++i)
         {
-            if (std::strcmp(rdf_ui_descriptor->Features[i].URI, LV2_UI__fixedSize) == 0 || std::strcmp(rdf_ui_descriptor->Features[i].URI, LV2_UI__noUserResize) == 0)
+            if (std::strcmp(fRdfUiDescriptor->Features[i].URI, LV2_UI__fixedSize) == 0 || std::strcmp(fRdfUiDescriptor->Features[i].URI, LV2_UI__noUserResize) == 0)
             {
-                m_resizable = false;
+                fIsResizable = false;
                 break;
             }
         }
-#endif
 
         // -----------------------------------------------------------
         // check for known extensions
 
-        for (uint32_t i=0; descriptor->extension_data && i < rdf_ui_descriptor->ExtensionCount; ++i)
+        if (fDescriptor->extension_data != nullptr)
         {
-            if (std::strcmp(rdf_ui_descriptor->Extensions[i], LV2_PROGRAMS__UIInterface) == 0)
+            for (uint32_t i=0; i < fRdfUiDescriptor->ExtensionCount; ++i)
             {
-                programs = (LV2_Programs_UI_Interface*)descriptor->extension_data(LV2_PROGRAMS__UIInterface);
+                if (std::strcmp(fRdfUiDescriptor->Extensions[i], LV2_PROGRAMS__UIInterface) == 0)
+                {
+                    fExt.options  = (const LV2_Options_Interface*)fDescriptor->extension_data(LV2_OPTIONS__interface);
+                    fExt.idle     = (const LV2UI_Idle_Interface*)fDescriptor->extension_data(LV2_UI__idleInterface);
+                    fExt.programs = (const LV2_Programs_UI_Interface*)fDescriptor->extension_data(LV2_PROGRAMS__UIInterface);
 
-                if (programs && ! programs->select_program)
-                    // invalid
-                    programs = nullptr;
+                    // check if invalid
+                    if (fExt.idle != nullptr && fExt.idle->idle == nullptr)
+                        fExt.idle = nullptr;
 
-                break;
+                    if (fExt.programs != nullptr && fExt.programs->select_program == nullptr)
+                        fExt.programs = nullptr;
+                }
             }
         }
 
         return true;
     }
 
-    void uiClose()
+    void uiIdle() override
+    {
+        if (fHandle != nullptr && fExt.idle != nullptr)
+            fExt.idle->idle(fHandle);
+    }
+
+    void uiClose() override
     {
         CarlaBridgeClient::uiClose();
 
-        if (handle && descriptor && descriptor->cleanup)
-            descriptor->cleanup(handle);
+        if (fHandle && fDescriptor && fDescriptor->cleanup)
+            fDescriptor->cleanup(fHandle);
 
         uiLibClose();
     }
@@ -492,19 +520,19 @@ public:
     // ---------------------------------------------------------------------
     // ui management
 
-    void* getWidget() const
+    void* getWidget() const override
     {
-        return widget;
+        return fWidget;
     }
 
-    bool isResizable() const
+    bool isResizable() const override
     {
-        return m_resizable;
+        return fIsResizable;
     }
 
-    bool needsReparent() const
+    bool needsReparent() const override
     {
-#ifdef BRIDGE_LV2_X11
+#if defined(BRIDGE_COCOA) || defined(BRIDGE_HWND) || defined(BRIDGE_X11)
         return true;
 #else
         return false;
@@ -512,36 +540,33 @@ public:
     }
 
     // ---------------------------------------------------------------------
-    // processing
+    // ui processing
 
-    void setParameter(const int32_t rindex, const float value)
+    void setParameter(const int32_t rindex, const float value) override
     {
-        CARLA_ASSERT(handle && descriptor);
+        CARLA_ASSERT(fHandle != nullptr && fDescriptor != nullptr);
 
-        if (handle && descriptor && descriptor->port_event)
-        {
-            float fvalue = value;
-            descriptor->port_event(handle, rindex, sizeof(float), 0, &fvalue);
-        }
+        if (fHandle != nullptr && fDescriptor != nullptr && fDescriptor->port_event != nullptr)
+            fDescriptor->port_event(fHandle, rindex, sizeof(float), 0, &value);
     }
 
-    void setProgram(const uint32_t)
+    void setProgram(const uint32_t) override
     {
     }
 
-    void setMidiProgram(const uint32_t bank, const uint32_t program)
+    void setMidiProgram(const uint32_t bank, const uint32_t program) override
     {
-        CARLA_ASSERT(handle);
+        CARLA_ASSERT(fHandle != nullptr);
 
-        if (handle && programs)
-            programs->select_program(handle, bank, program);
+        if (fHandle != nullptr && fExt.programs != nullptr)
+            fExt.programs->select_program(fHandle, bank, program);
     }
 
-    void noteOn(const uint8_t channel, const uint8_t note, const uint8_t velo)
+    void noteOn(const uint8_t channel, const uint8_t note, const uint8_t velo) override
     {
-        CARLA_ASSERT(handle && descriptor);
+        CARLA_ASSERT(fHandle != nullptr && fDescriptor != nullptr);
 
-        if (handle && descriptor && descriptor->port_event)
+        if (fHandle != nullptr && fDescriptor != nullptr && fDescriptor->port_event != nullptr)
         {
             LV2_Atom_MidiEvent midiEv;
             midiEv.event.time.frames = 0;
@@ -551,15 +576,15 @@ public:
             midiEv.data[1] = note;
             midiEv.data[2] = velo;
 
-            descriptor->port_event(handle, 0, 3, CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM, &midiEv);
+            fDescriptor->port_event(fHandle, 0, 3, CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM, &midiEv);
         }
     }
 
-    void noteOff(const uint8_t channel, const uint8_t note)
+    void noteOff(const uint8_t channel, const uint8_t note) override
     {
-        CARLA_ASSERT(handle && descriptor);
+        CARLA_ASSERT(fHandle != nullptr && fDescriptor != nullptr);
 
-        if (handle && descriptor && descriptor->port_event)
+        if (fHandle != nullptr && fDescriptor != nullptr && fDescriptor->port_event != nullptr)
         {
             LV2_Atom_MidiEvent midiEv;
             midiEv.event.time.frames = 0;
@@ -569,67 +594,54 @@ public:
             midiEv.data[1] = note;
             midiEv.data[2] = 0;
 
-            descriptor->port_event(handle, 0, 3, CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM, &midiEv);
+            fDescriptor->port_event(fHandle, 0, 3, CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM, &midiEv);
         }
     }
 
     // ---------------------------------------------------------------------
 
-    uint32_t getCustomURID(const char* const uri)
+    LV2_URID getCustomURID(const char* const uri)
     {
-        carla_debug("CarlaLv2Client::getCustomURID(%s)", uri);
-        CARLA_ASSERT(uri);
+        CARLA_ASSERT(uri != nullptr);
+        carla_debug("CarlaLv2Client::getCustomURID(\"%s\")", uri);
 
-        if (! uri)
+        if (uri == nullptr)
             return CARLA_URI_MAP_ID_NULL;
 
-        for (size_t i=0; i < customURIDs.size(); ++i)
+        for (size_t i=0; i < fCustomURIDs.count(); ++i)
         {
-            if (customURIDs[i] && std::strcmp(customURIDs[i], uri) == 0)
+            const char*& thisUri(fCustomURIDs.getAt(i));
+            if (thisUri != nullptr && std::strcmp(thisUri, uri) == 0)
                 return i;
         }
 
-        customURIDs.push_back(strdup(uri));
+        fCustomURIDs.append(carla_strdup(uri));
 
-        return customURIDs.size()-1;
+        const LV2_URID urid(fCustomURIDs.count()-1);
+
+        if (isOscControlRegistered())
+            sendOscLv2UridMap(urid, uri);
+
+        return urid;
     }
 
-    const char* getCustomURIString(const LV2_URID urid) const
+    const char* getCustomURIString(const LV2_URID urid)
     {
+        CARLA_ASSERT(urid != CARLA_URI_MAP_ID_NULL);
+        CARLA_ASSERT_INT2(urid < fCustomURIDs.count(), urid, fCustomURIDs.count());
         carla_debug("CarlaLv2Client::getCustomURIString(%i)", urid);
-        CARLA_ASSERT(urid > CARLA_URI_MAP_ID_NULL);
 
         if (urid == CARLA_URI_MAP_ID_NULL)
             return nullptr;
-        if (urid < customURIDs.size())
-            return customURIDs[urid];
+        if (urid < fCustomURIDs.count())
+            return fCustomURIDs.getAt(urid);
 
         return nullptr;
     }
 
     // ---------------------------------------------------------------------
 
-    void handleAtomTransfer(const uint32_t portIndex, const LV2_Atom* const atom)
-    {
-        CARLA_ASSERT(atom != nullptr);
-        carla_debug("CarlaLv2Client::handleTransferEvent(%i, %p)", portIndex, atom);
-
-        if (atom != nullptr && handle != nullptr && descriptor != nullptr && descriptor->port_event != nullptr)
-            descriptor->port_event(handle, portIndex, lv2_atom_total_size(atom), CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM, atom);
-    }
-
-    void handleUridMap(const LV2_URID urid, const char* const uri)
-    {
-        CARLA_ASSERT(urid != CARLA_URI_MAP_ID_NULL);
-        CARLA_ASSERT(uri != nullptr);
-        carla_debug("CarlaLv2Client::handleUridMap(%i, \"%s\")", urid, uri);
-
-        // TODO
-    }
-
-    // ---------------------------------------------------------------------
-
-    void handleProgramChanged(int32_t /*index*/)
+    void handleProgramChanged(const int32_t /*index*/)
     {
         if (isOscControlRegistered())
             sendOscConfigure("reloadprograms", "");
@@ -637,22 +649,21 @@ public:
 
     uint32_t handleUiPortMap(const char* const symbol)
     {
-        CARLA_ASSERT(symbol);
+        CARLA_ASSERT(symbol != nullptr);
 
-        if (! symbol)
+        if (symbol == nullptr)
             return LV2UI_INVALID_PORT_INDEX;
 
-        for (uint32_t i=0; i < rdf_descriptor->PortCount; ++i)
+        for (uint32_t i=0; i < fRdfDescriptor->PortCount; ++i)
         {
-            if (std::strcmp(rdf_descriptor->Ports[i].Symbol, symbol) == 0)
+            if (std::strcmp(fRdfDescriptor->Ports[i].Symbol, symbol) == 0)
                 return i;
         }
 
         return LV2UI_INVALID_PORT_INDEX;
     }
 
-
-    int handleUiResize(int width, int height)
+    int handleUiResize(const int width, const int height)
     {
         CARLA_ASSERT(width > 0);
         CARLA_ASSERT(height > 0);
@@ -667,59 +678,111 @@ public:
 
     void handleUiWrite(uint32_t portIndex, uint32_t bufferSize, uint32_t format, const void* buffer)
     {
-        if (buffer == nullptr || ! isOscControlRegistered())
-            return;
-
         if (format == 0)
         {
+            CARLA_ASSERT(buffer != nullptr);
             CARLA_ASSERT(bufferSize == sizeof(float));
 
             if (bufferSize != sizeof(float))
                 return;
 
+            if (buffer == nullptr || bufferSize != sizeof(float))
+                return;
+
             const float value(*(const float*)buffer);
 
-            sendOscControl(portIndex, value);
+            if (isOscControlRegistered())
+                sendOscControl(portIndex, value);
         }
         else if (format == CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM || CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT)
         {
             CARLA_ASSERT(bufferSize != 0);
+            CARLA_ASSERT(buffer != nullptr);
 
-            if (bufferSize == 0)
+            if (bufferSize == 0 || buffer == nullptr)
                 return;
 
-            QByteArray chunk((const char*)buffer, bufferSize);
-            sendOscLv2AtomTransfer(portIndex, chunk.toBase64().constData());
+            if (isOscControlRegistered())
+                sendOscLv2AtomTransfer(portIndex, QByteArray((const char*)buffer, bufferSize).toBase64().constData());
+        }
+        else
+        {
+            carla_stdout("CarlaLv2Client::handleUiWrite(%i, %i, %i:\"%s\", %p) - unknown format", portIndex, bufferSize, format, carla_lv2_urid_unmap(this, format), buffer);
         }
     }
 
-    // ----------------- Event Feature ---------------------------------------------------
+    // ---------------------------------------------------------------------
 
-    static uint32_t carla_lv2_event_ref(const LV2_Event_Callback_Data callback_data, LV2_Event* const event)
+    void handleAtomTransfer(const uint32_t portIndex, const LV2_Atom* const atom)
+    {
+        CARLA_ASSERT(atom != nullptr);
+        carla_debug("CarlaLv2Client::handleTransferEvent(%i, %p)", portIndex, atom);
+
+        if (atom != nullptr && fHandle != nullptr && fDescriptor != nullptr && fDescriptor->port_event != nullptr)
+            fDescriptor->port_event(fHandle, portIndex, lv2_atom_total_size(atom), CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT, atom);
+    }
+
+    void handleUridMap(const LV2_URID urid, const char* const uri)
+    {
+        CARLA_ASSERT(urid != CARLA_URI_MAP_ID_NULL);
+        CARLA_ASSERT(uri != nullptr);
+        carla_debug("CarlaLv2Client::handleUridMap(%i, \"%s\")", urid, uri);
+
+        // TODO
+    }
+
+private:
+    LV2UI_Handle fHandle;
+    LV2UI_Widget fWidget;
+    LV2_Feature* fFeatures[kFeatureCount+1];
+
+    const LV2UI_Descriptor*   fDescriptor;
+    const LV2_RDF_Descriptor* fRdfDescriptor;
+    const LV2_RDF_UI*         fRdfUiDescriptor;
+    Lv2PluginOptions          fOptions;
+
+    bool fIsResizable;
+    NonRtList<const char*> fCustomURIDs;
+
+    struct Extensions {
+        const LV2_Options_Interface* options;
+        const LV2UI_Idle_Interface* idle;
+        const LV2_Programs_UI_Interface* programs;
+
+        Extensions()
+            : options(nullptr),
+              idle(nullptr),
+              programs(nullptr) {}
+    } fExt;
+
+    // -------------------------------------------------------------------
+    // Event Feature
+
+    static uint32_t carla_lv2_event_ref(LV2_Event_Callback_Data callback_data, LV2_Event* event)
     {
         carla_debug("CarlaLv2Client::carla_lv2_event_ref(%p, %p)", callback_data, event);
-        CARLA_ASSERT(callback_data);
-        CARLA_ASSERT(event);
+        CARLA_ASSERT(callback_data != nullptr);
+        CARLA_ASSERT(event != nullptr);
 
         return 0;
     }
 
-    static uint32_t carla_lv2_event_unref(const LV2_Event_Callback_Data callback_data, LV2_Event* const event)
+    static uint32_t carla_lv2_event_unref(LV2_Event_Callback_Data callback_data, LV2_Event* event)
     {
         carla_debug("CarlaLv2Client::carla_lv2_event_unref(%p, %p)", callback_data, event);
-        CARLA_ASSERT(callback_data);
-        CARLA_ASSERT(event);
+        CARLA_ASSERT(callback_data != nullptr);
+        CARLA_ASSERT(event != nullptr);
 
         return 0;
     }
 
-    // ----------------- Logs Feature ----------------------------------------------------
+    // -------------------------------------------------------------------
+    // Logs Feature
 
-    static int carla_lv2_log_printf(const LV2_Log_Handle handle, const LV2_URID type, const char* const fmt, ...)
+    static int carla_lv2_log_printf(LV2_Log_Handle handle, LV2_URID type, const char* fmt, ...)
     {
-        carla_debug("CarlaLv2Client::carla_lv2_log_printf(%p, %i, %s, ...)", handle, type, fmt);
-        CARLA_ASSERT(handle);
-        CARLA_ASSERT(type > 0);
+        CARLA_ASSERT(handle != nullptr);
+        CARLA_ASSERT(type > CARLA_URI_MAP_ID_NULL);
 
 #ifndef DEBUG
         if (type == CARLA_URI_MAP_ID_LOG_TRACE)
@@ -734,67 +797,81 @@ public:
         return ret;
     }
 
-    static int carla_lv2_log_vprintf(const LV2_Log_Handle handle, const LV2_URID type, const char* const fmt, va_list ap)
+    static int carla_lv2_log_vprintf(LV2_Log_Handle handle, LV2_URID type, const char* fmt, va_list ap)
     {
-        carla_debug("CarlaLv2Client::carla_lv2_log_vprintf(%p, %i, %s, ...)", handle, type, fmt);
-        CARLA_ASSERT(handle);
-        CARLA_ASSERT(type > 0);
+        CARLA_ASSERT(handle != nullptr);
+        CARLA_ASSERT(type > CARLA_URI_MAP_ID_NULL);
 
 #ifndef DEBUG
         if (type == CARLA_URI_MAP_ID_LOG_TRACE)
             return 0;
 #endif
 
-        char buf[8196];
-        vsprintf(buf, fmt, ap);
-
-        if (*buf == 0)
-            return 0;
+        int ret = 0;
 
         switch (type)
         {
         case CARLA_URI_MAP_ID_LOG_ERROR:
-            qCritical("%s", buf);
+#ifndef CARLA_OS_WIN
+            std::fprintf(stderr, "\x1b[31m");
+#endif
+            ret = std::vfprintf(stderr, fmt, ap);
+#ifndef CARLA_OS_WIN
+            std::fprintf(stderr, "\x1b[0m");
+#endif
             break;
+
         case CARLA_URI_MAP_ID_LOG_NOTE:
-            printf("%s\n", buf);
+            ret = std::vfprintf(stdout, fmt, ap);
             break;
+
         case CARLA_URI_MAP_ID_LOG_TRACE:
-            carla_debug("%s", buf);
+#ifdef DEBUG
+# ifndef CARLA_OS_WIN
+            std::fprintf(stdout, "\x1b[30;1m");
+# endif
+            ret = std::vfprintf(stdout, fmt, ap);
+# ifndef CARLA_OS_WIN
+            std::fprintf(stdout, "\x1b[0m");
+# endif
+#endif
             break;
+
         case CARLA_URI_MAP_ID_LOG_WARNING:
-            carla_stderr("%s", buf);
+            ret = std::vfprintf(stderr, fmt, ap);
             break;
+
         default:
             break;
         }
 
-        return std::strlen(buf);
+        return ret;
     }
 
-    // ----------------- Programs Feature ------------------------------------------------
+    // -------------------------------------------------------------------
+    // Programs Feature
 
-    static void carla_lv2_program_changed(const LV2_Programs_Handle handle, const int32_t index)
+    static void carla_lv2_program_changed(LV2_Programs_Handle handle, int32_t index)
     {
         carla_debug("CarlaLv2Client::carla_lv2_program_changed(%p, %i)", handle, index);
-        CARLA_ASSERT(handle);
+        CARLA_ASSERT(handle != nullptr);
 
-        if (! handle)
+        if (handle == nullptr)
             return;
 
-        CarlaLv2Client* const client = (CarlaLv2Client*)handle;
-        client->handleProgramChanged(index);
+        ((CarlaLv2Client*)handle)->handleProgramChanged(index);
     }
 
-    // ----------------- State Feature ---------------------------------------------------
+    // -------------------------------------------------------------------
+    // State Feature
 
-    static char* carla_lv2_state_make_path(const LV2_State_Make_Path_Handle handle, const char* const path)
+    static char* carla_lv2_state_make_path(LV2_State_Make_Path_Handle handle, const char* path)
     {
-        carla_debug("CarlaLv2Client::carla_lv2_state_make_path(%p, %p)", handle, path);
-        CARLA_ASSERT(handle);
-        CARLA_ASSERT(path);
+        carla_debug("CarlaLv2Client::carla_lv2_state_make_path(%p, \"%s\")", handle, path);
+        CARLA_ASSERT(handle != nullptr);
+        CARLA_ASSERT(path != nullptr);
 
-        if (! path)
+        if (path == nullptr)
             return nullptr;
 
         QDir dir;
@@ -802,49 +879,54 @@ public:
         return strdup(path);
     }
 
-    static char* carla_lv2_state_map_abstract_path(const LV2_State_Map_Path_Handle handle, const char* const absolute_path)
+    static char* carla_lv2_state_map_abstract_path(LV2_State_Map_Path_Handle handle, const char* absolute_path)
     {
-        carla_debug("CarlaLv2Client::carla_lv2_state_map_abstract_path(%p, %p)", handle, absolute_path);
-        CARLA_ASSERT(handle);
-        CARLA_ASSERT(absolute_path);
+        carla_debug("CarlaLv2Client::carla_lv2_state_map_abstract_path(%p, \"%s\")", handle, absolute_path);
+        CARLA_ASSERT(handle != nullptr);
+        CARLA_ASSERT(absolute_path != nullptr);
 
-        if (! absolute_path)
+        if (absolute_path == nullptr)
             return nullptr;
 
         QDir dir(absolute_path);
         return strdup(dir.canonicalPath().toUtf8().constData());
     }
 
-    static char* carla_lv2_state_map_absolute_path(const LV2_State_Map_Path_Handle handle, const char* const abstract_path)
+    static char* carla_lv2_state_map_absolute_path(LV2_State_Map_Path_Handle handle, const char* abstract_path)
     {
-        carla_debug("CarlaLv2Client::carla_lv2_state_map_absolute_path(%p, %p)", handle, abstract_path);
-        CARLA_ASSERT(handle);
-        CARLA_ASSERT(abstract_path);
+        carla_debug("CarlaLv2Client::carla_lv2_state_map_absolute_path(%p, \"%s\")", handle, abstract_path);
+        CARLA_ASSERT(handle != nullptr);
+        CARLA_ASSERT(abstract_path != nullptr);
 
-        if (! abstract_path)
+        if (abstract_path == nullptr)
             return nullptr;
 
         QDir dir(abstract_path);
         return strdup(dir.absolutePath().toUtf8().constData());
     }
 
-    // ----------------- URI-Map Feature ---------------------------------------
+    // -------------------------------------------------------------------
+    // URI-Map Feature
 
-    static uint32_t carla_lv2_uri_to_id(const LV2_URI_Map_Callback_Data data, const char* const map, const char* const uri)
+    static uint32_t carla_lv2_uri_to_id(LV2_URI_Map_Callback_Data data, const char* map, const char* uri)
     {
-        carla_debug("CarlaLv2Client::carla_lv2_uri_to_id(%p, %s, %s)", data, map, uri);
+        carla_debug("CarlaLv2Client::carla_lv2_uri_to_id(%p, \"%s\", \"%s\")", data, map, uri);
         return carla_lv2_urid_map((LV2_URID_Map_Handle*)data, uri);
+
+        // unused
+        (void)map;
     }
 
-    // ----------------- URID Feature ------------------------------------------
+    // -------------------------------------------------------------------
+    // URID Feature
 
-    static LV2_URID carla_lv2_urid_map(const LV2_URID_Map_Handle handle, const char* const uri)
+    static LV2_URID carla_lv2_urid_map(LV2_URID_Map_Handle handle, const char* uri)
     {
-        carla_debug("CarlaLv2Client::carla_lv2_urid_map(%p, %s)", handle, uri);
-        CARLA_ASSERT(handle);
-        CARLA_ASSERT(uri);
+        CARLA_ASSERT(handle != nullptr);
+        CARLA_ASSERT(uri != nullptr);
+        carla_debug("CarlaLv2Client::carla_lv2_urid_map(%p, \"%s\")", handle, uri);
 
-        if (! uri)
+        if (uri == nullptr)
             return CARLA_URI_MAP_ID_NULL;
 
         // Atom types
@@ -854,6 +936,8 @@ public:
             return CARLA_URI_MAP_ID_ATOM_CHUNK;
         if (std::strcmp(uri, LV2_ATOM__Double) == 0)
             return CARLA_URI_MAP_ID_ATOM_DOUBLE;
+        if (std::strcmp(uri, LV2_ATOM__Float) == 0)
+            return CARLA_URI_MAP_ID_ATOM_FLOAT;
         if (std::strcmp(uri, LV2_ATOM__Int) == 0)
             return CARLA_URI_MAP_ID_ATOM_INT;
         if (std::strcmp(uri, LV2_ATOM__Path) == 0)
@@ -885,24 +969,45 @@ public:
         if (std::strcmp(uri, LV2_LOG__Warning) == 0)
             return CARLA_URI_MAP_ID_LOG_WARNING;
 
+        // Time types
+        if (std::strcmp(uri, LV2_TIME__Position) == 0)
+            return CARLA_URI_MAP_ID_TIME_POSITION;
+        if (std::strcmp(uri, LV2_TIME__bar) == 0)
+            return CARLA_URI_MAP_ID_TIME_BAR;
+        if (std::strcmp(uri, LV2_TIME__barBeat) == 0)
+            return CARLA_URI_MAP_ID_TIME_BAR_BEAT;
+        if (std::strcmp(uri, LV2_TIME__beat) == 0)
+            return CARLA_URI_MAP_ID_TIME_BEAT;
+        if (std::strcmp(uri, LV2_TIME__beatUnit) == 0)
+            return CARLA_URI_MAP_ID_TIME_BEAT_UNIT;
+        if (std::strcmp(uri, LV2_TIME__beatsPerBar) == 0)
+            return CARLA_URI_MAP_ID_TIME_BEATS_PER_BAR;
+        if (std::strcmp(uri, LV2_TIME__beatsPerMinute) == 0)
+            return CARLA_URI_MAP_ID_TIME_BEATS_PER_MINUTE;
+        if (std::strcmp(uri, LV2_TIME__frame) == 0)
+            return CARLA_URI_MAP_ID_TIME_FRAME;
+        if (std::strcmp(uri, LV2_TIME__framesPerSecond) == 0)
+            return CARLA_URI_MAP_ID_TIME_FRAMES_PER_SECOND;
+        if (std::strcmp(uri, LV2_TIME__speed) == 0)
+            return CARLA_URI_MAP_ID_TIME_SPEED;
+
         // Others
         if (std::strcmp(uri, LV2_MIDI__MidiEvent) == 0)
             return CARLA_URI_MAP_ID_MIDI_EVENT;
         if (std::strcmp(uri, LV2_PARAMETERS__sampleRate) == 0)
             return CARLA_URI_MAP_ID_PARAM_SAMPLE_RATE;
 
-        if (! handle)
+        if (handle == nullptr)
             return CARLA_URI_MAP_ID_NULL;
 
         // Custom types
-        CarlaLv2Client* const client = (CarlaLv2Client*)handle;
-        return client->getCustomURID(uri);
+        return ((CarlaLv2Client*)handle)->getCustomURID(uri);
     }
 
-    static const char* carla_lv2_urid_unmap(const LV2_URID_Map_Handle handle, const LV2_URID urid)
+    static const char* carla_lv2_urid_unmap(LV2_URID_Map_Handle handle, LV2_URID urid)
     {
         carla_debug("CarlaLv2Client::carla_lv2_urid_unmap(%p, %i)", handle, urid);
-        CARLA_ASSERT(handle);
+        CARLA_ASSERT(handle != nullptr);
         CARLA_ASSERT(urid > CARLA_URI_MAP_ID_NULL);
 
         if (urid == CARLA_URI_MAP_ID_NULL)
@@ -915,6 +1020,8 @@ public:
             return LV2_ATOM__Chunk;
         if (urid == CARLA_URI_MAP_ID_ATOM_DOUBLE)
             return LV2_ATOM__Double;
+        if (urid == CARLA_URI_MAP_ID_ATOM_FLOAT)
+            return LV2_ATOM__Float;
         if (urid == CARLA_URI_MAP_ID_ATOM_INT)
             return LV2_ATOM__Int;
         if (urid == CARLA_URI_MAP_ID_ATOM_PATH)
@@ -946,76 +1053,84 @@ public:
         if (urid == CARLA_URI_MAP_ID_LOG_WARNING)
             return LV2_LOG__Warning;
 
+        // Time types
+        if (urid == CARLA_URI_MAP_ID_TIME_POSITION)
+            return LV2_TIME__Position;
+        if (urid == CARLA_URI_MAP_ID_TIME_BAR)
+            return LV2_TIME__bar;
+        if (urid == CARLA_URI_MAP_ID_TIME_BAR_BEAT)
+            return LV2_TIME__barBeat;
+        if (urid == CARLA_URI_MAP_ID_TIME_BEAT)
+            return LV2_TIME__beat;
+        if (urid == CARLA_URI_MAP_ID_TIME_BEAT_UNIT)
+            return LV2_TIME__beatUnit;
+        if (urid == CARLA_URI_MAP_ID_TIME_BEATS_PER_BAR)
+            return LV2_TIME__beatsPerBar;
+        if (urid == CARLA_URI_MAP_ID_TIME_BEATS_PER_MINUTE)
+            return LV2_TIME__beatsPerMinute;
+        if (urid == CARLA_URI_MAP_ID_TIME_FRAME)
+            return LV2_TIME__frame;
+        if (urid == CARLA_URI_MAP_ID_TIME_FRAMES_PER_SECOND)
+            return LV2_TIME__framesPerSecond;
+        if (urid == CARLA_URI_MAP_ID_TIME_SPEED)
+            return LV2_TIME__speed;
+
         // Others
         if (urid == CARLA_URI_MAP_ID_MIDI_EVENT)
             return LV2_MIDI__MidiEvent;
         if (urid == CARLA_URI_MAP_ID_PARAM_SAMPLE_RATE)
             return LV2_PARAMETERS__sampleRate;
 
-        if (! handle)
+        if (handle == nullptr)
             return nullptr;
 
         // Custom types
-        CarlaLv2Client* const client = (CarlaLv2Client*)handle;
-        return client->getCustomURIString(urid);
+        return ((CarlaLv2Client*)handle)->getCustomURIString(urid);
     }
 
-    // ----------------- UI Port-Map Feature ---------------------------------------------
+    // -------------------------------------------------------------------
+    // UI Port-Map Feature
 
-    static uint32_t carla_lv2_ui_port_map(const LV2UI_Feature_Handle handle, const char* const symbol)
+    static uint32_t carla_lv2_ui_port_map(LV2UI_Feature_Handle handle, const char* symbol)
     {
-        carla_debug("CarlaLv2Client::carla_lv2_ui_port_map(%p, %s)", handle, symbol);
+        carla_debug("CarlaLv2Client::carla_lv2_ui_port_map(%p, \"%s\")", handle, symbol);
         CARLA_ASSERT(handle);
 
-        if (! handle)
+        if (handle == nullptr)
             return LV2UI_INVALID_PORT_INDEX;
 
-        CarlaLv2Client* const client = (CarlaLv2Client*)handle;
-        return client->handleUiPortMap(symbol);
+        return ((CarlaLv2Client*)handle)->handleUiPortMap(symbol);
     }
 
+    // -------------------------------------------------------------------
+    // UI Resize Feature
 
-    // ----------------- UI Resize Feature -------------------------------------
-
-    static int carla_lv2_ui_resize(const LV2UI_Feature_Handle handle, const int width, const int height)
+    static int carla_lv2_ui_resize(LV2UI_Feature_Handle handle, int width, int height)
     {
         carla_debug("CarlaLv2Client::carla_lv2_ui_resize(%p, %i, %i)", handle, width, height);
-        CARLA_ASSERT(handle);
+        CARLA_ASSERT(handle != nullptr);
 
-        if (! handle)
+        if (handle == nullptr)
             return 1;
 
-        CarlaLv2Client* const client = (CarlaLv2Client*)handle;
-        return client->handleUiResize(width, height);
+        return ((CarlaLv2Client*)handle)->handleUiResize(width, height);
     }
 
-    // ----------------- UI Extension ------------------------------------------
+    // -------------------------------------------------------------------
+    // UI Extension
 
-    static void carla_lv2_ui_write_function(const LV2UI_Controller controller, const uint32_t port_index, const uint32_t buffer_size, const uint32_t format, const void* const buffer)
+    static void carla_lv2_ui_write_function(LV2UI_Controller controller, uint32_t port_index, uint32_t buffer_size, uint32_t format, const void* buffer)
     {
+        CARLA_ASSERT(controller != nullptr);
         carla_debug("CarlaLv2Client::carla_lv2_ui_write_function(%p, %i, %i, %i, %p)", controller, port_index, buffer_size, format, buffer);
-        CARLA_ASSERT(controller);
 
-        if (! controller)
+        if (controller == nullptr)
             return;
 
-        CarlaLv2Client* const client = (CarlaLv2Client*)controller;
-        client->handleUiWrite(port_index, buffer_size, format, buffer);
+        ((CarlaLv2Client*)controller)->handleUiWrite(port_index, buffer_size, format, buffer);
     }
 
-private:
-    LV2UI_Handle handle;
-    LV2UI_Widget widget;
-    const LV2UI_Descriptor* descriptor;
-    LV2_Feature* features[kFeatureCount+1];
-
-    const LV2_RDF_Descriptor* rdf_descriptor;
-    const LV2_RDF_UI* rdf_ui_descriptor;
-
-    const LV2_Programs_UI_Interface* programs;
-
-    bool m_resizable;
-    std::vector<const char*> customURIDs;
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaLv2Client)
 };
 
 #define lv2ClientPtr ((CarlaLv2Client*)kClient)
@@ -1080,7 +1195,7 @@ int main(int argc, char* argv[])
     const char* uiURI     = argv[3];
     const char* uiTitle   = argv[4];
 
-    const bool useOsc = std::strcmp(oscUrl, "null");
+    const bool useOsc(std::strcmp(oscUrl, "null") != 0);
 
     // try to get sampleRate value
     if (const char* const sampleRateStr = getenv("CARLA_SAMPLE_RATE"))
@@ -1103,7 +1218,7 @@ int main(int argc, char* argv[])
     }
     else
     {
-        qCritical("Failed to load LV2 UI");
+        carla_stderr("Failed to load LV2 UI");
         ret = 1;
     }
 

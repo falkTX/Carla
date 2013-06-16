@@ -102,14 +102,15 @@ private:
     int handleMsgProgram(CARLA_BRIDGE_OSC_HANDLE_ARGS);
     int handleMsgMidiProgram(CARLA_BRIDGE_OSC_HANDLE_ARGS);
     int handleMsgMidi(CARLA_BRIDGE_OSC_HANDLE_ARGS);
+#endif
+
     int handleMsgShow();
     int handleMsgHide();
     int handleMsgQuit();
 
-# ifdef BRIDGE_LV2
+#ifdef BRIDGE_LV2
     int handleMsgLv2AtomTransfer(CARLA_BRIDGE_OSC_HANDLE_ARGS);
     int handleMsgLv2UridMap(CARLA_BRIDGE_OSC_HANDLE_ARGS);
-# endif
 #endif
 
 #ifdef BUILD_BRIDGE_PLUGIN

@@ -429,6 +429,28 @@ int CarlaBridgeOsc::handleMsgPluginSaveNow()
     return 0;
 }
 
+int CarlaBridgeOsc::handleMsgPluginSetParameterMidiChannel(CARLA_BRIDGE_OSC_HANDLE_ARGS)
+{
+    carla_debug("CarlaBridgeOsc::handleMsgPluginSetParameterMidiChannel()");
+    CARLA_ASSERT(kClient != nullptr);
+    //CARLA_BRIDGE_OSC_CHECK_OSC_TYPES(1, "s");
+
+    // TODO
+
+    return 0;
+}
+
+int CarlaBridgeOsc::handleMsgPluginSetParameterMidiCC(CARLA_BRIDGE_OSC_HANDLE_ARGS)
+{
+    carla_debug("CarlaBridgeOsc::handleMsgPluginSetParameterMidiCC()");
+    CARLA_ASSERT(kClient != nullptr);
+    //CARLA_BRIDGE_OSC_CHECK_OSC_TYPES(1, "s");
+
+    // TODO
+
+    return 0;
+}
+
 int CarlaBridgeOsc::handleMsgPluginSetChunk(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 {
     carla_debug("CarlaBridgeOsc::handleMsgPluginSaveNow()");

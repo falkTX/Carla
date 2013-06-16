@@ -174,6 +174,8 @@ int CarlaBridgeOsc::handleMessage(const char* const path, const int argc, const 
         return handleMsgMidi(argc, argv, types);
     if (std::strcmp(method, "sample-rate") == 0)
         return 0; // unused
+#endif
+
     if (std::strcmp(method, "show") == 0)
         return handleMsgShow();
     if (std::strcmp(method, "hide") == 0)
@@ -181,13 +183,12 @@ int CarlaBridgeOsc::handleMessage(const char* const path, const int argc, const 
     if (std::strcmp(method, "quit") == 0)
         return handleMsgQuit();
 
-# ifdef BRIDGE_LV2
-    // LV2 UI methods
+#ifdef BRIDGE_LV2
+    // LV2 methods
     if (std::strcmp(method, "lv2_atom_transfer") == 0)
         return handleMsgLv2AtomTransfer(argc, argv, types);
     if (std::strcmp(method, "lv2_urid_map") == 0)
         return handleMsgLv2UridMap(argc, argv, types);
-# endif
 #endif
 
 #ifdef BUILD_BRIDGE_PLUGIN
@@ -195,9 +196,9 @@ int CarlaBridgeOsc::handleMessage(const char* const path, const int argc, const 
     if (std::strcmp(method, "plugin_save_now") == 0)
         return handleMsgPluginSaveNow();
     if (std::strcmp(method, "plugin_set_parameter_midi_channel") == 0)
-       return handleMsgPluginSetParameterMidiChannel(argv);
+       return handleMsgPluginSetParameterMidiChannel(argc, argv, types);
     if (std::strcmp(method, "plugin_set_parameter_midi_cc") == 0)
-       return handleMsgPluginSetParameterMidiCC(argv);
+       return handleMsgPluginSetParameterMidiCC(argc, argv, types);
     if (std::strcmp(method, "plugin_set_chunk") == 0)
         return handleMsgPluginSetChunk(argc, argv, types);
     if (std::strcmp(method, "plugin_set_custom_data") == 0)

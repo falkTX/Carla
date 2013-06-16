@@ -15,8 +15,6 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#ifdef BRIDGE_VST
-
 #include "CarlaBridgeClient.hpp"
 #include "CarlaBridgeToolkit.hpp"
 #include "CarlaVstUtils.hpp"
@@ -37,13 +35,13 @@ CARLA_BRIDGE_START_NAMESPACE
 uint32_t bufferSize = 512;
 double   sampleRate = 44100.0;
 
-class CarlaVstClient : public CarlaBridgeClient,
-                       public QObject
+class CarlaVstClient : public QObject,
+                       public CarlaBridgeClient
 {
 public:
     CarlaVstClient(const char* const uiTitle)
-        : CarlaBridgeClient(uiTitle),
-          QObject(nullptr)
+        : QObject(nullptr),
+          CarlaBridgeClient(uiTitle)
     {
         effect = nullptr;
 
@@ -55,7 +53,7 @@ public:
         unique1 = unique2 = rand();
     }
 
-    ~CarlaVstClient()
+    ~CarlaVstClient() override
     {
         // make client invalid
         unique2 += 1;
@@ -64,7 +62,7 @@ public:
     // ---------------------------------------------------------------------
     // ui initialization
 
-    bool uiInit(const char* binary, const char*)
+    bool uiInit(const char* binary, const char*) override
     {
         // -----------------------------------------------------------------
         // init
@@ -85,10 +83,10 @@ public:
 
         VST_Function vstFn = (VST_Function)uiLibSymbol("VSTPluginMain");
 
-        if (! vstFn)
+        if (vstFn == nullptr)
             vstFn = (VST_Function)uiLibSymbol("main");
 
-        if (! vstFn)
+        if (vstFn == nullptr)
             return false;
 
         // -----------------------------------------------------------------
@@ -152,59 +150,67 @@ public:
         return true;
     }
 
-    void uiClose()
+    void uiIdle() override
+    {
+        // TODO
+    }
+
+    void uiClose() override
     {
         CarlaBridgeClient::uiClose();
 
-        if (effect)
+        if (effect != nullptr)
         {
             effect->dispatcher(effect, effEditClose, 0, 0, nullptr, 0.0f);
             effect->dispatcher(effect, effClose, 0, 0, nullptr, 0.0f);
+            effect = nullptr;
         }
+
+        uiLibClose();
     }
 
     // ---------------------------------------------------------------------
     // ui management
 
-    void* getWidget() const
+    void* getWidget() const override
     {
         return nullptr; // VST always uses reparent
     }
 
-    bool isResizable() const
+    bool isResizable() const override
     {
         return false;
     }
 
-    bool needsReparent() const
+    bool needsReparent() const override
     {
         return true;
     }
 
     // ---------------------------------------------------------------------
-    // processing
+    // ui processing
 
-    void setParameter(const int32_t rindex, const float value)
+    void setParameter(const int32_t rindex, const float value) override
     {
-        if (effect)
+        if (effect != nullptr)
             effect->setParameter(effect, rindex, value);
     }
 
-    void setProgram(const uint32_t index)
+    void setProgram(const uint32_t index) override
     {
-        if (effect)
+        if (effect != nullptr)
             effect->dispatcher(effect, effSetProgram, 0, index, nullptr, 0.0f);
     }
 
-    void setMidiProgram(const uint32_t, const uint32_t)
+    void setMidiProgram(const uint32_t, const uint32_t) override
     {
     }
 
-    void noteOn(const uint8_t, const uint8_t, const uint8_t)
+    void noteOn(const uint8_t, const uint8_t, const uint8_t) override
     {
     }
 
-    void noteOff(const uint8_t, const uint8_t)
+    void noteOff(const uint8_t, const uint8_t) override
     {
     }
 
@@ -586,6 +592,3 @@ int main(int argc, char* argv[])
 
     return ret;
 }
-
-#endif // BRIDGE_VST
-

@@ -41,6 +41,7 @@ public:
     // ui initialization
 
     virtual bool uiInit(const char* const, const char* const);
+    virtual void uiIdle() {}
     virtual void uiClose();
 
     // ---------------------------------------------------------------------

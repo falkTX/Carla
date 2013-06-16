@@ -205,6 +205,7 @@ protected:
             gtk_window_get_size(GTK_WINDOW(fWindow), &fLastWidth, &fLastHeight);
         }
 
+        kClient->uiIdle();
         return kClient->oscIdle();
     }
 

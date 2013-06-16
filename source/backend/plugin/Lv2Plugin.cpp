@@ -2952,15 +2952,10 @@ public:
                         break;
 
                     if (ev->body.type == CARLA_URI_MAP_ID_MIDI_EVENT && fEventsOut.ctrl->port != nullptr)
-                    {
                         fEventsOut.ctrl->port->writeMidiEvent(ev->time.frames, data, ev->body.size);
-                    }
-                    else if (ev->body.type == CARLA_URI_MAP_ID_ATOM_BLANK)
-                    {
-                        carla_debug("Event OUTPUT message TO BE SENT TO UI, type blank");
 
+                    else if (ev->body.type == CARLA_URI_MAP_ID_ATOM_BLANK)
                         fAtomQueueOut.put(rindex, &ev->body);
-                    }
 
                     lv2_atom_buffer_increment(&iter);
                 }
@@ -3816,7 +3811,7 @@ protected:
             if (buffer == nullptr || bufferSize != sizeof(float))
                 return;
 
-            float value = *(float*)buffer;
+            const float value(*(const float*)buffer);
 
             for (uint32_t i=0; i < kData->param.count; ++i)
             {
@@ -3830,9 +3825,10 @@ protected:
         }
         else if (format == CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM || format == CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT)
         {
+            CARLA_ASSERT(bufferSize != 0);
             CARLA_ASSERT(buffer != nullptr);
 
-            if (buffer == nullptr)
+            if (bufferSize == 0 || buffer == nullptr)
                 return;
 
             fAtomQueueIn.put(rindex, (const LV2_Atom*)buffer);
