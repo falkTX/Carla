@@ -371,3 +371,5 @@ CarlaBridgeToolkit* CarlaBridgeToolkit::createNew(CarlaBridgeClient* const clien
 }
 
 CARLA_BRIDGE_END_NAMESPACE
+
+#include "resources.cpp"
