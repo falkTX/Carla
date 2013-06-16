@@ -17,7 +17,7 @@
 
 #include "CarlaBridgeClient.hpp"
 #include "CarlaBridgeToolkit.hpp"
-//#include "CarlaStyle.hpp"
+#include "CarlaStyle.hpp"
 
 #include <QtCore/QSettings>
 #include <QtCore/QThread>
@@ -69,56 +69,52 @@ static char* qargv[0] = {};
 
 // -------------------------------------------------------------------------
 
-class CarlaBridgeToolkitQt: public CarlaBridgeToolkit,
-                            public QObject
+class CarlaBridgeToolkitQt: public QObject,
+                            public CarlaBridgeToolkit
 {
+      Q_OBJECT
+
 public:
     CarlaBridgeToolkitQt(CarlaBridgeClient* const client, const char* const uiTitle)
-        : CarlaBridgeToolkit(client, uiTitle),
-          QObject(nullptr)
+        : QObject(nullptr),
+          CarlaBridgeToolkit(client, uiTitle),
+          fApp(nullptr),
+          fWindow(nullptr),
+#ifdef BRIDGE_CONTAINER
+          fEmbedContainer(nullptr),
+#endif
+          fMsgTimer(0)
     {
         carla_debug("CarlaBridgeToolkitQt::CarlaBridgeToolkitQt(%p, \"%s\")", client, uiTitle);
 
-        app = nullptr;
-        window = nullptr;
-
-        msgTimer = 0;
-
-        needsResize = false;
-        nextWidth   = 0;
-        nextHeight  = 0;
-
-#ifdef BRIDGE_CONTAINER
-        embedContainer = nullptr;
-#endif
+        connect(this, SIGNAL(setSizeSafeSignal(int,int)), SLOT(setSizeSafeSlot(int,int)));
     }
 
     ~CarlaBridgeToolkitQt() override
     {
-        CARLA_ASSERT(! app);
-        CARLA_ASSERT(! window);
-        CARLA_ASSERT(! msgTimer);
+        CARLA_ASSERT(fApp == nullptr);
+        CARLA_ASSERT(fWindow == nullptr);
+        CARLA_ASSERT(fMsgTimer == 0);
         carla_debug("CarlaBridgeToolkitQt::~CarlaBridgeToolkitQt()");
     }
 
     void init() override
     {
-        CARLA_ASSERT(! app);
-        CARLA_ASSERT(! window);
-        CARLA_ASSERT(! msgTimer);
+        CARLA_ASSERT(fApp == nullptr);
+        CARLA_ASSERT(fWindow == nullptr);
+        CARLA_ASSERT(fMsgTimer == 0);
         carla_debug("CarlaBridgeToolkitQt::init()");
 
-        app = new QApplication(qargc, qargv);
+        fApp = new QApplication(qargc, qargv);
 
-#if 0
         {
             QSettings settings("falkTX", "Carla");
 
             if (settings.value("Main/UseProTheme", true).toBool())
             {
                 CarlaStyle* const style(new CarlaStyle());
-                app->setStyle(style);
-                style->ready(app);
+                fApp->setStyle(style);
+                style->ready(fApp);
 
                 QString color(settings.value("Main/ProThemeColor", "Black").toString());
 
@@ -128,39 +124,36 @@ public:
                     style->setColorScheme(CarlaStyle::COLOR_BLACK);
             }
         }
-#endif
 
-        window = new QMainWindow(nullptr);
-        window->resize(30, 30);
-        window->hide();
+        fWindow = new QMainWindow(nullptr);
+        fWindow->resize(30, 30);
+        fWindow->hide();
     }
 
     void exec(const bool showGui) override
     {
-        CARLA_ASSERT(app);
-        CARLA_ASSERT(window);
-        CARLA_ASSERT(kClient);
+        CARLA_ASSERT(kClient != nullptr);
+        CARLA_ASSERT(fApp != nullptr);
+        CARLA_ASSERT(fWindow != nullptr);
         carla_debug("CarlaBridgeToolkitQt::exec(%s)", bool2str(showGui));
 
 #if defined(BRIDGE_QT4) || defined(BRIDGE_QT5)
-        QWidget* const widget = (QWidget*)kClient->getWidget();
+        QWidget* const widget((QWidget*)kClient->getWidget());
 
-        window->setCentralWidget(widget);
-        window->adjustSize();
+        fWindow->setCentralWidget(widget);
+        fWindow->adjustSize();
 
-        widget->setParent(window);
+        widget->setParent(fWindow);
         widget->show();
 #endif
 
         if (! kClient->isResizable())
         {
-            window->setFixedSize(window->width(), window->height());
+            fWindow->setFixedSize(fWindow->width(), fWindow->height());
 #ifdef Q_OS_WIN
-            window->setWindowFlags(window->windowFlags() | Qt::MSWindowsFixedSizeDialogHint);
+            fWindow->setWindowFlags(fWindow->windowFlags() | Qt::MSWindowsFixedSizeDialogHint);
 #endif
         }
-
-        window->setWindowTitle(kUiTitle);
 
         {
             QSettings settings("falkTX", appName);
@@ -168,188 +161,200 @@ public:
             if (settings.contains(QString("%1/pos_x").arg(kUiTitle)))
             {
                 bool hasX, hasY;
-                int posX = settings.value(QString("%1/pos_x").arg(kUiTitle), window->x()).toInt(&hasX);
-                int posY = settings.value(QString("%1/pos_y").arg(kUiTitle), window->y()).toInt(&hasY);
+                const int posX(settings.value(QString("%1/pos_x").arg(kUiTitle), fWindow->x()).toInt(&hasX));
+                const int posY(settings.value(QString("%1/pos_y").arg(kUiTitle), fWindow->y()).toInt(&hasY));
 
                 if (hasX && hasY)
-                    window->move(posX, posY);
+                    fWindow->move(posX, posY);
 
                 if (kClient->isResizable())
                 {
                     bool hasWidth, hasHeight;
-                    int width  = settings.value(QString("%1/width").arg(kUiTitle), window->width()).toInt(&hasWidth);
-                    int height = settings.value(QString("%1/height").arg(kUiTitle), window->height()).toInt(&hasHeight);
+                    const int width(settings.value(QString("%1/width").arg(kUiTitle), fWindow->width()).toInt(&hasWidth));
+                    const int height(settings.value(QString("%1/height").arg(kUiTitle), fWindow->height()).toInt(&hasHeight));
 
                     if (hasWidth && hasHeight)
-                        window->resize(width, height);
+                        fWindow->resize(width, height);
                 }
             }
+
+            if (settings.value("Engine/UIsAlwaysOnTop", true).toBool())
+                fWindow->setWindowFlags(fWindow->windowFlags() | Qt::WindowStaysOnTopHint);
         }
+
+        fWindow->setWindowTitle(kUiTitle);
 
         if (showGui)
             show();
         else
             kClient->sendOscUpdate();
 
-        // Timer
-        msgTimer = startTimer(50);
+        fMsgTimer = startTimer(50);
 
         // First idle
         handleTimeout();
 
         // Main loop
-        app->exec();
+        fApp->exec();
     }
 
     void quit() override
     {
-        CARLA_ASSERT(app);
+        CARLA_ASSERT(kClient != nullptr);
+        CARLA_ASSERT(fApp != nullptr);
+        CARLA_ASSERT(fWindow != nullptr);
         carla_debug("CarlaBridgeToolkitQt::quit()");
 
-        if (msgTimer != 0)
+        if (fMsgTimer != 0)
         {
-            killTimer(msgTimer);
-            msgTimer = 0;
+            killTimer(fMsgTimer);
+            fMsgTimer = 0;
         }
 
-        if (window != nullptr)
+        if (fWindow != nullptr)
         {
             QSettings settings("falkTX", appName);
-            settings.setValue(QString("%1/pos_x").arg(kUiTitle), window->x());
-            settings.setValue(QString("%1/pos_y").arg(kUiTitle), window->y());
-            settings.setValue(QString("%1/width").arg(kUiTitle), window->width());
-            settings.setValue(QString("%1/height").arg(kUiTitle), window->height());
+            settings.setValue(QString("%1/pos_x").arg(kUiTitle), fWindow->x());
+            settings.setValue(QString("%1/pos_y").arg(kUiTitle), fWindow->y());
+            settings.setValue(QString("%1/width").arg(kUiTitle), fWindow->width());
+            settings.setValue(QString("%1/height").arg(kUiTitle), fWindow->height());
             settings.sync();
 
-            window->close();
-        }
+            fWindow->close();
 
 #ifdef BRIDGE_CONTAINER
-        if (embedContainer != nullptr)
-        {
-            embedContainer->close();
+            if (fEmbedContainer != nullptr)
+            {
+                fEmbedContainer->close();
 
-            delete embedContainer;
-            embedContainer = nullptr;
-        }
+                delete fEmbedContainer;
+                fEmbedContainer = nullptr;
+            }
 #endif
 
-        if (window != nullptr)
-        {
-            delete window;
-            window = nullptr;
+            delete fWindow;
+            fWindow = nullptr;
         }
 
-        if (app)
+        if (fApp != nullptr)
         {
-            if (! app->closingDown())
-                app->quit();
+            if (! fApp->closingDown())
+                fApp->quit();
 
-            delete app;
-            app = nullptr;
+            delete fApp;
+            fApp = nullptr;
         }
     }
 
     void show() override
     {
-        CARLA_ASSERT(window);
+        CARLA_ASSERT(fWindow != nullptr);
         carla_debug("CarlaBridgeToolkitQt::show()");
 
-        if (window)
-            window->show();
+        if (fWindow != nullptr)
+            fWindow->show();
     }
 
     void hide() override
     {
-        CARLA_ASSERT(window);
+        CARLA_ASSERT(fWindow != nullptr);
         carla_debug("CarlaBridgeToolkitQt::hide()");
 
-        if (window)
-            window->hide();
+        if (fWindow != nullptr)
+            fWindow->hide();
     }
 
     void resize(const int width, const int height) override
     {
-        CARLA_ASSERT(window);
+        CARLA_ASSERT_INT(width > 0, width);
+        CARLA_ASSERT_INT(height > 0, height);
         carla_debug("CarlaBridgeToolkitQt::resize(%i, %i)", width, height);
 
-        if (app->thread() != QThread::currentThread())
-        {
-            nextWidth  = width;
-            nextHeight  = height;
-            needsResize = true;
+        if (width <= 0)
             return;
-        }
+        if (height <= 0)
+            return;
 
-        if (window)
-            window->setFixedSize(width, height);
-
-#ifdef BRIDGE_CONTAINER
-        if (embedContainer)
-            embedContainer->setFixedSize(width, height);
-#endif
+        emit setSizeSafeSignal(width, height);
     }
 
 #ifdef BRIDGE_CONTAINER
     void* getContainerId()
     {
-        CARLA_ASSERT(window != nullptr);
+        CARLA_ASSERT(fWindow != nullptr);
         carla_debug("CarlaBridgeToolkitQt::getContainerId()");
 
-        if (embedContainer == nullptr)
+        if (fEmbedContainer == nullptr)
         {
-            embedContainer = new QEmbedContainer(window);
+            fEmbedContainer = new QEmbedContainer(fWindow);
 
-            window->setCentralWidget(embedContainer);
-            window->adjustSize();
+            fWindow->setCentralWidget(fEmbedContainer);
+            fWindow->adjustSize();
 
-            embedContainer->setParent(window);
-            embedContainer->show();
+            fEmbedContainer->setParent(fWindow);
+            fEmbedContainer->show();
         }
 
-        return (void*)embedContainer->winId();
+        return (void*)fEmbedContainer->winId();
     }
 #endif
 
 protected:
-    QApplication* app;
-    QMainWindow* window;
-    int msgTimer;
-
-    bool needsResize;
-    int nextWidth, nextHeight;
+    QApplication* fApp;
+    QMainWindow* fWindow;
 
 #ifdef BRIDGE_CONTAINER
-    QEmbedContainer* embedContainer;
+    QEmbedContainer* fEmbedContainer;
 #endif
+
+    int fMsgTimer;
 
     void handleTimeout()
     {
-        if (! kClient)
+        if (kClient == nullptr)
             return;
-
-        if (needsResize)
-        {
-            kClient->toolkitResize(nextWidth, nextHeight);
-            needsResize = false;
-        }
 
         if (kClient->isOscControlRegistered() && ! kClient->oscIdle())
         {
-            killTimer(msgTimer);
-            msgTimer = 0;
+            killTimer(fMsgTimer);
+            fMsgTimer = 0;
         }
     }
 
 private:
     void timerEvent(QTimerEvent* const event)
     {
-        if (event->timerId() == msgTimer)
+        if (event->timerId() == fMsgTimer)
             handleTimeout();
 
         QObject::timerEvent(event);
     }
+
+signals:
+    void setSizeSafeSignal(int, int);
+
+private slots:
+    void setSizeSafeSlot(int width, int height)
+    {
+        CARLA_ASSERT(kClient != nullptr && kClient->isResizable());
+        CARLA_ASSERT(fWindow != nullptr);
+
+        if (kClient == nullptr || fWindow == nullptr)
+            return;
+
+        if (kClient->isResizable())
+            fWindow->resize(width, height);
+        else
+            fWindow->setFixedSize(width, height);
+
+#ifdef BRIDGE_CONTAINER
+        if (fEmbedContainer != nullptr)
+            fEmbedContainer->setFixedSize(width, height);
+#endif
+    }
 };
+
+#include "CarlaBridgeToolkitQt.moc"
 
 // -------------------------------------------------------------------------
 

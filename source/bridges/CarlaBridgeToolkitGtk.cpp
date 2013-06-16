@@ -38,7 +38,9 @@ static const char* const appName = "Carla-UIs";
 #endif
 
 static int    gargc = 0;
-static char** gargv = {};
+static char** gargv = nullptr;
+
+// QSettings settings("falkTX", appName);
 
 // -------------------------------------------------------------------------
 
@@ -46,8 +48,7 @@ class CarlaToolkitGtk : public CarlaBridgeToolkit
 {
 public:
     CarlaToolkitGtk(CarlaBridgeClient* const client, const char* const uiTitle)
-        : CarlaBridgeToolkit(client, uiTitle),
-          settings("falkTX", appName)
+        : CarlaBridgeToolkit(client, uiTitle)
     {
         carla_debug("CarlaToolkitGtk::CarlaToolkitGtk(%p, \"%s\")", client, uiTitle);
 
@@ -182,7 +183,6 @@ public:
 
 protected:
     GtkWidget* window;
-    QSettings settings;
 
     gint lastX, lastY, lastWidth, lastHeight;
 

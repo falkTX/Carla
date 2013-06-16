@@ -16,7 +16,6 @@
  */
 
 #include "CarlaBridgeToolkit.hpp"
-#include "CarlaUtils.hpp"
 
 CARLA_BRIDGE_START_NAMESPACE
 

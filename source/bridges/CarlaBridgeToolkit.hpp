@@ -27,13 +27,6 @@ CARLA_BRIDGE_START_NAMESPACE
 } // Fix editor indentation
 #endif
 
-/*!
- * @defgroup CarlaBridgeToolkit Carla Bridge Toolkit
- *
- * The Carla Bridge Toolkit.
- * @{
- */
-
 class CarlaBridgeToolkit
 {
 public:
@@ -58,8 +51,6 @@ protected:
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaBridgeToolkit)
 };
-
-/**@}*/
 
 CARLA_BRIDGE_END_NAMESPACE
 

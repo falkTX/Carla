@@ -21,6 +21,7 @@ endif
 # Common
 
 LINK_FLAGS += $(shell pkg-config --libs liblo)
+LINK_FLAGS += -lpthread
 
 ifeq ($(HAVE_QT4),true)
 LINK_FLAGS += $(shell pkg-config --libs QtCore QtGui QtXml)

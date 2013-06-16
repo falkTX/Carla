@@ -20,9 +20,6 @@
 #include "CarlaMIDI.h"
 #include "RtList.hpp"
 
-// TODO - remove
-#include <vector>
-
 #include <QtCore/QDir>
 
 extern "C" {
@@ -34,11 +31,14 @@ extern "C" {
 
 Lv2WorldClass gLv2World;
 
+// -----------------------------------------------------
+
 CARLA_BRIDGE_START_NAMESPACE
 
-// -------------------------------------------------------------------------
+#if 0
+}
+#endif
 
-// fake values
 static uint32_t gBufferSize = 1024;
 static double   gSampleRate = 44100.0;
 

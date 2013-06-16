@@ -19,20 +19,16 @@
 #define __CARLA_BRIDGE_CLIENT_HPP__
 
 #include "CarlaBridgeOsc.hpp"
-#include "CarlaBridgeToolkit.hpp"
+
+#ifdef BUILD_BRIDGE_UI
+# include "CarlaBridgeToolkit.hpp"
+#endif
 
 CARLA_BRIDGE_START_NAMESPACE
 
 #if 0
 } // Fix editor indentation
 #endif
-
-/*!
- * @defgroup CarlaBridgeClient Carla Bridge Client
- *
- * The Carla Bridge Client.
- * @{
- */
 
 class CarlaBridgeClient
 {
@@ -53,6 +49,24 @@ public:
     virtual void* getWidget() const = 0;
     virtual bool isResizable() const = 0;
     virtual bool needsReparent() const = 0;
+
+    // ---------------------------------------------------------------------
+    // ui processing
+
+    virtual void setParameter(const int32_t rindex, const float value) = 0;
+    virtual void setProgram(const uint32_t index) = 0;
+    virtual void setMidiProgram(const uint32_t bank, const uint32_t program) = 0;
+    virtual void noteOn(const uint8_t channel, const uint8_t note, const uint8_t velo) = 0;
+    virtual void noteOff(const uint8_t channel, const uint8_t note) = 0;
+
+    // ---------------------------------------------------------------------
+    // ui toolkit
+
+    void toolkitShow();
+    void toolkitHide();
+    void toolkitResize(const int width, const int height);
+    void toolkitExec(const bool showGui);
+    void toolkitQuit();
 #endif
 
 #ifdef BUILD_BRIDGE_PLUGIN
@@ -62,18 +76,6 @@ public:
     virtual void saveNow() = 0;
     virtual void setCustomData(const char* const type, const char* const key, const char* const value) = 0;
     virtual void setChunkData(const char* const filePath) = 0;
-#endif
-
-    // ---------------------------------------------------------------------
-    // processing
-
-    virtual void setParameter(const int32_t rindex, const float value) = 0;
-
-#ifndef BUILD_BRIDGE_PLUGIN
-    virtual void setProgram(const uint32_t index) = 0;
-    virtual void setMidiProgram(const uint32_t bank, const uint32_t program) = 0;
-    virtual void noteOn(const uint8_t channel, const uint8_t note, const uint8_t velo) = 0;
-    virtual void noteOff(const uint8_t channel, const uint8_t note) = 0;
 #endif
 
     // ---------------------------------------------------------------------
@@ -89,17 +91,6 @@ public:
 #ifdef BUILD_BRIDGE_PLUGIN
     void sendOscBridgeUpdate();
     void sendOscBridgeError(const char* const error);
-#endif
-
-#ifdef BUILD_BRIDGE_UI
-    // ---------------------------------------------------------------------
-    // toolkit
-
-    void toolkitShow();
-    void toolkitHide();
-    void toolkitResize(const int width, const int height);
-    void toolkitExec(const bool showGui);
-    void toolkitQuit();
 #endif
 
     // ---------------------------------------------------------------------
@@ -142,7 +133,10 @@ private:
         UI(CarlaBridgeToolkit* const toolkit_)
             : toolkit(toolkit_),
               lib(nullptr),
-              quit(false) {}
+              quit(false)
+        {
+            CARLA_ASSERT(toolkit != nullptr);
+        }
 
         ~UI()
         {
@@ -161,6 +155,12 @@ private:
             toolkit->quit();
         }
 
+# ifdef CARLA_PROPER_CPP11_SUPPORT
+        UI() = delete;
+        UI(UI&) = delete;
+        UI(const UI&) = delete;
+# endif
+
     } fUI;
 #else
     friend class CarlaPluginClient;
@@ -170,8 +170,6 @@ private:
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaBridgeClient)
 };
-
-/**@}*/
 
 CARLA_BRIDGE_END_NAMESPACE
 

@@ -74,11 +74,16 @@ CarlaPluginGui::~CarlaPluginGui()
     if (fOptions.parented)
     {
         CARLA_ASSERT(fContainer != nullptr);
+
+        if (fContainer != nullptr)
+        {
 #ifdef Q_WS_X11
-        delete (QX11EmbedContainer*)fContainer;
+            delete (QX11EmbedContainer*)fContainer;
 #else
-        delete fContainer;
+            delete fContainer;
 #endif
+            fContainer = nullptr;
+        }
     }
 }
 

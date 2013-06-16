@@ -18,7 +18,6 @@
 #include "CarlaBridgeClient.hpp"
 
 #ifdef BUILD_BRIDGE_UI
-# include "CarlaBridgeToolkit.hpp"
 # include "CarlaLibUtils.hpp"
 #endif
 
@@ -54,16 +53,9 @@ bool CarlaBridgeClient::uiInit(const char* const, const char* const)
 {
     carla_debug("CarlaBridgeClient::uiInit()");
 
-    // Test for single init
-    {
-        static bool initiated = false;
-        CARLA_ASSERT(! initiated);
-        initiated = true;
-    }
-
     fUI.init();
 
-    return false;
+    return true;
 }
 
 void CarlaBridgeClient::uiClose()
@@ -75,6 +67,44 @@ void CarlaBridgeClient::uiClose()
 
     fUI.close();
 }
+
+// ---------------------------------------------------------------------
+// ui toolkit
+
+void CarlaBridgeClient::toolkitShow()
+{
+    carla_debug("CarlaBridgeClient::toolkitShow()");
+
+    fUI.toolkit->show();
+}
+
+void CarlaBridgeClient::toolkitHide()
+{
+    carla_debug("CarlaBridgeClient::toolkitHide()");
+
+    fUI.toolkit->hide();
+}
+
+void CarlaBridgeClient::toolkitResize(const int width, const int height)
+{
+    carla_debug("CarlaBridgeClient::toolkitResize(%i, %i)", width, height);
+
+    fUI.toolkit->resize(width, height);
+}
+
+void CarlaBridgeClient::toolkitExec(const bool showGui)
+{
+    carla_debug("CarlaBridgeClient::toolkitExec(%s)", bool2str(showGui));
+
+    fUI.toolkit->exec(showGui);
+}
+
+void CarlaBridgeClient::toolkitQuit()
+{
+    carla_debug("CarlaBridgeClient::toolkitQuit()");
+
+    fUI.close();
+}
 #endif
 
 // ---------------------------------------------------------------------
@@ -82,6 +112,7 @@ void CarlaBridgeClient::uiClose()
 
 void CarlaBridgeClient::oscInit(const char* const url)
 {
+    CARLA_ASSERT(fOscData == nullptr);
     carla_debug("CarlaBridgeClient::oscInit(\"%s\")", url);
 
     kOsc.init(url);
@@ -141,46 +172,6 @@ void CarlaBridgeClient::sendOscBridgeError(const char* const error)
 
     if (fOscData != nullptr && fOscData->target != nullptr && error != nullptr)
         osc_send_bridge_error(fOscData, error);
-}
-#endif
-
-#ifdef BUILD_BRIDGE_UI
-// ---------------------------------------------------------------------
-// toolkit
-
-void CarlaBridgeClient::toolkitShow()
-{
-    carla_debug("CarlaBridgeClient::toolkitShow()");
-
-    fUI.toolkit->show();
-}
-
-void CarlaBridgeClient::toolkitHide()
-{
-    carla_debug("CarlaBridgeClient::toolkitHide()");
-
-    fUI.toolkit->hide();
-}
-
-void CarlaBridgeClient::toolkitResize(const int width, const int height)
-{
-    carla_debug("CarlaBridgeClient::toolkitResize(%i, %i)", width, height);
-
-    fUI.toolkit->resize(width, height);
-}
-
-void CarlaBridgeClient::toolkitExec(const bool showGui)
-{
-    carla_debug("CarlaBridgeClient::toolkitExec(%s)", bool2str(showGui));
-
-    fUI.toolkit->exec(showGui);
-}
-
-void CarlaBridgeClient::toolkitQuit()
-{
-    carla_debug("CarlaBridgeClient::toolkitQuit()");
-
-    fUI.close();
 }
 #endif
 
@@ -265,6 +256,7 @@ void CarlaBridgeClient::sendOscLv2UridMap(const uint32_t urid, const char* const
 #ifdef BUILD_BRIDGE_UI
 void* CarlaBridgeClient::getContainerId()
 {
+    carla_debug("CarlaBridgeClient::getContainerId()");
     return fUI.toolkit->getContainerId();
 }
 
@@ -272,6 +264,7 @@ bool CarlaBridgeClient::uiLibOpen(const char* const filename)
 {
     CARLA_ASSERT(fUI.lib == nullptr);
     CARLA_ASSERT(filename != nullptr);
+    carla_debug("CarlaBridgeClient::uiLibOpen(\"%s\")", filename);
 
     fUI.lib      = lib_open(filename);
     fUI.filename = filename;
@@ -282,6 +275,7 @@ bool CarlaBridgeClient::uiLibOpen(const char* const filename)
 bool CarlaBridgeClient::uiLibClose()
 {
     CARLA_ASSERT(fUI.lib != nullptr);
+    carla_debug("CarlaBridgeClient::uiLibClose()");
 
     if (fUI.lib == nullptr)
         return false;
@@ -294,6 +288,7 @@ bool CarlaBridgeClient::uiLibClose()
 void* CarlaBridgeClient::uiLibSymbol(const char* const symbol)
 {
     CARLA_ASSERT(fUI.lib != nullptr);
+    carla_debug("CarlaBridgeClient::uiLibSymbol(\"%s\")", symbol);
 
     if (fUI.lib == nullptr)
         return nullptr;
@@ -303,6 +298,8 @@ void* CarlaBridgeClient::uiLibSymbol(const char* const symbol)
 
 const char* CarlaBridgeClient::uiLibError()
 {
+    carla_debug("CarlaBridgeClient::uiLibError()");
+
     return lib_error(fUI.filename);
 }
 #endif

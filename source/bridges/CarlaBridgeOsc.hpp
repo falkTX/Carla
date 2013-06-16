@@ -19,7 +19,6 @@
 #define __CARLA_BRIDGE_OSC_HPP__
 
 #include "CarlaBridge.hpp"
-#include "CarlaJuceUtils.hpp"
 #include "CarlaOscUtils.hpp"
 #include "CarlaString.hpp"
 
@@ -97,24 +96,26 @@ private:
 
     int handleMessage(const char* const path, const int argc, const lo_arg* const* const argv, const char* const types, const lo_message msg);
 
+#ifdef BUILD_BRIDGE_UI
     int handleMsgConfigure(CARLA_BRIDGE_OSC_HANDLE_ARGS);
     int handleMsgControl(CARLA_BRIDGE_OSC_HANDLE_ARGS);
-#ifndef BUILD_BRIDGE_PLUGIN
     int handleMsgProgram(CARLA_BRIDGE_OSC_HANDLE_ARGS);
     int handleMsgMidiProgram(CARLA_BRIDGE_OSC_HANDLE_ARGS);
     int handleMsgMidi(CARLA_BRIDGE_OSC_HANDLE_ARGS);
-#endif
     int handleMsgShow();
     int handleMsgHide();
     int handleMsgQuit();
 
-#ifdef BRIDGE_LV2
+# ifdef BRIDGE_LV2
     int handleMsgLv2AtomTransfer(CARLA_BRIDGE_OSC_HANDLE_ARGS);
     int handleMsgLv2UridMap(CARLA_BRIDGE_OSC_HANDLE_ARGS);
+# endif
 #endif
 
 #ifdef BUILD_BRIDGE_PLUGIN
     int handleMsgPluginSaveNow();
+    int handleMsgPluginSetParameterMidiChannel(CARLA_BRIDGE_OSC_HANDLE_ARGS);
+    int handleMsgPluginSetParameterMidiCC(CARLA_BRIDGE_OSC_HANDLE_ARGS);
     int handleMsgPluginSetChunk(CARLA_BRIDGE_OSC_HANDLE_ARGS);
     int handleMsgPluginSetCustomData(CARLA_BRIDGE_OSC_HANDLE_ARGS);
 #endif

@@ -8,20 +8,18 @@ include ../Makefile.mk
 
 # --------------------------------------------------------------
 
-QT_UI_FLAGS  = -I../theme
-
 ifeq ($(HAVE_QT4),true)
-QT_UI_FLAGS += $(shell pkg-config --cflags QtGui)
-QT_UI_LIBS   = $(shell pkg-config --libs QtGui)
+QT_UI_FLAGS = $(shell pkg-config --cflags QtGui)
+QT_UI_LIBS  = $(shell pkg-config --libs QtGui)
 else
-QT_UI_FLAGS += $(shell pkg-config --cflags Qt5Gui Qt5Widgets)
-QT_UI_LIBS   = $(shell pkg-config --libs Qt5Gui Qt5Widgets)
+QT_UI_FLAGS = $(shell pkg-config --cflags Qt5Gui Qt5Widgets)
+QT_UI_LIBS  = $(shell pkg-config --libs Qt5Gui Qt5Widgets)
 endif
 
 # --------------------------------------------------------------
 
 BUILD_CXX_FLAGS += -DBUILD_BRIDGE
-BUILD_CXX_FLAGS += -I. -I../backend -I../includes -I../utils
+BUILD_CXX_FLAGS += -I. -I../backend -I../includes -I../utils -I../theme
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo)
 LINK_FLAGS      += $(shell pkg-config --libs liblo)
 
@@ -37,7 +35,7 @@ endif
 # Plugin bridges
 
 BUILD_PLUGIN_FLAGS  = $(BUILD_CXX_FLAGS) -DBUILD_BRIDGE_PLUGIN
-BUILD_PLUGIN_FLAGS += -I../backend/engine -I../backend/plugin -I../libs -I../theme
+BUILD_PLUGIN_FLAGS += -I../backend/engine -I../backend/plugin -I../libs
 LINK_PLUGIN_FLAGS   = $(LINK_FLAGS) -lpthread
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
@@ -58,22 +56,22 @@ endif
 # --------------------------------------------------------------
 # Plugin bridges (POSIX)
 
-POSIX_BUILD_FLAGS   = $(BUILD_PLUGIN_FLAGS)
-POSIX_32BIT_FLAGS   = $(32BIT_FLAGS) -L/usr/lib32 -L/usr/lib/i386-linux-gnu
-POSIX_64BIT_FLAGS   = $(64BIT_FLAGS) -L/usr/lib64 -L/usr/lib/x86_64-linux-gnu
-POSIX_LINK_FLAGS    = $(LINK_PLUGIN_FLAGS) -ldl
+POSIX_BUILD_FLAGS = $(BUILD_PLUGIN_FLAGS)
+POSIX_32BIT_FLAGS = $(32BIT_FLAGS) -L/usr/lib32 -L/usr/lib/i386-linux-gnu
+POSIX_64BIT_FLAGS = $(64BIT_FLAGS) -L/usr/lib64 -L/usr/lib/x86_64-linux-gnu
+POSIX_LINK_FLAGS  = $(LINK_PLUGIN_FLAGS) -ldl
 
 ifneq ($(MACOS),true)
-POSIX_LINK_FLAGS   += -lrt
+POSIX_LINK_FLAGS += -lrt
 endif
 
 # --------------------------------------------------------------
 # Plugin bridges (Windows)
 
-WIN_BUILD_FLAGS     = $(BUILD_PLUGIN_FLAGS) -DJACKBRIDGE_EXPORT -DPTW32_STATIC_LIB -I../libs/jackbridge
-WIN_32BIT_FLAGS     = $(32BIT_FLAGS)
-WIN_64BIT_FLAGS     = $(64BIT_FLAGS)
-WIN_LINK_FLAGS      = $(LINK_PLUGIN_FLAGS) -mwindows -lwinspool -lole32 -luuid -limm32 -lshell32 -lws2_32 -L../libs
+WIN_BUILD_FLAGS = $(BUILD_PLUGIN_FLAGS) -DJACKBRIDGE_EXPORT
+WIN_32BIT_FLAGS = $(32BIT_FLAGS)
+WIN_64BIT_FLAGS = $(64BIT_FLAGS)
+WIN_LINK_FLAGS  = $(LINK_PLUGIN_FLAGS) -mwindows -lwinspool -lole32 -luuid -limm32 -lshell32 -lws2_32 -L../libs
 
 # --------------------------------------------------------------
 # Plugin bridges (Native)
@@ -85,9 +83,8 @@ DGL_LIBS = -lX11
 endif
 
 NATIVE_BUILD_FLAGS  = $(POSIX_BUILD_FLAGS)
-NATIVE_LINK_FLAGS   = $(POSIX_LINK_FLAGS)
-
 NATIVE_BUILD_FLAGS += -DWANT_NATIVE
+NATIVE_LINK_FLAGS   = $(POSIX_LINK_FLAGS)
 
 ifeq ($(HAVE_FLUIDSYNTH),true)
 NATIVE_BUILD_FLAGS += -DWANT_FLUIDSYNTH
@@ -134,8 +131,12 @@ endif
 BUILD_UI_FLAGS = $(BUILD_CXX_FLAGS) -DBUILD_BRIDGE_UI
 LINK_UI_FLAGS  = $(LINK_FLAGS) -ldl
 
-BUILD_UI_LV2_FLAGS = $(BUILD_UI_FLAGS) -DBRIDGE_LV2
-BUILD_UI_VST_FLAGS = $(BUILD_UI_FLAGS) -DBRIDGE_VST
+BUILD_UI_LV2_FLAGS  = $(BUILD_UI_FLAGS) -DBRIDGE_LV2
+BUILD_UI_VST_FLAGS  = $(BUILD_UI_FLAGS) -DBRIDGE_VST
+
+ifeq ($(CARLA_VESTIGE_HEADER),true)
+BUILD_UI_VST_FLAGS += -DVESTIGE_HEADER
+endif
 
 BUILD_UI_LV2_GTK2_FLAGS  = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_GTK2 -DBRIDGE_LV2_GTK2 $(shell pkg-config --cflags gtk+-2.0)
 LINK_UI_LV2_GTK2_FLAGS   = $(LINK_UI_FLAGS) $(shell pkg-config --libs gtk+-2.0)
@@ -150,7 +151,7 @@ BUILD_UI_LV2_QT5_FLAGS   = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_QT5 -DBRIDGE_LV2_QT5 $
 LINK_UI_LV2_QT5_FLAGS    = $(LINK_UI_FLAGS) $(shell pkg-config --libs Qt5Gui Qt5Widgets)
 
 BUILD_UI_LV2_COCOA_FLAGS = $(BUILD_UI_VST_FLAGS) -DBRIDGE_COCOA -DBRIDGE_LV2_COCOA $(QT_UI_FLAGS)
-LINK_UI_LV2_COCOA_FLAGS  = $(LINK_FLAGS) $(QT_UI_LIBS)
+LINK_UI_LV2_COCOA_FLAGS  = $(LINK_UI_FLAGS) $(QT_UI_LIBS)
 
 BUILD_UI_LV2_HWND_FLAGS  = $(BUILD_UI_VST_FLAGS) -DBRIDGE_HWND -DBRIDGE_LV2_HWND $(QT_UI_FLAGS)
 LINK_UI_LV2_HWND_FLAGS   = $(LINK_FLAGS) $(QT_UI_LIBS) -mwindows -static
@@ -159,7 +160,7 @@ BUILD_UI_LV2_X11_FLAGS   = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_X11 -DBRIDGE_LV2_X11 $
 LINK_UI_LV2_X11_FLAGS    = $(LINK_UI_FLAGS) $(QT_UI_LIBS)
 
 BUILD_UI_VST_COCOA_FLAGS = $(BUILD_UI_VST_FLAGS) -DBRIDGE_COCOA -DBRIDGE_VST_COCOA $(QT_UI_FLAGS)
-LINK_UI_VST_COCOA_FLAGS  = $(LINK_FLAGS) $(QT_UI_LIBS)
+LINK_UI_VST_COCOA_FLAGS  = $(LINK_UI_FLAGS) $(QT_UI_LIBS)
 
 BUILD_UI_VST_HWND_FLAGS  = $(BUILD_UI_VST_FLAGS) -DBRIDGE_HWND -DBRIDGE_VST_HWND $(QT_UI_FLAGS)
 LINK_UI_VST_HWND_FLAGS   = $(LINK_FLAGS) $(QT_UI_LIBS) -mwindows -static
@@ -167,23 +168,9 @@ LINK_UI_VST_HWND_FLAGS   = $(LINK_FLAGS) $(QT_UI_LIBS) -mwindows -static
 BUILD_UI_VST_X11_FLAGS   = $(BUILD_UI_VST_FLAGS) -DBRIDGE_X11 -DBRIDGE_VST_X11 $(QT_UI_FLAGS)
 LINK_UI_VST_X11_FLAGS    = $(LINK_UI_FLAGS) $(QT_UI_LIBS)
 
-ifeq ($(HAVE_QT4),true)
-BUILD_UI_LV2_QT4_FLAGS += -I../theme
-LINK_UI_LV2_QT4_FLAGS  += ../libs/theme.a
-else
-BUILD_UI_LV2_QT5_FLAGS += -I../theme
-LINK_UI_LV2_QT5_FLAGS  += ../libs/theme.a
-endif
-
-ifeq ($(CARLA_VESTIGE_HEADER),true)
-BUILD_UI_VST_COCOA_FLAGS += -DVESTIGE_HEADER
-BUILD_UI_VST_HWND_FLAGS  += -DVESTIGE_HEADER
-BUILD_UI_VST_X11_FLAGS   += -DVESTIGE_HEADER
-endif
-
 # --------------------------------------------------------------
 
-TARGETS = native
+TARGETS  = native
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
 ifeq ($(HAVE_GTK2),true)
@@ -194,9 +181,10 @@ TARGETS += ui_lv2-gtk3
 endif
 ifeq ($(HAVE_QT4),true)
 TARGETS += ui_lv2-qt4
-endif
+else
 ifeq ($(HAVE_QT5),true)
 TARGETS += ui_lv2-qt5
+endif
 endif
 TARGETS += ui_lv2-x11
 TARGETS += ui_vst-x11
@@ -236,6 +224,9 @@ win64:   carla-bridge-win64.exe
 %__vst.o: %.cpp
 	$(CXX) $< $(BUILD_UI_VST_FLAGS) -c -o $@
 
+CarlaBridgeToolkitQt.moc: CarlaBridgeToolkitQt.cpp
+	$(MOC) $< -DMOC_PARSING -o $@
+
 OBJS_UI_LV2_LIBS = \
 	../libs/lilv.a \
 	../libs/rtmempool.a
@@ -273,10 +264,10 @@ OBJS_UI_LV2_QT4 = CarlaBridgeUI-LV2__lv2-qt4.o \
 	CarlaBridgeClient__lv2.o CarlaBridgeOsc__lv2.o \
 	CarlaBridgeToolkit__lv2.o CarlaBridgeToolkitQt__lv2-qt4.o
 
-carla-bridge-lv2-qt4: $(OBJS_UI_LV2_QT4) $(OBJS_UI_LV2_LIBS)
+carla-bridge-lv2-qt4: $(OBJS_UI_LV2_QT4) $(OBJS_UI_LV2_LIBS) ../libs/theme.a
 	$(CXX) $^ $(LINK_UI_LV2_QT4_FLAGS) -o $@ $(CMD_STRIP) $@
 
-%__lv2-qt4.o: %.cpp
+%__lv2-qt4.o: %.cpp CarlaBridgeToolkitQt.moc
 	$(CXX) $< $(BUILD_UI_LV2_QT4_FLAGS) -c -o $@
 
 # --------------------------------------------------------------
@@ -286,11 +277,37 @@ OBJS_UI_LV2_QT5 = CarlaBridgeUI-LV2__lv2-qt5.o \
 	CarlaBridgeClient__lv2.o CarlaBridgeOsc__lv2.o \
 	CarlaBridgeToolkit__lv2.o CarlaBridgeToolkitQt__lv2-qt5.o
 
-carla-bridge-lv2-qt5: $(OBJS_UI_LV2_QT5) $(OBJS_UI_LV2_LIBS)
+carla-bridge-lv2-qt5: $(OBJS_UI_LV2_QT5) $(OBJS_UI_LV2_LIBS) ../libs/theme.a
 	$(CXX) $^ $(LINK_UI_LV2_QT5_FLAGS) -o $@ $(CMD_STRIP) $@
 
-%__lv2-qt5.o: %.cpp
+%__lv2-qt5.o: %.cpp CarlaBridgeToolkitQt.moc
 	$(CXX) $< $(BUILD_UI_LV2_QT5_FLAGS) -c -o $@
+
+# --------------------------------------------------------------
+# ui_lv2-cocoa
+
+OBJS_UI_LV2_COCOA = CarlaBridgeUI-LV2__lv2-cocoa.o \
+	CarlaBridgeClient__lv2.o CarlaBridgeOsc__lv2.o \
+	CarlaBridgeToolkit__lv2.o CarlaBridgeToolkitQt__lv2-cocoa.o
+
+carla-bridge-lv2-cocoa: $(OBJS_UI_LV2_COCOA) $(OBJS_UI_LV2_LIBS) ../libs/theme.a
+	$(CXX) $^ $(LINK_UI_LV2_COCOA_FLAGS) -o $@ $(CMD_STRIP) $@
+
+%__lv2-cocoa.o: %.cpp CarlaBridgeToolkitQt.moc
+	$(CXX) $< $(BUILD_UI_LV2_COCOA_FLAGS) -c -o $@
+
+# --------------------------------------------------------------
+# ui_lv2-hwnd
+
+OBJS_UI_LV2_HWND = CarlaBridgeUI-LV2__lv2-hwnd.o \
+	CarlaBridgeClient__lv2.o CarlaBridgeOsc__lv2.o \
+	CarlaBridgeToolkit__lv2.o CarlaBridgeToolkitQt__lv2-hwnd.o
+
+carla-bridge-lv2-hwnd.exe: $(OBJS_UI_LV2_HWND) $(OBJS_UI_LV2_LIBS) ../libs/theme.a
+	$(CXX) $^ $(LINK_UI_LV2_HWND_FLAGS) -o $@ $(CMD_STRIP) $@
+
+%__lv2-hwnd.o: %.cpp CarlaBridgeToolkitQt.moc
+	$(CXX) $< $(BUILD_UI_LV2_HWND_FLAGS) -c -o $@
 
 # --------------------------------------------------------------
 # ui_lv2-x11
@@ -302,8 +319,21 @@ OBJS_UI_LV2_X11 = CarlaBridgeUI-LV2__lv2-x11.o \
 carla-bridge-lv2-x11: $(OBJS_UI_LV2_X11) $(OBJS_UI_LV2_LIBS) ../libs/theme.a
 	$(CXX) $^ $(LINK_UI_LV2_X11_FLAGS) -o $@ $(CMD_STRIP) $@
 
-%__lv2-x11.o: %.cpp
+%__lv2-x11.o: %.cpp CarlaBridgeToolkitQt.moc
 	$(CXX) $< $(BUILD_UI_LV2_X11_FLAGS) -c -o $@
+
+# --------------------------------------------------------------
+# ui_vst-cocoa
+
+OBJS_UI_VST_COCOA = CarlaBridgeUI-VST__vst-cocoa.o \
+	CarlaBridgeClient__vst.o CarlaBridgeOsc__vst.o \
+	CarlaBridgeToolkit__vst.o CarlaBridgeToolkitQt__vst-cocoa.o
+
+carla-bridge-vst-cocoa: $(OBJS_UI_VST_COCOA) ../libs/theme.a
+	$(CXX) $^ $(LINK_UI_VST_COCOA_FLAGS) -o $@ $(CMD_STRIP) $@
+
+%__vst-cocoa.o: %.cpp CarlaBridgeToolkitQt.moc
+	$(CXX) $< $(BUILD_UI_VST_COCOA_FLAGS) -c -o $@
 
 # --------------------------------------------------------------
 # ui_vst-hwnd
@@ -315,7 +345,7 @@ OBJS_UI_VST_HWND = CarlaBridgeUI-VST__vst-hwnd.o \
 carla-bridge-vst-hwnd.exe: $(OBJS_UI_VST_HWND) ../libs/theme.a
 	$(CXX) $^ $(LINK_UI_VST_HWND_FLAGS) -o $@ $(CMD_STRIP) $@
 
-%__vst-hwnd.o: %.cpp
+%__vst-hwnd.o: %.cpp CarlaBridgeToolkitQt.moc
 	$(CXX) $< $(BUILD_UI_VST_HWND_FLAGS) -c -o $@
 
 # --------------------------------------------------------------
@@ -328,7 +358,7 @@ OBJS_UI_VST_X11 = CarlaBridgeUI-VST__vst-x11.o \
 carla-bridge-vst-x11: $(OBJS_UI_VST_X11) ../libs/theme.a
 	$(CXX) $^ $(LINK_UI_VST_X11_FLAGS) -o $@ $(CMD_STRIP) $@
 
-%__vst-x11.o: %.cpp
+%__vst-x11.o: %.cpp CarlaBridgeToolkitQt.moc
 	$(CXX) $< $(BUILD_UI_VST_X11_FLAGS) -c -o $@
 
 # --------------------------------------------------------------
@@ -583,14 +613,14 @@ doxygen: carla_bridge.doxygen
 # --------------------------------------------------------------
 
 clean:
-	rm -f *.o *.dll *.so *.exe
+	rm -f *.moc *.o *.dll *.dylib *.so *.exe
 	rm -f $(OBJS_NATIVE)
 	rm -f $(OBJS_POSIX32)
 	rm -f $(OBJS_POSIX64)
 	rm -f $(OBJS_WIN32)
 	rm -f $(OBJS_WIN64)
-	rm -f carla-bridge-lv2-gtk2 carla-bridge-lv2-gtk3 carla-bridge-lv2-qt4 carla-bridge-lv2-qt5 carla-bridge-lv2-x11
-	rm -f carla-bridge-vst-x11
+	rm -f carla-bridge-lv2-gtk2 carla-bridge-lv2-gtk3 carla-bridge-lv2-qt4 carla-bridge-lv2-qt5 carla-bridge-lv2-cocoa carla-bridge-lv2-x11
+	rm -f carla-bridge-vst-cocoa carla-bridge-vst-x11
 	rm -f carla-bridge-native carla-bridge-posix32 carla-bridge-posix64
 
 # --------------------------------------------------------------
