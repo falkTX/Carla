@@ -91,7 +91,7 @@ START_NAMESPACE_DISTRHO
 // -------------------------------------------------
 
 DistrhoPluginNekobi::DistrhoPluginNekobi()
-    : Plugin(paramCount, 1, 0) // 1 program, 0 states
+    : Plugin(paramCount, 0, 0) // 0 programs, 0 states
 {
     nekobee_init_tables();
 
@@ -133,8 +133,25 @@ DistrhoPluginNekobi::DistrhoPluginNekobi()
     fSynth->pitch_bend = 1.0f;
     fSynth->cc_volume  = 1.0f;
 
-    // set default values
-    d_setProgram(0);
+    // Default values
+    fParams.waveform = 0.0f;
+    fParams.tuning = 0.0f;
+    fParams.cutoff = 25.0f;
+    fParams.resonance = 25.0f;
+    fParams.envMod = 50.0f;
+    fParams.decay  = 75.0f;
+    fParams.accent = 25.0f;
+    fParams.volume = 75.0f;
+
+    // Internal stuff
+    fSynth->waveform  = 0.0f;
+    fSynth->tuning    = 1.0f;
+    fSynth->cutoff    = 5.0f;
+    fSynth->resonance = 0.8f;
+    fSynth->envmod    = 0.3f;
+    fSynth->decay     = 0.0002f;
+    fSynth->accent    = 0.3f;
+    fSynth->volume    = 0.75f;
 
     // reset
     d_deactivate();
@@ -226,14 +243,6 @@ void DistrhoPluginNekobi::d_initParameter(uint32_t index, Parameter& parameter)
     }
 }
 
-void DistrhoPluginNekobi::d_initProgramName(uint32_t index, d_string& programName)
-{
-    if (index != 0)
-        return;
-
-    programName = "Default";
-}
-
 // -------------------------------------------------
 // Internal data
 
@@ -307,32 +316,6 @@ void DistrhoPluginNekobi::d_setParameterValue(uint32_t index, float value)
         CARLA_SAFE_ASSERT_INT2(fSynth->volume >= 0.0f && fSynth->volume <= 1.0f, fSynth->volume, value);
         break;
     }
-}
-
-void DistrhoPluginNekobi::d_setProgram(uint32_t index)
-{
-    if (index != 0)
-        return;
-
-    // Default values
-    fParams.waveform = 0.0f;
-    fParams.tuning = 0.0f;
-    fParams.cutoff = 25.0f;
-    fParams.resonance = 25.0f;
-    fParams.envMod = 50.0f;
-    fParams.decay  = 75.0f;
-    fParams.accent = 25.0f;
-    fParams.volume = 75.0f;
-
-    // Internal stuff
-    fSynth->waveform  = 0.0f;
-    fSynth->tuning    = 1.0f;
-    fSynth->cutoff    = 5.0f;
-    fSynth->resonance = 0.8f;
-    fSynth->envmod    = 0.3f;
-    fSynth->decay     = 0.0002f;
-    fSynth->accent    = 0.3f;
-    fSynth->volume    = 0.75f;
 }
 
 // -------------------------------------------------

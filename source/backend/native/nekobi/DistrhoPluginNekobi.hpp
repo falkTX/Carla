@@ -79,14 +79,12 @@ protected:
     // Init
 
     void d_initParameter(uint32_t index, Parameter& parameter);
-    void d_initProgramName(uint32_t index, d_string& programName);
 
     // ---------------------------------------------
     // Internal data
 
     float d_parameterValue(uint32_t index);
     void  d_setParameterValue(uint32_t index, float value);
-    void  d_setProgram(uint32_t index);
 
     // ---------------------------------------------
     // Process

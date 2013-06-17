@@ -154,22 +154,6 @@ void DistrhoUINekobi::d_parameterChanged(uint32_t index, float value)
     }
 }
 
-void DistrhoUINekobi::d_programChanged(uint32_t index)
-{
-    if (index != 0)
-        return;
-
-    // Default values
-    fSliderWaveform->setValue(0.0f);
-    fKnobTuning->setValue(0.0f);
-    fKnobCutoff->setValue(25.0f);
-    fKnobResonance->setValue(25.0f);
-    fKnobEnvMod->setValue(50.0f);
-    fKnobDecay->setValue(75.0f);
-    fKnobAccent->setValue(25.0f);
-    fKnobVolume->setValue(75.0f);
-}
-
 void DistrhoUINekobi::d_noteReceived(bool onOff, uint8_t, uint8_t note, uint8_t)
 {
     return;
