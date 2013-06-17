@@ -963,7 +963,7 @@ class PluginParameter(QWidget):
         self.ui.widget.updateAll()
 
         self.setMidiControl(pInfo['midiCC'])
-        self.setMidiChannel(pInfo['midiChannel']+1)
+        self.setMidiChannel(pInfo['midiChannel'])
 
         # -------------------------------------------------------------
         # Set-up connections
@@ -1331,7 +1331,7 @@ class PluginEdit(QDialog):
                     'stepSmall': paramRanges['stepSmall'],
                     'stepLarge': paramRanges['stepLarge'],
                     'midiCC':    paramData['midiCC'],
-                    'midiChannel': paramData['midiChannel'],
+                    'midiChannel': paramData['midiChannel']+1,
 
                     'current': paramValue
                 }
@@ -1412,7 +1412,7 @@ class PluginEdit(QDialog):
                 'stepSmall': 0.0,
                 'stepLarge': 0.0,
                 'midiCC':   -1,
-                'midiChannel': 0,
+                'midiChannel': 1,
 
                 'current': 0.0
             }
@@ -1532,7 +1532,7 @@ class PluginEdit(QDialog):
     def setParameterMidiChannel(self, parameterId, channel):
         for paramType, paramId, paramWidget in self.fParameterList:
             if paramId == parameterId:
-                paramWidget.setMidiChannel(channel)
+                paramWidget.setMidiChannel(channel+1)
                 break
 
     def setProgram(self, index):
@@ -1937,7 +1937,7 @@ class PluginEdit(QDialog):
         elif not self.fPluginInfo['hints'] & PLUGIN_IS_SYNTH:
             return
 
-        if self.fControlChannel == -1:
+        if self.fControlChannel < 0:
             self.ui.cb_midi_programs.setEnabled(False)
             return
 

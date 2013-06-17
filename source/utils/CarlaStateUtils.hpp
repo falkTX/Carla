@@ -135,7 +135,7 @@ struct SaveState {
           balanceLeft(-1.0f),
           balanceRight(1.0f),
           panning(0.0f),
-          ctrlChannel(0),
+          ctrlChannel(-1),
           currentProgramIndex(-1),
           currentProgramName(nullptr),
           currentMidiBank(-1),
@@ -187,7 +187,7 @@ struct SaveState {
         balanceLeft  = -1.0f;
         balanceRight = 1.0f;
         panning      = 0.0f;
-        ctrlChannel  = 0;
+        ctrlChannel  = -1;
         currentProgramIndex = -1;
         currentMidiBank     = -1;
         currentMidiProgram  = -1;
@@ -541,7 +541,10 @@ const QString& getXMLFromSaveState(const SaveState& saveState)
         if (saveState.panning != 0.0f)
             data += QString("   <Panning>%1</Panning>\n").arg(saveState.panning);
 
-        data += QString("   <ControlChannel>%1</ControlChannel>\n").arg(saveState.ctrlChannel+1);
+        if (saveState.ctrlChannel < 0)
+            data += QString("   <ControlChannel>N</ControlChannel>\n");
+        else
+            data += QString("   <ControlChannel>%1</ControlChannel>\n").arg(saveState.ctrlChannel+1);
 
         content += data;
     }

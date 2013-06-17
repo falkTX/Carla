@@ -675,9 +675,7 @@ const SaveState& CarlaPlugin::getSaveState()
 
         if (data != nullptr && dataSize > 0)
         {
-            QByteArray chunk(QByteArray((char*)data, dataSize).toBase64());
-
-            saveState.chunk = carla_strdup(chunk.constData());
+            saveState.chunk = carla_strdup(QByteArray((char*)data, dataSize).toBase64().constData());
 
             // Don't save anything else if using chunks
             return saveState;
@@ -720,7 +718,7 @@ const SaveState& CarlaPlugin::getSaveState()
 
         stateParameter->index  = paramData.index;
         stateParameter->midiCC = paramData.midiCC;
-        stateParameter->midiChannel = paramData.midiChannel + 1;
+        stateParameter->midiChannel = paramData.midiChannel;
 
         getParameterName(i, strBuf);
         stateParameter->name = carla_strdup(strBuf);
