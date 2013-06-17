@@ -788,16 +788,19 @@ public:
             if (fHandle2 == nullptr)
                 fHandle2 = fDescriptor->instantiate(fDescriptor, &fHost);
 
-            if (aIns == 1)
+            if (fHandle2 != nullptr)
             {
-                aIns = 2;
-                forcedStereoIn = true;
-            }
+                if (aIns == 1)
+                {
+                    aIns = 2;
+                    forcedStereoIn = true;
+                }
 
-            if (aOuts == 1)
-            {
-                aOuts = 2;
-                forcedStereoOut = true;
+                if (aOuts == 1)
+                {
+                    aOuts = 2;
+                    forcedStereoOut = true;
+                }
             }
         }
 
