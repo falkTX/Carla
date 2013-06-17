@@ -1,9 +1,10 @@
 [Desktop Entry]
 Name=Carla
-GenericName=Carla
-Comment=Multi-Plugin Audio Host
-Exec=carla
+GenericName=Carla Plugin Host
+Comment=Audio Plugin Host
+Exec=carla %u
 Icon=carla
 Terminal=false
 Type=Application
 Categories=AudioVideo;AudioEditing;Qt;
+#MimeType=

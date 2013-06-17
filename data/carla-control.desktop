@@ -1,7 +1,7 @@
 [Desktop Entry]
 Name=Carla Control
-GenericName=Carla Control
-Comment=Multi-Plugin Audio Host (OSC Control)
+GenericName=Carla OSC Control
+Comment=Audio Plugin Host (OSC Control)
 Exec=carla-control
 Icon=carla-control
 Terminal=false

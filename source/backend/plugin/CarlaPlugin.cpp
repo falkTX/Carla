@@ -24,10 +24,6 @@
 #include <QtCore/QTextStream>
 #include <QtCore/QSettings>
 
-#ifdef WANT_LV2
-# include "lv2/atom.h"
-#endif
-
 CARLA_BACKEND_START_NAMESPACE
 
 // -------------------------------------------------------------------
@@ -789,27 +785,26 @@ struct ParamSymbol {
 
 void CarlaPlugin::loadSaveState(const SaveState& saveState)
 {
-    bool hasChunk = (saveState.chunk != nullptr && (fOptions & PLUGIN_OPTION_USE_CHUNKS) != 0);
     char strBuf[STR_MAX+1];
+    const bool usesMultiProgs(type() == PLUGIN_SF2 || (type() == PLUGIN_INTERNAL && (fHints & PLUGIN_IS_SYNTH) != 0));
 
     // ---------------------------------------------------------------------
-    // Part 1 - set custom data (except binary/chunks)
+    // Part 1 - PRE-set custom data (only that which reload programs)
 
     for (NonRtList<StateCustomData*>::Itenerator it = saveState.customData.begin(); it.valid(); it.next())
     {
         const StateCustomData* const stateCustomData(*it);
+        const char* const key(stateCustomData->key);
 
-        bool isChunk = (std::strcmp(stateCustomData->type, CUSTOM_DATA_CHUNK) == 0);
+        bool wantData = false;
 
-#ifdef WANT_LV2
-        if (! isChunk)
-            isChunk = (std::strcmp(stateCustomData->type, LV2_ATOM__Chunk) == 0);
-#endif
+        if (type() == PLUGIN_DSSI && (std::strcmp(key, "reloadprograms") == 0 || std::strcmp(key, "load") == 0 || std::strncmp(key, "patches", 7) == 0))
+            wantData = true;
+        else if (usesMultiProgs && std::strcmp(key, "midiPrograms") == 0)
+            wantData = true;
 
-        if (! isChunk)
+        if (wantData)
             setCustomData(stateCustomData->type, stateCustomData->key, stateCustomData->value, true);
-        else
-            hasChunk = true;
     }
 
     // ---------------------------------------------------------------------
@@ -854,143 +849,134 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
     // ---------------------------------------------------------------------
     // Part 3 - set midi program
 
-    const bool usesMultiProgs(type() == PLUGIN_SF2 || (type() == PLUGIN_INTERNAL && (fHints & PLUGIN_IS_SYNTH) != 0));
-
     if (saveState.currentMidiBank >= 0 && saveState.currentMidiProgram >= 0 && ! usesMultiProgs)
         setMidiProgramById(saveState.currentMidiBank, saveState.currentMidiProgram, true, true, true);
 
     // ---------------------------------------------------------------------
-    // Part 4 - set parameter values (ONLY IF NO CHUNK)
+    // Part 4a - get plugin parameter symbols
 
-    if (! hasChunk)
+    NonRtList<ParamSymbol*> paramSymbols;
+
+    if (type() == PLUGIN_LADSPA || type() == PLUGIN_LV2)
     {
-        // -----------------------------------------------------------------
-        // Part 4a - get plugin parameter symbols
-
-        NonRtList<ParamSymbol*> paramSymbols;
-
-        if (type() == PLUGIN_LADSPA || type() == PLUGIN_LV2)
+        for (uint32_t i=0; i < kData->param.count; ++i)
         {
-            for (uint32_t i=0; i < kData->param.count; ++i)
-            {
-                getParameterSymbol(i, strBuf);
+            getParameterSymbol(i, strBuf);
 
-                if (*strBuf != '\0')
-                {
-                    ParamSymbol* const paramSymbol(new ParamSymbol(i, strBuf));
-                    paramSymbols.append(paramSymbol);
-                }
+            if (*strBuf != '\0')
+            {
+                ParamSymbol* const paramSymbol(new ParamSymbol(i, strBuf));
+                paramSymbols.append(paramSymbol);
             }
         }
+    }
 
-        // -----------------------------------------------------------------
-        // Part 4b - set parameter values (carefully)
+    // ---------------------------------------------------------------------
+    // Part 4b - set parameter values (carefully)
 
-        const float sampleRate(kData->engine->getSampleRate());
+    const float sampleRate(kData->engine->getSampleRate());
 
-        for (NonRtList<StateParameter*>::Itenerator it = saveState.parameters.begin(); it.valid(); it.next())
+    for (NonRtList<StateParameter*>::Itenerator it = saveState.parameters.begin(); it.valid(); it.next())
+    {
+        StateParameter* const stateParameter(*it);
+
+        int32_t index = -1;
+
+        if (type() == PLUGIN_LADSPA)
         {
-            StateParameter* const stateParameter(*it);
-
-            int32_t index = -1;
-
-            if (type() == PLUGIN_LADSPA)
+            // Try to set by symbol, otherwise use index
+            if (stateParameter->symbol != nullptr && *stateParameter->symbol != 0)
             {
-                // Try to set by symbol, otherwise use index
-                if (stateParameter->symbol != nullptr && *stateParameter->symbol != 0)
+                for (NonRtList<ParamSymbol*>::Itenerator it = paramSymbols.begin(); it.valid(); it.next())
                 {
-                    for (NonRtList<ParamSymbol*>::Itenerator it = paramSymbols.begin(); it.valid(); it.next())
-                    {
-                        ParamSymbol* const paramSymbol(*it);
+                    ParamSymbol* const paramSymbol(*it);
 
-                        if (std::strcmp(stateParameter->symbol, paramSymbol->symbol) == 0)
-                        {
-                            index = paramSymbol->index;
-                            break;
-                        }
+                    if (std::strcmp(stateParameter->symbol, paramSymbol->symbol) == 0)
+                    {
+                        index = paramSymbol->index;
+                        break;
                     }
-                    if (index == -1)
-                        index = stateParameter->index;
                 }
-                else
+                if (index == -1)
                     index = stateParameter->index;
             }
-            else if (type() == PLUGIN_LV2)
-            {
-                // Symbol only
-                if (stateParameter->symbol != nullptr && *stateParameter->symbol != 0)
-                {
-                    for (NonRtList<ParamSymbol*>::Itenerator it = paramSymbols.begin(); it.valid(); it.next())
-                    {
-                        ParamSymbol* const paramSymbol(*it);
-
-                        if (std::strcmp(stateParameter->symbol, paramSymbol->symbol) == 0)
-                        {
-                            index = paramSymbol->index;
-                            break;
-                        }
-                    }
-                    if (index == -1)
-                        carla_stderr("Failed to find LV2 parameter symbol for '%s')", stateParameter->symbol);
-                }
-                else
-                    carla_stderr("LV2 Plugin parameter '%s' has no symbol", stateParameter->name);
-            }
             else
-            {
-                // Index only
                 index = stateParameter->index;
-            }
-
-            // Now set parameter
-            if (index >= 0 && index < static_cast<int32_t>(kData->param.count))
+        }
+        else if (type() == PLUGIN_LV2)
+        {
+            // Symbol only
+            if (stateParameter->symbol != nullptr && *stateParameter->symbol != 0)
             {
-                if (kData->param.data[index].hints & PARAMETER_USES_SAMPLERATE)
-                    stateParameter->value *= sampleRate;
+                for (NonRtList<ParamSymbol*>::Itenerator it = paramSymbols.begin(); it.valid(); it.next())
+                {
+                    ParamSymbol* const paramSymbol(*it);
 
-                setParameterValue(index, stateParameter->value, true, true, true);
-    #ifndef BUILD_BRIDGE
-                setParameterMidiCC(index, stateParameter->midiCC, true, true);
-                setParameterMidiChannel(index, stateParameter->midiChannel, true, true);
-    #endif
+                    if (std::strcmp(stateParameter->symbol, paramSymbol->symbol) == 0)
+                    {
+                        index = paramSymbol->index;
+                        break;
+                    }
+                }
+                if (index == -1)
+                    carla_stderr("Failed to find LV2 parameter symbol for '%s')", stateParameter->symbol);
             }
             else
-                carla_stderr("Could not set parameter data for '%s'", stateParameter->name);
+                carla_stderr("LV2 Plugin parameter '%s' has no symbol", stateParameter->name);
         }
-
-        // clear
-        for (NonRtList<ParamSymbol*>::Itenerator it = paramSymbols.begin(); it.valid(); it.next())
+        else
         {
-            ParamSymbol* const paramSymbol(*it);
-            paramSymbol->free();
-            delete paramSymbol;
+            // Index only
+            index = stateParameter->index;
         }
 
-        paramSymbols.clear();
+        // Now set parameter
+        if (index >= 0 && index < static_cast<int32_t>(kData->param.count))
+        {
+            if (kData->param.data[index].hints & PARAMETER_USES_SAMPLERATE)
+                stateParameter->value *= sampleRate;
+
+            setParameterValue(index, stateParameter->value, true, true, true);
+#ifndef BUILD_BRIDGE
+            setParameterMidiCC(index, stateParameter->midiCC, true, true);
+            setParameterMidiChannel(index, stateParameter->midiChannel, true, true);
+#endif
+        }
+        else
+            carla_stderr("Could not set parameter data for '%s'", stateParameter->name);
     }
-    else
+
+    // clear
+    for (NonRtList<ParamSymbol*>::Itenerator it = paramSymbols.begin(); it.valid(); it.next())
     {
-        // ---------------------------------------------------------------------
-        // Part 4 - set chunk data
-
-        for (NonRtList<StateCustomData*>::Itenerator it = saveState.customData.begin(); it.valid(); it.next())
-        {
-            const StateCustomData* const stateCustomData(*it);
-
-            bool isChunk = (std::strcmp(stateCustomData->type, CUSTOM_DATA_CHUNK) == 0);
-
-    #ifdef WANT_LV2
-            if (! isChunk)
-                isChunk = (std::strcmp(stateCustomData->type, LV2_ATOM__Chunk) == 0);
-    #endif
-
-            if (isChunk)
-                setCustomData(stateCustomData->type, stateCustomData->key, stateCustomData->value, true);
-        }
-
-        if (saveState.chunk != nullptr && (fOptions & PLUGIN_OPTION_USE_CHUNKS) != 0)
-            setChunkData(saveState.chunk);
+        ParamSymbol* const paramSymbol(*it);
+        paramSymbol->free();
+        delete paramSymbol;
     }
+
+    paramSymbols.clear();
+
+    // ---------------------------------------------------------------------
+    // Part 5 - set custom data
+
+    for (NonRtList<StateCustomData*>::Itenerator it = saveState.customData.begin(); it.valid(); it.next())
+    {
+        const StateCustomData* const stateCustomData(*it);
+        const char* const key(stateCustomData->key);
+
+        if (type() == PLUGIN_DSSI && (std::strcmp(key, "reloadprograms") == 0 || std::strcmp(key, "load") == 0 || std::strncmp(key, "patches", 7) == 0))
+            continue;
+        if (usesMultiProgs && std::strcmp(key, "midiPrograms") == 0)
+            continue;
+
+        setCustomData(stateCustomData->type, stateCustomData->key, stateCustomData->value, true);
+    }
+
+    // ---------------------------------------------------------------------
+    // Part 6 - set chunk
+
+    if (saveState.chunk != nullptr && (fOptions & PLUGIN_OPTION_USE_CHUNKS) != 0)
+        setChunkData(saveState.chunk);
 
     // ---------------------------------------------------------------------
     // Part 6 - set internal stuff
