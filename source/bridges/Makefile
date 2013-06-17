@@ -228,8 +228,7 @@ CarlaBridgeToolkitQt.moc: CarlaBridgeToolkitQt.cpp
 	$(MOC) $< -DMOC_PARSING -o $@
 
 OBJS_UI_LV2_LIBS = \
-	../libs/lilv.a \
-	../libs/rtmempool.a
+	../libs/lilv.a
 
 # --------------------------------------------------------------
 # ui_lv2-gtk2

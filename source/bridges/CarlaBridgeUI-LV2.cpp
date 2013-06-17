@@ -88,33 +88,24 @@ const uint32_t CARLA_URI_MAP_ID_PARAM_SAMPLE_RATE      = 38;
 const uint32_t CARLA_URI_MAP_ID_COUNT                  = 39;
 
 // LV2 Feature Ids
-const uint32_t kFeatureIdBufSizeBounded   =  0;
-const uint32_t kFeatureIdBufSizeFixed     =  1;
-const uint32_t kFeatureIdBufSizePowerOf2  =  2;
-const uint32_t kFeatureIdEvent            =  3;
-const uint32_t kFeatureIdHardRtCapable    =  4;
-const uint32_t kFeatureIdInPlaceBroken    =  5;
-const uint32_t kFeatureIdIsLive           =  6;
-const uint32_t kFeatureIdLogs             =  7;
-const uint32_t kFeatureIdOptions          =  8;
-const uint32_t kFeatureIdPrograms         =  9;
-const uint32_t kFeatureIdRtMemPool        = 10;
-const uint32_t kFeatureIdStateMakePath    = 11;
-const uint32_t kFeatureIdStateMapPath     = 12;
-const uint32_t kFeatureIdStrictBounds     = 13;
-const uint32_t kFeatureIdUriMap           = 14;
-const uint32_t kFeatureIdUridMap          = 15;
-const uint32_t kFeatureIdUridUnmap        = 16;
-const uint32_t kFeatureIdUiIdle           = 17;
-const uint32_t kFeatureIdUiFixedSize      = 18;
-const uint32_t kFeatureIdUiMakeResident   = 19;
-const uint32_t kFeatureIdUiNoUserResize   = 20;
-const uint32_t kFeatureIdUiParent         = 21;
-const uint32_t kFeatureIdUiPortMap        = 22;
-const uint32_t kFeatureIdUiPortSubscribe  = 23;
-const uint32_t kFeatureIdUiResize         = 24;
-const uint32_t kFeatureIdUiTouch          = 25;
-const uint32_t kFeatureCount              = 26;
+const uint32_t kFeatureIdLogs             =  0;
+const uint32_t kFeatureIdOptions          =  1;
+const uint32_t kFeatureIdPrograms         =  2;
+const uint32_t kFeatureIdStateMakePath    =  3;
+const uint32_t kFeatureIdStateMapPath     =  4;
+const uint32_t kFeatureIdUriMap           =  5;
+const uint32_t kFeatureIdUridMap          =  6;
+const uint32_t kFeatureIdUridUnmap        =  7;
+const uint32_t kFeatureIdUiIdle           =  8;
+const uint32_t kFeatureIdUiFixedSize      =  9;
+const uint32_t kFeatureIdUiMakeResident   = 10;
+const uint32_t kFeatureIdUiNoUserResize   = 11;
+const uint32_t kFeatureIdUiParent         = 12;
+const uint32_t kFeatureIdUiPortMap        = 13;
+const uint32_t kFeatureIdUiPortSubscribe  = 14;
+const uint32_t kFeatureIdUiResize         = 15;
+const uint32_t kFeatureIdUiTouch          = 16;
+const uint32_t kFeatureCount              = 17;
 
 // -------------------------------------------------------------------------
 
@@ -219,11 +210,6 @@ public:
         // ---------------------------------------------------------------
         // initialize features (part 1)
 
-        LV2_Event_Feature* const eventFt = new LV2_Event_Feature;
-        eventFt->callback_data           = this;
-        eventFt->lv2_event_ref           = carla_lv2_event_ref;
-        eventFt->lv2_event_unref         = carla_lv2_event_unref;
-
         LV2_Log_Log* const logFt         = new LV2_Log_Log;
         logFt->handle                    = this;
         logFt->printf                    = carla_lv2_log_printf;
@@ -241,9 +227,6 @@ public:
         LV2_Programs_Host* const programsFt   = new LV2_Programs_Host;
         programsFt->handle                    = this;
         programsFt->program_changed           = carla_lv2_program_changed;
-
-        LV2_RtMemPool_Pool* const rtMemPoolFt = new LV2_RtMemPool_Pool;
-        lv2_rtmempool_init(rtMemPoolFt);
 
         LV2_URI_Map_Feature* const uriMapFt = new LV2_URI_Map_Feature;
         uriMapFt->callback_data             = this;
@@ -271,27 +254,6 @@ public:
         for (uint32_t i=0; i < kFeatureCount; ++i)
             fFeatures[i] = new LV2_Feature;
 
-        fFeatures[kFeatureIdBufSizeBounded]->URI   = LV2_BUF_SIZE__boundedBlockLength;
-        fFeatures[kFeatureIdBufSizeBounded]->data  = nullptr;
-
-        fFeatures[kFeatureIdBufSizeFixed]->URI     = LV2_BUF_SIZE__fixedBlockLength;
-        fFeatures[kFeatureIdBufSizeFixed]->data    = nullptr;
-
-        fFeatures[kFeatureIdBufSizePowerOf2]->URI  = LV2_BUF_SIZE__powerOf2BlockLength;
-        fFeatures[kFeatureIdBufSizePowerOf2]->data = nullptr;
-
-        fFeatures[kFeatureIdEvent]->URI          = LV2_EVENT_URI;
-        fFeatures[kFeatureIdEvent]->data         = eventFt;
-
-        fFeatures[kFeatureIdHardRtCapable]->URI  = LV2_CORE__hardRTCapable;
-        fFeatures[kFeatureIdHardRtCapable]->data = nullptr;
-
-        fFeatures[kFeatureIdInPlaceBroken]->URI  = LV2_CORE__inPlaceBroken;
-        fFeatures[kFeatureIdInPlaceBroken]->data = nullptr;
-
-        fFeatures[kFeatureIdIsLive]->URI         = LV2_CORE__isLive;
-        fFeatures[kFeatureIdIsLive]->data        = nullptr;
-
         fFeatures[kFeatureIdLogs]->URI       = LV2_LOG__log;
         fFeatures[kFeatureIdLogs]->data      = logFt;
 
@@ -301,17 +263,11 @@ public:
         fFeatures[kFeatureIdPrograms]->URI   = LV2_PROGRAMS__Host;
         fFeatures[kFeatureIdPrograms]->data  = programsFt;
 
-        fFeatures[kFeatureIdRtMemPool]->URI  = LV2_RTSAFE_MEMORY_POOL__Pool;
-        fFeatures[kFeatureIdRtMemPool]->data = rtMemPoolFt;
-
         fFeatures[kFeatureIdStateMakePath]->URI  = LV2_STATE__makePath;
         fFeatures[kFeatureIdStateMakePath]->data = stateMakePathFt;
 
         fFeatures[kFeatureIdStateMapPath]->URI   = LV2_STATE__mapPath;
         fFeatures[kFeatureIdStateMapPath]->data  = stateMapPathFt;
-
-        fFeatures[kFeatureIdStrictBounds]->URI   = LV2_PORT_PROPS__supportsStrictBounds;
-        fFeatures[kFeatureIdStrictBounds]->data  = nullptr;
 
         fFeatures[kFeatureIdUriMap]->URI     = LV2_URI_MAP_URI;
         fFeatures[kFeatureIdUriMap]->data    = uriMapFt;
@@ -355,12 +311,10 @@ public:
         if (fRdfDescriptor != nullptr)
             delete fRdfDescriptor;
 
-        delete (LV2_Event_Feature*)fFeatures[kFeatureIdEvent]->data;
         delete (LV2_Log_Log*)fFeatures[kFeatureIdLogs]->data;
         delete (LV2_State_Make_Path*)fFeatures[kFeatureIdStateMakePath]->data;
         delete (LV2_State_Map_Path*)fFeatures[kFeatureIdStateMapPath]->data;
         delete (LV2_Programs_Host*)fFeatures[kFeatureIdPrograms]->data;
-        delete (LV2_RtMemPool_Pool*)fFeatures[kFeatureIdRtMemPool]->data;
         delete (LV2_URI_Map_Feature*)fFeatures[kFeatureIdUriMap]->data;
         delete (LV2_URID_Map*)fFeatures[kFeatureIdUridMap]->data;
         delete (LV2_URID_Unmap*)fFeatures[kFeatureIdUridUnmap]->data;
@@ -754,27 +708,6 @@ private:
               idle(nullptr),
               programs(nullptr) {}
     } fExt;
-
-    // -------------------------------------------------------------------
-    // Event Feature
-
-    static uint32_t carla_lv2_event_ref(LV2_Event_Callback_Data callback_data, LV2_Event* event)
-    {
-        carla_debug("CarlaLv2Client::carla_lv2_event_ref(%p, %p)", callback_data, event);
-        CARLA_ASSERT(callback_data != nullptr);
-        CARLA_ASSERT(event != nullptr);
-
-        return 0;
-    }
-
-    static uint32_t carla_lv2_event_unref(LV2_Event_Callback_Data callback_data, LV2_Event* event)
-    {
-        carla_debug("CarlaLv2Client::carla_lv2_event_unref(%p, %p)", callback_data, event);
-        CARLA_ASSERT(callback_data != nullptr);
-        CARLA_ASSERT(event != nullptr);
-
-        return 0;
-    }
 
     // -------------------------------------------------------------------
     // Logs Feature

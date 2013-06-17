@@ -1280,6 +1280,7 @@ bool is_lv2_feature_supported(const LV2_URI uri)
 
     if (uri == nullptr)
         return false;
+#ifndef BRIDGE_LV2
     if (std::strcmp(uri, LV2_CORE__hardRTCapable) == 0)
         return true;
     if (std::strcmp(uri, LV2_CORE__inPlaceBroken) == 0)
@@ -1294,28 +1295,35 @@ bool is_lv2_feature_supported(const LV2_URI uri)
         return true;
     if (std::strcmp(uri, LV2_EVENT_URI) == 0)
         return true;
+#endif
     if (std::strcmp(uri, LV2_LOG__log) == 0)
         return true;
     if (std::strcmp(uri, LV2_OPTIONS__options) == 0)
         return true;
     if (std::strcmp(uri, LV2_PROGRAMS__Host) == 0)
         return true;
+#ifndef BRIDGE_LV2
     if (std::strcmp(uri, LV2_RTSAFE_MEMORY_POOL__Pool) == 0)
         return true;
+#endif
     if (std::strcmp(uri, LV2_STATE__makePath) == 0)
         return true;
     if (std::strcmp(uri, LV2_STATE__mapPath) == 0)
         return true;
+#ifndef BRIDGE_LV2
     if (std::strcmp(uri, LV2_PORT_PROPS__supportsStrictBounds) == 0)
         return true;
+#endif
     if (std::strcmp(uri, LV2_URI_MAP_URI) == 0)
         return true;
     if (std::strcmp(uri, LV2_URID__map) == 0)
         return true;
     if (std::strcmp(uri, LV2_URID__unmap) == 0)
         return true;
+#ifndef BRIDGE_LV2
     if (std::strcmp(uri, LV2_WORKER__schedule) == 0)
         return false; // TODO
+#endif
     return false;
 }
 
@@ -1331,10 +1339,12 @@ bool is_lv2_ui_feature_supported(const LV2_URI uri)
         return false;
     if (is_lv2_feature_supported(uri))
         return true;
+#ifndef BRIDGE_LV2
     if (std::strcmp(uri, LV2_DATA_ACCESS_URI) == 0)
         return true;
     if (std::strcmp(uri, LV2_INSTANCE_ACCESS_URI) == 0)
         return true;
+#endif
     if (std::strcmp(uri, LV2_UI__fixedSize) == 0)
         return true;
     if (std::strcmp(uri, LV2_UI__idle) == 0)
@@ -1353,10 +1363,12 @@ bool is_lv2_ui_feature_supported(const LV2_URI uri)
         return true;
     if (std::strcmp(uri, LV2_UI__touch) == 0)
         return true;
+#ifndef BRIDGE_LV2
     if (std::strcmp(uri, LV2_EXTERNAL_UI__Widget) == 0)
         return true;
     if (std::strcmp(uri, LV2_EXTERNAL_UI_DEPRECATED_URI) == 0)
         return true;
+#endif
     return false;
 }
 
