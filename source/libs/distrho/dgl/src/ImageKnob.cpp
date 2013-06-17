@@ -16,6 +16,9 @@
 
 #include "../ImageKnob.hpp"
 
+#include <cassert>
+#include <cstdio>
+
 START_NAMESPACE_DGL
 
 // -------------------------------------------------
@@ -27,6 +30,7 @@ ImageKnob::ImageKnob(Window* parent, const Image& image, Orientation orientation
       fMaximum(1.0f),
       fValue(0.5f),
       fOrientation(orientation),
+      fRotationAngle(0),
       fDragging(false),
       fLastX(0),
       fLastY(0),
@@ -34,7 +38,8 @@ ImageKnob::ImageKnob(Window* parent, const Image& image, Orientation orientation
       fIsImgVertical(image.getHeight() > image.getWidth()),
       fImgLayerSize(fIsImgVertical ? image.getWidth() : image.getHeight()),
       fImgLayerCount(fIsImgVertical ? image.getHeight()/fImgLayerSize : image.getWidth()/fImgLayerSize),
-      fKnobArea(0, 0, fImgLayerSize, fImgLayerSize)
+      fKnobArea(0, 0, fImgLayerSize, fImgLayerSize),
+      fTextureId(0)
 {
     setSize(fImgLayerSize, fImgLayerSize);
 }
@@ -46,6 +51,7 @@ ImageKnob::ImageKnob(Widget* widget, const Image& image, Orientation orientation
       fMaximum(1.0f),
       fValue(0.5f),
       fOrientation(orientation),
+      fRotationAngle(0),
       fDragging(false),
       fLastX(0),
       fLastY(0),
@@ -53,7 +59,8 @@ ImageKnob::ImageKnob(Widget* widget, const Image& image, Orientation orientation
       fIsImgVertical(image.getHeight() > image.getWidth()),
       fImgLayerSize(fIsImgVertical ? image.getWidth() : image.getHeight()),
       fImgLayerCount(fIsImgVertical ? image.getHeight()/fImgLayerSize : image.getWidth()/fImgLayerSize),
-      fKnobArea(0, 0, fImgLayerSize, fImgLayerSize)
+      fKnobArea(0, 0, fImgLayerSize, fImgLayerSize),
+      fTextureId(0)
 {
     setSize(fImgLayerSize, fImgLayerSize);
 }
@@ -65,6 +72,7 @@ ImageKnob::ImageKnob(const ImageKnob& imageKnob)
       fMaximum(imageKnob.fMaximum),
       fValue(imageKnob.fValue),
       fOrientation(imageKnob.fOrientation),
+      fRotationAngle(imageKnob.fRotationAngle),
       fDragging(false),
       fLastX(0),
       fLastY(0),
@@ -72,9 +80,17 @@ ImageKnob::ImageKnob(const ImageKnob& imageKnob)
       fIsImgVertical(imageKnob.fIsImgVertical),
       fImgLayerSize(imageKnob.fImgLayerSize),
       fImgLayerCount(imageKnob.fImgLayerCount),
-      fKnobArea(imageKnob.fKnobArea)
+      fKnobArea(imageKnob.fKnobArea),
+      fTextureId(0)
 {
     setSize(fImgLayerSize, fImgLayerSize);
+
+    if (fRotationAngle != 0)
+    {
+        // force new texture creation
+        fRotationAngle = 0;
+        setRotationAngle(imageKnob.fRotationAngle);
+    }
 }
 
 float ImageKnob::getValue() const
@@ -125,6 +141,38 @@ void ImageKnob::setValue(float value, bool sendCallback)
         fCallback->imageKnobValueChanged(this, fValue);
 }
 
+void ImageKnob::setRotationAngle(int angle)
+{
+    if (fRotationAngle == angle)
+        return;
+
+    if (fRotationAngle != 0)
+    {
+        // delete old texture
+        glDeleteTextures(1, &fTextureId);
+        fTextureId = 0;
+    }
+
+    fRotationAngle = angle;
+
+    if (angle != 0)
+    {
+        glEnable(GL_TEXTURE_2D);
+        glGenTextures(1, &fTextureId);
+        glBindTexture(GL_TEXTURE_2D, fTextureId);
+
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glPixelStorei(GL_PACK_ALIGNMENT, 1);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, getWidth(), getHeight(), 0, fImage.getFormat(), fImage.getType(), fImage.getRawData());
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glDisable(GL_TEXTURE_2D);
+    }
+}
+
 void ImageKnob::setCallback(Callback* callback)
 {
     fCallback = callback;
@@ -132,17 +180,58 @@ void ImageKnob::setCallback(Callback* callback)
 
 void ImageKnob::onDisplay()
 {
-    float normValue = (fValue - fMinimum) / (fMaximum - fMinimum);
+    const float normValue = (fValue - fMinimum) / (fMaximum - fMinimum);
 
-    // FIXME: assuming GL_BGRA data (* 4)
-    int layerDataSize   = fImgLayerSize * fImgLayerSize * 4;
-    int imageDataSize   = layerDataSize * fImgLayerCount;
-    int imageDataOffset = imageDataSize - layerDataSize - (layerDataSize * int(normValue * float(fImgLayerCount-1)));
+    if (fRotationAngle != 0 || true)
+    {
+        glEnable(GL_TEXTURE_2D);
+        glBindTexture(GL_TEXTURE_2D, fTextureId);
 
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glPixelStorei(GL_PACK_ALIGNMENT, 1);
-    glRasterPos2i(getX(), getY()+getHeight());
-    glDrawPixels(fImgLayerSize, fImgLayerSize, fImage.getFormat(), fImage.getType(), fImage.getRawData() + imageDataOffset);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glPixelStorei(GL_PACK_ALIGNMENT, 1);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, getWidth(), getHeight(), 0, fImage.getFormat(), fImage.getType(), fImage.getRawData());
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        glPushMatrix();
+
+        const GLint w2 = getWidth()/2;
+        const GLint h2 = getHeight()/2;
+
+        glTranslatef(getX()+w2, getY()+h2, 0.f);
+        glRotatef(normValue*fRotationAngle, 0.0f, 0.0f, 1.0f);
+
+        glBegin(GL_QUADS);
+          glTexCoord2f(0.0f, 1.0f);
+          glVertex2i(-w2, -h2);
+
+          glTexCoord2f(1.0f, 1.0f);
+          glVertex2i(getWidth()-w2, -h2);
+
+          glTexCoord2f(1.0f, 0.0f);
+          glVertex2i(getWidth()-w2, getHeight()-h2);
+
+          glTexCoord2f(0.0f, 0.0f);
+          glVertex2i(-w2, getHeight()-h2);
+        glEnd();
+
+        glPopMatrix();
+
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glDisable(GL_TEXTURE_2D);
+    }
+    else
+    {
+        const int layerDataSize   = fImgLayerSize * fImgLayerSize * (fImage.getFormat() == GL_BGRA || fImage.getFormat() == GL_RGBA ? 4 : 3);
+        const int imageDataSize   = layerDataSize * fImgLayerCount;
+        const int imageDataOffset = imageDataSize - layerDataSize - (layerDataSize * int(normValue * float(fImgLayerCount-1)));
+
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glPixelStorei(GL_PACK_ALIGNMENT, 1);
+        glRasterPos2i(getX(), getY()+getHeight());
+        glDrawPixels(fImgLayerSize, fImgLayerSize, fImage.getFormat(), fImage.getType(), fImage.getRawData() + imageDataOffset);
+    }
 }
 
 bool ImageKnob::onMouse(int button, bool press, int x, int y)
@@ -220,6 +309,20 @@ bool ImageKnob::onMotion(int x, int y)
     fLastY = y;
 
     return true;
+}
+
+void ImageKnob::onReshape(int width, int height)
+{
+//     if (fRotationAngle != 0)
+//         glEnable(GL_TEXTURE_2D);
+
+    Widget::onReshape(width, height);
+}
+
+void ImageKnob::onClose()
+{
+    // delete old texture
+    setRotationAngle(0);
 }
 
 // -------------------------------------------------

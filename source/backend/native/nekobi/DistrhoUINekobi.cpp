@@ -41,10 +41,11 @@ DistrhoUINekobi::DistrhoUINekobi()
     Image sliderImage(DistrhoArtworkNekobi::sliderData, DistrhoArtworkNekobi::sliderWidth, DistrhoArtworkNekobi::sliderHeight);
 
     fSliderWaveform = new ImageSlider(this, sliderImage);
-    fSliderWaveform->setStartPos(133, 38);
-    fSliderWaveform->setEndPos(133, 64);
+    fSliderWaveform->setStartPos(133, 40);
+    fSliderWaveform->setEndPos(133, 60);
     fSliderWaveform->setRange(0.0f, 1.0f);
     fSliderWaveform->setValue(0.0f);
+    fSliderWaveform->setIsSwitch(true);
     fSliderWaveform->setCallback(this);
 
     // knobs
@@ -52,51 +53,58 @@ DistrhoUINekobi::DistrhoUINekobi()
 
     // knob Tuning
     fKnobTuning = new ImageKnob(this, knobImage);
-    fKnobTuning->setPos(42, 45);
+    fKnobTuning->setPos(41, 43);
     fKnobTuning->setRange(-12.0f, 12.0f);
     fKnobTuning->setValue(0.0f);
+    fKnobTuning->setRotationAngle(270);
     fKnobTuning->setCallback(this);
 
     // knob Cutoff
     fKnobCutoff = new ImageKnob(this, knobImage);
-    fKnobCutoff->setPos(185, 45);
+    fKnobCutoff->setPos(185, 43);
     fKnobCutoff->setRange(0.0f, 100.0f);
     fKnobCutoff->setValue(25.0f);
+    fKnobCutoff->setRotationAngle(270);
     fKnobCutoff->setCallback(this);
 
     // knob Resonance
     fKnobResonance = new ImageKnob(this, knobImage);
-    fKnobResonance->setPos(258, 45);
+    fKnobResonance->setPos(257, 43);
     fKnobResonance->setRange(0.0f, 95.0f);
     fKnobResonance->setValue(25.0f);
+    fKnobResonance->setRotationAngle(270);
     fKnobResonance->setCallback(this);
 
     // knob Env Mod
     fKnobEnvMod = new ImageKnob(this, knobImage);
-    fKnobEnvMod->setPos(330, 45);
+    fKnobEnvMod->setPos(329, 43);
     fKnobEnvMod->setRange(0.0f, 100.0f);
     fKnobEnvMod->setValue(50.0f);
+    fKnobEnvMod->setRotationAngle(270);
     fKnobEnvMod->setCallback(this);
 
     // knob Decay
     fKnobDecay = new ImageKnob(this, knobImage);
-    fKnobDecay->setPos(402, 45);
+    fKnobDecay->setPos(400, 43);
     fKnobDecay->setRange(0.0f, 100.0f);
     fKnobDecay->setValue(75.0f);
+    fKnobDecay->setRotationAngle(270);
     fKnobDecay->setCallback(this);
 
     // knob Accent
     fKnobAccent = new ImageKnob(this, knobImage);
-    fKnobAccent->setPos(474, 45);
+    fKnobAccent->setPos(473, 43);
     fKnobAccent->setRange(0.0f, 100.0f);
     fKnobAccent->setValue(25.0f);
+    fKnobAccent->setRotationAngle(270);
     fKnobAccent->setCallback(this);
 
     // knob Volume
     fKnobVolume = new ImageKnob(this, knobImage);
-    fKnobVolume->setPos(546, 45);
+    fKnobVolume->setPos(545, 43);
     fKnobVolume->setRange(0.0f, 100.0f);
     fKnobVolume->setValue(75.0f);
+    fKnobVolume->setRotationAngle(270);
     fKnobVolume->setCallback(this);
 
     // about button

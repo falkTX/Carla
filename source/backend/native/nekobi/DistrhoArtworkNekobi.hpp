@@ -31,9 +31,9 @@ namespace DistrhoArtworkNekobi
     const unsigned int claw2Height   = 32;
 
     extern const char* knobData;
-    const unsigned int knobDataSize = 390000;
+    const unsigned int knobDataSize = 10000;
     const unsigned int knobWidth    = 50;
-    const unsigned int knobHeight   = 1950;
+    const unsigned int knobHeight   = 50;
 
     extern const char* run1Data;
     const unsigned int run1DataSize = 4096;

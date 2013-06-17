@@ -49,6 +49,7 @@ public:
 
     void setRange(float min, float max);
     void setValue(float value, bool sendCallback = false);
+    void setIsSwitch(bool yesNo);
 
     void setCallback(Callback* callback);
 
@@ -63,6 +64,7 @@ private:
     float fMaximum;
     float fValue;
 
+    bool fIsSwitch;
     bool fDragging;
     int  fStartedX;
     int  fStartedY;

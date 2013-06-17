@@ -26,6 +26,7 @@ ImageSlider::ImageSlider(Window* parent, const Image& image)
       fMinimum(0.0f),
       fMaximum(1.0f),
       fValue(0.5f),
+      fIsSwitch(false),
       fDragging(false),
       fStartedX(0),
       fStartedY(0),
@@ -40,6 +41,7 @@ ImageSlider::ImageSlider(Widget* widget, const Image& image)
       fMinimum(0.0f),
       fMaximum(1.0f),
       fValue(0.5f),
+      fIsSwitch(false),
       fDragging(false),
       fStartedX(0),
       fStartedY(0),
@@ -54,6 +56,7 @@ ImageSlider::ImageSlider(const ImageSlider& imageSlider)
       fMinimum(imageSlider.fMinimum),
       fMaximum(imageSlider.fMaximum),
       fValue(imageSlider.fValue),
+      fIsSwitch(imageSlider.fIsSwitch),
       fDragging(false),
       fStartedX(0),
       fStartedY(0),
@@ -127,6 +130,15 @@ void ImageSlider::setValue(float value, bool sendCallback)
         fCallback->imageSliderValueChanged(this, fValue);
 }
 
+void ImageSlider::setIsSwitch(bool yesNo)
+{
+    if (fIsSwitch == yesNo)
+        return;
+
+    fIsSwitch = yesNo;
+    repaint();
+}
+
 void ImageSlider::setCallback(Callback* callback)
 {
     fCallback = callback;
@@ -184,12 +196,24 @@ bool ImageSlider::onMouse(int button, bool press, int x, int y)
         else
             return false;
 
-        float value = fMaximum - vper * (fMaximum - fMinimum);
+        float value;
 
-        if (value < fMinimum)
-            value = fMinimum;
-        else if (value > fMaximum)
-            value = fMaximum;
+        if (fIsSwitch)
+        {
+            if (vper < 0.5f)
+                value = fMaximum;
+            else
+                value = fMinimum;
+        }
+        else
+        {
+            value = fMaximum - vper * (fMaximum - fMinimum);
+
+            if (value < fMinimum)
+                value = fMinimum;
+            else if (value > fMaximum)
+                value = fMaximum;
+        }
 
         fDragging = true;
         fStartedX = x;
@@ -236,12 +260,24 @@ bool ImageSlider::onMotion(int x, int y)
             vper = float(y - fSliderArea.getY()) / float(fSliderArea.getHeight());
         }
 
-        float value = fMaximum - vper * (fMaximum - fMinimum);
+        float value;
 
-        if (value < fMinimum)
-            value = fMinimum;
-        else if (value > fMaximum)
-            value = fMaximum;
+        if (fIsSwitch)
+        {
+            if (vper < 0.5f)
+                value = fMaximum;
+            else
+                value = fMinimum;
+        }
+        else
+        {
+            value = fMaximum - vper * (fMaximum - fMinimum);
+
+            if (value < fMinimum)
+                value = fMinimum;
+            else if (value > fMaximum)
+                value = fMaximum;
+        }
 
         setValue(value, true);
     }

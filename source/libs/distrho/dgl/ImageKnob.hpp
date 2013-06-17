@@ -50,6 +50,7 @@ public:
     void setOrientation(Orientation orientation);
     void setRange(float min, float max);
     void setValue(float value, bool sendCallback = false);
+    void setRotationAngle(int angle);
 
     void setCallback(Callback* callback);
 
@@ -57,6 +58,8 @@ protected:
      void onDisplay() override;
      bool onMouse(int button, bool press, int x, int y) override;
      bool onMotion(int x, int y) override;
+     void onReshape(int width, int height) override;
+     void onClose() override;
 
 private:
     Image fImage;
@@ -65,6 +68,7 @@ private:
     float fValue;
     Orientation fOrientation;
 
+    int  fRotationAngle;
     bool fDragging;
     int  fLastX;
     int  fLastY;
@@ -75,6 +79,7 @@ private:
     int  fImgLayerSize;
     int  fImgLayerCount;
     Rectangle<int> fKnobArea;
+    GLuint fTextureId;
 };
 
 // -------------------------------------------------
