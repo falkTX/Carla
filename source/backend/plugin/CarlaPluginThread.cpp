@@ -55,8 +55,13 @@ CarlaPluginThread::CarlaPluginThread(CarlaBackend::CarlaEngine* const engine, Ca
 
 CarlaPluginThread::~CarlaPluginThread()
 {
+    carla_debug("CarlaPluginThread::~CarlaPluginThread()");
+
     if (fProcess != nullptr)
+    {
        delete fProcess;
+       fProcess = nullptr;
+    }
 }
 
 void CarlaPluginThread::setMode(const CarlaPluginThread::Mode mode)

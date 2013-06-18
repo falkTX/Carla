@@ -2297,9 +2297,12 @@ if __name__ == '__main__':
     app.setOrganizationName("falkTX")
     app.setWindowIcon(QIcon(":/scalable/carla.svg"))
 
-    for i in range(len(app.arguments())):
+    argv = app.arguments()
+    argc = len(argv)
+
+    for i in range(argc):
         if i == 0: continue
-        argument = app.arguments()[i]
+        argument = argv[i]
 
         if argument.startswith("--with-appname="):
             appName = os.path.basename(argument.replace("--with-appname=", ""))

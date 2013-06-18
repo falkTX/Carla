@@ -601,8 +601,8 @@ class ControlServer(ServerThread):
 # Main Window
 
 class CarlaControlW(QMainWindow):
-    def __init__(self, parent=None):
-        QMainWindow.__init__(self, parent)
+    def __init__(self, oscAddr=None):
+        QMainWindow.__init__(self, None)
         self.ui = ui_carla_control.Ui_CarlaControlW()
         self.ui.setupUi(self)
 
@@ -680,6 +680,33 @@ class CarlaControlW(QMainWindow):
         self.connect(self, SIGNAL("SetPeaks(int, double, double, double, double)"), SLOT("slot_handleSetPeaks(int, double, double, double, double)"))
         self.connect(self, SIGNAL("Exit()"), SLOT("slot_handleExit()"))
 
+        if oscAddr:
+            self.connectToAddr(oscAddr)
+
+    def connectToAddr(self, addr):
+        global lo_target, lo_targetName
+
+        self.lo_address = oscAddr
+        lo_target       = Address(self.lo_address)
+        lo_targetName   = self.lo_address.rsplit("/", 1)[-1]
+        print("Connecting to \"%s\" as '%s'..." % (self.lo_address, lo_targetName))
+
+        try:
+            self.lo_server = ControlServer(self, LO_UDP if self.lo_address.startswith("osc.udp") else LO_TCP)
+        except: # ServerError, err:
+            print("Connecting error!")
+            #print str(err)
+            QMessageBox.critical(self, self.tr("Error"), self.tr("Failed to connect, operation failed."))
+            return
+
+        if self.lo_server:
+            self.lo_server.start()
+            self.ui.act_file_refresh.setEnabled(True)
+            lo_send(lo_target, "/register", self.lo_server.getFullURL())
+
+        self.fIdleTimerFast = self.startTimer(60)
+        self.fIdleTimerSlow = self.startTimer(60*2)
+
     def removeAll(self):
         self.killTimer(self.fIdleTimerFast)
         self.killTimer(self.fIdleTimerSlow)
@@ -725,22 +752,7 @@ class CarlaControlW(QMainWindow):
 
         self.slot_handleExit()
 
-        self.lo_address = askValue[0]
-        lo_target       = Address(self.lo_address)
-        lo_targetName   = self.lo_address.rsplit("/", 1)[-1]
-        print("Connecting to \"%s\" as '%s'..." % (self.lo_address, lo_targetName))
-
-        try:
-            self.lo_server = ControlServer(self, LO_UDP if self.lo_address.startswith("osc.udp") else LO_TCP)
-        except: # ServerError, err:
-            print("Connecting error!")
-            #print str(err)
-            QMessageBox.critical(self, self.tr("Error"), self.tr("Failed to connect, operation failed."))
-
-        if self.lo_server:
-            self.lo_server.start()
-            self.ui.act_file_refresh.setEnabled(True)
-            lo_send(lo_target, "/register", self.lo_server.getFullURL())
+        self.connectToAddr(askValue[0])
 
     @pyqtSlot()
     def slot_fileRefresh(self):
@@ -1057,12 +1069,10 @@ if __name__ == '__main__':
     app.setWindowIcon(QIcon(":/scalable/carla-control.svg"))
 
     libPrefix = None
+    oscAddr = None
 
     argv = app.arguments()
     argc = len(argv)
-
-    #print(argc)
-    #print(argv)
 
     for i in range(argc):
         if i == 0: continue
@@ -1070,6 +1080,9 @@ if __name__ == '__main__':
 
         if argument.startswith("--with-libprefix="):
             libPrefix = argument.replace("--with-libprefix=", "")
+
+        elif argument.startswith("osc."):
+            oscAddr = argument
 
     if libPrefix is not None:
         libName = os.path.join(libPrefix, "lib", "carla", carla_libname)
@@ -1089,7 +1102,7 @@ if __name__ == '__main__':
     Carla.host = Host()
 
     # Create GUI
-    Carla.gui = CarlaControlW()
+    Carla.gui = CarlaControlW(oscAddr)
 
     # Set-up custom signal handling
     setUpSignals()

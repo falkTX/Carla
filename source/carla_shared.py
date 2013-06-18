@@ -1182,6 +1182,9 @@ class PluginEdit(QDialog):
         self.fPluginInfo['maker']     = cString(self.fPluginInfo['maker'])
         self.fPluginInfo['copyright'] = cString(self.fPluginInfo['copyright'])
 
+        if not Carla.isLocal:
+            self.fPluginInfo['hints'] &= ~PLUGIN_HAS_GUI
+
         self.reloadInfo()
         self.reloadParameters()
         self.reloadPrograms()
@@ -1981,6 +1984,9 @@ class PluginWidget(QFrame):
         self.fPluginInfo['label']     = cString(self.fPluginInfo['label'])
         self.fPluginInfo['maker']     = cString(self.fPluginInfo['maker'])
         self.fPluginInfo['copyright'] = cString(self.fPluginInfo['copyright'])
+
+        if not Carla.isLocal:
+            self.fPluginInfo['hints'] &= ~PLUGIN_HAS_GUI
 
         self.fLastGreenLedState = False
         self.fLastBlueLedState  = False
