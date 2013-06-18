@@ -7,3 +7,4 @@ Icon=carla-control
 Terminal=false
 Type=Application
 Categories=AudioVideo;AudioEditing;Qt;
+Version=1.0

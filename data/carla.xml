@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/x-carla-project">
+    <sub-class-of type="text/xml"/>
+    <comment>Carla project</comment>
+    <glob pattern="*.carxp"/>
+  </mime-type>
+  <mime-type type="application/x-carla-plugin-preset">
+    <sub-class-of type="text/xml"/>
+    <comment>Carla plugin preset</comment>
+    <glob pattern="*.carxs"/>
+  </mime-type>
+</mime-info>

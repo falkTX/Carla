@@ -151,17 +151,17 @@ install:
 	install -d $(DESTDIR)$(PREFIX)/lib/carla/resources/zynaddsubfx/
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
 	install -d $(DESTDIR)$(PREFIX)/lib/dssi/
-	install -d $(DESTDIR)$(PREFIX)/lib/lv2/
 	install -d $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/
 	install -d $(DESTDIR)$(PREFIX)/lib/vst/
 endif
 	install -d $(DESTDIR)$(PREFIX)/share/applications/
+	install -d $(DESTDIR)$(PREFIX)/share/carla/
 	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/16x16/apps/
 	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/48x48/apps/
 	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/128x128/apps/
 	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/256x256/apps/
 	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/
-	install -d $(DESTDIR)$(PREFIX)/share/carla/
+	install -d $(DESTDIR)$(PREFIX)/share/mime/packages/
 
 	# Install script files
 	install -m 755 \
@@ -192,6 +192,9 @@ endif
 	# Install icons, scalable
 	install -m 644 resources/scalable/carla.svg         $(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/
 	install -m 644 resources/scalable/carla-control.svg $(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/
+
+	# Install mime package
+	install -m 644 data/carla.xml $(DESTDIR)$(PREFIX)/share/mime/packages/
 
 	# Install binaries
 	install -m 755 \

@@ -7,4 +7,5 @@ Icon=carla
 Terminal=false
 Type=Application
 Categories=AudioVideo;AudioEditing;Qt;
-#MimeType=
+MimeType=application/x-carla-project;
+Version=1.0
