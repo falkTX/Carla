@@ -445,6 +445,8 @@ const CarlaNativePluginInfo* carla_get_internal_plugin_info(unsigned int interna
          info.hints |= CarlaBackend::PLUGIN_IS_SYNTH;
      if (nativePlugin->hints & PLUGIN_HAS_GUI)
          info.hints |= CarlaBackend::PLUGIN_HAS_GUI;
+     if (nativePlugin->hints & PLUGIN_USES_GUI_AS_FILE)
+         info.hints |= CarlaBackend::PLUGIN_HAS_GUI_AS_FILE;
      if (nativePlugin->hints & PLUGIN_USES_SINGLE_THREAD)
          info.hints |= CarlaBackend::PLUGIN_HAS_SINGLE_THREAD;
 

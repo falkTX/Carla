@@ -160,7 +160,7 @@ double SunVoxFilePlugin::sTicksPerFrame = 0.0;
 
 static const PluginDescriptor sunvoxfileDesc = {
     /* category  */ PLUGIN_CATEGORY_UTILITY,
-    /* hints     */ static_cast<PluginHints>(PLUGIN_HAS_GUI),
+    /* hints     */ static_cast<PluginHints>(PLUGIN_HAS_GUI|PLUGIN_USES_GUI_AS_FILE),
     /* audioIns  */ 0,
     /* audioOuts */ 2,
     /* midiIns   */ 0,

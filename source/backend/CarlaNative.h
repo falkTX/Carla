@@ -53,8 +53,9 @@ typedef enum _PluginHints {
     PLUGIN_IS_RTSAFE           = 1 << 0,
     PLUGIN_IS_SYNTH            = 1 << 1,
     PLUGIN_HAS_GUI             = 1 << 2,
-    PLUGIN_USES_SINGLE_THREAD  = 1 << 3,
-    PLUGIN_USES_STATE          = 1 << 4
+    PLUGIN_USES_GUI_AS_FILE    = 1 << 3,
+    PLUGIN_USES_SINGLE_THREAD  = 1 << 4,
+    PLUGIN_USES_STATE          = 1 << 5
 } PluginHints;
 
 typedef enum _ParameterHints {
