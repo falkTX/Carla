@@ -135,7 +135,6 @@ public:
 
     void quit() override
     {
-        CARLA_ASSERT(fWindow != nullptr);
         carla_debug("CarlaToolkitGtk::quit()");
 
         if (fWindow != nullptr)
@@ -153,7 +152,7 @@ public:
         carla_debug("CarlaToolkitGtk::show()");
 
         if (fWindow != nullptr)
-            gtk_widget_show(fWindow);
+            gtk_widget_show_all(fWindow);
     }
 
     void hide() override
