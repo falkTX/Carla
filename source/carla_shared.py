@@ -2034,8 +2034,12 @@ class PluginWidget(QFrame):
         }""" % labelColor)
 
         self.ui.b_enable.setPixmaps(":/bitmaps/button_off.png", ":/bitmaps/button_on.png", ":/bitmaps/button_off.png")
-        self.ui.b_gui.setPixmaps(":/bitmaps/button_gui.png", ":/bitmaps/button_gui_down.png", ":/bitmaps/button_gui_hover.png")
         self.ui.b_edit.setPixmaps(":/bitmaps/button_edit.png", ":/bitmaps/button_edit_down.png", ":/bitmaps/button_edit_hover.png")
+
+        if self.fPluginInfo['hints'] & PLUGIN_HAS_GUI_AS_FILE:
+            self.ui.b_gui.setPixmaps(":/bitmaps/button_file.png", ":/bitmaps/button_file_down.png", ":/bitmaps/button_file_hover.png")
+        else:
+            self.ui.b_gui.setPixmaps(":/bitmaps/button_gui.png", ":/bitmaps/button_gui_down.png", ":/bitmaps/button_gui_hover.png")
 
         self.ui.led_control.setColor(self.ui.led_control.YELLOW)
         self.ui.led_control.setEnabled(False)

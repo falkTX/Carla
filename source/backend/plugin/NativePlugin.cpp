@@ -1116,6 +1116,8 @@ public:
             fHints |= PLUGIN_IS_SYNTH;
         if (fDescriptor->hints & ::PLUGIN_HAS_GUI)
             fHints |= PLUGIN_HAS_GUI;
+        if (fDescriptor->hints & ::PLUGIN_USES_GUI_AS_FILE)
+            fHints |= PLUGIN_HAS_GUI_AS_FILE;
         if (fDescriptor->hints & ::PLUGIN_USES_SINGLE_THREAD)
             fHints |= PLUGIN_HAS_SINGLE_THREAD;
 

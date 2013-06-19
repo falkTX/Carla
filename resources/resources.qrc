@@ -45,11 +45,15 @@
 
         <file>scalable/carla.svg</file>
         <file>scalable/carla-control.svg</file>
+        <file>scalable/distrho.svg</file>
 
         <file>bitmaps/carla_about.png</file>
         <file>bitmaps/button_edit.png</file>
         <file>bitmaps/button_edit_down.png</file>
         <file>bitmaps/button_edit_hover.png</file>
+        <file>bitmaps/button_file.png</file>
+        <file>bitmaps/button_file_down.png</file>
+        <file>bitmaps/button_file_hover.png</file>
         <file>bitmaps/button_gui.png</file>
         <file>bitmaps/button_gui_down.png</file>
         <file>bitmaps/button_gui_hover.png</file>
@@ -83,6 +87,7 @@
         <file>scalable/pb_hardware.svg</file>
         <file>scalable/pb_audacious.svg</file>
         <file>scalable/pb_clementine.svg</file>
+        <file>scalable/pb_distrho.svg</file>
         <file>scalable/pb_jamin.svg</file>
         <file>scalable/pb_mplayer.svg</file>
         <file>scalable/pb_vlc.svg</file>

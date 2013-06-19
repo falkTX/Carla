@@ -59,6 +59,7 @@ public:
         qtUi->setParent(this);
         setCentralWidget(qtUi);
 #endif
+        setWindowIcon(QIcon(":/scalable/distrho.svg"));
         setWindowTitle(QString("%1 (GUI)").arg(fUi.name()));
 
         uiResize(fUi.width(), fUi.height());

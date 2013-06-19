@@ -33,8 +33,7 @@ DistrhoUINekobi::DistrhoUINekobi()
     // background
     fImgBackground = Image(DistrhoArtworkNekobi::backgroundData, DistrhoArtworkNekobi::backgroundWidth, DistrhoArtworkNekobi::backgroundHeight, GL_BGR);
 
-    // TODO - about png
-    Image imageAbout(DistrhoArtworkNekobi::aboutButtonHoverData, DistrhoArtworkNekobi::aboutButtonHoverWidth, DistrhoArtworkNekobi::aboutButtonHoverHeight, GL_BGRA);
+    Image imageAbout(DistrhoArtworkNekobi::aboutData, DistrhoArtworkNekobi::aboutWidth, DistrhoArtworkNekobi::aboutHeight, GL_BGR);
     fAboutWindow.setImage(imageAbout);
 
     // slider

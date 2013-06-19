@@ -5,6 +5,11 @@
 
 namespace DistrhoArtworkNekobi
 {
+    extern const char* aboutData;
+    const unsigned int aboutDataSize = 172710;
+    const unsigned int aboutWidth    = 303;
+    const unsigned int aboutHeight   = 190;
+
     extern const char* aboutButtonHoverData;
     const unsigned int aboutButtonHoverDataSize = 5888;
     const unsigned int aboutButtonHoverWidth    = 92;

@@ -2,5 +2,7 @@
     <qresource prefix="/">
         <file>bitmaps/style/arrow.png</file>
         <file>bitmaps/style/groupbox.png</file>
+        <file>scalable/carla.svg</file>
+        <file>scalable/distrho.svg</file>
     </qresource>
 </RCC>

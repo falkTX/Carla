@@ -439,7 +439,7 @@ const CarlaNativePluginInfo* carla_get_internal_plugin_info(unsigned int interna
      info.category = static_cast<CarlaPluginCategory>(nativePlugin->category);
      info.hints    = 0x0;
 
-    if (nativePlugin->hints & PLUGIN_IS_RTSAFE)
+     if (nativePlugin->hints & PLUGIN_IS_RTSAFE)
          info.hints |= CarlaBackend::PLUGIN_IS_RTSAFE;
      if (nativePlugin->hints & PLUGIN_IS_SYNTH)
          info.hints |= CarlaBackend::PLUGIN_IS_SYNTH;

@@ -29,8 +29,7 @@ DistrhoUIStereoEnhancer::DistrhoUIStereoEnhancer()
     // background
     fImgBackground = Image(DistrhoArtworkStereoEnhancer::backgroundData, DistrhoArtworkStereoEnhancer::backgroundWidth, DistrhoArtworkStereoEnhancer::backgroundHeight, GL_BGR);
 
-    // TODO - about png
-    Image imageAbout(DistrhoArtworkStereoEnhancer::aboutButtonHoverData, DistrhoArtworkStereoEnhancer::aboutButtonHoverWidth, DistrhoArtworkStereoEnhancer::aboutButtonHoverHeight, GL_BGRA);
+    Image imageAbout(DistrhoArtworkStereoEnhancer::aboutData, DistrhoArtworkStereoEnhancer::aboutWidth, DistrhoArtworkStereoEnhancer::aboutHeight, GL_BGR);
     fAboutWindow.setImage(imageAbout);
 
     // knobs
