@@ -57,7 +57,7 @@ public:
         : kApp(app),
           kAppPriv(appPriv),
           kSelf(self),
-          kView(puglCreate(parentId, "Window", 600, 500, false, (parentId != 0))),
+          kView(puglCreate(parentId, "Window", 100, 100, false, (parentId != 0))),
           fParent(parent),
           fChildFocus(nullptr),
           fVisible((parentId != 0)),
@@ -292,6 +292,9 @@ public:
 
     void setSize(unsigned int width, unsigned int height)
     {
+        kView->width  = width;
+        kView->height = height;
+
 #if DGL_OS_WINDOWS
         int winFlags = WS_POPUPWINDOW | WS_CAPTION;
 
@@ -304,18 +307,24 @@ public:
         SetWindowPos(hwnd, 0, 0, 0, wr.right-wr.left, wr.bottom-wr.top, SWP_NOACTIVATE|SWP_NOMOVE|SWP_NOOWNERZORDER|SWP_NOZORDER);
         UpdateWindow(hwnd);
 #elif DGL_OS_MAC
-		puglImplSetSize(kView, width, height);
+        puglImplSetSize(kView, width, height);
 #elif DGL_OS_LINUX
-        // TODO - handle fResizable
-        XSizeHints sizeHints;
-        memset(&sizeHints, 0, sizeof(sizeHints));
+        XResizeWindow(xDisplay, xWindow, width, height);
 
-        sizeHints.flags      = PMinSize|PMaxSize;
-        sizeHints.min_width  = width;
-        sizeHints.min_height = height;
-        sizeHints.max_width  = width;
-        sizeHints.max_height = height;
-        XSetNormalHints(xDisplay, xWindow, &sizeHints);
+        if (! fResizable)
+        {
+            XSizeHints sizeHints;
+            memset(&sizeHints, 0, sizeof(sizeHints));
+
+            sizeHints.flags      = PMinSize|PMaxSize;
+            sizeHints.min_width  = width;
+            sizeHints.min_height = height;
+            sizeHints.max_width  = width;
+            sizeHints.max_height = height;
+
+            XSetNormalHints(xDisplay, xWindow, &sizeHints);
+        }
+
         XFlush(xDisplay);
 #endif
 

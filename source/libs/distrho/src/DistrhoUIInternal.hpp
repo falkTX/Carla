@@ -133,12 +133,7 @@ public:
         if (kUi == nullptr)
             return;
 
-#ifdef DISTRHO_UI_OPENGL
-        //assert(winId != 0);
-
-        //if (winId == 0)
-        //    return;
-#else
+#ifdef DISTRHO_UI_QT
         assert(winId == 0);
 
         if (winId != 0)
@@ -250,6 +245,12 @@ public:
     intptr_t getWindowId() const
     {
         return glWindow.getWindowId();
+    }
+
+    void fixSize()
+    {
+        assert(kUi != nullptr);
+        glWindow.setSize(kUi->d_width(), kUi->d_height());
     }
 #else
     QtUI* getQtUI() const

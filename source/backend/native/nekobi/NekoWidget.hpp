@@ -59,7 +59,7 @@ public:
 
     void draw()
     {
-        int x = fPos+110;
+        int x = fPos+108;
         int y = -2;
 
         if (fCurImage == &fImages.claw1 || fCurImage == &fImages.claw2)

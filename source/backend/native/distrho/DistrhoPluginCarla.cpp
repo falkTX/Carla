@@ -62,6 +62,9 @@ public:
         setWindowIcon(QIcon(":/scalable/distrho.svg"));
         setWindowTitle(QString("%1 (GUI)").arg(fUi.name()));
 
+#ifdef DISTRHO_UI_OPENGL
+        fUi.fixSize();
+#endif
         uiResize(fUi.width(), fUi.height());
 
         {

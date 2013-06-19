@@ -110,7 +110,7 @@ DistrhoUINekobi::DistrhoUINekobi()
     Image aboutImageNormal(DistrhoArtworkNekobi::aboutButtonNormalData, DistrhoArtworkNekobi::aboutButtonNormalWidth, DistrhoArtworkNekobi::aboutButtonNormalHeight);
     Image aboutImageHover(DistrhoArtworkNekobi::aboutButtonHoverData, DistrhoArtworkNekobi::aboutButtonHoverWidth, DistrhoArtworkNekobi::aboutButtonHoverHeight);
     fButtonAbout = new ImageButton(this, aboutImageNormal, aboutImageHover, aboutImageHover);
-    fButtonAbout->setPos(500, 5);
+    fButtonAbout->setPos(505, 5);
     fButtonAbout->setCallback(this);
 }
 
