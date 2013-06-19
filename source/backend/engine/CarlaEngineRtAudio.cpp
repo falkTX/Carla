@@ -797,12 +797,15 @@ protected:
         float* outsPtr = (float*)outputBuffer;
 
         // assert buffers
-        CARLA_ASSERT(nframes == fBufferSize);
+        CARLA_ASSERT(nframes != 0);
+        CARLA_ASSERT_INT2(nframes == fBufferSize, nframes, fBufferSize);
         CARLA_ASSERT(outsPtr != nullptr);
 
-        if (kData->curPluginCount == 0 || ! fAudioIsReady)
+        if (kData->curPluginCount == 0 || fAudioCountOut == 0 || ! fAudioIsReady)
         {
-            carla_zeroFloat(outsPtr, nframes*fAudioCountOut);
+            if (fAudioCountOut > 0 && fAudioIsReady)
+                carla_zeroFloat(outsPtr, nframes*fAudioCountOut);
+
             return proccessPendingEvents();
         }
 
