@@ -875,7 +875,7 @@ class CarlaMainW(QMainWindow):
         self.connect(self, SIGNAL("ReloadParametersCallback(int)"), SLOT("slot_handleReloadParametersCallback(int)"))
         self.connect(self, SIGNAL("ReloadProgramsCallback(int)"), SLOT("slot_handleReloadProgramsCallback(int)"))
         self.connect(self, SIGNAL("ReloadAllCallback(int)"), SLOT("slot_handleReloadAllCallback(int)"))
-        self.connect(self, SIGNAL("PatchbayClientAddedCallback(int, QString)"), SLOT("slot_handlePatchbayClientAddedCallback(int, QString)"))
+        self.connect(self, SIGNAL("PatchbayClientAddedCallback(int, int, QString)"), SLOT("slot_handlePatchbayClientAddedCallback(int, int, QString)"))
         self.connect(self, SIGNAL("PatchbayClientRemovedCallback(int)"), SLOT("slot_handlePatchbayClientRemovedCallback(int)"))
         self.connect(self, SIGNAL("PatchbayClientRenamedCallback(int, QString)"), SLOT("slot_handlePatchbayClientRenamedCallback(int, QString)"))
         self.connect(self, SIGNAL("PatchbayPortAddedCallback(int, int, int, QString)"), SLOT("slot_handlePatchbayPortAddedCallback(int, int, int, QString)"))
@@ -1901,9 +1901,22 @@ class CarlaMainW(QMainWindow):
 
         pwidget.ui.edit_dialog.reloadAll()
 
-    @pyqtSlot(int, str)
-    def slot_handlePatchbayClientAddedCallback(self, clientId, clientName):
-        patchcanvas.addGroup(clientId, clientName)
+    @pyqtSlot(int, int, str)
+    def slot_handlePatchbayClientAddedCallback(self, clientId, clientIcon, clientName):
+        pcSplit = patchcanvas.SPLIT_UNDEF
+        pcIcon  = patchcanvas.ICON_APPLICATION
+
+        if clientIcon == PATCHBAY_ICON_HARDWARE:
+            pcSplit = patchcanvas.SPLIT_YES
+            pcIcon = patchcanvas.ICON_HARDWARE
+        elif clientIcon == PATCHBAY_ICON_PLUGIN:
+            pcIcon = patchcanvas.ICON_PLUGIN
+        elif clientIcon == PATCHBAY_ICON_DISTRHO:
+            pcIcon = patchcanvas.ICON_DISTRHO
+        elif clientIcon == PATCHBAY_ICON_FILE:
+            pcIcon = patchcanvas.ICON_FILE
+
+        patchcanvas.addGroup(clientId, clientName, pcSplit, pcIcon)
         QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
 
     @pyqtSlot(int)
@@ -2258,7 +2271,7 @@ def engineCallback(ptr, action, pluginId, value1, value2, value3, valueStr):
     elif action == CALLBACK_RELOAD_ALL:
         Carla.gui.emit(SIGNAL("ReloadAllCallback(int)"), pluginId)
     elif action == CALLBACK_PATCHBAY_CLIENT_ADDED:
-        Carla.gui.emit(SIGNAL("PatchbayClientAddedCallback(int, QString)"), value1, cString(valueStr))
+        Carla.gui.emit(SIGNAL("PatchbayClientAddedCallback(int, int, QString)"), value1, value2, cString(valueStr))
     elif action == CALLBACK_PATCHBAY_CLIENT_REMOVED:
         Carla.gui.emit(SIGNAL("PatchbayClientRemovedCallback(int)"), value1)
     elif action == CALLBACK_PATCHBAY_CLIENT_RENAMED:

@@ -85,6 +85,9 @@
 
         <file>scalable/pb_generic.svg</file>
         <file>scalable/pb_hardware.svg</file>
+        <file>scalable/pb_plugin.svg</file>
+        <file>scalable/pb_file.svg</file>
+        <file>scalable/pb_configure.svg</file>
         <file>scalable/pb_audacious.svg</file>
         <file>scalable/pb_clementine.svg</file>
         <file>scalable/pb_distrho.svg</file>

@@ -526,7 +526,7 @@ public:
         fOptions.processMode = PROCESS_MODE_MULTIPLE_CLIENTS;
 #else
 # ifndef CARLA_PROPER_CPP11_SUPPORT
-        carla_zeroStruct<jack_port_t*>(fRackPorts, rackPortCount);
+        carla_fill<jack_port_t*>(fRackPorts, rackPortCount, nullptr);
 # endif
 #endif
 
@@ -545,6 +545,7 @@ public:
         fUsedGroupNames.clear();
         fUsedPortNames.clear();
         fUsedConnections.clear();
+        fPluginClientNames.clear();
 #endif
     }
 
@@ -587,6 +588,7 @@ public:
         fUsedGroupNames.clear();
         fUsedPortNames.clear();
         fUsedConnections.clear();
+        fPluginClientNames.clear();
 
         fClient = jackbridge_client_open(clientName, JackNullOption, nullptr);
 
@@ -693,6 +695,7 @@ public:
         fUsedGroupNames.clear();
         fUsedPortNames.clear();
         fUsedConnections.clear();
+        fPluginClientNames.clear();
 #endif
         return false;
     }
@@ -746,6 +749,12 @@ public:
 # if 0
             jackbridge_set_latency_callback(client, carla_jack_latency_callback_plugin, plugin);
 # endif
+            CARLA_ASSERT(client != nullptr);
+
+            if (client == nullptr)
+                return nullptr;
+
+            fPluginClientNames.append(QString(jackbridge_get_client_name(client)));
         }
 #endif
 
@@ -851,8 +860,8 @@ public:
             return false;
         }
 
-        const char* const portNameA = getFullPortName(portA).toUtf8().constData();
-        const char* const portNameB = getFullPortName(portB).toUtf8().constData();
+        const char* const portNameA(getFullPortName(portA).toUtf8().constData());
+        const char* const portNameB(getFullPortName(portB).toUtf8().constData());
 
         if (! jackbridge_connect(fClient, portNameA, portNameB))
         {
@@ -877,8 +886,8 @@ public:
         {
             if (fUsedConnections[i].id == connectionId)
             {
-                const char* const portNameA = getFullPortName(fUsedConnections[i].portOut).toUtf8().constData();
-                const char* const portNameB = getFullPortName(fUsedConnections[i].portIn).toUtf8().constData();
+                const char* const portNameA(getFullPortName(fUsedConnections[i].portOut).toUtf8().constData());
+                const char* const portNameB(getFullPortName(fUsedConnections[i].portIn).toUtf8().constData());
 
                 if (! jackbridge_disconnect(fClient, portNameA, portNameB))
                 {
@@ -1274,7 +1283,15 @@ protected:
             groupNameToId.id   = fLastGroupId;
             groupNameToId.name = name;
 
-            callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, fLastGroupId, 0, 0.0f, name);
+            PatchbayIconType groupIcon = PATCHBAY_ICON_APPLICATION;
+
+            if (fPluginClientNames.contains(QString(name)))
+            {
+                // TODO - identify distrho or file icon
+                groupIcon = PATCHBAY_ICON_PLUGIN;
+            }
+
+            callback(CALLBACK_PATCHBAY_CLIENT_ADDED, groupIcon, fLastGroupId, 0, 0.0f, name);
             fUsedGroupNames.append(groupNameToId);
             fLastGroupId++;
         }
@@ -1455,6 +1472,8 @@ private:
     QList<PortNameToId>   fUsedPortNames;
     QList<ConnectionToId> fUsedConnections;
 
+    QStringList fPluginClientNames;
+
     int getGroupId(QString groupName)
     {
         for (int i=0, count=fUsedGroupNames.count(); i < count; ++i)
@@ -1528,6 +1547,7 @@ private:
                 QString fullName(ports[i]);
                 QString groupName(fullName.split(":").at(0));
                 int     groupId   = -1;
+                int jackPortFlags = jackbridge_port_flags(jackPort);
 
                 //if (groupName == ourName)
                 //    continue;
@@ -1547,10 +1567,20 @@ private:
                     fUsedGroupNames.append(groupNameToId);
                     parsedGroups.append(groupName);
 
-                    callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, groupId, 0, 0.0f, groupName.toUtf8().constData());
+                    PatchbayIconType groupIcon = PATCHBAY_ICON_APPLICATION;
+
+                    if (fPluginClientNames.contains(groupName))
+                    {
+                        // TODO - identify distrho or file icon
+                        groupIcon = PATCHBAY_ICON_PLUGIN;
+                    }
+                    else if (jackPortFlags & JackPortIsPhysical)
+                        groupIcon = PATCHBAY_ICON_HARDWARE;
+
+                    callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, groupId, groupIcon, 0.0f, groupName.toUtf8().constData());
                 }
 
-                bool portIsInput = (jackbridge_port_flags(jackPort) & JackPortIsInput);
+                bool portIsInput = (jackPortFlags & JackPortIsInput);
                 bool portIsAudio = (std::strcmp(jackbridge_port_type(jackPort), JACK_DEFAULT_AUDIO_TYPE) == 0);
 
                 unsigned int portFlags = 0x0;

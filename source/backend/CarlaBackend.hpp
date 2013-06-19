@@ -204,6 +204,17 @@ enum InternalParametersIndex {
 };
 
 /*!
+ * The icon of a patchbay client/group.
+ */
+enum PatchbayIconType {
+    PATCHBAY_ICON_APPLICATION = 0, //!< Generic application icon.
+    PATCHBAY_ICON_HARDWARE    = 1, //!< Hardware icon.
+    PATCHBAY_ICON_PLUGIN      = 2, //!< Plugin icon.
+    PATCHBAY_ICON_DISTRHO     = 3, //!< DISTRHO icon.
+    PATCHBAY_ICON_FILE        = 4  //!< File icon.
+};
+
+/*!
  * Options used in the CarlaEngine::setOption() and set_option() calls.\n
  * All options except paths must be set before initiliazing or after closing the engine.
  */
@@ -530,6 +541,7 @@ enum CallbackType {
      * Canvas client added
      *
      * \param value1   Client Id
+     * \param value2   Client Icon
      * \param valueStr Client name
      */
     CALLBACK_PATCHBAY_CLIENT_ADDED = 18,
