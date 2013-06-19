@@ -110,8 +110,9 @@ public:
 #endif
 
         // just to make sure
-        fOptions.forceStereo = true;
-        fOptions.processMode = PROCESS_MODE_CONTINUOUS_RACK;
+        fOptions.forceStereo   = true;
+        fOptions.processMode   = PROCESS_MODE_CONTINUOUS_RACK;
+        fOptions.transportMode = TRANSPORT_MODE_INTERNAL;
     }
 
     ~CarlaEngineRtAudio() override
