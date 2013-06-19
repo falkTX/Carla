@@ -29,8 +29,7 @@ DistrhoUIPingPongPan::DistrhoUIPingPongPan()
     // background
     fImgBackground = Image(DistrhoArtworkPingPongPan::backgroundData, DistrhoArtworkPingPongPan::backgroundWidth, DistrhoArtworkPingPongPan::backgroundHeight, GL_BGR);
 
-    // TODO - about png
-    Image imageAbout(DistrhoArtworkPingPongPan::aboutButtonHoverData, DistrhoArtworkPingPongPan::aboutButtonHoverWidth, DistrhoArtworkPingPongPan::aboutButtonHoverHeight, GL_BGRA);
+    Image imageAbout(DistrhoArtworkPingPongPan::aboutData, DistrhoArtworkPingPongPan::aboutWidth, DistrhoArtworkPingPongPan::aboutHeight, GL_BGR);
     fAboutWindow.setImage(imageAbout);
 
     // knobs
