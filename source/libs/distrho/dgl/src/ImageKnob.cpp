@@ -182,7 +182,7 @@ void ImageKnob::onDisplay()
 {
     const float normValue = (fValue - fMinimum) / (fMaximum - fMinimum);
 
-    if (fRotationAngle != 0 || true)
+    if (fRotationAngle != 0)
     {
         glEnable(GL_TEXTURE_2D);
         glBindTexture(GL_TEXTURE_2D, fTextureId);
@@ -223,7 +223,7 @@ void ImageKnob::onDisplay()
     }
     else
     {
-        const int layerDataSize   = fImgLayerSize * fImgLayerSize * (fImage.getFormat() == GL_BGRA || fImage.getFormat() == GL_RGBA ? 4 : 3);
+        const int layerDataSize   = fImgLayerSize * fImgLayerSize * ((fImage.getFormat() == GL_BGRA || fImage.getFormat() == GL_RGBA) ? 4 : 3);
         const int imageDataSize   = layerDataSize * fImgLayerCount;
         const int imageDataOffset = imageDataSize - layerDataSize - (layerDataSize * int(normValue * float(fImgLayerCount-1)));
 
