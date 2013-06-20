@@ -78,7 +78,7 @@ RES = source/resources_rc.py
 
 RES: $(RES)
 
-source/%_rc.py: resources/%.qrc
+source/%_rc.py: resources/%.qrc resources/*/*.png resources/*/*.svg
 	$(PYRCC) $< -o $@
 
 # --------------------------------------------------------------

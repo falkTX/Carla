@@ -2260,7 +2260,7 @@ class PluginWidget(QFrame):
         painter = QPainter(self)
         painter.save()
 
-        areaX = self.ui.area_right.x()
+        areaX = self.ui.area_right.x()+7
 
         painter.setPen(self.fColorSeprtr.lighter(110))
         painter.setBrush(self.fColorBottom)
@@ -2269,8 +2269,8 @@ class PluginWidget(QFrame):
         # name -> leds arc
         path = QPainterPath()
         path.moveTo(areaX-20, self.height()-4)
-        path.cubicTo(areaX+5, self.height()-5, areaX-20, 4.75, areaX+20, 4.75)
-        path.lineTo(areaX+20, self.height()-5)
+        path.cubicTo(areaX, self.height()-5, areaX-20, 4.75, areaX, 4.75)
+        path.lineTo(areaX, self.height()-5)
         painter.drawPath(path)
 
         painter.setPen(self.fColorSeprtr)
@@ -2278,7 +2278,7 @@ class PluginWidget(QFrame):
 
         # separator lines
         painter.drawLine(0, self.height()-5, areaX-20, self.height()-5)
-        painter.drawLine(areaX+20, 4, self.width(), 4)
+        painter.drawLine(areaX, 4, self.width(), 4)
 
         painter.setPen(self.fColorBottom)
         painter.setBrush(self.fColorBottom)
@@ -2286,11 +2286,11 @@ class PluginWidget(QFrame):
         # top, bottom and left lines
         painter.drawLine(0, 0, self.width(), 0)
         painter.drawRect(0, self.height()-4, areaX, 4)
-        painter.drawRoundedRect(areaX-20, self.height()-5, areaX+20, 5, 22, 22)
+        painter.drawRoundedRect(areaX-20, self.height()-5, areaX, 5, 22, 22)
         painter.drawLine(0, 0, 0, self.height())
 
         # fill the rest
-        painter.drawRect(areaX+19, 5, self.width(), self.height())
+        painter.drawRect(areaX-1, 5, self.width(), self.height())
 
         # bottom 1px line
         painter.setPen(self.fColorSeprtr)
