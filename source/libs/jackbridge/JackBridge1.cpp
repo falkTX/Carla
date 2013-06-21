@@ -82,6 +82,12 @@ typedef void (*jacksym_transport_start)(jack_client_t*);
 typedef void (*jacksym_transport_stop)(jack_client_t*);
 typedef jack_transport_state_t (*jacksym_transport_query)(const jack_client_t*, jack_position_t*);
 
+typedef int (*jacksym_custom_publish_data)(jack_client_t* client, const char* key, const void* data, size_t size);
+typedef int (*jacksym_custom_get_data)(jack_client_t* client, const char* client_name, const char* key, void** data, size_t* size);
+typedef int (*jacksym_custom_unpublish_data)(jack_client_t* client, const char* key);
+typedef int (*jacksym_custom_set_data_appearance_callback)(jack_client_t* client, JackCustomDataAppearanceCallback callback, void* arg);
+typedef const char** (*jacksym_custom_get_keys)(jack_client_t* client, const char* client_name);
+
 // -----------------------------------------------------------------------------
 
 struct JackBridge {
@@ -139,6 +145,12 @@ struct JackBridge {
     jacksym_transport_stop transport_stop_ptr;
     jacksym_transport_query transport_query_ptr;
 
+    jacksym_custom_publish_data custom_publish_data_ptr;
+    jacksym_custom_get_data custom_get_data_ptr;
+    jacksym_custom_unpublish_data custom_unpublish_data_ptr;
+    jacksym_custom_set_data_appearance_callback custom_set_data_appearance_callback_ptr;
+    jacksym_custom_get_keys custom_get_keys_ptr;
+
     JackBridge()
         : lib(nullptr),
           get_version_string_ptr(nullptr),
@@ -189,7 +201,12 @@ struct JackBridge {
           transport_locate_ptr(nullptr),
           transport_start_ptr(nullptr),
           transport_stop_ptr(nullptr),
-          transport_query_ptr(nullptr)
+          transport_query_ptr(nullptr),
+          custom_publish_data_ptr(nullptr),
+          custom_get_data_ptr(nullptr),
+          custom_unpublish_data_ptr(nullptr),
+          custom_set_data_appearance_callback_ptr(nullptr),
+          custom_get_keys_ptr(nullptr)
     {
 # if defined(CARLA_OS_MAC)
         const char* const filename("libjack.dylib");
@@ -265,6 +282,12 @@ struct JackBridge {
         LIB_SYMBOL(transport_start)
         LIB_SYMBOL(transport_stop)
         LIB_SYMBOL(transport_query)
+
+        LIB_SYMBOL(custom_publish_data)
+        LIB_SYMBOL(custom_get_data)
+        LIB_SYMBOL(custom_unpublish_data)
+        LIB_SYMBOL(custom_set_data_appearance_callback)
+        LIB_SYMBOL(custom_get_keys)
 
         #undef JOIN
         #undef LIB_SYMBOL
@@ -891,7 +914,7 @@ int jackbridge_transport_locate(jack_client_t* client, jack_nframes_t frame)
 #else
     if (bridge.transport_locate_ptr != nullptr)
         return (bridge.transport_locate_ptr(client, frame) == 0);
-    return false;
+    return 0;
 #endif
 }
 
@@ -927,6 +950,73 @@ jack_transport_state_t jackbridge_transport_query(const jack_client_t* client, j
     if (bridge.transport_query_ptr != nullptr)
         return bridge.transport_query_ptr(client, pos);
     return JackTransportStopped;
+#endif
+}
+
+// -----------------------------------------------------------------------------
+
+bool jackbridge_custom_publish_data(jack_client_t* client, const char* key, const void* data, size_t size)
+{
+#if JACKBRIDGE_DUMMY
+    return false;
+#elif JACKBRIDGE_DIRECT
+    return (jack_custom_publish_data(client, key, data, size) == 0);
+#else
+    if (bridge.custom_publish_data_ptr != nullptr)
+        return (bridge.custom_publish_data_ptr(client, key, data, size) == 0);
+    return false;
+#endif
+}
+
+bool jackbridge_custom_get_data(jack_client_t* client, const char* client_name, const char* key, void** data, size_t* size)
+{
+#if JACKBRIDGE_DUMMY
+    return false;
+#elif JACKBRIDGE_DIRECT
+    return (jack_custom_get_data(client, client_name, key, data, size) == 0);
+#else
+    if (bridge.custom_get_data_ptr != nullptr)
+        return (bridge.custom_get_data_ptr(client, client_name, key, data, size) == 0);
+    return false;
+#endif
+}
+
+bool jackbridge_custom_unpublish_data(jack_client_t* client, const char* key)
+{
+#if JACKBRIDGE_DUMMY
+    return false;
+#elif JACKBRIDGE_DIRECT
+    return (jack_custom_unpublish_data(client, key) == 0);
+#else
+    if (bridge.custom_unpublish_data_ptr != nullptr)
+        return (bridge.custom_unpublish_data_ptr(client, key) == 0);
+    return false;
+#endif
+}
+
+bool jackbridge_custom_set_data_appearance_callback(jack_client_t* client, JackCustomDataAppearanceCallback callback, void* arg)
+{
+#if JACKBRIDGE_DUMMY
+    return false;
+#elif JACKBRIDGE_DIRECT
+    return (jack_custom_set_data_appearance_callback(client, callback, arg) == 0);
+#else
+    if (bridge.custom_set_data_appearance_callback_ptr != nullptr)
+        return (bridge.custom_set_data_appearance_callback_ptr(client, callback, arg) == 0);
+    return false;
+#endif
+}
+
+const char** jackbridge_custom_get_keys(jack_client_t* client, const char* client_name)
+{
+#if JACKBRIDGE_DUMMY
+    return nullptr;
+#elif JACKBRIDGE_DIRECT
+    return jack_custom_get_keys(client, client_name);
+#else
+    if (bridge.custom_get_keys_ptr != nullptr)
+        return bridge.custom_get_keys_ptr(client, client_name);
+    return nullptr;
 #endif
 }
 

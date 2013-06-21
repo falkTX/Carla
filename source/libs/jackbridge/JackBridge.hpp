@@ -30,12 +30,6 @@
 # include <jack/transport.h>
 #else
 
-#define PRE_PACKED_STRUCTURE
-#define POST_PACKED_STRUCTURE __attribute__((__packed__))
-
-#define JACK_DEFAULT_AUDIO_TYPE "32 bit float mono audio"
-#define JACK_DEFAULT_MIDI_TYPE  "8 bit raw midi"
-
 #include <cstddef>
 
 #ifdef CARLA_PROPER_CPP11_SUPPORT
@@ -43,6 +37,47 @@
 #else
 # include <stdint.h>
 #endif
+
+#ifndef POST_PACKED_STRUCTURE
+# ifdef __GNUC__
+  /* POST_PACKED_STRUCTURE needs to be a macro which
+      expands into a compiler directive. The directive must
+      tell the compiler to arrange the preceding structure
+      declaration so that it is packed on byte-boundaries rather
+      than use the natural alignment of the processor and/or
+      compiler.
+  */
+  #define PRE_PACKED_STRUCTURE
+  #define POST_PACKED_STRUCTURE __attribute__((__packed__))
+# else
+  #ifdef _MSC_VER
+    #define PRE_PACKED_STRUCTURE1 __pragma(pack(push,1))
+    #define PRE_PACKED_STRUCTURE    PRE_PACKED_STRUCTURE1
+    /* PRE_PACKED_STRUCTURE needs to be a macro which
+    expands into a compiler directive. The directive must
+    tell the compiler to arrange the following structure
+    declaration so that it is packed on byte-boundaries rather
+    than use the natural alignment of the processor and/or
+    compiler.
+    */
+    #define POST_PACKED_STRUCTURE ;__pragma(pack(pop))
+    /* and POST_PACKED_STRUCTURE needs to be a macro which
+    restores the packing to its previous setting */
+  #else
+    #define PRE_PACKED_STRUCTURE
+    #define POST_PACKED_STRUCTURE
+  #endif // _MSC_VER
+# endif // __GNUC__
+#endif
+
+#define JACK_DEFAULT_AUDIO_TYPE "32 bit float mono audio"
+#define JACK_DEFAULT_MIDI_TYPE  "8 bit raw midi"
+
+#define JACK_HAS_CUSTOM_DATA_API 1
+#define JACK_HAS_PORT_IS_CONTROL_VOLTAGE_FLAG 1
+
+#define JackOpenOptions (JackSessionID|JackServerName|JackNoStartServer|JackUseExactName)
+#define JackLoadOptions (JackLoadInit|JackLoadName|JackUseExactName)
 
 enum JackOptions {
     JackNullOption    = 0x00,
@@ -81,6 +116,7 @@ enum JackPortFlags {
     JackPortIsPhysical = 0x4,
     JackPortCanMonitor = 0x8,
     JackPortIsTerminal = 0x10,
+    JackPortIsControlVoltage = 0x100
 };
 
 enum JackTransportFlags {
@@ -107,6 +143,12 @@ enum JackTransportBits {
     JackTransportBBT      = 0x10
 };
 
+enum JackCustomChange {
+    JackCustomRemoved,
+    JackCustomAdded,
+    JackCustomReplaced
+};
+
 typedef uint32_t jack_nframes_t;
 typedef uint32_t jack_port_id_t;
 typedef uint64_t jack_time_t;
@@ -120,6 +162,7 @@ typedef enum JackLatencyCallbackMode jack_latency_callback_mode_t;
 typedef enum JackTransportFlags jack_transport_state_t;
 typedef enum JackPositionBits jack_position_bits_t;
 typedef enum JackTransportBits jack_transport_bits_t;
+typedef enum JackCustomChange jack_custom_change_t;
 
 struct _jack_midi_event {
     jack_nframes_t    time;
@@ -174,6 +217,7 @@ typedef int  (*JackPortRenameCallback)(jack_port_id_t port, const char* old_name
 typedef void (*JackFreewheelCallback)(int starting, void* arg);
 typedef int  (*JackXRunCallback)(void* arg);
 typedef void (*JackShutdownCallback)(void* arg);
+typedef void (*JackCustomDataAppearanceCallback)(const char* client_name, const char* key, jack_custom_change_t change, void* arg);
 
 #endif // ! JACKBRIDGE_DIRECT
 
@@ -236,6 +280,12 @@ CARLA_EXPORT int  jackbridge_transport_locate(jack_client_t* client, jack_nframe
 CARLA_EXPORT void jackbridge_transport_start(jack_client_t* client);
 CARLA_EXPORT void jackbridge_transport_stop(jack_client_t* client);
 CARLA_EXPORT jack_transport_state_t jackbridge_transport_query(const jack_client_t* client, jack_position_t* pos);
+
+CARLA_EXPORT bool jackbridge_custom_publish_data(jack_client_t* client, const char* key, const void* data, size_t size);
+CARLA_EXPORT bool jackbridge_custom_get_data(jack_client_t* client, const char* client_name, const char* key, void** data, size_t* size);
+CARLA_EXPORT bool jackbridge_custom_unpublish_data(jack_client_t* client, const char* key);
+CARLA_EXPORT bool jackbridge_custom_set_data_appearance_callback(jack_client_t* client, JackCustomDataAppearanceCallback callback, void* arg);
+CARLA_EXPORT const char** jackbridge_custom_get_keys(jack_client_t* client, const char* client_name);
 
 CARLA_EXPORT bool jackbridge_sem_post(void* sem);
 CARLA_EXPORT bool jackbridge_sem_timedwait(void* sem, int secs);
