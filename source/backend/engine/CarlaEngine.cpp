@@ -115,6 +115,65 @@ void CarlaEngineAudioPort::initBuffer(CarlaEngine* const)
 }
 
 // -------------------------------------------------------------------------------------------------------------------
+// Carla Engine CV port
+
+CarlaEngineCVPort::CarlaEngineCVPort(const bool isInput, const ProcessMode processMode, const uint32_t bufferSize)
+    : CarlaEnginePort(isInput, processMode),
+      fBuffer(new float[bufferSize]),
+      fBufferSize(bufferSize)
+{
+    carla_debug("CarlaEngineCVPort::CarlaEngineCVPort(%s, %s)", bool2str(isInput), ProcessMode2Str(processMode));
+}
+
+CarlaEngineCVPort::~CarlaEngineCVPort()
+{
+    carla_debug("CarlaEngineCVPort::~CarlaEngineCVPort()");
+
+    CARLA_ASSERT(fBuffer != nullptr);
+
+    if (fBuffer != nullptr)
+    {
+        delete[] fBuffer;
+        fBuffer = nullptr;
+    }
+}
+
+void CarlaEngineCVPort::initBuffer(CarlaEngine* const engine)
+{
+    CARLA_ASSERT(engine != nullptr && engine->getBufferSize() == fBufferSize);
+
+    if (! kIsInput)
+        carla_zeroFloat(fBuffer, fBufferSize);
+}
+
+void CarlaEngineCVPort::writeBuffer(CarlaEngine* const engine)
+{
+    CARLA_ASSERT(! kIsInput);
+    CARLA_ASSERT(engine != nullptr);
+
+    if (kIsInput)
+        return;
+    if (engine == nullptr)
+        return;
+
+    CARLA_ASSERT(engine->getBufferSize() == fBufferSize);
+}
+
+void CarlaEngineCVPort::setBufferSize(const uint32_t bufferSize)
+{
+    CARLA_ASSERT(fBuffer != nullptr);
+
+    if (fBufferSize == bufferSize)
+        return;
+
+    if (fBuffer != nullptr)
+        delete[] fBuffer;
+
+    fBuffer     = new float[bufferSize];
+    fBufferSize = bufferSize;
+}
+
+// -------------------------------------------------------------------------------------------------------------------
 // Carla Engine Event port
 
 CarlaEngineEventPort::CarlaEngineEventPort(const bool isInput, const ProcessMode processMode)
@@ -288,14 +347,12 @@ void CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t cha
 // -------------------------------------------------------------------------------------------------------------------
 // Carla Engine client (Abstract)
 
-CarlaEngineClient::CarlaEngineClient(const EngineType engineType, const ProcessMode processMode)
-    : kEngineType(engineType),
-      kProcessMode(processMode),
+CarlaEngineClient::CarlaEngineClient(const CarlaEngine& engine)
+    : kEngine(engine),
       fActive(false),
       fLatency(0)
 {
-    CARLA_ASSERT(engineType != kEngineTypeNull);
-    carla_debug("CarlaEngineClient::CarlaEngineClient(%s, %s)", EngineType2Str(engineType), ProcessMode2Str(processMode));
+    carla_debug("CarlaEngineClient::CarlaEngineClient(name:\"%s\")", engine.getName());
 }
 
 CarlaEngineClient::~CarlaEngineClient()
@@ -353,9 +410,11 @@ CarlaEnginePort* CarlaEngineClient::addPort(const EnginePortType portType, const
     case kEnginePortTypeNull:
         break;
     case kEnginePortTypeAudio:
-        return new CarlaEngineAudioPort(isInput, kProcessMode);
+        return new CarlaEngineAudioPort(isInput, kEngine.getProccessMode());
+    case kEnginePortTypeCV:
+        return new CarlaEngineCVPort(isInput, kEngine.getProccessMode(), kEngine.getBufferSize());
     case kEnginePortTypeEvent:
-        return new CarlaEngineEventPort(isInput, kProcessMode);
+        return new CarlaEngineEventPort(isInput, kEngine.getProccessMode());
     }
 
     carla_stderr("CarlaEngineClient::addPort(%i, \"%s\", %s) - invalid type", portType, name, bool2str(isInput));
@@ -663,7 +722,7 @@ void CarlaEngine::idle()
 
 CarlaEngineClient* CarlaEngine::addClient(CarlaPlugin* const)
 {
-    return new CarlaEngineClient(type(), fOptions.processMode);
+    return new CarlaEngineClient(*this);
 }
 
 // -----------------------------------------------------------------------

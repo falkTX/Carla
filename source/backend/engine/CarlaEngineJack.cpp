@@ -107,6 +107,85 @@ private:
 };
 
 // -------------------------------------------------------------------------------------------------------------------
+// Carla Engine JACK-CV port
+
+class CarlaEngineJackCVPort : public CarlaEngineCVPort
+{
+public:
+    CarlaEngineJackCVPort(const bool isInput, const ProcessMode processMode, const uint32_t bufferSize, jack_client_t* const client, jack_port_t* const port)
+        : CarlaEngineCVPort(isInput, processMode, bufferSize),
+          kClient(client),
+          kPort(port)
+    {
+        carla_debug("CarlaEngineJackCVPort::CarlaEngineJackCVPort(%s, %s, %p, %p)", bool2str(isInput), ProcessMode2Str(processMode), client, port);
+
+        if (processMode == PROCESS_MODE_SINGLE_CLIENT || processMode == PROCESS_MODE_MULTIPLE_CLIENTS)
+        {
+            CARLA_ASSERT(client != nullptr && port != nullptr);
+        }
+        else
+        {
+            CARLA_ASSERT(client == nullptr && port == nullptr);
+        }
+    }
+
+    ~CarlaEngineJackCVPort() override
+    {
+        carla_debug("CarlaEngineJackCVPort::~CarlaEngineJackCVPort()");
+
+        if (kClient != nullptr && kPort != nullptr)
+            jackbridge_port_unregister(kClient, kPort);
+    }
+
+    void initBuffer(CarlaEngine* const engine) override
+    {
+        CARLA_ASSERT(engine != nullptr);
+
+        if (engine == nullptr)
+            return;
+
+        if (kPort == nullptr)
+            return CarlaEngineCVPort::initBuffer(engine);
+
+        CARLA_ASSERT(engine->getBufferSize() == fBufferSize);
+
+        if (kIsInput)
+        {
+            float* const jackBuffer = (float*)jackbridge_port_get_buffer(kPort, fBufferSize);
+            carla_copyFloat(fBuffer, jackBuffer, fBufferSize);
+        }
+        else
+        {
+            carla_zeroFloat(fBuffer, fBufferSize);
+        }
+    }
+
+    void writeBuffer(CarlaEngine* const engine) override
+    {
+        CARLA_ASSERT(! kIsInput);
+        CARLA_ASSERT(engine != nullptr);
+
+        if (kIsInput)
+            return;
+        if (engine == nullptr)
+            return;
+
+        CARLA_ASSERT(engine->getBufferSize() == fBufferSize);
+
+        float* const jackBuffer = (float*)jackbridge_port_get_buffer(kPort, fBufferSize);
+        carla_copyFloat(jackBuffer, fBuffer, fBufferSize);
+    }
+
+private:
+    jack_client_t* const kClient;
+    jack_port_t*   const kPort;
+
+    friend class CarlaEngineJack;
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineJackCVPort)
+};
+
+// -------------------------------------------------------------------------------------------------------------------
 // Carla Engine JACK-Event port
 
 class CarlaEngineJackEventPort : public CarlaEngineEventPort
@@ -378,12 +457,12 @@ private:
 class CarlaEngineJackClient : public CarlaEngineClient
 {
 public:
-    CarlaEngineJackClient(const EngineType engineType, const ProcessMode processMode, jack_client_t* const client)
-        : CarlaEngineClient(engineType, processMode),
+    CarlaEngineJackClient(const CarlaEngine& engine, jack_client_t* const client)
+        : CarlaEngineClient(engine),
           kClient(client),
-          kUseClient(processMode == PROCESS_MODE_SINGLE_CLIENT || processMode == PROCESS_MODE_MULTIPLE_CLIENTS)
+          kUseClient(engine.getProccessMode() == PROCESS_MODE_SINGLE_CLIENT || engine.getProccessMode() == PROCESS_MODE_MULTIPLE_CLIENTS)
     {
-        carla_debug("CarlaEngineJackClient::CarlaEngineJackClient(%s, %s, %p)", EngineType2Str(engineType), ProcessMode2Str(processMode), client);
+        carla_debug("CarlaEngineJackClient::CarlaEngineJackClient(name:\"%s\", %p)", engine.getName(), client);
 
         if (kUseClient)
         {
@@ -399,7 +478,7 @@ public:
     {
         carla_debug("CarlaEngineClient::~CarlaEngineClient()");
 
-        if (kProcessMode == PROCESS_MODE_MULTIPLE_CLIENTS && kClient != nullptr)
+        if (kEngine.getProccessMode() == PROCESS_MODE_MULTIPLE_CLIENTS && kClient != nullptr)
             jackbridge_client_close(kClient);
     }
 
@@ -407,7 +486,7 @@ public:
     {
         carla_debug("CarlaEngineJackClient::activate()");
 
-        if (kProcessMode == PROCESS_MODE_MULTIPLE_CLIENTS)
+        if (kEngine.getProccessMode() == PROCESS_MODE_MULTIPLE_CLIENTS)
         {
             CARLA_ASSERT(kClient != nullptr && ! fActive);
 
@@ -422,7 +501,7 @@ public:
     {
         carla_debug("CarlaEngineJackClient::deactivate()");
 
-        if (kProcessMode == PROCESS_MODE_MULTIPLE_CLIENTS)
+        if (kEngine.getProccessMode() == PROCESS_MODE_MULTIPLE_CLIENTS)
         {
             CARLA_ASSERT(kClient != nullptr && fActive);
 
@@ -469,6 +548,9 @@ public:
             case kEnginePortTypeAudio:
                 port = jackbridge_port_register(kClient, name, JACK_DEFAULT_AUDIO_TYPE, isInput ? JackPortIsInput : JackPortIsOutput, 0);
                 break;
+            case kEnginePortTypeCV:
+                port = jackbridge_port_register(kClient, name, JACK_DEFAULT_AUDIO_TYPE, JackPortIsControlVoltage | (isInput ? JackPortIsInput : JackPortIsOutput), 0);
+                break;
             case kEnginePortTypeEvent:
                 port = jackbridge_port_register(kClient, name, JACK_DEFAULT_MIDI_TYPE, isInput ? JackPortIsInput : JackPortIsOutput, 0);
                 break;
@@ -481,9 +563,11 @@ public:
         case kEnginePortTypeNull:
             break;
         case kEnginePortTypeAudio:
-            return new CarlaEngineJackAudioPort(isInput, kProcessMode, kClient, port);
+            return new CarlaEngineJackAudioPort(isInput, kEngine.getProccessMode(), kClient, port);
+        case kEnginePortTypeCV:
+            return new CarlaEngineJackCVPort(isInput, kEngine.getProccessMode(), kEngine.getBufferSize(), kClient, port);
         case kEnginePortTypeEvent:
-            return new CarlaEngineJackEventPort(isInput, kProcessMode, kClient, port);
+            return new CarlaEngineJackEventPort(isInput, kEngine.getProccessMode(), kClient, port);
         }
 
         carla_stderr("CarlaEngineJackClient::addPort(%s, \"%s\", %s) - invalid type", EnginePortType2Str(portType), name, bool2str(isInput));
@@ -758,7 +842,7 @@ public:
         }
 #endif
 
-        return new CarlaEngineJackClient(kEngineTypeJack, fOptions.processMode, client);
+        return new CarlaEngineJackClient(*this, client);
     }
 
 #ifndef BUILD_BRIDGE

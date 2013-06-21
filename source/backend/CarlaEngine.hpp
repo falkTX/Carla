@@ -83,10 +83,16 @@ enum EnginePortType {
     kEnginePortTypeAudio = 1,
 
     /*!
+    * CV port type.
+    * \see CarlaEngineCVPort
+    */
+    kEnginePortTypeCV = 2,
+
+    /*!
     * Event port type.
     ** \see CarlaEngineEventPort
     */
-    kEnginePortTypeEvent = 2
+    kEnginePortTypeEvent = 3
 };
 
 /*!
@@ -479,6 +485,66 @@ protected:
 // -----------------------------------------------------------------------
 
 /*!
+ * Carla Engine CV port.
+ */
+class CarlaEngineCVPort : public CarlaEnginePort
+{
+public:
+    /*!
+     * The contructor.\n
+     * All constructor parameters are constant and will never change in the lifetime of the port.
+     */
+    CarlaEngineCVPort(const bool isInput, const ProcessMode processMode, const uint32_t bufferSize);
+
+    /*!
+     * The destructor.
+     */
+    virtual ~CarlaEngineCVPort() override;
+
+    /*!
+     * Get the type of the port, in this case CarlaEnginePortTypeAudio.
+     */
+    EnginePortType type() const override
+    {
+        return kEnginePortTypeCV;
+    }
+
+    /*!
+     * Initialize the port's internal buffer for \a engine.
+     */
+    virtual void initBuffer(CarlaEngine* const engine) override;
+
+    /*!
+     * Write buffer.\n
+     * This is a handy function for the JACK engine only, where we need to write buffer to output ports.
+     */
+    virtual void writeBuffer(CarlaEngine* const engine);
+
+    /*!
+     * Set a new buffer size.
+     */
+    void setBufferSize(const uint32_t bufferSize);
+
+    /*!
+     * Direct access to the port's audio buffer.
+     */
+    float* getBuffer() const
+    {
+        return fBuffer;
+    }
+
+#ifndef DOXYGEN
+protected:
+    float*   fBuffer;
+    uint32_t fBufferSize;
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineCVPort)
+#endif
+};
+
+// -----------------------------------------------------------------------
+
+/*!
  * Carla Engine Event port.
  */
 class CarlaEngineEventPort : public CarlaEnginePort
@@ -581,7 +647,7 @@ public:
      * All constructor parameters are constant and will never change in the lifetime of the client.\n
      * Client starts in deactivated state.
      */
-    CarlaEngineClient(const CarlaBackend::EngineType engineType, const CarlaBackend::ProcessMode processMode);
+    CarlaEngineClient(const CarlaEngine& engine);
 
     /*!
      * The destructor.
@@ -630,8 +696,7 @@ public:
 
 #ifndef DOXYGEN
 protected:
-    const EngineType  kEngineType;
-    const ProcessMode kProcessMode;
+    const CarlaEngine& kEngine;
 
     bool     fActive;
     uint32_t fLatency;

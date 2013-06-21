@@ -61,6 +61,8 @@ const char* EnginePortType2Str(const EnginePortType type)
         return "kEnginePortTypeNull";
     case kEnginePortTypeAudio:
         return "kEnginePortTypeAudio";
+    case kEnginePortTypeCV:
+        return "kEnginePortTypeCV";
     case kEnginePortTypeEvent:
         return "kEnginePortTypeEvent";
     }
