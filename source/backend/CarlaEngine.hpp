@@ -1119,6 +1119,11 @@ protected:
     void sampleRateChanged(const double newSampleRate);
 
     /*!
+     * Report to all plugins about offline mode change.
+     */
+    void offlineModeChanged(const bool isOffline);
+
+    /*!
      * TODO.
      */
     void proccessPendingEvents();

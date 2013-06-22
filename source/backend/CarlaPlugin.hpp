@@ -677,14 +677,19 @@ public:
     virtual void process(float** const inBuffer, float** const outBuffer, const uint32_t frames);
 
     /*!
-     * Tell the plugin the current buffer size has changed.
+     * Tell the plugin the current buffer size changed.
      */
     virtual void bufferSizeChanged(const uint32_t newBufferSize);
 
     /*!
-     * Tell the plugin the current sample rate has changed.
+     * Tell the plugin the current sample rate changed.
      */
     virtual void sampleRateChanged(const double newSampleRate);
+
+    /*!
+     * Tell the plugin the current offline mode changed.
+     */
+    virtual void offlineModeChanged(const bool isOffline);
 
     /*!
      * TODO.

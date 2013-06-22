@@ -689,11 +689,9 @@ public:
             jackbridge_set_buffer_size_callback(fClient, carla_jack_bufsize_callback, this);
             jackbridge_set_sample_rate_callback(fClient, carla_jack_srate_callback, this);
             jackbridge_set_freewheel_callback(fClient, carla_jack_freewheel_callback, this);
+            jackbridge_set_latency_callback(fClient, carla_jack_latency_callback, this);
             jackbridge_set_process_callback(fClient, carla_jack_process_callback, this);
             jackbridge_on_shutdown(fClient, carla_jack_shutdown_callback, this);
-# if 0
-            jackbridge_set_latency_callback(fClient, carla_jack_latency_callback, this);
-# endif
 
             const char* const jackClientName(jackbridge_get_client_name(fClient));
 
@@ -884,11 +882,9 @@ public:
         jackbridge_set_buffer_size_callback(client, carla_jack_bufsize_callback, this);
         jackbridge_set_sample_rate_callback(client, carla_jack_srate_callback, this);
         jackbridge_set_freewheel_callback(client, carla_jack_freewheel_callback, this);
+        jackbridge_set_latency_callback(client, carla_jack_latency_callback, this);
         jackbridge_set_process_callback(client, carla_jack_process_callback, this);
         jackbridge_on_shutdown(client, carla_jack_shutdown_callback, this);
-# if 0
-        jackbridge_set_latency_callback(client, carla_jack_latency_callback, this);
-# endif
 #else
         if (fOptions.processMode == PROCESS_MODE_SINGLE_CLIENT)
         {
@@ -905,10 +901,8 @@ public:
 
             jackbridge_custom_publish_data(client, URI_CANVAS_ICON, iconName, std::strlen(iconName)+1);
 
-            jackbridge_set_process_callback(client, carla_jack_process_callback_plugin, plugin);
-# if 0
             jackbridge_set_latency_callback(client, carla_jack_latency_callback_plugin, plugin);
-# endif
+            jackbridge_set_process_callback(client, carla_jack_process_callback_plugin, plugin);
         }
 #endif
 
@@ -977,9 +971,7 @@ public:
                     name = jackbridge_get_client_name(jclient);
 
                     jackbridge_set_process_callback(jclient, carla_jack_process_callback_plugin, plugin);
-# if 0
                     jackbridge_set_latency_callback(jclient, carla_jack_latency_callback_plugin, plugin);
-# endif
 
                     // this is supposed to be constant...
                     std::memcpy((jack_client_t**)&client->kClient, &jclient, sizeof(jack_client_t**));
@@ -1135,7 +1127,11 @@ protected:
 
     void handleJackFreewheelCallback(const bool isFreewheel)
     {
+        if (fFreewheel == isFreewheel)
+            return;
+
         fFreewheel = isFreewheel;
+        offlineModeChanged(isFreewheel);
     }
 
     void saveTransportInfo()
@@ -1180,9 +1176,9 @@ protected:
     {
         saveTransportInfo();
 
-#ifndef BUILD_BRIDGE
         if (kData->curPluginCount == 0)
         {
+#ifndef BUILD_BRIDGE
             // pass-through
             if (fOptions.processMode == PROCESS_MODE_CONTINUOUS_RACK)
             {
@@ -1202,13 +1198,13 @@ protected:
                 carla_copyFloat(audioOut2, audioIn2, nframes);
                 jackbridge_midi_clear_buffer(eventOut);
             }
+#endif
 
             return proccessPendingEvents();
         }
-#endif
 
 #ifdef BUILD_BRIDGE
-        CarlaPlugin* const plugin(getPluginUnchecked(0));
+        CarlaPlugin* const plugin(kData->plugins[0].plugin);
 
         if (plugin != nullptr && plugin->enabled() && plugin->tryLock())
         {
@@ -1221,7 +1217,7 @@ protected:
         {
             for (unsigned int i=0; i < kData->curPluginCount; ++i)
             {
-                CarlaPlugin* const plugin(getPluginUnchecked(i));
+                CarlaPlugin* const plugin(kData->plugins[i].plugin);
 
                 if (plugin != nullptr && plugin->enabled() && plugin->tryLock())
                 {
@@ -1421,7 +1417,6 @@ protected:
         proccessPendingEvents();
     }
 
-#if 0
     void handleJackLatencyCallback(const jack_latency_callback_mode_t mode)
     {
         if (fOptions.processMode != PROCESS_MODE_SINGLE_CLIENT)
@@ -1429,13 +1424,12 @@ protected:
 
         for (unsigned int i=0; i < kData->curPluginCount; ++i)
         {
-            CarlaPlugin* const plugin = getPluginUnchecked(i);
+            CarlaPlugin* const plugin(kData->plugins[i].plugin);
 
-            if (plugin && plugin->enabled())
+            if (plugin != nullptr && plugin->enabled())
                 latencyPlugin(plugin, mode);
         }
     }
-#endif
 
 #ifndef BUILD_BRIDGE
     void handleCustomAppearanceCallback(const char* client_name, const char* key, jack_custom_change_t change)
@@ -1451,7 +1445,7 @@ protected:
         }
     }
 
-    void handleJackClientRegistrationCallback(const char* name, bool reg)
+    void handleJackClientRegistrationCallback(const char* const name, const bool reg)
     {
         // do nothing on client registration, wait for first port
         if (reg) return;
@@ -1467,7 +1461,7 @@ protected:
         callback(CALLBACK_PATCHBAY_CLIENT_REMOVED, 0, id, 0, 0.0f, nullptr);
     }
 
-    void handleJackPortRegistrationCallback(jack_port_id_t port, bool reg)
+    void handleJackPortRegistrationCallback(const jack_port_id_t port, const bool reg)
     {
         jack_port_t* const jackPort(jackbridge_port_by_id(fClient, port));
         const char*  const portName(jackbridge_port_short_name(jackPort));
@@ -1503,9 +1497,15 @@ protected:
                 GroupNameToId groupNameToId(groupId, groupName);
                 fUsedGroupNames.append(groupNameToId);
 
-                callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, groupId, PATCHBAY_ICON_APPLICATION, 0.0f, groupName);
-
-                fGroupIconsChanged.append(groupId);
+                if (jackPortFlags & JackPortIsPhysical)
+                {
+                    callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, groupId, PATCHBAY_ICON_HARDWARE, 0.0f, groupName);
+                }
+                else
+                {
+                    callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, groupId, PATCHBAY_ICON_APPLICATION, 0.0f, groupName);
+                    fGroupIconsChanged.append(groupId);
+                }
             }
 
             bool portIsInput = (jackPortFlags & JackPortIsInput);
@@ -1541,7 +1541,7 @@ protected:
         }
     }
 
-    void handleJackPortConnectCallback(jack_port_id_t a, jack_port_id_t b, bool connect)
+    void handleJackPortConnectCallback(const jack_port_id_t a, const jack_port_id_t b, const bool connect)
     {
         jack_port_t* const jackPortA(jackbridge_port_by_id(fClient, a));
         jack_port_t* const jackPortB(jackbridge_port_by_id(fClient, b));
@@ -1591,7 +1591,22 @@ protected:
         }
     }
 
-    void handleJackPortRenameCallback(jack_port_id_t port, const char* oldName, const char* newName)
+    void handleJackClientRenameCallback(const char* const oldName, const char* const newName)
+    {
+        for (int i=0, count=fUsedGroupNames.count(); i < count; ++i)
+        {
+            GroupNameToId& groupNameToId(fUsedGroupNames[i]);
+
+            if (std::strcmp(groupNameToId.name, oldName) == 0)
+            {
+                groupNameToId.rename(newName);
+                callback(CALLBACK_PATCHBAY_CLIENT_RENAMED, 0, groupNameToId.id, 0, 0.0f, newName);
+                break;
+            }
+        }
+    }
+
+    void handleJackPortRenameCallback(const jack_port_id_t port, const char* const oldName, const char* const newName)
     {
         jack_port_t* const jackPort(jackbridge_port_by_id(fClient, port));
         const char*  const portName(jackbridge_port_short_name(jackPort));
@@ -1621,7 +1636,7 @@ protected:
         {
             PortNameToId& portNameId(fUsedPortNames[i]);
 
-            if (/*portNameId.groupId == groupId &&*/ std::strcmp(portNameId.fullName, oldName) == 0)
+            if (std::strcmp(portNameId.fullName, oldName) == 0)
             {
                 CARLA_ASSERT(portNameId.groupId == groupId);
                 portNameId.rename(portName, newName);
@@ -1636,7 +1651,7 @@ protected:
     {
         for (unsigned int i=0; i < kData->curPluginCount; ++i)
         {
-            //CarlaPlugin* const plugin = getPluginUnchecked(i);
+            //CarlaPlugin* const plugin(kData->plugins[i].plugin);
 
             //if (plugin)
             //    plugin->x_client = nullptr;
@@ -1684,6 +1699,12 @@ private:
         GroupNameToId(const int id, const char name[])
         {
             this->id = id;
+            std::strncpy(this->name, name, STR_MAX);
+            this->name[STR_MAX] = '\0';
+        }
+
+        void rename(const char name[])
+        {
             std::strncpy(this->name, name, STR_MAX);
             this->name[STR_MAX] = '\0';
         }
@@ -1913,7 +1934,11 @@ private:
                     void*  data = nullptr;
                     size_t dataSize = 0;
 
-                    if (jackbridge_custom_get_data(fClient, groupName, URI_CANVAS_ICON, &data, &dataSize) && data != nullptr && dataSize != 0)
+                    if (jackPortFlags & JackPortIsPhysical)
+                    {
+                        groupIcon = PATCHBAY_ICON_HARDWARE;
+                    }
+                    else if (jackbridge_custom_get_data(fClient, groupName, URI_CANVAS_ICON, &data, &dataSize) && data != nullptr && dataSize != 0)
                     {
                         const char* const icon((const char*)data);
                         CARLA_ASSERT(std::strlen(icon)+1 == dataSize);
@@ -1931,8 +1956,6 @@ private:
                         else if (std::strcmp(icon, "plugin") == 0)
                             groupIcon = PATCHBAY_ICON_PLUGIN;
                     }
-                    else if (jackPortFlags & JackPortIsPhysical)
-                        groupIcon = PATCHBAY_ICON_HARDWARE;
 
                     callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, groupId, groupIcon, 0.0f, groupName);
                 }
@@ -2048,20 +2071,22 @@ private:
         setPeaks(plugin->id(), inPeaks, outPeaks);
     }
 
-#if 0
     void latencyPlugin(CarlaPlugin* const plugin, jack_latency_callback_mode_t mode)
     {
-        const uint32_t inCount  = plugin->audioInCount();
-        const uint32_t outCount = plugin->audioOutCount();
+        //const uint32_t inCount(plugin->audioInCount());
+        //const uint32_t outCount(plugin->audioOutCount());
+        const uint32_t latency(plugin->latency());
 
-        jack_latency_range_t range;
-        uint32_t pluginLatency = plugin->latency();
-
-        if (pluginLatency == 0)
+        if (latency == 0)
             return;
+
+        //jack_latency_range_t range;
+
+        // TODO
 
         if (mode == JackCaptureLatency)
         {
+#if 0
             for (uint32_t i=0; i < inCount; ++i)
             {
                 uint32_t aOutI = (i >= outCount) ? outCount : i;
@@ -2069,13 +2094,15 @@ private:
                 jack_port_t* const portOut = ((CarlaEngineJackAudioPort*)CarlaPluginGetAudioOutPort(plugin, aOutI))->kPort;
 
                 jackbridge_port_get_latency_range(portIn, mode, &range);
-                range.min += pluginLatency;
-                range.max += pluginLatency;
+                range.min += latency;
+                range.max += latency;
                 jackbridge_port_set_latency_range(portOut, mode, &range);
             }
+#endif
         }
         else
         {
+#if 0
             for (uint32_t i=0; i < outCount; ++i)
             {
                 uint32_t aInI = (i >= inCount) ? inCount : i;
@@ -2083,13 +2110,13 @@ private:
                 jack_port_t* const portOut = ((CarlaEngineJackAudioPort*)CarlaPluginGetAudioOutPort(plugin, i))->kPort;
 
                 jackbridge_port_get_latency_range(portOut, mode, &range);
-                range.min += pluginLatency;
-                range.max += pluginLatency;
+                range.min += latency;
+                range.max += latency;
                 jackbridge_port_set_latency_range(portIn, mode, &range);
             }
+#endif
         }
     }
-#endif
 
     // -------------------------------------
 
@@ -2118,12 +2145,10 @@ private:
         return 0;
     }
 
-#if 0
     static void carla_jack_latency_callback(jack_latency_callback_mode_t mode, void* arg)
     {
         handlePtr->handleJackLatencyCallback(mode);
     }
-#endif
 
 #ifndef BUILD_BRIDGE
     static void carla_jack_custom_appearance_callback(const char* client_name, const char* key, jack_custom_change_t change, void* arg)
@@ -2146,6 +2171,12 @@ private:
         handlePtr->handleJackPortConnectCallback(a, b, (connect != 0));
     }
 
+    static int carla_jack_client_rename_callback(const char* oldName, const char* newName, void* arg)
+    {
+        handlePtr->handleJackClientRenameCallback(oldName, newName);
+        return 0;
+    }
+
     static int carla_jack_port_rename_callback(jack_port_id_t port, const char* oldName, const char* newName, void* arg)
     {
         handlePtr->handleJackPortRenameCallback(port, oldName, newName);
@@ -2165,36 +2196,34 @@ private:
 #ifndef BUILD_BRIDGE
     static int carla_jack_process_callback_plugin(jack_nframes_t nframes, void* arg)
     {
-        CarlaPlugin* const plugin = (CarlaPlugin*)arg;
+        CarlaPlugin* const plugin((CarlaPlugin*)arg);
 
         if (plugin != nullptr && plugin->enabled() && plugin->tryLock())
         {
-            CarlaEngineJack* const engine = (CarlaEngineJack*)CarlaPluginGetEngine(plugin);
+            CarlaEngineJack* const engine((CarlaEngineJack*)CarlaPluginGetEngine(plugin));
+            CARLA_ASSERT(engine != nullptr);
 
             plugin->initBuffers();
             engine->saveTransportInfo();
             engine->processPlugin(plugin, nframes);
             plugin->unlock();
         }
-        else
-            carla_stdout("Plugin not enabled or locked");
 
         return 0;
     }
 
-# if 0
     static void carla_jack_latency_callback_plugin(jack_latency_callback_mode_t mode, void* arg)
     {
-        CarlaPlugin* const plugin = (CarlaPlugin*)arg;
+        CarlaPlugin* const plugin((CarlaPlugin*)arg);
 
         if (plugin != nullptr && plugin->enabled())
         {
-            CarlaEngineJack* const engine = (CarlaEngineJack*)CarlaPluginGetEngine(plugin);
+            CarlaEngineJack* const engine((CarlaEngineJack*)CarlaPluginGetEngine(plugin));
+            CARLA_ASSERT(engine != nullptr);
 
             engine->latencyPlugin(plugin, mode);
         }
     }
-# endif
 #endif
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineJack)

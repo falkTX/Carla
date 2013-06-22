@@ -1632,6 +1632,10 @@ void CarlaPlugin::sampleRateChanged(const double)
 {
 }
 
+void CarlaPlugin::offlineModeChanged(const bool)
+{
+}
+
 bool CarlaPlugin::tryLock()
 {
     return kData->masterMutex.tryLock();

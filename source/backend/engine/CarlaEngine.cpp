@@ -1740,6 +1740,19 @@ void CarlaEngine::sampleRateChanged(const double newSampleRate)
     callback(CALLBACK_SAMPLE_RATE_CHANGED, 0, 0, 0, newSampleRate, nullptr);
 }
 
+void CarlaEngine::offlineModeChanged(const bool isOffline)
+{
+    carla_debug("CarlaEngine::offlineModeChanged(%s)", bool2str(isOffline));
+
+    for (unsigned int i=0; i < kData->curPluginCount; ++i)
+    {
+        CarlaPlugin* const plugin(kData->plugins[i].plugin);
+
+        if (plugin != nullptr && plugin->enabled())
+           plugin->offlineModeChanged(isOffline);
+    }
+}
+
 void CarlaEngine::proccessPendingEvents()
 {
     //carla_stderr("proccessPendingEvents(%i)", kData->nextAction.opcode);

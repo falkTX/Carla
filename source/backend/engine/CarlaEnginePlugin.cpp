@@ -410,7 +410,7 @@ protected:
     {
         for (unsigned int i=0; i < kData->curPluginCount; ++i)
         {
-            CarlaPlugin* const plugin(getPluginUnchecked(i));
+            CarlaPlugin* const plugin(kData->plugins[i].plugin);
 
             if (plugin != nullptr && plugin->enabled())
                 plugin->setActive(true, true, false);
@@ -423,7 +423,7 @@ protected:
     {
         for (unsigned int i=0; i < kData->curPluginCount; ++i)
         {
-            CarlaPlugin* const plugin(getPluginUnchecked(i));
+            CarlaPlugin* const plugin(kData->plugins[i].plugin);
 
             if (plugin != nullptr && plugin->enabled())
                 plugin->setActive(false, true, false);
