@@ -78,6 +78,8 @@
 
 #define JackOpenOptions (JackSessionID|JackServerName|JackNoStartServer|JackUseExactName)
 #define JackLoadOptions (JackLoadInit|JackLoadName|JackUseExactName)
+#define JACK_POSITION_MASK (JackPositionBBT|JackPositionTimecode)
+#define EXTENDED_TIME_INFO
 
 enum JackOptions {
     JackNullOption    = 0x00,
@@ -106,8 +108,8 @@ enum JackStatus {
 };
 
 enum JackLatencyCallbackMode {
-     JackCaptureLatency,
-     JackPlaybackLatency
+    JackCaptureLatency,
+    JackPlaybackLatency
 };
 
 enum JackPortFlags {
@@ -119,7 +121,7 @@ enum JackPortFlags {
     JackPortIsControlVoltage = 0x100
 };
 
-enum JackTransportFlags {
+enum JackTransportState {
     JackTransportStopped     = 0,
     JackTransportRolling     = 1,
     JackTransportLooping     = 2,
@@ -135,12 +137,15 @@ enum JackPositionBits {
     JackVideoFrameOffset = 0x100
 };
 
-enum JackTransportBits {
-    JackTransportState    = 0x01,
-    JackTransportPosition = 0x02,
-    JackTransportLoop     = 0x04,
-    JackTransportSMPTE    = 0x08,
-    JackTransportBBT      = 0x10
+enum JackSessionEventType {
+    JackSessionSave         = 1,
+    JackSessionSaveAndQuit  = 2,
+    JackSessionSaveTemplate = 3
+};
+
+enum JackSessionFlags {
+    JackSessionSaveError    = 0x01,
+    JackSessionNeedTerminal = 0x02
 };
 
 enum JackCustomChange {
@@ -159,9 +164,10 @@ typedef float jack_default_audio_sample_t;
 typedef enum JackOptions jack_options_t;
 typedef enum JackStatus jack_status_t;
 typedef enum JackLatencyCallbackMode jack_latency_callback_mode_t;
-typedef enum JackTransportFlags jack_transport_state_t;
+typedef enum JackTransportState jack_transport_state_t;
 typedef enum JackPositionBits jack_position_bits_t;
-typedef enum JackTransportBits jack_transport_bits_t;
+typedef enum JackSessionEventType jack_session_event_type_t;
+typedef enum JackSessionFlags jack_session_flags_t;
 typedef enum JackCustomChange jack_custom_change_t;
 
 struct _jack_midi_event {
@@ -200,23 +206,48 @@ struct _jack_position {
     jack_unique_t  unique_2;
 } POST_PACKED_STRUCTURE;
 
+struct _jack_session_event {
+    jack_session_event_type_t type;
+    const char* session_dir;
+    const char* client_uuid;
+    char*       command_line;
+    jack_session_flags_t flags;
+    uint32_t future;
+};
+
+struct _jack_session_command_t {
+    const char* uuid;
+    const char* client_name;
+    const char* command;
+    jack_session_flags_t flags;
+};
+
 typedef struct _jack_port jack_port_t;
 typedef struct _jack_client jack_client_t;
+typedef struct _jack_midi_event jack_midi_event_t;
 typedef struct _jack_latency_range jack_latency_range_t;
 typedef struct _jack_position jack_position_t;
-typedef struct _jack_midi_event jack_midi_event_t;
+typedef struct _jack_session_event jack_session_event_t;
+typedef struct _jack_session_command_t jack_session_command_t;
 
 typedef void (*JackLatencyCallback)(jack_latency_callback_mode_t mode, void* arg);
 typedef int  (*JackProcessCallback)(jack_nframes_t nframes, void* arg);
+typedef void (*JackThreadInitCallback)(void *arg);
+typedef int  (*JackGraphOrderCallback)(void *arg);
+typedef int  (*JackXRunCallback)(void* arg);
 typedef int  (*JackBufferSizeCallback)(jack_nframes_t nframes, void* arg);
 typedef int  (*JackSampleRateCallback)(jack_nframes_t nframes, void* arg);
 typedef void (*JackPortRegistrationCallback)(jack_port_id_t port, int register_, void* arg);
 typedef void (*JackClientRegistrationCallback)(const char* name, int register_, void* arg);
+typedef int  (*JackClientRenameCallback)(const char* old_name, const char* new_name, void* arg);
 typedef void (*JackPortConnectCallback)(jack_port_id_t a, jack_port_id_t b, int connect, void* arg);
 typedef int  (*JackPortRenameCallback)(jack_port_id_t port, const char* old_name, const char* new_name, void* arg);
 typedef void (*JackFreewheelCallback)(int starting, void* arg);
-typedef int  (*JackXRunCallback)(void* arg);
 typedef void (*JackShutdownCallback)(void* arg);
+typedef void (*JackInfoShutdownCallback)(jack_status_t code, const char* reason, void* arg);
+typedef int  (*JackSyncCallback)(jack_transport_state_t state, jack_position_t* pos, void* arg);
+typedef void (*JackTimebaseCallback)(jack_transport_state_t state, jack_nframes_t nframes, jack_position_t* pos, int new_pos, void* arg);
+typedef void (*JackSessionCallback)(jack_session_event_t* event, void* arg);
 typedef void (*JackCustomDataAppearanceCallback)(const char* client_name, const char* key, jack_custom_change_t change, void* arg);
 
 #endif // ! JACKBRIDGE_DIRECT
@@ -231,20 +262,34 @@ CARLA_EXPORT char* jackbridge_get_client_name(jack_client_t* client);
 
 CARLA_EXPORT bool jackbridge_activate(jack_client_t* client);
 CARLA_EXPORT bool jackbridge_deactivate(jack_client_t* client);
+
+CARLA_EXPORT int jackbridge_get_client_pid(const char* name);
+CARLA_EXPORT int jackbridge_is_realtime(jack_client_t* client);
+
+CARLA_EXPORT bool jackbridge_set_thread_init_callback(jack_client_t* client, JackThreadInitCallback thread_init_callback, void* arg);
 CARLA_EXPORT void jackbridge_on_shutdown(jack_client_t* client, JackShutdownCallback shutdown_callback, void* arg);
+CARLA_EXPORT void jackbridge_on_info_shutdown(jack_client_t* client, JackInfoShutdownCallback shutdown_callback, void* arg);
 CARLA_EXPORT bool jackbridge_set_process_callback(jack_client_t* client, JackProcessCallback process_callback, void* arg);
 CARLA_EXPORT bool jackbridge_set_freewheel_callback(jack_client_t* client, JackFreewheelCallback freewheel_callback, void* arg);
 CARLA_EXPORT bool jackbridge_set_buffer_size_callback(jack_client_t* client, JackBufferSizeCallback bufsize_callback, void* arg);
 CARLA_EXPORT bool jackbridge_set_sample_rate_callback(jack_client_t* client, JackSampleRateCallback srate_callback, void* arg);
 CARLA_EXPORT bool jackbridge_set_client_registration_callback(jack_client_t* client, JackClientRegistrationCallback registration_callback, void* arg);
-CARLA_EXPORT bool jackbridge_set_port_registration_callback (jack_client_t* client, JackPortRegistrationCallback registration_callback, void *arg);
-CARLA_EXPORT bool jackbridge_set_port_connect_callback (jack_client_t* client, JackPortConnectCallback connect_callback, void* arg);
-CARLA_EXPORT bool jackbridge_set_port_rename_callback (jack_client_t* client, JackPortRenameCallback rename_callback, void* arg);
-CARLA_EXPORT bool jackbridge_set_latency_callback(jack_client_t* client, JackLatencyCallback latency_callback, void* arg);
+CARLA_EXPORT bool jackbridge_set_client_rename_callback(jack_client_t* client, JackClientRenameCallback registration_callback, void* arg);
+CARLA_EXPORT bool jackbridge_set_port_registration_callback(jack_client_t* client, JackPortRegistrationCallback registration_callback, void* arg);
+CARLA_EXPORT bool jackbridge_set_port_connect_callback(jack_client_t* client, JackPortConnectCallback connect_callback, void* arg);
+CARLA_EXPORT bool jackbridge_set_port_rename_callback(jack_client_t* client, JackPortRenameCallback rename_callback, void* arg);
+CARLA_EXPORT bool jackbridge_set_graph_order_callback(jack_client_t* client, JackGraphOrderCallback graph_callback, void* arg);
 CARLA_EXPORT bool jackbridge_set_xrun_callback(jack_client_t* client, JackXRunCallback xrun_callback, void* arg);
+CARLA_EXPORT bool jackbridge_set_latency_callback(jack_client_t* client, JackLatencyCallback latency_callback, void* arg);
+
+CARLA_EXPORT bool  jackbridge_set_freewheel(jack_client_t* client, int onoff);
+CARLA_EXPORT bool  jackbridge_set_buffer_size(jack_client_t* client, jack_nframes_t nframes);
+CARLA_EXPORT bool  jackbridge_engine_takeover_timebase(jack_client_t* client);
+CARLA_EXPORT float jackbridge_cpu_load(jack_client_t* client);
 
 CARLA_EXPORT jack_nframes_t jackbridge_get_sample_rate(jack_client_t* client);
 CARLA_EXPORT jack_nframes_t jackbridge_get_buffer_size(jack_client_t* client);
+
 CARLA_EXPORT jack_port_t*   jackbridge_port_register(jack_client_t* client, const char* port_name, const char* port_type, unsigned long flags, unsigned long buffer_size);
 
 CARLA_EXPORT bool  jackbridge_port_unregister(jack_client_t* client, jack_port_t* port);

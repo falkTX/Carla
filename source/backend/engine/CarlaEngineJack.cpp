@@ -842,6 +842,8 @@ public:
                     groupIcon = PATCHBAY_ICON_APPLICATION;
 
                 callback(CALLBACK_PATCHBAY_ICON_CHANGED, 0, groupId, groupIcon, 0.0f, nullptr);
+
+                jackbridge_free(data);
             }
         }
     }
