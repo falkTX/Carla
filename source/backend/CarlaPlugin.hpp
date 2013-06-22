@@ -167,6 +167,14 @@ public:
     }
 
     /*!
+     * Get the plugins's icon name.
+     */
+    const char* iconName() const
+    {
+        return (const char*)fIconName;
+    }
+
+    /*!
      * Get the plugin's category (delay, filter, synth, etc).
      */
     virtual PluginCategory category()
@@ -835,6 +843,7 @@ protected:
 
     CarlaString fName;     //!< Plugin name
     CarlaString fFilename; //!< Plugin filename, if applicable
+    CarlaString fIconName; //!< Icon name
 
     friend class CarlaEngineBridge;
     friend struct CarlaPluginProtectedData;

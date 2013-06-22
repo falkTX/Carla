@@ -287,6 +287,7 @@ CarlaPlugin::CarlaPlugin(CarlaEngine* const engine, const unsigned int id)
       fHints(0x0),
       fOptions(0x0),
       fEnabled(false),
+      fIconName("plugin"),
       kData(new CarlaPluginProtectedData(engine, this))
 {
     CARLA_ASSERT(kData != nullptr);

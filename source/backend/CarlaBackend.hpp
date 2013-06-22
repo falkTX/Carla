@@ -108,10 +108,11 @@ const unsigned int PARAMETER_USES_CUSTOM_TEXT = 0x80; //!< Parameter uses custom
  * Various patchbay port hints.
  * @{
  */
-const unsigned int PATCHBAY_PORT_IS_INPUT  = 0x1; //!< Patchbay port is input.
-const unsigned int PATCHBAY_PORT_IS_OUTPUT = 0x2; //!< Patchbay port is output.
-const unsigned int PATCHBAY_PORT_IS_AUDIO  = 0x4; //!< Patchbay port is of Audio type.
-const unsigned int PATCHBAY_PORT_IS_MIDI   = 0x8; //!< Patchbay port is of MIDI type.
+const unsigned int PATCHBAY_PORT_IS_INPUT  = 0x01; //!< Patchbay port is input.
+const unsigned int PATCHBAY_PORT_IS_OUTPUT = 0x02; //!< Patchbay port is output.
+const unsigned int PATCHBAY_PORT_IS_AUDIO  = 0x04; //!< Patchbay port is of Audio type.
+const unsigned int PATCHBAY_PORT_IS_CV     = 0x08; //!< Patchbay port is of CV type.
+const unsigned int PATCHBAY_PORT_IS_MIDI   = 0x10; //!< Patchbay port is of MIDI type.
 /**@}*/
 
 /*!
@@ -209,9 +210,10 @@ enum InternalParametersIndex {
 enum PatchbayIconType {
     PATCHBAY_ICON_APPLICATION = 0, //!< Generic application icon.
     PATCHBAY_ICON_HARDWARE    = 1, //!< Hardware icon.
-    PATCHBAY_ICON_PLUGIN      = 2, //!< Plugin icon.
-    PATCHBAY_ICON_DISTRHO     = 3, //!< DISTRHO icon.
-    PATCHBAY_ICON_FILE        = 4  //!< File icon.
+    PATCHBAY_ICON_CARLA       = 2, //!< Carla icon.
+    PATCHBAY_ICON_DISTRHO     = 3, //!< DISTRHO icon
+    PATCHBAY_ICON_FILE        = 4, //!< File icon.
+    PATCHBAY_ICON_PLUGIN      = 5  //!< Plugin icon.
 };
 
 /*!
