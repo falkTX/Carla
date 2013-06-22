@@ -790,6 +790,7 @@ public:
         return false;
     }
 
+#ifndef BUILD_BRIDGE
     void idle() override
     {
         CarlaEngine::idle();
@@ -846,6 +847,7 @@ public:
             }
         }
     }
+#endif
 
     bool isRunning() const override
     {
@@ -878,7 +880,6 @@ public:
         fSampleRate = jackbridge_get_sample_rate(client);
 
         jackbridge_custom_publish_data(client, URI_CANVAS_ICON, iconName, std::strlen(iconName)+1);
-        jackbridge_custom_set_data_appearance_callback(fClient, carla_jack_custom_appearance_callback, this);
 
         jackbridge_set_buffer_size_callback(client, carla_jack_bufsize_callback, this);
         jackbridge_set_sample_rate_callback(client, carla_jack_srate_callback, this);
@@ -1114,19 +1115,6 @@ public:
     // -------------------------------------
 
 protected:
-    void handleCustomAppearanceCallback(const char* client_name, const char* key, jack_custom_change_t change)
-    {
-        if ((change == JackCustomAdded || change == JackCustomReplaced) && std::strcmp(key, URI_CANVAS_ICON) == 0)
-        {
-            const int groupId (getGroupId(client_name));
-
-            if (groupId == -1)
-                return;
-
-            fGroupIconsChanged.append(groupId);
-        }
-    }
-
     void handleJackBufferSizeCallback(const uint32_t newBufferSize)
     {
         if (fBufferSize == newBufferSize)
@@ -1450,6 +1438,19 @@ protected:
 #endif
 
 #ifndef BUILD_BRIDGE
+    void handleCustomAppearanceCallback(const char* client_name, const char* key, jack_custom_change_t change)
+    {
+        if ((change == JackCustomAdded || change == JackCustomReplaced) && std::strcmp(key, URI_CANVAS_ICON) == 0)
+        {
+            const int groupId (getGroupId(client_name));
+
+            if (groupId == -1)
+                return;
+
+            fGroupIconsChanged.append(groupId);
+        }
+    }
+
     void handleJackClientRegistrationCallback(const char* name, bool reg)
     {
         // do nothing on client registration, wait for first port
@@ -2094,11 +2095,6 @@ private:
 
     #define handlePtr ((CarlaEngineJack*)arg)
 
-    static void carla_jack_custom_appearance_callback(const char* client_name, const char* key, jack_custom_change_t change, void* arg)
-    {
-        handlePtr->handleCustomAppearanceCallback(client_name, key, change);
-    }
-
     static int carla_jack_bufsize_callback(jack_nframes_t newBufferSize, void* arg)
     {
         handlePtr->handleJackBufferSizeCallback(newBufferSize);
@@ -2130,6 +2126,11 @@ private:
 #endif
 
 #ifndef BUILD_BRIDGE
+    static void carla_jack_custom_appearance_callback(const char* client_name, const char* key, jack_custom_change_t change, void* arg)
+    {
+        handlePtr->handleCustomAppearanceCallback(client_name, key, change);
+    }
+
     static void carla_jack_client_registration_callback(const char* name, int reg, void* arg)
     {
         handlePtr->handleJackClientRegistrationCallback(name, (reg != 0));
