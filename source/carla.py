@@ -883,6 +883,7 @@ class CarlaMainW(QMainWindow):
         self.connect(self, SIGNAL("PatchbayPortRenamedCallback(int, QString)"), SLOT("slot_handlePatchbayPortRenamedCallback(int, QString)"))
         self.connect(self, SIGNAL("PatchbayConnectionAddedCallback(int, int, int)"), SLOT("slot_handlePatchbayConnectionAddedCallback(int, int, int)"))
         self.connect(self, SIGNAL("PatchbayConnectionRemovedCallback(int)"), SLOT("slot_handlePatchbayConnectionRemovedCallback(int)"))
+        self.connect(self, SIGNAL("PatchbayIconChangedCallback(int, int)"), SLOT("slot_handlePatchbayIconChangedCallback(int, int)"))
         self.connect(self, SIGNAL("BufferSizeChangedCallback(int)"), SLOT("slot_handleBufferSizeChangedCallback(int)"))
         self.connect(self, SIGNAL("SampleRateChangedCallback(double)"), SLOT("slot_handleSampleRateChangedCallback(double)"))
         self.connect(self, SIGNAL("NSM_AnnounceCallback(QString)"), SLOT("slot_handleNSM_AnnounceCallback(QString)"))
@@ -1909,12 +1910,12 @@ class CarlaMainW(QMainWindow):
         if clientIcon == PATCHBAY_ICON_HARDWARE:
             pcSplit = patchcanvas.SPLIT_YES
             pcIcon = patchcanvas.ICON_HARDWARE
-        elif clientIcon == PATCHBAY_ICON_PLUGIN:
-            pcIcon = patchcanvas.ICON_PLUGIN
         elif clientIcon == PATCHBAY_ICON_DISTRHO:
             pcIcon = patchcanvas.ICON_DISTRHO
         elif clientIcon == PATCHBAY_ICON_FILE:
             pcIcon = patchcanvas.ICON_FILE
+        elif clientIcon == PATCHBAY_ICON_PLUGIN:
+            pcIcon = patchcanvas.ICON_PLUGIN
 
         patchcanvas.addGroup(clientId, clientName, pcSplit, pcIcon)
         QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
@@ -1970,6 +1971,21 @@ class CarlaMainW(QMainWindow):
         if not self.fEngineStarted: return
         patchcanvas.disconnectPorts(connectionId)
         QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
+
+    @pyqtSlot(int, int)
+    def slot_handlePatchbayIconChangedCallback(self, clientId, clientIcon):
+        pcIcon = patchcanvas.ICON_APPLICATION
+
+        if clientIcon == PATCHBAY_ICON_HARDWARE:
+            pcIcon = patchcanvas.ICON_HARDWARE
+        elif clientIcon == PATCHBAY_ICON_DISTRHO:
+            pcIcon = patchcanvas.ICON_DISTRHO
+        elif clientIcon == PATCHBAY_ICON_FILE:
+            pcIcon = patchcanvas.ICON_FILE
+        elif clientIcon == PATCHBAY_ICON_PLUGIN:
+            pcIcon = patchcanvas.ICON_PLUGIN
+
+        patchcanvas.setGroupIcon(clientId, pcIcon)
 
     @pyqtSlot(int)
     def slot_handleBufferSizeChangedCallback(self, newBufferSize):
@@ -2286,6 +2302,8 @@ def engineCallback(ptr, action, pluginId, value1, value2, value3, valueStr):
         Carla.gui.emit(SIGNAL("PatchbayConnectionAddedCallback(int, int, int)"), value1, value2, value3)
     elif action == CALLBACK_PATCHBAY_CONNECTION_REMOVED:
         Carla.gui.emit(SIGNAL("PatchbayConnectionRemovedCallback(int)"), value1)
+    elif action == CALLBACK_PATCHBAY_ICON_CHANGED:
+        Carla.gui.emit(SIGNAL("PatchbayIconChangedCallback(int, int)"), value1, value2)
     elif action == CALLBACK_BUFFER_SIZE_CHANGED:
         Carla.gui.emit(SIGNAL("BufferSizeChangedCallback(int)"), value1)
     elif action == CALLBACK_SAMPLE_RATE_CHANGED:

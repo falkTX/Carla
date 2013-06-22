@@ -605,14 +605,22 @@ enum CallbackType {
     CALLBACK_PATCHBAY_CONNECTION_REMOVED = 25,
 
     /*!
+     * Canvas client icon changed
+     *
+     * \param value1 Client Id
+     * \param value2 Client Icon
+     */
+    CALLBACK_PATCHBAY_ICON_CHANGED = 26,
+
+    /*!
      * Engine buffer-size changed.
      */
-    CALLBACK_BUFFER_SIZE_CHANGED = 26,
+    CALLBACK_BUFFER_SIZE_CHANGED = 27,
 
     /*!
      * Engine sample-rate changed.
      */
-    CALLBACK_SAMPLE_RATE_CHANGED = 27,
+    CALLBACK_SAMPLE_RATE_CHANGED = 28,
 
     /*!
      * Engine process mode changed.
@@ -620,37 +628,37 @@ enum CallbackType {
      * \param value1 New process mode
      * \see ProcessMode
      */
-    CALLBACK_PROCESS_MODE_CHANGED = 28,
+    CALLBACK_PROCESS_MODE_CHANGED = 29,
 
     /*!
      * Non-Session-Manager Announce message.
      */
-    CALLBACK_NSM_ANNOUNCE = 29,
+    CALLBACK_NSM_ANNOUNCE = 30,
 
     /*!
      * Non-Session-Manager Open message.
      */
-    CALLBACK_NSM_OPEN = 30,
+    CALLBACK_NSM_OPEN = 31,
 
     /*!
      * Non-Session-Manager Save message.
      */
-    CALLBACK_NSM_SAVE = 31,
+    CALLBACK_NSM_SAVE = 32,
 
     /*!
      * An error occurred, show \a valueStr as an error to user.
      */
-    CALLBACK_ERROR = 32,
+    CALLBACK_ERROR = 33,
 
     /*!
      * Show \a valueStr as info to user.
      */
-    CALLBACK_INFO = 33,
+    CALLBACK_INFO = 34,
 
     /*!
      * The engine has crashed or malfunctioned and will no longer work.
      */
-    CALLBACK_QUIT = 34
+    CALLBACK_QUIT = 35
 };
 
 /*!

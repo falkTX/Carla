@@ -631,6 +631,7 @@ public:
         fUsedGroupNames.clear();
         fUsedPortNames.clear();
         fUsedConnections.clear();
+        fGroupIconsChanged.clear();
 #endif
     }
 
@@ -673,6 +674,7 @@ public:
         fUsedGroupNames.clear();
         fUsedPortNames.clear();
         fUsedConnections.clear();
+        fGroupIconsChanged.clear();
 
         fClient = jackbridge_client_open(clientName, JackNullOption, nullptr);
 
@@ -682,6 +684,7 @@ public:
             fSampleRate = jackbridge_get_sample_rate(fClient);
 
             jackbridge_custom_publish_data(fClient, URI_CANVAS_ICON, "carla", 6);
+            jackbridge_custom_set_data_appearance_callback(fClient, carla_jack_custom_appearance_callback, this);
 
             jackbridge_set_buffer_size_callback(fClient, carla_jack_bufsize_callback, this);
             jackbridge_set_sample_rate_callback(fClient, carla_jack_srate_callback, this);
@@ -782,8 +785,66 @@ public:
         fUsedGroupNames.clear();
         fUsedPortNames.clear();
         fUsedConnections.clear();
+        fGroupIconsChanged.clear();
 #endif
         return false;
+    }
+
+    void idle() override
+    {
+        CarlaEngine::idle();
+
+        if (fGroupIconsChanged.count() == 0)
+            return;
+
+        static bool checkIcons = false;
+
+        if (! checkIcons)
+        {
+            checkIcons = true; // check them next time
+            return;
+        }
+
+        checkIcons = false;
+
+        void*  data;
+        size_t dataSize;
+
+        QList<int> groupIconsCopy(fGroupIconsChanged);
+        fGroupIconsChanged.clear();
+
+        foreach (const int& groupId, groupIconsCopy)
+        {
+            const char* const groupName(getGroupName(groupId));
+
+            data = nullptr;
+            dataSize = 0;
+
+            if (jackbridge_custom_get_data(fClient, groupName, URI_CANVAS_ICON, &data, &dataSize) && data != nullptr && dataSize != 0)
+            {
+                const char* const icon((const char*)data);
+                CARLA_ASSERT(std::strlen(icon)+1 == dataSize);
+
+                PatchbayIconType groupIcon;
+
+                if (std::strcmp(icon, "app") == 0 || std::strcmp(icon, "application") == 0)
+                    groupIcon = PATCHBAY_ICON_APPLICATION;
+                else if (std::strcmp(icon, "hardware") == 0)
+                    groupIcon = PATCHBAY_ICON_HARDWARE;
+                else if (std::strcmp(icon, "carla") == 0)
+                    groupIcon = PATCHBAY_ICON_CARLA;
+                else if (std::strcmp(icon, "distrho") == 0)
+                    groupIcon = PATCHBAY_ICON_DISTRHO;
+                else if (std::strcmp(icon, "file") == 0)
+                    groupIcon = PATCHBAY_ICON_FILE;
+                else if (std::strcmp(icon, "plugin") == 0)
+                    groupIcon = PATCHBAY_ICON_PLUGIN;
+                else
+                    groupIcon = PATCHBAY_ICON_APPLICATION;
+
+                callback(CALLBACK_PATCHBAY_ICON_CHANGED, 0, groupId, groupIcon, 0.0f, nullptr);
+            }
+        }
     }
 
     bool isRunning() const override
@@ -817,6 +878,7 @@ public:
         fSampleRate = jackbridge_get_sample_rate(client);
 
         jackbridge_custom_publish_data(client, URI_CANVAS_ICON, iconName, std::strlen(iconName)+1);
+        jackbridge_custom_set_data_appearance_callback(fClient, carla_jack_custom_appearance_callback, this);
 
         jackbridge_set_buffer_size_callback(client, carla_jack_bufsize_callback, this);
         jackbridge_set_sample_rate_callback(client, carla_jack_srate_callback, this);
@@ -1016,6 +1078,7 @@ public:
         fUsedGroupNames.clear();
         fUsedPortNames.clear();
         fUsedConnections.clear();
+        fGroupIconsChanged.clear();
 
         initJackPatchbay(jackbridge_get_client_name(fClient));
     }
@@ -1051,6 +1114,19 @@ public:
     // -------------------------------------
 
 protected:
+    void handleCustomAppearanceCallback(const char* client_name, const char* key, jack_custom_change_t change)
+    {
+        if ((change == JackCustomAdded || change == JackCustomReplaced) && std::strcmp(key, URI_CANVAS_ICON) == 0)
+        {
+            const int groupId (getGroupId(client_name));
+
+            if (groupId == -1)
+                return;
+
+            fGroupIconsChanged.append(groupId);
+        }
+    }
+
     void handleJackBufferSizeCallback(const uint32_t newBufferSize)
     {
         if (fBufferSize == newBufferSize)
@@ -1426,33 +1502,9 @@ protected:
                 GroupNameToId groupNameToId(groupId, groupName);
                 fUsedGroupNames.append(groupNameToId);
 
-                PatchbayIconType groupIcon = PATCHBAY_ICON_APPLICATION;
+                callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, groupId, PATCHBAY_ICON_APPLICATION, 0.0f, groupName);
 
-                void*  data = nullptr;
-                size_t dataSize = 0;
-
-                if (jackbridge_custom_get_data(fClient, groupName, URI_CANVAS_ICON, &data, &dataSize) && data != nullptr && dataSize != 0)
-                {
-                    const char* const icon((const char*)data);
-                    CARLA_ASSERT(std::strlen(icon)+1 == dataSize);
-
-                    if (std::strcmp(icon, "app") == 0 || std::strcmp(icon, "application") == 0)
-                        groupIcon = PATCHBAY_ICON_APPLICATION;
-                    else if (std::strcmp(icon, "hardware") == 0)
-                        groupIcon = PATCHBAY_ICON_HARDWARE;
-                    else if (std::strcmp(icon, "carla") == 0)
-                        groupIcon = PATCHBAY_ICON_CARLA;
-                    else if (std::strcmp(icon, "distrho") == 0)
-                        groupIcon = PATCHBAY_ICON_DISTRHO;
-                    else if (std::strcmp(icon, "file") == 0)
-                        groupIcon = PATCHBAY_ICON_FILE;
-                    else if (std::strcmp(icon, "plugin") == 0)
-                        groupIcon = PATCHBAY_ICON_PLUGIN;
-                }
-                else if (jackPortFlags & JackPortIsPhysical)
-                    groupIcon = PATCHBAY_ICON_HARDWARE;
-
-                callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, groupId, groupIcon, 0.0f, groupName);
+                fGroupIconsChanged.append(groupId);
             }
 
             bool portIsInput = (jackPortFlags & JackPortIsInput);
@@ -1729,6 +1781,7 @@ private:
     QList<GroupNameToId>  fUsedGroupNames;
     QList<PortNameToId>   fUsedPortNames;
     QList<ConnectionToId> fUsedConnections;
+    QList<int> fGroupIconsChanged;
 
     int getGroupId(const char* const name)
     {
@@ -1744,6 +1797,24 @@ private:
         }
 
         return -1;
+    }
+
+    const char* getGroupName(const int groupId)
+    {
+        CARLA_ASSERT(groupId >= 0);
+
+        static const char fallback[1] = { '\0' };
+
+        if (groupId < 0)
+            return fallback;
+
+        foreach (const GroupNameToId& groupNameId, fUsedGroupNames)
+        {
+            if (groupNameId.id == groupId)
+                return groupNameId.name;
+        }
+
+        return fallback;
     }
 
     int getPortId(const char* const fullName)
@@ -2023,15 +2094,20 @@ private:
 
     #define handlePtr ((CarlaEngineJack*)arg)
 
-    static int carla_jack_srate_callback(jack_nframes_t newSampleRate, void* arg)
+    static void carla_jack_custom_appearance_callback(const char* client_name, const char* key, jack_custom_change_t change, void* arg)
     {
-        handlePtr->handleJackSampleRateCallback(newSampleRate);
-        return 0;
+        handlePtr->handleCustomAppearanceCallback(client_name, key, change);
     }
 
     static int carla_jack_bufsize_callback(jack_nframes_t newBufferSize, void* arg)
     {
         handlePtr->handleJackBufferSizeCallback(newBufferSize);
+        return 0;
+    }
+
+    static int carla_jack_srate_callback(jack_nframes_t newSampleRate, void* arg)
+    {
+        handlePtr->handleJackSampleRateCallback(newSampleRate);
         return 0;
     }
 
