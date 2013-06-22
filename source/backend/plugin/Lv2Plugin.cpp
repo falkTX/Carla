@@ -365,8 +365,7 @@ public:
           fRdfDescriptor(nullptr),
           fAudioInBuffers(nullptr),
           fAudioOutBuffers(nullptr),
-          fParamBuffers(nullptr),
-          fParamFreewheel(0.0f)
+          fParamBuffers(nullptr)
     {
         carla_debug("Lv2Plugin::Lv2Plugin(%p, %i)", engine, id);
 
@@ -2013,23 +2012,15 @@ public:
                 kData->param.ranges[j].stepLarge = stepLarge;
 
                 // Start parameters in their default values
-                fParamBuffers[j] = def;
-
                 if (kData->param.data[j].type != PARAMETER_LV2_FREEWHEEL)
-                {
-                    fDescriptor->connect_port(fHandle, i, &fParamBuffers[j]);
-
-                    if (fHandle2 != nullptr)
-                        fDescriptor->connect_port(fHandle2, i, &fParamBuffers[j]);
-                }
+                    fParamBuffers[j] = def;
                 else
-                {
-                    // freewheel param
-                    fDescriptor->connect_port(fHandle, i, &fParamFreewheel);
+                    fParamBuffers[j] = min;
 
-                    if (fHandle2 != nullptr)
-                        fDescriptor->connect_port(fHandle2, i, &fParamFreewheel);
-                }
+                fDescriptor->connect_port(fHandle, i, &fParamBuffers[j]);
+
+                if (fHandle2 != nullptr)
+                    fDescriptor->connect_port(fHandle2, i, &fParamBuffers[j]);
             }
             else
             {
@@ -2421,14 +2412,6 @@ public:
             kData->needsReset = false;
 
             CARLA_PROCESS_CONTINUE_CHECK;
-        }
-
-        // --------------------------------------------------------------------------------------------------------
-        // Special Parameters
-
-        {
-            // TODO - there should be a callback for this
-            fParamFreewheel = kData->engine->isOffline() ? 1.0f : 0.0f;
         }
 
         // --------------------------------------------------------------------------------------------------------
@@ -3314,6 +3297,18 @@ public:
         }
 
         carla_debug("Lv2Plugin::sampleRateChanged(%g) - end", newSampleRate);
+    }
+
+    void offlineModeChanged(const bool isOffline) override
+    {
+        for (uint32_t k=0; k < kData->param.count; ++k)
+        {
+            if (kData->param.data[k].type == PARAMETER_LV2_FREEWHEEL)
+            {
+                fParamBuffers[k] = isOffline ? kData->param.ranges[k].max : kData->param.ranges[k].min;
+                postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 1, fParamBuffers[k]);
+            }
+        }
     }
 
     // -------------------------------------------------------------------
@@ -4724,7 +4719,6 @@ private:
     float** fAudioInBuffers;
     float** fAudioOutBuffers;
     float*  fParamBuffers;
-    float   fParamFreewheel;
 
     Lv2AtomQueue   fAtomQueueIn;
     Lv2AtomQueue   fAtomQueueOut;
