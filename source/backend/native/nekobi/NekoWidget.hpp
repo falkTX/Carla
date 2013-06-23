@@ -80,7 +80,7 @@ public:
         if (fTimer == fTimerSpeed*9)
         {
             if (fCurAction == kActionNone)
-                fCurAction = static_cast<Action>(rand() % kActionCount);
+                fCurAction = static_cast<Action>(std::rand() % kActionCount);
             else
                 fCurAction = kActionNone;
 

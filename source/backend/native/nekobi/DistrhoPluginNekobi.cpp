@@ -159,7 +159,7 @@ DistrhoPluginNekobi::DistrhoPluginNekobi()
 
 DistrhoPluginNekobi::~DistrhoPluginNekobi()
 {
-    free(fSynth->voice);
+    std::free(fSynth->voice);
     delete fSynth;
 }
 

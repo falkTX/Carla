@@ -1261,7 +1261,7 @@ protected:
 
                 for (uint32_t jackEventIndex=0; jackEventIndex < jackEventCount; ++jackEventIndex)
                 {
-                    if (jackbridge_midi_event_get(&jackEvent, eventIn, jackEventIndex) != 0)
+                    if (! jackbridge_midi_event_get(&jackEvent, eventIn, jackEventIndex))
                         continue;
 
                     EngineEvent* const engineEvent(&kData->bufEvents.in[engineEventIndex++]);
