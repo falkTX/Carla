@@ -1076,15 +1076,24 @@ class PatchScene(QGraphicsScene):
         self.m_mouse_down_init = False
         self.m_mouse_rubberband = False
 
+        self.addRubberBand()
+
+        self.m_view = view
+        if not self.m_view:
+            qFatal("PatchCanvas::PatchScene() - invalid view")
+
+    def addRubberBand(self):
         self.m_rubberband = self.addRect(QRectF(0, 0, 0, 0))
         self.m_rubberband.setZValue(-1)
         self.m_rubberband.hide()
         self.m_rubberband_selection = False
         self.m_rubberband_orig_point = QPointF(0, 0)
 
-        self.m_view = view
-        if not self.m_view:
-            qFatal("PatchCanvas::PatchScene() - invalid view")
+    def clear(self):
+        QGraphicsScene.clear(self)
+
+        # Re-add rubberband, that just got deleted
+        self.addRubberBand()
 
     def fixScaleFactor(self):
         scale = self.m_view.transform().m11()
