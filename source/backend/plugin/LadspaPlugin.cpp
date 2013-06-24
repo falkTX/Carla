@@ -998,7 +998,7 @@ public:
                             }
                             else
                             {
-                                value = kData->param.ranges[i].unnormalizeValue(ctrlEvent.value);
+                                value = kData->param.ranges[k].unnormalizeValue(ctrlEvent.value);
 
                                 if (kData->param.data[k].hints & PARAMETER_IS_INTEGER)
                                     value = std::rint(value);
