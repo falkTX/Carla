@@ -372,6 +372,8 @@ def clear():
     canvas.port_list = []
     canvas.connection_list = []
 
+    canvas.scene.clear()
+
     canvas.initiated = False
 
 def setInitialPos(x, y):
