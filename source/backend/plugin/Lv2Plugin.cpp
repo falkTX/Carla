@@ -1034,7 +1034,7 @@ public:
         {
             if (const LilvState* state = gLv2World.getState(fRdfDescriptor->Presets[index].URI, (const LV2_URID_Map*)fFeatures[kFeatureIdUridMap]->data))
             {
-                const ScopedDisabler sd(this);
+                const ScopedSingleProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
 
                 lilv_state_restore(state, fExt.state, fHandle, carla_lilv_set_port_value, this, 0, fFeatures);
 
@@ -3552,7 +3552,7 @@ protected:
 
         if (index == -1)
         {
-            const CarlaPlugin::ScopedDisabler m(this);
+            const ScopedSingleProcessLocker spl(this, true);
             return reloadPrograms(false);
         }
 
