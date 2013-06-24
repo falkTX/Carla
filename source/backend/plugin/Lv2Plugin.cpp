@@ -4973,6 +4973,8 @@ private:
         // Atom types
         if (std::strcmp(uri, LV2_ATOM__Blank) == 0)
             return CARLA_URI_MAP_ID_ATOM_BLANK;
+        if (std::strcmp(uri, LV2_ATOM__Bool) == 0)
+            return CARLA_URI_MAP_ID_ATOM_BOOL;
         if (std::strcmp(uri, LV2_ATOM__Chunk) == 0)
             return CARLA_URI_MAP_ID_ATOM_CHUNK;
         if (std::strcmp(uri, LV2_ATOM__Double) == 0)
@@ -4981,12 +4983,28 @@ private:
             return CARLA_URI_MAP_ID_ATOM_FLOAT;
         if (std::strcmp(uri, LV2_ATOM__Int) == 0)
             return CARLA_URI_MAP_ID_ATOM_INT;
+        if (std::strcmp(uri, LV2_ATOM__Literal) == 0)
+            return CARLA_URI_MAP_ID_ATOM_LITERAL;
+        if (std::strcmp(uri, LV2_ATOM__Long) == 0)
+            return CARLA_URI_MAP_ID_ATOM_LONG;
         if (std::strcmp(uri, LV2_ATOM__Path) == 0)
             return CARLA_URI_MAP_ID_ATOM_PATH;
+        if (std::strcmp(uri, LV2_ATOM__Property) == 0)
+            return CARLA_URI_MAP_ID_ATOM_PROPERTY;
+        if (std::strcmp(uri, LV2_ATOM__Resource) == 0)
+            return CARLA_URI_MAP_ID_ATOM_RESOURCE;
         if (std::strcmp(uri, LV2_ATOM__Sequence) == 0)
             return CARLA_URI_MAP_ID_ATOM_SEQUENCE;
         if (std::strcmp(uri, LV2_ATOM__String) == 0)
             return CARLA_URI_MAP_ID_ATOM_STRING;
+        if (std::strcmp(uri, LV2_ATOM__Tuple) == 0)
+            return CARLA_URI_MAP_ID_ATOM_TUPLE;
+        if (std::strcmp(uri, LV2_ATOM__URI) == 0)
+            return CARLA_URI_MAP_ID_ATOM_URI;
+        if (std::strcmp(uri, LV2_ATOM__URID) == 0)
+            return CARLA_URI_MAP_ID_ATOM_URID;
+        if (std::strcmp(uri, LV2_ATOM__Vector) == 0)
+            return CARLA_URI_MAP_ID_ATOM_VECTOR;
         if (std::strcmp(uri, LV2_ATOM__atomTransfer) == 0)
             return CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM;
         if (std::strcmp(uri, LV2_ATOM__eventTransfer) == 0)
@@ -5057,6 +5075,8 @@ private:
         // Atom types
         if (urid == CARLA_URI_MAP_ID_ATOM_BLANK)
             return LV2_ATOM__Blank;
+        if (urid == CARLA_URI_MAP_ID_ATOM_BOOL)
+            return LV2_ATOM__Bool;
         if (urid == CARLA_URI_MAP_ID_ATOM_CHUNK)
             return LV2_ATOM__Chunk;
         if (urid == CARLA_URI_MAP_ID_ATOM_DOUBLE)
@@ -5065,12 +5085,28 @@ private:
             return LV2_ATOM__Float;
         if (urid == CARLA_URI_MAP_ID_ATOM_INT)
             return LV2_ATOM__Int;
+        if (urid == CARLA_URI_MAP_ID_ATOM_LITERAL)
+            return LV2_ATOM__Literal;
+        if (urid == CARLA_URI_MAP_ID_ATOM_LONG)
+            return LV2_ATOM__Long;
         if (urid == CARLA_URI_MAP_ID_ATOM_PATH)
             return LV2_ATOM__Path;
+        if (urid == CARLA_URI_MAP_ID_ATOM_PROPERTY)
+            return LV2_ATOM__Property;
+        if (urid == CARLA_URI_MAP_ID_ATOM_RESOURCE)
+            return LV2_ATOM__Resource;
         if (urid == CARLA_URI_MAP_ID_ATOM_SEQUENCE)
             return LV2_ATOM__Sequence;
         if (urid == CARLA_URI_MAP_ID_ATOM_STRING)
             return LV2_ATOM__String;
+        if (urid == CARLA_URI_MAP_ID_ATOM_TUPLE)
+            return LV2_ATOM__Tuple;
+        if (urid == CARLA_URI_MAP_ID_ATOM_URI)
+            return LV2_ATOM__URI;
+        if (urid == CARLA_URI_MAP_ID_ATOM_URID)
+            return LV2_ATOM__URID;
+        if (urid == CARLA_URI_MAP_ID_ATOM_VECTOR)
+            return LV2_ATOM__Vector;
         if (urid == CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM)
             return LV2_ATOM__atomTransfer;
         if (urid == CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT)
