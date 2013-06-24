@@ -80,13 +80,13 @@ OBJS += \
 	distrho-3bandeq.cpp.o \
 	distrho-3bandsplitter.cpp.o \
 	distrho-nekobi.cpp.o \
-	distrho-pingpongpan.cpp.o \
-	distrho-stereoenhancer.cpp.o
+	distrho-pingpongpan.cpp.o
+# 	distrho-stereoenhancer.cpp.o
 endif
 
 # DISTRHO plugins (Qt)
-OBJS += \
-	distrho-notes.cpp.o
+# OBJS += \
+# 	distrho-notes.cpp.o
 
 ifeq ($(HAVE_ZYN_DEPS),true)
 # ZynAddSubFX

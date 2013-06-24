@@ -62,11 +62,11 @@ void carla_register_all_plugins()
     carla_register_native_plugin_3BandSplitter();
     carla_register_native_plugin_Nekobi();
     carla_register_native_plugin_PingPongPan();
-    carla_register_native_plugin_StereoEnhancer();
+    //carla_register_native_plugin_StereoEnhancer(); // unfinished
 #endif
 
     // DISTRHO plugins (Qt)
-    carla_register_native_plugin_Notes();
+    //carla_register_native_plugin_Notes(); // unfinished
 
 #ifdef WANT_ZYNADDSUBFX
     // ZynAddSubFX

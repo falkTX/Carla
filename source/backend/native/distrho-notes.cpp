@@ -17,7 +17,6 @@
 
 #include "CarlaNative.hpp"
 
-#if 0
 // Plugin Code
 #include "notes/DistrhoPluginNotes.cpp"
 #include "notes/DistrhoUINotes.cpp"
@@ -46,14 +45,13 @@ static const PluginDescriptor notesDesc = {
 };
 
 END_NAMESPACE_DISTRHO
-#endif
 
 // -----------------------------------------------------------------------
 
 void carla_register_native_plugin_Notes()
 {
-    //USE_NAMESPACE_DISTRHO
-    //carla_register_native_plugin(&notesDesc);
+    USE_NAMESPACE_DISTRHO
+    carla_register_native_plugin(&notesDesc);
 }
 
 // -----------------------------------------------------------------------
