@@ -1089,6 +1089,7 @@ const CarlaPluginInfo* carla_get_plugin_info(unsigned int pluginId)
     info.hints    = 0x0;
     info.binary   = nullptr;
     info.name     = nullptr;
+    info.iconName = nullptr;
     info.uniqueId = 0;
     info.latency  = 0;
     info.optionsAvailable = 0x0;
@@ -1127,6 +1128,7 @@ const CarlaPluginInfo* carla_get_plugin_info(unsigned int pluginId)
         info.hints    = plugin->hints();
         info.binary   = plugin->filename();
         info.name     = plugin->name();
+        info.iconName = plugin->iconName();
         info.uniqueId = plugin->uniqueId();
         info.latency  = plugin->latency();
 

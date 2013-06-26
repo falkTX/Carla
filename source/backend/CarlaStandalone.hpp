@@ -68,6 +68,7 @@ struct CarlaPluginInfo {
     const char* label;
     const char* maker;
     const char* copyright;
+    const char* iconName;
     long uniqueId;
     uint32_t latency;
 
@@ -83,6 +84,7 @@ struct CarlaPluginInfo {
           label(nullptr),
           maker(nullptr),
           copyright(nullptr),
+          iconName(nullptr),
           uniqueId(0),
           latency(0) {}
 

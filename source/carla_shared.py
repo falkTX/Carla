@@ -1181,6 +1181,7 @@ class PluginEdit(QDialog):
         self.fPluginInfo['label']     = cString(self.fPluginInfo['label'])
         self.fPluginInfo['maker']     = cString(self.fPluginInfo['maker'])
         self.fPluginInfo['copyright'] = cString(self.fPluginInfo['copyright'])
+        self.fPluginInfo['iconName']  = cString(self.fPluginInfo['iconName'])
 
         if not Carla.isLocal:
             self.fPluginInfo['hints'] &= ~PLUGIN_HAS_GUI
@@ -1984,6 +1985,7 @@ class PluginWidget(QFrame):
         self.fPluginInfo['label']     = cString(self.fPluginInfo['label'])
         self.fPluginInfo['maker']     = cString(self.fPluginInfo['maker'])
         self.fPluginInfo['copyright'] = cString(self.fPluginInfo['copyright'])
+        self.fPluginInfo['iconName']  = cString(self.fPluginInfo['iconName'])
 
         if not Carla.isLocal:
             self.fPluginInfo['hints'] &= ~PLUGIN_HAS_GUI
@@ -2036,7 +2038,9 @@ class PluginWidget(QFrame):
         self.ui.b_enable.setPixmaps(":/bitmaps/button_off.png", ":/bitmaps/button_on.png", ":/bitmaps/button_off.png")
         self.ui.b_edit.setPixmaps(":/bitmaps/button_edit.png", ":/bitmaps/button_edit_down.png", ":/bitmaps/button_edit_hover.png")
 
-        if self.fPluginInfo['hints'] & PLUGIN_HAS_GUI_AS_FILE:
+        if self.fPluginInfo['iconName'] == "distrho":
+            self.ui.b_gui.setPixmaps(":/bitmaps/button_distrho.png", ":/bitmaps/button_distrho_down.png", ":/bitmaps/button_distrho_hover.png")
+        elif self.fPluginInfo['iconName'] == "file" or (self.fPluginInfo['hints'] & PLUGIN_HAS_GUI_AS_FILE) != 0:
             self.ui.b_gui.setPixmaps(":/bitmaps/button_file.png", ":/bitmaps/button_file_down.png", ":/bitmaps/button_file_hover.png")
         else:
             self.ui.b_gui.setPixmaps(":/bitmaps/button_gui.png", ":/bitmaps/button_gui_down.png", ":/bitmaps/button_gui_hover.png")
