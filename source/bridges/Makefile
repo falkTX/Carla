@@ -153,8 +153,8 @@ LINK_UI_LV2_QT5_FLAGS    = $(LINK_UI_FLAGS) $(shell pkg-config --libs Qt5Gui Qt5
 BUILD_UI_LV2_COCOA_FLAGS = $(BUILD_UI_VST_FLAGS) -DBRIDGE_COCOA -DBRIDGE_LV2_COCOA $(QT_UI_FLAGS)
 LINK_UI_LV2_COCOA_FLAGS  = $(LINK_UI_FLAGS) $(QT_UI_LIBS)
 
-BUILD_UI_LV2_HWND_FLAGS  = $(BUILD_UI_VST_FLAGS) -DBRIDGE_HWND -DBRIDGE_LV2_HWND $(QT_UI_FLAGS)
-LINK_UI_LV2_HWND_FLAGS   = $(LINK_FLAGS) $(QT_UI_LIBS) -mwindows -static
+BUILD_UI_LV2_WIN32_FLAGS = $(BUILD_UI_VST_FLAGS) -DBRIDGE_HWND -DBRIDGE_LV2_WIN32 $(QT_UI_FLAGS)
+LINK_UI_LV2_WIN32_FLAGS  = $(LINK_FLAGS) $(QT_UI_LIBS) -mwindows -static
 
 BUILD_UI_LV2_X11_FLAGS   = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_X11 -DBRIDGE_LV2_X11 $(QT_UI_FLAGS)
 LINK_UI_LV2_X11_FLAGS    = $(LINK_UI_FLAGS) $(QT_UI_LIBS)
@@ -190,6 +190,13 @@ TARGETS += ui_lv2-x11
 TARGETS += ui_vst-x11
 endif
 
+ifeq ($(WIN32),true)
+TARGETS  = carla-bridge-win32.exe
+TARGETS += carla-bridge-win64.exe
+TARGETS += carla-bridge-lv2-windows.exe
+TARGETS += carla-bridge-vst-hwnd.exe
+endif
+
 # --------------------------------------------------------------
 
 all: $(TARGETS)
@@ -200,7 +207,7 @@ ui_lv2-qt4:  carla-bridge-lv2-qt4
 ui_lv2-qt5:  carla-bridge-lv2-qt5
 
 ui_lv2-cocoa: carla-bridge-lv2-cocoa
-ui_lv2-hwnd:  carla-bridge-lv2-hwnd.exe
+ui_lv2-win32: carla-bridge-lv2-windows.exe
 ui_lv2-x11:   carla-bridge-lv2-x11
 
 ui_vst-cocoa: carla-bridge-vst-cocoa
@@ -296,17 +303,17 @@ carla-bridge-lv2-cocoa: $(OBJS_UI_LV2_COCOA) $(OBJS_UI_LV2_LIBS) ../libs/theme.a
 	$(CXX) $< $(BUILD_UI_LV2_COCOA_FLAGS) -c -o $@
 
 # --------------------------------------------------------------
-# ui_lv2-hwnd
+# ui_lv2-windows
 
-OBJS_UI_LV2_HWND = CarlaBridgeUI-LV2__lv2-hwnd.o \
+OBJS_UI_LV2_WIN32 = CarlaBridgeUI-LV2__lv2-windows.o \
 	CarlaBridgeClient__lv2.o CarlaBridgeOsc__lv2.o \
-	CarlaBridgeToolkit__lv2.o CarlaBridgeToolkitQt__lv2-hwnd.o
+	CarlaBridgeToolkit__lv2.o CarlaBridgeToolkitQt__lv2-windows.o
 
-carla-bridge-lv2-hwnd.exe: $(OBJS_UI_LV2_HWND) $(OBJS_UI_LV2_LIBS) ../libs/theme.a
-	$(CXX) $^ $(LINK_UI_LV2_HWND_FLAGS) -o $@ $(CMD_STRIP) $@
+carla-bridge-lv2-windows.exe: $(OBJS_UI_LV2_WINDOWS) $(OBJS_UI_LV2_LIBS) ../libs/theme.a
+	$(CXX) $^ $(LINK_UI_LV2_WIN32_FLAGS) -o $@ $(CMD_STRIP) $@
 
-%__lv2-hwnd.o: %.cpp CarlaBridgeToolkitQt.moc
-	$(CXX) $< $(BUILD_UI_LV2_HWND_FLAGS) -c -o $@
+%__lv2-windows.o: %.cpp CarlaBridgeToolkitQt.moc
+	$(CXX) $< $(BUILD_UI_LV2_WIN32_FLAGS) -c -o $@
 
 # --------------------------------------------------------------
 # ui_lv2-x11

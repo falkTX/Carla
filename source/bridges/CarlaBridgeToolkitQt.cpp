@@ -160,6 +160,7 @@ public:
 #endif
         }
 
+        fWindow->setWindowIcon(QIcon::fromTheme("carla", QIcon(":/scalable/carla.svg")));
         fWindow->setWindowTitle(kUiTitle);
 
         {

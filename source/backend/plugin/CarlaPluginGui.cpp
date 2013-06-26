@@ -39,6 +39,8 @@ CarlaPluginGui::CarlaPluginGui(CarlaEngine* const engine, Callback* const callba
     CARLA_ASSERT(callback != nullptr);
     carla_debug("CarlaPluginGui::CarlaPluginGui(%p, %p)", engine, callback);
 
+    setWindowIcon(QIcon::fromTheme("carla", QIcon(":/scalable/carla.svg")));
+
     if (options.parented)
     {
 #ifdef Q_WS_X11

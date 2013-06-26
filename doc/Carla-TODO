@@ -32,7 +32,9 @@ VST:
 
 FluidSynth:
  - per-channel volume control
+ - proper buffer-size/sample-rate change
 
 LinuxSampler:
  - multi-program
  - 16outs (depends on multi-program)
+ - proper buffer-size/sample-rate change
