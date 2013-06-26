@@ -48,6 +48,9 @@
         <file>scalable/distrho.svg</file>
 
         <file>bitmaps/carla_about.png</file>
+        <file>bitmaps/button_distrho.png</file>
+        <file>bitmaps/button_distrho_down.png</file>
+        <file>bitmaps/button_distrho_hover.png</file>
         <file>bitmaps/button_edit.png</file>
         <file>bitmaps/button_edit_down.png</file>
         <file>bitmaps/button_edit_hover.png</file>
