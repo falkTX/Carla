@@ -42,16 +42,22 @@ class PluginLadspaDssi
 {
 public:
     PluginLadspaDssi()
-        : fPortAudioIns{nullptr},
-          fPortAudioOuts{nullptr}
     {
-        const uint32_t count(fPlugin.parameterCount());
+        for (uint32_t i=0; i < DISTRHO_PLUGIN_NUM_INPUTS; ++i)
+            fPortAudioIns[i] = nullptr;
 
-        fPortControls.resize(count, nullptr);
-        fLastControlValues.resize(count, 0.0f);
+        for (uint32_t i=0; i < DISTRHO_PLUGIN_NUM_OUTPUTS; ++i)
+            fPortAudioOuts[i] = nullptr;
 
-        for (uint32_t i=0; i < count; ++i)
-            fLastControlValues[i] = fPlugin.parameterValue(i);
+        {
+            const uint32_t count(fPlugin.parameterCount());
+
+            fPortControls.resize(count, nullptr);
+            fLastControlValues.resize(count, 0.0f);
+
+            for (uint32_t i=0; i < count; ++i)
+                fLastControlValues[i] = fPlugin.parameterValue(i);
+        }
 
 #if DISTRHO_PLUGIN_WANT_LATENCY
         fPortLatency = nullptr;

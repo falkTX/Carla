@@ -18,7 +18,11 @@
 
 #include "DistrhoPluginNekobi.hpp"
 
-#include "CarlaUtils.hpp"
+#ifdef CARLA_EXPORT
+# include "CarlaUtils.hpp"
+#else
+# define CARLA_SAFE_ASSERT_INT2(...)
+#endif
 
 extern "C" {
 #include "nekobee-src/nekobee_synth.c"
