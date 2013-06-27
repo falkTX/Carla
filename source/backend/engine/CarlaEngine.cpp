@@ -1303,6 +1303,20 @@ bool CarlaEngine::loadFilename(const char* const filename)
     return false;
 }
 
+bool charEndsWith(const char* const str, const char* const suffix)
+{
+    if (str == nullptr || suffix == nullptr)
+        return false;
+
+    const size_t strLen(std::strlen(str));
+    const size_t suffixLen(std::strlen(suffix));
+
+    if (strLen < suffixLen)
+        return false;
+
+    return (std::strncmp(str + (strLen-suffixLen), suffix, suffixLen) == 0);
+}
+
 bool CarlaEngine::loadProject(const char* const filename)
 {
     CARLA_ASSERT(filename != nullptr);
@@ -1342,7 +1356,16 @@ bool CarlaEngine::loadProject(const char* const filename)
             const void* extraStuff = nullptr;
 
             if (std::strcmp(saveState.type, "DSSI") == 0)
+            {
                 extraStuff = findDSSIGUI(saveState.binary, saveState.label);
+            }
+            else if (std::strcmp(saveState.type, "SF2") == 0)
+            {
+                const char use16OutsSuffix[] = " (16 outs)";
+
+                if (charEndsWith(saveState.label, use16OutsSuffix))
+                    extraStuff = (void*)0x1; // non-null
+            }
 
             // TODO - proper find&load plugins
             if (addPlugin(getPluginTypeFromString(saveState.type), saveState.binary, saveState.name, saveState.label, extraStuff))

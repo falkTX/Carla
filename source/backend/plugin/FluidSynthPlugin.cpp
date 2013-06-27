@@ -1571,6 +1571,9 @@ public:
         fFilename = filename;
         fLabel    = label;
 
+        if (kUses16Outs && ! fLabel.endsWith(" (16 outs)"))
+            fLabel += " (16 outs)";
+
         if (name != nullptr)
             fName = kData->engine->getUniquePluginName(name);
         else

@@ -178,6 +178,32 @@ public:
         return (buffer[pos] >= '0' && buffer[pos] <= '9');
     }
 
+    bool startsWith(const char* const prefix) const
+    {
+        if (prefix == nullptr)
+            return false;
+
+        const size_t prefixLen(std::strlen(prefix));
+
+        if (bufferLen < prefixLen)
+            return false;
+
+        return (std::strncmp(buffer + (bufferLen-prefixLen), prefix, prefixLen) == 0);
+    }
+
+    bool endsWith(const char* const suffix) const
+    {
+        if (suffix == nullptr)
+            return false;
+
+        const size_t suffixLen(std::strlen(suffix));
+
+        if (bufferLen < suffixLen)
+            return false;
+
+        return (std::strncmp(buffer + (bufferLen-suffixLen), suffix, suffixLen) == 0);
+    }
+
     void clear()
     {
         truncate(0);
