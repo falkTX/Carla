@@ -26,9 +26,9 @@ namespace DistrhoArtwork3BandSplitter
     const unsigned int backgroundHeight   = 372;
 
     extern const char* knobData;
-    const unsigned int knobDataSize = 615040;
+    const unsigned int knobDataSize = 15376;
     const unsigned int knobWidth    = 62;
-    const unsigned int knobHeight   = 2480;
+    const unsigned int knobHeight   = 62;
 
     extern const char* sliderData;
     const unsigned int sliderDataSize = 6000;

@@ -70,16 +70,18 @@ DistrhoUI3BandSplitter::DistrhoUI3BandSplitter()
 
     // knob Low-Mid
     fKnobLowMid = new ImageKnob(this, knobImage);
-    fKnobLowMid->setPos(66, 270);
+    fKnobLowMid->setPos(64, 270);
     fKnobLowMid->setRange(0.0f, 1000.0f);
     fKnobLowMid->setValue(220.0f);
+    fKnobLowMid->setRotationAngle(270);
     fKnobLowMid->setCallback(this);
 
     // knob Mid-High
     fKnobMidHigh = new ImageKnob(this, knobImage);
-    fKnobMidHigh->setPos(160, 270);
+    fKnobMidHigh->setPos(158, 270);
     fKnobMidHigh->setRange(1000.0f, 20000.0f);
     fKnobMidHigh->setValue(2000.0f);
+    fKnobMidHigh->setRotationAngle(270);
     fKnobMidHigh->setCallback(this);
 
     // about button
