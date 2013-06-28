@@ -242,7 +242,7 @@ public:
 
         fResizable = yesNo;
 
-        //setSize();
+        //setSize(kView->width, kView->height, true);
     }
 
     void setVisible(bool yesNo, bool closed = false)
@@ -290,10 +290,18 @@ public:
         }
     }
 
-    void setSize(unsigned int width, unsigned int height)
+    void setSize(unsigned int width, unsigned int height /*, bool forced = false*/)
     {
+        if (width == 0)
+            width = 1;
+        if (height == 0)
+            height = 1;
+
         kView->width  = width;
         kView->height = height;
+
+        //if (kView->width == width && kView->height == height && ! forced)
+        //    return;
 
 #if DGL_OS_WINDOWS
         int winFlags = WS_POPUPWINDOW | WS_CAPTION;

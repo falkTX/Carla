@@ -20,11 +20,7 @@
 # error DSSI always uses external UI, no wrapper neeed!
 #endif
 
-#define TEST_ONLY
-
-#ifndef TEST_ONLY
 #include <lo/lo.h>
-#endif
 
 #ifdef DISTRHO_UI_QT
 # include <QtGui/QApplication>
@@ -38,55 +34,64 @@ START_NAMESPACE_DISTRHO
 
 // -------------------------------------------------
 
-#ifdef TEST_ONLY
-struct OscData {};
-#else
 struct OscData {
     lo_address  addr;
     const char* path;
     lo_server   server;
+
+    OscData()
+        : addr(nullptr),
+          path(nullptr),
+          server(nullptr) {}
+
+    void idle() const
+    {
+        if (server == nullptr)
+            return;
+
+        while (lo_server_recv_noblock(server, 0) != 0) {}
+    }
+
+    void send_configure(const char* const key, const char* const value) const
+    {
+        char targetPath[std::strlen(path)+11];
+        std::strcpy(targetPath, path);
+        std::strcat(targetPath, "/configure");
+        lo_send(addr, targetPath, "ss", key, value);
+    }
+
+    void send_control(const int32_t index, const float value) const
+    {
+        char targetPath[std::strlen(path)+9];
+        std::strcpy(targetPath, path);
+        std::strcat(targetPath, "/control");
+        lo_send(addr, targetPath, "if", index, value);
+    }
+
+    void send_midi(unsigned char data[4]) const
+    {
+        char targetPath[std::strlen(path)+6];
+        std::strcpy(targetPath, path);
+        std::strcat(targetPath, "/midi");
+        lo_send(addr, targetPath, "m", data);
+    }
+
+    void send_update(const char* const url) const
+    {
+        char targetPath[std::strlen(path)+8];
+        std::strcpy(targetPath, path);
+        std::strcat(targetPath, "/update");
+        lo_send(addr, targetPath, "s", url);
+    }
+
+    void send_exiting() const
+    {
+        char targetPath[std::strlen(path)+9];
+        std::strcpy(targetPath, path);
+        std::strcat(targetPath, "/exiting");
+        lo_send(addr, targetPath, "");
+    }
 };
-
-void osc_send_configure(const OscData* oscData, const char* const key, const char* const value)
-{
-    char targetPath[strlen(oscData->path)+11];
-    strcpy(targetPath, oscData->path);
-    strcat(targetPath, "/configure");
-    lo_send(oscData->addr, targetPath, "ss", key, value);
-}
-
-void osc_send_control(const OscData* oscData, const int32_t index, const float value)
-{
-    char targetPath[strlen(oscData->path)+9];
-    strcpy(targetPath, oscData->path);
-    strcat(targetPath, "/control");
-    lo_send(oscData->addr, targetPath, "if", index, value);
-}
-
-void osc_send_midi(const OscData* oscData, unsigned char data[4])
-{
-    char targetPath[strlen(oscData->path)+6];
-    strcpy(targetPath, oscData->path);
-    strcat(targetPath, "/midi");
-    lo_send(oscData->addr, targetPath, "m", data);
-}
-
-void osc_send_update(const OscData* oscData, const char* const url)
-{
-    char targetPath[strlen(oscData->path)+8];
-    strcpy(targetPath, oscData->path);
-    strcat(targetPath, "/update");
-    lo_send(oscData->addr, targetPath, "s", url);
-}
-
-void osc_send_exiting(const OscData* oscData)
-{
-    char targetPath[strlen(oscData->path)+9];
-    strcpy(targetPath, oscData->path);
-    strcat(targetPath, "/exiting");
-    lo_send(oscData->addr, targetPath, "");
-}
-#endif
 
 // -------------------------------------------------
 
@@ -97,7 +102,7 @@ class UIDssi
 #endif
 {
 public:
-    UIDssi(const OscData* const oscData, const char* const uiTitle)
+    UIDssi(const OscData& oscData, const char* const uiTitle)
 #ifdef DISTRHO_UI_QT
         : QMainWindow(nullptr),
           fUI(this, 0, nullptr, setParameterCallback, setStateCallback, uiSendNoteCallback, uiResizeCallback),
@@ -109,7 +114,7 @@ public:
           glApp(fUI.getApp()),
           glWindow(fUI.getWindow()),
 #endif
-          kOscData(oscData)
+          fOscData(oscData)
     {
 #ifdef DISTRHO_UI_QT
         QtUI* const qtUI(fUI.getQt4Ui());
@@ -128,8 +133,6 @@ public:
             setWindowFlags(windowFlags()|Qt::MSWindowsFixedSizeDialogHint);
 # endif
         }
-
-        qtTimer = startTimer(30);
 #else
         glWindow.setSize(fUI.width(), fUI.height());
         glWindow.setWindowTitle(uiTitle);
@@ -145,30 +148,28 @@ public:
             qtTimer = 0;
         }
 #endif
-#ifndef TEST_ONLY
-        if (kOscData->server && ! fHostClosed)
-            osc_send_exiting(kOscData);
-#endif
+
+        if (fOscData.server != nullptr && ! fHostClosed)
+            fOscData.send_exiting();
     }
 
-#ifndef DISTRHO_UI_QT
-    void glExec()
+    void exec()
     {
+#ifdef DISTRHO_UI_QT
+        assert(qtTimer == 0);
+
+        qtTimer = startTimer(50);
+        qApp->exec();
+#else
         while (! glApp.isQuiting())
         {
-#ifndef TEST_ONLY
-            if (kOscData->server != nullptr)
-            {
-                while (lo_server_recv_noblock(kOscData->server, 0) != 0) {}
-            }
-#endif
-
+            fOscData.idle();
+            fUI.idle();
             glApp.idle();
-
-            dgl_msleep(10);
+            dgl_msleep(50);
         }
-    }
 #endif
+    }
 
     // ---------------------------------------------
 
@@ -254,26 +255,25 @@ public:
     // ---------------------------------------------
 
 protected:
-#ifndef TEST_ONLY
     void setParameterValue(uint32_t rindex, float value)
     {
-        if (kOscData->server == nullptr)
+        if (fOscData.server == nullptr)
             return;
 
-        osc_send_control(kOscData, rindex, value);
+        fOscData.send_control(rindex, value);
     }
 
     void setState(const char* key, const char* value)
     {
-        if (kOscData->server == nullptr)
+        if (fOscData.server == nullptr)
             return;
 
-        osc_send_configure(kOscData, key, value);
+        fOscData.send_configure(key, value);
     }
 
     void uiSendNote(bool onOff, uint8_t channel, uint8_t note, uint8_t velocity)
     {
-        if (kOscData->server == nullptr)
+        if (fOscData.server == nullptr)
             return;
         if (channel > 0xF)
             return;
@@ -281,9 +281,8 @@ protected:
         uint8_t mdata[4] = { 0, channel, note, velocity };
         mdata[1] += onOff ? 0x90 : 0x80;
 
-        osc_send_midi(kOscData, mdata);
+        fOscData.send_midi(mdata);
     }
-#endif
 
     void uiResize(unsigned int width, unsigned int height)
     {
@@ -299,9 +298,8 @@ protected:
     {
         if (event->timerId() == uiTimer)
         {
+            fOscData.idle();
             fUI.idle();
-
-            while (lo_server_recv_noblock(kOscData->server, 0) != 0) {}
         }
 
         QMainWindow::timerEvent(event);
@@ -322,7 +320,7 @@ private:
     Window& glWindow;
 #endif
 
-    const OscData* const kOscData;
+    const OscData& fOscData;
 
     // ---------------------------------------------
     // Callbacks
@@ -331,23 +329,17 @@ private:
 
     static void setParameterCallback(void* ptr, uint32_t rindex, float value)
     {
-#ifndef TEST_ONLY
         uiPtr->setParameterValue(rindex, value);
-#endif
     }
 
     static void setStateCallback(void* ptr, const char* key, const char* value)
     {
-#ifndef TEST_ONLY
         uiPtr->setState(key, value);
-#endif
     }
 
     static void uiSendNoteCallback(void* ptr, bool onOff, uint8_t channel, uint8_t note, uint8_t velocity)
     {
-#ifndef TEST_ONLY
         uiPtr->uiSendNote(onOff, channel, note, velocity);
-#endif
     }
 
     static void uiResizeCallback(void* ptr, unsigned int width, unsigned int height)
@@ -360,13 +352,9 @@ private:
 
 // -------------------------------------------------
 
-static UIDssi*     globalUI = nullptr;
-#ifdef TEST_ONLY
 static OscData     gOscData;
-#else
-static OscData     gOscData = { nullptr, nullptr, nullptr };
-#endif
 static const char* gUiTitle = nullptr;
+static UIDssi*     globalUI = nullptr;
 
 static void initUiIfNeeded()
 {
@@ -376,12 +364,11 @@ static void initUiIfNeeded()
     if (d_lastUiSampleRate == 0.0)
         d_lastUiSampleRate = 44100.0;
 
-    globalUI = new UIDssi(&gOscData, gUiTitle);
+    globalUI = new UIDssi(gOscData, gUiTitle);
 }
 
 // -------------------------------------------------
 
-#ifndef TEST_ONLY
 int osc_debug_handler(const char* path, const char*, lo_arg**, int, lo_message, void*)
 {
     d_debug("osc_debug_handler(\"%s\")", path);
@@ -503,7 +490,6 @@ int osc_quit_handler(const char*, const char*, lo_arg**, int, lo_message, void*)
 
     return 0;
 }
-#endif
 
 END_NAMESPACE_DISTRHO
 
@@ -511,32 +497,21 @@ int main(int argc, char* argv[])
 {
     USE_NAMESPACE_DISTRHO
 
-#ifndef TEST_ONLY
     // dummy test mode
     if (argc == 1)
-#endif
     {
 #ifdef DISTRHO_UI_QT
         QApplication app(argc, argv, true);
 #endif
-
-        gUiTitle = strdup("DSSI UI Test");
+        gUiTitle = "DSSI UI Test";
 
         initUiIfNeeded();
         globalUI->dssiui_show();
-
-#ifdef DISTRHO_UI_QT
-        app.exec();
-#else
-        globalUI->glExec();
-#endif
-
-        free((void*)gUiTitle);
+        globalUI->exec();
 
         return 0;
     }
 
-#ifndef TEST_ONLY
     if (argc != 5)
     {
         fprintf(stderr, "Usage: %s <osc-url> <plugin-dll> <plugin-label> <instance-name>\n", argv[0]);
@@ -615,13 +590,15 @@ int main(int argc, char* argv[])
 
     lo_server_add_method(oscServer, nullptr, nullptr, osc_debug_handler, nullptr);
 
-    gOscData = { oscAddr, oscPath, oscServer };
     gUiTitle = uiTitle;
 
-    osc_send_update(&gOscData, pluginPath);
+    gOscData.addr   = oscAddr;
+    gOscData.path   = oscPath;
+    gOscData.server = oscServer;
+    gOscData.send_update(pluginPath);
 
     // wait for init
-    for (int i=0; i < 1000; ++i)
+    for (int i=0; i < 100; ++i)
     {
         lo_server_recv(oscServer);
 
@@ -637,11 +614,7 @@ int main(int argc, char* argv[])
     {
         initUiIfNeeded();
 
-#ifdef DISTRHO_UI_QT
-        app.exec();
-#else
-        globalUI->glExec();
-#endif
+        globalUI->exec();
 
         delete globalUI;
         globalUI = nullptr;
@@ -674,5 +647,4 @@ int main(int argc, char* argv[])
     lo_server_free(oscServer);
 
     return ret;
-#endif
 }

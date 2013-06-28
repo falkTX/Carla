@@ -145,18 +145,6 @@ void d_msleep(unsigned int msecs)
 
 // -------------------------------------------------
 
-static inline
-void d_setenv(const char* key, const char* value)
-{
-#if DISTRHO_OS_WINDOWS
-    SetEnvironmentVariableA(key, value);
-#else
-    setenv(key, value, 1);
-#endif
-}
-
-// -------------------------------------------------
-
 class d_string
 {
 public:
@@ -310,6 +298,32 @@ public:
             return false;
 
         return (buffer[pos] >= '0' && buffer[pos] <= '9');
+    }
+
+    bool startsWith(const char* const prefix) const
+    {
+        if (prefix == nullptr)
+            return false;
+
+        const size_t prefixLen(std::strlen(prefix));
+
+        if (bufferLen < prefixLen)
+            return false;
+
+        return (std::strncmp(buffer + (bufferLen-prefixLen), prefix, prefixLen) == 0);
+    }
+
+    bool endsWith(const char* const suffix) const
+    {
+        if (suffix == nullptr)
+            return false;
+
+        const size_t suffixLen(std::strlen(suffix));
+
+        if (bufferLen < suffixLen)
+            return false;
+
+        return (std::strncmp(buffer + (bufferLen-suffixLen), suffix, suffixLen) == 0);
     }
 
     void clear()

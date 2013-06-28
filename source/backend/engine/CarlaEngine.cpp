@@ -662,7 +662,6 @@ bool CarlaEngine::init(const char* const clientName)
 bool CarlaEngine::close()
 {
     CARLA_ASSERT(fName.isNotEmpty());
-    CARLA_ASSERT(kData->oscData != nullptr);
     CARLA_ASSERT(kData->plugins != nullptr);
     CARLA_ASSERT(kData->nextAction.opcode == kEnginePostActionNull);
     CARLA_ASSERT(kData->nextPluginId == kData->maxPluginNumber);

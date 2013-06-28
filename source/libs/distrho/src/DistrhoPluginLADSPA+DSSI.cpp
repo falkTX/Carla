@@ -28,11 +28,7 @@
 # endif
 #endif
 
-#include <vector>
-
-typedef LADSPA_Data*                LADSPA_DataPtr;
-typedef std::vector<LADSPA_Data>    LADSPA_DataVector;
-typedef std::vector<LADSPA_DataPtr> LADSPA_DataPtrVector;
+typedef LADSPA_Data* LADSPA_DataPtr;
 
 // -------------------------------------------------
 
@@ -42,6 +38,8 @@ class PluginLadspaDssi
 {
 public:
     PluginLadspaDssi()
+        : fPortControls(nullptr),
+          fLastControlValues(nullptr)
     {
         for (uint32_t i=0; i < DISTRHO_PLUGIN_NUM_INPUTS; ++i)
             fPortAudioIns[i] = nullptr;
@@ -52,11 +50,14 @@ public:
         {
             const uint32_t count(fPlugin.parameterCount());
 
-            fPortControls.resize(count, nullptr);
-            fLastControlValues.resize(count, 0.0f);
+            fPortControls = new LADSPA_DataPtr[count];;
+            fLastControlValues = new LADSPA_Data[count];;
 
             for (uint32_t i=0; i < count; ++i)
+            {
+                fPortControls[i] = nullptr;
                 fLastControlValues[i] = fPlugin.parameterValue(i);
+            }
         }
 
 #if DISTRHO_PLUGIN_WANT_LATENCY
@@ -66,8 +67,17 @@ public:
 
     ~PluginLadspaDssi()
     {
-        fLastControlValues.clear();
-        fPortControls.clear();
+        if (fPortControls != nullptr)
+        {
+            delete[] fPortControls;
+            fPortControls = nullptr;
+        }
+
+        if (fLastControlValues)
+        {
+            delete[] fLastControlValues;
+            fLastControlValues = nullptr;
+        }
     }
 
     // ---------------------------------------------
@@ -159,7 +169,7 @@ public:
             {
                 fLastControlValues[i] = fPlugin.parameterValue(i);
 
-                if (fPortControls[i])
+                if (fPortControls[i] != nullptr)
                     *fPortControls[i] = fLastControlValues[i];
             }
         }
@@ -195,6 +205,8 @@ public:
 
         for (uint32_t i=0, count=fPlugin.parameterCount(); i < count; ++i)
         {
+            assert(fPortControls[i] != nullptr);
+
             curValue = *fPortControls[i];
 
             if (fLastControlValues[i] != curValue && ! fPlugin.parameterIsOutput(i))
@@ -297,18 +309,18 @@ public:
 private:
     PluginInternal fPlugin;
 
-    LADSPA_DataPtr       fPortAudioIns[DISTRHO_PLUGIN_NUM_INPUTS];
-    LADSPA_DataPtr       fPortAudioOuts[DISTRHO_PLUGIN_NUM_INPUTS];
-    LADSPA_DataPtrVector fPortControls;
+    LADSPA_DataPtr  fPortAudioIns[DISTRHO_PLUGIN_NUM_INPUTS];
+    LADSPA_DataPtr  fPortAudioOuts[DISTRHO_PLUGIN_NUM_OUTPUTS];
+    LADSPA_DataPtr* fPortControls;
 #if DISTRHO_PLUGIN_WANT_LATENCY
-    LADSPA_DataPtr       fPortLatency;
+    LADSPA_DataPtr  fPortLatency;
 #endif
 
 #if DISTRHO_PLUGIN_IS_SYNTH
     MidiEvent fMidiEvents[MAX_MIDI_EVENTS];
 #endif
 
-    LADSPA_DataVector fLastControlValues;
+    LADSPA_Data* fLastControlValues;
 
     // ---------------------------------------------
 

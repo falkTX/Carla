@@ -36,7 +36,9 @@ CarlaBridgeClient::CarlaBridgeClient(const char* const uiTitle)
 #endif
       fOscData(nullptr)
 {
+#ifdef BUILD_BRIDGE_UI
     CARLA_ASSERT(uiTitle != nullptr);
+#endif
     carla_debug("CarlaBridgeClient::CarlaBridgeClient(\"%s\")", uiTitle);
 }
 
