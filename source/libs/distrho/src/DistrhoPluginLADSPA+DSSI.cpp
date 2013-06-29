@@ -28,11 +28,15 @@
 # endif
 #endif
 
-typedef LADSPA_Data* LADSPA_DataPtr;
+#if DISTRHO_PLUGIN_WANT_TIMEPOS
+# warning LADSPA/DSSI does not support TimePos
+#endif
 
 // -------------------------------------------------
 
 START_NAMESPACE_DISTRHO
+
+typedef LADSPA_Data* LADSPA_DataPtr;
 
 class PluginLadspaDssi
 {
@@ -84,9 +88,9 @@ public:
 
     void ladspa_connect_port(const unsigned long port, const LADSPA_DataPtr dataLocation)
     {
-        unsigned long i, count, index = 0;
+        unsigned long index = 0;
 
-        for (i=0; i < DISTRHO_PLUGIN_NUM_INPUTS; ++i)
+        for (unsigned long i=0; i < DISTRHO_PLUGIN_NUM_INPUTS; ++i)
         {
             if (port == index++)
             {
@@ -95,7 +99,7 @@ public:
             }
         }
 
-        for (i=0; i < DISTRHO_PLUGIN_NUM_OUTPUTS; ++i)
+        for (unsigned long i=0; i < DISTRHO_PLUGIN_NUM_OUTPUTS; ++i)
         {
             if (port == index++)
             {
@@ -112,7 +116,7 @@ public:
         }
 #endif
 
-        for (i=0, count=fPlugin.parameterCount(); i < count; ++i)
+        for (unsigned long i=0, count=fPlugin.parameterCount(); i < count; ++i)
         {
             if (port == index++)
             {
@@ -216,10 +220,10 @@ public:
             }
         }
 
-#ifdef DISTRHO_PLUGIN_TARGET_DSSI
-# if DISTRHO_PLUGIN_IS_SYNTH
+#if DISTRHO_PLUGIN_IS_SYNTH
         // Get MIDI Events
-        uint32_t midiEventCount = 0;
+        uint32_t  midiEventCount = 0;
+        MidiEvent midiEvents[eventCount];
 
         for (uint32_t i=0, j; i < eventCount && midiEventCount < MAX_MIDI_EVENTS; ++i)
         {
@@ -232,71 +236,64 @@ public:
             {
             case SND_SEQ_EVENT_NOTEON:
                 j = midiEventCount++;
-                fMidiEvents[j].frame  = seqEvent.time.tick;
-                fMidiEvents[j].buf[0] = 0x90 + seqEvent.data.note.channel;
-                fMidiEvents[j].buf[1] = seqEvent.data.note.note;
-                fMidiEvents[j].buf[2] = seqEvent.data.note.velocity;
-                fMidiEvents[j].buf[3] = 0;
-                fMidiEvents[j].size   = 3;
+                midiEvents[j].frame  = seqEvent.time.tick;
+                midiEvents[j].buf[0] = 0x90 + seqEvent.data.note.channel;
+                midiEvents[j].buf[1] = seqEvent.data.note.note;
+                midiEvents[j].buf[2] = seqEvent.data.note.velocity;
+                midiEvents[j].buf[3] = 0;
+                midiEvents[j].size   = 3;
                 break;
             case SND_SEQ_EVENT_NOTEOFF:
                 j = midiEventCount++;
-                fMidiEvents[j].frame  = seqEvent.time.tick;
-                fMidiEvents[j].buf[0] = 0x80 + seqEvent.data.note.channel;
-                fMidiEvents[j].buf[1] = seqEvent.data.note.note;
-                fMidiEvents[j].buf[2] = 0;
-                fMidiEvents[j].buf[3] = 0;
-                fMidiEvents[j].size   = 3;
+                midiEvents[j].frame  = seqEvent.time.tick;
+                midiEvents[j].buf[0] = 0x80 + seqEvent.data.note.channel;
+                midiEvents[j].buf[1] = seqEvent.data.note.note;
+                midiEvents[j].buf[2] = 0;
+                midiEvents[j].buf[3] = 0;
+                midiEvents[j].size   = 3;
                 break;
             case SND_SEQ_EVENT_KEYPRESS:
                 j = midiEventCount++;
-                fMidiEvents[j].frame  = seqEvent.time.tick;
-                fMidiEvents[j].buf[0] = 0xA0 + seqEvent.data.note.channel;
-                fMidiEvents[j].buf[1] = seqEvent.data.note.note;
-                fMidiEvents[j].buf[2] = seqEvent.data.note.velocity;
-                fMidiEvents[j].buf[3] = 0;
-                fMidiEvents[j].size   = 3;
+                midiEvents[j].frame  = seqEvent.time.tick;
+                midiEvents[j].buf[0] = 0xA0 + seqEvent.data.note.channel;
+                midiEvents[j].buf[1] = seqEvent.data.note.note;
+                midiEvents[j].buf[2] = seqEvent.data.note.velocity;
+                midiEvents[j].buf[3] = 0;
+                midiEvents[j].size   = 3;
                 break;
             case SND_SEQ_EVENT_CONTROLLER:
                 j = midiEventCount++;
-                fMidiEvents[j].frame  = seqEvent.time.tick;
-                fMidiEvents[j].buf[0] = 0xB0 + seqEvent.data.control.channel;
-                fMidiEvents[j].buf[1] = seqEvent.data.control.param;
-                fMidiEvents[j].buf[2] = seqEvent.data.control.value;
-                fMidiEvents[j].buf[3] = 0;
-                fMidiEvents[j].size   = 3;
+                midiEvents[j].frame  = seqEvent.time.tick;
+                midiEvents[j].buf[0] = 0xB0 + seqEvent.data.control.channel;
+                midiEvents[j].buf[1] = seqEvent.data.control.param;
+                midiEvents[j].buf[2] = seqEvent.data.control.value;
+                midiEvents[j].buf[3] = 0;
+                midiEvents[j].size   = 3;
                 break;
             case SND_SEQ_EVENT_CHANPRESS:
                 j = midiEventCount++;
-                fMidiEvents[j].frame  = seqEvent.time.tick;
-                fMidiEvents[j].buf[0] = 0xD0 + seqEvent.data.control.channel;
-                fMidiEvents[j].buf[1] = seqEvent.data.control.value;
-                fMidiEvents[j].buf[2] = 0;
-                fMidiEvents[j].buf[3] = 0;
-                fMidiEvents[j].size   = 2;
+                midiEvents[j].frame  = seqEvent.time.tick;
+                midiEvents[j].buf[0] = 0xD0 + seqEvent.data.control.channel;
+                midiEvents[j].buf[1] = seqEvent.data.control.value;
+                midiEvents[j].buf[2] = 0;
+                midiEvents[j].buf[3] = 0;
+                midiEvents[j].size   = 2;
                 break;
-            case SND_SEQ_EVENT_PITCHBEND: // TODO
+#if 0 // TODO
+            case SND_SEQ_EVENT_PITCHBEND:
                 j = midiEventCount++;
-                fMidiEvents[j].frame  = seqEvent.time.tick;
-                fMidiEvents[j].buf[0] = 0xE0 + seqEvent.data.control.channel;
-                fMidiEvents[j].buf[1] = 0;
-                fMidiEvents[j].buf[2] = 0;
-                fMidiEvents[j].buf[3] = 0;
-                fMidiEvents[j].size   = 3;
+                midiEvents[j].frame  = seqEvent.time.tick;
+                midiEvents[j].buf[0] = 0xE0 + seqEvent.data.control.channel;
+                midiEvents[j].buf[1] = 0;
+                midiEvents[j].buf[2] = 0;
+                midiEvents[j].buf[3] = 0;
+                midiEvents[j].size   = 3;
                 break;
+#endif
             }
         }
-# else
-        return;
-        // unused
-        (void)events;
-        (void)eventCount;
-# endif
-#endif
 
-        // Run plugin for this cycle
-#if DISTRHO_PLUGIN_IS_SYNTH
-        fPlugin.run(fPortAudioIns, fPortAudioOuts, bufferSize, midiEventCount, fMidiEvents);
+        fPlugin.run(fPortAudioIns, fPortAudioOuts, bufferSize, midiEventCount, midiEvents);
 #else
         fPlugin.run(fPortAudioIns, fPortAudioOuts, bufferSize, 0, nullptr);
 #endif
@@ -314,10 +311,6 @@ private:
     LADSPA_DataPtr* fPortControls;
 #if DISTRHO_PLUGIN_WANT_LATENCY
     LADSPA_DataPtr  fPortLatency;
-#endif
-
-#if DISTRHO_PLUGIN_IS_SYNTH
-    MidiEvent fMidiEvents[MAX_MIDI_EVENTS];
 #endif
 
     LADSPA_Data* fLastControlValues;
@@ -480,38 +473,38 @@ public:
         d_lastSampleRate = 0.0;
 
         // Get port count, init
-        unsigned long i, port = 0;
+        unsigned long port = 0;
         unsigned long portCount = DISTRHO_PLUGIN_NUM_INPUTS + DISTRHO_PLUGIN_NUM_OUTPUTS + plugin.parameterCount();
 #if DISTRHO_PLUGIN_WANT_LATENCY
         portCount += 1;
 #endif
-        const char** const portNames = new const char* [portCount];
-        LADSPA_PortDescriptor* portDescriptors = new LADSPA_PortDescriptor [portCount];
-        LADSPA_PortRangeHint*  portRangeHints  = new LADSPA_PortRangeHint  [portCount];
+        const char** const portNames = new const char*[portCount];
+        LADSPA_PortDescriptor* portDescriptors = new LADSPA_PortDescriptor[portCount];
+        LADSPA_PortRangeHint*  portRangeHints  = new LADSPA_PortRangeHint [portCount];
 
         // Set ports
-        for (i=0; i < DISTRHO_PLUGIN_NUM_INPUTS; ++i, ++port)
+        for (unsigned long i=0; i < DISTRHO_PLUGIN_NUM_INPUTS; ++i, ++port)
         {
             char portName[24] = { '\0' };
-            sprintf(portName, "Audio Input %lu", i+1);
+            std::sprintf(portName, "Audio Input %lu", i+1);
 
             portNames[port]       = strdup(portName);
             portDescriptors[port] = LADSPA_PORT_AUDIO | LADSPA_PORT_INPUT;
 
-            portRangeHints[port].HintDescriptor = 0;
+            portRangeHints[port].HintDescriptor = 0x0;
             portRangeHints[port].LowerBound = 0.0f;
             portRangeHints[port].UpperBound = 1.0f;
         }
 
-        for (i=0; i < DISTRHO_PLUGIN_NUM_OUTPUTS; ++i, ++port)
+        for (unsigned long i=0; i < DISTRHO_PLUGIN_NUM_OUTPUTS; ++i, ++port)
         {
             char portName[24] = { '\0' };
-            sprintf(portName, "Audio Output %lu", i+1);
+            std::sprintf(portName, "Audio Output %lu", i+1);
 
             portNames[port]       = strdup(portName);
             portDescriptors[port] = LADSPA_PORT_AUDIO | LADSPA_PORT_OUTPUT;
 
-            portRangeHints[port].HintDescriptor = 0;
+            portRangeHints[port].HintDescriptor = 0x0;
             portRangeHints[port].LowerBound = 0.0f;
             portRangeHints[port].UpperBound = 1.0f;
         }
@@ -526,7 +519,7 @@ public:
         ++port;
 #endif
 
-        for (i=0; i < plugin.parameterCount(); ++i, ++port)
+        for (unsigned long i=0, count=plugin.parameterCount(); i < count; ++i, ++port)
         {
             portNames[port]       = strdup((const char*)plugin.parameterName(i));
             portDescriptors[port] = LADSPA_PORT_CONTROL;
@@ -538,7 +531,7 @@ public:
 
             {
                 const ParameterRanges& ranges(plugin.parameterRanges(i));
-                const float defValue = ranges.def;
+                const float defValue(ranges.def);
 
                 portRangeHints[port].HintDescriptor = LADSPA_HINT_BOUNDED_BELOW | LADSPA_HINT_BOUNDED_ABOVE;
                 portRangeHints[port].LowerBound     = ranges.min;
@@ -558,9 +551,9 @@ public:
                     portRangeHints[port].HintDescriptor |= LADSPA_HINT_DEFAULT_MAXIMUM;
                 else
                 {
-                    const float middleValue = ranges.min/2 + ranges.max/2;
-                    const float middleLow   = (ranges.min/2 + middleValue/2)/2 + middleValue/2;
-                    const float middleHigh  = (ranges.max/2 + middleValue/2)/2 + middleValue/2;
+                    const float middleValue =  ranges.min/2.0f + ranges.max/2.0f;
+                    const float middleLow   = (ranges.min/2.0f + middleValue/2.0f)/2.0f + middleValue/2.0f;
+                    const float middleHigh  = (ranges.max/2.0f + middleValue/2.0f)/2.0f + middleValue/2.0f;
 
                     if (defValue < middleLow)
                         portRangeHints[port].HintDescriptor |= LADSPA_HINT_DEFAULT_LOW;
@@ -598,37 +591,59 @@ public:
     ~DescriptorInitializer()
     {
         if (sLadspaDescriptor.Label != nullptr)
-            free((void*)sLadspaDescriptor.Label);
+        {
+            std::free((void*)sLadspaDescriptor.Label);
+            sLadspaDescriptor.Label = nullptr;
+        }
 
         if (sLadspaDescriptor.Name != nullptr)
-            free((void*)sLadspaDescriptor.Name);
+        {
+            std::free((void*)sLadspaDescriptor.Name);
+            sLadspaDescriptor.Name = nullptr;
+        }
 
         if (sLadspaDescriptor.Maker != nullptr)
-            free((void*)sLadspaDescriptor.Maker);
+        {
+            std::free((void*)sLadspaDescriptor.Maker);
+            sLadspaDescriptor.Maker = nullptr;
+        }
 
         if (sLadspaDescriptor.Copyright != nullptr)
-            free((void*)sLadspaDescriptor.Copyright);
+        {
+            std::free((void*)sLadspaDescriptor.Copyright);
+            sLadspaDescriptor.Copyright = nullptr;
+        }
 
         if (sLadspaDescriptor.PortDescriptors != nullptr)
+        {
             delete[] sLadspaDescriptor.PortDescriptors;
+            sLadspaDescriptor.PortDescriptors = nullptr;
+        }
 
         if (sLadspaDescriptor.PortRangeHints != nullptr)
+        {
             delete[] sLadspaDescriptor.PortRangeHints;
+            sLadspaDescriptor.PortRangeHints = nullptr;
+        }
 
         if (sLadspaDescriptor.PortNames != nullptr)
         {
             for (unsigned long i=0; i < sLadspaDescriptor.PortCount; ++i)
             {
                 if (sLadspaDescriptor.PortNames[i] != nullptr)
-                    free((void*)sLadspaDescriptor.PortNames[i]);
+                {
+                    std::free((void*)sLadspaDescriptor.PortNames[i]);
+                    sLadspaDescriptor.PortNames[i] = nullptr;
+                }
             }
 
             delete[] sLadspaDescriptor.PortNames;
+            sLadspaDescriptor.PortNames = nullptr;
         }
     }
 };
 
-static DescriptorInitializer sInit;
+static DescriptorInitializer sDescInit;
 
 END_NAMESPACE_DISTRHO
 

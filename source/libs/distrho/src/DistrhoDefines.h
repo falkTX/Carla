@@ -51,6 +51,10 @@
 # error DISTRHO_PLUGIN_WANT_STATE undefined!
 #endif
 
+#ifndef DISTRHO_PLUGIN_WANT_TIMEPOS
+# error DISTRHO_PLUGIN_WANT_TIMEPOS undefined!
+#endif
+
 #if DISTRHO_PLUGIN_HAS_UI
 # if ! (defined(DISTRHO_UI_EXTERNAL) || defined(DISTRHO_UI_OPENGL) || defined(DISTRHO_UI_QT))
 #  error DISTRHO_PLUGIN_HAS_UI is defined but not its type; please define one of DISTRHO_UI_EXTERNAL, DISTRHO_UI_OPENGL or DISTRHO_UI_QT

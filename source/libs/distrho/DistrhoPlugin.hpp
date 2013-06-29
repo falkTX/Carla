@@ -87,7 +87,7 @@ struct ParameterRanges {
             value = max;
     }
 
-    float fixValue(const float& value) const
+    float fixedValue(const float& value) const
     {
         if (value < min)
             return min;
@@ -96,19 +96,19 @@ struct ParameterRanges {
         return value;
     }
 
-    float normalizeValue(const float& value) const
+    float normalizedValue(const float& value) const
     {
-        float newValue = (value - min) / (max - min);
+        const float newValue((value - min) / (max - min));
 
         if (newValue < 0.0f)
-            newValue = 0.0f;
+            return 0.0f;
         else if (newValue > 1.0f)
-            newValue = 1.0f;
+            return 1.0f;
 
         return newValue;
     }
 
-    float unnormalizeValue(const float& value) const
+    float unnormalizedValue(const float& value) const
     {
         return value * (max - min) + min;
     }
@@ -189,7 +189,9 @@ public:
 
     uint32_t       d_bufferSize() const;
     double         d_sampleRate() const;
+#if DISTRHO_PLUGIN_WANT_TIMEPOS
     const TimePos& d_timePos()    const;
+#endif
 #if DISTRHO_PLUGIN_WANT_LATENCY
     void           d_setLatency(uint32_t frames);
 #endif

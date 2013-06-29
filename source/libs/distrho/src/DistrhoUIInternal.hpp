@@ -218,15 +218,14 @@ public:
 
     void idle()
     {
-#if defined(DISTRHO_UI_EXTERNAL)
-        // needed?
-#elif defined(DISTRHO_UI_OPENGL)
-        glApp.idle();
-#endif
         assert(kUi != nullptr);
 
         if (kUi != nullptr)
             kUi->d_uiIdle();
+
+#ifdef DISTRHO_UI_OPENGL
+        glApp.idle();
+#endif
     }
 
 #if defined(DISTRHO_UI_EXTERNAL)

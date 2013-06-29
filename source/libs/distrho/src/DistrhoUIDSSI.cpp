@@ -165,7 +165,6 @@ public:
         {
             fOscData.idle();
             fUI.idle();
-            glApp.idle();
             dgl_msleep(50);
         }
 #endif

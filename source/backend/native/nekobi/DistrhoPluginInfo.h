@@ -29,6 +29,7 @@
 #define DISTRHO_PLUGIN_WANT_LATENCY  0
 #define DISTRHO_PLUGIN_WANT_PROGRAMS 0
 #define DISTRHO_PLUGIN_WANT_STATE    0
+#define DISTRHO_PLUGIN_WANT_TIMEPOS  0
 
 #define DISTRHO_PLUGIN_URI "http://distrho.sf.net/plugins/Nekobi"
 

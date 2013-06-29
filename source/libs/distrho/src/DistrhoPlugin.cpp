@@ -77,10 +77,12 @@ double Plugin::d_sampleRate() const
     return pData->sampleRate;
 }
 
+#if DISTRHO_PLUGIN_WANT_TIMEPOS
 const TimePos& Plugin::d_timePos() const
 {
     return pData->timePos;
 }
+#endif
 
 #if DISTRHO_PLUGIN_WANT_LATENCY
 void Plugin::d_setLatency(uint32_t frames)

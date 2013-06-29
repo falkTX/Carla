@@ -22,6 +22,7 @@
 # include "src/DistrhoPluginLADSPA+DSSI.cpp"
 #elif defined(DISTRHO_PLUGIN_TARGET_LV2)
 # include "src/DistrhoPluginLV2.cpp"
+# include "src/DistrhoPluginLV2export.cpp"
 #elif defined(DISTRHO_PLUGIN_TARGET_VST)
 # include "src/DistrhoPluginVST.cpp"
 #endif

@@ -49,7 +49,11 @@ struct Plugin::PrivateData {
     uint32_t latency;
 #endif
 
+#if DISTRHO_PLUGIN_WANT_TIMEPOS
     TimePos timePos;
+#endif
+
+    char _d; // dummy
 
     PrivateData()
         : bufferSize(d_lastBufferSize),
@@ -67,7 +71,7 @@ struct Plugin::PrivateData {
 #if DISTRHO_PLUGIN_WANT_LATENCY
           latency(0),
 #endif
-          timePos()
+          _d(0)
     {
         assert(bufferSize != 0);
         assert(sampleRate != 0.0);
@@ -76,16 +80,25 @@ struct Plugin::PrivateData {
     ~PrivateData()
     {
         if (parameterCount > 0 && parameters != nullptr)
+        {
             delete[] parameters;
+            parameters = nullptr;
+        }
 
 #if DISTRHO_PLUGIN_WANT_PROGRAMS
         if (programCount > 0 && programNames != nullptr)
+        {
             delete[] programNames;
+            programNames = nullptr;
+        }
 #endif
 
 #if DISTRHO_PLUGIN_WANT_STATE
         if (stateCount > 0 && stateKeys != nullptr)
+        {
             delete[] stateKeys;
+            stateKeys = nullptr;
+        }
 #endif
     }
 };
@@ -178,48 +191,48 @@ public:
         return (kData != nullptr) ? kData->parameterCount : 0;
     }
 
-    uint32_t parameterHints(uint32_t index) const
+    uint32_t parameterHints(const uint32_t index) const
     {
         assert(kData != nullptr && index < kData->parameterCount);
         return (kData != nullptr && index < kData->parameterCount) ? kData->parameters[index].hints : 0x0;
     }
 
-    bool parameterIsOutput(uint32_t index) const
+    bool parameterIsOutput(const uint32_t index) const
     {
         return (parameterHints(index) & PARAMETER_IS_OUTPUT);
     }
 
-    const d_string& parameterName(uint32_t index) const
+    const d_string& parameterName(const uint32_t index) const
     {
         assert(kData != nullptr && index < kData->parameterCount);
         return (kData != nullptr && index < kData->parameterCount) ? kData->parameters[index].name : sFallbackString;
     }
 
-    const d_string& parameterSymbol(uint32_t index) const
+    const d_string& parameterSymbol(const uint32_t index) const
     {
         assert(kData != nullptr && index < kData->parameterCount);
         return (kData != nullptr && index < kData->parameterCount) ? kData->parameters[index].symbol : sFallbackString;
     }
 
-    const d_string& parameterUnit(uint32_t index) const
+    const d_string& parameterUnit(const uint32_t index) const
     {
         assert(kData != nullptr && index < kData->parameterCount);
         return (kData != nullptr && index < kData->parameterCount) ? kData->parameters[index].unit : sFallbackString;
     }
 
-    const ParameterRanges& parameterRanges(uint32_t index) const
+    const ParameterRanges& parameterRanges(const uint32_t index) const
     {
         assert(kData != nullptr && index < kData->parameterCount);
         return (kData != nullptr && index < kData->parameterCount) ? kData->parameters[index].ranges : sFallbackRanges;
     }
 
-    float parameterValue(uint32_t index)
+    float parameterValue(const uint32_t index)
     {
         assert(kPlugin != nullptr && index < kData->parameterCount);
         return (kPlugin != nullptr && index < kData->parameterCount) ? kPlugin->d_parameterValue(index) : 0.0f;
     }
 
-    void setParameterValue(uint32_t index, float value)
+    void setParameterValue(const uint32_t index, const float value)
     {
         assert(kPlugin != nullptr && index < kData->parameterCount);
 
@@ -234,13 +247,13 @@ public:
         return (kData != nullptr) ? kData->programCount : 0;
     }
 
-    const d_string& programName(uint32_t index) const
+    const d_string& programName(const uint32_t index) const
     {
         assert(kData != nullptr && index < kData->programCount);
         return (kData != nullptr && index < kData->programCount) ? kData->programNames[index] : sFallbackString;
     }
 
-    void setProgram(uint32_t index)
+    void setProgram(const uint32_t index)
     {
         assert(kPlugin != nullptr && index < kData->programCount);
 
@@ -256,13 +269,13 @@ public:
         return kData != nullptr ? kData->stateCount : 0;
     }
 
-    const d_string& stateKey(uint32_t index) const
+    const d_string& stateKey(const uint32_t index) const
     {
         assert(kData != nullptr && index < kData->stateCount);
         return (kData != nullptr && index < kData->stateCount) ? kData->stateKeys[index] : sFallbackString;
     }
 
-    void setState(const char* key, const char* value)
+    void setState(const char* const key, const char* const value)
     {
         assert(kPlugin != nullptr && key != nullptr && value != nullptr);
 
@@ -289,7 +302,7 @@ public:
             kPlugin->d_deactivate();
     }
 
-    void run(float** inputs, float** outputs, uint32_t frames, uint32_t midiEventCount, const MidiEvent* midiEvents)
+    void run(float** const inputs, float** const outputs, const uint32_t frames, const uint32_t midiEventCount, const MidiEvent* const midiEvents)
     {
         assert(kPlugin != nullptr);
 
@@ -299,7 +312,7 @@ public:
 
     // ---------------------------------------------
 
-    void setBufferSize(uint32_t bufferSize, bool doCallback = false)
+    void setBufferSize(const uint32_t bufferSize, bool doCallback = false)
     {
         assert(kData != nullptr && kPlugin != nullptr && bufferSize >= 2);
 
@@ -319,7 +332,7 @@ public:
         }
     }
 
-    void setSampleRate(double sampleRate, bool doCallback = false)
+    void setSampleRate(const double sampleRate, bool doCallback = false)
     {
         assert(kData != nullptr && kPlugin != nullptr && sampleRate > 0.0);
 

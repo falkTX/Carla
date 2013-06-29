@@ -18,7 +18,7 @@
 
 #if DISTRHO_PLUGIN_HAS_UI
 # include "DistrhoUIInternal.hpp"
-# ifdef DISTRHO_UI_QT4
+# ifdef DISTRHO_UI_QT
 #  include <QtGui/QApplication>
 # endif
 #endif
@@ -33,7 +33,7 @@
 //# include "vestige/aeffectx.h"
 //# define effSetProgramName 4
 //#else
-#include "vst/aeffectx.h"
+#include "aeffectx.h"
 //#endif
 
 START_NAMESPACE_DISTRHO
@@ -42,7 +42,7 @@ START_NAMESPACE_DISTRHO
 
 #if DISTRHO_PLUGIN_HAS_UI
 
-# ifdef DISTRHO_UI_QT4
+# ifdef DISTRHO_UI_QT
 class QStaticScopedAppInit
 {
 public:
@@ -57,14 +57,14 @@ public:
 
         fInitiated = true;
 
-        if (qApp != nullptr)
+        if (QApplication* app = qApp)
         {
-            fApp = qApp;
+            fApp = app;
         }
         else
         {
-            static int    qargc = 0;
-            static char** qargv = nullptr;
+            static int   qargc   = 0;
+            static char* qargv[] = { nullptr };
             fApp = new QApplication(qargc, qargv, true);
             fApp->setQuitOnLastWindowClosed(false);
         }
@@ -95,7 +95,7 @@ public:
           fParameterChecks(nullptr),
           fParameterValues(nullptr)
     {
-        uint32_t paramCount = plugin->parameterCount();
+        const uint32_t paramCount(plugin->parameterCount());
 
         if (paramCount > 0)
         {
@@ -121,10 +121,16 @@ public:
     ~UIVst()
     {
         if (fParameterChecks != nullptr)
+        {
             delete[] fParameterChecks;
+            fParameterChecks = nullptr;
+        }
 
         if (fParameterValues != nullptr)
+        {
             delete[] fParameterValues;
+            fParameterValues = nullptr;
+        }
     }
 
     // ---------------------------------------------
@@ -156,18 +162,18 @@ public:
         fUi.idle();
     }
 
-    int16_t getWidth()
+    int16_t getWidth() const
     {
         return fUi.width();
     }
 
-    int16_t getHeight()
+    int16_t getHeight() const
     {
         return fUi.height();
     }
 
     // ---------------------------------------------
-    // functions called from the plugin side, no block
+    // functions called from the plugin side, RT no block
 
     void setParameterValueFromPlugin(uint32_t index, float perValue)
     {
@@ -204,8 +210,8 @@ protected:
 
     void setParameterValue(uint32_t index, float realValue)
     {
-        const ParameterRanges& ranges = kPlugin->parameterRanges(index);
-        float perValue = ranges.normalizeValue(realValue);
+        const ParameterRanges& ranges(kPlugin->parameterRanges(index));
+        const float perValue(ranges.normalizeValue(realValue));
 
         kPlugin->setParameterValue(index, realValue);
         hostCallback(audioMasterAutomate, index, 0, nullptr, perValue);
@@ -355,7 +361,9 @@ public:
         case effGetProgramName:
             if (ptr != nullptr && fCurProgram >= 0 && fCurProgram < static_cast<int32_t>(fPlugin.programCount()))
             {
-                std::strncpy((char*)ptr, fPlugin.programName(fCurProgram), kVstMaxProgNameLen);
+                char* buf = (char*)ptr;
+                std::strncpy(buf, fPlugin.programName(fCurProgram), kVstMaxProgNameLen);
+                buf[kVstMaxProgNameLen] = '\0';
                 ret = 1;
             }
             break;
@@ -364,7 +372,9 @@ public:
         case effGetParamDisplay:
             if (ptr != nullptr && index < static_cast<int32_t>(fPlugin.parameterCount()))
             {
-                snprintf((char*)ptr, kVstMaxParamStrLen, "%f", fPlugin.parameterValue(index));
+                char* buf = (char*)ptr;
+                std::snprintf((char*)ptr, kVstMaxParamStrLen, "%f", fPlugin.parameterValue(index));
+                buf[kVstMaxParamStrLen] = '\0';
                 ret = 1;
             }
             break;
@@ -392,7 +402,7 @@ public:
             break;
 
         case effEditOpen:
-            createUiIfNeeded((intptr_t)ptr);
+            createUiIfNeeded((intptr_t)ptr); // FIXME - use FromVstPtr<>
             ret = 1;
             break;
 
@@ -461,14 +471,14 @@ public:
 
     float vst_getParameter(int32_t index)
     {
-        const ParameterRanges& ranges = fPlugin.parameterRanges(index);
+        const ParameterRanges& ranges(fPlugin.parameterRanges(index));
         return ranges.normalizeValue(fPlugin.parameterValue(index));
     }
 
     void vst_setParameter(int32_t index, float value)
     {
-        const ParameterRanges& ranges = fPlugin.parameterRanges(index);
-        float realValue = ranges.unnormalizeValue(value);
+        const ParameterRanges& ranges(fPlugin.parameterRanges(index));
+        const float realValue(ranges.unnormalizeValue(value));
         fPlugin.setParameterValue(index, realValue);
 
 #if DISTRHO_PLUGIN_HAS_UI
@@ -585,9 +595,6 @@ static intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t 
             d_lastBufferSize = audioMaster(effect, audioMasterGetBlockSize, 0, 0, nullptr, 0.0f);
             d_lastSampleRate = audioMaster(effect, audioMasterGetSampleRate, 0, 0, nullptr, 0.0f);
             effect->object   = new PluginVst(audioMaster, effect);
-#ifdef DISTRHO_UI_QT4
-            QStaticScopedAppInit::addOne();
-#endif
             return 1;
         }
         return 0;
@@ -598,14 +605,11 @@ static intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t 
             delete (PluginVst*)effect->object;
             effect->object = nullptr;
             delete effect;
-#ifdef DISTRHO_UI_QT4
-            QStaticScopedAppInit::removeOne();
-#endif
             return 1;
         }
         return 0;
 
-    case effGetParamLabel:
+    case effGetParamLabel: // FIXME - proper close buf/ptr
         if (ptr != nullptr && index < static_cast<int32_t>(plugin.parameterCount()))
         {
             std::strncpy((char*)ptr, plugin.parameterUnit(index), kVstMaxParamStrLen);
