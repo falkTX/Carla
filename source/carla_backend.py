@@ -125,17 +125,17 @@ PARAMETER_USES_SAMPLERATE  = 0x20
 PARAMETER_USES_SCALEPOINTS = 0x40
 PARAMETER_USES_CUSTOM_TEXT = 0x80
 
+# Custom Data types
+CUSTOM_DATA_INVALID = None
+CUSTOM_DATA_CHUNK   = "http://kxstudio.sf.net/ns/carla/chunk"
+CUSTOM_DATA_STRING  = "http://kxstudio.sf.net/ns/carla/string"
+
 # Patchbay Port Hints
 PATCHBAY_PORT_IS_INPUT  = 0x01
 PATCHBAY_PORT_IS_OUTPUT = 0x02
 PATCHBAY_PORT_IS_AUDIO  = 0x04
 PATCHBAY_PORT_IS_CV     = 0x08
 PATCHBAY_PORT_IS_MIDI   = 0x10
-
-# Custom Data types
-CUSTOM_DATA_INVALID = None
-CUSTOM_DATA_CHUNK   = "http://kxstudio.sf.net/ns/carla/chunk"
-CUSTOM_DATA_STRING  = "http://kxstudio.sf.net/ns/carla/string"
 
 # Binary Type
 BINARY_NONE    = 0
