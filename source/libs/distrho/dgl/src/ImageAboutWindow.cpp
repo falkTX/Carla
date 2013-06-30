@@ -16,6 +16,13 @@
 
 #include "../ImageAboutWindow.hpp"
 
+// FIXME: 32bit hack
+#if ! (defined (__LP64__) || defined (_LP64) || defined(WIN64) || defined(_WIN64) || defined(__WIN64__))
+# define PAD_SIZE +1
+#else
+# define PAD_SIZE
+#endif
+
 START_NAMESPACE_DGL
 
 // -------------------------------------------------
@@ -25,7 +32,7 @@ ImageAboutWindow::ImageAboutWindow(App* app, Window* parent, const Image& image)
       Widget(this),
       fImgBackground(image)
 {
-    Window::setSize(image.getWidth(), image.getHeight());
+    Window::setSize(image.getWidth(), image.getHeight() PAD_SIZE);
     Window::setWindowTitle("About");
 }
 
@@ -34,14 +41,14 @@ ImageAboutWindow::ImageAboutWindow(Widget* widget, const Image& image)
       Widget(this),
       fImgBackground(image)
 {
-    Window::setSize(image.getWidth(), image.getHeight());
+    Window::setSize(image.getWidth(), image.getHeight() PAD_SIZE);
     Window::setWindowTitle("About");
 }
 
 void ImageAboutWindow::setImage(const Image& image)
 {
     fImgBackground = image;
-    Window::setSize(image.getWidth(), image.getHeight());
+    Window::setSize(image.getWidth(), image.getHeight() PAD_SIZE);
 }
 
 void ImageAboutWindow::onDisplay()
