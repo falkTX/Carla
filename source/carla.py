@@ -800,7 +800,7 @@ class CarlaMainW(QMainWindow):
         self.connect(self.ui.act_file_open, SIGNAL("triggered()"), SLOT("slot_fileOpen()"))
         self.connect(self.ui.act_file_save, SIGNAL("triggered()"), SLOT("slot_fileSave()"))
         self.connect(self.ui.act_file_save_as, SIGNAL("triggered()"), SLOT("slot_fileSaveAs()"))
-        self.connect(self.ui.act_file_export_lv2, SIGNAL("triggered()"), SLOT("slot_fileExportLv2Preset()"))
+        #self.connect(self.ui.act_file_export_lv2, SIGNAL("triggered()"), SLOT("slot_fileExportLv2Preset()"))
 
         self.connect(self.ui.act_engine_start, SIGNAL("triggered()"), SLOT("slot_engineStart()"))
         self.connect(self.ui.act_engine_stop, SIGNAL("triggered()"), SLOT("slot_engineStop()"))

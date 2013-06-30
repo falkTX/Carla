@@ -2804,10 +2804,38 @@ class PluginRefreshW(QDialog):
 
         self.connect(self.ui.b_start, SIGNAL("clicked()"), SLOT("slot_start()"))
         self.connect(self.ui.b_skip, SIGNAL("clicked()"), SLOT("slot_skip()"))
+        self.connect(self.ui.ch_native, SIGNAL("clicked()"), SLOT("slot_checkTools()"))
+        self.connect(self.ui.ch_posix32, SIGNAL("clicked()"), SLOT("slot_checkTools()"))
+        self.connect(self.ui.ch_posix64, SIGNAL("clicked()"), SLOT("slot_checkTools()"))
+        self.connect(self.ui.ch_win32, SIGNAL("clicked()"), SLOT("slot_checkTools()"))
+        self.connect(self.ui.ch_win64, SIGNAL("clicked()"), SLOT("slot_checkTools()"))
+        self.connect(self.ui.ch_ladspa, SIGNAL("clicked()"), SLOT("slot_checkTools()"))
+        self.connect(self.ui.ch_dssi, SIGNAL("clicked()"), SLOT("slot_checkTools()"))
+        self.connect(self.ui.ch_lv2, SIGNAL("clicked()"), SLOT("slot_checkTools()"))
+        self.connect(self.ui.ch_vst, SIGNAL("clicked()"), SLOT("slot_checkTools()"))
+        self.connect(self.ui.ch_gig, SIGNAL("clicked()"), SLOT("slot_checkTools()"))
+        self.connect(self.ui.ch_sf2, SIGNAL("clicked()"), SLOT("slot_checkTools()"))
+        self.connect(self.ui.ch_sfz, SIGNAL("clicked()"), SLOT("slot_checkTools()"))
         self.connect(self.fThread, SIGNAL("pluginLook(int, QString)"), SLOT("slot_handlePluginLook(int, QString)"))
         self.connect(self.fThread, SIGNAL("finished()"), SLOT("slot_handlePluginThreadFinished()"))
 
         # -------------------------------------------------------------
+        # FIXME - only for stable release
+
+        self.ui.ch_posix32.setVisible(False)
+        self.ui.ch_posix64.setVisible(False)
+        self.ui.ch_win32.setVisible(False)
+        self.ui.ch_win64.setVisible(False)
+
+        self.ui.ico_posix32.setVisible(False)
+        self.ui.ico_posix64.setVisible(False)
+        self.ui.ico_win32.setVisible(False)
+        self.ui.ico_win64.setVisible(False)
+
+        self.ui.label_posix32.setVisible(False)
+        self.ui.label_posix64.setVisible(False)
+        self.ui.label_win32.setVisible(False)
+        self.ui.label_win64.setVisible(False)
 
     @pyqtSlot()
     def slot_start(self):
@@ -2829,6 +2857,13 @@ class PluginRefreshW(QDialog):
     @pyqtSlot()
     def slot_skip(self):
         self.fThread.skipPlugin()
+
+    @pyqtSlot()
+    def slot_checkTools(self):
+        enabled1 = bool(self.ui.ch_native.isChecked() or self.ui.ch_posix32.isChecked() or self.ui.ch_posix64.isChecked() or self.ui.ch_win32.isChecked() or self.ui.ch_win64.isChecked())
+        enabled2 = bool(self.ui.ch_ladspa.isChecked() or self.ui.ch_dssi.isChecked() or self.ui.ch_lv2.isChecked() or self.ui.ch_vst.isChecked() or
+                        self.ui.ch_gig.isChecked() or self.ui.ch_sf2.isChecked() or self.ui.ch_sfz.isChecked())
+        self.ui.b_start.setEnabled(enabled1 and enabled2)
 
     @pyqtSlot(int, str)
     def slot_handlePluginLook(self, percent, plugin):
