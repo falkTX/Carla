@@ -70,6 +70,10 @@
 # define GL_BGRA GL_BGRA_EXT
 #endif
 
+#ifndef GL_CLAMP_TO_BORDER
+# define GL_CLAMP_TO_BORDER 0x812D
+#endif
+
 // -------------------------------------------------
 
 START_NAMESPACE_DGL

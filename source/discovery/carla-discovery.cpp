@@ -121,9 +121,9 @@ intptr_t vstHostCanDo(const char* const feature)
     if (std::strcmp(feature, "startStopProcess") == 0)
         return 1;
     if (std::strcmp(feature, "supportShell") == 0)
-        return 1;
+        return -1; // FIXME
     if (std::strcmp(feature, "shellCategory") == 0)
-        return 1;
+        return -1; // FIXME
 
     // unimplemented
     carla_stderr("vstHostCanDo(\"%s\") - unknown feature", feature);
@@ -1100,6 +1100,7 @@ void do_vst_check(void* const libHandle, const bool init)
 
     effect->dispatcher(effect, effOpen, 0, 0, nullptr, 0.0f);
 
+#if 0 // FIXME
     const intptr_t vstCategory = effect->dispatcher(effect, effGetPlugCategory, 0, 0, nullptr, 0.0f);
 
     if (vstCategory == kPlugCategShell)
@@ -1108,6 +1109,7 @@ void do_vst_check(void* const libHandle, const bool init)
             cName = strBuf;
     }
     else
+#endif
     {
         gVstCurrentUniqueId = effect->uniqueID;
 
@@ -1303,6 +1305,7 @@ void do_vst_check(void* const libHandle, const bool init)
         DISCOVERY_OUT("build", BINARY_NATIVE);
         DISCOVERY_OUT("end", "------------");
 
+#if 0 // FIXME
         if (vstCategory == kPlugCategShell)
         {
             carla_fill<char>(strBuf, STR_MAX+1, '\0');
@@ -1311,6 +1314,7 @@ void do_vst_check(void* const libHandle, const bool init)
                 cName = strBuf;
         }
         else
+#endif
             break;
     }
 
