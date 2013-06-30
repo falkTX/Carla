@@ -71,7 +71,7 @@ endif
 WIN_BUILD_FLAGS = $(BUILD_PLUGIN_FLAGS) -DJACKBRIDGE_EXPORT
 WIN_32BIT_FLAGS = $(32BIT_FLAGS)
 WIN_64BIT_FLAGS = $(64BIT_FLAGS)
-WIN_LINK_FLAGS  = $(LINK_PLUGIN_FLAGS) -mwindows -lwinspool -lole32 -luuid -limm32 -lshell32 -lws2_32 -L../libs
+WIN_LINK_FLAGS  = $(LINK_PLUGIN_FLAGS) $(EXTRA_LIBS) -mwindows -lwinspool -lole32 -luuid -limm32 -lshell32 -lws2_32 -L../libs
 
 # --------------------------------------------------------------
 # Plugin bridges (Native)
@@ -150,11 +150,11 @@ LINK_UI_LV2_QT4_FLAGS    = $(LINK_UI_FLAGS) $(shell pkg-config --libs QtGui)
 BUILD_UI_LV2_QT5_FLAGS   = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_QT5 -DBRIDGE_LV2_QT5 $(shell pkg-config --cflags Qt5Gui Qt5Widgets)
 LINK_UI_LV2_QT5_FLAGS    = $(LINK_UI_FLAGS) $(shell pkg-config --libs Qt5Gui Qt5Widgets)
 
-BUILD_UI_LV2_COCOA_FLAGS = $(BUILD_UI_VST_FLAGS) -DBRIDGE_COCOA -DBRIDGE_LV2_COCOA $(QT_UI_FLAGS)
+BUILD_UI_LV2_COCOA_FLAGS = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_COCOA -DBRIDGE_LV2_COCOA $(QT_UI_FLAGS)
 LINK_UI_LV2_COCOA_FLAGS  = $(LINK_UI_FLAGS) $(QT_UI_LIBS)
 
-BUILD_UI_LV2_WIN32_FLAGS = $(BUILD_UI_VST_FLAGS) -DBRIDGE_HWND -DBRIDGE_LV2_WIN32 $(QT_UI_FLAGS)
-LINK_UI_LV2_WIN32_FLAGS  = $(LINK_FLAGS) $(QT_UI_LIBS) -mwindows -static
+BUILD_UI_LV2_WIN32_FLAGS = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_HWND -DBRIDGE_LV2_WIN32 $(QT_UI_FLAGS)
+LINK_UI_LV2_WIN32_FLAGS  = $(LINK_FLAGS) $(QT_UI_LIBS) $(EXTRA_LIBS) -mwindows -lwinspool -lole32 -luuid -limm32 -lshell32 -lws2_32 -static
 
 BUILD_UI_LV2_X11_FLAGS   = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_X11 -DBRIDGE_LV2_X11 $(QT_UI_FLAGS)
 LINK_UI_LV2_X11_FLAGS    = $(LINK_UI_FLAGS) $(QT_UI_LIBS)
@@ -163,7 +163,7 @@ BUILD_UI_VST_COCOA_FLAGS = $(BUILD_UI_VST_FLAGS) -DBRIDGE_COCOA -DBRIDGE_VST_COC
 LINK_UI_VST_COCOA_FLAGS  = $(LINK_UI_FLAGS) $(QT_UI_LIBS)
 
 BUILD_UI_VST_HWND_FLAGS  = $(BUILD_UI_VST_FLAGS) -DBRIDGE_HWND -DBRIDGE_VST_HWND $(QT_UI_FLAGS)
-LINK_UI_VST_HWND_FLAGS   = $(LINK_FLAGS) $(QT_UI_LIBS) -mwindows -static
+LINK_UI_VST_HWND_FLAGS   = $(LINK_FLAGS) $(QT_UI_LIBS) $(EXTRA_LIBS) -mwindows -lwinspool -lole32 -luuid -limm32 -lshell32 -lws2_32 -static
 
 BUILD_UI_VST_X11_FLAGS   = $(BUILD_UI_VST_FLAGS) -DBRIDGE_X11 -DBRIDGE_VST_X11 $(QT_UI_FLAGS)
 LINK_UI_VST_X11_FLAGS    = $(LINK_UI_FLAGS) $(QT_UI_LIBS)
@@ -309,7 +309,7 @@ OBJS_UI_LV2_WIN32 = CarlaBridgeUI-LV2__lv2-windows.o \
 	CarlaBridgeClient__lv2.o CarlaBridgeOsc__lv2.o \
 	CarlaBridgeToolkit__lv2.o CarlaBridgeToolkitQt__lv2-windows.o
 
-carla-bridge-lv2-windows.exe: $(OBJS_UI_LV2_WINDOWS) $(OBJS_UI_LV2_LIBS) ../libs/theme.a
+carla-bridge-lv2-windows.exe: $(OBJS_UI_LV2_WIN32) $(OBJS_UI_LV2_LIBS) ../libs/theme.a
 	$(CXX) $^ $(LINK_UI_LV2_WIN32_FLAGS) -o $@ $(CMD_STRIP) $@
 
 %__lv2-windows.o: %.cpp CarlaBridgeToolkitQt.moc

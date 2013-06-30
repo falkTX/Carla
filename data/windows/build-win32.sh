@@ -48,8 +48,11 @@ mv source/discovery/carla-discovery-native.exe source/discovery/carla-discovery-
 # Build backend
 make $JOBS backend EXTRA_LIBS="$EXTRA_LIBS1 $EXTRA_LIBS2"
 
-# Build bridges
+# Build Plugin bridges
 # make $JOBS bridges EXTRA_LIBS="$EXTRA_LIBS1 $EXTRA_LIBS2"
+
+# Build UI bridges
+make $JOBS -C source/bridges ui_lv2-win32 ui_vst-hwnd EXTRA_LIBS="$EXTRA_LIBS2"
 
 rm -rf ./data/windows/Carla
 cp ./source/carla.py ./source/carla.pyw
