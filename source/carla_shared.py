@@ -2014,6 +2014,7 @@ class PluginWidget(QFrame):
         if self.palette().window().color().lightness() > 100:
             # Light background
             labelColor = "333"
+            isLight = True
 
             self.fColorTop    = QColor(60, 60, 60)
             self.fColorBottom = QColor(47, 47, 47)
@@ -2022,6 +2023,7 @@ class PluginWidget(QFrame):
         else:
             # Dark background
             labelColor = "BBB"
+            isLight = False
 
             self.fColorTop    = QColor(60, 60, 60)
             self.fColorBottom = QColor(47, 47, 47)
@@ -2035,15 +2037,26 @@ class PluginWidget(QFrame):
             color: #%s;
         }""" % labelColor)
 
-        self.ui.b_enable.setPixmaps(":/bitmaps/button_off.png", ":/bitmaps/button_on.png", ":/bitmaps/button_off.png")
-        self.ui.b_edit.setPixmaps(":/bitmaps/button_edit.png", ":/bitmaps/button_edit_down.png", ":/bitmaps/button_edit_hover.png")
+        if isLight:
+            self.ui.b_enable.setPixmaps(":/bitmaps/button_off2.png", ":/bitmaps/button_on2.png", ":/bitmaps/button_off2.png")
+            self.ui.b_edit.setPixmaps(":/bitmaps/button_edit2.png", ":/bitmaps/button_edit_down2.png", ":/bitmaps/button_edit_hover2.png")
 
-        if self.fPluginInfo['iconName'] == "distrho":
-            self.ui.b_gui.setPixmaps(":/bitmaps/button_distrho.png", ":/bitmaps/button_distrho_down.png", ":/bitmaps/button_distrho_hover.png")
-        elif self.fPluginInfo['iconName'] == "file" or (self.fPluginInfo['hints'] & PLUGIN_HAS_GUI_AS_FILE) != 0:
-            self.ui.b_gui.setPixmaps(":/bitmaps/button_file.png", ":/bitmaps/button_file_down.png", ":/bitmaps/button_file_hover.png")
+            if self.fPluginInfo['iconName'] == "distrho":
+                self.ui.b_gui.setPixmaps(":/bitmaps/button_distrho2.png", ":/bitmaps/button_distrho_down2.png", ":/bitmaps/button_distrho_hover2.png")
+            elif self.fPluginInfo['iconName'] == "file" or (self.fPluginInfo['hints'] & PLUGIN_HAS_GUI_AS_FILE) != 0:
+                self.ui.b_gui.setPixmaps(":/bitmaps/button_file2.png", ":/bitmaps/button_file_down2.png", ":/bitmaps/button_file_hover2.png")
+            else:
+                self.ui.b_gui.setPixmaps(":/bitmaps/button_gui2.png", ":/bitmaps/button_gui_down2.png", ":/bitmaps/button_gui_hover2.png")
         else:
-            self.ui.b_gui.setPixmaps(":/bitmaps/button_gui.png", ":/bitmaps/button_gui_down.png", ":/bitmaps/button_gui_hover.png")
+            self.ui.b_enable.setPixmaps(":/bitmaps/button_off.png", ":/bitmaps/button_on.png", ":/bitmaps/button_off.png")
+            self.ui.b_edit.setPixmaps(":/bitmaps/button_edit.png", ":/bitmaps/button_edit_down.png", ":/bitmaps/button_edit_hover.png")
+
+            if self.fPluginInfo['iconName'] == "distrho":
+                self.ui.b_gui.setPixmaps(":/bitmaps/button_distrho.png", ":/bitmaps/button_distrho_down.png", ":/bitmaps/button_distrho_hover.png")
+            elif self.fPluginInfo['iconName'] == "file" or (self.fPluginInfo['hints'] & PLUGIN_HAS_GUI_AS_FILE) != 0:
+                self.ui.b_gui.setPixmaps(":/bitmaps/button_file.png", ":/bitmaps/button_file_down.png", ":/bitmaps/button_file_hover.png")
+            else:
+                self.ui.b_gui.setPixmaps(":/bitmaps/button_gui.png", ":/bitmaps/button_gui_down.png", ":/bitmaps/button_gui_hover.png")
 
         self.ui.led_control.setColor(self.ui.led_control.YELLOW)
         self.ui.led_control.setEnabled(False)

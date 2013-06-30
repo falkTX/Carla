@@ -49,17 +49,29 @@
 
         <file>bitmaps/carla_about.png</file>
         <file>bitmaps/button_distrho.png</file>
+        <file>bitmaps/button_distrho2.png</file>
         <file>bitmaps/button_distrho_down.png</file>
+        <file>bitmaps/button_distrho_down2.png</file>
         <file>bitmaps/button_distrho_hover.png</file>
+        <file>bitmaps/button_distrho_hover2.png</file>
         <file>bitmaps/button_edit.png</file>
+        <file>bitmaps/button_edit2.png</file>
         <file>bitmaps/button_edit_down.png</file>
+        <file>bitmaps/button_edit_down2.png</file>
         <file>bitmaps/button_edit_hover.png</file>
+        <file>bitmaps/button_edit_hover2.png</file>
         <file>bitmaps/button_file.png</file>
+        <file>bitmaps/button_file2.png</file>
         <file>bitmaps/button_file_down.png</file>
+        <file>bitmaps/button_file_down2.png</file>
         <file>bitmaps/button_file_hover.png</file>
+        <file>bitmaps/button_file_hover2.png</file>
         <file>bitmaps/button_gui.png</file>
+        <file>bitmaps/button_gui2.png</file>
         <file>bitmaps/button_gui_down.png</file>
+        <file>bitmaps/button_gui_down2.png</file>
         <file>bitmaps/button_gui_hover.png</file>
+        <file>bitmaps/button_gui_hover2.png</file>
         <file>bitmaps/button_off.png</file>
         <file>bitmaps/button_on.png</file>
         <file>bitmaps/dial_01.png</file>
