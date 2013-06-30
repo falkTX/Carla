@@ -70,7 +70,7 @@ DistrhoUI3BandEQ::DistrhoUI3BandEQ()
 
     // knob Low-Mid
     fKnobLowMid = new ImageKnob(this, knobImage);
-    fKnobLowMid->setPos(64, 270);
+    fKnobLowMid->setPos(65, 269);
     fKnobLowMid->setRange(0.0f, 1000.0f);
     fKnobLowMid->setValue(220.0f);
     fKnobLowMid->setRotationAngle(270);
@@ -78,7 +78,7 @@ DistrhoUI3BandEQ::DistrhoUI3BandEQ()
 
     // knob Mid-High
     fKnobMidHigh = new ImageKnob(this, knobImage);
-    fKnobMidHigh->setPos(158, 270);
+    fKnobMidHigh->setPos(159, 269);
     fKnobMidHigh->setRange(1000.0f, 20000.0f);
     fKnobMidHigh->setValue(2000.0f);
     fKnobMidHigh->setRotationAngle(270);

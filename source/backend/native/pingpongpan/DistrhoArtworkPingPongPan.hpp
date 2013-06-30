@@ -26,9 +26,9 @@ namespace DistrhoArtworkPingPongPan
     const unsigned int backgroundHeight   = 170;
 
     extern const char* knobData;
-    const unsigned int knobDataSize = 700284;
+    const unsigned int knobDataSize = 17956;
     const unsigned int knobWidth    = 67;
-    const unsigned int knobHeight   = 2613;
+    const unsigned int knobHeight   = 67;
 }
 
 #endif // BINARY_DISTRHOARTWORKPINGPONGPAN_HPP

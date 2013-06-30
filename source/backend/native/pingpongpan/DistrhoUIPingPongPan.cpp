@@ -37,16 +37,18 @@ DistrhoUIPingPongPan::DistrhoUIPingPongPan()
 
     // knob Low-Mid
     fKnobFreq = new ImageKnob(this, knobImage);
-    fKnobFreq->setPos(61, 59);
+    fKnobFreq->setPos(60, 58);
     fKnobFreq->setRange(0.0f, 100.0f);
     fKnobFreq->setValue(50.0f);
+    fKnobFreq->setRotationAngle(270);
     fKnobFreq->setCallback(this);
 
     // knob Mid-High
     fKnobWidth = new ImageKnob(this, knobImage);
-    fKnobWidth->setPos(183, 59);
+    fKnobWidth->setPos(182, 58);
     fKnobWidth->setRange(0.0f, 100.0f);
     fKnobWidth->setValue(75.0f);
+    fKnobWidth->setRotationAngle(270);
     fKnobWidth->setCallback(this);
 
     // about button
