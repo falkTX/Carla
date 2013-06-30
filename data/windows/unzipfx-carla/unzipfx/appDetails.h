@@ -2,7 +2,7 @@
 #ifndef __APP_DETAILS_H__
 #define __APP_DETAILS_H__
 
-#define SFX_APP_VERSION "0.6.0"
+#define SFX_APP_VERSION "1.0.0"
 #define SFX_APP_BANNER  "Carla self-contained executable " SFX_APP_VERSION ", based on UnZipSFX."
 
 #ifndef SFX_APP_MININAME
