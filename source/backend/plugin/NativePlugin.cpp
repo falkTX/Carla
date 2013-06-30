@@ -43,7 +43,7 @@ void carla_register_all_plugins()
 
 #ifndef BUILD_BRIDGE
     // Carla
-    carla_register_native_plugin_carla();
+    //carla_register_native_plugin_carla(); // kinda unfinished
 #endif
 
 #ifdef WANT_AUDIOFILE
