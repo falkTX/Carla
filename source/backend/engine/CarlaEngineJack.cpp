@@ -1275,6 +1275,8 @@ protected:
 
                     if (MIDI_IS_STATUS_CONTROL_CHANGE(midiStatus))
                     {
+                        CARLA_ASSERT(jackEvent.size == 2 || jackEvent.size == 3);
+
                         const uint8_t midiControl = jackEvent.buffer[1];
                         engineEvent->type         = kEngineEventTypeControl;
 
@@ -1300,6 +1302,8 @@ protected:
                         }
                         else
                         {
+                            CARLA_ASSERT(jackEvent.size == 3);
+
                             const uint8_t midiValue = jackEvent.buffer[2];
 
                             engineEvent->ctrl.type  = kEngineControlEventTypeParameter;
@@ -1309,6 +1313,8 @@ protected:
                     }
                     else if (MIDI_IS_STATUS_PROGRAM_CHANGE(midiStatus))
                     {
+                        CARLA_ASSERT(jackEvent.size == 2);
+
                         const uint8_t midiProgram = jackEvent.buffer[1];
                         engineEvent->type         = kEngineEventTypeControl;
 
@@ -1320,10 +1326,11 @@ protected:
                     {
                         engineEvent->type = kEngineEventTypeMidi;
 
-                        carla_copy<uint8_t>(engineEvent->midi.data, jackEvent.buffer, jackEvent.size);
-
                         engineEvent->midi.data[0] = midiStatus;
                         engineEvent->midi.size    = static_cast<uint8_t>(jackEvent.size);
+
+                        if (jackEvent.size > 1)
+                            carla_copy<uint8_t>(engineEvent->midi.data+1, jackEvent.buffer+1, jackEvent.size-1);
                     }
 
                     if (engineEventIndex >= INTERNAL_EVENT_COUNT)
@@ -1539,7 +1546,7 @@ protected:
             PortNameToId portNameId(groupId, portId, portName, fullPortName);
             fUsedPortNames.removeOne(portNameId);
 
-            callback(CALLBACK_PATCHBAY_PORT_REMOVED, 0, portId, 0, 0.0f, nullptr);
+            callback(CALLBACK_PATCHBAY_PORT_REMOVED, 0, portId, 0, 0.0f, fullPortName);
         }
     }
 
