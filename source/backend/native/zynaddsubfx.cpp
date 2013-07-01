@@ -235,7 +235,12 @@ protected:
         bool isOffline = false;
 
         if (isOffline || ! fIsActive)
+        {
             loadProgram(kMaster, channel, bank, program);
+#ifdef WANT_ZYNADDSUBFX_UI
+            fThread.uiRepaint();
+#endif
+        }
         else
             fThread.loadLater(channel, bank, program);
     }
@@ -436,14 +441,20 @@ private:
         }
 
 #ifdef WANT_ZYNADDSUBFX_UI
+        void uiHide()
+        {
+            fNextUiAction = 0;
+        }
+
         void uiShow()
         {
             fNextUiAction = 1;
         }
 
-        void uiHide()
+        void uiRepaint()
         {
-            fNextUiAction = 0;
+            if (fUi != nullptr)
+                fNextUiAction = 2;
         }
 #endif
 
@@ -454,7 +465,15 @@ private:
             {
 #ifdef WANT_ZYNADDSUBFX_UI
                 Fl::lock();
-                if (fNextUiAction == 1)
+
+                if (fNextUiAction == 2) // repaint
+                {
+                    CARLA_ASSERT(fUi != nullptr);
+
+                    if (fUi != nullptr)
+                        fUi->refresh_master_ui();
+                }
+                else if (fNextUiAction == 1) // init/show
                 {
                     static bool initialized = false;
 
@@ -491,7 +510,7 @@ private:
                         fUi->showUI();
                     }
                 }
-                else if (fNextUiAction == 0)
+                else if (fNextUiAction == 0) // close
                 {
                     CARLA_ASSERT(fUi != nullptr);
 
@@ -522,6 +541,15 @@ private:
                     fNextChannel = 0;
                     fNextBank    = 0;
                     fNextProgram = 0;
+
+#ifdef WANT_ZYNADDSUBFX_UI
+                    if (fUi != nullptr)
+                    {
+                        Fl::lock();
+                        fUi->refresh_master_ui();
+                        Fl::unlock();
+                    }
+#endif
 
                     carla_msleep(15);
                 }
