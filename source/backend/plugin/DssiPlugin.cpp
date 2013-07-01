@@ -79,6 +79,11 @@ public:
 
         if (fDescriptor != nullptr)
         {
+            if (fName.isNotEmpty() && fDssiDescriptor != nullptr && fDssiDescriptor->run_synth == nullptr && fDssiDescriptor->run_multiple_synths != nullptr)
+            {
+                removeUniqueMultiSynth(fDescriptor->Label);
+            }
+
             if (fDescriptor->cleanup != nullptr)
             {
                 if (fHandle != nullptr)
@@ -1856,6 +1861,18 @@ public:
         }
 
         // ---------------------------------------------------------------
+        // check if uses global instance
+
+        if (fDssiDescriptor->run_synth == nullptr && fDssiDescriptor->run_multiple_synths != nullptr)
+        {
+            if (! addUniqueMultiSynth(fDescriptor->Label))
+            {
+                kData->engine->setLastError("This plugin uses a global instance and can't be used more than once safely");
+                return false;
+            }
+        }
+
+        // ---------------------------------------------------------------
         // get info
 
         if (name != nullptr)
@@ -1963,8 +1980,41 @@ private:
     float*  fParamBuffers;
     snd_seq_event_t fMidiEvents[MAX_MIDI_EVENTS];
 
+    static NonRtList<const char*> sMultiSynthList;
+
+    static bool addUniqueMultiSynth(const char* const label)
+    {
+        for (NonRtList<const char*>::Itenerator it = sMultiSynthList.begin(); it.valid(); it.next())
+        {
+            const char*& itLabel(*it);
+
+            if (std::strcmp(label, itLabel) == 0)
+                return false;
+        }
+
+        sMultiSynthList.append(carla_strdup(label));
+        return true;
+    }
+
+    static void removeUniqueMultiSynth(const char* const label)
+    {
+        for (NonRtList<const char*>::Itenerator it = sMultiSynthList.begin(); it.valid(); it.next())
+        {
+            const char*& itLabel(*it);
+
+            if (std::strcmp(label, itLabel) == 0)
+            {
+                sMultiSynthList.remove(it);
+                delete[] itLabel;
+                return;
+            }
+        }
+    }
+
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DssiPlugin)
 };
+
+NonRtList<const char*> DssiPlugin::sMultiSynthList;
 
 CARLA_BACKEND_END_NAMESPACE
 
