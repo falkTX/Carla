@@ -304,6 +304,21 @@ protected:
 
                 kMaster->polyphonicAftertouch(channel, note, pressure);
             }
+            else if (MIDI_IS_STATUS_CONTROL_CHANGE(status))
+            {
+                const uint8_t control = midiEvent->data[1];
+                const uint8_t value   = midiEvent->data[2];
+
+                kMaster->setController(channel, control, value);
+            }
+            else if (MIDI_IS_STATUS_PITCH_WHEEL_CONTROL(status))
+            {
+                const uint8_t lsb = midiEvent->data[1];
+                const uint8_t msb = midiEvent->data[2];
+                const int   value = ((msb << 7) | lsb) - 8192;
+
+                kMaster->setController(channel, C_pitchwheel, value);
+            }
         }
 
         kMaster->GetAudioOutSamples(frames, kSampleRate, outBuffer[0], outBuffer[1]);
