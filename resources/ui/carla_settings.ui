@@ -555,7 +555,7 @@ You can disable these checks to get a faster scanning time (at your own risk).</
          <item>
           <widget class="QGroupBox" name="groupBox_5">
            <property name="title">
-            <string>Qt Render Hints</string>
+            <string>Render Hints</string>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_9">
             <item>
