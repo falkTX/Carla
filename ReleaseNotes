@@ -1,0 +1,23 @@
+# ---  Release Notes for Carla 1.0.0  ---
+
+1.  ZynAddSubFX internal plugin is not available in the pre-compiled builds.
+    We'll try to enable it in a future release.
+
+2.  Canvas does not save or restore connections.
+    You need to use external session management for now.
+
+3.  LADISH does not support multi-client JACK applications.
+    To prevent any issues Carla will switch to single-client mode automatically.
+
+4.  Rack mode is still a bit experimental, specially on non-JACK drivers.
+
+5.  LV2 plugin support is incomplete (although already in a good state).
+    Plugins that use CV ports or Worker extension will not work right now.
+
+6.  Carla will not work with non-native LV2 Plugin UIs that require the instance-data extension.
+    This is by design and not a bug.
+
+6.  OSC control seems to work well, but has not been tested in great detail.
+    Be sure to report any issues.
+
+7.  Carla "PRO" theme and Carla-Control are not available for Windows at this point.
