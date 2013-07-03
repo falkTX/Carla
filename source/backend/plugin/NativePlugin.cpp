@@ -189,6 +189,7 @@ public:
 
         fHost.get_buffer_size        = carla_host_get_buffer_size;
         fHost.get_sample_rate        = carla_host_get_sample_rate;
+        fHost.is_offline             = carla_host_is_offline;
         fHost.get_time_info          = carla_host_get_time_info;
         fHost.write_midi_event       = carla_host_write_midi_event;
         fHost.ui_parameter_changed   = carla_host_ui_parameter_changed;
@@ -436,9 +437,11 @@ public:
         CARLA_ASSERT(fHandle != nullptr);
         CARLA_ASSERT(parameterId < kData->param.count);
 
-        if (fDescriptor->get_parameter_text != nullptr && parameterId < kData->param.count)
+        if (fDescriptor->get_parameter_value != nullptr && fDescriptor->get_parameter_text != nullptr && parameterId < kData->param.count)
         {
-            if (const char* const text = fDescriptor->get_parameter_text(fHandle, parameterId))
+            const float value(fDescriptor->get_parameter_value(fHandle, parameterId));
+
+            if (const char* const text = fDescriptor->get_parameter_text(fHandle, parameterId, value))
             {
                 std::strncpy(strBuf, text, STR_MAX);
                 return;
@@ -2023,6 +2026,11 @@ protected:
         return kData->engine->getSampleRate();
     }
 
+    bool handleIsOffline()
+    {
+        return kData->engine->isOffline();
+    }
+
     const ::TimeInfo* handleGetTimeInfo()
     {
         CARLA_ASSERT(fIsProcessing);
@@ -2352,6 +2360,11 @@ private:
     static double carla_host_get_sample_rate(HostHandle handle)
     {
         return handlePtr->handleGetSampleRate();
+    }
+
+    static bool carla_host_is_offline(HostHandle handle)
+    {
+        return handlePtr->handleIsOffline();
     }
 
     static const ::TimeInfo* carla_host_get_time_info(HostHandle handle)

@@ -108,7 +108,6 @@ public:
           fMaster(new Master()),
           fSampleRate(getSampleRate()),
           fIsActive(false),
-          fIsOffline(false),
           fThread(fMaster, host)
     {
         fThread.start();
@@ -235,7 +234,7 @@ protected:
         if (program >= BANK_SIZE)
             return;
 
-        if (fIsOffline || ! fIsActive)
+        if (isOffline() || ! fIsActive)
         {
             loadProgram(fMaster, channel, bank, program);
 #ifdef WANT_ZYNADDSUBFX_UI
@@ -374,6 +373,8 @@ protected:
             break;
         case PLUGIN_OPCODE_SAMPLE_RATE_CHANGED:
             // TODO
+            break;
+        case PLUGIN_OPCODE_OFFLINE_CHANGED:
             break;
         case PLUGIN_OPCODE_UI_NAME_CHANGED:
 #ifdef WANT_ZYNADDSUBFX_UI
@@ -616,10 +617,9 @@ private:
         uint32_t fNextProgram;
     };
 
-    Master* const  fMaster;
+    Master*  fMaster;
     unsigned fSampleRate;
     bool fIsActive;
-    bool fIsOffline;
 
     ZynThread fThread;
 
