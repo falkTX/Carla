@@ -96,6 +96,452 @@ void set_module_parameters(Fl_Widget* o)
 }
 #endif
 
+// -----------------------------------------------------------------------
+
+class ZynAddSubFxPrograms
+{
+public:
+    ZynAddSubFxPrograms()
+        : fInitiated(false)
+    {
+    }
+
+    ~ZynAddSubFxPrograms()
+    {
+        if (! fInitiated)
+            return;
+
+        for (auto it = fPrograms.begin(); it.valid(); it.next())
+        {
+            const ProgramInfo*& pInfo(*it);
+            delete pInfo;
+        }
+
+        fPrograms.clear();
+    }
+
+    void init(Master& master)
+    {
+        if (fInitiated)
+            return;
+        fInitiated = true;
+
+        fPrograms.append(new ProgramInfo(0, 0, "default"));
+
+        pthread_mutex_lock(&master.mutex);
+
+        // refresh banks
+        master.bank.rescanforbanks();
+
+        for (uint32_t i=0, size = master.bank.banks.size(); i < size; ++i)
+        {
+            if (master.bank.banks[i].dir.empty())
+                continue;
+
+            master.bank.loadbank(master.bank.banks[i].dir);
+
+            for (unsigned int instrument = 0; instrument < BANK_SIZE; ++instrument)
+            {
+                const std::string insName(master.bank.getname(instrument));
+
+                if (insName.empty() || insName[0] == '\0' || insName[0] == ' ')
+                    continue;
+
+                fPrograms.append(new ProgramInfo(i+1, instrument, insName.c_str()));
+            }
+        }
+
+        pthread_mutex_unlock(&master.mutex);
+    }
+
+    void load(Master* const master, const uint8_t channel, const uint32_t bank, const uint32_t program)
+    {
+        if (bank == 0)
+        {
+            pthread_mutex_lock(&master->mutex);
+
+            master->partonoff(channel, 1);
+            master->part[channel]->defaults();
+            master->part[channel]->applyparameters(false);
+
+            pthread_mutex_unlock(&master->mutex);
+
+            return;
+        }
+
+        const std::string& bankdir(master->bank.banks[bank-1].dir);
+
+        if (! bankdir.empty())
+        {
+            pthread_mutex_lock(&master->mutex);
+
+            master->partonoff(channel, 1);
+
+            master->bank.loadbank(bankdir);
+            master->bank.loadfromslot(program, master->part[channel]);
+
+            master->part[channel]->applyparameters(false);
+
+            pthread_mutex_unlock(&master->mutex);
+        }
+    }
+
+    uint32_t count()
+    {
+        return fPrograms.count();
+    }
+
+    const MidiProgram* getInfo(const uint32_t index)
+    {
+        if (index >= fPrograms.count())
+            return nullptr;
+
+        const ProgramInfo*& pInfo(fPrograms.getAt(index));
+
+        fRetProgram.bank    = pInfo->bank;
+        fRetProgram.program = pInfo->prog;
+        fRetProgram.name    = pInfo->name;
+
+        return &fRetProgram;
+    }
+
+private:
+  struct ProgramInfo {
+      uint32_t bank;
+      uint32_t prog;
+      const char* name;
+
+      ProgramInfo(uint32_t bank_, uint32_t prog_, const char* name_)
+        : bank(bank_),
+          prog(prog_),
+          name(carla_strdup(name_)) {}
+
+      ~ProgramInfo()
+      {
+          if (name != nullptr)
+          {
+              delete[] name;
+              name = nullptr;
+          }
+      }
+
+#ifdef CARLA_PROPER_CPP11_SUPPORT
+      ProgramInfo() = delete;
+      ProgramInfo(ProgramInfo&) = delete;
+      ProgramInfo(const ProgramInfo&) = delete;
+#endif
+    };
+
+    bool fInitiated;
+    MidiProgram fRetProgram;
+    NonRtList<const ProgramInfo*> fPrograms;
+
+    CARLA_DECLARE_NON_COPYABLE(ZynAddSubFxPrograms)
+};
+
+static ZynAddSubFxPrograms sPrograms;
+
+// -----------------------------------------------------------------------
+
+class ZynAddSubFxInstanceCount
+{
+public:
+    ZynAddSubFxInstanceCount()
+        : fCount(0)
+    {
+    }
+
+    ~ZynAddSubFxInstanceCount()
+    {
+        CARLA_ASSERT(fCount == 0);
+    }
+
+    void addOne(HostDescriptor* host)
+    {
+        if (fCount++ == 0)
+        {
+            CARLA_ASSERT(synth == nullptr);
+            CARLA_ASSERT(denormalkillbuf == nullptr);
+
+            reinit(host);
+
+#ifdef WANT_ZYNADDSUBFX_UI
+            if (gPixmapPath.isEmpty())
+            {
+                gPixmapPath   = host->resource_dir;
+                gPixmapPath  += PIXMAP_PATH;
+                gUiPixmapPath = gPixmapPath;
+            }
+#endif
+        }
+    }
+
+    void removeOne()
+    {
+        if (--fCount == 0)
+        {
+            CARLA_ASSERT(synth != nullptr);
+            CARLA_ASSERT(denormalkillbuf != nullptr);
+
+            Master::deleteInstance();
+
+            delete[] denormalkillbuf;
+            denormalkillbuf = nullptr;
+
+            delete synth;
+            synth = nullptr;
+        }
+    }
+
+    void reinit(HostDescriptor* host)
+    {
+        Master::deleteInstance();
+
+        if (denormalkillbuf != nullptr)
+        {
+            delete[] denormalkillbuf;
+            denormalkillbuf = nullptr;
+        }
+
+        if (synth != nullptr)
+        {
+            delete synth;
+            synth = nullptr;
+        }
+
+        synth = new SYNTH_T();
+        synth->buffersize = host->get_buffer_size(host->handle);
+        synth->samplerate = host->get_sample_rate(host->handle);
+        synth->alias();
+
+        config.init();
+        config.cfg.SoundBufferSize = synth->buffersize;
+        config.cfg.SampleRate      = synth->samplerate;
+        config.cfg.GzipCompression = 0;
+
+        sprng(std::time(nullptr));
+
+        denormalkillbuf = new float[synth->buffersize];
+        for (int i=0; i < synth->buffersize; ++i)
+            denormalkillbuf[i] = (RND - 0.5f) * 1e-16;
+
+        sPrograms.init(Master::getInstance());
+    }
+
+private:
+    int fCount;
+
+    CARLA_DECLARE_NON_COPYABLE(ZynAddSubFxInstanceCount)
+};
+
+static ZynAddSubFxInstanceCount sInstanceCount;
+
+// -----------------------------------------------------------------------
+
+class ZynAddSubFxThread : public QThread
+{
+public:
+    ZynAddSubFxThread(Master* const master, const HostDescriptor* const host)
+        : fMaster(master),
+          kHost(host),
+#ifdef WANT_ZYNADDSUBFX_UI
+          fUi(nullptr),
+          fUiClosed(0),
+          fNextUiAction(-1),
+#endif
+          fQuit(false),
+          fChangeProgram(false),
+          fNextChannel(0),
+          fNextBank(0),
+          fNextProgram(0)
+    {
+    }
+
+    ~ZynAddSubFxThread()
+    {
+        // must be closed by now
+#ifdef WANT_ZYNADDSUBFX_UI
+        CARLA_ASSERT(fUi == nullptr);
+#endif
+        CARLA_ASSERT(fQuit);
+    }
+
+    void loadProgramLater(const uint8_t channel, const uint32_t bank, const uint32_t program)
+    {
+        fNextChannel = channel;
+        fNextBank    = bank;
+        fNextProgram = program;
+        fChangeProgram = true;
+    }
+
+    void stopLoadProgramLater()
+    {
+        fChangeProgram = false;
+        fNextChannel = 0;
+        fNextBank    = 0;
+        fNextProgram = 0;
+    }
+
+    void setMaster(Master* const master)
+    {
+        fMaster = master;
+    }
+
+    void stop()
+    {
+        fQuit = true;
+        quit();
+    }
+
+#ifdef WANT_ZYNADDSUBFX_UI
+    void uiHide()
+    {
+        fNextUiAction = 0;
+    }
+
+    void uiShow()
+    {
+        fNextUiAction = 1;
+    }
+
+    void uiRepaint()
+    {
+        if (fUi != nullptr)
+            fNextUiAction = 2;
+    }
+#endif
+
+protected:
+    void run() override
+    {
+        while (! fQuit)
+        {
+#ifdef WANT_ZYNADDSUBFX_UI
+            Fl::lock();
+
+            if (fNextUiAction == 2) // repaint
+            {
+                CARLA_ASSERT(fUi != nullptr);
+
+                if (fUi != nullptr)
+                    fUi->refresh_master_ui();
+            }
+            else if (fNextUiAction == 1) // init/show
+            {
+                static bool initialized = false;
+
+                if (! initialized)
+                {
+                    initialized = true;
+                    fl_register_images();
+
+                    Fl_Dial::default_style(Fl_Dial::PIXMAP_DIAL);
+
+                    if (Fl_Shared_Image* const img = Fl_Shared_Image::get(gPixmapPath + "knob.png"))
+                        Fl_Dial::default_image(img);
+
+                    if (Fl_Shared_Image* const img = Fl_Shared_Image::get(gPixmapPath + "window_backdrop.png"))
+                        Fl::scheme_bg(new Fl_Tiled_Image(img));
+
+                    if(Fl_Shared_Image* const img = Fl_Shared_Image::get(gPixmapPath + "module_backdrop.png"))
+                        gModuleBackdrop = new Fl_Tiled_Image(img);
+
+                    Fl::background(50, 50, 50);
+                    Fl::background2(70, 70, 70);
+                    Fl::foreground(255, 255, 255);
+
+                    Fl_Theme::set("Cairo");
+                }
+
+                CARLA_ASSERT(fUi == nullptr);
+
+                if (fUi == nullptr)
+                {
+                    fUiClosed = 0;
+                    fUi = new MasterUI(fMaster, &fUiClosed);
+                    fUi->showUI();
+                }
+            }
+            else if (fNextUiAction == 0) // close
+            {
+                CARLA_ASSERT(fUi != nullptr);
+
+                if (fUi != nullptr)
+                {
+                    delete fUi;
+                    fUi = nullptr;
+                }
+            }
+
+            fNextUiAction = -1;
+
+            if (fUiClosed != 0)
+            {
+                fUiClosed     = 0;
+                fNextUiAction = 0;
+                kHost->ui_closed(kHost->handle);
+            }
+
+            Fl::check();
+            Fl::unlock();
+#endif
+
+            if (fChangeProgram)
+            {
+                fChangeProgram = false;
+                sPrograms.load(fMaster, fNextChannel, fNextBank, fNextProgram);
+                fNextChannel = 0;
+                fNextBank    = 0;
+                fNextProgram = 0;
+
+#ifdef WANT_ZYNADDSUBFX_UI
+                if (fUi != nullptr)
+                {
+                    Fl::lock();
+                    fUi->refresh_master_ui();
+                    Fl::unlock();
+                }
+#endif
+
+                carla_msleep(15);
+            }
+            else
+            {
+                carla_msleep(30);
+            }
+        }
+
+#ifdef WANT_ZYNADDSUBFX_UI
+        if (fQuit && fUi != nullptr)
+        {
+            Fl::lock();
+            delete fUi;
+            fUi = nullptr;
+            Fl::check();
+            Fl::unlock();
+        }
+#endif
+    }
+
+private:
+    Master* fMaster;
+    const HostDescriptor* const kHost;
+
+#ifdef WANT_ZYNADDSUBFX_UI
+    MasterUI* fUi;
+    int       fUiClosed;
+    int       fNextUiAction;
+#endif
+
+    bool     fQuit;
+    bool     fChangeProgram;
+    uint8_t  fNextChannel;
+    uint32_t fNextBank;
+    uint32_t fNextProgram;
+};
+
+// -----------------------------------------------------------------------
+
 class ZynAddSubFxPlugin : public PluginDescriptorClass
 {
 public:
@@ -111,7 +557,6 @@ public:
           fThread(fMaster, host)
     {
         fThread.start();
-        maybeInitPrograms(fMaster);
 
         for (int i = 0; i < NUM_MIDI_PARTS; ++i)
             fMaster->partonoff(i, 1);
@@ -195,19 +640,7 @@ protected:
 
     const MidiProgram* getMidiProgramInfo(const uint32_t index) override
     {
-        CARLA_ASSERT(index < getMidiProgramCount());
-
-        if (index >= sPrograms.count())
-            return nullptr;
-
-        const ProgramInfo* const pInfo(sPrograms.getAt(index));
-
-        static MidiProgram midiProgram;
-        midiProgram.bank    = pInfo->bank;
-        midiProgram.program = pInfo->prog;
-        midiProgram.name    = pInfo->name;
-
-        return &midiProgram;
+        return sPrograms.getInfo(index);
     }
 
     // -------------------------------------------------------------------
@@ -236,13 +669,13 @@ protected:
 
         if (isOffline() || ! fIsActive)
         {
-            loadProgram(fMaster, channel, bank, program);
+            sPrograms.load(fMaster, channel, bank, program);
 #ifdef WANT_ZYNADDSUBFX_UI
             fThread.uiRepaint();
 #endif
         }
         else
-            fThread.loadLater(channel, bank, program);
+            fThread.loadProgramLater(channel, bank, program);
     }
 
     void setCustomData(const char* const key, const char* const value) override
@@ -354,7 +787,7 @@ protected:
 
     void setState(const char* const data) override
     {
-        fThread.stopLoadLater();
+        fThread.stopLoadProgramLater();
         fMaster->putalldata((char*)data, 0);
         fMaster->applyparameters(true);
     }
@@ -394,340 +827,16 @@ protected:
     // -------------------------------------------------------------------
 
 private:
-    struct ProgramInfo {
-        uint32_t bank;
-        uint32_t prog;
-        const char* name;
-
-        ProgramInfo(uint32_t bank_, uint32_t prog_, const char* name_)
-          : bank(bank_),
-            prog(prog_),
-            name(carla_strdup(name_)) {}
-
-        ~ProgramInfo()
-        {
-            if (name != nullptr)
-            {
-                delete[] name;
-                name = nullptr;
-            }
-        }
-
-#ifdef CARLA_PROPER_CPP11_SUPPORT
-        ProgramInfo() = delete;
-        ProgramInfo(ProgramInfo&) = delete;
-        ProgramInfo(const ProgramInfo&) = delete;
-#endif
-    };
-
-    class ZynThread : public QThread
-    {
-    public:
-        ZynThread(Master* const master, const HostDescriptor* const host)
-            : fMaster(master),
-              kHost(host),
-#ifdef WANT_ZYNADDSUBFX_UI
-              fUi(nullptr),
-              fUiClosed(0),
-              fNextUiAction(-1),
-#endif
-              fQuit(false),
-              fChangeProgram(false),
-              fNextChannel(0),
-              fNextBank(0),
-              fNextProgram(0)
-        {
-        }
-
-        ~ZynThread()
-        {
-            // must be closed by now
-#ifdef WANT_ZYNADDSUBFX_UI
-            CARLA_ASSERT(fUi == nullptr);
-#endif
-            CARLA_ASSERT(fQuit);
-        }
-
-        void loadLater(const uint8_t channel, const uint32_t bank, const uint32_t program)
-        {
-            fNextChannel = channel;
-            fNextBank    = bank;
-            fNextProgram = program;
-            fChangeProgram = true;
-        }
-
-        void stopLoadLater()
-        {
-            fChangeProgram = false;
-            fNextChannel = 0;
-            fNextBank    = 0;
-            fNextProgram = 0;
-        }
-
-        void stop()
-        {
-            fQuit = true;
-            quit();
-        }
-
-#ifdef WANT_ZYNADDSUBFX_UI
-        void uiHide()
-        {
-            fNextUiAction = 0;
-        }
-
-        void uiShow()
-        {
-            fNextUiAction = 1;
-        }
-
-        void uiRepaint()
-        {
-            if (fUi != nullptr)
-                fNextUiAction = 2;
-        }
-#endif
-
-    protected:
-        void run() override
-        {
-            while (! fQuit)
-            {
-#ifdef WANT_ZYNADDSUBFX_UI
-                Fl::lock();
-
-                if (fNextUiAction == 2) // repaint
-                {
-                    CARLA_ASSERT(fUi != nullptr);
-
-                    if (fUi != nullptr)
-                        fUi->refresh_master_ui();
-                }
-                else if (fNextUiAction == 1) // init/show
-                {
-                    static bool initialized = false;
-
-                    if (! initialized)
-                    {
-                        initialized = true;
-                        fl_register_images();
-
-                        Fl_Dial::default_style(Fl_Dial::PIXMAP_DIAL);
-
-                        if (Fl_Shared_Image* const img = Fl_Shared_Image::get(gPixmapPath + "knob.png"))
-                            Fl_Dial::default_image(img);
-
-                        if (Fl_Shared_Image* const img = Fl_Shared_Image::get(gPixmapPath + "window_backdrop.png"))
-                            Fl::scheme_bg(new Fl_Tiled_Image(img));
-
-                        if(Fl_Shared_Image* const img = Fl_Shared_Image::get(gPixmapPath + "module_backdrop.png"))
-                            gModuleBackdrop = new Fl_Tiled_Image(img);
-
-                        Fl::background(50, 50, 50);
-                        Fl::background2(70, 70, 70);
-                        Fl::foreground(255, 255, 255);
-
-                        Fl_Theme::set("Cairo");
-                    }
-
-                    CARLA_ASSERT(fUi == nullptr);
-
-                    if (fUi == nullptr)
-                    {
-                        fUiClosed = 0;
-                        fUi = new MasterUI(fMaster, &fUiClosed);
-                        fUi->showUI();
-                    }
-                }
-                else if (fNextUiAction == 0) // close
-                {
-                    CARLA_ASSERT(fUi != nullptr);
-
-                    if (fUi != nullptr)
-                    {
-                        delete fUi;
-                        fUi = nullptr;
-                    }
-                }
-
-                fNextUiAction = -1;
-
-                if (fUiClosed != 0)
-                {
-                    fUiClosed     = 0;
-                    fNextUiAction = 0;
-                    kHost->ui_closed(kHost->handle);
-                }
-
-                Fl::check();
-                Fl::unlock();
-#endif
-
-                if (fChangeProgram)
-                {
-                    fChangeProgram = false;
-                    loadProgram(fMaster, fNextChannel, fNextBank, fNextProgram);
-                    fNextChannel = 0;
-                    fNextBank    = 0;
-                    fNextProgram = 0;
-
-#ifdef WANT_ZYNADDSUBFX_UI
-                    if (fUi != nullptr)
-                    {
-                        Fl::lock();
-                        fUi->refresh_master_ui();
-                        Fl::unlock();
-                    }
-#endif
-
-                    carla_msleep(15);
-                }
-                else
-                {
-                    carla_msleep(30);
-                }
-            }
-
-#ifdef WANT_ZYNADDSUBFX_UI
-            if (fQuit && fUi != nullptr)
-            {
-                Fl::lock();
-                delete fUi;
-                fUi = nullptr;
-                Fl::check();
-                Fl::unlock();
-            }
-#endif
-        }
-
-    private:
-        Master* const fMaster;
-        const HostDescriptor* const kHost;
-
-#ifdef WANT_ZYNADDSUBFX_UI
-        MasterUI* fUi;
-        int       fUiClosed;
-        int       fNextUiAction;
-#endif
-
-        bool     fQuit;
-        bool     fChangeProgram;
-        uint8_t  fNextChannel;
-        uint32_t fNextBank;
-        uint32_t fNextProgram;
-    };
-
     Master*  fMaster;
     unsigned fSampleRate;
-    bool fIsActive;
+    bool     fIsActive;
 
-    ZynThread fThread;
-
-    static int sInstanceCount;
-    static NonRtList<ProgramInfo*> sPrograms;
-
-    static void maybeInitPrograms(Master* const master)
-    {
-        static bool doSearch = true;
-
-        if (! doSearch)
-            return;
-        doSearch = false;
-
-        sPrograms.append(new ProgramInfo(0, 0, "default"));
-
-        pthread_mutex_lock(&master->mutex);
-
-        // refresh banks
-        master->bank.rescanforbanks();
-
-        for (uint32_t i=0, size = master->bank.banks.size(); i < size; ++i)
-        {
-            if (master->bank.banks[i].dir.empty())
-                continue;
-
-            master->bank.loadbank(master->bank.banks[i].dir);
-
-            for (unsigned int instrument = 0; instrument < BANK_SIZE; ++instrument)
-            {
-                const std::string insName(master->bank.getname(instrument));
-
-                if (insName.empty() || insName[0] == '\0' || insName[0] == ' ')
-                    continue;
-
-                sPrograms.append(new ProgramInfo(i+1, instrument, insName.c_str()));
-            }
-        }
-
-        pthread_mutex_unlock(&master->mutex);
-    }
-
-    static void loadProgram(Master* const master, const uint8_t channel, const uint32_t bank, const uint32_t program)
-    {
-        if (bank == 0)
-        {
-            pthread_mutex_lock(&master->mutex);
-
-            master->part[channel]->defaults();
-            master->part[channel]->applyparameters(false);
-            master->partonoff(channel, 1);
-
-            pthread_mutex_unlock(&master->mutex);
-
-            return;
-        }
-
-        const std::string& bankdir(master->bank.banks[bank-1].dir);
-
-        if (! bankdir.empty())
-        {
-            pthread_mutex_lock(&master->mutex);
-
-            master->partonoff(channel, 1);
-
-            master->bank.loadbank(bankdir);
-            master->bank.loadfromslot(program, master->part[channel]);
-
-            master->part[channel]->applyparameters(false);
-
-            pthread_mutex_unlock(&master->mutex);
-        }
-    }
+    ZynAddSubFxThread fThread;
 
 public:
     static PluginHandle _instantiate(const PluginDescriptor*, HostDescriptor* host)
     {
-        if (sInstanceCount++ == 0)
-        {
-            CARLA_ASSERT(synth == nullptr);
-            CARLA_ASSERT(denormalkillbuf == nullptr);
-
-            synth = new SYNTH_T();
-            synth->buffersize = host->get_buffer_size(host->handle);
-            synth->samplerate = host->get_sample_rate(host->handle);
-            synth->alias();
-
-            config.init();
-            config.cfg.SoundBufferSize = synth->buffersize;
-            config.cfg.SampleRate      = synth->samplerate;
-            config.cfg.GzipCompression = 0;
-
-            sprng(std::time(nullptr));
-            denormalkillbuf = new float[synth->buffersize];
-            for (int i=0; i < synth->buffersize; ++i)
-                denormalkillbuf[i] = (RND - 0.5f) * 1e-16;
-
-            Master::getInstance();
-
-#ifdef WANT_ZYNADDSUBFX_UI
-            if (gPixmapPath.isEmpty())
-            {
-                gPixmapPath   = host->resource_dir;
-                gPixmapPath  += PIXMAP_PATH;
-                gUiPixmapPath = gPixmapPath;
-            }
-#endif
-        }
+        sInstanceCount.addOne(host);
 
         return new ZynAddSubFxPlugin(host);
     }
@@ -736,45 +845,12 @@ public:
     {
         delete (ZynAddSubFxPlugin*)handle;
 
-        if (--sInstanceCount == 0)
-        {
-            CARLA_ASSERT(synth != nullptr);
-            CARLA_ASSERT(denormalkillbuf != nullptr);
-
-            Master::deleteInstance();
-
-            delete[] denormalkillbuf;
-            denormalkillbuf = nullptr;
-
-            delete synth;
-            synth = nullptr;
-        }
-    }
-
-    static void _clearPrograms()
-    {
-        for (auto it = sPrograms.begin(); it.valid(); it.next())
-        {
-            ProgramInfo* const programInfo(*it);
-            delete programInfo;
-        }
-
-        sPrograms.clear();
+        sInstanceCount.removeOne();
     }
 
 private:
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ZynAddSubFxPlugin)
 };
-
-int ZynAddSubFxPlugin::sInstanceCount = 0;
-NonRtList<ZynAddSubFxPlugin::ProgramInfo*> ZynAddSubFxPlugin::sPrograms;
-
-static const struct ProgramsDestructor {
-    ProgramsDestructor() {}
-    ~ProgramsDestructor() {
-        ZynAddSubFxPlugin::_clearPrograms();
-    }
-} _programsDestructor;
 
 // -----------------------------------------------------------------------
 
