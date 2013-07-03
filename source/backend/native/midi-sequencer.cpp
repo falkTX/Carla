@@ -219,7 +219,7 @@ private:
 
         void splice()
         {
-            dataPendingRT.spliceAppend(data, true);
+            dataPendingRT.spliceAppend(data);
         }
 
     } fInEvents;

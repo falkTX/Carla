@@ -1299,7 +1299,7 @@ private:
 
         void splice()
         {
-            dataPending.spliceAppend(data, true);
+            dataPending.spliceAppend(data);
         }
     };
 

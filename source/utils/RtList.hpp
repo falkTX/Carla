@@ -287,7 +287,7 @@ public:
         }
     }
 
-    void spliceAppend(List& list, const bool init = false)
+    void spliceAppend(List& list, const bool init = true)
     {
         if (init)
         {
@@ -302,7 +302,7 @@ public:
         }
     }
 
-    void spliceInsert(List& list, const bool init = false)
+    void spliceInsert(List& list, const bool init = true)
     {
         if (init)
         {

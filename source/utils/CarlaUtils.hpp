@@ -160,18 +160,6 @@ void carla_msleep(const unsigned int msecs)
 #endif
 }
 
-static inline
-void carla_usleep(const unsigned int usecs)
-{
-    CARLA_ASSERT(usecs > 0);
-
-#ifdef CARLA_OS_WIN
-    Sleep(usecs / 1000);
-#else
-    usleep(usecs);
-#endif
-}
-
 // -------------------------------------------------
 // carla_setenv
 

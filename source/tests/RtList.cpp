@@ -73,7 +73,7 @@ struct PostRtEvents {
     {
         if (mutex.tryLock())
         {
-            dataPendingRT.spliceAppend(data, true);
+            dataPendingRT.spliceAppend(data);
             mutex.unlock();
         }
     }
