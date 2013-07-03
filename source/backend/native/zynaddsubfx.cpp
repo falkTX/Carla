@@ -85,6 +85,7 @@ extern CarlaString gUiPixmapPath;
 void set_module_parameters(Fl_Widget* o)
 {
     CARLA_ASSERT(gModuleBackdrop != nullptr);
+
     o->box(FL_DOWN_FRAME);
     o->align(o->align() | FL_ALIGN_IMAGE_BACKDROP);
     o->color(FL_BLACK);
@@ -104,27 +105,29 @@ public:
 
     ZynAddSubFxPlugin(const HostDescriptor* const host)
         : PluginDescriptorClass(host),
-          kMaster(new Master()),
-          kSampleRate(getSampleRate()),
+          fMaster(new Master()),
+          fSampleRate(getSampleRate()),
           fIsActive(false),
-          fThread(kMaster, host)
+          fIsOffline(false),
+          fThread(fMaster, host)
     {
         fThread.start();
-        maybeInitPrograms(kMaster);
+        maybeInitPrograms(fMaster);
 
         for (int i = 0; i < NUM_MIDI_PARTS; ++i)
-            kMaster->partonoff(i, 1);
+            fMaster->partonoff(i, 1);
     }
 
     ~ZynAddSubFxPlugin() override
     {
         //ensure that everything has stopped
-        pthread_mutex_lock(&kMaster->mutex);
-        pthread_mutex_unlock(&kMaster->mutex);
+        pthread_mutex_lock(&fMaster->mutex);
+        pthread_mutex_unlock(&fMaster->mutex);
         fThread.stop();
         fThread.wait();
 
-        delete kMaster;
+        delete fMaster;
+        fMaster = nullptr;
     }
 
 protected:
@@ -176,7 +179,7 @@ protected:
         {
 #if 0
         case PARAMETER_MASTER:
-            return kMaster->Pvolume;
+            return fMaster->Pvolume;
 #endif
         default:
             return 0.0f;
@@ -227,16 +230,14 @@ protected:
 
     void setMidiProgram(const uint8_t channel, const uint32_t bank, const uint32_t program) override
     {
-        if (bank >= kMaster->bank.banks.size())
+        if (bank >= fMaster->bank.banks.size())
             return;
         if (program >= BANK_SIZE)
             return;
 
-        bool isOffline = false;
-
-        if (isOffline || ! fIsActive)
+        if (fIsOffline || ! fIsActive)
         {
-            loadProgram(kMaster, channel, bank, program);
+            loadProgram(fMaster, channel, bank, program);
 #ifdef WANT_ZYNADDSUBFX_UI
             fThread.uiRepaint();
 #endif
@@ -251,9 +252,9 @@ protected:
         CARLA_ASSERT(value != nullptr);
 
         if (std::strcmp(key, "CarlaAlternateFile1") == 0) // xmz
-            kMaster->loadXML(value);
-        if (std::strcmp(key, "CarlaAlternateFile2") == 0) // xiz
-            kMaster->part[0]->loadXMLinstrument(value);
+            fMaster->loadXML(value);
+        else if (std::strcmp(key, "CarlaAlternateFile2") == 0) // xiz
+            fMaster->part[0]->loadXMLinstrument(value);
     }
 
     // -------------------------------------------------------------------
@@ -261,10 +262,6 @@ protected:
 
     void activate() override
     {
-        // broken
-        //for (int i=0; i < NUM_MIDI_PARTS; ++i)
-        //    kMaster->setController(0, MIDI_CONTROL_ALL_SOUND_OFF, 0);
-
         fIsActive = true;
     }
 
@@ -275,7 +272,7 @@ protected:
 
     void process(float**, float** const outBuffer, const uint32_t frames, const uint32_t midiEventCount, const MidiEvent* const midiEvents) override
     {
-        if (pthread_mutex_trylock(&kMaster->mutex) != 0)
+        if (pthread_mutex_trylock(&fMaster->mutex) != 0)
         {
             carla_zeroFloat(outBuffer[0], frames);
             carla_zeroFloat(outBuffer[1], frames);
@@ -284,7 +281,7 @@ protected:
 
         for (uint32_t i=0; i < midiEventCount; ++i)
         {
-            const MidiEvent* const midiEvent = &midiEvents[i];
+            const MidiEvent* const midiEvent(&midiEvents[i]);
 
             const uint8_t status  = MIDI_GET_STATUS_FROM_DATA(midiEvent->data);
             const uint8_t channel = MIDI_GET_CHANNEL_FROM_DATA(midiEvent->data);
@@ -293,28 +290,28 @@ protected:
             {
                 const uint8_t note = midiEvent->data[1];
 
-                kMaster->noteOff(channel, note);
+                fMaster->noteOff(channel, note);
             }
             else if (MIDI_IS_STATUS_NOTE_ON(status))
             {
                 const uint8_t note = midiEvent->data[1];
                 const uint8_t velo = midiEvent->data[2];
 
-                kMaster->noteOn(channel, note, velo);
+                fMaster->noteOn(channel, note, velo);
             }
             else if (MIDI_IS_STATUS_POLYPHONIC_AFTERTOUCH(status))
             {
                 const uint8_t note     = midiEvent->data[1];
                 const uint8_t pressure = midiEvent->data[2];
 
-                kMaster->polyphonicAftertouch(channel, note, pressure);
+                fMaster->polyphonicAftertouch(channel, note, pressure);
             }
             else if (MIDI_IS_STATUS_CONTROL_CHANGE(status))
             {
                 const uint8_t control = midiEvent->data[1];
                 const uint8_t value   = midiEvent->data[2];
 
-                kMaster->setController(channel, control, value);
+                fMaster->setController(channel, control, value);
             }
             else if (MIDI_IS_STATUS_PITCH_WHEEL_CONTROL(status))
             {
@@ -322,13 +319,13 @@ protected:
                 const uint8_t msb = midiEvent->data[2];
                 const int   value = ((msb << 7) | lsb) - 8192;
 
-                kMaster->setController(channel, C_pitchwheel, value);
+                fMaster->setController(channel, C_pitchwheel, value);
             }
         }
 
-        kMaster->GetAudioOutSamples(frames, kSampleRate, outBuffer[0], outBuffer[1]);
+        fMaster->GetAudioOutSamples(frames, fSampleRate, outBuffer[0], outBuffer[1]);
 
-        pthread_mutex_unlock(&kMaster->mutex);
+        pthread_mutex_unlock(&fMaster->mutex);
     }
 
 #ifdef WANT_ZYNADDSUBFX_UI
@@ -352,15 +349,45 @@ protected:
         config.save();
 
         char* data = nullptr;
-        kMaster->getalldata(&data);
+        fMaster->getalldata(&data);
         return data;
     }
 
     void setState(const char* const data) override
     {
         fThread.stopLoadLater();
-        kMaster->putalldata((char*)data, 0);
-        kMaster->applyparameters(true);
+        fMaster->putalldata((char*)data, 0);
+        fMaster->applyparameters(true);
+    }
+
+    // -------------------------------------------------------------------
+    // Plugin dispatcher
+
+    intptr_t pluginDispatcher(const PluginDispatcherOpcode opcode, const int32_t index, const intptr_t value, void* const ptr) override
+    {
+        switch (opcode)
+        {
+        case PLUGIN_OPCODE_NULL:
+            break;
+        case PLUGIN_OPCODE_BUFFER_SIZE_CHANGED:
+            // TODO
+            break;
+        case PLUGIN_OPCODE_SAMPLE_RATE_CHANGED:
+            // TODO
+            break;
+        case PLUGIN_OPCODE_UI_NAME_CHANGED:
+#ifdef WANT_ZYNADDSUBFX_UI
+            // TODO
+#endif
+            break;
+        }
+
+        return 0;
+
+        // unused
+        (void)index;
+        (void)value;
+        (void)ptr;
     }
 
     // -------------------------------------------------------------------
@@ -385,16 +412,18 @@ private:
             }
         }
 
+#ifdef CARLA_PROPER_CPP11_SUPPORT
         ProgramInfo() = delete;
         ProgramInfo(ProgramInfo&) = delete;
         ProgramInfo(const ProgramInfo&) = delete;
+#endif
     };
 
     class ZynThread : public QThread
     {
     public:
         ZynThread(Master* const master, const HostDescriptor* const host)
-            : kMaster(master),
+            : fMaster(master),
               kHost(host),
 #ifdef WANT_ZYNADDSUBFX_UI
               fUi(nullptr),
@@ -505,8 +534,7 @@ private:
                     if (fUi == nullptr)
                     {
                         fUiClosed = 0;
-                        fUi = new MasterUI(kMaster, &fUiClosed);
-                        //fUi->npartcounter->callback(_npartcounterCallback, this);
+                        fUi = new MasterUI(fMaster, &fUiClosed);
                         fUi->showUI();
                     }
                 }
@@ -537,7 +565,7 @@ private:
                 if (fChangeProgram)
                 {
                     fChangeProgram = false;
-                    loadProgram(kMaster, fNextChannel, fNextBank, fNextProgram);
+                    loadProgram(fMaster, fNextChannel, fNextBank, fNextProgram);
                     fNextChannel = 0;
                     fNextBank    = 0;
                     fNextProgram = 0;
@@ -571,20 +599,8 @@ private:
 #endif
         }
 
-#ifdef WANT_ZYNADDSUBFX_UI
-        void handlePartCounterCallback(Fl_Widget* widget)
-        {
-            carla_stdout("handlePartCounterCallback(%p)", widget);
-        }
-
-        static void _npartcounterCallback(Fl_Widget* widget, void* ptr)
-        {
-            ((ZynThread*)ptr)->handlePartCounterCallback(widget);
-        }
-#endif
-
     private:
-        Master* const kMaster;
+        Master* const fMaster;
         const HostDescriptor* const kHost;
 
 #ifdef WANT_ZYNADDSUBFX_UI
@@ -600,9 +616,10 @@ private:
         uint32_t fNextProgram;
     };
 
-    Master* const  kMaster;
-    const unsigned kSampleRate;
+    Master* const  fMaster;
+    unsigned fSampleRate;
     bool fIsActive;
+    bool fIsOffline;
 
     ZynThread fThread;
 
@@ -768,7 +785,7 @@ static const PluginDescriptor zynaddsubfxDesc = {
 #else
     /* hints     */ static_cast<PluginHints>(PLUGIN_IS_SYNTH|PLUGIN_USES_STATE),
 #endif
-    /* audioIns  */ 2,
+    /* audioIns  */ 0,
     /* audioOuts */ 2,
     /* midiIns   */ 1,
     /* midiOuts  */ 0,
