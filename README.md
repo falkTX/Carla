@@ -10,4 +10,8 @@ Carla-Control is an OSC Control GUI for Carla (you get the OSC address from the 
 It supports controlling main UI components (Dry/Wet, Volume and Balance), and all plugins parameters. <br/>
 Peak values and control outputs are displayed as well.
 
+<b>NOTE:</b> You're currently using the development git branch of Carla. <br/>
+For the stable version please use: <br/>
+`git checkout 1.0.x`
+
 <br/>
