@@ -121,13 +121,15 @@ public:
         fPrograms.clear();
     }
 
-    void init(Master& master)
+    void init()
     {
         if (fInitiated)
             return;
         fInitiated = true;
 
         fPrograms.append(new ProgramInfo(0, 0, "default"));
+
+        Master& master (Master::getInstance());
 
         pthread_mutex_lock(&master.mutex);
 
@@ -794,7 +796,7 @@ public:
         for (int i = 0; i < NUM_MIDI_PARTS; ++i)
             fMaster->partonoff(i, 1);
 
-        sPrograms.init(Master::getInstance());
+        sPrograms.init();
     }
 
     ~ZynAddSubFxPlugin() override
