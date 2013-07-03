@@ -1880,6 +1880,39 @@ public:
                 delete[] fAudioOutBuffers[i];
             fAudioOutBuffers[i] = new float[newBufferSize];
         }
+
+        if (fDescriptor != nullptr && fDescriptor->dispatcher != nullptr)
+        {
+            fDescriptor->dispatcher(fHandle, PLUGIN_OPCODE_BUFFER_SIZE_CHANGED, 0, 0, nullptr);
+
+            if (fHandle2 != nullptr)
+                fDescriptor->dispatcher(fHandle2, PLUGIN_OPCODE_BUFFER_SIZE_CHANGED, 0, 0, nullptr);
+        }
+    }
+
+    void sampleRateChanged(const double newSampleRate) override
+    {
+        CARLA_ASSERT_INT(newSampleRate > 0.0, newSampleRate);
+        carla_debug("NativePlugin::sampleRateChanged(%g)", newSampleRate);
+
+        if (fDescriptor != nullptr && fDescriptor->dispatcher != nullptr)
+        {
+            fDescriptor->dispatcher(fHandle, PLUGIN_OPCODE_SAMPLE_RATE_CHANGED, 0, 0, nullptr);
+
+            if (fHandle2 != nullptr)
+                fDescriptor->dispatcher(fHandle2, PLUGIN_OPCODE_SAMPLE_RATE_CHANGED, 0, 0, nullptr);
+        }
+    }
+
+    void offlineModeChanged(const bool) override
+    {
+        if (fDescriptor != nullptr && fDescriptor->dispatcher != nullptr)
+        {
+            fDescriptor->dispatcher(fHandle, PLUGIN_OPCODE_OFFLINE_CHANGED, 0, 0, nullptr);
+
+            if (fHandle2 != nullptr)
+                fDescriptor->dispatcher(fHandle2, PLUGIN_OPCODE_OFFLINE_CHANGED, 0, 0, nullptr);
+        }
     }
 
     // -------------------------------------------------------------------
