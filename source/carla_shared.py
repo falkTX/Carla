@@ -2832,24 +2832,6 @@ class PluginRefreshW(QDialog):
         self.connect(self.fThread, SIGNAL("pluginLook(int, QString)"), SLOT("slot_handlePluginLook(int, QString)"))
         self.connect(self.fThread, SIGNAL("finished()"), SLOT("slot_handlePluginThreadFinished()"))
 
-        # -------------------------------------------------------------
-        # FIXME - only for stable release
-
-        self.ui.ch_posix32.setVisible(False)
-        self.ui.ch_posix64.setVisible(False)
-        self.ui.ch_win32.setVisible(False)
-        self.ui.ch_win64.setVisible(False)
-
-        self.ui.ico_posix32.setVisible(False)
-        self.ui.ico_posix64.setVisible(False)
-        self.ui.ico_win32.setVisible(False)
-        self.ui.ico_win64.setVisible(False)
-
-        self.ui.label_posix32.setVisible(False)
-        self.ui.label_posix64.setVisible(False)
-        self.ui.label_win32.setVisible(False)
-        self.ui.label_win64.setVisible(False)
-
     @pyqtSlot()
     def slot_start(self):
         self.ui.progressBar.setMinimum(0)
