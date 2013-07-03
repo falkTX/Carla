@@ -315,7 +315,7 @@ protected:
         return plugin->getParameterValue(index);
     }
 
-    const char* getParameterText(const uint32_t index) override
+    const char* getParameterText(const uint32_t index, const float value) override // FIXME - use value
     {
         if (index >= getParameterCount())
             return nullptr;
