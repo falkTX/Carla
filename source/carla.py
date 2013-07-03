@@ -502,7 +502,7 @@ class CarlaSettingsW(QDialog):
                 paths.sort()
                 self.ui.lw_ladspa.clear()
 
-                for ladspa in Carla.paths:
+                for ladspa in paths:
                     self.ui.lw_ladspa.addItem(ladspa)
 
             elif self.ui.tw_paths.currentIndex() == 1:
