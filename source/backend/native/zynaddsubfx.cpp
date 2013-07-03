@@ -29,6 +29,7 @@
 #include "zynaddsubfx/Misc/Master.h"
 #include "zynaddsubfx/Misc/Part.h"
 #include "zynaddsubfx/Misc/Util.h"
+#include "zynaddsubfx/Effects/Reverb.h"
 
 #ifdef WANT_ZYNADDSUBFX_UI
 // FIXME
@@ -256,7 +257,7 @@ public:
         CARLA_ASSERT(fCount == 0);
     }
 
-    void addOne(HostDescriptor* host)
+    void addOne(HostDescriptor* const host)
     {
         if (fCount++ == 0)
         {
@@ -293,7 +294,7 @@ public:
         }
     }
 
-    void reinit(HostDescriptor* host)
+    void reinit(HostDescriptor* const host)
     {
         Master::deleteInstance();
 
@@ -325,7 +326,7 @@ public:
         for (int i=0; i < synth->buffersize; ++i)
             denormalkillbuf[i] = (RND - 0.5f) * 1e-16;
 
-        sPrograms.init(Master::getInstance());
+        Master::getInstance();
     }
 
 private:
@@ -542,6 +543,238 @@ private:
 
 // -----------------------------------------------------------------------
 
+#define ZynPluginDescriptorClassEND(ClassName)                                      \
+public:                                                                             \
+    static PluginHandle _instantiate(const PluginDescriptor*, HostDescriptor* host) \
+    {                                                                               \
+        sInstanceCount.addOne(host);                                                \
+        return new ClassName(host);                                                 \
+    }                                                                               \
+    static void _cleanup(PluginHandle handle)                                       \
+    {                                                                               \
+        delete (ClassName*)handle;                                                  \
+        sInstanceCount.removeOne();                                                 \
+    }
+
+// -----------------------------------------------------------------------
+
+class FxReverbPlugin : public PluginDescriptorClass
+{
+public:
+    static const uint32_t kParamCount   = 13;
+    static const uint32_t kProgramCount = 13;
+
+    FxReverbPlugin(const HostDescriptor* const host)
+        : PluginDescriptorClass(host),
+          fEffect(false, nullptr, nullptr)
+    {
+    }
+
+protected:
+    // -------------------------------------------------------------------
+    // Plugin parameter calls
+
+    uint32_t getParameterCount() override
+    {
+        return kParamCount;
+    }
+
+    const Parameter* getParameterInfo(const uint32_t index) override
+    {
+        if (index >= kParamCount)
+            return nullptr;
+
+        static Parameter param;
+
+        int hints = PARAMETER_IS_ENABLED | PARAMETER_IS_INTEGER;
+
+        param.name  = nullptr;
+        param.unit  = nullptr;
+        param.ranges.def       = 1.0f;
+        param.ranges.min       = 0.0f;
+        param.ranges.max       = 127.0f;
+        param.ranges.step      = 1.0f;
+        param.ranges.stepSmall = 1.0f;
+        param.ranges.stepLarge = 20.0f;
+        param.scalePointCount  = 0;
+        param.scalePoints      = nullptr;
+
+        switch (index)
+        {
+        case 0:
+            hints |= PARAMETER_IS_AUTOMABLE;
+            param.name = "Volume";
+            param.ranges.def = 80.0f;
+            break;
+        case 1:
+            hints |= PARAMETER_IS_AUTOMABLE;
+            param.name = "Panning";
+            param.ranges.def = 64.0f;
+            break;
+        case 2:
+            hints |= PARAMETER_IS_AUTOMABLE;
+            param.name = "Time";
+            param.ranges.def = 63.0f;
+            break;
+        case 3:
+            param.name = "Delay";
+            param.ranges.def = 24.0f;
+            break;
+        case 4:
+            hints |= PARAMETER_IS_AUTOMABLE;
+            param.name = "Feedback";
+            param.ranges.def = 0.0f;
+            break;
+        case 5:
+            hints = 0x0;
+            param.name = "unused1";
+            break;
+        case 6:
+            hints = 0x0;
+            param.name = "unused2";
+            break;
+        case 7:
+            param.name = "Low-Pass Filter";
+            param.ranges.def = 85.0f;
+            break;
+        case 8:
+            param.name = "High-Pass Filter";
+            param.ranges.def = 5.0f;
+            break;
+        case 9:
+            hints |= PARAMETER_IS_AUTOMABLE;
+            param.name = "Damp";
+            param.ranges.def = 83.0f;
+            break;
+        case 10:
+            param.name = "Type";
+            param.ranges.def = 1.0f;
+            param.ranges.max = 2.0f;
+            break;
+        case 11:
+            param.name = "Room size";
+            param.ranges.def = 64.0f;
+            break;
+        case 12:
+            param.name = "Bandwidth";
+            param.ranges.def = 20.0f;
+            break;
+        }
+
+        param.hints = static_cast<ParameterHints>(hints);
+
+        return &param;
+    }
+
+    float getParameterValue(const uint32_t index) override
+    {
+        return fEffect.getpar(index);
+    }
+
+    // -------------------------------------------------------------------
+    // Plugin midi-program calls
+
+    uint32_t getMidiProgramCount() override
+    {
+        return kProgramCount;
+    }
+
+    const MidiProgram* getMidiProgramInfo(const uint32_t index) override
+    {
+        if (index >= kProgramCount)
+            return nullptr;
+
+        static MidiProgram midiProg;
+
+        midiProg.bank    = 0;
+        midiProg.program = index;
+        midiProg.name    = nullptr;
+
+        switch (index)
+        {
+        case 0:
+            midiProg.name = "Cathedral1";
+            break;
+        case 1:
+            midiProg.name = "Cathedral2";
+            break;
+        case 2:
+            midiProg.name = "Cathedral3";
+            break;
+        case 3:
+            midiProg.name = "Hall1";
+            break;
+        case 4:
+            midiProg.name = "Hall2";
+            break;
+        case 5:
+            midiProg.name = "Room1";
+            break;
+        case 6:
+            midiProg.name = "Room2";
+            break;
+        case 7:
+            midiProg.name = "Basement";
+            break;
+        case 8:
+            midiProg.name = "Tunnel";
+            break;
+        case 9:
+            midiProg.name = "Echoed1";
+            break;
+        case 10:
+            midiProg.name = "Echoed2";
+            break;
+        case 11:
+            midiProg.name = "VeryLong1";
+            break;
+        case 12:
+            midiProg.name = "VeryLong2";
+            break;
+        }
+
+        return &midiProg;
+    }
+
+    // -------------------------------------------------------------------
+    // Plugin state calls
+
+    void setParameterValue(const uint32_t index, const float value) override
+    {
+        fEffect.changepar(index, value);
+    }
+
+    void setMidiProgram(const uint8_t, const uint32_t, const uint32_t program) override
+    {
+        fEffect.setpreset(program);
+    }
+
+    // -------------------------------------------------------------------
+    // Plugin process calls
+
+    void activate() override
+    {
+        fEffect.cleanup();
+    }
+
+    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t, const MidiEvent* const) override
+    {
+        // beh, only testing for now anyway
+        *((float**)&fEffect.efxoutl) = outBuffer[0];
+        *((float**)&fEffect.efxoutr) = outBuffer[1];
+
+        fEffect.out(Stereo<float*>(inBuffer[0], inBuffer[1]));
+    }
+
+private:
+    Reverb fEffect;
+
+    ZynPluginDescriptorClassEND(FxReverbPlugin)
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FxReverbPlugin)
+};
+
+// -----------------------------------------------------------------------
+
 class ZynAddSubFxPlugin : public PluginDescriptorClass
 {
 public:
@@ -560,6 +793,8 @@ public:
 
         for (int i = 0; i < NUM_MIDI_PARTS; ++i)
             fMaster->partonoff(i, 1);
+
+        sPrograms.init(Master::getInstance());
     }
 
     ~ZynAddSubFxPlugin() override
@@ -833,26 +1068,27 @@ private:
 
     ZynAddSubFxThread fThread;
 
-public:
-    static PluginHandle _instantiate(const PluginDescriptor*, HostDescriptor* host)
-    {
-        sInstanceCount.addOne(host);
-
-        return new ZynAddSubFxPlugin(host);
-    }
-
-    static void _cleanup(PluginHandle handle)
-    {
-        delete (ZynAddSubFxPlugin*)handle;
-
-        sInstanceCount.removeOne();
-    }
-
-private:
+    ZynPluginDescriptorClassEND(ZynAddSubFxPlugin)
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ZynAddSubFxPlugin)
 };
 
 // -----------------------------------------------------------------------
+
+static const PluginDescriptor fxReverbDesc = {
+    /* category  */ PLUGIN_CATEGORY_DELAY,
+    /* hints     */ static_cast<PluginHints>(/*PLUGIN_IS_RTSAFE*/ 0x0),
+    /* audioIns  */ 2,
+    /* audioOuts */ 2,
+    /* midiIns   */ 0,
+    /* midiOuts  */ 0,
+    /* paramIns  */ 12-2,
+    /* paramOuts */ 0,
+    /* name      */ "ZynReverb",
+    /* label     */ "zyn-reverb",
+    /* maker     */ "falkTX",
+    /* copyright */ "GNU GPL v2+",
+    PluginDescriptorFILL(FxReverbPlugin)
+};
 
 static const PluginDescriptor zynaddsubfxDesc = {
     /* category  */ PLUGIN_CATEGORY_SYNTH,
@@ -878,6 +1114,7 @@ static const PluginDescriptor zynaddsubfxDesc = {
 
 void carla_register_native_plugin_zynaddsubfx()
 {
+    carla_register_native_plugin(&fxReverbDesc);
     carla_register_native_plugin(&zynaddsubfxDesc);
 }
 
