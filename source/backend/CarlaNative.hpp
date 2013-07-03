@@ -89,6 +89,16 @@ protected:
         return 0.0;
     }
 
+    bool isOffline()
+    {
+        CARLA_ASSERT(kHost != nullptr);
+
+        if (kHost != nullptr)
+            return kHost->is_offline(kHost->handle);
+
+        return false;
+    }
+
     const TimeInfo* getTimeInfo()
     {
         CARLA_ASSERT(kHost != nullptr);

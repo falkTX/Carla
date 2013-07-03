@@ -74,7 +74,8 @@ typedef enum _PluginDispatcherOpcode {
     PLUGIN_OPCODE_NULL                = 0, // nothing
     PLUGIN_OPCODE_BUFFER_SIZE_CHANGED = 1, // nothing
     PLUGIN_OPCODE_SAMPLE_RATE_CHANGED = 2, // nothing
-    PLUGIN_OPCODE_UI_NAME_CHANGED     = 3  // nothing
+    PLUGIN_OPCODE_OFFLINE_CHANGED     = 3, // nothing
+    PLUGIN_OPCODE_UI_NAME_CHANGED     = 4  // nothing
 } PluginDispatcherOpcode;
 
 typedef enum _HostDispatcherOpcode {
@@ -151,8 +152,10 @@ typedef struct _HostDescriptor {
     const char* resource_dir;
     const char* ui_name;
 
-    uint32_t        (*get_buffer_size)(HostHandle handle);
-    double          (*get_sample_rate)(HostHandle handle);
+    uint32_t (*get_buffer_size)(HostHandle handle);
+    double   (*get_sample_rate)(HostHandle handle);
+    bool     (*is_offline)(HostHandle handle);
+
     const TimeInfo* (*get_time_info)(HostHandle handle);
     bool            (*write_midi_event)(HostHandle handle, const MidiEvent* event);
 
