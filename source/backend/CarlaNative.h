@@ -188,7 +188,7 @@ typedef struct _PluginDescriptor {
     uint32_t         (*get_parameter_count)(PluginHandle handle);
     const Parameter* (*get_parameter_info)(PluginHandle handle, uint32_t index);
     float            (*get_parameter_value)(PluginHandle handle, uint32_t index);
-    const char*      (*get_parameter_text)(PluginHandle handle, uint32_t index);
+    const char*      (*get_parameter_text)(PluginHandle handle, uint32_t index, float value);
 
     uint32_t           (*get_midi_program_count)(PluginHandle handle);
     const MidiProgram* (*get_midi_program_info)(PluginHandle handle, uint32_t index);

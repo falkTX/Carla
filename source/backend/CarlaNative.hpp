@@ -195,13 +195,14 @@ protected:
         (void)index;
     }
 
-    virtual const char* getParameterText(const uint32_t index)
+    virtual const char* getParameterText(const uint32_t index, const float value)
     {
         CARLA_ASSERT(index < getParameterCount());
         return nullptr;
 
         // unused
         (void)index;
+        (void)value;
     }
 
     // -------------------------------------------------------------------
@@ -372,9 +373,9 @@ public:
         return handlePtr->getParameterValue(index);
     }
 
-    static const char* _get_parameter_text(PluginHandle handle, uint32_t index)
+    static const char* _get_parameter_text(PluginHandle handle, uint32_t index, float value)
     {
-        return handlePtr->getParameterText(index);
+        return handlePtr->getParameterText(index, value);
     }
 
     static uint32_t _get_midi_program_count(PluginHandle handle)
