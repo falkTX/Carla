@@ -1487,11 +1487,8 @@ protected:
         if (fullPortName == nullptr)
             return;
 
-        const size_t groupNameSize(std::strstr(fullPortName, portName) - fullPortName - 1);
-        char         groupName[groupNameSize+1];
-
-        carla_copy<char>(groupName, fullPortName, groupNameSize);
-        groupName[groupNameSize] = '\0';
+        CarlaString groupName(fullPortName);
+        groupName.truncate(groupName.rfind(portName)-1);
 
         int groupId = getGroupId(groupName);
 
@@ -1628,11 +1625,8 @@ protected:
         if (portName == nullptr)
             return;
 
-        const size_t groupNameSize(std::strstr(newName, portName) - newName - 1);
-        char         groupName[groupNameSize+1];
-
-        carla_copy<char>(groupName, newName, groupNameSize);
-        groupName[groupNameSize] = '\0';
+        CarlaString groupName(newName);
+        groupName.truncate(groupName.rfind(portName)-1);
 
         const int groupId(getGroupId(groupName));
 
@@ -1918,14 +1912,14 @@ private:
 
                 const int jackPortFlags(jackbridge_port_flags(jackPort));
 
-                const size_t groupNameSize(std::strstr(fullPortName, portName) - fullPortName - 1);
-                char         groupName[groupNameSize+1];
-                int          groupId = -1;
+                int groupId = -1;
 
-                carla_copy<char>(groupName, fullPortName, groupNameSize);
-                groupName[groupNameSize] = '\0';
+                CarlaString groupName(fullPortName);
+                groupName.truncate(groupName.rfind(portName)-1);
 
-                if (parsedGroups.contains(QString(groupName)))
+                QString qGroupName(groupName);
+
+                if (parsedGroups.contains(qGroupName))
                 {
                     groupId = getGroupId(groupName);
                     CARLA_ASSERT(groupId != -1);
@@ -1933,7 +1927,7 @@ private:
                 else
                 {
                     groupId = fLastGroupId++;
-                    parsedGroups.append(groupName);
+                    parsedGroups.append(qGroupName);
 
                     GroupNameToId groupNameToId(groupId, groupName);
                     fUsedGroupNames.append(groupNameToId);

@@ -231,6 +231,26 @@ public:
         return 0;
     }
 
+    size_t rfind(const char* const strBuf) const
+    {
+        if (strBuf == nullptr || strBuf[0] == '\0')
+            return bufferLen;
+
+        size_t ret = bufferLen+1;
+        const char* tmpBuf = buffer;
+
+        for (size_t i=0; i < bufferLen; ++i)
+        {
+            if (std::strstr(tmpBuf, strBuf) == nullptr)
+                break;
+
+            --ret;
+            ++tmpBuf;
+        }
+
+        return (ret > bufferLen) ? bufferLen : bufferLen-ret;
+    }
+
     void replace(const char before, const char after)
     {
         if (after == '\0')
