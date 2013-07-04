@@ -132,7 +132,7 @@ public:
 
         fPrograms.append(new ProgramInfo(0, 0, "default"));
 
-        Master& master (Master::getInstance());
+        Master& master(Master::getInstance());
 
         pthread_mutex_lock(&master.mutex);
 
@@ -262,7 +262,7 @@ public:
         CARLA_ASSERT(fCount == 0);
     }
 
-    void addOne(HostDescriptor* const host)
+    void addOne(const HostDescriptor* const host)
     {
         if (fCount++ == 0)
         {
@@ -299,7 +299,7 @@ public:
         }
     }
 
-    void reinit(HostDescriptor* const host)
+    void reinit(const HostDescriptor* const host)
     {
         Master::deleteInstance();
 
@@ -332,6 +332,15 @@ public:
             denormalkillbuf[i] = (RND - 0.5f) * 1e-16;
 
         Master::getInstance();
+    }
+
+    void maybeReinit(const HostDescriptor* const host)
+    {
+        if (host->get_buffer_size(host->handle) == static_cast<uint32_t>(synth->buffersize) &&
+            host->get_sample_rate(host->handle) == static_cast<double>(synth->samplerate))
+            return;
+
+        reinit(host);
     }
 
 private:
@@ -563,22 +572,24 @@ public:                                                                         
 
 // -----------------------------------------------------------------------
 
-class FxAlienWahPlugin : public PluginDescriptorClass
+class FxAbstractPlugin : public PluginDescriptorClass
 {
-public:
-    static const uint32_t kParamCount   = 11;
-    static const uint32_t kProgramCount = 4;
-
-    FxAlienWahPlugin(const HostDescriptor* const host)
+protected:
+    FxAbstractPlugin(const HostDescriptor* const host, const uint32_t paramCount, const uint32_t programCount)
         : PluginDescriptorClass(host),
+          fEffect(nullptr),
           efxoutl(new float[synth->buffersize]),
           efxoutr(new float[synth->buffersize]),
-          fEffect(false, efxoutl, efxoutr)
+          fWetOnly(false),
+          kParamCount(paramCount),
+          kProgramCount(programCount)
     {
     }
 
-    ~FxAlienWahPlugin()
+    ~FxAbstractPlugin() override
     {
+        CARLA_ASSERT(fEffect != nullptr);
+
         if (efxoutl != nullptr)
         {
             delete[] efxoutl;
@@ -590,16 +601,161 @@ public:
             delete[] efxoutr;
             efxoutr = nullptr;
         }
+
+        if (fEffect != nullptr)
+        {
+            delete fEffect;
+            fEffect = nullptr;
+        }
     }
 
-protected:
     // -------------------------------------------------------------------
     // Plugin parameter calls
 
     uint32_t getParameterCount() override
     {
-        return kParamCount;
+        return kParamCount-1;
     }
+
+    float getParameterValue(const uint32_t index) override
+    {
+        if (index == 0)
+            return fWetOnly ? 1.0f : 0.0f;
+
+        return fEffect->getpar(index+1);
+    }
+
+    // -------------------------------------------------------------------
+    // Plugin midi-program calls
+
+    uint32_t getMidiProgramCount() override
+    {
+        return kProgramCount;
+    }
+
+    // -------------------------------------------------------------------
+    // Plugin state calls
+
+    void setParameterValue(const uint32_t index, const float value) override
+    {
+        if (index == 0)
+            fWetOnly = (value >= 0.5f);
+        else
+            fEffect->changepar(index+1, value);
+    }
+
+    void setMidiProgram(const uint8_t, const uint32_t, const uint32_t program) override
+    {
+        fEffect->setpreset(program);
+    }
+
+    // -------------------------------------------------------------------
+    // Plugin process calls
+
+    void activate() override
+    {
+        fEffect->cleanup();
+    }
+
+    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t, const MidiEvent* const) override
+    {
+        CARLA_ASSERT(synth->buffersize == static_cast<int>(frames));
+
+        fEffect->out(Stereo<float*>(inBuffer[0], inBuffer[1]));
+
+        if (fWetOnly)
+        {
+            carla_copyFloat(outBuffer[0], efxoutl, frames);
+            carla_copyFloat(outBuffer[1], efxoutr, frames);
+        }
+        else
+        {
+            for (uint32_t i=0; i<frames; ++i)
+            {
+                outBuffer[0][i] = inBuffer[0][i]/2.0f + efxoutl[i]/2.0f;
+                outBuffer[1][i] = inBuffer[1][i]/2.0f + efxoutr[i]/2.0f;
+            }
+        }
+    }
+
+    // -------------------------------------------------------------------
+    // Plugin dispatcher
+
+    intptr_t pluginDispatcher(const PluginDispatcherOpcode opcode, const int32_t, const intptr_t, void* const) override
+    {
+        switch (opcode)
+        {
+        case PLUGIN_OPCODE_BUFFER_SIZE_CHANGED:
+        {
+            const uint32_t bufferSize(getBufferSize());
+            delete[] efxoutl;
+            delete[] efxoutr;
+            efxoutl = new float[bufferSize];
+            efxoutr = new float[bufferSize];
+            *((float**)&fEffect->efxoutl) = efxoutl;
+            *((float**)&fEffect->efxoutr) = efxoutr;
+        }
+        case PLUGIN_OPCODE_SAMPLE_RATE_CHANGED:
+            sInstanceCount.maybeReinit(hostHandle());
+            break;
+        case PLUGIN_OPCODE_NULL:
+        case PLUGIN_OPCODE_OFFLINE_CHANGED:
+        case PLUGIN_OPCODE_UI_NAME_CHANGED:
+            break;
+        }
+
+        return 0;
+    }
+
+    Effect* fEffect;
+    float*  efxoutl;
+    float*  efxoutr;
+    bool    fWetOnly;
+    const uint32_t kParamCount;
+    const uint32_t kProgramCount;
+};
+
+// -----------------------------------------------------------------------
+
+class FxAlienWahPlugin : public FxAbstractPlugin /*PluginDescriptorClass*/
+{
+public:
+    //static const uint32_t kParamCount   = 11-1;
+    //static const uint32_t kProgramCount = 4;
+
+    FxAlienWahPlugin(const HostDescriptor* const host)
+        : FxAbstractPlugin(host, 11, 4)
+          //PluginDescriptorClass(host),
+          //efxoutl(new float[synth->buffersize]),
+          //efxoutr(new float[synth->buffersize]),
+          //fWetOnly(false)
+    {
+        fEffect = new Alienwah(false, efxoutl, efxoutr);
+    }
+
+//     ~FxAlienWahPlugin() override
+//     {
+//         if (efxoutl != nullptr)
+//         {
+//             delete[] efxoutl;
+//             efxoutl = nullptr;
+//         }
+//
+//         if (efxoutr != nullptr)
+//         {
+//             delete[] efxoutr;
+//             efxoutr = nullptr;
+//         }
+//     }
+
+protected:
+    // -------------------------------------------------------------------
+    // Plugin parameter calls
+
+//     uint32_t getParameterCount() override
+//     {
+//         return kParamCount;
+//     }
 
     const Parameter* getParameterInfo(const uint32_t index) override
     {
@@ -624,55 +780,51 @@ protected:
         switch (index)
         {
         case 0:
-            hints |= PARAMETER_IS_AUTOMABLE;
-            param.name = "Volume";
-            param.ranges.def = 127.0f;
+            hints |= PARAMETER_IS_AUTOMABLE|PARAMETER_IS_BOOLEAN;
+            param.name = "Wet Only";
+            param.ranges.def = 0.0f;
+            param.ranges.max = 1.0f;
             break;
         case 1:
-            hints |= PARAMETER_IS_AUTOMABLE;
-            param.name = "Panning";
-            param.ranges.def = 64.0f;
-            break;
-        case 2:
             hints |= PARAMETER_IS_AUTOMABLE;
             param.name = "LFO Frequency";
             param.ranges.def = 70.0f;
             break;
-        case 3:
+        case 2:
             hints |= PARAMETER_IS_AUTOMABLE;
             param.name = "LFO Randomness";
             param.ranges.def = 0.0f;
             break;
-        case 4:
+        case 3:
             hints |= PARAMETER_IS_AUTOMABLE;
             param.name = "LFO Type";
             param.ranges.def = 0.0f;
             break;
-        case 5:
+        case 4:
             hints |= PARAMETER_IS_AUTOMABLE;
             param.name = "LFO Stereo";
             param.ranges.def = 62.0f;
             break;
-        case 6:
+        case 5:
             hints |= PARAMETER_IS_AUTOMABLE;
             param.name = "Depth";
             param.ranges.def = 60.0f;
             break;
-        case 7:
+        case 6:
             hints |= PARAMETER_IS_AUTOMABLE;
             param.name = "Feedback";
             param.ranges.def = 105.0f;
             break;
-        case 8:
+        case 7:
             param.name = "Delay";
             param.ranges.def = 25.0f;
             break;
-        case 9:
+        case 8:
             hints |= PARAMETER_IS_AUTOMABLE;
             param.name = "Cross";
             param.ranges.def = 0.0f;
             break;
-        case 10:
+        case 9:
             hints |= PARAMETER_IS_AUTOMABLE;
             param.name = "Phase";
             param.ranges.def = 64.0f;
@@ -684,18 +836,18 @@ protected:
         return &param;
     }
 
-    float getParameterValue(const uint32_t index) override
-    {
-        return fEffect.getpar(index);
-    }
+//     float getParameterValue(const uint32_t index) override
+//     {
+//         return fEffect.getpar(index);
+//     }
 
     // -------------------------------------------------------------------
     // Plugin midi-program calls
 
-    uint32_t getMidiProgramCount() override
-    {
-        return kProgramCount;
-    }
+//     uint32_t getMidiProgramCount() override
+//     {
+//         return kProgramCount;
+//     }
 
     const MidiProgram* getMidiProgramInfo(const uint32_t index) override
     {
@@ -730,41 +882,90 @@ protected:
     // -------------------------------------------------------------------
     // Plugin state calls
 
-    void setParameterValue(const uint32_t index, const float value) override
-    {
-        fEffect.changepar(index, value);
-    }
-
-    void setMidiProgram(const uint8_t, const uint32_t, const uint32_t program) override
-    {
-        fEffect.setpreset(program);
-    }
+//     void setParameterValue(const uint32_t index, const float value) override
+//     {
+//         if (index == 0)
+//         {
+//             fWetOnly = (value < 0.5f);
+//             return;
+//         }
+//
+//         fEffect.changepar(index+1, value);
+//     }
+//
+//     void setMidiProgram(const uint8_t, const uint32_t, const uint32_t program) override
+//     {
+//         fEffect.setpreset(program);
+//     }
 
     // -------------------------------------------------------------------
     // Plugin process calls
 
-    void activate() override
-    {
-        fEffect.cleanup();
-    }
+//     void activate() override
+//     {
+//         fEffect.cleanup();
+//     }
+//
+//     void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t, const MidiEvent* const) override
+//     {
+//         CARLA_ASSERT(synth->buffersize == static_cast<int>(frames));
+//
+//         fEffect.out(Stereo<float*>(inBuffer[0], inBuffer[1]));
+//
+//         if (fWetOnly)
+//         {
+//             carla_copyFloat(outBuffer[0], efxoutl, frames);
+//             carla_copyFloat(outBuffer[1], efxoutr, frames);
+//         }
+//         else
+//         {
+//             for (uint32_t i=0; i<frames; ++i)
+//             {
+//                 outBuffer[0][i] = inBuffer[0][i]/2.0f + efxoutl[i]/2.0f;
+//                 outBuffer[1][i] = inBuffer[1][i]/2.0f + efxoutr[i]/2.0f;
+//             }
+//         }
+//     }
 
-    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t, const MidiEvent* const) override
-    {
-        CARLA_ASSERT(synth->buffersize == static_cast<int>(frames));
+    // -------------------------------------------------------------------
+    // Plugin dispatcher
 
-        fEffect.out(Stereo<float*>(inBuffer[0], inBuffer[1]));
-
-        for (uint32_t i=0; i<frames; ++i)
-        {
-            outBuffer[0][i] = inBuffer[0][i]/2.0f + efxoutl[i]/2.0f;
-            outBuffer[1][i] = inBuffer[1][i]/2.0f + efxoutr[i]/2.0f;
-        }
-    }
+//     intptr_t pluginDispatcher(const PluginDispatcherOpcode opcode, const int32_t index, const intptr_t value, void* const ptr) override
+//     {
+//         switch (opcode)
+//         {
+//         case PLUGIN_OPCODE_BUFFER_SIZE_CHANGED:
+//         {
+//             const uint32_t bufferSize(getBufferSize());
+//             delete[] efxoutl;
+//             delete[] efxoutr;
+//             efxoutl = new float[bufferSize];
+//             efxoutr = new float[bufferSize];
+//             *((float**)&fEffect.efxoutl) = efxoutl;
+//             *((float**)&fEffect.efxoutr) = efxoutr;
+//         }
+//         case PLUGIN_OPCODE_SAMPLE_RATE_CHANGED:
+//             sInstanceCount.maybeReinit(hostHandle());
+//             break;
+//         case PLUGIN_OPCODE_NULL:
+//         case PLUGIN_OPCODE_OFFLINE_CHANGED:
+//         case PLUGIN_OPCODE_UI_NAME_CHANGED:
+//             break;
+//         }
+//
+//         return 0;
+//
+//         // unused
+//         (void)index;
+//         (void)value;
+//         (void)ptr;
+//     }
 
 private:
-    float* efxoutl;
-    float* efxoutr;
-    Alienwah fEffect;
+    //float* efxoutl;
+    //float* efxoutr;
+    //Alienwah fEffect;
+    //bool     fWetOnly;
 
     ZynPluginDescriptorClassEND(FxAlienWahPlugin)
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FxAlienWahPlugin)
@@ -786,7 +987,7 @@ public:
     {
     }
 
-    ~FxChorusPlugin()
+    ~FxChorusPlugin() override
     {
         if (efxoutl != nullptr)
         {
@@ -1552,7 +1753,7 @@ static const PluginDescriptor fxAlienWahDesc = {
     /* audioOuts */ 2,
     /* midiIns   */ 0,
     /* midiOuts  */ 0,
-    /* paramIns  */ FxAlienWahPlugin::kParamCount,
+    /* paramIns  */ 11-1,
     /* paramOuts */ 0,
     /* name      */ "ZynAlienWah",
     /* label     */ "zynAlienWah",
