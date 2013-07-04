@@ -571,8 +571,8 @@ public:
 
     FxAlienWahPlugin(const HostDescriptor* const host)
         : PluginDescriptorClass(host),
-          efxoutl(new float[getBufferSize()]),
-          efxoutr(new float[getBufferSize()]),
+          efxoutl(new float[synth->buffersize]),
+          efxoutr(new float[synth->buffersize]),
           fEffect(false, efxoutl, efxoutr)
     {
     }
@@ -780,8 +780,8 @@ public:
 
     FxChorusPlugin(const HostDescriptor* const host)
         : PluginDescriptorClass(host),
-          efxoutl(new float[getBufferSize()]),
-          efxoutr(new float[getBufferSize()]),
+          efxoutl(new float[synth->buffersize]),
+          efxoutr(new float[synth->buffersize]),
           fEffect(false, efxoutl, efxoutr)
     {
     }
@@ -1014,8 +1014,8 @@ public:
 
     FxReverbPlugin(const HostDescriptor* const host)
         : PluginDescriptorClass(host),
-          efxoutl(new float[getBufferSize()]),
-          efxoutr(new float[getBufferSize()]),
+          efxoutl(new float[synth->buffersize]),
+          efxoutr(new float[synth->buffersize]),
           fEffect(false, efxoutl, efxoutr)
     {
     }
