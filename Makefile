@@ -234,6 +234,7 @@ uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/share/icons/hicolor/*/apps/carla-control.png
 	rm -f $(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/carla.svg
 	rm -f $(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/carla-control.svg
+	rm -f $(DESTDIR)$(PREFIX)/share/mime/packages/carla.xml
 	rm -f $(DESTDIR)$(PREFIX)/lib/dssi/carla-dssi.so
 	rm -f $(DESTDIR)$(PREFIX)/lib/vst/carla-vst.so
 	rm -rf $(DESTDIR)$(PREFIX)/lib/carla/
