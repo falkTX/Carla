@@ -55,7 +55,8 @@ typedef enum _PluginHints {
     PLUGIN_HAS_GUI             = 1 << 2,
     PLUGIN_USES_GUI_AS_FILE    = 1 << 3,
     PLUGIN_USES_SINGLE_THREAD  = 1 << 4,
-    PLUGIN_USES_STATE          = 1 << 5
+    PLUGIN_USES_STATE          = 1 << 5,
+    PLUGIN_USES_STATIC_BUFFERS = 1 << 6
 } PluginHints;
 
 typedef enum _ParameterHints {

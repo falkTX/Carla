@@ -484,14 +484,14 @@ public:
         fMemPool.resize(minPreallocated, maxPreallocated);
     }
 
-    void spliceAppend(RtList& list, const bool init = false)
+    void spliceAppend(RtList& list, const bool init = true)
     {
         CARLA_ASSERT(fMemPool == list.fMemPool);
 
         List<T>::spliceAppend(list, init);
     }
 
-    void spliceInsert(RtList& list, const bool init = false)
+    void spliceInsert(RtList& list, const bool init = true)
     {
         CARLA_ASSERT(fMemPool == list.fMemPool);
 
