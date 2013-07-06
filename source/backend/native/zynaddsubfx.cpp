@@ -1803,10 +1803,6 @@ protected:
 class ZynAddSubFxPlugin : public PluginDescriptorClass
 {
 public:
-    enum Parameters {
-        PARAMETER_COUNT = 0
-    };
-
     ZynAddSubFxPlugin(const HostDescriptor* const host)
         : PluginDescriptorClass(host),
           fMaster(new Master()),
@@ -1836,61 +1832,6 @@ public:
 
 protected:
     // -------------------------------------------------------------------
-    // Plugin parameter calls
-
-    uint32_t getParameterCount() override
-    {
-        return PARAMETER_COUNT;
-    }
-
-    const Parameter* getParameterInfo(const uint32_t index) override
-    {
-        CARLA_ASSERT(index < getParameterCount());
-
-        //if (index >= PARAMETER_COUNT)
-        return nullptr;
-
-        static Parameter param;
-
-        param.ranges.step      = PARAMETER_RANGES_DEFAULT_STEP;
-        param.ranges.stepSmall = PARAMETER_RANGES_DEFAULT_STEP_SMALL;
-        param.ranges.stepLarge = PARAMETER_RANGES_DEFAULT_STEP_LARGE;
-        param.scalePointCount  = 0;
-        param.scalePoints      = nullptr;
-
-        switch (index)
-        {
-#if 0
-        case PARAMETER_MASTER:
-            param.hints = PARAMETER_IS_ENABLED | PARAMETER_IS_AUTOMABLE;
-            param.name  = "Master Volume";
-            param.unit  = nullptr;
-            param.ranges.min = 0.0f;
-            param.ranges.max = 100.0f;
-            param.ranges.def = 100.0f;
-            break;
-#endif
-        }
-
-        return &param;
-    }
-
-    float getParameterValue(const uint32_t index) override
-    {
-        CARLA_ASSERT(index < getParameterCount());
-
-        switch (index)
-        {
-#if 0
-        case PARAMETER_MASTER:
-            return fMaster->Pvolume;
-#endif
-        default:
-            return 0.0f;
-        }
-    }
-
-    // -------------------------------------------------------------------
     // Plugin midi-program calls
 
     uint32_t getMidiProgramCount() override
@@ -1905,20 +1846,6 @@ protected:
 
     // -------------------------------------------------------------------
     // Plugin state calls
-
-    void setParameterValue(const uint32_t index, const float value) override
-    {
-        CARLA_ASSERT(index < getParameterCount());
-
-        switch (index)
-        {
-        }
-
-        return;
-
-        // unused, TODO
-        (void)value;
-    }
 
     void setMidiProgram(const uint8_t channel, const uint32_t bank, const uint32_t program) override
     {
@@ -2230,7 +2157,7 @@ static const PluginDescriptor zynaddsubfxDesc = {
     /* audioOuts */ 2,
     /* midiIns   */ 1,
     /* midiOuts  */ 0,
-    /* paramIns  */ ZynAddSubFxPlugin::PARAMETER_COUNT,
+    /* paramIns  */ 0,
     /* paramOuts */ 0,
     /* name      */ "ZynAddSubFX",
     /* label     */ "zynaddsubfx",
