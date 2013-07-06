@@ -475,6 +475,7 @@ protected:
                 {
                     fUiClosed = 0;
                     fUi = new MasterUI(fMaster, &fUiClosed);
+                    fUi->masterwindow->label(kHost->ui_name);
                     fUi->showUI();
                 }
             }
