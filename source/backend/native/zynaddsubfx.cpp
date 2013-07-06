@@ -35,7 +35,6 @@
 #include "zynaddsubfx/Effects/Distorsion.h"
 #include "zynaddsubfx/Effects/DynamicFilter.h"
 #include "zynaddsubfx/Effects/Echo.h"
-#include "zynaddsubfx/Effects/EQ.h"
 #include "zynaddsubfx/Effects/Phaser.h"
 #include "zynaddsubfx/Effects/Reverb.h"
 
@@ -646,7 +645,6 @@ protected:
     void setMidiProgram(const uint8_t, const uint32_t, const uint32_t program) final
     {
         fEffect->setpreset(program);
-        //fFirstInit = false;
 
         const float volume(float(fEffect->getpar(0))/127.0f);
         hostDispatcher(HOST_OPCODE_SET_VOLUME, 0, 0, nullptr, volume);
@@ -654,6 +652,9 @@ protected:
         const unsigned char pan(fEffect->getpar(1));
         const float panning(float(pan)/63.5f-1.0f);
         hostDispatcher(HOST_OPCODE_SET_PANNING, 0, 0, nullptr, (pan == 64) ? 0.0f : panning);
+
+        fEffect->changepar(0, 127);
+        fEffect->changepar(1, 64);
     }
 
     // -------------------------------------------------------------------
@@ -694,6 +695,8 @@ protected:
             delete[] efxoutr;
             efxoutl = new float[bufferSize];
             efxoutr = new float[bufferSize];
+            carla_zeroFloat(efxoutl, synth->buffersize);
+            carla_zeroFloat(efxoutr, synth->buffersize);
             *((float**)&fEffect->efxoutl) = efxoutl;
             *((float**)&fEffect->efxoutr) = efxoutr;
             // no break
@@ -1184,6 +1187,448 @@ protected:
 
 // -----------------------------------------------------------------------
 
+class FxDynamicFilterPlugin : public FxAbstractPlugin
+{
+public:
+    FxDynamicFilterPlugin(const HostDescriptor* const host)
+        : FxAbstractPlugin(host, 10, 5)
+    {
+        fEffect = new DynamicFilter(false, efxoutl, efxoutr);
+    }
+
+protected:
+    // -------------------------------------------------------------------
+    // Plugin parameter calls
+
+    const Parameter* getParameterInfo(const uint32_t index) override
+    {
+        if (index >= kParamCount)
+            return nullptr;
+
+        static Parameter param;
+        static ParameterScalePoint scalePoints[2];
+
+        int hints = PARAMETER_IS_ENABLED|PARAMETER_IS_INTEGER;
+
+        param.name = nullptr;
+        param.unit = nullptr;
+        param.ranges.def       = 1.0f;
+        param.ranges.min       = 0.0f;
+        param.ranges.max       = 127.0f;
+        param.ranges.step      = 1.0f;
+        param.ranges.stepSmall = 1.0f;
+        param.ranges.stepLarge = 20.0f;
+        param.scalePointCount  = 0;
+        param.scalePoints      = nullptr;
+
+        switch (index)
+        {
+        case 0:
+            hints |= PARAMETER_IS_AUTOMABLE;
+            param.name = "LFO Frequency";
+            param.ranges.def = 80.0f;
+            break;
+        case 1:
+            hints |= PARAMETER_IS_AUTOMABLE;
+            param.name = "LFO Randomness";
+            param.ranges.def = 0.0f;
+            break;
+        case 2:
+            hints |= PARAMETER_IS_AUTOMABLE|PARAMETER_IS_BOOLEAN|PARAMETER_USES_SCALEPOINTS;
+            param.name = "LFO Type";
+            param.ranges.def = 0.0f;
+            param.ranges.max = 1.0f;
+            param.scalePointCount = 2;
+            param.scalePoints     = scalePoints;
+            scalePoints[0].label  = "Sine";
+            scalePoints[1].label  = "Triangle";
+            scalePoints[0].value  = 0.0f;
+            scalePoints[1].value  = 1.0f;
+            break;
+        case 3:
+            hints |= PARAMETER_IS_AUTOMABLE;
+            param.name = "LFO Stereo";
+            param.ranges.def = 64.0f;
+            break;
+        case 4:
+            hints |= PARAMETER_IS_AUTOMABLE;
+            param.name = "Depth";
+            param.ranges.def = 0.0f;
+            break;
+        case 5:
+            hints |= PARAMETER_IS_AUTOMABLE;
+            param.name = "Amp sns";
+            param.ranges.def = 90.0f;
+            break;
+        case 6:
+            hints |= PARAMETER_IS_AUTOMABLE|PARAMETER_IS_BOOLEAN;
+            param.name = "Amp sns inv";
+            param.ranges.def = 0.0f;
+            param.ranges.max = 1.0f;
+            break;
+        case 7:
+            hints |= PARAMETER_IS_AUTOMABLE;
+            param.name = "Amp Smooth";
+            param.ranges.def = 60.0f;
+            break;
+        }
+
+        param.hints = static_cast<ParameterHints>(hints);
+
+        return &param;
+    }
+
+    // -------------------------------------------------------------------
+    // Plugin midi-program calls
+
+    const MidiProgram* getMidiProgramInfo(const uint32_t index) override
+    {
+        if (index >= kProgramCount)
+            return nullptr;
+
+        static MidiProgram midiProg;
+
+        midiProg.bank    = 0;
+        midiProg.program = index;
+
+        switch (index)
+        {
+        case 0:
+            midiProg.name = "WahWah";
+            break;
+        case 1:
+            midiProg.name = "AutoWah";
+            break;
+        case 2:
+            midiProg.name = "Sweep";
+            break;
+        case 3:
+            midiProg.name = "VocalMorph1";
+            break;
+        case 4:
+            midiProg.name = "VocalMorph2";
+            break;
+        default:
+            midiProg.name = nullptr;
+            break;
+        }
+
+        return &midiProg;
+    }
+
+    ZynPluginDescriptorClassEND(FxDynamicFilterPlugin)
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FxDynamicFilterPlugin)
+};
+
+// -----------------------------------------------------------------------
+
+class FxEchoPlugin : public FxAbstractPlugin
+{
+public:
+    FxEchoPlugin(const HostDescriptor* const host)
+        : FxAbstractPlugin(host, 7, 9)
+    {
+        fEffect = new Echo(false, efxoutl, efxoutr);
+    }
+
+protected:
+    // -------------------------------------------------------------------
+    // Plugin parameter calls
+
+    const Parameter* getParameterInfo(const uint32_t index) override
+    {
+        if (index >= kParamCount)
+            return nullptr;
+
+        static Parameter param;
+
+        int hints = PARAMETER_IS_ENABLED|PARAMETER_IS_INTEGER;
+
+        param.name = nullptr;
+        param.unit = nullptr;
+        param.ranges.def       = 1.0f;
+        param.ranges.min       = 0.0f;
+        param.ranges.max       = 127.0f;
+        param.ranges.step      = 1.0f;
+        param.ranges.stepSmall = 1.0f;
+        param.ranges.stepLarge = 20.0f;
+        param.scalePointCount  = 0;
+        param.scalePoints      = nullptr;
+
+        switch (index)
+        {
+        case 0:
+            hints |= PARAMETER_IS_AUTOMABLE;
+            param.name = "Delay";
+            param.ranges.def = 35.0f;
+            break;
+        case 1:
+            hints |= PARAMETER_IS_AUTOMABLE;
+            param.name = "L/R Delay";
+            param.ranges.def = 64.0f;
+            break;
+        case 2:
+            hints |= PARAMETER_IS_AUTOMABLE;
+            param.name = "L/R Cross";
+            param.ranges.def = 30.0f;
+            break;
+        case 3:
+            hints |= PARAMETER_IS_AUTOMABLE;
+            param.name = "Feedback";
+            param.ranges.def = 59.0f;
+            break;
+        case 4:
+            hints |= PARAMETER_IS_AUTOMABLE;
+            param.name = "High Damp";
+            param.ranges.def = 0.0f;
+            break;
+        }
+
+        param.hints = static_cast<ParameterHints>(hints);
+
+        return &param;
+    }
+
+    // -------------------------------------------------------------------
+    // Plugin midi-program calls
+
+    const MidiProgram* getMidiProgramInfo(const uint32_t index) override
+    {
+        if (index >= kProgramCount)
+            return nullptr;
+
+        static MidiProgram midiProg;
+
+        midiProg.bank    = 0;
+        midiProg.program = index;
+
+        switch (index)
+        {
+        case 0:
+            midiProg.name = "Echo 1";
+            break;
+        case 1:
+            midiProg.name = "Echo 2";
+            break;
+        case 2:
+            midiProg.name = "Echo 3";
+            break;
+        case 3:
+            midiProg.name = "Simple Echo";
+            break;
+        case 4:
+            midiProg.name = "Canyon";
+            break;
+        case 5:
+            midiProg.name = "Panning Echo 1";
+            break;
+        case 6:
+            midiProg.name = "Panning Echo 2";
+            break;
+        case 7:
+            midiProg.name = "Panning Echo 3";
+            break;
+        case 8:
+            midiProg.name = "Feedback Echo";
+            break;
+        default:
+            midiProg.name = nullptr;
+            break;
+        }
+
+        return &midiProg;
+    }
+
+    ZynPluginDescriptorClassEND(FxEchoPlugin)
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FxEchoPlugin)
+};
+
+// -----------------------------------------------------------------------
+
+class FxPhaserPlugin : public FxAbstractPlugin
+{
+public:
+    FxPhaserPlugin(const HostDescriptor* const host)
+        : FxAbstractPlugin(host, 15, 12)
+    {
+        fEffect = new Phaser(false, efxoutl, efxoutr);
+    }
+
+protected:
+    // -------------------------------------------------------------------
+    // Plugin parameter calls
+
+    const Parameter* getParameterInfo(const uint32_t index) override
+    {
+        if (index >= kParamCount)
+            return nullptr;
+
+        static Parameter param;
+        static ParameterScalePoint scalePoints[2];
+
+        int hints = PARAMETER_IS_ENABLED|PARAMETER_IS_INTEGER;
+
+        param.name = nullptr;
+        param.unit = nullptr;
+        param.ranges.def       = 1.0f;
+        param.ranges.min       = 0.0f;
+        param.ranges.max       = 127.0f;
+        param.ranges.step      = 1.0f;
+        param.ranges.stepSmall = 1.0f;
+        param.ranges.stepLarge = 20.0f;
+        param.scalePointCount  = 0;
+        param.scalePoints      = nullptr;
+
+        switch (index)
+        {
+        case 0:
+            hints |= PARAMETER_IS_AUTOMABLE;
+            param.name = "LFO Frequency";
+            param.ranges.def = 36.0f;
+            break;
+        case 1:
+            hints |= PARAMETER_IS_AUTOMABLE;
+            param.name = "LFO Randomness";
+            param.ranges.def = 0.0f;
+            break;
+        case 2:
+            hints |= PARAMETER_IS_AUTOMABLE|PARAMETER_IS_BOOLEAN|PARAMETER_USES_SCALEPOINTS;
+            param.name = "LFO Type";
+            param.ranges.def = 0.0f;
+            param.ranges.max = 1.0f;
+            param.scalePointCount = 2;
+            param.scalePoints     = scalePoints;
+            scalePoints[0].label  = "Sine";
+            scalePoints[1].label  = "Triangle";
+            scalePoints[0].value  = 0.0f;
+            scalePoints[1].value  = 1.0f;
+            break;
+        case 3:
+            hints |= PARAMETER_IS_AUTOMABLE;
+            param.name = "LFO Stereo";
+            param.ranges.def = 64.0f;
+            break;
+        case 4:
+            hints |= PARAMETER_IS_AUTOMABLE;
+            param.name = "Depth";
+            param.ranges.def = 110.0f;
+            break;
+        case 5:
+            hints |= PARAMETER_IS_AUTOMABLE;
+            param.name = "Feedback";
+            param.ranges.def = 64.0f;
+            break;
+        case 6:
+            param.name = "Stages";
+            param.ranges.def = 1.0f;
+            param.ranges.min = 1.0f;
+            param.ranges.max = 12.0f;
+            break;
+        case 7:
+            hints |= PARAMETER_IS_AUTOMABLE;
+            param.name = "L/R Cross|Offset";
+            param.ranges.def = 0.0f;
+            break;
+        case 8:
+            hints |= PARAMETER_IS_AUTOMABLE|PARAMETER_IS_BOOLEAN;
+            param.name = "Subtract Output";
+            param.ranges.def = 0.0f;
+            param.ranges.max = 1.0f;
+            break;
+        case 9:
+            hints |= PARAMETER_IS_AUTOMABLE;
+            param.name = "Phase|Width";
+            param.ranges.def = 20.0f;
+            break;
+        case 10:
+            hints |= PARAMETER_IS_AUTOMABLE|PARAMETER_IS_BOOLEAN;
+            param.name = "Hyper";
+            param.ranges.def = 0.0f;
+            param.ranges.max = 1.0f;
+            break;
+        case 11:
+            hints |= PARAMETER_IS_AUTOMABLE;
+            param.name = "Distortion";
+            param.ranges.def = 0.0f;
+            break;
+        case 12:
+            hints |= PARAMETER_IS_AUTOMABLE|PARAMETER_IS_BOOLEAN;
+            param.name = "Analog";
+            param.ranges.def = 0.0f;
+            param.ranges.max = 1.0f;
+            break;
+        }
+
+        param.hints = static_cast<ParameterHints>(hints);
+
+        return &param;
+    }
+
+    // -------------------------------------------------------------------
+    // Plugin midi-program calls
+
+    const MidiProgram* getMidiProgramInfo(const uint32_t index) override
+    {
+        if (index >= kProgramCount)
+            return nullptr;
+
+        static MidiProgram midiProg;
+
+        midiProg.bank    = 0;
+        midiProg.program = index;
+
+        switch (index)
+        {
+        case 0:
+            midiProg.name = "Phaser 1";
+            break;
+        case 1:
+            midiProg.name = "Phaser 2";
+            break;
+        case 2:
+            midiProg.name = "Phaser 3";
+            break;
+        case 3:
+            midiProg.name = "Phaser 4";
+            break;
+        case 4:
+            midiProg.name = "Phaser 5";
+            break;
+        case 5:
+            midiProg.name = "Phaser 6";
+            break;
+        case 6:
+            midiProg.name = "APhaser 1";
+            break;
+        case 7:
+            midiProg.name = "APhaser 2";
+            break;
+        case 8:
+            midiProg.name = "APhaser 3";
+            break;
+        case 9:
+            midiProg.name = "APhaser 4";
+            break;
+        case 10:
+            midiProg.name = "APhaser 5";
+            break;
+        case 11:
+            midiProg.name = "APhaser 6";
+            break;
+        default:
+            midiProg.name = nullptr;
+            break;
+        }
+
+        return &midiProg;
+    }
+
+    ZynPluginDescriptorClassEND(FxPhaserPlugin)
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FxPhaserPlugin)
+};
+
+// -----------------------------------------------------------------------
+
 class FxReverbPlugin : public FxAbstractPlugin
 {
 public:
@@ -1203,6 +1648,7 @@ protected:
             return nullptr;
 
         static Parameter param;
+        static ParameterScalePoint scalePoints[3];
 
         int hints = PARAMETER_IS_ENABLED | PARAMETER_IS_INTEGER;
 
@@ -1235,11 +1681,11 @@ protected:
             break;
         case 3:
             hints = 0x0;
-            param.name = "unused1";
+            param.name = "bw";
             break;
         case 4:
             hints = 0x0;
-            param.name = "unused2";
+            param.name = "E/R";
             break;
         case 5:
             param.name = "Low-Pass Filter";
@@ -1258,6 +1704,14 @@ protected:
             param.name = "Type";
             param.ranges.def = 1.0f;
             param.ranges.max = 2.0f;
+            param.scalePointCount = 3;
+            param.scalePoints     = scalePoints;
+            scalePoints[0].label  = "Random";
+            scalePoints[1].label  = "Freeverb";
+            scalePoints[2].label  = "Bandwidth";
+            scalePoints[0].value  = 0.0f;
+            scalePoints[1].value  = 1.0f;
+            scalePoints[2].value  = 2.0f;
             break;
         case 9:
             param.name = "Room size";
@@ -1649,7 +2103,7 @@ static const PluginDescriptor fxAlienWahDesc = {
     /* audioOuts */ 2,
     /* midiIns   */ 0,
     /* midiOuts  */ 0,
-    /* paramIns  */ 11-1,
+    /* paramIns  */ 11-2,
     /* paramOuts */ 0,
     /* name      */ "ZynAlienWah",
     /* label     */ "zynAlienWah",
@@ -1666,7 +2120,7 @@ static const PluginDescriptor fxChorusDesc = {
     /* audioOuts */ 2,
     /* midiIns   */ 0,
     /* midiOuts  */ 0,
-    /* paramIns  */ 12-1,
+    /* paramIns  */ 12-2,
     /* paramOuts */ 0,
     /* name      */ "ZynChorus",
     /* label     */ "zynChorus",
@@ -1683,7 +2137,7 @@ static const PluginDescriptor fxDistortionDesc = {
     /* audioOuts */ 2,
     /* midiIns   */ 0,
     /* midiOuts  */ 0,
-    /* paramIns  */ 11-1,
+    /* paramIns  */ 11-2,
     /* paramOuts */ 0,
     /* name      */ "ZynDistortion",
     /* label     */ "zynDistortion",
@@ -1692,7 +2146,6 @@ static const PluginDescriptor fxDistortionDesc = {
     PluginDescriptorFILL(FxDistortionPlugin)
 };
 
-#if 0
 static const PluginDescriptor fxDynamicFilterDesc = {
     /* category  */ PLUGIN_CATEGORY_FILTER,
     /* hints     */ static_cast<PluginHints>(PLUGIN_USES_PANNING|PLUGIN_USES_STATIC_BUFFERS),
@@ -1701,7 +2154,7 @@ static const PluginDescriptor fxDynamicFilterDesc = {
     /* audioOuts */ 2,
     /* midiIns   */ 0,
     /* midiOuts  */ 0,
-    /* paramIns  */ FxDynamicFilterPlugin::kParamCount,
+    /* paramIns  */ 10-2,
     /* paramOuts */ 0,
     /* name      */ "ZynDynamicFilter",
     /* label     */ "zynDynamicFilter",
@@ -1712,13 +2165,13 @@ static const PluginDescriptor fxDynamicFilterDesc = {
 
 static const PluginDescriptor fxEchoDesc = {
     /* category  */ PLUGIN_CATEGORY_DELAY,
-    /* hints     */ static_cast<PluginHints>(PLUGIN_USES_PANNING|PLUGIN_USES_STATIC_BUFFERS),
+    /* hints     */ static_cast<PluginHints>(PLUGIN_IS_RTSAFE|PLUGIN_USES_PANNING|PLUGIN_USES_STATIC_BUFFERS),
     /* supports  */ static_cast<PluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 2,
     /* midiIns   */ 0,
     /* midiOuts  */ 0,
-    /* paramIns  */ FxEchoPlugin::kParamCount,
+    /* paramIns  */ 7-2,
     /* paramOuts */ 0,
     /* name      */ "ZynEcho",
     /* label     */ "zynEcho",
@@ -1735,7 +2188,7 @@ static const PluginDescriptor fxPhaserDesc = {
     /* audioOuts */ 2,
     /* midiIns   */ 0,
     /* midiOuts  */ 0,
-    /* paramIns  */ FxPhaserPlugin::kParamCount,
+    /* paramIns  */ 15-2,
     /* paramOuts */ 0,
     /* name      */ "ZynPhaser",
     /* label     */ "zynPhaser",
@@ -1743,7 +2196,6 @@ static const PluginDescriptor fxPhaserDesc = {
     /* copyright */ "GNU GPL v2+",
     PluginDescriptorFILL(FxPhaserPlugin)
 };
-#endif
 
 static const PluginDescriptor fxReverbDesc = {
     /* category  */ PLUGIN_CATEGORY_DELAY,
@@ -1753,7 +2205,7 @@ static const PluginDescriptor fxReverbDesc = {
     /* audioOuts */ 2,
     /* midiIns   */ 0,
     /* midiOuts  */ 0,
-    /* paramIns  */ 13-1,
+    /* paramIns  */ 13-2,
     /* paramOuts */ 0,
     /* name      */ "ZynReverb",
     /* label     */ "zynReverb",
@@ -1790,11 +2242,9 @@ void carla_register_native_plugin_zynaddsubfx()
     carla_register_native_plugin(&fxAlienWahDesc);
     carla_register_native_plugin(&fxChorusDesc);
     carla_register_native_plugin(&fxDistortionDesc);
-#if 0
     carla_register_native_plugin(&fxDynamicFilterDesc);
     carla_register_native_plugin(&fxEchoDesc);
     carla_register_native_plugin(&fxPhaserDesc);
-#endif
     carla_register_native_plugin(&fxReverbDesc);
     carla_register_native_plugin(&zynaddsubfxDesc);
 }
