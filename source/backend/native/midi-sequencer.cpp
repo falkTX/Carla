@@ -235,6 +235,7 @@ private:
 static const PluginDescriptor midiSequencerDesc = {
     /* category  */ PLUGIN_CATEGORY_UTILITY,
     /* hints     */ PLUGIN_IS_RTSAFE/*|PLUGIN_HAS_GUI*/,
+    /* supports  */ static_cast<PluginSupports>(0x0),
     /* audioIns  */ 0,
     /* audioOuts */ 0,
     /* midiIns   */ 1,

@@ -145,6 +145,7 @@ static void midiTranspose_process(PluginHandle handle, float** inBuffer, float**
 static const PluginDescriptor midiTransposeDesc = {
     .category  = PLUGIN_CATEGORY_UTILITY,
     .hints     = PLUGIN_IS_RTSAFE,
+    .supports  = PLUGIN_SUPPORTS_EVERYTHING,
     .audioIns  = 0,
     .audioOuts = 0,
     .midiIns   = 1,

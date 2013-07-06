@@ -48,6 +48,7 @@ static void bypass_process(PluginHandle handle, float** inBuffer, float** outBuf
 static const PluginDescriptor bypassDesc = {
     .category  = PLUGIN_CATEGORY_NONE,
     .hints     = PLUGIN_IS_RTSAFE,
+    .supports  = 0x0,
     .audioIns  = 1,
     .audioOuts = 1,
     .midiIns   = 0,

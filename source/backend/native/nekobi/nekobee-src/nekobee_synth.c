@@ -150,6 +150,7 @@ nekobee_synth_control_change(nekobee_synth_t *synth, unsigned int param, signed 
       case MIDI_CTL_LSB_MAIN_VOLUME:
         nekobee_synth_update_volume(synth);
         break;
+
       case MIDI_CTL_ALL_SOUNDS_OFF:
         nekobee_synth_all_voices_off(synth);
         break;

@@ -17,6 +17,8 @@
 
 #include "CarlaPluginInternal.hpp"
 
+#define WANT_NATIVE
+
 #ifdef WANT_NATIVE
 
 #include "CarlaNative.h"

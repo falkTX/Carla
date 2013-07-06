@@ -32,6 +32,7 @@ START_NAMESPACE_DISTRHO
 static const PluginDescriptor stereoenhancerDesc = {
     /* category  */ PLUGIN_CATEGORY_EQ,
     /* hints     */ static_cast<PluginHints>(PLUGIN_IS_RTSAFE|PLUGIN_HAS_GUI),
+    /* supports  */ static_cast<PluginSupports>(0x0),
     /* audioIns  */ DISTRHO_PLUGIN_NUM_INPUTS,
     /* audioOuts */ DISTRHO_PLUGIN_NUM_OUTPUTS,
     /* midiIns   */ 0,

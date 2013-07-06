@@ -86,6 +86,7 @@ static void midiSplit_process(PluginHandle handle, float** inBuffer, float** out
 static const PluginDescriptor midiSplitDesc = {
     .category  = PLUGIN_CATEGORY_UTILITY,
     .hints     = PLUGIN_IS_RTSAFE,
+    .supports  = PLUGIN_SUPPORTS_EVERYTHING,
     .audioIns  = 0,
     .audioOuts = 0,
     .midiIns   = 1,

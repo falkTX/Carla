@@ -31,6 +31,7 @@ static const PluginDescriptor nekofilterDesc = {
 #else
     .hints     = PLUGIN_IS_RTSAFE,
 #endif
+    .supports  = 0x0,
     .audioIns  = 1,
     .audioOuts = 1,
     .midiIns   = 0,

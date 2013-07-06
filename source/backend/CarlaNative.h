@@ -54,10 +54,21 @@ typedef enum _PluginHints {
     PLUGIN_IS_SYNTH            = 1 << 1,
     PLUGIN_HAS_GUI             = 1 << 2,
     PLUGIN_USES_GUI_AS_FILE    = 1 << 3,
-    PLUGIN_USES_SINGLE_THREAD  = 1 << 4,
-    PLUGIN_USES_STATE          = 1 << 5,
-    PLUGIN_USES_STATIC_BUFFERS = 1 << 6
+    PLUGIN_USES_PANNING        = 1 << 4, // uses stereo balance if unset (default)
+    PLUGIN_USES_SINGLE_THREAD  = 1 << 5,
+    PLUGIN_USES_STATE          = 1 << 6,
+    PLUGIN_USES_STATIC_BUFFERS = 1 << 7
 } PluginHints;
+
+typedef enum _PluginSupports {
+    PLUGIN_SUPPORTS_PROGRAM_CHANGES  = 1 << 0, // used in MIDI filters only
+    PLUGIN_SUPPORTS_CONTROL_CHANGES  = 1 << 1,
+    PLUGIN_SUPPORTS_CHANNEL_PRESSURE = 1 << 2,
+    PLUGIN_SUPPORTS_NOTE_AFTERTOUCH  = 1 << 3,
+    PLUGIN_SUPPORTS_PITCHBEND        = 1 << 4,
+    PLUGIN_SUPPORTS_ALL_SOUND_OFF    = 1 << 5,
+    PLUGIN_SUPPORTS_EVERYTHING       = PLUGIN_SUPPORTS_ALL_SOUND_OFF*2-1
+} PluginSupports;
 
 typedef enum _ParameterHints {
     PARAMETER_IS_OUTPUT        = 1 << 0,
@@ -81,8 +92,13 @@ typedef enum _PluginDispatcherOpcode {
 
 typedef enum _HostDispatcherOpcode {
     HOST_OPCODE_NULL                  = 0, // nothing
-    HOST_OPCODE_SET_PROCESS_PRECISION = 1, // uses value
-    HOST_OPCODE_UI_UNAVAILABLE        = 2  // nothing
+    HOST_OPCODE_SET_VOLUME            = 1, // uses value
+    HOST_OPCODE_SET_DRYWET            = 2, // uses value
+    HOST_OPCODE_SET_BALANCE_LEFT      = 3, // uses value
+    HOST_OPCODE_SET_BALANCE_RIGHT     = 4, // uses value
+    HOST_OPCODE_SET_PANNING           = 5, // uses value
+    HOST_OPCODE_SET_PROCESS_PRECISION = 6, // uses value
+    HOST_OPCODE_UI_UNAVAILABLE        = 7  // nothing
 } HostDispatcherOpcode;
 
 typedef struct _ParameterScalePoint {
@@ -175,6 +191,7 @@ typedef struct _HostDescriptor {
 typedef struct _PluginDescriptor {
     const PluginCategory category;
     const PluginHints hints;
+    const PluginSupports supports;
     const uint32_t audioIns;
     const uint32_t audioOuts;
     const uint32_t midiIns;
