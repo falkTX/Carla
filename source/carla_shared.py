@@ -1108,18 +1108,22 @@ class PluginEdit(QDialog):
         self.ui.dial_drywet.setCustomPaint(self.ui.dial_drywet.CUSTOM_PAINT_CARLA_WET)
         self.ui.dial_drywet.setPixmap(3)
         self.ui.dial_drywet.setLabel("Dry/Wet")
+        self.ui.dial_drywet.setValue(Carla.host.get_current_parameter_value(self.fPluginId, PARAMETER_DRYWET))
 
         self.ui.dial_vol.setCustomPaint(self.ui.dial_vol.CUSTOM_PAINT_CARLA_VOL)
         self.ui.dial_vol.setPixmap(3)
         self.ui.dial_vol.setLabel("Volume")
+        self.ui.dial_vol.setValue(Carla.host.get_current_parameter_value(self.fPluginId, PARAMETER_VOLUME))
 
         self.ui.dial_b_left.setCustomPaint(self.ui.dial_b_left.CUSTOM_PAINT_CARLA_L)
         self.ui.dial_b_left.setPixmap(4)
         self.ui.dial_b_left.setLabel("L")
+        self.ui.dial_b_left.setValue(Carla.host.get_current_parameter_value(self.fPluginId, PARAMETER_BALANCE_LEFT))
 
         self.ui.dial_b_right.setCustomPaint(self.ui.dial_b_right.CUSTOM_PAINT_CARLA_R)
         self.ui.dial_b_right.setPixmap(4)
         self.ui.dial_b_right.setLabel("R")
+        self.ui.dial_b_right.setValue(Carla.host.get_current_parameter_value(self.fPluginId, PARAMETER_BALANCE_RIGHT))
 
         self.ui.keyboard.setMode(self.ui.keyboard.HORIZONTAL)
         self.ui.keyboard.setOctaves(10)
