@@ -32,10 +32,14 @@
 
 #include "zynaddsubfx/Effects/Alienwah.h"
 #include "zynaddsubfx/Effects/Chorus.h"
+#include "zynaddsubfx/Effects/Distorsion.h"
+#include "zynaddsubfx/Effects/DynamicFilter.h"
+#include "zynaddsubfx/Effects/Echo.h"
+#include "zynaddsubfx/Effects/EQ.h"
+#include "zynaddsubfx/Effects/Phaser.h"
 #include "zynaddsubfx/Effects/Reverb.h"
 
 #ifdef WANT_ZYNADDSUBFX_UI
-// FIXME
 # ifdef override
 #  define override_hack
 #  undef override
@@ -45,7 +49,6 @@
 # include "zynaddsubfx/UI/MasterUI.h"
 # include <FL/Fl_Shared_Image.H>
 # include <FL/Fl_Tiled_Image.H>
-# include <FL/Fl_Dial.H>
 # include <FL/Fl_Theme.H>
 
 # ifdef override_hack
@@ -55,7 +58,6 @@
 #endif
 
 #include <ctime>
-
 #include <set>
 #include <string>
 
@@ -581,7 +583,7 @@ protected:
           efxoutl(new float[synth->buffersize]),
           efxoutr(new float[synth->buffersize]),
           fWetOnly(false),
-          kParamCount(paramCount),
+          kParamCount(paramCount), // real zyn paramCount
           kProgramCount(programCount)
     {
     }
@@ -612,23 +614,23 @@ protected:
     // -------------------------------------------------------------------
     // Plugin parameter calls
 
-    uint32_t getParameterCount() override
+    uint32_t getParameterCount() final
     {
-        return kParamCount-1;
+        return kParamCount-1; // zyn paramCount - 2 + 1
     }
 
-    float getParameterValue(const uint32_t index) override
+    float getParameterValue(const uint32_t index) final
     {
         if (index == 0)
             return fWetOnly ? 1.0f : 0.0f;
 
-        return fEffect->getpar(index+1);
+        return fEffect->getpar(index+1); // + 2 - 1
     }
 
     // -------------------------------------------------------------------
     // Plugin midi-program calls
 
-    uint32_t getMidiProgramCount() override
+    uint32_t getMidiProgramCount() final
     {
         return kProgramCount;
     }
@@ -636,15 +638,15 @@ protected:
     // -------------------------------------------------------------------
     // Plugin state calls
 
-    void setParameterValue(const uint32_t index, const float value) override
+    void setParameterValue(const uint32_t index, const float value) final
     {
         if (index == 0)
             fWetOnly = (value >= 0.5f);
         else
-            fEffect->changepar(index+1, value);
+            fEffect->changepar(index+1, value); // + 2 - 1
     }
 
-    void setMidiProgram(const uint8_t, const uint32_t, const uint32_t program) override
+    void setMidiProgram(const uint8_t, const uint32_t, const uint32_t program) final
     {
         fEffect->setpreset(program);
     }
@@ -652,12 +654,12 @@ protected:
     // -------------------------------------------------------------------
     // Plugin process calls
 
-    void activate() override
+    void activate() final
     {
         fEffect->cleanup();
     }
 
-    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t, const MidiEvent* const) override
+    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t, const MidiEvent* const) final
     {
         CARLA_ASSERT(synth->buffersize == static_cast<int>(frames));
 
@@ -681,7 +683,7 @@ protected:
     // -------------------------------------------------------------------
     // Plugin dispatcher
 
-    intptr_t pluginDispatcher(const PluginDispatcherOpcode opcode, const int32_t, const intptr_t, void* const) override
+    intptr_t pluginDispatcher(const PluginDispatcherOpcode opcode, const int32_t, const intptr_t, void* const) final
     {
         switch (opcode)
         {
@@ -694,13 +696,12 @@ protected:
             efxoutr = new float[bufferSize];
             *((float**)&fEffect->efxoutl) = efxoutl;
             *((float**)&fEffect->efxoutr) = efxoutr;
+            // no break
         }
         case PLUGIN_OPCODE_SAMPLE_RATE_CHANGED:
             sInstanceCount.maybeReinit(hostHandle());
             break;
-        case PLUGIN_OPCODE_NULL:
-        case PLUGIN_OPCODE_OFFLINE_CHANGED:
-        case PLUGIN_OPCODE_UI_NAME_CHANGED:
+        default:
             break;
         }
 
@@ -717,45 +718,18 @@ protected:
 
 // -----------------------------------------------------------------------
 
-class FxAlienWahPlugin : public FxAbstractPlugin /*PluginDescriptorClass*/
+class FxAlienWahPlugin : public FxAbstractPlugin
 {
 public:
-    //static const uint32_t kParamCount   = 11-1;
-    //static const uint32_t kProgramCount = 4;
-
     FxAlienWahPlugin(const HostDescriptor* const host)
         : FxAbstractPlugin(host, 11, 4)
-          //PluginDescriptorClass(host),
-          //efxoutl(new float[synth->buffersize]),
-          //efxoutr(new float[synth->buffersize]),
-          //fWetOnly(false)
     {
         fEffect = new Alienwah(false, efxoutl, efxoutr);
     }
 
-//     ~FxAlienWahPlugin() override
-//     {
-//         if (efxoutl != nullptr)
-//         {
-//             delete[] efxoutl;
-//             efxoutl = nullptr;
-//         }
-//
-//         if (efxoutr != nullptr)
-//         {
-//             delete[] efxoutr;
-//             efxoutr = nullptr;
-//         }
-//     }
-
 protected:
     // -------------------------------------------------------------------
     // Plugin parameter calls
-
-//     uint32_t getParameterCount() override
-//     {
-//         return kParamCount;
-//     }
 
     const Parameter* getParameterInfo(const uint32_t index) override
     {
@@ -763,6 +737,7 @@ protected:
             return nullptr;
 
         static Parameter param;
+        static ParameterScalePoint scalePoints[2];
 
         int hints = PARAMETER_IS_ENABLED | PARAMETER_IS_INTEGER;
 
@@ -796,9 +771,16 @@ protected:
             param.ranges.def = 0.0f;
             break;
         case 3:
-            hints |= PARAMETER_IS_AUTOMABLE;
+            hints |= PARAMETER_IS_AUTOMABLE|PARAMETER_USES_SCALEPOINTS;
             param.name = "LFO Type";
             param.ranges.def = 0.0f;
+            param.ranges.max = 1.0f;
+            param.scalePointCount = 2;
+            param.scalePoints     = scalePoints;
+            scalePoints[0].label  = "Sine";
+            scalePoints[1].label  = "Triangle";
+            scalePoints[0].value  = 0.0f;
+            scalePoints[1].value  = 1.0f;
             break;
         case 4:
             hints |= PARAMETER_IS_AUTOMABLE;
@@ -818,6 +800,7 @@ protected:
         case 7:
             param.name = "Delay";
             param.ranges.def = 25.0f;
+            param.ranges.max = 100.0f;
             break;
         case 8:
             hints |= PARAMETER_IS_AUTOMABLE;
@@ -836,18 +819,8 @@ protected:
         return &param;
     }
 
-//     float getParameterValue(const uint32_t index) override
-//     {
-//         return fEffect.getpar(index);
-//     }
-
     // -------------------------------------------------------------------
     // Plugin midi-program calls
-
-//     uint32_t getMidiProgramCount() override
-//     {
-//         return kProgramCount;
-//     }
 
     const MidiProgram* getMidiProgramInfo(const uint32_t index) override
     {
@@ -879,137 +852,24 @@ protected:
         return &midiProg;
     }
 
-    // -------------------------------------------------------------------
-    // Plugin state calls
-
-//     void setParameterValue(const uint32_t index, const float value) override
-//     {
-//         if (index == 0)
-//         {
-//             fWetOnly = (value < 0.5f);
-//             return;
-//         }
-//
-//         fEffect.changepar(index+1, value);
-//     }
-//
-//     void setMidiProgram(const uint8_t, const uint32_t, const uint32_t program) override
-//     {
-//         fEffect.setpreset(program);
-//     }
-
-    // -------------------------------------------------------------------
-    // Plugin process calls
-
-//     void activate() override
-//     {
-//         fEffect.cleanup();
-//     }
-//
-//     void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t, const MidiEvent* const) override
-//     {
-//         CARLA_ASSERT(synth->buffersize == static_cast<int>(frames));
-//
-//         fEffect.out(Stereo<float*>(inBuffer[0], inBuffer[1]));
-//
-//         if (fWetOnly)
-//         {
-//             carla_copyFloat(outBuffer[0], efxoutl, frames);
-//             carla_copyFloat(outBuffer[1], efxoutr, frames);
-//         }
-//         else
-//         {
-//             for (uint32_t i=0; i<frames; ++i)
-//             {
-//                 outBuffer[0][i] = inBuffer[0][i]/2.0f + efxoutl[i]/2.0f;
-//                 outBuffer[1][i] = inBuffer[1][i]/2.0f + efxoutr[i]/2.0f;
-//             }
-//         }
-//     }
-
-    // -------------------------------------------------------------------
-    // Plugin dispatcher
-
-//     intptr_t pluginDispatcher(const PluginDispatcherOpcode opcode, const int32_t index, const intptr_t value, void* const ptr) override
-//     {
-//         switch (opcode)
-//         {
-//         case PLUGIN_OPCODE_BUFFER_SIZE_CHANGED:
-//         {
-//             const uint32_t bufferSize(getBufferSize());
-//             delete[] efxoutl;
-//             delete[] efxoutr;
-//             efxoutl = new float[bufferSize];
-//             efxoutr = new float[bufferSize];
-//             *((float**)&fEffect.efxoutl) = efxoutl;
-//             *((float**)&fEffect.efxoutr) = efxoutr;
-//         }
-//         case PLUGIN_OPCODE_SAMPLE_RATE_CHANGED:
-//             sInstanceCount.maybeReinit(hostHandle());
-//             break;
-//         case PLUGIN_OPCODE_NULL:
-//         case PLUGIN_OPCODE_OFFLINE_CHANGED:
-//         case PLUGIN_OPCODE_UI_NAME_CHANGED:
-//             break;
-//         }
-//
-//         return 0;
-//
-//         // unused
-//         (void)index;
-//         (void)value;
-//         (void)ptr;
-//     }
-
-private:
-    //float* efxoutl;
-    //float* efxoutr;
-    //Alienwah fEffect;
-    //bool     fWetOnly;
-
     ZynPluginDescriptorClassEND(FxAlienWahPlugin)
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FxAlienWahPlugin)
 };
 
 // -----------------------------------------------------------------------
 
-class FxChorusPlugin : public PluginDescriptorClass
+class FxChorusPlugin : public FxAbstractPlugin
 {
 public:
-    static const uint32_t kParamCount   = 12;
-    static const uint32_t kProgramCount = 10;
-
     FxChorusPlugin(const HostDescriptor* const host)
-        : PluginDescriptorClass(host),
-          efxoutl(new float[synth->buffersize]),
-          efxoutr(new float[synth->buffersize]),
-          fEffect(false, efxoutl, efxoutr)
+        : FxAbstractPlugin(host, 12, 10)
     {
-    }
-
-    ~FxChorusPlugin() override
-    {
-        if (efxoutl != nullptr)
-        {
-            delete[] efxoutl;
-            efxoutl = nullptr;
-        }
-
-        if (efxoutr != nullptr)
-        {
-            delete[] efxoutr;
-            efxoutr = nullptr;
-        }
+        fEffect = new Chorus(false, efxoutl, efxoutr);
     }
 
 protected:
     // -------------------------------------------------------------------
     // Plugin parameter calls
-
-    uint32_t getParameterCount() override
-    {
-        return kParamCount;
-    }
 
     const Parameter* getParameterInfo(const uint32_t index) override
     {
@@ -1034,61 +894,57 @@ protected:
         switch (index)
         {
         case 0:
-            hints |= PARAMETER_IS_AUTOMABLE;
-            param.name = "Volume";
-            param.ranges.def = 64.0f;
+            hints |= PARAMETER_IS_AUTOMABLE|PARAMETER_IS_BOOLEAN;
+            param.name = "Wet Only";
+            param.ranges.def = 0.0f;
+            param.ranges.max = 1.0f;
             break;
         case 1:
-            hints |= PARAMETER_IS_AUTOMABLE;
-            param.name = "Panning";
-            param.ranges.def = 64.0f;
-            break;
-        case 2:
             hints |= PARAMETER_IS_AUTOMABLE;
             param.name = "LFO Frequency";
             param.ranges.def = 50.0f;
             break;
-        case 3:
+        case 2:
             hints |= PARAMETER_IS_AUTOMABLE;
             param.name = "LFO Randomness";
             param.ranges.def = 0.0f;
             break;
-        case 4:
+        case 3:
             hints |= PARAMETER_IS_AUTOMABLE;
             param.name = "LFO Type";
             param.ranges.def = 0.0f;
             break;
-        case 5:
+        case 4:
             hints |= PARAMETER_IS_AUTOMABLE;
             param.name = "LFO Stereo";
             param.ranges.def = 90.0f;
             break;
-        case 6:
+        case 5:
             hints |= PARAMETER_IS_AUTOMABLE;
             param.name = "Depth";
             param.ranges.def = 40.0f;
             break;
-        case 7:
+        case 6:
             hints |= PARAMETER_IS_AUTOMABLE;
             param.name = "Delay";
             param.ranges.def = 85.0f;
             break;
-        case 8:
+        case 7:
             hints |= PARAMETER_IS_AUTOMABLE;
             param.name = "Feedback";
             param.ranges.def = 64.0f;
             break;
-        case 9:
+        case 8:
             hints |= PARAMETER_IS_AUTOMABLE;
             param.name = "Cross";
             param.ranges.def = 119.0f;
             break;
-        case 10:
+        case 9:
             hints |= PARAMETER_IS_AUTOMABLE;
             param.name = "Flange Mode";
             param.ranges.def = 0.0f;
             break;
-        case 11:
+        case 10:
             hints |= PARAMETER_IS_AUTOMABLE;
             param.name = "Subtract Output";
             param.ranges.def = 0.0f;
@@ -1101,18 +957,8 @@ protected:
         return &param;
     }
 
-    float getParameterValue(const uint32_t index) override
-    {
-        return fEffect.getpar(index);
-    }
-
     // -------------------------------------------------------------------
     // Plugin midi-program calls
-
-    uint32_t getMidiProgramCount() override
-    {
-        return kProgramCount;
-    }
 
     const MidiProgram* getMidiProgramInfo(const uint32_t index) override
     {
@@ -1162,88 +1008,24 @@ protected:
         return &midiProg;
     }
 
-    // -------------------------------------------------------------------
-    // Plugin state calls
-
-    void setParameterValue(const uint32_t index, const float value) override
-    {
-        fEffect.changepar(index, value);
-    }
-
-    void setMidiProgram(const uint8_t, const uint32_t, const uint32_t program) override
-    {
-        fEffect.setpreset(program);
-    }
-
-    // -------------------------------------------------------------------
-    // Plugin process calls
-
-    void activate() override
-    {
-        fEffect.cleanup();
-    }
-
-    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t, const MidiEvent* const) override
-    {
-        CARLA_ASSERT(synth->buffersize == static_cast<int>(frames));
-
-        fEffect.out(Stereo<float*>(inBuffer[0], inBuffer[1]));
-
-        for (uint32_t i=0; i<frames; ++i)
-        {
-            outBuffer[0][i] = inBuffer[0][i]/2.0f + efxoutl[i]/2.0f;
-            outBuffer[1][i] = inBuffer[1][i]/2.0f + efxoutr[i]/2.0f;
-        }
-    }
-
-private:
-    float* efxoutl;
-    float* efxoutr;
-    Chorus fEffect;
-
     ZynPluginDescriptorClassEND(FxChorusPlugin)
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FxChorusPlugin)
 };
 
 // -----------------------------------------------------------------------
 
-class FxReverbPlugin : public PluginDescriptorClass
+class FxReverbPlugin : public FxAbstractPlugin
 {
 public:
-    static const uint32_t kParamCount   = 13;
-    static const uint32_t kProgramCount = 13;
-
     FxReverbPlugin(const HostDescriptor* const host)
-        : PluginDescriptorClass(host),
-          efxoutl(new float[synth->buffersize]),
-          efxoutr(new float[synth->buffersize]),
-          fEffect(false, efxoutl, efxoutr)
+        : FxAbstractPlugin(host, 13, 13)
     {
-    }
-
-    ~FxReverbPlugin()
-    {
-        if (efxoutl != nullptr)
-        {
-            delete[] efxoutl;
-            efxoutl = nullptr;
-        }
-
-        if (efxoutr != nullptr)
-        {
-            delete[] efxoutr;
-            efxoutr = nullptr;
-        }
+        fEffect = new Reverb(false, efxoutl, efxoutr);
     }
 
 protected:
     // -------------------------------------------------------------------
     // Plugin parameter calls
-
-    uint32_t getParameterCount() override
-    {
-        return kParamCount;
-    }
 
     const Parameter* getParameterInfo(const uint32_t index) override
     {
@@ -1268,60 +1050,56 @@ protected:
         switch (index)
         {
         case 0:
-            hints |= PARAMETER_IS_AUTOMABLE;
-            param.name = "Volume";
-            param.ranges.def = 80.0f;
+            hints |= PARAMETER_IS_AUTOMABLE|PARAMETER_IS_BOOLEAN;
+            param.name = "Wet Only";
+            param.ranges.def = 0.0f;
+            param.ranges.max = 1.0f;
             break;
         case 1:
-            hints |= PARAMETER_IS_AUTOMABLE;
-            param.name = "Panning";
-            param.ranges.def = 64.0f;
-            break;
-        case 2:
             hints |= PARAMETER_IS_AUTOMABLE;
             param.name = "Time";
             param.ranges.def = 63.0f;
             break;
-        case 3:
+        case 2:
             param.name = "Delay";
             param.ranges.def = 24.0f;
             break;
-        case 4:
+        case 3:
             hints |= PARAMETER_IS_AUTOMABLE;
             param.name = "Feedback";
             param.ranges.def = 0.0f;
             break;
-        case 5:
+        case 4:
             hints = 0x0;
             param.name = "unused1";
             break;
-        case 6:
+        case 5:
             hints = 0x0;
             param.name = "unused2";
             break;
-        case 7:
+        case 6:
             param.name = "Low-Pass Filter";
             param.ranges.def = 85.0f;
             break;
-        case 8:
+        case 7:
             param.name = "High-Pass Filter";
             param.ranges.def = 5.0f;
             break;
-        case 9:
+        case 8:
             hints |= PARAMETER_IS_AUTOMABLE;
             param.name = "Damp";
             param.ranges.def = 83.0f;
             break;
-        case 10:
+        case 9:
             param.name = "Type";
             param.ranges.def = 1.0f;
             param.ranges.max = 2.0f;
             break;
-        case 11:
+        case 10:
             param.name = "Room size";
             param.ranges.def = 64.0f;
             break;
-        case 12:
+        case 11:
             param.name = "Bandwidth";
             param.ranges.def = 20.0f;
             break;
@@ -1332,18 +1110,8 @@ protected:
         return &param;
     }
 
-    float getParameterValue(const uint32_t index) override
-    {
-        return fEffect.getpar(index);
-    }
-
     // -------------------------------------------------------------------
     // Plugin midi-program calls
-
-    uint32_t getMidiProgramCount() override
-    {
-        return kProgramCount;
-    }
 
     const MidiProgram* getMidiProgramInfo(const uint32_t index) override
     {
@@ -1401,45 +1169,6 @@ protected:
 
         return &midiProg;
     }
-
-    // -------------------------------------------------------------------
-    // Plugin state calls
-
-    void setParameterValue(const uint32_t index, const float value) override
-    {
-        fEffect.changepar(index, value);
-    }
-
-    void setMidiProgram(const uint8_t, const uint32_t, const uint32_t program) override
-    {
-        fEffect.setpreset(program);
-    }
-
-    // -------------------------------------------------------------------
-    // Plugin process calls
-
-    void activate() override
-    {
-        fEffect.cleanup();
-    }
-
-    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t, const MidiEvent* const) override
-    {
-        CARLA_ASSERT(synth->buffersize == static_cast<int>(frames));
-
-        fEffect.out(Stereo<float*>(inBuffer[0], inBuffer[1]));
-
-        for (uint32_t i=0; i<frames; ++i)
-        {
-            outBuffer[0][i] = inBuffer[0][i]/2.0f + efxoutl[i]/2.0f;
-            outBuffer[1][i] = inBuffer[1][i]/2.0f + efxoutr[i]/2.0f;
-        }
-    }
-
-private:
-    float* efxoutl;
-    float* efxoutr;
-    Reverb fEffect;
 
     ZynPluginDescriptorClassEND(FxReverbPlugin)
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FxReverbPlugin)
@@ -1748,7 +1477,7 @@ private:
 
 static const PluginDescriptor fxAlienWahDesc = {
     /* category  */ PLUGIN_CATEGORY_MODULATOR,
-    /* hints     */ static_cast<PluginHints>(PLUGIN_USES_STATIC_BUFFERS),
+    /* hints     */ static_cast<PluginHints>(PLUGIN_IS_RTSAFE|PLUGIN_USES_STATIC_BUFFERS),
     /* audioIns  */ 2,
     /* audioOuts */ 2,
     /* midiIns   */ 0,
@@ -1769,7 +1498,7 @@ static const PluginDescriptor fxChorusDesc = {
     /* audioOuts */ 2,
     /* midiIns   */ 0,
     /* midiOuts  */ 0,
-    /* paramIns  */ FxChorusPlugin::kParamCount,
+    /* paramIns  */ 12-1,
     /* paramOuts */ 0,
     /* name      */ "ZynChorus",
     /* label     */ "zynChorus",
@@ -1867,7 +1596,7 @@ static const PluginDescriptor fxReverbDesc = {
     /* audioOuts */ 2,
     /* midiIns   */ 0,
     /* midiOuts  */ 0,
-    /* paramIns  */ FxReverbPlugin::kParamCount,
+    /* paramIns  */ 13-1,
     /* paramOuts */ 0,
     /* name      */ "ZynReverb",
     /* label     */ "zynReverb",
