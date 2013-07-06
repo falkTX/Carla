@@ -586,6 +586,8 @@ protected:
           kParamCount(paramCount-2), // volume and pan handled by host
           kProgramCount(programCount)
     {
+        carla_zeroFloat(efxoutl, synth->buffersize);
+        carla_zeroFloat(efxoutr, synth->buffersize);
     }
 
     ~FxAbstractPlugin() override
@@ -644,7 +646,7 @@ protected:
     void setMidiProgram(const uint8_t, const uint32_t, const uint32_t program) final
     {
         fEffect->setpreset(program);
-        fFirstInit = false;
+        //fFirstInit = false;
 
         const float volume(float(fEffect->getpar(0))/127.0f);
         hostDispatcher(HOST_OPCODE_SET_VOLUME, 0, 0, nullptr, volume);
@@ -1108,12 +1110,12 @@ protected:
             break;
         case 5:
             hints |= PARAMETER_IS_AUTOMABLE;
-            param.name = "lpf";
+            param.name = "Low-Pass Filter";
             param.ranges.def = 96.0f;
             break;
         case 6:
             hints |= PARAMETER_IS_AUTOMABLE;
-            param.name = "hpf";
+            param.name = "High-Pass Filter";
             param.ranges.def = 0.0f;
             break;
         case 7:
