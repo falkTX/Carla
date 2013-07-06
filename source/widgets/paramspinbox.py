@@ -422,6 +422,6 @@ class ParamSpinBox(QAbstractSpinBox):
         value = self._getNearestScalePoint(value)
 
         for i in range(self.fBox.count()):
-            if float(self.fBox.itemText(i).split(" - ", 1)[0] == value):
+            if float(self.fBox.itemText(i).split(" - ", 1)[0]) == value:
                 self.fBox.setCurrentIndex(i)
                 break
