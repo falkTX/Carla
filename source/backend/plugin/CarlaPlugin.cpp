@@ -1453,33 +1453,9 @@ void CarlaPlugin::setProgram(int32_t index, const bool sendGui, const bool sendO
     if (index > static_cast<int32_t>(kData->prog.count))
         return;
 
-    const int32_t fixedIndex = carla_fixValue<int32_t>(-1, kData->prog.count, index);
+    const int32_t fixedIndex(carla_fixValue<int32_t>(-1, kData->prog.count, index));
 
     kData->prog.current = fixedIndex;
-
-    // Change default parameter values
-    if (fixedIndex >= 0)
-    {
-#ifndef BUILD_BRIDGE
-        if (sendGui)
-            uiProgramChange(fixedIndex);
-#endif
-
-        for (uint32_t i=0; i < kData->param.count; ++i)
-        {
-            // FIXME?
-            kData->param.ranges[i].def = getParameterValue(i);
-            kData->param.ranges[i].fixDefault();
-
-#ifndef BUILD_BRIDGE
-            if (sendOsc)
-            {
-                kData->engine->osc_send_control_set_default_value(fId, i, kData->param.ranges[i].def);
-                kData->engine->osc_send_control_set_parameter_value(fId, i, kData->param.ranges[i].def);
-            }
-#endif
-        }
-    }
 
 #ifndef BUILD_BRIDGE
     if (sendOsc)
@@ -1489,12 +1465,41 @@ void CarlaPlugin::setProgram(int32_t index, const bool sendGui, const bool sendO
     if (sendCallback)
         kData->engine->callback(CALLBACK_PROGRAM_CHANGED, fId, fixedIndex, 0, 0.0f, nullptr);
 
+    // Change default parameter values
+    if (fixedIndex >= 0)
+    {
+#ifndef BUILD_BRIDGE
+        if (sendGui)
+            uiProgramChange(fixedIndex);
+#endif
+
+        if (type() == PLUGIN_GIG || type() == PLUGIN_SF2 || type() == PLUGIN_SFZ)
+            return;
+
+        for (uint32_t i=0; i < kData->param.count; ++i)
+        {
+            const float value(kData->param.ranges[i].fixValue(getParameterValue(i)));
+
+            kData->param.ranges[i].def = value;
+
+            if (sendOsc || sendCallback)
+            {
+#ifndef BUILD_BRIDGE
+                kData->engine->osc_send_control_set_default_value(fId, i, value);
+                kData->engine->osc_send_control_set_parameter_value(fId, i, value);
+#endif
+
+                kData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, i, 0, value, nullptr);
+                kData->engine->callback(CALLBACK_PARAMETER_DEFAULT_CHANGED, fId, i, 0, value, nullptr);
+            }
+        }
+    }
+
 #ifdef BUILD_BRIDGE
     return;
 
     // unused
     (void)sendGui;
-    (void)sendOsc;
 #endif
 }
 
@@ -1508,36 +1513,9 @@ void CarlaPlugin::setMidiProgram(int32_t index, const bool sendGui, const bool s
     if (index > static_cast<int32_t>(kData->midiprog.count))
         return;
 
-    const int32_t fixedIndex = carla_fixValue<int32_t>(-1, kData->midiprog.count, index);
+    const int32_t fixedIndex(carla_fixValue<int32_t>(-1, kData->midiprog.count, index));
 
     kData->midiprog.current = fixedIndex;
-
-    if (fixedIndex >= 0)
-    {
-#ifndef BUILD_BRIDGE
-        if (sendGui)
-            uiMidiProgramChange(fixedIndex);
-#endif
-
-        // Change default parameter values (sound banks never change defaults)
-        if (type() != PLUGIN_GIG && type() != PLUGIN_SF2 && type() != PLUGIN_SFZ)
-        {
-            for (uint32_t i=0; i < kData->param.count; ++i)
-            {
-                // FIXME?
-                kData->param.ranges[i].def = getParameterValue(i);
-                kData->param.ranges[i].fixDefault();
-
-#ifndef BUILD_BRIDGE
-                if (sendOsc)
-                {
-                    kData->engine->osc_send_control_set_default_value(fId, i, kData->param.ranges[i].def);
-                    kData->engine->osc_send_control_set_parameter_value(fId, i, kData->param.ranges[i].def);
-                }
-#endif
-            }
-        }
-    }
 
 #ifndef BUILD_BRIDGE
     if (sendOsc)
@@ -1547,12 +1525,40 @@ void CarlaPlugin::setMidiProgram(int32_t index, const bool sendGui, const bool s
     if (sendCallback)
         kData->engine->callback(CALLBACK_MIDI_PROGRAM_CHANGED, fId, fixedIndex, 0, 0.0f, nullptr);
 
+    if (fixedIndex >= 0)
+    {
+#ifndef BUILD_BRIDGE
+        if (sendGui)
+            uiMidiProgramChange(fixedIndex);
+#endif
+
+        if (type() == PLUGIN_GIG || type() == PLUGIN_SF2 || type() == PLUGIN_SFZ)
+            return;
+
+        for (uint32_t i=0; i < kData->param.count; ++i)
+        {
+            const float value(kData->param.ranges[i].fixValue(getParameterValue(i)));
+
+            kData->param.ranges[i].def = value;
+
+            if (sendOsc || sendCallback)
+            {
+#ifndef BUILD_BRIDGE
+                kData->engine->osc_send_control_set_default_value(fId, i, value);
+                kData->engine->osc_send_control_set_parameter_value(fId, i, value);
+#endif
+
+                kData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, i, 0, value, nullptr);
+                kData->engine->callback(CALLBACK_PARAMETER_DEFAULT_CHANGED, fId, i, 0, value, nullptr);
+            }
+        }
+    }
+
 #ifdef BUILD_BRIDGE
     return;
 
     // unused
     (void)sendGui;
-    (void)sendOsc;
 #endif
 }
 
@@ -2015,15 +2021,29 @@ void CarlaPlugin::postRtEventsRun()
 #ifndef BUILD_BRIDGE
             // Update OSC control client
             if (kData->engine->isOscControlRegistered())
-            {
                 kData->engine->osc_send_control_set_program(fId, event.value1);
-
-                for (uint32_t j=0; j < kData->param.count; ++j)
-                    kData->engine->osc_send_control_set_default_value(fId, j, kData->param.ranges[j].def);
-            }
 
             // Update Host
             kData->engine->callback(CALLBACK_PROGRAM_CHANGED, fId, event.value1, 0, 0.0f, nullptr);
+
+            // Update param values
+            {
+                const bool sendOsc(kData->engine->isOscControlRegistered());
+
+                for (uint32_t j=0; j < kData->param.count; ++j)
+                {
+                    const float value(getParameterValue(j));
+
+                    if (sendOsc)
+                    {
+                        kData->engine->osc_send_control_set_parameter_value(fId, j, value);
+                        kData->engine->osc_send_control_set_default_value(fId, j, kData->param.ranges[j].def);
+                    }
+
+                    kData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, j, 0, value, nullptr);
+                    kData->engine->callback(CALLBACK_PARAMETER_DEFAULT_CHANGED, fId, j, 0, kData->param.ranges[j].def, nullptr);
+                }
+            }
 #endif
             break;
 
@@ -2035,15 +2055,29 @@ void CarlaPlugin::postRtEventsRun()
 #ifndef BUILD_BRIDGE
             // Update OSC control client
             if (kData->engine->isOscControlRegistered())
-            {
                 kData->engine->osc_send_control_set_midi_program(fId, event.value1);
-
-                for (uint32_t j=0; j < kData->param.count; ++j)
-                    kData->engine->osc_send_control_set_default_value(fId, j, kData->param.ranges[j].def);
-            }
 
             // Update Host
             kData->engine->callback(CALLBACK_MIDI_PROGRAM_CHANGED, fId, event.value1, 0, 0.0f, nullptr);
+
+            // Update param values
+            {
+                const bool sendOsc(kData->engine->isOscControlRegistered());
+
+                for (uint32_t j=0; j < kData->param.count; ++j)
+                {
+                    const float value(getParameterValue(j));
+
+                    if (sendOsc)
+                    {
+                        kData->engine->osc_send_control_set_parameter_value(fId, j, value);
+                        kData->engine->osc_send_control_set_default_value(fId, j, kData->param.ranges[j].def);
+                    }
+
+                    kData->engine->callback(CALLBACK_PARAMETER_VALUE_CHANGED, fId, j, 0, value, nullptr);
+                    kData->engine->callback(CALLBACK_PARAMETER_DEFAULT_CHANGED, fId, j, 0, kData->param.ranges[j].def, nullptr);
+                }
+            }
 #endif
             break;
 
