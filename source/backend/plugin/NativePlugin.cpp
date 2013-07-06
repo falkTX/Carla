@@ -2147,7 +2147,7 @@ protected:
 
     intptr_t handleDispatcher(const HostDispatcherOpcode opcode, const int32_t index, const intptr_t value, void* const ptr, const float opt)
     {
-        carla_stdout("NativePlugin::handleDispatcher(%i, %i, " P_INTPTR ", %p, %f", opcode, index, value, ptr, opt);
+        carla_debug("NativePlugin::handleDispatcher(%i, %i, " P_INTPTR ", %p, %f)", opcode, index, value, ptr, opt);
 
         intptr_t ret = 0;
 

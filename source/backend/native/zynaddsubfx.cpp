@@ -582,11 +582,10 @@ protected:
           fEffect(nullptr),
           efxoutl(new float[synth->buffersize]),
           efxoutr(new float[synth->buffersize]),
-          fWetOnly(false),
+          fFirstInit(true),
           kParamCount(paramCount-2), // volume and pan handled by host
           kProgramCount(programCount)
     {
-        hostDispatcher(HOST_OPCODE_SET_DRYWET, 0, 0, nullptr, 0.5f);
     }
 
     ~FxAbstractPlugin() override
@@ -639,11 +638,13 @@ protected:
     void setParameterValue(const uint32_t index, const float value) final
     {
         fEffect->changepar(index+2, value);
+        fFirstInit = false;
     }
 
     void setMidiProgram(const uint8_t, const uint32_t, const uint32_t program) final
     {
         fEffect->setpreset(program);
+        fFirstInit = false;
 
         const float volume(float(fEffect->getpar(0))/127.0f);
         hostDispatcher(HOST_OPCODE_SET_VOLUME, 0, 0, nullptr, volume);
@@ -659,6 +660,12 @@ protected:
     void activate() final
     {
         fEffect->cleanup();
+
+        if (fFirstInit)
+        {
+            fFirstInit = false;
+            hostDispatcher(HOST_OPCODE_SET_DRYWET, 0, 0, nullptr, 0.5f);
+        }
     }
 
     void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t, const MidiEvent* const) final
@@ -667,19 +674,8 @@ protected:
 
         fEffect->out(Stereo<float*>(inBuffer[0], inBuffer[1]));
 
-        if (fWetOnly)
-        {
-            carla_copyFloat(outBuffer[0], efxoutl, frames);
-            carla_copyFloat(outBuffer[1], efxoutr, frames);
-        }
-        else
-        {
-            for (uint32_t i=0; i<frames; ++i)
-            {
-                outBuffer[0][i] = inBuffer[0][i]/2.0f + efxoutl[i]/2.0f;
-                outBuffer[1][i] = inBuffer[1][i]/2.0f + efxoutr[i]/2.0f;
-            }
-        }
+        carla_copyFloat(outBuffer[0], efxoutl, frames);
+        carla_copyFloat(outBuffer[1], efxoutr, frames);
     }
 
     // -------------------------------------------------------------------
@@ -713,7 +709,7 @@ protected:
     Effect* fEffect;
     float*  efxoutl;
     float*  efxoutr;
-    bool    fWetOnly;
+    bool    fFirstInit;
     const uint32_t kParamCount;
     const uint32_t kProgramCount;
 };
