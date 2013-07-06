@@ -17,8 +17,6 @@
 
 #include "CarlaPluginInternal.hpp"
 
-#define WANT_NATIVE
-
 #ifdef WANT_NATIVE
 
 #include "CarlaNative.h"
@@ -2157,6 +2155,14 @@ protected:
         {
         case ::HOST_OPCODE_NULL:
             break;
+#ifdef BUILD_BRIDGE
+        case ::HOST_OPCODE_SET_VOLUME:
+        case ::HOST_OPCODE_SET_DRYWET:
+        case ::HOST_OPCODE_SET_BALANCE_LEFT:
+        case ::HOST_OPCODE_SET_BALANCE_RIGHT:
+        case ::HOST_OPCODE_SET_PANNING:
+            break;
+#else
         case ::HOST_OPCODE_SET_VOLUME:
             setVolume(opt, true, true);
             break;
@@ -2172,6 +2178,7 @@ protected:
         case ::HOST_OPCODE_SET_PANNING:
             setPanning(opt, true, true);
             break;
+#endif
         case ::HOST_OPCODE_SET_PROCESS_PRECISION:
             // TODO
             break;

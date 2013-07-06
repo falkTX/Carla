@@ -591,7 +591,7 @@ protected:
         case CarlaEngineNativeThread::UiShow:
             break;
         case CarlaEngineNativeThread::UiCrashed:
-            hostDispatcher(HOST_OPCODE_UI_UNAVAILABLE, 0, 0, nullptr);
+            hostDispatcher(HOST_OPCODE_UI_UNAVAILABLE, 0, 0, nullptr, 0.0f);
             break;
         case CarlaEngineNativeThread::UiHide:
             uiClosed();
@@ -737,6 +737,7 @@ private:
 static const PluginDescriptor carlaDesc = {
     /* category  */ ::PLUGIN_CATEGORY_OTHER,
     /* hints     */ static_cast< ::PluginHints>(::PLUGIN_IS_SYNTH|::PLUGIN_HAS_GUI|::PLUGIN_USES_SINGLE_THREAD|::PLUGIN_USES_STATE),
+    /* supports  */ static_cast<PluginSupports>(PLUGIN_SUPPORTS_EVERYTHING),
     /* audioIns  */ 2,
     /* audioOuts */ 2,
     /* midiIns   */ 1,
