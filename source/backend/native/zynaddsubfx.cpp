@@ -797,6 +797,7 @@ protected:
         case 6:
             param.name = "Delay";
             param.ranges.def = 25.0f;
+            param.ranges.min = 1.0f;
             param.ranges.max = 100.0f;
             break;
         case 7:
@@ -1089,7 +1090,7 @@ protected:
             scalePoints[10].label = "Clip";
             scalePoints[11].label = "Asym2";
             scalePoints[12].label = "Pow2";
-            scalePoints[13].label = "sigmoid";
+            scalePoints[13].label = "Sigmoid";
             scalePoints[ 0].value = 0.0f;
             scalePoints[ 1].value = 1.0f;
             scalePoints[ 2].value = 2.0f;
@@ -1252,7 +1253,7 @@ protected:
             break;
         case 4:
             hints |= PARAMETER_IS_AUTOMABLE;
-            param.name = "Depth";
+            param.name = "LFO Depth";
             param.ranges.def = 0.0f;
             break;
         case 5:
@@ -1699,6 +1700,7 @@ protected:
             hints |= PARAMETER_IS_AUTOMABLE;
             param.name = "Damp";
             param.ranges.def = 83.0f;
+            param.ranges.min = 64.0f;
             break;
         case 8:
             hints |= PARAMETER_USES_SCALEPOINTS;
@@ -1717,6 +1719,7 @@ protected:
         case 9:
             param.name = "Room size";
             param.ranges.def = 64.0f;
+            param.ranges.min = 1.0f;
             break;
         case 10:
             param.name = "Bandwidth";
