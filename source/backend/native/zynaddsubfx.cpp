@@ -1701,6 +1701,7 @@ protected:
             param.ranges.def = 83.0f;
             break;
         case 8:
+            hints |= PARAMETER_USES_SCALEPOINTS;
             param.name = "Type";
             param.ranges.def = 1.0f;
             param.ranges.max = 2.0f;
