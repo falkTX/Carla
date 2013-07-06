@@ -50,7 +50,7 @@ static PluginHandle lfo_instantiate(const PluginDescriptor* _this_, HostDescript
     if (handle == NULL)
         return NULL;
 
-    host->dispatcher(host->handle, HOST_OPCODE_SET_PROCESS_PRECISION, 0, 32, NULL);
+    host->dispatcher(host->handle, HOST_OPCODE_SET_PROCESS_PRECISION, 0, 32, NULL, 0.0f);
 
     handle->host       = host;
     handle->mode       = 1;

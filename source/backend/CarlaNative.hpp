@@ -169,12 +169,12 @@ protected:
         return nullptr;
     }
 
-    intptr_t hostDispatcher(const HostDispatcherOpcode opcode, const int32_t index, const intptr_t value, void* const ptr)
+    intptr_t hostDispatcher(const HostDispatcherOpcode opcode, const int32_t index, const intptr_t value, void* const ptr, const float opt)
     {
         CARLA_ASSERT(kHost != nullptr);
 
         if (kHost != nullptr)
-            return kHost->dispatcher(kHost->handle, opcode, index, value, ptr);
+            return kHost->dispatcher(kHost->handle, opcode, index, value, ptr, opt);
 
         return 0;
     }
@@ -346,7 +346,7 @@ protected:
     // -------------------------------------------------------------------
     // Plugin dispatcher
 
-    virtual intptr_t pluginDispatcher(const PluginDispatcherOpcode opcode, const int32_t index, const intptr_t value, void* const ptr)
+    virtual intptr_t pluginDispatcher(const PluginDispatcherOpcode opcode, const int32_t index, const intptr_t value, void* const ptr, const float opt)
     {
         return 0;
 
@@ -355,6 +355,7 @@ protected:
         (void)index;
         (void)value;
         (void)ptr;
+        (void)opt;
     }
 
     // -------------------------------------------------------------------
@@ -463,9 +464,9 @@ public:
         handlePtr->setState(data);
     }
 
-    static intptr_t _dispatcher(PluginHandle handle, PluginDispatcherOpcode opcode, int32_t index, intptr_t value, void* ptr)
+    static intptr_t _dispatcher(PluginHandle handle, PluginDispatcherOpcode opcode, int32_t index, intptr_t value, void* ptr, float opt)
     {
-        return handlePtr->pluginDispatcher(opcode, index, value, ptr);
+        return handlePtr->pluginDispatcher(opcode, index, value, ptr, opt);
     }
 
     #undef handlePtr

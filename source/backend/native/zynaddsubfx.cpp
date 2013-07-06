@@ -586,7 +586,7 @@ protected:
           kParamCount(paramCount-2), // volume and pan handled by host
           kProgramCount(programCount)
     {
-        hostDispatcher(HOST_OPCODE_SET_DRYWET, 0, 0.5f, nullptr);
+        hostDispatcher(HOST_OPCODE_SET_DRYWET, 0, 0, nullptr, 0.5f);
     }
 
     ~FxAbstractPlugin() override
@@ -646,11 +646,11 @@ protected:
         fEffect->setpreset(program);
 
         const float volume(float(fEffect->getpar(0))/127.0f);
-        hostDispatcher(HOST_OPCODE_SET_VOLUME, 0, volume, nullptr);
+        hostDispatcher(HOST_OPCODE_SET_VOLUME, 0, 0, nullptr, volume);
 
         const unsigned char pan(fEffect->getpar(1));
         const float panning(float(pan)/63.5f-1.0f);
-        hostDispatcher(HOST_OPCODE_SET_PANNING, 0, (pan == 64) ? 0.0f : panning, nullptr);
+        hostDispatcher(HOST_OPCODE_SET_PANNING, 0, 0, nullptr, (pan == 64) ? 0.0f : panning);
     }
 
     // -------------------------------------------------------------------
@@ -685,7 +685,7 @@ protected:
     // -------------------------------------------------------------------
     // Plugin dispatcher
 
-    intptr_t pluginDispatcher(const PluginDispatcherOpcode opcode, const int32_t, const intptr_t, void* const) final
+    intptr_t pluginDispatcher(const PluginDispatcherOpcode opcode, const int32_t, const intptr_t, void* const, const float) final
     {
         switch (opcode)
         {
@@ -1599,7 +1599,7 @@ protected:
     // -------------------------------------------------------------------
     // Plugin dispatcher
 
-    intptr_t pluginDispatcher(const PluginDispatcherOpcode opcode, const int32_t index, const intptr_t value, void* const ptr) override
+    intptr_t pluginDispatcher(const PluginDispatcherOpcode opcode, const int32_t index, const intptr_t value, void* const ptr, const float) override
     {
         switch (opcode)
         {

@@ -1885,10 +1885,10 @@ public:
 
         if (fDescriptor != nullptr && fDescriptor->dispatcher != nullptr)
         {
-            fDescriptor->dispatcher(fHandle, PLUGIN_OPCODE_BUFFER_SIZE_CHANGED, 0, 0, nullptr);
+            fDescriptor->dispatcher(fHandle, PLUGIN_OPCODE_BUFFER_SIZE_CHANGED, 0, newBufferSize, nullptr, 0.0f);
 
             if (fHandle2 != nullptr)
-                fDescriptor->dispatcher(fHandle2, PLUGIN_OPCODE_BUFFER_SIZE_CHANGED, 0, 0, nullptr);
+                fDescriptor->dispatcher(fHandle2, PLUGIN_OPCODE_BUFFER_SIZE_CHANGED, 0, newBufferSize, nullptr, 0.0f);
         }
     }
 
@@ -1899,21 +1899,21 @@ public:
 
         if (fDescriptor != nullptr && fDescriptor->dispatcher != nullptr)
         {
-            fDescriptor->dispatcher(fHandle, PLUGIN_OPCODE_SAMPLE_RATE_CHANGED, 0, 0, nullptr);
+            fDescriptor->dispatcher(fHandle, PLUGIN_OPCODE_SAMPLE_RATE_CHANGED, 0, 0, nullptr, newSampleRate);
 
             if (fHandle2 != nullptr)
-                fDescriptor->dispatcher(fHandle2, PLUGIN_OPCODE_SAMPLE_RATE_CHANGED, 0, 0, nullptr);
+                fDescriptor->dispatcher(fHandle2, PLUGIN_OPCODE_SAMPLE_RATE_CHANGED, 0, 0, nullptr, newSampleRate);
         }
     }
 
-    void offlineModeChanged(const bool) override
+    void offlineModeChanged(const bool isOffline) override
     {
         if (fDescriptor != nullptr && fDescriptor->dispatcher != nullptr)
         {
-            fDescriptor->dispatcher(fHandle, PLUGIN_OPCODE_OFFLINE_CHANGED, 0, 0, nullptr);
+            fDescriptor->dispatcher(fHandle, PLUGIN_OPCODE_OFFLINE_CHANGED, 0, isOffline ? 1 : 0, nullptr, 0.0f);
 
             if (fHandle2 != nullptr)
-                fDescriptor->dispatcher(fHandle2, PLUGIN_OPCODE_OFFLINE_CHANGED, 0, 0, nullptr);
+                fDescriptor->dispatcher(fHandle2, PLUGIN_OPCODE_OFFLINE_CHANGED, 0, isOffline ? 1 : 0, nullptr, 0.0f);
         }
     }
 
@@ -2147,15 +2147,32 @@ protected:
         return retStr.isNotEmpty() ? (const char*)retStr : nullptr;
     }
 
-    intptr_t handleDispatcher(HostDispatcherOpcode opcode, int32_t index, intptr_t value, void* ptr)
+    intptr_t handleDispatcher(const HostDispatcherOpcode opcode, const int32_t index, const intptr_t value, void* const ptr, const float opt)
     {
+        carla_stdout("NativePlugin::handleDispatcher(%i, %i, " P_INTPTR ", %p, %f", opcode, index, value, ptr, opt);
+
         intptr_t ret = 0;
 
         switch (opcode)
         {
-        case HOST_OPCODE_NULL:
+        case ::HOST_OPCODE_NULL:
             break;
-        case HOST_OPCODE_SET_PROCESS_PRECISION:
+        case ::HOST_OPCODE_SET_VOLUME:
+            setVolume(opt, true, true);
+            break;
+        case ::HOST_OPCODE_SET_DRYWET:
+            setDryWet(opt, true, true);
+            break;
+        case ::HOST_OPCODE_SET_BALANCE_LEFT:
+            setBalanceLeft(opt, true, true);
+            break;
+        case ::HOST_OPCODE_SET_BALANCE_RIGHT:
+            setBalanceRight(opt, true, true);
+            break;
+        case ::HOST_OPCODE_SET_PANNING:
+            setPanning(opt, true, true);
+            break;
+        case ::HOST_OPCODE_SET_PROCESS_PRECISION:
             // TODO
             break;
         case HOST_OPCODE_UI_UNAVAILABLE:
@@ -2437,9 +2454,9 @@ private:
         return handlePtr->handleUiSaveFile(isDir, title, filter);
     }
 
-    static intptr_t carla_host_dispatcher(HostHandle handle, HostDispatcherOpcode opcode, int32_t index, intptr_t value, void* ptr)
+    static intptr_t carla_host_dispatcher(HostHandle handle, HostDispatcherOpcode opcode, int32_t index, intptr_t value, void* ptr, float opt)
     {
-        return handlePtr->handleDispatcher(opcode, index, value, ptr);
+        return handlePtr->handleDispatcher(opcode, index, value, ptr, opt);
     }
 
     #undef handlePtr

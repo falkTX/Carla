@@ -84,19 +84,19 @@ typedef enum _ParameterHints {
 
 typedef enum _PluginDispatcherOpcode {
     PLUGIN_OPCODE_NULL                = 0, // nothing
-    PLUGIN_OPCODE_BUFFER_SIZE_CHANGED = 1, // nothing
-    PLUGIN_OPCODE_SAMPLE_RATE_CHANGED = 2, // nothing
-    PLUGIN_OPCODE_OFFLINE_CHANGED     = 3, // nothing
-    PLUGIN_OPCODE_UI_NAME_CHANGED     = 4  // nothing
+    PLUGIN_OPCODE_BUFFER_SIZE_CHANGED = 1, // uses value
+    PLUGIN_OPCODE_SAMPLE_RATE_CHANGED = 2, // uses opt
+    PLUGIN_OPCODE_OFFLINE_CHANGED     = 3, // uses value
+    PLUGIN_OPCODE_UI_NAME_CHANGED     = 4  // uses ptr
 } PluginDispatcherOpcode;
 
 typedef enum _HostDispatcherOpcode {
     HOST_OPCODE_NULL                  = 0, // nothing
-    HOST_OPCODE_SET_VOLUME            = 1, // uses value
-    HOST_OPCODE_SET_DRYWET            = 2, // uses value
-    HOST_OPCODE_SET_BALANCE_LEFT      = 3, // uses value
-    HOST_OPCODE_SET_BALANCE_RIGHT     = 4, // uses value
-    HOST_OPCODE_SET_PANNING           = 5, // uses value
+    HOST_OPCODE_SET_VOLUME            = 1, // uses opt
+    HOST_OPCODE_SET_DRYWET            = 2, // uses opt
+    HOST_OPCODE_SET_BALANCE_LEFT      = 3, // uses opt
+    HOST_OPCODE_SET_BALANCE_RIGHT     = 4, // uses opt
+    HOST_OPCODE_SET_PANNING           = 5, // uses opt
     HOST_OPCODE_SET_PROCESS_PRECISION = 6, // uses value
     HOST_OPCODE_UI_UNAVAILABLE        = 7  // nothing
 } HostDispatcherOpcode;
@@ -184,7 +184,7 @@ typedef struct _HostDescriptor {
     const char* (*ui_open_file)(HostHandle handle, bool isDir, const char* title, const char* filter);
     const char* (*ui_save_file)(HostHandle handle, bool isDir, const char* title, const char* filter);
 
-    intptr_t (*dispatcher)(HostHandle handle, HostDispatcherOpcode opcode, int32_t index, intptr_t value, void* ptr);
+    intptr_t (*dispatcher)(HostHandle handle, HostDispatcherOpcode opcode, int32_t index, intptr_t value, void* ptr, float opt);
 
 } HostDescriptor;
 
@@ -232,7 +232,7 @@ typedef struct _PluginDescriptor {
     char* (*get_state)(PluginHandle handle);
     void  (*set_state)(PluginHandle handle, const char* data);
 
-    intptr_t (*dispatcher)(PluginHandle handle, PluginDispatcherOpcode opcode, int32_t index, intptr_t value, void* ptr);
+    intptr_t (*dispatcher)(PluginHandle handle, PluginDispatcherOpcode opcode, int32_t index, intptr_t value, void* ptr, float opt);
 
 } PluginDescriptor;
 

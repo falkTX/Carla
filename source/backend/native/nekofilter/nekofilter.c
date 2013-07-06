@@ -368,7 +368,7 @@ void nekofilter_ui_show(
     if (nekofilter_ptr->ui != NULL)
       nekoui_show(nekofilter_ptr->ui);
     else
-      nekofilter_ptr->host->dispatcher(nekofilter_ptr->host->handle, HOST_OPCODE_UI_UNAVAILABLE, 0, 0, NULL);
+      nekofilter_ptr->host->dispatcher(nekofilter_ptr->host->handle, HOST_OPCODE_UI_UNAVAILABLE, 0, 0, NULL, 0.0f);
   }
   else if (nekofilter_ptr->ui != NULL)
     nekoui_hide(nekofilter_ptr->ui);
