@@ -120,6 +120,85 @@ struct PluginAudioData {
 
 // -----------------------------------------------------------------------
 
+struct PluginCVPort {
+    uint32_t rindex;
+    uint32_t param;
+    CarlaEngineCVPort* port;
+
+    PluginCVPort()
+        : rindex(0),
+          param(0),
+          port(nullptr) {}
+
+    ~PluginCVPort()
+    {
+        CARLA_ASSERT(port == nullptr);
+    }
+
+    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(PluginCVPort)
+};
+
+struct PluginCVData {
+    uint32_t count;
+    PluginCVPort* ports;
+
+    PluginCVData()
+        : count(0),
+          ports(nullptr) {}
+
+    ~PluginCVData()
+    {
+        CARLA_ASSERT_INT(count == 0, count);
+        CARLA_ASSERT(ports == nullptr);
+    }
+
+    void createNew(const uint32_t newCount)
+    {
+        CARLA_ASSERT_INT(count == 0, count);
+        CARLA_ASSERT(ports == nullptr);
+        CARLA_ASSERT_INT(newCount > 0, newCount);
+
+        if (ports != nullptr || newCount == 0)
+            return;
+
+        ports = new PluginCVPort[newCount];
+        count = newCount;
+    }
+
+    void clear()
+    {
+        if (ports != nullptr)
+        {
+            for (uint32_t i=0; i < count; ++i)
+            {
+                if (ports[i].port != nullptr)
+                {
+                    delete ports[i].port;
+                    ports[i].port = nullptr;
+                }
+            }
+
+            delete[] ports;
+            ports = nullptr;
+        }
+
+        count = 0;
+    }
+
+    void initBuffers(CarlaEngine* const engine)
+    {
+        for (uint32_t i=0; i < count; ++i)
+        {
+            if (ports[i].port != nullptr)
+                ports[i].port->initBuffer(engine);
+        }
+    }
+
+    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(PluginCVData)
+};
+
+// -----------------------------------------------------------------------
+
 struct PluginEventData {
     CarlaEngineEventPort* portIn;
     CarlaEngineEventPort* portOut;

@@ -515,8 +515,7 @@ public:
     virtual void initBuffer(CarlaEngine* const engine) override;
 
     /*!
-     * Write buffer.\n
-     * This is a handy function for the JACK engine only, where we need to write buffer to output ports.
+     * Write buffer back into the engine.
      */
     virtual void writeBuffer(CarlaEngine* const engine);
 

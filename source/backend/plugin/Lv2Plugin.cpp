@@ -17,6 +17,8 @@
 
 #include "CarlaPluginInternal.hpp"
 
+#define WANT_LV2
+
 #ifdef WANT_LV2
 
 #include "CarlaPluginGui.hpp"
@@ -1373,6 +1375,8 @@ public:
                 params += 1;
         }
 
+        params += cvIns + cvOuts;
+
         // check extensions
         fExt.options  = nullptr;
         fExt.programs = nullptr;
@@ -1432,6 +1436,17 @@ public:
 
             for (uint32_t i=0; i < aOuts; ++i)
                 fAudioOutBuffers[i] = nullptr;
+        }
+
+        if (cvIns > 0)
+        {
+            fCvIn.createNew(aIns);
+        }
+
+        if (cvOuts > 0)
+        {
+            fCvOut.createNew(aOuts);
+            needsCtrlIn = true;
         }
 
         if (params > 0)
@@ -1510,7 +1525,7 @@ public:
         const uint portNameSize(kData->engine->maxPortNameSize());
         CarlaString portName;
 
-        for (uint32_t i=0, iAudioIn=0, iAudioOut=0, iEvIn=0, iEvOut=0, iCtrl=0; i < portCount; ++i)
+        for (uint32_t i=0, iAudioIn=0, iAudioOut=0, iCvIn=0, iCvOut=0, iEvIn=0, iEvOut=0, iCtrl=0; i < portCount; ++i)
         {
             const LV2_Property portTypes(fRdfDescriptor->Ports[i].Types);
 
@@ -1563,19 +1578,55 @@ public:
             {
                 if (LV2_IS_PORT_INPUT(portTypes))
                 {
-                    carla_stderr("WARNING - CV Ports are not supported yet");
+                    j = iCvIn++;
+                    fCvIn.ports[j].port   = (CarlaEngineCVPort*)kData->client->addPort(kEnginePortTypeCV, portName, true);
+                    fCvIn.ports[j].rindex = i;
+
+                    fDescriptor->connect_port(fHandle, i, fCvIn.ports[j].port->getBuffer());
+
+                    if (fHandle2 != nullptr)
+                        fDescriptor->connect_port(fHandle2, i, fCvIn.ports[j].port->getBuffer());
+
+                    j = params + j;
+                    kData->param.data[j].index  = j;
+                    kData->param.data[j].rindex = i;
+                    kData->param.data[j].hints  = 0x0;
+                    kData->param.data[j].midiChannel = 0;
+                    kData->param.data[j].midiCC = -1;
+                    kData->param.ranges[j].min = 0.0f;
+                    kData->param.ranges[j].max = 1.0f;
+                    kData->param.ranges[j].def = 0.0f;
+                    kData->param.ranges[j].step = 0.01f;
+                    kData->param.ranges[j].stepSmall = 0.001f;
+                    kData->param.ranges[j].stepLarge = 0.1f;
+
                 }
                 else if (LV2_IS_PORT_OUTPUT(portTypes))
                 {
-                    carla_stderr("WARNING - CV Ports are not supported yet");
+                    j = iCvOut++;
+                    fCvOut.ports[j].port   = (CarlaEngineCVPort*)kData->client->addPort(kEnginePortTypeCV, portName, false);
+                    fCvOut.ports[j].rindex = i;
+
+                    fDescriptor->connect_port(fHandle, i, fCvOut.ports[j].port->getBuffer());
+
+                    if (fHandle2 != nullptr)
+                        fDescriptor->connect_port(fHandle2, i, fCvOut.ports[j].port->getBuffer());
+
+                    j = params + cvIns + j;
+                    kData->param.data[j].index  = j;
+                    kData->param.data[j].rindex = i;
+                    kData->param.data[j].hints  = 0x0;
+                    kData->param.data[j].midiChannel = 0;
+                    kData->param.data[j].midiCC = -1;
+                    kData->param.ranges[j].min = 0.0f;
+                    kData->param.ranges[j].max = 1.0f;
+                    kData->param.ranges[j].def = 0.0f;
+                    kData->param.ranges[j].step = 0.01f;
+                    kData->param.ranges[j].stepSmall = 0.001f;
+                    kData->param.ranges[j].stepLarge = 0.1f;
                 }
                 else
                     carla_stderr("WARNING - Got a broken Port (CV, but not input or output)");
-
-                fDescriptor->connect_port(fHandle, i, nullptr);
-
-                if (fHandle2 != nullptr)
-                    fDescriptor->connect_port(fHandle2, i, nullptr);
             }
             else if (LV2_IS_PORT_ATOM_SEQUENCE(portTypes))
             {
@@ -4745,6 +4796,8 @@ private:
     Lv2AtomQueue   fAtomQueueOut;
     LV2_Atom_Forge fAtomForge;
 
+    PluginCVData fCvIn;
+    PluginCVData fCvOut;
     Lv2PluginEventData fEventsIn;
     Lv2PluginEventData fEventsOut;
     Lv2PluginOptions   fLv2Options;

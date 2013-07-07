@@ -1262,7 +1262,7 @@ bool is_lv2_port_supported(const LV2_Property types)
     if (LV2_IS_PORT_ATOM_SEQUENCE(types))
         return true;
     if (LV2_IS_PORT_CV(types))
-        return false; // TODO
+        return true;
     if (LV2_IS_PORT_EVENT(types))
         return true;
     if (LV2_IS_PORT_MIDI_LL(types))

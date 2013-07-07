@@ -153,7 +153,7 @@ public:
 
         if (kIsInput)
         {
-            float* const jackBuffer = (float*)jackbridge_port_get_buffer(kPort, fBufferSize);
+            float* const jackBuffer((float*)jackbridge_port_get_buffer(kPort, fBufferSize));
             carla_copyFloat(fBuffer, jackBuffer, fBufferSize);
         }
         else
@@ -174,7 +174,7 @@ public:
 
         CARLA_ASSERT(engine->getBufferSize() == fBufferSize);
 
-        float* const jackBuffer = (float*)jackbridge_port_get_buffer(kPort, fBufferSize);
+        float* const jackBuffer((float*)jackbridge_port_get_buffer(kPort, fBufferSize));
         carla_copyFloat(jackBuffer, fBuffer, fBufferSize);
     }
 
