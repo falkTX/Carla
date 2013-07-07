@@ -91,14 +91,19 @@ typedef enum _PluginDispatcherOpcode {
 } PluginDispatcherOpcode;
 
 typedef enum _HostDispatcherOpcode {
-    HOST_OPCODE_NULL                  = 0, // nothing
-    HOST_OPCODE_SET_VOLUME            = 1, // uses opt
-    HOST_OPCODE_SET_DRYWET            = 2, // uses opt
-    HOST_OPCODE_SET_BALANCE_LEFT      = 3, // uses opt
-    HOST_OPCODE_SET_BALANCE_RIGHT     = 4, // uses opt
-    HOST_OPCODE_SET_PANNING           = 5, // uses opt
-    HOST_OPCODE_SET_PROCESS_PRECISION = 6, // uses value
-    HOST_OPCODE_UI_UNAVAILABLE        = 7  // nothing
+    HOST_OPCODE_NULL                  = 0,  // nothing
+    HOST_OPCODE_SET_VOLUME            = 1,  // uses opt
+    HOST_OPCODE_SET_DRYWET            = 2,  // uses opt
+    HOST_OPCODE_SET_BALANCE_LEFT      = 3,  // uses opt
+    HOST_OPCODE_SET_BALANCE_RIGHT     = 4,  // uses opt
+    HOST_OPCODE_SET_PANNING           = 5,  // uses opt
+    HOST_OPCODE_SET_PROCESS_PRECISION = 6,  // uses value
+    HOST_OPCODE_UPDATE_PARAMETER      = 7,  // uses value, -1 for all
+    HOST_OPCODE_UPDATE_MIDI_PROGRAM   = 8,  // uses value, -1 for all; may use index for channel
+    HOST_OPCODE_RELOAD_PARAMETERS     = 9,  // nothing
+    HOST_OPCODE_RELOAD_MIDI_PROGRAMS  = 10, // nothing
+    HOST_OPCODE_RELOAD_ALL            = 11, // nothing
+    HOST_OPCODE_UI_UNAVAILABLE        = 12  // nothing
 } HostDispatcherOpcode;
 
 typedef struct _ParameterScalePoint {
