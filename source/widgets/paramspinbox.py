@@ -268,6 +268,10 @@ class ParamSpinBox(QAbstractSpinBox):
         self.fReadOnly = yesNo
         QAbstractSpinBox.setReadOnly(self, yesNo)
 
+    def setEnabled(self, yesNo):
+        self.fBar.setEnabled(yesNo)
+        QAbstractSpinBox.setEnabled(self, yesNo)
+
     def setScalePoints(self, scalePoints, useScalePoints):
         if len(scalePoints) == 0:
             self.fScalePoints     = None

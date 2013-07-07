@@ -933,6 +933,8 @@ class PluginParameter(QWidget):
             self.ui.widget.setScalePoints(pInfo['scalePoints'], bool(pHints & PARAMETER_USES_SCALEPOINTS))
 
             if not pHints & PARAMETER_IS_ENABLED:
+                self.ui.label.setEnabled(False)
+                self.ui.widget.setEnabled(False)
                 self.ui.widget.setReadOnly(True)
                 self.ui.sb_control.setEnabled(False)
                 self.ui.sb_channel.setEnabled(False)
