@@ -289,8 +289,30 @@ class ParamSpinBox(QAbstractSpinBox):
             self.fBox.show()
             self.slot_updateProgressBarGeometry()
 
+            # Add items, sorted
+            boxItemValues = []
+
             for scalePoint in scalePoints:
-                self.fBox.addItem("%f - %s" % (scalePoint['value'], scalePoint['label']))
+                value = scalePoint['value']
+                label = "%f - %s" % (value, scalePoint['label'])
+
+                if len(boxItemValues) == 0:
+                    self.fBox.addItem(label)
+                    boxItemValues.append(value)
+
+                else:
+                    if value < boxItemValues[0]:
+                        self.fBox.insertItem(0, label)
+                        boxItemValues.insert(0, value)
+                    elif value > boxItemValues[-1]:
+                        self.fBox.addItem(label)
+                        boxItemValues.append(value)
+                    else:
+                        for index in range(len(boxItemValues)):
+                            if value >= boxItemValues[index]:
+                                self.fBox.insertItem(index+1, label)
+                                boxItemValues.insert(index+1, value)
+                                break
 
             if self.fValue != None:
                 self._setScalePointValue(self.fValue)
