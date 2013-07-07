@@ -943,6 +943,9 @@ class PluginParameter(QWidget):
                 self.ui.sb_control.setEnabled(False)
                 self.ui.sb_channel.setEnabled(False)
 
+                if pHints & PARAMETER_IS_READ_ONLY:
+                    self.ui.widget.setReadOnly(True)
+
         elif pType == PARAMETER_OUTPUT:
             self.ui.widget.setMinimum(pInfo['minimum'])
             self.ui.widget.setMaximum(pInfo['maximum'])

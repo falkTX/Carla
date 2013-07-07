@@ -162,20 +162,15 @@ public:
         }
     }
 
-    void writeBuffer(CarlaEngine* const engine) override
+    void writeBuffer(const uint32_t frames, const uint32_t timeOffset) override
     {
         CARLA_ASSERT(! kIsInput);
-        CARLA_ASSERT(engine != nullptr);
 
         if (kIsInput)
             return;
-        if (engine == nullptr)
-            return;
-
-        CARLA_ASSERT(engine->getBufferSize() == fBufferSize);
 
         float* const jackBuffer((float*)jackbridge_port_get_buffer(kPort, fBufferSize));
-        carla_copyFloat(jackBuffer, fBuffer, fBufferSize);
+        carla_copyFloat(jackBuffer+timeOffset, fBuffer, frames);
     }
 
 private:

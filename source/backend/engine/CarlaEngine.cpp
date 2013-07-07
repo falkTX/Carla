@@ -142,21 +142,12 @@ void CarlaEngineCVPort::initBuffer(CarlaEngine* const engine)
 {
     CARLA_ASSERT(engine != nullptr && engine->getBufferSize() == fBufferSize);
 
-    if (! kIsInput)
-        carla_zeroFloat(fBuffer, fBufferSize);
+    carla_zeroFloat(fBuffer, fBufferSize);
 }
 
-void CarlaEngineCVPort::writeBuffer(CarlaEngine* const engine)
+void CarlaEngineCVPort::writeBuffer(const uint32_t, const uint32_t)
 {
     CARLA_ASSERT(! kIsInput);
-    CARLA_ASSERT(engine != nullptr);
-
-    if (kIsInput)
-        return;
-    if (engine == nullptr)
-        return;
-
-    CARLA_ASSERT(engine->getBufferSize() == fBufferSize);
 }
 
 void CarlaEngineCVPort::setBufferSize(const uint32_t bufferSize)

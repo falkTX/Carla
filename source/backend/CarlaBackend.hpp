@@ -92,14 +92,15 @@ const unsigned int PLUGIN_OPTION_SEND_ALL_SOUND_OFF    = 0x100; //!< Send MIDI a
  * \see CarlaPlugin::parameterData()
  * @{
  */
-const unsigned int PARAMETER_IS_BOOLEAN       = 0x01; //!< Parameter value is a boolean (always at minimum or maximum values).
-const unsigned int PARAMETER_IS_INTEGER       = 0x02; //!< Parameter value is an integer.
-const unsigned int PARAMETER_IS_LOGARITHMIC   = 0x04; //!< Parameter is logarithmic.
-const unsigned int PARAMETER_IS_ENABLED       = 0x08; //!< Parameter is enabled and will be shown in the host built-in editor.
-const unsigned int PARAMETER_IS_AUTOMABLE     = 0x10; //!< Parameter is automable (realtime safe)
-const unsigned int PARAMETER_USES_SAMPLERATE  = 0x20; //!< Parameter needs sample rate to work (value and ranges are multiplied by SR, and must be divided by SR on save).
-const unsigned int PARAMETER_USES_SCALEPOINTS = 0x40; //!< Parameter uses scalepoints to define internal values in a meaningful way.
-const unsigned int PARAMETER_USES_CUSTOM_TEXT = 0x80; //!< Parameter uses custom text for displaying its value.\see CarlaPlugin::getParameterText()
+const unsigned int PARAMETER_IS_BOOLEAN       = 0x001; //!< Parameter value is a boolean (always at minimum or maximum values).
+const unsigned int PARAMETER_IS_INTEGER       = 0x002; //!< Parameter value is an integer.
+const unsigned int PARAMETER_IS_LOGARITHMIC   = 0x004; //!< Parameter is logarithmic.
+const unsigned int PARAMETER_IS_ENABLED       = 0x008; //!< Parameter is enabled and will be shown in the host built-in editor.
+const unsigned int PARAMETER_IS_AUTOMABLE     = 0x010; //!< Parameter is automable (realtime safe)
+const unsigned int PARAMETER_IS_READ_ONLY     = 0x020; //!< Parameter is read-only
+const unsigned int PARAMETER_USES_SAMPLERATE  = 0x040; //!< Parameter needs sample rate to work (value and ranges are multiplied by SR, and must be divided by SR on save).
+const unsigned int PARAMETER_USES_SCALEPOINTS = 0x080; //!< Parameter uses scalepoints to define internal values in a meaningful way.
+const unsigned int PARAMETER_USES_CUSTOM_TEXT = 0x100; //!< Parameter uses custom text for displaying its value.\see CarlaPlugin::getParameterText()
 /**@}*/
 
 /*!

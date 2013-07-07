@@ -17,8 +17,6 @@
 
 #include "CarlaPluginInternal.hpp"
 
-#define WANT_LV2
-
 #ifdef WANT_LV2
 
 #include "CarlaPluginGui.hpp"
@@ -1375,8 +1373,6 @@ public:
                 params += 1;
         }
 
-        params += cvIns + cvOuts;
-
         // check extensions
         fExt.options  = nullptr;
         fExt.programs = nullptr;
@@ -1440,22 +1436,22 @@ public:
 
         if (cvIns > 0)
         {
-            fCvIn.createNew(aIns);
+            fCvIn.createNew(cvIns);
+            needsCtrlIn = true;
         }
 
         if (cvOuts > 0)
         {
-            fCvOut.createNew(aOuts);
-            needsCtrlIn = true;
+            fCvOut.createNew(cvOuts);
+            needsCtrlOut = true;
         }
 
         if (params > 0)
         {
-            kData->param.createNew(params);
-            fParamBuffers = new float[params];
+            kData->param.createNew(params+cvIns+cvOuts);
 
-            for (uint32_t i=0; i < params; ++i)
-                fParamBuffers[i] = 0.0f;
+            fParamBuffers = new float[params+cvIns+cvOuts];
+            carla_zeroFloat(fParamBuffers, params+cvIns+cvOuts);
         }
 
         if (evIns.count() > 0)
@@ -1579,51 +1575,57 @@ public:
                 if (LV2_IS_PORT_INPUT(portTypes))
                 {
                     j = iCvIn++;
-                    fCvIn.ports[j].port   = (CarlaEngineCVPort*)kData->client->addPort(kEnginePortTypeCV, portName, true);
-                    fCvIn.ports[j].rindex = i;
+                    fCvIn.ports[j].port    = (CarlaEngineCVPort*)kData->client->addPort(kEnginePortTypeCV, portName, true);
+                    fCvIn.ports[j].rindex  = i;
+                    fCvIn.ports[j].param   = params + j;
 
                     fDescriptor->connect_port(fHandle, i, fCvIn.ports[j].port->getBuffer());
 
                     if (fHandle2 != nullptr)
                         fDescriptor->connect_port(fHandle2, i, fCvIn.ports[j].port->getBuffer());
 
-                    j = params + j;
+                    j = fCvIn.ports[j].param;
+                    kData->param.data[j].type   = PARAMETER_INPUT;
                     kData->param.data[j].index  = j;
                     kData->param.data[j].rindex = i;
-                    kData->param.data[j].hints  = 0x0;
+                    kData->param.data[j].hints  = PARAMETER_IS_ENABLED|PARAMETER_IS_READ_ONLY;
                     kData->param.data[j].midiChannel = 0;
                     kData->param.data[j].midiCC = -1;
-                    kData->param.ranges[j].min = 0.0f;
+                    kData->param.ranges[j].min = -1.0f;
                     kData->param.ranges[j].max = 1.0f;
                     kData->param.ranges[j].def = 0.0f;
                     kData->param.ranges[j].step = 0.01f;
                     kData->param.ranges[j].stepSmall = 0.001f;
                     kData->param.ranges[j].stepLarge = 0.1f;
+                    fParamBuffers[j] = 0.0f;
 
                 }
                 else if (LV2_IS_PORT_OUTPUT(portTypes))
                 {
                     j = iCvOut++;
-                    fCvOut.ports[j].port   = (CarlaEngineCVPort*)kData->client->addPort(kEnginePortTypeCV, portName, false);
-                    fCvOut.ports[j].rindex = i;
+                    fCvOut.ports[j].port    = (CarlaEngineCVPort*)kData->client->addPort(kEnginePortTypeCV, portName, false);
+                    fCvOut.ports[j].rindex  = i;
+                    fCvOut.ports[j].param   = params + cvIns + j;
 
                     fDescriptor->connect_port(fHandle, i, fCvOut.ports[j].port->getBuffer());
 
                     if (fHandle2 != nullptr)
                         fDescriptor->connect_port(fHandle2, i, fCvOut.ports[j].port->getBuffer());
 
-                    j = params + cvIns + j;
+                    j = fCvOut.ports[j].param;
+                    kData->param.data[j].type   = PARAMETER_OUTPUT;
                     kData->param.data[j].index  = j;
                     kData->param.data[j].rindex = i;
-                    kData->param.data[j].hints  = 0x0;
+                    kData->param.data[j].hints  = PARAMETER_IS_ENABLED|PARAMETER_IS_AUTOMABLE;
                     kData->param.data[j].midiChannel = 0;
                     kData->param.data[j].midiCC = -1;
-                    kData->param.ranges[j].min = 0.0f;
+                    kData->param.ranges[j].min = -1.0f;
                     kData->param.ranges[j].max = 1.0f;
                     kData->param.ranges[j].def = 0.0f;
                     kData->param.ranges[j].step = 0.01f;
                     kData->param.ranges[j].stepSmall = 0.001f;
                     kData->param.ranges[j].stepLarge = 0.1f;
+                    fParamBuffers[j] = 0.0f;
                 }
                 else
                     carla_stderr("WARNING - Got a broken Port (CV, but not input or output)");
@@ -3156,6 +3158,21 @@ public:
             carla_zeroFloat(fAudioOutBuffers[i], frames);
 
         // --------------------------------------------------------------------------------------------------------
+        // Set CV input buffers
+
+        for (i=0; i < fCvIn.count; ++i)
+        {
+            const uint32_t cvIndex(fCvIn.ports[i].param);
+            const float    cvValue((fCvIn.ports[i].port->getBuffer()+timeOffset)[0]);
+
+            if (fParamBuffers[cvIndex] != cvValue)
+            {
+                fParamBuffers[cvIndex] = cvValue;
+                postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(cvIndex), 0, cvValue);
+            }
+        }
+
+        // --------------------------------------------------------------------------------------------------------
         // Run plugin
 
         fDescriptor->run(fHandle, frames);
@@ -3268,6 +3285,18 @@ public:
 #endif
 
         // --------------------------------------------------------------------------------------------------------
+        // Set CV output buffers
+
+        for (i=0; i < fCvOut.count; ++i)
+        {
+            const uint32_t cvIndex(fCvOut.ports[i].param);
+            const float    cvValue(fCvOut.ports[i].port->getBuffer()[0]);
+
+            fCvOut.ports[i].port->writeBuffer(frames, timeOffset);
+            fParamBuffers[cvIndex] = cvValue;
+        }
+
+        // --------------------------------------------------------------------------------------------------------
 
         kData->singleMutex.unlock();
         return true;
@@ -3290,6 +3319,32 @@ public:
             if (fAudioOutBuffers[i] != nullptr)
                 delete[] fAudioOutBuffers[i];
             fAudioOutBuffers[i] = new float[newBufferSize];
+        }
+
+        for (uint32_t i=0; i < fCvIn.count; ++i)
+        {
+            if (CarlaEngineCVPort* const port = fCvIn.ports[i].port)
+            {
+                port->setBufferSize(newBufferSize);
+
+                fDescriptor->connect_port(fHandle, fCvIn.ports[i].rindex, port->getBuffer());
+
+                if (fHandle2 != nullptr)
+                    fDescriptor->connect_port(fHandle2, fCvIn.ports[i].rindex, port->getBuffer());
+            }
+        }
+
+        for (uint32_t i=0; i < fCvOut.count; ++i)
+        {
+            if (CarlaEngineCVPort* const port = fCvOut.ports[i].port)
+            {
+                port->setBufferSize(newBufferSize);
+
+                fDescriptor->connect_port(fHandle, fCvOut.ports[i].rindex, port->getBuffer());
+
+                if (fHandle2 != nullptr)
+                    fDescriptor->connect_port(fHandle2, fCvOut.ports[i].rindex, port->getBuffer());
+            }
         }
 
         if (fHandle2 == nullptr)
@@ -3390,6 +3445,8 @@ public:
     {
         fEventsIn.initBuffers(kData->engine);
         fEventsOut.initBuffers(kData->engine);
+        fCvIn.initBuffers(kData->engine);
+        fCvOut.initBuffers(kData->engine);
 
         CarlaPlugin::initBuffers();
     }
@@ -3436,6 +3493,8 @@ public:
 
         fEventsIn.clear();
         fEventsOut.clear();
+        fCvIn.clear();
+        fCvOut.clear();
 
         CarlaPlugin::clearBuffers();
 
@@ -4303,7 +4362,7 @@ public:
         {
             const LV2_Property portTypes(fRdfDescriptor->Ports[i].Types);
 
-            if (! (LV2_IS_PORT_AUDIO(portTypes) || LV2_IS_PORT_CONTROL(portTypes) || LV2_IS_PORT_ATOM_SEQUENCE(portTypes) || LV2_IS_PORT_EVENT(portTypes) || LV2_IS_PORT_MIDI_LL(portTypes)))
+            if (! is_lv2_port_supported(portTypes))
             {
                 if (! LV2_IS_PORT_OPTIONAL(fRdfDescriptor->Ports[i].Properties))
                 {
@@ -5326,7 +5385,7 @@ private:
     static void carla_lilv_set_port_value(const char* port_symbol, void* user_data, const void* value, uint32_t size, uint32_t type)
     {
         CARLA_ASSERT(user_data != nullptr);
-        carla_debug("carla_lilv_set_port_value(\"%s\", %p, %p, %i, %i", port_symbol, user_data, value, size, type);
+        carla_debug("carla_lilv_set_port_value(\"%s\", %p, %p, %i, %i)", port_symbol, user_data, value, size, type);
 
         if (user_data == nullptr)
             return;

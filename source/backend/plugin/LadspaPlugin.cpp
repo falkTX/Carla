@@ -491,10 +491,9 @@ public:
         if (params > 0)
         {
             kData->param.createNew(params);
-            fParamBuffers = new float[params];
 
-            for (uint32_t i=0; i < params; ++i)
-                fParamBuffers[i] = 0.0f;
+            fParamBuffers = new float[params];
+            carla_zeroFloat(fParamBuffers, params);
         }
 
         const uint portNameSize(kData->engine->maxPortNameSize());

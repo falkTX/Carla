@@ -517,7 +517,7 @@ public:
     /*!
      * Write buffer back into the engine.
      */
-    virtual void writeBuffer(CarlaEngine* const engine);
+    virtual void writeBuffer(const uint32_t frames, const uint32_t timeOffset);
 
     /*!
      * Set a new buffer size.
