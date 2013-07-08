@@ -61,7 +61,7 @@ typedef enum _PluginHints {
 } PluginHints;
 
 typedef enum _PluginSupports {
-    PLUGIN_SUPPORTS_PROGRAM_CHANGES  = 1 << 0, // used in MIDI filters only
+    PLUGIN_SUPPORTS_PROGRAM_CHANGES  = 1 << 0, // handles MIDI programs internally instead of host-exposed/exported
     PLUGIN_SUPPORTS_CONTROL_CHANGES  = 1 << 1,
     PLUGIN_SUPPORTS_CHANNEL_PRESSURE = 1 << 2,
     PLUGIN_SUPPORTS_NOTE_AFTERTOUCH  = 1 << 3,

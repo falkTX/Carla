@@ -340,7 +340,7 @@ protected:
 #if DISTRHO_PLUGIN_WANT_PROGRAMS
     void setMidiProgram(const uint8_t, const uint32_t bank, const uint32_t program) override
     {
-        const uint32_t realProgram = bank * 128 + program;
+        const uint32_t realProgram(bank * 128 + program);
 
         if (realProgram >= fPlugin.programCount())
             return;

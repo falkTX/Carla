@@ -23,7 +23,7 @@
 
 #include <QtCore/Qt>
 
-# if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 # include <QtWidgets/QFileDialog>
 #else
 # include <QtGui/QFileDialog>
@@ -313,11 +313,14 @@ public:
         if (fDescriptor == nullptr)
             return 0x0;
 
+        const bool hasMidiProgs(fDescriptor->get_midi_program_count != nullptr && fDescriptor->get_midi_program_count(fHandle) > 0);
+
         unsigned int options = 0x0;
 
-        options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+        if (hasMidiProgs && (fDescriptor->supports & ::PLUGIN_SUPPORTS_PROGRAM_CHANGES) == 0)
+            options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
-        if (midiInCount() == 0 && (fDescriptor->hints & PLUGIN_USES_STATIC_BUFFERS) == 0)
+        if (midiInCount() == 0 && (fDescriptor->hints & ::PLUGIN_USES_STATIC_BUFFERS) == 0)
             options |= PLUGIN_OPTION_FIXED_BUFFER;
 
         if (kData->engine->getProccessMode() != PROCESS_MODE_CONTINUOUS_RACK)
@@ -328,14 +331,16 @@ public:
                 options |= PLUGIN_OPTION_FORCE_STEREO;
         }
 
-        if (fDescriptor->midiIns > 0)
-        {
+        if (fDescriptor->supports & ::PLUGIN_SUPPORTS_CONTROL_CHANGES)
             options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
+        if (fDescriptor->supports & ::PLUGIN_SUPPORTS_CHANNEL_PRESSURE)
             options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
+        if (fDescriptor->supports & ::PLUGIN_SUPPORTS_NOTE_AFTERTOUCH)
             options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
+        if (fDescriptor->supports & ::PLUGIN_SUPPORTS_PITCHBEND)
             options |= PLUGIN_OPTION_SEND_PITCHBEND;
+        if (fDescriptor->supports & ::PLUGIN_SUPPORTS_ALL_SOUND_OFF)
             options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
-        }
 
         return options;
     }
@@ -511,11 +516,12 @@ public:
                           fCurMidiProgs[4],  fCurMidiProgs[5],  fCurMidiProgs[6],  fCurMidiProgs[7],
                           fCurMidiProgs[8],  fCurMidiProgs[9],  fCurMidiProgs[10], fCurMidiProgs[11],
                           fCurMidiProgs[12], fCurMidiProgs[13], fCurMidiProgs[14], fCurMidiProgs[15]);
+            strBuf[STR_MAX] = '\0';
 
             CarlaPlugin::setCustomData(CUSTOM_DATA_STRING, "midiPrograms", strBuf, false);
         }
 
-        if (fDescriptor->get_state == nullptr || (fDescriptor->hints & ::PLUGIN_USES_STATE) == 0)
+        if (fDescriptor == nullptr || fDescriptor->get_state == nullptr || (fDescriptor->hints & ::PLUGIN_USES_STATE) == 0)
             return;
 
         if (char* data = fDescriptor->get_state(fHandle))
@@ -530,16 +536,19 @@ public:
 
     void setName(const char* const newName) override
     {
+        CARLA_ASSERT(fDescriptor != nullptr);
+        CARLA_ASSERT(fHandle != nullptr);
+
         char uiName[std::strlen(newName)+6+1];
         std::strcpy(uiName, newName);
         std::strcat(uiName, " (GUI)");
 
         if (fHost.ui_name != nullptr)
             delete[] fHost.ui_name;
-
         fHost.ui_name = carla_strdup(uiName);
 
-        // TODO - send callback to plugin, reporting name change
+        if (fDescriptor != nullptr && fDescriptor->dispatcher != nullptr)
+            fDescriptor->dispatcher(fHandle, PLUGIN_OPCODE_UI_NAME_CHANGED, 0, 0, uiName, 0.0f);
 
         CarlaPlugin::setName(newName);
     }
@@ -617,7 +626,7 @@ public:
                 foreach (const QString& midiProg, midiProgramList)
                 {
                     bool ok;
-                    uint index = midiProg.toUInt(&ok);
+                    const uint index(midiProg.toUInt(&ok));
 
                     if (ok && index < kData->midiprog.count)
                     {
@@ -706,31 +715,34 @@ public:
         fDescriptor->ui_show(fHandle, yesNo);
         fIsUiVisible = yesNo;
 
-        if (yesNo)
+        if (! yesNo)
+            return;
+
+        if (fDescriptor->ui_set_custom_data != nullptr)
         {
-            // Update UI values, FIXME? (remove?)
-            if (fDescriptor->ui_set_custom_data != nullptr)
+            for (NonRtList<CustomData>::Itenerator it = kData->custom.begin(); it.valid(); it.next())
             {
-                for (NonRtList<CustomData>::Itenerator it = kData->custom.begin(); it.valid(); it.next())
-                {
-                    const CustomData& cData(*it);
+                const CustomData& cData(*it);
 
-                    if (std::strcmp(cData.type, CUSTOM_DATA_STRING) == 0)
-                        fDescriptor->ui_set_custom_data(fHandle, cData.key, cData.value);
-                }
+                if (std::strcmp(cData.type, CUSTOM_DATA_STRING) == 0 && std::strcmp(cData.key, "midiPrograms") != 0)
+                    fDescriptor->ui_set_custom_data(fHandle, cData.key, cData.value);
             }
+        }
 
-            if (fDescriptor->ui_set_midi_program != nullptr && kData->midiprog.current >= 0)
-            {
-                const MidiProgramData& mpData(kData->midiprog.getCurrent());
-                fDescriptor->ui_set_midi_program(fHandle, 0, mpData.bank, mpData.program); // TODO
-            }
+        if (fDescriptor->ui_set_midi_program != nullptr && kData->midiprog.current >= 0 && kData->midiprog.count > 0)
+        {
+            const uint32_t index   = kData->midiprog.current;
+            const uint8_t  channel = (kData->ctrlChannel >= 0 || kData->ctrlChannel < MAX_MIDI_CHANNELS) ? kData->ctrlChannel : 0;
+            const uint32_t bank    = kData->midiprog.data[index].bank;
+            const uint32_t program = kData->midiprog.data[index].program;
 
-            if (fDescriptor->ui_set_parameter_value != nullptr)
-            {
-                for (uint32_t i=0; i < kData->param.count; ++i)
-                    fDescriptor->ui_set_parameter_value(fHandle, i, fDescriptor->get_parameter_value(fHandle, i));
-            }
+            fDescriptor->ui_set_midi_program(fHandle, channel, bank, program);
+        }
+
+        if (fDescriptor->ui_set_parameter_value != nullptr)
+        {
+            for (uint32_t i=0; i < kData->param.count; ++i)
+                fDescriptor->ui_set_parameter_value(fHandle, i, fDescriptor->get_parameter_value(fHandle, i));
         }
     }
 
@@ -770,7 +782,7 @@ public:
 
         clearBuffers();
 
-        const float sampleRate = (float)kData->engine->getSampleRate();
+        const float sampleRate((float)kData->engine->getSampleRate());
 
         uint32_t aIns, aOuts, mIns, mOuts, params, j;
 
@@ -2145,7 +2157,7 @@ protected:
         return retStr.isNotEmpty() ? (const char*)retStr : nullptr;
     }
 
-    intptr_t handleDispatcher(const HostDispatcherOpcode opcode, const int32_t index, const intptr_t value, void* const ptr, const float opt)
+    intptr_t handleDispatcher(const ::HostDispatcherOpcode opcode, const int32_t index, const intptr_t value, void* const ptr, const float opt)
     {
         carla_debug("NativePlugin::handleDispatcher(%i, %i, " P_INTPTR ", %p, %f)", opcode, index, value, ptr, opt);
 
@@ -2182,6 +2194,16 @@ protected:
         case ::HOST_OPCODE_SET_PROCESS_PRECISION:
             // TODO
             break;
+        case ::HOST_OPCODE_UPDATE_PARAMETER:
+            break;
+        case ::HOST_OPCODE_UPDATE_MIDI_PROGRAM:
+            break;
+        case ::HOST_OPCODE_RELOAD_PARAMETERS:
+            break;
+        case ::HOST_OPCODE_RELOAD_MIDI_PROGRAMS:
+            break;
+        case ::HOST_OPCODE_RELOAD_ALL:
+            break;
         case HOST_OPCODE_UI_UNAVAILABLE:
             kData->engine->callback(CALLBACK_SHOW_GUI, fId, -1, 0, 0.0f, nullptr);
             break;
@@ -2203,7 +2225,7 @@ public:
         return sPluginDescriptors.count();
     }
 
-    static const PluginDescriptor* getPluginDescriptor(const size_t index)
+    static const ::PluginDescriptor* getPluginDescriptor(const size_t index)
     {
         CARLA_ASSERT(index < sPluginDescriptors.count());
 
@@ -2213,7 +2235,7 @@ public:
         return nullptr;
     }
 
-    static void registerPlugin(const PluginDescriptor* desc)
+    static void registerPlugin(const ::PluginDescriptor* desc)
     {
         sPluginDescriptors.append(desc);
     }
@@ -2249,7 +2271,7 @@ public:
         // ---------------------------------------------------------------
         // get descriptor that matches label
 
-        for (NonRtList<const PluginDescriptor*>::Itenerator it = sPluginDescriptors.begin(); it.valid(); it.next())
+        for (NonRtList<const ::PluginDescriptor*>::Itenerator it = sPluginDescriptors.begin(); it.valid(); it.next())
         {
             fDescriptor = *it;
 
@@ -2338,24 +2360,28 @@ public:
         // load plugin settings
 
         {
+            const bool hasMidiProgs(fDescriptor->get_midi_program_count != nullptr && fDescriptor->get_midi_program_count(fHandle) > 0);
+
             // set default options
             fOptions = 0x0;
 
-            fOptions |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+            if (hasMidiProgs && (fDescriptor->supports & ::PLUGIN_SUPPORTS_PROGRAM_CHANGES) == 0)
+                fOptions |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
-            if (midiInCount() > 0 || (fDescriptor->hints & PLUGIN_USES_STATIC_BUFFERS) != 0)
+            if (midiInCount() > 0 || (fDescriptor->hints & ::PLUGIN_USES_STATIC_BUFFERS) != 0)
                 fOptions |= PLUGIN_OPTION_FIXED_BUFFER;
 
             if (kData->engine->getOptions().forceStereo)
                 fOptions |= PLUGIN_OPTION_FORCE_STEREO;
 
-            if (fDescriptor->midiIns > 0)
-            {
+            if (fDescriptor->supports & ::PLUGIN_SUPPORTS_CHANNEL_PRESSURE)
                 fOptions |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
+            if (fDescriptor->supports & ::PLUGIN_SUPPORTS_NOTE_AFTERTOUCH)
                 fOptions |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
+            if (fDescriptor->supports & ::PLUGIN_SUPPORTS_PITCHBEND)
                 fOptions |= PLUGIN_OPTION_SEND_PITCHBEND;
+            if (fDescriptor->supports & ::PLUGIN_SUPPORTS_ALL_SOUND_OFF)
                 fOptions |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
-            }
 
             // load settings
             kData->idStr  = "Native/";
@@ -2363,7 +2389,7 @@ public:
             fOptions = kData->loadSettings(fOptions, availableOptions());
 
             // ignore settings, we need this anyway
-            if (midiInCount() > 0 || (fDescriptor->hints & PLUGIN_USES_STATIC_BUFFERS) != 0)
+            if (midiInCount() > 0 || (fDescriptor->hints & ::PLUGIN_USES_STATIC_BUFFERS) != 0)
                 fOptions |= PLUGIN_OPTION_FIXED_BUFFER;
         }
 
@@ -2385,10 +2411,10 @@ public:
     };
 
 private:
-    PluginHandle   fHandle;
-    PluginHandle   fHandle2;
-    HostDescriptor fHost;
-    const PluginDescriptor* fDescriptor;
+    ::PluginHandle   fHandle;
+    ::PluginHandle   fHandle2;
+    ::HostDescriptor fHost;
+    const ::PluginDescriptor* fDescriptor;
 
     bool fIsProcessing;
     bool fIsUiVisible;
@@ -2405,63 +2431,63 @@ private:
 
     ::TimeInfo fTimeInfo;
 
-    static NonRtList<const PluginDescriptor*> sPluginDescriptors;
+    static NonRtList<const ::PluginDescriptor*> sPluginDescriptors;
 
     // -------------------------------------------------------------------
 
     #define handlePtr ((NativePlugin*)handle)
 
-    static uint32_t carla_host_get_buffer_size(HostHandle handle)
+    static uint32_t carla_host_get_buffer_size(::HostHandle handle)
     {
         return handlePtr->handleGetBufferSize();
     }
 
-    static double carla_host_get_sample_rate(HostHandle handle)
+    static double carla_host_get_sample_rate(::HostHandle handle)
     {
         return handlePtr->handleGetSampleRate();
     }
 
-    static bool carla_host_is_offline(HostHandle handle)
+    static bool carla_host_is_offline(::HostHandle handle)
     {
         return handlePtr->handleIsOffline();
     }
 
-    static const ::TimeInfo* carla_host_get_time_info(HostHandle handle)
+    static const ::TimeInfo* carla_host_get_time_info(::HostHandle handle)
     {
         return handlePtr->handleGetTimeInfo();
     }
 
-    static bool carla_host_write_midi_event(HostHandle handle, const ::MidiEvent* event)
+    static bool carla_host_write_midi_event(::HostHandle handle, const ::MidiEvent* event)
     {
         return handlePtr->handleWriteMidiEvent(event);
     }
 
-    static void carla_host_ui_parameter_changed(HostHandle handle, uint32_t index, float value)
+    static void carla_host_ui_parameter_changed(::HostHandle handle, uint32_t index, float value)
     {
         handlePtr->handleUiParameterChanged(index, value);
     }
 
-    static void carla_host_ui_custom_data_changed(HostHandle handle, const char* key, const char* value)
+    static void carla_host_ui_custom_data_changed(::HostHandle handle, const char* key, const char* value)
     {
         handlePtr->handleUiCustomDataChanged(key, value);
     }
 
-    static void carla_host_ui_closed(HostHandle handle)
+    static void carla_host_ui_closed(::HostHandle handle)
     {
         handlePtr->handleUiClosed();
     }
 
-    static const char* carla_host_ui_open_file(HostHandle handle, bool isDir, const char* title, const char* filter)
+    static const char* carla_host_ui_open_file(::HostHandle handle, bool isDir, const char* title, const char* filter)
     {
         return handlePtr->handleUiOpenFile(isDir, title, filter);
     }
 
-    static const char* carla_host_ui_save_file(HostHandle handle, bool isDir, const char* title, const char* filter)
+    static const char* carla_host_ui_save_file(::HostHandle handle, bool isDir, const char* title, const char* filter)
     {
         return handlePtr->handleUiSaveFile(isDir, title, filter);
     }
 
-    static intptr_t carla_host_dispatcher(HostHandle handle, HostDispatcherOpcode opcode, int32_t index, intptr_t value, void* ptr, float opt)
+    static intptr_t carla_host_dispatcher(::HostHandle handle, ::HostDispatcherOpcode opcode, int32_t index, intptr_t value, void* ptr, float opt)
     {
         return handlePtr->handleDispatcher(opcode, index, value, ptr, opt);
     }
@@ -2471,7 +2497,7 @@ private:
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(NativePlugin)
 };
 
-NonRtList<const PluginDescriptor*> NativePlugin::sPluginDescriptors;
+NonRtList<const ::PluginDescriptor*> NativePlugin::sPluginDescriptors;
 
 static const NativePlugin::ScopedInitializer _si;
 
