@@ -19,7 +19,7 @@ The required build dependencies are: <i>(devel packages of these)</i>
 
  - liblo
  - Qt4
- - PyQt4
+ - PyQt4 (python3 version)
 
 Optional for extended LV2 UIs support:
 
