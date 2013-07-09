@@ -1647,7 +1647,7 @@ public:
             }
         }
 
-        carla_debug("DssiPlugin::bufferSizeChanged(%i) - start", newBufferSize);
+        carla_debug("DssiPlugin::bufferSizeChanged(%i) - end", newBufferSize);
     }
 
     void sampleRateChanged(const double newSampleRate) override

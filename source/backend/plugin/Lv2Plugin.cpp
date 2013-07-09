@@ -2182,7 +2182,7 @@ public:
 
     void reloadPrograms(const bool init) override
     {
-        carla_debug("DssiPlugin::reloadPrograms(%s)", bool2str(init));
+        carla_debug("Lv2Plugin::reloadPrograms(%s)", bool2str(init));
         uint32_t i, oldCount  = kData->midiprog.count;
         const int32_t current = kData->midiprog.current;
 
