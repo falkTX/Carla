@@ -410,5 +410,5 @@ else
 	@echo "ZynAddSubFX:$(ANS_YES) (without UI) $(mS)NTK missing$(mE)"
 endif
 else
-	@echo "ZynAddSubFX:$(ANS_NO) $(mS)fftw-3, mxml or zlib missing$(mE)"
+	@echo "ZynAddSubFX:$(ANS_NO) $(mS)fftw3f, mxml or zlib missing$(mE)"
 endif

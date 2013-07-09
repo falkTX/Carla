@@ -69,7 +69,7 @@ HAVE_QT5          = $(shell pkg-config --exists Qt5Core && echo true)
 
 HAVE_AF_DEPS      = $(shell pkg-config --exists sndfile && echo true)
 HAVE_MF_DEPS      = $(shell pkg-config --exists smf && echo true)
-HAVE_ZYN_DEPS     = $(shell pkg-config --exists fftw3 mxml zlib && echo true)
+HAVE_ZYN_DEPS     = $(shell pkg-config --exists fftw3f mxml zlib && echo true)
 HAVE_ZYN_UI_DEPS  = $(shell pkg-config --exists ntk ntk_images && echo true)
 
 ifeq ($(CARLA_SAMPLERS_SUPPORT),true)

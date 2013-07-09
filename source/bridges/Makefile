@@ -119,7 +119,7 @@ endif
 
 ifeq ($(HAVE_ZYN_DEPS),true)
 NATIVE_BUILD_FLAGS += -DWANT_ZYNADDSUBFX
-NATIVE_LINK_FLAGS  += $(shell pkg-config --libs fftw3 mxml zlib)
+NATIVE_LINK_FLAGS  += $(shell pkg-config --libs fftw3f mxml zlib)
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
 NATIVE_LINK_FLAGS  += $(shell pkg-config --libs ntk ntk_images)
 endif

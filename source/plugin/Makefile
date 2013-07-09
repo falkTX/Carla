@@ -49,7 +49,7 @@ LINK_FLAGS += $(shell pkg-config --libs gl) $(DGL_LIBS)
 endif
 
 ifeq ($(HAVE_ZYN_DEPS),true)
-LINK_FLAGS += $(shell pkg-config --libs fftw3 mxml zlib)
+LINK_FLAGS += $(shell pkg-config --libs fftw3f mxml zlib)
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
 LINK_FLAGS += $(shell pkg-config --libs ntk ntk_images)
 endif
