@@ -149,11 +149,11 @@ install:
 	install -d $(DESTDIR)$(PREFIX)/lib/carla/resources/
 	install -d $(DESTDIR)$(PREFIX)/lib/carla/resources/nekofilter/
 	install -d $(DESTDIR)$(PREFIX)/lib/carla/resources/zynaddsubfx/
-ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-	install -d $(DESTDIR)$(PREFIX)/lib/dssi/
-	install -d $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/
-	install -d $(DESTDIR)$(PREFIX)/lib/vst/
-endif
+# ifeq ($(CARLA_PLUGIN_SUPPORT),true)
+# 	install -d $(DESTDIR)$(PREFIX)/lib/dssi/
+# 	install -d $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/
+# 	install -d $(DESTDIR)$(PREFIX)/lib/vst/
+# endif
 	install -d $(DESTDIR)$(PREFIX)/share/applications/
 	install -d $(DESTDIR)$(PREFIX)/share/carla/
 	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/16x16/apps/
