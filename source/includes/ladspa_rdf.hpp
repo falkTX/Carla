@@ -132,8 +132,6 @@ struct LADSPA_RDF_ScalePoint {
             Label = nullptr;
         }
     }
-
-    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(LADSPA_RDF_ScalePoint)
 };
 
 // Port
@@ -169,8 +167,6 @@ struct LADSPA_RDF_Port {
             ScalePoints = nullptr;
         }
     }
-
-    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(LADSPA_RDF_Port)
 };
 
 // Plugin
@@ -209,8 +205,6 @@ struct LADSPA_RDF_Descriptor {
             Ports = nullptr;
         }
     }
-
-    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(LADSPA_RDF_Descriptor)
 };
 
 #endif // LADSPA_RDF_INCLUDED
