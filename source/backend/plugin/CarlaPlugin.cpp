@@ -2253,6 +2253,24 @@ CarlaPlugin::ScopedSingleProcessLocker::~ScopedSingleProcessLocker()
     }
 }
 
+// #ifdef BUILD_BRIDGE
+// CarlaPlugin* newFailAsBridge(const CarlaPlugin::Initializer& init)
+// {
+//     init.engine->setLastError("Can't use this in plugin bridges");
+//     return nullptr;
+// }
+//
+// CarlaPlugin* CarlaPlugin::newNative(const Initializer& init)          { return newFailAsBridge(init); }
+// CarlaPlugin* CarlaPlugin::newGIG(const Initializer& init, const bool) { return newFailAsBridge(init); }
+// CarlaPlugin* CarlaPlugin::newSF2(const Initializer& init, const bool) { return newFailAsBridge(init); }
+// CarlaPlugin* CarlaPlugin::newSFZ(const Initializer& init, const bool) { return newFailAsBridge(init); }
+//
+// # ifdef WANT_NATIVE
+// size_t                  CarlaPlugin::getNativePluginCount()                  { return 0;       }
+// const PluginDescriptor* CarlaPlugin::getNativePluginDescriptor(const size_t) { return nullptr; }
+// # endif
+// #endif
+
 // -------------------------------------------------------------------
 
 CARLA_BACKEND_END_NAMESPACE

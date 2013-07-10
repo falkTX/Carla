@@ -56,7 +56,7 @@ posix64:
 	$(MAKE) -C source/discovery posix64
 
 win32:
-# 	$(MAKE) -C source/bridges win32
+	$(MAKE) -C source/bridges win32
 	$(MAKE) -C source/discovery win32
 
 win64:
@@ -64,11 +64,11 @@ win64:
 	$(MAKE) -C source/discovery win64
 
 wine32:
-	$(MAKE) -C source/libs jackbridge-win32.dll.so
+	$(MAKE) -C source/libs jackbridge-wine32
 	$(LINK) ../libs/jackbridge-win32.dll.so source/bridges/jackbridge-win32.dll
 
 wine64:
-	$(MAKE) -C source/libs jackbridge-win64.dll.so
+	$(MAKE) -C source/libs jackbridge-wine64
 	$(LINK) ../libs/jackbridge-win64.dll.so source/bridges/jackbridge-win64.dll
 
 # --------------------------------------------------------------

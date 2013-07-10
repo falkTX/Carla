@@ -608,7 +608,16 @@ carla-bridge-win64.exe: $(FILES) $(OBJS_WIN64) ../libs/jackbridge-win64.dll
 ../backend/libcarla_native.a: .FORCE
 	$(MAKE) -C ../backend/native
 
+../libs/lilv.%.a: .FORCE
+	$(MAKE) -C ../libs lilv_$*
+
+../libs/rtmempool.%.a: .FORCE
+	$(MAKE) -C ../libs rtmempool_$*
+
 ../libs/%.a: .FORCE
+	$(MAKE) -C ../libs $*
+
+../libs/%.dll:
 	$(MAKE) -C ../libs $*
 
 # --------------------------------------------------------------

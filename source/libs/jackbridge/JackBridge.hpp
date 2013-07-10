@@ -28,6 +28,7 @@
 # include <jack/jack.h>
 # include <jack/midiport.h>
 # include <jack/transport.h>
+# include <jack/custom.h>
 #else
 
 #include <cstddef>
@@ -274,7 +275,9 @@ CARLA_EXPORT bool jackbridge_set_freewheel_callback(jack_client_t* client, JackF
 CARLA_EXPORT bool jackbridge_set_buffer_size_callback(jack_client_t* client, JackBufferSizeCallback bufsize_callback, void* arg);
 CARLA_EXPORT bool jackbridge_set_sample_rate_callback(jack_client_t* client, JackSampleRateCallback srate_callback, void* arg);
 CARLA_EXPORT bool jackbridge_set_client_registration_callback(jack_client_t* client, JackClientRegistrationCallback registration_callback, void* arg);
+#ifndef JACKBRIDGE_DIRECT
 CARLA_EXPORT bool jackbridge_set_client_rename_callback(jack_client_t* client, JackClientRenameCallback registration_callback, void* arg);
+#endif
 CARLA_EXPORT bool jackbridge_set_port_registration_callback(jack_client_t* client, JackPortRegistrationCallback registration_callback, void* arg);
 CARLA_EXPORT bool jackbridge_set_port_connect_callback(jack_client_t* client, JackPortConnectCallback connect_callback, void* arg);
 CARLA_EXPORT bool jackbridge_set_port_rename_callback(jack_client_t* client, JackPortRenameCallback rename_callback, void* arg);
