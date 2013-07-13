@@ -29,5 +29,5 @@ debug:
 
 # --------------------------------------------------------------
 
-doc: CarlaBackend.doxygen
+doxygen: CarlaBackend.doxygen
 	doxygen $^

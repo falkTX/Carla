@@ -142,6 +142,11 @@ debug:
 
 # --------------------------------------------------------------
 
+doxygen:
+	$(MAKE) doxygen -C source/backend
+
+# --------------------------------------------------------------
+
 install:
 	# Create directories
 	install -d $(DESTDIR)$(PREFIX)/bin/

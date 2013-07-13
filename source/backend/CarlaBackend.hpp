@@ -110,6 +110,7 @@ const unsigned int PARAMETER_USES_CUSTOM_TEXT = 0x100; //!< Parameter uses custo
  *
  * Types are valid URIs.\n
  * Any non-string, non-simple type (not integral) is saved in a base64 encoded format.
+ * @{
  */
 const char* const CUSTOM_DATA_INVALID = nullptr;                                  //!< Null or Invalid data.
 const char* const CUSTOM_DATA_CHUNK   = "http://kxstudio.sf.net/ns/carla/chunk";  //!< Carla Chunk URI
@@ -124,9 +125,9 @@ const char* const CUSTOM_DATA_STRING  = "http://kxstudio.sf.net/ns/carla/string"
  */
 const unsigned int PATCHBAY_PORT_IS_INPUT  = 0x01; //!< Patchbay port is input.
 const unsigned int PATCHBAY_PORT_IS_OUTPUT = 0x02; //!< Patchbay port is output.
-const unsigned int PATCHBAY_PORT_IS_AUDIO  = 0x04; //!< Patchbay port is of Audio type.
-const unsigned int PATCHBAY_PORT_IS_CV     = 0x08; //!< Patchbay port is of CV type.
-const unsigned int PATCHBAY_PORT_IS_MIDI   = 0x10; //!< Patchbay port is of MIDI type.
+const unsigned int PATCHBAY_PORT_IS_AUDIO  = 0x10; //!< Patchbay port is of Audio type.
+const unsigned int PATCHBAY_PORT_IS_CV     = 0x20; //!< Patchbay port is of CV type.
+const unsigned int PATCHBAY_PORT_IS_MIDI   = 0x40; //!< Patchbay port is of MIDI type.
 /**@}*/
 
 /*!
