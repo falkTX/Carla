@@ -1,6 +1,6 @@
 # QtCreator project file
 
-TARGET   = CarlaPlugin
+TARGET   = CarlaNative
 TEMPLATE = lib
 VERSION  = 1.0
 

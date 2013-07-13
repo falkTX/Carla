@@ -2319,8 +2319,8 @@ public:
 
             // load settings
             kData->idStr  = "VST/";
-            kData->idStr += std::strrchr(filename, OS_SEP)+1; // FIXME!
-            kData->idStr += "/";
+            //kData->idStr += std::strrchr(filename, OS_SEP)+1; // FIXME!
+            //kData->idStr += "/";
             kData->idStr += CarlaString(uniqueId());
             fOptions = kData->loadSettings(fOptions, availableOptions());
 
