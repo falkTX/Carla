@@ -871,6 +871,11 @@ public:
 #ifdef BUILD_BRIDGE
         client = fClient = jackbridge_client_open(plugin->name(), JackNullOption, nullptr);
 
+        CARLA_ASSERT(client != nullptr);
+
+        if (client == nullptr)
+            return nullptr;
+
         fBufferSize = jackbridge_get_buffer_size(client);
         fSampleRate = jackbridge_get_sample_rate(client);
 

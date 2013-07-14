@@ -50,15 +50,16 @@ bool jackbridge_sem_timedwait(void*, int)
 
 #include <semaphore.h>
 
-//#ifdef __WINE__
-//# define _STRUCT_TIMEVAL 1
-//# define _SYS_SELECT_H   1
-//# include <bits/types.h>
-//struct timespec {
+// #ifdef __WINE__
+// # warning Using Wine
+// # define _STRUCT_TIMEVAL 1
+// # define _SYS_SELECT_H   1
+// # include <bits/types.h>
+// struct timespec {
 //    __time_t tv_sec;  /* Seconds.     */
 //    long int tv_nsec; /* Nanoseconds. */
-//};
-//#endif
+// };
+// #endif
 
 #ifdef CARLA_OS_WIN
 # include <sys/time.h>
