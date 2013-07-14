@@ -1823,6 +1823,16 @@ public:
         // ---------------------------------------------------------------
         // register client
 
+        if (fName.isEmpty())
+        {
+            if (name != nullptr)
+                fName = kData->engine->getUniquePluginName(name);
+            else if (label != nullptr)
+                fName = kData->engine->getUniquePluginName(label);
+            else
+                fName = kData->engine->getUniquePluginName("unknown");
+        }
+
         kData->client = kData->engine->addClient(this);
 
         if (kData->client == nullptr || ! kData->client->isOk())

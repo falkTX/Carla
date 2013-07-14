@@ -261,8 +261,6 @@ public:
 
         while (! fQuitNow)
         {
-            carla_debug("CarlaEngineBridge::run() - try wait");
-
             if (! jackbridge_sem_timedwait(&fShmControl.data->runServer, 5))
             {
                 if (errno == ETIMEDOUT)
@@ -273,13 +271,12 @@ public:
                 }
             }
 
-            carla_debug("CarlaEngineBridge::run() - connected");
-
             while (fShmControl.dataAvailable())
             {
                 const PluginBridgeOpcode opcode(fShmControl.readOpcode());
 
-                carla_debug("CarlaEngineBridge::run() - got opcode: %s", PluginBridgeOpcode2str(opcode));
+                if (opcode != kPluginBridgeOpcodeProcess)
+                    carla_debug("CarlaEngineBridge::run() - got opcode: %s", PluginBridgeOpcode2str(opcode));
 
                 switch (opcode)
                 {
