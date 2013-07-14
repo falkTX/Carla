@@ -18,6 +18,8 @@
 
 #ifndef __JACKBRIDGE_HPP__
 // don't include the whole JACK API in this file
+CARLA_EXPORT bool jackbridge_sem_init(void* sem);
+CARLA_EXPORT bool jackbridge_sem_destroy(void* sem);
 CARLA_EXPORT bool jackbridge_sem_post(void* sem);
 CARLA_EXPORT bool jackbridge_sem_timedwait(void* sem, int secs);
 #endif
@@ -25,6 +27,16 @@ CARLA_EXPORT bool jackbridge_sem_timedwait(void* sem, int secs);
 // -----------------------------------------------------------------------------
 
 #if JACKBRIDGE_DUMMY
+bool jackbridge_sem_init(void*)
+{
+    return false;
+}
+
+bool jackbridge_sem_destroy(void*)
+{
+    return false;
+}
+
 bool jackbridge_sem_post(void*)
 {
     return false;
@@ -38,21 +50,31 @@ bool jackbridge_sem_timedwait(void*, int)
 
 #include <semaphore.h>
 
-#ifdef __WINE__
-# define _STRUCT_TIMEVAL 1
-# define _SYS_SELECT_H   1
-# include <bits/types.h>
-struct timespec {
-    __time_t tv_sec;  /* Seconds.     */
-    long int tv_nsec; /* Nanoseconds. */
-};
-#endif
+//#ifdef __WINE__
+//# define _STRUCT_TIMEVAL 1
+//# define _SYS_SELECT_H   1
+//# include <bits/types.h>
+//struct timespec {
+//    __time_t tv_sec;  /* Seconds.     */
+//    long int tv_nsec; /* Nanoseconds. */
+//};
+//#endif
 
 #ifdef CARLA_OS_WIN
 # include <sys/time.h>
 #else
 # include <time.h>
 #endif
+
+bool jackbridge_sem_init(void* sem)
+{
+    return (sem_init((sem_t*)sem, 1, 0) == 0);
+}
+
+bool jackbridge_sem_destroy(void* sem)
+{
+    return (sem_destroy((sem_t*)sem) == 0);
+}
 
 bool jackbridge_sem_post(void* sem)
 {

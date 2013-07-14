@@ -19,16 +19,12 @@
 #ifndef __CARLA_BRIDGE_UTILS_HPP__
 #define __CARLA_BRIDGE_UTILS_HPP__
 
-#include "CarlaUtils.hpp"
+#include "CarlaRingBuffer.hpp"
 
-#include <semaphore.h>
-
-#define BRIDGE_SHM_RING_BUFFER_SIZE 2048
-
-// ---------------------------------------------------------------------------------------------
+// -------------------------------------------------
 
 enum PluginBridgeInfoType {
-    kPluginBridgeAudioCount,
+    kPluginBridgeAudioCount = 0,
     kPluginBridgeMidiCount,
     kPluginBridgeParameterCount,
     kPluginBridgeProgramCount,
@@ -52,7 +48,7 @@ enum PluginBridgeInfoType {
 
 enum PluginBridgeOpcode {
     kPluginBridgeOpcodeNull           = 0,
-    kPluginBridgeOpcodeSetAudioPool   = 1, // int
+    kPluginBridgeOpcodeSetAudioPool   = 1, // long
     kPluginBridgeOpcodeSetBufferSize  = 2, // int
     kPluginBridgeOpcodeSetSampleRate  = 3, // float
     kPluginBridgeOpcodeSetParameter   = 4, // int, float
@@ -72,29 +68,25 @@ const char* const CARLA_BRIDGE_MSG_SET_CUSTOM = "CarlaBridgeSetCustom"; //!< Hos
 //If \a type is 'chunk' or 'binary' \a rvalue refers to chunk file.
 #endif
 
-// ---------------------------------------------------------------------------------------------
-
-struct BridgeRingBuffer {
-    int head, tail, written;
-    bool invalidateCommit;
-    char buf[BRIDGE_SHM_RING_BUFFER_SIZE];
-};
+// -------------------------------------------------
 
 struct BridgeShmControl {
     // 32 and 64-bit binaries align semaphores differently.
     // Let's make sure there's plenty of room for either one.
     union {
-        sem_t runServer;
+        void* runServer;
         char _alignServer[128];
     };
     union {
-        sem_t runClient;
+        void* runClient;
         char _alignClient[128];
     };
-    BridgeRingBuffer ringBuffer;
+    RingBuffer ringBuffer;
+
+    CARLA_DECLARE_NON_COPY_STRUCT(BridgeShmControl)
 };
 
-// ---------------------------------------------------------------------------------------------
+// -------------------------------------------------
 
 static inline
 const char* PluginBridgeInfoType2str(const PluginBridgeInfoType type)
@@ -147,183 +139,37 @@ const char* PluginBridgeInfoType2str(const PluginBridgeInfoType type)
     return nullptr;
 }
 
-// ---------------------------------------------------------------------------------------------
-
 static inline
-void rdwr_tryRead(BridgeRingBuffer* const ringbuf, void* const buf, const size_t size)
+const char* PluginBridgeOpcode2str(const PluginBridgeOpcode opcode)
 {
-    CARLA_ASSERT(buf != nullptr);
-
-    if (buf == nullptr)
-        return;
-
-    char* const charbuf(static_cast<char*>(buf));
-
-    size_t tail = ringbuf->tail;
-    size_t head = ringbuf->head;
-    size_t wrap = 0;
-
-    if (head <= tail) {
-        wrap = BRIDGE_SHM_RING_BUFFER_SIZE;
-    }
-    if (head - tail + wrap < size) {
-        return;
-    }
-
-    size_t readto = tail + size;
-
-    if (readto >= BRIDGE_SHM_RING_BUFFER_SIZE)
+    switch (opcode)
     {
-        readto -= BRIDGE_SHM_RING_BUFFER_SIZE;
-        size_t firstpart = BRIDGE_SHM_RING_BUFFER_SIZE - tail;
-        std::memcpy(charbuf, ringbuf->buf + tail, firstpart);
-        std::memcpy(charbuf + firstpart, ringbuf->buf, readto);
-    }
-    else
-    {
-        std::memcpy(charbuf, ringbuf->buf + tail, size);
-    }
-
-    ringbuf->tail = readto;
-}
-
-static inline
-void rdwr_tryWrite(BridgeRingBuffer* const ringbuf, const void* const buf, const size_t size)
-{
-    CARLA_ASSERT(buf != nullptr);
-
-    if (buf == nullptr)
-        return;
-
-    const char* const charbuf(static_cast<const char*>(buf));
-
-    size_t written = ringbuf->written;
-    size_t tail = ringbuf->tail;
-    size_t wrap = 0;
-
-    if (tail <= written)
-    {
-        wrap = BRIDGE_SHM_RING_BUFFER_SIZE;
-    }
-    if (tail - written + wrap < size)
-    {
-        carla_stderr2("Ring buffer full! Dropping events.");
-        ringbuf->invalidateCommit = true;
-        return;
+    case kPluginBridgeOpcodeNull:
+        return "kPluginBridgeOpcodeNull";
+    case kPluginBridgeOpcodeSetAudioPool:
+        return "kPluginBridgeOpcodeSetAudioPool";
+    case kPluginBridgeOpcodeSetBufferSize:
+        return "kPluginBridgeOpcodeSetBufferSize";
+    case kPluginBridgeOpcodeSetSampleRate:
+        return "kPluginBridgeOpcodeSetSampleRate";
+    case kPluginBridgeOpcodeSetParameter:
+        return "kPluginBridgeOpcodeSetParameter";
+    case kPluginBridgeOpcodeSetProgram:
+        return "kPluginBridgeOpcodeSetProgram";
+    case kPluginBridgeOpcodeSetMidiProgram:
+        return "kPluginBridgeOpcodeSetMidiProgram";
+    case kPluginBridgeOpcodeMidiEvent:
+        return "kPluginBridgeOpcodeMidiEvent";
+    case kPluginBridgeOpcodeProcess:
+        return "kPluginBridgeOpcodeProcess";
+    case kPluginBridgeOpcodeQuit:
+        return "kPluginBridgeOpcodeQuit";
     }
 
-    size_t writeto = written + size;
-
-    if (writeto >= BRIDGE_SHM_RING_BUFFER_SIZE)
-    {
-        writeto -= BRIDGE_SHM_RING_BUFFER_SIZE;
-        size_t firstpart = BRIDGE_SHM_RING_BUFFER_SIZE - written;
-        std::memcpy(ringbuf->buf + written, charbuf, firstpart);
-        std::memcpy(ringbuf->buf, charbuf + firstpart, writeto);
-    }
-    else
-    {
-        std::memcpy(ringbuf->buf + written, charbuf, size);
-    }
-
-    ringbuf->written = writeto;
+    carla_stderr("CarlaBackend::PluginBridgeOpcode2str(%i) - invalid opcode", opcode);
+    return nullptr;
 }
 
-static inline
-void rdwr_commitWrite(BridgeRingBuffer* const ringbuf)
-{
-    if (ringbuf->invalidateCommit)
-    {
-        ringbuf->written = ringbuf->head;
-        ringbuf->invalidateCommit = false;
-    }
-    else
-    {
-        ringbuf->head = ringbuf->written;
-    }
-}
-
-// ---------------------------------------------------------------------------------------------
-
-static inline
-bool rdwr_dataAvailable(BridgeRingBuffer* const ringbuf)
-{
-    return (ringbuf->tail != ringbuf->head);
-}
-
-static inline
-PluginBridgeOpcode rdwr_readOpcode(BridgeRingBuffer* const ringbuf)
-{
-    int i = static_cast<int>(kPluginBridgeOpcodeNull);
-    rdwr_tryRead(ringbuf, &i, sizeof(int));
-    return static_cast<PluginBridgeOpcode>(i);
-}
-
-static inline
-char rdwr_readChar(BridgeRingBuffer* const ringbuf)
-{
-    char c = 0;
-    rdwr_tryRead(ringbuf, &c, sizeof(char));
-    return c;
-}
-
-static inline
-int rdwr_readInt(BridgeRingBuffer* const ringbuf)
-{
-    int i = 0;
-    rdwr_tryRead(ringbuf, &i, sizeof(int));
-    return i;
-}
-
-static inline
-long rdwr_readLong(BridgeRingBuffer* const ringbuf)
-{
-    long l = 0;
-    rdwr_tryRead(ringbuf, &l, sizeof(long));
-    return l;
-}
-
-static inline
-float rdwr_readFloat(BridgeRingBuffer* const ringbuf)
-{
-    float f = 0.0f;
-    rdwr_tryRead(ringbuf, &f, sizeof(float));
-    return f;
-}
-
-// ---------------------------------------------------------------------------------------------
-
-static inline
-void rdwr_writeOpcode(BridgeRingBuffer* const ringbuf, const PluginBridgeOpcode opcode)
-{
-    const int intcode(static_cast<int>(opcode));
-    rdwr_tryWrite(ringbuf, &intcode, sizeof(int));
-}
-
-static inline
-void rdwr_writeChar(BridgeRingBuffer* const ringbuf, const char value)
-{
-    rdwr_tryWrite(ringbuf, &value, sizeof(char));
-}
-
-static inline
-void rdwr_writeInt(BridgeRingBuffer* const ringbuf, const int value)
-{
-    rdwr_tryWrite(ringbuf, &value, sizeof(int));
-}
-
-static inline
-void rdwr_writeLong(BridgeRingBuffer* const ringbuf, const long value)
-{
-    rdwr_tryWrite(ringbuf, &value, sizeof(long));
-}
-
-static inline
-void rdwr_writeFloat(BridgeRingBuffer* const ringbuf, const float value)
-{
-    rdwr_tryWrite(ringbuf, &value, sizeof(float));
-}
-
-// ---------------------------------------------------------------------------------------------
+// -------------------------------------------------
 
 #endif // __CARLA_BRIDGE_UTILS_HPP__

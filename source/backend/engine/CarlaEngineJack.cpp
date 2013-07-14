@@ -2231,6 +2231,7 @@ private:
 
 CarlaEngine* CarlaEngine::newJack()
 {
+    carla_debug("CarlaEngine::newJack()");
     return new CarlaEngineJack();
 }
 

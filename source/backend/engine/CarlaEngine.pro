@@ -78,6 +78,7 @@ HEADERS += \
     ../../includes/CarlaDefines.hpp \
     ../../includes/CarlaMIDI.h \
     ../../utils/CarlaMutex.hpp \
+    ../../utils/CarlaRingBuffer.hpp \
     ../../utils/CarlaString.hpp \
     ../../utils/CarlaThread.hpp \
     ../../utils/CarlaUtils.hpp \

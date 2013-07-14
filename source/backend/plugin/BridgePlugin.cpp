@@ -71,26 +71,26 @@ shm_t shm_mkstemp(char* const fileBase)
                                   "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                                   "0123456789";
 
-    const int size = (fileBase != nullptr) ? std::strlen(fileBase) : 0;
+    const size_t fileBaseLen((fileBase != nullptr) ? std::strlen(fileBase) : 0);
 
-    shm_t shm;
-    carla_shm_init(shm);
+    shm_t fakeShm;
+    carla_shm_init(fakeShm);
 
-    if (size < 6)
+    if (fileBaseLen < 6)
     {
         errno = EINVAL;
-        return shm;
+        return fakeShm;
     }
 
-    if (std::strcmp(fileBase + size - 6, "XXXXXX") != 0)
+    if (std::strcmp(fileBase + fileBaseLen - 6, "XXXXXX") != 0)
     {
         errno = EINVAL;
-        return shm;
+        return fakeShm;
     }
 
-    while (true)
+    for (;;)
     {
-        for (int c = size - 6; c < size; ++c)
+        for (size_t c = fileBaseLen - 6; c < fileBaseLen; ++c)
         {
             // Note the -1 to avoid the trailing '\0' in charSet.
             fileBase[c] = charSet[std::rand() % (sizeof(charSet) - 1)];
@@ -105,6 +105,139 @@ shm_t shm_mkstemp(char* const fileBase)
 
 // -------------------------------------------------------------------------------------------------------------------
 
+struct BridgeAudioPool {
+    CarlaString filename;
+    float* data;
+    size_t size;
+    shm_t shm;
+
+    BridgeAudioPool()
+        : data(nullptr),
+          size(0)
+    {
+        carla_shm_init(shm);
+    }
+
+    ~BridgeAudioPool()
+    {
+        // should be cleared by now
+        CARLA_ASSERT(data == nullptr);
+
+        clear();
+    }
+
+    void clear()
+    {
+        filename.clear();
+
+        if (! carla_is_shm_valid(shm))
+            return;
+
+        if (data != nullptr)
+        {
+            carla_shm_unmap(shm, data, size);
+            data = nullptr;
+        }
+
+        size = 0;
+
+        carla_shm_close(shm);
+    }
+
+    void resize(const uint32_t bufferSize, const uint32_t portCount)
+    {
+        if (data != nullptr)
+            carla_shm_unmap(shm, data, size);
+
+        size = portCount*bufferSize*sizeof(float);
+
+        if (size == 0)
+            size = sizeof(float);
+
+        data = (float*)carla_shm_map(shm, size);
+    }
+};
+
+struct BridgeControl : public RingBufferControl {
+    CarlaString filename;
+    BridgeShmControl* data;
+    shm_t shm;
+
+    BridgeControl()
+        : RingBufferControl(nullptr),
+          data(nullptr)
+    {
+        carla_shm_init(shm);
+    }
+
+    ~BridgeControl()
+    {
+        // should be cleared by now
+        CARLA_ASSERT(data == nullptr);
+
+        clear();
+    }
+
+    void clear()
+    {
+        filename.clear();
+
+        if (! carla_is_shm_valid(shm))
+            return;
+
+        if (data != nullptr)
+        {
+            carla_shm_unmap(shm, data, sizeof(BridgeShmControl));
+            data = nullptr;
+        }
+
+        carla_shm_close(shm);
+    }
+
+    bool mapData()
+    {
+        CARLA_ASSERT(data == nullptr);
+
+        if (carla_shm_map<BridgeShmControl>(shm, data))
+        {
+            setRingBuffer(&data->ringBuffer, true);
+            return true;
+        }
+
+        return false;
+    }
+
+    void unmapData()
+    {
+        CARLA_ASSERT(data != nullptr);
+
+        if (data == nullptr)
+            return;
+
+        carla_shm_unmap(shm, data, sizeof(BridgeShmControl));
+        data = nullptr;
+
+        setRingBuffer(nullptr, false);
+    }
+
+    bool waitForServer()
+    {
+        CARLA_ASSERT(data != nullptr);
+
+        if (data == nullptr)
+            return false;
+
+        jackbridge_sem_post(&data->runServer);
+
+        return jackbridge_sem_timedwait(&data->runClient, 5);
+    }
+
+    void writeOpcode(const PluginBridgeOpcode opcode)
+    {
+        writeInt(static_cast<int>(opcode));
+    }
+};
+
 struct BridgeParamInfo {
     float value;
     CarlaString name;
@@ -116,6 +249,8 @@ struct BridgeParamInfo {
     CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(BridgeParamInfo)
 };
 
+// -------------------------------------------------------------------------------------------------------------------
+
 class BridgePlugin : public CarlaPlugin
 {
 public:
@@ -126,6 +261,7 @@ public:
           fInitiated(false),
           fInitError(false),
           fSaved(false),
+          fNeedsSemDestroy(false),
           fParams(nullptr)
     {
         carla_debug("BridgePlugin::BridgePlugin(%p, %i, %s, %s)", engine, id, BinaryType2Str(btype), PluginType2Str(ptype));
@@ -153,9 +289,9 @@ public:
 
         if (kData->osc.thread.isRunning())
         {
-            rdwr_writeOpcode(&fShmControl.data->ringBuffer, kPluginBridgeOpcodeQuit);
-            rdwr_commitWrite(&fShmControl.data->ringBuffer);
-            waitForServer();
+            fShmControl.writeOpcode(kPluginBridgeOpcodeQuit);
+            fShmControl.commitWrite();
+            fShmControl.waitForServer();
         }
 
         if (kData->osc.data.target != nullptr)
@@ -173,7 +309,15 @@ public:
             kData->osc.thread.terminate();
         }
 
-        cleanup();
+        if (fNeedsSemDestroy)
+        {
+            jackbridge_sem_destroy(&fShmControl.data->runServer);
+            jackbridge_sem_destroy(&fShmControl.data->runClient);
+        }
+
+        fShmAudioPool.clear();
+        fShmControl.clear();
+
         clearBuffers();
 
         //info.chunk.clear();
@@ -336,13 +480,13 @@ public:
         if (doLock)
             kData->singleMutex.lock();
 
-        rdwr_writeOpcode(&fShmControl.data->ringBuffer, kPluginBridgeOpcodeSetParameter);
-        rdwr_writeInt(&fShmControl.data->ringBuffer, parameterId);
-        rdwr_writeFloat(&fShmControl.data->ringBuffer, value);
+        fShmControl.writeOpcode(kPluginBridgeOpcodeSetParameter);
+        fShmControl.writeInt(parameterId);
+        fShmControl.writeFloat(value);
 
         if (doLock)
         {
-            rdwr_commitWrite(&fShmControl.data->ringBuffer);
+            fShmControl.commitWrite();
             kData->singleMutex.unlock();
         }
 
@@ -363,12 +507,12 @@ public:
         if (doLock)
             kData->singleMutex.lock();
 
-        rdwr_writeOpcode(&fShmControl.data->ringBuffer, kPluginBridgeOpcodeSetProgram);
-        rdwr_writeInt(&fShmControl.data->ringBuffer, index);
+        fShmControl.writeOpcode(kPluginBridgeOpcodeSetProgram);
+        fShmControl.writeInt(index);
 
         if (doLock)
         {
-            rdwr_commitWrite(&fShmControl.data->ringBuffer);
+            fShmControl.commitWrite();
             kData->singleMutex.unlock();
         }
 
@@ -389,12 +533,12 @@ public:
         if (doLock)
             kData->singleMutex.lock();
 
-        rdwr_writeOpcode(&fShmControl.data->ringBuffer, kPluginBridgeOpcodeSetMidiProgram);
-        rdwr_writeInt(&fShmControl.data->ringBuffer, index);
+        fShmControl.writeOpcode(kPluginBridgeOpcodeSetMidiProgram);
+        fShmControl.writeInt(index);
 
         if (doLock)
         {
-            rdwr_commitWrite(&fShmControl.data->ringBuffer);
+            fShmControl.commitWrite();
             kData->singleMutex.unlock();
         }
 
@@ -597,20 +741,20 @@ public:
     void activate() override
     {
         // already locked before
-        rdwr_writeOpcode(&fShmControl.data->ringBuffer, kPluginBridgeOpcodeSetParameter);
-        rdwr_writeInt(&fShmControl.data->ringBuffer, PARAMETER_ACTIVE);
-        rdwr_writeFloat(&fShmControl.data->ringBuffer, 1.0f);
-        rdwr_commitWrite(&fShmControl.data->ringBuffer);
+        fShmControl.writeOpcode(kPluginBridgeOpcodeSetParameter);
+        fShmControl.writeInt(PARAMETER_ACTIVE);
+        fShmControl.writeFloat(1.0f);
+        fShmControl.commitWrite();
         waitForServer();
     }
 
     void deactivate() override
     {
         // already locked before
-        rdwr_writeOpcode(&fShmControl.data->ringBuffer, kPluginBridgeOpcodeSetParameter);
-        rdwr_writeInt(&fShmControl.data->ringBuffer, PARAMETER_ACTIVE);
-        rdwr_writeFloat(&fShmControl.data->ringBuffer, 0.0f);
-        rdwr_commitWrite(&fShmControl.data->ringBuffer);
+        fShmControl.writeOpcode(kPluginBridgeOpcodeSetParameter);
+        fShmControl.writeInt(PARAMETER_ACTIVE);
+        fShmControl.writeFloat(0.0f);
+        fShmControl.commitWrite();
         waitForServer();
     }
 
@@ -662,12 +806,12 @@ public:
                     data2  = note.note;
                     data3  = note.velo;
 
-                    rdwr_writeOpcode(&fShmControl.data->ringBuffer, kPluginBridgeOpcodeMidiEvent);
-                    rdwr_writeLong(&fShmControl.data->ringBuffer, 0);
-                    rdwr_writeInt(&fShmControl.data->ringBuffer, 3);
-                    rdwr_writeChar(&fShmControl.data->ringBuffer, data1);
-                    rdwr_writeChar(&fShmControl.data->ringBuffer, data2);
-                    rdwr_writeChar(&fShmControl.data->ringBuffer, data3);
+                    fShmControl.writeOpcode(kPluginBridgeOpcodeMidiEvent);
+                    fShmControl.writeLong(0);
+                    fShmControl.writeInt(3);
+                    fShmControl.writeChar(data1);
+                    fShmControl.writeChar(data2);
+                    fShmControl.writeChar(data3);
                 }
 
                 kData->extNotes.mutex.unlock();
@@ -785,12 +929,12 @@ public:
 
                         if ((fOptions & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param <= 0x5F)
                         {
-                            rdwr_writeOpcode(&fShmControl.data->ringBuffer, kPluginBridgeOpcodeMidiEvent);
-                            rdwr_writeLong(&fShmControl.data->ringBuffer, event.time);
-                            rdwr_writeInt(&fShmControl.data->ringBuffer, 3);
-                            rdwr_writeChar(&fShmControl.data->ringBuffer, MIDI_STATUS_CONTROL_CHANGE + event.channel);
-                            rdwr_writeChar(&fShmControl.data->ringBuffer, ctrlEvent.param);
-                            rdwr_writeChar(&fShmControl.data->ringBuffer, ctrlEvent.value*127.0f);
+                            fShmControl.writeOpcode(kPluginBridgeOpcodeMidiEvent);
+                            fShmControl.writeLong(event.time);
+                            fShmControl.writeInt(3);
+                            fShmControl.writeChar(MIDI_STATUS_CONTROL_CHANGE + event.channel);
+                            fShmControl.writeChar(ctrlEvent.param);
+                            fShmControl.writeChar(ctrlEvent.value*127.0f);
                         }
 
                         break;
@@ -874,12 +1018,12 @@ public:
                     data[2] = midiEvent.data[2];
                     data[3] = midiEvent.data[3];
 
-                    rdwr_writeOpcode(&fShmControl.data->ringBuffer, kPluginBridgeOpcodeMidiEvent);
-                    rdwr_writeLong(&fShmControl.data->ringBuffer, event.time);
-                    rdwr_writeInt(&fShmControl.data->ringBuffer, midiEvent.size);
+                    fShmControl.writeOpcode(kPluginBridgeOpcodeMidiEvent);
+                    fShmControl.writeLong(event.time);
+                    fShmControl.writeInt(midiEvent.size);
 
                     for (uint8_t j=0; j < midiEvent.size && j < 4; ++j)
-                        rdwr_writeChar(&fShmControl.data->ringBuffer, data[j]);
+                        fShmControl.writeChar(data[j]);
 
                     if (status == MIDI_STATUS_NOTE_ON)
                         postponeRtEvent(kPluginPostRtEventNoteOn, channel, midiEvent.data[1], midiEvent.data[2]);
@@ -944,8 +1088,8 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Run plugin
 
-        rdwr_writeOpcode(&fShmControl.data->ringBuffer, kPluginBridgeOpcodeProcess);
-        rdwr_commitWrite(&fShmControl.data->ringBuffer);
+        fShmControl.writeOpcode(kPluginBridgeOpcodeProcess);
+        fShmControl.commitWrite();
 
         if (! waitForServer())
         {
@@ -1030,17 +1174,17 @@ public:
     {
         resizeAudioPool(newBufferSize);
 
-        rdwr_writeOpcode(&fShmControl.data->ringBuffer, kPluginBridgeOpcodeSetBufferSize);
-        rdwr_writeInt(&fShmControl.data->ringBuffer, newBufferSize);
-        rdwr_commitWrite(&fShmControl.data->ringBuffer);
+        fShmControl.writeOpcode(kPluginBridgeOpcodeSetBufferSize);
+        fShmControl.writeInt(newBufferSize);
+        fShmControl.commitWrite();
 
     }
 
     void sampleRateChanged(const double newSampleRate) override
     {
-        rdwr_writeOpcode(&fShmControl.data->ringBuffer, kPluginBridgeOpcodeSetSampleRate);
-        rdwr_writeFloat(&fShmControl.data->ringBuffer, newSampleRate);
-        rdwr_commitWrite(&fShmControl.data->ringBuffer);
+        fShmControl.writeOpcode(kPluginBridgeOpcodeSetSampleRate);
+        fShmControl.writeFloat(newSampleRate);
+        fShmControl.commitWrite();
     }
 
     // -------------------------------------------------------------------
@@ -1569,7 +1713,6 @@ public:
 
             if (! carla_is_shm_valid(fShmAudioPool.shm))
             {
-                //_cleanup();
                 carla_stdout("Failed to open or create shared memory file #1");
                 return false;
             }
@@ -1588,48 +1731,57 @@ public:
 
             if (! carla_is_shm_valid(fShmControl.shm))
             {
-                //_cleanup();
                 carla_stdout("Failed to open or create shared memory file #2");
+                // clear
+                carla_shm_close(fShmAudioPool.shm);
                 return false;
             }
 
             fShmControl.filename = tmpFileBase;
 
-            if (! carla_shm_map<BridgeShmControl>(fShmControl.shm, fShmControl.data))
+            if (! fShmControl.mapData())
             {
-                //_cleanup();
                 carla_stdout("Failed to mmap shared memory file");
+                // clear
+                carla_shm_close(fShmControl.shm);
+                carla_shm_close(fShmAudioPool.shm);
                 return false;
             }
 
             CARLA_ASSERT(fShmControl.data != nullptr);
 
-            std::memset(fShmControl.data, 0, sizeof(BridgeShmControl));
-            std::strcpy(fShmControl.data->ringBuffer.buf, "This thing is actually working!!!!");
-
-            if (sem_init(&fShmControl.data->runServer, 1, 0) != 0)
+            if (! jackbridge_sem_init(&fShmControl.data->runServer))
             {
-                //_cleanup();
                 carla_stdout("Failed to initialize shared memory semaphore #1");
+                // clear
+                fShmControl.unmapData();
+                carla_shm_close(fShmControl.shm);
+                carla_shm_close(fShmAudioPool.shm);
                 return false;
             }
 
-            if (sem_init(&fShmControl.data->runClient, 1, 0) != 0)
+            if (! jackbridge_sem_init(&fShmControl.data->runClient))
             {
-                //_cleanup();
                 carla_stdout("Failed to initialize shared memory semaphore #2");
+                // clear
+                jackbridge_sem_destroy(&fShmControl.data->runServer);
+                fShmControl.unmapData();
+                carla_shm_close(fShmControl.shm);
+                carla_shm_close(fShmAudioPool.shm);
                 return false;
             }
+
+            fNeedsSemDestroy = true;
         }
 
         // initial values
-        rdwr_writeOpcode(&fShmControl.data->ringBuffer, kPluginBridgeOpcodeSetBufferSize);
-        rdwr_writeInt(&fShmControl.data->ringBuffer, kData->engine->getBufferSize());
+        fShmControl.writeOpcode(kPluginBridgeOpcodeSetBufferSize);
+        fShmControl.writeInt(kData->engine->getBufferSize());
 
-        rdwr_writeOpcode(&fShmControl.data->ringBuffer, kPluginBridgeOpcodeSetSampleRate);
-        rdwr_writeFloat(&fShmControl.data->ringBuffer, kData->engine->getSampleRate());
+        fShmControl.writeOpcode(kPluginBridgeOpcodeSetSampleRate);
+        fShmControl.writeFloat(kData->engine->getSampleRate());
 
-        rdwr_commitWrite(&fShmControl.data->ringBuffer);
+        fShmControl.commitWrite();
 
         // register plugin now so we can receive OSC (and wait for it)
         fHints |= PLUGIN_IS_BRIDGE;
@@ -1689,35 +1841,12 @@ private:
     bool fInitiated;
     bool fInitError;
     bool fSaved;
+    bool fNeedsSemDestroy;
 
     CarlaString fBridgeBinary;
 
-    struct BridgeAudioPool {
-        CarlaString filename;
-        float* data;
-        size_t size;
-        shm_t shm;
-
-        BridgeAudioPool()
-            : data(nullptr),
-              size(0)
-        {
-            carla_shm_init(shm);
-        }
-    } fShmAudioPool;
-
-    struct BridgeControl {
-        CarlaString filename;
-        BridgeShmControl* data;
-        shm_t shm;
-
-        BridgeControl()
-            : data(nullptr)
-        {
-            carla_shm_init(shm);
-        }
-
-    } fShmControl;
+    BridgeAudioPool fShmAudioPool;
+    BridgeControl   fShmControl;
 
     struct Info {
         uint32_t aIns, aOuts;
@@ -1741,59 +1870,20 @@ private:
 
     BridgeParamInfo* fParams;
 
-    void cleanup()
+    void resizeAudioPool(const uint32_t bufferSize)
     {
-        if (fShmAudioPool.filename.isNotEmpty())
-            fShmAudioPool.filename.clear();
+        fShmAudioPool.resize(bufferSize, fInfo.aIns+fInfo.aOuts);
 
-        if (fShmControl.filename.isNotEmpty())
-            fShmControl.filename.clear();
-
-        if (fShmAudioPool.data != nullptr)
-        {
-            carla_shm_unmap(fShmAudioPool.shm, fShmAudioPool.data, fShmAudioPool.size);
-            fShmAudioPool.data = nullptr;
-        }
-
-        fShmAudioPool.size = 0;
-
-        if (fShmControl.data != nullptr)
-        {
-            carla_shm_unmap(fShmControl.shm, fShmControl.data, sizeof(BridgeShmControl));
-            fShmControl.data = nullptr;
-        }
-
-        if (carla_is_shm_valid(fShmAudioPool.shm))
-            carla_shm_close(fShmAudioPool.shm);
-
-        if (carla_is_shm_valid(fShmControl.shm))
-            carla_shm_close(fShmControl.shm);
-    }
-
-    void resizeAudioPool(uint32_t bufferSize)
-    {
-        if (fShmAudioPool.data != nullptr)
-            carla_shm_unmap(fShmAudioPool.shm, fShmAudioPool.data, fShmAudioPool.size);
-
-        fShmAudioPool.size = (fInfo.aIns+fInfo.aOuts)*bufferSize*sizeof(float);
-
-        if (fShmAudioPool.size == 0)
-            fShmAudioPool.size = sizeof(float);
-
-        fShmAudioPool.data = (float*)carla_shm_map(fShmAudioPool.shm, fShmAudioPool.size);
-
-        rdwr_writeOpcode(&fShmControl.data->ringBuffer, kPluginBridgeOpcodeSetAudioPool);
-        rdwr_writeInt(&fShmControl.data->ringBuffer, fShmAudioPool.size);
-        rdwr_commitWrite(&fShmControl.data->ringBuffer);
+        fShmControl.writeOpcode(kPluginBridgeOpcodeSetAudioPool);
+        fShmControl.writeLong(fShmAudioPool.size);
+        fShmControl.commitWrite();
 
         waitForServer();
     }
 
     bool waitForServer()
     {
-        sem_post(&fShmControl.data->runServer);
-
-        if (! jackbridge_sem_timedwait(&fShmControl.data->runClient, 5))
+        if (! fShmControl.waitForServer())
         {
             carla_stderr("waitForServer() timeout");
             kData->active = false; // TODO
@@ -1854,18 +1944,23 @@ CarlaPlugin* CarlaPlugin::newBridge(const Initializer& init, BinaryType btype, P
 // -------------------------------------------------------------------
 // Bridge Helper
 
+#define bridgePlugin ((BridgePlugin*)plugin)
+
 int CarlaPluginSetOscBridgeInfo(CarlaPlugin* const plugin, const PluginBridgeInfoType type,
                                 const int argc, const lo_arg* const* const argv, const char* const types)
 {
     CARLA_ASSERT(plugin != nullptr && (plugin->hints() & PLUGIN_IS_BRIDGE) != 0);
-    return ((BridgePlugin*)plugin)->setOscPluginBridgeInfo(type, argc, argv, types);
+    return bridgePlugin->setOscPluginBridgeInfo(type, argc, argv, types);
 }
 
 BinaryType CarlaPluginGetBridgeBinaryType(CarlaPlugin* const plugin)
 {
     CARLA_ASSERT(plugin != nullptr && (plugin->hints() & PLUGIN_IS_BRIDGE) != 0);
-    return ((BridgePlugin*)plugin)->binaryType();
+    return bridgePlugin->binaryType();
 }
+
+#undef bridgePlugin
+
 #endif
 
 CARLA_BACKEND_END_NAMESPACE

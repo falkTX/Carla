@@ -33,7 +33,7 @@ public:
     virtual ~ExternalUI() override;
 
 protected:
-    const char* d_externalFilename() const = 0;
+    virtual const char* d_externalFilename() const = 0;
 
 private:
     friend class UIInternal;

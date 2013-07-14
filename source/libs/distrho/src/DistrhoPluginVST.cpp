@@ -211,7 +211,7 @@ protected:
     void setParameterValue(uint32_t index, float realValue)
     {
         const ParameterRanges& ranges(kPlugin->parameterRanges(index));
-        const float perValue(ranges.normalizeValue(realValue));
+        const float perValue(ranges.normalizedValue(realValue));
 
         kPlugin->setParameterValue(index, realValue);
         hostCallback(audioMasterAutomate, index, 0, nullptr, perValue);
@@ -472,13 +472,13 @@ public:
     float vst_getParameter(int32_t index)
     {
         const ParameterRanges& ranges(fPlugin.parameterRanges(index));
-        return ranges.normalizeValue(fPlugin.parameterValue(index));
+        return ranges.normalizedValue(fPlugin.parameterValue(index));
     }
 
     void vst_setParameter(int32_t index, float value)
     {
         const ParameterRanges& ranges(fPlugin.parameterRanges(index));
-        const float realValue(ranges.unnormalizeValue(value));
+        const float realValue(ranges.unnormalizedValue(value));
         fPlugin.setParameterValue(index, realValue);
 
 #if DISTRHO_PLUGIN_HAS_UI

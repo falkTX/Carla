@@ -37,6 +37,111 @@ CARLA_BACKEND_START_NAMESPACE
 
 // -------------------------------------------------------------------
 
+struct BridgeAudioPool {
+    CarlaString filename;
+    float* data;
+    shm_t shm;
+
+    BridgeAudioPool()
+        : data(nullptr)
+    {
+        carla_shm_init(shm);
+    }
+
+    ~BridgeAudioPool()
+    {
+        // should be cleared by now
+        CARLA_ASSERT(data == nullptr);
+
+        clear();
+    }
+
+    bool attach()
+    {
+#ifdef CARLA_OS_WIN
+        // TESTING!
+        shm = carla_shm_attach_linux((const char*)filename);
+#else
+        shm = carla_shm_attach((const char*)filename);
+#endif
+
+        return carla_is_shm_valid(shm);
+    }
+
+    void clear()
+    {
+        filename.clear();
+
+        data = nullptr;
+
+        if (carla_is_shm_valid(shm))
+            carla_shm_close(shm);
+    }
+};
+
+struct BridgeControl : public RingBufferControl {
+    CarlaString filename;
+    BridgeShmControl* data;
+    shm_t shm;
+
+    BridgeControl()
+        : RingBufferControl(nullptr),
+          data(nullptr)
+    {
+        carla_shm_init(shm);
+    }
+
+    ~BridgeControl()
+    {
+        // should be cleared by now
+        CARLA_ASSERT(data == nullptr);
+
+        clear();
+    }
+
+    bool attach()
+    {
+#ifdef CARLA_OS_WIN
+        // TESTING!
+        shm = carla_shm_attach_linux((const char*)filename);
+#else
+        shm = carla_shm_attach((const char*)filename);
+#endif
+
+        return carla_is_shm_valid(shm);
+    }
+
+    void clear()
+    {
+        filename.clear();
+
+        data = nullptr;
+
+        if (carla_is_shm_valid(shm))
+            carla_shm_close(shm);
+    }
+
+    bool mapData()
+    {
+        CARLA_ASSERT(data == nullptr);
+
+        if (carla_shm_map<BridgeShmControl>(shm, data))
+        {
+            setRingBuffer(&data->ringBuffer, false);
+            return true;
+        }
+
+        return false;
+    }
+
+    PluginBridgeOpcode readOpcode()
+    {
+        return static_cast<PluginBridgeOpcode>(readInt());
+    }
+};
+
+// -------------------------------------------------------------------
+
 class CarlaEngineBridge : public CarlaEngine,
                           public QThread
 {
@@ -69,16 +174,8 @@ public:
 
         // SHM Audio Pool
         {
-#ifdef CARLA_OS_WIN
-            // TESTING!
-            fShmAudioPool.shm = carla_shm_attach_linux((const char*)fShmAudioPool.filename);
-#else
-            fShmAudioPool.shm = carla_shm_attach((const char*)fShmAudioPool.filename);
-#endif
-
-            if (! carla_is_shm_valid(fShmAudioPool.shm))
+            if (! fShmAudioPool.attach())
             {
-                _cleanup();
                 carla_stdout("Failed to open or create shared memory file #1");
                 return false;
             }
@@ -86,24 +183,20 @@ public:
 
         // SHM Control
         {
-#ifdef CARLA_OS_WIN
-            // TESTING!
-            fShmControl.shm = carla_shm_attach_linux((const char*)fShmControl.filename);
-#else
-            fShmControl.shm = carla_shm_attach((const char*)fShmControl.filename);
-#endif
-
-            if (! carla_is_shm_valid(fShmControl.shm))
+            if (! fShmControl.attach())
             {
-                _cleanup();
                 carla_stdout("Failed to open or create shared memory file #2");
+                // clear
+                fShmAudioPool.clear();
                 return false;
             }
 
-            if (! carla_shm_map<BridgeShmControl>(fShmControl.shm, fShmControl.data))
+            if (! fShmControl.mapData())
             {
-                _cleanup();
                 carla_stdout("Failed to mmap shared memory file");
+                // clear
+                fShmControl.clear();
+                fShmAudioPool.clear();
                 return false;
             }
         }
@@ -111,14 +204,14 @@ public:
         // Read values from memory
         PluginBridgeOpcode opcode;
 
-        opcode = rdwr_readOpcode(&fShmControl.data->ringBuffer);
-        CARLA_ASSERT(opcode == kPluginBridgeOpcodeSetBufferSize);
-        fBufferSize = rdwr_readInt(&fShmControl.data->ringBuffer);
+        opcode = fShmControl.readOpcode();
+        CARLA_ASSERT_INT(opcode == kPluginBridgeOpcodeSetBufferSize, opcode);
+        fBufferSize = fShmControl.readInt();
         carla_stderr("BufferSize: %i", fBufferSize);
 
-        opcode = rdwr_readOpcode(&fShmControl.data->ringBuffer);
-        CARLA_ASSERT(opcode == kPluginBridgeOpcodeSetSampleRate);
-        fSampleRate = rdwr_readFloat(&fShmControl.data->ringBuffer);
+        opcode = fShmControl.readOpcode();
+        CARLA_ASSERT_INT(opcode == kPluginBridgeOpcodeSetSampleRate, opcode);
+        fSampleRate = fShmControl.readFloat();
         carla_stderr("SampleRate: %f", fSampleRate);
 
         fQuitNow = false;
@@ -137,7 +230,8 @@ public:
         fQuitNow = true;
         QThread::wait();
 
-        _cleanup();
+        fShmControl.clear();
+        fShmAudioPool.clear();
 
         return true;
     }
@@ -163,21 +257,29 @@ public:
     void run()
     {
         // TODO - set RT permissions
+        carla_debug("CarlaEngineBridge::run()");
 
         while (! fQuitNow)
         {
+            carla_debug("CarlaEngineBridge::run() - try wait");
+
             if (! jackbridge_sem_timedwait(&fShmControl.data->runServer, 5))
             {
-                if (errno != ETIMEDOUT)
-                    continue;
-
-                fQuitNow = true;
-                return;
+                if (errno == ETIMEDOUT)
+                {
+                    fIsRunning = false;
+                    fQuitNow = true;
+                    return;
+                }
             }
 
-            while (rdwr_dataAvailable(&fShmControl.data->ringBuffer))
+            carla_debug("CarlaEngineBridge::run() - connected");
+
+            while (fShmControl.dataAvailable())
             {
-                const PluginBridgeOpcode opcode(rdwr_readOpcode(&fShmControl.data->ringBuffer));
+                const PluginBridgeOpcode opcode(fShmControl.readOpcode());
+
+                carla_debug("CarlaEngineBridge::run() - got opcode: %s", PluginBridgeOpcode2str(opcode));
 
                 switch (opcode)
                 {
@@ -186,29 +288,29 @@ public:
 
                 case kPluginBridgeOpcodeSetAudioPool:
                 {
-                    const int poolSize(rdwr_readInt(&fShmControl.data->ringBuffer));
+                    const long poolSize(fShmControl.readLong());
                     fShmAudioPool.data = (float*)carla_shm_map(fShmAudioPool.shm, poolSize);
                     break;
                 }
 
                 case kPluginBridgeOpcodeSetBufferSize:
                 {
-                    const int bufferSize(rdwr_readInt(&fShmControl.data->ringBuffer));
+                    const int bufferSize(fShmControl.readInt());
                     bufferSizeChanged(bufferSize);
                     break;
                 }
 
                 case kPluginBridgeOpcodeSetSampleRate:
                 {
-                    const float sampleRate(rdwr_readFloat(&fShmControl.data->ringBuffer));
+                    const float sampleRate(fShmControl.readFloat());
                     sampleRateChanged(sampleRate);
                     break;
                 }
 
                 case kPluginBridgeOpcodeSetParameter:
                 {
-                    const int   index(rdwr_readInt(&fShmControl.data->ringBuffer));
-                    const float value(rdwr_readFloat(&fShmControl.data->ringBuffer));
+                    const int   index(fShmControl.readInt());
+                    const float value(fShmControl.readFloat());
 
                     CarlaPlugin* const plugin(getPluginUnchecked(0));
 
@@ -223,7 +325,7 @@ public:
 
                 case kPluginBridgeOpcodeSetProgram:
                 {
-                    const int index(rdwr_readInt(&fShmControl.data->ringBuffer));
+                    const int index(fShmControl.readInt());
 
                     CarlaPlugin* const plugin(getPluginUnchecked(0));
 
@@ -238,7 +340,7 @@ public:
 
                 case kPluginBridgeOpcodeSetMidiProgram:
                 {
-                    const int index(rdwr_readInt(&fShmControl.data->ringBuffer));
+                    const int index(fShmControl.readInt());
 
                     CarlaPlugin* const plugin(getPluginUnchecked(0));
 
@@ -254,13 +356,13 @@ public:
                 case kPluginBridgeOpcodeMidiEvent:
                 {
                     uint8_t data[4] = { 0 };
-                    const long time(rdwr_readLong(&fShmControl.data->ringBuffer));
-                    const int  dataSize(rdwr_readInt(&fShmControl.data->ringBuffer));
+                    const long time(fShmControl.readLong());
+                    const int  dataSize(fShmControl.readInt());
 
                     CARLA_ASSERT_INT(dataSize >= 1 && dataSize <= 4, dataSize);
 
                     for (int i=0; i < dataSize && i < 4; ++i)
-                        data[i] = rdwr_readChar(&fShmControl.data->ringBuffer);
+                        data[i] = fShmControl.readChar();
 
                     CARLA_ASSERT(kData->bufEvents.in != nullptr);
 
@@ -311,51 +413,11 @@ public:
     }
 
 private:
-    struct BridgeAudioPool {
-        CarlaString filename;
-        float* data;
-        shm_t shm;
-
-        BridgeAudioPool()
-            : data(nullptr)
-        {
-            carla_shm_init(shm);
-        }
-    } fShmAudioPool;
-
-    struct BridgeControl {
-        CarlaString filename;
-        BridgeShmControl* data;
-        shm_t shm;
-
-        BridgeControl()
-            : data(nullptr)
-        {
-            carla_shm_init(shm);
-        }
-
-    } fShmControl;
+    BridgeAudioPool fShmAudioPool;
+    BridgeControl   fShmControl;
 
     bool fIsRunning;
     bool fQuitNow;
-
-    void _cleanup()
-    {
-        if (fShmAudioPool.filename.isNotEmpty())
-            fShmAudioPool.filename.clear();
-
-        if (fShmControl.filename.isNotEmpty())
-            fShmControl.filename.clear();
-
-        fShmAudioPool.data = nullptr;
-        fShmControl.data = nullptr;
-
-        if (carla_is_shm_valid(fShmAudioPool.shm))
-            carla_shm_close(fShmAudioPool.shm);
-
-        if (carla_is_shm_valid(fShmControl.shm))
-            carla_shm_close(fShmControl.shm);
-    }
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineBridge)
 };

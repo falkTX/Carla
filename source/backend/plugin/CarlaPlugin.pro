@@ -68,11 +68,13 @@ HEADERS += \
 
 HEADERS += \
     ../../utils/CarlaUtils.hpp \
+    ../../utils/CarlaBridgeUtils.hpp \
     ../../utils/CarlaJuceUtils.hpp \
     ../../utils/CarlaLibUtils.hpp \
     ../../utils/CarlaOscUtils.hpp \
     ../../utils/CarlaStateUtils.hpp \
     ../../utils/CarlaMutex.hpp \
+    ../../utils/CarlaRingBuffer.hpp \
     ../../utils/CarlaString.hpp
 
 INCLUDEPATH = . .. \
