@@ -55,7 +55,11 @@ typedef const char*  (*jacksym_port_name)(const jack_port_t*);
 typedef const char*  (*jacksym_port_short_name)(const jack_port_t*);
 typedef int          (*jacksym_port_flags)(const jack_port_t*);
 typedef const char*  (*jacksym_port_type)(const jack_port_t*);
+typedef int          (*jacksym_port_is_mine)(const jack_client_t*, const jack_port_t*);
+typedef int          (*jacksym_port_connected)(const jack_port_t*);
+typedef int          (*jacksym_port_connected_to)(const jack_port_t*, const char*);
 typedef const char** (*jacksym_port_get_connections)(const jack_port_t*);
+typedef const char** (*jacksym_port_get_all_connections)(const jack_client_t*, const jack_port_t*);
 
 typedef int  (*jacksym_port_set_name)(jack_port_t*, const char*);
 typedef int  (*jacksym_connect)(jack_client_t*, const char*, const char*);
@@ -121,7 +125,11 @@ struct JackBridge {
     jacksym_port_short_name port_short_name_ptr;
     jacksym_port_flags port_flags_ptr;
     jacksym_port_type port_type_ptr;
+    jacksym_port_is_mine port_is_mine_ptr;
+    jacksym_port_connected port_connected_ptr;
+    jacksym_port_connected_to port_connected_to_ptr;
     jacksym_port_get_connections port_get_connections_ptr;
+    jacksym_port_get_all_connections port_get_all_connections_ptr;
     jacksym_port_set_name port_set_name_ptr;
     jacksym_connect connect_ptr;
     jacksym_disconnect disconnect_ptr;
@@ -181,7 +189,11 @@ struct JackBridge {
           port_short_name_ptr(nullptr),
           port_flags_ptr(nullptr),
           port_type_ptr(nullptr),
+          port_is_mine_ptr(nullptr),
+          port_connected_ptr(nullptr),
+          port_connected_to_ptr(nullptr),
           port_get_connections_ptr(nullptr),
+          port_get_all_connections_ptr(nullptr),
           port_set_name_ptr(nullptr),
           connect_ptr(nullptr),
           disconnect_ptr(nullptr),
@@ -259,7 +271,11 @@ struct JackBridge {
         LIB_SYMBOL(port_short_name)
         LIB_SYMBOL(port_flags)
         LIB_SYMBOL(port_type)
+        LIB_SYMBOL(port_is_mine)
+        LIB_SYMBOL(port_connected)
+        LIB_SYMBOL(port_connected_to)
         LIB_SYMBOL(port_get_connections)
+        LIB_SYMBOL(port_get_all_connections)
         LIB_SYMBOL(port_set_name)
         LIB_SYMBOL(connect)
         LIB_SYMBOL(disconnect)
@@ -681,6 +697,45 @@ const char* jackbridge_port_type(const jack_port_t* port)
 #endif
 }
 
+bool jackbridge_port_is_mine(const jack_client_t* client, const jack_port_t* port)
+{
+#if JACKBRIDGE_DUMMY
+    return false;
+#elif JACKBRIDGE_DIRECT
+    return (jack_port_is_mine(client, port) == 0);
+#else
+    if (bridge.port_is_mine_ptr != nullptr)
+        return (bridge.port_is_mine_ptr(client, port) == 0);
+    return false;
+#endif
+}
+
+bool jackbridge_port_connected(const jack_port_t* port)
+{
+#if JACKBRIDGE_DUMMY
+    return false;
+#elif JACKBRIDGE_DIRECT
+    return (jack_port_connected(port) == 0);
+#else
+    if (bridge.port_connected_ptr != nullptr)
+        return (bridge.port_connected_ptr(port) == 0);
+    return false;
+#endif
+}
+
+bool jackbridge_port_connected_to(const jack_port_t* port, const char* port_name)
+{
+#if JACKBRIDGE_DUMMY
+    return false;
+#elif JACKBRIDGE_DIRECT
+    return (jack_port_connected_to(port, port_name) == 0);
+#else
+    if (bridge.port_connected_to_ptr != nullptr)
+        return (bridge.port_connected_to_ptr(port, port_name) == 0);
+    return false;
+#endif
+}
+
 const char** jackbridge_port_get_connections(const jack_port_t* port)
 {
 #if JACKBRIDGE_DUMMY
@@ -690,6 +745,19 @@ const char** jackbridge_port_get_connections(const jack_port_t* port)
 #else
     if (bridge.port_get_connections_ptr != nullptr)
         return bridge.port_get_connections_ptr(port);
+    return nullptr;
+#endif
+}
+
+const char** jackbridge_port_get_all_connections(const jack_client_t* client, const jack_port_t* port)
+{
+#if JACKBRIDGE_DUMMY
+    return nullptr;
+#elif JACKBRIDGE_DIRECT
+    return jack_port_get_all_connections(client, port);
+#else
+    if (bridge.port_get_all_connections_ptr != nullptr)
+        return bridge.port_get_all_connections_ptr(client, port);
     return nullptr;
 #endif
 }

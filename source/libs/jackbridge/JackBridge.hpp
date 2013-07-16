@@ -302,7 +302,11 @@ CARLA_EXPORT const char*  jackbridge_port_name(const jack_port_t* port);
 CARLA_EXPORT const char*  jackbridge_port_short_name(const jack_port_t* port);
 CARLA_EXPORT int          jackbridge_port_flags(const jack_port_t* port);
 CARLA_EXPORT const char*  jackbridge_port_type(const jack_port_t* port);
+CARLA_EXPORT bool         jackbridge_port_is_mine(const jack_client_t* client, const jack_port_t* port);
+CARLA_EXPORT bool         jackbridge_port_connected(const jack_port_t* port);
+CARLA_EXPORT bool         jackbridge_port_connected_to(const jack_port_t* port, const char* port_name);
 CARLA_EXPORT const char** jackbridge_port_get_connections(const jack_port_t* port);
+CARLA_EXPORT const char** jackbridge_port_get_all_connections(const jack_client_t* client, const jack_port_t* port);
 
 CARLA_EXPORT bool jackbridge_port_set_name(jack_port_t* port, const char* port_name);
 CARLA_EXPORT bool jackbridge_connect(jack_client_t* client, const char* source_port, const char* destination_port);
