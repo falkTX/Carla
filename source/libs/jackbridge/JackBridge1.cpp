@@ -338,14 +338,17 @@ const char* jackbridge_get_version_string()
 jack_client_t* jackbridge_client_open(const char* client_name, jack_options_t options, jack_status_t* status, ...)
 {
 #if JACKBRIDGE_DUMMY
-    return nullptr;
 #elif JACKBRIDGE_DIRECT
     return jack_client_open(client_name, options, status);
 #else
     if (bridge.client_open_ptr != nullptr)
         return bridge.client_open_ptr(client_name, options, status);
-    return nullptr;
 #endif
+
+    if (status != nullptr)
+        *status = JackServerError;
+
+    return nullptr;
 }
 
 const char* jackbridge_client_rename(jack_client_t* client, const char* new_name)
@@ -702,10 +705,10 @@ bool jackbridge_port_is_mine(const jack_client_t* client, const jack_port_t* por
 #if JACKBRIDGE_DUMMY
     return false;
 #elif JACKBRIDGE_DIRECT
-    return (jack_port_is_mine(client, port) == 0);
+    return jack_port_is_mine(client, port);
 #else
     if (bridge.port_is_mine_ptr != nullptr)
-        return (bridge.port_is_mine_ptr(client, port) == 0);
+        return bridge.port_is_mine_ptr(client, port);
     return false;
 #endif
 }
@@ -715,10 +718,10 @@ bool jackbridge_port_connected(const jack_port_t* port)
 #if JACKBRIDGE_DUMMY
     return false;
 #elif JACKBRIDGE_DIRECT
-    return (jack_port_connected(port) == 0);
+    return jack_port_connected(port);
 #else
     if (bridge.port_connected_ptr != nullptr)
-        return (bridge.port_connected_ptr(port) == 0);
+        return bridge.port_connected_ptr(port);
     return false;
 #endif
 }
@@ -728,10 +731,10 @@ bool jackbridge_port_connected_to(const jack_port_t* port, const char* port_name
 #if JACKBRIDGE_DUMMY
     return false;
 #elif JACKBRIDGE_DIRECT
-    return (jack_port_connected_to(port, port_name) == 0);
+    return jack_port_connected_to(port, port_name);
 #else
     if (bridge.port_connected_to_ptr != nullptr)
-        return (bridge.port_connected_to_ptr(port, port_name) == 0);
+        return bridge.port_connected_to_ptr(port, port_name);
     return false;
 #endif
 }
