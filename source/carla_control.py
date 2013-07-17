@@ -85,6 +85,7 @@ CarlaPluginInfo = {
     'label': None,
     'maker': None,
     'copyright': None,
+    'iconName': None,
     'uniqueId': 0,
     'latency': 0
 }
@@ -151,8 +152,7 @@ class ControlPluginInfo(object):
         'midiProgramCount',
         'midiProgramCurrent',
         'midiProgramDataS',
-        'inPeak',
-        'outPeak'
+        'peaks'
     ]
 
 # ------------------------------------------------------------------------------------------------------------
@@ -168,7 +168,7 @@ class Host(object):
         if len(self.fPluginsInfo) != pluginId:
             return
 
-        info = deepcopy(ControlPluginInfo)
+        info = ControlPluginInfo()
         info.pluginInfo = CarlaPluginInfo
         info.pluginRealName = None
         info.audioCountInfo = CarlaPortCountInfo
@@ -388,7 +388,7 @@ class Host(object):
         return self.fPluginsInfo[pluginId].peaks[portId-1]
 
     def get_output_peak_value(self, pluginId, portId):
-        return self.fPluginsInfo[pluginId].peaks[2+portId-1]
+        return self.fPluginsInfo[pluginId].peaks[portId+1]
 
     def set_option(self, pluginId, option, yesNo):
         global to_target, lo_targetName
@@ -686,7 +686,7 @@ class CarlaControlW(QMainWindow):
     def connectToAddr(self, addr):
         global lo_target, lo_targetName
 
-        self.lo_address = oscAddr
+        self.lo_address = addr
         lo_target       = Address(self.lo_address)
         lo_targetName   = self.lo_address.rsplit("/", 1)[-1]
         print("Connecting to \"%s\" as '%s'..." % (self.lo_address, lo_targetName))
