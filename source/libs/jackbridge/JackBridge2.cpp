@@ -16,7 +16,7 @@
 
 #include "CarlaDefines.hpp"
 
-#ifndef __JACKBRIDGE_HPP__
+#ifndef JACKBRIDGE_HPP_INCLUDED
 // don't include the whole JACK API in this file
 CARLA_EXPORT bool jackbridge_sem_init(void* sem);
 CARLA_EXPORT bool jackbridge_sem_destroy(void* sem);
@@ -48,24 +48,9 @@ bool jackbridge_sem_timedwait(void*, int)
 }
 #else
 
+#include <ctime>
 #include <semaphore.h>
-
-// #ifdef __WINE__
-// # warning Using Wine
-// # define _STRUCT_TIMEVAL 1
-// # define _SYS_SELECT_H   1
-// # include <bits/types.h>
-// struct timespec {
-//    __time_t tv_sec;  /* Seconds.     */
-//    long int tv_nsec; /* Nanoseconds. */
-// };
-// #endif
-
-#ifdef CARLA_OS_WIN
-# include <sys/time.h>
-#else
-# include <time.h>
-#endif
+#include <sys/time.h>
 
 bool jackbridge_sem_init(void* sem)
 {

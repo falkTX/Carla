@@ -14,8 +14,8 @@
  * For a full copy of the license see the LGPL.txt file
  */
 
-#ifndef __JACKBRIDGE_HPP__
-#define __JACKBRIDGE_HPP__
+#ifndef JACKBRIDGE_HPP_INCLUDED
+#define JACKBRIDGE_HPP_INCLUDED
 
 #include "CarlaDefines.hpp"
 
@@ -93,18 +93,18 @@ enum JackOptions {
 };
 
 enum JackStatus {
-    JackFailure       = 0x01,
-    JackInvalidOption = 0x02,
-    JackNameNotUnique = 0x04,
-    JackServerStarted = 0x08,
-    JackServerFailed  = 0x10,
-    JackServerError   = 0x20,
-    JackNoSuchClient  = 0x40,
-    JackLoadFailure   = 0x80,
-    JackInitFailure   = 0x100,
-    JackShmFailure    = 0x200,
-    JackVersionError  = 0x400,
-    JackBackendError  = 0x800,
+    JackFailure       = 0x0001,
+    JackInvalidOption = 0x0002,
+    JackNameNotUnique = 0x0004,
+    JackServerStarted = 0x0008,
+    JackServerFailed  = 0x0010,
+    JackServerError   = 0x0020,
+    JackNoSuchClient  = 0x0040,
+    JackLoadFailure   = 0x0080,
+    JackInitFailure   = 0x0100,
+    JackShmFailure    = 0x0200,
+    JackVersionError  = 0x0400,
+    JackBackendError  = 0x0800,
     JackClientZombie  = 0x1000
 };
 
@@ -114,10 +114,10 @@ enum JackLatencyCallbackMode {
 };
 
 enum JackPortFlags {
-    JackPortIsInput    = 0x1,
-    JackPortIsOutput   = 0x2,
-    JackPortIsPhysical = 0x4,
-    JackPortCanMonitor = 0x8,
+    JackPortIsInput    = 0x01,
+    JackPortIsOutput   = 0x02,
+    JackPortIsPhysical = 0x04,
+    JackPortCanMonitor = 0x08,
     JackPortIsTerminal = 0x10,
     JackPortIsControlVoltage = 0x100
 };
@@ -145,8 +145,8 @@ enum JackSessionEventType {
 };
 
 enum JackSessionFlags {
-    JackSessionSaveError    = 0x01,
-    JackSessionNeedTerminal = 0x02
+    JackSessionSaveError    = 0x1,
+    JackSessionNeedTerminal = 0x2
 };
 
 enum JackCustomChange {
@@ -233,8 +233,8 @@ typedef struct _jack_session_command_t jack_session_command_t;
 
 typedef void (*JackLatencyCallback)(jack_latency_callback_mode_t mode, void* arg);
 typedef int  (*JackProcessCallback)(jack_nframes_t nframes, void* arg);
-typedef void (*JackThreadInitCallback)(void *arg);
-typedef int  (*JackGraphOrderCallback)(void *arg);
+typedef void (*JackThreadInitCallback)(void* arg);
+typedef int  (*JackGraphOrderCallback)(void* arg);
 typedef int  (*JackXRunCallback)(void* arg);
 typedef int  (*JackBufferSizeCallback)(jack_nframes_t nframes, void* arg);
 typedef int  (*JackSampleRateCallback)(jack_nframes_t nframes, void* arg);
@@ -253,19 +253,21 @@ typedef void (*JackCustomDataAppearanceCallback)(const char* client_name, const 
 
 #endif // ! JACKBRIDGE_DIRECT
 
-CARLA_EXPORT const char*    jackbridge_get_version_string();
+CARLA_EXPORT void        jackbridge_get_version(int* major_ptr, int* minor_ptr, int* micro_ptr, int* proto_ptr);
+CARLA_EXPORT const char* jackbridge_get_version_string();
+
 CARLA_EXPORT jack_client_t* jackbridge_client_open(const char* client_name, jack_options_t options, jack_status_t* status, ...);
 CARLA_EXPORT const char*    jackbridge_client_rename(jack_client_t* client, const char* new_name);
+CARLA_EXPORT bool           jackbridge_client_close(jack_client_t* client);
 
-CARLA_EXPORT bool  jackbridge_client_close(jack_client_t* client);
 CARLA_EXPORT int   jackbridge_client_name_size();
 CARLA_EXPORT char* jackbridge_get_client_name(jack_client_t* client);
 
 CARLA_EXPORT bool jackbridge_activate(jack_client_t* client);
 CARLA_EXPORT bool jackbridge_deactivate(jack_client_t* client);
 
-CARLA_EXPORT int jackbridge_get_client_pid(const char* name);
-CARLA_EXPORT int jackbridge_is_realtime(jack_client_t* client);
+CARLA_EXPORT int  jackbridge_get_client_pid(const char* name);
+CARLA_EXPORT bool jackbridge_is_realtime(jack_client_t* client);
 
 CARLA_EXPORT bool jackbridge_set_thread_init_callback(jack_client_t* client, JackThreadInitCallback thread_init_callback, void* arg);
 CARLA_EXPORT void jackbridge_on_shutdown(jack_client_t* client, JackShutdownCallback shutdown_callback, void* arg);
@@ -275,9 +277,7 @@ CARLA_EXPORT bool jackbridge_set_freewheel_callback(jack_client_t* client, JackF
 CARLA_EXPORT bool jackbridge_set_buffer_size_callback(jack_client_t* client, JackBufferSizeCallback bufsize_callback, void* arg);
 CARLA_EXPORT bool jackbridge_set_sample_rate_callback(jack_client_t* client, JackSampleRateCallback srate_callback, void* arg);
 CARLA_EXPORT bool jackbridge_set_client_registration_callback(jack_client_t* client, JackClientRegistrationCallback registration_callback, void* arg);
-#ifndef JACKBRIDGE_DIRECT
-CARLA_EXPORT bool jackbridge_set_client_rename_callback(jack_client_t* client, JackClientRenameCallback registration_callback, void* arg);
-#endif
+CARLA_EXPORT bool jackbridge_set_client_rename_callback(jack_client_t* client, JackClientRenameCallback rename_callback, void* arg);
 CARLA_EXPORT bool jackbridge_set_port_registration_callback(jack_client_t* client, JackPortRegistrationCallback registration_callback, void* arg);
 CARLA_EXPORT bool jackbridge_set_port_connect_callback(jack_client_t* client, JackPortConnectCallback connect_callback, void* arg);
 CARLA_EXPORT bool jackbridge_set_port_rename_callback(jack_client_t* client, JackPortRenameCallback rename_callback, void* arg);
@@ -285,18 +285,16 @@ CARLA_EXPORT bool jackbridge_set_graph_order_callback(jack_client_t* client, Jac
 CARLA_EXPORT bool jackbridge_set_xrun_callback(jack_client_t* client, JackXRunCallback xrun_callback, void* arg);
 CARLA_EXPORT bool jackbridge_set_latency_callback(jack_client_t* client, JackLatencyCallback latency_callback, void* arg);
 
-CARLA_EXPORT bool  jackbridge_set_freewheel(jack_client_t* client, int onoff);
-CARLA_EXPORT bool  jackbridge_set_buffer_size(jack_client_t* client, jack_nframes_t nframes);
-CARLA_EXPORT bool  jackbridge_engine_takeover_timebase(jack_client_t* client);
-CARLA_EXPORT float jackbridge_cpu_load(jack_client_t* client);
+CARLA_EXPORT bool jackbridge_set_freewheel(jack_client_t* client, bool onoff);
+CARLA_EXPORT bool jackbridge_set_buffer_size(jack_client_t* client, jack_nframes_t nframes);
 
 CARLA_EXPORT jack_nframes_t jackbridge_get_sample_rate(jack_client_t* client);
 CARLA_EXPORT jack_nframes_t jackbridge_get_buffer_size(jack_client_t* client);
+CARLA_EXPORT float          jackbridge_cpu_load(jack_client_t* client);
 
-CARLA_EXPORT jack_port_t*   jackbridge_port_register(jack_client_t* client, const char* port_name, const char* port_type, unsigned long flags, unsigned long buffer_size);
-
-CARLA_EXPORT bool  jackbridge_port_unregister(jack_client_t* client, jack_port_t* port);
-CARLA_EXPORT void* jackbridge_port_get_buffer(jack_port_t* port, jack_nframes_t nframes);
+CARLA_EXPORT jack_port_t* jackbridge_port_register(jack_client_t* client, const char* port_name, const char* port_type, unsigned long flags, unsigned long buffer_size);
+CARLA_EXPORT bool         jackbridge_port_unregister(jack_client_t* client, jack_port_t* port);
+CARLA_EXPORT void*        jackbridge_port_get_buffer(jack_port_t* port, jack_nframes_t nframes);
 
 CARLA_EXPORT const char*  jackbridge_port_name(const jack_port_t* port);
 CARLA_EXPORT const char*  jackbridge_port_short_name(const jack_port_t* port);
@@ -309,9 +307,23 @@ CARLA_EXPORT const char** jackbridge_port_get_connections(const jack_port_t* por
 CARLA_EXPORT const char** jackbridge_port_get_all_connections(const jack_client_t* client, const jack_port_t* port);
 
 CARLA_EXPORT bool jackbridge_port_set_name(jack_port_t* port, const char* port_name);
+CARLA_EXPORT bool jackbridge_port_set_alias(jack_port_t* port, const char* alias);
+CARLA_EXPORT bool jackbridge_port_unset_alias(jack_port_t* port, const char* alias);
+CARLA_EXPORT int  jackbridge_port_get_aliases(const jack_port_t* port, char* const aliases[2]);
+
+CARLA_EXPORT bool jackbridge_port_request_monitor(jack_port_t* port, bool onoff);
+CARLA_EXPORT bool jackbridge_port_request_monitor_by_name(jack_client_t* client, const char* port_name, bool onoff);
+CARLA_EXPORT bool jackbridge_port_ensure_monitor(jack_port_t* port, bool onoff);
+CARLA_EXPORT bool jackbridge_port_monitoring_input(jack_port_t* port);
+
 CARLA_EXPORT bool jackbridge_connect(jack_client_t* client, const char* source_port, const char* destination_port);
 CARLA_EXPORT bool jackbridge_disconnect(jack_client_t* client, const char* source_port, const char* destination_port);
-CARLA_EXPORT int  jackbridge_port_name_size();
+CARLA_EXPORT bool jackbridge_port_disconnect(jack_client_t* client, jack_port_t* port);
+
+CARLA_EXPORT int    jackbridge_port_name_size();
+CARLA_EXPORT int    jackbridge_port_type_size();
+CARLA_EXPORT size_t jackbridge_port_type_get_buffer_size(jack_client_t* client, const char* port_type);
+
 CARLA_EXPORT void jackbridge_port_get_latency_range(jack_port_t* port, jack_latency_callback_mode_t mode, jack_latency_range_t* range);
 CARLA_EXPORT void jackbridge_port_set_latency_range(jack_port_t* port, jack_latency_callback_mode_t mode, jack_latency_range_t* range);
 CARLA_EXPORT bool jackbridge_recompute_total_latencies(jack_client_t* client);
@@ -328,10 +340,18 @@ CARLA_EXPORT void     jackbridge_midi_clear_buffer(void* port_buffer);
 CARLA_EXPORT bool     jackbridge_midi_event_write(void* port_buffer, jack_nframes_t time, const jack_midi_data_t* data, size_t data_size);
 CARLA_EXPORT jack_midi_data_t* jackbridge_midi_event_reserve(void* port_buffer, jack_nframes_t time, size_t data_size);
 
-CARLA_EXPORT int  jackbridge_transport_locate(jack_client_t* client, jack_nframes_t frame);
+CARLA_EXPORT bool jackbridge_release_timebase(jack_client_t* client);
+CARLA_EXPORT bool jackbridge_set_sync_callback(jack_client_t* client, JackSyncCallback sync_callback, void* arg);
+CARLA_EXPORT bool jackbridge_set_sync_timeout(jack_client_t* client, jack_time_t timeout);
+CARLA_EXPORT bool jackbridge_set_timebase_callback(jack_client_t* client, bool conditional, JackTimebaseCallback timebase_callback, void* arg);
+CARLA_EXPORT bool jackbridge_transport_locate(jack_client_t* client, jack_nframes_t frame);
+
+CARLA_EXPORT jack_transport_state_t jackbridge_transport_query(const jack_client_t* client, jack_position_t* pos);
+CARLA_EXPORT jack_nframes_t         jackbridge_get_current_transport_frame(const jack_client_t* client);
+
+CARLA_EXPORT bool jackbridge_transport_reposition(jack_client_t* client, const jack_position_t* pos);
 CARLA_EXPORT void jackbridge_transport_start(jack_client_t* client);
 CARLA_EXPORT void jackbridge_transport_stop(jack_client_t* client);
-CARLA_EXPORT jack_transport_state_t jackbridge_transport_query(const jack_client_t* client, jack_position_t* pos);
 
 CARLA_EXPORT bool jackbridge_custom_publish_data(jack_client_t* client, const char* key, const void* data, size_t size);
 CARLA_EXPORT bool jackbridge_custom_get_data(jack_client_t* client, const char* client_name, const char* key, void** data, size_t* size);
@@ -344,4 +364,4 @@ CARLA_EXPORT bool jackbridge_sem_destroy(void* sem);
 CARLA_EXPORT bool jackbridge_sem_post(void* sem);
 CARLA_EXPORT bool jackbridge_sem_timedwait(void* sem, int secs);
 
-#endif // __JACKBRIDGE_HPP__
+#endif // JACKBRIDGE_HPP_INCLUDED
