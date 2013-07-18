@@ -24,17 +24,11 @@
 #include "CarlaMIDI.h"
 #include "CarlaNative.h"
 
+#include "CarlaLogThread.hpp"
+
 #ifndef BUILD_BRIDGE
 # include "CarlaStyle.hpp"
 # include <QtCore/QSettings>
-#else
-# include <QtCore/Qt>
-#endif
-
-#if defined(NDEBUG) && ! (defined(CARLA_OS_WIN) || defined(BUILD_BRIDGE))
-# define WANT_LOGS
-# include <fcntl.h>
-# include <QtCore/QThread>
 #endif
 
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
@@ -48,117 +42,7 @@ using CarlaBackend::CarlaPlugin;
 using CarlaBackend::CallbackFunc;
 using CarlaBackend::EngineOptions;
 using CarlaBackend::EngineTimeInfo;
-
-#ifdef WANT_LOGS
-// -------------------------------------------------------------------------------------------------------------------
-// Log thread
-
-class LogThread : public QThread
-{
-public:
-    LogThread()
-        : fStop(false),
-          fCallback(nullptr),
-          fCallbackPtr(nullptr)
-    {
-        pipe(fPipe);
-
-        fflush(stdout);
-        fflush(stderr);
-
-        //pipefd[1] = ::dup(STDOUT_FILENO);
-        //pipefd[1] = ::dup(STDERR_FILENO);
-        dup2(fPipe[1], STDOUT_FILENO);
-        dup2(fPipe[1], STDERR_FILENO);
-
-        fcntl(fPipe[0], F_SETFL, O_NONBLOCK);
-    }
-
-    ~LogThread()
-    {
-        fflush(stdout);
-        fflush(stderr);
-
-        close(fPipe[0]);
-        close(fPipe[1]);
-    }
-
-    void ready(CallbackFunc callback, void* callbackPtr)
-    {
-        CARLA_ASSERT(callback != nullptr);
-
-        fCallback    = callback;
-        fCallbackPtr = callbackPtr;
-
-        start();
-    }
-
-    void stop()
-    {
-        fStop = true;
-
-        if (isRunning())
-            wait();
-    }
-
-protected:
-    void run()
-    {
-        if (fCallback == nullptr)
-            return;
-
-        while (! fStop)
-        {
-            int i, r, lastRead;
-
-            static char bufTemp[1024+1] = { '\0' };
-            static char bufRead[1024+1];
-            static char bufSend[2048+1];
-
-            while ((r = read(fPipe[0], bufRead, sizeof(char)*1024)) > 0)
-            {
-                bufRead[r] = '\0';
-                lastRead = 0;
-
-                for (i=0; i < r; ++i)
-                {
-                    CARLA_ASSERT(bufRead[i] != '\0');
-
-                    if (bufRead[i] == '\n')
-                    {
-                        std::strcpy(bufSend, bufTemp);
-                        std::strncat(bufSend, bufRead+lastRead, i-lastRead);
-                        bufSend[std::strlen(bufTemp)+i-lastRead] = '\0';
-
-                        lastRead = i;
-                        bufTemp[0] = '\0';
-
-                        fCallback(fCallbackPtr, CarlaBackend::CALLBACK_DEBUG, 0, 0, 0, 0.0f, bufSend);
-                    }
-                }
-
-                CARLA_ASSERT(i == r);
-                CARLA_ASSERT(lastRead < r);
-
-                if (lastRead > 0 && lastRead < r-1)
-                {
-                    std::strncpy(bufTemp, bufRead+lastRead, r-lastRead);
-                    bufTemp[r-lastRead] = '\0';
-                }
-            }
-
-            carla_msleep(20);
-        }
-    }
-
-private:
-    int  fPipe[2];
-    bool fStop;
-
-    CallbackFunc fCallback;
-    void*        fCallbackPtr;
-};
-#endif
+using CarlaBackend::LogThread;
 
 // -------------------------------------------------------------------------------------------------------------------
 // Single, standalone engine
@@ -174,9 +58,7 @@ struct CarlaBackendStandalone {
     QApplication* app;
     bool needsInit;
 
-#ifdef WANT_LOGS
     LogThread logThread;
-#endif
 
     CarlaBackendStandalone()
         : callback(nullptr),
@@ -211,9 +93,7 @@ struct CarlaBackendStandalone {
     {
         CARLA_ASSERT(engine == nullptr);
 
-#ifdef WANT_LOGS
         logThread.stop();
-#endif
     }
 
     void init()
@@ -638,9 +518,7 @@ void carla_set_engine_callback(CarlaCallbackFunc func, void* ptr)
     standalone.callback    = func;
     standalone.callbackPtr = ptr;
 
-#ifdef WANT_LOGS
     standalone.logThread.ready(func, ptr);
-#endif
 
     if (standalone.engine != nullptr)
         standalone.engine->setCallback(func, ptr);
