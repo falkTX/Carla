@@ -12,11 +12,11 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file
  */
 
-#ifndef LV2_RDF_INCLUDED
-#define LV2_RDF_INCLUDED
+#ifndef LV2_RDF_HPP_INCLUDED
+#define LV2_RDF_HPP_INCLUDED
 
 #ifdef CARLA_PROPER_CPP11_SUPPORT
 # include <cstdint>
@@ -298,8 +298,6 @@ struct LV2_RDF_PortMidiMap {
     LV2_RDF_PortMidiMap()
         : Type(0),
           Number(0) {}
-
-    CARLA_LEAK_DETECTOR(LV2_RDF_PortMidiMap)
 };
 
 // Port Points
@@ -314,8 +312,6 @@ struct LV2_RDF_PortPoints {
           Default(0.0f),
           Minimum(0.0f),
           Maximum(1.0f) {}
-
-    CARLA_LEAK_DETECTOR(LV2_RDF_PortPoints)
 };
 
 // Port Unit
@@ -351,8 +347,6 @@ struct LV2_RDF_PortUnit {
             Symbol = nullptr;
         }
     }
-
-    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(LV2_RDF_PortUnit)
 };
 
 // Port Scale Point
@@ -372,8 +366,6 @@ struct LV2_RDF_PortScalePoint {
             Label = nullptr;
         }
     }
-
-    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(LV2_RDF_PortScalePoint)
 };
 
 // Port
@@ -418,8 +410,6 @@ struct LV2_RDF_Port {
             ScalePoints = nullptr;
         }
     }
-
-    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(LV2_RDF_Port)
 };
 
 // Preset
@@ -444,8 +434,6 @@ struct LV2_RDF_Preset {
             Label = nullptr;
         }
     }
-
-    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(LV2_RDF_Preset)
 };
 
 // Feature
@@ -465,8 +453,6 @@ struct LV2_RDF_Feature {
             URI = nullptr;
         }
     }
-
-    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(LV2_RDF_Feature)
 };
 
 // UI
@@ -520,11 +506,9 @@ struct LV2_RDF_UI {
             Extensions = nullptr;
         }
     }
-
-    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(LV2_RDF_UI)
 };
 
-// Plugin
+// Plugin Descriptor
 struct LV2_RDF_Descriptor {
     LV2_Property Type[2];
     LV2_URI URI;
@@ -574,7 +558,7 @@ struct LV2_RDF_Descriptor {
           UICount(0),
           UIs(nullptr)
       {
-#ifdef CARLA_PROPER_CPP11_SUPPORT
+#ifndef CARLA_PROPER_CPP11_SUPPORT
           Type[0] = Type[1] = 0x0;
 #endif
       }
@@ -637,8 +621,6 @@ struct LV2_RDF_Descriptor {
             UIs = nullptr;
         }
     }
-
-    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(LV2_RDF_Descriptor)
 };
 
-#endif // LV2_RDF_INCLUDED
+#endif // LV2_RDF_HPP_INCLUDED

@@ -12,11 +12,11 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file
  */
 
-#ifndef __CARLA_NATIVE_HPP__
-#define __CARLA_NATIVE_HPP__
+#ifndef CARLA_NATIVE_HPP_INCLUDED
+#define CARLA_NATIVE_HPP_INCLUDED
 
 #include "CarlaNative.h"
 #include "CarlaMIDI.h"
@@ -514,4 +514,4 @@ public:                                                                         
     ClassName::_set_state,              \
     ClassName::_dispatcher
 
-#endif // __CARLA_NATIVE_HPP__
+#endif // CARLA_NATIVE_HPP_INCLUDED

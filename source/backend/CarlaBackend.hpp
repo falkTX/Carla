@@ -12,11 +12,11 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file
  */
 
-#ifndef __CARLA_BACKEND_HPP__
-#define __CARLA_BACKEND_HPP__
+#ifndef CARLA_BACKEND_HPP_INCLUDED
+#define CARLA_BACKEND_HPP_INCLUDED
 
 #include "CarlaDefines.hpp"
 
@@ -39,13 +39,12 @@ CARLA_BACKEND_START_NAMESPACE
  *
  * The Carla Backend API.\n
  * This is the base definitions for everything in the Carla code.
- *
  * @{
  */
 
-const unsigned int MAX_DEFAULT_PLUGINS    = 99;  //!< Maximum default number of loadable plugins
-const unsigned int MAX_RACK_PLUGINS       = 16;  //!< Maximum number of loadable plugins in rack mode
-const unsigned int MAX_PATCHBAY_PLUGINS   = 255; //!< Maximum number of loadable plugins in patchbay mode
+const unsigned int MAX_DEFAULT_PLUGINS    = 99;  //!< Maximum default number of loadable plugins.
+const unsigned int MAX_RACK_PLUGINS       = 16;  //!< Maximum number of loadable plugins in rack mode.
+const unsigned int MAX_PATCHBAY_PLUGINS   = 255; //!< Maximum number of loadable plugins in patchbay mode.
 const unsigned int MAX_DEFAULT_PARAMETERS = 200; //!< Maximum default number of parameters allowed.\see OPTION_MAX_PARAMETERS
 
 /*!
@@ -55,16 +54,15 @@ const unsigned int MAX_DEFAULT_PARAMETERS = 200; //!< Maximum default number of 
  * \see CarlaPlugin::hints()
  * @{
  */
-const unsigned int PLUGIN_IS_BRIDGE         = 0x001; //!< Plugin is a bridge (ie, BridgePlugin). This hint is required because "bridge" itself is not a plugin type.
+const unsigned int PLUGIN_IS_BRIDGE         = 0x001; //!< Plugin is a bridge. This hint is required because "bridge" itself is not a plugin type.
 const unsigned int PLUGIN_IS_RTSAFE         = 0x002; //!< Plugin is hard real-time safe.
 const unsigned int PLUGIN_IS_SYNTH          = 0x004; //!< Plugin is a synthesizer (produces sound).
 const unsigned int PLUGIN_HAS_GUI           = 0x010; //!< Plugin has its own custom GUI.
-const unsigned int PLUGIN_HAS_GUI_AS_FILE   = 0x020; //!< Plugin has custom GUI as a single file.
-const unsigned int PLUGIN_HAS_SINGLE_THREAD = 0x040; //!< Plugin needs a single thread for both DSP and UI events.
-const unsigned int PLUGIN_CAN_DRYWET        = 0x100; //!< Plugin can make use of Dry/Wet controls.
-const unsigned int PLUGIN_CAN_VOLUME        = 0x200; //!< Plugin can make use of Volume controls.
-const unsigned int PLUGIN_CAN_BALANCE       = 0x400; //!< Plugin can make use of Left & Right Balance controls.
-const unsigned int PLUGIN_CAN_PANNING       = 0x800; //!< Plugin can make use of Panning controls.
+const unsigned int PLUGIN_HAS_SINGLE_THREAD = 0x020; //!< Plugin has a single thread for all UI events (not thread-safe).
+const unsigned int PLUGIN_CAN_DRYWET        = 0x100; //!< Plugin can use internal Dry/Wet control.
+const unsigned int PLUGIN_CAN_VOLUME        = 0x200; //!< Plugin can use internal Volume control.
+const unsigned int PLUGIN_CAN_BALANCE       = 0x400; //!< Plugin can use internal Left & Right Balance controls.
+const unsigned int PLUGIN_CAN_PANNING       = 0x800; //!< Plugin can use internal Panning control.
 /**@}*/
 
 /*!
@@ -74,15 +72,15 @@ const unsigned int PLUGIN_CAN_PANNING       = 0x800; //!< Plugin can make use of
  * \see CarlaPlugin::availableOptions() and CarlaPlugin::options()
  * @{
  */
-const unsigned int PLUGIN_OPTION_FIXED_BUFFER          = 0x001; //!< Use a constant, fixed-size audio buffer
-const unsigned int PLUGIN_OPTION_FORCE_STEREO          = 0x002; //!< Force mono plugin as stereo
-const unsigned int PLUGIN_OPTION_MAP_PROGRAM_CHANGES   = 0x004; //!< Map MIDI-Programs to plugin programs
-const unsigned int PLUGIN_OPTION_USE_CHUNKS            = 0x008; //!< Use chunks to save data
-const unsigned int PLUGIN_OPTION_SEND_CONTROL_CHANGES  = 0x010; //!< Send MIDI CC events
-const unsigned int PLUGIN_OPTION_SEND_CHANNEL_PRESSURE = 0x020; //!< Send MIDI channel pressure events
-const unsigned int PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH  = 0x040; //!< Send MIDI note aftertouch events
-const unsigned int PLUGIN_OPTION_SEND_PITCHBEND        = 0x080; //!< Send MIDI pitchbend events
-const unsigned int PLUGIN_OPTION_SEND_ALL_SOUND_OFF    = 0x100; //!< Send MIDI all sounds/notes off events, single-note offs otherwise
+const unsigned int PLUGIN_OPTION_FIXED_BUFFER          = 0x001; //!< Use a constant/fixed-size audio buffer.
+const unsigned int PLUGIN_OPTION_FORCE_STEREO          = 0x002; //!< Force mono plugin as stereo.
+const unsigned int PLUGIN_OPTION_MAP_PROGRAM_CHANGES   = 0x004; //!< Map MIDI-Programs to plugin programs.
+const unsigned int PLUGIN_OPTION_USE_CHUNKS            = 0x008; //!< Use chunks to save&restore data.
+const unsigned int PLUGIN_OPTION_SEND_CONTROL_CHANGES  = 0x010; //!< Send MIDI control change events.
+const unsigned int PLUGIN_OPTION_SEND_CHANNEL_PRESSURE = 0x020; //!< Send MIDI channel pressure events.
+const unsigned int PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH  = 0x040; //!< Send MIDI note aftertouch events.
+const unsigned int PLUGIN_OPTION_SEND_PITCHBEND        = 0x080; //!< Send MIDI pitchbend events.
+const unsigned int PLUGIN_OPTION_SEND_ALL_SOUND_OFF    = 0x100; //!< Send MIDI all-sounds/notes-off events, single note-offs otherwise.
 /**@}*/
 
 /*!
@@ -94,11 +92,11 @@ const unsigned int PLUGIN_OPTION_SEND_ALL_SOUND_OFF    = 0x100; //!< Send MIDI a
  */
 const unsigned int PARAMETER_IS_BOOLEAN       = 0x001; //!< Parameter value is a boolean (always at minimum or maximum values).
 const unsigned int PARAMETER_IS_INTEGER       = 0x002; //!< Parameter value is an integer.
-const unsigned int PARAMETER_IS_LOGARITHMIC   = 0x004; //!< Parameter is logarithmic.
-const unsigned int PARAMETER_IS_ENABLED       = 0x008; //!< Parameter is enabled and will be shown in the host built-in editor.
-const unsigned int PARAMETER_IS_AUTOMABLE     = 0x010; //!< Parameter is automable (realtime safe)
-const unsigned int PARAMETER_IS_READ_ONLY     = 0x020; //!< Parameter is read-only
-const unsigned int PARAMETER_USES_SAMPLERATE  = 0x040; //!< Parameter needs sample rate to work (value and ranges are multiplied by SR, and must be divided by SR on save).
+const unsigned int PARAMETER_IS_LOGARITHMIC   = 0x004; //!< Parameter values are logarithmic.
+const unsigned int PARAMETER_IS_ENABLED       = 0x008; //!< Parameter is enabled (can be changed).
+const unsigned int PARAMETER_IS_AUTOMABLE     = 0x010; //!< Parameter is automable (realtime safe).
+const unsigned int PARAMETER_IS_READ_ONLY     = 0x020; //!< Parameter is read-only.
+const unsigned int PARAMETER_USES_SAMPLERATE  = 0x040; //!< Parameter needs Sample-Rate to work (value and ranges are multiplied by SR, and must be divided by SR on save).
 const unsigned int PARAMETER_USES_SCALEPOINTS = 0x080; //!< Parameter uses scalepoints to define internal values in a meaningful way.
 const unsigned int PARAMETER_USES_CUSTOM_TEXT = 0x100; //!< Parameter uses custom text for displaying its value.\see CarlaPlugin::getParameterText()
 /**@}*/
@@ -106,15 +104,14 @@ const unsigned int PARAMETER_USES_CUSTOM_TEXT = 0x100; //!< Parameter uses custo
 /*!
  * @defgroup CustomDataTypes Custom Data types
  *
- * The type defines how the \param value in CustomData is stored.
- *
- * Types are valid URIs.\n
- * Any non-string, non-simple type (not integral) is saved in a base64 encoded format.
+ * The type defines how the \param value in the CustomData struct is stored.\n
+ * Types are valid URIs. Any non-string or non-simple type (not integral) is saved in a base64 encoded format.
+ * \see CustomData
  * @{
  */
-const char* const CUSTOM_DATA_INVALID = nullptr;                                  //!< Null or Invalid data.
-const char* const CUSTOM_DATA_CHUNK   = "http://kxstudio.sf.net/ns/carla/chunk";  //!< Carla Chunk URI
-const char* const CUSTOM_DATA_STRING  = "http://kxstudio.sf.net/ns/carla/string"; //!< Carla String URI
+const char* const CUSTOM_DATA_INVALID = nullptr;                                  //!< Null or invalid data.
+const char* const CUSTOM_DATA_CHUNK   = "http://kxstudio.sf.net/ns/carla/chunk";  //!< Carla chunk URI.
+const char* const CUSTOM_DATA_STRING  = "http://kxstudio.sf.net/ns/carla/string"; //!< Carla string URI.
 /**@}*/
 
 /*!
@@ -143,25 +140,25 @@ enum BinaryType {
 };
 
 /*!
- * All the available plugin types, as provided by subclasses of CarlaPlugin.\n
+ * All the available plugin types, provided by subclasses of CarlaPlugin.\n
  * Some plugin classes might provide more than 1 plugin type.
  */
 enum PluginType {
-    PLUGIN_NONE     = 0, //!< Null plugin type
-    PLUGIN_INTERNAL = 1, //!< Internal plugin
-    PLUGIN_LADSPA   = 2, //!< LADSPA plugin
-    PLUGIN_DSSI     = 3, //!< DSSI plugin
-    PLUGIN_LV2      = 4, //!< LV2 plugin
-    PLUGIN_VST      = 5, //!< VST1/2 plugin
-    PLUGIN_VST3     = 6, //!< VST3 plugin
-    PLUGIN_GIG      = 7, //!< GIG sound kit
-    PLUGIN_SF2      = 8, //!< SF2 sound kit (aka SoundFont)
-    PLUGIN_SFZ      = 9  //!< SFZ sound kit
+    PLUGIN_NONE     = 0, //!< Null plugin type.
+    PLUGIN_INTERNAL = 1, //!< Internal plugin.
+    PLUGIN_LADSPA   = 2, //!< LADSPA plugin.
+    PLUGIN_DSSI     = 3, //!< DSSI plugin.
+    PLUGIN_LV2      = 4, //!< LV2 plugin.
+    PLUGIN_VST      = 5, //!< VST1/2 plugin.
+    PLUGIN_VST3     = 6, //!< VST3 plugin.
+    PLUGIN_GIG      = 7, //!< GIG sound kit.
+    PLUGIN_SF2      = 8, //!< SF2 sound kit (aka SoundFont).
+    PLUGIN_SFZ      = 9  //!< SFZ sound kit.
 };
 
 /*!
  * Plugin category, describing the funtionality of a plugin.\n
- * When a plugin fails to tell his own category, one is atributted to it based on its name.
+ * When a plugin fails to tell its own category, one is atributted to it based on its name.
  */
 enum PluginCategory {
     PLUGIN_CATEGORY_NONE      = 0, //!< Null plugin category.
@@ -202,8 +199,8 @@ enum InternalParametersIndex {
     PARAMETER_BALANCE_LEFT  = -5, //!< Stereo Balance-Left parameter, range -1.0...1.0; default is -1.0.
     PARAMETER_BALANCE_RIGHT = -6, //!< Stereo Balance-Right parameter, range -1.0...1.0; default is 1.0.
     PARAMETER_PANNING       = -7, //!< Mono Panning parameter, range -1.0...1.0; default is 0.0.
-    PARAMETER_CTRL_CHANNEL  = -8, //!< MIDI Control channel
-    PARAMETER_MAX           = -9  //!< Max value, defined for convenience
+    PARAMETER_CTRL_CHANNEL  = -8, //!< MIDI Control channel, range -1...15 (-1 = off).
+    PARAMETER_MAX           = -9  //!< Max value, defined for convenience.
 };
 
 /*!
@@ -213,25 +210,26 @@ enum PatchbayIconType {
     PATCHBAY_ICON_APPLICATION = 0, //!< Generic application icon.
     PATCHBAY_ICON_HARDWARE    = 1, //!< Hardware icon.
     PATCHBAY_ICON_CARLA       = 2, //!< Carla icon.
-    PATCHBAY_ICON_DISTRHO     = 3, //!< DISTRHO icon
+    PATCHBAY_ICON_DISTRHO     = 3, //!< DISTRHO icon.
     PATCHBAY_ICON_FILE        = 4, //!< File icon.
     PATCHBAY_ICON_PLUGIN      = 5  //!< Plugin icon.
 };
 
 /*!
- * Options used in the CarlaEngine::setOption() and set_option() calls.\n
+ * Options used in the CarlaEngine::setOption() calls.\n
  * All options except paths must be set before initiliazing or after closing the engine.
  */
 enum OptionsType {
     /*!
-     * Try to set the current process name.
+     * Set the current process name.\n
+     * This is a convenience option, as Python lacks this functionality.
      * \note Not available on all platforms.
      */
     OPTION_PROCESS_NAME = 0,
 
     /*!
      * Set the engine processing mode.\n
-     * Default is PROCESS_MODE_CONTINUOUS_RACK.
+     * Default is PROCESS_MODE_MULTIPLE_CLIENTS on Linux and PROCESS_MODE_CONTINUOUS_RACK for all other OSes.
      * \see ProcessMode
      */
     OPTION_PROCESS_MODE = 1,
@@ -246,6 +244,7 @@ enum OptionsType {
     /*!
      * Force mono plugins as stereo, by running 2 instances at the same time.
      * \note Not supported by all plugins.
+     * \see PLUGIN_OPTION_FORCE_STEREO
      */
     OPTION_FORCE_STEREO = 3,
 
@@ -265,6 +264,7 @@ enum OptionsType {
     /*!
      * Use (unofficial) dssi-vst chunks feature.\n
      * Default is no.
+     * \see PLUGIN_OPTION_USE_CHUNKS
      */
     OPTION_USE_DSSI_VST_CHUNKS = 6,
 #endif
@@ -276,22 +276,22 @@ enum OptionsType {
     OPTION_MAX_PARAMETERS = 7,
 
     /*!
-     * Timeout value in ms for how much to wait for OSC-Bridges to respond.\n
+     * Timeout value in ms for how much to wait for UI-Bridges to respond.\n
      * Default is 4000 (4 secs).
      */
-    OPTION_OSC_UI_TIMEOUT = 8,
+    OPTION_UI_BRIDGES_TIMEOUT = 8,
 
     /*!
      * JACK auto-connect to hardware ports.
      */
     OPTION_JACK_AUTOCONNECT = 9,
 
-    /*!
-     * JACK Transport master.
-     */
-    OPTION_JACK_TIMEMASTER = 10,
-
 #ifdef WANT_RTAUDIO
+    /*!
+     * RtAudio number of periods.
+     */
+    OPTION_RTAUDIO_NUMBER_PERIODS = 10,
+
     /*!
      * RtAudio buffer size.
      */
@@ -415,8 +415,7 @@ enum OptionsType {
 
 /*!
  * Opcodes sent from the engine callback to the GUI, as defined by CallbackFunc.
- *
- * \see CarlaEngine::setCallback() and set_callback_function()
+ * \see CarlaEngine::setCallback()
  */
 enum CallbackType {
     /*!
@@ -438,21 +437,19 @@ enum CallbackType {
 
     /*!
      * A plugin has been renamed.
-     * \param valueStr New name
+     * \param valueStr New plugin name
      */
     CALLBACK_PLUGIN_RENAMED = 3,
 
     /*!
      * A parameter value has been changed.
-     *
      * \param value1 Parameter index
-     * \param value3 Value
+     * \param value3 Parameter value
      */
     CALLBACK_PARAMETER_VALUE_CHANGED = 4,
 
     /*!
      * A parameter default has changed.
-     *
      * \param value1 Parameter index
      * \param value3 New default value
      */
@@ -460,7 +457,6 @@ enum CallbackType {
 
     /*!
      * A parameter's MIDI channel has been changed.
-     *
      * \param value1 Parameter index
      * \param value2 MIDI channel
      */
@@ -468,7 +464,6 @@ enum CallbackType {
 
     /*!
      * A parameter's MIDI CC has been changed.
-     *
      * \param value1 Parameter index
      * \param value2 MIDI CC
      */
@@ -476,14 +471,12 @@ enum CallbackType {
 
     /*!
      * The current program has has been changed.
-     *
      * \param value1 Program index
      */
     CALLBACK_PROGRAM_CHANGED = 8,
 
     /*!
      * The current MIDI program has been changed.
-     *
      * \param value1 MIDI bank
      * \param value2 MIDI program
      */
@@ -491,7 +484,6 @@ enum CallbackType {
 
     /*!
      * A note has been pressed.
-     *
      * \param value1 Channel
      * \param value2 Note
      * \param value3 Velocity
@@ -500,7 +492,6 @@ enum CallbackType {
 
     /*!
      * A note has been released.
-     *
      * \param value1 Channel
      * \param value2 Note
      */
@@ -508,7 +499,6 @@ enum CallbackType {
 
     /*!
      * The plugin's custom GUI state has changed.
-     *
      * \param value1 State, as follows:\n
      *                0: GUI has been closed or hidden\n
      *                1: GUI has been shown\n
@@ -542,32 +532,29 @@ enum CallbackType {
     CALLBACK_RELOAD_ALL = 17,
 
     /*!
-     * Canvas client added
-     *
+     * Canvas client added.
      * \param value1   Client Id
-     * \param value2   Client Icon
+     * \param value2   Client icon
      * \param valueStr Client name
      */
     CALLBACK_PATCHBAY_CLIENT_ADDED = 18,
 
     /*!
-     * Canvas client removed
-     *
-     * \param value1 Client Id
+     * Canvas client removed.
+     * \param value1   Client Id
+     * \param valueStr Client name
      */
     CALLBACK_PATCHBAY_CLIENT_REMOVED = 19,
 
     /*!
-     * Canvas client renamed
-     *
+     * Canvas client renamed.
      * \param value1   Client Id
      * \param valueStr New client name
      */
     CALLBACK_PATCHBAY_CLIENT_RENAMED = 20,
 
     /*!
-     * Canvas port added
-     *
+     * Canvas port added.
      * \param value1   Client Id
      * \param value2   Port Id
      * \param value3   Port flags
@@ -576,41 +563,40 @@ enum CallbackType {
     CALLBACK_PATCHBAY_PORT_ADDED = 21,
 
     /*!
-     * Canvas port remvoed
-     *
-     * \param value1 Port Id
+     * Canvas port removed.
+     * \param value1   Client Id
+     * \param value2   Port Id
+     * \param valueStr Port name
      */
     CALLBACK_PATCHBAY_PORT_REMOVED = 22,
 
     /*!
-     * Canvas port renamed
-     *
-     * \param value1   Port Id
+     * Canvas port renamed.
+     * \param value1   Client Id
+     * \param value2   Port Id
      * \param valueStr New port name
      */
     CALLBACK_PATCHBAY_PORT_RENAMED = 23,
 
     /*!
-     * Canvas port connection added
-     *
+     * Canvas port connection added.
      * \param value1 Output port Id
      * \param value2 Input port Id
      */
     CALLBACK_PATCHBAY_CONNECTION_ADDED = 24,
 
     /*!
-     * Canvas port connection removed
-     *
+     * Canvas port connection removed.
      * \param value1 Output port Id
      * \param value2 Input port Id
      */
     CALLBACK_PATCHBAY_CONNECTION_REMOVED = 25,
 
     /*!
-     * Canvas client icon changed
-     *
-     * \param value1 Client Id
-     * \param value2 Client Icon
+     * Canvas client icon changed.
+     * \param value1   Client Id
+     * \param value2   New client icon
+     * \param valueStr Client name
      */
     CALLBACK_PATCHBAY_ICON_CHANGED = 26,
 
@@ -626,7 +612,6 @@ enum CallbackType {
 
     /*!
      * Engine process mode changed.
-     *
      * \param value1 New process mode
      * \see ProcessMode
      */
@@ -665,12 +650,11 @@ enum CallbackType {
 
 /*!
  * Engine process mode.
- *
  * \see OPTION_PROCESS_MODE
  */
 enum ProcessMode {
-    PROCESS_MODE_SINGLE_CLIENT    = 0, //!< Single client mode (dynamic input/outputs as needed by plugins)
-    PROCESS_MODE_MULTIPLE_CLIENTS = 1, //!< Multiple client mode (1 master client + 1 client per plugin)
+    PROCESS_MODE_SINGLE_CLIENT    = 0, //!< Single client mode (dynamic input/outputs as needed by plugins).
+    PROCESS_MODE_MULTIPLE_CLIENTS = 1, //!< Multiple client mode (1 master client + 1 client per plugin).
     PROCESS_MODE_CONTINUOUS_RACK  = 2, //!< Single client, 'rack' mode. Processes plugins in order of Id, with forced stereo.
     PROCESS_MODE_PATCHBAY         = 3, //!< Single client, 'patchbay' mode.
     PROCESS_MODE_BRIDGE           = 4  //!< Special mode, used in plugin-bridges only.
@@ -681,20 +665,19 @@ enum ProcessMode {
  */
 enum TransportMode {
     TRANSPORT_MODE_INTERNAL = 0, //!< Internal transport mode.
-    TRANSPORT_MODE_JACK     = 1, //!< Transport from JACK, only available if driver name is "JACK"
-    TRANSPORT_MODE_PLUGIN   = 2, //!< Transport from host, used when Carla is a plugin
+    TRANSPORT_MODE_JACK     = 1, //!< Transport from JACK, only available if driver name is "JACK".
+    TRANSPORT_MODE_PLUGIN   = 2, //!< Transport from host, used when Carla is a plugin.
     TRANSPORT_MODE_BRIDGE   = 3  //!< Special mode, used in plugin-bridges only.
 };
 
 /*!
- * Callback function the engine will call when something interesting happens.
- *
- * \see CallbackType and set_callback_function()
+ * Callback function the engine will use when something interesting happens.
+ * \see CallbackType
  */
 typedef void (*CallbackFunc)(void* ptr, CallbackType action, unsigned int pluginId, int value1, int value2, float value3, const char* valueStr);
 
 /*!
- * Parameter data
+ * Parameter data.
  */
 struct ParameterData {
     ParameterType type;
@@ -716,7 +699,7 @@ struct ParameterData {
 };
 
 /*!
- * Parameter ranges
+ * Parameter ranges.
  */
 struct ParameterRanges {
     float def;
@@ -749,7 +732,7 @@ struct ParameterRanges {
             value = max;
     }
 
-    float fixValue(const float& value) const
+    float getFixedValue(const float& value) const
     {
         if (value < min)
             return min;
@@ -758,7 +741,7 @@ struct ParameterRanges {
         return value;
     }
 
-    float normalizeValue(const float& value) const
+    float getNormalizedValue(const float& value) const
     {
         float newValue = (value - min) / (max - min);
 
@@ -770,14 +753,14 @@ struct ParameterRanges {
         return newValue;
     }
 
-    float unnormalizeValue(const float& value) const
+    float getUnnormalizedValue(const float& value) const
     {
         return value * (max - min) + min;
     }
 };
 
 /*!
- * MIDI Program data
+ * MIDI Program data.
  */
 struct MidiProgramData {
     uint32_t bank;
@@ -793,9 +776,8 @@ struct MidiProgramData {
 };
 
 /*!
- * Custom data, saving key:value 'dictionaries'.\n
+ * Custom data, for saving key:value 'dictionaries'.\n
  * \a type is an URI which defines the \a value type.
- *
  * \see CustomDataTypes
  */
 struct CustomData {
@@ -819,4 +801,4 @@ class CarlaPlugin;
 
 CARLA_BACKEND_END_NAMESPACE
 
-#endif // __CARLA_BACKEND_HPP__
+#endif // CARLA_BACKEND_HPP_INCLUDED

@@ -12,11 +12,11 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file
  */
 
-#ifndef LADSPA_RDF_INCLUDED
-#define LADSPA_RDF_INCLUDED
+#ifndef LADSPA_RDF_HPP_INCLUDED
+#define LADSPA_RDF_HPP_INCLUDED
 
 // Base Types
 typedef float LADSPA_Data;
@@ -169,7 +169,7 @@ struct LADSPA_RDF_Port {
     }
 };
 
-// Plugin
+// Plugin Descriptor
 struct LADSPA_RDF_Descriptor {
     LADSPA_PluginType Type;
     unsigned long UniqueID;
@@ -207,4 +207,4 @@ struct LADSPA_RDF_Descriptor {
     }
 };
 
-#endif // LADSPA_RDF_INCLUDED
+#endif // LADSPA_RDF_HPP_INCLUDED

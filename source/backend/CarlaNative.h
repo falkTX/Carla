@@ -12,11 +12,11 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file
  */
 
-#ifndef __CARLA_NATIVE_H__
-#define __CARLA_NATIVE_H__
+#ifndef CARLA_NATIVE_H_INCLUDED
+#define CARLA_NATIVE_H_INCLUDED
 
 #ifdef __cplusplus
 extern "C" {
@@ -296,4 +296,4 @@ void carla_register_native_plugin_zynaddsubfx();
 } // extern "C"
 #endif
 
-#endif // __CARLA_NATIVE_H__
+#endif // CARLA_NATIVE_H_INCLUDED

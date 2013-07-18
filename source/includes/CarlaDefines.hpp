@@ -12,11 +12,11 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file
  */
 
-#ifndef __CARLA_DEFINES_HPP__
-#define __CARLA_DEFINES_HPP__
+#ifndef CARLA_DEFINES_HPP_INCLUDED
+#define CARLA_DEFINES_HPP_INCLUDED
 
 // Check OS
 #if defined(WIN64) || defined(_WIN64) || defined(__WIN64__)
@@ -43,9 +43,9 @@
 #if defined(HAVE_CPP11_SUPPORT)
 # define CARLA_PROPER_CPP11_SUPPORT
 #elif defined(__GNUC__) && defined(__GXX_EXPERIMENTAL_CXX0X__)
-# if  (__GNUC__ * 100 + __GNUC_MINOR__) >= 405
+# if (__GNUC__ * 100 + __GNUC_MINOR__) >= 405
 #  define CARLA_PROPER_CPP11_SUPPORT
-#  if  (__GNUC__ * 100 + __GNUC_MINOR__) < 407
+#  if (__GNUC__ * 100 + __GNUC_MINOR__) < 407
 #   define override // gcc4.7+ only
 #  endif
 # endif
@@ -110,9 +110,13 @@
 #endif
 
 // Define CARLA_SAFE_ASSERT*
-#define CARLA_SAFE_ASSERT(cond) ((!(cond)) ? carla_assert(#cond, __FILE__, __LINE__) : pass())
-#define CARLA_SAFE_ASSERT_INT(cond, value) ((!(cond)) ? carla_assert_int(#cond, __FILE__, __LINE__, value) : pass())
-#define CARLA_SAFE_ASSERT_INT2(cond, v1, v2) ((!(cond)) ? carla_assert_int2(#cond, __FILE__, __LINE__, v1, v2) : pass())
+#define CARLA_SAFE_ASSERT(COND)              if (COND) pass(); else carla_assert     (#COND, __FILE__, __LINE__);
+#define CARLA_SAFE_ASSERT_INT(COND, VALUE)   if (COND) pass(); else carla_assert_int (#COND, __FILE__, __LINE__, VALUE);
+#define CARLA_SAFE_ASSERT_INT2(COND, V1, V2) if (COND) pass(); else carla_assert_int2(#COND, __FILE__, __LINE__, V1, V2);
+
+// Define CARLA_SAFE_ASSERT_RETURN*
+#define CARLA_SAFE_ASSERT_RETURN(COND)       if (COND) pass(); else { carla_assert(#COND, __FILE__, __LINE__); return;     }
+#define CARLA_SAFE_ASSERT_RETURN(COND, RET)  if (COND) pass(); else { carla_assert(#COND, __FILE__, __LINE__); return RET; }
 
 // Define CARLA_ASSERT*
 #if defined(CARLA_NO_ASSERTS)
@@ -147,4 +151,4 @@
 # define OS_SEP '/'
 #endif
 
-#endif // __CARLA_DEFINES_HPP__
+#endif // CARLA_DEFINES_HPP_INCLUDED

@@ -12,11 +12,11 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file
  */
 
-#ifndef __CARLA_PLUGIN_HPP__
-#define __CARLA_PLUGIN_HPP__
+#ifndef CARLA_PLUGIN_HPP_INCLUDED
+#define CARLA_PLUGIN_HPP_INCLUDED
 
 #include "CarlaBackend.hpp"
 #include "CarlaString.hpp"
@@ -898,4 +898,4 @@ private:
 
 CARLA_BACKEND_END_NAMESPACE
 
-#endif // __CARLA_PLUGIN_HPP__
+#endif // CARLA_PLUGIN_HPP_INCLUDED

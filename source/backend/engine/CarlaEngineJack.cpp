@@ -836,7 +836,7 @@ public:
                 else
                     groupIcon = PATCHBAY_ICON_APPLICATION;
 
-                callback(CALLBACK_PATCHBAY_ICON_CHANGED, 0, groupId, groupIcon, 0.0f, nullptr);
+                callback(CALLBACK_PATCHBAY_ICON_CHANGED, 0, groupId, groupIcon, 0.0f, groupName);
 
                 jackbridge_free(data);
             }
@@ -1467,7 +1467,7 @@ protected:
         GroupNameToId groupNameId(id, name);
         fUsedGroupNames.removeAll(groupNameId);
 
-        callback(CALLBACK_PATCHBAY_CLIENT_REMOVED, 0, id, 0, 0.0f, nullptr);
+        callback(CALLBACK_PATCHBAY_CLIENT_REMOVED, 0, id, 0, 0.0f, name);
     }
 
     void handleJackPortRegistrationCallback(const jack_port_id_t port, const bool reg)
@@ -1543,7 +1543,7 @@ protected:
             PortNameToId portNameId(groupId, portId, portName, fullPortName);
             fUsedPortNames.removeOne(portNameId);
 
-            callback(CALLBACK_PATCHBAY_PORT_REMOVED, 0, portId, 0, 0.0f, fullPortName);
+            callback(CALLBACK_PATCHBAY_PORT_REMOVED, 0, groupId, portId, 0.0f, portName);
         }
     }
 
@@ -1643,7 +1643,7 @@ protected:
             {
                 CARLA_ASSERT(portNameId.groupId == groupId);
                 portNameId.rename(portName, newName);
-                callback(CALLBACK_PATCHBAY_PORT_RENAMED, 0, portNameId.portId, 0, 0.0f, newName);
+                callback(CALLBACK_PATCHBAY_PORT_RENAMED, 0, groupId, portNameId.portId, 0.0f, newName);
                 break;
             }
         }

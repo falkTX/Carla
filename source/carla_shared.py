@@ -142,7 +142,7 @@ Carla.host = None
 Carla.gui  = None
 Carla.isControl = False
 Carla.isLocal   = True
-Carla.processMode   = PROCESS_MODE_CONTINUOUS_RACK
+Carla.processMode   = PROCESS_MODE_MULTIPLE_CLIENTS if LINUX else PROCESS_MODE_CONTINUOUS_RACK
 Carla.maxParameters = MAX_DEFAULT_PARAMETERS
 
 # ------------------------------------------------------------------------------------------------------------

@@ -12,11 +12,11 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file
  */
 
-#ifndef __CARLA_ENGINE_HPP__
-#define __CARLA_ENGINE_HPP__
+#ifndef CARLA_ENGINE_HPP_INCLUDED
+#define CARLA_ENGINE_HPP_INCLUDED
 
 #include "CarlaBackend.hpp"
 #include "CarlaMIDI.h"
@@ -279,12 +279,12 @@ struct EngineOptions {
 
 #ifndef DOXYGEN
     EngineOptions()
-# if defined(CARLA_OS_WIN) || defined(CARLA_OS_MAC)
-        : processMode(PROCESS_MODE_CONTINUOUS_RACK),
-          transportMode(TRANSPORT_MODE_INTERNAL),
-# else
+# if defined(CARLA_OS_LINUX)
         : processMode(PROCESS_MODE_MULTIPLE_CLIENTS),
           transportMode(TRANSPORT_MODE_JACK),
+# else
+        : processMode(PROCESS_MODE_CONTINUOUS_RACK),
+          transportMode(TRANSPORT_MODE_INTERNAL),
 # endif
           forceStereo(false),
           preferPluginBridges(false),
@@ -1230,4 +1230,4 @@ private:
 
 CARLA_BACKEND_END_NAMESPACE
 
-#endif // __CARLA_ENGINE_HPP__
+#endif // CARLA_ENGINE_HPP_INCLUDED

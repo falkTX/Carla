@@ -12,14 +12,13 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file
  */
 
-#ifndef __CARLA_STANDALONE_HPP__
-#define __CARLA_STANDALONE_HPP__
+#ifndef CARLA_STANDALONE_HPP_INCLUDED
+#define CARLA_STANDALONE_HPP_INCLUDED
 
 #include "CarlaBackend.hpp"
-#include "CarlaJuceUtils.hpp"
 
 /*!
  * @defgroup CarlaStandaloneAPI Carla Standalone API
@@ -106,8 +105,6 @@ struct CarlaPluginInfo {
             copyright = nullptr;
         }
     }
-
-    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(CarlaPluginInfo)
 #endif
 };
 
@@ -143,8 +140,6 @@ struct CarlaNativePluginInfo {
           label(nullptr),
           maker(nullptr),
           copyright(nullptr) {}
-
-    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(CarlaNativePluginInfo)
 #endif
 };
 
@@ -164,8 +159,6 @@ struct CarlaPortCountInfo {
         : ins(0),
           outs(0),
           total(0) {}
-
-    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(CarlaPortCountInfo)
 #endif
 };
 
@@ -204,8 +197,6 @@ struct CarlaParameterInfo {
             unit = nullptr;
         }
     }
-
-    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(CarlaParameterInfo)
 #endif
 };
 
@@ -230,8 +221,6 @@ struct CarlaScalePointInfo {
             label = nullptr;
         }
     }
-
-    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(CarlaScalePointInfo)
 #endif
 };
 
@@ -254,8 +243,6 @@ struct CarlaTransportInfo {
           bar(0),
           beat(0),
           bpm(0.0) {}
-
-    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(CarlaTransportInfo)
 #endif
 };
 
