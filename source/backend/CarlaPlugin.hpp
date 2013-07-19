@@ -41,7 +41,11 @@ CARLA_BACKEND_START_NAMESPACE
  */
 
 /*!
- * TODO.
+ * Post-Rt event type.\n
+ * These are events postponned from within the process function,
+ *
+ * During process, we cannot lock, allocate memory or do UI stuff,\n
+ * so events have to be postponned to be executed later, on a separate thread.
  */
 enum PluginPostRtEventType {
     kPluginPostRtEventNull,
@@ -67,12 +71,11 @@ struct CarlaPluginProtectedData;
 // -----------------------------------------------------------------------
 
 /*!
- * \class CarlaPlugin
- *
- * \brief Carla Backend base plugin class
+ * Carla Backend base plugin class
  *
  * This is the base class for all available plugin types available in Carla Backend.\n
- * All virtual calls are implemented in this class as fallback, so it's safe to only override needed calls.
+ * All virtual calls are implemented in this class as fallback (except reload and process),\n
+ * so it's safe to only override needed calls.
  *
  * \see PluginType
  */
@@ -97,23 +100,23 @@ public:
     // Information (base)
 
     /*!
-     * Get the plugin's type (ie, a subclass of CarlaPlugin).
+     * Get the plugin's type (a subclass of CarlaPlugin).
      *
      * \note Plugin bridges will return their respective plugin type, there is no plugin type such as "bridge".\n
      *       To check if a plugin is a bridge use:
      * \code
-     * if (hints() & PLUGIN_IS_BRIDGE)
+     * if (getHints() & PLUGIN_IS_BRIDGE)
      *     ...
      * \endcode
      */
-    virtual PluginType type() const = 0;
+    virtual PluginType getType() const noexcept = 0;
 
     /*!
      * Get the plugin's id (as passed in the constructor).
      *
      * \see setId()
      */
-    unsigned int id() const
+    unsigned int getId() const noexcept
     {
         return fId;
     }
@@ -123,29 +126,28 @@ public:
      *
      * \see PluginHints
      */
-    unsigned int hints() const
+    unsigned int getHints() const noexcept
     {
         return fHints;
     }
 
     /*!
-     * Get the plugin's options.
+     * Get the plugin's options (currently in use).
      *
-     * \see PluginOptions, availableOptions() and setOption()
+     * \see PluginOptions, getAvailableOptions() and setOption()
      */
-    unsigned int options() const
+    unsigned int getOptions() const noexcept
     {
         return fOptions;
     }
 
     /*!
      * Check if the plugin is enabled.\n
-     * When a plugin is disabled, it will never be processed or managed in any way.\n
-     * To 'bypass' a plugin use setActive() instead.
+     * When a plugin is disabled, it will never be processed or managed in any way.
      *
      * \see setEnabled()
      */
-    bool enabled() const
+    bool isEnabled() const noexcept
     {
         return fEnabled;
     }
@@ -154,9 +156,9 @@ public:
      * Get the plugin's internal name.\n
      * This name is unique within all plugins in an engine.
      *
-     * \see getRealName()
+     * \see getRealName() and setName()
      */
-    const char* name() const
+    const char* getName() const noexcept
     {
         return (const char*)fName;
     }
@@ -165,7 +167,7 @@ public:
      * Get the currently loaded DLL filename for this plugin.\n
      * (Sound kits return their exact filename).
      */
-    const char* filename() const
+    const char* getFilename() const noexcept
     {
         return (const char*)fFilename;
     }
@@ -173,7 +175,7 @@ public:
     /*!
      * Get the plugins's icon name.
      */
-    const char* iconName() const
+    const char* getIconName() const noexcept
     {
         return (const char*)fIconName;
     }
@@ -181,7 +183,7 @@ public:
     /*!
      * Get the plugin's category (delay, filter, synth, etc).
      */
-    virtual PluginCategory category()
+    virtual PluginCategory getCategory() const
     {
         return PLUGIN_CATEGORY_NONE;
     }
@@ -190,7 +192,7 @@ public:
      * Get the plugin's native unique Id.\n
      * May return 0 on plugin types that don't support Ids.
      */
-    virtual long uniqueId() const
+    virtual long getUniqueId() const
     {
         return 0;
     }
@@ -198,7 +200,7 @@ public:
     /*!
      * Get the plugin's latency, in sample frames.
      */
-    uint32_t latency() const;
+    uint32_t getLatencyInFrames() const noexcept;
 
     // -------------------------------------------------------------------
     // Information (count)
@@ -206,48 +208,48 @@ public:
     /*!
      * Get the number of audio inputs.
      */
-    uint32_t audioInCount() const;
+    uint32_t getAudioInCount() const noexcept;
 
     /*!
      * Get the number of audio outputs.
      */
-    uint32_t audioOutCount() const;
+    uint32_t getAudioOutCount() const noexcept;
 
     /*!
      * Get the number of MIDI inputs.
      */
-    virtual uint32_t midiInCount() const;
+    virtual uint32_t getMidiInCount() const noexcept;
 
     /*!
      * Get the number of MIDI outputs.
      */
-    virtual uint32_t midiOutCount() const;
+    virtual uint32_t getMidiOutCount() const noexcept;
 
     /*!
      * Get the number of parameters.\n
      * To know the number of parameter inputs and outputs separately use getParameterCountInfo() instead.
      */
-    uint32_t parameterCount() const;
+    uint32_t getParameterCount() const noexcept;
 
     /*!
      * Get the number of scalepoints for parameter \a parameterId.
      */
-    virtual uint32_t parameterScalePointCount(const uint32_t parameterId) const;
+    virtual uint32_t getParameterScalePointCount(const uint32_t parameterId) const;
 
     /*!
      * Get the number of programs.
      */
-    uint32_t programCount() const;
+    uint32_t getProgramCount() const noexcept;
 
     /*!
      * Get the number of MIDI programs.
      */
-    uint32_t midiProgramCount() const;
+    uint32_t getMidiProgramCount() const noexcept;
 
     /*!
      * Get the number of custom data sets.
      */
-    uint32_t customDataCount() const;
+    uint32_t getCustomDataCount() const noexcept;
 
     // -------------------------------------------------------------------
     // Information (current data)
@@ -257,7 +259,7 @@ public:
      *
      * \see setProgram()
      */
-    int32_t currentProgram() const;
+    int32_t getCurrentProgram() const noexcept;
 
     /*!
      * Get the current MIDI program number (-1 if unset).
@@ -265,36 +267,36 @@ public:
      * \see setMidiProgram()
      * \see setMidiProgramById()
      */
-    int32_t currentMidiProgram() const;
+    int32_t getCurrentMidiProgram() const noexcept;
 
     /*!
      * Get the parameter data of \a parameterId.
      */
-    const ParameterData& parameterData(const uint32_t parameterId) const;
+    const ParameterData& getParameterData(const uint32_t parameterId) const;
 
     /*!
      * Get the parameter ranges of \a parameterId.
      */
-    const ParameterRanges& parameterRanges(const uint32_t parameterId) const;
+    const ParameterRanges& getParameterRanges(const uint32_t parameterId) const;
 
     /*!
      * Check if parameter \a parameterId is of output type.
      */
-    bool parameterIsOutput(const uint32_t parameterId) const;
+    bool isParameterOutput(const uint32_t parameterId) const;
 
     /*!
      * Get the MIDI program at \a index.
      *
      * \see getMidiProgramName()
      */
-    const MidiProgramData& midiProgramData(const uint32_t index) const;
+    const MidiProgramData& getMidiProgramData(const uint32_t index) const;
 
     /*!
      * Get the custom data set at \a index.
      *
-     * \see setCustomData()
+     * \see getCustomDataCount() and setCustomData()
      */
-    const CustomData& customData(const uint32_t index) const;
+    const CustomData& getCustomData(const uint32_t index) const;
 
     /*!
      * Get the complete plugin chunk data into \a dataPtr.
@@ -304,7 +306,7 @@ public:
      *
      * \see setChunkData()
      */
-    virtual int32_t chunkData(void** const dataPtr);
+    virtual int32_t getChunkData(void** const dataPtr) const;
 
     // -------------------------------------------------------------------
     // Information (per-plugin data)
@@ -312,78 +314,78 @@ public:
     /*!
      * Get the plugin available options.
      *
-     * \see PluginOptions
+     * \see PluginOptions, getOptions() and setOption()
      */
-    virtual unsigned int availableOptions();
+    virtual unsigned int getAvailableOptions() const;
 
     /*!
      * Get the current parameter value of \a parameterId.
      */
-    virtual float getParameterValue(const uint32_t parameterId);
+    virtual float getParameterValue(const uint32_t parameterId) const;
 
     /*!
      * Get the scalepoint \a scalePointId value of the parameter \a parameterId.
      */
-    virtual float getParameterScalePointValue(const uint32_t parameterId, const uint32_t scalePointId);
+    virtual float getParameterScalePointValue(const uint32_t parameterId, const uint32_t scalePointId) const;
 
     /*!
-     * Get the plugin's label (URI for PLUGIN_LV2).
+     * Get the plugin's label (URI for LV2 plugins).
      */
-    virtual void getLabel(char* const strBuf);
+    virtual void getLabel(char* const strBuf) const noexcept;
 
     /*!
      * Get the plugin's maker.
      */
-    virtual void getMaker(char* const strBuf);
+    virtual void getMaker(char* const strBuf) const noexcept;
 
     /*!
      * Get the plugin's copyright/license.
      */
-    virtual void getCopyright(char* const strBuf);
+    virtual void getCopyright(char* const strBuf) const noexcept;
 
     /*!
      * Get the plugin's (real) name.
      *
-     * \see name()
+     * \see getName() and setName()
      */
-    virtual void getRealName(char* const strBuf);
+    virtual void getRealName(char* const strBuf) const noexcept;
 
     /*!
      * Get the name of the parameter \a parameterId.
      */
-    virtual void getParameterName(const uint32_t parameterId, char* const strBuf);
+    virtual void getParameterName(const uint32_t parameterId, char* const strBuf) const;
 
     /*!
      * Get the symbol of the parameter \a parameterId.
      */
-    virtual void getParameterSymbol(const uint32_t parameterId, char* const strBuf);
+    virtual void getParameterSymbol(const uint32_t parameterId, char* const strBuf) const;
 
     /*!
      * Get the custom text of the parameter \a parameterId.
      */
-    virtual void getParameterText(const uint32_t parameterId, char* const strBuf);
+    virtual void getParameterText(const uint32_t parameterId, char* const strBuf) const;
 
     /*!
      * Get the unit of the parameter \a parameterId.
      */
-    virtual void getParameterUnit(const uint32_t parameterId, char* const strBuf);
+    virtual void getParameterUnit(const uint32_t parameterId, char* const strBuf) const;
 
     /*!
      * Get the scalepoint \a scalePointId label of the parameter \a parameterId.
      */
-    virtual void getParameterScalePointLabel(const uint32_t parameterId, const uint32_t scalePointId, char* const strBuf);
+    virtual void getParameterScalePointLabel(const uint32_t parameterId, const uint32_t scalePointId, char* const strBuf) const;
 
     /*!
      * Get the name of the program at \a index.
      */
-    void getProgramName(const uint32_t index, char* const strBuf);
+    void getProgramName(const uint32_t index, char* const strBuf) const;
 
     /*!
      * Get the name of the MIDI program at \a index.
      *
      * \see getMidiProgramInfo()
      */
-    void getMidiProgramName(const uint32_t index, char* const strBuf);
+    void getMidiProgramName(const uint32_t index, char* const strBuf) const;
 
     /*!
      * Get information about the plugin's parameter count.\n
@@ -391,9 +393,9 @@ public:
      *
      * \note Some parameters might not be input or output (ie, invalid).
      *
-     * \see parameterCount()
+     * \see getParameterCount()
      */
-    void getParameterCountInfo(uint32_t* const ins, uint32_t* const outs, uint32_t* const total);
+    void getParameterCountInfo(uint32_t* const ins, uint32_t* const outs, uint32_t* const total) const;
 
     // -------------------------------------------------------------------
     // Set data (state)
@@ -420,11 +422,15 @@ public:
 
     /*!
      * Save the current plugin state to \a filename.
+     *
+     * \see loadStateFromFile()
      */
     bool saveStateToFile(const char* const filename);
 
     /*!
      * Save the plugin state from \a filename.
+     *
+     * \see saveStateToFile()
      */
     bool loadStateFromFile(const char* const filename);
 
@@ -434,31 +440,29 @@ public:
     /*!
      * Set the plugin's id to \a newId.
      *
-     * \see id()
+     * \see getId()
      */
-    void setId(const unsigned int newId);
+    void setId(const unsigned int newId) noexcept;
 
     /*!
      * Set the plugin's name to \a newName.
      *
-     * \see name()
+     * \see getName() and getRealName()
      */
     virtual void setName(const char* const newName);
 
     /*!
      * Set a plugin's option.
      *
-     * \see options()
+     * \see getOptions() and getAvailableOptions()
      */
     void setOption(const unsigned int option, const bool yesNo);
 
     /*!
-     * Enable or disable the plugin according to \a yesNo.
+     * Enable or disable the plugin according to \a yesNo. \n
+     * When a plugin is disabled, it will never be processed or managed in any way.
      *
-     * When a plugin is disabled, it will never be processed or managed in any way.\n
-     * To 'bypass' a plugin use setActive() instead.
-     *
-     * \see enabled()
+     * \see isEnabled()
      */
     void setEnabled(const bool yesNo);
 
@@ -583,7 +587,7 @@ public:
      * \param value The value of the data set, of type \a type.
      * \param sendGui Send message change to plugin's custom GUI, if any
      *
-     * \see customData()
+     * \see getCustomDataCount() and getCustomData()
      */
     virtual void setCustomData(const char* const type, const char* const key, const char* const value, const bool sendGui);
 
@@ -591,7 +595,7 @@ public:
      * Set the complete chunk data as \a stringData.\n
      * \a stringData must a base64 encoded string of binary data.
      *
-     * \see chunkData()
+     * \see getChunkData()
      *
      * \note Make sure to verify the plugin supports chunks before calling this function!
      */
@@ -655,7 +659,7 @@ public:
      * Reload the plugin's entire state (including programs).\n
      * The plugin will be disabled during this call.
      */
-    virtual void reload();
+    virtual void reload() = 0;
 
     /*!
      * Reload the plugin's programs state.
@@ -678,7 +682,7 @@ public:
     /*!
      * Plugin process call.
      */
-    virtual void process(float** const inBuffer, float** const outBuffer, const uint32_t frames);
+    virtual void process(float** const inBuffer, float** const outBuffer, const uint32_t frames) = 0;
 
     /*!
      * Tell the plugin the current buffer size changed.
@@ -696,12 +700,13 @@ public:
     virtual void offlineModeChanged(const bool isOffline);
 
     /*!
-     * TODO.
+     * Try to lock the plugin's master mutex.
      */
     bool tryLock();
 
     /*!
-     * TODO.
+     * Unlock the plugin's master mutex.
+     * \note The mutex wasTryLockCalled() flag will be unset
      */
     void unlock();
 
@@ -735,7 +740,7 @@ public:
     /*!
      * Free the plugin's internal OSC memory data.
      */
-    void freeOscData();
+    //void freeOscData();
 
     /*!
      * Show the plugin's OSC based GUI.\n
@@ -809,6 +814,15 @@ public:
     // -------------------------------------------------------------------
     // Plugin initializers
 
+    /*!
+     * Handy function used and required by CarlaEngine::clonePlugin().
+     */
+    virtual const void* getExtraStuff() const noexcept
+    {
+        return nullptr;
+    }
+
+#ifndef DOXYGEN
     struct Initializer {
         CarlaEngine* const engine;
         const unsigned int id;
@@ -816,12 +830,6 @@ public:
         const char* const name;
         const char* const label;
     };
-
-    // used in CarlaEngine::clonePlugin()
-    virtual const void* getExtraStuff() const
-    {
-        return nullptr;
-    }
 
     static size_t getNativePluginCount();
     static const PluginDescriptor* getNativePluginDescriptor(const size_t index);
@@ -836,29 +844,51 @@ public:
     static CarlaPlugin* newGIG(const Initializer& init, const bool use16Outs);
     static CarlaPlugin* newSF2(const Initializer& init, const bool use16Outs);
     static CarlaPlugin* newSFZ(const Initializer& init, const bool use16Outs);
+#endif
 
     // -------------------------------------------------------------------
 
 protected:
-    unsigned int fId;      //!< Plugin Id, as passed in the constructor, returned in id(). \see setId()
-    unsigned int fHints;   //!< Hints, as returned in hints().
-    unsigned int fOptions; //!< Defined and currently in-use options, returned in options(). \see availableOptions()
+    /*!
+     * Plugin Id, as passed in the constructor, returned in getId().
+     * \see getId and setId()
+     */
+    unsigned int fId;
 
-    bool fEnabled; //!< Wherever the plugin is ready for usage
+    /*!
+     * Hints, as returned in getHints().
+     * \see PluginHints and getHints()
+     */
+    unsigned int fHints;
+
+    /*!
+     * Defined and currently in-use options, returned in getOptions().
+     * \see PluginOptions, getOptions(), getAvailableOptions() and setOption()
+     */
+    unsigned int fOptions;
+
+    /*!
+     * Wherever the plugin is ready for usage.\n
+     * When a plugin is disabled, it will never be processed or managed in any way.
+     * \see isEnabled() and setEnabled()
+     */
+    bool fEnabled;
 
     CarlaString fName;     //!< Plugin name
     CarlaString fFilename; //!< Plugin filename, if applicable
     CarlaString fIconName; //!< Icon name
 
-    //friend class CarlaEngineBridge;
-    friend struct CarlaPluginProtectedData;
     CarlaPluginProtectedData* const pData; //!< Internal data, for CarlaPlugin subclasses only.
+    friend struct CarlaPluginProtectedData;
+    //friend class CarlaEngineBridge;
 
     // -------------------------------------------------------------------
     // Helper classes
 
-    // Fully disable plugin in scope and also its engine client
-    // May wait-block on constructor for plugin process to end
+    /*!
+     * Fully disable plugin in scope and also its engine client.\n
+     * May wait-block on constructor for plugin process to end.
+     */
     class ScopedDisabler
     {
     public:
@@ -866,15 +896,17 @@ protected:
         ~ScopedDisabler();
 
     private:
-        CarlaPlugin* const kPlugin;
+        CarlaPlugin* const fPlugin;
 
         CARLA_PREVENT_HEAP_ALLOCATION
         CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ScopedDisabler)
     };
 
-    // Lock the plugin's own run/process call
-    // Plugin will still work as normal, but output only silence
-    // On destructor needsReset flag might be set if the plugin might have missed some events
+    /*!
+     * Lock the plugin's own run/process call.\n
+     * Plugin will still work as normal, but output only silence.\n
+     * On destructor needsReset flag might be set if the plugin might have missed some events.
+     */
     class ScopedSingleProcessLocker
     {
     public:
@@ -882,8 +914,8 @@ protected:
         ~ScopedSingleProcessLocker();
 
     private:
-        CarlaPlugin* const kPlugin;
-        const bool kBlock;
+        CarlaPlugin* const fPlugin;
+        const bool fBlock;
 
         CARLA_PREVENT_HEAP_ALLOCATION
         CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ScopedSingleProcessLocker)

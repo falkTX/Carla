@@ -295,7 +295,7 @@ struct LV2_RDF_PortMidiMap {
     LV2_Property Type;
     uint32_t Number;
 
-    LV2_RDF_PortMidiMap()
+    LV2_RDF_PortMidiMap() noexcept
         : Type(0),
           Number(0) {}
 };
@@ -307,7 +307,7 @@ struct LV2_RDF_PortPoints {
     float Minimum;
     float Maximum;
 
-    LV2_RDF_PortPoints()
+    LV2_RDF_PortPoints() noexcept
         : Hints(0x0),
           Default(0.0f),
           Minimum(0.0f),
@@ -322,7 +322,7 @@ struct LV2_RDF_PortUnit {
     const char* Symbol;
     LV2_Property Unit;
 
-    LV2_RDF_PortUnit()
+    LV2_RDF_PortUnit() noexcept
         : Hints(0x0),
           Name(nullptr),
           Render(nullptr),
@@ -354,7 +354,7 @@ struct LV2_RDF_PortScalePoint {
     const char* Label;
     float Value;
 
-    LV2_RDF_PortScalePoint()
+    LV2_RDF_PortScalePoint() noexcept
         : Label(nullptr),
           Value(0.0f) {}
 
@@ -383,7 +383,7 @@ struct LV2_RDF_Port {
     uint32_t ScalePointCount;
     LV2_RDF_PortScalePoint* ScalePoints;
 
-    LV2_RDF_Port()
+    LV2_RDF_Port() noexcept
         : Types(0x0),
           Properties(0x0),
           Designation(0),
@@ -417,7 +417,7 @@ struct LV2_RDF_Preset {
     LV2_URI URI;
     const char* Label;
 
-    LV2_RDF_Preset()
+    LV2_RDF_Preset() noexcept
         : URI(nullptr),
           Label(nullptr) {}
 
@@ -441,7 +441,7 @@ struct LV2_RDF_Feature {
     LV2_Property Type;
     LV2_URI URI;
 
-    LV2_RDF_Feature()
+    LV2_RDF_Feature() noexcept
         : Type(0),
           URI(nullptr) {}
 
@@ -468,7 +468,7 @@ struct LV2_RDF_UI {
     uint32_t ExtensionCount;
     LV2_URI* Extensions;
 
-    LV2_RDF_UI()
+    LV2_RDF_UI() noexcept
         : Type(0),
           URI(nullptr),
           Binary(nullptr),
@@ -534,7 +534,7 @@ struct LV2_RDF_Descriptor {
     uint32_t UICount;
     LV2_RDF_UI* UIs;
 
-    LV2_RDF_Descriptor()
+    LV2_RDF_Descriptor() noexcept
 #ifdef CARLA_PROPER_CPP11_SUPPORT
         : Type{0x0},
           URI(nullptr),

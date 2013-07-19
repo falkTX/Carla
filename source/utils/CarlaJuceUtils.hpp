@@ -134,7 +134,7 @@ private:
         volatile int numObjects;
     };
 
-    static const char* getLeakedObjectClassName()
+    static const char* getLeakedObjectClassName() noexcept
     {
         return OwnerClass::getLeakedObjectClassName();
     }
@@ -294,7 +294,7 @@ public:
     /** Swaps this object with that of another ScopedPointer.
         The two objects simply exchange their pointers.
     */
-    void swapWith(ScopedPointer<ObjectType>& other) noexcept
+    void swapWith(ScopedPointer<ObjectType>& other)
     {
         // Two ScopedPointers should never be able to refer to the same object - if
         // this happens, you must have done something dodgy!
@@ -308,7 +308,7 @@ private:
     ObjectType* object;
 
     // (Required as an alternative to the overloaded & operator).
-    const ScopedPointer* getAddress() const { return this; }
+    const ScopedPointer* getAddress() const noexcept { return this; }
 
 #if ! defined(CARLA_CC_MSVC)  // (MSVC can't deal with multiple copy constructors)
     /* The copy constructors are private to stop people accidentally copying a const ScopedPointer

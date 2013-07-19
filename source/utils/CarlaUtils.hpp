@@ -47,13 +47,13 @@
 // misc functions
 
 static inline
-const char* bool2str(const bool yesNo)
+const char* bool2str(const bool yesNo) noexcept
 {
     return yesNo ? "true" : "false";
 }
 
 static inline
-void pass() {}
+void pass() noexcept {}
 
 // -----------------------------------------------------------------------
 // string print functions
@@ -225,14 +225,14 @@ const char* carla_strdup_free(char* const strBuf)
 
 template<typename T>
 static inline
-const T& carla_min(const T& v1, const T& v2, const T& min)
+const T& carla_min(const T& v1, const T& v2, const T& min) noexcept
 {
     return ((v1 < min || v2 < min) ? min : (v1 < v2 ? v1 : v2));
 }
 
 template<typename T>
 static inline
-const T& carla_max(const T& v1, const T& v2, const T& max)
+const T& carla_max(const T& v1, const T& v2, const T& max) noexcept
 {
     return ((v1 > max || v2 > max) ? max : (v1 > v2 ? v1 : v2));
 }

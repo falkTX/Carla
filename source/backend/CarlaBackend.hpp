@@ -688,7 +688,7 @@ struct ParameterData {
     int16_t  midiCC;
 
 #ifndef DOXYGEN
-    ParameterData()
+    ParameterData() noexcept
         : type(PARAMETER_UNKNOWN),
           index(PARAMETER_NULL),
           rindex(-1),
@@ -710,7 +710,7 @@ struct ParameterRanges {
     float stepLarge;
 
 #ifndef DOXYGEN
-    ParameterRanges()
+    ParameterRanges() noexcept
         : def(0.0f),
           min(0.0f),
           max(1.0f),
@@ -719,12 +719,12 @@ struct ParameterRanges {
           stepLarge(0.1f) {}
 #endif
 
-    void fixDefault()
+    void fixDefault() noexcept
     {
         fixValue(def);
     }
 
-    void fixValue(float& value) const
+    void fixValue(float& value) const noexcept
     {
         if (value < min)
             value = min;
@@ -732,7 +732,7 @@ struct ParameterRanges {
             value = max;
     }
 
-    float getFixedValue(const float& value) const
+    float getFixedValue(const float& value) const noexcept
     {
         if (value < min)
             return min;
@@ -741,7 +741,7 @@ struct ParameterRanges {
         return value;
     }
 
-    float getNormalizedValue(const float& value) const
+    float getNormalizedValue(const float& value) const noexcept
     {
         float newValue = (value - min) / (max - min);
 
@@ -753,7 +753,7 @@ struct ParameterRanges {
         return newValue;
     }
 
-    float getUnnormalizedValue(const float& value) const
+    float getUnnormalizedValue(const float& value) const noexcept
     {
         return value * (max - min) + min;
     }
@@ -768,7 +768,7 @@ struct MidiProgramData {
     const char* name;
 
 #ifndef DOXYGEN
-    MidiProgramData()
+    MidiProgramData() noexcept
         : bank(0),
           program(0),
           name(nullptr) {}
@@ -786,7 +786,7 @@ struct CustomData {
     const char* value;
 
 #ifndef DOXYGEN
-    CustomData()
+    CustomData() noexcept
         : type(nullptr),
           key(nullptr),
           value(nullptr) {}

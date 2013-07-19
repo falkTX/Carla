@@ -47,12 +47,12 @@ protected:
     // -------------------------------------------------------------------
     // Host calls
 
-    const HostDescriptor* getHostHandle() const
+    const HostDescriptor* getHostHandle() const noexcept
     {
         return pHost;
     }
 
-    const char* getResourceDir() const
+    const char* getResourceDir() const noexcept
     {
         CARLA_ASSERT(pHost != nullptr);
 
@@ -62,7 +62,7 @@ protected:
         return nullptr;
     }
 
-    const char* getUiName() const
+    const char* getUiName() const noexcept
     {
         CARLA_ASSERT(pHost != nullptr);
 

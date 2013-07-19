@@ -120,7 +120,7 @@ struct LADSPA_RDF_ScalePoint {
     LADSPA_Data Value;
     const char* Label;
 
-    LADSPA_RDF_ScalePoint()
+    LADSPA_RDF_ScalePoint() noexcept
         : Value(0.0f),
           Label(nullptr) {}
 
@@ -145,7 +145,7 @@ struct LADSPA_RDF_Port {
     unsigned long ScalePointCount;
     LADSPA_RDF_ScalePoint* ScalePoints;
 
-    LADSPA_RDF_Port()
+    LADSPA_RDF_Port() noexcept
         : Type(0x0),
           Hints(0x0),
           Label(nullptr),
@@ -179,7 +179,7 @@ struct LADSPA_RDF_Descriptor {
     unsigned long PortCount;
     LADSPA_RDF_Port* Ports;
 
-    LADSPA_RDF_Descriptor()
+    LADSPA_RDF_Descriptor() noexcept
         : Type(0x0),
           UniqueID(0),
           Title(nullptr),

@@ -69,8 +69,11 @@ public:
 #endif
     }
 
-    void unlock()
+    void unlock(const bool resetTryLock)
     {
+        if (resetTryLock)
+            fTryLockWasCalled = false;
+
 #ifdef CPP11_MUTEX
         cmutex.unlock();
 #else
@@ -80,7 +83,7 @@ public:
 
     bool wasTryLockCalled()
     {
-        const bool ret = fTryLockWasCalled;
+        const bool ret(fTryLockWasCalled);
         fTryLockWasCalled = false;
         return ret;
     }

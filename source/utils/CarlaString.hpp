@@ -124,17 +124,17 @@ public:
     // -------------------------------------------------------------------
     // public methods
 
-    size_t length() const
+    size_t length() const noexcept
     {
         return fBufferLen;
     }
 
-    bool isEmpty() const
+    bool isEmpty() const noexcept
     {
         return (fBufferLen == 0);
     }
 
-    bool isNotEmpty() const
+    bool isNotEmpty() const noexcept
     {
         return (fBufferLen != 0);
     }
@@ -170,7 +170,7 @@ public:
     }
 #endif
 
-    bool isDigit(const size_t pos) const
+    bool isDigit(const size_t pos) const noexcept
     {
         if (pos >= fBufferLen)
             return false;
@@ -204,12 +204,12 @@ public:
         return (std::strncmp(fBuffer + (fBufferLen-suffixLen), suffix, suffixLen) == 0);
     }
 
-    void clear()
+    void clear() noexcept
     {
         truncate(0);
     }
 
-    size_t find(const char c) const
+    size_t find(const char c) const noexcept
     {
         for (size_t i=0; i < fBufferLen; ++i)
         {
@@ -220,7 +220,7 @@ public:
         return 0;
     }
 
-    size_t rfind(const char c) const
+    size_t rfind(const char c) const noexcept
     {
         for (size_t i=fBufferLen; i > 0; --i)
         {
@@ -251,7 +251,7 @@ public:
         return (ret > fBufferLen) ? fBufferLen : fBufferLen-ret;
     }
 
-    void replace(const char before, const char after)
+    void replace(const char before, const char after) noexcept
     {
         if (after == '\0')
             return;
@@ -265,7 +265,7 @@ public:
         }
     }
 
-    void truncate(const size_t n)
+    void truncate(const size_t n) noexcept
     {
         if (n >= fBufferLen)
             return;
@@ -276,7 +276,7 @@ public:
         fBufferLen = n;
     }
 
-    void toBasic()
+    void toBasic() noexcept
     {
         for (size_t i=0; i < fBufferLen; ++i)
         {
@@ -296,9 +296,9 @@ public:
 #ifndef BUILD_ANSI_TEST
     // Using '+=' and '-=' temporarily converts char into int
 
-    void toLower()
+    void toLower() noexcept
     {
-        static const char kCharDiff = 'a' - 'A';
+        static const char kCharDiff('a' - 'A');
 
         for (size_t i=0; i < fBufferLen; ++i)
         {
@@ -307,9 +307,9 @@ public:
         }
     }
 
-    void toUpper()
+    void toUpper() noexcept
     {
-        static const char kCharDiff = 'a' - 'A';
+        static const char kCharDiff('a' - 'A');
 
         for (size_t i=0; i < fBufferLen; ++i)
         {
@@ -322,12 +322,12 @@ public:
     // -------------------------------------------------------------------
     // public operators
 
-    operator const char*() const
+    operator const char*() const noexcept
     {
         return fBuffer;
     }
 
-    char& operator[](const size_t pos)
+    char& operator[](const size_t pos) const noexcept
     {
         return fBuffer[pos];
     }
@@ -405,7 +405,7 @@ private:
     size_t fBufferLen;
     bool   fFirstInit;
 
-    void _init()
+    void _init() noexcept
     {
         fBuffer    = nullptr;
         fBufferLen = 0;
