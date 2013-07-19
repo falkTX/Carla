@@ -12,21 +12,21 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#ifndef __CARLA_STRING_HPP__
-#define __CARLA_STRING_HPP__
+#ifndef CARLA_STRING_HPP_INCLUDED
+#define CARLA_STRING_HPP_INCLUDED
 
 #include "CarlaJuceUtils.hpp"
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // CarlaString class
 
 class CarlaString
 {
 public:
-    // ---------------------------------------------
+    // -------------------------------------------------------------------
     // constructors (no explicit conversions allowed)
 
     explicit CarlaString()
@@ -101,42 +101,42 @@ public:
         _dup(strBuf);
     }
 
-    // ---------------------------------------------
+    // -------------------------------------------------------------------
     // non-explicit constructor
 
     CarlaString(const CarlaString& str)
     {
         _init();
-        _dup(str.buffer);
+        _dup(str.fBuffer);
     }
 
-    // ---------------------------------------------
+    // -------------------------------------------------------------------
     // destructor
 
     ~CarlaString()
     {
-        CARLA_ASSERT(buffer != nullptr);
+        CARLA_ASSERT(fBuffer != nullptr);
 
-        delete[] buffer;
-        buffer = nullptr;
+        delete[] fBuffer;
+        fBuffer = nullptr;
     }
 
-    // ---------------------------------------------
+    // -------------------------------------------------------------------
     // public methods
 
     size_t length() const
     {
-        return bufferLen;
+        return fBufferLen;
     }
 
     bool isEmpty() const
     {
-        return (bufferLen == 0);
+        return (fBufferLen == 0);
     }
 
     bool isNotEmpty() const
     {
-        return (bufferLen != 0);
+        return (fBufferLen != 0);
     }
 
 #ifdef __USE_GNU
@@ -146,14 +146,14 @@ public:
             return false;
 
         if (ignoreCase)
-            return (strcasestr(buffer, strBuf) != nullptr);
+            return (strcasestr(fBuffer, strBuf) != nullptr);
         else
-            return (std::strstr(buffer, strBuf) != nullptr);
+            return (std::strstr(fBuffer, strBuf) != nullptr);
     }
 
     bool contains(const CarlaString& str, const bool ignoreCase = false) const
     {
-        return contains(str.buffer, ignoreCase);
+        return contains(str.fBuffer, ignoreCase);
     }
 #else
     bool contains(const char* const strBuf) const
@@ -161,21 +161,21 @@ public:
         if (strBuf == nullptr)
             return false;
 
-        return (std::strstr(buffer, strBuf) != nullptr);
+        return (std::strstr(fBuffer, strBuf) != nullptr);
     }
 
     bool contains(const CarlaString& str) const
     {
-        return contains(str.buffer);
+        return contains(str.fBuffer);
     }
 #endif
 
     bool isDigit(const size_t pos) const
     {
-        if (pos >= bufferLen)
+        if (pos >= fBufferLen)
             return false;
 
-        return (buffer[pos] >= '0' && buffer[pos] <= '9');
+        return (fBuffer[pos] >= '0' && fBuffer[pos] <= '9');
     }
 
     bool startsWith(const char* const prefix) const
@@ -185,10 +185,10 @@ public:
 
         const size_t prefixLen(std::strlen(prefix));
 
-        if (bufferLen < prefixLen)
+        if (fBufferLen < prefixLen)
             return false;
 
-        return (std::strncmp(buffer + (bufferLen-prefixLen), prefix, prefixLen) == 0);
+        return (std::strncmp(fBuffer + (fBufferLen-prefixLen), prefix, prefixLen) == 0);
     }
 
     bool endsWith(const char* const suffix) const
@@ -198,10 +198,10 @@ public:
 
         const size_t suffixLen(std::strlen(suffix));
 
-        if (bufferLen < suffixLen)
+        if (fBufferLen < suffixLen)
             return false;
 
-        return (std::strncmp(buffer + (bufferLen-suffixLen), suffix, suffixLen) == 0);
+        return (std::strncmp(fBuffer + (fBufferLen-suffixLen), suffix, suffixLen) == 0);
     }
 
     void clear()
@@ -211,9 +211,9 @@ public:
 
     size_t find(const char c) const
     {
-        for (size_t i=0; i < bufferLen; ++i)
+        for (size_t i=0; i < fBufferLen; ++i)
         {
-            if (buffer[i] == c)
+            if (fBuffer[i] == c)
                 return i;
         }
 
@@ -222,9 +222,9 @@ public:
 
     size_t rfind(const char c) const
     {
-        for (size_t i=bufferLen; i > 0; --i)
+        for (size_t i=fBufferLen; i > 0; --i)
         {
-            if (buffer[i-1] == c)
+            if (fBuffer[i-1] == c)
                 return i-1;
         }
 
@@ -234,12 +234,12 @@ public:
     size_t rfind(const char* const strBuf) const
     {
         if (strBuf == nullptr || strBuf[0] == '\0')
-            return bufferLen;
+            return fBufferLen;
 
-        size_t ret = bufferLen+1;
-        const char* tmpBuf = buffer;
+        size_t ret = fBufferLen+1;
+        const char* tmpBuf = fBuffer;
 
-        for (size_t i=0; i < bufferLen; ++i)
+        for (size_t i=0; i < fBufferLen; ++i)
         {
             if (std::strstr(tmpBuf, strBuf) == nullptr)
                 break;
@@ -248,7 +248,7 @@ public:
             ++tmpBuf;
         }
 
-        return (ret > bufferLen) ? bufferLen : bufferLen-ret;
+        return (ret > fBufferLen) ? fBufferLen : fBufferLen-ret;
     }
 
     void replace(const char before, const char after)
@@ -256,51 +256,54 @@ public:
         if (after == '\0')
             return;
 
-        for (size_t i=0; i < bufferLen; ++i)
+        for (size_t i=0; i < fBufferLen; ++i)
         {
-            if (buffer[i] == before)
-                buffer[i] = after;
-            else if (buffer[i] == '\0')
+            if (fBuffer[i] == before)
+                fBuffer[i] = after;
+            else if (fBuffer[i] == '\0')
                 break;
         }
     }
 
     void truncate(const size_t n)
     {
-        if (n >= bufferLen)
+        if (n >= fBufferLen)
             return;
 
-        for (size_t i=n; i < bufferLen; ++i)
-            buffer[i] = '\0';
+        for (size_t i=n; i < fBufferLen; ++i)
+            fBuffer[i] = '\0';
 
-        bufferLen = n;
+        fBufferLen = n;
     }
 
     void toBasic()
     {
-        for (size_t i=0; i < bufferLen; ++i)
+        for (size_t i=0; i < fBufferLen; ++i)
         {
-            if (buffer[i] >= '0' && buffer[i] <= '9')
+            if (fBuffer[i] >= '0' && fBuffer[i] <= '9')
                 continue;
-            if (buffer[i] >= 'A' && buffer[i] <= 'Z')
+            if (fBuffer[i] >= 'A' && fBuffer[i] <= 'Z')
                 continue;
-            if (buffer[i] >= 'a' && buffer[i] <= 'z')
+            if (fBuffer[i] >= 'a' && fBuffer[i] <= 'z')
                 continue;
-            if (buffer[i] == '_')
+            if (fBuffer[i] == '_')
                 continue;
 
-            buffer[i] = '_';
+            fBuffer[i] = '_';
         }
     }
+
+#ifndef BUILD_ANSI_TEST
+    // Using '+=' and '-=' temporarily converts char into int
 
     void toLower()
     {
         static const char kCharDiff = 'a' - 'A';
 
-        for (size_t i=0; i < bufferLen; ++i)
+        for (size_t i=0; i < fBufferLen; ++i)
         {
-            if (buffer[i] >= 'A' && buffer[i] <= 'Z')
-                buffer[i] += kCharDiff;
+            if (fBuffer[i] >= 'A' && fBuffer[i] <= 'Z')
+                fBuffer[i] += kCharDiff;
         }
     }
 
@@ -308,34 +311,35 @@ public:
     {
         static const char kCharDiff = 'a' - 'A';
 
-        for (size_t i=0; i < bufferLen; ++i)
+        for (size_t i=0; i < fBufferLen; ++i)
         {
-            if (buffer[i] >= 'a' && buffer[i] <= 'z')
-                buffer[i] -= kCharDiff;
+            if (fBuffer[i] >= 'a' && fBuffer[i] <= 'z')
+                fBuffer[i] -= kCharDiff;
         }
     }
+#endif
 
-    // ---------------------------------------------
+    // -------------------------------------------------------------------
     // public operators
 
     operator const char*() const
     {
-        return buffer;
+        return fBuffer;
     }
 
     char& operator[](const size_t pos)
     {
-        return buffer[pos];
+        return fBuffer[pos];
     }
 
     bool operator==(const char* const strBuf) const
     {
-        return (strBuf != nullptr && std::strcmp(buffer, strBuf) == 0);
+        return (strBuf != nullptr && std::strcmp(fBuffer, strBuf) == 0);
     }
 
     bool operator==(const CarlaString& str) const
     {
-        return operator==(str.buffer);
+        return operator==(str.fBuffer);
     }
 
     bool operator!=(const char* const strBuf) const
@@ -345,7 +349,7 @@ public:
 
     bool operator!=(const CarlaString& str) const
     {
-        return !operator==(str.buffer);
+        return !operator==(str.fBuffer);
     }
 
     CarlaString& operator=(const char* const strBuf)
@@ -357,15 +361,15 @@ public:
 
     CarlaString& operator=(const CarlaString& str)
     {
-        return operator=(str.buffer);
+        return operator=(str.fBuffer);
     }
 
     CarlaString& operator+=(const char* const strBuf)
     {
-        const size_t newBufSize = bufferLen + ((strBuf != nullptr) ? std::strlen(strBuf) : 0) + 1;
+        const size_t newBufSize = fBufferLen + ((strBuf != nullptr) ? std::strlen(strBuf) : 0) + 1;
         char         newBuf[newBufSize];
 
-        std::strcpy(newBuf, buffer);
+        std::strcpy(newBuf, fBuffer);
         std::strcat(newBuf, strBuf);
 
         _dup(newBuf, newBufSize-1);
@@ -375,15 +379,15 @@ public:
 
     CarlaString& operator+=(const CarlaString& str)
     {
-        return operator+=(str.buffer);
+        return operator+=(str.fBuffer);
     }
 
     CarlaString operator+(const char* const strBuf)
     {
-        const size_t newBufSize = bufferLen + ((strBuf != nullptr) ? std::strlen(strBuf) : 0) + 1;
+        const size_t newBufSize = fBufferLen + ((strBuf != nullptr) ? std::strlen(strBuf) : 0) + 1;
         char         newBuf[newBufSize];
 
-        std::strcpy(newBuf, buffer);
+        std::strcpy(newBuf, fBuffer);
         std::strcat(newBuf, strBuf);
 
         return CarlaString(newBuf);
@@ -391,21 +395,21 @@ public:
 
     CarlaString operator+(const CarlaString& str)
     {
-        return operator+(str.buffer);
+        return operator+(str.fBuffer);
     }
 
-    // ---------------------------------------------
+    // -------------------------------------------------------------------
 
 private:
-    char*  buffer;
-    size_t bufferLen;
-    bool   firstInit;
+    char*  fBuffer;
+    size_t fBufferLen;
+    bool   fFirstInit;
 
     void _init()
     {
-        buffer    = nullptr;
-        bufferLen = 0;
-        firstInit = true;
+        fBuffer    = nullptr;
+        fBufferLen = 0;
+        fFirstInit = true;
     }
 
     // allocate string strBuf if not null
@@ -415,22 +419,22 @@ private:
         if (strBuf != nullptr)
         {
             // don't recreate string if contents match
-            if (firstInit || std::strcmp(buffer, strBuf) != 0)
+            if (fFirstInit || std::strcmp(fBuffer, strBuf) != 0)
             {
-                if (! firstInit)
+                if (! fFirstInit)
                 {
-                    CARLA_ASSERT(buffer != nullptr);
-                    delete[] buffer;
+                    CARLA_ASSERT(fBuffer != nullptr);
+                    delete[] fBuffer;
                 }
 
-                bufferLen = (size > 0) ? size : std::strlen(strBuf);
-                buffer    = new char[bufferLen+1];
+                fBufferLen = (size > 0) ? size : std::strlen(strBuf);
+                fBuffer    = new char[fBufferLen+1];
 
-                std::strcpy(buffer, strBuf);
+                std::strcpy(fBuffer, strBuf);
 
-                buffer[bufferLen] = '\0';
+                fBuffer[fBufferLen] = '\0';
 
-                firstInit = false;
+                fFirstInit = false;
             }
         }
         else
@@ -438,19 +442,19 @@ private:
             CARLA_ASSERT(size == 0);
 
             // don't recreate null string
-            if (firstInit || bufferLen != 0)
+            if (fFirstInit || fBufferLen != 0)
             {
-                if (! firstInit)
+                if (! fFirstInit)
                 {
-                    CARLA_ASSERT(buffer != nullptr);
-                    delete[] buffer;
+                    CARLA_ASSERT(fBuffer != nullptr);
+                    delete[] fBuffer;
                 }
 
-                bufferLen = 0;
-                buffer    = new char[1];
-                buffer[0] = '\0';
+                fBufferLen = 0;
+                fBuffer    = new char[1];
+                fBuffer[0] = '\0';
 
-                firstInit = false;
+                fFirstInit = false;
             }
         }
     }
@@ -458,6 +462,8 @@ private:
     CARLA_LEAK_DETECTOR(CarlaString)
     CARLA_PREVENT_HEAP_ALLOCATION
 };
+
+// -----------------------------------------------------------------------
 
 static inline
 CarlaString operator+(const CarlaString& strBefore, const char* const strBufAfter)
@@ -485,6 +491,4 @@ CarlaString operator+(const char* const strBufBefore, const CarlaString& strAfte
     return CarlaString(newBuf);
 }
 
-// -------------------------------------------------
-
-#endif // __CARLA_UTILS_HPP__
+#endif // CARLA_STRING_HPP_INCLUDED

@@ -29,6 +29,48 @@
 # include <QtGui/QFileDialog>
 #endif
 
+// Simple plugins
+void carla_register_native_plugin_bypass();
+void carla_register_native_plugin_lfo();
+void carla_register_native_plugin_midiSequencer();
+void carla_register_native_plugin_midiSplit();
+void carla_register_native_plugin_midiThrough();
+void carla_register_native_plugin_midiTranspose();
+void carla_register_native_plugin_nekofilter();
+void carla_register_native_plugin_sunvoxfile();
+
+#ifndef BUILD_BRIDGE
+// Carla
+void carla_register_native_plugin_carla();
+#endif
+
+#ifdef WANT_AUDIOFILE
+// AudioFile
+void carla_register_native_plugin_audiofile();
+#endif
+
+#ifdef WANT_MIDIFILE
+// MidiFile
+void carla_register_native_plugin_midifile();
+#endif
+
+#ifdef WANT_OPENGL
+// DISTRHO plugins (OpenGL)
+void carla_register_native_plugin_3BandEQ();
+void carla_register_native_plugin_3BandSplitter();
+void carla_register_native_plugin_Nekobi();
+void carla_register_native_plugin_PingPongPan();
+// void carla_register_native_plugin_StereoEnhancer();
+#endif
+
+// DISTRHO plugins (Qt)
+// void carla_register_native_plugin_Notes();
+
+#ifdef WANT_ZYNADDSUBFX
+// ZynAddSubFX
+void carla_register_native_plugin_zynaddsubfx();
+#endif
+
 void carla_register_all_plugins()
 {
     // Simple plugins

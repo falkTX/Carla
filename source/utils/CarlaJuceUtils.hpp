@@ -15,8 +15,8 @@
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef __CARLA_JUCE_UTILS_HPP__
-#define __CARLA_JUCE_UTILS_HPP__
+#ifndef CARLA_JUCE_UTILS_HPP_INCLUDED
+#define CARLA_JUCE_UTILS_HPP_INCLUDED
 
 #include "CarlaUtils.hpp"
 
@@ -40,10 +40,6 @@ private:                                      \
     StructName(StructName&) = delete;             \
     StructName(const StructName&) = delete;       \
     StructName& operator=(const StructName&) = delete;
-
-#define CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(StructName) \
-    CARLA_DECLARE_NON_COPY_STRUCT(StructName)                        \
-    CARLA_LEAK_DETECTOR(StructName)
 
 /** This macro can be added to class definitions to disable the use of new/delete to
     allocate the object on the heap, forcing it to only be used as a stack or member variable.
@@ -84,8 +80,8 @@ class LeakedObjectDetector
 {
 public:
     //==============================================================================
-    LeakedObjectDetector() noexcept                                 { ++(getCounter().numObjects); }
-    LeakedObjectDetector (const LeakedObjectDetector&) noexcept     { ++(getCounter().numObjects); }
+    LeakedObjectDetector() noexcept                            { ++(getCounter().numObjects); }
+    LeakedObjectDetector(const LeakedObjectDetector&) noexcept { ++(getCounter().numObjects); }
 
     ~LeakedObjectDetector()
     {
@@ -355,4 +351,4 @@ bool operator!=(const ScopedPointer<ObjectType>& pointer1, ObjectType* const poi
     return static_cast<ObjectType*>(pointer1) != pointer2;
 }
 
-#endif // __CARLA_JUCE_UTILS_HPP__
+#endif // CARLA_JUCE_UTILS_HPP_INCLUDED

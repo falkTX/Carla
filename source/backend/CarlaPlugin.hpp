@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the doc/GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
 #ifndef CARLA_PLUGIN_HPP_INCLUDED
@@ -21,11 +21,13 @@
 #include "CarlaBackend.hpp"
 #include "CarlaString.hpp"
 
-#ifndef DOXYGEN
 // Avoid including extra libs here
-struct LADSPA_RDF_Descriptor;
 typedef void* lo_address;
-typedef struct _PluginDescriptor PluginDescriptor;
+#ifndef LADSPA_RDF_HPP_INCLUDED
+struct LADSPA_RDF_Descriptor;
+#endif
+#ifndef CARLA_NATIVE_H_INCLUDED
+struct PluginDescriptor;
 #endif
 
 CARLA_BACKEND_START_NAMESPACE
@@ -61,6 +63,8 @@ struct SaveState;
  * Non-plugin code MUST NEVER have direct access to this.
  */
 struct CarlaPluginProtectedData;
+
+// -----------------------------------------------------------------------
 
 /*!
  * \class CarlaPlugin
@@ -802,7 +806,6 @@ public:
      */
     virtual void uiNoteOff(const uint8_t channel, const uint8_t note);
 
-#ifndef DOXYGEN
     // -------------------------------------------------------------------
     // Plugin initializers
 
@@ -820,10 +823,8 @@ public:
         return nullptr;
     }
 
-# ifdef WANT_NATIVE
     static size_t getNativePluginCount();
     static const PluginDescriptor* getNativePluginDescriptor(const size_t index);
-# endif
 
     static CarlaPlugin* newNative(const Initializer& init);
     static CarlaPlugin* newBridge(const Initializer& init, const BinaryType btype, const PluginType ptype, const char* const bridgeBinary);
@@ -832,7 +833,6 @@ public:
     static CarlaPlugin* newDSSI(const Initializer& init, const char* const guiFilename);
     static CarlaPlugin* newLV2(const Initializer& init);
     static CarlaPlugin* newVST(const Initializer& init);
-    static CarlaPlugin* newVST3(const Initializer& init);
     static CarlaPlugin* newGIG(const Initializer& init, const bool use16Outs);
     static CarlaPlugin* newSF2(const Initializer& init, const bool use16Outs);
     static CarlaPlugin* newSFZ(const Initializer& init, const bool use16Outs);
@@ -850,9 +850,9 @@ protected:
     CarlaString fFilename; //!< Plugin filename, if applicable
     CarlaString fIconName; //!< Icon name
 
-    friend class CarlaEngineBridge;
+    //friend class CarlaEngineBridge;
     friend struct CarlaPluginProtectedData;
-    CarlaPluginProtectedData* const kData; //!< Internal data, for CarlaPlugin subclasses only.
+    CarlaPluginProtectedData* const pData; //!< Internal data, for CarlaPlugin subclasses only.
 
     // -------------------------------------------------------------------
     // Helper classes
@@ -889,9 +889,9 @@ protected:
         CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ScopedSingleProcessLocker)
     };
 
-private:
+    // -------------------------------------------------------------------
+
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPlugin)
-#endif
 };
 
 /**@}*/

@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the doc/GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
 #ifndef CARLA_NATIVE_H_INCLUDED
@@ -37,7 +37,10 @@ extern "C" {
 typedef void* HostHandle;
 typedef void* PluginHandle;
 
-typedef enum _PluginCategory {
+// -----------------------------------------------------------------------
+// enums
+
+typedef enum {
     PLUGIN_CATEGORY_NONE      = 0, //!< Null plugin category.
     PLUGIN_CATEGORY_SYNTH     = 1, //!< A synthesizer or generator.
     PLUGIN_CATEGORY_DELAY     = 2, //!< A delay or reverberator.
@@ -49,7 +52,7 @@ typedef enum _PluginCategory {
     PLUGIN_CATEGORY_OTHER     = 8  //!< Misc plugin (used to check if the plugin has a category).
 } PluginCategory;
 
-typedef enum _PluginHints {
+typedef enum {
     PLUGIN_IS_RTSAFE           = 1 << 0,
     PLUGIN_IS_SYNTH            = 1 << 1,
     PLUGIN_HAS_GUI             = 1 << 2,
@@ -60,17 +63,17 @@ typedef enum _PluginHints {
     PLUGIN_USES_STATIC_BUFFERS = 1 << 7
 } PluginHints;
 
-typedef enum _PluginSupports {
+typedef enum {
     PLUGIN_SUPPORTS_PROGRAM_CHANGES  = 1 << 0, // handles MIDI programs internally instead of host-exposed/exported
     PLUGIN_SUPPORTS_CONTROL_CHANGES  = 1 << 1,
     PLUGIN_SUPPORTS_CHANNEL_PRESSURE = 1 << 2,
     PLUGIN_SUPPORTS_NOTE_AFTERTOUCH  = 1 << 3,
     PLUGIN_SUPPORTS_PITCHBEND        = 1 << 4,
     PLUGIN_SUPPORTS_ALL_SOUND_OFF    = 1 << 5,
-    PLUGIN_SUPPORTS_EVERYTHING       = PLUGIN_SUPPORTS_ALL_SOUND_OFF*2-1
+    PLUGIN_SUPPORTS_EVERYTHING       = (1 << 6)-1
 } PluginSupports;
 
-typedef enum _ParameterHints {
+typedef enum {
     PARAMETER_IS_OUTPUT        = 1 << 0,
     PARAMETER_IS_ENABLED       = 1 << 1,
     PARAMETER_IS_AUTOMABLE     = 1 << 2,
@@ -82,7 +85,7 @@ typedef enum _ParameterHints {
     PARAMETER_USES_CUSTOM_TEXT = 1 << 8
 } ParameterHints;
 
-typedef enum _PluginDispatcherOpcode {
+typedef enum {
     PLUGIN_OPCODE_NULL                = 0, // nothing
     PLUGIN_OPCODE_BUFFER_SIZE_CHANGED = 1, // uses value
     PLUGIN_OPCODE_SAMPLE_RATE_CHANGED = 2, // uses opt
@@ -90,28 +93,33 @@ typedef enum _PluginDispatcherOpcode {
     PLUGIN_OPCODE_UI_NAME_CHANGED     = 4  // uses ptr
 } PluginDispatcherOpcode;
 
-typedef enum _HostDispatcherOpcode {
+typedef enum {
     HOST_OPCODE_NULL                  = 0,  // nothing
     HOST_OPCODE_SET_VOLUME            = 1,  // uses opt
     HOST_OPCODE_SET_DRYWET            = 2,  // uses opt
     HOST_OPCODE_SET_BALANCE_LEFT      = 3,  // uses opt
     HOST_OPCODE_SET_BALANCE_RIGHT     = 4,  // uses opt
     HOST_OPCODE_SET_PANNING           = 5,  // uses opt
-    HOST_OPCODE_SET_PROCESS_PRECISION = 6,  // uses value
-    HOST_OPCODE_UPDATE_PARAMETER      = 7,  // uses value, -1 for all
-    HOST_OPCODE_UPDATE_MIDI_PROGRAM   = 8,  // uses value, -1 for all; may use index for channel
-    HOST_OPCODE_RELOAD_PARAMETERS     = 9,  // nothing
-    HOST_OPCODE_RELOAD_MIDI_PROGRAMS  = 10, // nothing
-    HOST_OPCODE_RELOAD_ALL            = 11, // nothing
-    HOST_OPCODE_UI_UNAVAILABLE        = 12  // nothing
+    HOST_OPCODE_GET_PARAMETER_MIDI_CC = 6,  // uses index; return answer
+    HOST_OPCODE_SET_PARAMETER_MIDI_CC = 7,  // uses index and opt
+    HOST_OPCODE_SET_PROCESS_PRECISION = 8,  // uses value
+    HOST_OPCODE_UPDATE_PARAMETER      = 9,  // uses value, -1 for all
+    HOST_OPCODE_UPDATE_MIDI_PROGRAM   = 10, // uses value, -1 for all; may use index for channel
+    HOST_OPCODE_RELOAD_PARAMETERS     = 11, // nothing
+    HOST_OPCODE_RELOAD_MIDI_PROGRAMS  = 12, // nothing
+    HOST_OPCODE_RELOAD_ALL            = 13, // nothing
+    HOST_OPCODE_UI_UNAVAILABLE        = 14  // nothing
 } HostDispatcherOpcode;
 
-typedef struct _ParameterScalePoint {
+// -----------------------------------------------------------------------
+// base structs
+
+typedef struct {
     const char* label;
     float value;
 } ParameterScalePoint;
 
-typedef struct _ParameterRanges {
+typedef struct {
     float def;
     float min;
     float max;
@@ -124,7 +132,7 @@ typedef struct _ParameterRanges {
 #define PARAMETER_RANGES_DEFAULT_STEP_SMALL 0.0001f
 #define PARAMETER_RANGES_DEFAULT_STEP_LARGE 0.1f
 
-typedef struct _Parameter {
+typedef struct {
     ParameterHints hints;
     const char* name;
     const char* unit;
@@ -134,20 +142,20 @@ typedef struct _Parameter {
     ParameterScalePoint* scalePoints;
 } Parameter;
 
-typedef struct _MidiEvent {
+typedef struct {
     uint8_t  port;
     uint32_t time;
     uint8_t  data[4];
     uint8_t  size;
 } MidiEvent;
 
-typedef struct _MidiProgram {
+typedef struct {
     uint32_t bank;
     uint32_t program;
     const char* name;
 } MidiProgram;
 
-typedef struct _TimeInfoBBT {
+typedef struct {
     bool valid;
 
     int32_t bar;  //!< current bar
@@ -162,17 +170,20 @@ typedef struct _TimeInfoBBT {
     double beatsPerMinute;
 } TimeInfoBBT;
 
-typedef struct _TimeInfo {
+typedef struct {
     bool playing;
     uint64_t frame;
     uint64_t usecs;
     TimeInfoBBT bbt;
 } TimeInfo;
 
-typedef struct _HostDescriptor {
+// -----------------------------------------------------------------------
+// HostDescriptor
+
+typedef struct {
     HostHandle handle;
-    const char* resource_dir;
-    const char* ui_name;
+    const char* resourceDir;
+    const char* uiName;
 
     uint32_t (*get_buffer_size)(HostHandle handle);
     double   (*get_sample_rate)(HostHandle handle);
@@ -193,7 +204,10 @@ typedef struct _HostDescriptor {
 
 } HostDescriptor;
 
-typedef struct _PluginDescriptor {
+// -----------------------------------------------------------------------
+// PluginDescriptor
+
+typedef struct {
     const PluginCategory category;
     const PluginHints hints;
     const PluginSupports supports;
@@ -208,7 +222,7 @@ typedef struct _PluginDescriptor {
     const char* const maker;
     const char* const copyright;
 
-    PluginHandle (*instantiate)(const struct _PluginDescriptor* _this_, HostDescriptor* host);
+    PluginHandle (*instantiate)(HostDescriptor* host);
     void         (*cleanup)(PluginHandle handle);
 
     uint32_t         (*get_parameter_count)(PluginHandle handle);
@@ -242,51 +256,9 @@ typedef struct _PluginDescriptor {
 } PluginDescriptor;
 
 // -----------------------------------------------------------------------
-
 // Register plugin
-void carla_register_native_plugin(const PluginDescriptor* desc);
 
-// Simple plugins
-void carla_register_native_plugin_bypass();
-void carla_register_native_plugin_lfo();
-void carla_register_native_plugin_midiSequencer();
-void carla_register_native_plugin_midiSplit();
-void carla_register_native_plugin_midiThrough();
-void carla_register_native_plugin_midiTranspose();
-void carla_register_native_plugin_nekofilter();
-void carla_register_native_plugin_sunvoxfile();
-
-#ifndef BUILD_BRIDGE
-// Carla
-void carla_register_native_plugin_carla();
-#endif
-
-#ifdef WANT_AUDIOFILE
-// AudioFile
-void carla_register_native_plugin_audiofile();
-#endif
-
-#ifdef WANT_MIDIFILE
-// MidiFile
-void carla_register_native_plugin_midifile();
-#endif
-
-#ifdef WANT_OPENGL
-// DISTRHO plugins (OpenGL)
-void carla_register_native_plugin_3BandEQ();
-void carla_register_native_plugin_3BandSplitter();
-void carla_register_native_plugin_Nekobi();
-void carla_register_native_plugin_PingPongPan();
-// void carla_register_native_plugin_StereoEnhancer();
-#endif
-
-// DISTRHO plugins (Qt)
-// void carla_register_native_plugin_Notes();
-
-#ifdef WANT_ZYNADDSUBFX
-// ZynAddSubFX
-void carla_register_native_plugin_zynaddsubfx();
-#endif
+extern void carla_register_native_plugin(const PluginDescriptor* desc);
 
 // -----------------------------------------------------------------------
 

@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the doc/GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
 #ifndef CARLA_DEFINES_HPP_INCLUDED
@@ -110,13 +110,12 @@
 #endif
 
 // Define CARLA_SAFE_ASSERT*
-#define CARLA_SAFE_ASSERT(COND)              if (COND) pass(); else carla_assert     (#COND, __FILE__, __LINE__);
-#define CARLA_SAFE_ASSERT_INT(COND, VALUE)   if (COND) pass(); else carla_assert_int (#COND, __FILE__, __LINE__, VALUE);
-#define CARLA_SAFE_ASSERT_INT2(COND, V1, V2) if (COND) pass(); else carla_assert_int2(#COND, __FILE__, __LINE__, V1, V2);
+#define CARLA_SAFE_ASSERT(cond)              if (cond) pass(); else carla_assert     (#cond, __FILE__, __LINE__);
+#define CARLA_SAFE_ASSERT_INT(cond, value)   if (cond) pass(); else carla_assert_int (#cond, __FILE__, __LINE__, value);
+#define CARLA_SAFE_ASSERT_INT2(cond, v1, v2) if (cond) pass(); else carla_assert_int2(#cond, __FILE__, __LINE__, v1, v2);
 
 // Define CARLA_SAFE_ASSERT_RETURN*
-#define CARLA_SAFE_ASSERT_RETURN(COND)       if (COND) pass(); else { carla_assert(#COND, __FILE__, __LINE__); return;     }
-#define CARLA_SAFE_ASSERT_RETURN(COND, RET)  if (COND) pass(); else { carla_assert(#COND, __FILE__, __LINE__); return RET; }
+#define CARLA_SAFE_ASSERT_RETURN(cond, ret)  if (cond) pass(); else { carla_assert(#cond, __FILE__, __LINE__); return ret; }
 
 // Define CARLA_ASSERT*
 #if defined(CARLA_NO_ASSERTS)
@@ -124,12 +123,12 @@
 # define CARLA_ASSERT_INT(cond, value)
 # define CARLA_ASSERT_INT2(cond, v1, v2)
 #elif defined(NDEBUG)
-# define CARLA_ASSERT CARLA_SAFE_ASSERT
-# define CARLA_ASSERT_INT CARLA_SAFE_ASSERT_INT
+# define CARLA_ASSERT      CARLA_SAFE_ASSERT
+# define CARLA_ASSERT_INT  CARLA_SAFE_ASSERT_INT
 # define CARLA_ASSERT_INT2 CARLA_SAFE_ASSERT_INT2
 #else
-# define CARLA_ASSERT(cond) assert(cond)
-# define CARLA_ASSERT_INT(cond, value) assert(cond)
+# define CARLA_ASSERT(cond)              assert(cond)
+# define CARLA_ASSERT_INT(cond, value)   assert(cond)
 # define CARLA_ASSERT_INT2(cond, v1, v2) assert(cond)
 #endif
 

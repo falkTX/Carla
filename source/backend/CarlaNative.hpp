@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the doc/GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
 #ifndef CARLA_NATIVE_HPP_INCLUDED
@@ -27,11 +27,14 @@
  * @{
  */
 
+// -----------------------------------------------------------------------
+// Plugin Descriptor Class
+
 class PluginDescriptorClass
 {
 public:
     PluginDescriptorClass(const HostDescriptor* const host)
-        : kHost(host)
+        : pHost(host)
     {
         CARLA_ASSERT(host != nullptr);
     }
@@ -44,137 +47,137 @@ protected:
     // -------------------------------------------------------------------
     // Host calls
 
-    const HostDescriptor* hostHandle() const
+    const HostDescriptor* getHostHandle() const
     {
-        return kHost;
+        return pHost;
     }
 
-    const char* hostResourceDir() const
+    const char* getResourceDir() const
     {
-        CARLA_ASSERT(kHost != nullptr);
+        CARLA_ASSERT(pHost != nullptr);
 
-        if (kHost != nullptr)
-            return kHost->resource_dir;
+        if (pHost != nullptr)
+            return pHost->resourceDir;
 
         return nullptr;
     }
 
-    const char* hostUiName() const
+    const char* getUiName() const
     {
-        CARLA_ASSERT(kHost != nullptr);
+        CARLA_ASSERT(pHost != nullptr);
 
-        if (kHost != nullptr)
-            return kHost->ui_name;
+        if (pHost != nullptr)
+            return pHost->uiName;
 
         return nullptr;
     }
 
-    uint32_t getBufferSize()
+    uint32_t getBufferSize() const
     {
-        CARLA_ASSERT(kHost != nullptr);
+        CARLA_ASSERT(pHost != nullptr);
 
-        if (kHost != nullptr)
-            return kHost->get_buffer_size(kHost->handle);
+        if (pHost != nullptr)
+            return pHost->get_buffer_size(pHost->handle);
 
         return 0;
     }
 
-    double getSampleRate()
+    double getSampleRate() const
     {
-        CARLA_ASSERT(kHost != nullptr);
+        CARLA_ASSERT(pHost != nullptr);
 
-        if (kHost != nullptr)
-            return kHost->get_sample_rate(kHost->handle);
+        if (pHost != nullptr)
+            return pHost->get_sample_rate(pHost->handle);
 
         return 0.0;
     }
 
-    bool isOffline()
+    bool isOffline() const
     {
-        CARLA_ASSERT(kHost != nullptr);
+        CARLA_ASSERT(pHost != nullptr);
 
-        if (kHost != nullptr)
-            return kHost->is_offline(kHost->handle);
+        if (pHost != nullptr)
+            return pHost->is_offline(pHost->handle);
 
         return false;
     }
 
-    const TimeInfo* getTimeInfo()
+    const TimeInfo* getTimeInfo() const
     {
-        CARLA_ASSERT(kHost != nullptr);
+        CARLA_ASSERT(pHost != nullptr);
 
-        if (kHost != nullptr)
-            return kHost->get_time_info(kHost->handle);
+        if (pHost != nullptr)
+            return pHost->get_time_info(pHost->handle);
 
         return nullptr;
     }
 
-    void writeMidiEvent(const MidiEvent* const event)
+    void writeMidiEvent(const MidiEvent* const event) const
     {
-        CARLA_ASSERT(kHost != nullptr);
+        CARLA_ASSERT(pHost != nullptr);
 
-        if (kHost != nullptr)
-            kHost->write_midi_event(kHost->handle, event);
+        if (pHost != nullptr)
+            pHost->write_midi_event(pHost->handle, event);
     }
 
-    void uiParameterChanged(const uint32_t index, const float value)
+    void uiParameterChanged(const uint32_t index, const float value) const
     {
-        CARLA_ASSERT(kHost != nullptr);
+        CARLA_ASSERT(pHost != nullptr);
 
-        if (kHost != nullptr)
-            kHost->ui_parameter_changed(kHost->handle, index, value);
+        if (pHost != nullptr)
+            pHost->ui_parameter_changed(pHost->handle, index, value);
     }
 
-    void uiMidiProgramChanged(const uint8_t channel, const uint32_t bank, const uint32_t program)
+    void uiMidiProgramChanged(const uint8_t channel, const uint32_t bank, const uint32_t program) const
     {
-        CARLA_ASSERT(kHost != nullptr);
+        CARLA_ASSERT(pHost != nullptr);
 
-        if (kHost != nullptr)
-            kHost->ui_midi_program_changed(kHost->handle, channel, bank, program);
+        if (pHost != nullptr)
+            pHost->ui_midi_program_changed(pHost->handle, channel, bank, program);
     }
 
-    void uiCustomDataChanged(const char* const key, const char* const value)
+    void uiCustomDataChanged(const char* const key, const char* const value) const
     {
-        CARLA_ASSERT(kHost != nullptr);
+        CARLA_ASSERT(pHost != nullptr);
 
-        if (kHost != nullptr)
-            kHost->ui_custom_data_changed(kHost->handle, key, value);
+        if (pHost != nullptr)
+            pHost->ui_custom_data_changed(pHost->handle, key, value);
     }
 
-    void uiClosed()
+    void uiClosed() const
     {
-        CARLA_ASSERT(kHost != nullptr);
+        CARLA_ASSERT(pHost != nullptr);
 
-        if (kHost != nullptr)
-            kHost->ui_closed(kHost->handle);
+        if (pHost != nullptr)
+            pHost->ui_closed(pHost->handle);
     }
 
-    const char* uiOpenFile(const bool isDir, const char* const title, const char* const filter)
+    const char* uiOpenFile(const bool isDir, const char* const title, const char* const filter) const
     {
-        CARLA_ASSERT(kHost != nullptr);
+        CARLA_ASSERT(pHost != nullptr);
 
-        if (kHost != nullptr)
-            return kHost->ui_open_file(kHost->handle, isDir, title, filter);
+        if (pHost != nullptr)
+            return pHost->ui_open_file(pHost->handle, isDir, title, filter);
 
         return nullptr;
     }
 
-    const char* uiSaveFile(const bool isDir, const char* const title, const char* const filter)
+    const char* uiSaveFile(const bool isDir, const char* const title, const char* const filter) const
     {
-        CARLA_ASSERT(kHost != nullptr);
+        CARLA_ASSERT(pHost != nullptr);
 
-        if (kHost != nullptr)
-            return kHost->ui_save_file(kHost->handle, isDir, title, filter);
+        if (pHost != nullptr)
+            return pHost->ui_save_file(pHost->handle, isDir, title, filter);
 
         return nullptr;
     }
 
-    intptr_t hostDispatcher(const HostDispatcherOpcode opcode, const int32_t index, const intptr_t value, void* const ptr, const float opt)
+    intptr_t hostDispatcher(const HostDispatcherOpcode opcode, const int32_t index, const intptr_t value, void* const ptr, const float opt) const
     {
-        CARLA_ASSERT(kHost != nullptr);
+        CARLA_ASSERT(pHost != nullptr);
 
-        if (kHost != nullptr)
-            return kHost->dispatcher(kHost->handle, opcode, index, value, ptr, opt);
+        if (pHost != nullptr)
+            return pHost->dispatcher(pHost->handle, opcode, index, value, ptr, opt);
 
         return 0;
     }
@@ -301,6 +304,7 @@ protected:
         return;
 
         // unused
+        (void)index;
         (void)value;
     }
 
@@ -361,7 +365,7 @@ protected:
     // -------------------------------------------------------------------
 
 private:
-    const HostDescriptor* const kHost;
+    const HostDescriptor* const pHost;
 
     // -------------------------------------------------------------------
 
@@ -479,15 +483,15 @@ public:
 
 // -----------------------------------------------------------------------
 
-#define PluginDescriptorClassEND(ClassName)                                         \
-public:                                                                             \
-    static PluginHandle _instantiate(const PluginDescriptor*, HostDescriptor* host) \
-    {                                                                               \
-        return new ClassName(host);                                                 \
-    }                                                                               \
-    static void _cleanup(PluginHandle handle)                                       \
-    {                                                                               \
-        delete (ClassName*)handle;                                                  \
+#define PluginDescriptorClassEND(ClassName)                \
+public:                                                    \
+    static PluginHandle _instantiate(HostDescriptor* host) \
+    {                                                      \
+        return new ClassName(host);                        \
+    }                                                      \
+    static void _cleanup(PluginHandle handle)              \
+    {                                                      \
+        delete (ClassName*)handle;                         \
     }
 
 #define PluginDescriptorFILL(ClassName) \

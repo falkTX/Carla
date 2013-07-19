@@ -12,11 +12,11 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#ifndef __CARLA_UTILS_HPP__
-#define __CARLA_UTILS_HPP__
+#ifndef CARLA_UTILS_HPP_INCLUDED
+#define CARLA_UTILS_HPP_INCLUDED
 
 #include "CarlaDefines.hpp"
 
@@ -34,12 +34,16 @@
 
 #if defined(CARLA_OS_HAIKU)
 # include <kernel/OS.h>
-#elif defined(CARLA_OS_LINUX)
-# include <sys/prctl.h>
-# include <linux/prctl.h>
+#else
+# if (__GLIBC__ * 1000 + __GLIBC_MINOR__) >= 2012
+#  include <pthread.h>
+# elif defined(CARLA_OS_LINUX)
+#  include <sys/prctl.h>
+#  include <linux/prctl.h>
+# endif
 #endif
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // misc functions
 
 static inline
@@ -51,7 +55,7 @@ const char* bool2str(const bool yesNo)
 static inline
 void pass() {}
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // string print functions
 
 #ifndef DEBUG
@@ -62,15 +66,9 @@ void carla_debug(const char* const fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
-# ifndef CARLA_OS_WIN
     std::fprintf(stdout, "\x1b[30;1m");
-# endif
     std::vfprintf(stdout, fmt, args);
-# ifndef CARLA_OS_WIN
     std::fprintf(stdout, "\x1b[0m\n");
-# else
-    std::fprintf(stdout, "\n");
-# endif
     va_end(args);
 }
 #endif
@@ -100,19 +98,13 @@ void carla_stderr2(const char* const fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
-#ifndef CARLA_OS_WIN
     std::fprintf(stderr, "\x1b[31m");
-#endif
     std::vfprintf(stderr, fmt, args);
-#ifndef CARLA_OS_WIN
     std::fprintf(stderr, "\x1b[0m\n");
-#else
-    std::fprintf(stderr, "\n");
-#endif
     va_end(args);
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // carla_assert*
 
 static inline
@@ -133,7 +125,7 @@ void carla_assert_int2(const char* const assertion, const char* const file, cons
     carla_stderr2("Carla assertion failure: \"%s\" in file %s, line %i, v1 %i, v2 %i", assertion, file, line, v1, v2);
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // carla_*sleep
 
 static inline
@@ -160,7 +152,7 @@ void carla_msleep(const unsigned int msecs)
 #endif
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // carla_setenv
 
 static inline
@@ -176,7 +168,7 @@ void carla_setenv(const char* const key, const char* const value)
 #endif
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // carla_setprocname (not available on all platforms)
 
 static inline
@@ -187,14 +179,21 @@ void carla_setprocname(const char* const name)
 #if defined(CARLA_OS_HAIKU)
     if ((thread_id this_thread = find_thread(nullptr)) != B_NAME_NOT_FOUND)
         rename_thread(this_thread, name);
-#elif defined(CARLA_OS_LINUX)
-    prctl(PR_SET_NAME, name);
+    return;
 #else
-    carla_stderr("carla_setprocname(\"%s\") - unsupported on this platform", name);
+# if (__GLIBC__ * 1000 + __GLIBC_MINOR__) >= 2012
+    pthread_setname_np(pthread_self(), name);
+    return;
+# elif defined(CARLA_OS_LINUX)
+    prctl(PR_SET_NAME, name);
+    return;
+# endif
 #endif
+
+    carla_stderr("carla_setprocname(\"%s\") - unsupported on this platform", name);
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // carla_strdup
 
 static inline
@@ -221,7 +220,7 @@ const char* carla_strdup_free(char* const strBuf)
     return buffer;
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // math functions
 
 template<typename T>
@@ -242,9 +241,11 @@ template<typename T>
 static inline
 const T& carla_fixValue(const T& min, const T& max, const T& value)
 {
-    if (value < min)
+    CARLA_ASSERT(max > min);
+
+    if (value <= min)
         return min;
-    if (value > max)
+    if (value >= max)
         return max;
     return value;
 }
@@ -381,7 +382,7 @@ inline float
 }
 #endif
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // memory functions
 
 static inline
@@ -413,6 +414,4 @@ void carla_zeroStruct(T* const structure, const size_t count)
     std::memset(structure, 0, sizeof(T)*count);
 }
 
-// -------------------------------------------------
-
-#endif // __CARLA_UTILS_HPP__
+#endif // CARLA_UTILS_HPP_INCLUDED
