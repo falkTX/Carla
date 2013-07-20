@@ -434,22 +434,15 @@ public:
 
         if (fDescriptor->extension_data != nullptr)
         {
-            for (uint32_t i=0; i < fRdfUiDescriptor->ExtensionCount; ++i)
-            {
-                if (std::strcmp(fRdfUiDescriptor->Extensions[i], LV2_PROGRAMS__UIInterface) == 0)
-                {
-                    fExt.options  = (const LV2_Options_Interface*)fDescriptor->extension_data(LV2_OPTIONS__interface);
-                    fExt.idle     = (const LV2UI_Idle_Interface*)fDescriptor->extension_data(LV2_UI__idleInterface);
-                    fExt.programs = (const LV2_Programs_UI_Interface*)fDescriptor->extension_data(LV2_PROGRAMS__UIInterface);
+            fExt.programs = (const LV2_Programs_UI_Interface*)fDescriptor->extension_data(LV2_PROGRAMS__UIInterface);
+            fExt.options  = (const LV2_Options_Interface*)fDescriptor->extension_data(LV2_OPTIONS__interface);
+            fExt.idle     = (const LV2UI_Idle_Interface*)fDescriptor->extension_data(LV2_UI__idleInterface);
 
-                    // check if invalid
-                    if (fExt.idle != nullptr && fExt.idle->idle == nullptr)
-                        fExt.idle = nullptr;
-
-                    if (fExt.programs != nullptr && fExt.programs->select_program == nullptr)
-                        fExt.programs = nullptr;
-                }
-            }
+            // check if invalid
+            if (fExt.programs != nullptr && fExt.programs->select_program == nullptr)
+                fExt.programs = nullptr;
+            if (fExt.idle != nullptr && fExt.idle->idle == nullptr)
+                fExt.idle = nullptr;
         }
 
         return true;
