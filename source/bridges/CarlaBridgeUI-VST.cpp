@@ -480,7 +480,7 @@ public:
             break;
 
         case audioMasterGetVendorVersion:
-            ret = 0x103; // 1.0.3
+            ret = 0x104; // 1.0.4
             break;
 
         case audioMasterCanDo:

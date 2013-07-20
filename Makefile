@@ -38,9 +38,6 @@ discovery:
 plugin:
 	$(MAKE) -C source/plugin
 
-tests:
-	$(MAKE) -C source/tests
-
 theme:
 	$(MAKE) -C source/theme
 
@@ -127,7 +124,6 @@ clean:
 	$(MAKE) clean -C source/discovery
 	$(MAKE) clean -C source/libs
 	$(MAKE) clean -C source/plugin
-	$(MAKE) clean -C source/tests
 	$(MAKE) clean -C source/theme
 	$(MAKE) clean -C source/widgets
 	rm -f $(RES)
@@ -154,11 +150,6 @@ install:
 	install -d $(DESTDIR)$(PREFIX)/lib/carla/resources/
 	install -d $(DESTDIR)$(PREFIX)/lib/carla/resources/nekofilter/
 	install -d $(DESTDIR)$(PREFIX)/lib/carla/resources/zynaddsubfx/
-# ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-# 	install -d $(DESTDIR)$(PREFIX)/lib/dssi/
-# 	install -d $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/
-# 	install -d $(DESTDIR)$(PREFIX)/lib/vst/
-# endif
 	install -d $(DESTDIR)$(PREFIX)/share/applications/
 	install -d $(DESTDIR)$(PREFIX)/share/carla/
 	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/16x16/apps/
@@ -215,13 +206,6 @@ install:
 	install -m 644 source/backend/resources/nekofilter-ui     $(DESTDIR)$(PREFIX)/lib/carla/resources/
 	install -m 644 source/backend/resources/nekofilter/*.png  $(DESTDIR)$(PREFIX)/lib/carla/resources/nekofilter/
 	install -m 644 source/backend/resources/zynaddsubfx/*.png $(DESTDIR)$(PREFIX)/lib/carla/resources/zynaddsubfx/
-
-# ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-# 	# Install plugin
-# 	install -m 644 source/plugin/carla-dssi.so $(DESTDIR)$(PREFIX)/lib/dssi/
-# 	install -m 644 source/plugin/carla-vst.so  $(DESTDIR)$(PREFIX)/lib/vst/
-# 	install -m 644 source/plugin/carla.lv2/*   $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/
-# endif
 
 	# Adjust PREFIX value in script files
 	sed -i "s/X-PREFIX-X/$(SED_PREFIX)/" \
