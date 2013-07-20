@@ -25,8 +25,6 @@
 #include "CarlaPlugin.hpp"
 #include "RtList.hpp"
 
-class QMainWindow;
-
 CARLA_BACKEND_START_NAMESPACE
 
 // -------------------------------------------------------------------------------------------------------------------

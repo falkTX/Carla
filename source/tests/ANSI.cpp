@@ -50,6 +50,20 @@
 // Carla Engine API
 #include "CarlaEngine.hpp"
 
+// Carla Standalone API
+#include "CarlaStandalone.hpp"
+
+// // Carla Plugin Thread
+// #include "CarlaPluginThread.hpp"
+//
+// #include "CarlaBackendUtils.hpp"
+// #include "CarlaOscUtils.hpp"
+// #include "CarlaMutex.hpp"
+// #include "RtList.hpp"
+//
+// // Carla Plugin
+// #include "CarlaPluginInternal.hpp"
+
 //#include "standalone/CarlaStandalone.cpp"
 
 // #include "CarlaMutex.hpp"

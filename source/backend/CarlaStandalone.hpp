@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the doc/GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
 #ifndef CARLA_STANDALONE_HPP_INCLUDED
@@ -729,4 +729,4 @@ CARLA_EXPORT bool carla_engine_init_bridge(const char* audioBaseName, const char
 
 /**@}*/
 
-#endif // __CARLA_STANDALONE_HPP__
+#endif // CARLA_STANDALONE_HPP_INCLUDED

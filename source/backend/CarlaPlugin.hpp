@@ -941,8 +941,6 @@ protected:
         CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ScopedSingleProcessLocker)
     };
 
-    // -------------------------------------------------------------------
-
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPlugin)
 };
 
