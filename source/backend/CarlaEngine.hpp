@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the doc/GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
 #ifndef CARLA_ENGINE_HPP_INCLUDED
@@ -32,7 +32,6 @@ CARLA_BACKEND_START_NAMESPACE
  * @defgroup CarlaEngineAPI Carla Engine API
  *
  * The Carla Engine API.
- *
  * @{
  */
 
@@ -161,14 +160,12 @@ struct EngineControlEvent {
     uint16_t param;              //!< Parameter Id, midi bank or midi program.
     float    value;              //!< Parameter value, normalized to 0.0f<->1.0f.
 
-    void clear()
+    void clear() noexcept
     {
         type  = kEngineControlEventTypeNull;
         param = 0;
         value = 0.0f;
     }
-
-    CARLA_DECLARE_NON_COPY_STRUCT(EngineControlEvent)
 };
 
 /*!
@@ -179,7 +176,7 @@ struct EngineMidiEvent {
     uint8_t data[4]; //!< MIDI data, without channel bit
     uint8_t size;    //!< Number of bytes used
 
-    void clear()
+    void clear() noexcept
     {
         port    = 0;
         data[0] = 0;
@@ -188,8 +185,6 @@ struct EngineMidiEvent {
         data[3] = 0;
         size    = 0;
     }
-
-    CARLA_DECLARE_NON_COPY_STRUCT(EngineMidiEvent)
 };
 
 /*!
@@ -206,24 +201,18 @@ struct EngineEvent {
     };
 
 #ifndef DOXYGEN
-    EngineEvent()
+    EngineEvent() noexcept
     {
         clear();
     }
 #endif
 
-    void clear()
+    void clear() noexcept
     {
         type = kEngineEventTypeNull;
         time = 0;
         channel = 0;
     }
-
-#ifndef DEBUG
-    CARLA_DECLARE_NON_COPY_STRUCT(EngineEvent)
-#else
-    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(EngineEvent)
-#endif
 };
 
 /*!
@@ -278,7 +267,7 @@ struct EngineOptions {
 #endif
 
 #ifndef DOXYGEN
-    EngineOptions()
+    EngineOptions() noexcept
 # if defined(CARLA_OS_LINUX)
         : processMode(PROCESS_MODE_MULTIPLE_CLIENTS),
           transportMode(TRANSPORT_MODE_JACK),
@@ -302,8 +291,6 @@ struct EngineOptions {
           rtaudioSampleRate(44100),
 # endif
           resourceDir() {}
-
-    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(EngineOptions)
 #endif
 };
 
@@ -323,7 +310,7 @@ struct EngineTimeInfoBBT {
     double beatsPerMinute;
 
 #ifndef DOXYGEN
-    EngineTimeInfoBBT()
+    EngineTimeInfoBBT() noexcept
         : bar(0),
           beat(0),
           tick(0),
@@ -332,12 +319,6 @@ struct EngineTimeInfoBBT {
           beatType(0.0f),
           ticksPerBeat(0.0),
           beatsPerMinute(0.0) {}
-
-# ifndef DEBUG
-    CARLA_DECLARE_NON_COPY_STRUCT(EngineTimeInfoBBT)
-# else
-    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(EngineTimeInfoBBT)
-# endif
 #endif
 };
 
@@ -354,13 +335,13 @@ struct EngineTimeInfo {
     EngineTimeInfoBBT bbt;
 
 #ifndef DOXYGEN
-    EngineTimeInfo()
+    EngineTimeInfo() noexcept
     {
         clear();
     }
 #endif
 
-    void clear()
+    void clear() noexcept
     {
         playing = false;
         frame   = 0;
@@ -370,7 +351,7 @@ struct EngineTimeInfo {
 
 #ifndef DOXYGEN
     // quick operator, doesn't check all values
-    bool operator==(const EngineTimeInfo& timeInfo) const
+    bool operator==(const EngineTimeInfo& timeInfo) const noexcept
     {
         if (timeInfo.playing != playing || timeInfo.frame != frame)
             return false;
@@ -381,16 +362,10 @@ struct EngineTimeInfo {
         return true;
     }
 
-    bool operator!=(const EngineTimeInfo& timeInfo) const
+    bool operator!=(const EngineTimeInfo& timeInfo) const noexcept
     {
         return !operator==(timeInfo);
     }
-
-# ifndef DEBUG
-    CARLA_DECLARE_NON_COPY_STRUCT(EngineTimeInfo)
-# else
-    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(EngineTimeInfo)
-# endif
 #endif
 };
 
@@ -418,7 +393,7 @@ public:
     /*!
      * Get the type of the port, as provided by the respective subclasses.
      */
-    virtual EnginePortType type() const = 0;
+    virtual EnginePortType type() const noexcept = 0;
 
     /*!
      * Initialize the port's internal buffer for \a engine.
@@ -427,14 +402,12 @@ public:
 
 #ifndef DOXYGEN
 protected:
-    const bool kIsInput;
-    const ProcessMode kProcessMode;
+    const bool fIsInput;
+    const ProcessMode fProcessMode;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEnginePort)
 #endif
 };
-
-// -----------------------------------------------------------------------
 
 /*!
  * Carla Engine Audio port.
@@ -456,7 +429,7 @@ public:
     /*!
      * Get the type of the port, in this case CarlaEnginePortTypeAudio.
      */
-    EnginePortType type() const override
+    EnginePortType type() const noexcept override
     {
         return kEnginePortTypeAudio;
     }
@@ -469,7 +442,7 @@ public:
     /*!
      * Direct access to the port's audio buffer.
      */
-    float* getBuffer() const
+    float* getBuffer() const noexcept
     {
         return fBuffer;
     }
@@ -481,8 +454,6 @@ protected:
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineAudioPort)
 #endif
 };
-
-// -----------------------------------------------------------------------
 
 /*!
  * Carla Engine CV port.
@@ -504,7 +475,7 @@ public:
     /*!
      * Get the type of the port, in this case CarlaEnginePortTypeAudio.
      */
-    EnginePortType type() const override
+    EnginePortType type() const noexcept override
     {
         return kEnginePortTypeCV;
     }
@@ -527,7 +498,7 @@ public:
     /*!
      * Direct access to the port's audio buffer.
      */
-    float* getBuffer() const
+    float* getBuffer() const noexcept
     {
         return fBuffer;
     }
@@ -540,8 +511,6 @@ protected:
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineCVPort)
 #endif
 };
-
-// -----------------------------------------------------------------------
 
 /*!
  * Carla Engine Event port.
@@ -563,7 +532,7 @@ public:
     /*!
      * Get the type of the port, in this case CarlaEnginePortTypeControl.
      */
-    EnginePortType type() const override
+    EnginePortType type() const noexcept override
     {
         return kEnginePortTypeEvent;
     }
@@ -695,7 +664,7 @@ public:
 
 #ifndef DOXYGEN
 protected:
-    const CarlaEngine& kEngine;
+    const CarlaEngine& fEngine;
 
     bool     fActive;
     uint32_t fLatency;
@@ -707,7 +676,7 @@ protected:
 // -----------------------------------------------------------------------
 
 /*!
- * Protected data used in CarlaEngine.
+ * Protected data used in CarlaEngine and subclasses.\n
  * Non-engine code MUST NEVER have direct access to this.
  */
 struct CarlaEngineProtectedData;
@@ -752,8 +721,9 @@ public:
     static const char** getDriverDeviceNames(const unsigned int index);
 
     /*!
-     * Create a new engine, using driver \a driverName.\n
+     * Create a new engine, using driver \a driverName. \n
      * Returned variable must be deleted when no longer needed.
+     * \note This only initializes engine data, it doesn't initialize the engine itself.
      */
     static CarlaEngine* newDriverByName(const char* const driverName);
 
@@ -763,23 +733,23 @@ public:
     /*!
      * Maximum client name size.
      */
-    virtual unsigned int maxClientNameSize() const;
+    virtual unsigned int getMaxClientNameSize() const noexcept;
 
     /*!
      * Maximum port name size.
      */
-    virtual unsigned int maxPortNameSize() const;
+    virtual unsigned int getMaxPortNameSize() const noexcept;
 
     /*!
      * Current number of plugins loaded.
      */
-    unsigned int currentPluginCount() const;
+    unsigned int getCurrentPluginCount() const noexcept;
 
     /*!
      * Maximum number of loadable plugins allowed.
      * \note This function returns 0 if engine is not started.
      */
-    unsigned int maxPluginNumber() const;
+    unsigned int getMaxPluginNumber() const noexcept;
 
     // -------------------------------------------------------------------
     // Virtual, per-engine type calls
@@ -802,21 +772,21 @@ public:
     /*!
      * Check if engine is running.
      */
-    virtual bool isRunning() const = 0;
+    virtual bool isRunning() const noexcept = 0;
 
     /*!
      * Check if engine is running offline (aka freewheel mode).
      */
-    virtual bool isOffline() const = 0;
+    virtual bool isOffline() const noexcept = 0;
 
     /*!
      * Get engine type.
      */
-    virtual EngineType type() const = 0;
+    virtual EngineType getType() const noexcept = 0;
 
     /*!
      * Add new engine client.
-     * \note This must only be called within a plugin class.
+     * \note This function must only be called within a plugin class.
      */
     virtual CarlaEngineClient* addClient(CarlaPlugin* const plugin);
 
@@ -877,7 +847,7 @@ public:
     /*!
      * Get plugin with id \a id, faster unchecked version.
      */
-    CarlaPlugin* getPluginUnchecked(const unsigned int id) const;
+    CarlaPlugin* getPluginUnchecked(const unsigned int id) const noexcept;
 
     /*!
      * Get a unique plugin name within the engine.\n
@@ -914,7 +884,7 @@ public:
     /*!
      * Get current buffer size.
      */
-    uint32_t getBufferSize() const
+    uint32_t getBufferSize() const noexcept
     {
         return fBufferSize;
     }
@@ -922,7 +892,7 @@ public:
     /*!
      * Get current sample rate.
      */
-    double getSampleRate() const
+    double getSampleRate() const noexcept
     {
         return fSampleRate;
     }
@@ -930,7 +900,7 @@ public:
     /*!
      * Get engine name.
      */
-    const char* getName() const
+    const char* getName() const noexcept
     {
         return (const char*)fName;
     }
@@ -938,7 +908,7 @@ public:
     /*!
      * Get the engine options (read-only).
      */
-    const EngineOptions& getOptions() const
+    const EngineOptions& getOptions() const noexcept
     {
         return fOptions;
     }
@@ -946,7 +916,7 @@ public:
     /*!
      * Get the engine proccess mode.
      */
-    ProcessMode getProccessMode() const
+    ProcessMode getProccessMode() const noexcept
     {
         return fOptions.processMode;
     }
@@ -954,7 +924,7 @@ public:
     /*!
      * Get current Time information (read-only).
      */
-    const EngineTimeInfo& getTimeInfo() const
+    const EngineTimeInfo& getTimeInfo() const noexcept
     {
         return fTimeInfo;
     }
@@ -1029,7 +999,7 @@ public:
     /*!
      * Get last error.
      */
-    const char* getLastError() const;
+    const char* getLastError() const noexcept;
 
     /*!
      * Set last error.
@@ -1060,12 +1030,12 @@ public:
     /*!
      * Check if OSC bridge is registered.
      */
-    bool isOscBridgeRegistered() const;
+    bool isOscBridgeRegistered() const noexcept;
 #else
     /*!
      * Check if OSC controller is registered.
      */
-    bool isOscControlRegistered() const;
+    bool isOscControlRegistered() const noexcept;
 #endif
 
     /*!
@@ -1076,34 +1046,76 @@ public:
     /*!
      * Get OSC TCP server path.
      */
-    const char* getOscServerPathTCP() const;
+    const char* getOscServerPathTCP() const noexcept;
 
     /*!
      * Get OSC UDP server path.
      */
-    const char* getOscServerPathUDP() const;
+    const char* getOscServerPathUDP() const noexcept;
 
 #ifdef BUILD_BRIDGE
     /*!
      * Set OSC bridge data.
      */
-    void setOscBridgeData(const CarlaOscData* const oscData);
+    void setOscBridgeData(const CarlaOscData* const oscData) noexcept;
 #endif
 
-    // -------------------------------------
+    // -------------------------------------------------------------------
+    // Helper functions
 
-#ifndef DOXYGEN
+    /*!
+     * Return internal data, needed for EventPorts when used in Rack and Bridge modes.
+     * \note RT call
+     */
+    EngineEvent* getInternalEventBuffer(const bool isInput) const noexcept;
+
+    /*!
+     * Force register a plugin into slot \a id. \n
+     * This is needed so that we can receive OSC events for the plugin while it initializes.
+     */
+    void registerEnginePlugin(const unsigned int id, CarlaPlugin* const plugin);
+
+    // -------------------------------------------------------------------
+
 protected:
+    /*!
+     * Current buffer size.
+     * \see getBufferSize()
+     */
     uint32_t fBufferSize;
-    double   fSampleRate;
 
+    /*!
+     * Current sample rate.
+     * \see getSampleRate()
+     */
+    double fSampleRate;
+
+    /*!
+     * Engine name.
+     * \see getName()
+     */
     CarlaString fName;
 
-    EngineOptions  fOptions;
+    /*!
+     * Engine options.
+     * \see getOptions() and setOption()
+     */
+    EngineOptions fOptions;
+
+    /*!
+     * Current time-pos information.
+     * \see getTimeInfo()
+     */
     EngineTimeInfo fTimeInfo;
 
+    /*!
+     * Internal data, for CarlaEngine subclasses only.
+     */
+    CarlaEngineProtectedData* const pData;
     friend struct CarlaEngineProtectedData;
-    CarlaEngineProtectedData* const kData;
+
+    // -------------------------------------------------------------------
+    // Internal stuff
 
     /*!
      * Report to all plugins about buffer size change.
@@ -1112,8 +1124,7 @@ protected:
 
     /*!
      * Report to all plugins about sample rate change.\n
-     * This is not supported on all plugin types, on which case they will be re-initiated.\n
-     * TODO: Not implemented yet.
+     * This is not supported on all plugin types, in which case they will have to be re-initiated.
      */
     void sampleRateChanged(const double newSampleRate);
 
@@ -1123,34 +1134,44 @@ protected:
     void offlineModeChanged(const bool isOffline);
 
     /*!
-     * TODO.
+     * Run any RT pending events.\n
+     * Must always be called at the end of audio processing.
+     * \note RT call
      */
-    void proccessPendingEvents();
+    void runRtPendingEvents();
 
     /*!
-     * TODO.
+     * Set a plugin (stereo) peak values.
+     * \note RT call
      */
-    void setPeaks(const unsigned int pluginId, float const inPeaks[2], float const outPeaks[2]);
+    void setPluginPeaks(const unsigned int pluginId, float const inPeaks[2], float const outPeaks[2]) noexcept;
 
-    // Internal data, used in Rack and Bridge modes
-    EngineEvent* getInternalEventBuffer(const bool isInput) const;
-
-# ifndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE
     /*!
      * Proccess audio buffer in rack mode.
+     * \note RT call
      */
     void processRack(float* inBuf[2], float* outBuf[2], const uint32_t frames);
 
     /*!
      * Proccess audio buffer in patchbay mode.
      * In \a bufCount, [0]=inBufCount and [1]=outBufCount
+     * \note RT call
      */
     void processPatchbay(float** inBuf, float** outBuf, const uint32_t bufCount[2], const uint32_t frames);
-# endif
+#endif
+
+    // -------------------------------------------------------------------
+    // Engine initializers
+
+#ifdef BUILD_BRIDGE
+public:
+    static CarlaEngine* newBridge(const char* const audioBaseName, const char* const controlBaseName);
+#endif
 
 private:
     static CarlaEngine* newJack();
-# ifdef WANT_RTAUDIO
+#ifdef WANT_RTAUDIO
     enum RtAudioApi {
         RTAUDIO_DUMMY        = 0,
         RTAUDIO_LINUX_ALSA   = 1,
@@ -1166,65 +1187,58 @@ private:
     static size_t       getRtAudioApiCount();
     static const char*  getRtAudioApiName(const unsigned int index);
     static const char** getRtAudioApiDeviceNames(const unsigned int index);
-# endif
+#endif
 
+    // -------------------------------------------------------------------
+    // Bridge/Controller OSC stuff
+
+#ifdef BUILD_BRIDGE
+    void oscSend_bridge_audio_count(const int32_t ins, const int32_t outs, const int32_t total);
+    void oscSend_bridge_midi_count(const int32_t ins, const int32_t outs, const int32_t total);
+    void oscSend_bridge_parameter_count(const int32_t ins, const int32_t outs, const int32_t total);
+    void oscSend_bridge_program_count(const int32_t count);
+    void oscSend_bridge_midi_program_count(const int32_t count);
+    void oscSend_bridge_plugin_info(const int32_t category, const int32_t hints, const char* const name, const char* const label, const char* const maker, const char* const copyright, const int64_t uniqueId);
+    void oscSend_bridge_parameter_info(const int32_t index, const char* const name, const char* const unit);
+    void oscSend_bridge_parameter_data(const int32_t index, const int32_t type, const int32_t rindex, const int32_t hints, const int32_t midiChannel, const int32_t midiCC);
+    void oscSend_bridge_parameter_ranges(const int32_t index, const float def, const float min, const float max, const float step, const float stepSmall, const float stepLarge);
+    void oscSend_bridge_program_info(const int32_t index, const char* const name);
+    void oscSend_bridge_midi_program_info(const int32_t index, const int32_t bank, const int32_t program, const char* const label);
+    void oscSend_bridge_configure(const char* const key, const char* const value);
+    void oscSend_bridge_set_parameter_value(const int32_t index, const float value);
+    void oscSend_bridge_set_default_value(const int32_t index, const float value);
+    void oscSend_bridge_set_program(const int32_t index);
+    void oscSend_bridge_set_midi_program(const int32_t index);
+    void oscSend_bridge_set_custom_data(const char* const type, const char* const key, const char* const value);
+    void oscSend_bridge_set_chunk_data(const char* const chunkFile);
+    void oscSend_bridge_set_peaks();
+#else
 public:
-# ifdef BUILD_BRIDGE
-    static CarlaEngine* newBridge(const char* const audioBaseName, const char* const controlBaseName);
-
-    void osc_send_bridge_audio_count(const int32_t ins, const int32_t outs, const int32_t total);
-    void osc_send_bridge_midi_count(const int32_t ins, const int32_t outs, const int32_t total);
-    void osc_send_bridge_parameter_count(const int32_t ins, const int32_t outs, const int32_t total);
-    void osc_send_bridge_program_count(const int32_t count);
-    void osc_send_bridge_midi_program_count(const int32_t count);
-    void osc_send_bridge_plugin_info(const int32_t category, const int32_t hints, const char* const name, const char* const label, const char* const maker, const char* const copyright, const int64_t uniqueId);
-    void osc_send_bridge_parameter_info(const int32_t index, const char* const name, const char* const unit);
-    void osc_send_bridge_parameter_data(const int32_t index, const int32_t type, const int32_t rindex, const int32_t hints, const int32_t midiChannel, const int32_t midiCC);
-    void osc_send_bridge_parameter_ranges(const int32_t index, const float def, const float min, const float max, const float step, const float stepSmall, const float stepLarge);
-    void osc_send_bridge_program_info(const int32_t index, const char* const name);
-    void osc_send_bridge_midi_program_info(const int32_t index, const int32_t bank, const int32_t program, const char* const label);
-    void osc_send_bridge_configure(const char* const key, const char* const value);
-    void osc_send_bridge_set_parameter_value(const int32_t index, const float value);
-    void osc_send_bridge_set_default_value(const int32_t index, const float value);
-    void osc_send_bridge_set_program(const int32_t index);
-    void osc_send_bridge_set_midi_program(const int32_t index);
-    void osc_send_bridge_set_custom_data(const char* const type, const char* const key, const char* const value);
-    void osc_send_bridge_set_chunk_data(const char* const chunkFile);
-    void osc_send_bridge_set_peaks();
-# else
-    static void registerNativePlugin();
-
-    void osc_send_control_add_plugin_start(const int32_t pluginId, const char* const pluginName);
-    void osc_send_control_add_plugin_end(const int32_t pluginId);
-    void osc_send_control_remove_plugin(const int32_t pluginId);
-    void osc_send_control_set_plugin_data(const int32_t pluginId, const int32_t type, const int32_t category, const int32_t hints, const char* const realName, const char* const label, const char* const maker, const char* const copyright, const int64_t uniqueId);
-    void osc_send_control_set_plugin_ports(const int32_t pluginId, const int32_t audioIns, const int32_t audioOuts, const int32_t midiIns, const int32_t midiOuts, const int32_t cIns, const int32_t cOuts, const int32_t cTotals);
-    void osc_send_control_set_parameter_data(const int32_t pluginId, const int32_t index, const int32_t type, const int32_t hints, const char* const name, const char* const label, const float current);
-    void osc_send_control_set_parameter_ranges(const int32_t pluginId, const int32_t index, const float min, const float max, const float def, const float step, const float stepSmall, const float stepLarge);
-    void osc_send_control_set_parameter_midi_cc(const int32_t pluginId, const int32_t index, const int32_t cc);
-    void osc_send_control_set_parameter_midi_channel(const int32_t pluginId, const int32_t index, const int32_t channel);
-    void osc_send_control_set_parameter_value(const int32_t pluginId, const int32_t index, const float value);
-    void osc_send_control_set_default_value(const int32_t pluginId, const int32_t index, const float value);
-    void osc_send_control_set_program(const int32_t pluginId, const int32_t index);
-    void osc_send_control_set_program_count(const int32_t pluginId, const int32_t count);
-    void osc_send_control_set_program_name(const int32_t pluginId, const int32_t index, const char* const name);
-    void osc_send_control_set_midi_program(const int32_t pluginId, const int32_t index);
-    void osc_send_control_set_midi_program_count(const int32_t pluginId, const int32_t count);
-    void osc_send_control_set_midi_program_data(const int32_t pluginId, const int32_t index, const int32_t bank, const int32_t program, const char* const name);
-    void osc_send_control_note_on(const int32_t pluginId, const int32_t channel, const int32_t note, const int32_t velo);
-    void osc_send_control_note_off(const int32_t pluginId, const int32_t channel, const int32_t note);
-    void osc_send_control_set_peaks(const int32_t pluginId);
-    void osc_send_control_exit();
-# endif
-
-private:
-    friend class CarlaEngineEventPort;
+    void oscSend_control_add_plugin_start(const int32_t pluginId, const char* const pluginName);
+    void oscSend_control_add_plugin_end(const int32_t pluginId);
+    void oscSend_control_remove_plugin(const int32_t pluginId);
+    void oscSend_control_set_plugin_data(const int32_t pluginId, const int32_t type, const int32_t category, const int32_t hints, const char* const realName, const char* const label, const char* const maker, const char* const copyright, const int64_t uniqueId);
+    void oscSend_control_set_plugin_ports(const int32_t pluginId, const int32_t audioIns, const int32_t audioOuts, const int32_t midiIns, const int32_t midiOuts, const int32_t cIns, const int32_t cOuts, const int32_t cTotals);
+    void oscSend_control_set_parameter_data(const int32_t pluginId, const int32_t index, const int32_t type, const int32_t hints, const char* const name, const char* const label, const float current);
+    void oscSend_control_set_parameter_ranges(const int32_t pluginId, const int32_t index, const float min, const float max, const float def, const float step, const float stepSmall, const float stepLarge);
+    void oscSend_control_set_parameter_midi_cc(const int32_t pluginId, const int32_t index, const int32_t cc);
+    void oscSend_control_set_parameter_midi_channel(const int32_t pluginId, const int32_t index, const int32_t channel);
+    void oscSend_control_set_parameter_value(const int32_t pluginId, const int32_t index, const float value);
+    void oscSend_control_set_default_value(const int32_t pluginId, const int32_t index, const float value);
+    void oscSend_control_set_program(const int32_t pluginId, const int32_t index);
+    void oscSend_control_set_program_count(const int32_t pluginId, const int32_t count);
+    void oscSend_control_set_program_name(const int32_t pluginId, const int32_t index, const char* const name);
+    void oscSend_control_set_midi_program(const int32_t pluginId, const int32_t index);
+    void oscSend_control_set_midi_program_count(const int32_t pluginId, const int32_t count);
+    void oscSend_control_set_midi_program_data(const int32_t pluginId, const int32_t index, const int32_t bank, const int32_t program, const char* const name);
+    void oscSend_control_note_on(const int32_t pluginId, const int32_t channel, const int32_t note, const int32_t velo);
+    void oscSend_control_note_off(const int32_t pluginId, const int32_t channel, const int32_t note);
+    void oscSend_control_set_peaks(const int32_t pluginId);
+    void oscSend_control_exit();
+#endif
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngine)
-#endif
 };
-
-// -----------------------------------------------------------------------
 
 /**@}*/
 

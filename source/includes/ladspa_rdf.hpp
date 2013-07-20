@@ -18,6 +18,8 @@
 #ifndef LADSPA_RDF_HPP_INCLUDED
 #define LADSPA_RDF_HPP_INCLUDED
 
+#include "CarlaJuceUtils.hpp"
+
 // Base Types
 typedef float LADSPA_Data;
 typedef int LADSPA_Property;
@@ -132,6 +134,8 @@ struct LADSPA_RDF_ScalePoint {
             Label = nullptr;
         }
     }
+
+    CARLA_DECLARE_NON_COPY_STRUCT(LADSPA_RDF_ScalePoint)
 };
 
 // Port
@@ -167,6 +171,8 @@ struct LADSPA_RDF_Port {
             ScalePoints = nullptr;
         }
     }
+
+    CARLA_DECLARE_NON_COPY_STRUCT(LADSPA_RDF_Port)
 };
 
 // Plugin Descriptor
@@ -205,6 +211,8 @@ struct LADSPA_RDF_Descriptor {
             Ports = nullptr;
         }
     }
+
+    CARLA_DECLARE_NON_COPY_STRUCT(LADSPA_RDF_Descriptor)
 };
 
 #endif // LADSPA_RDF_HPP_INCLUDED

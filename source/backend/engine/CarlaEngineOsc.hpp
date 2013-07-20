@@ -66,12 +66,12 @@ public:
 
     // -------------------------------------------------------------------
 
-    const char* getServerPathTCP() const
+    const char* getServerPathTCP() const noexcept
     {
         return (const char*)fServerPathTCP;
     }
 
-    const char* getServerPathUDP() const
+    const char* getServerPathUDP() const noexcept
     {
         return (const char*)fServerPathUDP;
     }
@@ -79,12 +79,12 @@ public:
     // -------------------------------------------------------------------
 
 #ifndef BUILD_BRIDGE
-    bool isControlRegistered() const
+    bool isControlRegistered() const noexcept
     {
         return (fControlData.target != nullptr);
     }
 
-    const CarlaOscData* getControlData() const
+    const CarlaOscData* getControlData() const noexcept
     {
         return &fControlData;
     }

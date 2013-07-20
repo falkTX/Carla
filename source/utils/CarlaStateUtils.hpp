@@ -208,7 +208,7 @@ struct SaveState {
         customData.clear();
     }
 
-    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(SaveState)
+    CARLA_DECLARE_NON_COPY_STRUCT(SaveState)
 };
 
 // -------------------------------------------------
@@ -225,7 +225,7 @@ QString xmlSafeString(const QString& string, const bool toXml)
 }
 
 static inline
-const char* xmlSafeStringChar(const QString& string, const bool toXml)
+const char* xmlSafeStringCharDup(const QString& string, const bool toXml)
 {
     return carla_strdup(xmlSafeString(string, toXml).toUtf8().constData());
 }
@@ -233,13 +233,12 @@ const char* xmlSafeStringChar(const QString& string, const bool toXml)
 // -------------------------------------------------
 
 static inline
-const SaveState& getSaveStateDictFromXML(const QDomNode& xmlNode)
+void fillSaveStateFromXmlNode(SaveState& saveState, const QDomNode& xmlNode)
 {
-    static SaveState saveState;
     saveState.reset();
 
     if (xmlNode.isNull())
-        return saveState;
+        return;
 
     QDomNode node(xmlNode.firstChild());
 
@@ -258,13 +257,13 @@ const SaveState& getSaveStateDictFromXML(const QDomNode& xmlNode)
                 const QString text(xmlInfo.toElement().text().trimmed());
 
                 if (tag.compare("Type", Qt::CaseInsensitive) == 0)
-                    saveState.type = xmlSafeStringChar(text, false);
+                    saveState.type = xmlSafeStringCharDup(text, false);
                 else if (tag.compare("Name", Qt::CaseInsensitive) == 0)
-                    saveState.name = xmlSafeStringChar(text, false);
+                    saveState.name = xmlSafeStringCharDup(text, false);
                 else if (tag.compare("Label", Qt::CaseInsensitive) == 0 || tag.compare("URI", Qt::CaseInsensitive) == 0)
-                    saveState.label = xmlSafeStringChar(text, false);
+                    saveState.label = xmlSafeStringCharDup(text, false);
                 else if (tag.compare("Binary", Qt::CaseInsensitive) == 0)
-                    saveState.binary = xmlSafeStringChar(text, false);
+                    saveState.binary = xmlSafeStringCharDup(text, false);
                 else if (tag.compare("UniqueID", Qt::CaseInsensitive) == 0)
                 {
                     bool ok;
@@ -345,7 +344,7 @@ const SaveState& getSaveStateDictFromXML(const QDomNode& xmlNode)
                 }
                 else if (tag.compare("CurrentProgramName", Qt::CaseInsensitive) == 0)
                 {
-                    saveState.currentProgramName = xmlSafeStringChar(text, false);
+                    saveState.currentProgramName = xmlSafeStringCharDup(text, false);
                 }
 
                 // ----------------------------------------------
@@ -388,11 +387,11 @@ const SaveState& getSaveStateDictFromXML(const QDomNode& xmlNode)
                         }
                         else if (pTag.compare("Name", Qt::CaseInsensitive) == 0)
                         {
-                            stateParameter->name = xmlSafeStringChar(pText, false);
+                            stateParameter->name = xmlSafeStringCharDup(pText, false);
                         }
                         else if (pTag.compare("Symbol", Qt::CaseInsensitive) == 0)
                         {
-                            stateParameter->symbol = xmlSafeStringChar(pText, false);
+                            stateParameter->symbol = xmlSafeStringCharDup(pText, false);
                         }
                         else if (pTag.compare("Value", Qt::CaseInsensitive) == 0)
                         {
@@ -436,11 +435,11 @@ const SaveState& getSaveStateDictFromXML(const QDomNode& xmlNode)
                         const QString cText(xmlSubData.toElement().text().trimmed());
 
                         if (cTag.compare("Type", Qt::CaseInsensitive) == 0)
-                            stateCustomData->type = xmlSafeStringChar(cText, false);
+                            stateCustomData->type = xmlSafeStringCharDup(cText, false);
                         else if (cTag.compare("Key", Qt::CaseInsensitive) == 0)
-                            stateCustomData->key = xmlSafeStringChar(cText, false);
+                            stateCustomData->key = xmlSafeStringCharDup(cText, false);
                         else if (cTag.compare("Value", Qt::CaseInsensitive) == 0)
-                            stateCustomData->value = xmlSafeStringChar(cText, false);
+                            stateCustomData->value = xmlSafeStringCharDup(cText, false);
 
                         xmlSubData = xmlSubData.nextSibling();
                     }
@@ -453,7 +452,7 @@ const SaveState& getSaveStateDictFromXML(const QDomNode& xmlNode)
 
                 else if (tag.compare("Chunk", Qt::CaseInsensitive) == 0)
                 {
-                    saveState.chunk = xmlSafeStringChar(text, false);
+                    saveState.chunk = xmlSafeStringCharDup(text, false);
                 }
 
                 // ----------------------------------------------
@@ -466,16 +465,13 @@ const SaveState& getSaveStateDictFromXML(const QDomNode& xmlNode)
 
         node = node.nextSibling();
     }
-
-    return saveState;
 }
 
 // -------------------------------------------------
 
 static inline
-const QString& getXMLFromSaveState(const SaveState& saveState)
+void fillXmlStringFromSaveState(QString& content, const SaveState& saveState)
 {
-    static QString content;
     content.clear();
 
     {
@@ -632,8 +628,6 @@ const QString& getXMLFromSaveState(const SaveState& saveState)
     }
 
     content += "  </Data>\n";
-
-    return content;
 }
 
 // -------------------------------------------------

@@ -1957,17 +1957,6 @@ void CarlaPlugin::sendMidiAllNotesOffToCallback()
 // -------------------------------------------------------------------
 // Post-poned events
 
-void CarlaPlugin::postponeRtEvent(const PluginPostRtEventType type, const int32_t value1, const int32_t value2, const float value3)
-{
-    PluginPostRtEvent event;
-    event.type   = type;
-    event.value1 = value1;
-    event.value2 = value2;
-    event.value3 = value3;
-
-    pData->postRtEvents.appendRT(event);
-}
-
 void CarlaPlugin::postRtEventsRun()
 {
     const CarlaMutex::ScopedLocker sl(pData->postRtEvents.mutex);

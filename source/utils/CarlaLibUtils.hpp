@@ -76,7 +76,7 @@ const char* lib_error(const char* const filename)
     CARLA_ASSERT(filename != nullptr);
 
 #ifdef CARLA_OS_WIN
-    static char libError[2048];
+    static char libError[2048+1];
     //carla_fill<char>(libError, 2048, '\0');
 
     LPVOID winErrorString;

@@ -49,7 +49,8 @@ public:
 
     explicit CarlaString(const int value)
     {
-        char strBuf[0xff] = { '\0' };
+        char strBuf[0xff+1];
+        carla_fill<char>(strBuf, 0xff+1, '\0');
         std::snprintf(strBuf, 0xff, "%d", value);
 
         _init();
@@ -58,7 +59,8 @@ public:
 
     explicit CarlaString(const unsigned int value, const bool hexadecimal = false)
     {
-        char strBuf[0xff] = { '\0' };
+        char strBuf[0xff+1];
+        carla_fill<char>(strBuf, 0xff+1, '\0');
         std::snprintf(strBuf, 0xff, hexadecimal ? "0x%x" : "%u", value);
 
         _init();
@@ -67,7 +69,8 @@ public:
 
     explicit CarlaString(const long int value)
     {
-        char strBuf[0xff] = { '\0' };
+        char strBuf[0xff+1];
+        carla_fill<char>(strBuf, 0xff+1, '\0');
         std::snprintf(strBuf, 0xff, "%ld", value);
 
         _init();
@@ -76,7 +79,8 @@ public:
 
     explicit CarlaString(const unsigned long int value, const bool hexadecimal = false)
     {
-        char strBuf[0xff] = { '\0' };
+        char strBuf[0xff+1];
+        carla_fill<char>(strBuf, 0xff+1, '\0');
         std::snprintf(strBuf, 0xff, hexadecimal ? "0x%lx" : "%lu", value);
 
         _init();
@@ -85,7 +89,8 @@ public:
 
     explicit CarlaString(const float value)
     {
-        char strBuf[0xff] = { '\0' };
+        char strBuf[0xff+1];
+        carla_fill<char>(strBuf, 0xff+1, '\0');
         std::snprintf(strBuf, 0xff, "%f", value);
 
         _init();
@@ -94,7 +99,8 @@ public:
 
     explicit CarlaString(const double value)
     {
-        char strBuf[0xff] = { '\0' };
+        char strBuf[0xff+1];
+        carla_fill<char>(strBuf, 0xff+1, '\0');
         std::snprintf(strBuf, 0xff, "%g", value);
 
         _init();

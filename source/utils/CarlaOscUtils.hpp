@@ -60,7 +60,7 @@ struct CarlaOscData {
         }
     }
 
-    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(CarlaOscData)
+    CARLA_DECLARE_NON_COPY_STRUCT(CarlaOscData)
 };
 
 // -------------------------------------------------

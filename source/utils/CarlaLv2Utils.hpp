@@ -404,7 +404,7 @@ public:
     }
 
 private:
-    bool needInit;
+    bool fNeedsInit;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Lv2WorldClass)
 };

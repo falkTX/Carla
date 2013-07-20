@@ -43,6 +43,42 @@ const unsigned int PLUGIN_HINT_CAN_RUN_RACK = 0x4;
 
 // -----------------------------------------------------------------------
 
+/*!
+ * Post-RT event type.\n
+ * These are events postponned from within the process function,
+ *
+ * During process, we cannot lock, allocate memory or do UI stuff,\n
+ * so events have to be postponned to be executed later, on a separate thread.
+ */
+enum PluginPostRtEventType {
+    kPluginPostRtEventNull,
+    kPluginPostRtEventDebug,
+    kPluginPostRtEventParameterChange,   // param, SP*, value (SP: if 1, don't report change to Callback and OSC)
+    kPluginPostRtEventProgramChange,     // index
+    kPluginPostRtEventMidiProgramChange, // index
+    kPluginPostRtEventNoteOn,            // channel, note, velo
+    kPluginPostRtEventNoteOff            // channel, note
+};
+
+/*!
+ * A Post-RT event.
+ * \see PluginPostRtEventType
+ */
+struct PluginPostRtEvent {
+    PluginPostRtEventType type;
+    int32_t value1;
+    int32_t value2;
+    float   value3;
+
+    PluginPostRtEvent() noexcept
+        : type(kPluginPostRtEventNull),
+          value1(-1),
+          value2(-1),
+          value3(0.0f) {}
+};
+
+// -----------------------------------------------------------------------
+
 struct PluginAudioPort {
     uint32_t rindex;
     CarlaEngineAudioPort* port;
@@ -56,7 +92,7 @@ struct PluginAudioPort {
         CARLA_ASSERT(port == nullptr);
     }
 
-    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(PluginAudioPort)
+    CARLA_DECLARE_NON_COPY_STRUCT(PluginAudioPort)
 };
 
 struct PluginAudioData {
@@ -115,7 +151,7 @@ struct PluginAudioData {
         }
     }
 
-    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(PluginAudioData)
+    CARLA_DECLARE_NON_COPY_STRUCT(PluginAudioData)
 };
 
 // -----------------------------------------------------------------------
@@ -135,7 +171,7 @@ struct PluginCVPort {
         CARLA_ASSERT(port == nullptr);
     }
 
-    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(PluginCVPort)
+    CARLA_DECLARE_NON_COPY_STRUCT(PluginCVPort)
 };
 
 struct PluginCVData {
@@ -194,7 +230,7 @@ struct PluginCVData {
         }
     }
 
-    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(PluginCVData)
+    CARLA_DECLARE_NON_COPY_STRUCT(PluginCVData)
 };
 
 // -----------------------------------------------------------------------
@@ -237,7 +273,7 @@ struct PluginEventData {
             portOut->initBuffer(engine);
     }
 
-    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(PluginEventData)
+    CARLA_DECLARE_NON_COPY_STRUCT(PluginEventData)
 };
 
 // -----------------------------------------------------------------------
@@ -297,7 +333,7 @@ struct PluginParameterData {
         return ranges[parameterId].fixValue(value);
     }
 
-    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(PluginParameterData)
+    CARLA_DECLARE_NON_COPY_STRUCT(PluginParameterData)
 };
 
 // -----------------------------------------------------------------------
@@ -359,7 +395,7 @@ struct PluginProgramData {
         current = -1;
     }
 
-    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(PluginProgramData)
+    CARLA_DECLARE_NON_COPY_STRUCT(PluginProgramData)
 };
 
 // -----------------------------------------------------------------------
@@ -422,28 +458,7 @@ struct PluginMidiProgramData {
         return data[current];
     }
 
-    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(PluginMidiProgramData)
-};
-
-// -----------------------------------------------------------------------
-
-struct PluginPostRtEvent {
-    PluginPostRtEventType type;
-    int32_t value1;
-    int32_t value2;
-    float   value3;
-
-    PluginPostRtEvent()
-        : type(kPluginPostRtEventNull),
-          value1(-1),
-          value2(-1),
-          value3(0.0f) {}
-
-#ifndef DEBUG
-    CARLA_DECLARE_NON_COPY_STRUCT(PluginPostRtEvent)
-#else
-    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(PluginPostRtEvent)
-#endif
+    CARLA_DECLARE_NON_COPY_STRUCT(PluginMidiProgramData)
 };
 
 // -----------------------------------------------------------------------
@@ -458,11 +473,7 @@ struct ExternalMidiNote {
           note(0),
           velo(0) {}
 
-#ifndef DEBUG
     CARLA_DECLARE_NON_COPY_STRUCT(ExternalMidiNote)
-#else
-    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(ExternalMidiNote)
-#endif
 };
 
 // -----------------------------------------------------------------------
@@ -764,20 +775,36 @@ struct CarlaPluginProtectedData {
     }
 
     // -------------------------------------------------------------------
+    // Post-poned events
+
+    void postponeRtEvent(const PluginPostRtEventType type, const int32_t value1, const int32_t value2, const float value3)
+    {
+        PluginPostRtEvent event;
+        event.type   = type;
+        event.value1 = value1;
+        event.value2 = value2;
+        event.value3 = value3;
+
+        postRtEvents.appendRT(event);
+    }
+
+    // -------------------------------------------------------------------
     // Library functions, see CarlaPlugin.cpp
 
-    bool libOpen(const char* const filename);
-    bool uiLibOpen(const char* const filename);
-    bool libClose();
-    bool uiLibClose();
+    bool  libOpen(const char* const filename);
+    bool  libClose();
     void* libSymbol(const char* const symbol);
+
+    bool  uiLibOpen(const char* const filename);
+    bool  uiLibClose();
     void* uiLibSymbol(const char* const symbol);
+
     const char* libError(const char* const filename);
 
     // -------------------------------------------------------------------
     // Settings functions, see CarlaPlugin.cpp
 
-    void saveSetting(const unsigned int option, const bool yesNo);
+    void         saveSetting(const unsigned int option, const bool yesNo);
     unsigned int loadSettings(const unsigned int options, const unsigned int availOptions);
 
     // -------------------------------------------------------------------

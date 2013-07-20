@@ -18,9 +18,17 @@
 #undef NDEBUG
 #define DEBUG
 
-// includes
+// includes (part1)
 #include "CarlaDefines.hpp"
 #include "CarlaMIDI.h"
+
+// Carla common utils
+#include "CarlaUtils.hpp"
+
+// Carla misc utils imported from Juce source code
+#include "CarlaJuceUtils.hpp"
+
+// includes (part2)
 #include "ladspa_rdf.hpp"
 #include "lv2_rdf.hpp"
 
@@ -29,12 +37,6 @@
 
 // Carla Native Plugin API
 #include "CarlaNative.h"
-
-// Carla common utils
-#include "CarlaUtils.hpp"
-
-// Carla misc utils imported from Juce source code
-#include "CarlaJuceUtils.hpp"
 
 // Carla Native Plugin API (C++)
 #include "CarlaNative.hpp"
@@ -45,7 +47,9 @@
 // Carla Plugin API
 #include "CarlaPlugin.hpp"
 
-// #include "CarlaEngine.hpp"
+// Carla Engine API
+#include "CarlaEngine.hpp"
+
 //#include "standalone/CarlaStandalone.cpp"
 
 // #include "CarlaMutex.hpp"
@@ -74,7 +78,6 @@ int main()
         LADSPA_RDF_ScalePoint a;
         LADSPA_RDF_Port b;
         LADSPA_RDF_Descriptor c;
-        a=a;b=b;c=c;
     }
 
     // lv2 rdf
@@ -88,7 +91,6 @@ int main()
         LV2_RDF_Feature g;
         LV2_RDF_UI h;
         LV2_RDF_Descriptor i;
-        a=a;b=b;c=c;d=d;e=e;f=f;g=g;h=h;i=i;
     }
 
     // Carla Backend API

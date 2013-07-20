@@ -36,26 +36,12 @@ CARLA_BACKEND_START_NAMESPACE
  * @defgroup CarlaPluginAPI Carla Plugin API
  *
  * The Carla Plugin API.
- *
  * @{
  */
 
-/*!
- * Post-Rt event type.\n
- * These are events postponned from within the process function,
- *
- * During process, we cannot lock, allocate memory or do UI stuff,\n
- * so events have to be postponned to be executed later, on a separate thread.
- */
-enum PluginPostRtEventType {
-    kPluginPostRtEventNull,
-    kPluginPostRtEventDebug,
-    kPluginPostRtEventParameterChange,   // param, SP*, value (SP: if 1, don't report change to Callback and OSC)
-    kPluginPostRtEventProgramChange,     // index
-    kPluginPostRtEventMidiProgramChange, // index
-    kPluginPostRtEventNoteOn,            // channel, note, velo
-    kPluginPostRtEventNoteOff            // channel, note
-};
+class CarlaEngine;
+class CarlaEngineClient;
+class CarlaEngineAudioPort;
 
 /*!
  * Save state data.
@@ -771,13 +757,6 @@ public:
     // Post-poned events
 
     /*!
-     * Post pone an event of type \a type.\n
-     * The event will be processed later, but as soon as possible.
-     * \note RT call
-     */
-    void postponeRtEvent(const PluginPostRtEventType type, const int32_t value1, const int32_t value2, const float value3);
-
-    /*!
      * Process all the post-poned events.
      * This function must be called from the main thread (ie, idleGui()) if PLUGIN_USES_SINGLE_THREAD is set.
      */
@@ -812,15 +791,40 @@ public:
     virtual void uiNoteOff(const uint8_t channel, const uint8_t note);
 
     // -------------------------------------------------------------------
+    // Helper functions
+
+    /*!
+     * Check if the plugin can run in rack mode.
+     */
+    bool canRunInRack() const noexcept;
+
+    /*!
+     * Get the plugin's engine, as passed in the constructor.
+     */
+    CarlaEngine* getEngine() const noexcept;
+
+    /*!
+     * Get the plugin's engine client.
+     */
+    CarlaEngineClient* getEngineClient() const noexcept;
+
+    /*!
+     * Get a plugin's audio input port.
+     */
+    CarlaEngineAudioPort* getAudioInPort(const uint32_t index) const noexcept;
+
+    /*!
+     * Get a plugin's audio output port.
+     */
+    CarlaEngineAudioPort* getAudioOutPort(const uint32_t index) const noexcept;
+
+    // -------------------------------------------------------------------
     // Plugin initializers
 
     /*!
      * Handy function used and required by CarlaEngine::clonePlugin().
      */
-    virtual const void* getExtraStuff() const noexcept
-    {
-        return nullptr;
-    }
+    virtual const void* getExtraStuff() const noexcept;
 
 #ifndef DOXYGEN
     struct Initializer {
@@ -874,13 +878,29 @@ protected:
      */
     bool fEnabled;
 
-    CarlaString fName;     //!< Plugin name
-    CarlaString fFilename; //!< Plugin filename, if applicable
-    CarlaString fIconName; //!< Icon name
+    /*!
+     * Plugin name
+     * \see getName(), getRealName() and setName()
+     */
+    CarlaString fName;
 
-    CarlaPluginProtectedData* const pData; //!< Internal data, for CarlaPlugin subclasses only.
+    /*!
+     * Plugin filename, if applicable
+     * \see getFilename()
+     */
+    CarlaString fFilename;
+
+    /*!
+     * Icon name
+     * \see getIconName()
+     */
+    CarlaString fIconName;
+
+    /*!
+     * Internal data, for CarlaPlugin subclasses only.
+     */
+    CarlaPluginProtectedData* const pData;
     friend struct CarlaPluginProtectedData;
-    //friend class CarlaEngineBridge;
 
     // -------------------------------------------------------------------
     // Helper classes

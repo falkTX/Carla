@@ -18,6 +18,8 @@
 #ifndef LV2_RDF_HPP_INCLUDED
 #define LV2_RDF_HPP_INCLUDED
 
+#include "CarlaJuceUtils.hpp"
+
 #ifdef CARLA_PROPER_CPP11_SUPPORT
 # include <cstdint>
 #else
@@ -347,6 +349,8 @@ struct LV2_RDF_PortUnit {
             Symbol = nullptr;
         }
     }
+
+    CARLA_DECLARE_NON_COPY_STRUCT(LV2_RDF_PortUnit)
 };
 
 // Port Scale Point
@@ -366,6 +370,8 @@ struct LV2_RDF_PortScalePoint {
             Label = nullptr;
         }
     }
+
+    CARLA_DECLARE_NON_COPY_STRUCT(LV2_RDF_PortScalePoint)
 };
 
 // Port
@@ -410,6 +416,8 @@ struct LV2_RDF_Port {
             ScalePoints = nullptr;
         }
     }
+
+    CARLA_DECLARE_NON_COPY_STRUCT(LV2_RDF_Port)
 };
 
 // Preset
@@ -434,6 +442,8 @@ struct LV2_RDF_Preset {
             Label = nullptr;
         }
     }
+
+    CARLA_DECLARE_NON_COPY_STRUCT(LV2_RDF_Preset)
 };
 
 // Feature
@@ -453,6 +463,8 @@ struct LV2_RDF_Feature {
             URI = nullptr;
         }
     }
+
+    CARLA_DECLARE_NON_COPY_STRUCT(LV2_RDF_Feature)
 };
 
 // UI
@@ -506,6 +518,8 @@ struct LV2_RDF_UI {
             Extensions = nullptr;
         }
     }
+
+    CARLA_DECLARE_NON_COPY_STRUCT(LV2_RDF_UI)
 };
 
 // Plugin Descriptor
@@ -621,6 +635,8 @@ struct LV2_RDF_Descriptor {
             UIs = nullptr;
         }
     }
+
+    CARLA_DECLARE_NON_COPY_STRUCT(LV2_RDF_Descriptor)
 };
 
 #endif // LV2_RDF_HPP_INCLUDED
