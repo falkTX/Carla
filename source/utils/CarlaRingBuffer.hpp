@@ -23,7 +23,7 @@
 
 #define RING_BUFFER_SIZE 2048
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // RingBuffer struct
 
 struct RingBuffer {
@@ -34,7 +34,7 @@ struct RingBuffer {
     CARLA_DECLARE_NON_COPY_STRUCT(RingBuffer)
 };
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // RingBufferControl class
 
 class RingBufferControl

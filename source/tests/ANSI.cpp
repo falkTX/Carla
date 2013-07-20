@@ -53,31 +53,33 @@
 // Carla Standalone API
 #include "CarlaStandalone.hpp"
 
-// // Carla Plugin Thread
-// #include "CarlaPluginThread.hpp"
-//
-// #include "CarlaBackendUtils.hpp"
-// #include "CarlaOscUtils.hpp"
-// #include "CarlaMutex.hpp"
-// #include "RtList.hpp"
-//
-// // Carla Plugin
+// Carla Plugin Thread
+#include "CarlaPluginThread.hpp"
+
+// Carla Backend utils
+#include "CarlaBackendUtils.hpp"
+
+// Carla OSC utils
+#include "CarlaOscUtils.hpp"
+
+// Carla Mutex
+#include "CarlaMutex.hpp"
+
+// RT List
+#include "RtList.hpp"
+
+// Carla Plugin
 // #include "CarlaPluginInternal.hpp"
 
 //#include "standalone/CarlaStandalone.cpp"
 
-// #include "CarlaMutex.hpp"
-
-// #include "CarlaBackendUtils.hpp"
 // #include "CarlaBridgeUtils.hpp"
 // #include "CarlaLadspaUtils.hpp"
 // #include "CarlaLibUtils.hpp"
 // #include "CarlaLv2Utils.hpp"
-// #include "CarlaOscUtils.hpp"
 // #include "CarlaShmUtils.hpp"
 // #include "CarlaStateUtils.hpp"
 // #include "CarlaVstUtils.hpp"
-// #include "RtList.hpp"
 
 int safe_assert_return_test(bool test)
 {
@@ -432,6 +434,40 @@ int main()
 
         ScopedPointer<PluginDescriptorClassTest> c;
         c = new PluginDescriptorClassTest(&a);
+    }
+
+    // Carla Backend utils
+    {
+        class TestClass { public: int i; char pad[50]; };
+
+        TestClass a, b, c;
+        uintptr_t ad = CarlaBackend::getAddressFromPointer(&a);
+        uintptr_t bd = CarlaBackend::getAddressFromPointer(&b);
+        uintptr_t cd = CarlaBackend::getAddressFromPointer(&c);
+        assert(bd > ad);
+        assert(cd > bd);
+
+        TestClass* ap = CarlaBackend::getPointerFromAddress<TestClass>(ad);
+        TestClass* bp = CarlaBackend::getPointerFromAddress<TestClass>(bd);
+        TestClass* cp = CarlaBackend::getPointerFromAddress<TestClass>(cd);
+        assert(ap == &a);
+        assert(bp == &b);
+        assert(cp == &c);
+
+        ap->i = 4;
+        bp->i = 5;
+        cp->i = 6;
+        assert(a.i == 4);
+        assert(b.i == 5);
+        assert(c.i == 6);
+    }
+
+    // Carla Mutex
+    {
+        CarlaMutex m;
+        m.tryLock();
+        m.unlock();
+        const CarlaMutex::ScopedLocker sl(m);
     }
 
     return 0;

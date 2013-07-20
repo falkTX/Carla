@@ -21,7 +21,7 @@
 
 #include "CarlaRingBuffer.hpp"
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 enum PluginBridgeInfoType {
     kPluginBridgeAudioCount = 0,
@@ -68,7 +68,7 @@ const char* const CARLA_BRIDGE_MSG_SET_CUSTOM = "CarlaBridgeSetCustom"; //!< Hos
 //If \a type is 'chunk' or 'binary' \a rvalue refers to chunk file.
 #endif
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 struct BridgeShmControl {
     // 32 and 64-bit binaries align semaphores differently.
@@ -86,7 +86,7 @@ struct BridgeShmControl {
     CARLA_DECLARE_NON_COPY_STRUCT(BridgeShmControl)
 };
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 static inline
 const char* PluginBridgeInfoType2str(const PluginBridgeInfoType type)
@@ -169,7 +169,5 @@ const char* PluginBridgeOpcode2str(const PluginBridgeOpcode opcode)
     carla_stderr("CarlaBackend::PluginBridgeOpcode2str(%i) - invalid opcode", opcode);
     return nullptr;
 }
-
-// -------------------------------------------------
 
 #endif // __CARLA_BRIDGE_UTILS_HPP__

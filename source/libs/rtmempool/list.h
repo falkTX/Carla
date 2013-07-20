@@ -21,8 +21,8 @@
  *
  *****************************************************************************/
 
-#ifndef __LINUX_LIST_H__
-#define __LINUX_LIST_H__
+#ifndef LINUX_LIST_H_INCLUDED
+#define LINUX_LIST_H_INCLUDED
 
 /* This file is from Linux Kernel (include/linux/list.h)
  * and modified by removing hardware prefetching of list items
@@ -300,7 +300,7 @@ static inline void list_splice_tail_init(struct list_head *list, struct list_hea
  * @type:   the type of the struct this is embedded in.
  * @member: the name of the list_struct within the struct.
  */
-#if defined(__GNUC__) && ! defined(QTCREATOR_TEST)
+#if defined(__GNUC__) && ! (defined(BUILD_ANSI_TEST) || defined(QTCREATOR_TEST))
 # define list_entry(ptr, type, member) \
     container_of(ptr, type, member)
 #else
@@ -452,4 +452,4 @@ static inline void list_splice_tail_init(struct list_head *list, struct list_hea
     &pos->member != (head);          \
     pos = n, n = list_entry(n->member.prev, typeof(*n), member))
 
-#endif // __LINUX_LIST_H__
+#endif // LINUX_LIST_H_INCLUDED

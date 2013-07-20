@@ -64,7 +64,7 @@ CarlaPluginThread::~CarlaPluginThread()
     }
 }
 
-void CarlaPluginThread::setMode(const CarlaPluginThread::Mode mode)
+void CarlaPluginThread::setMode(const CarlaPluginThread::Mode mode) noexcept
 {
     fMode = mode;
 }

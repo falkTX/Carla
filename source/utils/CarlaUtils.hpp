@@ -131,7 +131,7 @@ void carla_assert_int2(const char* const assertion, const char* const file, cons
 static inline
 void carla_sleep(const unsigned int secs)
 {
-    CARLA_ASSERT(secs > 0);
+    CARLA_SAFE_ASSERT_RETURN(secs > 0,);
 
 #ifdef CARLA_OS_WIN
     Sleep(secs * 1000);
@@ -143,7 +143,7 @@ void carla_sleep(const unsigned int secs)
 static inline
 void carla_msleep(const unsigned int msecs)
 {
-    CARLA_ASSERT(msecs > 0);
+    CARLA_SAFE_ASSERT_RETURN(msecs > 0,);
 
 #ifdef CARLA_OS_WIN
     Sleep(msecs);
@@ -158,8 +158,8 @@ void carla_msleep(const unsigned int msecs)
 static inline
 void carla_setenv(const char* const key, const char* const value)
 {
-    CARLA_ASSERT(key != nullptr);
-    CARLA_ASSERT(value != nullptr);
+    CARLA_SAFE_ASSERT_RETURN(key != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(value != nullptr,);
 
 #ifdef CARLA_OS_WIN
     SetEnvironmentVariableA(key, value);
@@ -174,7 +174,7 @@ void carla_setenv(const char* const key, const char* const value)
 static inline
 void carla_setprocname(const char* const name)
 {
-    CARLA_ASSERT(name != nullptr);
+    CARLA_SAFE_ASSERT_RETURN(name != nullptr,);
 
 #if defined(CARLA_OS_HAIKU)
     if ((thread_id this_thread = find_thread(nullptr)) != B_NAME_NOT_FOUND)
@@ -199,7 +199,7 @@ void carla_setprocname(const char* const name)
 static inline
 const char* carla_strdup(const char* const strBuf)
 {
-    CARLA_ASSERT(strBuf != nullptr);
+    CARLA_SAFE_ASSERT(strBuf != nullptr);
 
     const size_t bufferLen = (strBuf != nullptr) ? std::strlen(strBuf) : 0;
     char* const  buffer    = new char[bufferLen+1];
@@ -241,7 +241,7 @@ template<typename T>
 static inline
 const T& carla_fixValue(const T& min, const T& max, const T& value)
 {
-    CARLA_ASSERT(max > min);
+    CARLA_SAFE_ASSERT_RETURN(max > min, max);
 
     if (value <= min)
         return min;
@@ -254,12 +254,9 @@ template<typename T>
 static inline
 void carla_add(T* dataDst, T* dataSrc, const size_t size)
 {
-    CARLA_ASSERT(dataDst != nullptr);
-    CARLA_ASSERT(dataSrc != nullptr);
-    CARLA_ASSERT(size != 0);
-
-    if (dataDst == nullptr || dataSrc == nullptr || size == 0)
-        return;
+    CARLA_SAFE_ASSERT_RETURN(dataDst != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(dataSrc != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(size != 0,);
 
     for (size_t i=0; i < size; ++i)
         *dataDst++ += *dataSrc++;
@@ -269,12 +266,9 @@ template<typename T>
 static inline
 void carla_add(T* dataDst, const T* dataSrc, const size_t size)
 {
-    CARLA_ASSERT(dataDst != nullptr);
-    CARLA_ASSERT(dataSrc != nullptr);
-    CARLA_ASSERT(size != 0);
-
-    if (dataDst == nullptr || dataSrc == nullptr || size == 0)
-        return;
+    CARLA_SAFE_ASSERT_RETURN(dataDst != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(dataSrc != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(size != 0,);
 
     for (size_t i=0; i < size; ++i)
         *dataDst++ += *dataSrc++;
@@ -284,12 +278,9 @@ template<typename T>
 static inline
 void carla_copy(T* dataDst, T* dataSrc, const size_t size)
 {
-    CARLA_ASSERT(dataDst != nullptr);
-    CARLA_ASSERT(dataSrc != nullptr);
-    CARLA_ASSERT(size != 0);
-
-    if (dataDst == nullptr || dataSrc == nullptr || size == 0)
-        return;
+    CARLA_SAFE_ASSERT_RETURN(dataDst != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(dataSrc != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(size != 0,);
 
     for (size_t i=0; i < size; ++i)
         *dataDst++ = *dataSrc++;
@@ -299,12 +290,9 @@ template<typename T>
 static inline
 void carla_copy(T* dataDst, const T* dataSrc, const size_t size)
 {
-    CARLA_ASSERT(dataDst != nullptr);
-    CARLA_ASSERT(dataSrc != nullptr);
-    CARLA_ASSERT(size != 0);
-
-    if (dataDst == nullptr || dataSrc == nullptr || size == 0)
-        return;
+    CARLA_SAFE_ASSERT_RETURN(dataDst != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(dataSrc != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(size != 0,);
 
     for (size_t i=0; i < size; ++i)
         *dataDst++ = *dataSrc++;
@@ -314,11 +302,8 @@ template<typename T>
 static inline
 void carla_fill(T* data, const size_t size, const T v)
 {
-    CARLA_ASSERT(data != nullptr);
-    CARLA_ASSERT(size != 0);
-
-    if (data == nullptr || size == 0)
-        return;
+    CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(size != 0,);
 
     for (size_t i=0; i < size; ++i)
         *data++ = v;
@@ -339,9 +324,9 @@ void carla_addFloat(float* const dataDst, float* const dataSrc, const size_t siz
 static inline
 void carla_copyDouble(double* const dataDst, double* const dataSrc, const size_t size)
 {
-    CARLA_ASSERT(dataDst != nullptr);
-    CARLA_ASSERT(dataSrc != nullptr);
-    CARLA_ASSERT(size > 0);
+    CARLA_SAFE_ASSERT_RETURN(dataDst != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(dataSrc != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(size > 0,);
 
     std::memcpy(dataDst, dataSrc, size*sizeof(double));
 }
@@ -349,9 +334,9 @@ void carla_copyDouble(double* const dataDst, double* const dataSrc, const size_t
 static inline
 void carla_copyFloat(float* const dataDst, float* const dataSrc, const size_t size)
 {
-    CARLA_ASSERT(dataDst != nullptr);
-    CARLA_ASSERT(dataSrc != nullptr);
-    CARLA_ASSERT(size > 0);
+    CARLA_SAFE_ASSERT_RETURN(dataDst != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(dataSrc != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(size > 0,);
 
     std::memcpy(dataDst, dataSrc, size*sizeof(float));
 }
@@ -388,11 +373,8 @@ inline float
 static inline
 void carla_zeroMem(void* const memory, const size_t numBytes)
 {
-    CARLA_ASSERT(memory != nullptr);
-    CARLA_ASSERT(numBytes != 0);
-
-    if (memory == nullptr || numBytes == 0)
-        return;
+    CARLA_SAFE_ASSERT_RETURN(memory != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(numBytes != 0,);
 
     std::memset(memory, 0, numBytes);
 }
@@ -408,8 +390,8 @@ template <typename T>
 static inline
 void carla_zeroStruct(T* const structure, const size_t count)
 {
-    CARLA_ASSERT(structure != nullptr);
-    CARLA_ASSERT(count >= 1);
+    CARLA_SAFE_ASSERT_RETURN(structure != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(count != 0,);
 
     std::memset(structure, 0, sizeof(T)*count);
 }

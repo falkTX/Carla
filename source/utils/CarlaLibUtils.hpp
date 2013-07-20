@@ -24,7 +24,7 @@
 # include <dlfcn.h>
 #endif
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // library related calls
 
 static inline
@@ -94,7 +94,5 @@ const char* lib_error(const char* const filename)
     (void)filename;
 #endif
 }
-
-// -------------------------------------------------
 
 #endif // __CARLA_LIB_UTILS_HPP__

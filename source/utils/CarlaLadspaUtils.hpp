@@ -25,7 +25,7 @@
 
 #include <cmath>
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // Copy RDF object
 
 static inline
@@ -87,7 +87,7 @@ const LADSPA_RDF_Descriptor* ladspa_rdf_dup(const LADSPA_RDF_Descriptor* const o
     return newDescriptor;
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // Check if 2 ports match types
 
 static inline
@@ -104,7 +104,7 @@ bool is_ladspa_port_good(const LADSPA_PortDescriptor port1, const LADSPA_PortDes
     return true;
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // Check if rdf data matches descriptor
 
 static inline
@@ -137,7 +137,7 @@ bool is_ladspa_rdf_descriptor_valid(const LADSPA_RDF_Descriptor* const rdfDescri
     return true;
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // Get default control port value
 
 static inline
@@ -204,7 +204,5 @@ LADSPA_Data get_default_ladspa_port_value(const LADSPA_PortRangeHintDescriptor h
 
     return def;
 }
-
-// -------------------------------------------------
 
 #endif // __CARLA_LADSPA_UTILS_HPP__

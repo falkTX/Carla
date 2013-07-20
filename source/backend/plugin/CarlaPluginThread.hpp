@@ -12,11 +12,11 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#ifndef __CARLA_PLUGIN_THREAD_HPP__
-#define __CARLA_PLUGIN_THREAD_HPP__
+#ifndef CARLA_PLUGIN_THREAD_HPP_INCLUDED
+#define CARLA_PLUGIN_THREAD_HPP_INCLUDED
 
 #include "CarlaBackend.hpp"
 #include "CarlaString.hpp"
@@ -41,15 +41,15 @@ public:
     CarlaPluginThread(CarlaEngine* const engine, CarlaPlugin* const plugin, const Mode mode = PLUGIN_THREAD_NULL);
     ~CarlaPluginThread();
 
-    void setMode(const CarlaPluginThread::Mode mode);
+    void setMode(const CarlaPluginThread::Mode mode) noexcept;
     void setOscData(const char* const binary, const char* const label, const char* const extra1="", const char* const extra2="");
 
 protected:
     void run();
 
 private:
-    CarlaEngine* const kEngine;
-    CarlaPlugin* const kPlugin;
+    CarlaEngine* const fEngine;
+    CarlaPlugin* const fPlugin;
 
     Mode        fMode;
     CarlaString fBinary;
@@ -58,9 +58,10 @@ private:
     CarlaString fExtra2;
     QProcess*   fProcess;
 
+    CARLA_PREVENT_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginThread)
 };
 
 CARLA_BACKEND_END_NAMESPACE
 
-#endif // __CARLA_PLUGIN_THREAD_HPP__
+#endif // CARLA_PLUGIN_THREAD_HPP_INCLUDED

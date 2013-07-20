@@ -12,11 +12,11 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#ifndef __RT_LIST_HPP__
-#define __RT_LIST_HPP__
+#ifndef RT_LIST_HPP_INCLUDED
+#define RT_LIST_HPP_INCLUDED
 
 #include "CarlaUtils.hpp"
 
@@ -137,7 +137,7 @@ public:
     {
         if (Data* const data = _allocate())
         {
-            std::memcpy(&data->value, &value, sizeof(T));
+            data->value = value;
             list_add_tail(&data->siblings, &fQueue);
             ++fCount;
             return true;
@@ -150,7 +150,7 @@ public:
     {
         if (Data* const data = _allocate())
         {
-            std::memcpy(&data->value, &value, sizeof(T));
+            data->value = value;
             list_add_tail(&data->siblings, it.fEntry->next);
             ++fCount;
             return true;
@@ -163,7 +163,7 @@ public:
     {
         if (Data* const data = _allocate())
         {
-            std::memcpy(&data->value, &value, sizeof(T));
+            data->value = value;
             list_add(&data->siblings, &fQueue);
             ++fCount;
             return true;
@@ -176,7 +176,7 @@ public:
     {
         if (Data* const data = _allocate())
         {
-            std::memcpy(&data->value, &value, sizeof(T));
+            data->value = value;
             list_add(&data->siblings, it.fEntry->prev);
             ++fCount;
             return true;
@@ -461,7 +461,7 @@ public:
     {
         if (typename List<T>::Data* const data = _allocate_sleepy())
         {
-            std::memcpy(&data->value, &value, sizeof(T));
+            data->value = value;
             list_add_tail(&data->siblings, &this->fQueue);
             ++this->fCount;
         }
@@ -471,7 +471,7 @@ public:
     {
         if (typename List<T>::Data* const data = _allocate_sleepy())
         {
-            std::memcpy(&data->value, &value, sizeof(T));
+            data->value = value;
             list_add(&data->siblings, &this->fQueue);
             ++this->fCount;
         }
@@ -584,6 +584,4 @@ private:
     LIST_DECLARATIONS(NonRtListNew)
 };
 
-// -----------------------------------------------------------------------
-
-#endif // __RT_LIST_HPP__
+#endif // RT_LIST_HPP_INCLUDED

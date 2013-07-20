@@ -222,10 +222,10 @@ struct CarlaEngineProtectedData {
 #ifndef BUILD_BRIDGE
     static void registerEnginePlugin(CarlaEngine* const engine, const unsigned int id, CarlaPlugin* const plugin)
     {
-        CARLA_ASSERT(id == engine->kData->curPluginCount);
+        CARLA_ASSERT(id == engine->pData->curPluginCount);
 
-        if (id == engine->kData->curPluginCount)
-            engine->kData->plugins[id].plugin = plugin;
+        if (id == engine->pData->curPluginCount)
+            engine->pData->plugins[id].plugin = plugin;
     }
 #endif
 
@@ -316,36 +316,36 @@ struct CarlaEngineProtectedData {
     {
     public:
         ScopedPluginAction(CarlaEngineProtectedData* const data, const EnginePostAction action, const unsigned int pluginId, const unsigned int value, const bool lockWait)
-            : kData(data)
+            : fData(data)
         {
-            kData->nextAction.mutex.lock();
+            fData->nextAction.mutex.lock();
 
-            CARLA_ASSERT(kData->nextAction.opcode == kEnginePostActionNull);
+            CARLA_ASSERT(fData->nextAction.opcode == kEnginePostActionNull);
 
-            kData->nextAction.opcode   = action;
-            kData->nextAction.pluginId = pluginId;
-            kData->nextAction.value    = value;
+            fData->nextAction.opcode   = action;
+            fData->nextAction.pluginId = pluginId;
+            fData->nextAction.value    = value;
 
             if (lockWait)
             {
                 // block wait for unlock on proccessing side
                 carla_stdout("ScopedPluginAction(%i) - blocking START", pluginId);
-                kData->nextAction.mutex.lock();
+                fData->nextAction.mutex.lock();
                 carla_stdout("ScopedPluginAction(%i) - blocking DONE", pluginId);
             }
             else
             {
-                kData->doNextPluginAction(false);
+                fData->doNextPluginAction(false);
             }
         }
 
         ~ScopedPluginAction()
         {
-            kData->nextAction.mutex.unlock();
+            fData->nextAction.mutex.unlock();
         }
 
     private:
-        CarlaEngineProtectedData* const kData;
+        CarlaEngineProtectedData* const fData;
     };
 };
 

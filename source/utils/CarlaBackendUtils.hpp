@@ -12,21 +12,21 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#ifndef __CARLA_BACKEND_UTILS_HPP__
-#define __CARLA_BACKEND_UTILS_HPP__
+#ifndef CARLA_BACKEND_UTILS_HPP_INCLUDED
+#define CARLA_BACKEND_UTILS_HPP_INCLUDED
 
 #include "CarlaBackend.hpp"
 #include "CarlaString.hpp"
 
 CARLA_BACKEND_START_NAMESPACE
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 static inline
-const char* PluginOption2Str(const unsigned int& option)
+const char* PluginOption2Str(const unsigned int option)
 {
     switch (option)
     {
@@ -54,10 +54,8 @@ const char* PluginOption2Str(const unsigned int& option)
     return nullptr;
 }
 
-// -------------------------------------------------
-
 static inline
-const char* BinaryType2Str(const BinaryType& type)
+const char* BinaryType2Str(const BinaryType type)
 {
     switch (type)
     {
@@ -80,7 +78,7 @@ const char* BinaryType2Str(const BinaryType& type)
 }
 
 static inline
-const char* PluginType2Str(const PluginType& type)
+const char* PluginType2Str(const PluginType type)
 {
     switch (type)
     {
@@ -111,7 +109,7 @@ const char* PluginType2Str(const PluginType& type)
 }
 
 static inline
-const char* PluginCategory2Str(const PluginCategory& category)
+const char* PluginCategory2Str(const PluginCategory category)
 {
     switch (category)
     {
@@ -140,7 +138,7 @@ const char* PluginCategory2Str(const PluginCategory& category)
 }
 
 static inline
-const char* ParameterType2Str(const ParameterType& type)
+const char* ParameterType2Str(const ParameterType type)
 {
     switch (type)
     {
@@ -167,7 +165,7 @@ const char* ParameterType2Str(const ParameterType& type)
 }
 
 static inline
-const char* InternalParametersIndex2Str(const InternalParametersIndex& index)
+const char* InternalParametersIndex2Str(const InternalParametersIndex index)
 {
     switch (index)
     {
@@ -196,7 +194,7 @@ const char* InternalParametersIndex2Str(const InternalParametersIndex& index)
 }
 
 static inline
-const char* OptionsType2Str(const OptionsType& type)
+const char* OptionsType2Str(const OptionsType type)
 {
     switch (type)
     {
@@ -218,15 +216,15 @@ const char* OptionsType2Str(const OptionsType& type)
 #endif
     case OPTION_MAX_PARAMETERS:
         return "OPTION_MAX_PARAMETERS";
-    case OPTION_OSC_UI_TIMEOUT:
-        return "OPTION_OSC_UI_TIMEOUT";
+    case OPTION_UI_BRIDGES_TIMEOUT:
+        return "OPTION_UI_BRIDGES_TIMEOUT";
     case OPTION_JACK_AUTOCONNECT:
         return "OPTION_JACK_AUTOCONNECT";
-    case OPTION_JACK_TIMEMASTER:
-        return "OPTION_JACK_TIMEMASTER";
 #ifdef WANT_RTAUDIO
+    case OPTION_RTAUDIO_NUMBER_PERIODS:
+        return "OPTION_RTAUDIO_NUMBER_PERIODS";
     case OPTION_RTAUDIO_BUFFER_SIZE:
-        return "OPTION_RTAUDIO_BUFFER_SIZE:";
+        return "OPTION_RTAUDIO_BUFFER_SIZE";
     case OPTION_RTAUDIO_SAMPLE_RATE:
         return "OPTION_RTAUDIO_SAMPLE_RATE";
     case OPTION_RTAUDIO_DEVICE:
@@ -277,7 +275,7 @@ const char* OptionsType2Str(const OptionsType& type)
 }
 
 static inline
-const char* CallbackType2Str(const CallbackType& type)
+const char* CallbackType2Str(const CallbackType type)
 {
     switch (type)
     {
@@ -360,7 +358,7 @@ const char* CallbackType2Str(const CallbackType& type)
 }
 
 static inline
-const char* ProcessMode2Str(const ProcessMode& mode)
+const char* ProcessMode2Str(const ProcessMode mode)
 {
     switch (mode)
     {
@@ -381,7 +379,7 @@ const char* ProcessMode2Str(const ProcessMode& mode)
 }
 
 static inline
-const char* TransportMode2Str(const TransportMode& mode)
+const char* TransportMode2Str(const TransportMode mode)
 {
     switch (mode)
     {
@@ -399,30 +397,31 @@ const char* TransportMode2Str(const TransportMode& mode)
     return nullptr;
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 static inline
 uintptr_t getAddressFromPointer(void* ptr)
 {
     CARLA_ASSERT(ptr != nullptr);
 
-    uintptr_t* addr = (uintptr_t*)&ptr;
+    uintptr_t* const addr((uintptr_t*)&ptr);
     return *addr;
 }
 
+template<typename T>
 static inline
-void* getPointerFromAddress(uintptr_t& addr)
+T* getPointerFromAddress(uintptr_t& addr)
 {
     CARLA_ASSERT(addr != 0);
 
-    uintptr_t** const ptr = (uintptr_t**)&addr;
+    T** const ptr((T**)&addr);
     return *ptr;
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 static inline
-const char* getPluginTypeAsString(const PluginType& type)
+const char* getPluginTypeAsString(const PluginType type)
 {
     carla_debug("CarlaBackend::getPluginTypeAsString(%s)", PluginType2Str(type));
 
@@ -491,7 +490,7 @@ PluginType getPluginTypeFromString(const char* const stype)
     return PLUGIN_NONE;
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 static inline
 PluginCategory getPluginCategoryFromName(const char* const name)
@@ -577,4 +576,4 @@ PluginCategory getPluginCategoryFromName(const char* const name)
 
 CARLA_BACKEND_END_NAMESPACE
 
-#endif // __CARLA_BACKEND_UTILS_HPP__
+#endif // CARLA_BACKEND_UTILS_HPP_INCLUDED

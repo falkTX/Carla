@@ -21,6 +21,8 @@
 #include "CarlaLv2Utils.hpp"
 #include "CarlaMutex.hpp"
 
+// -----------------------------------------------------------------------
+
 class Lv2AtomQueue
 {
 public:

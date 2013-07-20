@@ -28,7 +28,7 @@ struct shm_t { HANDLE shm; HANDLE map; };
 typedef int shm_t;
 #endif
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // shared memory calls
 
 static inline

@@ -12,23 +12,17 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#ifndef __CARLA_MUTEX_HPP__
-#define __CARLA_MUTEX_HPP__
+#ifndef CARLA_MUTEX_HPP_INCLUDED
+#define CARLA_MUTEX_HPP_INCLUDED
 
 #include "CarlaJuceUtils.hpp"
 
-// #define CPP11_MUTEX
+#include <pthread.h>
 
-#ifdef CPP11_MUTEX
-# include <mutex>
-#else
-# include <pthread.h>
-#endif
-
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // CarlaMutex class
 
 class CarlaMutex
@@ -37,48 +31,32 @@ public:
     CarlaMutex()
         : fTryLockWasCalled(false)
     {
-#ifndef CPP11_MUTEX
         pthread_mutex_init(&pmutex, nullptr);
-#endif
     }
 
     ~CarlaMutex()
     {
-#ifndef CPP11_MUTEX
         pthread_mutex_destroy(&pmutex);
-#endif
     }
 
     void lock()
     {
-#ifdef CPP11_MUTEX
-        cmutex.lock();
-#else
         pthread_mutex_lock(&pmutex);
-#endif
     }
 
     bool tryLock()
     {
         fTryLockWasCalled = true;
 
-#ifdef CPP11_MUTEX
-        return cmutex.try_lock();
-#else
         return (pthread_mutex_trylock(&pmutex) == 0);
-#endif
     }
 
-    void unlock(const bool resetTryLock)
+    void unlock(/*const bool resetTryLock*/)
     {
-        if (resetTryLock)
-            fTryLockWasCalled = false;
+        //if (resetTryLock)
+        //    fTryLockWasCalled = false;
 
-#ifdef CPP11_MUTEX
-        cmutex.unlock();
-#else
         pthread_mutex_unlock(&pmutex);
-#endif
     }
 
     bool wasTryLockCalled()
@@ -110,17 +88,11 @@ public:
     };
 
 private:
-#ifdef CPP11_MUTEX
-    std::mutex cmutex;
-#else
     pthread_mutex_t pmutex;
-#endif
     bool fTryLockWasCalled;
 
     CARLA_PREVENT_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaMutex)
 };
 
-// -------------------------------------------------
-
-#endif // __CARLA_MUTEX_HPP__
+#endif // CARLA_MUTEX_HPP_INCLUDED

@@ -8,11 +8,11 @@ include ../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += -I../backend -I../includes -I../libs -I../theme -I../utils
+BUILD_CXX_FLAGS += -I../backend -I../backend/plugin -I../includes -I../libs -I../theme -I../utils
 BUILD_CXX_FLAGS += -DWANT_NATIVE -DWANT_LADSPA -DWANT_DSSI -DWANT_LV2 -DWANT_VST -DWANT_FLUIDSYNTH -DWANT_LINUXSAMPLER
 BUILD_CXX_FLAGS += -DWANT_RTAUDIO -DWANT_OPENGL -DWANT_AUDIOFILE -DWANT_MIDIFILE -DWANT_ZYNADDSUBFX -DWANT_ZYNADDSUBFX_UI
 # BUILD_CXX_FLAGS += -isystem ../libs/juce
-# BUILD_CXX_FLAGS += -isystem /usr/include/qt4
+BUILD_CXX_FLAGS += -isystem /usr/include/qt4
 # BUILD_CXX_FLAGS += -isystem ../backend/engine/rtaudio-4.0.11
 # BUILD_CXX_FLAGS += -I/opt/mingw32/include
 

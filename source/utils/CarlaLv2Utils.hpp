@@ -64,7 +64,7 @@
 #include <QtCore/QMap>
 #include <QtCore/QStringList>
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // Define namespaces and missing prefixes
 
 #define NS_dct  "http://purl.org/dc/terms/"
@@ -82,7 +82,7 @@
 #define LV2_UI__idle          LV2_UI_PREFIX "idle"
 #define LV2_UI__makeResident  LV2_UI_PREFIX "makeResident"
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // Non-void versions
 
 #define LV2NV_ATOM_CONTENTS(type, atom) \

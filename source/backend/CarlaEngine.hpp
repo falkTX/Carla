@@ -234,9 +234,9 @@ struct EngineOptions {
     unsigned int oscUiTimeout;
 
     bool jackAutoConnect;
-    bool jackTimeMaster;
 
 #ifdef WANT_RTAUDIO
+    unsigned int rtaudioNumberPeriods;
     unsigned int rtaudioBufferSize;
     unsigned int rtaudioSampleRate;
     CarlaString  rtaudioDevice;
@@ -285,9 +285,9 @@ struct EngineOptions {
           maxParameters(MAX_DEFAULT_PARAMETERS),
           oscUiTimeout(4000),
           jackAutoConnect(false),
-          jackTimeMaster(false),
 # ifdef WANT_RTAUDIO
-          rtaudioBufferSize(1024),
+          rtaudioNumberPeriods(0),
+          rtaudioBufferSize(512),
           rtaudioSampleRate(44100),
 # endif
           resourceDir() {}
@@ -1134,11 +1134,11 @@ protected:
     void offlineModeChanged(const bool isOffline);
 
     /*!
-     * Run any RT pending events.\n
+     * Run any pending RT events.\n
      * Must always be called at the end of audio processing.
      * \note RT call
      */
-    void runRtPendingEvents();
+    void runPendingRtEvents();
 
     /*!
      * Set a plugin (stereo) peak values.
