@@ -2,22 +2,22 @@
  * DISTRHO Plugin Toolkit (DPT)
  * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation.
+ * Permission to use, copy, modify, and/or distribute this software for any purpose with
+ * or without fee is hereby granted, provided that the above copyright notice and this
+ * permission notice appear in all copies.
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Lesser General Public License for more details.
- *
- * For a full copy of the license see the LGPL.txt file
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD
+ * TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN
+ * NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
+ * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER
+ * IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef __DISTRHO_UI_INTERNAL_HPP__
-#define __DISTRHO_UI_INTERNAL_HPP__
+#ifndef DISTRHO_UI_INTERNAL_HPP_INCLUDED
+#define DISTRHO_UI_INTERNAL_HPP_INCLUDED
 
-#include "DistrhoDefines.h"
+# include "../DistrhoUI.hpp"
 
 #if defined(DISTRHO_UI_EXTERNAL)
 # include "../DistrhoUIExternal.hpp"
@@ -33,7 +33,7 @@
 
 START_NAMESPACE_DISTRHO
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 typedef void (*editParamFunc) (void* ptr, uint32_t index, bool started);
 typedef void (*setParamFunc)  (void* ptr, uint32_t index, float value);
@@ -43,7 +43,7 @@ typedef void (*uiResizeFunc)  (void* ptr, unsigned int width, unsigned int heigh
 
 extern double d_lastUiSampleRate;
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 struct UI::PrivateData {
     // DSP
@@ -73,13 +73,9 @@ struct UI::PrivateData {
 #if defined(DISTRHO_PLUGIN_TARGET_DSSI) || defined(DISTRHO_PLUGIN_TARGET_LV2)
         parameterOffset += DISTRHO_PLUGIN_NUM_INPUTS + DISTRHO_PLUGIN_NUM_OUTPUTS;
 # if DISTRHO_PLUGIN_WANT_LATENCY
-        parameterOffset += 1; // latency
+        parameterOffset += 1;
 # endif
 #endif
-    }
-
-    ~PrivateData()
-    {
     }
 
     void editParamCallback(uint32_t index, bool started)
@@ -113,7 +109,7 @@ struct UI::PrivateData {
     }
 };
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 class UIInternal
 {
@@ -122,15 +118,15 @@ public:
 #ifdef DISTRHO_UI_OPENGL
         : glApp(),
           glWindow(&glApp, winId),
-          kUi(createUI()),
+          fUi(createUI()),
 #else
-        : kUi(createUI()),
+        : fUi(createUI()),
 #endif
-          kData((kUi != nullptr) ? kUi->pData : nullptr)
+          fData((fUi != nullptr) ? fUi->pData : nullptr)
     {
-        assert(kUi != nullptr);
+        assert(fUi != nullptr);
 
-        if (kUi == nullptr)
+        if (fUi == nullptr)
             return;
 
 #ifdef DISTRHO_UI_QT
@@ -140,88 +136,88 @@ public:
             return;
 #endif
 
-        kData->ptr = ptr;
-        kData->editParamCallbackFunc = editParamCall;
-        kData->setParamCallbackFunc  = setParamCall;
-        kData->setStateCallbackFunc  = setStateCall;
-        kData->sendNoteCallbackFunc  = sendNoteCall;
-        kData->uiResizeCallbackFunc  = uiResizeCall;
+        fData->ptr = ptr;
+        fData->editParamCallbackFunc = editParamCall;
+        fData->setParamCallbackFunc  = setParamCall;
+        fData->setStateCallbackFunc  = setStateCall;
+        fData->sendNoteCallbackFunc  = sendNoteCall;
+        fData->uiResizeCallbackFunc  = uiResizeCall;
     }
 
     ~UIInternal()
     {
-        if (kUi != nullptr)
-            delete kUi;
+        if (fUi != nullptr)
+            delete fUi;
     }
 
-    // ---------------------------------------------
+    // -------------------------------------------------------------------
 
-    const char* name() const
+    const char* getName() const
     {
-        assert(kUi != nullptr);
-        return (kUi != nullptr) ? kUi->d_name() : "";
+        assert(fUi != nullptr);
+        return (fUi != nullptr) ? fUi->d_getName() : "";
     }
 
-    unsigned int width() const
+    unsigned int getWidth() const
     {
-        assert(kUi != nullptr);
-        return (kUi != nullptr) ? kUi->d_width() : 0;
+        assert(fUi != nullptr);
+        return (fUi != nullptr) ? fUi->d_getWidth() : 0;
     }
 
-    unsigned int height() const
+    unsigned int getHeight() const
     {
-        assert(kUi != nullptr);
-        return (kUi != nullptr) ? kUi->d_height() : 0;
+        assert(fUi != nullptr);
+        return (fUi != nullptr) ? fUi->d_getHeight() : 0;
     }
 
-    // ---------------------------------------------
+    // -------------------------------------------------------------------
 
     void parameterChanged(uint32_t index, float value)
     {
-        assert(kUi != nullptr);
+        assert(fUi != nullptr);
 
-        if (kUi != nullptr)
-            kUi->d_parameterChanged(index, value);
+        if (fUi != nullptr)
+            fUi->d_parameterChanged(index, value);
     }
 
 #if DISTRHO_PLUGIN_WANT_PROGRAMS
     void programChanged(uint32_t index)
     {
-      assert(kUi != nullptr);
+        assert(fUi != nullptr);
 
-        if (kUi != nullptr)
-            kUi->d_programChanged(index);
+        if (fUi != nullptr)
+            fUi->d_programChanged(index);
     }
 #endif
 
 #if DISTRHO_PLUGIN_WANT_STATE
     void stateChanged(const char* key, const char* value)
     {
-        assert(kUi != nullptr);
+        assert(fUi != nullptr);
 
-        if (kUi != nullptr)
-            kUi->d_stateChanged(key, value);
+        if (fUi != nullptr)
+            fUi->d_stateChanged(key, value);
     }
 #endif
 
 #if DISTRHO_PLUGIN_IS_SYNTH
     void noteReceived(bool onOff, uint8_t channel, uint8_t note, uint8_t velocity)
     {
-        assert(kUi != nullptr);
+        assert(fUi != nullptr);
 
-        if (kUi != nullptr)
-            kUi->d_noteReceived(onOff, channel, note, velocity);
+        if (fUi != nullptr)
+            fUi->d_noteReceived(onOff, channel, note, velocity);
     }
 #endif
 
-    // ---------------------------------------------
+    // -------------------------------------------------------------------
 
     void idle()
     {
-        assert(kUi != nullptr);
+        assert(fUi != nullptr);
 
-        if (kUi != nullptr)
-            kUi->d_uiIdle();
+        if (fUi != nullptr)
+            fUi->d_uiIdle();
 
 #ifdef DISTRHO_UI_OPENGL
         glApp.idle();
@@ -229,7 +225,7 @@ public:
     }
 
 #if defined(DISTRHO_UI_EXTERNAL)
-    // needed?
+    // not needed
 #elif defined(DISTRHO_UI_OPENGL)
     App& getApp()
     {
@@ -246,24 +242,24 @@ public:
         return glWindow.getWindowId();
     }
 
-    void fixSize()
+    void fixWindowSize()
     {
-        assert(kUi != nullptr);
-        glWindow.setSize(kUi->d_width(), kUi->d_height());
+        assert(fUi != nullptr);
+        glWindow.setSize(fUi->d_getWidth(), fUi->d_getHeight());
     }
-#else
+#elif defined(DISTRHO_UI_QT)
     QtUI* getQtUI() const
     {
-        return (QtUI*)kUi;
+        return (QtUI*)fUi;
     }
 
-    bool resizable() const
+    bool isResizable() const
     {
-        return ((QtUI*)kUi)->d_resizable();
+        return ((QtUI*)fUi)->d_isResizable();
     }
 #endif
 
-    // ---------------------------------------------
+    // -------------------------------------------------------------------
 
 #ifdef DISTRHO_UI_OPENGL
 private:
@@ -272,12 +268,12 @@ private:
 #endif
 
 protected:
-    UI* const kUi;
-    UI::PrivateData* const kData;
+    UI* const fUi;
+    UI::PrivateData* const fData;
 };
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 END_NAMESPACE_DISTRHO
 
-#endif // __DISTRHO_UI_INTERNAL_HPP__
+#endif // DISTRHO_UI_INTERNAL_HPP_INCLUDED

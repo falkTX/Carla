@@ -2,16 +2,16 @@
  * DISTRHO Plugin Toolkit (DPT)
  * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation.
+ * Permission to use, copy, modify, and/or distribute this software for any purpose with
+ * or without fee is hereby granted, provided that the above copyright notice and this
+ * permission notice appear in all copies.
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Lesser General Public License for more details.
- *
- * For a full copy of the license see the LGPL.txt file
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD
+ * TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN
+ * NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
+ * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER
+ * IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
 #include "DistrhoPluginInternal.hpp"
@@ -38,7 +38,7 @@
 
 START_NAMESPACE_DISTRHO
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 #if DISTRHO_PLUGIN_HAS_UI
 
@@ -133,7 +133,7 @@ public:
         }
     }
 
-    // ---------------------------------------------
+    // -------------------------------------------------------------------
 
     void idle()
     {
@@ -172,7 +172,7 @@ public:
         return fUi.height();
     }
 
-    // ---------------------------------------------
+    // -------------------------------------------------------------------
     // functions called from the plugin side, RT no block
 
     void setParameterValueFromPlugin(uint32_t index, float perValue)
@@ -192,7 +192,7 @@ public:
     }
 #endif
 
-    // ---------------------------------------------
+    // -------------------------------------------------------------------
 
 protected:
     intptr_t hostCallback(int32_t opcode, int32_t index, intptr_t value, void* ptr, float opt)
@@ -264,7 +264,7 @@ private:
     MidiEvent fMidiEvents[MAX_MIDI_EVENTS];
 #endif
 
-    // ---------------------------------------------
+    // -------------------------------------------------------------------
     // Callbacks
 
     #define handlePtr ((UIVst*)ptr)
@@ -298,7 +298,7 @@ private:
 };
 #endif
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 class PluginVst
 {
@@ -498,7 +498,7 @@ public:
 #endif
     }
 
-    // ---------------------------------------------
+    // -------------------------------------------------------------------
 
 private:
     // VST stuff
@@ -556,7 +556,7 @@ private:
 #endif
 };
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 #define handlePtr ((PluginVst*)effect->object)
 
@@ -707,9 +707,9 @@ static void vst_processReplacingCallback(AEffect* effect, float** inputs, float*
 
 #undef handlePtr
 
-END_NAMESPACE_DISTRHO
+// -----------------------------------------------------------------------
 
-// -------------------------------------------------
+END_NAMESPACE_DISTRHO
 
 DISTRHO_PLUGIN_EXPORT
 const AEffect* VSTPluginMain(audioMasterCallback audioMaster)
@@ -762,5 +762,3 @@ const AEffect* VSTPluginMain(audioMasterCallback audioMaster)
 
     return effect;
 }
-
-// -------------------------------------------------

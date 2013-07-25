@@ -411,4 +411,6 @@ void carla_zeroStruct(T* const structure, const size_t count)
     std::memset(structure, 0, count*sizeof(T));
 }
 
+// -----------------------------------------------------------------------
+
 #endif // CARLA_UTILS_HPP_INCLUDED

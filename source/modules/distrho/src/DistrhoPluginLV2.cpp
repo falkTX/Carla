@@ -2,16 +2,16 @@
  * DISTRHO Plugin Toolkit (DPT)
  * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation.
+ * Permission to use, copy, modify, and/or distribute this software for any purpose with
+ * or without fee is hereby granted, provided that the above copyright notice and this
+ * permission notice appear in all copies.
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Lesser General Public License for more details.
- *
- * For a full copy of the license see the LGPL.txt file
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD
+ * TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN
+ * NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
+ * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER
+ * IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
 #include "DistrhoPluginInternal.hpp"
@@ -47,12 +47,12 @@
 #define DISTRHO_LV2_USE_EVENTS_IN  (DISTRHO_PLUGIN_IS_SYNTH || DISTRHO_PLUGIN_WANT_STATE || DISTRHO_PLUGIN_WANT_TIMEPOS)
 #define DISTRHO_LV2_USE_EVENTS_OUT (DISTRHO_PLUGIN_WANT_STATE)
 
-// -------------------------------------------------
+typedef float* floatptr;
+typedef std::map<d_string,d_string> StringMap;
 
 START_NAMESPACE_DISTRHO
 
-typedef float* floatptr;
-typedef std::map<d_string,d_string> stringMap;
+// -----------------------------------------------------------------------
 
 class PluginLv2
 {
@@ -493,7 +493,7 @@ private:
     }
 };
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 static LV2_Handle lv2_instantiate(const LV2_Descriptor*, double sampleRate, const char*, const LV2_Feature* const* features)
 {
@@ -638,7 +638,7 @@ static const void* lv2_extension_data(const char* uri)
 
 #undef instancePtr
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 static LV2_Descriptor sLv2Descriptor = {
     DISTRHO_PLUGIN_URI,
@@ -651,9 +651,9 @@ static LV2_Descriptor sLv2Descriptor = {
     lv2_extension_data
 };
 
-END_NAMESPACE_DISTRHO
+// -----------------------------------------------------------------------
 
-// -------------------------------------------------
+END_NAMESPACE_DISTRHO
 
 DISTRHO_PLUGIN_EXPORT
 const LV2_Descriptor* lv2_descriptor(uint32_t index)

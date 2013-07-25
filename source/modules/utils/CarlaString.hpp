@@ -477,7 +477,7 @@ static inline
 CarlaString operator+(const CarlaString& strBefore, const char* const strBufAfter)
 {
     const char* const strBufBefore = (const char*)strBefore;
-    const size_t newBufSize = strBefore.length() + ((strBufAfter != nullptr) ? std::strlen(strBufAfter) : 0) + 1;
+    const size_t      newBufSize   = strBefore.length() + ((strBufAfter != nullptr) ? std::strlen(strBufAfter) : 0) + 1;
     char newBuf[newBufSize];
 
     std::strcpy(newBuf, strBufBefore);
@@ -490,7 +490,7 @@ static inline
 CarlaString operator+(const char* const strBufBefore, const CarlaString& strAfter)
 {
     const char* const strBufAfter = (const char*)strAfter;
-    const size_t newBufSize = ((strBufBefore != nullptr) ? std::strlen(strBufBefore) : 0) + strAfter.length() + 1;
+    const size_t      newBufSize  = ((strBufBefore != nullptr) ? std::strlen(strBufBefore) : 0) + strAfter.length() + 1;
     char newBuf[newBufSize];
 
     std::strcpy(newBuf, strBufBefore);

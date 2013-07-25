@@ -2,28 +2,28 @@
  * DISTRHO Plugin Toolkit (DPT)
  * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation.
+ * Permission to use, copy, modify, and/or distribute this software for any purpose with
+ * or without fee is hereby granted, provided that the above copyright notice and this
+ * permission notice appear in all copies.
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Lesser General Public License for more details.
- *
- * For a full copy of the license see the LGPL.txt file
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD
+ * TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN
+ * NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
+ * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER
+ * IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef __DISTRHO_UI_EXTERNAL_HPP__
-#define __DISTRHO_UI_EXTERNAL_HPP__
+#ifndef DISTRHO_UI_EXTERNAL_HPP_INCLUDED
+#define DISTRHO_UI_EXTERNAL_HPP_INCLUDED
 
 #include "DistrhoUI.hpp"
 
-#include <lo/lo.h>
+//#include <lo/lo.h>
 
 START_NAMESPACE_DISTRHO
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // External UI
 
 class ExternalUI : public UI
@@ -33,16 +33,18 @@ public:
     virtual ~ExternalUI() override;
 
 protected:
-    virtual const char* d_externalFilename() const = 0;
+    // -------------------------------------------------------------------
+    // Information (External)
+
+    virtual const char* d_getExternalFilename() const = 0;
 
 private:
-    friend class UIInternal;
+    // -------------------------------------------------------------------
+    // Implement stuff not needed for external UIs
 
-    // ---------------------------------------------
-    // not needed for external UIs
+    unsigned int d_getWidth()  const noexcept override { return 0; }
+    unsigned int d_getHeight() const noexcept override { return 0; }
 
-    unsigned int d_width() const override { return 0; }
-    unsigned int d_height() const override { return 0; }
     void d_parameterChanged(uint32_t, float) override {}
 #if DISTRHO_PLUGIN_WANT_PROGRAMS
     void d_programChanged(uint32_t) override {}
@@ -53,11 +55,15 @@ private:
 #if DISTRHO_PLUGIN_IS_SYNTH
     void d_noteReceived(bool, uint8_t, uint8_t, uint8_t) override {}
 #endif
+
     void d_uiIdle() override {}
+
+    friend class UIInternal;
 };
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
+
 
 END_NAMESPACE_DISTRHO
 
-#endif // __DISTRHO_UI_EXTERNAL_HPP__
+#endif // DISTRHO_UI_EXTERNAL_HPP_INCLUDED

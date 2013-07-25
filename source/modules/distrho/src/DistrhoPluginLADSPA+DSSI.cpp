@@ -2,16 +2,16 @@
  * DISTRHO Plugin Toolkit (DPT)
  * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation.
+ * Permission to use, copy, modify, and/or distribute this software for any purpose with
+ * or without fee is hereby granted, provided that the above copyright notice and this
+ * permission notice appear in all copies.
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Lesser General Public License for more details.
- *
- * For a full copy of the license see the LGPL.txt file
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD
+ * TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN
+ * NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
+ * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER
+ * IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
 #include "DistrhoPluginInternal.hpp"
@@ -32,11 +32,11 @@
 # warning LADSPA/DSSI does not support TimePos
 #endif
 
-// -------------------------------------------------
+typedef LADSPA_Data* LADSPA_DataPtr;
 
 START_NAMESPACE_DISTRHO
 
-typedef LADSPA_Data* LADSPA_DataPtr;
+// -----------------------------------------------------------------------
 
 class PluginLadspaDssi
 {
@@ -52,7 +52,7 @@ public:
             fPortAudioOuts[i] = nullptr;
 
         {
-            const uint32_t count(fPlugin.parameterCount());
+            const uint32_t count(fPlugin.getParameterCount());
 
             fPortControls = new LADSPA_DataPtr[count];;
             fLastControlValues = new LADSPA_Data[count];;
@@ -60,7 +60,7 @@ public:
             for (uint32_t i=0; i < count; ++i)
             {
                 fPortControls[i] = nullptr;
-                fLastControlValues[i] = fPlugin.parameterValue(i);
+                fLastControlValues[i] = fPlugin.getParameterValue(i);
             }
         }
 
@@ -84,7 +84,7 @@ public:
         }
     }
 
-    // ---------------------------------------------
+    // -------------------------------------------------------------------
 
     void ladspa_connect_port(const unsigned long port, const LADSPA_DataPtr dataLocation)
     {
@@ -116,7 +116,7 @@ public:
         }
 #endif
 
-        for (unsigned long i=0, count=fPlugin.parameterCount(); i < count; ++i)
+        for (unsigned long i=0, count=fPlugin.getParameterCount(); i < count; ++i)
         {
             if (port == index++)
             {
@@ -126,7 +126,7 @@ public:
         }
     }
 
-    // ---------------------------------------------
+    // -------------------------------------------------------------------
 
 #ifdef DISTRHO_PLUGIN_TARGET_DSSI
 # if DISTRHO_PLUGIN_WANT_STATE
@@ -145,14 +145,14 @@ public:
 # if DISTRHO_PLUGIN_WANT_PROGRAMS
     const DSSI_Program_Descriptor* dssi_get_program(const unsigned long index)
     {
-        if (index >= fPlugin.programCount())
+        if (index >= fPlugin.getProgramCount())
             return nullptr;
 
         static DSSI_Program_Descriptor desc;
 
         desc.Bank    = index / 128;
         desc.Program = index % 128;
-        desc.Name    = fPlugin.programName(index);
+        desc.Name    = fPlugin.getProgramName(index);
 
         return &desc;
     }
@@ -161,7 +161,7 @@ public:
     {
         const unsigned long realProgram(bank * 128 + program);
 
-        if (realProgram >= fPlugin.programCount())
+        if (realProgram >= fPlugin.getProgramCount())
             return;
 
         fPlugin.setProgram(realProgram);
@@ -169,19 +169,19 @@ public:
         // Update parameters
         for (uint32_t i=0, count=fPlugin.parameterCount(); i < count; ++i)
         {
-            if (! fPlugin.parameterIsOutput(i))
-            {
-                fLastControlValues[i] = fPlugin.parameterValue(i);
+            if (fPlugin.isParameterIsOutput(i))
+                continue;
 
-                if (fPortControls[i] != nullptr)
-                    *fPortControls[i] = fLastControlValues[i];
-            }
+            fLastControlValues[i] = fPlugin.getParameterValue(i);
+
+            if (fPortControls[i] != nullptr)
+                *fPortControls[i] = fLastControlValues[i];
         }
     }
 # endif
 #endif
 
-    // ---------------------------------------------
+    // -------------------------------------------------------------------
 
     void ladspa_activate()
     {
@@ -207,13 +207,13 @@ public:
         // Check for updated parameters
         float curValue;
 
-        for (uint32_t i=0, count=fPlugin.parameterCount(); i < count; ++i)
+        for (uint32_t i=0, count=fPlugin.getParameterCount(); i < count; ++i)
         {
             assert(fPortControls[i] != nullptr);
 
             curValue = *fPortControls[i];
 
-            if (fLastControlValues[i] != curValue && ! fPlugin.parameterIsOutput(i))
+            if (fLastControlValues[i] != curValue && ! fPlugin.isParameterIsOutput(i))
             {
                 fLastControlValues[i] = curValue;
                 fPlugin.setParameterValue(i, curValue);
@@ -301,7 +301,7 @@ public:
         updateParameterOutputs();
     }
 
-    // ---------------------------------------------
+    // -------------------------------------------------------------------
 
 private:
     PluginInternal fPlugin;
@@ -315,19 +315,19 @@ private:
 
     LADSPA_Data* fLastControlValues;
 
-    // ---------------------------------------------
+    // -------------------------------------------------------------------
 
     void updateParameterOutputs()
     {
-        for (uint32_t i=0, count=fPlugin.parameterCount(); i < count; ++i)
+        for (uint32_t i=0, count=fPlugin.getParameterCount(); i < count; ++i)
         {
-            if (fPlugin.parameterIsOutput(i))
-            {
-                fLastControlValues[i] = fPlugin.parameterValue(i);
+            if (! fPlugin.isParameterIsOutput(i))
+                continue;
 
-                if (fPortControls[i] != nullptr)
-                    *fPortControls[i] = fLastControlValues[i];
-            }
+            fLastControlValues[i] = fPlugin.getParameterValue(i);
+
+            if (fPortControls[i] != nullptr)
+                *fPortControls[i] = fLastControlValues[i];
         }
 
 #if DISTRHO_PLUGIN_WANT_LATENCY
@@ -337,7 +337,7 @@ private:
     }
 };
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 static LADSPA_Handle ladspa_instantiate(const LADSPA_Descriptor*, unsigned long sampleRate)
 {
@@ -405,7 +405,7 @@ static void dssi_run_synth(LADSPA_Handle instance, unsigned long sampleCount, sn
 
 #undef instancePtr
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 static LADSPA_Descriptor sLadspaDescriptor = {
     /* UniqueID   */ 0,
@@ -458,7 +458,7 @@ static DSSI_Descriptor sDssiDescriptor = {
 };
 #endif
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 class DescriptorInitializer
 {
@@ -474,11 +474,11 @@ public:
 
         // Get port count, init
         unsigned long port = 0;
-        unsigned long portCount = DISTRHO_PLUGIN_NUM_INPUTS + DISTRHO_PLUGIN_NUM_OUTPUTS + plugin.parameterCount();
+        unsigned long portCount = DISTRHO_PLUGIN_NUM_INPUTS + DISTRHO_PLUGIN_NUM_OUTPUTS + plugin.getParameterCount();
 #if DISTRHO_PLUGIN_WANT_LATENCY
         portCount += 1;
 #endif
-        const char** const portNames = new const char*[portCount];
+        const char** const     portNames       = new const char*[portCount];
         LADSPA_PortDescriptor* portDescriptors = new LADSPA_PortDescriptor[portCount];
         LADSPA_PortRangeHint*  portRangeHints  = new LADSPA_PortRangeHint [portCount];
 
@@ -519,18 +519,18 @@ public:
         ++port;
 #endif
 
-        for (unsigned long i=0, count=plugin.parameterCount(); i < count; ++i, ++port)
+        for (unsigned long i=0, count=plugin.getParameterCount(); i < count; ++i, ++port)
         {
-            portNames[port]       = strdup((const char*)plugin.parameterName(i));
+            portNames[port]       = strdup((const char*)plugin.getParameterName(i));
             portDescriptors[port] = LADSPA_PORT_CONTROL;
 
-            if (plugin.parameterIsOutput(i))
+            if (plugin.isParameterIsOutput(i))
                 portDescriptors[port] |= LADSPA_PORT_OUTPUT;
             else
                 portDescriptors[port] |= LADSPA_PORT_INPUT;
 
             {
-                const ParameterRanges& ranges(plugin.parameterRanges(i));
+                const ParameterRanges& ranges(plugin.getParameterRanges(i));
                 const float defValue(ranges.def);
 
                 portRangeHints[port].HintDescriptor = LADSPA_HINT_BOUNDED_BELOW | LADSPA_HINT_BOUNDED_ABOVE;
@@ -565,7 +565,7 @@ public:
             }
 
             {
-                const uint32_t hints(plugin.parameterHints(i));
+                const uint32_t hints(plugin.getParameterHints(i));
 
                 if (hints & PARAMETER_IS_BOOLEAN)
                     portRangeHints[port].HintDescriptor |= LADSPA_HINT_TOGGLED;
@@ -577,11 +577,11 @@ public:
         }
 
         // Set data
-        sLadspaDescriptor.UniqueID  = plugin.uniqueId();
-        sLadspaDescriptor.Label     = strdup(plugin.label());
-        sLadspaDescriptor.Name      = strdup(plugin.name());
-        sLadspaDescriptor.Maker     = strdup(plugin.maker());
-        sLadspaDescriptor.Copyright = strdup(plugin.license());
+        sLadspaDescriptor.UniqueID  = plugin.getUniqueId();
+        sLadspaDescriptor.Label     = strdup(plugin.getLabel());
+        sLadspaDescriptor.Name      = strdup(plugin.getName());
+        sLadspaDescriptor.Maker     = strdup(plugin.getMaker());
+        sLadspaDescriptor.Copyright = strdup(plugin.getLicense());
         sLadspaDescriptor.PortCount = portCount;
         sLadspaDescriptor.PortNames = portNames;
         sLadspaDescriptor.PortDescriptors = portDescriptors;
@@ -645,9 +645,9 @@ public:
 
 static DescriptorInitializer sDescInit;
 
-END_NAMESPACE_DISTRHO
+// -----------------------------------------------------------------------
 
-// -------------------------------------------------
+END_NAMESPACE_DISTRHO
 
 DISTRHO_PLUGIN_EXPORT
 const LADSPA_Descriptor* ladspa_descriptor(unsigned long index)

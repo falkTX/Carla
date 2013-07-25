@@ -2,26 +2,26 @@
  * DISTRHO Plugin Toolkit (DPT)
  * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation.
+ * Permission to use, copy, modify, and/or distribute this software for any purpose with
+ * or without fee is hereby granted, provided that the above copyright notice and this
+ * permission notice appear in all copies.
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Lesser General Public License for more details.
- *
- * For a full copy of the license see the LGPL.txt file
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD
+ * TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN
+ * NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
+ * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER
+ * IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef __DISTRHO_UI_HPP__
-#define __DISTRHO_UI_HPP__
+#ifndef DISTRHO_UI_HPP_INCLUDED
+#define DISTRHO_UI_HPP_INCLUDED
 
 #include "DistrhoUtils.hpp"
 
 START_NAMESPACE_DISTRHO
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // UI
 
 class UI
@@ -30,10 +30,10 @@ public:
     UI();
     virtual ~UI();
 
-    // ---------------------------------------------
+    // -------------------------------------------------------------------
     // Host DSP State
 
-    double d_sampleRate() const;
+    double d_getSampleRate() const noexcept;
     void   d_editParameter(uint32_t index, bool started);
     void   d_setParameterValue(uint32_t index, float value);
 #if DISTRHO_PLUGIN_WANT_STATE
@@ -43,20 +43,20 @@ public:
     void   d_sendNote(bool onOff, uint8_t channel, uint8_t note, uint8_t velocity);
 #endif
 
-    // ---------------------------------------------
+    // -------------------------------------------------------------------
     // Host UI State
 
     void d_uiResize(unsigned int width, unsigned int height);
 
 protected:
-    // ---------------------------------------------
-    // Information
+    // -------------------------------------------------------------------
+    // Basic Information
 
-    virtual const char*  d_name() const { return DISTRHO_PLUGIN_NAME; }
-    virtual unsigned int d_width() const = 0;
-    virtual unsigned int d_height() const = 0;
+    virtual const char*  d_getName()   const noexcept { return DISTRHO_PLUGIN_NAME; }
+    virtual unsigned int d_getWidth()  const noexcept = 0;
+    virtual unsigned int d_getHeight() const noexcept = 0;
 
-    // ---------------------------------------------
+    // -------------------------------------------------------------------
     // DSP Callbacks
 
     virtual void d_parameterChanged(uint32_t index, float value) = 0;
@@ -70,12 +70,12 @@ protected:
     virtual void d_noteReceived(bool onOff, uint8_t channel, uint8_t note, uint8_t velocity) = 0;
 #endif
 
-    // ---------------------------------------------
-    // UI Callbacks
+    // -------------------------------------------------------------------
+    // UI Callbacks (optional)
 
-    virtual void d_uiIdle() = 0;
+    virtual void d_uiIdle() {}
 
-    // ---------------------------------------------
+    // -------------------------------------------------------------------
 
 private:
     struct PrivateData;
@@ -83,12 +83,13 @@ private:
     friend class UIInternal;
 };
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
+// Create UI, entry point
 
-UI* createUI();
+extern UI* createUI();
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 END_NAMESPACE_DISTRHO
 
-#endif // __DISTRHO_UI_HPP__
+#endif // DISTRHO_UI_HPP_INCLUDED

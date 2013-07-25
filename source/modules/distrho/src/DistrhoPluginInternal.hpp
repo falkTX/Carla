@@ -2,26 +2,26 @@
  * DISTRHO Plugin Toolkit (DPT)
  * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation.
+ * Permission to use, copy, modify, and/or distribute this software for any purpose with
+ * or without fee is hereby granted, provided that the above copyright notice and this
+ * permission notice appear in all copies.
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Lesser General Public License for more details.
- *
- * For a full copy of the license see the LGPL.txt file
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD
+ * TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN
+ * NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
+ * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER
+ * IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef __DISTRHO_PLUGIN_INTERNAL_HPP__
-#define __DISTRHO_PLUGIN_INTERNAL_HPP__
+#ifndef DISTRHO_PLUGIN_INTERNAL_HPP_INCLUDED
+#define DISTRHO_PLUGIN_INTERNAL_HPP_INCLUDED
 
 #include "../DistrhoPlugin.hpp"
 
 START_NAMESPACE_DISTRHO
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 #define MAX_MIDI_EVENTS 512
 
@@ -79,14 +79,14 @@ struct Plugin::PrivateData {
 
     ~PrivateData()
     {
-        if (parameterCount > 0 && parameters != nullptr)
+        if (parameters != nullptr)
         {
             delete[] parameters;
             parameters = nullptr;
         }
 
 #if DISTRHO_PLUGIN_WANT_PROGRAMS
-        if (programCount > 0 && programNames != nullptr)
+        if (programNames != nullptr)
         {
             delete[] programNames;
             programNames = nullptr;
@@ -94,7 +94,7 @@ struct Plugin::PrivateData {
 #endif
 
 #if DISTRHO_PLUGIN_WANT_STATE
-        if (stateCount > 0 && stateKeys != nullptr)
+        if (stateKeys != nullptr)
         {
             delete[] stateKeys;
             stateKeys = nullptr;
@@ -103,268 +103,268 @@ struct Plugin::PrivateData {
     }
 };
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 class PluginInternal
 {
 public:
     PluginInternal()
-        : kPlugin(createPlugin()),
-          kData((kPlugin != nullptr) ? kPlugin->pData : nullptr)
+        : fPlugin(createPlugin()),
+          fData((fPlugin != nullptr) ? fPlugin->pData : nullptr)
     {
-        assert(kPlugin != nullptr);
+        assert(fPlugin != nullptr);
 
-        if (kPlugin == nullptr)
+        if (fPlugin == nullptr)
             return;
 
-        for (uint32_t i=0, count=kData->parameterCount; i < count; ++i)
-            kPlugin->d_initParameter(i, kData->parameters[i]);
+        for (uint32_t i=0, count=fData->parameterCount; i < count; ++i)
+            fPlugin->d_initParameter(i, fData->parameters[i]);
 
 #if DISTRHO_PLUGIN_WANT_PROGRAMS
-        for (uint32_t i=0, count=kData->programCount; i < count; ++i)
-            kPlugin->d_initProgramName(i, kData->programNames[i]);
+        for (uint32_t i=0, count=fData->programCount; i < count; ++i)
+            fPlugin->d_initProgramName(i, fData->programNames[i]);
 #endif
 
 #if DISTRHO_PLUGIN_WANT_STATE
-        for (uint32_t i=0, count=kData->stateCount; i < count; ++i)
-            kPlugin->d_initStateKey(i, kData->stateKeys[i]);
+        for (uint32_t i=0, count=fData->stateCount; i < count; ++i)
+            fPlugin->d_initStateKey(i, fData->stateKeys[i]);
 #endif
     }
 
     ~PluginInternal()
     {
-        if (kPlugin != nullptr)
-            delete kPlugin;
+        if (fPlugin != nullptr)
+            delete fPlugin;
     }
 
-    // ---------------------------------------------
+    // -------------------------------------------------------------------
 
-    const char* name() const
+    const char* getName() const
     {
-        assert(kPlugin != nullptr);
-        return (kPlugin != nullptr) ? kPlugin->d_name() : "";
+        assert(fPlugin != nullptr);
+        return (fPlugin != nullptr) ? fPlugin->d_getName() : "";
     }
 
-    const char* label() const
+    const char* getLabel() const
     {
-        assert(kPlugin != nullptr);
-        return (kPlugin != nullptr) ? kPlugin->d_label() : "";
+        assert(fPlugin != nullptr);
+        return (fPlugin != nullptr) ? fPlugin->d_getLabel() : "";
     }
 
-    const char* maker() const
+    const char* getMaker() const
     {
-        assert(kPlugin != nullptr);
-        return (kPlugin != nullptr) ? kPlugin->d_maker() : "";
+        assert(fPlugin != nullptr);
+        return (fPlugin != nullptr) ? fPlugin->d_getMaker() : "";
     }
 
-    const char* license() const
+    const char* getLicense() const
     {
-        assert(kPlugin != nullptr);
-        return (kPlugin != nullptr) ? kPlugin->d_license() : "";
+        assert(fPlugin != nullptr);
+        return (fPlugin != nullptr) ? fPlugin->d_getLicense() : "";
     }
 
-    uint32_t version() const
+    uint32_t getVersion() const
     {
-        assert(kPlugin != nullptr);
-        return (kPlugin != nullptr) ? kPlugin->d_version() : 1000;
+        assert(fPlugin != nullptr);
+        return (fPlugin != nullptr) ? fPlugin->d_getVersion() : 1000;
     }
 
-    long uniqueId() const
+    long getUniqueId() const
     {
-        assert(kPlugin != nullptr);
-        return (kPlugin != nullptr) ? kPlugin->d_uniqueId() : 0;
+        assert(fPlugin != nullptr);
+        return (fPlugin != nullptr) ? fPlugin->d_getUniqueId() : 0;
     }
 
-    // ---------------------------------------------
+    // -------------------------------------------------------------------
 
 #if DISTRHO_PLUGIN_WANT_LATENCY
-    uint32_t latency() const
+    uint32_t getLatency() const
     {
-        assert(kData != nullptr);
-        return (kData != nullptr) ? kData->latency : 0;
+        assert(fData != nullptr);
+        return (fData != nullptr) ? fData->getLatency : 0;
     }
 #endif
 
-    uint32_t parameterCount() const
+    uint32_t getParameterCount() const
     {
-        assert(kData != nullptr);
-        return (kData != nullptr) ? kData->parameterCount : 0;
+        assert(fData != nullptr);
+        return (fData != nullptr) ? fData->parameterCount : 0;
     }
 
-    uint32_t parameterHints(const uint32_t index) const
+    uint32_t getParameterHints(const uint32_t index) const
     {
-        assert(kData != nullptr && index < kData->parameterCount);
-        return (kData != nullptr && index < kData->parameterCount) ? kData->parameters[index].hints : 0x0;
+        assert(fData != nullptr && index < fData->parameterCount);
+        return (fData != nullptr && index < fData->parameterCount) ? fData->parameters[index].hints : 0x0;
     }
 
-    bool parameterIsOutput(const uint32_t index) const
+    bool isParameterIsOutput(const uint32_t index) const
     {
-        return (parameterHints(index) & PARAMETER_IS_OUTPUT);
+        return (getParameterHints(index) & PARAMETER_IS_OUTPUT);
     }
 
-    const d_string& parameterName(const uint32_t index) const
+    const d_string& getParameterName(const uint32_t index) const
     {
-        assert(kData != nullptr && index < kData->parameterCount);
-        return (kData != nullptr && index < kData->parameterCount) ? kData->parameters[index].name : sFallbackString;
+        assert(fData != nullptr && index < fData->parameterCount);
+        return (fData != nullptr && index < fData->parameterCount) ? fData->parameters[index].name : sFallbackString;
     }
 
-    const d_string& parameterSymbol(const uint32_t index) const
+    const d_string& getParameterSymbol(const uint32_t index) const
     {
-        assert(kData != nullptr && index < kData->parameterCount);
-        return (kData != nullptr && index < kData->parameterCount) ? kData->parameters[index].symbol : sFallbackString;
+        assert(fData != nullptr && index < fData->parameterCount);
+        return (fData != nullptr && index < fData->parameterCount) ? fData->parameters[index].symbol : sFallbackString;
     }
 
-    const d_string& parameterUnit(const uint32_t index) const
+    const d_string& getParameterUnit(const uint32_t index) const
     {
-        assert(kData != nullptr && index < kData->parameterCount);
-        return (kData != nullptr && index < kData->parameterCount) ? kData->parameters[index].unit : sFallbackString;
+        assert(fData != nullptr && index < fData->parameterCount);
+        return (fData != nullptr && index < fData->parameterCount) ? fData->parameters[index].unit : sFallbackString;
     }
 
-    const ParameterRanges& parameterRanges(const uint32_t index) const
+    const ParameterRanges& getParameterRanges(const uint32_t index) const
     {
-        assert(kData != nullptr && index < kData->parameterCount);
-        return (kData != nullptr && index < kData->parameterCount) ? kData->parameters[index].ranges : sFallbackRanges;
+        assert(fData != nullptr && index < fData->parameterCount);
+        return (fData != nullptr && index < fData->parameterCount) ? fData->parameters[index].ranges : sFallbackRanges;
     }
 
-    float parameterValue(const uint32_t index)
+    float getParameterValue(const uint32_t index) const
     {
-        assert(kPlugin != nullptr && index < kData->parameterCount);
-        return (kPlugin != nullptr && index < kData->parameterCount) ? kPlugin->d_parameterValue(index) : 0.0f;
+        assert(fPlugin != nullptr && index < fData->parameterCount);
+        return (fPlugin != nullptr && index < fData->parameterCount) ? fPlugin->d_getParameterValue(index) : 0.0f;
     }
 
     void setParameterValue(const uint32_t index, const float value)
     {
-        assert(kPlugin != nullptr && index < kData->parameterCount);
+        assert(fPlugin != nullptr && index < fData->parameterCount);
 
-        if (kPlugin != nullptr && index < kData->parameterCount)
-            kPlugin->d_setParameterValue(index, value);
+        if (fPlugin != nullptr && index < fData->parameterCount)
+            fPlugin->d_setParameterValue(index, value);
     }
 
 #if DISTRHO_PLUGIN_WANT_PROGRAMS
-    uint32_t programCount() const
+    uint32_t getProgramCount() const
     {
-        assert(kData != nullptr);
-        return (kData != nullptr) ? kData->programCount : 0;
+        assert(fData != nullptr);
+        return (fData != nullptr) ? fData->programCount : 0;
     }
 
-    const d_string& programName(const uint32_t index) const
+    const d_string& getProgramName(const uint32_t index) const
     {
-        assert(kData != nullptr && index < kData->programCount);
-        return (kData != nullptr && index < kData->programCount) ? kData->programNames[index] : sFallbackString;
+        assert(fData != nullptr && index < fData->programCount);
+        return (fData != nullptr && index < fData->programCount) ? fData->programNames[index] : sFallbackString;
     }
 
     void setProgram(const uint32_t index)
     {
-        assert(kPlugin != nullptr && index < kData->programCount);
+        assert(fPlugin != nullptr && index < fData->programCount);
 
-        if (kPlugin != nullptr && index < kData->programCount)
-            kPlugin->d_setProgram(index);
+        if (fPlugin != nullptr && index < fData->programCount)
+            fPlugin->d_setProgram(index);
     }
 #endif
 
 #if DISTRHO_PLUGIN_WANT_STATE
-    uint32_t stateCount() const
+    uint32_t getStateCount() const
     {
-        assert(kData != nullptr);
-        return kData != nullptr ? kData->stateCount : 0;
+        assert(fData != nullptr);
+        return fData != nullptr ? fData->stateCount : 0;
     }
 
-    const d_string& stateKey(const uint32_t index) const
+    const d_string& getStateKey(const uint32_t index) const
     {
-        assert(kData != nullptr && index < kData->stateCount);
-        return (kData != nullptr && index < kData->stateCount) ? kData->stateKeys[index] : sFallbackString;
+        assert(fData != nullptr && index < fData->stateCount);
+        return (fData != nullptr && index < fData->stateCount) ? fData->stateKeys[index] : sFallbackString;
     }
 
     void setState(const char* const key, const char* const value)
     {
-        assert(kPlugin != nullptr && key != nullptr && value != nullptr);
+        assert(fPlugin != nullptr && key != nullptr && value != nullptr);
 
-        if (kPlugin != nullptr && key != nullptr && value != nullptr)
-            kPlugin->d_setState(key, value);
+        if (fPlugin != nullptr && key != nullptr && value != nullptr)
+            fPlugin->d_setState(key, value);
     }
 #endif
 
-    // ---------------------------------------------
+    // -------------------------------------------------------------------
 
     void activate()
     {
-        assert(kPlugin != nullptr);
+        assert(fPlugin != nullptr);
 
-        if (kPlugin != nullptr)
-            kPlugin->d_activate();
+        if (fPlugin != nullptr)
+            fPlugin->d_activate();
     }
 
     void deactivate()
     {
-        assert(kPlugin != nullptr);
+        assert(fPlugin != nullptr);
 
-        if (kPlugin != nullptr)
-            kPlugin->d_deactivate();
+        if (fPlugin != nullptr)
+            fPlugin->d_deactivate();
     }
 
     void run(float** const inputs, float** const outputs, const uint32_t frames, const uint32_t midiEventCount, const MidiEvent* const midiEvents)
     {
-        assert(kPlugin != nullptr);
+        assert(fPlugin != nullptr);
 
-        if (kPlugin != nullptr)
-            kPlugin->d_run(inputs, outputs, frames, midiEventCount, midiEvents);
+        if (fPlugin != nullptr)
+            fPlugin->d_run(inputs, outputs, frames, midiEventCount, midiEvents);
     }
 
-    // ---------------------------------------------
+    // -------------------------------------------------------------------
 
     void setBufferSize(const uint32_t bufferSize, bool doCallback = false)
     {
-        assert(kData != nullptr && kPlugin != nullptr && bufferSize >= 2);
+        assert(fData != nullptr && fPlugin != nullptr && bufferSize >= 2);
 
-        if (kData != nullptr)
+        if (fData != nullptr)
         {
-            if (doCallback && kData->bufferSize == bufferSize)
+            if (doCallback && fData->bufferSize == bufferSize)
                 doCallback = false;
 
-            kData->bufferSize = bufferSize;
+            fData->bufferSize = bufferSize;
         }
 
-        if (kPlugin != nullptr && doCallback)
+        if (fPlugin != nullptr && doCallback)
         {
-            kPlugin->d_deactivate();
-            kPlugin->d_bufferSizeChanged(bufferSize);
-            kPlugin->d_activate();
+            fPlugin->d_deactivate();
+            fPlugin->d_bufferSizeChanged(bufferSize);
+            fPlugin->d_activate();
         }
     }
 
     void setSampleRate(const double sampleRate, bool doCallback = false)
     {
-        assert(kData != nullptr && kPlugin != nullptr && sampleRate > 0.0);
+        assert(fData != nullptr && fPlugin != nullptr && sampleRate > 0.0);
 
-        if (kData != nullptr)
+        if (fData != nullptr)
         {
-            if (doCallback && kData->sampleRate == sampleRate)
+            if (doCallback && fData->sampleRate == sampleRate)
                 doCallback = false;
 
-            kData->sampleRate = sampleRate;
+            fData->sampleRate = sampleRate;
         }
 
-        if (kPlugin != nullptr && doCallback)
+        if (fPlugin != nullptr && doCallback)
         {
-            kPlugin->d_deactivate();
-            kPlugin->d_sampleRateChanged(sampleRate);
-            kPlugin->d_activate();
+            fPlugin->d_deactivate();
+            fPlugin->d_sampleRateChanged(sampleRate);
+            fPlugin->d_activate();
         }
     }
 
-    // ---------------------------------------------
+    // -------------------------------------------------------------------
 
 protected:
-    Plugin* const kPlugin;
-    Plugin::PrivateData* const kData;
+    Plugin* const fPlugin;
+    Plugin::PrivateData* const fData;
 
 private:
     static const d_string        sFallbackString;
     static const ParameterRanges sFallbackRanges;
 };
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 END_NAMESPACE_DISTRHO
 
-#endif // __DISTRHO_PLUGIN_INTERNAL_HPP__
+#endif // DISTRHO_PLUGIN_INTERNAL_HPP_INCLUDED
