@@ -19,7 +19,13 @@ PYRCC ?= pyrcc4 -py3
 
 # --------------------------------------------------------------
 
-all: CXX RES UI WIDGETS
+all: WARN
+# CXX RES UI WIDGETS
+
+WARN:
+	@echo "This is the development branch of carla, DO NOT USE IT."
+	@echo "Please switch to the stable branch by using:"
+	@echo "git checkout 1.0.x"
 
 # --------------------------------------------------------------
 # C++ code
