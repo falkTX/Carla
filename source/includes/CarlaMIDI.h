@@ -28,7 +28,7 @@
 #define MIDI_STATUS_POLYPHONIC_AFTERTOUCH              0xA0 // note (0-127), pressure (0-127)
 #define MIDI_STATUS_CONTROL_CHANGE                     0xB0 // see 'Control Change Messages List'
 #define MIDI_STATUS_PROGRAM_CHANGE                     0xC0 // program (0-127), none
-#define MIDI_STATUS_AFTERTOUCH                         0xD0 // pressure (0-127), none
+#define MIDI_STATUS_CHANNEL_PRESSURE                   0xD0 // pressure (0-127), none
 #define MIDI_STATUS_PITCH_WHEEL_CONTROL                0xE0 // LSB (0-127), MSB (0-127)
 
 #define MIDI_IS_STATUS_NOTE_OFF(status)                (((status) & 0xF0) == MIDI_STATUS_NOTE_OFF)

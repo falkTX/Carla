@@ -15,8 +15,8 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#ifndef __CARLA_LV2_UTILS_HPP__
-#define __CARLA_LV2_UTILS_HPP__
+#ifndef CARLA_LV2_UTILS_HPP_INCLUDED
+#define CARLA_LV2_UTILS_HPP_INCLUDED
 
 #include "CarlaJuceUtils.hpp"
 
@@ -1372,6 +1372,4 @@ bool is_lv2_ui_feature_supported(const LV2_URI uri)
     return false;
 }
 
-// -------------------------------------------------
-
-#endif // __CARLA_LV2_UTILS_HPP__
+#endif // CARLA_LV2_UTILS_HPP_INCLUDED

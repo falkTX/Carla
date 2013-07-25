@@ -15,8 +15,8 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#ifndef __CARLA_STATE_UTILS_HPP__
-#define __CARLA_STATE_UTILS_HPP__
+#ifndef CARLA_STATE_UTILS_HPP_INCLUDED
+#define CARLA_STATE_UTILS_HPP_INCLUDED
 
 #include "CarlaBackendUtils.hpp"
 #include "CarlaMIDI.h"
@@ -630,8 +630,6 @@ void fillXmlStringFromSaveState(QString& content, const SaveState& saveState)
     content += "  </Data>\n";
 }
 
-// -------------------------------------------------
-
 CARLA_BACKEND_END_NAMESPACE
 
-#endif // __CARLA_STATE_UTILS_HPP__
+#endif // CARLA_STATE_UTILS_HPP_INCLUDED

@@ -16,8 +16,8 @@
  * For a full copy of the GNU General Public License see the GPL3.txt file
  */
 
-#ifndef __CARLA_STYLE_ANIMATIONS_HPP__
-#define __CARLA_STYLE_ANIMATIONS_HPP__
+#ifndef CARLA_STYLE_ANIMATIONS_HPP_INCLUDED
+#define CARLA_STYLE_ANIMATIONS_HPP_INCLUDED
 
 #include "CarlaStyle.hpp"
 
@@ -181,4 +181,4 @@ private:
     mutable int _step;
 };
 
-#endif // __CARLA_STYLE_ANIMATIONS_HPP__
+#endif // CARLA_STYLE_ANIMATIONS_HPP_INCLUDED

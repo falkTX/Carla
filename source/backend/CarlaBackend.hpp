@@ -260,31 +260,32 @@ enum OptionsType {
      */
     OPTION_PREFER_UI_BRIDGES = 5,
 
+    /*!
+     * Make plugin UIs always-on-top.\n
+     * Default is yes.
+     */
+    OPTION_UIS_ALWAYS_ON_TOP = 6,
+
 #ifdef WANT_DSSI
     /*!
      * Use (unofficial) dssi-vst chunks feature.\n
      * Default is no.
      * \see PLUGIN_OPTION_USE_CHUNKS
      */
-    OPTION_USE_DSSI_VST_CHUNKS = 6,
+    OPTION_USE_DSSI_VST_CHUNKS = 7,
 #endif
 
     /*!
      * Maximum number of parameters allowed.\n
      * Default is MAX_DEFAULT_PARAMETERS.
      */
-    OPTION_MAX_PARAMETERS = 7,
+    OPTION_MAX_PARAMETERS = 8,
 
     /*!
      * Timeout value in ms for how much to wait for UI-Bridges to respond.\n
      * Default is 4000 (4 secs).
      */
-    OPTION_UI_BRIDGES_TIMEOUT = 8,
-
-    /*!
-     * JACK auto-connect to hardware ports.
-     */
-    OPTION_JACK_AUTOCONNECT = 9,
+    OPTION_UI_BRIDGES_TIMEOUT = 9,
 
 #ifdef WANT_RTAUDIO
     /*!
@@ -734,23 +735,22 @@ struct ParameterRanges {
 
     float getFixedValue(const float& value) const noexcept
     {
-        if (value < min)
+        if (value <= min)
             return min;
-        else if (value > max)
+        if (value >= max)
             return max;
         return value;
     }
 
     float getNormalizedValue(const float& value) const noexcept
     {
-        float newValue = (value - min) / (max - min);
+        const float normValue((value - min) / (max - min));
 
-        if (newValue < 0.0f)
-            newValue = 0.0f;
-        else if (newValue > 1.0f)
-            newValue = 1.0f;
-
-        return newValue;
+        if (normValue <= 0.0f)
+            return 0.0f;
+        if (normValue >= 1.0f)
+            return 1.0f;
+        return normValue;
     }
 
     float getUnnormalizedValue(const float& value) const noexcept

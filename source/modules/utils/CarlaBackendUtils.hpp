@@ -210,6 +210,8 @@ const char* OptionsType2Str(const OptionsType type)
         return "OPTION_PREFER_PLUGIN_BRIDGES";
     case OPTION_PREFER_UI_BRIDGES:
         return "OPTION_PREFER_UI_BRIDGES";
+    case OPTION_UIS_ALWAYS_ON_TOP:
+        return "OPTION_UIS_ALWAYS_ON_TOP";
 #ifdef WANT_DSSI
     case OPTION_USE_DSSI_VST_CHUNKS:
         return "OPTION_USE_DSSI_VST_CHUNKS";
@@ -218,8 +220,6 @@ const char* OptionsType2Str(const OptionsType type)
         return "OPTION_MAX_PARAMETERS";
     case OPTION_UI_BRIDGES_TIMEOUT:
         return "OPTION_UI_BRIDGES_TIMEOUT";
-    case OPTION_JACK_AUTOCONNECT:
-        return "OPTION_JACK_AUTOCONNECT";
 #ifdef WANT_RTAUDIO
     case OPTION_RTAUDIO_NUMBER_PERIODS:
         return "OPTION_RTAUDIO_NUMBER_PERIODS";

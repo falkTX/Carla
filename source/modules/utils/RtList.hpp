@@ -49,7 +49,7 @@ protected:
     };
 
     List()
-        : kDataSize(sizeof(Data)),
+        : fDataSize(sizeof(Data)),
           fCount(0)
     {
         _init();
@@ -64,22 +64,22 @@ public:
     class Itenerator {
     public:
         Itenerator(const k_list_head* queue)
-            : kQueue(queue),
+            : fData(nullptr),
               fEntry(queue->next),
               fEntry2(fEntry->next),
-              fData(nullptr)
+              fQueue(queue)
         {
-            CARLA_ASSERT(kQueue != nullptr);
             CARLA_ASSERT(fEntry != nullptr);
             CARLA_ASSERT(fEntry2 != nullptr);
+            CARLA_ASSERT(fQueue != nullptr);
         }
 
-        bool valid()
+        bool valid() const noexcept
         {
-            return (fEntry != kQueue);
+            return (fEntry != fQueue);
         }
 
-        void next()
+        void next() noexcept
         {
             fEntry  = fEntry2;
             fEntry2 = fEntry->next;
@@ -88,15 +88,15 @@ public:
         T& operator*()
         {
             fData = list_entry(fEntry, Data, siblings);
-            CARLA_ASSERT(fData != nullptr);
+            CARLA_SAFE_ASSERT_RETURN(fData != nullptr, nullptr);
             return fData->value;
         }
 
     private:
-        const k_list_head* const kQueue;
+        Data* fData;
         k_list_head* fEntry;
         k_list_head* fEntry2;
-        Data* fData;
+        const k_list_head* const fQueue;
 
         friend class List;
     };
@@ -123,12 +123,12 @@ public:
         _init();
     }
 
-    size_t count() const
+    size_t count() const noexcept
     {
         return fCount;
     }
 
-    bool isEmpty() const
+    bool isEmpty() const noexcept
     {
         return (fCount == 0);
     }
@@ -318,7 +318,7 @@ public:
     }
 
 protected:
-    const size_t kDataSize;
+    const size_t fDataSize;
           size_t fCount;
     k_list_head  fQueue;
 
@@ -326,7 +326,7 @@ protected:
     virtual void  _deallocate(Data* const dataPtr) = 0;
 
 private:
-    void _init()
+    void _init() noexcept
     {
         fCount = 0;
         INIT_LIST_HEAD(&fQueue);
@@ -340,14 +340,11 @@ private:
         k_list_head* const entry = first ? fQueue.next : fQueue.prev;
         Data*        const data  = list_entry(entry, Data, siblings);
 
-        CARLA_ASSERT(data != nullptr);
-
-        if (data == nullptr)
-            return _getEmpty();
+        CARLA_SAFE_ASSERT_RETURN(data != nullptr, _getEmpty());
 
         T& ret = data->value;
 
-        if (data != nullptr && remove)
+        if (remove)
         {
             --fCount;
             list_del(entry);
@@ -359,17 +356,11 @@ private:
 
     T& _getEmpty()
     {
-        static T value;
-        static bool reset = true;
-
-        if (reset)
-        {
-            reset = false;
-            carla_zeroStruct<T>(value);
-        }
-
-        return value;
+        carla_zeroStruct<T>(fFallbackValue);
+        return fFallbackValue;
     }
+
+    T fFallbackValue;
 
     LIST_DECLARATIONS(List)
 };
@@ -389,7 +380,7 @@ public:
     public:
         Pool(const size_t minPreallocated, const size_t maxPreallocated)
             : fHandle(nullptr),
-              kDataSize(sizeof(typename List<T>::Data))
+              fDataSize(sizeof(typename List<T>::Data))
         {
             resize(minPreallocated, maxPreallocated);
         }
@@ -426,23 +417,23 @@ public:
                 fHandle = nullptr;
             }
 
-            rtsafe_memory_pool_create(&fHandle, nullptr, kDataSize, minPreallocated, maxPreallocated);
+            rtsafe_memory_pool_create(&fHandle, nullptr, fDataSize, minPreallocated, maxPreallocated);
             CARLA_ASSERT(fHandle != nullptr);
         }
 
-        bool operator==(const Pool& pool) const
+        bool operator==(const Pool& pool) const noexcept
         {
-            return (fHandle == pool.fHandle && kDataSize == pool.kDataSize);
+            return (fHandle == pool.fHandle && fDataSize == pool.fDataSize);
         }
 
-        bool operator!=(const Pool& pool) const
+        bool operator!=(const Pool& pool) const noexcept
         {
-            return (fHandle != pool.fHandle || kDataSize != pool.kDataSize);
+            return (fHandle != pool.fHandle || fDataSize != pool.fDataSize);
         }
 
     private:
         RtMemPool_Handle fHandle;
-        const size_t     kDataSize;
+        const size_t     fDataSize;
     };
 
     // -------------------------------------------------------------------
@@ -516,9 +507,11 @@ private:
         return (typename List<T>::Data*)fMemPool.allocate_sleepy();
     }
 
-    void _deallocate(typename List<T>::Data* const dataPtr) override
+    void _deallocate(typename List<T>::Data*& dataPtr) override
     {
+        CARLA_ASSERT(dataPtr != nullptr);
         fMemPool.deallocate(dataPtr);
+        dataPtr = nullptr;
     }
 
     LIST_DECLARATIONS(RtList)
@@ -542,13 +535,14 @@ public:
 private:
     typename List<T>::Data* _allocate() override
     {
-        return (typename List<T>::Data*)std::malloc(this->kDataSize);
+        return (typename List<T>::Data*)std::malloc(this->fDataSize);
     }
 
-    void _deallocate(typename List<T>::Data* const dataPtr) override
+    void _deallocate(typename List<T>::Data*& dataPtr) override
     {
         CARLA_ASSERT(dataPtr != nullptr);
         std::free(dataPtr);
+        dataPtr = nullptr;
     }
 
     LIST_DECLARATIONS(NonRtList)
@@ -575,10 +569,11 @@ private:
         return new typename List<T>::Data;
     }
 
-    void _deallocate(typename List<T>::Data* const dataPtr) override
+    void _deallocate(typename List<T>::Data*& dataPtr) override
     {
         CARLA_ASSERT(dataPtr != nullptr);
         delete dataPtr;
+        dataPtr = nullptr;
     }
 
     LIST_DECLARATIONS(NonRtListNew)

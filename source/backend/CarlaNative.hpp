@@ -52,134 +52,102 @@ protected:
         return pHost;
     }
 
-    const char* getResourceDir() const noexcept
+    const char* getResourceDir() const
     {
-        CARLA_ASSERT(pHost != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr, nullptr);
 
-        if (pHost != nullptr)
-            return pHost->resourceDir;
-
-        return nullptr;
+        return pHost->resourceDir;
     }
 
-    const char* getUiName() const noexcept
+    const char* getUiName() const
     {
-        CARLA_ASSERT(pHost != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr, nullptr);
 
-        if (pHost != nullptr)
-            return pHost->uiName;
-
-        return nullptr;
+        return pHost->uiName;
     }
 
     uint32_t getBufferSize() const
     {
-        CARLA_ASSERT(pHost != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr, 0);
 
-        if (pHost != nullptr)
-            return pHost->get_buffer_size(pHost->handle);
-
-        return 0;
+        return pHost->get_buffer_size(pHost->handle);
     }
 
     double getSampleRate() const
     {
-        CARLA_ASSERT(pHost != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr, 0.0);
 
-        if (pHost != nullptr)
-            return pHost->get_sample_rate(pHost->handle);
-
-        return 0.0;
+        return pHost->get_sample_rate(pHost->handle);
     }
 
     bool isOffline() const
     {
-        CARLA_ASSERT(pHost != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr, false);
 
-        if (pHost != nullptr)
-            return pHost->is_offline(pHost->handle);
-
-        return false;
+        return pHost->is_offline(pHost->handle);
     }
 
     const TimeInfo* getTimeInfo() const
     {
-        CARLA_ASSERT(pHost != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr, nullptr);
 
-        if (pHost != nullptr)
-            return pHost->get_time_info(pHost->handle);
-
-        return nullptr;
+        return pHost->get_time_info(pHost->handle);
     }
 
     void writeMidiEvent(const MidiEvent* const event) const
     {
-        CARLA_ASSERT(pHost != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
 
-        if (pHost != nullptr)
-            pHost->write_midi_event(pHost->handle, event);
+        pHost->write_midi_event(pHost->handle, event);
     }
 
     void uiParameterChanged(const uint32_t index, const float value) const
     {
-        CARLA_ASSERT(pHost != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
 
-        if (pHost != nullptr)
-            pHost->ui_parameter_changed(pHost->handle, index, value);
+        pHost->ui_parameter_changed(pHost->handle, index, value);
     }
 
     void uiMidiProgramChanged(const uint8_t channel, const uint32_t bank, const uint32_t program) const
     {
-        CARLA_ASSERT(pHost != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
 
-        if (pHost != nullptr)
-            pHost->ui_midi_program_changed(pHost->handle, channel, bank, program);
+        pHost->ui_midi_program_changed(pHost->handle, channel, bank, program);
     }
 
     void uiCustomDataChanged(const char* const key, const char* const value) const
     {
-        CARLA_ASSERT(pHost != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
 
-        if (pHost != nullptr)
-            pHost->ui_custom_data_changed(pHost->handle, key, value);
+        pHost->ui_custom_data_changed(pHost->handle, key, value);
     }
 
     void uiClosed() const
     {
-        CARLA_ASSERT(pHost != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
 
-        if (pHost != nullptr)
-            pHost->ui_closed(pHost->handle);
+        pHost->ui_closed(pHost->handle);
     }
 
     const char* uiOpenFile(const bool isDir, const char* const title, const char* const filter) const
     {
-        CARLA_ASSERT(pHost != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr, nullptr);
 
-        if (pHost != nullptr)
-            return pHost->ui_open_file(pHost->handle, isDir, title, filter);
-
-        return nullptr;
+        return pHost->ui_open_file(pHost->handle, isDir, title, filter);
     }
 
     const char* uiSaveFile(const bool isDir, const char* const title, const char* const filter) const
     {
-        CARLA_ASSERT(pHost != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr, nullptr);
 
-        if (pHost != nullptr)
-            return pHost->ui_save_file(pHost->handle, isDir, title, filter);
-
-        return nullptr;
+        return pHost->ui_save_file(pHost->handle, isDir, title, filter);
     }
 
     intptr_t hostDispatcher(const HostDispatcherOpcode opcode, const int32_t index, const intptr_t value, void* const ptr, const float opt) const
     {
-        CARLA_ASSERT(pHost != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr, 0);
 
-        if (pHost != nullptr)
-            return pHost->dispatcher(pHost->handle, opcode, index, value, ptr, opt);
-
-        return 0;
+        return pHost->dispatcher(pHost->handle, opcode, index, value, ptr, opt);
     }
 
     // -------------------------------------------------------------------
@@ -192,29 +160,22 @@ protected:
 
     virtual const Parameter* getParameterInfo(const uint32_t index)
     {
-        CARLA_ASSERT(index < getParameterCount());
+        CARLA_SAFE_ASSERT_RETURN(index < getParameterCount(), nullptr);
         return nullptr;
-
-        // unused
-        (void)index;
     }
 
     virtual float getParameterValue(const uint32_t index)
     {
-        CARLA_ASSERT(index < getParameterCount());
+        CARLA_SAFE_ASSERT_RETURN(index < getParameterCount(), 0.0f);
         return 0.0f;
-
-        // unused
-        (void)index;
     }
 
     virtual const char* getParameterText(const uint32_t index, const float value)
     {
-        CARLA_ASSERT(index < getParameterCount());
+        CARLA_SAFE_ASSERT_RETURN(index < getParameterCount(), nullptr);
         return nullptr;
 
         // unused
-        (void)index;
         (void)value;
     }
 
@@ -228,11 +189,8 @@ protected:
 
     virtual const MidiProgram* getMidiProgramInfo(const uint32_t index)
     {
-        CARLA_ASSERT(index < getMidiProgramCount());
+        CARLA_SAFE_ASSERT_RETURN(index < getMidiProgramCount(), nullptr);
         return nullptr;
-
-        // unused
-        (void)index;
     }
 
     // -------------------------------------------------------------------
@@ -240,34 +198,27 @@ protected:
 
     virtual void setParameterValue(const uint32_t index, const float value)
     {
-        CARLA_ASSERT(index < getParameterCount());
+        CARLA_SAFE_ASSERT_RETURN(index < getParameterCount(),);
         return;
 
         // unused
-        (void)index;
         (void)value;
     }
 
     virtual void setMidiProgram(const uint8_t channel, const uint32_t bank, const uint32_t program)
     {
-        CARLA_ASSERT(channel < MAX_MIDI_CHANNELS);
+        CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
         return;
 
         // unused
-        (void)channel;
         (void)bank;
         (void)program;
     }
 
     virtual void setCustomData(const char* const key, const char* const value)
     {
-        CARLA_ASSERT(key != nullptr);
-        CARLA_ASSERT(value != nullptr);
-        return;
-
-        // unused
-        (void)key;
-        (void)value;
+        CARLA_SAFE_ASSERT_RETURN(key != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(value != nullptr,);
     }
 
     // -------------------------------------------------------------------
@@ -300,34 +251,27 @@ protected:
 
     virtual void uiSetParameterValue(const uint32_t index, const float value)
     {
-        CARLA_ASSERT(index < getParameterCount());
+        CARLA_SAFE_ASSERT_RETURN(index < getParameterCount(),);
         return;
 
         // unused
-        (void)index;
         (void)value;
     }
 
     virtual void uiSetMidiProgram(const uint8_t channel, const uint32_t bank, const uint32_t program)
     {
-        CARLA_ASSERT(channel < MAX_MIDI_CHANNELS);
+        CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
         return;
 
         // unused
-        (void)channel;
         (void)bank;
         (void)program;
     }
 
     virtual void uiSetCustomData(const char* const key, const char* const value)
     {
-        CARLA_ASSERT(key != nullptr);
-        CARLA_ASSERT(value != nullptr);
-        return;
-
-        // unused
-        (void)key;
-        (void)value;
+        CARLA_SAFE_ASSERT_RETURN(key != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(value != nullptr,);
     }
 
     // -------------------------------------------------------------------
@@ -340,11 +284,7 @@ protected:
 
     virtual void setState(const char* const data)
     {
-        CARLA_ASSERT(data != nullptr);
-        return;
-
-        // unused
-        (void)data;
+        CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
     }
 
     // -------------------------------------------------------------------
@@ -405,42 +345,42 @@ public:
 
     static void _set_parameter_value(PluginHandle handle, uint32_t index, float value)
     {
-        return handlePtr->setParameterValue(index, value);
+        handlePtr->setParameterValue(index, value);
     }
 
     static void _set_midi_program(PluginHandle handle, uint8_t channel, uint32_t bank, uint32_t program)
     {
-        return handlePtr->setMidiProgram(channel, bank, program);
+        handlePtr->setMidiProgram(channel, bank, program);
     }
 
     static void _set_custom_data(PluginHandle handle, const char* key, const char* value)
     {
-        return handlePtr->setCustomData(key, value);
+        handlePtr->setCustomData(key, value);
     }
 
     static void _ui_show(PluginHandle handle, bool show)
     {
-        return handlePtr->uiShow(show);
+        handlePtr->uiShow(show);
     }
 
     static void _ui_idle(PluginHandle handle)
     {
-        return handlePtr->uiIdle();
+        handlePtr->uiIdle();
     }
 
     static void _ui_set_parameter_value(PluginHandle handle, uint32_t index, float value)
     {
-        return handlePtr->uiSetParameterValue(index, value);
+        handlePtr->uiSetParameterValue(index, value);
     }
 
     static void _ui_set_midi_program(PluginHandle handle, uint8_t channel, uint32_t bank, uint32_t program)
     {
-        return handlePtr->uiSetMidiProgram(channel, bank, program);
+        handlePtr->uiSetMidiProgram(channel, bank, program);
     }
 
     static void _ui_set_custom_data(PluginHandle handle, const char* key, const char* value)
     {
-        return handlePtr->uiSetCustomData(key, value);
+        handlePtr->uiSetCustomData(key, value);
     }
 
     static void _activate(PluginHandle handle)
@@ -455,7 +395,7 @@ public:
 
     static void _process(PluginHandle handle, float** inBuffer, float** outBuffer, const uint32_t frames, uint32_t midiEventCount, const MidiEvent* midiEvents)
     {
-        return handlePtr->process(inBuffer, outBuffer, frames, midiEventCount, midiEvents);
+        handlePtr->process(inBuffer, outBuffer, frames, midiEventCount, midiEvents);
     }
 
     static char* _get_state(PluginHandle handle)

@@ -15,8 +15,8 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#ifndef __CARLA_BRIDGE_HPP__
-#define __CARLA_BRIDGE_HPP__
+#ifndef CARLA_BRIDGE_HPP_INCLUDED
+#define CARLA_BRIDGE_HPP_INCLUDED
 
 #include "CarlaDefines.hpp"
 
@@ -32,4 +32,4 @@ class CarlaBridgeToolkit;
 
 CARLA_BRIDGE_END_NAMESPACE
 
-#endif // __CARLA_BRIDGE_HPP__
+#endif // CARLA_BRIDGE_HPP_INCLUDED

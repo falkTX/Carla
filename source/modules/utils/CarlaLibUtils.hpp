@@ -15,8 +15,8 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#ifndef __CARLA_LIB_UTILS_HPP__
-#define __CARLA_LIB_UTILS_HPP__
+#ifndef CARLA_LIB_UTILS_HPP_INCLUDED
+#define CARLA_LIB_UTILS_HPP_INCLUDED
 
 #include "CarlaUtils.hpp"
 
@@ -95,4 +95,4 @@ const char* lib_error(const char* const filename)
 #endif
 }
 
-#endif // __CARLA_LIB_UTILS_HPP__
+#endif // CARLA_LIB_UTILS_HPP_INCLUDED

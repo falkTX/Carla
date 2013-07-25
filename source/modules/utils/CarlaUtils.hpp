@@ -205,7 +205,7 @@ const char* carla_strdup(const char* const strBuf)
     char* const  buffer    = new char[bufferLen+1];
 
     if (strBuf != nullptr && bufferLen > 0)
-        std::strcpy(buffer, strBuf);
+        std::strncpy(buffer, strBuf, bufferLen);
 
     buffer[bufferLen] = '\0';
 
@@ -215,7 +215,7 @@ const char* carla_strdup(const char* const strBuf)
 static inline
 const char* carla_strdup_free(char* const strBuf)
 {
-    const char* const buffer = carla_strdup(strBuf);
+    const char* const buffer(carla_strdup(strBuf));
     std::free(strBuf);
     return buffer;
 }
@@ -342,15 +342,30 @@ void carla_copyFloat(float* const dataDst, float* const dataSrc, const size_t si
 }
 
 static inline
+void carla_zeroChar(char* const data, const size_t size)
+{
+    CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(size > 0,);
+
+    std::memset(data, 0, size*sizeof(char));
+}
+
+static inline
 void carla_zeroDouble(double* const data, const size_t size)
 {
-    carla_fill<double>(data, size, 0.0);
+    CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(size > 0,);
+
+    std::memset(data, 0, size*sizeof(double));
 }
 
 static inline
 void carla_zeroFloat(float* const data, const size_t size)
 {
-    carla_fill<float>(data, size, 0.0f);
+    CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(size > 0,);
+
+    std::memset(data, 0, size*sizeof(float));
 }
 
 #if defined(CARLA_OS_MAC) && ! defined(DISTRHO_OS_MAC)
@@ -393,7 +408,7 @@ void carla_zeroStruct(T* const structure, const size_t count)
     CARLA_SAFE_ASSERT_RETURN(structure != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(count != 0,);
 
-    std::memset(structure, 0, sizeof(T)*count);
+    std::memset(structure, 0, count*sizeof(T));
 }
 
 #endif // CARLA_UTILS_HPP_INCLUDED

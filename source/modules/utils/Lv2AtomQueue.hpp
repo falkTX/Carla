@@ -15,8 +15,8 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#ifndef __LV2_ATOM_QUEUE_HPP__
-#define __LV2_ATOM_QUEUE_HPP__
+#ifndef LV2_ATOM_QUEUE_HPP_INCLUDED
+#define LV2_ATOM_QUEUE_HPP_INCLUDED
 
 #include "CarlaLv2Utils.hpp"
 #include "CarlaMutex.hpp"
@@ -191,4 +191,4 @@ private:
     CarlaMutex fMutex;
 };
 
-#endif // __LV2_ATOM_QUEUE_HPP__
+#endif // LV2_ATOM_QUEUE_HPP_INCLUDED

@@ -15,8 +15,8 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#ifndef __MIDI_BASE_HPP__
-#define __MIDI_BASE_HPP__
+#ifndef MIDI_BASE_HPP_INCLUDED
+#define MIDI_BASE_HPP_INCLUDED
 
 #include "CarlaMIDI.h"
 #include "CarlaMutex.hpp"
@@ -236,4 +236,4 @@ private:
     }
 };
 
-#endif // __MIDI_BASE_HPP__
+#endif // MIDI_BASE_HPP_INCLUDED

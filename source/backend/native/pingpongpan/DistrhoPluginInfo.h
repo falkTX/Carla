@@ -14,8 +14,8 @@
  * For a full copy of the license see the LGPL.txt file
  */
 
-#ifndef __DISTRHO_PLUGIN_INFO_H__
-#define __DISTRHO_PLUGIN_INFO_H__
+#ifndef DISTRHO_PLUGIN_INFO_H_INCLUDED
+#define DISTRHO_PLUGIN_INFO_H_INCLUDED
 
 #define DISTRHO_PLUGIN_NAME "Ping Pong Pan"
 
@@ -34,4 +34,4 @@
 
 #define DISTRHO_UI_OPENGL
 
-#endif // __DISTRHO_PLUGIN_INFO_H__
+#endif // DISTRHO_PLUGIN_INFO_H_INCLUDED

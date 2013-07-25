@@ -8,8 +8,8 @@ include ../../../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_C_FLAGS   += -fvisibility=hidden -fPIC
-BUILD_CXX_FLAGS += -fvisibility=hidden -fPIC -I.
+BUILD_C_FLAGS   += -I.
+BUILD_CXX_FLAGS += -I.
 
 OBJS  = \
 	src/App.cpp.o \

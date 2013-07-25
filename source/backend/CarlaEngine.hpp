@@ -200,12 +200,10 @@ struct EngineEvent {
         EngineMidiEvent midi;
     };
 
-#ifndef DOXYGEN
     EngineEvent() noexcept
     {
         clear();
     }
-#endif
 
     void clear() noexcept
     {
@@ -231,12 +229,10 @@ struct EngineOptions {
 #endif
 
     unsigned int maxParameters;
-    unsigned int oscUiTimeout;
-
-    bool jackAutoConnect;
+    unsigned int uiBridgesTimeout;
 
 #ifdef WANT_RTAUDIO
-    unsigned int rtaudioNumberPeriods;
+    unsigned int rtaudioNumPeriods;
     unsigned int rtaudioBufferSize;
     unsigned int rtaudioSampleRate;
     CarlaString  rtaudioDevice;
@@ -266,32 +262,29 @@ struct EngineOptions {
     CarlaString bridge_vstX11;
 #endif
 
-#ifndef DOXYGEN
-    EngineOptions() noexcept
-# if defined(CARLA_OS_LINUX)
+    EngineOptions()
+#if defined(CARLA_OS_LINUX)
         : processMode(PROCESS_MODE_MULTIPLE_CLIENTS),
           transportMode(TRANSPORT_MODE_JACK),
-# else
+#else
         : processMode(PROCESS_MODE_CONTINUOUS_RACK),
           transportMode(TRANSPORT_MODE_INTERNAL),
-# endif
+#endif
           forceStereo(false),
           preferPluginBridges(false),
           preferUiBridges(true),
           uisAlwaysOnTop(true),
-# ifdef WANT_DSSI
+#ifdef WANT_DSSI
           useDssiVstChunks(false),
-# endif
+#endif
           maxParameters(MAX_DEFAULT_PARAMETERS),
-          oscUiTimeout(4000),
-          jackAutoConnect(false),
-# ifdef WANT_RTAUDIO
-          rtaudioNumberPeriods(0),
+          uiBridgesTimeout(4000),
+#ifdef WANT_RTAUDIO
+          rtaudioNumPeriods(2),
           rtaudioBufferSize(512),
           rtaudioSampleRate(44100),
-# endif
-          resourceDir() {}
 #endif
+          resourceDir() {}
 };
 
 /*!
@@ -309,7 +302,6 @@ struct EngineTimeInfoBBT {
     double ticksPerBeat;
     double beatsPerMinute;
 
-#ifndef DOXYGEN
     EngineTimeInfoBBT() noexcept
         : bar(0),
           beat(0),
@@ -319,7 +311,6 @@ struct EngineTimeInfoBBT {
           beatType(0.0f),
           ticksPerBeat(0.0),
           beatsPerMinute(0.0) {}
-#endif
 };
 
 /*!
@@ -334,12 +325,10 @@ struct EngineTimeInfo {
     uint32_t valid;
     EngineTimeInfoBBT bbt;
 
-#ifndef DOXYGEN
     EngineTimeInfo() noexcept
     {
         clear();
     }
-#endif
 
     void clear() noexcept
     {
@@ -349,7 +338,6 @@ struct EngineTimeInfo {
         valid   = 0x0;
     }
 
-#ifndef DOXYGEN
     // quick operator, doesn't check all values
     bool operator==(const EngineTimeInfo& timeInfo) const noexcept
     {
@@ -366,7 +354,6 @@ struct EngineTimeInfo {
     {
         return !operator==(timeInfo);
     }
-#endif
 };
 
 // -----------------------------------------------------------------------
@@ -1192,6 +1179,7 @@ private:
     // -------------------------------------------------------------------
     // Bridge/Controller OSC stuff
 
+public:
 #ifdef BUILD_BRIDGE
     void oscSend_bridge_audio_count(const int32_t ins, const int32_t outs, const int32_t total);
     void oscSend_bridge_midi_count(const int32_t ins, const int32_t outs, const int32_t total);
@@ -1213,7 +1201,6 @@ private:
     void oscSend_bridge_set_chunk_data(const char* const chunkFile);
     void oscSend_bridge_set_peaks();
 #else
-public:
     void oscSend_control_add_plugin_start(const int32_t pluginId, const char* const pluginName);
     void oscSend_control_add_plugin_end(const int32_t pluginId);
     void oscSend_control_remove_plugin(const int32_t pluginId);

@@ -15,8 +15,8 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#ifndef __DISTRHO_UI_NOTES_HPP__
-#define __DISTRHO_UI_NOTES_HPP__
+#ifndef DISTRHO_UI_NOTES_HPP_INCLUDED
+#define DISTRHO_UI_NOTES_HPP_INCLUDED
 
 #include "DistrhoUIQt.hpp"
 #include "paramspinbox.hpp"
@@ -104,8 +104,6 @@ private:
     void saveCurrentTextState();
 };
 
-// -------------------------------------------------
-
 END_NAMESPACE_DISTRHO
 
-#endif // __DISTRHO_UI_NOTES_HPP__
+#endif // DISTRHO_UI_NOTES_HPP_INCLUDED

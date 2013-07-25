@@ -15,8 +15,8 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#ifndef __DISTRHO_UI_3BANDEQ_HPP__
-#define __DISTRHO_UI_3BANDEQ_HPP__
+#ifndef DISTRHO_UI_3BANDEQ_HPP_INCLUDED
+#define DISTRHO_UI_3BANDEQ_HPP_INCLUDED
 
 #include "DistrhoUIOpenGL.hpp"
 
@@ -101,4 +101,4 @@ private:
 
 END_NAMESPACE_DISTRHO
 
-#endif // __DISTRHO_UI_3BANDEQ_HPP__
+#endif // DISTRHO_UI_3BANDEQ_HPP_INCLUDED

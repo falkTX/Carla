@@ -15,8 +15,8 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#ifndef __AUDIO_BASE_HPP__
-#define __AUDIO_BASE_HPP__
+#ifndef AUDIO_BASE_HPP_INCLUDED
+#define AUDIO_BASE_HPP_INCLUDED
 
 #include "CarlaMutex.hpp"
 
@@ -386,4 +386,4 @@ private:
     CarlaMutex    fMutex;
 };
 
-#endif // __AUDIO_BASE_HPP__
+#endif // AUDIO_BASE_HPP_INCLUDED

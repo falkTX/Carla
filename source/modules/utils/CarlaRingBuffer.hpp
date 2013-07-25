@@ -16,8 +16,8 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#ifndef __CARLA_RING_BUFFER_HPP__
-#define __CARLA_RING_BUFFER_HPP__
+#ifndef CARLA_RING_BUFFER_HPP_INCLUDED
+#define CARLA_RING_BUFFER_HPP_INCLUDED
 
 #include "CarlaJuceUtils.hpp"
 
@@ -254,6 +254,4 @@ private:
     }
 };
 
-// -------------------------------------------------
-
-#endif // __CARLA_RING_BUFFER_HPP__
+#endif // CARLA_RING_BUFFER_HPP_INCLUDED

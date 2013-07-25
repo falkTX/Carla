@@ -12,11 +12,11 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#ifndef __CARLA_PLUGIN_INTERNAL_HPP__
-#define __CARLA_PLUGIN_INTERNAL_HPP__
+#ifndef CARLA_PLUGIN_INTERNAL_HPP_INCLUDED
+#define CARLA_PLUGIN_INTERNAL_HPP_INCLUDED
 
 #include "CarlaPlugin.hpp"
 #include "CarlaPluginThread.hpp"
@@ -806,38 +806,8 @@ struct CarlaPluginProtectedData {
 
     void         saveSetting(const unsigned int option, const bool yesNo);
     unsigned int loadSettings(const unsigned int options, const unsigned int availOptions);
-
-    // -------------------------------------------------------------------
-    // Static helper functions
-
-    static CarlaEngine* getEngine(CarlaPlugin* const plugin)
-    {
-        return plugin->kData->engine;
-    }
-
-    static CarlaEngineClient* getEngineClient(CarlaPlugin* const plugin)
-    {
-        return plugin->kData->client;
-    }
-
-    static CarlaEngineAudioPort* getAudioInPort(CarlaPlugin* const plugin, const uint32_t index)
-    {
-        return plugin->kData->audioIn.ports[index].port;
-    }
-
-    static CarlaEngineAudioPort* getAudioOutPort(CarlaPlugin* const plugin, const uint32_t index)
-    {
-        return plugin->kData->audioOut.ports[index].port;
-    }
-
-    static bool canRunInRack(CarlaPlugin* const plugin)
-    {
-        return (plugin->kData->extraHints & PLUGIN_HINT_CAN_RUN_RACK);
-    }
 };
-
-// -----------------------------------------------------------------------
 
 CARLA_BACKEND_END_NAMESPACE
 
-#endif // __CARLA_PLUGIN_INTERNAL_HPP__
+#endif // CARLA_PLUGIN_INTERNAL_HPP_INCLUDED

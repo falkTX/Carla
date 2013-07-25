@@ -14,8 +14,8 @@
  * For a full copy of the license see the LGPL.txt file
  */
 
-#ifndef __DISTRHO_UI_3BANDEQ_HPP__
-#define __DISTRHO_UI_3BANDEQ_HPP__
+#ifndef DISTRHO_UI_STEREO_ENHANCER_HPP_INCLUDED
+#define DISTRHO_UI_STEREO_ENHANCER_HPP_INCLUDED
 
 #include "DistrhoUIOpenGL.hpp"
 
@@ -78,8 +78,6 @@ private:
     ImageButton* fButtonAbout;
 };
 
-// -------------------------------------------------
-
 END_NAMESPACE_DISTRHO
 
-#endif // __DISTRHO_UI_3BANDEQ_HPP__
+#endif // DISTRHO_UI_STEREO_ENHANCER_HPP_INCLUDED

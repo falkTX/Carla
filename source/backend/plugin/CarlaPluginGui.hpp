@@ -15,8 +15,8 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#ifndef __CARLA_PLUGIN_GUI_HPP__
-#define __CARLA_PLUGIN_GUI_HPP__
+#ifndef CARLA_PLUGIN_GUI_HPP_INCLUDED
+#define CARLA_PLUGIN_GUI_HPP_INCLUDED
 
 #include "CarlaPluginInternal.hpp"
 
@@ -79,4 +79,4 @@ private slots:
 
 CARLA_BACKEND_END_NAMESPACE
 
-#endif // __CARLA_PLUGIN_GUI_HPP__
+#endif // CARLA_PLUGIN_GUI_HPP_INCLUDED

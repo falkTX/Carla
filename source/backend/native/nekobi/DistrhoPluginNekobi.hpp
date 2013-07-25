@@ -16,8 +16,8 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#ifndef __DISTRHO_PLUGIN_3BANDEQ_HPP__
-#define __DISTRHO_PLUGIN_3BANDEQ_HPP__
+#ifndef DISTRHO_PLUGIN_3BANDEQ_HPP_INCLUDED
+#define DISTRHO_PLUGIN_3BANDEQ_HPP_INCLUDED
 
 #include "DistrhoPlugin.hpp"
 
@@ -112,4 +112,4 @@ private:
 
 END_NAMESPACE_DISTRHO
 
-#endif  // __DISTRHO_PLUGIN_3BANDEQ_HPP__
+#endif  // DISTRHO_PLUGIN_3BANDEQ_HPP_INCLUDED

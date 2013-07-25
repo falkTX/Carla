@@ -29,7 +29,7 @@ STRIP ?= strip
 
 # --------------------------------------------------------------
 
-BASE_FLAGS = -Wall -Wextra -fPIC -pipe
+BASE_FLAGS = -Wall -Wextra -fPIC -DPIC -pipe
 BASE_OPTS  = -O2 -ffast-math -mtune=generic -msse -mfpmath=sse
 
 ifeq ($(RASPPI),true)

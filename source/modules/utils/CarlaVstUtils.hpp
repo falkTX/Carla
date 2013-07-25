@@ -15,8 +15,8 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#ifndef __CARLA_VST_UTILS_HPP__
-#define __CARLA_VST_UTILS_HPP__
+#ifndef CARLA_VST_UTILS_HPP_INCLUDED
+#define CARLA_VST_UTILS_HPP_INCLUDED
 
 #include "CarlaUtils.hpp"
 
@@ -453,6 +453,4 @@ const char* vstMasterOpcode2str(const int32_t opcode)
     }
 }
 
-// -------------------------------------------------
-
-#endif // __CARLA_VST_UTILS_HPP__
+#endif // CARLA_VST_UTILS_HPP_INCLUDED

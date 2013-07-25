@@ -18,31 +18,42 @@
 #undef NDEBUG
 #define DEBUG
 
-// includes (part1)
+// includes
 #include "CarlaDefines.hpp"
 #include "CarlaMIDI.h"
-
-// Carla common utils
-#include "CarlaUtils.hpp"
-
-// Carla misc utils imported from Juce source code
-#include "CarlaJuceUtils.hpp"
-
-// includes (part2)
 #include "ladspa_rdf.hpp"
 #include "lv2_rdf.hpp"
 
 // Carla Backend API
 #include "CarlaBackend.hpp"
 
+// Carla utils (part 1/3)
+#include "CarlaUtils.hpp"
+#include "CarlaJuceUtils.hpp"
+
+// Carla utils (part 2/3)
+#include "CarlaMutex.hpp"
+#include "CarlaRingBuffer.hpp"
+#include "CarlaString.hpp"
+#include "Lv2AtomQueue.hpp"
+#include "RtList.hpp"
+
+// Carla utils (part 3/3)
+#include "CarlaBackendUtils.hpp"
+#include "CarlaBridgeUtils.hpp"
+#include "CarlaLadspaUtils.hpp"
+#include "CarlaLibUtils.hpp"
+#include "CarlaLv2Utils.hpp"
+#include "CarlaOscUtils.hpp"
+#include "CarlaShmUtils.hpp"
+#include "CarlaStateUtils.hpp"
+#include "CarlaVstUtils.hpp"
+
 // Carla Native Plugin API
 #include "CarlaNative.h"
 
 // Carla Native Plugin API (C++)
 #include "CarlaNative.hpp"
-
-// Carla String
-#include "CarlaString.hpp"
 
 // Carla Plugin API
 #include "CarlaPlugin.hpp"
@@ -53,33 +64,13 @@
 // Carla Standalone API
 #include "CarlaStandalone.hpp"
 
-// Carla Plugin Thread
-#include "CarlaPluginThread.hpp"
+// // Carla Plugin
+// #include "plugin/CarlaPluginThread.hpp"
+// #include "plugin/CarlaPluginInternal.hpp"
 
-// Carla Backend utils
-#include "CarlaBackendUtils.hpp"
+// #include "standalone/CarlaStandalone.cpp"
 
-// Carla OSC utils
-#include "CarlaOscUtils.hpp"
-
-// Carla Mutex
-#include "CarlaMutex.hpp"
-
-// RT List
-#include "RtList.hpp"
-
-// Carla Plugin
-// #include "CarlaPluginInternal.hpp"
-
-//#include "standalone/CarlaStandalone.cpp"
-
-// #include "CarlaBridgeUtils.hpp"
-// #include "CarlaLadspaUtils.hpp"
-// #include "CarlaLibUtils.hpp"
-// #include "CarlaLv2Utils.hpp"
-// #include "CarlaShmUtils.hpp"
-// #include "CarlaStateUtils.hpp"
-// #include "CarlaVstUtils.hpp"
+namespace CB = CarlaBackend;
 
 int safe_assert_return_test(bool test)
 {
@@ -111,7 +102,6 @@ int main()
 
     // Carla Backend API
     {
-        namespace CB = CarlaBackend;
         CB::BinaryType a = CB::BINARY_NONE;
         CB::PluginType b = CB::PLUGIN_NONE;
         CB::PluginCategory c = CB::PLUGIN_CATEGORY_NONE;

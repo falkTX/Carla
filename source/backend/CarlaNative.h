@@ -30,7 +30,6 @@ extern "C" {
  * @defgroup CarlaNativeAPI Carla Native API
  *
  * The Carla Native API
- *
  * @{
  */
 
@@ -56,11 +55,10 @@ typedef enum {
     PLUGIN_IS_RTSAFE           = 1 << 0,
     PLUGIN_IS_SYNTH            = 1 << 1,
     PLUGIN_HAS_GUI             = 1 << 2,
-    PLUGIN_USES_GUI_AS_FILE    = 1 << 3,
-    PLUGIN_USES_PANNING        = 1 << 4, // uses stereo balance if unset (default)
-    PLUGIN_USES_SINGLE_THREAD  = 1 << 5,
-    PLUGIN_USES_STATE          = 1 << 6,
-    PLUGIN_USES_STATIC_BUFFERS = 1 << 7
+    PLUGIN_USES_PANNING        = 1 << 3, // uses stereo balance if unset (default)
+    PLUGIN_USES_SINGLE_THREAD  = 1 << 4,
+    PLUGIN_USES_STATE          = 1 << 5,
+    PLUGIN_USES_STATIC_BUFFERS = 1 << 6
 } PluginHints;
 
 typedef enum {

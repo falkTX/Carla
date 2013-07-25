@@ -15,8 +15,8 @@
  * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
-#ifndef __CARLA_ENGINE_INTERNAL_HPP__
-#define __CARLA_ENGINE_INTERNAL_HPP__
+#ifndef CARLA_ENGINE_INTERNAL_HPP_INCLUDED
+#define CARLA_ENGINE_INTERNAL_HPP_INCLUDED
 
 #include "CarlaEngine.hpp"
 #include "CarlaEngineOsc.hpp"
@@ -351,4 +351,4 @@ struct CarlaEngineProtectedData {
 
 CARLA_BACKEND_END_NAMESPACE
 
-#endif // __CARLA_ENGINE_INTERNAL_HPP__
+#endif // CARLA_ENGINE_INTERNAL_HPP_INCLUDED

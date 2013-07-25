@@ -8,8 +8,7 @@ include ../../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_C_FLAGS += -pthread
-BUILD_C_FLAGS += -I. -I../../includes
+BUILD_C_FLAGS += -I. -I../../includes -pthread
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
 BUILD_C_FLAGS += -DWANT_LV2
@@ -60,20 +59,20 @@ win64:   ../rtmempool.win64.a
 
 # --------------------------------------------------------------
 
-rtmempool.c.o: rtmempool.c
+%.c.o: %.c
 	$(CC) $< $(BUILD_C_FLAGS) -c -o $@
 
-rtmempool.c.posix32.o: rtmempool.c
+%.c.posix32.o: %.c
 	$(CC) $< $(BUILD_C_FLAGS) $(32BIT_FLAGS) -c -o $@
 
-rtmempool.c.posix64.o: rtmempool.c
+%.c.posix64.o: %.c
 	$(CC) $< $(BUILD_C_FLAGS) $(64BIT_FLAGS) -c -o $@
 
-rtmempool.c.win32.o: rtmempool.c
-	$(CC) $< $(BUILD_C_FLAGS) -DPTW32_STATIC_LIB $(32BIT_FLAGS) -c -o $@
+%.c.win32.o: %.c
+	$(CC) $< $(BUILD_C_FLAGS) $(32BIT_FLAGS) -c -o $@
 
-rtmempool.c.win64.o: rtmempool.c
-	$(CC) $< $(BUILD_C_FLAGS) -DPTW32_STATIC_LIB $(64BIT_FLAGS) -c -o $@
+%.c.win64.o: %.c
+	$(CC) $< $(BUILD_C_FLAGS) $(64BIT_FLAGS) -c -o $@
 
 # --------------------------------------------------------------
 

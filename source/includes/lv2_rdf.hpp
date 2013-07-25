@@ -18,7 +18,7 @@
 #ifndef LV2_RDF_HPP_INCLUDED
 #define LV2_RDF_HPP_INCLUDED
 
-#include "CarlaJuceUtils.hpp"
+#include "CarlaDefines.hpp"
 
 #ifdef CARLA_PROPER_CPP11_SUPPORT
 # include <cstdint>

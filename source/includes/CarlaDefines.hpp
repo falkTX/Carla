@@ -109,6 +109,16 @@
 # define BINARY_NATIVE BINARY_OTHER
 #endif
 
+// Define CARLA_DECLARE_NON_COPY_STRUCT
+#ifdef CARLA_PROPER_CPP11_SUPPORT
+# define CARLA_DECLARE_NON_COPY_STRUCT(StructName) \
+     StructName(StructName&) = delete;             \
+     StructName(const StructName&) = delete;       \
+     StructName& operator=(const StructName&) = delete;
+#else
+# define CARLA_DECLARE_NON_COPY_STRUCT(StructName)
+#endif
+
 // Define CARLA_SAFE_ASSERT*
 #define CARLA_SAFE_ASSERT(cond)              if (cond) pass(); else carla_assert     (#cond, __FILE__, __LINE__);
 #define CARLA_SAFE_ASSERT_INT(cond, value)   if (cond) pass(); else carla_assert_int (#cond, __FILE__, __LINE__, value);
