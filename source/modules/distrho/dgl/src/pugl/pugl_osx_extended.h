@@ -1,6 +1,6 @@
 /*
   Copyright 2012 David Robillard <http://drobilla.net>
-  Copyright 2013 Fil...
+  Copyright 2013 Filipe Coelho <falktx@falktx.com>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above

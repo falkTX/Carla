@@ -38,12 +38,6 @@ discovery:
 plugin:
 	$(MAKE) -C source/plugin
 
-theme:
-	$(MAKE) -C source/theme
-
-widgets:
-	$(MAKE) -C source/widgets
-
 posix32:
 	$(MAKE) -C source/bridges posix32
 	$(MAKE) -C source/discovery posix32
@@ -122,10 +116,8 @@ clean:
 	$(MAKE) clean -C source/backend
 	$(MAKE) clean -C source/bridges
 	$(MAKE) clean -C source/discovery
-	$(MAKE) clean -C source/libs
+	$(MAKE) clean -C source/modules
 	$(MAKE) clean -C source/plugin
-	$(MAKE) clean -C source/theme
-	$(MAKE) clean -C source/widgets
 	rm -f $(RES)
 	rm -f $(UIs)
 	rm -f $(WIDGETS)

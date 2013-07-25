@@ -2,20 +2,20 @@
  * DISTRHO Plugin Toolkit (DPT)
  * Copyright (C) 2012-2013 Filipe Coelho <falktx@falktx.com>
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation.
+ * Permission to use, copy, modify, and/or distribute this software for any purpose with
+ * or without fee is hereby granted, provided that the above copyright notice and this
+ * permission notice appear in all copies.
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Lesser General Public License for more details.
- *
- * For a full copy of the license see the LGPL.txt file
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD
+ * TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN
+ * NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
+ * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER
+ * IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef __DGL_BASE_HPP__
-#define __DGL_BASE_HPP__
+#ifndef DGL_BASE_HPP_INCLUDED
+#define DGL_BASE_HPP_INCLUDED
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
 # define DGL_OS_WINDOWS 1
@@ -74,9 +74,9 @@
 # define GL_CLAMP_TO_BORDER 0x812D
 #endif
 
-// -------------------------------------------------
-
 START_NAMESPACE_DGL
+
+// -----------------------------------------------------------------------
 
 enum Char {
     DGL_CHAR_BACKSPACE = 0x08,
@@ -119,9 +119,9 @@ enum Modifier {
     DGL_MODIFIER_SUPER = 1 << 3  /**< Mod4/Command/Windows key */
 };
 
-END_NAMESPACE_DGL
+// -----------------------------------------------------------------------
 
-// -------------------------------------------------
+END_NAMESPACE_DGL
 
 static inline
 void dgl_sleep(unsigned int secs)
@@ -143,4 +143,6 @@ void dgl_msleep(unsigned int msecs)
 #endif
 }
 
-#endif // __DGL_BASE_HPP__
+// -----------------------------------------------------------------------
+
+#endif // DGL_BASE_HPP_INCLUDED

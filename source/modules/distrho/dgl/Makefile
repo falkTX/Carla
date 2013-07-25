@@ -11,7 +11,7 @@ include ../../../Makefile.mk
 BUILD_C_FLAGS   += -I.
 BUILD_CXX_FLAGS += -I.
 
-OBJS  = \
+OBJS = \
 	src/App.cpp.o \
 	src/Image.cpp.o \
 	src/ImageAboutWindow.cpp.o \
@@ -44,7 +44,7 @@ OBJS_posix64 = \
 	src/Widget.cpp.posix64.o \
 	src/Window.cpp.posix64.o
 
-OBJS_win32   = \
+OBJS_win32 = \
 	src/App.cpp.win32.o \
 	src/Image.cpp.win32.o \
 	src/ImageAboutWindow.cpp.win32.o \
@@ -55,7 +55,7 @@ OBJS_win32   = \
 	src/Widget.cpp.win32.o \
 	src/Window.cpp.win32.o
 
-OBJS_win64   = \
+OBJS_win64 = \
 	src/App.cpp.win64.o \
 	src/Image.cpp.win64.o \
 	src/ImageAboutWindow.cpp.win64.o \
@@ -67,7 +67,7 @@ OBJS_win64   = \
 	src/Window.cpp.win64.o
 
 ifeq ($(MACOS),true)
-OBJS += src/pugl/pugl_osx_extended.m.o
+OBJS         += src/pugl/pugl_osx_extended.m.o
 OBJS_posix32 += src/pugl/pugl_osx_extended.m.posix32.o
 OBJS_posix64 += src/pugl/pugl_osx_extended.m.posix64.o
 endif
@@ -99,13 +99,13 @@ win64:   ../../dgl.win64.a
 	$(AR) rs $@ $^
 
 ../../dgl.dll: $(OBJS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -lopengl32 -lgdi32 -o $@
+	$(CXX) $^ -shared $(LINK_FLAGS) -lopengl32 -lgdi32 -o $@ $(CMD_STRIP) $@
 
 ../../dgl.dylib: $(OBJS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -framework OpenGL -framework Cocoa -o $@
+	$(CXX) $^ -dynamiclib $(LINK_FLAGS) -framework OpenGL -framework Cocoa -o $@ $(CMD_STRIP) $@
 
 ../../dgl.so: $(OBJS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -lGL -lX11 -o $@
+	$(CXX) $^ -shared $(LINK_FLAGS) -lGL -lX11 -o $@ $(CMD_STRIP) $@
 
 # --------------------------------------------------------------
 

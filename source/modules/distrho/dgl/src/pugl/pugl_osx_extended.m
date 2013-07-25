@@ -1,6 +1,6 @@
 /*
   Copyright 2012 David Robillard <http://drobilla.net>
-  Copyright 2013 Fil...
+  Copyright 2013 Filipe Coelho <falktx@falktx.com>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -25,41 +25,40 @@
 
 void puglImplFocus(PuglView* view)
 {
-	// TODO
+    // TODO
 }
 
 void puglImplSetSize(PuglView* view, unsigned int width, unsigned int height)
 {
-	id window = view->impl->window;
+    //id window = view->impl->window;
 
-	// TODO
-//	NSRect frame = [window frame];
-//	frame.size.width  = width;
-//	frame.size.height = height;
+    // TODO
+    //NSRect frame = [window frame];
+    //frame.size.width  = width;
+    //frame.size.height = height;
 
-	// display:NO ?
-//	[window setFrame:frame display:YES animate:NO];
+    // display:NO ?
+    //[window setFrame:frame display:YES animate:NO];
 }
 
 void puglImplSetTitle(PuglView* view, const char* title)
 {
-	id window = view->impl->window;
-	
-	NSString* titleString = [[NSString alloc]
-							    initWithBytes:title
-							           length:strlen(title)
-									 encoding:NSUTF8StringEncoding];
+    id window = view->impl->window;
 
-	[window setTitle:titleString];
+    NSString* titleString = [[NSString alloc]
+                              initWithBytes:title
+                                     length:strlen(title)
+                                   encoding:NSUTF8StringEncoding];
+
+    [window setTitle:titleString];
 }
 
 void puglImplSetVisible(PuglView* view, bool yesNo)
 {
-	id window = view->impl->window;
+    id window = view->impl->window;
 
-	if (yesNo) {
-		[window setIsVisible:YES];
-	} else {
-		[window setIsVisible:NO];
-	}
+    if (yesNo)
+        [window setIsVisible:YES];
+    else
+        [window setIsVisible:NO];
 }

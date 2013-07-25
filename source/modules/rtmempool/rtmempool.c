@@ -366,7 +366,7 @@ void rtsafe_memory_pool_deallocate(RtMemPool_Handle handle, void* memoryPtr)
 }
 
 #ifdef WANT_LV2
-#include "lv2/lv2_rtmempool.h"
+# include "lv2/lv2_rtmempool.h"
 
 void lv2_rtmempool_init(LV2_RtMemPool_Pool* poolPtr)
 {
