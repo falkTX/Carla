@@ -1,6 +1,5 @@
 /*
- * Carla Bridge utils imported from dssi-vst code
- * Copyright (C) 2004-2010 Chris Cannam <cannam@all-day-breakfast.com>
+ * Carla Bridge utils
  * Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
@@ -13,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
 #ifndef CARLA_BRIDGE_UTILS_HPP_INCLUDED
@@ -69,20 +68,16 @@ const char* const CARLA_BRIDGE_MSG_SET_CUSTOM = "CarlaBridgeSetCustom"; //!< Hos
 // -----------------------------------------------------------------------
 
 struct BridgeShmControl {
-    // 32 and 64-bit binaries align semaphores differently.
-    // Let's make sure there's plenty of room for either one.
     union {
         void* runServer;
-        char _alignServer[128];
+        char _padServer[32];
     };
     union {
         void* runClient;
-        char _alignClient[128];
+        char _padClient[32];
     };
     RingBuffer ringBuffer;
-
-    CARLA_DECLARE_NON_COPY_STRUCT(BridgeShmControl)
-};
+} __attribute__((__packed__));
 
 // -----------------------------------------------------------------------
 
@@ -167,5 +162,7 @@ const char* PluginBridgeOpcode2str(const PluginBridgeOpcode opcode)
     carla_stderr("CarlaBackend::PluginBridgeOpcode2str(%i) - invalid opcode", opcode);
     return nullptr;
 }
+
+// -----------------------------------------------------------------------
 
 #endif // CARLA_BRIDGE_UTILS_HPP_INCLUDED

@@ -109,24 +109,6 @@
 # define BINARY_NATIVE BINARY_OTHER
 #endif
 
-// Define CARLA_DECLARE_NON_COPY_STRUCT
-#ifdef CARLA_PROPER_CPP11_SUPPORT
-# define CARLA_DECLARE_NON_COPY_STRUCT(StructName) \
-     StructName(StructName&) = delete;             \
-     StructName(const StructName&) = delete;       \
-     StructName& operator=(const StructName&) = delete;
-#else
-# define CARLA_DECLARE_NON_COPY_STRUCT(StructName)
-#endif
-
-// Define CARLA_SAFE_ASSERT*
-#define CARLA_SAFE_ASSERT(cond)              if (cond) pass(); else carla_assert     (#cond, __FILE__, __LINE__);
-#define CARLA_SAFE_ASSERT_INT(cond, value)   if (cond) pass(); else carla_assert_int (#cond, __FILE__, __LINE__, value);
-#define CARLA_SAFE_ASSERT_INT2(cond, v1, v2) if (cond) pass(); else carla_assert_int2(#cond, __FILE__, __LINE__, v1, v2);
-
-// Define CARLA_SAFE_ASSERT_RETURN*
-#define CARLA_SAFE_ASSERT_RETURN(cond, ret)  if (cond) pass(); else { carla_assert(#cond, __FILE__, __LINE__); return ret; }
-
 // Define CARLA_ASSERT*
 #if defined(CARLA_NO_ASSERTS)
 # define CARLA_ASSERT(cond)
@@ -140,6 +122,24 @@
 # define CARLA_ASSERT(cond)              assert(cond)
 # define CARLA_ASSERT_INT(cond, value)   assert(cond)
 # define CARLA_ASSERT_INT2(cond, v1, v2) assert(cond)
+#endif
+
+// Define CARLA_SAFE_ASSERT*
+#define CARLA_SAFE_ASSERT(cond)              if (cond) pass(); else carla_assert     (#cond, __FILE__, __LINE__);
+#define CARLA_SAFE_ASSERT_INT(cond, value)   if (cond) pass(); else carla_assert_int (#cond, __FILE__, __LINE__, value);
+#define CARLA_SAFE_ASSERT_INT2(cond, v1, v2) if (cond) pass(); else carla_assert_int2(#cond, __FILE__, __LINE__, v1, v2);
+
+// Define CARLA_SAFE_ASSERT_RETURN*
+#define CARLA_SAFE_ASSERT_RETURN(cond, ret)  if (cond) pass(); else { carla_assert(#cond, __FILE__, __LINE__); return ret; }
+
+// Define CARLA_DECLARE_NON_COPY_STRUCT
+#ifdef CARLA_PROPER_CPP11_SUPPORT
+# define CARLA_DECLARE_NON_COPY_STRUCT(StructName) \
+     StructName(StructName&) = delete;             \
+     StructName(const StructName&) = delete;       \
+     StructName& operator=(const StructName&) = delete;
+#else
+# define CARLA_DECLARE_NON_COPY_STRUCT(StructName)
 #endif
 
 // Define CARLA_EXPORT

@@ -1,5 +1,5 @@
 /*
- * Carla Ring Buffer imported from dssi-vst code
+ * Carla Ring Buffer based on dssi-vst code
  * Copyright (C) 2004-2010 Chris Cannam <cannam@all-day-breakfast.com>
  * Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
  *
@@ -13,26 +13,26 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
 #ifndef CARLA_RING_BUFFER_HPP_INCLUDED
 #define CARLA_RING_BUFFER_HPP_INCLUDED
 
-#include "CarlaJuceUtils.hpp"
+#include "CarlaUtils.hpp"
 
-#define RING_BUFFER_SIZE 2048
+#ifndef RING_BUFFER_SIZE
+# define RING_BUFFER_SIZE 2048
+#endif
 
 // -----------------------------------------------------------------------
 // RingBuffer struct
 
 struct RingBuffer {
-    int head, tail, written;
-    bool invalidateCommit;
-    char buf[RING_BUFFER_SIZE];
-
-    CARLA_DECLARE_NON_COPY_STRUCT(RingBuffer)
-};
+    int32_t head, tail, written;
+    bool    invalidateCommit;
+    char    buf[RING_BUFFER_SIZE];
+} __attribute__((__packed__));
 
 // -----------------------------------------------------------------------
 // RingBufferControl class
@@ -61,18 +61,14 @@ public:
         fRingBuf->tail = 0;
         fRingBuf->written = 0;
         fRingBuf->invalidateCommit = false;
-
-        carla_fill<char>(fRingBuf->buf, RING_BUFFER_SIZE, 0);
+        carla_zeroChar(fRingBuf->buf, RING_BUFFER_SIZE);
     }
 
-    // ---------------------------------------------
+    // -------------------------------------------------------------------
 
     void commitWrite()
     {
-        CARLA_ASSERT(fRingBuf != nullptr);
-
-        if (fRingBuf == nullptr)
-            return;
+        CARLA_SAFE_ASSERT_RETURN(fRingBuf != nullptr,);
 
         if (fRingBuf->invalidateCommit)
         {
@@ -87,23 +83,12 @@ public:
 
     bool dataAvailable() const
     {
-        CARLA_ASSERT(fRingBuf != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(fRingBuf != nullptr, false);
 
-        if (fRingBuf == nullptr)
-            return false;
-
-        return (fRingBuf->tail != fRingBuf->head);
+        return (fRingBuf->head != fRingBuf->tail);
     }
 
-    // ---------------------------------------------
-
-    template<typename T>
-    T read()
-    {
-        T t = 0;
-        tryRead(&t, sizeof(T));
-        return t;
-    }
+    // -------------------------------------------------------------------
 
     char readChar()
     {
@@ -112,17 +97,17 @@ public:
         return c;
     }
 
-    int readInt()
+    int32_t readInt()
     {
-        int i = 0;
-        tryRead(&i, sizeof(int));
+        int32_t i = 0;
+        tryRead(&i, sizeof(int32_t));
         return i;
     }
 
-    long readLong()
+    int64_t readLong()
     {
-        long l = 0;
-        tryRead(&l, sizeof(long));
+        int64_t l = 0;
+        tryRead(&l, sizeof(int64_t));
         return l;
     }
 
@@ -133,27 +118,21 @@ public:
         return f;
     }
 
-    // ---------------------------------------------
-
-    template<typename T>
-    void write(const T value)
-    {
-        tryWrite(&value, sizeof(T));
-    }
+    // -------------------------------------------------------------------
 
     void writeChar(const char value)
     {
         tryWrite(&value, sizeof(char));
     }
 
-    void writeInt(const int value)
+    void writeInt(const int32_t value)
     {
-        tryWrite(&value, sizeof(int));
+        tryWrite(&value, sizeof(int32_t));
     }
 
-    void writeLong(const long value)
+    void writeLong(const int64_t value)
     {
-        tryWrite(&value, sizeof(long));
+        tryWrite(&value, sizeof(int64_t));
     }
 
     void writeFloat(const float value)
@@ -161,37 +140,37 @@ public:
         tryWrite(&value, sizeof(float));
     }
 
-    // ---------------------------------------------
+    // -------------------------------------------------------------------
 
 private:
     RingBuffer* fRingBuf;
 
     void tryRead(void* const buf, const size_t size)
     {
-        CARLA_ASSERT(fRingBuf != nullptr);
-        CARLA_ASSERT(buf != nullptr);
-        CARLA_ASSERT(size != 0);
-
-        if (fRingBuf == nullptr)
-            return;
-        if (buf == nullptr)
-            return;
-        if (size == 0)
-            return;
+        CARLA_SAFE_ASSERT_RETURN(fRingBuf != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(buf != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(size != 0,);
 
         // this should not happen
         CARLA_ASSERT(fRingBuf->head >= 0);
         CARLA_ASSERT(fRingBuf->tail >= 0);
         CARLA_ASSERT(fRingBuf->written >= 0);
 
+        // empty
+        if (fRingBuf->head == fRingBuf->tail)
+            return;
+
         char* const charbuf(static_cast<char*>(buf));
 
-        const size_t head(fRingBuf->head);
-        const size_t tail(fRingBuf->tail);
-        const size_t wrap((head <= tail) ? RING_BUFFER_SIZE : 0);
+        const size_t head(static_cast<size_t>(fRingBuf->head));
+        const size_t tail(static_cast<size_t>(fRingBuf->tail));
+        const size_t wrap((head < tail) ? RING_BUFFER_SIZE : 0);
 
         if (head - tail + wrap < size)
+        {
+            carla_stderr2("RingBufferControl::tryRead() - failed");
             return;
+        }
 
         size_t readto = tail + size;
 
@@ -207,50 +186,48 @@ private:
             std::memcpy(charbuf, fRingBuf->buf + tail, size);
         }
 
-        fRingBuf->tail = readto;
+        fRingBuf->tail = static_cast<int32_t>(readto);
     }
 
     void tryWrite(const void* const buf, const size_t size)
     {
-        CARLA_ASSERT(fRingBuf != nullptr);
-        CARLA_ASSERT(buf != nullptr);
-        CARLA_ASSERT(size != 0);
+        CARLA_SAFE_ASSERT_RETURN(fRingBuf != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(buf != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(size != 0,);
 
-        if (fRingBuf == nullptr)
-            return;
-        if (buf == nullptr)
-            return;
-        if (size == 0)
-            return;
+        // this should not happen
+        CARLA_ASSERT(fRingBuf->head >= 0);
+        CARLA_ASSERT(fRingBuf->tail >= 0);
+        CARLA_ASSERT(fRingBuf->written >= 0);
 
         const char* const charbuf(static_cast<const char*>(buf));
 
-        const size_t tail(fRingBuf->tail);
-        const size_t written(fRingBuf->written);
-        const size_t wrap((tail <= written) ? RING_BUFFER_SIZE : 0);
+        const size_t tail(static_cast<size_t>(fRingBuf->tail));
+        const size_t wrtn(static_cast<size_t>(fRingBuf->written));
+        const size_t wrap((tail <= wrtn) ? RING_BUFFER_SIZE : 0);
 
-        if (tail - written + wrap < size)
+        if (tail - wrtn + wrap <= size)
         {
             carla_stderr2("RingBufferControl::tryWrite() - buffer full!");
             fRingBuf->invalidateCommit = true;
             return;
         }
 
-        size_t writeto = written + size;
+        size_t writeto = wrtn + size;
 
         if (writeto >= RING_BUFFER_SIZE)
         {
             writeto -= RING_BUFFER_SIZE;
-            const size_t firstpart(RING_BUFFER_SIZE - written);
-            std::memcpy(fRingBuf->buf + written, charbuf, firstpart);
+            const size_t firstpart(RING_BUFFER_SIZE - wrtn);
+            std::memcpy(fRingBuf->buf + wrtn, charbuf, firstpart);
             std::memcpy(fRingBuf->buf, charbuf + firstpart, writeto);
         }
         else
         {
-            std::memcpy(fRingBuf->buf + written, charbuf, size);
+            std::memcpy(fRingBuf->buf + wrtn, charbuf, size);
         }
 
-        fRingBuf->written = writeto;
+        fRingBuf->written = static_cast<int32_t>(writeto);
     }
 };
 

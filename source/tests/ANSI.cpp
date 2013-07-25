@@ -18,6 +18,8 @@
 #undef NDEBUG
 #define DEBUG
 
+#define RING_BUFFER_SIZE 48
+
 // includes
 #include "CarlaDefines.hpp"
 #include "CarlaMIDI.h"
@@ -27,27 +29,29 @@
 // Carla Backend API
 #include "CarlaBackend.hpp"
 
-// Carla utils (part 1/3)
+// Carla utils (part 1/4)
 #include "CarlaUtils.hpp"
 #include "CarlaJuceUtils.hpp"
 
-// Carla utils (part 2/3)
+// Carla utils (part 2/4)
 #include "CarlaMutex.hpp"
 #include "CarlaRingBuffer.hpp"
 #include "CarlaString.hpp"
-#include "Lv2AtomQueue.hpp"
 #include "RtList.hpp"
 
-// Carla utils (part 3/3)
+// Carla utils (part 3/4)
 #include "CarlaBackendUtils.hpp"
 #include "CarlaBridgeUtils.hpp"
-#include "CarlaLadspaUtils.hpp"
-#include "CarlaLibUtils.hpp"
-#include "CarlaLv2Utils.hpp"
-#include "CarlaOscUtils.hpp"
-#include "CarlaShmUtils.hpp"
-#include "CarlaStateUtils.hpp"
-#include "CarlaVstUtils.hpp"
+// #include "CarlaLadspaUtils.hpp"
+// #include "CarlaLibUtils.hpp"
+// #include "CarlaLv2Utils.hpp"
+// #include "CarlaOscUtils.hpp"
+// #include "CarlaShmUtils.hpp"
+// #include "CarlaStateUtils.hpp"
+// #include "CarlaVstUtils.hpp"
+
+// Carla utils (part 4/4)
+// #include "Lv2AtomQueue.hpp"
 
 // Carla Native Plugin API
 #include "CarlaNative.h"
@@ -80,6 +84,7 @@ int safe_assert_return_test(bool test)
 
 int main()
 {
+#if 0
     // ladspa rdf
     {
         LADSPA_RDF_ScalePoint a;
@@ -458,6 +463,67 @@ int main()
         m.tryLock();
         m.unlock();
         const CarlaMutex::ScopedLocker sl(m);
+    }
+#endif
+
+    // RingBuffer
+    {
+        RingBuffer buf;
+        RingBufferControl ctrl(&buf);
+
+        assert(! ctrl.dataAvailable());
+        assert(ctrl.readInt() == 0);
+        assert(ctrl.readFloat() == 0.0f);
+        assert(! ctrl.dataAvailable());
+
+        ctrl.writeChar('z');
+        ctrl.commitWrite();
+        assert(ctrl.dataAvailable());
+        const char c = ctrl.readChar();
+        carla_stdout("BufRead c = \"%c\"", c);
+        assert(c != '\0');
+        assert(c == 'z');
+        assert(! ctrl.dataAvailable());
+
+        ctrl.writeInt(9999);
+        ctrl.commitWrite();
+        const int i = ctrl.readInt();
+        carla_stdout("BufRead i = \"%i\"", i);
+        assert(i != 0);
+        assert(i == 9999);
+
+        ctrl.writeLong(-88088);
+        ctrl.commitWrite();
+        const long l = ctrl.readLong();
+        carla_stdout("BufRead l = \"%li\"", l);
+        assert(l != 0);
+        assert(l == -88088);
+
+        ctrl.writeFloat(5.6789f);
+        ctrl.commitWrite();
+        const float f = ctrl.readFloat();
+        carla_stdout("BufRead f = \"%f\"", f);
+        assert(f != 0.0f);
+        assert(f == 5.6789f);
+
+        assert(! ctrl.dataAvailable());
+
+        for (char i='1'; i <= 'z'; ++i)
+        {
+           ctrl.writeChar(char(i));
+           ctrl.commitWrite();
+        }
+
+        assert(ctrl.dataAvailable());
+
+        printf("CHAR DUMP:\n");
+
+        while (ctrl.dataAvailable())
+            printf("%c", ctrl.readChar());
+
+        assert(! ctrl.dataAvailable());
+
+        printf("\nDUMP FINISHED");
     }
 
     return 0;
