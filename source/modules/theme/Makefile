@@ -4,12 +4,12 @@
 # Created by falkTX
 #
 
-include ../Makefile.mk
+include ../../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += -I. -I../includes -I../utils
-QT5_CXX_FLAGS    = $(BUILD_CXX_FLAGS)
+BUILD_CXX_FLAGS += -I. -I../../includes -I../utils
+QT5_CXX_FLAGS    = $(BUILD_CXX_FLAGS) # FIXME: use copy instead of reference
 
 ifeq ($(HAVE_QT4),true)
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtCore QtGui)
@@ -76,10 +76,11 @@ OBJS_win64 = \
 
 all: ../theme.a
 
-posix32: ../rtmempool.posix32.a
-posix64: ../rtmempool.posix64.a
-win32:   ../rtmempool.win32.a
-win64:   ../rtmempool.win64.a
+qt5:     ../theme.qt5.a
+posix32: ../theme.posix32.a
+posix64: ../theme.posix64.a
+win32:   ../theme.win32.a
+win64:   ../theme.win64.a
 
 # --------------------------------------------------------------
 
@@ -136,7 +137,7 @@ win64:   ../rtmempool.win64.a
 moc_%.cpp: %.hpp
 	$(MOC) $< -o $@
 
-resources.cpp: ../../resources/resources-theme.qrc
+resources.cpp: ../../../resources/resources-theme.qrc
 	$(RCC) $< -o $@
 
 # --------------------------------------------------------------

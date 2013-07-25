@@ -4,11 +4,11 @@
 # Created by falkTX
 #
 
-include ../Makefile.mk
+include ../../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += -I. -I../includes -I../utils
+BUILD_CXX_FLAGS += -I. -I../../includes -I../utils
 
 ifeq ($(HAVE_QT4),true)
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtCore QtGui)
@@ -33,21 +33,13 @@ OBJS = \
 	moc_paramspinbox.cpp.o \
 	moc_pixmapkeyboard.cpp.o
 
-TARGET = ../libs/widgets.a
+# --------------------------------------------------------------
+
+all: ../widgets.a
 
 # --------------------------------------------------------------
 
-all: $(TARGET)
-
-clean:
-	rm -f $(FILES) $(TARGET) $(OBJS)
-
-debug:
-	$(MAKE) DEBUG=true
-
-# --------------------------------------------------------------
-
-$(TARGET): $(FILES) $(OBJS)
+../widgets.a: $(FILES) $(OBJS)
 	$(AR) rs $@ $(OBJS)
 
 # --------------------------------------------------------------
@@ -60,3 +52,11 @@ moc_%.cpp.o: %.cpp
 
 moc_%.cpp: %.hpp
 	$(MOC) $< -o $@
+
+# --------------------------------------------------------------
+
+clean:
+	rm -f *.o ../widgets.* $(FILES)
+
+debug:
+	$(MAKE) DEBUG=true

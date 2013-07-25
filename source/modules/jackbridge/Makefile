@@ -65,3 +65,6 @@ JackBridge%.w64.o: JackBridge%.cpp
 	$(WINECXX) $^ $(WINE_64BIT_FLAGS) $(WINE_LINK_FLAGS) -o $@ $(CMD_STRIP) $@
 
 # --------------------------------------------------------------
+
+clean:
+	rm -f *.o ../jackbridge-*.*

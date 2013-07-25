@@ -15,6 +15,7 @@ LILV_VERSION   = 0.16.0
 
 BUILD_C_FLAGS += -w
 BUILD_C_FLAGS += -Iconfig -I../../includes
+BUILD_C_FLAGS += -Iserd-$(SERD_VERSION) -Isord-$(SORD_VERSION) -Isratom-$(SRATOM_VERSION)
 
 OBJS         = serd.c.o         sord.c.o         sratom.c.o         lilv.c.o
 OBJS_posix32 = serd.c.posix32.o sord.c.posix32.o sratom.c.posix32.o lilv.c.posix32.o
