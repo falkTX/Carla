@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
 #ifndef CARLA_LIB_UTILS_HPP_INCLUDED
@@ -30,7 +30,7 @@
 static inline
 void* lib_open(const char* const filename)
 {
-    CARLA_ASSERT(filename != nullptr);
+    CARLA_SAFE_ASSERT_RETURN(filename != nullptr, nullptr);
 
 #ifdef CARLA_OS_WIN
     return (void*)LoadLibraryA(filename);
@@ -42,10 +42,7 @@ void* lib_open(const char* const filename)
 static inline
 bool lib_close(void* const lib)
 {
-    CARLA_ASSERT(lib != nullptr);
-
-    if (lib == nullptr)
-        return false;
+    CARLA_SAFE_ASSERT_RETURN(lib != nullptr, false);
 
 #ifdef CARLA_OS_WIN
     return FreeLibrary((HMODULE)lib);
@@ -57,11 +54,8 @@ bool lib_close(void* const lib)
 static inline
 void* lib_symbol(void* const lib, const char* const symbol)
 {
-    CARLA_ASSERT(lib != nullptr);
-    CARLA_ASSERT(symbol != nullptr);
-
-    if (lib == nullptr && symbol == nullptr)
-        return nullptr;
+    CARLA_SAFE_ASSERT_RETURN(lib != nullptr, nullptr);
+    CARLA_SAFE_ASSERT_RETURN(symbol != nullptr, nullptr);
 
 #ifdef CARLA_OS_WIN
     return (void*)GetProcAddress((HMODULE)lib, symbol);
@@ -73,11 +67,11 @@ void* lib_symbol(void* const lib, const char* const symbol)
 static inline
 const char* lib_error(const char* const filename)
 {
-    CARLA_ASSERT(filename != nullptr);
+    CARLA_SAFE_ASSERT_RETURN(filename != nullptr, nullptr);
 
 #ifdef CARLA_OS_WIN
     static char libError[2048+1];
-    //carla_fill<char>(libError, 2048, '\0');
+    carla_zeroChar(libError, 2048);
 
     LPVOID winErrorString;
     DWORD  winErrorCode = GetLastError();
@@ -89,10 +83,9 @@ const char* lib_error(const char* const filename)
     return libError;
 #else
     return dlerror();
-
-    // unused
-    (void)filename;
 #endif
 }
+
+// -----------------------------------------------------------------------
 
 #endif // CARLA_LIB_UTILS_HPP_INCLUDED

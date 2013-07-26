@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
 #ifndef CARLA_STATE_UTILS_HPP_INCLUDED
@@ -22,7 +22,13 @@
 #include "CarlaMIDI.h"
 #include "RtList.hpp"
 
-#include <QtXml/QDomNode>
+#if 1
+# include <QtXml/QDomNode>
+#else
+# include "juce_core/AppConfig.h"
+# include "juce_core/juce_core.h"
+using juce::String;
+#endif
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -36,7 +42,7 @@ struct StateParameter {
     uint8_t     midiChannel;
     int16_t     midiCC;
 
-    StateParameter()
+    StateParameter() noexcept
         : index(0),
           name(nullptr),
           symbol(nullptr),
@@ -66,7 +72,7 @@ struct StateCustomData {
     const char* key;
     const char* value;
 
-    StateCustomData()
+    StateCustomData() noexcept
         : type(nullptr),
           key(nullptr),
           value(nullptr) {}
@@ -123,7 +129,7 @@ struct SaveState {
     StateParameterList parameters;
     StateCustomDataList customData;
 
-    SaveState()
+    SaveState() noexcept
         : type(nullptr),
           name(nullptr),
           label(nullptr),
@@ -211,8 +217,9 @@ struct SaveState {
     CARLA_DECLARE_NON_COPY_STRUCT(SaveState)
 };
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
+#if 1
 static inline
 QString xmlSafeString(const QString& string, const bool toXml)
 {
@@ -229,8 +236,26 @@ const char* xmlSafeStringCharDup(const QString& string, const bool toXml)
 {
     return carla_strdup(xmlSafeString(string, toXml).toUtf8().constData());
 }
+#else
+static inline
+String xmlSafeString(const String& string, const bool toXml)
+{
+    String newString(string);
 
-// -------------------------------------------------
+    if (toXml)
+        return newString.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace("'","&apos;").replace("\"","&quot;");
+    else
+        return newString.replace("&amp;","&").replace("&lt;","<").replace("&gt;",">").replace("&apos;","'").replace("&quot;","\"");
+}
+
+static inline
+const char* xmlSafeStringCharDup(const String& string, const bool toXml)
+{
+    return carla_strdup(xmlSafeString(string, toXml).toRawUTF8());
+}
+#endif
+
+// -----------------------------------------------------------------------
 
 static inline
 void fillSaveStateFromXmlNode(SaveState& saveState, const QDomNode& xmlNode)
@@ -244,7 +269,7 @@ void fillSaveStateFromXmlNode(SaveState& saveState, const QDomNode& xmlNode)
 
     while (! node.isNull())
     {
-        // ------------------------------------------------------
+        // ---------------------------------------------------------------
         // Info
 
         if (node.toElement().tagName().compare("Info", Qt::CaseInsensitive) == 0)
@@ -275,7 +300,7 @@ void fillSaveStateFromXmlNode(SaveState& saveState, const QDomNode& xmlNode)
             }
         }
 
-        // ------------------------------------------------------
+        // ---------------------------------------------------------------
         // Data
 
         else if (node.toElement().tagName().compare("Data", Qt::CaseInsensitive) == 0)
@@ -287,7 +312,7 @@ void fillSaveStateFromXmlNode(SaveState& saveState, const QDomNode& xmlNode)
                 const QString tag(xmlData.toElement().tagName());
                 const QString text(xmlData.toElement().text().trimmed());
 
-                // ----------------------------------------------
+                // -------------------------------------------------------
                 // Internal Data
 
                 if (tag.compare("Active", Qt::CaseInsensitive) == 0)
@@ -332,7 +357,7 @@ void fillSaveStateFromXmlNode(SaveState& saveState, const QDomNode& xmlNode)
                         saveState.ctrlChannel = static_cast<int8_t>(value-1);
                 }
 
-                // ----------------------------------------------
+                // -------------------------------------------------------
                 // Program (current)
 
                 else if (tag.compare("CurrentProgramIndex", Qt::CaseInsensitive) == 0)
@@ -347,7 +372,7 @@ void fillSaveStateFromXmlNode(SaveState& saveState, const QDomNode& xmlNode)
                     saveState.currentProgramName = xmlSafeStringCharDup(text, false);
                 }
 
-                // ----------------------------------------------
+                // -------------------------------------------------------
                 // Midi Program (current)
 
                 else if (tag.compare("CurrentMidiBank", Qt::CaseInsensitive) == 0)
@@ -365,7 +390,7 @@ void fillSaveStateFromXmlNode(SaveState& saveState, const QDomNode& xmlNode)
                         saveState.currentMidiProgram = value-1;
                 }
 
-                // ----------------------------------------------
+                // -------------------------------------------------------
                 // Parameters
 
                 else if (tag.compare("Parameter", Qt::CaseInsensitive) == 0)
@@ -420,7 +445,7 @@ void fillSaveStateFromXmlNode(SaveState& saveState, const QDomNode& xmlNode)
                     saveState.parameters.append(stateParameter);
                 }
 
-                // ----------------------------------------------
+                // -------------------------------------------------------
                 // Custom Data
 
                 else if (tag.compare("CustomData", Qt::CaseInsensitive) == 0)
@@ -447,7 +472,7 @@ void fillSaveStateFromXmlNode(SaveState& saveState, const QDomNode& xmlNode)
                     saveState.customData.append(stateCustomData);
                 }
 
-                // ----------------------------------------------
+                // -------------------------------------------------------
                 // Chunk
 
                 else if (tag.compare("Chunk", Qt::CaseInsensitive) == 0)
@@ -455,19 +480,19 @@ void fillSaveStateFromXmlNode(SaveState& saveState, const QDomNode& xmlNode)
                     saveState.chunk = xmlSafeStringCharDup(text, false);
                 }
 
-                // ----------------------------------------------
+                // -------------------------------------------------------
 
                 xmlData = xmlData.nextSibling();
             }
         }
 
-        // ------------------------------------------------------
+        // ---------------------------------------------------------------
 
         node = node.nextSibling();
     }
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 static inline
 void fillXmlStringFromSaveState(QString& content, const SaveState& saveState)
@@ -629,6 +654,8 @@ void fillXmlStringFromSaveState(QString& content, const SaveState& saveState)
 
     content += "  </Data>\n";
 }
+
+// -----------------------------------------------------------------------
 
 CARLA_BACKEND_END_NAMESPACE
 

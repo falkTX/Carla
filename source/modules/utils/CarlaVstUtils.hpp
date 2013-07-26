@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
 #ifndef CARLA_VST_UTILS_HPP_INCLUDED
@@ -22,7 +22,7 @@
 
 #include <cstring>
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // Include fixes
 
 // Disable deprecated VST features (NOT)
@@ -119,12 +119,12 @@ struct VstTimeInfo_R {
 typedef VstTimeInfo VstTimeInfo_R;
 #endif
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // Plugin callback
 
 typedef AEffect* (*VST_Function)(audioMasterCallback);
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // Check if feature is supported by the plugin
 
 static inline
@@ -133,7 +133,7 @@ bool vstPluginCanDo(AEffect* const effect, const char* const feature)
     return (effect->dispatcher(effect, effCanDo, 0, 0, (void*)feature, 0.0f) == 1);
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // Convert Effect opcode to string
 
 static inline
@@ -326,7 +326,7 @@ const char* vstEffectOpcode2str(const int32_t opcode)
     }
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // Convert Host/Master opcode to string
 
 static inline
@@ -452,5 +452,7 @@ const char* vstMasterOpcode2str(const int32_t opcode)
         return "unknown";
     }
 }
+
+// -----------------------------------------------------------------------
 
 #endif // CARLA_VST_UTILS_HPP_INCLUDED

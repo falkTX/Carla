@@ -195,7 +195,7 @@ public:
     T& getAt(const size_t index, const bool remove = false)
     {
         if (fCount == 0 || index >= fCount)
-            return fFallbackValue;
+            return fRetValue;
 
         size_t i = 0;
         Data* data = nullptr;
@@ -227,7 +227,7 @@ public:
             break;
         }
 
-        return (data != nullptr) ? fRetValue : fFallbackValue;
+        return fRetValue;
     }
 
     T& getFirst(const bool remove = false)
@@ -320,7 +320,6 @@ protected:
     virtual void  _deallocate(Data*& dataPtr) = 0;
 
 private:
-    T fFallbackValue;
     T fRetValue;
 
     void _init() noexcept
@@ -332,7 +331,7 @@ private:
     T& _getFirstOrLast(const bool first, const bool remove)
     {
         if (fCount == 0)
-            return fFallbackValue;
+            return fRetValue;
 
         k_list_head* const entry = first ? fQueue.next : fQueue.prev;
         Data*              data  = list_entry(entry, Data, siblings);
@@ -352,7 +351,7 @@ private:
             }
         }
 
-        return (data != nullptr) ? fRetValue : fFallbackValue;
+        return fRetValue;
     }
 
     LIST_DECLARATIONS(List)

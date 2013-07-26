@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
 #ifndef CARLA_SHM_UTILS_HPP_INCLUDED
@@ -185,7 +185,7 @@ void carla_shm_unmap(shm_t& shm, void* const ptr, const size_t size)
 #endif
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // shared memory, templated calls
 
 template<typename T>
@@ -203,5 +203,7 @@ void carla_shm_unmap(shm_t& shm, T*& value)
     carla_shm_unmap(shm, value, sizeof(T));
     value = nullptr;
 }
+
+// -----------------------------------------------------------------------
 
 #endif // CARLA_SHM_UTILS_HPP_INCLUDED

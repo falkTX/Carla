@@ -20,6 +20,8 @@
 
 #include "CarlaRingBuffer.hpp"
 
+// -----------------------------------------------------------------------
+
 enum PluginBridgeInfoType {
     kPluginBridgeAudioCount = 0,
     kPluginBridgeMidiCount,

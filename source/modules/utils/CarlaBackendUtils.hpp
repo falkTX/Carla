@@ -96,6 +96,8 @@ const char* PluginType2Str(const PluginType type)
         return "PLUGIN_VST";
     case PLUGIN_VST3:
         return "PLUGIN_VST3";
+    case PLUGIN_AU:
+        return "PLUGIN_AU";
     case PLUGIN_GIG:
         return "PLUGIN_GIG";
     case PLUGIN_SF2:
@@ -402,7 +404,7 @@ const char* TransportMode2Str(const TransportMode mode)
 static inline
 uintptr_t getAddressFromPointer(void* ptr)
 {
-    CARLA_ASSERT(ptr != nullptr);
+    CARLA_SAFE_ASSERT_RETURN(ptr != nullptr, 0);
 
     uintptr_t* const addr((uintptr_t*)&ptr);
     return *addr;
@@ -412,7 +414,7 @@ template<typename T>
 static inline
 T* getPointerFromAddress(uintptr_t& addr)
 {
-    CARLA_ASSERT(addr != 0);
+    CARLA_SAFE_ASSERT_RETURN(addr != 0, nullptr);
 
     T** const ptr((T**)&addr);
     return *ptr;
@@ -441,6 +443,8 @@ const char* getPluginTypeAsString(const PluginType type)
         return "VST";
     case PLUGIN_VST3:
         return "VST3";
+    case PLUGIN_AU:
+        return "AU";
     case PLUGIN_GIG:
         return "GIG";
     case PLUGIN_SF2:
@@ -479,6 +483,8 @@ PluginType getPluginTypeFromString(const char* const stype)
         return PLUGIN_VST;
     if (std::strcmp(stype, "VST3") == 0)
         return PLUGIN_VST3;
+    if (std::strcmp(stype, "AU") == 0)
+        return PLUGIN_AU;
     if (std::strcmp(stype, "GIG") == 0)
         return PLUGIN_GIG;
     if (std::strcmp(stype, "SF2") == 0)
@@ -573,6 +579,8 @@ PluginCategory getPluginCategoryFromName(const char* const name)
 
     return PLUGIN_CATEGORY_NONE;
 }
+
+// -----------------------------------------------------------------------
 
 CARLA_BACKEND_END_NAMESPACE
 

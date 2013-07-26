@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
 #ifndef CARLA_LADSPA_UTILS_HPP_INCLUDED
@@ -31,10 +31,7 @@
 static inline
 const LADSPA_RDF_Descriptor* ladspa_rdf_dup(const LADSPA_RDF_Descriptor* const oldDescriptor)
 {
-    CARLA_ASSERT(oldDescriptor != nullptr);
-
-    if (oldDescriptor == nullptr)
-        return nullptr;
+    CARLA_SAFE_ASSERT_RETURN(oldDescriptor != nullptr, nullptr);
 
     LADSPA_RDF_Descriptor* const newDescriptor(new LADSPA_RDF_Descriptor());
 
@@ -143,66 +140,55 @@ bool is_ladspa_rdf_descriptor_valid(const LADSPA_RDF_Descriptor* const rdfDescri
 static inline
 LADSPA_Data get_default_ladspa_port_value(const LADSPA_PortRangeHintDescriptor hintDescriptor, const LADSPA_Data min, const LADSPA_Data max)
 {
-    LADSPA_Data def;
-
     if (LADSPA_IS_HINT_HAS_DEFAULT(hintDescriptor))
     {
         switch (hintDescriptor & LADSPA_HINT_DEFAULT_MASK)
         {
         case LADSPA_HINT_DEFAULT_MINIMUM:
-            def = min;
-            break;
+            return min;
+
         case LADSPA_HINT_DEFAULT_MAXIMUM:
-            def = max;
-            break;
+            return max;
+
         case LADSPA_HINT_DEFAULT_0:
-            def = 0.0f;
-            break;
+            return 0.0f;
+
         case LADSPA_HINT_DEFAULT_1:
-            def = 1.0f;
-            break;
+            return 1.0f;
+
         case LADSPA_HINT_DEFAULT_100:
-            def = 100.0f;
-            break;
+            return 100.0f;
+
         case LADSPA_HINT_DEFAULT_440:
-            def = 440.0f;
-            break;
+            return 440.0f;
+
         case LADSPA_HINT_DEFAULT_LOW:
             if (LADSPA_IS_HINT_LOGARITHMIC(hintDescriptor))
-                def = std::exp((std::log(min)*0.75f) + (std::log(max)*0.25f));
+                return std::exp((std::log(min)*0.75f) + (std::log(max)*0.25f));
             else
-                def = (min*0.75f) + (max*0.25f);
-            break;
+                return (min*0.75f) + (max*0.25f);
+
         case LADSPA_HINT_DEFAULT_MIDDLE:
             if (LADSPA_IS_HINT_LOGARITHMIC(hintDescriptor))
-                def = std::sqrt(min*max);
+                return std::sqrt(min*max);
             else
-                def = (min+max)/2;
-            break;
+                return (min+max)/2;
+
         case LADSPA_HINT_DEFAULT_HIGH:
             if (LADSPA_IS_HINT_LOGARITHMIC(hintDescriptor))
-                def = std::exp((std::log(min)*0.25f) + (std::log(max)*0.75f));
+                return std::exp((std::log(min)*0.25f) + (std::log(max)*0.75f));
             else
-                def = (min*0.25f) + (max*0.75f);
-            break;
-        default:
-            if (min < 0.0f && max > 0.0f)
-                def = 0.0f;
-            else
-                def = min;
-            break;
+                return (min*0.25f) + (max*0.75f);
         }
     }
-    else
-    {
-        // no default value
-        if (min < 0.0f && max > 0.0f)
-            def = 0.0f;
-        else
-            def = min;
-    }
 
-    return def;
+    // no default value
+    if (min < 0.0f && max > 0.0f)
+        return 0.0f;
+    else
+        return min;
 }
+
+// -----------------------------------------------------------------------
 
 #endif // CARLA_LADSPA_UTILS_HPP_INCLUDED

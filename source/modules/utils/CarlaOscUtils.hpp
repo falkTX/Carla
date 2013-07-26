@@ -68,211 +68,185 @@ struct CarlaOscData {
 static inline
 void osc_send_configure(const CarlaOscData& oscData, const char* const key, const char* const value)
 {
-    CARLA_ASSERT(oscData.path != nullptr);
-    CARLA_ASSERT(key != nullptr);
-    CARLA_ASSERT(value != nullptr);
+    CARLA_SAFE_ASSERT_RETURN(oscData.path != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(oscData.target != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(key != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(value != nullptr,);
     carla_debug("osc_send_configure(path:\"%s\", \"%s\", \"%s\")", oscData.path, key, value);
 
-    if (oscData.path != nullptr && oscData.target != nullptr && key != nullptr && value != nullptr)
-    {
-        char targetPath[std::strlen(oscData.path)+11];
-        std::strcpy(targetPath, oscData.path);
-        std::strcat(targetPath, "/configure");
-        lo_send(oscData.target, targetPath, "ss", key, value);
-    }
+    char targetPath[std::strlen(oscData.path)+11];
+    std::strcpy(targetPath, oscData.path);
+    std::strcat(targetPath, "/configure");
+    lo_send(oscData.target, targetPath, "ss", key, value);
 }
 
 static inline
 void osc_send_control(const CarlaOscData& oscData, const int32_t index, const float value)
 {
-    CARLA_ASSERT(oscData.path != nullptr);
-    CARLA_ASSERT(index != -1); // -1 == PARAMETER_NULL
+    CARLA_SAFE_ASSERT_RETURN(oscData.path != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(oscData.target != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(index != -1,); // -1 == PARAMETER_NULL
     carla_debug("osc_send_control(path:\"%s\", %i, %f)", oscData.path, index, value);
 
-    if (oscData.path != nullptr && oscData.target != nullptr && index != -1)
-    {
-        char targetPath[std::strlen(oscData.path)+9];
-        std::strcpy(targetPath, oscData.path);
-        std::strcat(targetPath, "/control");
-        lo_send(oscData.target, targetPath, "if", index, value);
-    }
+    char targetPath[std::strlen(oscData.path)+9];
+    std::strcpy(targetPath, oscData.path);
+    std::strcat(targetPath, "/control");
+    lo_send(oscData.target, targetPath, "if", index, value);
 }
 
 static inline
 void osc_send_program(const CarlaOscData& oscData, const int32_t index)
 {
-    CARLA_ASSERT(oscData.path != nullptr);
-    CARLA_ASSERT(index >= 0);
+    CARLA_SAFE_ASSERT_RETURN(oscData.path != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(oscData.target != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(index >= 0,);
     carla_debug("osc_send_program(path:\"%s\", %i)", oscData.path, index);
 
-    if (oscData.path != nullptr && oscData.target != nullptr && index >= 0)
-    {
-        char targetPath[std::strlen(oscData.path)+9];
-        std::strcpy(targetPath, oscData.path);
-        std::strcat(targetPath, "/program");
-        lo_send(oscData.target, targetPath, "i", index);
-    }
+    char targetPath[std::strlen(oscData.path)+9];
+    std::strcpy(targetPath, oscData.path);
+    std::strcat(targetPath, "/program");
+    lo_send(oscData.target, targetPath, "i", index);
 }
 
 static inline
 void osc_send_program(const CarlaOscData& oscData, const int32_t bank, const int32_t program)
 {
-    CARLA_ASSERT(oscData.path != nullptr);
-    CARLA_ASSERT(program >= 0);
-    CARLA_ASSERT(bank >= 0);
+    CARLA_SAFE_ASSERT_RETURN(oscData.path != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(oscData.target != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(program >= 0,);
+    CARLA_SAFE_ASSERT_RETURN(bank >= 0,);
     carla_debug("osc_send_program(path:\"%s\", %i, %i)", oscData.path, bank, program);
 
-    if (oscData.path != nullptr && oscData.target != nullptr && bank >= 0 && program >= 0)
-    {
-        char targetPath[std::strlen(oscData.path)+9];
-        std::strcpy(targetPath, oscData.path);
-        std::strcat(targetPath, "/program");
-        lo_send(oscData.target, targetPath, "ii", bank, program);
-    }
+    char targetPath[std::strlen(oscData.path)+9];
+    std::strcpy(targetPath, oscData.path);
+    std::strcat(targetPath, "/program");
+    lo_send(oscData.target, targetPath, "ii", bank, program);
 }
 
 static inline
 void osc_send_midi_program(const CarlaOscData& oscData, const int32_t index)
 {
-    CARLA_ASSERT(oscData.path != nullptr);
-    CARLA_ASSERT(index >= 0);
+    CARLA_SAFE_ASSERT_RETURN(oscData.path != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(oscData.target != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(index >= 0,);
     carla_debug("osc_send_midi_program(path:\"%s\", %i)", oscData.path, index);
 
-    if (oscData.path != nullptr && oscData.target != nullptr && index >= 0)
-    {
-        char targetPath[std::strlen(oscData.path)+14];
-        std::strcpy(targetPath, oscData.path);
-        std::strcat(targetPath, "/midi-program");
-        lo_send(oscData.target, targetPath, "i", index);
-    }
+    char targetPath[std::strlen(oscData.path)+14];
+    std::strcpy(targetPath, oscData.path);
+    std::strcat(targetPath, "/midi-program");
+    lo_send(oscData.target, targetPath, "i", index);
 }
 
 static inline
 void osc_send_midi_program(const CarlaOscData& oscData, const int32_t bank, const int32_t program)
 {
-    CARLA_ASSERT(oscData.path != nullptr);
-    CARLA_ASSERT(program >= 0);
-    CARLA_ASSERT(bank >= 0);
+    CARLA_SAFE_ASSERT_RETURN(oscData.path != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(oscData.target != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(program >= 0,);
+    CARLA_SAFE_ASSERT_RETURN(bank >= 0,);
     carla_debug("osc_send_midi_program(path:\"%s\", %i, %i)", oscData.path, bank, program);
 
-    if (oscData.path != nullptr && oscData.target != nullptr && bank >= 0 && program >= 0)
-    {
-        char targetPath[std::strlen(oscData.path)+14];
-        std::strcpy(targetPath, oscData.path);
-        std::strcat(targetPath, "/midi-program");
-        lo_send(oscData.target, targetPath, "ii", bank, program);
-    }
+    char targetPath[std::strlen(oscData.path)+14];
+    std::strcpy(targetPath, oscData.path);
+    std::strcat(targetPath, "/midi-program");
+    lo_send(oscData.target, targetPath, "ii", bank, program);
 }
 
 static inline
 void osc_send_midi(const CarlaOscData& oscData, const uint8_t buf[4])
 {
-    CARLA_ASSERT(oscData.path != nullptr);
-    CARLA_ASSERT(buf[0] == 0);
-    CARLA_ASSERT(buf[1] != 0);
-    carla_debug("osc_send_midi(path:\"%s\", [0x%X, %03u, %03u])", oscData.path, buf[1], buf[2], buf[3]);
+    CARLA_SAFE_ASSERT_RETURN(oscData.path != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(oscData.target != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(buf[0] == 0,);
+    CARLA_SAFE_ASSERT_RETURN(buf[1] != 0,);
+    carla_debug("osc_send_midi(path:\"%s\", port:%u, [0x%X, %03u, %03u])", oscData.path, buf[0], buf[1], buf[2], buf[3]);
 
-    if (oscData.path != nullptr && oscData.target != nullptr && buf[0] == 0 && buf[1] != 0)
-    {
-        char targetPath[std::strlen(oscData.path)+6];
-        std::strcpy(targetPath, oscData.path);
-        std::strcat(targetPath, "/midi");
-        lo_send(oscData.target, targetPath, "m", buf);
-    }
+    char targetPath[std::strlen(oscData.path)+6];
+    std::strcpy(targetPath, oscData.path);
+    std::strcat(targetPath, "/midi");
+    lo_send(oscData.target, targetPath, "m", buf);
 }
 
 static inline
 void osc_send_sample_rate(const CarlaOscData& oscData, const float sampleRate)
 {
-    CARLA_ASSERT(oscData.path != nullptr);
-    CARLA_ASSERT(sampleRate > 0.0f);
+    CARLA_SAFE_ASSERT_RETURN(oscData.path != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(oscData.target != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(sampleRate > 0.0f,);
     carla_debug("osc_send_sample_rate(path:\"%s\", %f)", oscData.path, sampleRate);
 
-    if (oscData.path != nullptr && oscData.target != nullptr && sampleRate > 0.0f)
-    {
-        char targetPath[std::strlen(oscData.path)+13];
-        std::strcpy(targetPath, oscData.path);
-        std::strcat(targetPath, "/sample-rate");
-        lo_send(oscData.target, targetPath, "f", sampleRate);
-    }
+    char targetPath[std::strlen(oscData.path)+13];
+    std::strcpy(targetPath, oscData.path);
+    std::strcat(targetPath, "/sample-rate");
+    lo_send(oscData.target, targetPath, "f", sampleRate);
 }
 
 #ifdef BUILD_BRIDGE
 static inline
 void osc_send_update(const CarlaOscData& oscData, const char* const url)
 {
-    CARLA_ASSERT(oscData.path != nullptr);
-    CARLA_ASSERT(url != nullptr);
+    CARLA_SAFE_ASSERT_RETURN(oscData.path != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(oscData.target != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(url != nullptr,);
     carla_debug("osc_send_update(path:\"%s\", \"%s\")", oscData.path, url);
 
-    if (oscData.path != nullptr && oscData.target != nullptr && url != nullptr)
-    {
-        char targetPath[std::strlen(oscData.path)+8];
-        std::strcpy(targetPath, oscData.path);
-        std::strcat(targetPath, "/update");
-        lo_send(oscData.target, targetPath, "s", url);
-    }
+    char targetPath[std::strlen(oscData.path)+8];
+    std::strcpy(targetPath, oscData.path);
+    std::strcat(targetPath, "/update");
+    lo_send(oscData.target, targetPath, "s", url);
 }
 
 static inline
 void osc_send_exiting(const CarlaOscData& oscData)
 {
-    CARLA_ASSERT(oscData.path != nullptr);
+    CARLA_SAFE_ASSERT_RETURN(oscData.path != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(oscData.target != nullptr,);
     carla_debug("osc_send_exiting(path:\"%s\")", oscData.path);
 
-    if (oscData.path != nullptr && oscData.target != nullptr)
-    {
-        char targetPath[std::strlen(oscData.path)+9];
-        std::strcpy(targetPath, oscData.path);
-        std::strcat(targetPath, "/exiting");
-        lo_send(oscData.target, targetPath, "");
-    }
+    char targetPath[std::strlen(oscData.path)+9];
+    std::strcpy(targetPath, oscData.path);
+    std::strcat(targetPath, "/exiting");
+    lo_send(oscData.target, targetPath, "");
 }
 #endif
 
 static inline
 void osc_send_show(const CarlaOscData& oscData)
 {
-    CARLA_ASSERT(oscData.path != nullptr);
+    CARLA_SAFE_ASSERT_RETURN(oscData.path != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(oscData.target != nullptr,);
     carla_debug("osc_send_show(path:\"%s\")", oscData.path);
 
-    if (oscData.path != nullptr && oscData.target != nullptr)
-    {
-        char targetPath[std::strlen(oscData.path)+6];
-        std::strcpy(targetPath, oscData.path);
-        std::strcat(targetPath, "/show");
-        lo_send(oscData.target, targetPath, "");
-    }
+    char targetPath[std::strlen(oscData.path)+6];
+    std::strcpy(targetPath, oscData.path);
+    std::strcat(targetPath, "/show");
+    lo_send(oscData.target, targetPath, "");
 }
 
 static inline
 void osc_send_hide(const CarlaOscData& oscData)
 {
-    CARLA_ASSERT(oscData.path != nullptr);
+    CARLA_SAFE_ASSERT_RETURN(oscData.path != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(oscData.target != nullptr,);
     carla_debug("osc_send_hide(path:\"%s\")", oscData.path);
 
-    if (oscData.path != nullptr && oscData.target != nullptr)
-    {
-        char targetPath[std::strlen(oscData.path)+6];
-        std::strcpy(targetPath, oscData.path);
-        std::strcat(targetPath, "/hide");
-        lo_send(oscData.target, targetPath, "");
-    }
+    char targetPath[std::strlen(oscData.path)+6];
+    std::strcpy(targetPath, oscData.path);
+    std::strcat(targetPath, "/hide");
+    lo_send(oscData.target, targetPath, "");
 }
 
 static inline
 void osc_send_quit(const CarlaOscData& oscData)
 {
-    CARLA_ASSERT(oscData.path != nullptr);
+    CARLA_SAFE_ASSERT_RETURN(oscData.path != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(oscData.target != nullptr,);
     carla_debug("osc_send_quit(path:\"%s\")", oscData.path);
 
-    if (oscData.path != nullptr && oscData.target != nullptr)
-    {
-        char targetPath[std::strlen(oscData.path)+6];
-        std::strcpy(targetPath, oscData.path);
-        std::strcat(targetPath, "/quit");
-        lo_send(oscData.target, targetPath, "");
-    }
+    char targetPath[std::strlen(oscData.path)+6];
+    std::strcpy(targetPath, oscData.path);
+    std::strcat(targetPath, "/quit");
+    lo_send(oscData.target, targetPath, "");
 }
 
 // -----------------------------------------------------------------------
@@ -281,33 +255,29 @@ void osc_send_quit(const CarlaOscData& oscData)
 static inline
 void osc_send_bridge_update(const CarlaOscData& oscData, const char* const url)
 {
-    CARLA_ASSERT(oscData.path != nullptr);
-    CARLA_ASSERT(url != nullptr);
+    CARLA_SAFE_ASSERT_RETURN(oscData.path != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(oscData.target != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(url != nullptr,);
     carla_debug("osc_send_bridge_update(path:\"%s\", \"%s\")", oscData.path, url);
 
-    if (oscData.path != nullptr && oscData.target != nullptr && url != nullptr)
-    {
-        char targetPath[std::strlen(oscData.path)+15];
-        std::strcpy(targetPath, oscData.path);
-        std::strcat(targetPath, "/bridge_update");
-        lo_send(oscData.target, targetPath, "s", url);
-    }
+    char targetPath[std::strlen(oscData.path)+15];
+    std::strcpy(targetPath, oscData.path);
+    std::strcat(targetPath, "/bridge_update");
+    lo_send(oscData.target, targetPath, "s", url);
 }
 
 static inline
 void osc_send_bridge_error(const CarlaOscData& oscData, const char* const error)
 {
-    CARLA_ASSERT(oscData.path != nullptr);
-    CARLA_ASSERT(error != nullptr);
+    CARLA_SAFE_ASSERT_RETURN(oscData.path != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(oscData.target != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(error != nullptr,);
     carla_debug("osc_send_bridge_error(path:\"%s\", \"%s\")", oscData.path, error);
 
-    if (oscData.path != nullptr && oscData.target != nullptr && error != nullptr)
-    {
-        char targetPath[std::strlen(oscData.path)+14];
-        std::strcpy(targetPath, oscData.path);
-        std::strcat(targetPath, "/bridge_error");
-        lo_send(oscData.target, targetPath, "s", error);
-    }
+    char targetPath[std::strlen(oscData.path)+14];
+    std::strcpy(targetPath, oscData.path);
+    std::strcat(targetPath, "/bridge_error");
+    lo_send(oscData.target, targetPath, "s", error);
 }
 #endif
 
@@ -315,36 +285,34 @@ void osc_send_bridge_error(const CarlaOscData& oscData, const char* const error)
 static inline
 void osc_send_lv2_atom_transfer(const CarlaOscData& oscData, const int32_t portIndex, const char* const atomBuf)
 {
-    CARLA_ASSERT(oscData.path != nullptr);
-    CARLA_ASSERT(portIndex >= 0);
-    CARLA_ASSERT(atomBuf != nullptr);
+    CARLA_SAFE_ASSERT_RETURN(oscData.path != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(oscData.target != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(portIndex >= 0,);
+    CARLA_SAFE_ASSERT_RETURN(atomBuf != nullptr,);
     carla_debug("osc_send_lv2_atom_transfer(path:\"%s\", %i, <atomBuf:%p>)", oscData.path, portIndex, atomBuf);
 
-    if (oscData.path != nullptr && oscData.target != nullptr && portIndex >= 0 && atomBuf != nullptr)
-    {
-        char targetPath[std::strlen(oscData.path)+19];
-        std::strcpy(targetPath, oscData.path);
-        std::strcat(targetPath, "/lv2_atom_transfer");
-        lo_send(oscData.target, targetPath, "is", portIndex, atomBuf);
-    }
+    char targetPath[std::strlen(oscData.path)+19];
+    std::strcpy(targetPath, oscData.path);
+    std::strcat(targetPath, "/lv2_atom_transfer");
+    lo_send(oscData.target, targetPath, "is", portIndex, atomBuf);
 }
 
 static inline
 void osc_send_lv2_urid_map(const CarlaOscData& oscData, const uint32_t urid, const char* const uri)
 {
-    CARLA_ASSERT(oscData.path != nullptr);
-    CARLA_ASSERT(urid > 0);
-    CARLA_ASSERT(uri != nullptr);
+    CARLA_SAFE_ASSERT_RETURN(oscData.path != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(oscData.target != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(urid > 0,);
+    CARLA_SAFE_ASSERT_RETURN(uri != nullptr,);
     carla_debug("osc_send_lv2_urid_map(path:\"%s\", %i, \"%s\")", oscData.path, urid, uri);
 
-    if (oscData.path != nullptr && oscData.target != nullptr && urid > 0 && uri != nullptr)
-    {
-        char targetPath[std::strlen(oscData.path)+14];
-        std::strcpy(targetPath, oscData.path);
-        std::strcat(targetPath, "/lv2_urid_map");
-        lo_send(oscData.target, targetPath, "is", urid, uri);
-    }
+    char targetPath[std::strlen(oscData.path)+14];
+    std::strcpy(targetPath, oscData.path);
+    std::strcat(targetPath, "/lv2_urid_map");
+    lo_send(oscData.target, targetPath, "is", urid, uri);
 }
 #endif
+
+// -----------------------------------------------------------------------
 
 #endif // CARLA_OSC_UTILS_HPP_INCLUDED

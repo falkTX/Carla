@@ -41,14 +41,14 @@
 #include "RtList.hpp"
 
 // Carla utils (part 3/4)
-// #include "CarlaBackendUtils.hpp"
-// #include "CarlaBridgeUtils.hpp"
-// #include "CarlaLadspaUtils.hpp"
-// #include "CarlaLibUtils.hpp"
+#include "CarlaBackendUtils.hpp"
+#include "CarlaBridgeUtils.hpp"
+#include "CarlaLadspaUtils.hpp"
+#include "CarlaLibUtils.hpp"
 // #include "CarlaLv2Utils.hpp"
-// #include "CarlaOscUtils.hpp"
-// #include "CarlaShmUtils.hpp"
-// #include "CarlaStateUtils.hpp"
+#include "CarlaOscUtils.hpp"
+#include "CarlaShmUtils.hpp"
+#include "CarlaStateUtils.hpp"
 // #include "CarlaVstUtils.hpp"
 
 // Carla utils (part 4/4)
@@ -526,14 +526,56 @@ int main()
 
         assert(! ctrl.dataAvailable());
 
-        printf("\nDUMP FINISHED");
+        printf("\nDUMP FINISHED\n");
     }
 
     // RtList
     {
-        NonRtList<int> list;
-        list.append(6);
+        class ListTester
+        {
+        public:
+            struct CountObj {
+                CountObj() : count(0) {}
+                volatile int count;
+            };
+
+            ListTester()
+            {
+                ++getCounter().count;
+            }
+
+            ~ListTester()
+            {
+                --getCounter().count;
+            }
+
+            static CountObj& getCounter()
+            {
+                static CountObj counter;
+                return counter;
+            }
+        };
+
+        ListTester::CountObj& obj = ListTester::getCounter();
+        assert(obj.count == 0);
+
+        NonRtList<ListTester> list;
+        obj = ListTester::getCounter();
+        assert(obj.count == 1); // List fRetValue
+
+        ListTester t1;
+        obj = ListTester::getCounter();
+        assert(obj.count == 2); // List fRetValue + t1
+
+        list.append(t1);
+        list.append(t1);
+        list.append(t1);
+        obj = ListTester::getCounter();
+        assert(obj.count == 5); // List fRetValue + t1 + 3 appends
+
         list.clear();
+        obj = ListTester::getCounter();
+        assert(obj.count == 2); // List fRetValue + t1
     }
 
     return 0;
