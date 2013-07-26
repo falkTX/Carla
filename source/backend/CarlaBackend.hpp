@@ -144,16 +144,17 @@ enum BinaryType {
  * Some plugin classes might provide more than 1 plugin type.
  */
 enum PluginType {
-    PLUGIN_NONE     = 0, //!< Null plugin type.
-    PLUGIN_INTERNAL = 1, //!< Internal plugin.
-    PLUGIN_LADSPA   = 2, //!< LADSPA plugin.
-    PLUGIN_DSSI     = 3, //!< DSSI plugin.
-    PLUGIN_LV2      = 4, //!< LV2 plugin.
-    PLUGIN_VST      = 5, //!< VST1/2 plugin.
-    PLUGIN_VST3     = 6, //!< VST3 plugin.
-    PLUGIN_GIG      = 7, //!< GIG sound kit.
-    PLUGIN_SF2      = 8, //!< SF2 sound kit (aka SoundFont).
-    PLUGIN_SFZ      = 9  //!< SFZ sound kit.
+    PLUGIN_NONE     =  0, //!< Null plugin type.
+    PLUGIN_INTERNAL =  1, //!< Internal plugin.
+    PLUGIN_LADSPA   =  2, //!< LADSPA plugin.
+    PLUGIN_DSSI     =  3, //!< DSSI plugin.
+    PLUGIN_LV2      =  4, //!< LV2 plugin.
+    PLUGIN_VST      =  5, //!< VST1/2 plugin.
+    PLUGIN_VST3     =  6, //!< VST3 plugin.
+    PLUGIN_AU       =  7, //!< AU plugin.
+    PLUGIN_GIG      =  8, //!< GIG sound kit.
+    PLUGIN_SF2      =  9, //!< SF2 sound kit (aka SoundFont).
+    PLUGIN_SFZ      = 10  //!< SFZ sound kit.
 };
 
 /*!

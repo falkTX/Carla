@@ -160,4 +160,17 @@
 # define OS_SEP '/'
 #endif
 
+// Define PRE/POST_PACKED_STRUCTURE
+#if defined(__GNUC__)
+# define PRE_PACKED_STRUCTURE
+# define POST_PACKED_STRUCTURE __attribute__((__packed__))
+#elif defined(_MSC_VER)
+# define PRE_PACKED_STRUCTURE1 __pragma(pack(push,1))
+# define PRE_PACKED_STRUCTURE    PRE_PACKED_STRUCTURE1
+# define POST_PACKED_STRUCTURE ;__pragma(pack(pop))
+#else
+# define PRE_PACKED_STRUCTURE
+# define POST_PACKED_STRUCTURE
+#endif
+
 #endif // CARLA_DEFINES_HPP_INCLUDED

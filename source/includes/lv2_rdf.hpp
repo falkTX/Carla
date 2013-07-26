@@ -118,11 +118,13 @@ typedef uint32_t LV2_Property;
 #define LV2_PORT_ATOM_SEQUENCE          (0x040 | LV2_PORT_ATOM)
 #define LV2_PORT_EVENT                   0x080
 #define LV2_PORT_MIDI_LL                 0x100
+#define LV2_PORT_OSC                     0x200
 
 // Port Data Types
 #define LV2_PORT_DATA_MIDI_EVENT         0x1000
-#define LV2_PORT_DATA_PATCH_MESSAGE      0x2000
-#define LV2_PORT_DATA_TIME_POSITION      0x4000
+#define LV2_PORT_DATA_OSC                0x2000
+#define LV2_PORT_DATA_PATCH_MESSAGE      0x4000
+#define LV2_PORT_DATA_TIME_POSITION      0x8000
 
 #define LV2_IS_PORT_INPUT(x)             ((x) & LV2_PORT_INPUT)
 #define LV2_IS_PORT_OUTPUT(x)            ((x) & LV2_PORT_OUTPUT)
@@ -132,8 +134,10 @@ typedef uint32_t LV2_Property;
 #define LV2_IS_PORT_ATOM_SEQUENCE(x)     ((x) & LV2_PORT_ATOM_SEQUENCE)
 #define LV2_IS_PORT_EVENT(x)             ((x) & LV2_PORT_EVENT)
 #define LV2_IS_PORT_MIDI_LL(x)           ((x) & LV2_PORT_MIDI_LL)
+#define LV2_IS_PORT_OSC(x)               ((x) & LV2_PORT_OSC)
 
 #define LV2_PORT_SUPPORTS_MIDI_EVENT(x)    ((x) & LV2_PORT_DATA_MIDI_EVENT)
+#define LV2_PORT_SUPPORTS_OSC(x)           ((x) & LV2_PORT_DATA_OSC)
 #define LV2_PORT_SUPPORTS_PATCH_MESSAGE(x) ((x) & LV2_PORT_DATA_PATCH_MESSAGE)
 #define LV2_PORT_SUPPORTS_TIME_POSITION(x) ((x) & LV2_PORT_DATA_TIME_POSITION)
 
@@ -210,16 +214,18 @@ typedef uint32_t LV2_Property;
 #define LV2_UI_GTK3                      2
 #define LV2_UI_QT4                       3
 #define LV2_UI_QT5                       4
-#define LV2_UI_COCOA                     5
-#define LV2_UI_WINDOWS                   6
-#define LV2_UI_X11                       7
-#define LV2_UI_EXTERNAL                  8
-#define LV2_UI_OLD_EXTERNAL              9
+#define LV2_UI_NTK                       5
+#define LV2_UI_COCOA                     6
+#define LV2_UI_WINDOWS                   7
+#define LV2_UI_X11                       8
+#define LV2_UI_EXTERNAL                  9
+#define LV2_UI_OLD_EXTERNAL              10
 
 #define LV2_IS_UI_GTK2(x)                ((x) == LV2_UI_GTK2)
 #define LV2_IS_UI_GTK3(x)                ((x) == LV2_UI_GTK3)
 #define LV2_IS_UI_QT4(x)                 ((x) == LV2_UI_QT4)
 #define LV2_IS_UI_QT5(x)                 ((x) == LV2_UI_QT5)
+#define LV2_IS_UI_NTK(x)                 ((x) == LV2_UI_NTK)
 #define LV2_IS_UI_COCOA(x)               ((x) == LV2_UI_COCOA)
 #define LV2_IS_UI_WINDOWS(x)             ((x) == LV2_UI_WINDOWS)
 #define LV2_IS_UI_X11(x)                 ((x) == LV2_UI_X11)

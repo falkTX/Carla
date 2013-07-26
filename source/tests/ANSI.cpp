@@ -40,8 +40,8 @@
 #include "RtList.hpp"
 
 // Carla utils (part 3/4)
-#include "CarlaBackendUtils.hpp"
-#include "CarlaBridgeUtils.hpp"
+// #include "CarlaBackendUtils.hpp"
+// #include "CarlaBridgeUtils.hpp"
 // #include "CarlaLadspaUtils.hpp"
 // #include "CarlaLibUtils.hpp"
 // #include "CarlaLv2Utils.hpp"
@@ -54,19 +54,19 @@
 // #include "Lv2AtomQueue.hpp"
 
 // Carla Native Plugin API
-#include "CarlaNative.h"
+// #include "CarlaNative.h"
 
 // Carla Native Plugin API (C++)
-#include "CarlaNative.hpp"
+// #include "CarlaNative.hpp"
 
 // Carla Plugin API
-#include "CarlaPlugin.hpp"
+// #include "CarlaPlugin.hpp"
 
 // Carla Engine API
-#include "CarlaEngine.hpp"
+// #include "CarlaEngine.hpp"
 
 // Carla Standalone API
-#include "CarlaStandalone.hpp"
+// #include "CarlaStandalone.hpp"
 
 // // Carla Plugin
 // #include "plugin/CarlaPluginThread.hpp"
@@ -84,7 +84,6 @@ int safe_assert_return_test(bool test)
 
 int main()
 {
-#if 0
     // ladspa rdf
     {
         LADSPA_RDF_ScalePoint a;
@@ -125,6 +124,7 @@ int main()
         a=a;b=b;c=c;d=d;e=e;f=f;g=g;h=h;i=i;j=j;k=k;l=l;m=m;n=n;o=o;
     }
 
+#if 0
     // Carla Native Plugin API
     {
         HostHandle a = nullptr;
@@ -158,6 +158,7 @@ int main()
         a=a;b=b;c=c;d=d;e=e;f=f;g=g;h=h;i=i;j=j;k=k;l=l;m=m;n=n;o=o;p=p;
         (void)q;
     }
+#endif
 
     // Carla common utils
     {
@@ -400,6 +401,7 @@ int main()
         ScopedPointer<Test> f(nullptr);
     }
 
+#if 0
     // Carla Native Plugin API (C++)
     {
         class PluginDescriptorClassTest : public PluginDescriptorClass
@@ -456,6 +458,7 @@ int main()
         assert(b.i == 5);
         assert(c.i == 6);
     }
+#endif
 
     // Carla Mutex
     {
@@ -464,7 +467,6 @@ int main()
         m.unlock();
         const CarlaMutex::ScopedLocker sl(m);
     }
-#endif
 
     // RingBuffer
     {
@@ -524,6 +526,13 @@ int main()
         assert(! ctrl.dataAvailable());
 
         printf("\nDUMP FINISHED");
+    }
+
+    // RtList
+    {
+        NonRtList<int> list;
+        list.append(6);
+        list.clear();
     }
 
     return 0;

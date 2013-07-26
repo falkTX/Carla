@@ -19,7 +19,7 @@
 #ifndef CARLA_RING_BUFFER_HPP_INCLUDED
 #define CARLA_RING_BUFFER_HPP_INCLUDED
 
-#include "CarlaUtils.hpp"
+#include "CarlaJuceUtils.hpp"
 
 #ifndef RING_BUFFER_SIZE
 # define RING_BUFFER_SIZE 2048
@@ -28,11 +28,12 @@
 // -----------------------------------------------------------------------
 // RingBuffer struct
 
+PRE_PACKED_STRUCTURE
 struct RingBuffer {
     int32_t head, tail, written;
     bool    invalidateCommit;
     char    buf[RING_BUFFER_SIZE];
-} __attribute__((__packed__));
+} POST_PACKED_STRUCTURE;
 
 // -----------------------------------------------------------------------
 // RingBufferControl class
@@ -229,6 +230,11 @@ private:
 
         fRingBuf->written = static_cast<int32_t>(writeto);
     }
+
+    CARLA_PREVENT_HEAP_ALLOCATION
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(RingBufferControl)
 };
+
+// -----------------------------------------------------------------------
 
 #endif // CARLA_RING_BUFFER_HPP_INCLUDED

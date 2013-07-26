@@ -67,6 +67,7 @@ const char* const CARLA_BRIDGE_MSG_SET_CUSTOM = "CarlaBridgeSetCustom"; //!< Hos
 
 // -----------------------------------------------------------------------
 
+PRE_PACKED_STRUCTURE
 struct BridgeShmControl {
     union {
         void* runServer;
@@ -77,7 +78,7 @@ struct BridgeShmControl {
         char _padClient[32];
     };
     RingBuffer ringBuffer;
-} __attribute__((__packed__));
+} POST_PACKED_STRUCTURE;
 
 // -----------------------------------------------------------------------
 

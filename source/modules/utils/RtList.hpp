@@ -88,7 +88,7 @@ public:
         T& operator*()
         {
             fData = list_entry(fEntry, Data, siblings);
-            CARLA_SAFE_ASSERT_RETURN(fData != nullptr, nullptr);
+            CARLA_ASSERT(fData != nullptr);
             return fData->value;
         }
 
@@ -116,7 +116,10 @@ public:
             list_for_each_safe(entry, entry2, &fQueue)
             {
                 if (Data* data = list_entry(entry, Data, siblings))
+                {
+                    data->~Data();
                     _deallocate(data);
+                }
             }
         }
 
@@ -137,6 +140,7 @@ public:
     {
         if (Data* const data = _allocate())
         {
+            new(data)Data();
             data->value = value;
             list_add_tail(&data->siblings, &fQueue);
             ++fCount;
@@ -150,6 +154,7 @@ public:
     {
         if (Data* const data = _allocate())
         {
+            new(data)Data();
             data->value = value;
             list_add_tail(&data->siblings, it.fEntry->next);
             ++fCount;
@@ -163,6 +168,7 @@ public:
     {
         if (Data* const data = _allocate())
         {
+            new(data)Data();
             data->value = value;
             list_add(&data->siblings, &fQueue);
             ++fCount;
@@ -176,6 +182,7 @@ public:
     {
         if (Data* const data = _allocate())
         {
+            new(data)Data();
             data->value = value;
             list_add(&data->siblings, it.fEntry->prev);
             ++fCount;
@@ -188,7 +195,7 @@ public:
     T& getAt(const size_t index, const bool remove = false)
     {
         if (fCount == 0 || index >= fCount)
-            return _getEmpty();
+            return fFallbackValue;
 
         size_t i = 0;
         Data* data = nullptr;
@@ -202,21 +209,25 @@ public:
 
             data = list_entry(entry, Data, siblings);
 
+            if (data != nullptr)
+                fRetValue = data->value;
+
             if (remove)
             {
                 --fCount;
                 list_del(entry);
 
                 if (data != nullptr)
+                {
+                    data->~Data();
                     _deallocate(data);
+                }
             }
 
             break;
         }
 
-        CARLA_ASSERT(data != nullptr);
-
-        return (data != nullptr) ? data->value : _getEmpty();
+        return (data != nullptr) ? fRetValue : fFallbackValue;
     }
 
     T& getFirst(const bool remove = false)
@@ -238,6 +249,8 @@ public:
         {
             --fCount;
             list_del(it.fEntry);
+
+            it.fData->~Data();
             _deallocate(it.fData);
         }
     }
@@ -258,33 +271,14 @@ public:
             {
                 --fCount;
                 list_del(entry);
+
+                data->~Data();
                 _deallocate(data);
                 break;
             }
         }
 
         return (data != nullptr);
-    }
-
-    void removeAll(const T& value)
-    {
-        Data* data;
-        k_list_head* entry;
-        k_list_head* entry2;
-
-        list_for_each_safe(entry, entry2, &fQueue)
-        {
-            data = list_entry(entry, Data, siblings);
-
-            CARLA_ASSERT(data != nullptr);
-
-            if (data != nullptr && data->value == value)
-            {
-                --fCount;
-                list_del(entry);
-                _deallocate(data);
-            }
-        }
     }
 
     void spliceAppend(List& list, const bool init = true)
@@ -323,9 +317,12 @@ protected:
     k_list_head  fQueue;
 
     virtual Data* _allocate() = 0;
-    virtual void  _deallocate(Data* const dataPtr) = 0;
+    virtual void  _deallocate(Data*& dataPtr) = 0;
 
 private:
+    T fFallbackValue;
+    T fRetValue;
+
     void _init() noexcept
     {
         fCount = 0;
@@ -335,32 +332,28 @@ private:
     T& _getFirstOrLast(const bool first, const bool remove)
     {
         if (fCount == 0)
-            return _getEmpty();
+            return fFallbackValue;
 
         k_list_head* const entry = first ? fQueue.next : fQueue.prev;
-        Data*        const data  = list_entry(entry, Data, siblings);
+        Data*              data  = list_entry(entry, Data, siblings);
 
-        CARLA_SAFE_ASSERT_RETURN(data != nullptr, _getEmpty());
-
-        T& ret = data->value;
+        if (data != nullptr)
+            fRetValue = data->value;
 
         if (remove)
         {
             --fCount;
             list_del(entry);
-            _deallocate(data);
+
+            if (data != nullptr)
+            {
+                data->~Data();
+                _deallocate(data);
+            }
         }
 
-        return ret;
+        return (data != nullptr) ? fRetValue : fFallbackValue;
     }
-
-    T& _getEmpty()
-    {
-        carla_zeroStruct<T>(fFallbackValue);
-        return fFallbackValue;
-    }
-
-    T fFallbackValue;
 
     LIST_DECLARATIONS(List)
 };
@@ -452,6 +445,7 @@ public:
     {
         if (typename List<T>::Data* const data = _allocate_sleepy())
         {
+            new(data)typename List<T>::Data();
             data->value = value;
             list_add_tail(&data->siblings, &this->fQueue);
             ++this->fCount;
@@ -462,6 +456,7 @@ public:
     {
         if (typename List<T>::Data* const data = _allocate_sleepy())
         {
+            new(data)typename List<T>::Data();
             data->value = value;
             list_add(&data->siblings, &this->fQueue);
             ++this->fCount;
@@ -518,7 +513,7 @@ private:
 };
 
 // -----------------------------------------------------------------------
-// Non-Realtime list, using malloc/free methods
+// Non-Realtime list
 
 template<typename T>
 class NonRtList : public List<T>
@@ -549,34 +544,5 @@ private:
 };
 
 // -----------------------------------------------------------------------
-// Non-Realtime list, using new/delete methods
-
-template<typename T>
-class NonRtListNew : public List<T>
-{
-public:
-    NonRtListNew()
-    {
-    }
-
-    ~NonRtListNew() override
-    {
-    }
-
-private:
-    typename List<T>::Data* _allocate() override
-    {
-        return new typename List<T>::Data;
-    }
-
-    void _deallocate(typename List<T>::Data*& dataPtr) override
-    {
-        CARLA_ASSERT(dataPtr != nullptr);
-        delete dataPtr;
-        dataPtr = nullptr;
-    }
-
-    LIST_DECLARATIONS(NonRtListNew)
-};
 
 #endif // RT_LIST_HPP_INCLUDED

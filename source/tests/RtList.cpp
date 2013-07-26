@@ -20,8 +20,8 @@
 #include "CarlaString.hpp"
 #include "CarlaMutex.hpp"
 
-const unsigned short MIN_RT_EVENTS = 152;
-const unsigned short MAX_RT_EVENTS = 512;
+const unsigned short MIN_RT_EVENTS = 5;
+const unsigned short MAX_RT_EVENTS = 10;
 
 struct MyData {
     CarlaString str;
@@ -33,11 +33,6 @@ struct MyData {
     MyData(int id)
         : str(id),
           idStr(id) {}
-
-#ifdef PROPER_CPP11_SUPPORT
-    MyData(MyData&) = delete;
-    MyData(const MyData&) = delete;
-#endif
 };
 
 struct PostRtEvents {
@@ -78,11 +73,6 @@ struct PostRtEvents {
         }
     }
 
-    //void appendNonRT(const PluginPostRtEvent& event)
-    //{
-    //    data.append_sleepy(event);
-    //}
-
 } postRtEvents;
 
 void run5Tests()
@@ -95,9 +85,8 @@ void run5Tests()
 
     while (! postRtEvents.data.isEmpty())
     {
-        MyData& my = postRtEvents.data.getFirst(true);
+        const MyData& my(postRtEvents.data.getFirst(true));
         allMyData[k++] = my;
-        //std::memcpy(&allMyData[i++], &my, sizeof(MyData));
     }
 
     postRtEvents.mutex.unlock();
@@ -114,7 +103,7 @@ void run5Tests()
     // Handle events now
     for (unsigned short i=0; i < k; ++i)
     {
-        const MyData& my = allMyData[i];
+        const MyData& my(allMyData[i]);
 
         printf("Got data: %i %s\n", my.idStr, (const char*)my.str);
     }

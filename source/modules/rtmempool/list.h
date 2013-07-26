@@ -38,7 +38,7 @@
 # include <stddef.h>
 #endif
 
-#if !defined(offsetof)
+#ifndef offsetof
 # define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
 #endif
 
@@ -51,7 +51,7 @@
  */
 #define container_of(ptr, type, member) ({                  \
     const typeof( ((type *)0)->member ) *__mptr = (ptr);    \
-    (type *)( (char *)__mptr - offsetof(type,member) );})
+    (type *)( (char *)__mptr - offsetof(type, member) );})
 
 #define prefetch(x) (x = x)
 
@@ -305,7 +305,7 @@ static inline void list_splice_tail_init(struct list_head *list, struct list_hea
     container_of(ptr, type, member)
 #else
 # define list_entry(ptr, type, member) \
-    ((type *)((char *)(ptr)-(unsigned long)(&((type *)0)->member)))
+    ((type *)((char *)(ptr)-offsetof(type, member)))
 #endif
 
 /**

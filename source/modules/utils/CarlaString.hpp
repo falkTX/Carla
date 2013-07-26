@@ -467,8 +467,8 @@ private:
         }
     }
 
-    CARLA_LEAK_DETECTOR(CarlaString)
     CARLA_PREVENT_HEAP_ALLOCATION
+    CARLA_LEAK_DETECTOR(CarlaString)
 };
 
 // -----------------------------------------------------------------------
@@ -498,5 +498,7 @@ CarlaString operator+(const char* const strBufBefore, const CarlaString& strAfte
 
     return CarlaString(newBuf);
 }
+
+// -----------------------------------------------------------------------
 
 #endif // CARLA_STRING_HPP_INCLUDED

@@ -95,4 +95,6 @@ private:
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaMutex)
 };
 
+// -----------------------------------------------------------------------
+
 #endif // CARLA_MUTEX_HPP_INCLUDED

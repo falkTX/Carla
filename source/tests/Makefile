@@ -42,7 +42,7 @@ all: $(TARGETS) RUN
 ANSI: ANSI.cpp
 	$(CXX) $^ $(BUILD_CXX_FLAGS) $(ANSI_CXX_FLAGS) $(LINK_FLAGS) -lpthread -o $@
 
-CarlaString: CarlaString.cpp
+CarlaString: CarlaString.cpp ../modules/utils/CarlaString.hpp
 	$(CXX) $^ $(BUILD_CXX_FLAGS) $(LINK_FLAGS) -o $@
 
 DGL1: DGL1.cpp DGL1_Artwork.cpp ../libs/dgl.a
@@ -54,8 +54,8 @@ DGL2: DGL2.cpp NekoArtwork.cpp ../libs/dgl.a
 MacTest: MacTest.cpp
 	$(CXX) MacTest.cpp -o $@
 
-RtList: RtList.cpp ../utils/RtList.hpp ../libs/rtmempool.a
-	$(CXX) RtList.cpp ../libs/rtmempool.a $(BUILD_CXX_FLAGS) $(LINK_FLAGS) -pthread -lpthread -o $@
+RtList: RtList.cpp ../modules/utils/RtList.hpp ../modules/rtmempool.a
+	$(CXX) RtList.cpp ../modules/rtmempool.a $(BUILD_CXX_FLAGS) $(LINK_FLAGS) -pthread -lpthread -o $@
 
 Print: Print.cpp
 	$(CXX) $^ $(BUILD_CXX_FLAGS) $(LINK_FLAGS) -o $@
