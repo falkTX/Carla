@@ -8,10 +8,9 @@ include ../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += -I../backend -I../includes -I../modules -I../modules/theme -I../modules/utils
+BUILD_CXX_FLAGS += -I../backend -I../includes -I../modules -I../modules/distrho -I../modules/theme -I../modules/utils
 BUILD_CXX_FLAGS += -DWANT_NATIVE -DWANT_LADSPA -DWANT_DSSI -DWANT_LV2 -DWANT_VST -DWANT_FLUIDSYNTH -DWANT_LINUXSAMPLER
 BUILD_CXX_FLAGS += -DWANT_RTAUDIO -DWANT_OPENGL -DWANT_AUDIOFILE -DWANT_MIDIFILE -DWANT_ZYNADDSUBFX -DWANT_ZYNADDSUBFX_UI
-# BUILD_CXX_FLAGS += -isystem ../libs/juce
 BUILD_CXX_FLAGS += -isystem /usr/include/qt4
 BUILD_CXX_FLAGS += -isystem /opt/kxstudio/include
 # BUILD_CXX_FLAGS += -isystem ../backend/engine/rtaudio-4.0.11
@@ -25,8 +24,11 @@ ANSI_CXX_FLAGS  += -Wcast-qual -Wconversion -Wsign-conversion -Wlogical-op -Wagg
 ifeq ($(MACOS),true)
 DGL_LIBS = -framework OpenGL -framework Cocoa
 else
-# DGL_LIBS = -lQtCore -lopengl32 -lgdi32 -lole32 -luuid -lws2_32
+ifeq ($(WIN32),true)
+DGL_LIBS = -lQtCore -lopengl32 -lgdi32 -lole32 -luuid -lws2_32
+else
 DGL_LIBS = -lQtCore -lGL -lX11
+endif
 endif
 
 ifeq ($(MACOS),true)
@@ -40,19 +42,16 @@ all: $(TARGETS) RUN
 # --------------------------------------------------------------
 
 ANSI: ANSI.cpp
-	$(CXX) $^ $(BUILD_CXX_FLAGS) $(ANSI_CXX_FLAGS) $(LINK_FLAGS) -lpthread -o $@
+	$(CXX) $^ $(BUILD_CXX_FLAGS) $(ANSI_CXX_FLAGS) $(LINK_FLAGS) -pthread -lpthread -o $@
 
 CarlaString: CarlaString.cpp ../modules/utils/CarlaString.hpp
 	$(CXX) $^ $(BUILD_CXX_FLAGS) $(LINK_FLAGS) -o $@
 
-DGL1: DGL1.cpp DGL1_Artwork.cpp ../libs/dgl.a
+DGL1: DGL1.cpp DGL1_Artwork.cpp ../modules/dgl.a
 	$(CXX) $^ $(BUILD_CXX_FLAGS) $(LINK_FLAGS) $(DGL_LIBS) -o $@
 
-DGL2: DGL2.cpp NekoArtwork.cpp ../libs/dgl.a
+DGL2: DGL2.cpp NekoArtwork.cpp ../modules/dgl.a
 	$(CXX) $^ $(BUILD_CXX_FLAGS) $(LINK_FLAGS) $(DGL_LIBS) -o $@ && $(STRIP) $@
-
-MacTest: MacTest.cpp
-	$(CXX) MacTest.cpp -o $@
 
 RtList: RtList.cpp ../modules/utils/RtList.hpp ../modules/rtmempool.a
 	$(CXX) RtList.cpp ../modules/rtmempool.a $(BUILD_CXX_FLAGS) $(LINK_FLAGS) -pthread -lpthread -o $@
@@ -61,15 +60,11 @@ Print: Print.cpp
 	$(CXX) $^ $(BUILD_CXX_FLAGS) $(LINK_FLAGS) -o $@
 
 Utils: Utils.cpp
-	$(CXX) $^ $(BUILD_CXX_FLAGS) $(LINK_FLAGS) -o $@
+	$(CXX) $^ $(BUILD_CXX_FLAGS) $(LINK_FLAGS) -pthread -lpthread -o $@
 
 RUN: $(TARGETS)
-# 	valgrind ./Base64
-# 	./ANSI
-# 	./CarlaString && ./RtList && ./Thread
-# 	./Print
-# 	./Base64
-# 	./GL
+	./ANSI && ./CarlaString && ./RtList && ./Print && ./Utils
+	./DGL1 && ./DGL2
 
 # --------------------------------------------------------------
 

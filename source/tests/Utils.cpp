@@ -29,7 +29,6 @@ int main()
     // carla_*sleep
     carla_sleep(1);
     carla_msleep(1);
-    carla_usleep(1);
 
     // carla_setenv
     carla_setenv("THIS", "THAT");

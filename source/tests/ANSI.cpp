@@ -16,7 +16,8 @@
  */
 
 #undef NDEBUG
-#define DEBUG
+#undef DEBUG
+#define DEBUG 1
 
 #define RING_BUFFER_SIZE 48
 
