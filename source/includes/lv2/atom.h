@@ -77,13 +77,13 @@ typedef char lv2_atom_assert_double_fits_in_64_bits[
    @param atom A variable-sized atom.
 */
 #define LV2_ATOM_CONTENTS(type, atom) \
-	((void*)((uint8_t*)(atom) + sizeof(type)))
+	((uint8_t*)(atom) + sizeof(type))
 
 /**
    Const version of LV2_ATOM_CONTENTS.
 */
 #define LV2_ATOM_CONTENTS_CONST(type, atom) \
-	((const void*)((const uint8_t*)(atom) + sizeof(type)))
+	((const uint8_t*)(atom) + sizeof(type))
 
 /**
    Return a pointer to the body of an Atom.  The "body" of an atom is the

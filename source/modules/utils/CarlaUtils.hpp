@@ -385,6 +385,24 @@ inline float
 // -----------------------------------------------------------------------
 // memory functions
 
+template <typename T>
+static inline
+void carla_copyStruct(T& struct1, T& struct2)
+{
+    std::memcpy(&struct1, &struct2, sizeof(T));
+}
+
+template <typename T>
+static inline
+void carla_copyStruct(T* const struct1, T* const struct2, const size_t count)
+{
+    CARLA_SAFE_ASSERT_RETURN(struct1 != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(struct2 != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(count != 0,);
+
+    std::memcpy(struct1, struct2, count*sizeof(T));
+}
+
 static inline
 void carla_zeroMem(void* const memory, const size_t numBytes)
 {

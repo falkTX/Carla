@@ -45,35 +45,37 @@
 #include "CarlaBridgeUtils.hpp"
 #include "CarlaLadspaUtils.hpp"
 #include "CarlaLibUtils.hpp"
-// #include "CarlaLv2Utils.hpp"
+#include "CarlaLv2Utils.hpp"
 #include "CarlaOscUtils.hpp"
 #include "CarlaShmUtils.hpp"
 #include "CarlaStateUtils.hpp"
-// #include "CarlaVstUtils.hpp"
+#include "CarlaVstUtils.hpp"
 
 // Carla utils (part 4/4)
-// #include "Lv2AtomQueue.hpp"
+#include "Lv2AtomQueue.hpp"
 
 // Carla Native Plugin API
-// #include "CarlaNative.h"
+#include "CarlaNative.h"
 
 // Carla Native Plugin API (C++)
-// #include "CarlaNative.hpp"
+#include "CarlaNative.hpp"
 
 // Carla Plugin API
-// #include "CarlaPlugin.hpp"
+#include "CarlaPlugin.hpp"
 
 // Carla Engine API
-// #include "CarlaEngine.hpp"
+#include "CarlaEngine.hpp"
 
 // Carla Standalone API
-// #include "CarlaStandalone.hpp"
+#include "CarlaStandalone.hpp"
 
 // // Carla Plugin
 // #include "plugin/CarlaPluginThread.hpp"
 // #include "plugin/CarlaPluginInternal.hpp"
 
 // #include "standalone/CarlaStandalone.cpp"
+
+// -----------------------------------------------------------------------
 
 namespace CB = CarlaBackend;
 
@@ -82,6 +84,8 @@ int safe_assert_return_test(bool test)
     CARLA_SAFE_ASSERT_RETURN(test, 1);
     return 0;
 }
+
+// -----------------------------------------------------------------------
 
 int main()
 {
@@ -125,7 +129,6 @@ int main()
         a=a;b=b;c=c;d=d;e=e;f=f;g=g;h=h;i=i;j=j;k=k;l=l;m=m;n=n;o=o;
     }
 
-#if 0
     // Carla Native Plugin API
     {
         HostHandle a = nullptr;
@@ -159,7 +162,6 @@ int main()
         a=a;b=b;c=c;d=d;e=e;f=f;g=g;h=h;i=i;j=j;k=k;l=l;m=m;n=n;o=o;p=p;
         (void)q;
     }
-#endif
 
     // Carla common utils
     {
@@ -402,7 +404,6 @@ int main()
         ScopedPointer<Test> f(nullptr);
     }
 
-#if 0
     // Carla Native Plugin API (C++)
     {
         class PluginDescriptorClassTest : public PluginDescriptorClass
@@ -459,7 +460,6 @@ int main()
         assert(b.i == 5);
         assert(c.i == 6);
     }
-#endif
 
     // Carla Mutex
     {
@@ -580,3 +580,5 @@ int main()
 
     return 0;
 }
+
+// -----------------------------------------------------------------------

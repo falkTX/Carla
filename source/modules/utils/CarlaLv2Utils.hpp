@@ -20,6 +20,11 @@
 
 #include "CarlaJuceUtils.hpp"
 
+#include <cstddef>
+
+#undef NULL
+#define NULL nullptr
+
 #include "lv2/lv2.h"
 #include "lv2/atom.h"
 #include "lv2/atom-forge.h"
@@ -78,22 +83,12 @@
 
 #define LV2_MIDI_LL__MidiPort "http://ll-plugins.nongnu.org/lv2/ext/MidiPort"
 
+#define LV2_OSC__OscEvent     "http://kxstudio.sf.net/ns/lv2ext/osc#OscEvent"
+
 #define LV2_UI__Qt5UI         LV2_UI_PREFIX "Qt5UI"
+#define LV2_UI__NtkUI         LV2_UI_PREFIX "NtkUI"
 #define LV2_UI__idle          LV2_UI_PREFIX "idle"
 #define LV2_UI__makeResident  LV2_UI_PREFIX "makeResident"
-
-// -----------------------------------------------------------------------
-// Non-void versions
-
-#define LV2NV_ATOM_CONTENTS(type, atom) \
-    ((uint8_t*)(atom) + sizeof(type))
-
-#define LV2NV_ATOM_CONTENTS_CONST(type, atom) \
-    ((const uint8_t*)(atom) + sizeof(type))
-
-#define LV2NV_ATOM_BODY(atom) LV2NV_ATOM_CONTENTS(LV2_Atom, atom)
-
-#define LV2NV_ATOM_BODY_CONST(atom) LV2NV_ATOM_CONTENTS_CONST(LV2_Atom, atom)
 
 // -------------------------------------------------
 // Custom Atom types
@@ -192,6 +187,7 @@ public:
     Lilv::Node ui_gtk3;
     Lilv::Node ui_qt4;
     Lilv::Node ui_qt5;
+    Lilv::Node ui_ntk;
     Lilv::Node ui_cocoa;
     Lilv::Node ui_windows;
     Lilv::Node ui_x11;
@@ -213,6 +209,7 @@ public:
 
     // Port Data Types
     Lilv::Node midi_event;
+    Lilv::Node osc_event;
     Lilv::Node patch_message;
     Lilv::Node time_position;
 
@@ -308,6 +305,7 @@ public:
           ui_gtk3            (new_uri(LV2_UI__Gtk3UI)),
           ui_qt4             (new_uri(LV2_UI__Qt4UI)),
           ui_qt5             (new_uri(LV2_UI__Qt5UI)),
+          ui_ntk             (new_uri(LV2_UI__NtkUI)),
           ui_cocoa           (new_uri(LV2_UI__CocoaUI)),
           ui_windows         (new_uri(LV2_UI__WindowsUI)),
           ui_x11             (new_uri(LV2_UI__X11UI)),
@@ -327,6 +325,7 @@ public:
           value_maximum      (new_uri(LV2_CORE__maximum)),
 
           midi_event         (new_uri(LV2_MIDI__MidiEvent)),
+          osc_event          (new_uri(LV2_OSC__OscEvent)),
           patch_message      (new_uri(LV2_PATCH__Message)),
           time_position      (new_uri(LV2_TIME__Position)),
 
@@ -339,21 +338,21 @@ public:
           rdf_type           (new_uri(NS_rdf "type")),
           rdfs_label         (new_uri(NS_rdfs "label"))
     {
-        needInit = true;
+        fNeedsInit = true;
     }
 
     void init()
     {
-        if (! needInit)
+        if (! fNeedsInit)
             return;
 
-        needInit = false;
+        fNeedsInit = false;
         Lilv::World::load_all();
     }
 
     const LilvPlugin* getPlugin(const LV2_URI uri)
     {
-        CARLA_ASSERT(uri != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(uri != nullptr, nullptr);
 
         static const Lilv::Plugins lilvPlugins(Lilv::World::get_all_plugins());
 
@@ -380,7 +379,7 @@ public:
 
     const LilvState* getState(const LV2_URI uri, const LV2_URID_Map* const uridMap)
     {
-        CARLA_ASSERT(uri != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(uri != nullptr, nullptr);
 
         LilvNode* const uriNode(Lilv::World::new_uri(uri));
 
@@ -418,15 +417,9 @@ extern Lv2WorldClass gLv2World;
 // Create new RDF object (using lilv)
 
 static inline
-const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool fillPresets = true)
+const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool fillPresets)
 {
-    CARLA_ASSERT(uri != nullptr);
-
-    if (uri == nullptr)
-    {
-        carla_stderr("lv2_rdf_new() - Invalid uri");
-        return nullptr;
-    }
+    CARLA_SAFE_ASSERT_RETURN(uri != nullptr, nullptr);
 
     const LilvPlugin* const cPlugin(gLv2World.getPlugin(uri));
 
@@ -1276,10 +1269,8 @@ bool is_lv2_port_supported(const LV2_Property types)
 static inline
 bool is_lv2_feature_supported(const LV2_URI uri)
 {
-    CARLA_ASSERT(uri != nullptr);
+    CARLA_SAFE_ASSERT_RETURN(uri != nullptr, false);
 
-    if (uri == nullptr)
-        return false;
 #ifndef BRIDGE_LV2
     if (std::strcmp(uri, LV2_CORE__hardRTCapable) == 0)
         return true;
@@ -1333,10 +1324,8 @@ bool is_lv2_feature_supported(const LV2_URI uri)
 static inline
 bool is_lv2_ui_feature_supported(const LV2_URI uri)
 {
-    CARLA_ASSERT(uri != nullptr);
+    CARLA_SAFE_ASSERT_RETURN(uri != nullptr, false);
 
-    if (uri == nullptr)
-        return false;
     if (is_lv2_feature_supported(uri))
         return true;
 #ifndef BRIDGE_LV2
@@ -1363,12 +1352,10 @@ bool is_lv2_ui_feature_supported(const LV2_URI uri)
         return true;
     if (std::strcmp(uri, LV2_UI__touch) == 0)
         return true;
-#ifndef BRIDGE_LV2
     if (std::strcmp(uri, LV2_EXTERNAL_UI__Widget) == 0)
         return true;
     if (std::strcmp(uri, LV2_EXTERNAL_UI_DEPRECATED_URI) == 0)
         return true;
-#endif
     return false;
 }
 

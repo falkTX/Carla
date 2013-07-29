@@ -42,6 +42,9 @@
 
 #include "atom.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 // An abstract/opaque LV2 atom:Sequence buffer.
 //
@@ -243,6 +246,9 @@ bool lv2_atom_buffer_write (
 	return true;
 }
 
+#ifdef __cplusplus
+}  /* extern "C" */
+#endif
 
 #endif	// LV2_ATOM_HELPERS_H
 

@@ -48,15 +48,9 @@ public:
             setRingBuffer(ringBuf, true);
     }
 
-    void setRingBuffer(RingBuffer* const ringBuf, const bool reset)
+    void clear()
     {
-        CARLA_ASSERT(ringBuf != nullptr);
-        CARLA_ASSERT(ringBuf != fRingBuf);
-
-        fRingBuf = ringBuf;
-
-        if (! reset)
-            return;
+        CARLA_SAFE_ASSERT_RETURN(fRingBuf != nullptr,);
 
         fRingBuf->head = 0;
         fRingBuf->tail = 0;
@@ -65,20 +59,33 @@ public:
         carla_zeroChar(fRingBuf->buf, RING_BUFFER_SIZE);
     }
 
+    void setRingBuffer(RingBuffer* const ringBuf, const bool reset)
+    {
+        CARLA_ASSERT(ringBuf != nullptr);
+        CARLA_ASSERT(ringBuf != fRingBuf);
+
+        fRingBuf = ringBuf;
+
+        if (reset)
+            clear();
+    }
+
     // -------------------------------------------------------------------
 
-    void commitWrite()
+    bool commitWrite()
     {
-        CARLA_SAFE_ASSERT_RETURN(fRingBuf != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fRingBuf != nullptr, false);
 
         if (fRingBuf->invalidateCommit)
         {
             fRingBuf->written = fRingBuf->head;
             fRingBuf->invalidateCommit = false;
+            return false;
         }
         else
         {
             fRingBuf->head = fRingBuf->written;
+            return true;
         }
     }
 

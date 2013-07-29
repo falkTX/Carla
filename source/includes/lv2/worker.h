@@ -32,6 +32,10 @@
 #define LV2_WORKER__interface LV2_WORKER_PREFIX "interface"
 #define LV2_WORKER__schedule  LV2_WORKER_PREFIX "schedule"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
    A status code for worker functions.
 */
@@ -146,5 +150,9 @@ typedef struct _LV2_Worker_Schedule {
 	                                   uint32_t                   size,
 	                                   const void*                data);
 } LV2_Worker_Schedule;
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif  /* LV2_WORKER_H */

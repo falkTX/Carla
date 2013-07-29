@@ -25,6 +25,9 @@
 
 #include "lv2-miditype.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef struct {
   LV2_MIDI* midi;
@@ -86,6 +89,10 @@ inline void lv2midi_put_event(LV2_MIDIState* state,
     state->midi->event_count++;
   }
 }
+
+#ifdef __cplusplus
+}  /* extern "C" */
+#endif
 
 #endif
 

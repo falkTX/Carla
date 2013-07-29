@@ -23,6 +23,9 @@
 #ifndef LV2_MIDITYPE_H
 #define LV2_MIDITYPE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** This data structure is used to contain the MIDI events for one run() 
     cycle. The port buffer for a LV2 port that has the datatype 
@@ -165,6 +168,8 @@ typedef struct {
 
 } LV2_MIDI;
 
-
+#ifdef __cplusplus
+}  /* extern "C" */
+#endif
 
 #endif

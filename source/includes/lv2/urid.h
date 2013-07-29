@@ -35,6 +35,10 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
    Opaque pointer to host data for LV2_URID_Map.
 */
@@ -117,5 +121,9 @@ typedef struct _LV2_URID_Unmap {
 	const char* (*unmap)(LV2_URID_Unmap_Handle handle,
 	                     LV2_URID              urid);
 } LV2_URID_Unmap;
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif /* LV2_URID_H */

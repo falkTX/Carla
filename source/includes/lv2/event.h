@@ -51,6 +51,10 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
    The best Pulses Per Quarter Note for tempo-based uint32_t timestamps.
    Equal to 2^12 * 5 * 7 * 9 * 11 * 13 * 17, which is evenly divisble
@@ -283,5 +287,8 @@ typedef struct {
 	                            LV2_Event*              event);
 } LV2_Event_Feature;
 
+#ifdef __cplusplus
+}  /* extern "C" */
+#endif
 
 #endif /* LV2_EVENT_H */

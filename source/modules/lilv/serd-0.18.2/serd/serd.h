@@ -317,7 +317,7 @@ serd_base64_decode(const uint8_t* str, size_t len, size_t* size);
    @{
 */
 
-static const SerdURI SERD_URI_NULL = {{0,0},{0,0},{0,0},{0,0},{0,0},{0,0}};
+static const SerdURI SERD_URI_NULL = {{NULL,0},{NULL,0},{NULL,0},{NULL,0},{NULL,0},{NULL,0}};
 
 /**
    Return the local path for @c uri, or NULL if @c uri is not a file URI.
@@ -397,7 +397,7 @@ serd_uri_serialise_relative(const SerdURI* uri,
    @{
 */
 
-static const SerdNode SERD_NODE_NULL = { 0, 0, 0, 0, SERD_NOTHING };
+static const SerdNode SERD_NODE_NULL = { NULL, 0, 0, 0, SERD_NOTHING };
 
 /**
    Make a (shallow) node from @c str.

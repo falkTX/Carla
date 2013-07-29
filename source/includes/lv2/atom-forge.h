@@ -319,7 +319,7 @@ static inline LV2_Atom_Forge_Ref
 lv2_atom_forge_primitive(LV2_Atom_Forge* forge, const LV2_Atom* a)
 {
 	if (lv2_atom_forge_top_is(forge, forge->Vector)) {
-		return lv2_atom_forge_raw(forge, LV2_ATOM_BODY(a), a->size);
+		return lv2_atom_forge_raw(forge, LV2_ATOM_BODY_CONST(a), a->size);
 	} else {
 		return lv2_atom_forge_write(forge, a, sizeof(LV2_Atom) + a->size);
 	}

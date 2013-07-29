@@ -12,14 +12,73 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
 #ifndef LV2_ATOM_QUEUE_HPP_INCLUDED
 #define LV2_ATOM_QUEUE_HPP_INCLUDED
 
-#include "CarlaLv2Utils.hpp"
+//#include "CarlaLv2Utils.hpp"
 #include "CarlaMutex.hpp"
+#include "CarlaRingBuffer.hpp"
+
+#include "lv2/atom.h"
+
+// -----------------------------------------------------------------------
+
+class Lv2AtomRingBufferControl : public RingBufferControl
+{
+public:
+    Lv2AtomRingBufferControl()
+        : RingBufferControl(&fBuffer)
+    {
+    }
+
+    // -------------------------------------------------------------------
+
+    const RetAtom* readAtom(uint32_t* const portIndex)
+    {
+        fRetAtom.atom.size = 0;
+        fRetAtom.atom.type = 0;
+        tryRead(&fRetAtom.atom, sizeof(LV2_Atom));
+
+        if (fRetAtom.atom.size == 0 || fRetAtom.atom.type == 0)
+            return nullptr;
+
+        int32_t index = -1;
+        tryRead(&index, sizeof(int32_t));
+
+        if (index == -1)
+            return nullptr;
+
+        *portIndex = index;
+
+        tryRead(fRetAtom.data, fRetAtom.atom.size);
+        return &RetAtom;
+    }
+
+    // -------------------------------------------------------------------
+
+    bool writeAtom(const LV2_Atom* const atom, const int32_t portIndex)
+    {
+        tryWrite(atom,       sizeof(LV2_Atom));
+        tryWrite(&portIndex, sizeof(int32_t));
+        tryWrite(LV2_ATOM_BODY_CONST(atom), atom->size);
+        return commitWrite();
+    }
+
+    // -------------------------------------------------------------------
+
+private:
+    RingBuffer fBuffer;
+
+    struct RetAtom {
+        LV2_Atom atom;
+        unsigned char data[RING_BUFFER_SIZE];
+    } fRetAtom;
+
+    friend class Lv2AtomQueue;
+};
 
 // -----------------------------------------------------------------------
 
@@ -27,50 +86,22 @@ class Lv2AtomQueue
 {
 public:
     Lv2AtomQueue()
-        : fIndex(0),
-          fIndexPool(0),
-          fEmpty(true),
-          fFull(false)
     {
-        std::memset(fDataPool, 0, sizeof(unsigned char)*MAX_POOL_SIZE);
     }
 
-    void copyDataFrom(Lv2AtomQueue* const queue)
+    void copyDataFrom(Lv2AtomQueue& queue)
     {
-        // lock mutexes
-        queue->lock();
-        lock();
+        // lock queue
+        const CarlaMutex::ScopedLocker qsl(queue.fMutex);
 
-        // copy data from queue
-        std::memcpy(fData, queue->fData, sizeof(DataType)*MAX_SIZE);
-        std::memcpy(fDataPool, queue->fDataPool, sizeof(unsigned char)*MAX_POOL_SIZE);
-        fIndex = queue->fIndex;
-        fIndexPool = queue->fIndexPool;
-        fEmpty = queue->fEmpty;
-        fFull  = queue->fFull;
-
-        // unlock our mutex, no longer needed
-        unlock();
+        {
+            // copy data from queue
+            const CarlaMutex::ScopedLocker sl(fMutex);
+            carla_copyStruct<RingBuffer>(fRingBufferCtrl.fBuffer, queue.fRingBufferCtrl.fBuffer);
+        }
 
         // reset queque
-        std::memset(queue->fData, 0, sizeof(DataType)*MAX_SIZE);
-        std::memset(queue->fDataPool, 0, sizeof(unsigned char)*MAX_POOL_SIZE);
-        queue->fIndex = queue->fIndexPool = 0;
-        queue->fEmpty = true;
-        queue->fFull  = false;
-
-        // unlock queque mutex
-        queue->unlock();
-    }
-
-    bool isEmpty() const
-    {
-        return fEmpty;
-    }
-
-    bool isFull() const
-    {
-        return fFull;
+        fRingBufferCtrl.clear();
     }
 
     void lock()
@@ -88,107 +119,62 @@ public:
         fMutex.unlock();
     }
 
-    bool put(const uint32_t portIndex, const LV2_Atom* const atom)
+    bool put(const LV2_Atom* const atom, const uint32_t portIndex)
     {
-        CARLA_ASSERT(atom != nullptr && atom->size > 0);
-        CARLA_ASSERT(fIndexPool + atom->size < MAX_POOL_SIZE); // overflow
+        CARLA_SAFE_ASSERT_RETURN(atom != nullptr && atom->size > 0, false);
 
-        if (fFull || atom == nullptr || fIndexPool + atom->size >= MAX_POOL_SIZE)
-            return false;
-        if (atom->size == 0)
-            return true;
+        const CarlaMutex::ScopedLocker sl(fMutex);
 
-        bool ret = false;
-
-        lock();
-
-        for (unsigned short i=0; i < MAX_SIZE; ++i)
-        {
-            if (fData[i].size == 0)
-            {
-                fData[i].portIndex  = portIndex;
-                fData[i].size       = atom->size;
-                fData[i].type       = atom->type;
-                fData[i].poolOffset = fIndexPool;
-                std::memcpy(fDataPool + fIndexPool, LV2NV_ATOM_BODY_CONST(atom), atom->size);
-                fEmpty = false;
-                fFull  = (i == MAX_SIZE-1);
-                fIndexPool += atom->size;
-                ret = true;
-                break;
-            }
-        }
-
-        unlock();
-
-        return ret;
+        return fRingBufferCtrl.writeAtom(atom, portIndex);
     }
 
-    // needs to be locked first!
-    bool get(uint32_t* const portIndex, const LV2_Atom** const atom)
+    bool get(const LV2_Atom** const atom, uint32_t* const portIndex)
     {
-        CARLA_ASSERT(portIndex != nullptr && atom != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(portIndex != nullptr && atom != nullptr, false);
 
-        if (fEmpty || portIndex == nullptr || atom == nullptr)
+        if (! fRingBufferCtrl.dataAvailable())
             return false;
 
-        fFull = false;
+        const LV2_Atom atom     = fRingBufferCtrl.readAtom();
+        const int32_t portIndex = fRingBufferCtrl.readAndCheckInt();
+        const uint8_t* atomBody = fRingBufferCtrl.readAtomBody();
 
-        if (fData[fIndex].size == 0)
-        {
-            fIndex = fIndexPool = 0;
-            fEmpty = true;
-
-            unlock();
-            return false;
-        }
-
-        fRetAtom.atom.size = fData[fIndex].size;
-        fRetAtom.atom.type = fData[fIndex].type;
-        std::memcpy(fRetAtom.data, fDataPool + fData[fIndex].poolOffset, fData[fIndex].size);
-
-        *portIndex = fData[fIndex].portIndex;
-        *atom      = (LV2_Atom*)&fRetAtom;
-
-        fData[fIndex].portIndex  = 0;
-        fData[fIndex].size       = 0;
-        fData[fIndex].type       = 0;
-        fData[fIndex].poolOffset = 0;
-        fEmpty = false;
-        ++fIndex;
+//         fFull = false;
+//
+//         if (fData[fIndex].size == 0)
+//         {
+//             fIndex = fIndexPool = 0;
+//             fEmpty = true;
+//
+//             unlock();
+//             return false;
+//         }
+//
+//         fRetAtom.atom.size = fData[fIndex].size;
+//         fRetAtom.atom.type = fData[fIndex].type;
+//         std::memcpy(fRetAtom.data, fDataPool + fData[fIndex].poolOffset, fData[fIndex].size);
+//
+//         *portIndex = fData[fIndex].portIndex;
+//         *atom      = (LV2_Atom*)&fRetAtom;
+//
+//         fData[fIndex].portIndex  = 0;
+//         fData[fIndex].size       = 0;
+//         fData[fIndex].type       = 0;
+//         fData[fIndex].poolOffset = 0;
+//         fEmpty = false;
+//         ++fIndex;
 
         return true;
     }
 
 private:
-    struct DataType {
-        size_t   size;
-        uint32_t type;
-        uint32_t portIndex;
-        uint32_t poolOffset;
-
-        DataType()
-            : size(0),
-              type(0),
-              portIndex(0),
-              poolOffset(0) {}
-    };
-
-    static const unsigned short MAX_SIZE = 128;
-    static const unsigned short MAX_POOL_SIZE = 8192;
-
-    DataType fData[MAX_SIZE];
-    unsigned char fDataPool[MAX_POOL_SIZE];
-
-    struct RetAtom {
-        LV2_Atom atom;
-        unsigned char data[MAX_POOL_SIZE];
-    } fRetAtom;
-
-    unsigned short fIndex, fIndexPool;
-    bool fEmpty, fFull;
-
     CarlaMutex fMutex;
+    Lv2AtomRingBufferControl fRingBufferCtrl;
+
+    CARLA_PREVENT_HEAP_ALLOCATION
+
 };
+
+// -----------------------------------------------------------------------
 
 #endif // LV2_ATOM_QUEUE_HPP_INCLUDED

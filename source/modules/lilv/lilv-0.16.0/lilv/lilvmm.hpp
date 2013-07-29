@@ -122,7 +122,7 @@ struct PluginClass {
 	LILV_WRAP0(LilvIter*, prefix, begin); \
 	LILV_WRAP1(LilvIter*, prefix, next, LilvIter*, i); \
 	LILV_WRAP1(bool, prefix, is_end, LilvIter*, i); \
-	const Lilv ## CT* me; \
+	const Lilv ## CT* me
 
 struct PluginClasses {
 	LILV_WRAP_COLL(PluginClasses, PluginClass, plugin_classes);
@@ -255,7 +255,7 @@ struct Instance {
 
 	LILV_DEPRECATED
 	inline Instance(Plugin plugin, double sample_rate) {
-		me = lilv_plugin_instantiate(plugin, sample_rate, NULL);
+		me = lilv_plugin_instantiate(plugin, sample_rate, nullptr);
 	}
 
 	LILV_DEPRECATED inline Instance(Plugin              plugin,
@@ -270,7 +270,7 @@ struct Instance {
 		LilvInstance* me = lilv_plugin_instantiate(
 			plugin, sample_rate, features);
 
-		return me ? new Instance(me) : NULL;
+		return me ? new Instance(me) : nullptr;
 	}
 
 	LILV_WRAP_CONVERSION(LilvInstance);
