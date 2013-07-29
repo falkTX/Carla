@@ -196,9 +196,9 @@ const char* InternalParametersIndex2Str(const InternalParametersIndex index)
 }
 
 static inline
-const char* OptionsType2Str(const OptionsType type)
+const char* OptionsType2Str(const OptionsType option)
 {
-    switch (type)
+    switch (option)
     {
     case OPTION_PROCESS_NAME:
         return "OPTION_PROCESS_NAME";
@@ -272,7 +272,7 @@ const char* OptionsType2Str(const OptionsType type)
 #endif
     }
 
-    carla_stderr("CarlaBackend::OptionsType2Str(%i) - invalid type", type);
+    carla_stderr("CarlaBackend::OptionsType2Str(%i) - invalid option", option);
     return nullptr;
 }
 
@@ -376,7 +376,7 @@ const char* ProcessMode2Str(const ProcessMode mode)
         return "PROCESS_MODE_BRIDGE";
     }
 
-    carla_stderr("CarlaBackend::ProcessMode2Str(%i) - invalid type", mode);
+    carla_stderr("CarlaBackend::ProcessMode2Str(%i) - invalid mode", mode);
     return nullptr;
 }
 
@@ -395,7 +395,7 @@ const char* TransportMode2Str(const TransportMode mode)
         return "TRANSPORT_MODE_BRIDGE";
     }
 
-    carla_stderr("CarlaBackend::TransportMode2Str(%i) - invalid type", mode);
+    carla_stderr("CarlaBackend::TransportMode2Str(%i) - invalid mode", mode);
     return nullptr;
 }
 

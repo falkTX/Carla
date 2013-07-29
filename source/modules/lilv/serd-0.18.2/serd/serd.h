@@ -183,7 +183,7 @@ typedef enum {
 	   @see <a href="http://www.w3.org/TeamSubmission/turtle#nodeID">Turtle
 	   <tt>nodeID</tt></a>
 	*/
-	SERD_BLANK = 4,
+	SERD_BLANK = 4
 
 } SerdType;
 

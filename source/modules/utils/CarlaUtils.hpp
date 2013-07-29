@@ -256,7 +256,7 @@ void carla_add(T* dataDst, T* dataSrc, const size_t size)
 {
     CARLA_SAFE_ASSERT_RETURN(dataDst != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(dataSrc != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(size != 0,);
+    CARLA_SAFE_ASSERT_RETURN(size > 0,);
 
     for (size_t i=0; i < size; ++i)
         *dataDst++ += *dataSrc++;
@@ -268,7 +268,7 @@ void carla_add(T* dataDst, const T* dataSrc, const size_t size)
 {
     CARLA_SAFE_ASSERT_RETURN(dataDst != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(dataSrc != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(size != 0,);
+    CARLA_SAFE_ASSERT_RETURN(size > 0,);
 
     for (size_t i=0; i < size; ++i)
         *dataDst++ += *dataSrc++;
@@ -280,7 +280,7 @@ void carla_copy(T* dataDst, T* dataSrc, const size_t size)
 {
     CARLA_SAFE_ASSERT_RETURN(dataDst != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(dataSrc != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(size != 0,);
+    CARLA_SAFE_ASSERT_RETURN(size > 0,);
 
     for (size_t i=0; i < size; ++i)
         *dataDst++ = *dataSrc++;
@@ -292,7 +292,7 @@ void carla_copy(T* dataDst, const T* dataSrc, const size_t size)
 {
     CARLA_SAFE_ASSERT_RETURN(dataDst != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(dataSrc != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(size != 0,);
+    CARLA_SAFE_ASSERT_RETURN(size > 0,);
 
     for (size_t i=0; i < size; ++i)
         *dataDst++ = *dataSrc++;
@@ -303,7 +303,7 @@ static inline
 void carla_fill(T* data, const size_t size, const T v)
 {
     CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(size != 0,);
+    CARLA_SAFE_ASSERT_RETURN(size > 0,);
 
     for (size_t i=0; i < size; ++i)
         *data++ = v;
@@ -398,7 +398,7 @@ void carla_copyStruct(T* const struct1, T* const struct2, const size_t count)
 {
     CARLA_SAFE_ASSERT_RETURN(struct1 != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(struct2 != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(count != 0,);
+    CARLA_SAFE_ASSERT_RETURN(count > 0,);
 
     std::memcpy(struct1, struct2, count*sizeof(T));
 }
@@ -407,7 +407,7 @@ static inline
 void carla_zeroMem(void* const memory, const size_t numBytes)
 {
     CARLA_SAFE_ASSERT_RETURN(memory != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(numBytes != 0,);
+    CARLA_SAFE_ASSERT_RETURN(numBytes > 0,);
 
     std::memset(memory, 0, numBytes);
 }
@@ -424,7 +424,7 @@ static inline
 void carla_zeroStruct(T* const structure, const size_t count)
 {
     CARLA_SAFE_ASSERT_RETURN(structure != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(count != 0,);
+    CARLA_SAFE_ASSERT_RETURN(count > 0,);
 
     std::memset(structure, 0, count*sizeof(T));
 }

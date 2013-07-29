@@ -90,6 +90,8 @@ const LADSPA_RDF_Descriptor* ladspa_rdf_dup(const LADSPA_RDF_Descriptor* const o
 static inline
 bool is_ladspa_port_good(const LADSPA_PortDescriptor port1, const LADSPA_PortDescriptor port2)
 {
+    if (port1 == 0x0 || port2 == 0x0)
+        return false;
     if (LADSPA_IS_PORT_INPUT(port1) && ! LADSPA_IS_PORT_INPUT(port2))
         return false;
     if (LADSPA_IS_PORT_OUTPUT(port1) && ! LADSPA_IS_PORT_OUTPUT(port2))

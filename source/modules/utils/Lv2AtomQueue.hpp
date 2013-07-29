@@ -18,7 +18,6 @@
 #ifndef LV2_ATOM_QUEUE_HPP_INCLUDED
 #define LV2_ATOM_QUEUE_HPP_INCLUDED
 
-//#include "CarlaLv2Utils.hpp"
 #include "CarlaMutex.hpp"
 #include "CarlaRingBuffer.hpp"
 
@@ -36,7 +35,7 @@ public:
 
     // -------------------------------------------------------------------
 
-    const RetAtom* readAtom(uint32_t* const portIndex)
+    const LV2_Atom* readAtom(uint32_t* const portIndex)
     {
         fRetAtom.atom.size = 0;
         fRetAtom.atom.type = 0;
@@ -45,16 +44,21 @@ public:
         if (fRetAtom.atom.size == 0 || fRetAtom.atom.type == 0)
             return nullptr;
 
+        CARLA_SAFE_ASSERT_RETURN(fRetAtom.atom.size < RING_BUFFER_SIZE, nullptr)
+
         int32_t index = -1;
         tryRead(&index, sizeof(int32_t));
 
         if (index == -1)
             return nullptr;
 
-        *portIndex = index;
+        if (portIndex != nullptr)
+            *portIndex = static_cast<uint32_t>(index);
 
+        carla_zeroChar(fRetAtom.data, fRetAtom.atom.size);
         tryRead(fRetAtom.data, fRetAtom.atom.size);
-        return &RetAtom;
+
+        return &fRetAtom.atom;
     }
 
     // -------------------------------------------------------------------
@@ -74,7 +78,7 @@ private:
 
     struct RetAtom {
         LV2_Atom atom;
-        unsigned char data[RING_BUFFER_SIZE];
+        char     data[RING_BUFFER_SIZE];
     } fRetAtom;
 
     friend class Lv2AtomQueue;
@@ -123,48 +127,23 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(atom != nullptr && atom->size > 0, false);
 
-        const CarlaMutex::ScopedLocker sl(fMutex);
-
-        return fRingBufferCtrl.writeAtom(atom, portIndex);
+        return fRingBufferCtrl.writeAtom(atom, static_cast<int32_t>(portIndex));
     }
 
     bool get(const LV2_Atom** const atom, uint32_t* const portIndex)
     {
-        CARLA_SAFE_ASSERT_RETURN(portIndex != nullptr && atom != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(atom != nullptr && portIndex != nullptr, false);
 
         if (! fRingBufferCtrl.dataAvailable())
             return false;
 
-        const LV2_Atom atom     = fRingBufferCtrl.readAtom();
-        const int32_t portIndex = fRingBufferCtrl.readAndCheckInt();
-        const uint8_t* atomBody = fRingBufferCtrl.readAtomBody();
+        if (const LV2_Atom* retAtom = fRingBufferCtrl.readAtom(portIndex))
+        {
+            *atom = retAtom;
+            return true;
+        }
 
-//         fFull = false;
-//
-//         if (fData[fIndex].size == 0)
-//         {
-//             fIndex = fIndexPool = 0;
-//             fEmpty = true;
-//
-//             unlock();
-//             return false;
-//         }
-//
-//         fRetAtom.atom.size = fData[fIndex].size;
-//         fRetAtom.atom.type = fData[fIndex].type;
-//         std::memcpy(fRetAtom.data, fDataPool + fData[fIndex].poolOffset, fData[fIndex].size);
-//
-//         *portIndex = fData[fIndex].portIndex;
-//         *atom      = (LV2_Atom*)&fRetAtom;
-//
-//         fData[fIndex].portIndex  = 0;
-//         fData[fIndex].size       = 0;
-//         fData[fIndex].type       = 0;
-//         fData[fIndex].poolOffset = 0;
-//         fEmpty = false;
-//         ++fIndex;
-
-        return true;
+        return false;
     }
 
 private:
@@ -172,7 +151,7 @@ private:
     Lv2AtomRingBufferControl fRingBufferCtrl;
 
     CARLA_PREVENT_HEAP_ALLOCATION
-
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Lv2AtomQueue)
 };
 
 // -----------------------------------------------------------------------

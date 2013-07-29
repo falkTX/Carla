@@ -71,7 +71,7 @@ const char* lib_error(const char* const filename)
 
 #ifdef CARLA_OS_WIN
     static char libError[2048+1];
-    carla_zeroChar(libError, 2048);
+    carla_zeroChar(libError, 2048+1);
 
     LPVOID winErrorString;
     DWORD  winErrorCode = GetLastError();

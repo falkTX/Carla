@@ -118,11 +118,10 @@ typedef uint32_t LV2_Property;
 #define LV2_PORT_ATOM_SEQUENCE          (0x040 | LV2_PORT_ATOM)
 #define LV2_PORT_EVENT                   0x080
 #define LV2_PORT_MIDI_LL                 0x100
-#define LV2_PORT_OSC                     0x200
 
 // Port Data Types
 #define LV2_PORT_DATA_MIDI_EVENT         0x1000
-#define LV2_PORT_DATA_OSC                0x2000
+#define LV2_PORT_DATA_OSC_EVENT          0x2000
 #define LV2_PORT_DATA_PATCH_MESSAGE      0x4000
 #define LV2_PORT_DATA_TIME_POSITION      0x8000
 
@@ -134,10 +133,9 @@ typedef uint32_t LV2_Property;
 #define LV2_IS_PORT_ATOM_SEQUENCE(x)     ((x) & LV2_PORT_ATOM_SEQUENCE)
 #define LV2_IS_PORT_EVENT(x)             ((x) & LV2_PORT_EVENT)
 #define LV2_IS_PORT_MIDI_LL(x)           ((x) & LV2_PORT_MIDI_LL)
-#define LV2_IS_PORT_OSC(x)               ((x) & LV2_PORT_OSC)
 
 #define LV2_PORT_SUPPORTS_MIDI_EVENT(x)    ((x) & LV2_PORT_DATA_MIDI_EVENT)
-#define LV2_PORT_SUPPORTS_OSC(x)           ((x) & LV2_PORT_DATA_OSC)
+#define LV2_PORT_SUPPORTS_OSC_EVENT(x)     ((x) & LV2_PORT_DATA_OSC_EVENT)
 #define LV2_PORT_SUPPORTS_PATCH_MESSAGE(x) ((x) & LV2_PORT_DATA_PATCH_MESSAGE)
 #define LV2_PORT_SUPPORTS_TIME_POSITION(x) ((x) & LV2_PORT_DATA_TIME_POSITION)
 

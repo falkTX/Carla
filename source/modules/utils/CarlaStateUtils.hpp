@@ -265,18 +265,14 @@ void fillSaveStateFromXmlNode(SaveState& saveState, const QDomNode& xmlNode)
     if (xmlNode.isNull())
         return;
 
-    QDomNode node(xmlNode.firstChild());
-
-    while (! node.isNull())
+    for (QDomNode node = xmlNode.firstChild(); ! node.isNull(); node = node.nextSibling())
     {
         // ---------------------------------------------------------------
         // Info
 
         if (node.toElement().tagName().compare("Info", Qt::CaseInsensitive) == 0)
         {
-            QDomNode xmlInfo(node.toElement().firstChild());
-
-            while (! xmlInfo.isNull())
+            for (QDomNode xmlInfo = node.toElement().firstChild(); ! xmlInfo.isNull(); xmlInfo = xmlInfo.nextSibling())
             {
                 const QString tag(xmlInfo.toElement().tagName());
                 const QString text(xmlInfo.toElement().text().trimmed());
@@ -295,8 +291,6 @@ void fillSaveStateFromXmlNode(SaveState& saveState, const QDomNode& xmlNode)
                     const long uniqueID(text.toLong(&ok));
                     if (ok) saveState.uniqueID = uniqueID;
                 }
-
-                xmlInfo = xmlInfo.nextSibling();
             }
         }
 
@@ -305,9 +299,7 @@ void fillSaveStateFromXmlNode(SaveState& saveState, const QDomNode& xmlNode)
 
         else if (node.toElement().tagName().compare("Data", Qt::CaseInsensitive) == 0)
         {
-            QDomNode xmlData(node.toElement().firstChild());
-
-            while (! xmlData.isNull())
+            for (QDomNode xmlData = node.toElement().firstChild(); ! xmlData.isNull(); xmlData = xmlData.nextSibling())
             {
                 const QString tag(xmlData.toElement().tagName());
                 const QString text(xmlData.toElement().text().trimmed());
@@ -323,37 +315,37 @@ void fillSaveStateFromXmlNode(SaveState& saveState, const QDomNode& xmlNode)
                 {
                     bool ok;
                     const float value(text.toFloat(&ok));
-                    if (ok) saveState.dryWet = value;
+                    if (ok) saveState.dryWet = carla_fixValue(0.0f, 1.0f, value);
                 }
                 else if (tag.compare("Volume", Qt::CaseInsensitive) == 0)
                 {
                     bool ok;
                     const float value(text.toFloat(&ok));
-                    if (ok) saveState.volume = value;
+                    if (ok) saveState.volume = carla_fixValue(0.0f, 1.27f, value);
                 }
                 else if (tag.compare("Balance-Left", Qt::CaseInsensitive) == 0)
                 {
                     bool ok;
                     const float value(text.toFloat(&ok));
-                    if (ok) saveState.balanceLeft = value;
+                    if (ok) saveState.balanceLeft = carla_fixValue(-1.0f, 1.0f, value);
                 }
                 else if (tag.compare("Balance-Right", Qt::CaseInsensitive) == 0)
                 {
                     bool ok;
                     const float value(text.toFloat(&ok));
-                    if (ok) saveState.balanceRight = value;
+                    if (ok) saveState.balanceRight = carla_fixValue(-1.0f, 1.0f, value);
                 }
                 else if (tag.compare("Panning", Qt::CaseInsensitive) == 0)
                 {
                     bool ok;
                     const float value(text.toFloat(&ok));
-                    if (ok) saveState.panning = value;
+                    if (ok) saveState.panning = carla_fixValue(-1.0f, 1.0f, value);
                 }
                 else if (tag.compare("ControlChannel", Qt::CaseInsensitive) == 0)
                 {
                     bool ok;
                     const short value(text.toShort(&ok));
-                    if (ok && value >= 1 && value < INT8_MAX)
+                    if (ok && value >= 1 && value <= MAX_MIDI_CHANNELS)
                         saveState.ctrlChannel = static_cast<int8_t>(value-1);
                 }
 
@@ -397,9 +389,7 @@ void fillSaveStateFromXmlNode(SaveState& saveState, const QDomNode& xmlNode)
                 {
                     StateParameter* const stateParameter(new StateParameter());
 
-                    QDomNode xmlSubData(xmlData.toElement().firstChild());
-
-                    while (! xmlSubData.isNull())
+                    for (QDomNode xmlSubData = xmlData.toElement().firstChild(); ! xmlSubData.isNull(); xmlSubData = xmlSubData.nextSibling())
                     {
                         const QString pTag(xmlSubData.toElement().tagName());
                         const QString pText(xmlSubData.toElement().text().trimmed());
@@ -428,18 +418,16 @@ void fillSaveStateFromXmlNode(SaveState& saveState, const QDomNode& xmlNode)
                         {
                             bool ok;
                             const ushort channel(pText.toUShort(&ok));
-                            if (ok && channel >= 1 && channel < MAX_MIDI_CHANNELS)
+                            if (ok && channel >= 1 && channel <= MAX_MIDI_CHANNELS)
                                 stateParameter->midiChannel = static_cast<uint8_t>(channel-1);
                         }
                         else if (pTag.compare("MidiCC", Qt::CaseInsensitive) == 0)
                         {
                             bool ok;
                             const int cc(pText.toInt(&ok));
-                            if (ok && cc >= 1 && cc < INT16_MAX)
+                            if (ok && cc >= 1 && cc < 0x5F)
                                 stateParameter->midiCC = static_cast<int16_t>(cc);
                         }
-
-                        xmlSubData = xmlSubData.nextSibling();
                     }
 
                     saveState.parameters.append(stateParameter);
@@ -452,9 +440,7 @@ void fillSaveStateFromXmlNode(SaveState& saveState, const QDomNode& xmlNode)
                 {
                     StateCustomData* const stateCustomData(new StateCustomData());
 
-                    QDomNode xmlSubData(xmlData.toElement().firstChild());
-
-                    while (! xmlSubData.isNull())
+                    for (QDomNode xmlSubData = xmlData.toElement().firstChild(); ! xmlSubData.isNull(); xmlSubData = xmlSubData.nextSibling())
                     {
                         const QString cTag(xmlSubData.toElement().tagName());
                         const QString cText(xmlSubData.toElement().text().trimmed());
@@ -465,8 +451,6 @@ void fillSaveStateFromXmlNode(SaveState& saveState, const QDomNode& xmlNode)
                             stateCustomData->key = xmlSafeStringCharDup(cText, false);
                         else if (cTag.compare("Value", Qt::CaseInsensitive) == 0)
                             stateCustomData->value = xmlSafeStringCharDup(cText, false);
-
-                        xmlSubData = xmlSubData.nextSibling();
                     }
 
                     saveState.customData.append(stateCustomData);
@@ -479,16 +463,8 @@ void fillSaveStateFromXmlNode(SaveState& saveState, const QDomNode& xmlNode)
                 {
                     saveState.chunk = xmlSafeStringCharDup(text, false);
                 }
-
-                // -------------------------------------------------------
-
-                xmlData = xmlData.nextSibling();
             }
         }
-
-        // ---------------------------------------------------------------
-
-        node = node.nextSibling();
     }
 }
 

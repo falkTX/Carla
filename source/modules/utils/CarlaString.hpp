@@ -121,7 +121,7 @@ public:
 
     ~CarlaString()
     {
-        CARLA_ASSERT(fBuffer != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr,)
 
         delete[] fBuffer;
         fBuffer = nullptr;
@@ -148,8 +148,7 @@ public:
 #ifdef __USE_GNU
     bool contains(const char* const strBuf, const bool ignoreCase = false) const
     {
-        if (strBuf == nullptr)
-            return false;
+        CARLA_SAFE_ASSERT_RETURN(strBuf != nullptr, false)
 
         if (ignoreCase)
             return (strcasestr(fBuffer, strBuf) != nullptr);
@@ -164,8 +163,7 @@ public:
 #else
     bool contains(const char* const strBuf) const
     {
-        if (strBuf == nullptr)
-            return false;
+        CARLA_SAFE_ASSERT_RETURN(strBuf != nullptr, false)
 
         return (std::strstr(fBuffer, strBuf) != nullptr);
     }
@@ -178,16 +176,14 @@ public:
 
     bool isDigit(const size_t pos) const noexcept
     {
-        if (pos >= fBufferLen)
-            return false;
+        CARLA_SAFE_ASSERT_RETURN(pos < fBufferLen, false)
 
         return (fBuffer[pos] >= '0' && fBuffer[pos] <= '9');
     }
 
     bool startsWith(const char* const prefix) const
     {
-        if (prefix == nullptr)
-            return false;
+        CARLA_SAFE_ASSERT_RETURN(prefix != nullptr, false)
 
         const size_t prefixLen(std::strlen(prefix));
 
@@ -199,8 +195,7 @@ public:
 
     bool endsWith(const char* const suffix) const
     {
-        if (suffix == nullptr)
-            return false;
+        CARLA_SAFE_ASSERT_RETURN(suffix != nullptr, false)
 
         const size_t suffixLen(std::strlen(suffix));
 
@@ -239,8 +234,7 @@ public:
 
     size_t rfind(const char* const strBuf) const
     {
-        if (strBuf == nullptr || strBuf[0] == '\0')
-            return fBufferLen;
+        CARLA_SAFE_ASSERT_RETURN(strBuf != nullptr && strBuf[0] != '\0', fBufferLen)
 
         size_t ret = fBufferLen+1;
         const char* tmpBuf = fBuffer;
@@ -259,8 +253,7 @@ public:
 
     void replace(const char before, const char after) noexcept
     {
-        if (after == '\0')
-            return;
+        CARLA_SAFE_ASSERT_RETURN(before != '\0' && after != '\0',)
 
         for (size_t i=0; i < fBufferLen; ++i)
         {

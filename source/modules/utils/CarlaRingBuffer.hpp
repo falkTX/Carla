@@ -150,9 +150,7 @@ public:
 
     // -------------------------------------------------------------------
 
-private:
-    RingBuffer* fRingBuf;
-
+protected:
     void tryRead(void* const buf, const size_t size)
     {
         CARLA_SAFE_ASSERT_RETURN(fRingBuf != nullptr,);
@@ -237,6 +235,9 @@ private:
 
         fRingBuf->written = static_cast<int32_t>(writeto);
     }
+
+private:
+    RingBuffer* fRingBuf;
 
     CARLA_PREVENT_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(RingBufferControl)

@@ -83,7 +83,7 @@ typedef enum {
 	   to sratom_read(); if this is a resource it will be read as an Object,
 	   but all other named resources encountered will be read as URIs.
 	*/
-	SRATOM_OBJECT_MODE_BLANK_SUBJECT,
+	SRATOM_OBJECT_MODE_BLANK_SUBJECT
 } SratomObjectMode;
 
 /**
