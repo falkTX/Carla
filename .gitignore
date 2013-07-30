@@ -72,7 +72,7 @@ source/tests/DGL2
 source/tests/Print
 source/tests/RtList
 source/tests/Utils
-source/tests/dgl-neko-test*
+source/tests/Widgets
 
 # Docs
 doc/CarlaBackend/
