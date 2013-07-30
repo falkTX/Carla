@@ -25,11 +25,8 @@
 #include "CarlaNative.h"
 
 #include "CarlaLogThread.hpp"
-
-#ifndef BUILD_BRIDGE
-# include "CarlaStyle.hpp"
-# include <QtCore/QSettings>
-#endif
+#include "CarlaStyle.hpp"
+#include <QtCore/QSettings>
 
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 # include <QtWidgets/QApplication>
@@ -58,6 +55,7 @@ struct CarlaBackendStandalone {
     EngineOptions options;
 
     QApplication* app;
+    CarlaStyle* style;
     bool needsInit;
 
     LogThread logThread;
@@ -69,26 +67,7 @@ struct CarlaBackendStandalone {
           app(qApp),
           needsInit(app == nullptr)
     {
-#ifndef BUILD_BRIDGE
-        if (app != nullptr)
-        {
-            QSettings settings;
-
-            if (settings.value("Main/UseProTheme", true).toBool())
-            {
-                CarlaStyle* const style(new CarlaStyle());
-                app->setStyle(style);
-                style->ready(app);
-
-                QString color(settings.value("Main/ProThemeColor", "Black").toString());
-
-                if (color == "System")
-                    pass(); //style->setColorScheme(CarlaStyle::COLOR_SYSTEM);
-                else
-                    style->setColorScheme(CarlaStyle::COLOR_BLACK);
-            }
-        }
-#endif
+        checkTheme();
     }
 
     ~CarlaBackendStandalone()
@@ -109,14 +88,12 @@ struct CarlaBackendStandalone {
         app = qApp;
 
         if (app != nullptr)
-        {
-            needsInit = false;
             return;
-        }
 
         static int    argc = 0;
         static char** argv = nullptr;
         app = new QApplication(argc, argv, true);
+        checkTheme();
     }
 
     void close()
@@ -128,8 +105,27 @@ struct CarlaBackendStandalone {
 
         app->quit();
         app->processEvents();
+
+        if (style != nullptr)
+        {
+            delete style;
+            style = nullptr;
+        }
+
         delete app;
         app = nullptr;
+    }
+
+    void checkTheme()
+    {
+        if (app == nullptr || style != nullptr)
+            return;
+
+        if (QSettings().value("Main/UseProTheme", true).toBool())
+        {
+            style = new CarlaStyle();
+            app->setStyle(style);
+        }
     }
 
     CARLA_DECLARE_NON_COPY_STRUCT(CarlaBackendStandalone)

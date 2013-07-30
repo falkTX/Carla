@@ -14,9 +14,11 @@ QT5_CXX_FLAGS    = $(BUILD_CXX_FLAGS) # FIXME: use copy instead of reference
 ifeq ($(HAVE_QT4),true)
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtCore QtGui)
 LINK_FLAGS      += $(shell pkg-config --libs QtCore QtGui)
+QT_STYLES_DIR    = $(shell pkg-config --variable=libdir QtCore)/qt4/plugins/styles
 else
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags Qt5Core Qt5Gui Qt5Widgets)
 LINK_FLAGS      += $(shell pkg-config --libs Qt5Core Qt5Gui Qt5Widgets)
+QT_STYLES_DIR    = $(shell pkg-config --variable=libdir Qt5Core)/qt5/plugins/styles
 endif
 
 ifeq ($(HAVE_QT5),true)
@@ -27,50 +29,51 @@ endif
 
 FILES = \
 	moc_CarlaStyle.cpp \
-	moc_CarlaStylePrivate.cpp \
 	moc_CarlaStyleAnimations.cpp \
+	moc_CarlaStylePlugin.cpp \
+	moc_CarlaStylePrivate.cpp \
 	resources.cpp
 
 OBJS  = \
+	CarlaStyle.cpp.o \
 	moc_CarlaStyle.cpp.o \
 	moc_CarlaStyleAnimations.cpp.o \
+	moc_CarlaStylePlugin.cpp.o \
 	moc_CarlaStylePrivate.cpp.o
 
-OBJS_static = $(OBJS) \
-	CarlaStyle.cpp.o
-
 OBJS_shared = $(OBJS) \
-	CarlaStyle.cpp.export.o
+	CarlaStylePlugin.cpp.o \
+	resources.cpp.o
 
 OBJS_qt5 = \
+	CarlaStyle.cpp.qt5.o \
 	moc_CarlaStyle.cpp.qt5.o \
 	moc_CarlaStyleAnimations.cpp.qt5.o \
-	moc_CarlaStylePrivate.cpp.qt5.o \
-	CarlaStyle.cpp.qt5.o
+	moc_CarlaStylePrivate.cpp.qt5.o
 
 OBJS_posix32 = \
+	CarlaStyle.cpp.posix32.o \
 	moc_CarlaStyle.cpp.posix32.o \
 	moc_CarlaStyleAnimations.cpp.posix32.o \
-	moc_CarlaStylePrivate.cpp.posix32.o \
-	CarlaStyle.cpp.posix32.o
+	moc_CarlaStylePrivate.cpp.posix32.o
 
 OBJS_posix64 = \
+	CarlaStyle.cpp.posix64.o \
 	moc_CarlaStyle.cpp.posix64.o \
 	moc_CarlaStyleAnimations.cpp.posix64.o \
-	moc_CarlaStylePrivate.cpp.posix64.o \
-	CarlaStyle.cpp.posix64.o
+	moc_CarlaStylePrivate.cpp.posix64.o
 
 OBJS_win32 = \
+	CarlaStyle.cpp.win32.o \
 	moc_CarlaStyle.cpp.win32.o \
 	moc_CarlaStyleAnimations.cpp.win32.o \
-	moc_CarlaStylePrivate.cpp.win32.o \
-	CarlaStyle.cpp.win32.o
+	moc_CarlaStylePrivate.cpp.win32.o
 
 OBJS_win64 = \
+	CarlaStyle.cpp.win64.o \
 	moc_CarlaStyle.cpp.win64.o \
 	moc_CarlaStyleAnimations.cpp.win64.o \
-	moc_CarlaStylePrivate.cpp.win64.o \
-	CarlaStyle.cpp.win64.o
+	moc_CarlaStylePrivate.cpp.win64.o
 
 # --------------------------------------------------------------
 
@@ -84,8 +87,8 @@ win64:   ../theme.win64.a
 
 # --------------------------------------------------------------
 
-../theme.a: $(FILES) $(OBJS_static)
-	$(AR) rs $@ $(OBJS_static)
+../theme.a: $(FILES) $(OBJS)
+	$(AR) rs $@ $(OBJS)
 
 ../theme.qt5.a: $(FILES) $(OBJS_qt5)
 	$(AR) rs $@ $(OBJS_qt5)
@@ -119,9 +122,6 @@ win64:   ../theme.win64.a
 %.cpp.qt5.o: %.cpp CarlaStyle.hpp moc_CarlaStyle.cpp
 	$(CXX) $< $(QT5_CXX_FLAGS) -c -o $@
 
-%.cpp.export.o: %.cpp CarlaStyle.hpp moc_CarlaStyle.cpp
-	$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_EXPORT_STYLE -c -o $@
-
 %.cpp.posix32.o: %.cpp CarlaStyle.hpp moc_CarlaStyle.cpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
 
@@ -141,6 +141,10 @@ resources.cpp: ../../../resources/resources-theme.qrc
 	$(RCC) $< -o $@
 
 # --------------------------------------------------------------
+
+install: ../carlastyle.so
+	install -d $(QT_STYLES_DIR)
+	install -m 644 $< $(QT_STYLES_DIR)
 
 clean:
 	rm -f *.o ../theme.* $(FILES)

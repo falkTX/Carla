@@ -1,19 +1,18 @@
 /*
  * Carla Style, based on Qt5 fusion style
- * Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
  * Copyright (C) 2012 Digia Plc and/or its subsidiary(-ies)
+ * Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 3 of
- * the License, or any later version.
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
+ * GNU Lesser General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL3.txt file
+ * For a full copy of the license see the doc/LGPL.txt file
  */
 
 #ifndef CARLA_STYLE_PRIVATE_HPP_INCLUDED
@@ -39,7 +38,7 @@ public:
     };
 
     CarlaStylePrivate(CarlaStyle* const style)
-        : kStyle(style),
+        : fStyle(style),
           fAnimationFps(60)
     {
     }
@@ -131,7 +130,7 @@ public:
     void startAnimation(CarlaStyleAnimation* animation) const
     {
         stopAnimation(animation->target());
-        kStyle->connect(animation, SIGNAL(destroyed()), SLOT(_removeAnimation()), Qt::UniqueConnection);
+        fStyle->connect(animation, SIGNAL(destroyed()), SLOT(_removeAnimation()), Qt::UniqueConnection);
         fAnimations.insert(animation->target(), animation);
         animation->start();
     }
@@ -144,15 +143,14 @@ public:
     }
 
 private:
-    CarlaStyle* const kStyle;
+    CarlaStyle* const fStyle;
     int fAnimationFps;
     mutable QHash<const QObject*, CarlaStyleAnimation*> fAnimations;
 
 private slots:
     void _removeAnimation()
     {
-        QObject* animation = kStyle->sender();
-        if (animation != nullptr)
+        if (QObject* animation = fStyle->sender())
            fAnimations.remove(animation->parent());
     }
 };
