@@ -12,11 +12,11 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#ifndef __PIXMAPKEYBOARD_HPP__
-#define __PIXMAPKEYBOARD_HPP__
+#ifndef PIXMAPKEYBOARD_HPP_INCLUDED
+#define PIXMAPKEYBOARD_HPP_INCLUDED
 
 #include "CarlaJuceUtils.hpp"
 
@@ -87,7 +87,8 @@ private:
     bool _isNoteBlack(int note) const;
     const QRectF& _getRectFromMidiNote(int note) const;
 
-    CARLA_LEAK_DETECTOR(PixmapKeyboard)
+    CARLA_PREVENT_HEAP_ALLOCATION
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PixmapKeyboard)
 };
 
-#endif // __PIXMAPKEYBOARD_HPP__
+#endif // PIXMAPKEYBOARD_HPP_INCLUDED

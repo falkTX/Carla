@@ -24,12 +24,14 @@ FILES = \
 	moc_paramspinbox.cpp \
 	moc_pixmapkeyboard.cpp
 
-OBJS = \
+OBJS  = \
 	digitalpeakmeter.cpp.o \
 	ledbutton.cpp.o \
 	paramspinbox.cpp.o \
 	pixmapdial.cpp.o \
-	pixmapkeyboard.cpp.o \
+	pixmapkeyboard.cpp.o
+
+OBJS += \
 	moc_paramspinbox.cpp.o \
 	moc_pixmapkeyboard.cpp.o
 

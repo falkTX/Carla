@@ -12,11 +12,11 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#ifndef __LEDBUTTON_HPP__
-#define __LEDBUTTON_HPP__
+#ifndef LEDBUTTON_HPP_INCLUDED
+#define LEDBUTTON_HPP_INCLUDED
 
 #include "CarlaJuceUtils.hpp"
 
@@ -54,7 +54,8 @@ private:
     QPixmap fPixmap;
     QRectF  fPixmapRect;
 
-    CARLA_LEAK_DETECTOR(LEDButton)
+    CARLA_PREVENT_HEAP_ALLOCATION
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LEDButton)
 };
 
-#endif // __LEDBUTTON_HPP__
+#endif // LEDBUTTON_HPP_INCLUDED

@@ -12,11 +12,11 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#ifndef __PIXMAPDIAL_HPP__
-#define __PIXMAPDIAL_HPP__
+#ifndef PIXMAPDIAL_HPP_INCLUDED
+#define PIXMAPDIAL_HPP_INCLUDED
 
 #include "CarlaJuceUtils.hpp"
 
@@ -93,7 +93,8 @@ private:
 
     int fWidth, fHeight, fSize, fCount;
 
-    CARLA_LEAK_DETECTOR(PixmapDial)
+    CARLA_PREVENT_HEAP_ALLOCATION
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PixmapDial)
 };
 
-#endif // __PIXMAPDIAL_HPP__
+#endif // PIXMAPDIAL_HPP_INCLUDED

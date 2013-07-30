@@ -19,7 +19,7 @@
 #define CARLA_LOG_THREAD_HPP_INCLUDED
 
 #include "CarlaBackend.hpp"
-#include "CarlaUtils.hpp"
+#include "CarlaJuceUtils.hpp"
 
 #include <fcntl.h>
 #include <QtCore/QThread>
@@ -133,6 +133,9 @@ private:
 
     CallbackFunc fCallback;
     void*        fCallbackPtr;
+
+    CARLA_PREVENT_HEAP_ALLOCATION
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LogThread)
 };
 
 // -----------------------------------------------------------------------

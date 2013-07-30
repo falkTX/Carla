@@ -12,11 +12,11 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#ifndef __DIGITALPEAKMETER_HPP__
-#define __DIGITALPEAKMETER_HPP__
+#ifndef DIGITALPEAKMETER_HPP_INCLUDED
+#define DIGITALPEAKMETER_HPP_INCLUDED
 
 #include "CarlaJuceUtils.hpp"
 
@@ -74,7 +74,8 @@ private:
     float* fChannelsData;
     float* fLastValueData;
 
-    CARLA_LEAK_DETECTOR(DigitalPeakMeter)
+    CARLA_PREVENT_HEAP_ALLOCATION
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DigitalPeakMeter)
 };
 
-#endif // __DIGITALPEAKMETER_HPP__
+#endif // DIGITALPEAKMETER_HPP_INCLUDED
