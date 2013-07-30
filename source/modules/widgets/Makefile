@@ -50,7 +50,7 @@ all: ../widgets.a
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 moc_%.cpp.o: %.cpp
-	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+	$(CXX) moc_$< $(BUILD_CXX_FLAGS) -c -o $@
 
 moc_%.cpp: %.hpp
 	$(MOC) $< -o $@

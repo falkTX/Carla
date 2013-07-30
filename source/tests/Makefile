@@ -8,7 +8,7 @@ include ../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += -I../backend -I../includes -I../modules -I../modules/distrho -I../modules/theme -I../modules/utils
+BUILD_CXX_FLAGS += -I../backend -I../includes -I../modules -I../modules/distrho -I../modules/theme -I../modules/utils -I../modules/widgets
 BUILD_CXX_FLAGS += -DWANT_NATIVE -DWANT_LADSPA -DWANT_DSSI -DWANT_LV2 -DWANT_VST -DWANT_FLUIDSYNTH -DWANT_LINUXSAMPLER
 BUILD_CXX_FLAGS += -DWANT_RTAUDIO -DWANT_OPENGL -DWANT_AUDIOFILE -DWANT_MIDIFILE -DWANT_ZYNADDSUBFX -DWANT_ZYNADDSUBFX_UI
 BUILD_CXX_FLAGS += -isystem /usr/include/qt4
@@ -62,14 +62,27 @@ Print: Print.cpp
 Utils: Utils.cpp
 	$(CXX) $^ $(BUILD_CXX_FLAGS) $(LINK_FLAGS) -pthread -lpthread -o $@
 
+Widgets: Widgets.cpp resources.cpp.o ../modules/theme.a ../modules/widgets.a
+	$(CXX) $^ $(BUILD_CXX_FLAGS) $(LINK_FLAGS) -lQtCore -lQtGui -o $@
+
 RUN: $(TARGETS)
 	./ANSI && ./CarlaString && ./RtList && ./Print && ./Utils
 	./DGL1 && ./DGL2
 
 # --------------------------------------------------------------
 
+resources.cpp.o: ../../resources/resources.qrc
+	$(RCC) $< -o resources.cpp
+	$(CXX) resources.cpp $(BUILD_CXX_FLAGS) -c -o $@
+	rm resources.cpp
+
+../modules/%.a:
+	$(MAKE) -C ../modules $*
+
+# --------------------------------------------------------------
+
 clean:
-	rm -f $(TARGETS)
+	rm -f *.o $(TARGETS)
 
 debug:
 	$(MAKE) DEBUG=true

@@ -87,7 +87,6 @@ private:
     bool _isNoteBlack(int note) const;
     const QRectF& _getRectFromMidiNote(int note) const;
 
-    CARLA_PREVENT_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PixmapKeyboard)
 };
 

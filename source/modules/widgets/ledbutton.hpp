@@ -30,8 +30,6 @@
 
 class LEDButton : public QPushButton
 {
-    Q_OBJECT
-
 public:
     enum Color {
         OFF    = 0,
@@ -54,7 +52,6 @@ private:
     QPixmap fPixmap;
     QRectF  fPixmapRect;
 
-    CARLA_PREVENT_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LEDButton)
 };
 
