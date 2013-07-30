@@ -20,14 +20,12 @@
 
 #include "CarlaBackend.hpp"
 #include "CarlaString.hpp"
+#include "CarlaNative.h"
 
 // Avoid including extra libs here
 typedef void* lo_address;
 #ifndef LADSPA_RDF_HPP_INCLUDED
 struct LADSPA_RDF_Descriptor;
-#endif
-#ifndef CARLA_NATIVE_H_INCLUDED
-struct PluginDescriptor;
 #endif
 
 CARLA_BACKEND_START_NAMESPACE

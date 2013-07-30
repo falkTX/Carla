@@ -21,6 +21,9 @@
 
 #define RING_BUFFER_SIZE 48
 
+#define ANSI_TEST_N 2
+
+#if ANSI_TEST_N == 1
 // includes
 #include "CarlaDefines.hpp"
 #include "CarlaMIDI.h"
@@ -68,13 +71,21 @@
 
 // Carla Standalone API
 #include "CarlaStandalone.hpp"
+// ANSI_TEST_N == 1
+#endif
 
-// // Carla Plugin
+#if ANSI_TEST_N == 2
+// Carla Standalone
+#include "CarlaStandalone.hpp"
+#include "standalone/CarlaStandalone.cpp"
+#endif
+
 // #include "plugin/CarlaPluginThread.hpp"
 // #include "plugin/CarlaPluginInternal.hpp"
 
 // #include "standalone/CarlaStandalone.cpp"
 
+#if ANSI_TEST_N == 1
 // -----------------------------------------------------------------------
 
 namespace CB = CarlaBackend;
@@ -84,11 +95,13 @@ int safe_assert_return_test(bool test)
     CARLA_SAFE_ASSERT_RETURN(test, 1);
     return 0;
 }
+#endif
 
 // -----------------------------------------------------------------------
 
 int main()
 {
+#if ANSI_TEST_N == 1
     // ladspa rdf
     {
         LADSPA_RDF_ScalePoint a;
@@ -577,6 +590,8 @@ int main()
         obj = ListTester::getCounter();
         assert(obj.count == 2); // List fRetValue + t1
     }
+// ANSI_TEST_N == 1
+#endif
 
     return 0;
 }

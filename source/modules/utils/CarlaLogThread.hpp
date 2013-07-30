@@ -19,21 +19,22 @@
 #define CARLA_LOG_THREAD_HPP_INCLUDED
 
 #include "CarlaBackend.hpp"
-#include "CarlaJuceUtils.hpp"
+#include "CarlaString.hpp"
 
 #include <fcntl.h>
 #include <QtCore/QThread>
 
-CARLA_BACKEND_START_NAMESPACE
+using CarlaBackend::CallbackFunc;
 
 // -----------------------------------------------------------------------
 // Log thread
 
-class LogThread : public QThread
+class CarlaLogThread : public QThread
 {
 public:
-    LogThread()
-        : fStop(false),
+    CarlaLogThread()
+        : QThread(nullptr),
+          fStop(false),
           fCallback(nullptr),
           fCallbackPtr(nullptr)
     {
@@ -48,10 +49,17 @@ public:
         dup2(fPipe[1], STDERR_FILENO);
 
         fcntl(fPipe[0], F_SETFL, O_NONBLOCK);
+
+        QThread::start(LowPriority);
     }
 
-    ~LogThread()
+    ~CarlaLogThread()
     {
+        fCallback    = nullptr;
+        fCallbackPtr = nullptr;
+
+        stop();
+
         fflush(stdout);
         fflush(stderr);
 
@@ -59,14 +67,12 @@ public:
         close(fPipe[1]);
     }
 
-    void ready(CallbackFunc callback, void* callbackPtr)
+    void setCallback(CallbackFunc callback, void* callbackPtr)
     {
         CARLA_ASSERT(callback != nullptr);
 
         fCallback    = callback;
         fCallbackPtr = callbackPtr;
-
-        start();
     }
 
     void stop()
@@ -80,23 +86,23 @@ public:
 protected:
     void run()
     {
-        if (fCallback == nullptr)
-            return;
-
         while (! fStop)
         {
-            int i, r, lastRead;
+            size_t r, lastRead;
+            ssize_t r2; // to avoid sign/unsign conversions
 
             static char bufTemp[1024+1] = { '\0' };
             static char bufRead[1024+1];
             static char bufSend[2048+1];
 
-            while ((r = read(fPipe[0], bufRead, sizeof(char)*1024)) > 0)
+            while ((r2 = read(fPipe[0], bufRead, sizeof(char)*1024)) > 0)
             {
+                r = static_cast<size_t>(r2);
+
                 bufRead[r] = '\0';
                 lastRead = 0;
 
-                for (i=0; i < r; ++i)
+                for (size_t i=0; i < r; ++i)
                 {
                     CARLA_ASSERT(bufRead[i] != '\0');
 
@@ -109,14 +115,24 @@ protected:
                         lastRead = i;
                         bufTemp[0] = '\0';
 
-                        fCallback(fCallbackPtr, CarlaBackend::CALLBACK_DEBUG, 0, 0, 0, 0.0f, bufSend);
+                        if (fCallback != nullptr)
+                        {
+                            if (fOldBuffer.isNotEmpty())
+                            {
+                                fCallback(fCallbackPtr, CarlaBackend::CALLBACK_DEBUG, 0, 0, 0, 0.0f, (const char*)fOldBuffer);
+                                fOldBuffer = nullptr;
+                            }
+
+                            fCallback(fCallbackPtr, CarlaBackend::CALLBACK_DEBUG, 0, 0, 0, 0.0f, bufSend);
+                        }
+                        else
+                            fOldBuffer += bufSend;
                     }
                 }
 
-                CARLA_ASSERT(i == r);
                 CARLA_ASSERT(lastRead < r);
 
-                if (lastRead > 0 && lastRead < r-1)
+                if (lastRead > 0 && r > 0 && lastRead+1 < r)
                 {
                     std::strncpy(bufTemp, bufRead+lastRead, r-lastRead);
                     bufTemp[r-lastRead] = '\0';
@@ -133,13 +149,12 @@ private:
 
     CallbackFunc fCallback;
     void*        fCallbackPtr;
+    CarlaString  fOldBuffer;
 
     CARLA_PREVENT_HEAP_ALLOCATION
-    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LogThread)
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaLogThread)
 };
 
 // -----------------------------------------------------------------------
-
-CARLA_BACKEND_END_NAMESPACE
 
 #endif // CARLA_LOG_THREAD_HPP_INCLUDED

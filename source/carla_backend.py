@@ -389,7 +389,7 @@ class CarlaScalePointInfo(Structure):
 class CarlaTransportInfo(Structure):
     _fields_ = [
         ("playing", c_bool),
-        ("frame", c_uint32),
+        ("frame", c_uint64),
         ("bar", c_int32),
         ("beat", c_int32),
         ("tick", c_int32),
@@ -475,7 +475,7 @@ class Host(object):
         self.lib.carla_transport_relocate.restype = None
 
         self.lib.carla_get_current_transport_frame.argtypes = None
-        self.lib.carla_get_current_transport_frame.restype = c_uint32
+        self.lib.carla_get_current_transport_frame.restype = c_uint64
 
         self.lib.carla_get_transport_info.argtypes = None
         self.lib.carla_get_transport_info.restype = POINTER(CarlaTransportInfo)

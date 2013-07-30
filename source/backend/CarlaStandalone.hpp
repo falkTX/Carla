@@ -230,7 +230,7 @@ struct CarlaScalePointInfo {
  */
 struct CarlaTransportInfo {
     bool playing;
-    uint32_t frame;
+    uint64_t frame;
     int32_t bar;
     int32_t beat;
     int32_t tick;
@@ -384,7 +384,7 @@ CARLA_EXPORT void carla_transport_relocate(uint32_t frames);
 /*!
  * Get the current transport frame.
  */
-CARLA_EXPORT uint32_t carla_get_current_transport_frame();
+CARLA_EXPORT uint64_t carla_get_current_transport_frame();
 
 /*!
  * Get the engine transport information.

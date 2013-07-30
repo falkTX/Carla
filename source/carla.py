@@ -2353,7 +2353,6 @@ if __name__ == '__main__':
 
     # Init backend
     Carla.host = Host(libName)
-    Carla.host.set_engine_callback(engineCallback)
 
     if NSM_URL:
         Carla.host.nsm_announce(NSM_URL, appName, os.getpid())
@@ -2414,6 +2413,9 @@ if __name__ == '__main__':
     # Create GUI and start engine
     Carla.gui = CarlaMainW()
 
+    # Only now we're ready to handle events
+    Carla.host.set_engine_callback(engineCallback)
+
     # Set-up custom signal handling
     setUpSignals()
 
@@ -2426,6 +2428,11 @@ if __name__ == '__main__':
 
     # App-Loop
     ret = app.exec_()
+
+    # Destroy GUI
+    tmp = Carla.gui
+    Carla.gui = None
+    del tmp
 
     # Exit properly
     sys.exit(ret)
