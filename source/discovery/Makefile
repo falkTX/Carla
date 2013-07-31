@@ -8,7 +8,7 @@ include ../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += -I../backend -I../includes -I../utils
+BUILD_CXX_FLAGS += -I../backend -I../includes -I../modules/utils
 
 ifeq ($(HAVE_QT4),true)
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtCore)
@@ -51,6 +51,7 @@ WIN_64BIT_FLAGS   = $(64BIT_FLAGS)
 WIN_LINK_FLAGS    = $(LINK_FLAGS) $(EXTRA_LIBS) -lole32 -luuid -lws2_32
 
 ifeq ($(HAVE_FLUIDSYNTH),true)
+WIN_BUILD_FLAGS  +=
 WIN_LINK_FLAGS   += -ldsound -lwinmm
 endif
 
@@ -59,11 +60,11 @@ WIN_LINK_FLAGS   += -lrpcrt4
 endif
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-LIBS         = ../libs/lilv.a
-LIBS_posix32 = ../libs/lilv.posix32.a
-LIBS_posix64 = ../libs/lilv.posix64.a
-LIBS_win32   = ../libs/lilv.win32.a
-LIBS_win64   = ../libs/lilv.win64.a
+LIBS         = ../modules/lilv.a
+LIBS_posix32 = ../modules/lilv.posix32.a
+LIBS_posix64 = ../modules/lilv.posix64.a
+LIBS_win32   = ../modules/lilv.win32.a
+LIBS_win64   = ../modules/lilv.win64.a
 endif
 
 OBJS = carla-discovery.cpp
@@ -114,8 +115,8 @@ debug:
 .FORCE:
 .PHONY: .FORCE
 
-../libs/lilv.a: .FORCE
-	$(MAKE) -C ../libs lilv
+../modules/lilv.a: .FORCE
+	$(MAKE) -C ../modules lilv
 
-../libs/lilv.%.a: .FORCE
-	$(MAKE) -C ../libs lilv_$*
+../modules/lilv.%.a: .FORCE
+	$(MAKE) -C ../modules lilv_$*

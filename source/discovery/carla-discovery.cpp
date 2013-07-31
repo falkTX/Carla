@@ -12,11 +12,10 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
 #include "CarlaBackendUtils.hpp"
-#include "CarlaJuceUtils.hpp"
 #include "CarlaLibUtils.hpp"
 #include "CarlaString.hpp"
 #include "CarlaMIDI.h"
@@ -25,12 +24,11 @@
 # include "CarlaLadspaUtils.hpp"
 #endif
 #ifdef WANT_DSSI
-# include "CarlaLadspaUtils.hpp"
-# include "dssi/dssi.h"
+# include "CarlaDssiUtils.hpp"
 #endif
 #ifdef WANT_LV2
-# include <QtCore/QUrl>
 # include "CarlaLv2Utils.hpp"
+# include <QtCore/QUrl>
 #endif
 #ifdef WANT_VST
 # include "CarlaVstUtils.hpp"
@@ -39,8 +37,8 @@
 # include <fluidsynth.h>
 #endif
 #ifdef WANT_LINUXSAMPLER
-# include <QtCore/QFileInfo>
 # include "linuxsampler/EngineFactory.h"
+# include <QtCore/QFileInfo>
 #endif
 
 #include <iostream>
@@ -48,13 +46,6 @@
 #define DISCOVERY_OUT(x, y) std::cout << "\ncarla-discovery::" << x << "::" << y << std::endl;
 
 CARLA_BACKEND_USE_NAMESPACE
-
-#ifdef WANT_LV2
-// --------------------------------------------------------------------------
-// Our LV2 World class object
-
-Lv2WorldClass gLv2World;
-#endif
 
 // --------------------------------------------------------------------------
 // Dummy values to test plugins with
@@ -67,8 +58,9 @@ const double   kSampleRate = 44100.0;
 
 void print_lib_error(const char* const filename)
 {
-    const char* const error = lib_error(filename);
-    if (error && strstr(error, "wrong ELF class") == nullptr && strstr(error, "Bad EXE format") == nullptr)
+    const char* const error(lib_error(filename));
+
+    if (error != nullptr && strstr(error, "wrong ELF class") == nullptr && strstr(error, "Bad EXE format") == nullptr)
         DISCOVERY_OUT("error", error);
 }
 
@@ -133,7 +125,9 @@ intptr_t vstHostCanDo(const char* const feature)
 // Host-side callback
 intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t opcode, const int32_t index, const intptr_t value, void* const ptr, const float opt)
 {
-    carla_debug("vstHostCallback(%p, %s, %i, " P_INTPTR ", %p, %f)", effect, vstMasterOpcode2str(opcode), index, value, ptr, opt);
+    carla_debug("vstHostCallback(%p, %i:%s, %i, " P_INTPTR ", %p, %f)", effect, opcode, vstMasterOpcode2str(opcode), index, value, ptr, opt);
+
+    static VstTimeInfo_R timeInfo;
 
     intptr_t ret = 0;
 
@@ -159,7 +153,6 @@ intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t opcode
 #endif
 
     case audioMasterGetTime:
-        static VstTimeInfo_R timeInfo;
         carla_zeroStruct<VstTimeInfo_R>(timeInfo);
         timeInfo.sampleRate = kSampleRate;
 
@@ -185,7 +178,7 @@ intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t opcode
         break;
 
     case audioMasterGetNumAutomatableParameters:
-        ret = carla_min<int32_t>(effect->numParams, MAX_DEFAULT_PARAMETERS, 0);
+        ret = carla_min<intptr_t>(effect->numParams, MAX_DEFAULT_PARAMETERS, 0);
         break;
 
     case audioMasterGetParameterQuantization:
@@ -251,16 +244,11 @@ intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t opcode
         break;
 
     default:
-        carla_stdout("vstHostCallback(%p, %s, %i, " P_INTPTR ", %p, %f)", effect, vstMasterOpcode2str(opcode), index, value, ptr, opt);
+        carla_stdout("vstHostCallback(%p, %i:%s, %i, " P_INTPTR ", %p, %f)", effect, opcode, vstMasterOpcode2str(opcode), index, value, ptr, opt);
         break;
     }
 
     return ret;
-
-    // unused
-    (void)index;
-    (void)value;
-    (void)opt;
 }
 #endif
 
@@ -272,8 +260,7 @@ class LinuxSamplerScopedEngine
 {
 public:
     LinuxSamplerScopedEngine(const char* const filename, const char* const stype)
-        : fEngine(nullptr),
-          fIns(nullptr)
+        : fEngine(nullptr)
     {
         using namespace LinuxSampler;
 
@@ -289,9 +276,9 @@ public:
         if (fEngine == nullptr)
             return;
 
-        fIns = fEngine->GetInstrumentManager();
+        InstrumentManager* const insMan(fEngine->GetInstrumentManager());
 
-        if (fIns == nullptr)
+        if (insMan == nullptr)
         {
             DISCOVERY_OUT("error", "Failed to get LinuxSampler instrument manager");
             return;
@@ -300,7 +287,7 @@ public:
         std::vector<InstrumentManager::instrument_id_t> ids;
 
         try {
-            ids = fIns->GetInstrumentFileContent(filename);
+            ids = insMan->GetInstrumentFileContent(filename);
         }
         catch (const InstrumentManagerException& e)
         {
@@ -314,7 +301,7 @@ public:
         InstrumentManager::instrument_info_t info;
 
         try {
-            info = fIns->GetInstrumentInfo(ids[0]);
+            info = insMan->GetInstrumentInfo(ids[0]);
         }
         catch (const InstrumentManagerException& e)
         {
@@ -328,7 +315,10 @@ public:
     ~LinuxSamplerScopedEngine()
     {
         if (fEngine != nullptr)
+        {
             LinuxSampler::EngineFactory::Destroy(fEngine);
+            fEngine = nullptr;
+        }
     }
 
     static void outputInfo(LinuxSampler::InstrumentManager::instrument_info_t* const info, const int programs, const char* const basename = nullptr)
@@ -363,18 +353,18 @@ public:
 
 private:
     LinuxSampler::Engine* fEngine;
-    LinuxSampler::InstrumentManager* fIns;
 
+    CARLA_PREVENT_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LinuxSamplerScopedEngine)
 };
 #endif
 
 // ------------------------------ Plugin Checks -----------------------------
 
-void do_ladspa_check(void* const libHandle, const bool init)
+void do_ladspa_check(void*& libHandle, const char* const filename, const bool init)
 {
 #ifdef WANT_LADSPA
-    const LADSPA_Descriptor_Function descFn = (LADSPA_Descriptor_Function)lib_symbol(libHandle, "ladspa_descriptor");
+    LADSPA_Descriptor_Function descFn = (LADSPA_Descriptor_Function)lib_symbol(libHandle, "ladspa_descriptor");
 
     if (descFn == nullptr)
     {
@@ -384,6 +374,46 @@ void do_ladspa_check(void* const libHandle, const bool init)
 
     unsigned long i = 0;
     const LADSPA_Descriptor* descriptor;
+
+    {
+        descriptor = descFn(0);
+
+        if (descriptor == nullptr)
+        {
+            DISCOVERY_OUT("error", "Binary doesn't contain any plugins");
+            return;
+        }
+
+        if (init && descriptor->instantiate != nullptr && descriptor->cleanup != nullptr)
+        {
+            LADSPA_Handle handle = descriptor->instantiate(descriptor, kSampleRate);
+
+            if (handle == nullptr)
+            {
+                DISCOVERY_OUT("error", "Failed to init first LADSPA plugin");
+                return;
+            }
+
+            descriptor->cleanup(handle);
+
+            lib_close(libHandle);
+            libHandle = lib_open(filename);
+
+            if (libHandle == nullptr)
+            {
+                print_lib_error(filename);
+                return;
+            }
+
+            descFn = (LADSPA_Descriptor_Function)lib_symbol(libHandle, "ladspa_descriptor");
+
+            if (descFn == nullptr)
+            {
+                DISCOVERY_OUT("error", "Not a LADSPA plugin (#2)");
+                return;
+            }
+        }
+    }
 
     while ((descriptor = descFn(i++)) != nullptr)
     {
@@ -463,7 +493,7 @@ void do_ladspa_check(void* const libHandle, const bool init)
 
             if (handle == nullptr)
             {
-                DISCOVERY_OUT("error", "Failed to init LADSPA plugin #2");
+                DISCOVERY_OUT("error", "Failed to init LADSPA plugin (#2)");
                 continue;
             }
 
@@ -571,14 +601,15 @@ void do_ladspa_check(void* const libHandle, const bool init)
 
     // unused
     (void)libHandle;
+    (void)filename;
     (void)init;
 #endif
 }
 
-void do_dssi_check(void* const libHandle, const bool init)
+void do_dssi_check(void*& libHandle, const char* const filename, const bool init)
 {
 #ifdef WANT_DSSI
-    const DSSI_Descriptor_Function descFn = (DSSI_Descriptor_Function)lib_symbol(libHandle, "dssi_descriptor");
+    DSSI_Descriptor_Function descFn = (DSSI_Descriptor_Function)lib_symbol(libHandle, "dssi_descriptor");
 
     if (descFn == nullptr)
     {
@@ -589,9 +620,51 @@ void do_dssi_check(void* const libHandle, const bool init)
     unsigned long i = 0;
     const DSSI_Descriptor* descriptor;
 
+    {
+        descriptor = descFn(0);
+
+        if (descriptor == nullptr)
+        {
+            DISCOVERY_OUT("error", "Binary doesn't contain any plugins");
+            return;
+        }
+
+        const LADSPA_Descriptor* const ldescriptor(descriptor->LADSPA_Plugin);
+
+        if (init && ldescriptor->instantiate != nullptr && ldescriptor->cleanup != nullptr)
+        {
+            LADSPA_Handle handle = ldescriptor->instantiate(ldescriptor, kSampleRate);
+
+            if (handle == nullptr)
+            {
+                DISCOVERY_OUT("error", "Failed to init first LADSPA plugin");
+                return;
+            }
+
+            ldescriptor->cleanup(handle);
+
+            lib_close(libHandle);
+            libHandle = lib_open(filename);
+
+            if (libHandle == nullptr)
+            {
+                print_lib_error(filename);
+                return;
+            }
+
+            DSSI_Descriptor_Function descFn = (DSSI_Descriptor_Function)lib_symbol(libHandle, "dssi_descriptor");
+
+            if (descFn == nullptr)
+            {
+                DISCOVERY_OUT("error", "Not a DSSI plugin (#2)");
+                return;
+            }
+        }
+    }
+
     while ((descriptor = descFn(i++)) != nullptr)
     {
-        const LADSPA_Descriptor* const ldescriptor = descriptor->LADSPA_Plugin;
+        const LADSPA_Descriptor* const ldescriptor(descriptor->LADSPA_Plugin);
 
         if (ldescriptor == nullptr)
         {
@@ -688,7 +761,7 @@ void do_dssi_check(void* const libHandle, const bool init)
 
             if (handle == nullptr)
             {
-                DISCOVERY_OUT("error", "Failed to init DSSI plugin #2");
+                DISCOVERY_OUT("error", "Failed to init DSSI plugin (#2)");
                 continue;
             }
 
@@ -779,7 +852,7 @@ void do_dssi_check(void* const libHandle, const bool init)
             if (descriptor->run_synth != nullptr || descriptor->run_multiple_synths != nullptr)
             {
                 snd_seq_event_t midiEvents[2];
-                memset(midiEvents, 0, sizeof(snd_seq_event_t)*2); //FIXME
+                carla_zeroStruct<snd_seq_event_t>(midiEvents, 2);
 
                 const unsigned long midiEventCount = 2;
 
@@ -839,6 +912,7 @@ void do_dssi_check(void* const libHandle, const bool init)
 
     // unused
     (void)libHandle;
+    (void)filename;
     (void)init;
 #endif
 }
@@ -846,17 +920,19 @@ void do_dssi_check(void* const libHandle, const bool init)
 void do_lv2_check(const char* const bundle, const bool init)
 {
 #ifdef WANT_LV2
+    Lv2WorldClass& lv2World(Lv2WorldClass::getInstance());
+
     // Convert bundle filename to URI
     QString qBundle(QUrl::fromLocalFile(bundle).toString());
     if (! qBundle.endsWith(QChar(OS_SEP)))
         qBundle += QChar(OS_SEP);
 
     // Load bundle
-    Lilv::Node lilvBundle(gLv2World.new_uri(qBundle.toUtf8().constData()));
-    gLv2World.load_bundle(lilvBundle);
+    Lilv::Node lilvBundle(lv2World.new_uri(qBundle.toUtf8().constData()));
+    lv2World.load_bundle(lilvBundle);
 
     // Load plugins in this bundle
-    const Lilv::Plugins lilvPlugins(gLv2World.get_all_plugins());
+    const Lilv::Plugins lilvPlugins(lv2World.get_all_plugins());
 
     // Get all plugin URIs in this bundle
     QStringList URIs;
@@ -1069,7 +1145,7 @@ void do_lv2_check(const char* const bundle, const bool init)
 #endif
 }
 
-void do_vst_check(void* const libHandle, const bool init)
+void do_vst_check(void*& libHandle, const bool init)
 {
 #ifdef WANT_VST
     VST_Function vstFn = (VST_Function)lib_symbol(libHandle, "VSTPluginMain");
@@ -1556,9 +1632,9 @@ int main(int argc, char* argv[])
 
     // never do init for dssi-vst, takes too long and it's crashy
 #ifdef __USE_GNU
-    bool doInit = (strcasestr(filename, "dssi-vst") != nullptr);
+    bool doInit = (strcasestr(filename, "dssi-vst") == nullptr);
 #else
-    bool doInit = (std::strstr(filename, "dssi-vst") != nullptr);
+    bool doInit = (std::strstr(filename, "dssi-vst") == nullptr);
 #endif
 
     if (doInit && getenv("CARLA_DISCOVERY_NO_PROCESSING_CHECKS") != nullptr)
@@ -1585,10 +1661,10 @@ int main(int argc, char* argv[])
     switch (type)
     {
     case PLUGIN_LADSPA:
-        do_ladspa_check(handle, doInit);
+        do_ladspa_check(handle, filename, doInit);
         break;
     case PLUGIN_DSSI:
-        do_dssi_check(handle, doInit);
+        do_dssi_check(handle, filename, doInit);
         break;
     case PLUGIN_LV2:
         do_lv2_check(filename, doInit);

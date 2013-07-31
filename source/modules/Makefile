@@ -48,14 +48,6 @@ theme_%:
 
 # --------------------------------------------------------------
 
-utils:
-	$(MAKE) -C utils
-
-utils_%:
-	$(MAKE) -C utils $*
-
-# --------------------------------------------------------------
-
 widgets:
 	$(MAKE) -C widgets
 
@@ -90,4 +82,4 @@ clean:
 
 # --------------------------------------------------------------
 
-.PHONY: dgl lilv rtmempool theme widgets
+.PHONY: dgl juce_core lilv rtmempool theme widgets

@@ -18,7 +18,9 @@
 #ifndef CARLA_DSSI_UTILS_HPP_INCLUDED
 #define CARLA_DSSI_UTILS_HPP_INCLUDED
 
-#include "CarlaUtils.hpp"
+#include "CarlaLadspaUtils.hpp"
+
+#include "dssi/dssi.h"
 
 // -----------------------------------------------------------------------
 // ...

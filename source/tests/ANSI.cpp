@@ -83,8 +83,6 @@
 // #include "plugin/CarlaPluginThread.hpp"
 // #include "plugin/CarlaPluginInternal.hpp"
 
-// #include "standalone/CarlaStandalone.cpp"
-
 #if ANSI_TEST_N == 1
 // -----------------------------------------------------------------------
 
