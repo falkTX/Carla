@@ -34,7 +34,7 @@ endif
 ifeq ($(MACOS),true)
 TARGETS = CarlaString DGL1 DGL2 Print
 else
-TARGETS = ANSI CarlaString DGL1 DGL2 Print RtList Utils
+TARGETS = ANSI CarlaString DGL1 DGL2 Print RtList Utils Widgets
 endif
 
 all: $(TARGETS) RUN

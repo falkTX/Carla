@@ -181,6 +181,13 @@ public:
         return (fBuffer[pos] >= '0' && fBuffer[pos] <= '9');
     }
 
+    bool startsWith(const char c) const
+    {
+        CARLA_SAFE_ASSERT_RETURN(c != '\0', false)
+
+        return (fBufferLen > 0 && fBuffer[0] == c);
+    }
+
     bool startsWith(const char* const prefix) const
     {
         CARLA_SAFE_ASSERT_RETURN(prefix != nullptr, false)
@@ -191,6 +198,13 @@ public:
             return false;
 
         return (std::strncmp(fBuffer + (fBufferLen-prefixLen), prefix, prefixLen) == 0);
+    }
+
+    bool endsWith(const char c) const
+    {
+        CARLA_SAFE_ASSERT_RETURN(c != '\0', false)
+
+        return (fBufferLen > 0 && fBuffer[fBufferLen] == c);
     }
 
     bool endsWith(const char* const suffix) const
@@ -251,7 +265,7 @@ public:
         return (ret > fBufferLen) ? fBufferLen : fBufferLen-ret;
     }
 
-    void replace(const char before, const char after) noexcept
+    void replace(const char before, const char after)
     {
         CARLA_SAFE_ASSERT_RETURN(before != '\0' && after != '\0',)
 

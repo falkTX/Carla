@@ -20,6 +20,13 @@
 
 CARLA_BACKEND_START_NAMESPACE
 
+// 1 - utils
+// 2 - engine
+// 3 - plugin
+// 4 - standalone
+#define ANSI_TEST_N 2
+
+#if ANSI_TEST_N != 3
 struct SaveState {};
 
 // -----------------------------------------------------------------------
@@ -129,7 +136,9 @@ void CarlaPlugin::uiNoteOff(const uint8_t, const uint8_t) {}
 
 size_t CarlaPlugin::getNativePluginCount() { return 0; }
 const PluginDescriptor* CarlaPlugin::getNativePluginDescriptor(const size_t) { return nullptr; }
+#endif
 
+#if ANSI_TEST_N != 2
 // -----------------------------------------------------------------------
 // CarlaEngine
 
@@ -191,6 +200,7 @@ bool        CarlaEngine::isOscControlRegistered()     const noexcept { return fa
 void        CarlaEngine::idleOsc()                                   {}
 const char* CarlaEngine::getOscServerPathTCP()        const noexcept { return nullptr; }
 const char* CarlaEngine::getOscServerPathUDP()        const noexcept { return nullptr; }
+#endif
 
 // -----------------------------------------------------------------------
 

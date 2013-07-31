@@ -51,9 +51,6 @@ theme_%:
 widgets:
 	$(MAKE) -C widgets
 
-widgets_%:
-	$(MAKE) -C widgets $*
-
 # --------------------------------------------------------------
 
 jackbridge-win32:
@@ -75,6 +72,7 @@ clean:
 	$(MAKE) clean -C distrho/dgl
 	$(MAKE) clean -C lilv
 	$(MAKE) clean -C jackbridge
+	$(MAKE) clean -C juce_core
 	$(MAKE) clean -C rtmempool
 	$(MAKE) clean -C theme
 	$(MAKE) clean -C utils

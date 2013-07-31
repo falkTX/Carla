@@ -21,6 +21,10 @@
 
 #define RING_BUFFER_SIZE 48
 
+// 1 - utils
+// 2 - engine
+// 3 - plugin
+// 4 - standalone
 #define ANSI_TEST_N 2
 
 #if ANSI_TEST_N == 1
@@ -75,13 +79,21 @@
 #endif
 
 #if ANSI_TEST_N == 2
+// Carla Engine
+#include "engine/CarlaEngineThread.hpp"
+#endif
+
+#if ANSI_TEST_N == 3
+// Carla Plugin
+#include "plugin/CarlaPluginThread.hpp"
+#include "plugin/CarlaPluginInternal.hpp"
+#endif
+
+#if ANSI_TEST_N == 4
 // Carla Standalone
 #include "CarlaStandalone.hpp"
 #include "CarlaUtils.hpp"
 #endif
-
-// #include "plugin/CarlaPluginThread.hpp"
-// #include "plugin/CarlaPluginInternal.hpp"
 
 #if ANSI_TEST_N == 1
 // -----------------------------------------------------------------------
@@ -592,6 +604,14 @@ int main()
 #endif
 
 #if ANSI_TEST_N == 2
+// ANSI_TEST_N == 2
+#endif
+
+#if ANSI_TEST_N == 3
+// ANSI_TEST_N == 3
+#endif
+
+#if ANSI_TEST_N == 4
     carla_stdout("NOTICE LICENSE:");
     carla_stdout(carla_get_extended_license_text());
     carla_stdout("");
@@ -606,7 +626,7 @@ int main()
     carla_engine_close();
     carla_stdout(carla_get_last_error());
 
-// ANSI_TEST_N == 2
+// ANSI_TEST_N == 4
 #endif
 
     return 0;

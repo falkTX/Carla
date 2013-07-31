@@ -20,6 +20,8 @@
 #include "CarlaString.hpp"
 #include "CarlaMIDI.h"
 
+#include "JuceHeader.h"
+
 #ifdef WANT_LADSPA
 # include "CarlaLadspaUtils.hpp"
 #endif
@@ -28,7 +30,6 @@
 #endif
 #ifdef WANT_LV2
 # include "CarlaLv2Utils.hpp"
-# include <QtCore/QUrl>
 #endif
 #ifdef WANT_VST
 # include "CarlaVstUtils.hpp"
@@ -38,7 +39,6 @@
 #endif
 #ifdef WANT_LINUXSAMPLER
 # include "linuxsampler/EngineFactory.h"
-# include <QtCore/QFileInfo>
 #endif
 
 #include <iostream>
@@ -923,43 +923,46 @@ void do_lv2_check(const char* const bundle, const bool init)
     Lv2WorldClass& lv2World(Lv2WorldClass::getInstance());
 
     // Convert bundle filename to URI
-    QString qBundle(QUrl::fromLocalFile(bundle).toString());
-    if (! qBundle.endsWith(QChar(OS_SEP)))
-        qBundle += QChar(OS_SEP);
+    const size_t bundleSize(std::strlen(bundle)+8);
+    char bundleURI[bundleSize];
+    std::strcpy(bundleURI, "file://");
+    std::strcat(bundleURI, bundle);
+
+    bundleURI[bundleSize-1] = OS_SEP;
+    bundleURI[bundleSize]   = '\0';
 
     // Load bundle
-    Lilv::Node lilvBundle(lv2World.new_uri(qBundle.toUtf8().constData()));
+    Lilv::Node lilvBundle(lv2World.new_uri(bundleURI));
     lv2World.load_bundle(lilvBundle);
 
     // Load plugins in this bundle
     const Lilv::Plugins lilvPlugins(lv2World.get_all_plugins());
 
     // Get all plugin URIs in this bundle
-    QStringList URIs;
+    juce::StringArray URIs;
 
     LILV_FOREACH(plugins, i, lilvPlugins)
     {
         Lilv::Plugin lilvPlugin(lilv_plugins_get(lilvPlugins, i));
 
         if (const char* const uri = lilvPlugin.get_uri().as_string())
-            URIs.append(QString(uri));
+            URIs.add(String(uri));
     }
 
-    if (URIs.count() == 0)
+    if (URIs.size() == 0)
     {
         DISCOVERY_OUT("warning", "LV2 Bundle doesn't provide any plugins");
         return;
     }
 
     // Get & check every plugin-instance
-    for (int i=0; i < URIs.count(); ++i)
+    for (juce::String* it = URIs.begin(); it != URIs.end(); ++it)
     {
-        const LV2_RDF_Descriptor* const rdfDescriptor = lv2_rdf_new(URIs.at(i).toUtf8().constData(), false);
-        CARLA_ASSERT(rdfDescriptor != nullptr && rdfDescriptor->URI != nullptr);
+        const LV2_RDF_Descriptor* const rdfDescriptor(lv2_rdf_new(it->toRawUTF8(), false));
 
         if (rdfDescriptor == nullptr || rdfDescriptor->URI == nullptr)
         {
-            DISCOVERY_OUT("error", "Failed to find LV2 plugin '" << URIs.at(i).toUtf8().constData() << "'");
+            DISCOVERY_OUT("error", "Failed to find LV2 plugin '" << it->toRawUTF8() << "'");
             continue;
         }
 
@@ -1506,30 +1509,18 @@ void do_fluidsynth_check(const char* const filename, const bool init)
 void do_linuxsampler_check(const char* const filename, const char* const stype, const bool init)
 {
 #ifdef WANT_LINUXSAMPLER
-    const QFileInfo file(filename);
+    const juce::File file(filename);
 
-    if (! file.exists())
+    if (! file.existsAsFile())
     {
-        DISCOVERY_OUT("error", "Requested file does not exist");
-        return;
-    }
-
-    if (! file.isFile())
-    {
-        DISCOVERY_OUT("error", "Requested file is not valid");
-        return;
-    }
-
-    if (! file.isReadable())
-    {
-        DISCOVERY_OUT("error", "Requested file is not readable");
+        DISCOVERY_OUT("error", "Requested file is not valid or does not exist");
         return;
     }
 
     if (init)
         const LinuxSamplerScopedEngine engine(filename, stype);
     else
-        LinuxSamplerScopedEngine::outputInfo(nullptr, 0, file.baseName().toUtf8().constData());
+        LinuxSamplerScopedEngine::outputInfo(nullptr, 0, file.getFileNameWithoutExtension().toRawUTF8());
 #else
     DISCOVERY_OUT("error", stype << " support not available");
     return;

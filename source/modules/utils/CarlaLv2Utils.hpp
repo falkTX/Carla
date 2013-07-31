@@ -20,11 +20,6 @@
 
 #include "CarlaJuceUtils.hpp"
 
-#include <cstddef>
-
-#undef NULL
-#define NULL nullptr
-
 #include "lv2/lv2.h"
 #include "lv2/atom.h"
 #include "lv2/atom-forge.h"
@@ -65,8 +60,6 @@
 
 #include "lilv/lilvmm.hpp"
 #include "sratom/sratom.h"
-
-#include <QtCore/QStringList>
 
 // -----------------------------------------------------------------------
 // Define namespaces and missing prefixes
@@ -556,16 +549,11 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool fillPresets)
 
             if (replaceNode.is_uri())
             {
-                const QString replaceURI(replaceNode.as_uri());
+                const juce::String replaceURI(replaceNode.as_uri());
 
                 if (replaceURI.startsWith("urn:"))
                 {
-                    const QString replaceId(replaceURI.split(":").last());
-
-                    bool ok;
-                    const ulong uniqueId(replaceId.toULong(&ok));
-
-                    if (ok && uniqueId != 0)
+                    if (int uniqueId = replaceURI.getTrailingIntValue())
                         rdfDescriptor->UniqueID = uniqueId;
                 }
             }
@@ -1024,23 +1012,23 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool fillPresets)
         if (presetNodes.size() > 0)
         {
             // create a list of preset URIs (for checking appliesTo, sorting and unique-ness)
-            QStringList presetListURIs;
+            juce::StringArray presetListURIs;
 
             LILV_FOREACH(nodes, j, presetNodes)
             {
                 Lilv::Node presetNode(presetNodes.get(j));
                 // FIXME - check appliesTo?
 
-                QString presetURI(presetNode.as_uri());
+                juce::String presetURI(presetNode.as_uri());
 
-                if (! presetListURIs.contains(presetURI))
-                    presetListURIs.append(presetURI);
+                if (presetURI.trim().isNotEmpty())
+                    presetListURIs.addIfNotAlreadyThere(presetURI);
             }
 
-            presetListURIs.sort();
+            presetListURIs.sort(false);
 
             // create presets with unique URIs
-            rdfDescriptor->PresetCount = static_cast<uint32_t>(presetListURIs.count());
+            rdfDescriptor->PresetCount = static_cast<uint32_t>(presetListURIs.size());
             rdfDescriptor->Presets = new LV2_RDF_Preset[rdfDescriptor->PresetCount];
 
             // set preset data
@@ -1053,12 +1041,9 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool fillPresets)
 
                 if (const char* const presetURI = presetNode.as_uri())
                 {
-                    const int index(presetListURIs.indexOf(QString(presetURI)));
+                    const int index(presetListURIs.indexOf(juce::String(presetURI)));
 
-                    CARLA_ASSERT(index >= 0);
-
-                    if (index < 0)
-                        continue;
+                    CARLA_SAFE_ASSERT_CONTINUE(index >= 0);
 
                     LV2_RDF_Preset* const rdfPreset(&rdfDescriptor->Presets[index]);
 

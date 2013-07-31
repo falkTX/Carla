@@ -8,15 +8,15 @@ include ../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += -I../backend -I../includes -I../modules/utils
+BUILD_CXX_FLAGS += -I../backend -I../includes -I../modules -I../modules/utils
 
-ifeq ($(HAVE_QT4),true)
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtCore)
-LINK_FLAGS      += $(shell pkg-config --libs QtCore)
-else
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags Qt5Core)
-LINK_FLAGS      += $(shell pkg-config --libs Qt5Core)
-endif
+# ifeq ($(HAVE_QT4),true)
+# BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtCore)
+# LINK_FLAGS      += $(shell pkg-config --libs QtCore)
+# else
+# BUILD_CXX_FLAGS += $(shell pkg-config --cflags Qt5Core)
+# LINK_FLAGS      += $(shell pkg-config --libs Qt5Core)
+# endif
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
 BUILD_CXX_FLAGS += -DWANT_LADSPA -DWANT_DSSI -DWANT_LV2 -DWANT_VST
@@ -51,7 +51,6 @@ WIN_64BIT_FLAGS   = $(64BIT_FLAGS)
 WIN_LINK_FLAGS    = $(LINK_FLAGS) $(EXTRA_LIBS) -lole32 -luuid -lws2_32
 
 ifeq ($(HAVE_FLUIDSYNTH),true)
-WIN_BUILD_FLAGS  +=
 WIN_LINK_FLAGS   += -ldsound -lwinmm
 endif
 
@@ -59,12 +58,18 @@ ifeq ($(HAVE_LINUXSAMPLER),true)
 WIN_LINK_FLAGS   += -lrpcrt4
 endif
 
+LIBS         = ../modules/juce_core.a
+LIBS_posix32 = ../modules/juce_core.posix32.a
+LIBS_posix64 = ../modules/juce_core.posix64.a
+LIBS_win32   = ../modules/juce_core.win32.a
+LIBS_win64   = ../modules/juce_core.win64.a
+
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-LIBS         = ../modules/lilv.a
-LIBS_posix32 = ../modules/lilv.posix32.a
-LIBS_posix64 = ../modules/lilv.posix64.a
-LIBS_win32   = ../modules/lilv.win32.a
-LIBS_win64   = ../modules/lilv.win64.a
+LIBS         += ../modules/lilv.a
+LIBS_posix32 += ../modules/lilv.posix32.a
+LIBS_posix64 += ../modules/lilv.posix64.a
+LIBS_win32   += ../modules/lilv.win32.a
+LIBS_win64   += ../modules/lilv.win64.a
 endif
 
 OBJS = carla-discovery.cpp
@@ -115,8 +120,11 @@ debug:
 .FORCE:
 .PHONY: .FORCE
 
-../modules/lilv.a: .FORCE
-	$(MAKE) -C ../modules lilv
+../modules/%.a: .FORCE
+	$(MAKE) -C ../modules $*
+
+../modules/juce_core.%.a: .FORCE
+	$(MAKE) -C ../modules juce_core_$*
 
 ../modules/lilv.%.a: .FORCE
 	$(MAKE) -C ../modules lilv_$*
