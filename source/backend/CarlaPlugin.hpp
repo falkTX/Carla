@@ -821,7 +821,10 @@ public:
     /*!
      * Handy function used and required by CarlaEngine::clonePlugin().
      */
-    virtual const void* getExtraStuff() const noexcept;
+    virtual const void* getExtraStuff() const noexcept
+    {
+        return nullptr;
+    }
 
 #ifndef DOXYGEN
     struct Initializer {

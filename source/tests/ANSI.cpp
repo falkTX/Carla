@@ -77,7 +77,7 @@
 #if ANSI_TEST_N == 2
 // Carla Standalone
 #include "CarlaStandalone.hpp"
-#include "standalone/CarlaStandalone.cpp"
+#include "CarlaUtils.hpp"
 #endif
 
 // #include "plugin/CarlaPluginThread.hpp"
@@ -591,6 +591,24 @@ int main()
         assert(obj.count == 2); // List fRetValue + t1
     }
 // ANSI_TEST_N == 1
+#endif
+
+#if ANSI_TEST_N == 2
+    carla_stdout("NOTICE LICENSE:");
+    carla_stdout(carla_get_extended_license_text());
+    carla_stdout("");
+
+    carla_stdout("FILETYPES:");
+    carla_stdout(carla_get_supported_file_types());
+    carla_stdout("");
+
+    carla_engine_init("beh", "bah");
+    carla_stdout(carla_get_last_error());
+
+    carla_engine_close();
+    carla_stdout(carla_get_last_error());
+
+// ANSI_TEST_N == 2
 #endif
 
     return 0;

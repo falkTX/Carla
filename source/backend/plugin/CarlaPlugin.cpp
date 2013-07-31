@@ -328,7 +328,7 @@ CarlaPlugin::~CarlaPlugin()
 // -------------------------------------------------------------------
 // Information (base)
 
-uint32_t CarlaPlugin::latency() const noexcept
+uint32_t CarlaPlugin::getLatencyInFrames() const noexcept
 {
     return pData->latency;
 }
@@ -336,32 +336,32 @@ uint32_t CarlaPlugin::latency() const noexcept
 // -------------------------------------------------------------------
 // Information (count)
 
-uint32_t CarlaPlugin::audioInCount() const noexcept
+uint32_t CarlaPlugin::getAudioInCount() const noexcept
 {
     return pData->audioIn.count;
 }
 
-uint32_t CarlaPlugin::audioOutCount() const noexcept
+uint32_t CarlaPlugin::getAudioOutCount() const noexcept
 {
     return pData->audioOut.count;
 }
 
-uint32_t CarlaPlugin::midiInCount() const noexcept
+uint32_t CarlaPlugin::getMidiInCount() const noexcept
 {
     return (pData->extraHints & PLUGIN_HINT_HAS_MIDI_IN) ? 1 : 0;
 }
 
-uint32_t CarlaPlugin::midiOutCount() const
+uint32_t CarlaPlugin::getMidiOutCount() const noexcept
 {
     return (pData->extraHints & PLUGIN_HINT_HAS_MIDI_OUT) ? 1 : 0;
 }
 
-uint32_t CarlaPlugin::parameterCount() const noexcept
+uint32_t CarlaPlugin::getParameterCount() const noexcept
 {
     return pData->param.count;
 }
 
-uint32_t CarlaPlugin::parameterScalePointCount(const uint32_t parameterId) const
+uint32_t CarlaPlugin::getParameterScalePointCount(const uint32_t parameterId) const
 {
     CARLA_ASSERT(parameterId < pData->param.count);
     return 0;
@@ -370,17 +370,17 @@ uint32_t CarlaPlugin::parameterScalePointCount(const uint32_t parameterId) const
     (void)parameterId;
 }
 
-uint32_t CarlaPlugin::programCount() const noexcept
+uint32_t CarlaPlugin::getProgramCount() const noexcept
 {
     return pData->prog.count;
 }
 
-uint32_t CarlaPlugin::midiProgramCount() const noexcept
+uint32_t CarlaPlugin::getMidiProgramCount() const noexcept
 {
     return pData->midiprog.count;
 }
 
-uint32_t CarlaPlugin::customDataCount() const noexcept
+uint32_t CarlaPlugin::getCustomDataCount() const noexcept
 {
     return pData->custom.count();
 }
@@ -388,52 +388,52 @@ uint32_t CarlaPlugin::customDataCount() const noexcept
 // -------------------------------------------------------------------
 // Information (current data)
 
-int32_t CarlaPlugin::currentProgram() const noexcept
+int32_t CarlaPlugin::getCurrentProgram() const noexcept
 {
     return pData->prog.current;
 }
 
-int32_t CarlaPlugin::currentMidiProgram() const noexcept
+int32_t CarlaPlugin::getCurrentMidiProgram() const noexcept
 {
     return pData->midiprog.current;
 }
 
-const ParameterData& CarlaPlugin::parameterData(const uint32_t parameterId) const
+const ParameterData& CarlaPlugin::getParameterData(const uint32_t parameterId) const
 {
     CARLA_ASSERT(parameterId < pData->param.count);
 
     return (parameterId < pData->param.count) ? pData->param.data[parameterId] : kParameterDataNull;
 }
 
-const ParameterRanges& CarlaPlugin::parameterRanges(const uint32_t parameterId) const
+const ParameterRanges& CarlaPlugin::getParameterRanges(const uint32_t parameterId) const
 {
     CARLA_ASSERT(parameterId < pData->param.count);
 
     return (parameterId < pData->param.count) ? pData->param.ranges[parameterId] : kParameterRangesNull;
 }
 
-bool CarlaPlugin::parameterIsOutput(const uint32_t parameterId) const
+bool CarlaPlugin::isParameterOutput(const uint32_t parameterId) const
 {
     CARLA_ASSERT(parameterId < pData->param.count);
 
     return (parameterId < pData->param.count) ? (pData->param.data[parameterId].type == PARAMETER_OUTPUT) : false;
 }
 
-const MidiProgramData& CarlaPlugin::midiProgramData(const uint32_t index) const
+const MidiProgramData& CarlaPlugin::getMidiProgramData(const uint32_t index) const
 {
     CARLA_ASSERT(index < pData->midiprog.count);
 
     return (index < pData->midiprog.count) ? pData->midiprog.data[index] : kMidiProgramDataNull;
 }
 
-const CustomData& CarlaPlugin::customData(const uint32_t index) const
+const CustomData& CarlaPlugin::getCustomData(const uint32_t index) const
 {
     CARLA_ASSERT(index < pData->custom.count());
 
     return (index < pData->custom.count()) ? pData->custom.getAt(index) : kCustomDataNull;
 }
 
-int32_t CarlaPlugin::chunkData(void** const dataPtr)
+int32_t CarlaPlugin::getChunkData(void** const dataPtr) const
 {
     CARLA_ASSERT(dataPtr != nullptr);
     CARLA_ASSERT(false); // this should never happen
@@ -446,13 +446,13 @@ int32_t CarlaPlugin::chunkData(void** const dataPtr)
 // -------------------------------------------------------------------
 // Information (per-plugin data)
 
-unsigned int CarlaPlugin::availableOptions()
+unsigned int CarlaPlugin::getAvailableOptions() const
 {
     CARLA_ASSERT(false); // this should never happen
     return 0x0;
 }
 
-float CarlaPlugin::getParameterValue(const uint32_t parameterId)
+float CarlaPlugin::getParameterValue(const uint32_t parameterId) const
 {
     CARLA_ASSERT(parameterId < parameterCount());
     CARLA_ASSERT(false); // this should never happen
@@ -462,7 +462,7 @@ float CarlaPlugin::getParameterValue(const uint32_t parameterId)
     (void)parameterId;
 }
 
-float CarlaPlugin::getParameterScalePointValue(const uint32_t parameterId, const uint32_t scalePointId)
+float CarlaPlugin::getParameterScalePointValue(const uint32_t parameterId, const uint32_t scalePointId) const
 {
     CARLA_ASSERT(parameterId < parameterCount());
     CARLA_ASSERT(scalePointId < parameterScalePointCount(parameterId));
@@ -474,48 +474,27 @@ float CarlaPlugin::getParameterScalePointValue(const uint32_t parameterId, const
     (void)scalePointId;
 }
 
-void CarlaPlugin::getLabel(char* const strBuf) noexcept
+void CarlaPlugin::getLabel(char* const strBuf) const noexcept
 {
     *strBuf = '\0';
 }
 
-void CarlaPlugin::getMaker(char* const strBuf) noexcept
+void CarlaPlugin::getMaker(char* const strBuf) const noexcept
 {
     *strBuf = '\0';
 }
 
-void CarlaPlugin::getCopyright(char* const strBuf) noexcept
+void CarlaPlugin::getCopyright(char* const strBuf) const noexcept
 {
     *strBuf = '\0';
 }
 
-void CarlaPlugin::getRealName(char* const strBuf) noexcept
+void CarlaPlugin::getRealName(char* const strBuf) const noexcept
 {
     *strBuf = '\0';
 }
 
-void CarlaPlugin::getParameterName(const uint32_t parameterId, char* const strBuf)
-{
-    CARLA_ASSERT(parameterId < parameterCount());
-    CARLA_ASSERT(false); // this should never happen
-    *strBuf = '\0';
-    return;
-
-    // unused
-    (void)parameterId;
-}
-
-void CarlaPlugin::getParameterSymbol(const uint32_t parameterId, char* const strBuf)
-{
-    CARLA_ASSERT(parameterId < parameterCount());
-    *strBuf = '\0';
-    return;
-
-    // unused
-    (void)parameterId;
-}
-
-void CarlaPlugin::getParameterText(const uint32_t parameterId, char* const strBuf)
+void CarlaPlugin::getParameterName(const uint32_t parameterId, char* const strBuf) const
 {
     CARLA_ASSERT(parameterId < parameterCount());
     CARLA_ASSERT(false); // this should never happen
@@ -526,7 +505,7 @@ void CarlaPlugin::getParameterText(const uint32_t parameterId, char* const strBu
     (void)parameterId;
 }
 
-void CarlaPlugin::getParameterUnit(const uint32_t parameterId, char* const strBuf)
+void CarlaPlugin::getParameterSymbol(const uint32_t parameterId, char* const strBuf) const
 {
     CARLA_ASSERT(parameterId < parameterCount());
     *strBuf = '\0';
@@ -536,7 +515,28 @@ void CarlaPlugin::getParameterUnit(const uint32_t parameterId, char* const strBu
     (void)parameterId;
 }
 
-void CarlaPlugin::getParameterScalePointLabel(const uint32_t parameterId, const uint32_t scalePointId, char* const strBuf)
+void CarlaPlugin::getParameterText(const uint32_t parameterId, char* const strBuf) const
+{
+    CARLA_ASSERT(parameterId < parameterCount());
+    CARLA_ASSERT(false); // this should never happen
+    *strBuf = '\0';
+    return;
+
+    // unused
+    (void)parameterId;
+}
+
+void CarlaPlugin::getParameterUnit(const uint32_t parameterId, char* const strBuf) const
+{
+    CARLA_ASSERT(parameterId < parameterCount());
+    *strBuf = '\0';
+    return;
+
+    // unused
+    (void)parameterId;
+}
+
+void CarlaPlugin::getParameterScalePointLabel(const uint32_t parameterId, const uint32_t scalePointId, char* const strBuf) const
 {
     CARLA_ASSERT(parameterId < parameterCount());
     CARLA_ASSERT(scalePointId < parameterScalePointCount(parameterId));
@@ -549,7 +549,7 @@ void CarlaPlugin::getParameterScalePointLabel(const uint32_t parameterId, const 
     (void)scalePointId;
 }
 
-void CarlaPlugin::getProgramName(const uint32_t index, char* const strBuf)
+void CarlaPlugin::getProgramName(const uint32_t index, char* const strBuf) const
 {
     CARLA_ASSERT(index < pData->prog.count);
     CARLA_ASSERT(pData->prog.names[index] != nullptr);
@@ -560,7 +560,7 @@ void CarlaPlugin::getProgramName(const uint32_t index, char* const strBuf)
         *strBuf = '\0';
 }
 
-void CarlaPlugin::getMidiProgramName(const uint32_t index, char* const strBuf)
+void CarlaPlugin::getMidiProgramName(const uint32_t index, char* const strBuf) const
 {
     CARLA_ASSERT(index < pData->midiprog.count);
     CARLA_ASSERT(pData->midiprog.data[index].name != nullptr);
@@ -571,7 +571,7 @@ void CarlaPlugin::getMidiProgramName(const uint32_t index, char* const strBuf)
         *strBuf = '\0';
 }
 
-void CarlaPlugin::getParameterCountInfo(uint32_t* const ins, uint32_t* const outs, uint32_t* const total)
+void CarlaPlugin::getParameterCountInfo(uint32_t* const ins, uint32_t* const outs, uint32_t* const total) const
 {
     CARLA_ASSERT(ins != nullptr);
     CARLA_ASSERT(outs != nullptr);

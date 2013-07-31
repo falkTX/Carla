@@ -41,8 +41,8 @@ all: $(TARGETS) RUN
 
 # --------------------------------------------------------------
 
-ANSI: ANSI.cpp
-	$(CXX) $^ $(BUILD_CXX_FLAGS) $(ANSI_CXX_FLAGS) $(LINK_FLAGS) -pthread -lpthread -o $@
+ANSI: ANSI.cpp ../backend/standalone/CarlaStandalone.cpp.o CarlaBackendDummy.cpp.o ../modules/theme.a
+	$(CXX) $^ $(BUILD_CXX_FLAGS) $(ANSI_CXX_FLAGS) $(LINK_FLAGS) -L/opt/kxstudio/lib -lQtCore -lQtGui -llo -o $@
 
 CarlaString: CarlaString.cpp ../modules/utils/CarlaString.hpp
 	$(CXX) $^ $(BUILD_CXX_FLAGS) $(LINK_FLAGS) -o $@
@@ -71,10 +71,11 @@ RUN: $(TARGETS)
 
 # --------------------------------------------------------------
 
-resources.cpp.o: ../../resources/resources.qrc
+%.cpp.o: %.cpp
+	$(CXX) $< $(BUILD_CXX_FLAGS) $(ANSI_CXX_FLAGS) -c -o $@
+
+resources.cpp: ../../resources/resources.qrc
 	$(RCC) $< -o resources.cpp
-	$(CXX) resources.cpp $(BUILD_CXX_FLAGS) -c -o $@
-	rm resources.cpp
 
 ../modules/%.a:
 	$(MAKE) -C ../modules $*
@@ -82,7 +83,7 @@ resources.cpp.o: ../../resources/resources.qrc
 # --------------------------------------------------------------
 
 clean:
-	rm -f *.o $(TARGETS)
+	rm -f *.o resources.cpp $(TARGETS)
 
 debug:
 	$(MAKE) DEBUG=true

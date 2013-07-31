@@ -34,6 +34,10 @@
 # include <QtGui/QApplication>
 #endif
 
+#if ! (defined(DEBUG) || defined(WANT_LOGS) || defined(BUILD_ANSI_TEST))
+# define WANT_LOGS
+#endif
+
 namespace CB = CarlaBackend;
 
 using CB::CarlaEngine;
@@ -68,6 +72,12 @@ struct CarlaBackendStandalone {
     ~CarlaBackendStandalone()
     {
         CARLA_ASSERT(engine == nullptr);
+
+        if (needsInit)
+        {
+            CARLA_ASSERT(app == nullptr);
+            CARLA_ASSERT(style == nullptr);
+        }
     }
 
     void init()
@@ -126,7 +136,7 @@ struct CarlaBackendStandalone {
     CARLA_DECLARE_NON_COPY_STRUCT(CarlaBackendStandalone)
 };
 
-#ifndef DEBUG
+#ifdef WANT_LOGS
 static CarlaLogThread gLogThread;
 #endif
 static CarlaBackendStandalone gStandalone;
@@ -513,7 +523,7 @@ void carla_set_engine_callback(CarlaCallbackFunc func, void* ptr)
     if (gStandalone.engine != nullptr)
         gStandalone.engine->setCallback(func, ptr);
 
-#ifndef DEBUG
+#ifdef WANT_LOGS
     gLogThread.setCallback(func, ptr);
 #endif
 }
