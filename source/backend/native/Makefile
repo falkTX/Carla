@@ -201,11 +201,11 @@ zynaddsubfx-ui.cpp.o: zynaddsubfx-ui.cpp $(ZYN_UI_FILES_H)
 
 # --------------------------------------------------------------
 
-# %.c.o: %.c
-# 	$(CC) $< $(BUILD_C_FLAGS) -c -o $@
-#
-# %.cpp.o: %.cpp
-# 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+%.c.o: %.c
+	$(CC) $< $(BUILD_C_FLAGS) -c -o $@
+
+%.cpp.o: %.cpp
+	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 moc_%.cpp: %.hpp
 	$(MOC) $< -DMOC_PARSING -o $@

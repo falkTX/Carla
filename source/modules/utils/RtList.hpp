@@ -20,6 +20,8 @@
 
 #include "CarlaUtils.hpp"
 
+#include <new>
+
 extern "C" {
 #include "rtmempool/list.h"
 #include "rtmempool/rtmempool.h"

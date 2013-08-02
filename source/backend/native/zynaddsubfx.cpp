@@ -2169,6 +2169,7 @@ static const PluginDescriptor zynaddsubfxDesc = {
 
 // -----------------------------------------------------------------------
 
+CARLA_EXPORT
 void carla_register_native_plugin_zynaddsubfx()
 {
     carla_register_native_plugin(&fxAlienWahDesc);

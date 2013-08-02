@@ -8,7 +8,7 @@ include ../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += -I../../theme
+BUILD_CXX_FLAGS += -I../../modules/theme
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo)
 
 ifeq ($(HAVE_QT4),true)

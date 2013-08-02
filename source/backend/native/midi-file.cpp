@@ -237,6 +237,7 @@ static const PluginDescriptor midifileDesc = {
 
 // -----------------------------------------------------------------------
 
+CARLA_EXPORT
 void carla_register_native_plugin_midifile()
 {
     carla_register_native_plugin(&midifileDesc);

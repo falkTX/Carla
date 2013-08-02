@@ -177,6 +177,7 @@ static const PluginDescriptor sunvoxfileDesc = {
 
 // -----------------------------------------------------------------------
 
+CARLA_EXPORT
 void carla_register_native_plugin_sunvoxfile()
 {
     carla_register_native_plugin(&sunvoxfileDesc);

@@ -63,6 +63,8 @@ carla-discovery-native
 carla-discovery-posix32
 carla-discovery-posix64
 
+carla-native-export
+
 data/windows/Carla
 data/windows/CarlaControl
 source/tests/ANSI

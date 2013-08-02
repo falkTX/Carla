@@ -6,6 +6,26 @@
 
 include ../Makefile.mk
 
+BUILD_CXX_FLAGS += -I../backend -I../includes -I../modules -I../modules/utils
+
+# --------------------------------------------------------------
+
+ifeq ($(HAVE_OPENGL),true)
+BUILD_CXX_FLAGS += -DWANT_OPENGL
+endif
+
+ifeq ($(HAVE_AF_DEPS),true)
+BUILD_CXX_FLAGS += -DWANT_AUDIOFILE
+endif
+
+ifeq ($(HAVE_MF_DEPS),true)
+BUILD_CXX_FLAGS += -DWANT_MIDIFILE
+endif
+
+ifeq ($(HAVE_ZYN_DEPS),true)
+BUILD_CXX_FLAGS += -DWANT_ZYNADDSUBFX
+endif
+
 # --------------------------------------------------------------
 # Common
 
@@ -59,50 +79,73 @@ LINK_FLAGS += $(EXTRA_LIBS)
 
 # --------------------------------------------------------------
 
-LIBS  = ../backend/libcarla_engine_plugin.a
-LIBS += ../backend/libcarla_plugin.a
+# LIBS  = ../backend/libcarla_engine_xx.a
+# LIBS += ../backend/libcarla_plugin.a
 LIBS += ../backend/libcarla_native.a
-LIBS += ../libs/rtmempool.a
-LIBS += ../libs/widgets.a
+LIBS += ../modules/rtmempool.a
+LIBS += ../modules/widgets.a
+LIBS += ../modules/juce_core.a
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-LIBS += ../libs/lilv.a
+LIBS += ../modules/lilv.a
 endif
 
 ifeq ($(HAVE_OPENGL),true)
-LIBS += ../libs/dgl.a
+LIBS += ../modules/dgl.a
+endif
+
+ifeq ($(WIN32),true)
+TARGETS  = carla-native.lv2/carla-native.dll
+TARGETS += carla-native-export.exe
+else
+ifeq ($(MACOS),true)
+TARGETS  = carla-native.lv2/carla-native.dylib
+else
+TARGETS  = carla-native.lv2/carla-native.so
+endif
+TARGETS += carla-native-export
 endif
 
 # --------------------------------------------------------------
 
-all: dssi vst
-# all: dssi lv2 vst
-
-dssi: carla-dssi.so
-vst:  carla-vst.so
-lv2:  carla.lv2/carla-lv2.so
-
-# --------------------------------------------------------------
-
-carla-dssi.so: ../backend/engine/CarlaEnginePlugin.cpp.dssi.o $(LIBS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
-
-carla-vst.so: ../backend/engine/CarlaEnginePlugin.cpp.vst.o $(LIBS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
-
-carla.lv2/carla-lv2.so: ../backend/engine/CarlaEnginePlugin.cpp.lv2.o $(LIBS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
-
-# --------------------------------------------------------------
+all: $(TARGETS)
 
 clean:
-	rm -f *.dll *.dylib *.so
-	rm -f carla.lv2/*.dll carla.lv2/*.dylib carla.lv2/*.so
+	rm -f *.o
+	rm -f carla-native.lv2/*
 
 debug:
 	$(MAKE) DEBUG=true
 
 # --------------------------------------------------------------
 
-../backend/engine/CarlaEnginePlugin.cpp.%.o: ../backend/engine/CarlaEnginePlugin.cpp
-	make -C ../backend/engine CarlaEnginePlugin.cpp.$*.o
+%.cpp.o: %.cpp ../backend/CarlaNative.h
+	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+
+carla-native.lv2/carla-native.dll: carla-native-plugin.cpp.o $(LIBS)
+	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
+
+carla-native.lv2/carla-native.dylib: carla-native-plugin.cpp.o $(LIBS)
+	$(CXX) $^ -dynamiclib $(LINK_FLAGS) -o $@
+
+carla-native.lv2/carla-native.so: carla-native-plugin.cpp.o $(LIBS)
+	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
+
+carla-native-export: carla-native-export.cpp.o $(LIBS)
+	$(CXX) $^ $(LINK_FLAGS) -o $@
+	./carla-native-export
+
+carla-native-export.exe: carla-native-export.cpp.o $(LIBS)
+	$(CXX) $^ $(LINK_FLAGS) -o $@
+	./carla-native-export.exe
+
+# --------------------------------------------------------------
+
+.FORCE:
+.PHONY: .FORCE
+
+../backend/libcarla_%.a: .FORCE
+	$(MAKE) -C ../backend/$*
+
+../modules/%.a: .FORCE
+	$(MAKE) -C ../modules $*

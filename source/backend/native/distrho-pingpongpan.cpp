@@ -50,6 +50,7 @@ END_NAMESPACE_DISTRHO
 
 // -----------------------------------------------------------------------
 
+CARLA_EXPORT
 void carla_register_native_plugin_PingPongPan()
 {
     USE_NAMESPACE_DISTRHO
