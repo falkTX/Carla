@@ -12,19 +12,19 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
- * For a full copy of the license see the LGPL.txt file
+ * For a full copy of the license see the doc/LGPL.txt file.
  */
 
 #include "DistrhoPluginStereoEnhancer.hpp"
 
 #include <cmath>
 
-static const float cfDC_ADD = 1e-30f;
-static const float cfPI     = 3.141592654f;
+static const float kDC_ADD = 1e-30f;
+static const float kPI     = 3.141592654f;
 
 START_NAMESPACE_DISTRHO
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 DistrhoPluginStereoEnhancer::DistrhoPluginStereoEnhancer()
     : Plugin(paramCount, 1, 0) // 1 program, 0 states
@@ -40,7 +40,7 @@ DistrhoPluginStereoEnhancer::~DistrhoPluginStereoEnhancer()
 {
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // Init
 
 void DistrhoPluginStereoEnhancer::d_initParameter(uint32_t index, Parameter& parameter)
@@ -87,10 +87,10 @@ void DistrhoPluginStereoEnhancer::d_initProgramName(uint32_t index, d_string& pr
     programName = "Default";
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // Internal data
 
-float DistrhoPluginStereoEnhancer::d_parameterValue(uint32_t index)
+float DistrhoPluginStereoEnhancer::d_getParameterValue(uint32_t index) const
 {
     switch (index)
     {
@@ -107,7 +107,7 @@ float DistrhoPluginStereoEnhancer::d_parameterValue(uint32_t index)
 
 void DistrhoPluginStereoEnhancer::d_setParameterValue(uint32_t index, float value)
 {
-    if (d_sampleRate() <= 0.0)
+    if (d_getSampleRate() <= 0.0)
         return;
 
     switch (index)
@@ -123,7 +123,7 @@ void DistrhoPluginStereoEnhancer::d_setParameterValue(uint32_t index, float valu
     case paramCrossover:
         freqHPFader = value;
         freqHP = freqHPFader*freqHPFader*freqHPFader*24000.0f;
-        xHP  = std::exp(-2.0f * cfPI * freqHP / (float)d_sampleRate());
+        xHP  = std::exp(-2.0f * kPI * freqHP / (float)d_getSampleRate());
         a0HP = 1.0f-xHP;
         b1HP = -xHP;
         break;
@@ -149,12 +149,12 @@ void DistrhoPluginStereoEnhancer::d_setProgram(uint32_t index)
     d_activate();
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // Process
 
 void DistrhoPluginStereoEnhancer::d_activate()
 {
-    xHP  = std::exp(-2.0f * cfPI * freqHP/ (float)d_sampleRate());
+    xHP  = std::exp(-2.0f * kPI * freqHP/ (float)d_getSampleRate());
     a0HP = 1.0f-xHP;
     b1HP = -xHP;
 }
@@ -177,11 +177,11 @@ void DistrhoPluginStereoEnhancer::d_run(float** inputs, float** outputs, uint32_
         out1HP = in1[i];
         out2HP = in2[i];
 
-        in1[i] = (tmp1HP = a0HP * in1[i] - b1HP * tmp1HP + cfDC_ADD);
-        in2[i] = (tmp2HP = a0HP * in2[i] - b1HP * tmp2HP + cfDC_ADD);
+        in1[i] = (tmp1HP = a0HP * in1[i] - b1HP * tmp1HP + kDC_ADD);
+        in2[i] = (tmp2HP = a0HP * in2[i] - b1HP * tmp2HP + kDC_ADD);
 
-        out1HP -= in1[i];
-        out2HP -= in2[i];
+        out1HP -= in1[i] - kDC_ADD;
+        out2HP -= in2[i] - kDC_ADD;
 
         monoLP   = (in1[i] + in2[i]) / 2.0f;
         stereoLP = in1[i] - in2[i];
@@ -190,6 +190,7 @@ void DistrhoPluginStereoEnhancer::d_run(float** inputs, float** outputs, uint32_
 
         monoHP   = (out1HP + out2HP) / 2.0f;
         stereoHP = out1HP - out2HP;
+
         out1HP = (monoHP + stereoHP * widthHP) / widthCoeffHP;
         out2HP = (monoHP - stereoHP * widthHP) / widthCoeffHP;
 
@@ -198,13 +199,13 @@ void DistrhoPluginStereoEnhancer::d_run(float** inputs, float** outputs, uint32_
     }
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 Plugin* createPlugin()
 {
     return new DistrhoPluginStereoEnhancer();
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 END_NAMESPACE_DISTRHO

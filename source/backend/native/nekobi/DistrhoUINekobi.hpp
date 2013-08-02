@@ -12,11 +12,11 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#ifndef DISTRHO_UI_3BANDEQ_HPP_INCLUDED
-#define DISTRHO_UI_3BANDEQ_HPP_INCLUDED
+#ifndef DISTRHO_UI_NEKOBI_HPP_INCLUDED
+#define DISTRHO_UI_NEKOBI_HPP_INCLUDED
 
 #include "DistrhoUIOpenGL.hpp"
 
@@ -31,7 +31,7 @@
 
 START_NAMESPACE_DISTRHO
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 class DistrhoUINekobi : public OpenGLUI,
                         public ImageButton::Callback,
@@ -43,31 +43,31 @@ public:
     ~DistrhoUINekobi() override;
 
 protected:
-    // ---------------------------------------------
+    // -------------------------------------------------------------------
     // Information
 
-    unsigned int d_width() const override
+    unsigned int d_getWidth() const noexcept override
     {
         return DistrhoArtworkNekobi::backgroundWidth;
     }
 
-    unsigned int d_height() const override
+    unsigned int d_getHeight() const noexcept override
     {
         return DistrhoArtworkNekobi::backgroundHeight;
     }
 
-    // ---------------------------------------------
+    // -------------------------------------------------------------------
     // DSP Callbacks
 
     void d_parameterChanged(uint32_t index, float value) override;
-    void d_noteReceived(bool onOff, uint8_t channel, uint8_t note, uint8_t velocity) override;
+    void d_noteReceived(bool, uint8_t, uint8_t, uint8_t) override {}
 
-    // ---------------------------------------------
+    // -------------------------------------------------------------------
     // UI Callbacks
 
     void d_uiIdle() override;
 
-    // ---------------------------------------------
+    // -------------------------------------------------------------------
     // Widget Callbacks
 
     void imageButtonClicked(ImageButton* button, int) override;
@@ -97,8 +97,8 @@ private:
     ImageAboutWindow fAboutWindow;
 };
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 END_NAMESPACE_DISTRHO
 
-#endif // DISTRHO_UI_3BANDEQ_HPP_INCLUDED
+#endif // DISTRHO_UI_NEKOBI_HPP_INCLUDED

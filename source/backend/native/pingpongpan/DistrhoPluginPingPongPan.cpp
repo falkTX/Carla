@@ -12,18 +12,18 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
- * For a full copy of the license see the LGPL.txt file
+ * For a full copy of the license see the doc/LGPL.txt file.
  */
 
 #include "DistrhoPluginPingPongPan.hpp"
 
 #include <cmath>
 
-static const float cf2PI = 6.283185307f;
+static const float k2PI = 6.283185307f;
 
 START_NAMESPACE_DISTRHO
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 DistrhoPluginPingPongPan::DistrhoPluginPingPongPan()
     : Plugin(paramCount, 1, 0) // 1 program, 0 states
@@ -39,7 +39,7 @@ DistrhoPluginPingPongPan::~DistrhoPluginPingPongPan()
 {
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // Init
 
 void DistrhoPluginPingPongPan::d_initParameter(uint32_t index, Parameter& parameter)
@@ -75,10 +75,10 @@ void DistrhoPluginPingPongPan::d_initProgramName(uint32_t index, d_string& progr
     programName = "Default";
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // Internal data
 
-float DistrhoPluginPingPongPan::d_parameterValue(uint32_t index)
+float DistrhoPluginPingPongPan::d_getParameterValue(uint32_t index) const
 {
     switch (index)
     {
@@ -93,14 +93,14 @@ float DistrhoPluginPingPongPan::d_parameterValue(uint32_t index)
 
 void DistrhoPluginPingPongPan::d_setParameterValue(uint32_t index, float value)
 {
-    if (d_sampleRate() <= 0.0)
+    if (d_getSampleRate() <= 0.0)
         return;
 
     switch (index)
     {
     case paramFreq:
         fFreq = value;
-        waveSpeed = (cf2PI * fFreq / 100.0f)/(float)d_sampleRate();
+        waveSpeed = (k2PI * fFreq / 100.0f)/(float)d_getSampleRate();
         break;
     case paramWidth:
         fWidth = value;
@@ -121,12 +121,12 @@ void DistrhoPluginPingPongPan::d_setProgram(uint32_t index)
     d_activate();
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // Process
 
 void DistrhoPluginPingPongPan::d_activate()
 {
-    waveSpeed = (cf2PI * fFreq / 100.0f)/(float)d_sampleRate();
+    waveSpeed = (k2PI * fFreq / 100.0f)/(float)d_getSampleRate();
 }
 
 void DistrhoPluginPingPongPan::d_deactivate()
@@ -145,21 +145,21 @@ void DistrhoPluginPingPongPan::d_run(float** inputs, float** outputs, uint32_t f
     {
         pan = std::fmin(std::fmax(std::sin(wavePos) * (fWidth/100.0f), -1.0f), 1.0f);
 
-        if ((wavePos += waveSpeed) >= cf2PI)
-            wavePos -= cf2PI;
+        if ((wavePos += waveSpeed) >= k2PI)
+            wavePos -= k2PI;
 
         out1[i] = in1[i] * (pan > 0.0f ? 1.0f-pan : 1.0f);
         out2[i] = in2[i] * (pan < 0.0f ? 1.0f+pan : 1.0f);
     }
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 Plugin* createPlugin()
 {
     return new DistrhoPluginPingPongPan();
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 END_NAMESPACE_DISTRHO

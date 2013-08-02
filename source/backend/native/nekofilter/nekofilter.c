@@ -55,7 +55,6 @@ struct nekofilter
 
 PluginHandle
 nekofilter_instantiate(
-  const struct _PluginDescriptor* _this_,
   HostDescriptor* host)
 {
   struct nekofilter * nekofilter_ptr;
@@ -66,7 +65,7 @@ nekofilter_instantiate(
   nekofilter_ptr = malloc(sizeof(struct nekofilter));
   if (nekofilter_ptr == NULL)
   {
-    goto fail;
+    return NULL;
   }
 
   nekofilter_ptr->host = host;
@@ -74,9 +73,10 @@ nekofilter_instantiate(
   nekofilter_ptr->ui   = NULL;
 #endif
 
-  if (!filter_create(host->get_sample_rate(host->handle), BANDS_COUNT, &nekofilter_ptr->filter))
+  if (! filter_create(host->get_sample_rate(host->handle), BANDS_COUNT, &nekofilter_ptr->filter))
   {
-    goto fail_destroy_filter;
+    free(nekofilter_ptr);
+    return NULL;
   }
 
   nekofilter_ptr->params_global[GLOBAL_PARAMETER_ACTIVE] = 1.0f;
@@ -135,16 +135,6 @@ nekofilter_instantiate(
   }
 
   return (PluginHandle)nekofilter_ptr;
-
-fail_destroy_filter:
-  filter_destroy(nekofilter_ptr->filter);
-  free(nekofilter_ptr);
-
-fail:
-  return NULL;
-
-  // unused
-  (void)_this_;
 }
 
 #define nekofilter_ptr ((struct nekofilter *)handle)

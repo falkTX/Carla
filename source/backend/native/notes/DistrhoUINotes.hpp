@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
 #ifndef DISTRHO_UI_NOTES_HPP_INCLUDED
@@ -38,7 +38,7 @@ class QResizeEvent;
 
 START_NAMESPACE_DISTRHO
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 class DistrhoUINotes : public QtUI
 {
@@ -49,39 +49,41 @@ public:
     ~DistrhoUINotes() override;
 
 protected:
-    // ---------------------------------------------
+    // -------------------------------------------------------------------
     // Information
 
-    bool d_resizable() const override
+    bool d_isResizable() const noexcept override
     {
         return true;
     }
 
-    uint d_minimumWidth() const override
+    uint d_getMinimumWidth() const noexcept override
     {
         return 180;
     }
 
-    uint d_minimumHeight() const override
+    uint d_getMinimumHeight() const noexcept override
     {
         return 150;
     }
 
-    // ---------------------------------------------
+    // -------------------------------------------------------------------
     // DSP Callbacks
 
     void d_parameterChanged(uint32_t index, float value) override;
     void d_stateChanged(const char* key, const char* value) override;
 
-    // ---------------------------------------------
+    // -------------------------------------------------------------------
     // UI Callbacks
 
     void d_uiIdle() override;
 
-    // ---------------------------------------------
+    // -------------------------------------------------------------------
     // listen for resize events
 
     void resizeEvent(QResizeEvent*) override;
+
+    // -------------------------------------------------------------------
 
 private slots:
     void buttonClicked(bool click);
@@ -103,6 +105,8 @@ private:
 
     void saveCurrentTextState();
 };
+
+// -----------------------------------------------------------------------
 
 END_NAMESPACE_DISTRHO
 

@@ -27,11 +27,11 @@ START_NAMESPACE_DISTRHO
 
 OpenGLUI::OpenGLUI()
     : UI(),
-      Widget(dgl_lastUiParent)
+      Widget(DGL::dgl_lastUiParent)
 {
-    assert(dgl_lastUiParent != nullptr);
+    assert(DGL::dgl_lastUiParent != nullptr);
 
-    dgl_lastUiParent = nullptr;
+    DGL::dgl_lastUiParent = nullptr;
 }
 
 OpenGLUI::~OpenGLUI()

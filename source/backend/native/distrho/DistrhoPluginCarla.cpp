@@ -15,7 +15,6 @@
  */
 
 #include "CarlaNative.hpp"
-#include "CarlaUtils.hpp"
 
 #include "DistrhoPluginMain.cpp"
 
@@ -29,6 +28,8 @@
 # endif
 # include "DistrhoUIMain.cpp"
 #endif
+
+using juce::ScopedPointer;
 
 // -----------------------------------------------------------------------
 
@@ -60,12 +61,12 @@ public:
         setCentralWidget(qtUi);
 #endif
         setWindowIcon(QIcon(":/scalable/distrho.svg"));
-        setWindowTitle(QString("%1 (GUI)").arg(fUi.name()));
+        setWindowTitle(QString("%1 (GUI)").arg(fUi.getName()));
 
 #ifdef DISTRHO_UI_OPENGL
-        fUi.fixSize();
+        fUi.fixWindowSize();
 #endif
-        uiResize(fUi.width(), fUi.height());
+        uiResize(fUi.getWidth(), fUi.getHeight());
 
         {
             QSettings settings;
@@ -148,7 +149,7 @@ protected:
         fWidget.setFixedSize(width, height);
         setFixedSize(width, height);
 #else
-        if (fUi.resizable())
+        if (fUi.isResizable())
             resize(width, height);
         else
             setFixedSize(width, height);
@@ -243,7 +244,7 @@ protected:
 
     uint32_t getParameterCount() override
     {
-        return fPlugin.parameterCount();
+        return fPlugin.getParameterCount();
     }
 
     const ::Parameter* getParameterInfo(const uint32_t index) override
@@ -259,7 +260,7 @@ protected:
 
         {
             int      nativeParamHints = ::PARAMETER_IS_ENABLED;
-            const uint32_t paramHints = fPlugin.parameterHints(index);
+            const uint32_t paramHints = fPlugin.getParameterHints(index);
 
             if (paramHints & PARAMETER_IS_AUTOMABLE)
                 nativeParamHints |= ::PARAMETER_IS_AUTOMABLE;
@@ -275,11 +276,11 @@ protected:
             param.hints = static_cast<ParameterHints>(nativeParamHints);
         }
 
-        param.name = fPlugin.parameterName(index);
-        param.unit = fPlugin.parameterUnit(index);
+        param.name = fPlugin.getParameterName(index);
+        param.unit = fPlugin.getParameterUnit(index);
 
         {
-            const ParameterRanges& ranges(fPlugin.parameterRanges(index));
+            const ParameterRanges& ranges(fPlugin.getParameterRanges(index));
 
             param.ranges.def = ranges.def;
             param.ranges.min = ranges.min;
@@ -296,7 +297,7 @@ protected:
     {
         CARLA_ASSERT(index < getParameterCount());
 
-        return fPlugin.parameterValue(index);
+        return fPlugin.getParameterValue(index);
     }
 
     // getParameterText unused
@@ -307,21 +308,21 @@ protected:
 #if DISTRHO_PLUGIN_WANT_PROGRAMS
     uint32_t getMidiProgramCount() override
     {
-        return fPlugin.programCount();
+        return fPlugin.getProgramCount();
     }
 
     const ::MidiProgram* getMidiProgramInfo(const uint32_t index) override
     {
         CARLA_ASSERT(index < getMidiProgramCount());
 
-        if (index >= fPlugin.programCount())
+        if (index >= fPlugin.getProgramCount())
             return nullptr;
 
         static ::MidiProgram midiProgram;
 
         midiProgram.bank    = index / 128;
         midiProgram.program = index % 128;
-        midiProgram.name    = fPlugin.programName(index);
+        midiProgram.name    = fPlugin.getProgramName(index);
 
         return &midiProgram;
     }
@@ -342,7 +343,7 @@ protected:
     {
         const uint32_t realProgram(bank * 128 + program);
 
-        if (realProgram >= fPlugin.programCount())
+        if (realProgram >= fPlugin.getProgramCount())
             return;
 
         fPlugin.setProgram(realProgram);
@@ -436,7 +437,7 @@ protected:
 
         const uint32_t realProgram(bank * 128 + program);
 
-        if (realProgram >= fPlugin.programCount())
+        if (realProgram >= fPlugin.getProgramCount())
             return;
 
         if (fUiPtr != nullptr)
@@ -476,7 +477,7 @@ private:
         if (fUiPtr == nullptr)
         {
             d_lastUiSampleRate = getSampleRate();
-            fUiPtr = new UICarla(hostHandle(), &fPlugin);
+            fUiPtr = new UICarla(getHostHandle(), &fPlugin);
 
             if (! fUiGeometry.isNull())
                 fUiPtr->restoreGeometry(fUiGeometry);
@@ -489,7 +490,7 @@ private:
     // -------------------------------------------------------------------
 
 public:
-    static PluginHandle _instantiate(const PluginDescriptor*, HostDescriptor* host)
+    static PluginHandle _instantiate(HostDescriptor* host)
     {
         d_lastBufferSize = host->get_buffer_size(host->handle);
         d_lastSampleRate = host->get_sample_rate(host->handle);

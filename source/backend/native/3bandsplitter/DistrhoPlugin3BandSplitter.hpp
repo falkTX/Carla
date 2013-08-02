@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
- * For a full copy of the license see the LGPL.txt file
+ * For a full copy of the license see the doc/LGPL.txt file.
  */
 
 #ifndef DISTRHO_PLUGIN_3BANDSPLITTER_HPP_INCLUDED
@@ -21,6 +21,8 @@
 #include "DistrhoPlugin.hpp"
 
 START_NAMESPACE_DISTRHO
+
+// -----------------------------------------------------------------------
 
 class DistrhoPlugin3BandSplitter : public Plugin
 {
@@ -37,58 +39,58 @@ public:
     };
 
     DistrhoPlugin3BandSplitter();
-    ~DistrhoPlugin3BandSplitter();
+    ~DistrhoPlugin3BandSplitter() override;
 
 protected:
-    // ---------------------------------------------
+    // -------------------------------------------------------------------
     // Information
 
-    const char* d_label() const
+    const char* d_getLabel() const noexcept override
     {
         return "3BandSplitter";
     }
 
-    const char* d_maker() const
+    const char* d_getMaker() const noexcept override
     {
         return "DISTRHO";
     }
 
-    const char* d_license() const
+    const char* d_getLicense() const noexcept override
     {
         return "LGPL";
     }
 
-    uint32_t d_version() const
+    uint32_t d_getVersion() const noexcept override
     {
         return 0x1000;
     }
 
-    long d_uniqueId() const
+    long d_getUniqueId() const noexcept override
     {
         return d_cconst('D', '3', 'E', 'S');
     }
 
-    // ---------------------------------------------
+    // -------------------------------------------------------------------
     // Init
 
-    void d_initParameter(uint32_t index, Parameter& parameter);
-    void d_initProgramName(uint32_t index, d_string& programName);
+    void d_initParameter(uint32_t index, Parameter& parameter) override;
+    void d_initProgramName(uint32_t index, d_string& programName) override;
 
-    // ---------------------------------------------
+    // -------------------------------------------------------------------
     // Internal data
 
-    float d_parameterValue(uint32_t index);
-    void  d_setParameterValue(uint32_t index, float value);
-    void  d_setProgram(uint32_t index);
+    float d_getParameterValue(uint32_t index) const override;
+    void  d_setParameterValue(uint32_t index, float value) override;
+    void  d_setProgram(uint32_t index) override;
 
-    // ---------------------------------------------
+    // -------------------------------------------------------------------
     // Process
 
-    void d_activate();
-    void d_deactivate();
-    void d_run(float** inputs, float** outputs, uint32_t frames, uint32_t midiEventCount, const MidiEvent* midiEvents);
+    void d_activate() override;
+    void d_deactivate() override;
+    void d_run(float** inputs, float** outputs, uint32_t frames, uint32_t midiEventCount, const MidiEvent* midiEvents) override;
 
-    // ---------------------------------------------
+    // -------------------------------------------------------------------
 
 private:
     float fLow, fMid, fHigh, fMaster, fLowMidFreq, fMidHighFreq;
@@ -102,6 +104,8 @@ private:
     float out1LP, out2LP, out1HP, out2HP;
     float tmp1LP, tmp2LP, tmp1HP, tmp2HP;
 };
+
+// -----------------------------------------------------------------------
 
 END_NAMESPACE_DISTRHO
 

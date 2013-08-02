@@ -12,20 +12,20 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
- * For a full copy of the license see the LGPL.txt file
+ * For a full copy of the license see the doc/LGPL.txt file.
  */
 
 #include "DistrhoPlugin3BandEQ.hpp"
 
 #include <cmath>
 
-static const float cfAMP_DB = 8.656170245f;
-static const float cfDC_ADD = 1e-30f;
-static const float cfPI     = 3.141592654f;
+static const float kAMP_DB = 8.656170245f;
+static const float kDC_ADD = 1e-30f;
+static const float kPI     = 3.141592654f;
 
 START_NAMESPACE_DISTRHO
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 DistrhoPlugin3BandEQ::DistrhoPlugin3BandEQ()
     : Plugin(paramCount, 1, 0) // 1 program, 0 states
@@ -41,7 +41,7 @@ DistrhoPlugin3BandEQ::~DistrhoPlugin3BandEQ()
 {
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // Init
 
 void DistrhoPlugin3BandEQ::d_initParameter(uint32_t index, Parameter& parameter)
@@ -118,10 +118,10 @@ void DistrhoPlugin3BandEQ::d_initProgramName(uint32_t index, d_string& programNa
     programName = "Default";
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // Internal data
 
-float DistrhoPlugin3BandEQ::d_parameterValue(uint32_t index)
+float DistrhoPlugin3BandEQ::d_getParameterValue(uint32_t index) const
 {
     switch (index)
     {
@@ -144,38 +144,38 @@ float DistrhoPlugin3BandEQ::d_parameterValue(uint32_t index)
 
 void DistrhoPlugin3BandEQ::d_setParameterValue(uint32_t index, float value)
 {
-    if (d_sampleRate() <= 0.0)
+    if (d_getSampleRate() <= 0.0)
         return;
 
     switch (index)
     {
     case paramLow:
         fLow   = value;
-        lowVol = std::exp( (fLow/48.0f) * 48 / cfAMP_DB);
+        lowVol = std::exp( (fLow/48.0f) * 48 / kAMP_DB);
         break;
     case paramMid:
         fMid   = value;
-        midVol = std::exp( (fMid/48.0f) * 48 / cfAMP_DB);
+        midVol = std::exp( (fMid/48.0f) * 48 / kAMP_DB);
         break;
     case paramHigh:
         fHigh   = value;
-        highVol = std::exp( (fHigh/48.0f) * 48 / cfAMP_DB);
+        highVol = std::exp( (fHigh/48.0f) * 48 / kAMP_DB);
         break;
     case paramMaster:
         fMaster = value;
-        outVol  = std::exp( (fMaster/48.0f) * 48 / cfAMP_DB);
+        outVol  = std::exp( (fMaster/48.0f) * 48 / kAMP_DB);
         break;
     case paramLowMidFreq:
         fLowMidFreq = std::fmin(value, fMidHighFreq);
         freqLP = fLowMidFreq; //fLowMidFreq * (fLowMidFreq / 24000.0f) * (fLowMidFreq / 24000.0f);
-        xLP  = std::exp(-2.0f * cfPI * freqLP / (float)d_sampleRate());
+        xLP  = std::exp(-2.0f * kPI * freqLP / (float)d_getSampleRate());
         a0LP = 1.0f - xLP;
         b1LP = -xLP;
         break;
     case paramMidHighFreq:
         fMidHighFreq = std::fmax(value, fLowMidFreq);
         freqHP = fMidHighFreq; //fMidHighFreq * (fMidHighFreq / 24000.0f) * (fMidHighFreq / 24000.0f);
-        xHP  = std::exp(-2.0f * cfPI * freqHP / (float)d_sampleRate());
+        xHP  = std::exp(-2.0f * kPI * freqHP / (float)d_getSampleRate());
         a0HP = 1.0f - xHP;
         b1HP = -xHP;
         break;
@@ -204,16 +204,16 @@ void DistrhoPlugin3BandEQ::d_setProgram(uint32_t index)
     d_activate();
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // Process
 
 void DistrhoPlugin3BandEQ::d_activate()
 {
-    xLP  = std::exp(-2.0f * cfPI * freqLP / (float)d_sampleRate());
+    xLP  = std::exp(-2.0f * kPI * freqLP / (float)d_getSampleRate());
     a0LP = 1.0f - xLP;
     b1LP = -xLP;
 
-    xHP  = std::exp(-2.0f * cfPI * freqHP / (float)d_sampleRate());
+    xHP  = std::exp(-2.0f * kPI * freqHP / (float)d_getSampleRate());
     a0HP = 1.0f - xHP;
     b1HP = -xHP;
 }
@@ -233,28 +233,28 @@ void DistrhoPlugin3BandEQ::d_run(float** inputs, float** outputs, uint32_t frame
 
     for (uint32_t i=0; i < frames; ++i)
     {
-        tmp1LP = a0LP * in1[i] - b1LP * tmp1LP + cfDC_ADD;
-        tmp2LP = a0LP * in2[i] - b1LP * tmp2LP + cfDC_ADD;
-        out1LP = tmp1LP - cfDC_ADD;
-        out2LP = tmp2LP - cfDC_ADD;
+        tmp1LP = a0LP * in1[i] - b1LP * tmp1LP + kDC_ADD;
+        tmp2LP = a0LP * in2[i] - b1LP * tmp2LP + kDC_ADD;
+        out1LP = tmp1LP - kDC_ADD;
+        out2LP = tmp2LP - kDC_ADD;
 
-        tmp1HP = a0HP * in1[i] - b1HP * tmp1HP + cfDC_ADD;
-        tmp2HP = a0HP * in2[i] - b1HP * tmp2HP + cfDC_ADD;
-        out1HP = in1[i] - tmp1HP - cfDC_ADD;
-        out2HP = in2[i] - tmp2HP - cfDC_ADD;
+        tmp1HP = a0HP * in1[i] - b1HP * tmp1HP + kDC_ADD;
+        tmp2HP = a0HP * in2[i] - b1HP * tmp2HP + kDC_ADD;
+        out1HP = in1[i] - tmp1HP - kDC_ADD;
+        out2HP = in2[i] - tmp2HP - kDC_ADD;
 
         out1[i] = (out1LP*lowVol + (in1[i] - out1LP - out1HP)*midVol + out1HP*highVol) * outVol;
         out2[i] = (out2LP*lowVol + (in2[i] - out2LP - out2HP)*midVol + out2HP*highVol) * outVol;
     }
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 Plugin* createPlugin()
 {
     return new DistrhoPlugin3BandEQ();
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 END_NAMESPACE_DISTRHO

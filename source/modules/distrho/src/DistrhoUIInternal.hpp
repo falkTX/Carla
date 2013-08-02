@@ -227,12 +227,12 @@ public:
 #if defined(DISTRHO_UI_EXTERNAL)
     // not needed
 #elif defined(DISTRHO_UI_OPENGL)
-    App& getApp()
+    DGL::App& getApp()
     {
         return glApp;
     }
 
-    Window& getWindow()
+    DGL::Window& getWindow()
     {
         return glWindow;
     }
@@ -263,8 +263,8 @@ public:
 
 #ifdef DISTRHO_UI_OPENGL
 private:
-    App    glApp;
-    Window glWindow;
+    DGL::App    glApp;
+    DGL::Window glWindow;
 #endif
 
 protected:

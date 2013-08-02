@@ -11,14 +11,14 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
- * For a full copy of the license see the LGPL.txt file
+ * For a full copy of the license see the doc/LGPL.txt file.
  */
 
 #include "DistrhoUI3BandSplitter.hpp"
 
 START_NAMESPACE_DISTRHO
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 DistrhoUI3BandSplitter::DistrhoUI3BandSplitter()
     : OpenGLUI(),
@@ -103,7 +103,7 @@ DistrhoUI3BandSplitter::~DistrhoUI3BandSplitter()
     delete fButtonAbout;
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // DSP Callbacks
 
 void DistrhoUI3BandSplitter::d_parameterChanged(uint32_t index, float value)
@@ -145,7 +145,7 @@ void DistrhoUI3BandSplitter::d_programChanged(uint32_t index)
     fKnobMidHigh->setValue(2000.0f);
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // Widget Callbacks
 
 void DistrhoUI3BandSplitter::imageButtonClicked(ImageButton* button, int)
@@ -221,13 +221,13 @@ void DistrhoUI3BandSplitter::onDisplay()
     fImgBackground.draw();
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 UI* createUI()
 {
     return new DistrhoUI3BandSplitter();
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 END_NAMESPACE_DISTRHO

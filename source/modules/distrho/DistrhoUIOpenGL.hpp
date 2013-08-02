@@ -21,7 +21,7 @@
 
 #include "dgl/Widget.hpp"
 
-using DGL::Widget;
+using namespace DGL;
 
 START_NAMESPACE_DISTRHO
 

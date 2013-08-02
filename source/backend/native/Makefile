@@ -6,10 +6,6 @@
 
 include ../Makefile.mk
 
-# --------------------------------------------------------------
-
-BUILD_CXX_FLAGS += -I. -I../../libs/distrho -I../../widgets
-
 ifeq ($(HAVE_QT4),true)
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtCore QtGui)
 else
@@ -19,30 +15,34 @@ endif
 # --------------------------------------------------------------
 
 ifeq ($(HAVE_AF_DEPS),true)
-AF_C_FLAGS       = $(BUILD_C_FLAGS)
-AF_C_FLAGS      += $(shell pkg-config --cflags sndfile)
+AF_C_FLAGS     = $(BUILD_C_FLAGS)
+AF_C_FLAGS    += $(shell pkg-config --cflags sndfile)
 ifeq ($(HAVE_FFMPEG),true)
-AF_C_FLAGS      += -DHAVE_FFMPEG
-AF_C_FLAGS      += $(shell pkg-config --cflags libavcodec libavformat libavutil)
+AF_C_FLAGS    += -DHAVE_FFMPEG
+AF_C_FLAGS    += $(shell pkg-config --cflags libavcodec libavformat libavutil)
 endif
 endif
 
 ifeq ($(HAVE_MF_DEPS),true)
-MF_CXX_FLAGS     = $(BUILD_CXX_FLAGS)
-MF_CXX_FLAGS    += $(shell pkg-config --cflags smf)
+MF_CXX_FLAGS   = $(BUILD_CXX_FLAGS)
+MF_CXX_FLAGS  += $(shell pkg-config --cflags smf)
 endif
 
 ifeq ($(HAVE_OPENGL),true)
-GL_CXX_FLAGS     = $(BUILD_CXX_FLAGS)
-GL_CXX_FLAGS    += $(shell pkg-config --cflags gl)
+GL_CXX_FLAGS   = $(BUILD_CXX_FLAGS)
+GL_CXX_FLAGS  += -I../../modules/distrho
+GL_CXX_FLAGS  += $(shell pkg-config --cflags gl)
 endif
 
+QT_CXX_FLAGS   = $(BUILD_CXX_FLAGS)
+QT_CXX_FLAGS  += -I../../modules/distrho -I../../modules/widgets
+
 ifeq ($(HAVE_ZYN_DEPS),true)
-ZYN_CXX_FLAGS    = $(BUILD_CXX_FLAGS)
-ZYN_CXX_FLAGS   += $(shell pkg-config --cflags fftw3 mxml zlib)
+ZYN_CXX_FLAGS  = $(BUILD_CXX_FLAGS)
+ZYN_CXX_FLAGS += $(shell pkg-config --cflags fftw3 mxml zlib)
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
-ZYN_CXX_FLAGS   += -DNTK_GUI
-ZYN_CXX_FLAGS   += $(shell pkg-config --cflags ntk ntk_images)
+ZYN_CXX_FLAGS += -DNTK_GUI
+ZYN_CXX_FLAGS += $(shell pkg-config --cflags ntk ntk_images)
 endif
 endif
 
@@ -56,8 +56,7 @@ OBJS  = \
 	midi-split.c.o \
 	midi-through.c.o \
 	midi-transpose.c.o \
-	nekofilter.c.o \
-	sunvox-file.cpp.o
+	nekofilter.c.o
 
 # AudioFile
 ifeq ($(HAVE_AF_DEPS),true)
@@ -80,13 +79,13 @@ OBJS += \
 	distrho-3bandeq.cpp.o \
 	distrho-3bandsplitter.cpp.o \
 	distrho-nekobi.cpp.o \
-	distrho-pingpongpan.cpp.o
-# 	distrho-stereoenhancer.cpp.o
+	distrho-pingpongpan.cpp.o \
+	distrho-stereoenhancer.cpp.o
 endif
 
 # DISTRHO plugins (Qt)
-# OBJS += \
-# 	distrho-notes.cpp.o
+OBJS += \
+	distrho-notes.cpp.o
 
 ifeq ($(HAVE_ZYN_DEPS),true)
 # ZynAddSubFX
@@ -142,9 +141,7 @@ TARGET = ../libcarla_native.a
 all: $(TARGET)
 
 clean:
-	rm -f $(OBJS) $(TARGET)
-	rm -f $(ZYN_UI_FILES_CPP)
-	rm -f $(ZYN_UI_FILES_H)
+	rm -f $(OBJS) $(TARGET) $(ZYN_UI_FILES_H) $(ZYN_UI_FILES_CPP)
 	rm -f moc_*.cpp
 
 debug:
@@ -182,7 +179,7 @@ distrho-stereoenhancer.cpp.o: distrho-stereoenhancer.cpp stereoenhancer/*.cpp st
 	$(CXX) $< $(GL_CXX_FLAGS) -Istereoenhancer -DDISTRHO_NAMESPACE=DISTRHO_StereoEnhancer -c -o $@
 
 distrho-notes.cpp.o: distrho-notes.cpp notes/moc_DistrhoUINotes.cpp notes/*.cpp notes/*.h notes/*.hpp distrho/DistrhoPluginCarla.cpp $(CXXDEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) -Inotes -DDISTRHO_NAMESPACE=DISTRHO_Notes -c -o $@
+	$(CXX) $< $(QT_CXX_FLAGS) -Inotes -DDISTRHO_NAMESPACE=DISTRHO_Notes -c -o $@
 
 midi-file.cpp.o: midi-file.cpp midi-base.hpp $(CXXDEPS)
 	$(CXX) $< $(MF_CXX_FLAGS) -c -o $@
@@ -196,7 +193,7 @@ nekofilter.c.o: nekofilter.c nekofilter/*.c nekofilter/*.h $(CDEPS)
 zynaddsubfx.cpp.o: zynaddsubfx.cpp $(CXXDEPS) $(ZYN_UI_FILES_H)
 	$(CXX) $< $(ZYN_CXX_FLAGS) -c -o $@
 
-zynaddsubfx-src.cpp.o: zynaddsubfx-src.cpp $(ZYN_UI_FILES_CPP)
+zynaddsubfx-src.cpp.o: zynaddsubfx-src.cpp $(ZYN_UI_FILES_H) $(ZYN_UI_FILES_CPP)
 	$(CXX) $< $(ZYN_CXX_FLAGS) -c -o $@
 
 zynaddsubfx-ui.cpp.o: zynaddsubfx-ui.cpp $(ZYN_UI_FILES_H)
@@ -204,11 +201,11 @@ zynaddsubfx-ui.cpp.o: zynaddsubfx-ui.cpp $(ZYN_UI_FILES_H)
 
 # --------------------------------------------------------------
 
-%.c.o: %.c $(CDEPS)
-	$(CC) $< $(BUILD_C_FLAGS) -c -o $@
-
-%.cpp.o: %.cpp $(CXXDEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+# %.c.o: %.c
+# 	$(CC) $< $(BUILD_C_FLAGS) -c -o $@
+#
+# %.cpp.o: %.cpp
+# 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 moc_%.cpp: %.hpp
 	$(MOC) $< -DMOC_PARSING -o $@

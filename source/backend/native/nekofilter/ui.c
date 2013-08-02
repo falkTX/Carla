@@ -373,13 +373,13 @@ nekoui_instantiate(
   snprintf(ui_recv_pipe, sizeof(ui_recv_pipe), "%d", pipe1[0]); /* [0] means reading end */
   snprintf(ui_send_pipe, sizeof(ui_send_pipe), "%d", pipe2[1]); /* [1] means writting end */
 
-  filename = malloc(strlen(host->resource_dir) + strlen(UI_EXECUTABLE) + 1);
+  filename = malloc(strlen(host->resourceDir) + strlen(UI_EXECUTABLE) + 1);
   if (filename == NULL)
   {
     goto fail_free_control;
   }
 
-  strcpy(filename, host->resource_dir);
+  strcpy(filename, host->resourceDir);
   strcat(filename, UI_EXECUTABLE);
 
   char sample_rate_str[12] = { 0 };

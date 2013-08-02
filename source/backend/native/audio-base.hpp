@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
 #ifndef AUDIO_BASE_HPP_INCLUDED
@@ -20,7 +20,7 @@
 
 #include "CarlaMutex.hpp"
 
-#include <QtCore/QThread>
+#include "JuceHeader.h"
 
 extern "C" {
 #include "audio_decoder/ad.h"
@@ -109,14 +109,13 @@ public:
     virtual uint32_t getLastFrame() const = 0;
 };
 
-class AudioFileThread : public QThread
+class AudioFileThread : public juce::Thread
 {
 public:
     AudioFileThread(AbstractAudioPlayer* const player, const double sampleRate)
-        : QThread(nullptr),
+        : juce::Thread("AudioFileThread"),
           kPlayer(player),
           fNeedsRead(false),
-          fQuitNow(true),
           fFilePtr(nullptr)
     {
         CARLA_ASSERT(kPlayer != nullptr);
@@ -136,8 +135,7 @@ public:
 
     ~AudioFileThread() override
     {
-        CARLA_ASSERT(fQuitNow);
-        CARLA_ASSERT(! isRunning());
+        CARLA_ASSERT(! isThreadRunning());
 
         if (fFilePtr != nullptr)
             ad_close(fFilePtr);
@@ -148,17 +146,13 @@ public:
     void startNow()
     {
         fNeedsRead = true;
-        fQuitNow = false;
-        start(IdlePriority);
+        startThread(2);
     }
 
     void stopNow()
     {
         fNeedsRead = false;
-        fQuitNow = true;
-
-        if (isRunning() && ! wait(1000))
-            terminate();
+        stopThread(1000);
 
         const CarlaMutex::ScopedLocker sl(fMutex);
         fPool.reset();
@@ -176,7 +170,7 @@ public:
 
     bool loadFilename(const char* const filename)
     {
-        CARLA_ASSERT(! isRunning());
+        CARLA_ASSERT(! isThreadRunning());
         CARLA_ASSERT(filename != nullptr);
 
         fPool.startFrame = 0;
@@ -362,7 +356,7 @@ public:
 protected:
     void run() override
     {
-        while (! fQuitNow)
+        while (! threadShouldExit())
         {
             const uint32_t lastFrame(kPlayer->getLastFrame());
 
@@ -377,7 +371,6 @@ private:
     AbstractAudioPlayer* const kPlayer;
 
     bool fNeedsRead;
-    bool fQuitNow;
 
     void*  fFilePtr;
     ADInfo fFileNfo;

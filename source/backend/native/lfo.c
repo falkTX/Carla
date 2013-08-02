@@ -43,7 +43,7 @@ typedef struct _LfoHandle {
     float value;
 } LfoHandle;
 
-static PluginHandle lfo_instantiate(const PluginDescriptor* _this_, HostDescriptor* host)
+static PluginHandle lfo_instantiate(HostDescriptor* host)
 {
     LfoHandle* const handle = (LfoHandle*)malloc(sizeof(LfoHandle));
 
@@ -59,9 +59,6 @@ static PluginHandle lfo_instantiate(const PluginDescriptor* _this_, HostDescript
     handle->baseStart  = 0.0f;
     handle->value      = 0.0f;
     return handle;
-
-    // unused
-    (void)_this_;
 }
 
 #define handlePtr ((LfoHandle*)handle)

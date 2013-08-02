@@ -13,11 +13,11 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#ifndef DISTRHO_PLUGIN_3BANDEQ_HPP_INCLUDED
-#define DISTRHO_PLUGIN_3BANDEQ_HPP_INCLUDED
+#ifndef DISTRHO_PLUGIN_NEKOBI_HPP_INCLUDED
+#define DISTRHO_PLUGIN_NEKOBI_HPP_INCLUDED
 
 #include "DistrhoPlugin.hpp"
 
@@ -26,6 +26,8 @@ extern "C" {
 }
 
 START_NAMESPACE_DISTRHO
+
+// -----------------------------------------------------------------------
 
 class DistrhoPluginNekobi : public Plugin
 {
@@ -44,56 +46,56 @@ public:
     };
 
     DistrhoPluginNekobi();
-    ~DistrhoPluginNekobi();
+    ~DistrhoPluginNekobi() override;
 
 protected:
-    // ---------------------------------------------
+    // -------------------------------------------------------------------
     // Information
 
-    const char* d_label() const
+    const char* d_getLabel() const noexcept override
     {
         return "Nekobi";
     }
 
-    const char* d_maker() const
+    const char* d_getMaker() const noexcept override
     {
         return "DISTRHO";
     }
 
-    const char* d_license() const
+    const char* d_getLicense() const noexcept override
     {
         return "GPL v2+";
     }
 
-    uint32_t d_version() const
+    uint32_t d_getVersion() const noexcept override
     {
         return 0x1000;
     }
 
-    long d_uniqueId() const
+    long d_getUniqueId() const noexcept override
     {
         return d_cconst('D', 'N', 'e', 'k');
     }
 
-    // ---------------------------------------------
+    // -------------------------------------------------------------------
     // Init
 
-    void d_initParameter(uint32_t index, Parameter& parameter);
+    void d_initParameter(uint32_t index, Parameter& parameter) override;
 
-    // ---------------------------------------------
+    // -------------------------------------------------------------------
     // Internal data
 
-    float d_parameterValue(uint32_t index);
-    void  d_setParameterValue(uint32_t index, float value);
+    float d_getParameterValue(uint32_t index) const override;
+    void  d_setParameterValue(uint32_t index, float value) override;
 
-    // ---------------------------------------------
+    // -------------------------------------------------------------------
     // Process
 
-    void d_activate();
-    void d_deactivate();
-    void d_run(float** inputs, float** outputs, uint32_t frames, uint32_t midiEventCount, const MidiEvent* midiEvents);
+    void d_activate() override;
+    void d_deactivate() override;
+    void d_run(float** inputs, float** outputs, uint32_t frames, uint32_t midiEventCount, const MidiEvent* midiEvents) override;
 
-    // ---------------------------------------------
+    // -------------------------------------------------------------------
 
 private:
     struct ParamValues {
@@ -110,6 +112,8 @@ private:
     nekobee_synth_t* fSynth;
 };
 
+// -----------------------------------------------------------------------
+
 END_NAMESPACE_DISTRHO
 
-#endif  // DISTRHO_PLUGIN_3BANDEQ_HPP_INCLUDED
+#endif  // DISTRHO_PLUGIN_NEKOBI_HPP_INCLUDED

@@ -11,7 +11,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
- * For a full copy of the license see the LGPL.txt file
+ * For a full copy of the license see the doc/LGPL.txt file.
  */
 
 #include "DistrhoUIStereoEnhancer.hpp"
@@ -20,7 +20,7 @@
 
 START_NAMESPACE_DISTRHO
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 DistrhoUIStereoEnhancer::DistrhoUIStereoEnhancer()
     : OpenGLUI(),
@@ -69,7 +69,7 @@ DistrhoUIStereoEnhancer::~DistrhoUIStereoEnhancer()
     delete fButtonAbout;
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // DSP Callbacks
 
 void DistrhoUIStereoEnhancer::d_parameterChanged(uint32_t index, float value)
@@ -99,7 +99,7 @@ void DistrhoUIStereoEnhancer::d_programChanged(uint32_t index)
     fKnobCrossover->setValue(27.51604f);
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // Widget Callbacks
 
 void DistrhoUIStereoEnhancer::imageButtonClicked(ImageButton* button, int)
@@ -145,13 +145,13 @@ void DistrhoUIStereoEnhancer::onDisplay()
     fImgBackground.draw();
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 UI* createUI()
 {
     return new DistrhoUIStereoEnhancer();
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 END_NAMESPACE_DISTRHO

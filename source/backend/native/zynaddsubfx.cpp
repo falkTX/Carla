@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
 // for UINT32_MAX
@@ -275,7 +275,7 @@ public:
 #ifdef WANT_ZYNADDSUBFX_UI
             if (gPixmapPath.isEmpty())
             {
-                gPixmapPath   = host->resource_dir;
+                gPixmapPath   = host->resourceDir;
                 gPixmapPath  += PIXMAP_PATH;
                 gUiPixmapPath = gPixmapPath;
             }
@@ -475,7 +475,7 @@ protected:
                 {
                     fUiClosed = 0;
                     fUi = new MasterUI(fMaster, &fUiClosed);
-                    fUi->masterwindow->label(kHost->ui_name);
+                    fUi->masterwindow->label(kHost->uiName);
                     fUi->showUI();
                 }
             }
@@ -559,17 +559,17 @@ private:
 
 // -----------------------------------------------------------------------
 
-#define ZynPluginDescriptorClassEND(ClassName)                                      \
-public:                                                                             \
-    static PluginHandle _instantiate(const PluginDescriptor*, HostDescriptor* host) \
-    {                                                                               \
-        sInstanceCount.addOne(host);                                                \
-        return new ClassName(host);                                                 \
-    }                                                                               \
-    static void _cleanup(PluginHandle handle)                                       \
-    {                                                                               \
-        delete (ClassName*)handle;                                                  \
-        sInstanceCount.removeOne();                                                 \
+#define ZynPluginDescriptorClassEND(ClassName)             \
+public:                                                    \
+    static PluginHandle _instantiate(HostDescriptor* host) \
+    {                                                      \
+        sInstanceCount.addOne(host);                       \
+        return new ClassName(host);                        \
+    }                                                      \
+    static void _cleanup(PluginHandle handle)              \
+    {                                                      \
+        delete (ClassName*)handle;                         \
+        sInstanceCount.removeOne();                        \
     }
 
 // -----------------------------------------------------------------------
@@ -703,7 +703,7 @@ protected:
             // no break
         }
         case PLUGIN_OPCODE_SAMPLE_RATE_CHANGED:
-            sInstanceCount.maybeReinit(hostHandle());
+            sInstanceCount.maybeReinit(getHostHandle());
             break;
         default:
             break;

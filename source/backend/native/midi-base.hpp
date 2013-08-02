@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
 #ifndef MIDI_BASE_HPP_INCLUDED
@@ -83,7 +83,7 @@ public:
     void addChannelPressure(const uint32_t time, const uint8_t channel, const uint8_t pressure)
     {
         RawMidiEvent* pressureEvent(new RawMidiEvent());
-        pressureEvent->data[0] = MIDI_STATUS_AFTERTOUCH | (channel & 0x0F);
+        pressureEvent->data[0] = MIDI_STATUS_CHANNEL_PRESSURE | (channel & 0x0F);
         pressureEvent->data[1] = pressure;
         pressureEvent->size    = 2;
         pressureEvent->time    = time;

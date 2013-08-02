@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
 #include "CarlaEngineThread.hpp"
@@ -25,7 +25,7 @@ CARLA_BACKEND_START_NAMESPACE
 // -----------------------------------------------------------------------
 
 CarlaEngineThread::CarlaEngineThread(CarlaEngine* const engine)
-    : kEngine(engine),
+    : fEngine(engine),
       fStopNow(true)
 {
     carla_debug("CarlaEngineThread::CarlaEngineThread(%p)", engine);

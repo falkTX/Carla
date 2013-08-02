@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
 #include "DistrhoUINotes.hpp"
@@ -23,7 +23,7 @@ START_NAMESPACE_DISTRHO
 
 #include "moc_DistrhoUINotes.cpp"
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 DistrhoUINotes::DistrhoUINotes()
     : QtUI(),
@@ -80,7 +80,7 @@ void DistrhoUINotes::saveCurrentTextState()
     }
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // DSP Callbacks
 
 void DistrhoUINotes::d_parameterChanged(uint32_t index, float value)
@@ -143,7 +143,7 @@ void DistrhoUINotes::d_stateChanged(const char* key, const char* value)
     }
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // UI Callbacks
 
 void DistrhoUINotes::d_uiIdle()
@@ -174,7 +174,7 @@ void DistrhoUINotes::resizeEvent(QResizeEvent* event)
     QtUI::resizeEvent(event);
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 void DistrhoUINotes::buttonClicked(bool click)
 {
@@ -210,13 +210,13 @@ void DistrhoUINotes::textChanged()
     fSaveTextNowChecker = 0;
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 UI* createUI()
 {
-    return new DistrhoUINotes;
+    return new DistrhoUINotes();
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 END_NAMESPACE_DISTRHO

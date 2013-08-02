@@ -1,5 +1,5 @@
 /*
- * Carla Tests
+ * Neko widget animation
  * Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
@@ -12,8 +12,11 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
+
+#ifndef NEKO_WIDGET_HPP_INCLUDED
+#define NEKO_WIDGET_HPP_INCLUDED
 
 #include "dgl/Image.hpp"
 #include "dgl/Widget.hpp"
@@ -23,6 +26,8 @@
 #include "DistrhoArtworkNekobi.hpp"
 
 USE_NAMESPACE_DGL;
+
+// -----------------------------------------------------------------------
 
 class NekoWidget
 {
@@ -159,6 +164,8 @@ public:
         fTimerSpeed = speed;
     }
 
+    // -------------------------------------------------------------------
+
 private:
     enum Action {
         kActionNone, // bounce tail
@@ -189,3 +196,7 @@ private:
     Action fCurAction;
     Image* fCurImage;
 };
+
+// -----------------------------------------------------------------------
+
+#endif // NEKO_WIDGET_HPP_INCLUDED

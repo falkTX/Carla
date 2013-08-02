@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
 #include "DistrhoPluginNotes.hpp"
@@ -21,7 +21,7 @@
 
 START_NAMESPACE_DISTRHO
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 DistrhoPluginNotes::DistrhoPluginNotes()
     : Plugin(1, 0, 103) // 1 parameter, 0 programs, 103 states
@@ -33,7 +33,7 @@ DistrhoPluginNotes::~DistrhoPluginNotes()
 {
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // Init
 
 void DistrhoPluginNotes::d_initParameter(uint32_t index, Parameter& parameter)
@@ -71,10 +71,10 @@ void DistrhoPluginNotes::d_initStateKey(uint32_t index, d_string& stateKey)
     }
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // Internal data
 
-float DistrhoPluginNotes::d_parameterValue(uint32_t index)
+float DistrhoPluginNotes::d_getParameterValue(uint32_t index) const
 {
     if (index != 0)
         return 0.0f;
@@ -95,7 +95,7 @@ void DistrhoPluginNotes::d_setState(const char*, const char*)
     // do nothing, used only for UI state
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // Process
 
 void DistrhoPluginNotes::d_run(float** inputs, float** outputs, uint32_t frames, uint32_t, const MidiEvent*)
@@ -109,13 +109,13 @@ void DistrhoPluginNotes::d_run(float** inputs, float** outputs, uint32_t frames,
     std::memcpy(out2, in2, sizeof(float)*frames);
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 Plugin* createPlugin()
 {
     return new DistrhoPluginNotes();
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 END_NAMESPACE_DISTRHO

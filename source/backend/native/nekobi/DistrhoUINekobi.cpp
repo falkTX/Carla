@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
 #include "DistrhoUINekobi.hpp"
@@ -21,7 +21,7 @@
 
 START_NAMESPACE_DISTRHO
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 DistrhoUINekobi::DistrhoUINekobi()
     : OpenGLUI(),
@@ -127,7 +127,7 @@ DistrhoUINekobi::~DistrhoUINekobi()
     delete fButtonAbout;
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // DSP Callbacks
 
 void DistrhoUINekobi::d_parameterChanged(uint32_t index, float value)
@@ -161,15 +161,7 @@ void DistrhoUINekobi::d_parameterChanged(uint32_t index, float value)
     }
 }
 
-void DistrhoUINekobi::d_noteReceived(bool onOff, uint8_t, uint8_t note, uint8_t)
-{
-    return;
-
-    (void)onOff;
-    (void)note;
-}
-
-// ---------------------------------------------
+// -----------------------------------------------------------------------
 // UI Callbacks
 
 void DistrhoUINekobi::d_uiIdle()
@@ -178,7 +170,7 @@ void DistrhoUINekobi::d_uiIdle()
         repaint();
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // Widget Callbacks
 
 void DistrhoUINekobi::imageButtonClicked(ImageButton* button, int)
@@ -273,13 +265,13 @@ void DistrhoUINekobi::onDisplay()
     fNeko.draw();
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 UI* createUI()
 {
     return new DistrhoUINekobi();
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 END_NAMESPACE_DISTRHO

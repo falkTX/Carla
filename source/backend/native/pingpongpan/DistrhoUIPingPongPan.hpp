@@ -11,7 +11,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
- * For a full copy of the license see the LGPL.txt file
+ * For a full copy of the license see the doc/LGPL.txt file.
  */
 
 #ifndef DISTRHO_UI_PINGPONGPAN_HPP_INCLUDED
@@ -28,7 +28,7 @@
 
 START_NAMESPACE_DISTRHO
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 class DistrhoUIPingPongPan : public OpenGLUI,
                              public ImageButton::Callback,
@@ -39,27 +39,26 @@ public:
     ~DistrhoUIPingPongPan() override;
 
 protected:
-
-    // ---------------------------------------------
+    // -------------------------------------------------------------------
     // Information
 
-    unsigned int d_width() const override
+    unsigned int d_getWidth() const noexcept override
     {
         return DistrhoArtworkPingPongPan::backgroundWidth;
     }
 
-    unsigned int d_height() const override
+    unsigned int d_getHeight() const noexcept override
     {
         return DistrhoArtworkPingPongPan::backgroundHeight;
     }
 
-    // ---------------------------------------------
+    // -------------------------------------------------------------------
     // DSP Callbacks
 
     void d_parameterChanged(uint32_t index, float value) override;
     void d_programChanged(uint32_t index) override;
 
-    // ---------------------------------------------
+    // -------------------------------------------------------------------
     // Widget Callbacks
 
     void imageButtonClicked(ImageButton* button, int) override;
@@ -77,6 +76,8 @@ private:
     ImageKnob*   fKnobWidth;
     ImageButton* fButtonAbout;
 };
+
+// -----------------------------------------------------------------------
 
 END_NAMESPACE_DISTRHO
 

@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
 #include "CarlaNative.hpp"
@@ -245,7 +245,7 @@ private:
 
 static const PluginDescriptor audiofileDesc = {
     /* category  */ PLUGIN_CATEGORY_UTILITY,
-    /* hints     */ static_cast<PluginHints>(PLUGIN_IS_RTSAFE|PLUGIN_HAS_GUI|PLUGIN_USES_GUI_AS_FILE),
+    /* hints     */ static_cast<PluginHints>(PLUGIN_IS_RTSAFE|PLUGIN_HAS_GUI),
     /* supports  */ static_cast<PluginSupports>(0x0),
     /* audioIns  */ 0,
     /* audioOuts */ 2,

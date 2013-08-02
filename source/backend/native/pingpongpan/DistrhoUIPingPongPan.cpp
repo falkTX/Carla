@@ -11,7 +11,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
- * For a full copy of the license see the LGPL.txt file
+ * For a full copy of the license see the doc/LGPL.txt file.
  */
 
 #include "DistrhoUIPingPongPan.hpp"
@@ -20,7 +20,7 @@
 
 START_NAMESPACE_DISTRHO
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 DistrhoUIPingPongPan::DistrhoUIPingPongPan()
     : OpenGLUI(),
@@ -66,7 +66,7 @@ DistrhoUIPingPongPan::~DistrhoUIPingPongPan()
     delete fButtonAbout;
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // DSP Callbacks
 
 void DistrhoUIPingPongPan::d_parameterChanged(uint32_t index, float value)
@@ -92,7 +92,7 @@ void DistrhoUIPingPongPan::d_programChanged(uint32_t index)
     fKnobWidth->setValue(75.0f);
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // Widget Callbacks
 
 void DistrhoUIPingPongPan::imageButtonClicked(ImageButton* button, int)
@@ -133,13 +133,13 @@ void DistrhoUIPingPongPan::onDisplay()
     fImgBackground.draw();
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 UI* createUI()
 {
     return new DistrhoUIPingPongPan();
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 END_NAMESPACE_DISTRHO

@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
 #include "CarlaNative.h"
@@ -24,7 +24,7 @@ typedef struct _MidiThroughHandle {
     HostDescriptor* host;
 } MidiThroughHandle;
 
-static PluginHandle midiThrough_instantiate(const PluginDescriptor* _this_, HostDescriptor* host)
+static PluginHandle midiThrough_instantiate(HostDescriptor* host)
 {
     MidiThroughHandle* const handle = (MidiThroughHandle*)malloc(sizeof(MidiThroughHandle));
 
@@ -33,9 +33,6 @@ static PluginHandle midiThrough_instantiate(const PluginDescriptor* _this_, Host
 
     handle->host = host;
     return handle;
-
-    // unused
-    (void)_this_;
 }
 
 #define handlePtr ((MidiThroughHandle*)handle)

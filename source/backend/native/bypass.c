@@ -12,18 +12,17 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
 #include "CarlaNative.h"
 
-static PluginHandle bypass_instantiate(const PluginDescriptor* _this_, HostDescriptor* host)
+static PluginHandle bypass_instantiate(HostDescriptor* host)
 {
     // dummy, return non-NULL
     return (PluginHandle)0x1;
 
     // unused
-    (void)_this_;
     (void)host;
 }
 

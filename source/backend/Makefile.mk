@@ -8,9 +8,7 @@ include ../../Makefile.mk
 
 # --------------------------------------------------------------
 
-BACKEND_FLAGS    = -I. -I.. -I../../includes -I../../libs -I../../utils
-BACKEND_FLAGS   += -pedantic -pedantic-errors -Wunused-parameter -Wuninitialized -Wno-vla
-BACKEND_FLAGS   += -Wcast-qual -Wconversion -Wsign-conversion -Wlogical-op -Waggregate-return
+BACKEND_FLAGS    = -I. -I.. -I../../includes -I../../modules -I../../modules/utils
 
 BUILD_C_FLAGS   += $(BACKEND_FLAGS)
 BUILD_CXX_FLAGS += $(BACKEND_FLAGS)

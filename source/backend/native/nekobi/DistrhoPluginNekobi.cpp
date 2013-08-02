@@ -13,7 +13,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
 #include "DistrhoPluginNekobi.hpp"
@@ -30,7 +30,8 @@ extern "C" {
 #include "nekobee-src/nekobee_voice_render.c"
 #include "nekobee-src/minblep_tables.c"
 
-/* ---- mutual exclusion ---- */
+// -----------------------------------------------------------------------
+// mutual exclusion
 
 bool dssp_voicelist_mutex_trylock(nekobee_synth_t* synth)
 {
@@ -61,9 +62,9 @@ bool dssp_voicelist_mutex_unlock(nekobee_synth_t *synth)
     return (pthread_mutex_unlock(&synth->voicelist_mutex) == 0);
 }
 
-/*
- * nekobee_handle_raw_event
- */
+// -----------------------------------------------------------------------
+// nekobee_handle_raw_event
+
 void nekobee_handle_raw_event(nekobee_synth_t* synth, uint8_t size, const uint8_t* data)
 {
     if (size != 3)
@@ -92,7 +93,7 @@ void nekobee_handle_raw_event(nekobee_synth_t* synth, uint8_t size, const uint8_
 
 START_NAMESPACE_DISTRHO
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 DistrhoPluginNekobi::DistrhoPluginNekobi()
     : Plugin(paramCount, 0, 0) // 0 programs, 0 states
@@ -102,8 +103,8 @@ DistrhoPluginNekobi::DistrhoPluginNekobi()
     // init synth
     fSynth = new nekobee_synth_t;
 
-    fSynth->sample_rate = d_sampleRate();
-    fSynth->deltat = 1.0f / (float)d_sampleRate();
+    fSynth->sample_rate = d_getSampleRate();
+    fSynth->deltat = 1.0f / (float)d_getSampleRate();
     fSynth->nugget_remains = 0;
 
     fSynth->note_id = 0;
@@ -167,7 +168,7 @@ DistrhoPluginNekobi::~DistrhoPluginNekobi()
     delete fSynth;
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // Init
 
 void DistrhoPluginNekobi::d_initParameter(uint32_t index, Parameter& parameter)
@@ -247,10 +248,10 @@ void DistrhoPluginNekobi::d_initParameter(uint32_t index, Parameter& parameter)
     }
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // Internal data
 
-float DistrhoPluginNekobi::d_parameterValue(uint32_t index)
+float DistrhoPluginNekobi::d_getParameterValue(uint32_t index) const
 {
     switch (index)
     {
@@ -322,7 +323,7 @@ void DistrhoPluginNekobi::d_setParameterValue(uint32_t index, float value)
     }
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 // Process
 
 void DistrhoPluginNekobi::d_activate()
@@ -397,13 +398,13 @@ void DistrhoPluginNekobi::d_run(float**, float** outputs, uint32_t frames, uint3
     dssp_voicelist_mutex_unlock(fSynth);
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 Plugin* createPlugin()
 {
     return new DistrhoPluginNekobi();
 }
 
-// -------------------------------------------------
+// -----------------------------------------------------------------------
 
 END_NAMESPACE_DISTRHO

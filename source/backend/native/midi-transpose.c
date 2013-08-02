@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
 #include "CarlaNative.h"
@@ -25,7 +25,7 @@ typedef struct _MidiTransposeHandle {
     int octaves;
 } MidiTransposeHandle;
 
-static PluginHandle midiTranspose_instantiate(const PluginDescriptor* _this_, HostDescriptor* host)
+static PluginHandle midiTranspose_instantiate(HostDescriptor* host)
 {
     MidiTransposeHandle* const handle = (MidiTransposeHandle*)malloc(sizeof(MidiTransposeHandle));
 
@@ -35,9 +35,6 @@ static PluginHandle midiTranspose_instantiate(const PluginDescriptor* _this_, Ho
     handle->host    = host;
     handle->octaves = 0;
     return handle;
-
-    // unused
-    (void)_this_;
 }
 
 #define handlePtr ((MidiTransposeHandle*)handle)
