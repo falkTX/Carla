@@ -35,10 +35,8 @@ void carla_register_native_plugin_midiTranspose();
 void carla_register_native_plugin_nekofilter();
 //void carla_register_native_plugin_sunvoxfile();
 
-#if 0 //ndef BUILD_BRIDGE
 // Carla
-void carla_register_native_plugin_carla();
-#endif
+//void carla_register_native_plugin_carla();
 
 #ifdef WANT_AUDIOFILE
 // AudioFile
@@ -84,10 +82,8 @@ struct PluginListManager {
         carla_register_native_plugin_nekofilter();
         //carla_register_native_plugin_sunvoxfile(); // unfinished
 
-#if 0 //ndef BUILD_BRIDGE
         // Carla
-        carla_register_native_plugin_carla(); // kinda unfinished
-#endif
+        //carla_register_native_plugin_carla(); // kinda unfinished
 
 #ifdef WANT_AUDIOFILE
         // AudioFile
@@ -119,10 +115,9 @@ struct PluginListManager {
 
     ~PluginListManager()
     {
-        for (auto it = lv2Descs.begin(); it.valid(); it.next())
+        for (NonRtList<const LV2_Descriptor*>::Itenerator it = lv2Descs.begin(); it.valid(); it.next())
         {
             const LV2_Descriptor*& lv2Desc(*it);
-
             delete[] lv2Desc->URI;
             delete lv2Desc;
         }

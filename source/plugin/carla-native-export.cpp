@@ -224,29 +224,51 @@ void writePluginFile(const PluginDescriptor* const pluginDesc)
     }
 
     // -------------------------------------------------------------------
+    // First MIDI/Time port
+
+    text += "    lv2:port [\n";
+    text += "        a lv2:InputPort, atom:AtomPort ;\n";
+    text += "        atom:bufferType atom:Sequence ;\n";
+
+    if (pluginDesc->midiIns > 0)
+    {
+        text += "        atom:supports <" LV2_MIDI__MidiEvent "> ,\n";
+        text += "                      <" LV2_TIME__Position "> ;\n";
+    }
+    else
+    {
+        text += "        atom:supports <" LV2_TIME__Position "> ;\n";
+    }
+
+    text += "        lv2:designation lv2:control ;\n";
+    text += "        lv2:index 0" + String(portIndex++) + " ;\n";
+
+    if (pluginDesc->midiIns > 1)
+    {
+        text += "        lv2:symbol \"lv2_events_in_1\" ;\n";
+        text += "        lv2:name \"Events Input #1\" ;\n";
+    }
+    else
+    {
+        text += "        lv2:symbol \"lv2_events_in\" ;\n";
+        text += "        lv2:name \"Events Input\" ;\n";
+    }
+
+    text += "    ] ;\n\n";
+
+    // -------------------------------------------------------------------
     // MIDI inputs
 
-    for (uint32_t i=0; i < pluginDesc->midiIns; ++i)
+    for (uint32_t i=1; i < pluginDesc->midiIns; ++i)
     {
-        if (i == 0)
+        if (i == 1)
             text += "    lv2:port [\n";
         else
             text += "    [\n";
 
         text += "        a lv2:InputPort, atom:AtomPort ;\n";
         text += "        atom:bufferType atom:Sequence ;\n";
-
-        if (i == 0)
-        {
-            text += "        atom:supports <" LV2_MIDI__MidiEvent "> ,\n";
-            text += "                      <" LV2_TIME__Position "> ;\n";
-            text += "        lv2:designation lv2:control ;\n";
-        }
-        else
-        {
-            text += "        atom:supports <" LV2_MIDI__MidiEvent "> ;\n";
-        }
-
+        text += "        atom:supports <" LV2_MIDI__MidiEvent "> ;\n";
         text += "        lv2:index " + String(portIndex++) + " ;\n";
 
         if (pluginDesc->midiIns > 1)
@@ -370,9 +392,8 @@ void writePluginFile(const PluginDescriptor* const pluginDesc)
     for (uint32_t i=0; i < paramCount; ++i)
     {
         const Parameter* paramInfo(pluginDesc->get_parameter_info(pluginHandle, i));
-        const String     paramName(paramInfo->name);
+        const String     paramName(paramInfo->name != nullptr ? paramInfo->name : "");
         const String     paramUnit(paramInfo->unit != nullptr ? paramInfo->unit : "");
-        const float      paramValue(pluginDesc->get_parameter_value(pluginHandle, i));
 
         CARLA_SAFE_ASSERT_RETURN(paramInfo != nullptr,)
 
@@ -381,7 +402,11 @@ void writePluginFile(const PluginDescriptor* const pluginDesc)
         else
             text += "    [\n";
 
-        text += "        a lv2:InputPort, lv2:ControlPort ;\n";
+        if (paramInfo->hints & PARAMETER_IS_OUTPUT)
+            text += "        a lv2:OutputPort, lv2:ControlPort ;\n";
+        else
+            text += "        a lv2:InputPort, lv2:ControlPort ;\n";
+
         text += "        lv2:index " + String(portIndex++) + " ;\n";
         text += "        lv2:symbol \"" + nameToSymbol(paramName, i) + "\" ;\n";
 
@@ -390,9 +415,9 @@ void writePluginFile(const PluginDescriptor* const pluginDesc)
         else
             text += "        lv2:name \"Port " + String(i+1) + "\" ;\n";
 
-        text += "        lv2:default " + String::formatted("%f", paramValue) + " ;\n";
-        text += "        lv2:minimum 0.0 ;\n";
-        text += "        lv2:maximum 1.0 ;\n";
+        text += "        lv2:default " + String::formatted("%f", paramInfo->ranges.def) + " ;\n";
+        text += "        lv2:minimum " + String::formatted("%f", paramInfo->ranges.min) + " ;\n";
+        text += "        lv2:maximum " + String::formatted("%f", paramInfo->ranges.max) + " ;\n";
 
         if (paramUnit.isNotEmpty())
         {

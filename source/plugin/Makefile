@@ -8,6 +8,12 @@ include ../Makefile.mk
 
 BUILD_CXX_FLAGS += -I../backend -I../includes -I../modules -I../modules/utils
 
+ifeq ($(HAVE_QT4),true)
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtCore QtGui)
+else
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags Qt5Core Qt5Gui Qt5Widgets)
+endif
+
 # --------------------------------------------------------------
 
 ifeq ($(HAVE_OPENGL),true)

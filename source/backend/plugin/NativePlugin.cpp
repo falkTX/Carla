@@ -224,10 +224,11 @@ public:
 #endif
 
         carla_zeroStruct< ::MidiEvent>(fMidiEvents, MAX_MIDI_EVENTS*2);
+        carla_zeroStruct< ::TimeInfo>(fTimeInfo);
 
-        fHost.handle       = this;
-        fHost.resource_dir = carla_strdup((const char*)engine->getOptions().resourceDir);
-        fHost.ui_name      = nullptr;
+        fHost.handle      = this;
+        fHost.resourceDir = carla_strdup((const char*)engine->getOptions().resourceDir);
+        fHost.uiName      = nullptr;
 
         fHost.get_buffer_size        = carla_host_get_buffer_size;
         fHost.get_sample_rate        = carla_host_get_sample_rate;
