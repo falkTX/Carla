@@ -43,7 +43,7 @@ endif
 ifeq ($(DEBUG),true)
 BASE_FLAGS += -DDEBUG -O0 -g
 else
-BASE_FLAGS += -DNDEBUG $(BASE_OPTS) -fvisibility=hidden
+BASE_FLAGS += -DNDEBUG $(BASE_OPTS) -fvisibility=hidden -fvisibility-inlines-hidden
 LINK_OPTS  += -Wl,--strip-all
 endif
 

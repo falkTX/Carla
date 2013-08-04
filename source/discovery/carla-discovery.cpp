@@ -946,7 +946,7 @@ void do_lv2_check(const char* const bundle, const bool init)
         Lilv::Plugin lilvPlugin(lilv_plugins_get(lilvPlugins, i));
 
         if (const char* const uri = lilvPlugin.get_uri().as_string())
-            URIs.add(String(uri));
+            URIs.add(juce::String(uri));
     }
 
     if (URIs.size() == 0)
