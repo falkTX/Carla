@@ -118,7 +118,7 @@ all: $(TARGETS)
 
 clean:
 	rm -f *.o
-	rm -f carla-native.lv2/*
+	rm -f carla-native.lv2/*.*
 
 debug:
 	$(MAKE) DEBUG=true

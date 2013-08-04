@@ -67,6 +67,7 @@ carla-native-export
 
 data/windows/Carla
 data/windows/CarlaControl
+source/plugin/carla-native.lv2/*.ttl
 source/tests/ANSI
 source/tests/CarlaString
 source/tests/DGL1

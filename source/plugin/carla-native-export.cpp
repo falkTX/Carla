@@ -134,6 +134,11 @@ void writeManifestFile()
     text += "    a <" LV2_EXTERNAL_UI__Widget "> ;\n";
     text += "    ui:binary <carla-native" PLUGIN_EXT "> ;\n";
     text += "    lv2:requiredFeature <" LV2_INSTANCE_ACCESS_URI "> .\n";
+    text += "\n";
+    text += "<http://kxstudio.sf.net/carla#UIold>\n";
+    text += "    a <" LV2_EXTERNAL_UI_DEPRECATED_URI "> ;\n";
+    text += "    ui:binary <carla-native" PLUGIN_EXT "> ;\n";
+    text += "    lv2:requiredFeature <" LV2_INSTANCE_ACCESS_URI "> .\n";
 
     // -------------------------------------------------------------------
     // Write file now
@@ -219,7 +224,8 @@ void writePluginFile(const PluginDescriptor* const pluginDesc)
 
     if (pluginDesc->hints & PLUGIN_HAS_GUI)
     {
-        text += "    ui:ui <http://kxstudio.sf.net/carla#UI> ;\n";
+        text += "    ui:ui <http://kxstudio.sf.net/carla#UI> ,\n";
+        text += "          <http://kxstudio.sf.net/carla#UIold> ;\n";
         text += "\n";
     }
 

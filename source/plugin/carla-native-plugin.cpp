@@ -21,9 +21,11 @@
 
 #include "lv2/atom.h"
 #include "lv2/buf-size.h"
+#include "lv2/instance-access.h"
 #include "lv2/options.h"
 #include "lv2/state.h"
 #include "lv2/ui.h"
+#include "lv2/lv2_external_ui.h"
 
 #include <QtCore/Qt>
 
@@ -36,90 +38,113 @@
 // -----------------------------------------------------------------------
 // LV2 descriptor functions
 
-class NativePlugin
+class NativePlugin : public LV2_External_UI_Widget
 {
 public:
-      static const uint32_t kMaxMidiEvents = 512;
+    static const uint32_t kMaxMidiEvents = 512;
 
-      NativePlugin(const PluginDescriptor* const desc, const double sampleRate, const char* const bundlePath, const LV2_Feature* const* features)
-          : fHandle(nullptr),
-            fDescriptor(desc),
-            fIsProcessing(false),
-            fIsUiVisible(false),
-            fMidiEventCount(0),
-            fBufferSize(0),
-            fSampleRate(sampleRate),
-            fFeatures(features)
-      {
-          fHost.handle      = this;
-          fHost.resourceDir = carla_strdup(bundlePath);
-          fHost.uiName      = nullptr;
+    NativePlugin(const PluginDescriptor* const desc, const double sampleRate, const char* const bundlePath, const LV2_Feature* const* features)
+        : fHandle(nullptr),
+          fDescriptor(desc),
+          fMidiEventCount(0),
+          fIsProcessing(false),
+          fBufferSize(0),
+          fSampleRate(sampleRate)
+    {
+        run  = extui_run;
+        show = extui_show;
+        hide = extui_hide;
 
-          fHost.get_buffer_size        = carla_host_get_buffer_size;
-          fHost.get_sample_rate        = carla_host_get_sample_rate;
-          fHost.is_offline             = carla_host_is_offline;
-          fHost.get_time_info          = carla_host_get_time_info;
-          fHost.write_midi_event       = carla_host_write_midi_event;
-          fHost.ui_parameter_changed   = carla_host_ui_parameter_changed;
-          fHost.ui_custom_data_changed = carla_host_ui_custom_data_changed;
-          fHost.ui_closed              = carla_host_ui_closed;
-          fHost.ui_open_file           = carla_host_ui_open_file;
-          fHost.ui_save_file           = carla_host_ui_save_file;
-          fHost.dispatcher             = carla_host_dispatcher;
+        fHost.handle      = this;
+        fHost.resourceDir = carla_strdup(bundlePath);
+        fHost.uiName      = nullptr;
 
-          const LV2_Options_Option* options = nullptr;
-          const LV2_URID_Map*       uridMap = nullptr;
+        fHost.get_buffer_size        = host_get_buffer_size;
+        fHost.get_sample_rate        = host_get_sample_rate;
+        fHost.is_offline             = host_is_offline;
+        fHost.get_time_info          = host_get_time_info;
+        fHost.write_midi_event       = host_write_midi_event;
+        fHost.ui_parameter_changed   = host_ui_parameter_changed;
+        fHost.ui_custom_data_changed = host_ui_custom_data_changed;
+        fHost.ui_closed              = host_ui_closed;
+        fHost.ui_open_file           = host_ui_open_file;
+        fHost.ui_save_file           = host_ui_save_file;
+        fHost.dispatcher             = host_dispatcher;
 
-          for (int i=0; features[i] != nullptr; ++i)
-          {
-              if (std::strcmp(features[i]->URI, LV2_OPTIONS__options) == 0)
-                  options = (const LV2_Options_Option*)features[i]->data;
-              else if (std::strcmp(features[i]->URI, LV2_URID__map) == 0)
-                  uridMap = (const LV2_URID_Map*)features[i]->data;
-          }
+        const LV2_Options_Option* options = nullptr;
+        const LV2_URID_Map*       uridMap = nullptr;
 
-          if (uridMap == nullptr || options == nullptr)
-              return;
+        for (int i=0; features[i] != nullptr; ++i)
+        {
+            if (std::strcmp(features[i]->URI, LV2_OPTIONS__options) == 0)
+                options = (const LV2_Options_Option*)features[i]->data;
+            else if (std::strcmp(features[i]->URI, LV2_URID__map) == 0)
+                uridMap = (const LV2_URID_Map*)features[i]->data;
+        }
 
-          for (int i=0; options[i].key != 0; ++i)
-          {
-              if (options[i].key == uridMap->map(uridMap->handle, LV2_BUF_SIZE__maxBlockLength))
-              {
-                  if (options[i].type == uridMap->map(uridMap->handle, LV2_ATOM__Int))
-                      fBufferSize = *(const int*)options[i].value;
-                  else
-                      carla_stderr("Host provides maxBlockLength but has wrong value type");
-                  break;
-              }
-          }
-      }
+        if (options == nullptr || uridMap == nullptr)
+        {
+            carla_stderr("Host don't provides option or urid-map features");
+            return;
+        }
 
-      ~NativePlugin()
-      {
-          CARLA_ASSERT(fHandle != nullptr);
+        fBufferSize = 1024;
 
-          if (fHost.resourceDir != nullptr)
-          {
-              delete[] fHost.resourceDir;
-              fHost.resourceDir = nullptr;
-          }
-      }
+        for (int i=0; options[i].key != 0; ++i)
+        {
+            if (options[i].key == uridMap->map(uridMap->handle, LV2_BUF_SIZE__maxBlockLength))
+            {
+                if (options[i].type == uridMap->map(uridMap->handle, LV2_ATOM__Int))
+                    fBufferSize = *(const int*)options[i].value;
+                else
+                    carla_stderr("Host provides maxBlockLength but has wrong value type");
+                break;
+            }
+        }
 
-      bool init()
-      {
-          if (fDescriptor->instantiate == nullptr || fDescriptor->process == nullptr || fBufferSize == 0)
-              return false;
+        fUridMap = uridMap;
 
-          fHandle = fDescriptor->instantiate(&fHost);
+        fUI.offset += (desc->midiIns > 0) ? desc->midiIns : 1;
+        fUI.offset += desc->midiOuts;
+        fUI.offset += 1; // freewheel
+        fUI.offset += desc->audioIns;
+        fUI.offset += desc->audioOuts;
+    }
 
-          if (fHandle == nullptr)
-              return false;
+    ~NativePlugin()
+    {
+        CARLA_ASSERT(fHandle == nullptr);
 
-          carla_zeroStruct<MidiEvent>(fMidiEvents, kMaxMidiEvents*2);
-          carla_zeroStruct<TimeInfo>(fTimeInfo);
-          fPorts.init(fDescriptor, fHandle);
-          return true;
-      }
+        if (fHost.resourceDir != nullptr)
+        {
+            delete[] fHost.resourceDir;
+            fHost.resourceDir = nullptr;
+        }
+    }
+
+    bool init()
+    {
+        if (fDescriptor->instantiate == nullptr || fDescriptor->process == nullptr)
+        {
+            carla_stderr("Plugin is missing something...");
+            return false;
+        }
+        if (fBufferSize == 0)
+        {
+            carla_stderr("Plugin is missing bufferSize value");
+            return false;
+        }
+
+        fHandle = fDescriptor->instantiate(&fHost);
+
+        if (fHandle == nullptr)
+            return false;
+
+        carla_zeroStruct<MidiEvent>(fMidiEvents, kMaxMidiEvents*2);
+        carla_zeroStruct<TimeInfo>(fTimeInfo);
+        fPorts.init(fDescriptor, fHandle);
+        return true;
+    }
 
     // -------------------------------------------------------------------
     // LV2 functions
@@ -145,6 +170,7 @@ public:
     {
         if (fDescriptor->cleanup != nullptr)
             fDescriptor->cleanup(fHandle);
+        fHandle = nullptr;
     }
 
     void lv2_run(const uint32_t frames)
@@ -178,7 +204,84 @@ public:
 
     // -------------------------------------------------------------------
 
+    void lv2ui_instantiate(LV2UI_Write_Function writeFunction, LV2UI_Controller controller, LV2UI_Widget* widget,
+                           const LV2_Feature* const* features)
+    {
+        for (int i=0; features[i] != nullptr; ++i)
+        {
+            if (std::strcmp(features[i]->URI, LV2_EXTERNAL_UI__Host) == 0 ||
+                std::strcmp(features[i]->URI, LV2_EXTERNAL_UI_DEPRECATED_URI) == 0)
+            {
+                fUI.host = (const LV2_External_UI_Host*)features[i]->data;
+                break;
+            }
+        }
+
+        if (fUI.host != nullptr)
+            fHost.uiName = fUI.host->plugin_human_id;
+
+        fUI.writeFunction = writeFunction;
+        fUI.controller = controller;
+        *widget = this;
+    }
+
+    void lv2ui_port_event(uint32_t portIndex, uint32_t bufferSize, uint32_t format, const void* buffer)
+    {
+        if (format != 0 || bufferSize != sizeof(float) || buffer == nullptr)
+            return;
+        if (portIndex >= fUI.offset || ! fUI.isVisible)
+            return;
+        if (fDescriptor->ui_set_parameter_value == nullptr)
+            return;
+
+        const float value(*(const float*)buffer);
+        fDescriptor->ui_set_parameter_value(fHandle, portIndex-fUI.offset, value);
+    }
+
+    void lv2ui_cleanup()
+    {
+        fUI.host = nullptr;
+        fUI.writeFunction = nullptr;
+        fUI.controller = nullptr;
+
+        if (! fUI.isVisible)
+            return;
+
+        if (fDescriptor->ui_show != nullptr)
+            fDescriptor->ui_show(fHandle, false);
+
+        fUI.isVisible = false;
+    }
+
+    // -------------------------------------------------------------------
+
 protected:
+    void handleUiRun()
+    {
+        // TODO - idle Qt if needed
+
+        if (fDescriptor->ui_idle != nullptr)
+            fDescriptor->ui_idle(fHandle);
+    }
+
+    void handleUiShow()
+    {
+        if (fDescriptor->ui_show != nullptr)
+            fDescriptor->ui_show(fHandle, true);
+
+        fUI.isVisible = true;
+    }
+
+    void handleUiHide()
+    {
+        if (fDescriptor->ui_show != nullptr)
+            fDescriptor->ui_show(fHandle, false);
+
+        fUI.isVisible = false;
+    }
+
+    // -------------------------------------------------------------------
+
     uint32_t handleGetBufferSize()
     {
         return fBufferSize;
@@ -191,13 +294,15 @@ protected:
 
     bool handleIsOffline()
     {
-        CARLA_ASSERT(fIsProcessing);
-        return (fPorts.freewheel != nullptr && *fPorts.freewheel < 0.5f);
+        CARLA_SAFE_ASSERT_RETURN(fIsProcessing, false);
+
+        return (fPorts.freewheel != nullptr && *fPorts.freewheel > 0.5f);
     }
 
     const TimeInfo* handleGetTimeInfo()
     {
-        CARLA_ASSERT(fIsProcessing);
+        CARLA_SAFE_ASSERT_RETURN(fIsProcessing, nullptr);
+
         return &fTimeInfo;
     }
 
@@ -224,20 +329,26 @@ protected:
         return true;
     }
 
-    void handleUiParameterChanged(const uint32_t /*index*/, const float /*value*/)
+    void handleUiParameterChanged(const uint32_t index, const float value)
     {
-        //setParameterValue(index, value, false, true, true);
+        if (fUI.writeFunction != nullptr && fUI.controller != nullptr)
+            fUI.writeFunction(fUI.controller, index+fUI.offset, sizeof(float), 0, &value);
     }
 
     void handleUiCustomDataChanged(const char* const /*key*/, const char* const /*value*/)
     {
-        //setCustomData(CUSTOM_DATA_STRING, key, value, false);
+        //storeCustomData(key, value);
     }
 
     void handleUiClosed()
     {
-        // call external ui close
-        fIsUiVisible = false;
+        if (fUI.host != nullptr && fUI.host->ui_closed != nullptr && fUI.controller != nullptr)
+            fUI.host->ui_closed(fUI.controller);
+
+        fUI.host = nullptr;
+        fUI.writeFunction = nullptr;
+        fUI.controller = nullptr;
+        fUI.isVisible = false;
     }
 
     const char* handleUiOpenFile(const bool isDir, const char* const title, const char* const filter)
@@ -287,21 +398,15 @@ protected:
             break;
         case HOST_OPCODE_GET_PARAMETER_MIDI_CC:
         case HOST_OPCODE_SET_PARAMETER_MIDI_CC:
-            break;
         case HOST_OPCODE_SET_PROCESS_PRECISION:
-            break;
         case HOST_OPCODE_UPDATE_PARAMETER:
-            break;
         case HOST_OPCODE_UPDATE_MIDI_PROGRAM:
-            break;
         case HOST_OPCODE_RELOAD_PARAMETERS:
-            break;
         case HOST_OPCODE_RELOAD_MIDI_PROGRAMS:
-            break;
         case HOST_OPCODE_RELOAD_ALL:
             break;
         case HOST_OPCODE_UI_UNAVAILABLE:
-            //kData->engine->callback(CALLBACK_SHOW_GUI, fId, -1, 0, 0.0f, nullptr);
+            handleUiClosed();
             break;
         }
 
@@ -335,19 +440,32 @@ private:
     HostDescriptor fHost;
     const PluginDescriptor* const fDescriptor;
 
-    bool fIsProcessing;
-    bool fIsUiVisible;
-
     uint32_t  fMidiEventCount;
     MidiEvent fMidiEvents[kMaxMidiEvents*2];
+    TimeInfo  fTimeInfo;
 
-    TimeInfo fTimeInfo;
+    bool fIsProcessing;
 
     // Lv2 host data
     uint32_t fBufferSize;
     double   fSampleRate;
 
-    const LV2_Feature* const* fFeatures;
+    const LV2_URID_Map* fUridMap;
+
+    struct UI {
+        const LV2_External_UI_Host* host;
+        LV2UI_Write_Function writeFunction;
+        LV2UI_Controller controller;
+        bool isVisible;
+        uint32_t offset;
+
+        UI()
+            : host(nullptr),
+              writeFunction(nullptr),
+              controller(nullptr),
+              isVisible(false),
+              offset(0) {}
+    } fUI;
 
     struct Ports {
         LV2_Atom_Sequence** eventsIn;
@@ -531,59 +649,80 @@ private:
 
     // -------------------------------------------------------------------
 
+    #define handlePtr ((NativePlugin*)_this_)
+
+    static void extui_run(LV2_External_UI_Widget* _this_)
+    {
+        handlePtr->handleUiRun();
+    }
+
+    static void extui_show(LV2_External_UI_Widget* _this_)
+    {
+        handlePtr->handleUiShow();
+    }
+
+    static void extui_hide(LV2_External_UI_Widget* _this_)
+    {
+        handlePtr->handleUiHide();
+    }
+
+    #undef handlePtr
+
+    // -------------------------------------------------------------------
+
     #define handlePtr ((NativePlugin*)handle)
 
-    static uint32_t carla_host_get_buffer_size(::HostHandle handle)
+    static uint32_t host_get_buffer_size(HostHandle handle)
     {
         return handlePtr->handleGetBufferSize();
     }
 
-    static double carla_host_get_sample_rate(::HostHandle handle)
+    static double host_get_sample_rate(HostHandle handle)
     {
         return handlePtr->handleGetSampleRate();
     }
 
-    static bool carla_host_is_offline(::HostHandle handle)
+    static bool host_is_offline(HostHandle handle)
     {
         return handlePtr->handleIsOffline();
     }
 
-    static const ::TimeInfo* carla_host_get_time_info(::HostHandle handle)
+    static const TimeInfo* host_get_time_info(HostHandle handle)
     {
         return handlePtr->handleGetTimeInfo();
     }
 
-    static bool carla_host_write_midi_event(::HostHandle handle, const ::MidiEvent* event)
+    static bool host_write_midi_event(HostHandle handle, const ::MidiEvent* event)
     {
         return handlePtr->handleWriteMidiEvent(event);
     }
 
-    static void carla_host_ui_parameter_changed(::HostHandle handle, uint32_t index, float value)
+    static void host_ui_parameter_changed(HostHandle handle, uint32_t index, float value)
     {
         handlePtr->handleUiParameterChanged(index, value);
     }
 
-    static void carla_host_ui_custom_data_changed(::HostHandle handle, const char* key, const char* value)
+    static void host_ui_custom_data_changed(HostHandle handle, const char* key, const char* value)
     {
         handlePtr->handleUiCustomDataChanged(key, value);
     }
 
-    static void carla_host_ui_closed(::HostHandle handle)
+    static void host_ui_closed(HostHandle handle)
     {
         handlePtr->handleUiClosed();
     }
 
-    static const char* carla_host_ui_open_file(::HostHandle handle, bool isDir, const char* title, const char* filter)
+    static const char* host_ui_open_file(HostHandle handle, bool isDir, const char* title, const char* filter)
     {
         return handlePtr->handleUiOpenFile(isDir, title, filter);
     }
 
-    static const char* carla_host_ui_save_file(::HostHandle handle, bool isDir, const char* title, const char* filter)
+    static const char* host_ui_save_file(HostHandle handle, bool isDir, const char* title, const char* filter)
     {
         return handlePtr->handleUiSaveFile(isDir, title, filter);
     }
 
-    static intptr_t carla_host_dispatcher(::HostHandle handle, ::HostDispatcherOpcode opcode, int32_t index, intptr_t value, void* ptr, float opt)
+    static intptr_t host_dispatcher(HostHandle handle, HostDispatcherOpcode opcode, int32_t index, intptr_t value, void* ptr, float opt)
     {
         return handlePtr->handleDispatcher(opcode, index, value, ptr, opt);
     }
@@ -724,6 +863,50 @@ static const void* lv2_extension_data(const char* uri)
 // -----------------------------------------------------------------------
 // Startup code
 
+static LV2UI_Handle lv2ui_instantiate(const LV2UI_Descriptor*, const char*, const char*, LV2UI_Write_Function writeFunction,
+                                      LV2UI_Controller controller, LV2UI_Widget* widget, const LV2_Feature* const* features)
+{
+    NativePlugin* plugin = nullptr;
+
+    for (int i=0; features[i] != nullptr; ++i)
+    {
+        if (std::strcmp(features[i]->URI, LV2_INSTANCE_ACCESS_URI) == 0)
+        {
+            plugin = (NativePlugin*)features[i]->data;
+            break;
+        }
+    }
+
+    if (plugin == nullptr)
+    {
+        carla_stderr("Host doesn't support instance-access, cannot show UI");
+        return nullptr;
+    }
+
+    plugin->lv2ui_instantiate(writeFunction, controller, widget, features);
+
+    return (LV2UI_Handle)plugin;
+}
+
+#define uiPtr ((NativePlugin*)ui)
+
+static void lv2ui_port_event(LV2UI_Handle ui, uint32_t portIndex, uint32_t bufferSize, uint32_t format, const void* buffer)
+{
+    carla_debug("lv2ui_port_event(%p, %i, %i, %i, %p)", ui, portIndex, bufferSize, format, buffer);
+    uiPtr->lv2ui_port_event(portIndex, bufferSize, format, buffer);
+}
+
+static void lv2ui_cleanup(LV2UI_Handle ui)
+{
+    carla_debug("lv2ui_cleanup(%p)", ui);
+    uiPtr->lv2ui_cleanup();
+}
+
+#undef uiPtr
+
+// -----------------------------------------------------------------------
+// Startup code
+
 CARLA_EXPORT const LV2_Descriptor* lv2_descriptor(uint32_t index)
 {
     carla_debug("lv2_descriptor(%i)", index);
@@ -775,23 +958,31 @@ CARLA_EXPORT const LV2UI_Descriptor* lv2ui_descriptor(uint32_t index)
 {
     carla_debug("lv2ui_descriptor(%i)", index);
 
-    //if (index != 0)
-        return nullptr;
-
-#if 0
     static const LV2UI_Descriptor lv2UiDesc = {
     /* URI            */ "http://kxstudio.sf.net/carla#UI",
     /* instantiate    */ lv2ui_instantiate,
-    /* connect_port   */ nullptr,
-    /* activate       */ nullptr,
-    /* run            */ nullptr,
-    /* deactivate     */ nullptr,
-    /* cleanup        */ nullptr,
+    /* cleanup        */ lv2ui_cleanup,
+    /* port_event     */ lv2ui_port_event,
     /* extension_data */ nullptr
     };
 
-    return &lv2UiDesc;
-#endif
+    static const LV2UI_Descriptor lv2UiDescOld = {
+    /* URI            */ "http://kxstudio.sf.net/carla#UIold",
+    /* instantiate    */ lv2ui_instantiate,
+    /* cleanup        */ lv2ui_cleanup,
+    /* port_event     */ lv2ui_port_event,
+    /* extension_data */ nullptr
+    };
+
+    switch (index)
+    {
+    case 0:
+        return &lv2UiDesc;
+    case 1:
+        return &lv2UiDescOld;
+    default:
+        return nullptr;
+    }
 }
 
 // -----------------------------------------------------------------------
