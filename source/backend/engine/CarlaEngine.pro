@@ -49,9 +49,6 @@ DEFINES   += __UNIX_JACK__
 DEFINES   += __LINUX_PULSE__
 PKGCONFIG += libpulse-simple
 
-# DISTRHO Plugin
-DEFINES   += DISTRHO_PLUGIN_TARGET_VST
-
 # -------------------------------------------------------
 
 SOURCES  = \
@@ -60,8 +57,8 @@ SOURCES  = \
     CarlaEngineThread.cpp \
     CarlaEngineBridge.cpp \
     CarlaEngineJack.cpp \
+    CarlaEngineJuce.cpp \
     CarlaEngineNative.cpp \
-    CarlaEnginePlugin.cpp \
     CarlaEngineRtAudio.cpp
 
 HEADERS  = \
@@ -72,11 +69,14 @@ HEADERS  = \
 HEADERS += \
     ../CarlaBackend.hpp \
     ../CarlaEngine.hpp \
+    ../CarlaNative.h \
     ../CarlaPlugin.hpp
 
 HEADERS += \
     ../../includes/CarlaDefines.hpp \
-    ../../includes/CarlaMIDI.h \
+    ../../includes/CarlaMIDI.h
+
+HEADERS += \
     ../../utils/CarlaMutex.hpp \
     ../../utils/CarlaRingBuffer.hpp \
     ../../utils/CarlaString.hpp \
@@ -86,24 +86,17 @@ HEADERS += \
     ../../utils/CarlaBridgeUtils.hpp \
     ../../utils/CarlaJuceUtils.hpp \
     ../../utils/CarlaOscUtils.hpp \
-    ../../utils/CarlaStateUtils.hpp
+    ../../utils/CarlaStateUtils.hpp \
+    ../../utils/RtList.hpp
 
-HEADERS += \
-    distrho/DistrhoPluginInfo.h
-
-INCLUDEPATH = . .. plugin \
+INCLUDEPATH = . .. \
     ../../includes \
-    ../../libs \
+    ../../modules \
     ../../utils
 
 # RtAudio/RtMidi
 INCLUDEPATH += rtaudio-4.0.12 rtmidi-2.0.1
 SOURCES     += rtaudio-4.0.12/RtAudio.cpp
 SOURCES     += rtmidi-2.0.1/RtMidi.cpp
-
-# Plugin
-INCLUDEPATH += distrho
-INCLUDEPATH += ../../libs/distrho
-INCLUDEPATH += ../../includes/vst
 
 QMAKE_CXXFLAGS += -std=c++0x

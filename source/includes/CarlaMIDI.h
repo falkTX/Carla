@@ -36,7 +36,7 @@
 #define MIDI_IS_STATUS_POLYPHONIC_AFTERTOUCH(status)   (((status) & 0xF0) == MIDI_STATUS_POLYPHONIC_AFTERTOUCH)
 #define MIDI_IS_STATUS_CONTROL_CHANGE(status)          (((status) & 0xF0) == MIDI_STATUS_CONTROL_CHANGE)
 #define MIDI_IS_STATUS_PROGRAM_CHANGE(status)          (((status) & 0xF0) == MIDI_STATUS_PROGRAM_CHANGE)
-#define MIDI_IS_STATUS_AFTERTOUCH(status)              (((status) & 0xF0) == MIDI_STATUS_AFTERTOUCH)
+#define MIDI_IS_STATUS_CHANNEL_PRESSURE(status)        (((status) & 0xF0) == MIDI_STATUS_CHANNEL_PRESSURE)
 #define MIDI_IS_STATUS_PITCH_WHEEL_CONTROL(status)     (((status) & 0xF0) == MIDI_STATUS_PITCH_WHEEL_CONTROL)
 
 // MIDI Utils

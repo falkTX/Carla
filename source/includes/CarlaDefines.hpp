@@ -135,9 +135,9 @@
 // Define CARLA_DECLARE_NON_COPY_STRUCT
 #ifdef CARLA_PROPER_CPP11_SUPPORT
 # define CARLA_DECLARE_NON_COPY_STRUCT(StructName) \
-     StructName(StructName&) = delete;             \
-     StructName(const StructName&) = delete;       \
-     StructName& operator=(const StructName&) = delete;
+    StructName(StructName&) = delete;             \
+    StructName(const StructName&) = delete;       \
+    StructName& operator=(const StructName&) = delete;
 #else
 # define CARLA_DECLARE_NON_COPY_STRUCT(StructName)
 #endif
@@ -153,13 +153,6 @@
 # endif
 #endif
 
-// Define OS_SEP
-#ifdef CARLA_OS_WIN
-# define OS_SEP '\\'
-#else
-# define OS_SEP '/'
-#endif
-
 // Define PRE/POST_PACKED_STRUCTURE
 #if defined(__GNUC__)
 # define PRE_PACKED_STRUCTURE
@@ -171,6 +164,13 @@
 #else
 # define PRE_PACKED_STRUCTURE
 # define POST_PACKED_STRUCTURE
+#endif
+
+// Define OS_SEP
+#ifdef CARLA_OS_WIN
+# define OS_SEP '\\'
+#else
+# define OS_SEP '/'
 #endif
 
 #endif // CARLA_DEFINES_HPP_INCLUDED

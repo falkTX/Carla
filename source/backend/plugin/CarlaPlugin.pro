@@ -52,6 +52,8 @@ SOURCES  = \
     DssiPlugin.cpp \
     Lv2Plugin.cpp \
     VstPlugin.cpp \
+    Vst3Plugin.cpp \
+    JucePlugin.cpp \
     FluidSynthPlugin.cpp \
     LinuxSamplerPlugin.cpp
 
@@ -67,19 +69,26 @@ HEADERS += \
     ../CarlaPlugin.hpp
 
 HEADERS += \
+    ../../includes/CarlaDefines.hpp \
+    ../../includes/CarlaMIDI.h
+
+HEADERS += \
+    ../../utils/CarlaMutex.hpp \
+    ../../utils/CarlaRingBuffer.hpp \
+    ../../utils/CarlaString.hpp
     ../../utils/CarlaUtils.hpp \
+    ../../utils/CarlaBackendUtils.hpp \
     ../../utils/CarlaBridgeUtils.hpp \
     ../../utils/CarlaJuceUtils.hpp \
     ../../utils/CarlaLibUtils.hpp \
     ../../utils/CarlaOscUtils.hpp \
     ../../utils/CarlaStateUtils.hpp \
-    ../../utils/CarlaMutex.hpp \
-    ../../utils/CarlaRingBuffer.hpp \
-    ../../utils/CarlaString.hpp
+    ../../utils/Lv2AtomQueue.hpp \
+    ../../utils/RtList.hpp
 
 INCLUDEPATH = . .. \
     ../../includes \
-    ../../libs \
+    ../../modules \
     ../../utils
 
 QMAKE_CXXFLAGS += -std=c++0x
