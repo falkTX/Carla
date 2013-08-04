@@ -135,8 +135,9 @@
 // Define CARLA_DECLARE_NON_COPY_STRUCT
 #ifdef CARLA_PROPER_CPP11_SUPPORT
 # define CARLA_DECLARE_NON_COPY_STRUCT(StructName) \
-    StructName(StructName&) = delete;             \
-    StructName(const StructName&) = delete;       \
+    StructName(StructName&) = delete;              \
+    StructName(const StructName&) = delete;        \
+    StructName& operator=(StructName&) = delete;   \
     StructName& operator=(const StructName&) = delete;
 #else
 # define CARLA_DECLARE_NON_COPY_STRUCT(StructName)

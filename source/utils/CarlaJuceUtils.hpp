@@ -22,21 +22,30 @@
 
 #include "JuceHeader.h"
 
-#define CARLA_PREVENT_HEAP_ALLOCATION   \
-private:                                \
-    static void* operator new(size_t);  \
-    static void operator delete(void*);
+#define CARLA_PREVENT_HEAP_ALLOCATION \
+    JUCE_PREVENT_HEAP_ALLOCATION
 
-#define CARLA_DECLARE_NON_COPYABLE(ClassName) \
-private:                                      \
-    ClassName(const ClassName&);              \
+#ifdef CARLA_PROPER_CPP11_SUPPORT
+# define CARLA_DECLARE_NON_COPYABLE(ClassName) \
+private:                                       \
+    ClassName(ClassName&) = delete;            \
+    ClassName(const ClassName&) = delete;      \
+    ClassName& operator=(ClassName&) = delete; \
+    ClassName& operator=(const ClassName&) = delete;
+#else
+# define CARLA_DECLARE_NON_COPYABLE(ClassName) \
+private:                                       \
+    ClassName(ClassName&);                     \
+    ClassName(const ClassName&);               \
+    ClassName& operator=(ClassName&);          \
     ClassName& operator=(const ClassName&);
+#endif
 
 #define CARLA_LEAK_DETECTOR(ClassName) \
     JUCE_LEAK_DETECTOR(ClassName)
 
 #define CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ClassName) \
     CARLA_DECLARE_NON_COPYABLE(ClassName)                        \
-    CARLA_LEAK_DETECTOR(ClassName)
+    JUCE_LEAK_DETECTOR(ClassName)
 
 #endif // CARLA_JUCE_UTILS_HPP_INCLUDED
