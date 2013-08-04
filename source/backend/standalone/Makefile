@@ -142,13 +142,13 @@ debug:
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 ../libcarla_standalone.dll: $(OBJS) $(LIBS)
-	$(CXX) $^ -shared $(LINK_FLAGS) $(W32_LIBS) -Wl,--output-def,$@.def -o $@ $(CMD_STRIP) $@
+	$(CXX) $^ -shared $(LINK_FLAGS) $(W32_LIBS) -Wl,--output-def,$@.def -o $@
 
 ../libcarla_standalone.dylib: $(OBJS) $(LIBS)
-	$(CXX) $^ -dynamiclib $(LINK_FLAGS) -framework CoreAudio -framework CoreMIDI -framework CoreFoundation -o $@ $(CMD_STRIP) $@
+	$(CXX) $^ -dynamiclib $(LINK_FLAGS) -framework CoreAudio -framework CoreMIDI -framework CoreFoundation -o $@
 
 ../libcarla_standalone.so: $(OBJS) $(LIBS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -o $@ $(CMD_STRIP) $@
+	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
 
 # --------------------------------------------------------------
 

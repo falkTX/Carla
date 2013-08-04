@@ -106,13 +106,13 @@ win64:   ../theme.win64.a
 	$(AR) rs $@ $(OBJS_win64)
 
 ../carlastyle.dll: $(FILES) $(OBJS_shared)
-	$(CXX) $(OBJS_shared) -shared $(LINK_FLAGS) -o $@ $(CMD_STRIP) $@
+	$(CXX) $(OBJS_shared) -shared $(LINK_FLAGS) -o $@
 
 ../carlastyle.dynlib: $(FILES) $(OBJS_shared)
-	$(CXX) $(OBJS_shared) -dynamiclib $(LINK_FLAGS) -o $@ $(CMD_STRIP) $@
+	$(CXX) $(OBJS_shared) -dynamiclib $(LINK_FLAGS) -o $@
 
 ../carlastyle.so: $(FILES) $(OBJS_shared)
-	$(CXX) $(OBJS_shared) -shared $(LINK_FLAGS) -o $@ $(CMD_STRIP) $@
+	$(CXX) $(OBJS_shared) -shared $(LINK_FLAGS) -o $@
 
 # --------------------------------------------------------------
 

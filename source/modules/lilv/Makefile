@@ -49,13 +49,13 @@ win64:   ../lilv.win64.a
 	$(AR) rs $@ $^
 
 ../lilv.dll: $(OBJS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -o $@ $(CMD_STRIP) $@
+	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
 
 ../lilv.dylib: $(OBJS)
-	$(CXX) $^ -dynamiclib $(LINK_FLAGS) -o $@ $(CMD_STRIP) $@
+	$(CXX) $^ -dynamiclib $(LINK_FLAGS) -o $@
 
 ../lilv.so: $(OBJS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -o $@ $(CMD_STRIP) $@
+	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
 
 # --------------------------------------------------------------
 

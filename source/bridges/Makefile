@@ -245,7 +245,7 @@ OBJS_UI_LV2_GTK2 = CarlaBridgeUI-LV2__lv2-gtk2.o \
 	CarlaBridgeToolkit__lv2.o CarlaBridgeToolkitGtk__lv2-gtk2.o
 
 carla-bridge-lv2-gtk2: $(OBJS_UI_LV2_GTK2) $(OBJS_UI_LV2_LIBS)
-	$(CXX) $^ $(LINK_UI_LV2_GTK2_FLAGS) -o $@ $(CMD_STRIP) $@
+	$(CXX) $^ $(LINK_UI_LV2_GTK2_FLAGS) -o $@
 
 %__lv2-gtk2.o: %.cpp
 	$(CXX) $< $(BUILD_UI_LV2_GTK2_FLAGS) -c -o $@
@@ -258,7 +258,7 @@ OBJS_UI_LV2_GTK3 = CarlaBridgeUI-LV2__lv2-gtk3.o \
 	CarlaBridgeToolkit__lv2.o CarlaBridgeToolkitGtk__lv2-gtk3.o
 
 carla-bridge-lv2-gtk3: $(OBJS_UI_LV2_GTK3) $(OBJS_UI_LV2_LIBS)
-	$(CXX) $^ $(LINK_UI_LV2_GTK3_FLAGS) -o $@ $(CMD_STRIP) $@
+	$(CXX) $^ $(LINK_UI_LV2_GTK3_FLAGS) -o $@
 
 %__lv2-gtk3.o: %.cpp
 	$(CXX) $< $(BUILD_UI_LV2_GTK3_FLAGS) -c -o $@
@@ -271,7 +271,7 @@ OBJS_UI_LV2_QT4 = CarlaBridgeUI-LV2__lv2-qt4.o \
 	CarlaBridgeToolkit__lv2.o CarlaBridgeToolkitQt__lv2-qt4.o
 
 carla-bridge-lv2-qt4: $(OBJS_UI_LV2_QT4) $(OBJS_UI_LV2_LIBS) ../libs/theme.a
-	$(CXX) $^ $(LINK_UI_LV2_QT4_FLAGS) -o $@ $(CMD_STRIP) $@
+	$(CXX) $^ $(LINK_UI_LV2_QT4_FLAGS) -o $@
 
 %__lv2-qt4.o: %.cpp CarlaBridgeToolkitQt.moc
 	$(CXX) $< $(BUILD_UI_LV2_QT4_FLAGS) -c -o $@
@@ -284,7 +284,7 @@ OBJS_UI_LV2_QT5 = CarlaBridgeUI-LV2__lv2-qt5.o \
 	CarlaBridgeToolkit__lv2.o CarlaBridgeToolkitQt__lv2-qt5.o
 
 carla-bridge-lv2-qt5: $(OBJS_UI_LV2_QT5) $(OBJS_UI_LV2_LIBS) ../libs/theme.a
-	$(CXX) $^ $(LINK_UI_LV2_QT5_FLAGS) -o $@ $(CMD_STRIP) $@
+	$(CXX) $^ $(LINK_UI_LV2_QT5_FLAGS) -o $@
 
 %__lv2-qt5.o: %.cpp CarlaBridgeToolkitQt.moc
 	$(CXX) $< $(BUILD_UI_LV2_QT5_FLAGS) -c -o $@
@@ -297,7 +297,7 @@ OBJS_UI_LV2_COCOA = CarlaBridgeUI-LV2__lv2-cocoa.o \
 	CarlaBridgeToolkit__lv2.o CarlaBridgeToolkitQt__lv2-cocoa.o
 
 carla-bridge-lv2-cocoa: $(OBJS_UI_LV2_COCOA) $(OBJS_UI_LV2_LIBS) ../libs/theme.a
-	$(CXX) $^ $(LINK_UI_LV2_COCOA_FLAGS) -o $@ $(CMD_STRIP) $@
+	$(CXX) $^ $(LINK_UI_LV2_COCOA_FLAGS) -o $@
 
 %__lv2-cocoa.o: %.cpp CarlaBridgeToolkitQt.moc
 	$(CXX) $< $(BUILD_UI_LV2_COCOA_FLAGS) -c -o $@
@@ -310,7 +310,7 @@ OBJS_UI_LV2_WIN32 = CarlaBridgeUI-LV2__lv2-windows.o \
 	CarlaBridgeToolkit__lv2.o CarlaBridgeToolkitQt__lv2-windows.o
 
 carla-bridge-lv2-windows.exe: $(OBJS_UI_LV2_WIN32) $(OBJS_UI_LV2_LIBS) ../libs/theme.a
-	$(CXX) $^ $(LINK_UI_LV2_WIN32_FLAGS) -o $@ $(CMD_STRIP) $@
+	$(CXX) $^ $(LINK_UI_LV2_WIN32_FLAGS) -o $@
 
 %__lv2-windows.o: %.cpp CarlaBridgeToolkitQt.moc
 	$(CXX) $< $(BUILD_UI_LV2_WIN32_FLAGS) -c -o $@
@@ -323,7 +323,7 @@ OBJS_UI_LV2_X11 = CarlaBridgeUI-LV2__lv2-x11.o \
 	CarlaBridgeToolkit__lv2.o CarlaBridgeToolkitQt__lv2-x11.o
 
 carla-bridge-lv2-x11: $(OBJS_UI_LV2_X11) $(OBJS_UI_LV2_LIBS) ../libs/theme.a
-	$(CXX) $^ $(LINK_UI_LV2_X11_FLAGS) -o $@ $(CMD_STRIP) $@
+	$(CXX) $^ $(LINK_UI_LV2_X11_FLAGS) -o $@
 
 %__lv2-x11.o: %.cpp CarlaBridgeToolkitQt.moc
 	$(CXX) $< $(BUILD_UI_LV2_X11_FLAGS) -c -o $@
@@ -336,7 +336,7 @@ OBJS_UI_VST_COCOA = CarlaBridgeUI-VST__vst-cocoa.o \
 	CarlaBridgeToolkit__vst.o CarlaBridgeToolkitQt__vst-cocoa.o
 
 carla-bridge-vst-cocoa: $(OBJS_UI_VST_COCOA) ../libs/theme.a
-	$(CXX) $^ $(LINK_UI_VST_COCOA_FLAGS) -o $@ $(CMD_STRIP) $@
+	$(CXX) $^ $(LINK_UI_VST_COCOA_FLAGS) -o $@
 
 %__vst-cocoa.o: %.cpp CarlaBridgeToolkitQt.moc
 	$(CXX) $< $(BUILD_UI_VST_COCOA_FLAGS) -c -o $@
@@ -349,7 +349,7 @@ OBJS_UI_VST_HWND = CarlaBridgeUI-VST__vst-hwnd.o \
 	CarlaBridgeToolkit__vst.o CarlaBridgeToolkitQt__vst-hwnd.o
 
 carla-bridge-vst-hwnd.exe: $(OBJS_UI_VST_HWND) ../libs/theme.a
-	$(CXX) $^ $(LINK_UI_VST_HWND_FLAGS) -o $@ $(CMD_STRIP) $@
+	$(CXX) $^ $(LINK_UI_VST_HWND_FLAGS) -o $@
 
 %__vst-hwnd.o: %.cpp CarlaBridgeToolkitQt.moc
 	$(CXX) $< $(BUILD_UI_VST_HWND_FLAGS) -c -o $@
@@ -362,7 +362,7 @@ OBJS_UI_VST_X11 = CarlaBridgeUI-VST__vst-x11.o \
 	CarlaBridgeToolkit__vst.o CarlaBridgeToolkitQt__vst-x11.o
 
 carla-bridge-vst-x11: $(OBJS_UI_VST_X11) ../libs/theme.a
-	$(CXX) $^ $(LINK_UI_VST_X11_FLAGS) -o $@ $(CMD_STRIP) $@
+	$(CXX) $^ $(LINK_UI_VST_X11_FLAGS) -o $@
 
 %__vst-x11.o: %.cpp CarlaBridgeToolkitQt.moc
 	$(CXX) $< $(BUILD_UI_VST_X11_FLAGS) -c -o $@
@@ -418,7 +418,7 @@ OBJS_NATIVE += \
 endif
 
 carla-bridge-native: $(FILES) $(OBJS_NATIVE)
-	$(CXX) $(OBJS_NATIVE) $(NATIVE_LINK_FLAGS) -o $@ $(CMD_STRIP) $@
+	$(CXX) $(OBJS_NATIVE) $(NATIVE_LINK_FLAGS) -o $@
 
 %__native.o: %.cpp
 	$(CXX) $< $(NATIVE_BUILD_FLAGS) -c -o $@
@@ -461,7 +461,7 @@ OBJS_POSIX32 += \
 	../libs/rtmempool.posix32.a
 
 carla-bridge-posix32: $(FILES) $(OBJS_POSIX32)
-	$(CXX) $(OBJS_POSIX32) $(POSIX_LINK_FLAGS) $(POSIX_32BIT_FLAGS) -o $@ $(CMD_STRIP) $@
+	$(CXX) $(OBJS_POSIX32) $(POSIX_LINK_FLAGS) $(POSIX_32BIT_FLAGS) -o $@
 
 %__posix32.o: %.cpp
 	$(CXX) $< $(POSIX_BUILD_FLAGS) $(POSIX_32BIT_FLAGS) -c -o $@
@@ -504,7 +504,7 @@ OBJS_POSIX64 += \
 	../libs/rtmempool.posix64.a
 
 carla-bridge-posix64: $(FILES) $(OBJS_POSIX64)
-	$(CXX) $(OBJS_POSIX64) $(POSIX_LINK_FLAGS) $(POSIX_64BIT_FLAGS) -o $@ $(CMD_STRIP) $@
+	$(CXX) $(OBJS_POSIX64) $(POSIX_LINK_FLAGS) $(POSIX_64BIT_FLAGS) -o $@
 
 %__posix64.o: %.cpp
 	$(CXX) $< $(POSIX_BUILD_FLAGS) $(POSIX_64BIT_FLAGS) -c -o $@
@@ -547,7 +547,7 @@ OBJS_WIN32 += \
 	../libs/rtmempool.win32.a
 
 carla-bridge-win32.exe: $(FILES) $(OBJS_WIN32) ../libs/jackbridge-win32.dll
-	$(CXX) $(OBJS_WIN32) $(WIN_32BIT_FLAGS) $(WIN_LINK_FLAGS) -ljackbridge-win32 -o $@ $(CMD_STRIP) $@
+	$(CXX) $(OBJS_WIN32) $(WIN_32BIT_FLAGS) $(WIN_LINK_FLAGS) -ljackbridge-win32 -o $@
 
 %__win32.o: %.cpp
 	$(CXX) $< $(WIN_BUILD_FLAGS) $(WIN_32BIT_FLAGS) -c -o $@
@@ -590,7 +590,7 @@ OBJS_WIN64 += \
 	../libs/rtmempool.win64.a
 
 carla-bridge-win64.exe: $(FILES) $(OBJS_WIN64) ../libs/jackbridge-win64.dll
-	$(CXX) $(OBJS_WIN64) $(WIN_64BIT_FLAGS) $(WIN_LINK_FLAGS) -ljackbridge-win64 -o $@ $(CMD_STRIP) $@
+	$(CXX) $(OBJS_WIN64) $(WIN_64BIT_FLAGS) $(WIN_LINK_FLAGS) -ljackbridge-win64 -o $@
 
 %__win64.o: %.cpp
 	$(CXX) $< $(WIN_BUILD_FLAGS) $(WIN_64BIT_FLAGS) -c -o $@

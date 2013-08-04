@@ -53,16 +53,16 @@ JackBridge%.w64.o: JackBridge%.cpp
 # --------------------------------------------------------------
 
 ../jackbridge-win32.dll: $(OBJS)
-	$(CXX) $^ $(WIN_BUILD_FLAGS) $(WIN_32BIT_FLAGS) $(WIN_LINK_FLAGS) -Wl,--output-def,$@.def,--out-implib,$@.a -o $@ $(CMD_STRIP) $@
+	$(CXX) $^ $(WIN_BUILD_FLAGS) $(WIN_32BIT_FLAGS) $(WIN_LINK_FLAGS) -Wl,--output-def,$@.def,--out-implib,$@.a -o $@
 
 ../jackbridge-win64.dll: $(OBJS)
-	$(CXX) $^ $(WIN_BUILD_FLAGS) $(WIN_64BIT_FLAGS) $(WIN_LINK_FLAGS) -Wl,--output-def,$@.def,--out-implib,$@.a -o $@ $(CMD_STRIP) $@
+	$(CXX) $^ $(WIN_BUILD_FLAGS) $(WIN_64BIT_FLAGS) $(WIN_LINK_FLAGS) -Wl,--output-def,$@.def,--out-implib,$@.a -o $@
 
 ../jackbridge-win32.dll.so: $(OBJSw32) ../jackbridge-win32.dll.def
-	$(WINECXX) $^ $(WINE_32BIT_FLAGS) $(WINE_LINK_FLAGS) -o $@ $(CMD_STRIP) $@
+	$(WINECXX) $^ $(WINE_32BIT_FLAGS) $(WINE_LINK_FLAGS) -o $@
 
 ../jackbridge-win64.dll.so: $(OBJS) ../jackbridge-win64.dll.def
-	$(WINECXX) $^ $(WINE_64BIT_FLAGS) $(WINE_LINK_FLAGS) -o $@ $(CMD_STRIP) $@
+	$(WINECXX) $^ $(WINE_64BIT_FLAGS) $(WINE_LINK_FLAGS) -o $@
 
 # --------------------------------------------------------------
 

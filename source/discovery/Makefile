@@ -10,14 +10,6 @@ include ../Makefile.mk
 
 BUILD_CXX_FLAGS += -I../backend -I../includes -I../modules -I../modules/utils
 
-# ifeq ($(HAVE_QT4),true)
-# BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtCore)
-# LINK_FLAGS      += $(shell pkg-config --libs QtCore)
-# else
-# BUILD_CXX_FLAGS += $(shell pkg-config --cflags Qt5Core)
-# LINK_FLAGS      += $(shell pkg-config --libs Qt5Core)
-# endif
-
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
 BUILD_CXX_FLAGS += -DWANT_LADSPA -DWANT_DSSI -DWANT_LV2 -DWANT_VST
 ifeq ($(CARLA_VESTIGE_HEADER),true)
@@ -90,22 +82,22 @@ win64:   carla-discovery-win64.exe
 # --------------------------------------------------------------
 
 carla-discovery-native: $(OBJS) $(LIBS)
-	$(CXX) $^ $(POSIX_BUILD_FLAGS) $(NATIVE_FLAGS) $(POSIX_LINK_FLAGS) -o $@ $(CMD_STRIP) $@
+	$(CXX) $^ $(POSIX_BUILD_FLAGS) $(NATIVE_FLAGS) $(POSIX_LINK_FLAGS) -o $@
 
 carla-discovery-native.exe: $(OBJS) $(LIBS)
-	$(CXX) $^ $(WIN_BUILD_FLAGS) $(NATIVE_FLAGS) $(WIN_LINK_FLAGS) -o $@ $(CMD_STRIP) $@
+	$(CXX) $^ $(WIN_BUILD_FLAGS) $(NATIVE_FLAGS) $(WIN_LINK_FLAGS) -o $@
 
 carla-discovery-posix32: $(OBJS) $(LIBS_posix32)
-	$(CXX) $^ $(POSIX_BUILD_FLAGS) $(POSIX_32BIT_FLAGS) $(POSIX_LINK_FLAGS) -o $@ $(CMD_STRIP) $@
+	$(CXX) $^ $(POSIX_BUILD_FLAGS) $(POSIX_32BIT_FLAGS) $(POSIX_LINK_FLAGS) -o $@
 
 carla-discovery-posix64: $(OBJS) $(LIBS_posix64)
-	$(CXX) $^ $(POSIX_BUILD_FLAGS) $(POSIX_64BIT_FLAGS) $(POSIX_LINK_FLAGS) -o $@ $(CMD_STRIP) $@
+	$(CXX) $^ $(POSIX_BUILD_FLAGS) $(POSIX_64BIT_FLAGS) $(POSIX_LINK_FLAGS) -o $@
 
 carla-discovery-win32.exe: $(OBJS) $(LIBS_win32)
-	$(CXX) $^ $(WIN_BUILD_FLAGS) $(WIN_32BIT_FLAGS) $(WIN_LINK_FLAGS) -o $@ $(CMD_STRIP) $@
+	$(CXX) $^ $(WIN_BUILD_FLAGS) $(WIN_32BIT_FLAGS) $(WIN_LINK_FLAGS) -o $@
 
 carla-discovery-win64.exe: $(OBJS) $(LIBS_win64)
-	$(CXX) $^ $(WIN_BUILD_FLAGS) $(WIN_64BIT_FLAGS) $(WIN_LINK_FLAGS) -o $@ $(CMD_STRIP) $@
+	$(CXX) $^ $(WIN_BUILD_FLAGS) $(WIN_64BIT_FLAGS) $(WIN_LINK_FLAGS) -o $@
 
 # --------------------------------------------------------------
 

@@ -49,13 +49,13 @@ win64:   ../rtmempool.win64.a
 	$(AR) rs $@ $^
 
 ../rtmempool.dll: $(OBJS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -o $@ $(CMD_STRIP) $@
+	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
 
 ../rtmempool.dylib: $(OBJS)
-	$(CXX) $^ -dynamiclib $(LINK_FLAGS) -o $@ $(CMD_STRIP) $@
+	$(CXX) $^ -dynamiclib $(LINK_FLAGS) -o $@
 
 ../rtmempool.so: $(OBJS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -o $@ $(CMD_STRIP) $@
+	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
 
 # --------------------------------------------------------------
 

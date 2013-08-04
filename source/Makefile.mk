@@ -31,18 +31,20 @@ STRIP ?= strip
 
 BASE_FLAGS = -Wall -Wextra -fPIC -DPIC -pipe
 BASE_OPTS  = -O2 -ffast-math -mtune=generic -msse -mfpmath=sse
+BASE_OPTS += -fdata-sections -ffunction-sections
+LINK_OPTS  = -Wl,--gc-sections
 
 ifeq ($(RASPPI),true)
 # Raspberry-Pi optimization flags
 BASE_OPTS  = -O2 -ffast-math -march=armv6 -mfpu=vfp -mfloat-abi=hard
+LINK_OPTS  =
 endif
 
 ifeq ($(DEBUG),true)
 BASE_FLAGS += -DDEBUG -O0 -g
-CMD_STRIP   = \# no-strip
 else
 BASE_FLAGS += -DNDEBUG $(BASE_OPTS) -fvisibility=hidden
-CMD_STRIP   = && $(STRIP)
+LINK_OPTS  += -Wl,--strip-all
 endif
 
 32BIT_FLAGS = -m32
@@ -50,7 +52,7 @@ endif
 
 BUILD_C_FLAGS   = $(BASE_FLAGS) -std=gnu99 $(CFLAGS)
 BUILD_CXX_FLAGS = $(BASE_FLAGS) -std=gnu++0x $(CXXFLAGS)
-LINK_FLAGS      = $(LDFLAGS)
+LINK_FLAGS      = $(LINK_OPTS) $(LDFLAGS)
 
 ifeq ($(MACOS),true)
 # No C++11 support; force 32bit per default

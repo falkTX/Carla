@@ -51,13 +51,13 @@ win64:   ../juce_core.win64.a
 	$(AR) rs $@ $^
 
 ../juce_core.dll: $(OBJS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -o $@ $(CMD_STRIP) $@
+	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
 
 ../juce_core.dylib: $(OBJS)
-	$(CXX) $^ -dynamiclib $(LINK_FLAGS) -o $@ $(CMD_STRIP) $@
+	$(CXX) $^ -dynamiclib $(LINK_FLAGS) -o $@
 
 ../juce_core.so: $(OBJS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -o $@ $(CMD_STRIP) $@
+	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
 
 # --------------------------------------------------------------
 

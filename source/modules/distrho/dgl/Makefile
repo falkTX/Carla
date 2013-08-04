@@ -99,13 +99,13 @@ win64:   ../../dgl.win64.a
 	$(AR) rs $@ $^
 
 ../../dgl.dll: $(OBJS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -lopengl32 -lgdi32 -o $@ $(CMD_STRIP) $@
+	$(CXX) $^ -shared $(LINK_FLAGS) -lopengl32 -lgdi32 -o $@
 
 ../../dgl.dylib: $(OBJS)
-	$(CXX) $^ -dynamiclib $(LINK_FLAGS) -framework OpenGL -framework Cocoa -o $@ $(CMD_STRIP) $@
+	$(CXX) $^ -dynamiclib $(LINK_FLAGS) -framework OpenGL -framework Cocoa -o $@
 
 ../../dgl.so: $(OBJS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -lGL -lX11 -o $@ $(CMD_STRIP) $@
+	$(CXX) $^ -shared $(LINK_FLAGS) -lGL -lX11 -o $@
 
 # --------------------------------------------------------------
 
