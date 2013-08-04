@@ -36,11 +36,11 @@ public:
     {
         carla_debug("Vst3Plugin::~Vst3Plugin()");
 
-        kData->singleMutex.lock();
-        kData->masterMutex.lock();
+        pData->singleMutex.lock();
+        pData->masterMutex.lock();
 
-        if (kData->client != nullptr && kData->client->isActive())
-            kData->client->deactivate();
+        if (pData->client != nullptr && pData->client->isActive())
+            pData->client->deactivate();
     }
 
     // -------------------------------------------------------------------

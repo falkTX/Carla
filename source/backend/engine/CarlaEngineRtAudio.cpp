@@ -361,17 +361,17 @@ public:
         return (! hasError);
     }
 
-    bool isRunning() const override
+    bool isRunning() const noexcept override
     {
         return fAudio.isStreamRunning();
     }
 
-    bool isOffline() const override
+    bool isOffline() const noexcept override
     {
         return false;
     }
 
-    EngineType type() const override
+    EngineType getType() const noexcept override
     {
         return kEngineTypeRtAudio;
     }
@@ -802,12 +802,12 @@ protected:
         CARLA_ASSERT_INT2(nframes == fBufferSize, nframes, fBufferSize);
         CARLA_ASSERT(outsPtr != nullptr);
 
-        if (kData->curPluginCount == 0 || fAudioCountOut == 0 || ! fAudioIsReady)
+        if (pData->curPluginCount == 0 || fAudioCountOut == 0 || ! fAudioIsReady)
         {
             if (fAudioCountOut > 0 && fAudioIsReady)
                 carla_zeroFloat(outsPtr, nframes*fAudioCountOut);
 
-            return proccessPendingEvents();
+            return runPendingRtEvents();
         }
 
         // initialize audio input
@@ -835,7 +835,7 @@ protected:
         carla_zeroFloat(fAudioBufRackOut[1], nframes);
 
         // initialize input events
-        carla_zeroMem(kData->bufEvents.in, sizeof(EngineEvent)*INTERNAL_EVENT_COUNT);
+        carla_zeroMem(pData->bufEvents.in, sizeof(EngineEvent)*INTERNAL_EVENT_COUNT);
 
         if (fMidiInEvents.mutex.tryLock())
         {
@@ -846,7 +846,7 @@ protected:
             {
                 const RtMidiEvent& midiEvent(fMidiInEvents.data.getFirst(true));
 
-                EngineEvent& engineEvent(kData->bufEvents.in[engineEventIndex++]);
+                EngineEvent& engineEvent(pData->bufEvents.in[engineEventIndex++]);
                 engineEvent.clear();
 
                 const uint8_t midiStatus  = MIDI_GET_STATUS_FROM_DATA(midiEvent.data);
@@ -1033,7 +1033,7 @@ protected:
             //fMidiOutEvents...
         }
 
-        proccessPendingEvents();
+        runPendingRtEvents();
         return;
 
         // unused

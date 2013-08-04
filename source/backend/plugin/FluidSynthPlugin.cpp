@@ -64,7 +64,7 @@ public:
         // define settings
         fluid_settings_setint(fSettings, "synth.audio-channels", use16Outs ? 16 : 1);
         fluid_settings_setint(fSettings, "synth.audio-groups", use16Outs ? 16 : 1);
-        fluid_settings_setnum(fSettings, "synth.sample-rate", kData->engine->getSampleRate());
+        fluid_settings_setnum(fSettings, "synth.sample-rate", pData->engine->getSampleRate());
         fluid_settings_setint(fSettings, "synth.threadsafe-api ", 0);
 
         // create synth
@@ -72,7 +72,7 @@ public:
         CARLA_ASSERT(fSynth != nullptr);
 
 #ifdef FLUIDSYNTH_VERSION_NEW_API
-        fluid_synth_set_sample_rate(fSynth, kData->engine->getSampleRate());
+        fluid_synth_set_sample_rate(fSynth, pData->engine->getSampleRate());
 #endif
 
         // set default values
@@ -93,16 +93,16 @@ public:
     {
         carla_debug("FluidSynthPlugin::~FluidSynthPlugin()");
 
-        kData->singleMutex.lock();
-        kData->masterMutex.lock();
+        pData->singleMutex.lock();
+        pData->masterMutex.lock();
 
-        if (kData->client != nullptr && kData->client->isActive())
-            kData->client->deactivate();
+        if (pData->client != nullptr && pData->client->isActive())
+            pData->client->deactivate();
 
-        if (kData->active)
+        if (pData->active)
         {
             deactivate();
-            kData->active = false;
+            pData->active = false;
         }
 
         delete_fluid_synth(fSynth);
@@ -129,7 +129,7 @@ public:
 
     uint32_t parameterScalePointCount(const uint32_t parameterId) const override
     {
-        CARLA_ASSERT(parameterId < kData->param.count);
+        CARLA_ASSERT(parameterId < pData->param.count);
 
         switch (parameterId)
         {
@@ -165,14 +165,14 @@ public:
 
     float getParameterValue(const uint32_t parameterId) override
     {
-        CARLA_ASSERT(parameterId < kData->param.count);
+        CARLA_ASSERT(parameterId < pData->param.count);
 
         return fParamBuffers[parameterId];
     }
 
     float getParameterScalePointValue(const uint32_t parameterId, const uint32_t scalePointId) override
     {
-        CARLA_ASSERT(parameterId < kData->param.count);
+        CARLA_ASSERT(parameterId < pData->param.count);
         CARLA_ASSERT(scalePointId < parameterScalePointCount(parameterId));
 
         switch (parameterId)
@@ -231,7 +231,7 @@ public:
 
     void getParameterName(const uint32_t parameterId, char* const strBuf) override
     {
-        CARLA_ASSERT(parameterId < kData->param.count);
+        CARLA_ASSERT(parameterId < pData->param.count);
 
         switch (parameterId)
         {
@@ -285,7 +285,7 @@ public:
 
     void getParameterUnit(const uint32_t parameterId, char* const strBuf) override
     {
-        CARLA_ASSERT(parameterId < kData->param.count);
+        CARLA_ASSERT(parameterId < pData->param.count);
 
         switch (parameterId)
         {
@@ -303,7 +303,7 @@ public:
 
     void getParameterScalePointLabel(const uint32_t parameterId, const uint32_t scalePointId, char* const strBuf) override
     {
-        CARLA_ASSERT(parameterId < kData->param.count);
+        CARLA_ASSERT(parameterId < pData->param.count);
         CARLA_ASSERT(scalePointId < parameterScalePointCount(parameterId));
 
         switch (parameterId)
@@ -361,7 +361,7 @@ public:
     void setCtrlChannel(const int8_t channel, const bool sendOsc, const bool sendCallback) override
     {
         if (channel < MAX_MIDI_CHANNELS)
-            kData->midiprog.current = fCurMidiProgs[channel];
+            pData->midiprog.current = fCurMidiProgs[channel];
 
         CarlaPlugin::setCtrlChannel(channel, sendOsc, sendCallback);
     }
@@ -371,9 +371,9 @@ public:
 
     void setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) override
     {
-        CARLA_ASSERT(parameterId < kData->param.count);
+        CARLA_ASSERT(parameterId < pData->param.count);
 
-        const float fixedValue(kData->param.fixValue(parameterId, value));
+        const float fixedValue(pData->param.fixValue(parameterId, value));
         fParamBuffers[parameterId] = fixedValue;
 
         {
@@ -454,18 +454,18 @@ public:
                 bool ok;
                 uint index = midiProg.toUInt(&ok);
 
-                if (ok && index < kData->midiprog.count)
+                if (ok && index < pData->midiprog.count)
                 {
-                    const uint32_t bank    = kData->midiprog.data[index].bank;
-                    const uint32_t program = kData->midiprog.data[index].program;
+                    const uint32_t bank    = pData->midiprog.data[index].bank;
+                    const uint32_t program = pData->midiprog.data[index].program;
 
                     fluid_synth_program_select(fSynth, i, fSynthId, bank, program);
                     fCurMidiProgs[i] = index;
 
-                    if (kData->ctrlChannel == static_cast<int32_t>(i))
+                    if (pData->ctrlChannel == static_cast<int32_t>(i))
                     {
-                        kData->midiprog.current = index;
-                        kData->engine->callback(CALLBACK_MIDI_PROGRAM_CHANGED, fId, index, 0, 0.0f, nullptr);
+                        pData->midiprog.current = index;
+                        pData->engine->callback(CALLBACK_MIDI_PROGRAM_CHANGED, fId, index, 0, 0.0f, nullptr);
                     }
                 }
 
@@ -479,24 +479,24 @@ public:
     void setMidiProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) override
     {
         CARLA_ASSERT(fSynth != nullptr);
-        CARLA_ASSERT(index >= -1 && index < static_cast<int32_t>(kData->midiprog.count));
+        CARLA_ASSERT(index >= -1 && index < static_cast<int32_t>(pData->midiprog.count));
 
         if (index < -1)
             index = -1;
-        else if (index > static_cast<int32_t>(kData->midiprog.count))
+        else if (index > static_cast<int32_t>(pData->midiprog.count))
             return;
 
-        if (kData->ctrlChannel < 0 || kData->ctrlChannel >= MAX_MIDI_CHANNELS)
+        if (pData->ctrlChannel < 0 || pData->ctrlChannel >= MAX_MIDI_CHANNELS)
             return;
 
         if (index >= 0)
         {
-            const uint32_t bank    = kData->midiprog.data[index].bank;
-            const uint32_t program = kData->midiprog.data[index].program;
+            const uint32_t bank    = pData->midiprog.data[index].bank;
+            const uint32_t program = pData->midiprog.data[index].program;
 
             //const ScopedSingleProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
-            fluid_synth_program_select(fSynth, kData->ctrlChannel, fSynthId, bank, program);
-            fCurMidiProgs[kData->ctrlChannel] = index;
+            fluid_synth_program_select(fSynth, pData->ctrlChannel, fSynthId, bank, program);
+            fCurMidiProgs[pData->ctrlChannel] = index;
         }
 
         CarlaPlugin::setMidiProgram(index, sendGui, sendOsc, sendCallback);
@@ -513,20 +513,20 @@ public:
     void reload() override
     {
         carla_debug("FluidSynthPlugin::reload() - start");
-        CARLA_ASSERT(kData->engine != nullptr);
+        CARLA_ASSERT(pData->engine != nullptr);
         CARLA_ASSERT(fSynth != nullptr);
 
-        if (kData->engine == nullptr)
+        if (pData->engine == nullptr)
             return;
         if (fSynth == nullptr)
             return;
 
-        const ProcessMode processMode(kData->engine->getProccessMode());
+        const ProcessMode processMode(pData->engine->getProccessMode());
 
         // Safely disable plugin for reload
         const ScopedDisabler sd(this);
 
-        if (kData->active)
+        if (pData->active)
             deactivate();
 
         clearBuffers();
@@ -535,10 +535,10 @@ public:
         aOuts  = kUses16Outs ? 32 : 2;
         params = FluidSynthParametersMax;
 
-        kData->audioOut.createNew(aOuts);
-        kData->param.createNew(params);
+        pData->audioOut.createNew(aOuts);
+        pData->param.createNew(params);
 
-        const int   portNameSize = kData->engine->maxPortNameSize();
+        const int   portNameSize = pData->engine->maxPortNameSize();
         CarlaString portName;
 
         // ---------------------------------------
@@ -570,8 +570,8 @@ public:
 
                 portName.truncate(portNameSize);
 
-                kData->audioOut.ports[j].port   = (CarlaEngineAudioPort*)kData->client->addPort(kEnginePortTypeAudio, portName, false);
-                kData->audioOut.ports[j].rindex = j;
+                pData->audioOut.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false);
+                pData->audioOut.ports[j].rindex = j;
             }
 
             fAudio16Buffers = new float*[aOuts];
@@ -593,8 +593,8 @@ public:
             portName += "out-left";
             portName.truncate(portNameSize);
 
-            kData->audioOut.ports[0].port   = (CarlaEngineAudioPort*)kData->client->addPort(kEnginePortTypeAudio, portName, false);
-            kData->audioOut.ports[0].rindex = 0;
+            pData->audioOut.ports[0].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false);
+            pData->audioOut.ports[0].rindex = 0;
 
             // out-right
             portName.clear();
@@ -608,8 +608,8 @@ public:
             portName += "out-right";
             portName.truncate(portNameSize);
 
-            kData->audioOut.ports[1].port   = (CarlaEngineAudioPort*)kData->client->addPort(kEnginePortTypeAudio, portName, false);
-            kData->audioOut.ports[1].rindex = 1;
+            pData->audioOut.ports[1].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false);
+            pData->audioOut.ports[1].rindex = 1;
         }
 
         // ---------------------------------------
@@ -627,7 +627,7 @@ public:
             portName += "event-in";
             portName.truncate(portNameSize);
 
-            kData->event.portIn = (CarlaEngineEventPort*)kData->client->addPort(kEnginePortTypeEvent, portName, true);
+            pData->event.portIn = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true);
         }
 
         // ---------------------------------------
@@ -645,232 +645,232 @@ public:
             portName += "event-out";
             portName.truncate(portNameSize);
 
-            kData->event.portOut = (CarlaEngineEventPort*)kData->client->addPort(kEnginePortTypeEvent, portName, false);
+            pData->event.portOut = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, false);
         }
 
         // ----------------------
         j = FluidSynthReverbOnOff;
-        kData->param.data[j].index  = j;
-        kData->param.data[j].rindex = j;
-        kData->param.data[j].type   = PARAMETER_INPUT;
-        kData->param.data[j].hints  = PARAMETER_IS_ENABLED | PARAMETER_IS_AUTOMABLE | PARAMETER_IS_BOOLEAN;
-        kData->param.data[j].midiChannel = 0;
-        kData->param.data[j].midiCC = -1;
-        kData->param.ranges[j].min = 0.0f;
-        kData->param.ranges[j].max = 1.0f;
-        kData->param.ranges[j].def = 0.0f; // off
-        kData->param.ranges[j].step = 1.0f;
-        kData->param.ranges[j].stepSmall = 1.0f;
-        kData->param.ranges[j].stepLarge = 1.0f;
-        fParamBuffers[j] = kData->param.ranges[j].def;
+        pData->param.data[j].index  = j;
+        pData->param.data[j].rindex = j;
+        pData->param.data[j].type   = PARAMETER_INPUT;
+        pData->param.data[j].hints  = PARAMETER_IS_ENABLED | PARAMETER_IS_AUTOMABLE | PARAMETER_IS_BOOLEAN;
+        pData->param.data[j].midiChannel = 0;
+        pData->param.data[j].midiCC = -1;
+        pData->param.ranges[j].min = 0.0f;
+        pData->param.ranges[j].max = 1.0f;
+        pData->param.ranges[j].def = 0.0f; // off
+        pData->param.ranges[j].step = 1.0f;
+        pData->param.ranges[j].stepSmall = 1.0f;
+        pData->param.ranges[j].stepLarge = 1.0f;
+        fParamBuffers[j] = pData->param.ranges[j].def;
 
         // ----------------------
         j = FluidSynthReverbRoomSize;
-        kData->param.data[j].index  = j;
-        kData->param.data[j].rindex = j;
-        kData->param.data[j].type   = PARAMETER_INPUT;
-        kData->param.data[j].hints  = PARAMETER_IS_ENABLED | PARAMETER_IS_AUTOMABLE;
-        kData->param.data[j].midiChannel = 0;
-        kData->param.data[j].midiCC = -1;
-        kData->param.ranges[j].min = 0.0f;
-        kData->param.ranges[j].max = 1.2f;
-        kData->param.ranges[j].def = FLUID_REVERB_DEFAULT_ROOMSIZE;
-        kData->param.ranges[j].step = 0.01f;
-        kData->param.ranges[j].stepSmall = 0.0001f;
-        kData->param.ranges[j].stepLarge = 0.1f;
-        fParamBuffers[j] = kData->param.ranges[j].def;
+        pData->param.data[j].index  = j;
+        pData->param.data[j].rindex = j;
+        pData->param.data[j].type   = PARAMETER_INPUT;
+        pData->param.data[j].hints  = PARAMETER_IS_ENABLED | PARAMETER_IS_AUTOMABLE;
+        pData->param.data[j].midiChannel = 0;
+        pData->param.data[j].midiCC = -1;
+        pData->param.ranges[j].min = 0.0f;
+        pData->param.ranges[j].max = 1.2f;
+        pData->param.ranges[j].def = FLUID_REVERB_DEFAULT_ROOMSIZE;
+        pData->param.ranges[j].step = 0.01f;
+        pData->param.ranges[j].stepSmall = 0.0001f;
+        pData->param.ranges[j].stepLarge = 0.1f;
+        fParamBuffers[j] = pData->param.ranges[j].def;
 
         // ----------------------
         j = FluidSynthReverbDamp;
-        kData->param.data[j].index  = j;
-        kData->param.data[j].rindex = j;
-        kData->param.data[j].type   = PARAMETER_INPUT;
-        kData->param.data[j].hints  = PARAMETER_IS_ENABLED | PARAMETER_IS_AUTOMABLE;
-        kData->param.data[j].midiChannel = 0;
-        kData->param.data[j].midiCC = -1;
-        kData->param.ranges[j].min = 0.0f;
-        kData->param.ranges[j].max = 1.0f;
-        kData->param.ranges[j].def = FLUID_REVERB_DEFAULT_DAMP;
-        kData->param.ranges[j].step = 0.01f;
-        kData->param.ranges[j].stepSmall = 0.0001f;
-        kData->param.ranges[j].stepLarge = 0.1f;
-        fParamBuffers[j] = kData->param.ranges[j].def;
+        pData->param.data[j].index  = j;
+        pData->param.data[j].rindex = j;
+        pData->param.data[j].type   = PARAMETER_INPUT;
+        pData->param.data[j].hints  = PARAMETER_IS_ENABLED | PARAMETER_IS_AUTOMABLE;
+        pData->param.data[j].midiChannel = 0;
+        pData->param.data[j].midiCC = -1;
+        pData->param.ranges[j].min = 0.0f;
+        pData->param.ranges[j].max = 1.0f;
+        pData->param.ranges[j].def = FLUID_REVERB_DEFAULT_DAMP;
+        pData->param.ranges[j].step = 0.01f;
+        pData->param.ranges[j].stepSmall = 0.0001f;
+        pData->param.ranges[j].stepLarge = 0.1f;
+        fParamBuffers[j] = pData->param.ranges[j].def;
 
         // ----------------------
         j = FluidSynthReverbLevel;
-        kData->param.data[j].index  = j;
-        kData->param.data[j].rindex = j;
-        kData->param.data[j].type   = PARAMETER_INPUT;
-        kData->param.data[j].hints  = PARAMETER_IS_ENABLED | PARAMETER_IS_AUTOMABLE;
-        kData->param.data[j].midiChannel = 0;
-        kData->param.data[j].midiCC = MIDI_CONTROL_REVERB_SEND_LEVEL;
-        kData->param.ranges[j].min = 0.0f;
-        kData->param.ranges[j].max = 1.0f;
-        kData->param.ranges[j].def = FLUID_REVERB_DEFAULT_LEVEL;
-        kData->param.ranges[j].step = 0.01f;
-        kData->param.ranges[j].stepSmall = 0.0001f;
-        kData->param.ranges[j].stepLarge = 0.1f;
-        fParamBuffers[j] = kData->param.ranges[j].def;
+        pData->param.data[j].index  = j;
+        pData->param.data[j].rindex = j;
+        pData->param.data[j].type   = PARAMETER_INPUT;
+        pData->param.data[j].hints  = PARAMETER_IS_ENABLED | PARAMETER_IS_AUTOMABLE;
+        pData->param.data[j].midiChannel = 0;
+        pData->param.data[j].midiCC = MIDI_CONTROL_REVERB_SEND_LEVEL;
+        pData->param.ranges[j].min = 0.0f;
+        pData->param.ranges[j].max = 1.0f;
+        pData->param.ranges[j].def = FLUID_REVERB_DEFAULT_LEVEL;
+        pData->param.ranges[j].step = 0.01f;
+        pData->param.ranges[j].stepSmall = 0.0001f;
+        pData->param.ranges[j].stepLarge = 0.1f;
+        fParamBuffers[j] = pData->param.ranges[j].def;
 
         // ----------------------
         j = FluidSynthReverbWidth;
-        kData->param.data[j].index  = j;
-        kData->param.data[j].rindex = j;
-        kData->param.data[j].type   = PARAMETER_INPUT;
-        kData->param.data[j].hints  = PARAMETER_IS_ENABLED | PARAMETER_IS_AUTOMABLE;
-        kData->param.data[j].midiChannel = 0;
-        kData->param.data[j].midiCC = -1;
-        kData->param.ranges[j].min = 0.0f;
-        kData->param.ranges[j].max = 10.0f; // should be 100, but that sounds too much
-        kData->param.ranges[j].def = FLUID_REVERB_DEFAULT_WIDTH;
-        kData->param.ranges[j].step = 0.01f;
-        kData->param.ranges[j].stepSmall = 0.0001f;
-        kData->param.ranges[j].stepLarge = 0.1f;
-        fParamBuffers[j] = kData->param.ranges[j].def;
+        pData->param.data[j].index  = j;
+        pData->param.data[j].rindex = j;
+        pData->param.data[j].type   = PARAMETER_INPUT;
+        pData->param.data[j].hints  = PARAMETER_IS_ENABLED | PARAMETER_IS_AUTOMABLE;
+        pData->param.data[j].midiChannel = 0;
+        pData->param.data[j].midiCC = -1;
+        pData->param.ranges[j].min = 0.0f;
+        pData->param.ranges[j].max = 10.0f; // should be 100, but that sounds too much
+        pData->param.ranges[j].def = FLUID_REVERB_DEFAULT_WIDTH;
+        pData->param.ranges[j].step = 0.01f;
+        pData->param.ranges[j].stepSmall = 0.0001f;
+        pData->param.ranges[j].stepLarge = 0.1f;
+        fParamBuffers[j] = pData->param.ranges[j].def;
 
         // ----------------------
         j = FluidSynthChorusOnOff;
-        kData->param.data[j].index  = j;
-        kData->param.data[j].rindex = j;
-        kData->param.data[j].type   = PARAMETER_INPUT;
-        kData->param.data[j].hints  = PARAMETER_IS_ENABLED | PARAMETER_IS_BOOLEAN;
-        kData->param.data[j].midiChannel = 0;
-        kData->param.data[j].midiCC = -1;
-        kData->param.ranges[j].min = 0.0f;
-        kData->param.ranges[j].max = 1.0f;
-        kData->param.ranges[j].def = 0.0f; // off
-        kData->param.ranges[j].step = 1.0f;
-        kData->param.ranges[j].stepSmall = 1.0f;
-        kData->param.ranges[j].stepLarge = 1.0f;
-        fParamBuffers[j] = kData->param.ranges[j].def;
+        pData->param.data[j].index  = j;
+        pData->param.data[j].rindex = j;
+        pData->param.data[j].type   = PARAMETER_INPUT;
+        pData->param.data[j].hints  = PARAMETER_IS_ENABLED | PARAMETER_IS_BOOLEAN;
+        pData->param.data[j].midiChannel = 0;
+        pData->param.data[j].midiCC = -1;
+        pData->param.ranges[j].min = 0.0f;
+        pData->param.ranges[j].max = 1.0f;
+        pData->param.ranges[j].def = 0.0f; // off
+        pData->param.ranges[j].step = 1.0f;
+        pData->param.ranges[j].stepSmall = 1.0f;
+        pData->param.ranges[j].stepLarge = 1.0f;
+        fParamBuffers[j] = pData->param.ranges[j].def;
 
         // ----------------------
         j = FluidSynthChorusNr;
-        kData->param.data[j].index  = j;
-        kData->param.data[j].rindex = j;
-        kData->param.data[j].type   = PARAMETER_INPUT;
-        kData->param.data[j].hints  = PARAMETER_IS_ENABLED | PARAMETER_IS_INTEGER;
-        kData->param.data[j].midiChannel = 0;
-        kData->param.data[j].midiCC = -1;
-        kData->param.ranges[j].min = 0.0f;
-        kData->param.ranges[j].max = 99.0f;
-        kData->param.ranges[j].def = FLUID_CHORUS_DEFAULT_N;
-        kData->param.ranges[j].step = 1.0f;
-        kData->param.ranges[j].stepSmall = 1.0f;
-        kData->param.ranges[j].stepLarge = 10.0f;
-        fParamBuffers[j] = kData->param.ranges[j].def;
+        pData->param.data[j].index  = j;
+        pData->param.data[j].rindex = j;
+        pData->param.data[j].type   = PARAMETER_INPUT;
+        pData->param.data[j].hints  = PARAMETER_IS_ENABLED | PARAMETER_IS_INTEGER;
+        pData->param.data[j].midiChannel = 0;
+        pData->param.data[j].midiCC = -1;
+        pData->param.ranges[j].min = 0.0f;
+        pData->param.ranges[j].max = 99.0f;
+        pData->param.ranges[j].def = FLUID_CHORUS_DEFAULT_N;
+        pData->param.ranges[j].step = 1.0f;
+        pData->param.ranges[j].stepSmall = 1.0f;
+        pData->param.ranges[j].stepLarge = 10.0f;
+        fParamBuffers[j] = pData->param.ranges[j].def;
 
         // ----------------------
         j = FluidSynthChorusLevel;
-        kData->param.data[j].index  = j;
-        kData->param.data[j].rindex = j;
-        kData->param.data[j].type   = PARAMETER_INPUT;
-        kData->param.data[j].hints  = PARAMETER_IS_ENABLED;
-        kData->param.data[j].midiChannel = 0;
-        kData->param.data[j].midiCC = 0; //MIDI_CONTROL_CHORUS_SEND_LEVEL;
-        kData->param.ranges[j].min = 0.0f;
-        kData->param.ranges[j].max = 10.0f;
-        kData->param.ranges[j].def = FLUID_CHORUS_DEFAULT_LEVEL;
-        kData->param.ranges[j].step = 0.01f;
-        kData->param.ranges[j].stepSmall = 0.0001f;
-        kData->param.ranges[j].stepLarge = 0.1f;
-        fParamBuffers[j] = kData->param.ranges[j].def;
+        pData->param.data[j].index  = j;
+        pData->param.data[j].rindex = j;
+        pData->param.data[j].type   = PARAMETER_INPUT;
+        pData->param.data[j].hints  = PARAMETER_IS_ENABLED;
+        pData->param.data[j].midiChannel = 0;
+        pData->param.data[j].midiCC = 0; //MIDI_CONTROL_CHORUS_SEND_LEVEL;
+        pData->param.ranges[j].min = 0.0f;
+        pData->param.ranges[j].max = 10.0f;
+        pData->param.ranges[j].def = FLUID_CHORUS_DEFAULT_LEVEL;
+        pData->param.ranges[j].step = 0.01f;
+        pData->param.ranges[j].stepSmall = 0.0001f;
+        pData->param.ranges[j].stepLarge = 0.1f;
+        fParamBuffers[j] = pData->param.ranges[j].def;
 
         // ----------------------
         j = FluidSynthChorusSpeedHz;
-        kData->param.data[j].index  = j;
-        kData->param.data[j].rindex = j;
-        kData->param.data[j].type   = PARAMETER_INPUT;
-        kData->param.data[j].hints  = PARAMETER_IS_ENABLED;
-        kData->param.data[j].midiChannel = 0;
-        kData->param.data[j].midiCC = -1;
-        kData->param.ranges[j].min = 0.29f;
-        kData->param.ranges[j].max = 5.0f;
-        kData->param.ranges[j].def = FLUID_CHORUS_DEFAULT_SPEED;
-        kData->param.ranges[j].step = 0.01f;
-        kData->param.ranges[j].stepSmall = 0.0001f;
-        kData->param.ranges[j].stepLarge = 0.1f;
-        fParamBuffers[j] = kData->param.ranges[j].def;
+        pData->param.data[j].index  = j;
+        pData->param.data[j].rindex = j;
+        pData->param.data[j].type   = PARAMETER_INPUT;
+        pData->param.data[j].hints  = PARAMETER_IS_ENABLED;
+        pData->param.data[j].midiChannel = 0;
+        pData->param.data[j].midiCC = -1;
+        pData->param.ranges[j].min = 0.29f;
+        pData->param.ranges[j].max = 5.0f;
+        pData->param.ranges[j].def = FLUID_CHORUS_DEFAULT_SPEED;
+        pData->param.ranges[j].step = 0.01f;
+        pData->param.ranges[j].stepSmall = 0.0001f;
+        pData->param.ranges[j].stepLarge = 0.1f;
+        fParamBuffers[j] = pData->param.ranges[j].def;
 
         // ----------------------
         j = FluidSynthChorusDepthMs;
-        kData->param.data[j].index  = j;
-        kData->param.data[j].rindex = j;
-        kData->param.data[j].type   = PARAMETER_INPUT;
-        kData->param.data[j].hints  = PARAMETER_IS_ENABLED;
-        kData->param.data[j].midiChannel = 0;
-        kData->param.data[j].midiCC = -1;
-        kData->param.ranges[j].min = 0.0f;
-        kData->param.ranges[j].max = 2048000.0 / kData->engine->getSampleRate();
-        kData->param.ranges[j].def = FLUID_CHORUS_DEFAULT_DEPTH;
-        kData->param.ranges[j].step = 0.01f;
-        kData->param.ranges[j].stepSmall = 0.0001f;
-        kData->param.ranges[j].stepLarge = 0.1f;
-        fParamBuffers[j] = kData->param.ranges[j].def;
+        pData->param.data[j].index  = j;
+        pData->param.data[j].rindex = j;
+        pData->param.data[j].type   = PARAMETER_INPUT;
+        pData->param.data[j].hints  = PARAMETER_IS_ENABLED;
+        pData->param.data[j].midiChannel = 0;
+        pData->param.data[j].midiCC = -1;
+        pData->param.ranges[j].min = 0.0f;
+        pData->param.ranges[j].max = 2048000.0 / pData->engine->getSampleRate();
+        pData->param.ranges[j].def = FLUID_CHORUS_DEFAULT_DEPTH;
+        pData->param.ranges[j].step = 0.01f;
+        pData->param.ranges[j].stepSmall = 0.0001f;
+        pData->param.ranges[j].stepLarge = 0.1f;
+        fParamBuffers[j] = pData->param.ranges[j].def;
 
         // ----------------------
         j = FluidSynthChorusType;
-        kData->param.data[j].index  = j;
-        kData->param.data[j].rindex = j;
-        kData->param.data[j].type   = PARAMETER_INPUT;
-        kData->param.data[j].hints  = PARAMETER_IS_ENABLED | PARAMETER_IS_INTEGER | PARAMETER_USES_SCALEPOINTS;
-        kData->param.data[j].midiChannel = 0;
-        kData->param.data[j].midiCC = -1;
-        kData->param.ranges[j].min = FLUID_CHORUS_MOD_SINE;
-        kData->param.ranges[j].max = FLUID_CHORUS_MOD_TRIANGLE;
-        kData->param.ranges[j].def = FLUID_CHORUS_DEFAULT_TYPE;
-        kData->param.ranges[j].step = 1.0f;
-        kData->param.ranges[j].stepSmall = 1.0f;
-        kData->param.ranges[j].stepLarge = 1.0f;
-        fParamBuffers[j] = kData->param.ranges[j].def;
+        pData->param.data[j].index  = j;
+        pData->param.data[j].rindex = j;
+        pData->param.data[j].type   = PARAMETER_INPUT;
+        pData->param.data[j].hints  = PARAMETER_IS_ENABLED | PARAMETER_IS_INTEGER | PARAMETER_USES_SCALEPOINTS;
+        pData->param.data[j].midiChannel = 0;
+        pData->param.data[j].midiCC = -1;
+        pData->param.ranges[j].min = FLUID_CHORUS_MOD_SINE;
+        pData->param.ranges[j].max = FLUID_CHORUS_MOD_TRIANGLE;
+        pData->param.ranges[j].def = FLUID_CHORUS_DEFAULT_TYPE;
+        pData->param.ranges[j].step = 1.0f;
+        pData->param.ranges[j].stepSmall = 1.0f;
+        pData->param.ranges[j].stepLarge = 1.0f;
+        fParamBuffers[j] = pData->param.ranges[j].def;
 
         // ----------------------
         j = FluidSynthPolyphony;
-        kData->param.data[j].index  = j;
-        kData->param.data[j].rindex = j;
-        kData->param.data[j].type   = PARAMETER_INPUT;
-        kData->param.data[j].hints  = PARAMETER_IS_ENABLED | PARAMETER_IS_INTEGER;
-        kData->param.data[j].midiChannel = 0;
-        kData->param.data[j].midiCC = -1;
-        kData->param.ranges[j].min = 1.0f;
-        kData->param.ranges[j].max = 512.0f; // max theoric is 65535
-        kData->param.ranges[j].def = fluid_synth_get_polyphony(fSynth);
-        kData->param.ranges[j].step = 1.0f;
-        kData->param.ranges[j].stepSmall = 1.0f;
-        kData->param.ranges[j].stepLarge = 10.0f;
-        fParamBuffers[j] = kData->param.ranges[j].def;
+        pData->param.data[j].index  = j;
+        pData->param.data[j].rindex = j;
+        pData->param.data[j].type   = PARAMETER_INPUT;
+        pData->param.data[j].hints  = PARAMETER_IS_ENABLED | PARAMETER_IS_INTEGER;
+        pData->param.data[j].midiChannel = 0;
+        pData->param.data[j].midiCC = -1;
+        pData->param.ranges[j].min = 1.0f;
+        pData->param.ranges[j].max = 512.0f; // max theoric is 65535
+        pData->param.ranges[j].def = fluid_synth_get_polyphony(fSynth);
+        pData->param.ranges[j].step = 1.0f;
+        pData->param.ranges[j].stepSmall = 1.0f;
+        pData->param.ranges[j].stepLarge = 10.0f;
+        fParamBuffers[j] = pData->param.ranges[j].def;
 
         // ----------------------
         j = FluidSynthInterpolation;
-        kData->param.data[j].index  = j;
-        kData->param.data[j].rindex = j;
-        kData->param.data[j].type   = PARAMETER_INPUT;
-        kData->param.data[j].hints  = PARAMETER_IS_ENABLED | PARAMETER_IS_INTEGER | PARAMETER_USES_SCALEPOINTS;
-        kData->param.data[j].midiChannel = 0;
-        kData->param.data[j].midiCC = -1;
-        kData->param.ranges[j].min = FLUID_INTERP_NONE;
-        kData->param.ranges[j].max = FLUID_INTERP_HIGHEST;
-        kData->param.ranges[j].def = FLUID_INTERP_DEFAULT;
-        kData->param.ranges[j].step = 1.0f;
-        kData->param.ranges[j].stepSmall = 1.0f;
-        kData->param.ranges[j].stepLarge = 1.0f;
-        fParamBuffers[j] = kData->param.ranges[j].def;
+        pData->param.data[j].index  = j;
+        pData->param.data[j].rindex = j;
+        pData->param.data[j].type   = PARAMETER_INPUT;
+        pData->param.data[j].hints  = PARAMETER_IS_ENABLED | PARAMETER_IS_INTEGER | PARAMETER_USES_SCALEPOINTS;
+        pData->param.data[j].midiChannel = 0;
+        pData->param.data[j].midiCC = -1;
+        pData->param.ranges[j].min = FLUID_INTERP_NONE;
+        pData->param.ranges[j].max = FLUID_INTERP_HIGHEST;
+        pData->param.ranges[j].def = FLUID_INTERP_DEFAULT;
+        pData->param.ranges[j].step = 1.0f;
+        pData->param.ranges[j].stepSmall = 1.0f;
+        pData->param.ranges[j].stepLarge = 1.0f;
+        fParamBuffers[j] = pData->param.ranges[j].def;
 
         // ----------------------
         j = FluidSynthVoiceCount;
-        kData->param.data[j].index  = j;
-        kData->param.data[j].rindex = j;
-        kData->param.data[j].type   = PARAMETER_OUTPUT;
-        kData->param.data[j].hints  = PARAMETER_IS_ENABLED | PARAMETER_IS_AUTOMABLE | PARAMETER_IS_INTEGER;
-        kData->param.data[j].midiChannel = 0;
-        kData->param.data[j].midiCC = -1;
-        kData->param.ranges[j].min = 0.0f;
-        kData->param.ranges[j].max = 65535.0f;
-        kData->param.ranges[j].def = 0.0f;
-        kData->param.ranges[j].step = 1.0f;
-        kData->param.ranges[j].stepSmall = 1.0f;
-        kData->param.ranges[j].stepLarge = 1.0f;
-        fParamBuffers[j] = kData->param.ranges[j].def;
+        pData->param.data[j].index  = j;
+        pData->param.data[j].rindex = j;
+        pData->param.data[j].type   = PARAMETER_OUTPUT;
+        pData->param.data[j].hints  = PARAMETER_IS_ENABLED | PARAMETER_IS_AUTOMABLE | PARAMETER_IS_INTEGER;
+        pData->param.data[j].midiChannel = 0;
+        pData->param.data[j].midiCC = -1;
+        pData->param.ranges[j].min = 0.0f;
+        pData->param.ranges[j].max = 65535.0f;
+        pData->param.ranges[j].def = 0.0f;
+        pData->param.ranges[j].step = 1.0f;
+        pData->param.ranges[j].stepSmall = 1.0f;
+        pData->param.ranges[j].stepLarge = 1.0f;
+        fParamBuffers[j] = pData->param.ranges[j].def;
 
         // ---------------------------------------
 
@@ -881,14 +881,14 @@ public:
         fHints |= PLUGIN_CAN_BALANCE;
 
         // extra plugin hints
-        kData->extraHints  = 0x0;
-        kData->extraHints |= PLUGIN_HINT_HAS_MIDI_IN;
-        kData->extraHints |= PLUGIN_HINT_CAN_RUN_RACK;
+        pData->extraHints  = 0x0;
+        pData->extraHints |= PLUGIN_HINT_HAS_MIDI_IN;
+        pData->extraHints |= PLUGIN_HINT_CAN_RUN_RACK;
 
-        bufferSizeChanged(kData->engine->getBufferSize());
+        bufferSizeChanged(pData->engine->getBufferSize());
         reloadPrograms(true);
 
-        if (kData->active)
+        if (pData->active)
             activate();
 
         carla_debug("FluidSynthPlugin::reload() - end");
@@ -899,7 +899,7 @@ public:
         carla_debug("FluidSynthPlugin::reloadPrograms(%s)", bool2str(init));
 
         // Delete old programs
-        kData->midiprog.clear();
+        pData->midiprog.clear();
 
         // Query new programs
         uint32_t count = 0;
@@ -922,7 +922,7 @@ public:
         if (count == 0)
             return;
 
-        kData->midiprog.createNew(count);
+        pData->midiprog.createNew(count);
 
         // Update data
         uint32_t i = 0;
@@ -930,16 +930,16 @@ public:
 
         while (f_sfont->iteration_next(f_sfont, &f_preset))
         {
-            CARLA_ASSERT(i < kData->midiprog.count);
-            kData->midiprog.data[i].bank    = f_preset.get_banknum(&f_preset);
-            kData->midiprog.data[i].program = f_preset.get_num(&f_preset);
-            kData->midiprog.data[i].name    = carla_strdup(f_preset.get_name(&f_preset));
+            CARLA_ASSERT(i < pData->midiprog.count);
+            pData->midiprog.data[i].bank    = f_preset.get_banknum(&f_preset);
+            pData->midiprog.data[i].program = f_preset.get_num(&f_preset);
+            pData->midiprog.data[i].name    = carla_strdup(f_preset.get_name(&f_preset));
 
-            if (kData->midiprog.data[i].bank == 128 && ! hasDrums)
+            if (pData->midiprog.data[i].bank == 128 && ! hasDrums)
             {
                 hasDrums  = true;
                 drumIndex = i;
-                drumProg  = kData->midiprog.data[i].program;
+                drumProg  = pData->midiprog.data[i].program;
             }
 
             ++i;
@@ -949,12 +949,12 @@ public:
 
 #ifndef BUILD_BRIDGE
         // Update OSC Names
-        if (kData->engine->isOscControlRegistered())
+        if (pData->engine->isOscControlRegistered())
         {
-            kData->engine->osc_send_control_set_midi_program_count(fId, count);
+            pData->engine->osc_send_control_set_midi_program_count(fId, count);
 
             for (i=0; i < count; ++i)
-                kData->engine->osc_send_control_set_midi_program_data(fId, i, kData->midiprog.data[i].bank, kData->midiprog.data[i].program, kData->midiprog.data[i].name);
+                pData->engine->osc_send_control_set_midi_program_data(fId, i, pData->midiprog.data[i].bank, pData->midiprog.data[i].program, pData->midiprog.data[i].name);
         }
 #endif
 
@@ -968,7 +968,7 @@ public:
 #ifdef FLUIDSYNTH_VERSION_NEW_API
                 fluid_synth_set_channel_type(fSynth, i, CHANNEL_TYPE_MELODIC);
 #endif
-                fluid_synth_program_select(fSynth, i, fSynthId, kData->midiprog.data[0].bank, kData->midiprog.data[0].program);
+                fluid_synth_program_select(fSynth, i, fSynthId, pData->midiprog.data[0].bank, pData->midiprog.data[0].program);
 
                 fCurMidiProgs[i] = 0;
             }
@@ -987,16 +987,16 @@ public:
 #ifdef FLUIDSYNTH_VERSION_NEW_API
                 fluid_synth_set_channel_type(fSynth, 9, CHANNEL_TYPE_MELODIC);
 #endif
-                fluid_synth_program_select(fSynth, 9, fSynthId, kData->midiprog.data[0].bank, kData->midiprog.data[0].program);
+                fluid_synth_program_select(fSynth, 9, fSynthId, pData->midiprog.data[0].bank, pData->midiprog.data[0].program);
 
                 fCurMidiProgs[9] = 0;
             }
 
-            kData->midiprog.current = 0;
+            pData->midiprog.current = 0;
         }
         else
         {
-            kData->engine->callback(CALLBACK_RELOAD_PROGRAMS, fId, 0, 0, 0.0f, nullptr);
+            pData->engine->callback(CALLBACK_RELOAD_PROGRAMS, fId, 0, 0, 0.0f, nullptr);
         }
     }
 
@@ -1010,10 +1010,10 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Check if active
 
-        if (! kData->active)
+        if (! pData->active)
         {
             // disable any output sound
-            for (i=0; i < kData->audioOut.count; ++i)
+            for (i=0; i < pData->audioOut.count; ++i)
                 carla_zeroFloat(outBuffer[i], frames);
 
             return;
@@ -1022,7 +1022,7 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Check if needs reset
 
-        if (kData->needsReset)
+        if (pData->needsReset)
         {
             if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
             {
@@ -1037,13 +1037,13 @@ public:
 #endif
                 }
             }
-            else if (kData->ctrlChannel >= 0 && kData->ctrlChannel < MAX_MIDI_CHANNELS)
+            else if (pData->ctrlChannel >= 0 && pData->ctrlChannel < MAX_MIDI_CHANNELS)
             {
                 for (k=0; k < MAX_MIDI_NOTE; ++k)
-                    fluid_synth_noteoff(fSynth, kData->ctrlChannel, k);
+                    fluid_synth_noteoff(fSynth, pData->ctrlChannel, k);
             }
 
-            kData->needsReset = false;
+            pData->needsReset = false;
         }
 
         // --------------------------------------------------------------------------------------------------------
@@ -1053,11 +1053,11 @@ public:
             // ----------------------------------------------------------------------------------------------------
             // MIDI Input (External)
 
-            if (kData->extNotes.mutex.tryLock())
+            if (pData->extNotes.mutex.tryLock())
             {
-                while (! kData->extNotes.data.isEmpty())
+                while (! pData->extNotes.data.isEmpty())
                 {
-                    const ExternalMidiNote& note(kData->extNotes.data.getFirst(true));
+                    const ExternalMidiNote& note(pData->extNotes.data.getFirst(true));
 
                     CARLA_ASSERT(note.channel >= 0 && note.channel < MAX_MIDI_CHANNELS);
 
@@ -1067,7 +1067,7 @@ public:
                         fluid_synth_noteoff(fSynth,note.channel, note.note);
                 }
 
-                kData->extNotes.mutex.unlock();
+                pData->extNotes.mutex.unlock();
 
             } // End of MIDI Input (External)
 
@@ -1076,17 +1076,17 @@ public:
 
             bool allNotesOffSent = false;
 
-            uint32_t time, nEvents = kData->event.portIn->getEventCount();
+            uint32_t time, nEvents = pData->event.portIn->getEventCount();
             uint32_t timeOffset = 0;
 
             uint32_t nextBankIds[MAX_MIDI_CHANNELS] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 128, 0, 0, 0, 0, 0, 0 };
 
-            if (kData->midiprog.current >= 0 && kData->midiprog.count > 0 && kData->ctrlChannel >= 0 && kData->ctrlChannel < MAX_MIDI_CHANNELS)
-                nextBankIds[kData->ctrlChannel] = kData->midiprog.data[kData->midiprog.current].bank;
+            if (pData->midiprog.current >= 0 && pData->midiprog.count > 0 && pData->ctrlChannel >= 0 && pData->ctrlChannel < MAX_MIDI_CHANNELS)
+                nextBankIds[pData->ctrlChannel] = pData->midiprog.data[pData->midiprog.current].bank;
 
             for (i=0; i < nEvents; ++i)
             {
-                const EngineEvent& event(kData->event.portIn->getEvent(i));
+                const EngineEvent& event(pData->event.portIn->getEvent(i));
 
                 time = event.time;
 
@@ -1101,8 +1101,8 @@ public:
                     {
                         timeOffset = time;
 
-                        if (kData->midiprog.current >= 0 && kData->midiprog.count > 0 && kData->ctrlChannel >= 0 && kData->ctrlChannel < 16)
-                            nextBankIds[kData->ctrlChannel] = kData->midiprog.data[kData->midiprog.current].bank;
+                        if (pData->midiprog.current >= 0 && pData->midiprog.count > 0 && pData->ctrlChannel >= 0 && pData->ctrlChannel < 16)
+                            nextBankIds[pData->ctrlChannel] = pData->midiprog.data[pData->midiprog.current].bank;
                     }
                 }
 
@@ -1125,7 +1125,7 @@ public:
                     {
 #ifndef BUILD_BRIDGE
                         // Control backend stuff
-                        if (event.channel == kData->ctrlChannel)
+                        if (event.channel == pData->ctrlChannel)
                         {
                             float value;
 
@@ -1173,28 +1173,28 @@ public:
 #endif
 
                         // Control plugin parameters
-                        for (k=0; k < kData->param.count; ++k)
+                        for (k=0; k < pData->param.count; ++k)
                         {
-                            if (kData->param.data[k].midiChannel != event.channel)
+                            if (pData->param.data[k].midiChannel != event.channel)
                                 continue;
-                            if (kData->param.data[k].midiCC != ctrlEvent.param)
+                            if (pData->param.data[k].midiCC != ctrlEvent.param)
                                 continue;
-                            if (kData->param.data[k].type != PARAMETER_INPUT)
+                            if (pData->param.data[k].type != PARAMETER_INPUT)
                                 continue;
-                            if ((kData->param.data[k].hints & PARAMETER_IS_AUTOMABLE) == 0)
+                            if ((pData->param.data[k].hints & PARAMETER_IS_AUTOMABLE) == 0)
                                 continue;
 
                             float value;
 
-                            if (kData->param.data[k].hints & PARAMETER_IS_BOOLEAN)
+                            if (pData->param.data[k].hints & PARAMETER_IS_BOOLEAN)
                             {
-                                value = (ctrlEvent.value < 0.5f) ? kData->param.ranges[k].min : kData->param.ranges[k].max;
+                                value = (ctrlEvent.value < 0.5f) ? pData->param.ranges[k].min : pData->param.ranges[k].max;
                             }
                             else
                             {
-                                value = kData->param.ranges[k].unnormalizeValue(ctrlEvent.value);
+                                value = pData->param.ranges[k].unnormalizeValue(ctrlEvent.value);
 
-                                if (kData->param.data[k].hints & PARAMETER_IS_INTEGER)
+                                if (pData->param.data[k].hints & PARAMETER_IS_INTEGER)
                                     value = std::rint(value);
                             }
 
@@ -1221,14 +1221,14 @@ public:
                             const uint32_t bankId(nextBankIds[event.channel]);
                             const uint32_t progId(ctrlEvent.param);
 
-                            for (k=0; k < kData->midiprog.count; ++k)
+                            for (k=0; k < pData->midiprog.count; ++k)
                             {
-                                if (kData->midiprog.data[k].bank == bankId && kData->midiprog.data[k].program == progId)
+                                if (pData->midiprog.data[k].bank == bankId && pData->midiprog.data[k].program == progId)
                                 {
                                     fluid_synth_program_select(fSynth, event.channel, fSynthId, bankId, progId);
                                     fCurMidiProgs[event.channel] = k;
 
-                                    if (event.channel == kData->ctrlChannel)
+                                    if (event.channel == pData->ctrlChannel)
                                         postponeRtEvent(kPluginPostRtEventMidiProgramChange, k, 0, 0.0f);
 
                                     break;
@@ -1251,7 +1251,7 @@ public:
                     case kEngineControlEventTypeAllNotesOff:
                         if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                         {
-                            if (event.channel == kData->ctrlChannel && ! allNotesOffSent)
+                            if (event.channel == pData->ctrlChannel && ! allNotesOffSent)
                             {
                                 allNotesOffSent = true;
                                 sendMidiAllNotesOffToCallback();
@@ -1330,7 +1330,7 @@ public:
                 }
             }
 
-            kData->postRtEvents.trySplice();
+            pData->postRtEvents.trySplice();
 
             if (frames > timeOffset)
                 processSingle(outBuffer, frames - timeOffset, timeOffset);
@@ -1345,12 +1345,12 @@ public:
         {
             k = FluidSynthVoiceCount;
             fParamBuffers[k] = fluid_synth_get_active_voice_count(fSynth);
-            kData->param.ranges[k].fixValue(fParamBuffers[k]);
+            pData->param.ranges[k].fixValue(fParamBuffers[k]);
 
-            if (kData->param.data[k].midiCC > 0)
+            if (pData->param.data[k].midiCC > 0)
             {
-                float value(kData->param.ranges[k].normalizeValue(fParamBuffers[k]));
-                kData->event.portOut->writeControlEvent(0, kData->param.data[k].midiChannel, kEngineControlEventTypeParameter, kData->param.data[k].midiCC, value);
+                float value(pData->param.ranges[k].normalizeValue(fParamBuffers[k]));
+                pData->event.portOut->writeControlEvent(0, pData->param.data[k].midiChannel, kEngineControlEventTypeParameter, pData->param.data[k].midiCC, value);
             }
 
         } // End of Control Output
@@ -1371,13 +1371,13 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Try lock, silence otherwise
 
-        if (kData->engine->isOffline())
+        if (pData->engine->isOffline())
         {
-            kData->singleMutex.lock();
+            pData->singleMutex.lock();
         }
-        else if (! kData->singleMutex.tryLock())
+        else if (! pData->singleMutex.tryLock())
         {
-            for (i=0; i < kData->audioOut.count; ++i)
+            for (i=0; i < pData->audioOut.count; ++i)
             {
                 for (k=0; k < frames; ++k)
                     outBuffer[i][k+timeOffset] = 0.0f;
@@ -1391,10 +1391,10 @@ public:
 
         if (kUses16Outs)
         {
-            for (i=0; i < kData->audioOut.count; ++i)
+            for (i=0; i < pData->audioOut.count; ++i)
                 carla_zeroFloat(fAudio16Buffers[i], frames);
 
-            fluid_synth_process(fSynth, frames, 0, nullptr, kData->audioOut.count, fAudio16Buffers);
+            fluid_synth_process(fSynth, frames, 0, nullptr, pData->audioOut.count, fAudio16Buffers);
         }
         else
             fluid_synth_write_float(fSynth, frames, outBuffer[0] + timeOffset, 0, 1, outBuffer[1] + timeOffset, 0, 1);
@@ -1405,12 +1405,12 @@ public:
 
         {
             // note - balance not possible with kUses16Outs, so we can safely skip fAudioOutBuffers
-            const bool doVolume  = (fHints & PLUGIN_CAN_VOLUME) > 0 && kData->postProc.volume != 1.0f;
-            const bool doBalance = (fHints & PLUGIN_CAN_BALANCE) > 0 && (kData->postProc.balanceLeft != -1.0f || kData->postProc.balanceRight != 1.0f);
+            const bool doVolume  = (fHints & PLUGIN_CAN_VOLUME) > 0 && pData->postProc.volume != 1.0f;
+            const bool doBalance = (fHints & PLUGIN_CAN_BALANCE) > 0 && (pData->postProc.balanceLeft != -1.0f || pData->postProc.balanceRight != 1.0f);
 
             float oldBufLeft[doBalance ? frames : 1];
 
-            for (i=0; i < kData->audioOut.count; ++i)
+            for (i=0; i < pData->audioOut.count; ++i)
             {
                 // Balance
                 if (doBalance)
@@ -1418,8 +1418,8 @@ public:
                     if (i % 2 == 0)
                         carla_copyFloat(oldBufLeft, outBuffer[i]+timeOffset, frames);
 
-                    float balRangeL = (kData->postProc.balanceLeft  + 1.0f)/2.0f;
-                    float balRangeR = (kData->postProc.balanceRight + 1.0f)/2.0f;
+                    float balRangeL = (pData->postProc.balanceLeft  + 1.0f)/2.0f;
+                    float balRangeR = (pData->postProc.balanceRight + 1.0f)/2.0f;
 
                     for (k=0; k < frames; ++k)
                     {
@@ -1442,12 +1442,12 @@ public:
                 if (kUses16Outs)
                 {
                     for (k=0; k < frames; ++k)
-                        outBuffer[i][k+timeOffset] = fAudio16Buffers[i][k] * kData->postProc.volume;
+                        outBuffer[i][k+timeOffset] = fAudio16Buffers[i][k] * pData->postProc.volume;
                 }
                 else if (doVolume)
                 {
                     for (k=0; k < frames; ++k)
-                        outBuffer[i][k+timeOffset] *= kData->postProc.volume;
+                        outBuffer[i][k+timeOffset] *= pData->postProc.volume;
                 }
             }
 
@@ -1455,7 +1455,7 @@ public:
 #else
         if (kUses16Outs)
         {
-            for (i=0; i < kData->audioOut.count; ++i)
+            for (i=0; i < pData->audioOut.count; ++i)
             {
                 for (k=0; k < frames; ++k)
                     outBuffer[i][k+timeOffset] = fAudio16Buffers[i][k];
@@ -1465,7 +1465,7 @@ public:
 
         // --------------------------------------------------------------------------------------------------------
 
-        kData->singleMutex.unlock();
+        pData->singleMutex.unlock();
         return true;
     }
 
@@ -1474,7 +1474,7 @@ public:
         if (! kUses16Outs)
             return;
 
-        for (uint32_t i=0; i < kData->audioOut.count; ++i)
+        for (uint32_t i=0; i < pData->audioOut.count; ++i)
         {
             if (fAudio16Buffers[i] != nullptr)
                 delete[] fAudio16Buffers[i];
@@ -1491,7 +1491,7 @@ public:
 
         if (fAudio16Buffers != nullptr)
         {
-            for (uint32_t i=0; i < kData->audioOut.count; ++i)
+            for (uint32_t i=0; i < pData->audioOut.count; ++i)
             {
                 if (fAudio16Buffers[i] != nullptr)
                 {
@@ -1525,32 +1525,32 @@ public:
         // ---------------------------------------------------------------
         // first checks
 
-        if (kData->engine == nullptr)
+        if (pData->engine == nullptr)
         {
             return false;
         }
 
-        if (kData->client != nullptr)
+        if (pData->client != nullptr)
         {
-            kData->engine->setLastError("Plugin client is already registered");
+            pData->engine->setLastError("Plugin client is already registered");
             return false;
         }
 
         if (fSynth == nullptr)
         {
-            kData->engine->setLastError("null synth");
+            pData->engine->setLastError("null synth");
             return false;
         }
 
         if (filename == nullptr)
         {
-            kData->engine->setLastError("null filename");
+            pData->engine->setLastError("null filename");
             return false;
         }
 
         if (label == nullptr)
         {
-            kData->engine->setLastError("null label");
+            pData->engine->setLastError("null label");
             return false;
         }
 
@@ -1561,7 +1561,7 @@ public:
 
         if (fSynthId < 0)
         {
-            kData->engine->setLastError("Failed to load SoundFont file");
+            pData->engine->setLastError("Failed to load SoundFont file");
             return false;
         }
 
@@ -1575,18 +1575,18 @@ public:
             fLabel += " (16 outs)";
 
         if (name != nullptr)
-            fName = kData->engine->getUniquePluginName(name);
+            fName = pData->engine->getUniquePluginName(name);
         else
-            fName = kData->engine->getUniquePluginName(label);
+            fName = pData->engine->getUniquePluginName(label);
 
         // ---------------------------------------------------------------
         // register client
 
-        kData->client = kData->engine->addClient(this);
+        pData->client = pData->engine->addClient(this);
 
-        if (kData->client == nullptr || ! kData->client->isOk())
+        if (pData->client == nullptr || ! pData->client->isOk())
         {
-            kData->engine->setLastError("Failed to register plugin client");
+            pData->engine->setLastError("Failed to register plugin client");
             return false;
         }
 
@@ -1604,9 +1604,9 @@ public:
             fOptions |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
 
             // load settings
-            kData->idStr  = "SF2/";
-            kData->idStr += label;
-            fOptions = kData->loadSettings(fOptions, availableOptions());
+            pData->idStr  = "SF2/";
+            pData->idStr += label;
+            fOptions = pData->loadSettings(fOptions, availableOptions());
         }
 
         return true;

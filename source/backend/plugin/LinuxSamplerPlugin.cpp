@@ -182,16 +182,16 @@ public:
     {
         carla_debug("LinuxSamplerPlugin::~LinuxSamplerPlugin()");
 
-        kData->singleMutex.lock();
-        kData->masterMutex.lock();
+        pData->singleMutex.lock();
+        pData->masterMutex.lock();
 
-        if (kData->client != nullptr && kData->client->isActive())
-            kData->client->deactivate();
+        if (pData->client != nullptr && pData->client->isActive())
+            pData->client->deactivate();
 
-        if (kData->active)
+        if (pData->active)
         {
             deactivate();
-            kData->active = false;
+            pData->active = false;
         }
 
         if (fEngine != nullptr)
@@ -291,25 +291,25 @@ public:
 
     void setMidiProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) override
     {
-        CARLA_ASSERT(index >= -1 && index < static_cast<int32_t>(kData->midiprog.count));
+        CARLA_ASSERT(index >= -1 && index < static_cast<int32_t>(pData->midiprog.count));
 
         if (index < -1)
             index = -1;
-        else if (index > static_cast<int32_t>(kData->midiprog.count))
+        else if (index > static_cast<int32_t>(pData->midiprog.count))
             return;
 
-        if (kData->ctrlChannel < 0 || kData->ctrlChannel >= 16)
+        if (pData->ctrlChannel < 0 || pData->ctrlChannel >= 16)
             return;
 
         if (index >= 0)
         {
-            const uint32_t bank    = kData->midiprog.data[index].bank;
-            const uint32_t program = kData->midiprog.data[index].program;
+            const uint32_t bank    = pData->midiprog.data[index].bank;
+            const uint32_t program = pData->midiprog.data[index].program;
             const uint32_t rIndex  = bank*128 + program;
 
             const ScopedSingleProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
 
-            if (kData->engine->isOffline())
+            if (pData->engine->isOffline())
             {
                 fEngineChannel->PrepareLoadInstrument((const char*)fFilename, rIndex);
                 fEngineChannel->LoadInstrument();
@@ -329,20 +329,20 @@ public:
     void reload() override
     {
         carla_debug("LinuxSamplerPlugin::reload() - start");
-        CARLA_ASSERT(kData->engine != nullptr);
+        CARLA_ASSERT(pData->engine != nullptr);
         CARLA_ASSERT(fInstrument != nullptr);
 
-        if (kData->engine == nullptr)
+        if (pData->engine == nullptr)
             return;
         if (fInstrument == nullptr)
             return;
 
-        const ProcessMode processMode(kData->engine->getProccessMode());
+        const ProcessMode processMode(pData->engine->getProccessMode());
 
         // Safely disable plugin for reload
         const ScopedDisabler sd(this);
 
-        if (kData->active)
+        if (pData->active)
             deactivate();
 
         clearBuffers();
@@ -350,9 +350,9 @@ public:
         uint32_t aOuts;
         aOuts = 2;
 
-        kData->audioOut.createNew(aOuts);
+        pData->audioOut.createNew(aOuts);
 
-        const int   portNameSize = kData->engine->maxPortNameSize();
+        const int   portNameSize = pData->engine->maxPortNameSize();
         CarlaString portName;
 
         // ---------------------------------------
@@ -371,8 +371,8 @@ public:
             portName += "out-left";
             portName.truncate(portNameSize);
 
-            kData->audioOut.ports[0].port   = (CarlaEngineAudioPort*)kData->client->addPort(kEnginePortTypeAudio, portName, false);
-            kData->audioOut.ports[0].rindex = 0;
+            pData->audioOut.ports[0].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false);
+            pData->audioOut.ports[0].rindex = 0;
 
             // out-right
             portName.clear();
@@ -386,8 +386,8 @@ public:
             portName += "out-right";
             portName.truncate(portNameSize);
 
-            kData->audioOut.ports[1].port   = (CarlaEngineAudioPort*)kData->client->addPort(kEnginePortTypeAudio, portName, false);
-            kData->audioOut.ports[1].rindex = 1;
+            pData->audioOut.ports[1].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false);
+            pData->audioOut.ports[1].rindex = 1;
         }
 
         // ---------------------------------------
@@ -405,7 +405,7 @@ public:
             portName += "event-in";
             portName.truncate(portNameSize);
 
-            kData->event.portIn = (CarlaEngineEventPort*)kData->client->addPort(kEnginePortTypeEvent, portName, true);
+            pData->event.portIn = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true);
         }
 
         // ---------------------------------------
@@ -417,14 +417,14 @@ public:
         fHints |= PLUGIN_CAN_BALANCE;
 
         // extra plugin hints
-        kData->extraHints  = 0x0;
-        kData->extraHints |= PLUGIN_HINT_HAS_MIDI_IN;
-        kData->extraHints |= PLUGIN_HINT_CAN_RUN_RACK;
+        pData->extraHints  = 0x0;
+        pData->extraHints |= PLUGIN_HINT_HAS_MIDI_IN;
+        pData->extraHints |= PLUGIN_HINT_CAN_RUN_RACK;
 
-        bufferSizeChanged(kData->engine->getBufferSize());
+        bufferSizeChanged(pData->engine->getBufferSize());
         reloadPrograms(true);
 
-        if (kData->active)
+        if (pData->active)
             activate();
 
         carla_debug("LinuxSamplerPlugin::reload() - end");
@@ -435,7 +435,7 @@ public:
         carla_debug("LinuxSamplerPlugin::reloadPrograms(%s)", bool2str(init));
 
         // Delete old programs
-        kData->midiprog.clear();
+        pData->midiprog.clear();
 
         // Query new programs
         uint32_t i, count = fInstrumentIds.size();
@@ -446,14 +446,14 @@ public:
         if (count == 0)
             return;
 
-        kData->midiprog.createNew(count);
+        pData->midiprog.createNew(count);
 
         LinuxSampler::InstrumentManager::instrument_info_t info;
 
-        for (i=0; i < kData->midiprog.count; ++i)
+        for (i=0; i < pData->midiprog.count; ++i)
         {
-            kData->midiprog.data[i].bank    = i / 128;
-            kData->midiprog.data[i].program = i % 128;
+            pData->midiprog.data[i].bank    = i / 128;
+            pData->midiprog.data[i].program = i % 128;
 
             try {
                 info = fInstrument->GetInstrumentInfo(fInstrumentIds[i]);
@@ -463,17 +463,17 @@ public:
                 continue;
             }
 
-            kData->midiprog.data[i].name = carla_strdup(info.InstrumentName.c_str());
+            pData->midiprog.data[i].name = carla_strdup(info.InstrumentName.c_str());
         }
 
 #ifndef BUILD_BRIDGE
         // Update OSC Names
-        if (kData->engine->isOscControlRegistered())
+        if (pData->engine->isOscControlRegistered())
         {
-            kData->engine->osc_send_control_set_midi_program_count(fId, count);
+            pData->engine->osc_send_control_set_midi_program_count(fId, count);
 
             for (i=0; i < count; ++i)
-                kData->engine->osc_send_control_set_midi_program_data(fId, i, kData->midiprog.data[i].bank, kData->midiprog.data[i].program, kData->midiprog.data[i].name);
+                pData->engine->osc_send_control_set_midi_program_data(fId, i, pData->midiprog.data[i].bank, pData->midiprog.data[i].program, pData->midiprog.data[i].name);
         }
 #endif
 
@@ -483,7 +483,7 @@ public:
         }
         else
         {
-            kData->engine->callback(CALLBACK_RELOAD_PROGRAMS, fId, 0, 0, 0.0f, nullptr);
+            pData->engine->callback(CALLBACK_RELOAD_PROGRAMS, fId, 0, 0, 0.0f, nullptr);
         }
     }
 
@@ -511,10 +511,10 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Check if active
 
-        if (! kData->active)
+        if (! pData->active)
         {
             // disable any output sound
-            for (i=0; i < kData->audioOut.count; ++i)
+            for (i=0; i < pData->audioOut.count; ++i)
                 carla_zeroFloat(outBuffer[i], frames);
 
             return;
@@ -523,7 +523,7 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Check if needs reset
 
-        if (kData->needsReset)
+        if (pData->needsReset)
         {
             if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
             {
@@ -533,13 +533,13 @@ public:
                     fMidiInputPort->DispatchControlChange(MIDI_CONTROL_ALL_SOUND_OFF, 0, k);
                 }
             }
-            else if (kData->ctrlChannel >= 0 && kData->ctrlChannel < MAX_MIDI_CHANNELS)
+            else if (pData->ctrlChannel >= 0 && pData->ctrlChannel < MAX_MIDI_CHANNELS)
             {
                 for (k=0; k < MAX_MIDI_NOTE; ++k)
-                    fMidiInputPort->DispatchNoteOff(k, 0, kData->ctrlChannel);
+                    fMidiInputPort->DispatchNoteOff(k, 0, pData->ctrlChannel);
             }
 
-            kData->needsReset = false;
+            pData->needsReset = false;
         }
 
         // --------------------------------------------------------------------------------------------------------
@@ -549,11 +549,11 @@ public:
             // ----------------------------------------------------------------------------------------------------
             // MIDI Input (External)
 
-            if (kData->extNotes.mutex.tryLock())
+            if (pData->extNotes.mutex.tryLock())
             {
-                while (! kData->extNotes.data.isEmpty())
+                while (! pData->extNotes.data.isEmpty())
                 {
-                    const ExternalMidiNote& note(kData->extNotes.data.getFirst(true));
+                    const ExternalMidiNote& note(pData->extNotes.data.getFirst(true));
 
                     CARLA_ASSERT(note.channel >= 0 && note.channel < MAX_MIDI_CHANNELS);
 
@@ -563,7 +563,7 @@ public:
                         fMidiInputPort->DispatchNoteOff(note.note, note.velo, note.channel, 0);
                 }
 
-                kData->extNotes.mutex.unlock();
+                pData->extNotes.mutex.unlock();
 
             } // End of MIDI Input (External)
 
@@ -573,17 +573,17 @@ public:
             bool allNotesOffSent = false;
             bool sampleAccurate  = (fOptions & PLUGIN_OPTION_FIXED_BUFFER) == 0;
 
-            uint32_t time, nEvents = kData->event.portIn->getEventCount();
+            uint32_t time, nEvents = pData->event.portIn->getEventCount();
             uint32_t startTime  = 0;
             uint32_t timeOffset = 0;
             uint32_t nextBankId = 0;
 
-            if (kData->midiprog.current >= 0 && kData->midiprog.count > 0)
-                nextBankId = kData->midiprog.data[kData->midiprog.current].bank;
+            if (pData->midiprog.current >= 0 && pData->midiprog.count > 0)
+                nextBankId = pData->midiprog.data[pData->midiprog.current].bank;
 
             for (i=0; i < nEvents; ++i)
             {
-                const EngineEvent& event(kData->event.portIn->getEvent(i));
+                const EngineEvent& event(pData->event.portIn->getEvent(i));
 
                 time = event.time;
 
@@ -599,8 +599,8 @@ public:
                         startTime  = 0;
                         timeOffset = time;
 
-                        if (kData->midiprog.current >= 0 && kData->midiprog.count > 0)
-                            nextBankId = kData->midiprog.data[kData->midiprog.current].bank;
+                        if (pData->midiprog.current >= 0 && pData->midiprog.count > 0)
+                            nextBankId = pData->midiprog.data[pData->midiprog.current].bank;
                         else
                             nextBankId = 0;
                     }
@@ -627,7 +627,7 @@ public:
                     {
 #ifndef BUILD_BRIDGE
                         // Control backend stuff
-                        if (event.channel == kData->ctrlChannel)
+                        if (event.channel == pData->ctrlChannel)
                         {
                             float value;
 
@@ -675,28 +675,28 @@ public:
 #endif
 
                         // Control plugin parameters
-                        for (k=0; k < kData->param.count; ++k)
+                        for (k=0; k < pData->param.count; ++k)
                         {
-                            if (kData->param.data[k].midiChannel != event.channel)
+                            if (pData->param.data[k].midiChannel != event.channel)
                                 continue;
-                            if (kData->param.data[k].midiCC != ctrlEvent.param)
+                            if (pData->param.data[k].midiCC != ctrlEvent.param)
                                 continue;
-                            if (kData->param.data[k].type != PARAMETER_INPUT)
+                            if (pData->param.data[k].type != PARAMETER_INPUT)
                                 continue;
-                            if ((kData->param.data[k].hints & PARAMETER_IS_AUTOMABLE) == 0)
+                            if ((pData->param.data[k].hints & PARAMETER_IS_AUTOMABLE) == 0)
                                 continue;
 
                             double value;
 
-                            if (kData->param.data[k].hints & PARAMETER_IS_BOOLEAN)
+                            if (pData->param.data[k].hints & PARAMETER_IS_BOOLEAN)
                             {
-                                value = (ctrlEvent.value < 0.5f) ? kData->param.ranges[k].min : kData->param.ranges[k].max;
+                                value = (ctrlEvent.value < 0.5f) ? pData->param.ranges[k].min : pData->param.ranges[k].max;
                             }
                             else
                             {
-                                value = kData->param.ranges[k].unnormalizeValue(ctrlEvent.value);
+                                value = pData->param.ranges[k].unnormalizeValue(ctrlEvent.value);
 
-                                if (kData->param.data[k].hints & PARAMETER_IS_INTEGER)
+                                if (pData->param.data[k].hints & PARAMETER_IS_INTEGER)
                                     value = std::rint(value);
                             }
 
@@ -713,18 +713,18 @@ public:
                     }
 
                     case kEngineControlEventTypeMidiBank:
-                        if (event.channel == kData->ctrlChannel && (fOptions & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
+                        if (event.channel == pData->ctrlChannel && (fOptions & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
                             nextBankId = ctrlEvent.param;
                         break;
 
                     case kEngineControlEventTypeMidiProgram:
-                        if (event.channel == kData->ctrlChannel && (fOptions & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
+                        if (event.channel == pData->ctrlChannel && (fOptions & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
                         {
                             const uint32_t nextProgramId = ctrlEvent.param;
 
-                            for (k=0; k < kData->midiprog.count; ++k)
+                            for (k=0; k < pData->midiprog.count; ++k)
                             {
-                                if (kData->midiprog.data[k].bank == nextBankId && kData->midiprog.data[k].program == nextProgramId)
+                                if (pData->midiprog.data[k].bank == nextBankId && pData->midiprog.data[k].program == nextProgramId)
                                 {
                                     setMidiProgram(k, false, false, false);
                                     postponeRtEvent(kPluginPostRtEventMidiProgramChange, k, 0, 0.0f);
@@ -744,7 +744,7 @@ public:
                     case kEngineControlEventTypeAllNotesOff:
                         if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                         {
-                            if (event.channel == kData->ctrlChannel && ! allNotesOffSent)
+                            if (event.channel == pData->ctrlChannel && ! allNotesOffSent)
                             {
                                 allNotesOffSent = true;
                                 sendMidiAllNotesOffToCallback();
@@ -821,7 +821,7 @@ public:
                 }
             }
 
-            kData->postRtEvents.trySplice();
+            pData->postRtEvents.trySplice();
 
             if (frames > timeOffset)
                 processSingle(outBuffer, frames - timeOffset, timeOffset);
@@ -844,13 +844,13 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Try lock, silence otherwise
 
-        if (kData->engine->isOffline())
+        if (pData->engine->isOffline())
         {
-            kData->singleMutex.lock();
+            pData->singleMutex.lock();
         }
-        else if (! kData->singleMutex.tryLock())
+        else if (! pData->singleMutex.tryLock())
         {
-            for (i=0; i < kData->audioOut.count; ++i)
+            for (i=0; i < pData->audioOut.count; ++i)
             {
                 for (k=0; k < frames; ++k)
                     outBuffer[i][k+timeOffset] = 0.0f;
@@ -872,12 +872,12 @@ public:
         // Post-processing (dry/wet, volume and balance)
 
         {
-            const bool doVolume  = (fHints & PLUGIN_CAN_VOLUME) > 0 && kData->postProc.volume != 1.0f;
-            const bool doBalance = (fHints & PLUGIN_CAN_BALANCE) > 0 && (kData->postProc.balanceLeft != -1.0f || kData->postProc.balanceRight != 1.0f);
+            const bool doVolume  = (fHints & PLUGIN_CAN_VOLUME) > 0 && pData->postProc.volume != 1.0f;
+            const bool doBalance = (fHints & PLUGIN_CAN_BALANCE) > 0 && (pData->postProc.balanceLeft != -1.0f || pData->postProc.balanceRight != 1.0f);
 
             float oldBufLeft[doBalance ? frames : 1];
 
-            for (i=0; i < kData->audioOut.count; ++i)
+            for (i=0; i < pData->audioOut.count; ++i)
             {
                 // Balance
                 if (doBalance)
@@ -885,8 +885,8 @@ public:
                     if (i % 2 == 0)
                         carla_copyFloat(oldBufLeft, outBuffer[i], frames);
 
-                    float balRangeL = (kData->postProc.balanceLeft  + 1.0f)/2.0f;
-                    float balRangeR = (kData->postProc.balanceRight + 1.0f)/2.0f;
+                    float balRangeL = (pData->postProc.balanceLeft  + 1.0f)/2.0f;
+                    float balRangeR = (pData->postProc.balanceRight + 1.0f)/2.0f;
 
                     for (k=0; k < frames; ++k)
                     {
@@ -909,7 +909,7 @@ public:
                 if (doVolume)
                 {
                     for (k=0; k < frames; ++k)
-                        outBuffer[i][k+timeOffset] *= kData->postProc.volume;
+                        outBuffer[i][k+timeOffset] *= pData->postProc.volume;
                 }
             }
 
@@ -918,7 +918,7 @@ public:
 
         // --------------------------------------------------------------------------------------------------------
 
-        kData->singleMutex.unlock();
+        pData->singleMutex.unlock();
         return true;
     }
 
@@ -936,34 +936,34 @@ public:
 
     bool init(const char* filename, const char* const name, const char* label)
     {
-        CARLA_ASSERT(kData->engine != nullptr);
-        CARLA_ASSERT(kData->client == nullptr);
+        CARLA_ASSERT(pData->engine != nullptr);
+        CARLA_ASSERT(pData->client == nullptr);
         CARLA_ASSERT(filename != nullptr);
         CARLA_ASSERT(label != nullptr);
 
         // ---------------------------------------------------------------
         // first checks
 
-        if (kData->engine == nullptr)
+        if (pData->engine == nullptr)
         {
             return false;
         }
 
-        if (kData->client != nullptr)
+        if (pData->client != nullptr)
         {
-            kData->engine->setLastError("Plugin client is already registered");
+            pData->engine->setLastError("Plugin client is already registered");
             return false;
         }
 
         if (filename == nullptr)
         {
-            kData->engine->setLastError("null filename");
+            pData->engine->setLastError("null filename");
             return false;
         }
 
         if (label == nullptr)
         {
-            kData->engine->setLastError("null label");
+            pData->engine->setLastError("null label");
             return false;
         }
 
@@ -974,7 +974,7 @@ public:
 
             if (! (file.exists() && file.isFile() && file.isReadable()))
             {
-                kData->engine->setLastError("Requested file is not valid or does not exist");
+                pData->engine->setLastError("Requested file is not valid or does not exist");
                 return false;
             }
         }
@@ -989,7 +989,7 @@ public:
         }
         catch (LinuxSampler::Exception& e)
         {
-            kData->engine->setLastError(e.what());
+            pData->engine->setLastError(e.what());
             return false;
         }
 
@@ -1000,7 +1000,7 @@ public:
 
         if (fInstrument == nullptr)
         {
-            kData->engine->setLastError("Failed to get LinuxSampler instrument manager");
+            pData->engine->setLastError("Failed to get LinuxSampler instrument manager");
             LinuxSampler::EngineFactory::Destroy(fEngine);
             fEngine = nullptr;
             return false;
@@ -1014,7 +1014,7 @@ public:
         }
         catch (const LinuxSampler::InstrumentManagerException& e)
         {
-            kData->engine->setLastError(e.what());
+            pData->engine->setLastError(e.what());
             LinuxSampler::EngineFactory::Destroy(fEngine);
             fEngine = nullptr;
             return false;
@@ -1025,7 +1025,7 @@ public:
 
         if (fInstrumentIds.size() == 0)
         {
-            kData->engine->setLastError("Failed to find any instruments");
+            pData->engine->setLastError("Failed to find any instruments");
             LinuxSampler::EngineFactory::Destroy(fEngine);
             fEngine = nullptr;
             return false;
@@ -1038,7 +1038,7 @@ public:
         }
         catch (const LinuxSampler::InstrumentManagerException& e)
         {
-            kData->engine->setLastError(e.what());
+            pData->engine->setLastError(e.what());
             LinuxSampler::EngineFactory::Destroy(fEngine);
             fEngine = nullptr;
             return false;
@@ -1053,18 +1053,18 @@ public:
             fLabel += " (16 outs)";
 
         if (name != nullptr)
-            fName = kData->engine->getUniquePluginName(name);
+            fName = pData->engine->getUniquePluginName(name);
         else
-            fName = kData->engine->getUniquePluginName((const char*)fRealName);
+            fName = pData->engine->getUniquePluginName((const char*)fRealName);
 
         // ---------------------------------------------------------------
         // Register client
 
-        kData->client = kData->engine->addClient(this);
+        pData->client = pData->engine->addClient(this);
 
-        if (kData->client == nullptr || ! kData->client->isOk())
+        if (pData->client == nullptr || ! pData->client->isOk())
         {
-            kData->engine->setLastError("Failed to register plugin client");
+            pData->engine->setLastError("Failed to register plugin client");
             LinuxSampler::EngineFactory::Destroy(fEngine);
             fEngine = nullptr;
             return false;
@@ -1095,10 +1095,10 @@ public:
             fOptions |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
 
             // load settings
-            kData->idStr  = kIsGIG ? "GIG" : "SFZ";
-            kData->idStr += "/";
-            kData->idStr += label;
-            fOptions = kData->loadSettings(fOptions, availableOptions());
+            pData->idStr  = kIsGIG ? "GIG" : "SFZ";
+            pData->idStr += "/";
+            pData->idStr += label;
+            fOptions = pData->loadSettings(fOptions, availableOptions());
         }
 
         return true;

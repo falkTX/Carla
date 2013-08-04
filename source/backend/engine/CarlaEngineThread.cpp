@@ -69,32 +69,32 @@ void CarlaEngineThread::stopNow()
 void CarlaEngineThread::run()
 {
     carla_debug("CarlaEngineThread::run()");
-    CARLA_ASSERT(kEngine->isRunning());
+    CARLA_ASSERT(fEngine->isRunning());
 
     bool oscRegisted, usesSingleThread;
     unsigned int i, count;
     float value;
 
-    while (kEngine->isRunning() && ! fStopNow)
+    while (fEngine->isRunning() && ! fStopNow)
     {
         const CarlaMutex::ScopedLocker sl(fMutex);
 
 #ifdef BUILD_BRIDGE
-        oscRegisted = kEngine->isOscBridgeRegistered();
+        oscRegisted = fEngine->isOscBridgeRegistered();
 #else
-        oscRegisted = kEngine->isOscControlRegistered();
+        oscRegisted = fEngine->isOscControlRegistered();
 #endif
 
-        for (i=0, count = kEngine->currentPluginCount(); i < count; ++i)
+        for (i=0, count = fEngine->getCurrentPluginCount(); i < count; ++i)
         {
-            CarlaPlugin* const plugin = kEngine->getPluginUnchecked(i);
+            CarlaPlugin* const plugin = fEngine->getPluginUnchecked(i);
 
-            if (plugin == nullptr || ! plugin->enabled())
+            if (plugin == nullptr || ! plugin->isEnabled())
                 continue;
 
-            CARLA_SAFE_ASSERT_INT2(i == plugin->id(), i, plugin->id());
+            CARLA_SAFE_ASSERT_INT2(i == plugin->getId(), i, plugin->getId());
 
-            usesSingleThread = (plugin->hints() & PLUGIN_HAS_SINGLE_THREAD);
+            usesSingleThread = (plugin->getHints() & PLUGIN_HAS_SINGLE_THREAD);
 
             // -------------------------------------------------------
             // Process postponed events
@@ -107,9 +107,9 @@ void CarlaEngineThread::run()
                 // ---------------------------------------------------
                 // Update parameter outputs
 
-                for (uint32_t j=0; j < plugin->parameterCount(); ++j)
+                for (uint32_t j=0; j < plugin->getParameterCount(); ++j)
                 {
-                    if (! plugin->parameterIsOutput(j))
+                    if (! plugin->isParameterOutput(j))
                         continue;
 
                     value = plugin->getParameterValue(j);
@@ -122,9 +122,9 @@ void CarlaEngineThread::run()
                     if (oscRegisted)
                     {
 #ifdef BUILD_BRIDGE
-                        kEngine->osc_send_bridge_set_parameter_value(j, value);
+                        fEngine->oscSend_bridge_set_parameter_value(j, value);
 #else
-                        kEngine->osc_send_control_set_parameter_value(i, j, value);
+                        fEngine->oscSend_control_set_parameter_value(i, j, value);
 #endif
                     }
                 }
@@ -134,12 +134,12 @@ void CarlaEngineThread::run()
                 // Update OSC control client peaks
 
                 if (oscRegisted)
-                    kEngine->osc_send_control_set_peaks(i);
+                    fEngine->oscSend_control_set_peaks(i);
 #endif
             }
         }
 
-        kEngine->idleOsc();
+        fEngine->idleOsc();
         carla_msleep(oscRegisted ? 30 : 50);
     }
 }

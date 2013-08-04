@@ -575,14 +575,14 @@ void carla_set_engine_option(CarlaOptionsType option, int value, const char* val
 #endif
 
     case CB::OPTION_MAX_PARAMETERS:
-        if (value <= 0)
+        if (value < 1)
             return carla_stderr2("carla_set_engine_option(OPTION_MAX_PARAMETERS, %i, \"%s\") - invalid value", value, valueStr);
 
         gStandalone.options.maxParameters = static_cast<unsigned int>(value);
         break;
 
     case CB::OPTION_UI_BRIDGES_TIMEOUT:
-        if (value <= 0)
+        if (value < 1)
             return carla_stderr2("carla_set_engine_option(OPTION_UI_BRIDGES_TIMEOUT, %i, \"%s\") - invalid value", value, valueStr);
 
         gStandalone.options.uiBridgesTimeout = static_cast<unsigned int>(value);
@@ -590,21 +590,21 @@ void carla_set_engine_option(CarlaOptionsType option, int value, const char* val
 
 #ifdef WANT_RTAUDIO
     case CB::OPTION_RTAUDIO_NUMBER_PERIODS:
-        if (value <= 0 || value > 3)
+        if (value < 2 || value > 3)
             return carla_stderr2("carla_set_engine_option(OPTION_RTAUDIO_NUMBER_PERIODS, %i, \"%s\") - invalid value", value, valueStr);
 
         gStandalone.options.rtaudioNumPeriods = static_cast<unsigned int>(value);
         break;
 
     case CB::OPTION_RTAUDIO_BUFFER_SIZE:
-        if (value <= 0)
+        if (value < 8)
             return carla_stderr2("carla_set_engine_option(OPTION_RTAUDIO_BUFFER_SIZE, %i, \"%s\") - invalid value", value, valueStr);
 
         gStandalone.options.rtaudioBufferSize = static_cast<unsigned int>(value);
         break;
 
     case CB::OPTION_RTAUDIO_SAMPLE_RATE:
-        if (value <= 0)
+        if (value < 22050)
             return carla_stderr2("carla_set_engine_option(OPTION_RTAUDIO_SAMPLE_RATE, %i, \"%s\") - invalid value", value, valueStr);
 
         gStandalone.options.rtaudioSampleRate = static_cast<unsigned int>(value);

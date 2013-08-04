@@ -805,6 +805,10 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
             //plugin = CarlaPlugin::newVST3(init);
             break;
 
+        case PLUGIN_AU:
+            //plugin = CarlaPlugin::newAU(init);
+            break;
+
         case PLUGIN_GIG:
             plugin = CarlaPlugin::newGIG(init, (extra != nullptr));
             break;
@@ -1517,98 +1521,91 @@ void CarlaEngine::setAboutToClose()
 // -----------------------------------------------------------------------
 // Global options
 
-#define CARLA_ENGINE_SET_OPTION_RUNNING_CHECK \
-    if (isRunning()) \
-        return carla_stderr("CarlaEngine::setOption(%s, %i, \"%s\") - Cannot set this option while engine is running!", OptionsType2Str(option), value, valueStr);
-
 void CarlaEngine::setOption(const OptionsType option, const int value, const char* const valueStr)
 {
     carla_debug("CarlaEngine::setOption(%s, %i, \"%s\")", OptionsType2Str(option), value, valueStr);
 
+    if (option >= OPTION_PROCESS_MODE && option < OPTION_PATH_RESOURCES && isRunning())
+        return carla_stderr("CarlaEngine::setOption(%s, %i, \"%s\") - Cannot set this option while engine is running!", OptionsType2Str(option), value, valueStr);
+
     switch (option)
     {
     case OPTION_PROCESS_NAME:
-        carla_setprocname(valueStr);
         break;
 
     case OPTION_PROCESS_MODE:
-        CARLA_ENGINE_SET_OPTION_RUNNING_CHECK
-
-        if (value < PROCESS_MODE_SINGLE_CLIENT || value > PROCESS_MODE_BRIDGE)
-            return carla_stderr("CarlaEngine::setOption(%s, %i, \"%s\") - invalid value", OptionsType2Str(option), value, valueStr);
+        if (value < PROCESS_MODE_SINGLE_CLIENT || value > PROCESS_MODE_PATCHBAY)
+            return carla_stderr("CarlaEngine::setOption(OPTION_PROCESS_MODE, %i, \"%s\") - invalid value", value, valueStr);
 
         fOptions.processMode = static_cast<ProcessMode>(value);
         break;
 
     case OPTION_TRANSPORT_MODE:
-        // FIXME: Always enable JACK transport for now
-#if 0
-        if (value < CarlaBackend::TRANSPORT_MODE_INTERNAL || value > CarlaBackend::TRANSPORT_MODE_BRIDGE)
+        if (value < CarlaBackend::TRANSPORT_MODE_INTERNAL || value > CarlaBackend::TRANSPORT_MODE_JACK)
             return carla_stderr2("carla_set_engine_option(OPTION_TRANSPORT_MODE, %i, \"%s\") - invalid value", value, valueStr);
 
         fOptions.transportMode = static_cast<CarlaBackend::TransportMode>(value);
-#endif
-        break;
-
-    case OPTION_MAX_PARAMETERS:
-        CARLA_ENGINE_SET_OPTION_RUNNING_CHECK
-
-        if (value < 0)
-            return; // TODO error here
-
-        fOptions.maxParameters = static_cast<uint>(value);
         break;
 
     case OPTION_FORCE_STEREO:
-        CARLA_ENGINE_SET_OPTION_RUNNING_CHECK
         fOptions.forceStereo = (value != 0);
         break;
 
     case OPTION_PREFER_PLUGIN_BRIDGES:
-        CARLA_ENGINE_SET_OPTION_RUNNING_CHECK
         fOptions.preferPluginBridges = (value != 0);
         break;
 
     case OPTION_PREFER_UI_BRIDGES:
-        CARLA_ENGINE_SET_OPTION_RUNNING_CHECK
         fOptions.preferUiBridges = (value != 0);
+        break;
+
+    case OPTION_UIS_ALWAYS_ON_TOP:
+        fOptions.uisAlwaysOnTop = (value != 0);
         break;
 
 #ifdef WANT_DSSI
     case OPTION_USE_DSSI_VST_CHUNKS:
-        CARLA_ENGINE_SET_OPTION_RUNNING_CHECK
         fOptions.useDssiVstChunks = (value != 0);
         break;
 #endif
 
-    case OPTION_UI_BRIDGES_TIMEOUT:
-        CARLA_ENGINE_SET_OPTION_RUNNING_CHECK
-        fOptions.oscUiTimeout = static_cast<uint>(value);
+    case OPTION_MAX_PARAMETERS:
+        if (value < 1)
+            return carla_stderr2("carla_set_engine_option(OPTION_MAX_PARAMETERS, %i, \"%s\") - invalid value", value, valueStr);
+
+        fOptions.maxParameters = static_cast<uint>(value);
         break;
 
-    case OPTION_JACK_AUTOCONNECT:
-        CARLA_ENGINE_SET_OPTION_RUNNING_CHECK
-        fOptions.jackAutoConnect = (value != 0);
+    case OPTION_UI_BRIDGES_TIMEOUT:
+        if (value < 1)
+            return carla_stderr2("carla_set_engine_option(OPTION_UI_BRIDGES_TIMEOUT, %i, \"%s\") - invalid value", value, valueStr);
+
+        fOptions.uiBridgesTimeout = static_cast<uint>(value);
         break;
 
 #ifdef WANT_RTAUDIO
     case OPTION_RTAUDIO_NUMBER_PERIODS:
-        CARLA_ENGINE_SET_OPTION_RUNNING_CHECK
-        fOptions.rtaudioNumberPeriods = static_cast<uint>(value);
+        if (value < 2 || value > 3)
+            return carla_stderr2("carla_set_engine_option(OPTION_MAX_PARAMETERS, %i, \"%s\") - invalid value", value, valueStr);
+
+        fOptions.rtaudioNumPeriods = static_cast<uint>(value);
         break;
 
     case OPTION_RTAUDIO_BUFFER_SIZE:
-        CARLA_ENGINE_SET_OPTION_RUNNING_CHECK
+        if (value < 8)
+            return carla_stderr2("carla_set_engine_option(OPTION_MAX_PARAMETERS, %i, \"%s\") - invalid value", value, valueStr);
+
         fOptions.rtaudioBufferSize = static_cast<uint>(value);
         break;
 
     case OPTION_RTAUDIO_SAMPLE_RATE:
-        CARLA_ENGINE_SET_OPTION_RUNNING_CHECK
+        if (value < 22050)
+            return carla_stderr2("carla_set_engine_option(OPTION_MAX_PARAMETERS, %i, \"%s\") - invalid value", value, valueStr);
+
         fOptions.rtaudioSampleRate = static_cast<uint>(value);
         break;
 
     case OPTION_RTAUDIO_DEVICE:
-        CARLA_ENGINE_SET_OPTION_RUNNING_CHECK
         fOptions.rtaudioDevice = valueStr;
         break;
 #endif

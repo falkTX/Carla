@@ -327,10 +327,10 @@ struct PluginParameterData {
         count = 0;
     }
 
-    float fixValue(const uint32_t parameterId, const float& value)
+    float getFixedValue(const uint32_t parameterId, const float& value) const
     {
-        CARLA_ASSERT_INT2(parameterId < count, parameterId, count);
-        return ranges[parameterId].fixValue(value);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < count, 0.0f);
+        return ranges[parameterId].getFixedValue(value);
     }
 
     CARLA_DECLARE_NON_COPY_STRUCT(PluginParameterData)
@@ -472,8 +472,6 @@ struct ExternalMidiNote {
         : channel(-1),
           note(0),
           velo(0) {}
-
-    CARLA_DECLARE_NON_COPY_STRUCT(ExternalMidiNote)
 };
 
 // -----------------------------------------------------------------------
@@ -535,7 +533,7 @@ struct CarlaPluginProtectedData {
             mutex.unlock();
         }
 
-        CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(ExternalNotes)
+        CARLA_DECLARE_NON_COPY_STRUCT(ExternalNotes)
 
     } extNotes;
 
@@ -577,7 +575,7 @@ struct CarlaPluginProtectedData {
             mutex.unlock();
         }
 
-        CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(PostRtEvents)
+        CARLA_DECLARE_NON_COPY_STRUCT(PostRtEvents)
 
     } postRtEvents;
 
@@ -596,7 +594,7 @@ struct CarlaPluginProtectedData {
               balanceRight(1.0f),
               panning(0.0f) {}
 
-        CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(PostProc)
+        CARLA_DECLARE_NON_COPY_STRUCT(PostProc)
 
     } postProc;
 #endif

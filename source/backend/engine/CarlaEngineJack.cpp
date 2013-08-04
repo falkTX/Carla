@@ -95,7 +95,7 @@ public:
 
         fBuffer = (float*)jackbridge_port_get_buffer(kPort, bufferSize);
 
-        if (! kIsInput)
+        if (! fIsInput)
            carla_zeroFloat(fBuffer, bufferSize);
     }
 
@@ -151,7 +151,7 @@ public:
 
         CARLA_ASSERT(engine->getBufferSize() == fBufferSize);
 
-        if (kIsInput)
+        if (fIsInput)
         {
             float* const jackBuffer((float*)jackbridge_port_get_buffer(kPort, fBufferSize));
             carla_copyFloat(fBuffer, jackBuffer, fBufferSize);
@@ -164,9 +164,9 @@ public:
 
     void writeBuffer(const uint32_t frames, const uint32_t timeOffset) override
     {
-        CARLA_ASSERT(! kIsInput);
+        CARLA_ASSERT(! fIsInput);
 
-        if (kIsInput)
+        if (fIsInput)
             return;
 
         float* const jackBuffer((float*)jackbridge_port_get_buffer(kPort, fBufferSize));
@@ -226,7 +226,7 @@ public:
 
         fJackBuffer = jackbridge_port_get_buffer(kPort, engine->getBufferSize());
 
-        if (! kIsInput)
+        if (! fIsInput)
             jackbridge_midi_clear_buffer(fJackBuffer);
     }
 
@@ -235,10 +235,10 @@ public:
         if (kPort == nullptr)
             return CarlaEngineEventPort::getEventCount();
 
-        CARLA_ASSERT(kIsInput);
+        CARLA_ASSERT(fIsInput);
         CARLA_ASSERT(fJackBuffer != nullptr);
 
-        if (! kIsInput)
+        if (! fIsInput)
             return 0;
         if (fJackBuffer == nullptr)
             return 0;
@@ -251,10 +251,10 @@ public:
         if (kPort == nullptr)
             return CarlaEngineEventPort::getEvent(index);
 
-        CARLA_ASSERT(kIsInput);
+        CARLA_ASSERT(fIsInput);
         CARLA_ASSERT(fJackBuffer != nullptr);
 
-        if (! kIsInput)
+        if (! fIsInput)
             return kFallbackJackEngineEvent;
         if (fJackBuffer == nullptr)
             return kFallbackJackEngineEvent;
@@ -342,14 +342,14 @@ public:
         if (kPort == nullptr)
             return CarlaEngineEventPort::writeControlEvent(time, channel, type, param, value);
 
-        CARLA_ASSERT(! kIsInput);
+        CARLA_ASSERT(! fIsInput);
         CARLA_ASSERT(fJackBuffer != nullptr);
         CARLA_ASSERT(type != kEngineControlEventTypeNull);
         CARLA_ASSERT(channel < MAX_MIDI_CHANNELS);
         CARLA_ASSERT(param < MAX_MIDI_VALUE);
         CARLA_SAFE_ASSERT(value >= 0.0f && value <= 1.0f);
 
-        if (kIsInput)
+        if (fIsInput)
             return;
         if (fJackBuffer == nullptr)
             return;
@@ -413,13 +413,13 @@ public:
         if (kPort == nullptr)
             return CarlaEngineEventPort::writeMidiEvent(time, channel, port, data, size);
 
-        CARLA_ASSERT(! kIsInput);
+        CARLA_ASSERT(! fIsInput);
         CARLA_ASSERT(fJackBuffer != nullptr);
         CARLA_ASSERT(channel < MAX_MIDI_CHANNELS);
         CARLA_ASSERT(data != nullptr);
         CARLA_ASSERT(size != 0);
 
-        if (kIsInput)
+        if (fIsInput)
             return;
         if (fJackBuffer == nullptr)
             return;
@@ -475,7 +475,7 @@ public:
     {
         carla_debug("CarlaEngineClient::~CarlaEngineClient()");
 
-        if (kEngine.getProccessMode() == PROCESS_MODE_MULTIPLE_CLIENTS && kClient != nullptr)
+        if (fEngine.getProccessMode() == PROCESS_MODE_MULTIPLE_CLIENTS && kClient != nullptr)
             jackbridge_client_close(kClient);
     }
 
@@ -483,7 +483,7 @@ public:
     {
         carla_debug("CarlaEngineJackClient::activate()");
 
-        if (kEngine.getProccessMode() == PROCESS_MODE_MULTIPLE_CLIENTS)
+        if (fEngine.getProccessMode() == PROCESS_MODE_MULTIPLE_CLIENTS)
         {
             CARLA_ASSERT(kClient != nullptr && ! fActive);
 
@@ -498,7 +498,7 @@ public:
     {
         carla_debug("CarlaEngineJackClient::deactivate()");
 
-        if (kEngine.getProccessMode() == PROCESS_MODE_MULTIPLE_CLIENTS)
+        if (fEngine.getProccessMode() == PROCESS_MODE_MULTIPLE_CLIENTS)
         {
             CARLA_ASSERT(kClient != nullptr && fActive);
 
@@ -560,11 +560,11 @@ public:
         case kEnginePortTypeNull:
             break;
         case kEnginePortTypeAudio:
-            return new CarlaEngineJackAudioPort(isInput, kEngine.getProccessMode(), kClient, port);
+            return new CarlaEngineJackAudioPort(isInput, fEngine.getProccessMode(), kClient, port);
         case kEnginePortTypeCV:
-            return new CarlaEngineJackCVPort(isInput, kEngine.getProccessMode(), kEngine.getBufferSize(), kClient, port);
+            return new CarlaEngineJackCVPort(isInput, fEngine.getProccessMode(), fEngine.getBufferSize(), kClient, port);
         case kEnginePortTypeEvent:
-            return new CarlaEngineJackEventPort(isInput, kEngine.getProccessMode(), kClient, port);
+            return new CarlaEngineJackEventPort(isInput, fEngine.getProccessMode(), kClient, port);
         }
 
         carla_stderr("CarlaEngineJackClient::addPort(%s, \"%s\", %s) - invalid type", EnginePortType2Str(portType), name, bool2str(isInput));
@@ -633,20 +633,20 @@ public:
     // -------------------------------------------------------------------
     // Maximum values
 
-    unsigned int maxClientNameSize() const override
+    unsigned int getMaxClientNameSize() const noexcept override
     {
         if (fOptions.processMode == PROCESS_MODE_SINGLE_CLIENT || fOptions.processMode == PROCESS_MODE_MULTIPLE_CLIENTS)
             return static_cast<unsigned int>(jackbridge_client_name_size());
 
-        return CarlaEngine::maxClientNameSize();
+        return CarlaEngine::getMaxClientNameSize();
     }
 
-    unsigned int maxPortNameSize() const override
+    unsigned int getMaxPortNameSize() const noexcept override
     {
         if (fOptions.processMode == PROCESS_MODE_SINGLE_CLIENT || fOptions.processMode == PROCESS_MODE_MULTIPLE_CLIENTS)
             return static_cast<unsigned int>(jackbridge_port_name_size());
 
-        return CarlaEngine::maxPortNameSize();
+        return CarlaEngine::getMaxPortNameSize();
     }
 
     // -------------------------------------------------------------------
@@ -844,7 +844,7 @@ public:
     }
 #endif
 
-    bool isRunning() const override
+    bool isRunning() const noexcept override
     {
 #ifdef BUILD_BRIDGE
         return (fClient != nullptr || ! fHasQuit);
@@ -853,19 +853,19 @@ public:
 #endif
     }
 
-    bool isOffline() const override
+    bool isOffline() const noexcept override
     {
         return fFreewheel;
     }
 
-    EngineType type() const override
+    EngineType getType() const noexcept override
     {
         return kEngineTypeJack;
     }
 
     CarlaEngineClient* addClient(CarlaPlugin* const plugin) override
     {
-        const char* const iconName(plugin->iconName());
+        const char* const iconName(plugin->getIconName());
         jack_client_t* client = nullptr;
 
 #ifdef BUILD_BRIDGE
@@ -894,7 +894,7 @@ public:
         }
         else if (fOptions.processMode == PROCESS_MODE_MULTIPLE_CLIENTS)
         {
-            client = jackbridge_client_open(plugin->name(), JackNullOption, nullptr);
+            client = jackbridge_client_open(plugin->getName(), JackNullOption, nullptr);
 
             CARLA_ASSERT(client != nullptr);
 
@@ -914,18 +914,18 @@ public:
 #ifndef BUILD_BRIDGE
     const char* renamePlugin(const unsigned int id, const char* const newName) override
     {
-        CARLA_ASSERT(kData->curPluginCount > 0);
-        CARLA_ASSERT(id < kData->curPluginCount);
-        CARLA_ASSERT(kData->plugins != nullptr);
+        CARLA_ASSERT(pData->curPluginCount > 0);
+        CARLA_ASSERT(id < pData->curPluginCount);
+        CARLA_ASSERT(pData->plugins != nullptr);
         CARLA_ASSERT(newName != nullptr);
 
-        if (kData->plugins == nullptr)
+        if (pData->plugins == nullptr)
         {
             setLastError("Critical error: no plugins are currently loaded!");
             return nullptr;
         }
 
-        CarlaPlugin* const plugin(kData->plugins[id].plugin);
+        CarlaPlugin* const plugin(pData->plugins[id].plugin);
 
         if (plugin == nullptr)
         {
@@ -933,7 +933,7 @@ public:
             return nullptr;
         }
 
-        CARLA_ASSERT(plugin->id() == id);
+        CARLA_ASSERT(plugin->getId() == id);
 
         bool needsReinit = (fOptions.processMode == PROCESS_MODE_SINGLE_CLIENT);
         const char* name = getUniquePluginName(newName);
@@ -956,7 +956,7 @@ public:
 
                 if (jack_client_t* jclient = jackbridge_client_open(name, JackNullOption, nullptr))
                 {
-                    const char* const iconName(plugin->iconName());
+                    const char* const iconName(plugin->getIconName());
                     jackbridge_custom_publish_data(jclient, URI_CANVAS_ICON, iconName, std::strlen(iconName)+1);
 
                     // close old client
@@ -1178,7 +1178,7 @@ protected:
     {
         saveTransportInfo();
 
-        if (kData->curPluginCount == 0)
+        if (pData->curPluginCount == 0)
         {
 #ifndef BUILD_BRIDGE
             // pass-through
@@ -1202,13 +1202,13 @@ protected:
             }
 #endif
 
-            return proccessPendingEvents();
+            return runPendingRtEvents();
         }
 
 #ifdef BUILD_BRIDGE
-        CarlaPlugin* const plugin(kData->plugins[0].plugin);
+        CarlaPlugin* const plugin(pData->plugins[0].plugin);
 
-        if (plugin != nullptr && plugin->enabled() && plugin->tryLock())
+        if (plugin != nullptr && plugin->isEnabled() && plugin->tryLock())
         {
             plugin->initBuffers();
             processPlugin(plugin, nframes);
@@ -1217,11 +1217,11 @@ protected:
 #else
         if (fOptions.processMode == PROCESS_MODE_SINGLE_CLIENT)
         {
-            for (unsigned int i=0; i < kData->curPluginCount; ++i)
+            for (unsigned int i=0; i < pData->curPluginCount; ++i)
             {
-                CarlaPlugin* const plugin(kData->plugins[i].plugin);
+                CarlaPlugin* const plugin(pData->plugins[i].plugin);
 
-                if (plugin != nullptr && plugin->enabled() && plugin->tryLock())
+                if (plugin != nullptr && plugin->isEnabled() && plugin->tryLock())
                 {
                     plugin->initBuffers();
                     processPlugin(plugin, nframes);
@@ -1252,7 +1252,7 @@ protected:
             float* outBuf[2] = { audioOut1, audioOut2 };
 
             // initialize input events
-            carla_zeroStruct<EngineEvent>(kData->bufEvents.in, INTERNAL_EVENT_COUNT);
+            carla_zeroStruct<EngineEvent>(pData->bufEvents.in, INTERNAL_EVENT_COUNT);
             {
                 uint32_t engineEventIndex = 0;
 
@@ -1264,7 +1264,7 @@ protected:
                     if (! jackbridge_midi_event_get(&jackEvent, eventIn, jackEventIndex))
                         continue;
 
-                    EngineEvent* const engineEvent(&kData->bufEvents.in[engineEventIndex++]);
+                    EngineEvent* const engineEvent(&pData->bufEvents.in[engineEventIndex++]);
                     engineEvent->clear();
 
                     const uint8_t midiStatus  = MIDI_GET_STATUS_FROM_DATA(jackEvent.buffer);
@@ -1347,7 +1347,7 @@ protected:
 
                 for (unsigned short i=0; i < INTERNAL_EVENT_COUNT; ++i)
                 {
-                    EngineEvent* const engineEvent = &kData->bufEvents.out[i];
+                    EngineEvent* const engineEvent = &pData->bufEvents.out[i];
 
                     uint8_t data[3] = { 0 };
                     uint8_t size    = 0;
@@ -1423,7 +1423,7 @@ protected:
         }
 #endif // ! BUILD_BRIDGE
 
-        proccessPendingEvents();
+        runPendingRtEvents();
     }
 
     void handleJackLatencyCallback(const jack_latency_callback_mode_t mode)
@@ -1431,11 +1431,11 @@ protected:
         if (fOptions.processMode != PROCESS_MODE_SINGLE_CLIENT)
             return;
 
-        for (unsigned int i=0; i < kData->curPluginCount; ++i)
+        for (unsigned int i=0; i < pData->curPluginCount; ++i)
         {
-            CarlaPlugin* const plugin(kData->plugins[i].plugin);
+            CarlaPlugin* const plugin(pData->plugins[i].plugin);
 
-            if (plugin != nullptr && plugin->enabled())
+            if (plugin != nullptr && plugin->isEnabled())
                 latencyPlugin(plugin, mode);
         }
     }
@@ -1652,9 +1652,9 @@ protected:
 
     void handleJackShutdownCallback()
     {
-        for (unsigned int i=0; i < kData->curPluginCount; ++i)
+        for (unsigned int i=0; i < pData->curPluginCount; ++i)
         {
-            //CarlaPlugin* const plugin(kData->plugins[i].plugin);
+            //CarlaPlugin* const plugin(pData->plugins[i].plugin);
 
             //if (plugin)
             //    plugin->x_client = nullptr;
@@ -2026,8 +2026,8 @@ private:
 
     void processPlugin(CarlaPlugin* const plugin, const uint32_t nframes)
     {
-        const uint32_t inCount(plugin->audioInCount());
-        const uint32_t outCount(plugin->audioOutCount());
+        const uint32_t inCount(plugin->getAudioInCount());
+        const uint32_t outCount(plugin->getAudioOutCount());
 
         float* inBuffer[inCount];
         float* outBuffer[outCount];
@@ -2071,14 +2071,14 @@ private:
             }
         }
 
-        setPeaks(plugin->id(), inPeaks, outPeaks);
+        setPluginPeaks(plugin->getId(), inPeaks, outPeaks);
     }
 
     void latencyPlugin(CarlaPlugin* const plugin, jack_latency_callback_mode_t mode)
     {
         //const uint32_t inCount(plugin->audioInCount());
         //const uint32_t outCount(plugin->audioOutCount());
-        const uint32_t latency(plugin->latency());
+        const uint32_t latency(plugin->getLatencyInFrames());
 
         if (latency == 0)
             return;
@@ -2201,7 +2201,7 @@ private:
     {
         CarlaPlugin* const plugin((CarlaPlugin*)arg);
 
-        if (plugin != nullptr && plugin->enabled() && plugin->tryLock())
+        if (plugin != nullptr && plugin->isEnabled() && plugin->tryLock())
         {
             CarlaEngineJack* const engine((CarlaEngineJack*)CarlaPluginGetEngine(plugin));
             CARLA_ASSERT(engine != nullptr);
@@ -2219,7 +2219,7 @@ private:
     {
         CarlaPlugin* const plugin((CarlaPlugin*)arg);
 
-        if (plugin != nullptr && plugin->enabled())
+        if (plugin != nullptr && plugin->isEnabled())
         {
             CarlaEngineJack* const engine((CarlaEngineJack*)CarlaPluginGetEngine(plugin));
             CARLA_ASSERT(engine != nullptr);

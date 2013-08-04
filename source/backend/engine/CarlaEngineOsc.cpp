@@ -253,7 +253,7 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
         return 1;
     }
 
-    if (pluginId > kEngine->currentPluginCount())
+    if (pluginId > kEngine->getCurrentPluginCount())
     {
         carla_stderr("CarlaEngineOsc::handleMessage() - failed to get plugin, wrong id '%i'", pluginId);
         return 1;
@@ -262,7 +262,7 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
     // Get plugin
     CarlaPlugin* const plugin = kEngine->getPluginUnchecked(pluginId);
 
-    if (plugin == nullptr || plugin->id() != pluginId)
+    if (plugin == nullptr || plugin->getId() != pluginId)
     {
         carla_stderr("CarlaEngineOsc::handleMessage() - invalid plugin id '%i', probably has been removed", pluginId);
         return 1;
@@ -325,7 +325,7 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
         return handleMsgNoteOff(plugin, argc, argv, types);
 
     // Plugin Bridges
-    if ((plugin->hints() & PLUGIN_IS_BRIDGE) > 0 && std::strlen(method) > 11 && std::strncmp(method, "bridge_", 7) == 0)
+    if ((plugin->getHints() & PLUGIN_IS_BRIDGE) > 0 && std::strlen(method) > 11 && std::strncmp(method, "bridge_", 7) == 0)
     {
         if (std::strcmp(method+7, "audio_count") == 0)
             return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeAudioCount, argc, argv, types);
@@ -416,11 +416,11 @@ int CarlaEngineOsc::handleMsgRegister(const bool isTCP, const int argc, const lo
         std::free(port);
     }
 
-    for (unsigned short i=0; i < kEngine->currentPluginCount(); ++i)
+    for (unsigned short i=0; i < kEngine->getCurrentPluginCount(); ++i)
     {
         CarlaPlugin* const plugin = kEngine->getPluginUnchecked(i);
 
-        if (plugin && plugin->enabled())
+        if (plugin && plugin->isEnabled())
             plugin->registerToOscClient();
     }
 
@@ -516,7 +516,7 @@ int CarlaEngineOsc::handleMsgProgram(CARLA_ENGINE_OSC_HANDLE_ARGS2)
         if (program < 0)
             return 1;
 
-        if (program < static_cast<int32_t>(plugin->programCount()))
+        if (program < static_cast<int32_t>(plugin->getProgramCount()))
         {
             plugin->setProgram(program, false, true, true);
             return 0;
@@ -540,7 +540,7 @@ int CarlaEngineOsc::handleMsgMidi(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     (void)plugin;
     (void)argv;
 #else
-    if (plugin->midiInCount() == 0)
+    if (plugin->getMidiInCount() == 0)
     {
         carla_stderr("CarlaEngineOsc::handleMsgMidi() - recived midi when plugin has no midi inputs");
         return 1;
@@ -590,9 +590,10 @@ int CarlaEngineOsc::handleMsgExiting(CARLA_ENGINE_OSC_HANDLE_ARGS1)
     carla_debug("CarlaEngineOsc::handleMsgExiting()");
 
     // TODO - check for non-UIs (dssi-vst) and set to -1 instead
-    kEngine->callback(CALLBACK_SHOW_GUI, plugin->id(), 0, 0, 0.0f, nullptr);
+    kEngine->callback(CALLBACK_SHOW_GUI, plugin->getId(), 0, 0, 0.0f, nullptr);
 
-    plugin->freeOscData();
+    // TODO
+    //plugin->freeOscData();
 
     return 0;
 }

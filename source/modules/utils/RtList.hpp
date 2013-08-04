@@ -267,9 +267,9 @@ public:
         {
             data = list_entry(entry, Data, siblings);
 
-            CARLA_ASSERT(data != nullptr);
+            CARLA_SAFE_ASSERT_CONTINUE(data != nullptr)
 
-            if (data != nullptr && data->value == value)
+            if (data->value == value)
             {
                 --fCount;
                 list_del(entry);
@@ -281,6 +281,29 @@ public:
         }
 
         return (data != nullptr);
+    }
+
+    void removeAll(const T& value)
+    {
+        Data* data;
+        k_list_head* entry;
+        k_list_head* entry2;
+
+        list_for_each_safe(entry, entry2, &fQueue)
+        {
+            data = list_entry(entry, Data, siblings);
+
+            CARLA_SAFE_ASSERT_CONTINUE(data != nullptr)
+
+            if (data->value == value)
+            {
+                --fCount;
+                list_del(entry);
+
+                data->~Data();
+                _deallocate(data);
+            }
+        }
     }
 
     void spliceAppend(List& list, const bool init = true)

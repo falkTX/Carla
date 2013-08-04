@@ -162,7 +162,7 @@ public:
         init("Carla-Plugin");
 
         // set control thread binary
-        CarlaString threadBinary(hostResourceDir());
+        CarlaString threadBinary(getResourceDir());
         threadBinary += "/../";
         threadBinary += "carla_control.py";
 
@@ -207,21 +207,21 @@ protected:
     {
         carla_debug("CarlaEngineNative::close()");
 
-        proccessPendingEvents();
+        runPendingRtEvents();
         return CarlaEngine::close();
     }
 
-    bool isRunning() const override
+    bool isRunning() const noexcept override
     {
         return fIsRunning;
     }
 
-    bool isOffline() const override
+    bool isOffline() const noexcept override
     {
         return false;
     }
 
-    EngineType type() const override
+    EngineType getType() const noexcept override
     {
         return kEngineTypePlugin;
     }
@@ -231,15 +231,15 @@ protected:
 
     uint32_t getParameterCount() override
     {
-        if (kData->curPluginCount == 0 || kData->plugins == nullptr)
+        if (pData->curPluginCount == 0 || pData->plugins == nullptr)
             return 0;
 
-        CarlaPlugin* const plugin(kData->plugins[0].plugin);
+        CarlaPlugin* const plugin(pData->plugins[0].plugin);
 
-        if (plugin == nullptr || ! plugin->enabled())
+        if (plugin == nullptr || ! plugin->isEnabled())
             return 0;
 
-        return kData->plugins[0].plugin->parameterCount();
+        return pData->plugins[0].plugin->getParameterCount();
     }
 
     const Parameter* getParameterInfo(const uint32_t index) override
@@ -247,17 +247,17 @@ protected:
         if (index >= getParameterCount())
             return nullptr;
 
-        CarlaPlugin* const plugin(kData->plugins[0].plugin);
+        CarlaPlugin* const plugin(pData->plugins[0].plugin);
 
-        if (plugin == nullptr || ! plugin->enabled())
+        if (plugin == nullptr || ! plugin->isEnabled())
             return nullptr;
 
         static ::Parameter param;
         static char strBufName[STR_MAX+1];
         static char strBufUnit[STR_MAX+1];
 
-        const ParameterData& paramData(plugin->parameterData(index));
-        const ParameterRanges& paramRanges(plugin->parameterRanges(index));
+        const ParameterData& paramData(plugin->getParameterData(index));
+        const ParameterRanges& paramRanges(plugin->getParameterRanges(index));
 
         plugin->getParameterName(index, strBufName);
         plugin->getParameterUnit(index, strBufUnit);
@@ -307,9 +307,9 @@ protected:
         if (index >= getParameterCount())
             return 0.0f;
 
-        CarlaPlugin* const plugin(kData->plugins[0].plugin);
+        CarlaPlugin* const plugin(pData->plugins[0].plugin);
 
-        if (plugin == nullptr || ! plugin->enabled())
+        if (plugin == nullptr || ! plugin->isEnabled())
             return 0.0f;
 
         return plugin->getParameterValue(index);
@@ -320,9 +320,9 @@ protected:
         if (index >= getParameterCount())
             return nullptr;
 
-        CarlaPlugin* const plugin(kData->plugins[0].plugin);
+        CarlaPlugin* const plugin(pData->plugins[0].plugin);
 
-        if (plugin == nullptr || ! plugin->enabled())
+        if (plugin == nullptr || ! plugin->isEnabled())
             return nullptr;
 
         static char strBuf[STR_MAX+1];
@@ -337,15 +337,15 @@ protected:
 
     uint32_t getMidiProgramCount() override
     {
-        if (kData->curPluginCount == 0 || kData->plugins == nullptr)
+        if (pData->curPluginCount == 0 || pData->plugins == nullptr)
             return 0;
 
-        CarlaPlugin* const plugin(kData->plugins[0].plugin);
+        CarlaPlugin* const plugin(pData->plugins[0].plugin);
 
-        if (plugin == nullptr || ! plugin->enabled())
+        if (plugin == nullptr || ! plugin->isEnabled())
             return 0.0f;
 
-        return plugin->midiProgramCount();
+        return plugin->getMidiProgramCount();
     }
 
     const MidiProgram* getMidiProgramInfo(const uint32_t index) override
@@ -353,15 +353,15 @@ protected:
         if (index >= getMidiProgramCount())
             return nullptr;
 
-        CarlaPlugin* const plugin(kData->plugins[0].plugin);
+        CarlaPlugin* const plugin(pData->plugins[0].plugin);
 
-        if (plugin == nullptr || ! plugin->enabled())
+        if (plugin == nullptr || ! plugin->isEnabled())
             return nullptr;
 
         static ::MidiProgram midiProg;
 
         {
-            const MidiProgramData& midiProgData(plugin->midiProgramData(index));
+            const MidiProgramData& midiProgData(plugin->getMidiProgramData(index));
 
             midiProg.bank    = midiProgData.bank;
             midiProg.program = midiProgData.program;
@@ -379,9 +379,9 @@ protected:
         if (index >= getParameterCount())
             return;
 
-        CarlaPlugin* const plugin(kData->plugins[0].plugin);
+        CarlaPlugin* const plugin(pData->plugins[0].plugin);
 
-        if (plugin == nullptr || ! plugin->enabled())
+        if (plugin == nullptr || ! plugin->isEnabled())
             return;
 
         plugin->setParameterValue(index, value, false, false, false);
@@ -389,12 +389,12 @@ protected:
 
     void setMidiProgram(const uint8_t, const uint32_t bank, const uint32_t program) override
     {
-        if (kData->curPluginCount == 0 || kData->plugins == nullptr)
+        if (pData->curPluginCount == 0 || pData->plugins == nullptr)
             return;
 
-        CarlaPlugin* const plugin(kData->plugins[0].plugin);
+        CarlaPlugin* const plugin(pData->plugins[0].plugin);
 
-        if (plugin == nullptr || ! plugin->enabled())
+        if (plugin == nullptr || ! plugin->isEnabled())
             return;
 
         plugin->setMidiProgramById(bank, program, false, false, false);
@@ -418,11 +418,11 @@ protected:
 
     void activate() override
     {
-        for (uint32_t i=0; i < kData->curPluginCount; ++i)
+        for (uint32_t i=0; i < pData->curPluginCount; ++i)
         {
-            CarlaPlugin* const plugin(kData->plugins[i].plugin);
+            CarlaPlugin* const plugin(pData->plugins[i].plugin);
 
-            if (plugin == nullptr || ! plugin->enabled())
+            if (plugin == nullptr || ! plugin->isEnabled())
                 continue;
 
             plugin->setActive(true, true, false);
@@ -431,27 +431,27 @@ protected:
 
     void deactivate() override
     {
-        for (uint32_t i=0; i < kData->curPluginCount; ++i)
+        for (uint32_t i=0; i < pData->curPluginCount; ++i)
         {
-            CarlaPlugin* const plugin(kData->plugins[i].plugin);
+            CarlaPlugin* const plugin(pData->plugins[i].plugin);
 
-            if (plugin == nullptr || ! plugin->enabled())
+            if (plugin == nullptr || ! plugin->isEnabled())
                 continue;
 
             plugin->setActive(false, true, false);
         }
 
         // just in case
-        proccessPendingEvents();
+        runPendingRtEvents();
     }
 
     void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t midiEventCount, const ::MidiEvent* const midiEvents) override
     {
-        if (kData->curPluginCount == 0)
+        if (pData->curPluginCount == 0)
         {
             carla_zeroFloat(outBuffer[0], frames);
             carla_zeroFloat(outBuffer[1], frames);
-            return proccessPendingEvents();
+            return runPendingRtEvents();;
         }
 
         // ---------------------------------------------------------------
@@ -483,7 +483,7 @@ protected:
         // ---------------------------------------------------------------
         // initialize input events
 
-        carla_zeroStruct<EngineEvent>(kData->bufEvents.in, INTERNAL_EVENT_COUNT);
+        carla_zeroStruct<EngineEvent>(pData->bufEvents.in, INTERNAL_EVENT_COUNT);
         {
             uint32_t engineEventIndex = 0;
 
@@ -511,7 +511,7 @@ protected:
 
                     if (control == MIDI_CONTROL_ALL_SOUND_OFF || control == MIDI_CONTROL_ALL_NOTES_OFF)
                     {
-                        EngineEvent& engineEvent(kData->bufEvents.in[engineEventIndex++]);
+                        EngineEvent& engineEvent(pData->bufEvents.in[engineEventIndex++]);
                         engineEvent.clear();
 
                         engineEvent.type    = kEngineEventTypeControl;
@@ -526,7 +526,7 @@ protected:
                     }
                 }
 
-                EngineEvent& engineEvent(kData->bufEvents.in[engineEventIndex++]);
+                EngineEvent& engineEvent(pData->bufEvents.in[engineEventIndex++]);
                 engineEvent.clear();
 
                 engineEvent.type    = kEngineEventTypeMidi;
@@ -551,7 +551,7 @@ protected:
         // process
 
         processRack(inBuf, outBuf, frames);
-        proccessPendingEvents();
+        runPendingRtEvents();
     }
 
     // -------------------------------------------------------------------
@@ -566,9 +566,9 @@ protected:
         else
         {
 #if 0
-            for (uint32_t i=0; i < kData->curPluginCount; ++i)
+            for (uint32_t i=0; i < pData->curPluginCount; ++i)
             {
-                CarlaPlugin* const plugin(kData->plugins[i].plugin);
+                CarlaPlugin* const plugin(pData->plugins[i].plugin);
 
                 if (plugin == nullptr || ! plugin->enabled())
                     continue;
@@ -604,9 +604,9 @@ protected:
         if (index >= getParameterCount())
             return;
 
-        CarlaPlugin* const plugin(kData->plugins[0].plugin);
+        CarlaPlugin* const plugin(pData->plugins[0].plugin);
 
-        if (plugin == nullptr || ! plugin->enabled())
+        if (plugin == nullptr || ! plugin->isEnabled())
             return;
 
         plugin->uiParameterChange(index, value);
@@ -652,11 +652,11 @@ protected:
         bool firstPlugin = true;
         char strBuf[STR_MAX+1];
 
-        for (unsigned int i=0; i < kData->curPluginCount; ++i)
+        for (unsigned int i=0; i < pData->curPluginCount; ++i)
         {
-            CarlaPlugin* const plugin(kData->plugins[i].plugin);
+            CarlaPlugin* const plugin(pData->plugins[i].plugin);
 
-            if (plugin != nullptr && plugin->enabled())
+            if (plugin != nullptr && plugin->isEnabled())
             {
                 if (! firstPlugin)
                     out << "\n";
@@ -666,8 +666,11 @@ protected:
                 if (*strBuf != 0)
                     out << QString(" <!-- %1 -->\n").arg(xmlSafeString(strBuf, true));
 
+                QString content;
+                fillXmlStringFromSaveState(content, plugin->getSaveState());
+
                 out << " <Plugin>\n";
-                out << getXMLFromSaveState(plugin->getSaveState());
+                out << content;
                 out << " </Plugin>\n";
 
                 firstPlugin = false;
@@ -698,11 +701,10 @@ protected:
         {
             if (node.toElement().tagName() == "Plugin")
             {
-                const SaveState& saveState(getSaveStateDictFromXML(node));
-                CARLA_ASSERT(saveState.type != nullptr);
+                SaveState saveState;
+                fillSaveStateFromXmlNode(saveState, node);
 
-                if (saveState.type == nullptr)
-                    continue;
+                CARLA_SAFE_ASSERT_CONTINUE(saveState.type != nullptr)
 
                 const void* extraStuff = nullptr;
 
@@ -713,7 +715,7 @@ protected:
                 // TODO - proper find&load plugins
                 if (addPlugin(getPluginTypeFromString(saveState.type), saveState.binary, saveState.name, saveState.label, extraStuff))
                 {
-                    if (CarlaPlugin* plugin = getPlugin(kData->curPluginCount-1))
+                    if (CarlaPlugin* plugin = getPlugin(pData->curPluginCount-1))
                         plugin->loadSaveState(saveState);
                 }
             }
@@ -751,7 +753,8 @@ static const PluginDescriptor carlaDesc = {
     PluginDescriptorFILL(CarlaEngineNative)
 };
 
-void CarlaEngine::registerNativePlugin()
+CARLA_EXPORT
+void carla_register_native_plugin_carla()
 {
     carla_register_native_plugin(&carlaDesc);
 }
