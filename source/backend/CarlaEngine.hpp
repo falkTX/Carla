@@ -28,6 +28,10 @@ struct CarlaOscData;
 
 CARLA_BACKEND_START_NAMESPACE
 
+#if 0
+} // Fix editor indentation
+#endif
+
 /*!
  * @defgroup CarlaEngineAPI Carla Engine API
  *
@@ -51,19 +55,24 @@ enum EngineType {
     kEngineTypeJack = 1,
 
     /*!
+    * Juce engine type, used to provide Native Audio and MIDI support.
+    */
+    kEngineTypeJuce = 2,
+
+    /*!
     * RtAudio engine type, used to provide Native Audio and MIDI support.
     */
-    kEngineTypeRtAudio = 2,
+    kEngineTypeRtAudio = 3,
 
     /*!
     * Plugin engine type, used to export the engine as a plugin.
     */
-    kEngineTypePlugin = 3,
+    kEngineTypePlugin = 4,
 
     /*!
     * Bridge engine type, used in BridgePlugin class.
     */
-    kEngineTypeBridge = 4
+    kEngineTypeBridge = 5
 };
 
 /*!
@@ -366,11 +375,11 @@ class CarlaEnginePort
 {
 public:
     /*!
-     * The contructor.\n
+     * The constructor.\n
      * Param \a isInput defines wherever this is an input port or not (output otherwise).\n
      * Input/output and process mode are constant for the lifetime of the port.
      */
-    CarlaEnginePort(const bool isInput, const ProcessMode processMode);
+    CarlaEnginePort(const CarlaEngine& engine, const bool isInput);
 
     /*!
      * The destructor.
@@ -380,17 +389,17 @@ public:
     /*!
      * Get the type of the port, as provided by the respective subclasses.
      */
-    virtual EnginePortType type() const noexcept = 0;
+    virtual EnginePortType getType() const noexcept = 0;
 
     /*!
-     * Initialize the port's internal buffer for \a engine.
+     * Initialize the port's internal buffer.
      */
-    virtual void initBuffer(CarlaEngine* const engine) = 0;
+    virtual void initBuffer() = 0;
 
 #ifndef DOXYGEN
 protected:
+    const CarlaEngine& fEngine;
     const bool fIsInput;
-    const ProcessMode fProcessMode;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEnginePort)
 #endif
@@ -403,10 +412,10 @@ class CarlaEngineAudioPort : public CarlaEnginePort
 {
 public:
     /*!
-     * The contructor.\n
+     * The constructor.\n
      * All constructor parameters are constant and will never change in the lifetime of the port.
      */
-    CarlaEngineAudioPort(const bool isInput, const ProcessMode processMode);
+    CarlaEngineAudioPort(const CarlaEngine& engine, const bool isInput);
 
     /*!
      * The destructor.
@@ -414,17 +423,17 @@ public:
     virtual ~CarlaEngineAudioPort() override;
 
     /*!
-     * Get the type of the port, in this case CarlaEnginePortTypeAudio.
+     * Get the type of the port, in this case kEnginePortTypeAudio.
      */
-    EnginePortType type() const noexcept override
+    EnginePortType getType() const noexcept override
     {
         return kEnginePortTypeAudio;
     }
 
     /*!
-     * Initialize the port's internal buffer for \a engine.
+     * Initialize the port's internal buffer.
      */
-    virtual void initBuffer(CarlaEngine* const engine) override;
+    virtual void initBuffer() override;
 
     /*!
      * Direct access to the port's audio buffer.
@@ -449,10 +458,10 @@ class CarlaEngineCVPort : public CarlaEnginePort
 {
 public:
     /*!
-     * The contructor.\n
+     * The constructor.\n
      * All constructor parameters are constant and will never change in the lifetime of the port.
      */
-    CarlaEngineCVPort(const bool isInput, const ProcessMode processMode, const uint32_t bufferSize);
+    CarlaEngineCVPort(const CarlaEngine& engine, const bool isInput);
 
     /*!
      * The destructor.
@@ -460,9 +469,9 @@ public:
     virtual ~CarlaEngineCVPort() override;
 
     /*!
-     * Get the type of the port, in this case CarlaEnginePortTypeAudio.
+     * Get the type of the port, in this case kEnginePortTypeCV.
      */
-    EnginePortType type() const noexcept override
+    EnginePortType getType() const noexcept override
     {
         return kEnginePortTypeCV;
     }
@@ -470,7 +479,7 @@ public:
     /*!
      * Initialize the port's internal buffer for \a engine.
      */
-    virtual void initBuffer(CarlaEngine* const engine) override;
+    virtual void initBuffer() override;
 
     /*!
      * Write buffer back into the engine.
@@ -492,8 +501,7 @@ public:
 
 #ifndef DOXYGEN
 protected:
-    float*   fBuffer;
-    uint32_t fBufferSize;
+    float* fBuffer;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineCVPort)
 #endif
@@ -506,10 +514,10 @@ class CarlaEngineEventPort : public CarlaEnginePort
 {
 public:
     /*!
-     * The contructor.\n
+     * The constructor.\n
      * All constructor parameters are constant and will never change in the lifetime of the port.
      */
-    CarlaEngineEventPort(const bool isInput, const ProcessMode processMode);
+    CarlaEngineEventPort(const CarlaEngine& engine, const bool isInput);
 
     /*!
      * The destructor.
@@ -517,9 +525,9 @@ public:
     virtual ~CarlaEngineEventPort() override;
 
     /*!
-     * Get the type of the port, in this case CarlaEnginePortTypeControl.
+     * Get the type of the port, in this case kEnginePortTypeEvent.
      */
-    EnginePortType type() const noexcept override
+    EnginePortType getType() const noexcept override
     {
         return kEnginePortTypeEvent;
     }
@@ -527,7 +535,7 @@ public:
     /*!
      * Initialize the port's internal buffer for \a engine.
      */
-    virtual void initBuffer(CarlaEngine* const engine) override;
+    virtual void initBuffer() override;
 
     /*!
      * Get the number of events present in the buffer.
@@ -580,8 +588,8 @@ public:
     }
 
 #ifndef DOXYGEN
-private:
-    EngineEvent* pBuffer;
+protected:
+    EngineEvent* fBuffer;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineEventPort)
 #endif
@@ -1158,6 +1166,12 @@ public:
 
 private:
     static CarlaEngine* newJack();
+
+    static CarlaEngine* newJuce();
+    static size_t       getJuceApiCount();
+    static const char*  getJuceApiName(const unsigned int index);
+    static const char** getJuceApiDeviceNames(const unsigned int index);
+
 #ifdef WANT_RTAUDIO
     enum RtAudioApi {
         RTAUDIO_DUMMY        = 0,

@@ -29,34 +29,19 @@
 
 CARLA_BACKEND_START_NAMESPACE
 
-// -------------------------------------------------------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // Fallback data
 
 static const EngineEvent kFallbackEngineEvent;
 
-#ifndef BUILD_BRIDGE
-// -------------------------------------------------------------------------------------------------------------------
-// Bridge Helper, defined in CarlaPlugin.cpp
-
-extern BinaryType CarlaPluginGetBridgeBinaryType(CarlaPlugin* const plugin);
-
-// -------------------------------------------------------------------------------------------------------------------
-// Engine Helpers
-
-void registerEnginePlugin(CarlaEngine* const engine, const unsigned int id, CarlaPlugin* const plugin)
-{
-    CarlaEngineProtectedData::registerEnginePlugin(engine, id, plugin);
-}
-#endif
-
-// -------------------------------------------------------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // Carla Engine port (Abstract)
 
-CarlaEnginePort::CarlaEnginePort(const bool isInput, const ProcessMode processMode)
-    : fIsInput(isInput),
-      fProcessMode(processMode)
+CarlaEnginePort::CarlaEnginePort(const CarlaEngine& engine, const bool isInput)
+    : fEngine(engine),
+      fIsInput(isInput)
 {
-    carla_debug("CarlaEnginePort::CarlaEnginePort(%s, %s)", bool2str(isInput), ProcessMode2Str(processMode));
+    carla_debug("CarlaEnginePort::CarlaEnginePort(name:\"%s\", %s)", engine.getName(), bool2str(isInput));
 }
 
 CarlaEnginePort::~CarlaEnginePort()
@@ -64,16 +49,16 @@ CarlaEnginePort::~CarlaEnginePort()
     carla_debug("CarlaEnginePort::~CarlaEnginePort()");
 }
 
-// -------------------------------------------------------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // Carla Engine Audio port
 
-CarlaEngineAudioPort::CarlaEngineAudioPort(const bool isInput, const ProcessMode processMode)
-    : CarlaEnginePort(isInput, processMode),
+CarlaEngineAudioPort::CarlaEngineAudioPort(const CarlaEngine& engine, const bool isInput)
+    : CarlaEnginePort(engine, isInput),
       fBuffer(nullptr)
 {
-    carla_debug("CarlaEngineAudioPort::CarlaEngineAudioPort(%s, %s)", bool2str(isInput), ProcessMode2Str(processMode));
+    carla_debug("CarlaEngineAudioPort::CarlaEngineAudioPort(name:\"%s\", %s)", engine.getName(), bool2str(isInput));
 
-    if (fProcessMode == PROCESS_MODE_PATCHBAY)
+    if (fEngine.getProccessMode() == PROCESS_MODE_PATCHBAY)
         fBuffer = new float[PATCHBAY_BUFFER_SIZE];
 }
 
@@ -81,7 +66,7 @@ CarlaEngineAudioPort::~CarlaEngineAudioPort()
 {
     carla_debug("CarlaEngineAudioPort::~CarlaEngineAudioPort()");
 
-    if (fProcessMode == PROCESS_MODE_PATCHBAY)
+    if (fEngine.getProccessMode() == PROCESS_MODE_PATCHBAY)
     {
         CARLA_ASSERT(fBuffer != nullptr);
 
@@ -93,28 +78,25 @@ CarlaEngineAudioPort::~CarlaEngineAudioPort()
     }
 }
 
-void CarlaEngineAudioPort::initBuffer(CarlaEngine* const)
+void CarlaEngineAudioPort::initBuffer()
 {
-    if (fProcessMode == PROCESS_MODE_PATCHBAY && ! fIsInput)
+    if (fEngine.getProccessMode() == PROCESS_MODE_PATCHBAY && ! fIsInput)
         carla_zeroFloat(fBuffer, PATCHBAY_BUFFER_SIZE);
 }
 
-// -------------------------------------------------------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // Carla Engine CV port
 
-CarlaEngineCVPort::CarlaEngineCVPort(const bool isInput, const ProcessMode processMode, const uint32_t bufferSize)
-    : CarlaEnginePort(isInput, processMode),
-      fBuffer(new float[bufferSize]),
-      fBufferSize(bufferSize)
+CarlaEngineCVPort::CarlaEngineCVPort(const CarlaEngine& engine, const bool isInput)
+    : CarlaEnginePort(engine, isInput),
+      fBuffer(new float[engine.getBufferSize()])
 {
-    carla_debug("CarlaEngineCVPort::CarlaEngineCVPort(%s, %s)", bool2str(isInput), ProcessMode2Str(processMode));
+    carla_debug("CarlaEngineCVPort::CarlaEngineCVPort(name:\"%s\", %s)", engine.getName(), bool2str(isInput));
 }
 
 CarlaEngineCVPort::~CarlaEngineCVPort()
 {
     carla_debug("CarlaEngineCVPort::~CarlaEngineCVPort()");
-
-    CARLA_ASSERT(fBuffer != nullptr);
 
     if (fBuffer != nullptr)
     {
@@ -123,11 +105,9 @@ CarlaEngineCVPort::~CarlaEngineCVPort()
     }
 }
 
-void CarlaEngineCVPort::initBuffer(CarlaEngine* const engine)
+void CarlaEngineCVPort::initBuffer()
 {
-    CARLA_ASSERT(engine != nullptr && engine->getBufferSize() == fBufferSize);
-
-    carla_zeroFloat(fBuffer, fBufferSize);
+    carla_zeroFloat(fBuffer, fEngine.getBufferSize());
 }
 
 void CarlaEngineCVPort::writeBuffer(const uint32_t, const uint32_t)
@@ -137,139 +117,105 @@ void CarlaEngineCVPort::writeBuffer(const uint32_t, const uint32_t)
 
 void CarlaEngineCVPort::setBufferSize(const uint32_t bufferSize)
 {
-    CARLA_ASSERT(fBuffer != nullptr);
-
-    if (fBufferSize == bufferSize)
-        return;
-
     if (fBuffer != nullptr)
         delete[] fBuffer;
 
-    fBuffer     = new float[bufferSize];
-    fBufferSize = bufferSize;
+    fBuffer = new float[bufferSize];
 }
 
-// -------------------------------------------------------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // Carla Engine Event port
 
-CarlaEngineEventPort::CarlaEngineEventPort(const bool isInput, const ProcessMode processMode)
-    : CarlaEnginePort(isInput, processMode),
-      pBuffer(nullptr)
+CarlaEngineEventPort::CarlaEngineEventPort(const CarlaEngine& engine, const bool isInput)
+    : CarlaEnginePort(engine, isInput),
+      fBuffer(nullptr)
 {
-    carla_debug("CarlaEngineEventPort::CarlaEngineEventPort(%s, %s)", bool2str(isInput), ProcessMode2Str(processMode));
+    carla_debug("CarlaEngineEventPort::CarlaEngineEventPort(name:\"%s\", %s)", engine.getName(), bool2str(isInput));
 
-    if (fProcessMode == PROCESS_MODE_PATCHBAY)
-        pBuffer = new EngineEvent[INTERNAL_EVENT_COUNT];
+    if (fEngine.getProccessMode() == PROCESS_MODE_PATCHBAY)
+        fBuffer = new EngineEvent[INTERNAL_EVENT_COUNT];
 }
 
 CarlaEngineEventPort::~CarlaEngineEventPort()
 {
     carla_debug("CarlaEngineEventPort::~CarlaEngineEventPort()");
 
-    if (fProcessMode == PROCESS_MODE_PATCHBAY)
+    if (fEngine.getProccessMode() == PROCESS_MODE_PATCHBAY)
     {
-        CARLA_ASSERT(pBuffer != nullptr);
+        CARLA_ASSERT(fBuffer != nullptr);
 
-        if (pBuffer != nullptr)
+        if (fBuffer != nullptr)
         {
-            delete[] pBuffer;
-            pBuffer = nullptr;
+            delete[] fBuffer;
+            fBuffer = nullptr;
         }
     }
 }
 
-void CarlaEngineEventPort::initBuffer(CarlaEngine* const engine)
+void CarlaEngineEventPort::initBuffer()
 {
-    CARLA_ASSERT(engine != nullptr);
-
-    if (engine == nullptr)
-        return;
-
-    if (fProcessMode == PROCESS_MODE_CONTINUOUS_RACK || fProcessMode == PROCESS_MODE_BRIDGE)
-        pBuffer = engine->getInternalEventBuffer(fIsInput);
-
-    else if (fProcessMode == PROCESS_MODE_PATCHBAY && ! fIsInput)
-        carla_zeroStruct<EngineEvent>(pBuffer, INTERNAL_EVENT_COUNT);
+    if (fEngine.getProccessMode() == PROCESS_MODE_CONTINUOUS_RACK || fEngine.getProccessMode() == PROCESS_MODE_BRIDGE)
+        fBuffer = fEngine.getInternalEventBuffer(fIsInput);
+    else if (fEngine.getProccessMode() == PROCESS_MODE_PATCHBAY && ! fIsInput)
+        carla_zeroStruct<EngineEvent>(fBuffer, INTERNAL_EVENT_COUNT);
 }
 
 uint32_t CarlaEngineEventPort::getEventCount() const
 {
-    CARLA_ASSERT(fIsInput);
-    CARLA_ASSERT(pBuffer != nullptr);
-    CARLA_ASSERT(fProcessMode != PROCESS_MODE_SINGLE_CLIENT && fProcessMode != PROCESS_MODE_MULTIPLE_CLIENTS);
+    CARLA_SAFE_ASSERT_RETURN(fIsInput, 0);
+    CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr, 0);
+    CARLA_SAFE_ASSERT_RETURN(fEngine.getProccessMode() != PROCESS_MODE_SINGLE_CLIENT && fEngine.getProccessMode() != PROCESS_MODE_MULTIPLE_CLIENTS, 0);
 
-    if (! fIsInput)
-        return 0;
-    if (pBuffer == nullptr)
-        return 0;
-    if (fProcessMode == PROCESS_MODE_SINGLE_CLIENT || fProcessMode == PROCESS_MODE_MULTIPLE_CLIENTS)
-        return 0;
+    uint32_t i=0;
 
-    for (uint32_t i=0; i < INTERNAL_EVENT_COUNT; ++i)
+    for (; i < INTERNAL_EVENT_COUNT; ++i)
     {
-        if (pBuffer[i].type == kEngineEventTypeNull)
-            return i;
+        if (fBuffer[i].type == kEngineEventTypeNull)
+            break;
     }
 
-    // buffer full
-    return INTERNAL_EVENT_COUNT;
+    return i;
 }
 
 const EngineEvent& CarlaEngineEventPort::getEvent(const uint32_t index)
 {
-    CARLA_ASSERT(fIsInput);
-    CARLA_ASSERT(pBuffer != nullptr);
-    CARLA_ASSERT(fProcessMode != PROCESS_MODE_SINGLE_CLIENT && fProcessMode != PROCESS_MODE_MULTIPLE_CLIENTS);
-    CARLA_ASSERT(index < INTERNAL_EVENT_COUNT);
+    CARLA_SAFE_ASSERT_RETURN(fIsInput, kFallbackEngineEvent);
+    CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr, kFallbackEngineEvent);
+    CARLA_SAFE_ASSERT_RETURN(fEngine.getProccessMode() != PROCESS_MODE_SINGLE_CLIENT && fEngine.getProccessMode() != PROCESS_MODE_MULTIPLE_CLIENTS, kFallbackEngineEvent);
+    CARLA_SAFE_ASSERT_RETURN(index < INTERNAL_EVENT_COUNT, kFallbackEngineEvent);
 
-    if (! fIsInput)
-        return kFallbackEngineEvent;
-    if (pBuffer == nullptr)
-        return kFallbackEngineEvent;
-    if (fProcessMode == PROCESS_MODE_SINGLE_CLIENT || fProcessMode == PROCESS_MODE_MULTIPLE_CLIENTS)
-        return kFallbackEngineEvent;
-    if (index >= INTERNAL_EVENT_COUNT)
-        return kFallbackEngineEvent;
-
-    return pBuffer[index];
+    return fBuffer[index];
 }
 
 void CarlaEngineEventPort::writeControlEvent(const uint32_t time, const uint8_t channel, const EngineControlEventType type, const uint16_t param, const float value)
 {
-    CARLA_ASSERT(! fIsInput);
-    CARLA_ASSERT(pBuffer != nullptr);
-    CARLA_ASSERT(fProcessMode != PROCESS_MODE_SINGLE_CLIENT && fProcessMode != PROCESS_MODE_MULTIPLE_CLIENTS);
-    CARLA_ASSERT(type != kEngineControlEventTypeNull);
-    CARLA_ASSERT(channel < MAX_MIDI_CHANNELS);
+    CARLA_SAFE_ASSERT_RETURN(! fIsInput,);
+    CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(fEngine.getProccessMode() != PROCESS_MODE_SINGLE_CLIENT && fEngine.getProccessMode() != PROCESS_MODE_MULTIPLE_CLIENTS,);
+    CARLA_SAFE_ASSERT_RETURN(type != kEngineControlEventTypeNull,);
+    CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
     CARLA_SAFE_ASSERT(value >= 0.0f && value <= 1.0f);
 
-    if (fIsInput)
-        return;
-    if (pBuffer == nullptr)
-        return;
-    if (fProcessMode == PROCESS_MODE_SINGLE_CLIENT || fProcessMode == PROCESS_MODE_MULTIPLE_CLIENTS)
-        return;
-    if (type == kEngineControlEventTypeNull)
-        return;
-    if (channel >= MAX_MIDI_CHANNELS)
-        return;
     if (type == kEngineControlEventTypeParameter)
     {
         CARLA_ASSERT(! MIDI_IS_CONTROL_BANK_SELECT(param));
     }
 
+    const float fixedValue(carla_fixValue<float>(0.0f, 1.0f, value));
+
     for (uint32_t i=0; i < INTERNAL_EVENT_COUNT; ++i)
     {
-        if (pBuffer[i].type != kEngineEventTypeNull)
+        if (fBuffer[i].type != kEngineEventTypeNull)
             continue;
 
-        pBuffer[i].type    = kEngineEventTypeControl;
-        pBuffer[i].time    = time;
-        pBuffer[i].channel = channel;
+        fBuffer[i].type    = kEngineEventTypeControl;
+        fBuffer[i].time    = time;
+        fBuffer[i].channel = channel;
 
-        pBuffer[i].ctrl.type  = type;
-        pBuffer[i].ctrl.param = param;
-        pBuffer[i].ctrl.value = carla_fixValue<float>(0.0f, 1.0f, value);
+        fBuffer[i].ctrl.type  = type;
+        fBuffer[i].ctrl.param = param;
+        fBuffer[i].ctrl.value = fixedValue;
+
         return;
     }
 
@@ -278,49 +224,37 @@ void CarlaEngineEventPort::writeControlEvent(const uint32_t time, const uint8_t 
 
 void CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t channel, const uint8_t port, const uint8_t* const data, const uint8_t size)
 {
-    CARLA_ASSERT(! fIsInput);
-    CARLA_ASSERT(pBuffer != nullptr);
-    CARLA_ASSERT(fProcessMode != PROCESS_MODE_SINGLE_CLIENT && fProcessMode != PROCESS_MODE_MULTIPLE_CLIENTS);
-    CARLA_ASSERT(channel < MAX_MIDI_CHANNELS);
-    CARLA_ASSERT(data != nullptr);
-    CARLA_ASSERT(size != 0 && size <= 4);
-
-    if (fIsInput)
-        return;
-    if (pBuffer == nullptr)
-        return;
-    if (fProcessMode == PROCESS_MODE_SINGLE_CLIENT || fProcessMode == PROCESS_MODE_MULTIPLE_CLIENTS)
-        return;
-    if (channel >= MAX_MIDI_CHANNELS)
-        return;
-    if (data == nullptr)
-        return;
-    if (size == 0 || size > 4)
-        return;
+    CARLA_SAFE_ASSERT_RETURN(! fIsInput,);
+    CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(fEngine.getProccessMode() != PROCESS_MODE_SINGLE_CLIENT && fEngine.getProccessMode() != PROCESS_MODE_MULTIPLE_CLIENTS,);
+    CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
+    CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(size > 0 && size <= 4,);
 
     for (uint32_t i=0; i < INTERNAL_EVENT_COUNT; ++i)
     {
-        if (pBuffer[i].type != kEngineEventTypeNull)
+        if (fBuffer[i].type != kEngineEventTypeNull)
             continue;
 
-        pBuffer[i].type    = kEngineEventTypeMidi;
-        pBuffer[i].time    = time;
-        pBuffer[i].channel = channel;
+        fBuffer[i].type    = kEngineEventTypeMidi;
+        fBuffer[i].time    = time;
+        fBuffer[i].channel = channel;
 
-        pBuffer[i].midi.port = port;
-        pBuffer[i].midi.size = size;
+        fBuffer[i].midi.port = port;
+        fBuffer[i].midi.size = size;
 
-        carla_copy<uint8_t>(pBuffer[i].midi.data, data, size);
+        fBuffer[i].midi.data[0] = MIDI_GET_CHANNEL_FROM_DATA(data);
 
-        // strip MIDI channel from 1st byte
-        pBuffer[i].midi.data[0] = MIDI_GET_STATUS_FROM_DATA(pBuffer[i].midi.data);
+        for (uint8_t j=1; j < size; ++j)
+            fBuffer[i].midi.data[j] = data[j];
+
         return;
     }
 
     carla_stderr2("CarlaEngineEventPort::writeMidiEvent() - buffer full");
 }
 
-// -------------------------------------------------------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // Carla Engine client (Abstract)
 
 CarlaEngineClient::CarlaEngineClient(const CarlaEngine& engine)
@@ -386,18 +320,18 @@ CarlaEnginePort* CarlaEngineClient::addPort(const EnginePortType portType, const
     case kEnginePortTypeNull:
         break;
     case kEnginePortTypeAudio:
-        return new CarlaEngineAudioPort(isInput, fEngine.getProccessMode());
+        return new CarlaEngineAudioPort(fEngine, isInput);
     case kEnginePortTypeCV:
-        return new CarlaEngineCVPort(isInput, fEngine.getProccessMode(), fEngine.getBufferSize());
+        return new CarlaEngineCVPort(fEngine, isInput);
     case kEnginePortTypeEvent:
-        return new CarlaEngineEventPort(isInput, fEngine.getProccessMode());
+        return new CarlaEngineEventPort(fEngine, isInput);
     }
 
     carla_stderr("CarlaEngineClient::addPort(%i, \"%s\", %s) - invalid type", portType, name, bool2str(isInput));
     return nullptr;
 }
 
-// -------------------------------------------------------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // Carla Engine
 
 CarlaEngine::CarlaEngine()
@@ -980,16 +914,9 @@ bool CarlaEngine::clonePlugin(const unsigned int id)
     char label[STR_MAX+1] = { '\0' };
     plugin->getLabel(label);
 
-    BinaryType binaryType = BINARY_NATIVE;
-
-#ifndef BUILD_BRIDGE
-    if (plugin->getHints() & PLUGIN_IS_BRIDGE)
-        binaryType = CarlaPluginGetBridgeBinaryType(plugin);
-#endif
-
     const unsigned int pluginCountBefore(pData->curPluginCount);
 
-    if (! addPlugin(binaryType, plugin->getType(), plugin->getFilename(), plugin->getName(), label, plugin->getExtraStuff()))
+    if (! addPlugin(plugin->getBinaryType(), plugin->getType(), plugin->getFilename(), plugin->getName(), label, plugin->getExtraStuff()))
         return false;
 
     CARLA_ASSERT(pluginCountBefore+1 == pData->curPluginCount);
@@ -1785,6 +1712,14 @@ EngineEvent* CarlaEngine::getInternalEventBuffer(const bool isInput) const noexc
     return isInput ? pData->bufEvents.in : pData->bufEvents.out;
 }
 
+void CarlaEngine::registerEnginePlugin(const unsigned int id, CarlaPlugin* const plugin)
+{
+    CARLA_ASSERT(id == pData->curPluginCount);
+
+    if (id == pData->curPluginCount)
+        pData->plugins[id].plugin = plugin;
+}
+
 #ifndef BUILD_BRIDGE
 void setValueIfHigher(float& value, const float& compare)
 {
@@ -1889,7 +1824,7 @@ void CarlaEngine::processPatchbay(float** inBuf, float** outBuf, const uint32_t 
 }
 #endif
 
-// -------------------------------------------------------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // Carla Engine OSC stuff
 
 #ifndef BUILD_BRIDGE

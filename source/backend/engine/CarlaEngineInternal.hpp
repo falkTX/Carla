@@ -38,6 +38,8 @@ const char* EngineType2Str(const EngineType type)
         return "kEngineTypeNull";
     case kEngineTypeJack:
         return "kEngineTypeJack";
+    case kEngineTypeJuce:
+        return "kEngineTypeJuce";
     case kEngineTypeRtAudio:
         return "kEngineTypeRtAudio";
     case kEngineTypePlugin:
@@ -217,16 +219,6 @@ struct CarlaEngineProtectedData {
     CarlaEngineProtectedData() = delete;
     CarlaEngineProtectedData(CarlaEngineProtectedData&) = delete;
     CarlaEngineProtectedData(const CarlaEngineProtectedData&) = delete;
-#endif
-
-#ifndef BUILD_BRIDGE
-    static void registerEnginePlugin(CarlaEngine* const engine, const unsigned int id, CarlaPlugin* const plugin)
-    {
-        CARLA_ASSERT(id == engine->pData->curPluginCount);
-
-        if (id == engine->pData->curPluginCount)
-            engine->pData->plugins[id].plugin = plugin;
-    }
 #endif
 
     void doPluginRemove()

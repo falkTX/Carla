@@ -819,6 +819,15 @@ public:
     // Plugin initializers
 
     /*!
+     * Get a plugin's binary type.\n
+     * This is always BINARY_NATIVE unless the plugin is a bridge.
+     */
+    virtual BinaryType getBinaryType() const noexcept
+    {
+        return BINARY_NATIVE;
+    }
+
+    /*!
      * Handy function used and required by CarlaEngine::clonePlugin().
      */
     virtual const void* getExtraStuff() const noexcept

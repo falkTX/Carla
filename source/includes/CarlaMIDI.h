@@ -22,6 +22,9 @@
 #define MAX_MIDI_NOTE     128
 #define MAX_MIDI_VALUE    128
 
+#define MIDI_STATUS_BIT   0xF0
+#define MIDI_CHANNEL_BIT  0x0F
+
 // MIDI Messages List
 #define MIDI_STATUS_NOTE_OFF                           0x80 // note (0-127), velocity (0-127)
 #define MIDI_STATUS_NOTE_ON                            0x90 // note (0-127), velocity (0-127)
@@ -31,17 +34,17 @@
 #define MIDI_STATUS_CHANNEL_PRESSURE                   0xD0 // pressure (0-127), none
 #define MIDI_STATUS_PITCH_WHEEL_CONTROL                0xE0 // LSB (0-127), MSB (0-127)
 
-#define MIDI_IS_STATUS_NOTE_OFF(status)                (((status) & 0xF0) == MIDI_STATUS_NOTE_OFF)
-#define MIDI_IS_STATUS_NOTE_ON(status)                 (((status) & 0xF0) == MIDI_STATUS_NOTE_ON)
-#define MIDI_IS_STATUS_POLYPHONIC_AFTERTOUCH(status)   (((status) & 0xF0) == MIDI_STATUS_POLYPHONIC_AFTERTOUCH)
-#define MIDI_IS_STATUS_CONTROL_CHANGE(status)          (((status) & 0xF0) == MIDI_STATUS_CONTROL_CHANGE)
-#define MIDI_IS_STATUS_PROGRAM_CHANGE(status)          (((status) & 0xF0) == MIDI_STATUS_PROGRAM_CHANGE)
-#define MIDI_IS_STATUS_CHANNEL_PRESSURE(status)        (((status) & 0xF0) == MIDI_STATUS_CHANNEL_PRESSURE)
-#define MIDI_IS_STATUS_PITCH_WHEEL_CONTROL(status)     (((status) & 0xF0) == MIDI_STATUS_PITCH_WHEEL_CONTROL)
+#define MIDI_IS_STATUS_NOTE_OFF(status)                (((status) & MIDI_STATUS_BIT) == MIDI_STATUS_NOTE_OFF)
+#define MIDI_IS_STATUS_NOTE_ON(status)                 (((status) & MIDI_STATUS_BIT) == MIDI_STATUS_NOTE_ON)
+#define MIDI_IS_STATUS_POLYPHONIC_AFTERTOUCH(status)   (((status) & MIDI_STATUS_BIT) == MIDI_STATUS_POLYPHONIC_AFTERTOUCH)
+#define MIDI_IS_STATUS_CONTROL_CHANGE(status)          (((status) & MIDI_STATUS_BIT) == MIDI_STATUS_CONTROL_CHANGE)
+#define MIDI_IS_STATUS_PROGRAM_CHANGE(status)          (((status) & MIDI_STATUS_BIT) == MIDI_STATUS_PROGRAM_CHANGE)
+#define MIDI_IS_STATUS_CHANNEL_PRESSURE(status)        (((status) & MIDI_STATUS_BIT) == MIDI_STATUS_CHANNEL_PRESSURE)
+#define MIDI_IS_STATUS_PITCH_WHEEL_CONTROL(status)     (((status) & MIDI_STATUS_BIT) == MIDI_STATUS_PITCH_WHEEL_CONTROL)
 
 // MIDI Utils
-#define MIDI_GET_STATUS_FROM_DATA(data)                ((data[0]) & 0xF0)
-#define MIDI_GET_CHANNEL_FROM_DATA(data)               ((data[0]) & 0x0F)
+#define MIDI_GET_STATUS_FROM_DATA(data)                ((data[0] < 0xF0) ? data[0] & MIDI_STATUS_BIT  : data[0])
+#define MIDI_GET_CHANNEL_FROM_DATA(data)               ((data[0] < 0xF0) ? data[0] & MIDI_CHANNEL_BIT : 0)
 
 // Control Change Messages List
 #define MIDI_CONTROL_BANK_SELECT                       0x00 // 0-127, MSB

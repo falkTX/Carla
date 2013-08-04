@@ -34,7 +34,7 @@ CARLA_BACKEND_START_NAMESPACE
 static const char** gRetNames = nullptr;
 
 class CarlaEngineJuce : public CarlaEngine,
-                        public AudioIODeviceCallback
+        public juce::AudioIODeviceCallback
 {
 public:
     CarlaEngineJuce()
@@ -69,17 +69,17 @@ public:
         return CarlaEngine::close();
     }
 
-    bool isRunning() const override
+    bool isRunning() const noexcept override
     {
         return false;
     }
 
-    bool isOffline() const override
+    bool isOffline() const noexcept override
     {
         return false;
     }
 
-    EngineType type() const override
+    EngineType getType() const noexcept override
     {
         return kEngineTypeJuce;
     }
@@ -88,14 +88,14 @@ public:
 
 protected:
     void audioDeviceIOCallback (const float** inputChannelData,
-                                        int numInputChannels,
-                                        float** outputChannelData,
-                                        int numOutputChannels,
-                                        int numSamples)
+                                int numInputChannels,
+                                float** outputChannelData,
+                                int numOutputChannels,
+                                int numSamples)
     {
     }
 
-    void audioDeviceAboutToStart (AudioIODevice* device)
+    void audioDeviceAboutToStart (juce::AudioIODevice* device)
     {
     }
 
@@ -103,14 +103,14 @@ protected:
     {
     }
 
-    void audioDeviceError (const String& errorMessage)
+    void audioDeviceError (const juce::String& errorMessage)
     {
     }
 
     // -------------------------------------
 
 private:
-    AudioIODeviceType* fDeviceType;
+    juce::AudioIODeviceType* fDeviceType;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineJuce)
 };
@@ -134,27 +134,27 @@ const char* CarlaEngine::getJuceApiName(const unsigned int index)
 
 const char** CarlaEngine::getJuceApiDeviceNames(const unsigned int index)
 {
-    ScopedPointer<AudioIODeviceType*> deviceType;
+    juce::ScopedPointer<juce::AudioIODeviceType> deviceType;
 
     switch(index)
     {
     case 0:
-        deviceType = AudioIODeviceType::createAudioIODeviceType_JACK();
+        deviceType = juce::AudioIODeviceType::createAudioIODeviceType_JACK();
         break;
     default:
-        setLastError("");
+        //setLastError("");
         return nullptr;
     }
 
     if (deviceType == nullptr)
     {
-        setLastError("");
+        //setLastError("");
         return nullptr;
     }
 
     deviceType->scanForDevices();
 
-    const StringArray devNames(deviceType->getDeviceNames());
+    const juce::StringArray devNames(deviceType->getDeviceNames());
     const int devNameCount(devNames.size());
 
     if (devNameCount <= 0)
