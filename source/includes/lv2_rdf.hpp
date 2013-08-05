@@ -575,11 +575,11 @@ struct LV2_RDF_Descriptor {
           Extensions(nullptr),
           UICount(0),
           UIs(nullptr)
-      {
+    {
 #ifndef CARLA_PROPER_CPP11_SUPPORT
-          Type[0] = Type[1] = 0x0;
+        Type[0] = Type[1] = 0x0;
 #endif
-      }
+    }
 
     ~LV2_RDF_Descriptor()
     {

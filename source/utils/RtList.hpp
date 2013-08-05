@@ -267,7 +267,7 @@ public:
         {
             data = list_entry(entry, Data, siblings);
 
-            CARLA_SAFE_ASSERT_CONTINUE(data != nullptr)
+            CARLA_SAFE_ASSERT_CONTINUE(data != nullptr);
 
             if (data->value == value)
             {
@@ -293,7 +293,7 @@ public:
         {
             data = list_entry(entry, Data, siblings);
 
-            CARLA_SAFE_ASSERT_CONTINUE(data != nullptr)
+            CARLA_SAFE_ASSERT_CONTINUE(data != nullptr);
 
             if (data->value == value)
             {

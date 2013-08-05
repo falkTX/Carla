@@ -127,6 +127,7 @@ HEADERS += \
 
 # utils
 HEADERS += \
+    ../../utils/CarlaUtils.hpp \
     ../../utils/CarlaBackendUtils.hpp \
     ../../utils/CarlaBridgeUtils.hpp \
     ../../utils/CarlaJuceUtils.hpp \
@@ -137,8 +138,8 @@ HEADERS += \
     ../../utils/CarlaShmUtils.hpp \
     ../../utils/CarlaStateUtils.hpp \
     ../../utils/CarlaVstUtils.hpp \
-    ../../utils/CarlaUtils.hpp \
     ../../utils/CarlaMutex.hpp \
+    ../../utils/CarlaRingBuffer.hpp \
     ../../utils/CarlaString.hpp \
     ../../utils/Lv2AtomQueue.hpp \
     ../../utils/RtList.hpp
@@ -157,10 +158,11 @@ INCLUDEPATH = .. \
 LIBS  = -ldl
 LIBS += ../../backend/libcarla_native.a
 LIBS += ../../modules/juce_core.a
-LIBS += ../../modules/dgl.a
-LIBS += ../../modules/lilv.a
 LIBS += ../../modules/rtmempool.a
 LIBS += ../../modules/theme.a
 LIBS += ../../modules/widgets.a
+
+LIBS += ../../modules/dgl.a
+LIBS += ../../modules/lilv.a
 
 QMAKE_CXXFLAGS *= -std=gnu++0x

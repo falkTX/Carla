@@ -44,7 +44,7 @@ public:
         if (fRetAtom.atom.size == 0 || fRetAtom.atom.type == 0)
             return nullptr;
 
-        CARLA_SAFE_ASSERT_RETURN(fRetAtom.atom.size < RING_BUFFER_SIZE, nullptr)
+        CARLA_SAFE_ASSERT_RETURN(fRetAtom.atom.size < RING_BUFFER_SIZE, nullptr);
 
         int32_t index = -1;
         tryRead(&index, sizeof(int32_t));
