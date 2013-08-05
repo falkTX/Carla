@@ -8,7 +8,7 @@ include ../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += -I../backend -I../includes -I../modules -I../modules/utils
+BUILD_CXX_FLAGS += -I../backend -I../includes -I../modules -I../utils
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
 BUILD_CXX_FLAGS += -DWANT_LADSPA -DWANT_DSSI -DWANT_LV2 -DWANT_VST

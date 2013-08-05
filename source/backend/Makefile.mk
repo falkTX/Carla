@@ -8,7 +8,7 @@ include ../../Makefile.mk
 
 # --------------------------------------------------------------
 
-BACKEND_FLAGS    = -I. -I.. -I../../includes -I../../modules -I../../modules/utils
+BACKEND_FLAGS    = -I. -I.. -I../../includes -I../../modules -I../../utils
 
 BUILD_C_FLAGS   += $(BACKEND_FLAGS)
 BUILD_CXX_FLAGS += $(BACKEND_FLAGS)

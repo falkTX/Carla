@@ -6,7 +6,7 @@
 
 include ../Makefile.mk
 
-BUILD_CXX_FLAGS += -I../backend -I../includes -I../modules -I../modules/utils
+BUILD_CXX_FLAGS += -I../backend -I../includes -I../modules -I../utils
 
 ifeq ($(HAVE_QT4),true)
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtCore QtGui)

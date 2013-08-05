@@ -8,7 +8,7 @@ include ../../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += -I. -I../../includes -I../utils
+BUILD_CXX_FLAGS += -I. -I../../includes -I../../utils
 QT5_CXX_FLAGS    = $(BUILD_CXX_FLAGS) # FIXME: use copy instead of reference
 
 ifeq ($(HAVE_QT4),true)

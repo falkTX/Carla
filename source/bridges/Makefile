@@ -19,7 +19,7 @@ endif
 # --------------------------------------------------------------
 
 BUILD_CXX_FLAGS += -DBUILD_BRIDGE
-BUILD_CXX_FLAGS += -I. -I../backend -I../includes -I../utils -I../theme
+BUILD_CXX_FLAGS += -I. -I../backend -I../includes -I../modules -I../modules/theme -I../utils
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo)
 LINK_FLAGS      += $(shell pkg-config --libs liblo)
 
@@ -35,7 +35,7 @@ endif
 # Plugin bridges
 
 BUILD_PLUGIN_FLAGS  = $(BUILD_CXX_FLAGS) -DBUILD_BRIDGE_PLUGIN
-BUILD_PLUGIN_FLAGS += -I../backend/engine -I../backend/plugin -I../libs
+BUILD_PLUGIN_FLAGS += -I../backend/engine -I../backend/plugin
 LINK_PLUGIN_FLAGS   = $(LINK_FLAGS) -lpthread
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)

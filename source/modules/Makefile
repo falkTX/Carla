@@ -75,7 +75,6 @@ clean:
 	$(MAKE) clean -C juce_core
 	$(MAKE) clean -C rtmempool
 	$(MAKE) clean -C theme
-	$(MAKE) clean -C utils
 	$(MAKE) clean -C widgets
 
 # --------------------------------------------------------------
