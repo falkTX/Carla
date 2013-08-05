@@ -25,60 +25,33 @@ CARLA_BACKEND_START_NAMESPACE
 // -----------------------------------------------------------------------
 
 CarlaEngineThread::CarlaEngineThread(CarlaEngine* const engine)
-    : fEngine(engine),
-      fStopNow(true)
+    : juce::Thread("CarlaEngineThread"),
+      fEngine(engine)
 {
-    carla_debug("CarlaEngineThread::CarlaEngineThread(%p)", engine);
     CARLA_ASSERT(engine != nullptr);
+    carla_debug("CarlaEngineThread::CarlaEngineThread(%p)", engine);
+
+    setPriority(5);
 }
 
 CarlaEngineThread::~CarlaEngineThread()
 {
     carla_debug("CarlaEngineThread::~CarlaEngineThread()");
-    CARLA_ASSERT(fStopNow);
-}
-
-// -----------------------------------------------------------------------
-
-void CarlaEngineThread::startNow()
-{
-    carla_debug("CarlaEngineThread::startNow()");
-    CARLA_ASSERT(fStopNow);
-
-    fStopNow = false;
-    start();
-}
-
-void CarlaEngineThread::stopNow()
-{
-    carla_debug("CarlaEngineThread::stopNow()");
-
-    if (fStopNow)
-        return;
-
-    fStopNow = true;
-
-    const CarlaMutex::ScopedLocker sl(fMutex);
-
-    if (isRunning() && ! wait(500))
-        terminate();
 }
 
 // -----------------------------------------------------------------------
 
 void CarlaEngineThread::run()
 {
-    carla_debug("CarlaEngineThread::run()");
     CARLA_ASSERT(fEngine->isRunning());
+    carla_debug("CarlaEngineThread::run()");
 
     bool oscRegisted, usesSingleThread;
     unsigned int i, count;
     float value;
 
-    while (fEngine->isRunning() && ! fStopNow)
+    while (fEngine->isRunning() && ! threadShouldExit())
     {
-        const CarlaMutex::ScopedLocker sl(fMutex);
-
 #ifdef BUILD_BRIDGE
         oscRegisted = fEngine->isOscBridgeRegistered();
 #else
@@ -96,7 +69,7 @@ void CarlaEngineThread::run()
 
             usesSingleThread = (plugin->getHints() & PLUGIN_HAS_SINGLE_THREAD);
 
-            // -------------------------------------------------------
+            // -----------------------------------------------------------
             // Process postponed events
 
             if (oscRegisted || ! usesSingleThread)
@@ -104,7 +77,7 @@ void CarlaEngineThread::run()
                 if (! usesSingleThread)
                     plugin->postRtEventsRun();
 
-                // ---------------------------------------------------
+                // -------------------------------------------------------
                 // Update parameter outputs
 
                 for (uint32_t j=0; j < plugin->getParameterCount(); ++j)
@@ -140,8 +113,10 @@ void CarlaEngineThread::run()
         }
 
         fEngine->idleOsc();
-        carla_msleep(oscRegisted ? 30 : 50);
+        sleep(oscRegisted ? 30 : 50);
     }
 }
+
+// -----------------------------------------------------------------------
 
 CARLA_BACKEND_END_NAMESPACE

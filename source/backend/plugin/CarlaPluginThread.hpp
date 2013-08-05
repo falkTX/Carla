@@ -21,13 +21,9 @@
 #include "CarlaBackend.hpp"
 #include "CarlaString.hpp"
 
-#include <QtCore/QThread>
-
-class QProcess;
-
 CARLA_BACKEND_START_NAMESPACE
 
-class CarlaPluginThread : public QThread
+class CarlaPluginThread : public juce::Thread
 {
 public:
     enum Mode {
@@ -39,13 +35,12 @@ public:
     };
 
     CarlaPluginThread(CarlaEngine* const engine, CarlaPlugin* const plugin, const Mode mode = PLUGIN_THREAD_NULL);
-    ~CarlaPluginThread();
 
-    void setMode(const CarlaPluginThread::Mode mode) noexcept;
+    void setMode(const CarlaPluginThread::Mode mode);
     void setOscData(const char* const binary, const char* const label, const char* const extra1="", const char* const extra2="");
 
 protected:
-    void run();
+    void run() override;
 
 private:
     CarlaEngine* const fEngine;
@@ -56,7 +51,6 @@ private:
     CarlaString fLabel;
     CarlaString fExtra1;
     CarlaString fExtra2;
-    QProcess*   fProcess;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginThread)
 };

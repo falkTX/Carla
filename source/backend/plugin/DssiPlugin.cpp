@@ -57,12 +57,7 @@ public:
         {
             showGui(false);
 
-            // Wait a bit first, then force kill
-            if (pData->osc.thread.isRunning() && ! pData->osc.thread.wait(pData->engine->getOptions().uiBridgesTimeout))
-            {
-                carla_stderr("DSSI GUI thread still running, forcing termination now");
-                pData->osc.thread.terminate();
-            }
+            pData->osc.thread.stopThread(pData->engine->getOptions().uiBridgesTimeout);
         }
 
         pData->singleMutex.lock();
@@ -381,7 +376,7 @@ public:
     {
         if (yesNo)
         {
-            pData->osc.thread.start();
+            pData->osc.thread.startThread();
         }
         else
         {
@@ -392,8 +387,7 @@ public:
                 pData->osc.data.free();
             }
 
-            if (pData->osc.thread.isRunning() && ! pData->osc.thread.wait(pData->engine->getOptions().uiBridgesTimeout))
-                pData->osc.thread.terminate();
+            pData->osc.thread.stopThread(pData->engine->getOptions().uiBridgesTimeout);
         }
     }
 

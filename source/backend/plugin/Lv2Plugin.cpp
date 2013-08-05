@@ -408,12 +408,7 @@ public:
 
             if (fUi.type == PLUGIN_UI_OSC)
             {
-                // Wait a bit first, then force kill
-                if (pData->osc.thread.isRunning() && ! pData->osc.thread.wait(pData->engine->getOptions().uiBridgesTimeout))
-                {
-                    carla_stderr("LV2 OSC-GUI thread still running, forcing termination now");
-                    pData->osc.thread.terminate();
-                }
+                pData->osc.thread.stopThread(pData->engine->getOptions().uiBridgesTimeout);
             }
             else
             {
@@ -1085,7 +1080,7 @@ public:
         {
             if (yesNo)
             {
-                pData->osc.thread.start();
+                pData->osc.thread.startThread();
             }
             else
             {
@@ -1096,8 +1091,7 @@ public:
                     pData->osc.data.free();
                 }
 
-                if (pData->osc.thread.isRunning() && ! pData->osc.thread.wait(pData->engine->getOptions().uiBridgesTimeout))
-                    pData->osc.thread.terminate();
+                pData->osc.thread.stopThread(pData->engine->getOptions().uiBridgesTimeout);
             }
 
             return;

@@ -282,7 +282,7 @@ public:
             pData->active = false;
         }
 
-        if (pData->osc.thread.isRunning())
+        if (pData->osc.thread.isThreadRunning())
         {
             fShmControl.writeOpcode(kPluginBridgeOpcodeQuit);
             fShmControl.commitWrite();
@@ -296,13 +296,7 @@ public:
         }
 
         pData->osc.data.free();
-
-        // Wait a bit first, then force kill
-        if (pData->osc.thread.isRunning() && ! pData->osc.thread.wait(pData->engine->getOptions().uiBridgesTimeout))
-        {
-            carla_stderr("Failed to properly stop Plugin Bridge thread");
-            pData->osc.thread.terminate();
-        }
+        pData->osc.thread.stopThread(6000);
 
         if (fNeedsSemDestroy)
         {
@@ -599,7 +593,7 @@ public:
 
     void idleGui() override
     {
-        if (! pData->osc.thread.isRunning())
+        if (! pData->osc.thread.isThreadRunning())
             carla_stderr2("TESTING: Bridge has closed!");
 
         CarlaPlugin::idleGui();
@@ -1789,12 +1783,12 @@ public:
             std::strncat(shmIdStr, &fShmControl.filename[fShmControl.filename.length()-6], 6);
 
             pData->osc.thread.setOscData(bridgeBinary, label, getPluginTypeAsString(fPluginType), shmIdStr);
-            pData->osc.thread.start();
+            pData->osc.thread.startThread(7);
         }
 
         for (int i=0; i < 200; ++i)
         {
-            if (fInitiated || ! pData->osc.thread.isRunning())
+            if (fInitiated || ! pData->osc.thread.isThreadRunning())
                 break;
             carla_msleep(50);
         }
@@ -1804,10 +1798,7 @@ public:
             // unregister so it gets handled properly
             pData->engine->registerEnginePlugin(fId, nullptr);
 
-            pData->osc.thread.quit();
-
-            if (pData->osc.thread.isRunning())
-                pData->osc.thread.terminate();
+            pData->osc.thread.stopThread(6000);
 
             if (! fInitError)
                 pData->engine->setLastError("Timeout while waiting for a response from plugin-bridge\n(or the plugin crashed on initialization?)");

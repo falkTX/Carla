@@ -143,13 +143,13 @@ struct BridgeControl : public RingBufferControl {
 // -------------------------------------------------------------------
 
 class CarlaEngineBridge : public CarlaEngine,
-                          public QThread
+                          public juce::Thread
 {
 public:
     CarlaEngineBridge(const char* const audioBaseName, const char* const controlBaseName)
         : CarlaEngine(),
-          fIsRunning(false),
-          fQuitNow(false)
+          juce::Thread("CarlaEngineBridge"),
+          fIsRunning(false)
     {
         carla_debug("CarlaEngineBridge::CarlaEngineBridge()");
 
@@ -214,10 +214,9 @@ public:
         fSampleRate = fShmControl.readFloat();
         carla_stderr("SampleRate: %f", fSampleRate);
 
-        fQuitNow = false;
         fIsRunning = true;
 
-        QThread::start(QThread::TimeCriticalPriority);
+        startThread(10);
         CarlaEngine::init(clientName);
         return true;
     }
@@ -227,8 +226,7 @@ public:
         carla_debug("CarlaEnginePlugin::close()");
         CarlaEngine::close();
 
-        fQuitNow = true;
-        QThread::wait();
+        stopThread(6000);
 
         fShmControl.clear();
         fShmAudioPool.clear();
@@ -259,14 +257,14 @@ public:
         // TODO - set RT permissions
         carla_debug("CarlaEngineBridge::run()");
 
-        while (! fQuitNow)
+        while (! threadShouldExit())
         {
             if (! jackbridge_sem_timedwait(&fShmControl.data->runServer, 5))
             {
                 if (errno == ETIMEDOUT)
                 {
                     fIsRunning = false;
-                    fQuitNow = true;
+                    signalThreadShouldExit();
                     return;
                 }
             }
@@ -397,7 +395,7 @@ public:
                 }
 
                 case kPluginBridgeOpcodeQuit:
-                    fQuitNow = true;
+                    signalThreadShouldExit();
                     break;
                 }
             }
@@ -413,8 +411,7 @@ private:
     BridgeAudioPool fShmAudioPool;
     BridgeControl   fShmControl;
 
-    bool fIsRunning;
-    bool fQuitNow;
+    volatile bool fIsRunning;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineBridge)
 };

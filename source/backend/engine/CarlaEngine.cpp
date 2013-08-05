@@ -565,7 +565,7 @@ bool CarlaEngine::init(const char* const clientName)
 #endif
 
     pData->nextAction.ready();
-    pData->thread.startNow();
+    pData->thread.startThread();
 
     return true;
 }
@@ -578,7 +578,7 @@ bool CarlaEngine::close()
     CARLA_ASSERT(pData->nextPluginId == pData->maxPluginNumber);
     carla_debug("CarlaEngine::close()");
 
-    pData->thread.stopNow();
+    pData->thread.stopThread(500);
     pData->nextAction.ready();
 
 #ifndef BUILD_BRIDGE
@@ -800,7 +800,7 @@ bool CarlaEngine::removePlugin(const unsigned int id)
 
     CARLA_ASSERT(plugin->getId() == id);
 
-    pData->thread.stopNow();
+    pData->thread.stopThread(500);
 
     const bool lockWait(isRunning() && fOptions.processMode != PROCESS_MODE_MULTIPLE_CLIENTS);
     const CarlaEngineProtectedData::ScopedActionLock sal(pData, kEnginePostActionRemovePlugin, id, 0, lockWait);
@@ -813,7 +813,7 @@ bool CarlaEngine::removePlugin(const unsigned int id)
     delete plugin;
 
     if (isRunning() && ! pData->aboutToClose)
-        pData->thread.startNow();
+        pData->thread.startThread();
 
     callback(CALLBACK_PLUGIN_REMOVED, id, 0, 0, 0.0f, nullptr);
     return true;
@@ -828,7 +828,7 @@ void CarlaEngine::removeAllPlugins()
     if (pData->plugins == nullptr || pData->curPluginCount == 0)
         return;
 
-    pData->thread.stopNow();
+    pData->thread.stopThread(500);
 
     const bool lockWait(isRunning());
     const CarlaEngineProtectedData::ScopedActionLock sal(pData, kEnginePostActionZeroCount, 0, 0, lockWait);
@@ -850,7 +850,7 @@ void CarlaEngine::removeAllPlugins()
     }
 
     if (isRunning() && ! pData->aboutToClose)
-        pData->thread.startNow();
+        pData->thread.startThread();
 
     carla_debug("CarlaEngine::removeAllPlugins() - END");
 }
@@ -959,7 +959,7 @@ bool CarlaEngine::switchPlugins(const unsigned int idA, const unsigned int idB)
         return false;
     }
 
-    pData->thread.stopNow();
+    pData->thread.stopThread(500);
 
     const bool lockWait(isRunning() && fOptions.processMode != PROCESS_MODE_MULTIPLE_CLIENTS);
     const CarlaEngineProtectedData::ScopedActionLock sal(pData, kEnginePostActionSwitchPlugins, idA, idB, lockWait);
@@ -970,7 +970,7 @@ bool CarlaEngine::switchPlugins(const unsigned int idA, const unsigned int idB)
 #endif
 
     if (isRunning() && ! pData->aboutToClose)
-        pData->thread.startNow();
+        pData->thread.startThread();
 
     return true;
 }

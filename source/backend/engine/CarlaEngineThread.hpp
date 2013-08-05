@@ -19,9 +19,7 @@
 #define CARLA_ENGINE_THREAD_HPP_INCLUDED
 
 #include "CarlaBackend.hpp"
-#include "CarlaMutex.hpp"
-
-#include <QtCore/QThread>
+#include "CarlaJuceUtils.hpp"
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -29,23 +27,17 @@ CARLA_BACKEND_START_NAMESPACE
 } // Fix editor indentation
 #endif
 
-class CarlaEngineThread : public QThread
+class CarlaEngineThread : public juce::Thread
 {
 public:
     CarlaEngineThread(CarlaEngine* const engine);
-    ~CarlaEngineThread();
-
-    void startNow();
-    void stopNow();
+    ~CarlaEngineThread() override;
 
 protected:
-    void run();
+    void run() override;
 
 private:
     CarlaEngine* const fEngine;
-
-    CarlaMutex fMutex;
-    bool       fStopNow;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineThread)
 };

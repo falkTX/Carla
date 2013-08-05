@@ -33,7 +33,7 @@ CarlaBridgeClient::CarlaBridgeClient(const char* const uiTitle)
     : fOsc(this),
       fOscData(fOsc.getControlData())
 #ifdef BUILD_BRIDGE_UI
-      , fUI(CarlaBridgeToolkit::createNew(this, uiTitle)),
+    , fUI(CarlaBridgeToolkit::createNew(this, uiTitle)),
 #endif
 {
 #ifdef BUILD_BRIDGE_UI
@@ -75,6 +75,7 @@ void CarlaBridgeClient::uiClose()
 
 void CarlaBridgeClient::toolkitShow()
 {
+    CARLA_SAFE_ASSERT_RETURN(fUI.toolkit != nullptr,);
     carla_debug("CarlaBridgeClient::toolkitShow()");
 
     fUI.toolkit->show();
@@ -82,6 +83,7 @@ void CarlaBridgeClient::toolkitShow()
 
 void CarlaBridgeClient::toolkitHide()
 {
+    CARLA_SAFE_ASSERT_RETURN(fUI.toolkit != nullptr,);
     carla_debug("CarlaBridgeClient::toolkitHide()");
 
     fUI.toolkit->hide();
@@ -89,6 +91,7 @@ void CarlaBridgeClient::toolkitHide()
 
 void CarlaBridgeClient::toolkitResize(const int width, const int height)
 {
+    CARLA_SAFE_ASSERT_RETURN(fUI.toolkit != nullptr,);
     carla_debug("CarlaBridgeClient::toolkitResize(%i, %i)", width, height);
 
     fUI.toolkit->resize(width, height);
@@ -96,6 +99,7 @@ void CarlaBridgeClient::toolkitResize(const int width, const int height)
 
 void CarlaBridgeClient::toolkitExec(const bool showGui)
 {
+    CARLA_SAFE_ASSERT_RETURN(fUI.toolkit != nullptr,);
     carla_debug("CarlaBridgeClient::toolkitExec(%s)", bool2str(showGui));
 
     fUI.toolkit->exec(showGui);
@@ -153,19 +157,17 @@ void CarlaBridgeClient::sendOscUpdate()
 #ifdef BUILD_BRIDGE_PLUGIN
 void CarlaBridgeClient::sendOscBridgeUpdate()
 {
-    CARLA_ASSERT(fOscData.target != nullptr && fOscData.path != nullptr);
     carla_debug("CarlaBridgeClient::sendOscBridgeUpdate()");
 
-    if (fOscData.target != nullptr && fOscData.path != nullptr)
+    if (fOscData.target != nullptr)
         osc_send_bridge_update(fOscData, fOscData.path);
 }
 
 void CarlaBridgeClient::sendOscBridgeError(const char* const error)
 {
-    CARLA_ASSERT(error != nullptr);
     carla_debug("CarlaBridgeClient::sendOscBridgeError(\"%s\")", error);
 
-    if (fOscData.target != nullptr && error != nullptr)
+    if (fOscData.target != nullptr)
         osc_send_bridge_error(fOscData, error);
 }
 #endif
@@ -261,11 +263,8 @@ bool CarlaBridgeClient::uiLibOpen(const char* const filename)
 
 bool CarlaBridgeClient::uiLibClose()
 {
-    CARLA_ASSERT(fUI.lib != nullptr);
+    CARLA_SAFE_ASSERT_RETURN(fUI.lib != nullptr, false);
     carla_debug("CarlaBridgeClient::uiLibClose()");
-
-    if (fUI.lib == nullptr)
-        return false;
 
     const bool closed = lib_close(fUI.lib);
     fUI.lib = nullptr;
@@ -274,11 +273,8 @@ bool CarlaBridgeClient::uiLibClose()
 
 void* CarlaBridgeClient::uiLibSymbol(const char* const symbol)
 {
-    CARLA_ASSERT(fUI.lib != nullptr);
+    CARLA_SAFE_ASSERT_RETURN(fUI.lib != nullptr, nullptr);
     carla_debug("CarlaBridgeClient::uiLibSymbol(\"%s\")", symbol);
-
-    if (fUI.lib == nullptr)
-        return nullptr;
 
     return lib_symbol(fUI.lib, symbol);
 }

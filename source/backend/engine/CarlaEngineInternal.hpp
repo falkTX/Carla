@@ -23,6 +23,7 @@
 #include "CarlaEngineThread.hpp"
 
 #include "CarlaPlugin.hpp"
+#include "CarlaMutex.hpp"
 #include "RtList.hpp"
 
 CARLA_BACKEND_START_NAMESPACE

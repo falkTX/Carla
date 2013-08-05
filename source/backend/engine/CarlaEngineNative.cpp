@@ -24,6 +24,7 @@
 
 #include <QtCore/QProcess>
 #include <QtCore/QTextStream>
+#include <QtCore/QThread>
 
 CARLA_BACKEND_START_NAMESPACE
 
