@@ -425,11 +425,13 @@ bool carla_engine_init(const char* driverName, const char* clientName)
     gStandalone.engine->setOption(CB::OPTION_RTAUDIO_DEVICE,          0, (const char*)gStandalone.options.rtaudioDevice);
 #endif
     gStandalone.engine->setOption(CB::OPTION_PATH_RESOURCES,          0, (const char*)gStandalone.options.resourceDir);
+#ifndef BUILD_BRIDGE
     gStandalone.engine->setOption(CB::OPTION_PATH_BRIDGE_NATIVE,      0, (const char*)gStandalone.options.bridge_native);
     gStandalone.engine->setOption(CB::OPTION_PATH_BRIDGE_POSIX32,     0, (const char*)gStandalone.options.bridge_posix32);
     gStandalone.engine->setOption(CB::OPTION_PATH_BRIDGE_POSIX64,     0, (const char*)gStandalone.options.bridge_posix64);
     gStandalone.engine->setOption(CB::OPTION_PATH_BRIDGE_WIN32,       0, (const char*)gStandalone.options.bridge_win32);
     gStandalone.engine->setOption(CB::OPTION_PATH_BRIDGE_WIN64,       0, (const char*)gStandalone.options.bridge_win64);
+#endif
 #ifdef WANT_LV2
     gStandalone.engine->setOption(CB::OPTION_PATH_BRIDGE_LV2_GTK2,    0, (const char*)gStandalone.options.bridge_lv2Gtk2);
     gStandalone.engine->setOption(CB::OPTION_PATH_BRIDGE_LV2_GTK3,    0, (const char*)gStandalone.options.bridge_lv2Gtk3);

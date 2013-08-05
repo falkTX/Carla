@@ -1673,7 +1673,7 @@ void CarlaPlugin::registerToOscClient()
         getCopyright(bufCopyright);
 
 #ifdef BUILD_BRIDGE
-        pData->engine->osc_send_bridge_plugin_info(category(), fHints, bufName, bufLabel, bufMaker, bufCopyright, uniqueId());
+        pData->engine->oscSend_bridge_plugin_info(getCategory(), fHints, bufName, bufLabel, bufMaker, bufCopyright, getUniqueId());
 #else
         pData->engine->oscSend_control_set_plugin_data(fId, getType(), getCategory(), fHints, bufName, bufLabel, bufMaker, bufCopyright, getUniqueId());
 #endif
@@ -1685,9 +1685,9 @@ void CarlaPlugin::registerToOscClient()
         getParameterCountInfo(&cIns, &cOuts, &cTotals);
 
 #ifdef BUILD_BRIDGE
-        pData->engine->osc_send_bridge_audio_count(audioInCount(), audioOutCount(), audioInCount() + audioOutCount());
-        pData->engine->osc_send_bridge_midi_count(midiInCount(), midiOutCount(), midiInCount() + midiOutCount());
-        pData->engine->osc_send_bridge_parameter_count(cIns, cOuts, cTotals);
+        pData->engine->oscSend_bridge_audio_count(getAudioInCount(), getAudioOutCount(), getAudioInCount() + getAudioOutCount());
+        pData->engine->oscSend_bridge_midi_count(getMidiInCount(), getMidiOutCount(), getMidiInCount() + getMidiOutCount());
+        pData->engine->oscSend_bridge_parameter_count(cIns, cOuts, cTotals);
 #else
         pData->engine->oscSend_control_set_plugin_ports(fId, getAudioInCount(), getAudioOutCount(), getMidiInCount(), getMidiOutCount(), cIns, cOuts, cTotals);
 #endif
@@ -1710,10 +1710,10 @@ void CarlaPlugin::registerToOscClient()
             const ParameterRanges& paramRanges(pData->param.ranges[i]);
 
 #ifdef BUILD_BRIDGE
-            pData->engine->osc_send_bridge_parameter_info(i, bufName, bufUnit);
-            pData->engine->osc_send_bridge_parameter_data(i, paramData.type, paramData.rindex, paramData.hints, paramData.midiChannel, paramData.midiCC);
-            pData->engine->osc_send_bridge_parameter_ranges(i, paramRanges.def, paramRanges.min, paramRanges.max, paramRanges.step, paramRanges.stepSmall, paramRanges.stepLarge);
-            pData->engine->osc_send_bridge_set_parameter_value(i, getParameterValue(i));
+            pData->engine->oscSend_bridge_parameter_info(i, bufName, bufUnit);
+            pData->engine->oscSend_bridge_parameter_data(i, paramData.type, paramData.rindex, paramData.hints, paramData.midiChannel, paramData.midiCC);
+            pData->engine->oscSend_bridge_parameter_ranges(i, paramRanges.def, paramRanges.min, paramRanges.max, paramRanges.step, paramRanges.stepSmall, paramRanges.stepLarge);
+            pData->engine->oscSend_bridge_set_parameter_value(i, getParameterValue(i));
 #else
             pData->engine->oscSend_control_set_parameter_data(fId, i, paramData.type, paramData.hints, bufName, bufUnit, getParameterValue(i));
             pData->engine->oscSend_control_set_parameter_ranges(fId, i, paramRanges.min, paramRanges.max, paramRanges.def, paramRanges.step, paramRanges.stepSmall, paramRanges.stepLarge);
@@ -1727,12 +1727,12 @@ void CarlaPlugin::registerToOscClient()
     if (pData->prog.count > 0)
     {
 #ifdef BUILD_BRIDGE
-        pData->engine->osc_send_bridge_program_count(pData->prog.count);
+        pData->engine->oscSend_bridge_program_count(pData->prog.count);
 
         for (uint32_t i=0; i < pData->prog.count; ++i)
-            pData->engine->osc_send_bridge_program_info(i, pData->prog.names[i]);
+            pData->engine->oscSend_bridge_program_info(i, pData->prog.names[i]);
 
-        pData->engine->osc_send_bridge_set_program(pData->prog.current);
+        pData->engine->oscSend_bridge_set_program(pData->prog.current);
 #else
         pData->engine->oscSend_control_set_program_count(fId, pData->prog.count);
 
@@ -1747,16 +1747,16 @@ void CarlaPlugin::registerToOscClient()
     if (pData->midiprog.count > 0)
     {
 #ifdef BUILD_BRIDGE
-        pData->engine->osc_send_bridge_midi_program_count(pData->midiprog.count);
+        pData->engine->oscSend_bridge_midi_program_count(pData->midiprog.count);
 
         for (uint32_t i=0; i < pData->midiprog.count; ++i)
         {
             const MidiProgramData& mpData(pData->midiprog.data[i]);
 
-            pData->engine->osc_send_bridge_midi_program_info(i, mpData.bank, mpData.program, mpData.name);
+            pData->engine->oscSend_bridge_midi_program_info(i, mpData.bank, mpData.program, mpData.name);
         }
 
-        pData->engine->osc_send_bridge_set_midi_program(pData->midiprog.current);
+        pData->engine->oscSend_bridge_set_midi_program(pData->midiprog.current);
 #else
         pData->engine->oscSend_control_set_midi_program_count(fId, pData->midiprog.count);
 

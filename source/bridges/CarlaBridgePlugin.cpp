@@ -147,7 +147,7 @@ public:
         CarlaBridgeClient::oscInit(url);
 
         fEngine = carla_get_standalone_engine();
-        fEngine->setOscBridgeData(fOscData);
+        fEngine->setOscBridgeData(&fOscData);
     }
 
     void ready(const bool doSaveLoad)
@@ -159,7 +159,7 @@ public:
 
         if (doSaveLoad)
         {
-            fProjFileName  = fPlugin->name();
+            fProjFileName  = fPlugin->getName();
             fProjFileName += ".carxs";
 
             fPlugin->loadStateFromFile(fProjFileName);
@@ -226,16 +226,16 @@ public:
 
         fPlugin->prepareForSave();
 
-        for (uint32_t i=0; i < fPlugin->customDataCount(); ++i)
+        for (uint32_t i=0; i < fPlugin->getCustomDataCount(); ++i)
         {
-            const CarlaBackend::CustomData& cdata(fPlugin->customData(i));
-            fEngine->osc_send_bridge_set_custom_data(cdata.type, cdata.key, cdata.value);
+            const CarlaBackend::CustomData& cdata(fPlugin->getCustomData(i));
+            fEngine->oscSend_bridge_set_custom_data(cdata.type, cdata.key, cdata.value);
         }
 
-        if (fPlugin->options() & CarlaBackend::PLUGIN_OPTION_USE_CHUNKS)
+        if (fPlugin->getOptions() & CarlaBackend::PLUGIN_OPTION_USE_CHUNKS)
         {
             void* data = nullptr;
-            int32_t dataSize = fPlugin->chunkData(&data);
+            int32_t dataSize = fPlugin->getChunkData(&data);
 
             if (data && dataSize >= 4)
             {
@@ -246,7 +246,7 @@ public:
 #else
                 filePath += "/.CarlaChunk_";
 #endif
-                filePath += fPlugin->name();
+                filePath += fPlugin->getName();
 
                 QFile file(filePath);
 
@@ -255,12 +255,12 @@ public:
                     QByteArray chunk((const char*)data, dataSize);
                     file.write(chunk);
                     file.close();
-                    fEngine->osc_send_bridge_set_chunk_data(filePath.toUtf8().constData());
+                    fEngine->oscSend_bridge_set_chunk_data(filePath.toUtf8().constData());
                 }
             }
         }
 
-        fEngine->osc_send_bridge_configure(CARLA_BRIDGE_MSG_SAVED, "");
+        fEngine->oscSend_bridge_configure(CARLA_BRIDGE_MSG_SAVED, "");
     }
 
     void setCustomData(const char* const type, const char* const key, const char* const value)
@@ -338,7 +338,7 @@ protected:
             else
             {
                 // show-gui button
-                fEngine->osc_send_bridge_configure(CARLA_BRIDGE_MSG_HIDE_GUI, "");
+                fEngine->oscSend_bridge_configure(CARLA_BRIDGE_MSG_HIDE_GUI, "");
             }
             break;
         default:

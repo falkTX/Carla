@@ -820,7 +820,7 @@ public:
         jack_client_t* client = nullptr;
 
 #ifdef BUILD_BRIDGE
-        client = fClient = jackbridge_client_open(plugin->name(), JackNullOption, nullptr);
+        client = fClient = jackbridge_client_open(plugin->getName(), JackNullOption, nullptr);
 
         CARLA_ASSERT(client != nullptr);
 

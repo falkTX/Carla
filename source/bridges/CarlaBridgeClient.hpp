@@ -122,7 +122,8 @@ protected:
     // ---------------------------------------------------------------------
 
 private:
-    CarlaBridgeOsc kOsc;
+    CarlaBridgeOsc fOsc;
+    const CarlaOscData& fOscData;
 
 #ifdef BUILD_BRIDGE_UI
     struct UI {
@@ -166,8 +167,6 @@ private:
 #else
     friend class CarlaPluginClient;
 #endif
-
-    const CarlaOscData* fOscData;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaBridgeClient)
 };

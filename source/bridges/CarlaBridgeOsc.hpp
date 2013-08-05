@@ -70,9 +70,9 @@ public:
         return (fControlData.target != nullptr);
     }
 
-    const CarlaOscData* getControlData() const
+    const CarlaOscData& getControlData() const
     {
-        return &fControlData;
+        return fControlData;
     }
 
     const char* getServerPath() const

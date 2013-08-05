@@ -23,42 +23,22 @@ DEFINES   += WANT_LADSPA
 DEFINES   += WANT_DSSI
 DEFINES   += WANT_LV2
 DEFINES   += WANT_VST
-#DEFINES   += WANT_PLUGIN
-#DEFINES   += WANT_RTAUDIO
 DEFINES   += WANT_FLUIDSYNTH
-DEFINES   += WANT_LINUXSAMPLER
+#DEFINES   += WANT_LINUXSAMPLER
 DEFINES   += WANT_OPENGL
 DEFINES   += WANT_AUDIOFILE
 DEFINES   += WANT_MIDIFILE
 DEFINES   += WANT_ZYNADDSUBFX
-DEFINES   += WANT_ZYNADDSUBFX_UI
+#DEFINES   += WANT_ZYNADDSUBFX_UI
 
 # Engine
 PKGCONFIG  = liblo
-
-# RtAudio
-DEFINES   += HAVE_GETTIMEOFDAY
-DEFINES   += __RTAUDIO_DEBUG__ __RTMIDI_DEBUG__
-
-# ALSA
-DEFINES   += __LINUX_ALSA__ __LINUX_ALSASEQ__
-PKGCONFIG += alsa
-
-# JACK
-DEFINES   += __UNIX_JACK__
-
-# PulseAudio
-DEFINES   += __LINUX_PULSE__
-PKGCONFIG += libpulse-simple
-
-# DISTRHO Plugin
-DEFINES   += DISTRHO_PLUGIN_TARGET_DSSI
 
 # FluidSynth
 PKGCONFIG += fluidsynth
 
 # LinuxSampler
-PKGCONFIG += linuxsampler
+#PKGCONFIG += linuxsampler
 
 # AudioFile
 DEFINES   += HAVE_FFMPEG
@@ -71,7 +51,8 @@ PKGCONFIG += smf
 PKGCONFIG += gl
 
 # ZynAddSubFX
-PKGCONFIG += fftw3 mxml zlib ntk ntk_images
+PKGCONFIG += fftw3 mxml zlib
+# ntk ntk_images
 
 # -----------------------------------------------------------
 
@@ -93,9 +74,7 @@ SOURCES += \
     ../../backend/engine/CarlaEngineOsc.cpp \
     ../../backend/engine/CarlaEngineThread.cpp \
     ../../backend/engine/CarlaEngineBridge.cpp \
-    ../../backend/engine/CarlaEngineJack.cpp \
-    ../../backend/engine/CarlaEnginePlugin.cpp \
-    ../../backend/engine/CarlaEngineRtAudio.cpp
+    ../../backend/engine/CarlaEngineJack.cpp
 
 # Plugin
 SOURCES += \
@@ -168,19 +147,20 @@ INCLUDEPATH = .. \
     ../../backend \
     ../../backend/engine \
     ../../backend/plugin \
-    ../../backend/utils \
     ../../includes \
-    ../../libs \
+    ../../modules \
+    ../../modules/theme \
     ../../utils
 
 # -----------------------------------------------------------
 
 LIBS  = -ldl
 LIBS += ../../backend/libcarla_native.a
-LIBS += ../../libs/dgl.a
-LIBS += ../../libs/lilv.a
-LIBS += ../../libs/rtmempool.a
-LIBS += ../../libs/theme.a
-LIBS += ../../libs/widgets.a
+LIBS += ../../modules/juce_core.a
+LIBS += ../../modules/dgl.a
+LIBS += ../../modules/lilv.a
+LIBS += ../../modules/rtmempool.a
+LIBS += ../../modules/theme.a
+LIBS += ../../modules/widgets.a
 
 QMAKE_CXXFLAGS *= -std=gnu++0x

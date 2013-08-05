@@ -160,7 +160,7 @@ public:
         fShmControl.filename   += controlBaseName;
     }
 
-    ~CarlaEngineBridge()
+    ~CarlaEngineBridge() override
     {
         carla_debug("CarlaEngineBridge::~CarlaEngineBridge()");
     }
@@ -168,7 +168,7 @@ public:
     // -------------------------------------
     // CarlaEngine virtual calls
 
-    bool init(const char* const clientName)
+    bool init(const char* const clientName) override
     {
         carla_debug("CarlaEngineBridge::init(\"%s\")", clientName);
 
@@ -222,7 +222,7 @@ public:
         return true;
     }
 
-    bool close()
+    bool close() override
     {
         carla_debug("CarlaEnginePlugin::close()");
         CarlaEngine::close();
@@ -236,17 +236,17 @@ public:
         return true;
     }
 
-    bool isRunning() const
+    bool isRunning() const noexcept override
     {
         return fIsRunning;
     }
 
-    bool isOffline() const
+    bool isOffline() const noexcept override
     {
         return false;
     }
 
-    EngineType type() const
+    EngineType getType() const noexcept override
     {
         return kEngineTypeBridge;
     }
@@ -254,7 +254,7 @@ public:
     // -------------------------------------
     // CarlaThread virtual calls
 
-    void run()
+    void run() override
     {
         // TODO - set RT permissions
         carla_debug("CarlaEngineBridge::run()");
@@ -311,10 +311,10 @@ public:
 
                     CarlaPlugin* const plugin(getPluginUnchecked(0));
 
-                    if (plugin != nullptr && plugin->enabled())
+                    if (plugin != nullptr && plugin->isEnabled())
                     {
-                        plugin->setParameterValueByRealIndex(index, value, false, false, false);
-                        plugin->postponeRtEvent(kPluginPostRtEventParameterChange, index, 0, value);
+                        //plugin->setParameterValueByRealIndex(index, value, false, false, false);
+                        //plugin->postponeRtEvent(kPluginPostRtEventParameterChange, index, 0, value);
                     }
 
                     break;
@@ -326,10 +326,10 @@ public:
 
                     CarlaPlugin* const plugin(getPluginUnchecked(0));
 
-                    if (plugin != nullptr && plugin->enabled())
+                    if (plugin != nullptr && plugin->isEnabled())
                     {
-                        plugin->setProgram(index, false, false, false);
-                        plugin->postponeRtEvent(kPluginPostRtEventProgramChange, index, 0, 0.0f);
+                        //plugin->setProgram(index, false, false, false);
+                        //plugin->postponeRtEvent(kPluginPostRtEventProgramChange, index, 0, 0.0f);
                     }
 
                     break;
@@ -341,10 +341,10 @@ public:
 
                     CarlaPlugin* const plugin(getPluginUnchecked(0));
 
-                    if (plugin != nullptr && plugin->enabled())
+                    if (plugin != nullptr && plugin->isEnabled())
                     {
-                        plugin->setMidiProgram(index, false, false, false);
-                        plugin->postponeRtEvent(kPluginPostRtEventMidiProgramChange, index, 0, 0.0f);
+                        //plugin->setMidiProgram(index, false, false, false);
+                        //plugin->postponeRtEvent(kPluginPostRtEventMidiProgramChange, index, 0, 0.0f);
                     }
 
                     break;
@@ -361,9 +361,9 @@ public:
                     for (int i=0; i < dataSize && i < 4; ++i)
                         data[i] = fShmControl.readChar();
 
-                    CARLA_ASSERT(kData->bufEvents.in != nullptr);
+                    CARLA_ASSERT(pData->bufEvents.in != nullptr);
 
-                    if (kData->bufEvents.in != nullptr)
+                    if (pData->bufEvents.in != nullptr)
                     {
                         // TODO
                     }
@@ -376,10 +376,10 @@ public:
                     CARLA_ASSERT(fShmAudioPool.data != nullptr);
                     CarlaPlugin* const plugin(getPluginUnchecked(0));
 
-                    if (plugin != nullptr && plugin->enabled() && plugin->tryLock())
+                    if (plugin != nullptr && plugin->isEnabled() && plugin->tryLock())
                     {
-                        const uint32_t inCount(plugin->audioInCount());
-                        const uint32_t outCount(plugin->audioOutCount());
+                        const uint32_t inCount(plugin->getAudioInCount());
+                        const uint32_t outCount(plugin->getAudioOutCount());
 
                         float* inBuffer[inCount];
                         float* outBuffer[outCount];
