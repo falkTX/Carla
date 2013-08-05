@@ -2048,7 +2048,7 @@ class PluginWidget(QFrame):
 
             if self.fPluginInfo['iconName'] == "distrho":
                 self.ui.b_gui.setPixmaps(":/bitmaps/button_distrho2.png", ":/bitmaps/button_distrho_down2.png", ":/bitmaps/button_distrho_hover2.png")
-            elif self.fPluginInfo['iconName'] == "file" or (self.fPluginInfo['hints'] & PLUGIN_HAS_GUI_AS_FILE) != 0:
+            elif self.fPluginInfo['iconName'] == "file":
                 self.ui.b_gui.setPixmaps(":/bitmaps/button_file2.png", ":/bitmaps/button_file_down2.png", ":/bitmaps/button_file_hover2.png")
             else:
                 self.ui.b_gui.setPixmaps(":/bitmaps/button_gui2.png", ":/bitmaps/button_gui_down2.png", ":/bitmaps/button_gui_hover2.png")
@@ -2058,7 +2058,7 @@ class PluginWidget(QFrame):
 
             if self.fPluginInfo['iconName'] == "distrho":
                 self.ui.b_gui.setPixmaps(":/bitmaps/button_distrho.png", ":/bitmaps/button_distrho_down.png", ":/bitmaps/button_distrho_hover.png")
-            elif self.fPluginInfo['iconName'] == "file" or (self.fPluginInfo['hints'] & PLUGIN_HAS_GUI_AS_FILE) != 0:
+            elif self.fPluginInfo['iconName'] == "file":
                 self.ui.b_gui.setPixmaps(":/bitmaps/button_file.png", ":/bitmaps/button_file_down.png", ":/bitmaps/button_file_hover.png")
             else:
                 self.ui.b_gui.setPixmaps(":/bitmaps/button_gui.png", ":/bitmaps/button_gui_down.png", ":/bitmaps/button_gui_hover.png")

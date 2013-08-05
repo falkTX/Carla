@@ -101,16 +101,17 @@ endif
 LIBS  = ../libcarla_engine.a
 LIBS += ../libcarla_plugin.a
 LIBS += ../libcarla_native.a
-LIBS += ../../libs/rtmempool.a
-LIBS += ../../libs/theme.a
-LIBS += ../../libs/widgets.a
+LIBS += ../../modules/juce_core.a
+LIBS += ../../modules/rtmempool.a
+LIBS += ../../modules/theme.a
+LIBS += ../../modules/widgets.a
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-LIBS += ../../libs/lilv.a
+LIBS += ../../modules/lilv.a
 endif
 
 ifeq ($(HAVE_OPENGL),true)
-LIBS += ../../libs/dgl.a
+LIBS += ../../modules/dgl.a
 endif
 
 OBJS  = \
@@ -158,5 +159,5 @@ debug:
 ../libcarla_%.a: .FORCE
 	$(MAKE) -C ../$*
 
-../../libs/%.a: .FORCE
-	$(MAKE) -C ../../libs $*
+../../modules/%.a: .FORCE
+	$(MAKE) -C ../../modules $*

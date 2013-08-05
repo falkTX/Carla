@@ -83,7 +83,7 @@ public:
             if (fGui.isOsc)
             {
                 // Wait a bit first, then force kill
-                if (pData->osc.thread.isRunning() && ! pData->osc.thread.wait(pData->engine->getOptions().oscUiTimeout))
+                if (pData->osc.thread.isRunning() && ! pData->osc.thread.wait(pData->engine->getOptions().uiBridgesTimeout))
                 {
                     carla_stderr("VST OSC-GUI thread still running, forcing termination now");
                     pData->osc.thread.terminate();
@@ -126,12 +126,12 @@ public:
     // -------------------------------------------------------------------
     // Information (base)
 
-    PluginType type() const override
+    PluginType getType() const noexcept override
     {
         return PLUGIN_VST;
     }
 
-    PluginCategory category() override
+    PluginCategory getCategory() const override
     {
         CARLA_ASSERT(fEffect != nullptr);
 
@@ -159,7 +159,7 @@ public:
         return getPluginCategoryFromName(fName);
     }
 
-    long uniqueId() const override
+    long getUniqueId() const override
     {
         CARLA_ASSERT(fEffect != nullptr);
 
@@ -174,7 +174,7 @@ public:
     // -------------------------------------------------------------------
     // Information (current data)
 
-    int32_t chunkData(void** const dataPtr) override
+    int32_t getChunkData(void** const dataPtr) const override
     {
         CARLA_ASSERT(fOptions & PLUGIN_OPTION_USE_CHUNKS);
         CARLA_ASSERT(fEffect != nullptr);
@@ -186,7 +186,7 @@ public:
     // -------------------------------------------------------------------
     // Information (per-plugin data)
 
-    unsigned int availableOptions() override
+    unsigned int getAvailableOptions() const override
     {
         CARLA_ASSERT(fEffect != nullptr);
 
@@ -197,7 +197,7 @@ public:
 
         options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
-        if (midiInCount() == 0)
+        if (getMidiInCount() == 0)
             options |= PLUGIN_OPTION_FIXED_BUFFER;
 
         if (fEffect->flags & effFlagsProgramChunks)
@@ -215,7 +215,7 @@ public:
         return options;
     }
 
-    float getParameterValue(const uint32_t parameterId) override
+    float getParameterValue(const uint32_t parameterId) const override
     {
         CARLA_ASSERT(fEffect != nullptr);
         CARLA_ASSERT(parameterId < pData->param.count);
@@ -223,7 +223,7 @@ public:
         return fEffect->getParameter(fEffect, parameterId);
     }
 
-    void getLabel(char* const strBuf) override
+    void getLabel(char* const strBuf) const override
     {
         CARLA_ASSERT(fEffect != nullptr);
 
@@ -231,7 +231,7 @@ public:
         dispatcher(effGetProductString, 0, 0, strBuf, 0.0f);
     }
 
-    void getMaker(char* const strBuf) override
+    void getMaker(char* const strBuf) const override
     {
         CARLA_ASSERT(fEffect != nullptr);
 
@@ -239,7 +239,7 @@ public:
         dispatcher(effGetVendorString, 0, 0, strBuf, 0.0f);
     }
 
-    void getCopyright(char* const strBuf) override
+    void getCopyright(char* const strBuf) const override
     {
         CARLA_ASSERT(fEffect != nullptr);
 
@@ -247,7 +247,7 @@ public:
         dispatcher(effGetVendorString, 0, 0, strBuf, 0.0f);
     }
 
-    void getRealName(char* const strBuf) override
+    void getRealName(char* const strBuf) const override
     {
         CARLA_ASSERT(fEffect != nullptr);
 
@@ -255,7 +255,7 @@ public:
         dispatcher(effGetEffectName, 0, 0, strBuf, 0.0f);
     }
 
-    void getParameterName(const uint32_t parameterId, char* const strBuf) override
+    void getParameterName(const uint32_t parameterId, char* const strBuf) const override
     {
         CARLA_ASSERT(fEffect != nullptr);
         CARLA_ASSERT(parameterId < pData->param.count);
@@ -264,7 +264,7 @@ public:
         dispatcher(effGetParamName, parameterId, 0, strBuf, 0.0f);
     }
 
-    void getParameterText(const uint32_t parameterId, char* const strBuf) override
+    void getParameterText(const uint32_t parameterId, char* const strBuf) const override
     {
         CARLA_ASSERT(fEffect != nullptr);
         CARLA_ASSERT(parameterId < pData->param.count);
@@ -276,7 +276,7 @@ public:
             std::snprintf(strBuf, STR_MAX, "%f", getParameterValue(parameterId));
     }
 
-    void getParameterUnit(const uint32_t parameterId, char* const strBuf) override
+    void getParameterUnit(const uint32_t parameterId, char* const strBuf) const override
     {
         CARLA_ASSERT(fEffect != nullptr);
         CARLA_ASSERT(parameterId < pData->param.count);
@@ -309,7 +309,7 @@ public:
         CARLA_ASSERT(fEffect != nullptr);
         CARLA_ASSERT(parameterId < pData->param.count);
 
-        const float fixedValue(pData->param.fixValue(parameterId, value));
+        const float fixedValue(pData->param.getFixedValue(parameterId, value));
 
         fEffect->setParameter(fEffect, parameterId, fixedValue);
 
@@ -387,12 +387,12 @@ public:
             {
                 if (pData->osc.data.target != nullptr)
                 {
-                    osc_send_hide(&pData->osc.data);
-                    osc_send_quit(&pData->osc.data);
+                    osc_send_hide(pData->osc.data);
+                    osc_send_quit(pData->osc.data);
                     pData->osc.data.free();
                 }
 
-                if (pData->osc.thread.isRunning() && ! pData->osc.thread.wait(pData->engine->getOptions().oscUiTimeout))
+                if (pData->osc.thread.isRunning() && ! pData->osc.thread.wait(pData->engine->getOptions().uiBridgesTimeout))
                     pData->osc.thread.terminate();
             }
         }
@@ -563,7 +563,7 @@ public:
             needsCtrlIn = true;
         }
 
-        const uint portNameSize(pData->engine->maxPortNameSize());
+        const uint portNameSize(pData->engine->getMaxPortNameSize());
         CarlaString portName;
 
         // Audio Ins
@@ -916,10 +916,10 @@ public:
         // Update OSC Names
         if (pData->engine->isOscControlRegistered())
         {
-            pData->engine->osc_send_control_set_program_count(fId, count);
+            pData->engine->oscSend_control_set_program_count(fId, count);
 
             for (i=0; i < count; ++i)
-                pData->engine->osc_send_control_set_program_name(fId, i, pData->prog.names[i]);
+                pData->engine->oscSend_control_set_program_name(fId, i, pData->prog.names[i]);
         }
 #endif
 
@@ -1213,14 +1213,14 @@ public:
                             {
                                 value = ctrlEvent.value;
                                 setDryWet(value, false, false);
-                                postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_DRYWET, 0, value);
+                                pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_DRYWET, 0, value);
                             }
 
                             if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (fHints & PLUGIN_CAN_VOLUME) > 0)
                             {
                                 value = ctrlEvent.value*127.0f/100.0f;
                                 setVolume(value, false, false);
-                                postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_VOLUME, 0, value);
+                                pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_VOLUME, 0, value);
                             }
 
                             if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (fHints & PLUGIN_CAN_BALANCE) > 0)
@@ -1246,8 +1246,8 @@ public:
 
                                 setBalanceLeft(left, false, false);
                                 setBalanceRight(right, false, false);
-                                postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_LEFT, 0, left);
-                                postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_RIGHT, 0, right);
+                                pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_LEFT, 0, left);
+                                pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_RIGHT, 0, right);
                             }
                         }
 #endif
@@ -1272,14 +1272,14 @@ public:
                             }
                             else
                             {
-                                value = pData->param.ranges[k].unnormalizeValue(ctrlEvent.value);
+                                value = pData->param.ranges[k].getUnnormalizedValue(ctrlEvent.value);
 
                                 if (pData->param.data[k].hints & PARAMETER_IS_INTEGER)
                                     value = std::rint(value);
                             }
 
                             setParameterValue(k, value, false, false, false);
-                            postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 0, value);
+                            pData->postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 0, value);
                         }
 
                         if ((fOptions & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param <= 0x5F)
@@ -1311,7 +1311,7 @@ public:
                             if (ctrlEvent.param < pData->prog.count)
                             {
                                 setProgram(ctrlEvent.param, false, false, false);
-                                postponeRtEvent(kPluginPostRtEventProgramChange, ctrlEvent.param, 0, 0.0f);
+                                pData->postponeRtEvent(kPluginPostRtEventProgramChange, ctrlEvent.param, 0, 0.0f);
                                 break;
                             }
                         }
@@ -1373,7 +1373,7 @@ public:
                     uint8_t status  = MIDI_GET_STATUS_FROM_DATA(midiEvent.data);
                     uint8_t channel = event.channel;
 
-                    if (MIDI_IS_STATUS_AFTERTOUCH(status) && (fOptions & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE) == 0)
+                    if (MIDI_IS_STATUS_CHANNEL_PRESSURE(status) && (fOptions & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE) == 0)
                         continue;
                     if (MIDI_IS_STATUS_CONTROL_CHANGE(status) && (fOptions & PLUGIN_OPTION_SEND_CONTROL_CHANGES) == 0)
                         continue;
@@ -1398,9 +1398,9 @@ public:
                     fMidiEventCount += 1;
 
                     if (status == MIDI_STATUS_NOTE_ON)
-                        postponeRtEvent(kPluginPostRtEventNoteOn, channel, midiEvent.data[1], midiEvent.data[2]);
+                        pData->postponeRtEvent(kPluginPostRtEventNoteOn, channel, midiEvent.data[1], midiEvent.data[2]);
                     else if (status == MIDI_STATUS_NOTE_OFF)
-                        postponeRtEvent(kPluginPostRtEventNoteOff, channel, midiEvent.data[1], 0.0f);
+                        pData->postponeRtEvent(kPluginPostRtEventNoteOff, channel, midiEvent.data[1], 0.0f);
 
                     break;
                 }
@@ -1663,7 +1663,7 @@ public:
         if (pData->osc.data.target == nullptr)
             return;
 
-        osc_send_control(&pData->osc.data, pData->param.data[index].rindex, value);
+        osc_send_control(pData->osc.data, pData->param.data[index].rindex, value);
     }
 
     void uiProgramChange(const uint32_t index) override
@@ -1677,7 +1677,7 @@ public:
         if (pData->osc.data.target == nullptr)
             return;
 
-        osc_send_program(&pData->osc.data, index);
+        osc_send_program(pData->osc.data, index);
     }
 
     void uiNoteOn(const uint8_t channel, const uint8_t note, const uint8_t velo) override
@@ -1702,7 +1702,7 @@ public:
         midiData[2] = note;
         midiData[3] = velo;
 
-        osc_send_midi(&pData->osc.data, midiData);
+        osc_send_midi(pData->osc.data, midiData);
     }
 
     void uiNoteOff(const uint8_t channel, const uint8_t note) override
@@ -1723,7 +1723,7 @@ public:
         midiData[1] = MIDI_STATUS_NOTE_OFF + channel;
         midiData[2] = note;
 
-        osc_send_midi(&pData->osc.data, midiData);
+        osc_send_midi(pData->osc.data, midiData);
     }
 
     // -------------------------------------------------------------------
@@ -1735,7 +1735,7 @@ protected:
         pData->engine->callback(CALLBACK_SHOW_GUI, fId, 0, 0, 0.0f, nullptr);
     }
 
-    intptr_t dispatcher(int32_t opcode, int32_t index, intptr_t value, void* ptr, float opt)
+    intptr_t dispatcher(int32_t opcode, int32_t index, intptr_t value, void* ptr, float opt) const
     {
 #if defined(DEBUG) && ! defined(CARLA_OS_WIN)
         if (opcode != effEditIdle && opcode != effProcessEvents)
@@ -1803,7 +1803,7 @@ protected:
             else if (fIsProcessing)
             {
                 // Called from engine
-                const float fixedValue(pData->param.fixValue(index, opt));
+                const float fixedValue(pData->param.getFixedValue(index, opt));
 
                 if (pData->engine->isOffline())
                 {
@@ -1812,7 +1812,7 @@ protected:
                 else
                 {
                     CarlaPlugin::setParameterValue(index, fixedValue, false, false, false);
-                    postponeRtEvent(kPluginPostRtEventParameterChange, index, 0, fixedValue);
+                    pData->postponeRtEvent(kPluginPostRtEventParameterChange, index, 0, fixedValue);
                 }
             }
             else
@@ -2303,7 +2303,7 @@ public:
 
             fOptions |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
-            if (midiInCount() > 0)
+            if (getMidiInCount() > 0)
                 fOptions |= PLUGIN_OPTION_FIXED_BUFFER;
 
             if (fEffect->flags & effFlagsProgramChunks)
@@ -2321,11 +2321,11 @@ public:
             pData->idStr  = "VST/";
             //pData->idStr += std::strrchr(filename, OS_SEP)+1; // FIXME!
             //pData->idStr += "/";
-            pData->idStr += CarlaString(uniqueId());
-            fOptions = pData->loadSettings(fOptions, availableOptions());
+            pData->idStr += CarlaString(getUniqueId());
+            fOptions = pData->loadSettings(fOptions, getAvailableOptions());
 
             // ignore settings, we need this anyway
-            if (midiInCount() > 0)
+            if (getMidiInCount() > 0)
                 fOptions |= PLUGIN_OPTION_FIXED_BUFFER;
         }
 
@@ -2555,7 +2555,7 @@ CarlaPlugin* CarlaPlugin::newVST(const Initializer& init)
 
     plugin->reload();
 
-    if (init.engine->getProccessMode() == PROCESS_MODE_CONTINUOUS_RACK && ! CarlaPluginProtectedData::canRunInRack(plugin))
+    if (init.engine->getProccessMode() == PROCESS_MODE_CONTINUOUS_RACK && ! plugin->canRunInRack())
     {
         init.engine->setLastError("Carla's rack mode can only work with Stereo VST plugins, sorry!");
         delete plugin;

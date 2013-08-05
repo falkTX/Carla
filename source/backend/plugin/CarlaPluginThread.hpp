@@ -58,7 +58,6 @@ private:
     CarlaString fExtra2;
     QProcess*   fProcess;
 
-    CARLA_PREVENT_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginThread)
 };
 

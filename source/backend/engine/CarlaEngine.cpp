@@ -29,6 +29,10 @@
 
 CARLA_BACKEND_START_NAMESPACE
 
+#if 0
+} // Fix editor indentation
+#endif
+
 // -----------------------------------------------------------------------
 // Fallback data
 
@@ -482,12 +486,12 @@ CarlaEngine* CarlaEngine::newDriverByName(const char* const driverName)
 // -----------------------------------------------------------------------
 // Maximum values
 
-unsigned int CarlaEngine::getMaxClientNameSize() const noexcept
+unsigned int CarlaEngine::getMaxClientNameSize() const
 {
     return STR_MAX/2;
 }
 
-unsigned int CarlaEngine::getMaxPortNameSize() const noexcept
+unsigned int CarlaEngine::getMaxPortNameSize() const
 {
     return STR_MAX;
 }
@@ -560,9 +564,6 @@ bool CarlaEngine::init(const char* const clientName)
     pData->oscData = pData->osc.getControlData();
 #endif
 
-    if (getType() != kEngineTypePlugin)
-        carla_setprocname(clientName);
-
     pData->nextAction.ready();
     pData->thread.startNow();
 
@@ -616,9 +617,9 @@ bool CarlaEngine::close()
 
 void CarlaEngine::idle()
 {
-    CARLA_ASSERT(pData->plugins != nullptr); // this one too maybe
     CARLA_ASSERT(pData->nextAction.opcode == kEnginePostActionNull); // TESTING, remove later
     CARLA_ASSERT(pData->nextPluginId == pData->maxPluginNumber);     // TESTING, remove later
+    CARLA_ASSERT(pData->plugins != nullptr); // this one too maybe
 
     for (unsigned int i=0; i < pData->curPluginCount; ++i)
     {
@@ -651,6 +652,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
     {
         id = pData->nextPluginId;
         pData->nextPluginId = pData->maxPluginNumber;
+
         CARLA_ASSERT(pData->plugins[id].plugin != nullptr);
     }
     else
@@ -801,7 +803,7 @@ bool CarlaEngine::removePlugin(const unsigned int id)
     pData->thread.stopNow();
 
     const bool lockWait(isRunning() && fOptions.processMode != PROCESS_MODE_MULTIPLE_CLIENTS);
-    const CarlaEngineProtectedData::ScopedPluginAction spa(pData, kEnginePostActionRemovePlugin, id, 0, lockWait);
+    const CarlaEngineProtectedData::ScopedActionLock sal(pData, kEnginePostActionRemovePlugin, id, 0, lockWait);
 
 #ifndef BUILD_BRIDGE
     if (isOscControlRegistered())
@@ -829,7 +831,7 @@ void CarlaEngine::removeAllPlugins()
     pData->thread.stopNow();
 
     const bool lockWait(isRunning());
-    const CarlaEngineProtectedData::ScopedPluginAction spa(pData, kEnginePostActionZeroCount, 0, 0, lockWait);
+    const CarlaEngineProtectedData::ScopedActionLock sal(pData, kEnginePostActionZeroCount, 0, 0, lockWait);
 
     for (unsigned int i=0; i < pData->maxPluginNumber; ++i)
     {
@@ -960,7 +962,7 @@ bool CarlaEngine::switchPlugins(const unsigned int idA, const unsigned int idB)
     pData->thread.stopNow();
 
     const bool lockWait(isRunning() && fOptions.processMode != PROCESS_MODE_MULTIPLE_CLIENTS);
-    const CarlaEngineProtectedData::ScopedPluginAction spa(pData, kEnginePostActionSwitchPlugins, idA, idB, lockWait);
+    const CarlaEngineProtectedData::ScopedActionLock sal(pData, kEnginePostActionSwitchPlugins, idA, idB, lockWait);
 
 #ifndef BUILD_BRIDGE // TODO
     //if (isOscControlRegistered())
@@ -1676,7 +1678,7 @@ void CarlaEngine::offlineModeChanged(const bool isOffline)
         CarlaPlugin* const plugin(pData->plugins[i].plugin);
 
         if (plugin != nullptr && plugin->isEnabled())
-           plugin->offlineModeChanged(isOffline);
+            plugin->offlineModeChanged(isOffline);
     }
 }
 

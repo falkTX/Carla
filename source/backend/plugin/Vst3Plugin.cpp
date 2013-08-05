@@ -64,6 +64,7 @@ CARLA_BACKEND_END_NAMESPACE
 
 CARLA_BACKEND_START_NAMESPACE
 
+#if 0
 CarlaPlugin* CarlaPlugin::newVST3(const Initializer& init)
 {
     carla_debug("CarlaPlugin::newVST3(%p, \"%s\", \"%s\", \"%s\")", init.engine, init.filename, init.name, init.label);
@@ -92,5 +93,6 @@ CarlaPlugin* CarlaPlugin::newVST3(const Initializer& init)
     return nullptr;
 #endif
 }
+#endif
 
 CARLA_BACKEND_END_NAMESPACE

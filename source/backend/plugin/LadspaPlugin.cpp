@@ -86,12 +86,12 @@ public:
     // -------------------------------------------------------------------
     // Information (base)
 
-    PluginType type() const override
+    PluginType getType() const noexcept override
     {
         return PLUGIN_LADSPA;
     }
 
-    PluginCategory category() override
+    PluginCategory getCategory() const override
     {
         if (fRdfDescriptor != nullptr)
         {
@@ -129,7 +129,7 @@ public:
         return getPluginCategoryFromName(fName);
     }
 
-    long uniqueId() const override
+    long getUniqueId() const override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
 
@@ -139,7 +139,7 @@ public:
     // -------------------------------------------------------------------
     // Information (count)
 
-    uint32_t parameterScalePointCount(const uint32_t parameterId) const override
+    uint32_t getParameterScalePointCount(const uint32_t parameterId) const override
     {
         CARLA_ASSERT(parameterId < pData->param.count);
 
@@ -162,7 +162,7 @@ public:
     // -------------------------------------------------------------------
     // Information (per-plugin data)
 
-    unsigned int availableOptions() override
+    unsigned int getAvailableOptions() const override
     {
 #ifdef __USE_GNU
         const bool isDssiVst = fFilename.contains("dssi-vst", true);
@@ -186,7 +186,7 @@ public:
         return options;
     }
 
-    float getParameterValue(const uint32_t parameterId) override
+    float getParameterValue(const uint32_t parameterId) const override
     {
         CARLA_ASSERT(fParamBuffers != nullptr);
         CARLA_ASSERT(parameterId < pData->param.count);
@@ -194,11 +194,11 @@ public:
         return fParamBuffers[parameterId];
     }
 
-    float getParameterScalePointValue(const uint32_t parameterId, const uint32_t scalePointId) override
+    float getParameterScalePointValue(const uint32_t parameterId, const uint32_t scalePointId) const override
     {
         CARLA_ASSERT(fRdfDescriptor != nullptr);
         CARLA_ASSERT(parameterId < pData->param.count);
-        CARLA_ASSERT(scalePointId < parameterScalePointCount(parameterId));
+        CARLA_ASSERT(scalePointId < getParameterScalePointCount(parameterId));
 
         const int32_t rindex(pData->param.data[parameterId].rindex);
 
@@ -216,7 +216,7 @@ public:
         return 0.0f;
     }
 
-    void getLabel(char* const strBuf) override
+    void getLabel(char* const strBuf) const override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
 
@@ -226,7 +226,7 @@ public:
             CarlaPlugin::getLabel(strBuf);
     }
 
-    void getMaker(char* const strBuf) override
+    void getMaker(char* const strBuf) const override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
 
@@ -238,7 +238,7 @@ public:
             CarlaPlugin::getMaker(strBuf);
     }
 
-    void getCopyright(char* const strBuf) override
+    void getCopyright(char* const strBuf) const override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
 
@@ -248,7 +248,7 @@ public:
             CarlaPlugin::getCopyright(strBuf);
     }
 
-    void getRealName(char* const strBuf) override
+    void getRealName(char* const strBuf) const override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
 
@@ -260,7 +260,7 @@ public:
             CarlaPlugin::getRealName(strBuf);
     }
 
-    void getParameterName(const uint32_t parameterId, char* const strBuf) override
+    void getParameterName(const uint32_t parameterId, char* const strBuf) const override
     {
         CARLA_ASSERT(fDescriptor != nullptr);
         CARLA_ASSERT(parameterId < pData->param.count);
@@ -273,7 +273,7 @@ public:
             CarlaPlugin::getParameterName(parameterId, strBuf);
     }
 
-    void getParameterSymbol(const uint32_t parameterId, char* const strBuf) override
+    void getParameterSymbol(const uint32_t parameterId, char* const strBuf) const override
     {
         CARLA_ASSERT(parameterId < pData->param.count);
 
@@ -293,7 +293,7 @@ public:
         CarlaPlugin::getParameterSymbol(parameterId, strBuf);
     }
 
-    void getParameterUnit(const uint32_t parameterId, char* const strBuf) override
+    void getParameterUnit(const uint32_t parameterId, char* const strBuf) const override
     {
         CARLA_ASSERT(parameterId < pData->param.count);
 
@@ -332,11 +332,11 @@ public:
         CarlaPlugin::getParameterUnit(parameterId, strBuf);
     }
 
-    void getParameterScalePointLabel(const uint32_t parameterId, const uint32_t scalePointId, char* const strBuf) override
+    void getParameterScalePointLabel(const uint32_t parameterId, const uint32_t scalePointId, char* const strBuf) const override
     {
         CARLA_ASSERT(fRdfDescriptor != nullptr);
         CARLA_ASSERT(parameterId < pData->param.count);
-        CARLA_ASSERT(scalePointId < parameterScalePointCount(parameterId));
+        CARLA_ASSERT(scalePointId < getParameterScalePointCount(parameterId));
 
         const int32_t rindex(pData->param.data[parameterId].rindex);
 
@@ -376,7 +376,7 @@ public:
     {
         CARLA_ASSERT(parameterId < pData->param.count);
 
-        const float fixedValue(pData->param.fixValue(parameterId, value));
+        const float fixedValue(pData->param.getFixedValue(parameterId, value));
         fParamBuffers[parameterId] = fixedValue;
 
         CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
@@ -496,7 +496,7 @@ public:
             carla_zeroFloat(fParamBuffers, params);
         }
 
-        const uint portNameSize(pData->engine->maxPortNameSize());
+        const uint portNameSize(pData->engine->getMaxPortNameSize());
         CarlaString portName;
 
         for (uint32_t i=0, iAudioIn=0, iAudioOut=0, iCtrl=0; i < portCount; ++i)
@@ -938,14 +938,14 @@ public:
                             {
                                 value = ctrlEvent.value;
                                 setDryWet(value, false, false);
-                                postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_DRYWET, 0, value);
+                                pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_DRYWET, 0, value);
                             }
 
                             if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (fHints & PLUGIN_CAN_VOLUME) > 0)
                             {
                                 value = ctrlEvent.value*127.0f/100.0f;
                                 setVolume(value, false, false);
-                                postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_VOLUME, 0, value);
+                                pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_VOLUME, 0, value);
                             }
 
                             if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (fHints & PLUGIN_CAN_BALANCE) > 0)
@@ -971,8 +971,8 @@ public:
 
                                 setBalanceLeft(left, false, false);
                                 setBalanceRight(right, false, false);
-                                postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_LEFT, 0, left);
-                                postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_RIGHT, 0, right);
+                                pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_LEFT, 0, left);
+                                pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_RIGHT, 0, right);
                             }
                         }
 #endif
@@ -997,14 +997,14 @@ public:
                             }
                             else
                             {
-                                value = pData->param.ranges[k].unnormalizeValue(ctrlEvent.value);
+                                value = pData->param.ranges[k].getUnnormalizedValue(ctrlEvent.value);
 
                                 if (pData->param.data[k].hints & PARAMETER_IS_INTEGER)
                                     value = std::rint(value);
                             }
 
                             setParameterValue(k, value, false, false, false);
-                            postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 0, value);
+                            pData->postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 0, value);
                         }
 
                         break;
@@ -1064,7 +1064,7 @@ public:
                 {
                     channel = pData->param.data[k].midiChannel;
                     param   = static_cast<uint16_t>(pData->param.data[k].midiCC);
-                    value   = pData->param.ranges[k].normalizeValue(fParamBuffers[k]);
+                    value   = pData->param.ranges[k].getNormalizedValue(fParamBuffers[k]);
                     pData->event.portOut->writeControlEvent(0, channel, kEngineControlEventTypeParameter, param, value);
                 }
             }
@@ -1338,7 +1338,7 @@ public:
 
     // -------------------------------------------------------------------
 
-    const void* getExtraStuff() const override
+    const void* getExtraStuff() const noexcept override
     {
         return fRdfDescriptor;
     }
@@ -1474,10 +1474,10 @@ public:
             pData->idStr  = "LADSPA/";
             pData->idStr += std::strrchr(filename, OS_SEP)+1;
             pData->idStr += "/";
-            pData->idStr += CarlaString(uniqueId());
+            pData->idStr += CarlaString(getUniqueId());
             pData->idStr += "/";
             pData->idStr += label;
-            fOptions = pData->loadSettings(fOptions, availableOptions());
+            fOptions = pData->loadSettings(fOptions, getAvailableOptions());
 
             // ignore settings, we need this anyway
             if (isDssiVst)
@@ -1523,7 +1523,7 @@ CarlaPlugin* CarlaPlugin::newLADSPA(const Initializer& init, const LADSPA_RDF_De
 
     plugin->reload();
 
-    if (init.engine->getProccessMode() == PROCESS_MODE_CONTINUOUS_RACK && ! CarlaPluginProtectedData::canRunInRack(plugin))
+    if (init.engine->getProccessMode() == PROCESS_MODE_CONTINUOUS_RACK && ! plugin->canRunInRack())
     {
         init.engine->setLastError("Carla's rack mode can only work with Mono or Stereo LADSPA plugins, sorry!");
         delete plugin;

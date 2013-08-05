@@ -69,9 +69,9 @@ CARLA_DEFAULT_PREFER_UI_BRIDGES     = True
 CARLA_DEFAULT_UIS_ALWAYS_ON_TOP     = True
 CARLA_DEFAULT_USE_DSSI_VST_CHUNKS   = False
 CARLA_DEFAULT_MAX_PARAMETERS        = MAX_DEFAULT_PARAMETERS
-CARLA_DEFAULT_OSC_UI_TIMEOUT        = 4000
-CARLA_DEFAULT_JACK_AUTOCONNECT      = False
-CARLA_DEFAULT_JACK_TIMEMASTER       = False
+#CARLA_DEFAULT_OSC_UI_TIMEOUT        = 4000
+#CARLA_DEFAULT_JACK_AUTOCONNECT      = False
+#CARLA_DEFAULT_JACK_TIMEMASTER       = False
 CARLA_DEFAULT_RTAUDIO_BUFFER_SIZE   = 1024
 CARLA_DEFAULT_RTAUDIO_SAMPLE_RATE   = 44100
 
@@ -169,11 +169,12 @@ class DriverSettingsW(QDialog):
         settings = QSettings()
 
         if self.fDriverName == "JACK":
-            jackAutoConnect = settings.value("Engine/JackAutoConnect", CARLA_DEFAULT_JACK_AUTOCONNECT, type=bool)
-            jackTimeMaster  = settings.value("Engine/JackTimeMaster", CARLA_DEFAULT_JACK_TIMEMASTER, type=bool)
+            #jackAutoConnect = settings.value("Engine/JackAutoConnect", CARLA_DEFAULT_JACK_AUTOCONNECT, type=bool)
+            #jackTimeMaster  = settings.value("Engine/JackTimeMaster", CARLA_DEFAULT_JACK_TIMEMASTER, type=bool)
 
-            self.ui.cb_jack_autoconnect.setChecked(jackAutoConnect)
-            self.ui.cb_jack_timemaster.setChecked(jackTimeMaster)
+            #self.ui.cb_jack_autoconnect.setChecked(jackAutoConnect)
+            #self.ui.cb_jack_timemaster.setChecked(jackTimeMaster)
+            pass
 
         else:
             rtaudioDevice     = settings.value("Engine/RtAudioDevice", "", type=str)
@@ -200,8 +201,9 @@ class DriverSettingsW(QDialog):
         settings = QSettings()
 
         if self.fDriverName == "JACK":
-            settings.setValue("Engine/JackAutoConnect", self.ui.cb_jack_autoconnect.isChecked())
-            settings.setValue("Engine/JackTimeMaster", self.ui.cb_jack_timemaster.isChecked())
+            #settings.setValue("Engine/JackAutoConnect", self.ui.cb_jack_autoconnect.isChecked())
+            #settings.setValue("Engine/JackTimeMaster", self.ui.cb_jack_timemaster.isChecked())
+            pass
         else:
             settings.setValue("Engine/RtAudioDevice", self.ui.cb_rtaudio_device.currentText())
             settings.setValue("Engine/RtAudioBufferSize", self.ui.cb_rtaudio_buffersize.currentText())
@@ -333,7 +335,7 @@ class CarlaSettingsW(QDialog):
         self.ui.sb_engine_max_params.setValue(settings.value("Engine/MaxParameters", CARLA_DEFAULT_MAX_PARAMETERS, type=int))
         self.ui.ch_engine_uis_always_on_top.setChecked(settings.value("Engine/UIsAlwaysOnTop", CARLA_DEFAULT_UIS_ALWAYS_ON_TOP, type=bool))
         self.ui.ch_engine_prefer_ui_bridges.setChecked(settings.value("Engine/PreferUiBridges", CARLA_DEFAULT_PREFER_UI_BRIDGES, type=bool))
-        self.ui.sb_engine_oscgui_timeout.setValue(settings.value("Engine/OscUiTimeout", CARLA_DEFAULT_OSC_UI_TIMEOUT, type=int))
+        #self.ui.sb_engine_oscgui_timeout.setValue(settings.value("Engine/OscUiTimeout", CARLA_DEFAULT_OSC_UI_TIMEOUT, type=int))
         self.ui.ch_engine_disable_checks.setChecked(settings.value("Engine/DisableChecks", CARLA_DEFAULT_DISABLE_CHECKS, type=bool))
         self.ui.ch_engine_dssi_chunks.setChecked(settings.value("Engine/UseDssiVstChunks", CARLA_DEFAULT_USE_DSSI_VST_CHUNKS, type=bool))
         self.ui.ch_engine_prefer_plugin_bridges.setChecked(settings.value("Engine/PreferPluginBridges", CARLA_DEFAULT_PREFER_PLUGIN_BRIDGES, type=bool))
@@ -416,7 +418,7 @@ class CarlaSettingsW(QDialog):
         settings.setValue("Engine/MaxParameters", self.ui.sb_engine_max_params.value())
         settings.setValue("Engine/UIsAlwaysOnTop", self.ui.ch_engine_uis_always_on_top.isChecked())
         settings.setValue("Engine/PreferUiBridges", self.ui.ch_engine_prefer_ui_bridges.isChecked())
-        settings.setValue("Engine/OscUiTimeout", self.ui.sb_engine_oscgui_timeout.value())
+        #settings.setValue("Engine/OscUiTimeout", self.ui.sb_engine_oscgui_timeout.value())
         settings.setValue("Engine/DisableChecks", self.ui.ch_engine_disable_checks.isChecked())
         settings.setValue("Engine/UseDssiVstChunks", self.ui.ch_engine_dssi_chunks.isChecked())
         settings.setValue("Engine/PreferPluginBridges", self.ui.ch_engine_prefer_plugin_bridges.isChecked())
@@ -483,7 +485,7 @@ class CarlaSettingsW(QDialog):
             self.ui.sb_engine_max_params.setValue(CARLA_DEFAULT_MAX_PARAMETERS)
             self.ui.ch_engine_uis_always_on_top.setChecked(CARLA_DEFAULT_UIS_ALWAYS_ON_TOP)
             self.ui.ch_engine_prefer_ui_bridges.setChecked(CARLA_DEFAULT_PREFER_UI_BRIDGES)
-            self.ui.sb_engine_oscgui_timeout.setValue(CARLA_DEFAULT_OSC_UI_TIMEOUT)
+            #self.ui.sb_engine_oscgui_timeout.setValue(CARLA_DEFAULT_OSC_UI_TIMEOUT)
             self.ui.ch_engine_disable_checks.setChecked(CARLA_DEFAULT_DISABLE_CHECKS)
             self.ui.ch_engine_dssi_chunks.setChecked(CARLA_DEFAULT_USE_DSSI_VST_CHUNKS)
             self.ui.ch_engine_prefer_plugin_bridges.setChecked(CARLA_DEFAULT_PREFER_PLUGIN_BRIDGES)
@@ -911,7 +913,7 @@ class CarlaMainW(QMainWindow):
         preferPluginBridges = settings.value("Engine/PreferPluginBridges", CARLA_DEFAULT_PREFER_PLUGIN_BRIDGES, type=bool)
         preferUiBridges     = settings.value("Engine/PreferUiBridges", CARLA_DEFAULT_PREFER_UI_BRIDGES, type=bool)
         useDssiVstChunks    = settings.value("Engine/UseDssiVstChunks", CARLA_DEFAULT_USE_DSSI_VST_CHUNKS, type=bool)
-        oscUiTimeout        = settings.value("Engine/OscUiTimeout", CARLA_DEFAULT_OSC_UI_TIMEOUT, type=int)
+        #oscUiTimeout        = settings.value("Engine/OscUiTimeout", CARLA_DEFAULT_OSC_UI_TIMEOUT, type=int)
 
         Carla.processMode   = settings.value("Engine/ProcessMode", CARLA_DEFAULT_PROCESS_MODE, type=int)
         Carla.maxParameters = settings.value("Engine/MaxParameters", CARLA_DEFAULT_MAX_PARAMETERS, type=int)
@@ -928,18 +930,19 @@ class CarlaMainW(QMainWindow):
         Carla.host.set_engine_option(OPTION_PREFER_PLUGIN_BRIDGES, preferPluginBridges, "")
         Carla.host.set_engine_option(OPTION_PREFER_UI_BRIDGES, preferUiBridges, "")
         Carla.host.set_engine_option(OPTION_USE_DSSI_VST_CHUNKS, useDssiVstChunks, "")
-        Carla.host.set_engine_option(OPTION_OSC_UI_TIMEOUT, oscUiTimeout, "")
+        #Carla.host.set_engine_option(OPTION_OSC_UI_TIMEOUT, oscUiTimeout, "")
 
         if audioDriver == "JACK":
-            jackAutoConnect = settings.value("Engine/JackAutoConnect", CARLA_DEFAULT_JACK_AUTOCONNECT, type=bool)
-            jackTimeMaster  = settings.value("Engine/JackTimeMaster", CARLA_DEFAULT_JACK_TIMEMASTER, type=bool)
+            pass
+            #jackAutoConnect = settings.value("Engine/JackAutoConnect", CARLA_DEFAULT_JACK_AUTOCONNECT, type=bool)
+            #jackTimeMaster  = settings.value("Engine/JackTimeMaster", CARLA_DEFAULT_JACK_TIMEMASTER, type=bool)
 
-            if jackAutoConnect and LADISH_APP_NAME:
-                print("LADISH detected but using JACK auto-connect (not desired), disabling auto-connect now")
-                jackAutoConnect = False
+            #if jackAutoConnect and LADISH_APP_NAME:
+                #print("LADISH detected but using JACK auto-connect (not desired), disabling auto-connect now")
+                #jackAutoConnect = False
 
-            Carla.host.set_engine_option(OPTION_JACK_AUTOCONNECT, jackAutoConnect, "")
-            Carla.host.set_engine_option(OPTION_JACK_TIMEMASTER, jackTimeMaster, "")
+            #Carla.host.set_engine_option(OPTION_JACK_AUTOCONNECT, jackAutoConnect, "")
+            #Carla.host.set_engine_option(OPTION_JACK_TIMEMASTER, jackTimeMaster, "")
 
         else:
             rtaudioBufferSize = settings.value("Engine/RtAudioBufferSize", CARLA_DEFAULT_RTAUDIO_BUFFER_SIZE, type=int)

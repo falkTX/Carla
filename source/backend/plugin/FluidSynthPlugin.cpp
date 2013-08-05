@@ -114,12 +114,12 @@ public:
     // -------------------------------------------------------------------
     // Information (base)
 
-    PluginType type() const override
+    PluginType getType() const noexcept override
     {
         return PLUGIN_SF2;
     }
 
-    PluginCategory category() override
+    PluginCategory getCategory() const override
     {
         return PLUGIN_CATEGORY_SYNTH;
     }
@@ -127,7 +127,7 @@ public:
     // -------------------------------------------------------------------
     // Information (count)
 
-    uint32_t parameterScalePointCount(const uint32_t parameterId) const override
+    uint32_t getParameterScalePointCount(const uint32_t parameterId) const override
     {
         CARLA_ASSERT(parameterId < pData->param.count);
 
@@ -150,7 +150,7 @@ public:
     // -------------------------------------------------------------------
     // Information (per-plugin data)
 
-    unsigned int availableOptions() override
+    unsigned int getAvailableOptions() const override
     {
         unsigned int options = 0x0;
 
@@ -163,17 +163,17 @@ public:
         return options;
     }
 
-    float getParameterValue(const uint32_t parameterId) override
+    float getParameterValue(const uint32_t parameterId) const override
     {
         CARLA_ASSERT(parameterId < pData->param.count);
 
         return fParamBuffers[parameterId];
     }
 
-    float getParameterScalePointValue(const uint32_t parameterId, const uint32_t scalePointId) override
+    float getParameterScalePointValue(const uint32_t parameterId, const uint32_t scalePointId) const override
     {
         CARLA_ASSERT(parameterId < pData->param.count);
-        CARLA_ASSERT(scalePointId < parameterScalePointCount(parameterId));
+        CARLA_ASSERT(scalePointId < getParameterScalePointCount(parameterId));
 
         switch (parameterId)
         {
@@ -206,7 +206,7 @@ public:
         }
     }
 
-    void getLabel(char* const strBuf) override
+    void getLabel(char* const strBuf) const override
     {
         if (fLabel.isNotEmpty())
             std::strncpy(strBuf, (const char*)fLabel, STR_MAX);
@@ -214,22 +214,22 @@ public:
             CarlaPlugin::getLabel(strBuf);
     }
 
-    void getMaker(char* const strBuf) override
+    void getMaker(char* const strBuf) const override
     {
         std::strncpy(strBuf, "FluidSynth SF2 engine", STR_MAX);
     }
 
-    void getCopyright(char* const strBuf) override
+    void getCopyright(char* const strBuf) const override
     {
         std::strncpy(strBuf, "GNU GPL v2+", STR_MAX);
     }
 
-    void getRealName(char* const strBuf) override
+    void getRealName(char* const strBuf) const override
     {
         getLabel(strBuf);
     }
 
-    void getParameterName(const uint32_t parameterId, char* const strBuf) override
+    void getParameterName(const uint32_t parameterId, char* const strBuf) const override
     {
         CARLA_ASSERT(parameterId < pData->param.count);
 
@@ -283,7 +283,7 @@ public:
         }
     }
 
-    void getParameterUnit(const uint32_t parameterId, char* const strBuf) override
+    void getParameterUnit(const uint32_t parameterId, char* const strBuf) const override
     {
         CARLA_ASSERT(parameterId < pData->param.count);
 
@@ -301,10 +301,10 @@ public:
         }
     }
 
-    void getParameterScalePointLabel(const uint32_t parameterId, const uint32_t scalePointId, char* const strBuf) override
+    void getParameterScalePointLabel(const uint32_t parameterId, const uint32_t scalePointId, char* const strBuf) const override
     {
         CARLA_ASSERT(parameterId < pData->param.count);
-        CARLA_ASSERT(scalePointId < parameterScalePointCount(parameterId));
+        CARLA_ASSERT(scalePointId < getParameterScalePointCount(parameterId));
 
         switch (parameterId)
         {
@@ -373,7 +373,7 @@ public:
     {
         CARLA_ASSERT(parameterId < pData->param.count);
 
-        const float fixedValue(pData->param.fixValue(parameterId, value));
+        const float fixedValue(pData->param.getFixedValue(parameterId, value));
         fParamBuffers[parameterId] = fixedValue;
 
         {
@@ -538,7 +538,7 @@ public:
         pData->audioOut.createNew(aOuts);
         pData->param.createNew(params);
 
-        const int   portNameSize = pData->engine->maxPortNameSize();
+        const int portNameSize(pData->engine->getMaxPortNameSize());
         CarlaString portName;
 
         // ---------------------------------------
@@ -951,10 +951,10 @@ public:
         // Update OSC Names
         if (pData->engine->isOscControlRegistered())
         {
-            pData->engine->osc_send_control_set_midi_program_count(fId, count);
+            pData->engine->oscSend_control_set_midi_program_count(fId, count);
 
             for (i=0; i < count; ++i)
-                pData->engine->osc_send_control_set_midi_program_data(fId, i, pData->midiprog.data[i].bank, pData->midiprog.data[i].program, pData->midiprog.data[i].name);
+                pData->engine->oscSend_control_set_midi_program_data(fId, i, pData->midiprog.data[i].bank, pData->midiprog.data[i].program, pData->midiprog.data[i].name);
         }
 #endif
 
@@ -1133,14 +1133,14 @@ public:
                             {
                                 value = ctrlEvent.value;
                                 setDryWet(value, false, false);
-                                postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_DRYWET, 0, value);
+                                pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_DRYWET, 0, value);
                             }
 
                             if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (fHints & PLUGIN_CAN_VOLUME) > 0)
                             {
                                 value = ctrlEvent.value*127.0f/100.0f;
                                 setVolume(value, false, false);
-                                postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_VOLUME, 0, value);
+                                pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_VOLUME, 0, value);
                             }
 
                             if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (fHints & PLUGIN_CAN_BALANCE) > 0)
@@ -1166,8 +1166,8 @@ public:
 
                                 setBalanceLeft(left, false, false);
                                 setBalanceRight(right, false, false);
-                                postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_LEFT, 0, left);
-                                postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_RIGHT, 0, right);
+                                pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_LEFT, 0, left);
+                                pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_RIGHT, 0, right);
                             }
                         }
 #endif
@@ -1192,14 +1192,14 @@ public:
                             }
                             else
                             {
-                                value = pData->param.ranges[k].unnormalizeValue(ctrlEvent.value);
+                                value = pData->param.ranges[k].getUnnormalizedValue(ctrlEvent.value);
 
                                 if (pData->param.data[k].hints & PARAMETER_IS_INTEGER)
                                     value = std::rint(value);
                             }
 
                             setParameterValue(k, value, false, false, false);
-                            postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 0, value);
+                            pData->postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 0, value);
                         }
 
                         if ((fOptions & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param <= 0x5F)
@@ -1229,7 +1229,7 @@ public:
                                     fCurMidiProgs[event.channel] = k;
 
                                     if (event.channel == pData->ctrlChannel)
-                                        postponeRtEvent(kPluginPostRtEventMidiProgramChange, k, 0, 0.0f);
+                                        pData->postponeRtEvent(kPluginPostRtEventMidiProgramChange, k, 0, 0.0f);
 
                                     break;
                                 }
@@ -1286,7 +1286,7 @@ public:
 
                         fluid_synth_noteoff(fSynth, channel, note);
 
-                        postponeRtEvent(kPluginPostRtEventNoteOff, channel, note, 0.0f);
+                        pData->postponeRtEvent(kPluginPostRtEventNoteOff, channel, note, 0.0f);
                     }
                     else if (MIDI_IS_STATUS_NOTE_ON(status))
                     {
@@ -1295,7 +1295,7 @@ public:
 
                         fluid_synth_noteon(fSynth, channel, note, velo);
 
-                        postponeRtEvent(kPluginPostRtEventNoteOn, channel, note, velo);
+                        pData->postponeRtEvent(kPluginPostRtEventNoteOn, channel, note, velo);
                     }
                     else if (MIDI_IS_STATUS_POLYPHONIC_AFTERTOUCH(status) && (fOptions & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH) != 0)
                     {
@@ -1311,7 +1311,7 @@ public:
 
                         fluid_synth_cc(fSynth, channel, control, value);
                     }
-                    else if (MIDI_IS_STATUS_AFTERTOUCH(status) && (fOptions & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE) != 0)
+                    else if (MIDI_IS_STATUS_CHANNEL_PRESSURE(status) && (fOptions & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE) != 0)
                     {
                         const uint8_t pressure = midiEvent.data[1];
 
@@ -1349,7 +1349,7 @@ public:
 
             if (pData->param.data[k].midiCC > 0)
             {
-                float value(pData->param.ranges[k].normalizeValue(fParamBuffers[k]));
+                float value(pData->param.ranges[k].getNormalizedValue(fParamBuffers[k]));
                 pData->event.portOut->writeControlEvent(0, pData->param.data[k].midiChannel, kEngineControlEventTypeParameter, pData->param.data[k].midiCC, value);
             }
 
@@ -1511,7 +1511,7 @@ public:
 
     // -------------------------------------------------------------------
 
-    const void* getExtraStuff() const override
+    const void* getExtraStuff() const noexcept override
     {
         return kUses16Outs ? (const void*)0x1 : nullptr;
     }
@@ -1606,7 +1606,7 @@ public:
             // load settings
             pData->idStr  = "SF2/";
             pData->idStr += label;
-            fOptions = pData->loadSettings(fOptions, availableOptions());
+            fOptions = pData->loadSettings(fOptions, getAvailableOptions());
         }
 
         return true;

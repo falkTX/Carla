@@ -59,11 +59,6 @@
 CARLA_BACKEND_START_NAMESPACE
 
 // -------------------------------------------------------------------------------------------------------------------
-// Engine Helpers
-
-extern void registerEnginePlugin(CarlaEngine* const engine, const unsigned int id, CarlaPlugin* const plugin);
-
-// -------------------------------------------------------------------------------------------------------------------
 
 shm_t shm_mkstemp(char* const fileBase)
 {
@@ -246,7 +241,7 @@ struct BridgeParamInfo {
     BridgeParamInfo()
         : value(0.0f) {}
 
-    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(BridgeParamInfo)
+    CARLA_DECLARE_NON_COPY_STRUCT(BridgeParamInfo)
 };
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -296,14 +291,14 @@ public:
 
         if (pData->osc.data.target != nullptr)
         {
-            osc_send_hide(&pData->osc.data);
-            osc_send_quit(&pData->osc.data);
+            osc_send_hide(pData->osc.data);
+            osc_send_quit(pData->osc.data);
         }
 
         pData->osc.data.free();
 
         // Wait a bit first, then force kill
-        if (pData->osc.thread.isRunning() && ! pData->osc.thread.wait(pData->engine->getOptions().oscUiTimeout))
+        if (pData->osc.thread.isRunning() && ! pData->osc.thread.wait(pData->engine->getOptions().uiBridgesTimeout))
         {
             carla_stderr("Failed to properly stop Plugin Bridge thread");
             pData->osc.thread.terminate();
@@ -326,22 +321,22 @@ public:
     // -------------------------------------------------------------------
     // Information (base)
 
-    BinaryType binaryType() const
+    BinaryType getBinaryType() const noexcept
     {
         return fBinaryType;
     }
 
-    PluginType type() const override
+    PluginType getType() const noexcept override
     {
         return fPluginType;
     }
 
-    PluginCategory category() override
+    PluginCategory getCategory() const override
     {
         return fInfo.category;
     }
 
-    long uniqueId() const override
+    long getUniqueId() const noexcept override
     {
         return fInfo.uniqueId;
     }
@@ -349,12 +344,12 @@ public:
     // -------------------------------------------------------------------
     // Information (count)
 
-    uint32_t midiInCount() const override
+    uint32_t getMidiInCount() const noexcept override
     {
         return fInfo.mIns;
     }
 
-    uint32_t midiOutCount() const override
+    uint32_t getMidiOutCount() const noexcept override
     {
         return fInfo.mOuts;
     }
@@ -362,7 +357,7 @@ public:
     // -------------------------------------------------------------------
     // Information (current data)
 
-    int32_t chunkData(void** const dataPtr) override
+    int32_t getChunkData(void** const dataPtr) const override
     {
         CARLA_ASSERT(fOptions & PLUGIN_OPTION_USE_CHUNKS);
         CARLA_ASSERT(dataPtr != nullptr);
@@ -381,7 +376,7 @@ public:
     // -------------------------------------------------------------------
     // Information (per-plugin data)
 
-    unsigned int availableOptions() override
+    unsigned int getAvailableOptions() const override
     {
         unsigned int options = 0x0;
 
@@ -396,41 +391,41 @@ public:
         return options;
     }
 
-    float getParameterValue(const uint32_t parameterId) override
+    float getParameterValue(const uint32_t parameterId) const override
     {
         CARLA_ASSERT(parameterId < pData->param.count);
 
         return fParams[parameterId].value;
     }
 
-    void getLabel(char* const strBuf) override
+    void getLabel(char* const strBuf) const override
     {
         std::strncpy(strBuf, (const char*)fInfo.label, STR_MAX);
     }
 
-    void getMaker(char* const strBuf) override
+    void getMaker(char* const strBuf) const override
     {
         std::strncpy(strBuf, (const char*)fInfo.maker, STR_MAX);
     }
 
-    void getCopyright(char* const strBuf) override
+    void getCopyright(char* const strBuf) const override
     {
         std::strncpy(strBuf, (const char*)fInfo.copyright, STR_MAX);
     }
 
-    void getRealName(char* const strBuf) override
+    void getRealName(char* const strBuf) const override
     {
         std::strncpy(strBuf, (const char*)fInfo.name, STR_MAX);
     }
 
-    void getParameterName(const uint32_t parameterId, char* const strBuf) override
+    void getParameterName(const uint32_t parameterId, char* const strBuf) const override
     {
         CARLA_ASSERT(parameterId < pData->param.count);
 
         std::strncpy(strBuf, (const char*)fParams[parameterId].name, STR_MAX);
     }
 
-    void getParameterUnit(const uint32_t parameterId, char* const strBuf) override
+    void getParameterUnit(const uint32_t parameterId, char* const strBuf) const override
     {
         CARLA_ASSERT(parameterId < pData->param.count);
 
@@ -472,7 +467,7 @@ public:
     {
         CARLA_ASSERT(parameterId < pData->param.count);
 
-        const float fixedValue(pData->param.fixValue(parameterId, value));
+        const float fixedValue(pData->param.getFixedValue(parameterId, value));
         fParams[parameterId].value = fixedValue;
 
         const bool doLock(sendGui || sendOsc || sendCallback);
@@ -597,9 +592,9 @@ public:
     void showGui(const bool yesNo) override
     {
         if (yesNo)
-            osc_send_show(&pData->osc.data);
+            osc_send_show(pData->osc.data);
         else
-            osc_send_hide(&pData->osc.data);
+            osc_send_hide(pData->osc.data);
     }
 
     void idleGui() override
@@ -646,7 +641,7 @@ public:
         if (fInfo.mOuts > 0)
             needsCtrlOut = true;
 
-        const uint portNameSize(pData->engine->maxPortNameSize());
+        const uint portNameSize(pData->engine->getMaxPortNameSize());
         CarlaString portName;
 
         // Audio Ins
@@ -859,14 +854,14 @@ public:
                             {
                                 value = ctrlEvent.value;
                                 setDryWet(value, false, false);
-                                postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_DRYWET, 0, value);
+                                pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_DRYWET, 0, value);
                             }
 
                             if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (fHints & PLUGIN_CAN_VOLUME) > 0)
                             {
                                 value = ctrlEvent.value*127.0f/100.0f;
                                 setVolume(value, false, false);
-                                postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_VOLUME, 0, value);
+                                pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_VOLUME, 0, value);
                             }
 
                             if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (fHints & PLUGIN_CAN_BALANCE) > 0)
@@ -892,8 +887,8 @@ public:
 
                                 setBalanceLeft(left, false, false);
                                 setBalanceRight(right, false, false);
-                                postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_LEFT, 0, left);
-                                postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_RIGHT, 0, right);
+                                pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_LEFT, 0, left);
+                                pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_RIGHT, 0, right);
                             }
                         }
 
@@ -917,14 +912,14 @@ public:
                             }
                             else
                             {
-                                value = pData->param.ranges[k].unnormalizeValue(ctrlEvent.value);
+                                value = pData->param.ranges[k].getUnnormalizedValue(ctrlEvent.value);
 
                                 if (pData->param.data[k].hints & PARAMETER_IS_INTEGER)
                                     value = std::rint(value);
                             }
 
                             setParameterValue(k, value, false, false, false);
-                            postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 0, value);
+                            pData->postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 0, value);
                         }
 
                         if ((fOptions & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param <= 0x5F)
@@ -957,7 +952,7 @@ public:
                                     if (pData->midiprog.data[k].bank == nextBankId && pData->midiprog.data[k].program == nextProgramId)
                                     {
                                         setMidiProgram(k, false, false, false);
-                                        postponeRtEvent(kPluginPostRtEventMidiProgramChange, k, 0, 0.0f);
+                                        pData->postponeRtEvent(kPluginPostRtEventMidiProgramChange, k, 0, 0.0f);
                                         break;
                                     }
                                 }
@@ -999,7 +994,7 @@ public:
                     uint8_t status  = MIDI_GET_STATUS_FROM_DATA(midiEvent.data);
                     uint8_t channel = event.channel;
 
-                    if (MIDI_IS_STATUS_AFTERTOUCH(status) && (fOptions & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE) == 0)
+                    if (MIDI_IS_STATUS_CHANNEL_PRESSURE(status) && (fOptions & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE) == 0)
                         continue;
                     if (MIDI_IS_STATUS_CONTROL_CHANGE(status) && (fOptions & PLUGIN_OPTION_SEND_CONTROL_CHANGES) == 0)
                         continue;
@@ -1026,9 +1021,9 @@ public:
                         fShmControl.writeChar(data[j]);
 
                     if (status == MIDI_STATUS_NOTE_ON)
-                        postponeRtEvent(kPluginPostRtEventNoteOn, channel, midiEvent.data[1], midiEvent.data[2]);
+                        pData->postponeRtEvent(kPluginPostRtEventNoteOn, channel, midiEvent.data[1], midiEvent.data[2]);
                     else if (status == MIDI_STATUS_NOTE_OFF)
-                        postponeRtEvent(kPluginPostRtEventNoteOff, channel, midiEvent.data[1], 0.0f);
+                        pData->postponeRtEvent(kPluginPostRtEventNoteOff, channel, midiEvent.data[1], 0.0f);
 
                     break;
                 }
@@ -1523,7 +1518,7 @@ public:
 
             if (index >= 0 && static_cast<int32_t>(pData->param.count))
             {
-                const float fixedValue(pData->param.fixValue(index, value));
+                const float fixedValue(pData->param.getFixedValue(index, value));
                 fParams[index].value = fixedValue;
 
                 CarlaPlugin::setParameterValue(index, fixedValue, false, true, true);
@@ -1668,7 +1663,7 @@ public:
 
     // -------------------------------------------------------------------
 
-    const void* getExtraStuff() const override
+    const void* getExtraStuff() const noexcept override
     {
         return fBridgeBinary.isNotEmpty() ? (const char*)fBridgeBinary : nullptr;
     }
@@ -1785,7 +1780,7 @@ public:
 
         // register plugin now so we can receive OSC (and wait for it)
         fHints |= PLUGIN_IS_BRIDGE;
-        registerEnginePlugin(pData->engine, fId, this);
+        pData->engine->registerEnginePlugin(fId, this);
 
         // init OSC
         {
@@ -1807,7 +1802,7 @@ public:
         if (fInitError || ! fInitiated)
         {
             // unregister so it gets handled properly
-            registerEnginePlugin(pData->engine, fId, nullptr);
+            pData->engine->registerEnginePlugin(fId, nullptr);
 
             pData->osc.thread.quit();
 
@@ -1933,7 +1928,7 @@ CarlaPlugin* CarlaPlugin::newBridge(const Initializer& init, BinaryType btype, P
 
     plugin->reload();
 
-    if (init.engine->getProccessMode() == PROCESS_MODE_CONTINUOUS_RACK && ! CarlaPluginProtectedData::canRunInRack(plugin))
+    if (init.engine->getProccessMode() == PROCESS_MODE_CONTINUOUS_RACK && ! plugin->canRunInRack())
     {
         init.engine->setLastError("Carla's rack mode can only work with Stereo Bridged plugins, sorry!");
         delete plugin;
@@ -1959,14 +1954,8 @@ CarlaPlugin* CarlaPlugin::newBridge(const Initializer& init, BinaryType btype, P
 int CarlaPluginSetOscBridgeInfo(CarlaPlugin* const plugin, const PluginBridgeInfoType type,
                                 const int argc, const lo_arg* const* const argv, const char* const types)
 {
-    CARLA_ASSERT(plugin != nullptr && (plugin->hints() & PLUGIN_IS_BRIDGE) != 0);
+    CARLA_ASSERT(plugin != nullptr && (plugin->getHints() & PLUGIN_IS_BRIDGE) != 0);
     return bridgePlugin->setOscPluginBridgeInfo(type, argc, argv, types);
-}
-
-BinaryType CarlaPluginGetBridgeBinaryType(CarlaPlugin* const plugin)
-{
-    CARLA_ASSERT(plugin != nullptr && (plugin->hints() & PLUGIN_IS_BRIDGE) != 0);
-    return bridgePlugin->binaryType();
 }
 
 #undef bridgePlugin

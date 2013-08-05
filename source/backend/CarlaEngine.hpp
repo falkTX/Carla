@@ -728,12 +728,12 @@ public:
     /*!
      * Maximum client name size.
      */
-    virtual unsigned int getMaxClientNameSize() const noexcept;
+    virtual unsigned int getMaxClientNameSize() const;
 
     /*!
      * Maximum port name size.
      */
-    virtual unsigned int getMaxPortNameSize() const noexcept;
+    virtual unsigned int getMaxPortNameSize() const;
 
     /*!
      * Current number of plugins loaded.

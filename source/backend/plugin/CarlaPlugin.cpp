@@ -451,22 +451,22 @@ float CarlaPlugin::getParameterScalePointValue(const uint32_t parameterId, const
     (void)scalePointId;
 }
 
-void CarlaPlugin::getLabel(char* const strBuf) const noexcept
+void CarlaPlugin::getLabel(char* const strBuf) const
 {
     *strBuf = '\0';
 }
 
-void CarlaPlugin::getMaker(char* const strBuf) const noexcept
+void CarlaPlugin::getMaker(char* const strBuf) const
 {
     *strBuf = '\0';
 }
 
-void CarlaPlugin::getCopyright(char* const strBuf) const noexcept
+void CarlaPlugin::getCopyright(char* const strBuf) const
 {
     *strBuf = '\0';
 }
 
-void CarlaPlugin::getRealName(char* const strBuf) const noexcept
+void CarlaPlugin::getRealName(char* const strBuf) const
 {
     *strBuf = '\0';
 }
@@ -1634,9 +1634,9 @@ void CarlaPlugin::unlock()
 
 void CarlaPlugin::initBuffers()
 {
-    pData->audioIn.initBuffers(pData->engine);
-    pData->audioOut.initBuffers(pData->engine);
-    pData->event.initBuffers(pData->engine);
+    pData->audioIn.initBuffers();
+    pData->audioOut.initBuffers();
+    pData->event.initBuffers();
 }
 
 void CarlaPlugin::clearBuffers()
@@ -2132,6 +2132,32 @@ void CarlaPlugin::uiNoteOff(const uint8_t channel, const uint8_t note)
     (void)channel;
     (void)note;
 }
+
+bool CarlaPlugin::canRunInRack() const noexcept
+{
+    return false; // TODO
+}
+
+CarlaEngine* CarlaPlugin::getEngine() const noexcept
+{
+    return pData->engine;
+}
+
+CarlaEngineClient* CarlaPlugin::getEngineClient() const noexcept
+{
+    return pData->client;
+}
+
+CarlaEngineAudioPort* CarlaPlugin::getAudioInPort(const uint32_t index) const noexcept
+{
+    return pData->audioIn.ports[index].port;
+}
+
+CarlaEngineAudioPort* CarlaPlugin::getAudioOutPort(const uint32_t index) const noexcept
+{
+    return pData->audioOut.ports[index].port;
+}
+
 
 // -------------------------------------------------------------------
 // Scoped Disabler

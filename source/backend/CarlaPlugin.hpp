@@ -314,24 +314,24 @@ public:
     /*!
      * Get the plugin's label (URI for LV2 plugins).
      */
-    virtual void getLabel(char* const strBuf) const noexcept;
+    virtual void getLabel(char* const strBuf) const;
 
     /*!
      * Get the plugin's maker.
      */
-    virtual void getMaker(char* const strBuf) const noexcept;
+    virtual void getMaker(char* const strBuf) const;
 
     /*!
      * Get the plugin's copyright/license.
      */
-    virtual void getCopyright(char* const strBuf) const noexcept;
+    virtual void getCopyright(char* const strBuf) const;
 
     /*!
      * Get the plugin's (real) name.
      *
      * \see getName() and setName()
      */
-    virtual void getRealName(char* const strBuf) const noexcept;
+    virtual void getRealName(char* const strBuf) const;
 
     /*!
      * Get the name of the parameter \a parameterId.

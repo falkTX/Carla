@@ -27,7 +27,11 @@
 
 CARLA_BACKEND_START_NAMESPACE
 
-// -------------------------------------------------------------------------------------------------------------------
+#if 0
+} // Fix editor indentation
+#endif
+
+// -----------------------------------------------------------------------
 
 static inline
 const char* EngineType2Str(const EngineType type)
@@ -111,7 +115,7 @@ const char* EngineControlEventType2Str(const EngineControlEventType type)
     return nullptr;
 }
 
-// -------------------------------------------------------------------------------------------------------------------
+// -----------------------------------------------------------------------
 
 const unsigned short INTERNAL_EVENT_COUNT = 512;
 const uint32_t       PATCHBAY_BUFFER_SIZE = 128;
@@ -143,7 +147,7 @@ struct EnginePluginData {
 #endif
 };
 
-// -------------------------------------------------------------------------------------------------------------------
+// -----------------------------------------------------------------------
 
 struct CarlaEngineProtectedData {
     CarlaEngineOsc    osc;
@@ -155,27 +159,42 @@ struct CarlaEngineProtectedData {
     void*        callbackPtr;
     CarlaString  lastError;
 
-    bool aboutToClose;            // don't re-activate thread if true
+    bool         aboutToClose;    // don't re-activate thread if true
     unsigned int curPluginCount;  // number of plugins loaded (0...max)
     unsigned int maxPluginNumber; // number of plugins allowed (0, 16, 99 or 255)
     unsigned int nextPluginId;    // invalid if == maxPluginNumber
 
     EnginePluginData* plugins;
 
-    struct InternalEventBuffer {
+    struct InternalEvents {
         EngineEvent* in;
         EngineEvent* out;
 
-        InternalEventBuffer()
+        InternalEvents()
             : in(nullptr),
               out(nullptr) {}
+
+        ~InternalEvents()
+        {
+            CARLA_ASSERT(in == nullptr);
+            CARLA_ASSERT(out == nullptr);
+        }
     } bufEvents;
+
+    struct InternalTime {
+        bool playing;
+        uint64_t frame;
+
+        InternalTime()
+            : playing(false),
+              frame(0) {}
+    } time;
 
     struct NextAction {
         EnginePostAction opcode;
-        unsigned int     pluginId;
-        unsigned int     value;
-        CarlaMutex       mutex;
+        unsigned int pluginId;
+        unsigned int value;
+        CarlaMutex   mutex;
 
         NextAction()
             : opcode(kEnginePostActionNull),
@@ -194,15 +213,6 @@ struct CarlaEngineProtectedData {
         }
     } nextAction;
 
-    struct Time {
-        bool playing;
-        uint32_t frame;
-
-        Time()
-            : playing(false),
-              frame(0) {}
-    } time;
-
     CarlaEngineProtectedData(CarlaEngine* const engine)
         : osc(engine),
           thread(engine),
@@ -217,8 +227,7 @@ struct CarlaEngineProtectedData {
 
 #ifdef CARLA_PROPER_CPP11_SUPPORT
     CarlaEngineProtectedData() = delete;
-    CarlaEngineProtectedData(CarlaEngineProtectedData&) = delete;
-    CarlaEngineProtectedData(const CarlaEngineProtectedData&) = delete;
+    CARLA_DECLARE_NON_COPY_STRUCT(CarlaEngineProtectedData)
 #endif
 
     void doPluginRemove()
@@ -248,7 +257,7 @@ struct CarlaEngineProtectedData {
 
         const unsigned int id(curPluginCount);
 
-        // reset now last plugin
+        // reset last plugin (now removed)
         plugins[id].plugin      = nullptr;
         plugins[id].insPeak[0]  = 0.0f;
         plugins[id].insPeak[1]  = 0.0f;
@@ -265,7 +274,6 @@ struct CarlaEngineProtectedData {
 
         CARLA_ASSERT(idA < curPluginCount);
         CARLA_ASSERT(idB < curPluginCount);
-
         CARLA_ASSERT(plugins[idA].plugin != nullptr);
         CARLA_ASSERT(plugins[idB].plugin != nullptr);
 
@@ -304,10 +312,10 @@ struct CarlaEngineProtectedData {
             nextAction.mutex.unlock();
     }
 
-    class ScopedPluginAction
+    class ScopedActionLock
     {
     public:
-        ScopedPluginAction(CarlaEngineProtectedData* const data, const EnginePostAction action, const unsigned int pluginId, const unsigned int value, const bool lockWait)
+        ScopedActionLock(CarlaEngineProtectedData* const data, const EnginePostAction action, const unsigned int pluginId, const unsigned int value, const bool lockWait)
             : fData(data)
         {
             fData->nextAction.mutex.lock();
@@ -331,7 +339,7 @@ struct CarlaEngineProtectedData {
             }
         }
 
-        ~ScopedPluginAction()
+        ~ScopedActionLock()
         {
             fData->nextAction.mutex.unlock();
         }
@@ -340,6 +348,8 @@ struct CarlaEngineProtectedData {
         CarlaEngineProtectedData* const fData;
     };
 };
+
+// -----------------------------------------------------------------------
 
 CARLA_BACKEND_END_NAMESPACE
 

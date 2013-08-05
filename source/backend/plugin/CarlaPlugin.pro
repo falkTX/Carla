@@ -24,7 +24,7 @@ DEFINES   += WANT_VST
 DEFINES   += WANT_PLUGIN
 DEFINES   += WANT_RTAUDIO
 DEFINES   += WANT_FLUIDSYNTH
-DEFINES   += WANT_LINUXSAMPLER
+#DEFINES   += WANT_LINUXSAMPLER
 DEFINES   += WANT_OPENGL
 DEFINES   += WANT_AUDIOFILE
 DEFINES   += WANT_MIDIFILE
@@ -38,7 +38,7 @@ PKGCONFIG += liblo
 PKGCONFIG += fluidsynth
 
 # LinuxSampler
-PKGCONFIG += linuxsampler
+#PKGCONFIG += linuxsampler
 
 # -------------------------------------------------------
 
@@ -70,12 +70,14 @@ HEADERS += \
 
 HEADERS += \
     ../../includes/CarlaDefines.hpp \
-    ../../includes/CarlaMIDI.h
+    ../../includes/CarlaMIDI.h \
+    ../../includes/ladspa_rdf.hpp \
+    ../../includes/lv2_rdf.hpp
 
 HEADERS += \
     ../../utils/CarlaMutex.hpp \
     ../../utils/CarlaRingBuffer.hpp \
-    ../../utils/CarlaString.hpp
+    ../../utils/CarlaString.hpp \
     ../../utils/CarlaUtils.hpp \
     ../../utils/CarlaBackendUtils.hpp \
     ../../utils/CarlaBridgeUtils.hpp \

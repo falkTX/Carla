@@ -29,7 +29,7 @@
 
 #include "RtList.hpp"
 
-#define CARLA_PROCESS_CONTINUE_CHECK if (! fEnabled) { kData->engine->callback(CALLBACK_DEBUG, fId, 0, 0, 0.0f, "Processing while plugin is disabled!!"); return; }
+#define CARLA_PROCESS_CONTINUE_CHECK if (! fEnabled) { pData->engine->callback(CALLBACK_DEBUG, fId, 0, 0, 0.0f, "Processing while plugin is disabled!!"); return; }
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -142,12 +142,12 @@ struct PluginAudioData {
         count = 0;
     }
 
-    void initBuffers(CarlaEngine* const engine)
+    void initBuffers()
     {
         for (uint32_t i=0; i < count; ++i)
         {
             if (ports[i].port != nullptr)
-                ports[i].port->initBuffer(engine);
+                ports[i].port->initBuffer();
         }
     }
 
@@ -221,12 +221,12 @@ struct PluginCVData {
         count = 0;
     }
 
-    void initBuffers(CarlaEngine* const engine)
+    void initBuffers()
     {
         for (uint32_t i=0; i < count; ++i)
         {
             if (ports[i].port != nullptr)
-                ports[i].port->initBuffer(engine);
+                ports[i].port->initBuffer();
         }
     }
 
@@ -264,13 +264,13 @@ struct PluginEventData {
         }
     }
 
-    void initBuffers(CarlaEngine* const engine)
+    void initBuffers()
     {
         if (portIn != nullptr)
-            portIn->initBuffer(engine);
+            portIn->initBuffer();
 
         if (portOut != nullptr)
-            portOut->initBuffer(engine);
+            portOut->initBuffer();
     }
 
     CARLA_DECLARE_NON_COPY_STRUCT(PluginEventData)
