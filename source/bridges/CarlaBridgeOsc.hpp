@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
 #ifndef CARLA_BRIDGE_OSC_HPP_INCLUDED
@@ -83,14 +83,12 @@ public:
     // -------------------------------------------------------------------
 
 private:
-    CarlaBridgeClient* const kClient;
-
-    CarlaString fName;
-
-    CarlaString fServerPath;
-    lo_server   fServer;
+    CarlaBridgeClient* const fClient;
 
     CarlaOscData fControlData;
+    CarlaString  fName;
+    CarlaString  fServerPath;
+    lo_server    fServer;
 
     // -------------------------------------------------------------------
 

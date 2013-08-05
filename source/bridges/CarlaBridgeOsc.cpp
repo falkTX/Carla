@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
 #include "CarlaBridgeClient.hpp"
@@ -27,7 +27,7 @@ CARLA_BRIDGE_START_NAMESPACE
 // -----------------------------------------------------------------------
 
 CarlaBridgeOsc::CarlaBridgeOsc(CarlaBridgeClient* const client)
-    : kClient(client),
+    : fClient(client),
       fServer(nullptr)
 {
     CARLA_ASSERT(client != nullptr);
@@ -36,10 +36,10 @@ CarlaBridgeOsc::CarlaBridgeOsc(CarlaBridgeClient* const client)
 
 CarlaBridgeOsc::~CarlaBridgeOsc()
 {
+    CARLA_ASSERT(fControlData.source == nullptr); // must never be used
     CARLA_ASSERT(fName.isEmpty());
     CARLA_ASSERT(fServerPath.isEmpty());
     CARLA_ASSERT(fServer == nullptr);
-    CARLA_ASSERT(fControlData.source == nullptr); // must never be used
     carla_debug("CarlaBridgeOsc::~CarlaBridgeOsc()");
 }
 
@@ -57,6 +57,10 @@ void CarlaBridgeOsc::init(const char* const url)
     fName = "carla-bridge-ui";
 #endif
 
+    fServer = lo_server_new_with_proto(nullptr, LO_TCP, osc_error_handler);
+
+    CARLA_SAFE_ASSERT_RETURN(fServer == nullptr,)
+
     {
         char* const host = lo_url_get_hostname(url);
         char* const port = lo_url_get_port(url);
@@ -67,39 +71,33 @@ void CarlaBridgeOsc::init(const char* const url)
         std::free(port);
     }
 
-    fServer = lo_server_new_with_proto(nullptr, LO_TCP, osc_error_handler);
-
-    if (fServer != nullptr)
+    if (char* const tmpServerPath = lo_server_get_url(fServer))
     {
-        if (char* const tmpServerPath = lo_server_get_url(fServer))
-        {
-            fServerPath  = tmpServerPath;
-            fServerPath += fName;
-            std::free(tmpServerPath);
-        }
-
-        lo_server_add_method(fServer, nullptr, nullptr, osc_message_handler, this);
+        fServerPath  = tmpServerPath;
+        fServerPath += fName;
+        std::free(tmpServerPath);
     }
+
+    lo_server_add_method(fServer, nullptr, nullptr, osc_message_handler, this);
 
     CARLA_ASSERT(fName.isNotEmpty());
     CARLA_ASSERT(fServerPath.isNotEmpty());
-    CARLA_ASSERT(fServer != nullptr);
 }
 
 void CarlaBridgeOsc::idle()
 {
-    if (fServer != nullptr)
-    {
-        while (lo_server_recv_noblock(fServer, 0) != 0) {}
-    }
+    if (fServer == nullptr)
+        return;
+
+    for (; lo_server_recv_noblock(fServer, 0) != 0;) {}
 }
 
 void CarlaBridgeOsc::close()
 {
+    CARLA_ASSERT(fControlData.source == nullptr); // must never be used
     CARLA_ASSERT(fName.isNotEmpty());
     CARLA_ASSERT(fServerPath.isNotEmpty());
     CARLA_ASSERT(fServer != nullptr);
-    CARLA_ASSERT(fControlData.source == nullptr); // must never be used
     carla_debug("CarlaBridgeOsc::close()");
 
     fName.clear();
@@ -212,12 +210,9 @@ int CarlaBridgeOsc::handleMessage(const char* const path, const int argc, const 
 #ifdef BUILD_BRIDGE_UI
 int CarlaBridgeOsc::handleMsgConfigure(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 {
-    CARLA_ASSERT(kClient != nullptr);
     CARLA_BRIDGE_OSC_CHECK_OSC_TYPES(2, "ss");
+    CARLA_SAFE_ASSERT_RETURN(fClient == nullptr, 1)
     carla_debug("CarlaBridgeOsc::handleMsgConfigure()");
-
-    if (kClient == nullptr)
-        return 1;
 
     // nothing here for now
     return 0;
@@ -228,8 +223,8 @@ int CarlaBridgeOsc::handleMsgConfigure(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 
 int CarlaBridgeOsc::handleMsgControl(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 {
-    CARLA_ASSERT(kClient != nullptr);
     CARLA_BRIDGE_OSC_CHECK_OSC_TYPES(2, "if");
+    CARLA_SAFE_ASSERT_RETURN(fClient == nullptr, 1)
     carla_debug("CarlaBridgeOsc::handleMsgControl()");
 
     if (kClient == nullptr)
@@ -250,8 +245,8 @@ int CarlaBridgeOsc::handleMsgControl(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 
 int CarlaBridgeOsc::handleMsgProgram(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 {
-    CARLA_ASSERT(kClient != nullptr);
     CARLA_BRIDGE_OSC_CHECK_OSC_TYPES(1, "i");
+    CARLA_SAFE_ASSERT_RETURN(fClient == nullptr, 1)
     carla_debug("CarlaBridgeOsc::handleMsgProgram()");
 
     if (kClient == nullptr)
@@ -271,8 +266,8 @@ int CarlaBridgeOsc::handleMsgProgram(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 
 int CarlaBridgeOsc::handleMsgMidiProgram(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 {
-    CARLA_ASSERT(kClient != nullptr);
     CARLA_BRIDGE_OSC_CHECK_OSC_TYPES(2, "ii");
+    CARLA_SAFE_ASSERT_RETURN(fClient == nullptr, 1)
     carla_debug("CarlaBridgeOsc::handleMsgMidiProgram()");
 
     if (kClient == nullptr)
@@ -296,8 +291,8 @@ int CarlaBridgeOsc::handleMsgMidiProgram(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 
 int CarlaBridgeOsc::handleMsgMidi(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 {
-    CARLA_ASSERT(kClient != nullptr);
     CARLA_BRIDGE_OSC_CHECK_OSC_TYPES(1, "m");
+    CARLA_SAFE_ASSERT_RETURN(fClient == nullptr, 1)
     carla_debug("CarlaBridgeOsc::handleMsgMidi()");
 
     if (kClient == nullptr)
@@ -343,7 +338,7 @@ int CarlaBridgeOsc::handleMsgMidi(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 
 int CarlaBridgeOsc::handleMsgShow()
 {
-    CARLA_ASSERT(kClient != nullptr);
+    CARLA_SAFE_ASSERT_RETURN(fClient == nullptr, 1)
     carla_debug("CarlaBridgeOsc::handleMsgShow()");
 
     if (kClient == nullptr)
@@ -356,7 +351,7 @@ int CarlaBridgeOsc::handleMsgShow()
 
 int CarlaBridgeOsc::handleMsgHide()
 {
-    CARLA_ASSERT(kClient != nullptr);
+    CARLA_SAFE_ASSERT_RETURN(fClient == nullptr, 1)
     carla_debug("CarlaBridgeOsc::handleMsgHide()");
 
     if (kClient == nullptr)
@@ -369,7 +364,7 @@ int CarlaBridgeOsc::handleMsgHide()
 
 int CarlaBridgeOsc::handleMsgQuit()
 {
-    CARLA_ASSERT(kClient != nullptr);
+    CARLA_SAFE_ASSERT_RETURN(fClient == nullptr, 1)
     carla_debug("CarlaBridgeOsc::handleMsgQuit()");
 
     if (kClient == nullptr)

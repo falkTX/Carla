@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
 #include "CarlaBridgeClient.hpp"
@@ -380,36 +380,24 @@ private:
 int CarlaBridgeOsc::handleMsgShow()
 {
     carla_debug("CarlaBridgeOsc::handleMsgShow()");
-    CARLA_ASSERT(kClient != nullptr);
-
-    if (kClient == nullptr)
-        return 1;
 
     carla_show_gui(0, true);
-
     return 0;
 }
 
 int CarlaBridgeOsc::handleMsgHide()
 {
     carla_debug("CarlaBridgeOsc::handleMsgHide()");
-    CARLA_ASSERT(kClient != nullptr);
-
-    if (kClient == nullptr)
-        return 1;
 
     carla_show_gui(0, false);
-
     return 0;
 }
 
 int CarlaBridgeOsc::handleMsgQuit()
 {
     carla_debug("CarlaBridgeOsc::handleMsgQuit()");
-    CARLA_ASSERT(kClient != nullptr);
 
     gCloseNow = true;
-
     return 0;
 }
 
@@ -417,13 +405,10 @@ int CarlaBridgeOsc::handleMsgQuit()
 
 int CarlaBridgeOsc::handleMsgPluginSaveNow()
 {
+    CARLA_SAFE_ASSERT_RETURN(fClient == nullptr, 1);
     carla_debug("CarlaBridgeOsc::handleMsgPluginSaveNow()");
-    CARLA_ASSERT(kClient != nullptr);
 
-    if (kClient == nullptr)
-        return 1;
-
-    CarlaPluginClient* const plugClient = (CarlaPluginClient*)kClient;
+    CarlaPluginClient* const plugClient((CarlaPluginClient*)fClient);
     plugClient->saveNow();
 
     return 0;
@@ -431,9 +416,9 @@ int CarlaBridgeOsc::handleMsgPluginSaveNow()
 
 int CarlaBridgeOsc::handleMsgPluginSetParameterMidiChannel(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 {
-    carla_debug("CarlaBridgeOsc::handleMsgPluginSetParameterMidiChannel()");
-    CARLA_ASSERT(kClient != nullptr);
     //CARLA_BRIDGE_OSC_CHECK_OSC_TYPES(1, "s");
+    CARLA_SAFE_ASSERT_RETURN(fClient == nullptr, 1);
+    carla_debug("CarlaBridgeOsc::handleMsgPluginSetParameterMidiChannel()");
 
     // TODO
 
@@ -442,9 +427,9 @@ int CarlaBridgeOsc::handleMsgPluginSetParameterMidiChannel(CARLA_BRIDGE_OSC_HAND
 
 int CarlaBridgeOsc::handleMsgPluginSetParameterMidiCC(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 {
-    carla_debug("CarlaBridgeOsc::handleMsgPluginSetParameterMidiCC()");
-    CARLA_ASSERT(kClient != nullptr);
     //CARLA_BRIDGE_OSC_CHECK_OSC_TYPES(1, "s");
+    CARLA_SAFE_ASSERT_RETURN(fClient == nullptr, 1);
+    carla_debug("CarlaBridgeOsc::handleMsgPluginSetParameterMidiCC()");
 
     // TODO
 
@@ -453,16 +438,13 @@ int CarlaBridgeOsc::handleMsgPluginSetParameterMidiCC(CARLA_BRIDGE_OSC_HANDLE_AR
 
 int CarlaBridgeOsc::handleMsgPluginSetChunk(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 {
-    carla_debug("CarlaBridgeOsc::handleMsgPluginSaveNow()");
-    CARLA_ASSERT(kClient != nullptr);
     CARLA_BRIDGE_OSC_CHECK_OSC_TYPES(1, "s");
-
-    if (kClient == nullptr)
-        return 1;
+    CARLA_SAFE_ASSERT_RETURN(fClient == nullptr, 1);
+    carla_debug("CarlaBridgeOsc::handleMsgPluginSaveNow()");
 
     const char* const chunkFile = (const char*)&argv[0]->s;
 
-    CarlaPluginClient* const plugClient = (CarlaPluginClient*)kClient;
+    CarlaPluginClient* const plugClient((CarlaPluginClient*)fClient);
     plugClient->setChunkData(chunkFile);
 
     return 0;
@@ -470,18 +452,15 @@ int CarlaBridgeOsc::handleMsgPluginSetChunk(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 
 int CarlaBridgeOsc::handleMsgPluginSetCustomData(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 {
-    carla_debug("CarlaBridgeOsc::handleMsgPluginSaveNow()");
-    CARLA_ASSERT(kClient != nullptr);
     CARLA_BRIDGE_OSC_CHECK_OSC_TYPES(3, "sss");
-
-    if (kClient == nullptr)
-        return 1;
+    CARLA_SAFE_ASSERT_RETURN(fClient == nullptr, 1);
+    carla_debug("CarlaBridgeOsc::handleMsgPluginSaveNow()");
 
     const char* const type  = (const char*)&argv[0]->s;
     const char* const key   = (const char*)&argv[1]->s;
     const char* const value = (const char*)&argv[2]->s;
 
-    CarlaPluginClient* const plugClient = (CarlaPluginClient*)kClient;
+    CarlaPluginClient* const plugClient((CarlaPluginClient*)fClient);
     plugClient->setCustomData(type, key, value);
 
     return 0;
