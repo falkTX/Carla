@@ -26,6 +26,9 @@
 
 namespace LinuxSampler {
 
+using CarlaBackend::CarlaEngine;
+using CarlaBackend::CarlaPlugin;
+
 // -----------------------------------------------------------------------
 // LinuxSampler static values
 
@@ -40,8 +43,8 @@ class AudioOutputDevicePlugin : public AudioOutputDevice
 public:
     AudioOutputDevicePlugin(CarlaBackend::CarlaEngine* const engine, CarlaBackend::CarlaPlugin* const plugin)
         : AudioOutputDevice(std::map<String, DeviceCreationParameter*>()),
-          kEngine(engine),
-          kPlugin(plugin)
+          fEngine(engine),
+          fPlugin(plugin)
     {
         CARLA_ASSERT(engine != nullptr);
         CARLA_ASSERT(plugin != nullptr);
@@ -56,7 +59,7 @@ public:
 
     bool IsPlaying() override
     {
-        return (kEngine->isRunning() && kPlugin->enabled());
+        return (fEngine->isRunning() && fPlugin->isEnabled());
     }
 
     void Stop() override
@@ -65,12 +68,12 @@ public:
 
     uint MaxSamplesPerCycle() override
     {
-        return kEngine->getBufferSize();
+        return fEngine->getBufferSize();
     }
 
     uint SampleRate() override
     {
-        return kEngine->getSampleRate();
+        return fEngine->getSampleRate();
     }
 
     String Driver() override
@@ -92,8 +95,8 @@ public:
     }
 
 private:
-    CarlaBackend::CarlaEngine* const kEngine;
-    CarlaBackend::CarlaPlugin* const kPlugin;
+    CarlaEngine* const fEngine;
+    CarlaPlugin* const fPlugin;
 };
 
 // -----------------------------------------------------------------------
@@ -221,12 +224,12 @@ public:
     // -------------------------------------------------------------------
     // Information (base)
 
-    PluginType type() const override
+    PluginType getType() const noexcept override
     {
         return kIsGIG ? PLUGIN_GIG : PLUGIN_SFZ;
     }
 
-    PluginCategory category() override
+    PluginCategory getCategory() const override
     {
         return PLUGIN_CATEGORY_SYNTH;
     }
@@ -244,7 +247,7 @@ public:
     // -------------------------------------------------------------------
     // Information (per-plugin data)
 
-    unsigned int availableOptions() override
+    unsigned int getAvailableOptions() const override
     {
         unsigned int options = 0x0;
 
@@ -256,22 +259,22 @@ public:
         return options;
     }
 
-    void getLabel(char* const strBuf) override
+    void getLabel(char* const strBuf) const override
     {
         std::strncpy(strBuf, (const char*)fLabel, STR_MAX);
     }
 
-    void getMaker(char* const strBuf) override
+    void getMaker(char* const strBuf) const override
     {
         std::strncpy(strBuf, (const char*)fMaker, STR_MAX);
     }
 
-    void getCopyright(char* const strBuf) override
+    void getCopyright(char* const strBuf) const override
     {
         getMaker(strBuf);
     }
 
-    void getRealName(char* const strBuf) override
+    void getRealName(char* const strBuf) const override
     {
         std::strncpy(strBuf, (const char*)fRealName, STR_MAX);
     }
@@ -352,7 +355,7 @@ public:
 
         pData->audioOut.createNew(aOuts);
 
-        const int   portNameSize = pData->engine->maxPortNameSize();
+        const int   portNameSize = pData->engine->getMaxPortNameSize();
         CarlaString portName;
 
         // ---------------------------------------
@@ -470,10 +473,10 @@ public:
         // Update OSC Names
         if (pData->engine->isOscControlRegistered())
         {
-            pData->engine->osc_send_control_set_midi_program_count(fId, count);
+            pData->engine->oscSend_control_set_midi_program_count(fId, count);
 
             for (i=0; i < count; ++i)
-                pData->engine->osc_send_control_set_midi_program_data(fId, i, pData->midiprog.data[i].bank, pData->midiprog.data[i].program, pData->midiprog.data[i].name);
+                pData->engine->oscSend_control_set_midi_program_data(fId, i, pData->midiprog.data[i].bank, pData->midiprog.data[i].program, pData->midiprog.data[i].name);
         }
 #endif
 
@@ -694,7 +697,7 @@ public:
                             }
                             else
                             {
-                                value = pData->param.ranges[k].unnormalizeValue(ctrlEvent.value);
+                                value = pData->param.ranges[k].getUnnormalizedValue(ctrlEvent.value);
 
                                 if (pData->param.data[k].hints & PARAMETER_IS_INTEGER)
                                     value = std::rint(value);
@@ -802,7 +805,7 @@ public:
 
                         fMidiInputPort->DispatchControlChange(control, value, channel, fragmentPos);
                     }
-                    else if (MIDI_IS_STATUS_AFTERTOUCH(status) && (fOptions & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE) != 0)
+                    else if (MIDI_IS_STATUS_CHANNEL_PRESSURE(status) && (fOptions & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE) != 0)
                     {
                         //const uint8_t pressure = midiEvent.data[1];
 
@@ -929,7 +932,7 @@ public:
 
     // -------------------------------------------------------------------
 
-    const void* getExtraStuff() const override
+    const void* getExtraStuff() const noexcept override
     {
         return kUses16Outs ? (const void*)0x1 : nullptr;
     }
@@ -1098,7 +1101,7 @@ public:
             pData->idStr  = kIsGIG ? "GIG" : "SFZ";
             pData->idStr += "/";
             pData->idStr += label;
-            fOptions = pData->loadSettings(fOptions, availableOptions());
+            fOptions = pData->loadSettings(fOptions, getAvailableOptions());
         }
 
         return true;
