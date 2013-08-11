@@ -341,10 +341,6 @@ class CarlaSettingsW(QDialog):
         self.ui.ch_engine_prefer_plugin_bridges.setChecked(settings.value("Engine/PreferPluginBridges", CARLA_DEFAULT_PREFER_PLUGIN_BRIDGES, type=bool))
         self.ui.ch_engine_force_stereo.setChecked(settings.value("Engine/ForceStereo", CARLA_DEFAULT_FORCE_STEREO, type=bool))
 
-        # FIXME - only for stable release
-        self.ui.ch_engine_disable_checks.setChecked(True)
-        self.ui.ch_engine_disable_checks.setVisible(False)
-
         # --------------------------------------------
 
         ladspas = toList(settings.value("Paths/LADSPA", Carla.LADSPA_PATH))
@@ -2106,8 +2102,7 @@ class CarlaMainW(QMainWindow):
         # ---------------------------------------------
         # plugin checks
 
-        # FIXME - only for stable release
-        if True: # settings.value("Engine/DisableChecks", False, type=bool):
+        if settings.value("Engine/DisableChecks", False, type=bool):
             os.environ["CARLA_DISCOVERY_NO_PROCESSING_CHECKS"] = "true"
 
         elif os.getenv("CARLA_DISCOVERY_NO_PROCESSING_CHECKS"):
