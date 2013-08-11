@@ -878,11 +878,11 @@ class CarlaMainW(QMainWindow):
         self.connect(self, SIGNAL("ReloadProgramsCallback(int)"), SLOT("slot_handleReloadProgramsCallback(int)"))
         self.connect(self, SIGNAL("ReloadAllCallback(int)"), SLOT("slot_handleReloadAllCallback(int)"))
         self.connect(self, SIGNAL("PatchbayClientAddedCallback(int, int, QString)"), SLOT("slot_handlePatchbayClientAddedCallback(int, int, QString)"))
-        self.connect(self, SIGNAL("PatchbayClientRemovedCallback(int)"), SLOT("slot_handlePatchbayClientRemovedCallback(int)"))
+        self.connect(self, SIGNAL("PatchbayClientRemovedCallback(int, QString)"), SLOT("slot_handlePatchbayClientRemovedCallback(int, QString)"))
         self.connect(self, SIGNAL("PatchbayClientRenamedCallback(int, QString)"), SLOT("slot_handlePatchbayClientRenamedCallback(int, QString)"))
         self.connect(self, SIGNAL("PatchbayPortAddedCallback(int, int, int, QString)"), SLOT("slot_handlePatchbayPortAddedCallback(int, int, int, QString)"))
-        self.connect(self, SIGNAL("PatchbayPortRemovedCallback(int)"), SLOT("slot_handlePatchbayPortRemovedCallback(int)"))
-        self.connect(self, SIGNAL("PatchbayPortRenamedCallback(int, QString)"), SLOT("slot_handlePatchbayPortRenamedCallback(int, QString)"))
+        self.connect(self, SIGNAL("PatchbayPortRemovedCallback(int, int, QString)"), SLOT("slot_handlePatchbayPortRemovedCallback(int, int, QString)"))
+        self.connect(self, SIGNAL("PatchbayPortRenamedCallback(int, int, QString)"), SLOT("slot_handlePatchbayPortRenamedCallback(int, int, QString)"))
         self.connect(self, SIGNAL("PatchbayConnectionAddedCallback(int, int, int)"), SLOT("slot_handlePatchbayConnectionAddedCallback(int, int, int)"))
         self.connect(self, SIGNAL("PatchbayConnectionRemovedCallback(int)"), SLOT("slot_handlePatchbayConnectionRemovedCallback(int)"))
         self.connect(self, SIGNAL("PatchbayIconChangedCallback(int, int)"), SLOT("slot_handlePatchbayIconChangedCallback(int, int)"))
@@ -1923,8 +1923,8 @@ class CarlaMainW(QMainWindow):
         patchcanvas.addGroup(clientId, clientName, pcSplit, pcIcon)
         QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
 
-    @pyqtSlot(int)
-    def slot_handlePatchbayClientRemovedCallback(self, clientId):
+    @pyqtSlot(int, str)
+    def slot_handlePatchbayClientRemovedCallback(self, clientId, clientName):
         if not self.fEngineStarted: return
         patchcanvas.removeGroup(clientId)
         QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
@@ -1953,14 +1953,14 @@ class CarlaMainW(QMainWindow):
         patchcanvas.addPort(clientId, portId, portName, portMode, portType)
         QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
 
-    @pyqtSlot(int)
-    def slot_handlePatchbayPortRemovedCallback(self, portId):
+    @pyqtSlot(int, int, str)
+    def slot_handlePatchbayPortRemovedCallback(self, groupId, portId, fullPortName):
         if not self.fEngineStarted: return
         patchcanvas.removePort(portId)
         QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
 
-    @pyqtSlot(int, str)
-    def slot_handlePatchbayPortRenamedCallback(self, portId, newPortName):
+    @pyqtSlot(int, int, str)
+    def slot_handlePatchbayPortRenamedCallback(self, groupId, portId, newPortName):
         patchcanvas.renamePort(portId, newPortName)
         QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
 
@@ -2292,15 +2292,15 @@ def engineCallback(ptr, action, pluginId, value1, value2, value3, valueStr):
     elif action == CALLBACK_PATCHBAY_CLIENT_ADDED:
         Carla.gui.emit(SIGNAL("PatchbayClientAddedCallback(int, int, QString)"), value1, value2, cString(valueStr))
     elif action == CALLBACK_PATCHBAY_CLIENT_REMOVED:
-        Carla.gui.emit(SIGNAL("PatchbayClientRemovedCallback(int)"), value1)
+        Carla.gui.emit(SIGNAL("PatchbayClientRemovedCallback(int, QString)"), value1, cString(valueStr))
     elif action == CALLBACK_PATCHBAY_CLIENT_RENAMED:
         Carla.gui.emit(SIGNAL("PatchbayClientRenamedCallback(int, QString)"), value1, cString(valueStr))
     elif action == CALLBACK_PATCHBAY_PORT_ADDED:
         Carla.gui.emit(SIGNAL("PatchbayPortAddedCallback(int, int, int, QString)"), value1, value2, int(value3), cString(valueStr))
     elif action == CALLBACK_PATCHBAY_PORT_REMOVED:
-        Carla.gui.emit(SIGNAL("PatchbayPortRemovedCallback(int)"), value1)
+        Carla.gui.emit(SIGNAL("PatchbayPortRemovedCallback(int, int, QString)"), value1, value2, cString(valueStr))
     elif action == CALLBACK_PATCHBAY_PORT_RENAMED:
-        Carla.gui.emit(SIGNAL("PatchbayPortRenamedCallback(int, QString)"), value1, cString(valueStr))
+        Carla.gui.emit(SIGNAL("PatchbayPortRenamedCallback(int, int, QString)"), value1, value2, cString(valueStr))
     elif action == CALLBACK_PATCHBAY_CONNECTION_ADDED:
         Carla.gui.emit(SIGNAL("PatchbayConnectionAddedCallback(int, int, int)"), value1, value2, value3)
     elif action == CALLBACK_PATCHBAY_CONNECTION_REMOVED:
