@@ -2835,9 +2835,13 @@ class PluginRefreshW(QDialog):
         # -------------------------------------------------------------
         # FIXME - only for stable release
 
+        self.ui.ch_posix32.setChecked(False)
         self.ui.ch_posix32.setVisible(False)
+        self.ui.ch_posix64.setChecked(False)
         self.ui.ch_posix64.setVisible(False)
+        self.ui.ch_win32.setChecked(False)
         self.ui.ch_win32.setVisible(False)
+        self.ui.ch_win64.setChecked(False)
         self.ui.ch_win64.setVisible(False)
 
         self.ui.ico_posix32.setVisible(False)
