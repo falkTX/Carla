@@ -70,7 +70,7 @@ elif WINDOWS:
 # ------------------------------------------------------------------------------------------------------------
 # Set Version
 
-VERSION = "1.0.4"
+VERSION = "1.1.0"
 
 # ------------------------------------------------------------------------------------------------------------
 # Set TMP
@@ -677,8 +677,12 @@ def runCarlaDiscovery(itype, stype, filename, tool, isWine=False):
     command.append(filename)
 
     Ps = Popen(command, stdout=PIPE)
-    Ps.wait()
-    output = Ps.stdout.read().decode("utf-8", errors="ignore").split("\n")
+
+    try:
+        Ps.wait()
+        output = Ps.stdout.read().decode("utf-8", errors="ignore").split("\n")
+    except:
+        output = ""
 
     pinfo = None
 
@@ -2836,6 +2840,24 @@ class PluginRefreshW(QDialog):
         self.connect(self.ui.ch_sfz, SIGNAL("clicked()"), SLOT("slot_checkTools()"))
         self.connect(self.fThread, SIGNAL("pluginLook(int, QString)"), SLOT("slot_handlePluginLook(int, QString)"))
         self.connect(self.fThread, SIGNAL("finished()"), SLOT("slot_handlePluginThreadFinished()"))
+
+        # -------------------------------------------------------------
+        # FIXME - only for stable release
+
+        self.ui.ch_posix32.setVisible(False)
+        self.ui.ch_posix64.setVisible(False)
+        self.ui.ch_win32.setVisible(False)
+        self.ui.ch_win64.setVisible(False)
+
+        self.ui.ico_posix32.setVisible(False)
+        self.ui.ico_posix64.setVisible(False)
+        self.ui.ico_win32.setVisible(False)
+        self.ui.ico_win64.setVisible(False)
+
+        self.ui.label_posix32.setVisible(False)
+        self.ui.label_posix64.setVisible(False)
+        self.ui.label_win32.setVisible(False)
+        self.ui.label_win64.setVisible(False)
 
     @pyqtSlot()
     def slot_start(self):
