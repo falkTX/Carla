@@ -677,8 +677,12 @@ def runCarlaDiscovery(itype, stype, filename, tool, isWine=False):
     command.append(filename)
 
     Ps = Popen(command, stdout=PIPE)
-    Ps.wait()
-    output = Ps.stdout.read().decode("utf-8", errors="ignore").split("\n")
+
+    try:
+        Ps.wait()
+        output = Ps.stdout.read().decode("utf-8", errors="ignore").split("\n")
+    except:
+        output = ""
 
     pinfo = None
 
