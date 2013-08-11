@@ -369,7 +369,7 @@ ifeq ($(HAVE_AF_DEPS),true)
 ifeq ($(HAVE_FFMPEG),true)
 	@echo "AudioFile:  $(ANS_YES) (with ffmpeg)"
 else
-	@echo "AudioFile:  $(ANS_YES) (without ffmpeg) $(mS)ffmpeg/libav missing$(mE)"
+	@echo "AudioFile:  $(ANS_YES) (without ffmpeg) $(mS)ffmpeg/libav missing or too new$(mE)"
 endif
 else
 	@echo "AudioFile:  $(ANS_NO) $(mS)libsndfile missing$(mE)"

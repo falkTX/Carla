@@ -60,7 +60,7 @@ endif
 
 # --------------------------------------------------------------
 
-HAVE_FFMPEG       = $(shell pkg-config --exists libavcodec libavformat libavutil && echo true)
+HAVE_FFMPEG       = $(shell pkg-config --exists libavcodec libavformat libavutil && pkg-config --max-version=1.9 libavcodec && echo true)
 HAVE_OPENGL       = $(shell pkg-config --exists gl && echo true)
 HAVE_GTK2         = $(shell pkg-config --exists gtk+-2.0 && echo true)
 HAVE_GTK3         = $(shell pkg-config --exists gtk+-3.0 && echo true)
