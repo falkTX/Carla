@@ -102,6 +102,7 @@ LIBS  = ../libcarla_engine.a
 LIBS += ../libcarla_plugin.a
 LIBS += ../libcarla_native.a
 LIBS += ../../modules/juce_core.a
+LIBS += ../../modules/juce_audio_basics.a
 LIBS += ../../modules/rtmempool.a
 LIBS += ../../modules/theme.a
 LIBS += ../../modules/widgets.a

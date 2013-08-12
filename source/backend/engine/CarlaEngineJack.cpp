@@ -279,7 +279,7 @@ public:
         }
         else if (midiStatus == MIDI_STATUS_PROGRAM_CHANGE)
         {
-            CARLA_ASSERT(jackEvent.size == 2);
+            CARLA_SAFE_ASSERT_INT2(jackEvent.size == 2, jackEvent.size, jackEvent.buffer[1]);
 
             const uint8_t midiProgram = jackEvent.buffer[1];
             fRetEvent.type            = kEngineEventTypeControl;

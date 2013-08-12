@@ -16,6 +16,14 @@ dgl_%:
 
 # --------------------------------------------------------------
 
+juce_audio_basics:
+	$(MAKE) -C juce_audio_basics
+
+juce_audio_basics_%:
+	$(MAKE) -C juce_audio_basics $*
+
+# --------------------------------------------------------------
+
 juce_core:
 	$(MAKE) -C juce_core
 
@@ -79,4 +87,4 @@ clean:
 
 # --------------------------------------------------------------
 
-.PHONY: dgl juce_core lilv rtmempool theme widgets
+.PHONY: dgl juce_audio_basics juce_core lilv rtmempool theme widgets

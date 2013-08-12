@@ -56,7 +56,8 @@ OBJS  = \
 	midi-split.c.o \
 	midi-through.c.o \
 	midi-transpose.c.o \
-	nekofilter.c.o
+	nekofilter.c.o \
+	vex.cpp.o
 
 # AudioFile
 ifeq ($(HAVE_AF_DEPS),true)

@@ -40,6 +40,7 @@ void carla_register_native_plugin_midiThrough();
 void carla_register_native_plugin_midiTranspose();
 void carla_register_native_plugin_nekofilter();
 void carla_register_native_plugin_sunvoxfile();
+void carla_register_native_plugin_vex();
 
 #ifndef BUILD_BRIDGE
 // Carla
@@ -85,6 +86,7 @@ void carla_register_all_plugins()
     carla_register_native_plugin_midiTranspose();
     carla_register_native_plugin_nekofilter();
     //carla_register_native_plugin_sunvoxfile(); // unfinished
+    carla_register_native_plugin_vex();
 
 #ifndef BUILD_BRIDGE
     // Carla
