@@ -120,11 +120,12 @@ const char* const CUSTOM_DATA_STRING  = "http://kxstudio.sf.net/ns/carla/string"
  * Various patchbay port hints.
  * @{
  */
-const unsigned int PATCHBAY_PORT_IS_INPUT  = 0x01; //!< Patchbay port is input.
-const unsigned int PATCHBAY_PORT_IS_OUTPUT = 0x02; //!< Patchbay port is output.
-const unsigned int PATCHBAY_PORT_IS_AUDIO  = 0x10; //!< Patchbay port is of Audio type.
-const unsigned int PATCHBAY_PORT_IS_CV     = 0x20; //!< Patchbay port is of CV type.
-const unsigned int PATCHBAY_PORT_IS_MIDI   = 0x40; //!< Patchbay port is of MIDI type.
+const unsigned int PATCHBAY_PORT_IS_INPUT     = 0x01; //!< Patchbay port is input.
+const unsigned int PATCHBAY_PORT_IS_OUTPUT    = 0x02; //!< Patchbay port is output.
+const unsigned int PATCHBAY_PORT_IS_AUDIO     = 0x10; //!< Patchbay port is of Audio type.
+const unsigned int PATCHBAY_PORT_IS_CV        = 0x20; //!< Patchbay port is of CV type.
+const unsigned int PATCHBAY_PORT_IS_MIDI      = 0x40; //!< Patchbay port is of MIDI type.
+const unsigned int PATCHBAY_PORT_IS_PARAMETER = 0x80; //!< Patchbay port is of Parameter type.
 /**@}*/
 
 /*!
@@ -152,9 +153,10 @@ enum PluginType {
     PLUGIN_VST      =  5, //!< VST1/2 plugin.
     PLUGIN_VST3     =  6, //!< VST3 plugin.
     PLUGIN_AU       =  7, //!< AU plugin.
-    PLUGIN_GIG      =  8, //!< GIG sound kit.
-    PLUGIN_SF2      =  9, //!< SF2 sound kit (aka SoundFont).
-    PLUGIN_SFZ      = 10  //!< SFZ sound kit.
+    PLUGIN_CSOUND   =  8, //!< Csound file.
+    PLUGIN_GIG      =  9, //!< GIG sound kit.
+    PLUGIN_SF2      = 10, //!< SF2 sound kit (aka SoundFont).
+    PLUGIN_SFZ      = 11  //!< SFZ sound kit.
 };
 
 /*!

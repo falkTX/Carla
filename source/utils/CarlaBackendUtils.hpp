@@ -98,6 +98,8 @@ const char* PluginType2Str(const PluginType type)
         return "PLUGIN_VST3";
     case PLUGIN_AU:
         return "PLUGIN_AU";
+    case PLUGIN_CSOUND:
+        return "PLUGIN_CSOUND";
     case PLUGIN_GIG:
         return "PLUGIN_GIG";
     case PLUGIN_SF2:
@@ -445,6 +447,8 @@ const char* getPluginTypeAsString(const PluginType type)
         return "VST3";
     case PLUGIN_AU:
         return "AU";
+    case PLUGIN_CSOUND:
+        return "CSOUND";
     case PLUGIN_GIG:
         return "GIG";
     case PLUGIN_SF2:
@@ -485,6 +489,8 @@ PluginType getPluginTypeFromString(const char* const stype)
         return PLUGIN_VST3;
     if (std::strcmp(stype, "AU") == 0)
         return PLUGIN_AU;
+    if (std::strcmp(stype, "CSOUND") == 0)
+        return PLUGIN_CSOUND;
     if (std::strcmp(stype, "GIG") == 0)
         return PLUGIN_GIG;
     if (std::strcmp(stype, "SF2") == 0)

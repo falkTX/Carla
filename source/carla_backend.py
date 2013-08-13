@@ -131,11 +131,12 @@ CUSTOM_DATA_CHUNK   = "http://kxstudio.sf.net/ns/carla/chunk"
 CUSTOM_DATA_STRING  = "http://kxstudio.sf.net/ns/carla/string"
 
 # Patchbay Port Hints
-PATCHBAY_PORT_IS_INPUT  = 0x01
-PATCHBAY_PORT_IS_OUTPUT = 0x02
-PATCHBAY_PORT_IS_AUDIO  = 0x10
-PATCHBAY_PORT_IS_CV     = 0x20
-PATCHBAY_PORT_IS_MIDI   = 0x40
+PATCHBAY_PORT_IS_INPUT     = 0x01
+PATCHBAY_PORT_IS_OUTPUT    = 0x02
+PATCHBAY_PORT_IS_AUDIO     = 0x10
+PATCHBAY_PORT_IS_CV        = 0x20
+PATCHBAY_PORT_IS_MIDI      = 0x40
+PATCHBAY_PORT_IS_PARAMETER = 0x80
 
 # Binary Type
 BINARY_NONE    = 0
@@ -153,9 +154,11 @@ PLUGIN_DSSI     = 3
 PLUGIN_LV2      = 4
 PLUGIN_VST      = 5
 PLUGIN_VST3     = 6
-PLUGIN_GIG      = 7
-PLUGIN_SF2      = 8
-PLUGIN_SFZ      = 9
+PLUGIN_AU       = 7
+PLUGIN_CSOUND   = 8
+PLUGIN_GIG      = 9
+PLUGIN_SF2      = 10
+PLUGIN_SFZ      = 11
 
 # Plugin Category
 PLUGIN_CATEGORY_NONE      = 0
@@ -397,7 +400,7 @@ class CarlaTransportInfo(Structure):
     ]
 
 # ------------------------------------------------------------------------------------------------------------
-# Standalone Python object
+# Host Python object (Control/Standalone)
 
 class Host(object):
     def __init__(self, libName):
