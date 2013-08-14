@@ -1,4 +1,4 @@
-# ---  Release Notes for Carla 1.0.x  ---
+# ---  Release Notes for Carla 1.1.x  ---
 
 1.  Canvas does not save or restore connections.
     You need to use external session management for now.
