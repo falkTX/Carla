@@ -19,8 +19,8 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from PyQt4.QtCore import QLibrary
-from PyQt4.QtGui import QApplication, QInputDialog, QMainWindow
+from PyQt5.QtCore import QLibrary
+from PyQt5.QtWidgets import QApplication, QInputDialog, QMainWindow
 from liblo import make_method, Address, ServerError, ServerThread
 from liblo import send as lo_send
 from liblo import TCP as LO_TCP
@@ -642,8 +642,8 @@ class CarlaControlW(QMainWindow):
         # -------------------------------------------------------------
         # Connect actions to functions
 
-        self.connect(self.ui.act_file_connect, SIGNAL("triggered()"), SLOT("slot_fileConnect()"))
-        self.connect(self.ui.act_file_refresh, SIGNAL("triggered()"), SLOT("slot_fileRefresh()"))
+        #self.connect(self.ui.act_file_connect, SIGNAL("triggered()"), SLOT("slot_fileConnect()"))
+        #self.connect(self.ui.act_file_refresh, SIGNAL("triggered()"), SLOT("slot_fileRefresh()"))
 
         #self.connect(self.ui.act_plugin_add, SIGNAL("triggered()"), SLOT("slot_pluginAdd()"))
         #self.connect(self.ui.act_plugin_add2, SIGNAL("triggered()"), SLOT("slot_pluginAdd()"))
@@ -653,32 +653,32 @@ class CarlaControlW(QMainWindow):
         #self.connect(self.ui.act_settings_show_toolbar, SIGNAL("triggered(bool)"), SLOT("slot_toolbarShown()"))
         #self.connect(self.ui.act_settings_configure, SIGNAL("triggered()"), SLOT("slot_configureCarla()"))
 
-        self.connect(self.ui.act_help_about, SIGNAL("triggered()"), SLOT("slot_aboutCarlaControl()"))
-        self.connect(self.ui.act_help_about_qt, SIGNAL("triggered()"), app, SLOT("aboutQt()"))
+        #self.connect(self.ui.act_help_about, SIGNAL("triggered()"), SLOT("slot_aboutCarlaControl()"))
+        #self.connect(self.ui.act_help_about_qt, SIGNAL("triggered()"), app, SLOT("aboutQt()"))
 
-        self.connect(self, SIGNAL("SIGTERM()"), SLOT("slot_handleSIGTERM()"))
+        #self.connect(self, SIGNAL("SIGTERM()"), SLOT("slot_handleSIGTERM()"))
 
-        self.connect(self, SIGNAL("AddPluginStart(int, QString)"), SLOT("slot_handleAddPluginStart(int, QString)"))
-        self.connect(self, SIGNAL("AddPluginEnd(int)"), SLOT("slot_handleAddPluginEnd(int)"))
-        self.connect(self, SIGNAL("RemovePlugin(int)"), SLOT("slot_handleRemovePlugin(int)"))
-        self.connect(self, SIGNAL("SetPluginData(int, int, int, int, QString, QString, QString, QString, int)"), SLOT("slot_handleSetPluginData(int, int, int, int, QString, QString, QString, QString, int)"))
-        self.connect(self, SIGNAL("SetPluginPorts(int, int, int, int, int, int, int, int)"), SLOT("slot_handleSetPluginPorts(int, int, int, int, int, int, int, int)"))
-        self.connect(self, SIGNAL("SetParameterData(int, int, int, int, QString, QString, double)"), SLOT("slot_handleSetParameterData(int, int, int, int, QString, QString, double)"))
-        self.connect(self, SIGNAL("SetParameterRanges(int, int, double, double, double, double, double, double)"), SLOT("slot_handleSetParameterRanges(int, int, double, double, double, double, double, double)"))
-        self.connect(self, SIGNAL("SetParameterMidiCC(int, int, int)"), SLOT("slot_handleSetParameterMidiCC(int, int, int)"))
-        self.connect(self, SIGNAL("SetParameterMidiChannel(int, int, int)"), SLOT("slot_handleSetParameterMidiChannel(int, int, int)"))
-        self.connect(self, SIGNAL("SetParameterValue(int, int, double)"), SLOT("slot_handleSetParameterValue(int, int, double)"))
-        self.connect(self, SIGNAL("SetDefaultValue(int, int, double)"), SLOT("slot_handleSetDefaultValue(int, int, double)"))
-        self.connect(self, SIGNAL("SetProgram(int, int)"), SLOT("slot_handleSetProgram(int, int)"))
-        self.connect(self, SIGNAL("SetProgramCount(int, int)"), SLOT("slot_handleSetProgramCount(int, int)"))
-        self.connect(self, SIGNAL("SetProgramName(int, int, QString)"), SLOT("slot_handleSetProgramName(int, int, QString)"))
-        self.connect(self, SIGNAL("SetMidiProgram(int, int)"), SLOT("slot_handleSetMidiProgram(int, int)"))
-        self.connect(self, SIGNAL("SetMidiProgramCount(int, int)"), SLOT("slot_handleSetMidiProgramCount(int, int)"))
-        self.connect(self, SIGNAL("SetMidiProgramData(int, int, int, int, QString)"), SLOT("slot_handleSetMidiProgramData(int, int, int, int, QString)"))
-        self.connect(self, SIGNAL("NoteOn(int, int, int, int)"), SLOT("slot_handleNoteOn(int, int, int, int)"))
-        self.connect(self, SIGNAL("NoteOff(int, int, int)"), SLOT("slot_handleNoteOff(int, int, int)"))
-        self.connect(self, SIGNAL("SetPeaks(int, double, double, double, double)"), SLOT("slot_handleSetPeaks(int, double, double, double, double)"))
-        self.connect(self, SIGNAL("Exit()"), SLOT("slot_handleExit()"))
+        #self.connect(self, SIGNAL("AddPluginStart(int, QString)"), SLOT("slot_handleAddPluginStart(int, QString)"))
+        #self.connect(self, SIGNAL("AddPluginEnd(int)"), SLOT("slot_handleAddPluginEnd(int)"))
+        #self.connect(self, SIGNAL("RemovePlugin(int)"), SLOT("slot_handleRemovePlugin(int)"))
+        #self.connect(self, SIGNAL("SetPluginData(int, int, int, int, QString, QString, QString, QString, int)"), SLOT("slot_handleSetPluginData(int, int, int, int, QString, QString, QString, QString, int)"))
+        #self.connect(self, SIGNAL("SetPluginPorts(int, int, int, int, int, int, int, int)"), SLOT("slot_handleSetPluginPorts(int, int, int, int, int, int, int, int)"))
+        #self.connect(self, SIGNAL("SetParameterData(int, int, int, int, QString, QString, double)"), SLOT("slot_handleSetParameterData(int, int, int, int, QString, QString, double)"))
+        #self.connect(self, SIGNAL("SetParameterRanges(int, int, double, double, double, double, double, double)"), SLOT("slot_handleSetParameterRanges(int, int, double, double, double, double, double, double)"))
+        #self.connect(self, SIGNAL("SetParameterMidiCC(int, int, int)"), SLOT("slot_handleSetParameterMidiCC(int, int, int)"))
+        #self.connect(self, SIGNAL("SetParameterMidiChannel(int, int, int)"), SLOT("slot_handleSetParameterMidiChannel(int, int, int)"))
+        #self.connect(self, SIGNAL("SetParameterValue(int, int, double)"), SLOT("slot_handleSetParameterValue(int, int, double)"))
+        #self.connect(self, SIGNAL("SetDefaultValue(int, int, double)"), SLOT("slot_handleSetDefaultValue(int, int, double)"))
+        #self.connect(self, SIGNAL("SetProgram(int, int)"), SLOT("slot_handleSetProgram(int, int)"))
+        #self.connect(self, SIGNAL("SetProgramCount(int, int)"), SLOT("slot_handleSetProgramCount(int, int)"))
+        #self.connect(self, SIGNAL("SetProgramName(int, int, QString)"), SLOT("slot_handleSetProgramName(int, int, QString)"))
+        #self.connect(self, SIGNAL("SetMidiProgram(int, int)"), SLOT("slot_handleSetMidiProgram(int, int)"))
+        #self.connect(self, SIGNAL("SetMidiProgramCount(int, int)"), SLOT("slot_handleSetMidiProgramCount(int, int)"))
+        #self.connect(self, SIGNAL("SetMidiProgramData(int, int, int, int, QString)"), SLOT("slot_handleSetMidiProgramData(int, int, int, int, QString)"))
+        #self.connect(self, SIGNAL("NoteOn(int, int, int, int)"), SLOT("slot_handleNoteOn(int, int, int, int)"))
+        #self.connect(self, SIGNAL("NoteOff(int, int, int)"), SLOT("slot_handleNoteOff(int, int, int)"))
+        #self.connect(self, SIGNAL("SetPeaks(int, double, double, double, double)"), SLOT("slot_handleSetPeaks(int, double, double, double, double)"))
+        #self.connect(self, SIGNAL("Exit()"), SLOT("slot_handleExit()"))
 
         if oscAddr:
             self.connectToAddr(oscAddr)
@@ -1087,16 +1087,7 @@ if __name__ == '__main__':
     if libPrefix is not None:
         libName = os.path.join(libPrefix, "lib", "carla", carla_libname)
     else:
-        libName = carla_library_path
-
-    # Load backend DLL, so it registers the theme
-    libDLL = QLibrary()
-    libDLL.setFileName(libName)
-
-    try:
-        libDLL.load()
-    except:
-        pass
+        libName = carla_library_filename
 
     # Init backend (OSC bridge version)
     Carla.host = Host()
@@ -1111,12 +1102,4 @@ if __name__ == '__main__':
     Carla.gui.show()
 
     # App-Loop
-    ret = app.exec_()
-
-    # Close backend DLL
-    if libDLL.isLoaded():
-        # Need to destroy app before theme
-        del app
-        libDLL.unload()
-
-    sys.exit(ret)
+    sys.exit(app.exec_())

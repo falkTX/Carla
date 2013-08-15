@@ -16,16 +16,17 @@
 #
 # For a full copy of the GNU General Public License see the GPL.txt file
 
-# TODO - apply last changes to c++ (2 commits + theme changes)
+# TODO - SIGNAL, SLOT
 
 # Imports (Global)
-from PyQt4.QtCore import pyqtSlot, qDebug, qCritical, qFatal, qWarning, Qt, QObject, SIGNAL, SLOT
-from PyQt4.QtCore import QAbstractAnimation, QLineF, QPointF, QRectF, QSizeF, QSettings, QTimer
-from PyQt4.QtGui import QColor, QLinearGradient, QPen, QPolygonF, QPainter, QPainterPath
-from PyQt4.QtGui import QCursor, QFont, QFontMetrics, QInputDialog, QLineEdit, QMenu
-from PyQt4.QtGui import QGraphicsScene, QGraphicsItem, QGraphicsLineItem, QGraphicsPathItem
-from PyQt4.QtGui import QGraphicsColorizeEffect, QGraphicsDropShadowEffect
-from PyQt4.QtSvg import QGraphicsSvgItem, QSvgRenderer
+from PyQt5.QtCore import pyqtSlot, qDebug, qCritical, qFatal, qWarning, Qt, QObject
+from PyQt5.QtCore import QAbstractAnimation, QLineF, QPointF, QRectF, QSizeF, QSettings, QTimer
+from PyQt5.QtGui import QColor, QLinearGradient, QPen, QPolygonF, QPainter, QPainterPath
+from PyQt5.QtGui import QCursor, QFont, QFontMetrics
+from PyQt5.QtSvg import QGraphicsSvgItem, QSvgRenderer
+from PyQt5.QtWidgets import QGraphicsScene, QGraphicsItem, QGraphicsLineItem, QGraphicsPathItem
+from PyQt5.QtWidgets import QGraphicsColorizeEffect, QGraphicsDropShadowEffect
+from PyQt5.QtWidgets import QInputDialog, QLineEdit, QMenu
 
 # Imports (Theme)
 from patchcanvas_theme import *

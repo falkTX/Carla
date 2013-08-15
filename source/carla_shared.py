@@ -147,7 +147,7 @@ class CarlaObject(object):
 Carla = CarlaObject()
 Carla.host = None
 Carla.gui  = None
-Carla.isControl = True
+Carla.isControl = False
 Carla.isLocal   = False
 Carla.processMode   = PROCESS_MODE_MULTIPLE_CLIENTS if LINUX else PROCESS_MODE_CONTINUOUS_RACK
 Carla.maxParameters = MAX_DEFAULT_PARAMETERS

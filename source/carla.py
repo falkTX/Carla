@@ -20,9 +20,10 @@
 # Imports (Global)
 
 from time import sleep
-from PyQt4.QtCore import Qt, QModelIndex, QPointF, QSize
-from PyQt4.QtGui import QApplication, QDialogButtonBox, QFileSystemModel, QLabel, QMainWindow, QResizeEvent
-from PyQt4.QtGui import QImage, QPalette, QPrinter, QPrintDialog, QSyntaxHighlighter
+from PyQt5.QtCore import Qt, QModelIndex, QPointF, QSize
+from PyQt5.QtGui import QImage, QPalette, QResizeEvent, QSyntaxHighlighter
+from PyQt5.QtPrintSupport import QPrinter, QPrintDialog
+from PyQt5.QtWidgets import QApplication, QDialogButtonBox, QFileSystemModel, QLabel, QMainWindow
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom Stuff)
@@ -2351,8 +2352,8 @@ if __name__ == '__main__':
         libPath = os.path.join(libPrefix, "lib", "carla")
         libName = os.path.join(libPath, carla_libname)
     else:
-        libPath = carla_library_path.replace(carla_libname, "")
-        libName = carla_library_path
+        libPath = carla_library_filename.replace(carla_libname, "")
+        libName = carla_library_filename
 
     # Init backend
     Carla.host = Host(libName)
@@ -2391,8 +2392,8 @@ if __name__ == '__main__':
         if carla_bridge_lv2_cocoa:
             Carla.host.set_engine_option(OPTION_PATH_BRIDGE_LV2_COCOA, 0, carla_bridge_lv2_cocoa)
 
-        if carla_bridge_vst_cocoa:
-            Carla.host.set_engine_option(OPTION_PATH_BRIDGE_VST_COCOA, 0, carla_bridge_vst_cocoa)
+        if carla_bridge_vst_mac:
+            Carla.host.set_engine_option(OPTION_PATH_BRIDGE_VST_MAC, 0, carla_bridge_vst_mac)
 
     else:
         if carla_bridge_lv2_gtk2:
