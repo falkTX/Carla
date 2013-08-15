@@ -14,13 +14,16 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
-# For a full copy of the GNU General Public License see the GPL.txt file
+# For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from PyQt4.QtCore import pyqtSlot, qCritical, Qt, QPointF, QRectF, QTimer, SIGNAL, SLOT
-from PyQt4.QtGui import QFont, QPainter, QPixmap, QWidget
+# TODO - SIGNAL, SLOT
+
+from PyQt5.QtCore import pyqtSlot, qCritical, Qt, QPointF, QRectF, QTimer
+from PyQt5.QtGui import QFont, QPainter, QPixmap
+from PyQt5.QtWidgets import QWidget
 
 # ------------------------------------------------------------------------------------------------------------
 

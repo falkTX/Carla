@@ -14,8 +14,8 @@ DESTDIR =
 SED_PREFIX = $(shell echo $(PREFIX) | sed "s/\//\\\\\\\\\//g")
 
 LINK   = ln -sf
-PYUIC ?= pyuic4
-PYRCC ?= pyrcc4 -py3
+PYUIC ?= pyuic5
+PYRCC ?= pyrcc5
 
 # --------------------------------------------------------------
 
@@ -300,7 +300,7 @@ endif
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
 	@echo "\033[36m---> LV2 UI toolkit support: \033[0m"
-	@echo "ExternalUI:$(ANS_YES) (direct)"
+	@echo "ExternalUI:$(ANS_YES) (direct+bridge)"
 ifeq ($(MACOS),true)
 # --- MacOS ---
 	@echo "CocoaUI:   $(ANS_YES) (direct+bridge)"
@@ -323,16 +323,12 @@ else
 	@echo "Gtk3UI:    $(ANS_NO) $(mS)Gtk3 missing$(mE)"
 endif
 ifeq ($(HAVE_QT4),true)
-	@echo "Qt4UI:     $(ANS_YES) (direct+bridge)"
+	@echo "Qt4UI:     $(ANS_YES) (bridge)"
 else
 	@echo "Qt4UI:     $(ANS_NO) $(mS)Qt4 missing$(mE)"
 endif
 ifeq ($(HAVE_QT5),true)
-ifeq ($(HAVE_QT4),true)
 	@echo "Qt5UI:     $(ANS_YES) (bridge)"
-else
-	@echo "Qt5UI:     $(ANS_YES) (direct+bridge)"
-endif
 else
 	@echo "Qt5UI:     $(ANS_NO) $(mS)Qt5 missing$(mE)"
 endif

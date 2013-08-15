@@ -14,19 +14,22 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
-# For a full copy of the GNU General Public License see the GPL.txt file
+# For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
 import os
-import json
 import sys
 from copy import deepcopy
 from subprocess import Popen, PIPE
-from PyQt4.QtCore import pyqtSlot, qWarning, Qt, QByteArray, QSettings, QThread, QTimer, SIGNAL, SLOT
-from PyQt4.QtGui import QColor, QCursor, QDialog, QIcon, QInputDialog, QFileDialog, QFontMetrics, QFrame, QMenu
-from PyQt4.QtGui import QLineEdit, QMessageBox, QPainter, QPainterPath, QTableWidgetItem, QVBoxLayout, QWidget
+from PyQt5.QtCore import qCritical, qFatal, qWarning, Qt, QByteArray, QThread, QSettings
+from PyQt5.QtGui import QColor, QCursor, QFontMetrics, QIcon, QPainter, QPainterPath
+from PyQt5.QtWidgets import QDialog, QFileDialog, QFrame, QInputDialog, QLineEdit, QMenu, QMessageBox
+from PyQt5.QtWidgets import QTableWidgetItem, QVBoxLayout, QWidget
+
+# remove?
+from PyQt5.QtCore import pyqtSlot
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -44,19 +47,22 @@ from carla_backend import *
 
 try:
     import ladspa_rdf
+    import json
     haveLRDF = True
 except:
-    print("LRDF Support not available (LADSPA-RDF will be disabled)")
+    qWarning("LRDF Support not available (LADSPA-RDF will be disabled)")
     haveLRDF = False
 
 # ------------------------------------------------------------------------------------------------------------
-# Try Import Signal
+# Import Signal
+
+from signal import signal, SIGINT, SIGTERM
 
 try:
-    from signal import signal, SIGINT, SIGTERM, SIGUSR1
-    haveSignal = True
+    from signal import SIGUSR1
+    haveSIGUSR1 = True
 except:
-    haveSignal = False
+    haveSIGUSR1 = False
 
 # ------------------------------------------------------------------------------------------------------------
 # Platform specific stuff
@@ -70,7 +76,7 @@ elif WINDOWS:
 # ------------------------------------------------------------------------------------------------------------
 # Set Version
 
-VERSION = "1.1.0"
+VERSION = "1.9.0"
 
 # ------------------------------------------------------------------------------------------------------------
 # Set TMP
@@ -132,6 +138,7 @@ class CarlaObject(object):
         'DSSI_PATH',
         'LV2_PATH',
         'VST_PATH',
+        'CSOUND_PATH',
         'GIG_PATH',
         'SF2_PATH',
         'SFZ_PATH'
@@ -140,8 +147,8 @@ class CarlaObject(object):
 Carla = CarlaObject()
 Carla.host = None
 Carla.gui  = None
-Carla.isControl = False
-Carla.isLocal   = True
+Carla.isControl = True
+Carla.isLocal   = False
 Carla.processMode   = PROCESS_MODE_MULTIPLE_CLIENTS if LINUX else PROCESS_MODE_CONTINUOUS_RACK
 Carla.maxParameters = MAX_DEFAULT_PARAMETERS
 
@@ -152,16 +159,6 @@ ICON_STATE_NULL  = 0
 ICON_STATE_OFF   = 1
 ICON_STATE_WAIT  = 2
 ICON_STATE_ON    = 3
-
-PALETTE_COLOR_NONE   = 0
-PALETTE_COLOR_WHITE  = 1
-PALETTE_COLOR_RED    = 2
-PALETTE_COLOR_GREEN  = 3
-PALETTE_COLOR_BLUE   = 4
-PALETTE_COLOR_YELLOW = 5
-PALETTE_COLOR_ORANGE = 6
-PALETTE_COLOR_BROWN  = 7
-PALETTE_COLOR_PINK   = 8
 
 # ------------------------------------------------------------------------------------------------------------
 # Static MIDI CC list
@@ -231,38 +228,40 @@ if WINDOWS:
 
     # Small integrity tests
     if not APPDATA:
-        print("APPDATA variable not set, cannot continue")
+        qFatal("APPDATA variable not set, cannot continue")
         sys.exit(1)
 
     if not PROGRAMFILES:
-        print("PROGRAMFILES variable not set, cannot continue")
+        qFatal("PROGRAMFILES variable not set, cannot continue")
         sys.exit(1)
 
     if not COMMONPROGRAMFILES:
-        print("COMMONPROGRAMFILES variable not set, cannot continue")
+        qFatal("COMMONPROGRAMFILES variable not set, cannot continue")
         sys.exit(1)
 
     DEFAULT_LADSPA_PATH = ";".join((os.path.join(APPDATA, "LADSPA"),
                                     os.path.join(PROGRAMFILES, "LADSPA")))
 
-    DEFAULT_DSSI_PATH = ";".join((os.path.join(APPDATA, "DSSI"),
-                                  os.path.join(PROGRAMFILES, "DSSI")))
+    DEFAULT_DSSI_PATH   = ";".join((os.path.join(APPDATA, "DSSI"),
+                                    os.path.join(PROGRAMFILES, "DSSI")))
 
-    DEFAULT_LV2_PATH = ";".join((os.path.join(APPDATA, "LV2"),
-                                 os.path.join(COMMONPROGRAMFILES, "LV2")))
+    DEFAULT_LV2_PATH    = ";".join((os.path.join(APPDATA, "LV2"),
+                                    os.path.join(COMMONPROGRAMFILES, "LV2")))
 
-    DEFAULT_VST_PATH = ";".join((os.path.join(PROGRAMFILES, "VstPlugins"),
-                                 os.path.join(PROGRAMFILES, "Steinberg", "VstPlugins")))
+    DEFAULT_VST_PATH    = ";".join((os.path.join(PROGRAMFILES, "VstPlugins"),
+                                    os.path.join(PROGRAMFILES, "Steinberg", "VstPlugins")))
+    # TODO
+    DEFAULT_CSOUND_PATH = ""
 
-    DEFAULT_GIG_PATH = ";".join((os.path.join(APPDATA, "GIG"),))
-    DEFAULT_SF2_PATH = ";".join((os.path.join(APPDATA, "SF2"),))
-    DEFAULT_SFZ_PATH = ";".join((os.path.join(APPDATA, "SFZ"),))
+    DEFAULT_GIG_PATH    = ";".join((os.path.join(APPDATA, "GIG"),))
+    DEFAULT_SF2_PATH    = ";".join((os.path.join(APPDATA, "SF2"),))
+    DEFAULT_SFZ_PATH    = ";".join((os.path.join(APPDATA, "SFZ"),))
 
     if PROGRAMFILESx86:
         DEFAULT_LADSPA_PATH += ";"+os.path.join(PROGRAMFILESx86, "LADSPA")
-        DEFAULT_DSSI_PATH += ";"+os.path.join(PROGRAMFILESx86, "DSSI")
-        DEFAULT_VST_PATH += ";"+os.path.join(PROGRAMFILESx86, "VstPlugins")
-        DEFAULT_VST_PATH += ";"+os.path.join(PROGRAMFILESx86, "Steinberg", "VstPlugins")
+        DEFAULT_DSSI_PATH   += ";"+os.path.join(PROGRAMFILESx86, "DSSI")
+        DEFAULT_VST_PATH    += ";"+os.path.join(PROGRAMFILESx86, "VstPlugins")
+        DEFAULT_VST_PATH    += ";"+os.path.join(PROGRAMFILESx86, "Steinberg", "VstPlugins")
 
 elif HAIKU:
     splitter = ":"
@@ -270,19 +269,22 @@ elif HAIKU:
     DEFAULT_LADSPA_PATH = ":".join((os.path.join(HOME, ".ladspa"),
                                     os.path.join("/", "boot", "common", "add-ons", "ladspa")))
 
-    DEFAULT_DSSI_PATH = ":".join((os.path.join(HOME, ".dssi"),
-                                  os.path.join("/", "boot", "common", "add-ons", "dssi")))
+    DEFAULT_DSSI_PATH   = ":".join((os.path.join(HOME, ".dssi"),
+                                    os.path.join("/", "boot", "common", "add-ons", "dssi")))
 
-    DEFAULT_LV2_PATH = ":".join((os.path.join(HOME, ".lv2"),
-                                 os.path.join("/", "boot", "common", "add-ons", "lv2")))
+    DEFAULT_LV2_PATH    = ":".join((os.path.join(HOME, ".lv2"),
+                                    os.path.join("/", "boot", "common", "add-ons", "lv2")))
 
-    DEFAULT_VST_PATH = ":".join((os.path.join(HOME, ".vst"),
-                                 os.path.join("/", "boot", "common", "add-ons", "vst")))
+    DEFAULT_VST_PATH    = ":".join((os.path.join(HOME, ".vst"),
+                                    os.path.join("/", "boot", "common", "add-ons", "vst")))
 
     # TODO
-    DEFAULT_GIG_PATH = ""
-    DEFAULT_SF2_PATH = ""
-    DEFAULT_SFZ_PATH = ""
+    DEFAULT_CSOUND_PATH = ""
+
+    # TODO
+    DEFAULT_GIG_PATH    = ""
+    DEFAULT_SF2_PATH    = ""
+    DEFAULT_SFZ_PATH    = ""
 
 elif MACOS:
     splitter = ":"
@@ -290,19 +292,22 @@ elif MACOS:
     DEFAULT_LADSPA_PATH = ":".join((os.path.join(HOME, "Library", "Audio", "Plug-Ins", "LADSPA"),
                                     os.path.join("/", "Library", "Audio", "Plug-Ins", "LADSPA")))
 
-    DEFAULT_DSSI_PATH = ":".join((os.path.join(HOME, "Library", "Audio", "Plug-Ins", "DSSI"),
-                                  os.path.join("/", "Library", "Audio", "Plug-Ins", "DSSI")))
+    DEFAULT_DSSI_PATH   = ":".join((os.path.join(HOME, "Library", "Audio", "Plug-Ins", "DSSI"),
+                                    os.path.join("/", "Library", "Audio", "Plug-Ins", "DSSI")))
 
-    DEFAULT_LV2_PATH = ":".join((os.path.join(HOME, "Library", "Audio", "Plug-Ins", "LV2"),
-                                 os.path.join("/", "Library", "Audio", "Plug-Ins", "LV2")))
+    DEFAULT_LV2_PATH    = ":".join((os.path.join(HOME, "Library", "Audio", "Plug-Ins", "LV2"),
+                                    os.path.join("/", "Library", "Audio", "Plug-Ins", "LV2")))
 
-    DEFAULT_VST_PATH = ":".join((os.path.join(HOME, "Library", "Audio", "Plug-Ins", "VST"),
-                                 os.path.join("/", "Library", "Audio", "Plug-Ins", "VST")))
+    DEFAULT_VST_PATH    = ":".join((os.path.join(HOME, "Library", "Audio", "Plug-Ins", "VST"),
+                                    os.path.join("/", "Library", "Audio", "Plug-Ins", "VST")))
 
     # TODO
-    DEFAULT_GIG_PATH = ""
-    DEFAULT_SF2_PATH = ""
-    DEFAULT_SFZ_PATH = ""
+    DEFAULT_CSOUND_PATH = ""
+
+    # TODO
+    DEFAULT_GIG_PATH    = ""
+    DEFAULT_SF2_PATH    = ""
+    DEFAULT_SFZ_PATH    = ""
 
 else:
     splitter = ":"
@@ -311,26 +316,29 @@ else:
                                     os.path.join("/", "usr", "lib", "ladspa"),
                                     os.path.join("/", "usr", "local", "lib", "ladspa")))
 
-    DEFAULT_DSSI_PATH = ":".join((os.path.join(HOME, ".dssi"),
-                                  os.path.join("/", "usr", "lib", "dssi"),
-                                  os.path.join("/", "usr", "local", "lib", "dssi")))
+    DEFAULT_DSSI_PATH   = ":".join((os.path.join(HOME, ".dssi"),
+                                    os.path.join("/", "usr", "lib", "dssi"),
+                                    os.path.join("/", "usr", "local", "lib", "dssi")))
 
-    DEFAULT_LV2_PATH = ":".join((os.path.join(HOME, ".lv2"),
-                                 os.path.join("/", "usr", "lib", "lv2"),
-                                 os.path.join("/", "usr", "local", "lib", "lv2")))
+    DEFAULT_LV2_PATH    = ":".join((os.path.join(HOME, ".lv2"),
+                                    os.path.join("/", "usr", "lib", "lv2"),
+                                    os.path.join("/", "usr", "local", "lib", "lv2")))
 
-    DEFAULT_VST_PATH = ":".join((os.path.join(HOME, ".vst"),
-                                 os.path.join("/", "usr", "lib", "vst"),
-                                 os.path.join("/", "usr", "local", "lib", "vst")))
+    DEFAULT_VST_PATH    = ":".join((os.path.join(HOME, ".vst"),
+                                    os.path.join("/", "usr", "lib", "vst"),
+                                    os.path.join("/", "usr", "local", "lib", "vst")))
 
-    DEFAULT_GIG_PATH = ":".join((os.path.join(HOME, ".sounds"),
-                                 os.path.join("/", "usr", "share", "sounds", "gig")))
+    # TODO
+    DEFAULT_CSOUND_PATH = ""
 
-    DEFAULT_SF2_PATH = ":".join((os.path.join(HOME, ".sounds"),
-                                 os.path.join("/", "usr", "share", "sounds", "sf2")))
+    DEFAULT_GIG_PATH    = ":".join((os.path.join(HOME, ".sounds"),
+                                    os.path.join("/", "usr", "share", "sounds", "gig")))
 
-    DEFAULT_SFZ_PATH = ":".join((os.path.join(HOME, ".sounds"),
-                                 os.path.join("/", "usr", "share", "sounds", "sfz")))
+    DEFAULT_SF2_PATH    = ":".join((os.path.join(HOME, ".sounds"),
+                                    os.path.join("/", "usr", "share", "sounds", "sf2")))
+
+    DEFAULT_SFZ_PATH    = ":".join((os.path.join(HOME, ".sounds"),
+                                    os.path.join("/", "usr", "share", "sounds", "sfz")))
 
 # ------------------------------------------------------------------------------------------------------------
 # Default Plugin Folders (set)
@@ -354,12 +362,13 @@ if WINDOWS:
 
 if readEnvVars:
     Carla.LADSPA_PATH = os.getenv("LADSPA_PATH", DEFAULT_LADSPA_PATH).split(splitter)
-    Carla.DSSI_PATH = os.getenv("DSSI_PATH", DEFAULT_DSSI_PATH).split(splitter)
-    Carla.LV2_PATH = os.getenv("LV2_PATH", DEFAULT_LV2_PATH).split(splitter)
-    Carla.VST_PATH = os.getenv("VST_PATH", DEFAULT_VST_PATH).split(splitter)
-    Carla.GIG_PATH = os.getenv("GIG_PATH", DEFAULT_GIG_PATH).split(splitter)
-    Carla.SF2_PATH = os.getenv("SF2_PATH", DEFAULT_SF2_PATH).split(splitter)
-    Carla.SFZ_PATH = os.getenv("SFZ_PATH", DEFAULT_SFZ_PATH).split(splitter)
+    Carla.DSSI_PATH   = os.getenv("DSSI_PATH",   DEFAULT_DSSI_PATH).split(splitter)
+    Carla.LV2_PATH    = os.getenv("LV2_PATH",    DEFAULT_LV2_PATH).split(splitter)
+    Carla.VST_PATH    = os.getenv("VST_PATH",    DEFAULT_VST_PATH).split(splitter)
+    Carla.CSOUND_PATH = os.getenv("CSOUND_PATH", DEFAULT_CSOUND_PATH).split(splitter)
+    Carla.GIG_PATH    = os.getenv("GIG_PATH",    DEFAULT_GIG_PATH).split(splitter)
+    Carla.SF2_PATH    = os.getenv("SF2_PATH",    DEFAULT_SF2_PATH).split(splitter)
+    Carla.SFZ_PATH    = os.getenv("SFZ_PATH",    DEFAULT_SFZ_PATH).split(splitter)
 
     if haveLRDF:
         LADSPA_RDF_PATH_env = os.getenv("LADSPA_RDF_PATH")
@@ -369,18 +378,20 @@ if readEnvVars:
 
 else:
     Carla.LADSPA_PATH = DEFAULT_LADSPA_PATH.split(splitter)
-    Carla.DSSI_PATH = DEFAULT_DSSI_PATH.split(splitter)
-    Carla.LV2_PATH = DEFAULT_LV2_PATH.split(splitter)
-    Carla.VST_PATH = DEFAULT_VST_PATH.split(splitter)
-    Carla.GIG_PATH = DEFAULT_GIG_PATH.split(splitter)
-    Carla.SF2_PATH = DEFAULT_SF2_PATH.split(splitter)
-    Carla.SFZ_PATH = DEFAULT_SFZ_PATH.split(splitter)
+    Carla.DSSI_PATH   = DEFAULT_DSSI_PATH.split(splitter)
+    Carla.LV2_PATH    = DEFAULT_LV2_PATH.split(splitter)
+    Carla.VST_PATH    = DEFAULT_VST_PATH.split(splitter)
+    Carla.CSOUND_PATH = DEFAULT_CSOUND_PATH.split(splitter)
+    Carla.GIG_PATH    = DEFAULT_GIG_PATH.split(splitter)
+    Carla.SF2_PATH    = DEFAULT_SF2_PATH.split(splitter)
+    Carla.SFZ_PATH    = DEFAULT_SFZ_PATH.split(splitter)
+
+del readEnvVars
 
 # ------------------------------------------------------------------------------------------------------------
 # Search for Carla library and tools
 
-global carla_library_path
-carla_library_path = ""
+carla_library_filename  = ""
 
 carla_discovery_native  = ""
 carla_discovery_posix32 = ""
@@ -394,17 +405,18 @@ carla_bridge_posix64 = ""
 carla_bridge_win32   = ""
 carla_bridge_win64   = ""
 
-carla_bridge_lv2_gtk2    = ""
-carla_bridge_lv2_gtk3    = ""
-carla_bridge_lv2_qt4     = ""
-carla_bridge_lv2_qt5     = ""
-carla_bridge_lv2_cocoa   = ""
-carla_bridge_lv2_windows = ""
-carla_bridge_lv2_x11     = ""
+carla_bridge_lv2_external = ""
+carla_bridge_lv2_gtk2     = ""
+carla_bridge_lv2_gtk3     = ""
+carla_bridge_lv2_qt4      = ""
+carla_bridge_lv2_qt5      = ""
+carla_bridge_lv2_cocoa    = ""
+carla_bridge_lv2_windows  = ""
+carla_bridge_lv2_x11      = ""
 
-carla_bridge_vst_cocoa = ""
-carla_bridge_vst_hwnd  = ""
-carla_bridge_vst_x11   = ""
+carla_bridge_vst_mac  = ""
+carla_bridge_vst_hwnd = ""
+carla_bridge_vst_x11  = ""
 
 if WINDOWS:
     carla_libname = "libcarla_standalone.dll"
@@ -416,14 +428,14 @@ else:
 CWD = sys.path[0]
 
 # make it work with cxfreeze
-if CWD.endswith("%scarla" % os.sep):
-    CWD = CWD.rsplit("%scarla" % os.sep, 1)[0]
-elif CWD.endswith("carla.exe"):
-    CWD = CWD.rsplit("carla.exe", 1)[0]
+if CWD.endswith("/carla"):
+    CWD = CWD.rsplit("/carla", 1)[0]
+elif CWD.endswith("\\carla.exe"):
+    CWD = CWD.rsplit("\\carla.exe", 1)[0]
 
-# find carla_library_path
+# find carla_library_filename
 if os.path.exists(os.path.join(CWD, "backend", carla_libname)):
-    carla_library_path = os.path.join(CWD, "backend", carla_libname)
+    carla_library_filename = os.path.join(CWD, "backend", carla_libname)
 else:
     if WINDOWS:
         CARLA_PATH = (os.path.join(PROGRAMFILES, "Carla"),)
@@ -434,17 +446,19 @@ else:
 
     for path in CARLA_PATH:
         if os.path.exists(os.path.join(path, "carla", carla_libname)):
-            carla_library_path = os.path.join(path, "carla", carla_libname)
+            carla_library_filename = os.path.join(path, "carla", carla_libname)
             break
 
+    del CARLA_PATH
+
 # find tool
-def findTool(tdir, tname):
-    if os.path.exists(os.path.join(CWD, tdir, tname)):
-        return os.path.join(CWD, tdir, tname)
+def findTool(toolDir, toolName):
+    if os.path.exists(os.path.join(CWD, toolDir, toolName)):
+        return os.path.join(CWD, toolDir, toolName)
 
     for p in PATH:
-        if os.path.exists(os.path.join(p, tname)):
-            return os.path.join(p, tname)
+        if os.path.exists(os.path.join(p, toolName)):
+            return os.path.join(p, toolName)
 
     return ""
 
@@ -463,6 +477,9 @@ if not WINDOWS:
     carla_bridge_posix32    = findTool("bridges", "carla-bridge-posix32")
     carla_bridge_posix64    = findTool("bridges", "carla-bridge-posix64")
 
+# find generic tools
+carla_bridge_lv2_external = findTool("bridges", "carla-bridge-lv2-external")
+
 # find windows only tools
 if WINDOWS:
     carla_bridge_lv2_windows = findTool("bridges", "carla-bridge-lv2-windows.exe")
@@ -471,9 +488,9 @@ if WINDOWS:
 # find mac os only tools
 elif MACOS:
     carla_bridge_lv2_cocoa = findTool("bridges", "carla-bridge-lv2-cocoa")
-    carla_bridge_vst_cocoa = findTool("bridges", "carla-bridge-vst-cocoa")
+    carla_bridge_vst_mac   = findTool("bridges", "carla-bridge-vst-mac")
 
-# find generic tools
+# find other tools
 else:
     carla_bridge_lv2_gtk2 = findTool("bridges", "carla-bridge-lv2-gtk2")
     carla_bridge_lv2_gtk3 = findTool("bridges", "carla-bridge-lv2-gtk3")
@@ -528,15 +545,16 @@ def signalHandler(sig, frame):
 
     if sig in (SIGINT, SIGTERM):
         Carla.gui.emit(SIGNAL("SIGTERM()"))
-    elif sig == SIGUSR1:
+    elif haveSIGUSR1 and sig == SIGUSR1:
         Carla.gui.emit(SIGNAL("SIGUSR1()"))
 
 def setUpSignals():
-    if not haveSignal:
-        return
-
     signal(SIGINT,  signalHandler)
     signal(SIGTERM, signalHandler)
+
+    if haveSIGUSR1:
+        return
+
     signal(SIGUSR1, signalHandler)
 
 # ------------------------------------------------------------------------------------------------------------
@@ -564,7 +582,7 @@ def CustomMessageBox(self_, icon, title, text, extraText="", buttons=QMessageBox
 # ------------------------------------------------------------------------------------------------------------
 # Plugin Query (helper functions)
 
-def findBinaries(bPATH, OS):
+def findBinaries(binPath, OS):
     binaries = []
 
     if OS == "WINDOWS":
@@ -574,25 +592,36 @@ def findBinaries(bPATH, OS):
     else:
         extensions = (".so",)
 
-    for root, dirs, files in os.walk(bPATH):
+    for root, dirs, files in os.walk(binPath):
         for name in [name for name in files if name.lower().endswith(extensions)]:
             binaries.append(os.path.join(root, name))
 
     return binaries
 
-def findLV2Bundles(bPATH):
+def findLV2Bundles(bundlePath):
     bundles = []
 
-    for root, dirs, files in os.walk(bPATH):
+    for root, dirs, files in os.walk(bundlePath):
         if os.path.exists(os.path.join(root, "manifest.ttl")):
             bundles.append(root)
 
     return bundles
 
-def findSoundKits(bPATH, stype):
-    soundfonts = []
+def findMacVSTBundles(bundlePath):
+    bundles = []
 
-    if stype == "gig":
+    for root, dirs, files in os.walk(bundlePath):
+        for name in [name for name in dirs if name.lower().endswith(".vst")]:
+            bundles.append(os.path.join(root, name))
+
+    return bundles
+
+def findFilenames(filePath, stype):
+    filenames = []
+
+    if stype == "csound":
+        extensions = (".csnd",)
+    elif stype == "gig":
         extensions = (".gig",)
     elif stype == "sf2":
         extensions = (".sf2",)
@@ -601,12 +630,13 @@ def findSoundKits(bPATH, stype):
     else:
         return []
 
-    for root, dirs, files in os.walk(bPATH):
+    for root, dirs, files in os.walk(filePath):
         for name in [name for name in files if name.lower().endswith(extensions)]:
-            soundfonts.append(os.path.join(root, name))
+            filenames.append(os.path.join(root, name))
 
-    return soundfonts
+    return filenames
 
+# FIXME - put this into c++ discovery
 def findDSSIGUI(filename, name, label):
     pluginDir = filename.rsplit(".", 1)[0]
     shortName = os.path.basename(pluginDir)
@@ -627,7 +657,7 @@ def findDSSIGUI(filename, name, label):
         guiFiles = []
 
     for guiFile in guiFiles:
-        if guiFile.startswith(checkName) or guiFile.startswith(checkLabel) or guiFile.startswith(checkSName):
+        if guiFile.startswith((checkName, checkLabel, checkSName)):
             guiFilename = os.path.join(pluginDir, guiFile)
             break
 
@@ -661,9 +691,14 @@ PyPluginInfo = {
     'programs.total': 0
 }
 
+global discoveryProcess
+discoveryProcess = None
+
 def runCarlaDiscovery(itype, stype, filename, tool, isWine=False):
-    fakeLabel = os.path.basename(filename).rsplit(".", 1)[0]
-    plugins = []
+    if not os.path.exists(tool):
+        qCritical("runCarlaDiscovery() - tool '%s' does not exist" % tool)
+        return
+
     command = []
 
     if LINUX or MACOS:
@@ -676,26 +711,30 @@ def runCarlaDiscovery(itype, stype, filename, tool, isWine=False):
     command.append(stype)
     command.append(filename)
 
-    Ps = Popen(command, stdout=PIPE)
+    global discoveryProcess
+    discoveryProcess = Popen(command, stdout=PIPE)
 
     try:
-        Ps.wait()
-        output = Ps.stdout.read().decode("utf-8", errors="ignore").split("\n")
+        discoveryProcess.wait()
+        output = discoveryProcess.stdout.read().decode("utf-8", errors="ignore").split("\n")
     except:
-        output = ""
+        output = ()
 
     pinfo = None
+    plugins = []
+    fakeLabel = os.path.basename(filename).rsplit(".", 1)[0]
 
     for line in output:
         line = line.strip()
         if line == "carla-discovery::init::-----------":
             pinfo = deepcopy(PyPluginInfo)
-            pinfo['type'] = itype
+            pinfo['type']   = itype
             pinfo['binary'] = filename
 
         elif line == "carla-discovery::end::------------":
             if pinfo != None:
                 plugins.append(pinfo)
+                del pinfo
                 pinfo = None
 
         elif line == "Segmentation fault":
@@ -711,11 +750,14 @@ def runCarlaDiscovery(itype, stype, filename, tool, isWine=False):
             if pinfo == None:
                 continue
 
-            prop, value = line.replace("carla-discovery::", "").split("::", 1)
+            try:
+                prop, value = line.replace("carla-discovery::", "").split("::", 1)
+            except:
+               continue
 
             if prop == "name":
                 pinfo['name'] = value if value else fakeLabel
-            elif prop in ("label", "uri"):
+            elif prop == "label":
                 pinfo['label'] = value if value else fakeLabel
             elif prop == "maker":
                 pinfo['maker'] = value
@@ -747,14 +789,31 @@ def runCarlaDiscovery(itype, stype, filename, tool, isWine=False):
                 if value.isdigit(): pinfo['programs.total'] = int(value)
             elif prop == "build":
                 if value.isdigit(): pinfo['build'] = int(value)
+            elif prop == "uri":
+                if value: pinfo['label'] = value
+                else:
+                    # cannot use empty URIs
+                    del pinfo
+                    pinfo = None
+                    continue
 
-    # Additional checks
+    # FIXME - put this into c++ discovery
     for pinfo in plugins:
         if itype == PLUGIN_DSSI:
             if findDSSIGUI(pinfo['binary'], pinfo['name'], pinfo['label']):
                 pinfo['hints'] |= PLUGIN_HAS_GUI
 
+    tmp = discoveryProcess
+    discoveryProcess = None
+    del discoveryProcess, tmp
+
     return plugins
+
+def killDiscovery():
+    global discoveryProcess
+
+    if discoveryProcess is not None:
+        discoveryProcess.kill()
 
 def checkPluginInternal(desc):
     plugins = []
@@ -795,6 +854,12 @@ def checkPluginLV2(filename, tool, isWine=False):
 
 def checkPluginVST(filename, tool, isWine=False):
     return runCarlaDiscovery(PLUGIN_VST, "VST", filename, tool, isWine)
+
+def checkPluginAU(filename, tool):
+    return runCarlaDiscovery(PLUGIN_AU, "AU", filename, tool)
+
+def checkPluginCSOUND(filename, tool):
+    return runCarlaDiscovery(PLUGIN_CSOUND, "CSOUND", filename, tool)
 
 def checkPluginGIG(filename, tool):
     return runCarlaDiscovery(PLUGIN_GIG, "GIG", filename, tool)

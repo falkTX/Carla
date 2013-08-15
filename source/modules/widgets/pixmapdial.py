@@ -14,15 +14,18 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
-# For a full copy of the GNU General Public License see the GPL.txt file
+# For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
+# TODO - SLOTS
+
 from math import floor
-from PyQt4.QtCore import Qt, QPointF, QRectF, QTimer, QSize, SLOT
-from PyQt4.QtGui import QColor, QConicalGradient, QDial, QFont, QFontMetrics
-from PyQt4.QtGui import QLinearGradient, QPainter, QPainterPath, QPen, QPixmap
+from PyQt5.QtCore import Qt, QPointF, QRectF, QTimer, QSize
+from PyQt5.QtGui import QColor, QConicalGradient, QFont, QFontMetrics
+from PyQt5.QtGui import QLinearGradient, QPainter, QPainterPath, QPen, QPixmap
+from PyQt5.QtWidgets import QDial
 
 # ------------------------------------------------------------------------------------------------------------
 # Widget Class

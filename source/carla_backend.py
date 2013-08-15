@@ -14,7 +14,7 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
-# For a full copy of the GNU General Public License see the GPL.txt file
+# For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
@@ -153,12 +153,11 @@ PLUGIN_LADSPA   = 2
 PLUGIN_DSSI     = 3
 PLUGIN_LV2      = 4
 PLUGIN_VST      = 5
-PLUGIN_VST3     = 6
-PLUGIN_AU       = 7
-PLUGIN_CSOUND   = 8
-PLUGIN_GIG      = 9
-PLUGIN_SF2      = 10
-PLUGIN_SFZ      = 11
+PLUGIN_AU       = 6
+PLUGIN_CSOUND   = 7
+PLUGIN_GIG      = 8
+PLUGIN_SF2      = 9
+PLUGIN_SFZ      = 10
 
 # Plugin Category
 PLUGIN_CATEGORY_NONE      = 0

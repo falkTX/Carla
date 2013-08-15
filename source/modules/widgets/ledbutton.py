@@ -14,13 +14,14 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
-# For a full copy of the GNU General Public License see the GPL.txt file
+# For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from PyQt4.QtCore import qCritical, QRectF
-from PyQt4.QtGui import QPainter, QPixmap, QPushButton
+from PyQt5.QtCore import qCritical, QRectF
+from PyQt5.QtGui import QPainter, QPixmap
+from PyQt5.QtWidgets import QPushButton
 
 # ------------------------------------------------------------------------------------------------------------
 # Widget Class

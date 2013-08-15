@@ -150,13 +150,12 @@ enum PluginType {
     PLUGIN_LADSPA   =  2, //!< LADSPA plugin.
     PLUGIN_DSSI     =  3, //!< DSSI plugin.
     PLUGIN_LV2      =  4, //!< LV2 plugin.
-    PLUGIN_VST      =  5, //!< VST1/2 plugin.
-    PLUGIN_VST3     =  6, //!< VST3 plugin.
-    PLUGIN_AU       =  7, //!< AU plugin.
-    PLUGIN_CSOUND   =  8, //!< Csound file.
-    PLUGIN_GIG      =  9, //!< GIG sound kit.
-    PLUGIN_SF2      = 10, //!< SF2 sound kit (aka SoundFont).
-    PLUGIN_SFZ      = 11  //!< SFZ sound kit.
+    PLUGIN_VST      =  5, //!< VST plugin.
+    PLUGIN_AU       =  6, //!< AU plugin.
+    PLUGIN_CSOUND   =  7, //!< Csound file.
+    PLUGIN_GIG      =  8, //!< GIG sound kit.
+    PLUGIN_SF2      =  9, //!< SF2 sound kit (aka SoundFont).
+    PLUGIN_SFZ      = 10  //!< SFZ sound kit.
 };
 
 /*!

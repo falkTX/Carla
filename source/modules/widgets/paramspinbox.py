@@ -14,13 +14,16 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
-# For a full copy of the GNU General Public License see the GPL.txt file
+# For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from PyQt4.QtCore import pyqtSlot, Qt, QTimer, SIGNAL, SLOT
-from PyQt4.QtGui import QAbstractSpinBox, QApplication, QComboBox, QCursor, QDialog, QMenu, QProgressBar
+# TODO - SIGNAL, SLOT
+
+from PyQt5.QtCore import pyqtSlot, Qt, QTimer
+from PyQt5.QtGui import QCursor
+from PyQt5.QtWidgets import QAbstractSpinBox, QApplication, QComboBox, QDialog, QMenu, QProgressBar
 from math import isnan
 
 # ------------------------------------------------------------------------------------------------------------
@@ -451,3 +454,13 @@ class ParamSpinBox(QAbstractSpinBox):
             if float(self.fBox.itemText(i).split(" - ", 1)[0]) == value:
                 self.fBox.setCurrentIndex(i)
                 break
+
+# ------------------------------------------------------------------------------------------------------------
+# TESTING
+
+import sys
+from PyQt5.QtWidgets import QApplication
+app = QApplication(sys.argv)
+gui = ParamSpinBox(None)
+gui.show()
+app.exec_()
