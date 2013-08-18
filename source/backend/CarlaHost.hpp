@@ -1,5 +1,5 @@
 ﻿/*
- * Carla Standalone API
+ * Carla Host API
  * Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
@@ -15,17 +15,17 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#ifndef CARLA_STANDALONE_HPP_INCLUDED
-#define CARLA_STANDALONE_HPP_INCLUDED
+#ifndef CARLA_HOST_HPP_INCLUDED
+#define CARLA_HOST_HPP_INCLUDED
 
 #include "CarlaBackend.hpp"
 
 /*!
- * @defgroup CarlaStandaloneAPI Carla Standalone API
+ * @defgroup CarlaHostAPI Carla Host API
  *
- * The Carla Standalone API.
+ * The Carla Host API.
  *
- * This API makes it possible to use the Carla Backend in a Standalone application.\n
+ * This API makes it possible to use the Carla Backend in a Host application.\n
  * All functions are C-compatible, making it possible to use this API in non-C++ hosts.
  *
  * None of the returned values in this API calls need to be deleted or free'd.\n
@@ -729,4 +729,4 @@ CARLA_EXPORT bool carla_engine_init_bridge(const char* audioBaseName, const char
 
 /**@}*/
 
-#endif // CARLA_STANDALONE_HPP_INCLUDED
+#endif // CARLA_HOST_HPP_INCLUDED

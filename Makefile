@@ -113,8 +113,8 @@ WIDGETS = \
 
 WIDGETS: $(WIDGETS)
 
-source/%.py: source/modules/widgets/%.py
-	$(LINK) modules/widgets/$*.py $@
+source/%.py: source/widgets/%.py
+	$(LINK) widgets/$*.py $@
 
 # --------------------------------------------------------------
 
