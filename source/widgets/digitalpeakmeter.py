@@ -229,3 +229,4 @@ class DigitalPeakMeter(QWidget):
     def resizeEvent(self, event):
         self.updateSizes()
         QWidget.resizeEvent(self, event)
+

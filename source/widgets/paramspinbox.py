@@ -19,9 +19,7 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-# TODO - SIGNAL, SLOT
-
-from PyQt5.QtCore import pyqtSlot, Qt, QTimer
+from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QTimer
 from PyQt5.QtGui import QCursor
 from PyQt5.QtWidgets import QAbstractSpinBox, QApplication, QComboBox, QDialog, QMenu, QProgressBar
 from math import isnan
@@ -71,7 +69,7 @@ class CustomInputDialog(QDialog):
 
         self.fRetValue = current
 
-        #self.connect(self, SIGNAL("accepted()"), SLOT("slot_setReturnValue()"))
+        self.accepted.connect(self.slot_setReturnValue)
 
     def returnValue(self):
         return self.fRetValue
@@ -88,6 +86,9 @@ class CustomInputDialog(QDialog):
 # ProgressBar used for ParamSpinBox
 
 class ParamProgressBar(QProgressBar):
+    # signals
+    valueChanged = pyqtSignal(float)
+
     def __init__(self, parent):
         QProgressBar.__init__(self, parent)
 
@@ -140,7 +141,7 @@ class ParamProgressBar(QProgressBar):
         elif value > self.fMaximum:
             value = self.fMaximum
 
-        #self.emit(SIGNAL("valueChanged(double)"), value)
+        self.valueChanged.emit(value)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
@@ -171,6 +172,9 @@ class ParamProgressBar(QProgressBar):
 # Special SpinBox used for parameters
 
 class ParamSpinBox(QAbstractSpinBox):
+    # signals
+    valueChanged = pyqtSignal(float)
+
     def __init__(self, parent):
         QAbstractSpinBox.__init__(self, parent)
 
@@ -178,9 +182,9 @@ class ParamSpinBox(QAbstractSpinBox):
         self.fMaximum = 1.0
         self.fDefault = 0.0
         self.fValue   = None
-        self.fStep    = 0.0
-        self.fStepSmall = 0.0
-        self.fStepLarge = 0.0
+        self.fStep    = 0.01
+        self.fStepSmall = 0.0001
+        self.fStepLarge = 0.1
 
         self.fReadOnly = False
         self.fScalePoints = None
@@ -194,10 +198,10 @@ class ParamSpinBox(QAbstractSpinBox):
 
         self.lineEdit().setVisible(False)
 
-        #self.connect(self, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_showCustomMenu()"))
-        #self.connect(self.fBar, SIGNAL("valueChanged(double)"), SLOT("slot_progressBarValueChanged(double)"))
+        self.customContextMenuRequested.connect(self.slot_showCustomMenu)
+        self.fBar.valueChanged.connect(self.slot_progressBarValueChanged)
 
-        #QTimer.singleShot(0, self, SLOT("slot_updateProgressBarGeometry()"))
+        QTimer.singleShot(0, self.slot_updateProgressBarGeometry)
 
     def setDefault(self, value):
         value = fixValue(value, self.fMinimum, self.fMaximum)
@@ -223,8 +227,8 @@ class ParamSpinBox(QAbstractSpinBox):
         if self.fHaveScalePoints:
             self._setScalePointValue(value)
 
-        #if send:
-            #self.emit(SIGNAL("valueChanged(double)"), value)
+        if send:
+            self.valueChanged.emit(value)
 
         self.update()
 
@@ -320,7 +324,7 @@ class ParamSpinBox(QAbstractSpinBox):
             if self.fValue != None:
                 self._setScalePointValue(self.fValue)
 
-            #self.connect(self.fBox, SIGNAL("currentIndexChanged(QString)"), SLOT("slot_comboBoxIndexChanged(QString)"))
+            self.fBox.currentIndexChanged.connect(self.slot_comboBoxIndexChanged)
 
     def stepBy(self, steps):
         if steps == 0 or self.fValue is None:
@@ -351,7 +355,7 @@ class ParamSpinBox(QAbstractSpinBox):
             self.fBox.update()
 
     def resizeEvent(self, event):
-        #QTimer.singleShot(0, self, SLOT("slot_updateProgressBarGeometry()"))
+        QTimer.singleShot(0, self.slot_updateProgressBarGeometry)
         QAbstractSpinBox.resizeEvent(self, event)
 
     @pyqtSlot(str)

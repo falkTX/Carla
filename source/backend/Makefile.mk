@@ -24,6 +24,10 @@ BUILD_CXX_FLAGS += -DVESTIGE_HEADER
 endif
 endif
 
+ifeq ($(CARLA_CSOUND_SUPPORT),true)
+BUILD_CXX_FLAGS += -DWANT_CSOUND
+endif
+
 ifeq ($(CARLA_RTAUDIO_SUPPORT),true)
 BUILD_CXX_FLAGS += -DWANT_RTAUDIO
 endif
@@ -59,3 +63,5 @@ ifeq ($(HAVE_ZYN_UI_DEPS),true)
 BUILD_CXX_FLAGS += -DWANT_ZYNADDSUBFX_UI
 endif
 endif
+
+# --------------------------------------------------------------

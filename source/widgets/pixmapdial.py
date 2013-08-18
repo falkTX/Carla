@@ -19,8 +19,6 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-# TODO - SLOTS
-
 from math import floor
 from PyQt5.QtCore import Qt, QPointF, QRectF, QTimer, QSize
 from PyQt5.QtGui import QColor, QConicalGradient, QFont, QFontMetrics
@@ -52,7 +50,7 @@ class PixmapDial(QDial):
         self.fPixmapNum   = "01"
         self.fCustomPaint = self.CUSTOM_PAINT_NULL
 
-        self.fHovered   = False
+        self.fIsHovered = False
         self.fHoverStep = self.HOVER_MIN
 
         if self.fPixmap.width() > self.fPixmap.height():
@@ -155,21 +153,21 @@ class PixmapDial(QDial):
         self.setMaximumSize(self.fSize, self.fSize + self.fLabelHeight + 5)
 
     def enterEvent(self, event):
-        self.fHovered = True
+        self.fIsHovered = True
         if self.fHoverStep == self.HOVER_MIN:
             self.fHoverStep = self.HOVER_MIN + 1
         QDial.enterEvent(self, event)
 
     def leaveEvent(self, event):
-        self.fHovered = False
+        self.fIsHovered = False
         if self.fHoverStep == self.HOVER_MAX:
             self.fHoverStep = self.HOVER_MAX - 1
         QDial.leaveEvent(self, event)
 
     def paintEvent(self, event):
+        painter = QPainter(self)
         event.accept()
 
-        painter = QPainter(self)
         painter.save()
         painter.setRenderHint(QPainter.Antialiasing, True)
 
@@ -280,9 +278,14 @@ class PixmapDial(QDial):
                 painter.setPen(QPen(color, 2))
                 painter.drawArc(3.5, 4.5, 22.0, 22.0, startAngle, spanAngle)
 
+            # Custom knobs
+            else:
+                painter.restore()
+                return
+
             if self.HOVER_MIN < self.fHoverStep < self.HOVER_MAX:
-                self.fHoverStep += 1 if self.fHovered else -1
-                QTimer.singleShot(20, self, SLOT("update()"))
+                self.fHoverStep += 1 if self.fIsHovered else -1
+                QTimer.singleShot(20, self.update)
 
         else: # isEnabled()
             target = QRectF(0.0, 0.0, self.fSize, self.fSize)
@@ -293,3 +296,4 @@ class PixmapDial(QDial):
     def resizeEvent(self, event):
         self.updateSizes()
         QDial.resizeEvent(self, event)
+

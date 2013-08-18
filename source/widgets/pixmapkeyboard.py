@@ -19,9 +19,7 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-# TODO - SIGNAL, SLOT
-
-from PyQt5.QtCore import pyqtSlot, qCritical, Qt, QPointF, QRectF, QTimer
+from PyQt5.QtCore import pyqtSignal, qCritical, Qt, QPointF, QRectF, QSize
 from PyQt5.QtGui import QFont, QPainter, QPixmap
 from PyQt5.QtWidgets import QWidget
 
@@ -100,6 +98,12 @@ class PixmapKeyboard(QWidget):
     HORIZONTAL = 0
     VERTICAL   = 1
 
+    # signals
+    noteOn   = pyqtSignal(int)
+    noteOff  = pyqtSignal(int)
+    notesOn  = pyqtSignal()
+    notesOff = pyqtSignal()
+
     def __init__(self, parent):
         QWidget.__init__(self, parent)
 
@@ -114,10 +118,12 @@ class PixmapKeyboard(QWidget):
         self.setCursor(Qt.PointingHandCursor)
         self.setMode(self.HORIZONTAL)
 
-    def allNotesOff(self):
+    def allNotesOff(self, sendSignal=True):
         self.fEnabledKeys = []
 
-        self.emit(SIGNAL("notesOff()"))
+        if sendSignal:
+            self.notesOff.emit()
+
         self.update()
 
     def sendNoteOn(self, note, sendSignal=True):
@@ -125,24 +131,24 @@ class PixmapKeyboard(QWidget):
             self.fEnabledKeys.append(note)
 
             if sendSignal:
-                self.emit(SIGNAL("noteOn(int)"), note)
+                self.noteOn.emit(note)
 
             self.update()
 
         if len(self.fEnabledKeys) == 1:
-            self.emit(SIGNAL("notesOn()"))
+            self.notesOn.emit()
 
     def sendNoteOff(self, note, sendSignal=True):
         if 0 <= note <= 127 and note in self.fEnabledKeys:
             self.fEnabledKeys.remove(note)
 
             if sendSignal:
-                self.emit(SIGNAL("noteOff(int)"), note)
+                self.noteOff.emit(note)
 
             self.update()
 
         if len(self.fEnabledKeys) == 0:
-            self.emit(SIGNAL("notesOff()"))
+            self.notesOff.emit()
 
     def setMode(self, mode, color=COLOR_ORANGE):
         if color == self.COLOR_CLASSIC:
@@ -242,6 +248,17 @@ class PixmapKeyboard(QWidget):
             self.sendNoteOff(self.fLastMouseNote)
 
         self.fLastMouseNote = note
+
+    def minimumSizeHint(self):
+        return QSize(self.fWidth, self.fHeight)
+
+    def sizeHint(self):
+        if self.fPixmapMode == self.HORIZONTAL:
+            return QSize(self.fWidth * self.fOctaves, self.fHeight)
+        elif self.fPixmapMode == self.VERTICAL:
+            return QSize(self.fWidth, self.fHeight * self.fOctaves)
+        else:
+            return QSize(self.fWidth, self.fHeight)
 
     def keyPressEvent(self, event):
         if not event.isAutoRepeat():

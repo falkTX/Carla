@@ -395,3 +395,5 @@ endif
 else
 	@echo "ZynAddSubFX:$(ANS_NO) $(mS)fftw-3, mxml or zlib missing$(mE)"
 endif
+
+# --------------------------------------------------------------
