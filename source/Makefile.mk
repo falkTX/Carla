@@ -10,6 +10,9 @@
 # Support for LADSPA, DSSI, LV2 and VST plugins
 CARLA_PLUGIN_SUPPORT = true
 
+# Support for csound files (version 6)
+CARLA_CSOUND_SUPPORT = true
+
 # Support for GIG, SF2 and SFZ sample banks (through fluidsynth and linuxsampler)
 CARLA_SAMPLERS_SUPPORT = true
 
@@ -25,18 +28,17 @@ CARLA_VESTIGE_HEADER = true
 AR  ?= ar
 CC  ?= gcc
 CXX ?= g++
-STRIP ?= strip
 
 # --------------------------------------------------------------
 
 BASE_FLAGS = -Wall -Wextra -fPIC -DPIC -pipe
-BASE_OPTS  = -O2 -ffast-math -mtune=generic -msse -mfpmath=sse
+BASE_OPTS  = -O3 -ffast-math -mtune=generic -msse -mfpmath=sse
 BASE_OPTS += -fdata-sections -ffunction-sections
 LINK_OPTS  = -Wl,--gc-sections
 
 ifeq ($(RASPPI),true)
 # Raspberry-Pi optimization flags
-BASE_OPTS  = -O2 -ffast-math -march=armv6 -mfpu=vfp -mfloat-abi=hard
+BASE_OPTS  = -O3 -ffast-math -march=armv6 -mfpu=vfp -mfloat-abi=hard
 LINK_OPTS  =
 endif
 
@@ -86,12 +88,11 @@ endif
 
 # --------------------------------------------------------------
 
+# TODO - move this to theme
 ifeq ($(HAVE_QT4),true)
 MOC ?= $(shell pkg-config --variable=moc_location QtCore)
 RCC ?= $(shell pkg-config --variable=rcc_location QtCore)
 UIC ?= $(shell pkg-config --variable=uic_location QtCore)
-else
-MOC ?= moc
-RCC ?= rcc
-UIC ?= uic
 endif
+
+# --------------------------------------------------------------
