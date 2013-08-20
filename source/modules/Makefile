@@ -8,6 +8,11 @@ all:
 
 # --------------------------------------------------------------
 
+carla_native:
+	$(MAKE) -C carla_native
+
+# --------------------------------------------------------------
+
 dgl:
 	$(MAKE) -C distrho/dgl
 
@@ -56,11 +61,6 @@ theme_%:
 
 # --------------------------------------------------------------
 
-widgets:
-	$(MAKE) -C widgets
-
-# --------------------------------------------------------------
-
 jackbridge-win32:
 	$(MAKE) -C jackbridge win32
 
@@ -87,4 +87,4 @@ clean:
 
 # --------------------------------------------------------------
 
-.PHONY: dgl juce_audio_basics juce_core lilv rtmempool theme widgets
+.PHONY: carla_native dgl juce_audio_basics juce_core lilv rtmempool theme

@@ -24,8 +24,6 @@
 #include "CarlaString.hpp"
 #include "RtList.hpp"
 
-#include <QtCore/QThread>
-
 #include "zynaddsubfx/Misc/Master.h"
 #include "zynaddsubfx/Misc/Part.h"
 #include "zynaddsubfx/Misc/Util.h"
@@ -236,6 +234,8 @@ private:
       ProgramInfo() = delete;
       ProgramInfo(ProgramInfo&) = delete;
       ProgramInfo(const ProgramInfo&) = delete;
+      ProgramInfo& operator=(ProgramInfo&);
+      ProgramInfo& operator=(const ProgramInfo&);
 #endif
     };
 
@@ -354,18 +354,18 @@ static ZynAddSubFxInstanceCount sInstanceCount;
 
 // -----------------------------------------------------------------------
 
-class ZynAddSubFxThread : public QThread
+class ZynAddSubFxThread : public juce::Thread
 {
 public:
     ZynAddSubFxThread(Master* const master, const HostDescriptor* const host)
-        : fMaster(master),
+        : juce::Thread("ZynAddSubFxThread"),
+          fMaster(master),
           kHost(host),
 #ifdef WANT_ZYNADDSUBFX_UI
           fUi(nullptr),
           fUiClosed(0),
           fNextUiAction(-1),
 #endif
-          fQuit(false),
           fChangeProgram(false),
           fNextChannel(0),
           fNextBank(0),
@@ -375,11 +375,10 @@ public:
 
     ~ZynAddSubFxThread()
     {
-        // must be closed by now
 #ifdef WANT_ZYNADDSUBFX_UI
+        // must be closed by now
         CARLA_ASSERT(fUi == nullptr);
 #endif
-        CARLA_ASSERT(fQuit);
     }
 
     void loadProgramLater(const uint8_t channel, const uint32_t bank, const uint32_t program)
@@ -403,12 +402,6 @@ public:
         fMaster = master;
     }
 
-    void stop()
-    {
-        fQuit = true;
-        quit();
-    }
-
 #ifdef WANT_ZYNADDSUBFX_UI
     void uiHide()
     {
@@ -430,7 +423,7 @@ public:
 protected:
     void run() override
     {
-        while (! fQuit)
+        while (! threadShouldExit())
         {
 #ifdef WANT_ZYNADDSUBFX_UI
             Fl::lock();
@@ -529,7 +522,7 @@ protected:
         }
 
 #ifdef WANT_ZYNADDSUBFX_UI
-        if (fQuit && fUi != nullptr)
+        if (threadShouldExit() && fUi != nullptr)
         {
             Fl::lock();
             delete fUi;
@@ -547,38 +540,37 @@ private:
 #ifdef WANT_ZYNADDSUBFX_UI
     MasterUI* fUi;
     int       fUiClosed;
-    int       fNextUiAction;
+    volatile int fNextUiAction;
 #endif
 
-    bool     fQuit;
-    bool     fChangeProgram;
-    uint8_t  fNextChannel;
-    uint32_t fNextBank;
-    uint32_t fNextProgram;
+    volatile bool     fChangeProgram;
+    volatile uint8_t  fNextChannel;
+    volatile uint32_t fNextBank;
+    volatile uint32_t fNextProgram;
 };
 
 // -----------------------------------------------------------------------
 
-#define ZynPluginDescriptorClassEND(ClassName)             \
-public:                                                    \
-    static PluginHandle _instantiate(HostDescriptor* host) \
-    {                                                      \
-        sInstanceCount.addOne(host);                       \
-        return new ClassName(host);                        \
-    }                                                      \
-    static void _cleanup(PluginHandle handle)              \
-    {                                                      \
-        delete (ClassName*)handle;                         \
-        sInstanceCount.removeOne();                        \
+#define ZynPluginClassEND(ClassName)                             \
+public:                                                          \
+    static PluginHandle _instantiate(const HostDescriptor* host) \
+    {                                                            \
+        sInstanceCount.addOne(host);                             \
+        return new ClassName(host);                              \
+    }                                                            \
+    static void _cleanup(PluginHandle handle)                    \
+    {                                                            \
+        delete (ClassName*)handle;                               \
+        sInstanceCount.removeOne();                              \
     }
 
 // -----------------------------------------------------------------------
 
-class FxAbstractPlugin : public PluginDescriptorClass
+class FxAbstractPlugin : public PluginClass
 {
 protected:
     FxAbstractPlugin(const HostDescriptor* const host, const uint32_t paramCount, const uint32_t programCount)
-        : PluginDescriptorClass(host),
+        : PluginClass(host),
           fEffect(nullptr),
           efxoutl(new float[synth->buffersize]),
           efxoutr(new float[synth->buffersize]),
@@ -616,12 +608,12 @@ protected:
     // -------------------------------------------------------------------
     // Plugin parameter calls
 
-    uint32_t getParameterCount() final
+    uint32_t getParameterCount() const final
     {
         return kParamCount;
     }
 
-    float getParameterValue(const uint32_t index) final
+    float getParameterValue(const uint32_t index) const final
     {
         return fEffect->getpar(index+2);
     }
@@ -629,7 +621,7 @@ protected:
     // -------------------------------------------------------------------
     // Plugin midi-program calls
 
-    uint32_t getMidiProgramCount() final
+    uint32_t getMidiProgramCount() const final
     {
         return kProgramCount;
     }
@@ -648,11 +640,11 @@ protected:
         fEffect->setpreset(program);
 
         const float volume(float(fEffect->getpar(0))/127.0f);
-        hostDispatcher(HOST_OPCODE_SET_VOLUME, 0, 0, nullptr, volume);
+        hostSetVolume(volume);
 
         const unsigned char pan(fEffect->getpar(1));
         const float panning(float(pan)/63.5f-1.0f);
-        hostDispatcher(HOST_OPCODE_SET_PANNING, 0, 0, nullptr, (pan == 64) ? 0.0f : panning);
+        hostSetPanning(panning);
 
         fEffect->changepar(0, 127);
         fEffect->changepar(1, 64);
@@ -668,11 +660,11 @@ protected:
         if (fFirstInit)
         {
             fFirstInit = false;
-            hostDispatcher(HOST_OPCODE_SET_DRYWET, 0, 0, nullptr, 0.5f);
+            hostSetDryWet(0.5f);
         }
     }
 
-    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t, const MidiEvent* const) final
+    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const MidiEvent* const, const uint32_t) final
     {
         CARLA_ASSERT(synth->buffersize == static_cast<int>(frames));
 
@@ -685,31 +677,23 @@ protected:
     // -------------------------------------------------------------------
     // Plugin dispatcher
 
-    intptr_t pluginDispatcher(const PluginDispatcherOpcode opcode, const int32_t, const intptr_t, void* const, const float) final
+    void bufferSizeChanged(const uint32_t bufferSize) final
     {
-        switch (opcode)
-        {
-        case PLUGIN_OPCODE_BUFFER_SIZE_CHANGED:
-        {
-            const uint32_t bufferSize(getBufferSize());
-            delete[] efxoutl;
-            delete[] efxoutr;
-            efxoutl = new float[bufferSize];
-            efxoutr = new float[bufferSize];
-            carla_zeroFloat(efxoutl, synth->buffersize);
-            carla_zeroFloat(efxoutr, synth->buffersize);
-            *((float**)&fEffect->efxoutl) = efxoutl;
-            *((float**)&fEffect->efxoutr) = efxoutr;
-            // no break
-        }
-        case PLUGIN_OPCODE_SAMPLE_RATE_CHANGED:
-            sInstanceCount.maybeReinit(getHostHandle());
-            break;
-        default:
-            break;
-        }
+        delete[] efxoutl;
+        delete[] efxoutr;
+        efxoutl = new float[bufferSize];
+        efxoutr = new float[bufferSize];
+        carla_zeroFloat(efxoutl, synth->buffersize);
+        carla_zeroFloat(efxoutr, synth->buffersize);
+        *((float**)&fEffect->efxoutl) = efxoutl;
+        *((float**)&fEffect->efxoutr) = efxoutr;
 
-        return 0;
+        sInstanceCount.maybeReinit(getHostHandle());
+    }
+
+    void sampleRateChanged(const double) final
+    {
+        sInstanceCount.maybeReinit(getHostHandle());
     }
 
     Effect* fEffect;
@@ -735,7 +719,7 @@ protected:
     // -------------------------------------------------------------------
     // Plugin parameter calls
 
-    const Parameter* getParameterInfo(const uint32_t index) override
+    const Parameter* getParameterInfo(const uint32_t index) const override
     {
         if (index >= kParamCount)
             return nullptr;
@@ -821,7 +805,7 @@ protected:
     // -------------------------------------------------------------------
     // Plugin midi-program calls
 
-    const MidiProgram* getMidiProgramInfo(const uint32_t index) override
+    const MidiProgram* getMidiProgramInfo(const uint32_t index) const override
     {
         if (index >= kProgramCount)
             return nullptr;
@@ -853,7 +837,7 @@ protected:
         return &midiProg;
     }
 
-    ZynPluginDescriptorClassEND(FxAlienWahPlugin)
+    ZynPluginClassEND(FxAlienWahPlugin)
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FxAlienWahPlugin)
 };
 
@@ -872,7 +856,7 @@ protected:
     // -------------------------------------------------------------------
     // Plugin parameter calls
 
-    const Parameter* getParameterInfo(const uint32_t index) override
+    const Parameter* getParameterInfo(const uint32_t index) const override
     {
         if (index >= kParamCount)
             return nullptr;
@@ -964,7 +948,7 @@ protected:
     // -------------------------------------------------------------------
     // Plugin midi-program calls
 
-    const MidiProgram* getMidiProgramInfo(const uint32_t index) override
+    const MidiProgram* getMidiProgramInfo(const uint32_t index) const override
     {
         if (index >= kProgramCount)
             return nullptr;
@@ -1014,7 +998,7 @@ protected:
         return &midiProg;
     }
 
-    ZynPluginDescriptorClassEND(FxChorusPlugin)
+    ZynPluginClassEND(FxChorusPlugin)
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FxChorusPlugin)
 };
 
@@ -1033,7 +1017,7 @@ protected:
     // -------------------------------------------------------------------
     // Plugin parameter calls
 
-    const Parameter* getParameterInfo(const uint32_t index) override
+    const Parameter* getParameterInfo(const uint32_t index) const override
     {
         if (index >= kParamCount)
             return nullptr;
@@ -1145,7 +1129,7 @@ protected:
     // -------------------------------------------------------------------
     // Plugin midi-program calls
 
-    const MidiProgram* getMidiProgramInfo(const uint32_t index) override
+    const MidiProgram* getMidiProgramInfo(const uint32_t index) const override
     {
         if (index >= kProgramCount)
             return nullptr;
@@ -1183,7 +1167,7 @@ protected:
         return &midiProg;
     }
 
-    ZynPluginDescriptorClassEND(FxDistortionPlugin)
+    ZynPluginClassEND(FxDistortionPlugin)
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FxDistortionPlugin)
 };
 
@@ -1202,7 +1186,7 @@ protected:
     // -------------------------------------------------------------------
     // Plugin parameter calls
 
-    const Parameter* getParameterInfo(const uint32_t index) override
+    const Parameter* getParameterInfo(const uint32_t index) const override
     {
         if (index >= kParamCount)
             return nullptr;
@@ -1283,7 +1267,7 @@ protected:
     // -------------------------------------------------------------------
     // Plugin midi-program calls
 
-    const MidiProgram* getMidiProgramInfo(const uint32_t index) override
+    const MidiProgram* getMidiProgramInfo(const uint32_t index) const override
     {
         if (index >= kProgramCount)
             return nullptr;
@@ -1318,7 +1302,7 @@ protected:
         return &midiProg;
     }
 
-    ZynPluginDescriptorClassEND(FxDynamicFilterPlugin)
+    ZynPluginClassEND(FxDynamicFilterPlugin)
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FxDynamicFilterPlugin)
 };
 
@@ -1337,7 +1321,7 @@ protected:
     // -------------------------------------------------------------------
     // Plugin parameter calls
 
-    const Parameter* getParameterInfo(const uint32_t index) override
+    const Parameter* getParameterInfo(const uint32_t index) const override
     {
         if (index >= kParamCount)
             return nullptr;
@@ -1394,7 +1378,7 @@ protected:
     // -------------------------------------------------------------------
     // Plugin midi-program calls
 
-    const MidiProgram* getMidiProgramInfo(const uint32_t index) override
+    const MidiProgram* getMidiProgramInfo(const uint32_t index) const override
     {
         if (index >= kProgramCount)
             return nullptr;
@@ -1441,7 +1425,7 @@ protected:
         return &midiProg;
     }
 
-    ZynPluginDescriptorClassEND(FxEchoPlugin)
+    ZynPluginClassEND(FxEchoPlugin)
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FxEchoPlugin)
 };
 
@@ -1460,7 +1444,7 @@ protected:
     // -------------------------------------------------------------------
     // Plugin parameter calls
 
-    const Parameter* getParameterInfo(const uint32_t index) override
+    const Parameter* getParameterInfo(const uint32_t index) const override
     {
         if (index >= kParamCount)
             return nullptr;
@@ -1569,7 +1553,7 @@ protected:
     // -------------------------------------------------------------------
     // Plugin midi-program calls
 
-    const MidiProgram* getMidiProgramInfo(const uint32_t index) override
+    const MidiProgram* getMidiProgramInfo(const uint32_t index) const override
     {
         if (index >= kProgramCount)
             return nullptr;
@@ -1625,7 +1609,7 @@ protected:
         return &midiProg;
     }
 
-    ZynPluginDescriptorClassEND(FxPhaserPlugin)
+    ZynPluginClassEND(FxPhaserPlugin)
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FxPhaserPlugin)
 };
 
@@ -1644,7 +1628,7 @@ protected:
     // -------------------------------------------------------------------
     // Plugin parameter calls
 
-    const Parameter* getParameterInfo(const uint32_t index) override
+    const Parameter* getParameterInfo(const uint32_t index) const override
     {
         if (index >= kParamCount)
             return nullptr;
@@ -1736,7 +1720,7 @@ protected:
     // -------------------------------------------------------------------
     // Plugin midi-program calls
 
-    const MidiProgram* getMidiProgramInfo(const uint32_t index) override
+    const MidiProgram* getMidiProgramInfo(const uint32_t index) const override
     {
         if (index >= kProgramCount)
             return nullptr;
@@ -1795,23 +1779,23 @@ protected:
         return &midiProg;
     }
 
-    ZynPluginDescriptorClassEND(FxReverbPlugin)
+    ZynPluginClassEND(FxReverbPlugin)
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FxReverbPlugin)
 };
 
 // -----------------------------------------------------------------------
 
-class ZynAddSubFxPlugin : public PluginDescriptorClass
+class ZynAddSubFxPlugin : public PluginClass
 {
 public:
     ZynAddSubFxPlugin(const HostDescriptor* const host)
-        : PluginDescriptorClass(host),
+        : PluginClass(host),
           fMaster(new Master()),
           fSampleRate(getSampleRate()),
           fIsActive(false),
           fThread(fMaster, host)
     {
-        fThread.start();
+        fThread.startThread(3);
 
         for (int i = 0; i < NUM_MIDI_PARTS; ++i)
             fMaster->partonoff(i, 1);
@@ -1824,8 +1808,7 @@ public:
         //ensure that everything has stopped
         pthread_mutex_lock(&fMaster->mutex);
         pthread_mutex_unlock(&fMaster->mutex);
-        fThread.stop();
-        fThread.wait();
+        fThread.stopThread(-1);
 
         delete fMaster;
         fMaster = nullptr;
@@ -1835,12 +1818,12 @@ protected:
     // -------------------------------------------------------------------
     // Plugin midi-program calls
 
-    uint32_t getMidiProgramCount() override
+    uint32_t getMidiProgramCount() const override
     {
         return sPrograms.count();
     }
 
-    const MidiProgram* getMidiProgramInfo(const uint32_t index) override
+    const MidiProgram* getMidiProgramInfo(const uint32_t index) const override
     {
         return sPrograms.getInfo(index);
     }
@@ -1890,7 +1873,7 @@ protected:
         fIsActive = false;
     }
 
-    void process(float**, float** const outBuffer, const uint32_t frames, const uint32_t midiEventCount, const MidiEvent* const midiEvents) override
+    void process(float**, float** const outBuffer, const uint32_t frames, const MidiEvent* const midiEvents, const uint32_t midiEventCount) override
     {
         if (pthread_mutex_trylock(&fMaster->mutex) != 0)
         {
@@ -1964,7 +1947,7 @@ protected:
     // -------------------------------------------------------------------
     // Plugin state calls
 
-    char* getState() override
+    char* getState() const override
     {
         config.save();
 
@@ -1980,6 +1963,7 @@ protected:
         fMaster->applyparameters(true);
     }
 
+#if 0
     // -------------------------------------------------------------------
     // Plugin dispatcher
 
@@ -2011,6 +1995,7 @@ protected:
         (void)value;
         (void)ptr;
     }
+#endif
 
     // -------------------------------------------------------------------
 
@@ -2021,7 +2006,7 @@ private:
 
     ZynAddSubFxThread fThread;
 
-    ZynPluginDescriptorClassEND(ZynAddSubFxPlugin)
+    ZynPluginClassEND(ZynAddSubFxPlugin)
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ZynAddSubFxPlugin)
 };
 

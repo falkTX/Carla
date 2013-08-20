@@ -18,33 +18,17 @@
 #include "CarlaNative.h"
 #include "CarlaMIDI.h"
 
-#include <stdlib.h>
+// -----------------------------------------------------------------------
 
-typedef struct _MidiSplitHandle {
-    HostDescriptor* host;
-} MidiSplitHandle;
-
-static PluginHandle midiSplit_instantiate(HostDescriptor* host)
+static PluginHandle midiSplit_instantiate(const HostDescriptor* host)
 {
-    MidiSplitHandle* const handle = (MidiSplitHandle*)malloc(sizeof(MidiSplitHandle));
-
-    if (handle == NULL)
-        return NULL;
-
-    handle->host = host;
-    return handle;
+    // use HostDescriptor as PluginHandle
+    return (PluginHandle)host;
 }
 
-#define handlePtr ((MidiSplitHandle*)handle)
-
-static void midiSplit_cleanup(PluginHandle handle)
+static void midiSplit_process(PluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const MidiEvent* midiEvents, uint32_t midiEventCount)
 {
-    free(handlePtr);
-}
-
-static void midiSplit_process(PluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, uint32_t midiEventCount, const MidiEvent* midiEvents)
-{
-    HostDescriptor* const host = handlePtr->host;
+    const HostDescriptor* const host = (const HostDescriptor*)handle;
     MidiEvent tmpEvent;
 
     for (uint32_t i=0; i < midiEventCount; ++i)
@@ -76,8 +60,6 @@ static void midiSplit_process(PluginHandle handle, float** inBuffer, float** out
     (void)frames;
 }
 
-#undef handlePtr
-
 // -----------------------------------------------------------------------
 
 static const PluginDescriptor midiSplitDesc = {
@@ -96,7 +78,7 @@ static const PluginDescriptor midiSplitDesc = {
     .copyright = "GNU GPL v2+",
 
     .instantiate = midiSplit_instantiate,
-    .cleanup     = midiSplit_cleanup,
+    .cleanup     = NULL,
 
     .get_parameter_count = NULL,
     .get_parameter_info  = NULL,

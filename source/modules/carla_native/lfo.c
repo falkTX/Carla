@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
 #include "CarlaNative.h"
@@ -21,21 +21,21 @@
 #include <math.h>
 #include <stdlib.h>
 
-#ifndef __linux__
-# define uint unsigned int
-#endif
+typedef unsigned int uint;
 
-typedef enum _LfoParams {
-    PARAM_MODE       = 0,
-    PARAM_SPEED      = 1,
-    PARAM_MULTIPLIER = 2,
-    PARAM_BASE_START = 3,
-    PARAM_LFO_OUT    = 4,
-    PARAM_COUNT      = 5
+// -----------------------------------------------------------------------
+
+typedef enum {
+    PARAM_MODE = 0,
+    PARAM_SPEED,
+    PARAM_MULTIPLIER,
+    PARAM_BASE_START,
+    PARAM_LFO_OUT,
+    PARAM_COUNT
 } LfoParams;
 
-typedef struct _LfoHandle {
-    HostDescriptor* host;
+typedef struct {
+    const HostDescriptor* host;
     int   mode;
     float speed;
     float multiplier;
@@ -43,7 +43,9 @@ typedef struct _LfoHandle {
     float value;
 } LfoHandle;
 
-static PluginHandle lfo_instantiate(HostDescriptor* host)
+// -----------------------------------------------------------------------
+
+static PluginHandle lfo_instantiate(const HostDescriptor* host)
 {
     LfoHandle* const handle = (LfoHandle*)malloc(sizeof(LfoHandle));
 
@@ -108,7 +110,7 @@ const Parameter* lfo_get_parameter_info(PluginHandle handle, uint32_t index)
         param.hints |= PARAMETER_IS_INTEGER|PARAMETER_USES_SCALEPOINTS;
         param.ranges.def = 1.0f;
         param.ranges.min = 1.0f;
-        param.ranges.max = 3.0f;
+        param.ranges.max = 5.0f;
         param.ranges.step = 1.0f;
         param.ranges.stepSmall = 1.0f;
         param.ranges.stepLarge = 1.0f;
@@ -119,7 +121,7 @@ const Parameter* lfo_get_parameter_info(PluginHandle handle, uint32_t index)
         param.name = "Speed";
         param.unit = "(coef)";
         param.ranges.def = 1.0f;
-        param.ranges.min = 0.1f;
+        param.ranges.min = 0.01f;
         param.ranges.max = 2.0f;
         param.ranges.step = 0.25f;
         param.ranges.stepSmall = 0.1f;
@@ -129,7 +131,7 @@ const Parameter* lfo_get_parameter_info(PluginHandle handle, uint32_t index)
         param.name = "Multiplier";
         param.unit = "(coef)";
         param.ranges.def = 1.0f;
-        param.ranges.min = 0.0f;
+        param.ranges.min = 0.01f;
         param.ranges.max = 2.0f;
         param.ranges.step = 0.01f;
         param.ranges.stepSmall = 0.0001f;
@@ -138,7 +140,7 @@ const Parameter* lfo_get_parameter_info(PluginHandle handle, uint32_t index)
     case PARAM_BASE_START:
         param.name = "Start value";
         param.unit = NULL;
-        param.ranges.def = -1.0f;
+        param.ranges.def = 0.0f;
         param.ranges.min = -1.0f;
         param.ranges.max = 1.0f;
         param.ranges.step = 0.01f;
@@ -205,47 +207,47 @@ static void lfo_set_parameter_value(PluginHandle handle, uint32_t index, float v
     }
 }
 
-static void lfo_process(PluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, uint32_t midiEventCount, const MidiEvent* midiEvents)
+static void lfo_process(PluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const MidiEvent* midiEvents, uint32_t midiEventCount)
 {
-    HostDescriptor* const host     = handlePtr->host;
-    const TimeInfo* const timeInfo = host->get_time_info(host->handle);
+    const HostDescriptor* const host     = handlePtr->host;
+    const TimeInfo*       const timeInfo = host->get_time_info(host->handle);
 
     if (! timeInfo->playing)
        return;
 
-    const float bpm = timeInfo->bbt.valid ? timeInfo->bbt.beatsPerMinute : 120.0;
-    const float SR  = host->get_sample_rate(host->handle);
+    const float bpm        = timeInfo->bbt.valid ? timeInfo->bbt.beatsPerMinute : 120.0;
+    const float sampleRate = host->get_sample_rate(host->handle);
 
-    const float rate  = handlePtr->speed/(bpm/60.0f/SR);
-    const uint  rateI = rate;
+    const float speedRate  = handlePtr->speed/(bpm/60.0f/sampleRate);
+    const uint  speedRatei = speedRate;
 
     float value = 0.0f;
 
     switch (handlePtr->mode)
     {
     case 1: // Triangle
-        value = fabs(1.0f-(float)(timeInfo->frame % rateI)/(rate/2.0f));
+        value = fabs(1.0f-(float)(timeInfo->frame % speedRatei)/(speedRate/2.0f));
         break;
     case 2: // Sawtooth
-        value = (float)(timeInfo->frame % rateI)/rate;
+        value = (float)(timeInfo->frame % speedRatei)/speedRate;
         break;
     case 3: // Sawtooth (inverted)
-        value = 1.0f - (float)(timeInfo->frame % rateI)/rate;
+        value = 1.0f - (float)(timeInfo->frame % speedRatei)/speedRate;
         break;
     case 4: // Sine -- TODO!
         value = 0.0f;
         break;
     case 5: // Square
-        value = (timeInfo->frame % rateI <= rateI/2) ? 1.0f : 0.0f;
+        value = (timeInfo->frame % speedRatei <= speedRatei/2) ? 1.0f : 0.0f;
         break;
     }
 
     value *= handlePtr->multiplier;
     value += handlePtr->baseStart;
 
-    if (value < 0.0f)
+    if (value <= 0.0f)
         handlePtr->value = 0.0f;
-    else if (value > 1.0f)
+    else if (value >= 1.0f)
         handlePtr->value = 1.0f;
     else
         handlePtr->value = value;
@@ -256,8 +258,8 @@ static void lfo_process(PluginHandle handle, float** inBuffer, float** outBuffer
     (void)inBuffer;
     (void)outBuffer;
     (void)frames;
-    (void)midiEventCount;
     (void)midiEvents;
+    (void)midiEventCount;
 }
 
 #undef handlePtr

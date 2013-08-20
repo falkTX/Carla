@@ -19,8 +19,15 @@
 
 #ifdef WANT_LINUXSAMPLER
 
+// fix broken headers
+#define old__cplusplus __cplusplus
+#undef __cplusplus
+
 #include "linuxsampler/EngineFactory.h"
 #include <linuxsampler/Sampler.h>
+
+#define __cplusplus old__cplusplus
+#undef old__cplusplus
 
 #include <QtCore/QFileInfo>
 

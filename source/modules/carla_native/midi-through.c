@@ -18,33 +18,17 @@
 #include "CarlaNative.h"
 #include "CarlaMIDI.h"
 
-#include <stdlib.h>
+// -----------------------------------------------------------------------
 
-typedef struct _MidiThroughHandle {
-    HostDescriptor* host;
-} MidiThroughHandle;
-
-static PluginHandle midiThrough_instantiate(HostDescriptor* host)
+static PluginHandle midiThrough_instantiate(const HostDescriptor* host)
 {
-    MidiThroughHandle* const handle = (MidiThroughHandle*)malloc(sizeof(MidiThroughHandle));
-
-    if (handle == NULL)
-        return NULL;
-
-    handle->host = host;
-    return handle;
+    // use HostDescriptor as PluginHandle
+    return (PluginHandle)host;
 }
 
-#define handlePtr ((MidiThroughHandle*)handle)
-
-static void midiThrough_cleanup(PluginHandle handle)
+static void midiThrough_process(PluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const MidiEvent* midiEvents, uint32_t midiEventCount)
 {
-    free(handlePtr);
-}
-
-static void midiThrough_process(PluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, uint32_t midiEventCount, const MidiEvent* midiEvents)
-{
-    HostDescriptor* const host = handlePtr->host;
+    const HostDescriptor* const host = (const HostDescriptor*)handle;
 
     for (uint32_t i=0; i < midiEventCount; ++i)
         host->write_midi_event(host->handle, &midiEvents[i]);
@@ -56,8 +40,6 @@ static void midiThrough_process(PluginHandle handle, float** inBuffer, float** o
     (void)outBuffer;
     (void)frames;
 }
-
-#undef handlePtr
 
 // -----------------------------------------------------------------------
 
@@ -77,7 +59,7 @@ static const PluginDescriptor midiThroughDesc = {
     .copyright = "GNU GPL v2+",
 
     .instantiate = midiThrough_instantiate,
-    .cleanup     = midiThrough_cleanup,
+    .cleanup     = NULL,
 
     .get_parameter_count = NULL,
     .get_parameter_info  = NULL,

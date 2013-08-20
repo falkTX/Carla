@@ -15,13 +15,15 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#include "CarlaStandalone.hpp"
+#include "CarlaHost.hpp"
 
 #include "CarlaBackendUtils.hpp"
 #include "CarlaOscUtils.hpp"
 #include "CarlaEngine.hpp"
 #include "CarlaPlugin.hpp"
 #include "CarlaMIDI.h"
+
+#include "carla_native/CarlaNative.h"
 
 #include "CarlaLogThread.hpp"
 #include "CarlaStyle.hpp"

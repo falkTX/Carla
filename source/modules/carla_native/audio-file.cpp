@@ -22,12 +22,12 @@
 
 #define PROGRAM_COUNT 16
 
-class AudioFilePlugin : public PluginDescriptorClass,
+class AudioFilePlugin : public PluginClass,
                         public AbstractAudioPlayer
 {
 public:
     AudioFilePlugin(const HostDescriptor* const host)
-        : PluginDescriptorClass(host),
+        : PluginClass(host),
           AbstractAudioPlayer(),
           fLoopMode(false),
           fDoProcess(false),
@@ -53,12 +53,12 @@ protected:
     // -------------------------------------------------------------------
     // Plugin parameter calls
 
-    uint32_t getParameterCount() override
+    uint32_t getParameterCount() const override
     {
         return 0; // TODO - loopMode
     }
 
-    const Parameter* getParameterInfo(const uint32_t index) override
+    const Parameter* getParameterInfo(const uint32_t index) const override
     {
         if (index != 0)
             return nullptr;
@@ -80,7 +80,7 @@ protected:
         return &param;
     }
 
-    float getParameterValue(const uint32_t index) override
+    float getParameterValue(const uint32_t index) const override
     {
         if (index != 0)
             return 0.0f;
@@ -116,7 +116,7 @@ protected:
     // -------------------------------------------------------------------
     // Plugin process calls
 
-    void process(float**, float** const outBuffer, const uint32_t frames, const uint32_t, const MidiEvent* const) override
+    void process(float**, float** const outBuffer, const uint32_t frames, const MidiEvent* const, const uint32_t) override
     {
         const TimeInfo* const timePos(getTimeInfo());
 
@@ -237,7 +237,7 @@ private:
         }
     }
 
-    PluginDescriptorClassEND(AudioFilePlugin)
+    PluginClassEND(AudioFilePlugin)
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AudioFilePlugin)
 };
 

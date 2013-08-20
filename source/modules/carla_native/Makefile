@@ -4,15 +4,12 @@
 # Created by falkTX
 #
 
-include ../Makefile.mk
-
-ifeq ($(HAVE_QT4),true)
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtCore QtGui)
-else
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags Qt5Core Qt5Gui Qt5Widgets)
-endif
+include ../../Makefile.mk
 
 # --------------------------------------------------------------
+
+BUILD_C_FLAGS   += -I. -I.. -I../../includes
+BUILD_CXX_FLAGS += -I. -I.. -I../../includes -I../../utils
 
 ifeq ($(HAVE_AF_DEPS),true)
 AF_C_FLAGS     = $(BUILD_C_FLAGS)
@@ -34,9 +31,6 @@ GL_CXX_FLAGS  += -I../../modules/distrho
 GL_CXX_FLAGS  += $(shell pkg-config --cflags gl)
 endif
 
-QT_CXX_FLAGS   = $(BUILD_CXX_FLAGS)
-QT_CXX_FLAGS  += -I../../modules/distrho -I../../modules/widgets
-
 ifeq ($(HAVE_ZYN_DEPS),true)
 ZYN_CXX_FLAGS  = $(BUILD_CXX_FLAGS)
 ZYN_CXX_FLAGS += $(shell pkg-config --cflags fftw3 mxml zlib)
@@ -48,15 +42,19 @@ endif
 
 # --------------------------------------------------------------
 
-# Simple plugins
+# Simple plugins (C)
 OBJS  = \
 	bypass.c.o \
 	lfo.c.o \
-	midi-sequencer.cpp.o \
+	midi-gain.c.o \
 	midi-split.c.o \
 	midi-through.c.o \
 	midi-transpose.c.o \
-	nekofilter.c.o \
+	nekofilter.c.o
+
+# Simple plugins (C++)
+OBJS += \
+	midi-sequencer.cpp.o \
 	vex.cpp.o
 
 # AudioFile
@@ -74,19 +72,19 @@ OBJS += \
 	midi-file.cpp.o
 endif
 
-# DISTRHO plugins (OpenGL)
-ifeq ($(HAVE_OPENGL),true)
-OBJS += \
-	distrho-3bandeq.cpp.o \
-	distrho-3bandsplitter.cpp.o \
-	distrho-nekobi.cpp.o \
-	distrho-pingpongpan.cpp.o \
-	distrho-stereoenhancer.cpp.o
-endif
+# # DISTRHO plugins (OpenGL)
+# ifeq ($(HAVE_OPENGL),true)
+# OBJS += \
+# 	distrho-3bandeq.cpp.o \
+# 	distrho-3bandsplitter.cpp.o \
+# 	distrho-nekobi.cpp.o \
+# 	distrho-pingpongpan.cpp.o \
+# 	distrho-stereoenhancer.cpp.o
+# endif
 
-# DISTRHO plugins (Qt)
-OBJS += \
-	distrho-notes.cpp.o
+# # DISTRHO plugins (Qt)
+# OBJS += \
+# 	distrho-notes.cpp.o
 
 ifeq ($(HAVE_ZYN_DEPS),true)
 # ZynAddSubFX
@@ -135,26 +133,38 @@ ZYN_UI_FILES_H = \
 endif
 endif
 
-TARGET = ../libcarla_native.a
+# --------------------------------------------------------------
+
+all: ../carla_native.a
 
 # --------------------------------------------------------------
 
-all: $(TARGET)
-
-clean:
-	rm -f $(OBJS) $(TARGET) $(ZYN_UI_FILES_H) $(ZYN_UI_FILES_CPP)
-	rm -f moc_*.cpp
-
-debug:
-	$(MAKE) DEBUG=true
-
-# --------------------------------------------------------------
-
-CDEPS   = ../CarlaNative.h
-CXXDEPS = ../CarlaNative.h ../CarlaNative.hpp
-
-$(TARGET): $(OBJS)
+../carla_native.a: $(OBJS)
+	rm -f $@
 	$(AR) rs $@ $^
+
+../carla_native.dll: $(OBJS)
+	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
+
+../carla_native.dylib: $(OBJS)
+	$(CXX) $^ -dynamiclib $(LINK_FLAGS) -o $@
+
+../carla_native.so: $(OBJS)
+	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
+
+# --------------------------------------------------------------
+
+CDEPS   = CarlaNative.h
+CXXDEPS = CarlaNative.h CarlaNative.hpp
+
+%.c.o: %.c
+	$(CC) $< $(BUILD_C_FLAGS) -c -o $@
+
+%.cpp.o: %.cpp
+	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+
+moc_%.cpp: %.hpp
+	$(MOC) $< -DMOC_PARSING -o $@
 
 # --------------------------------------------------------------
 
@@ -179,7 +189,7 @@ distrho-pingpongpan.cpp.o: distrho-pingpongpan.cpp pingpongpan/*.cpp pingpongpan
 distrho-stereoenhancer.cpp.o: distrho-stereoenhancer.cpp stereoenhancer/*.cpp stereoenhancer/*.h stereoenhancer/*.hpp distrho/DistrhoPluginCarla.cpp $(CXXDEPS)
 	$(CXX) $< $(GL_CXX_FLAGS) -Istereoenhancer -DDISTRHO_NAMESPACE=DISTRHO_StereoEnhancer -c -o $@
 
-distrho-notes.cpp.o: distrho-notes.cpp notes/moc_DistrhoUINotes.cpp notes/*.cpp notes/*.h notes/*.hpp distrho/DistrhoPluginCarla.cpp $(CXXDEPS)
+distrho-notes.cpp.o: distrho-notes.cpp notes/*.cpp notes/*.h notes/*.hpp distrho/DistrhoPluginCarla.cpp $(CXXDEPS)
 	$(CXX) $< $(QT_CXX_FLAGS) -Inotes -DDISTRHO_NAMESPACE=DISTRHO_Notes -c -o $@
 
 midi-file.cpp.o: midi-file.cpp midi-base.hpp $(CXXDEPS)
@@ -200,17 +210,6 @@ zynaddsubfx-src.cpp.o: zynaddsubfx-src.cpp $(ZYN_UI_FILES_H) $(ZYN_UI_FILES_CPP)
 zynaddsubfx-ui.cpp.o: zynaddsubfx-ui.cpp $(ZYN_UI_FILES_H)
 	$(CXX) $< $(ZYN_CXX_FLAGS) -c -o $@
 
-# --------------------------------------------------------------
-
-%.c.o: %.c
-	$(CC) $< $(BUILD_C_FLAGS) -c -o $@
-
-%.cpp.o: %.cpp
-	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
-
-moc_%.cpp: %.hpp
-	$(MOC) $< -DMOC_PARSING -o $@
-
 zynaddsubfx/UI/%.cpp: zynaddsubfx/UI/%.fl
 	ntk-fluid -c -o zynaddsubfx/UI/$*.cpp -h zynaddsubfx/UI/$*.h $<
 
@@ -219,5 +218,9 @@ zynaddsubfx/UI/%.h: zynaddsubfx/UI/%.fl
 
 # --------------------------------------------------------------
 
-../libs/%:
-	$(MAKE) -C ../libs $*
+clean:
+	rm -f *.o ../carla_native.*
+	rm -f  $(ZYN_UI_FILES_H) $(ZYN_UI_FILES_CPP)
+
+debug:
+	$(MAKE) DEBUG=true

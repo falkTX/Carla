@@ -20,10 +20,10 @@
 
 #include "CarlaBackend.hpp"
 #include "CarlaString.hpp"
-#include "CarlaNative.h"
 
 // Avoid including extra libs here
 typedef void* lo_address;
+typedef struct _PluginDescriptor PluginDescriptor;
 #ifndef LADSPA_RDF_HPP_INCLUDED
 struct LADSPA_RDF_Descriptor;
 #endif
@@ -854,6 +854,7 @@ public:
     static CarlaPlugin* newDSSI(const Initializer& init, const char* const guiFilename);
     static CarlaPlugin* newLV2(const Initializer& init);
     static CarlaPlugin* newVST(const Initializer& init);
+    static CarlaPlugin* newCSOUND(const Initializer& init);
     static CarlaPlugin* newGIG(const Initializer& init, const bool use16Outs);
     static CarlaPlugin* newSF2(const Initializer& init, const bool use16Outs);
     static CarlaPlugin* newSFZ(const Initializer& init, const bool use16Outs);

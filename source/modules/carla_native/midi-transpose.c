@@ -20,12 +20,16 @@
 
 #include <stdlib.h>
 
-typedef struct _MidiTransposeHandle {
-    HostDescriptor* host;
+// -----------------------------------------------------------------------
+
+typedef struct {
+    const HostDescriptor* host;
     int octaves;
 } MidiTransposeHandle;
 
-static PluginHandle midiTranspose_instantiate(HostDescriptor* host)
+// -----------------------------------------------------------------------
+
+static PluginHandle midiTranspose_instantiate(const HostDescriptor* host)
 {
     MidiTransposeHandle* const handle = (MidiTransposeHandle*)malloc(sizeof(MidiTransposeHandle));
 
@@ -93,9 +97,9 @@ static void midiTranspose_set_parameter_value(PluginHandle handle, uint32_t inde
     handlePtr->octaves = (int)value;
 }
 
-static void midiTranspose_process(PluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, uint32_t midiEventCount, const MidiEvent* midiEvents)
+static void midiTranspose_process(PluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const MidiEvent* midiEvents, uint32_t midiEventCount)
 {
-    HostDescriptor* const host = handlePtr->host;
+    const HostDescriptor* const host = handlePtr->host;
     const int octaves = handlePtr->octaves;
     MidiEvent tmpEvent;
 

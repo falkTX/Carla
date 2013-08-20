@@ -18,12 +18,12 @@
 #include "CarlaNative.hpp"
 #include "midi-base.hpp"
 
-class MidiSequencerPlugin : public PluginDescriptorClass,
+class MidiSequencerPlugin : public PluginClass,
                             public AbstractMidiPlayer
 {
 public:
     MidiSequencerPlugin(const HostDescriptor* const host)
-        : PluginDescriptorClass(host),
+        : PluginClass(host),
           fWantInEvents(false),
           fMidiOut(this)
     {
@@ -136,7 +136,7 @@ protected:
     {
     }
 
-    void process(float**, float**, const uint32_t frames, const uint32_t midiEventCount, const MidiEvent* const midiEvents) override
+    void process(float**, float**, const uint32_t frames, const MidiEvent* const midiEvents, const uint32_t midiEventCount) override
     {
         const TimeInfo* const timePos = getTimeInfo();
 
@@ -184,7 +184,7 @@ protected:
         midiEvent.data[3] = event->data[3];
         midiEvent.size    = event->size;
 
-        PluginDescriptorClass::writeMidiEvent(&midiEvent);
+        PluginClass::writeMidiEvent(&midiEvent);
     }
 
 private:
@@ -226,7 +226,7 @@ private:
 
     MidiPattern fMidiOut;
 
-    PluginDescriptorClassEND(MidiSequencerPlugin)
+    PluginClassEND(MidiSequencerPlugin)
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MidiSequencerPlugin)
 };
 

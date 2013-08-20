@@ -17,7 +17,9 @@
 
 #include "CarlaNative.h"
 
+// -----------------------------------------------------------------------
 // Plugin Code
+
 #include "nekofilter/nekofilter.c"
 #include "nekofilter/filter.c"
 #include "nekofilter/log.c"

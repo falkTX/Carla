@@ -27,9 +27,9 @@ QStyle* CarlaStylePlugin::create(const QString& key)
     return (key.toLower() == "carla") ? new CarlaStyle() : nullptr;
 }
 
-QStringList CarlaStylePlugin::keys() const
-{
-    return QStringList() << "Carla";
-}
+// QStringList CarlaStylePlugin::keys() const
+// {
+//     return QStringList() << "Carla";
+// }
 
 Q_EXPORT_PLUGIN2(Carla, CarlaStylePlugin)

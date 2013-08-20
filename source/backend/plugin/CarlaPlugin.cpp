@@ -588,45 +588,9 @@ const SaveState& CarlaPlugin::getSaveState()
     // ----------------------------
     // Basic info
 
-    switch (getType())
-    {
-    case PLUGIN_NONE:
-        saveState.type = carla_strdup("None");
-        break;
-    case PLUGIN_INTERNAL:
-        saveState.type = carla_strdup("Internal");
-        break;
-    case PLUGIN_LADSPA:
-        saveState.type = carla_strdup("LADSPA");
-        break;
-    case PLUGIN_DSSI:
-        saveState.type = carla_strdup("DSSI");
-        break;
-    case PLUGIN_LV2:
-        saveState.type = carla_strdup("LV2");
-        break;
-    case PLUGIN_VST:
-        saveState.type = carla_strdup("VST");
-        break;
-    case PLUGIN_VST3:
-        saveState.type = carla_strdup("VST3");
-        break;
-    case PLUGIN_AU:
-        saveState.type = carla_strdup("AU");
-        break;
-    case PLUGIN_GIG:
-        saveState.type = carla_strdup("GIG");
-        break;
-    case PLUGIN_SF2:
-        saveState.type = carla_strdup("SF2");
-        break;
-    case PLUGIN_SFZ:
-        saveState.type = carla_strdup("SFZ");
-        break;
-    }
-
     getLabel(strBuf);
 
+    saveState.type   = carla_strdup(getPluginTypeAsString(getType()));
     saveState.name   = carla_strdup(fName);
     saveState.label  = carla_strdup(strBuf);
     saveState.binary = carla_strdup(fFilename);

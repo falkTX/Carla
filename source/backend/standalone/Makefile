@@ -100,12 +100,11 @@ endif
 
 LIBS  = ../libcarla_engine.a
 LIBS += ../libcarla_plugin.a
-LIBS += ../libcarla_native.a
+LIBS += ../../modules/carla_native.a
 LIBS += ../../modules/juce_core.a
 LIBS += ../../modules/juce_audio_basics.a
 LIBS += ../../modules/rtmempool.a
 LIBS += ../../modules/theme.a
-LIBS += ../../modules/widgets.a
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
 LIBS += ../../modules/lilv.a
@@ -140,7 +139,7 @@ debug:
 
 # --------------------------------------------------------------
 
-%.cpp.o: %.cpp ../CarlaBackend.hpp ../CarlaEngine.hpp ../CarlaNative.h ../CarlaPlugin.hpp ../CarlaStandalone.hpp
+%.cpp.o: %.cpp ../CarlaBackend.hpp ../CarlaEngine.hpp ../CarlaPlugin.hpp ../CarlaHost.hpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 ../libcarla_standalone.dll: $(OBJS) $(LIBS)

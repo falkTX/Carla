@@ -28,18 +28,18 @@
  */
 
 // -----------------------------------------------------------------------
-// Plugin Descriptor Class
+// Plugin Class
 
-class PluginDescriptorClass
+class PluginClass
 {
 public:
-    PluginDescriptorClass(const HostDescriptor* const host)
+    PluginClass(const HostDescriptor* const host)
         : pHost(host)
     {
         CARLA_ASSERT(host != nullptr);
     }
 
-    virtual ~PluginDescriptorClass()
+    virtual ~PluginClass()
     {
     }
 
@@ -143,34 +143,142 @@ protected:
         return pHost->ui_save_file(pHost->handle, isDir, title, filter);
     }
 
-    intptr_t hostDispatcher(const HostDispatcherOpcode opcode, const int32_t index, const intptr_t value, void* const ptr, const float opt) const
-    {
-        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr, 0);
+    // -------------------------------------------------------------------
+    // Host dispatcher calls
 
-        return pHost->dispatcher(pHost->handle, opcode, index, value, ptr, opt);
+    void hostSetVolume(const float value) const
+    {
+        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
+
+        pHost->dispatcher(pHost->handle, HOST_OPCODE_SET_VOLUME, 0, 0, nullptr, value);
+    }
+
+    void hostSetDryWet(const float value) const
+    {
+        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
+
+        pHost->dispatcher(pHost->handle, HOST_OPCODE_SET_DRYWET, 0, 0, nullptr, value);
+    }
+
+    void hostSetBalanceLeft(const float value) const
+    {
+        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
+
+        pHost->dispatcher(pHost->handle, HOST_OPCODE_SET_BALANCE_LEFT, 0, 0, nullptr, value);
+    }
+
+    void hostSetBalanceRight(const float value) const
+    {
+        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
+
+        pHost->dispatcher(pHost->handle, HOST_OPCODE_SET_BALANCE_RIGHT, 0, 0, nullptr, value);
+    }
+
+    void hostSetPanning(const float value) const
+    {
+        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
+
+        pHost->dispatcher(pHost->handle, HOST_OPCODE_SET_PANNING, 0, 0, nullptr, value);
+    }
+
+    intptr_t hostGetParameterMidiCC(const int32_t index) const
+    {
+        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr, -1);
+
+        return pHost->dispatcher(pHost->handle, HOST_OPCODE_GET_PARAMETER_MIDI_CC, index, 0, nullptr, 0.0f);
+    }
+
+    void hostSetParameterMidiCC(const int32_t index, const intptr_t value) const
+    {
+        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
+
+        pHost->dispatcher(pHost->handle, HOST_OPCODE_SET_PARAMETER_MIDI_CC, index, value, nullptr, 0.0f);
+    }
+
+    void hostSetProcessPrecision(const intptr_t value) const
+    {
+        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
+
+        pHost->dispatcher(pHost->handle, HOST_OPCODE_SET_PROCESS_PRECISION, 0, value, nullptr, 0.0f);
+    }
+
+    void hostUpdateParameter(const int32_t index) const
+    {
+        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
+
+        pHost->dispatcher(pHost->handle, HOST_OPCODE_UPDATE_PARAMETER, index, 0, nullptr, 0.0f);
+    }
+
+    void hostUpdateAllParameters() const
+    {
+        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
+
+        pHost->dispatcher(pHost->handle, HOST_OPCODE_UPDATE_PARAMETER, -1, 0, nullptr, 0.0f);
+    }
+
+    void hostUpdateMidiProgram(const int32_t index, const intptr_t channel = 0) const
+    {
+        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
+
+        pHost->dispatcher(pHost->handle, HOST_OPCODE_UPDATE_MIDI_PROGRAM, index, channel, nullptr, 0.0f);
+    }
+
+    void hostUpdateAllMidiPrograms(const intptr_t channel = 0) const
+    {
+        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
+
+        pHost->dispatcher(pHost->handle, HOST_OPCODE_UPDATE_MIDI_PROGRAM, -1, channel, nullptr, 0.0f);
+    }
+
+    void hostReloadParameters() const
+    {
+        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
+
+        pHost->dispatcher(pHost->handle, HOST_OPCODE_RELOAD_PARAMETERS, 0, 0, nullptr, 0.0f);
+    }
+
+    void hostReloadMidiPrograms() const
+    {
+        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
+
+        pHost->dispatcher(pHost->handle, HOST_OPCODE_RELOAD_MIDI_PROGRAMS, 0, 0, nullptr, 0.0f);
+    }
+
+    void hostReloadAll() const
+    {
+        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
+
+        pHost->dispatcher(pHost->handle, HOST_OPCODE_RELOAD_ALL, 0, 0, nullptr, 0.0f);
+    }
+
+    void hostUiUnavailable() const
+    {
+        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
+
+        pHost->dispatcher(pHost->handle, HOST_OPCODE_UI_UNAVAILABLE, 0, 0, nullptr, 0.0f);
     }
 
     // -------------------------------------------------------------------
     // Plugin parameter calls
 
-    virtual uint32_t getParameterCount()
+    virtual uint32_t getParameterCount() const
     {
         return 0;
     }
 
-    virtual const Parameter* getParameterInfo(const uint32_t index)
+    virtual const Parameter* getParameterInfo(const uint32_t index) const
     {
         CARLA_SAFE_ASSERT_RETURN(index < getParameterCount(), nullptr);
         return nullptr;
     }
 
-    virtual float getParameterValue(const uint32_t index)
+    virtual float getParameterValue(const uint32_t index) const
     {
         CARLA_SAFE_ASSERT_RETURN(index < getParameterCount(), 0.0f);
         return 0.0f;
     }
 
-    virtual const char* getParameterText(const uint32_t index, const float value)
+    virtual const char* getParameterText(const uint32_t index, const float value) const
     {
         CARLA_SAFE_ASSERT_RETURN(index < getParameterCount(), nullptr);
         return nullptr;
@@ -182,12 +290,12 @@ protected:
     // -------------------------------------------------------------------
     // Plugin midi-program calls
 
-    virtual uint32_t getMidiProgramCount()
+    virtual uint32_t getMidiProgramCount() const
     {
         return 0;
     }
 
-    virtual const MidiProgram* getMidiProgramInfo(const uint32_t index)
+    virtual const MidiProgram* getMidiProgramInfo(const uint32_t index) const
     {
         CARLA_SAFE_ASSERT_RETURN(index < getMidiProgramCount(), nullptr);
         return nullptr;
@@ -232,7 +340,7 @@ protected:
     {
     }
 
-    virtual void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t midiEventCount, const MidiEvent* const midiEvents) = 0;
+    virtual void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const MidiEvent* const midiEvents, const uint32_t midiEventCount) = 0;
 
     // -------------------------------------------------------------------
     // Plugin UI calls
@@ -277,7 +385,7 @@ protected:
     // -------------------------------------------------------------------
     // Plugin state calls
 
-    virtual char* getState()
+    virtual char* getState() const
     {
         return nullptr;
     }
@@ -288,18 +396,32 @@ protected:
     }
 
     // -------------------------------------------------------------------
-    // Plugin dispatcher
+    // Plugin dispatcher calls
 
-    virtual intptr_t pluginDispatcher(const PluginDispatcherOpcode opcode, const int32_t index, const intptr_t value, void* const ptr, const float opt)
+    virtual void bufferSizeChanged(const uint32_t bufferSize)
     {
-        return 0;
+        return;
 
         // unused
-        (void)opcode;
-        (void)index;
-        (void)value;
-        (void)ptr;
-        (void)opt;
+        (void)bufferSize;
+    }
+
+    virtual void sampleRateChanged(const double sampleRate)
+    {
+        CARLA_SAFE_ASSERT_RETURN(sampleRate > 0.0,);
+    }
+
+    virtual void offlineChanged(const bool isOffline)
+    {
+        return;
+
+        // unused
+        (void)isOffline;
+    }
+
+    virtual void uiNameChanged(const char* const uiName)
+    {
+        CARLA_SAFE_ASSERT_RETURN(uiName != nullptr,);
     }
 
     // -------------------------------------------------------------------
@@ -311,7 +433,7 @@ private:
 
 #ifndef DOXYGEN
 public:
-    #define handlePtr ((PluginDescriptorClass*)handle)
+    #define handlePtr ((PluginClass*)handle)
 
     static uint32_t _get_parameter_count(PluginHandle handle)
     {
@@ -393,9 +515,9 @@ public:
         handlePtr->deactivate();
     }
 
-    static void _process(PluginHandle handle, float** inBuffer, float** outBuffer, const uint32_t frames, uint32_t midiEventCount, const MidiEvent* midiEvents)
+    static void _process(PluginHandle handle, float** inBuffer, float** outBuffer, const uint32_t frames, const MidiEvent* midiEvents, uint32_t midiEventCount)
     {
-        handlePtr->process(inBuffer, outBuffer, frames, midiEventCount, midiEvents);
+        handlePtr->process(inBuffer, outBuffer, frames, midiEvents, midiEventCount);
     }
 
     static char* _get_state(PluginHandle handle)
@@ -410,12 +532,31 @@ public:
 
     static intptr_t _dispatcher(PluginHandle handle, PluginDispatcherOpcode opcode, int32_t index, intptr_t value, void* ptr, float opt)
     {
-        return handlePtr->pluginDispatcher(opcode, index, value, ptr, opt);
+        switch(opcode)
+        {
+        case PLUGIN_OPCODE_NULL:
+            return 0;
+        case PLUGIN_OPCODE_BUFFER_SIZE_CHANGED:
+            CARLA_SAFE_ASSERT_RETURN(value > 0, 0);
+            handlePtr->bufferSizeChanged(static_cast<uint32_t>(value));
+            return 0;
+        case PLUGIN_OPCODE_SAMPLE_RATE_CHANGED:
+            handlePtr->sampleRateChanged(static_cast<double>(opt));
+            return 0;
+        case PLUGIN_OPCODE_OFFLINE_CHANGED:
+            handlePtr->offlineChanged(value != 0);
+            return 0;
+        case PLUGIN_OPCODE_UI_NAME_CHANGED:
+            handlePtr->uiNameChanged(static_cast<const char*>(ptr));
+            return 0;
+        }
+
+        return 0;
     }
 
     #undef handlePtr
 
-    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PluginDescriptorClass)
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PluginClass)
 #endif
 };
 
@@ -423,15 +564,15 @@ public:
 
 // -----------------------------------------------------------------------
 
-#define PluginDescriptorClassEND(ClassName)                \
-public:                                                    \
-    static PluginHandle _instantiate(HostDescriptor* host) \
-    {                                                      \
-        return new ClassName(host);                        \
-    }                                                      \
-    static void _cleanup(PluginHandle handle)              \
-    {                                                      \
-        delete (ClassName*)handle;                         \
+#define PluginClassEND(ClassName)                                \
+public:                                                          \
+    static PluginHandle _instantiate(const HostDescriptor* host) \
+    {                                                            \
+        return new ClassName(host);                              \
+    }                                                            \
+    static void _cleanup(PluginHandle handle)                    \
+    {                                                            \
+        delete (ClassName*)handle;                               \
     }
 
 #define PluginDescriptorFILL(ClassName) \
@@ -457,5 +598,7 @@ public:                                                    \
     ClassName::_get_state,              \
     ClassName::_set_state,              \
     ClassName::_dispatcher
+
+// -----------------------------------------------------------------------
 
 #endif // CARLA_NATIVE_HPP_INCLUDED

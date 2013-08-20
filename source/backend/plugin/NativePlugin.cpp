@@ -19,7 +19,7 @@
 
 #ifdef WANT_NATIVE
 
-#include "CarlaNative.h"
+#include "carla_native/CarlaNative.h"
 
 #include <QtCore/Qt>
 
@@ -1826,19 +1826,19 @@ public:
 
         if (fHandle2 == nullptr)
         {
-            fDescriptor->process(fHandle, fAudioInBuffers, fAudioOutBuffers, frames, fMidiEventCount, fMidiEvents);
+            fDescriptor->process(fHandle, fAudioInBuffers, fAudioOutBuffers, frames, fMidiEvents, fMidiEventCount);
         }
         else
         {
             fDescriptor->process(fHandle,
                                  (pData->audioIn.count > 0) ? &fAudioInBuffers[0] : nullptr,
                                  (pData->audioOut.count > 0) ? &fAudioOutBuffers[0] : nullptr,
-                                 frames, fMidiEventCount, fMidiEvents);
+                                 frames, fMidiEvents, fMidiEventCount);
 
             fDescriptor->process(fHandle2,
                                  (pData->audioIn.count > 0) ? &fAudioInBuffers[1] : nullptr,
                                  (pData->audioOut.count > 0) ? &fAudioOutBuffers[1] : nullptr,
-                                 frames, fMidiEventCount, fMidiEvents);
+                                 frames, fMidiEvents, fMidiEventCount);
         }
 
         fIsProcessing = false;

@@ -87,7 +87,7 @@ typedef enum {
     PLUGIN_OPCODE_NULL                = 0, // nothing
     PLUGIN_OPCODE_BUFFER_SIZE_CHANGED = 1, // uses value
     PLUGIN_OPCODE_SAMPLE_RATE_CHANGED = 2, // uses opt
-    PLUGIN_OPCODE_OFFLINE_CHANGED     = 3, // uses value
+    PLUGIN_OPCODE_OFFLINE_CHANGED     = 3, // uses value (0=off, 1=on)
     PLUGIN_OPCODE_UI_NAME_CHANGED     = 4  // uses ptr
 } PluginDispatcherOpcode;
 
@@ -99,10 +99,10 @@ typedef enum {
     HOST_OPCODE_SET_BALANCE_RIGHT     = 4,  // uses opt
     HOST_OPCODE_SET_PANNING           = 5,  // uses opt
     HOST_OPCODE_GET_PARAMETER_MIDI_CC = 6,  // uses index; return answer
-    HOST_OPCODE_SET_PARAMETER_MIDI_CC = 7,  // uses index and opt
+    HOST_OPCODE_SET_PARAMETER_MIDI_CC = 7,  // uses index and value
     HOST_OPCODE_SET_PROCESS_PRECISION = 8,  // uses value
-    HOST_OPCODE_UPDATE_PARAMETER      = 9,  // uses value, -1 for all
-    HOST_OPCODE_UPDATE_MIDI_PROGRAM   = 10, // uses value, -1 for all; may use index for channel
+    HOST_OPCODE_UPDATE_PARAMETER      = 9,  // uses index, -1 for all
+    HOST_OPCODE_UPDATE_MIDI_PROGRAM   = 10, // uses index, -1 for all; may use value for channel
     HOST_OPCODE_RELOAD_PARAMETERS     = 11, // nothing
     HOST_OPCODE_RELOAD_MIDI_PROGRAMS  = 12, // nothing
     HOST_OPCODE_RELOAD_ALL            = 13, // nothing
@@ -205,7 +205,7 @@ typedef struct {
 // -----------------------------------------------------------------------
 // PluginDescriptor
 
-typedef struct {
+typedef struct _PluginDescriptor {
     const PluginCategory category;
     const PluginHints hints;
     const PluginSupports supports;
@@ -220,7 +220,7 @@ typedef struct {
     const char* const maker;
     const char* const copyright;
 
-    PluginHandle (*instantiate)(HostDescriptor* host);
+    PluginHandle (*instantiate)(const HostDescriptor* host);
     void         (*cleanup)(PluginHandle handle);
 
     uint32_t         (*get_parameter_count)(PluginHandle handle);
@@ -244,7 +244,7 @@ typedef struct {
 
     void (*activate)(PluginHandle handle);
     void (*deactivate)(PluginHandle handle);
-    void (*process)(PluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, uint32_t midiEventCount, const MidiEvent* midiEvents);
+    void (*process)(PluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const MidiEvent* midiEvents, uint32_t midiEventCount);
 
     char* (*get_state)(PluginHandle handle);
     void  (*set_state)(PluginHandle handle, const char* data);

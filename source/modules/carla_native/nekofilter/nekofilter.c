@@ -25,13 +25,13 @@
 
 #define LOG_LEVEL LOG_LEVEL_ERROR
 
+#include "CarlaNative.h"
+
 #include <assert.h>
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-
-#include "CarlaNative.h"
 
 #include "filter.h"
 #include "log.h"
@@ -47,7 +47,7 @@ struct nekofilter
   filter_handle filter;
   float params_global[GLOBAL_PARAMETERS_COUNT];
   float params_bands[BAND_PARAMETERS_COUNT*BANDS_COUNT];
-  HostDescriptor* host;
+  const HostDescriptor* host;
 #ifdef WANT_UI
   struct control* ui;
 #endif
@@ -55,7 +55,7 @@ struct nekofilter
 
 PluginHandle
 nekofilter_instantiate(
-  HostDescriptor* host)
+  const HostDescriptor* host)
 {
   struct nekofilter * nekofilter_ptr;
   unsigned int i;
@@ -329,8 +329,8 @@ nekofilter_process(
   float** inBuffer,
   float** outBuffer,
   uint32_t frames,
-  uint32_t midiEventCount,
-  const MidiEvent* midiEvents)
+  const MidiEvent* midiEvents,
+  uint32_t midiEventCount)
 {
   LOG_DEBUG("nekofilter_run");
   filter_run(

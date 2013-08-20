@@ -20,7 +20,7 @@
 #include "CarlaEngineInternal.hpp"
 #include "CarlaStateUtils.hpp"
 
-#include "CarlaNative.hpp"
+#include "carla_native/CarlaNative.hpp"
 
 #include <QtCore/QProcess>
 #include <QtCore/QTextStream>
@@ -142,12 +142,12 @@ private:
 
 // -----------------------------------------------------------------------
 
-class CarlaEngineNative : public PluginDescriptorClass,
+class CarlaEngineNative : public PluginClass,
                           public CarlaEngine
 {
 public:
     CarlaEngineNative(const HostDescriptor* const host)
-        : PluginDescriptorClass(host),
+        : PluginClass(host),
           CarlaEngine(),
           fIsRunning(true),
           fThread(this)
@@ -197,8 +197,8 @@ protected:
     {
         carla_debug("CarlaEngineNative::init(\"%s\")", clientName);
 
-        fBufferSize = PluginDescriptorClass::getBufferSize();
-        fSampleRate = PluginDescriptorClass::getSampleRate();
+        fBufferSize = PluginClass::getBufferSize();
+        fSampleRate = PluginClass::getSampleRate();
 
         CarlaEngine::init(clientName);
         return true;
@@ -230,7 +230,7 @@ protected:
     // -------------------------------------------------------------------
     // Plugin parameter calls
 
-    uint32_t getParameterCount() override
+    uint32_t getParameterCount() const override
     {
         if (pData->curPluginCount == 0 || pData->plugins == nullptr)
             return 0;
@@ -243,7 +243,7 @@ protected:
         return pData->plugins[0].plugin->getParameterCount();
     }
 
-    const Parameter* getParameterInfo(const uint32_t index) override
+    const Parameter* getParameterInfo(const uint32_t index) const override
     {
         if (index >= getParameterCount())
             return nullptr;
@@ -303,7 +303,7 @@ protected:
         return &param;
     }
 
-    float getParameterValue(const uint32_t index) override
+    float getParameterValue(const uint32_t index) const override
     {
         if (index >= getParameterCount())
             return 0.0f;
@@ -316,7 +316,7 @@ protected:
         return plugin->getParameterValue(index);
     }
 
-    const char* getParameterText(const uint32_t index, const float value) override // FIXME - use value
+    const char* getParameterText(const uint32_t index, const float value) const override // FIXME - use value
     {
         if (index >= getParameterCount())
             return nullptr;
@@ -336,7 +336,7 @@ protected:
     // -------------------------------------------------------------------
     // Plugin midi-program calls
 
-    uint32_t getMidiProgramCount() override
+    uint32_t getMidiProgramCount() const override
     {
         if (pData->curPluginCount == 0 || pData->plugins == nullptr)
             return 0;
@@ -349,7 +349,7 @@ protected:
         return plugin->getMidiProgramCount();
     }
 
-    const MidiProgram* getMidiProgramInfo(const uint32_t index) override
+    const MidiProgram* getMidiProgramInfo(const uint32_t index) const override
     {
         if (index >= getMidiProgramCount())
             return nullptr;
@@ -446,7 +446,7 @@ protected:
         runPendingRtEvents();
     }
 
-    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t midiEventCount, const ::MidiEvent* const midiEvents) override
+    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const ::MidiEvent* const midiEvents, const uint32_t midiEventCount) override
     {
         if (pData->curPluginCount == 0)
         {
@@ -458,7 +458,7 @@ protected:
         // ---------------------------------------------------------------
         // Time Info
 
-        const ::TimeInfo* timeInfo(PluginDescriptorClass::getTimeInfo());
+        const ::TimeInfo* timeInfo(PluginClass::getTimeInfo());
 
         fTimeInfo.playing = timeInfo->playing;
         fTimeInfo.frame   = timeInfo->frame;
@@ -592,7 +592,7 @@ protected:
         case CarlaEngineNativeThread::UiShow:
             break;
         case CarlaEngineNativeThread::UiCrashed:
-            hostDispatcher(HOST_OPCODE_UI_UNAVAILABLE, 0, 0, nullptr, 0.0f);
+            hostUiUnavailable();
             break;
         case CarlaEngineNativeThread::UiHide:
             uiClosed();
@@ -641,7 +641,7 @@ protected:
     // -------------------------------------------------------------------
     // Plugin state calls
 
-    char* getState() override
+    char* getState() const override
     {
         QString string;
         QTextStream out(&string);
@@ -731,7 +731,7 @@ private:
     bool fIsRunning;
     CarlaEngineNativeThread fThread;
 
-    PluginDescriptorClassEND(CarlaEngineNative)
+    PluginClassEND(CarlaEngineNative)
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineNative)
 };
 

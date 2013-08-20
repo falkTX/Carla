@@ -26,7 +26,7 @@ using namespace juce;
 
 // -----------------------------------------------------------------------
 
-class VexArpPlugin : public PluginDescriptorClass
+class VexArpPlugin : public PluginClass
 {
 public:
     enum Params {
@@ -40,7 +40,7 @@ public:
     };
 
     VexArpPlugin(const HostDescriptor* const host)
-        : PluginDescriptorClass(host),
+        : PluginClass(host),
           fSettings(),
           fArp(&fSettings)
     {
@@ -65,12 +65,12 @@ protected:
     // -------------------------------------------------------------------
     // Plugin parameter calls
 
-    uint32_t getParameterCount() override
+    uint32_t getParameterCount() const override
     {
         return kParamCount;
     }
 
-    const Parameter* getParameterInfo(const uint32_t index) override
+    const Parameter* getParameterInfo(const uint32_t index) const override
     {
         static Parameter paramInfo;
         static ParameterScalePoint scalePoints[4];
@@ -168,7 +168,7 @@ protected:
         return &paramInfo;
     }
 
-    float getParameterValue(const uint32_t index) override
+    float getParameterValue(const uint32_t index) const override
     {
         switch (index)
         {
@@ -197,7 +197,7 @@ protected:
         switch (index)
         {
         case kParamOnOff:
-            fSettings.on = (value > 0.5f);
+            fSettings.on = (value >= 0.5f);
             break;
         case kParamLength:
             fSettings.length = value;
@@ -220,7 +220,7 @@ protected:
     // -------------------------------------------------------------------
     // Plugin process calls
 
-    void process(float**, float**, const uint32_t frames, const uint32_t midiEventCount, const MidiEvent* const midiEvents) override
+    void process(float**, float**, const uint32_t frames, const MidiEvent* const midiEvents, const uint32_t midiEventCount) override
     {
         if (! fSettings.on)
         {
@@ -280,18 +280,26 @@ protected:
         }
     }
 
+    // -------------------------------------------------------------------
+    // Plugin dispatcher calls
+
+    void sampleRateChanged(const double sampleRate) override
+    {
+        fArp.setSampleRate(sampleRate);
+    }
+
 private:
     VexArpSettings fSettings;
     VexArp fArp;
     MidiBuffer fMidiInBuffer;
 
-    PluginDescriptorClassEND(VexArpPlugin)
+    PluginClassEND(VexArpPlugin)
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(VexArpPlugin)
 };
 
 // -----------------------------------------------------------------------
 
-class VexChorusPlugin : public PluginDescriptorClass
+class VexChorusPlugin : public PluginClass
 {
 public:
     enum Params {
@@ -301,7 +309,7 @@ public:
     };
 
     VexChorusPlugin(const HostDescriptor* const host)
-        : PluginDescriptorClass(host),
+        : PluginClass(host),
           chorus(parameters)
     {
         parameters[0] = 0.6f;
@@ -314,12 +322,12 @@ protected:
     // -------------------------------------------------------------------
     // Plugin parameter calls
 
-    uint32_t getParameterCount() override
+    uint32_t getParameterCount() const override
     {
         return kParamCount;
     }
 
-    const Parameter* getParameterInfo(const uint32_t index) override
+    const Parameter* getParameterInfo(const uint32_t index) const override
     {
         static Parameter paramInfo;
 
@@ -357,7 +365,7 @@ protected:
         return &paramInfo;
     }
 
-    float getParameterValue(const uint32_t index) override
+    float getParameterValue(const uint32_t index) const override
     {
         if (index < kParamCount)
             return parameters[index];
@@ -376,7 +384,7 @@ protected:
     // -------------------------------------------------------------------
     // Plugin process calls
 
-    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t, const MidiEvent* const) override
+    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const MidiEvent* const, const uint32_t) override
     {
         if (inBuffer[0] != outBuffer[0])
             carla_copyFloat(outBuffer[0], inBuffer[0], frames);
@@ -386,17 +394,25 @@ protected:
         chorus.processBlock(outBuffer[0], outBuffer[1], frames);
     }
 
+    // -------------------------------------------------------------------
+    // Plugin dispatcher calls
+
+    void sampleRateChanged(const double sampleRate) override
+    {
+        chorus.setSampleRate(sampleRate);
+    }
+
 private:
     VexChorus chorus;
     float parameters[2];
 
-    PluginDescriptorClassEND(VexChorusPlugin)
+    PluginClassEND(VexChorusPlugin)
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(VexChorusPlugin)
 };
 
 // -----------------------------------------------------------------------
 
-class VexDelayPlugin : public PluginDescriptorClass
+class VexDelayPlugin : public PluginClass
 {
 public:
     enum Params {
@@ -406,7 +422,7 @@ public:
     };
 
     VexDelayPlugin(const HostDescriptor* const host)
-        : PluginDescriptorClass(host),
+        : PluginClass(host),
           delay(parameters)
     {
         parameters[0] = 4.0f;
@@ -419,12 +435,12 @@ protected:
     // -------------------------------------------------------------------
     // Plugin parameter calls
 
-    uint32_t getParameterCount() override
+    uint32_t getParameterCount() const override
     {
         return kParamCount;
     }
 
-    const Parameter* getParameterInfo(const uint32_t index) override
+    const Parameter* getParameterInfo(const uint32_t index) const override
     {
         static Parameter paramInfo;
 
@@ -464,7 +480,7 @@ protected:
         return &paramInfo;
     }
 
-    float getParameterValue(const uint32_t index) override
+    float getParameterValue(const uint32_t index) const override
     {
         if (index < kParamCount)
             return parameters[index];
@@ -483,7 +499,7 @@ protected:
     // -------------------------------------------------------------------
     // Plugin process calls
 
-    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t, const MidiEvent* const) override
+    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const MidiEvent* const, const uint32_t) override
     {
         if (inBuffer[0] != outBuffer[0])
             carla_copyFloat(outBuffer[0], inBuffer[0], frames);
@@ -496,17 +512,25 @@ protected:
         delay.processBlock(outBuffer[0], outBuffer[1], frames, bpm);
     }
 
+    // -------------------------------------------------------------------
+    // Plugin dispatcher calls
+
+    void sampleRateChanged(const double sampleRate) override
+    {
+        delay.setSampleRate(sampleRate);
+    }
+
 private:
     VexDelay delay;
     float parameters[2];
 
-    PluginDescriptorClassEND(VexDelayPlugin)
+    PluginClassEND(VexDelayPlugin)
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(VexDelayPlugin)
 };
 
 // -----------------------------------------------------------------------
 
-class VexReverbPlugin : public PluginDescriptorClass
+class VexReverbPlugin : public PluginClass
 {
 public:
     enum Params {
@@ -517,7 +541,7 @@ public:
     };
 
     VexReverbPlugin(const HostDescriptor* const host)
-        : PluginDescriptorClass(host),
+        : PluginClass(host),
           reverb(parameters)
     {
         parameters[0] = 0.6f;
@@ -529,12 +553,12 @@ protected:
     // -------------------------------------------------------------------
     // Plugin parameter calls
 
-    uint32_t getParameterCount() override
+    uint32_t getParameterCount() const override
     {
         return kParamCount;
     }
 
-    const Parameter* getParameterInfo(const uint32_t index) override
+    const Parameter* getParameterInfo(const uint32_t index) const override
     {
         static Parameter paramInfo;
 
@@ -578,7 +602,7 @@ protected:
         return &paramInfo;
     }
 
-    float getParameterValue(const uint32_t index) override
+    float getParameterValue(const uint32_t index) const override
     {
         if (index < kParamCount)
             return parameters[index];
@@ -597,7 +621,7 @@ protected:
     // -------------------------------------------------------------------
     // Plugin process calls
 
-    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t, const MidiEvent* const) override
+    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const MidiEvent* const, const uint32_t) override
     {
         for (uint32_t i=0; i< frames; ++i)
             outBuffer[0][i] = inBuffer[0][i]/2.0f;
@@ -611,7 +635,7 @@ private:
     VexReverb reverb;
     float parameters[3];
 
-    PluginDescriptorClassEND(VexReverbPlugin)
+    PluginClassEND(VexReverbPlugin)
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(VexReverbPlugin)
 };
 

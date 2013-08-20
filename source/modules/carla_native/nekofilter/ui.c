@@ -47,6 +47,8 @@
 # define FORK_STR "fork"
 #endif
 
+#include "CarlaNative.h"
+
 #include <errno.h>
 #include <fcntl.h>
 #include <locale.h>
@@ -65,11 +67,9 @@
 # include <sched.h>
 #endif
 
-#include "CarlaNative.h"
-
 struct control
 {
-  HostDescriptor* host;
+  const HostDescriptor* host;
 
   bool running;  /* true if UI launched and 'exiting' not received */
   bool visible;  /* true if 'show' sent */
@@ -245,8 +245,12 @@ nekoui_show(
     return;
   }
 
-  write(control_ptr->send_pipe, "show\n", 5);
+  ssize_t ign = write(control_ptr->send_pipe, "show\n", 5);
   control_ptr->visible = true;
+  return;
+
+  // ignored
+  (void)ign;
 }
 
 void
@@ -258,15 +262,19 @@ nekoui_hide(
     return;
   }
 
-  write(control_ptr->send_pipe, "hide\n", 5);
+  ssize_t ign = write(control_ptr->send_pipe, "hide\n", 5);
   control_ptr->visible = false;
+  return;
+
+  // ignored
+  (void)ign;
 }
 
 void
 nekoui_quit(
   struct control * control_ptr)
 {
-  write(control_ptr->send_pipe, "quit\n", 5);
+  ssize_t ign = write(control_ptr->send_pipe, "quit\n", 5);
   control_ptr->visible = false;
 
   /* for a while wait child to exit, we dont like zombie processes */
@@ -282,6 +290,10 @@ nekoui_quit(
       wait_child(control_ptr->pid);
     }
   }
+  return;
+
+  // ignored
+  (void)ign;
 }
 
 #if defined(FORK_TIME_MEASURE)
@@ -325,10 +337,35 @@ static int clone_fn(void * context)
 
 #endif
 
+static bool do_fork(const char * argv[6], int* ret)
+{
+  int ret2 = *ret = FORK();
+
+  switch (ret2)
+  {
+  case 0: /* child process */
+    /* fork duplicated the handles, close pipe ends that are used by parent process */
+#if !defined(USE_VFORK)
+    /* it looks we cant do this for vfork() */
+    close(pipe1[1]);
+    close(pipe2[0]);
+#endif
+
+    execvp(argv[0], (char **)argv);
+    fprintf(stderr, "exec of UI failed: %s\n", strerror(errno));
+    return false;
+  case -1:
+    fprintf(stderr, "fork() failed to create new process for plugin UI\n");
+    return false;
+  }
+
+  return true;
+}
+
 static
 struct control*
 nekoui_instantiate(
-  HostDescriptor* host)
+  const HostDescriptor* host)
 {
   struct control * control_ptr;
   char * filename;
@@ -359,6 +396,11 @@ nekoui_instantiate(
   }
 
   control_ptr->host = host;
+  control_ptr->running = false;
+  control_ptr->visible = false;
+  control_ptr->send_pipe = -1;
+  control_ptr->recv_pipe = -1;
+  control_ptr->pid = -1;
 
   if (pipe(pipe1) != 0)
   {
@@ -385,11 +427,6 @@ nekoui_instantiate(
   char sample_rate_str[12] = { 0 };
   snprintf(sample_rate_str, 12, "%g", host->get_sample_rate(host->handle));
 
-  control_ptr->running = false;
-  control_ptr->visible = false;
-
-  control_ptr->pid = -1;
-
   argv[1] = filename;
   argv[2] = sample_rate_str;
   argv[3] = ui_recv_pipe;       /* reading end */
@@ -413,25 +450,8 @@ nekoui_instantiate(
   fprintf(stderr, "clone2() exec not implemented yet\n");
   goto fail_free_control;
 #else
-  ret = FORK();
-  switch (ret)
-  {
-  case 0:                       /* child process */
-    /* fork duplicated the handles, close pipe ends that are used by parent process */
-#if !defined(USE_VFORK)
-    /* it looks we cant do this for vfork() */
-    close(pipe1[1]);
-    close(pipe2[0]);
-#endif
-
-    execvp(argv[0], (char **)argv);
-    fprintf(stderr, "exec of UI failed: %s\n", strerror(errno));
-    goto fail_free_control;
-  case -1:
-    fprintf(stderr, "fork() failed to create new process for plugin UI\n");
-    goto fail_free_control;
-  }
-
+  if (! do_fork(argv, &ret))
+      goto fail_free_control;
 #endif
 
   FORK_TIME_MEASURE_END(FORK_STR "() time");
@@ -525,21 +545,26 @@ void nekoui_set_parameter_value(
   char buf[100];
   int len;
   char * locale;
+  ssize_t ign;
 
   //printf("port_event(%u, %f) called\n", (unsigned int)port_index, *(float *)buffer);
 
   locale = strdup(setlocale(LC_NUMERIC, NULL));
   setlocale(LC_NUMERIC, "POSIX");
 
-  write(control_ptr->send_pipe, "port_value\n", 11);
+  ign = write(control_ptr->send_pipe, "port_value\n", 11);
   len = sprintf(buf, "%u\n", (unsigned int)index);
-  write(control_ptr->send_pipe, buf, len);
+  ign = write(control_ptr->send_pipe, buf, len);
   len = sprintf(buf, "%.10f\n", value);
-  write(control_ptr->send_pipe, buf, len);
+  ign = write(control_ptr->send_pipe, buf, len);
   fsync(control_ptr->send_pipe);
 
   setlocale(LC_NUMERIC, locale);
   free(locale);
+  return;
+
+  // ignored
+  (void)ign;
 }
 
 #undef control_ptr

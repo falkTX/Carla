@@ -20,12 +20,12 @@
 
 #include <smf.h>
 
-class MidiFilePlugin : public PluginDescriptorClass,
+class MidiFilePlugin : public PluginClass,
                        public AbstractMidiPlayer
 {
 public:
     MidiFilePlugin(const HostDescriptor* const host)
-        : PluginDescriptorClass(host),
+        : PluginClass(host),
           fMidiOut(this),
           fWasPlayingBefore(false)
     {
@@ -53,7 +53,7 @@ protected:
     // -------------------------------------------------------------------
     // Plugin process calls
 
-    void process(float**, float**, const uint32_t frames, const uint32_t, const MidiEvent* const) override
+    void process(float**, float**, const uint32_t frames, const MidiEvent* const, const uint32_t) override
     {
         const TimeInfo* const timePos(getTimeInfo());
 
@@ -76,7 +76,7 @@ protected:
             for (int i=0; i < MAX_MIDI_CHANNELS; ++i)
             {
                 midiEvent.data[0] = MIDI_STATUS_CONTROL_CHANGE+i;
-                PluginDescriptorClass::writeMidiEvent(&midiEvent);
+                PluginClass::writeMidiEvent(&midiEvent);
             }
 
             carla_stdout("WAS PLAYING BEFORE, NOW STOPPED");
@@ -116,7 +116,7 @@ protected:
         midiEvent.data[3] = event->data[3];
         midiEvent.size    = event->size;
 
-        PluginDescriptorClass::writeMidiEvent(&midiEvent);
+        PluginClass::writeMidiEvent(&midiEvent);
     }
 
 private:
@@ -212,7 +212,7 @@ private:
         }
     }
 
-    PluginDescriptorClassEND(MidiFilePlugin)
+    PluginClassEND(MidiFilePlugin)
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MidiFilePlugin)
 };
 

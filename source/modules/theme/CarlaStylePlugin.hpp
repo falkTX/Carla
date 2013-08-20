@@ -20,7 +20,11 @@
 
 #include "CarlaStyle.hpp"
 
-#include <QtGui/QStylePlugin>
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+# include <QtWidgets/QStylePlugin>
+#else
+# include <QtGui/QStylePlugin>
+#endif
 
 class CarlaStylePlugin : public QStylePlugin
 {
@@ -29,7 +33,7 @@ class CarlaStylePlugin : public QStylePlugin
 public:
     CarlaStylePlugin(QObject* parent = nullptr);
     QStyle* create(const QString& key) override;
-    QStringList keys() const override;
+    //QStringList keys() const override;
 };
 
 #endif // CARLA_STYLE_PLUGIN_HPP_INCLUDED

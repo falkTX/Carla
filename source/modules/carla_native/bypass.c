@@ -17,7 +17,11 @@
 
 #include "CarlaNative.h"
 
-static PluginHandle bypass_instantiate(HostDescriptor* host)
+#include <string.h>
+
+// -----------------------------------------------------------------------
+
+static PluginHandle bypass_instantiate(const HostDescriptor* host)
 {
     // dummy, return non-NULL
     return (PluginHandle)0x1;
@@ -26,20 +30,15 @@ static PluginHandle bypass_instantiate(HostDescriptor* host)
     (void)host;
 }
 
-static void bypass_process(PluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, uint32_t midiEventCount, const MidiEvent* midiEvents)
+static void bypass_process(PluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const MidiEvent* midiEvents, uint32_t midiEventCount)
 {
-    float* in  = inBuffer[0];
-    float* out = outBuffer[0];
-
-    for (uint32_t i=0; i < frames; ++i)
-        *out++ = *in++;
-
+    memcpy(outBuffer[0], inBuffer[0], sizeof(float)*frames);
     return;
 
     // unused
     (void)handle;
-    (void)midiEventCount;
     (void)midiEvents;
+    (void)midiEventCount;
 }
 
 // -----------------------------------------------------------------------

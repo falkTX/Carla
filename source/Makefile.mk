@@ -32,8 +32,7 @@ CXX ?= g++
 # --------------------------------------------------------------
 
 BASE_FLAGS = -Wall -Wextra -fPIC -DPIC -pipe
-BASE_OPTS  = -O3 -ffast-math -mtune=generic -msse -mfpmath=sse
-BASE_OPTS += -fdata-sections -ffunction-sections
+BASE_OPTS  = -O3 -ffast-math -mtune=generic -msse -mfpmath=sse -fdata-sections -ffunction-sections
 LINK_OPTS  = -Wl,--gc-sections
 
 ifeq ($(RASPPI),true)
@@ -45,7 +44,8 @@ endif
 ifeq ($(DEBUG),true)
 BASE_FLAGS += -DDEBUG -O0 -g
 else
-BASE_FLAGS += -DNDEBUG $(BASE_OPTS) -fvisibility=hidden -fvisibility-inlines-hidden
+BASE_FLAGS += -DNDEBUG $(BASE_OPTS) -fvisibility=hidden
+CXXFLAGS   += -fvisibility-inlines-hidden
 LINK_OPTS  += -Wl,--strip-all
 endif
 
@@ -93,6 +93,10 @@ ifeq ($(HAVE_QT4),true)
 MOC ?= $(shell pkg-config --variable=moc_location QtCore)
 RCC ?= $(shell pkg-config --variable=rcc_location QtCore)
 UIC ?= $(shell pkg-config --variable=uic_location QtCore)
+else
+MOC ?= moc
+RCC ?= rcc
+UIC ?= uic
 endif
 
 # --------------------------------------------------------------
