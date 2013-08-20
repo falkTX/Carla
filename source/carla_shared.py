@@ -23,13 +23,10 @@ import os
 import sys
 from copy import deepcopy
 from subprocess import Popen, PIPE
-from PyQt5.QtCore import qCritical, qFatal, qWarning, Qt, QByteArray, QThread, QSettings
+from PyQt5.QtCore import pyqtSignal, pyqtSlot, qCritical, qFatal, qWarning, Qt, QByteArray, QThread, QSettings
 from PyQt5.QtGui import QColor, QCursor, QFontMetrics, QIcon, QPainter, QPainterPath
 from PyQt5.QtWidgets import QDialog, QFileDialog, QFrame, QInputDialog, QLineEdit, QMenu, QMessageBox
 from PyQt5.QtWidgets import QTableWidgetItem, QVBoxLayout, QWidget
-
-# remove?
-from PyQt5.QtCore import pyqtSlot
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -68,7 +65,7 @@ except:
 # Platform specific stuff
 
 if MACOS:
-    from PyQt4.QtGui import qt_mac_set_menubar_icons
+    from PyQt5.QtGui import qt_mac_set_menubar_icons
     qt_mac_set_menubar_icons(False)
 elif WINDOWS:
     WINDIR = os.getenv("WINDIR")
@@ -418,12 +415,14 @@ carla_bridge_vst_mac  = ""
 carla_bridge_vst_hwnd = ""
 carla_bridge_vst_x11  = ""
 
+carla_libname = "libcarla_%s" % "control" if Carla.isControl else "standalone"
+
 if WINDOWS:
-    carla_libname = "libcarla_standalone.dll"
+    carla_libname += ".dll"
 elif MACOS:
-    carla_libname = "libcarla_standalone.dylib"
+    carla_libname += ".dylib"
 else:
-    carla_libname = "libcarla_standalone.so"
+    carla_libname += ".so"
 
 CWD = sys.path[0]
 
@@ -544,9 +543,9 @@ def signalHandler(sig, frame):
         return
 
     if sig in (SIGINT, SIGTERM):
-        Carla.gui.emit(SIGNAL("SIGTERM()"))
+        Carla.gui.SIGTERM.emit()
     elif haveSIGUSR1 and sig == SIGUSR1:
-        Carla.gui.emit(SIGNAL("SIGUSR1()"))
+        Carla.gui.SIGUSR1.emit()
 
 def setUpSignals():
     signal(SIGINT,  signalHandler)
@@ -620,7 +619,7 @@ def findFilenames(filePath, stype):
     filenames = []
 
     if stype == "csound":
-        extensions = (".csnd",)
+        extensions = (".csd",)
     elif stype == "gig":
         extensions = (".gig",)
     elif stype == "sf2":
@@ -803,6 +802,7 @@ def runCarlaDiscovery(itype, stype, filename, tool, isWine=False):
             if findDSSIGUI(pinfo['binary'], pinfo['name'], pinfo['label']):
                 pinfo['hints'] |= PLUGIN_HAS_GUI
 
+    # FIXME?
     tmp = discoveryProcess
     discoveryProcess = None
     del discoveryProcess, tmp
@@ -933,22 +933,24 @@ class CarlaAboutW(QDialog):
                                           "<li>http://lv2plug.in/ns/ext/atom</li>"
                                           "<li>http://lv2plug.in/ns/ext/buf-size</li>"
                                           "<li>http://lv2plug.in/ns/ext/data-access</li>"
-                                          #"<li>http://lv2plug.in/ns/ext/dynmanifest</li>"
+                                         #"<li>http://lv2plug.in/ns/ext/dynmanifest</li>"
                                           "<li>http://lv2plug.in/ns/ext/event</li>"
                                           "<li>http://lv2plug.in/ns/ext/instance-access</li>"
                                           "<li>http://lv2plug.in/ns/ext/log</li>"
                                           "<li>http://lv2plug.in/ns/ext/midi</li>"
+                                         #"<li>http://lv2plug.in/ns/ext/morph</li>"
                                           "<li>http://lv2plug.in/ns/ext/options</li>"
                                           "<li>http://lv2plug.in/ns/ext/parameters</li>"
-                                          #"<li>http://lv2plug.in/ns/ext/patch</li>"
-                                          #"<li>http://lv2plug.in/ns/ext/port-groups</li>"
-                                          #"<li>http://lv2plug.in/ns/ext/port-props</li>"
+                                         #"<li>http://lv2plug.in/ns/ext/patch</li>"
+                                         #"<li>http://lv2plug.in/ns/ext/port-groups</li>"
+                                         #"<li>http://lv2plug.in/ns/ext/port-props</li>"
                                           "<li>http://lv2plug.in/ns/ext/presets</li>"
+                                         #"<li>http://lv2plug.in/ns/ext/resize-port</li>"
                                           "<li>http://lv2plug.in/ns/ext/state</li>"
                                           "<li>http://lv2plug.in/ns/ext/time</li>"
                                           "<li>http://lv2plug.in/ns/ext/uri-map</li>"
                                           "<li>http://lv2plug.in/ns/ext/urid</li>"
-                                          #"<li>http://lv2plug.in/ns/ext/worker</li>"
+                                         #"<li>http://lv2plug.in/ns/ext/worker</li>"
                                           "<li>http://lv2plug.in/ns/extensions/ui</li>"
                                           "<li>http://lv2plug.in/ns/extensions/units</li>"
                                           "<li>http://kxstudio.sf.net/ns/lv2ext/external-ui</li>"
@@ -967,6 +969,10 @@ class CarlaAboutW(QDialog):
 # Plugin Parameter
 
 class PluginParameter(QWidget):
+    midiControlChanged = pyqtSignal(int, int)
+    midiChannelChanged = pyqtSignal(int, int)
+    valueChanged       = pyqtSignal(int, float)
+
     def __init__(self, parent, pInfo, pluginId, tabIndex):
         QWidget.__init__(self, parent)
         self.ui = ui_carla_parameter.Ui_PluginParameter()
@@ -1042,11 +1048,11 @@ class PluginParameter(QWidget):
         # -------------------------------------------------------------
         # Set-up connections
 
-        self.connect(self.ui.sb_control, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_controlSpinboxCustomMenu()"))
-        self.connect(self.ui.sb_channel, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_channelSpinboxCustomMenu()"))
-        self.connect(self.ui.sb_control, SIGNAL("valueChanged(int)"), SLOT("slot_controlSpinboxChanged(int)"))
-        self.connect(self.ui.sb_channel, SIGNAL("valueChanged(int)"), SLOT("slot_channelSpinboxChanged(int)"))
-        self.connect(self.ui.widget, SIGNAL("valueChanged(double)"), SLOT("slot_widgetValueChanged(double)"))
+        self.ui.sb_control.customContextMenuRequested.connect(self.slot_controlSpinboxCustomMenu)
+        self.ui.sb_channel.customContextMenuRequested.connect(self.slot_channelSpinboxCustomMenu)
+        self.ui.sb_control.valueChanged.connect(self.slot_controlSpinboxChanged)
+        self.ui.sb_channel.valueChanged.connect(self.slot_channelSpinboxChanged)
+        self.ui.widget.valueChanged.connect(self.slot_widgetValueChanged)
 
         # -------------------------------------------------------------
 
@@ -1126,18 +1132,18 @@ class PluginParameter(QWidget):
     @pyqtSlot(int)
     def slot_controlSpinboxChanged(self, control):
         if self.fMidiControl != control:
-            self.emit(SIGNAL("midiControlChanged(int, int)"), self.fParameterId, control)
+            self.midiControlChanged.emit(self.fParameterId, control)
             self.fMidiControl = control
 
     @pyqtSlot(int)
     def slot_channelSpinboxChanged(self, channel):
         if self.fMidiChannel != channel:
-            self.emit(SIGNAL("midiChannelChanged(int, int)"), self.fParameterId, channel)
+            self.midiChannelChanged.emit(self.fParameterId, channel)
             self.fMidiChannel = channel
 
     @pyqtSlot(float)
     def slot_widgetValueChanged(self, value):
-        self.emit(SIGNAL("valueChanged(int, double)"), self.fParameterId, value)
+        self.valueChanged.emit(self.fParameterId, value)
 
     def _textCallBack(self):
         return cString(Carla.host.get_parameter_text(self.fPluginId, self.fParameterId))
@@ -1204,47 +1210,47 @@ class PluginEdit(QDialog):
         self.ui.scrollArea.setEnabled(False)
         self.ui.scrollArea.setVisible(False)
 
-        self.reloadAll()
+        #self.reloadAll()
 
         # -------------------------------------------------------------
         # Set-up connections
 
-        self.connect(self, SIGNAL("finished(int)"), SLOT("slot_finished()"))
+        #self.connect(self, SIGNAL("finished(int)"), SLOT("slot_finished()"))
 
-        self.connect(self.ui.ch_fixed_buffer, SIGNAL("clicked(bool)"), SLOT("slot_optionChanged(bool)"))
-        self.connect(self.ui.ch_force_stereo, SIGNAL("clicked(bool)"), SLOT("slot_optionChanged(bool)"))
-        self.connect(self.ui.ch_map_program_changes, SIGNAL("clicked(bool)"), SLOT("slot_optionChanged(bool)"))
-        self.connect(self.ui.ch_use_chunks, SIGNAL("clicked(bool)"), SLOT("slot_optionChanged(bool)"))
-        self.connect(self.ui.ch_send_control_changes, SIGNAL("clicked(bool)"), SLOT("slot_optionChanged(bool)"))
-        self.connect(self.ui.ch_send_channel_pressure, SIGNAL("clicked(bool)"), SLOT("slot_optionChanged(bool)"))
-        self.connect(self.ui.ch_send_note_aftertouch, SIGNAL("clicked(bool)"), SLOT("slot_optionChanged(bool)"))
-        self.connect(self.ui.ch_send_pitchbend, SIGNAL("clicked(bool)"), SLOT("slot_optionChanged(bool)"))
-        self.connect(self.ui.ch_send_all_sound_off, SIGNAL("clicked(bool)"), SLOT("slot_optionChanged(bool)"))
+        #self.connect(self.ui.ch_fixed_buffer, SIGNAL("clicked(bool)"), SLOT("slot_optionChanged(bool)"))
+        #self.connect(self.ui.ch_force_stereo, SIGNAL("clicked(bool)"), SLOT("slot_optionChanged(bool)"))
+        #self.connect(self.ui.ch_map_program_changes, SIGNAL("clicked(bool)"), SLOT("slot_optionChanged(bool)"))
+        #self.connect(self.ui.ch_use_chunks, SIGNAL("clicked(bool)"), SLOT("slot_optionChanged(bool)"))
+        #self.connect(self.ui.ch_send_control_changes, SIGNAL("clicked(bool)"), SLOT("slot_optionChanged(bool)"))
+        #self.connect(self.ui.ch_send_channel_pressure, SIGNAL("clicked(bool)"), SLOT("slot_optionChanged(bool)"))
+        #self.connect(self.ui.ch_send_note_aftertouch, SIGNAL("clicked(bool)"), SLOT("slot_optionChanged(bool)"))
+        #self.connect(self.ui.ch_send_pitchbend, SIGNAL("clicked(bool)"), SLOT("slot_optionChanged(bool)"))
+        #self.connect(self.ui.ch_send_all_sound_off, SIGNAL("clicked(bool)"), SLOT("slot_optionChanged(bool)"))
 
-        self.connect(self.ui.dial_drywet, SIGNAL("valueChanged(int)"), SLOT("slot_dryWetChanged(int)"))
-        self.connect(self.ui.dial_vol, SIGNAL("valueChanged(int)"), SLOT("slot_volumeChanged(int)"))
-        self.connect(self.ui.dial_b_left, SIGNAL("valueChanged(int)"), SLOT("slot_balanceLeftChanged(int)"))
-        self.connect(self.ui.dial_b_right, SIGNAL("valueChanged(int)"), SLOT("slot_balanceRightChanged(int)"))
-        self.connect(self.ui.sb_ctrl_channel, SIGNAL("valueChanged(int)"), SLOT("slot_ctrlChannelChanged(int)"))
+        #self.connect(self.ui.dial_drywet, SIGNAL("valueChanged(int)"), SLOT("slot_dryWetChanged(int)"))
+        #self.connect(self.ui.dial_vol, SIGNAL("valueChanged(int)"), SLOT("slot_volumeChanged(int)"))
+        #self.connect(self.ui.dial_b_left, SIGNAL("valueChanged(int)"), SLOT("slot_balanceLeftChanged(int)"))
+        #self.connect(self.ui.dial_b_right, SIGNAL("valueChanged(int)"), SLOT("slot_balanceRightChanged(int)"))
+        #self.connect(self.ui.sb_ctrl_channel, SIGNAL("valueChanged(int)"), SLOT("slot_ctrlChannelChanged(int)"))
 
-        self.connect(self.ui.dial_drywet, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_knobCustomMenu()"))
-        self.connect(self.ui.dial_vol, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_knobCustomMenu()"))
-        self.connect(self.ui.dial_b_left, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_knobCustomMenu()"))
-        self.connect(self.ui.dial_b_right, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_knobCustomMenu()"))
-        self.connect(self.ui.sb_ctrl_channel, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_channelCustomMenu()"))
+        #self.connect(self.ui.dial_drywet, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_knobCustomMenu()"))
+        #self.connect(self.ui.dial_vol, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_knobCustomMenu()"))
+        #self.connect(self.ui.dial_b_left, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_knobCustomMenu()"))
+        #self.connect(self.ui.dial_b_right, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_knobCustomMenu()"))
+        #self.connect(self.ui.sb_ctrl_channel, SIGNAL("customContextMenuRequested(QPoint)"), SLOT("slot_channelCustomMenu()"))
 
-        self.connect(self.ui.keyboard, SIGNAL("noteOn(int)"), SLOT("slot_noteOn(int)"))
-        self.connect(self.ui.keyboard, SIGNAL("noteOff(int)"), SLOT("slot_noteOff(int)"))
+        #self.connect(self.ui.keyboard, SIGNAL("noteOn(int)"), SLOT("slot_noteOn(int)"))
+        #self.connect(self.ui.keyboard, SIGNAL("noteOff(int)"), SLOT("slot_noteOff(int)"))
 
-        self.connect(self.ui.cb_programs, SIGNAL("currentIndexChanged(int)"), SLOT("slot_programIndexChanged(int)"))
-        self.connect(self.ui.cb_midi_programs, SIGNAL("currentIndexChanged(int)"), SLOT("slot_midiProgramIndexChanged(int)"))
+        #self.connect(self.ui.cb_programs, SIGNAL("currentIndexChanged(int)"), SLOT("slot_programIndexChanged(int)"))
+        #self.connect(self.ui.cb_midi_programs, SIGNAL("currentIndexChanged(int)"), SLOT("slot_midiProgramIndexChanged(int)"))
 
-        if Carla.isLocal:
-            self.connect(self.ui.b_save_state, SIGNAL("clicked()"), SLOT("slot_stateSave()"))
-            self.connect(self.ui.b_load_state, SIGNAL("clicked()"), SLOT("slot_stateLoad()"))
-        else:
-            self.ui.b_load_state.setEnabled(False)
-            self.ui.b_save_state.setEnabled(False)
+        #if Carla.isLocal:
+            #self.connect(self.ui.b_save_state, SIGNAL("clicked()"), SLOT("slot_stateSave()"))
+            #self.connect(self.ui.b_load_state, SIGNAL("clicked()"), SLOT("slot_stateLoad()"))
+        #else:
+            #self.ui.b_load_state.setEnabled(False)
+            #self.ui.b_save_state.setEnabled(False)
 
         # -------------------------------------------------------------
 
@@ -3416,3 +3422,35 @@ class PluginDatabaseW(QDialog):
     def done(self, r):
         QDialog.done(self, r)
         self.close()
+
+# ------------------------------------------------------------------------------------------------------------
+# TESTING
+
+Carla.isControl = True
+
+pInfo = {
+    'type':  PARAMETER_INPUT,
+    'hints': PARAMETER_IS_ENABLED|PARAMETER_IS_AUTOMABLE,
+    'name':  "Parameter Name",
+    'unit':  "",
+    'scalePoints': [],
+
+    'index':   0,
+    'default': 0.0,
+    'minimum': 0.0,
+    'maximum': 1.0,
+    'step':    0.01,
+    'stepSmall': 0.01,
+    'stepLarge': 0.01,
+    'midiCC':   -1,
+    'midiChannel': 1,
+
+    'current': 0.0
+}
+
+from PyQt5.QtWidgets import QApplication
+app = QApplication(sys.argv)
+#gui = PluginParameter(None, pInfo, 0, 0)
+gui = PluginEdit(None, 0)
+gui.show()
+app.exec_()

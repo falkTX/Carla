@@ -353,46 +353,52 @@ enum OptionsType {
 
 #ifdef WANT_LV2
     /*!
+     * Set path to the LV2 External UI bridge executable.\n
+     * Default unset.
+     */
+    OPTION_PATH_BRIDGE_LV2_EXTERNAL = 20,
+
+    /*!
      * Set path to the LV2 Gtk2 UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_GTK2 = 20,
+    OPTION_PATH_BRIDGE_LV2_GTK2 = 21,
 
     /*!
      * Set path to the LV2 Gtk3 UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_GTK3 = 21,
+    OPTION_PATH_BRIDGE_LV2_GTK3 = 22,
 
     /*!
      * Set path to the LV2 Qt4 UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_QT4 = 22,
+    OPTION_PATH_BRIDGE_LV2_QT4 = 23,
 
     /*!
      * Set path to the LV2 Qt5 UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_QT5 = 23,
+    OPTION_PATH_BRIDGE_LV2_QT5 = 24,
 
     /*!
      * Set path to the LV2 Cocoa UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_COCOA = 24,
+    OPTION_PATH_BRIDGE_LV2_COCOA = 25,
 
     /*!
      * Set path to the LV2 Windows UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_WINDOWS = 25,
+    OPTION_PATH_BRIDGE_LV2_WINDOWS = 26,
 
     /*!
      * Set path to the LV2 X11 UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_X11 = 26,
+    OPTION_PATH_BRIDGE_LV2_X11 = 27,
 #endif
 
 #ifdef WANT_VST
@@ -400,19 +406,19 @@ enum OptionsType {
      * Set path to the VST Cocoa UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_VST_COCOA = 27,
+    OPTION_PATH_BRIDGE_VST_COCOA = 28,
 
     /*!
      * Set path to the VST HWND UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_VST_HWND = 28,
+    OPTION_PATH_BRIDGE_VST_HWND = 29,
 
     /*!
      * Set path to the VST X11 UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_VST_X11 = 29
+    OPTION_PATH_BRIDGE_VST_X11 = 30
 #endif
 };
 
