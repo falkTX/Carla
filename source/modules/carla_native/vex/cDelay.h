@@ -1,1 +1,128 @@
-/home/falktx/Personal/FOSS/GIT/distrho/ports/vex/source/synth/cDelay.h
+/*
+ ==============================================================================
+
+ This file is part of the JUCETICE project - Copyright 2008 by Lucio Asnaghi.
+
+ JUCETICE is based around the JUCE library - "Jules' Utility Class Extensions"
+ Copyright 2008 by Julian Storer.
+
+ ------------------------------------------------------------------------------
+
+ JUCE and JUCETICE can be redistributed and/or modified under the terms of
+ the GNU Lesser General Public License, as published by the Free Software
+ Foundation; either version 2 of the License, or (at your option) any later
+ version.
+
+ JUCE and JUCETICE are distributed in the hope that they will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU Lesser General Public License
+ along with JUCE and JUCETICE; if not, visit www.gnu.org/licenses or write to
+ Free Software Foundation, Inc., 59 Temple Place, Suite 330,
+ Boston, MA 02111-1307 USA
+
+ ==============================================================================
+
+   @author  rockhardbuns
+   @tweaker Lucio Asnaghi
+
+ ==============================================================================
+*/
+
+#ifndef __JUCETICE_VEXCDELAY_HEADER__
+#define __JUCETICE_VEXCDELAY_HEADER__
+
+#ifdef CARLA_EXPORT
+ #include "JuceHeader.h"
+#else
+ #include "../StandardHeader.h"
+#endif
+
+class VexDelay
+{
+public:
+    VexDelay(const float* const p)
+        : parameters(p),
+          sampleRate(44100),
+          bufferSize(sampleRate*2),
+          iRead(0),
+          iWrite(0),
+          buffer(2, bufferSize)
+    {
+        buffer.clear();
+    }
+
+    void updateParameterPtr(const float* const p)
+    {
+        parameters = p;
+    }
+
+    void setSampleRate(const float s)
+    {
+        if (sampleRate == s)
+            return;
+
+        sampleRate = s;
+        bufferSize = sampleRate * 2;
+
+        iRead  = 0;
+        iWrite = 0;
+
+        buffer.setSize(2, bufferSize, false, false, true);
+        buffer.clear();
+     }
+
+    void processBlock(AudioSampleBuffer* const outBuffer, double bpm)
+    {
+        processBlock(outBuffer->getSampleData(0, 0), outBuffer->getSampleData(1, 0), outBuffer->getNumSamples(), bpm);
+    }
+
+    void processBlock(float* const outBufferL, float* const outBufferR, const int numSamples, double bpm)
+    {
+        bpm = jlimit(10.0, 500.0, bpm);
+
+#ifdef CARLA_EXPORT
+        const int   delay    = jmin(int(parameters[0]) * int(((60.0 / bpm) * sampleRate) / 4.0), 44100);
+        const float feedback = parameters[1]/100.0f;
+#else
+        const int   delay    = jmin(int(parameters[73] * 8.0) * int(((60.0 / bpm) * sampleRate) / 4.0), 44100);
+        const float feedback = parameters[74];
+#endif
+
+        float* const bufferL = buffer.getSampleData(0, 0);
+        float* const bufferR = buffer.getSampleData(1, 0);
+
+        for (int i = 0; i < numSamples; ++i)
+        {
+            iRead = iWrite - delay;
+
+            if (iRead < 0)
+                iRead += (int)sampleRate;
+
+            bufferL[iWrite]  = outBufferL[i];
+            bufferR[iWrite]  = outBufferR[i];
+            bufferR[iWrite] += bufferL[iRead] * feedback;
+            bufferL[iWrite] += bufferR[iRead] * feedback;
+
+            jassert(i < numSamples);
+            jassert(iRead < bufferSize);
+            jassert(iWrite < bufferSize);
+
+            outBufferL[i] = bufferL[iRead];
+            outBufferR[i] = bufferR[iRead];
+
+            if (++iWrite == sampleRate)
+                iWrite = 0;
+        }
+     }
+
+private:
+     const float* parameters;
+     float sampleRate;
+     int bufferSize, iRead, iWrite;
+     AudioSampleBuffer buffer;
+};
+
+#endif
