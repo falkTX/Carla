@@ -46,8 +46,8 @@ public:
           fDescriptor(desc),
           fMidiEventCount(0),
           fIsProcessing(false),
-          fNeedsDryWetFix(false),
           fVolume(1.0f),
+          fDryWet(1.0f),
           fBufferSize(0),
           fSampleRate(sampleRate),
           fUridMap(nullptr)
@@ -131,7 +131,9 @@ public:
         if (fBufferSize == 0)
         {
             carla_stderr("Host is missing bufferSize feature");
-            return false;
+            //return false;
+            // as testing, continue for now
+            fBufferSize = 1024;
         }
 
         fHandle = fDescriptor->instantiate(&fHost);
@@ -156,13 +158,15 @@ public:
         fPorts.connectPort(fDescriptor, port, dataLocation);
     }
 
-    void lv2_activate() const
+    void lv2_activate()
     {
         if (fDescriptor->activate != nullptr)
             fDescriptor->activate(fHandle);
+
+        carla_zeroStruct<TimeInfo>(fTimeInfo);
     }
 
-    void lv2_deactivate() const
+    void lv2_deactivate()
     {
         if (fDescriptor->deactivate != nullptr)
             fDescriptor->deactivate(fHandle);
@@ -198,6 +202,9 @@ public:
                 fDescriptor->set_parameter_value(fHandle, i, curValue);
             }
         }
+
+        fMidiEventCount = 0;
+        carla_zeroStruct<MidiEvent>(fMidiEvents, kMaxMidiEvents*2);
 
         LV2_ATOM_SEQUENCE_FOREACH(fPorts.eventsIn[0], iter)
         {
@@ -322,11 +329,22 @@ public:
         fDescriptor->process(fHandle, fPorts.audioIns, fPorts.audioOuts, frames, fMidiEvents, fMidiEventCount);
         fIsProcessing = false;
 
-        if (fVolume != 1.0f)
+        if (fDryWet != 1.0f && fDescriptor->audioIns == fDescriptor->audioOuts)
+        {
+            for (uint32_t i=0; i < fDescriptor->audioOuts; ++i)
+            {
+                FloatVectorOperations::multiply(fPorts.audioIns[i], fVolume*(1.0f-fDryWet), frames);
+                FloatVectorOperations::multiply(fPorts.audioOuts[i], fVolume*fDryWet, frames);
+                FloatVectorOperations::add(fPorts.audioOuts[i], fPorts.audioIns[i], frames);
+            }
+        }
+        else if (fVolume != 1.0f)
         {
             for (uint32_t i=0; i < fDescriptor->audioOuts; ++i)
                 FloatVectorOperations::multiply(fPorts.audioOuts[i], fVolume, frames);
         }
+
+        // TODO - midi out
 
         updateParameterOutputs();
     }
@@ -568,8 +586,7 @@ protected:
             fVolume = opt;
             break;
         case HOST_OPCODE_SET_DRYWET:
-            carla_stdout("Plugin asked dryWet custom value %f", opt);
-            fNeedsDryWetFix = true;
+            fDryWet = opt;
             break;
         case HOST_OPCODE_SET_BALANCE_LEFT:
         case HOST_OPCODE_SET_BALANCE_RIGHT:
@@ -626,8 +643,8 @@ private:
     TimeInfo  fTimeInfo;
 
     bool fIsProcessing;
-    bool fNeedsDryWetFix;
     float fVolume;
+    float fDryWet;
 
     // Lv2 host data
     uint32_t fBufferSize;

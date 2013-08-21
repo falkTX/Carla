@@ -452,7 +452,9 @@ void writePluginFile(const PluginDescriptor* const pluginDesc)
             text += "        lv2:portProperty <" LV2_PORT_PROPS__notOnGUI "> ;\n";
         }
 
-        // TODO - scalepoints
+        if (paramInfo->scalePointCount > 0)
+        {
+        }
 
         if (paramUnit.isNotEmpty())
         {
