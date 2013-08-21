@@ -8,8 +8,16 @@ include ../../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_C_FLAGS   += -I. -I.. -I../../includes
+BUILD_C_FLAGS   += -I. -I../../includes
 BUILD_CXX_FLAGS += -I. -I.. -I../../includes -I../../utils
+
+# --------------------------------------------------------------
+
+ifeq ($(HAVE_OPENGL),true)
+GL_CXX_FLAGS   = $(BUILD_CXX_FLAGS)
+GL_CXX_FLAGS  += -I../distrho
+GL_CXX_FLAGS  += $(shell pkg-config --cflags gl)
+endif
 
 ifeq ($(HAVE_AF_DEPS),true)
 AF_C_FLAGS     = $(BUILD_C_FLAGS)
@@ -23,12 +31,6 @@ endif
 ifeq ($(HAVE_MF_DEPS),true)
 MF_CXX_FLAGS   = $(BUILD_CXX_FLAGS)
 MF_CXX_FLAGS  += $(shell pkg-config --cflags smf)
-endif
-
-ifeq ($(HAVE_OPENGL),true)
-GL_CXX_FLAGS   = $(BUILD_CXX_FLAGS)
-GL_CXX_FLAGS  += -I../../modules/distrho
-GL_CXX_FLAGS  += $(shell pkg-config --cflags gl)
 endif
 
 ifeq ($(HAVE_ZYN_DEPS),true)
@@ -54,7 +56,6 @@ OBJS  = \
 
 # Simple plugins (C++)
 OBJS += \
-	midi-sequencer.cpp.o \
 	vex.cpp.o
 
 # AudioFile
@@ -154,9 +155,6 @@ all: ../carla_native.a
 
 # --------------------------------------------------------------
 
-CDEPS   = CarlaNative.h
-CXXDEPS = CarlaNative.h CarlaNative.hpp
-
 %.c.o: %.c
 	$(CC) $< $(BUILD_C_FLAGS) -c -o $@
 
@@ -167,6 +165,9 @@ moc_%.cpp: %.hpp
 	$(MOC) $< -DMOC_PARSING -o $@
 
 # --------------------------------------------------------------
+
+CDEPS   = CarlaNative.h
+CXXDEPS = CarlaNative.h CarlaNative.hpp
 
 audio_decoder/%.c.o: audio_decoder/%.c
 	$(CC) $< $(AF_C_FLAGS) -c -o $@
@@ -190,7 +191,7 @@ distrho-stereoenhancer.cpp.o: distrho-stereoenhancer.cpp stereoenhancer/*.cpp st
 	$(CXX) $< $(GL_CXX_FLAGS) -Istereoenhancer -DDISTRHO_NAMESPACE=DISTRHO_StereoEnhancer -c -o $@
 
 distrho-notes.cpp.o: distrho-notes.cpp notes/*.cpp notes/*.h notes/*.hpp distrho/DistrhoPluginCarla.cpp $(CXXDEPS)
-	$(CXX) $< $(QT_CXX_FLAGS) -Inotes -DDISTRHO_NAMESPACE=DISTRHO_Notes -c -o $@
+	$(CXX) $< $(BUILD_CXX_FLAGS) -Inotes -DDISTRHO_NAMESPACE=DISTRHO_Notes -c -o $@
 
 midi-file.cpp.o: midi-file.cpp midi-base.hpp $(CXXDEPS)
 	$(CXX) $< $(MF_CXX_FLAGS) -c -o $@
@@ -204,10 +205,10 @@ nekofilter.c.o: nekofilter.c nekofilter/*.c nekofilter/*.h $(CDEPS)
 zynaddsubfx.cpp.o: zynaddsubfx.cpp $(CXXDEPS) $(ZYN_UI_FILES_H)
 	$(CXX) $< $(ZYN_CXX_FLAGS) -c -o $@
 
-zynaddsubfx-src.cpp.o: zynaddsubfx-src.cpp $(ZYN_UI_FILES_H) $(ZYN_UI_FILES_CPP)
+zynaddsubfx-src.cpp.o: zynaddsubfx-src.cpp $(ZYN_UI_FILES_H)
 	$(CXX) $< $(ZYN_CXX_FLAGS) -c -o $@
 
-zynaddsubfx-ui.cpp.o: zynaddsubfx-ui.cpp $(ZYN_UI_FILES_H)
+zynaddsubfx-ui.cpp.o: zynaddsubfx-ui.cpp $(ZYN_UI_FILES_H) $(ZYN_UI_FILES_CPP)
 	$(CXX) $< $(ZYN_CXX_FLAGS) -c -o $@
 
 zynaddsubfx/UI/%.cpp: zynaddsubfx/UI/%.fl
@@ -219,8 +220,8 @@ zynaddsubfx/UI/%.h: zynaddsubfx/UI/%.fl
 # --------------------------------------------------------------
 
 clean:
-	rm -f *.o ../carla_native.*
-	rm -f  $(ZYN_UI_FILES_H) $(ZYN_UI_FILES_CPP)
+	rm -f $(OBJS) ../carla_native.*
+	rm -f $(ZYN_UI_FILES_H) $(ZYN_UI_FILES_CPP)
 
 debug:
 	$(MAKE) DEBUG=true

@@ -99,6 +99,7 @@ lv2_atom_sequence_is_end(const LV2_Atom_Sequence_Body* body,
 static inline const LV2_Atom_Event*
 lv2_atom_sequence_next(const LV2_Atom_Event* i)
 {
+	if (!i) return NULL;
 	return (const LV2_Atom_Event*)((const uint8_t*)i
 	                               + sizeof(LV2_Atom_Event)
 	                               + lv2_atom_pad_size(i->body.size));
@@ -117,13 +118,13 @@ lv2_atom_sequence_next(const LV2_Atom_Event* i)
    @endcode
 */
 #define LV2_ATOM_SEQUENCE_FOREACH(seq, iter) \
-	for (LV2_Atom_Event* (iter) = lv2_atom_sequence_begin(&(seq)->body); \
+	for (const LV2_Atom_Event* (iter) = lv2_atom_sequence_begin(&(seq)->body); \
 	     !lv2_atom_sequence_is_end(&(seq)->body, (seq)->atom.size, (iter)); \
 	     (iter) = lv2_atom_sequence_next(iter))
 
 /** Like LV2_ATOM_SEQUENCE_FOREACH but for a headerless sequence body. */
 #define LV2_ATOM_SEQUENCE_BODY_FOREACH(body, size, iter) \
-	for (LV2_Atom_Event* (iter) = lv2_atom_sequence_begin(body); \
+	for (const LV2_Atom_Event* (iter) = lv2_atom_sequence_begin(body); \
 	     !lv2_atom_sequence_is_end(body, size, (iter)); \
 	     (iter) = lv2_atom_sequence_next(iter))
 

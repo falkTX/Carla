@@ -20,20 +20,18 @@
 #include "CarlaString.hpp"
 
 #include "lv2/atom.h"
+#include "lv2/atom-util.h"
 #include "lv2/buf-size.h"
 #include "lv2/instance-access.h"
+#include "lv2/midi.h"
 #include "lv2/options.h"
 #include "lv2/state.h"
+#include "lv2/time.h"
 #include "lv2/ui.h"
 #include "lv2/lv2_external_ui.h"
+#include "lv2/lv2_programs.h"
 
-#include <QtCore/Qt>
-
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
-# include <QtWidgets/QFileDialog>
-#else
-# include <QtGui/QFileDialog>
-#endif
+using juce::FloatVectorOperations;
 
 // -----------------------------------------------------------------------
 // LV2 descriptor functions
@@ -48,8 +46,11 @@ public:
           fDescriptor(desc),
           fMidiEventCount(0),
           fIsProcessing(false),
+          fNeedsDryWetFix(false),
+          fVolume(1.0f),
           fBufferSize(0),
-          fSampleRate(sampleRate)
+          fSampleRate(sampleRate),
+          fUridMap(nullptr)
     {
         run  = extui_run;
         show = extui_show;
@@ -88,8 +89,6 @@ public:
             return;
         }
 
-        fBufferSize = 1024;
-
         for (int i=0; options[i].key != 0; ++i)
         {
             if (options[i].key == uridMap->map(uridMap->handle, LV2_BUF_SIZE__maxBlockLength))
@@ -104,11 +103,11 @@ public:
 
         fUridMap = uridMap;
 
-        fUI.offset += (desc->midiIns > 0) ? desc->midiIns : 1;
-        fUI.offset += desc->midiOuts;
-        fUI.offset += 1; // freewheel
-        fUI.offset += desc->audioIns;
-        fUI.offset += desc->audioOuts;
+        fUI.portOffset += (desc->midiIns > 0) ? desc->midiIns : 1;
+        fUI.portOffset += desc->midiOuts;
+        fUI.portOffset += 1; // freewheel
+        fUI.portOffset += desc->audioIns;
+        fUI.portOffset += desc->audioOuts;
     }
 
     ~NativePlugin()
@@ -131,7 +130,7 @@ public:
         }
         if (fBufferSize == 0)
         {
-            carla_stderr("Plugin is missing bufferSize value");
+            carla_stderr("Host is missing bufferSize feature");
             return false;
         }
 
@@ -142,7 +141,10 @@ public:
 
         carla_zeroStruct<MidiEvent>(fMidiEvents, kMaxMidiEvents*2);
         carla_zeroStruct<TimeInfo>(fTimeInfo);
+
         fPorts.init(fDescriptor, fHandle);
+        fUris.map(fUridMap);
+
         return true;
     }
 
@@ -154,13 +156,13 @@ public:
         fPorts.connectPort(fDescriptor, port, dataLocation);
     }
 
-    void lv2_activate()
+    void lv2_activate() const
     {
         if (fDescriptor->activate != nullptr)
             fDescriptor->activate(fHandle);
     }
 
-    void lv2_deactivate()
+    void lv2_deactivate() const
     {
         if (fDescriptor->deactivate != nullptr)
             fDescriptor->deactivate(fHandle);
@@ -197,14 +199,194 @@ public:
             }
         }
 
-        fDescriptor->process(fHandle, fPorts.audioIns, fPorts.audioOuts, frames, fMidiEventCount, fMidiEvents);
+        LV2_ATOM_SEQUENCE_FOREACH(fPorts.eventsIn[0], iter)
+        {
+            const LV2_Atom_Event* const event((const LV2_Atom_Event*)iter);
+
+            if (event == nullptr)
+                continue;
+            if (event->body.size > 4)
+                continue;
+            if (event->time.frames >= frames)
+                break;
+
+            if (event->body.type == fUris.midiEvent)
+            {
+                if (fMidiEventCount >= kMaxMidiEvents*2)
+                    continue;
+
+                const uint8_t* const data((const uint8_t*)(event + 1));
+
+                fMidiEvents[fMidiEventCount].port = 0;
+                fMidiEvents[fMidiEventCount].time = event->time.frames;
+                fMidiEvents[fMidiEventCount].size = event->body.size;
+
+                for (uint32_t i=0; i < event->body.size; ++i)
+                    fMidiEvents[fMidiEventCount].data[i] = data[i];
+
+                fMidiEventCount += 1;
+                continue;
+            }
+
+            if (event->body.type == fUris.atomBlank)
+            {
+                const LV2_Atom_Object* const obj((LV2_Atom_Object*)&event->body);
+
+                if (obj->body.otype != fUris.timePos)
+                    continue;
+
+                LV2_Atom* bar = nullptr;
+                LV2_Atom* barBeat = nullptr;
+                LV2_Atom* beatsPerBar = nullptr;
+                LV2_Atom* bpm = nullptr;
+                LV2_Atom* beatUnit = nullptr;
+                LV2_Atom* frame = nullptr;
+                LV2_Atom* speed = nullptr;
+
+                lv2_atom_object_get(obj,
+                                    fUris.timeBar, &bar,
+                                    fUris.timeBarBeat, &barBeat,
+                                    fUris.timeBeatsPerBar, &beatsPerBar,
+                                    fUris.timeBeatsPerMinute, &bpm,
+                                    fUris.timeBeatUnit, &beatUnit,
+                                    fUris.timeFrame, &frame,
+                                    fUris.timeSpeed, &speed,
+                                    nullptr);
+
+                if (bpm != nullptr && bpm->type == fUris.atomFloat)
+                {
+                    fTimeInfo.bbt.beatsPerMinute = ((LV2_Atom_Float*)bpm)->body;
+                    fTimeInfo.bbt.valid = true;
+                }
+
+                if (beatsPerBar != nullptr && beatsPerBar->type == fUris.atomFloat)
+                {
+                    float beatsPerBarValue = ((LV2_Atom_Float*)beatsPerBar)->body;
+                    fTimeInfo.bbt.beatsPerBar = beatsPerBarValue;
+
+                    if (bar != nullptr && bar->type == fUris.atomLong)
+                    {
+                        //float barValue = ((LV2_Atom_Long*)bar)->body;
+                        //curPosInfo.ppqPositionOfLastBarStart = barValue * beatsPerBarValue;
+
+                        if (barBeat != nullptr && barBeat->type == fUris.atomFloat)
+                        {
+                            //float barBeatValue = ((LV2_Atom_Float*)barBeat)->body;
+                            //curPosInfo.ppqPosition = curPosInfo.ppqPositionOfLastBarStart + barBeatValue;
+                        }
+                    }
+                }
+
+                if (beatUnit != nullptr && beatUnit->type == fUris.atomFloat)
+                    fTimeInfo.bbt.beatType = ((LV2_Atom_Float*)beatUnit)->body;
+
+                if (frame != nullptr && frame->type == fUris.atomLong)
+                    fTimeInfo.frame = ((LV2_Atom_Long*)frame)->body;
+
+                if (speed != nullptr && speed->type == fUris.atomFloat)
+                    fTimeInfo.playing = ((LV2_Atom_Float*)speed)->body == 1.0f;
+            }
+        }
+
+        for (uint32_t i=1; i < fDescriptor->midiIns; ++i)
+        {
+            LV2_ATOM_SEQUENCE_FOREACH(fPorts.eventsIn[i], iter)
+            {
+                const LV2_Atom_Event* const event((const LV2_Atom_Event*)iter);
+
+                if (event == nullptr)
+                    continue;
+                if (event->body.type != fUris.midiEvent)
+                    continue;
+                if (event->body.size > 4)
+                    continue;
+                if (event->time.frames >= frames)
+                    break;
+                if (fMidiEventCount >= kMaxMidiEvents*2)
+                    break;
+
+                const uint8_t* const data((const uint8_t*)(event + 1));
+
+                fMidiEvents[fMidiEventCount].port = i;
+                fMidiEvents[fMidiEventCount].time = event->time.frames;
+                fMidiEvents[fMidiEventCount].size = event->body.size;
+
+                for (uint32_t j=0; j < event->body.size; ++j)
+                    fMidiEvents[fMidiEventCount].data[j] = data[j];
+
+                fMidiEventCount += 1;
+            }
+        }
+
+        fIsProcessing = true;
+        fDescriptor->process(fHandle, fPorts.audioIns, fPorts.audioOuts, frames, fMidiEvents, fMidiEventCount);
+        fIsProcessing = false;
+
+        if (fVolume != 1.0f)
+        {
+            for (uint32_t i=0; i < fDescriptor->audioOuts; ++i)
+                FloatVectorOperations::multiply(fPorts.audioOuts[i], fVolume, frames);
+        }
 
         updateParameterOutputs();
     }
 
     // -------------------------------------------------------------------
 
-    void lv2ui_instantiate(LV2UI_Write_Function writeFunction, LV2UI_Controller controller, LV2UI_Widget* widget,
+    uint32_t lv2_get_options(LV2_Options_Option* const /*options*/) const
+    {
+        return 0;
+    }
+
+    uint32_t lv2_set_options(const LV2_Options_Option* const /*options*/)
+    {
+        return 0;
+    }
+
+    const LV2_Program_Descriptor* lv2_get_program(const uint32_t index) const
+    {
+        if (fDescriptor->get_midi_program_count == nullptr)
+            return nullptr;
+        if (fDescriptor->get_midi_program_info == nullptr)
+            return nullptr;
+        if (index >= fDescriptor->get_midi_program_count(fHandle))
+            return nullptr;
+
+        const MidiProgram* const midiProg(fDescriptor->get_midi_program_info(fHandle, index));
+
+        if (midiProg == nullptr)
+            return nullptr;
+
+        static LV2_Program_Descriptor progDesc;
+
+        progDesc.bank    = midiProg->bank;
+        progDesc.program = midiProg->program;
+        progDesc.name    = midiProg->name;
+
+        return &progDesc;
+    }
+
+    void lv2_select_program(uint32_t bank, uint32_t program) const
+    {
+        if (fDescriptor->set_midi_program == nullptr)
+            return;
+
+        fDescriptor->set_midi_program(fHandle, 0, bank, program);
+    }
+
+    LV2_State_Status lv2_save(const LV2_State_Store_Function /*store*/, const LV2_State_Handle /*handle*/, const uint32_t /*flags*/, const LV2_Feature* const* const /*features*/) const
+    {
+        return LV2_STATE_ERR_UNKNOWN;
+    }
+
+    LV2_State_Status lv2_restore(const LV2_State_Retrieve_Function /*retrieve*/, const LV2_State_Handle /*handle*/, const uint32_t /*flags*/, const LV2_Feature* const* const /*features*/) const
+    {
+        return LV2_STATE_ERR_UNKNOWN;
+    }
+
+    // -------------------------------------------------------------------
+
+    bool lv2ui_instantiate(LV2UI_Write_Function writeFunction, LV2UI_Controller controller, LV2UI_Widget* widget,
                            const LV2_Feature* const* features)
     {
         for (int i=0; features[i] != nullptr; ++i)
@@ -217,25 +399,29 @@ public:
             }
         }
 
-        if (fUI.host != nullptr)
-            fHost.uiName = fUI.host->plugin_human_id;
+        if (fUI.host == nullptr)
+            return false;
 
         fUI.writeFunction = writeFunction;
         fUI.controller = controller;
         *widget = this;
+
+        fHost.uiName = fUI.host->plugin_human_id;
+
+        return true;
     }
 
-    void lv2ui_port_event(uint32_t portIndex, uint32_t bufferSize, uint32_t format, const void* buffer)
+    void lv2ui_port_event(uint32_t portIndex, uint32_t bufferSize, uint32_t format, const void* buffer) const
     {
         if (format != 0 || bufferSize != sizeof(float) || buffer == nullptr)
             return;
-        if (portIndex >= fUI.offset || ! fUI.isVisible)
+        if (portIndex >= fUI.portOffset || ! fUI.isVisible)
             return;
         if (fDescriptor->ui_set_parameter_value == nullptr)
             return;
 
         const float value(*(const float*)buffer);
-        fDescriptor->ui_set_parameter_value(fHandle, portIndex-fUI.offset, value);
+        fDescriptor->ui_set_parameter_value(fHandle, portIndex-fUI.portOffset, value);
     }
 
     void lv2ui_cleanup()
@@ -255,11 +441,19 @@ public:
 
     // -------------------------------------------------------------------
 
+    void lv2ui_select_program(uint32_t bank, uint32_t program) const
+    {
+        if (fDescriptor->ui_set_midi_program == nullptr)
+            return;
+
+        fDescriptor->ui_set_midi_program(fHandle, 0, bank, program);
+    }
+
+    // -------------------------------------------------------------------
+
 protected:
     void handleUiRun()
     {
-        // TODO - idle Qt if needed
-
         if (fDescriptor->ui_idle != nullptr)
             fDescriptor->ui_idle(fHandle);
     }
@@ -282,24 +476,24 @@ protected:
 
     // -------------------------------------------------------------------
 
-    uint32_t handleGetBufferSize()
+    uint32_t handleGetBufferSize() const
     {
         return fBufferSize;
     }
 
-    double handleGetSampleRate()
+    double handleGetSampleRate() const
     {
         return fSampleRate;
     }
 
-    bool handleIsOffline()
+    bool handleIsOffline() const
     {
         CARLA_SAFE_ASSERT_RETURN(fIsProcessing, false);
 
-        return (fPorts.freewheel != nullptr && *fPorts.freewheel > 0.5f);
+        return (fPorts.freewheel != nullptr && *fPorts.freewheel >= 0.5f);
     }
 
-    const TimeInfo* handleGetTimeInfo()
+    const TimeInfo* handleGetTimeInfo() const
     {
         CARLA_SAFE_ASSERT_RETURN(fIsProcessing, nullptr);
 
@@ -313,26 +507,23 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(event != nullptr, false);
         CARLA_SAFE_ASSERT_RETURN(event->data[0] != 0, false);
 
-        if (fMidiEventCount >= kMaxMidiEvents*2)
-            return false;
-
         // reverse-find first free event, and put it there
-        for (uint32_t i=(kMaxMidiEvents*2)-1; i >= fMidiEventCount; --i)
+        for (uint32_t i=(kMaxMidiEvents*2)-1; i > fMidiEventCount; --i)
         {
             if (fMidiEvents[i].data[0] == 0)
             {
                 std::memcpy(&fMidiEvents[i], event, sizeof(MidiEvent));
-                break;
+                return true;
             }
         }
 
-        return true;
+        return false;
     }
 
     void handleUiParameterChanged(const uint32_t index, const float value)
     {
         if (fUI.writeFunction != nullptr && fUI.controller != nullptr)
-            fUI.writeFunction(fUI.controller, index+fUI.offset, sizeof(float), 0, &value);
+            fUI.writeFunction(fUI.controller, index+fUI.portOffset, sizeof(float), 0, &value);
     }
 
     void handleUiCustomDataChanged(const char* const /*key*/, const char* const /*value*/)
@@ -351,27 +542,19 @@ protected:
         fUI.isVisible = false;
     }
 
-    const char* handleUiOpenFile(const bool isDir, const char* const title, const char* const filter)
+    const char* handleUiOpenFile(const bool /*isDir*/, const char* const /*title*/, const char* const /*filter*/) const
     {
-        static CarlaString retStr;
-        QFileDialog::Options options(isDir ? QFileDialog::ShowDirsOnly : 0x0);
-
-        retStr = QFileDialog::getOpenFileName(nullptr, title, "", filter, nullptr, options).toUtf8().constData();
-
-        return retStr.isNotEmpty() ? (const char*)retStr : nullptr;
+        // TODO
+        return nullptr;
     }
 
-    const char* handleUiSaveFile(const bool isDir, const char* const title, const char* const filter)
+    const char* handleUiSaveFile(const bool /*isDir*/, const char* const /*title*/, const char* const /*filter*/) const
     {
-        static CarlaString retStr;
-        QFileDialog::Options options(isDir ? QFileDialog::ShowDirsOnly : 0x0);
-
-        retStr = QFileDialog::getSaveFileName(nullptr, title, "", filter, nullptr, options).toUtf8().constData();
-
-        return retStr.isNotEmpty() ? (const char*)retStr : nullptr;
+        // TODO
+        return nullptr;
     }
 
-    intptr_t handleDispatcher(const ::HostDispatcherOpcode opcode, const int32_t index, const intptr_t value, void* const ptr, const float opt)
+    intptr_t handleDispatcher(const HostDispatcherOpcode opcode, const int32_t index, const intptr_t value, void* const ptr, const float opt)
     {
         carla_debug("NativePlugin::handleDispatcher(%i, %i, " P_INTPTR ", %p, %f)", opcode, index, value, ptr, opt);
 
@@ -382,19 +565,16 @@ protected:
         case HOST_OPCODE_NULL:
             break;
         case HOST_OPCODE_SET_VOLUME:
-            //setVolume(opt, true, true);
+            fVolume = opt;
             break;
         case HOST_OPCODE_SET_DRYWET:
-            //setDryWet(opt, true, true);
+            carla_stdout("Plugin asked dryWet custom value %f", opt);
+            fNeedsDryWetFix = true;
             break;
         case HOST_OPCODE_SET_BALANCE_LEFT:
-            //setBalanceLeft(opt, true, true);
-            break;
         case HOST_OPCODE_SET_BALANCE_RIGHT:
-            //setBalanceRight(opt, true, true);
-            break;
         case HOST_OPCODE_SET_PANNING:
-            //setPanning(opt, true, true);
+            // nothing
             break;
         case HOST_OPCODE_GET_PARAMETER_MIDI_CC:
         case HOST_OPCODE_SET_PARAMETER_MIDI_CC:
@@ -404,6 +584,7 @@ protected:
         case HOST_OPCODE_RELOAD_PARAMETERS:
         case HOST_OPCODE_RELOAD_MIDI_PROGRAMS:
         case HOST_OPCODE_RELOAD_ALL:
+            // nothing
             break;
         case HOST_OPCODE_UI_UNAVAILABLE:
             handleUiClosed();
@@ -445,6 +626,8 @@ private:
     TimeInfo  fTimeInfo;
 
     bool fIsProcessing;
+    bool fNeedsDryWetFix;
+    float fVolume;
 
     // Lv2 host data
     uint32_t fBufferSize;
@@ -452,19 +635,67 @@ private:
 
     const LV2_URID_Map* fUridMap;
 
+    struct URIDs {
+        LV2_URID atomBlank;
+        LV2_URID atomFloat;
+        LV2_URID atomLong;
+        LV2_URID atomSequence;
+        LV2_URID midiEvent;
+        LV2_URID timePos;
+        LV2_URID timeBar;
+        LV2_URID timeBarBeat;
+        LV2_URID timeBeatsPerBar;
+        LV2_URID timeBeatsPerMinute;
+        LV2_URID timeBeatUnit;
+        LV2_URID timeFrame;
+        LV2_URID timeSpeed;
+
+        URIDs()
+            : atomBlank(0),
+              atomFloat(0),
+              atomLong(0),
+              atomSequence(0),
+              midiEvent(0),
+              timePos(0),
+              timeBar(0),
+              timeBarBeat(0),
+              timeBeatsPerBar(0),
+              timeBeatsPerMinute(0),
+              timeBeatUnit(0),
+              timeFrame(0),
+              timeSpeed(0) {}
+
+        void map(const LV2_URID_Map* const uridMap)
+        {
+            atomBlank    = uridMap->map(uridMap->handle, LV2_ATOM__Blank);
+            atomFloat    = uridMap->map(uridMap->handle, LV2_ATOM__Float);
+            atomLong     = uridMap->map(uridMap->handle, LV2_ATOM__Long);
+            atomSequence = uridMap->map(uridMap->handle, LV2_ATOM__Sequence);
+            midiEvent    = uridMap->map(uridMap->handle, LV2_MIDI__MidiEvent);
+            timePos      = uridMap->map(uridMap->handle, LV2_TIME__Position);
+            timeBar      = uridMap->map(uridMap->handle, LV2_TIME__bar);
+            timeBarBeat  = uridMap->map(uridMap->handle, LV2_TIME__barBeat);
+            timeBeatUnit = uridMap->map(uridMap->handle, LV2_TIME__beatUnit);
+            timeFrame    = uridMap->map(uridMap->handle, LV2_TIME__frame);
+            timeSpeed    = uridMap->map(uridMap->handle, LV2_TIME__speed);
+            timeBeatsPerBar    = uridMap->map(uridMap->handle, LV2_TIME__beatsPerBar);
+            timeBeatsPerMinute = uridMap->map(uridMap->handle, LV2_TIME__beatsPerMinute);
+        }
+    } fUris;
+
     struct UI {
         const LV2_External_UI_Host* host;
         LV2UI_Write_Function writeFunction;
         LV2UI_Controller controller;
+        uint32_t portOffset;
         bool isVisible;
-        uint32_t offset;
 
         UI()
             : host(nullptr),
               writeFunction(nullptr),
               controller(nullptr),
-              isVisible(false),
-              offset(0) {}
+              portOffset(0),
+              isVisible(false) {}
     } fUI;
 
     struct Ports {
@@ -528,6 +759,8 @@ private:
 
         void init(const PluginDescriptor* const desc, PluginHandle handle)
         {
+            CARLA_SAFE_ASSERT_RETURN(desc != nullptr && handle != nullptr,)
+
             if (desc->midiIns > 0)
             {
                 eventsIn = new LV2_Atom_Sequence*[desc->midiIns];
@@ -749,11 +982,11 @@ static LV2_Handle lv2_instantiate(const LV2_Descriptor* lv2Descriptor, double sa
 
     if (pluginLabel == nullptr)
     {
-        carla_stderr("Failed to find carla native plugin with URI: \"%s\"", lv2Descriptor->URI);
+        carla_stderr("Failed to find carla native plugin with URI \"%s\"", lv2Descriptor->URI);
         return nullptr;
     }
 
-    carla_debug("lv2_instantiate() - looking up label %s", pluginLabel);
+    carla_debug("lv2_instantiate() - looking up label \"%s\"", pluginLabel);
 
     for (NonRtList<const PluginDescriptor*>::Itenerator it = sPluginDescsMgr.descs.begin(); it.valid(); it.next())
     {
@@ -768,7 +1001,7 @@ static LV2_Handle lv2_instantiate(const LV2_Descriptor* lv2Descriptor, double sa
 
     if (pluginDesc == nullptr)
     {
-        carla_stderr("Failed to find carla native plugin with label: \"%s\"", pluginLabel);
+        carla_stderr("Failed to find carla native plugin with label \"%s\"", pluginLabel);
         return nullptr;
     }
 
@@ -815,45 +1048,56 @@ static void lv2_cleanup(LV2_Handle instance)
     delete instancePtr;
 }
 
-#if 0
 static uint32_t lv2_get_options(LV2_Handle instance, LV2_Options_Option* options)
 {
-    carla_debug("lv2_()", );
+    carla_debug("lv2_get_options(%p, %p)", instance, options);
     return instancePtr->lv2_get_options(options);
 }
 
 static uint32_t lv2_set_options(LV2_Handle instance, const LV2_Options_Option* options)
 {
-    carla_debug("lv2_()", );
+    carla_debug("lv2_set_options(%p, %p)", instance, options);
     return instancePtr->lv2_set_options(options);
+}
+
+static const LV2_Program_Descriptor* lv2_get_program(LV2_Handle instance, uint32_t index)
+{
+    carla_debug("lv2_get_program(%p, %i)", instance, index);
+    return instancePtr->lv2_get_program(index);
+}
+
+static void lv2_select_program(LV2_Handle instance, uint32_t bank, uint32_t program)
+{
+    carla_debug("lv2_select_program(%p, %i, %i)", instance, bank, program);
+    return instancePtr->lv2_select_program(bank, program);
 }
 
 static LV2_State_Status lv2_save(LV2_Handle instance, LV2_State_Store_Function store, LV2_State_Handle handle, uint32_t flags, const LV2_Feature* const* features)
 {
-    carla_debug("lv2_()", );
+    carla_debug("lv2_save(%p, %p, %p, %i, %p)", instance, store, handle, flags, features);
     return instancePtr->lv2_save(store, handle, flags, features);
 }
 
 static LV2_State_Status lv2_restore(LV2_Handle instance, LV2_State_Retrieve_Function retrieve, LV2_State_Handle handle, uint32_t flags, const LV2_Feature* const* features)
 {
-    carla_debug("lv2_()", );
+    carla_debug("lv2_restore(%p, %p, %p, %i, %p)", instance, retrieve, handle, flags, features);
     return instancePtr->lv2_restore(retrieve, handle, flags, features);
 }
-#endif
 
 static const void* lv2_extension_data(const char* uri)
 {
-    carla_debug("lv2_extension_data(%s)", uri);
+    carla_debug("lv2_extension_data(\"%s\")", uri);
 
-#if 0
-    static const LV2_Options_Interface options = { lv2_get_options, lv2_set_options };
-    static const LV2_State_Interface   state   = { lv2_save, lv2_restore };
+    static const LV2_Options_Interface  options  = { lv2_get_options, lv2_set_options };
+    static const LV2_Programs_Interface programs = { lv2_get_program, lv2_select_program };
+    static const LV2_State_Interface    state    = { lv2_save, lv2_restore };
 
     if (std::strcmp(uri, LV2_OPTIONS__interface) == 0)
         return &options;
+    if (std::strcmp(uri, LV2_PROGRAMS__Interface) == 0)
+        return &programs;
     if (std::strcmp(uri, LV2_STATE__interface) == 0)
         return &state;
-#endif
 
     return nullptr;
 }
@@ -883,7 +1127,11 @@ static LV2UI_Handle lv2ui_instantiate(const LV2UI_Descriptor*, const char*, cons
         return nullptr;
     }
 
-    plugin->lv2ui_instantiate(writeFunction, controller, widget, features);
+    if (! plugin->lv2ui_instantiate(writeFunction, controller, widget, features))
+    {
+        carla_stderr("Host doesn't support external UI");
+        return nullptr;
+    }
 
     return (LV2UI_Handle)plugin;
 }
@@ -902,12 +1150,31 @@ static void lv2ui_cleanup(LV2UI_Handle ui)
     uiPtr->lv2ui_cleanup();
 }
 
+static void lv2ui_select_program(LV2UI_Handle ui, uint32_t bank, uint32_t program)
+{
+    carla_debug("lv2ui_select_program(%p, %i, %i)", ui, bank, program);
+    uiPtr->lv2ui_select_program(bank, program);
+}
+
+static const void* lv2ui_extension_data(const char* uri)
+{
+    carla_debug("lv2ui_extension_data(\"%s\")", uri);
+
+    static const LV2_Programs_UI_Interface uiprograms = { lv2ui_select_program };
+
+    if (std::strcmp(uri, LV2_PROGRAMS__UIInterface) == 0)
+        return &uiprograms;
+
+    return nullptr;
+}
+
 #undef uiPtr
 
 // -----------------------------------------------------------------------
 // Startup code
 
-CARLA_EXPORT const LV2_Descriptor* lv2_descriptor(uint32_t index)
+CARLA_EXPORT
+const LV2_Descriptor* lv2_descriptor(uint32_t index)
 {
     carla_debug("lv2_descriptor(%i)", index);
 
@@ -936,7 +1203,7 @@ CARLA_EXPORT const LV2_Descriptor* lv2_descriptor(uint32_t index)
         tmpURI += pluginDesc->label;
     }
 
-    carla_debug("lv2_descriptor(%i) - not found, allocating new with uri: %s", index, (const char*)tmpURI);
+    carla_debug("lv2_descriptor(%i) - not found, allocating new with uri \"%s\"", index, (const char*)tmpURI);
 
     const LV2_Descriptor* const lv2Desc(new const LV2_Descriptor{
     /* URI            */ carla_strdup(tmpURI),
@@ -951,10 +1218,11 @@ CARLA_EXPORT const LV2_Descriptor* lv2_descriptor(uint32_t index)
 
     sPluginDescsMgr.lv2Descs.append(lv2Desc);
 
-    return sPluginDescsMgr.lv2Descs.getLast();
+    return lv2Desc;
 }
 
-CARLA_EXPORT const LV2UI_Descriptor* lv2ui_descriptor(uint32_t index)
+CARLA_EXPORT
+const LV2UI_Descriptor* lv2ui_descriptor(uint32_t index)
 {
     carla_debug("lv2ui_descriptor(%i)", index);
 
@@ -963,7 +1231,7 @@ CARLA_EXPORT const LV2UI_Descriptor* lv2ui_descriptor(uint32_t index)
     /* instantiate    */ lv2ui_instantiate,
     /* cleanup        */ lv2ui_cleanup,
     /* port_event     */ lv2ui_port_event,
-    /* extension_data */ nullptr
+    /* extension_data */ lv2ui_extension_data
     };
 
     static const LV2UI_Descriptor lv2UiDescOld = {
@@ -971,7 +1239,7 @@ CARLA_EXPORT const LV2UI_Descriptor* lv2ui_descriptor(uint32_t index)
     /* instantiate    */ lv2ui_instantiate,
     /* cleanup        */ lv2ui_cleanup,
     /* port_event     */ lv2ui_port_event,
-    /* extension_data */ nullptr
+    /* extension_data */ lv2ui_extension_data
     };
 
     switch (index)

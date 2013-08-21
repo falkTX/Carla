@@ -8,13 +8,7 @@ include ../../Makefile.mk
 
 # --------------------------------------------------------------
 
-BACKEND_FLAGS    = -I. -I.. -I../../includes -I../../modules -I../../utils
-
-BUILD_C_FLAGS   += $(BACKEND_FLAGS)
-BUILD_CXX_FLAGS += $(BACKEND_FLAGS)
-
-# --------------------------------------------------------------
-
+BUILD_CXX_FLAGS += -I. -I.. -I../../includes -I../../modules -I../../utils
 BUILD_CXX_FLAGS += -DWANT_NATIVE
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
@@ -42,9 +36,7 @@ ifeq ($(HAVE_LINUXSAMPLER),true)
 BUILD_CXX_FLAGS += -DWANT_LINUXSAMPLER
 endif
 
-ifeq ($(HAVE_OPENGL),true)
-BUILD_CXX_FLAGS += -DWANT_OPENGL
-endif
+# --------------------------------------------------------------
 
 ifeq ($(HAVE_AF_DEPS),true)
 BUILD_CXX_FLAGS += -DWANT_AUDIOFILE
@@ -55,6 +47,10 @@ endif
 
 ifeq ($(HAVE_MF_DEPS),true)
 BUILD_CXX_FLAGS += -DWANT_MIDIFILE
+endif
+
+ifeq ($(HAVE_OPENGL),true)
+BUILD_CXX_FLAGS += -DWANT_OPENGL
 endif
 
 ifeq ($(HAVE_ZYN_DEPS),true)

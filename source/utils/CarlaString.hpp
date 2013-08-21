@@ -381,7 +381,10 @@ public:
 
     CarlaString& operator+=(const char* const strBuf)
     {
-        const size_t newBufSize = fBufferLen + ((strBuf != nullptr) ? std::strlen(strBuf) : 0) + 1;
+        if (strBuf == nullptr)
+            return *this;
+
+        const size_t newBufSize = fBufferLen + std::strlen(strBuf) + 1;
         char         newBuf[newBufSize];
 
         std::strcpy(newBuf, fBuffer);
@@ -403,7 +406,9 @@ public:
         char         newBuf[newBufSize];
 
         std::strcpy(newBuf, fBuffer);
-        std::strcat(newBuf, strBuf);
+
+        if (strBuf != nullptr)
+            std::strcat(newBuf, strBuf);
 
         return CarlaString(newBuf);
     }

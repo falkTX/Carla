@@ -2151,20 +2151,17 @@ protected:
             return false;
         }
 
-        if (fMidiEventCount >= MAX_MIDI_EVENTS*2)
-            return false;
-
         // reverse-find first free event, and put it there
-        for (uint32_t i=(MAX_MIDI_EVENTS*2)-1; i >= fMidiEventCount; --i)
+        for (uint32_t i=(MAX_MIDI_EVENTS*2)-1; i > fMidiEventCount; --i)
         {
             if (fMidiEvents[i].data[0] == 0)
             {
                 std::memcpy(&fMidiEvents[i], event, sizeof(::MidiEvent));
-                break;
+                return true;
             }
         }
 
-        return true;
+        return false;
     }
 
     void handleUiParameterChanged(const uint32_t index, const float value)

@@ -24,12 +24,14 @@
 #include "lv2/instance-access.h"
 #include "lv2/midi.h"
 #include "lv2/options.h"
+#include "lv2/port-props.h"
 #include "lv2/state.h"
 #include "lv2/time.h"
 #include "lv2/ui.h"
 #include "lv2/units.h"
 #include "lv2/urid.h"
 #include "lv2/lv2_external_ui.h"
+#include "lv2/lv2_programs.h"
 
 #include <fstream>
 
@@ -52,7 +54,7 @@ static StringArray gUsedSymbols;
 
 const String nameToSymbol(const String& name, const uint32_t portIndex)
 {
-    String symbol, trimmedName = name.trimStart().trimEnd().toLowerCase();
+    String symbol, trimmedName = name.trim().toLowerCase();
 
     if (trimmedName.isEmpty())
     {
@@ -133,11 +135,13 @@ void writeManifestFile()
     text += "<http://kxstudio.sf.net/carla#UI>\n";
     text += "    a <" LV2_EXTERNAL_UI__Widget "> ;\n";
     text += "    ui:binary <carla-native" PLUGIN_EXT "> ;\n";
+    text += "    lv2:extensionData <" LV2_PROGRAMS__UIInterface "> ;\n";
     text += "    lv2:requiredFeature <" LV2_INSTANCE_ACCESS_URI "> .\n";
     text += "\n";
     text += "<http://kxstudio.sf.net/carla#UIold>\n";
     text += "    a <" LV2_EXTERNAL_UI_DEPRECATED_URI "> ;\n";
     text += "    ui:binary <carla-native" PLUGIN_EXT "> ;\n";
+    text += "    lv2:extensionData <" LV2_PROGRAMS__UIInterface "> ;\n";
     text += "    lv2:requiredFeature <" LV2_INSTANCE_ACCESS_URI "> .\n";
 
     // -------------------------------------------------------------------
@@ -216,7 +220,8 @@ void writePluginFile(const PluginDescriptor* const pluginDesc)
     text += "    lv2:requiredFeature <" LV2_BUF_SIZE__boundedBlockLength "> ,\n";
     text += "                        <" LV2_URID__map "> ;\n";
     text += "    lv2:extensionData <" LV2_OPTIONS__interface "> ,\n";
-    text += "                      <" LV2_STATE__interface "> ;\n";
+    text += "                      <" LV2_STATE__interface "> ,\n";
+    text += "                      <" LV2_PROGRAMS__Interface "> ;\n";
     text += "\n";
 
     // -------------------------------------------------------------------
@@ -247,7 +252,7 @@ void writePluginFile(const PluginDescriptor* const pluginDesc)
     }
 
     text += "        lv2:designation lv2:control ;\n";
-    text += "        lv2:index 0" + String(portIndex++) + " ;\n";
+    text += "        lv2:index " + String(portIndex++) + " ;\n";
 
     if (pluginDesc->midiIns > 1)
     {
@@ -425,6 +430,30 @@ void writePluginFile(const PluginDescriptor* const pluginDesc)
         text += "        lv2:minimum " + String::formatted("%f", paramInfo->ranges.min) + " ;\n";
         text += "        lv2:maximum " + String::formatted("%f", paramInfo->ranges.max) + " ;\n";
 
+        if (paramInfo->hints & PARAMETER_IS_ENABLED)
+        {
+            if ((paramInfo->hints & PARAMETER_IS_AUTOMABLE) == 0)
+                text += "        lv2:portProperty <" LV2_PORT_PROPS__expensive "> ;\n";
+            if (paramInfo->hints & PARAMETER_IS_BOOLEAN)
+                text += "        lv2:portProperty lv2:toggled ;\n";
+            if (paramInfo->hints & PARAMETER_IS_INTEGER)
+                text += "        lv2:portProperty lv2:integer ;\n";
+            if (paramInfo->hints & PARAMETER_IS_LOGARITHMIC)
+                text += "        lv2:portProperty <" LV2_PORT_PROPS__logarithmic "> ;\n";
+            if (paramInfo->hints & PARAMETER_USES_SAMPLE_RATE)
+                text += "        lv2:portProperty lv2:toggled ;\n";
+            if (paramInfo->hints & PARAMETER_USES_SCALEPOINTS)
+                text += "        lv2:portProperty lv2:enumeration ;\n";
+            if (paramInfo->hints & PARAMETER_USES_CUSTOM_TEXT)
+                pass(); // TODO: custom lv2 extension for this
+        }
+        else
+        {
+            text += "        lv2:portProperty <" LV2_PORT_PROPS__notOnGUI "> ;\n";
+        }
+
+        // TODO - scalepoints
+
         if (paramUnit.isNotEmpty())
         {
             text += "        units:unit [\n";
@@ -434,9 +463,6 @@ void writePluginFile(const PluginDescriptor* const pluginDesc)
             text += "            units:render \"%f " + paramUnit + "\" ;\n";
             text += "        ] ;\n";
         }
-
-//         if (! filter->isParameterAutomatable(i))
-//             text += "        lv2:portProperty <" LV2_PORT_PROPS__expensive "> ;\n";
 
         if (i+1 == paramCount)
             text += "    ] ;\n\n";

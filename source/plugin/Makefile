@@ -6,13 +6,7 @@
 
 include ../Makefile.mk
 
-BUILD_CXX_FLAGS += -I../backend -I../includes -I../modules -I../utils
-
-ifeq ($(HAVE_QT4),true)
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtCore QtGui)
-else
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags Qt5Core Qt5Gui Qt5Widgets)
-endif
+BUILD_CXX_FLAGS += -I../includes -I../modules -I../utils
 
 # --------------------------------------------------------------
 
@@ -35,29 +29,33 @@ endif
 # --------------------------------------------------------------
 # Common
 
-LINK_FLAGS += $(shell pkg-config --libs liblo)
-
-ifeq ($(HAVE_QT4),true)
-LINK_FLAGS += $(shell pkg-config --libs QtCore QtGui QtXml)
-else
-LINK_FLAGS += $(shell pkg-config --libs Qt5Core Qt5Gui Qt5Xml Qt5Widgets)
-endif
+# LINK_FLAGS += $(shell pkg-config --libs liblo)
+#
+# ifeq ($(HAVE_QT4),true)
+# LINK_FLAGS += $(shell pkg-config --libs QtCore QtGui QtXml)
+# else
+# LINK_FLAGS += $(shell pkg-config --libs Qt5Core Qt5Gui Qt5Xml Qt5Widgets)
+# endif
 
 # --------------------------------------------------------------
 # Plugin
 
-ifeq ($(HAVE_FLUIDSYNTH),true)
-LINK_FLAGS += $(shell pkg-config --libs fluidsynth)
-endif
-
-ifeq ($(HAVE_LINUXSAMPLER),true)
-LINK_FLAGS += $(shell pkg-config --libs linuxsampler)
-endif
+# ifeq ($(HAVE_FLUIDSYNTH),true)
+# LINK_FLAGS += $(shell pkg-config --libs fluidsynth)
+# endif
+#
+# ifeq ($(HAVE_LINUXSAMPLER),true)
+# LINK_FLAGS += $(shell pkg-config --libs linuxsampler)
+# endif
 
 # --------------------------------------------------------------
 # Native
 
 DGL_LIBS = -lX11
+
+ifeq ($(HAVE_OPENGL),true)
+LINK_FLAGS += $(shell pkg-config --libs gl) $(DGL_LIBS)
+endif
 
 ifeq ($(HAVE_AF_DEPS),true)
 LINK_FLAGS += $(shell pkg-config --libs sndfile)
@@ -68,10 +66,6 @@ endif
 
 ifeq ($(HAVE_MF_DEPS),true)
 LINK_FLAGS += $(shell pkg-config --libs smf)
-endif
-
-ifeq ($(HAVE_OPENGL),true)
-LINK_FLAGS += $(shell pkg-config --libs gl) $(DGL_LIBS)
 endif
 
 ifeq ($(HAVE_ZYN_DEPS),true)
@@ -85,31 +79,30 @@ LINK_FLAGS += $(EXTRA_LIBS)
 
 # --------------------------------------------------------------
 
-# LIBS  = ../backend/libcarla_engine_xx.a
-# LIBS += ../backend/libcarla_plugin.a
-LIBS += ../backend/libcarla_native.a
-LIBS += ../modules/rtmempool.a
-LIBS += ../modules/widgets.a
+LIBS  = ../modules/carla_native.a
+LIBS += ../modules/juce_audio_basics.a
 LIBS += ../modules/juce_core.a
+LIBS += ../modules/rtmempool.a
 
-ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-LIBS += ../modules/lilv.a
-endif
+# ifeq ($(CARLA_PLUGIN_SUPPORT),true)
+# LIBS += ../modules/lilv.a
+# endif
 
 ifeq ($(HAVE_OPENGL),true)
 LIBS += ../modules/dgl.a
 endif
 
 ifeq ($(WIN32),true)
-TARGETS  = carla-native.lv2/carla-native.dll
-TARGETS += carla-native-export.exe
+TARGETS  = carla-native-export.exe
+TARGETS += carla-native.lv2/carla-native.dll
 else
+TARGETS  = carla-native-export
 ifeq ($(MACOS),true)
-TARGETS  = carla-native.lv2/carla-native.dylib
+TARGETS += carla-native.lv2/carla-native.dylib
 else
-TARGETS  = carla-native.lv2/carla-native.so
+LIBS    += -ldl -lrt
+TARGETS += carla-native.lv2/carla-native.so
 endif
-TARGETS += carla-native-export
 endif
 
 # --------------------------------------------------------------
@@ -125,8 +118,24 @@ debug:
 
 # --------------------------------------------------------------
 
-%.cpp.o: %.cpp ../backend/CarlaNative.h
+carla-native-base.cpp.o: carla-native-base.cpp ../modules/carla_native/CarlaNative.h
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+
+carla-native-export.cpp.o: carla-native-export.cpp carla-native-base.cpp ../modules/carla_native/CarlaNative.h
+	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+
+carla-native-plugin.cpp.o: carla-native-plugin.cpp carla-native-base.cpp ../modules/carla_native/CarlaNative.h
+	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+
+# --------------------------------------------------------------
+
+carla-native-export: carla-native-export.cpp.o $(LIBS)
+	$(CXX) $^ $(LINK_FLAGS) -o $@
+	./carla-native-export
+
+carla-native-export.exe: carla-native-export.cpp.o $(LIBS)
+	$(CXX) $^ $(LINK_FLAGS) -o $@
+	./carla-native-export.exe
 
 carla-native.lv2/carla-native.dll: carla-native-plugin.cpp.o $(LIBS)
 	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
@@ -137,21 +146,10 @@ carla-native.lv2/carla-native.dylib: carla-native-plugin.cpp.o $(LIBS)
 carla-native.lv2/carla-native.so: carla-native-plugin.cpp.o $(LIBS)
 	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
 
-carla-native-export: carla-native-export.cpp.o $(LIBS)
-	$(CXX) $^ $(LINK_FLAGS) -o $@
-	./carla-native-export
-
-carla-native-export.exe: carla-native-export.cpp.o $(LIBS)
-	$(CXX) $^ $(LINK_FLAGS) -o $@
-	./carla-native-export.exe
-
 # --------------------------------------------------------------
 
 .FORCE:
 .PHONY: .FORCE
-
-../backend/libcarla_%.a: .FORCE
-	$(MAKE) -C ../backend/$*
 
 ../modules/%.a: .FORCE
 	$(MAKE) -C ../modules $*

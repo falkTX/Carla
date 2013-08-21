@@ -15,7 +15,7 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#include "CarlaNative.h"
+#include "carla_native/CarlaNative.h"
 #include "RtList.hpp"
 
 #include "lv2/lv2.h"
@@ -25,18 +25,17 @@
 
 extern "C" {
 
-// Simple plugins
+// Simple plugins (C)
 void carla_register_native_plugin_bypass();
 void carla_register_native_plugin_lfo();
-//void carla_register_native_plugin_midiSequencer();
+void carla_register_native_plugin_midiGain();
 void carla_register_native_plugin_midiSplit();
 void carla_register_native_plugin_midiThrough();
 void carla_register_native_plugin_midiTranspose();
 void carla_register_native_plugin_nekofilter();
-//void carla_register_native_plugin_sunvoxfile();
 
-// Carla
-//void carla_register_native_plugin_carla();
+// Simple plugins (C++)
+void carla_register_native_plugin_vex();
 
 #ifdef WANT_AUDIOFILE
 // AudioFile
@@ -50,15 +49,15 @@ void carla_register_native_plugin_midifile();
 
 #ifdef WANT_OPENGL
 // DISTRHO plugins (OpenGL)
-void carla_register_native_plugin_3BandEQ();
-void carla_register_native_plugin_3BandSplitter();
-void carla_register_native_plugin_Nekobi();
-void carla_register_native_plugin_PingPongPan();
-void carla_register_native_plugin_StereoEnhancer();
+// void carla_register_native_plugin_3BandEQ();
+// void carla_register_native_plugin_3BandSplitter();
+// void carla_register_native_plugin_Nekobi();
+// void carla_register_native_plugin_PingPongPan();
+// void carla_register_native_plugin_StereoEnhancer();
 #endif
 
 // DISTRHO plugins (Qt)
-void carla_register_native_plugin_Notes();
+// void carla_register_native_plugin_Notes();
 
 #ifdef WANT_ZYNADDSUBFX
 // ZynAddSubFX
@@ -72,18 +71,17 @@ void carla_register_native_plugin_zynaddsubfx();
 struct PluginListManager {
     PluginListManager()
     {
-        // Simple plugins
+        // Simple plugins (C)
         carla_register_native_plugin_bypass();
         carla_register_native_plugin_lfo();
-        //carla_register_native_plugin_midiSequencer(); // unfinished
+        carla_register_native_plugin_midiGain();
         carla_register_native_plugin_midiSplit();
         carla_register_native_plugin_midiThrough();
         carla_register_native_plugin_midiTranspose();
         carla_register_native_plugin_nekofilter();
-        //carla_register_native_plugin_sunvoxfile(); // unfinished
 
-        // Carla
-        //carla_register_native_plugin_carla(); // kinda unfinished
+        // Simple plugins (C++)
+        carla_register_native_plugin_vex();
 
 #ifdef WANT_AUDIOFILE
         // AudioFile
@@ -97,15 +95,15 @@ struct PluginListManager {
 
 #ifdef WANT_OPENGL
         // DISTRHO plugins (OpenGL)
-        carla_register_native_plugin_3BandEQ();
-        carla_register_native_plugin_3BandSplitter();
-        carla_register_native_plugin_Nekobi();
-        carla_register_native_plugin_PingPongPan();
-        carla_register_native_plugin_StereoEnhancer(); // unfinished
+        //carla_register_native_plugin_3BandEQ();
+        //carla_register_native_plugin_3BandSplitter();
+        //carla_register_native_plugin_Nekobi();
+        //carla_register_native_plugin_PingPongPan();
+        //carla_register_native_plugin_StereoEnhancer(); // unfinished
 #endif
 
         // DISTRHO plugins (Qt)
-        carla_register_native_plugin_Notes(); // unfinished
+        //carla_register_native_plugin_Notes(); // unfinished
 
 #ifdef WANT_ZYNADDSUBFX
         // ZynAddSubFX
