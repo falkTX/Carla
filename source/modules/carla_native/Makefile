@@ -73,15 +73,15 @@ OBJS += \
 	midi-file.cpp.o
 endif
 
-# # DISTRHO plugins (OpenGL)
-# ifeq ($(HAVE_OPENGL),true)
-# OBJS += \
-# 	distrho-3bandeq.cpp.o \
-# 	distrho-3bandsplitter.cpp.o \
-# 	distrho-nekobi.cpp.o \
-# 	distrho-pingpongpan.cpp.o \
+# DISTRHO plugins (OpenGL)
+ifeq ($(HAVE_OPENGL),true)
+OBJS += \
+	distrho-3bandeq.cpp.o \
+	distrho-3bandsplitter.cpp.o \
+	distrho-nekobi.cpp.o \
+	distrho-pingpongpan.cpp.o
 # 	distrho-stereoenhancer.cpp.o
-# endif
+endif
 
 # # DISTRHO plugins (Qt)
 # OBJS += \

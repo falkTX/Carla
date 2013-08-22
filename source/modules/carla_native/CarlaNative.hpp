@@ -552,6 +552,9 @@ public:
         }
 
         return 0;
+
+        // unused
+        (void)index;
     }
 
     #undef handlePtr

@@ -14,21 +14,26 @@
  * For a full copy of the license see the LGPL.txt file
  */
 
-#include "CarlaNative.hpp"
+#include "../CarlaNative.hpp"
 
 #include "DistrhoPluginMain.cpp"
 
-#include <QtCore/QSettings>
-
-#if DISTRHO_PLUGIN_HAS_UI
-# if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
-#  include <QtWidgets/QMainWindow>
-# else
-#  include <QtGui/QMainWindow>
-# endif
-# include "DistrhoUIMain.cpp"
+#ifdef DISTRHO_UI_QT
+# error We do not want Qt in the engine code!
+#endif
+#ifdef DISTRHO_UI_EXTERNAL
+# error Not implemented yet
 #endif
 
+#define DISTRHO_PLUGIN_HAS_UI 1
+
+#if DISTRHO_PLUGIN_HAS_UI
+# include "DistrhoUIMain.cpp"
+# include "dgl/App.hpp"
+# include "dgl/Window.hpp"
+#endif
+
+using namespace DGL;
 using juce::ScopedPointer;
 
 // -----------------------------------------------------------------------
@@ -39,52 +44,25 @@ START_NAMESPACE_DISTRHO
 // -----------------------------------------------------------------------
 // Carla UI
 
-class UICarla : public QMainWindow
+class UICarla
 {
 public:
     UICarla(const HostDescriptor* const host, PluginInternal* const plugin)
-        : QMainWindow(nullptr),
-          kHost(host),
-          kPlugin(plugin),
-#ifdef DISTRHO_UI_OPENGL
-          fWidget(this),
-          fUi(this, (intptr_t)fWidget.winId(), editParameterCallback, setParameterCallback, setStateCallback, sendNoteCallback, uiResizeCallback)
-#else
-          fUi(this, 0, editParameterCallback, setParameterCallback, setStateCallback, sendNoteCallback, uiResizeCallback)
-#endif
+        : fHost(host),
+          fPlugin(plugin),
+          fUi(this, 0, editParameterCallback, setParameterCallback, setStateCallback, sendNoteCallback, uiResizeCallback),
+          glApp(fUi.getApp()),
+          glWindow(fUi.getWindow())
     {
-#ifdef DISTRHO_UI_OPENGL
-        setCentralWidget(&fWidget);
-#else
-        QtUI* const qtUi(fUi.getQtUI());
-        qtUi->setParent(this);
-        setCentralWidget(qtUi);
-#endif
-        setWindowIcon(QIcon(":/scalable/distrho.svg"));
-        setWindowTitle(QString("%1 (GUI)").arg(fUi.getName()));
-
-#ifdef DISTRHO_UI_OPENGL
-        fUi.fixWindowSize();
-#endif
-        uiResize(fUi.getWidth(), fUi.getHeight());
-
-        {
-            QSettings settings;
-
-            if (settings.value("Engine/UIsAlwaysOnTop", true).toBool())
-                setWindowFlags(windowFlags()|Qt::WindowStaysOnTopHint);
-        }
-    }
-
-    ~UICarla()
-    {
+        glWindow.setSize(fUi.getWidth(), fUi.getHeight());
+        glWindow.setWindowTitle(host->uiName);
     }
 
     // ---------------------------------------------
 
     void carla_show(const bool yesNo)
     {
-        setVisible(yesNo);
+        glWindow.setVisible(yesNo);
     }
 
     void carla_idle()
@@ -130,12 +108,12 @@ protected:
 
     void setParameterValue(uint32_t rindex, float value)
     {
-        kHost->ui_parameter_changed(kHost->handle, rindex, value);
+        fHost->ui_parameter_changed(fHost->handle, rindex, value);
     }
 
     void setState(const char* key, const char* value)
     {
-        kHost->ui_custom_data_changed(kHost->handle, key, value);
+        fHost->ui_custom_data_changed(fHost->handle, key, value);
     }
 
     void sendNote(bool, uint8_t, uint8_t, uint8_t)
@@ -143,43 +121,24 @@ protected:
         // TODO
     }
 
-    void uiResize(unsigned int width, unsigned int height)
+    void uiResize(unsigned int /*width*/, unsigned int /*height*/)
     {
-#ifdef DISTRHO_UI_OPENGL
-        fWidget.setFixedSize(width, height);
-        setFixedSize(width, height);
-#else
-        if (fUi.isResizable())
-            resize(width, height);
-        else
-            setFixedSize(width, height);
-#endif
-    }
-
-    // ---------------------------------------------
-
-    void closeEvent(QCloseEvent* event) override
-    {
-        kHost->ui_closed(kHost->handle);
-
-        // FIXME - ignore event?
-        QMainWindow::closeEvent(event);
+        // TODO
     }
 
     // ---------------------------------------------
 
 private:
     // Plugin stuff
-    const HostDescriptor* const kHost;
-    PluginInternal* const kPlugin;
-
-#ifdef DISTRHO_UI_OPENGL
-    // Qt stuff, used for GL
-    QWidget fWidget;
-#endif
+    const HostDescriptor* const fHost;
+    PluginInternal* const fPlugin;
 
     // UI
     UIInternal fUi;
+
+    // OpenGL stuff
+    App& glApp;
+    Window& glWindow;
 
     // ---------------------------------------------
     // Callbacks
@@ -220,11 +179,11 @@ private:
 // -----------------------------------------------------------------------
 // Carla Plugin
 
-class PluginCarla : public PluginDescriptorClass
+class PluginCarla : public PluginClass
 {
 public:
     PluginCarla(const HostDescriptor* const host)
-        : PluginDescriptorClass(host)
+        : PluginClass(host)
     {
 #if DISTRHO_PLUGIN_HAS_UI
         fUiPtr = nullptr;
@@ -242,12 +201,12 @@ protected:
     // -------------------------------------------------------------------
     // Plugin parameter calls
 
-    uint32_t getParameterCount() override
+    uint32_t getParameterCount() const override
     {
         return fPlugin.getParameterCount();
     }
 
-    const ::Parameter* getParameterInfo(const uint32_t index) override
+    const ::Parameter* getParameterInfo(const uint32_t index) const override
     {
         CARLA_ASSERT(index < getParameterCount());
 
@@ -293,25 +252,23 @@ protected:
         return &param;
     }
 
-    float getParameterValue(const uint32_t index) override
+    float getParameterValue(const uint32_t index) const override
     {
         CARLA_ASSERT(index < getParameterCount());
 
         return fPlugin.getParameterValue(index);
     }
 
-    // getParameterText unused
-
     // -------------------------------------------------------------------
     // Plugin midi-program calls
 
 #if DISTRHO_PLUGIN_WANT_PROGRAMS
-    uint32_t getMidiProgramCount() override
+    uint32_t getMidiProgramCount() const override
     {
         return fPlugin.getProgramCount();
     }
 
-    const ::MidiProgram* getMidiProgramInfo(const uint32_t index) override
+    const ::MidiProgram* getMidiProgramInfo(const uint32_t index) const override
     {
         CARLA_ASSERT(index < getMidiProgramCount());
 
@@ -374,7 +331,7 @@ protected:
     }
 
 #if DISTRHO_PLUGIN_IS_SYNTH
-    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t midiEventCount, const ::MidiEvent* const midiEvents) override
+    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const ::MidiEvent* const midiEvents, const uint32_t midiEventCount) override
     {
         uint32_t i;
 
@@ -392,7 +349,7 @@ protected:
         fPlugin.run(inBuffer, outBuffer, frames, i, fRealMidiEvents);
     }
 #else
-    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t, const ::MidiEvent* const) override
+    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const ::MidiEvent* const, const uint32_t) override
     {
         fPlugin.run(inBuffer, outBuffer, frames, 0, nullptr);
     }
@@ -406,8 +363,6 @@ protected:
     {
         if (show)
             createUiIfNeeded();
-        else if (fUiPtr != nullptr)
-            fUiGeometry = fUiPtr->saveGeometry();
 
         if (fUiPtr != nullptr)
             fUiPtr->carla_show(show);
@@ -470,7 +425,6 @@ private:
 #if DISTRHO_PLUGIN_HAS_UI
     // UI
     ScopedPointer<UICarla> fUiPtr;
-    QByteArray fUiGeometry;
 
     void createUiIfNeeded()
     {
@@ -478,9 +432,6 @@ private:
         {
             d_lastUiSampleRate = getSampleRate();
             fUiPtr = new UICarla(getHostHandle(), &fPlugin);
-
-            if (! fUiGeometry.isNull())
-                fUiPtr->restoreGeometry(fUiGeometry);
         }
     }
 #endif
@@ -490,7 +441,7 @@ private:
     // -------------------------------------------------------------------
 
 public:
-    static PluginHandle _instantiate(HostDescriptor* host)
+    static PluginHandle _instantiate(const HostDescriptor* host)
     {
         d_lastBufferSize = host->get_buffer_size(host->handle);
         d_lastSampleRate = host->get_sample_rate(host->handle);

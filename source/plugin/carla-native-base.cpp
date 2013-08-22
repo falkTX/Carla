@@ -49,10 +49,10 @@ void carla_register_native_plugin_midifile();
 
 #ifdef WANT_OPENGL
 // DISTRHO plugins (OpenGL)
-// void carla_register_native_plugin_3BandEQ();
-// void carla_register_native_plugin_3BandSplitter();
-// void carla_register_native_plugin_Nekobi();
-// void carla_register_native_plugin_PingPongPan();
+void carla_register_native_plugin_3BandEQ();
+void carla_register_native_plugin_3BandSplitter();
+void carla_register_native_plugin_Nekobi();
+void carla_register_native_plugin_PingPongPan();
 // void carla_register_native_plugin_StereoEnhancer();
 #endif
 
@@ -95,10 +95,10 @@ struct PluginListManager {
 
 #ifdef WANT_OPENGL
         // DISTRHO plugins (OpenGL)
-        //carla_register_native_plugin_3BandEQ();
-        //carla_register_native_plugin_3BandSplitter();
-        //carla_register_native_plugin_Nekobi();
-        //carla_register_native_plugin_PingPongPan();
+        carla_register_native_plugin_3BandEQ();
+        carla_register_native_plugin_3BandSplitter();
+        carla_register_native_plugin_Nekobi();
+        carla_register_native_plugin_PingPongPan();
         //carla_register_native_plugin_StereoEnhancer(); // unfinished
 #endif
 
