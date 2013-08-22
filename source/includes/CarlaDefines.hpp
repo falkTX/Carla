@@ -47,12 +47,14 @@
 #  define CARLA_PROPER_CPP11_SUPPORT
 #  if (__GNUC__ * 100 + __GNUC_MINOR__) < 407
 #   define override // gcc4.7+ only
+#   define final    // gcc4.7+ only
 #  endif
 # endif
 #endif
 
 #ifndef CARLA_PROPER_CPP11_SUPPORT
 # define override
+# define final
 # define noexcept
 # define nullptr (0)
 #endif
