@@ -123,7 +123,34 @@ void writeManifestFile()
         else
             text += "<http://kxstudio.sf.net/carla/plugins/" + label + ">\n";
 
-        text += "    a lv2:Plugin ;\n";
+        switch (pluginDesc->category)
+        {
+        case PLUGIN_CATEGORY_SYNTH:
+            text += "    a lv2:InstrumentPlugin, lv2:Plugin ;\n";
+            break;
+        case PLUGIN_CATEGORY_DELAY:
+            text += "    a lv2:DelayPlugin, lv2:Plugin ;\n";
+            break;
+        case PLUGIN_CATEGORY_EQ:
+            text += "    a lv2:EQPlugin, lv2:Plugin ;\n";
+            break;
+        case PLUGIN_CATEGORY_FILTER:
+            text += "    a lv2:FilterPlugin, lv2:Plugin ;\n";
+            break;
+        case PLUGIN_CATEGORY_DYNAMICS:
+            text += "    a lv2:DynamicsPlugin, lv2:Plugin ;\n";
+            break;
+        case PLUGIN_CATEGORY_MODULATOR:
+            text += "    a lv2:ModulatorPlugin, lv2:Plugin ;\n";
+            break;
+        case PLUGIN_CATEGORY_UTILITY:
+            text += "    a lv2:UtilityPlugin, lv2:Plugin ;\n";
+            break;
+        default:
+            text += "    a lv2:Plugin ;\n";
+            break;
+        }
+
         text += "    lv2:binary <carla-native" PLUGIN_EXT "> ;\n";
         text += "    rdfs:seeAlso <" + label + ".ttl> .\n";
         text += "\n";
@@ -202,26 +229,61 @@ void writePluginFile(const PluginDescriptor* const pluginDesc)
     text += "@prefix doap: <http://usefulinc.com/ns/doap#> .\n";
     text += "@prefix foaf: <http://xmlns.com/foaf/0.1/> .\n";
     text += "@prefix lv2:  <" LV2_CORE_PREFIX "> .\n";
+    text += "@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\n";
     text += "@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n";
     text += "@prefix ui:   <" LV2_UI_PREFIX "> .\n";
     text += "@prefix unit: <" LV2_UNITS_PREFIX "> .\n";
     text += "\n";
 
     // -------------------------------------------------------------------
-    // Plugin
+    // Plugin URI
 
     if (pluginLabel == "carla")
         text += "<http://kxstudio.sf.net/carla>\n";
     else
         text += "<http://kxstudio.sf.net/carla/plugins/" + pluginLabel + ">\n";
 
-    //text += "    a " + getPluginType() + " ;\n";
+    // -------------------------------------------------------------------
+    // Features
+
+    if (pluginDesc->hints & PLUGIN_IS_RTSAFE)
+        text += "    lv2:optionalFeature <" LV2_CORE__hardRTCapable "> ;\n\n";
 
     text += "    lv2:requiredFeature <" LV2_BUF_SIZE__boundedBlockLength "> ,\n";
+
+    if (pluginDesc->hints & PLUGIN_USES_STATIC_BUFFERS)
+        text += "                        <" LV2_BUF_SIZE__fixedBlockLength "> ,\n";
+
+    text += "                        <" LV2_OPTIONS__options "> ,\n";
     text += "                        <" LV2_URID__map "> ;\n";
-    text += "    lv2:extensionData <" LV2_OPTIONS__interface "> ,\n";
-    text += "                      <" LV2_STATE__interface "> ,\n";
-    text += "                      <" LV2_PROGRAMS__Interface "> ;\n";
+    text += "\n";
+
+    // -------------------------------------------------------------------
+    // Extensions
+
+    text += "    lv2:extensionData <" LV2_OPTIONS__interface ">";
+
+    if (pluginDesc->hints & PLUGIN_USES_STATE)
+    {
+        text += " ,\n";
+        text += "                      <" LV2_STATE__interface ">";
+
+        if ((pluginDesc->hints & PLUGIN_IS_SYNTH) == 0)
+        {
+            text += " ,\n";
+            text += "                      <" LV2_PROGRAMS__Interface "> ;\n";
+        }
+        else
+            text += " ;\n";
+    }
+    else if ((pluginDesc->hints & PLUGIN_IS_SYNTH) == 0)
+    {
+        text += " ,\n";
+        text += "                      <" LV2_PROGRAMS__Interface "> ;\n";
+    }
+    else
+        text += " ;\n";
+
     text += "\n";
 
     // -------------------------------------------------------------------
@@ -274,8 +336,6 @@ void writePluginFile(const PluginDescriptor* const pluginDesc)
     {
         if (i == 1)
             text += "    lv2:port [\n";
-        else
-            text += "    [\n";
 
         text += "        a lv2:InputPort, atom:AtomPort ;\n";
         text += "        atom:bufferType atom:Sequence ;\n";
@@ -296,7 +356,7 @@ void writePluginFile(const PluginDescriptor* const pluginDesc)
         if (i+1 == pluginDesc->midiIns)
             text += "    ] ;\n\n";
         else
-            text += "    ] ,\n";
+            text += "    ] , [\n";
     }
 
     // -------------------------------------------------------------------
@@ -306,8 +366,6 @@ void writePluginFile(const PluginDescriptor* const pluginDesc)
     {
         if (i == 0)
             text += "    lv2:port [\n";
-        else
-            text += "    [\n";
 
         text += "        a lv2:OutputPort, atom:AtomPort ;\n";
         text += "        atom:bufferType atom:Sequence ;\n";
@@ -328,7 +386,7 @@ void writePluginFile(const PluginDescriptor* const pluginDesc)
         if (i+1 == pluginDesc->midiOuts)
             text += "    ] ;\n\n";
         else
-            text += "    ] ,\n";
+            text += "    ] , [\n";
     }
 
     // -------------------------------------------------------------------
@@ -354,8 +412,6 @@ void writePluginFile(const PluginDescriptor* const pluginDesc)
     {
         if (i == 0)
             text += "    lv2:port [\n";
-        else
-            text += "    [\n";
 
         text += "        a lv2:InputPort, lv2:AudioPort ;\n";
         text += "        lv2:index " + String(portIndex++) + " ;\n";
@@ -365,7 +421,7 @@ void writePluginFile(const PluginDescriptor* const pluginDesc)
         if (i+1 == pluginDesc->audioIns)
             text += "    ] ;\n\n";
         else
-            text += "    ] ,\n";
+            text += "    ] , [\n";
     }
 
     // -------------------------------------------------------------------
@@ -375,8 +431,6 @@ void writePluginFile(const PluginDescriptor* const pluginDesc)
     {
         if (i == 0)
             text += "    lv2:port [\n";
-        else
-            text += "    [\n";
 
         text += "        a lv2:OutputPort, lv2:AudioPort ;\n";
         text += "        lv2:index " + String(portIndex++) + " ;\n";
@@ -386,7 +440,7 @@ void writePluginFile(const PluginDescriptor* const pluginDesc)
         if (i+1 == pluginDesc->audioOuts)
             text += "    ] ;\n\n";
         else
-            text += "    ] ,\n";
+            text += "    ] , [\n";
     }
 
     // -------------------------------------------------------------------
@@ -410,8 +464,6 @@ void writePluginFile(const PluginDescriptor* const pluginDesc)
 
         if (i == 0)
             text += "    lv2:port [\n";
-        else
-            text += "    [\n";
 
         if (paramInfo->hints & PARAMETER_IS_OUTPUT)
             text += "        a lv2:OutputPort, lv2:ControlPort ;\n";
@@ -452,8 +504,22 @@ void writePluginFile(const PluginDescriptor* const pluginDesc)
             text += "        lv2:portProperty <" LV2_PORT_PROPS__notOnGUI "> ;\n";
         }
 
-        if (paramInfo->scalePointCount > 0)
+        for (uint32_t j=0; j < paramInfo->scalePointCount; ++j)
         {
+            const ParameterScalePoint* const scalePoint(&paramInfo->scalePoints[j]);
+
+            if (j == 0)
+                text += "        lv2:scalePoint [ ";
+            else
+                text += "                       [ ";
+
+            text += "rdfs:label \"" + String(scalePoint->label) + "\" ;\n";
+            text += "                         rdf:value  " + String::formatted("%f", scalePoint->value) + " ";
+
+            if (j+1 == paramInfo->scalePointCount)
+                text += "] ;\n";
+            else
+                text += "] ,\n";
         }
 
         if (paramUnit.isNotEmpty())
@@ -469,7 +535,7 @@ void writePluginFile(const PluginDescriptor* const pluginDesc)
         if (i+1 == paramCount)
             text += "    ] ;\n\n";
         else
-            text += "    ] ,\n";
+            text += "    ] , [\n";
     }
 
     text += "    doap:name \"" + String(pluginDesc->name) + "\" ;\n";

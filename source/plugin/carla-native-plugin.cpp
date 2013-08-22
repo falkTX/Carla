@@ -85,7 +85,7 @@ public:
 
         if (options == nullptr || uridMap == nullptr)
         {
-            carla_stderr("Host don't provides option or urid-map features");
+            carla_stderr("Host doesn't provides option or urid-map features");
             return;
         }
 
@@ -353,12 +353,41 @@ public:
 
     uint32_t lv2_get_options(LV2_Options_Option* const /*options*/) const
     {
-        return 0;
+        // currently unused
+        return LV2_OPTIONS_SUCCESS;
     }
 
-    uint32_t lv2_set_options(const LV2_Options_Option* const /*options*/)
+    uint32_t lv2_set_options(const LV2_Options_Option* const options)
     {
-        return 0;
+        for (int i=0; options[i].key != 0; ++i)
+        {
+            if (options[i].key == fUridMap->map(fUridMap->handle, LV2_BUF_SIZE__maxBlockLength))
+            {
+                if (options[i].type == fUridMap->map(fUridMap->handle, LV2_ATOM__Int))
+                {
+                    fBufferSize = *(const int*)options[i].value;
+
+                    if (fDescriptor->dispatcher != nullptr)
+                        fDescriptor->dispatcher(fHandle, PLUGIN_OPCODE_BUFFER_SIZE_CHANGED, 0, fBufferSize, nullptr, 0.0f);
+                }
+                else
+                    carla_stderr("Host changed maxBlockLength but with wrong value type");
+            }
+            else if (options[i].key == fUridMap->map(fUridMap->handle, LV2_CORE__sampleRate))
+            {
+                if (options[i].type == fUridMap->map(fUridMap->handle, LV2_ATOM__Double))
+                {
+                    fSampleRate = *(const double*)options[i].value;
+
+                    if (fDescriptor->dispatcher != nullptr)
+                        fDescriptor->dispatcher(fHandle, PLUGIN_OPCODE_SAMPLE_RATE_CHANGED, 0, 0, nullptr, fSampleRate);
+                }
+                else
+                    carla_stderr("Host changed sampleRate but with wrong value type");
+            }
+        }
+
+        return LV2_OPTIONS_SUCCESS;
     }
 
     const LV2_Program_Descriptor* lv2_get_program(const uint32_t index) const
@@ -384,7 +413,7 @@ public:
         return &progDesc;
     }
 
-    void lv2_select_program(uint32_t bank, uint32_t program) const
+    void lv2_select_program(uint32_t bank, uint32_t program)
     {
         if (fDescriptor->set_midi_program == nullptr)
             return;
@@ -392,14 +421,47 @@ public:
         fDescriptor->set_midi_program(fHandle, 0, bank, program);
     }
 
-    LV2_State_Status lv2_save(const LV2_State_Store_Function /*store*/, const LV2_State_Handle /*handle*/, const uint32_t /*flags*/, const LV2_Feature* const* const /*features*/) const
+    LV2_State_Status lv2_save(const LV2_State_Store_Function store, const LV2_State_Handle handle, const uint32_t /*flags*/, const LV2_Feature* const* const /*features*/) const
     {
+        if ((fDescriptor->hints & PLUGIN_USES_STATE) == 0 || fDescriptor->get_state == nullptr)
+            return LV2_STATE_ERR_UNKNOWN;
+
+        if (char* const state = fDescriptor->get_state(fHandle))
+        {
+            store(handle,
+                  fUridMap->map(fUridMap->handle, "http://kxstudio.sf.net/ns/carla/chunk"),
+                  state,
+                  std::strlen(state),
+                  fUridMap->map(fUridMap->handle, LV2_ATOM__String),
+                  LV2_STATE_IS_POD|LV2_STATE_IS_PORTABLE);
+
+            return LV2_STATE_SUCCESS;
+        }
+
         return LV2_STATE_ERR_UNKNOWN;
     }
 
-    LV2_State_Status lv2_restore(const LV2_State_Retrieve_Function /*retrieve*/, const LV2_State_Handle /*handle*/, const uint32_t /*flags*/, const LV2_Feature* const* const /*features*/) const
+    LV2_State_Status lv2_restore(const LV2_State_Retrieve_Function retrieve, const LV2_State_Handle handle, uint32_t flags, const LV2_Feature* const* const /*features*/) const
     {
-        return LV2_STATE_ERR_UNKNOWN;
+        if ((fDescriptor->hints & PLUGIN_USES_STATE) == 0 || fDescriptor->set_state == nullptr)
+            return LV2_STATE_ERR_UNKNOWN;
+
+        size_t   size = 0;
+        uint32_t type = 0;
+        const void* data = retrieve(handle, fUridMap->map(fUridMap->handle, "http://kxstudio.sf.net/ns/carla/chunk"), &size, &type, &flags);
+
+        if (size == 0)
+            return LV2_STATE_ERR_UNKNOWN;
+        if (type == 0)
+            return LV2_STATE_ERR_UNKNOWN;
+        if (data == nullptr)
+            return LV2_STATE_ERR_UNKNOWN;
+        if (type != fUridMap->map(fUridMap->handle, LV2_ATOM__String))
+            return LV2_STATE_ERR_BAD_TYPE;
+
+        fDescriptor->set_state(fHandle, (const char*)data);
+
+        return LV2_STATE_SUCCESS;
     }
 
     // -------------------------------------------------------------------
