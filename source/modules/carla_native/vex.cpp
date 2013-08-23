@@ -23,6 +23,7 @@ using namespace juce;
 #include "vex/cChorus.h"
 #include "vex/cDelay.h"
 #include "vex/cReverb.h"
+#include "vex/cSyntModule.h"
 
 // -----------------------------------------------------------------------
 
@@ -192,7 +193,7 @@ protected:
     // -------------------------------------------------------------------
     // Plugin state calls
 
-    void setParameterValue(const uint32_t index, const float value)
+    void setParameterValue(const uint32_t index, const float value) override
     {
         switch (index)
         {
@@ -375,7 +376,7 @@ protected:
     // -------------------------------------------------------------------
     // Plugin state calls
 
-    void setParameterValue(const uint32_t index, const float value)
+    void setParameterValue(const uint32_t index, const float value) override
     {
         if (index < kParamCount)
             parameters[index] = value;
@@ -490,7 +491,7 @@ protected:
     // -------------------------------------------------------------------
     // Plugin state calls
 
-    void setParameterValue(const uint32_t index, const float value)
+    void setParameterValue(const uint32_t index, const float value) override
     {
         if (index < kParamCount)
             parameters[index] = value;
@@ -612,7 +613,7 @@ protected:
     // -------------------------------------------------------------------
     // Plugin state calls
 
-    void setParameterValue(const uint32_t index, const float value)
+    void setParameterValue(const uint32_t index, const float value) override
     {
         if (index < kParamCount)
             parameters[index] = value;
@@ -641,6 +642,170 @@ private:
 
 // -----------------------------------------------------------------------
 
+class VexSynthPlugin : public PluginClass
+{
+public:
+    static const unsigned int kParamCount = 1;
+
+    VexSynthPlugin(const HostDescriptor* const host)
+        : PluginClass(host),
+          synth(parameters)
+    {
+        std::memset(parameters, 0, sizeof(float)*92);
+
+        for (int i = 0; i < 3; ++i)
+        {
+            const int offset = i * 24;
+
+            parameters[offset +  1] = 0.5f;
+            parameters[offset +  2] = 0.5f;
+            parameters[offset +  3] = 0.5f;
+            parameters[offset +  4] = 0.5f;
+            parameters[offset +  5] = 0.9f;
+            parameters[offset +  6] = 0.0f;
+            parameters[offset +  7] = 1.0f;
+            parameters[offset +  8] = 0.5f;
+            parameters[offset +  9] = 0.0f;
+            parameters[offset + 10] = 0.2f;
+            parameters[offset + 11] = 0.0f;
+            parameters[offset + 12] = 0.5f;
+            parameters[offset + 13] = 0.5f;
+            parameters[offset + 14] = 0.0f;
+            parameters[offset + 15] = 0.3f;
+            parameters[offset + 16] = 0.7f;
+            parameters[offset + 17] = 0.1f;
+            parameters[offset + 18] = 0.5f;
+            parameters[offset + 19] = 0.5f;
+            parameters[offset + 20] = 0.0f;
+            parameters[offset + 21] = 0.0f;
+            parameters[offset + 22] = 0.5f;
+            parameters[offset + 23] = 0.5f;
+            parameters[offset + 24] = 0.5f;
+        }
+
+        parameters[89] = 1.0f;
+
+        synth.setSampleRate(getSampleRate());
+        synth.update(89);
+    }
+
+protected:
+    // -------------------------------------------------------------------
+    // Plugin parameter calls
+
+    uint32_t getParameterCount() const override
+    {
+        return kParamCount;
+    }
+
+    const Parameter* getParameterInfo(const uint32_t index) const override
+    {
+        static Parameter paramInfo;
+
+        int hints = PARAMETER_IS_ENABLED|PARAMETER_IS_AUTOMABLE;
+
+        paramInfo.name = nullptr;
+        paramInfo.unit = nullptr;
+        paramInfo.ranges.def       = 0.0f;
+        paramInfo.ranges.min       = 0.0f;
+        paramInfo.ranges.max       = 1.0f;
+        paramInfo.ranges.step      = 1.0f;
+        paramInfo.ranges.stepSmall = 1.0f;
+        paramInfo.ranges.stepLarge = 1.0f;
+        paramInfo.scalePointCount  = 0;
+        paramInfo.scalePoints      = nullptr;
+
+        switch (index)
+        {
+        case 0:
+            hints |= PARAMETER_IS_INTEGER;
+            paramInfo.name = "Wave";
+            paramInfo.ranges.def = 0.0f;
+            paramInfo.ranges.min = 0.0f;
+            paramInfo.ranges.max = WaveRenderer::getWaveTableSize();
+            break;
+        }
+
+        paramInfo.hints = static_cast<ParameterHints>(hints);
+
+        return &paramInfo;
+    }
+
+    float getParameterValue(const uint32_t index) const override
+    {
+        if (index < kParamCount)
+            return parameters[index];
+        return 0.0f;
+    }
+
+    // -------------------------------------------------------------------
+    // Plugin state calls
+
+    void setParameterValue(const uint32_t index, const float value) override
+    {
+        if (index < kParamCount)
+        {
+            parameters[index] = value;
+            synth.setWaveLater(1, WaveRenderer::getWaveTableName(value));
+
+            //synth.update(index);
+        }
+    }
+
+    // -------------------------------------------------------------------
+    // Plugin process calls
+
+    void process(float**, float** outBuffer, const uint32_t frames, const MidiEvent* const midiEvents, const uint32_t midiEventCount) override
+    {
+        for (uint32_t i=0; i < midiEventCount; ++i)
+        {
+            const MidiEvent* const midiEvent(&midiEvents[i]);
+
+            const uint8_t status(MIDI_GET_STATUS_FROM_DATA(midiEvent->data));
+
+            if (status == MIDI_STATUS_NOTE_ON)
+            {
+                synth.playNote(midiEvent->data[1], midiEvent->data[2], 0, 1);
+            }
+            else if (status == MIDI_STATUS_NOTE_OFF)
+            {
+                synth.releaseNote(midiEvent->data[1], 0, 1);
+            }
+            else if (status == MIDI_STATUS_CONTROL_CHANGE)
+            {
+                const uint8_t control(midiEvent->data[1]);
+
+                if (control == MIDI_CONTROL_ALL_SOUND_OFF)
+                    synth.kill();
+                else if (control == MIDI_CONTROL_ALL_NOTES_OFF)
+                    synth.releaseAll(1);
+            }
+        }
+
+        carla_zeroFloat(outBuffer[0], frames);
+        carla_zeroFloat(outBuffer[1], frames);
+
+        synth.doProcess(outBuffer[0], outBuffer[1], frames);
+    }
+
+    // -------------------------------------------------------------------
+    // Plugin dispatcher calls
+
+    void sampleRateChanged(const double sampleRate) override
+    {
+        synth.setSampleRate(sampleRate);
+    }
+
+private:
+    VexSyntModule synth;
+    float parameters[92];
+
+    PluginClassEND(VexSynthPlugin)
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(VexSynthPlugin)
+};
+
+// -----------------------------------------------------------------------
+
 static const PluginDescriptor vexArpDesc = {
     /* category  */ PLUGIN_CATEGORY_UTILITY,
     /* hints     */ static_cast<PluginHints>(0x0),
@@ -651,7 +816,7 @@ static const PluginDescriptor vexArpDesc = {
     /* midiOuts  */ 1,
     /* paramIns  */ VexArpPlugin::kParamCount,
     /* paramOuts */ 0,
-    /* name      */ "Vex Arp",
+    /* name      */ "VexArp",
     /* label     */ "vexArp",
     /* maker     */ "falkTX",
     /* copyright */ "GNU GPL v2+",
@@ -668,7 +833,7 @@ static const PluginDescriptor vexChorusDesc = {
     /* midiOuts  */ 0,
     /* paramIns  */ VexChorusPlugin::kParamCount,
     /* paramOuts */ 0,
-    /* name      */ "Vex Chorus",
+    /* name      */ "VexChorus",
     /* label     */ "vexChorus",
     /* maker     */ "falkTX",
     /* copyright */ "GNU GPL v2+",
@@ -685,7 +850,7 @@ static const PluginDescriptor vexDelayDesc = {
     /* midiOuts  */ 0,
     /* paramIns  */ VexDelayPlugin::kParamCount,
     /* paramOuts */ 0,
-    /* name      */ "Vex Delay",
+    /* name      */ "VexDelay",
     /* label     */ "vexDelay",
     /* maker     */ "falkTX",
     /* copyright */ "GNU GPL v2+",
@@ -702,11 +867,28 @@ static const PluginDescriptor vexReverbDesc = {
     /* midiOuts  */ 0,
     /* paramIns  */ VexReverbPlugin::kParamCount,
     /* paramOuts */ 0,
-    /* name      */ "Vex Reverb",
+    /* name      */ "VexReverb",
     /* label     */ "vexReverb",
     /* maker     */ "falkTX",
     /* copyright */ "GNU GPL v2+",
     PluginDescriptorFILL(VexReverbPlugin)
+};
+
+static const PluginDescriptor vexSynthDesc = {
+    /* category  */ PLUGIN_CATEGORY_SYNTH,
+    /* hints     */ static_cast<PluginHints>(0x0),
+    /* supports  */ static_cast<PluginSupports>(0x0),
+    /* audioIns  */ 0,
+    /* audioOuts */ 2,
+    /* midiIns   */ 1,
+    /* midiOuts  */ 0,
+    /* paramIns  */ VexSynthPlugin::kParamCount,
+    /* paramOuts */ 0,
+    /* name      */ "VexSynth",
+    /* label     */ "vexSynth",
+    /* maker     */ "falkTX",
+    /* copyright */ "GNU GPL v2+",
+    PluginDescriptorFILL(VexSynthPlugin)
 };
 
 // -----------------------------------------------------------------------
@@ -718,6 +900,7 @@ void carla_register_native_plugin_vex()
     carla_register_native_plugin(&vexChorusDesc);
     carla_register_native_plugin(&vexDelayDesc);
     carla_register_native_plugin(&vexReverbDesc);
+    carla_register_native_plugin(&vexSynthDesc);
 }
 
 // -----------------------------------------------------------------------
@@ -725,5 +908,9 @@ void carla_register_native_plugin_vex()
 #include "vex/freeverb/allpass.cpp"
 #include "vex/freeverb/comb.cpp"
 #include "vex/freeverb/revmodel.cpp"
+
+#include "vex/cVoice.cpp"
+#include "vex/cWaveRenderer.cpp"
+#include "vex/ResourceFile.cpp"
 
 // -----------------------------------------------------------------------

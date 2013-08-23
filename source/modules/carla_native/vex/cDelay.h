@@ -123,6 +123,8 @@ private:
      float sampleRate;
      int bufferSize, iRead, iWrite;
      AudioSampleBuffer buffer;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(VexDelay)
 };
 
 #endif

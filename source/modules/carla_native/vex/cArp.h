@@ -158,7 +158,7 @@ public:
         }
 
         // BarSync
-        const int samplesPerStep = int((60.0 / bpm) * sampleRate * 4) / timeSig;
+        const unsigned int samplesPerStep = int((60.0 / bpm) * sampleRate * 4) / timeSig;
 
         if (isPlaying && arpSet->syncMode == 2)
         {
@@ -300,12 +300,14 @@ private:
     const VexArpSettings* arpSet;
     MidiBuffer outMidiBuffer;
     bool dead, notesPlaying, doSync;
-    char nextStep;
+    unsigned int nextStep;
     unsigned int sampleCount, sampleRate;
     int meter[4];
     char cKeysDown[kMaxNotes];
     char cKeysVelocity[kMaxNotes];
     char cNotesToKill[kMaxNotes];
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(VexArp)
 };
 
 #endif

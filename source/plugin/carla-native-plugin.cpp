@@ -392,6 +392,8 @@ public:
 
     const LV2_Program_Descriptor* lv2_get_program(const uint32_t index) const
     {
+        if (fDescriptor->hints & PLUGIN_IS_SYNTH)
+            return nullptr;
         if (fDescriptor->get_midi_program_count == nullptr)
             return nullptr;
         if (fDescriptor->get_midi_program_info == nullptr)
@@ -415,6 +417,8 @@ public:
 
     void lv2_select_program(uint32_t bank, uint32_t program)
     {
+        if (fDescriptor->hints & PLUGIN_IS_SYNTH)
+            return;
         if (fDescriptor->set_midi_program == nullptr)
             return;
 
@@ -523,6 +527,8 @@ public:
 
     void lv2ui_select_program(uint32_t bank, uint32_t program) const
     {
+        if (fDescriptor->hints & PLUGIN_IS_SYNTH)
+            return;
         if (fDescriptor->ui_set_midi_program == nullptr)
             return;
 
@@ -1189,6 +1195,8 @@ static const void* lv2_extension_data(const char* uri)
 static LV2UI_Handle lv2ui_instantiate(const LV2UI_Descriptor*, const char*, const char*, LV2UI_Write_Function writeFunction,
                                       LV2UI_Controller controller, LV2UI_Widget* widget, const LV2_Feature* const* features)
 {
+    carla_debug("lv2ui_instantiate(..., %p, %p, %p)", writeFunction, controller, widget, features);
+
     NativePlugin* plugin = nullptr;
 
     for (int i=0; features[i] != nullptr; ++i)
