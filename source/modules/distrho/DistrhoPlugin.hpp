@@ -234,7 +234,7 @@ protected:
 
     virtual void d_activate() {}
     virtual void d_deactivate() {}
-    virtual void d_run(float** inputs, float** outputs, uint32_t frames, uint32_t midiEventCount, const MidiEvent* midiEvents) = 0;
+    virtual void d_run(float** inputs, float** outputs, uint32_t frames, const MidiEvent* midiEvents, uint32_t midiEventCount) = 0;
 
     // -------------------------------------------------------------------
     // Callbacks (optional)

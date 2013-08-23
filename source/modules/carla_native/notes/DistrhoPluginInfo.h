@@ -33,6 +33,6 @@
 
 #define DISTRHO_PLUGIN_URI "http://distrho.sf.net/plugins/Notes"
 
-#define DISTRHO_UI_QT
+#define DISTRHO_UI_EXTERNAL
 
 #endif // DISTRHO_PLUGIN_INFO_H_INCLUDED

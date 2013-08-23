@@ -524,11 +524,11 @@ void writePluginFile(const PluginDescriptor* const pluginDesc)
 
         if (paramUnit.isNotEmpty())
         {
-            text += "        units:unit [\n";
-            text += "            a units:Unit ;\n";
-            text += "            rdfs:label   \"" + paramUnit + "\" ;\n";
-            text += "            units:symbol \"" + paramUnit + "\" ;\n";
-            text += "            units:render \"%f " + paramUnit + "\" ;\n";
+            text += "        unit:unit [\n";
+            text += "            a unit:Unit ;\n";
+            text += "            rdfs:label  \"" + paramUnit + "\" ;\n";
+            text += "            unit:symbol \"" + paramUnit + "\" ;\n";
+            text += "            unit:render \"%f " + paramUnit + "\" ;\n";
             text += "        ] ;\n";
         }
 

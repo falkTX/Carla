@@ -165,7 +165,7 @@ void DistrhoPluginStereoEnhancer::d_deactivate()
     tmp1HP = tmp2HP = 0.0f;
 }
 
-void DistrhoPluginStereoEnhancer::d_run(float** inputs, float** outputs, uint32_t frames, uint32_t, const MidiEvent*)
+void DistrhoPluginStereoEnhancer::d_run(float** inputs, float** outputs, uint32_t frames, const MidiEvent*, uint32_t)
 {
     float* in1  = inputs[0];
     float* in2  = inputs[1];

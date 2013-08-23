@@ -98,6 +98,11 @@ public:
 #endif
     }
 
+    void carla_setUiTitle(const char* const uiName)
+    {
+        glWindow.setWindowTitle(uiName);
+    }
+
     // ---------------------------------------------
 
 protected:
@@ -343,15 +348,16 @@ protected:
             realMidiEvent->frame = midiEvent->time;
             realMidiEvent->size  = midiEvent->size;
 
-            carla_copy<uint8_t>(realMidiEvent->buf, midiEvent->data, midiEvent->size);
+            for (uint8_t j=0; j < midiEvent->size; ++j)
+                realMidiEvent->buf[j] = midiEvent->data[j];
         }
 
-        fPlugin.run(inBuffer, outBuffer, frames, i, fRealMidiEvents);
+        fPlugin.run(inBuffer, outBuffer, frames, fRealMidiEvents, i);
     }
 #else
     void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const ::MidiEvent* const, const uint32_t) override
     {
-        fPlugin.run(inBuffer, outBuffer, frames, 0, nullptr);
+        fPlugin.run(inBuffer, outBuffer, frames, nullptr, 0);
     }
 #endif
 
@@ -411,6 +417,27 @@ protected:
             fUiPtr->carla_setCustomData(key, value);
     }
 # endif
+#endif
+
+    // -------------------------------------------------------------------
+    // Plugin dispatcher calls
+
+    void bufferSizeChanged(const uint32_t bufferSize) override
+    {
+        fPlugin.setBufferSize(bufferSize, true);
+    }
+
+    void sampleRateChanged(const double sampleRate) override
+    {
+        fPlugin.setSampleRate(sampleRate, true);
+    }
+
+#if DISTRHO_PLUGIN_HAS_UI
+    void uiNameChanged(const char* const uiName) override
+    {
+        if (fUiPtr != nullptr)
+            fUiPtr->carla_setUiTitle(uiName);
+    }
 #endif
 
     // -------------------------------------------------------------------

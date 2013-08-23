@@ -134,7 +134,7 @@ void DistrhoPluginPingPongPan::d_deactivate()
     wavePos = 0.0f;
 }
 
-void DistrhoPluginPingPongPan::d_run(float** inputs, float** outputs, uint32_t frames, uint32_t, const MidiEvent*)
+void DistrhoPluginPingPongPan::d_run(float** inputs, float** outputs, uint32_t frames, const MidiEvent*, uint32_t)
 {
     float* in1  = inputs[0];
     float* in2  = inputs[1];

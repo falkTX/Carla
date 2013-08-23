@@ -302,12 +302,12 @@ public:
             fPlugin->d_deactivate();
     }
 
-    void run(float** const inputs, float** const outputs, const uint32_t frames, const uint32_t midiEventCount, const MidiEvent* const midiEvents)
+    void run(float** const inputs, float** const outputs, const uint32_t frames, const MidiEvent* const midiEvents, const uint32_t midiEventCount)
     {
         assert(fPlugin != nullptr);
 
         if (fPlugin != nullptr)
-            fPlugin->d_run(inputs, outputs, frames, midiEventCount, midiEvents);
+            fPlugin->d_run(inputs, outputs, frames, midiEvents, midiEventCount);
     }
 
     // -------------------------------------------------------------------

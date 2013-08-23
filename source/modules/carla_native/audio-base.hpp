@@ -370,7 +370,7 @@ protected:
 private:
     AbstractAudioPlayer* const kPlayer;
 
-    bool fNeedsRead;
+    mutable bool fNeedsRead;
 
     void*  fFilePtr;
     ADInfo fFileNfo;
