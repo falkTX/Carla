@@ -38,7 +38,12 @@
 # include <fluidsynth.h>
 #endif
 #ifdef WANT_LINUXSAMPLER
+// fix broken headers
+# define TMP__cplusplus __cplusplus
+# undef __cplusplus
 # include "linuxsampler/EngineFactory.h"
+# define __cplusplus TMP__cplusplus
+# undef TMP__cplusplus
 #endif
 
 #include <iostream>
@@ -1604,7 +1609,7 @@ int main(int argc, char* argv[])
     case PLUGIN_LADSPA:
     case PLUGIN_DSSI:
     case PLUGIN_VST:
-    case PLUGIN_VST3:
+    case PLUGIN_AU:
         openLib = true;
     default:
         break;
@@ -1661,8 +1666,13 @@ int main(int argc, char* argv[])
         do_lv2_check(filename, doInit);
         break;
     case PLUGIN_VST:
-    case PLUGIN_VST3:
         do_vst_check(handle, doInit);
+        break;
+    case PLUGIN_AU:
+        //do_au_check(handle, doInit);
+        break;
+    case PLUGIN_CSOUND:
+        //do_csound_check(handle, doInit);
         break;
     case PLUGIN_GIG:
         do_linuxsampler_check(filename, "gig", doInit);

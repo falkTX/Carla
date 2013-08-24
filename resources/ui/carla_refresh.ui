@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>610</width>
-    <height>308</height>
+    <width>609</width>
+    <height>349</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -72,6 +72,13 @@
            </widget>
           </item>
           <item>
+           <widget class="QCheckBox" name="ch_au">
+            <property name="text">
+             <string>AudioUnits</string>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="Line" name="line_3">
             <property name="lineWidth">
              <number>0</number>
@@ -81,6 +88,13 @@
             </property>
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="ch_csound">
+            <property name="text">
+             <string>CSD</string>
             </property>
            </widget>
           </item>
