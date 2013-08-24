@@ -21,8 +21,6 @@
 
 import os
 import sys
-from copy import deepcopy
-from subprocess import Popen, PIPE
 
 try:
     from PyQt5.QtCore import pyqtSignal, pyqtSlot, qCritical, qFatal, qWarning
@@ -34,21 +32,6 @@ except:
     from PyQt4.QtGui import QFileDialog, QMessageBox
 
 # ------------------------------------------------------------------------------------------------------------
-# Imports (Custom)
-
-from carla_backend import *
-
-# ------------------------------------------------------------------------------------------------------------
-# Try Import LADSPA-RDF
-
-try:
-    import ladspa_rdf
-    haveLRDF = True
-except:
-    qWarning("LRDF Support not available (LADSPA-RDF will be disabled)")
-    haveLRDF = False
-
-# ------------------------------------------------------------------------------------------------------------
 # Import Signal
 
 from signal import signal, SIGINT, SIGTERM
@@ -58,6 +41,11 @@ try:
     haveSIGUSR1 = True
 except:
     haveSIGUSR1 = False
+
+# ------------------------------------------------------------------------------------------------------------
+# Imports (Custom)
+
+from carla_backend import *
 
 # ------------------------------------------------------------------------------------------------------------
 # Platform specific stuff
@@ -369,12 +357,6 @@ if readEnvVars:
     Carla.SF2_PATH    = os.getenv("SF2_PATH",    DEFAULT_SF2_PATH).split(splitter)
     Carla.SFZ_PATH    = os.getenv("SFZ_PATH",    DEFAULT_SFZ_PATH).split(splitter)
 
-    if haveLRDF:
-        LADSPA_RDF_PATH_env = os.getenv("LADSPA_RDF_PATH")
-        if LADSPA_RDF_PATH_env:
-            ladspa_rdf.set_rdf_path(LADSPA_RDF_PATH_env.split(splitter))
-        del LADSPA_RDF_PATH_env
-
 else:
     Carla.LADSPA_PATH = DEFAULT_LADSPA_PATH.split(splitter)
     Carla.DSSI_PATH   = DEFAULT_DSSI_PATH.split(splitter)
@@ -385,8 +367,6 @@ else:
     Carla.GIG_PATH    = DEFAULT_GIG_PATH.split(splitter)
     Carla.SF2_PATH    = DEFAULT_SF2_PATH.split(splitter)
     Carla.SFZ_PATH    = DEFAULT_SFZ_PATH.split(splitter)
-
-del readEnvVars
 
 # ------------------------------------------------------------------------------------------------------------
 # Search for Carla library and tools

@@ -46,6 +46,51 @@ ICON_STATE_WAIT  = 2
 ICON_STATE_ON    = 3
 
 # ------------------------------------------------------------------------------------------------------------
+# Fake plugin info for easy testing
+
+gFakePluginInfo = {
+    "type": PLUGIN_NONE,
+    "category": PLUGIN_CATEGORY_SYNTH,
+    "hints": PLUGIN_CAN_DRYWET|PLUGIN_CAN_VOLUME|PLUGIN_CAN_PANNING, # PLUGIN_IS_SYNTH
+    "optionsAvailable": 0x1FF, # all
+    "optionsEnabled": 0x1FF, # all
+    "binary": "AwesoomeBinary.yeah",
+    "name": "Awesoome Name",
+    "label": "awesoomeLabel",
+    "maker": "Awesoome Maker",
+    "copyright": "Awesoome Copyright",
+    "iconName": "plugin",
+    "uniqueId": 0,
+    "latency": 0
+}
+
+gFakeParamInfo = {
+    'type':  PARAMETER_INPUT,
+    'hints': PARAMETER_IS_ENABLED|PARAMETER_IS_AUTOMABLE,
+    'name':  "Parameter Name",
+    'unit':  "",
+    'scalePoints': [],
+
+    'index':   0,
+    'default': 0.0,
+    'minimum': 0.0,
+    'maximum': 1.0,
+    'step':    0.01,
+    'stepSmall': 0.01,
+    'stepLarge': 0.01,
+    'midiCC':   -1,
+    'midiChannel': 1,
+
+    'current': 0.0
+}
+
+gFakeCountInfo = {
+    "ins": 0,
+    "outs": 0,
+    "total": 0
+}
+
+# ------------------------------------------------------------------------------------------------------------
 # Carla About dialog
 
 class CarlaAboutW(QDialog):
@@ -65,7 +110,7 @@ class CarlaAboutW(QDialog):
                                      "<br>Copyright (C) 2011-2013 falkTX<br>"
                                      "" % (VERSION, extraInfo)))
 
-        if Carla.isControl:
+        if Carla.host is None:
             self.ui.l_extended.hide()
             self.ui.tabWidget.removeTab(1)
             self.ui.tabWidget.removeTab(1)
@@ -385,7 +430,7 @@ class PluginEdit(QDialog):
         self.ui.scrollArea.setEnabled(False)
         self.ui.scrollArea.setVisible(False)
 
-        #self.reloadAll()
+        self.reloadAll()
 
         # -------------------------------------------------------------
         # Set-up connections
@@ -430,16 +475,20 @@ class PluginEdit(QDialog):
         # -------------------------------------------------------------
 
     def reloadAll(self):
-        self.fPluginInfo = Carla.host.get_plugin_info(self.fPluginId)
-        self.fPluginInfo['binary']    = cString(self.fPluginInfo['binary'])
-        self.fPluginInfo['name']      = cString(self.fPluginInfo['name'])
-        self.fPluginInfo['label']     = cString(self.fPluginInfo['label'])
-        self.fPluginInfo['maker']     = cString(self.fPluginInfo['maker'])
-        self.fPluginInfo['copyright'] = cString(self.fPluginInfo['copyright'])
-        self.fPluginInfo['iconName']  = cString(self.fPluginInfo['iconName'])
+        if Carla.host is not None:
+            self.fPluginInfo = Carla.host.get_plugin_info(self.fPluginId)
+            self.fPluginInfo['binary']    = cString(self.fPluginInfo['binary'])
+            self.fPluginInfo['name']      = cString(self.fPluginInfo['name'])
+            self.fPluginInfo['label']     = cString(self.fPluginInfo['label'])
+            self.fPluginInfo['maker']     = cString(self.fPluginInfo['maker'])
+            self.fPluginInfo['copyright'] = cString(self.fPluginInfo['copyright'])
+            self.fPluginInfo['iconName']  = cString(self.fPluginInfo['iconName'])
 
-        if not Carla.isLocal:
-            self.fPluginInfo['hints'] &= ~PLUGIN_HAS_GUI
+            if not Carla.isLocal:
+                self.fPluginInfo['hints'] &= ~PLUGIN_HAS_GUI
+
+        else:
+            self.fPluginInfo = gFakePluginInfo
 
         self.reloadInfo()
         self.reloadParameters()
@@ -452,57 +501,63 @@ class PluginEdit(QDialog):
             self.resize(self.width(), self.height()-self.ui.scrollArea.height())
 
     def reloadInfo(self):
-        pluginName  = cString(Carla.host.get_real_plugin_name(self.fPluginId))
+        if Carla.host is not None:
+            pluginName     = cString(Carla.host.get_real_plugin_name(self.fPluginId))
+            audioCountInfo = Carla.host.get_audio_port_count_info(self.fPluginId)
+            midiCountInfo  = Carla.host.get_midi_port_count_info(self.fPluginId)
+            paramCountInfo = Carla.host.get_parameter_count_info(self.fPluginId)
+        else:
+            pluginName     = ""
+            audioCountInfo = gFakeCountInfo
+            midiCountInfo  = gFakeCountInfo
+            paramCountInfo = gFakeCountInfo
+
         pluginType  = self.fPluginInfo['type']
         pluginHints = self.fPluginInfo['hints']
 
-        audioCountInfo = Carla.host.get_audio_port_count_info(self.fPluginId)
-        midiCountInfo  = Carla.host.get_midi_port_count_info(self.fPluginId)
-        paramCountInfo = Carla.host.get_parameter_count_info(self.fPluginId)
+        #if pluginType == PLUGIN_INTERNAL:
+            #self.ui.le_type.setText(self.tr("Internal"))
+        #elif pluginType == PLUGIN_LADSPA:
+            #self.ui.le_type.setText("LADSPA")
+        #elif pluginType == PLUGIN_DSSI:
+            #self.ui.le_type.setText("DSSI")
+        #elif pluginType == PLUGIN_LV2:
+            #self.ui.le_type.setText("LV2")
+        #elif pluginType == PLUGIN_VST:
+            #self.ui.le_type.setText("VST")
+        #elif pluginType == PLUGIN_AU:
+            #self.ui.le_type.setText("AU")
+        #elif pluginType == PLUGIN_CSOUND:
+            #self.ui.le_type.setText("CSOUND")
+        #elif pluginType == PLUGIN_GIG:
+            #self.ui.le_type.setText("GIG")
+        #elif pluginType == PLUGIN_SF2:
+            #self.ui.le_type.setText("SF2")
+        #elif pluginType == PLUGIN_SFZ:
+            #self.ui.le_type.setText("SFZ")
+        #else:
+            #self.ui.le_type.setText(self.tr("Unknown"))
 
-        if pluginType == PLUGIN_INTERNAL:
-            self.ui.le_type.setText(self.tr("Internal"))
-        elif pluginType == PLUGIN_LADSPA:
-            self.ui.le_type.setText("LADSPA")
-        elif pluginType == PLUGIN_DSSI:
-            self.ui.le_type.setText("DSSI")
-        elif pluginType == PLUGIN_LV2:
-            self.ui.le_type.setText("LV2")
-        elif pluginType == PLUGIN_VST:
-            self.ui.le_type.setText("VST")
-        elif pluginType == PLUGIN_AU:
-            self.ui.le_type.setText("AU")
-        elif pluginType == PLUGIN_CSOUND:
-            self.ui.le_type.setText("CSOUND")
-        elif pluginType == PLUGIN_GIG:
-            self.ui.le_type.setText("GIG")
-        elif pluginType == PLUGIN_SF2:
-            self.ui.le_type.setText("SF2")
-        elif pluginType == PLUGIN_SFZ:
-            self.ui.le_type.setText("SFZ")
-        else:
-            self.ui.le_type.setText(self.tr("Unknown"))
-
-        self.ui.le_name.setText(pluginName)
-        self.ui.le_name.setToolTip(pluginName)
-        self.ui.le_label.setText(self.fPluginInfo['label'])
-        self.ui.le_label.setToolTip(self.fPluginInfo['label'])
-        self.ui.le_maker.setText(self.fPluginInfo['maker'])
-        self.ui.le_maker.setToolTip(self.fPluginInfo['maker'])
-        self.ui.le_copyright.setText(self.fPluginInfo['copyright'])
-        self.ui.le_copyright.setToolTip(self.fPluginInfo['copyright'])
-        self.ui.le_unique_id.setText(str(self.fPluginInfo['uniqueId']))
-        self.ui.le_unique_id.setToolTip(str(self.fPluginInfo['uniqueId']))
-        self.ui.le_ains.setText(str(audioCountInfo['ins']))
-        self.ui.le_aouts.setText(str(audioCountInfo['outs']))
-        self.ui.le_params.setText(str(paramCountInfo['ins']))
+        #self.ui.le_name.setText(pluginName)
+        #self.ui.le_name.setToolTip(pluginName)
+        #self.ui.le_label.setText(self.fPluginInfo['label'])
+        #self.ui.le_label.setToolTip(self.fPluginInfo['label'])
+        #self.ui.le_maker.setText(self.fPluginInfo['maker'])
+        #self.ui.le_maker.setToolTip(self.fPluginInfo['maker'])
+        #self.ui.le_copyright.setText(self.fPluginInfo['copyright'])
+        #self.ui.le_copyright.setToolTip(self.fPluginInfo['copyright'])
+        #self.ui.le_unique_id.setText(str(self.fPluginInfo['uniqueId']))
+        #self.ui.le_unique_id.setToolTip(str(self.fPluginInfo['uniqueId']))
+        #self.ui.le_ains.setText(str(audioCountInfo['ins']))
+        #self.ui.le_aouts.setText(str(audioCountInfo['outs']))
+        #self.ui.le_params.setText(str(paramCountInfo['ins']))
         self.ui.label_plugin.setText("\n%s\n" % self.fPluginInfo['name'])
         self.setWindowTitle(self.fPluginInfo['name'])
 
-        if self.fPluginInfo['latency'] > 0:
-            self.ui.le_latency.setText("%i samples" % self.fPluginInfo['latency'])
-        else:
-            self.ui.le_latency.setText(self.tr("None"))
+        #if self.fPluginInfo['latency'] > 0:
+            #self.ui.le_latency.setText("%i samples" % self.fPluginInfo['latency'])
+        #else:
+            #self.ui.le_latency.setText(self.tr("None"))
 
         self.ui.dial_drywet.setEnabled(pluginHints & PLUGIN_CAN_DRYWET)
         self.ui.dial_vol.setEnabled(pluginHints & PLUGIN_CAN_VOLUME)
@@ -541,8 +596,6 @@ class PluginEdit(QDialog):
             self.fRealParent.recheckPluginHints(pluginHints)
 
     def reloadParameters(self):
-        parameterCount = Carla.host.get_parameter_count(self.fPluginId)
-
         # Reset
         self.fParameterCount = 0
         self.fParameterList  = []
@@ -555,6 +608,19 @@ class PluginEdit(QDialog):
         for x in range(self.ui.tabWidget.count()-1):
             self.ui.tabWidget.widget(1).deleteLater()
             self.ui.tabWidget.removeTab(1)
+
+        if Carla.host is None:
+            paramFakeListFull = []
+            paramFakeList  = []
+            paramFakeWidth = QFontMetrics(self.font()).width(gFakeParamInfo['name'])
+
+            paramFakeList.append(gFakeParamInfo)
+            paramFakeListFull.append((paramFakeList, paramFakeWidth))
+
+            self._createParameterWidgets(PARAMETER_INPUT, paramFakeListFull,  self.tr("Parameters"))
+            return
+
+        parameterCount = Carla.host.get_parameter_count(self.fPluginId)
 
         if parameterCount <= 0:
             pass
@@ -688,7 +754,7 @@ class PluginEdit(QDialog):
         self.ui.cb_programs.blockSignals(True)
         self.ui.cb_programs.clear()
 
-        programCount = Carla.host.get_program_count(self.fPluginId)
+        programCount = Carla.host.get_program_count(self.fPluginId) if Carla.host is not None else 0
 
         if programCount > 0:
             self.ui.cb_programs.setEnabled(True)
@@ -713,7 +779,7 @@ class PluginEdit(QDialog):
         self.ui.cb_midi_programs.blockSignals(True)
         self.ui.cb_midi_programs.clear()
 
-        midiProgramCount = Carla.host.get_midi_program_count(self.fPluginId)
+        midiProgramCount = Carla.host.get_midi_program_count(self.fPluginId) if Carla.host is not None else 0
 
         if midiProgramCount > 0:
             self.ui.cb_midi_programs.setEnabled(True)
@@ -1235,7 +1301,7 @@ class PluginWidget(QFrame):
         # Internal stuff
 
         self.fPluginId   = pluginId
-        self.fPluginInfo = Carla.host.get_plugin_info(self.fPluginId)
+        self.fPluginInfo = Carla.host.get_plugin_info(self.fPluginId) if Carla.host is not None else gFakePluginInfo
 
         self.fPluginInfo['binary']    = cString(self.fPluginInfo['binary'])
         self.fPluginInfo['name']      = cString(self.fPluginInfo['name'])
@@ -1252,7 +1318,7 @@ class PluginWidget(QFrame):
 
         self.fParameterIconTimer = ICON_STATE_NULL
 
-        if Carla.processMode == PROCESS_MODE_CONTINUOUS_RACK:
+        if Carla.processMode == PROCESS_MODE_CONTINUOUS_RACK or Carla.host is None:
             self.fPeaksInputCount  = 2
             self.fPeaksOutputCount = 2
 
@@ -1504,7 +1570,7 @@ class PluginWidget(QFrame):
 
             newName = newNameTry[0]
 
-            if Carla.host.rename_plugin(self.fPluginId, newName):
+            if Carla.host is None or Carla.host.rename_plugin(self.fPluginId, newName):
                 self.fPluginInfo['name'] = newName
                 self.ui.edit_dialog.fPluginInfo['name'] = newName
                 self.ui.edit_dialog.reloadInfo()
@@ -1576,31 +1642,10 @@ class PluginWidget(QFrame):
 # ------------------------------------------------------------------------------------------------------------
 # TESTING
 
-Carla.isControl = True
-
-pInfo = {
-    'type':  PARAMETER_INPUT,
-    'hints': PARAMETER_IS_ENABLED|PARAMETER_IS_AUTOMABLE,
-    'name':  "Parameter Name",
-    'unit':  "",
-    'scalePoints': [],
-
-    'index':   0,
-    'default': 0.0,
-    'minimum': 0.0,
-    'maximum': 1.0,
-    'step':    0.01,
-    'stepSmall': 0.01,
-    'stepLarge': 0.01,
-    'midiCC':   -1,
-    'midiChannel': 1,
-
-    'current': 0.0
-}
-
 from PyQt5.QtWidgets import QApplication
 app = QApplication(sys.argv)
 #gui = PluginParameter(None, pInfo, 0, 0)
-gui = PluginEdit(None, 0)
+#gui = PluginEdit(None, 0)
+gui = PluginWidget(None, 0)
 gui.show()
 app.exec_()

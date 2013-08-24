@@ -19,6 +19,9 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
+from copy import deepcopy
+from subprocess import Popen, PIPE
+
 try:
     from PyQt5.QtCore import Qt, QThread, QSettings
     from PyQt5.QtWidgets import QDialog, QTableWidgetItem
@@ -34,10 +37,24 @@ import ui_carla_refresh
 from carla_shared import *
 
 # ------------------------------------------------------------------------------------------------------------
-# Import json
+# Try Import LADSPA-RDF
 
-if haveLRDF:
+try:
+    import ladspa_rdf
     import json
+    haveLRDF = True
+except:
+    qWarning("LRDF Support not available (LADSPA-RDF will be disabled)")
+    haveLRDF = False
+
+# ------------------------------------------------------------------------------------------------------------
+# Set LADSPA-RDF Path
+
+if haveLRDF and readEnvVars:
+    LADSPA_RDF_PATH_env = os.getenv("LADSPA_RDF_PATH")
+    if LADSPA_RDF_PATH_env:
+        ladspa_rdf.set_rdf_path(LADSPA_RDF_PATH_env.split(splitter))
+    del LADSPA_RDF_PATH_env
 
 # ------------------------------------------------------------------------------------------------------------
 # Plugin Query (helper functions)
@@ -1415,7 +1432,7 @@ class PluginDatabaseW(QDialog):
             for plugin in plugins:
                 internalCount += 1
 
-        if (not Carla.isControl) and internalCount != Carla.host.get_internal_plugin_count():
+        if Carla.host is not None and internalCount != Carla.host.get_internal_plugin_count():
             internalCount   = Carla.host.get_internal_plugin_count()
             internalPlugins = []
 
