@@ -333,7 +333,7 @@ class CustomData(Structure):
     ]
 
 # ------------------------------------------------------------------------------------------------------------
-# Standalone C++ -> Python variables
+# Host C++ -> Python variables
 
 class CarlaPluginInfo(Structure):
     _fields_ = [

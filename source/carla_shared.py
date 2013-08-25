@@ -73,6 +73,10 @@ if TMP is None:
     else:
         TMP = "/tmp"
 
+elif not os.path.exists(TMP):
+    qWarning("TMP does not exist")
+    TMP = "/tmp"
+
 # ------------------------------------------------------------------------------------------------------------
 # Set HOME
 
@@ -105,36 +109,6 @@ if PATH is None:
 
 else:
     PATH = PATH.split(os.pathsep)
-
-# ------------------------------------------------------------------------------------------------------------
-# Global Carla object
-
-class CarlaObject(object):
-    __slots__ = [
-        'host',
-        'gui',
-        'isControl',
-        'isLocal',
-        'processMode',
-        'maxParameters',
-        'LADSPA_PATH',
-        'DSSI_PATH',
-        'LV2_PATH',
-        'VST_PATH',
-        'AU_PATH',
-        'CSOUND_PATH',
-        'GIG_PATH',
-        'SF2_PATH',
-        'SFZ_PATH'
-    ]
-
-Carla = CarlaObject()
-Carla.host = None
-Carla.gui  = None
-Carla.isControl = False
-Carla.isLocal   = False
-Carla.processMode   = PROCESS_MODE_MULTIPLE_CLIENTS if LINUX else PROCESS_MODE_CONTINUOUS_RACK
-Carla.maxParameters = MAX_DEFAULT_PARAMETERS
 
 # ------------------------------------------------------------------------------------------------------------
 # Static MIDI CC list
@@ -193,7 +167,7 @@ MIDI_CC_LIST = (
   )
 
 # ------------------------------------------------------------------------------------------------------------
-# Default Plugin Folders
+# Default Plugin Folders (get)
 
 if WINDOWS:
     splitter = ";"
@@ -327,6 +301,36 @@ else:
                                     os.path.join("/", "usr", "share", "sounds", "sfz")))
 
 # ------------------------------------------------------------------------------------------------------------
+# Global Carla object
+
+class CarlaObject(object):
+    __slots__ = [
+        'host',
+        'gui',
+        'isControl',
+        'isLocal',
+        'processMode',
+        'maxParameters',
+        'DEFAULT_LADSPA_PATH',
+        'DEFAULT_DSSI_PATH',
+        'DEFAULT_LV2_PATH',
+        'DEFAULT_VST_PATH',
+        'DEFAULT_AU_PATH',
+        'DEFAULT_CSOUND_PATH',
+        'DEFAULT_GIG_PATH',
+        'DEFAULT_SF2_PATH',
+        'DEFAULT_SFZ_PATH'
+    ]
+
+Carla = CarlaObject()
+Carla.host = None
+Carla.gui  = None
+Carla.isControl = False
+Carla.isLocal   = False
+Carla.processMode   = PROCESS_MODE_MULTIPLE_CLIENTS if LINUX else PROCESS_MODE_CONTINUOUS_RACK
+Carla.maxParameters = MAX_DEFAULT_PARAMETERS
+
+# ------------------------------------------------------------------------------------------------------------
 # Default Plugin Folders (set)
 
 readEnvVars = True
@@ -347,26 +351,26 @@ if WINDOWS:
     del reg
 
 if readEnvVars:
-    Carla.LADSPA_PATH = os.getenv("LADSPA_PATH", DEFAULT_LADSPA_PATH).split(splitter)
-    Carla.DSSI_PATH   = os.getenv("DSSI_PATH",   DEFAULT_DSSI_PATH).split(splitter)
-    Carla.LV2_PATH    = os.getenv("LV2_PATH",    DEFAULT_LV2_PATH).split(splitter)
-    Carla.VST_PATH    = os.getenv("VST_PATH",    DEFAULT_VST_PATH).split(splitter)
-    Carla.AU_PATH     = os.getenv("AU_PATH",     DEFAULT_AU_PATH).split(splitter)
-    Carla.CSOUND_PATH = os.getenv("CSOUND_PATH", DEFAULT_CSOUND_PATH).split(splitter)
-    Carla.GIG_PATH    = os.getenv("GIG_PATH",    DEFAULT_GIG_PATH).split(splitter)
-    Carla.SF2_PATH    = os.getenv("SF2_PATH",    DEFAULT_SF2_PATH).split(splitter)
-    Carla.SFZ_PATH    = os.getenv("SFZ_PATH",    DEFAULT_SFZ_PATH).split(splitter)
+    Carla.DEFAULT_LADSPA_PATH = os.getenv("LADSPA_PATH", DEFAULT_LADSPA_PATH).split(splitter)
+    Carla.DEFAULT_DSSI_PATH   = os.getenv("DSSI_PATH",   DEFAULT_DSSI_PATH).split(splitter)
+    Carla.DEFAULT_LV2_PATH    = os.getenv("LV2_PATH",    DEFAULT_LV2_PATH).split(splitter)
+    Carla.DEFAULT_VST_PATH    = os.getenv("VST_PATH",    DEFAULT_VST_PATH).split(splitter)
+    Carla.DEFAULT_AU_PATH     = os.getenv("AU_PATH",     DEFAULT_AU_PATH).split(splitter)
+    Carla.DEFAULT_CSOUND_PATH = os.getenv("CSOUND_PATH", DEFAULT_CSOUND_PATH).split(splitter)
+    Carla.DEFAULT_GIG_PATH    = os.getenv("GIG_PATH",    DEFAULT_GIG_PATH).split(splitter)
+    Carla.DEFAULT_SF2_PATH    = os.getenv("SF2_PATH",    DEFAULT_SF2_PATH).split(splitter)
+    Carla.DEFAULT_SFZ_PATH    = os.getenv("SFZ_PATH",    DEFAULT_SFZ_PATH).split(splitter)
 
 else:
-    Carla.LADSPA_PATH = DEFAULT_LADSPA_PATH.split(splitter)
-    Carla.DSSI_PATH   = DEFAULT_DSSI_PATH.split(splitter)
-    Carla.LV2_PATH    = DEFAULT_LV2_PATH.split(splitter)
-    Carla.VST_PATH    = DEFAULT_VST_PATH.split(splitter)
-    Carla.AU_PATH     = DEFAULT_AU_PATH.split(splitter)
-    Carla.CSOUND_PATH = DEFAULT_CSOUND_PATH.split(splitter)
-    Carla.GIG_PATH    = DEFAULT_GIG_PATH.split(splitter)
-    Carla.SF2_PATH    = DEFAULT_SF2_PATH.split(splitter)
-    Carla.SFZ_PATH    = DEFAULT_SFZ_PATH.split(splitter)
+    Carla.DEFAULT_LADSPA_PATH = DEFAULT_LADSPA_PATH.split(splitter)
+    Carla.DEFAULT_DSSI_PATH   = DEFAULT_DSSI_PATH.split(splitter)
+    Carla.DEFAULT_LV2_PATH    = DEFAULT_LV2_PATH.split(splitter)
+    Carla.DEFAULT_VST_PATH    = DEFAULT_VST_PATH.split(splitter)
+    Carla.DEFAULT_AU_PATH     = DEFAULT_AU_PATH.split(splitter)
+    Carla.DEFAULT_CSOUND_PATH = DEFAULT_CSOUND_PATH.split(splitter)
+    Carla.DEFAULT_GIG_PATH    = DEFAULT_GIG_PATH.split(splitter)
+    Carla.DEFAULT_SF2_PATH    = DEFAULT_SF2_PATH.split(splitter)
+    Carla.DEFAULT_SFZ_PATH    = DEFAULT_SFZ_PATH.split(splitter)
 
 # ------------------------------------------------------------------------------------------------------------
 # Search for Carla library and tools

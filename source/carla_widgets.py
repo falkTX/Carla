@@ -20,11 +20,11 @@
 # Imports (Global)
 
 try:
-    from PyQt5.QtCore import QByteArray
+    from PyQt5.QtCore import QByteArray, QSettings
     from PyQt5.QtGui import QColor, QCursor, QFontMetrics, QPainter, QPainterPath
     from PyQt5.QtWidgets import QDialog, QFrame, QInputDialog, QLineEdit, QMenu, QVBoxLayout, QWidget
 except:
-    from PyQt4.QtCore import QByteArray
+    from PyQt4.QtCore import QByteArray, QSettings
     from PyQt4.QtGui import QColor, QCursor, QFontMetrics, QPainter, QPainterPath
     from PyQt4.QtGui import QDialog, QFrame, QInputDialog, QLineEdit, QMenu, QVBoxLayout, QWidget
 
@@ -1638,14 +1638,3 @@ class PluginWidget(QFrame):
 
         painter.restore()
         QFrame.paintEvent(self, event)
-
-# ------------------------------------------------------------------------------------------------------------
-# TESTING
-
-from PyQt5.QtWidgets import QApplication
-app = QApplication(sys.argv)
-#gui = PluginParameter(None, pInfo, 0, 0)
-#gui = PluginEdit(None, 0)
-gui = PluginWidget(None, 0)
-gui.show()
-app.exec_()
