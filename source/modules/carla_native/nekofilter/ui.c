@@ -405,11 +405,13 @@ nekoui_instantiate(
   if (pipe(pipe1) != 0)
   {
     fprintf(stderr, "pipe1 creation failed.\n");
+    goto fail_free_control;
   }
 
   if (pipe(pipe2) != 0)
   {
     fprintf(stderr, "pipe2 creation failed.\n");
+    goto fail_free_control;
   }
 
   snprintf(ui_recv_pipe, sizeof(ui_recv_pipe), "%d", pipe1[0]); /* [0] means reading end */

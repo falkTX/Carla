@@ -77,10 +77,12 @@ jackbridge-wine64:
 
 clean:
 	rm -f *.a *.def *.dll *.dylib *.so
+	$(MAKE) clean -C carla_native
 	$(MAKE) clean -C distrho/dgl
-	$(MAKE) clean -C lilv
 	$(MAKE) clean -C jackbridge
+	$(MAKE) clean -C juce_audio_basics
 	$(MAKE) clean -C juce_core
+	$(MAKE) clean -C lilv
 	$(MAKE) clean -C rtmempool
 	$(MAKE) clean -C theme
 	$(MAKE) clean -C widgets

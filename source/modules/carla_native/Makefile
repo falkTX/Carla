@@ -9,13 +9,12 @@ include ../../Makefile.mk
 # --------------------------------------------------------------
 
 BUILD_C_FLAGS   += -I. -I../../includes
-BUILD_CXX_FLAGS += -I. -I.. -I../../includes -I../../utils
+BUILD_CXX_FLAGS += -I. -I.. -I../distrho -I../../includes -I../../utils
 
 # --------------------------------------------------------------
 
 ifeq ($(HAVE_OPENGL),true)
 GL_CXX_FLAGS   = $(BUILD_CXX_FLAGS)
-GL_CXX_FLAGS  += -I../distrho
 GL_CXX_FLAGS  += $(shell pkg-config --cflags gl)
 endif
 
@@ -83,9 +82,9 @@ OBJS += \
 # 	distrho-stereoenhancer.cpp.o
 endif
 
-# # DISTRHO plugins (Qt)
-# OBJS += \
-# 	distrho-notes.cpp.o
+# DISTRHO plugins (PyQt)
+OBJS += \
+	distrho-notes.cpp.o
 
 ifeq ($(HAVE_ZYN_DEPS),true)
 # ZynAddSubFX
@@ -175,19 +174,19 @@ audio_decoder/%.c.o: audio_decoder/%.c
 audio-file.cpp.o: audio-file.cpp audio-base.hpp $(CXXDEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
-distrho-3bandeq.cpp.o: distrho-3bandeq.cpp 3bandeq/*.cpp 3bandeq/*.h 3bandeq/*.hpp distrho/DistrhoPluginCarla.cpp $(CXXDEPS)
+distrho-3bandeq.cpp.o: distrho-3bandeq.cpp #3bandeq/*.cpp 3bandeq/*.h 3bandeq/*.hpp distrho/DistrhoPluginCarla.cpp $(CXXDEPS)
 	$(CXX) $< $(GL_CXX_FLAGS) -I3bandeq -DDISTRHO_NAMESPACE=DISTRHO_3BandEQ -c -o $@
 
-distrho-3bandsplitter.cpp.o: distrho-3bandsplitter.cpp 3bandsplitter/*.cpp 3bandsplitter/*.h 3bandsplitter/*.hpp distrho/DistrhoPluginCarla.cpp $(CXXDEPS)
+distrho-3bandsplitter.cpp.o: distrho-3bandsplitter.cpp #3bandsplitter/*.cpp 3bandsplitter/*.h 3bandsplitter/*.hpp distrho/DistrhoPluginCarla.cpp $(CXXDEPS)
 	$(CXX) $< $(GL_CXX_FLAGS) -I3bandsplitter -DDISTRHO_NAMESPACE=DISTRHO_3BandSplitter -c -o $@
 
-distrho-nekobi.cpp.o: distrho-nekobi.cpp nekobi/*.cpp nekobi/*.h nekobi/*.hpp nekobi/nekobee-src/*.c nekobi/nekobee-src/*.h distrho/DistrhoPluginCarla.cpp $(CXXDEPS)
+distrho-nekobi.cpp.o: distrho-nekobi.cpp nekobi/*.cpp #nekobi/*.h nekobi/*.hpp nekobi/nekobee-src/*.c nekobi/nekobee-src/*.h distrho/DistrhoPluginCarla.cpp $(CXXDEPS)
 	$(CXX) $< $(GL_CXX_FLAGS) -Inekobi -DDISTRHO_NAMESPACE=DISTRHO_Nekobi -c -o $@
 
-distrho-pingpongpan.cpp.o: distrho-pingpongpan.cpp pingpongpan/*.cpp pingpongpan/*.h pingpongpan/*.hpp distrho/DistrhoPluginCarla.cpp $(CXXDEPS)
+distrho-pingpongpan.cpp.o: distrho-pingpongpan.cpp #pingpongpan/*.cpp pingpongpan/*.h pingpongpan/*.hpp distrho/DistrhoPluginCarla.cpp $(CXXDEPS)
 	$(CXX) $< $(GL_CXX_FLAGS) -Ipingpongpan -DDISTRHO_NAMESPACE=DISTRHO_PingPongPan -c -o $@
 
-distrho-stereoenhancer.cpp.o: distrho-stereoenhancer.cpp stereoenhancer/*.cpp stereoenhancer/*.h stereoenhancer/*.hpp distrho/DistrhoPluginCarla.cpp $(CXXDEPS)
+distrho-stereoenhancer.cpp.o: distrho-stereoenhancer.cpp #stereoenhancer/*.cpp stereoenhancer/*.h stereoenhancer/*.hpp distrho/DistrhoPluginCarla.cpp $(CXXDEPS)
 	$(CXX) $< $(GL_CXX_FLAGS) -Istereoenhancer -DDISTRHO_NAMESPACE=DISTRHO_StereoEnhancer -c -o $@
 
 distrho-notes.cpp.o: distrho-notes.cpp notes/*.cpp notes/*.h notes/*.hpp distrho/DistrhoPluginCarla.cpp $(CXXDEPS)

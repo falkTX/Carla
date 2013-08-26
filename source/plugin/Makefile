@@ -131,7 +131,7 @@ carla-native-plugin.cpp.o: carla-native-plugin.cpp carla-native-base.cpp ../modu
 
 carla-native-export: carla-native-export.cpp.o $(LIBS)
 	$(CXX) $^ $(LINK_FLAGS) -o $@
-	./carla-native-export
+# 	./carla-native-export
 
 carla-native-export.exe: carla-native-export.cpp.o $(LIBS)
 	$(CXX) $^ $(LINK_FLAGS) -o $@

@@ -17,7 +17,7 @@
 #ifndef DISTRHO_UI_INTERNAL_HPP_INCLUDED
 #define DISTRHO_UI_INTERNAL_HPP_INCLUDED
 
-# include "../DistrhoUI.hpp"
+#include "../DistrhoUI.hpp"
 
 #if defined(DISTRHO_UI_EXTERNAL)
 # include "../DistrhoUIExternal.hpp"
@@ -25,8 +25,10 @@
 # include "../DistrhoUIOpenGL.hpp"
 # include "../dgl/App.hpp"
 # include "../dgl/Window.hpp"
-#else
+#elif defined(DISTRHO_UI_QT)
 # include "../DistrhoUIQt.hpp"
+#else
+# error Invalid UI type
 #endif
 
 #include <cassert>
@@ -129,19 +131,20 @@ public:
         if (fUi == nullptr)
             return;
 
-#ifdef DISTRHO_UI_QT
-        assert(winId == 0);
-
-        if (winId != 0)
-            return;
-#endif
-
         fData->ptr = ptr;
         fData->editParamCallbackFunc = editParamCall;
         fData->setParamCallbackFunc  = setParamCall;
         fData->setStateCallbackFunc  = setStateCall;
         fData->sendNoteCallbackFunc  = sendNoteCall;
         fData->uiResizeCallbackFunc  = uiResizeCall;
+
+#ifndef DISTRHO_UI_OPENGL
+        assert(winId == 0);
+        return;
+
+        // unused
+        (void)winId;
+#endif
     }
 
     ~UIInternal()
@@ -225,7 +228,10 @@ public:
     }
 
 #if defined(DISTRHO_UI_EXTERNAL)
-    // not needed
+    const char* getExternalFilename() const
+    {
+        return ((ExternalUI*)fUi)->d_getExternalFilename();
+    }
 #elif defined(DISTRHO_UI_OPENGL)
     DGL::App& getApp()
     {
@@ -237,21 +243,21 @@ public:
         return glWindow;
     }
 
-    intptr_t getWindowId() const
+    /*intptr_t getWindowId() const
     {
         return glWindow.getWindowId();
-    }
+    }*/
 
-    void fixWindowSize()
+    /*void fixWindowSize()
     {
         assert(fUi != nullptr);
         glWindow.setSize(fUi->d_getWidth(), fUi->d_getHeight());
-    }
+    }*/
 #elif defined(DISTRHO_UI_QT)
-    QtUI* getQtUI() const
+    /*QtUI* getQtUI() const
     {
         return (QtUI*)fUi;
-    }
+    }*/
 
     bool isResizable() const
     {

@@ -93,6 +93,7 @@ class ParamProgressBar(QProgressBar):
         QProgressBar.__init__(self, parent)
 
         self.fLeftClickDown = False
+        self.fIsInteger     = False
 
         self.fMinimum   = 0.0
         self.fMaximum   = 1.0
@@ -163,6 +164,8 @@ class ParamProgressBar(QProgressBar):
     def paintEvent(self, event):
         if self.fTextCall is not None:
             self.setFormat("%s %s %s" % (self.fPreLabel, self.fTextCall(), self.fLabel))
+        elif self.fIsInteger:
+            self.setFormat("%s %i %s" % (self.fPreLabel, int(self.fRealValue), self.fLabel))
         else:
             self.setFormat("%s %f %s" % (self.fPreLabel, self.fRealValue, self.fLabel))
 
@@ -245,6 +248,8 @@ class ParamSpinBox(QAbstractSpinBox):
         if self.fStepLarge < value:
             self.fStepLarge = value
 
+        self.fBar.fIsInteger = bool(self.fStepSmall == 1.0)
+
     def setStepSmall(self, value):
         if value == 0.0:
             self.fStepSmall = 0.0001
@@ -252,6 +257,8 @@ class ParamSpinBox(QAbstractSpinBox):
             self.fStepSmall = self.fStep
         else:
             self.fStepSmall = value
+
+        self.fBar.fIsInteger = bool(self.fStepSmall == 1.0)
 
     def setStepLarge(self, value):
         if value == 0.0:

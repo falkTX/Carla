@@ -56,8 +56,8 @@ void carla_register_native_plugin_PingPongPan();
 // void carla_register_native_plugin_StereoEnhancer();
 #endif
 
-// DISTRHO plugins (Qt)
-// void carla_register_native_plugin_Notes();
+// DISTRHO plugins (PyQt)
+void carla_register_native_plugin_Notes();
 
 #ifdef WANT_ZYNADDSUBFX
 // ZynAddSubFX
@@ -102,8 +102,8 @@ struct PluginListManager {
         //carla_register_native_plugin_StereoEnhancer(); // unfinished
 #endif
 
-        // DISTRHO plugins (Qt)
-        //carla_register_native_plugin_Notes(); // unfinished
+        // DISTRHO plugins (PyQt)
+        carla_register_native_plugin_Notes(); // unfinished
 
 #ifdef WANT_ZYNADDSUBFX
         // ZynAddSubFX

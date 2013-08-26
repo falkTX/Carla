@@ -1321,23 +1321,7 @@ const LV2UI_Descriptor* lv2ui_descriptor(uint32_t index)
     /* extension_data */ lv2ui_extension_data
     };
 
-    static const LV2UI_Descriptor lv2UiDescOld = {
-    /* URI            */ "http://kxstudio.sf.net/carla#UIold",
-    /* instantiate    */ lv2ui_instantiate,
-    /* cleanup        */ lv2ui_cleanup,
-    /* port_event     */ lv2ui_port_event,
-    /* extension_data */ lv2ui_extension_data
-    };
-
-    switch (index)
-    {
-    case 0:
-        return &lv2UiDesc;
-    case 1:
-        return &lv2UiDescOld;
-    default:
-        return nullptr;
-    }
+    return (index == 0) ? &lv2UiDesc : nullptr;
 }
 
 // -----------------------------------------------------------------------
