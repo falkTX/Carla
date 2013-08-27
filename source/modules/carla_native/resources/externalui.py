@@ -34,9 +34,9 @@ class ExternalUI(object):
         self.fQuitReceived = False
 
         self.fSampleRate = float(argv[1])
-        self.fPipeRecvFd = int(argv[2])
-        self.fPipeSendFd = int(argv[3])
-        self.fUiName     = argv[4]
+        self.fUiName     = argv[2]
+        self.fPipeRecvFd = int(argv[3])
+        self.fPipeSendFd = int(argv[4])
 
         fcntl(self.fPipeRecvFd, F_SETFL, fcntl(self.fPipeRecvFd, F_GETFL) | O_NONBLOCK)
 
