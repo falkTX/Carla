@@ -82,7 +82,7 @@ win64:   ../juce_core.win64.a
 # --------------------------------------------------------------
 
 clean:
-	rm -f *.o ../juce_core.*
+	rm -f *.o ../juce_core*.a
 
 debug:
 	$(MAKE) DEBUG=true

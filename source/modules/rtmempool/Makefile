@@ -77,7 +77,7 @@ win64:   ../rtmempool.win64.a
 # --------------------------------------------------------------
 
 clean:
-	rm -f *.o ../rtmempool.*
+	rm -f *.o ../rtmempool*.a
 
 debug:
 	$(MAKE) DEBUG=true

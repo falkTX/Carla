@@ -1,5 +1,6 @@
 /*
- * Carla Pipe utils
+ * Carla Pipe utils based on lv2fil UI code
+ * Copyright (C) 2009 Nedko Arnaudov <nedko@arnaudov.name>
  * Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or

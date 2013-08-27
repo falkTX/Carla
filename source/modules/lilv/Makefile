@@ -102,7 +102,7 @@ lilv.c.%64.o: lilv.c
 # --------------------------------------------------------------
 
 clean:
-	rm -f *.o ../lilv.*
+	rm -f *.o ../lilv*.a
 
 debug:
 	$(MAKE) DEBUG=true

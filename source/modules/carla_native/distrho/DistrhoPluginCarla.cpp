@@ -23,9 +23,6 @@
 
 #include "DistrhoPluginMain.cpp"
 
-#define DISTRHO_PLUGIN_HAS_UI 1
-#define DISTRHO_UI_EXTERNAL
-
 #if DISTRHO_PLUGIN_HAS_UI
 # include "DistrhoUIMain.cpp"
 # ifdef DISTRHO_UI_OPENGL
@@ -205,7 +202,7 @@ public:
     void carla_setUiTitle(const char* const uiTitle)
     {
 #ifdef DISTRHO_UI_OPENGL
-        glWindow.setWindowTitle(uiName);
+        glWindow.setWindowTitle(uiTitle);
 #else
         writeMsg("uiTitle\n", 8);
         writeAndFixMsg(uiTitle);

@@ -37,7 +37,7 @@
 #include "cArpSettings.h"
 
 #ifdef CARLA_EXPORT
- #include "JuceHeader.h"
+ #include "juce_audio_basics.h"
 #else
  #include "../StandardHeader.h"
 #endif

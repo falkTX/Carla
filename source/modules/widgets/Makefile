@@ -58,7 +58,7 @@ moc_%.cpp: %.hpp
 # --------------------------------------------------------------
 
 clean:
-	rm -f *.o ../widgets.* $(FILES)
+	rm -f *.o ../widgets*.a $(FILES)
 
 debug:
 	$(MAKE) DEBUG=true

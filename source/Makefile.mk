@@ -32,7 +32,7 @@ CXX ?= g++
 # --------------------------------------------------------------
 
 BASE_FLAGS = -Wall -Wextra -fPIC -DPIC -pipe
-BASE_OPTS  = -O3 -ffast-math -mtune=generic -msse -mfpmath=sse -fdata-sections -ffunction-sections
+BASE_OPTS  = -O3 -ffast-math -mtune=generic -msse -msse2 -mfpmath=sse -fdata-sections -ffunction-sections
 LINK_OPTS  = -Wl,--gc-sections
 
 ifeq ($(RASPPI),true)

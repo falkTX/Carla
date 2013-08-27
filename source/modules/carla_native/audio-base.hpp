@@ -20,7 +20,9 @@
 
 #include "CarlaMutex.hpp"
 
-#include "JuceHeader.h"
+#include "juce_core.h"
+
+using juce::Thread;
 
 extern "C" {
 #include "audio_decoder/ad.h"
@@ -109,11 +111,11 @@ public:
     virtual uint32_t getLastFrame() const = 0;
 };
 
-class AudioFileThread : public juce::Thread
+class AudioFileThread : public Thread
 {
 public:
     AudioFileThread(AbstractAudioPlayer* const player, const double sampleRate)
-        : juce::Thread("AudioFileThread"),
+        : Thread("AudioFileThread"),
           kPlayer(player),
           fNeedsRead(false),
           fFilePtr(nullptr)

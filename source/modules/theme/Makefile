@@ -147,7 +147,7 @@ install: ../carlastyle.so
 	install -m 644 $< $(QT_STYLES_DIR)
 
 clean:
-	rm -f *.o ../theme.* $(FILES)
+	rm -f *.o ../theme*.a $(FILES)
 
 debug:
 	$(MAKE) DEBUG=true

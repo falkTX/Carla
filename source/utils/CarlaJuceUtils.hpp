@@ -20,7 +20,7 @@
 
 #include "CarlaUtils.hpp"
 
-#include "JuceHeader.h"
+#include "juce_core.h"
 
 #define CARLA_PREVENT_HEAP_ALLOCATION \
     JUCE_PREVENT_HEAP_ALLOCATION

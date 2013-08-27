@@ -82,7 +82,7 @@ win64:   ../juce_audio_basics.win64.a
 # --------------------------------------------------------------
 
 clean:
-	rm -f *.o ../juce_audio_basics.*
+	rm -f *.o ../juce_audio_basics*.a
 
 debug:
 	$(MAKE) DEBUG=true

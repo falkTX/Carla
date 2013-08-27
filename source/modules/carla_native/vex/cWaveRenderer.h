@@ -35,7 +35,7 @@
 #define __JUCETICE_VEXCWAVERENDERER_HEADER__
 
 #ifdef CARLA_EXPORT
- #include "JuceHeader.h"
+ #include "juce_audio_basics.h"
  #include "ResourceFile.h"
 #else
  #include "../StandardHeader.h"

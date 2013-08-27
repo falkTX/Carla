@@ -1,5 +1,5 @@
 #!/usr/bin/make -f
-# Makefile for carla backend #
+# Makefile for carla-backend #
 # -------------------------- #
 # Created by falkTX
 #
@@ -9,7 +9,7 @@ include ../Makefile.mk
 # --------------------------------------------------------------
 
 all:
-# 	$(MAKE) -C control
+	$(MAKE) -C control
 	$(MAKE) -C engine
 	$(MAKE) -C plugin
 	$(MAKE) -C standalone
@@ -17,7 +17,7 @@ all:
 # --------------------------------------------------------------
 
 clean:
-# 	$(MAKE) clean -C control
+	$(MAKE) clean -C control
 	$(MAKE) clean -C engine
 	$(MAKE) clean -C plugin
 	$(MAKE) clean -C standalone
