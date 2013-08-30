@@ -19,9 +19,14 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QTimer
-from PyQt5.QtGui import QCursor
-from PyQt5.QtWidgets import QAbstractSpinBox, QApplication, QComboBox, QDialog, QMenu, QProgressBar
+try:
+    from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QTimer
+    from PyQt5.QtGui import QCursor
+    from PyQt5.QtWidgets import QAbstractSpinBox, QApplication, QComboBox, QDialog, QMenu, QProgressBar
+except:
+    from PyQt4.QtCore import pyqtSignal, pyqtSlot, Qt, QTimer
+    from PyQt4.QtGui import QAbstractSpinBox, QApplication, QComboBox, QCursor, QDialog, QMenu, QProgressBar
+
 from math import isnan
 
 # ------------------------------------------------------------------------------------------------------------
