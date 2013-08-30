@@ -1638,3 +1638,16 @@ class PluginWidget(QFrame):
 
         painter.restore()
         QFrame.paintEvent(self, event)
+
+# ------------------------------------------------------------------------------------------------------------
+# TESTING
+
+hasGL = True
+
+from PyQt5.QtWidgets import QApplication
+app = QApplication(sys.argv)
+#gui = PluginParameter(None, pInfo, 0, 0)
+#gui = PluginEdit(None, 0)
+gui = PluginWidget(None, 0)
+gui.show()
+app.exec_()

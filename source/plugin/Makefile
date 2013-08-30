@@ -118,20 +118,20 @@ debug:
 
 # --------------------------------------------------------------
 
-carla-native-base.cpp.o: carla-native-base.cpp ../modules/carla_native/CarlaNative.h
+carla-native-base.cpp.o: carla-native-base.cpp ../modules/CarlaNative.h
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
-carla-native-export.cpp.o: carla-native-export.cpp carla-native-base.cpp ../modules/carla_native/CarlaNative.h
+carla-native-export.cpp.o: carla-native-export.cpp carla-native-base.cpp ../modules/CarlaNative.h
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
-carla-native-plugin.cpp.o: carla-native-plugin.cpp carla-native-base.cpp ../modules/carla_native/CarlaNative.h
+carla-native-plugin.cpp.o: carla-native-plugin.cpp carla-native-base.cpp ../modules/CarlaNative.h
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 # --------------------------------------------------------------
 
 carla-native-export: carla-native-export.cpp.o $(LIBS)
 	$(CXX) $^ $(LINK_FLAGS) -o $@
-# 	./carla-native-export
+	./carla-native-export
 
 carla-native-export.exe: carla-native-export.cpp.o $(LIBS)
 	$(CXX) $^ $(LINK_FLAGS) -o $@

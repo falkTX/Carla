@@ -17,7 +17,7 @@
 
 #include "carla-native-base.cpp"
 
-#include "JuceHeader.h"
+#include "juce_core.h"
 
 #include "lv2/atom.h"
 #include "lv2/buf-size.h"

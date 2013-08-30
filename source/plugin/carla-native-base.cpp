@@ -15,7 +15,7 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#include "carla_native/CarlaNative.h"
+#include "CarlaNative.h"
 #include "RtList.hpp"
 
 #include "lv2/lv2.h"

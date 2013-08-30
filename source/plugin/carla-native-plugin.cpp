@@ -17,6 +17,8 @@
 
 #include "carla-native-base.cpp"
 
+#include "juce_audio_basics.h"
+
 #include "CarlaString.hpp"
 
 #include "lv2/atom.h"
