@@ -100,7 +100,7 @@ TARGETS  = carla-native-export
 ifeq ($(MACOS),true)
 TARGETS += carla-native.lv2/carla-native.dylib
 else
-LIBS    += -ldl -lrt
+LIBS    += -ldl -lpthread -lrt
 TARGETS += carla-native.lv2/carla-native.so
 endif
 endif
