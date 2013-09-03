@@ -25,8 +25,6 @@
 
 #include "../engine/CarlaEngineOsc.hpp"
 
-#include <QtCore/QDir>
-
 extern "C" {
 #include "rtmempool/rtmempool-lv2.h"
 }
@@ -338,8 +336,8 @@ struct Lv2PluginOptions {
         optNull.type    = CARLA_URI_MAP_ID_NULL;
         optNull.value   = nullptr;
 
-        opts[0] = &optMinBlockLenth;
-        opts[1] = &optMaxBlockLenth;
+        opts[0] = &optMaxBlockLenth;
+        opts[1] = &optMinBlockLenth;
         opts[2] = &optSequenceSize;
         opts[3] = &optSampleRate;
         opts[4] = &optNull;
@@ -350,8 +348,8 @@ struct Lv2PluginOptions {
 
 // -----------------------------------------------------
 
-class Lv2Plugin : public CarlaPlugin,
-                  public CarlaPluginGui::Callback
+class Lv2Plugin : public CarlaPlugin/*,
+                  public CarlaPluginGui::Callback*/
 {
 public:
     Lv2Plugin(CarlaEngine* const engine, const unsigned int id)
@@ -646,7 +644,7 @@ public:
         options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
         if (! (hasMidiIn || needsFixedBuffer()))
-            options |= PLUGIN_OPTION_FIXED_BUFFER;
+            options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
         if (pData->engine->getProccessMode() != PROCESS_MODE_CONTINUOUS_RACK)
         {
@@ -917,10 +915,10 @@ public:
     {
         CarlaPlugin::setName(newName);
 
-        QString guiTitle(QString("%1 (GUI)").arg((const char*)fName));
+        //QString guiTitle(QString("%1 (GUI)").arg((const char*)fName));
 
-        if (pData->gui != nullptr)
-            pData->gui->setWindowTitle(guiTitle);
+        //if (pData->gui != nullptr)
+            //pData->gui->setWindowTitle(guiTitle);
 
         if (fFeatures[kFeatureIdExternalUi] != nullptr && fFeatures[kFeatureIdExternalUi]->data != nullptr)
         {
@@ -929,7 +927,7 @@ public:
             if (uiHost->plugin_human_id != nullptr)
                 delete[] uiHost->plugin_human_id;
 
-            uiHost->plugin_human_id = carla_strdup(guiTitle.toUtf8().constData());
+            //uiHost->plugin_human_id = carla_strdup(guiTitle.toUtf8().constData());
         }
     }
 
@@ -1164,6 +1162,7 @@ public:
         }
         else // means PLUGIN_UI_PARENT || PLUGIN_UI_QT
         {
+#if 0
             if (yesNo)
             {
                 if (pData->gui == nullptr)
@@ -1229,6 +1228,7 @@ public:
                     pData->gui = nullptr;
                 }
             }
+#endif
         }
     }
 
@@ -1254,8 +1254,8 @@ public:
                 {
                     if (pData->osc.data.target != nullptr)
                     {
-                        QByteArray chunk((const char*)atom, lv2_atom_total_size(atom));
-                        osc_send_lv2_atom_transfer(pData->osc.data, portIndex, chunk.toBase64().constData());
+                        //QByteArray chunk((const char*)atom, lv2_atom_total_size(atom));
+                        //osc_send_lv2_atom_transfer(pData->osc.data, portIndex, chunk.toBase64().constData());
                     }
                 }
                 else if (fUi.type != PLUGIN_UI_NULL)
@@ -2133,11 +2133,11 @@ public:
             fHints |= PLUGIN_HAS_GUI;
 
             if (fUi.type == PLUGIN_UI_QT || fUi.type == PLUGIN_UI_PARENT)
-                fHints |= PLUGIN_HAS_SINGLE_THREAD;
+                fHints |= PLUGIN_NEEDS_SINGLE_THREAD;
         }
 
-        if (LV2_IS_GENERATOR(fRdfDescriptor->Type[0], fRdfDescriptor->Type[1]))
-            fHints |= PLUGIN_IS_SYNTH;
+        //if (LV2_IS_GENERATOR(fRdfDescriptor->Type[0], fRdfDescriptor->Type[1]))
+        //    fHints |= PLUGIN_IS_SYNTH;
 
         if (aOuts > 0 && (aIns == aOuts || aIns == 1))
             fHints |= PLUGIN_CAN_DRYWET;
@@ -2676,7 +2676,7 @@ public:
             // Event Input (System)
 
             bool allNotesOffSent = false;
-            bool sampleAccurate  = (fOptions & PLUGIN_OPTION_FIXED_BUFFER) == 0;
+            bool sampleAccurate  = (fOptions & PLUGIN_OPTION_FIXED_BUFFERS) == 0;
 
             uint32_t time, nEvents = (fEventsIn.ctrl->port != nullptr) ? fEventsIn.ctrl->port->getEventCount() : 0;
             uint32_t startTime  = 0;
@@ -3621,11 +3621,11 @@ public:
     // -------------------------------------------------------------------
 
 protected:
-    void guiClosedCallback() override
-    {
-        showGui(false);
-        pData->engine->callback(CALLBACK_SHOW_GUI, fId, 0, 0, 0.0f, nullptr);
-    }
+//     void guiClosedCallback() override
+//     {
+//         showGui(false);
+//         pData->engine->callback(CALLBACK_SHOW_GUI, fId, 0, 0, 0.0f, nullptr);
+//     }
 
     // -------------------------------------------------------------------
 
@@ -3756,8 +3756,8 @@ protected:
 
                 if (std::strcmp(stype, LV2_ATOM__String) == 0 || std::strcmp(stype, LV2_ATOM__Path) == 0)
                     data.value = carla_strdup((const char*)value);
-                else
-                    data.value = carla_strdup(QByteArray((const char*)value, size).toBase64().constData());
+                //else
+                    //data.value = carla_strdup(QByteArray((const char*)value, size).toBase64().constData());
 
                 return LV2_STATE_SUCCESS;
             }
@@ -3770,8 +3770,8 @@ protected:
 
         if (std::strcmp(stype, LV2_ATOM__String) == 0 || std::strcmp(stype, LV2_ATOM__Path) == 0)
             newData.value = carla_strdup((const char*)value);
-        else
-            newData.value = carla_strdup(QByteArray((const char*)value, size).toBase64().constData());
+        //else
+            //newData.value = carla_strdup(QByteArray((const char*)value, size).toBase64().constData());
 
         pData->custom.append(newData);
 
@@ -3835,10 +3835,11 @@ protected:
         }
         else
         {
-            static QByteArray chunk;
-            chunk = QByteArray::fromBase64(stringData);
-            *size = chunk.size();
-            return chunk.constData();
+//             static QByteArray chunk;
+//             chunk = QByteArray::fromBase64(stringData);
+//             *size = chunk.size();
+//             return chunk.constData();
+            return nullptr;
         }
     }
 
@@ -3918,8 +3919,8 @@ protected:
         if (width <= 0 || height <= 0)
             return 1;
 
-        if (pData->gui != nullptr)
-            pData->gui->setSize(width, height);
+        //if (pData->gui != nullptr)
+        //    pData->gui->setSize(width, height);
 
         return 0;
     }
@@ -4372,8 +4373,8 @@ public:
         {
             if (LV2_IS_FEATURE_REQUIRED(fRdfDescriptor->Features[i].Type) && ! is_lv2_feature_supported(fRdfDescriptor->Features[i].URI))
             {
-                QString msg(QString("Plugin requires a feature that is not supported:\n%1").arg(fRdfDescriptor->Features[i].URI));
-                pData->engine->setLastError(msg.toUtf8().constData());
+//                 QString msg(QString("Plugin requires a feature that is not supported:\n%1").arg(fRdfDescriptor->Features[i].URI));
+//                 pData->engine->setLastError(msg.toUtf8().constData());
                 canContinue = false;
                 break;
             }
@@ -4440,7 +4441,7 @@ public:
             fOptions |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
             if (getMidiInCount() > 0 || needsFixedBuffer())
-                fOptions |= PLUGIN_OPTION_FIXED_BUFFER;
+                fOptions |= PLUGIN_OPTION_FIXED_BUFFERS;
 
             if (pData->engine->getOptions().forceStereo)
                 fOptions |= PLUGIN_OPTION_FORCE_STEREO;
@@ -4460,7 +4461,7 @@ public:
 
             // ignore settings, we need this anyway
             if (getMidiInCount() > 0 || needsFixedBuffer())
-                fOptions |= PLUGIN_OPTION_FIXED_BUFFER;
+                fOptions |= PLUGIN_OPTION_FIXED_BUFFERS;
         }
 
         // ---------------------------------------------------------------
@@ -4493,7 +4494,7 @@ public:
 
             switch (fRdfDescriptor->UIs[i].Type)
             {
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+#if 0//(QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
             case LV2_UI_QT4:
                 if (isUiBridgeable(i))
                     eQt4 = i;
@@ -4506,7 +4507,7 @@ public:
                 break;
 #endif
 
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+#if 0//(QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
             case LV2_UI_QT5:
                 if (isUiBridgeable(i) && preferUiBridges)
                     eQt5 = i;
@@ -4683,7 +4684,7 @@ public:
 
             switch (uiType)
             {
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+#if 0//(QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
             case LV2_UI_QT5:
                 carla_debug("Will use LV2 Qt5 UI");
                 fUi.type = PLUGIN_UI_QT;
@@ -4742,7 +4743,7 @@ public:
             // -------------------------------------------------------
             // initialize ui features (part 1)
 
-            QString guiTitle(QString("%1 (GUI)").arg((const char*)fName));
+            //QString guiTitle(QString("%1 (GUI)").arg((const char*)fName));
 
             LV2_Extension_Data_Feature* const uiDataFt = new LV2_Extension_Data_Feature;
             uiDataFt->data_access                      = fDescriptor->extension_data;
@@ -4757,7 +4758,7 @@ public:
 
             LV2_External_UI_Host* const uiExternalHostFt = new LV2_External_UI_Host;
             uiExternalHostFt->ui_closed                  = carla_lv2_external_ui_closed;
-            uiExternalHostFt->plugin_human_id            = carla_strdup(guiTitle.toUtf8().constData());
+            uiExternalHostFt->plugin_human_id            = nullptr; //carla_strdup(guiTitle.toUtf8().constData());
 
             // -------------------------------------------------------
             // initialize ui features (part 2)
@@ -5020,9 +5021,10 @@ private:
         if (path == nullptr)
             return nullptr;
 
-        QDir dir;
-        dir.mkpath(path);
-        return strdup(path);
+        //QDir dir;
+        //dir.mkpath(path);
+        //return strdup(path);
+        return nullptr;
     }
 
     static char* carla_lv2_state_map_abstract_path(LV2_State_Map_Path_Handle handle, const char* absolute_path)
@@ -5034,8 +5036,9 @@ private:
         if (absolute_path == nullptr)
             return nullptr;
 
-        QDir dir(absolute_path);
-        return strdup(dir.canonicalPath().toUtf8().constData());
+        //QDir dir(absolute_path);
+        //return strdup(dir.canonicalPath().toUtf8().constData());
+        return nullptr;
     }
 
     static char* carla_lv2_state_map_absolute_path(LV2_State_Map_Path_Handle handle, const char* abstract_path)
@@ -5047,8 +5050,9 @@ private:
         if (abstract_path == nullptr)
             return nullptr;
 
-        QDir dir(abstract_path);
-        return strdup(dir.absolutePath().toUtf8().constData());
+        //QDir dir(abstract_path);
+        //return strdup(dir.absolutePath().toUtf8().constData());
+        return nullptr;
     }
 
     static LV2_State_Status carla_lv2_state_store(LV2_State_Handle handle, uint32_t key, const void* value, size_t size, uint32_t type, uint32_t flags)
@@ -5407,11 +5411,11 @@ int CarlaEngineOsc::handleMsgLv2AtomTransfer(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     if (portIndex < 0)
         return 0;
 
-    QByteArray chunk;
-    chunk = QByteArray::fromBase64(atomBuf);
-
-    LV2_Atom* const atom = (LV2_Atom*)chunk.data();
-    lv2PluginPtr->handleTransferAtom(portIndex, atom);
+//     QByteArray chunk;
+//     chunk = QByteArray::fromBase64(atomBuf);
+//
+//     LV2_Atom* const atom = (LV2_Atom*)chunk.data();
+//     lv2PluginPtr->handleTransferAtom(portIndex, atom);
     return 0;
 }
 
@@ -5434,7 +5438,7 @@ int CarlaEngineOsc::handleMsgLv2UridMap(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 
 CARLA_BACKEND_END_NAMESPACE
 
-#else // WANT_VST
+#else // WANT_LV2
 # warning Building without LV2 support
 #endif
 

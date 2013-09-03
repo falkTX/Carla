@@ -46,7 +46,7 @@ void CarlaEngineThread::run()
     CARLA_ASSERT(fEngine->isRunning());
     carla_debug("CarlaEngineThread::run()");
 
-    bool oscRegisted, usesSingleThread;
+    bool oscRegisted, needsSingleThread;
     unsigned int i, count;
     float value;
 
@@ -67,14 +67,14 @@ void CarlaEngineThread::run()
 
             CARLA_SAFE_ASSERT_INT2(i == plugin->getId(), i, plugin->getId());
 
-            usesSingleThread = (plugin->getHints() & PLUGIN_HAS_SINGLE_THREAD);
+            needsSingleThread = (plugin->getHints() & PLUGIN_NEEDS_SINGLE_THREAD);
 
             // -----------------------------------------------------------
             // Process postponed events
 
-            if (oscRegisted || ! usesSingleThread)
+            if (oscRegisted || ! needsSingleThread)
             {
-                if (! usesSingleThread)
+                if (! needsSingleThread)
                     plugin->postRtEventsRun();
 
                 // -------------------------------------------------------
@@ -88,7 +88,7 @@ void CarlaEngineThread::run()
                     value = plugin->getParameterValue(j);
 
                     // Update UI
-                    if (! usesSingleThread)
+                    if (! needsSingleThread)
                         plugin->uiParameterChange(j, value);
 
                     // Update OSC engine client

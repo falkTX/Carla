@@ -19,6 +19,8 @@
 #include "CarlaBackendUtils.hpp"
 #include "CarlaMIDI.h"
 
+#include "juce_core.h"
+
 #ifdef JACKBRIDGE_EXPORT
 # include "jackbridge/JackBridge.hpp"
 #else
@@ -27,9 +29,11 @@
 #endif
 
 #include <cmath>
-#include <QtCore/QStringList>
 
 #define URI_CANVAS_ICON "http://kxstudio.sf.net/ns/canvas/icon"
+
+using juce::String;
+using juce::StringArray;
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -755,11 +759,12 @@ public:
         void*  data;
         size_t dataSize;
 
-        QList<int> groupIconsCopy(fGroupIconsChanged);
-        fGroupIconsChanged.clear();
+        NonRtList<int> groupIconsCopy;
+        fGroupIconsChanged.spliceAppend(groupIconsCopy, true);
 
-        foreach (const int& groupId, groupIconsCopy)
+        for (NonRtList<int>::Itenerator it = groupIconsCopy.begin(); it.valid(); it.next())
         {
+            const int& groupId(*it);
             const char* const groupName(getGroupName(groupId));
 
             data = nullptr;
@@ -792,6 +797,8 @@ public:
                 jackbridge_free(data);
             }
         }
+
+        groupIconsCopy.clear();
     }
 #endif
 
@@ -986,8 +993,10 @@ public:
             return false;
         }
 
-        foreach (const ConnectionToId& connectionToId, fUsedConnections)
+        for (NonRtList<ConnectionToId>::Itenerator it = fUsedConnections.begin(); it.valid(); it.next())
         {
+            const ConnectionToId& connectionToId(*it);
+
             if (connectionToId.id == connectionId)
             {
                 char portNameOut[STR_MAX+1];
@@ -1534,14 +1543,14 @@ protected:
         }
         else
         {
-            for (int i=0, count=fUsedConnections.count(); i < count; ++i)
+            for (NonRtList<ConnectionToId>::Itenerator it = fUsedConnections.begin(); it.valid(); it.next())
             {
-                const ConnectionToId& connectionToId(fUsedConnections[i]);
+                const ConnectionToId& connectionToId(*it);
 
                 if (connectionToId.portOut == portIdA && connectionToId.portIn == portIdB)
                 {
                     callback(CALLBACK_PATCHBAY_CONNECTION_REMOVED, 0, connectionToId.id, 0, 0.0f, nullptr);
-                    fUsedConnections.takeAt(i);
+                    fUsedConnections.remove(it);
                     break;
                 }
             }
@@ -1550,9 +1559,9 @@ protected:
 
     void handleJackClientRenameCallback(const char* const oldName, const char* const newName)
     {
-        for (int i=0, count=fUsedGroupNames.count(); i < count; ++i)
+        for (NonRtList<GroupNameToId>::Itenerator it = fUsedGroupNames.begin(); it.valid(); it.next())
         {
-            GroupNameToId& groupNameToId(fUsedGroupNames[i]);
+            GroupNameToId& groupNameToId(*it);
 
             if (std::strcmp(groupNameToId.name, oldName) == 0)
             {
@@ -1586,9 +1595,9 @@ protected:
         if (groupId == -1)
             return;
 
-        for (int i=0, count=fUsedPortNames.count(); i < count; ++i)
+        for (NonRtList<PortNameToId>::Itenerator it = fUsedPortNames.begin(); it.valid(); it.next())
         {
-            PortNameToId& portNameId(fUsedPortNames[i]);
+            PortNameToId& portNameId(*it);
 
             if (std::strcmp(portNameId.fullName, oldName) == 0)
             {
@@ -1754,10 +1763,10 @@ private:
     int fLastPortId;
     int fLastConnectionId;
 
-    QList<GroupNameToId>  fUsedGroupNames;
-    QList<PortNameToId>   fUsedPortNames;
-    QList<ConnectionToId> fUsedConnections;
-    QList<int> fGroupIconsChanged;
+    NonRtList<GroupNameToId>  fUsedGroupNames;
+    NonRtList<PortNameToId>   fUsedPortNames;
+    NonRtList<ConnectionToId> fUsedConnections;
+    NonRtList<int>            fGroupIconsChanged;
 
     int getGroupId(const char* const name)
     {
@@ -1766,8 +1775,10 @@ private:
         if (name == nullptr)
             return -1;
 
-        foreach (const GroupNameToId& groupNameId, fUsedGroupNames)
+        for (NonRtList<GroupNameToId>::Itenerator it = fUsedGroupNames.begin(); it.valid(); it.next())
         {
+            const GroupNameToId& groupNameId(*it);
+
             if (std::strcmp(groupNameId.name, name) == 0)
                 return groupNameId.id;
         }
@@ -1784,8 +1795,10 @@ private:
         if (groupId < 0)
             return fallback;
 
-        foreach (const GroupNameToId& groupNameId, fUsedGroupNames)
+        for (NonRtList<GroupNameToId>::Itenerator it = fUsedGroupNames.begin(); it.valid(); it.next())
         {
+            const GroupNameToId& groupNameId(*it);
+
             if (groupNameId.id == groupId)
                 return groupNameId.name;
         }
@@ -1800,8 +1813,10 @@ private:
         if (fullName == nullptr)
             return -1;
 
-        foreach (const PortNameToId& portNameId, fUsedPortNames)
+        for (NonRtList<PortNameToId>::Itenerator it = fUsedPortNames.begin(); it.valid(); it.next())
         {
+            const PortNameToId& portNameId(*it);
+
             if (std::strcmp(portNameId.fullName, fullName) == 0)
                 return portNameId.portId;
         }
@@ -1811,8 +1826,10 @@ private:
 
     void getFullPortName(const int portId, char nameBuf[STR_MAX+1])
     {
-        foreach (const PortNameToId& portNameId, fUsedPortNames)
+        for (NonRtList<PortNameToId>::Itenerator it = fUsedPortNames.begin(); it.valid(); it.next())
         {
+            const PortNameToId& portNameId(*it);
+
             if (portNameId.portId == portId)
             {
                 std::strncpy(nameBuf, portNameId.fullName, STR_MAX);
@@ -1832,12 +1849,12 @@ private:
         CARLA_ASSERT(ourName != nullptr);
 
         // query initial jack ports
-        QStringList parsedGroups;
+        StringArray parsedGroups;
 
         // our client
         if (ourName != nullptr)
         {
-            parsedGroups.append(QString(ourName));
+            parsedGroups.add(String(ourName));
 
             GroupNameToId groupNameToId(fLastGroupId++, ourName);
             fUsedGroupNames.append(groupNameToId);
@@ -1868,7 +1885,7 @@ private:
                 CarlaString groupName(fullPortName);
                 groupName.truncate(groupName.rfind(portName)-1);
 
-                QString qGroupName(groupName);
+                String qGroupName(groupName);
 
                 if (parsedGroups.contains(qGroupName))
                 {
@@ -1878,7 +1895,7 @@ private:
                 else
                 {
                     groupId = fLastGroupId++;
-                    parsedGroups.append(qGroupName);
+                    parsedGroups.add(qGroupName);
 
                     GroupNameToId groupNameToId(groupId, groupName);
                     fUsedGroupNames.append(groupNameToId);

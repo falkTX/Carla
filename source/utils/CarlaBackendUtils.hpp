@@ -30,8 +30,8 @@ const char* PluginOption2Str(const unsigned int option)
 {
     switch (option)
     {
-    case PLUGIN_OPTION_FIXED_BUFFER:
-        return "PLUGIN_OPTION_FIXED_BUFFER";
+    case PLUGIN_OPTION_FIXED_BUFFERS:
+        return "PLUGIN_OPTION_FIXED_BUFFERS";
     case PLUGIN_OPTION_FORCE_STEREO:
         return "PLUGIN_OPTION_FORCE_STEREO";
     case PLUGIN_OPTION_MAP_PROGRAM_CHANGES:
@@ -247,6 +247,8 @@ const char* OptionsType2Str(const OptionsType option)
         return "OPTION_PATH_BRIDGE_WIN64";
 #endif
 #ifdef WANT_LV2
+    case OPTION_PATH_BRIDGE_LV2_EXTERNAL:
+        return "OPTION_PATH_BRIDGE_LV2_EXTERNAL";
     case OPTION_PATH_BRIDGE_LV2_GTK2:
         return "OPTION_PATH_BRIDGE_LV2_GTK2";
     case OPTION_PATH_BRIDGE_LV2_GTK3:
@@ -263,8 +265,8 @@ const char* OptionsType2Str(const OptionsType option)
         return "OPTION_PATH_BRIDGE_LV2_X11";
 #endif
 #ifdef WANT_VST
-    case OPTION_PATH_BRIDGE_VST_COCOA:
-        return "OPTION_PATH_BRIDGE_VST_COCOA";
+    case OPTION_PATH_BRIDGE_VST_MAC:
+        return "OPTION_PATH_BRIDGE_VST_MAC";
     case OPTION_PATH_BRIDGE_VST_HWND:
         return "OPTION_PATH_BRIDGE_VST_HWND";
     case OPTION_PATH_BRIDGE_VST_X11:

@@ -20,7 +20,7 @@
 #include "CarlaMIDI.h"
 #include "RtList.hpp"
 
-#include "JuceHeader.h"
+#include "juce_audio_basics.h"
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -34,7 +34,7 @@ CARLA_BACKEND_START_NAMESPACE
 static const char** gRetNames = nullptr;
 
 class CarlaEngineJuce : public CarlaEngine,
-        public juce::AudioIODeviceCallback
+                        public juce::AudioIODeviceCallback
 {
 public:
     CarlaEngineJuce()

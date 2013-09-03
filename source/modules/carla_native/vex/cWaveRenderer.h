@@ -274,37 +274,44 @@ public:
 
     void fillBuffer(float* buffer, int bufferSize, OscSet& o)
     {
+        if (buffer == nullptr || bufferSize == 0)
+            return;
+
+        float tmp;
+
         for (int i = 0; i < bufferSize; ++i)
         {
             buffer[i] = 0.0f;
 
-            float tmp = 0.0f;
             int index = roundFloatToInt(o.phase - 0.5f);
             float alpha = o.phase - (float)index;
             const float conv = 1.0f / 65535.0f;
             float sIndex = daTable[index] * conv - 0.5f;
             float sIndexp1 = daTable[(index + 1) % tableSize] * conv - 0.5f;
+
             tmp = sIndex + alpha * (sIndexp1 - sIndex);
             o.buf[1] = ((tmp - o.buf[1]) * o.cut) + o.buf[1];
             o.buf[2] = ((o.buf[1] - o.buf[2]) * o.cut) + o.buf[2];
             o.buf[3] = ((o.buf[2] - o.buf[3]) * o.cut) + o.buf[3];
             o.buf[0] = ((o.buf[3] - o.buf[0]) * o.cut) + o.buf[0];
+
             tmp = o.buf[0];
             buffer[i] += tmp;
             o.phase += o.phaseInc;
             if (o.phase > (float)tableSize)
                 o.phase -= (float)tableSize;
 
-            tmp = 0.0f;
             index = roundFloatToInt(o.phase - 0.5f);
             alpha = o.phase - (float)index;
             sIndex = daTable[index] * conv - 0.5f;
             sIndexp1 = daTable[(index + 1) % tableSize] * conv - 0.5f;
+
             tmp = sIndex + alpha * (sIndexp1 - sIndex);
             o.buf[1] = ((tmp - o.buf[1]) * o.cut) + o.buf[1];
             o.buf[2] = ((o.buf[1] - o.buf[2]) * o.cut) + o.buf[2];
             o.buf[3] = ((o.buf[2] - o.buf[3]) * o.cut) + o.buf[3];
             o.buf[0] = ((o.buf[3] - o.buf[0]) * o.cut) + o.buf[0];
+
             tmp = o.buf[0];
             buffer[i] += tmp;
             o.phase += o.phaseInc;

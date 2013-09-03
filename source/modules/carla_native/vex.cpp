@@ -232,23 +232,28 @@ protected:
         }
 
         const TimeInfo* const timeInfo(getTimeInfo());
-        double ppqPos, barStartPos, bpm;
 
-        if (timeInfo->bbt.valid)
-        {
-            ppqPos = 0.0;
-            barStartPos = 0.0;
-            bpm = timeInfo->bbt.beatsPerMinute;
-        }
-        else
-        {
-            double ppqBar  = double(timeInfo->bbt.bar - 1) * timeInfo->bbt.beatsPerBar;
-            double ppqBeat = double(timeInfo->bbt.beat - 1);
-            double ppqTick = double(timeInfo->bbt.tick) / timeInfo->bbt.ticksPerBeat;
+        int    timeFrame   = 0;
+        bool   timePlaying = false;
+        double ppqPos      = 0.0;
+        double barStartPos = 0.0;
+        double bpm         = 120.0;
 
-            ppqPos = ppqBar + ppqBeat + ppqTick;
-            barStartPos = ppqBar;
-            bpm = 120.0;
+        if (timeInfo != nullptr)
+        {
+            timeFrame   = timeInfo->frame;
+            timePlaying = timeInfo->playing;
+
+            if (timeInfo->bbt.valid)
+            {
+                double ppqBar  = double(timeInfo->bbt.bar - 1) * timeInfo->bbt.beatsPerBar;
+                double ppqBeat = double(timeInfo->bbt.beat - 1);
+                double ppqTick = double(timeInfo->bbt.tick) / timeInfo->bbt.ticksPerBeat;
+
+                ppqPos      = ppqBar + ppqBeat + ppqTick;
+                barStartPos = ppqBar;
+                bpm         = timeInfo->bbt.beatsPerMinute;
+            }
         }
 
         fMidiInBuffer.clear();
@@ -256,10 +261,10 @@ protected:
         for (uint32_t i=0; i < midiEventCount; ++i)
         {
             const MidiEvent* const midiEvent(&midiEvents[i]);
-            fMidiInBuffer.addEvent(MidiMessage(midiEvent->data, midiEvent->size, midiEvent->time), timeInfo->frame);
+            fMidiInBuffer.addEvent(MidiMessage(midiEvent->data, midiEvent->size, midiEvent->time), timeFrame);
         }
 
-        const MidiBuffer& outMidiBuffer(fArp.processMidi(fMidiInBuffer, timeInfo->playing, ppqPos, barStartPos, bpm, frames));
+        const MidiBuffer& outMidiBuffer(fArp.processMidi(fMidiInBuffer, timePlaying, ppqPos, barStartPos, bpm, frames));
 
         MidiBuffer::Iterator outBufferIterator(outMidiBuffer);
         MidiMessage midiMessage(0xf4);
@@ -508,7 +513,7 @@ protected:
             carla_copyFloat(outBuffer[1], inBuffer[1], frames);
 
         const TimeInfo* const timeInfo(getTimeInfo());
-        const double bpm(timeInfo->bbt.valid ? timeInfo->bbt.beatsPerMinute : 120.0);
+        const double bpm((timeInfo != nullptr && timeInfo->bbt.valid) ? timeInfo->bbt.beatsPerMinute : 120.0);
 
         delay.processBlock(outBuffer[0], outBuffer[1], frames, bpm);
     }
@@ -808,7 +813,7 @@ private:
 
 static const PluginDescriptor vexArpDesc = {
     /* category  */ PLUGIN_CATEGORY_UTILITY,
-    /* hints     */ static_cast<PluginHints>(0x0),
+    /* hints     */ static_cast<PluginHints>(PLUGIN_USES_TIMEPOS),
     /* supports  */ static_cast<PluginSupports>(PLUGIN_SUPPORTS_EVERYTHING),
     /* audioIns  */ 0,
     /* audioOuts */ 0,
@@ -842,7 +847,7 @@ static const PluginDescriptor vexChorusDesc = {
 
 static const PluginDescriptor vexDelayDesc = {
     /* category  */ PLUGIN_CATEGORY_DELAY,
-    /* hints     */ static_cast<PluginHints>(PLUGIN_IS_RTSAFE),
+    /* hints     */ static_cast<PluginHints>(PLUGIN_IS_RTSAFE|PLUGIN_USES_TIMEPOS),
     /* supports  */ static_cast<PluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 2,

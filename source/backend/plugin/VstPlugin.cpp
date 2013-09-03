@@ -42,8 +42,8 @@ const unsigned int PLUGIN_USES_OLD_VSTSDK       = 0x4000; //!< VST Plugin uses a
 const unsigned int PLUGIN_WANTS_MIDI_INPUT      = 0x8000; //!< VST Plugin wants MIDI input
 /**@}*/
 
-class VstPlugin : public CarlaPlugin,
-                  public CarlaPluginGui::Callback
+class VstPlugin : public CarlaPlugin/*,
+                  public CarlaPluginGui::Callback*/
 {
 public:
     VstPlugin(CarlaEngine* const engine, const unsigned int id)
@@ -193,7 +193,7 @@ public:
         options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
         if (getMidiInCount() == 0)
-            options |= PLUGIN_OPTION_FIXED_BUFFER;
+            options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
         if (fEffect->flags & effFlagsProgramChunks)
             options |= PLUGIN_OPTION_USE_CHUNKS;
@@ -292,8 +292,8 @@ public:
     {
         CarlaPlugin::setName(newName);
 
-        if (pData->gui != nullptr)
-            pData->gui->setWindowTitle(QString("%1 (GUI)").arg((const char*)fName));
+        //if (pData->gui != nullptr)
+        //    pData->gui->setWindowTitle(QString("%1 (GUI)").arg((const char*)fName));
     }
 
     // -------------------------------------------------------------------
@@ -323,23 +323,23 @@ public:
             fLastChunk = nullptr;
         }
 
-        QByteArray chunk(QByteArray::fromBase64(stringData));
-
-        CARLA_ASSERT(chunk.size() > 0);
-
-        if (chunk.size() > 0)
-        {
-            fLastChunk = std::malloc(chunk.size());
-            std::memcpy(fLastChunk, chunk.constData(), chunk.size());
-
-            {
-                const ScopedSingleProcessLocker spl(this, true);
-                dispatcher(effSetChunk, 0 /* bank */, chunk.size(), fLastChunk, 0.0f);
-            }
-
-            // simulate an updateDisplay callback
-            handleAudioMasterCallback(audioMasterUpdateDisplay, 0, 0, nullptr, 0.0f);
-        }
+//         QByteArray chunk(QByteArray::fromBase64(stringData));
+//
+//         CARLA_ASSERT(chunk.size() > 0);
+//
+//         if (chunk.size() > 0)
+//         {
+//             fLastChunk = std::malloc(chunk.size());
+//             std::memcpy(fLastChunk, chunk.constData(), chunk.size());
+//
+//             {
+//                 const ScopedSingleProcessLocker spl(this, true);
+//                 dispatcher(effSetChunk, 0 /* bank */, chunk.size(), fLastChunk, 0.0f);
+//             }
+//
+//             // simulate an updateDisplay callback
+//             handleAudioMasterCallback(audioMasterUpdateDisplay, 0, 0, nullptr, 0.0f);
+//         }
     }
 
     void setProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) override
@@ -392,6 +392,7 @@ public:
         }
         else
         {
+#if 0
             if (yesNo)
             {
                 CARLA_ASSERT(pData->gui == nullptr);
@@ -465,6 +466,7 @@ public:
                     pData->gui = nullptr;
                 }
             }
+#endif
         }
 
         fGui.isVisible = yesNo;
@@ -789,15 +791,15 @@ public:
 
         fHints = 0x0;
 
-        if (vstCategory == kPlugCategSynth || vstCategory == kPlugCategGenerator)
-            fHints |= PLUGIN_IS_SYNTH;
+        //if (vstCategory == kPlugCategSynth || vstCategory == kPlugCategGenerator)
+        //    fHints |= PLUGIN_IS_SYNTH;
 
         if (fEffect->flags & effFlagsHasEditor)
         {
             fHints |= PLUGIN_HAS_GUI;
 
             if (! fGui.isOsc)
-                fHints |= PLUGIN_HAS_SINGLE_THREAD;
+                fHints |= PLUGIN_NEEDS_SINGLE_THREAD;
         }
 
         if (dispatcher(effGetVstVersion, 0, 0, nullptr, 0.0f) < kVstVersion)
@@ -1146,7 +1148,7 @@ public:
             // Event Input (System)
 
             bool allNotesOffSent = false;
-            bool sampleAccurate  = (fOptions & PLUGIN_OPTION_FIXED_BUFFER) == 0;
+            bool sampleAccurate  = (fOptions & PLUGIN_OPTION_FIXED_BUFFERS) == 0;
 
             uint32_t time, nEvents = pData->event.portIn->getEventCount();
             uint32_t startTime  = 0;
@@ -1723,11 +1725,11 @@ public:
     // -------------------------------------------------------------------
 
 protected:
-    void guiClosedCallback() override
-    {
-        showGui(false);
-        pData->engine->callback(CALLBACK_SHOW_GUI, fId, 0, 0, 0.0f, nullptr);
-    }
+//     void guiClosedCallback() override
+//     {
+//         showGui(false);
+//         pData->engine->callback(CALLBACK_SHOW_GUI, fId, 0, 0, 0.0f, nullptr);
+//     }
 
     intptr_t dispatcher(int32_t opcode, int32_t index, intptr_t value, void* ptr, float opt) const
     {
@@ -1971,8 +1973,8 @@ protected:
             if (pData->gui != nullptr)
             {
                 CARLA_SAFE_ASSERT(fGui.isVisible);
-                if (fGui.isVisible)
-                    pData->gui->setSize(index, value);
+                //if (fGui.isVisible)
+                //    pData->gui->setSize(index, value);
                 ret = 1;
             }
             break;
@@ -2298,7 +2300,7 @@ public:
             fOptions |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
             if (getMidiInCount() > 0)
-                fOptions |= PLUGIN_OPTION_FIXED_BUFFER;
+                fOptions |= PLUGIN_OPTION_FIXED_BUFFERS;
 
             if (fEffect->flags & effFlagsProgramChunks)
                 fOptions |= PLUGIN_OPTION_USE_CHUNKS;
@@ -2320,7 +2322,7 @@ public:
 
             // ignore settings, we need this anyway
             if (getMidiInCount() > 0)
-                fOptions |= PLUGIN_OPTION_FIXED_BUFFER;
+                fOptions |= PLUGIN_OPTION_FIXED_BUFFERS;
         }
 
         return true;

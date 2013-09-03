@@ -15,6 +15,7 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
+#define CARLA_NATIVE_PLUGIN_LV2
 #include "carla-native-base.cpp"
 
 #include "juce_core.h"
@@ -123,34 +124,7 @@ void writeManifestFile()
         else
             text += "<http://kxstudio.sf.net/carla/plugins/" + label + ">\n";
 
-        switch (pluginDesc->category)
-        {
-        case PLUGIN_CATEGORY_SYNTH:
-            text += "    a lv2:InstrumentPlugin, lv2:Plugin ;\n";
-            break;
-        case PLUGIN_CATEGORY_DELAY:
-            text += "    a lv2:DelayPlugin, lv2:Plugin ;\n";
-            break;
-        case PLUGIN_CATEGORY_EQ:
-            text += "    a lv2:EQPlugin, lv2:Plugin ;\n";
-            break;
-        case PLUGIN_CATEGORY_FILTER:
-            text += "    a lv2:FilterPlugin, lv2:Plugin ;\n";
-            break;
-        case PLUGIN_CATEGORY_DYNAMICS:
-            text += "    a lv2:DynamicsPlugin, lv2:Plugin ;\n";
-            break;
-        case PLUGIN_CATEGORY_MODULATOR:
-            text += "    a lv2:ModulatorPlugin, lv2:Plugin ;\n";
-            break;
-        case PLUGIN_CATEGORY_UTILITY:
-            text += "    a lv2:UtilityPlugin, lv2:Plugin ;\n";
-            break;
-        default:
-            text += "    a lv2:Plugin ;\n";
-            break;
-        }
-
+        text += "    a lv2:Plugin ;\n";
         text += "    lv2:binary <carla-native" PLUGIN_EXT "> ;\n";
         text += "    rdfs:seeAlso <" + label + ".ttl> .\n";
         text += "\n";
@@ -238,6 +212,37 @@ void writePluginFile(const PluginDescriptor* const pluginDesc)
         text += "<http://kxstudio.sf.net/carla/plugins/" + pluginLabel + ">\n";
 
     // -------------------------------------------------------------------
+    // Category
+
+    switch (pluginDesc->category)
+    {
+    case PLUGIN_CATEGORY_SYNTH:
+        text += "    a lv2:InstrumentPlugin, lv2:Plugin ;\n";
+        break;
+    case PLUGIN_CATEGORY_DELAY:
+        text += "    a lv2:DelayPlugin, lv2:Plugin ;\n";
+        break;
+    case PLUGIN_CATEGORY_EQ:
+        text += "    a lv2:EQPlugin, lv2:Plugin ;\n";
+        break;
+    case PLUGIN_CATEGORY_FILTER:
+        text += "    a lv2:FilterPlugin, lv2:Plugin ;\n";
+        break;
+    case PLUGIN_CATEGORY_DYNAMICS:
+        text += "    a lv2:DynamicsPlugin, lv2:Plugin ;\n";
+        break;
+    case PLUGIN_CATEGORY_MODULATOR:
+        text += "    a lv2:ModulatorPlugin, lv2:Plugin ;\n";
+        break;
+    case PLUGIN_CATEGORY_UTILITY:
+        text += "    a lv2:UtilityPlugin, lv2:Plugin ;\n";
+        break;
+    default:
+        text += "    a lv2:Plugin ;\n";
+        break;
+    }
+
+    // -------------------------------------------------------------------
     // Features
 
     if (pluginDesc->hints & PLUGIN_IS_RTSAFE)
@@ -245,7 +250,7 @@ void writePluginFile(const PluginDescriptor* const pluginDesc)
 
     text += "    lv2:requiredFeature <" LV2_BUF_SIZE__boundedBlockLength "> ,\n";
 
-    if (pluginDesc->hints & PLUGIN_USES_STATIC_BUFFERS)
+    if (pluginDesc->hints & PLUGIN_NEEDS_STATIC_BUFFERS)
         text += "                        <" LV2_BUF_SIZE__fixedBlockLength "> ,\n";
 
     text += "                        <" LV2_OPTIONS__options "> ,\n";
@@ -262,7 +267,7 @@ void writePluginFile(const PluginDescriptor* const pluginDesc)
         text += " ,\n";
         text += "                      <" LV2_STATE__interface ">";
 
-        if ((pluginDesc->hints & PLUGIN_IS_SYNTH) == 0)
+        if (pluginDesc->category != PLUGIN_CATEGORY_SYNTH)
         {
             text += " ,\n";
             text += "                      <" LV2_PROGRAMS__Interface "> ;\n";
@@ -270,7 +275,7 @@ void writePluginFile(const PluginDescriptor* const pluginDesc)
         else
             text += " ;\n";
     }
-    else if ((pluginDesc->hints & PLUGIN_IS_SYNTH) == 0)
+    else if (pluginDesc->category != PLUGIN_CATEGORY_SYNTH)
     {
         text += " ,\n";
         text += "                      <" LV2_PROGRAMS__Interface "> ;\n";
@@ -292,35 +297,38 @@ void writePluginFile(const PluginDescriptor* const pluginDesc)
     // -------------------------------------------------------------------
     // First MIDI/Time port
 
-    text += "    lv2:port [\n";
-    text += "        a lv2:InputPort, atom:AtomPort ;\n";
-    text += "        atom:bufferType atom:Sequence ;\n";
-
-    if (pluginDesc->midiIns > 0)
+    if (pluginDesc->midiIns > 0 || (pluginDesc->hints & PLUGIN_USES_TIMEPOS) != 0)
     {
-        text += "        atom:supports <" LV2_MIDI__MidiEvent "> ,\n";
-        text += "                      <" LV2_TIME__Position "> ;\n";
-    }
-    else
-    {
-        text += "        atom:supports <" LV2_TIME__Position "> ;\n";
-    }
+        text += "    lv2:port [\n";
+        text += "        a lv2:InputPort, atom:AtomPort ;\n";
+        text += "        atom:bufferType atom:Sequence ;\n";
 
-    text += "        lv2:designation lv2:control ;\n";
-    text += "        lv2:index " + String(portIndex++) + " ;\n";
+        if (pluginDesc->midiIns > 0 && (pluginDesc->hints & PLUGIN_USES_TIMEPOS) != 0)
+        {
+            text += "        atom:supports <" LV2_MIDI__MidiEvent "> ,\n";
+            text += "                      <" LV2_TIME__Position "> ;\n";
+        }
+        else if (pluginDesc->midiIns > 0)
+            text += "        atom:supports <" LV2_MIDI__MidiEvent "> ;\n";
+        else
+            text += "        atom:supports <" LV2_TIME__Position "> ;\n";
 
-    if (pluginDesc->midiIns > 1)
-    {
-        text += "        lv2:symbol \"lv2_events_in_1\" ;\n";
-        text += "        lv2:name \"Events Input #1\" ;\n";
-    }
-    else
-    {
-        text += "        lv2:symbol \"lv2_events_in\" ;\n";
-        text += "        lv2:name \"Events Input\" ;\n";
-    }
+        text += "        lv2:designation lv2:control ;\n";
+        text += "        lv2:index " + String(portIndex++) + " ;\n";
 
-    text += "    ] ;\n\n";
+        if (pluginDesc->midiIns > 1)
+        {
+            text += "        lv2:symbol \"lv2_events_in_1\" ;\n";
+            text += "        lv2:name \"Events Input #1\" ;\n";
+        }
+        else
+        {
+            text += "        lv2:symbol \"lv2_events_in\" ;\n";
+            text += "        lv2:name \"Events Input\" ;\n";
+        }
+
+        text += "    ] ;\n\n";
+    }
 
     // -------------------------------------------------------------------
     // MIDI inputs

@@ -132,6 +132,11 @@ static PluginListManager sPluginDescsMgr;
 
 void carla_register_native_plugin(const PluginDescriptor* desc)
 {
+#ifdef CARLA_NATIVE_PLUGIN_LV2
+    // LV2 MIDI Out and Open/Save are not implemented yet
+    if (desc->midiOuts > 0 || (desc->hints & PLUGIN_NEEDS_OPENSAVE) != 0)
+        return;
+#endif
     sPluginDescsMgr.descs.append(desc);
 }
 

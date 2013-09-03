@@ -268,7 +268,7 @@ static void lfo_process(PluginHandle handle, float** inBuffer, float** outBuffer
 
 static const PluginDescriptor lfoDesc = {
     .category  = PLUGIN_CATEGORY_UTILITY,
-    .hints     = PLUGIN_IS_RTSAFE,
+    .hints     = PLUGIN_IS_RTSAFE|PLUGIN_USES_TIMEPOS,
     .supports  = 0x0,
     .audioIns  = 0,
     .audioOuts = 0,

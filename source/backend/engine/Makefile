@@ -11,11 +11,11 @@ include ../Makefile.mk
 BUILD_CXX_FLAGS += -D__UNIX_JACK__
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo)
 
-ifeq ($(HAVE_QT4),true)
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtCore QtXml)
-else
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags Qt5Core Qt5Xml)
-endif
+# ifeq ($(HAVE_QT4),true)
+# BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtCore QtXml)
+# else
+# BUILD_CXX_FLAGS += $(shell pkg-config --cflags Qt5Core Qt5Xml)
+# endif
 
 # --------------------------------------------------------------
 
@@ -44,10 +44,6 @@ endif
 ifeq ($(WIN32),true)
 BUILD_CXX_FLAGS += -D__WINDOWS_ASIO__ -D__WINDOWS_DS__ -D__WINDOWS_MM__
 endif
-
-PLUGIN_CXX_FLAGS  = $(BUILD_CXX_FLAGS)
-PLUGIN_CXX_FLAGS += -Idistrho -I../../libs/distrho
-PLUGIN_CXX_FLAGS += -DWANT_PLUGIN
 
 # --------------------------------------------------------------
 
@@ -97,15 +93,6 @@ HEADERS = \
 
 %.cpp.o: %.cpp $(HEADERS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
-
-%.cpp.dssi.o: %.cpp $(HEADERS)
-	$(CXX) $< $(PLUGIN_CXX_FLAGS) -DDISTRHO_PLUGIN_TARGET_DSSI -c -o $@
-
-%.cpp.lv2.o: %.cpp $(HEADERS)
-	$(CXX) $< $(PLUGIN_CXX_FLAGS) -DDISTRHO_PLUGIN_TARGET_LV2 -c -o $@
-
-%.cpp.vst.o: %.cpp $(HEADERS)
-	$(CXX) $< $(PLUGIN_CXX_FLAGS) -DDISTRHO_PLUGIN_TARGET_VST -c -o $@
 
 $(TARGET): $(OBJS)
 	$(AR) rs $@ $^

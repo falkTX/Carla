@@ -17,7 +17,8 @@
 
 #include "CarlaPluginGui.hpp"
 
-# include <QtCore/QSettings>
+#if 0
+#include <QtCore/QSettings>
 
 #ifdef Q_WS_X11
 # include <QtGui/QX11EmbedContainer>
@@ -149,3 +150,4 @@ void CarlaPluginGui::setSizeSafeSlot(int width, int height)
 // -------------------------------------------------------------------
 
 CARLA_BACKEND_END_NAMESPACE
+#endif

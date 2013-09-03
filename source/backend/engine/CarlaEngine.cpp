@@ -22,11 +22,6 @@
 
 #include <cmath>
 
-#include <QtCore/QDir>
-#include <QtCore/QFile>
-#include <QtCore/QFileInfo>
-#include <QtCore/QTextStream>
-
 CARLA_BACKEND_START_NAMESPACE
 
 #if 0
@@ -359,34 +354,35 @@ CarlaEngine::~CarlaEngine()
 // returned value must be deleted
 const char* findDSSIGUI(const char* const filename, const char* const label)
 {
-    QString guiFilename;
-    QString pluginDir(filename);
-    pluginDir.resize(pluginDir.lastIndexOf("."));
-
-    QString shortName(QFileInfo(pluginDir).baseName());
-
-    QString checkLabel(label);
-    QString checkSName(shortName);
-
-    if (! checkLabel.endsWith("_")) checkLabel += "_";
-    if (! checkSName.endsWith("_")) checkSName += "_";
-
-    QStringList guiFiles(QDir(pluginDir).entryList());
-
-    foreach (const QString& gui, guiFiles)
-    {
-        if (gui.startsWith(checkLabel) || gui.startsWith(checkSName))
-        {
-            QFileInfo finalname(pluginDir + QDir::separator() + gui);
-            guiFilename = finalname.absoluteFilePath();
-            break;
-        }
-    }
-
-    if (guiFilename.isEmpty())
-        return nullptr;
-
-    return carla_strdup(guiFilename.toUtf8().constData());
+//     QString guiFilename;
+//     QString pluginDir(filename);
+//     pluginDir.resize(pluginDir.lastIndexOf("."));
+//
+//     QString shortName(QFileInfo(pluginDir).baseName());
+//
+//     QString checkLabel(label);
+//     QString checkSName(shortName);
+//
+//     if (! checkLabel.endsWith("_")) checkLabel += "_";
+//     if (! checkSName.endsWith("_")) checkSName += "_";
+//
+//     QStringList guiFiles(QDir(pluginDir).entryList());
+//
+//     foreach (const QString& gui, guiFiles)
+//     {
+//         if (gui.startsWith(checkLabel) || gui.startsWith(checkSName))
+//         {
+//             QFileInfo finalname(pluginDir + QDir::separator() + gui);
+//             guiFilename = finalname.absoluteFilePath();
+//             break;
+//         }
+//     }
+//
+//     if (guiFilename.isEmpty())
+//         return nullptr;
+//
+//     return carla_strdup(guiFilename.toUtf8().constData());
+    return nullptr;
 }
 
 // -----------------------------------------------------------------------
@@ -742,7 +738,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
             break;
 
         case PLUGIN_CSOUND:
-            plugin = CarlaPlugin::newCSOUND(init);
+            //plugin = CarlaPlugin::newCSOUND(init);
             break;
 
         case PLUGIN_GIG:
@@ -1089,6 +1085,7 @@ bool CarlaEngine::loadFilename(const char* const filename)
     CARLA_ASSERT(filename != nullptr);
     carla_debug("CarlaEngine::loadFilename(\"%s\")", filename);
 
+#if 0
     QFileInfo fileInfo(filename);
 
     if (! fileInfo.exists())
@@ -1206,6 +1203,7 @@ bool CarlaEngine::loadFilename(const char* const filename)
     }
 
     // -------------------------------------------------------------------
+#endif
 
     setLastError("Unknown file extension");
     return false;
@@ -1230,6 +1228,7 @@ bool CarlaEngine::loadProject(const char* const filename)
     CARLA_ASSERT(filename != nullptr);
     carla_debug("CarlaEngine::loadProject(\"%s\")", filename);
 
+#if 0
     QFile file(filename);
 
     if (! file.open(QIODevice::ReadOnly | QIODevice::Text))
@@ -1292,6 +1291,9 @@ bool CarlaEngine::loadProject(const char* const filename)
     }
 
     return true;
+#endif
+    setLastError("Not implemented yet");
+    return false;
 }
 
 bool CarlaEngine::saveProject(const char* const filename)
@@ -1299,6 +1301,7 @@ bool CarlaEngine::saveProject(const char* const filename)
     CARLA_ASSERT(filename != nullptr);
     carla_debug("CarlaEngine::saveProject(\"%s\")", filename);
 
+#if 0
     QFile file(filename);
 
     if (! file.open(QIODevice::WriteOnly | QIODevice::Text))
@@ -1341,6 +1344,9 @@ bool CarlaEngine::saveProject(const char* const filename)
 
     file.close();
     return true;
+#endif
+    setLastError("Not implemented yet");
+    return false;
 }
 
 // -----------------------------------------------------------------------
@@ -1562,6 +1568,9 @@ void CarlaEngine::setOption(const OptionsType option, const int value, const cha
 #endif
 
 #ifdef WANT_LV2
+    case OPTION_PATH_BRIDGE_LV2_EXTERNAL:
+        fOptions.bridge_lv2Extrn = valueStr;
+        break;
     case OPTION_PATH_BRIDGE_LV2_GTK2:
         fOptions.bridge_lv2Gtk2 = valueStr;
         break;
@@ -1586,8 +1595,8 @@ void CarlaEngine::setOption(const OptionsType option, const int value, const cha
 #endif
 
 #ifdef WANT_VST
-    case OPTION_PATH_BRIDGE_VST_COCOA:
-        fOptions.bridge_vstCocoa = valueStr;
+    case OPTION_PATH_BRIDGE_VST_MAC:
+        fOptions.bridge_vstMac = valueStr;
         break;
     case OPTION_PATH_BRIDGE_VST_HWND:
         fOptions.bridge_vstHWND = valueStr;

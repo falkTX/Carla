@@ -89,6 +89,9 @@ void VexVoice::updateParameterPtr(const float* const p)
 
 void VexVoice::doProcess(float* outBufferL, float* outBufferR, int bufferSize)
 {
+    if (outBufferL == nullptr || outBufferR == nullptr || bufferSize == 0)
+        return;
+
     //float resAmt = 0.0;
     float A, B;
     float amod;

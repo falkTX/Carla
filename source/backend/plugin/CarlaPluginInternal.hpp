@@ -28,7 +28,7 @@
 #include "CarlaMIDI.h"
 #include "RtList.hpp"
 
-#include <QtCore/QByteArray>
+// #include <QtCore/QByteArray>
 
 #define CARLA_PROCESS_CONTINUE_CHECK if (! fEnabled) { pData->engine->callback(CALLBACK_DEBUG, fId, 0, 0, 0.0f, "Processing while plugin is disabled!!"); return; }
 
@@ -483,7 +483,7 @@ struct CarlaPluginProtectedData {
     CarlaEngine* const engine;
     CarlaEngineClient* client;
     CarlaPluginGui* gui;
-    QByteArray guiGeometry;
+    //QByteArray guiGeometry;
 
     bool active;
     bool needsReset;

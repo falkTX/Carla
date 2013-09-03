@@ -22,6 +22,14 @@
 
 #include "juce_core.h"
 
+#define juce_foreach(type, array)           \
+    type* iter = array.getRawDataPointer(); \
+    for (int _i=0, _size=array.size(); _i < _size; ++_i, ++iter)
+
+#define juce_foreach_const(type, array)           \
+    const type* iter = array.getRawDataPointer(); \
+    for (int _i=0, _size=array.size(); _i < _size; ++_i, ++iter)
+
 #define CARLA_PREVENT_HEAP_ALLOCATION \
     JUCE_PREVENT_HEAP_ALLOCATION
 

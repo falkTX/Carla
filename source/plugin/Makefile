@@ -93,10 +93,10 @@ LIBS += ../modules/dgl.a
 endif
 
 ifeq ($(WIN32),true)
-TARGETS  = carla-native-export.exe
+TARGETS  = carla-native-lv2-export.exe
 TARGETS += carla-native.lv2/carla-native.dll
 else
-TARGETS  = carla-native-export
+TARGETS  = carla-native-lv2-export
 ifeq ($(MACOS),true)
 TARGETS += carla-native.lv2/carla-native.dylib
 else
@@ -121,30 +121,30 @@ debug:
 carla-native-base.cpp.o: carla-native-base.cpp ../modules/CarlaNative.h
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
-carla-native-export.cpp.o: carla-native-export.cpp carla-native-base.cpp ../modules/CarlaNative.h
+carla-native-lv2.cpp.o: carla-native-lv2.cpp carla-native-base.cpp ../modules/CarlaNative.h
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
-carla-native-plugin.cpp.o: carla-native-plugin.cpp carla-native-base.cpp ../modules/CarlaNative.h
+carla-native-lv2-export.cpp.o: carla-native-lv2-export.cpp carla-native-base.cpp ../modules/CarlaNative.h
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 # --------------------------------------------------------------
 
-carla-native-export: carla-native-export.cpp.o $(LIBS)
-	$(CXX) $^ $(LINK_FLAGS) -o $@
-	./carla-native-export
-
-carla-native-export.exe: carla-native-export.cpp.o $(LIBS)
-	$(CXX) $^ $(LINK_FLAGS) -o $@
-	./carla-native-export.exe
-
-carla-native.lv2/carla-native.dll: carla-native-plugin.cpp.o $(LIBS)
+carla-native.lv2/carla-native.dll: carla-native-lv2.cpp.o $(LIBS)
 	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
 
-carla-native.lv2/carla-native.dylib: carla-native-plugin.cpp.o $(LIBS)
+carla-native.lv2/carla-native.dylib: carla-native-lv2.cpp.o $(LIBS)
 	$(CXX) $^ -dynamiclib $(LINK_FLAGS) -o $@
 
-carla-native.lv2/carla-native.so: carla-native-plugin.cpp.o $(LIBS)
+carla-native.lv2/carla-native.so: carla-native-lv2.cpp.o $(LIBS)
 	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
+
+carla-native-lv2-export: carla-native-lv2-export.cpp.o $(LIBS)
+	$(CXX) $^ $(LINK_FLAGS) -o $@
+	./carla-native-lv2-export
+
+carla-native-lv2-export.exe: carla-native-lv2-export.cpp.o $(LIBS)
+	$(CXX) $^ $(LINK_FLAGS) -o $@
+	./carla-native-lv2-export.exe
 
 # --------------------------------------------------------------
 

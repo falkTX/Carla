@@ -104,7 +104,6 @@ LIBS += ../../modules/carla_native.a
 LIBS += ../../modules/juce_core.a
 LIBS += ../../modules/juce_audio_basics.a
 LIBS += ../../modules/rtmempool.a
-LIBS += ../../modules/theme.a
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
 LIBS += ../../modules/lilv.a
@@ -149,7 +148,7 @@ debug:
 	$(CXX) $^ -dynamiclib $(LINK_FLAGS) -framework CoreAudio -framework CoreMIDI -framework CoreFoundation -o $@
 
 ../libcarla_standalone.so: $(OBJS) $(LIBS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
+	$(CXX) $^ $(LINK_FLAGS) -o $@ # -shared
 
 # --------------------------------------------------------------
 

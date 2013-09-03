@@ -2014,7 +2014,7 @@ private:
 
 static const PluginDescriptor fxAlienWahDesc = {
     /* category  */ PLUGIN_CATEGORY_MODULATOR,
-    /* hints     */ static_cast<PluginHints>(PLUGIN_IS_RTSAFE|PLUGIN_USES_PANNING|PLUGIN_USES_STATIC_BUFFERS),
+    /* hints     */ static_cast<PluginHints>(PLUGIN_IS_RTSAFE|PLUGIN_USES_PANNING|PLUGIN_NEEDS_FIXED_BUFFERS),
     /* supports  */ static_cast<PluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 2,
@@ -2031,7 +2031,7 @@ static const PluginDescriptor fxAlienWahDesc = {
 
 static const PluginDescriptor fxChorusDesc = {
     /* category  */ PLUGIN_CATEGORY_MODULATOR,
-    /* hints     */ static_cast<PluginHints>(PLUGIN_IS_RTSAFE|PLUGIN_USES_PANNING|PLUGIN_USES_STATIC_BUFFERS),
+    /* hints     */ static_cast<PluginHints>(PLUGIN_IS_RTSAFE|PLUGIN_USES_PANNING|PLUGIN_NEEDS_FIXED_BUFFERS),
     /* supports  */ static_cast<PluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 2,
@@ -2048,7 +2048,7 @@ static const PluginDescriptor fxChorusDesc = {
 
 static const PluginDescriptor fxDistortionDesc = {
     /* category  */ PLUGIN_CATEGORY_MODULATOR,
-    /* hints     */ static_cast<PluginHints>(PLUGIN_USES_PANNING|PLUGIN_USES_STATIC_BUFFERS),
+    /* hints     */ static_cast<PluginHints>(PLUGIN_USES_PANNING|PLUGIN_NEEDS_FIXED_BUFFERS),
     /* supports  */ static_cast<PluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 2,
@@ -2065,7 +2065,7 @@ static const PluginDescriptor fxDistortionDesc = {
 
 static const PluginDescriptor fxDynamicFilterDesc = {
     /* category  */ PLUGIN_CATEGORY_FILTER,
-    /* hints     */ static_cast<PluginHints>(PLUGIN_USES_PANNING|PLUGIN_USES_STATIC_BUFFERS),
+    /* hints     */ static_cast<PluginHints>(PLUGIN_USES_PANNING|PLUGIN_NEEDS_FIXED_BUFFERS),
     /* supports  */ static_cast<PluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 2,
@@ -2082,7 +2082,7 @@ static const PluginDescriptor fxDynamicFilterDesc = {
 
 static const PluginDescriptor fxEchoDesc = {
     /* category  */ PLUGIN_CATEGORY_DELAY,
-    /* hints     */ static_cast<PluginHints>(PLUGIN_IS_RTSAFE|PLUGIN_USES_PANNING|PLUGIN_USES_STATIC_BUFFERS),
+    /* hints     */ static_cast<PluginHints>(PLUGIN_IS_RTSAFE|PLUGIN_USES_PANNING|PLUGIN_NEEDS_FIXED_BUFFERS),
     /* supports  */ static_cast<PluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 2,
@@ -2099,7 +2099,7 @@ static const PluginDescriptor fxEchoDesc = {
 
 static const PluginDescriptor fxPhaserDesc = {
     /* category  */ PLUGIN_CATEGORY_MODULATOR,
-    /* hints     */ static_cast<PluginHints>(PLUGIN_USES_PANNING|PLUGIN_USES_STATIC_BUFFERS),
+    /* hints     */ static_cast<PluginHints>(PLUGIN_USES_PANNING|PLUGIN_NEEDS_FIXED_BUFFERS),
     /* supports  */ static_cast<PluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 2,
@@ -2116,7 +2116,7 @@ static const PluginDescriptor fxPhaserDesc = {
 
 static const PluginDescriptor fxReverbDesc = {
     /* category  */ PLUGIN_CATEGORY_DELAY,
-    /* hints     */ static_cast<PluginHints>(PLUGIN_USES_PANNING|PLUGIN_USES_STATIC_BUFFERS),
+    /* hints     */ static_cast<PluginHints>(PLUGIN_USES_PANNING|PLUGIN_NEEDS_FIXED_BUFFERS),
     /* supports  */ static_cast<PluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 2,
@@ -2134,9 +2134,9 @@ static const PluginDescriptor fxReverbDesc = {
 static const PluginDescriptor zynaddsubfxDesc = {
     /* category  */ PLUGIN_CATEGORY_SYNTH,
 #ifdef WANT_ZYNADDSUBFX_UI
-    /* hints     */ static_cast<PluginHints>(PLUGIN_IS_SYNTH|PLUGIN_HAS_GUI|PLUGIN_USES_STATE),
+    /* hints     */ static_cast<PluginHints>(PLUGIN_HAS_GUI|PLUGIN_USES_STATE),
 #else
-    /* hints     */ static_cast<PluginHints>(PLUGIN_IS_SYNTH|PLUGIN_USES_STATE),
+    /* hints     */ static_cast<PluginHints>(PLUGIN_USES_STATE),
 #endif
     /* supports  */ static_cast<PluginSupports>(PLUGIN_SUPPORTS_CONTROL_CHANGES|PLUGIN_SUPPORTS_NOTE_AFTERTOUCH|PLUGIN_SUPPORTS_PITCHBEND|PLUGIN_SUPPORTS_ALL_SOUND_OFF),
     /* audioIns  */ 0,

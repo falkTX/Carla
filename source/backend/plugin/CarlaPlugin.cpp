@@ -20,10 +20,6 @@
 #include "CarlaLibUtils.hpp"
 #include "CarlaStateUtils.hpp"
 
-#include <QtCore/QFile>
-#include <QtCore/QTextStream>
-#include <QtCore/QSettings>
-
 CARLA_BACKEND_START_NAMESPACE
 
 // -------------------------------------------------------------------
@@ -181,13 +177,14 @@ const char* CarlaPluginProtectedData::libError(const char* const filename)
 
 void CarlaPluginProtectedData::saveSetting(const unsigned int option, const bool yesNo)
 {
+#if 0
     QSettings settings("falkTX", "CarlaPluginSettings");
     settings.beginGroup((const char*)idStr);
 
     switch (option)
     {
-    case PLUGIN_OPTION_FIXED_BUFFER:
-        settings.setValue("FixedBuffer", yesNo);
+    case PLUGIN_OPTION_FIXED_BUFFERS:
+        settings.setValue("FixedBuffers", yesNo);
         break;
     case PLUGIN_OPTION_FORCE_STEREO:
         settings.setValue("ForceStereo", yesNo);
@@ -218,10 +215,12 @@ void CarlaPluginProtectedData::saveSetting(const unsigned int option, const bool
     }
 
     settings.endGroup();
+#endif
 }
 
 unsigned int CarlaPluginProtectedData::loadSettings(const unsigned int options, const unsigned int availOptions)
 {
+#if 0
     QSettings settings("falkTX", "CarlaPluginSettings");
     settings.beginGroup((const char*)idStr);
 
@@ -239,7 +238,7 @@ unsigned int CarlaPluginProtectedData::loadSettings(const unsigned int options, 
             newOptions |= BIT;                                          \
     }
 
-    CHECK_AND_SET_OPTION("FixedBuffer", PLUGIN_OPTION_FIXED_BUFFER);
+    CHECK_AND_SET_OPTION("FixedBuffers", PLUGIN_OPTION_FIXED_BUFFERS);
     CHECK_AND_SET_OPTION("ForceStereo", PLUGIN_OPTION_FORCE_STEREO);
     CHECK_AND_SET_OPTION("MapProgramChanges", PLUGIN_OPTION_MAP_PROGRAM_CHANGES);
     CHECK_AND_SET_OPTION("UseChunks", PLUGIN_OPTION_USE_CHUNKS);
@@ -254,6 +253,8 @@ unsigned int CarlaPluginProtectedData::loadSettings(const unsigned int options, 
     settings.endGroup();
 
     return newOptions;
+#endif
+    return 0x0;
 }
 
 // -------------------------------------------------------------------
@@ -620,7 +621,8 @@ const SaveState& CarlaPlugin::getSaveState()
 
         if (data != nullptr && dataSize > 0)
         {
-            saveState.chunk = carla_strdup(QByteArray((char*)data, dataSize).toBase64().constData());
+            // TODO
+            //saveState.chunk = carla_strdup(QByteArray((char*)data, dataSize).toBase64().constData());
 
             // Don't save anything else if using chunks
             return saveState;
@@ -729,7 +731,7 @@ struct ParamSymbol {
 void CarlaPlugin::loadSaveState(const SaveState& saveState)
 {
     char strBuf[STR_MAX+1];
-    const bool usesMultiProgs(getType() == PLUGIN_SF2 || (getType() == PLUGIN_INTERNAL && (fHints & PLUGIN_IS_SYNTH) != 0));
+    const bool usesMultiProgs(getType() == PLUGIN_SF2 /*|| (getType() == PLUGIN_INTERNAL && (fHints & PLUGIN_IS_SYNTH) != 0)*/); // TODO
 
     // ---------------------------------------------------------------------
     // Part 1 - PRE-set custom data (only that which reload programs)
@@ -941,6 +943,7 @@ bool CarlaPlugin::saveStateToFile(const char* const filename)
     carla_debug("CarlaPlugin::saveStateToFile(\"%s\")", filename);
     CARLA_ASSERT(filename != nullptr);
 
+#if 0
     QFile file(filename);
 
     if (! file.open(QIODevice::WriteOnly | QIODevice::Text))
@@ -958,6 +961,9 @@ bool CarlaPlugin::saveStateToFile(const char* const filename)
 
     file.close();
     return true;
+#endif
+    pData->engine->setLastError("NIY");
+    return false;
 }
 
 bool CarlaPlugin::loadStateFromFile(const char* const filename)
@@ -965,6 +971,7 @@ bool CarlaPlugin::loadStateFromFile(const char* const filename)
     carla_debug("CarlaPlugin::loadStateFromFile(\"%s\")", filename);
     CARLA_ASSERT(filename != nullptr);
 
+#if 0
     QFile file(filename);
 
     if (! file.open(QIODevice::ReadOnly | QIODevice::Text))
@@ -987,6 +994,9 @@ bool CarlaPlugin::loadStateFromFile(const char* const filename)
     loadSaveState(saveState);
 
     return true;
+#endif
+    pData->engine->setLastError("NIY");
+    return false;
 }
 
 // -------------------------------------------------------------------
@@ -1537,7 +1547,7 @@ void CarlaPlugin::idleGui()
     if (! fEnabled)
         return;
 
-    if (fHints & PLUGIN_HAS_SINGLE_THREAD)
+    if (fHints & PLUGIN_NEEDS_SINGLE_THREAD)
     {
         // Process postponed events
         postRtEventsRun();

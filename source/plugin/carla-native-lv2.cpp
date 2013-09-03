@@ -15,6 +15,7 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
+#define CARLA_NATIVE_PLUGIN_LV2
 #include "carla-native-base.cpp"
 
 #include "juce_audio_basics.h"
@@ -30,6 +31,7 @@
 #include "lv2/state.h"
 #include "lv2/time.h"
 #include "lv2/ui.h"
+#include "lv2/urid.h"
 #include "lv2/lv2_external_ui.h"
 #include "lv2/lv2_programs.h"
 
@@ -58,8 +60,15 @@ public:
         show = extui_show;
         hide = extui_hide;
 
+        CarlaString resourceDir(bundlePath);
+#ifdef CARLA_OS_WIN
+        resourceDir += "\\resources\\";
+#else
+        resourceDir += "/resources/";
+#endif
+
         fHost.handle      = this;
-        fHost.resourceDir = carla_strdup(bundlePath);
+        fHost.resourceDir = resourceDir.dup();
         fHost.uiName      = nullptr;
 
         fHost.get_buffer_size        = host_get_buffer_size;
@@ -74,8 +83,9 @@ public:
         fHost.ui_save_file           = host_ui_save_file;
         fHost.dispatcher             = host_dispatcher;
 
-        const LV2_Options_Option* options = nullptr;
-        const LV2_URID_Map*       uridMap = nullptr;
+        const LV2_Options_Option* options   = nullptr;
+        const LV2_URID_Map*       uridMap   = nullptr;
+        const LV2_URID_Unmap*     uridUnmap = nullptr;
 
         for (int i=0; features[i] != nullptr; ++i)
         {
@@ -83,6 +93,8 @@ public:
                 options = (const LV2_Options_Option*)features[i]->data;
             else if (std::strcmp(features[i]->URI, LV2_URID__map) == 0)
                 uridMap = (const LV2_URID_Map*)features[i]->data;
+            else if (std::strcmp(features[i]->URI, LV2_URID__unmap) == 0)
+                uridUnmap = (const LV2_URID_Unmap*)features[i]->data;
         }
 
         if (options == nullptr || uridMap == nullptr)
@@ -93,19 +105,34 @@ public:
 
         for (int i=0; options[i].key != 0; ++i)
         {
+            if (uridUnmap != nullptr)
+            {
+                carla_debug("Host option %i:\"%s\"", i, uridUnmap->unmap(uridUnmap->handle, options[i].key));
+            }
+
             if (options[i].key == uridMap->map(uridMap->handle, LV2_BUF_SIZE__maxBlockLength))
             {
                 if (options[i].type == uridMap->map(uridMap->handle, LV2_ATOM__Int))
+                {
                     fBufferSize = *(const int*)options[i].value;
+
+                    if (fBufferSize == 0)
+                        carla_stderr("Host provides maxBlockLength but has null value");
+                }
                 else
                     carla_stderr("Host provides maxBlockLength but has wrong value type");
+
                 break;
             }
         }
 
         fUridMap = uridMap;
 
-        fUI.portOffset += (desc->midiIns > 0) ? desc->midiIns : 1;
+        if (fDescriptor->midiIns > 0)
+            fUI.portOffset += desc->midiIns;
+        else if (fDescriptor->hints & PLUGIN_USES_TIMEPOS)
+            fUI.portOffset += 1;
+
         fUI.portOffset += desc->midiOuts;
         fUI.portOffset += 1; // freewheel
         fUI.portOffset += desc->audioIns;
@@ -205,125 +232,130 @@ public:
             }
         }
 
-        fMidiEventCount = 0;
-        carla_zeroStruct<MidiEvent>(fMidiEvents, kMaxMidiEvents*2);
-
-        LV2_ATOM_SEQUENCE_FOREACH(fPorts.eventsIn[0], iter)
+        if (fDescriptor->midiIns > 0 || (fDescriptor->hints & PLUGIN_USES_TIMEPOS) != 0)
         {
-            const LV2_Atom_Event* const event((const LV2_Atom_Event*)iter);
+            fMidiEventCount = 0;
+            carla_zeroStruct<MidiEvent>(fMidiEvents, kMaxMidiEvents*2);
 
-            if (event == nullptr)
-                continue;
-            if (event->body.size > 4)
-                continue;
-            if (event->time.frames >= frames)
-                break;
-
-            if (event->body.type == fUris.midiEvent)
-            {
-                if (fMidiEventCount >= kMaxMidiEvents*2)
-                    continue;
-
-                const uint8_t* const data((const uint8_t*)(event + 1));
-
-                fMidiEvents[fMidiEventCount].port = 0;
-                fMidiEvents[fMidiEventCount].time = event->time.frames;
-                fMidiEvents[fMidiEventCount].size = event->body.size;
-
-                for (uint32_t i=0; i < event->body.size; ++i)
-                    fMidiEvents[fMidiEventCount].data[i] = data[i];
-
-                fMidiEventCount += 1;
-                continue;
-            }
-
-            if (event->body.type == fUris.atomBlank)
-            {
-                const LV2_Atom_Object* const obj((LV2_Atom_Object*)&event->body);
-
-                if (obj->body.otype != fUris.timePos)
-                    continue;
-
-                LV2_Atom* bar = nullptr;
-                LV2_Atom* barBeat = nullptr;
-                LV2_Atom* beatsPerBar = nullptr;
-                LV2_Atom* bpm = nullptr;
-                LV2_Atom* beatUnit = nullptr;
-                LV2_Atom* frame = nullptr;
-                LV2_Atom* speed = nullptr;
-
-                lv2_atom_object_get(obj,
-                                    fUris.timeBar, &bar,
-                                    fUris.timeBarBeat, &barBeat,
-                                    fUris.timeBeatsPerBar, &beatsPerBar,
-                                    fUris.timeBeatsPerMinute, &bpm,
-                                    fUris.timeBeatUnit, &beatUnit,
-                                    fUris.timeFrame, &frame,
-                                    fUris.timeSpeed, &speed,
-                                    nullptr);
-
-                if (bpm != nullptr && bpm->type == fUris.atomFloat)
-                {
-                    fTimeInfo.bbt.beatsPerMinute = ((LV2_Atom_Float*)bpm)->body;
-                    fTimeInfo.bbt.valid = true;
-                }
-
-                if (beatsPerBar != nullptr && beatsPerBar->type == fUris.atomFloat)
-                {
-                    float beatsPerBarValue = ((LV2_Atom_Float*)beatsPerBar)->body;
-                    fTimeInfo.bbt.beatsPerBar = beatsPerBarValue;
-
-                    if (bar != nullptr && bar->type == fUris.atomLong)
-                    {
-                        //float barValue = ((LV2_Atom_Long*)bar)->body;
-                        //curPosInfo.ppqPositionOfLastBarStart = barValue * beatsPerBarValue;
-
-                        if (barBeat != nullptr && barBeat->type == fUris.atomFloat)
-                        {
-                            //float barBeatValue = ((LV2_Atom_Float*)barBeat)->body;
-                            //curPosInfo.ppqPosition = curPosInfo.ppqPositionOfLastBarStart + barBeatValue;
-                        }
-                    }
-                }
-
-                if (beatUnit != nullptr && beatUnit->type == fUris.atomFloat)
-                    fTimeInfo.bbt.beatType = ((LV2_Atom_Float*)beatUnit)->body;
-
-                if (frame != nullptr && frame->type == fUris.atomLong)
-                    fTimeInfo.frame = ((LV2_Atom_Long*)frame)->body;
-
-                if (speed != nullptr && speed->type == fUris.atomFloat)
-                    fTimeInfo.playing = ((LV2_Atom_Float*)speed)->body == 1.0f;
-            }
-        }
-
-        for (uint32_t i=1; i < fDescriptor->midiIns; ++i)
-        {
-            LV2_ATOM_SEQUENCE_FOREACH(fPorts.eventsIn[i], iter)
+            LV2_ATOM_SEQUENCE_FOREACH(fPorts.eventsIn[0], iter)
             {
                 const LV2_Atom_Event* const event((const LV2_Atom_Event*)iter);
 
                 if (event == nullptr)
                     continue;
-                if (event->body.type != fUris.midiEvent)
-                    continue;
                 if (event->body.size > 4)
                     continue;
                 if (event->time.frames >= frames)
                     break;
-                if (fMidiEventCount >= kMaxMidiEvents*2)
-                    break;
 
-                const uint8_t* const data((const uint8_t*)(event + 1));
+                if (event->body.type == fUris.midiEvent)
+                {
+                    if (fMidiEventCount >= kMaxMidiEvents*2)
+                        continue;
 
-                fMidiEvents[fMidiEventCount].port = i;
-                fMidiEvents[fMidiEventCount].time = event->time.frames;
-                fMidiEvents[fMidiEventCount].size = event->body.size;
+                    const uint8_t* const data((const uint8_t*)(event + 1));
 
-                for (uint32_t j=0; j < event->body.size; ++j)
-                    fMidiEvents[fMidiEventCount].data[j] = data[j];
+                    fMidiEvents[fMidiEventCount].port = 0;
+                    fMidiEvents[fMidiEventCount].time = event->time.frames;
+                    fMidiEvents[fMidiEventCount].size = event->body.size;
 
-                fMidiEventCount += 1;
+                    for (uint32_t i=0; i < event->body.size; ++i)
+                        fMidiEvents[fMidiEventCount].data[i] = data[i];
+
+                    fMidiEventCount += 1;
+                    continue;
+                }
+
+                if (event->body.type == fUris.atomBlank)
+                {
+                    const LV2_Atom_Object* const obj((LV2_Atom_Object*)&event->body);
+
+                    if (obj->body.otype != fUris.timePos)
+                        continue;
+
+                    LV2_Atom* bar = nullptr;
+                    LV2_Atom* barBeat = nullptr;
+                    LV2_Atom* beatsPerBar = nullptr;
+                    LV2_Atom* bpm = nullptr;
+                    LV2_Atom* beatUnit = nullptr;
+                    LV2_Atom* frame = nullptr;
+                    LV2_Atom* speed = nullptr;
+
+                    lv2_atom_object_get(obj,
+                                        fUris.timeBar, &bar,
+                                        fUris.timeBarBeat, &barBeat,
+                                        fUris.timeBeatsPerBar, &beatsPerBar,
+                                        fUris.timeBeatsPerMinute, &bpm,
+                                        fUris.timeBeatUnit, &beatUnit,
+                                        fUris.timeFrame, &frame,
+                                        fUris.timeSpeed, &speed,
+                                        nullptr);
+
+                    if (bpm != nullptr && bpm->type == fUris.atomFloat)
+                    {
+                        fTimeInfo.bbt.beatsPerMinute = ((LV2_Atom_Float*)bpm)->body;
+                        fTimeInfo.bbt.valid = true;
+                    }
+
+                    if (beatsPerBar != nullptr && beatsPerBar->type == fUris.atomFloat)
+                    {
+                        float beatsPerBarValue = ((LV2_Atom_Float*)beatsPerBar)->body;
+                        fTimeInfo.bbt.beatsPerBar = beatsPerBarValue;
+
+                        if (bar != nullptr && bar->type == fUris.atomLong)
+                        {
+                            //float barValue = ((LV2_Atom_Long*)bar)->body;
+                            //curPosInfo.ppqPositionOfLastBarStart = barValue * beatsPerBarValue;
+
+                            if (barBeat != nullptr && barBeat->type == fUris.atomFloat)
+                            {
+                                //float barBeatValue = ((LV2_Atom_Float*)barBeat)->body;
+                                //curPosInfo.ppqPosition = curPosInfo.ppqPositionOfLastBarStart + barBeatValue;
+                            }
+                        }
+                    }
+
+                    if (beatUnit != nullptr && beatUnit->type == fUris.atomFloat)
+                        fTimeInfo.bbt.beatType = ((LV2_Atom_Float*)beatUnit)->body;
+
+                    if (frame != nullptr && frame->type == fUris.atomLong)
+                        fTimeInfo.frame = ((LV2_Atom_Long*)frame)->body;
+
+                    if (speed != nullptr && speed->type == fUris.atomFloat)
+                        fTimeInfo.playing = ((LV2_Atom_Float*)speed)->body == 1.0f;
+
+                    continue;
+                }
+            }
+
+            for (uint32_t i=1; i < fDescriptor->midiIns; ++i)
+            {
+                LV2_ATOM_SEQUENCE_FOREACH(fPorts.eventsIn[i], iter)
+                {
+                    const LV2_Atom_Event* const event((const LV2_Atom_Event*)iter);
+
+                    if (event == nullptr)
+                        continue;
+                    if (event->body.type != fUris.midiEvent)
+                        continue;
+                    if (event->body.size > 4)
+                        continue;
+                    if (event->time.frames >= frames)
+                        break;
+                    if (fMidiEventCount >= kMaxMidiEvents*2)
+                        break;
+
+                    const uint8_t* const data((const uint8_t*)(event + 1));
+
+                    fMidiEvents[fMidiEventCount].port = i;
+                    fMidiEvents[fMidiEventCount].time = event->time.frames;
+                    fMidiEvents[fMidiEventCount].size = event->body.size;
+
+                    for (uint32_t j=0; j < event->body.size; ++j)
+                        fMidiEvents[fMidiEventCount].data[j] = data[j];
+
+                    fMidiEventCount += 1;
+                }
             }
         }
 
@@ -392,9 +424,9 @@ public:
         return LV2_OPTIONS_SUCCESS;
     }
 
-    const LV2_Program_Descriptor* lv2_get_program(const uint32_t index) const
+    const LV2_Program_Descriptor* lv2_get_program(const uint32_t index)
     {
-        if (fDescriptor->hints & PLUGIN_IS_SYNTH)
+        if (fDescriptor->category == PLUGIN_CATEGORY_SYNTH)
             return nullptr;
         if (fDescriptor->get_midi_program_count == nullptr)
             return nullptr;
@@ -408,18 +440,16 @@ public:
         if (midiProg == nullptr)
             return nullptr;
 
-        static LV2_Program_Descriptor progDesc;
+        fProgramDesc.bank    = midiProg->bank;
+        fProgramDesc.program = midiProg->program;
+        fProgramDesc.name    = midiProg->name;
 
-        progDesc.bank    = midiProg->bank;
-        progDesc.program = midiProg->program;
-        progDesc.name    = midiProg->name;
-
-        return &progDesc;
+        return &fProgramDesc;
     }
 
     void lv2_select_program(uint32_t bank, uint32_t program)
     {
-        if (fDescriptor->hints & PLUGIN_IS_SYNTH)
+        if (fDescriptor->category == PLUGIN_CATEGORY_SYNTH)
             return;
         if (fDescriptor->set_midi_program == nullptr)
             return;
@@ -430,17 +460,12 @@ public:
     LV2_State_Status lv2_save(const LV2_State_Store_Function store, const LV2_State_Handle handle, const uint32_t /*flags*/, const LV2_Feature* const* const /*features*/) const
     {
         if ((fDescriptor->hints & PLUGIN_USES_STATE) == 0 || fDescriptor->get_state == nullptr)
-            return LV2_STATE_ERR_UNKNOWN;
+            return LV2_STATE_ERR_NO_FEATURE;
 
         if (char* const state = fDescriptor->get_state(fHandle))
         {
-            store(handle,
-                  fUridMap->map(fUridMap->handle, "http://kxstudio.sf.net/ns/carla/chunk"),
-                  state,
-                  std::strlen(state),
-                  fUridMap->map(fUridMap->handle, LV2_ATOM__String),
-                  LV2_STATE_IS_POD|LV2_STATE_IS_PORTABLE);
-
+            store(handle, fUridMap->map(fUridMap->handle, "http://kxstudio.sf.net/ns/carla/chunk"), state, std::strlen(state), fUris.atomString, LV2_STATE_IS_POD|LV2_STATE_IS_PORTABLE);
+            std::free(state);
             return LV2_STATE_SUCCESS;
         }
 
@@ -450,7 +475,7 @@ public:
     LV2_State_Status lv2_restore(const LV2_State_Retrieve_Function retrieve, const LV2_State_Handle handle, uint32_t flags, const LV2_Feature* const* const /*features*/) const
     {
         if ((fDescriptor->hints & PLUGIN_USES_STATE) == 0 || fDescriptor->set_state == nullptr)
-            return LV2_STATE_ERR_UNKNOWN;
+            return LV2_STATE_ERR_NO_FEATURE;
 
         size_t   size = 0;
         uint32_t type = 0;
@@ -462,7 +487,7 @@ public:
             return LV2_STATE_ERR_UNKNOWN;
         if (data == nullptr)
             return LV2_STATE_ERR_UNKNOWN;
-        if (type != fUridMap->map(fUridMap->handle, LV2_ATOM__String))
+        if (type != fUris.atomString)
             return LV2_STATE_ERR_BAD_TYPE;
 
         fDescriptor->set_state(fHandle, (const char*)data);
@@ -472,8 +497,7 @@ public:
 
     // -------------------------------------------------------------------
 
-    bool lv2ui_instantiate(LV2UI_Write_Function writeFunction, LV2UI_Controller controller, LV2UI_Widget* widget,
-                           const LV2_Feature* const* features)
+    bool lv2ui_instantiate(LV2UI_Write_Function writeFunction, LV2UI_Controller controller, LV2UI_Widget* widget, const LV2_Feature* const* features)
     {
         for (int i=0; features[i] != nullptr; ++i)
         {
@@ -529,7 +553,7 @@ public:
 
     void lv2ui_select_program(uint32_t bank, uint32_t program) const
     {
-        if (fDescriptor->hints & PLUGIN_IS_SYNTH)
+        if (fDescriptor->category == PLUGIN_CATEGORY_SYNTH)
             return;
         if (fDescriptor->ui_set_midi_program == nullptr)
             return;
@@ -608,13 +632,13 @@ protected:
         return false;
     }
 
-    void handleUiParameterChanged(const uint32_t index, const float value)
+    void handleUiParameterChanged(const uint32_t index, const float value) const
     {
         if (fUI.writeFunction != nullptr && fUI.controller != nullptr)
             fUI.writeFunction(fUI.controller, index+fUI.portOffset, sizeof(float), 0, &value);
     }
 
-    void handleUiCustomDataChanged(const char* const /*key*/, const char* const /*value*/)
+    void handleUiCustomDataChanged(const char* const /*key*/, const char* const /*value*/) const
     {
         //storeCustomData(key, value);
     }
@@ -707,12 +731,13 @@ private:
     PluginHandle   fHandle;
     HostDescriptor fHost;
     const PluginDescriptor* const fDescriptor;
+    LV2_Program_Descriptor        fProgramDesc;
 
     uint32_t  fMidiEventCount;
     MidiEvent fMidiEvents[kMaxMidiEvents*2];
     TimeInfo  fTimeInfo;
 
-    bool fIsProcessing;
+    bool  fIsProcessing;
     float fVolume;
     float fDryWet;
 
@@ -727,6 +752,7 @@ private:
         LV2_URID atomFloat;
         LV2_URID atomLong;
         LV2_URID atomSequence;
+        LV2_URID atomString;
         LV2_URID midiEvent;
         LV2_URID timePos;
         LV2_URID timeBar;
@@ -742,6 +768,7 @@ private:
               atomFloat(0),
               atomLong(0),
               atomSequence(0),
+              atomString(0),
               midiEvent(0),
               timePos(0),
               timeBar(0),
@@ -758,6 +785,7 @@ private:
             atomFloat    = uridMap->map(uridMap->handle, LV2_ATOM__Float);
             atomLong     = uridMap->map(uridMap->handle, LV2_ATOM__Long);
             atomSequence = uridMap->map(uridMap->handle, LV2_ATOM__Sequence);
+            atomString   = uridMap->map(uridMap->handle, LV2_ATOM__String);
             midiEvent    = uridMap->map(uridMap->handle, LV2_MIDI__MidiEvent);
             timePos      = uridMap->map(uridMap->handle, LV2_TIME__Position);
             timeBar      = uridMap->map(uridMap->handle, LV2_TIME__bar);
@@ -855,7 +883,7 @@ private:
                 for (uint32_t i=0; i < desc->midiIns; ++i)
                     eventsIn[i] = nullptr;
             }
-            else
+            else if (desc->hints & PLUGIN_USES_TIMEPOS)
             {
                 eventsIn = new LV2_Atom_Sequence*[1];
                 eventsIn[0] = nullptr;
@@ -907,10 +935,13 @@ private:
         {
             uint32_t index = 0;
 
-            if (port == index++)
+            if (desc->midiIns > 0 || (desc->hints & PLUGIN_USES_TIMEPOS) != 0)
             {
-                eventsIn[0] = (LV2_Atom_Sequence*)dataLocation;
-                return;
+                if (port == index++)
+                {
+                    eventsIn[0] = (LV2_Atom_Sequence*)dataLocation;
+                    return;
+                }
             }
 
             for (uint32_t i=1; i < desc->midiIns; ++i)
@@ -964,7 +995,6 @@ private:
                 }
             }
         }
-
     } fPorts;
 
     // -------------------------------------------------------------------

@@ -245,7 +245,7 @@ private:
 
 static const PluginDescriptor audiofileDesc = {
     /* category  */ PLUGIN_CATEGORY_UTILITY,
-    /* hints     */ static_cast<PluginHints>(PLUGIN_IS_RTSAFE|PLUGIN_HAS_GUI),
+    /* hints     */ static_cast<PluginHints>(PLUGIN_IS_RTSAFE|PLUGIN_HAS_GUI|PLUGIN_NEEDS_OPENSAVE),
     /* supports  */ static_cast<PluginSupports>(0x0),
     /* audioIns  */ 0,
     /* audioOuts */ 2,

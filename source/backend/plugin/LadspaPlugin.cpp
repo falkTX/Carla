@@ -173,7 +173,7 @@ public:
         unsigned int options = 0x0;
 
         if (! isDssiVst)
-            options |= PLUGIN_OPTION_FIXED_BUFFER;
+            options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
         if (pData->engine->getProccessMode() != PROCESS_MODE_CONTINUOUS_RACK)
         {
@@ -889,7 +889,7 @@ public:
             // ----------------------------------------------------------------------------------------------------
             // Event Input (System)
 
-            bool sampleAccurate  = (fOptions & PLUGIN_OPTION_FIXED_BUFFER) == 0;
+            bool sampleAccurate  = (fOptions & PLUGIN_OPTION_FIXED_BUFFERS) == 0;
 
             uint32_t time, nEvents = pData->event.portIn->getEventCount();
             uint32_t timeOffset = 0;
@@ -1465,7 +1465,7 @@ public:
             fOptions = 0x0;
 
             if (isDssiVst)
-                fOptions |= PLUGIN_OPTION_FIXED_BUFFER;
+                fOptions |= PLUGIN_OPTION_FIXED_BUFFERS;
 
             if (pData->engine->getOptions().forceStereo)
                 fOptions |= PLUGIN_OPTION_FORCE_STEREO;
@@ -1481,7 +1481,7 @@ public:
 
             // ignore settings, we need this anyway
             if (isDssiVst)
-                fOptions |= PLUGIN_OPTION_FIXED_BUFFER;
+                fOptions |= PLUGIN_OPTION_FIXED_BUFFERS;
         }
 
         return true;

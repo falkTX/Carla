@@ -24,10 +24,7 @@
 static PluginHandle bypass_instantiate(const HostDescriptor* host)
 {
     // dummy, return non-NULL
-    return (PluginHandle)0x1;
-
-    // unused
-    (void)host;
+    return (PluginHandle)host;
 }
 
 static void bypass_process(PluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const MidiEvent* midiEvents, uint32_t midiEventCount)

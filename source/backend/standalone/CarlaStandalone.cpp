@@ -22,19 +22,18 @@
 #include "CarlaEngine.hpp"
 #include "CarlaPlugin.hpp"
 #include "CarlaMIDI.h"
-
-#include "carla_native/CarlaNative.h"
+#include "CarlaNative.h"
 
 #include "CarlaLogThread.hpp"
 #include "CarlaStyle.hpp"
 
-#include <QtCore/QSettings>
-
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
-# include <QtWidgets/QApplication>
-#else
-# include <QtGui/QApplication>
-#endif
+// #include <QtCore/QSettings>
+//
+// #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+// # include <QtWidgets/QApplication>
+// #else
+// # include <QtGui/QApplication>
+// #endif
 
 #if ! (defined(DEBUG) || defined(WANT_LOGS) || defined(BUILD_ANSI_TEST))
 # define WANT_LOGS
@@ -47,6 +46,9 @@ using CB::CarlaPlugin;
 using CB::EngineOptions;
 using CB::EngineTimeInfo;
 
+// TEST
+int main() { return 0; }
+
 // -------------------------------------------------------------------------------------------------------------------
 // Single, standalone engine
 
@@ -57,82 +59,24 @@ struct CarlaBackendStandalone {
     CarlaString   lastError;
     EngineOptions options;
 
-    QApplication* app;
-    CarlaStyle* style;
-    bool needsInit;
-
     CarlaBackendStandalone()
         : callback(nullptr),
           callbackPtr(nullptr),
-          engine(nullptr),
-          app(qApp),
-          needsInit(app == nullptr)
+          engine(nullptr)
     {
-        checkTheme();
     }
 
     ~CarlaBackendStandalone()
     {
         CARLA_ASSERT(engine == nullptr);
-
-        if (needsInit)
-        {
-            CARLA_ASSERT(app == nullptr);
-            CARLA_ASSERT(style == nullptr);
-        }
     }
 
     void init()
     {
-        if (! needsInit)
-            return;
-        if (app != nullptr)
-            return;
-
-        // try again, app might be registed now
-        app = qApp;
-
-        if (app != nullptr)
-            return;
-
-        static int    argc = 0;
-        static char** argv = nullptr;
-        app = new QApplication(argc, argv, true);
-        checkTheme();
     }
 
     void close()
     {
-        if (! needsInit)
-            return;
-        if (app == nullptr)
-            return;
-
-        app->quit();
-        app->processEvents();
-
-        if (style != nullptr)
-        {
-            delete style;
-            style = nullptr;
-        }
-
-        delete app;
-        app = nullptr;
-    }
-
-    void checkTheme()
-    {
-        if (app == nullptr || style != nullptr)
-            return;
-
-        QSettings settings("falkTX", "Carla");
-
-        if (settings.value("Main/UseProTheme", true).toBool())
-        {
-            style = new CarlaStyle();
-            app->setStyle(style);
-        }
     }
 
     CARLA_DECLARE_NON_COPY_STRUCT(CarlaBackendStandalone)
@@ -329,12 +273,12 @@ const CarlaNativePluginInfo* carla_get_internal_plugin_info(unsigned int interna
 
      if (nativePlugin->hints & PLUGIN_IS_RTSAFE)
          info.hints |= CB::PLUGIN_IS_RTSAFE;
-     if (nativePlugin->hints & PLUGIN_IS_SYNTH)
-         info.hints |= CB::PLUGIN_IS_SYNTH;
      if (nativePlugin->hints & PLUGIN_HAS_GUI)
          info.hints |= CB::PLUGIN_HAS_GUI;
-     if (nativePlugin->hints & PLUGIN_USES_SINGLE_THREAD)
-         info.hints |= CB::PLUGIN_HAS_SINGLE_THREAD;
+     if (nativePlugin->hints & PLUGIN_NEEDS_SINGLE_THREAD)
+         info.hints |= CB::PLUGIN_NEEDS_SINGLE_THREAD;
+     if (nativePlugin->hints & PLUGIN_NEEDS_FIXED_BUFFERS)
+         info.hints |= CB::PLUGIN_NEEDS_FIXED_BUFFERS;
 
      info.audioIns  = nativePlugin->audioIns;
      info.audioOuts = nativePlugin->audioOuts;
@@ -435,6 +379,7 @@ bool carla_engine_init(const char* driverName, const char* clientName)
     gStandalone.engine->setOption(CB::OPTION_PATH_BRIDGE_WIN64,       0, (const char*)gStandalone.options.bridge_win64);
 #endif
 #ifdef WANT_LV2
+    gStandalone.engine->setOption(CB::OPTION_PATH_BRIDGE_LV2_EXTERNAL,0, (const char*)gStandalone.options.bridge_lv2Extrn);
     gStandalone.engine->setOption(CB::OPTION_PATH_BRIDGE_LV2_GTK2,    0, (const char*)gStandalone.options.bridge_lv2Gtk2);
     gStandalone.engine->setOption(CB::OPTION_PATH_BRIDGE_LV2_GTK3,    0, (const char*)gStandalone.options.bridge_lv2Gtk3);
     gStandalone.engine->setOption(CB::OPTION_PATH_BRIDGE_LV2_QT4,     0, (const char*)gStandalone.options.bridge_lv2Qt4);
@@ -444,7 +389,7 @@ bool carla_engine_init(const char* driverName, const char* clientName)
     gStandalone.engine->setOption(CB::OPTION_PATH_BRIDGE_LV2_X11,     0, (const char*)gStandalone.options.bridge_lv2X11);
 #endif
 #ifdef WANT_VST
-    gStandalone.engine->setOption(CB::OPTION_PATH_BRIDGE_VST_COCOA,   0, (const char*)gStandalone.options.bridge_vstCocoa);
+    gStandalone.engine->setOption(CB::OPTION_PATH_BRIDGE_VST_MAC,     0, (const char*)gStandalone.options.bridge_vstMac);
     gStandalone.engine->setOption(CB::OPTION_PATH_BRIDGE_VST_HWND,    0, (const char*)gStandalone.options.bridge_vstHWND);
     gStandalone.engine->setOption(CB::OPTION_PATH_BRIDGE_VST_X11,     0, (const char*)gStandalone.options.bridge_vstX11);
 #endif
@@ -494,8 +439,8 @@ void carla_engine_idle()
 {
     CARLA_ASSERT(gStandalone.engine != nullptr);
 
-    if (gStandalone.needsInit && gStandalone.app != nullptr)
-        gStandalone.app->processEvents();
+    //if (gStandalone.needsInit && gStandalone.app != nullptr)
+    //    gStandalone.app->processEvents();
 
     if (gStandalone.engine != nullptr)
         gStandalone.engine->idle();
@@ -642,6 +587,9 @@ void carla_set_engine_option(CarlaOptionsType option, int value, const char* val
 #endif
 
 #ifdef WANT_LV2
+    case CB::OPTION_PATH_BRIDGE_LV2_EXTERNAL:
+        gStandalone.options.bridge_lv2Extrn = valueStr;
+        break;
     case CB::OPTION_PATH_BRIDGE_LV2_GTK2:
         gStandalone.options.bridge_lv2Gtk2 = valueStr;
         break;
@@ -666,8 +614,8 @@ void carla_set_engine_option(CarlaOptionsType option, int value, const char* val
 #endif
 
 #ifdef WANT_VST
-    case CB::OPTION_PATH_BRIDGE_VST_COCOA:
-        gStandalone.options.bridge_vstCocoa = valueStr;
+    case CB::OPTION_PATH_BRIDGE_VST_MAC:
+        gStandalone.options.bridge_vstMac = valueStr;
         break;
     case CB::OPTION_PATH_BRIDGE_VST_HWND:
         gStandalone.options.bridge_vstHWND = valueStr;

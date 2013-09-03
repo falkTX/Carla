@@ -29,8 +29,6 @@
 #define __cplusplus old__cplusplus
 #undef old__cplusplus
 
-#include <QtCore/QFileInfo>
-
 namespace LinuxSampler {
 
 using CarlaBackend::CarlaEngine;
@@ -422,7 +420,7 @@ public:
 
         // plugin hints
         fHints  = 0x0;
-        fHints |= PLUGIN_IS_SYNTH;
+        //fHints |= PLUGIN_IS_SYNTH;
         fHints |= PLUGIN_CAN_VOLUME;
         fHints |= PLUGIN_CAN_BALANCE;
 
@@ -581,7 +579,7 @@ public:
             // Event Input (System)
 
             bool allNotesOffSent = false;
-            bool sampleAccurate  = (fOptions & PLUGIN_OPTION_FIXED_BUFFER) == 0;
+            bool sampleAccurate  = (fOptions & PLUGIN_OPTION_FIXED_BUFFERS) == 0;
 
             uint32_t time, nEvents = pData->event.portIn->getEventCount();
             uint32_t startTime  = 0;
@@ -980,13 +978,13 @@ public:
         // ---------------------------------------------------------------
         // Check if file exists
         {
-            QFileInfo file(filename);
-
-            if (! (file.exists() && file.isFile() && file.isReadable()))
-            {
-                pData->engine->setLastError("Requested file is not valid or does not exist");
-                return false;
-            }
+//             QFileInfo file(filename);
+//
+//             if (! (file.exists() && file.isFile() && file.isReadable()))
+//             {
+//                 pData->engine->setLastError("Requested file is not valid or does not exist");
+//                 return false;
+//             }
         }
 
         // ---------------------------------------------------------------

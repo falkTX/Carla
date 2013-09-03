@@ -334,6 +334,11 @@ public:
 #endif
     }
 
+    const char* dup() const
+    {
+        return carla_strdup(fBuffer);
+    }
+
     // -------------------------------------------------------------------
     // public operators
 

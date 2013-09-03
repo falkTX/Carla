@@ -193,7 +193,7 @@ static void midiGain_process(PluginHandle handle, float** inBuffer, float** outB
 
             if (value <= 0.0f)
                 tmpEvent.data[2] = 0;
-            else if (value >= 1.27f)
+            else if (value >= 127.0f)
                 tmpEvent.data[2] = 127;
             else
                 tmpEvent.data[2] = (uint8_t)value;

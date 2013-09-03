@@ -54,15 +54,15 @@ const unsigned int MAX_DEFAULT_PARAMETERS = 200; //!< Maximum default number of 
  * \see CarlaPlugin::hints()
  * @{
  */
-const unsigned int PLUGIN_IS_BRIDGE         = 0x001; //!< Plugin is a bridge. This hint is required because "bridge" itself is not a plugin type.
-const unsigned int PLUGIN_IS_RTSAFE         = 0x002; //!< Plugin is hard real-time safe.
-const unsigned int PLUGIN_IS_SYNTH          = 0x004; //!< Plugin is a synthesizer (produces sound).
-const unsigned int PLUGIN_HAS_GUI           = 0x010; //!< Plugin has its own custom GUI.
-const unsigned int PLUGIN_HAS_SINGLE_THREAD = 0x020; //!< Plugin has a single thread for all UI events (not thread-safe).
-const unsigned int PLUGIN_CAN_DRYWET        = 0x100; //!< Plugin can use internal Dry/Wet control.
-const unsigned int PLUGIN_CAN_VOLUME        = 0x200; //!< Plugin can use internal Volume control.
-const unsigned int PLUGIN_CAN_BALANCE       = 0x400; //!< Plugin can use internal Left & Right Balance controls.
-const unsigned int PLUGIN_CAN_PANNING       = 0x800; //!< Plugin can use internal Panning control.
+const unsigned int PLUGIN_IS_BRIDGE   = 0x001; //!< Plugin is a bridge. This hint is required because "bridge" itself is not a plugin type.
+const unsigned int PLUGIN_IS_RTSAFE   = 0x002; //!< Plugin is hard real-time safe.
+const unsigned int PLUGIN_HAS_GUI     = 0x004; //!< Plugin has its own custom GUI.
+const unsigned int PLUGIN_CAN_DRYWET  = 0x010; //!< Plugin can use internal Dry/Wet control.
+const unsigned int PLUGIN_CAN_VOLUME  = 0x020; //!< Plugin can use internal Volume control.
+const unsigned int PLUGIN_CAN_BALANCE = 0x040; //!< Plugin can use internal Left & Right Balance controls.
+const unsigned int PLUGIN_CAN_PANNING = 0x080; //!< Plugin can use internal Panning control.
+const unsigned int PLUGIN_NEEDS_SINGLE_THREAD = 0x100; //!< Plugin needs a single thread for all UI events.
+const unsigned int PLUGIN_NEEDS_FIXED_BUFFERS = 0x200; //!< Plugin needs constant/fixed-size audio buffers.
 /**@}*/
 
 /*!
@@ -72,7 +72,7 @@ const unsigned int PLUGIN_CAN_PANNING       = 0x800; //!< Plugin can use interna
  * \see CarlaPlugin::availableOptions() and CarlaPlugin::options()
  * @{
  */
-const unsigned int PLUGIN_OPTION_FIXED_BUFFER          = 0x001; //!< Use a constant/fixed-size audio buffer.
+const unsigned int PLUGIN_OPTION_FIXED_BUFFERS         = 0x001; //!< Use constant/fixed-size audio buffers.
 const unsigned int PLUGIN_OPTION_FORCE_STEREO          = 0x002; //!< Force mono plugin as stereo.
 const unsigned int PLUGIN_OPTION_MAP_PROGRAM_CHANGES   = 0x004; //!< Map MIDI-Programs to plugin programs.
 const unsigned int PLUGIN_OPTION_USE_CHUNKS            = 0x008; //!< Use chunks to save&restore data.
@@ -90,13 +90,13 @@ const unsigned int PLUGIN_OPTION_SEND_ALL_SOUND_OFF    = 0x100; //!< Send MIDI a
  * \see CarlaPlugin::parameterData()
  * @{
  */
-const unsigned int PARAMETER_IS_BOOLEAN       = 0x001; //!< Parameter value is a boolean (always at minimum or maximum values).
-const unsigned int PARAMETER_IS_INTEGER       = 0x002; //!< Parameter value is an integer.
+const unsigned int PARAMETER_IS_BOOLEAN       = 0x001; //!< Parameter values are boolean (always at minimum or maximum values).
+const unsigned int PARAMETER_IS_INTEGER       = 0x002; //!< Parameter values are integer.
 const unsigned int PARAMETER_IS_LOGARITHMIC   = 0x004; //!< Parameter values are logarithmic.
-const unsigned int PARAMETER_IS_ENABLED       = 0x008; //!< Parameter is enabled (can be changed).
+const unsigned int PARAMETER_IS_ENABLED       = 0x008; //!< Parameter is enabled (can be viewed and changed).
 const unsigned int PARAMETER_IS_AUTOMABLE     = 0x010; //!< Parameter is automable (realtime safe).
 const unsigned int PARAMETER_IS_READ_ONLY     = 0x020; //!< Parameter is read-only.
-const unsigned int PARAMETER_USES_SAMPLERATE  = 0x040; //!< Parameter needs Sample-Rate to work (value and ranges are multiplied by SR, and must be divided by SR on save).
+const unsigned int PARAMETER_USES_SAMPLERATE  = 0x040; //!< Parameter needs sample rate to work (value and ranges are multiplied by SR on usage, divided by SR on save).
 const unsigned int PARAMETER_USES_SCALEPOINTS = 0x080; //!< Parameter uses scalepoints to define internal values in a meaningful way.
 const unsigned int PARAMETER_USES_CUSTOM_TEXT = 0x100; //!< Parameter uses custom text for displaying its value.\see CarlaPlugin::getParameterText()
 /**@}*/
@@ -225,7 +225,6 @@ enum OptionsType {
     /*!
      * Set the current process name.\n
      * This is a convenience option, as Python lacks this functionality.
-     * \note Not available on all platforms.
      */
     OPTION_PROCESS_NAME = 0,
 
@@ -257,7 +256,7 @@ enum OptionsType {
     OPTION_PREFER_PLUGIN_BRIDGES = 4,
 
     /*!
-     * Use OSC-UI bridges whenever possible, otherwise UIs will be handled in the main thread.\n
+     * Use UI bridges whenever possible, otherwise UIs will be handled in the main thread.\n
      * Default is yes.
      */
     OPTION_PREFER_UI_BRIDGES = 5,
@@ -403,10 +402,10 @@ enum OptionsType {
 
 #ifdef WANT_VST
     /*!
-     * Set path to the VST Cocoa UI bridge executable.\n
+     * Set path to the VST Mac UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_VST_COCOA = 28,
+    OPTION_PATH_BRIDGE_VST_MAC = 28,
 
     /*!
      * Set path to the VST HWND UI bridge executable.\n

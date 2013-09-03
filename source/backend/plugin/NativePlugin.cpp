@@ -19,15 +19,7 @@
 
 #ifdef WANT_NATIVE
 
-#include "carla_native/CarlaNative.h"
-
-#include <QtCore/Qt>
-
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
-# include <QtWidgets/QFileDialog>
-#else
-# include <QtGui/QFileDialog>
-#endif
+#include "CarlaNative.h"
 
 extern "C" {
 
@@ -63,7 +55,7 @@ void carla_register_native_plugin_3BandEQ();
 void carla_register_native_plugin_3BandSplitter();
 void carla_register_native_plugin_Nekobi();
 void carla_register_native_plugin_PingPongPan();
-void carla_register_native_plugin_StereoEnhancer();
+//void carla_register_native_plugin_StereoEnhancer();
 #endif
 
 // DISTRHO plugins (Qt)
@@ -109,7 +101,7 @@ void carla_register_all_plugins()
     carla_register_native_plugin_3BandSplitter();
     carla_register_native_plugin_Nekobi();
     carla_register_native_plugin_PingPongPan();
-    carla_register_native_plugin_StereoEnhancer(); // unfinished
+    //carla_register_native_plugin_StereoEnhancer(); // unfinished
 #endif
 
     // DISTRHO plugins (Qt)
@@ -368,8 +360,8 @@ public:
         if (hasMidiProgs && (fDescriptor->supports & ::PLUGIN_SUPPORTS_PROGRAM_CHANGES) == 0)
             options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
-        if (getMidiInCount() == 0 && (fDescriptor->hints & ::PLUGIN_USES_STATIC_BUFFERS) == 0)
-            options |= PLUGIN_OPTION_FIXED_BUFFER;
+        if (getMidiInCount() == 0 && (fDescriptor->hints & ::PLUGIN_NEEDS_FIXED_BUFFERS) == 0)
+            options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
         if (pData->engine->getProccessMode() != PROCESS_MODE_CONTINUOUS_RACK)
         {
@@ -556,7 +548,7 @@ public:
         CARLA_ASSERT(fDescriptor != nullptr);
         CARLA_ASSERT(fHandle != nullptr);
 
-        if (pData->midiprog.count > 0 && (fHints & PLUGIN_IS_SYNTH) != 0)
+        if (pData->midiprog.count > 0 /*&& (fHints & PLUGIN_IS_SYNTH) != 0*/) // TODO
         {
             char strBuf[STR_MAX+1];
             std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i",
@@ -666,6 +658,7 @@ public:
         }
         else if (std::strcmp(key, "midiPrograms") == 0 && fDescriptor->set_midi_program != nullptr)
         {
+#if 0 // TODO
             QStringList midiProgramList(QString(value).split(":", QString::SkipEmptyParts));
 
             if (midiProgramList.count() == MAX_MIDI_CHANNELS)
@@ -698,6 +691,7 @@ public:
                     ++i;
                 }
             }
+#endif
         }
         else
         {
@@ -727,8 +721,9 @@ public:
         else if (index > static_cast<int32_t>(pData->midiprog.count))
             return;
 
-        if ((fHints & PLUGIN_IS_SYNTH) != 0 && (pData->ctrlChannel < 0 || pData->ctrlChannel >= MAX_MIDI_CHANNELS))
-            return;
+        // TODO
+        //if ((fHints & PLUGIN_IS_SYNTH) != 0 && (pData->ctrlChannel < 0 || pData->ctrlChannel >= MAX_MIDI_CHANNELS))
+        //    return;
 
         if (index >= 0)
         {
@@ -1175,12 +1170,12 @@ public:
         // native plugin hints
         if (fDescriptor->hints & ::PLUGIN_IS_RTSAFE)
             fHints |= PLUGIN_IS_RTSAFE;
-        if (fDescriptor->hints & ::PLUGIN_IS_SYNTH)
-            fHints |= PLUGIN_IS_SYNTH;
         if (fDescriptor->hints & ::PLUGIN_HAS_GUI)
             fHints |= PLUGIN_HAS_GUI;
-        if (fDescriptor->hints & ::PLUGIN_USES_SINGLE_THREAD)
-            fHints |= PLUGIN_HAS_SINGLE_THREAD;
+        if (fDescriptor->hints & ::PLUGIN_NEEDS_SINGLE_THREAD)
+            fHints |= PLUGIN_NEEDS_SINGLE_THREAD;
+        if (fDescriptor->hints & ::PLUGIN_NEEDS_FIXED_BUFFERS)
+            fHints |= PLUGIN_NEEDS_FIXED_BUFFERS;
 
         // extra plugin hints
         pData->extraHints = 0x0;
@@ -1438,7 +1433,7 @@ public:
             // Event Input (System)
 
             bool allNotesOffSent = false;
-            bool sampleAccurate  = (fOptions & PLUGIN_OPTION_FIXED_BUFFER) == 0;
+            bool sampleAccurate  = (fOptions & PLUGIN_OPTION_FIXED_BUFFERS) == 0;
 
             uint32_t time, nEvents = pData->event.portIn->getEventCount();
             uint32_t startTime  = 0;
@@ -2183,20 +2178,22 @@ protected:
     const char* handleUiOpenFile(const bool isDir, const char* const title, const char* const filter)
     {
         static CarlaString retStr;
+#if 0
         QFileDialog::Options options(isDir ? QFileDialog::ShowDirsOnly : 0x0);
 
         retStr = QFileDialog::getOpenFileName(nullptr, title, "", filter, nullptr, options).toUtf8().constData();
-
+#endif
         return retStr.isNotEmpty() ? (const char*)retStr : nullptr;
     }
 
     const char* handleUiSaveFile(const bool isDir, const char* const title, const char* const filter)
     {
         static CarlaString retStr;
+#if 0
         QFileDialog::Options options(isDir ? QFileDialog::ShowDirsOnly : 0x0);
 
         retStr = QFileDialog::getSaveFileName(nullptr, title, "", filter, nullptr, options).toUtf8().constData();
-
+#endif
         return retStr.isNotEmpty() ? (const char*)retStr : nullptr;
     }
 
@@ -2234,6 +2231,10 @@ protected:
             setPanning(opt, true, true);
             break;
 #endif
+        case HOST_OPCODE_GET_PARAMETER_MIDI_CC:
+        case HOST_OPCODE_SET_PARAMETER_MIDI_CC:
+            // TODO
+            break;
         case ::HOST_OPCODE_SET_PROCESS_PRECISION:
             // TODO
             break;
@@ -2411,8 +2412,8 @@ public:
             if (hasMidiProgs && (fDescriptor->supports & ::PLUGIN_SUPPORTS_PROGRAM_CHANGES) == 0)
                 fOptions |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
-            if (getMidiInCount() > 0 || (fDescriptor->hints & ::PLUGIN_USES_STATIC_BUFFERS) != 0)
-                fOptions |= PLUGIN_OPTION_FIXED_BUFFER;
+            if (getMidiInCount() > 0 || (fDescriptor->hints & ::PLUGIN_NEEDS_FIXED_BUFFERS) != 0)
+                fOptions |= PLUGIN_OPTION_FIXED_BUFFERS;
 
             if (pData->engine->getOptions().forceStereo)
                 fOptions |= PLUGIN_OPTION_FORCE_STEREO;
@@ -2432,8 +2433,8 @@ public:
             fOptions = pData->loadSettings(fOptions, getAvailableOptions());
 
             // ignore settings, we need this anyway
-            if (getMidiInCount() > 0 || (fDescriptor->hints & ::PLUGIN_USES_STATIC_BUFFERS) != 0)
-                fOptions |= PLUGIN_OPTION_FIXED_BUFFER;
+            if (getMidiInCount() > 0 || (fDescriptor->hints & ::PLUGIN_NEEDS_FIXED_BUFFERS) != 0)
+                fOptions |= PLUGIN_OPTION_FIXED_BUFFERS;
         }
 
         return true;

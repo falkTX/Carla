@@ -20,6 +20,7 @@
 
 #include "CarlaPluginInternal.hpp"
 
+#if 0
 #include <QtGui/QCloseEvent>
 
 # if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
@@ -78,5 +79,6 @@ private slots:
 };
 
 CARLA_BACKEND_END_NAMESPACE
+#endif
 
 #endif // CARLA_PLUGIN_GUI_HPP_INCLUDED

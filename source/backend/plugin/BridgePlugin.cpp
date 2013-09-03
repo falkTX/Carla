@@ -28,11 +28,6 @@
 #include <cmath>
 #include <ctime>
 
-#include <QtCore/QDir>
-#include <QtCore/QFile>
-#include <QtCore/QStringList>
-#include <QtCore/QTextStream>
-
 #define CARLA_BRIDGE_CHECK_OSC_TYPES(/* argc, types, */ argcToCompare, typesToCompare)                                       \
     /* check argument count */                                                                                               \
     if (argc != argcToCompare)                                                                                               \

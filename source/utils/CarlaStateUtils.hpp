@@ -22,11 +22,10 @@
 #include "CarlaMIDI.h"
 #include "RtList.hpp"
 
-#if 1
+#if 0
 # include <QtXml/QDomNode>
 #else
-# include "juce_core/AppConfig.h"
-# include "juce_core/juce_core.h"
+# include "juce_core.h"
 using juce::String;
 #endif
 
@@ -219,7 +218,7 @@ struct SaveState {
 
 // -----------------------------------------------------------------------
 
-#if 1
+#if 0
 static inline
 QString xmlSafeString(const QString& string, const bool toXml)
 {
@@ -257,11 +256,10 @@ const char* xmlSafeStringCharDup(const String& string, const bool toXml)
 
 // -----------------------------------------------------------------------
 
+#if 0
 static inline
 void fillSaveStateFromXmlNode(SaveState& saveState, const QDomNode& xmlNode)
 {
-    saveState.reset();
-
     if (xmlNode.isNull())
         return;
 
@@ -467,109 +465,108 @@ void fillSaveStateFromXmlNode(SaveState& saveState, const QDomNode& xmlNode)
         }
     }
 }
+#endif
 
 // -----------------------------------------------------------------------
 
 static inline
-void fillXmlStringFromSaveState(QString& content, const SaveState& saveState)
+void fillXmlStringFromSaveState(String& content, const SaveState& saveState)
 {
-    content.clear();
-
     {
-        QString info("  <Info>\n");
+        String info("  <Info>\n");
 
-        info += QString("   <Type>%1</Type>\n").arg(saveState.type);
-        info += QString("   <Name>%1</Name>\n").arg(xmlSafeString(saveState.name, true));
+        info << "   <Type>" << saveState.type                      << "</Type>\n";
+        info << "   <Name>" << xmlSafeString(saveState.name, true) << "</Name>\n";
 
         switch (getPluginTypeFromString(saveState.type))
         {
         case PLUGIN_NONE:
             break;
         case PLUGIN_INTERNAL:
-            info += QString("   <Label>%1</Label>\n").arg(xmlSafeString(saveState.label, true));
+            info << "   <Label>"    << xmlSafeString(saveState.label, true)  << "</Label>\n";
             break;
         case PLUGIN_LADSPA:
-            info += QString("   <Binary>%1</Binary>\n").arg(xmlSafeString(saveState.binary, true));
-            info += QString("   <Label>%1</Label>\n").arg(xmlSafeString(saveState.label, true));
-            info += QString("   <UniqueID>%1</UniqueID>\n").arg(saveState.uniqueID);
+            info << "   <Binary>"   << xmlSafeString(saveState.binary, true) << "</Binary>\n";
+            info << "   <Label>"    << xmlSafeString(saveState.label, true)  << "</Label>\n";
+            info << "   <UniqueID>" << saveState.uniqueID                    << "</UniqueID>\n";
             break;
         case PLUGIN_DSSI:
-            info += QString("   <Binary>%1</Binary>\n").arg(xmlSafeString(saveState.binary, true));
-            info += QString("   <Label>%1</Label>\n").arg(xmlSafeString(saveState.label, true));
+            info << "   <Binary>"   << xmlSafeString(saveState.binary, true) << "</Binary>\n";
+            info << "   <Label>"    << xmlSafeString(saveState.label, true)  << "</Label>\n";
             break;
         case PLUGIN_LV2:
-            info += QString("   <URI>%1</URI>\n").arg(xmlSafeString(saveState.label, true));
+            info << "   <URI>"      << xmlSafeString(saveState.label, true)  << "</URI>\n";
             break;
         case PLUGIN_VST:
-            info += QString("   <Binary>%1</Binary>\n").arg(xmlSafeString(saveState.binary, true));
-            info += QString("   <UniqueID>%1</UniqueID>\n").arg(saveState.uniqueID);
+            info << "   <Binary>"   << xmlSafeString(saveState.binary, true) << "</Binary>\n";
+            info << "   <UniqueID>" << saveState.uniqueID                    << "</UniqueID>\n";
             break;
         case PLUGIN_AU:
             // TODO?
-            info += QString("   <Binary>%1</Binary>\n").arg(xmlSafeString(saveState.binary, true));
-            info += QString("   <UniqueID>%1</UniqueID>\n").arg(saveState.uniqueID);
+            info << "   <Binary>"   << xmlSafeString(saveState.binary, true) << "</Binary>\n";
+            info << "   <UniqueID>" << saveState.uniqueID                    << "</UniqueID>\n";
             break;
         case PLUGIN_CSOUND:
         case PLUGIN_GIG:
         case PLUGIN_SF2:
         case PLUGIN_SFZ:
-            info += QString("   <Binary>%1</Binary>\n").arg(xmlSafeString(saveState.binary, true));
-            info += QString("   <Label>%1</Label>\n").arg(xmlSafeString(saveState.label, true));
+            info << "   <Binary>"   << xmlSafeString(saveState.binary, true) << "</Binary>\n";
+            info << "   <Label>"    << xmlSafeString(saveState.label, true)  << "</Label>\n";
             break;
         }
 
-        info += "  </Info>\n\n";
+        info << "  </Info>\n\n";
 
-        content += info;
+        content << info;
     }
 
     {
-        QString data("  <Data>\n");
+        String data("  <Data>\n");
 
-        data += QString("   <Active>%1</Active>\n").arg(saveState.active ? "Yes" : "No");
+        data << "   <Active>" << (saveState.active ? "Yes" : "No") << "</Active>\n";
 
         if (saveState.dryWet != 1.0f)
-            data += QString("   <DryWet>%1</DryWet>\n").arg(saveState.dryWet);
+            data << "   <DryWet>"        << saveState.dryWet       << "</DryWet>\n";
         if (saveState.volume != 1.0f)
-            data += QString("   <Volume>%1</Volume>\n").arg(saveState.volume);
+            data << "   <Volume>"        << saveState.volume       << "</Volume>\n";
         if (saveState.balanceLeft != -1.0f)
-            data += QString("   <Balance-Left>%1</Balance-Left>\n").arg(saveState.balanceLeft);
+            data << "   <Balance-Left>"  << saveState.balanceLeft  << "</Balance-Left>\n";
         if (saveState.balanceRight != 1.0f)
-            data += QString("   <Balance-Right>%1</Balance-Right>\n").arg(saveState.balanceRight);
+            data << "   <Balance-Right>" << saveState.balanceRight << "</Balance-Right>\n";
         if (saveState.panning != 0.0f)
-            data += QString("   <Panning>%1</Panning>\n").arg(saveState.panning);
+            data << "   <Panning>"       << saveState.panning      << "</Panning>\n";
 
         if (saveState.ctrlChannel < 0)
-            data += QString("   <ControlChannel>N</ControlChannel>\n");
+            data << "   <ControlChannel>N</ControlChannel>\n";
         else
-            data += QString("   <ControlChannel>%1</ControlChannel>\n").arg(saveState.ctrlChannel+1);
+            data << "   <ControlChannel>" << saveState.ctrlChannel+1 << "</ControlChannel>\n";
 
-        content += data;
+        content << data;
     }
 
     for (StateParameterItenerator it = saveState.parameters.begin(); it.valid(); it.next())
     {
         StateParameter* const stateParameter(*it);
 
-        QString parameter("\n""   <Parameter>\n");
+        String parameter("\n""   <Parameter>\n");
 
-        parameter += QString("    <Index>%1</Index>\n").arg(stateParameter->index);
-        parameter += QString("    <Name>%1</Name>\n").arg(xmlSafeString(stateParameter->name, true));
+        parameter << "    <Index>" << (long)stateParameter->index               << "</Index>\n"; // FIXME
+        parameter << "    <Name>"  << xmlSafeString(stateParameter->name, true) << "</Name>\n";
 
         if (stateParameter->symbol != nullptr && *stateParameter->symbol != '\0')
-            parameter += QString("    <Symbol>%1</Symbol>\n").arg(xmlSafeString(stateParameter->symbol, true));
+            parameter << "    <Symbol>" << xmlSafeString(stateParameter->symbol, true) << "</Symbol>\n";
 
-        parameter += QString("    <Value>%1</Value>\n").arg(stateParameter->value);
+        parameter << "    <Value>" << stateParameter->value << "</Value>\n";
 
         if (stateParameter->midiCC > 0)
         {
-            parameter += QString("    <MidiCC>%1</MidiCC>\n").arg(stateParameter->midiCC);
-            parameter += QString("    <MidiChannel>%1</MidiChannel>\n").arg(stateParameter->midiChannel+1);
+            parameter << "    <MidiCC>"      << stateParameter->midiCC        << "</MidiCC>\n";
+            parameter << "    <MidiChannel>" << stateParameter->midiChannel+1 << "</MidiChannel>\n";
         }
 
-        parameter += "   </Parameter>\n";
+        parameter << "   </Parameter>\n";
 
-        content += parameter;
+        content << parameter;
     }
 
     if (saveState.currentProgramIndex >= 0 && saveState.currentProgramName != nullptr)
@@ -581,55 +578,55 @@ void fillXmlStringFromSaveState(QString& content, const SaveState& saveState)
         if ((saveState.currentProgramIndex > 0 || std::strcmp(saveState.currentProgramName, "Default") != 0))
 #endif
         {
-            QString program("\n");
-            program += QString("   <CurrentProgramIndex>%1</CurrentProgramIndex>\n").arg(saveState.currentProgramIndex+1);
-            program += QString("   <CurrentProgramName>%1</CurrentProgramName>\n").arg(xmlSafeString(saveState.currentProgramName, true));
+            String program("\n");
+            program << "   <CurrentProgramIndex>" << saveState.currentProgramIndex+1                   << "</CurrentProgramIndex>\n";
+            program << "   <CurrentProgramName>"  << xmlSafeString(saveState.currentProgramName, true) << "</CurrentProgramName>\n";
 
-            content += program;
+            content << program;
         }
     }
 
     if (saveState.currentMidiBank >= 0 && saveState.currentMidiProgram >= 0)
     {
-        QString midiProgram("\n");
-        midiProgram += QString("   <CurrentMidiBank>%1</CurrentMidiBank>\n").arg(saveState.currentMidiBank+1);
-        midiProgram += QString("   <CurrentMidiProgram>%1</CurrentMidiProgram>\n").arg(saveState.currentMidiProgram+1);
+        String midiProgram("\n");
+        midiProgram << "   <CurrentMidiBank>"    << saveState.currentMidiBank+1    << "</CurrentMidiBank>\n";
+        midiProgram << "   <CurrentMidiProgram>" << saveState.currentMidiProgram+1 << "</CurrentMidiProgram>\n";
 
-        content += midiProgram;
+        content << midiProgram;
     }
 
     for (StateCustomDataItenerator it = saveState.customData.begin(); it.valid(); it.next())
     {
         StateCustomData* const stateCustomData(*it);
 
-        QString customData("\n""   <CustomData>\n");
-        customData += QString("    <Type>%1</Type>\n").arg(xmlSafeString(stateCustomData->type, true));
-        customData += QString("    <Key>%1</Key>\n").arg(xmlSafeString(stateCustomData->key, true));
+        String customData("\n""   <CustomData>\n");
+        customData << "    <Type>" << xmlSafeString(stateCustomData->type, true) << "</Type>\n";
+        customData << "    <Key>"  << xmlSafeString(stateCustomData->key, true)  << "</Key>\n";
 
         if (std::strcmp(stateCustomData->type, CUSTOM_DATA_CHUNK) == 0 || std::strlen(stateCustomData->value) >= 128)
         {
-            customData += "    <Value>\n";
-            customData += QString("%1\n").arg(xmlSafeString(stateCustomData->value, true));
-            customData += "    </Value>\n";
+            customData << "    <Value>\n";
+            customData << "" << xmlSafeString(stateCustomData->value, true) << "\n";
+            customData << "    </Value>\n";
         }
         else
-            customData += QString("    <Value>%1</Value>\n").arg(xmlSafeString(stateCustomData->value, true));
+            customData << "    <Value>" << xmlSafeString(stateCustomData->value, true) << "</Value>\n";
 
-        customData += "   </CustomData>\n";
+        customData << "   </CustomData>\n";
 
-        content += customData;
+        content << customData;
     }
 
     if (saveState.chunk != nullptr && *saveState.chunk != '\0')
     {
-        QString chunk("\n""   <Chunk>\n");
-        chunk += QString("%1\n").arg(saveState.chunk);
-        chunk += "   </Chunk>\n";
+        String chunk("\n""   <Chunk>\n");
+        chunk << "" << saveState.chunk << "\n";
+        chunk << "   </Chunk>\n";
 
-        content += chunk;
+        content << chunk;
     }
 
-    content += "  </Data>\n";
+    content << "  </Data>\n";
 }
 
 // -----------------------------------------------------------------------

@@ -257,6 +257,7 @@ struct EngineOptions {
     CarlaString bridge_win64;
 #endif
 #ifdef WANT_LV2
+    CarlaString bridge_lv2Extrn;
     CarlaString bridge_lv2Gtk2;
     CarlaString bridge_lv2Gtk3;
     CarlaString bridge_lv2Qt4;
@@ -266,7 +267,7 @@ struct EngineOptions {
     CarlaString bridge_lv2X11;
 #endif
 #ifdef WANT_VST
-    CarlaString bridge_vstCocoa;
+    CarlaString bridge_vstMac;
     CarlaString bridge_vstHWND;
     CarlaString bridge_vstX11;
 #endif

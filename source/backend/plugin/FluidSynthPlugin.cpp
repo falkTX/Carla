@@ -21,8 +21,6 @@
 
 #include <fluidsynth.h>
 
-#include <QtCore/QStringList>
-
 #define FLUIDSYNTH_VERSION_NEW_API (FLUIDSYNTH_VERSION_MAJOR >= 1 && FLUIDSYNTH_VERSION_MINOR >= 1 && FLUIDSYNTH_VERSION_MICRO >= 4)
 
 CARLA_BACKEND_START_NAMESPACE
@@ -444,34 +442,34 @@ public:
         if (value == nullptr)
             return carla_stderr2("DssiPlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - value is null", type, key, value, bool2str(sendGui));
 
-        QStringList midiProgramList(QString(value).split(":", QString::SkipEmptyParts));
-
-        if (midiProgramList.count() == MAX_MIDI_CHANNELS)
-        {
-            uint i = 0;
-            foreach (const QString& midiProg, midiProgramList)
-            {
-                bool ok;
-                uint index = midiProg.toUInt(&ok);
-
-                if (ok && index < pData->midiprog.count)
-                {
-                    const uint32_t bank    = pData->midiprog.data[index].bank;
-                    const uint32_t program = pData->midiprog.data[index].program;
-
-                    fluid_synth_program_select(fSynth, i, fSynthId, bank, program);
-                    fCurMidiProgs[i] = index;
-
-                    if (pData->ctrlChannel == static_cast<int32_t>(i))
-                    {
-                        pData->midiprog.current = index;
-                        pData->engine->callback(CALLBACK_MIDI_PROGRAM_CHANGED, fId, index, 0, 0.0f, nullptr);
-                    }
-                }
-
-                ++i;
-            }
-        }
+//         QStringList midiProgramList(QString(value).split(":", QString::SkipEmptyParts));
+//
+//         if (midiProgramList.count() == MAX_MIDI_CHANNELS)
+//         {
+//             uint i = 0;
+//             foreach (const QString& midiProg, midiProgramList)
+//             {
+//                 bool ok;
+//                 uint index = midiProg.toUInt(&ok);
+//
+//                 if (ok && index < pData->midiprog.count)
+//                 {
+//                     const uint32_t bank    = pData->midiprog.data[index].bank;
+//                     const uint32_t program = pData->midiprog.data[index].program;
+//
+//                     fluid_synth_program_select(fSynth, i, fSynthId, bank, program);
+//                     fCurMidiProgs[i] = index;
+//
+//                     if (pData->ctrlChannel == static_cast<int32_t>(i))
+//                     {
+//                         pData->midiprog.current = index;
+//                         pData->engine->callback(CALLBACK_MIDI_PROGRAM_CHANGED, fId, index, 0, 0.0f, nullptr);
+//                     }
+//                 }
+//
+//                 ++i;
+//             }
+//         }
 
         CarlaPlugin::setCustomData(type, key, value, sendGui);
     }
@@ -876,7 +874,7 @@ public:
 
         // plugin hints
         fHints  = 0x0;
-        fHints |= PLUGIN_IS_SYNTH;
+        //fHints |= PLUGIN_IS_SYNTH;
         fHints |= PLUGIN_CAN_VOLUME;
         fHints |= PLUGIN_CAN_BALANCE;
 

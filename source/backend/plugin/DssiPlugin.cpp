@@ -106,8 +106,9 @@ public:
 
     PluginCategory getCategory() const override
     {
-        if (fHints & PLUGIN_IS_SYNTH)
-            return PLUGIN_CATEGORY_SYNTH;
+        // TODO
+        //if (fHints & PLUGIN_IS_SYNTH)
+        //   return PLUGIN_CATEGORY_SYNTH;
 
         return getPluginCategoryFromName(fName);
     }
@@ -179,7 +180,7 @@ public:
                     options |= PLUGIN_OPTION_FORCE_STEREO;
             }
 
-            options |= PLUGIN_OPTION_FIXED_BUFFER;
+            options |= PLUGIN_OPTION_FIXED_BUFFERS;
         }
 
         if (fDssiDescriptor->run_synth != nullptr || fDssiDescriptor->run_multiple_synths != nullptr)
@@ -331,6 +332,8 @@ public:
         if (fDssiDescriptor->set_custom_data == nullptr)
             return;
 
+        // TODO
+#if 0
         QByteArray chunk(QByteArray::fromBase64(stringData));
 
         CARLA_ASSERT(chunk.size() > 0);
@@ -340,6 +343,7 @@ public:
             const ScopedSingleProcessLocker spl(this, true);
             fDssiDescriptor->set_custom_data(fHandle, chunk.data(), chunk.size());
         }
+#endif
     }
 
     void setMidiProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) override
@@ -767,8 +771,9 @@ public:
         if (fGuiFilename.isNotEmpty())
             fHints |= PLUGIN_HAS_GUI;
 
-        if (mIns == 1 && aIns == 0 && aOuts > 0)
-            fHints |= PLUGIN_IS_SYNTH;
+        // TODO
+        //if (mIns == 1 && aIns == 0 && aOuts > 0)
+        //    fHints |= PLUGIN_IS_SYNTH;
 
         if (aOuts > 0 && (aIns == aOuts || aIns == 1))
             fHints |= PLUGIN_CAN_DRYWET;
@@ -1066,7 +1071,7 @@ public:
             // Event Input (System)
 
             bool allNotesOffSent = false;
-            bool sampleAccurate  = (fOptions & PLUGIN_OPTION_FIXED_BUFFER) == 0;
+            bool sampleAccurate  = (fOptions & PLUGIN_OPTION_FIXED_BUFFERS) == 0;
 
             uint32_t time, nEvents = pData->event.portIn->getEventCount();
             uint32_t startTime  = 0;
@@ -1928,7 +1933,7 @@ public:
 
             if (isDssiVst)
             {
-                fOptions |= PLUGIN_OPTION_FIXED_BUFFER;
+                fOptions |= PLUGIN_OPTION_FIXED_BUFFERS;
 
                 if (pData->engine->getOptions().useDssiVstChunks && fDssiDescriptor->get_custom_data != nullptr && fDssiDescriptor->set_custom_data != nullptr)
                     fOptions |= PLUGIN_OPTION_USE_CHUNKS;
@@ -1954,7 +1959,7 @@ public:
 
             // ignore settings, we need this anyway
             if (isDssiVst)
-                fOptions |= PLUGIN_OPTION_FIXED_BUFFER;
+                fOptions |= PLUGIN_OPTION_FIXED_BUFFERS;
         }
 
         return true;

@@ -20,14 +20,11 @@
 #include "CarlaEngineInternal.hpp"
 #include "CarlaStateUtils.hpp"
 
-#include "carla_native/CarlaNative.hpp"
-
-#include <QtCore/QProcess>
-#include <QtCore/QTextStream>
-#include <QtCore/QThread>
+#include "CarlaNative.hpp"
 
 CARLA_BACKEND_START_NAMESPACE
 
+#if 0
 // -----------------------------------------------------------------------
 
 class CarlaEngineNativeThread : public QThread
@@ -753,11 +750,12 @@ static const PluginDescriptor carlaDesc = {
     /* copyright */ "GNU GPL v2+",
     PluginDescriptorFILL(CarlaEngineNative)
 };
+#endif
 
 CARLA_EXPORT
 void carla_register_native_plugin_carla()
 {
-    carla_register_native_plugin(&carlaDesc);
+    //carla_register_native_plugin(&carlaDesc);
 }
 
 CARLA_BACKEND_END_NAMESPACE
