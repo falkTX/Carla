@@ -214,24 +214,18 @@ const char* OptionsType2Str(const OptionsType option)
         return "OPTION_PREFER_UI_BRIDGES";
     case OPTION_UIS_ALWAYS_ON_TOP:
         return "OPTION_UIS_ALWAYS_ON_TOP";
-#ifdef WANT_DSSI
-    case OPTION_USE_DSSI_VST_CHUNKS:
-        return "OPTION_USE_DSSI_VST_CHUNKS";
-#endif
     case OPTION_MAX_PARAMETERS:
         return "OPTION_MAX_PARAMETERS";
     case OPTION_UI_BRIDGES_TIMEOUT:
         return "OPTION_UI_BRIDGES_TIMEOUT";
-#ifdef WANT_RTAUDIO
-    case OPTION_RTAUDIO_NUMBER_PERIODS:
-        return "OPTION_RTAUDIO_NUMBER_PERIODS";
-    case OPTION_RTAUDIO_BUFFER_SIZE:
-        return "OPTION_RTAUDIO_BUFFER_SIZE";
-    case OPTION_RTAUDIO_SAMPLE_RATE:
-        return "OPTION_RTAUDIO_SAMPLE_RATE";
-    case OPTION_RTAUDIO_DEVICE:
-        return "OPTION_RTAUDIO_DEVICE";
-#endif
+    case OPTION_AUDIO_NUM_PERIODS:
+        return "OPTION_AUDIO_NUM_PERIODS";
+    case OPTION_AUDIO_BUFFER_SIZE:
+        return "OPTION_AUDIO_BUFFER_SIZE";
+    case OPTION_AUDIO_SAMPLE_RATE:
+        return "OPTION_AUDIO_SAMPLE_RATE";
+    case OPTION_AUDIO_DEVICE:
+        return "OPTION_AUDIO_DEVICE";
     case OPTION_PATH_RESOURCES:
         return "OPTION_PATH_RESOURCES";
 #ifndef BUILD_BRIDGE

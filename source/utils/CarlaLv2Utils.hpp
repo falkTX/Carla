@@ -554,7 +554,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool fillPresets)
                 if (replaceURI.startsWith("urn:"))
                 {
                     if (int uniqueId = replaceURI.getTrailingIntValue())
-                        rdfDescriptor->UniqueID = uniqueId;
+                        rdfDescriptor->UniqueID = (unsigned long)uniqueId;
                 }
             }
         }

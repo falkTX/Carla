@@ -21,11 +21,20 @@
 
 #define RING_BUFFER_SIZE 48
 
+// 0 - base
 // 1 - utils
 // 2 - engine
 // 3 - plugin
 // 4 - standalone
-#define ANSI_TEST_N 2
+#define ANSI_TEST_N 0
+
+#if ANSI_TEST_N == 0
+// utils
+#include "CarlaUtils.hpp"
+
+// Carla Backend API
+#include "CarlaBackend.hpp"
+#endif
 
 #if ANSI_TEST_N == 1
 // includes
@@ -73,8 +82,8 @@
 // Carla Engine API
 #include "CarlaEngine.hpp"
 
-// Carla Standalone API
-#include "CarlaStandalone.hpp"
+// Carla Host API
+#include "CarlaHost.hpp"
 // ANSI_TEST_N == 1
 #endif
 
@@ -90,8 +99,8 @@
 #endif
 
 #if ANSI_TEST_N == 4
-// Carla Standalone
-#include "CarlaStandalone.hpp"
+// Carla Host Standalone
+#include "CarlaHost.hpp"
 #include "CarlaUtils.hpp"
 #endif
 
@@ -99,6 +108,7 @@
 // -----------------------------------------------------------------------
 
 namespace CB = CarlaBackend;
+using juce::ScopedPointer;
 
 int safe_assert_return_test(bool test)
 {
@@ -111,6 +121,20 @@ int safe_assert_return_test(bool test)
 
 int main()
 {
+#if ANSI_TEST_N == 0
+    CARLA_BACKEND_USE_NAMESPACE
+
+    BinaryType b;
+    CallbackType c;
+    CARLA_ASSERT(sizeof(b) == sizeof(BinaryType));
+    CARLA_ASSERT(sizeof(b) == sizeof(int));
+    CARLA_ASSERT(sizeof(BinaryType) == sizeof(int));
+
+    CARLA_ASSERT(sizeof(c) == sizeof(CallbackType));
+    CARLA_ASSERT(sizeof(c) == sizeof(int));
+    CARLA_ASSERT(sizeof(CallbackType) == sizeof(int));
+#endif
+
 #if ANSI_TEST_N == 1
     // ladspa rdf
     {
@@ -429,16 +453,16 @@ int main()
 
     // Carla Native Plugin API (C++)
     {
-        class PluginDescriptorClassTest : public PluginDescriptorClass
+        class PluginClassTest : public PluginClass
         {
         public:
             PluginDescriptorClassTest(const HostDescriptor* const host)
-                : PluginDescriptorClass(host) {}
+                : PluginClass(host) {}
         protected:
-            void process(float** const, float** const, const uint32_t, const uint32_t, const MidiEvent* const) {}
+            void process(float** const, float** const, const uint32_t, const MidiEvent* const, const uint32_t) {}
 
-            PluginDescriptorClassEND(PluginDescriptorClassTest)
-            CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PluginDescriptorClassTest)
+            PluginClassEND(PluginClassTest)
+            CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PluginClassTest)
         };
 
         const HostDescriptor a = { nullptr, nullptr, nullptr,

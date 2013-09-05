@@ -109,9 +109,8 @@ const unsigned int PARAMETER_USES_CUSTOM_TEXT = 0x100; //!< Parameter uses custo
  * \see CustomData
  * @{
  */
-const char* const CUSTOM_DATA_INVALID = nullptr;                                  //!< Null or invalid data.
-const char* const CUSTOM_DATA_CHUNK   = "http://kxstudio.sf.net/ns/carla/chunk";  //!< Carla chunk URI.
-const char* const CUSTOM_DATA_STRING  = "http://kxstudio.sf.net/ns/carla/string"; //!< Carla string URI.
+const char* const CUSTOM_DATA_CHUNK  = "http://kxstudio.sf.net/ns/carla/chunk";  //!< Carla chunk URI.
+const char* const CUSTOM_DATA_STRING = "http://kxstudio.sf.net/ns/carla/string"; //!< Carla string URI.
 /**@}*/
 
 /*!
@@ -120,18 +119,19 @@ const char* const CUSTOM_DATA_STRING  = "http://kxstudio.sf.net/ns/carla/string"
  * Various patchbay port hints.
  * @{
  */
-const unsigned int PATCHBAY_PORT_IS_INPUT     = 0x01; //!< Patchbay port is input.
-const unsigned int PATCHBAY_PORT_IS_OUTPUT    = 0x02; //!< Patchbay port is output.
-const unsigned int PATCHBAY_PORT_IS_AUDIO     = 0x10; //!< Patchbay port is of Audio type.
-const unsigned int PATCHBAY_PORT_IS_CV        = 0x20; //!< Patchbay port is of CV type.
-const unsigned int PATCHBAY_PORT_IS_MIDI      = 0x40; //!< Patchbay port is of MIDI type.
-const unsigned int PATCHBAY_PORT_IS_PARAMETER = 0x80; //!< Patchbay port is of Parameter type.
+const unsigned int PATCHBAY_PORT_IS_INPUT     = 0x001; //!< Patchbay port is input.
+const unsigned int PATCHBAY_PORT_IS_OUTPUT    = 0x002; //!< Patchbay port is output.
+const unsigned int PATCHBAY_PORT_IS_AUDIO     = 0x010; //!< Patchbay port is of Audio type.
+const unsigned int PATCHBAY_PORT_IS_CV        = 0x020; //!< Patchbay port is of CV type.
+const unsigned int PATCHBAY_PORT_IS_MIDI      = 0x040; //!< Patchbay port is of MIDI type.
+const unsigned int PATCHBAY_PORT_IS_OSC       = 0x100; //!< Patchbay port is of OSC type.
+const unsigned int PATCHBAY_PORT_IS_PARAMETER = 0x200; //!< Patchbay port is of Parameter type.
 /**@}*/
 
 /*!
  * The binary type of a plugin.
  */
-enum BinaryType {
+enum BinaryType : int {
     BINARY_NONE    = 0, //!< Null binary type.
     BINARY_POSIX32 = 1, //!< POSIX 32bit.
     BINARY_POSIX64 = 2, //!< POSIX 64bit.
@@ -144,7 +144,7 @@ enum BinaryType {
  * All the available plugin types, provided by subclasses of CarlaPlugin.\n
  * Some plugin classes might provide more than 1 plugin type.
  */
-enum PluginType {
+enum PluginType : int {
     PLUGIN_NONE     =  0, //!< Null plugin type.
     PLUGIN_INTERNAL =  1, //!< Internal plugin.
     PLUGIN_LADSPA   =  2, //!< LADSPA plugin.
@@ -162,7 +162,7 @@ enum PluginType {
  * Plugin category, describing the funtionality of a plugin.\n
  * When a plugin fails to tell its own category, one is atributted to it based on its name.
  */
-enum PluginCategory {
+enum PluginCategory : int {
     PLUGIN_CATEGORY_NONE      = 0, //!< Null plugin category.
     PLUGIN_CATEGORY_SYNTH     = 1, //!< A synthesizer or generator.
     PLUGIN_CATEGORY_DELAY     = 2, //!< A delay or reverberator.
@@ -177,7 +177,7 @@ enum PluginCategory {
 /*!
  * Plugin parameter type.
  */
-enum ParameterType {
+enum ParameterType : int {
     PARAMETER_UNKNOWN       = 0, //!< Null parameter type.
     PARAMETER_INPUT         = 1, //!< Input parameter.
     PARAMETER_OUTPUT        = 2, //!< Ouput parameter.
@@ -193,7 +193,7 @@ enum ParameterType {
  * Internal parameter indexes.\n
  * These are special parameters used internally, plugins do not know about their existence.
  */
-enum InternalParametersIndex {
+enum InternalParametersIndex : int {
     PARAMETER_NULL          = -1, //!< Null parameter.
     PARAMETER_ACTIVE        = -2, //!< Active parameter, can only be 'true' or 'false'; default is 'false'.
     PARAMETER_DRYWET        = -3, //!< Dry/Wet parameter, range 0.0...1.0; default is 1.0.
@@ -208,7 +208,7 @@ enum InternalParametersIndex {
 /*!
  * The icon of a patchbay client/group.
  */
-enum PatchbayIconType {
+enum PatchbayIconType : int {
     PATCHBAY_ICON_APPLICATION = 0, //!< Generic application icon.
     PATCHBAY_ICON_HARDWARE    = 1, //!< Hardware icon.
     PATCHBAY_ICON_CARLA       = 2, //!< Carla icon.
@@ -221,7 +221,7 @@ enum PatchbayIconType {
  * Options used in the CarlaEngine::setOption() calls.\n
  * All options except paths must be set before initiliazing or after closing the engine.
  */
-enum OptionsType {
+enum OptionsType : int {
     /*!
      * Set the current process name.\n
      * This is a convenience option, as Python lacks this functionality.
@@ -267,87 +267,76 @@ enum OptionsType {
      */
     OPTION_UIS_ALWAYS_ON_TOP = 6,
 
-#ifdef WANT_DSSI
-    /*!
-     * Use (unofficial) dssi-vst chunks feature.\n
-     * Default is no.
-     * \see PLUGIN_OPTION_USE_CHUNKS
-     */
-    OPTION_USE_DSSI_VST_CHUNKS = 7,
-#endif
-
     /*!
      * Maximum number of parameters allowed.\n
      * Default is MAX_DEFAULT_PARAMETERS.
      */
-    OPTION_MAX_PARAMETERS = 8,
+    OPTION_MAX_PARAMETERS = 7,
 
     /*!
      * Timeout value in ms for how much to wait for UI-Bridges to respond.\n
      * Default is 4000 (4 secs).
      */
-    OPTION_UI_BRIDGES_TIMEOUT = 9,
+    OPTION_UI_BRIDGES_TIMEOUT = 8,
 
-#ifdef WANT_RTAUDIO
     /*!
-     * RtAudio number of periods.
+     * Audio number of periods.
      */
-    OPTION_RTAUDIO_NUMBER_PERIODS = 10,
+    OPTION_AUDIO_NUM_PERIODS = 9,
 
     /*!
-     * RtAudio buffer size.
+     * Audio buffer size.
      */
-    OPTION_RTAUDIO_BUFFER_SIZE = 11,
+    OPTION_AUDIO_BUFFER_SIZE = 10,
 
     /*!
-     * RtAudio sample rate.
+     * Audio sample rate.
      */
-    OPTION_RTAUDIO_SAMPLE_RATE = 12,
+    OPTION_AUDIO_SAMPLE_RATE = 11,
 
     /*!
-     * RtAudio device.
+     * Audio device.
      */
-    OPTION_RTAUDIO_DEVICE = 13,
-#endif
+    OPTION_AUDIO_DEVICE = 12,
 
     /*!
-     * Set path to the backend resource files.\n
+     * Set path to the resource files.\n
      * Default unset.
      *
      * \note Must be set for some internal plugins to work!
      */
-    OPTION_PATH_RESOURCES = 14,
+    OPTION_PATH_RESOURCES = 13,
 
 #ifndef BUILD_BRIDGE
     /*!
      * Set path to the native plugin bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_NATIVE = 15,
+    OPTION_PATH_BRIDGE_NATIVE = 14,
 
     /*!
      * Set path to the POSIX 32bit plugin bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_POSIX32 = 16,
+    OPTION_PATH_BRIDGE_POSIX32 = 15,
 
     /*!
      * Set path to the POSIX 64bit plugin bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_POSIX64 = 17,
+    OPTION_PATH_BRIDGE_POSIX64 = 16,
 
     /*!
      * Set path to the Windows 32bit plugin bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_WIN32 = 18,
+    OPTION_PATH_BRIDGE_WIN32 = 17,
 
     /*!
      * Set path to the Windows 64bit plugin bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_WIN64 = 19,
+    OPTION_PATH_BRIDGE_WIN64 = 18,
 #endif
 
 #ifdef WANT_LV2
@@ -355,49 +344,49 @@ enum OptionsType {
      * Set path to the LV2 External UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_EXTERNAL = 20,
+    OPTION_PATH_BRIDGE_LV2_EXTERNAL = 19,
 
     /*!
      * Set path to the LV2 Gtk2 UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_GTK2 = 21,
+    OPTION_PATH_BRIDGE_LV2_GTK2 = 20,
 
     /*!
      * Set path to the LV2 Gtk3 UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_GTK3 = 22,
+    OPTION_PATH_BRIDGE_LV2_GTK3 = 21,
 
     /*!
      * Set path to the LV2 Qt4 UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_QT4 = 23,
+    OPTION_PATH_BRIDGE_LV2_QT4 = 22,
 
     /*!
      * Set path to the LV2 Qt5 UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_QT5 = 24,
+    OPTION_PATH_BRIDGE_LV2_QT5 = 23,
 
     /*!
      * Set path to the LV2 Cocoa UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_COCOA = 25,
+    OPTION_PATH_BRIDGE_LV2_COCOA = 24,
 
     /*!
      * Set path to the LV2 Windows UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_WINDOWS = 26,
+    OPTION_PATH_BRIDGE_LV2_WINDOWS = 25,
 
     /*!
      * Set path to the LV2 X11 UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_X11 = 27,
+    OPTION_PATH_BRIDGE_LV2_X11 = 26,
 #endif
 
 #ifdef WANT_VST
@@ -405,19 +394,19 @@ enum OptionsType {
      * Set path to the VST Mac UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_VST_MAC = 28,
+    OPTION_PATH_BRIDGE_VST_MAC = 27,
 
     /*!
      * Set path to the VST HWND UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_VST_HWND = 29,
+    OPTION_PATH_BRIDGE_VST_HWND = 28,
 
     /*!
      * Set path to the VST X11 UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_VST_X11 = 30
+    OPTION_PATH_BRIDGE_VST_X11 = 29
 #endif
 };
 
@@ -425,7 +414,7 @@ enum OptionsType {
  * Opcodes sent from the engine callback to the GUI, as defined by CallbackFunc.
  * \see CarlaEngine::setCallback()
  */
-enum CallbackType {
+enum CallbackType : int {
     /*!
      * Debug.\n
      * This opcode is undefined and used only for testing purposes.
@@ -660,7 +649,7 @@ enum CallbackType {
  * Engine process mode.
  * \see OPTION_PROCESS_MODE
  */
-enum ProcessMode {
+enum ProcessMode : int {
     PROCESS_MODE_SINGLE_CLIENT    = 0, //!< Single client mode (dynamic input/outputs as needed by plugins).
     PROCESS_MODE_MULTIPLE_CLIENTS = 1, //!< Multiple client mode (1 master client + 1 client per plugin).
     PROCESS_MODE_CONTINUOUS_RACK  = 2, //!< Single client, 'rack' mode. Processes plugins in order of Id, with forced stereo.
@@ -671,7 +660,7 @@ enum ProcessMode {
 /*!
  * All the available transport modes
  */
-enum TransportMode {
+enum TransportMode : int {
     TRANSPORT_MODE_INTERNAL = 0, //!< Internal transport mode.
     TRANSPORT_MODE_JACK     = 1, //!< Transport from JACK, only available if driver name is "JACK".
     TRANSPORT_MODE_PLUGIN   = 2, //!< Transport from host, used when Carla is a plugin.
@@ -734,7 +723,7 @@ struct ParameterRanges {
 
     void fixValue(float& value) const noexcept
     {
-        if (value < min)
+        if (value <= min)
             value = min;
         else if (value > max)
             value = max;

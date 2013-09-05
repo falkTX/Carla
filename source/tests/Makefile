@@ -8,7 +8,7 @@ include ../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += -I../backend -I../includes -I../modules -I../modules/distrho -I../modules/theme -I../modules/utils -I../modules/widgets
+BUILD_CXX_FLAGS += -I../backend -I../includes -I../modules -I../modules/distrho -I../modules/theme -I../modules/widgets -I../utils
 BUILD_CXX_FLAGS += -DWANT_NATIVE -DWANT_LADSPA -DWANT_DSSI -DWANT_LV2 -DWANT_VST -DWANT_FLUIDSYNTH -DWANT_LINUXSAMPLER
 BUILD_CXX_FLAGS += -DWANT_RTAUDIO -DWANT_OPENGL -DWANT_AUDIOFILE -DWANT_MIDIFILE -DWANT_ZYNADDSUBFX -DWANT_ZYNADDSUBFX_UI
 BUILD_CXX_FLAGS += -isystem /usr/include/qt4
@@ -41,7 +41,7 @@ all: $(TARGETS) RUN
 
 # --------------------------------------------------------------
 
-ANSI: ANSI.cpp ../backend/standalone/CarlaStandalone.cpp.o CarlaBackendDummy.cpp.o ../modules/theme.a
+ANSI: ANSI.cpp #../backend/standalone/CarlaStandalone.cpp.o CarlaBackendDummy.cpp.o ../modules/theme.a
 	$(CXX) $^ $(BUILD_CXX_FLAGS) $(ANSI_CXX_FLAGS) $(LINK_FLAGS) -L/opt/kxstudio/lib -lQtCore -lQtGui -llo -o $@
 
 CarlaString: CarlaString.cpp ../modules/utils/CarlaString.hpp

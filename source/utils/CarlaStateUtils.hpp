@@ -353,7 +353,7 @@ void fillSaveStateFromXmlElement(SaveState& saveState, const XmlElement& xmlElem
                         {
                             const int index(pText.getIntValue());
                             if (index >= 0)
-                                stateParameter->index = index;
+                                stateParameter->index = static_cast<uint32_t>(index);
                         }
                         else if (pTag.equalsIgnoreCase("name"))
                         {

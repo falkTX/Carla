@@ -60,6 +60,7 @@ ifeq ($(MACOS),true)
 # No C++11 support; force 32bit per default
 BUILD_C_FLAGS   = $(BASE_FLAGS) $(32BIT_FLAGS) -std=gnu99 $(CFLAGS)
 BUILD_CXX_FLAGS = $(BASE_FLAGS) $(32BIT_FLAGS) $(CXXFLAGS)
+LINK_FLAGS      = $(LDFLAGS)
 endif
 
 # --------------------------------------------------------------
