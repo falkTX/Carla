@@ -143,6 +143,14 @@ void LocalisedStrings::loadFromText (const String& fileContents, bool ignoreCase
     }
 }
 
+void LocalisedStrings::addStrings (const LocalisedStrings& other)
+{
+    jassert (languageName == other.languageName);
+    jassert (countryCodes == other.countryCodes);
+
+    translations.addArray (other.translations);
+}
+
 //==============================================================================
 void LocalisedStrings::setCurrentMappings (LocalisedStrings* newTranslations)
 {
@@ -155,26 +163,12 @@ LocalisedStrings* LocalisedStrings::getCurrentMappings()
     return currentMappings;
 }
 
-String LocalisedStrings::translateWithCurrentMappings (const String& text)
-{
-    return juce::translate (text);
-}
+String LocalisedStrings::translateWithCurrentMappings (const String& text)  { return juce::translate (text); }
+String LocalisedStrings::translateWithCurrentMappings (const char* text)    { return juce::translate (text); }
 
-String LocalisedStrings::translateWithCurrentMappings (const char* text)
-{
-    return juce::translate (String (text));
-}
-
-String translate (const String& text)
-{
-    return translate (text, text);
-}
-
-String translate (const char* const literal)
-{
-    const String text (literal);
-    return translate (text, text);
-}
+String translate (const String& text)       { return juce::translate (text, text); }
+String translate (const char* text)         { return juce::translate (String (text)); }
+String translate (CharPointer_UTF8 text)    { return juce::translate (String (text)); }
 
 String translate (const String& text, const String& resultIfNotFound)
 {

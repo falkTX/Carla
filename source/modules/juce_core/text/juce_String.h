@@ -29,28 +29,6 @@
 #ifndef JUCE_STRING_H_INCLUDED
 #define JUCE_STRING_H_INCLUDED
 
-#include "juce_CharacterFunctions.h"
-
-#ifndef JUCE_STRING_UTF_TYPE
- #define JUCE_STRING_UTF_TYPE 8
-#endif
-
-#if JUCE_MSVC
- #pragma warning (push)
- #pragma warning (disable: 4514 4996)
-#endif
-
-#include "../memory/juce_Atomic.h"
-#include "juce_CharPointer_UTF8.h"
-#include "juce_CharPointer_UTF16.h"
-#include "juce_CharPointer_UTF32.h"
-#include "juce_CharPointer_ASCII.h"
-
-#if JUCE_MSVC
- #pragma warning (pop)
-#endif
-
-class OutputStream;
 
 //==============================================================================
 /**
@@ -238,6 +216,17 @@ public:
         @param maxCharsToTake   the maximum number of characters to take from the string passed in
     */
     void append (const String& textToAppend, size_t maxCharsToTake);
+
+    /** Appends a string to the end of this one.
+
+        @param startOfTextToAppend  the start of the string to add. This must not be a nullptr
+        @param endOfTextToAppend    the end of the string to add. This must not be a nullptr
+    */
+    void appendCharPointer (const CharPointerType startOfTextToAppend,
+                            const CharPointerType endOfTextToAppend);
+
+    /** Appends a string to the end of this one. */
+    void appendCharPointer (const CharPointerType textToAppend);
 
     /** Appends a string to the end of this one.
 

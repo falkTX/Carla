@@ -26,68 +26,28 @@
   ==============================================================================
 */
 
-/*
-    Note that a lot of methods that you'd expect to find in this file actually
-    live in juce_posix_SharedCode.h!
+#ifndef JUCE_CONTAINERDELETEPOLICY_H_INCLUDED
+#define JUCE_CONTAINERDELETEPOLICY_H_INCLUDED
+
+//==============================================================================
+/**
+    Used by container classes as an indirect way to delete an object of a
+    particular type.
+
+    The generic implementation of this class simply calls 'delete', but you can
+    create a specialised version of it for a particular class if you need to
+    delete that type of object in a more appropriate way.
+
+    @see ScopedPointer, OwnedArray
 */
-
-//==============================================================================
-JUCE_API bool JUCE_CALLTYPE Process::isForegroundProcess()
+template <typename ObjectType>
+struct ContainerDeletePolicy
 {
-   #if JUCE_MAC
-    return [NSApp isActive];
-   #else
-    return true; // xxx change this if more than one app is ever possible on iOS!
-   #endif
-}
-
-JUCE_API void JUCE_CALLTYPE Process::makeForegroundProcess()
-{
-   #if JUCE_MAC
-    [NSApp activateIgnoringOtherApps: YES];
-   #endif
-}
-
-JUCE_API void JUCE_CALLTYPE Process::hide()
-{
-   #if JUCE_MAC
-    [NSApp hide: nil];
-   #endif
-}
-
-JUCE_API void JUCE_CALLTYPE Process::raisePrivilege()
-{
-    jassertfalse;
-}
-
-JUCE_API void JUCE_CALLTYPE Process::lowerPrivilege()
-{
-    jassertfalse;
-}
-
-JUCE_API void JUCE_CALLTYPE Process::setPriority (ProcessPriority)
-{
-    // xxx
-}
-
-//==============================================================================
-JUCE_API bool JUCE_CALLTYPE juce_isRunningUnderDebugger()
-{
-    static char testResult = 0;
-
-    if (testResult == 0)
+    static void destroy (ObjectType* object)
     {
-        struct kinfo_proc info;
-        int m[] = { CTL_KERN, KERN_PROC, KERN_PROC_PID, getpid() };
-        size_t sz = sizeof (info);
-        sysctl (m, 4, &info, &sz, 0, 0);
-        testResult = ((info.kp_proc.p_flag & P_TRACED) != 0) ? 1 : -1;
+        delete object;
     }
+};
 
-    return testResult > 0;
-}
 
-JUCE_API bool JUCE_CALLTYPE Process::isRunningUnderDebugger()
-{
-    return juce_isRunningUnderDebugger();
-}
+#endif   // JUCE_CONTAINERDELETEPOLICY_H_INCLUDED

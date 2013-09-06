@@ -29,10 +29,6 @@
 #ifndef JUCE_ARRAY_H_INCLUDED
 #define JUCE_ARRAY_H_INCLUDED
 
-#include "juce_ArrayAllocationBase.h"
-#include "juce_ElementComparator.h"
-#include "../threads/juce_CriticalSection.h"
-
 
 //==============================================================================
 /**
@@ -1025,9 +1021,11 @@ public:
 
 
     //==============================================================================
+   #ifndef DOXYGEN
     // Note that the swapWithArray method has been replaced by a more flexible templated version,
     // and renamed "swapWith" to be more consistent with the names used in other classes.
     JUCE_DEPRECATED_WITH_BODY (void swapWithArray (Array& other) noexcept, { swapWith (other); })
+   #endif
 
 private:
     //==============================================================================

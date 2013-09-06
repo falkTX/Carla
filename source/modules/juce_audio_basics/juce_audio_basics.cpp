@@ -48,19 +48,24 @@
  #include <emmintrin.h>
 #endif
 
-#if JUCE_MAC || JUCE_IOS
+#ifndef JUCE_USE_VDSP_FRAMEWORK
  #define JUCE_USE_VDSP_FRAMEWORK 1
+#endif
+
+#if (JUCE_MAC || JUCE_IOS) && JUCE_USE_VDSP_FRAMEWORK
  #include <Accelerate/Accelerate.h>
+#else
+ #undef JUCE_USE_VDSP_FRAMEWORK
 #endif
 
 namespace juce
 {
 
-// START_AUTOINCLUDE buffers/*.cpp, effects/*.cpp, midi/*.cpp, sources/*.cpp, synthesisers/*.cpp
 #include "buffers/juce_AudioDataConverters.cpp"
 #include "buffers/juce_AudioSampleBuffer.cpp"
 #include "buffers/juce_FloatVectorOperations.cpp"
 #include "effects/juce_IIRFilter.cpp"
+#include "effects/juce_IIRFilterOld.cpp"
 #include "effects/juce_LagrangeInterpolator.cpp"
 #include "midi/juce_MidiBuffer.cpp"
 #include "midi/juce_MidiFile.cpp"
@@ -75,6 +80,5 @@ namespace juce
 #include "sources/juce_ReverbAudioSource.cpp"
 #include "sources/juce_ToneGeneratorAudioSource.cpp"
 #include "synthesisers/juce_Synthesiser.cpp"
-// END_AUTOINCLUDE
 
 }

@@ -209,7 +209,7 @@ namespace XmlOutputFunctions
         }
     }
 
-    static void writeSpaces (OutputStream& out, const int numSpaces)
+    static void writeSpaces (OutputStream& out, const size_t numSpaces)
     {
         out.writeRepeatedByte (' ', numSpaces);
     }
@@ -222,7 +222,7 @@ void XmlElement::writeElementAsText (OutputStream& outputStream,
     using namespace XmlOutputFunctions;
 
     if (indentationLevel >= 0)
-        writeSpaces (outputStream, indentationLevel);
+        writeSpaces (outputStream, (size_t) indentationLevel);
 
     if (! isTextElement())
     {
@@ -230,7 +230,7 @@ void XmlElement::writeElementAsText (OutputStream& outputStream,
         outputStream << tagName;
 
         {
-            const int attIndent = indentationLevel + tagName.length() + 1;
+            const size_t attIndent = (size_t) (indentationLevel + tagName.length() + 1);
             int lineLen = 0;
 
             for (const XmlAttributeNode* att = attributes; att != nullptr; att = att->nextListItem)
@@ -279,7 +279,7 @@ void XmlElement::writeElementAsText (OutputStream& outputStream,
             if (indentationLevel >= 0 && ! lastWasTextNode)
             {
                 outputStream << newLine;
-                writeSpaces (outputStream, indentationLevel);
+                writeSpaces (outputStream, (size_t) indentationLevel);
             }
 
             outputStream.write ("</", 2);
@@ -470,10 +470,7 @@ bool XmlElement::getBoolAttribute (const String& attributeName, const bool defau
     {
         if (att->hasName (attributeName))
         {
-            juce_wchar firstChar = att->value[0];
-
-            if (CharacterFunctions::isWhitespace (firstChar))
-                firstChar = att->value.trimStart() [0];
+            const juce_wchar firstChar = *(att->value.getCharPointer().findEndOfWhitespace());
 
             return firstChar == '1'
                 || firstChar == 't'
@@ -531,7 +528,7 @@ void XmlElement::setAttribute (const String& attributeName, const int number)
 
 void XmlElement::setAttribute (const String& attributeName, const double number)
 {
-    setAttribute (attributeName, String (number));
+    setAttribute (attributeName, String (number, 20));
 }
 
 void XmlElement::removeAttribute (const String& attributeName) noexcept
@@ -791,7 +788,7 @@ String XmlElement::getAllSubText() const
     for (const XmlElement* child = firstChildElement; child != nullptr; child = child->nextListItem)
         mem << child->getAllSubText();
 
-    return mem.toString();
+    return mem.toUTF8();
 }
 
 String XmlElement::getChildElementAllSubText (const String& childTagName,

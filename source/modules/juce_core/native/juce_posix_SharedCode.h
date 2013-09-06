@@ -150,6 +150,14 @@ void JUCE_CALLTYPE Thread::sleep (int millisecs)
     nanosleep (&time, nullptr);
 }
 
+void JUCE_CALLTYPE Process::terminate()
+{
+   #if JUCE_ANDROID
+    _exit (EXIT_FAILURE);
+   #else
+    std::_Exit (EXIT_FAILURE);
+   #endif
+}
 
 //==============================================================================
 const juce_wchar File::separator = '/';
@@ -882,7 +890,7 @@ void Thread::killThread()
     }
 }
 
-void Thread::setCurrentThreadName (const String& name)
+void JUCE_CALLTYPE Thread::setCurrentThreadName (const String& name)
 {
    #if JUCE_IOS || (JUCE_MAC && defined (MAC_OS_X_VERSION_10_5) && MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_5)
     JUCE_AUTORELEASEPOOL
@@ -919,12 +927,12 @@ bool Thread::setThreadPriority (void* handle, int priority)
     return pthread_setschedparam ((pthread_t) handle, policy, &param) == 0;
 }
 
-Thread::ThreadID Thread::getCurrentThreadId()
+Thread::ThreadID JUCE_CALLTYPE Thread::getCurrentThreadId()
 {
     return (ThreadID) pthread_self();
 }
 
-void Thread::yield()
+void JUCE_CALLTYPE Thread::yield()
 {
     sched_yield();
 }
@@ -938,7 +946,7 @@ void Thread::yield()
  #define SUPPORT_AFFINITIES 1
 #endif
 
-void Thread::setCurrentThreadAffinityMask (const uint32 affinityMask)
+void JUCE_CALLTYPE Thread::setCurrentThreadAffinityMask (const uint32 affinityMask)
 {
    #if SUPPORT_AFFINITIES
     cpu_set_t affinity;
@@ -1143,7 +1151,7 @@ struct HighResolutionTimer::Pimpl
             shouldStop = false;
 
             if (pthread_create (&thread, nullptr, timerThread, this) == 0)
-                setThreadToRealtime (thread, newPeriod);
+                setThreadToRealtime (thread, (uint64) newPeriod);
             else
                 jassertfalse;
         }
