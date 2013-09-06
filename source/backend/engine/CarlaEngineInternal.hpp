@@ -70,6 +70,8 @@ const char* EnginePortType2Str(const EnginePortType type)
         return "kEnginePortTypeCV";
     case kEnginePortTypeEvent:
         return "kEnginePortTypeEvent";
+    case kEnginePortTypeOSC:
+        return "kEnginePortTypeOSC";
     }
 
     carla_stderr("CarlaBackend::EnginePortType2Str(%i) - invalid type", type);
@@ -118,8 +120,7 @@ const char* EngineControlEventType2Str(const EngineControlEventType type)
 
 // -----------------------------------------------------------------------
 
-const unsigned short INTERNAL_EVENT_COUNT = 512;
-const uint32_t       PATCHBAY_BUFFER_SIZE = 128;
+const unsigned short kEngineMaxInternalEventCount = 512;
 
 enum EnginePostAction {
     kEnginePostActionNull,
@@ -133,19 +134,12 @@ struct EnginePluginData {
     float insPeak[2];
     float outsPeak[2];
 
-#ifdef CARLA_PROPER_CPP11_SUPPORT
-    EnginePluginData()
-        : plugin(nullptr),
-          insPeak{0.0f},
-          outsPeak{0.0f} {}
-#else
     EnginePluginData()
         : plugin(nullptr)
     {
         insPeak[0] = insPeak[1] = nullptr;
         outsPeak[0] = outsPeak[1] = nullptr;
     }
-#endif
 };
 
 // -----------------------------------------------------------------------

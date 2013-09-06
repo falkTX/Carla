@@ -97,10 +97,16 @@ enum EnginePortType {
     kEnginePortTypeCV = 2,
 
     /*!
-    * Event port type.
+    * Event port type (Control or MIDI).
     ** \see CarlaEngineEventPort
     */
-    kEnginePortTypeEvent = 3
+    kEnginePortTypeEvent = 3,
+
+    /*!
+    * OSC port type.
+    ** \see CarlaEngineOscPort
+    */
+    kEnginePortTypeOSC = 3
 };
 
 /*!
@@ -233,19 +239,14 @@ struct EngineOptions {
     bool preferPluginBridges;
     bool preferUiBridges;
     bool uisAlwaysOnTop;
-#ifdef WANT_DSSI
-    bool useDssiVstChunks;
-#endif
 
     unsigned int maxParameters;
     unsigned int uiBridgesTimeout;
 
-#ifdef WANT_RTAUDIO
-    unsigned int rtaudioNumPeriods;
-    unsigned int rtaudioBufferSize;
-    unsigned int rtaudioSampleRate;
-    CarlaString  rtaudioDevice;
-#endif
+    unsigned int audioNumPeriods;
+    unsigned int audioBufferSize;
+    unsigned int audioSampleRate;
+    CarlaString  audioDevice;
 
     CarlaString resourceDir;
 
@@ -284,17 +285,11 @@ struct EngineOptions {
           preferPluginBridges(false),
           preferUiBridges(true),
           uisAlwaysOnTop(true),
-#ifdef WANT_DSSI
-          useDssiVstChunks(false),
-#endif
           maxParameters(MAX_DEFAULT_PARAMETERS),
           uiBridgesTimeout(4000),
-#ifdef WANT_RTAUDIO
-          rtaudioNumPeriods(2),
-          rtaudioBufferSize(512),
-          rtaudioSampleRate(44100),
-#endif
-          resourceDir() {}
+          audioNumPeriods(2),
+          audioBufferSize(512),
+          audioSampleRate(44100) {}
 };
 
 /*!
@@ -1067,7 +1062,7 @@ public:
 
     /*!
      * Force register a plugin into slot \a id. \n
-     * This is needed so that we can receive OSC events for the plugin while it initializes.
+     * This is needed so we can receive OSC events for a plugin while it initializes.
      */
     void registerEnginePlugin(const unsigned int id, CarlaPlugin* const plugin);
 

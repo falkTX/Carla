@@ -25,7 +25,7 @@ CARLA_BACKEND_START_NAMESPACE
 // -----------------------------------------------------------------------
 
 CarlaEngineThread::CarlaEngineThread(CarlaEngine* const engine)
-    : juce::Thread("CarlaEngineThread"),
+    : Thread("CarlaEngineThread"),
       fEngine(engine)
 {
     CARLA_ASSERT(engine != nullptr);
@@ -60,7 +60,7 @@ void CarlaEngineThread::run()
 
         for (i=0, count = fEngine->getCurrentPluginCount(); i < count; ++i)
         {
-            CarlaPlugin* const plugin = fEngine->getPluginUnchecked(i);
+            CarlaPlugin* const plugin(fEngine->getPluginUnchecked(i));
 
             if (plugin == nullptr || ! plugin->isEnabled())
                 continue;

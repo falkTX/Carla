@@ -9,12 +9,17 @@ include ../Makefile.mk
 # --------------------------------------------------------------
 
 BUILD_CXX_FLAGS += -I../backend -I../includes -I../modules -I../utils
+BUILD_CXX_FLAGS += -DWANT_NATIVE
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
 BUILD_CXX_FLAGS += -DWANT_LADSPA -DWANT_DSSI -DWANT_LV2 -DWANT_VST
 ifeq ($(CARLA_VESTIGE_HEADER),true)
 BUILD_CXX_FLAGS += -DVESTIGE_HEADER
 endif
+endif
+
+ifeq ($(CARLA_CSOUND_SUPPORT),true)
+NATIVE_FLAGS += -DWANT_CSOUND
 endif
 
 ifeq ($(HAVE_FLUIDSYNTH),true)
@@ -30,7 +35,7 @@ endif
 POSIX_BUILD_FLAGS = $(BUILD_CXX_FLAGS)
 POSIX_32BIT_FLAGS = $(32BIT_FLAGS) -L/usr/lib32 -L/usr/lib/i386-linux-gnu
 POSIX_64BIT_FLAGS = $(64BIT_FLAGS) -L/usr/lib64 -L/usr/lib/x86_64-linux-gnu
-POSIX_LINK_FLAGS  = $(LINK_FLAGS) -ldl
+POSIX_LINK_FLAGS  = $(LINK_FLAGS) $(EXTRA_LIBS) -ldl
 
 WIN_BUILD_FLAGS   = $(BUILD_CXX_FLAGS)
 WIN_32BIT_FLAGS   = $(32BIT_FLAGS)

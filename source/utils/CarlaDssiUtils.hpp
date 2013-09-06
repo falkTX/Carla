@@ -19,16 +19,54 @@
 #define CARLA_DSSI_UTILS_HPP_INCLUDED
 
 #include "CarlaLadspaUtils.hpp"
-
 #include "dssi/dssi.h"
 
+#include "juce_core.h"
+
 // -----------------------------------------------------------------------
-// ...
 
 static inline
-bool func()
+const char* find_dssi_ui(const char* const filename, const char* const label)
 {
-    return false;
+    CARLA_SAFE_ASSERT_RETURN(filename != nullptr, nullptr);
+    CARLA_SAFE_ASSERT_RETURN(label    != nullptr, nullptr);
+
+    using namespace juce;
+
+    File pluginFile(filename);
+    File pluginDir(pluginFile.getParentDirectory());
+
+    Array<File> results;
+
+    if (pluginDir.findChildFiles(results, File::findFiles|File::ignoreHiddenFiles, false) == 0)
+        return nullptr;
+
+    StringArray guiFiles;
+
+    for (int i=0, count=results.size(); i < count; ++i)
+    {
+        const File& file(results[i]);
+        guiFiles.add(file.getFullPathName());
+    }
+
+    String pluginDirName(pluginDir.getFullPathName());
+    String pluginShortName(pluginFile.getFileNameWithoutExtension());
+
+    String checkLabel(label);
+    String checkShort(pluginShortName);
+
+    if (! checkLabel.endsWith("_")) checkLabel += "_";
+    if (! checkShort.endsWith("_")) checkShort += "_";
+
+    for (int i=0, count=guiFiles.size(); i < count; ++i)
+    {
+        const String& gui(guiFiles[i]);
+
+        if (gui.startsWith(checkLabel) || gui.startsWith(checkShort))
+            return carla_strdup(File(pluginDir).getChildFile(gui).getFullPathName().toRawUTF8());
+    }
+
+    return nullptr;
 }
 
 // -----------------------------------------------------------------------

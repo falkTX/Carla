@@ -11,23 +11,11 @@ include ../Makefile.mk
 BUILD_CXX_FLAGS += -I../../modules/theme
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo)
 
-ifeq ($(HAVE_QT4),true)
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtCore QtGui)
-else
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags Qt5Core Qt5Widgets)
-endif
-
 # --------------------------------------------------------------
 # Common
 
 LINK_FLAGS += $(shell pkg-config --libs liblo)
 LINK_FLAGS += -lpthread
-
-ifeq ($(HAVE_QT4),true)
-LINK_FLAGS += $(shell pkg-config --libs QtCore QtGui QtXml)
-else
-LINK_FLAGS += $(shell pkg-config --libs Qt5Core Qt5Gui Qt5Xml Qt5Widgets)
-endif
 
 # --------------------------------------------------------------
 # Engine
@@ -101,8 +89,8 @@ endif
 LIBS  = ../libcarla_engine.a
 LIBS += ../libcarla_plugin.a
 LIBS += ../../modules/carla_native.a
-LIBS += ../../modules/juce_core.a
 LIBS += ../../modules/juce_audio_basics.a
+LIBS += ../../modules/juce_core.a
 LIBS += ../../modules/rtmempool.a
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)

@@ -19,21 +19,12 @@
 
 #include "CarlaBackendUtils.hpp"
 #include "CarlaOscUtils.hpp"
+
 #include "CarlaEngine.hpp"
 #include "CarlaPlugin.hpp"
-#include "CarlaMIDI.h"
 #include "CarlaNative.h"
 
 #include "CarlaLogThread.hpp"
-#include "CarlaStyle.hpp"
-
-// #include <QtCore/QSettings>
-//
-// #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
-// # include <QtWidgets/QApplication>
-// #else
-// # include <QtGui/QApplication>
-// #endif
 
 #if ! (defined(DEBUG) || defined(WANT_LOGS) || defined(BUILD_ANSI_TEST))
 # define WANT_LOGS
@@ -45,9 +36,6 @@ using CB::CarlaEngine;
 using CB::CarlaPlugin;
 using CB::EngineOptions;
 using CB::EngineTimeInfo;
-
-// TEST
-int main() { return 0; }
 
 // -------------------------------------------------------------------------------------------------------------------
 // Single, standalone engine
@@ -263,10 +251,7 @@ const CarlaNativePluginInfo* carla_get_internal_plugin_info(unsigned int interna
     const PluginDescriptor* const nativePlugin(CarlaPlugin::getNativePluginDescriptor(internalPluginId));
 
     // as internal plugin, this must never fail
-    CARLA_ASSERT(nativePlugin != nullptr);
-
-    if (nativePlugin == nullptr)
-        return nullptr;
+    CARLA_SAFE_ASSERT_RETURN(nativePlugin != nullptr, nullptr);
 
      info.category = static_cast<CarlaPluginCategory>(nativePlugin->category);
      info.hints    = 0x0;

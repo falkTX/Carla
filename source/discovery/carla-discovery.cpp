@@ -20,8 +20,6 @@
 #include "CarlaString.hpp"
 #include "CarlaMIDI.h"
 
-#include "JuceHeader.h"
-
 #ifdef WANT_LADSPA
 # include "CarlaLadspaUtils.hpp"
 #endif
@@ -45,6 +43,8 @@
 # define __cplusplus TMP__cplusplus
 # undef TMP__cplusplus
 #endif
+
+#include "juce_core.h"
 
 #include <iostream>
 
@@ -343,7 +343,7 @@ public:
             DISCOVERY_OUT("label", basename);
         }
 
-        DISCOVERY_OUT("hints", PLUGIN_IS_SYNTH);
+//         DISCOVERY_OUT("hints", PLUGIN_IS_SYNTH);
         DISCOVERY_OUT("audio.outs", 2);
         DISCOVERY_OUT("audio.total", 2);
         DISCOVERY_OUT("midi.ins", 1);
@@ -743,8 +743,14 @@ void do_dssi_check(void*& libHandle, const char* const filename, const bool init
         if (descriptor->run_synth || descriptor->run_multiple_synths)
             midiIns = midiTotal = 1;
 
-        if (midiIns > 0 && audioIns == 0 && audioOuts > 0)
-            hints |= PLUGIN_IS_SYNTH;
+//         if (midiIns > 0 && audioIns == 0 && audioOuts > 0)
+//             hints |= PLUGIN_IS_SYNTH;
+
+        if (const char* const ui = find_dssi_ui(filename, ldescriptor->Label))
+        {
+            hints |= PLUGIN_HAS_GUI;
+            delete[] ui;
+        }
 
         if (init)
         {
@@ -1112,8 +1118,8 @@ void do_lv2_check(const char* const bundle, const bool init)
             }
         }
 
-        if (rdfDescriptor->Type[1] & LV2_PLUGIN_INSTRUMENT)
-            hints |= PLUGIN_IS_SYNTH;
+//         if (rdfDescriptor->Type[1] & LV2_PLUGIN_INSTRUMENT)
+//             hints |= PLUGIN_IS_SYNTH;
 
         if (rdfDescriptor->UICount > 0)
             hints |= PLUGIN_HAS_GUI;
@@ -1238,8 +1244,8 @@ void do_vst_check(void*& libHandle, const bool init)
         if (effect->flags & effFlagsHasEditor)
             hints |= PLUGIN_HAS_GUI;
 
-        if (effect->flags & effFlagsIsSynth)
-            hints |= PLUGIN_IS_SYNTH;
+//         if (effect->flags & effFlagsIsSynth)
+//             hints |= PLUGIN_IS_SYNTH;
 
         if (vstPluginCanDo(effect, "receiveVstEvents") || vstPluginCanDo(effect, "receiveVstMidiEvent") || (effect->flags & effFlagsIsSynth) > 0)
             midiIns = 1;
@@ -1469,7 +1475,7 @@ void do_fluidsynth_check(const char* const filename, const bool init)
     DISCOVERY_OUT("label", (const char*)label);
     DISCOVERY_OUT("maker", "");
     DISCOVERY_OUT("copyright", "");
-    DISCOVERY_OUT("hints", PLUGIN_IS_SYNTH);
+//     DISCOVERY_OUT("hints", PLUGIN_IS_SYNTH);
     DISCOVERY_OUT("audio.outs", 2);
     DISCOVERY_OUT("audio.total", 2);
     DISCOVERY_OUT("midi.ins", 1);
@@ -1490,7 +1496,7 @@ void do_fluidsynth_check(const char* const filename, const bool init)
     DISCOVERY_OUT("name", (const char*)name);
     DISCOVERY_OUT("label", (const char*)label);
     DISCOVERY_OUT("copyright", "");
-    DISCOVERY_OUT("hints", PLUGIN_IS_SYNTH);
+//     DISCOVERY_OUT("hints", PLUGIN_IS_SYNTH);
     DISCOVERY_OUT("audio.outs", 32);
     DISCOVERY_OUT("audio.total", 32);
     DISCOVERY_OUT("midi.ins", 1);
@@ -1601,6 +1607,19 @@ int main(int argc, char* argv[])
     const char* const filename = argv[2];
     const PluginType  type     = getPluginTypeFromString(stype);
 
+    CarlaString filenameStr(filename);
+
+    if (filenameStr.contains("fluidsynth", true))
+    {
+        DISCOVERY_OUT("info", "skipping fluidsynth based plugin");
+        return 0;
+    }
+    if (filenameStr.contains("linuxsampler", true))
+    {
+        DISCOVERY_OUT("info", "skipping linuxsampler based plugin");
+        return 0;
+    }
+
     bool openLib = false;
     void* handle = nullptr;
 
@@ -1627,11 +1646,7 @@ int main(int argc, char* argv[])
     }
 
     // never do init for dssi-vst, takes too long and it's crashy
-#ifdef __USE_GNU
-    bool doInit = (strcasestr(filename, "dssi-vst") == nullptr);
-#else
-    bool doInit = (std::strstr(filename, "dssi-vst") == nullptr);
-#endif
+    bool doInit = ! filenameStr.contains("dssi-vst", true);
 
     if (doInit && getenv("CARLA_DISCOVERY_NO_PROCESSING_CHECKS") != nullptr)
         doInit = false;

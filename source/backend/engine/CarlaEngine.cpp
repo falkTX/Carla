@@ -56,31 +56,15 @@ CarlaEngineAudioPort::CarlaEngineAudioPort(const CarlaEngine& engine, const bool
       fBuffer(nullptr)
 {
     carla_debug("CarlaEngineAudioPort::CarlaEngineAudioPort(name:\"%s\", %s)", engine.getName(), bool2str(isInput));
-
-    if (fEngine.getProccessMode() == PROCESS_MODE_PATCHBAY)
-        fBuffer = new float[PATCHBAY_BUFFER_SIZE];
 }
 
 CarlaEngineAudioPort::~CarlaEngineAudioPort()
 {
     carla_debug("CarlaEngineAudioPort::~CarlaEngineAudioPort()");
-
-    if (fEngine.getProccessMode() == PROCESS_MODE_PATCHBAY)
-    {
-        CARLA_ASSERT(fBuffer != nullptr);
-
-        if (fBuffer != nullptr)
-        {
-            delete[] fBuffer;
-            fBuffer = nullptr;
-        }
-    }
 }
 
 void CarlaEngineAudioPort::initBuffer()
 {
-    if (fEngine.getProccessMode() == PROCESS_MODE_PATCHBAY && ! fIsInput)
-        carla_zeroFloat(fBuffer, PATCHBAY_BUFFER_SIZE);
 }
 
 // -----------------------------------------------------------------------
@@ -95,17 +79,17 @@ CarlaEngineCVPort::CarlaEngineCVPort(const CarlaEngine& engine, const bool isInp
 
 CarlaEngineCVPort::~CarlaEngineCVPort()
 {
+    CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr,);
     carla_debug("CarlaEngineCVPort::~CarlaEngineCVPort()");
 
-    if (fBuffer != nullptr)
-    {
-        delete[] fBuffer;
-        fBuffer = nullptr;
-    }
+    delete[] fBuffer;
+    fBuffer = nullptr;
 }
 
 void CarlaEngineCVPort::initBuffer()
 {
+    CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr,);
+
     carla_zeroFloat(fBuffer, fEngine.getBufferSize());
 }
 
@@ -132,7 +116,7 @@ CarlaEngineEventPort::CarlaEngineEventPort(const CarlaEngine& engine, const bool
     carla_debug("CarlaEngineEventPort::CarlaEngineEventPort(name:\"%s\", %s)", engine.getName(), bool2str(isInput));
 
     if (fEngine.getProccessMode() == PROCESS_MODE_PATCHBAY)
-        fBuffer = new EngineEvent[INTERNAL_EVENT_COUNT];
+        fBuffer = new EngineEvent[kEngineMaxInternalEventCount];
 }
 
 CarlaEngineEventPort::~CarlaEngineEventPort()
@@ -141,13 +125,10 @@ CarlaEngineEventPort::~CarlaEngineEventPort()
 
     if (fEngine.getProccessMode() == PROCESS_MODE_PATCHBAY)
     {
-        CARLA_ASSERT(fBuffer != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr,);
 
-        if (fBuffer != nullptr)
-        {
-            delete[] fBuffer;
-            fBuffer = nullptr;
-        }
+        delete[] fBuffer;
+        fBuffer = nullptr;
     }
 }
 
@@ -156,7 +137,7 @@ void CarlaEngineEventPort::initBuffer()
     if (fEngine.getProccessMode() == PROCESS_MODE_CONTINUOUS_RACK || fEngine.getProccessMode() == PROCESS_MODE_BRIDGE)
         fBuffer = fEngine.getInternalEventBuffer(fIsInput);
     else if (fEngine.getProccessMode() == PROCESS_MODE_PATCHBAY && ! fIsInput)
-        carla_zeroStruct<EngineEvent>(fBuffer, INTERNAL_EVENT_COUNT);
+        carla_zeroStruct<EngineEvent>(fBuffer, kEngineMaxInternalEventCount);
 }
 
 uint32_t CarlaEngineEventPort::getEventCount() const
@@ -167,7 +148,7 @@ uint32_t CarlaEngineEventPort::getEventCount() const
 
     uint32_t i=0;
 
-    for (; i < INTERNAL_EVENT_COUNT; ++i)
+    for (; i < kEngineMaxInternalEventCount; ++i)
     {
         if (fBuffer[i].type == kEngineEventTypeNull)
             break;
@@ -181,7 +162,7 @@ const EngineEvent& CarlaEngineEventPort::getEvent(const uint32_t index)
     CARLA_SAFE_ASSERT_RETURN(fIsInput, kFallbackEngineEvent);
     CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr, kFallbackEngineEvent);
     CARLA_SAFE_ASSERT_RETURN(fEngine.getProccessMode() != PROCESS_MODE_SINGLE_CLIENT && fEngine.getProccessMode() != PROCESS_MODE_MULTIPLE_CLIENTS, kFallbackEngineEvent);
-    CARLA_SAFE_ASSERT_RETURN(index < INTERNAL_EVENT_COUNT, kFallbackEngineEvent);
+    CARLA_SAFE_ASSERT_RETURN(index < kEngineMaxInternalEventCount, kFallbackEngineEvent);
 
     return fBuffer[index];
 }
@@ -202,7 +183,7 @@ void CarlaEngineEventPort::writeControlEvent(const uint32_t time, const uint8_t 
 
     const float fixedValue(carla_fixValue<float>(0.0f, 1.0f, value));
 
-    for (uint32_t i=0; i < INTERNAL_EVENT_COUNT; ++i)
+    for (uint32_t i=0; i < kEngineMaxInternalEventCount; ++i)
     {
         if (fBuffer[i].type != kEngineEventTypeNull)
             continue;
@@ -230,7 +211,7 @@ void CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t cha
     CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(size > 0 && size <= 4,);
 
-    for (uint32_t i=0; i < INTERNAL_EVENT_COUNT; ++i)
+    for (uint32_t i=0; i < kEngineMaxInternalEventCount; ++i)
     {
         if (fBuffer[i].type != kEngineEventTypeNull)
             continue;
@@ -324,6 +305,8 @@ CarlaEnginePort* CarlaEngineClient::addPort(const EnginePortType portType, const
         return new CarlaEngineCVPort(fEngine, isInput);
     case kEnginePortTypeEvent:
         return new CarlaEngineEventPort(fEngine, isInput);
+    case kEnginePortTypeOSC:
+        return nullptr; //new CarlaEngineOscPort(fEngine, isInput);
     }
 
     carla_stderr("CarlaEngineClient::addPort(%i, \"%s\", %s) - invalid type", portType, name, bool2str(isInput));
@@ -346,43 +329,6 @@ CarlaEngine::~CarlaEngine()
     carla_debug("CarlaEngine::~CarlaEngine()");
 
     delete pData;
-}
-
-// -----------------------------------------------------------------------
-// Helpers
-
-// returned value must be deleted
-const char* findDSSIGUI(const char* const filename, const char* const label)
-{
-//     QString guiFilename;
-//     QString pluginDir(filename);
-//     pluginDir.resize(pluginDir.lastIndexOf("."));
-//
-//     QString shortName(QFileInfo(pluginDir).baseName());
-//
-//     QString checkLabel(label);
-//     QString checkSName(shortName);
-//
-//     if (! checkLabel.endsWith("_")) checkLabel += "_";
-//     if (! checkSName.endsWith("_")) checkSName += "_";
-//
-//     QStringList guiFiles(QDir(pluginDir).entryList());
-//
-//     foreach (const QString& gui, guiFiles)
-//     {
-//         if (gui.startsWith(checkLabel) || gui.startsWith(checkSName))
-//         {
-//             QFileInfo finalname(pluginDir + QDir::separator() + gui);
-//             guiFilename = finalname.absoluteFilePath();
-//             break;
-//         }
-//     }
-//
-//     if (guiFilename.isEmpty())
-//         return nullptr;
-//
-//     return carla_strdup(guiFilename.toUtf8().constData());
-    return nullptr;
 }
 
 // -----------------------------------------------------------------------
@@ -528,8 +474,8 @@ bool CarlaEngine::init(const char* const clientName)
 
     case PROCESS_MODE_CONTINUOUS_RACK:
         pData->maxPluginNumber = MAX_RACK_PLUGINS;
-        pData->bufEvents.in  = new EngineEvent[INTERNAL_EVENT_COUNT];
-        pData->bufEvents.out = new EngineEvent[INTERNAL_EVENT_COUNT];
+        pData->bufEvents.in  = new EngineEvent[kEngineMaxInternalEventCount];
+        pData->bufEvents.out = new EngineEvent[kEngineMaxInternalEventCount];
         break;
 
     case PROCESS_MODE_PATCHBAY:
@@ -538,8 +484,8 @@ bool CarlaEngine::init(const char* const clientName)
 
     case PROCESS_MODE_BRIDGE:
         pData->maxPluginNumber = 1;
-        pData->bufEvents.in  = new EngineEvent[INTERNAL_EVENT_COUNT];
-        pData->bufEvents.out = new EngineEvent[INTERNAL_EVENT_COUNT];
+        pData->bufEvents.in  = new EngineEvent[kEngineMaxInternalEventCount];
+        pData->bufEvents.out = new EngineEvent[kEngineMaxInternalEventCount];
         break;
     }
 
@@ -1746,7 +1692,7 @@ void CarlaEngine::processRack(float* inBuf[2], float* outBuf[2], const uint32_t 
     // initialize outputs (zero)
     carla_zeroFloat(outBuf[0], frames);
     carla_zeroFloat(outBuf[1], frames);
-    carla_zeroMem(pData->bufEvents.out, sizeof(EngineEvent)*INTERNAL_EVENT_COUNT);
+    carla_zeroMem(pData->bufEvents.out, sizeof(EngineEvent)*kEngineMaxInternalEventCount);
 
     bool processed = false;
 
@@ -1763,12 +1709,12 @@ void CarlaEngine::processRack(float* inBuf[2], float* outBuf[2], const uint32_t 
             // initialize inputs (from previous outputs)
             carla_copyFloat(inBuf[0], outBuf[0], frames);
             carla_copyFloat(inBuf[1], outBuf[1], frames);
-            std::memcpy(pData->bufEvents.in, pData->bufEvents.out, sizeof(EngineEvent)*INTERNAL_EVENT_COUNT);
+            std::memcpy(pData->bufEvents.in, pData->bufEvents.out, sizeof(EngineEvent)*kEngineMaxInternalEventCount);
 
             // initialize outputs (zero)
             carla_zeroFloat(outBuf[0], frames);
             carla_zeroFloat(outBuf[1], frames);
-            carla_zeroMem(pData->bufEvents.out, sizeof(EngineEvent)*INTERNAL_EVENT_COUNT);
+            carla_zeroMem(pData->bufEvents.out, sizeof(EngineEvent)*kEngineMaxInternalEventCount);
         }
 
         // process

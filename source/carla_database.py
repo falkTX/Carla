@@ -113,33 +113,6 @@ def findFilenames(filePath, stype):
 
     return filenames
 
-# FIXME - put this into c++ discovery
-def findDSSIGUI(filename, name, label):
-    pluginDir = filename.rsplit(".", 1)[0]
-    shortName = os.path.basename(pluginDir)
-    guiFilename = ""
-
-    checkName  = name.replace(" ", "_")
-    checkLabel = label
-    checkSName = shortName
-
-    if checkName[-1]  != "_": checkName  += "_"
-    if checkLabel[-1] != "_": checkLabel += "_"
-    if checkSName[-1] != "_": checkSName += "_"
-
-    for root, dirs, files in os.walk(pluginDir):
-        guiFiles = files
-        break
-    else:
-        guiFiles = []
-
-    for guiFile in guiFiles:
-        if guiFile.startswith((checkName, checkLabel, checkSName)):
-            guiFilename = os.path.join(pluginDir, guiFile)
-            break
-
-    return guiFilename
-
 # ------------------------------------------------------------------------------------------------------------
 # Plugin Query
 
