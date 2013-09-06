@@ -35,20 +35,12 @@ endif
 POSIX_BUILD_FLAGS = $(BUILD_CXX_FLAGS)
 POSIX_32BIT_FLAGS = $(32BIT_FLAGS) -L/usr/lib32 -L/usr/lib/i386-linux-gnu
 POSIX_64BIT_FLAGS = $(64BIT_FLAGS) -L/usr/lib64 -L/usr/lib/x86_64-linux-gnu
-POSIX_LINK_FLAGS  = $(LINK_FLAGS) $(EXTRA_LIBS) -ldl
+POSIX_LINK_FLAGS  = $(LINK_FLAGS) $(EXTRA_LIBS) -ldl -lpthread
 
 WIN_BUILD_FLAGS   = $(BUILD_CXX_FLAGS)
 WIN_32BIT_FLAGS   = $(32BIT_FLAGS)
 WIN_64BIT_FLAGS   = $(64BIT_FLAGS)
-WIN_LINK_FLAGS    = $(LINK_FLAGS) $(EXTRA_LIBS) -lole32 -luuid -lws2_32
-
-ifeq ($(HAVE_FLUIDSYNTH),true)
-WIN_LINK_FLAGS   += -ldsound -lwinmm
-endif
-
-ifeq ($(HAVE_LINUXSAMPLER),true)
-WIN_LINK_FLAGS   += -lrpcrt4
-endif
+WIN_LINK_FLAGS    = $(LINK_FLAGS) $(EXTRA_LIBS) -lole32 -lshlwapi -lversion -lwininet -lwinmm -lws2_32
 
 LIBS         = ../modules/juce_core.a
 LIBS_posix32 = ../modules/juce_core.posix32.a
@@ -112,11 +104,11 @@ debug:
 .FORCE:
 .PHONY: .FORCE
 
-../modules/%.a: .FORCE
-	$(MAKE) -C ../modules $*
-
 ../modules/juce_core.%.a: .FORCE
 	$(MAKE) -C ../modules juce_core_$*
 
 ../modules/lilv.%.a: .FORCE
 	$(MAKE) -C ../modules lilv_$*
+
+../modules/%.a: .FORCE
+	$(MAKE) -C ../modules $*

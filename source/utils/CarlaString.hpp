@@ -145,34 +145,29 @@ public:
         return (fBufferLen != 0);
     }
 
-#ifdef __USE_GNU
     bool contains(const char* const strBuf, const bool ignoreCase = false) const
     {
         CARLA_SAFE_ASSERT_RETURN(strBuf != nullptr, false);
 
         if (ignoreCase)
+        {
+#ifdef __USE_GNU
             return (strcasestr(fBuffer, strBuf) != nullptr);
-        else
-            return (std::strstr(fBuffer, strBuf) != nullptr);
+#else
+            CarlaString tmp1(fBuffer), tmp2(strBuf);
+            tmp1.toLower();
+            tmp2.toLower();
+            return (std::strstr((const char*)tmp1, (const char*)tmp2) != nullptr);
+#endif
+        }
+
+        return (std::strstr(fBuffer, strBuf) != nullptr);
     }
 
     bool contains(const CarlaString& str, const bool ignoreCase = false) const
     {
         return contains(str.fBuffer, ignoreCase);
     }
-#else
-    bool contains(const char* const strBuf) const
-    {
-        CARLA_SAFE_ASSERT_RETURN(strBuf != nullptr, false);
-
-        return (std::strstr(fBuffer, strBuf) != nullptr);
-    }
-
-    bool contains(const CarlaString& str) const
-    {
-        return contains(str.fBuffer);
-    }
-#endif
 
     bool isDigit(const size_t pos) const noexcept
     {
