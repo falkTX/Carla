@@ -169,7 +169,7 @@ struct Lv2PluginOptions {
         opts[4] = &optNull;
     }
 
-    CARLA_DECLARE_NON_COPY_STRUCT_WITH_LEAK_DETECTOR(Lv2PluginOptions)
+    CARLA_DECLARE_NON_COPY_STRUCT(Lv2PluginOptions)
 };
 
 // -------------------------------------------------------------------------
@@ -358,7 +358,7 @@ public:
         // get plugin from lv2_rdf (lilv)
 
         gLv2World.init();
-        fRdfDescriptor = lv2_rdf_new(pluginURI);
+        fRdfDescriptor = lv2_rdf_new(pluginURI, false);
 
         if (fRdfDescriptor == nullptr)
             return false;
@@ -1095,14 +1095,14 @@ private:
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaLv2Client)
 };
 
-#define lv2ClientPtr ((CarlaLv2Client*)kClient)
+#define lv2ClientPtr ((CarlaLv2Client*)fClient)
 
 int CarlaBridgeOsc::handleMsgLv2AtomTransfer(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 {
     CARLA_BRIDGE_OSC_CHECK_OSC_TYPES(2, "is");
     carla_debug("CarlaBridgeOsc::handleMsgLv2AtomTransfer()");
 
-    if (kClient == nullptr)
+    if (fClient == nullptr)
         return 1;
 
     const int32_t   portIndex = argv[0]->i;
@@ -1125,7 +1125,7 @@ int CarlaBridgeOsc::handleMsgLv2UridMap(CARLA_BRIDGE_OSC_HANDLE_ARGS)
     CARLA_BRIDGE_OSC_CHECK_OSC_TYPES(2, "is");
     carla_debug("CarlaBridgeOsc::handleMsgLv2UridMap()");
 
-    if (kClient == nullptr)
+    if (fClient == nullptr)
         return 1;
 
     const int32_t    urid = argv[0]->i;

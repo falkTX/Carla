@@ -23,7 +23,7 @@
  *
  *****************************************************************************/
 
-#define UI_EXECUTABLE "/resources/nekofilter-ui"
+#define UI_EXECUTABLE "/nekofilter-ui"
 
 #define WAIT_START_TIMEOUT  3000 /* ms */
 #define WAIT_ZOMBIE_TIMEOUT 3000 /* ms */

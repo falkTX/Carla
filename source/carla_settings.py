@@ -31,8 +31,10 @@ except:
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
 
+#import patchcanvas
 import ui_carla_settings
 import ui_carla_settings_driver
+
 from carla_shared import *
 
 # ------------------------------------------------------------------------------------------------------------
@@ -43,16 +45,15 @@ CARLA_DEFAULT_CANVAS_WIDTH  = 3100
 CARLA_DEFAULT_CANVAS_HEIGHT = 2400
 
 # Engine settings
-CARLA_DEFAULT_DISABLE_CHECKS        = False
+CARLA_DEFAULT_RUN_DISCOVERY_CHECKS  = True
 CARLA_DEFAULT_FORCE_STEREO          = False
 CARLA_DEFAULT_PREFER_PLUGIN_BRIDGES = False
 CARLA_DEFAULT_PREFER_UI_BRIDGES     = True
 CARLA_DEFAULT_UIS_ALWAYS_ON_TOP     = True
-CARLA_DEFAULT_USE_DSSI_VST_CHUNKS   = False
 CARLA_DEFAULT_MAX_PARAMETERS        = MAX_DEFAULT_PARAMETERS
 CARLA_DEFAULT_UI_BRIDGES_TIMEOUT    = 4000
 CARLA_DEFAULT_AUDIO_NUM_PERIODS     = 2
-CARLA_DEFAULT_AUDIO_BUFFER_SIZE     = 1024
+CARLA_DEFAULT_AUDIO_BUFFER_SIZE     = 512
 CARLA_DEFAULT_AUDIO_SAMPLE_RATE     = 44100
 
 if WINDOWS:
@@ -132,7 +133,7 @@ class DriverSettingsW(QDialog):
         else:
             self.ui.cb_device.setCurrentIndex(-1)
 
-        if audioNumPeriods and 2 < audioNumPeriods < 3:
+        if 2 < audioNumPeriods < 3:
             self.ui.sb_numperiods.setValue(audioNumPeriods)
         else:
             self.ui.sb_numperiods.setValue(CARLA_DEFAULT_AUDIO_NUM_PERIODS)
@@ -177,7 +178,7 @@ class CarlaSettingsW(QDialog):
     PROCESS_MODE_NON_JACK_PADDING = 2
 
     def __init__(self, parent):
-        QDialog.__init__(self, parent)
+        QDialog.__init__(self, parent, hasGL)
         self.ui = ui_carla_settings.Ui_CarlaSettingsW()
         self.ui.setupUi(self)
 
@@ -202,8 +203,6 @@ class CarlaSettingsW(QDialog):
         if WINDOWS:
             self.ui.group_theme.setEnabled(False)
             self.ui.ch_theme_pro.setChecked(False)
-            self.ui.ch_engine_dssi_chunks.setChecked(False)
-            self.ui.ch_engine_dssi_chunks.setEnabled(False)
 
         # -------------------------------------------------------------
         # Set-up connections
@@ -226,6 +225,8 @@ class CarlaSettingsW(QDialog):
 
         # -------------------------------------------------------------
         # Post-connect setup
+
+        # TODO - add AU and csound, hide AU on non-mac
 
         self.ui.lw_ladspa.setCurrentRow(0)
         self.ui.lw_dssi.setCurrentRow(0)
@@ -424,13 +425,13 @@ class CarlaSettingsW(QDialog):
 
     @pyqtSlot()
     def slot_resetSettings(self):
-        if self.ui.lw_page.currentRow() == TAB_INDEX_MAIN:
+        if self.ui.lw_page.currentRow() == self.TAB_INDEX_MAIN:
             self.ui.le_main_def_folder.setText(HOME)
             self.ui.ch_theme_pro.setChecked(True)
             self.ui.cb_theme_color.setCurrentIndex(0)
             self.ui.sb_gui_refresh.setValue(50)
 
-        elif self.ui.lw_page.currentRow() == TAB_INDEX_CANVAS:
+        elif self.ui.lw_page.currentRow() == self.TAB_INDEX_CANVAS:
             self.ui.cb_canvas_theme.setCurrentIndex(0)
             self.ui.cb_canvas_hide_groups.setChecked(False)
             self.ui.cb_canvas_bezier_lines.setChecked(True)
@@ -439,14 +440,13 @@ class CarlaSettingsW(QDialog):
             self.ui.cb_canvas_render_aa.setCheckState(Qt.PartiallyChecked)
             self.ui.cb_canvas_render_hq_aa.setChecked(False)
 
-        elif self.ui.lw_page.currentRow() == TAB_INDEX_CARLA_ENGINE:
+        elif self.ui.lw_page.currentRow() == self.TAB_INDEX_CARLA_ENGINE:
             self.ui.cb_engine_audio_driver.setCurrentIndex(0)
             self.ui.sb_engine_max_params.setValue(CARLA_DEFAULT_MAX_PARAMETERS)
             self.ui.ch_engine_uis_always_on_top.setChecked(CARLA_DEFAULT_UIS_ALWAYS_ON_TOP)
             self.ui.ch_engine_prefer_ui_bridges.setChecked(CARLA_DEFAULT_PREFER_UI_BRIDGES)
             #self.ui.sb_engine_oscgui_timeout.setValue(CARLA_DEFAULT_OSC_UI_TIMEOUT)
-            self.ui.ch_engine_disable_checks.setChecked(CARLA_DEFAULT_DISABLE_CHECKS)
-            self.ui.ch_engine_dssi_chunks.setChecked(CARLA_DEFAULT_USE_DSSI_VST_CHUNKS)
+            #self.ui.ch_engine_disable_checks.setChecked(CARLA_DEFAULT_DISABLE_CHECKS)
             self.ui.ch_engine_prefer_plugin_bridges.setChecked(CARLA_DEFAULT_PREFER_PLUGIN_BRIDGES)
             self.ui.ch_engine_force_stereo.setChecked(CARLA_DEFAULT_FORCE_STEREO)
 
@@ -454,10 +454,10 @@ class CarlaSettingsW(QDialog):
                 self.ui.cb_engine_process_mode_jack.setCurrentIndex(PROCESS_MODE_MULTIPLE_CLIENTS)
                 self.ui.sw_engine_process_mode.setCurrentIndex(0)
             else:
-                self.ui.cb_engine_process_mode_other.setCurrentIndex(PROCESS_MODE_CONTINUOUS_RACK-PROCESS_MODE_NON_JACK_PADDING)
+                self.ui.cb_engine_process_mode_other.setCurrentIndex(PROCESS_MODE_CONTINUOUS_RACK-self.PROCESS_MODE_NON_JACK_PADDING)
                 self.ui.sw_engine_process_mode.setCurrentIndex(1)
 
-        elif self.ui.lw_page.currentRow() == TAB_INDEX_CARLA_PATHS:
+        elif self.ui.lw_page.currentRow() == self.TAB_INDEX_CARLA_PATHS:
             if self.ui.tw_paths.currentIndex() == 0:
                 paths = DEFAULT_LADSPA_PATH.split(splitter)
                 paths.sort()
@@ -640,14 +640,8 @@ class CarlaSettingsW(QDialog):
 # ------------------------------------------------------------------------------------------------------------
 # TESTING
 
-hasGL = True
-
 from PyQt5.QtWidgets import QApplication
 app = QApplication(sys.argv)
-#gui = PluginParameter(None, pInfo, 0, 0)
-#gui = PluginEdit(None, 0)
-#gui = PluginWidget(None, 0)
-#gui = DriverSettingsW(None, 1, "beh")
-gui = CarlaSettingsW(None)
+gui = CarlaSettingsW(None, True)
 gui.show()
 app.exec_()

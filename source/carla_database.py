@@ -34,6 +34,7 @@ except:
 
 import ui_carla_database
 import ui_carla_refresh
+
 from carla_shared import *
 
 # ------------------------------------------------------------------------------------------------------------
@@ -116,12 +117,13 @@ def findFilenames(filePath, stype):
 # ------------------------------------------------------------------------------------------------------------
 # Plugin Query
 
-PLUGIN_QUERY_API_VERSION = 1
+PLUGIN_QUERY_API_VERSION = 2
 
 PyPluginInfo = {
     'API': PLUGIN_QUERY_API_VERSION,
     'build': BINARY_NONE,
     'type': PLUGIN_NONE,
+    'category': PLUGIN_CATEGORY_NONE,
     'hints': 0x0,
     'binary': "",
     'name': "",
@@ -182,7 +184,7 @@ def runCarlaDiscovery(itype, stype, filename, tool, isWine=False):
             pinfo['binary'] = filename
 
         elif line == "carla-discovery::end::------------":
-            if pinfo != None:
+            if pinfo is not None:
                 plugins.append(pinfo)
                 del pinfo
                 pinfo = None
@@ -192,6 +194,9 @@ def runCarlaDiscovery(itype, stype, filename, tool, isWine=False):
 
         elif line.startswith("err:module:import_dll Library"):
             print(line)
+
+        elif line.startswith("carla-discovery::info::"):
+            print("%s - %s" % (line, filename))
 
         elif line.startswith("carla-discovery::error::"):
             print("%s - %s" % (line, filename))
@@ -217,6 +222,8 @@ def runCarlaDiscovery(itype, stype, filename, tool, isWine=False):
                 if value.isdigit(): pinfo['uniqueId'] = int(value)
             elif prop == "hints":
                 if value.isdigit(): pinfo['hints'] = int(value)
+            elif prop == "category":
+                if value.isdigit(): pinfo['category'] = int(value)
             elif prop == "audio.ins":
                 if value.isdigit(): pinfo['audio.ins'] = int(value)
             elif prop == "audio.outs":
@@ -247,12 +254,6 @@ def runCarlaDiscovery(itype, stype, filename, tool, isWine=False):
                     pinfo = None
                     continue
 
-    # FIXME - put this into c++ discovery
-    for pinfo in plugins:
-        if itype == PLUGIN_DSSI:
-            if findDSSIGUI(pinfo['binary'], pinfo['name'], pinfo['label']):
-                pinfo['hints'] |= PLUGIN_HAS_GUI
-
     # FIXME?
     tmp = discoveryProcess
     discoveryProcess = None
@@ -270,12 +271,13 @@ def checkPluginInternal(desc):
     plugins = []
 
     pinfo = deepcopy(PyPluginInfo)
-    pinfo['build'] = BINARY_NATIVE
-    pinfo['type']  = PLUGIN_INTERNAL
-    pinfo['hints'] = int(desc['hints'])
-    pinfo['name']  = cString(desc['name'])
-    pinfo['label'] = cString(desc['label'])
-    pinfo['maker'] = cString(desc['maker'])
+    pinfo['build']     = BINARY_NATIVE
+    pinfo['type']      = PLUGIN_INTERNAL
+    pinfo['category']  = int(desc['category'])
+    pinfo['hints']     = int(desc['hints'])
+    pinfo['name']      = cString(desc['name'])
+    pinfo['label']     = cString(desc['label'])
+    pinfo['maker']     = cString(desc['maker'])
     pinfo['copyright'] = cString(desc['copyright'])
 
     pinfo['audio.ins']   = int(desc['audioIns'])
@@ -500,7 +502,7 @@ class SearchPluginsThread(QThread):
                 json.dump(ladspaRdfInfo, fdLadspa)
                 fdLadspa.close()
 
-        if not self.fContinueChecking: return
+            if not self.fContinueChecking: return
 
         if self.fCheckDSSI:
             if self.fCheckNative:
@@ -533,7 +535,7 @@ class SearchPluginsThread(QThread):
 
             settingsDB.sync()
 
-        if not self.fContinueChecking: return
+            if not self.fContinueChecking: return
 
         if self.fCheckLV2:
             if self.fCheckNative:
@@ -566,7 +568,7 @@ class SearchPluginsThread(QThread):
 
             settingsDB.sync()
 
-        if not self.fContinueChecking: return
+            if not self.fContinueChecking: return
 
         if self.fCheckVST:
             if self.fCheckNative:
@@ -599,7 +601,7 @@ class SearchPluginsThread(QThread):
 
             settingsDB.sync()
 
-        if not self.fContinueChecking: return
+            if not self.fContinueChecking: return
 
         if self.fCheckAU:
             if self.fCheckNative:
@@ -620,28 +622,40 @@ class SearchPluginsThread(QThread):
 
             settingsDB.sync()
 
-        if not self.fContinueChecking: return
+            if not self.fContinueChecking: return
 
         if self.fCheckCSOUND:
             self._checkCSOUND()
             settingsDB.setValue("Plugins/CSOUND", self.fCsoundPlugins)
 
-        if not self.fContinueChecking: return
+            if not self.fContinueChecking: return
 
         if self.fCheckGIG:
-            self._checkKIT(Carla.GIG_PATH, "gig")
+            settings = QSettings()
+            GIG_PATH = toList(settings.value("Paths/GIG", Carla.DEFAULT_GIG_PATH))
+            del settings
+
+            self._checkKIT(GIG_PATH, "gig")
             settingsDB.setValue("Plugins/GIG", self.fKitPlugins)
 
-        if not self.fContinueChecking: return
+            if not self.fContinueChecking: return
 
         if self.fCheckSF2:
-            self._checkKIT(Carla.SF2_PATH, "sf2")
+            settings = QSettings()
+            SF2_PATH = toList(settings.value("Paths/SF2", Carla.DEFAULT_SF2_PATH))
+            del settings
+
+            self._checkKIT(SF2_PATH, "sf2")
             settingsDB.setValue("Plugins/SF2", self.fKitPlugins)
 
-        if not self.fContinueChecking: return
+            if not self.fContinueChecking: return
 
         if self.fCheckSFZ:
-            self._checkKIT(Carla.SFZ_PATH, "sfz")
+            settings = QSettings()
+            SFZ_PATH = toList(settings.value("Paths/SFZ", Carla.DEFAULT_SFZ_PATH))
+            del settings
+
+            self._checkKIT(SFZ_PATH, "sfz")
             settingsDB.setValue("Plugins/SFZ", self.fKitPlugins)
 
         settingsDB.sync()
@@ -652,7 +666,10 @@ class SearchPluginsThread(QThread):
 
         self._pluginLook(self.fLastCheckValue, "LADSPA plugins...")
 
-        for iPATH in Carla.LADSPA_PATH:
+        settings = QSettings()
+        LADSPA_PATH = toList(settings.value("Paths/LADSPA", Carla.DEFAULT_LADSPA_PATH))
+
+        for iPATH in LADSPA_PATH:
             binaries = findBinaries(iPATH, OS)
             for binary in binaries:
                 if binary not in ladspaBinaries:
@@ -682,7 +699,10 @@ class SearchPluginsThread(QThread):
 
         self._pluginLook(self.fLastCheckValue, "DSSI plugins...")
 
-        for iPATH in Carla.DSSI_PATH:
+        settings = QSettings()
+        DSSI_PATH = toList(settings.value("Paths/DSSI", Carla.DEFAULT_DSSI_PATH))
+
+        for iPATH in DSSI_PATH:
             binaries = findBinaries(iPATH, OS)
             for binary in binaries:
                 if binary not in dssiBinaries:
@@ -712,7 +732,10 @@ class SearchPluginsThread(QThread):
 
         self._pluginLook(self.fLastCheckValue, "LV2 bundles...")
 
-        for iPATH in Carla.LV2_PATH:
+        settings = QSettings()
+        LV2_PATH = toList(settings.value("Paths/LV2", Carla.DEFAULT_LV2_PATH))
+
+        for iPATH in LV2_PATH:
             bundles = findLV2Bundles(iPATH)
             for bundle in bundles:
                 if bundle not in lv2Bundles:
@@ -745,7 +768,10 @@ class SearchPluginsThread(QThread):
         else:
             self._pluginLook(self.fLastCheckValue, "VST plugins...")
 
-        for iPATH in Carla.VST_PATH:
+        settings = QSettings()
+        VST_PATH = toList(settings.value("Paths/VST", Carla.DEFAULT_VST_PATH))
+
+        for iPATH in VST_PATH:
             if MACOS and not isWine:
                 binaries = findMacVSTBundles(iPATH)
             else:
@@ -779,7 +805,10 @@ class SearchPluginsThread(QThread):
         # FIXME - this probably uses bundles
         self._pluginLook(self.fLastCheckValue, "AU plugins...")
 
-        for iPATH in Carla.AU_PATH:
+        settings = QSettings()
+        AU_PATH = toList(settings.value("Paths/AU", Carla.DEFAULT_AU_PATH))
+
+        for iPATH in AU_PATH:
             binaries = findBinaries(iPATH, "MACOS")
             for binary in binaries:
                 if binary not in auBinaries:
@@ -807,7 +836,10 @@ class SearchPluginsThread(QThread):
         csoundFiles = []
         self.fCsoundPlugins = []
 
-        for iPATH in Carla.CSOUND_PATH:
+        settings = QSettings()
+        CSOUND_PATH = toList(settings.value("Paths/CSOUND", Carla.DEFAULT_CSOUND_PATH))
+
+        for iPATH in CSOUND_PATH:
             files = findFilenames(iPATH, "csd")
             for file_ in files:
                 if file_ not in csoundFiles:
@@ -1270,7 +1302,8 @@ class PluginDatabaseW(QDialog):
             mIns   = plugin['midi.ins']
             mOuts  = plugin['midi.outs']
             ptype  = self.ui.tableWidget.item(i, 12).text()
-            isSynth  = bool(plugin['hints'] & PLUGIN_IS_SYNTH)
+            #isSynth  = bool(plugin['hints'] & PLUGIN_IS_SYNTH)
+            isSynth  = bool(plugin['category'] == PLUGIN_CATEGORY_SYNTH)
             isEffect = bool(aIns > 0 < aOuts and not isSynth)
             isMidi   = bool(aIns == 0 and aOuts == 0 and mIns > 0 < mOuts)
             isKit    = bool(ptype in ("GIG", "SF2", "SFZ"))
@@ -1332,6 +1365,9 @@ class PluginDatabaseW(QDialog):
         self.ui.frame.setVisible(yesNo)
 
     def _addPluginToTable(self, plugin, ptype):
+        if plugin['API'] != PLUGIN_QUERY_API_VERSION:
+            return
+
         index = self.fLastTableIndex
 
         if plugin['build'] == BINARY_NATIVE:
@@ -1370,7 +1406,7 @@ class PluginDatabaseW(QDialog):
         self.ui.tableWidget.setItem(index, 7, QTableWidgetItem(str(plugin['parameters.outs'])))
         self.ui.tableWidget.setItem(index, 8, QTableWidgetItem(str(plugin['programs.total'])))
         self.ui.tableWidget.setItem(index, 9, QTableWidgetItem(self.tr("Yes") if (plugin['hints'] & PLUGIN_HAS_GUI) else self.tr("No")))
-        self.ui.tableWidget.setItem(index, 10, QTableWidgetItem(self.tr("Yes") if (plugin['hints'] & PLUGIN_IS_SYNTH) else self.tr("No")))
+        self.ui.tableWidget.setItem(index, 10, QTableWidgetItem(self.tr("Yes") if (plugin['category'] == PLUGIN_CATEGORY_SYNTH) else self.tr("No")))
         self.ui.tableWidget.setItem(index, 11, QTableWidgetItem(bridgeText))
         self.ui.tableWidget.setItem(index, 12, QTableWidgetItem(ptype))
         self.ui.tableWidget.setItem(index, 13, QTableWidgetItem(str(plugin['binary'])))
@@ -1402,8 +1438,7 @@ class PluginDatabaseW(QDialog):
         internalPlugins = toList(settingsDB.value("Plugins/Internal", []))
 
         for plugins in internalPlugins:
-            for plugin in plugins:
-                internalCount += 1
+            internalCount += len(plugins)
 
         if Carla.host is not None and internalCount != Carla.host.get_internal_plugin_count():
             internalCount   = Carla.host.get_internal_plugin_count()
@@ -1422,6 +1457,8 @@ class PluginDatabaseW(QDialog):
             for plugin in plugins:
                 self._addPluginToTable(plugin, self.tr("Internal"))
 
+        del internalPlugins
+
         # ---------------------------------------------------------------------------
         # LADSPA
 
@@ -1436,6 +1473,8 @@ class PluginDatabaseW(QDialog):
             for plugin in plugins:
                 self._addPluginToTable(plugin, "LADSPA")
                 ladspaCount += 1
+
+        del ladspaPlugins
 
         # ---------------------------------------------------------------------------
         # DSSI
@@ -1452,6 +1491,8 @@ class PluginDatabaseW(QDialog):
                 self._addPluginToTable(plugin, "DSSI")
                 dssiCount += 1
 
+        del dssiPlugins
+
         # ---------------------------------------------------------------------------
         # LV2
 
@@ -1466,6 +1507,8 @@ class PluginDatabaseW(QDialog):
             for plugin in plugins:
                 self._addPluginToTable(plugin, "LV2")
                 lv2Count += 1
+
+        del lv2Plugins
 
         # ---------------------------------------------------------------------------
         # VST
@@ -1482,6 +1525,8 @@ class PluginDatabaseW(QDialog):
                 self._addPluginToTable(plugin, "VST")
                 vstCount += 1
 
+        del vstPlugins
+
         # ---------------------------------------------------------------------------
         # AU
 
@@ -1496,6 +1541,8 @@ class PluginDatabaseW(QDialog):
                     self._addPluginToTable(plugin, "AU")
                     auCount += 1
 
+            del auPlugins
+
         # ---------------------------------------------------------------------------
         # Csound
 
@@ -1506,27 +1553,41 @@ class PluginDatabaseW(QDialog):
                 self._addPluginToTable(csd_i, "CSOUND")
                 csoundCount += 1
 
+        del csds
+
         # ---------------------------------------------------------------------------
         # Kits
 
         gigs = toList(settingsDB.value("Plugins/GIG", []))
-        sf2s = toList(settingsDB.value("Plugins/SF2", []))
-        sfzs = toList(settingsDB.value("Plugins/SFZ", []))
 
         for gig in gigs:
             for gig_i in gig:
                 self._addPluginToTable(gig_i, "GIG")
                 kitCount += 1
 
+        del gigs
+
+        # ---------------------------------------------------------------------------
+
+        sf2s = toList(settingsDB.value("Plugins/SF2", []))
+
         for sf2 in sf2s:
             for sf2_i in sf2:
                 self._addPluginToTable(sf2_i, "SF2")
                 kitCount += 1
 
+        del sf2s
+
+        # ---------------------------------------------------------------------------
+
+        sfzs = toList(settingsDB.value("Plugins/SFZ", []))
+
         for sfz in sfzs:
             for sfz_i in sfz:
                 self._addPluginToTable(sfz_i, "SFZ")
                 kitCount += 1
+
+        del sfzs
 
         # ---------------------------------------------------------------------------
 
@@ -1603,10 +1664,8 @@ class PluginDatabaseW(QDialog):
 # ------------------------------------------------------------------------------------------------------------
 # TESTING
 
-#Carla.isControl = True
-
-#from PyQt5.QtWidgets import QApplication
-#app = QApplication(sys.argv)
-#gui = PluginDatabaseW(None)
-#gui.show()
-#app.exec_()
+from PyQt5.QtWidgets import QApplication
+app = QApplication(sys.argv)
+gui = PluginDatabaseW(None)
+gui.show()
+app.exec_()

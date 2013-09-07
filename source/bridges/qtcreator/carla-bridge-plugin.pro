@@ -1,14 +1,12 @@
 # QtCreator project file
 
-QT = core gui xml
-
 TARGET   = carla-bridge-qtcreator
 TEMPLATE = app
 
 # -------------------------------------------------------
 
 CONFIG     = debug
-CONFIG    += link_pkgconfig qt warn_on
+CONFIG    += link_pkgconfig warn_on
 
 DEFINES    = DEBUG
 DEFINES   += HAVE_CPP11_SUPPORT
@@ -23,13 +21,14 @@ DEFINES   += WANT_LADSPA
 DEFINES   += WANT_DSSI
 DEFINES   += WANT_LV2
 DEFINES   += WANT_VST
+DEFINES   += WANT_AU
 DEFINES   += WANT_FLUIDSYNTH
-#DEFINES   += WANT_LINUXSAMPLER
+DEFINES   += WANT_LINUXSAMPLER
 DEFINES   += WANT_OPENGL
 DEFINES   += WANT_AUDIOFILE
 DEFINES   += WANT_MIDIFILE
 DEFINES   += WANT_ZYNADDSUBFX
-#DEFINES   += WANT_ZYNADDSUBFX_UI
+# DEFINES   += WANT_ZYNADDSUBFX_UI
 
 # Engine
 PKGCONFIG  = liblo
@@ -38,7 +37,7 @@ PKGCONFIG  = liblo
 PKGCONFIG += fluidsynth
 
 # LinuxSampler
-#PKGCONFIG += linuxsampler
+PKGCONFIG += linuxsampler
 
 # AudioFile
 DEFINES   += HAVE_FFMPEG
@@ -74,7 +73,9 @@ SOURCES += \
     ../../backend/engine/CarlaEngineOsc.cpp \
     ../../backend/engine/CarlaEngineThread.cpp \
     ../../backend/engine/CarlaEngineBridge.cpp \
-    ../../backend/engine/CarlaEngineJack.cpp
+    ../../backend/engine/CarlaEngineJack.cpp \
+    ../../backend/engine/CarlaEngineJuce.cpp \
+    ../../backend/engine/CarlaEngineRtAudio.cpp
 
 # Plugin
 SOURCES += \
@@ -87,7 +88,7 @@ SOURCES += \
     ../../backend/plugin/DssiPlugin.cpp \
     ../../backend/plugin/Lv2Plugin.cpp \
     ../../backend/plugin/VstPlugin.cpp \
-    ../../backend/plugin/Vst3Plugin.cpp \
+    ../../backend/plugin/CsoundPlugin.cpp \
     ../../backend/plugin/FluidSynthPlugin.cpp \
     ../../backend/plugin/LinuxSamplerPlugin.cpp
 
@@ -104,7 +105,7 @@ HEADERS += \
     ../../backend/CarlaNative.h \
     ../../backend/CarlaNative.hpp \
     ../../backend/CarlaPlugin.hpp \
-    ../../backend/CarlaStandalone.hpp
+    ../../backend/CarlaHost.hpp
 
 # engine
 HEADERS += \
@@ -121,9 +122,14 @@ HEADERS += \
 # includes
 HEADERS += \
     ../../includes/CarlaDefines.hpp \
-    ../../includes/CarlaMIDI.h \
-    ../../includes/ladspa_rdf.hpp \
-    ../../includes/lv2_rdf.hpp
+    ../../includes/CarlaMIDI.h
+
+# modules
+HEADERS += \
+    ../../modules/CarlaNative.h \
+    ../../modules/CarlaNative.hpp \
+    ../../modules/ladspa_rdf.hpp \
+    ../../modules/lv2_rdf.hpp
 
 # utils
 HEADERS += \
@@ -156,11 +162,11 @@ INCLUDEPATH = .. \
 # -----------------------------------------------------------
 
 LIBS  = -ldl
-LIBS += ../../backend/libcarla_native.a
+LIBS += ../../modules/carla_native.a
+LIBS += ../../modules/juce_audio_basics.a
 LIBS += ../../modules/juce_core.a
 LIBS += ../../modules/rtmempool.a
 LIBS += ../../modules/theme.a
-LIBS += ../../modules/widgets.a
 
 LIBS += ../../modules/dgl.a
 LIBS += ../../modules/lilv.a

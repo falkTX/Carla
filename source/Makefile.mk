@@ -7,7 +7,7 @@
 # --------------------------------------------------------------
 # Modify to enable/disable specific features
 
-# Support for LADSPA, DSSI, LV2 and VST plugins
+# Support for LADSPA, DSSI, LV2, VST and AU plugins
 CARLA_PLUGIN_SUPPORT = true
 
 # Support for csound files (version 6)
@@ -15,9 +15,6 @@ CARLA_CSOUND_SUPPORT = true
 
 # Support for GIG, SF2 and SFZ sample banks (through fluidsynth and linuxsampler)
 CARLA_SAMPLERS_SUPPORT = true
-
-# Support for Native Audio (ALSA and/or PulseAudio in Linux)
-CARLA_RTAUDIO_SUPPORT = true
 
 # Use the free vestige header instead of the official VST SDK
 CARLA_VESTIGE_HEADER = true
@@ -66,10 +63,12 @@ endif
 
 # --------------------------------------------------------------
 
+HAVE_ALSA         = $(shell pkg-config --exists alsa && echo true)
 HAVE_FFMPEG       = $(shell pkg-config --exists libavcodec libavformat libavutil && pkg-config --max-version=1.9 libavcodec && echo true)
 HAVE_OPENGL       = $(shell pkg-config --exists gl && echo true)
 HAVE_GTK2         = $(shell pkg-config --exists gtk+-2.0 && echo true)
 HAVE_GTK3         = $(shell pkg-config --exists gtk+-3.0 && echo true)
+HAVE_PULSEAUDIO   = $(shell pkg-config --exists libpulse-simple && echo true)
 HAVE_QT4          = $(shell pkg-config --exists QtCore && echo true)
 HAVE_QT5          = $(shell pkg-config --exists Qt5Core && echo true)
 
@@ -81,11 +80,6 @@ HAVE_ZYN_UI_DEPS  = $(shell pkg-config --exists ntk ntk_images && echo true)
 ifeq ($(CARLA_SAMPLERS_SUPPORT),true)
 HAVE_FLUIDSYNTH   = $(shell pkg-config --exists fluidsynth && echo true)
 HAVE_LINUXSAMPLER = $(shell pkg-config --exists linuxsampler && echo true)
-endif
-
-ifeq ($(CARLA_RTAUDIO_SUPPORT),true)
-HAVE_ALSA         = $(shell pkg-config --exists alsa && echo true)
-HAVE_PULSEAUDIO   = $(shell pkg-config --exists libpulse-simple && echo true)
 endif
 
 # --------------------------------------------------------------

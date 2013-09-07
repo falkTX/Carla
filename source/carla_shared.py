@@ -256,8 +256,8 @@ elif MACOS:
     DEFAULT_VST_PATH    = ":".join((os.path.join(HOME, "Library", "Audio", "Plug-Ins", "VST"),
                                     os.path.join("/", "Library", "Audio", "Plug-Ins", "VST")))
 
-    DEFAULT_AU_PATH     = ":".join((os.path.join(HOME, "Library", "Audio", "Plug-Ins", "AudioUnits"),
-                                    os.path.join("/", "Library", "Audio", "Plug-Ins", "AudioUnits")))
+    DEFAULT_AU_PATH     = ":".join((os.path.join(HOME, "Library", "Audio", "Plug-Ins", "Components"),
+                                    os.path.join("/", "Library", "Audio", "Plug-Ins", "Components")))
 
     # TODO
     DEFAULT_CSOUND_PATH = ""
@@ -291,13 +291,13 @@ else:
     # TODO
     DEFAULT_CSOUND_PATH = ""
 
-    DEFAULT_GIG_PATH    = ":".join((os.path.join(HOME, ".sounds"),
+    DEFAULT_GIG_PATH    = ":".join((os.path.join(HOME, ".sounds", "gig"),
                                     os.path.join("/", "usr", "share", "sounds", "gig")))
 
-    DEFAULT_SF2_PATH    = ":".join((os.path.join(HOME, ".sounds"),
+    DEFAULT_SF2_PATH    = ":".join((os.path.join(HOME, ".sounds", "sf2"),
                                     os.path.join("/", "usr", "share", "sounds", "sf2")))
 
-    DEFAULT_SFZ_PATH    = ":".join((os.path.join(HOME, ".sounds"),
+    DEFAULT_SFZ_PATH    = ":".join((os.path.join(HOME, ".sounds", "sfz"),
                                     os.path.join("/", "usr", "share", "sounds", "sfz")))
 
 # ------------------------------------------------------------------------------------------------------------
@@ -538,7 +538,7 @@ def setUpSignals():
     signal(SIGINT,  signalHandler)
     signal(SIGTERM, signalHandler)
 
-    if haveSIGUSR1:
+    if not haveSIGUSR1:
         return
 
     signal(SIGUSR1, signalHandler)

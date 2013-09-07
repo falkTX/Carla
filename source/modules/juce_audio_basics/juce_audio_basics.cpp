@@ -65,7 +65,6 @@ namespace juce
 #include "buffers/juce_AudioSampleBuffer.cpp"
 #include "buffers/juce_FloatVectorOperations.cpp"
 #include "effects/juce_IIRFilter.cpp"
-#include "effects/juce_IIRFilterOld.cpp"
 #include "effects/juce_LagrangeInterpolator.cpp"
 #include "midi/juce_MidiBuffer.cpp"
 #include "midi/juce_MidiFile.cpp"

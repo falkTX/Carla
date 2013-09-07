@@ -119,14 +119,14 @@ public:
             {
                 CarlaStyle* const style(new CarlaStyle());
                 fApp->setStyle(style);
-                style->ready(fApp);
+                //style->ready(fApp);
 
-                QString color(settings.value("Main/ProThemeColor", "Black").toString());
-
-                if (color == "System")
-                    pass(); //style->setColorScheme(CarlaStyle::COLOR_SYSTEM);
-                else
-                    style->setColorScheme(CarlaStyle::COLOR_BLACK);
+//                 QString color(settings.value("Main/ProThemeColor", "Black").toString());
+//
+//                 if (color == "System")
+//                     pass(); //style->setColorScheme(CarlaStyle::COLOR_SYSTEM);
+//                 else
+//                     style->setColorScheme(CarlaStyle::COLOR_BLACK);
             }
         }
 

@@ -137,8 +137,8 @@ struct EnginePluginData {
     EnginePluginData()
         : plugin(nullptr)
     {
-        insPeak[0] = insPeak[1] = nullptr;
-        outsPeak[0] = outsPeak[1] = nullptr;
+        insPeak[0] = insPeak[1] = 0.0f;
+        outsPeak[0] = outsPeak[1] = 0.0f;
     }
 };
 

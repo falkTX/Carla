@@ -33,8 +33,8 @@ CARLA_BACKEND_START_NAMESPACE
 
 static const char** gRetNames = nullptr;
 
-class CarlaEngineJuce : public CarlaEngine,
-                        public juce::AudioIODeviceCallback
+class CarlaEngineJuce : public CarlaEngine/*,
+                        public juce::AudioIODeviceCallback*/
 {
 public:
     CarlaEngineJuce()
@@ -87,30 +87,30 @@ public:
     // -------------------------------------------------------------------
 
 protected:
-    void audioDeviceIOCallback (const float** inputChannelData,
-                                int numInputChannels,
-                                float** outputChannelData,
-                                int numOutputChannels,
-                                int numSamples)
-    {
-    }
-
-    void audioDeviceAboutToStart (juce::AudioIODevice* device)
-    {
-    }
-
-    void audioDeviceStopped()
-    {
-    }
-
-    void audioDeviceError (const juce::String& errorMessage)
-    {
-    }
+//     void audioDeviceIOCallback (const float** inputChannelData,
+//                                 int numInputChannels,
+//                                 float** outputChannelData,
+//                                 int numOutputChannels,
+//                                 int numSamples)
+//     {
+//     }
+//
+//     void audioDeviceAboutToStart (juce::AudioIODevice* device)
+//     {
+//     }
+//
+//     void audioDeviceStopped()
+//     {
+//     }
+//
+//     void audioDeviceError (const juce::String& errorMessage)
+//     {
+//     }
 
     // -------------------------------------
 
 private:
-    juce::AudioIODeviceType* fDeviceType;
+    //juce::AudioIODeviceType* fDeviceType;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineJuce)
 };
@@ -134,6 +134,7 @@ const char* CarlaEngine::getJuceApiName(const unsigned int index)
 
 const char** CarlaEngine::getJuceApiDeviceNames(const unsigned int index)
 {
+#if 0
     juce::ScopedPointer<juce::AudioIODeviceType> deviceType;
 
     switch(index)
@@ -166,6 +167,7 @@ const char** CarlaEngine::getJuceApiDeviceNames(const unsigned int index)
         gRetNames[i] = carla_strdup(devNames[i].toRawUTF8());
 
     gRetNames[devNameCount] = nullptr;
+#endif
 
     return gRetNames;
 }

@@ -33,7 +33,7 @@ CarlaBridgeClient::CarlaBridgeClient(const char* const uiTitle)
     : fOsc(this),
       fOscData(fOsc.getControlData())
 #ifdef BUILD_BRIDGE_UI
-    , fUI(CarlaBridgeToolkit::createNew(this, uiTitle)),
+    , fUI(CarlaBridgeToolkit::createNew(this, uiTitle))
 #endif
 {
 #ifdef BUILD_BRIDGE_UI

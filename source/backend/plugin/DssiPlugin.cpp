@@ -167,8 +167,8 @@ public:
 
         if (isDssiVst)
         {
-            if (pData->engine->getOptions().useDssiVstChunks && fDssiDescriptor->get_custom_data != nullptr && fDssiDescriptor->set_custom_data != nullptr)
-                options |= PLUGIN_OPTION_USE_CHUNKS;
+//             if (pData->engine->getOptions().useDssiVstChunks && fDssiDescriptor->get_custom_data != nullptr && fDssiDescriptor->set_custom_data != nullptr)
+//                 options |= PLUGIN_OPTION_USE_CHUNKS;
         }
         else
         {
@@ -1935,8 +1935,8 @@ public:
             {
                 fOptions |= PLUGIN_OPTION_FIXED_BUFFERS;
 
-                if (pData->engine->getOptions().useDssiVstChunks && fDssiDescriptor->get_custom_data != nullptr && fDssiDescriptor->set_custom_data != nullptr)
-                    fOptions |= PLUGIN_OPTION_USE_CHUNKS;
+//                 if (pData->engine->getOptions().useDssiVstChunks && fDssiDescriptor->get_custom_data != nullptr && fDssiDescriptor->set_custom_data != nullptr)
+//                     fOptions |= PLUGIN_OPTION_USE_CHUNKS;
             }
 
             if (fDssiDescriptor->run_synth != nullptr || fDssiDescriptor->run_multiple_synths != nullptr)

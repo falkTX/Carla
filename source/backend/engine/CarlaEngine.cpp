@@ -340,8 +340,9 @@ unsigned int CarlaEngine::getDriverCount()
 
     unsigned int count = 1; // JACK
 
-#ifdef WANT_RTAUDIO
+#ifndef BUILD_BRIDGE
     count += getRtAudioApiCount();
+    count += getJuceApiCount();
 #endif
 
     return count;
@@ -354,11 +355,16 @@ const char* CarlaEngine::getDriverName(const unsigned int index)
     if (index == 0)
         return "JACK";
 
-#ifdef WANT_RTAUDIO
-    const unsigned int rtIndex(index-1);
+#ifndef BUILD_BRIDGE
+    const unsigned int rtAudioIndex(index-1);
 
-    if (rtIndex < getRtAudioApiCount())
-        return getRtAudioApiName(rtIndex);
+    if (rtAudioIndex < getRtAudioApiCount())
+        return getRtAudioApiName(rtAudioIndex);
+
+    const unsigned int juceIndex(index-rtAudioIndex-1);
+
+    if (juceIndex < getJuceApiCount())
+        return getJuceApiName(juceIndex);
 #endif
 
     carla_stderr("CarlaEngine::getDriverName(%i) - invalid index", index);
@@ -372,11 +378,16 @@ const char** CarlaEngine::getDriverDeviceNames(const unsigned int index)
     if (index == 0)
         return nullptr;
 
-#ifdef WANT_RTAUDIO
-    const unsigned int rtIndex(index-1);
+#ifndef BUILD_BRIDGE
+    const unsigned int rtAudioIndex(index-1);
 
-    if (rtIndex < getRtAudioApiCount())
-        return getRtAudioApiDeviceNames(rtIndex);
+    if (rtAudioIndex < getRtAudioApiCount())
+        return getRtAudioApiDeviceNames(rtAudioIndex);
+
+    const unsigned int juceIndex(index-rtAudioIndex-1);
+
+    if (juceIndex < getJuceApiCount())
+        return getJuceApiDeviceNames(juceIndex);
 #endif
 
     carla_stderr("CarlaEngine::getDriverDeviceNames(%i) - invalid index", index);
@@ -390,35 +401,33 @@ CarlaEngine* CarlaEngine::newDriverByName(const char* const driverName)
     if (std::strcmp(driverName, "JACK") == 0)
         return newJack();
 
-#ifdef WANT_RTAUDIO
-# ifdef __LINUX_ALSA__
+#ifdef __LINUX_ALSA__
     if (std::strcmp(driverName, "ALSA") == 0)
         return newRtAudio(RTAUDIO_LINUX_ALSA);
-# endif
-# ifdef __LINUX_PULSE__
+#endif
+#ifdef __LINUX_PULSE__
     if (std::strcmp(driverName, "PulseAudio") == 0)
         return newRtAudio(RTAUDIO_LINUX_PULSE);
-# endif
-# ifdef __LINUX_OSS__
+#endif
+#ifdef __LINUX_OSS__
     if (std::strcmp(driverName, "OSS") == 0)
         return newRtAudio(RTAUDIO_LINUX_OSS);
-# endif
-# ifdef __UNIX_JACK__
+#endif
+#ifdef __UNIX_JACK__
     if (std::strncmp(driverName, "JACK ", 5) == 0)
         return newRtAudio(RTAUDIO_UNIX_JACK);
-# endif
-# ifdef __MACOSX_CORE__
+#endif
+#ifdef __MACOSX_CORE__
     if (std::strcmp(driverName, "CoreAudio") == 0)
         return newRtAudio(RTAUDIO_MACOSX_CORE);
-# endif
-# ifdef __WINDOWS_ASIO__
+#endif
+#ifdef __WINDOWS_ASIO__
     if (std::strcmp(driverName, "ASIO") == 0)
         return newRtAudio(RTAUDIO_WINDOWS_ASIO);
-# endif
-# ifdef __WINDOWS_DS__
+#endif
+#ifdef __WINDOWS_DS__
     if (std::strcmp(driverName, "DirectSound") == 0)
         return newRtAudio(RTAUDIO_WINDOWS_DS);
-# endif
 #endif
 
     carla_stderr("CarlaEngine::newDriverByName(\"%s\") - invalid driver name", driverName);
@@ -1444,12 +1453,6 @@ void CarlaEngine::setOption(const OptionsType option, const int value, const cha
         fOptions.uisAlwaysOnTop = (value != 0);
         break;
 
-#ifdef WANT_DSSI
-    case OPTION_USE_DSSI_VST_CHUNKS:
-        fOptions.useDssiVstChunks = (value != 0);
-        break;
-#endif
-
     case OPTION_MAX_PARAMETERS:
         if (value < 1)
             return carla_stderr2("carla_set_engine_option(OPTION_MAX_PARAMETERS, %i, \"%s\") - invalid value", value, valueStr);
@@ -1464,32 +1467,30 @@ void CarlaEngine::setOption(const OptionsType option, const int value, const cha
         fOptions.uiBridgesTimeout = static_cast<uint>(value);
         break;
 
-#ifdef WANT_RTAUDIO
-    case OPTION_RTAUDIO_NUMBER_PERIODS:
+    case OPTION_AUDIO_NUM_PERIODS:
         if (value < 2 || value > 3)
-            return carla_stderr2("carla_set_engine_option(OPTION_MAX_PARAMETERS, %i, \"%s\") - invalid value", value, valueStr);
+            return carla_stderr2("carla_set_engine_option(OPTION_AUDIO_NUM_PERIODS, %i, \"%s\") - invalid value", value, valueStr);
 
-        fOptions.rtaudioNumPeriods = static_cast<uint>(value);
+        fOptions.audioNumPeriods = static_cast<uint>(value);
         break;
 
-    case OPTION_RTAUDIO_BUFFER_SIZE:
+    case OPTION_AUDIO_BUFFER_SIZE:
         if (value < 8)
-            return carla_stderr2("carla_set_engine_option(OPTION_MAX_PARAMETERS, %i, \"%s\") - invalid value", value, valueStr);
+            return carla_stderr2("carla_set_engine_option(OPTION_AUDIO_BUFFER_SIZE, %i, \"%s\") - invalid value", value, valueStr);
 
-        fOptions.rtaudioBufferSize = static_cast<uint>(value);
+        fOptions.audioBufferSize = static_cast<uint>(value);
         break;
 
-    case OPTION_RTAUDIO_SAMPLE_RATE:
+    case OPTION_AUDIO_SAMPLE_RATE:
         if (value < 22050)
-            return carla_stderr2("carla_set_engine_option(OPTION_MAX_PARAMETERS, %i, \"%s\") - invalid value", value, valueStr);
+            return carla_stderr2("carla_set_engine_option(OPTION_AUDIO_SAMPLE_RATE, %i, \"%s\") - invalid value", value, valueStr);
 
-        fOptions.rtaudioSampleRate = static_cast<uint>(value);
+        fOptions.audioSampleRate = static_cast<uint>(value);
         break;
 
-    case OPTION_RTAUDIO_DEVICE:
-        fOptions.rtaudioDevice = valueStr;
+    case OPTION_AUDIO_DEVICE:
+        fOptions.audioDevice = valueStr;
         break;
-#endif
 
     case OPTION_PATH_RESOURCES:
         fOptions.resourceDir = valueStr;

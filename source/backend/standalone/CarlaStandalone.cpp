@@ -142,9 +142,9 @@ const char* carla_get_extended_license_text()
 #ifdef WANT_LV2
         text4 += "<li>serd, sord, sratom and lilv libraries for LV2 discovery, http://drobilla.net/software/lilv/</li>";
 #endif
-#ifdef WANT_RTAUDIO
         text4 += "<li>RtAudio+RtMidi libraries for extra Audio and MIDI support, http://www.music.mcgill.ca/~gary/rtaudio/</li>";
-#endif
+
+        // end
         text4 += "</ul>";
 
         // code snippets
@@ -337,24 +337,18 @@ bool carla_engine_init(const char* driverName, const char* clientName)
         gStandalone.engine->setCallback(gStandalone.callback, nullptr);
 
 #ifndef BUILD_BRIDGE
-    gStandalone.engine->setOption(CB::OPTION_PROCESS_MODE,               static_cast<int>(gStandalone.options.processMode),       nullptr);
-    gStandalone.engine->setOption(CB::OPTION_TRANSPORT_MODE,             static_cast<int>(gStandalone.options.transportMode),     nullptr);
+    gStandalone.engine->setOption(CB::OPTION_TRANSPORT_MODE,             static_cast<int>(gStandalone.options.transportMode),    nullptr);
 #endif
-    gStandalone.engine->setOption(CB::OPTION_FORCE_STEREO,               gStandalone.options.forceStereo ? 1 : 0,                 nullptr);
-    gStandalone.engine->setOption(CB::OPTION_PREFER_PLUGIN_BRIDGES,      gStandalone.options.preferPluginBridges ? 1 : 0,         nullptr);
-    gStandalone.engine->setOption(CB::OPTION_PREFER_UI_BRIDGES,          gStandalone.options.preferUiBridges ? 1 : 0,             nullptr);
-    gStandalone.engine->setOption(CB::OPTION_UIS_ALWAYS_ON_TOP,          gStandalone.options.uisAlwaysOnTop ? 1 : 0,              nullptr);
-#ifdef WANT_DSSI
-    gStandalone.engine->setOption(CB::OPTION_USE_DSSI_VST_CHUNKS,        gStandalone.options.useDssiVstChunks ? 1 : 0,            nullptr);
-#endif
-    gStandalone.engine->setOption(CB::OPTION_MAX_PARAMETERS,             static_cast<int>(gStandalone.options.maxParameters),     nullptr);
-    gStandalone.engine->setOption(CB::OPTION_UI_BRIDGES_TIMEOUT,         static_cast<int>(gStandalone.options.uiBridgesTimeout),  nullptr);
-#ifdef WANT_RTAUDIO
-    gStandalone.engine->setOption(CB::OPTION_RTAUDIO_NUMBER_PERIODS,     static_cast<int>(gStandalone.options.rtaudioNumPeriods), nullptr);
-    gStandalone.engine->setOption(CB::OPTION_RTAUDIO_BUFFER_SIZE,        static_cast<int>(gStandalone.options.rtaudioBufferSize), nullptr);
-    gStandalone.engine->setOption(CB::OPTION_RTAUDIO_SAMPLE_RATE,        static_cast<int>(gStandalone.options.rtaudioSampleRate), nullptr);
-    gStandalone.engine->setOption(CB::OPTION_RTAUDIO_DEVICE,          0, (const char*)gStandalone.options.rtaudioDevice);
-#endif
+    gStandalone.engine->setOption(CB::OPTION_FORCE_STEREO,               gStandalone.options.forceStereo         ? 1 : 0,        nullptr);
+    gStandalone.engine->setOption(CB::OPTION_PREFER_PLUGIN_BRIDGES,      gStandalone.options.preferPluginBridges ? 1 : 0,        nullptr);
+    gStandalone.engine->setOption(CB::OPTION_PREFER_UI_BRIDGES,          gStandalone.options.preferUiBridges     ? 1 : 0,        nullptr);
+    gStandalone.engine->setOption(CB::OPTION_UIS_ALWAYS_ON_TOP,          gStandalone.options.uisAlwaysOnTop      ? 1 : 0,        nullptr);
+    gStandalone.engine->setOption(CB::OPTION_MAX_PARAMETERS,             static_cast<int>(gStandalone.options.maxParameters),    nullptr);
+    gStandalone.engine->setOption(CB::OPTION_UI_BRIDGES_TIMEOUT,         static_cast<int>(gStandalone.options.uiBridgesTimeout), nullptr);
+    gStandalone.engine->setOption(CB::OPTION_AUDIO_NUM_PERIODS,          static_cast<int>(gStandalone.options.audioNumPeriods),  nullptr);
+    gStandalone.engine->setOption(CB::OPTION_AUDIO_BUFFER_SIZE,          static_cast<int>(gStandalone.options.audioBufferSize),  nullptr);
+    gStandalone.engine->setOption(CB::OPTION_AUDIO_SAMPLE_RATE,          static_cast<int>(gStandalone.options.audioSampleRate),  nullptr);
+    gStandalone.engine->setOption(CB::OPTION_AUDIO_DEVICE,            0, (const char*)gStandalone.options.audioDevice);
     gStandalone.engine->setOption(CB::OPTION_PATH_RESOURCES,          0, (const char*)gStandalone.options.resourceDir);
 #ifndef BUILD_BRIDGE
     gStandalone.engine->setOption(CB::OPTION_PATH_BRIDGE_NATIVE,      0, (const char*)gStandalone.options.bridge_native);
@@ -502,12 +496,6 @@ void carla_set_engine_option(CarlaOptionsType option, int value, const char* val
         gStandalone.options.uisAlwaysOnTop = (value != 0);
         break;
 
-#ifdef WANT_DSSI
-    case CB::OPTION_USE_DSSI_VST_CHUNKS:
-        gStandalone.options.useDssiVstChunks = (value != 0);
-        break;
-#endif
-
     case CB::OPTION_MAX_PARAMETERS:
         if (value < 1)
             return carla_stderr2("carla_set_engine_option(OPTION_MAX_PARAMETERS, %i, \"%s\") - invalid value", value, valueStr);
@@ -522,32 +510,30 @@ void carla_set_engine_option(CarlaOptionsType option, int value, const char* val
         gStandalone.options.uiBridgesTimeout = static_cast<unsigned int>(value);
         break;
 
-#ifdef WANT_RTAUDIO
-    case CB::OPTION_RTAUDIO_NUMBER_PERIODS:
+    case CB::OPTION_AUDIO_NUM_PERIODS:
         if (value < 2 || value > 3)
-            return carla_stderr2("carla_set_engine_option(OPTION_RTAUDIO_NUMBER_PERIODS, %i, \"%s\") - invalid value", value, valueStr);
+            return carla_stderr2("carla_set_engine_option(OPTION_AUDIO_NUM_PERIODS, %i, \"%s\") - invalid value", value, valueStr);
 
-        gStandalone.options.rtaudioNumPeriods = static_cast<unsigned int>(value);
+        gStandalone.options.audioNumPeriods = static_cast<unsigned int>(value);
         break;
 
-    case CB::OPTION_RTAUDIO_BUFFER_SIZE:
+    case CB::OPTION_AUDIO_BUFFER_SIZE:
         if (value < 8)
-            return carla_stderr2("carla_set_engine_option(OPTION_RTAUDIO_BUFFER_SIZE, %i, \"%s\") - invalid value", value, valueStr);
+            return carla_stderr2("carla_set_engine_option(OPTION_AUDIO_BUFFER_SIZE, %i, \"%s\") - invalid value", value, valueStr);
 
-        gStandalone.options.rtaudioBufferSize = static_cast<unsigned int>(value);
+        gStandalone.options.audioBufferSize = static_cast<unsigned int>(value);
         break;
 
-    case CB::OPTION_RTAUDIO_SAMPLE_RATE:
+    case CB::OPTION_AUDIO_SAMPLE_RATE:
         if (value < 22050)
-            return carla_stderr2("carla_set_engine_option(OPTION_RTAUDIO_SAMPLE_RATE, %i, \"%s\") - invalid value", value, valueStr);
+            return carla_stderr2("carla_set_engine_option(OPTION_AUDIO_SAMPLE_RATE, %i, \"%s\") - invalid value", value, valueStr);
 
-        gStandalone.options.rtaudioSampleRate = static_cast<unsigned int>(value);
+        gStandalone.options.audioSampleRate = static_cast<unsigned int>(value);
         break;
 
-    case CB::OPTION_RTAUDIO_DEVICE:
-        gStandalone.options.rtaudioDevice = valueStr;
+    case CB::OPTION_AUDIO_DEVICE:
+        gStandalone.options.audioDevice = valueStr;
         break;
-#endif
 
     case CB::OPTION_PATH_RESOURCES:
         gStandalone.options.resourceDir = valueStr;
@@ -1277,6 +1263,8 @@ const char* carla_get_chunk_data(unsigned int pluginId)
             void* data = nullptr;
             const int32_t dataSize = plugin->getChunkData(&data);
 
+            // TODO
+#if 0
             if (data != nullptr && dataSize > 0)
             {
                 QByteArray chunk(QByteArray((char*)data, dataSize).toBase64());
@@ -1284,6 +1272,7 @@ const char* carla_get_chunk_data(unsigned int pluginId)
                 return (const char*)chunkData;
             }
             else
+#endif
                 carla_stderr2("carla_get_chunk_data(%i) - got invalid chunk data", pluginId);
         }
         else

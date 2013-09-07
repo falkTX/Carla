@@ -21,20 +21,21 @@
 #include "CarlaBackend.hpp"
 #include "CarlaString.hpp"
 
+#include "juce_core.h"
+
 #include <fcntl.h>
-#include <QtCore/QThread>
 
 using CarlaBackend::CallbackFunc;
+using juce::Thread;
 
 // -----------------------------------------------------------------------
 // Log thread
 
-class CarlaLogThread : public QThread
+class CarlaLogThread : public Thread
 {
 public:
     CarlaLogThread()
-        : QThread(nullptr),
-          fStop(false),
+        : Thread("CarlaLogThread"),
           fCallback(nullptr),
           fCallbackPtr(nullptr)
     {
@@ -50,7 +51,7 @@ public:
 
         fcntl(fPipe[0], F_SETFL, O_NONBLOCK);
 
-        QThread::start(LowPriority);
+        startThread(2);
     }
 
     ~CarlaLogThread()
@@ -58,7 +59,7 @@ public:
         fCallback    = nullptr;
         fCallbackPtr = nullptr;
 
-        stop();
+        stopThread(5000);
 
         fflush(stdout);
         fflush(stderr);
@@ -75,18 +76,10 @@ public:
         fCallbackPtr = callbackPtr;
     }
 
-    void stop()
-    {
-        fStop = true;
-
-        if (isRunning())
-            wait();
-    }
-
 protected:
     void run()
     {
-        while (! fStop)
+        while (! threadShouldExit())
         {
             size_t r, lastRead;
             ssize_t r2; // to avoid sign/unsign conversions
@@ -145,7 +138,6 @@ protected:
 
 private:
     int  fPipe[2];
-    bool fStop;
 
     CallbackFunc fCallback;
     void*        fCallbackPtr;

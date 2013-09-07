@@ -20,7 +20,7 @@
 
 #include "CarlaBackendUtils.hpp"
 #include "CarlaBridgeUtils.hpp"
-#include "CarlaStandalone.hpp"
+#include "CarlaHost.hpp"
 #include "CarlaEngine.hpp"
 #include "CarlaPlugin.hpp"
 
@@ -37,6 +37,10 @@
 #ifdef CARLA_OS_UNIX
 # include <signal.h>
 #endif
+
+#include "juce_core.h"
+
+using juce::File;
 
 // -------------------------------------------------------------------------
 
@@ -99,10 +103,6 @@ void initSignalHandler()
 
 extern CarlaBackend::CarlaEngine* carla_get_standalone_engine();
 
-CARLA_BACKEND_START_NAMESPACE
-extern const char* findDSSIGUI(const char* const filename, const char* const label);
-CARLA_BACKEND_END_NAMESPACE
-
 CARLA_BRIDGE_START_NAMESPACE
 
 #if 0
@@ -131,6 +131,13 @@ public:
             carla_engine_init("JACK", driverName);
 
         carla_set_engine_callback(callback, this);
+
+        File curDir(File::getSpecialLocation(File::currentApplicationFile).getParentDirectory());
+
+        if (curDir.getChildFile("resources").exists())
+            carla_set_engine_option(CarlaBackend::OPTION_PATH_RESOURCES, 0, curDir.getChildFile("resources").getFullPathName().toRawUTF8());
+        else
+            carla_set_engine_option(CarlaBackend::OPTION_PATH_RESOURCES, 0, curDir.getChildFile("../modules/carla_native/resources").getFullPathName().toRawUTF8());
     }
 
     ~CarlaPluginClient()
@@ -536,15 +543,10 @@ int main(int argc, char* argv[])
     // Listen for ctrl+c or sigint/sigterm events
     initSignalHandler();
 
-    const void* extraStuff = nullptr;
-
-    if (itype == CarlaBackend::PLUGIN_DSSI)
-        extraStuff = CarlaBackend::findDSSIGUI(filename, label);
-
     // Init plugin
     int ret;
 
-    if (carla_add_plugin(CarlaBackend::BINARY_NATIVE, itype, filename, name, label, extraStuff))
+    if (carla_add_plugin(CarlaBackend::BINARY_NATIVE, itype, filename, name, label, nullptr))
     {
         if (useOsc)
         {
@@ -578,9 +580,6 @@ int main(int argc, char* argv[])
 
         ret = 1;
     }
-
-    if (extraStuff != nullptr && itype == CarlaBackend::PLUGIN_DSSI)
-        delete[] (const char*)extraStuff;
 
     // Close OSC
     if (useOsc)

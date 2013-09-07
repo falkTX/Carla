@@ -106,7 +106,7 @@ enum EnginePortType {
     * OSC port type.
     ** \see CarlaEngineOscPort
     */
-    kEnginePortTypeOSC = 3
+    kEnginePortTypeOSC = 4
 };
 
 /*!
@@ -1163,12 +1163,12 @@ public:
 private:
     static CarlaEngine* newJack();
 
+#ifndef BUILD_BRIDGE
     static CarlaEngine* newJuce();
     static size_t       getJuceApiCount();
     static const char*  getJuceApiName(const unsigned int index);
     static const char** getJuceApiDeviceNames(const unsigned int index);
 
-#ifdef WANT_RTAUDIO
     enum RtAudioApi {
         RTAUDIO_DUMMY        = 0,
         RTAUDIO_LINUX_ALSA   = 1,

@@ -65,9 +65,9 @@ public:
         CarlaString filename;
         filename += fHost->resourceDir;
 #ifdef CARLA_OS_WIN
-        filename += "\\resources\\";
+        filename += "\\";
 #else
-        filename += "/resources/";
+        filename += "/";
 #endif
         filename += fUi.getExternalFilename();
 

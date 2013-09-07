@@ -71,7 +71,7 @@ endif
 WIN_BUILD_FLAGS = $(BUILD_PLUGIN_FLAGS) -DJACKBRIDGE_EXPORT
 WIN_32BIT_FLAGS = $(32BIT_FLAGS)
 WIN_64BIT_FLAGS = $(64BIT_FLAGS)
-WIN_LINK_FLAGS  = $(LINK_PLUGIN_FLAGS) $(EXTRA_LIBS) -mwindows -lwinspool -lole32 -luuid -limm32 -lshell32 -lws2_32 -L../libs
+WIN_LINK_FLAGS  = $(LINK_PLUGIN_FLAGS) $(EXTRA_LIBS) -mwindows -lwinspool -lole32 -luuid -limm32 -lshell32 -lws2_32 -L../modules
 
 # --------------------------------------------------------------
 # Plugin bridges (Native)
@@ -159,8 +159,8 @@ LINK_UI_LV2_WIN32_FLAGS  = $(LINK_FLAGS) $(QT_UI_LIBS) $(EXTRA_LIBS) -mwindows -
 BUILD_UI_LV2_X11_FLAGS   = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_X11 -DBRIDGE_LV2_X11 $(QT_UI_FLAGS)
 LINK_UI_LV2_X11_FLAGS    = $(LINK_UI_FLAGS) $(QT_UI_LIBS)
 
-BUILD_UI_VST_COCOA_FLAGS = $(BUILD_UI_VST_FLAGS) -DBRIDGE_COCOA -DBRIDGE_VST_COCOA $(QT_UI_FLAGS)
-LINK_UI_VST_COCOA_FLAGS  = $(LINK_UI_FLAGS) $(QT_UI_LIBS)
+BUILD_UI_VST_MAC_FLAGS   = $(BUILD_UI_VST_FLAGS) -DBRIDGE_MAC -DBRIDGE_VST_MAC $(QT_UI_FLAGS)
+LINK_UI_VST_MAC_FLAGS    = $(LINK_UI_FLAGS) $(QT_UI_LIBS)
 
 BUILD_UI_VST_HWND_FLAGS  = $(BUILD_UI_VST_FLAGS) -DBRIDGE_HWND -DBRIDGE_VST_HWND $(QT_UI_FLAGS)
 LINK_UI_VST_HWND_FLAGS   = $(LINK_FLAGS) $(QT_UI_LIBS) $(EXTRA_LIBS) -mwindows -lwinspool -lole32 -luuid -limm32 -lshell32 -lws2_32 -static
@@ -210,9 +210,9 @@ ui_lv2-cocoa: carla-bridge-lv2-cocoa
 ui_lv2-win32: carla-bridge-lv2-windows.exe
 ui_lv2-x11:   carla-bridge-lv2-x11
 
-ui_vst-cocoa: carla-bridge-vst-cocoa
-ui_vst-hwnd:  carla-bridge-vst-hwnd.exe
-ui_vst-x11:   carla-bridge-vst-x11
+ui_vst-mac:  carla-bridge-vst-mac
+ui_vst-hwnd: carla-bridge-vst-hwnd.exe
+ui_vst-x11:  carla-bridge-vst-x11
 
 # --------------------------------------------------------------
 
@@ -235,7 +235,11 @@ CarlaBridgeToolkitQt.moc: CarlaBridgeToolkitQt.cpp
 	$(MOC) $< -DMOC_PARSING -o $@
 
 OBJS_UI_LV2_LIBS = \
-	../libs/lilv.a
+	../modules/lilv.a \
+	../modules/juce_core.a
+
+OBJS_UI_VST_LIBS = \
+	../modules/juce_core.a
 
 # --------------------------------------------------------------
 # ui_lv2-gtk2
@@ -270,7 +274,7 @@ OBJS_UI_LV2_QT4 = CarlaBridgeUI-LV2__lv2-qt4.o \
 	CarlaBridgeClient__lv2.o CarlaBridgeOsc__lv2.o \
 	CarlaBridgeToolkit__lv2.o CarlaBridgeToolkitQt__lv2-qt4.o
 
-carla-bridge-lv2-qt4: $(OBJS_UI_LV2_QT4) $(OBJS_UI_LV2_LIBS) ../libs/theme.a
+carla-bridge-lv2-qt4: $(OBJS_UI_LV2_QT4) $(OBJS_UI_LV2_LIBS) ../modules/theme.a
 	$(CXX) $^ $(LINK_UI_LV2_QT4_FLAGS) -o $@
 
 %__lv2-qt4.o: %.cpp CarlaBridgeToolkitQt.moc
@@ -283,7 +287,7 @@ OBJS_UI_LV2_QT5 = CarlaBridgeUI-LV2__lv2-qt5.o \
 	CarlaBridgeClient__lv2.o CarlaBridgeOsc__lv2.o \
 	CarlaBridgeToolkit__lv2.o CarlaBridgeToolkitQt__lv2-qt5.o
 
-carla-bridge-lv2-qt5: $(OBJS_UI_LV2_QT5) $(OBJS_UI_LV2_LIBS) ../libs/theme.a
+carla-bridge-lv2-qt5: $(OBJS_UI_LV2_QT5) $(OBJS_UI_LV2_LIBS) ../modules/theme.a
 	$(CXX) $^ $(LINK_UI_LV2_QT5_FLAGS) -o $@
 
 %__lv2-qt5.o: %.cpp CarlaBridgeToolkitQt.moc
@@ -296,7 +300,7 @@ OBJS_UI_LV2_COCOA = CarlaBridgeUI-LV2__lv2-cocoa.o \
 	CarlaBridgeClient__lv2.o CarlaBridgeOsc__lv2.o \
 	CarlaBridgeToolkit__lv2.o CarlaBridgeToolkitQt__lv2-cocoa.o
 
-carla-bridge-lv2-cocoa: $(OBJS_UI_LV2_COCOA) $(OBJS_UI_LV2_LIBS) ../libs/theme.a
+carla-bridge-lv2-cocoa: $(OBJS_UI_LV2_COCOA) $(OBJS_UI_LV2_LIBS) ../modules/theme.a
 	$(CXX) $^ $(LINK_UI_LV2_COCOA_FLAGS) -o $@
 
 %__lv2-cocoa.o: %.cpp CarlaBridgeToolkitQt.moc
@@ -309,7 +313,7 @@ OBJS_UI_LV2_WIN32 = CarlaBridgeUI-LV2__lv2-windows.o \
 	CarlaBridgeClient__lv2.o CarlaBridgeOsc__lv2.o \
 	CarlaBridgeToolkit__lv2.o CarlaBridgeToolkitQt__lv2-windows.o
 
-carla-bridge-lv2-windows.exe: $(OBJS_UI_LV2_WIN32) $(OBJS_UI_LV2_LIBS) ../libs/theme.a
+carla-bridge-lv2-windows.exe: $(OBJS_UI_LV2_WIN32) $(OBJS_UI_LV2_LIBS) ../modules/theme.a
 	$(CXX) $^ $(LINK_UI_LV2_WIN32_FLAGS) -o $@
 
 %__lv2-windows.o: %.cpp CarlaBridgeToolkitQt.moc
@@ -322,24 +326,24 @@ OBJS_UI_LV2_X11 = CarlaBridgeUI-LV2__lv2-x11.o \
 	CarlaBridgeClient__lv2.o CarlaBridgeOsc__lv2.o \
 	CarlaBridgeToolkit__lv2.o CarlaBridgeToolkitQt__lv2-x11.o
 
-carla-bridge-lv2-x11: $(OBJS_UI_LV2_X11) $(OBJS_UI_LV2_LIBS) ../libs/theme.a
+carla-bridge-lv2-x11: $(OBJS_UI_LV2_X11) $(OBJS_UI_LV2_LIBS) ../modules/theme.a
 	$(CXX) $^ $(LINK_UI_LV2_X11_FLAGS) -o $@
 
 %__lv2-x11.o: %.cpp CarlaBridgeToolkitQt.moc
 	$(CXX) $< $(BUILD_UI_LV2_X11_FLAGS) -c -o $@
 
 # --------------------------------------------------------------
-# ui_vst-cocoa
+# ui_vst-mac
 
-OBJS_UI_VST_COCOA = CarlaBridgeUI-VST__vst-cocoa.o \
+OBJS_UI_VST_MAC = CarlaBridgeUI-VST__vst-mac.o \
 	CarlaBridgeClient__vst.o CarlaBridgeOsc__vst.o \
-	CarlaBridgeToolkit__vst.o CarlaBridgeToolkitQt__vst-cocoa.o
+	CarlaBridgeToolkit__vst.o CarlaBridgeToolkitQt__vst-mac.o
 
-carla-bridge-vst-cocoa: $(OBJS_UI_VST_COCOA) ../libs/theme.a
-	$(CXX) $^ $(LINK_UI_VST_COCOA_FLAGS) -o $@
+carla-bridge-vst-mac: $(OBJS_UI_VST_MAC) $(OBJS_UI_VST_LIBS) ../modules/theme.a
+	$(CXX) $^ $(LINK_UI_VST_MAC_FLAGS) -o $@
 
-%__vst-cocoa.o: %.cpp CarlaBridgeToolkitQt.moc
-	$(CXX) $< $(BUILD_UI_VST_COCOA_FLAGS) -c -o $@
+%__vst-mac.o: %.cpp CarlaBridgeToolkitQt.moc
+	$(CXX) $< $(BUILD_UI_VST_MAC_FLAGS) -c -o $@
 
 # --------------------------------------------------------------
 # ui_vst-hwnd
@@ -348,7 +352,7 @@ OBJS_UI_VST_HWND = CarlaBridgeUI-VST__vst-hwnd.o \
 	CarlaBridgeClient__vst.o CarlaBridgeOsc__vst.o \
 	CarlaBridgeToolkit__vst.o CarlaBridgeToolkitQt__vst-hwnd.o
 
-carla-bridge-vst-hwnd.exe: $(OBJS_UI_VST_HWND) ../libs/theme.a
+carla-bridge-vst-hwnd.exe: $(OBJS_UI_VST_HWND) $(OBJS_UI_VST_LIBS) ../modules/theme.a
 	$(CXX) $^ $(LINK_UI_VST_HWND_FLAGS) -o $@
 
 %__vst-hwnd.o: %.cpp CarlaBridgeToolkitQt.moc
@@ -361,7 +365,7 @@ OBJS_UI_VST_X11 = CarlaBridgeUI-VST__vst-x11.o \
 	CarlaBridgeClient__vst.o CarlaBridgeOsc__vst.o \
 	CarlaBridgeToolkit__vst.o CarlaBridgeToolkitQt__vst-x11.o
 
-carla-bridge-vst-x11: $(OBJS_UI_VST_X11) ../libs/theme.a
+carla-bridge-vst-x11: $(OBJS_UI_VST_X11) $(OBJS_UI_VST_LIBS) ../modules/theme.a
 	$(CXX) $^ $(LINK_UI_VST_X11_FLAGS) -o $@
 
 %__vst-x11.o: %.cpp CarlaBridgeToolkitQt.moc
@@ -407,14 +411,15 @@ OBJS_NATIVE += \
 
 # libs
 OBJS_NATIVE += \
-	../backend/libcarla_native.a \
-	../libs/dgl.a \
-	../libs/rtmempool.a \
-	../libs/widgets.a
+	../modules/carla_native.a \
+	../modules/dgl.a \
+	../modules/juce_audio_basics.a \
+	../modules/juce_core.a \
+	../modules/rtmempool.a
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
 OBJS_NATIVE += \
-	../libs/lilv.a
+	../modules/lilv.a
 endif
 
 carla-bridge-native: $(FILES) $(OBJS_NATIVE)
@@ -457,8 +462,8 @@ OBJS_POSIX32 += \
 
 # libs
 OBJS_POSIX32 += \
-	../libs/lilv.posix32.a \
-	../libs/rtmempool.posix32.a
+	../modules/lilv.posix32.a \
+	../modules/rtmempool.posix32.a
 
 carla-bridge-posix32: $(FILES) $(OBJS_POSIX32)
 	$(CXX) $(OBJS_POSIX32) $(POSIX_LINK_FLAGS) $(POSIX_32BIT_FLAGS) -o $@
@@ -500,8 +505,8 @@ OBJS_POSIX64 += \
 
 # libs
 OBJS_POSIX64 += \
-	../libs/lilv.posix64.a \
-	../libs/rtmempool.posix64.a
+	../modules/lilv.posix64.a \
+	../modules/rtmempool.posix64.a
 
 carla-bridge-posix64: $(FILES) $(OBJS_POSIX64)
 	$(CXX) $(OBJS_POSIX64) $(POSIX_LINK_FLAGS) $(POSIX_64BIT_FLAGS) -o $@
@@ -543,10 +548,10 @@ OBJS_WIN32 += \
 
 # libs
 OBJS_WIN32 += \
-	../libs/lilv.win32.a \
-	../libs/rtmempool.win32.a
+	../modules/lilv.win32.a \
+	../modules/rtmempool.win32.a
 
-carla-bridge-win32.exe: $(FILES) $(OBJS_WIN32) ../libs/jackbridge-win32.dll
+carla-bridge-win32.exe: $(FILES) $(OBJS_WIN32) ../modules/jackbridge-win32.dll
 	$(CXX) $(OBJS_WIN32) $(WIN_32BIT_FLAGS) $(WIN_LINK_FLAGS) -ljackbridge-win32 -o $@
 
 %__win32.o: %.cpp
@@ -586,10 +591,10 @@ OBJS_WIN64 += \
 
 # libs
 OBJS_WIN64 += \
-	../libs/lilv.win64.a \
-	../libs/rtmempool.win64.a
+	../modules/lilv.win64.a \
+	../modules/rtmempool.win64.a
 
-carla-bridge-win64.exe: $(FILES) $(OBJS_WIN64) ../libs/jackbridge-win64.dll
+carla-bridge-win64.exe: $(FILES) $(OBJS_WIN64) ../modules/jackbridge-win64.dll
 	$(CXX) $(OBJS_WIN64) $(WIN_64BIT_FLAGS) $(WIN_LINK_FLAGS) -ljackbridge-win64 -o $@
 
 %__win64.o: %.cpp
@@ -605,20 +610,17 @@ carla-bridge-win64.exe: $(FILES) $(OBJS_WIN64) ../libs/jackbridge-win64.dll
 .FORCE:
 .PHONY: .FORCE
 
-../backend/libcarla_native.a: .FORCE
-	$(MAKE) -C ../backend/native
+../modules/lilv.%.a: .FORCE
+	$(MAKE) -C ../modules lilv_$*
 
-../libs/lilv.%.a: .FORCE
-	$(MAKE) -C ../libs lilv_$*
+../modules/rtmempool.%.a: .FORCE
+	$(MAKE) -C ../modules rtmempool_$*
 
-../libs/rtmempool.%.a: .FORCE
-	$(MAKE) -C ../libs rtmempool_$*
+../modules/%.a: .FORCE
+	$(MAKE) -C ../modules $*
 
-../libs/%.a: .FORCE
-	$(MAKE) -C ../libs $*
-
-../libs/%.dll:
-	$(MAKE) -C ../libs $*
+../modules/%.dll:
+	$(MAKE) -C ../modules $*
 
 # --------------------------------------------------------------
 
@@ -635,7 +637,7 @@ clean:
 	rm -f $(OBJS_WIN32)
 	rm -f $(OBJS_WIN64)
 	rm -f carla-bridge-lv2-gtk2 carla-bridge-lv2-gtk3 carla-bridge-lv2-qt4 carla-bridge-lv2-qt5 carla-bridge-lv2-cocoa carla-bridge-lv2-x11
-	rm -f carla-bridge-vst-cocoa carla-bridge-vst-x11
+	rm -f carla-bridge-vst-mac carla-bridge-vst-x11
 	rm -f carla-bridge-native carla-bridge-posix32 carla-bridge-posix64
 
 # --------------------------------------------------------------

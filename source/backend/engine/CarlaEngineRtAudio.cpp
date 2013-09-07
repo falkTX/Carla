@@ -15,8 +15,6 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#ifdef WANT_RTAUDIO
-
 #include "CarlaEngineInternal.hpp"
 #include "CarlaBackendUtils.hpp"
 #include "CarlaMIDI.h"
@@ -158,13 +156,13 @@ public:
             return false;
         }
 
-        if (fOptions.rtaudioDevice.isNotEmpty())
+        if (fOptions.audioDevice.isNotEmpty())
         {
             for (unsigned int i=0; i < devCount; ++i)
             {
                 RtAudio::DeviceInfo devInfo(fAudio.getDeviceInfo(i));
 
-                if (devInfo.probed && devInfo.outputChannels > 0 && devInfo.name == (const char*)fOptions.rtaudioDevice)
+                if (devInfo.probed && devInfo.outputChannels > 0 && devInfo.name == (const char*)fOptions.audioDevice)
                 {
                     deviceSet    = true;
                     fConnectName = devInfo.name.c_str();
@@ -201,10 +199,10 @@ public:
         else
             fAudioIsInterleaved = true;
 
-        fBufferSize = fOptions.rtaudioBufferSize;
+        fBufferSize = fOptions.audioBufferSize;
 
         try {
-            fAudio.openStream(&oParams, &iParams, RTAUDIO_FLOAT32, fOptions.rtaudioSampleRate, &fBufferSize, carla_rtaudio_process_callback, this, &rtOptions);
+            fAudio.openStream(&oParams, &iParams, RTAUDIO_FLOAT32, fOptions.audioSampleRate, &fBufferSize, carla_rtaudio_process_callback, this, &rtOptions);
         }
         catch (RtError& e)
         {
@@ -835,7 +833,7 @@ protected:
         carla_zeroFloat(fAudioBufRackOut[1], nframes);
 
         // initialize input events
-        carla_zeroMem(pData->bufEvents.in, sizeof(EngineEvent)*INTERNAL_EVENT_COUNT);
+        carla_zeroMem(pData->bufEvents.in, sizeof(EngineEvent)*kEngineMaxInternalEventCount);
 
         if (fMidiInEvents.mutex.tryLock())
         {
@@ -920,7 +918,7 @@ protected:
                     engineEvent.midi.size    = midiEvent.size;
                 }
 
-                if (engineEventIndex >= INTERNAL_EVENT_COUNT)
+                if (engineEventIndex >= kEngineMaxInternalEventCount)
                     break;
             }
 
@@ -1463,5 +1461,3 @@ const char** CarlaEngine::getRtAudioApiDeviceNames(const unsigned int index)
 // -----------------------------------------
 
 CARLA_BACKEND_END_NAMESPACE
-
-#endif // CARLA_ENGINE_RTAUDIO

@@ -136,7 +136,7 @@ debug:
 	$(CXX) $^ -dynamiclib $(LINK_FLAGS) -framework CoreAudio -framework CoreMIDI -framework CoreFoundation -o $@
 
 ../libcarla_standalone.so: $(OBJS) $(LIBS)
-	$(CXX) $^ $(LINK_FLAGS) -o $@ # -shared
+	$(CXX) $^ $(LINK_FLAGS) -shared -o $@
 
 # --------------------------------------------------------------
 

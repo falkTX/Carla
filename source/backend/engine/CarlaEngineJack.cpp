@@ -505,6 +505,8 @@ public:
             case kEnginePortTypeEvent:
                 port = jackbridge_port_register(fClient, name, JACK_DEFAULT_MIDI_TYPE, isInput ? JackPortIsInput : JackPortIsOutput, 0);
                 break;
+            case kEnginePortTypeOSC:
+                break;
             }
         }
 
@@ -519,6 +521,8 @@ public:
             return new CarlaEngineJackCVPort(fEngine, isInput, fClient, port);
         case kEnginePortTypeEvent:
             return new CarlaEngineJackEventPort(fEngine, isInput, fClient, port);
+        case kEnginePortTypeOSC:
+            break;
         }
 
         carla_stderr("CarlaEngineJackClient::addPort(%s, \"%s\", %s) - invalid type", EnginePortType2Str(portType), name, bool2str(isInput));
@@ -1212,7 +1216,7 @@ protected:
             float* outBuf[2] = { audioOut1, audioOut2 };
 
             // initialize input events
-            carla_zeroStruct<EngineEvent>(pData->bufEvents.in, INTERNAL_EVENT_COUNT);
+            carla_zeroStruct<EngineEvent>(pData->bufEvents.in, kEngineMaxInternalEventCount);
             {
                 uint32_t engineEventIndex = 0;
 
@@ -1293,7 +1297,7 @@ protected:
                             carla_copy<uint8_t>(engineEvent->midi.data+1, jackEvent.buffer+1, jackEvent.size-1);
                     }
 
-                    if (engineEventIndex >= INTERNAL_EVENT_COUNT)
+                    if (engineEventIndex >= kEngineMaxInternalEventCount)
                         break;
                 }
             }
@@ -1305,7 +1309,7 @@ protected:
             {
                 jackbridge_midi_clear_buffer(eventOut);
 
-                for (unsigned short i=0; i < INTERNAL_EVENT_COUNT; ++i)
+                for (unsigned short i=0; i < kEngineMaxInternalEventCount; ++i)
                 {
                     EngineEvent* const engineEvent = &pData->bufEvents.out[i];
 

@@ -39,6 +39,8 @@ POSIX_LINK_FLAGS  = $(LINK_FLAGS) $(EXTRA_LIBS) -ldl -lpthread
 
 ifeq ($(MACOS),true)
 POSIX_LINK_FLAGS += -framework Cocoa -framework IOKit
+else
+POSIX_LINK_FLAGS += -lrt
 endif
 
 WIN_BUILD_FLAGS   = $(BUILD_CXX_FLAGS)
