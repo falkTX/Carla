@@ -31,24 +31,24 @@ public:
     CarlaMutex()
         : fTryLockWasCalled(false)
     {
-        pthread_mutex_init(&pmutex, nullptr);
+        pthread_mutex_init(&fMutex, nullptr);
     }
 
     ~CarlaMutex()
     {
-        pthread_mutex_destroy(&pmutex);
+        pthread_mutex_destroy(&fMutex);
     }
 
     void lock()
     {
-        pthread_mutex_lock(&pmutex);
+        pthread_mutex_lock(&fMutex);
     }
 
     bool tryLock()
     {
         fTryLockWasCalled = true;
 
-        return (pthread_mutex_trylock(&pmutex) == 0);
+        return (pthread_mutex_trylock(&fMutex) == 0);
     }
 
     void unlock(/*const bool resetTryLock*/)
@@ -56,7 +56,7 @@ public:
         //if (resetTryLock)
         //    fTryLockWasCalled = false;
 
-        pthread_mutex_unlock(&pmutex);
+        pthread_mutex_unlock(&fMutex);
     }
 
     bool wasTryLockCalled()
@@ -88,8 +88,8 @@ public:
     };
 
 private:
-    pthread_mutex_t pmutex;
-    bool fTryLockWasCalled;
+    pthread_mutex_t fMutex;
+    volatile bool   fTryLockWasCalled;
 
     CARLA_PREVENT_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaMutex)
