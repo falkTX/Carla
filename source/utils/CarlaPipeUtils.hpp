@@ -55,9 +55,9 @@ public:
 
     void start(const char* const filename, const char* const arg1, const char* const arg2)
     {
-        CARLA_SAFE_ASSERT_RETURN(filename != nullptr,)
-        CARLA_SAFE_ASSERT_RETURN(arg1 != nullptr,)
-        CARLA_SAFE_ASSERT_RETURN(arg2 != nullptr,)
+        CARLA_SAFE_ASSERT_RETURN(filename != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(arg1 != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(arg2 != nullptr,);
         carla_debug("CarlaPipeServer::start(\"%s\", \"%s\", \"%s\"", filename, arg1, arg2);
 
         //----------------------------------------------------------------
@@ -448,12 +448,12 @@ private:
             if (ret != 0)
             {
                 if (ret == pid)
-                  return true;
+                    return true;
 
                 if (ret == -1)
                 {
-                  carla_stderr2("waitpid(%d) failed: %s", (int)pid, strerror(errno));
-                  return false;
+                    carla_stderr2("waitpid(%d) failed: %s", (int)pid, strerror(errno));
+                    return false;
                 }
 
                 carla_stderr2("we have waited for child pid %d to exit but we got pid %d instead", (int)pid, (int)ret);

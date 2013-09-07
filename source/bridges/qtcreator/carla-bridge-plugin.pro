@@ -128,6 +128,8 @@ HEADERS += \
 HEADERS += \
     ../../modules/CarlaNative.h \
     ../../modules/CarlaNative.hpp \
+    ../../modules/juce_audio_basics.h \
+    ../../modules/juce_core.h \
     ../../modules/ladspa_rdf.hpp \
     ../../modules/lv2_rdf.hpp
 

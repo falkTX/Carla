@@ -33,7 +33,7 @@ extern "C" {
     ClassName(const ClassName&) = delete;            \
     ClassName& operator=(const ClassName&) = delete; \
     static void* operator new(size_t) = delete;
-    //static void operator delete(void*) = delete; // FIXME?
+  //static void operator delete(void*) = delete; // FIXME?
 
 typedef struct list_head k_list_head;
 
