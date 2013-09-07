@@ -21,9 +21,15 @@
 #include "CarlaBackend.hpp"
 #include "CarlaString.hpp"
 
+using juce::Thread;
+
 CARLA_BACKEND_START_NAMESPACE
 
-class CarlaPluginThread : public juce::Thread
+#if 0
+} // Fix editor indentation
+#endif
+
+class CarlaPluginThread : public Thread
 {
 public:
     enum Mode {

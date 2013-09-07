@@ -35,13 +35,13 @@
     if (argc > 0)                                                                                                              \
     {                                                                                                                          \
         /* check for nullness */                                                                                               \
-        if (! (types && typesToCompare))                                                                                       \
+        if (types == nullptr || typesToCompare == nullptr)                                                                     \
         {                                                                                                                      \
             carla_stderr("CarlaEngineOsc::%s() - argument types are null", __FUNCTION__);                                      \
             return 1;                                                                                                          \
         }                                                                                                                      \
         /* check argument types */                                                                                             \
-        if (std::strcmp(types, typesToCompare) != 0)                                                                                \
+        if (std::strcmp(types, typesToCompare) != 0)                                                                           \
         {                                                                                                                      \
             carla_stderr("CarlaEngineOsc::%s() - argument types mismatch: '%s' != '%s'", __FUNCTION__, types, typesToCompare); \
             return 1;                                                                                                          \

@@ -28,11 +28,13 @@
 #include "CarlaMIDI.h"
 #include "RtList.hpp"
 
-// #include <QtCore/QByteArray>
-
 #define CARLA_PROCESS_CONTINUE_CHECK if (! fEnabled) { pData->engine->callback(CALLBACK_DEBUG, fId, 0, 0, 0.0f, "Processing while plugin is disabled!!"); return; }
 
 CARLA_BACKEND_START_NAMESPACE
+
+#if 0
+} // Fix editor indentation
+#endif
 
 // -----------------------------------------------------------------------
 
