@@ -242,13 +242,11 @@ struct EngineOptions {
 
     unsigned int maxParameters;
     unsigned int uiBridgesTimeout;
-
     unsigned int audioNumPeriods;
     unsigned int audioBufferSize;
     unsigned int audioSampleRate;
     CarlaString  audioDevice;
-
-    CarlaString resourceDir;
+    CarlaString  resourceDir;
 
 #ifndef BUILD_BRIDGE
     CarlaString bridge_native;
@@ -348,7 +346,7 @@ struct EngineTimeInfo {
     {
         if (timeInfo.playing != playing || timeInfo.frame != frame)
             return false;
-        if ((timeInfo.valid & ValidBBT) != (valid & ValidBBT))
+        if (timeInfo.valid != valid)
             return false;
         if (timeInfo.bbt.beatsPerMinute != bbt.beatsPerMinute)
             return false;
@@ -391,6 +389,14 @@ public:
      * Initialize the port's internal buffer.
      */
     virtual void initBuffer() = 0;
+
+    /*!
+     * Check if this port is an input.
+     */
+    bool isInput() const noexcept
+    {
+        return fIsInput;
+    }
 
 #ifndef DOXYGEN
 protected:
