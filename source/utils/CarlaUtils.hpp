@@ -32,17 +32,6 @@
 # include <stdint.h>
 #endif
 
-#if defined(CARLA_OS_HAIKU)
-# include <kernel/OS.h>
-#else
-# if (__GLIBC__ * 1000 + __GLIBC_MINOR__) >= 2012
-#  include <pthread.h>
-# elif defined(CARLA_OS_LINUX)
-#  include <sys/prctl.h>
-#  include <linux/prctl.h>
-# endif
-#endif
-
 // -----------------------------------------------------------------------
 // misc functions
 
@@ -166,31 +155,6 @@ void carla_setenv(const char* const key, const char* const value)
 #else
     setenv(key, value, 1);
 #endif
-}
-
-// -----------------------------------------------------------------------
-// carla_setprocname (not available on all platforms)
-
-static inline
-void carla_setprocname(const char* const name)
-{
-    CARLA_SAFE_ASSERT_RETURN(name != nullptr,);
-
-#if defined(CARLA_OS_HAIKU)
-    if ((thread_id this_thread = find_thread(nullptr)) != B_NAME_NOT_FOUND)
-        rename_thread(this_thread, name);
-    return;
-#else
-# if (__GLIBC__ * 1000 + __GLIBC_MINOR__) >= 2012
-    pthread_setname_np(pthread_self(), name);
-    return;
-# elif defined(CARLA_OS_LINUX)
-    prctl(PR_SET_NAME, name);
-    return;
-# endif
-#endif
-
-    carla_stderr("carla_setprocname(\"%s\") - unsupported on this platform", name);
 }
 
 // -----------------------------------------------------------------------
