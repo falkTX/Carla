@@ -553,12 +553,7 @@ struct LV2_RDF_Descriptor {
     LV2_RDF_UI* UIs;
 
     LV2_RDF_Descriptor() noexcept
-#ifdef CARLA_PROPER_CPP11_SUPPORT
-        : Type{0x0},
-          URI(nullptr),
-#else
         : URI(nullptr),
-#endif
           Name(nullptr),
           Author(nullptr),
           License(nullptr),
@@ -576,9 +571,7 @@ struct LV2_RDF_Descriptor {
           UICount(0),
           UIs(nullptr)
     {
-#ifndef CARLA_PROPER_CPP11_SUPPORT
         Type[0] = Type[1] = 0x0;
-#endif
     }
 
     ~LV2_RDF_Descriptor()
