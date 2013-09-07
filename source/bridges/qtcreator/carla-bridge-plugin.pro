@@ -41,8 +41,8 @@ PKGCONFIG += fluidsynth
 PKGCONFIG += linuxsampler
 
 # AudioFile
-DEFINES   += HAVE_FFMPEG
-PKGCONFIG += libavcodec libavformat libavutil sndfile
+# DEFINES   += HAVE_FFMPEG
+# PKGCONFIG += libavcodec libavformat libavutil sndfile
 
 # MidiFile
 PKGCONFIG += smf

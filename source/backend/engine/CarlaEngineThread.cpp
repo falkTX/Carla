@@ -43,11 +43,11 @@ CarlaEngineThread::~CarlaEngineThread()
 
 void CarlaEngineThread::run()
 {
+    CARLA_SAFE_ASSERT_RETURN(fEngine != nullptr,);
     CARLA_ASSERT(fEngine->isRunning());
     carla_debug("CarlaEngineThread::run()");
 
     bool oscRegisted, needsSingleThread;
-    unsigned int i, count;
     float value;
 
     while (fEngine->isRunning() && ! threadShouldExit())
@@ -58,7 +58,7 @@ void CarlaEngineThread::run()
         oscRegisted = fEngine->isOscControlRegistered();
 #endif
 
-        for (i=0, count = fEngine->getCurrentPluginCount(); i < count; ++i)
+        for (unsigned int i=0, count = fEngine->getCurrentPluginCount(); i < count; ++i)
         {
             CarlaPlugin* const plugin(fEngine->getPluginUnchecked(i));
 
@@ -80,7 +80,7 @@ void CarlaEngineThread::run()
                 // -------------------------------------------------------
                 // Update parameter outputs
 
-                for (uint32_t j=0; j < plugin->getParameterCount(); ++j)
+                for (uint32_t j=0, pcount=plugin->getParameterCount(); j < pcount; ++j)
                 {
                     if (! plugin->isParameterOutput(j))
                         continue;
@@ -113,7 +113,7 @@ void CarlaEngineThread::run()
         }
 
         fEngine->idleOsc();
-        sleep(oscRegisted ? 30 : 50);
+        Thread::sleep(oscRegisted ? 30 : 50);
     }
 }
 

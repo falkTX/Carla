@@ -19,7 +19,6 @@
 
 #include "CarlaEngine.hpp"
 #include "CarlaPlugin.hpp"
-#include "CarlaMIDI.h"
 
 #ifndef BUILD_BRIDGE
 # include "CarlaBridgeUtils.hpp"
