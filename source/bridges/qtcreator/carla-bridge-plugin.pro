@@ -22,6 +22,7 @@ DEFINES   += WANT_DSSI
 DEFINES   += WANT_LV2
 DEFINES   += WANT_VST
 DEFINES   += WANT_AU
+DEFINES   += WANT_CSOUND
 DEFINES   += WANT_FLUIDSYNTH
 DEFINES   += WANT_LINUXSAMPLER
 DEFINES   += WANT_OPENGL
@@ -74,8 +75,9 @@ SOURCES += \
     ../../backend/engine/CarlaEngineThread.cpp \
     ../../backend/engine/CarlaEngineBridge.cpp \
     ../../backend/engine/CarlaEngineJack.cpp \
-    ../../backend/engine/CarlaEngineJuce.cpp \
-    ../../backend/engine/CarlaEngineRtAudio.cpp
+    ../../backend/engine/CarlaEngineNative.cpp
+#    ../../backend/engine/CarlaEngineJuce.cpp \
+#    ../../backend/engine/CarlaEngineRtAudio.cpp
 
 # Plugin
 SOURCES += \
@@ -102,8 +104,6 @@ SOURCES += \
 HEADERS += \
     ../../backend/CarlaBackend.hpp \
     ../../backend/CarlaEngine.hpp \
-    ../../backend/CarlaNative.h \
-    ../../backend/CarlaNative.hpp \
     ../../backend/CarlaPlugin.hpp \
     ../../backend/CarlaHost.hpp
 
@@ -111,12 +111,12 @@ HEADERS += \
 HEADERS += \
     ../../backend/engine/CarlaEngineInternal.hpp \
     ../../backend/engine/CarlaEngineOsc.hpp \
-    ../../backend/engine/CarlaEngineThread.hpp \
-    ../../backend/engine/distrho/DistrhoPluginInfo.h
+    ../../backend/engine/CarlaEngineThread.hpp
 
 # plugin
 HEADERS += \
     ../../backend/plugin/CarlaPluginInternal.hpp \
+    ../../backend/plugin/CarlaPluginGui.hpp \
     ../../backend/plugin/CarlaPluginThread.hpp
 
 # includes
@@ -136,11 +136,14 @@ HEADERS += \
     ../../utils/CarlaUtils.hpp \
     ../../utils/CarlaBackendUtils.hpp \
     ../../utils/CarlaBridgeUtils.hpp \
+    ../../utils/CarlaDssiUtils.hpp \
     ../../utils/CarlaJuceUtils.hpp \
     ../../utils/CarlaLadspaUtils.hpp \
     ../../utils/CarlaLibUtils.hpp \
+    ../../utils/CarlaLogThread.hpp \
     ../../utils/CarlaLv2Utils.hpp \
     ../../utils/CarlaOscUtils.hpp \
+    ../../utils/CarlaPipeUtils.hpp \
     ../../utils/CarlaShmUtils.hpp \
     ../../utils/CarlaStateUtils.hpp \
     ../../utils/CarlaVstUtils.hpp \
@@ -156,17 +159,15 @@ INCLUDEPATH = .. \
     ../../backend/plugin \
     ../../includes \
     ../../modules \
-    ../../modules/theme \
     ../../utils
 
 # -----------------------------------------------------------
 
-LIBS  = -ldl
+LIBS  = -ldl -lpthread -lrt
 LIBS += ../../modules/carla_native.a
 LIBS += ../../modules/juce_audio_basics.a
 LIBS += ../../modules/juce_core.a
 LIBS += ../../modules/rtmempool.a
-LIBS += ../../modules/theme.a
 
 LIBS += ../../modules/dgl.a
 LIBS += ../../modules/lilv.a

@@ -24,15 +24,15 @@
 #include "CarlaEngine.hpp"
 #include "CarlaPlugin.hpp"
 
-#include <QtCore/QDir>
-#include <QtCore/QFile>
-#include <QtCore/QTextStream>
+//#include <QtCore/QDir>
+//#include <QtCore/QFile>
+//#include <QtCore/QTextStream>
 
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
-# include <QtWidgets/QApplication>
-#else
-# include <QtGui/QApplication>
-#endif
+//#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+//# include <QtWidgets/QApplication>
+//#else
+//# include <QtGui/QApplication>
+//#endif
 
 #ifdef CARLA_OS_UNIX
 # include <signal.h>
@@ -111,13 +111,13 @@ CARLA_BRIDGE_START_NAMESPACE
 
 // -------------------------------------------------------------------------
 
-class CarlaPluginClient : public CarlaBridgeClient,
-                          public QObject
+class CarlaPluginClient : public CarlaBridgeClient/*,
+                          public QObject*/
 {
 public:
     CarlaPluginClient(const bool useBridge, const char* const driverName, const char* audioBaseName, const char* controlBaseName)
         : CarlaBridgeClient(nullptr),
-          QObject(nullptr),
+//          QObject(nullptr),
           fEngine(nullptr),
           fPlugin(nullptr),
           fTimerId(0)
@@ -172,7 +172,7 @@ public:
             fPlugin->loadStateFromFile(fProjFileName);
         }
 
-        fTimerId = startTimer(50);
+        //fTimerId = startTimer(50);
     }
 
     void idle()
@@ -198,15 +198,15 @@ public:
 
             if (fTimerId != 0)
             {
-                killTimer(fTimerId);
+                //killTimer(fTimerId);
                 fTimerId = 0;
             }
 
-            if (QApplication* const app = qApp)
-            {
-                if (! app->closingDown())
-                    app->quit();
-            }
+//            if (QApplication* const app = qApp)
+//            {
+//                if (! app->closingDown())
+//                    app->quit();
+//            }
         }
     }
 
@@ -246,6 +246,7 @@ public:
 
             if (data && dataSize >= 4)
             {
+#if 0
                 QString filePath;
                 filePath = QDir::tempPath();
 #ifdef Q_OS_WIN
@@ -264,6 +265,7 @@ public:
                     file.close();
                     fEngine->oscSend_bridge_set_chunk_data(filePath.toUtf8().constData());
                 }
+#endif
             }
         }
 
@@ -287,6 +289,7 @@ public:
         if (fPlugin == nullptr)
             return;
 
+#if 0
         QString chunkFilePath(filePath);
 
 #ifdef CARLA_OS_WIN
@@ -308,6 +311,7 @@ public:
 
             fPlugin->setChunkData(stringData.toUtf8().constData());
         }
+#endif
     }
 
     // ---------------------------------------------------------------------
@@ -365,13 +369,13 @@ private:
     CarlaString fProjFileName;
     int fTimerId;
 
-    void timerEvent(QTimerEvent* const event)
-    {
-        if (event->timerId() == fTimerId)
-            idle();
+//    void timerEvent(QTimerEvent* const event)
+//    {
+//        if (event->timerId() == fTimerId)
+//            idle();
 
-        QObject::timerEvent(event);
-    }
+//        QObject::timerEvent(event);
+//    }
 
     static void callback(void* ptr, CarlaBackend::CallbackType action, unsigned int pluginId, int value1, int value2, float value3, const char* valueStr)
     {
@@ -519,15 +523,15 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    QApplication app(argc, argv, true);
-    app.setQuitOnLastWindowClosed(false);
+    //QApplication app(argc, argv, true);
+    //app.setQuitOnLastWindowClosed(false);
 
     CarlaString clientName((name != nullptr) ? name : label);
 
     if (clientName.isEmpty())
     {
-        QFileInfo fileinfo(filename);
-        clientName = fileinfo.baseName().toUtf8().constData();
+        //QFileInfo fileinfo(filename);
+        //clientName = fileinfo.baseName().toUtf8().constData();
     }
 
     if (itype >= CarlaBackend::PLUGIN_GIG && itype <= CarlaBackend::PLUGIN_SFZ && label == nullptr)
@@ -566,7 +570,7 @@ int main(int argc, char* argv[])
 
         client.ready(!useOsc);
 
-        ret = app.exec();
+        //ret = app.exec();
 
         carla_remove_plugin(0);
     }

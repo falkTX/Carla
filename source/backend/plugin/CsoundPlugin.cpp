@@ -24,6 +24,10 @@
 
 CARLA_BACKEND_START_NAMESPACE
 
+#if 0
+}
+#endif
+
 class CsoundPlugin : public CarlaPlugin
 {
 public:
@@ -33,9 +37,9 @@ public:
         carla_debug("CsoundPlugin::CsoundPlugin(%p, %i)", engine, id);
     }
 
-    ~Vst3Plugin() override
+    ~CsoundPlugin() override
     {
-        carla_debug("Vst3Plugin::~Vst3Plugin()");
+        carla_debug("CsoundPlugin::~CsoundPlugin()");
 
         pData->singleMutex.lock();
         pData->masterMutex.lock();
@@ -47,9 +51,18 @@ public:
     // -------------------------------------------------------------------
     // Information (base)
 
-    PluginType getType() const override
+    PluginType getType() const noexcept override
     {
         return PLUGIN_CSOUND;
+    }
+
+    void reload() override
+    {
+    }
+
+    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames) override
+    {
+
     }
 
 private:
@@ -62,7 +75,7 @@ CARLA_BACKEND_END_NAMESPACE
 
 CARLA_BACKEND_START_NAMESPACE
 
-CarlaPlugin* CarlaPlugin::newCsound(const Initializer& init)
+CarlaPlugin* CarlaPlugin::newCSOUND(const Initializer& init)
 {
     carla_debug("CarlaPlugin::newCsound(%p, \"%s\", \"%s\", \"%s\")", init.engine, init.filename, init.name, init.label);
 
