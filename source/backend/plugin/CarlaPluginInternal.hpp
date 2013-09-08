@@ -38,7 +38,7 @@ CARLA_BACKEND_START_NAMESPACE
 
 // -----------------------------------------------------------------------
 
-const unsigned short MAX_MIDI_EVENTS = 512;
+const unsigned short kPluginMaxMidiEvents = 512;
 
 const unsigned int PLUGIN_HINT_HAS_MIDI_IN  = 0x1;
 const unsigned int PLUGIN_HINT_HAS_MIDI_OUT = 0x2;
@@ -634,10 +634,8 @@ struct CarlaPluginProtectedData {
 
 #ifdef CARLA_PROPER_CPP11_SUPPORT
     CarlaPluginProtectedData() = delete;
-    CarlaPluginProtectedData(CarlaPluginProtectedData&) = delete;
-    CarlaPluginProtectedData(const CarlaPluginProtectedData&) = delete;
+    CARLA_DECLARE_NON_COPY_STRUCT(CarlaPluginProtectedData)
 #endif
-    CARLA_LEAK_DETECTOR(CarlaPluginProtectedData)
 
     ~CarlaPluginProtectedData()
     {

@@ -29,6 +29,8 @@ CARLA_BACKEND_START_NAMESPACE
 } // Fix editor indentation
 #endif
 
+// -----------------------------------------------------------------------
+
 class CarlaPluginThread : public Thread
 {
 public:
@@ -60,6 +62,8 @@ private:
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginThread)
 };
+
+// -----------------------------------------------------------------------
 
 CARLA_BACKEND_END_NAMESPACE
 

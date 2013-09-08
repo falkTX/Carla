@@ -225,6 +225,14 @@ struct CarlaEngineProtectedData {
     CARLA_DECLARE_NON_COPY_STRUCT(CarlaEngineProtectedData)
 #endif
 
+    ~CarlaEngineProtectedData()
+    {
+        CARLA_ASSERT(curPluginCount == 0);
+        CARLA_ASSERT(maxPluginNumber == 0);
+        CARLA_ASSERT(nextPluginId == 0);
+        CARLA_ASSERT(plugins == nullptr);
+    }
+
     void doPluginRemove()
     {
         CARLA_ASSERT(curPluginCount > 0);
@@ -323,7 +331,7 @@ struct CarlaEngineProtectedData {
 
             if (lockWait)
             {
-                // block wait for unlock on proccessing side
+                // block wait for unlock on processing side
                 carla_stdout("ScopedPluginAction(%i) - blocking START", pluginId);
                 fData->nextAction.mutex.lock();
                 carla_stdout("ScopedPluginAction(%i) - blocking DONE", pluginId);

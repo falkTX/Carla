@@ -93,7 +93,7 @@ public:
     // -------------------------------------------------------------------
 
 private:
-    CarlaEngine* const kEngine;
+    CarlaEngine* const fEngine;
 
     CarlaString fName;
 

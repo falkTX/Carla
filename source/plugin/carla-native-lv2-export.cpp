@@ -250,7 +250,7 @@ void writePluginFile(const PluginDescriptor* const pluginDesc)
 
     text += "    lv2:requiredFeature <" LV2_BUF_SIZE__boundedBlockLength "> ,\n";
 
-    if (pluginDesc->hints & PLUGIN_NEEDS_STATIC_BUFFERS)
+    if (pluginDesc->hints & PLUGIN_NEEDS_FIXED_BUFFERS)
         text += "                        <" LV2_BUF_SIZE__fixedBlockLength "> ,\n";
 
     text += "                        <" LV2_OPTIONS__options "> ,\n";
