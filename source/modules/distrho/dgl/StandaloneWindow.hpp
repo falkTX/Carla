@@ -34,14 +34,14 @@ public:
     {
     }
 
-    App* getApp()
+    App& getApp() const
     {
-        return &fApp;
+        return fApp;
     }
 
-    Window* getWindow()
+    Window& getWindow() const
     {
-        return &fWindow;
+        return fWindow;
     }
 
     void exec()
@@ -52,6 +52,11 @@ public:
 
     // -------------------------------------------------------------------
     // helpers
+
+    void setResizable(bool yesNo)
+    {
+        fWindow.setResizable(yesNo);
+    }
 
     void setSize(unsigned int width, unsigned int height)
     {

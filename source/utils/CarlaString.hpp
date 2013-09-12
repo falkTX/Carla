@@ -334,6 +334,11 @@ public:
         return carla_strdup(fBuffer);
     }
 
+    const char* getBuffer() const
+    {
+        return fBuffer;
+    }
+
     // -------------------------------------------------------------------
     // public operators
 

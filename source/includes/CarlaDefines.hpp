@@ -134,6 +134,23 @@
 #define CARLA_SAFE_ASSERT_CONTINUE(cond)     if (cond) pass(); else { carla_assert(#cond, __FILE__, __LINE__); continue; }
 #define CARLA_SAFE_ASSERT_RETURN(cond, ret)  if (cond) pass(); else { carla_assert(#cond, __FILE__, __LINE__); return ret; }
 
+// Define CARLA_DECLARE_NON_COPY_CLASS
+#ifdef CARLA_PROPER_CPP11_SUPPORT
+# define CARLA_DECLARE_NON_COPY_CLASS(ClassName) \
+private:                                         \
+    ClassName(ClassName&) = delete;              \
+    ClassName(const ClassName&) = delete;        \
+    ClassName& operator=(ClassName&) = delete;   \
+    ClassName& operator=(const ClassName&) = delete;
+#else
+# define CARLA_DECLARE_NON_COPY_CLASS(ClassName) \
+private:                                         \
+    ClassName(ClassName&);                       \
+    ClassName(const ClassName&);                 \
+    ClassName& operator=(ClassName&);            \
+    ClassName& operator=(const ClassName&);
+#endif
+
 // Define CARLA_DECLARE_NON_COPY_STRUCT
 #ifdef CARLA_PROPER_CPP11_SUPPORT
 # define CARLA_DECLARE_NON_COPY_STRUCT(StructName) \
@@ -143,6 +160,18 @@
     StructName& operator=(const StructName&) = delete;
 #else
 # define CARLA_DECLARE_NON_COPY_STRUCT(StructName)
+#endif
+
+#ifdef CARLA_PROPER_CPP11_SUPPORT
+# define CARLA_PREVENT_HEAP_ALLOCATION \
+private:                               \
+    static void* operator new(size_t) = delete; \
+    static void operator delete(void*) = delete;
+#else
+# define CARLA_PREVENT_HEAP_ALLOCATION \
+private:                               \
+    static void* operator new(size_t); \
+    static void operator delete(void*);
 #endif
 
 // Define CARLA_EXPORT

@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
 #include "RtList.hpp"
@@ -139,7 +139,7 @@ int main()
     assert(postRtEvents.data.count() == 4);
     assert(postRtEvents.dataPendingRT.count() == 0);
 
-    for (auto it = postRtEvents.data.begin(); it.valid(); it.next())
+    for (RtList<MyData>::Itenerator it = postRtEvents.data.begin(); it.valid(); it.next())
     {
         MyData& my(*it);
 
@@ -177,9 +177,7 @@ int main()
 
     if (evIns.count() > 0)
     {
-        const size_t count(evIns.count());
-
-        for (uint32_t j=0; j < count; ++j)
+        for (uint32_t j=0, count=evIns.count(); j < count; ++j)
         {
             const uint32_t& type(evIns.getAt(j));
 

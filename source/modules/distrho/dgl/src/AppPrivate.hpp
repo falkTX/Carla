@@ -14,8 +14,8 @@
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef APP_PRIVATE_HPP_INCLUDED
-#define APP_PRIVATE_HPP_INCLUDED
+#ifndef DGL_APP_PRIVATE_HPP_INCLUDED
+#define DGL_APP_PRIVATE_HPP_INCLUDED
 
 #include "../App.hpp"
 
@@ -27,7 +27,7 @@ START_NAMESPACE_DGL
 
 class Window;
 
-class App::Private
+class App::PrivateData
 {
 public:
     Private()
@@ -41,13 +41,13 @@ public:
         fWindows.clear();
     }
 
-    void addWindow(Window* window)
+    void addWindow(Window* const window)
     {
         if (window != nullptr)
             fWindows.push_back(window);
     }
 
-    void removeWindow(Window* window)
+    void removeWindow(Window* const window)
     {
         if (window != nullptr)
             fWindows.remove(window);
@@ -55,17 +55,13 @@ public:
 
     void oneShown()
     {
-        ++fVisibleWindows;
-
-        if (fVisibleWindows == 1)
+        if (++fVisibleWindows == 1)
             fDoLoop = true;
     }
 
     void oneHidden()
     {
-        --fVisibleWindows;
-
-        if (fVisibleWindows == 0)
+        if (--fVisibleWindows == 0)
             fDoLoop = false;
     }
 
@@ -82,4 +78,4 @@ private:
 
 END_NAMESPACE_DGL
 
-#endif // APP_PRIVATE_HPP_INCLUDED
+#endif // DGL_APP_PRIVATE_HPP_INCLUDED

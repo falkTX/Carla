@@ -167,7 +167,7 @@ public:
         fPlugin.setProgram(realProgram);
 
         // Update parameters
-        for (uint32_t i=0, count=fPlugin.parameterCount(); i < count; ++i)
+        for (uint32_t i=0, count=fPlugin.getParameterCount(); i < count; ++i)
         {
             if (fPlugin.isParameterIsOutput(i))
                 continue;
@@ -293,9 +293,9 @@ public:
             }
         }
 
-        fPlugin.run(fPortAudioIns, fPortAudioOuts, bufferSize, midiEventCount, midiEvents);
+        fPlugin.run(fPortAudioIns, fPortAudioOuts, bufferSize, midiEvents, midiEventCount);
 #else
-        fPlugin.run(fPortAudioIns, fPortAudioOuts, bufferSize, 0, nullptr);
+        fPlugin.run(fPortAudioIns, fPortAudioOuts, bufferSize, nullptr, 0);
 #endif
 
         updateParameterOutputs();
@@ -631,10 +631,7 @@ public:
             for (unsigned long i=0; i < sLadspaDescriptor.PortCount; ++i)
             {
                 if (sLadspaDescriptor.PortNames[i] != nullptr)
-                {
                     std::free((void*)sLadspaDescriptor.PortNames[i]);
-                    sLadspaDescriptor.PortNames[i] = nullptr;
-                }
             }
 
             delete[] sLadspaDescriptor.PortNames;

@@ -28,12 +28,18 @@ extern "C" {
 }
 
 // Declare non copyable and prevent heap allocation
-#define LIST_DECLARATIONS(ClassName)                 \
+#ifdef CARLA_PROPER_CPP11_SUPPORT
+# define LIST_DECLARATIONS(ClassName)                \
     ClassName(ClassName&) = delete;                  \
     ClassName(const ClassName&) = delete;            \
     ClassName& operator=(const ClassName&) = delete; \
     static void* operator new(size_t) = delete;
-  //static void operator delete(void*) = delete; // FIXME?
+#else
+# define LIST_DECLARATIONS(ClassName) \
+    ClassName(ClassName&);            \
+    ClassName(const ClassName&);      \
+    ClassName& operator=(const ClassName&);
+#endif
 
 typedef struct list_head k_list_head;
 
@@ -411,17 +417,17 @@ public:
             }
         }
 
-        void* allocate_atomic()
+        void* allocate_atomic() const
         {
             return rtsafe_memory_pool_allocate_atomic(fHandle);
         }
 
-        void* allocate_sleepy()
+        void* allocate_sleepy() const
         {
             return rtsafe_memory_pool_allocate_sleepy(fHandle);
         }
 
-        void deallocate(void* const dataPtr)
+        void deallocate(void* const dataPtr) const
         {
             rtsafe_memory_pool_deallocate(fHandle, dataPtr);
         }
@@ -454,14 +460,10 @@ public:
     };
 
     // -------------------------------------------------------------------
-    // Now the actual list code
+    // Now the actual rt-list code
 
     RtList(Pool& memPool)
         : fMemPool(memPool)
-    {
-    }
-
-    ~RtList() override
     {
     }
 
@@ -544,10 +546,6 @@ class NonRtList : public List<T>
 {
 public:
     NonRtList()
-    {
-    }
-
-    ~NonRtList() override
     {
     }
 

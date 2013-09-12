@@ -35,8 +35,8 @@ public:
     bool isQuiting() const;
 
 private:
-    class Private;
-    Private* const kPrivate;
+    class PrivateData;
+    PrivateData* const pData;
     friend class Window;
 };
 

@@ -12,10 +12,17 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
 #include "CarlaUtils.hpp"
+
+struct MyStruct {
+    char pad[100];
+    int i;
+    double d;
+    intptr_t ptr;
+};
 
 int main()
 {
@@ -32,9 +39,7 @@ int main()
 
     // carla_setenv
     carla_setenv("THIS", "THAT");
-
-    // carla_setprocname
-    carla_setprocname("test-proc");
+    assert(std::strcmp(getenv("THIS"), "THAT") == 0);
 
     // carla_strdup
     const char* const str1 = carla_strdup("string1");
@@ -123,12 +128,6 @@ int main()
     }
 
     {
-        struct MyStruct {
-            char pad[100];
-            int i;
-            double d;
-            intptr_t ptr;
-        };
         MyStruct a, b, c, d;
         carla_zeroStruct<MyStruct>(a);
         carla_zeroStruct<MyStruct>(b);

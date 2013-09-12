@@ -134,7 +134,6 @@ public:
 # endif
         }
 #else
-        glWindow.setSize(fUI.width(), fUI.height());
         glWindow.setWindowTitle(uiTitle);
 #endif
     }

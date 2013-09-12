@@ -19,12 +19,6 @@
 
 #include "Geometry.hpp"
 
-#ifdef PROPER_CPP11_SUPPORT
-# include <cstdint>
-#else
-# include <stdint.h>
-#endif
-
 START_NAMESPACE_DGL
 
 // -----------------------------------------------------------------------
@@ -35,7 +29,7 @@ class Window;
 class Widget
 {
 public:
-    Widget(Window* parent);
+    Widget(Window& parent);
     virtual ~Widget();
 
     bool isVisible() const;
@@ -82,7 +76,7 @@ public:
 
 protected:
     virtual void onDisplay();
-    virtual bool onKeyboard(bool press, uint32_t key);
+    virtual bool onKeyboard(bool press, unsigned key);
     virtual bool onMouse(int button, bool press, int x, int y);
     virtual bool onMotion(int x, int y);
     virtual bool onScroll(float dx, float dy);
@@ -91,7 +85,7 @@ protected:
     virtual void onClose();
 
 private:
-    Window* fParent;
+    Window& fParent;
     bool    fVisible;
     Rectangle<int> fArea;
 

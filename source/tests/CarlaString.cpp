@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the GPL.txt file
+ * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
 #include "CarlaString.hpp"
@@ -26,8 +26,9 @@ int main()
     assert(str.length() == std::strlen(""));
     assert(str.isEmpty());
     assert(str.contains(""));
+    assert(str.contains("\0"));
     assert(! str.isNotEmpty());
-    assert(! str.contains("-"));
+    assert(! str.contains(" "));
     assert(! str.isDigit(0));
 
     // single number

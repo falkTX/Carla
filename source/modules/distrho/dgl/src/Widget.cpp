@@ -20,23 +20,27 @@
 
 #include <cassert>
 
+#ifdef PROPER_CPP11_SUPPORT
+# include <cstdint>
+#else
+# include <stdint.h>
+#endif
+
 START_NAMESPACE_DGL
 
 // -----------------------------------------------------------------------
 // Widget
 
-Widget::Widget(Window* parent)
+Widget::Widget(Window& parent)
     : fParent(parent),
       fVisible(true)
 {
-    assert(parent != nullptr);
-
-    parent->addWidget(this);
+    parent.addWidget(this);
 }
 
 Widget::~Widget()
 {
-    fParent->removeWidget(this);
+    fParent.removeWidget(this);
 }
 
 bool Widget::isVisible() const
@@ -50,7 +54,7 @@ void Widget::setVisible(bool yesNo)
         return;
 
     fVisible = yesNo;
-    fParent->repaint();
+    fParent.repaint();
 }
 
 int Widget::getX() const
@@ -133,7 +137,7 @@ void Widget::setWidth(int width)
         return;
 
     fArea.setWidth(width);
-    fParent->repaint();
+    fParent.repaint();
 }
 
 void Widget::setHeight(int height)
@@ -142,7 +146,7 @@ void Widget::setHeight(int height)
         return;
 
     fArea.setHeight(height);
-    fParent->repaint();
+    fParent.repaint();
 }
 
 void Widget::setSize(int width, int height)
@@ -156,7 +160,7 @@ void Widget::setSize(const Size<int>& size)
         return;
 
     fArea.setSize(size);
-    fParent->repaint();
+    fParent.repaint();
 }
 
 const Rectangle<int>& Widget::getArea() const
@@ -166,29 +170,29 @@ const Rectangle<int>& Widget::getArea() const
 
 int Widget::getModifiers()
 {
-    return fParent->getModifiers();
+    return fParent.getModifiers();
 }
 
-App* Widget::getApp() const
+App& Widget::getApp() const
 {
-    return fParent->getApp();
+    return fParent.getApp();
 }
 
-Window* Widget::getParent() const
+Window& Widget::getParent() const
 {
     return fParent;
 }
 
 void Widget::repaint()
 {
-    fParent->repaint();
+    fParent.repaint();
 }
 
 void Widget::onDisplay()
 {
 }
 
-bool Widget::onKeyboard(bool, uint32_t)
+bool Widget::onKeyboard(bool, unsigned)
 {
     return false;
 }

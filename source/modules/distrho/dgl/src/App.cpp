@@ -23,18 +23,18 @@ START_NAMESPACE_DGL
 // -----------------------------------------------------------------------
 
 App::App()
-    : kPrivate(new Private)
+    : pData(new Private())
 {
 }
 
 App::~App()
 {
-    delete kPrivate;
+    delete pData;
 }
 
 void App::idle()
 {
-    for (std::list<Window*>::iterator it = kPrivate->fWindows.begin(); it != kPrivate->fWindows.end(); ++it)
+    for (std::list<Window*>::iterator it = pData->fWindows.begin(); it != pData->fWindows.end(); ++it)
     {
         Window* const window(*it);
         window->idle();
@@ -43,18 +43,18 @@ void App::idle()
 
 void App::exec()
 {
-    while (kPrivate->fDoLoop)
+    while (pData->fDoLoop)
     {
         idle();
-        dgl_msleep(10);
+        msleep(10);
     }
 }
 
 void App::quit()
 {
-    kPrivate->fDoLoop = false;
+    pData->fDoLoop = false;
 
-    for (std::list<Window*>::iterator it = kPrivate->fWindows.begin(); it != kPrivate->fWindows.end(); ++it)
+    for (std::list<Window*>::iterator it = pData->fWindows.begin(); it != pData->fWindows.end(); ++it)
     {
         Window* const window(*it);
         window->close();
@@ -63,7 +63,7 @@ void App::quit()
 
 bool App::isQuiting() const
 {
-    return !kPrivate->fDoLoop;
+    return !pData->fDoLoop;
 }
 
 // -----------------------------------------------------------------------

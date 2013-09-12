@@ -50,10 +50,10 @@ Window* dgl_lastUiParent = nullptr;
 // -----------------------------------------------------------------------
 // Window Private
 
-class Window::Private
+class Window::PrivateData
 {
 public:
-    Private(Window* self, App* app, App::Private* appPriv, Private* parent, intptr_t parentId = 0)
+    Private(Window& self, App& app, App::PrivateData& appPriv, PrivateData& parent, intptr_t parentId = 0)
         : kApp(app),
           kAppPriv(appPriv),
           kSelf(self),
@@ -71,6 +71,10 @@ public:
 #else
           _dummy(0)
 #endif
+    {
+    }
+
+    void setup()
     {
         if (kView == nullptr)
             return;
@@ -566,91 +570,97 @@ private:
 // -----------------------------------------------------------------------
 // Window
 
-Window::Window(App* app, Window* parent)
-    : kPrivate(new Private(this, app, app->kPrivate, (parent != nullptr) ? parent->kPrivate : nullptr))
+Window::Window(App& app)
+    : pData(new Private(this, app, app->pData, nullptr))
 {
     dgl_lastUiParent = this;
 }
 
-Window::Window(App* app, intptr_t parentId)
-    : kPrivate(new Private(this, app, app->kPrivate, nullptr, parentId))
+Window::Window(App& app, Window& parent)
+    : pData(new Private(this, app, app->pData, parent->pData))
+{
+    dgl_lastUiParent = this;
+}
+
+Window::Window(App*&app, intptr_t parentId)
+    : pData(new Private(this, app, app->pData, nullptr, parentId))
 {
     dgl_lastUiParent = this;
 }
 
 Window::~Window()
 {
-    delete kPrivate;
+    delete pData;
 }
 
 void Window::exec(bool lock)
 {
-    kPrivate->exec(lock);
+    pData->exec(lock);
 }
 
 void Window::focus()
 {
-    kPrivate->focus();
+    pData->focus();
 }
 
 void Window::idle()
 {
-    kPrivate->idle();
+    pData->idle();
 }
 
 void Window::repaint()
 {
-    kPrivate->repaint();
+    pData->repaint();
 }
 
 bool Window::isVisible()
 {
-    return kPrivate->isVisible();
+    return pData->isVisible();
 }
 
 void Window::setResizable(bool yesNo)
 {
-    kPrivate->setResizable(yesNo);
+    pData->setResizable(yesNo);
 }
 
 void Window::setVisible(bool yesNo)
 {
-    kPrivate->setVisible(yesNo);
+    pData->setVisible(yesNo);
 }
 
 void Window::setSize(unsigned int width, unsigned int height)
 {
-    kPrivate->setSize(width, height);
+    pData->setSize(width, height);
 }
 
 void Window::setWindowTitle(const char* title)
 {
-    kPrivate->setWindowTitle(title);
+    pData->setWindowTitle(title);
 }
 
 App* Window::getApp() const
 {
-    return kPrivate->getApp();
+    return pData->getApp();
 }
 
 int Window::getModifiers() const
 {
-    return kPrivate->getModifiers();
+    return pData->getModifiers();
 }
 
 intptr_t Window::getWindowId() const
 {
-    return kPrivate->getWindowId();
+    return pData->getWindowId();
 }
 
 void Window::addWidget(Widget* widget)
 {
-    kPrivate->addWidget(widget);
+    pData->addWidget(widget);
 }
 
 void Window::removeWidget(Widget* widget)
 {
-    kPrivate->removeWidget(widget);
+    pData->removeWidget(widget);
 }
 
 void Window::show()
@@ -665,7 +675,7 @@ void Window::hide()
 
 void Window::close()
 {
-    kPrivate->close();
+    pData->close();
 }
 
 // -----------------------------------------------------------------------

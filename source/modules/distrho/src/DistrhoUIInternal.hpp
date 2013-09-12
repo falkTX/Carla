@@ -138,7 +138,9 @@ public:
         fData->sendNoteCallbackFunc  = sendNoteCall;
         fData->uiResizeCallbackFunc  = uiResizeCall;
 
-#ifndef DISTRHO_UI_OPENGL
+#ifdef DISTRHO_UI_OPENGL
+        glWindow.setSize(fUi->d_getWidth(), fUi->d_getHeight());
+#else
         assert(winId == 0);
         return;
 

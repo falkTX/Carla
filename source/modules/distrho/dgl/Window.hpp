@@ -29,11 +29,12 @@ class Widget;
 class Window
 {
 public:
-    Window(App* app, Window* parent = nullptr);
-    Window(App* app, intptr_t parentId);
+    Window(App& app);
+    Window(App& app, Window& parent);
+    Window(App& app, intptr_t parentId);
     virtual ~Window();
 
-    void exec(bool lock = false);
+    void exec(bool lockWait = false);
     void focus();
     void idle();
     void repaint();
@@ -44,8 +45,8 @@ public:
     void setSize(unsigned int width, unsigned int height);
     void setWindowTitle(const char* title);
 
-    App* getApp() const;
-    int getModifiers() const;
+    App& getApp() const;
+    int  getModifiers() const;
     intptr_t getWindowId() const;
 
     void addWidget(Widget* widget);
@@ -56,8 +57,8 @@ public:
     void close();
 
 private:
-    class Private;
-    Private* const kPrivate;
+    class PrivateData;
+    PrivateData* const pData;
 };
 
 // -----------------------------------------------------------------------
