@@ -251,19 +251,21 @@ typedef struct {
 // PluginDescriptor
 
 typedef struct _PluginDescriptor {
-    const char* const category;
-    const char* const hints;
-    const char* const supports;
-    const uint32_t audioIns;
-    const uint32_t audioOuts;
-    const uint32_t midiIns;
-    const uint32_t midiOuts;
-    const uint32_t parameterIns;
-    const uint32_t parameterOuts;
-    const char* const name;
-    const char* const label;
-    const char* const maker;
-    const char* const copyright;
+    const int api;                //!< Must be set to PLUGIN_API_VERSION
+    const char* const categories; //!< Categories. @see PluginCategories
+    const char* const hints;      //!< Hints. @see PluginHints
+    const char* const supports;   //!< MIDI supported events. @see PluginSupports
+    const uint32_t audioIns;      //!< Default number of audio inputs.
+    const uint32_t audioOuts;     //!< Default number of audio outputs.
+    const uint32_t midiIns;       //!< Default number of MIDI inputs.
+    const uint32_t midiOuts;      //!< Default number of MIDI inputs.
+    const uint32_t parameterIns;  //!< Default number of input parameters, may be 0.
+    const uint32_t parameterOuts; //!< Default number of output parameters, may be 0.
+    const char* const name;       //!< Name.
+    const char* const label;      //!< Label, can only contain letters, numbers and "_".
+    const char* const maker;      //!< Maker.
+    const char* const copyright;  //!< Copyright.
+    const int version;            //!< Version.
 
     PluginHandle (*instantiate)(const HostDescriptor* host);
     void         (*cleanup)(PluginHandle handle);
