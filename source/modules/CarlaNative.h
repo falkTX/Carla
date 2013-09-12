@@ -33,56 +33,88 @@ extern "C" {
  * @{
  */
 
+typedef int32_t AtomXYZ;
 typedef void* HostHandle;
 typedef void* PluginHandle;
 
 // -----------------------------------------------------------------------
 // enums
 
-typedef enum {
-    PLUGIN_CATEGORY_NONE      = 0, //!< Null plugin category.
-    PLUGIN_CATEGORY_SYNTH     = 1, //!< A synthesizer or generator.
-    PLUGIN_CATEGORY_DELAY     = 2, //!< A delay or reverberator.
-    PLUGIN_CATEGORY_EQ        = 3, //!< An equalizer.
-    PLUGIN_CATEGORY_FILTER    = 4, //!< A filter.
-    PLUGIN_CATEGORY_DYNAMICS  = 5, //!< A 'dynamic' plugin (amplifier, compressor, gate, etc).
-    PLUGIN_CATEGORY_MODULATOR = 6, //!< A 'modulator' plugin (chorus, flanger, phaser, etc).
-    PLUGIN_CATEGORY_UTILITY   = 7, //!< An 'utility' plugin (analyzer, converter, mixer, etc).
-    PLUGIN_CATEGORY_OTHER     = 8  //!< Misc plugin (used to check if the plugin has a category).
-} PluginCategory;
+#define PLUGIN_API_VERSION 1
 
-typedef enum {
-    PLUGIN_IS_RTSAFE           = 1 << 0,
-    PLUGIN_HAS_GUI             = 1 << 1,
-    PLUGIN_NEEDS_OPENSAVE      = 1 << 2,
-    PLUGIN_NEEDS_SINGLE_THREAD = 1 << 3,
-    PLUGIN_NEEDS_FIXED_BUFFERS = 1 << 4,
-    PLUGIN_USES_PANNING        = 1 << 5, // uses stereo balance if unset (default)
-    PLUGIN_USES_STATE          = 1 << 6,
-    PLUGIN_USES_TIMEPOS        = 1 << 7
-} PluginHints;
+/*!
+ * @defgroup PluginCategories Plugin Categories
+ *
+ * A small list of pre-defined plugin categories.
+ *
+ * Plugins can use their own custom categories as well, as long as they are lowercase and contain ASCII characters only.
+ * Many categories can be set by using ":" in between them.
+ * @{
+ */
+#define PLUGIN_CATEGORY_SYNTH     "synth"     //!< A synthesizer or generator.
+#define PLUGIN_CATEGORY_DELAY     "delay"     //!< A delay or reverberator.
+#define PLUGIN_CATEGORY_EQ        "eq"        //!< An equalizer.
+#define PLUGIN_CATEGORY_FILTER    "filter"    //!< A filter.
+#define PLUGIN_CATEGORY_DYNAMICS  "dynamics"  //!< A 'dynamic' plugin (amplifier, compressor, gate, etc).
+#define PLUGIN_CATEGORY_MODULATOR "modulator" //!< A 'modulator' plugin (chorus, flanger, phaser, etc).
+#define PLUGIN_CATEGORY_UTILITY   "utility"   //!< An 'utility' plugin (analyzer, converter, mixer, etc).
+#define PLUGIN_CATEGORY_OTHER     "other"     //!< Misc plugin (used to check if the plugin has a category).
+/**@}*/
 
-typedef enum {
-    PLUGIN_SUPPORTS_PROGRAM_CHANGES  = 1 << 0, // handles MIDI programs internally instead of host-exposed/exported
-    PLUGIN_SUPPORTS_CONTROL_CHANGES  = 1 << 1,
-    PLUGIN_SUPPORTS_CHANNEL_PRESSURE = 1 << 2,
-    PLUGIN_SUPPORTS_NOTE_AFTERTOUCH  = 1 << 3,
-    PLUGIN_SUPPORTS_PITCHBEND        = 1 << 4,
-    PLUGIN_SUPPORTS_ALL_SOUND_OFF    = 1 << 5,
-    PLUGIN_SUPPORTS_EVERYTHING       = (1 << 6)-1
-} PluginSupports;
+/*!
+ * @defgroup PluginFeatures Plugin Features
+ *
+ * A list of plugin features or hints.
+ *
+ * Custom features are allowed, as long as they are lowercase and contain ASCII characters only.
+ * The host can decide if it can load the plugin or not based on this information.
+ *
+ * Multiple features can be set by using ":" in between them.
+ * @{
+ */
+#define PLUGIN_FEATURE_RTSAFE         "rtsafe"         //!< Is hard-realtime safe.
+#define PLUGIN_FEATURE_GUI            "gui"            //!< Provides custom UI.
+#define PLUGIN_FEATURE_STATE          "state"          //!< Supports get_state() and set_state().
+#define PLUGIN_FEATURE_TIME           "time"           //!< Uses get_time_info().
+#define PLUGIN_FEATURE_WRITE_EVENT    "writeevent"     //!< Uses write_event().
+#define PLUGIN_FEATURE_FIXED_BUFFERS  "fixedbuffers"   //!< Needs fixed-size audio buffers.
+#define PLUGIN_FEATURE_MONO_PANNING   "monopanning"    //!< Prefers mono-style panning.
+#define PLUGIN_FEATURE_STEREO_BALANCE "stereobalance"  //!< Prefers stereo balance.
+#define PLUGIN_FEATURE_OPENSAVE       "uiopensave"     //!< UI uses ui_open_file() and/or ui_save_file() functions.
+#define PLUGIN_FEATURE_SINGLE_THREAD  "uisinglethread" //!< UI needs paramter, midi-program and custom-data changes in the main thread.
+/**@}*/
 
-typedef enum {
-    PARAMETER_IS_OUTPUT        = 1 << 0,
-    PARAMETER_IS_ENABLED       = 1 << 1,
-    PARAMETER_IS_AUTOMABLE     = 1 << 2,
-    PARAMETER_IS_BOOLEAN       = 1 << 3,
-    PARAMETER_IS_INTEGER       = 1 << 4,
-    PARAMETER_IS_LOGARITHMIC   = 1 << 5,
-    PARAMETER_USES_SAMPLE_RATE = 1 << 6,
-    PARAMETER_USES_SCALEPOINTS = 1 << 7,
-    PARAMETER_USES_CUSTOM_TEXT = 1 << 8
-} ParameterHints;
+/*!
+ * @defgroup PluginSupports Plugin Supports
+ *
+ * A list of plugin supported MIDI events.
+ * @{
+ */
+#define PLUGIN_SUPPORTS_PROGRAM_CHANGES  "program"     //!< Handles MIDI programs internally instead of host-exposed/exported
+#define PLUGIN_SUPPORTS_CONTROL_CHANGES  "control"     //!< Supports control changes (0xB0)
+#define PLUGIN_SUPPORTS_CHANNEL_PRESSURE "pressure"    //!< Supports channel pressure (0xD0)
+#define PLUGIN_SUPPORTS_NOTE_AFTERTOUCH  "aftertouch"  //!< Supports note aftertouch (0xA0)
+#define PLUGIN_SUPPORTS_PITCHBEND        "pitchbend"   //!< Supports pitchbend (0xE0)
+#define PLUGIN_SUPPORTS_ALL_SOUND_OFF    "allsoundoff" //!< Supporta all-sound-off and all-notes-off events
+#define PLUGIN_SUPPORTS_EVERYTHING       "program:control:pressure:aftertouch:pitchbend:allsoundoff" //!< Supports everything
+/**@}*/
+
+/*!
+ * @defgroup ParameterHints Parameter Hints
+ *
+ * List of parameter hints.
+ * @{
+ */
+#define PARAMETER_IS_OUTPUT        "output"      //!< Is output; input if unset.
+#define PARAMETER_IS_ENABLED       "enabled"     //!< Is enabled and shown by the host; can be changed if not output.
+#define PARAMETER_IS_AUTOMABLE     "automable"   //!< Is automable; get_parameter_value() and set_parameter_value() MUST be realtime safe for this parameter.
+#define PARAMETER_IS_BOOLEAN       "boolean"     //!< Values are boolean (always at minimum or maximum values).
+#define PARAMETER_IS_INTEGER       "integer"     //!< Values are integer.
+#define PARAMETER_IS_LOGARITHMIC   "logarithmic" //!< Values are logarithmic.
+#define PARAMETER_USES_SAMPLE_RATE "samplerate"  //!< Needs sample-rate to work (value and ranges are multiplied by SR on usage, divided by SR on save).
+#define PARAMETER_USES_SCALEPOINTS "scalepoints" //!< Uses scalepoints to define internal values in a meaningful way.
+#define PARAMETER_USES_CUSTOM_TEXT "customtext"  //!< Uses custom text for displaying its value. @see get_parameter_text()
+/**@}*/
 
 typedef enum {
     PLUGIN_OPCODE_NULL                = 0, // nothing
@@ -132,7 +164,7 @@ typedef struct {
 #define PARAMETER_RANGES_DEFAULT_STEP_LARGE 0.1f
 
 typedef struct {
-    ParameterHints hints;
+    const char* hints;
     const char* name;
     const char* unit;
     ParameterRanges ranges;
@@ -142,11 +174,22 @@ typedef struct {
 } Parameter;
 
 typedef struct {
-    uint8_t  port;
-    uint32_t time;
-    uint8_t  data[4];
-    uint8_t  size;
+    AtomXYZ type;
+    uint32_t frame;
+} Event;
+
+typedef struct {
+    Event e;
+    uint8_t port;
+    uint8_t size;
+    uint8_t data[4];
 } MidiEvent;
+
+typedef struct {
+    Event e;
+    uint32_t index;
+    float    value;
+} ParameterEvent;
 
 typedef struct {
     uint32_t bank;
@@ -189,7 +232,7 @@ typedef struct {
     bool     (*is_offline)(HostHandle handle);
 
     const TimeInfo* (*get_time_info)(HostHandle handle);
-    bool            (*write_midi_event)(HostHandle handle, const MidiEvent* event);
+    bool            (*write_event)(HostHandle handle, const Event* event);
 
     void (*ui_parameter_changed)(HostHandle handle, uint32_t index, float value);
     void (*ui_midi_program_changed)(HostHandle handle, uint8_t channel, uint32_t bank, uint32_t program);
@@ -208,9 +251,9 @@ typedef struct {
 // PluginDescriptor
 
 typedef struct _PluginDescriptor {
-    const PluginCategory category;
-    const PluginHints hints;
-    const PluginSupports supports;
+    const char* const category;
+    const char* const hints;
+    const char* const supports;
     const uint32_t audioIns;
     const uint32_t audioOuts;
     const uint32_t midiIns;
@@ -246,7 +289,7 @@ typedef struct _PluginDescriptor {
 
     void (*activate)(PluginHandle handle);
     void (*deactivate)(PluginHandle handle);
-    void (*process)(PluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const MidiEvent* midiEvents, uint32_t midiEventCount);
+    void (*process)(PluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const Event* events, uint32_t eventCount);
 
     char* (*get_state)(PluginHandle handle);
     void  (*set_state)(PluginHandle handle, const char* data);
