@@ -14,68 +14,36 @@
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef DGL_APP_PRIVATE_HPP_INCLUDED
-#define DGL_APP_PRIVATE_HPP_INCLUDED
+#include "../Base.hpp"
 
-#include "../App.hpp"
-
-#include <list>
+#if DGL_OS_WINDOWS
+# include <windows.h>
+#else
+# include <unistd.h>
+#endif
 
 START_NAMESPACE_DGL
 
 // -----------------------------------------------------------------------
 
-class Window;
-
-class App::PrivateData
+void sleep(unsigned int secs)
 {
-public:
-    Private()
-        : fDoLoop(true),
-          fVisibleWindows(0)
-    {
-    }
+#ifdef DGL_OS_WINDOWS
+    ::Sleep(secs * 1000);
+#else
+    ::sleep(secs);
+#endif
+}
 
-    ~Private()
-    {
-        fWindows.clear();
-    }
-
-    void addWindow(Window* const window)
-    {
-        if (window != nullptr)
-            fWindows.push_back(window);
-    }
-
-    void removeWindow(Window* const window)
-    {
-        if (window != nullptr)
-            fWindows.remove(window);
-    }
-
-    void oneShown()
-    {
-        if (++fVisibleWindows == 1)
-            fDoLoop = true;
-    }
-
-    void oneHidden()
-    {
-        if (--fVisibleWindows == 0)
-            fDoLoop = false;
-    }
-
-private:
-    bool     fDoLoop;
-    unsigned fVisibleWindows;
-
-    std::list<Window*> fWindows;
-
-    friend class App;
-};
+void msleep(unsigned int msecs)
+{
+#ifdef DGL_OS_WINDOWS
+    ::Sleep(msecs);
+#else
+    ::usleep(msecs * 1000);
+#endif
+}
 
 // -----------------------------------------------------------------------
 
 END_NAMESPACE_DGL
-
-#endif // DGL_APP_PRIVATE_HPP_INCLUDED

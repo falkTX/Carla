@@ -34,12 +34,12 @@ public:
     {
     }
 
-    App& getApp() const
+    App& getApp() const noexcept
     {
         return fApp;
     }
 
-    Window& getWindow() const
+    Window& getWindow() const noexcept
     {
         return fWindow;
     }
@@ -63,9 +63,9 @@ public:
         fWindow.setSize(width, height);
     }
 
-    void setWindowTitle(const char* title)
+    void setTitle(const char* title)
     {
-        fWindow.setWindowTitle(title);
+        fWindow.setTitle(title);
     }
 
 private:

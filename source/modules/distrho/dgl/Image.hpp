@@ -26,31 +26,31 @@ START_NAMESPACE_DGL
 class Image
 {
 public:
-    Image();
-    Image(const char* rawData, int width, int height, GLenum format = GL_BGRA, GLenum type = GL_UNSIGNED_BYTE);
-    Image(const char* rawData, const Size<int>& size, GLenum format = GL_BGRA, GLenum type = GL_UNSIGNED_BYTE);
-    Image(const Image& image);
+    Image() noexcept;
+    Image(const char* rawData, int width, int height, GLenum format = GL_BGRA, GLenum type = GL_UNSIGNED_BYTE) noexcept;
+    Image(const char* rawData, const Size<int>& size, GLenum format = GL_BGRA, GLenum type = GL_UNSIGNED_BYTE) noexcept;
+    Image(const Image& image) noexcept;
 
-    void loadFromMemory(const char* rawData, int width, int height, GLenum format = GL_BGRA, GLenum type = GL_UNSIGNED_BYTE);
-    void loadFromMemory(const char* rawData, const Size<int>& size, GLenum format = GL_BGRA, GLenum type = GL_UNSIGNED_BYTE);
+    void loadFromMemory(const char* rawData, int width, int height, GLenum format = GL_BGRA, GLenum type = GL_UNSIGNED_BYTE) noexcept;
+    void loadFromMemory(const char* rawData, const Size<int>& size, GLenum format = GL_BGRA, GLenum type = GL_UNSIGNED_BYTE) noexcept;
 
-    bool isValid() const;
+    bool isValid() const noexcept;
 
-    int getWidth() const;
-    int getHeight() const;
-    const Size<int>& getSize() const;
+    int getWidth() const noexcept;
+    int getHeight() const noexcept;
+    const Size<int>& getSize() const noexcept;
 
-    const char* getRawData() const;
-    GLenum getFormat() const;
-    GLenum getType() const;
+    const char* getRawData() const noexcept;
+    GLenum getFormat() const noexcept;
+    GLenum getType() const noexcept;
 
     void draw() const;
     void draw(int x, int y) const;
     void draw(const Point<int>& pos) const;
 
-    Image& operator=(const Image& image);
-    bool operator==(const Image& image) const;
-    bool operator!=(const Image& image) const;
+    Image& operator=(const Image& image) noexcept;
+    bool operator==(const Image& image) const noexcept;
+    bool operator!=(const Image& image) const noexcept;
 
 private:
     const char* fRawData;

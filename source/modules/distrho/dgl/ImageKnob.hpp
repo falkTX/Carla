@@ -41,7 +41,7 @@ public:
         virtual void imageKnobValueChanged(ImageKnob* imageKnob, float value) = 0;
     };
 
-    ImageKnob(Window* parent, const Image& image, Orientation orientation = Vertical);
+    ImageKnob(Window& parent, const Image& image, Orientation orientation = Vertical);
     ImageKnob(Widget* widget, const Image& image, Orientation orientation = Vertical);
     ImageKnob(const ImageKnob& imageKnob);
 

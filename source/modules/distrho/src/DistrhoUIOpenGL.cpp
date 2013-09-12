@@ -27,7 +27,7 @@ START_NAMESPACE_DISTRHO
 
 OpenGLUI::OpenGLUI()
     : UI(),
-      Widget(DGL::dgl_lastUiParent)
+      Widget(*DGL::dgl_lastUiParent)
 {
     assert(DGL::dgl_lastUiParent != nullptr);
 

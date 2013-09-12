@@ -27,7 +27,7 @@ else
 ifeq ($(WIN32),true)
 DGL_LIBS = -lopengl32 -lgdi32
 else
-DGL_LIBS = -lX11
+DGL_LIBS = -lGL -lX11
 endif
 endif
 
@@ -44,8 +44,10 @@ CarlaString: CarlaString.cpp ../utils/CarlaString.hpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) $(LINK_FLAGS) -o $@
 # 	valgrind ./CarlaString
 
-DGL: DGL.cpp
-	$(CXX) $^ $(BUILD_CXX_FLAGS) $(LINK_FLAGS) $(DGL_LIBS) -o $@
+DGL: DGL.cpp ../modules/distrho/dgl/src/Window.cpp
+	$(CXX) $< $(BUILD_CXX_FLAGS) $(LINK_FLAGS) $(DGL_LIBS) -o $@
+# 	./DGL
+# 	valgrind ./DGL
 
 Print: Print.cpp
 	$(CXX) $^ $(BUILD_CXX_FLAGS) $(LINK_FLAGS) -o $@

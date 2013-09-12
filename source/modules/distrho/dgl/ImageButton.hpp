@@ -34,9 +34,9 @@ public:
         virtual void imageButtonClicked(ImageButton* imageButton, int button) = 0;
     };
 
-    ImageButton(Window* parent, const Image& image);
+    ImageButton(Window& parent, const Image& image);
     ImageButton(Widget* widget, const Image& image);
-    ImageButton(Window* parent, const Image& imageNormal, const Image& imageHover, const Image& imageDown);
+    ImageButton(Window& parent, const Image& imageNormal, const Image& imageHover, const Image& imageDown);
     ImageButton(Widget* widget, const Image& imageNormal, const Image& imageHover, const Image& imageDown);
     ImageButton(const ImageButton& imageButton);
 

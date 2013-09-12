@@ -17,7 +17,13 @@
 #ifndef DGL_WINDOW_HPP_INCLUDED
 #define DGL_WINDOW_HPP_INCLUDED
 
-#include "Base.hpp"
+#include "Geometry.hpp"
+
+#ifdef PROPER_CPP11_SUPPORT
+# include <cstdint>
+#else
+# include <stdint.h>
+#endif
 
 START_NAMESPACE_DGL
 
@@ -34,31 +40,40 @@ public:
     Window(App& app, intptr_t parentId);
     virtual ~Window();
 
+    void show();
+    void hide();
+    void close();
     void exec(bool lockWait = false);
+
     void focus();
     void idle();
     void repaint();
 
-    bool isVisible();
+    bool isVisible() const noexcept;
     void setVisible(bool yesNo);
+
+    bool isResizable() const noexcept;
     void setResizable(bool yesNo);
+
+    int getWidth() const noexcept;
+    int getHeight() const noexcept;
+    Size<int> getSize() const noexcept;
     void setSize(unsigned int width, unsigned int height);
-    void setWindowTitle(const char* title);
 
-    App& getApp() const;
-    int  getModifiers() const;
+    void setTitle(const char* title);
+
+    App&     getApp() const noexcept;
+    uint32_t getEventTimestamp() const;
+    int      getModifiers() const;
     intptr_t getWindowId() const;
-
-    void addWidget(Widget* widget);
-    void removeWidget(Widget* widget);
-
-    void show();
-    void hide();
-    void close();
 
 private:
     class PrivateData;
     PrivateData* const pData;
+    friend class Widget;
+
+    void addWidget(Widget* const widget);
+    void removeWidget(Widget* const widget);
 };
 
 // -----------------------------------------------------------------------

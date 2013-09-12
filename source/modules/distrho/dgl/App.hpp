@@ -21,6 +21,8 @@
 
 START_NAMESPACE_DGL
 
+class Window;
+
 // -----------------------------------------------------------------------
 
 class App
@@ -35,9 +37,14 @@ public:
     bool isQuiting() const;
 
 private:
-    class PrivateData;
+    struct PrivateData;
     PrivateData* const pData;
     friend class Window;
+
+    void addWindow(Window* const window);
+    void removeWindow(Window* const window);
+    void oneShown();
+    void oneHidden();
 };
 
 // -----------------------------------------------------------------------

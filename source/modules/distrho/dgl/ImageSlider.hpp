@@ -36,7 +36,7 @@ public:
         virtual void imageSliderValueChanged(ImageSlider* imageSlider, float value) = 0;
     };
 
-    ImageSlider(Window* parent, const Image& image);
+    ImageSlider(Window& parent, const Image& image);
     ImageSlider(Widget* widget, const Image& image);
     ImageSlider(const ImageSlider& imageSlider);
 

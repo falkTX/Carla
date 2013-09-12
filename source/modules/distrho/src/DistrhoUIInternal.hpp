@@ -119,7 +119,7 @@ public:
     UIInternal(void* ptr, intptr_t winId, editParamFunc editParamCall, setParamFunc setParamCall, setStateFunc setStateCall, sendNoteFunc sendNoteCall, uiResizeFunc uiResizeCall)
 #ifdef DISTRHO_UI_OPENGL
         : glApp(),
-          glWindow(&glApp, winId),
+          glWindow(glApp, winId),
           fUi(createUI()),
 #else
         : fUi(createUI()),
@@ -140,6 +140,7 @@ public:
 
 #ifdef DISTRHO_UI_OPENGL
         glWindow.setSize(fUi->d_getWidth(), fUi->d_getHeight());
+        glWindow.setResizable(false);
 #else
         assert(winId == 0);
         return;

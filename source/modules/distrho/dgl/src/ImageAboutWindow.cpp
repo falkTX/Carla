@@ -27,22 +27,22 @@ START_NAMESPACE_DGL
 
 // -----------------------------------------------------------------------
 
-ImageAboutWindow::ImageAboutWindow(App* app, Window* parent, const Image& image)
+ImageAboutWindow::ImageAboutWindow(App& app, Window& parent, const Image& image)
     : Window(app, parent),
-      Widget(this),
+      Widget((Window&)*this),
       fImgBackground(image)
 {
     Window::setSize(image.getWidth(), image.getHeight() PAD_SIZE);
-    Window::setWindowTitle("About");
+    Window::setTitle("About");
 }
 
 ImageAboutWindow::ImageAboutWindow(Widget* widget, const Image& image)
-    : Window(widget->getApp(), widget->getParent()),
-      Widget(this),
+    : Window(widget->getParentApp(), widget->getParentWindow()),
+      Widget((Window&)*this),
       fImgBackground(image)
 {
     Window::setSize(image.getWidth(), image.getHeight() PAD_SIZE);
-    Window::setWindowTitle("About");
+    Window::setTitle("About");
 }
 
 void ImageAboutWindow::setImage(const Image& image)
@@ -69,7 +69,7 @@ bool ImageAboutWindow::onMouse(int, bool press, int, int)
 
 bool ImageAboutWindow::onKeyboard(bool press, uint32_t key)
 {
-    if (press && key == DGL_CHAR_ESCAPE)
+    if (press && key == CHAR_ESCAPE)
     {
         Window::close();
         return true;

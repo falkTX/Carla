@@ -18,7 +18,7 @@
 # error We do not want Qt in the engine code!
 #endif
 
-#include "../CarlaNative.hpp"
+#include "CarlaNative.hpp"
 #include "CarlaString.hpp"
 
 #include "DistrhoPluginMain.cpp"
@@ -32,8 +32,6 @@
 #  include "CarlaPipeUtils.hpp"
 # endif
 #endif
-
-using juce::ScopedPointer;
 
 // -----------------------------------------------------------------------
 
@@ -59,8 +57,8 @@ public:
 #endif
     {
 #ifdef DISTRHO_UI_OPENGL
-        glWindow.setSize(fUi.getWidth(), fUi.getHeight());
-        glWindow.setWindowTitle(host->uiName);
+        //glWindow.setSize(fUi.getWidth(), fUi.getHeight());
+        glWindow.setTitle(host->uiName);
 #else
         CarlaString filename;
         filename += fHost->resourceDir;
@@ -202,7 +200,7 @@ public:
     void carla_setUiTitle(const char* const uiTitle)
     {
 #ifdef DISTRHO_UI_OPENGL
-        glWindow.setWindowTitle(uiTitle);
+        glWindow.setTitle(uiTitle);
 #else
         writeMsg("uiTitle\n", 8);
         writeAndFixMsg(uiTitle);
@@ -321,7 +319,11 @@ public:
     ~PluginCarla() override
     {
 #if DISTRHO_PLUGIN_HAS_UI
-        fUiPtr = nullptr;
+        if (fUiPtr != nullptr)
+        {
+            delete fUiPtr;
+            fUiPtr = nullptr;
+        }
 #endif
     }
 
@@ -574,7 +576,7 @@ private:
 
 #if DISTRHO_PLUGIN_HAS_UI
     // UI
-    ScopedPointer<UICarla> fUiPtr;
+    UICarla* fUiPtr;
 
     void createUiIfNeeded()
     {

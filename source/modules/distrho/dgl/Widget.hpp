@@ -19,6 +19,12 @@
 
 #include "Geometry.hpp"
 
+#ifdef PROPER_CPP11_SUPPORT
+# include <cstdint>
+#else
+# include <stdint.h>
+#endif
+
 START_NAMESPACE_DGL
 
 // -----------------------------------------------------------------------
@@ -32,22 +38,15 @@ public:
     Widget(Window& parent);
     virtual ~Widget();
 
-    bool isVisible() const;
+    bool isVisible() const noexcept;
     void setVisible(bool yesNo);
 
-    void show()
-    {
-        setVisible(true);
-    }
+    void show();
+    void hide();
 
-    void hide()
-    {
-        setVisible(false);
-    }
-
-    int getX() const;
-    int getY() const;
-    const Point<int>& getPos() const;
+    int getX() const noexcept;
+    int getY() const noexcept;
+    const Point<int>& getPos() const noexcept;
 
     void setX(int x);
     void setY(int y);
@@ -57,26 +56,28 @@ public:
     void move(int x, int y);
     void move(const Point<int>& pos);
 
-    int getWidth() const;
-    int getHeight() const;
-    const Size<int>& getSize() const;
+    int getWidth() const noexcept;
+    int getHeight() const noexcept;
+    const Size<int>& getSize() const noexcept;
 
     void setWidth(int width);
     void setHeight(int height);
     void setSize(int width, int height);
     void setSize(const Size<int>& size);
 
-    const Rectangle<int>& getArea() const;
+    const Rectangle<int>& getArea() const noexcept;
 
+    uint32_t getEventTimestamp();
     int getModifiers();
 
-    App* getApp() const;
-    Window* getParent() const;
+    App& getParentApp() const noexcept;
+    Window& getParentWindow() const noexcept;
+
     void repaint();
 
 protected:
     virtual void onDisplay();
-    virtual bool onKeyboard(bool press, unsigned key);
+    virtual bool onKeyboard(bool press, uint32_t key);
     virtual bool onMouse(int button, bool press, int x, int y);
     virtual bool onMotion(int x, int y);
     virtual bool onScroll(float dx, float dy);

@@ -14,10 +14,12 @@
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "AppPrivate.hpp"
-
+#include "../App.hpp"
 #include "../Widget.hpp"
 #include "../Window.hpp"
+
+#include <cassert>
+#include <list>
 
 #include "pugl/pugl.h"
 
@@ -32,10 +34,8 @@ extern "C" {
 # include "pugl/pugl_x11.c"
 }
 #else
-# error Unsupported platform!
+# error Unsupported platform
 #endif
-
-#include <cassert>
 
 #define FOR_EACH_WIDGET(it) \
   for (std::list<Widget*>::iterator it = fWidgets.begin(); it != fWidgets.end(); ++it)
@@ -53,15 +53,58 @@ Window* dgl_lastUiParent = nullptr;
 class Window::PrivateData
 {
 public:
-    Private(Window& self, App& app, App::PrivateData& appPriv, PrivateData& parent, intptr_t parentId = 0)
-        : kApp(app),
-          kAppPriv(appPriv),
-          kSelf(self),
-          kView(puglCreate(parentId, "Window", 100, 100, false, (parentId != 0))),
-          fParent(parent),
-          fChildFocus(nullptr),
-          fVisible((parentId != 0)),
-          fOnModal(false),
+    PrivateData(App& app, Window* const self)
+        : fApp(app),
+          fSelf(self),
+          fView(puglCreate(0, "Window", 100, 100, true, false)),
+          fFirstInit(true),
+          fVisible(false),
+          fResizable(true),
+#if DGL_OS_WINDOWS
+          hwnd(0)
+#elif DGL_OS_LINUX
+          xDisplay(nullptr),
+          xWindow(0)
+#else
+          _dummy('\0')
+#endif
+    {
+        init();
+    }
+
+    PrivateData(App& app, Window* const self, Window& parent)
+        : fApp(app),
+          fSelf(self),
+          fView(puglCreate(0, "Window", 100, 100, true, false)),
+          fFirstInit(true),
+          fVisible(false),
+          fResizable(true),
+          fModal(parent.pData),
+#if DGL_OS_WINDOWS
+          hwnd(0)
+#elif DGL_OS_LINUX
+          xDisplay(nullptr),
+          xWindow(0)
+#else
+          _dummy('\0')
+#endif
+    {
+        init();
+
+#if DGL_OS_LINUX
+        PuglInternals* const parentImpl = parent.pData->fView->impl;
+
+        XSetTransientForHint(xDisplay, xWindow, parentImpl->win);
+        XFlush(xDisplay);
+#endif
+    }
+
+    PrivateData(App& app, Window* const self, const intptr_t parentId)
+        : fApp(app),
+          fSelf(self),
+          fView(puglCreate(parentId, "Window", 100, 100, true, true)),
+          fFirstInit(true),
+          fVisible(true),
           fResizable(false),
 #if DGL_OS_WINDOWS
           hwnd(0)
@@ -69,118 +112,85 @@ public:
           xDisplay(nullptr),
           xWindow(0)
 #else
-          _dummy(0)
+          _dummy('\0')
 #endif
     {
+        init();
+
+        // starts visible
+        fApp.oneShown();
+        fFirstInit = false;
     }
 
-    void setup()
+    void init()
     {
-        if (kView == nullptr)
+        if (fView == nullptr)
             return;
 
-        // we can't have both
-        if (parent != nullptr)
-        {
-            assert(parentId == 0);
-        }
+        dgl_lastUiParent = fSelf;
 
-        puglSetHandle(kView, this);
-        puglSetDisplayFunc(kView, onDisplayCallback);
-        puglSetKeyboardFunc(kView, onKeyboardCallback);
-        puglSetMotionFunc(kView, onMotionCallback);
-        puglSetMouseFunc(kView, onMouseCallback);
-        puglSetScrollFunc(kView, onScrollCallback);
-        puglSetSpecialFunc(kView, onSpecialCallback);
-        puglSetReshapeFunc(kView, onReshapeCallback);
-        puglSetCloseFunc(kView, onCloseCallback);
+        puglSetHandle(fView, this);
+        puglSetDisplayFunc(fView, onDisplayCallback);
+        puglSetKeyboardFunc(fView, onKeyboardCallback);
+        puglSetMotionFunc(fView, onMotionCallback);
+        puglSetMouseFunc(fView, onMouseCallback);
+        puglSetScrollFunc(fView, onScrollCallback);
+        puglSetSpecialFunc(fView, onSpecialCallback);
+        puglSetReshapeFunc(fView, onReshapeCallback);
+        puglSetCloseFunc(fView, onCloseCallback);
 
 #if DGL_OS_WINDOWS
-        PuglInternals* impl = kView->impl;
+        PuglInternals* impl = fView->impl;
         hwnd = impl->hwnd;
 #elif DGL_OS_LINUX
-        PuglInternals* impl = kView->impl;
+        PuglInternals* impl = fView->impl;
         xDisplay = impl->display;
         xWindow  = impl->win;
-
-        if (parent != nullptr && parentId == 0)
-        {
-            PuglInternals* parentImpl = parent->kView->impl;
-
-            XSetTransientForHint(xDisplay, xWindow, parentImpl->win);
-            XFlush(xDisplay);
-        }
 #endif
 
-        kAppPriv->addWindow(kSelf);
+        fApp.addWindow(fSelf);
     }
 
-    ~Private()
+    ~PrivateData()
     {
-        fOnModal = false;
+        //fOnModal = false;
         fWidgets.clear();
 
-        if (kView != nullptr)
+        if (fView != nullptr)
         {
-            kAppPriv->removeWindow(kSelf);
-            puglDestroy(kView);
+            fApp.removeWindow(fSelf);
+            puglDestroy(fView);
         }
     }
 
-    void exec_init()
-    {
-        fOnModal = true;
-        assert(fParent != nullptr);
+    // -------------------------------------------------------------------
 
-        if (fParent != nullptr)
+    void close()
+    {
+        setVisible(false);
+
+        if (! fFirstInit)
         {
-            fParent->fChildFocus = this;
-
-#if DGL_OS_WINDOWS
-            // Center this window
-            PuglInternals* parentImpl = fParent->kView->impl;
-
-            RECT curRect;
-            RECT parentRect;
-            GetWindowRect(hwnd, &curRect);
-            GetWindowRect(parentImpl->hwnd, &parentRect);
-
-            int x = parentRect.left+(parentRect.right-curRect.right)/2;
-            int y = parentRect.top+(parentRect.bottom-curRect.bottom)/2;
-
-            SetWindowPos(hwnd, 0, x, y, 0, 0, SWP_NOACTIVATE|SWP_NOOWNERZORDER|SWP_NOSIZE|SWP_NOZORDER);
-            UpdateWindow(hwnd);
-#endif
-
-            fParent->show();
+            fApp.oneHidden();
+            fFirstInit = true;
         }
-
-        show();
     }
 
-    void exec_fini()
-    {
-        fOnModal = false;
-
-        if (fParent != nullptr)
-            fParent->fChildFocus = nullptr;
-    }
-
-    void exec(bool block)
+    void exec(const bool lockWait)
     {
         exec_init();
 
-        if (block)
+        if (lockWait)
         {
-            while (fVisible && fOnModal)
+            while (fVisible && fModal.enabled)
             {
                 // idle()
-                puglProcessEvents(kView);
+                puglProcessEvents(fView);
 
-                if (fParent != nullptr)
-                    fParent->idle();
+                if (fModal.parent != nullptr)
+                    fModal.parent->idle();
 
-                dgl_msleep(10);
+                msleep(10);
             }
 
             exec_fini();
@@ -191,6 +201,8 @@ public:
         }
     }
 
+    // -------------------------------------------------------------------
+
     void focus()
     {
 #if DGL_OS_WINDOWS
@@ -198,7 +210,7 @@ public:
         SetActiveWindow(hwnd);
         SetFocus(hwnd);
 #elif DGL_OS_MAC
-		puglImplFocus(kView);
+        puglImplFocus(fView);
 #elif DGL_OS_LINUX
         XRaiseWindow(xDisplay, xWindow);
         XSetInputFocus(xDisplay, xWindow, RevertToPointerRoot, CurrentTime);
@@ -208,60 +220,41 @@ public:
 
     void idle()
     {
-        puglProcessEvents(kView);
+        puglProcessEvents(fView);
 
-        if (fVisible && fOnModal && fParent != nullptr)
-            fParent->idle();
+        if (fVisible && fModal.enabled && fModal.parent != nullptr)
+            fModal.parent->idle();
     }
 
     void repaint()
     {
-        puglPostRedisplay(kView);
+        puglPostRedisplay(fView);
     }
 
-    void show()
-    {
-        setVisible(true);
-    }
+    // -------------------------------------------------------------------
 
-    void hide()
-    {
-        setVisible(false);
-    }
-
-    void close()
-    {
-        setVisible(false, true);
-    }
-
-    bool isVisible()
+    bool isVisible() const noexcept
     {
         return fVisible;
     }
 
-    void setResizable(bool yesNo)
-    {
-        if (fResizable == yesNo)
-            return;
-
-        fResizable = yesNo;
-
-        //setSize(kView->width, kView->height, true);
-    }
-
-    void setVisible(bool yesNo, bool closed = false)
+    void setVisible(const bool yesNo)
     {
         if (fVisible == yesNo)
             return;
 
         fVisible = yesNo;
 
+        if (yesNo && fFirstInit)
+            setSize(fView->width, fView->height, true);
+
 #if DGL_OS_WINDOWS
         if (yesNo)
         {
             ShowWindow(hwnd, WS_VISIBLE);
-            ShowWindow(hwnd, SW_RESTORE);
-            //SetForegroundWindow(hwnd);
+
+            if (! fFirstInit)
+                ShowWindow(hwnd, SW_RESTORE);
         }
         else
         {
@@ -270,7 +263,7 @@ public:
 
         UpdateWindow(hwnd);
 #elif DGL_OS_MAC
-		puglImplSetVisible(kView, yesNo);
+        puglImplSetVisible(fView, yesNo);
 #elif DGL_OS_LINUX
         if (yesNo)
             XMapRaised(xDisplay, xWindow);
@@ -282,30 +275,62 @@ public:
 
         if (yesNo)
         {
-            kAppPriv->oneShown();
+            if (fFirstInit)
+            {
+                fApp.oneShown();
+                fFirstInit = false;
+            }
         }
-        else
-        {
-            if (fOnModal)
-                exec_fini();
-
-            if (closed)
-                kAppPriv->oneHidden();
-        }
+        else if (fModal.enabled)
+            exec_fini();
     }
 
-    void setSize(unsigned int width, unsigned int height /*, bool forced = false*/)
+    // -------------------------------------------------------------------
+
+    bool isResizable() const noexcept
+    {
+        return fResizable;
+    }
+
+    void setResizable(const bool yesNo)
+    {
+        if (fResizable == yesNo)
+            return;
+
+        fResizable = yesNo;
+
+        setSize(fView->width, fView->height, true);
+    }
+
+    // -------------------------------------------------------------------
+
+    int getWidth() const noexcept
+    {
+        return fView->width;
+    }
+
+    int getHeight() const noexcept
+    {
+        return fView->height;
+    }
+
+    Size<int> getSize() const noexcept
+    {
+        return Size<int>(fView->width, fView->height);
+    }
+
+    void setSize(unsigned int width, unsigned int height, const bool forced = false)
     {
         if (width == 0)
             width = 1;
         if (height == 0)
             height = 1;
 
-        kView->width  = width;
-        kView->height = height;
+        fView->width  = width;
+        fView->height = height;
 
-        //if (kView->width == width && kView->height == height && ! forced)
-        //    return;
+        if (fView->width == (int)width && fView->height == (int)height && ! forced)
+           return;
 
 #if DGL_OS_WINDOWS
         int winFlags = WS_POPUPWINDOW | WS_CAPTION;
@@ -319,7 +344,7 @@ public:
         SetWindowPos(hwnd, 0, 0, 0, wr.right-wr.left, wr.bottom-wr.top, SWP_NOACTIVATE|SWP_NOMOVE|SWP_NOOWNERZORDER|SWP_NOZORDER);
         UpdateWindow(hwnd);
 #elif DGL_OS_MAC
-        puglImplSetSize(kView, width, height);
+        puglImplSetSize(fView, width, height);
 #elif DGL_OS_LINUX
         XResizeWindow(xDisplay, xWindow, width, height);
 
@@ -343,42 +368,93 @@ public:
         repaint();
     }
 
-    void setWindowTitle(const char* title)
+    // -------------------------------------------------------------------
+
+    void setTitle(const char* const title)
     {
 #if DGL_OS_WINDOWS
         SetWindowTextA(hwnd, title);
 #elif DGL_OS_MAC
-		puglImplSetTitle(kView, title);
+        puglImplSetTitle(fView, title);
 #elif DGL_OS_LINUX
         XStoreName(xDisplay, xWindow, title);
         XFlush(xDisplay);
 #endif
     }
 
-    App* getApp() const
+    App& getApp() const noexcept
     {
-        return kApp;
+        return fApp;
     }
 
     int getModifiers() const
     {
-        return puglGetModifiers(kView);
+        return puglGetModifiers(fView);
+    }
+
+    uint32_t getEventTimestamp() const
+    {
+        return puglGetEventTimestamp(fView);
     }
 
     intptr_t getWindowId() const
     {
-        return puglGetNativeWindow(kView);
+        return puglGetNativeWindow(fView);
     }
 
-    void addWidget(Widget* widget)
+    // -------------------------------------------------------------------
+
+    void addWidget(Widget* const widget)
     {
         fWidgets.push_back(widget);
     }
 
-    void removeWidget(Widget* widget)
+    void removeWidget(Widget* const widget)
     {
         fWidgets.remove(widget);
     }
+
+    // -------------------------------------------------------------------
+
+    void exec_init()
+    {
+        fModal.enabled = true;
+        assert(fModal.parent != nullptr);
+
+        if (fModal.parent == nullptr)
+            return setVisible(true);
+
+        fModal.parent->fModal.childFocus = this;
+
+#if DGL_OS_WINDOWS
+        // Center this window
+        PuglInternals* const parentImpl = fParent->fView->impl;
+
+        RECT curRect;
+        RECT parentRect;
+        GetWindowRect(hwnd, &curRect);
+        GetWindowRect(parentImpl->hwnd, &parentRect);
+
+        int x = parentRect.left+(parentRect.right-curRect.right)/2;
+        int y = parentRect.top +(parentRect.bottom-curRect.bottom)/2;
+
+        SetWindowPos(hwnd, 0, x, y, 0, 0, SWP_NOACTIVATE|SWP_NOOWNERZORDER|SWP_NOSIZE|SWP_NOZORDER);
+        UpdateWindow(hwnd);
+#endif
+
+        fModal.parent->setVisible(true);
+        setVisible(true);
+    }
+
+    void exec_fini()
+    {
+        fModal.enabled = false;
+
+        if (fModal.parent != nullptr)
+            fModal.parent->fModal.childFocus = nullptr;
+    }
+
+    // -------------------------------------------------------------------
 
 protected:
     void onDisplay()
@@ -388,93 +464,85 @@ protected:
         FOR_EACH_WIDGET(it)
         {
             Widget* const widget(*it);
+
             if (widget->isVisible())
                 widget->onDisplay();
         }
     }
 
-    void onKeyboard(bool press, uint32_t key)
+    void onKeyboard(const bool press, const uint32_t key)
     {
-        if (fChildFocus != nullptr)
-            return fChildFocus->focus();
+        if (fModal.childFocus != nullptr)
+            return fModal.childFocus->focus();
 
         FOR_EACH_WIDGET_INV(rit)
         {
             Widget* const widget(*rit);
-            if (widget->isVisible())
-            {
-                if (widget->onKeyboard(press, key))
-                    break;
-            }
+
+            if (widget->isVisible() && widget->onKeyboard(press, key))
+                break;
         }
     }
 
-    void onMouse(int button, bool press, int x, int y)
+    void onMouse(const int button, const bool press, const int x, const int y)
     {
-        if (fChildFocus != nullptr)
-            return fChildFocus->focus();
+        if (fModal.childFocus != nullptr)
+            return fModal.childFocus->focus();
 
         FOR_EACH_WIDGET_INV(rit)
         {
             Widget* const widget(*rit);
-            if (widget->isVisible())
-            {
-                if (widget->onMouse(button, press, x, y))
-                    break;
-            }
+
+            if (widget->isVisible() && widget->onMouse(button, press, x, y))
+                break;
         }
     }
 
-    void onMotion(int x, int y)
+    void onMotion(const int x, const int y)
     {
-        if (fChildFocus != nullptr)
+        if (fModal.childFocus != nullptr)
             return;
 
         FOR_EACH_WIDGET_INV(rit)
         {
             Widget* const widget(*rit);
-            if (widget->isVisible())
-            {
-                if (widget->onMotion(x, y))
-                    break;
-            }
+
+            if (widget->isVisible() && widget->onMotion(x, y))
+                break;
         }
     }
 
-    void onScroll(float dx, float dy)
+    void onScroll(const float dx, const float dy)
     {
-        if (fChildFocus != nullptr)
+        if (fModal.childFocus != nullptr)
             return;
 
         FOR_EACH_WIDGET_INV(rit)
         {
             Widget* const widget(*rit);
-            if (widget->isVisible())
-            {
-                if (widget->onScroll(dx, dy))
-                    break;
-            }
+
+            if (widget->isVisible() && widget->onScroll(dx, dy))
+                break;
         }
     }
 
-    void onSpecial(bool press, Key key)
+    void onSpecial(const bool press, const Key key)
     {
-        if (fChildFocus != nullptr)
+        if (fModal.childFocus != nullptr)
             return;
 
         FOR_EACH_WIDGET_INV(rit)
         {
             Widget* const widget(*rit);
-            if (widget->isVisible())
-            {
-                if (widget->onSpecial(press, key))
-                    break;
-            }
+
+            if (widget->isVisible() && widget->onSpecial(press, key))
+                break;
         }
     }
 
-    void onReshape(int width, int height)
+    void onReshape(const int width, const int height)
     {
+        printf("resized: %i:%i\n", width, height);
         FOR_EACH_WIDGET(it)
         {
             Widget* const widget(*it);
@@ -484,10 +552,10 @@ protected:
 
     void onClose()
     {
-        fOnModal = false;
+        fModal.enabled = false;
 
-        if (fChildFocus != nullptr)
-            fChildFocus->onClose();
+        if (fModal.childFocus != nullptr)
+            fModal.childFocus->onClose();
 
         FOR_EACH_WIDGET(it)
         {
@@ -498,19 +566,39 @@ protected:
         close();
     }
 
+    // -------------------------------------------------------------------
+
 private:
-    App*          const kApp;
-    App::Private* const kAppPriv;
-    Window*       const kSelf;
-    PuglView*     const kView;
+    App&            fApp;
+    Window*   const fSelf;
+    PuglView* const fView;
 
-    Private* fParent;
-    Private* fChildFocus;
-    bool     fVisible;
-    bool     fOnModal;
-    bool     fResizable;
-
+    bool fFirstInit;
+    bool fVisible;
+    bool fResizable;
     std::list<Widget*> fWidgets;
+
+    struct Modal {
+        bool enabled;
+        PrivateData* parent;
+        PrivateData* childFocus;
+
+        Modal()
+            : enabled(false),
+              parent(nullptr),
+              childFocus(nullptr) {}
+
+        Modal(PrivateData* const p)
+            : enabled(false),
+              parent(p),
+              childFocus(nullptr) {}
+
+        ~Modal()
+        {
+            assert(! enabled);
+            assert(childFocus == nullptr);
+        }
+    } fModal;
 
 #if DGL_OS_WINDOWS
     HWND     hwnd;
@@ -518,11 +606,13 @@ private:
     Display* xDisplay;
     ::Window xWindow;
 #else
-    int      _dummy;
+    char      _dummy;
 #endif
 
+    // -------------------------------------------------------------------
     // Callbacks
-    #define handlePtr ((Private*)puglGetHandle(view))
+
+    #define handlePtr ((PrivateData*)puglGetHandle(view))
 
     static void onDisplayCallback(PuglView* view)
     {
@@ -571,21 +661,18 @@ private:
 // Window
 
 Window::Window(App& app)
-    : pData(new Private(this, app, app->pData, nullptr))
+    : pData(new PrivateData(app, this))
 {
-    dgl_lastUiParent = this;
 }
 
 Window::Window(App& app, Window& parent)
-    : pData(new Private(this, app, app->pData, parent->pData))
+    : pData(new PrivateData(app, this, parent))
 {
-    dgl_lastUiParent = this;
 }
 
-Window::Window(App*&app, intptr_t parentId)
-    : pData(new Private(this, app, app->pData, nullptr, parentId))
+Window::Window(App& app, intptr_t parentId)
+    : pData(new PrivateData(app, this, parentId))
 {
-    dgl_lastUiParent = this;
 }
 
 Window::~Window()
@@ -593,9 +680,24 @@ Window::~Window()
     delete pData;
 }
 
-void Window::exec(bool lock)
+void Window::show()
 {
-    pData->exec(lock);
+    pData->setVisible(true);
+}
+
+void Window::hide()
+{
+    pData->setVisible(false);
+}
+
+void Window::close()
+{
+    pData->close();
+}
+
+void Window::exec(bool lockWait)
+{
+    pData->exec(lockWait);
 }
 
 void Window::focus()
@@ -613,14 +715,9 @@ void Window::repaint()
     pData->repaint();
 }
 
-bool Window::isVisible()
+bool Window::isVisible() const noexcept
 {
     return pData->isVisible();
-}
-
-void Window::setResizable(bool yesNo)
-{
-    pData->setResizable(yesNo);
 }
 
 void Window::setVisible(bool yesNo)
@@ -628,17 +725,42 @@ void Window::setVisible(bool yesNo)
     pData->setVisible(yesNo);
 }
 
+bool Window::isResizable() const noexcept
+{
+    return pData->isResizable();
+}
+
+void Window::setResizable(bool yesNo)
+{
+    pData->setResizable(yesNo);
+}
+
+int Window::getWidth() const noexcept
+{
+    return pData->getWidth();
+}
+
+int Window::getHeight() const noexcept
+{
+    return pData->getHeight();
+}
+
+Size<int> Window::getSize() const noexcept
+{
+    return pData->getSize();
+}
+
 void Window::setSize(unsigned int width, unsigned int height)
 {
     pData->setSize(width, height);
 }
 
-void Window::setWindowTitle(const char* title)
+void Window::setTitle(const char* title)
 {
-    pData->setWindowTitle(title);
+    pData->setTitle(title);
 }
 
-App* Window::getApp() const
+App& Window::getApp() const noexcept
 {
     return pData->getApp();
 }
@@ -648,34 +770,24 @@ int Window::getModifiers() const
     return pData->getModifiers();
 }
 
+uint32_t Window::getEventTimestamp() const
+{
+    return pData->getEventTimestamp();
+}
+
 intptr_t Window::getWindowId() const
 {
     return pData->getWindowId();
 }
 
-void Window::addWidget(Widget* widget)
+void Window::addWidget(Widget* const widget)
 {
     pData->addWidget(widget);
 }
 
-void Window::removeWidget(Widget* widget)
+void Window::removeWidget(Widget* const widget)
 {
     pData->removeWidget(widget);
-}
-
-void Window::show()
-{
-    setVisible(true);
-}
-
-void Window::hide()
-{
-    setVisible(false);
-}
-
-void Window::close()
-{
-    pData->close();
 }
 
 // -----------------------------------------------------------------------

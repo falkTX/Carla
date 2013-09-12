@@ -23,7 +23,7 @@ START_NAMESPACE_DGL
 
 // -----------------------------------------------------------------------
 
-ImageKnob::ImageKnob(Window* parent, const Image& image, Orientation orientation)
+ImageKnob::ImageKnob(Window& parent, const Image& image, Orientation orientation)
     : Widget(parent),
       fImage(image),
       fMinimum(0.0f),
@@ -45,7 +45,7 @@ ImageKnob::ImageKnob(Window* parent, const Image& image, Orientation orientation
 }
 
 ImageKnob::ImageKnob(Widget* widget, const Image& image, Orientation orientation)
-    : Widget(widget->getParent()),
+    : Widget(widget->getParentWindow()),
       fImage(image),
       fMinimum(0.0f),
       fMaximum(1.0f),
@@ -66,7 +66,7 @@ ImageKnob::ImageKnob(Widget* widget, const Image& image, Orientation orientation
 }
 
 ImageKnob::ImageKnob(const ImageKnob& imageKnob)
-    : Widget(imageKnob.getParent()),
+    : Widget(imageKnob.getParentWindow()),
       fImage(imageKnob.fImage),
       fMinimum(imageKnob.fMinimum),
       fMaximum(imageKnob.fMaximum),
@@ -286,7 +286,7 @@ bool ImageKnob::onMotion(int x, int y)
 
         if (movX != 0)
         {
-            float d     = (getModifiers() & DGL_MODIFIER_SHIFT) ? 2000.0f : 200.0f;
+            float d     = (getModifiers() & MODIFIER_SHIFT) ? 2000.0f : 200.0f;
             float value = fValue + (float(fMaximum - fMinimum) / d * float(movX));
 
             if (value < fMinimum)
@@ -303,7 +303,7 @@ bool ImageKnob::onMotion(int x, int y)
 
         if (movY != 0)
         {
-            float d     = (getModifiers() & DGL_MODIFIER_SHIFT) ? 2000.0f : 200.0f;
+            float d     = (getModifiers() & MODIFIER_SHIFT) ? 2000.0f : 200.0f;
             float value = fValue + (float(fMaximum - fMinimum) / d * float(movY));
 
             if (value < fMinimum)

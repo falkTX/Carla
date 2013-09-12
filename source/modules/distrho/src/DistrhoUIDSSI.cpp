@@ -17,7 +17,7 @@
 #include "DistrhoUIInternal.hpp"
 
 #ifdef DISTRHO_UI_EXTERNAL
-# error DSSI always uses external UI, no wrapper neeed!
+# error DSSI always uses external UI, no wrapper needed!
 #endif
 
 #include <lo/lo.h>
@@ -134,7 +134,7 @@ public:
 # endif
         }
 #else
-        glWindow.setWindowTitle(uiTitle);
+        glWindow.setTitle(uiTitle);
 #endif
     }
 
@@ -164,7 +164,7 @@ public:
         {
             fOscData.idle();
             fUI.idle();
-            dgl_msleep(50);
+            msleep(50);
         }
 #endif
     }

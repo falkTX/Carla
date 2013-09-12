@@ -27,24 +27,24 @@ template<typename T>
 class Point
 {
 public:
-    Point();
-    Point(T x, T y);
-    Point(const Point<T>& pos);
+    Point() noexcept;
+    Point(T x, T y) noexcept;
+    Point(const Point<T>& pos) noexcept;
 
-    T getX() const;
-    T getY() const;
+    T getX() const noexcept;
+    T getY() const noexcept;
 
-    void setX(T x);
-    void setY(T y);
+    void setX(T x) noexcept;
+    void setY(T y) noexcept;
 
-    void move(T x, T y);
-    void move(const Point<T>& pos);
+    void move(T x, T y) noexcept;
+    void move(const Point<T>& pos) noexcept;
 
-    Point<T>& operator=(const Point<T>& pos);
-    Point<T>& operator+=(const Point<T>& pos);
-    Point<T>& operator-=(const Point<T>& pos);
-    bool operator==(const Point<T>& pos) const;
-    bool operator!=(const Point<T>& pos) const;
+    Point<T>& operator=(const Point<T>& pos) noexcept;
+    Point<T>& operator+=(const Point<T>& pos) noexcept;
+    Point<T>& operator-=(const Point<T>& pos) noexcept;
+    bool operator==(const Point<T>& pos) const noexcept;
+    bool operator!=(const Point<T>& pos) const noexcept;
 
 private:
     T fX, fY;
@@ -57,23 +57,23 @@ template<typename T>
 class Size
 {
 public:
-    Size();
-    Size(T width, T height);
-    Size(const Size<T>& size);
+    Size() noexcept;
+    Size(T width, T height) noexcept;
+    Size(const Size<T>& size) noexcept;
 
-    T getWidth() const;
-    T getHeight() const;
+    T getWidth() const noexcept;
+    T getHeight() const noexcept;
 
-    void setWidth(T width);
-    void setHeight(T height);
+    void setWidth(T width) noexcept;
+    void setHeight(T height) noexcept;
 
-    Size<T>& operator=(const Size<T>& size);
-    Size<T>& operator+=(const Size<T>& size);
-    Size<T>& operator-=(const Size<T>& size);
-    Size<T>& operator*=(T m);
-    Size<T>& operator/=(T d);
-    bool operator==(const Size<T>& size) const;
-    bool operator!=(const Size<T>& size) const;
+    Size<T>& operator=(const Size<T>& size) noexcept;
+    Size<T>& operator+=(const Size<T>& size) noexcept;
+    Size<T>& operator-=(const Size<T>& size) noexcept;
+    Size<T>& operator*=(T m) noexcept;
+    Size<T>& operator/=(T d) noexcept;
+    bool operator==(const Size<T>& size) const noexcept;
+    bool operator!=(const Size<T>& size) const noexcept;
 
 private:
     T fWidth, fHeight;
@@ -86,40 +86,40 @@ template<typename T>
 class Rectangle
 {
 public:
-    Rectangle();
-    Rectangle(T x, T y, T width, T height);
-    Rectangle(T x, T y, const Size<T>& size);
-    Rectangle(const Point<T>& pos, T width, T height);
-    Rectangle(const Point<T>& pos, const Size<T>& size);
-    Rectangle(const Rectangle<T>& rect);
+    Rectangle() noexcept;
+    Rectangle(T x, T y, T width, T height) noexcept;
+    Rectangle(T x, T y, const Size<T>& size) noexcept;
+    Rectangle(const Point<T>& pos, T width, T height) noexcept;
+    Rectangle(const Point<T>& pos, const Size<T>& size) noexcept;
+    Rectangle(const Rectangle<T>& rect) noexcept;
 
-    T getX() const;
-    T getY() const;
-    T getWidth() const;
-    T getHeight() const;
+    T getX() const noexcept;
+    T getY() const noexcept;
+    T getWidth() const noexcept;
+    T getHeight() const noexcept;
 
-    const Point<T>& getPos() const;
-    const Size<T>&  getSize() const;
+    const Point<T>& getPos() const noexcept;
+    const Size<T>&  getSize() const noexcept;
 
-    bool contains(T x, T y) const;
-    bool contains(const Point<T>& pos) const;
-    bool containsX(T x) const;
-    bool containsY(T y) const;
+    bool contains(T x, T y) const noexcept;
+    bool contains(const Point<T>& pos) const noexcept;
+    bool containsX(T x) const noexcept;
+    bool containsY(T y) const noexcept;
 
-    void setX(T x);
-    void setY(T y);
-    void setPos(T x, T y);
-    void setPos(const Point<T>& pos);
+    void setX(T x) noexcept;
+    void setY(T y) noexcept;
+    void setPos(T x, T y) noexcept;
+    void setPos(const Point<T>& pos) noexcept;
 
-    void move(T x, T y);
-    void move(const Point<T>& pos);
+    void move(T x, T y) noexcept;
+    void move(const Point<T>& pos) noexcept;
 
-    void setWidth(T width);
-    void setHeight(T height);
-    void setSize(T width, T height);
-    void setSize(const Size<T>& size);
+    void setWidth(T width) noexcept;
+    void setHeight(T height) noexcept;
+    void setSize(T width, T height) noexcept;
+    void setSize(const Size<T>& size) noexcept;
 
-    Rectangle<T>& operator=(const Rectangle<T>& rect);
+    Rectangle<T>& operator=(const Rectangle<T>& rect) noexcept;
 
 private:
     Point<T> fPos;

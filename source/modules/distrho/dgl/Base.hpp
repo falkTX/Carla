@@ -53,9 +53,9 @@
 #define USE_NAMESPACE_DGL using namespace DGL_NAMESPACE;
 
 #if DGL_OS_MAC
-# include <OpenGL/glu.h>
+# include <OpenGL/gl.h>
 #else
-# include <GL/glu.h>
+# include <GL/gl.h>
 #endif
 
 #if defined(GL_BGR_EXT) && ! defined(GL_BGR)

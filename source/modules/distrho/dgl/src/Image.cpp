@@ -20,7 +20,7 @@ START_NAMESPACE_DGL
 
 // -----------------------------------------------------------------------
 
-Image::Image()
+Image::Image() noexcept
     : fRawData(nullptr),
       fSize(0, 0),
       fFormat(0),
@@ -28,7 +28,7 @@ Image::Image()
 {
 }
 
-Image::Image(const char* rawData, int width, int height, GLenum format, GLenum type)
+Image::Image(const char* rawData, int width, int height, GLenum format, GLenum type) noexcept
     : fRawData(rawData),
       fSize(width, height),
       fFormat(format),
@@ -36,7 +36,7 @@ Image::Image(const char* rawData, int width, int height, GLenum format, GLenum t
 {
 }
 
-Image::Image(const char* rawData, const Size<int>& size, GLenum format, GLenum type)
+Image::Image(const char* rawData, const Size<int>& size, GLenum format, GLenum type) noexcept
     : fRawData(rawData),
       fSize(size),
       fFormat(format),
@@ -44,7 +44,7 @@ Image::Image(const char* rawData, const Size<int>& size, GLenum format, GLenum t
 {
 }
 
-Image::Image(const Image& image)
+Image::Image(const Image& image) noexcept
     : fRawData(image.fRawData),
       fSize(image.fSize),
       fFormat(image.fFormat),
@@ -52,12 +52,12 @@ Image::Image(const Image& image)
 {
 }
 
-void Image::loadFromMemory(const char* rawData, int width, int height, GLenum format, GLenum type)
+void Image::loadFromMemory(const char* rawData, int width, int height, GLenum format, GLenum type) noexcept
 {
     loadFromMemory(rawData, Size<int>(width, height), format, type);
 }
 
-void Image::loadFromMemory(const char* rawData, const Size<int>& size, GLenum format, GLenum type)
+void Image::loadFromMemory(const char* rawData, const Size<int>& size, GLenum format, GLenum type) noexcept
 {
     fRawData = rawData;
     fSize    = size;
@@ -65,37 +65,37 @@ void Image::loadFromMemory(const char* rawData, const Size<int>& size, GLenum fo
     fType    = type;
 }
 
-bool Image::isValid() const
+bool Image::isValid() const noexcept
 {
     return (fRawData != nullptr && getWidth() > 0 && getHeight() > 0);
 }
 
-int Image::getWidth() const
+int Image::getWidth() const noexcept
 {
     return fSize.getWidth();
 }
 
-int Image::getHeight() const
+int Image::getHeight() const noexcept
 {
     return fSize.getHeight();
 }
 
-const Size<int>& Image::getSize() const
+const Size<int>& Image::getSize() const noexcept
 {
     return fSize;
 }
 
-const char* Image::getRawData() const
+const char* Image::getRawData() const noexcept
 {
     return fRawData;
 }
 
-GLenum Image::getFormat() const
+GLenum Image::getFormat() const noexcept
 {
     return fFormat;
 }
 
-GLenum Image::getType() const
+GLenum Image::getType() const noexcept
 {
     return fType;
 }
@@ -121,7 +121,7 @@ void Image::draw(const Point<int>& pos) const
     draw(pos.getX(), pos.getY());
 }
 
-Image& Image::operator=(const Image& image)
+Image& Image::operator=(const Image& image) noexcept
 {
     fRawData = image.fRawData;
     fSize    = image.fSize;
@@ -130,12 +130,12 @@ Image& Image::operator=(const Image& image)
     return *this;
 }
 
-bool Image::operator==(const Image& image) const
+bool Image::operator==(const Image& image) const noexcept
 {
     return (fRawData == image.fRawData);
 }
 
-bool Image::operator!=(const Image& image) const
+bool Image::operator!=(const Image& image) const noexcept
 {
     return (fRawData != image.fRawData);
 }

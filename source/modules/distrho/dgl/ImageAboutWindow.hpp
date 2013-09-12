@@ -35,7 +35,7 @@ class ImageAboutWindow : public Window,
                          public Widget
 {
 public:
-    ImageAboutWindow(App* app, Window* parent, const Image& image = Image());
+    ImageAboutWindow(App& app, Window& parent, const Image& image = Image());
     ImageAboutWindow(Widget* widget, const Image& image = Image());
 
     void setImage(const Image& image);

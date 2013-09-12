@@ -22,7 +22,7 @@ START_NAMESPACE_DGL
 
 // -----------------------------------------------------------------------
 
-ImageButton::ImageButton(Window* parent, const Image& image)
+ImageButton::ImageButton(Window& parent, const Image& image)
     : Widget(parent),
       fImageNormal(image),
       fImageHover(image),
@@ -34,7 +34,7 @@ ImageButton::ImageButton(Window* parent, const Image& image)
 }
 
 ImageButton::ImageButton(Widget* widget, const Image& image)
-    : Widget(widget->getParent()),
+    : Widget(widget->getParentWindow()),
       fImageNormal(image),
       fImageHover(image),
       fImageDown(image),
@@ -44,7 +44,7 @@ ImageButton::ImageButton(Widget* widget, const Image& image)
 {
 }
 
-ImageButton::ImageButton(Window* parent, const Image& imageNormal, const Image& imageHover, const Image& imageDown)
+ImageButton::ImageButton(Window& parent, const Image& imageNormal, const Image& imageHover, const Image& imageDown)
     : Widget(parent),
       fImageNormal(imageNormal),
       fImageHover(imageHover),
@@ -59,7 +59,7 @@ ImageButton::ImageButton(Window* parent, const Image& imageNormal, const Image& 
 }
 
 ImageButton::ImageButton(Widget* widget, const Image& imageNormal, const Image& imageHover, const Image& imageDown)
-    : Widget(widget->getParent()),
+    : Widget(widget->getParentWindow()),
       fImageNormal(imageNormal),
       fImageHover(imageHover),
       fImageDown(imageDown),
@@ -73,7 +73,7 @@ ImageButton::ImageButton(Widget* widget, const Image& imageNormal, const Image& 
 }
 
 ImageButton::ImageButton(const ImageButton& imageButton)
-    : Widget(imageButton.getParent()),
+    : Widget(imageButton.getParentWindow()),
       fImageNormal(imageButton.fImageNormal),
       fImageHover(imageButton.fImageHover),
       fImageDown(imageButton.fImageDown),

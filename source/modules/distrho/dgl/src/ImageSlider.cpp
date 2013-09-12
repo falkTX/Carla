@@ -20,7 +20,7 @@ START_NAMESPACE_DGL
 
 // -----------------------------------------------------------------------
 
-ImageSlider::ImageSlider(Window* parent, const Image& image)
+ImageSlider::ImageSlider(Window& parent, const Image& image)
     : Widget(parent),
       fImage(image),
       fMinimum(0.0f),
@@ -36,7 +36,7 @@ ImageSlider::ImageSlider(Window* parent, const Image& image)
 }
 
 ImageSlider::ImageSlider(Widget* widget, const Image& image)
-    : Widget(widget->getParent()),
+    : Widget(widget->getParentWindow()),
       fImage(image),
       fMinimum(0.0f),
       fMaximum(1.0f),
@@ -51,7 +51,7 @@ ImageSlider::ImageSlider(Widget* widget, const Image& image)
 }
 
 ImageSlider::ImageSlider(const ImageSlider& imageSlider)
-    : Widget(imageSlider.getParent()),
+    : Widget(imageSlider.getParentWindow()),
       fImage(imageSlider.fImage),
       fMinimum(imageSlider.fMinimum),
       fMaximum(imageSlider.fMaximum),

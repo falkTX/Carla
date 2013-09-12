@@ -22,66 +22,66 @@ START_NAMESPACE_DGL
 // Point
 
 template<typename T>
-Point<T>::Point()
+Point<T>::Point() noexcept
     : fX(0),
       fY(0)
 {
 }
 
 template<typename T>
-Point<T>::Point(T x, T y)
+Point<T>::Point(T x, T y) noexcept
     : fX(x),
       fY(y)
 {
 }
 
 template<typename T>
-Point<T>::Point(const Point& pos)
+Point<T>::Point(const Point& pos) noexcept
     : fX(pos.fX),
       fY(pos.fY)
 {
 }
 
 template<typename T>
-T Point<T>::getX() const
+T Point<T>::getX() const noexcept
 {
     return fX;
 }
 
 template<typename T>
-T Point<T>::getY() const
+T Point<T>::getY() const noexcept
 {
     return fY;
 }
 
 template<typename T>
-void Point<T>::setX(T x)
+void Point<T>::setX(T x) noexcept
 {
     fX = x;
 }
 
 template<typename T>
-void Point<T>::setY(T y)
+void Point<T>::setY(T y) noexcept
 {
     fY = y;
 }
 
 template<typename T>
-void Point<T>::move(T x, T y)
+void Point<T>::move(T x, T y) noexcept
 {
     fX += x;
     fY += y;
 }
 
 template<typename T>
-void Point<T>::move(const Point& pos)
+void Point<T>::move(const Point& pos) noexcept
 {
     fX += pos.fX;
     fY += pos.fY;
 }
 
 template<typename T>
-Point<T>& Point<T>::operator=(const Point<T>& pos)
+Point<T>& Point<T>::operator=(const Point<T>& pos) noexcept
 {
     fX = pos.fX;
     fY = pos.fY;
@@ -89,7 +89,7 @@ Point<T>& Point<T>::operator=(const Point<T>& pos)
 }
 
 template<typename T>
-Point<T>& Point<T>::operator+=(const Point<T>& pos)
+Point<T>& Point<T>::operator+=(const Point<T>& pos) noexcept
 {
     fX += pos.fX;
     fY += pos.fY;
@@ -97,7 +97,7 @@ Point<T>& Point<T>::operator+=(const Point<T>& pos)
 }
 
 template<typename T>
-Point<T>& Point<T>::operator-=(const Point<T>& pos)
+Point<T>& Point<T>::operator-=(const Point<T>& pos) noexcept
 {
     fX -= pos.fX;
     fY -= pos.fY;
@@ -105,13 +105,13 @@ Point<T>& Point<T>::operator-=(const Point<T>& pos)
 }
 
 template<typename T>
-bool Point<T>::operator==(const Point<T>& pos) const
+bool Point<T>::operator==(const Point<T>& pos) const noexcept
 {
     return (fX == pos.fX && fY== pos.fY);
 }
 
 template<typename T>
-bool Point<T>::operator!=(const Point<T>& pos) const
+bool Point<T>::operator!=(const Point<T>& pos) const noexcept
 {
     return !operator==(pos);
 }
@@ -120,52 +120,52 @@ bool Point<T>::operator!=(const Point<T>& pos) const
 // Size
 
 template<typename T>
-Size<T>::Size()
+Size<T>::Size() noexcept
     : fWidth(0),
       fHeight(0)
 {
 }
 
 template<typename T>
-Size<T>::Size(T width, T height)
+Size<T>::Size(T width, T height) noexcept
     : fWidth(width),
       fHeight(height)
 {
 }
 
 template<typename T>
-Size<T>::Size(const Size<T>& size)
+Size<T>::Size(const Size<T>& size) noexcept
     : fWidth(size.fWidth),
       fHeight(size.fHeight)
 {
 }
 
 template<typename T>
-T Size<T>::getWidth() const
+T Size<T>::getWidth() const noexcept
 {
     return fWidth;
 }
 
 template<typename T>
-T Size<T>::getHeight() const
+T Size<T>::getHeight() const noexcept
 {
     return fHeight;
 }
 
 template<typename T>
-void Size<T>::setWidth(T width)
+void Size<T>::setWidth(T width) noexcept
 {
     fWidth = width;
 }
 
 template<typename T>
-void Size<T>::setHeight(T height)
+void Size<T>::setHeight(T height) noexcept
 {
     fHeight = height;
 }
 
 template<typename T>
-Size<T>& Size<T>::operator=(const Size<T>& size)
+Size<T>& Size<T>::operator=(const Size<T>& size) noexcept
 {
     fWidth  = size.fWidth;
     fHeight = size.fHeight;
@@ -173,7 +173,7 @@ Size<T>& Size<T>::operator=(const Size<T>& size)
 }
 
 template<typename T>
-Size<T>& Size<T>::operator+=(const Size<T>& size)
+Size<T>& Size<T>::operator+=(const Size<T>& size) noexcept
 {
     fWidth  += size.fWidth;
     fHeight += size.fHeight;
@@ -181,7 +181,7 @@ Size<T>& Size<T>::operator+=(const Size<T>& size)
 }
 
 template<typename T>
-Size<T>& Size<T>::operator-=(const Size<T>& size)
+Size<T>& Size<T>::operator-=(const Size<T>& size) noexcept
 {
     fWidth  -= size.fWidth;
     fHeight -= size.fHeight;
@@ -189,7 +189,7 @@ Size<T>& Size<T>::operator-=(const Size<T>& size)
 }
 
 template<typename T>
-Size<T>& Size<T>::operator*=(T m)
+Size<T>& Size<T>::operator*=(T m) noexcept
 {
     fWidth  *= m;
     fHeight *= m;
@@ -197,7 +197,7 @@ Size<T>& Size<T>::operator*=(T m)
 }
 
 template<typename T>
-Size<T>& Size<T>::operator/=(T d)
+Size<T>& Size<T>::operator/=(T d) noexcept
 {
     fWidth  /= d;
     fHeight /= d;
@@ -205,13 +205,13 @@ Size<T>& Size<T>::operator/=(T d)
 }
 
 template<typename T>
-bool Size<T>::operator==(const Size<T>& size) const
+bool Size<T>::operator==(const Size<T>& size) const noexcept
 {
     return (fWidth == size.fWidth && fHeight == size.fHeight);
 }
 
 template<typename T>
-bool Size<T>::operator!=(const Size<T>& size) const
+bool Size<T>::operator!=(const Size<T>& size) const noexcept
 {
     return !operator==(size);
 }
@@ -220,172 +220,172 @@ bool Size<T>::operator!=(const Size<T>& size) const
 // Rectangle
 
 template<typename T>
-Rectangle<T>::Rectangle()
+Rectangle<T>::Rectangle() noexcept
     : fPos(0, 0),
       fSize(0, 0)
 {
 }
 
 template<typename T>
-Rectangle<T>::Rectangle(T x, T y, T width, T height)
+Rectangle<T>::Rectangle(T x, T y, T width, T height) noexcept
     : fPos(x, y),
       fSize(width, height)
 {
 }
 
 template<typename T>
-Rectangle<T>::Rectangle(T x, T y, const Size<T>& size)
+Rectangle<T>::Rectangle(T x, T y, const Size<T>& size) noexcept
     : fPos(x, y),
       fSize(size)
 {
 }
 
 template<typename T>
-Rectangle<T>::Rectangle(const Point<T>& pos, T width, T height)
+Rectangle<T>::Rectangle(const Point<T>& pos, T width, T height) noexcept
     : fPos(pos),
       fSize(width, height)
 {
 }
 
 template<typename T>
-Rectangle<T>::Rectangle(const Point<T>& pos, const Size<T>& size)
+Rectangle<T>::Rectangle(const Point<T>& pos, const Size<T>& size) noexcept
     : fPos(pos),
       fSize(size)
 {
 }
 
 template<typename T>
-Rectangle<T>::Rectangle(const Rectangle<T>& rect)
+Rectangle<T>::Rectangle(const Rectangle<T>& rect) noexcept
     : fPos(rect.fPos),
       fSize(rect.fSize)
 {
 }
 
 template<typename T>
-T Rectangle<T>::getX() const
+T Rectangle<T>::getX() const noexcept
 {
     return fPos.fX;
 }
 
 template<typename T>
-T Rectangle<T>::getY() const
+T Rectangle<T>::getY() const noexcept
 {
     return fPos.fY;
 }
 
 template<typename T>
-T Rectangle<T>::getWidth() const
+T Rectangle<T>::getWidth() const noexcept
 {
     return fSize.fWidth;
 }
 
 template<typename T>
-T Rectangle<T>::getHeight() const
+T Rectangle<T>::getHeight() const noexcept
 {
     return fSize.fHeight;
 }
 
 template<typename T>
-const Point<T>& Rectangle<T>::getPos() const
+const Point<T>& Rectangle<T>::getPos() const noexcept
 {
     return fPos;
 }
 
 template<typename T>
-const Size<T>& Rectangle<T>::getSize() const
+const Size<T>& Rectangle<T>::getSize() const noexcept
 {
     return fSize;
 }
 
 template<typename T>
-bool Rectangle<T>::contains(T x, T y) const
+bool Rectangle<T>::contains(T x, T y) const noexcept
 {
     return (x >= fPos.fX && y >= fPos.fY && x <= fPos.fX+fSize.fWidth && y <= fPos.fY+fSize.fHeight);
 }
 
 template<typename T>
-bool Rectangle<T>::contains(const Point<T>& pos) const
+bool Rectangle<T>::contains(const Point<T>& pos) const noexcept
 {
     return contains(pos.fX, pos.fY);
 }
 
 template<typename T>
-bool Rectangle<T>::containsX(T x) const
+bool Rectangle<T>::containsX(T x) const noexcept
 {
     return (x >= fPos.fX && x <= fPos.fX + fSize.fWidth);
 }
 
 template<typename T>
-bool Rectangle<T>::containsY(T y) const
+bool Rectangle<T>::containsY(T y) const noexcept
 {
     return (y >= fPos.fY && y <= fPos.fY + fSize.fHeight);
 }
 
 template<typename T>
-void Rectangle<T>::setX(T x)
+void Rectangle<T>::setX(T x) noexcept
 {
     fPos.fX = x;
 }
 
 template<typename T>
-void Rectangle<T>::setY(T y)
+void Rectangle<T>::setY(T y) noexcept
 {
     fPos.fY = y;
 }
 
 template<typename T>
-void Rectangle<T>::setPos(T x, T y)
+void Rectangle<T>::setPos(T x, T y) noexcept
 {
     fPos.fX = x;
     fPos.fY = y;
 }
 
 template<typename T>
-void Rectangle<T>::setPos(const Point<T>& pos)
+void Rectangle<T>::setPos(const Point<T>& pos) noexcept
 {
     fPos = pos;
 }
 
 template<typename T>
-void Rectangle<T>::move(T x, T y)
+void Rectangle<T>::move(T x, T y) noexcept
 {
     fPos.fX += x;
     fPos.fY += y;
 }
 
 template<typename T>
-void Rectangle<T>::move(const Point<T>& pos)
+void Rectangle<T>::move(const Point<T>& pos) noexcept
 {
     fPos += pos;
 }
 
 template<typename T>
-void Rectangle<T>::setWidth(T width)
+void Rectangle<T>::setWidth(T width) noexcept
 {
     fSize.fWidth = width;
 }
 
 template<typename T>
-void Rectangle<T>::setHeight(T height)
+void Rectangle<T>::setHeight(T height) noexcept
 {
     fSize.fHeight = height;
 }
 
 template<typename T>
-void Rectangle<T>::setSize(T width, T height)
+void Rectangle<T>::setSize(T width, T height) noexcept
 {
     fSize.fWidth  = width;
     fSize.fHeight = height;
 }
 
 template<typename T>
-void Rectangle<T>::setSize(const Size<T>& size)
+void Rectangle<T>::setSize(const Size<T>& size) noexcept
 {
     fSize = size;
 }
 
 template<typename T>
-Rectangle<T>& Rectangle<T>::operator=(const Rectangle<T>& rect)
+Rectangle<T>& Rectangle<T>::operator=(const Rectangle<T>& rect) noexcept
 {
     fPos  = rect.fPos;
     fSize = rect.fSize;
