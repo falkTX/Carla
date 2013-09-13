@@ -71,16 +71,28 @@ extern "C" {
  * Multiple features can be set by using ":" in between them.
  * @{
  */
-#define PLUGIN_FEATURE_RTSAFE         "rtsafe"         //!< Is hard-realtime safe.
-#define PLUGIN_FEATURE_GUI            "gui"            //!< Provides custom UI.
-#define PLUGIN_FEATURE_STATE          "state"          //!< Supports get_state() and set_state().
-#define PLUGIN_FEATURE_TIME           "time"           //!< Uses get_time_info().
-#define PLUGIN_FEATURE_WRITE_EVENT    "writeevent"     //!< Uses write_event().
-#define PLUGIN_FEATURE_FIXED_BUFFERS  "fixedbuffers"   //!< Needs fixed-size audio buffers.
-#define PLUGIN_FEATURE_MONO_PANNING   "monopanning"    //!< Prefers mono-style panning.
-#define PLUGIN_FEATURE_STEREO_BALANCE "stereobalance"  //!< Prefers stereo balance.
-#define PLUGIN_FEATURE_OPENSAVE       "uiopensave"     //!< UI uses ui_open_file() and/or ui_save_file() functions.
-#define PLUGIN_FEATURE_SINGLE_THREAD  "uisinglethread" //!< UI needs paramter, midi-program and custom-data changes in the main thread.
+#define PLUGIN_FEATURE_RTSAFE         "rtsafe"        //!< Is hard-realtime safe.
+#define PLUGIN_FEATURE_STATE          "state"         //!< Supports get_state() and set_state().
+#define PLUGIN_FEATURE_TIME           "time"          //!< Uses get_time_info().
+#define PLUGIN_FEATURE_WRITE_EVENT    "writeevent"    //!< Uses write_event().
+#define PLUGIN_FEATURE_FIXED_BUFFERS  "fixedbuffers"  //!< Needs fixed-size audio buffers.
+#define PLUGIN_FEATURE_MONO_PANNING   "monopanning"   //!< Prefers mono-style panning.
+#define PLUGIN_FEATURE_STEREO_BALANCE "stereobalance" //!< Prefers stereo balance.
+/**@}*/
+
+/*!
+ * @defgroup UiFeatures UI Features
+ *
+ * A list of UI features or hints.
+ *
+ * Custom features are allowed, as long as they are lowercase and contain ASCII characters only.
+ * The host can decide if it can load the plugin or not based on this information.
+ *
+ * Multiple features can be set by using ":" in between them.
+ * @{
+ */
+#define UI_FEATURE_OPENSAVE      "opensave"     //!< Uses ui_open_file() and/or ui_save_file() functions.
+#define UI_FEATURE_SINGLE_THREAD "singlethread" //!< Needs paramter, midi-program and custom-data changes in the main thread.
 /**@}*/
 
 /*!
@@ -358,6 +370,8 @@ typedef struct {
     void (*ui_closed)(UiHostHandle handle);
 
     // TODO: add some msgbox call
+
+    // ui must set "opensave" feature to use these
     const char* (*ui_open_file)(UiHostHandle handle, bool isDir, const char* title, const char* filter);
     const char* (*ui_save_file)(UiHostHandle handle, bool isDir, const char* title, const char* filter);
 
@@ -369,7 +383,7 @@ typedef struct {
 typedef struct _PluginDescriptor {
     const int api_version;        //!< Must be set to CARLA_NATIVE_API_VERSION
     const char* const categories; //!< Categories. @see PluginCategories
-    const char* const hints;      //!< Hints. @see PluginHints
+    const char* const features;   //!< Features. @see PluginFeatures
     const char* const supports;   //!< MIDI supported events. @see PluginSupports
     const uint32_t audioIns;      //!< Default number of audio inputs.
     const uint32_t audioOuts;     //!< Default number of audio outputs.
@@ -404,7 +418,7 @@ typedef struct _PluginDescriptor {
     void (*deactivate)(PluginHandle handle);
     void (*process)(PluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const Event* events, uint32_t eventCount);
 
-    // only used is "state" feature is set
+    // only used if "state" feature is set
     char* (*get_state)(PluginHandle handle);
     void  (*set_state)(PluginHandle handle, const char* data);
 
@@ -416,9 +430,10 @@ typedef struct _PluginDescriptor {
 // UiDescriptor
 
 typedef struct {
-    const int api_version;    //!< Must be set to CARLA_NATIVE_API_VERSION
-    const char* const author; //!< Author this UI matches to.
-    const char* const label;  //!< Label this UI matches to, can only contain letters, numbers and "_". May be null, in which case represents all UIs for @a maker.
+    const int api_version;      //!< Must be set to CARLA_NATIVE_API_VERSION
+    const char* const features; //!< Features. @see UiFeatures
+    const char* const author;   //!< Author this UI matches to.
+    const char* const label;    //!< Label this UI matches to, can only contain letters, numbers and "_". May be null, in which case represents all UIs for @a maker.
 
     UiHandle (*instantiate)(const UiHostDescriptor* host);
     void     (*cleanup)(UiHandle handle);
