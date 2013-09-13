@@ -338,6 +338,12 @@ typedef struct {
 typedef struct {
     PluginHostHandle handle;
 
+    /*!
+     * Previously used plugin version, may be 0.
+     * Plugins might want to this value during set_parameter_value(), set_midi_program() and set_state().
+     */
+    int pluginVersion;
+
     MappedValue (*map_value)(PluginHostHandle handle, const char* valueStr);
     const char* (*unmap_value)(PluginHostHandle handle, MappedValue value);
 
