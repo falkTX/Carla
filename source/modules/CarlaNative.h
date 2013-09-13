@@ -405,6 +405,7 @@ typedef struct _PluginDescriptor {
     const char* const categories; //!< Categories. @see PluginCategories
     const char* const features;   //!< Features. @see PluginFeatures
     const char* const supports;   //!< MIDI supported events. @see PluginSupports
+    const char* const metadata;   //!< Meta-data in JSON? format.
     const uint32_t audioIns;      //!< Default number of audio inputs.
     const uint32_t audioOuts;     //!< Default number of audio outputs.
     const uint32_t midiIns;       //!< Default number of MIDI inputs.
