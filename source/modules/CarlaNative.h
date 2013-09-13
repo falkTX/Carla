@@ -72,9 +72,11 @@ extern "C" {
  * @{
  */
 #define PLUGIN_FEATURE_RTSAFE         "rtsafe"        //!< Is hard-realtime safe.
-#define PLUGIN_FEATURE_STATE          "state"         //!< Supports get_state() and set_state().
-#define PLUGIN_FEATURE_TIME           "time"          //!< Uses get_time_info().
-#define PLUGIN_FEATURE_WRITE_EVENT    "writeevent"    //!< Uses write_event().
+#define PLUGIN_FEATURE_IDLE           "idle"          //!< Needs non-realtime idle regularly. @see HOST_OPCODE_NEEDS_IDLE
+#define PLUGIN_FEATURE_STATE          "state"         //!< Supports get_state() and set_state() functions.
+#define PLUGIN_FEATURE_TIME           "time"          //!< Uses get_time_info() function.
+#define PLUGIN_FEATURE_SEND_MSG       "sendmsg"       //!< Uses send_ui_msg() function.
+#define PLUGIN_FEATURE_WRITE_EVENT    "writeevent"    //!< Uses write_event() function.
 #define PLUGIN_FEATURE_FIXED_BUFFERS  "fixedbuffers"  //!< Needs fixed-size audio buffers.
 #define PLUGIN_FEATURE_MONO_PANNING   "monopanning"   //!< Prefers mono-style panning.
 #define PLUGIN_FEATURE_STEREO_BALANCE "stereobalance" //!< Prefers stereo balance.
@@ -91,7 +93,8 @@ extern "C" {
  * Multiple features can be set by using ":" in between them.
  * @{
  */
-#define UI_FEATURE_OPENSAVE      "opensave"     //!< Uses ui_open_file() and/or ui_save_file() functions.
+#define UI_FEATURE_OPEN_SAVE     "opensave"     //!< Uses ui_open_file() and/or ui_save_file() functions.
+#define UI_FEATURE_SEND_MSG      "sendmsg"      //!< Uses send_plugin_msg() function.
 #define UI_FEATURE_SINGLE_THREAD "singlethread" //!< Needs paramter, midi-program and custom-data changes in the main thread.
 /**@}*/
 
@@ -160,12 +163,13 @@ extern "C" {
 /*!
  * @defgroup PluginDispatcherOpcodes Plugin Dispatcher Opcodes
  *
- * .
+ * Opcodes dispatched by the host to report changes to the plugin or UI.
  *
  * The opcodes are mapped into MappedValue by the host.
  * @see PluginDescriptor::dispatcher()
  * @{
  */
+#define PLUGIN_OPCODE_MSG_RECEIVED        "msgReceived"       //!< Message received, uses ptr as char*.
 #define PLUGIN_OPCODE_BUFFER_SIZE_CHANGED "bufferSizeChanged" //!< Audio buffer size changed, uses value. @see PluginHostDescriptor::get_buffer_size()
 #define PLUGIN_OPCODE_SAMPLE_RATE_CHANGED "sampleRateChanged" //!< Audio sample rate changed, uses opt. @see Plugin/UiHostDescriptor::get_sample_rate()
 #define PLUGIN_OPCODE_OFFLINE_CHANGED     "offlineChanged"    //!< Offline mode changed, uses value (0=off, 1=on). @see Plugin/UiHostDescriptor::is_offline()
@@ -175,25 +179,26 @@ extern "C" {
 /*!
  * @defgroup HostDispatcherOpcodes Host Dispatcher Opcodes
  *
- * .
+ * Opcodes dispatched by the plugin or UI to report and request information from the host.
  *
  * The opcodes are mapped into MappedValue by the host.
  * @see HostDescriptor::dispatcher()
  * @{
  */
-#define HOST_OPCODE_SET_VOLUME            "setVolume"          // uses opt
-#define HOST_OPCODE_SET_DRYWET            "setDryWet"          // uses opt
-#define HOST_OPCODE_SET_BALANCE_LEFT      "setBalanceLeft"     // uses opt
-#define HOST_OPCODE_SET_BALANCE_RIGHT     "setBalanceRight"    // uses opt
-#define HOST_OPCODE_SET_PANNING           "setPanning"         // uses opt
-#define HOST_OPCODE_GET_PARAMETER_MIDI_CC "getParameterMidiCC" // uses index; return answer
-#define HOST_OPCODE_SET_PARAMETER_MIDI_CC "setParameterMidiCC" // uses index and value
-#define HOST_OPCODE_UPDATE_PARAMETER      "updateParameter"    // uses index, -1 for all
-#define HOST_OPCODE_UPDATE_MIDI_PROGRAM   "updateMidiProgram"  // uses index, -1 for all; may use value for channel
-#define HOST_OPCODE_RELOAD_PARAMETERS     "reloadParameters"   // nothing
-#define HOST_OPCODE_RELOAD_MIDI_PROGRAMS  "reloadMidiPrograms" // nothing
-#define HOST_OPCODE_RELOAD_ALL            "reloadAll"          // nothing
-#define HOST_OPCODE_UI_UNAVAILABLE        "uiUnavailable"      // nothing
+#define HOST_OPCODE_NEEDS_IDLE            "needsIdle"          //!< Tell the host to call idle() as soon as possible (once), uses nothing.
+#define HOST_OPCODE_SET_VOLUME            "setVolume"          //!< Set host's volume, uses opt. MUST ONLY be called within PluginDescriptor::set_midi_program().
+#define HOST_OPCODE_SET_DRYWET            "setDryWet"          //!< Set host's dry-wet, uses opt. MUST ONLY be called within PluginDescriptor::set_midi_program().
+#define HOST_OPCODE_SET_BALANCE_LEFT      "setBalanceLeft"     //!< Set host's balance-left, uses opt. MUST ONLY be called within PluginDescriptor::set_midi_program().
+#define HOST_OPCODE_SET_BALANCE_RIGHT     "setBalanceRight"    //!< Set host's balance-right, uses opt. MUST ONLY be called within PluginDescriptor::set_midi_program().
+#define HOST_OPCODE_SET_PANNING           "setPanning"         //!< Set host's panning, uses opt. MUST ONLY be called within PluginDescriptor::set_midi_program().
+#define HOST_OPCODE_GET_PARAMETER_MIDI_CC "getParameterMidiCC" //!< Get the parameter @a index currently mapped MIDI control, uses index, return answer.
+#define HOST_OPCODE_SET_PARAMETER_MIDI_CC "setParameterMidiCC" //!< Set the parameter @a index mapped MIDI control, uses index and value.
+#define HOST_OPCODE_UPDATE_PARAMETER      "updateParameter"    //!< Tell the host to update parameter @a index, uses index with -1 for all.
+#define HOST_OPCODE_UPDATE_MIDI_PROGRAM   "updateMidiProgram"  //!< Tell the host to update midi-program @index,  uses index with -1 for all; may also use value for channel.
+#define HOST_OPCODE_RELOAD_PARAMETERS     "reloadParameters"   //!< Tell the host to reload all parameters data, uses nothing.
+#define HOST_OPCODE_RELOAD_MIDI_PROGRAMS  "reloadMidiPrograms" //!< Tell the host to reload all midi-programs data, uses nothing.
+#define HOST_OPCODE_RELOAD_ALL            "reloadAll"          //!< Tell the host to reload everything all the plugin, uses nothing.
+#define HOST_OPCODE_UI_UNAVAILABLE        "uiUnavailable"      //!< Tell the host the UI can't be shown, uses nothing.
 /**@}*/
 
 // -----------------------------------------------------------------------
@@ -304,8 +309,8 @@ typedef struct {
  * Generic event.
  */
 typedef struct {
-    MappedValue type; //!< Type of event. @see EventTypes
-    uint32_t frame;   //!< Frame offset since the beginning of process()
+    MappedValue type;  //!< Type of event. @see EventTypes
+    uint32_t    frame; //!< Frame offset since the beginning of process()
 } Event;
 
 /*!
@@ -343,9 +348,13 @@ typedef struct {
     // plugin must set "time" feature to use this
     const TimeInfo* (*get_time_info)(PluginHostHandle handle);
 
+    // plugin must set "sendmsg" feature to use this
+    bool (*send_ui_msg)(const char* msg);
+
     // plugin must set "writeevent" feature to use this
     bool (*write_event)(PluginHostHandle handle, const Event* event);
 
+    // uses HostDispatcherOpcodes
     intptr_t (*dispatcher)(PluginHostHandle handle, MappedValue opcode, int32_t index, intptr_t value, void* ptr, float opt);
 
 } PluginHostDescriptor;
@@ -364,16 +373,21 @@ typedef struct {
     double (*get_sample_rate)(UiHostHandle handle);
     bool   (*is_offline)(UiHostHandle handle);
 
-    void (*ui_parameter_changed)(UiHostHandle handle, uint32_t index, float value);
-    void (*ui_midi_program_changed)(UiHostHandle handle, uint8_t channel, uint32_t bank, uint32_t program);
-    void (*ui_custom_data_changed)(UiHostHandle handle, const char* key, const char* value);
-    void (*ui_closed)(UiHostHandle handle);
+    void (*parameter_changed)(UiHostHandle handle, uint32_t index, float value);
+    void (*midi_program_changed)(UiHostHandle handle, uint8_t channel, uint32_t bank, uint32_t program);
+    void (*closed)(UiHostHandle handle);
 
     // TODO: add some msgbox call
 
     // ui must set "opensave" feature to use these
-    const char* (*ui_open_file)(UiHostHandle handle, bool isDir, const char* title, const char* filter);
-    const char* (*ui_save_file)(UiHostHandle handle, bool isDir, const char* title, const char* filter);
+    const char* (*open_file)(UiHostHandle handle, bool isDir, const char* title, const char* filter);
+    const char* (*save_file)(UiHostHandle handle, bool isDir, const char* title, const char* filter);
+
+    // ui must set "sendmsg" feature to use this
+    bool (*send_plugin_msg)(const char* msg);
+
+    // uses HostDispatcherOpcodes
+    intptr_t (*dispatcher)(PluginHostHandle handle, MappedValue opcode, int32_t index, intptr_t value, void* ptr, float opt);
 
 } UiHostDescriptor;
 
@@ -403,25 +417,26 @@ typedef struct _PluginDescriptor {
     uint32_t         (*get_parameter_count)(PluginHandle handle);
     const Parameter* (*get_parameter_info)(PluginHandle handle, uint32_t index);
     float            (*get_parameter_value)(PluginHandle handle, uint32_t index);
-
-    // only used if parameter hint "customtext" is set
-    const char*      (*get_parameter_text)(PluginHandle handle, uint32_t index, float value);
+    const char*      (*get_parameter_text)(PluginHandle handle, uint32_t index, float value); // only used if parameter hint "customtext" is set
+    void             (*set_parameter_value)(PluginHandle handle, uint32_t index, float value);
 
     uint32_t           (*get_midi_program_count)(PluginHandle handle);
     const MidiProgram* (*get_midi_program_info)(PluginHandle handle, uint32_t index);
-
-    void (*set_parameter_value)(PluginHandle handle, uint32_t index, float value);
-    void (*set_midi_program)(PluginHandle handle, uint8_t channel, uint32_t bank, uint32_t program);
-    void (*set_custom_data)(PluginHandle handle, const char* key, const char* value);
-
-    void (*activate)(PluginHandle handle);
-    void (*deactivate)(PluginHandle handle);
-    void (*process)(PluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const Event* events, uint32_t eventCount);
+    void               (*set_midi_program)(PluginHandle handle, uint8_t channel, uint32_t bank, uint32_t program); // channel used only in synths
 
     // only used if "state" feature is set
     char* (*get_state)(PluginHandle handle);
     void  (*set_state)(PluginHandle handle, const char* data);
 
+    // only used if "idle" feature is set, or HOST_OPCODE_NEEDS_IDLE was triggered (for one-shot).
+    // NOTE: although it's a non-realtime function, it will probably still not be called from the host main thread
+    void (*idle)();
+
+    void (*activate)(PluginHandle handle);
+    void (*deactivate)(PluginHandle handle);
+    void (*process)(PluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const Event* events, uint32_t eventCount);
+
+    // uses PluginDispatcherOpcodes
     intptr_t (*dispatcher)(PluginHandle handle, MappedValue opcode, int32_t index, intptr_t value, void* ptr, float opt);
 
 } PluginDescriptor;
@@ -442,8 +457,7 @@ typedef struct {
     void (*idle)(UiHandle handle);
 
     void (*set_parameter_value)(UiHandle handle, uint32_t index, float value);
-    void (*set_midi_program)(UiHandle handle, uint8_t channel, uint32_t bank, uint32_t program);
-    void (*set_custom_data)(UiHandle handle, const char* key, const char* value);
+    void (*set_midi_program)(UiHandle handle, uint8_t channel, uint32_t bank, uint32_t program); // channel used only in synths
 
     intptr_t (*dispatcher)(UiHandle handle, MappedValue opcode, int32_t index, intptr_t value, void* ptr, float opt);
 
