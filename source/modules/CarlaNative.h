@@ -33,14 +33,13 @@ extern "C" {
  * @{
  */
 
-typedef int32_t AtomXYZ;
-typedef void* HostHandle;
-typedef void* PluginHandle;
-
 // -----------------------------------------------------------------------
-// enums
+// Macros
 
-#define PLUGIN_API_VERSION 1
+/*!
+ * Current API version.
+ */
+#define CARLA_NATIVE_API_VERSION 1
 
 /*!
  * @defgroup PluginCategories Plugin Categories
@@ -85,9 +84,13 @@ typedef void* PluginHandle;
 /**@}*/
 
 /*!
+ * TODO - this needs a better name...
+ *
  * @defgroup PluginSupports Plugin Supports
  *
  * A list of plugin supported MIDI events.
+ *
+ * Multiple (supports) can be set by using ":" in between them.
  * @{
  */
 #define PLUGIN_SUPPORTS_PROGRAM_CHANGES  "program"     //!< Handles MIDI programs internally instead of host-exposed/exported
@@ -95,7 +98,7 @@ typedef void* PluginHandle;
 #define PLUGIN_SUPPORTS_CHANNEL_PRESSURE "pressure"    //!< Supports channel pressure (0xD0)
 #define PLUGIN_SUPPORTS_NOTE_AFTERTOUCH  "aftertouch"  //!< Supports note aftertouch (0xA0)
 #define PLUGIN_SUPPORTS_PITCHBEND        "pitchbend"   //!< Supports pitchbend (0xE0)
-#define PLUGIN_SUPPORTS_ALL_SOUND_OFF    "allsoundoff" //!< Supporta all-sound-off and all-notes-off events
+#define PLUGIN_SUPPORTS_ALL_SOUND_OFF    "allsoundoff" //!< Supports all-sound-off and all-notes-off events
 #define PLUGIN_SUPPORTS_EVERYTHING       "program:control:pressure:aftertouch:pitchbend:allsoundoff" //!< Supports everything
 /**@}*/
 
@@ -103,6 +106,8 @@ typedef void* PluginHandle;
  * @defgroup ParameterHints Parameter Hints
  *
  * List of parameter hints.
+ *
+ * Multiple hints can be set by using ":" in between them.
  * @{
  */
 #define PARAMETER_IS_OUTPUT        "output"      //!< Is output; input if unset.
@@ -116,40 +121,112 @@ typedef void* PluginHandle;
 #define PARAMETER_USES_CUSTOM_TEXT "customtext"  //!< Uses custom text for displaying its value. @see get_parameter_text()
 /**@}*/
 
-typedef enum {
-    PLUGIN_OPCODE_NULL                = 0, // nothing
-    PLUGIN_OPCODE_BUFFER_SIZE_CHANGED = 1, // uses value
-    PLUGIN_OPCODE_SAMPLE_RATE_CHANGED = 2, // uses opt
-    PLUGIN_OPCODE_OFFLINE_CHANGED     = 3, // uses value (0=off, 1=on)
-    PLUGIN_OPCODE_UI_NAME_CHANGED     = 4  // uses ptr
-} PluginDispatcherOpcode;
+/*!
+ * @defgroup DefaultParameterRanges Default Parameter Ranges
+ *
+ * Default ParameterRanges values.
+ * @{
+ */
+#define PARAMETER_RANGE_DEFAULT_STEP       0.01f
+#define PARAMETER_RANGE_DEFAULT_STEP_SMALL 0.0001f
+#define PARAMETER_RANGE_DEFAULT_STEP_LARGE 0.1f
+/**@}*/
 
-typedef enum {
-    HOST_OPCODE_NULL                  = 0,  // nothing
-    HOST_OPCODE_SET_VOLUME            = 1,  // uses opt
-    HOST_OPCODE_SET_DRYWET            = 2,  // uses opt
-    HOST_OPCODE_SET_BALANCE_LEFT      = 3,  // uses opt
-    HOST_OPCODE_SET_BALANCE_RIGHT     = 4,  // uses opt
-    HOST_OPCODE_SET_PANNING           = 5,  // uses opt
-    HOST_OPCODE_GET_PARAMETER_MIDI_CC = 6,  // uses index; return answer
-    HOST_OPCODE_SET_PARAMETER_MIDI_CC = 7,  // uses index and value
-    HOST_OPCODE_SET_PROCESS_PRECISION = 8,  // uses value
-    HOST_OPCODE_UPDATE_PARAMETER      = 9,  // uses index, -1 for all
-    HOST_OPCODE_UPDATE_MIDI_PROGRAM   = 10, // uses index, -1 for all; may use value for channel
-    HOST_OPCODE_RELOAD_PARAMETERS     = 11, // nothing
-    HOST_OPCODE_RELOAD_MIDI_PROGRAMS  = 12, // nothing
-    HOST_OPCODE_RELOAD_ALL            = 13, // nothing
-    HOST_OPCODE_UI_UNAVAILABLE        = 14  // nothing
-} HostDispatcherOpcode;
+/*!
+ * @defgroup EventTypes EventTypes
+ *
+ * List of supported event types.
+ *
+ * The types are mapped into MappedValue by the host.
+ * @see HostDescriptor::map_value()
+ * @{
+ */
+#define EVENT_TYPE_MIDI      "midi"      //!< @see MidiEvent
+#define EVENT_TYPE_PARAMETER "parameter" //!< @see ParameterEvent
+/**@}*/
+
+/*!
+ * @defgroup PluginDispatcherOpcodes Plugin Dispatcher Opcodes
+ *
+ * .
+ *
+ * The opcodes are mapped into MappedValue by the host.
+ * @see PluginDescriptor::dispatcher()
+ * @{
+ */
+#define PLUGIN_OPCODE_BUFFER_SIZE_CHANGED "bufferSizeChanged" //!< Audio buffer size changed, uses value. @see PluginHostDescriptor::get_buffer_size()
+#define PLUGIN_OPCODE_SAMPLE_RATE_CHANGED "sampleRateChanged" //!< Audio sample rate changed, uses opt. @see Plugin/UiHostDescriptor::get_sample_rate()
+#define PLUGIN_OPCODE_OFFLINE_CHANGED     "offlineChanged"    //!< Offline mode changed, uses value (0=off, 1=on). @see Plugin/UiHostDescriptor::is_offline()
+#define PLUGIN_OPCODE_UI_TITLE_CHANGED    "uiTitleChanged"    //!< UI title changed, uses ptr. @see UiHostDescriptor::is_offline()
+/**@}*/
+
+/*!
+ * @defgroup HostDispatcherOpcodes Host Dispatcher Opcodes
+ *
+ * .
+ *
+ * The opcodes are mapped into MappedValue by the host.
+ * @see HostDescriptor::dispatcher()
+ * @{
+ */
+#define HOST_OPCODE_SET_VOLUME            "setVolume"          // uses opt
+#define HOST_OPCODE_SET_DRYWET            "setDryWet"          // uses opt
+#define HOST_OPCODE_SET_BALANCE_LEFT      "setBalanceLeft"     // uses opt
+#define HOST_OPCODE_SET_BALANCE_RIGHT     "setBalanceRight"    // uses opt
+#define HOST_OPCODE_SET_PANNING           "setPanning"         // uses opt
+#define HOST_OPCODE_GET_PARAMETER_MIDI_CC "getParameterMidiCC" // uses index; return answer
+#define HOST_OPCODE_SET_PARAMETER_MIDI_CC "setParameterMidiCC" // uses index and value
+#define HOST_OPCODE_UPDATE_PARAMETER      "updateParameter"    // uses index, -1 for all
+#define HOST_OPCODE_UPDATE_MIDI_PROGRAM   "updateMidiProgram"  // uses index, -1 for all; may use value for channel
+#define HOST_OPCODE_RELOAD_PARAMETERS     "reloadParameters"   // nothing
+#define HOST_OPCODE_RELOAD_MIDI_PROGRAMS  "reloadMidiPrograms" // nothing
+#define HOST_OPCODE_RELOAD_ALL            "reloadAll"          // nothing
+#define HOST_OPCODE_UI_UNAVAILABLE        "uiUnavailable"      // nothing
+/**@}*/
 
 // -----------------------------------------------------------------------
-// base structs
+// Base types
 
+/*!
+ * Host mapped value of a string.
+ * @see Plugin/UiHostDescriptor::map_value()
+ */
+typedef int32_t MappedValue;
+
+/*!
+ * Opaque plugin handle.
+ */
+typedef void* PluginHandle;
+
+/*!
+ * Opaque UI handle.
+ */
+typedef void* UiHandle;
+
+/*!
+ * Opaque plugin host handle.
+ */
+typedef void* PluginHostHandle;
+
+/*!
+ * Opaque UI host handle.
+ */
+typedef void* UiHostHandle;
+
+// -----------------------------------------------------------------------
+// Base structs
+
+/*!
+ * Parameter scale point.
+ */
 typedef struct {
     const char* label;
     float value;
 } ParameterScalePoint;
 
+/*!
+ * Paraneter ranges.
+ */
 typedef struct {
     float def;
     float min;
@@ -159,12 +236,11 @@ typedef struct {
     float stepLarge;
 } ParameterRanges;
 
-#define PARAMETER_RANGES_DEFAULT_STEP       0.01f
-#define PARAMETER_RANGES_DEFAULT_STEP_SMALL 0.0001f
-#define PARAMETER_RANGES_DEFAULT_STEP_LARGE 0.1f
-
+/*!
+ * Parameter.
+ */
 typedef struct {
-    const char* hints;
+    const char* hints; //!< @see ParameterHints
     const char* name;
     const char* unit;
     ParameterRanges ranges;
@@ -173,30 +249,20 @@ typedef struct {
     ParameterScalePoint* scalePoints;
 } Parameter;
 
-typedef struct {
-    AtomXYZ type;
-    uint32_t frame;
-} Event;
-
-typedef struct {
-    Event e;
-    uint8_t port;
-    uint8_t size;
-    uint8_t data[4];
-} MidiEvent;
-
-typedef struct {
-    Event e;
-    uint32_t index;
-    float    value;
-} ParameterEvent;
-
+/*!
+ * MIDI Program.
+ */
 typedef struct {
     uint32_t bank;
     uint32_t program;
     const char* name;
 } MidiProgram;
 
+/*!
+ * Bar-Beat-Tick information.
+ *
+ * @note this is the same data provided by JACK
+ */
 typedef struct {
     bool valid;
 
@@ -212,6 +278,9 @@ typedef struct {
     double beatsPerMinute;
 } TimeInfoBBT;
 
+/*!
+ * Time information.
+ */
 typedef struct {
     bool playing;
     uint64_t frame;
@@ -219,39 +288,86 @@ typedef struct {
     TimeInfoBBT bbt;
 } TimeInfo;
 
+/*!
+ * Generic event.
+ */
+typedef struct {
+    MappedValue type; //!< Type of event. @see EventTypes
+    uint32_t frame;   //!< Frame offset since the beginning of process()
+} Event;
+
+/*!
+ * MIDI event.
+ */
+typedef struct {
+    Event e;
+    uint8_t port;
+    uint8_t size;
+    uint8_t data[4];
+} MidiEvent;
+
+/*!
+ * Parameter event.
+ */
+typedef struct {
+    Event e;
+    uint32_t index;
+    float    value;
+} ParameterEvent;
+
 // -----------------------------------------------------------------------
-// HostDescriptor
+// PluginHostDescriptor
 
 typedef struct {
-    HostHandle handle;
+    PluginHostHandle handle;
+
+    MappedValue (*map_value)(PluginHostHandle handle, const char* valueStr);
+    const char* (*unmap_value)(PluginHostHandle handle, MappedValue value);
+
+    uint32_t (*get_buffer_size)(PluginHostHandle handle);
+    double   (*get_sample_rate)(PluginHostHandle handle);
+    bool     (*is_offline)(PluginHostHandle handle);
+
+    // plugin must set "time" feature to use this
+    const TimeInfo* (*get_time_info)(PluginHostHandle handle);
+
+    // plugin must set "writeevent" feature to use this
+    bool (*write_event)(PluginHostHandle handle, const Event* event);
+
+    intptr_t (*dispatcher)(PluginHostHandle handle, MappedValue opcode, int32_t index, intptr_t value, void* ptr, float opt);
+
+} PluginHostDescriptor;
+
+// -----------------------------------------------------------------------
+// UiHostDescriptor
+
+typedef struct {
+    UiHostHandle handle;
     const char* resourceDir;
-    const char* uiName;
+    const char* uiTitle;
 
-    uint32_t (*get_buffer_size)(HostHandle handle);
-    double   (*get_sample_rate)(HostHandle handle);
-    bool     (*is_offline)(HostHandle handle);
+    MappedValue (*map_value)(UiHostHandle handle, const char* valueStr);
+    const char* (*unmap_value)(UiHostHandle handle, MappedValue value);
 
-    const TimeInfo* (*get_time_info)(HostHandle handle);
-    bool            (*write_event)(HostHandle handle, const Event* event);
+    double (*get_sample_rate)(UiHostHandle handle);
+    bool   (*is_offline)(UiHostHandle handle);
 
-    void (*ui_parameter_changed)(HostHandle handle, uint32_t index, float value);
-    void (*ui_midi_program_changed)(HostHandle handle, uint8_t channel, uint32_t bank, uint32_t program);
-    void (*ui_custom_data_changed)(HostHandle handle, const char* key, const char* value);
-    void (*ui_closed)(HostHandle handle);
+    void (*ui_parameter_changed)(UiHostHandle handle, uint32_t index, float value);
+    void (*ui_midi_program_changed)(UiHostHandle handle, uint8_t channel, uint32_t bank, uint32_t program);
+    void (*ui_custom_data_changed)(UiHostHandle handle, const char* key, const char* value);
+    void (*ui_closed)(UiHostHandle handle);
 
     // TODO: add some msgbox call
-    const char* (*ui_open_file)(HostHandle handle, bool isDir, const char* title, const char* filter);
-    const char* (*ui_save_file)(HostHandle handle, bool isDir, const char* title, const char* filter);
+    const char* (*ui_open_file)(UiHostHandle handle, bool isDir, const char* title, const char* filter);
+    const char* (*ui_save_file)(UiHostHandle handle, bool isDir, const char* title, const char* filter);
 
-    intptr_t (*dispatcher)(HostHandle handle, HostDispatcherOpcode opcode, int32_t index, intptr_t value, void* ptr, float opt);
-
-} HostDescriptor;
+} UiHostDescriptor;
 
 // -----------------------------------------------------------------------
 // PluginDescriptor
 
 typedef struct _PluginDescriptor {
-    const int api;                //!< Must be set to PLUGIN_API_VERSION
+    const int api_version;        //!< Must be set to CARLA_NATIVE_API_VERSION
     const char* const categories; //!< Categories. @see PluginCategories
     const char* const hints;      //!< Hints. @see PluginHints
     const char* const supports;   //!< MIDI supported events. @see PluginSupports
@@ -261,18 +377,20 @@ typedef struct _PluginDescriptor {
     const uint32_t midiOuts;      //!< Default number of MIDI inputs.
     const uint32_t parameterIns;  //!< Default number of input parameters, may be 0.
     const uint32_t parameterOuts; //!< Default number of output parameters, may be 0.
+    const char* const author;     //!< Author.
     const char* const name;       //!< Name.
     const char* const label;      //!< Label, can only contain letters, numbers and "_".
-    const char* const maker;      //!< Maker.
     const char* const copyright;  //!< Copyright.
     const int version;            //!< Version.
 
-    PluginHandle (*instantiate)(const HostDescriptor* host);
+    PluginHandle (*instantiate)(const PluginHostDescriptor* host);
     void         (*cleanup)(PluginHandle handle);
 
     uint32_t         (*get_parameter_count)(PluginHandle handle);
     const Parameter* (*get_parameter_info)(PluginHandle handle, uint32_t index);
     float            (*get_parameter_value)(PluginHandle handle, uint32_t index);
+
+    // only used if parameter hint "customtext" is set
     const char*      (*get_parameter_text)(PluginHandle handle, uint32_t index, float value);
 
     uint32_t           (*get_midi_program_count)(PluginHandle handle);
@@ -282,23 +400,39 @@ typedef struct _PluginDescriptor {
     void (*set_midi_program)(PluginHandle handle, uint8_t channel, uint32_t bank, uint32_t program);
     void (*set_custom_data)(PluginHandle handle, const char* key, const char* value);
 
-    void (*ui_show)(PluginHandle handle, bool show);
-    void (*ui_idle)(PluginHandle handle);
-
-    void (*ui_set_parameter_value)(PluginHandle handle, uint32_t index, float value);
-    void (*ui_set_midi_program)(PluginHandle handle, uint8_t channel, uint32_t bank, uint32_t program);
-    void (*ui_set_custom_data)(PluginHandle handle, const char* key, const char* value);
-
     void (*activate)(PluginHandle handle);
     void (*deactivate)(PluginHandle handle);
     void (*process)(PluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const Event* events, uint32_t eventCount);
 
+    // only used is "state" feature is set
     char* (*get_state)(PluginHandle handle);
     void  (*set_state)(PluginHandle handle, const char* data);
 
-    intptr_t (*dispatcher)(PluginHandle handle, PluginDispatcherOpcode opcode, int32_t index, intptr_t value, void* ptr, float opt);
+    intptr_t (*dispatcher)(PluginHandle handle, MappedValue opcode, int32_t index, intptr_t value, void* ptr, float opt);
 
 } PluginDescriptor;
+
+// -----------------------------------------------------------------------
+// UiDescriptor
+
+typedef struct {
+    const int api_version;    //!< Must be set to CARLA_NATIVE_API_VERSION
+    const char* const author; //!< Author this UI matches to.
+    const char* const label;  //!< Label this UI matches to, can only contain letters, numbers and "_". May be null, in which case represents all UIs for @a maker.
+
+    UiHandle (*instantiate)(const UiHostDescriptor* host);
+    void     (*cleanup)(UiHandle handle);
+
+    void (*show)(UiHandle handle, bool show);
+    void (*idle)(UiHandle handle);
+
+    void (*set_parameter_value)(UiHandle handle, uint32_t index, float value);
+    void (*set_midi_program)(UiHandle handle, uint8_t channel, uint32_t bank, uint32_t program);
+    void (*set_custom_data)(UiHandle handle, const char* key, const char* value);
+
+    intptr_t (*dispatcher)(UiHandle handle, MappedValue opcode, int32_t index, intptr_t value, void* ptr, float opt);
+
+} UiDescriptor;
 
 // -----------------------------------------------------------------------
 // Register plugin
