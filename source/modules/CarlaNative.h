@@ -95,7 +95,7 @@ extern "C" {
  */
 #define UI_FEATURE_OPEN_SAVE     "opensave"     //!< Uses ui_open_file() and/or ui_save_file() functions.
 #define UI_FEATURE_SEND_MSG      "sendmsg"      //!< Uses send_plugin_msg() function.
-#define UI_FEATURE_SINGLE_THREAD "singlethread" //!< Needs paramter, midi-program and custom-data changes in the main thread.
+#define UI_FEATURE_SINGLE_THREAD "singlethread" //!< Needs parameter, midi-program and custom-data changes in the main thread.
 /**@}*/
 
 /*!
@@ -340,7 +340,7 @@ typedef struct {
 
     /*!
      * Previously used plugin version, may be 0.
-     * Plugins might want to this value during set_parameter_value(), set_midi_program() and set_state().
+     * Plugins might want to check this value during set_parameter_value(), set_midi_program() and set_state().
      */
     int pluginVersion;
 
