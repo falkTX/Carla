@@ -355,7 +355,7 @@ typedef struct {
     const TimeInfo* (*get_time_info)(PluginHostHandle handle);
 
     // plugin must set "sendmsg" feature to use this
-    bool (*send_ui_msg)(const char* msg);
+    bool (*send_ui_msg)(PluginHostHandle handle, const char* msg);
 
     // plugin must set "writeevent" feature to use this
     bool (*write_event)(PluginHostHandle handle, const Event* event);
@@ -401,7 +401,7 @@ typedef struct {
 // PluginDescriptor
 
 typedef struct _PluginDescriptor {
-    const int api_version;        //!< Must be set to CARLA_NATIVE_API_VERSION
+    const int api;                //!< Must be set to CARLA_NATIVE_API_VERSION.
     const char* const categories; //!< Categories. @see PluginCategories
     const char* const features;   //!< Features. @see PluginFeatures
     const char* const supports;   //!< MIDI supported events. @see PluginSupports
@@ -410,13 +410,13 @@ typedef struct _PluginDescriptor {
     const uint32_t audioOuts;     //!< Default number of audio outputs.
     const uint32_t midiIns;       //!< Default number of MIDI inputs.
     const uint32_t midiOuts;      //!< Default number of MIDI inputs.
-    const uint32_t parameterIns;  //!< Default number of input parameters, may be 0.
-    const uint32_t parameterOuts; //!< Default number of output parameters, may be 0.
+    const uint32_t paramIns;      //!< Default number of input parameters, may be 0.
+    const uint32_t paramOuts;     //!< Default number of output parameters, may be 0.
     const char* const author;     //!< Author.
     const char* const name;       //!< Name.
     const char* const label;      //!< Label, can only contain letters, numbers and "_".
     const char* const copyright;  //!< Copyright.
-    const int version;            //!< Version.
+    const int version;            //!< Version in hexadecimal (0x1023 = 1.0.23).
 
     PluginHandle (*instantiate)(const PluginHostDescriptor* host);
     void         (*cleanup)(PluginHandle handle);
@@ -431,13 +431,13 @@ typedef struct _PluginDescriptor {
     const MidiProgram* (*get_midi_program_info)(PluginHandle handle, uint32_t index);
     void               (*set_midi_program)(PluginHandle handle, uint8_t channel, uint32_t bank, uint32_t program); // channel used only in synths
 
+    // only used if "idle" feature is set, or HOST_OPCODE_NEEDS_IDLE was triggered (for one-shot).
+    // NOTE: although it's a non-realtime function, it will probably still not be called from the host main thread
+    void (*idle)(PluginHandle handle);
+
     // only used if "state" feature is set
     char* (*get_state)(PluginHandle handle);
     void  (*set_state)(PluginHandle handle, const char* data);
-
-    // only used if "idle" feature is set, or HOST_OPCODE_NEEDS_IDLE was triggered (for one-shot).
-    // NOTE: although it's a non-realtime function, it will probably still not be called from the host main thread
-    void (*idle)();
 
     void (*activate)(PluginHandle handle);
     void (*deactivate)(PluginHandle handle);
@@ -452,7 +452,7 @@ typedef struct _PluginDescriptor {
 // UiDescriptor
 
 typedef struct {
-    const int api_version;      //!< Must be set to CARLA_NATIVE_API_VERSION
+    const int api;              //!< Must be set to CARLA_NATIVE_API_VERSION.
     const char* const features; //!< Features. @see UiFeatures
     const char* const author;   //!< Author this UI matches to.
     const char* const label;    //!< Label this UI matches to, can only contain letters, numbers and "_". May be null, in which case represents all UIs for @a maker.

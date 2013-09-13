@@ -18,20 +18,46 @@
 #include "CarlaNative.h"
 #include "CarlaMIDI.h"
 
+#include <stdlib.h>
+
 // -----------------------------------------------------------------------
 
-static PluginHandle midiThrough_instantiate(const HostDescriptor* host)
+typedef struct {
+    const PluginHostDescriptor* host;
+    MappedValue map_midi;
+} MidiThroughHandle;
+
+// -----------------------------------------------------------------------
+
+static PluginHandle midiThrough_instantiate(const PluginHostDescriptor* host)
 {
-    // use HostDescriptor as PluginHandle
-    return (PluginHandle)host;
+    MidiThroughHandle* const handle = (MidiThroughHandle*)malloc(sizeof(MidiThroughHandle));
+
+    if (handle == NULL)
+        return NULL;
+
+    handle->host     = host;
+    handle->map_midi = host->map_value(host->handle, EVENT_TYPE_MIDI);
+    return handle;
 }
 
-static void midiThrough_process(PluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const MidiEvent* midiEvents, uint32_t midiEventCount)
-{
-    const HostDescriptor* const host = (const HostDescriptor*)handle;
+#define handlePtr ((MidiThroughHandle*)handle)
 
-    for (uint32_t i=0; i < midiEventCount; ++i)
-        host->write_midi_event(host->handle, &midiEvents[i]);
+static void midiThrough_cleanup(PluginHandle handle)
+{
+    free(handlePtr);
+}
+
+static void midiThrough_process(PluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const Event* events, uint32_t eventCount)
+{
+    const PluginHostDescriptor* const host = handlePtr->host;
+    const MappedValue map_midi = handlePtr->map_midi;
+
+    for (uint32_t i=0; i < eventCount; ++i)
+    {
+        if (events[i].type == map_midi)
+            host->write_event(host->handle, &events[i]);
+    }
 
     return;
 
@@ -41,51 +67,49 @@ static void midiThrough_process(PluginHandle handle, float** inBuffer, float** o
     (void)frames;
 }
 
+#undef handlePtr
+
 // -----------------------------------------------------------------------
 
 static const PluginDescriptor midiThroughDesc = {
-    .category  = PLUGIN_CATEGORY_UTILITY,
-    .hints     = PLUGIN_IS_RTSAFE,
-    .supports  = PLUGIN_SUPPORTS_EVERYTHING,
-    .audioIns  = 0,
-    .audioOuts = 0,
-    .midiIns   = 1,
-    .midiOuts  = 1,
-    .parameterIns  = 0,
-    .parameterOuts = 0,
-    .name      = "MIDI Through",
-    .label     = "midiThrough",
-    .maker     = "falkTX",
-    .copyright = "GNU GPL v2+",
+    .api        = CARLA_NATIVE_API_VERSION,
+    .categories = PLUGIN_CATEGORY_UTILITY ":midi",
+    .features   = "rtsafe",
+    .supports   = PLUGIN_SUPPORTS_EVERYTHING,
+    .metadata   = NULL,
+    .audioIns   = 0,
+    .audioOuts  = 0,
+    .midiIns    = 1,
+    .midiOuts   = 1,
+    .paramIns   = 0,
+    .paramOuts  = 0,
+    .author     = "falkTX",
+    .name       = "MIDI Through",
+    .label      = "midiThrough",
+    .copyright  = "GNU GPL v2+",
+    .version    = 0x1000,
 
     .instantiate = midiThrough_instantiate,
-    .cleanup     = NULL,
+    .cleanup     = midiThrough_cleanup,
 
     .get_parameter_count = NULL,
     .get_parameter_info  = NULL,
     .get_parameter_value = NULL,
     .get_parameter_text  = NULL,
+    .set_parameter_value = NULL,
 
     .get_midi_program_count = NULL,
     .get_midi_program_info  = NULL,
+    .set_midi_program       = NULL,
 
-    .set_parameter_value = NULL,
-    .set_midi_program    = NULL,
-    .set_custom_data     = NULL,
+    .idle = NULL,
 
-    .ui_show = NULL,
-    .ui_idle = NULL,
-
-    .ui_set_parameter_value = NULL,
-    .ui_set_midi_program    = NULL,
-    .ui_set_custom_data     = NULL,
+    .get_state = NULL,
+    .set_state = NULL,
 
     .activate   = NULL,
     .deactivate = NULL,
     .process    = midiThrough_process,
-
-    .get_state = NULL,
-    .set_state = NULL,
 
     .dispatcher = NULL
 };

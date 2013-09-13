@@ -21,39 +21,42 @@
 
 // -----------------------------------------------------------------------
 
-static PluginHandle bypass_instantiate(const HostDescriptor* host)
+static PluginHandle bypass_instantiate(const PluginHostDescriptor* host)
 {
     // dummy, return non-NULL
     return (PluginHandle)host;
 }
 
-static void bypass_process(PluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const MidiEvent* midiEvents, uint32_t midiEventCount)
+static void bypass_process(PluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const Event* events, uint32_t eventCount)
 {
     memcpy(outBuffer[0], inBuffer[0], sizeof(float)*frames);
     return;
 
     // unused
     (void)handle;
-    (void)midiEvents;
-    (void)midiEventCount;
+    (void)events;
+    (void)eventCount;
 }
 
 // -----------------------------------------------------------------------
 
 static const PluginDescriptor bypassDesc = {
-    .category  = PLUGIN_CATEGORY_NONE,
-    .hints     = PLUGIN_IS_RTSAFE,
-    .supports  = 0x0,
-    .audioIns  = 1,
-    .audioOuts = 1,
-    .midiIns   = 0,
-    .midiOuts  = 0,
-    .parameterIns  = 0,
-    .parameterOuts = 0,
-    .name      = "ByPass",
-    .label     = "bypass",
-    .maker     = "falkTX",
-    .copyright = "GNU GPL v2+",
+    .api        = CARLA_NATIVE_API_VERSION,
+    .categories = NULL,
+    .features   = "rtsafe",
+    .supports   = NULL,
+    .metadata   = NULL,
+    .audioIns   = 1,
+    .audioOuts  = 1,
+    .midiIns    = 0,
+    .midiOuts   = 0,
+    .paramIns   = 0,
+    .paramOuts  = 0,
+    .author     = "falkTX",
+    .name       = "ByPass",
+    .label      = "bypass",
+    .copyright  = "GNU GPL v2+",
+    .version    = 0x1000,
 
     .instantiate = bypass_instantiate,
     .cleanup     = NULL,
@@ -62,27 +65,20 @@ static const PluginDescriptor bypassDesc = {
     .get_parameter_info  = NULL,
     .get_parameter_value = NULL,
     .get_parameter_text  = NULL,
+    .set_parameter_value = NULL,
 
     .get_midi_program_count = NULL,
     .get_midi_program_info  = NULL,
+    .set_midi_program       = NULL,
 
-    .set_parameter_value = NULL,
-    .set_midi_program    = NULL,
-    .set_custom_data     = NULL,
+    .idle = NULL,
 
-    .ui_show = NULL,
-    .ui_idle = NULL,
-
-    .ui_set_parameter_value = NULL,
-    .ui_set_midi_program    = NULL,
-    .ui_set_custom_data     = NULL,
+    .get_state = NULL,
+    .set_state = NULL,
 
     .activate   = NULL,
     .deactivate = NULL,
     .process    = bypass_process,
-
-    .get_state = NULL,
-    .set_state = NULL,
 
     .dispatcher = NULL
 };

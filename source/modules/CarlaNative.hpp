@@ -33,10 +33,35 @@
 class PluginClass
 {
 public:
-    PluginClass(const HostDescriptor* const host)
+    struct MappedValues {
+        // event types
+        MappedValue midi;
+        MappedValue parameter;
+        // plugin opcodes
+        MappedValue msgReceived;
+        MappedValue bufferSizeChanged;
+        MappedValue sampleRateChanged;
+        MappedValue offlineChanged;
+        // host opcodes
+        MappedValue needsIdle;
+
+    } fMap;
+
+    PluginClass(const PluginHostDescriptor* const host)
         : pHost(host)
     {
-        CARLA_ASSERT(host != nullptr);
+        std::memset(&fMap, 0, sizeof(MappedValues));
+        CARLA_SAFE_ASSERT_RETURN(host != nullptr,);
+
+        fMap.midi      = pHost->map_value(pHost->handle, EVENT_TYPE_MIDI);
+        fMap.parameter = pHost->map_value(pHost->handle, EVENT_TYPE_PARAMETER);
+
+        fMap.msgReceived       = pHost->map_value(pHost->handle, PLUGIN_OPCODE_MSG_RECEIVED);
+        fMap.bufferSizeChanged = pHost->map_value(pHost->handle, PLUGIN_OPCODE_BUFFER_SIZE_CHANGED);
+        fMap.sampleRateChanged = pHost->map_value(pHost->handle, PLUGIN_OPCODE_SAMPLE_RATE_CHANGED);
+        fMap.offlineChanged    = pHost->map_value(pHost->handle, PLUGIN_OPCODE_OFFLINE_CHANGED);
+
+        fMap.needsIdle = pHost->map_value(pHost->handle, HOST_OPCODE_NEEDS_IDLE);
     }
 
     virtual ~PluginClass()
@@ -47,23 +72,30 @@ protected:
     // -------------------------------------------------------------------
     // Host calls
 
-    const HostDescriptor* getHostHandle() const noexcept
+    const PluginHostDescriptor* getHostHandle() const noexcept
     {
         return pHost;
     }
 
-    const char* getResourceDir() const
+    int getPluginVersion() const noexcept
     {
-        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr, nullptr);
-
-        return pHost->resourceDir;
+        return pHost->pluginVersion;
     }
 
-    const char* getUiName() const
+    MappedValue mapValue(const char* const valueStr) const
+    {
+        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr, 0);
+        CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr, 0);
+
+        return pHost->map_value(pHost->handle, valueStr);
+    }
+
+    const char* unmapValue(const MappedValue value) const
     {
         CARLA_SAFE_ASSERT_RETURN(pHost != nullptr, nullptr);
+        CARLA_SAFE_ASSERT_RETURN(value != 0, nullptr);
 
-        return pHost->uiName;
+        return pHost->unmap_value(pHost->handle, value);
     }
 
     uint32_t getBufferSize() const
@@ -94,58 +126,49 @@ protected:
         return pHost->get_time_info(pHost->handle);
     }
 
-    void writeMidiEvent(const MidiEvent* const event) const
+    bool sendUiMessage(const char* const msg)
     {
-        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(msg != nullptr, false);
 
-        pHost->write_midi_event(pHost->handle, event);
+        return pHost->send_ui_msg(pHost->handle, msg);
     }
 
-    void uiParameterChanged(const uint32_t index, const float value) const
+    bool writeEvent(const Event* const event) const
     {
-        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(event != nullptr, false);
 
-        pHost->ui_parameter_changed(pHost->handle, index, value);
+        return pHost->write_event(pHost->handle, event);
     }
 
-    void uiMidiProgramChanged(const uint8_t channel, const uint32_t bank, const uint32_t program) const
+    bool writeMidiEvent(const MidiEvent* const midiEvent) const
     {
-        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(midiEvent != nullptr, false);
 
-        pHost->ui_midi_program_changed(pHost->handle, channel, bank, program);
+        return pHost->write_event(pHost->handle, (const Event*)midiEvent);
     }
 
-    void uiCustomDataChanged(const char* const key, const char* const value) const
+    bool writeParameterEvent(const ParameterEvent* const paramEvent) const
     {
-        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(paramEvent != nullptr, false);
 
-        pHost->ui_custom_data_changed(pHost->handle, key, value);
-    }
-
-    void uiClosed() const
-    {
-        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
-
-        pHost->ui_closed(pHost->handle);
-    }
-
-    const char* uiOpenFile(const bool isDir, const char* const title, const char* const filter) const
-    {
-        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr, nullptr);
-
-        return pHost->ui_open_file(pHost->handle, isDir, title, filter);
-    }
-
-    const char* uiSaveFile(const bool isDir, const char* const title, const char* const filter) const
-    {
-        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr, nullptr);
-
-        return pHost->ui_save_file(pHost->handle, isDir, title, filter);
+        return pHost->write_event(pHost->handle, (const Event*)paramEvent);
     }
 
     // -------------------------------------------------------------------
     // Host dispatcher calls
 
+    void hostNeedsIdle() const
+    {
+        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
+
+        pHost->dispatcher(pHost->handle, fMap.needsIdle, 0, 0, nullptr, 0.0f);
+    }
+
+#if 0
     void hostSetVolume(const float value) const
     {
         CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
@@ -193,13 +216,6 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
 
         pHost->dispatcher(pHost->handle, HOST_OPCODE_SET_PARAMETER_MIDI_CC, index, value, nullptr, 0.0f);
-    }
-
-    void hostSetProcessPrecision(const intptr_t value) const
-    {
-        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
-
-        pHost->dispatcher(pHost->handle, HOST_OPCODE_SET_PROCESS_PRECISION, 0, value, nullptr, 0.0f);
     }
 
     void hostUpdateParameter(const int32_t index) const
@@ -250,13 +266,7 @@ protected:
 
         pHost->dispatcher(pHost->handle, HOST_OPCODE_RELOAD_ALL, 0, 0, nullptr, 0.0f);
     }
-
-    void hostUiUnavailable() const
-    {
-        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
-
-        pHost->dispatcher(pHost->handle, HOST_OPCODE_UI_UNAVAILABLE, 0, 0, nullptr, 0.0f);
-    }
+#endif
 
     // -------------------------------------------------------------------
     // Plugin parameter calls
@@ -287,6 +297,15 @@ protected:
         (void)value;
     }
 
+    virtual void setParameterValue(const uint32_t index, const float value)
+    {
+        CARLA_SAFE_ASSERT_RETURN(index < getParameterCount(),);
+        return;
+
+        // unused
+        (void)value;
+    }
+
     // -------------------------------------------------------------------
     // Plugin midi-program calls
 
@@ -301,18 +320,6 @@ protected:
         return nullptr;
     }
 
-    // -------------------------------------------------------------------
-    // Plugin state calls
-
-    virtual void setParameterValue(const uint32_t index, const float value)
-    {
-        CARLA_SAFE_ASSERT_RETURN(index < getParameterCount(),);
-        return;
-
-        // unused
-        (void)value;
-    }
-
     virtual void setMidiProgram(const uint8_t channel, const uint32_t bank, const uint32_t program)
     {
         CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
@@ -323,63 +330,11 @@ protected:
         (void)program;
     }
 
-    virtual void setCustomData(const char* const key, const char* const value)
-    {
-        CARLA_SAFE_ASSERT_RETURN(key != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(value != nullptr,);
-    }
-
     // -------------------------------------------------------------------
-    // Plugin process calls
+    // Plugin idle
 
-    virtual void activate()
+    virtual void idle()
     {
-    }
-
-    virtual void deactivate()
-    {
-    }
-
-    virtual void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const MidiEvent* const midiEvents, const uint32_t midiEventCount) = 0;
-
-    // -------------------------------------------------------------------
-    // Plugin UI calls
-
-    virtual void uiShow(const bool show)
-    {
-        return;
-
-        // unused
-        (void)show;
-    }
-
-    virtual void uiIdle()
-    {
-    }
-
-    virtual void uiSetParameterValue(const uint32_t index, const float value)
-    {
-        CARLA_SAFE_ASSERT_RETURN(index < getParameterCount(),);
-        return;
-
-        // unused
-        (void)value;
-    }
-
-    virtual void uiSetMidiProgram(const uint8_t channel, const uint32_t bank, const uint32_t program)
-    {
-        CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
-        return;
-
-        // unused
-        (void)bank;
-        (void)program;
-    }
-
-    virtual void uiSetCustomData(const char* const key, const char* const value)
-    {
-        CARLA_SAFE_ASSERT_RETURN(key != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(value != nullptr,);
     }
 
     // -------------------------------------------------------------------
@@ -396,14 +351,29 @@ protected:
     }
 
     // -------------------------------------------------------------------
+    // Plugin process calls
+
+    virtual void activate()
+    {
+    }
+
+    virtual void deactivate()
+    {
+    }
+
+    virtual void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const Event* const events, const uint32_t eventCount) = 0;
+
+    // -------------------------------------------------------------------
     // Plugin dispatcher calls
+
+    virtual void messageReceived(const char* const msg)
+    {
+        CARLA_SAFE_ASSERT_RETURN(msg != nullptr,);
+    }
 
     virtual void bufferSizeChanged(const uint32_t bufferSize)
     {
-        return;
-
-        // unused
-        (void)bufferSize;
+        CARLA_SAFE_ASSERT_RETURN(bufferSize > 0,);
     }
 
     virtual void sampleRateChanged(const double sampleRate)
@@ -411,7 +381,7 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(sampleRate > 0.0,);
     }
 
-    virtual void offlineChanged(const bool isOffline)
+    virtual void offlineModeChanged(const bool isOffline)
     {
         return;
 
@@ -419,15 +389,10 @@ protected:
         (void)isOffline;
     }
 
-    virtual void uiNameChanged(const char* const uiName)
-    {
-        CARLA_SAFE_ASSERT_RETURN(uiName != nullptr,);
-    }
-
     // -------------------------------------------------------------------
 
 private:
-    const HostDescriptor* const pHost;
+    const PluginHostDescriptor* const pHost;
 
     // -------------------------------------------------------------------
 
@@ -455,6 +420,11 @@ public:
         return handlePtr->getParameterText(index, value);
     }
 
+    static void _set_parameter_value(PluginHandle handle, uint32_t index, float value)
+    {
+        handlePtr->setParameterValue(index, value);
+    }
+
     static uint32_t _get_midi_program_count(PluginHandle handle)
     {
         return handlePtr->getMidiProgramCount();
@@ -465,59 +435,14 @@ public:
         return handlePtr->getMidiProgramInfo(index);
     }
 
-    static void _set_parameter_value(PluginHandle handle, uint32_t index, float value)
-    {
-        handlePtr->setParameterValue(index, value);
-    }
-
     static void _set_midi_program(PluginHandle handle, uint8_t channel, uint32_t bank, uint32_t program)
     {
         handlePtr->setMidiProgram(channel, bank, program);
     }
 
-    static void _set_custom_data(PluginHandle handle, const char* key, const char* value)
+    static void _idle(PluginHandle handle)
     {
-        handlePtr->setCustomData(key, value);
-    }
-
-    static void _ui_show(PluginHandle handle, bool show)
-    {
-        handlePtr->uiShow(show);
-    }
-
-    static void _ui_idle(PluginHandle handle)
-    {
-        handlePtr->uiIdle();
-    }
-
-    static void _ui_set_parameter_value(PluginHandle handle, uint32_t index, float value)
-    {
-        handlePtr->uiSetParameterValue(index, value);
-    }
-
-    static void _ui_set_midi_program(PluginHandle handle, uint8_t channel, uint32_t bank, uint32_t program)
-    {
-        handlePtr->uiSetMidiProgram(channel, bank, program);
-    }
-
-    static void _ui_set_custom_data(PluginHandle handle, const char* key, const char* value)
-    {
-        handlePtr->uiSetCustomData(key, value);
-    }
-
-    static void _activate(PluginHandle handle)
-    {
-        handlePtr->activate();
-    }
-
-    static void _deactivate(PluginHandle handle)
-    {
-        handlePtr->deactivate();
-    }
-
-    static void _process(PluginHandle handle, float** inBuffer, float** outBuffer, const uint32_t frames, const MidiEvent* midiEvents, uint32_t midiEventCount)
-    {
-        handlePtr->process(inBuffer, outBuffer, frames, midiEvents, midiEventCount);
+        handlePtr->idle();
     }
 
     static char* _get_state(PluginHandle handle)
@@ -530,31 +455,49 @@ public:
         handlePtr->setState(data);
     }
 
-    static intptr_t _dispatcher(PluginHandle handle, PluginDispatcherOpcode opcode, int32_t index, intptr_t value, void* ptr, float opt)
+    static void _activate(PluginHandle handle)
     {
-        switch(opcode)
+        handlePtr->activate();
+    }
+
+    static void _deactivate(PluginHandle handle)
+    {
+        handlePtr->deactivate();
+    }
+
+    static void _process(PluginHandle handle, float** inBuffer, float** outBuffer, const uint32_t frames, const Event* events, uint32_t eventCount)
+    {
+        handlePtr->process(inBuffer, outBuffer, frames, events, eventCount);
+    }
+
+    static intptr_t _dispatcher(PluginHandle handle, MappedValue opcode, int32_t /*index*/, intptr_t value, void* ptr, float opt)
+    {
+        const MappedValues& map(handlePtr->fMap);
+
+        if (opcode == 0)
         {
-        case PLUGIN_OPCODE_NULL:
-            return 0;
-        case PLUGIN_OPCODE_BUFFER_SIZE_CHANGED:
+        }
+        else if (opcode == map.msgReceived)
+        {
+            CARLA_SAFE_ASSERT_RETURN(ptr != nullptr, 0);
+            handlePtr->messageReceived(static_cast<const char*>(ptr));
+        }
+        else if (opcode == map.bufferSizeChanged)
+        {
             CARLA_SAFE_ASSERT_RETURN(value > 0, 0);
             handlePtr->bufferSizeChanged(static_cast<uint32_t>(value));
-            return 0;
-        case PLUGIN_OPCODE_SAMPLE_RATE_CHANGED:
+        }
+        else if (opcode == map.sampleRateChanged)
+        {
+            CARLA_SAFE_ASSERT_RETURN(opt > 0.0f, 0);
             handlePtr->sampleRateChanged(static_cast<double>(opt));
-            return 0;
-        case PLUGIN_OPCODE_OFFLINE_CHANGED:
-            handlePtr->offlineChanged(value != 0);
-            return 0;
-        case PLUGIN_OPCODE_UI_NAME_CHANGED:
-            handlePtr->uiNameChanged(static_cast<const char*>(ptr));
-            return 0;
+        }
+        else if (opcode == map.offlineChanged)
+        {
+            handlePtr->offlineModeChanged(value != 0);
         }
 
         return 0;
-
-        // unused
-        (void)index;
     }
 
     #undef handlePtr
@@ -567,15 +510,15 @@ public:
 
 // -----------------------------------------------------------------------
 
-#define PluginClassEND(ClassName)                                \
-public:                                                          \
-    static PluginHandle _instantiate(const HostDescriptor* host) \
-    {                                                            \
-        return new ClassName(host);                              \
-    }                                                            \
-    static void _cleanup(PluginHandle handle)                    \
-    {                                                            \
-        delete (ClassName*)handle;                               \
+#define PluginClassEND(ClassName)                                      \
+public:                                                                \
+    static PluginHandle _instantiate(const PluginHostDescriptor* host) \
+    {                                                                  \
+        return new ClassName(host);                                    \
+    }                                                                  \
+    static void _cleanup(PluginHandle handle)                          \
+    {                                                                  \
+        delete (ClassName*)handle;                                     \
     }
 
 #define PluginDescriptorFILL(ClassName) \
@@ -585,21 +528,16 @@ public:                                                          \
     ClassName::_get_parameter_info,     \
     ClassName::_get_parameter_value,    \
     ClassName::_get_parameter_text,     \
+    ClassName::_set_parameter_value,    \
     ClassName::_get_midi_program_count, \
     ClassName::_get_midi_program_info,  \
-    ClassName::_set_parameter_value,    \
     ClassName::_set_midi_program,       \
-    ClassName::_set_custom_data,        \
-    ClassName::_ui_show,                \
-    ClassName::_ui_idle,                \
-    ClassName::_ui_set_parameter_value, \
-    ClassName::_ui_set_midi_program,    \
-    ClassName::_ui_set_custom_data,     \
+    ClassName::_idle,                   \
+    ClassName::_get_state,              \
+    ClassName::_set_state,              \
     ClassName::_activate,               \
     ClassName::_deactivate,             \
     ClassName::_process,                \
-    ClassName::_get_state,              \
-    ClassName::_set_state,              \
     ClassName::_dispatcher
 
 // -----------------------------------------------------------------------
