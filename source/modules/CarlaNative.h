@@ -33,13 +33,8 @@ extern "C" {
  * @{
  */
 
-// -----------------------------------------------------------------------
-// Macros
-
-/*!
- * Current API version.
- */
-#define CARLA_NATIVE_API_VERSION 1
+// ---------------------------------------------------------------------------------------
+// Plugin Categories
 
 /*!
  * @defgroup PluginCategories Plugin Categories
