@@ -47,7 +47,7 @@ extern "C" {
  * A small list of pre-defined plugin categories.
  *
  * Plugins should provide at least one of these basic categories.
- * THey can use their own custom categories as well, as long as they are lowercase and contain ASCII characters only.
+ * They can use their own custom categories as well, as long as they are lowercase and contain ASCII characters only.
  * Many categories can be set by using ":" in between them.
  * @{
  */
@@ -76,11 +76,13 @@ extern "C" {
 /*!
  * Is hard-realtime safe.
  *
- * Plugins with non-rtsafe parameters can be considered rtsafe,
- * as long as they set parameters hints accordingly.
+ * TODO - add description of what RT safe is here.
  *
  * If the plugin is hard-realtime safe and supports MIDI programs,
  * it MUST ensure MIDI Program events are hard-realtime safe as well.
+ *
+ * @note: Plugins with non-rtsafe parameters can still be considered rtsafe,
+ *        as long as they set parameters hints accordingly.
  *
  * @see PARAMETER_IS_RTSAFE
  */
@@ -101,7 +103,7 @@ extern "C" {
 /*!
  * Needs fixed-size audio buffers.
  *
- * When this feature is set, the host will always call the process() with frames equal to the current buffer size.
+ * When this feature is set, the host will always call process() with frames equal to the current buffer size.
  * The plugin should probably listen for buffer size changes.
  *
  * @see PLUGIN_FEATURE_BUFFER_SIZE_CHANGES, PLUGIN_OPCODE_BUFFER_SIZE_CHANGED
@@ -199,7 +201,7 @@ extern "C" {
 /*!
  * Handles MIDI programs internally instead of host-exposed/exported.
  *
- * When this is set, the host will no try to map MIDI program changes into
+ * When this is set, the host will not try to map MIDI program changes into
  * plugin exported programs by sending MidiProgramEvent, but will send MidiEvent directly.
  *
  * @see MidiProgram, MidiProgramEvent
@@ -258,8 +260,8 @@ extern "C" {
  * The plugin MUST NEVER change input parameters on its own.
  *
  * Output parameters are managed by the plugin.
- * Every time their values change the plugin should .
- * Because of this, any plugin that has output parameters should always set PLUGIN_FEATURE_WRITE_EVENT.
+ * Most plugins that have output parameters should set PLUGIN_FEATURE_WRITE_EVENT,
+ * see PARAMETER_IS_RTSAFE for details.
  */
 #define PARAMETER_IS_OUTPUT "output"
 
@@ -298,7 +300,7 @@ extern "C" {
 /*!
  * Values are logarithmic.
  */
-#define PARAMETER_IS_LOGARITHMIC   "logarithmic"
+#define PARAMETER_IS_LOGARITHMIC "logarithmic"
 
 /*!
  * Needs sample rate to work.
