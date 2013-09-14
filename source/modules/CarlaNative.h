@@ -56,6 +56,9 @@ extern "C" {
 #define PLUGIN_CATEGORY_OTHER     "other"     //!< Misc plugin (used to check if the plugin has a category).
 /** @} */
 
+// ---------------------------------------------------------------------------------------
+// Plugin Features
+
 /*!
  * @defgroup PluginFeatures Plugin Features
  *
@@ -82,18 +85,6 @@ extern "C" {
  * @see PARAMETER_IS_RTSAFE
  */
 #define PLUGIN_FEATURE_RTSAFE "rtsafe"
-
-/*!
- * Needs non-realtime idle() function regularly.
- *
- * This can be used by plugins that need a non-realtime thread to do work.
- * The host will call PluginDescriptor::idle() at regular intervals.
- * The plugin MUST NOT lock indefinitely.
- *
- * Alternatively, the plugin can ask the host for a one-shot idle(),
- * by using HOST_OPCODE_NEEDS_IDLE.
- */
-#define PLUGIN_FEATURE_IDLE "idle"
 
 /*!
  * Needs fixed-size audio buffers.
@@ -145,42 +136,14 @@ extern "C" {
 #define PLUGIN_FEATURE_WRITE_EVENT "writeevent"
 
 /*!
- * Uses send_ui_msg() function.
- */
-#define PLUGIN_FEATURE_SEND_MSG "sendmsg"
-
-/** @} */
-
-/*!
- * @defgroup UiFeatures UI Features
- *
- * A list of UI features or hints.
- *
- * Custom features are allowed, as long as they are lowercase and contain ASCII characters only.
- * The host can decide if it can load the UI or not based on this information.
- *
- * Multiple features can be set by using ":" in between them.
- * @{
- */
-
-/*!
- * Supports sample rate changes on-the-fly.
- *
- * If unset, the host will re-initiate the UI when the sample rate changes.
- */
-#define UI_FEATURE_SAMPLE_RATE_CHANGES "sampleratechanges"
-
-/*!
  * Uses ui_open_file() and/or ui_save_file() functions.
  */
-#define UI_FEATURE_OPEN_SAVE "opensave"
-
-/*!
- * Uses send_plugin_msg() function.
- */
-#define UI_FEATURE_SEND_MSG "sendmsg"
+#define UI_FEATURE_OPEN_SAVE "uiopensave"
 
 /** @} */
+
+// ---------------------------------------------------------------------------------------
+// Plugin Supports
 
 /*!
  * TODO - this needs a better name...
@@ -235,7 +198,15 @@ extern "C" {
  */
 #define PLUGIN_SUPPORTS_ALL_SOUND_OFF "allsoundoff"
 
-/**@}*/
+/*!
+ * Convenience macro.
+ */
+#define PLUGIN_SUPPORTS_EVERYTHING "control:pressure:aftertouch:pitchbend:allsoundoff"
+
+/** @} */
+
+// ---------------------------------------------------------------------------------------
+// Parameter Hints
 
 /*!
  * @defgroup ParameterHints Parameter Hints
@@ -317,7 +288,10 @@ extern "C" {
  */
 #define PARAMETER_USES_CUSTOM_TEXT "customtext"
 
-/**@}*/
+/** @} */
+
+// ---------------------------------------------------------------------------------------
+// Default Parameter Ranges
 
 /*!
  * @defgroup DefaultParameterRanges Default Parameter Ranges
@@ -328,15 +302,18 @@ extern "C" {
 #define PARAMETER_RANGE_DEFAULT_STEP       0.01f
 #define PARAMETER_RANGE_DEFAULT_STEP_SMALL 0.0001f
 #define PARAMETER_RANGE_DEFAULT_STEP_LARGE 0.1f
-/**@}*/
+/** @} */
+
+// ---------------------------------------------------------------------------------------
+// Event Types
 
 /*!
- * @defgroup EventTypes EventTypes
+ * @defgroup EventTypes Event Types
  *
  * List of supported event types.
  *
  * The types are mapped into mapped_value_t by the host.
- * @see Plugin/UiHostDescriptor::map_value()
+ * @see HostDescriptor::map_value()
  * @{
  */
 
@@ -369,32 +346,10 @@ extern "C" {
  */
 #define EVENT_TYPE_PARAMETER "parameter"
 
-/*!
- * Time information event.
- *
- * Used in-process only.
- *
- * @see TimeInfoEvent
- */
-#define EVENT_TYPE_PARAMETER "time"
+/** @} */
 
-/**@}*/
-
-/*!
- * @defgroup PluginDispatcherOpcodes Plugin Dispatcher Opcodes
- *
- * Opcodes dispatched by the host to report changes to the plugin or UI.
- *
- * The opcodes are mapped into MappedValue by the host.
- * @see PluginDescriptor::dispatcher()
- * @{
- */
-#define PLUGIN_OPCODE_MSG_RECEIVED        "msgReceived"       //!< Message received, uses ptr as char*.
-#define PLUGIN_OPCODE_BUFFER_SIZE_CHANGED "bufferSizeChanged" //!< Audio buffer size changed, uses value, returns 1 if supported. @see PluginHostDescriptor::get_buffer_size()
-#define PLUGIN_OPCODE_SAMPLE_RATE_CHANGED "sampleRateChanged" //!< Audio sample rate changed, uses opt, returns 1 if supported. @see Plugin/UiHostDescriptor::get_sample_rate()
-#define PLUGIN_OPCODE_OFFLINE_CHANGED     "offlineChanged"    //!< Offline mode changed, uses value (0=off, 1=on). @see Plugin/UiHostDescriptor::is_offline()
-#define PLUGIN_OPCODE_UI_TITLE_CHANGED    "uiTitleChanged"    //!< UI title changed, uses ptr. @see UiHostDescriptor::is_offline()
-/**@}*/
+// ---------------------------------------------------------------------------------------
+// Host Dispatcher Opcodes
 
 /*!
  * @defgroup HostDispatcherOpcodes Host Dispatcher Opcodes
@@ -419,9 +374,28 @@ extern "C" {
 #define HOST_OPCODE_RELOAD_MIDI_PROGRAMS  "reloadMidiPrograms" //!< Tell the host to reload all midi-programs data, uses nothing.
 #define HOST_OPCODE_RELOAD_ALL            "reloadAll"          //!< Tell the host to reload everything all the plugin, uses nothing.
 #define HOST_OPCODE_UI_UNAVAILABLE        "uiUnavailable"      //!< Tell the host the UI can't be shown, uses nothing.
-/**@}*/
+/** @} */
 
-// -----------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
+// Plugin Dispatcher Opcodes
+
+/*!
+ * @defgroup PluginDispatcherOpcodes Plugin Dispatcher Opcodes
+ *
+ * Opcodes dispatched by the host to report changes to the plugin or UI.
+ *
+ * The opcodes are mapped into MappedValue by the host.
+ * @see PluginDescriptor::dispatcher()
+ * @{
+ */
+#define PLUGIN_OPCODE_MSG_RECEIVED        "msgReceived"       //!< Message received, uses ptr as char*.
+#define PLUGIN_OPCODE_BUFFER_SIZE_CHANGED "bufferSizeChanged" //!< Audio buffer size changed, uses value, returns 1 if supported. @see HostDescriptor::buffer_size
+#define PLUGIN_OPCODE_SAMPLE_RATE_CHANGED "sampleRateChanged" //!< Audio sample rate changed, uses opt, returns 1 if supported. @see HostDescriptor::sample_rate
+#define PLUGIN_OPCODE_OFFLINE_CHANGED     "offlineChanged"    //!< Offline mode changed, uses value (0=off, 1=on). @see HostDescriptor::is_offline
+#define PLUGIN_OPCODE_UI_TITLE_CHANGED    "uiTitleChanged"    //!< UI title changed, uses ptr. @see HostDescriptor::ui_title
+/** @} */
+
+// ---------------------------------------------------------------------------------------
 // Base types
 
 /*!
@@ -432,7 +406,7 @@ typedef float audio_sample_t;
 /*!
  * Host mapped value of a string.
  * The value 0 is reserved as undefined.
- * @see Plugin/UiHostDescriptor::map_value()
+ * @see HostDescriptor::map_value()
  */
 typedef uint32_t mapped_value_t;
 
@@ -442,21 +416,11 @@ typedef uint32_t mapped_value_t;
 typedef void* PluginHandle;
 
 /*!
- * Opaque UI handle.
+ * Opaque host handle.
  */
-typedef void* UiHandle;
+typedef void* HostHandle;
 
-/*!
- * Opaque plugin host handle.
- */
-typedef void* PluginHostHandle;
-
-/*!
- * Opaque UI host handle.
- */
-typedef void* UiHostHandle;
-
-// -----------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 // Base structs
 
 /*!
@@ -485,7 +449,6 @@ typedef struct {
 typedef struct {
     const char* hints; //!< @see ParameterHints
     const char* name;
-    const char* symbol;
     const char* unit;
     ParameterRanges ranges;
 
@@ -532,6 +495,9 @@ typedef struct {
     TimeInfoBBT bbt;
 } TimeInfo;
 
+// ---------------------------------------------------------------------------------------
+// Events
+
 /*!
  * Generic event.
  */
@@ -576,92 +542,85 @@ typedef struct {
     float    value;
 } ParameterEvent;
 
-/*!
- * Time information event.
- */
-typedef struct {
-    Event e;
-    TimeInfoBBT bbt;
-} TimeInfoEvent;
-
-// -----------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 // PluginHostDescriptor
 
 typedef struct {
-    PluginHostHandle handle;
+    HostHandle handle;
 
     /*!
-     * Previously used plugin version, may be NULL.
+     * Full filepath to resource dir.
      */
-    const char* pluginVersion;
+    const char* resource_dir;
+
+    /*!
+     * Host desired UI title.
+     */
+    const char* ui_title;
+
+    /*!
+     * Current audio buffer size.
+     */
+    uint32_t buffer_size;
+
+    /*!
+     * Current audio sample rate.
+     */
+    double sample_rate;
+
+    /*!
+     * Wherever the host is currently processing offline.
+     */
+    bool is_offline;
 
     // NOTE: NOT allowed during process()
-    mapped_value_t (*map_value)(PluginHostHandle handle, const char* valueStr);
-    const char*    (*unmap_value)(PluginHostHandle handle, mapped_value_t value);
-
-    // NOTE: always allowed
-    uint32_t (*get_buffer_size)(PluginHostHandle handle);
-    double   (*get_sample_rate)(PluginHostHandle handle);
-    bool     (*is_offline)(PluginHostHandle handle);
+    // probably better if only allowed during instantiate()
+    mapped_value_t (*map_value)(HostHandle handle, const char* valueStr);
+    const char*    (*unmap_value)(HostHandle handle, mapped_value_t value);
 
     // plugin must set "time" feature to use this
     // NOTE: only allowed during process()
-    const TimeInfo* (*get_time_info)(PluginHostHandle handle);
-
-    // plugin must set "sendmsg" feature to use this
-    // NOTE: only allowed during idle()
-    bool (*send_ui_msg)(PluginHostHandle handle, const char* msg);
+    const TimeInfo* (*get_time_info)(HostHandle handle);
 
     // plugin must set "writeevent" feature to use this
     // NOTE: only allowed during process()
-    bool (*write_event)(PluginHostHandle handle, const Event* event);
+    bool (*write_event)(HostHandle handle, const Event* event);
 
-    // uses HostDispatcherOpcodes
-    intptr_t (*dispatcher)(PluginHostHandle handle, MappedValue opcode, int32_t index, intptr_t value, void* ptr, float opt);
+    /*!
+     * Inform the host about a parameter change from the UI.
+     */
+    void (*ui_parameter_changed)(HostHandle handle, uint32_t index, float value);
 
-} PluginHostDescriptor;
+    /*!
+     * Inform the host about a/the MIDI program change from the UI.
+     *
+     * @note: Only synths make use the of @a channel argument.
+     */
+    void (*ui_midi_program_changed)(HostHandle handle, uint8_t channel, uint32_t bank, uint32_t program);
 
-// -----------------------------------------------------------------------
-// UiHostDescriptor
-
-typedef struct {
-    UiHostHandle handle;
-    const char* resourceDir;
-    const char* uiTitle;
-
-    mapped_value_t (*map_value)(UiHostHandle handle, const char* valueStr);
-    const char*    (*unmap_value)(UiHostHandle handle, mapped_value_t value);
-
-    double (*get_sample_rate)(UiHostHandle handle);
-    bool   (*is_offline)(UiHostHandle handle);
-
-    void (*parameter_changed)(UiHostHandle handle, uint32_t index, float value);
-    void (*midi_program_changed)(UiHostHandle handle, uint8_t channel, uint32_t bank, uint32_t program);
-    void (*closed)(UiHostHandle handle);
+    /*!
+     * Inform the host the UI has been closed.
+     */
+    void (*ui_closed)(HostHandle handle);
 
     // TODO: add some msgbox call
 
     // ui must set "opensave" feature to use these
-    const char* (*open_file)(UiHostHandle handle, bool isDir, const char* title, const char* filter);
-    const char* (*save_file)(UiHostHandle handle, bool isDir, const char* title, const char* filter);
-
-    // ui must set "sendmsg" feature to use this
-    bool (*send_plugin_msg)(const char* msg);
+    const char* (*ui_open_file)(HostHandle handle, bool isDir, const char* title, const char* filter);
+    const char* (*ui_save_file)(HostHandle handle, bool isDir, const char* title, const char* filter);
 
     // uses HostDispatcherOpcodes
-    intptr_t (*dispatcher)(PluginHostHandle handle, MappedValue opcode, int32_t index, intptr_t value, void* ptr, float opt);
+    intptr_t (*dispatcher)(HostHandle handle, mapped_value_t opcode, int32_t index, intptr_t value, void* ptr, float opt);
 
-} UiHostDescriptor;
+} PluginHostDescriptor;
 
-// -----------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 // PluginDescriptor
 
-typedef struct _PluginDescriptor {
-    const int api;                //!< Must be set to CARLA_NATIVE_API_VERSION.
+typedef struct {
     const char* const categories; //!< Categories. @see PluginCategories
     const char* const features;   //!< Features. @see PluginFeatures
     const char* const supports;   //!< MIDI supported events. @see PluginSupports
-    const char* const metadata;   //!< Meta-data in JSON? format.
     const uint32_t audioIns;      //!< Default number of audio inputs.
     const uint32_t audioOuts;     //!< Default number of audio outputs.
     const uint32_t midiIns;       //!< Default number of MIDI inputs.
@@ -672,7 +631,6 @@ typedef struct _PluginDescriptor {
     const char* const name;       //!< Name.
     const char* const label;      //!< Label, can only contain letters, numbers and "_".
     const char* const copyright;  //!< Copyright.
-    const int version;            //!< Version in hexadecimal (0x1023 = 1.0.23).
 
     PluginHandle (*instantiate)(const PluginHostDescriptor* host);
     void         (*cleanup)(PluginHandle handle);
@@ -685,13 +643,6 @@ typedef struct _PluginDescriptor {
     uint32_t           (*get_midi_program_count)(PluginHandle handle);
     const MidiProgram* (*get_midi_program_info)(PluginHandle handle, uint32_t index);
 
-    // NOTE: host will never call this while process() is running
-    void (*non_rt_event)(PluginHandle handle, const Event* event);
-
-    // only used if "idle" feature is set, or HOST_OPCODE_NEEDS_IDLE was triggered (for one-shot).
-    // NOTE: although it's a non-realtime function, it will probably still not be called from the host main thread
-    void (*idle)(PluginHandle handle);
-
     // only used if "state" feature is set
     char* (*get_state)(PluginHandle handle);
     void  (*set_state)(PluginHandle handle, const char* data);
@@ -700,31 +651,16 @@ typedef struct _PluginDescriptor {
     void (*deactivate)(PluginHandle handle);
     void (*process)(PluginHandle handle, audio_sample_t** inBuffer, audio_sample_t** outBuffer, uint32_t frames, const Event* events, uint32_t eventCount);
 
+    void (*ui_show)(PluginHandle handle, bool show);
+    void (*ui_idle)(PluginHandle handle);
+
+    void (*ui_set_parameter)(PluginHandle handle, uint32_t index, float value);
+    void (*ui_set_midi_program)(PluginHandle handle, uint8_t channel, uint32_t bank, uint32_t program);
+
     // uses PluginDispatcherOpcodes
-    intptr_t (*dispatcher)(PluginHandle handle, MappedValue opcode, int32_t index, intptr_t value, void* ptr, float opt);
+    intptr_t (*dispatcher)(PluginHandle handle, mapped_value_t opcode, int32_t index, intptr_t value, void* ptr, float opt);
 
 } PluginDescriptor;
-
-// -----------------------------------------------------------------------
-// UiDescriptor
-
-typedef struct {
-    const int api;              //!< Must be set to CARLA_NATIVE_API_VERSION.
-    const char* const features; //!< Features. @see UiFeatures
-    const char* const author;   //!< Author this UI matches to.
-    const char* const label;    //!< Label this UI matches to, can only contain letters, numbers and "_". May be null, in which case represents all UIs for @a maker.
-
-    UiHandle (*instantiate)(const UiHostDescriptor* host);
-    void     (*cleanup)(UiHandle handle);
-
-    void (*show)(UiHandle handle, bool show);
-    void (*idle)(UiHandle handle);
-
-    void (*event)(UiHandle handle, const Event* event);
-
-    intptr_t (*dispatcher)(UiHandle handle, MappedValue opcode, int32_t index, intptr_t value, void* ptr, float opt);
-
-} UiDescriptor;
 
 // -----------------------------------------------------------------------
 // Register plugin
@@ -733,7 +669,7 @@ extern void carla_register_native_plugin(const PluginDescriptor* desc);
 
 // -----------------------------------------------------------------------
 
-/**@}*/
+/** @} */
 
 #ifdef __cplusplus
 } // extern "C"
