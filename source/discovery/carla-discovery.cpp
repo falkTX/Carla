@@ -132,8 +132,6 @@ intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t opcode
 {
     carla_debug("vstHostCallback(%p, %i:%s, %i, " P_INTPTR ", %p, %f)", effect, opcode, vstMasterOpcode2str(opcode), index, value, ptr, opt);
 
-    static VstTimeInfo_R timeInfo;
-
     intptr_t ret = 0;
 
     switch (opcode)
@@ -158,6 +156,7 @@ intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t opcode
 #endif
 
     case audioMasterGetTime:
+        static VstTimeInfo_R timeInfo;
         carla_zeroStruct<VstTimeInfo_R>(timeInfo);
         timeInfo.sampleRate = kSampleRate;
 
@@ -343,7 +342,7 @@ public:
             DISCOVERY_OUT("label", basename);
         }
 
-//         DISCOVERY_OUT("hints", PLUGIN_IS_SYNTH);
+        DISCOVERY_OUT("category", PLUGIN_CATEGORY_SYNTH);
         DISCOVERY_OUT("audio.outs", 2);
         DISCOVERY_OUT("audio.total", 2);
         DISCOVERY_OUT("midi.ins", 1);
