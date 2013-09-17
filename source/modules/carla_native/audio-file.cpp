@@ -26,7 +26,7 @@ class AudioFilePlugin : public PluginClass,
                         public AbstractAudioPlayer
 {
 public:
-    AudioFilePlugin(const PluginHostDescriptor* const host)
+    AudioFilePlugin(const HostDescriptor* const host)
         : PluginClass(host),
           AbstractAudioPlayer(),
           fLoopMode(false),
@@ -65,17 +65,17 @@ protected:
 
         static Parameter param;
 
-        param.hints = PARAMETER_IS_ENABLED ":" PARAMETER_IS_BOOLEAN;
         param.name  = "Loop Mode";
         param.unit  = nullptr;
-        param.ranges.def  = 1.0f;
-        param.ranges.min  = 0.0f;
-        param.ranges.max  = 1.0f;
+        param.hints = static_cast<ParameterHints>(PARAMETER_IS_ENABLED|PARAMETER_IS_BOOLEAN);
+        param.ranges.def = 1.0f;
+        param.ranges.min = 0.0f;
+        param.ranges.max = 1.0f;
         param.ranges.step = 1.0f;
         param.ranges.stepSmall = 1.0f;
         param.ranges.stepLarge = 1.0f;
-        param.scalePointCount  = 0;
-        param.scalePoints      = nullptr;
+        param.scalePointCount = 0;
+        param.scalePoints     = nullptr;
 
         return &param;
     }
@@ -87,6 +87,9 @@ protected:
 
         return fLoopMode ? 1.0f : 0.0f;
     }
+
+    // -------------------------------------------------------------------
+    // Plugin state calls
 
     void setParameterValue(const uint32_t index, const float value) override
     {
@@ -102,21 +105,18 @@ protected:
         fThread.setNeedsRead();
     }
 
-    // -------------------------------------------------------------------
-    // Plugin state calls
+    void setCustomData(const char* const key, const char* const value) override
+    {
+        if (std::strcmp(key, "file") != 0)
+            return;
 
-//     void setCustomData(const char* const key, const char* const value) override
-//     {
-//         if (std::strcmp(key, "file") != 0)
-//             return;
-//
-//         loadFilename(value);
-//     }
+        loadFilename(value);
+    }
 
     // -------------------------------------------------------------------
     // Plugin process calls
 
-    void process(float**, float** const outBuffer, const uint32_t frames, const Event* const, const uint32_t) override
+    void process(float**, float** const outBuffer, const uint32_t frames, const MidiEvent* const, const uint32_t) override
     {
         const TimeInfo* const timePos(getTimeInfo());
 
@@ -189,16 +189,16 @@ protected:
     // -------------------------------------------------------------------
     // Plugin UI calls
 
-//     void uiShow(const bool show) override
-//     {
-//         if (! show)
-//             return;
-//
-//         if (const char* const filename = uiOpenFile(false, "Open Audio File", ""))
-//             uiCustomDataChanged("file", filename);
-//
-//         uiClosed();
-//     }
+    void uiShow(const bool show) override
+    {
+        if (! show)
+            return;
+
+        if (const char* const filename = uiOpenFile(false, "Open Audio File", ""))
+            uiCustomDataChanged("file", filename);
+
+        uiClosed();
+    }
 
 private:
     bool fLoopMode;
@@ -244,22 +244,19 @@ private:
 // -----------------------------------------------------------------------
 
 static const PluginDescriptor audiofileDesc = {
-    /* api        */ CARLA_NATIVE_API_VERSION,
-    /* categories */ PLUGIN_CATEGORY_UTILITY,
-    /* features   */ PLUGIN_FEATURE_RTSAFE,
-    /* supports   */ nullptr,
-    /* metadata   */ nullptr,
-    /* audioIns   */ 0,
-    /* audioOuts  */ 2,
-    /* midiIns    */ 0,
-    /* midiOuts   */ 0,
-    /* paramIns   */ 0, // TODO - loopMode
-    /* paramOuts  */ 0,
-    /* author     */ "falkTX",
-    /* name       */ "Audio File",
-    /* label      */ "audiofile",
-    /* copyright  */ "GNU GPL v2+",
-    /* version    */ 0x1000,
+    /* category  */ PLUGIN_CATEGORY_UTILITY,
+    /* hints     */ static_cast<PluginHints>(PLUGIN_IS_RTSAFE|PLUGIN_HAS_GUI|PLUGIN_NEEDS_UI_OPEN_SAVE),
+    /* supports  */ static_cast<PluginSupports>(0x0),
+    /* audioIns  */ 0,
+    /* audioOuts */ 2,
+    /* midiIns   */ 0,
+    /* midiOuts  */ 0,
+    /* paramIns  */ 0, // TODO - loopMode
+    /* paramOuts */ 0,
+    /* name      */ "Audio File",
+    /* label     */ "audiofile",
+    /* maker     */ "falkTX",
+    /* copyright */ "GNU GPL v2+",
     PluginDescriptorFILL(AudioFilePlugin)
 };
 

@@ -154,17 +154,6 @@ all: ../carla_native.a
 
 # --------------------------------------------------------------
 
-%.c.o: %.c
-	$(CC) $< $(BUILD_C_FLAGS) -c -o $@
-
-%.cpp.o: %.cpp
-	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
-
-moc_%.cpp: %.hpp
-	$(MOC) $< -DMOC_PARSING -o $@
-
-# --------------------------------------------------------------
-
 CDEPS   = ../CarlaNative.h
 CXXDEPS = ../CarlaNative.h ../CarlaNative.hpp
 
@@ -215,6 +204,17 @@ zynaddsubfx/UI/%.cpp: zynaddsubfx/UI/%.fl
 
 zynaddsubfx/UI/%.h: zynaddsubfx/UI/%.fl
 	ntk-fluid -c -o zynaddsubfx/UI/$*.cpp -h zynaddsubfx/UI/$*.h $<
+
+# --------------------------------------------------------------
+
+%.c.o: %.c
+	$(CC) $< $(BUILD_C_FLAGS) -c -o $@
+
+%.cpp.o: %.cpp
+	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+
+moc_%.cpp: %.hpp
+	$(MOC) $< -DMOC_PARSING -o $@
 
 # --------------------------------------------------------------
 

@@ -58,6 +58,8 @@
 #include <set>
 #include <string>
 
+#include "juce_core.h"
+
 // Dummy variables and functions for linking purposes
 const char* instance_name = nullptr;
 class WavFile;
@@ -243,7 +245,7 @@ private:
     MidiProgram fRetProgram;
     NonRtList<const ProgramInfo*> fPrograms;
 
-    CARLA_DECLARE_NON_COPYABLE(ZynAddSubFxPrograms)
+    CARLA_DECLARE_NON_COPY_CLASS(ZynAddSubFxPrograms)
 };
 
 static ZynAddSubFxPrograms sPrograms;
@@ -347,7 +349,7 @@ public:
 private:
     int fCount;
 
-    CARLA_DECLARE_NON_COPYABLE(ZynAddSubFxInstanceCount)
+    CARLA_DECLARE_NON_COPY_CLASS(ZynAddSubFxInstanceCount)
 };
 
 static ZynAddSubFxInstanceCount sInstanceCount;

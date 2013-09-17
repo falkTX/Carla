@@ -130,7 +130,7 @@ public:
 
         if (fDescriptor->midiIns > 0)
             fUI.portOffset += desc->midiIns;
-        else if (fDescriptor->hints & PLUGIN_USES_TIMEPOS)
+        else if (fDescriptor->hints & PLUGIN_USES_TIME)
             fUI.portOffset += 1;
 
         fUI.portOffset += desc->midiOuts;
@@ -232,7 +232,7 @@ public:
             }
         }
 
-        if (fDescriptor->midiIns > 0 || (fDescriptor->hints & PLUGIN_USES_TIMEPOS) != 0)
+        if (fDescriptor->midiIns > 0 || (fDescriptor->hints & PLUGIN_USES_TIME) != 0)
         {
             fMidiEventCount = 0;
             carla_zeroStruct<MidiEvent>(fMidiEvents, kMaxMidiEvents*2);
@@ -883,7 +883,7 @@ private:
                 for (uint32_t i=0; i < desc->midiIns; ++i)
                     eventsIn[i] = nullptr;
             }
-            else if (desc->hints & PLUGIN_USES_TIMEPOS)
+            else if (desc->hints & PLUGIN_USES_TIME)
             {
                 eventsIn = new LV2_Atom_Sequence*[1];
                 eventsIn[0] = nullptr;
@@ -935,7 +935,7 @@ private:
         {
             uint32_t index = 0;
 
-            if (desc->midiIns > 0 || (desc->hints & PLUGIN_USES_TIMEPOS) != 0)
+            if (desc->midiIns > 0 || (desc->hints & PLUGIN_USES_TIME) != 0)
             {
                 if (port == index++)
                 {

@@ -268,14 +268,14 @@ static void lfo_process(PluginHandle handle, float** inBuffer, float** outBuffer
 
 static const PluginDescriptor lfoDesc = {
     .category  = PLUGIN_CATEGORY_UTILITY,
-    .hints     = PLUGIN_IS_RTSAFE|PLUGIN_USES_TIMEPOS,
+    .hints     = PLUGIN_IS_RTSAFE,
     .supports  = 0x0,
     .audioIns  = 0,
     .audioOuts = 0,
     .midiIns   = 0,
     .midiOuts  = 0,
-    .parameterIns  = PARAM_COUNT-1,
-    .parameterOuts = 1,
+    .paramIns  = PARAM_COUNT-1,
+    .paramOuts = 1,
     .name      = "LFO",
     .label     = "lfo",
     .maker     = "falkTX",

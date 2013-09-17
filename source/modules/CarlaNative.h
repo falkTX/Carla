@@ -26,106 +26,93 @@ extern "C" {
 #include <stddef.h>
 #include <stdint.h>
 
-// ---------------------------------------------------------------------------------------
-// Plugin Categories
+/*!
+ * @defgroup CarlaNativeAPI Carla Native API
+ *
+ * The Carla Native API
+ * @{
+ */
 
-#define PLUGIN_CATEGORY_SYNTH     ":synth"     //!< A synthesizer or generator.
-#define PLUGIN_CATEGORY_DELAY     ":delay"     //!< A delay or reverberator.
-#define PLUGIN_CATEGORY_EQ        ":eq"        //!< An equalizer.
-#define PLUGIN_CATEGORY_FILTER    ":filter"    //!< A filter.
-#define PLUGIN_CATEGORY_DYNAMICS  ":dynamics"  //!< A 'dynamic' plugin (amplifier, compressor, gate, etc).
-#define PLUGIN_CATEGORY_MODULATOR ":modulator" //!< A 'modulator' plugin (chorus, flanger, phaser, etc).
-#define PLUGIN_CATEGORY_UTILITY   ":utility"   //!< An 'utility' plugin (analyzer, converter, mixer, etc).
-#define PLUGIN_CATEGORY_OTHER     ":other"     //!< Misc plugin (used to check if the plugin has a category).
-
-// ---------------------------------------------------------------------------------------
-// Plugin Features
-
-#define PLUGIN_FEATURE_RTSAFE              ":rtsafe"
-#define PLUGIN_FEATURE_FIXED_BUFFERS       ":fixedbuffers"
-#define PLUGIN_FEATURE_BUFFER_SIZE_CHANGES ":buffersizechanges"
-#define PLUGIN_FEATURE_SAMPLE_RATE_CHANGES ":sampleratechanges"
-#define PLUGIN_FEATURE_MONO_PANNING        ":monopanning"
-#define PLUGIN_FEATURE_STEREO_BALANCE      ":stereobalance"
-#define PLUGIN_FEATURE_STATE               ":state"
-#define PLUGIN_FEATURE_TIME                ":time"
-#define PLUGIN_FEATURE_WRITE_EVENT         ":writeevent"
-#define PLUGIN_FEATURE_OPEN_SAVE           ":uiopensave"
-
-// ---------------------------------------------------------------------------------------
-// Plugin Supports
-
-#define PLUGIN_SUPPORTS_PROGRAM_CHANGES  ":program"
-#define PLUGIN_SUPPORTS_CONTROL_CHANGES  ":control"
-#define PLUGIN_SUPPORTS_CHANNEL_PRESSURE ":pressure"
-#define PLUGIN_SUPPORTS_NOTE_AFTERTOUCH  ":aftertouch"
-#define PLUGIN_SUPPORTS_PITCHBEND        ":pitchbend"
-#define PLUGIN_SUPPORTS_ALL_SOUND_OFF    ":allsoundoff"
-#define PLUGIN_SUPPORTS_EVERYTHING       ":control:pressure:aftertouch:pitchbend:allsoundoff:"
-
-// ---------------------------------------------------------------------------------------
-// Parameter Hints
-
-#define PARAMETER_IS_OUTPUT        ":output"
-#define PARAMETER_IS_ENABLED       ":enabled"
-#define PARAMETER_IS_AUTOMABLE     ":rtsafe"
-#define PARAMETER_IS_BOOLEAN       ":boolean"
-#define PARAMETER_IS_INTEGER       ":integer"
-#define PARAMETER_IS_LOGARITHMIC   ":logarithmic"
-#define PARAMETER_USES_SAMPLE_RATE ":samplerate"
-#define PARAMETER_USES_SCALEPOINTS ":scalepoints"
-#define PARAMETER_USES_CUSTOM_TEXT ":customtext"
-
-// ---------------------------------------------------------------------------------------
-// Default Parameter Ranges
-
-#define PARAMETER_RANGE_DEFAULT_STEP       0.01f
-#define PARAMETER_RANGE_DEFAULT_STEP_SMALL 0.0001f
-#define PARAMETER_RANGE_DEFAULT_STEP_LARGE 0.1f
-
-// ---------------------------------------------------------------------------------------
-// Event Types
-
-#define EVENT_TYPE_MIDI         "midi"
-#define EVENT_TYPE_MIDI_PROGRAM "midiprogram"
-#define EVENT_TYPE_PARAMETER    "parameter"
-
-// ---------------------------------------------------------------------------------------
-// Host Dispatcher Opcodes
-
-#define HOST_OPCODE_SET_VOLUME            "setVolume"          //!< Set host's volume, uses opt.
-#define HOST_OPCODE_SET_DRYWET            "setDryWet"          //!< Set host's dry-wet, uses opt.
-#define HOST_OPCODE_SET_BALANCE_LEFT      "setBalanceLeft"     //!< Set host's balance-left, uses opt.
-#define HOST_OPCODE_SET_BALANCE_RIGHT     "setBalanceRight"    //!< Set host's balance-right, uses opt.
-#define HOST_OPCODE_SET_PANNING           "setPanning"         //!< Set host's panning, uses opt.
-#define HOST_OPCODE_GET_PARAMETER_MIDI_CC "getParameterMidiCC" //!< Get the parameter @a index currently mapped MIDI control, uses index, return answer.
-#define HOST_OPCODE_SET_PARAMETER_MIDI_CC "setParameterMidiCC" //!< Set the parameter @a index mapped MIDI control, uses index and value.
-#define HOST_OPCODE_UPDATE_PARAMETER      "updateParameter"    //!< Tell the host to update parameter @a index, uses index with -1 for all.
-#define HOST_OPCODE_UPDATE_MIDI_PROGRAM   "updateMidiProgram"  //!< Tell the host to update midi-program @a index, uses index with -1 for all; may also use value for channel.
-#define HOST_OPCODE_RELOAD_PARAMETERS     "reloadParameters"   //!< Tell the host to reload all parameters data, uses nothing.
-#define HOST_OPCODE_RELOAD_MIDI_PROGRAMS  "reloadMidiPrograms" //!< Tell the host to reload all midi-programs data, uses nothing.
-#define HOST_OPCODE_RELOAD_ALL            "reloadAll"          //!< Tell the host to reload everything all the plugin, uses nothing.
-#define HOST_OPCODE_UI_UNAVAILABLE        "uiUnavailable"      //!< Tell the host the UI can't be shown, uses nothing.
-
-// ---------------------------------------------------------------------------------------
-// Plugin Dispatcher Opcodes
-
-#define PLUGIN_OPCODE_BUFFER_SIZE_CHANGED "bufferSizeChanged" //!< Audio buffer size changed, uses value.
-#define PLUGIN_OPCODE_SAMPLE_RATE_CHANGED "sampleRateChanged" //!< Audio sample rate changed, uses opt.
-#define PLUGIN_OPCODE_OFFLINE_CHANGED     "offlineChanged"    //!< Offline mode changed, uses value (0=off, 1=on).
-#define PLUGIN_OPCODE_UI_TITLE_CHANGED    "uiTitleChanged"    //!< UI title changed, uses ptr.
-
-// ---------------------------------------------------------------------------------------
-// Base types
-
-typedef float    audio_sample_t;
-typedef uint32_t mapped_value_t;
-
-typedef void* PluginHandle;
 typedef void* HostHandle;
+typedef void* PluginHandle;
 
-// ---------------------------------------------------------------------------------------
-// Base structs
+// -----------------------------------------------------------------------
+// enums
+
+typedef enum {
+    PLUGIN_CATEGORY_NONE      = 0, //!< Null plugin category.
+    PLUGIN_CATEGORY_SYNTH     = 1, //!< A synthesizer or generator.
+    PLUGIN_CATEGORY_DELAY     = 2, //!< A delay or reverberator.
+    PLUGIN_CATEGORY_EQ        = 3, //!< An equalizer.
+    PLUGIN_CATEGORY_FILTER    = 4, //!< A filter.
+    PLUGIN_CATEGORY_DYNAMICS  = 5, //!< A 'dynamic' plugin (amplifier, compressor, gate, etc).
+    PLUGIN_CATEGORY_MODULATOR = 6, //!< A 'modulator' plugin (chorus, flanger, phaser, etc).
+    PLUGIN_CATEGORY_UTILITY   = 7, //!< An 'utility' plugin (analyzer, converter, mixer, etc).
+    PLUGIN_CATEGORY_OTHER     = 8  //!< Misc plugin (used to check if the plugin has a category).
+} PluginCategory;
+
+typedef enum {
+    PLUGIN_IS_RTSAFE           = 1 << 0,
+    PLUGIN_IS_SYNTH            = 1 << 1,
+    PLUGIN_HAS_GUI             = 1 << 2,
+    PLUGIN_NEEDS_FIXED_BUFFERS = 1 << 3,
+    PLUGIN_NEEDS_SINGLE_THREAD = 1 << 4,
+    PLUGIN_NEEDS_UI_OPEN_SAVE  = 1 << 5,
+    PLUGIN_USES_PANNING        = 1 << 6, // uses stereo balance if unset (default)
+    PLUGIN_USES_STATE          = 1 << 7,
+    PLUGIN_USES_TIME           = 1 << 8
+} PluginHints;
+
+typedef enum {
+    PLUGIN_SUPPORTS_PROGRAM_CHANGES  = 1 << 0, // handles MIDI programs internally instead of host-exposed/exported
+    PLUGIN_SUPPORTS_CONTROL_CHANGES  = 1 << 1,
+    PLUGIN_SUPPORTS_CHANNEL_PRESSURE = 1 << 2,
+    PLUGIN_SUPPORTS_NOTE_AFTERTOUCH  = 1 << 3,
+    PLUGIN_SUPPORTS_PITCHBEND        = 1 << 4,
+    PLUGIN_SUPPORTS_ALL_SOUND_OFF    = 1 << 5,
+    PLUGIN_SUPPORTS_EVERYTHING       = (1 << 6)-1
+} PluginSupports;
+
+typedef enum {
+    PARAMETER_IS_OUTPUT        = 1 << 0,
+    PARAMETER_IS_ENABLED       = 1 << 1,
+    PARAMETER_IS_AUTOMABLE     = 1 << 2,
+    PARAMETER_IS_BOOLEAN       = 1 << 3,
+    PARAMETER_IS_INTEGER       = 1 << 4,
+    PARAMETER_IS_LOGARITHMIC   = 1 << 5,
+    PARAMETER_USES_SAMPLE_RATE = 1 << 6,
+    PARAMETER_USES_SCALEPOINTS = 1 << 7,
+    PARAMETER_USES_CUSTOM_TEXT = 1 << 8
+} ParameterHints;
+
+typedef enum {
+    PLUGIN_OPCODE_NULL                = 0, // nothing
+    PLUGIN_OPCODE_BUFFER_SIZE_CHANGED = 1, // uses value
+    PLUGIN_OPCODE_SAMPLE_RATE_CHANGED = 2, // uses opt
+    PLUGIN_OPCODE_OFFLINE_CHANGED     = 3, // uses value (0=off, 1=on)
+    PLUGIN_OPCODE_UI_NAME_CHANGED     = 4  // uses ptr
+} PluginDispatcherOpcode;
+
+typedef enum {
+    HOST_OPCODE_NULL                  = 0,  // nothing
+    HOST_OPCODE_SET_VOLUME            = 1,  // uses opt
+    HOST_OPCODE_SET_DRYWET            = 2,  // uses opt
+    HOST_OPCODE_SET_BALANCE_LEFT      = 3,  // uses opt
+    HOST_OPCODE_SET_BALANCE_RIGHT     = 4,  // uses opt
+    HOST_OPCODE_SET_PANNING           = 5,  // uses opt
+    HOST_OPCODE_GET_PARAMETER_MIDI_CC = 6,  // uses index; return answer
+    HOST_OPCODE_SET_PARAMETER_MIDI_CC = 7,  // uses index and value
+    HOST_OPCODE_SET_PROCESS_PRECISION = 8,  // uses value
+    HOST_OPCODE_UPDATE_PARAMETER      = 9,  // uses index, -1 for all
+    HOST_OPCODE_UPDATE_MIDI_PROGRAM   = 10, // uses index, -1 for all; may use value for channel
+    HOST_OPCODE_RELOAD_PARAMETERS     = 11, // nothing
+    HOST_OPCODE_RELOAD_MIDI_PROGRAMS  = 12, // nothing
+    HOST_OPCODE_RELOAD_ALL            = 13, // nothing
+    HOST_OPCODE_UI_UNAVAILABLE        = 14  // nothing
+} HostDispatcherOpcode;
+
+// -----------------------------------------------------------------------
+// base structs
 
 typedef struct {
     const char* label;
@@ -141,8 +128,12 @@ typedef struct {
     float stepLarge;
 } ParameterRanges;
 
+#define PARAMETER_RANGES_DEFAULT_STEP       0.01f
+#define PARAMETER_RANGES_DEFAULT_STEP_SMALL 0.0001f
+#define PARAMETER_RANGES_DEFAULT_STEP_LARGE 0.1f
+
 typedef struct {
-    const char* hints;
+    ParameterHints hints;
     const char* name;
     const char* unit;
     ParameterRanges ranges;
@@ -152,41 +143,17 @@ typedef struct {
 } Parameter;
 
 typedef struct {
+    uint8_t  port;
+    uint32_t time;
+    uint8_t  data[4];
+    uint8_t  size;
+} MidiEvent;
+
+typedef struct {
     uint32_t bank;
     uint32_t program;
     const char* name;
 } MidiProgram;
-
-// ---------------------------------------------------------------------------------------
-// Events
-
-typedef struct {
-    mapped_value_t type;
-    uint32_t frame;
-} Event;
-
-typedef struct {
-    Event e;
-    uint32_t port;
-    uint32_t size;
-    uint8_t  data[4];
-} MidiEvent;
-
-typedef struct {
-    Event e;
-    uint32_t channel; // used only in synths
-    uint32_t bank;
-    uint32_t program;
-} MidiProgramEvent;
-
-typedef struct {
-    Event e;
-    uint32_t index;
-    float    value;
-} ParameterEvent;
-
-// ---------------------------------------------------------------------------------------
-// Time
 
 typedef struct {
     bool valid;
@@ -210,57 +177,52 @@ typedef struct {
     TimeInfoBBT bbt;
 } TimeInfo;
 
-// ---------------------------------------------------------------------------------------
-// PluginHostDescriptor
+// -----------------------------------------------------------------------
+// HostDescriptor
 
 typedef struct {
     HostHandle handle;
-
     const char* resourceDir;
-    const char* uiTitle;
+    const char* uiName;
 
-    uint32_t bufferSize;
-    uint32_t sampleRate;
-    bool     isOffline;
-
-    mapped_value_t (*map_value)(HostHandle handle, const char* valueStr);
-    const char*    (*unmap_value)(HostHandle handle, mapped_value_t value);
+    uint32_t (*get_buffer_size)(HostHandle handle);
+    double   (*get_sample_rate)(HostHandle handle);
+    bool     (*is_offline)(HostHandle handle);
 
     const TimeInfo* (*get_time_info)(HostHandle handle);
-    bool            (*write_event)(HostHandle handle, const Event* event);
+    bool            (*write_midi_event)(HostHandle handle, const MidiEvent* event);
 
     void (*ui_parameter_changed)(HostHandle handle, uint32_t index, float value);
     void (*ui_midi_program_changed)(HostHandle handle, uint8_t channel, uint32_t bank, uint32_t program);
+    void (*ui_custom_data_changed)(HostHandle handle, const char* key, const char* value);
     void (*ui_closed)(HostHandle handle);
 
-    // TODO: add some msgbox call
     const char* (*ui_open_file)(HostHandle handle, bool isDir, const char* title, const char* filter);
     const char* (*ui_save_file)(HostHandle handle, bool isDir, const char* title, const char* filter);
 
-    intptr_t (*dispatcher)(HostHandle handle, mapped_value_t opcode, int32_t index, intptr_t value, void* ptr, float opt);
+    intptr_t (*dispatcher)(HostHandle handle, HostDispatcherOpcode opcode, int32_t index, intptr_t value, void* ptr, float opt);
 
-} PluginHostDescriptor;
+} HostDescriptor;
 
-// ---------------------------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // PluginDescriptor
 
-typedef struct {
-    const char* const categories;
-    const char* const features;
-    const char* const supports;
+typedef struct _PluginDescriptor {
+    const PluginCategory category;
+    const PluginHints hints;
+    const PluginSupports supports;
     const uint32_t audioIns;
     const uint32_t audioOuts;
     const uint32_t midiIns;
     const uint32_t midiOuts;
     const uint32_t paramIns;
     const uint32_t paramOuts;
-    const char* const author;
     const char* const name;
     const char* const label;
+    const char* const maker;
     const char* const copyright;
-    const char* const version;
 
-    PluginHandle (*instantiate)(const PluginHostDescriptor* host);
+    PluginHandle (*instantiate)(const HostDescriptor* host);
     void         (*cleanup)(PluginHandle handle);
 
     uint32_t         (*get_parameter_count)(PluginHandle handle);
@@ -271,20 +233,25 @@ typedef struct {
     uint32_t           (*get_midi_program_count)(PluginHandle handle);
     const MidiProgram* (*get_midi_program_info)(PluginHandle handle, uint32_t index);
 
-    char* (*get_state)(PluginHandle handle);
-    void  (*set_state)(PluginHandle handle, const char* data);
-
-    void (*activate)(PluginHandle handle);
-    void (*deactivate)(PluginHandle handle);
-    void (*process)(PluginHandle handle, audio_sample_t** inBuffer, audio_sample_t** outBuffer, uint32_t frames, const Event* events, uint32_t eventCount);
+    void (*set_parameter_value)(PluginHandle handle, uint32_t index, float value);
+    void (*set_midi_program)(PluginHandle handle, uint8_t channel, uint32_t bank, uint32_t program);
+    void (*set_custom_data)(PluginHandle handle, const char* key, const char* value);
 
     void (*ui_show)(PluginHandle handle, bool show);
     void (*ui_idle)(PluginHandle handle);
 
-    void (*ui_set_parameter)(PluginHandle handle, uint32_t index, float value);
+    void (*ui_set_parameter_value)(PluginHandle handle, uint32_t index, float value);
     void (*ui_set_midi_program)(PluginHandle handle, uint8_t channel, uint32_t bank, uint32_t program);
+    void (*ui_set_custom_data)(PluginHandle handle, const char* key, const char* value);
 
-    intptr_t (*dispatcher)(PluginHandle handle, mapped_value_t opcode, int32_t index, intptr_t value, void* ptr, float opt);
+    void (*activate)(PluginHandle handle);
+    void (*deactivate)(PluginHandle handle);
+    void (*process)(PluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const MidiEvent* midiEvents, uint32_t midiEventCount);
+
+    char* (*get_state)(PluginHandle handle);
+    void  (*set_state)(PluginHandle handle, const char* data);
+
+    intptr_t (*dispatcher)(PluginHandle handle, PluginDispatcherOpcode opcode, int32_t index, intptr_t value, void* ptr, float opt);
 
 } PluginDescriptor;
 
@@ -294,6 +261,8 @@ typedef struct {
 extern void carla_register_native_plugin(const PluginDescriptor* desc);
 
 // -----------------------------------------------------------------------
+
+/**@}*/
 
 #ifdef __cplusplus
 } // extern "C"

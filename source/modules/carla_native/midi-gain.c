@@ -32,8 +32,7 @@ typedef enum {
 } MidiGainParams;
 
 typedef struct {
-    const PluginHostDescriptor* host;
-    MappedValue map_midi;
+    const HostDescriptor* host;
     float gain;
     bool applyNotes;
     bool applyAftertouch;
@@ -42,19 +41,18 @@ typedef struct {
 
 // -----------------------------------------------------------------------
 
-static PluginHandle midiGain_instantiate(const PluginHostDescriptor* host)
+static PluginHandle midiGain_instantiate(const HostDescriptor* host)
 {
     MidiGainHandle* const handle = (MidiGainHandle*)malloc(sizeof(MidiGainHandle));
 
     if (handle == NULL)
         return NULL;
 
-    handle->host            = host;
-    handle->map_midi        = host->map_value(host->handle, EVENT_TYPE_MIDI);
-    handle->gain            = 1.0f;
-    handle->applyNotes      = true;
+    handle->host = host;
+    handle->gain = 1.0f;
+    handle->applyNotes = true;
     handle->applyAftertouch = true;
-    handle->applyCC         = false;
+    handle->applyCC = false;
     return handle;
 }
 
@@ -80,7 +78,7 @@ const Parameter* midiGain_get_parameter_info(PluginHandle handle, uint32_t index
 
     static Parameter param;
 
-    param.hints = PARAMETER_IS_ENABLED ":" PARAMETER_IS_AUTOMABLE;
+    param.hints = PARAMETER_IS_ENABLED|PARAMETER_IS_AUTOMABLE;
     param.unit  = NULL;
     param.scalePointCount = 0;
     param.scalePoints     = NULL;
@@ -89,16 +87,16 @@ const Parameter* midiGain_get_parameter_info(PluginHandle handle, uint32_t index
     {
     case PARAM_GAIN:
         param.name = "Gain";
-        param.ranges.def  = 1.0f;
-        param.ranges.min  = 0.001f;
-        param.ranges.max  = 4.0f;
-        param.ranges.step = PARAMETER_RANGE_DEFAULT_STEP;
-        param.ranges.stepSmall = PARAMETER_RANGE_DEFAULT_STEP_SMALL;
-        param.ranges.stepLarge = PARAMETER_RANGE_DEFAULT_STEP_LARGE;
+        param.ranges.def = 1.0f;
+        param.ranges.min = 0.001f;
+        param.ranges.max = 4.0f;
+        param.ranges.step = PARAMETER_RANGES_DEFAULT_STEP;
+        param.ranges.stepSmall = PARAMETER_RANGES_DEFAULT_STEP_SMALL;
+        param.ranges.stepLarge = PARAMETER_RANGES_DEFAULT_STEP_LARGE;
         break;
     case PARAM_APPLY_NOTES:
-        param.name  = "Apply Notes";
-        param.hints = PARAMETER_IS_ENABLED ":" PARAMETER_IS_AUTOMABLE ":" PARAMETER_IS_BOOLEAN;
+        param.name   = "Apply Notes";
+        param.hints |= PARAMETER_IS_BOOLEAN;
         param.ranges.def = 1.0f;
         param.ranges.min = 0.0f;
         param.ranges.max = 1.0f;
@@ -107,8 +105,8 @@ const Parameter* midiGain_get_parameter_info(PluginHandle handle, uint32_t index
         param.ranges.stepLarge = 1.0f;
         break;
     case PARAM_APPLY_AFTERTOUCH:
-        param.name  = "Apply Aftertouch";
-        param.hints = PARAMETER_IS_ENABLED ":" PARAMETER_IS_AUTOMABLE ":" PARAMETER_IS_BOOLEAN;
+        param.name   = "Apply Aftertouch";
+        param.hints |= PARAMETER_IS_BOOLEAN;
         param.ranges.def = 1.0f;
         param.ranges.min = 0.0f;
         param.ranges.max = 1.0f;
@@ -117,8 +115,8 @@ const Parameter* midiGain_get_parameter_info(PluginHandle handle, uint32_t index
         param.ranges.stepLarge = 1.0f;
         break;
     case PARAM_APPLY_CC:
-        param.name  = "Apply CC";
-        param.hints = PARAMETER_IS_ENABLED ":" PARAMETER_IS_AUTOMABLE ":" PARAMETER_IS_BOOLEAN;
+        param.name   = "Apply CC";
+        param.hints |= PARAMETER_IS_BOOLEAN;
         param.ranges.def = 0.0f;
         param.ranges.min = 0.0f;
         param.ranges.max = 1.0f;
@@ -170,24 +168,18 @@ static void midiGain_set_parameter_value(PluginHandle handle, uint32_t index, fl
     }
 }
 
-static void midiGain_process(PluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const Event* events, uint32_t eventCount)
+static void midiGain_process(PluginHandle handle, float** inBuffer, float** outBuffer, uint32_t frames, const MidiEvent* midiEvents, uint32_t midiEventCount)
 {
-    const PluginHostDescriptor* const host = handlePtr->host;
-    const MappedValue map_midi = handlePtr->map_midi;
+    const HostDescriptor* const host = handlePtr->host;
     const float gain           = handlePtr->gain;
     const bool applyNotes      = handlePtr->applyNotes;
     const bool applyAftertouch = handlePtr->applyAftertouch;
     const bool applyCC         = handlePtr->applyCC;
-
     MidiEvent tmpEvent;
-    tmpEvent.e.type = map_midi;
 
-    for (uint32_t i=0; i < eventCount; ++i)
+    for (uint32_t i=0; i < midiEventCount; ++i)
     {
-        if (events[i].type != map_midi)
-            continue;
-
-        const MidiEvent* const midiEvent = (const MidiEvent*)&events[i];
+        const MidiEvent* const midiEvent = &midiEvents[i];
 
         const uint8_t status = MIDI_GET_STATUS_FROM_DATA(midiEvent->data);
 
@@ -201,15 +193,15 @@ static void midiGain_process(PluginHandle handle, float** inBuffer, float** outB
 
             if (value <= 0.0f)
                 tmpEvent.data[2] = 0;
-            else if (value >= 127.0f)
+            else if (value >= 1.27f)
                 tmpEvent.data[2] = 127;
             else
                 tmpEvent.data[2] = (uint8_t)value;
 
-            host->write_event(host->handle, (const Event*)&tmpEvent);
+            host->write_midi_event(host->handle, &tmpEvent);
         }
         else
-            host->write_event(host->handle, &events[i]);
+            host->write_midi_event(host->handle, midiEvent);
     }
 
     return;
@@ -223,21 +215,19 @@ static void midiGain_process(PluginHandle handle, float** inBuffer, float** outB
 // -----------------------------------------------------------------------
 
 static const PluginDescriptor midiGainDesc = {
-    .api        = CARLA_NATIVE_API_VERSION,
-    .categories = PLUGIN_CATEGORY_UTILITY ":midi",
-    .features   = "rtsafe",
-    .supports   = PLUGIN_SUPPORTS_EVERYTHING,
-    .metadata   = NULL,
-    .audioIns   = 0,
-    .audioOuts  = 0,
-    .midiIns    = 1,
-    .midiOuts   = 1,
-    .paramIns   = 0,
-    .paramOuts  = 0,
-    .author     = "falkTX",
-    .name       = "MIDI Gain",
-    .label      = "midiGain",
-    .copyright  = "GNU GPL v2+",
+    .category  = PLUGIN_CATEGORY_UTILITY,
+    .hints     = PLUGIN_IS_RTSAFE,
+    .supports  = PLUGIN_SUPPORTS_EVERYTHING,
+    .audioIns  = 0,
+    .audioOuts = 0,
+    .midiIns   = 1,
+    .midiOuts  = 1,
+    .paramIns  = 0,
+    .paramOuts = 0,
+    .name      = "MIDI Gain",
+    .label     = "midiGain",
+    .maker     = "falkTX",
+    .copyright = "GNU GPL v2+",
 
     .instantiate = midiGain_instantiate,
     .cleanup     = midiGain_cleanup,
@@ -246,20 +236,27 @@ static const PluginDescriptor midiGainDesc = {
     .get_parameter_info  = midiGain_get_parameter_info,
     .get_parameter_value = midiGain_get_parameter_value,
     .get_parameter_text  = NULL,
-    .set_parameter_value = midiGain_set_parameter_value,
 
     .get_midi_program_count = NULL,
     .get_midi_program_info  = NULL,
+
+    .set_parameter_value = midiGain_set_parameter_value,
     .set_midi_program    = NULL,
+    .set_custom_data     = NULL,
 
-    .idle = NULL,
+    .ui_show = NULL,
+    .ui_idle = NULL,
 
-    .get_state = NULL,
-    .set_state = NULL,
+    .ui_set_parameter_value = NULL,
+    .ui_set_midi_program    = NULL,
+    .ui_set_custom_data     = NULL,
 
     .activate   = NULL,
     .deactivate = NULL,
     .process    = midiGain_process,
+
+    .get_state = NULL,
+    .set_state = NULL,
 
     .dispatcher = NULL
 };

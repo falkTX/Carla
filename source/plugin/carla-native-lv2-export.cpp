@@ -297,13 +297,13 @@ void writePluginFile(const PluginDescriptor* const pluginDesc)
     // -------------------------------------------------------------------
     // First MIDI/Time port
 
-    if (pluginDesc->midiIns > 0 || (pluginDesc->hints & PLUGIN_USES_TIMEPOS) != 0)
+    if (pluginDesc->midiIns > 0 || (pluginDesc->hints & PLUGIN_USES_TIME) != 0)
     {
         text += "    lv2:port [\n";
         text += "        a lv2:InputPort, atom:AtomPort ;\n";
         text += "        atom:bufferType atom:Sequence ;\n";
 
-        if (pluginDesc->midiIns > 0 && (pluginDesc->hints & PLUGIN_USES_TIMEPOS) != 0)
+        if (pluginDesc->midiIns > 0 && (pluginDesc->hints & PLUGIN_USES_TIME) != 0)
         {
             text += "        atom:supports <" LV2_MIDI__MidiEvent "> ,\n";
             text += "                      <" LV2_TIME__Position "> ;\n";

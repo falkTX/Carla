@@ -17,6 +17,8 @@
 
 #include "CarlaNative.hpp"
 
+#include "juce_core.h"
+
 using namespace juce;
 
 #include "vex/cArp.h"
@@ -813,7 +815,7 @@ private:
 
 static const PluginDescriptor vexArpDesc = {
     /* category  */ PLUGIN_CATEGORY_UTILITY,
-    /* hints     */ static_cast<PluginHints>(PLUGIN_USES_TIMEPOS),
+    /* hints     */ static_cast<PluginHints>(PLUGIN_USES_TIME),
     /* supports  */ static_cast<PluginSupports>(PLUGIN_SUPPORTS_EVERYTHING),
     /* audioIns  */ 0,
     /* audioOuts */ 0,
@@ -847,7 +849,7 @@ static const PluginDescriptor vexChorusDesc = {
 
 static const PluginDescriptor vexDelayDesc = {
     /* category  */ PLUGIN_CATEGORY_DELAY,
-    /* hints     */ static_cast<PluginHints>(PLUGIN_IS_RTSAFE|PLUGIN_USES_TIMEPOS),
+    /* hints     */ static_cast<PluginHints>(PLUGIN_IS_RTSAFE|PLUGIN_USES_TIME),
     /* supports  */ static_cast<PluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 2,

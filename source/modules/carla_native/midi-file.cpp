@@ -220,7 +220,7 @@ private:
 
 static const PluginDescriptor midifileDesc = {
     /* category  */ PLUGIN_CATEGORY_UTILITY,
-    /* hints     */ static_cast<PluginHints>(PLUGIN_IS_RTSAFE|PLUGIN_HAS_GUI|PLUGIN_NEEDS_OPENSAVE),
+    /* hints     */ static_cast<PluginHints>(PLUGIN_IS_RTSAFE|PLUGIN_HAS_GUI|PLUGIN_NEEDS_UI_OPEN_SAVE),
     /* supports  */ static_cast<PluginSupports>(0x0),
     /* audioIns  */ 0,
     /* audioOuts */ 0,

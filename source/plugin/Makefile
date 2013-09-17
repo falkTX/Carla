@@ -110,7 +110,7 @@ endif
 all: $(TARGETS)
 
 clean:
-	rm -f *.o
+	rm -f $(TARGETS) *.o
 	rm -f carla-native.lv2/*.*
 
 debug:

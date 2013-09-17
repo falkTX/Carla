@@ -26,6 +26,9 @@
 #include "CarlaUtils.hpp"
 #include "CarlaString.hpp"
 
+#include <cerrno>
+#include <clocale>
+
 #include <fcntl.h>
 #include <sys/wait.h>
 
