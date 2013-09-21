@@ -689,7 +689,6 @@ public:
 
     /*!
      * Unlock the plugin's master mutex.
-     * \note The mutex wasTryLockCalled() flag will be unset
      */
     void unlock();
 

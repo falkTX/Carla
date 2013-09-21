@@ -565,8 +565,8 @@ class PluginEdit(QDialog):
         self.ui.dial_b_left.setEnabled(pluginHints & PLUGIN_CAN_BALANCE)
         self.ui.dial_b_right.setEnabled(pluginHints & PLUGIN_CAN_BALANCE)
 
-        self.ui.ch_fixed_buffer.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_FIXED_BUFFER)
-        self.ui.ch_fixed_buffer.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_FIXED_BUFFER)
+        self.ui.ch_fixed_buffer.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_FIXED_BUFFERS)
+        self.ui.ch_fixed_buffer.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_FIXED_BUFFERS)
         self.ui.ch_force_stereo.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_FORCE_STEREO)
         self.ui.ch_force_stereo.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_FORCE_STEREO)
         self.ui.ch_map_program_changes.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_MAP_PROGRAM_CHANGES)
@@ -588,7 +588,7 @@ class PluginEdit(QDialog):
             self.ui.tab_programs.setCurrentIndex(1)
 
         # Show/hide keyboard
-        showKeyboard = (pluginHints & PLUGIN_IS_SYNTH) != 0 or (midiCountInfo['ins'] > 0 < midiCountInfo['outs'])
+        showKeyboard = (self.fPluginInfo['category'] == PLUGIN_CATEGORY_SYNTH) != 0 or (midiCountInfo['ins'] > 0 < midiCountInfo['outs'])
         self.ui.scrollArea.setEnabled(showKeyboard)
         self.ui.scrollArea.setVisible(showKeyboard)
 
