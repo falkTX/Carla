@@ -20,6 +20,8 @@
 
 #include "CarlaPluginInternal.hpp"
 
+#include "juce_gui_basics.h"
+
 #if 0
 #include <QtGui/QCloseEvent>
 

@@ -51,17 +51,20 @@ public:
     ~Uuid() noexcept;
 
     /** Creates a copy of another UUID. */
-    Uuid (const Uuid& other) noexcept;
+    Uuid (const Uuid&) noexcept;
 
     /** Copies another UUID. */
-    Uuid& operator= (const Uuid& other) noexcept;
+    Uuid& operator= (const Uuid&) noexcept;
 
     //==============================================================================
     /** Returns true if the ID is zero. */
     bool isNull() const noexcept;
 
-    bool operator== (const Uuid& other) const noexcept;
-    bool operator!= (const Uuid& other) const noexcept;
+    /** Returns a null Uuid object. */
+    static Uuid null() noexcept;
+
+    bool operator== (const Uuid&) const noexcept;
+    bool operator!= (const Uuid&) const noexcept;
 
     //==============================================================================
     /** Returns a stringified version of this UUID.
@@ -95,7 +98,7 @@ public:
     /** Creates a UUID from a 16-byte array.
         @see getRawData
     */
-    Uuid (const uint8* rawData);
+    Uuid (const uint8* rawData) noexcept;
 
     /** Sets this UUID from 16-bytes of raw data. */
     Uuid& operator= (const uint8* rawData) noexcept;

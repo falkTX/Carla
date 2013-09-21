@@ -312,7 +312,8 @@ void XmlDocument::skipNextWhiteSpace()
                 input += closeComment + 3;
                 continue;
             }
-            else if (input[1] == '?')
+
+            if (input[1] == '?')
             {
                 input += 2;
                 const int closeBracket = input.indexOf (CharPointer_ASCII ("?>"));
@@ -515,7 +516,8 @@ void XmlDocument::readChildElements (XmlElement* parent)
 
                 break;
             }
-            else if (c1 == '!' && CharacterFunctions::compareUpTo (input + 2, CharPointer_ASCII ("[CDATA["), 7) == 0)
+
+            if (c1 == '!' && CharacterFunctions::compareUpTo (input + 2, CharPointer_ASCII ("[CDATA["), 7) == 0)
             {
                 input += 9;
                 const String::CharPointerType inputStart (input);

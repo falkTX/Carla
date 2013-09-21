@@ -28,6 +28,13 @@
 
 HWND juce_messageWindowHandle = 0;  // (this is used by other parts of the codebase)
 
+void* getUser32Function (const char* functionName)
+{
+    HMODULE module = GetModuleHandleA ("user32.dll");
+    jassert (module != 0);
+    return (void*) GetProcAddress (module, functionName);
+}
+
 //==============================================================================
 #if ! JUCE_USE_INTRINSICS
 // In newer compilers, the inline versions of these are used (in juce_Atomic.h), but in
@@ -55,59 +62,33 @@ __int64 juce_InterlockedCompareExchange64 (volatile __int64* value, __int64 newV
 CriticalSection::CriticalSection() noexcept
 {
     // (just to check the MS haven't changed this structure and broken things...)
-  #if JUCE_VC7_OR_EARLIER
+   #if JUCE_VC7_OR_EARLIER
     static_jassert (sizeof (CRITICAL_SECTION) <= 24);
-  #else
-    static_jassert (sizeof (CRITICAL_SECTION) <= sizeof (internal));
-  #endif
+   #else
+    static_jassert (sizeof (CRITICAL_SECTION) <= sizeof (lock));
+   #endif
 
-    InitializeCriticalSection ((CRITICAL_SECTION*) internal);
+    InitializeCriticalSection ((CRITICAL_SECTION*) lock);
 }
 
-CriticalSection::~CriticalSection() noexcept
-{
-    DeleteCriticalSection ((CRITICAL_SECTION*) internal);
-}
+CriticalSection::~CriticalSection() noexcept        { DeleteCriticalSection ((CRITICAL_SECTION*) lock); }
+void CriticalSection::enter() const noexcept        { EnterCriticalSection ((CRITICAL_SECTION*) lock); }
+bool CriticalSection::tryEnter() const noexcept     { return TryEnterCriticalSection ((CRITICAL_SECTION*) lock) != FALSE; }
+void CriticalSection::exit() const noexcept         { LeaveCriticalSection ((CRITICAL_SECTION*) lock); }
 
-void CriticalSection::enter() const noexcept
-{
-    EnterCriticalSection ((CRITICAL_SECTION*) internal);
-}
-
-bool CriticalSection::tryEnter() const noexcept
-{
-    return TryEnterCriticalSection ((CRITICAL_SECTION*) internal) != FALSE;
-}
-
-void CriticalSection::exit() const noexcept
-{
-    LeaveCriticalSection ((CRITICAL_SECTION*) internal);
-}
 
 //==============================================================================
 WaitableEvent::WaitableEvent (const bool manualReset) noexcept
-    : internal (CreateEvent (0, manualReset ? TRUE : FALSE, FALSE, 0))
-{
-}
+    : handle (CreateEvent (0, manualReset ? TRUE : FALSE, FALSE, 0)) {}
 
-WaitableEvent::~WaitableEvent() noexcept
-{
-    CloseHandle (internal);
-}
+WaitableEvent::~WaitableEvent() noexcept        { CloseHandle (handle); }
 
-bool WaitableEvent::wait (const int timeOutMillisecs) const noexcept
-{
-    return WaitForSingleObject (internal, (DWORD) timeOutMillisecs) == WAIT_OBJECT_0;
-}
+void WaitableEvent::signal() const noexcept     { SetEvent (handle); }
+void WaitableEvent::reset() const noexcept      { ResetEvent (handle); }
 
-void WaitableEvent::signal() const noexcept
+bool WaitableEvent::wait (const int timeOutMs) const noexcept
 {
-    SetEvent (internal);
-}
-
-void WaitableEvent::reset() const noexcept
-{
-    ResetEvent (internal);
+    return WaitForSingleObject (handle, (DWORD) timeOutMs) == WAIT_OBJECT_0;
 }
 
 //==============================================================================
@@ -229,17 +210,15 @@ static SleepEvent sleepEvent;
 
 void JUCE_CALLTYPE Thread::sleep (const int millisecs)
 {
+    jassert (millisecs >= 0);
+
     if (millisecs >= 10 || sleepEvent.handle == 0)
-    {
         Sleep ((DWORD) millisecs);
-    }
     else
-    {
         // unlike Sleep() this is guaranteed to return to the current thread after
         // the time expires, so we'll use this for short waits, which are more likely
         // to need to be accurate
         WaitForSingleObject (sleepEvent.handle, (DWORD) millisecs);
-    }
 }
 
 void Thread::yield()
@@ -250,7 +229,7 @@ void Thread::yield()
 //==============================================================================
 static int lastProcessPriority = -1;
 
-// called by WindowDriver because Windows does weird things to process priority
+// called when the app gains focus because Windows does weird things to process priority
 // when you swap apps, and this forces an update when the app is brought to the front.
 void juce_repeatLastProcessPriority()
 {
