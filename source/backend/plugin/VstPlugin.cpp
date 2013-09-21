@@ -58,10 +58,10 @@ public:
     {
         carla_debug("VstPlugin::VstPlugin(%p, %i)", engine, id);
 
-        carla_zeroStruct<VstMidiEvent>(fMidiEvents, MAX_MIDI_EVENTS*2);
+        carla_zeroStruct<VstMidiEvent>(fMidiEvents, kPluginMaxMidiEvents*2);
         carla_zeroStruct<VstTimeInfo_R>(fTimeInfo);
 
-        for (unsigned short i=0; i < MAX_MIDI_EVENTS*2; ++i)
+        for (unsigned short i=0; i < kPluginMaxMidiEvents*2; ++i)
             fEvents.data[i] = (VstEvent*)&fMidiEvents[i];
 
         pData->osc.thread.setMode(CarlaPluginThread::PLUGIN_THREAD_VST_GUI);
@@ -1006,7 +1006,7 @@ public:
         }
 
         fMidiEventCount = 0;
-        carla_zeroStruct<VstMidiEvent>(fMidiEvents, MAX_MIDI_EVENTS*2);
+        carla_zeroStruct<VstMidiEvent>(fMidiEvents, kPluginMaxMidiEvents*2);
 
         // --------------------------------------------------------------------------------------------------------
         // Check if needs reset
@@ -1124,7 +1124,7 @@ public:
 
             if (pData->extNotes.mutex.tryLock())
             {
-                while (fMidiEventCount < MAX_MIDI_EVENTS*2 && ! pData->extNotes.data.isEmpty())
+                while (fMidiEventCount < kPluginMaxMidiEvents*2 && ! pData->extNotes.data.isEmpty())
                 {
                     const ExternalMidiNote& note(pData->extNotes.data.getFirst(true));
 
@@ -1280,7 +1280,7 @@ public:
 
                         if ((fOptions & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param <= 0x5F)
                         {
-                            if (fMidiEventCount >= MAX_MIDI_EVENTS*2)
+                            if (fMidiEventCount >= kPluginMaxMidiEvents*2)
                                 continue;
 
                             carla_zeroStruct<VstMidiEvent>(fMidiEvents[fMidiEventCount]);
@@ -1316,7 +1316,7 @@ public:
                     case kEngineControlEventTypeAllSoundOff:
                         if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                         {
-                            if (fMidiEventCount >= MAX_MIDI_EVENTS*2)
+                            if (fMidiEventCount >= kPluginMaxMidiEvents*2)
                                 continue;
 
                             carla_zeroStruct<VstMidiEvent>(fMidiEvents[fMidiEventCount]);
@@ -1340,7 +1340,7 @@ public:
                                 sendMidiAllNotesOffToCallback();
                             }
 
-                            if (fMidiEventCount >= MAX_MIDI_EVENTS*2)
+                            if (fMidiEventCount >= kPluginMaxMidiEvents*2)
                                 continue;
 
                             carla_zeroStruct<VstMidiEvent>(fMidiEvents[fMidiEventCount]);
@@ -1361,7 +1361,7 @@ public:
 
                 case kEngineEventTypeMidi:
                 {
-                    if (fMidiEventCount >= MAX_MIDI_EVENTS*2)
+                    if (fMidiEventCount >= kPluginMaxMidiEvents*2)
                         continue;
 
                     const EngineMidiEvent& midiEvent(event.midi);
@@ -1427,7 +1427,7 @@ public:
         if (pData->event.portOut != nullptr)
         {
             // reverse lookup MIDI events
-            for (k = (MAX_MIDI_EVENTS*2)-1; k >= fMidiEventCount; --k)
+            for (k = (kPluginMaxMidiEvents*2)-1; k >= fMidiEventCount; --k)
             {
                 if (fMidiEvents[k].type == 0)
                     break;
@@ -1867,14 +1867,14 @@ protected:
                 return 0;
             }
 
-            if (fMidiEventCount >= MAX_MIDI_EVENTS*2)
+            if (fMidiEventCount >= kPluginMaxMidiEvents*2)
                 return 0;
 
 
         {
             const VstEvents* const vstEvents((const VstEvents*)ptr);
 
-            for (int32_t i=0; i < vstEvents->numEvents && i < MAX_MIDI_EVENTS*2; ++i)
+            for (int32_t i=0; i < vstEvents->numEvents && i < kPluginMaxMidiEvents*2; ++i)
             {
                 if (vstEvents->events[i] == nullptr)
                     break;
@@ -1885,7 +1885,7 @@ protected:
                     continue;
 
                 // reverse-find first free event, and put it there
-                for (uint32_t j=(MAX_MIDI_EVENTS*2)-1; j >= fMidiEventCount; --j)
+                for (uint32_t j=(kPluginMaxMidiEvents*2)-1; j >= fMidiEventCount; --j)
                 {
                     if (fMidiEvents[j].type == 0)
                     {
@@ -2334,13 +2334,13 @@ private:
 
     void*         fLastChunk;
     uint32_t      fMidiEventCount;
-    VstMidiEvent  fMidiEvents[MAX_MIDI_EVENTS*2];
+    VstMidiEvent  fMidiEvents[kPluginMaxMidiEvents*2];
     VstTimeInfo_R fTimeInfo;
 
     struct FixedVstEvents {
         int32_t numEvents;
         intptr_t reserved;
-        VstEvent* data[MAX_MIDI_EVENTS*2];
+        VstEvent* data[kPluginMaxMidiEvents*2];
 
         FixedVstEvents()
             : numEvents(0),
@@ -2350,7 +2350,7 @@ private:
 #else
               reserved(0)
         {
-            carla_fill<VstEvent*>(data, MAX_MIDI_EVENTS*2, nullptr);
+            carla_fill<VstEvent*>(data, kPluginMaxMidiEvents*2, nullptr);
         }
 #endif
     } fEvents;

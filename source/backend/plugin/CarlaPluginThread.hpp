@@ -21,6 +21,8 @@
 #include "CarlaBackend.hpp"
 #include "CarlaString.hpp"
 
+#include "juce_core.h"
+
 using juce::Thread;
 
 CARLA_BACKEND_START_NAMESPACE
@@ -60,7 +62,7 @@ private:
     CarlaString fExtra1;
     CarlaString fExtra2;
 
-    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginThread)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginThread)
 };
 
 // -----------------------------------------------------------------------

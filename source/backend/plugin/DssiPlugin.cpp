@@ -43,7 +43,7 @@ public:
     {
         carla_debug("DssiPlugin::DssiPlugin(%p, %i)", engine, id);
 
-        carla_zeroStruct<snd_seq_event_t>(fMidiEvents, MAX_MIDI_EVENTS);
+        carla_zeroStruct<snd_seq_event_t>(fMidiEvents, kPluginMaxMidiEvents);
 
         pData->osc.thread.setMode(CarlaPluginThread::PLUGIN_THREAD_DSSI_GUI);
     }
@@ -1049,7 +1049,7 @@ public:
 
             if (pData->extNotes.mutex.tryLock())
             {
-                while (midiEventCount < MAX_MIDI_EVENTS && ! pData->extNotes.data.isEmpty())
+                while (midiEventCount < kPluginMaxMidiEvents && ! pData->extNotes.data.isEmpty())
                 {
                     const ExternalMidiNote& note(pData->extNotes.data.getFirst(true));
 
@@ -1207,7 +1207,7 @@ public:
 
                         if ((fOptions & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param <= 0x5F)
                         {
-                            if (midiEventCount >= MAX_MIDI_EVENTS)
+                            if (midiEventCount >= kPluginMaxMidiEvents)
                                 continue;
 
                             carla_zeroStruct<snd_seq_event_t>(fMidiEvents[midiEventCount]);
@@ -1250,7 +1250,7 @@ public:
                     case kEngineControlEventTypeAllSoundOff:
                         if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                         {
-                            if (midiEventCount >= MAX_MIDI_EVENTS)
+                            if (midiEventCount >= kPluginMaxMidiEvents)
                                 continue;
 
                             carla_zeroStruct<snd_seq_event_t>(fMidiEvents[midiEventCount]);
@@ -1274,7 +1274,7 @@ public:
                                 sendMidiAllNotesOffToCallback();
                             }
 
-                            if (midiEventCount >= MAX_MIDI_EVENTS)
+                            if (midiEventCount >= kPluginMaxMidiEvents)
                                 continue;
 
                             carla_zeroStruct<snd_seq_event_t>(fMidiEvents[midiEventCount]);
@@ -1295,7 +1295,7 @@ public:
 
                 case kEngineEventTypeMidi:
                 {
-                    if (midiEventCount >= MAX_MIDI_EVENTS)
+                    if (midiEventCount >= kPluginMaxMidiEvents)
                         continue;
 
                     const EngineMidiEvent& midiEvent(event.midi);
@@ -1976,7 +1976,7 @@ private:
     float** fAudioInBuffers;
     float** fAudioOutBuffers;
     float*  fParamBuffers;
-    snd_seq_event_t fMidiEvents[MAX_MIDI_EVENTS];
+    snd_seq_event_t fMidiEvents[kPluginMaxMidiEvents];
 
     static NonRtList<const char*> sMultiSynthList;
 

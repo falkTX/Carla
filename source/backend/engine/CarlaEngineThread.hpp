@@ -19,7 +19,8 @@
 #define CARLA_ENGINE_THREAD_HPP_INCLUDED
 
 #include "CarlaBackend.hpp"
-#include "CarlaJuceUtils.hpp"
+
+#include "juce_core.h"
 
 using juce::Thread;
 
@@ -43,7 +44,7 @@ protected:
 private:
     CarlaEngine* const fEngine;
 
-    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineThread)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineThread)
 };
 
 // -----------------------------------------------------------------------

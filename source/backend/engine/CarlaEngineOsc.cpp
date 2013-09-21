@@ -37,7 +37,7 @@ extern int CarlaPluginSetOscBridgeInfo(CarlaPlugin* const plugin, const PluginBr
 // -----------------------------------------------------------------------
 
 CarlaEngineOsc::CarlaEngineOsc(CarlaEngine* const engine)
-    : kEngine(engine),
+    : fEngine(engine),
       fServerTCP(nullptr),
       fServerUDP(nullptr)
 {
@@ -252,14 +252,14 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
         return 1;
     }
 
-    if (pluginId > kEngine->getCurrentPluginCount())
+    if (pluginId > fEngine->getCurrentPluginCount())
     {
         carla_stderr("CarlaEngineOsc::handleMessage() - failed to get plugin, wrong id '%i'", pluginId);
         return 1;
     }
 
     // Get plugin
-    CarlaPlugin* const plugin = kEngine->getPluginUnchecked(pluginId);
+    CarlaPlugin* const plugin = fEngine->getPluginUnchecked(pluginId);
 
     if (plugin == nullptr || plugin->getId() != pluginId)
     {
@@ -415,9 +415,9 @@ int CarlaEngineOsc::handleMsgRegister(const bool isTCP, const int argc, const lo
         std::free(port);
     }
 
-    for (unsigned short i=0; i < kEngine->getCurrentPluginCount(); ++i)
+    for (unsigned short i=0; i < fEngine->getCurrentPluginCount(); ++i)
     {
-        CarlaPlugin* const plugin = kEngine->getPluginUnchecked(i);
+        CarlaPlugin* const plugin = fEngine->getPluginUnchecked(i);
 
         if (plugin && plugin->isEnabled())
             plugin->registerToOscClient();
@@ -589,7 +589,7 @@ int CarlaEngineOsc::handleMsgExiting(CARLA_ENGINE_OSC_HANDLE_ARGS1)
     carla_debug("CarlaEngineOsc::handleMsgExiting()");
 
     // TODO - check for non-UIs (dssi-vst) and set to -1 instead
-    kEngine->callback(CALLBACK_SHOW_GUI, plugin->getId(), 0, 0, 0.0f, nullptr);
+    fEngine->callback(CALLBACK_SHOW_GUI, plugin->getId(), 0, 0, 0.0f, nullptr);
 
     // TODO
     //plugin->freeOscData();

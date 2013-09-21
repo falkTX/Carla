@@ -220,7 +220,7 @@ public:
         carla_fill<int32_t>(fCurMidiProgs, MAX_MIDI_CHANNELS, 0);
 #endif
 
-        carla_zeroStruct< ::MidiEvent>(fMidiEvents, MAX_MIDI_EVENTS*2);
+        carla_zeroStruct< ::MidiEvent>(fMidiEvents, kPluginMaxMidiEvents*2);
         carla_zeroStruct< ::TimeInfo>(fTimeInfo);
 
         fHost.handle      = this;
@@ -1329,7 +1329,7 @@ public:
         }
 
         fMidiEventCount = 0;
-        carla_zeroStruct< ::MidiEvent>(fMidiEvents, MAX_MIDI_EVENTS*2);
+        carla_zeroStruct< ::MidiEvent>(fMidiEvents, kPluginMaxMidiEvents*2);
 
         // --------------------------------------------------------------------------------------------------------
         // Check if needs reset
@@ -1410,7 +1410,7 @@ public:
 
             if (pData->extNotes.mutex.tryLock())
             {
-                while (fMidiEventCount < MAX_MIDI_EVENTS*2 && ! pData->extNotes.data.isEmpty())
+                while (fMidiEventCount < kPluginMaxMidiEvents*2 && ! pData->extNotes.data.isEmpty())
                 {
                     const ExternalMidiNote& note(pData->extNotes.data.getFirst(true));
 
@@ -1574,7 +1574,7 @@ public:
 
                         if ((fOptions & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param <= 0x5F)
                         {
-                            if (fMidiEventCount >= MAX_MIDI_EVENTS*2)
+                            if (fMidiEventCount >= kPluginMaxMidiEvents*2)
                                 continue;
 
                             fMidiEvents[fMidiEventCount].port = 0;
@@ -1623,7 +1623,7 @@ public:
                     case kEngineControlEventTypeAllSoundOff:
                         if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                         {
-                            if (fMidiEventCount >= MAX_MIDI_EVENTS*2)
+                            if (fMidiEventCount >= kPluginMaxMidiEvents*2)
                                 continue;
 
                             fMidiEvents[fMidiEventCount].port = 0;
@@ -1646,7 +1646,7 @@ public:
                                 sendMidiAllNotesOffToCallback();
                             }
 
-                            if (fMidiEventCount >= MAX_MIDI_EVENTS*2)
+                            if (fMidiEventCount >= kPluginMaxMidiEvents*2)
                                 continue;
 
                             fMidiEvents[fMidiEventCount].port = 0;
@@ -1666,7 +1666,7 @@ public:
 
                 case kEngineEventTypeMidi:
                 {
-                    if (fMidiEventCount >= MAX_MIDI_EVENTS*2)
+                    if (fMidiEventCount >= kPluginMaxMidiEvents*2)
                         continue;
 
                     const EngineMidiEvent& midiEvent(event.midi);
@@ -1749,7 +1749,7 @@ public:
             }
 
             // reverse lookup MIDI events
-            for (k = (MAX_MIDI_EVENTS*2)-1; k >= fMidiEventCount; --k)
+            for (k = (kPluginMaxMidiEvents*2)-1; k >= fMidiEventCount; --k)
             {
                 if (fMidiEvents[k].data[0] == 0)
                     break;
@@ -2147,7 +2147,7 @@ protected:
         }
 
         // reverse-find first free event, and put it there
-        for (uint32_t i=(MAX_MIDI_EVENTS*2)-1; i > fMidiEventCount; --i)
+        for (uint32_t i=(kPluginMaxMidiEvents*2)-1; i > fMidiEventCount; --i)
         {
             if (fMidiEvents[i].data[0] == 0)
             {
@@ -2466,7 +2466,7 @@ private:
     float**     fAudioInBuffers;
     float**     fAudioOutBuffers;
     uint32_t    fMidiEventCount;
-    ::MidiEvent fMidiEvents[MAX_MIDI_EVENTS*2];
+    ::MidiEvent fMidiEvents[kPluginMaxMidiEvents*2];
 
     int32_t fCurMidiProgs[MAX_MIDI_CHANNELS];
 

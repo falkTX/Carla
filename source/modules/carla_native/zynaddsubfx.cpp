@@ -81,7 +81,6 @@ namespace Nio {
 SYNTH_T* synth = nullptr;
 
 #ifdef WANT_ZYNADDSUBFX_UI
-#define PIXMAP_PATH "/resources/zynaddsubfx/"
 
 static Fl_Tiled_Image* gModuleBackdrop = nullptr;
 static CarlaString gPixmapPath;
@@ -278,7 +277,7 @@ public:
             if (gPixmapPath.isEmpty())
             {
                 gPixmapPath   = host->resourceDir;
-                gPixmapPath  += PIXMAP_PATH;
+                gPixmapPath  += "/zynaddsubfx/";
                 gUiPixmapPath = gPixmapPath;
             }
 #endif

@@ -494,7 +494,7 @@ public:
     void setBufferSize(const uint32_t bufferSize);
 
     /*!
-     * Direct access to the port's audio buffer.
+     * Direct access to the port's buffer.
      */
     float* getBuffer() const noexcept
     {
@@ -550,6 +550,11 @@ public:
      * \note You must only call this for input ports.
      */
     virtual const EngineEvent& getEvent(const uint32_t index);
+
+    /*!
+     * TODO.
+     */
+    virtual const EngineEvent& getEventUnchecked(const uint32_t index);
 
     /*!
      * Write a control event into the buffer.\n

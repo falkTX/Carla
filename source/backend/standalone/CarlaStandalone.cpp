@@ -269,8 +269,8 @@ const CarlaNativePluginInfo* carla_get_internal_plugin_info(unsigned int interna
      info.audioOuts = nativePlugin->audioOuts;
      info.midiIns   = nativePlugin->midiIns;
      info.midiOuts  = nativePlugin->midiOuts;
-     info.parameterIns  = nativePlugin->parameterIns;
-     info.parameterOuts = nativePlugin->parameterOuts;
+     info.parameterIns  = nativePlugin->paramIns;
+     info.parameterOuts = nativePlugin->paramOuts;
 
      info.name      = nativePlugin->name;
      info.label     = nativePlugin->label;
@@ -463,7 +463,7 @@ void carla_set_engine_option(CarlaOptionsType option, int value, const char* val
     switch (option)
     {
     case CB::OPTION_PROCESS_NAME:
-        carla_setprocname(valueStr);
+        juce::Thread::setCurrentThreadName(valueStr);
         break;
 
     case CB::OPTION_PROCESS_MODE:

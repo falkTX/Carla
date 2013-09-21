@@ -167,6 +167,11 @@ const EngineEvent& CarlaEngineEventPort::getEvent(const uint32_t index)
     return fBuffer[index];
 }
 
+const EngineEvent& CarlaEngineEventPort::getEventUnchecked(const uint32_t index)
+{
+    return fBuffer[index];
+}
+
 void CarlaEngineEventPort::writeControlEvent(const uint32_t time, const uint8_t channel, const EngineControlEventType type, const uint16_t param, const float value)
 {
     CARLA_SAFE_ASSERT_RETURN(! fIsInput,);
@@ -598,13 +603,15 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
     carla_debug("CarlaEngine::addPlugin(%s, %s, \"%s\", \"%s\", \"%s\", %p)", BinaryType2Str(btype), PluginType2Str(ptype), filename, name, label, extra);
 
     unsigned int id;
+    CarlaPlugin* oldPlugin = nullptr;
 
     if (pData->nextPluginId < pData->curPluginCount)
     {
         id = pData->nextPluginId;
         pData->nextPluginId = pData->maxPluginNumber;
 
-        CARLA_ASSERT(pData->plugins[id].plugin != nullptr);
+        oldPlugin = pData->plugins[id].plugin;
+        CARLA_ASSERT(oldPlugin != nullptr);
     }
     else
     {
@@ -721,9 +728,17 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
     pData->plugins[id].outsPeak[0] = 0.0f;
     pData->plugins[id].outsPeak[1] = 0.0f;
 
-    ++pData->curPluginCount;
+    if (oldPlugin != nullptr)
+    {
+        delete oldPlugin;
+        callback(CALLBACK_RELOAD_ALL, id, 0, 0, 0.0f, plugin->getName());
+    }
+    else
+    {
+        ++pData->curPluginCount;
+        callback(CALLBACK_PLUGIN_ADDED, id, 0, 0, 0.0f, plugin->getName());
+    }
 
-    callback(CALLBACK_PLUGIN_ADDED, id, 0, 0, 0.0f, plugin->getName());
     return true;
 }
 
@@ -786,12 +801,11 @@ void CarlaEngine::removeAllPlugins()
 
     for (unsigned int i=0; i < pData->maxPluginNumber; ++i)
     {
-        CarlaPlugin* const plugin(pData->plugins[i].plugin);
-
-        pData->plugins[i].plugin = nullptr;
-
-        if (plugin != nullptr)
+        if (CarlaPlugin* const plugin = pData->plugins[i].plugin)
+        {
+            pData->plugins[i].plugin = nullptr;
             delete plugin;
+        }
 
         // clear this plugin
         pData->plugins[i].insPeak[0]  = 0.0f;
@@ -952,6 +966,9 @@ const char* CarlaEngine::getUniquePluginName(const char* const name)
     CARLA_ASSERT(pData->nextAction.opcode == kEnginePostActionNull);
     CARLA_ASSERT(name != nullptr);
     carla_debug("CarlaEngine::getUniquePluginName(\"%s\")", name);
+
+    //static CarlaMutex m;
+    //const CarlaMutex::ScopedLocker sl(m);
 
     static CarlaString sname;
     sname = name;
@@ -1338,7 +1355,7 @@ void CarlaEngine::callback(const CallbackType action, const unsigned int pluginI
 {
     carla_debug("CarlaEngine::callback(%s, %i, %i, %i, %f, \"%s\")", CallbackType2Str(action), pluginId, value1, value2, value3, valueStr);
 
-    if (pData->callback)
+    if (pData->callback != nullptr)
         pData->callback(pData->callbackPtr, action, pluginId, value1, value2, value3, valueStr);
 }
 
