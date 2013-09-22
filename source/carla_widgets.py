@@ -20,11 +20,11 @@
 # Imports (Global)
 
 try:
-    from PyQt5.QtCore import QByteArray, QSettings
+    from PyQt5.QtCore import pyqtSignal, pyqtSlot, QByteArray, QSettings
     from PyQt5.QtGui import QColor, QCursor, QFontMetrics, QPainter, QPainterPath
     from PyQt5.QtWidgets import QDialog, QFrame, QInputDialog, QLineEdit, QMenu, QVBoxLayout, QWidget
 except:
-    from PyQt4.QtCore import QByteArray, QSettings
+    from PyQt4.QtCore import pyqtSignal, pyqtSlot, QByteArray, QSettings
     from PyQt4.QtGui import QColor, QCursor, QFontMetrics, QPainter, QPainterPath
     from PyQt4.QtGui import QDialog, QFrame, QInputDialog, QLineEdit, QMenu, QVBoxLayout, QWidget
 
@@ -424,6 +424,10 @@ class PluginEdit(QDialog):
         self.ui.dial_b_right.setPixmap(4)
         self.ui.dial_b_right.setLabel("R")
 
+        self.ui.dial_pan.setCustomPaint(self.ui.dial_b_right.CUSTOM_PAINT_CARLA_R) # FIXME
+        self.ui.dial_pan.setPixmap(4)
+        self.ui.dial_pan.setLabel("Pan")
+
         self.ui.keyboard.setMode(self.ui.keyboard.HORIZONTAL)
         self.ui.keyboard.setOctaves(10)
 
@@ -518,54 +522,47 @@ class PluginEdit(QDialog):
         pluginType  = self.fPluginInfo['type']
         pluginHints = self.fPluginInfo['hints']
 
-        #if pluginType == PLUGIN_INTERNAL:
-            #self.ui.le_type.setText(self.tr("Internal"))
-        #elif pluginType == PLUGIN_LADSPA:
-            #self.ui.le_type.setText("LADSPA")
-        #elif pluginType == PLUGIN_DSSI:
-            #self.ui.le_type.setText("DSSI")
-        #elif pluginType == PLUGIN_LV2:
-            #self.ui.le_type.setText("LV2")
-        #elif pluginType == PLUGIN_VST:
-            #self.ui.le_type.setText("VST")
-        #elif pluginType == PLUGIN_AU:
-            #self.ui.le_type.setText("AU")
-        #elif pluginType == PLUGIN_CSOUND:
-            #self.ui.le_type.setText("CSOUND")
-        #elif pluginType == PLUGIN_GIG:
-            #self.ui.le_type.setText("GIG")
-        #elif pluginType == PLUGIN_SF2:
-            #self.ui.le_type.setText("SF2")
-        #elif pluginType == PLUGIN_SFZ:
-            #self.ui.le_type.setText("SFZ")
-        #else:
-            #self.ui.le_type.setText(self.tr("Unknown"))
+        if pluginType == PLUGIN_INTERNAL:
+            self.ui.le_type.setText(self.tr("Internal"))
+        elif pluginType == PLUGIN_LADSPA:
+            self.ui.le_type.setText("LADSPA")
+        elif pluginType == PLUGIN_DSSI:
+            self.ui.le_type.setText("DSSI")
+        elif pluginType == PLUGIN_LV2:
+            self.ui.le_type.setText("LV2")
+        elif pluginType == PLUGIN_VST:
+            self.ui.le_type.setText("VST")
+        elif pluginType == PLUGIN_AU:
+            self.ui.le_type.setText("AU")
+        elif pluginType == PLUGIN_CSOUND:
+            self.ui.le_type.setText("CSOUND")
+        elif pluginType == PLUGIN_GIG:
+            self.ui.le_type.setText("GIG")
+        elif pluginType == PLUGIN_SF2:
+            self.ui.le_type.setText("SF2")
+        elif pluginType == PLUGIN_SFZ:
+            self.ui.le_type.setText("SFZ")
+        else:
+            self.ui.le_type.setText(self.tr("Unknown"))
 
-        #self.ui.le_name.setText(pluginName)
-        #self.ui.le_name.setToolTip(pluginName)
-        #self.ui.le_label.setText(self.fPluginInfo['label'])
-        #self.ui.le_label.setToolTip(self.fPluginInfo['label'])
-        #self.ui.le_maker.setText(self.fPluginInfo['maker'])
-        #self.ui.le_maker.setToolTip(self.fPluginInfo['maker'])
-        #self.ui.le_copyright.setText(self.fPluginInfo['copyright'])
-        #self.ui.le_copyright.setToolTip(self.fPluginInfo['copyright'])
-        #self.ui.le_unique_id.setText(str(self.fPluginInfo['uniqueId']))
-        #self.ui.le_unique_id.setToolTip(str(self.fPluginInfo['uniqueId']))
-        #self.ui.le_ains.setText(str(audioCountInfo['ins']))
-        #self.ui.le_aouts.setText(str(audioCountInfo['outs']))
-        #self.ui.le_params.setText(str(paramCountInfo['ins']))
+        self.ui.le_name.setText(pluginName)
+        self.ui.le_name.setToolTip(pluginName)
+        self.ui.le_label.setText(self.fPluginInfo['label'])
+        self.ui.le_label.setToolTip(self.fPluginInfo['label'])
+        self.ui.le_maker.setText(self.fPluginInfo['maker'])
+        self.ui.le_maker.setToolTip(self.fPluginInfo['maker'])
+        self.ui.le_copyright.setText(self.fPluginInfo['copyright'])
+        self.ui.le_copyright.setToolTip(self.fPluginInfo['copyright'])
+        self.ui.le_unique_id.setText(str(self.fPluginInfo['uniqueId']))
+        self.ui.le_unique_id.setToolTip(str(self.fPluginInfo['uniqueId']))
         self.ui.label_plugin.setText("\n%s\n" % self.fPluginInfo['name'])
         self.setWindowTitle(self.fPluginInfo['name'])
-
-        #if self.fPluginInfo['latency'] > 0:
-            #self.ui.le_latency.setText("%i samples" % self.fPluginInfo['latency'])
-        #else:
-            #self.ui.le_latency.setText(self.tr("None"))
 
         self.ui.dial_drywet.setEnabled(pluginHints & PLUGIN_CAN_DRYWET)
         self.ui.dial_vol.setEnabled(pluginHints & PLUGIN_CAN_VOLUME)
         self.ui.dial_b_left.setEnabled(pluginHints & PLUGIN_CAN_BALANCE)
         self.ui.dial_b_right.setEnabled(pluginHints & PLUGIN_CAN_BALANCE)
+        self.ui.dial_pan.setEnabled(pluginHints & PLUGIN_CAN_PANNING)
 
         self.ui.ch_fixed_buffer.setEnabled(self.fPluginInfo['optionsAvailable'] & PLUGIN_OPTION_FIXED_BUFFERS)
         self.ui.ch_fixed_buffer.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_FIXED_BUFFERS)
@@ -587,10 +584,10 @@ class PluginEdit(QDialog):
         self.ui.ch_send_all_sound_off.setChecked(self.fPluginInfo['optionsEnabled'] & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
 
         if self.fPluginInfo['type'] != PLUGIN_VST:
-            self.ui.tab_programs.setCurrentIndex(1)
+            self.ui.sw_programs.setCurrentIndex(1)
 
         # Show/hide keyboard
-        showKeyboard = (self.fPluginInfo['category'] == PLUGIN_CATEGORY_SYNTH) != 0 or (midiCountInfo['ins'] > 0 < midiCountInfo['outs'])
+        showKeyboard = (self.fPluginInfo['category'] == PLUGIN_CATEGORY_SYNTH or midiCountInfo['ins'] > 0 < midiCountInfo['outs'])
         self.ui.scrollArea.setEnabled(showKeyboard)
         self.ui.scrollArea.setVisible(showKeyboard)
 
@@ -806,6 +803,8 @@ class PluginEdit(QDialog):
             self.ui.label_midi_programs.setEnabled(False)
 
         self.ui.cb_midi_programs.blockSignals(False)
+
+        self.ui.sw_programs.setEnabled(programCount > 0 or midiProgramCount > 0)
 
         if self.fPluginInfo['type'] == PLUGIN_LV2:
             self.ui.b_load_state.setEnabled(programCount > 0)
@@ -1264,7 +1263,7 @@ class PluginEdit(QDialog):
     def _updateCtrlMidiProgram(self):
         if self.fPluginInfo['type'] not in (PLUGIN_INTERNAL, PLUGIN_SF2):
             return
-        elif not self.fPluginInfo['hints'] & PLUGIN_IS_SYNTH:
+        elif self.fPluginInfo['category'] != PLUGIN_CATEGORY_SYNTH:
             return
 
         if self.fControlChannel < 0:

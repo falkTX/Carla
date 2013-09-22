@@ -20,50 +20,39 @@
 # Imports (Global)
 
 try:
-    from PyQt5.QtWidgets import QApplication, QMainWindow
+    from PyQt5.QtCore import QTimer
+    from PyQt5.QtWidgets import QApplication
 except:
-    from PyQt4.QtGui import QApplication, QMainWindow
+    from PyQt4.QtCore import QTimer
+    from PyQt4.QtGui import QApplication
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom Stuff)
 
-from carla_database import *
-from carla_rack import *
+from carla_host import *
+from carla_rack import CarlaRackW
 
 # ------------------------------------------------------------------------------------------------------------
 # Main Window
 
-class CarlaMiniW(QMainWindow):
+class CarlaMiniW(HostWindow):
     def __init__(self, parent=None):
-        QMainWindow.__init__(self, parent)
+        HostWindow.__init__(self, parent)
         #self.ui =  ui_carla.Ui_CarlaMainW()
         #self.ui.setupUi(self)
 
         Carla.host.engine_init("JACK", "Carla")
 
-        self.fRack = CarlaRackW(self)
-        self.setCentralWidget(self.fRack)
+        self.fContainer = CarlaRackW(self)
+        self.setCentralWidget(self.fContainer)
 
-        self.fIdleTimerFast = self.startTimer(50)
-        self.fIdleTimerSlow = self.startTimer(50*2)
+        self.init()
 
         QTimer.singleShot(0, self.slot_pluginAdd)
 
     def closeEvent(self, event):
-        self.fIdleTimerFast = 0
-        self.fIdleTimerSlow = 0
         Carla.host.engine_close()
-        QMainWindow.closeEvent(self, event)
-
-    def timerEvent(self, event):
-        if event.timerId() == self.fIdleTimerFast:
-            Carla.host.engine_idle()
-            self.fRack.idleFast()
-
-        elif event.timerId() == self.fIdleTimerSlow:
-            self.fRack.idleSlow()
-
-        QMainWindow.timerEvent(self, event)
+        HostWindow.closeEvent(self, event)
 
     @pyqtSlot()
     def slot_pluginAdd(self):
@@ -81,82 +70,7 @@ class CarlaMiniW(QMainWindow):
             CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"), self.tr("Failed to load plugin"), cString(Carla.host.get_last_error()), QMessageBox.Ok, QMessageBox.Ok)
             return
 
-        self.fRack.addPlugin(0)
-
-# ------------------------------------------------------------------------------------------------------------
-
-def engineCallback(ptr, action, pluginId, value1, value2, value3, valueStr):
-    if pluginId < 0 or not Carla.gui:
-        return
-
-    #if action == CALLBACK_DEBUG:
-        #Carla.gui.emit(SIGNAL("DebugCallback(int, int, int, double, QString)"), pluginId, value1, value2, value3, cString(valueStr))
-    #elif action == CALLBACK_PLUGIN_ADDED:
-        #Carla.gui.emit(SIGNAL("PluginAddedCallback(int)"), pluginId)
-    #elif action == CALLBACK_PLUGIN_REMOVED:
-        #Carla.gui.emit(SIGNAL("PluginRemovedCallback(int)"), pluginId)
-    #elif action == CALLBACK_PLUGIN_RENAMED:
-        #Carla.gui.emit(SIGNAL("PluginRenamedCallback(int, QString)"), pluginId, valueStr)
-    #elif action == CALLBACK_PARAMETER_VALUE_CHANGED:
-        #Carla.gui.emit(SIGNAL("ParameterValueChangedCallback(int, int, double)"), pluginId, value1, value3)
-    #elif action == CALLBACK_PARAMETER_DEFAULT_CHANGED:
-        #Carla.gui.emit(SIGNAL("ParameterDefaultChangedCallback(int, int, double)"), pluginId, value1, value3)
-    #elif action == CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED:
-        #Carla.gui.emit(SIGNAL("ParameterMidiChannelChangedCallback(int, int, int)"), pluginId, value1, value2)
-    #elif action == CALLBACK_PARAMETER_MIDI_CC_CHANGED:
-        #Carla.gui.emit(SIGNAL("ParameterMidiCcChangedCallback(int, int, int)"), pluginId, value1, value2)
-    #elif action == CALLBACK_PROGRAM_CHANGED:
-        #Carla.gui.emit(SIGNAL("ProgramChangedCallback(int, int)"), pluginId, value1)
-    #elif action == CALLBACK_MIDI_PROGRAM_CHANGED:
-        #Carla.gui.emit(SIGNAL("MidiProgramChangedCallback(int, int)"), pluginId, value1)
-    #elif action == CALLBACK_NOTE_ON:
-        #Carla.gui.emit(SIGNAL("NoteOnCallback(int, int, int, int)"), pluginId, value1, value2, value3)
-    #elif action == CALLBACK_NOTE_OFF:
-        #Carla.gui.emit(SIGNAL("NoteOffCallback(int, int, int)"), pluginId, value1, value2)
-    #elif action == CALLBACK_SHOW_GUI:
-        #Carla.gui.emit(SIGNAL("ShowGuiCallback(int, int)"), pluginId, value1)
-    #elif action == CALLBACK_UPDATE:
-        #Carla.gui.emit(SIGNAL("UpdateCallback(int)"), pluginId)
-    #elif action == CALLBACK_RELOAD_INFO:
-        #Carla.gui.emit(SIGNAL("ReloadInfoCallback(int)"), pluginId)
-    #elif action == CALLBACK_RELOAD_PARAMETERS:
-        #Carla.gui.emit(SIGNAL("ReloadParametersCallback(int)"), pluginId)
-    #elif action == CALLBACK_RELOAD_PROGRAMS:
-        #Carla.gui.emit(SIGNAL("ReloadProgramsCallback(int)"), pluginId)
-    #elif action == CALLBACK_RELOAD_ALL:
-        #Carla.gui.emit(SIGNAL("ReloadAllCallback(int)"), pluginId)
-    #elif action == CALLBACK_PATCHBAY_CLIENT_ADDED:
-        #Carla.gui.emit(SIGNAL("PatchbayClientAddedCallback(int, int, QString)"), value1, value2, cString(valueStr))
-    #elif action == CALLBACK_PATCHBAY_CLIENT_REMOVED:
-        #Carla.gui.emit(SIGNAL("PatchbayClientRemovedCallback(int, QString)"), value1, cString(valueStr))
-    #elif action == CALLBACK_PATCHBAY_CLIENT_RENAMED:
-        #Carla.gui.emit(SIGNAL("PatchbayClientRenamedCallback(int, QString)"), value1, cString(valueStr))
-    #elif action == CALLBACK_PATCHBAY_PORT_ADDED:
-        #Carla.gui.emit(SIGNAL("PatchbayPortAddedCallback(int, int, int, QString)"), value1, value2, int(value3), cString(valueStr))
-    #elif action == CALLBACK_PATCHBAY_PORT_REMOVED:
-        #Carla.gui.emit(SIGNAL("PatchbayPortRemovedCallback(int, int, QString)"), value1, value2, cString(valueStr))
-    #elif action == CALLBACK_PATCHBAY_PORT_RENAMED:
-        #Carla.gui.emit(SIGNAL("PatchbayPortRenamedCallback(int, int, QString)"), value1, value2, cString(valueStr))
-    #elif action == CALLBACK_PATCHBAY_CONNECTION_ADDED:
-        #Carla.gui.emit(SIGNAL("PatchbayConnectionAddedCallback(int, int, int)"), value1, value2, value3)
-    #elif action == CALLBACK_PATCHBAY_CONNECTION_REMOVED:
-        #Carla.gui.emit(SIGNAL("PatchbayConnectionRemovedCallback(int)"), value1)
-    #elif action == CALLBACK_PATCHBAY_ICON_CHANGED:
-        #Carla.gui.emit(SIGNAL("PatchbayIconChangedCallback(int, int)"), value1, value2)
-    #elif action == CALLBACK_BUFFER_SIZE_CHANGED:
-        #Carla.gui.emit(SIGNAL("BufferSizeChangedCallback(int)"), value1)
-    #elif action == CALLBACK_SAMPLE_RATE_CHANGED:
-        #Carla.gui.emit(SIGNAL("SampleRateChangedCallback(double)"), value3)
-    #elif action == CALLBACK_NSM_ANNOUNCE:
-        #Carla.gui.emit(SIGNAL("NSM_AnnounceCallback(QString)"), cString(valueStr))
-    #elif action == CALLBACK_NSM_OPEN:
-        #Carla.gui.emit(SIGNAL("NSM_OpenCallback(QString)"), cString(valueStr))
-    #elif action == CALLBACK_NSM_SAVE:
-        #Carla.gui.emit(SIGNAL("NSM_SaveCallback()"))
-    #elif action == CALLBACK_ERROR:
-        #Carla.gui.emit(SIGNAL("ErrorCallback(QString)"), cString(valueStr))
-    #elif action == CALLBACK_QUIT:
-        #Carla.gui.emit(SIGNAL("QuitCallback()"))
+        self.fContainer.addPlugin(0)
 
 # ------------------------------------------------------------------------------------------------------------
 # --------------- main ------------------
@@ -179,66 +93,8 @@ if __name__ == '__main__':
     Carla.host.set_engine_option(OPTION_PROCESS_NAME, 0, "carla")
     Carla.host.set_engine_option(OPTION_PATH_RESOURCES, 0, libPath)
 
-    # Set bridge paths
-    if carla_bridge_native:
-        Carla.host.set_engine_option(OPTION_PATH_BRIDGE_NATIVE, 0, carla_bridge_native)
-
-    if carla_bridge_posix32:
-        Carla.host.set_engine_option(OPTION_PATH_BRIDGE_POSIX32, 0, carla_bridge_posix32)
-
-    if carla_bridge_posix64:
-        Carla.host.set_engine_option(OPTION_PATH_BRIDGE_POSIX64, 0, carla_bridge_posix64)
-
-    if carla_bridge_win32:
-        Carla.host.set_engine_option(OPTION_PATH_BRIDGE_WIN32, 0, carla_bridge_win32)
-
-    if carla_bridge_win64:
-        Carla.host.set_engine_option(OPTION_PATH_BRIDGE_WIN64, 0, carla_bridge_win64)
-
-    if carla_bridge_lv2_external:
-        Carla.host.set_engine_option(OPTION_PATH_BRIDGE_LV2_EXTERNAL, 0, carla_bridge_lv2_external)
-
-    if WINDOWS:
-        if carla_bridge_lv2_windows:
-            Carla.host.set_engine_option(OPTION_PATH_BRIDGE_LV2_WINDOWS, 0, carla_bridge_lv2_windows)
-
-        if carla_bridge_vst_hwnd:
-            Carla.host.set_engine_option(OPTION_PATH_BRIDGE_VST_HWND, 0, carla_bridge_vst_hwnd)
-
-    elif MACOS:
-        if carla_bridge_lv2_cocoa:
-            Carla.host.set_engine_option(OPTION_PATH_BRIDGE_LV2_COCOA, 0, carla_bridge_lv2_cocoa)
-
-        if carla_bridge_vst_mac:
-            Carla.host.set_engine_option(OPTION_PATH_BRIDGE_VST_MAC, 0, carla_bridge_vst_mac)
-
-    else:
-        if carla_bridge_lv2_gtk2:
-            Carla.host.set_engine_option(OPTION_PATH_BRIDGE_LV2_GTK2, 0, carla_bridge_lv2_gtk2)
-
-        if carla_bridge_lv2_gtk3:
-            Carla.host.set_engine_option(OPTION_PATH_BRIDGE_LV2_GTK3, 0, carla_bridge_lv2_gtk3)
-
-        if carla_bridge_lv2_qt4:
-            Carla.host.set_engine_option(OPTION_PATH_BRIDGE_LV2_QT4, 0, carla_bridge_lv2_qt4)
-
-        if carla_bridge_lv2_qt5:
-            Carla.host.set_engine_option(OPTION_PATH_BRIDGE_LV2_QT5, 0, carla_bridge_lv2_qt5)
-
-        if carla_bridge_lv2_x11:
-            Carla.host.set_engine_option(OPTION_PATH_BRIDGE_LV2_X11, 0, carla_bridge_lv2_x11)
-
-        if carla_bridge_vst_x11:
-            Carla.host.set_engine_option(OPTION_PATH_BRIDGE_VST_X11, 0, carla_bridge_vst_x11)
-
     # Create GUI and start engine
     Carla.gui = CarlaMiniW()
-
-    # Only now we're ready to handle events
-    Carla.host.set_engine_callback(engineCallback)
-
-    # Set-up custom signal handling
-    setUpSignals()
 
     # Show GUI
     Carla.gui.show()

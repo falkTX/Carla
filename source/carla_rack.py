@@ -94,21 +94,6 @@ class CarlaRackW(QListWidget):
         """ % (col1, col2))
 
         # -------------------------------------------------------------
-        # TESTING
-
-        #self.addPlugin(0)
-        #self.addPlugin(1)
-        #self.addPlugin(2)
-        #self.addPlugin(3)
-        #self.addPlugin(4)
-
-        #self.removePlugin(3)
-
-        #QTimer.singleShot(3000, self.testRemove)
-        #QTimer.singleShot(5000, self.removeAllPlugins)
-
-    def testRemove(self):
-        self.removePlugin(0)
 
     def idleFast(self):
         for i in range(self.fPluginCount):

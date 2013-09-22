@@ -116,9 +116,6 @@ class CarlaMainW(QMainWindow):
         self.fClientName = "Carla"
         self.fSessionManagerName = "LADISH" if LADISH_APP_NAME else ""
 
-        self.fLadspaRdfNeedsUpdate = True
-        self.fLadspaRdfList = []
-
         # -------------------------------------------------------------
         # Load Settings
 
@@ -437,60 +434,6 @@ class CarlaMainW(QMainWindow):
         self.fPluginList  = []
 
         Carla.host.remove_all_plugins()
-
-    def getExtraStuff(self, plugin):
-        ptype = plugin['type']
-
-        if ptype == PLUGIN_LADSPA:
-            uniqueId = plugin['uniqueId']
-
-            self.loadRDFs()
-
-            for rdfItem in self.fLadspaRdfList:
-                if rdfItem.UniqueID == uniqueId:
-                    return pointer(rdfItem)
-
-        elif ptype == PLUGIN_DSSI:
-            if plugin['hints'] & PLUGIN_HAS_GUI:
-                gui = findDSSIGUI(plugin['binary'], plugin['name'], plugin['label'])
-                if gui:
-                    return gui.encode("utf-8")
-
-        elif ptype in (PLUGIN_GIG, PLUGIN_SF2, PLUGIN_SFZ):
-            if plugin['name'].endswith(" (16 outputs)"):
-                # return a dummy non-null pointer
-                INTPOINTER = POINTER(c_int)
-                ptr  = c_int(0x1)
-                addr = addressof(ptr)
-                return cast(addr, INTPOINTER)
-
-        return c_nullptr
-
-    def loadRDFs(self):
-        if not self.fLadspaRdfNeedsUpdate:
-            return
-
-        self.fLadspaRdfList = []
-        self.fLadspaRdfNeedsUpdate = False
-
-        if not haveLRDF:
-            return
-
-        settingsDir  = os.path.join(HOME, ".config", "falkTX")
-        frLadspaFile = os.path.join(settingsDir, "ladspa_rdf.db")
-
-        if os.path.exists(frLadspaFile):
-            frLadspa = open(frLadspaFile, 'r')
-
-            try:
-                self.fLadspaRdfList = ladspa_rdf.get_c_ladspa_rdfs(json.load(frLadspa))
-            except:
-                pass
-
-            frLadspa.close()
-
-    def loadRDFsNeeded(self):
-        self.fLadspaRdfNeedsUpdate = True
 
     def menuTransport(self, enabled):
         self.ui.act_transport_play.setEnabled(enabled)

@@ -133,9 +133,9 @@ class CarlaPatchbayW(QWidget):
             painter.restore()
 
 # ------------------------------------------------------------------------------------------------
-# ...
+# Canvas callback
 
-def canvasCallback(action, value1, value2, valueStr):
+def CanvasCallback(action, value1, value2, valueStr):
     if action == patchcanvas.ACTION_GROUP_INFO:
         pass
 

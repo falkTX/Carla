@@ -639,8 +639,8 @@ class CarlaSettingsW(QDialog):
 # ------------------------------------------------------------------------------------------------------------
 # TESTING
 
-from PyQt5.QtWidgets import QApplication
-app = QApplication(sys.argv)
-gui = CarlaSettingsW(None, True)
-gui.show()
-app.exec_()
+#from PyQt5.QtWidgets import QApplication
+#app = QApplication(sys.argv)
+#gui = CarlaSettingsW(None, True)
+#gui.show()
+#app.exec_()
