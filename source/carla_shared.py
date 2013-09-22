@@ -326,7 +326,7 @@ Carla = CarlaObject()
 Carla.host = None
 Carla.gui  = None
 Carla.isControl = False
-Carla.isLocal   = False
+Carla.isLocal   = True
 Carla.processMode   = PROCESS_MODE_MULTIPLE_CLIENTS if LINUX else PROCESS_MODE_CONTINUOUS_RACK
 Carla.maxParameters = MAX_DEFAULT_PARAMETERS
 
@@ -402,7 +402,7 @@ carla_bridge_vst_mac  = ""
 carla_bridge_vst_hwnd = ""
 carla_bridge_vst_x11  = ""
 
-carla_libname = "libcarla_%s" % "control" if Carla.isControl else "standalone"
+carla_libname = "libcarla_%s" % ("control" if Carla.isControl else "standalone")
 
 if WINDOWS:
     carla_libname += ".dll"

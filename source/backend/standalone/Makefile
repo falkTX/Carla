@@ -8,7 +8,6 @@ include ../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += -I../../modules/theme
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo)
 
 # --------------------------------------------------------------
@@ -91,6 +90,8 @@ LIBS += ../libcarla_plugin.a
 LIBS += ../../modules/carla_native.a
 LIBS += ../../modules/juce_audio_basics.a
 LIBS += ../../modules/juce_core.a
+LIBS += ../../modules/juce_data_structures.a
+LIBS += ../../modules/juce_events.a
 LIBS += ../../modules/rtmempool.a
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)

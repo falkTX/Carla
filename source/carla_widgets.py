@@ -373,6 +373,8 @@ class PluginParameter(QWidget):
 # Plugin Editor (Built-in)
 
 class PluginEdit(QDialog):
+    ParamsPerPage = 8
+
     def __init__(self, parent, pluginId):
         QDialog.__init__(self, Carla.gui)
         self.ui = ui_carla_edit.Ui_PluginEdit()
@@ -685,7 +687,7 @@ class PluginEdit(QDialog):
 
                     paramInputList.append(parameter)
 
-                    if len(paramInputList) == 10:
+                    if len(paramInputList) == self.ParamsPerPage:
                         paramInputListFull.append((paramInputList, paramInputWidth))
                         paramInputList  = []
                         paramInputWidth = 0
@@ -698,7 +700,7 @@ class PluginEdit(QDialog):
 
                     paramOutputList.append(parameter)
 
-                    if len(paramOutputList) == 10:
+                    if len(paramOutputList) == self.ParamsPerPage:
                         paramOutputListFull.append((paramOutputList, paramOutputWidth))
                         paramOutputList  = []
                         paramOutputWidth = 0
@@ -1407,8 +1409,7 @@ class PluginWidget(QFrame):
         self.ui.edit_dialog = PluginEdit(self, self.fPluginId)
         self.ui.edit_dialog.hide()
 
-        self.setMinimumHeight(32)
-        self.setMaximumHeight(32)
+        self.setFixedHeight(32)
 
         # -------------------------------------------------------------
         # Set-up connections
@@ -1643,12 +1644,12 @@ class PluginWidget(QFrame):
 # ------------------------------------------------------------------------------------------------------------
 # TESTING
 
-hasGL = True
+#hasGL = True
 
-from PyQt5.QtWidgets import QApplication
-app = QApplication(sys.argv)
+#from PyQt5.QtWidgets import QApplication
+#app = QApplication(sys.argv)
 #gui = PluginParameter(None, pInfo, 0, 0)
 #gui = PluginEdit(None, 0)
-gui = PluginWidget(None, 0)
-gui.show()
-app.exec_()
+#gui = PluginWidget(None, 0)
+#gui.show()
+#app.exec_()

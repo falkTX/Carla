@@ -1664,8 +1664,8 @@ class PluginDatabaseW(QDialog):
 # ------------------------------------------------------------------------------------------------------------
 # TESTING
 
-from PyQt5.QtWidgets import QApplication
-app = QApplication(sys.argv)
-gui = PluginDatabaseW(None)
-gui.show()
-app.exec_()
+#from PyQt5.QtWidgets import QApplication
+#app = QApplication(sys.argv)
+#gui = PluginDatabaseW(None)
+#gui.show()
+#app.exec_()

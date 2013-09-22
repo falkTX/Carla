@@ -52,7 +52,7 @@ endif
 
 BUILD_C_FLAGS   = $(BASE_FLAGS) -std=gnu99 $(CFLAGS)
 BUILD_CXX_FLAGS = $(BASE_FLAGS) -std=gnu++0x $(CXXFLAGS)
-LINK_FLAGS      = $(LINK_OPTS) $(LDFLAGS)
+LINK_FLAGS      = $(LINK_OPTS) -Wl,--no-undefined $(LDFLAGS)
 
 ifeq ($(MACOS),true)
 # No C++11 support; force 32bit per default

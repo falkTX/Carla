@@ -16,8 +16,6 @@ ifeq ($(DEBUG),true)
 BUILD_CXX_FLAGS += -D__RTAUDIO_DEBUG__ -D__RTMIDI_DEBUG__
 endif
 
-# --------------------------------------------------------------
-
 ifeq ($(HAVE_ALSA),true)
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags alsa) -D__LINUX_ALSA__ -D__LINUX_ALSASEQ__
 endif
@@ -84,7 +82,9 @@ HEADERS = \
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 $(TARGET): $(OBJS)
-	$(AR) rs $@ $^
+	rm -f $@
+	$(AR) crs $@ $^
 
 $(TARGETp): $(OBJSp)
-	$(AR) rs $@ $^
+	rm -f $@
+	$(AR) crs $@ $^
