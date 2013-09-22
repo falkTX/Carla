@@ -118,10 +118,10 @@ class ExternalUI(object):
         except IOError:
             return False
 
-        if msg == "":
+        if not msg:
             return True
 
-        if msg == "control":
+        elif msg == "control":
             index = int(self.fPipeRecv.readline())
             value = float(self.fPipeRecv.readline())
             self.d_parameterChanged(index, value)

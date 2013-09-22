@@ -23,6 +23,8 @@
 
 #include "juce_core.h"
 
+using namespace juce;
+
 // -----------------------------------------------------------------------
 
 static inline
@@ -30,11 +32,10 @@ const char* find_dssi_ui(const char* const filename, const char* const label)
 {
     CARLA_SAFE_ASSERT_RETURN(filename != nullptr, nullptr);
     CARLA_SAFE_ASSERT_RETURN(label    != nullptr, nullptr);
-
-    using namespace juce;
+    carla_debug("find_dssi_ui(\"%s\", \"%s\")", filename, label);
 
     File pluginFile(filename);
-    File pluginDir(pluginFile.getParentDirectory());
+    File pluginDir(pluginFile.getParentDirectory().getFullPathName() + File::separatorString + pluginFile.getFileNameWithoutExtension());
 
     Array<File> results;
 
@@ -46,7 +47,7 @@ const char* find_dssi_ui(const char* const filename, const char* const label)
     for (int i=0, count=results.size(); i < count; ++i)
     {
         const File& file(results[i]);
-        guiFiles.add(file.getFullPathName());
+        guiFiles.add(file.getFileName());
     }
 
     String pluginDirName(pluginDir.getFullPathName());

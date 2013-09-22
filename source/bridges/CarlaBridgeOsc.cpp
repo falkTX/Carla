@@ -84,7 +84,7 @@ void CarlaBridgeOsc::init(const char* const url)
     CARLA_ASSERT(fServerPath.isNotEmpty());
 }
 
-void CarlaBridgeOsc::idle()
+void CarlaBridgeOsc::idle() const
 {
     if (fServer == nullptr)
         return;
@@ -125,6 +125,7 @@ int CarlaBridgeOsc::handleMessage(const char* const path, const int argc, const 
     CARLA_SAFE_ASSERT_RETURN(fServerPath.isNotEmpty(), 1);
     CARLA_SAFE_ASSERT_RETURN(fServer != nullptr, 1);
     CARLA_SAFE_ASSERT_RETURN(path != nullptr, 1);
+    CARLA_SAFE_ASSERT_RETURN(msg != nullptr, 1);
     carla_debug("CarlaBridgeOsc::handleMessage(\"%s\", %i, %p, \"%s\", %p)", path, argc, argv, types, msg);
 
     const size_t nameSize(fName.length());
@@ -146,22 +147,7 @@ int CarlaBridgeOsc::handleMessage(const char* const path, const int argc, const 
         return 1;
     }
 
-#ifdef BUILD_BRIDGE_UI
-    // Common UI methods
-    if (std::strcmp(method, "configure") == 0)
-        return handleMsgConfigure(argc, argv, types);
-    if (std::strcmp(method, "control") == 0)
-        return handleMsgControl(argc, argv, types);
-    if (std::strcmp(method, "program") == 0)
-        return handleMsgProgram(argc, argv, types);
-    if (std::strcmp(method, "midi-program") == 0)
-        return handleMsgMidiProgram(argc, argv, types);
-    if (std::strcmp(method, "midi") == 0)
-        return handleMsgMidi(argc, argv, types);
-    if (std::strcmp(method, "sample-rate") == 0)
-        return 0; // unused
-#endif
-
+    // Common methods
     if (std::strcmp(method, "show") == 0)
         return handleMsgShow();
     if (std::strcmp(method, "hide") == 0)
@@ -175,6 +161,22 @@ int CarlaBridgeOsc::handleMessage(const char* const path, const int argc, const 
         return handleMsgLv2AtomTransfer(argc, argv, types);
     if (std::strcmp(method, "lv2_urid_map") == 0)
         return handleMsgLv2UridMap(argc, argv, types);
+#endif
+
+#ifdef BUILD_BRIDGE_UI
+    // UI methods
+    if (std::strcmp(method, "configure") == 0)
+        return handleMsgConfigure(argc, argv, types);
+    if (std::strcmp(method, "control") == 0)
+        return handleMsgControl(argc, argv, types);
+    if (std::strcmp(method, "program") == 0)
+        return handleMsgProgram(argc, argv, types);
+    if (std::strcmp(method, "midi-program") == 0)
+        return handleMsgMidiProgram(argc, argv, types);
+    if (std::strcmp(method, "midi") == 0)
+        return handleMsgMidi(argc, argv, types);
+    if (std::strcmp(method, "sample-rate") == 0)
+        return 0; // unused
 #endif
 
 #ifdef BUILD_BRIDGE_PLUGIN
@@ -196,6 +198,36 @@ int CarlaBridgeOsc::handleMessage(const char* const path, const int argc, const 
 }
 
 #ifdef BUILD_BRIDGE_UI
+int CarlaBridgeOsc::handleMsgShow()
+{
+    CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, 1);
+    carla_debug("CarlaBridgeOsc::handleMsgShow()");
+
+    fClient->toolkitShow();
+
+    return 0;
+}
+
+int CarlaBridgeOsc::handleMsgHide()
+{
+    CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, 1);
+    carla_debug("CarlaBridgeOsc::handleMsgHide()");
+
+    fClient->toolkitHide();
+
+    return 0;
+}
+
+int CarlaBridgeOsc::handleMsgQuit()
+{
+    CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, 1);
+    carla_debug("CarlaBridgeOsc::handleMsgQuit()");
+
+    fClient->toolkitQuit();
+
+    return 0;
+}
+
 int CarlaBridgeOsc::handleMsgConfigure(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 {
     CARLA_BRIDGE_OSC_CHECK_OSC_TYPES(2, "ss");
@@ -289,36 +321,6 @@ int CarlaBridgeOsc::handleMsgMidi(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 
         fClient->noteOn(channel, note, velo);
     }
-
-    return 0;
-}
-
-int CarlaBridgeOsc::handleMsgShow()
-{
-    CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, 1);
-    carla_debug("CarlaBridgeOsc::handleMsgShow()");
-
-    fClient->toolkitShow();
-
-    return 0;
-}
-
-int CarlaBridgeOsc::handleMsgHide()
-{
-    CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, 1);
-    carla_debug("CarlaBridgeOsc::handleMsgHide()");
-
-    fClient->toolkitHide();
-
-    return 0;
-}
-
-int CarlaBridgeOsc::handleMsgQuit()
-{
-    CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, 1);
-    carla_debug("CarlaBridgeOsc::handleMsgQuit()");
-
-    fClient->toolkitQuit();
 
     return 0;
 }

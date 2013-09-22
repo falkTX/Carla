@@ -378,7 +378,7 @@ public:
      *
      * \see getParameterCount()
      */
-    void getParameterCountInfo(uint32_t* const ins, uint32_t* const outs, uint32_t* const total) const;
+    void getParameterCountInfo(uint32_t& ins, uint32_t& outs, uint32_t& total) const;
 
     // -------------------------------------------------------------------
     // Set data (state)
@@ -547,7 +547,6 @@ public:
      */
     void setParameterValueByRealIndex(const int32_t rindex, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback);
 
-#ifndef BUILD_BRIDGE
     /*!
      * Set parameter's \a parameterId MIDI channel to \a channel.\n
      * \a channel must be between 0 and 15.
@@ -559,7 +558,6 @@ public:
      * \a cc must be between 0 and 95 (0x5F), or -1 for invalid.
      */
     void setParameterMidiCC(const uint32_t parameterId, int16_t cc, const bool sendOsc, const bool sendCallback);
-#endif
 
     /*!
      * Add a custom data set.\n

@@ -375,6 +375,9 @@ bool carla_engine_init(const char* driverName, const char* clientName)
 
     if (gStandalone.engine->init(clientName))
     {
+        if (gStandalone.callback != nullptr)
+            gStandalone.engine->setCallback(gStandalone.callback, gStandalone.callbackPtr);
+
         gStandalone.lastError = "no error";
         gStandalone.init();
         return true;
@@ -1034,7 +1037,7 @@ const CarlaPortCountInfo* carla_get_parameter_count_info(unsigned int pluginId)
 
     if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
     {
-        plugin->getParameterCountInfo(&info.ins, &info.outs, &info.total);
+        plugin->getParameterCountInfo(info.ins, info.outs, info.total);
         return &info;
     }
 

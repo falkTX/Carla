@@ -123,7 +123,7 @@ void CarlaBridgeClient::oscInit(const char* const url)
     fOsc.init(url);
 }
 
-bool CarlaBridgeClient::oscIdle()
+bool CarlaBridgeClient::oscIdle() const
 {
     fOsc.idle();
 
@@ -141,12 +141,12 @@ void CarlaBridgeClient::oscClose()
     fOsc.close();
 }
 
-bool CarlaBridgeClient::isOscControlRegistered() const
+bool CarlaBridgeClient::isOscControlRegistered() const noexcept
 {
     return fOsc.isControlRegistered();
 }
 
-void CarlaBridgeClient::sendOscUpdate()
+void CarlaBridgeClient::sendOscUpdate() const
 {
     carla_debug("CarlaBridgeClient::sendOscUpdate()");
 
@@ -155,7 +155,7 @@ void CarlaBridgeClient::sendOscUpdate()
 }
 
 #ifdef BUILD_BRIDGE_PLUGIN
-void CarlaBridgeClient::sendOscBridgeUpdate()
+void CarlaBridgeClient::sendOscBridgeUpdate() const
 {
     carla_debug("CarlaBridgeClient::sendOscBridgeUpdate()");
 
@@ -163,7 +163,7 @@ void CarlaBridgeClient::sendOscBridgeUpdate()
         osc_send_bridge_update(fOscData, fOscData.path);
 }
 
-void CarlaBridgeClient::sendOscBridgeError(const char* const error)
+void CarlaBridgeClient::sendOscBridgeError(const char* const error) const
 {
     carla_debug("CarlaBridgeClient::sendOscBridgeError(\"%s\")", error);
 
@@ -174,7 +174,7 @@ void CarlaBridgeClient::sendOscBridgeError(const char* const error)
 
 // ---------------------------------------------------------------------
 
-void CarlaBridgeClient::sendOscConfigure(const char* const key, const char* const value)
+void CarlaBridgeClient::sendOscConfigure(const char* const key, const char* const value) const
 {
     carla_debug("CarlaBridgeClient::sendOscConfigure(\"%s\", \"%s\")", key, value);
 
@@ -182,7 +182,7 @@ void CarlaBridgeClient::sendOscConfigure(const char* const key, const char* cons
         osc_send_configure(fOscData, key, value);
 }
 
-void CarlaBridgeClient::sendOscControl(const int32_t index, const float value)
+void CarlaBridgeClient::sendOscControl(const int32_t index, const float value) const
 {
     carla_debug("CarlaBridgeClient::sendOscControl(%i, %f)", index, value);
 
@@ -190,7 +190,7 @@ void CarlaBridgeClient::sendOscControl(const int32_t index, const float value)
         osc_send_control(fOscData, index, value);
 }
 
-void CarlaBridgeClient::sendOscProgram(const int32_t index)
+void CarlaBridgeClient::sendOscProgram(const int32_t index) const
 {
     carla_debug("CarlaBridgeClient::sendOscProgram(%i)", index);
 
@@ -198,7 +198,7 @@ void CarlaBridgeClient::sendOscProgram(const int32_t index)
         osc_send_program(fOscData, index);
 }
 
-void CarlaBridgeClient::sendOscMidiProgram(const int32_t index)
+void CarlaBridgeClient::sendOscMidiProgram(const int32_t index) const
 {
     carla_debug("CarlaBridgeClient::sendOscMidiProgram(%i)", index);
 
@@ -206,7 +206,7 @@ void CarlaBridgeClient::sendOscMidiProgram(const int32_t index)
         osc_send_midi_program(fOscData, index);
 }
 
-void CarlaBridgeClient::sendOscMidi(const uint8_t midiBuf[4])
+void CarlaBridgeClient::sendOscMidi(const uint8_t midiBuf[4]) const
 {
     carla_debug("CarlaBridgeClient::sendOscMidi(%p)", midiBuf);
 
@@ -214,7 +214,7 @@ void CarlaBridgeClient::sendOscMidi(const uint8_t midiBuf[4])
         osc_send_midi(fOscData, midiBuf);
 }
 
-void CarlaBridgeClient::sendOscExiting()
+void CarlaBridgeClient::sendOscExiting() const
 {
     carla_debug("CarlaBridgeClient::sendOscExiting()");
 
@@ -223,7 +223,7 @@ void CarlaBridgeClient::sendOscExiting()
 }
 
 #ifdef BRIDGE_LV2
-void CarlaBridgeClient::sendOscLv2AtomTransfer(const int32_t portIndex, const char* const atomBuf)
+void CarlaBridgeClient::sendOscLv2AtomTransfer(const int32_t portIndex, const char* const atomBuf) const
 {
     carla_debug("CarlaBridgeClient::sendOscLv2TransferAtom(%i, \"%s\")", portIndex, atomBuf);
 
@@ -231,7 +231,7 @@ void CarlaBridgeClient::sendOscLv2AtomTransfer(const int32_t portIndex, const ch
         osc_send_lv2_atom_transfer(fOscData, portIndex, atomBuf);
 }
 
-void CarlaBridgeClient::sendOscLv2UridMap(const uint32_t urid, const char* const uri)
+void CarlaBridgeClient::sendOscLv2UridMap(const uint32_t urid, const char* const uri) const
 {
     carla_debug("CarlaBridgeClient::sendOscLv2UridMap(%i, \"%s\")", urid, uri);
 

@@ -23,8 +23,6 @@
 
 #include "juce_core.h"
 
-using juce::Thread;
-
 CARLA_BACKEND_START_NAMESPACE
 
 #if 0
@@ -33,7 +31,7 @@ CARLA_BACKEND_START_NAMESPACE
 
 // -----------------------------------------------------------------------
 
-class CarlaPluginThread : public Thread
+class CarlaPluginThread : public juce::Thread
 {
 public:
     enum Mode {

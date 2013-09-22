@@ -60,22 +60,22 @@ public:
     ~CarlaBridgeOsc();
 
     void init(const char* const url);
-    void idle();
+    void idle() const;
     void close();
 
     // -------------------------------------------------------------------
 
-    bool isControlRegistered() const
+    bool isControlRegistered() const noexcept
     {
         return (fControlData.target != nullptr);
     }
 
-    const CarlaOscData& getControlData() const
+    const CarlaOscData& getControlData() const noexcept
     {
         return fControlData;
     }
 
-    const char* getServerPath() const
+    const char* getServerPath() const noexcept
     {
         return (const char*)fServerPath;
     }

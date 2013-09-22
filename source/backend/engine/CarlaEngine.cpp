@@ -1432,8 +1432,10 @@ void CarlaEngine::setOption(const OptionsType option, const int value, const cha
 {
     carla_debug("CarlaEngine::setOption(%s, %i, \"%s\")", OptionsType2Str(option), value, valueStr);
 
+#ifndef BUILD_BRIDGE
     if (option >= OPTION_PROCESS_MODE && option < OPTION_PATH_RESOURCES && isRunning())
         return carla_stderr("CarlaEngine::setOption(%s, %i, \"%s\") - Cannot set this option while engine is running!", OptionsType2Str(option), value, valueStr);
+#endif
 
     switch (option)
     {

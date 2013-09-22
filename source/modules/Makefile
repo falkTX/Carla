@@ -29,11 +29,67 @@ juce_audio_basics_%:
 
 # --------------------------------------------------------------
 
+juce_audio_devices:
+	$(MAKE) -C juce_audio_devices
+
+juce_audio_devices_%:
+	$(MAKE) -C juce_audio_devices $*
+
+# --------------------------------------------------------------
+
+juce_audio_formats:
+	$(MAKE) -C juce_audio_formats
+
+juce_audio_formats_%:
+	$(MAKE) -C juce_audio_formats $*
+
+# --------------------------------------------------------------
+
+juce_audio_processors:
+	$(MAKE) -C juce_audio_processors
+
+juce_audio_processors_%:
+	$(MAKE) -C juce_audio_processors $*
+
+# --------------------------------------------------------------
+
 juce_core:
 	$(MAKE) -C juce_core
 
 juce_core_%:
 	$(MAKE) -C juce_core $*
+
+# --------------------------------------------------------------
+
+juce_data_structures:
+	$(MAKE) -C juce_data_structures
+
+juce_data_structures_%:
+	$(MAKE) -C juce_data_structures $*
+
+# --------------------------------------------------------------
+
+juce_events:
+	$(MAKE) -C juce_events
+
+juce_events_%:
+	$(MAKE) -C juce_events $*
+
+# --------------------------------------------------------------
+
+juce_graphics:
+	$(MAKE) -C juce_graphics
+
+juce_graphics_%:
+	$(MAKE) -C juce_graphics $*
+
+# --------------------------------------------------------------
+
+juce_gui_basics:
+	$(MAKE) -C juce_gui_basics
+
+juce_gui_basics_%:
+	$(MAKE) -C juce_gui_basics $*
 
 # --------------------------------------------------------------
 
@@ -81,7 +137,14 @@ clean:
 	$(MAKE) clean -C distrho/dgl
 	$(MAKE) clean -C jackbridge
 	$(MAKE) clean -C juce_audio_basics
+	$(MAKE) clean -C juce_audio_devices
+	$(MAKE) clean -C juce_audio_formats
+	$(MAKE) clean -C juce_audio_processors
 	$(MAKE) clean -C juce_core
+	$(MAKE) clean -C juce_data_structures
+	$(MAKE) clean -C juce_events
+	$(MAKE) clean -C juce_graphics
+	$(MAKE) clean -C juce_gui_basics
 	$(MAKE) clean -C lilv
 	$(MAKE) clean -C rtmempool
 	$(MAKE) clean -C theme
@@ -89,4 +152,6 @@ clean:
 
 # --------------------------------------------------------------
 
-.PHONY: carla_native dgl juce_audio_basics juce_core lilv rtmempool theme
+.PHONY: carla_native dgl juce_audio_basics juce_audio_devices juce_audio_formats juce_audio_processors juce_core juce_data_structures juce_events juce_graphics juce_gui_basics lilv rtmempool theme
+
+# --------------------------------------------------------------

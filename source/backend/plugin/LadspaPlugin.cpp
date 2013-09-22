@@ -760,7 +760,7 @@ public:
         pData->extraHints = 0x0;
 
         if (aIns <= 2 && aOuts <= 2 && (aIns == aOuts || aIns == 0 || aOuts == 0))
-            pData->extraHints |= PLUGIN_HINT_CAN_RUN_RACK;
+            pData->extraHints |= PLUGIN_EXTRA_HINT_CAN_RUN_RACK;
 
         // check latency
         if (fHints & PLUGIN_CAN_DRYWET)

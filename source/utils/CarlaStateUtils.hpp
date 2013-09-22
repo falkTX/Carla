@@ -24,9 +24,6 @@
 
 #include "juce_core.h"
 
-using juce::String;
-using juce::XmlElement;
-
 CARLA_BACKEND_START_NAMESPACE
 
 // -----------------------------------------------------------------------
@@ -217,9 +214,9 @@ struct SaveState {
 // -----------------------------------------------------------------------
 
 static inline
-String xmlSafeString(const String& string, const bool toXml)
+juce::String xmlSafeString(const juce::String& string, const bool toXml)
 {
-    String newString(string);
+    juce::String newString(string);
 
     if (toXml)
         return newString.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace("'","&apos;").replace("\"","&quot;");
@@ -228,7 +225,7 @@ String xmlSafeString(const String& string, const bool toXml)
 }
 
 static inline
-const char* xmlSafeStringCharDup(const String& string, const bool toXml)
+const char* xmlSafeStringCharDup(const juce::String& string, const bool toXml)
 {
     return carla_strdup(xmlSafeString(string, toXml).toRawUTF8());
 }
@@ -236,9 +233,11 @@ const char* xmlSafeStringCharDup(const String& string, const bool toXml)
 // -----------------------------------------------------------------------
 
 static inline
-void fillSaveStateFromXmlElement(SaveState& saveState, const XmlElement& xmlElement)
+void fillSaveStateFromXmlElement(SaveState& saveState, const juce::XmlElement* const xmlElement)
 {
-    for (XmlElement* elem = xmlElement.getFirstChildElement(); elem != nullptr; elem = elem->getNextElement())
+    using namespace juce;
+
+    for (XmlElement* elem = xmlElement->getFirstChildElement(); elem != nullptr; elem = elem->getNextElement())
     {
         // ---------------------------------------------------------------
         // Info
@@ -422,8 +421,10 @@ void fillSaveStateFromXmlElement(SaveState& saveState, const XmlElement& xmlElem
 // -----------------------------------------------------------------------
 
 static inline
-void fillXmlStringFromSaveState(String& content, const SaveState& saveState)
+void fillXmlStringFromSaveState(juce::String& content, const SaveState& saveState)
 {
+    using namespace juce;
+
     {
         String info("  <Info>\n");
 

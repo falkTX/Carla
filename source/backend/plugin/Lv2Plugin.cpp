@@ -19,7 +19,6 @@
 
 #ifdef WANT_LV2
 
-#include "CarlaPluginGui.hpp"
 #include "CarlaLv2Utils.hpp"
 #include "Lv2AtomQueue.hpp"
 
@@ -2149,17 +2148,17 @@ public:
             fHints |= PLUGIN_CAN_BALANCE;
 
         // extra plugin hints
-        pData->extraHints &= ~PLUGIN_HINT_CAN_RUN_RACK;
+        pData->extraHints &= ~PLUGIN_EXTRA_HINT_CAN_RUN_RACK;
 
         if (fExt.state != nullptr || fExt.worker != nullptr)
         {
             if ((aIns == 0 || aIns == 2) && (aOuts == 0 || aOuts == 2) && evIns.count() <= 1 && evOuts.count() <= 1)
-                pData->extraHints |= PLUGIN_HINT_CAN_RUN_RACK;
+                pData->extraHints |= PLUGIN_EXTRA_HINT_CAN_RUN_RACK;
         }
         else
         {
             if (aIns <= 2 && aOuts <= 2 && (aIns == aOuts || aIns == 0 || aOuts == 0) && evIns.count() <= 1 && evOuts.count() <= 1)
-                pData->extraHints |= PLUGIN_HINT_CAN_RUN_RACK;
+                pData->extraHints |= PLUGIN_EXTRA_HINT_CAN_RUN_RACK;
         }
 
         bufferSizeChanged(pData->engine->getBufferSize());
@@ -3912,7 +3911,6 @@ protected:
 
     int handleUiResize(const int width, const int height)
     {
-        CARLA_ASSERT(pData->gui != nullptr);
         CARLA_ASSERT(width > 0);
         CARLA_ASSERT(height > 0);
 

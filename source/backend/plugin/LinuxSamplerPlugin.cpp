@@ -426,8 +426,8 @@ public:
 
         // extra plugin hints
         pData->extraHints  = 0x0;
-        pData->extraHints |= PLUGIN_HINT_HAS_MIDI_IN;
-        pData->extraHints |= PLUGIN_HINT_CAN_RUN_RACK;
+        pData->extraHints |= PLUGIN_EXTRA_HINT_HAS_MIDI_IN;
+        pData->extraHints |= PLUGIN_EXTRA_HINT_CAN_RUN_RACK;
 
         bufferSizeChanged(pData->engine->getBufferSize());
         reloadPrograms(true);

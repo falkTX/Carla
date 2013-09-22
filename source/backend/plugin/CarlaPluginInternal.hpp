@@ -24,6 +24,7 @@
 
 #include "CarlaBackendUtils.hpp"
 #include "CarlaOscUtils.hpp"
+#include "CarlaStateUtils.hpp"
 #include "CarlaMutex.hpp"
 #include "CarlaMIDI.h"
 #include "RtList.hpp"
@@ -40,9 +41,9 @@ CARLA_BACKEND_START_NAMESPACE
 
 const unsigned short kPluginMaxMidiEvents = 512;
 
-const unsigned int PLUGIN_HINT_HAS_MIDI_IN  = 0x1;
-const unsigned int PLUGIN_HINT_HAS_MIDI_OUT = 0x2;
-const unsigned int PLUGIN_HINT_CAN_RUN_RACK = 0x4;
+const unsigned int PLUGIN_EXTRA_HINT_HAS_MIDI_IN  = 0x1;
+const unsigned int PLUGIN_EXTRA_HINT_HAS_MIDI_OUT = 0x2;
+const unsigned int PLUGIN_EXTRA_HINT_CAN_RUN_RACK = 0x4;
 
 // -----------------------------------------------------------------------
 
@@ -56,7 +57,7 @@ const unsigned int PLUGIN_HINT_CAN_RUN_RACK = 0x4;
 enum PluginPostRtEventType {
     kPluginPostRtEventNull,
     kPluginPostRtEventDebug,
-    kPluginPostRtEventParameterChange,   // param, SP*, value (SP: if 1, don't report change to Callback and OSC)
+    kPluginPostRtEventParameterChange,   // param, SP (*), value (SP: if 1, don't report change to Callback and OSC)
     kPluginPostRtEventProgramChange,     // index
     kPluginPostRtEventMidiProgramChange, // index
     kPluginPostRtEventNoteOn,            // channel, note, velo
@@ -86,7 +87,7 @@ struct PluginAudioPort {
     uint32_t rindex;
     CarlaEngineAudioPort* port;
 
-    PluginAudioPort()
+    PluginAudioPort() noexcept
         : rindex(0),
           port(nullptr) {}
 
@@ -102,7 +103,7 @@ struct PluginAudioData {
     uint32_t count;
     PluginAudioPort* ports;
 
-    PluginAudioData()
+    PluginAudioData() noexcept
         : count(0),
           ports(nullptr) {}
 
@@ -164,7 +165,7 @@ struct PluginCVPort {
     uint32_t param;
     CarlaEngineCVPort* port;
 
-    PluginCVPort()
+    PluginCVPort() noexcept
         : rindex(0),
           param(0),
           port(nullptr) {}
@@ -181,7 +182,7 @@ struct PluginCVData {
     uint32_t count;
     PluginCVPort* ports;
 
-    PluginCVData()
+    PluginCVData() noexcept
         : count(0),
           ports(nullptr) {}
 
@@ -242,7 +243,7 @@ struct PluginEventData {
     CarlaEngineEventPort* portIn;
     CarlaEngineEventPort* portOut;
 
-    PluginEventData()
+    PluginEventData() noexcept
         : portIn(nullptr),
           portOut(nullptr) {}
 
@@ -286,7 +287,7 @@ struct PluginParameterData {
     ParameterData* data;
     ParameterRanges* ranges;
 
-    PluginParameterData()
+    PluginParameterData() noexcept
         : count(0),
           data(nullptr),
           ranges(nullptr) {}
@@ -348,7 +349,7 @@ struct PluginProgramData {
     int32_t  current;
     ProgramName* names;
 
-    PluginProgramData()
+    PluginProgramData() noexcept
         : count(0),
           current(-1),
           names(nullptr) {}
@@ -408,7 +409,7 @@ struct PluginMidiProgramData {
     int32_t  current;
     MidiProgramData* data;
 
-    PluginMidiProgramData()
+    PluginMidiProgramData() noexcept
         : count(0),
           current(-1),
           data(nullptr) {}
@@ -467,11 +468,11 @@ struct PluginMidiProgramData {
 // -----------------------------------------------------------------------
 
 struct ExternalMidiNote {
-    int8_t  channel; // invalid == -1
+    int8_t  channel; // invalid if -1
     uint8_t note;
     uint8_t velo; // note-off if 0
 
-    ExternalMidiNote()
+    ExternalMidiNote() noexcept
         : channel(-1),
           note(0),
           velo(0) {}
@@ -479,13 +480,9 @@ struct ExternalMidiNote {
 
 // -----------------------------------------------------------------------
 
-class CarlaPluginGui;
-
 struct CarlaPluginProtectedData {
     CarlaEngine* const engine;
     CarlaEngineClient* client;
-    CarlaPluginGui* gui;
-    //QByteArray guiGeometry;
 
     bool active;
     bool needsReset;
@@ -509,6 +506,8 @@ struct CarlaPluginProtectedData {
     PluginProgramData prog;
     PluginMidiProgramData midiprog;
     NonRtList<CustomData> custom;
+
+    SaveState saveState;
 
     CarlaMutex masterMutex; // global master lock
     CarlaMutex singleMutex; // small lock used only in processSingle()
@@ -590,7 +589,7 @@ struct CarlaPluginProtectedData {
         float balanceRight;
         float panning;
 
-        PostProc()
+        PostProc() noexcept
             : dryWet(1.0f),
               volume(1.0f),
               balanceLeft(-1.0f),
@@ -611,17 +610,13 @@ struct CarlaPluginProtectedData {
 
 #ifdef CARLA_PROPER_CPP11_SUPPORT
         OSC() = delete;
-        OSC(OSC&) = delete;
-        OSC(const OSC&) = delete;
+        CARLA_DECLARE_NON_COPY_STRUCT(OSC)
 #endif
-        CARLA_LEAK_DETECTOR(OSC)
-
     } osc;
 
-    CarlaPluginProtectedData(CarlaEngine* const engine_, CarlaPlugin* const plugin)
-        : engine(engine_),
+    CarlaPluginProtectedData(CarlaEngine* const eng, CarlaPlugin* const plug)
+        : engine(eng),
           client(nullptr),
-          gui(nullptr),
           active(false),
           needsReset(false),
           lib(nullptr),
@@ -630,7 +625,7 @@ struct CarlaPluginProtectedData {
           extraHints(0x0),
           latency(0),
           latencyBuffers(nullptr),
-          osc(engine, plugin) {}
+          osc(eng, plug) {}
 
 #ifdef CARLA_PROPER_CPP11_SUPPORT
     CarlaPluginProtectedData() = delete;
@@ -639,7 +634,6 @@ struct CarlaPluginProtectedData {
 
     ~CarlaPluginProtectedData()
     {
-        CARLA_ASSERT(gui == nullptr);
         CARLA_ASSERT(client == nullptr);
         CARLA_ASSERT(! active);
         CARLA_ASSERT(lib == nullptr);
@@ -655,6 +649,7 @@ struct CarlaPluginProtectedData {
     void cleanup()
     {
         {
+            // mutex MUST have been locked before
             const bool lockMaster(masterMutex.tryLock());
             const bool lockSingle(singleMutex.tryLock());
             CARLA_ASSERT(! lockMaster);
@@ -720,6 +715,8 @@ struct CarlaPluginProtectedData {
     {
         if (latencyBuffers != nullptr)
         {
+            CARLA_ASSERT(audioIn.count > 0);
+
             for (uint32_t i=0; i < audioIn.count; ++i)
             {
                 CARLA_ASSERT(latencyBuffers[i] != nullptr);
@@ -735,6 +732,10 @@ struct CarlaPluginProtectedData {
             latencyBuffers = nullptr;
             latency = 0;
         }
+        else
+        {
+            CARLA_ASSERT(latency == 0);
+        }
 
         audioIn.clear();
         audioOut.clear();
@@ -746,6 +747,8 @@ struct CarlaPluginProtectedData {
     {
         if (latencyBuffers != nullptr)
         {
+            CARLA_ASSERT(audioIn.count > 0);
+
             for (uint32_t i=0; i < audioIn.count; ++i)
             {
                 CARLA_ASSERT(latencyBuffers[i] != nullptr);
@@ -778,6 +781,8 @@ struct CarlaPluginProtectedData {
 
     void postponeRtEvent(const PluginPostRtEventType type, const int32_t value1, const int32_t value2, const float value3)
     {
+        CARLA_SAFE_ASSERT_RETURN(type != kPluginPostRtEventNull,);
+
         PluginPostRtEvent event;
         event.type   = type;
         event.value1 = value1;

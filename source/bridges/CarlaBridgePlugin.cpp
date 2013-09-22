@@ -16,36 +16,26 @@
  */
 
 #include "CarlaBridgeClient.hpp"
-#include "CarlaBridgeToolkit.hpp"
+
+#include "CarlaEngine.hpp"
+#include "CarlaPlugin.hpp"
+#include "CarlaHost.hpp"
 
 #include "CarlaBackendUtils.hpp"
 #include "CarlaBridgeUtils.hpp"
-#include "CarlaHost.hpp"
-#include "CarlaEngine.hpp"
-#include "CarlaPlugin.hpp"
 
-//#include <QtCore/QDir>
-//#include <QtCore/QFile>
-//#include <QtCore/QTextStream>
-
-//#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
-//# include <QtWidgets/QApplication>
-//#else
-//# include <QtGui/QApplication>
-//#endif
+#include "juce_core.h"
 
 #ifdef CARLA_OS_UNIX
 # include <signal.h>
 #endif
 
-#include "juce_core.h"
-
 using juce::File;
 
 // -------------------------------------------------------------------------
 
-static bool gCloseNow = false;
-static bool gSaveNow  = false;
+static volatile bool gCloseNow = false;
+static volatile bool gSaveNow  = false;
 
 #ifdef CARLA_OS_WIN
 BOOL WINAPI closeSignalHandler(DWORD dwCtrlType)
@@ -59,11 +49,11 @@ BOOL WINAPI closeSignalHandler(DWORD dwCtrlType)
     return FALSE;
 }
 #else
-void closeSignalHandler(int)
+static void closeSignalHandler(int)
 {
     gCloseNow = true;
 }
-void saveSignalHandler(int)
+static void saveSignalHandler(int)
 {
     gSaveNow = true;
 }
@@ -99,9 +89,6 @@ void initSignalHandler()
 }
 
 // -------------------------------------------------------------------------
-// Helpers
-
-extern CarlaBackend::CarlaEngine* carla_get_standalone_engine();
 
 CARLA_BRIDGE_START_NAMESPACE
 
@@ -111,24 +98,16 @@ CARLA_BRIDGE_START_NAMESPACE
 
 // -------------------------------------------------------------------------
 
-class CarlaPluginClient : public CarlaBridgeClient/*,
-                          public QObject*/
+class CarlaPluginClient : public CarlaBridgeClient
 {
 public:
     CarlaPluginClient(const bool useBridge, const char* const driverName, const char* audioBaseName, const char* controlBaseName)
         : CarlaBridgeClient(nullptr),
-//          QObject(nullptr),
           fEngine(nullptr),
-          fPlugin(nullptr),
-          fTimerId(0)
+          fPlugin(nullptr)
     {
         CARLA_ASSERT(driverName != nullptr);
         carla_debug("CarlaPluginClient::CarlaPluginClient(%s, \"%s\", %s, %s)", bool2str(useBridge), driverName, audioBaseName, controlBaseName);
-
-        if (useBridge)
-            carla_engine_init_bridge(audioBaseName, controlBaseName, driverName);
-        else
-            carla_engine_init("JACK", driverName);
 
         carla_set_engine_callback(callback, this);
 
@@ -136,16 +115,21 @@ public:
 
         if (curDir.getChildFile("resources").exists())
             carla_set_engine_option(CarlaBackend::OPTION_PATH_RESOURCES, 0, curDir.getChildFile("resources").getFullPathName().toRawUTF8());
+        else if (curDir.getChildFile("../../modules/carla_native/resources").exists())
+            carla_set_engine_option(CarlaBackend::OPTION_PATH_RESOURCES, 0, curDir.getChildFile("../../modules/carla_native/resources").getFullPathName().toRawUTF8());
         else
             carla_set_engine_option(CarlaBackend::OPTION_PATH_RESOURCES, 0, curDir.getChildFile("../modules/carla_native/resources").getFullPathName().toRawUTF8());
+
+        if (useBridge)
+            carla_engine_init_bridge(audioBaseName, controlBaseName, driverName);
+        else
+            carla_engine_init("JACK", driverName);
     }
 
-    ~CarlaPluginClient()
+    ~CarlaPluginClient() override
     {
-        CARLA_ASSERT(fTimerId == 0);
         carla_debug("CarlaPluginClient::~CarlaPluginClient()");
 
-        carla_set_engine_about_to_close();
         carla_engine_close();
     }
 
@@ -159,8 +143,6 @@ public:
 
     void ready(const bool doSaveLoad)
     {
-        CARLA_ASSERT(fTimerId == 0);
-
         fEngine = carla_get_standalone_engine();
         fPlugin = fEngine->getPlugin(0);
 
@@ -169,44 +151,37 @@ public:
             fProjFileName  = fPlugin->getName();
             fProjFileName += ".carxs";
 
-            fPlugin->loadStateFromFile(fProjFileName);
-        }
+            if (! File::isAbsolutePath((const char*)fProjFileName))
+                fProjFileName = File::getCurrentWorkingDirectory().getChildFile((const char*)fProjFileName).getFullPathName().toRawUTF8();
 
-        //fTimerId = startTimer(50);
+            if (! fPlugin->loadStateFromFile(fProjFileName))
+                carla_stderr("Plugin preset load failed, error was:\n%s", fEngine->getLastError());
+        }
     }
 
     void idle()
     {
-        if (fEngine != nullptr)
-            fEngine->idle();
+        CARLA_SAFE_ASSERT_RETURN(fEngine != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fPlugin != nullptr,);
 
+        fEngine->idle();
         CarlaBridgeClient::oscIdle();
 
         if (gSaveNow)
         {
             gSaveNow = false;
 
-            CARLA_ASSERT(fPlugin != nullptr);
-
-            if (fPlugin != nullptr && fProjFileName.isNotEmpty())
-                fPlugin->saveStateToFile(fProjFileName);
+            if (fProjFileName.isNotEmpty())
+            {
+                if (! fPlugin->saveStateToFile(fProjFileName))
+                    carla_stderr("Plugin preset save failed, error was:\n%s", fEngine->getLastError());
+            }
         }
 
         if (gCloseNow)
         {
-            gCloseNow = false;
-
-            if (fTimerId != 0)
-            {
-                //killTimer(fTimerId);
-                fTimerId = 0;
-            }
-
-//            if (QApplication* const app = qApp)
-//            {
-//                if (! app->closingDown())
-//                    app->quit();
-//            }
+            //gCloseNow = false;
+            // close something?
         }
     }
 
@@ -215,7 +190,7 @@ public:
         while (! gCloseNow)
         {
             idle();
-            carla_msleep(50);
+            carla_msleep(30);
         }
     }
 
@@ -224,12 +199,9 @@ public:
 
     void saveNow()
     {
+        CARLA_SAFE_ASSERT_RETURN(fEngine != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fPlugin != nullptr,);
         carla_debug("CarlaPluginClient::saveNow()");
-        CARLA_ASSERT(fEngine != nullptr);
-        CARLA_ASSERT(fPlugin != nullptr);
-
-        if (fPlugin == nullptr || fEngine == nullptr)
-            return;
 
         fPlugin->prepareForSave();
 
@@ -272,22 +244,34 @@ public:
         fEngine->oscSend_bridge_configure(CARLA_BRIDGE_MSG_SAVED, "");
     }
 
+    void setParameterMidiChannel(const int32_t index, const int32_t channel)
+    {
+        CARLA_SAFE_ASSERT_RETURN(fPlugin != nullptr,);
+        carla_debug("CarlaPluginClient::setParameterMidiChannel(%i, %i)", index, channel);
+
+        fPlugin->setParameterMidiChannel(index, channel, false, false);
+    }
+
+    void setParameterMidiCC(const int32_t index, const int32_t cc)
+    {
+        CARLA_SAFE_ASSERT_RETURN(fPlugin != nullptr,);
+        carla_debug("CarlaPluginClient::setParameterMidiCC(%i, %i)", index, cc);
+
+        fPlugin->setParameterMidiCC(index, cc, false, false);
+    }
+
     void setCustomData(const char* const type, const char* const key, const char* const value)
     {
+        CARLA_SAFE_ASSERT_RETURN(fPlugin != nullptr,);
         carla_debug("CarlaPluginClient::setCustomData(\"%s\", \"%s\", \"%s\")", type, key, value);
-        CARLA_ASSERT(fPlugin != nullptr);
 
-        if (fPlugin != nullptr)
-            fPlugin->setCustomData(type, key, value, true);
+        fPlugin->setCustomData(type, key, value, true);
     }
 
     void setChunkData(const char* const filePath)
     {
+        CARLA_SAFE_ASSERT_RETURN(fPlugin != nullptr,);
         carla_debug("CarlaPluginClient::setChunkData(\"%s\")", filePath);
-        CARLA_ASSERT(fPlugin != nullptr);
-
-        if (fPlugin == nullptr)
-            return;
 
 #if 0
         QString chunkFilePath(filePath);
@@ -315,16 +299,6 @@ public:
     }
 
     // ---------------------------------------------------------------------
-    // processing
-
-    void setParameter(const int32_t rindex, const float value)
-    {
-        carla_debug("CarlaPluginClient::setParameter(%i, %f)", rindex, value);
-        CARLA_ASSERT(fPlugin != nullptr);
-
-        if (fPlugin != nullptr)
-            fPlugin->setParameterValueByRealIndex(rindex, value, true, true, false);
-    }
 
 protected:
     void handleCallback(const CarlaBackend::CallbackType action, const int value1, const int value2, const float value3, const char* const valueStr)
@@ -367,22 +341,14 @@ private:
     CarlaBackend::CarlaPlugin* fPlugin;
 
     CarlaString fProjFileName;
-    int fTimerId;
-
-//    void timerEvent(QTimerEvent* const event)
-//    {
-//        if (event->timerId() == fTimerId)
-//            idle();
-
-//        QObject::timerEvent(event);
-//    }
 
     static void callback(void* ptr, CarlaBackend::CallbackType action, unsigned int pluginId, int value1, int value2, float value3, const char* valueStr)
     {
-        return ((CarlaPluginClient*)ptr)->handleCallback(action, value1, value2, value3, valueStr);
+        carla_debug("CarlaPluginClient::callback(%p, %i:%s, %i, %i, %i, %f, \"%s\")", ptr, action, CarlaBackend::CallbackType2Str(action), pluginId, value1, value2, value3, valueStr);
+        CARLA_SAFE_ASSERT_RETURN(ptr != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(pluginId == 0,);
 
-        // unused
-        (void)pluginId;
+        return ((CarlaPluginClient*)ptr)->handleCallback(action, value1, value2, value3, valueStr);
     }
 };
 
@@ -416,7 +382,7 @@ int CarlaBridgeOsc::handleMsgQuit()
 
 int CarlaBridgeOsc::handleMsgPluginSaveNow()
 {
-    CARLA_SAFE_ASSERT_RETURN(fClient == nullptr, 1);
+    CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, 1);
     carla_debug("CarlaBridgeOsc::handleMsgPluginSaveNow()");
 
     CarlaPluginClient* const plugClient((CarlaPluginClient*)fClient);
@@ -427,22 +393,30 @@ int CarlaBridgeOsc::handleMsgPluginSaveNow()
 
 int CarlaBridgeOsc::handleMsgPluginSetParameterMidiChannel(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 {
-    //CARLA_BRIDGE_OSC_CHECK_OSC_TYPES(1, "s");
-    CARLA_SAFE_ASSERT_RETURN(fClient == nullptr, 1);
+    CARLA_BRIDGE_OSC_CHECK_OSC_TYPES(2, "ii");
+    CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, 1);
     carla_debug("CarlaBridgeOsc::handleMsgPluginSetParameterMidiChannel()");
 
-    // TODO
+    const int32_t index   = argv[0]->i;
+    const int32_t channel = argv[1]->i;
+
+    CarlaPluginClient* const plugClient((CarlaPluginClient*)fClient);
+    plugClient->setParameterMidiChannel(index, channel);
 
     return 0;
 }
 
 int CarlaBridgeOsc::handleMsgPluginSetParameterMidiCC(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 {
-    //CARLA_BRIDGE_OSC_CHECK_OSC_TYPES(1, "s");
-    CARLA_SAFE_ASSERT_RETURN(fClient == nullptr, 1);
+    CARLA_BRIDGE_OSC_CHECK_OSC_TYPES(2, "ii");
+    CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, 1);
     carla_debug("CarlaBridgeOsc::handleMsgPluginSetParameterMidiCC()");
 
-    // TODO
+    const int32_t index  = argv[0]->i;
+    const int32_t cc     = argv[1]->i;
+
+    CarlaPluginClient* const plugClient((CarlaPluginClient*)fClient);
+    plugClient->setParameterMidiCC(index, cc);
 
     return 0;
 }
@@ -450,8 +424,8 @@ int CarlaBridgeOsc::handleMsgPluginSetParameterMidiCC(CARLA_BRIDGE_OSC_HANDLE_AR
 int CarlaBridgeOsc::handleMsgPluginSetChunk(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 {
     CARLA_BRIDGE_OSC_CHECK_OSC_TYPES(1, "s");
-    CARLA_SAFE_ASSERT_RETURN(fClient == nullptr, 1);
-    carla_debug("CarlaBridgeOsc::handleMsgPluginSaveNow()");
+    CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, 1);
+    carla_debug("CarlaBridgeOsc::handleMsgPluginSetChunk()");
 
     const char* const chunkFile = (const char*)&argv[0]->s;
 
@@ -464,8 +438,8 @@ int CarlaBridgeOsc::handleMsgPluginSetChunk(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 int CarlaBridgeOsc::handleMsgPluginSetCustomData(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 {
     CARLA_BRIDGE_OSC_CHECK_OSC_TYPES(3, "sss");
-    CARLA_SAFE_ASSERT_RETURN(fClient == nullptr, 1);
-    carla_debug("CarlaBridgeOsc::handleMsgPluginSaveNow()");
+    CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, 1);
+    carla_debug("CarlaBridgeOsc::handleMsgPluginSetCustomData()");
 
     const char* const type  = (const char*)&argv[0]->s;
     const char* const key   = (const char*)&argv[1]->s;
@@ -481,9 +455,14 @@ int CarlaBridgeOsc::handleMsgPluginSetCustomData(CARLA_BRIDGE_OSC_HANDLE_ARGS)
 
 CARLA_BRIDGE_END_NAMESPACE
 
+// -------------------------------------------------------------------------
+
 int main(int argc, char* argv[])
 {
-    CARLA_BRIDGE_USE_NAMESPACE
+    CARLA_BRIDGE_USE_NAMESPACE;
+
+    // ---------------------------------------------------------------------
+    // Check argument count
 
     if (argc != 6 && argc != 7)
     {
@@ -491,11 +470,17 @@ int main(int argc, char* argv[])
         return 1;
     }
 
+    // ---------------------------------------------------------------------
+    // Get args
+
     const char* const oscUrl   = argv[1];
     const char* const stype    = argv[2];
     const char* const filename = argv[3];
     const char*       name     = argv[4];
     const char*       label    = argv[5];
+
+    // ---------------------------------------------------------------------
+    // Setup args
 
     const bool useBridge = (argc == 7);
     const bool useOsc    = std::strcmp(oscUrl, "null");
@@ -506,14 +491,24 @@ int main(int argc, char* argv[])
     if (std::strlen(label) == 0)
         label = nullptr;
 
-    char bridgeBaseAudioName[6+1]   = { 0 };
-    char bridgeBaseControlName[6+1] = { 0 };
+    char bridgeBaseAudioName[6+1];
+    char bridgeBaseControlName[6+1];
 
     if (useBridge)
     {
-        std::strncpy(bridgeBaseAudioName,   argv[6], 6);
+        std::strncpy(bridgeBaseAudioName,   argv[6],   6);
         std::strncpy(bridgeBaseControlName, argv[6]+6, 6);
+        bridgeBaseAudioName[6]   = '\0';
+        bridgeBaseControlName[6] = '\0';
     }
+    else
+    {
+        bridgeBaseAudioName[0]   = '\0';
+        bridgeBaseControlName[0] = '\0';
+    }
+
+    // ---------------------------------------------------------------------
+    // Check plugin type
 
     CarlaBackend::PluginType itype(CarlaBackend::getPluginTypeFromString(stype));
 
@@ -523,34 +518,53 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    //QApplication app(argc, argv, true);
-    //app.setQuitOnLastWindowClosed(false);
+    // ---------------------------------------------------------------------
+    // Set client name
 
     CarlaString clientName((name != nullptr) ? name : label);
 
     if (clientName.isEmpty())
     {
-        //QFileInfo fileinfo(filename);
-        //clientName = fileinfo.baseName().toUtf8().constData();
+        File file(filename);
+        clientName = file.getFileNameWithoutExtension().toRawUTF8();
     }
 
-    if (itype >= CarlaBackend::PLUGIN_GIG && itype <= CarlaBackend::PLUGIN_SFZ && label == nullptr)
-        label = clientName;
+    // ---------------------------------------------------------------------
+    // Set extraStuff
 
-    // Init Plugin client
+    const void* extraStuff = nullptr;
+
+    if (itype == CarlaBackend::PLUGIN_GIG || itype == CarlaBackend::PLUGIN_SF2 || itype == CarlaBackend::PLUGIN_SFZ)
+    {
+        if (label == nullptr)
+            label = clientName;
+
+        if (std::strstr(label, " (16 outs)") == 0)
+            extraStuff = (const void*)label; // dummy non-null pointer
+    }
+
+    // ---------------------------------------------------------------------
+    // Init plugin client
+
     CarlaPluginClient client(useBridge, (const char*)clientName, bridgeBaseAudioName, bridgeBaseControlName);
 
+    // ---------------------------------------------------------------------
     // Init OSC
+
     if (useOsc)
         client.oscInit(oscUrl);
 
+    // ---------------------------------------------------------------------
     // Listen for ctrl+c or sigint/sigterm events
+
     initSignalHandler();
 
+    // ---------------------------------------------------------------------
     // Init plugin
+
     int ret;
 
-    if (carla_add_plugin(CarlaBackend::BINARY_NATIVE, itype, filename, name, label, nullptr))
+    if (carla_add_plugin(CarlaBackend::BINARY_NATIVE, itype, filename, name, label, extraStuff))
     {
         if (useOsc)
         {
@@ -569,14 +583,15 @@ int main(int argc, char* argv[])
         }
 
         client.ready(!useOsc);
-
-        //ret = app.exec();
+        client.exec();
 
         carla_remove_plugin(0);
+
+        ret = 0;
     }
     else
     {
-        const char* const lastError = carla_get_last_error();
+        const char* const lastError(carla_get_last_error());
         carla_stderr("Plugin failed to load, error was:\n%s", lastError);
 
         if (useOsc)
@@ -585,7 +600,9 @@ int main(int argc, char* argv[])
         ret = 1;
     }
 
+    // ---------------------------------------------------------------------
     // Close OSC
+
     if (useOsc)
         client.oscClose();
 

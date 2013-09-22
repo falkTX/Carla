@@ -16,9 +16,11 @@
  */
 
 #include "CarlaPluginInternal.hpp"
+#include "CarlaLibCounter.hpp"
 
-#include "CarlaLibUtils.hpp"
-#include "CarlaStateUtils.hpp"
+#include "juce_data_structures.h"
+
+using namespace juce;
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -30,136 +32,68 @@ static const ParameterRanges kParameterRangesNull;
 static const MidiProgramData kMidiProgramDataNull;
 static const CustomData      kCustomDataNull;
 
+static bool gIsLoadingProject = false;
+
 // -------------------------------------------------------------------
-// Library functions
+// ParamSymbol struct, needed for CarlaPlugin::loadSaveState()
 
-class LibMap
-{
-public:
-    LibMap() {}
+struct ParamSymbol {
+    uint32_t index;
+    const char* symbol;
 
-    ~LibMap()
+    ParamSymbol(uint32_t index_, const char* symbol_)
+        : index(index_),
+          symbol(carla_strdup(symbol_)) {}
+
+    void free()
     {
-        CARLA_ASSERT(libs.isEmpty());
-    }
-
-    void* open(const char* const filename)
-    {
-        CARLA_ASSERT(filename != nullptr);
-
-        if (filename == nullptr)
-            return nullptr;
-
-        const CarlaMutex::ScopedLocker sl(mutex);
-
-        for (NonRtList<Lib>::Itenerator it = libs.begin(); it.valid(); it.next())
+        if (symbol != nullptr)
         {
-            Lib& lib(*it);
-
-            if (std::strcmp(lib.filename, filename) == 0)
-            {
-                lib.count++;
-                return lib.lib;
-            }
+            delete[] symbol;
+            symbol = nullptr;
         }
-
-        void* const libPtr(lib_open(filename));
-
-        if (libPtr == nullptr)
-            return nullptr;
+    }
 
 #ifdef CARLA_PROPER_CPP11_SUPPORT
-        Lib lib{libPtr, carla_strdup(filename), 1};
-#else
-        Lib lib(libPtr, carla_strdup(filename));
+    ParamSymbol() = delete;
+    CARLA_DECLARE_NON_COPY_STRUCT(ParamSymbol)
 #endif
-        libs.append(lib);
-
-        return libPtr;
-    }
-
-    bool close(void* const libPtr)
-    {
-        CARLA_ASSERT(libPtr != nullptr);
-
-        if (libPtr == nullptr)
-            return false;
-
-        const CarlaMutex::ScopedLocker sl(mutex);
-
-        for (NonRtList<Lib>::Itenerator it = libs.begin(); it.valid(); it.next())
-        {
-            Lib& lib(*it);
-
-            if (lib.lib != libPtr)
-                continue;
-
-            lib.count--;
-
-            if (lib.count == 0)
-            {
-                delete[] lib.filename;
-                lib_close(lib.lib);
-
-                libs.remove(it);
-            }
-
-            return true;
-        }
-
-        CARLA_ASSERT(false); // invalid pointer
-        return false;
-    }
-
-private:
-    struct Lib {
-        void* lib;
-        const char* filename;
-        int count;
-
-#ifndef CARLA_PROPER_CPP11_SUPPORT
-        Lib(void* const lib_, const char* const filename_)
-            : lib(lib_),
-              filename(filename_),
-              count(1) {}
-#endif
-    };
-
-    CarlaMutex mutex;
-    NonRtList<Lib> libs;
 };
 
-static LibMap sLibMap;
+// -------------------------------------------------------------------
+// Library functions, defined in CarlaPluginInternal.hpp
+
+static LibCounter sLibCounter;
 
 bool CarlaPluginProtectedData::libOpen(const char* const filename)
 {
-    lib = sLibMap.open(filename);
+    lib = sLibCounter.open(filename);
     return (lib != nullptr);
-}
-
-bool CarlaPluginProtectedData::uiLibOpen(const char* const filename)
-{
-    uiLib = sLibMap.open(filename);
-    return (uiLib != nullptr);
 }
 
 bool CarlaPluginProtectedData::libClose()
 {
-    const bool ret = sLibMap.close(lib);
+    const bool ret = sLibCounter.close(lib);
     lib = nullptr;
-    return ret;
-}
-
-bool CarlaPluginProtectedData::uiLibClose()
-{
-    const bool ret = sLibMap.close(uiLib);
-    uiLib = nullptr;
     return ret;
 }
 
 void* CarlaPluginProtectedData::libSymbol(const char* const symbol)
 {
     return lib_symbol(lib, symbol);
+}
+
+bool CarlaPluginProtectedData::uiLibOpen(const char* const filename)
+{
+    uiLib = sLibCounter.open(filename);
+    return (uiLib != nullptr);
+}
+
+bool CarlaPluginProtectedData::uiLibClose()
+{
+    const bool ret = sLibCounter.close(uiLib);
+    uiLib = nullptr;
+    return ret;
 }
 
 void* CarlaPluginProtectedData::uiLibSymbol(const char* const symbol)
@@ -173,65 +107,93 @@ const char* CarlaPluginProtectedData::libError(const char* const filename)
 }
 
 // -------------------------------------------------------------------
-// Settings functions
+// Settings functions, defined in CarlaPluginInternal.hpp
 
 void CarlaPluginProtectedData::saveSetting(const unsigned int option, const bool yesNo)
 {
-#if 0
-    QSettings settings("falkTX", "CarlaPluginSettings");
-    settings.beginGroup((const char*)idStr);
+    PropertiesFile::Options opts;
+    opts.applicationName     = "common"; // TODO, (const char*)idStr
+    opts.filenameSuffix      = ".cfg";
+    opts.osxLibrarySubFolder = "Application Support";
+
+#ifdef CARLA_OS_LINUX
+    opts.folderName = "config/falkTX/Carla/PluginSettings/";
+#else
+    opts.folderName = "falkTX\\Carla\\PluginSettings\\";
+#endif
+
+    ApplicationProperties appProps;
+    appProps.setStorageParameters(opts);
+
+    PropertiesFile* const props(appProps.getUserSettings());
+
+    CARLA_SAFE_ASSERT_RETURN(props != nullptr,);
 
     switch (option)
     {
     case PLUGIN_OPTION_FIXED_BUFFERS:
-        settings.setValue("FixedBuffers", yesNo);
+        props->setValue("FixedBuffers", yesNo);
         break;
     case PLUGIN_OPTION_FORCE_STEREO:
-        settings.setValue("ForceStereo", yesNo);
+        props->setValue("ForceStereo", yesNo);
         break;
     case PLUGIN_OPTION_MAP_PROGRAM_CHANGES:
-        settings.setValue("MapProgramChanges", yesNo);
+        props->setValue("MapProgramChanges", yesNo);
         break;
     case PLUGIN_OPTION_USE_CHUNKS:
-        settings.setValue("UseChunks", yesNo);
+        props->setValue("UseChunks", yesNo);
         break;
     case PLUGIN_OPTION_SEND_CONTROL_CHANGES:
-        settings.setValue("SendControlChanges", yesNo);
+        props->setValue("SendControlChanges", yesNo);
         break;
     case PLUGIN_OPTION_SEND_CHANNEL_PRESSURE:
-        settings.setValue("SendChannelPressure", yesNo);
+        props->setValue("SendChannelPressure", yesNo);
         break;
     case PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH:
-        settings.setValue("SendNoteAftertouch", yesNo);
+        props->setValue("SendNoteAftertouch", yesNo);
         break;
     case PLUGIN_OPTION_SEND_PITCHBEND:
-        settings.setValue("SendPitchbend", yesNo);
+        props->setValue("SendPitchbend", yesNo);
         break;
     case PLUGIN_OPTION_SEND_ALL_SOUND_OFF:
-        settings.setValue("SendAllSoundOff", yesNo);
+        props->setValue("SendAllSoundOff", yesNo);
         break;
     default:
         break;
     }
 
-    settings.endGroup();
-#endif
+    appProps.saveIfNeeded();
+    appProps.closeFiles();
 }
 
 unsigned int CarlaPluginProtectedData::loadSettings(const unsigned int options, const unsigned int availOptions)
 {
-#if 0
-    QSettings settings("falkTX", "CarlaPluginSettings");
-    settings.beginGroup((const char*)idStr);
+    PropertiesFile::Options opts;
+    opts.applicationName     = "common"; // TODO, (const char*)idStr
+    opts.filenameSuffix      = ".cfg";
+    opts.osxLibrarySubFolder = "Application Support";
+
+#ifdef CARLA_OS_LINUX
+    opts.folderName = "config/falkTX/Carla/PluginSettings/";
+#else
+    opts.folderName = "falkTX\\Carla\\PluginSettings\\";
+#endif
+
+    ApplicationProperties appProps;
+    appProps.setStorageParameters(opts);
+
+    PropertiesFile* const props(appProps.getUserSettings());
+
+    CARLA_SAFE_ASSERT_RETURN(props != nullptr, options);
 
     unsigned int newOptions = 0x0;
 
-    #define CHECK_AND_SET_OPTION(STR, BIT)                              \
+    #define CHECK_AND_SET_OPTION(KEY, BIT)                              \
     if ((availOptions & BIT) != 0 || BIT == PLUGIN_OPTION_FORCE_STEREO) \
     {                                                                   \
-        if (settings.contains(STR))                                     \
+        if (props->containsKey(KEY))                                    \
         {                                                               \
-            if (settings.value(STR, bool(options & BIT)).toBool())      \
+            if (props->getBoolValue(KEY, bool(options & BIT)))          \
                 newOptions |= BIT;                                      \
         }                                                               \
         else if (options & BIT)                                         \
@@ -250,11 +212,7 @@ unsigned int CarlaPluginProtectedData::loadSettings(const unsigned int options, 
 
     #undef CHECK_AND_SET_OPTION
 
-    settings.endGroup();
-
     return newOptions;
-#endif
-    return 0x0;
 }
 
 // -------------------------------------------------------------------
@@ -268,7 +226,6 @@ CarlaPlugin::CarlaPlugin(CarlaEngine* const engine, const unsigned int id)
       fIconName("plugin"),
       pData(new CarlaPluginProtectedData(engine, this))
 {
-    CARLA_ASSERT(pData != nullptr);
     CARLA_ASSERT(engine != nullptr);
     CARLA_ASSERT(id < engine->getMaxPluginNumber());
     CARLA_ASSERT(id == engine->getCurrentPluginCount());
@@ -326,12 +283,12 @@ uint32_t CarlaPlugin::getAudioOutCount() const noexcept
 
 uint32_t CarlaPlugin::getMidiInCount() const noexcept
 {
-    return (pData->extraHints & PLUGIN_HINT_HAS_MIDI_IN) ? 1 : 0;
+    return (pData->extraHints & PLUGIN_EXTRA_HINT_HAS_MIDI_IN) ? 1 : 0;
 }
 
 uint32_t CarlaPlugin::getMidiOutCount() const noexcept
 {
-    return (pData->extraHints & PLUGIN_HINT_HAS_MIDI_OUT) ? 1 : 0;
+    return (pData->extraHints & PLUGIN_EXTRA_HINT_HAS_MIDI_OUT) ? 1 : 0;
 }
 
 uint32_t CarlaPlugin::getParameterCount() const noexcept
@@ -341,11 +298,8 @@ uint32_t CarlaPlugin::getParameterCount() const noexcept
 
 uint32_t CarlaPlugin::getParameterScalePointCount(const uint32_t parameterId) const
 {
-    CARLA_ASSERT(parameterId < pData->param.count);
+    CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, 0);
     return 0;
-
-    // unused
-    (void)parameterId;
 }
 
 uint32_t CarlaPlugin::getProgramCount() const noexcept
@@ -378,47 +332,44 @@ int32_t CarlaPlugin::getCurrentMidiProgram() const noexcept
 
 const ParameterData& CarlaPlugin::getParameterData(const uint32_t parameterId) const
 {
-    CARLA_ASSERT(parameterId < pData->param.count);
+    CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, kParameterDataNull);
 
-    return (parameterId < pData->param.count) ? pData->param.data[parameterId] : kParameterDataNull;
+    return pData->param.data[parameterId];
 }
 
 const ParameterRanges& CarlaPlugin::getParameterRanges(const uint32_t parameterId) const
 {
-    CARLA_ASSERT(parameterId < pData->param.count);
+    CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, kParameterRangesNull);
 
-    return (parameterId < pData->param.count) ? pData->param.ranges[parameterId] : kParameterRangesNull;
+    return pData->param.ranges[parameterId];
 }
 
 bool CarlaPlugin::isParameterOutput(const uint32_t parameterId) const
 {
-    CARLA_ASSERT(parameterId < pData->param.count);
+    CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
 
-    return (parameterId < pData->param.count) ? (pData->param.data[parameterId].type == PARAMETER_OUTPUT) : false;
+    return (pData->param.data[parameterId].type == PARAMETER_OUTPUT);
 }
 
 const MidiProgramData& CarlaPlugin::getMidiProgramData(const uint32_t index) const
 {
-    CARLA_ASSERT(index < pData->midiprog.count);
+    CARLA_SAFE_ASSERT_RETURN(index < pData->midiprog.count, kMidiProgramDataNull);
 
-    return (index < pData->midiprog.count) ? pData->midiprog.data[index] : kMidiProgramDataNull;
+    return pData->midiprog.data[index];
 }
 
 const CustomData& CarlaPlugin::getCustomData(const uint32_t index) const
 {
-    CARLA_ASSERT(index < pData->custom.count());
+    CARLA_SAFE_ASSERT_RETURN(index < pData->custom.count(), kCustomDataNull);
 
-    return (index < pData->custom.count()) ? pData->custom.getAt(index) : kCustomDataNull;
+    return pData->custom.getAt(index);
 }
 
 int32_t CarlaPlugin::getChunkData(void** const dataPtr) const
 {
-    CARLA_ASSERT(dataPtr != nullptr);
+    CARLA_SAFE_ASSERT_RETURN(dataPtr != nullptr, 0);
     CARLA_ASSERT(false); // this should never happen
     return 0;
-
-    // unused
-    (void)dataPtr;
 }
 
 // -------------------------------------------------------------------
@@ -432,142 +383,101 @@ unsigned int CarlaPlugin::getAvailableOptions() const
 
 float CarlaPlugin::getParameterValue(const uint32_t parameterId) const
 {
-    CARLA_ASSERT(parameterId < getParameterCount());
+    CARLA_SAFE_ASSERT_RETURN(parameterId < getParameterCount(), 0.0f);
     CARLA_ASSERT(false); // this should never happen
     return 0.0f;
-
-    // unused
-    (void)parameterId;
 }
 
 float CarlaPlugin::getParameterScalePointValue(const uint32_t parameterId, const uint32_t scalePointId) const
 {
-    CARLA_ASSERT(parameterId < getParameterCount());
-    CARLA_ASSERT(scalePointId < getParameterScalePointCount(parameterId));
+    CARLA_SAFE_ASSERT_RETURN(parameterId < getParameterCount(), 0.0f);
+    CARLA_SAFE_ASSERT_RETURN(scalePointId < getParameterScalePointCount(parameterId), 0.0f);
     CARLA_ASSERT(false); // this should never happen
     return 0.0f;
-
-    // unused
-    (void)parameterId;
-    (void)scalePointId;
 }
 
 void CarlaPlugin::getLabel(char* const strBuf) const
 {
-    *strBuf = '\0';
+    strBuf[0] = '\0';
 }
 
 void CarlaPlugin::getMaker(char* const strBuf) const
 {
-    *strBuf = '\0';
+    strBuf[0] = '\0';
 }
 
 void CarlaPlugin::getCopyright(char* const strBuf) const
 {
-    *strBuf = '\0';
+    strBuf[0] = '\0';
 }
 
 void CarlaPlugin::getRealName(char* const strBuf) const
 {
-    *strBuf = '\0';
+    strBuf[0] = '\0';
 }
 
 void CarlaPlugin::getParameterName(const uint32_t parameterId, char* const strBuf) const
 {
-    CARLA_ASSERT(parameterId < getParameterCount());
+    CARLA_SAFE_ASSERT_RETURN(parameterId < getParameterCount(),);
     CARLA_ASSERT(false); // this should never happen
-    *strBuf = '\0';
-    return;
-
-    // unused
-    (void)parameterId;
+    strBuf[0] = '\0';
 }
 
 void CarlaPlugin::getParameterSymbol(const uint32_t parameterId, char* const strBuf) const
 {
-    CARLA_ASSERT(parameterId < getParameterCount());
-    *strBuf = '\0';
-    return;
-
-    // unused
-    (void)parameterId;
+    CARLA_SAFE_ASSERT_RETURN(parameterId < getParameterCount(),);
+    strBuf[0] = '\0';
 }
 
 void CarlaPlugin::getParameterText(const uint32_t parameterId, char* const strBuf) const
 {
-    CARLA_ASSERT(parameterId < getParameterCount());
+    CARLA_SAFE_ASSERT_RETURN(parameterId < getParameterCount(),);
     CARLA_ASSERT(false); // this should never happen
-    *strBuf = '\0';
-    return;
-
-    // unused
-    (void)parameterId;
+    strBuf[0] = '\0';
 }
 
 void CarlaPlugin::getParameterUnit(const uint32_t parameterId, char* const strBuf) const
 {
-    CARLA_ASSERT(parameterId < getParameterCount());
-    *strBuf = '\0';
-    return;
-
-    // unused
-    (void)parameterId;
+    CARLA_SAFE_ASSERT_RETURN(parameterId < getParameterCount(),);
+    strBuf[0] = '\0';
 }
 
 void CarlaPlugin::getParameterScalePointLabel(const uint32_t parameterId, const uint32_t scalePointId, char* const strBuf) const
 {
-    CARLA_ASSERT(parameterId < getParameterCount());
-    CARLA_ASSERT(scalePointId < getParameterScalePointCount(parameterId));
+    CARLA_SAFE_ASSERT_RETURN(parameterId < getParameterCount(),);
+    CARLA_SAFE_ASSERT_RETURN(scalePointId < getParameterScalePointCount(parameterId),);
     CARLA_ASSERT(false); // this should never happen
-    *strBuf = '\0';
-    return;
-
-    // unused
-    (void)parameterId;
-    (void)scalePointId;
+    strBuf[0] = '\0';
 }
 
 void CarlaPlugin::getProgramName(const uint32_t index, char* const strBuf) const
 {
-    CARLA_ASSERT(index < pData->prog.count);
-    CARLA_ASSERT(pData->prog.names[index] != nullptr);
+    CARLA_SAFE_ASSERT_RETURN(index < pData->prog.count,);
+    CARLA_SAFE_ASSERT_RETURN(pData->prog.names[index] != nullptr,);
 
-    if (index < pData->prog.count && pData->prog.names[index])
-        std::strncpy(strBuf, pData->prog.names[index], STR_MAX);
-    else
-        *strBuf = '\0';
+    std::strncpy(strBuf, pData->prog.names[index], STR_MAX);
 }
 
 void CarlaPlugin::getMidiProgramName(const uint32_t index, char* const strBuf) const
 {
-    CARLA_ASSERT(index < pData->midiprog.count);
-    CARLA_ASSERT(pData->midiprog.data[index].name != nullptr);
+    CARLA_SAFE_ASSERT_RETURN(index < pData->midiprog.count,);
+    CARLA_SAFE_ASSERT_RETURN(pData->midiprog.data[index].name != nullptr,);
 
-    if (index < pData->midiprog.count && pData->midiprog.data[index].name)
-        std::strncpy(strBuf, pData->midiprog.data[index].name, STR_MAX);
-    else
-        *strBuf = '\0';
+    std::strncpy(strBuf, pData->midiprog.data[index].name, STR_MAX);
 }
 
-void CarlaPlugin::getParameterCountInfo(uint32_t* const ins, uint32_t* const outs, uint32_t* const total) const
+void CarlaPlugin::getParameterCountInfo(uint32_t& ins, uint32_t& outs, uint32_t& total) const
 {
-    CARLA_ASSERT(ins != nullptr);
-    CARLA_ASSERT(outs != nullptr);
-    CARLA_ASSERT(total != nullptr);
-
-    if (ins == nullptr || outs == nullptr || total == nullptr)
-        return;
-
-    *ins   = 0;
-    *outs  = 0;
-    *total = pData->param.count;
+    ins   = 0;
+    outs  = 0;
+    total = pData->param.count;
 
     for (uint32_t i=0; i < pData->param.count; ++i)
     {
         if (pData->param.data[i].type == PARAMETER_INPUT)
-            *ins += 1;
+            ++ins;
         else if (pData->param.data[i].type == PARAMETER_OUTPUT)
-            *outs += 1;
+            ++outs;
     }
 }
 
@@ -580,38 +490,37 @@ void CarlaPlugin::prepareForSave()
 
 const SaveState& CarlaPlugin::getSaveState()
 {
-    static SaveState saveState;
-    saveState.reset();
+    pData->saveState.reset();
     prepareForSave();
 
     char strBuf[STR_MAX+1];
 
-    // ----------------------------
+    // ---------------------------------------------------------------
     // Basic info
 
     getLabel(strBuf);
 
-    saveState.type   = carla_strdup(getPluginTypeAsString(getType()));
-    saveState.name   = carla_strdup(fName);
-    saveState.label  = carla_strdup(strBuf);
-    saveState.binary = carla_strdup(fFilename);
-    saveState.uniqueID = getUniqueId();
+    pData->saveState.type     = carla_strdup(getPluginTypeAsString(getType()));
+    pData->saveState.name     = carla_strdup(fName);
+    pData->saveState.label    = carla_strdup(strBuf);
+    pData->saveState.binary   = carla_strdup(fFilename);
+    pData->saveState.uniqueID = getUniqueId();
 
-    // ----------------------------
+    // ---------------------------------------------------------------
     // Internals
 
-    saveState.active = pData->active;
+    pData->saveState.active = pData->active;
 
 #ifndef BUILD_BRIDGE
-    saveState.dryWet = pData->postProc.dryWet;
-    saveState.volume = pData->postProc.volume;
-    saveState.balanceLeft  = pData->postProc.balanceLeft;
-    saveState.balanceRight = pData->postProc.balanceRight;
-    saveState.panning      = pData->postProc.panning;
-    saveState.ctrlChannel  = pData->ctrlChannel;
+    pData->saveState.dryWet       = pData->postProc.dryWet;
+    pData->saveState.volume       = pData->postProc.volume;
+    pData->saveState.balanceLeft  = pData->postProc.balanceLeft;
+    pData->saveState.balanceRight = pData->postProc.balanceRight;
+    pData->saveState.panning      = pData->postProc.panning;
+    pData->saveState.ctrlChannel  = pData->ctrlChannel;
 #endif
 
-    // ----------------------------
+    // ---------------------------------------------------------------
     // Chunk
 
     if (fOptions & PLUGIN_OPTION_USE_CHUNKS)
@@ -621,44 +530,44 @@ const SaveState& CarlaPlugin::getSaveState()
 
         if (data != nullptr && dataSize > 0)
         {
-            // TODO
-            //saveState.chunk = carla_strdup(QByteArray((char*)data, dataSize).toBase64().constData());
+            MemoryBlock memBlock(data, dataSize);
+            pData->saveState.chunk = carla_strdup(memBlock.toBase64Encoding().toRawUTF8());
 
             // Don't save anything else if using chunks
-            return saveState;
+            return pData->saveState;
         }
     }
 
-    // ----------------------------
+    // ---------------------------------------------------------------
     // Current Program
 
-    if (pData->prog.current >= 0)
+    if (pData->prog.current >= 0 && getType() != PLUGIN_LV2)
     {
-        saveState.currentProgramIndex = pData->prog.current;
-        saveState.currentProgramName  = carla_strdup(pData->prog.names[pData->prog.current]);
+        pData->saveState.currentProgramIndex = pData->prog.current;
+        pData->saveState.currentProgramName  = carla_strdup(pData->prog.names[pData->prog.current]);
     }
 
-    // ----------------------------
+    // ---------------------------------------------------------------
     // Current MIDI Program
 
-    if (pData->midiprog.current >= 0)
+    if (pData->midiprog.current >= 0 && getType() != PLUGIN_LV2)
     {
         const MidiProgramData& mpData(pData->midiprog.getCurrent());
 
-        saveState.currentMidiBank    = mpData.bank;
-        saveState.currentMidiProgram = mpData.program;
+        pData->saveState.currentMidiBank    = mpData.bank;
+        pData->saveState.currentMidiProgram = mpData.program;
     }
 
-    // ----------------------------
+    // ---------------------------------------------------------------
     // Parameters
 
     const float sampleRate(pData->engine->getSampleRate());
 
-    for (uint32_t i=0, count=pData->param.count; i < count; ++i)
+    for (uint32_t i=0; i < pData->param.count; ++i)
     {
         const ParameterData& paramData(pData->param.data[i]);
 
-        if ((paramData.hints & PARAMETER_IS_AUTOMABLE) == 0)
+        if (paramData.type != PARAMETER_INPUT || (paramData.hints & PARAMETER_IS_ENABLED) == 0)
             continue;
 
         StateParameter* stateParameter(new StateParameter());
@@ -673,23 +582,20 @@ const SaveState& CarlaPlugin::getSaveState()
         getParameterSymbol(i, strBuf);
         stateParameter->symbol = carla_strdup(strBuf);;
 
-        stateParameter->value  = getParameterValue(i);
+        stateParameter->value = getParameterValue(i);
 
         if (paramData.hints & PARAMETER_USES_SAMPLERATE)
             stateParameter->value /= sampleRate;
 
-        saveState.parameters.append(stateParameter);
+        pData->saveState.parameters.append(stateParameter);
     }
 
-    // ----------------------------
+    // ---------------------------------------------------------------
     // Custom Data
 
     for (NonRtList<CustomData>::Itenerator it = pData->custom.begin(); it.valid(); it.next())
     {
         const CustomData& cData(*it);
-
-        if (cData.type == nullptr)
-            continue;
 
         StateCustomData* stateCustomData(new StateCustomData());
 
@@ -697,43 +603,21 @@ const SaveState& CarlaPlugin::getSaveState()
         stateCustomData->key   = carla_strdup(cData.key);
         stateCustomData->value = carla_strdup(cData.value);
 
-        saveState.customData.append(stateCustomData);
+        pData->saveState.customData.append(stateCustomData);
     }
 
-    return saveState;
+    return pData->saveState;
 }
-
-
-struct ParamSymbol {
-    uint32_t index;
-    const char* symbol;
-
-    ParamSymbol(uint32_t index_, const char* symbol_)
-        : index(index_),
-          symbol(carla_strdup(symbol_)) {}
-
-    void free()
-    {
-        if (symbol != nullptr)
-        {
-            delete[] symbol;
-            symbol = nullptr;
-        }
-    }
-
-#ifdef CARLA_PROPER_CPP11_SUPPORT
-    ParamSymbol() = delete;
-    ParamSymbol(ParamSymbol&) = delete;
-    ParamSymbol(const ParamSymbol&) = delete;
-#endif
-};
 
 void CarlaPlugin::loadSaveState(const SaveState& saveState)
 {
     char strBuf[STR_MAX+1];
-    const bool usesMultiProgs(getType() == PLUGIN_SF2 /*|| (getType() == PLUGIN_INTERNAL && (fHints & PLUGIN_IS_SYNTH) != 0)*/); // TODO
+    const bool usesMultiProgs(getType() == PLUGIN_SF2 || (getType() == PLUGIN_INTERNAL && getCategory() == PLUGIN_CATEGORY_SYNTH));
 
-    // ---------------------------------------------------------------------
+    gIsLoadingProject = true;
+    ScopedValueSetter<bool>(gIsLoadingProject, false);
+
+    // ---------------------------------------------------------------
     // Part 1 - PRE-set custom data (only that which reload programs)
 
     for (NonRtList<StateCustomData*>::Itenerator it = saveState.customData.begin(); it.valid(); it.next())
@@ -752,22 +636,15 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
             setCustomData(stateCustomData->type, stateCustomData->key, stateCustomData->value, true);
     }
 
-    // ---------------------------------------------------------------------
+    // ---------------------------------------------------------------
     // Part 2 - set program
 
-    int32_t programId = -1;
-
-    if (saveState.currentProgramName != nullptr)
+    if (saveState.currentProgramIndex >= 0 && saveState.currentProgramName != nullptr)
     {
-        getProgramName(saveState.currentProgramIndex, strBuf);
+        int32_t programId = -1;
 
-        // Program name matches
-        if (std::strcmp(saveState.currentProgramName, strBuf) == 0)
-        {
-            programId = saveState.currentProgramIndex;
-        }
         // index < count
-        else if (saveState.currentProgramIndex < static_cast<int32_t>(pData->prog.count))
+        if (saveState.currentProgramIndex < static_cast<int32_t>(pData->prog.count))
         {
             programId = saveState.currentProgramIndex;
         }
@@ -776,28 +653,29 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
         {
             for (uint32_t i=0; i < pData->prog.count; ++i)
             {
+                strBuf[0] = '\0';
                 getProgramName(i, strBuf);
 
-                if (std::strcmp(saveState.currentProgramName, strBuf) == 0)
+                if (strBuf[0] != '\0' && std::strcmp(saveState.currentProgramName, strBuf) == 0)
                 {
                     programId = i;
                     break;
                 }
             }
         }
+
+        // set program now, if valid
+        if (programId >= 0)
+            setProgram(programId, true, true, true);
     }
 
-    // set program now, if valid
-    if (programId >= 0)
-        setProgram(programId, true, true, true);
-
-    // ---------------------------------------------------------------------
+    // ---------------------------------------------------------------
     // Part 3 - set midi program
 
     if (saveState.currentMidiBank >= 0 && saveState.currentMidiProgram >= 0 && ! usesMultiProgs)
         setMidiProgramById(saveState.currentMidiBank, saveState.currentMidiProgram, true, true, true);
 
-    // ---------------------------------------------------------------------
+    // ---------------------------------------------------------------
     // Part 4a - get plugin parameter symbols
 
     NonRtList<ParamSymbol*> paramSymbols;
@@ -806,9 +684,10 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
     {
         for (uint32_t i=0; i < pData->param.count; ++i)
         {
+            strBuf[0] = '\0';
             getParameterSymbol(i, strBuf);
 
-            if (*strBuf != '\0')
+            if (strBuf[0] != '\0')
             {
                 ParamSymbol* const paramSymbol(new ParamSymbol(i, strBuf));
                 paramSymbols.append(paramSymbol);
@@ -816,7 +695,7 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
         }
     }
 
-    // ---------------------------------------------------------------------
+    // ---------------------------------------------------------------
     // Part 4b - set parameter values (carefully)
 
     const float sampleRate(pData->engine->getSampleRate());
@@ -830,7 +709,7 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
         if (getType() == PLUGIN_LADSPA)
         {
             // Try to set by symbol, otherwise use index
-            if (stateParameter->symbol != nullptr && *stateParameter->symbol != 0)
+            if (stateParameter->symbol != nullptr && stateParameter->symbol[0] != '\0')
             {
                 for (NonRtList<ParamSymbol*>::Itenerator it = paramSymbols.begin(); it.valid(); it.next())
                 {
@@ -851,7 +730,7 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
         else if (getType() == PLUGIN_LV2)
         {
             // Symbol only
-            if (stateParameter->symbol != nullptr && *stateParameter->symbol != 0)
+            if (stateParameter->symbol != nullptr && stateParameter->symbol[0] != '\0')
             {
                 for (NonRtList<ParamSymbol*>::Itenerator it = paramSymbols.begin(); it.valid(); it.next())
                 {
@@ -864,7 +743,7 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
                     }
                 }
                 if (index == -1)
-                    carla_stderr("Failed to find LV2 parameter symbol for '%s')", stateParameter->symbol);
+                    carla_stderr("Failed to find LV2 parameter symbol '%s')", stateParameter->symbol);
             }
             else
                 carla_stderr("LV2 Plugin parameter '%s' has no symbol", stateParameter->name);
@@ -891,7 +770,9 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
             carla_stderr("Could not set parameter data for '%s'", stateParameter->name);
     }
 
-    // clear
+    // ---------------------------------------------------------------
+    // Part 4c - clear
+
     for (NonRtList<ParamSymbol*>::Itenerator it = paramSymbols.begin(); it.valid(); it.next())
     {
         ParamSymbol* const paramSymbol(*it);
@@ -901,7 +782,7 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
 
     paramSymbols.clear();
 
-    // ---------------------------------------------------------------------
+    // ---------------------------------------------------------------
     // Part 5 - set custom data
 
     for (NonRtList<StateCustomData*>::Itenerator it = saveState.customData.begin(); it.valid(); it.next())
@@ -917,13 +798,13 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
         setCustomData(stateCustomData->type, stateCustomData->key, stateCustomData->value, true);
     }
 
-    // ---------------------------------------------------------------------
+    // ---------------------------------------------------------------
     // Part 6 - set chunk
 
     if (saveState.chunk != nullptr && (fOptions & PLUGIN_OPTION_USE_CHUNKS) != 0)
         setChunkData(saveState.chunk);
 
-    // ---------------------------------------------------------------------
+    // ---------------------------------------------------------------
     // Part 6 - set internal stuff
 
 #ifndef BUILD_BRIDGE
@@ -940,62 +821,60 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
 
 bool CarlaPlugin::saveStateToFile(const char* const filename)
 {
+    CARLA_SAFE_ASSERT_RETURN(filename != nullptr, false);
     carla_debug("CarlaPlugin::saveStateToFile(\"%s\")", filename);
-    CARLA_ASSERT(filename != nullptr);
 
-#if 0
-    QFile file(filename);
+    File file(filename);
 
-    if (! file.open(QIODevice::WriteOnly | QIODevice::Text))
-        return false;
-
-    QString content;
+    String content;
     fillXmlStringFromSaveState(content, getSaveState());
 
-    QTextStream out(&file);
+    String out;
     out << "<?xml version='1.0' encoding='UTF-8'?>\n";
     out << "<!DOCTYPE CARLA-PRESET>\n";
-    out << "<CARLA-PRESET VERSION='1.0'>\n";
+    out << "<CARLA-PRESET VERSION='2.0'>\n";
     out << content;
     out << "</CARLA-PRESET>\n";
 
-    file.close();
-    return true;
-#endif
-    pData->engine->setLastError("NIY");
-    return false;
+    carla_stdout("TESTING, FULL OUT FILE:\n%s", out.toRawUTF8());
+
+    return file.replaceWithText(out);
 }
 
 bool CarlaPlugin::loadStateFromFile(const char* const filename)
 {
+    CARLA_SAFE_ASSERT_RETURN(filename != nullptr, false);
     carla_debug("CarlaPlugin::loadStateFromFile(\"%s\")", filename);
-    CARLA_ASSERT(filename != nullptr);
 
-#if 0
-    QFile file(filename);
+    File file(filename);
 
-    if (! file.open(QIODevice::ReadOnly | QIODevice::Text))
-        return false;
+    XmlDocument xml(file);
 
-    QDomDocument xml;
-    xml.setContent(file.readAll());
-    file.close();
-
-    QDomNode xmlNode(xml.documentElement());
-
-    if (xmlNode.toElement().tagName() != "CARLA-PRESET")
+    if (XmlElement* const xmlCheck = xml.getDocumentElement(true))
     {
-        pData->engine->setLastError("Not a valid Carla preset file");
+        if (xmlCheck->getTagName().equalsIgnoreCase("carla-preset"))
+        {
+            if (XmlElement* const xmlElem = xml.getDocumentElement(false))
+            {
+                pData->saveState.reset();
+                fillSaveStateFromXmlElement(pData->saveState, xmlElem);
+                loadSaveState(pData->saveState);
+
+                delete xmlElem;
+                delete xmlCheck;
+                return true;
+            }
+            else
+                pData->engine->setLastError("Failed to parse file");
+        }
+        else
+            pData->engine->setLastError("Invalid Carla preset file");
+
+        delete xmlCheck;
         return false;
     }
 
-    SaveState saveState;
-    fillSaveStateFromXmlNode(saveState, xmlNode);
-    loadSaveState(saveState);
-
-    return true;
-#endif
-    pData->engine->setLastError("NIY");
+    pData->engine->setLastError("Not a valid file");
     return false;
 }
 
@@ -1208,7 +1087,10 @@ void CarlaPlugin::setParameterValue(const uint32_t parameterId, const float valu
 {
     CARLA_ASSERT(parameterId < pData->param.count);
 #ifdef BUILD_BRIDGE
-    CARLA_ASSERT(! sendGui); // this should never happen
+    if (! gIsLoadingProject)
+    {
+        CARLA_ASSERT(! sendGui); // this should never happen
+    }
 #endif
 
 #ifndef BUILD_BRIDGE
@@ -1268,7 +1150,6 @@ void CarlaPlugin::setParameterValueByRealIndex(const int32_t rindex, const float
     }
 }
 
-#ifndef BUILD_BRIDGE
 void CarlaPlugin::setParameterMidiChannel(const uint32_t parameterId, uint8_t channel, const bool sendOsc, const bool sendCallback)
 {
     CARLA_ASSERT(sendOsc || sendCallback); // never call this from RT
@@ -1326,7 +1207,6 @@ void CarlaPlugin::setParameterMidiCC(const uint32_t parameterId, int16_t cc, con
     (void)sendCallback;
 #endif
 }
-#endif
 
 void CarlaPlugin::setCustomData(const char* const type, const char* const key, const char* const value, const bool sendGui)
 {
@@ -1334,7 +1214,10 @@ void CarlaPlugin::setCustomData(const char* const type, const char* const key, c
     CARLA_ASSERT(key != nullptr);
     CARLA_ASSERT(value != nullptr);
 #ifdef BUILD_BRIDGE
-    CARLA_ASSERT(! sendGui); // this should never happen
+    if (! gIsLoadingProject)
+    {
+        CARLA_ASSERT(! sendGui); // this should never happen
+    }
 #endif
 
     if (type == nullptr)
@@ -1406,7 +1289,10 @@ void CarlaPlugin::setProgram(int32_t index, const bool sendGui, const bool sendO
 {
     CARLA_ASSERT(index >= -1 && index < static_cast<int32_t>(pData->prog.count));
 #ifdef BUILD_BRIDGE
-    CARLA_ASSERT(! sendGui); // this should never happen
+    if (! gIsLoadingProject)
+    {
+        CARLA_ASSERT(! sendGui); // this should never happen
+    }
 #endif
 
     if (index > static_cast<int32_t>(pData->prog.count))
@@ -1466,7 +1352,10 @@ void CarlaPlugin::setMidiProgram(int32_t index, const bool sendGui, const bool s
 {
     CARLA_ASSERT(index >= -1 && index < static_cast<int32_t>(pData->midiprog.count));
 #ifdef BUILD_BRIDGE
-    CARLA_ASSERT(! sendGui); // this should never happen
+    if (! gIsLoadingProject)
+    {
+        CARLA_ASSERT(! sendGui); // this should never happen
+    }
 #endif
 
     if (index > static_cast<int32_t>(pData->midiprog.count))
@@ -1656,7 +1545,7 @@ void CarlaPlugin::registerToOscClient()
     // Base count
     {
         uint32_t cIns, cOuts, cTotals;
-        getParameterCountInfo(&cIns, &cOuts, &cTotals);
+        getParameterCountInfo(cIns, cOuts, cTotals);
 
 #ifdef BUILD_BRIDGE
         pData->engine->oscSend_bridge_audio_count(getAudioInCount(), getAudioOutCount(), getAudioInCount() + getAudioOutCount());

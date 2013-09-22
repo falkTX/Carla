@@ -19,7 +19,6 @@
 
 #ifdef WANT_VST
 
-#include "CarlaPluginGui.hpp"
 #include "CarlaVstUtils.hpp"
 
 //#ifdef Q_WS_X11
@@ -827,13 +826,13 @@ public:
         pData->extraHints = 0x0;
 
         if (mIns > 0)
-            pData->extraHints |= PLUGIN_HINT_HAS_MIDI_IN;
+            pData->extraHints |= PLUGIN_EXTRA_HINT_HAS_MIDI_IN;
 
         if (mOuts > 0)
-            pData->extraHints |= PLUGIN_HINT_HAS_MIDI_OUT;
+            pData->extraHints |= PLUGIN_EXTRA_HINT_HAS_MIDI_OUT;
 
         if (aIns <= 2 && aOuts <= 2 && (aIns == aOuts || aIns == 0 || aOuts == 0))
-            pData->extraHints |= PLUGIN_HINT_CAN_RUN_RACK;
+            pData->extraHints |= PLUGIN_EXTRA_HINT_CAN_RUN_RACK;
 
         // dummy pre-start to get latency and wantEvents() on old plugins
         {
@@ -1970,7 +1969,7 @@ protected:
             break;
 
         case audioMasterSizeWindow:
-            if (pData->gui != nullptr)
+            //if (pData->gui != nullptr)
             {
                 CARLA_SAFE_ASSERT(fGui.isVisible);
                 //if (fGui.isVisible)

@@ -70,43 +70,34 @@ public:
     void toolkitQuit();
 #endif
 
-#ifdef BUILD_BRIDGE_PLUGIN
-    // ---------------------------------------------------------------------
-    // plugin management
-
-    virtual void saveNow() = 0;
-    virtual void setCustomData(const char* const type, const char* const key, const char* const value) = 0;
-    virtual void setChunkData(const char* const filePath) = 0;
-#endif
-
     // ---------------------------------------------------------------------
     // osc stuff
 
     void oscInit(const char* const url);
-    bool oscIdle();
+    bool oscIdle() const;
     void oscClose();
 
-    bool isOscControlRegistered() const;
-    void sendOscUpdate();
+    bool isOscControlRegistered() const noexcept;
+    void sendOscUpdate() const;
 
 #ifdef BUILD_BRIDGE_PLUGIN
-    void sendOscBridgeUpdate();
-    void sendOscBridgeError(const char* const error);
+    void sendOscBridgeUpdate() const;
+    void sendOscBridgeError(const char* const error) const;
 #endif
 
     // ---------------------------------------------------------------------
 
 protected:
-    void sendOscConfigure(const char* const key, const char* const value);
-    void sendOscControl(const int32_t index, const float value);
-    void sendOscProgram(const int32_t index);
-    void sendOscMidiProgram(const int32_t index);
-    void sendOscMidi(const uint8_t midiBuf[4]);
-    void sendOscExiting();
+    void sendOscConfigure(const char* const key, const char* const value) const;
+    void sendOscControl(const int32_t index, const float value) const;
+    void sendOscProgram(const int32_t index) const;
+    void sendOscMidiProgram(const int32_t index) const;
+    void sendOscMidi(const uint8_t midiBuf[4]) const;
+    void sendOscExiting() const;
 
 #ifdef BRIDGE_LV2
-    void sendOscLv2AtomTransfer(const int32_t portIndex, const char* const atomBuf);
-    void sendOscLv2UridMap(const uint32_t urid, const char* const uri);
+    void sendOscLv2AtomTransfer(const int32_t portIndex, const char* const atomBuf) const;
+    void sendOscLv2UridMap(const uint32_t urid, const char* const uri) const;
 #endif
 
     // ---------------------------------------------------------------------

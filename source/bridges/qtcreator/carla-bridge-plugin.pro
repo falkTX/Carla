@@ -29,7 +29,7 @@ DEFINES   += WANT_OPENGL
 DEFINES   += WANT_AUDIOFILE
 DEFINES   += WANT_MIDIFILE
 DEFINES   += WANT_ZYNADDSUBFX
-# DEFINES   += WANT_ZYNADDSUBFX_UI
+DEFINES   += WANT_ZYNADDSUBFX_UI
 
 # Engine
 PKGCONFIG  = liblo
@@ -51,8 +51,7 @@ PKGCONFIG += smf
 PKGCONFIG += gl
 
 # ZynAddSubFX
-PKGCONFIG += fftw3 mxml zlib
-# ntk ntk_images
+PKGCONFIG += fftw3 mxml zlib ntk ntk_images
 
 # -----------------------------------------------------------
 
@@ -82,7 +81,6 @@ SOURCES += \
 # Plugin
 SOURCES += \
     ../../backend/plugin/CarlaPlugin.cpp \
-    ../../backend/plugin/CarlaPluginGui.cpp \
     ../../backend/plugin/CarlaPluginThread.cpp \
     ../../backend/plugin/BridgePlugin.cpp \
     ../../backend/plugin/NativePlugin.cpp \
@@ -102,58 +100,29 @@ SOURCES += \
 
 # common
 HEADERS += \
-    ../../backend/CarlaBackend.hpp \
-    ../../backend/CarlaEngine.hpp \
-    ../../backend/CarlaPlugin.hpp \
-    ../../backend/CarlaHost.hpp
+    ../../backend/*.hpp
 
 # engine
 HEADERS += \
-    ../../backend/engine/CarlaEngineInternal.hpp \
-    ../../backend/engine/CarlaEngineOsc.hpp \
-    ../../backend/engine/CarlaEngineThread.hpp
+    ../../backend/engine/*.hpp
 
 # plugin
 HEADERS += \
-    ../../backend/plugin/CarlaPluginInternal.hpp \
-    ../../backend/plugin/CarlaPluginGui.hpp \
-    ../../backend/plugin/CarlaPluginThread.hpp
+    ../../backend/plugin/*.hpp
 
 # includes
 HEADERS += \
-    ../../includes/CarlaDefines.hpp \
-    ../../includes/CarlaMIDI.h
+    ../../includes/*.h \
+    ../../includes/*.hpp
 
 # modules
 HEADERS += \
-    ../../modules/CarlaNative.h \
-    ../../modules/CarlaNative.hpp \
-    ../../modules/juce_audio_basics.h \
-    ../../modules/juce_core.h \
-    ../../modules/ladspa_rdf.hpp \
-    ../../modules/lv2_rdf.hpp
+    ../../modules/*.h \
+    ../../modules/*.hpp
 
 # utils
 HEADERS += \
-    ../../utils/CarlaUtils.hpp \
-    ../../utils/CarlaBackendUtils.hpp \
-    ../../utils/CarlaBridgeUtils.hpp \
-    ../../utils/CarlaDssiUtils.hpp \
-    ../../utils/CarlaJuceUtils.hpp \
-    ../../utils/CarlaLadspaUtils.hpp \
-    ../../utils/CarlaLibUtils.hpp \
-    ../../utils/CarlaLogThread.hpp \
-    ../../utils/CarlaLv2Utils.hpp \
-    ../../utils/CarlaOscUtils.hpp \
-    ../../utils/CarlaPipeUtils.hpp \
-    ../../utils/CarlaShmUtils.hpp \
-    ../../utils/CarlaStateUtils.hpp \
-    ../../utils/CarlaVstUtils.hpp \
-    ../../utils/CarlaMutex.hpp \
-    ../../utils/CarlaRingBuffer.hpp \
-    ../../utils/CarlaString.hpp \
-    ../../utils/Lv2AtomQueue.hpp \
-    ../../utils/RtList.hpp
+    ../../utils/*.hpp
 
 INCLUDEPATH = .. \
     ../../backend \
@@ -169,6 +138,8 @@ LIBS  = -ldl -lpthread -lrt
 LIBS += ../../modules/carla_native.a
 LIBS += ../../modules/juce_audio_basics.a
 LIBS += ../../modules/juce_core.a
+LIBS += ../../modules/juce_data_structures.a
+LIBS += ../../modules/juce_events.a
 LIBS += ../../modules/rtmempool.a
 
 LIBS += ../../modules/dgl.a

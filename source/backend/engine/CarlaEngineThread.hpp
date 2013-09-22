@@ -22,8 +22,6 @@
 
 #include "juce_core.h"
 
-using juce::Thread;
-
 CARLA_BACKEND_START_NAMESPACE
 
 #if 0
@@ -32,7 +30,7 @@ CARLA_BACKEND_START_NAMESPACE
 
 // -----------------------------------------------------------------------
 
-class CarlaEngineThread : public Thread
+class CarlaEngineThread : public juce::Thread
 {
 public:
     CarlaEngineThread(CarlaEngine* const engine);

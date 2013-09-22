@@ -19,8 +19,7 @@
 
 #ifdef WANT_DSSI
 
-#include "CarlaLadspaUtils.hpp"
-#include "dssi/dssi.h"
+#include "CarlaDssiUtils.hpp"
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -788,10 +787,10 @@ public:
         pData->extraHints = 0x0;
 
         if (mIns > 0)
-            pData->extraHints |= PLUGIN_HINT_HAS_MIDI_IN;
+            pData->extraHints |= PLUGIN_EXTRA_HINT_HAS_MIDI_IN;
 
         if (aIns <= 2 && aOuts <= 2 && (aIns == aOuts || aIns == 0 || aOuts == 0))
-            pData->extraHints |= PLUGIN_HINT_CAN_RUN_RACK;
+            pData->extraHints |= PLUGIN_EXTRA_HINT_CAN_RUN_RACK;
 
         // check latency
         if (fHints & PLUGIN_CAN_DRYWET)
@@ -1910,8 +1909,15 @@ public:
         if (guiFilename != nullptr)
         {
             fGuiFilename = guiFilename;
-            pData->osc.thread.setOscData(guiFilename, fDescriptor->Label);
         }
+        else if (const char* const guiFilename2 = find_dssi_ui(filename, fDescriptor->Label))
+        {
+            fGuiFilename = guiFilename2;
+            delete[] guiFilename2;
+        }
+
+        if (fGuiFilename.isNotEmpty())
+            pData->osc.thread.setOscData((const char*)fGuiFilename, fDescriptor->Label);
 
         // ---------------------------------------------------------------
         // load plugin settings

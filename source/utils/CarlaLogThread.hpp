@@ -26,12 +26,11 @@
 #include <fcntl.h>
 
 using CarlaBackend::CallbackFunc;
-using juce::Thread;
 
 // -----------------------------------------------------------------------
 // Log thread
 
-class CarlaLogThread : public Thread
+class CarlaLogThread : public juce::Thread
 {
 public:
     CarlaLogThread()
