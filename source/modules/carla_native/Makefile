@@ -84,6 +84,8 @@ endif
 
 # DISTRHO plugins (PyQt)
 OBJS += \
+	distrho-bigmeter.cpp.o \
+	distrho-bigmeterM.cpp.o \
 	distrho-notes.cpp.o
 
 ifeq ($(HAVE_ZYN_DEPS),true)
@@ -177,6 +179,12 @@ distrho-pingpongpan.cpp.o: distrho-pingpongpan.cpp pingpongpan/*.cpp pingpongpan
 
 distrho-stereoenhancer.cpp.o: distrho-stereoenhancer.cpp stereoenhancer/*.cpp stereoenhancer/*.h stereoenhancer/*.hpp distrho/DistrhoPluginCarla.cpp $(CXXDEPS)
 	$(CXX) $< $(GL_CXX_FLAGS) -Istereoenhancer -DDISTRHO_NAMESPACE=DISTRHO_StereoEnhancer -c -o $@
+
+distrho-bigmeter.cpp.o: distrho-bigmeter.cpp bigmeter/*.cpp bigmeter/*.h bigmeter/*.hpp distrho/DistrhoPluginCarla.cpp $(CXXDEPS)
+	$(CXX) $< $(BUILD_CXX_FLAGS) -Ibigmeter -DDISTRHO_NAMESPACE=DISTRHO_BigMeter -c -o $@
+
+distrho-bigmeterM.cpp.o: distrho-bigmeterM.cpp bigmeterM/*.cpp bigmeterM/*.h bigmeterM/*.hpp distrho/DistrhoPluginCarla.cpp $(CXXDEPS)
+	$(CXX) $< $(BUILD_CXX_FLAGS) -IbigmeterM -DDISTRHO_NAMESPACE=DISTRHO_BigMeterM -c -o $@
 
 distrho-notes.cpp.o: distrho-notes.cpp notes/*.cpp notes/*.h notes/*.hpp distrho/DistrhoPluginCarla.cpp $(CXXDEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -Inotes -DDISTRHO_NAMESPACE=DISTRHO_Notes -c -o $@

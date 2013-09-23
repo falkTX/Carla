@@ -84,7 +84,7 @@ if __name__ == '__main__':
     app.setWindowIcon(QIcon(":/scalable/carla.svg"))
 
     libName = carla_library_filename
-    libPath = carla_library_filename.replace(carla_libname, "")
+    libPath = os.path.join(carla_library_filename.replace(carla_libname, ""), "..", "modules", "carla_native", "resources")
 
     # Init backend
     print("libName:", libName, ":", carla_libname)

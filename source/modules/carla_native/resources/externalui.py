@@ -33,18 +33,30 @@ class ExternalUI(object):
         self.fPipeSend     = None
         self.fQuitReceived = False
 
-        self.fSampleRate = float(argv[1])
-        self.fUiName     = argv[2]
-        self.fPipeRecvFd = int(argv[3])
-        self.fPipeSendFd = int(argv[4])
+        if len(argv) > 1:
+            self.fSampleRate = float(argv[1])
+            self.fUiName     = argv[2]
+            self.fPipeRecvFd = int(argv[3])
+            self.fPipeSendFd = int(argv[4])
 
-        fcntl(self.fPipeRecvFd, F_SETFL, fcntl(self.fPipeRecvFd, F_GETFL) | O_NONBLOCK)
+            fcntl(self.fPipeRecvFd, F_SETFL, fcntl(self.fPipeRecvFd, F_GETFL) | O_NONBLOCK)
 
-        self.fPipeRecv = fdopen(self.fPipeRecvFd, 'r')
-        self.fPipeSend = fdopen(self.fPipeSendFd, 'w')
+            self.fPipeRecv = fdopen(self.fPipeRecvFd, 'r')
+            self.fPipeSend = fdopen(self.fPipeSendFd, 'w')
+
+        else:
+            self.fSampleRate = 44100.0
+            self.fUiName     = "TestUI"
+
+            self.fPipeRecv = None
+            self.fPipeSend = None
 
         # send empty line (just newline char)
         self.send([""])
+
+    def showUiIfTesting(self):
+        if self.fPipeRecv is None:
+            self.d_uiShow()
 
     # -------------------------------------------------------------------
     # Host DSP State
@@ -110,54 +122,55 @@ class ExternalUI(object):
           self.fPipeSend = None
 
     def idleExternalUI(self):
-        if self.fPipeRecv is None:
-            return False
+        while True:
+            if self.fPipeRecv is None:
+                return True
 
-        try:
-            msg = self.fPipeRecv.readline().strip()
-        except IOError:
-            return False
+            try:
+                msg = self.fPipeRecv.readline().strip()
+            except IOError:
+                return False
 
-        if not msg:
-            return True
+            if not msg:
+                return True
 
-        elif msg == "control":
-            index = int(self.fPipeRecv.readline())
-            value = float(self.fPipeRecv.readline())
-            self.d_parameterChanged(index, value)
+            elif msg == "control":
+                index = int(self.fPipeRecv.readline())
+                value = float(self.fPipeRecv.readline())
+                self.d_parameterChanged(index, value)
 
-        elif msg == "program":
-            index = int(self.fPipeRecv.readline())
-            self.d_programChanged(index)
+            elif msg == "program":
+                index = int(self.fPipeRecv.readline())
+                self.d_programChanged(index)
 
-        elif msg == "configure":
-            key   = self.fPipeRecv.readline().strip().replace("\r", "\n")
-            value = self.fPipeRecv.readline().strip().replace("\r", "\n")
-            self.d_stateChanged(key, value)
+            elif msg == "configure":
+                key   = self.fPipeRecv.readline().strip().replace("\r", "\n")
+                value = self.fPipeRecv.readline().strip().replace("\r", "\n")
+                self.d_stateChanged(key, value)
 
-        elif msg == "note":
-            onOff    = bool(self.fPipeRecv.readline().strip() == "true")
-            channel  = int(self.fPipeRecv.readline())
-            note     = int(self.fPipeRecv.readline())
-            velocity = int(self.fPipeRecv.readline())
-            self.d_noteReceived(onOff, channel, note, velocity)
+            elif msg == "note":
+                onOff    = bool(self.fPipeRecv.readline().strip() == "true")
+                channel  = int(self.fPipeRecv.readline())
+                note     = int(self.fPipeRecv.readline())
+                velocity = int(self.fPipeRecv.readline())
+                self.d_noteReceived(onOff, channel, note, velocity)
 
-        elif msg == "show":
-            self.d_uiShow()
+            elif msg == "show":
+                self.d_uiShow()
 
-        elif msg == "hide":
-            self.d_uiHide()
+            elif msg == "hide":
+                self.d_uiHide()
 
-        elif msg == "quit":
-            self.fQuitReceived = True
-            self.d_uiQuit()
+            elif msg == "quit":
+                self.fQuitReceived = True
+                self.d_uiQuit()
 
-        elif msg == "uiTitle":
-            uiTitle = self.fPipeRecv.readline().strip().replace("\r", "\n")
-            self.d_uiTitleChanged(uiTitle)
+            elif msg == "uiTitle":
+                uiTitle = self.fPipeRecv.readline().strip().replace("\r", "\n")
+                self.d_uiTitleChanged(uiTitle)
 
-        else:
-            print("unknown message: \"" + msg + "\"")
+            else:
+                print("unknown message: \"" + msg + "\"")
 
         return True
 

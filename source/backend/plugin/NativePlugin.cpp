@@ -26,7 +26,7 @@ extern "C" {
 // Simple plugins
 void carla_register_native_plugin_bypass();
 void carla_register_native_plugin_lfo();
-void carla_register_native_plugin_midiSequencer();
+void carla_register_native_plugin_midiGain();
 void carla_register_native_plugin_midiSplit();
 void carla_register_native_plugin_midiThrough();
 void carla_register_native_plugin_midiTranspose();
@@ -58,7 +58,9 @@ void carla_register_native_plugin_PingPongPan();
 //void carla_register_native_plugin_StereoEnhancer();
 #endif
 
-// DISTRHO plugins (Qt)
+// DISTRHO plugins (PyQt)
+void carla_register_native_plugin_BigMeter();
+void carla_register_native_plugin_BigMeterM();
 void carla_register_native_plugin_Notes();
 
 #ifdef WANT_ZYNADDSUBFX
@@ -72,7 +74,7 @@ void carla_register_all_plugins()
     // Simple plugins
     carla_register_native_plugin_bypass();
     carla_register_native_plugin_lfo();
-    //carla_register_native_plugin_midiSequencer(); // unfinished
+    carla_register_native_plugin_midiGain();
     carla_register_native_plugin_midiSplit();
     carla_register_native_plugin_midiThrough();
     carla_register_native_plugin_midiTranspose();
@@ -104,8 +106,10 @@ void carla_register_all_plugins()
     //carla_register_native_plugin_StereoEnhancer(); // unfinished
 #endif
 
-    // DISTRHO plugins (Qt)
-    carla_register_native_plugin_Notes(); // unfinished
+    // DISTRHO plugins (PyQt)
+    carla_register_native_plugin_BigMeter();
+    carla_register_native_plugin_BigMeterM();
+    carla_register_native_plugin_Notes();
 
 #ifdef WANT_ZYNADDSUBFX
     // ZynAddSubFX

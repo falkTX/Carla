@@ -23,10 +23,10 @@ from copy import deepcopy
 from subprocess import Popen, PIPE
 
 try:
-    from PyQt5.QtCore import Qt, QThread, QSettings
+    from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QThread, QSettings
     from PyQt5.QtWidgets import QDialog, QTableWidgetItem
 except:
-    from PyQt4.QtCore import Qt, QThread, QSettings
+    from PyQt4.QtCore import pyqtSignal, pyqtSlot, Qt, QThread, QSettings
     from PyQt4.QtGui import QDialog, QTableWidgetItem
 
 # ------------------------------------------------------------------------------------------------------------

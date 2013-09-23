@@ -78,14 +78,16 @@ class DistrhoUINotes(QWidget, ExternalUI):
         self.fGridLayout.addWidget(self.fSpacer, 1, 2, 1, 1)
         self.fGridLayout.setContentsMargins(0, 0, 0, 0)
 
-        self.resize(300, 200)
-        self.setWindowTitle(self.fUiName)
-
         self.fButton.clicked.connect(self.slot_buttonClicked)
         self.fProgressBar.valueChanged.connect(self.slot_progressBarValueChanged)
         self.fTextEdit.textChanged.connect(self.slot_textChanged)
 
+        self.resize(300, 200)
+        self.setWindowTitle(self.fUiName)
+
         self.fIdleTimer = self.startTimer(50)
+
+        self.showUiIfTesting()
 
     def saveCurrentTextState(self):
         pageKey   = "pageText %i" % self.fCurPage
