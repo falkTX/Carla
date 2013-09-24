@@ -33,15 +33,6 @@ import ui_carla
 from carla_shared import *
 
 # ------------------------------------------------------------------------------------------------------------
-# Try Import OpenGL
-
-try:
-    from PyQt4.QtOpenGL import QGLWidget
-    hasGL = True
-except:
-    hasGL = False
-
-# ------------------------------------------------------------------------------------------------------------
 # Static Variables
 
 # Tab indexes

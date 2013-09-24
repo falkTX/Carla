@@ -57,6 +57,8 @@ void carla_register_native_plugin_PingPongPan();
 #endif
 
 // DISTRHO plugins (PyQt)
+void carla_register_native_plugin_BigMeter();
+void carla_register_native_plugin_BigMeterM();
 void carla_register_native_plugin_Notes();
 
 #ifdef WANT_ZYNADDSUBFX
@@ -103,6 +105,8 @@ struct PluginListManager {
 #endif
 
         // DISTRHO plugins (PyQt)
+        carla_register_native_plugin_BigMeter();
+        carla_register_native_plugin_BigMeterM();
         carla_register_native_plugin_Notes(); // unfinished
 
 #ifdef WANT_ZYNADDSUBFX

@@ -87,6 +87,7 @@ UIs = \
 	source/ui_carla_about.py \
 	source/ui_carla_database.py \
 	source/ui_carla_edit.py \
+	source/ui_carla_host.py \
 	source/ui_carla_parameter.py \
 	source/ui_carla_plugin.py \
 	source/ui_carla_refresh.py \

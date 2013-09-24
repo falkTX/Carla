@@ -48,11 +48,10 @@ class CarlaRackItem(QListWidgetItem):
 
         parent.setItemWidget(self, self.fWidget)
 
+    # -----------------------------------------------------------------
+
     def close(self):
         self.fWidget.ui.edit_dialog.close()
-
-    def getWidget(self):
-        return self.fWidget
 
     def setId(self, idx):
         self.fWidget.setId(idx)
@@ -73,10 +72,10 @@ class CarlaRackW(QListWidget):
         # -------------------------------------------------------------
         # Set-up GUI stuff
 
-        self.setFixedWidth(800)
+        #self.setMnimumWidth(800)
         self.setSortingEnabled(False)
 
-        app = QApplication.instance()
+        app  = QApplication.instance()
         pal1 = app.palette().base().color()
         pal2 = app.palette().button().color()
         col1 = "stop:0 rgb(%i, %i, %i)" % (pal1.red(), pal1.green(), pal1.blue())
@@ -93,34 +92,31 @@ class CarlaRackW(QListWidget):
           }
         """ % (col1, col2))
 
-        # -------------------------------------------------------------
+    # -----------------------------------------------------------------
 
-    def idleFast(self):
-        for i in range(self.fPluginCount):
-            pitem = self.fPluginList[i]
+    def getPluginCount(self):
+        return self.fPluginCount
 
-            if pitem is None:
-                break
+    def getPlugin(self, pluginId):
+        if pluginId >= self.fPluginCount:
+            return None
 
-            pitem.fWidget.idleFast()
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return None
 
-    def idleSlow(self):
-        for i in range(self.fPluginCount):
-            pitem = self.fPluginList[i]
+        return pitem
 
-            if pitem is None:
-                break
+    # -----------------------------------------------------------------
 
-            pitem.fWidget.idleSlow()
-
-    def addPlugin(self, pluginId):
+    def addPlugin(self, pluginId, isProjectLoading):
         pitem = CarlaRackItem(self, pluginId)
 
         self.fPluginList.append(pitem)
         self.fPluginCount += 1
 
-        #if not self.fProjectLoading:
-            #pwidget.setActive(True, True, True)
+        if not isProjectLoading:
+            pitem.fWidget.setActive(True, True, True)
 
     def removePlugin(self, pluginId):
         if pluginId >= self.fPluginCount:
@@ -142,6 +138,17 @@ class CarlaRackW(QListWidget):
         for i in range(pluginId, self.fPluginCount):
             self.fPluginList[i].setId(i)
 
+    def renamePlugin(self, pluginId, newName):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.fWidget.ui.label_name.setText(name)
+        pitem.fWidget.ui.edit_dialog.setName(name)
+
     def removeAllPlugins(self):
         while (self.takeItem(0)):
             pass
@@ -157,6 +164,213 @@ class CarlaRackW(QListWidget):
 
         self.fPluginCount = 0
         self.fPluginList  = []
+
+    # -----------------------------------------------------------------
+
+    def setParameterValue(self, pluginId, index, value):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.fWidget.setParameterValue(index, value)
+
+    def setParameterDefault(self, pluginId, index, value):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.fWidget.setParameterDefault(index, value)
+
+    def setParameterMidiChannel(self, pluginId, index, channel):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.fWidget.setParameterMidiChannel(index, channel)
+
+    def setParameterMidiCC(self, pluginId, index, cc):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.fWidget.setParameterMidiControl(index, cc)
+
+    # -----------------------------------------------------------------
+
+    def setProgram(self, pluginId, index):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.fWidget.setProgram(index)
+
+    def setMidiProgram(self, pluginId, index):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.fWidget.setMidiProgram(index)
+
+    # -----------------------------------------------------------------
+
+    def noteOn(self, pluginId, channel, note, velocity):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.fWidget.sendNoteOn(channel, note)
+
+    def noteOff(self, pluginId, channel, note):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.fWidget.sendNoteOff(channel, note)
+
+    # -----------------------------------------------------------------
+
+    def setGuiState(self, pluginId, state):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        if state == 0:
+            pitem.fWidget.ui.b_gui.setChecked(False)
+            pitem.fWidget.ui.b_gui.setEnabled(True)
+        elif state == 1:
+            pitem.fWidget.ui.b_gui.setChecked(True)
+            pitem.fWidget.ui.b_gui.setEnabled(True)
+        elif state == -1:
+            pitem.fWidget.ui.b_gui.setChecked(False)
+            pitem.fWidget.ui.b_gui.setEnabled(False)
+
+    # -----------------------------------------------------------------
+
+    def updateInfo(self, pluginId):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.ui.edit_dialog.updateInfo()
+
+    def reloadInfo(self, pluginId):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.ui.edit_dialog.reloadInfo()
+
+    def reloadParameters(self, pluginId):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.ui.edit_dialog.reloadParameters()
+
+    def reloadPrograms(self, pluginId):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.ui.edit_dialog.reloadPrograms()
+
+    def reloadAll(self, pluginId):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.ui.edit_dialog.reloadAll()
+
+    # -----------------------------------------------------------------
+
+    def patchbayClientAdded(self, clientId, clientIcon, clientName):
+        pass
+
+    def patchbayClientRemoved(self, clientId, clientName):
+        pass
+
+    def patchbayClientRenamed(self, clientId, newClientName):
+        pass
+
+    def patchbayPortAdded(self, clientId, portId, portFlags, portName):
+        pass
+
+    def patchbayPortRemoved(self, groupId, portId, fullPortName):
+        pass
+
+    def patchbayPortRenamed(self, groupId, portId, newPortName):
+        pass
+
+    def patchbayConnectionAdded(self, connectionId, portOutId, portInId):
+        pass
+
+    def patchbayConnectionRemoved(self, connectionId):
+        pass
+
+    def patchbayIconChanged(self, clientId, clientIcon):
+        pass
+
+    # -----------------------------------------------------------------
+
+    def idleFast(self):
+        for i in range(self.fPluginCount):
+            pitem = self.fPluginList[i]
+
+            if pitem is None:
+                break
+
+            pitem.fWidget.idleFast()
+
+    def idleSlow(self):
+        for i in range(self.fPluginCount):
+            pitem = self.fPluginList[i]
+
+            if pitem is None:
+                break
+
+            pitem.fWidget.idleSlow()
 
 # ------------------------------------------------------------------------------------------------------------
 # TESTING

@@ -31,6 +31,7 @@ except:
 
 from carla_host import *
 from carla_rack import CarlaRackW
+#from carla_patchbay import CarlaPatchbayW
 
 # ------------------------------------------------------------------------------------------------------------
 # Main Window
@@ -38,39 +39,20 @@ from carla_rack import CarlaRackW
 class CarlaMiniW(HostWindow):
     def __init__(self, parent=None):
         HostWindow.__init__(self, parent)
-        #self.ui =  ui_carla.Ui_CarlaMainW()
-        #self.ui.setupUi(self)
+
+        self.fContainer = CarlaRackW(self)
+        #self.fContainer = CarlaPatchbayW(self)
+        self.setCentralWidget(self.fContainer)
 
         Carla.host.engine_init("JACK", "Carla")
 
-        self.fContainer = CarlaRackW(self)
-        self.setCentralWidget(self.fContainer)
-
         self.init()
 
-        QTimer.singleShot(0, self.slot_pluginAdd)
+        Carla.host.patchbay_refresh()
 
     def closeEvent(self, event):
         Carla.host.engine_close()
         HostWindow.closeEvent(self, event)
-
-    @pyqtSlot()
-    def slot_pluginAdd(self):
-        dialog = PluginDatabaseW(self)
-
-        if not dialog.exec_():
-            return
-
-        btype    = dialog.fRetPlugin['build']
-        ptype    = dialog.fRetPlugin['type']
-        filename = dialog.fRetPlugin['binary']
-        label    = dialog.fRetPlugin['label']
-
-        if not Carla.host.add_plugin(btype, ptype, filename, None, label, c_nullptr):
-            CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"), self.tr("Failed to load plugin"), cString(Carla.host.get_last_error()), QMessageBox.Ok, QMessageBox.Ok)
-            return
-
-        self.fContainer.addPlugin(0)
 
 # ------------------------------------------------------------------------------------------------------------
 # --------------- main ------------------
@@ -95,6 +77,8 @@ if __name__ == '__main__':
 
     # Create GUI and start engine
     Carla.gui = CarlaMiniW()
+
+    Carla.host.patchbay_refresh()
 
     # Show GUI
     Carla.gui.show()

@@ -19,6 +19,11 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
+try:
+    from PyQt5.QtWidgets import QGraphicsView
+except:
+    from PyQt4.QtGui import QGraphicsView
+
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom Stuff)
 
@@ -26,29 +31,47 @@ import patchcanvas
 
 from carla_widgets import *
 
+# ------------------------------------------------------------------------------------------------------------
+# Try Import OpenGL
+
+try:
+    #try:
+    from PyQt5.QtOpenGL import QGLWidget
+    #except:
+        #from PyQt4.QtOpenGL import QGLWidget
+    hasGL = True
+except:
+    hasGL = False
+
 # ------------------------------------------------------------------------------------------------
 # Patchbay widget
 
-class CarlaPatchbayW(QWidget):
+class CarlaPatchbayW(QGraphicsView):
     def __init__(self, parent):
-        QWidget.__init__(self, parent)
+        QGraphicsView.__init__(self, parent)
+
+        # -------------------------------------------------------------
+        # Internal stuff
+
+        self.fPluginCount = 0
+        self.fPluginList  = []
 
         # -------------------------------------------------------------
         # Set-up Canvas
 
-        self.scene = patchcanvas.PatchScene(self, self.ui.graphicsView)
-        self.ui.graphicsView.setScene(self.scene)
-        self.ui.graphicsView.setRenderHint(QPainter.Antialiasing, bool(self.fSavedSettings["Canvas/Antialiasing"] == patchcanvas.ANTIALIASING_FULL))
-        if self.fSavedSettings["Canvas/UseOpenGL"] and hasGL:
-            self.ui.graphicsView.setViewport(QGLWidget(self.ui.graphicsView))
-            self.ui.graphicsView.setRenderHint(QPainter.HighQualityAntialiasing, self.fSavedSettings["Canvas/HighQualityAntialiasing"])
+        self.scene = patchcanvas.PatchScene(self, self) # FIXME?
+        self.setScene(self.scene)
+        #self.setRenderHint(QPainter.Antialiasing, bool(self.fSavedSettings["Canvas/Antialiasing"] == patchcanvas.ANTIALIASING_FULL))
+        #if self.fSavedSettings["Canvas/UseOpenGL"] and hasGL:
+            #self.setViewport(QGLWidget(self))
+            #self.setRenderHint(QPainter.HighQualityAntialiasing, self.fSavedSettings["Canvas/HighQualityAntialiasing"])
 
-        pOptions = patchcanvas.options_t()
-        pOptions.theme_name       = self.fSavedSettings["Canvas/Theme"]
-        pOptions.auto_hide_groups = self.fSavedSettings["Canvas/AutoHideGroups"]
-        pOptions.use_bezier_lines = self.fSavedSettings["Canvas/UseBezierLines"]
-        pOptions.antialiasing     = self.fSavedSettings["Canvas/Antialiasing"]
-        pOptions.eyecandy         = self.fSavedSettings["Canvas/EyeCandy"]
+        #pOptions = patchcanvas.options_t()
+        #pOptions.theme_name       = self.fSavedSettings["Canvas/Theme"]
+        #pOptions.auto_hide_groups = self.fSavedSettings["Canvas/AutoHideGroups"]
+        #pOptions.use_bezier_lines = self.fSavedSettings["Canvas/UseBezierLines"]
+        #pOptions.antialiasing     = self.fSavedSettings["Canvas/Antialiasing"]
+        #pOptions.eyecandy         = self.fSavedSettings["Canvas/EyeCandy"]
 
         pFeatures = patchcanvas.features_t()
         pFeatures.group_info   = False
@@ -57,13 +80,319 @@ class CarlaPatchbayW(QWidget):
         pFeatures.port_rename  = False
         pFeatures.handle_group_pos = True
 
-        patchcanvas.setOptions(pOptions)
+        #patchcanvas.setOptions(pOptions)
         patchcanvas.setFeatures(pFeatures)
-        patchcanvas.init("Carla", self.scene, canvasCallback, False)
+        patchcanvas.init("Carla", self.scene, CanvasCallback, True)
 
-        patchcanvas.setCanvasSize(0, 0, DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT)
-        patchcanvas.setInitialPos(DEFAULT_CANVAS_WIDTH / 2, DEFAULT_CANVAS_HEIGHT / 2)
-        self.ui.graphicsView.setSceneRect(0, 0, DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT)
+        #patchcanvas.setCanvasSize(0, 0, DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT)
+        #patchcanvas.setInitialPos(DEFAULT_CANVAS_WIDTH / 2, DEFAULT_CANVAS_HEIGHT / 2)
+        #self.setSceneRect(0, 0, DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT)
+
+    # -----------------------------------------------------------------
+
+    def recheckPluginHints(self, hints):
+        pass
+
+    # -----------------------------------------------------------------
+
+    def getPluginCount(self):
+        return self.fPluginCount
+
+    def getPlugin(self, pluginId):
+        if pluginId >= self.fPluginCount:
+            return None
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return None
+
+        return pitem
+
+    # -----------------------------------------------------------------
+
+    def addPlugin(self, pluginId, isProjectLoading):
+        pitem = PluginEdit(self, pluginId)
+
+        self.fPluginList.append(pitem)
+        self.fPluginCount += 1
+
+    def removePlugin(self, pluginId):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        self.fPluginCount -= 1
+        self.fPluginList.pop(pluginId)
+
+        pitem.close()
+        del pitem
+
+        # push all plugins 1 slot back
+        for i in range(pluginId, self.fPluginCount):
+            self.fPluginList[i].fPluginId = i # FIXME ?
+
+    def renamePlugin(self, pluginId, newName):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.setName(name)
+
+    def removeAllPlugins(self):
+        for i in range(self.fPluginCount):
+            pitem = self.fPluginList[i]
+
+            if pitem is None:
+                break
+
+            pitem.close()
+            del pitem
+
+        self.fPluginCount = 0
+        self.fPluginList  = []
+
+    # -----------------------------------------------------------------
+
+    def setParameterValue(self, pluginId, index, value):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.setParameterValue(index, value)
+
+    def setParameterDefault(self, pluginId, index, value):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.setParameterDefault(index, value)
+
+    def setParameterMidiChannel(self, pluginId, index, channel):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.setParameterMidiChannel(index, channel)
+
+    def setParameterMidiCC(self, pluginId, index, cc):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.setParameterMidiControl(index, cc)
+
+    # -----------------------------------------------------------------
+
+    def setProgram(self, pluginId, index):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.setProgram(index)
+
+    def setMidiProgram(self, pluginId, index):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.setMidiProgram(index)
+
+    # -----------------------------------------------------------------
+
+    def noteOn(self, pluginId, channel, note, velocity):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.sendNoteOn(channel, note)
+
+    def noteOff(self, pluginId, channel, note):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.sendNoteOff(channel, note)
+
+    # -----------------------------------------------------------------
+
+    def setGuiState(self, pluginId, state):
+        pass
+
+    # -----------------------------------------------------------------
+
+    def updateInfo(self, pluginId):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.updateInfo()
+
+    def reloadInfo(self, pluginId):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.reloadInfo()
+
+    def reloadParameters(self, pluginId):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.reloadParameters()
+
+    def reloadPrograms(self, pluginId):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.reloadPrograms()
+
+    def reloadAll(self, pluginId):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.reloadAll()
+
+    # -----------------------------------------------------------------
+
+    def patchbayClientAdded(self, clientId, clientIcon, clientName):
+        pcSplit = patchcanvas.SPLIT_UNDEF
+        pcIcon  = patchcanvas.ICON_APPLICATION
+
+        if clientIcon == PATCHBAY_ICON_HARDWARE:
+            pcSplit = patchcanvas.SPLIT_YES
+            pcIcon = patchcanvas.ICON_HARDWARE
+        elif clientIcon == PATCHBAY_ICON_DISTRHO:
+            pcIcon = patchcanvas.ICON_DISTRHO
+        elif clientIcon == PATCHBAY_ICON_FILE:
+            pcIcon = patchcanvas.ICON_FILE
+        elif clientIcon == PATCHBAY_ICON_PLUGIN:
+            pcIcon = patchcanvas.ICON_PLUGIN
+
+        patchcanvas.addGroup(clientId, clientName, pcSplit, pcIcon)
+        #QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
+
+    def patchbayClientRemoved(self, clientId, clientName):
+        #if not self.fEngineStarted: return
+        patchcanvas.removeGroup(clientId)
+        #QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
+
+    def patchbayClientRenamed(self, clientId, newClientName):
+        patchcanvas.renameGroup(clientId, newClientName)
+        #QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
+
+    def patchbayPortAdded(self, clientId, portId, portFlags, portName):
+        if (portFlags & PATCHBAY_PORT_IS_INPUT):
+            portMode = patchcanvas.PORT_MODE_INPUT
+        elif (portFlags & PATCHBAY_PORT_IS_OUTPUT):
+            portMode = patchcanvas.PORT_MODE_OUTPUT
+        else:
+            portMode = patchcanvas.PORT_MODE_NULL
+
+        if (portFlags & PATCHBAY_PORT_IS_AUDIO):
+            portType = patchcanvas.PORT_TYPE_AUDIO_JACK
+        elif (portFlags & PATCHBAY_PORT_IS_MIDI):
+            portType = patchcanvas.PORT_TYPE_MIDI_JACK
+        else:
+            portType = patchcanvas.PORT_TYPE_NULL
+
+        patchcanvas.addPort(clientId, portId, portName, portMode, portType)
+        #QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
+
+    def patchbayPortRemoved(self, groupId, portId, fullPortName):
+        #if not self.fEngineStarted: return
+        patchcanvas.removePort(portId)
+        #QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
+
+    def patchbayPortRenamed(self, groupId, portId, newPortName):
+        patchcanvas.renamePort(portId, newPortName)
+        #QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
+
+    def patchbayConnectionAdded(self, connectionId, portOutId, portInId):
+        patchcanvas.connectPorts(connectionId, portOutId, portInId)
+        #QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
+
+    def patchbayConnectionRemoved(self, connectionId):
+        #if not self.fEngineStarted: return
+        patchcanvas.disconnectPorts(connectionId)
+        #QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
+
+    def patchbayIconChanged(self, clientId, clientIcon):
+        pcIcon = patchcanvas.ICON_APPLICATION
+
+        if clientIcon == PATCHBAY_ICON_HARDWARE:
+            pcIcon = patchcanvas.ICON_HARDWARE
+        elif clientIcon == PATCHBAY_ICON_DISTRHO:
+            pcIcon = patchcanvas.ICON_DISTRHO
+        elif clientIcon == PATCHBAY_ICON_FILE:
+            pcIcon = patchcanvas.ICON_FILE
+        elif clientIcon == PATCHBAY_ICON_PLUGIN:
+            pcIcon = patchcanvas.ICON_PLUGIN
+
+        patchcanvas.setGroupIcon(clientId, pcIcon)
+
+    # -----------------------------------------------------------------
+
+    def idleFast(self):
+        pass
+
+    def idleSlow(self):
+        for i in range(self.fPluginCount):
+            pitem = self.fPluginList[i]
+
+            if pitem is None:
+                break
+
+            pitem.idleSlow()
+
+    # -----------------------------------------------------------------
 
     @pyqtSlot()
     def slot_canvasArrange(self):

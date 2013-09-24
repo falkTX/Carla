@@ -838,6 +838,10 @@ class PluginEdit(QDialog):
          self.fPlayingNotes = []
          self.ui.keyboard.allNotesOff()
 
+    def setName(self, name):
+        self.ui.label_plugin.setText("\n%s\n" % name)
+        self.setWindowTitle(name)
+
     def setParameterValue(self, parameterId, value):
         for paramItem in self.fParametersToUpdate:
             if paramItem[0] == parameterId:
@@ -1490,9 +1494,6 @@ class PluginWidget(QFrame):
             self.ui.edit_dialog.clearNotes()
             self.ui.led_midi.setChecked(False)
 
-    def setParameterDefault(self, parameterId, value):
-        self.ui.edit_dialog.setParameterDefault(parameterId, value)
-
     def setParameterValue(self, parameterId, value):
         self.fParameterIconTimer = ICON_STATE_ON
 
@@ -1500,6 +1501,9 @@ class PluginWidget(QFrame):
             return self.setActive(bool(value), True, False)
 
         self.ui.edit_dialog.setParameterValue(parameterId, value)
+
+    def setParameterDefault(self, parameterId, value):
+        self.ui.edit_dialog.setParameterDefault(parameterId, value)
 
     def setParameterMidiControl(self, parameterId, control):
         self.ui.edit_dialog.setParameterMidiControl(parameterId, control)

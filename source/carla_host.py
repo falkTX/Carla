@@ -20,12 +20,14 @@
 # Imports (Global)
 
 try:
-    from PyQt5.QtWidgets import QMainWindow
+    from PyQt5.QtWidgets import QApplication, QMainWindow
 except:
-    from PyQt4.QtGui import QMainWindow
+    from PyQt4.QtGui import QApplication, QMainWindow
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
+
+import ui_carla_host
 
 from carla_database import *
 from carla_settings import *
@@ -38,14 +40,110 @@ class CarlaDummyW(object):
     def __init__(self, parent):
         object.__init__(self)
 
-    def addPlugin(self, pluginId):
+    # -----------------------------------------------------------------
+
+    def getPluginCount(self):
+        return 0
+
+    def getPlugin(self, pluginId):
+        return None
+
+    # -----------------------------------------------------------------
+
+    def addPlugin(self, pluginId, isProjectLoading):
         pass
 
     def removePlugin(self, pluginId):
         pass
 
+    def renamePlugin(self, pluginId, newName):
+        pass
+
     def removeAllPlugins(self):
         pass
+
+    # -----------------------------------------------------------------
+
+    def setParameterValue(self, pluginId, index, value):
+        pass
+
+    def setParameterDefault(self, pluginId, index, value):
+        pass
+
+    def setParameterMidiChannel(self, pluginId, index, channel):
+        pass
+
+    def setParameterMidiCC(self, pluginId, index, cc):
+        pass
+
+    # -----------------------------------------------------------------
+
+    def setProgram(self, pluginId, index):
+        pass
+
+    def setMidiProgram(self, pluginId, index):
+        pass
+
+    # -----------------------------------------------------------------
+
+    def noteOn(self, pluginId, channel, note, velocity):
+        pass
+
+    def noteOff(self, pluginId, channel, note):
+        pass
+
+    # -----------------------------------------------------------------
+
+    def setGuiState(self, pluginId, state):
+        pass
+
+    # -----------------------------------------------------------------
+
+    def updateInfo(self, pluginId):
+        pass
+
+    def reloadInfo(self, pluginId):
+        pass
+
+    def reloadParameters(self, pluginId):
+        pass
+
+    def reloadPrograms(self, pluginId):
+        pass
+
+    def reloadAll(self, pluginId):
+        pass
+
+    # -----------------------------------------------------------------
+
+    def patchbayClientAdded(self, clientId, clientIcon, clientName):
+        pass
+
+    def patchbayClientRemoved(self, clientId, clientName):
+        pass
+
+    def patchbayClientRenamed(self, clientId, newClientName):
+        pass
+
+    def patchbayPortAdded(self, clientId, portId, portFlags, portName):
+        pass
+
+    def patchbayPortRemoved(self, groupId, portId, fullPortName):
+        pass
+
+    def patchbayPortRenamed(self, groupId, portId, newPortName):
+        pass
+
+    def patchbayConnectionAdded(self, connectionId, portOutId, portInId):
+        pass
+
+    def patchbayConnectionRemoved(self, connectionId):
+        pass
+
+    def patchbayIconChanged(self, clientId, clientIcon):
+        pass
+
+    # -----------------------------------------------------------------
 
     def idleFast(self):
         pass
@@ -97,8 +195,8 @@ class HostWindow(QMainWindow):
 
     def __init__(self, parent):
         QMainWindow.__init__(self, parent)
-        #self.ui = ui_carla_plugin.Ui_PluginWidget()
-        #self.ui.setupUi(self)
+        self.ui = ui_carla_host.Ui_CarlaHostW()
+        self.ui.setupUi(self)
 
         # -------------------------------------------------------------
         # Set bridge paths
@@ -169,6 +267,7 @@ class HostWindow(QMainWindow):
 
         self.fIdleTimerFast = 0
         self.fIdleTimerSlow = 0
+        self.fIsProjectLoading = False
 
         self.fLadspaRdfNeedsUpdate = True
         self.fLadspaRdfList = []
@@ -176,6 +275,107 @@ class HostWindow(QMainWindow):
         self.fContainer = CarlaDummyW(self)
 
         # -------------------------------------------------------------
+        # Connect actions to functions
+
+        #self.connect(self.ui.act_file_new, SIGNAL("triggered()"), SLOT("slot_fileNew()"))
+        #self.connect(self.ui.act_file_open, SIGNAL("triggered()"), SLOT("slot_fileOpen()"))
+        #self.connect(self.ui.act_file_save, SIGNAL("triggered()"), SLOT("slot_fileSave()"))
+        #self.connect(self.ui.act_file_save_as, SIGNAL("triggered()"), SLOT("slot_fileSaveAs()"))
+        ##self.connect(self.ui.act_file_export_lv2, SIGNAL("triggered()"), SLOT("slot_fileExportLv2Preset()"))
+
+        #self.connect(self.ui.act_engine_start, SIGNAL("triggered()"), SLOT("slot_engineStart()"))
+        #self.connect(self.ui.act_engine_stop, SIGNAL("triggered()"), SLOT("slot_engineStop()"))
+
+        self.ui.act_plugin_add.triggered.connect(self.slot_pluginAdd)
+        self.ui.act_plugin_add2.triggered.connect(self.slot_pluginAdd)
+        self.ui.act_plugin_remove_all.triggered.connect(self.slot_pluginRemoveAll)
+
+        #self.connect(self.ui.act_plugins_enable, SIGNAL("triggered()"), SLOT("slot_pluginsEnable()"))
+        #self.connect(self.ui.act_plugins_disable, SIGNAL("triggered()"), SLOT("slot_pluginsDisable()"))
+        #self.connect(self.ui.act_plugins_panic, SIGNAL("triggered()"), SLOT("slot_pluginsDisable()"))
+        #self.connect(self.ui.act_plugins_volume100, SIGNAL("triggered()"), SLOT("slot_pluginsVolume100()"))
+        #self.connect(self.ui.act_plugins_mute, SIGNAL("triggered()"), SLOT("slot_pluginsMute()"))
+        #self.connect(self.ui.act_plugins_wet100, SIGNAL("triggered()"), SLOT("slot_pluginsWet100()"))
+        #self.connect(self.ui.act_plugins_bypass, SIGNAL("triggered()"), SLOT("slot_pluginsBypass()"))
+        #self.connect(self.ui.act_plugins_center, SIGNAL("triggered()"), SLOT("slot_pluginsCenter()"))
+
+        #self.connect(self.ui.act_transport_play, SIGNAL("triggered(bool)"), SLOT("slot_transportPlayPause(bool)"))
+        #self.connect(self.ui.act_transport_stop, SIGNAL("triggered()"), SLOT("slot_transportStop()"))
+        #self.connect(self.ui.act_transport_backwards, SIGNAL("triggered()"), SLOT("slot_transportBackwards()"))
+        #self.connect(self.ui.act_transport_forwards, SIGNAL("triggered()"), SLOT("slot_transportForwards()"))
+
+        #self.ui.act_canvas_arrange.setEnabled(False) # TODO, later
+        #self.connect(self.ui.act_canvas_arrange, SIGNAL("triggered()"), SLOT("slot_canvasArrange()"))
+        #self.connect(self.ui.act_canvas_refresh, SIGNAL("triggered()"), SLOT("slot_canvasRefresh()"))
+        #self.connect(self.ui.act_canvas_zoom_fit, SIGNAL("triggered()"), SLOT("slot_canvasZoomFit()"))
+        #self.connect(self.ui.act_canvas_zoom_in, SIGNAL("triggered()"), SLOT("slot_canvasZoomIn()"))
+        #self.connect(self.ui.act_canvas_zoom_out, SIGNAL("triggered()"), SLOT("slot_canvasZoomOut()"))
+        #self.connect(self.ui.act_canvas_zoom_100, SIGNAL("triggered()"), SLOT("slot_canvasZoomReset()"))
+        #self.connect(self.ui.act_canvas_print, SIGNAL("triggered()"), SLOT("slot_canvasPrint()"))
+        #self.connect(self.ui.act_canvas_save_image, SIGNAL("triggered()"), SLOT("slot_canvasSaveImage()"))
+
+        self.ui.act_settings_configure.triggered.connect(self.slot_configureCarla)
+
+        self.ui.act_help_about.triggered.connect(self.slot_aboutCarla)
+        self.ui.act_help_about_qt.triggered.connect(self.slot_aboutQt)
+
+        #self.connect(self.ui.splitter, SIGNAL("splitterMoved.connect(self.slot_splitterMoved()"))
+
+        #self.connect(self.ui.cb_disk, SIGNAL("currentIndexChanged.connect(self.slot_diskFolderChanged)
+        #self.connect(self.ui.b_disk_add, SIGNAL("clicked()"), SLOT("slot_diskFolderAdd()"))
+        #self.connect(self.ui.b_disk_remove, SIGNAL("clicked()"), SLOT("slot_diskFolderRemove()"))
+        #self.connect(self.ui.fileTreeView, SIGNAL("doubleClicked(QModelIndex)"), SLOT("slot_fileTreeDoubleClicked(QModelIndex)"))
+        #self.connect(self.ui.miniCanvasPreview, SIGNAL("miniCanvasMoved(double, double)"), SLOT("slot_miniCanvasMoved(double, double)"))
+
+        #self.connect(self.ui.graphicsView.horizontalScrollBar(), SIGNAL("valueChanged.connect(self.slot_horizontalScrollBarChanged)
+        #self.connect(self.ui.graphicsView.verticalScrollBar(), SIGNAL("valueChanged.connect(self.slot_verticalScrollBarChanged)
+
+        #self.connect(self.scene, SIGNAL("sceneGroupMoved(int, int, QPointF)"), SLOT("slot_canvasItemMoved(int, int, QPointF)"))
+        #self.connect(self.scene, SIGNAL("scaleChanged(double)"), SLOT("slot_canvasScaleChanged(double)"))
+
+        self.DebugCallback.connect(self.slot_handleDebugCallback)
+        self.PluginAddedCallback.connect(self.slot_handlePluginAddedCallback)
+        self.PluginRemovedCallback.connect(self.slot_handlePluginRemovedCallback)
+        self.PluginRenamedCallback.connect(self.slot_handlePluginRenamedCallback)
+        self.ParameterValueChangedCallback.connect(self.slot_handleParameterValueChangedCallback)
+        self.ParameterDefaultChangedCallback.connect(self.slot_handleParameterDefaultChangedCallback)
+        self.ParameterMidiChannelChangedCallback.connect(self.slot_handleParameterMidiChannelChangedCallback)
+        self.ParameterMidiCcChangedCallback.connect(self.slot_handleParameterMidiCcChangedCallback)
+        self.ProgramChangedCallback.connect(self.slot_handleProgramChangedCallback)
+        self.MidiProgramChangedCallback.connect(self.slot_handleMidiProgramChangedCallback)
+        self.NoteOnCallback.connect(self.slot_handleNoteOnCallback)
+        self.NoteOffCallback.connect(self.slot_handleNoteOffCallback)
+        self.ShowGuiCallback.connect(self.slot_handleShowGuiCallback)
+        self.UpdateCallback.connect(self.slot_handleUpdateCallback)
+        self.ReloadInfoCallback.connect(self.slot_handleReloadInfoCallback)
+        self.ReloadParametersCallback.connect(self.slot_handleReloadParametersCallback)
+        self.ReloadProgramsCallback.connect(self.slot_handleReloadProgramsCallback)
+        self.ReloadAllCallback.connect(self.slot_handleReloadAllCallback)
+        self.PatchbayClientAddedCallback.connect(self.slot_handlePatchbayClientAddedCallback)
+        self.PatchbayClientRemovedCallback.connect(self.slot_handlePatchbayClientRemovedCallback)
+        self.PatchbayClientRenamedCallback.connect(self.slot_handlePatchbayClientRenamedCallback)
+        self.PatchbayPortAddedCallback.connect(self.slot_handlePatchbayPortAddedCallback)
+        self.PatchbayPortRemovedCallback.connect(self.slot_handlePatchbayPortRemovedCallback)
+        self.PatchbayPortRenamedCallback.connect(self.slot_handlePatchbayPortRenamedCallback)
+        self.PatchbayConnectionAddedCallback.connect(self.slot_handlePatchbayConnectionAddedCallback)
+        self.PatchbayConnectionRemovedCallback.connect(self.slot_handlePatchbayConnectionRemovedCallback)
+        self.PatchbayIconChangedCallback.connect(self.slot_handlePatchbayIconChangedCallback)
+        #self.BufferSizeChangedCallback.connect(self.slot_handleBufferSizeChangedCallback)
+        #self.SampleRateChangedCallback(double)"), SLOT("slot_handleSampleRateChangedCallback(double)"))
+        #self.NSM_AnnounceCallback(QString)"), SLOT("slot_handleNSM_AnnounceCallback(QString)"))
+        #self.NSM_OpenCallback(QString)"), SLOT("slot_handleNSM_OpenCallback(QString)"))
+        #self.NSM_SaveCallback()"), SLOT("slot_handleNSM_SaveCallback()"))
+        #self.ErrorCallback(QString)"), SLOT("slot_handleErrorCallback(QString)"))
+        #self.QuitCallback()"), SLOT("slot_handleQuitCallback()"))
+
+        self.SIGUSR1.connect(self.slot_handleSIGUSR1)
+        self.SIGTERM.connect(self.slot_handleSIGTERM)
+
+    # -----------------------------------------------------------------
+
+    def init(self):
+        self.fIdleTimerFast = self.startTimer(50)
+        self.fIdleTimerSlow = self.startTimer(50*2)
 
     def getExtraStuff(self, plugin):
         ptype = plugin['type']
@@ -225,9 +425,204 @@ class HostWindow(QMainWindow):
     def setLoadRDFsNeeded(self):
         self.fLadspaRdfNeedsUpdate = True
 
-    def init(self):
-        self.fIdleTimerFast = self.startTimer(50)
-        self.fIdleTimerSlow = self.startTimer(50*2)
+    # -----------------------------------------------------------------
+
+    @pyqtSlot()
+    def slot_pluginAdd(self):
+        dialog = PluginDatabaseW(self)
+
+        if not dialog.exec_():
+            return
+
+        if not Carla.host.is_engine_running():
+            QMessageBox.warning(self, self.tr("Warning"), self.tr("Cannot add new plugins while engine is stopped"))
+            return
+
+        btype    = dialog.fRetPlugin['build']
+        ptype    = dialog.fRetPlugin['type']
+        filename = dialog.fRetPlugin['binary']
+        label    = dialog.fRetPlugin['label']
+        extraStuff = self.getExtraStuff(dialog.fRetPlugin)
+
+        if not Carla.host.add_plugin(btype, ptype, filename, None, label, c_nullptr):
+            CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"), self.tr("Failed to load plugin"), cString(Carla.host.get_last_error()), QMessageBox.Ok, QMessageBox.Ok)
+            return
+
+    @pyqtSlot()
+    def slot_pluginRemoveAll(self):
+        self.fContainer.removeAllPlugins()
+
+        Carla.host.remove_all_plugins()
+
+    @pyqtSlot()
+    def slot_configureCarla(self):
+        dialog = CarlaSettingsW(self, False) # TODO - hasGL
+
+        if not dialog.exec_():
+            return
+
+        #self.loadSettings(False)
+        #patchcanvas.clear()
+
+        #pOptions = patchcanvas.options_t()
+        #pOptions.theme_name       = self.fSavedSettings["Canvas/Theme"]
+        #pOptions.auto_hide_groups = self.fSavedSettings["Canvas/AutoHideGroups"]
+        #pOptions.use_bezier_lines = self.fSavedSettings["Canvas/UseBezierLines"]
+        #pOptions.antialiasing     = self.fSavedSettings["Canvas/Antialiasing"]
+        #pOptions.eyecandy         = self.fSavedSettings["Canvas/EyeCandy"]
+
+        #pFeatures = patchcanvas.features_t()
+        #pFeatures.group_info   = False
+        #pFeatures.group_rename = False
+        #pFeatures.port_info    = False
+        #pFeatures.port_rename  = False
+        #pFeatures.handle_group_pos = True
+
+        #patchcanvas.setOptions(pOptions)
+        #patchcanvas.setFeatures(pFeatures)
+        #patchcanvas.init("Carla", self.scene, canvasCallback, False)
+
+        #if self.fEngineStarted:
+            #Carla.host.patchbay_refresh()
+
+    @pyqtSlot()
+    def slot_aboutCarla(self):
+        CarlaAboutW(self).exec_()
+
+    @pyqtSlot()
+    def slot_aboutQt(self):
+        QApplication.instance().aboutQt()
+
+    # -----------------------------------------------------------------
+
+    @pyqtSlot(int, int, int, float, str)
+    def slot_handleDebugCallback(self, pluginId, value1, value2, value3, valueStr):
+        print("DEBUG:", pluginId, value1, value2, value3, valueStr)
+        #self.ui.pte_log.appendPlainText(valueStr.replace("[30;1m", "DEBUG: ").replace("[31m", "ERROR: ").replace("[0m", "").replace("\n", ""))
+
+    @pyqtSlot(int)
+    def slot_handlePluginAddedCallback(self, pluginId):
+        self.fContainer.addPlugin(pluginId, self.fIsProjectLoading)
+
+        if self.fContainer.getPluginCount() == 1:
+            self.ui.act_plugin_remove_all.setEnabled(True)
+
+    @pyqtSlot(int)
+    def slot_handlePluginRemovedCallback(self, pluginId):
+        self.fContainer.removePlugin(pluginId)
+
+        if self.fContainer.getPluginCount() == 0:
+            self.ui.act_plugin_remove_all.setEnabled(False)
+
+    @pyqtSlot(int, str)
+    def slot_handlePluginRenamedCallback(self, pluginId, newName):
+        self.fContainer.renamePlugin(pluginId, newName)
+
+    @pyqtSlot(int, int, float)
+    def slot_handleParameterValueChangedCallback(self, pluginId, parameterId, value):
+        self.fContainer.setParameterValue(parameterId, value)
+
+    @pyqtSlot(int, int, float)
+    def slot_handleParameterDefaultChangedCallback(self, pluginId, parameterId, value):
+        self.fContainer.setParameterDefault(parameterId, value)
+
+    @pyqtSlot(int, int, int)
+    def slot_handleParameterMidiChannelChangedCallback(self, pluginId, parameterId, channel):
+        self.fContainer.setParameterMidiChannel(parameterId, channel)
+
+    @pyqtSlot(int, int, int)
+    def slot_handleParameterMidiCcChangedCallback(self, pluginId, parameterId, cc):
+        self.fContainer.setParameterMidiCC(parameterId, cc)
+
+    @pyqtSlot(int, int)
+    def slot_handleProgramChangedCallback(self, pluginId, programId):
+        self.fContainer.setProgram(programId)
+
+    @pyqtSlot(int, int)
+    def slot_handleMidiProgramChangedCallback(self, pluginId, midiProgramId):
+        self.fContainer.setMidiProgram(midiProgramId)
+
+    @pyqtSlot(int, int, int, int)
+    def slot_handleNoteOnCallback(self, pluginId, channel, note, velo):
+        self.fContainer.noteOn(channel, note)
+
+    @pyqtSlot(int, int, int)
+    def slot_handleNoteOffCallback(self, pluginId, channel, note):
+        self.fContainer.noteOff(channel, note)
+
+    @pyqtSlot(int, int)
+    def slot_handleShowGuiCallback(self, pluginId, state):
+        self.fContainer.setGuiState(pluginId, state)
+
+    @pyqtSlot(int)
+    def slot_handleUpdateCallback(self, pluginId):
+        self.fContainer.updateInfo(pluginId)
+
+    @pyqtSlot(int)
+    def slot_handleReloadInfoCallback(self, pluginId):
+        self.fContainer.reloadInfo(pluginId)
+
+    @pyqtSlot(int)
+    def slot_handleReloadParametersCallback(self, pluginId):
+        self.fContainer.reloadParameters(pluginId)
+
+    @pyqtSlot(int)
+    def slot_handleReloadProgramsCallback(self, pluginId):
+        self.fContainer.reloadPrograms(pluginId)
+
+    @pyqtSlot(int)
+    def slot_handleReloadAllCallback(self, pluginId):
+        self.fContainer.reloadAll(pluginId)
+
+    @pyqtSlot(int, int, str)
+    def slot_handlePatchbayClientAddedCallback(self, clientId, clientIcon, clientName):
+        self.fContainer.patchbayClientAdded(clientId, clientIcon, clientName)
+
+    @pyqtSlot(int, str)
+    def slot_handlePatchbayClientRemovedCallback(self, clientId, clientName):
+        self.fContainer.patchbayClientRemoved(clientId, clientName)
+
+    @pyqtSlot(int, str)
+    def slot_handlePatchbayClientRenamedCallback(self, clientId, newClientName):
+        self.fContainer.patchbayClientRenamed(clientId, newClientName)
+
+    @pyqtSlot(int, int, int, str)
+    def slot_handlePatchbayPortAddedCallback(self, clientId, portId, portFlags, portName):
+        self.fContainer.patchbayPortAdded(clientId, portId, portFlags, portName)
+
+    @pyqtSlot(int, int, str)
+    def slot_handlePatchbayPortRemovedCallback(self, groupId, portId, fullPortName):
+        self.fContainer.patchbayPortRemoved(groupId, portId, fullPortName)
+
+    @pyqtSlot(int, int, str)
+    def slot_handlePatchbayPortRenamedCallback(self, groupId, portId, newPortName):
+        self.fContainer.patchbayPortRenamed(groupId, portId, newPortName)
+
+    @pyqtSlot(int, int, int)
+    def slot_handlePatchbayConnectionAddedCallback(self, connectionId, portOutId, portInId):
+        self.fContainer.patchbayConnectionAdded(connectionId, portOutId, portInId)
+
+    @pyqtSlot(int)
+    def slot_handlePatchbayConnectionRemovedCallback(self, connectionId):
+        self.fContainer.patchbayConnectionRemoved(connectionId)
+
+    @pyqtSlot(int, int)
+    def slot_handlePatchbayIconChangedCallback(self, clientId, clientIcon):
+        self.fContainer.patchbayIconChanged(clientId, clientIcon)
+
+    # -----------------------------------------------------------------
+
+    @pyqtSlot()
+    def slot_handleSIGUSR1(self):
+        print("Got SIGUSR1 -> Saving project now")
+        #QTimer.singleShot(0, self, SLOT("slot_fileSave()"))
+
+    @pyqtSlot()
+    def slot_handleSIGTERM(self):
+        print("Got SIGTERM -> Closing now")
+        self.close()
+
+    # -----------------------------------------------------------------
 
     def timerEvent(self, event):
         if event.timerId() == self.fIdleTimerFast:
