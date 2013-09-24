@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>CarlaHostW</class>
+ <widget class="QMainWindow" name="CarlaHostW">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>590</width>
+    <height>191</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <zorder>splitter</zorder>
+   <zorder>miniCanvasPreview</zorder>
+   <zorder>miniCanvasPreview</zorder>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>590</width>
+     <height>19</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menu_Help">
+    <property name="title">
+     <string>&amp;Help</string>
+    </property>
+    <addaction name="act_help_about"/>
+    <addaction name="act_help_about_qt"/>
+   </widget>
+   <widget class="QMenu" name="menu_Engine">
+    <property name="title">
+     <string>&amp;Engine</string>
+    </property>
+    <addaction name="act_engine_start"/>
+    <addaction name="act_engine_stop"/>
+   </widget>
+   <widget class="QMenu" name="menu_Settings">
+    <property name="title">
+     <string>&amp;Settings</string>
+    </property>
+    <addaction name="act_settings_show_toolbar"/>
+    <addaction name="separator"/>
+    <addaction name="act_settings_configure"/>
+   </widget>
+   <widget class="QMenu" name="menu_Plugin">
+    <property name="title">
+     <string>&amp;Plugin</string>
+    </property>
+    <addaction name="act_plugin_add"/>
+    <addaction name="act_plugin_remove_all"/>
+   </widget>
+   <addaction name="menu_Engine"/>
+   <addaction name="menu_Plugin"/>
+   <addaction name="menu_Settings"/>
+   <addaction name="menu_Help"/>
+  </widget>
+  <widget class="QToolBar" name="toolBar">
+   <property name="windowTitle">
+    <string>toolBar</string>
+   </property>
+   <property name="toolButtonStyle">
+    <enum>Qt::ToolButtonTextBesideIcon</enum>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="act_plugin_add2"/>
+   <addaction name="act_plugin_remove_all"/>
+   <addaction name="separator"/>
+   <addaction name="act_settings_configure"/>
+  </widget>
+  <action name="act_help_about">
+   <property name="text">
+    <string>&amp;About</string>
+   </property>
+  </action>
+  <action name="act_help_about_qt">
+   <property name="text">
+    <string>About &amp;Qt</string>
+   </property>
+  </action>
+  <action name="act_engine_start">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/media-playback-start.png</normaloff>:/16x16/media-playback-start.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Start</string>
+   </property>
+  </action>
+  <action name="act_engine_stop">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/media-playback-stop.png</normaloff>:/16x16/media-playback-stop.png</iconset>
+   </property>
+   <property name="text">
+    <string>St&amp;op</string>
+   </property>
+  </action>
+  <action name="act_settings_show_toolbar">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show &amp;Toolbar</string>
+   </property>
+  </action>
+  <action name="act_settings_configure">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/configure.png</normaloff>:/16x16/configure.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Configure Carla</string>
+   </property>
+  </action>
+  <action name="act_plugin_add">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/list-add.png</normaloff>:/16x16/list-add.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Add...</string>
+   </property>
+  </action>
+  <action name="act_plugin_remove_all">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/edit-delete.png</normaloff>:/16x16/edit-delete.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Remove All</string>
+   </property>
+  </action>
+  <action name="act_plugin_add2">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/list-add.png</normaloff>:/16x16/list-add.png</iconset>
+   </property>
+   <property name="text">
+    <string>Add Plugin...</string>
+   </property>
+  </action>
+ </widget>
+ <resources>
+  <include location="../resources.qrc"/>
+ </resources>
+ <connections>
+  <connection>
+   <sender>act_settings_show_toolbar</sender>
+   <signal>triggered(bool)</signal>
+   <receiver>toolBar</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>399</x>
+     <y>34</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>
