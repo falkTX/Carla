@@ -31,11 +31,11 @@ except:
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
 
-#import patchcanvas
 import ui_carla_settings
 import ui_carla_settings_driver
 
 from carla_shared import *
+from patchcanvas_theme import *
 
 # ------------------------------------------------------------------------------------------------------------
 # Carla defaults
@@ -69,6 +69,12 @@ if LINUX:
 else:
     CARLA_DEFAULT_PROCESS_MODE   = PROCESS_MODE_CONTINUOUS_RACK
     CARLA_DEFAULT_TRANSPORT_MODE = TRANSPORT_MODE_INTERNAL
+
+# ------------------------------------------------------------------------------------------------------------
+# PatchCanvas defines
+
+CANVAS_ANTIALIASING_SMALL = 1
+CANVAS_EYECANDY_SMALL     = 1
 
 # ------------------------------------------------------------------------------------------------------------
 # ...
@@ -177,7 +183,7 @@ class CarlaSettingsW(QDialog):
     # so add +2 pos padding if driverName != "JACK".
     PROCESS_MODE_NON_JACK_PADDING = 2
 
-    def __init__(self, parent, hasGL):
+    def __init__(self, parent, hasCanvas, hasGL):
         QDialog.__init__(self, parent)
         self.ui = ui_carla_settings.Ui_CarlaSettingsW()
         self.ui.setupUi(self)
@@ -256,20 +262,20 @@ class CarlaSettingsW(QDialog):
 
         # ---------------------------------------
 
-        #self.ui.cb_canvas_hide_groups.setChecked(settings.value("Canvas/AutoHideGroups", False, type=bool))
-        #self.ui.cb_canvas_bezier_lines.setChecked(settings.value("Canvas/UseBezierLines", True, type=bool))
-        #self.ui.cb_canvas_eyecandy.setCheckState(settings.value("Canvas/EyeCandy", patchcanvas.EYECANDY_SMALL, type=int))
-        #self.ui.cb_canvas_use_opengl.setChecked(settings.value("Canvas/UseOpenGL", False, type=bool))
-        #self.ui.cb_canvas_render_aa.setCheckState(settings.value("Canvas/Antialiasing", patchcanvas.ANTIALIASING_SMALL, type=int))
-        #self.ui.cb_canvas_render_hq_aa.setChecked(settings.value("Canvas/HighQualityAntialiasing", False, type=bool))
+        self.ui.cb_canvas_hide_groups.setChecked(settings.value("Canvas/AutoHideGroups", False, type=bool))
+        self.ui.cb_canvas_bezier_lines.setChecked(settings.value("Canvas/UseBezierLines", True, type=bool))
+        self.ui.cb_canvas_eyecandy.setCheckState(settings.value("Canvas/EyeCandy", CANVAS_EYECANDY_SMALL, type=int))
+        self.ui.cb_canvas_use_opengl.setChecked(settings.value("Canvas/UseOpenGL", False, type=bool))
+        self.ui.cb_canvas_render_aa.setCheckState(settings.value("Canvas/Antialiasing", CANVAS_ANTIALIASING_SMALL, type=int))
+        self.ui.cb_canvas_render_hq_aa.setChecked(settings.value("Canvas/HighQualityAntialiasing", False, type=bool))
 
-        #canvasThemeName = settings.value("Canvas/Theme", patchcanvas.getDefaultThemeName(), type=str)
+        canvasThemeName = settings.value("Canvas/Theme", getDefaultThemeName(), type=str)
 
-        #for i in range(patchcanvas.Theme.THEME_MAX):
-            #thisThemeName = patchcanvas.getThemeName(i)
-            #self.ui.cb_canvas_theme.addItem(thisThemeName)
-            #if thisThemeName == canvasThemeName:
-                #self.ui.cb_canvas_theme.setCurrentIndex(i)
+        for i in range(Theme.THEME_MAX):
+            thisThemeName = getThemeName(i)
+            self.ui.cb_canvas_theme.addItem(thisThemeName)
+            if thisThemeName == canvasThemeName:
+                self.ui.cb_canvas_theme.setCurrentIndex(i)
 
         # --------------------------------------------
 
@@ -637,10 +643,23 @@ class CarlaSettingsW(QDialog):
         self.close()
 
 # ------------------------------------------------------------------------------------------------------------
-# TESTING
+# Main
 
-#from PyQt5.QtWidgets import QApplication
-#app = QApplication(sys.argv)
-#gui = CarlaSettingsW(None, True)
-#gui.show()
-#app.exec_()
+if __name__ == '__main__':
+    try:
+        from PyQt5.QtWidgets import QApplication
+    except:
+        from PyQt4.QtGui import QApplication
+
+    app = QApplication(sys.argv)
+    app.setApplicationName("Carla")
+    app.setApplicationVersion(VERSION)
+    app.setOrganizationName("falkTX")
+    app.setWindowIcon(QIcon(":/scalable/carla.svg"))
+
+    initHost(False)
+
+    gui = CarlaSettingsW(None, True, True)
+    gui.show()
+
+    sys.exit(app.exec_())

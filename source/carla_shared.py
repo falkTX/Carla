@@ -305,12 +305,25 @@ else:
 
 class CarlaObject(object):
     __slots__ = [
+        # Host library object
         'host',
+        # Host Window
         'gui',
+        # bool, is controller
         'isControl',
+        # bool, is controller local
         'isLocal',
+        # current process mode
         'processMode',
+        # current max parameters
         'maxParameters',
+        # discovery tools
+        'discovery_native',
+        'discovery_posix32',
+        'discovery_posix64',
+        'discovery_win32',
+        'discovery_win64',
+        # default paths
         'DEFAULT_LADSPA_PATH',
         'DEFAULT_DSSI_PATH',
         'DEFAULT_LV2_PATH',
@@ -329,6 +342,12 @@ Carla.isControl = False
 Carla.isLocal   = True
 Carla.processMode   = PROCESS_MODE_MULTIPLE_CLIENTS if LINUX else PROCESS_MODE_CONTINUOUS_RACK
 Carla.maxParameters = MAX_DEFAULT_PARAMETERS
+
+Carla.discovery_native  = ""
+Carla.discovery_posix32 = ""
+Carla.discovery_posix64 = ""
+Carla.discovery_win32   = ""
+Carla.discovery_win64   = ""
 
 # ------------------------------------------------------------------------------------------------------------
 # Default Plugin Folders (set)
@@ -373,43 +392,7 @@ else:
     Carla.DEFAULT_SFZ_PATH    = DEFAULT_SFZ_PATH.split(splitter)
 
 # ------------------------------------------------------------------------------------------------------------
-# Search for Carla library and tools
-
-carla_library_filename  = ""
-
-carla_discovery_native  = ""
-carla_discovery_posix32 = ""
-carla_discovery_posix64 = ""
-carla_discovery_win32   = ""
-carla_discovery_win64   = ""
-
-carla_bridge_native  = ""
-carla_bridge_posix32 = ""
-carla_bridge_posix64 = ""
-carla_bridge_win32   = ""
-carla_bridge_win64   = ""
-
-carla_bridge_lv2_external = ""
-carla_bridge_lv2_gtk2     = ""
-carla_bridge_lv2_gtk3     = ""
-carla_bridge_lv2_qt4      = ""
-carla_bridge_lv2_qt5      = ""
-carla_bridge_lv2_cocoa    = ""
-carla_bridge_lv2_windows  = ""
-carla_bridge_lv2_x11      = ""
-
-carla_bridge_vst_mac  = ""
-carla_bridge_vst_hwnd = ""
-carla_bridge_vst_x11  = ""
-
-carla_libname = "libcarla_%s" % ("control" if Carla.isControl else "standalone")
-
-if WINDOWS:
-    carla_libname += ".dll"
-elif MACOS:
-    carla_libname += ".dylib"
-else:
-    carla_libname += ".so"
+# Search for Carla tools
 
 CWD = sys.path[0]
 
@@ -418,24 +401,6 @@ if CWD.endswith("/carla"):
     CWD = CWD.rsplit("/carla", 1)[0]
 elif CWD.endswith("\\carla.exe"):
     CWD = CWD.rsplit("\\carla.exe", 1)[0]
-
-# find carla_library_filename
-if os.path.exists(os.path.join(CWD, "backend", carla_libname)):
-    carla_library_filename = os.path.join(CWD, "backend", carla_libname)
-else:
-    if WINDOWS:
-        CARLA_PATH = (os.path.join(PROGRAMFILES, "Carla"),)
-    elif MACOS:
-        CARLA_PATH = ("/opt/local/lib", "/usr/local/lib/", "/usr/lib")
-    else:
-        CARLA_PATH = ("/usr/local/lib/", "/usr/lib")
-
-    for path in CARLA_PATH:
-        if os.path.exists(os.path.join(path, "carla", carla_libname)):
-            carla_library_filename = os.path.join(path, "carla", carla_libname)
-            break
-
-    del CARLA_PATH
 
 # find tool
 def findTool(toolDir, toolName):
@@ -448,42 +413,194 @@ def findTool(toolDir, toolName):
 
     return ""
 
-# find windows tools
-carla_discovery_win32 = findTool("discovery", "carla-discovery-win32.exe")
-carla_discovery_win64 = findTool("discovery", "carla-discovery-win64.exe")
-carla_bridge_win32    = findTool("bridges", "carla-bridge-win32.exe")
-carla_bridge_win64    = findTool("bridges", "carla-bridge-win64.exe")
+# ------------------------------------------------------------------------------------------------------------
+# Init host
 
-# find native and posix tools
-if not WINDOWS:
-    carla_discovery_native  = findTool("discovery", "carla-discovery-native")
-    carla_discovery_posix32 = findTool("discovery", "carla-discovery-posix32")
-    carla_discovery_posix64 = findTool("discovery", "carla-discovery-posix64")
-    carla_bridge_native     = findTool("bridges", "carla-bridge-native")
-    carla_bridge_posix32    = findTool("bridges", "carla-bridge-posix32")
-    carla_bridge_posix64    = findTool("bridges", "carla-bridge-posix64")
+def initHost(failError = True):
+    # -------------------------------------------------------------
+    # Search for Carla library
 
-# find generic tools
-carla_bridge_lv2_external = findTool("bridges", "carla-bridge-lv2-external")
+    libname = "libcarla_"
 
-# find windows only tools
-if WINDOWS:
-    carla_bridge_lv2_windows = findTool("bridges", "carla-bridge-lv2-windows.exe")
-    carla_bridge_vst_hwnd    = findTool("bridges", "carla-bridge-vst-hwnd.exe")
+    if Carla.isControl:
+        libname += "control"
+    else:
+        libname += "standalone"
 
-# find mac os only tools
-elif MACOS:
-    carla_bridge_lv2_cocoa = findTool("bridges", "carla-bridge-lv2-cocoa")
-    carla_bridge_vst_mac   = findTool("bridges", "carla-bridge-vst-mac")
+    if WINDOWS:
+        libname += ".dll"
+    elif MACOS:
+        libname += ".dylib"
+    else:
+        libname += ".so"
 
-# find other tools
-else:
-    carla_bridge_lv2_gtk2 = findTool("bridges", "carla-bridge-lv2-gtk2")
-    carla_bridge_lv2_gtk3 = findTool("bridges", "carla-bridge-lv2-gtk3")
-    carla_bridge_lv2_qt4  = findTool("bridges", "carla-bridge-lv2-qt4")
-    carla_bridge_lv2_qt5  = findTool("bridges", "carla-bridge-lv2-qt5")
-    carla_bridge_lv2_x11  = findTool("bridges", "carla-bridge-lv2-x11")
-    carla_bridge_vst_x11  = findTool("bridges", "carla-bridge-vst-x11")
+    libfilename = ""
+
+    if os.path.exists(os.path.join(CWD, "backend", libname)):
+        libfilename = os.path.join(CWD, "backend", libname)
+    #else:
+        #CARLA_LIB_PATH = os.getenv("CARLA_LIB_PATH")
+
+        #if CARLA_LIB_PATH and os.path.exists(CARLA_LIB_PATH):
+            #CARLA_LIB_PATH = os.path.join(CARLA_LIB_PATH, "..")
+        #elif WINDOWS:
+            #CARLA_LIB_PATH = (os.path.join(PROGRAMFILES, "Carla"),)
+        #elif MACOS:
+            #CARLA_LIB_PATH = ("/opt/local/lib", "/usr/local/lib/", "/usr/lib")
+        #else:
+            #CARLA_LIB_PATH = ("/usr/local/lib/", "/usr/lib")
+
+        #for path in CARLA_LIB_PATH:
+            #if os.path.exists(os.path.join(path, "carla", libname)):
+                #libfilename = os.path.join(path, "carla", libname)
+                #break
+
+    # -------------------------------------------------------------
+    # Search for Carla tools
+
+    carla_bridge_native  = ""
+    carla_bridge_posix32 = ""
+    carla_bridge_posix64 = ""
+    carla_bridge_win32   = ""
+    carla_bridge_win64   = ""
+
+    carla_bridge_lv2_external = ""
+    carla_bridge_lv2_gtk2     = ""
+    carla_bridge_lv2_gtk3     = ""
+    carla_bridge_lv2_qt4      = ""
+    carla_bridge_lv2_qt5      = ""
+    carla_bridge_lv2_cocoa    = ""
+    carla_bridge_lv2_windows  = ""
+    carla_bridge_lv2_x11      = ""
+
+    carla_bridge_vst_mac  = ""
+    carla_bridge_vst_hwnd = ""
+    carla_bridge_vst_x11  = ""
+
+    # -------------------------------------------------------------
+    # find windows tools
+
+    Carla.discovery_win32 = findTool("discovery", "carla-discovery-win32.exe")
+    Carla.discovery_win64 = findTool("discovery", "carla-discovery-win64.exe")
+    carla_bridge_win32    = findTool("bridges", "carla-bridge-win32.exe")
+    carla_bridge_win64    = findTool("bridges", "carla-bridge-win64.exe")
+
+    # -------------------------------------------------------------
+    # find native and posix tools
+
+    if not WINDOWS:
+        Carla.discovery_native  = findTool("discovery", "carla-discovery-native")
+        Carla.discovery_posix32 = findTool("discovery", "carla-discovery-posix32")
+        Carla.discovery_posix64 = findTool("discovery", "carla-discovery-posix64")
+        carla_bridge_native     = findTool("bridges", "carla-bridge-native")
+        carla_bridge_posix32    = findTool("bridges", "carla-bridge-posix32")
+        carla_bridge_posix64    = findTool("bridges", "carla-bridge-posix64")
+
+    # -------------------------------------------------------------
+    # find generic tools
+
+    carla_bridge_lv2_external = findTool("bridges", "carla-bridge-lv2-external")
+
+    # -------------------------------------------------------------
+    # find windows only tools
+
+    if WINDOWS:
+        carla_bridge_lv2_windows = findTool("bridges", "carla-bridge-lv2-windows.exe")
+        carla_bridge_vst_hwnd    = findTool("bridges", "carla-bridge-vst-hwnd.exe")
+
+    # -------------------------------------------------------------
+    # find mac os only tools
+
+    elif MACOS:
+        carla_bridge_lv2_cocoa = findTool("bridges", "carla-bridge-lv2-cocoa")
+        carla_bridge_vst_mac   = findTool("bridges", "carla-bridge-vst-mac")
+
+    # -------------------------------------------------------------
+    # find other tools
+
+    else:
+        carla_bridge_lv2_gtk2 = findTool("bridges", "carla-bridge-lv2-gtk2")
+        carla_bridge_lv2_gtk3 = findTool("bridges", "carla-bridge-lv2-gtk3")
+        carla_bridge_lv2_qt4  = findTool("bridges", "carla-bridge-lv2-qt4")
+        carla_bridge_lv2_qt5  = findTool("bridges", "carla-bridge-lv2-qt5")
+        carla_bridge_lv2_x11  = findTool("bridges", "carla-bridge-lv2-x11")
+        carla_bridge_vst_x11  = findTool("bridges", "carla-bridge-vst-x11")
+
+    if not libfilename:
+        if failError:
+            QMessageBox.critical(None, "Error", "Failed to find the carla library, cannot continue")
+            sys.exit(1)
+        return
+
+    # -------------------------------------------------------------
+    # Init now
+
+    Carla.host = Host(libfilename)
+
+    # -------------------------------------------------------------
+    # Set resource path
+
+    localResources  = os.path.join(libfilename.replace(libname, ""), "..", "modules", "carla_native", "resources")
+    systemResources = os.path.join(libfilename.replace(libname, ""), "resources")
+
+    if os.path.exists(localResources):
+        Carla.host.set_engine_option(OPTION_PATH_RESOURCES, 0, localResources)
+    elif os.path.exists(systemResources):
+        Carla.host.set_engine_option(OPTION_PATH_RESOURCES, 0, systemResources)
+
+    # -------------------------------------------------------------
+    # Set bridge paths
+
+    if carla_bridge_native:
+        Carla.host.set_engine_option(OPTION_PATH_BRIDGE_NATIVE, 0, carla_bridge_native)
+
+    if carla_bridge_posix32:
+        Carla.host.set_engine_option(OPTION_PATH_BRIDGE_POSIX32, 0, carla_bridge_posix32)
+
+    if carla_bridge_posix64:
+        Carla.host.set_engine_option(OPTION_PATH_BRIDGE_POSIX64, 0, carla_bridge_posix64)
+
+    if carla_bridge_win32:
+        Carla.host.set_engine_option(OPTION_PATH_BRIDGE_WIN32, 0, carla_bridge_win32)
+
+    if carla_bridge_win64:
+        Carla.host.set_engine_option(OPTION_PATH_BRIDGE_WIN64, 0, carla_bridge_win64)
+
+    if carla_bridge_lv2_external:
+        Carla.host.set_engine_option(OPTION_PATH_BRIDGE_LV2_EXTERNAL, 0, carla_bridge_lv2_external)
+
+    if WINDOWS:
+        if carla_bridge_lv2_windows:
+            Carla.host.set_engine_option(OPTION_PATH_BRIDGE_LV2_WINDOWS, 0, carla_bridge_lv2_windows)
+
+        if carla_bridge_vst_hwnd:
+            Carla.host.set_engine_option(OPTION_PATH_BRIDGE_VST_HWND, 0, carla_bridge_vst_hwnd)
+
+    elif MACOS:
+        if carla_bridge_lv2_cocoa:
+            Carla.host.set_engine_option(OPTION_PATH_BRIDGE_LV2_COCOA, 0, carla_bridge_lv2_cocoa)
+
+        if carla_bridge_vst_mac:
+            Carla.host.set_engine_option(OPTION_PATH_BRIDGE_VST_MAC, 0, carla_bridge_vst_mac)
+
+    else:
+        if carla_bridge_lv2_gtk2:
+            Carla.host.set_engine_option(OPTION_PATH_BRIDGE_LV2_GTK2, 0, carla_bridge_lv2_gtk2)
+
+        if carla_bridge_lv2_gtk3:
+            Carla.host.set_engine_option(OPTION_PATH_BRIDGE_LV2_GTK3, 0, carla_bridge_lv2_gtk3)
+
+        if carla_bridge_lv2_qt4:
+            Carla.host.set_engine_option(OPTION_PATH_BRIDGE_LV2_QT4, 0, carla_bridge_lv2_qt4)
+
+        if carla_bridge_lv2_qt5:
+            Carla.host.set_engine_option(OPTION_PATH_BRIDGE_LV2_QT5, 0, carla_bridge_lv2_qt5)
+
+        if carla_bridge_lv2_x11:
+            Carla.host.set_engine_option(OPTION_PATH_BRIDGE_LV2_X11, 0, carla_bridge_lv2_x11)
+
+        if carla_bridge_vst_x11:
+            Carla.host.set_engine_option(OPTION_PATH_BRIDGE_VST_X11, 0, carla_bridge_vst_x11)
 
 # ------------------------------------------------------------------------------------------------------------
 # Convert a ctypes c_char_p into a python string

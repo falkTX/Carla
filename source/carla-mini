@@ -31,7 +31,7 @@ except:
 
 from carla_host import *
 from carla_rack import CarlaRackW
-#from carla_patchbay import CarlaPatchbayW
+from carla_patchbay import CarlaPatchbayW
 
 # ------------------------------------------------------------------------------------------------------------
 # Main Window
@@ -40,8 +40,8 @@ class CarlaMiniW(HostWindow):
     def __init__(self, parent=None):
         HostWindow.__init__(self, parent)
 
-        self.fContainer = CarlaRackW(self)
-        #self.fContainer = CarlaPatchbayW(self)
+        #self.fContainer = CarlaRackW(self)
+        self.fContainer = CarlaPatchbayW(self)
         self.setCentralWidget(self.fContainer)
 
         Carla.host.engine_init("JACK", "Carla")
@@ -55,7 +55,7 @@ class CarlaMiniW(HostWindow):
         HostWindow.closeEvent(self, event)
 
 # ------------------------------------------------------------------------------------------------------------
-# --------------- main ------------------
+# Main
 
 if __name__ == '__main__':
     # App initialization
@@ -65,15 +65,9 @@ if __name__ == '__main__':
     app.setOrganizationName("falkTX")
     app.setWindowIcon(QIcon(":/scalable/carla.svg"))
 
-    libName = carla_library_filename
-    libPath = os.path.join(carla_library_filename.replace(carla_libname, ""), "..", "modules", "carla_native", "resources")
-
-    # Init backend
-    print("libName:", libName, ":", carla_libname)
-    Carla.host = Host(libName)
+    initHost()
 
     Carla.host.set_engine_option(OPTION_PROCESS_NAME, 0, "carla")
-    Carla.host.set_engine_option(OPTION_PATH_RESOURCES, 0, libPath)
 
     # Create GUI and start engine
     Carla.gui = CarlaMiniW()

@@ -1645,14 +1645,23 @@ class PluginWidget(QFrame):
         QFrame.paintEvent(self, event)
 
 # ------------------------------------------------------------------------------------------------------------
-# TESTING
+# Main
 
-#hasGL = True
+if __name__ == '__main__':
+    try:
+        from PyQt5.QtWidgets import QApplication
+    except:
+        from PyQt4.QtGui import QApplication
 
-#from PyQt5.QtWidgets import QApplication
-#app = QApplication(sys.argv)
-#gui = PluginParameter(None, pInfo, 0, 0)
-#gui = PluginEdit(None, 0)
-#gui = PluginWidget(None, 0)
-#gui.show()
-#app.exec_()
+    app = QApplication(sys.argv)
+    app.setApplicationName("Carla")
+    app.setApplicationVersion(VERSION)
+    app.setOrganizationName("falkTX")
+    app.setWindowIcon(QIcon(":/scalable/carla.svg"))
+
+    #gui = PluginParameter(None, gFakeParamInfo, 0, 0)
+    #gui = PluginEdit(None, 0)
+    gui = PluginWidget(None, 0)
+    gui.show()
+
+    sys.exit(app.exec_())

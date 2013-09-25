@@ -198,69 +198,14 @@ class HostWindow(QMainWindow):
         self.ui = ui_carla_host.Ui_CarlaHostW()
         self.ui.setupUi(self)
 
-        # -------------------------------------------------------------
-        # Set bridge paths
-
-        if carla_bridge_native:
-            Carla.host.set_engine_option(OPTION_PATH_BRIDGE_NATIVE, 0, carla_bridge_native)
-
-        if carla_bridge_posix32:
-            Carla.host.set_engine_option(OPTION_PATH_BRIDGE_POSIX32, 0, carla_bridge_posix32)
-
-        if carla_bridge_posix64:
-            Carla.host.set_engine_option(OPTION_PATH_BRIDGE_POSIX64, 0, carla_bridge_posix64)
-
-        if carla_bridge_win32:
-            Carla.host.set_engine_option(OPTION_PATH_BRIDGE_WIN32, 0, carla_bridge_win32)
-
-        if carla_bridge_win64:
-            Carla.host.set_engine_option(OPTION_PATH_BRIDGE_WIN64, 0, carla_bridge_win64)
-
-        if carla_bridge_lv2_external:
-            Carla.host.set_engine_option(OPTION_PATH_BRIDGE_LV2_EXTERNAL, 0, carla_bridge_lv2_external)
-
-        if WINDOWS:
-            if carla_bridge_lv2_windows:
-                Carla.host.set_engine_option(OPTION_PATH_BRIDGE_LV2_WINDOWS, 0, carla_bridge_lv2_windows)
-
-            if carla_bridge_vst_hwnd:
-                Carla.host.set_engine_option(OPTION_PATH_BRIDGE_VST_HWND, 0, carla_bridge_vst_hwnd)
-
-        elif MACOS:
-            if carla_bridge_lv2_cocoa:
-                Carla.host.set_engine_option(OPTION_PATH_BRIDGE_LV2_COCOA, 0, carla_bridge_lv2_cocoa)
-
-            if carla_bridge_vst_mac:
-                Carla.host.set_engine_option(OPTION_PATH_BRIDGE_VST_MAC, 0, carla_bridge_vst_mac)
-
-        else:
-            if carla_bridge_lv2_gtk2:
-                Carla.host.set_engine_option(OPTION_PATH_BRIDGE_LV2_GTK2, 0, carla_bridge_lv2_gtk2)
-
-            if carla_bridge_lv2_gtk3:
-                Carla.host.set_engine_option(OPTION_PATH_BRIDGE_LV2_GTK3, 0, carla_bridge_lv2_gtk3)
-
-            if carla_bridge_lv2_qt4:
-                Carla.host.set_engine_option(OPTION_PATH_BRIDGE_LV2_QT4, 0, carla_bridge_lv2_qt4)
-
-            if carla_bridge_lv2_qt5:
-                Carla.host.set_engine_option(OPTION_PATH_BRIDGE_LV2_QT5, 0, carla_bridge_lv2_qt5)
-
-            if carla_bridge_lv2_x11:
-                Carla.host.set_engine_option(OPTION_PATH_BRIDGE_LV2_X11, 0, carla_bridge_lv2_x11)
-
-            if carla_bridge_vst_x11:
-                Carla.host.set_engine_option(OPTION_PATH_BRIDGE_VST_X11, 0, carla_bridge_vst_x11)
+        if False:
+            Carla.gui = self
+            self.fContainer = CarlaDummyW(self)
 
         # -------------------------------------------------------------
         # Set callback
 
         Carla.host.set_engine_callback(EngineCallback)
-
-        # -------------------------------------------------------------
-        # Set custom signal handling
-
-        setUpSignals()
 
         # -------------------------------------------------------------
         # Internal stuff
@@ -271,8 +216,6 @@ class HostWindow(QMainWindow):
 
         self.fLadspaRdfNeedsUpdate = True
         self.fLadspaRdfList = []
-
-        self.fContainer = CarlaDummyW(self)
 
         # -------------------------------------------------------------
         # Connect actions to functions
