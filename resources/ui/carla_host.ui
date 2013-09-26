@@ -6,33 +6,33 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>590</width>
+    <width>679</width>
     <height>191</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
-  <widget class="QWidget" name="centralwidget">
-   <zorder>splitter</zorder>
-   <zorder>miniCanvasPreview</zorder>
-   <zorder>miniCanvasPreview</zorder>
-  </widget>
+  <widget class="QWidget" name="centralwidget"/>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>590</width>
+     <width>679</width>
      <height>19</height>
     </rect>
    </property>
-   <widget class="QMenu" name="menu_Help">
+   <widget class="QMenu" name="menu_File">
     <property name="title">
-     <string>&amp;Help</string>
+     <string>&amp;File</string>
     </property>
-    <addaction name="act_help_about"/>
-    <addaction name="act_help_about_qt"/>
+    <addaction name="act_file_new"/>
+    <addaction name="act_file_open"/>
+    <addaction name="act_file_save"/>
+    <addaction name="act_file_save_as"/>
+    <addaction name="separator"/>
+    <addaction name="act_file_quit"/>
    </widget>
    <widget class="QMenu" name="menu_Engine">
     <property name="title">
@@ -40,6 +40,60 @@
     </property>
     <addaction name="act_engine_start"/>
     <addaction name="act_engine_stop"/>
+   </widget>
+   <widget class="QMenu" name="menu_Plugin">
+    <property name="title">
+     <string>&amp;Plugin</string>
+    </property>
+    <widget class="QMenu" name="menu_PluginMacros">
+     <property name="title">
+      <string>Macros (all plugins)</string>
+     </property>
+     <addaction name="act_plugins_enable"/>
+     <addaction name="act_plugins_disable"/>
+     <addaction name="separator"/>
+     <addaction name="act_plugins_volume100"/>
+     <addaction name="act_plugins_mute"/>
+     <addaction name="separator"/>
+     <addaction name="act_plugins_wet100"/>
+     <addaction name="act_plugins_bypass"/>
+     <addaction name="separator"/>
+     <addaction name="act_plugins_center"/>
+    </widget>
+    <addaction name="act_plugin_add"/>
+    <addaction name="act_plugin_remove_all"/>
+    <addaction name="separator"/>
+    <addaction name="menu_PluginMacros"/>
+   </widget>
+   <widget class="QMenu" name="menu_Transport">
+    <property name="title">
+     <string>&amp;Transport</string>
+    </property>
+    <addaction name="act_transport_play"/>
+    <addaction name="act_transport_stop"/>
+    <addaction name="act_transport_backwards"/>
+    <addaction name="act_transport_forwards"/>
+   </widget>
+   <widget class="QMenu" name="menu_Canvas">
+    <property name="title">
+     <string>&amp;Canvas</string>
+    </property>
+    <widget class="QMenu" name="menu_Canvas_Zoom">
+     <property name="title">
+      <string>Zoom</string>
+     </property>
+     <addaction name="act_canvas_zoom_fit"/>
+     <addaction name="separator"/>
+     <addaction name="act_canvas_zoom_in"/>
+     <addaction name="act_canvas_zoom_out"/>
+     <addaction name="act_canvas_zoom_100"/>
+    </widget>
+    <addaction name="act_canvas_arrange"/>
+    <addaction name="act_canvas_refresh"/>
+    <addaction name="menu_Canvas_Zoom"/>
+    <addaction name="separator"/>
+    <addaction name="act_canvas_print"/>
+    <addaction name="act_canvas_save_image"/>
    </widget>
    <widget class="QMenu" name="menu_Settings">
     <property name="title">
@@ -49,21 +103,30 @@
     <addaction name="separator"/>
     <addaction name="act_settings_configure"/>
    </widget>
-   <widget class="QMenu" name="menu_Plugin">
+   <widget class="QMenu" name="menu_Help">
     <property name="title">
-     <string>&amp;Plugin</string>
+     <string>&amp;Help</string>
     </property>
-    <addaction name="act_plugin_add"/>
-    <addaction name="act_plugin_remove_all"/>
+    <addaction name="act_help_about"/>
+    <addaction name="act_help_about_qt"/>
    </widget>
+   <addaction name="menu_File"/>
    <addaction name="menu_Engine"/>
    <addaction name="menu_Plugin"/>
+   <addaction name="menu_Transport"/>
+   <addaction name="menu_Canvas"/>
    <addaction name="menu_Settings"/>
    <addaction name="menu_Help"/>
   </widget>
   <widget class="QToolBar" name="toolBar">
    <property name="windowTitle">
     <string>toolBar</string>
+   </property>
+   <property name="movable">
+    <bool>false</bool>
+   </property>
+   <property name="allowedAreas">
+    <set>Qt::NoToolBarArea</set>
    </property>
    <property name="toolButtonStyle">
     <enum>Qt::ToolButtonTextBesideIcon</enum>
@@ -74,19 +137,75 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
+   <addaction name="act_file_new"/>
+   <addaction name="act_file_open"/>
+   <addaction name="act_file_save"/>
+   <addaction name="act_file_save_as"/>
+   <addaction name="separator"/>
    <addaction name="act_plugin_add2"/>
    <addaction name="act_plugin_remove_all"/>
+   <addaction name="act_plugins_panic"/>
    <addaction name="separator"/>
    <addaction name="act_settings_configure"/>
   </widget>
-  <action name="act_help_about">
+  <action name="act_file_new">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/document-new.png</normaloff>:/16x16/document-new.png</iconset>
+   </property>
    <property name="text">
-    <string>&amp;About</string>
+    <string>&amp;New</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+N</string>
    </property>
   </action>
-  <action name="act_help_about_qt">
+  <action name="act_file_open">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/document-open.png</normaloff>:/16x16/document-open.png</iconset>
+   </property>
    <property name="text">
-    <string>About &amp;Qt</string>
+    <string>&amp;Open...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+O</string>
+   </property>
+  </action>
+  <action name="act_file_save">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/document-save.png</normaloff>:/16x16/document-save.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Save</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+S</string>
+   </property>
+  </action>
+  <action name="act_file_save_as">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/document-save-as.png</normaloff>:/16x16/document-save-as.png</iconset>
+   </property>
+   <property name="text">
+    <string>Save &amp;As...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+S</string>
+   </property>
+  </action>
+  <action name="act_file_quit">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/application-exit.png</normaloff>:/16x16/application-exit.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Quit</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Q</string>
    </property>
   </action>
   <action name="act_engine_start">
@@ -97,6 +216,9 @@
    <property name="text">
     <string>&amp;Start</string>
    </property>
+   <property name="shortcut">
+    <string>F5</string>
+   </property>
   </action>
   <action name="act_engine_stop">
    <property name="icon">
@@ -105,6 +227,220 @@
    </property>
    <property name="text">
     <string>St&amp;op</string>
+   </property>
+   <property name="shortcut">
+    <string>F6</string>
+   </property>
+  </action>
+  <action name="act_plugin_add">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/list-add.png</normaloff>:/16x16/list-add.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Add...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+A</string>
+   </property>
+  </action>
+  <action name="act_plugin_add2">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/list-add.png</normaloff>:/16x16/list-add.png</iconset>
+   </property>
+   <property name="text">
+    <string>Add Plugin...</string>
+   </property>
+  </action>
+  <action name="act_plugin_remove_all">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/edit-delete.png</normaloff>:/16x16/edit-delete.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Remove All</string>
+   </property>
+  </action>
+  <action name="act_plugins_enable">
+   <property name="text">
+    <string>Enable</string>
+   </property>
+  </action>
+  <action name="act_plugins_disable">
+   <property name="text">
+    <string>Disable</string>
+   </property>
+  </action>
+  <action name="act_plugins_bypass">
+   <property name="text">
+    <string>0% Wet (Bypass)</string>
+   </property>
+  </action>
+  <action name="act_plugins_wet100">
+   <property name="text">
+    <string>100% Wet</string>
+   </property>
+  </action>
+  <action name="act_plugins_mute">
+   <property name="text">
+    <string>0% Volume (Mute)</string>
+   </property>
+  </action>
+  <action name="act_plugins_volume100">
+   <property name="text">
+    <string>100% Volume</string>
+   </property>
+  </action>
+  <action name="act_plugins_center">
+   <property name="text">
+    <string>Center Balance</string>
+   </property>
+  </action>
+  <action name="act_plugins_panic">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/dialog-warning.png</normaloff>:/16x16/dialog-warning.png</iconset>
+   </property>
+   <property name="text">
+    <string>Panic</string>
+   </property>
+  </action>
+  <action name="act_transport_play">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/media-playback-start.png</normaloff>:/16x16/media-playback-start.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Play</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+P</string>
+   </property>
+  </action>
+  <action name="act_transport_stop">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/media-playback-stop.png</normaloff>:/16x16/media-playback-stop.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Stop</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+X</string>
+   </property>
+  </action>
+  <action name="act_transport_backwards">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/media-seek-backward.png</normaloff>:/16x16/media-seek-backward.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Backwards</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+B</string>
+   </property>
+  </action>
+  <action name="act_transport_forwards">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/media-seek-forward.png</normaloff>:/16x16/media-seek-forward.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Forwards</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+F</string>
+   </property>
+  </action>
+  <action name="act_canvas_arrange">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/view-sort-ascending.png</normaloff>:/16x16/view-sort-ascending.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Arrange</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+G</string>
+   </property>
+  </action>
+  <action name="act_canvas_refresh">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/view-refresh.png</normaloff>:/16x16/view-refresh.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Refresh</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+R</string>
+   </property>
+  </action>
+  <action name="act_canvas_print">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/document-print.png</normaloff>:/16x16/document-print.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Print...</string>
+   </property>
+  </action>
+  <action name="act_canvas_save_image">
+   <property name="text">
+    <string>Save &amp;Image...</string>
+   </property>
+  </action>
+  <action name="act_canvas_zoom_fit">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/zoom-fit-best.png</normaloff>:/16x16/zoom-fit-best.png</iconset>
+   </property>
+   <property name="text">
+    <string>Auto-Fit</string>
+   </property>
+   <property name="shortcut">
+    <string>Home</string>
+   </property>
+  </action>
+  <action name="act_canvas_zoom_in">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/zoom-in.png</normaloff>:/16x16/zoom-in.png</iconset>
+   </property>
+   <property name="text">
+    <string>Zoom In</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl++</string>
+   </property>
+  </action>
+  <action name="act_canvas_zoom_out">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/zoom-out.png</normaloff>:/16x16/zoom-out.png</iconset>
+   </property>
+   <property name="text">
+    <string>Zoom Out</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+-</string>
+   </property>
+  </action>
+  <action name="act_canvas_zoom_100">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/zoom-original.png</normaloff>:/16x16/zoom-original.png</iconset>
+   </property>
+   <property name="text">
+    <string>Zoom 100%</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+1</string>
    </property>
   </action>
   <action name="act_settings_show_toolbar">
@@ -127,31 +463,14 @@
     <string>&amp;Configure Carla</string>
    </property>
   </action>
-  <action name="act_plugin_add">
-   <property name="icon">
-    <iconset resource="../resources.qrc">
-     <normaloff>:/16x16/list-add.png</normaloff>:/16x16/list-add.png</iconset>
-   </property>
+  <action name="act_help_about">
    <property name="text">
-    <string>&amp;Add...</string>
+    <string>&amp;About</string>
    </property>
   </action>
-  <action name="act_plugin_remove_all">
-   <property name="icon">
-    <iconset resource="../resources.qrc">
-     <normaloff>:/16x16/edit-delete.png</normaloff>:/16x16/edit-delete.png</iconset>
-   </property>
+  <action name="act_help_about_qt">
    <property name="text">
-    <string>&amp;Remove All</string>
-   </property>
-  </action>
-  <action name="act_plugin_add2">
-   <property name="icon">
-    <iconset resource="../resources.qrc">
-     <normaloff>:/16x16/list-add.png</normaloff>:/16x16/list-add.png</iconset>
-   </property>
-   <property name="text">
-    <string>Add Plugin...</string>
+    <string>About &amp;Qt</string>
    </property>
   </action>
  </widget>
@@ -159,6 +478,22 @@
   <include location="../resources.qrc"/>
  </resources>
  <connections>
+  <connection>
+   <sender>act_file_quit</sender>
+   <signal>triggered()</signal>
+   <receiver>CarlaHostW</receiver>
+   <slot>close()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>189</x>
+     <y>34</y>
+    </hint>
+   </hints>
+  </connection>
   <connection>
    <sender>act_settings_show_toolbar</sender>
    <signal>triggered(bool)</signal>
@@ -170,8 +505,8 @@
      <y>-1</y>
     </hint>
     <hint type="destinationlabel">
-     <x>399</x>
-     <y>34</y>
+     <x>354</x>
+     <y>35</y>
     </hint>
    </hints>
   </connection>

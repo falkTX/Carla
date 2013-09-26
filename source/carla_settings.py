@@ -202,9 +202,12 @@ class CarlaSettingsW(QDialog):
 
         self.loadSettings()
 
-        if not hasGL:
-            self.ui.cb_canvas_use_opengl.setChecked(False)
-            self.ui.cb_canvas_use_opengl.setEnabled(False)
+        if not hasCanvas:
+            # TODO - hide canvas section
+
+            if not hasGL:
+                self.ui.cb_canvas_use_opengl.setChecked(False)
+                self.ui.cb_canvas_use_opengl.setEnabled(False)
 
         if WINDOWS:
             self.ui.group_theme.setEnabled(False)

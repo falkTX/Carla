@@ -220,61 +220,60 @@ class HostWindow(QMainWindow):
         # -------------------------------------------------------------
         # Connect actions to functions
 
-        #self.connect(self.ui.act_file_new, SIGNAL("triggered()"), SLOT("slot_fileNew()"))
-        #self.connect(self.ui.act_file_open, SIGNAL("triggered()"), SLOT("slot_fileOpen()"))
-        #self.connect(self.ui.act_file_save, SIGNAL("triggered()"), SLOT("slot_fileSave()"))
-        #self.connect(self.ui.act_file_save_as, SIGNAL("triggered()"), SLOT("slot_fileSaveAs()"))
-        ##self.connect(self.ui.act_file_export_lv2, SIGNAL("triggered()"), SLOT("slot_fileExportLv2Preset()"))
+        #self.ui.act_file_new.triggered.connect(self.slot_fileNew)
+        #self.ui.act_file_open.triggered.connect(self.slot_fileOpen)
+        #self.ui.act_file_save.triggered.connect(self.slot_fileSave)
+        #self.ui.act_file_save_as.triggered.connect(self.slot_fileSaveAs)
 
-        #self.connect(self.ui.act_engine_start, SIGNAL("triggered()"), SLOT("slot_engineStart()"))
-        #self.connect(self.ui.act_engine_stop, SIGNAL("triggered()"), SLOT("slot_engineStop()"))
+        #self.ui.act_engine_start.triggered.connect(self.slot_engineStart)
+        #self.ui.act_engine_stop.triggered.connect(self.slot_engineStop)
 
         self.ui.act_plugin_add.triggered.connect(self.slot_pluginAdd)
         self.ui.act_plugin_add2.triggered.connect(self.slot_pluginAdd)
         self.ui.act_plugin_remove_all.triggered.connect(self.slot_pluginRemoveAll)
 
-        #self.connect(self.ui.act_plugins_enable, SIGNAL("triggered()"), SLOT("slot_pluginsEnable()"))
-        #self.connect(self.ui.act_plugins_disable, SIGNAL("triggered()"), SLOT("slot_pluginsDisable()"))
-        #self.connect(self.ui.act_plugins_panic, SIGNAL("triggered()"), SLOT("slot_pluginsDisable()"))
-        #self.connect(self.ui.act_plugins_volume100, SIGNAL("triggered()"), SLOT("slot_pluginsVolume100()"))
-        #self.connect(self.ui.act_plugins_mute, SIGNAL("triggered()"), SLOT("slot_pluginsMute()"))
-        #self.connect(self.ui.act_plugins_wet100, SIGNAL("triggered()"), SLOT("slot_pluginsWet100()"))
-        #self.connect(self.ui.act_plugins_bypass, SIGNAL("triggered()"), SLOT("slot_pluginsBypass()"))
-        #self.connect(self.ui.act_plugins_center, SIGNAL("triggered()"), SLOT("slot_pluginsCenter()"))
+        #self.ui.act_plugins_enable.triggered.connect(self.slot_pluginsEnable)
+        #self.ui.act_plugins_disable.triggered.connect(self.slot_pluginsDisable)
+        #self.ui.act_plugins_panic.triggered.connect(self.slot_pluginsDisable)
+        #self.ui.act_plugins_volume100.triggered.connect(self.slot_pluginsVolume100)
+        #self.ui.act_plugins_mute.triggered.connect(self.slot_pluginsMute)
+        #self.ui.act_plugins_wet100.triggered.connect(self.slot_pluginsWet100)
+        #self.ui.act_plugins_bypass.triggered.connect(self.slot_pluginsBypass)
+        #self.ui.act_plugins_center.triggered.connect(self.slot_pluginsCenter)
 
-        #self.connect(self.ui.act_transport_play, SIGNAL("triggered(bool)"), SLOT("slot_transportPlayPause(bool)"))
-        #self.connect(self.ui.act_transport_stop, SIGNAL("triggered()"), SLOT("slot_transportStop()"))
-        #self.connect(self.ui.act_transport_backwards, SIGNAL("triggered()"), SLOT("slot_transportBackwards()"))
-        #self.connect(self.ui.act_transport_forwards, SIGNAL("triggered()"), SLOT("slot_transportForwards()"))
+        #self.ui.act_transport_play-triggered(bool)"), SLOT("slot_transportPlayPause(bool)"))
+        #self.ui.act_transport_stop.triggered.connect(self.slot_transportStop)
+        #self.ui.act_transport_backwards.triggered.connect(self.slot_transportBackwards)
+        #self.ui.act_transport_forwards.triggered.connect(self.slot_transportForwards)
 
         #self.ui.act_canvas_arrange.setEnabled(False) # TODO, later
-        #self.connect(self.ui.act_canvas_arrange, SIGNAL("triggered()"), SLOT("slot_canvasArrange()"))
-        #self.connect(self.ui.act_canvas_refresh, SIGNAL("triggered()"), SLOT("slot_canvasRefresh()"))
-        #self.connect(self.ui.act_canvas_zoom_fit, SIGNAL("triggered()"), SLOT("slot_canvasZoomFit()"))
-        #self.connect(self.ui.act_canvas_zoom_in, SIGNAL("triggered()"), SLOT("slot_canvasZoomIn()"))
-        #self.connect(self.ui.act_canvas_zoom_out, SIGNAL("triggered()"), SLOT("slot_canvasZoomOut()"))
-        #self.connect(self.ui.act_canvas_zoom_100, SIGNAL("triggered()"), SLOT("slot_canvasZoomReset()"))
-        #self.connect(self.ui.act_canvas_print, SIGNAL("triggered()"), SLOT("slot_canvasPrint()"))
-        #self.connect(self.ui.act_canvas_save_image, SIGNAL("triggered()"), SLOT("slot_canvasSaveImage()"))
+        #self.ui.act_canvas_arrange.triggered.connect(self.slot_canvasArrange)
+        #self.ui.act_canvas_refresh.triggered.connect(self.slot_canvasRefresh)
+        #self.ui.act_canvas_zoom_fit.triggered.connect(self.slot_canvasZoomFit)
+        #self.ui.act_canvas_zoom_in.triggered.connect(self.slot_canvasZoomIn)
+        #self.ui.act_canvas_zoom_out.triggered.connect(self.slot_canvasZoomOut)
+        #self.ui.act_canvas_zoom_100.triggered.connect(self.slot_canvasZoomReset)
+        #self.ui.act_canvas_print.triggered.connect(self.slot_canvasPrint)
+        #self.ui.act_canvas_save_image.triggered.connect(self.slot_canvasSaveImage)
 
         self.ui.act_settings_configure.triggered.connect(self.slot_configureCarla)
 
         self.ui.act_help_about.triggered.connect(self.slot_aboutCarla)
         self.ui.act_help_about_qt.triggered.connect(self.slot_aboutQt)
 
-        #self.connect(self.ui.splitter, SIGNAL("splitterMoved.connect(self.slot_splitterMoved()"))
+        #self.ui.splitter-splitterMoved.connect(self.slot_splitterMoved)
 
-        #self.connect(self.ui.cb_disk, SIGNAL("currentIndexChanged.connect(self.slot_diskFolderChanged)
-        #self.connect(self.ui.b_disk_add, SIGNAL("clicked()"), SLOT("slot_diskFolderAdd()"))
-        #self.connect(self.ui.b_disk_remove, SIGNAL("clicked()"), SLOT("slot_diskFolderRemove()"))
-        #self.connect(self.ui.fileTreeView, SIGNAL("doubleClicked(QModelIndex)"), SLOT("slot_fileTreeDoubleClicked(QModelIndex)"))
-        #self.connect(self.ui.miniCanvasPreview, SIGNAL("miniCanvasMoved(double, double)"), SLOT("slot_miniCanvasMoved(double, double)"))
+        #self.ui.cb_disk-currentIndexChanged.connect(self.slot_diskFolderChanged)
+        #self.ui.b_disk_add-clicked.connect(self.slot_diskFolderAdd)
+        #self.ui.b_disk_remove-clicked.connect(self.slot_diskFolderRemove)
+        #self.ui.fileTreeView-doubleClicked(QModelIndex)"), SLOT("slot_fileTreeDoubleClicked(QModelIndex)"))
+        #self.ui.miniCanvasPreview-miniCanvasMoved(double, double)"), SLOT("slot_miniCanvasMoved(double, double)"))
 
-        #self.connect(self.ui.graphicsView.horizontalScrollBar(), SIGNAL("valueChanged.connect(self.slot_horizontalScrollBarChanged)
-        #self.connect(self.ui.graphicsView.verticalScrollBar(), SIGNAL("valueChanged.connect(self.slot_verticalScrollBarChanged)
+        #self.ui.graphicsView.horizontalScrollBar()-valueChanged.connect(self.slot_horizontalScrollBarChanged)
+        #self.ui.graphicsView.verticalScrollBar()-valueChanged.connect(self.slot_verticalScrollBarChanged)
 
-        #self.connect(self.scene, SIGNAL("sceneGroupMoved(int, int, QPointF)"), SLOT("slot_canvasItemMoved(int, int, QPointF)"))
-        #self.connect(self.scene, SIGNAL("scaleChanged(double)"), SLOT("slot_canvasScaleChanged(double)"))
+        #self.scene-sceneGroupMoved(int, int, QPointF)"), SLOT("slot_canvasItemMoved(int, int, QPointF)"))
+        #self.scene-scaleChanged(double)"), SLOT("slot_canvasScaleChanged(double)"))
 
         self.DebugCallback.connect(self.slot_handleDebugCallback)
         self.PluginAddedCallback.connect(self.slot_handlePluginAddedCallback)
@@ -307,9 +306,9 @@ class HostWindow(QMainWindow):
         #self.SampleRateChangedCallback(double)"), SLOT("slot_handleSampleRateChangedCallback(double)"))
         #self.NSM_AnnounceCallback(QString)"), SLOT("slot_handleNSM_AnnounceCallback(QString)"))
         #self.NSM_OpenCallback(QString)"), SLOT("slot_handleNSM_OpenCallback(QString)"))
-        #self.NSM_SaveCallback()"), SLOT("slot_handleNSM_SaveCallback()"))
+        #self.NSM_SaveCallback.connect(self.slot_handleNSM_SaveCallback)
         #self.ErrorCallback(QString)"), SLOT("slot_handleErrorCallback(QString)"))
-        #self.QuitCallback()"), SLOT("slot_handleQuitCallback()"))
+        #self.QuitCallback.connect(self.slot_handleQuitCallback)
 
         self.SIGUSR1.connect(self.slot_handleSIGUSR1)
         self.SIGTERM.connect(self.slot_handleSIGTERM)
@@ -558,7 +557,7 @@ class HostWindow(QMainWindow):
     @pyqtSlot()
     def slot_handleSIGUSR1(self):
         print("Got SIGUSR1 -> Saving project now")
-        #QTimer.singleShot(0, self, SLOT("slot_fileSave()"))
+        #QTimer.singleShot(0, self, SLOT("slot_fileSave)
 
     @pyqtSlot()
     def slot_handleSIGTERM(self):
