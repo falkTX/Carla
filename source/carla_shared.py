@@ -416,7 +416,7 @@ def findTool(toolDir, toolName):
 # ------------------------------------------------------------------------------------------------------------
 # Init host
 
-def initHost(failError = True):
+def initHost(appName, libPrefix = None, failError = True):
     # -------------------------------------------------------------
     # Search for Carla library
 
@@ -434,26 +434,28 @@ def initHost(failError = True):
     else:
         libname += ".so"
 
-    libfilename = ""
+    if libPrefix is not None:
+        libfilename = os.path.join(libPrefix, "lib", "carla", libname)
 
-    if os.path.exists(os.path.join(CWD, "backend", libname)):
-        libfilename = os.path.join(CWD, "backend", libname)
-    #else:
-        #CARLA_LIB_PATH = os.getenv("CARLA_LIB_PATH")
-
-        #if CARLA_LIB_PATH and os.path.exists(CARLA_LIB_PATH):
-            #CARLA_LIB_PATH = os.path.join(CARLA_LIB_PATH, "..")
-        #elif WINDOWS:
-            #CARLA_LIB_PATH = (os.path.join(PROGRAMFILES, "Carla"),)
-        #elif MACOS:
-            #CARLA_LIB_PATH = ("/opt/local/lib", "/usr/local/lib/", "/usr/lib")
+    else:
+        if os.path.exists(os.path.join(CWD, "backend", libname)):
+            libfilename = os.path.join(CWD, "backend", libname)
         #else:
-            #CARLA_LIB_PATH = ("/usr/local/lib/", "/usr/lib")
+            #CARLA_LIB_PATH = os.getenv("CARLA_LIB_PATH")
 
-        #for path in CARLA_LIB_PATH:
-            #if os.path.exists(os.path.join(path, "carla", libname)):
-                #libfilename = os.path.join(path, "carla", libname)
-                #break
+            #if CARLA_LIB_PATH and os.path.exists(CARLA_LIB_PATH):
+                #CARLA_LIB_PATH = os.path.join(CARLA_LIB_PATH, "..")
+            #elif WINDOWS:
+                #CARLA_LIB_PATH = (os.path.join(PROGRAMFILES, "Carla"),)
+            #elif MACOS:
+                #CARLA_LIB_PATH = ("/opt/local/lib", "/usr/local/lib/", "/usr/lib")
+            #else:
+                #CARLA_LIB_PATH = ("/usr/local/lib/", "/usr/lib")
+
+            #for path in CARLA_LIB_PATH:
+                #if os.path.exists(os.path.join(path, "carla", libname)):
+                    #libfilename = os.path.join(path, "carla", libname)
+                    #break
 
     # -------------------------------------------------------------
     # Search for Carla tools
@@ -536,6 +538,16 @@ def initHost(failError = True):
     # Init now
 
     Carla.host = Host(libfilename)
+
+    # -------------------------------------------------------------
+    # Set internal stuff
+
+    Carla.host.set_engine_option(OPTION_PROCESS_NAME, 0, os.path.basename(appName))
+
+    NSM_URL = os.getenv("NSM_URL")
+
+    if NSM_URL:
+        Carla.host.nsm_announce(NSM_URL, appName, os.getpid())
 
     # -------------------------------------------------------------
     # Set resource path

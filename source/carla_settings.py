@@ -183,7 +183,7 @@ class CarlaSettingsW(QDialog):
     # so add +2 pos padding if driverName != "JACK".
     PROCESS_MODE_NON_JACK_PADDING = 2
 
-    def __init__(self, parent, hasCanvas, hasGL):
+    def __init__(self, parent, hasCanvas, hasCanvasGL):
         QDialog.__init__(self, parent)
         self.ui = ui_carla_settings.Ui_CarlaSettingsW()
         self.ui.setupUi(self)
@@ -205,7 +205,7 @@ class CarlaSettingsW(QDialog):
         if not hasCanvas:
             # TODO - hide canvas section
 
-            if not hasGL:
+            if not hasCanvasGL:
                 self.ui.cb_canvas_use_opengl.setChecked(False)
                 self.ui.cb_canvas_use_opengl.setEnabled(False)
 

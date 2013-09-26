@@ -66,6 +66,7 @@ class CarlaRackW(QListWidget):
         # -------------------------------------------------------------
         # Internal stuff
 
+        self.fParent      = parent
         self.fPluginCount = 0
         self.fPluginList  = []
 
@@ -92,20 +93,44 @@ class CarlaRackW(QListWidget):
           }
         """ % (col1, col2))
 
+        # -------------------------------------------------------------
+        # Connect actions to functions
+
+        if parent is None:
+            return
+
+        parent.ui.menu_Canvas.hide()
+
+        parent.ui.act_plugins_enable.triggered.connect(self.slot_pluginsEnable)
+        parent.ui.act_plugins_disable.triggered.connect(self.slot_pluginsDisable)
+        parent.ui.act_plugins_volume100.triggered.connect(self.slot_pluginsVolume100)
+        parent.ui.act_plugins_mute.triggered.connect(self.slot_pluginsMute)
+        parent.ui.act_plugins_wet100.triggered.connect(self.slot_pluginsWet100)
+        parent.ui.act_plugins_bypass.triggered.connect(self.slot_pluginsBypass)
+        parent.ui.act_plugins_center.triggered.connect(self.slot_pluginsCenter)
+        parent.ui.act_plugins_panic.triggered.connect(self.slot_pluginsDisable)
+
+        parent.ui.act_settings_configure.triggered.connect(self.slot_configureCarla)
+
+        parent.ParameterValueChangedCallback.connect(self.slot_handleParameterValueChangedCallback)
+        parent.ParameterDefaultChangedCallback.connect(self.slot_handleParameterDefaultChangedCallback)
+        parent.ParameterMidiChannelChangedCallback.connect(self.slot_handleParameterMidiChannelChangedCallback)
+        parent.ParameterMidiCcChangedCallback.connect(self.slot_handleParameterMidiCcChangedCallback)
+        parent.ProgramChangedCallback.connect(self.slot_handleProgramChangedCallback)
+        parent.MidiProgramChangedCallback.connect(self.slot_handleMidiProgramChangedCallback)
+        parent.NoteOnCallback.connect(self.slot_handleNoteOnCallback)
+        parent.NoteOffCallback.connect(self.slot_handleNoteOffCallback)
+        parent.ShowGuiCallback.connect(self.slot_handleShowGuiCallback)
+        parent.UpdateCallback.connect(self.slot_handleUpdateCallback)
+        parent.ReloadInfoCallback.connect(self.slot_handleReloadInfoCallback)
+        parent.ReloadParametersCallback.connect(self.slot_handleReloadParametersCallback)
+        parent.ReloadProgramsCallback.connect(self.slot_handleReloadProgramsCallback)
+        parent.ReloadAllCallback.connect(self.slot_handleReloadAllCallback)
+
     # -----------------------------------------------------------------
 
     def getPluginCount(self):
         return self.fPluginCount
-
-    def getPlugin(self, pluginId):
-        if pluginId >= self.fPluginCount:
-            return None
-
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return None
-
-        return pitem
 
     # -----------------------------------------------------------------
 
@@ -146,8 +171,8 @@ class CarlaRackW(QListWidget):
         if pitem is None:
             return
 
-        pitem.fWidget.ui.label_name.setText(name)
-        pitem.fWidget.ui.edit_dialog.setName(name)
+        pitem.fWidget.ui.label_name.setText(newName)
+        pitem.fWidget.ui.edit_dialog.setName(newName)
 
     def removeAllPlugins(self):
         while (self.takeItem(0)):
@@ -167,189 +192,10 @@ class CarlaRackW(QListWidget):
 
     # -----------------------------------------------------------------
 
-    def setParameterValue(self, pluginId, index, value):
-        if pluginId >= self.fPluginCount:
-            return
-
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return
-
-        pitem.fWidget.setParameterValue(index, value)
-
-    def setParameterDefault(self, pluginId, index, value):
-        if pluginId >= self.fPluginCount:
-            return
-
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return
-
-        pitem.fWidget.setParameterDefault(index, value)
-
-    def setParameterMidiChannel(self, pluginId, index, channel):
-        if pluginId >= self.fPluginCount:
-            return
-
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return
-
-        pitem.fWidget.setParameterMidiChannel(index, channel)
-
-    def setParameterMidiCC(self, pluginId, index, cc):
-        if pluginId >= self.fPluginCount:
-            return
-
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return
-
-        pitem.fWidget.setParameterMidiControl(index, cc)
-
-    # -----------------------------------------------------------------
-
-    def setProgram(self, pluginId, index):
-        if pluginId >= self.fPluginCount:
-            return
-
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return
-
-        pitem.fWidget.setProgram(index)
-
-    def setMidiProgram(self, pluginId, index):
-        if pluginId >= self.fPluginCount:
-            return
-
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return
-
-        pitem.fWidget.setMidiProgram(index)
-
-    # -----------------------------------------------------------------
-
-    def noteOn(self, pluginId, channel, note, velocity):
-        if pluginId >= self.fPluginCount:
-            return
-
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return
-
-        pitem.fWidget.sendNoteOn(channel, note)
-
-    def noteOff(self, pluginId, channel, note):
-        if pluginId >= self.fPluginCount:
-            return
-
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return
-
-        pitem.fWidget.sendNoteOff(channel, note)
-
-    # -----------------------------------------------------------------
-
-    def setGuiState(self, pluginId, state):
-        if pluginId >= self.fPluginCount:
-            return
-
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return
-
-        if state == 0:
-            pitem.fWidget.ui.b_gui.setChecked(False)
-            pitem.fWidget.ui.b_gui.setEnabled(True)
-        elif state == 1:
-            pitem.fWidget.ui.b_gui.setChecked(True)
-            pitem.fWidget.ui.b_gui.setEnabled(True)
-        elif state == -1:
-            pitem.fWidget.ui.b_gui.setChecked(False)
-            pitem.fWidget.ui.b_gui.setEnabled(False)
-
-    # -----------------------------------------------------------------
-
-    def updateInfo(self, pluginId):
-        if pluginId >= self.fPluginCount:
-            return
-
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return
-
-        pitem.ui.edit_dialog.updateInfo()
-
-    def reloadInfo(self, pluginId):
-        if pluginId >= self.fPluginCount:
-            return
-
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return
-
-        pitem.ui.edit_dialog.reloadInfo()
-
-    def reloadParameters(self, pluginId):
-        if pluginId >= self.fPluginCount:
-            return
-
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return
-
-        pitem.ui.edit_dialog.reloadParameters()
-
-    def reloadPrograms(self, pluginId):
-        if pluginId >= self.fPluginCount:
-            return
-
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return
-
-        pitem.ui.edit_dialog.reloadPrograms()
-
-    def reloadAll(self, pluginId):
-        if pluginId >= self.fPluginCount:
-            return
-
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return
-
-        pitem.ui.edit_dialog.reloadAll()
-
-    # -----------------------------------------------------------------
-
-    def patchbayClientAdded(self, clientId, clientIcon, clientName):
+    def engineStarted(self):
         pass
 
-    def patchbayClientRemoved(self, clientId, clientName):
-        pass
-
-    def patchbayClientRenamed(self, clientId, newClientName):
-        pass
-
-    def patchbayPortAdded(self, clientId, portId, portFlags, portName):
-        pass
-
-    def patchbayPortRemoved(self, groupId, portId, fullPortName):
-        pass
-
-    def patchbayPortRenamed(self, groupId, portId, newPortName):
-        pass
-
-    def patchbayConnectionAdded(self, connectionId, portOutId, portInId):
-        pass
-
-    def patchbayConnectionRemoved(self, connectionId):
-        pass
-
-    def patchbayIconChanged(self, clientId, clientIcon):
+    def engineStopped(self):
         pass
 
     # -----------------------------------------------------------------
@@ -371,6 +217,289 @@ class CarlaRackW(QListWidget):
                 break
 
             pitem.fWidget.idleSlow()
+
+    # -----------------------------------------------------------------
+
+    @pyqtSlot()
+    def slot_pluginsEnable(self):
+        if not Carla.host.is_engine_running():
+            return
+
+        for i in range(self.fPluginCount):
+            pitem = self.fPluginList[i]
+            if pitem is None:
+                break
+
+            pitem.fWidget.setActive(True, True, True)
+
+    @pyqtSlot()
+    def slot_pluginsDisable(self):
+        if not Carla.host.is_engine_running():
+            return
+
+        for i in range(self.fPluginCount):
+            pitem = self.fPluginList[i]
+            if pitem is None:
+                break
+
+            pitem.fWidget.setActive(False, True, True)
+
+    @pyqtSlot()
+    def slot_pluginsVolume100(self):
+        if not Carla.host.is_engine_running():
+            return
+
+        for i in range(self.fPluginCount):
+            pitem = self.fPluginList[i]
+            if pitem is None:
+                break
+
+            if pitem.fWidget.fPluginInfo['hints'] & PLUGIN_CAN_VOLUME:
+                pitem.fWidget.ui.edit_dialog.setParameterValue(PARAMETER_VOLUME, 1.0)
+                Carla.host.set_volume(i, 1.0)
+
+    @pyqtSlot()
+    def slot_pluginsMute(self):
+        if not Carla.host.is_engine_running():
+            return
+
+        for i in range(self.fPluginCount):
+            pitem = self.fPluginList[i]
+            if pitem is None:
+                break
+
+            if pitem.fWidget.fPluginInfo['hints'] & PLUGIN_CAN_VOLUME:
+                pitem.fWidget.ui.edit_dialog.setParameterValue(PARAMETER_VOLUME, 0.0)
+                Carla.host.set_volume(i, 0.0)
+
+    @pyqtSlot()
+    def slot_pluginsWet100(self):
+        if not Carla.host.is_engine_running():
+            return
+
+        for i in range(self.fPluginCount):
+            pitem = self.fPluginList[i]
+            if pitem is None:
+                break
+
+            if pitem.fWidget.fPluginInfo['hints'] & PLUGIN_CAN_DRYWET:
+                pitem.fWidget.ui.edit_dialog.setParameterValue(PARAMETER_DRYWET, 1.0)
+                Carla.host.set_drywet(i, 1.0)
+
+    @pyqtSlot()
+    def slot_pluginsBypass(self):
+        if not Carla.host.is_engine_running():
+            return
+
+        for i in range(self.fPluginCount):
+            pitem = self.fPluginList[i]
+            if pitem is None:
+                break
+
+            if pitem.fWidget.fPluginInfo['hints'] & PLUGIN_CAN_DRYWET:
+                pitem.fWidget.ui.edit_dialog.setParameterValue(PARAMETER_DRYWET, 0.0)
+                Carla.host.set_drywet(i, 0.0)
+
+    @pyqtSlot()
+    def slot_pluginsCenter(self):
+        if not Carla.host.is_engine_running():
+            return
+
+        for i in range(self.fPluginCount):
+            pitem = self.fPluginList[i]
+            if pitem is None:
+                break
+
+            if pitem.fWidget.fPluginInfo['hints'] & PLUGIN_CAN_BALANCE:
+                pitem.fWidget.ui.edit_dialog.setParameterValue(PARAMETER_BALANCE_LEFT, -1.0)
+                pitem.fWidget.ui.edit_dialog.setParameterValue(PARAMETER_BALANCE_RIGHT, 1.0)
+                Carla.host.set_balance_left(i, -1.0)
+                Carla.host.set_balance_right(i, 1.0)
+
+            if pitem.fWidget.fPluginInfo['hints'] & PLUGIN_CAN_PANNING:
+                pitem.fWidget.ui.edit_dialog.setParameterValue(PARAMETER_PANNING, 1.0)
+                Carla.host.set_panning(i, 1.0)
+
+    # -----------------------------------------------------------------
+
+    @pyqtSlot()
+    def slot_configureCarla(self):
+        if self.fParent is None or not self.fParent.openSettings(False, False):
+            return
+
+        #self.loadSettings(False)
+
+    # -----------------------------------------------------------------
+
+    @pyqtSlot(int, int, float)
+    def slot_handleParameterValueChangedCallback(self, pluginId, index, value):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.fWidget.setParameterValue(index, value)
+
+    @pyqtSlot(int, int, float)
+    def slot_handleParameterDefaultChangedCallback(self, pluginId, index, value):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.fWidget.setParameterDefault(index, value)
+
+    @pyqtSlot(int, int, int)
+    def slot_handleParameterMidiChannelChangedCallback(self, pluginId, index, channel):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.fWidget.setParameterMidiChannel(index, channel)
+
+    @pyqtSlot(int, int, int)
+    def slot_handleParameterMidiCcChangedCallback(self, pluginId, index, cc):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.fWidget.setParameterMidiControl(index, cc)
+
+    # -----------------------------------------------------------------
+
+    @pyqtSlot(int, int)
+    def slot_handleProgramChangedCallback(self, pluginId, index):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.fWidget.setProgram(index)
+
+    @pyqtSlot(int, int)
+    def slot_handleMidiProgramChangedCallback(self, pluginId, index):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.fWidget.setMidiProgram(index)
+
+    # -----------------------------------------------------------------
+
+    @pyqtSlot(int, int, int, int)
+    def slot_handleNoteOnCallback(self, pluginId, channel, note, velo):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.fWidget.sendNoteOn(channel, note)
+
+    @pyqtSlot(int, int, int)
+    def slot_handleNoteOffCallback(self, pluginId, channel, note):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.fWidget.sendNoteOff(channel, note)
+
+    # -----------------------------------------------------------------
+
+    @pyqtSlot(int, int)
+    def slot_handleShowGuiCallback(self, pluginId, state):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        if state == 0:
+            pitem.fWidget.ui.b_gui.setChecked(False)
+            pitem.fWidget.ui.b_gui.setEnabled(True)
+        elif state == 1:
+            pitem.fWidget.ui.b_gui.setChecked(True)
+            pitem.fWidget.ui.b_gui.setEnabled(True)
+        elif state == -1:
+            pitem.fWidget.ui.b_gui.setChecked(False)
+            pitem.fWidget.ui.b_gui.setEnabled(False)
+
+    # -----------------------------------------------------------------
+
+    @pyqtSlot(int)
+    def slot_handleUpdateCallback(self, pluginId):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.ui.edit_dialog.updateInfo()
+
+    @pyqtSlot(int)
+    def slot_handleReloadInfoCallback(self, pluginId):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.ui.edit_dialog.reloadInfo()
+
+    @pyqtSlot(int)
+    def slot_handleReloadParametersCallback(self, pluginId):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.ui.edit_dialog.reloadParameters()
+
+    @pyqtSlot(int)
+    def slot_handleReloadProgramsCallback(self, pluginId):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.ui.edit_dialog.reloadPrograms()
+
+    @pyqtSlot(int)
+    def slot_handleReloadAllCallback(self, pluginId):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.ui.edit_dialog.reloadAll()
 
 # ------------------------------------------------------------------------------------------------------------
 # TESTING

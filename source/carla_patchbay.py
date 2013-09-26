@@ -24,6 +24,9 @@ try:
 except:
     from PyQt4.QtGui import QGraphicsView
 
+#QPrinter, QPrintDialog
+#QImage
+
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom Stuff)
 
@@ -53,6 +56,7 @@ class CarlaPatchbayW(QGraphicsView):
         # -------------------------------------------------------------
         # Internal stuff
 
+        self.fParent      = parent
         self.fPluginCount = 0
         self.fPluginList  = []
 
@@ -88,25 +92,68 @@ class CarlaPatchbayW(QGraphicsView):
         #patchcanvas.setInitialPos(DEFAULT_CANVAS_WIDTH / 2, DEFAULT_CANVAS_HEIGHT / 2)
         #self.setSceneRect(0, 0, DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT)
 
-    # -----------------------------------------------------------------
+        # -------------------------------------------------------------
+        # Connect actions to functions
 
-    def recheckPluginHints(self, hints):
-        pass
+        if parent is None:
+            return
+
+        parent.ui.act_plugins_enable.triggered.connect(self.slot_pluginsEnable)
+        parent.ui.act_plugins_disable.triggered.connect(self.slot_pluginsDisable)
+        parent.ui.act_plugins_volume100.triggered.connect(self.slot_pluginsVolume100)
+        parent.ui.act_plugins_mute.triggered.connect(self.slot_pluginsMute)
+        parent.ui.act_plugins_wet100.triggered.connect(self.slot_pluginsWet100)
+        parent.ui.act_plugins_bypass.triggered.connect(self.slot_pluginsBypass)
+        parent.ui.act_plugins_center.triggered.connect(self.slot_pluginsCenter)
+        parent.ui.act_plugins_panic.triggered.connect(self.slot_pluginsDisable)
+
+        parent.ui.act_canvas_arrange.setEnabled(False) # TODO, later
+        parent.ui.act_canvas_arrange.triggered.connect(self.slot_canvasArrange)
+        parent.ui.act_canvas_refresh.triggered.connect(self.slot_canvasRefresh)
+        parent.ui.act_canvas_zoom_fit.triggered.connect(self.slot_canvasZoomFit)
+        parent.ui.act_canvas_zoom_in.triggered.connect(self.slot_canvasZoomIn)
+        parent.ui.act_canvas_zoom_out.triggered.connect(self.slot_canvasZoomOut)
+        parent.ui.act_canvas_zoom_100.triggered.connect(self.slot_canvasZoomReset)
+        parent.ui.act_canvas_print.triggered.connect(self.slot_canvasPrint)
+        parent.ui.act_canvas_save_image.triggered.connect(self.slot_canvasSaveImage)
+
+        parent.ui.act_settings_configure.triggered.connect(self.slot_configureCarla)
+
+        parent.ParameterValueChangedCallback.connect(self.slot_handleParameterValueChangedCallback)
+        parent.ParameterDefaultChangedCallback.connect(self.slot_handleParameterDefaultChangedCallback)
+        parent.ParameterMidiChannelChangedCallback.connect(self.slot_handleParameterMidiChannelChangedCallback)
+        parent.ParameterMidiCcChangedCallback.connect(self.slot_handleParameterMidiCcChangedCallback)
+        parent.ProgramChangedCallback.connect(self.slot_handleProgramChangedCallback)
+        parent.MidiProgramChangedCallback.connect(self.slot_handleMidiProgramChangedCallback)
+        parent.NoteOnCallback.connect(self.slot_handleNoteOnCallback)
+        parent.NoteOffCallback.connect(self.slot_handleNoteOffCallback)
+        parent.ShowGuiCallback.connect(self.slot_handleShowGuiCallback)
+        parent.UpdateCallback.connect(self.slot_handleUpdateCallback)
+        parent.ReloadInfoCallback.connect(self.slot_handleReloadInfoCallback)
+        parent.ReloadParametersCallback.connect(self.slot_handleReloadParametersCallback)
+        parent.ReloadProgramsCallback.connect(self.slot_handleReloadProgramsCallback)
+        parent.ReloadAllCallback.connect(self.slot_handleReloadAllCallback)
+        parent.PatchbayClientAddedCallback.connect(self.slot_handlePatchbayClientAddedCallback)
+        parent.PatchbayClientRemovedCallback.connect(self.slot_handlePatchbayClientRemovedCallback)
+        parent.PatchbayClientRenamedCallback.connect(self.slot_handlePatchbayClientRenamedCallback)
+        parent.PatchbayPortAddedCallback.connect(self.slot_handlePatchbayPortAddedCallback)
+        parent.PatchbayPortRemovedCallback.connect(self.slot_handlePatchbayPortRemovedCallback)
+        parent.PatchbayPortRenamedCallback.connect(self.slot_handlePatchbayPortRenamedCallback)
+        parent.PatchbayConnectionAddedCallback.connect(self.slot_handlePatchbayConnectionAddedCallback)
+        parent.PatchbayConnectionRemovedCallback.connect(self.slot_handlePatchbayConnectionRemovedCallback)
+        parent.PatchbayIconChangedCallback.connect(self.slot_handlePatchbayIconChangedCallback)
+        #self.ui.miniCanvasPreview-miniCanvasMoved(double, double)"), SLOT("slot_miniCanvasMoved(double, double)"))
+
+        #self.ui.graphicsView.horizontalScrollBar()-valueChanged.connect(self.slot_horizontalScrollBarChanged)
+        #self.ui.graphicsView.verticalScrollBar()-valueChanged.connect(self.slot_verticalScrollBarChanged)
+
+        #self.scene-sceneGroupMoved(int, int, QPointF)"), SLOT("slot_canvasItemMoved(int, int, QPointF)"))
+        #self.scene-scaleChanged(double)"), SLOT("slot_canvasScaleChanged(double)"))
 
     # -----------------------------------------------------------------
 
     def getPluginCount(self):
         return self.fPluginCount
-
-    def getPlugin(self, pluginId):
-        if pluginId >= self.fPluginCount:
-            return None
-
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return None
-
-        return pitem
 
     # -----------------------------------------------------------------
 
@@ -142,7 +189,7 @@ class CarlaPatchbayW(QGraphicsView):
         if pitem is None:
             return
 
-        pitem.setName(name)
+        pitem.setName(newName)
 
     def removeAllPlugins(self):
         for i in range(self.fPluginCount):
@@ -159,224 +206,11 @@ class CarlaPatchbayW(QGraphicsView):
 
     # -----------------------------------------------------------------
 
-    def setParameterValue(self, pluginId, index, value):
-        if pluginId >= self.fPluginCount:
-            return
-
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return
-
-        pitem.setParameterValue(index, value)
-
-    def setParameterDefault(self, pluginId, index, value):
-        if pluginId >= self.fPluginCount:
-            return
-
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return
-
-        pitem.setParameterDefault(index, value)
-
-    def setParameterMidiChannel(self, pluginId, index, channel):
-        if pluginId >= self.fPluginCount:
-            return
-
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return
-
-        pitem.setParameterMidiChannel(index, channel)
-
-    def setParameterMidiCC(self, pluginId, index, cc):
-        if pluginId >= self.fPluginCount:
-            return
-
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return
-
-        pitem.setParameterMidiControl(index, cc)
-
-    # -----------------------------------------------------------------
-
-    def setProgram(self, pluginId, index):
-        if pluginId >= self.fPluginCount:
-            return
-
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return
-
-        pitem.setProgram(index)
-
-    def setMidiProgram(self, pluginId, index):
-        if pluginId >= self.fPluginCount:
-            return
-
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return
-
-        pitem.setMidiProgram(index)
-
-    # -----------------------------------------------------------------
-
-    def noteOn(self, pluginId, channel, note, velocity):
-        if pluginId >= self.fPluginCount:
-            return
-
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return
-
-        pitem.sendNoteOn(channel, note)
-
-    def noteOff(self, pluginId, channel, note):
-        if pluginId >= self.fPluginCount:
-            return
-
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return
-
-        pitem.sendNoteOff(channel, note)
-
-    # -----------------------------------------------------------------
-
-    def setGuiState(self, pluginId, state):
+    def engineStarted(self):
         pass
 
-    # -----------------------------------------------------------------
-
-    def updateInfo(self, pluginId):
-        if pluginId >= self.fPluginCount:
-            return
-
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return
-
-        pitem.updateInfo()
-
-    def reloadInfo(self, pluginId):
-        if pluginId >= self.fPluginCount:
-            return
-
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return
-
-        pitem.reloadInfo()
-
-    def reloadParameters(self, pluginId):
-        if pluginId >= self.fPluginCount:
-            return
-
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return
-
-        pitem.reloadParameters()
-
-    def reloadPrograms(self, pluginId):
-        if pluginId >= self.fPluginCount:
-            return
-
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return
-
-        pitem.reloadPrograms()
-
-    def reloadAll(self, pluginId):
-        if pluginId >= self.fPluginCount:
-            return
-
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return
-
-        pitem.reloadAll()
-
-    # -----------------------------------------------------------------
-
-    def patchbayClientAdded(self, clientId, clientIcon, clientName):
-        pcSplit = patchcanvas.SPLIT_UNDEF
-        pcIcon  = patchcanvas.ICON_APPLICATION
-
-        if clientIcon == PATCHBAY_ICON_HARDWARE:
-            pcSplit = patchcanvas.SPLIT_YES
-            pcIcon = patchcanvas.ICON_HARDWARE
-        elif clientIcon == PATCHBAY_ICON_DISTRHO:
-            pcIcon = patchcanvas.ICON_DISTRHO
-        elif clientIcon == PATCHBAY_ICON_FILE:
-            pcIcon = patchcanvas.ICON_FILE
-        elif clientIcon == PATCHBAY_ICON_PLUGIN:
-            pcIcon = patchcanvas.ICON_PLUGIN
-
-        patchcanvas.addGroup(clientId, clientName, pcSplit, pcIcon)
-        #QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
-
-    def patchbayClientRemoved(self, clientId, clientName):
-        #if not self.fEngineStarted: return
-        patchcanvas.removeGroup(clientId)
-        #QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
-
-    def patchbayClientRenamed(self, clientId, newClientName):
-        patchcanvas.renameGroup(clientId, newClientName)
-        #QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
-
-    def patchbayPortAdded(self, clientId, portId, portFlags, portName):
-        if (portFlags & PATCHBAY_PORT_IS_INPUT):
-            portMode = patchcanvas.PORT_MODE_INPUT
-        elif (portFlags & PATCHBAY_PORT_IS_OUTPUT):
-            portMode = patchcanvas.PORT_MODE_OUTPUT
-        else:
-            portMode = patchcanvas.PORT_MODE_NULL
-
-        if (portFlags & PATCHBAY_PORT_IS_AUDIO):
-            portType = patchcanvas.PORT_TYPE_AUDIO_JACK
-        elif (portFlags & PATCHBAY_PORT_IS_MIDI):
-            portType = patchcanvas.PORT_TYPE_MIDI_JACK
-        else:
-            portType = patchcanvas.PORT_TYPE_NULL
-
-        patchcanvas.addPort(clientId, portId, portName, portMode, portType)
-        #QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
-
-    def patchbayPortRemoved(self, groupId, portId, fullPortName):
-        #if not self.fEngineStarted: return
-        patchcanvas.removePort(portId)
-        #QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
-
-    def patchbayPortRenamed(self, groupId, portId, newPortName):
-        patchcanvas.renamePort(portId, newPortName)
-        #QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
-
-    def patchbayConnectionAdded(self, connectionId, portOutId, portInId):
-        patchcanvas.connectPorts(connectionId, portOutId, portInId)
-        #QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
-
-    def patchbayConnectionRemoved(self, connectionId):
-        #if not self.fEngineStarted: return
-        patchcanvas.disconnectPorts(connectionId)
-        #QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
-
-    def patchbayIconChanged(self, clientId, clientIcon):
-        pcIcon = patchcanvas.ICON_APPLICATION
-
-        if clientIcon == PATCHBAY_ICON_HARDWARE:
-            pcIcon = patchcanvas.ICON_HARDWARE
-        elif clientIcon == PATCHBAY_ICON_DISTRHO:
-            pcIcon = patchcanvas.ICON_DISTRHO
-        elif clientIcon == PATCHBAY_ICON_FILE:
-            pcIcon = patchcanvas.ICON_FILE
-        elif clientIcon == PATCHBAY_ICON_PLUGIN:
-            pcIcon = patchcanvas.ICON_PLUGIN
-
-        patchcanvas.setGroupIcon(clientId, pcIcon)
+    def engineStopped(self):
+        patchcanvas.clear()
 
     # -----------------------------------------------------------------
 
@@ -394,6 +228,380 @@ class CarlaPatchbayW(QGraphicsView):
 
     # -----------------------------------------------------------------
 
+    def recheckPluginHints(self, hints):
+        pass
+
+    # -----------------------------------------------------------------
+
+    @pyqtSlot()
+    def slot_pluginsEnable(self):
+        if not Carla.host.is_engine_running():
+            return
+
+        for i in range(self.fPluginCount):
+            Carla.host.set_active(i, True)
+
+    @pyqtSlot()
+    def slot_pluginsDisable(self):
+        if not Carla.host.is_engine_running():
+            return
+
+        for i in range(self.fPluginCount):
+            Carla.host.set_active(i, False)
+
+    @pyqtSlot()
+    def slot_pluginsVolume100(self):
+        if not Carla.host.is_engine_running():
+            return
+
+        for i in range(self.fPluginCount):
+            pitem = self.fPluginList[i]
+            if pitem is None:
+                break
+
+            if pitem.fPluginInfo['hints'] & PLUGIN_CAN_VOLUME:
+                pitem.setParameterValue(PARAMETER_VOLUME, 1.0)
+                Carla.host.set_volume(i, 1.0)
+
+    @pyqtSlot()
+    def slot_pluginsMute(self):
+        if not Carla.host.is_engine_running():
+            return
+
+        for i in range(self.fPluginCount):
+            pitem = self.fPluginList[i]
+            if pitem is None:
+                break
+
+            if pitem.fPluginInfo['hints'] & PLUGIN_CAN_VOLUME:
+                pitem.setParameterValue(PARAMETER_VOLUME, 0.0)
+                Carla.host.set_volume(i, 0.0)
+
+    @pyqtSlot()
+    def slot_pluginsWet100(self):
+        if not Carla.host.is_engine_running():
+            return
+
+        for i in range(self.fPluginCount):
+            pitem = self.fPluginList[i]
+            if pitem is None:
+                break
+
+            if pitem.fPluginInfo['hints'] & PLUGIN_CAN_DRYWET:
+                pitem.setParameterValue(PARAMETER_DRYWET, 1.0)
+                Carla.host.set_drywet(i, 1.0)
+
+    @pyqtSlot()
+    def slot_pluginsBypass(self):
+        if not Carla.host.is_engine_running():
+            return
+
+        for i in range(self.fPluginCount):
+            pitem = self.fPluginList[i]
+            if pitem is None:
+                break
+
+            if pitem.fPluginInfo['hints'] & PLUGIN_CAN_DRYWET:
+                pitem.setParameterValue(PARAMETER_DRYWET, 0.0)
+                Carla.host.set_drywet(i, 0.0)
+
+    @pyqtSlot()
+    def slot_pluginsCenter(self):
+        if not Carla.host.is_engine_running():
+            return
+
+        for i in range(self.fPluginCount):
+            pitem = self.fPluginList[i]
+            if pitem is None:
+                break
+
+            if pitem.fPluginInfo['hints'] & PLUGIN_CAN_BALANCE:
+                pitem.setParameterValue(PARAMETER_BALANCE_LEFT, -1.0)
+                pitem.setParameterValue(PARAMETER_BALANCE_RIGHT, 1.0)
+                Carla.host.set_balance_left(i, -1.0)
+                Carla.host.set_balance_right(i, 1.0)
+
+            if pitem.fPluginInfo['hints'] & PLUGIN_CAN_PANNING:
+                pitem.setParameterValue(PARAMETER_PANNING, 1.0)
+                Carla.host.set_panning(i, 1.0)
+
+    # -----------------------------------------------------------------
+
+    @pyqtSlot()
+    def slot_configureCarla(self):
+        if self.fParent is None or not self.fParent.openSettings(False, False):
+            return
+
+        #self.loadSettings(False)
+        patchcanvas.clear()
+
+        #pOptions = patchcanvas.options_t()
+        #pOptions.theme_name       = self.fSavedSettings["Canvas/Theme"]
+        #pOptions.auto_hide_groups = self.fSavedSettings["Canvas/AutoHideGroups"]
+        #pOptions.use_bezier_lines = self.fSavedSettings["Canvas/UseBezierLines"]
+        #pOptions.antialiasing     = self.fSavedSettings["Canvas/Antialiasing"]
+        #pOptions.eyecandy         = self.fSavedSettings["Canvas/EyeCandy"]
+
+        pFeatures = patchcanvas.features_t()
+        pFeatures.group_info   = False
+        pFeatures.group_rename = False
+        pFeatures.port_info    = False
+        pFeatures.port_rename  = False
+        pFeatures.handle_group_pos = True
+
+        #patchcanvas.setOptions(pOptions)
+        patchcanvas.setFeatures(pFeatures)
+        patchcanvas.init("Carla", self.scene, CanvasCallback, False)
+
+        if Carla.host.is_engine_running():
+            Carla.host.patchbay_refresh()
+
+    # -----------------------------------------------------------------
+
+    @pyqtSlot(int, int, float)
+    def slot_handleParameterValueChangedCallback(self, pluginId, index, value):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.setParameterValue(index, value)
+
+    @pyqtSlot(int, int, float)
+    def slot_handleParameterDefaultChangedCallback(self, pluginId, index, value):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.setParameterDefault(index, value)
+
+    @pyqtSlot(int, int, int)
+    def slot_handleParameterMidiChannelChangedCallback(self, pluginId, index, channel):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.setParameterMidiChannel(index, channel)
+
+    @pyqtSlot(int, int, int)
+    def slot_handleParameterMidiCcChangedCallback(self, pluginId, index, cc):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.setParameterMidiControl(index, cc)
+
+    # -----------------------------------------------------------------
+
+    @pyqtSlot(int, int)
+    def slot_handleProgramChangedCallback(self, pluginId, index):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.setProgram(index)
+
+    @pyqtSlot(int, int)
+    def slot_handleMidiProgramChangedCallback(self, pluginId, index):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.setMidiProgram(index)
+
+    # -----------------------------------------------------------------
+
+    @pyqtSlot(int, int, int, int)
+    def slot_handleNoteOnCallback(self, pluginId, channel, note, velo):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.sendNoteOn(channel, note)
+
+    @pyqtSlot(int, int, int)
+    def slot_handleNoteOffCallback(self, pluginId, channel, note):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.sendNoteOff(channel, note)
+
+    # -----------------------------------------------------------------
+
+    @pyqtSlot(int, int)
+    def slot_handleShowGuiCallback(self, pluginId, state):
+        pass
+
+    # -----------------------------------------------------------------
+
+    @pyqtSlot(int)
+    def slot_handleUpdateCallback(self, pluginId):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.updateInfo()
+
+    @pyqtSlot(int)
+    def slot_handleReloadInfoCallback(self, pluginId):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.reloadInfo()
+
+    @pyqtSlot(int)
+    def slot_handleReloadParametersCallback(self, pluginId):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.reloadParameters()
+
+    @pyqtSlot(int)
+    def slot_handleReloadProgramsCallback(self, pluginId):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.reloadPrograms()
+
+    @pyqtSlot(int)
+    def slot_handleReloadAllCallback(self, pluginId):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        pitem.reloadAll()
+
+    # -----------------------------------------------------------------
+
+    @pyqtSlot(int, int, str)
+    def slot_handlePatchbayClientAddedCallback(self, clientId, clientIcon, clientName):
+        pcSplit = patchcanvas.SPLIT_UNDEF
+        pcIcon  = patchcanvas.ICON_APPLICATION
+
+        if clientIcon == PATCHBAY_ICON_HARDWARE:
+            pcSplit = patchcanvas.SPLIT_YES
+            pcIcon = patchcanvas.ICON_HARDWARE
+        elif clientIcon == PATCHBAY_ICON_DISTRHO:
+            pcIcon = patchcanvas.ICON_DISTRHO
+        elif clientIcon == PATCHBAY_ICON_FILE:
+            pcIcon = patchcanvas.ICON_FILE
+        elif clientIcon == PATCHBAY_ICON_PLUGIN:
+            pcIcon = patchcanvas.ICON_PLUGIN
+
+        patchcanvas.addGroup(clientId, clientName, pcSplit, pcIcon)
+        #QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
+
+    @pyqtSlot(int, str)
+    def slot_handlePatchbayClientRemovedCallback(self, clientId, clientName):
+        #if not self.fEngineStarted: return
+        patchcanvas.removeGroup(clientId)
+        #QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
+
+    @pyqtSlot(int, str)
+    def slot_handlePatchbayClientRenamedCallback(self, clientId, newClientName):
+        patchcanvas.renameGroup(clientId, newClientName)
+        #QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
+
+    @pyqtSlot(int, int, int, str)
+    def slot_handlePatchbayPortAddedCallback(self, clientId, portId, portFlags, portName):
+        if (portFlags & PATCHBAY_PORT_IS_INPUT):
+            portMode = patchcanvas.PORT_MODE_INPUT
+        elif (portFlags & PATCHBAY_PORT_IS_OUTPUT):
+            portMode = patchcanvas.PORT_MODE_OUTPUT
+        else:
+            portMode = patchcanvas.PORT_MODE_NULL
+
+        if (portFlags & PATCHBAY_PORT_IS_AUDIO):
+            portType = patchcanvas.PORT_TYPE_AUDIO_JACK
+        elif (portFlags & PATCHBAY_PORT_IS_MIDI):
+            portType = patchcanvas.PORT_TYPE_MIDI_JACK
+        else:
+            portType = patchcanvas.PORT_TYPE_NULL
+
+        patchcanvas.addPort(clientId, portId, portName, portMode, portType)
+        #QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
+
+    @pyqtSlot(int, int, str)
+    def slot_handlePatchbayPortRemovedCallback(self, groupId, portId, fullPortName):
+        #if not self.fEngineStarted: return
+        patchcanvas.removePort(portId)
+        #QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
+
+    @pyqtSlot(int, int, str)
+    def slot_handlePatchbayPortRenamedCallback(self, groupId, portId, newPortName):
+        patchcanvas.renamePort(portId, newPortName)
+        #QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
+
+    @pyqtSlot(int, int, int)
+    def slot_handlePatchbayConnectionAddedCallback(self, connectionId, portOutId, portInId):
+        patchcanvas.connectPorts(connectionId, portOutId, portInId)
+        #QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
+
+    @pyqtSlot(int)
+    def slot_handlePatchbayConnectionRemovedCallback(self, connectionId):
+        #if not self.fEngineStarted: return
+        patchcanvas.disconnectPorts(connectionId)
+        #QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
+
+    @pyqtSlot(int, int)
+    def slot_handlePatchbayIconChangedCallback(self, clientId, clientIcon):
+        pcIcon = patchcanvas.ICON_APPLICATION
+
+        if clientIcon == PATCHBAY_ICON_HARDWARE:
+            pcIcon = patchcanvas.ICON_HARDWARE
+        elif clientIcon == PATCHBAY_ICON_DISTRHO:
+            pcIcon = patchcanvas.ICON_DISTRHO
+        elif clientIcon == PATCHBAY_ICON_FILE:
+            pcIcon = patchcanvas.ICON_FILE
+        elif clientIcon == PATCHBAY_ICON_PLUGIN:
+            pcIcon = patchcanvas.ICON_PLUGIN
+
+        patchcanvas.setGroupIcon(clientId, pcIcon)
+
+    # -----------------------------------------------------------------
+
     @pyqtSlot()
     def slot_canvasArrange(self):
         patchcanvas.arrange()
@@ -403,7 +611,7 @@ class CarlaPatchbayW(QGraphicsView):
         patchcanvas.clear()
         if Carla.host.is_engine_running():
             Carla.host.patchbay_refresh()
-        QTimer.singleShot(1000 if self.fSavedSettings['Canvas/EyeCandy'] else 0, self.ui.miniCanvasPreview, SLOT("update()"))
+        #QTimer.singleShot(1000 if self.fSavedSettings['Canvas/EyeCandy'] else 0, self.ui.miniCanvasPreview, SLOT("update()"))
 
     @pyqtSlot()
     def slot_canvasZoomFit(self):

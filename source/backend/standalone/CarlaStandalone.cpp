@@ -430,8 +430,6 @@ void carla_engine_idle()
 
 bool carla_is_engine_running()
 {
-    carla_debug("carla_is_engine_running()");
-
     return (gStandalone.engine != nullptr && gStandalone.engine->isRunning());
 }
 

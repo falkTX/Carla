@@ -40,50 +40,73 @@ class CarlaMiniW(HostWindow):
     def __init__(self, parent=None):
         HostWindow.__init__(self, parent)
 
-        #self.fContainer = CarlaRackW(self)
-        self.fContainer = CarlaPatchbayW(self)
+        self.fContainer = CarlaRackW(self)
+        #self.fContainer = CarlaPatchbayW(self)
         self.setCentralWidget(self.fContainer)
-
-        Carla.host.engine_init("JACK", "Carla")
-
-        self.init()
-
-        Carla.host.patchbay_refresh()
-
-    def closeEvent(self, event):
-        Carla.host.engine_close()
-        HostWindow.closeEvent(self, event)
 
 # ------------------------------------------------------------------------------------------------------------
 # Main
 
 if __name__ == '__main__':
+    # -------------------------------------------------------------
     # App initialization
+
     app = QApplication(sys.argv)
     app.setApplicationName("Carla")
     app.setApplicationVersion(VERSION)
     app.setOrganizationName("falkTX")
     app.setWindowIcon(QIcon(":/scalable/carla.svg"))
 
-    initHost()
+    # -------------------------------------------------------------
+    # Set-up custom signal handling
 
-    Carla.host.set_engine_option(OPTION_PROCESS_NAME, 0, "carla")
+    setUpSignals()
 
-    # Create GUI and start engine
+    # -------------------------------------------------------------
+    # Read CLI args
+
+    appName = os.path.basename(__file__) if ("__file__" in dir() and os.path.dirname(__file__) in PATH) else sys.argv[0]
+    libPrefix = None
+    projectFilename = None
+
+    argv = app.arguments()
+    argc = len(argv)
+
+    for i in range(argc):
+        if i == 0: continue
+        argument = argv[i]
+
+        if argument.startswith("--with-appname="):
+            appName = os.path.basename(argument.replace("--with-appname=", ""))
+
+        elif argument.startswith("--with-libprefix="):
+            libPrefix = argument.replace("--with-libprefix=", "")
+
+        elif os.path.exists(argument):
+            projectFilename = argument
+
+    # -------------------------------------------------------------
+    # Init host backend
+
+    initHost(appName, libPrefix)
+
+    # -------------------------------------------------------------
+    # Create GUI
+
     Carla.gui = CarlaMiniW()
 
-    Carla.host.patchbay_refresh()
+    # -------------------------------------------------------------
+    # Load project file if set
 
+    if projectFilename is not None:
+        Carla.gui.loadProjectLater(projectFilename)
+
+    # -------------------------------------------------------------
     # Show GUI
+
     Carla.gui.show()
 
+    # -------------------------------------------------------------
     # App-Loop
-    ret = app.exec_()
 
-    # Destroy GUI
-    tmp = Carla.gui
-    Carla.gui = None
-    del tmp
-
-    # Exit properly
-    sys.exit(ret)
+    sys.exit(app.exec_())

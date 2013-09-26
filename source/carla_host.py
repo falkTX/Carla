@@ -34,6 +34,12 @@ from carla_settings import *
 from carla_widgets import *
 
 # ------------------------------------------------------------------------------------------------------------
+# Session Management support
+
+LADISH_APP_NAME = os.getenv("LADISH_APP_NAME")
+NSM_URL         = os.getenv("NSM_URL")
+
+# ------------------------------------------------------------------------------------------------------------
 # Dummy widget
 
 class CarlaDummyW(object):
@@ -44,9 +50,6 @@ class CarlaDummyW(object):
 
     def getPluginCount(self):
         return 0
-
-    def getPlugin(self, pluginId):
-        return None
 
     # -----------------------------------------------------------------
 
@@ -64,83 +67,10 @@ class CarlaDummyW(object):
 
     # -----------------------------------------------------------------
 
-    def setParameterValue(self, pluginId, index, value):
+    def engineStarted(self):
         pass
 
-    def setParameterDefault(self, pluginId, index, value):
-        pass
-
-    def setParameterMidiChannel(self, pluginId, index, channel):
-        pass
-
-    def setParameterMidiCC(self, pluginId, index, cc):
-        pass
-
-    # -----------------------------------------------------------------
-
-    def setProgram(self, pluginId, index):
-        pass
-
-    def setMidiProgram(self, pluginId, index):
-        pass
-
-    # -----------------------------------------------------------------
-
-    def noteOn(self, pluginId, channel, note, velocity):
-        pass
-
-    def noteOff(self, pluginId, channel, note):
-        pass
-
-    # -----------------------------------------------------------------
-
-    def setGuiState(self, pluginId, state):
-        pass
-
-    # -----------------------------------------------------------------
-
-    def updateInfo(self, pluginId):
-        pass
-
-    def reloadInfo(self, pluginId):
-        pass
-
-    def reloadParameters(self, pluginId):
-        pass
-
-    def reloadPrograms(self, pluginId):
-        pass
-
-    def reloadAll(self, pluginId):
-        pass
-
-    # -----------------------------------------------------------------
-
-    def patchbayClientAdded(self, clientId, clientIcon, clientName):
-        pass
-
-    def patchbayClientRemoved(self, clientId, clientName):
-        pass
-
-    def patchbayClientRenamed(self, clientId, newClientName):
-        pass
-
-    def patchbayPortAdded(self, clientId, portId, portFlags, portName):
-        pass
-
-    def patchbayPortRemoved(self, groupId, portId, fullPortName):
-        pass
-
-    def patchbayPortRenamed(self, groupId, portId, newPortName):
-        pass
-
-    def patchbayConnectionAdded(self, connectionId, portOutId, portInId):
-        pass
-
-    def patchbayConnectionRemoved(self, connectionId):
-        pass
-
-    def patchbayIconChanged(self, clientId, clientIcon):
+    def engineStopped(self):
         pass
 
     # -----------------------------------------------------------------
@@ -210,12 +140,41 @@ class HostWindow(QMainWindow):
         # -------------------------------------------------------------
         # Internal stuff
 
+        self.fBufferSize = 0
+        self.fSampleRate = 0.0
+
         self.fIdleTimerFast = 0
         self.fIdleTimerSlow = 0
         self.fIsProjectLoading = False
 
         self.fLadspaRdfNeedsUpdate = True
         self.fLadspaRdfList = []
+
+        self.fLastTransportFrame = 0
+        self.fLastTransportState = False
+
+        if LADISH_APP_NAME:
+            self.fClientName         = LADISH_APP_NAME
+            self.fSessionManagerName = "LADISH"
+        elif NSM_URL:
+            self.fClientName         = "Carla.tmp"
+            self.fSessionManagerName = "Non Session Manager"
+        else:
+            self.fClientName         = "Carla"
+            self.fSessionManagerName = ""
+
+        # -------------------------------------------------------------
+        # Set up GUI (engine stopped)
+
+        self.ui.act_file_save.setEnabled(False)
+        self.ui.act_file_save_as.setEnabled(False)
+        self.ui.act_engine_start.setEnabled(True)
+        self.ui.act_engine_stop.setEnabled(False)
+        self.ui.act_plugin_remove_all.setEnabled(False)
+        #self.ui.menu_Plugins.setEnabled(False)
+        self.ui.menu_Canvas.setEnabled(False)
+
+        self.setTransportMenuEnabled(False)
 
         # -------------------------------------------------------------
         # Connect actions to functions
@@ -225,99 +184,152 @@ class HostWindow(QMainWindow):
         #self.ui.act_file_save.triggered.connect(self.slot_fileSave)
         #self.ui.act_file_save_as.triggered.connect(self.slot_fileSaveAs)
 
-        #self.ui.act_engine_start.triggered.connect(self.slot_engineStart)
-        #self.ui.act_engine_stop.triggered.connect(self.slot_engineStop)
+        self.ui.act_engine_start.triggered.connect(self.slot_engineStart)
+        self.ui.act_engine_stop.triggered.connect(self.slot_engineStop)
 
         self.ui.act_plugin_add.triggered.connect(self.slot_pluginAdd)
         self.ui.act_plugin_add2.triggered.connect(self.slot_pluginAdd)
         self.ui.act_plugin_remove_all.triggered.connect(self.slot_pluginRemoveAll)
 
-        #self.ui.act_plugins_enable.triggered.connect(self.slot_pluginsEnable)
-        #self.ui.act_plugins_disable.triggered.connect(self.slot_pluginsDisable)
-        #self.ui.act_plugins_panic.triggered.connect(self.slot_pluginsDisable)
-        #self.ui.act_plugins_volume100.triggered.connect(self.slot_pluginsVolume100)
-        #self.ui.act_plugins_mute.triggered.connect(self.slot_pluginsMute)
-        #self.ui.act_plugins_wet100.triggered.connect(self.slot_pluginsWet100)
-        #self.ui.act_plugins_bypass.triggered.connect(self.slot_pluginsBypass)
-        #self.ui.act_plugins_center.triggered.connect(self.slot_pluginsCenter)
-
-        #self.ui.act_transport_play-triggered(bool)"), SLOT("slot_transportPlayPause(bool)"))
-        #self.ui.act_transport_stop.triggered.connect(self.slot_transportStop)
-        #self.ui.act_transport_backwards.triggered.connect(self.slot_transportBackwards)
-        #self.ui.act_transport_forwards.triggered.connect(self.slot_transportForwards)
-
-        #self.ui.act_canvas_arrange.setEnabled(False) # TODO, later
-        #self.ui.act_canvas_arrange.triggered.connect(self.slot_canvasArrange)
-        #self.ui.act_canvas_refresh.triggered.connect(self.slot_canvasRefresh)
-        #self.ui.act_canvas_zoom_fit.triggered.connect(self.slot_canvasZoomFit)
-        #self.ui.act_canvas_zoom_in.triggered.connect(self.slot_canvasZoomIn)
-        #self.ui.act_canvas_zoom_out.triggered.connect(self.slot_canvasZoomOut)
-        #self.ui.act_canvas_zoom_100.triggered.connect(self.slot_canvasZoomReset)
-        #self.ui.act_canvas_print.triggered.connect(self.slot_canvasPrint)
-        #self.ui.act_canvas_save_image.triggered.connect(self.slot_canvasSaveImage)
-
-        self.ui.act_settings_configure.triggered.connect(self.slot_configureCarla)
+        self.ui.act_transport_play.triggered.connect(self.slot_transportPlayPause)
+        self.ui.act_transport_stop.triggered.connect(self.slot_transportStop)
+        self.ui.act_transport_backwards.triggered.connect(self.slot_transportBackwards)
+        self.ui.act_transport_forwards.triggered.connect(self.slot_transportForwards)
 
         self.ui.act_help_about.triggered.connect(self.slot_aboutCarla)
         self.ui.act_help_about_qt.triggered.connect(self.slot_aboutQt)
 
-        #self.ui.splitter-splitterMoved.connect(self.slot_splitterMoved)
+        #self.ui.splitter.splitterMoved.connect(self.slot_splitterMoved)
 
-        #self.ui.cb_disk-currentIndexChanged.connect(self.slot_diskFolderChanged)
-        #self.ui.b_disk_add-clicked.connect(self.slot_diskFolderAdd)
-        #self.ui.b_disk_remove-clicked.connect(self.slot_diskFolderRemove)
-        #self.ui.fileTreeView-doubleClicked(QModelIndex)"), SLOT("slot_fileTreeDoubleClicked(QModelIndex)"))
-        #self.ui.miniCanvasPreview-miniCanvasMoved(double, double)"), SLOT("slot_miniCanvasMoved(double, double)"))
-
-        #self.ui.graphicsView.horizontalScrollBar()-valueChanged.connect(self.slot_horizontalScrollBarChanged)
-        #self.ui.graphicsView.verticalScrollBar()-valueChanged.connect(self.slot_verticalScrollBarChanged)
-
-        #self.scene-sceneGroupMoved(int, int, QPointF)"), SLOT("slot_canvasItemMoved(int, int, QPointF)"))
-        #self.scene-scaleChanged(double)"), SLOT("slot_canvasScaleChanged(double)"))
+        #self.ui.cb_disk.currentIndexChanged.connect(self.slot_diskFolderChanged)
+        #self.ui.b_disk_add.clicked.connect(self.slot_diskFolderAdd)
+        #self.ui.b_disk_remove.clicked.connect(self.slot_diskFolderRemove)
+        #self.ui.fileTreeView.doubleClicked.connect(self.slot_fileTreeDoubleClicked)
 
         self.DebugCallback.connect(self.slot_handleDebugCallback)
         self.PluginAddedCallback.connect(self.slot_handlePluginAddedCallback)
         self.PluginRemovedCallback.connect(self.slot_handlePluginRemovedCallback)
         self.PluginRenamedCallback.connect(self.slot_handlePluginRenamedCallback)
-        self.ParameterValueChangedCallback.connect(self.slot_handleParameterValueChangedCallback)
-        self.ParameterDefaultChangedCallback.connect(self.slot_handleParameterDefaultChangedCallback)
-        self.ParameterMidiChannelChangedCallback.connect(self.slot_handleParameterMidiChannelChangedCallback)
-        self.ParameterMidiCcChangedCallback.connect(self.slot_handleParameterMidiCcChangedCallback)
-        self.ProgramChangedCallback.connect(self.slot_handleProgramChangedCallback)
-        self.MidiProgramChangedCallback.connect(self.slot_handleMidiProgramChangedCallback)
-        self.NoteOnCallback.connect(self.slot_handleNoteOnCallback)
-        self.NoteOffCallback.connect(self.slot_handleNoteOffCallback)
-        self.ShowGuiCallback.connect(self.slot_handleShowGuiCallback)
-        self.UpdateCallback.connect(self.slot_handleUpdateCallback)
-        self.ReloadInfoCallback.connect(self.slot_handleReloadInfoCallback)
-        self.ReloadParametersCallback.connect(self.slot_handleReloadParametersCallback)
-        self.ReloadProgramsCallback.connect(self.slot_handleReloadProgramsCallback)
-        self.ReloadAllCallback.connect(self.slot_handleReloadAllCallback)
-        self.PatchbayClientAddedCallback.connect(self.slot_handlePatchbayClientAddedCallback)
-        self.PatchbayClientRemovedCallback.connect(self.slot_handlePatchbayClientRemovedCallback)
-        self.PatchbayClientRenamedCallback.connect(self.slot_handlePatchbayClientRenamedCallback)
-        self.PatchbayPortAddedCallback.connect(self.slot_handlePatchbayPortAddedCallback)
-        self.PatchbayPortRemovedCallback.connect(self.slot_handlePatchbayPortRemovedCallback)
-        self.PatchbayPortRenamedCallback.connect(self.slot_handlePatchbayPortRenamedCallback)
-        self.PatchbayConnectionAddedCallback.connect(self.slot_handlePatchbayConnectionAddedCallback)
-        self.PatchbayConnectionRemovedCallback.connect(self.slot_handlePatchbayConnectionRemovedCallback)
-        self.PatchbayIconChangedCallback.connect(self.slot_handlePatchbayIconChangedCallback)
-        #self.BufferSizeChangedCallback.connect(self.slot_handleBufferSizeChangedCallback)
-        #self.SampleRateChangedCallback(double)"), SLOT("slot_handleSampleRateChangedCallback(double)"))
-        #self.NSM_AnnounceCallback(QString)"), SLOT("slot_handleNSM_AnnounceCallback(QString)"))
-        #self.NSM_OpenCallback(QString)"), SLOT("slot_handleNSM_OpenCallback(QString)"))
+        self.BufferSizeChangedCallback.connect(self.slot_handleBufferSizeChangedCallback)
+        self.SampleRateChangedCallback.connect(self.slot_handleSampleRateChangedCallback)
+        #self.NSM_AnnounceCallback.connect(self.slot_handleNSM_AnnounceCallback)
+        #self.NSM_OpenCallback.connect(self.slot_handleNSM_OpenCallback)
         #self.NSM_SaveCallback.connect(self.slot_handleNSM_SaveCallback)
-        #self.ErrorCallback(QString)"), SLOT("slot_handleErrorCallback(QString)"))
+        #self.ErrorCallback.connect(self.slot_handleErrorCallback)
         #self.QuitCallback.connect(self.slot_handleQuitCallback)
 
         self.SIGUSR1.connect(self.slot_handleSIGUSR1)
         self.SIGTERM.connect(self.slot_handleSIGTERM)
 
     # -----------------------------------------------------------------
+    # Called by containers
 
-    def init(self):
+    def openSettings(self, hasCanvas, hasCanvasGL):
+        dialog = CarlaSettingsW(self, hasCanvas, hasCanvasGL)
+        return dialog.exec_()
+
+    # -----------------------------------------------------------------
+    # Internal stuff
+
+    def startEngine(self):
+        # ---------------------------------------------
+        # Engine settings
+
+        settings = QSettings()
+
+        forceStereo         = settings.value("Engine/ForceStereo",         CARLA_DEFAULT_FORCE_STEREO,          type=bool)
+        preferPluginBridges = settings.value("Engine/PreferPluginBridges", CARLA_DEFAULT_PREFER_PLUGIN_BRIDGES, type=bool)
+        preferUiBridges     = settings.value("Engine/PreferUiBridges",     CARLA_DEFAULT_PREFER_UI_BRIDGES,     type=bool)
+        uisAlwaysOnTop      = settings.value("Engine/OscUiTimeout",        CARLA_DEFAULT_UIS_ALWAYS_ON_TOP,     type=bool)
+        uiBridgesTimeout    = settings.value("Engine/OscUiTimeout",        CARLA_DEFAULT_UI_BRIDGES_TIMEOUT,    type=int)
+
+        Carla.processMode   = settings.value("Engine/ProcessMode",         CARLA_DEFAULT_PROCESS_MODE,          type=int)
+        Carla.maxParameters = settings.value("Engine/MaxParameters",       CARLA_DEFAULT_MAX_PARAMETERS,        type=int)
+
+        audioDriver         = settings.value("Engine/AudioDriver",         CARLA_DEFAULT_AUDIO_DRIVER,          type=str)
+
+        if audioDriver == "JACK":
+            #transportMode  = settings.value("Engine/TransportMode",       TRANSPORT_MODE_JACK,                 type=int)
+            transportMode   = TRANSPORT_MODE_JACK
+        else:
+            transportMode   = TRANSPORT_MODE_INTERNAL
+            audioNumPeriods = settings.value("Engine/AudioBufferSize", CARLA_DEFAULT_AUDIO_NUM_PERIODS, type=int)
+            audioBufferSize = settings.value("Engine/AudioBufferSize", CARLA_DEFAULT_AUDIO_BUFFER_SIZE, type=int)
+            audioSampleRate = settings.value("Engine/AudioSampleRate", CARLA_DEFAULT_AUDIO_SAMPLE_RATE, type=int)
+            audioDevice     = settings.value("Engine/AudioDevice",     "",                              type=str)
+
+            Carla.host.set_engine_option(OPTION_AUDIO_NUM_PERIODS, audioNumPeriods, "")
+            Carla.host.set_engine_option(OPTION_AUDIO_BUFFER_SIZE, audioBufferSize, "")
+            Carla.host.set_engine_option(OPTION_AUDIO_SAMPLE_RATE, audioSampleRate, "")
+            Carla.host.set_engine_option(OPTION_AUDIO_DEVICE,   0, audioDevice)
+
+        if Carla.processMode == PROCESS_MODE_CONTINUOUS_RACK:
+            forceStereo = True
+        elif Carla.processMode == PROCESS_MODE_MULTIPLE_CLIENTS: # and LADISH_APP_NAME:
+            print("LADISH detected but using multiple clients (not allowed), forcing single client now")
+            Carla.processMode = PROCESS_MODE_SINGLE_CLIENT
+
+        Carla.host.set_engine_option(OPTION_FORCE_STEREO,          forceStereo,         "")
+        Carla.host.set_engine_option(OPTION_PREFER_PLUGIN_BRIDGES, preferPluginBridges, "")
+        Carla.host.set_engine_option(OPTION_PREFER_UI_BRIDGES,     preferUiBridges,     "")
+        Carla.host.set_engine_option(OPTION_UIS_ALWAYS_ON_TOP,     uisAlwaysOnTop,      "")
+        Carla.host.set_engine_option(OPTION_UI_BRIDGES_TIMEOUT,    uiBridgesTimeout,    "")
+        Carla.host.set_engine_option(OPTION_PROCESS_MODE,          Carla.processMode,   "")
+        Carla.host.set_engine_option(OPTION_MAX_PARAMETERS,        Carla.maxParameters, "")
+        Carla.host.set_engine_option(OPTION_TRANSPORT_MODE,        transportMode,       "")
+
+        # ---------------------------------------------
+        # Start
+
+        if not Carla.host.engine_init(audioDriver, self.fClientName):
+            #if self.fFirstEngineInit:
+                #self.fFirstEngineInit = False
+                #return
+
+            audioError = cString(Carla.host.get_last_error())
+
+            if audioError:
+                QMessageBox.critical(self, self.tr("Error"), self.tr("Could not connect to Audio backend '%s', possible reasons:\n%s" % (audioDriver, audioError)))
+            else:
+                QMessageBox.critical(self, self.tr("Error"), self.tr("Could not connect to Audio backend '%s'" % audioDriver))
+            return
+
+        self.fBufferSize = Carla.host.get_buffer_size()
+        self.fSampleRate = Carla.host.get_sample_rate()
+
+        #self.fFirstEngineInit = False
+
+        # Peaks and TimeInfo
+        #self.fIdleTimerFast = self.startTimer(self.fSavedSettings["Main/RefreshInterval"])
+        # LEDs and edit dialog parameters
+        #self.fIdleTimerSlow = self.startTimer(self.fSavedSettings["Main/RefreshInterval"]*2)
         self.fIdleTimerFast = self.startTimer(50)
         self.fIdleTimerSlow = self.startTimer(50*2)
+
+    def stopEngine(self):
+        if self.fContainer.getPluginCount() > 0:
+            ask = QMessageBox.question(self, self.tr("Warning"), self.tr("There are still some plugins loaded, you need to remove them to stop the engine.\n"
+                                                                         "Do you want to do this now?"),
+                                                                         QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+            if ask != QMessageBox.Yes:
+                return
+
+            self.ui.act_plugin_remove_all.setEnabled(False)
+            self.fContainer.removeAllPlugins()
+
+        if Carla.host.is_engine_running() and not Carla.host.engine_close():
+            print(cString(Carla.host.get_last_error()))
+
+        self.fBufferSize = 0
+        self.fSampleRate = 0.0
+
+        if self.fIdleTimerFast != 0:
+            self.killTimer(self.fIdleTimerFast)
+            self.fIdleTimerFast = 0
+
+        if self.fIdleTimerSlow != 0:
+            self.killTimer(self.fIdleTimerSlow)
+            self.fIdleTimerSlow = 0
 
     def getExtraStuff(self, plugin):
         ptype = plugin['type']
@@ -367,6 +379,90 @@ class HostWindow(QMainWindow):
     def setLoadRDFsNeeded(self):
         self.fLadspaRdfNeedsUpdate = True
 
+    def refreshTransport(self, forced = False):
+        if not Carla.host.is_engine_running():
+            return
+        if self.fSampleRate == 0.0:
+            return
+
+        timeInfo = Carla.host.get_transport_info()
+        playing  = bool(timeInfo['playing'])
+        frame    = int(timeInfo['frame'])
+
+        if playing != self.fLastTransportState or forced:
+            if playing:
+                icon = getIcon("media-playback-pause")
+                self.ui.act_transport_play.setChecked(True)
+                self.ui.act_transport_play.setIcon(icon)
+                self.ui.act_transport_play.setText(self.tr("&Pause"))
+            else:
+                icon = getIcon("media-playback-start")
+                self.ui.act_transport_play.setChecked(False)
+                self.ui.act_transport_play.setIcon(icon)
+                self.ui.act_transport_play.setText(self.tr("&Play"))
+
+            self.fLastTransportState = playing
+
+        if frame != self.fLastTransportFrame or forced:
+            time = frame / self.fSampleRate
+            secs = time % 60
+            mins = (time / 60) % 60
+            hrs  = (time / 3600) % 60
+
+            #textTransport = "Transport %s, at %02i:%02i:%02i" % ("playing" if playing else "stopped", hrs, mins, secs)
+            #self.fInfoLabel.setText("%s | %s" % (self.fInfoText, textTransport))
+
+            self.fLastTransportFrame = frame
+
+    def setTransportMenuEnabled(self, enabled):
+        self.ui.act_transport_play.setEnabled(enabled)
+        self.ui.act_transport_stop.setEnabled(enabled)
+        self.ui.act_transport_backwards.setEnabled(enabled)
+        self.ui.act_transport_forwards.setEnabled(enabled)
+        self.ui.menu_Transport.setEnabled(enabled)
+
+    # -----------------------------------------------------------------
+
+    @pyqtSlot()
+    def slot_engineStart(self):
+        self.startEngine()
+        check = Carla.host.is_engine_running()
+        self.ui.act_file_save.setEnabled(check)
+        self.ui.act_engine_start.setEnabled(not check)
+        self.ui.act_engine_stop.setEnabled(check)
+        self.ui.menu_Canvas.setEnabled(check)
+
+        if self.fSessionManagerName != "Non Session Manager":
+            self.ui.act_file_open.setEnabled(check)
+            self.ui.act_file_save_as.setEnabled(check)
+
+        if check:
+            #self.fInfoText = "Engine running | SampleRate: %g | BufferSize: %i" % (self.fSampleRate, self.fBufferSize)
+            self.refreshTransport(True)
+            self.fContainer.engineStarted()
+
+        self.setTransportMenuEnabled(check)
+
+    @pyqtSlot()
+    def slot_engineStop(self):
+        self.stopEngine()
+        check = Carla.host.is_engine_running()
+        self.ui.act_file_save.setEnabled(check)
+        self.ui.act_engine_start.setEnabled(not check)
+        self.ui.act_engine_stop.setEnabled(check)
+        self.ui.menu_Canvas.setEnabled(check)
+
+        if self.fSessionManagerName != "Non Session Manager":
+            self.ui.act_file_open.setEnabled(check)
+            self.ui.act_file_save_as.setEnabled(check)
+
+        if not check:
+            self.fContainer.engineStopped()
+            #self.fInfoText = ""
+            #self.fInfoLabel.setText("Engine stopped")
+
+        self.setTransportMenuEnabled(check)
+
     # -----------------------------------------------------------------
 
     @pyqtSlot()
@@ -392,40 +488,55 @@ class HostWindow(QMainWindow):
 
     @pyqtSlot()
     def slot_pluginRemoveAll(self):
+        self.ui.act_plugin_remove_all.setEnabled(False)
         self.fContainer.removeAllPlugins()
-
         Carla.host.remove_all_plugins()
 
-    @pyqtSlot()
-    def slot_configureCarla(self):
-        dialog = CarlaSettingsW(self, False) # TODO - hasGL
+    # -----------------------------------------------------------------
 
-        if not dialog.exec_():
+    @pyqtSlot(bool)
+    def slot_transportPlayPause(self, toggled):
+        if not Carla.host.is_engine_running():
             return
 
-        #self.loadSettings(False)
-        #patchcanvas.clear()
+        if toggled:
+            Carla.host.transport_play()
+        else:
+            Carla.host.transport_pause()
 
-        #pOptions = patchcanvas.options_t()
-        #pOptions.theme_name       = self.fSavedSettings["Canvas/Theme"]
-        #pOptions.auto_hide_groups = self.fSavedSettings["Canvas/AutoHideGroups"]
-        #pOptions.use_bezier_lines = self.fSavedSettings["Canvas/UseBezierLines"]
-        #pOptions.antialiasing     = self.fSavedSettings["Canvas/Antialiasing"]
-        #pOptions.eyecandy         = self.fSavedSettings["Canvas/EyeCandy"]
+        self.refreshTransport()
 
-        #pFeatures = patchcanvas.features_t()
-        #pFeatures.group_info   = False
-        #pFeatures.group_rename = False
-        #pFeatures.port_info    = False
-        #pFeatures.port_rename  = False
-        #pFeatures.handle_group_pos = True
+    @pyqtSlot()
+    def slot_transportStop(self):
+        if not Carla.host.is_engine_running():
+            return
 
-        #patchcanvas.setOptions(pOptions)
-        #patchcanvas.setFeatures(pFeatures)
-        #patchcanvas.init("Carla", self.scene, canvasCallback, False)
+        Carla.host.transport_pause()
+        Carla.host.transport_relocate(0)
 
-        #if self.fEngineStarted:
-            #Carla.host.patchbay_refresh()
+        self.refreshTransport()
+
+    @pyqtSlot()
+    def slot_transportBackwards(self):
+        if not Carla.host.is_engine_running():
+            return
+
+        newFrame = Carla.host.get_current_transport_frame() - 100000
+
+        if newFrame < 0:
+            newFrame = 0
+
+        Carla.host.transport_relocate(newFrame)
+
+    @pyqtSlot()
+    def slot_transportForwards(self):
+        if not Carla.host.is_engine_running():
+            return
+
+        newFrame = Carla.host.get_current_transport_frame() + 100000
+        Carla.host.transport_relocate(newFrame)
+
+    # -----------------------------------------------------------------
 
     @pyqtSlot()
     def slot_aboutCarla(self):
@@ -460,97 +571,15 @@ class HostWindow(QMainWindow):
     def slot_handlePluginRenamedCallback(self, pluginId, newName):
         self.fContainer.renamePlugin(pluginId, newName)
 
-    @pyqtSlot(int, int, float)
-    def slot_handleParameterValueChangedCallback(self, pluginId, parameterId, value):
-        self.fContainer.setParameterValue(parameterId, value)
-
-    @pyqtSlot(int, int, float)
-    def slot_handleParameterDefaultChangedCallback(self, pluginId, parameterId, value):
-        self.fContainer.setParameterDefault(parameterId, value)
-
-    @pyqtSlot(int, int, int)
-    def slot_handleParameterMidiChannelChangedCallback(self, pluginId, parameterId, channel):
-        self.fContainer.setParameterMidiChannel(parameterId, channel)
-
-    @pyqtSlot(int, int, int)
-    def slot_handleParameterMidiCcChangedCallback(self, pluginId, parameterId, cc):
-        self.fContainer.setParameterMidiCC(parameterId, cc)
-
-    @pyqtSlot(int, int)
-    def slot_handleProgramChangedCallback(self, pluginId, programId):
-        self.fContainer.setProgram(programId)
-
-    @pyqtSlot(int, int)
-    def slot_handleMidiProgramChangedCallback(self, pluginId, midiProgramId):
-        self.fContainer.setMidiProgram(midiProgramId)
-
-    @pyqtSlot(int, int, int, int)
-    def slot_handleNoteOnCallback(self, pluginId, channel, note, velo):
-        self.fContainer.noteOn(channel, note)
-
-    @pyqtSlot(int, int, int)
-    def slot_handleNoteOffCallback(self, pluginId, channel, note):
-        self.fContainer.noteOff(channel, note)
-
-    @pyqtSlot(int, int)
-    def slot_handleShowGuiCallback(self, pluginId, state):
-        self.fContainer.setGuiState(pluginId, state)
-
     @pyqtSlot(int)
-    def slot_handleUpdateCallback(self, pluginId):
-        self.fContainer.updateInfo(pluginId)
+    def slot_handleBufferSizeChangedCallback(self, newBufferSize):
+        self.fBufferSize = newBufferSize
+        #self.fInfoText   = "Engine running | SampleRate: %g | BufferSize: %i" % (self.fSampleRate, self.fBufferSize)
 
-    @pyqtSlot(int)
-    def slot_handleReloadInfoCallback(self, pluginId):
-        self.fContainer.reloadInfo(pluginId)
-
-    @pyqtSlot(int)
-    def slot_handleReloadParametersCallback(self, pluginId):
-        self.fContainer.reloadParameters(pluginId)
-
-    @pyqtSlot(int)
-    def slot_handleReloadProgramsCallback(self, pluginId):
-        self.fContainer.reloadPrograms(pluginId)
-
-    @pyqtSlot(int)
-    def slot_handleReloadAllCallback(self, pluginId):
-        self.fContainer.reloadAll(pluginId)
-
-    @pyqtSlot(int, int, str)
-    def slot_handlePatchbayClientAddedCallback(self, clientId, clientIcon, clientName):
-        self.fContainer.patchbayClientAdded(clientId, clientIcon, clientName)
-
-    @pyqtSlot(int, str)
-    def slot_handlePatchbayClientRemovedCallback(self, clientId, clientName):
-        self.fContainer.patchbayClientRemoved(clientId, clientName)
-
-    @pyqtSlot(int, str)
-    def slot_handlePatchbayClientRenamedCallback(self, clientId, newClientName):
-        self.fContainer.patchbayClientRenamed(clientId, newClientName)
-
-    @pyqtSlot(int, int, int, str)
-    def slot_handlePatchbayPortAddedCallback(self, clientId, portId, portFlags, portName):
-        self.fContainer.patchbayPortAdded(clientId, portId, portFlags, portName)
-
-    @pyqtSlot(int, int, str)
-    def slot_handlePatchbayPortRemovedCallback(self, groupId, portId, fullPortName):
-        self.fContainer.patchbayPortRemoved(groupId, portId, fullPortName)
-
-    @pyqtSlot(int, int, str)
-    def slot_handlePatchbayPortRenamedCallback(self, groupId, portId, newPortName):
-        self.fContainer.patchbayPortRenamed(groupId, portId, newPortName)
-
-    @pyqtSlot(int, int, int)
-    def slot_handlePatchbayConnectionAddedCallback(self, connectionId, portOutId, portInId):
-        self.fContainer.patchbayConnectionAdded(connectionId, portOutId, portInId)
-
-    @pyqtSlot(int)
-    def slot_handlePatchbayConnectionRemovedCallback(self, connectionId):
-        self.fContainer.patchbayConnectionRemoved(connectionId)
-
-    @pyqtSlot(int, int)
-    def slot_handlePatchbayIconChangedCallback(self, clientId, clientIcon):
-        self.fContainer.patchbayIconChanged(clientId, clientIcon)
+    @pyqtSlot(float)
+    def slot_handleSampleRateChangedCallback(self, newSampleRate):
+        self.fSampleRate = newSampleRate
+        #self.fInfoText   = "Engine running | SampleRate: %g | BufferSize: %i" % (self.fSampleRate, self.fBufferSize)
 
     # -----------------------------------------------------------------
 
@@ -570,6 +599,7 @@ class HostWindow(QMainWindow):
         if event.timerId() == self.fIdleTimerFast:
             Carla.host.engine_idle()
             self.fContainer.idleFast()
+            self.refreshTransport()
 
         elif event.timerId() == self.fIdleTimerSlow:
             self.fContainer.idleSlow()
@@ -584,6 +614,14 @@ class HostWindow(QMainWindow):
         if self.fIdleTimerSlow != 0:
             self.killTimer(self.fIdleTimerSlow)
             self.fIdleTimerSlow = 0
+
+        #self.saveSettings()
+
+        if Carla.host.is_engine_running():
+            Carla.host.set_engine_about_to_close()
+            self.ui.act_plugin_remove_all.setEnabled(False)
+            self.fContainer.removeAllPlugins()
+            self.stopEngine()
 
         QMainWindow.closeEvent(self, event)
 
