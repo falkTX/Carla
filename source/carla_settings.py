@@ -66,15 +66,18 @@ else:
 if LINUX:
     CARLA_DEFAULT_PROCESS_MODE   = PROCESS_MODE_MULTIPLE_CLIENTS
     CARLA_DEFAULT_TRANSPORT_MODE = TRANSPORT_MODE_JACK
+    CARLA_DEFAULT_DISABLE_CHECKS = False
 else:
     CARLA_DEFAULT_PROCESS_MODE   = PROCESS_MODE_CONTINUOUS_RACK
     CARLA_DEFAULT_TRANSPORT_MODE = TRANSPORT_MODE_INTERNAL
+    CARLA_DEFAULT_DISABLE_CHECKS = False
 
 # ------------------------------------------------------------------------------------------------------------
 # PatchCanvas defines
 
 CANVAS_ANTIALIASING_SMALL = 1
 CANVAS_EYECANDY_SMALL     = 1
+CANVAS_DEFAULT_THEME_NAME = "Modern Dark"
 
 # ------------------------------------------------------------------------------------------------------------
 # ...
@@ -305,7 +308,7 @@ class CarlaSettingsW(QDialog):
         self.ui.ch_engine_uis_always_on_top.setChecked(settings.value("Engine/UIsAlwaysOnTop", CARLA_DEFAULT_UIS_ALWAYS_ON_TOP, type=bool))
         self.ui.ch_engine_prefer_ui_bridges.setChecked(settings.value("Engine/PreferUiBridges", CARLA_DEFAULT_PREFER_UI_BRIDGES, type=bool))
         #self.ui.sb_engine_oscgui_timeout.setValue(settings.value("Engine/OscUiTimeout", CARLA_DEFAULT_OSC_UI_TIMEOUT, type=int))
-        #self.ui.ch_engine_disable_checks.setChecked(settings.value("Engine/DisableChecks", CARLA_DEFAULT_DISABLE_CHECKS, type=bool))
+        self.ui.ch_engine_disable_checks.setChecked(settings.value("Engine/DisableChecks", CARLA_DEFAULT_DISABLE_CHECKS, type=bool))
         self.ui.ch_engine_prefer_plugin_bridges.setChecked(settings.value("Engine/PreferPluginBridges", CARLA_DEFAULT_PREFER_PLUGIN_BRIDGES, type=bool))
         self.ui.ch_engine_force_stereo.setChecked(settings.value("Engine/ForceStereo", CARLA_DEFAULT_FORCE_STEREO, type=bool))
 
@@ -660,7 +663,7 @@ if __name__ == '__main__':
     app.setOrganizationName("falkTX")
     app.setWindowIcon(QIcon(":/scalable/carla.svg"))
 
-    initHost(False)
+    initHost("Settings", None, False)
 
     gui = CarlaSettingsW(None, True, True)
     gui.show()

@@ -72,13 +72,6 @@ class CarlaMainW(QMainWindow):
 
         self.fFirstEngineInit = True
 
-        self.fProjectFilename = None
-
-        # -------------------------------------------------------------
-        # Load Settings
-
-        self.loadSettings(True)
-
         # -------------------------------------------------------------
         # Set-up GUI stuff
 
@@ -123,44 +116,6 @@ class CarlaMainW(QMainWindow):
         self.ui.miniCanvasPreview.init(self.scene, DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT, self.fSavedSettings["UseCustomMiniCanvasPaint"])
         QTimer.singleShot(100, self, SLOT("slot_miniCanvasInit()"))
 
-        # -------------------------------------------------------------
-        # Connect actions to functions
-
-        self.setProperWindowTitle()
-
-        if NSM_URL:
-            Carla.host.nsm_ready()
-        else:
-            QTimer.singleShot(0, self, SLOT("slot_engineStart()"))
-
-    def loadProject(self, filename):
-        self.fProjectFilename = filename
-        self.setProperWindowTitle()
-
-        self.fProjectLoading = True
-        Carla.host.load_project(filename)
-        self.fProjectLoading = False
-
-    def loadProjectLater(self, filename):
-        self.fProjectFilename = filename
-        self.setProperWindowTitle()
-        QTimer.singleShot(0, self, SLOT("slot_loadProjectLater()"))
-
-    def saveProject(self, filename):
-        self.fProjectFilename = filename
-        self.setProperWindowTitle()
-        Carla.host.save_project(filename)
-
-    def setProperWindowTitle(self):
-        title = LADISH_APP_NAME if LADISH_APP_NAME else "Carla"
-
-        if self.fProjectFilename:
-            title += " - %s" % os.path.basename(self.fProjectFilename)
-        if self.fSessionManagerName:
-            title += " (%s)" % self.fSessionManagerName
-
-        self.setWindowTitle(title)
-
     def updateInfoLabelPos(self):
         tabBar = self.ui.tabMain.tabBar()
         y = tabBar.mapFromParent(self.ui.centralwidget.pos()).y()+tabBar.height()/4
@@ -173,43 +128,6 @@ class CarlaMainW(QMainWindow):
     def updateInfoLabelSize(self):
         tabBar = self.ui.tabMain.tabBar()
         self.fInfoLabel.resize(self.ui.tabMain.width()-tabBar.width()-20, self.fInfoLabel.height())
-
-    @pyqtSlot()
-    def slot_fileNew(self):
-        self.removeAllPlugins()
-        self.fProjectFilename = None
-        self.fProjectLoading  = False
-        self.setProperWindowTitle()
-
-    @pyqtSlot()
-    def slot_fileOpen(self):
-        fileFilter  = self.tr("Carla Project File (*.carxp)")
-        filenameTry = QFileDialog.getOpenFileName(self, self.tr("Open Carla Project File"), self.fSavedSettings["Main/DefaultProjectFolder"], filter=fileFilter)
-
-        if filenameTry:
-            # FIXME - show dialog to user (remove all plugins?)
-            self.removeAllPlugins()
-            self.loadProject(filenameTry)
-
-    @pyqtSlot()
-    def slot_fileSave(self, saveAs=False):
-        if self.fProjectFilename and not saveAs:
-            return self.saveProject(self.fProjectFilename)
-
-        fileFilter  = self.tr("Carla Project File (*.carxp)")
-        filenameTry = QFileDialog.getSaveFileName(self, self.tr("Save Carla Project File"), self.fSavedSettings["Main/DefaultProjectFolder"], filter=fileFilter)
-
-        if not filenameTry:
-            return
-
-        if not filenameTry.endswith(".carxp"):
-            filenameTry += ".carxp"
-
-        self.saveProject(filenameTry)
-
-    @pyqtSlot()
-    def slot_fileSaveAs(self):
-        self.slot_fileSave(True)
 
     @pyqtSlot()
     def slot_fileExportLv2Preset(self):
@@ -262,12 +180,6 @@ class CarlaMainW(QMainWindow):
     ] .
 """ % (manifestPath, os.path.basename(filenameTry), presetContents))
         manifestFd.close()
-
-    @pyqtSlot()
-    def slot_loadProjectLater(self):
-        self.fProjectLoading = True
-        Carla.host.load_project(self.fProjectFilename)
-        self.fProjectLoading = False
 
     @pyqtSlot()
     def slot_toolbarShown(self):
@@ -415,92 +327,6 @@ class CarlaMainW(QMainWindow):
         CustomMessageBox(self, QMessageBox.Warning, self.tr("Warning"),
             self.tr("Engine has been stopped or crashed.\nPlease restart Carla"),
             self.tr("You may want to save your session now..."), QMessageBox.Ok, QMessageBox.Ok)
-
-    def loadSettings(self, geometry):
-        settings = QSettings()
-
-        if geometry:
-            self.restoreGeometry(settings.value("Geometry", ""))
-
-            showToolbar = settings.value("ShowToolbar", True, type=bool)
-            self.ui.act_settings_show_toolbar.setChecked(showToolbar)
-            self.ui.toolBar.setVisible(showToolbar)
-
-            if settings.contains("SplitterState"):
-                self.ui.splitter.restoreState(settings.value("SplitterState", ""))
-            else:
-                self.ui.splitter.setSizes([99999, 210])
-
-            diskFolders = toList(settings.value("DiskFolders", [HOME]))
-
-            self.ui.cb_disk.setItemData(0, HOME)
-
-            for i in range(len(diskFolders)):
-                if i == 0: continue
-                folder = diskFolders[i]
-                self.ui.cb_disk.addItem(os.path.basename(folder), folder)
-
-            if MACOS and not settings.value("Main/UseProTheme", True, type=bool):
-                self.setUnifiedTitleAndToolBarOnMac(True)
-
-        useCustomMiniCanvasPaint = bool(settings.value("Main/UseProTheme", True, type=bool) and
-                                        settings.value("Main/ProThemeColor", "Black", type=str) == "Black")
-
-        self.fSavedSettings = {
-            "Main/DefaultProjectFolder": settings.value("Main/DefaultProjectFolder", HOME, type=str),
-            "Main/RefreshInterval": settings.value("Main/RefreshInterval", 50, type=int),
-            "Canvas/Theme": settings.value("Canvas/Theme", patchcanvas.getDefaultThemeName(), type=str),
-            "Canvas/AutoHideGroups": settings.value("Canvas/AutoHideGroups", False, type=bool),
-            "Canvas/UseBezierLines": settings.value("Canvas/UseBezierLines", True, type=bool),
-            "Canvas/EyeCandy": settings.value("Canvas/EyeCandy", patchcanvas.EYECANDY_SMALL, type=int),
-            "Canvas/UseOpenGL": settings.value("Canvas/UseOpenGL", False, type=bool),
-            "Canvas/Antialiasing": settings.value("Canvas/Antialiasing", patchcanvas.ANTIALIASING_SMALL, type=int),
-            "Canvas/HighQualityAntialiasing": settings.value("Canvas/HighQualityAntialiasing", False, type=bool),
-            "UseCustomMiniCanvasPaint": useCustomMiniCanvasPaint
-        }
-
-        # ---------------------------------------------
-        # plugin checks
-
-        if settings.value("Engine/DisableChecks", False, type=bool):
-            os.environ["CARLA_DISCOVERY_NO_PROCESSING_CHECKS"] = "true"
-
-        elif os.getenv("CARLA_DISCOVERY_NO_PROCESSING_CHECKS"):
-            os.environ.pop("CARLA_DISCOVERY_NO_PROCESSING_CHECKS")
-
-        # ---------------------------------------------
-        # plugin paths
-
-        Carla.LADSPA_PATH = toList(settings.value("Paths/LADSPA", Carla.LADSPA_PATH))
-        Carla.DSSI_PATH = toList(settings.value("Paths/DSSI", Carla.DSSI_PATH))
-        Carla.LV2_PATH = toList(settings.value("Paths/LV2", Carla.LV2_PATH))
-        Carla.VST_PATH = toList(settings.value("Paths/VST", Carla.VST_PATH))
-        Carla.GIG_PATH = toList(settings.value("Paths/GIG", Carla.GIG_PATH))
-        Carla.SF2_PATH = toList(settings.value("Paths/SF2", Carla.SF2_PATH))
-        Carla.SFZ_PATH = toList(settings.value("Paths/SFZ", Carla.SFZ_PATH))
-
-        os.environ["LADSPA_PATH"] = splitter.join(Carla.LADSPA_PATH)
-        os.environ["DSSI_PATH"] = splitter.join(Carla.DSSI_PATH)
-        os.environ["LV2_PATH"] = splitter.join(Carla.LV2_PATH)
-        os.environ["VST_PATH"] = splitter.join(Carla.VST_PATH)
-        os.environ["GIG_PATH"] = splitter.join(Carla.GIG_PATH)
-        os.environ["SF2_PATH"] = splitter.join(Carla.SF2_PATH)
-        os.environ["SFZ_PATH"] = splitter.join(Carla.SFZ_PATH)
-
-    def saveSettings(self):
-        settings = QSettings()
-        settings.setValue("Geometry", self.saveGeometry())
-        settings.setValue("SplitterState", self.ui.splitter.saveState())
-        settings.setValue("ShowToolbar", self.ui.toolBar.isVisible())
-        settings.setValue("HorizontalScrollBarValue", self.ui.graphicsView.horizontalScrollBar().value())
-        settings.setValue("VerticalScrollBarValue", self.ui.graphicsView.verticalScrollBar().value())
-
-        diskFolders = []
-
-        for i in range(self.ui.cb_disk.count()):
-            diskFolders.append(self.ui.cb_disk.itemData(i))
-
-        settings.setValue("DiskFolders", diskFolders)
 
     def dragEnterEvent(self, event):
         if event.source() == self.ui.fileTreeView:

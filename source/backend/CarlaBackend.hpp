@@ -615,34 +615,45 @@ enum CallbackType : int {
     CALLBACK_PROCESS_MODE_CHANGED = 29,
 
     /*!
+     * Engine started.
+     * \param valuestr Engine driver
+     */
+    CALLBACK_ENGINE_STARTED = 30,
+
+    /*!
+     * Engine stopped.
+     */
+    CALLBACK_ENGINE_STOPPED = 31,
+
+    /*!
      * Non-Session-Manager Announce message.
      */
-    CALLBACK_NSM_ANNOUNCE = 30,
+    CALLBACK_NSM_ANNOUNCE = 32,
 
     /*!
      * Non-Session-Manager Open message.
      */
-    CALLBACK_NSM_OPEN = 31,
+    CALLBACK_NSM_OPEN = 33,
 
     /*!
      * Non-Session-Manager Save message.
      */
-    CALLBACK_NSM_SAVE = 32,
+    CALLBACK_NSM_SAVE = 34,
 
     /*!
      * An error occurred, show \a valueStr as an error to user.
      */
-    CALLBACK_ERROR = 33,
+    CALLBACK_ERROR = 35,
 
     /*!
      * Show \a valueStr as info to user.
      */
-    CALLBACK_INFO = 34,
+    CALLBACK_INFO = 36,
 
     /*!
      * The engine has crashed or malfunctioned and will no longer work.
      */
-    CALLBACK_QUIT = 35
+    CALLBACK_QUIT = 37
 };
 
 /*!

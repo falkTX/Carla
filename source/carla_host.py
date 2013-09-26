@@ -20,8 +20,10 @@
 # Imports (Global)
 
 try:
+    from PyQt5.QtCore import QTimer
     from PyQt5.QtWidgets import QApplication, QMainWindow
 except:
+    from PyQt4.QtCore import QTimer
     from PyQt4.QtGui import QApplication, QMainWindow
 
 # ------------------------------------------------------------------------------------------------------------
@@ -32,6 +34,13 @@ import ui_carla_host
 from carla_database import *
 from carla_settings import *
 from carla_widgets import *
+
+# ------------------------------------------------------------------------------------------------------------
+# PatchCanvas defines
+
+CANVAS_ANTIALIASING_SMALL = 1
+CANVAS_EYECANDY_SMALL     = 1
+CANVAS_DEFAULT_THEME_NAME = "Modern Dark"
 
 # ------------------------------------------------------------------------------------------------------------
 # Session Management support
@@ -81,6 +90,11 @@ class CarlaDummyW(object):
     def idleSlow(self):
         pass
 
+    # -----------------------------------------------------------------
+
+    def saveSettings(self, settings):
+        pass
+
 # ------------------------------------------------------------------------------------------------------------
 # Host Window
 
@@ -115,6 +129,9 @@ class HostWindow(QMainWindow):
     PatchbayIconChangedCallback = pyqtSignal(int, int)
     BufferSizeChangedCallback = pyqtSignal(int)
     SampleRateChangedCallback = pyqtSignal(float)
+    ProcessModeChangedCallback = pyqtSignal(int)
+    EngineStartedCallback = pyqtSignal(str)
+    EngineStoppedChangedCallback = pyqtSignal()
     NSM_AnnounceCallback = pyqtSignal(str)
     NSM_OpenCallback = pyqtSignal(str)
     NSM_SaveCallback = pyqtSignal()
@@ -145,13 +162,17 @@ class HostWindow(QMainWindow):
 
         self.fIdleTimerFast = 0
         self.fIdleTimerSlow = 0
+
         self.fIsProjectLoading = False
+        self.fProjectFilename  = ""
 
         self.fLadspaRdfNeedsUpdate = True
         self.fLadspaRdfList = []
 
         self.fLastTransportFrame = 0
         self.fLastTransportState = False
+
+        self.fSavedSettings = {}
 
         if LADISH_APP_NAME:
             self.fClientName         = LADISH_APP_NAME
@@ -162,6 +183,11 @@ class HostWindow(QMainWindow):
         else:
             self.fClientName         = "Carla"
             self.fSessionManagerName = ""
+
+        # -------------------------------------------------------------
+        # Load Settings
+
+        self.loadSettings(True)
 
         # -------------------------------------------------------------
         # Set up GUI (engine stopped)
@@ -176,13 +202,15 @@ class HostWindow(QMainWindow):
 
         self.setTransportMenuEnabled(False)
 
+        self.setProperWindowTitle()
+
         # -------------------------------------------------------------
         # Connect actions to functions
 
-        #self.ui.act_file_new.triggered.connect(self.slot_fileNew)
-        #self.ui.act_file_open.triggered.connect(self.slot_fileOpen)
-        #self.ui.act_file_save.triggered.connect(self.slot_fileSave)
-        #self.ui.act_file_save_as.triggered.connect(self.slot_fileSaveAs)
+        self.ui.act_file_new.triggered.connect(self.slot_fileNew)
+        self.ui.act_file_open.triggered.connect(self.slot_fileOpen)
+        self.ui.act_file_save.triggered.connect(self.slot_fileSave)
+        self.ui.act_file_save_as.triggered.connect(self.slot_fileSaveAs)
 
         self.ui.act_engine_start.triggered.connect(self.slot_engineStart)
         self.ui.act_engine_stop.triggered.connect(self.slot_engineStop)
@@ -212,6 +240,8 @@ class HostWindow(QMainWindow):
         self.PluginRenamedCallback.connect(self.slot_handlePluginRenamedCallback)
         self.BufferSizeChangedCallback.connect(self.slot_handleBufferSizeChangedCallback)
         self.SampleRateChangedCallback.connect(self.slot_handleSampleRateChangedCallback)
+        self.EngineStartedCallback.connect(self.slot_handleEngineStartedCallback)
+        self.EngineStoppedChangedCallback.connect(self.slot_handleEngineStoppedCallback)
         #self.NSM_AnnounceCallback.connect(self.slot_handleNSM_AnnounceCallback)
         #self.NSM_OpenCallback.connect(self.slot_handleNSM_OpenCallback)
         #self.NSM_SaveCallback.connect(self.slot_handleNSM_SaveCallback)
@@ -221,21 +251,166 @@ class HostWindow(QMainWindow):
         self.SIGUSR1.connect(self.slot_handleSIGUSR1)
         self.SIGTERM.connect(self.slot_handleSIGTERM)
 
+        # -------------------------------------------------------------
+        # Final setup
+
+        if NSM_URL:
+            Carla.host.nsm_ready()
+        #else:
+            #QTimer.singleShot(0, self.slot_engineStart)
+
     # -----------------------------------------------------------------
     # Called by containers
 
-    def openSettings(self, hasCanvas, hasCanvasGL):
+    def openSettingsWindow(self, hasCanvas, hasCanvasGL):
         dialog = CarlaSettingsW(self, hasCanvas, hasCanvasGL)
         return dialog.exec_()
 
-    # -----------------------------------------------------------------
-    # Internal stuff
-
-    def startEngine(self):
-        # ---------------------------------------------
-        # Engine settings
-
+    def loadSettings(self, doGeometry):
         settings = QSettings()
+
+        if doGeometry:
+            self.restoreGeometry(settings.value("Geometry", ""))
+
+            showToolbar = settings.value("ShowToolbar", True, type=bool)
+            self.ui.act_settings_show_toolbar.setChecked(showToolbar)
+            self.ui.toolBar.setVisible(showToolbar)
+
+            #if settings.contains("SplitterState"):
+                #self.ui.splitter.restoreState(settings.value("SplitterState", ""))
+            #else:
+                #self.ui.splitter.setSizes([99999, 210])
+
+            #diskFolders = toList(settings.value("DiskFolders", [HOME]))
+
+            #self.ui.cb_disk.setItemData(0, HOME)
+
+            #for i in range(len(diskFolders)):
+                #if i == 0: continue
+                #folder = diskFolders[i]
+                #self.ui.cb_disk.addItem(os.path.basename(folder), folder)
+
+            if MACOS and not settings.value("Main/UseProTheme", True, type=bool):
+                self.setUnifiedTitleAndToolBarOnMac(True)
+
+        useCustomMiniCanvasPaint = bool(settings.value("Main/UseProTheme", True, type=bool) and
+                                        settings.value("Main/ProThemeColor", "Black", type=str) == "Black")
+
+        # ---------------------------------------------
+        # engine
+
+        self.setEngineSettings(settings)
+
+        # ---------------------------------------------
+        # plugin checks
+
+        if settings.value("Engine/DisableChecks", False, type=bool):
+            os.environ["CARLA_DISCOVERY_NO_PROCESSING_CHECKS"] = "true"
+
+        elif os.getenv("CARLA_DISCOVERY_NO_PROCESSING_CHECKS"):
+            os.environ.pop("CARLA_DISCOVERY_NO_PROCESSING_CHECKS")
+
+        # ---------------------------------------------
+        # plugin paths
+
+        LADSPA_PATH = toList(settings.value("Paths/LADSPA", Carla.DEFAULT_LADSPA_PATH))
+        DSSI_PATH   = toList(settings.value("Paths/DSSI",   Carla.DEFAULT_DSSI_PATH))
+        LV2_PATH    = toList(settings.value("Paths/LV2",    Carla.DEFAULT_LV2_PATH))
+        VST_PATH    = toList(settings.value("Paths/VST",    Carla.DEFAULT_VST_PATH))
+        AU_PATH     = toList(settings.value("Paths/AU",     Carla.DEFAULT_AU_PATH))
+        CSOUND_PATH = toList(settings.value("Paths/CSOUND", Carla.DEFAULT_CSOUND_PATH))
+        GIG_PATH    = toList(settings.value("Paths/GIG",    Carla.DEFAULT_GIG_PATH))
+        SF2_PATH    = toList(settings.value("Paths/SF2",    Carla.DEFAULT_SF2_PATH))
+        SFZ_PATH    = toList(settings.value("Paths/SFZ",    Carla.DEFAULT_SFZ_PATH))
+
+        os.environ["LADSPA_PATH"] = splitter.join(LADSPA_PATH)
+        os.environ["DSSI_PATH"]   = splitter.join(DSSI_PATH)
+        os.environ["LV2_PATH"]    = splitter.join(LV2_PATH)
+        os.environ["VST_PATH"]    = splitter.join(VST_PATH)
+        os.environ["AU_PATH"]     = splitter.join(AU_PATH)
+        os.environ["CSOUND_PATH"] = splitter.join(CSOUND_PATH)
+        os.environ["GIG_PATH"]    = splitter.join(GIG_PATH)
+        os.environ["SF2_PATH"]    = splitter.join(SF2_PATH)
+        os.environ["SFZ_PATH"]    = splitter.join(SFZ_PATH)
+
+        # ---------------------------------------------
+
+        self.fSavedSettings = {
+            "Main/DefaultProjectFolder":      settings.value("Main/DefaultProjectFolder", HOME, type=str),
+            "Main/RefreshInterval":           settings.value("Main/RefreshInterval",      50, type=int),
+            "Canvas/Theme":                   settings.value("Canvas/Theme",              CANVAS_DEFAULT_THEME_NAME, type=str),
+            "Canvas/AutoHideGroups":          settings.value("Canvas/AutoHideGroups",     False, type=bool),
+            "Canvas/UseBezierLines":          settings.value("Canvas/UseBezierLines",     True, type=bool),
+            "Canvas/EyeCandy":                settings.value("Canvas/EyeCandy",           CANVAS_EYECANDY_SMALL, type=int),
+            "Canvas/UseOpenGL":               settings.value("Canvas/UseOpenGL",          False, type=bool),
+            "Canvas/Antialiasing":            settings.value("Canvas/Antialiasing",       CANVAS_ANTIALIASING_SMALL, type=int),
+            "Canvas/HighQualityAntialiasing": settings.value("Canvas/HighQualityAntialiasing", False, type=bool),
+            "UseCustomMiniCanvasPaint":       useCustomMiniCanvasPaint
+        }
+
+        # ---------------------------------------------
+
+        if self.fIdleTimerFast != 0:
+            self.killTimer(self.fIdleTimerFast)
+            self.fIdleTimerFast = self.startTimer(self.fSavedSettings["Main/RefreshInterval"])
+
+        if self.fIdleTimerSlow != 0:
+            self.killTimer(self.fIdleTimerSlow)
+            self.fIdleTimerSlow = self.startTimer(self.fSavedSettings["Main/RefreshInterval"]*2)
+
+    def saveSettings(self):
+        settings = QSettings()
+
+        settings.setValue("Geometry", self.saveGeometry())
+        #settings.setValue("SplitterState", self.ui.splitter.saveState())
+        settings.setValue("ShowToolbar", self.ui.toolBar.isVisible())
+        #settings.setValue("HorizontalScrollBarValue", self.ui.graphicsView.horizontalScrollBar().value())
+        #settings.setValue("VerticalScrollBarValue", self.ui.graphicsView.verticalScrollBar().value())
+
+        #diskFolders = []
+
+        #for i in range(self.ui.cb_disk.count()):
+            #diskFolders.append(self.ui.cb_disk.itemData(i))
+
+        #settings.setValue("DiskFolders", diskFolders)
+
+        self.fContainer.saveSettings(settings)
+
+    # -----------------------------------------------------------------
+    # Internal stuff (files)
+
+    def loadProjectNow(self):
+        if not self.fProjectFilename:
+            return qCritical("ERROR: loading project without filename set")
+
+        # TESTING
+        if not Carla.host.is_engine_running():
+            self.slot_engineStart()
+
+        self.fIsProjectLoading = True
+        Carla.host.load_project(self.fProjectFilename)
+        self.fIsProjectLoading = False
+
+    @pyqtSlot()
+    def slot_loadProjectNow(self):
+        self.loadProjectNow()
+
+    def loadProjectLater(self, filename):
+        self.fProjectFilename = filename
+        self.setProperWindowTitle()
+        QTimer.singleShot(0, self.slot_loadProjectNow)
+
+    def saveProjectNow(self):
+        if not self.fProjectFilename:
+            return qCritical("ERROR: saving project without filename set")
+
+        Carla.host.save_project(self.fProjectFilename)
+
+    # -----------------------------------------------------------------
+    # Internal stuff (engine)
+
+    def setEngineSettings(self, settings = None):
+        if settings is None: settings = QSettings()
 
         forceStereo         = settings.value("Engine/ForceStereo",         CARLA_DEFAULT_FORCE_STEREO,          type=bool)
         preferPluginBridges = settings.value("Engine/PreferPluginBridges", CARLA_DEFAULT_PREFER_PLUGIN_BRIDGES, type=bool)
@@ -278,8 +453,10 @@ class HostWindow(QMainWindow):
         Carla.host.set_engine_option(OPTION_MAX_PARAMETERS,        Carla.maxParameters, "")
         Carla.host.set_engine_option(OPTION_TRANSPORT_MODE,        transportMode,       "")
 
-        # ---------------------------------------------
-        # Start
+        return audioDriver
+
+    def startEngine(self):
+        audioDriver = self.setEngineSettings()
 
         if not Carla.host.engine_init(audioDriver, self.fClientName):
             #if self.fFirstEngineInit:
@@ -300,11 +477,9 @@ class HostWindow(QMainWindow):
         #self.fFirstEngineInit = False
 
         # Peaks and TimeInfo
-        #self.fIdleTimerFast = self.startTimer(self.fSavedSettings["Main/RefreshInterval"])
+        self.fIdleTimerFast = self.startTimer(self.fSavedSettings["Main/RefreshInterval"])
         # LEDs and edit dialog parameters
-        #self.fIdleTimerSlow = self.startTimer(self.fSavedSettings["Main/RefreshInterval"]*2)
-        self.fIdleTimerFast = self.startTimer(50)
-        self.fIdleTimerSlow = self.startTimer(50*2)
+        self.fIdleTimerSlow = self.startTimer(self.fSavedSettings["Main/RefreshInterval"]*2)
 
     def stopEngine(self):
         if self.fContainer.getPluginCount() > 0:
@@ -330,6 +505,9 @@ class HostWindow(QMainWindow):
         if self.fIdleTimerSlow != 0:
             self.killTimer(self.fIdleTimerSlow)
             self.fIdleTimerSlow = 0
+
+    # -----------------------------------------------------------------
+    # Internal stuff (plugins)
 
     def getExtraStuff(self, plugin):
         ptype = plugin['type']
@@ -379,6 +557,9 @@ class HostWindow(QMainWindow):
     def setLoadRDFsNeeded(self):
         self.fLadspaRdfNeedsUpdate = True
 
+    # -----------------------------------------------------------------
+    # Internal stuff (transport)
+
     def refreshTransport(self, forced = False):
         if not Carla.host.is_engine_running():
             return
@@ -422,10 +603,82 @@ class HostWindow(QMainWindow):
         self.ui.menu_Transport.setEnabled(enabled)
 
     # -----------------------------------------------------------------
+    # Internal stuff (gui)
+
+    def setProperWindowTitle(self):
+        title = self.fClientName
+
+        if self.fProjectFilename:
+            title += " - %s" % os.path.basename(self.fProjectFilename)
+        if self.fSessionManagerName:
+            title += " (%s)" % self.fSessionManagerName
+
+        self.setWindowTitle(title)
+
+    # -----------------------------------------------------------------
 
     @pyqtSlot()
-    def slot_engineStart(self):
-        self.startEngine()
+    def slot_fileNew(self):
+        self.fContainer.removeAllPlugins()
+        self.fProjectFilename = ""
+        self.setProperWindowTitle()
+
+    @pyqtSlot()
+    def slot_fileOpen(self):
+        fileFilter  = self.tr("Carla Project File (*.carxp)")
+        filenameTry = QFileDialog.getOpenFileName(self, self.tr("Open Carla Project File"), self.fSavedSettings["Main/DefaultProjectFolder"], filter=fileFilter)[0]
+
+        if not filenameTry:
+            return
+
+        newFile = True
+
+        if self.fContainer.getPluginCount() > 0:
+            ask = QMessageBox.question(self, self.tr("Question"), self.tr("There are some plugins loaded, do you want to remove them now?"),
+                                                                          QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+            newFile = ask == QMessageBox.Yes
+
+        if newFile:
+            self.fContainer.removeAllPlugins()
+            self.fProjectFilename = filenameTry
+            self.setProperWindowTitle()
+            self.loadProjectNow()
+        else:
+            filenameOld = self.fProjectFilename
+            self.fProjectFilename = filenameTry
+            self.loadProjectNow()
+            self.fProjectFilename = filenameOld
+
+    @pyqtSlot()
+    def slot_fileSave(self, saveAs=False):
+        if self.fProjectFilename and not saveAs:
+            return self.saveProjectNow()
+
+        fileFilter  = self.tr("Carla Project File (*.carxp)")
+        filenameTry = QFileDialog.getSaveFileName(self, self.tr("Save Carla Project File"), self.fSavedSettings["Main/DefaultProjectFolder"], filter=fileFilter)[0]
+
+        if not filenameTry:
+            return
+
+        if not filenameTry.endswith(".carxp"):
+            filenameTry += ".carxp"
+
+        if self.fProjectFilename != filenameTry:
+            self.fProjectFilename = filenameTry
+            self.setProperWindowTitle()
+
+        self.saveProjectNow()
+
+    @pyqtSlot()
+    def slot_fileSaveAs(self):
+        self.slot_fileSave(True)
+
+    # -----------------------------------------------------------------
+
+    @pyqtSlot()
+    def slot_engineStart(self, doStart = True):
+        if doStart: self.startEngine()
+
         check = Carla.host.is_engine_running()
         self.ui.act_file_save.setEnabled(check)
         self.ui.act_engine_start.setEnabled(not check)
@@ -444,8 +697,9 @@ class HostWindow(QMainWindow):
         self.setTransportMenuEnabled(check)
 
     @pyqtSlot()
-    def slot_engineStop(self):
-        self.stopEngine()
+    def slot_engineStop(self, doStop = True):
+        if doStop: self.stopEngine()
+
         check = Carla.host.is_engine_running()
         self.ui.act_file_save.setEnabled(check)
         self.ui.act_engine_start.setEnabled(not check)
@@ -583,6 +837,39 @@ class HostWindow(QMainWindow):
 
     # -----------------------------------------------------------------
 
+    @pyqtSlot(str)
+    def slot_handleEngineStartedCallback(self, driverName):
+        self.fBufferSize = Carla.host.get_buffer_size()
+        self.fSampleRate = Carla.host.get_sample_rate()
+
+        if self.fIdleTimerFast == 0:
+            self.fIdleTimerFast = self.startTimer(self.fSavedSettings["Main/RefreshInterval"])
+        if self.fIdleTimerSlow == 0:
+            self.fIdleTimerSlow = self.startTimer(self.fSavedSettings["Main/RefreshInterval"]*2)
+
+        self.slot_engineStart(False)
+
+    @pyqtSlot()
+    def slot_handleEngineStoppedCallback(self):
+        self.fBufferSize = 0
+        self.fSampleRate = 0.0
+
+        if self.fIdleTimerFast != 0:
+            self.killTimer(self.fIdleTimerFast)
+            self.fIdleTimerFast = 0
+
+        if self.fIdleTimerSlow != 0:
+            self.killTimer(self.fIdleTimerSlow)
+            self.fIdleTimerSlow = 0
+
+        if self.fContainer.getPluginCount() > 0:
+            self.ui.act_plugin_remove_all.setEnabled(False)
+            self.fContainer.removeAllPlugins() # FIXME?
+
+        self.slot_engineStop(False)
+
+    # -----------------------------------------------------------------
+
     @pyqtSlot()
     def slot_handleSIGUSR1(self):
         print("Got SIGUSR1 -> Saving project now")
@@ -615,7 +902,7 @@ class HostWindow(QMainWindow):
             self.killTimer(self.fIdleTimerSlow)
             self.fIdleTimerSlow = 0
 
-        #self.saveSettings()
+        self.saveSettings()
 
         if Carla.host.is_engine_running():
             Carla.host.set_engine_about_to_close()
@@ -690,6 +977,12 @@ def EngineCallback(ptr, action, pluginId, value1, value2, value3, valueStr):
         Carla.gui.BufferSizeChangedCallback.emit(value1)
     elif action == CALLBACK_SAMPLE_RATE_CHANGED:
         Carla.gui.SampleRateChangedCallback.emit(value3)
+    elif action == CALLBACK_PROCESS_MODE_CHANGED:
+        Carla.gui.ProcessModeChangedCallback.emit(value1)
+    elif action == CALLBACK_ENGINE_STARTED:
+        Carla.gui.EngineStartedCallback.emit(cString(valueStr))
+    elif action == CALLBACK_ENGINE_STOPPED:
+        Carla.gui.EngineStoppedChangedCallback.emit()
     elif action == CALLBACK_NSM_ANNOUNCE:
         Carla.gui.NSM_AnnounceCallback.emit(cString(valueStr))
     elif action == CALLBACK_NSM_OPEN:

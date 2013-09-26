@@ -228,6 +228,11 @@ class CarlaPatchbayW(QGraphicsView):
 
     # -----------------------------------------------------------------
 
+    def saveSettings(self, settings):
+        pass
+
+    # -----------------------------------------------------------------
+
     def recheckPluginHints(self, hints):
         pass
 

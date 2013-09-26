@@ -220,6 +220,11 @@ class CarlaRackW(QListWidget):
 
     # -----------------------------------------------------------------
 
+    def saveSettings(self, settings):
+        pass
+
+    # -----------------------------------------------------------------
+
     @pyqtSlot()
     def slot_pluginsEnable(self):
         if not Carla.host.is_engine_running():
