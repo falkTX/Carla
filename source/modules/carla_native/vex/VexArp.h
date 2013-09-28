@@ -27,14 +27,19 @@
 
    @author  rockhardbuns
    @tweaker Lucio Asnaghi
+   @tweaker falkTX
 
  ==============================================================================
 */
 
-#ifndef __JUCETICE_VEXCARP_HEADER__
-#define __JUCETICE_VEXCARP_HEADER__
+#ifndef DISTRHO_VEX_ARP_HEADER_INCLUDED
+#define DISTRHO_VEX_ARP_HEADER_INCLUDED
 
-#include "cArpSettings.h"
+#include "VexArpSettings.h"
+
+#ifndef CARLA_EXPORT
+ #define CARLA_EXPORT
+#endif
 
 #ifdef CARLA_EXPORT
  #include "juce_audio_basics.h"
@@ -144,28 +149,30 @@ public:
 
             MidiBuffer::Iterator inBufferIterator(inMidiBuffer);
             MidiMessage midiMessage(0xf4);
-            int sampleNumber;
+            int samplePosition;
 
-            while (inBufferIterator.getNextEvent(midiMessage, sampleNumber))
+            while (inBufferIterator.getNextEvent(midiMessage, samplePosition))
             {
                 if (midiMessage.isNoteOn())
                     addNote(midiMessage.getNoteNumber(), midiMessage.getVelocity());
-                else if(midiMessage.isNoteOff())
+                else if (midiMessage.isNoteOff())
                     dropNote(midiMessage.getNoteNumber());
                 else
-                    outMidiBuffer.addEvent(midiMessage, sampleNumber);
+                    outMidiBuffer.addEvent(midiMessage, samplePosition);
             }
         }
 
-        // BarSync
-        const unsigned int samplesPerStep = int((60.0 / bpm) * sampleRate * 4) / timeSig;
+        const double beatsPerSec = (60.0 * double(sampleRate)) / bpm;
 
-        if (isPlaying && arpSet->syncMode == 2)
+        // BarSync
+        const unsigned int samplesPerStep = int(beatsPerSec * 4.0) / timeSig;
+
+        if (isPlaying && arpSet->syncMode == 2) // bar sync
         {
             if (doSync)
             {
                 //offset sample count
-                sampleCount = int((ppqPosition - ppqPositionOfLastBarStart) * ((60 / bpm) * sampleRate));
+                sampleCount = int((ppqPosition - ppqPositionOfLastBarStart) * beatsPerSec);
 
                 //offset step count
                 nextStep = sampleCount / samplesPerStep;
@@ -173,8 +180,9 @@ public:
                 //Cycle the counts
                 sampleCount = (sampleCount % samplesPerStep) + samplesPerStep - 10;
                 nextStep = nextStep % arpSet->length;
+
+                doSync = false;
             }
-            doSync = false;
         }
         else
         {
@@ -183,7 +191,7 @@ public:
 
         //***************************
         if (cKeysDown[0])
-        {   //Keys are down
+        {   // Keys are down
             dead = false;
             sampleCount += numSamples;
             bool repeat = false;
@@ -201,7 +209,7 @@ public:
                     for (int i = 0; i < 5; ++i)
                     {
                         if((cKeysDown[i]!= 0) && (arpSet->grid[nextStep*5 + i]))
-                        {   //we have a note to play
+                        {   // we have a note to play
                             int vel;
 
                             switch (arpSet->velMode)
@@ -299,7 +307,7 @@ public:
 private:
     const VexArpSettings* arpSet;
     MidiBuffer outMidiBuffer;
-    bool dead, notesPlaying, doSync;
+    bool dead, notesPlaying, doSync; // doSync used only in bar-sync
     unsigned int nextStep;
     unsigned int sampleCount, sampleRate;
     int meter[4];
@@ -310,4 +318,4 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(VexArp)
 };
 
-#endif
+#endif // DISTRHO_VEX_ARP_HEADER_INCLUDED

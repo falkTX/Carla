@@ -27,12 +27,17 @@
 
    @author  rockhardbuns
    @tweaker Lucio Asnaghi
+   @tweaker falkTX
 
  ==============================================================================
 */
 
-#ifndef __JUCETICE_VEXCADSR_HEADER__
-#define __JUCETICE_VEXCADSR_HEADER__
+#ifndef DISTRHO_VEX_ADSR_HEADER_INCLUDED
+#define DISTRHO_VEX_ADSR_HEADER_INCLUDED
+
+#ifndef CARLA_EXPORT
+ #define CARLA_EXPORT
+#endif
 
 #ifdef CARLA_EXPORT
  #include "juce_audio_basics.h"
@@ -193,4 +198,4 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(VexADSR)
 };
 
-#endif
+#endif // DISTRHO_VEX_ADSR_HEADER_INCLUDED

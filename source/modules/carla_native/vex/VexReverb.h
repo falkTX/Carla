@@ -27,12 +27,17 @@
 
    @author  rockhardbuns
    @tweaker Lucio Asnaghi
+   @tweaker falkTX
 
  ==============================================================================
 */
 
-#ifndef __JUCETICE_VEXCVOICE_HEADER__
-#define __JUCETICE_VEXCVOICE_HEADER__
+#ifndef DISTRHO_VEX_REVERB_HEADER_INCLUDED
+#define DISTRHO_VEX_REVERB_HEADER_INCLUDED
+
+#ifndef CARLA_EXPORT
+ #define CARLA_EXPORT
+#endif
 
 #ifdef CARLA_EXPORT
  #include "juce_audio_basics.h"
@@ -40,52 +45,47 @@
  #include "../StandardHeader.h"
 #endif
 
-#include "cADSR.h"
-#include "cWaveRenderer.h"
+#include "freeverb/revmodel.hpp"
 
-class VexVoice
+class VexReverb
 {
 public:
-    VexVoice(const float* const p, int poff, WaveRenderer& w, float sr = 44100);
+    VexReverb(const float* const p)
+        : parameters(p)
+    {
+        model.setwet(1.0f);
+        model.setdry(0.0f);
+    }
 
-    void updateParameterPtr(const float* const p);
+    void updateParameterPtr(const float* const p)
+    {
+        parameters = p;
+    }
 
-    void doProcess(float* outBufferL, float* outBufferR, int bufferSize);
-    void start(float f, float v, int n, int preroll, double s, long o);
-    void release(int p);
-    void quickRelease();
+    void processBlock(AudioSampleBuffer* const outBuffer)
+    {
+        processBlock(outBuffer->getSampleData(0, 0), outBuffer->getSampleData(1, 0), outBuffer->getNumSamples());
+    }
 
-    void kill();
-    void update(const int index);
-
-    long getOrdinal() const;
-    int  getNote() const;
-    bool getIsOn() const;
-    bool getIsReleased() const;
+    void processBlock(float* const outBufferL, float* const outBufferR, const int numSamples)
+    {
+#ifdef CARLA_EXPORT
+        model.setroomsize(parameters[0]);
+        model.setdamp(parameters[1]);
+        model.setwidth(parameters[2]);
+#else
+        model.setroomsize(parameters[79]);
+        model.setdamp(parameters[81]);
+        model.setwidth(parameters[80]);
+#endif
+        model.processreplace(outBufferL, outBufferR, outBufferL, outBufferR, numSamples, 1);
+    }
 
 private:
-    OscSet oL;
-    OscSet oR;
-    WaveRenderer& wr;
-
-    VexADSR aadsr;
-    VexADSR fadsr;
-
+    revmodel model;
     const float* parameters;
-    const int poff;
 
-    bool isOn, isReleased;
-    int note;
-
-    long Ordinal;
-
-    float Avelocity;
-    float Fvelocity;
-    double SampleRate;
-    float BaseFrequency;
-    float lfoC, LFOA, LFOP, LFOF;
-    float lfoS[2];
-    float lowL, bandL, highL, lowR, bandR, highR, q, cut;
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(VexReverb)
 };
 
-#endif
+#endif // DISTRHO_VEX_REVERB_HEADER_INCLUDED

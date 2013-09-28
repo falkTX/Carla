@@ -27,12 +27,17 @@
 
    @author  rockhardbuns
    @tweaker Lucio Asnaghi
+   @tweaker falkTX
 
  ==============================================================================
 */
 
-#ifndef __JUCETICE_VEXCWAVERENDERER_HEADER__
-#define __JUCETICE_VEXCWAVERENDERER_HEADER__
+#ifndef DISTRHO_VEX_WAVE_RENDERER_HEADER_INCLUDED
+#define DISTRHO_VEX_WAVE_RENDERER_HEADER_INCLUDED
+
+#ifndef CARLA_EXPORT
+ #define CARLA_EXPORT
+#endif
 
 #ifdef CARLA_EXPORT
  #include "juce_audio_basics.h"
@@ -334,4 +339,4 @@ private:
     bool loadWave;
 };
 
-#endif
+#endif // DISTRHO_VEX_WAVE_RENDERER_HEADER_INCLUDED

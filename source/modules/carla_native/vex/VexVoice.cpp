@@ -27,11 +27,12 @@
 
    @author  rockhardbuns
    @tweaker Lucio Asnaghi
+   @tweaker falkTX
 
  ==============================================================================
 */
 
-#include "cVoice.h"
+#include "VexVoice.h"
 
 float convertPitch(float pitch)
 {

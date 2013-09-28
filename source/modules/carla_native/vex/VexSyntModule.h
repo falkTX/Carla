@@ -27,12 +27,17 @@
 
    @author  rockhardbuns
    @tweaker Lucio Asnaghi
+   @tweaker falkTX
 
  ==============================================================================
 */
 
-#ifndef __JUCETICE_VEXCSYNTMODULE_HEADER__
-#define __JUCETICE_VEXCSYNTMODULE_HEADER__
+#ifndef DISTRHO_VEX_SYNTH_MODULE_HEADER_INCLUDED
+#define DISTRHO_VEX_SYNTH_MODULE_HEADER_INCLUDED
+
+#ifndef CARLA_EXPORT
+ #define CARLA_EXPORT
+#endif
 
 #ifdef CARLA_EXPORT
  #include "juce_audio_basics.h"
@@ -40,7 +45,7 @@
  #include "../StandardHeader.h"
 #endif
 
-#include "cVoice.h"
+#include "VexVoice.h"
 
 class VexSyntModule
 {
@@ -397,4 +402,4 @@ private:
     WaveRenderer wr3;
 };
 
-#endif
+#endif // DISTRHO_VEX_SYNTH_MODULE_HEADER_INCLUDED
