@@ -44,9 +44,6 @@ public:
     CarlaStyle();
     ~CarlaStyle();
 
-    void setColorSchemeAsNeeded();
-    void setColorScheme(ColorScheme color);
-
     QPalette standardPalette() const override;
     void drawPrimitive(PrimitiveElement elem, const QStyleOption* option, QPainter* painter,
                        const QWidget* widget = nullptr) const override;
@@ -65,10 +62,6 @@ public:
     void unpolish(QWidget* widget) override;
 
 private:
-    QPalette fPalBlack;
-    QPalette fPalBlue;
-    QPalette fPalSystem;
-
     CarlaStylePrivate* const d;
     friend class CarlaStylePrivate;
 };

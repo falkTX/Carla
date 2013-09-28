@@ -523,13 +523,9 @@ CarlaStyle::CarlaStyle()
     : QCommonStyle(),
       d(new CarlaStylePrivate(this))
 {
-    setObjectName(QLatin1String("Carla"));
+    setObjectName(QLatin1String("CarlaStyle"));
 
-    QApplication* const app(qApp);
-
-    if (app == nullptr)
-        return;
-
+#if 0
     fPalSystem = app->palette();
 
     fPalBlack.setColor(QPalette::Disabled, QPalette::Window, QColor(14, 14, 14));
@@ -647,46 +643,12 @@ CarlaStyle::CarlaStyle()
     fPalBlue.setColor(QPalette::Disabled, QPalette::LinkVisited, QColor(51, 74, 118));
     fPalBlue.setColor(QPalette::Active,   QPalette::LinkVisited, QColor(64, 128, 255));
     fPalBlue.setColor(QPalette::Inactive, QPalette::LinkVisited, QColor(64, 128, 255));
-
-    setColorSchemeAsNeeded();
+#endif
 }
 
 CarlaStyle::~CarlaStyle()
 {
     delete d;
-}
-
-void CarlaStyle::setColorSchemeAsNeeded()
-{
-    QSettings settings("falkTX", "Carla");
-
-    if (! settings.value("Main/UseProTheme", true).toBool())
-        return;
-
-    QString color(settings.value("Main/ProThemeColor", "Black").toString());
-
-    if (color == "System")
-        setColorScheme(CarlaStyle::COLOR_SYSTEM);
-    else if (color == "Blue")
-        setColorScheme(CarlaStyle::COLOR_BLUE);
-    else
-        setColorScheme(CarlaStyle::COLOR_BLACK);
-}
-
-void CarlaStyle::setColorScheme(ColorScheme color)
-{
-    switch (color)
-    {
-    case COLOR_BLACK:
-        qApp->setPalette(fPalBlack);
-        break;
-    case COLOR_BLUE:
-        qApp->setPalette(fPalBlue);
-        break;
-    case COLOR_SYSTEM:
-        qApp->setPalette(fPalSystem);
-        break;
-    }
 }
 
 void printPalette(const QPalette& pal)

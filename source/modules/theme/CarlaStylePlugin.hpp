@@ -18,7 +18,7 @@
 #ifndef CARLA_STYLE_PLUGIN_HPP_INCLUDED
 #define CARLA_STYLE_PLUGIN_HPP_INCLUDED
 
-#include "CarlaStyle.hpp"
+#include <QtCore/Qt>
 
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 # include <QtWidgets/QStylePlugin>
@@ -29,11 +29,16 @@
 class CarlaStylePlugin : public QStylePlugin
 {
     Q_OBJECT
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+    Q_PLUGIN_METADATA(IID "org.qt-project.Qt.QStyleFactoryInterface" FILE "carlastyle.json")
+#endif
 
 public:
     CarlaStylePlugin(QObject* parent = nullptr);
     QStyle* create(const QString& key) override;
-    //QStringList keys() const override;
+#if (QT_VERSION < QT_VERSION_CHECK(5, 0, 0))
+    QStringList keys() const override;
+#endif
 };
 
 #endif // CARLA_STYLE_PLUGIN_HPP_INCLUDED

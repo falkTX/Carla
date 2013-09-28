@@ -683,6 +683,9 @@ public:
             fParameters[offset + 24] = 0.5f;
         }
 
+        fParameters[76] = 0.3f; // Chorus Rate
+        fParameters[77] = 0.6f; // Chorus Depth
+
         fParameters[89] = 1.0f;
 
         fSynth.setSampleRate(getSampleRate());

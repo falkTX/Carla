@@ -21,10 +21,11 @@
 
 try:
     from PyQt5.QtCore import QTimer
+    from PyQt5.QtGui import QPalette
     from PyQt5.QtWidgets import QApplication, QMainWindow
 except:
     from PyQt4.QtCore import QTimer
-    from PyQt4.QtGui import QApplication, QMainWindow
+    from PyQt4.QtGui import QApplication, QMainWindow, QPalette
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -33,6 +34,7 @@ import ui_carla_host
 
 from carla_database import *
 from carla_settings import *
+from carla_style import *
 from carla_widgets import *
 
 # ------------------------------------------------------------------------------------------------------------
@@ -507,10 +509,10 @@ class HostWindow(QMainWindow):
     # -----------------------------------------------------------------
     # Internal stuff (settings)
 
-    def loadSettings(self, doGeometry):
+    def loadSettings(self, firstTime):
         settings = QSettings()
 
-        if doGeometry:
+        if firstTime:
             self.restoreGeometry(settings.value("Geometry", ""))
 
             showToolbar = settings.value("ShowToolbar", True, type=bool)
@@ -572,9 +574,6 @@ class HostWindow(QMainWindow):
 
         # ---------------------------------------------
 
-        useCustomMiniCanvasPaint = bool(settings.value("Main/UseProTheme", True, type=bool) and
-                                        settings.value("Main/ProThemeColor", "Black", type=str) == "Black")
-
         self.fSavedSettings = {
             "Main/DefaultProjectFolder":      settings.value("Main/DefaultProjectFolder", HOME, type=str),
             "Main/RefreshInterval":           settings.value("Main/RefreshInterval",      50, type=int),
@@ -585,7 +584,8 @@ class HostWindow(QMainWindow):
             "Canvas/UseOpenGL":               settings.value("Canvas/UseOpenGL",          False, type=bool),
             "Canvas/Antialiasing":            settings.value("Canvas/Antialiasing",       CANVAS_ANTIALIASING_SMALL, type=int),
             "Canvas/HighQualityAntialiasing": settings.value("Canvas/HighQualityAntialiasing", False, type=bool),
-            "UseCustomMiniCanvasPaint":       useCustomMiniCanvasPaint
+            "UseCustomMiniCanvasPaint":      (settings.value("Main/UseProTheme", True, type=bool) and
+                                              settings.value("Main/ProThemeColor", "Black", type=str).lower() == "black")
         }
 
         # ---------------------------------------------

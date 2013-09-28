@@ -44,6 +44,9 @@ discovery:
 plugin:
 	$(MAKE) -C source/plugin
 
+theme:
+	$(MAKE) -C source/modules/theme
+
 posix32:
 	$(MAKE) -C source/bridges posix32
 	$(MAKE) -C source/discovery posix32

@@ -1040,7 +1040,7 @@ class PluginEdit(QDialog):
         sender = self.sender()
 
         if sender == self.ui.ch_fixed_buffer:
-            option = PLUGIN_OPTION_FIXED_BUFFER
+            option = PLUGIN_OPTION_FIXED_BUFFERS
         elif sender == self.ui.ch_force_stereo:
             option = PLUGIN_OPTION_FORCE_STEREO
         elif sender == self.ui.ch_map_program_changes:

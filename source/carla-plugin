@@ -331,11 +331,7 @@ if __name__ == '__main__':
     # -------------------------------------------------------------
     # App initialization
 
-    app = QApplication(sys.argv)
-    app.setApplicationName("Carla")
-    app.setApplicationVersion(VERSION)
-    app.setOrganizationName("falkTX")
-    app.setWindowIcon(QIcon(":/scalable/carla.svg"))
+    app = CarlaApplication()
 
     # -------------------------------------------------------------
     # Set-up custom signal handling

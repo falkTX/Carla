@@ -16,6 +16,7 @@
  */
 
 #include "CarlaStylePlugin.hpp"
+#include "CarlaStyle.hpp"
 
 CarlaStylePlugin::CarlaStylePlugin(QObject* parent)
     : QStylePlugin(parent)
@@ -24,12 +25,14 @@ CarlaStylePlugin::CarlaStylePlugin(QObject* parent)
 
 QStyle* CarlaStylePlugin::create(const QString& key)
 {
-    return (key.toLower() == "carla") ? new CarlaStyle() : nullptr;
+    return (key.toLower() == "carla") ? new CarlaStyle : nullptr;
 }
 
-// QStringList CarlaStylePlugin::keys() const
-// {
-//     return QStringList() << "Carla";
-// }
+#if (QT_VERSION < QT_VERSION_CHECK(5, 0, 0))
+QStringList CarlaStylePlugin::keys() const
+{
+    return QStringList() << "Carla";
+}
 
 Q_EXPORT_PLUGIN2(Carla, CarlaStylePlugin)
+#endif

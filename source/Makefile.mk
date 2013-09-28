@@ -25,6 +25,9 @@ CARLA_VESTIGE_HEADER = true
 AR  ?= ar
 CC  ?= gcc
 CXX ?= g++
+MOC ?= moc
+RCC ?= rcc
+UIC ?= uic
 
 # --------------------------------------------------------------
 
@@ -82,17 +85,10 @@ HAVE_FLUIDSYNTH   = $(shell pkg-config --exists fluidsynth && echo true)
 HAVE_LINUXSAMPLER = $(shell pkg-config --exists linuxsampler && echo true)
 endif
 
-# --------------------------------------------------------------
-
-# TODO - move this to theme
 ifeq ($(HAVE_QT4),true)
-MOC ?= $(shell pkg-config --variable=moc_location QtCore)
-RCC ?= $(shell pkg-config --variable=rcc_location QtCore)
-UIC ?= $(shell pkg-config --variable=uic_location QtCore)
-else
-MOC ?= moc
-RCC ?= rcc
-UIC ?= uic
+MOC_QT4 ?= $(shell pkg-config --variable=moc_location QtCore)
+RCC_QT4 ?= $(shell pkg-config --variable=rcc_location QtCore)
+UIC_QT4 ?= $(shell pkg-config --variable=uic_location QtCore)
 endif
 
 # --------------------------------------------------------------
