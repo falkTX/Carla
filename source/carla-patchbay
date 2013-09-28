@@ -1,0 +1,96 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+# Carla plugin host
+# Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 2 of
+# the License, or any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# For a full copy of the GNU General Public License see the GPL.txt file
+
+# ------------------------------------------------------------------------------------------------------------
+# Imports (Custom Stuff)
+
+from carla_host import *
+from carla_patchbay import CarlaPatchbayW
+
+# ------------------------------------------------------------------------------------------------------------
+# Main Window
+
+class CarlaHostW(HostWindow):
+    def __init__(self, parent=None):
+        HostWindow.__init__(self, parent)
+
+        self.fContainer = CarlaPatchbayW(self)
+        self.setCentralWidget(self.fContainer)
+
+# ------------------------------------------------------------------------------------------------------------
+# Main
+
+if __name__ == '__main__':
+    # -------------------------------------------------------------
+    # App initialization
+
+    app = CarlaApplication()
+
+    # -------------------------------------------------------------
+    # Set-up custom signal handling
+
+    setUpSignals()
+
+    # -------------------------------------------------------------
+    # Read CLI args
+
+    appName = os.path.basename(__file__) if ("__file__" in dir() and os.path.dirname(__file__) in PATH) else sys.argv[0]
+    libPrefix = None
+    projectFilename = None
+
+    argv = app.arguments()
+    argc = len(argv)
+
+    for i in range(argc):
+        if i == 0: continue
+        argument = argv[i]
+
+        if argument.startswith("--with-appname="):
+            appName = os.path.basename(argument.replace("--with-appname=", ""))
+
+        elif argument.startswith("--with-libprefix="):
+            libPrefix = argument.replace("--with-libprefix=", "")
+
+        elif os.path.exists(argument):
+            projectFilename = argument
+
+    # -------------------------------------------------------------
+    # Init host backend
+
+    initHost(appName, libPrefix)
+
+    # -------------------------------------------------------------
+    # Create GUI
+
+    Carla.gui = CarlaHostW()
+
+    # -------------------------------------------------------------
+    # Load project file if set
+
+    if projectFilename is not None:
+        Carla.gui.loadProjectLater(projectFilename)
+
+    # -------------------------------------------------------------
+    # Show GUI
+
+    Carla.gui.show()
+
+    # -------------------------------------------------------------
+    # App-Loop
+
+    sys.exit(app.exec_())

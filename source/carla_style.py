@@ -35,11 +35,6 @@ from carla_shared import *
 # ------------------------------------------------------------------------------------------------------------
 
 class CarlaApplication(object):
-    # Colors
-    COLOR_SYSTEM = 0
-    COLOR_BLACK  = 1
-    COLOR_BLUE   = 1
-
     def __init__(self, appName = "Carla"):
         object.__init__(self)
 
@@ -181,7 +176,6 @@ class CarlaApplication(object):
         self.fPalBlue.setColor(QPalette.Inactive, QPalette.LinkVisited, QColor(64, 128, 255))
 
         self.loadSettings()
-        print("TESTING", self.fApp.style().objectName())
 
     def loadSettings(self):
         settings = QSettings()
@@ -189,17 +183,14 @@ class CarlaApplication(object):
         useProTheme = settings.value("Main/UseProTheme", True, type=bool)
 
         if useProTheme:
-            print("USING PRO THEME")
             self.fApp.setStyle("carla")
 
-            proThemeColor = settings.value("Main/ProThemeColor", "Black", type=str)
+            proThemeColor = settings.value("Main/ProThemeColor", "Black", type=str).lower()
 
-            if proThemeColor.lower() == "black":
-                print("USING PRO AND BLACK THEME")
+            if proThemeColor == "black":
                 self.fApp.setPalette(self.fPalBlack)
 
-            elif proThemeColor.lower() == "blue":
-                print("USING PRO AND BLUE THEME")
+            elif proThemeColor == "blue":
                 self.fApp.setPalette(self.fPalBlue)
 
     def arguments(self):
