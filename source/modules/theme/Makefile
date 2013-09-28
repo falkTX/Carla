@@ -179,6 +179,6 @@ clean:
 debug:
 	$(MAKE) DEBUG=true
 
-install: $(THEMESTYLE)
+install: $(CARLASTYLE) styles/carlastyle.json
 	install -d $(QT_STYLES_DIR)
-	install -m 644 $< styles/carlastyle.json $(QT_STYLES_DIR)
+	install -m 644 $^ $(QT_STYLES_DIR)
