@@ -51,7 +51,7 @@ public:
         connect(this, SIGNAL(finished()), SLOT(deleteLater()));
     }
 
-    virtual ~CarlaStyleAnimation()
+    ~CarlaStyleAnimation() override
     {
     }
 
@@ -60,7 +60,7 @@ public:
         return parent();
     }
 
-    int duration() const
+    int duration() const override
     {
         return _duration;
     }

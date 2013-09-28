@@ -35,14 +35,8 @@ class CarlaStyle : public QCommonStyle
     Q_OBJECT
 
 public:
-    enum ColorScheme {
-        COLOR_BLACK  = 0,
-        COLOR_BLUE   = 1,
-        COLOR_SYSTEM = 2
-    };
-
     CarlaStyle();
-    ~CarlaStyle();
+    ~CarlaStyle() override;
 
     QPalette standardPalette() const override;
     void drawPrimitive(PrimitiveElement elem, const QStyleOption* option, QPainter* painter,

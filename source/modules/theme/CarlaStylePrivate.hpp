@@ -43,7 +43,7 @@ public:
     {
     }
 
-    ~CarlaStylePrivate()
+    ~CarlaStylePrivate() override
     {
         qDeleteAll(fAnimations);
     }
@@ -109,7 +109,7 @@ public:
     QColor buttonColor(const QPalette& pal) const
     {
         QColor buttonColor = pal.button().color();
-        int val = qGray(buttonColor.rgb());
+        const int val = qGray(buttonColor.rgb());
         buttonColor = buttonColor.lighter(100 + qMax(1, (180 - val)/6));
         buttonColor.setHsv(buttonColor.hue(), buttonColor.saturation() * 0.75, buttonColor.value());
         return buttonColor;
@@ -137,7 +137,7 @@ public:
 
     void stopAnimation(const QObject* target) const
     {
-        CarlaStyleAnimation* animation = fAnimations.take(target);
+        CarlaStyleAnimation* const animation = fAnimations.take(target);
         if (animation != nullptr && animation->state() != QAbstractAnimation::Stopped)
             animation->stop();
     }

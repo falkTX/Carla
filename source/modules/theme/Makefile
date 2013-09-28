@@ -163,7 +163,7 @@ moc_%.qt4.cpp: %.hpp
 	$(MOC_QT4) $< -o $@
 
 moc_%.cpp: %.hpp
-	$(MOC) $< -o $@
+	$(MOC) -Istyles $< -o $@
 
 resources.cpp: ../../../resources/resources-theme.qrc
 	$(RCC) $< -o $@
