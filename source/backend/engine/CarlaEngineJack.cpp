@@ -227,6 +227,11 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fIsInput, kFallbackJackEngineEvent);
         CARLA_SAFE_ASSERT_RETURN(fJackBuffer != nullptr, kFallbackJackEngineEvent);
 
+        return getEventUnchecked(index);
+    }
+
+    const EngineEvent& getEventUnchecked(const uint32_t index) override
+    {
         jack_midi_event_t jackEvent;
         carla_zeroStruct<jack_midi_event_t>(jackEvent);
 

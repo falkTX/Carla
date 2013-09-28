@@ -216,6 +216,14 @@ class CarlaSettingsW(QDialog):
             self.ui.group_theme.setEnabled(False)
             self.ui.ch_theme_pro.setChecked(False)
 
+        if Carla.isPlugin:
+            self.ui.lw_page.hideRow(self.TAB_INDEX_CARLA_ENGINE)
+            self.ui.lw_page.hideRow(self.TAB_INDEX_CARLA_PATHS)
+
+            #from PyQt4.QtGui import QTableWidget
+            #x = QTableWidget(self)
+            #x.()
+
         # -------------------------------------------------------------
         # Set-up connections
 

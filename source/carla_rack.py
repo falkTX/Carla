@@ -329,10 +329,10 @@ class CarlaRackW(QListWidget):
 
     @pyqtSlot()
     def slot_configureCarla(self):
-        if self.fParent is None or not self.fParent.openSettings(False, False):
+        if self.fParent is None or not self.fParent.openSettingsWindow(False, False):
             return
 
-        #self.loadSettings(False)
+        self.loadSettings(False)
 
     # -----------------------------------------------------------------
 

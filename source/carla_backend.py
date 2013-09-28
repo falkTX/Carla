@@ -89,7 +89,7 @@ def structToDict(struct):
 
 MAX_DEFAULT_PLUGINS    = 99
 MAX_RACK_PLUGINS       = 16
-MAX_PATCHBAY_PLUGINS   = 999
+MAX_PATCHBAY_PLUGINS   = 255
 MAX_DEFAULT_PARAMETERS = 200
 
 # Plugin Hints
@@ -162,13 +162,13 @@ PLUGIN_SFZ      = 10
 # Plugin Category
 PLUGIN_CATEGORY_NONE      = 0
 PLUGIN_CATEGORY_SYNTH     = 1
-PLUGIN_CATEGORY_DELAY     = 2 # also Reverb
+PLUGIN_CATEGORY_DELAY     = 2
 PLUGIN_CATEGORY_EQ        = 3
 PLUGIN_CATEGORY_FILTER    = 4
-PLUGIN_CATEGORY_DYNAMICS  = 5 # Amplifier, Compressor, Gate
-PLUGIN_CATEGORY_MODULATOR = 6 # Chorus, Flanger, Phaser
-PLUGIN_CATEGORY_UTILITY   = 7 # Analyzer, Converter, Mixer
-PLUGIN_CATEGORY_OTHER     = 8 # used to check if a plugin has a category
+PLUGIN_CATEGORY_DYNAMICS  = 5
+PLUGIN_CATEGORY_MODULATOR = 6
+PLUGIN_CATEGORY_UTILITY   = 7
+PLUGIN_CATEGORY_OTHER     = 8
 
 # Parameter Type
 PARAMETER_UNKNOWN       = 0
@@ -304,7 +304,7 @@ class ParameterData(Structure):
         ("type", c_enum),
         ("index", c_int32),
         ("rindex", c_int32),
-        ("hints", c_uint32),
+        ("hints", c_uint),
         ("midiChannel", c_uint8),
         ("midiCC", c_int16)
     ]
@@ -399,6 +399,73 @@ class CarlaTransportInfo(Structure):
         ("tick", c_int32),
         ("bpm", c_double)
     ]
+
+# ------------------------------------------------------------------------------------------------------------
+# Python object dicts compatible with ctypes struct
+
+PyParameterData = {
+    'type': PARAMETER_NULL,
+    'index': 0,
+    'rindex': -1,
+    'hints': 0x0,
+    'midiChannel': 0,
+    'midiCC': -1
+}
+
+PyParameterRanges = {
+    'def': 0.0,
+    'min': 0.0,
+    'max': 1.0,
+    'step': 0.0,
+    'stepSmall': 0.0,
+    'stepLarge': 0.0
+}
+
+PyMidiProgramData = {
+    'bank': 0,
+    'program': 0,
+    'name': None
+}
+
+PyCustomData = {
+    'type': None,
+    'key': None,
+    'value': None
+}
+
+PyCarlaPluginInfo = {
+    'type': PLUGIN_NONE,
+    'category': PLUGIN_CATEGORY_NONE,
+    'hints': 0x0,
+    'optionsAvailable': 0x0,
+    'optionsEnabled': 0x0,
+    'binary': None,
+    'name':  None,
+    'label': None,
+    'maker': None,
+    'copyright': None,
+    'iconName': None,
+    'uniqueId': 0,
+    'latency': 0
+}
+
+PyCarlaPortCountInfo = {
+    'ins': 0,
+    'outs': 0,
+    'total': 0
+}
+
+PyCarlaParameterInfo = {
+    'name': None,
+    'symbol': None,
+    'unit': None,
+    'scalePointCount': 0,
+}
+
+PyCarlaScalePointInfo = {
+    'value': 0.0,
+    'label': None
+}
 
 # ------------------------------------------------------------------------------------------------------------
 # Host Python object (Control/Standalone)

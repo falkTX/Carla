@@ -829,16 +829,14 @@ bool CarlaPlugin::saveStateToFile(const char* const filename)
     String content;
     fillXmlStringFromSaveState(content, getSaveState());
 
-    String out;
+    MemoryOutputStream out;
     out << "<?xml version='1.0' encoding='UTF-8'?>\n";
     out << "<!DOCTYPE CARLA-PRESET>\n";
     out << "<CARLA-PRESET VERSION='2.0'>\n";
     out << content;
     out << "</CARLA-PRESET>\n";
 
-    carla_stdout("TESTING, FULL OUT FILE:\n%s", out.toRawUTF8());
-
-    return file.replaceWithText(out);
+    return file.replaceWithData(out.getData(), out.getDataSize());
 }
 
 bool CarlaPlugin::loadStateFromFile(const char* const filename)

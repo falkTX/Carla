@@ -1442,7 +1442,9 @@ class PluginDatabaseW(QDialog):
         for plugins in internalPlugins:
             internalCount += len(plugins)
 
-        if Carla.host is not None and internalCount != Carla.host.get_internal_plugin_count():
+        canRefreshInternals = not (Carla.isControl or Carla.isPlugin or Carla.host is None)
+
+        if  canRefreshInternals and internalCount != Carla.host.get_internal_plugin_count():
             internalCount   = Carla.host.get_internal_plugin_count()
             internalPlugins = []
 

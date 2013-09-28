@@ -17,16 +17,6 @@
 # For a full copy of the GNU General Public License see the GPL.txt file
 
 # ------------------------------------------------------------------------------------------------------------
-# Imports (Global)
-
-try:
-    from PyQt5.QtCore import QTimer
-    from PyQt5.QtWidgets import QApplication
-except:
-    from PyQt4.QtCore import QTimer
-    from PyQt4.QtGui import QApplication
-
-# ------------------------------------------------------------------------------------------------------------
 # Imports (Custom Stuff)
 
 from carla_host import *

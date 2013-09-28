@@ -102,6 +102,8 @@ class CarlaAboutW(QDialog):
 
         if Carla.isControl:
             extraInfo = " - <b>%s</b>" % self.tr("OSC Bridge Version")
+        elif Carla.isPlugin:
+            extraInfo = " - <b>%s</b>" % self.tr("Plugin Version")
         else:
             extraInfo = ""
 
@@ -111,7 +113,7 @@ class CarlaAboutW(QDialog):
                                      "<br>Copyright (C) 2011-2013 falkTX<br>"
                                      "" % (VERSION, extraInfo)))
 
-        if Carla.host is None:
+        if Carla.isControl or Carla.isPlugin or Carla.host is None:
             self.ui.l_extended.hide()
             self.ui.tabWidget.removeTab(1)
             self.ui.tabWidget.removeTab(1)

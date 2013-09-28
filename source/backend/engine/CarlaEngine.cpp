@@ -381,7 +381,12 @@ const char** CarlaEngine::getDriverDeviceNames(const unsigned int index)
     carla_debug("CarlaEngine::getDriverDeviceNames(%i)", index);
 
     if (index == 0)
-        return nullptr;
+    {
+        //static const char* const strOff = "Auto-connect OFF";
+        //static const char* const strOn  = "Auto-connect ON";
+        static const char* ret[3] = { "Auto-connect OFF", "Auto-connect ON", nullptr };
+        return ret;
+    }
 
 #ifndef BUILD_BRIDGE
     const unsigned int rtAudioIndex(index-1);
@@ -1057,29 +1062,18 @@ bool CarlaEngine::loadFilename(const char* const filename)
     CARLA_ASSERT(filename != nullptr);
     carla_debug("CarlaEngine::loadFilename(\"%s\")", filename);
 
-#if 0
-    QFileInfo fileInfo(filename);
+    using namespace juce;
 
-    if (! fileInfo.exists())
+    File file(filename);
+
+    if (! file.existsAsFile())
     {
         setLastError("File does not exist");
         return false;
     }
 
-    if (! fileInfo.isFile())
-    {
-        setLastError("Not a file");
-        return false;
-    }
-
-    if (! fileInfo.isReadable())
-    {
-        setLastError("File is not readable");
-        return false;
-    }
-
-    CarlaString baseName(fileInfo.baseName().toUtf8().constData());
-    CarlaString extension(fileInfo.suffix().toLower().toUtf8().constData());
+    CarlaString baseName(file.getFileNameWithoutExtension().toRawUTF8());
+    CarlaString extension(file.getFileExtension().toRawUTF8());
 
     // -------------------------------------------------------------------
 
@@ -1175,7 +1169,6 @@ bool CarlaEngine::loadFilename(const char* const filename)
     }
 
     // -------------------------------------------------------------------
-#endif
 
     setLastError("Unknown file extension");
     return false;
@@ -1200,71 +1193,68 @@ bool CarlaEngine::loadProject(const char* const filename)
     CARLA_ASSERT(filename != nullptr);
     carla_debug("CarlaEngine::loadProject(\"%s\")", filename);
 
-#if 0
-    QFile file(filename);
+    using namespace juce;
 
-    if (! file.open(QIODevice::ReadOnly | QIODevice::Text))
-        return false;
+    File file(filename);
 
-    QDomDocument xml;
-    xml.setContent(file.readAll());
-    file.close();
+    XmlDocument xml(file);
 
-    QDomNode xmlNode(xml.documentElement());
-
-    if (xmlNode.toElement().tagName() != "CARLA-PROJECT" && xmlNode.toElement().tagName() != "CARLA-PRESET")
+    if (XmlElement* const xmlCheck = xml.getDocumentElement(true))
     {
-        setLastError("Not a valid Carla project or preset file");
-        return false;
-    }
+        const String& tagNameTest(xmlCheck->getTagName());
+        const bool    isPreset(tagNameTest.equalsIgnoreCase("carla-preset"));
 
-    const bool isPreset(xmlNode.toElement().tagName() == "CARLA-PRESET");
-
-    QDomNode node(xmlNode.firstChild());
-
-    while (! node.isNull())
-    {
-        if (isPreset || node.toElement().tagName() == "Plugin")
+        if (tagNameTest.equalsIgnoreCase("carla-project") || isPreset)
         {
-            SaveState saveState;
-            fillSaveStateFromXmlNode(saveState, isPreset ? xmlNode : node);
-
-            CARLA_ASSERT(saveState.type != nullptr);
-
-            if (saveState.type == nullptr)
-                continue;
-
-            const void* extraStuff = nullptr;
-
-            if (std::strcmp(saveState.type, "DSSI") == 0)
+            if (XmlElement* const xmlElem = xml.getDocumentElement(false))
             {
-                extraStuff = findDSSIGUI(saveState.binary, saveState.label);
-            }
-            else if (std::strcmp(saveState.type, "SF2") == 0)
-            {
-                const char use16OutsSuffix[] = " (16 outs)";
+                for (XmlElement* subElem = xmlElem->getFirstChildElement(); subElem != nullptr; subElem = subElem->getNextElement())
+                {
+                    if (isPreset || subElem->getTagName().equalsIgnoreCase("Plugin"))
+                    {
+                        SaveState saveState;
+                        fillSaveStateFromXmlElement(saveState, isPreset ? xmlElem : subElem);
 
-                if (charEndsWith(saveState.label, use16OutsSuffix))
-                    extraStuff = (void*)0x1; // non-null
-            }
+                        CARLA_SAFE_ASSERT_CONTINUE(saveState.type != nullptr);
 
-            // TODO - proper find&load plugins
-            if (addPlugin(getPluginTypeFromString(saveState.type), saveState.binary, saveState.name, saveState.label, extraStuff))
-            {
-                if (CarlaPlugin* plugin = getPlugin(pData->curPluginCount-1))
-                    plugin->loadSaveState(saveState);
+                        const void* extraStuff = nullptr;
+
+                        if (std::strcmp(saveState.type, "SF2") == 0)
+                        {
+                            const char* const use16OutsSuffix = " (16 outs)";
+
+                            if (charEndsWith(saveState.label, use16OutsSuffix))
+                                extraStuff = (void*)0x1; // non-null
+                        }
+
+                        // TODO - proper find&load plugins
+
+                        if (addPlugin(getPluginTypeFromString(saveState.type), saveState.binary, saveState.name, saveState.label, extraStuff))
+                        {
+                            if (CarlaPlugin* plugin = getPlugin(pData->curPluginCount-1))
+                                plugin->loadSaveState(saveState);
+                        }
+                    }
+
+                    if (isPreset)
+                        break;
+                }
+
+                delete xmlElem;
+                delete xmlCheck;
+                return true;
             }
+            else
+                setLastError("Failed to parse file");
         }
+        else
+            setLastError("Not a valid Carla project or preset file");
 
-        if (isPreset)
-            break;
-
-        node = node.nextSibling();
+        delete xmlCheck;
+        return false;
     }
 
-    return true;
-#endif
-    setLastError("Not implemented yet");
+    setLastError("Not a valid file");
     return false;
 }
 
@@ -1273,16 +1263,14 @@ bool CarlaEngine::saveProject(const char* const filename)
     CARLA_ASSERT(filename != nullptr);
     carla_debug("CarlaEngine::saveProject(\"%s\")", filename);
 
-#if 0
-    QFile file(filename);
+    using namespace juce;
 
-    if (! file.open(QIODevice::WriteOnly | QIODevice::Text))
-        return false;
+    File file(filename);
 
-    QTextStream out(&file);
+    MemoryOutputStream out;
     out << "<?xml version='1.0' encoding='UTF-8'?>\n";
     out << "<!DOCTYPE CARLA-PROJECT>\n";
-    out << "<CARLA-PROJECT VERSION='1.0'>\n";
+    out << "<CARLA-PROJECT VERSION='2.0'>\n";
 
     bool firstPlugin = true;
     char strBuf[STR_MAX+1];
@@ -1296,12 +1284,18 @@ bool CarlaEngine::saveProject(const char* const filename)
             if (! firstPlugin)
                 out << "\n";
 
+            strBuf[0] = '\0';
+
             plugin->getRealName(strBuf);
 
-            if (*strBuf != 0)
-                out << QString(" <!-- %1 -->\n").arg(xmlSafeString(strBuf, true));
+            if (strBuf[0] != '\0')
+            {
+                out << " <!-- ";
+                out << xmlSafeString(strBuf, true);
+                out << " -->\n";
+            }
 
-            QString content;
+            String content;
             fillXmlStringFromSaveState(content, plugin->getSaveState());
 
             out << " <Plugin>\n";
@@ -1314,11 +1308,7 @@ bool CarlaEngine::saveProject(const char* const filename)
 
     out << "</CARLA-PROJECT>\n";
 
-    file.close();
-    return true;
-#endif
-    setLastError("Not implemented yet");
-    return false;
+    return file.replaceWithData(out.getData(), out.getDataSize());
 }
 
 // -----------------------------------------------------------------------

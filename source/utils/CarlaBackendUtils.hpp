@@ -337,6 +337,10 @@ const char* CallbackType2Str(const CallbackType type)
         return "CALLBACK_SAMPLE_RATE_CHANGED";
     case CALLBACK_PROCESS_MODE_CHANGED:
         return "CALLBACK_PROCESS_MODE_CHANGED";
+    case CALLBACK_ENGINE_STARTED:
+        return "CALLBACK_ENGINE_STARTED";
+    case CALLBACK_ENGINE_STOPPED:
+        return "CALLBACK_ENGINE_STOPPED";
     case CALLBACK_NSM_ANNOUNCE:
         return "CALLBACK_NSM_ANNOUNCE";
     case CALLBACK_NSM_OPEN:

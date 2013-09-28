@@ -1,0 +1,367 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+# Carla plugin host (plugin UI)
+# Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 2 of
+# the License, or any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# For a full copy of the GNU General Public License see the GPL.txt file
+
+# ------------------------------------------------------------------------------------------------------------
+# Imports (Custom Stuff)
+
+from carla_host import *
+from externalui import ExternalUI
+
+# ------------------------------------------------------------------------------------------------------------
+# Host Plugin object
+
+class PluginHost(object):
+    def __init__(self):
+        object.__init__(self)
+
+        self.fParent = None
+
+        self.fBufferSize = 0
+        self.fSampleRate = 0.0
+        self.fLastError  = ""
+        self.fSupportedFileTypes = ""
+
+    # -------------------------------------------------------------------
+
+    def get_engine_driver_count(self):
+        return 0
+
+    def get_supported_file_types(self):
+        return self.fSupportedFileTypes
+
+    def engine_init(self, driverName, clientName):
+        return True
+
+    def engine_close(self):
+        return True
+
+    def is_engine_running(self):
+        return True
+
+    def set_engine_about_to_close(self):
+        pass
+
+    def set_engine_callback(self, func):
+        pass
+
+    def load_filename(self, filename):
+        self.fParent.send(["load_filename", filename])
+        return True
+
+    def load_project(self, filename):
+        self.fParent.send(["load_project", filename])
+        return True
+
+    def save_project(self, filename):
+        self.fParent.send(["save_project", filename])
+        return True
+
+    def patchbay_connect(self, portIdA, portIdB):
+        self.fParent.send(["patchbay_connect", portIdA, portIdB])
+        return True
+
+    def patchbay_disconnect(self, connectionId):
+        self.fParent.send(["patchbay_disconnect", connectionId])
+        return True
+
+    def patchbay_refresh(self):
+        self.fParent.send(["patchbay_refresh"])
+
+    def add_plugin(self, btype, ptype, filename, name, label, extraStuff):
+        self.fParent.send(["add_plugin", btype, ptype, filename, name, label])
+        return True
+
+    def remove_plugin(self, pluginId):
+        self.fParent.send(["remove_plugin", pluginId])
+        return True
+
+    def remove_all_plugins(self):
+        self.fParent.send(["remove_all_plugins"])
+
+    def rename_plugin(self, pluginId, newName):
+        self.fParent.send(["rename_plugin", pluginId, newName])
+        return True
+
+    def clone_plugin(self, pluginId):
+        self.fParent.send(["clone_plugin", pluginId])
+        return True
+
+    def replace_plugin(self, pluginId):
+        self.fParent.send(["replace_plugin", pluginId])
+        return True
+
+    def switch_plugins(self, pluginIdA, pluginIdB):
+        self.fParent.send(["switch_plugins", pluginIdA, pluginIdB])
+        return True
+
+    def load_plugin_state(self, pluginId, filename):
+        self.fParent.send(["load_plugin_state", pluginId, filename])
+        return True
+
+    def save_plugin_state(self, pluginId, filename):
+        self.fParent.send(["save_plugin_state", pluginId, filename])
+        return True
+
+    #def get_plugin_info(self, pluginId):
+        #return structToDict(self.lib.carla_get_plugin_info(pluginId).contents)
+
+    #def get_audio_port_count_info(self, pluginId):
+        #return structToDict(self.lib.carla_get_audio_port_count_info(pluginId).contents)
+
+    #def get_midi_port_count_info(self, pluginId):
+        #return structToDict(self.lib.carla_get_midi_port_count_info(pluginId).contents)
+
+    #def get_parameter_count_info(self, pluginId):
+        #return structToDict(self.lib.carla_get_parameter_count_info(pluginId).contents)
+
+    #def get_parameter_info(self, pluginId, parameterId):
+        #return structToDict(self.lib.carla_get_parameter_info(pluginId, parameterId).contents)
+
+    #def get_parameter_scalepoint_info(self, pluginId, parameterId, scalePointId):
+        #return structToDict(self.lib.carla_get_parameter_scalepoint_info(pluginId, parameterId, scalePointId).contents)
+
+    #def get_parameter_data(self, pluginId, parameterId):
+        #return structToDict(self.lib.carla_get_parameter_data(pluginId, parameterId).contents)
+
+    #def get_parameter_ranges(self, pluginId, parameterId):
+        #return structToDict(self.lib.carla_get_parameter_ranges(pluginId, parameterId).contents)
+
+    #def get_midi_program_data(self, pluginId, midiProgramId):
+        #return structToDict(self.lib.carla_get_midi_program_data(pluginId, midiProgramId).contents)
+
+    #def get_custom_data(self, pluginId, customDataId):
+        #return structToDict(self.lib.carla_get_custom_data(pluginId, customDataId).contents)
+
+    #def get_chunk_data(self, pluginId):
+        #return self.lib.carla_get_chunk_data(pluginId)
+
+    #def get_parameter_count(self, pluginId):
+        #return self.lib.carla_get_parameter_count(pluginId)
+
+    #def get_program_count(self, pluginId):
+        #return self.lib.carla_get_program_count(pluginId)
+
+    #def get_midi_program_count(self, pluginId):
+        #return self.lib.carla_get_midi_program_count(pluginId)
+
+    #def get_custom_data_count(self, pluginId):
+        #return self.lib.carla_get_custom_data_count(pluginId)
+
+    #def get_parameter_text(self, pluginId, parameterId):
+        #return self.lib.carla_get_parameter_text(pluginId, parameterId)
+
+    #def get_program_name(self, pluginId, programId):
+        #return self.lib.carla_get_program_name(pluginId, programId)
+
+    #def get_midi_program_name(self, pluginId, midiProgramId):
+        #return self.lib.carla_get_midi_program_name(pluginId, midiProgramId)
+
+    #def get_real_plugin_name(self, pluginId):
+        #return self.lib.carla_get_real_plugin_name(pluginId)
+
+    #def get_current_program_index(self, pluginId):
+        #return self.lib.carla_get_current_program_index(pluginId)
+
+    #def get_current_midi_program_index(self, pluginId):
+        #return self.lib.carla_get_current_midi_program_index(pluginId)
+
+    #def get_default_parameter_value(self, pluginId, parameterId):
+        #return self.lib.carla_get_default_parameter_value(pluginId, parameterId)
+
+    #def get_current_parameter_value(self, pluginId, parameterId):
+        #return self.lib.carla_get_current_parameter_value(pluginId, parameterId)
+
+    #def get_input_peak_value(self, pluginId, portId):
+        #return self.lib.carla_get_input_peak_value(pluginId, portId)
+
+    #def get_output_peak_value(self, pluginId, portId):
+        #return self.lib.carla_get_output_peak_value(pluginId, portId)
+
+    def set_option(self, pluginId, option, yesNo):
+        self.fParent.send(["set_option", pluginId, option, yesNo])
+
+    def set_active(self, pluginId, onOff):
+        self.fParent.send(["set_active", pluginId, onOff])
+
+    def set_drywet(self, pluginId, value):
+        self.fParent.send(["set_drywet", pluginId, value])
+
+    def set_volume(self, pluginId, value):
+        self.fParent.send(["set_volume", pluginId, value])
+
+    def set_balance_left(self, pluginId, value):
+        self.fParent.send(["set_balance_left", pluginId, value])
+
+    def set_balance_right(self, pluginId, value):
+        self.fParent.send(["set_balance_right", pluginId, value])
+
+    def set_panning(self, pluginId, value):
+        self.fParent.send(["set_panning", pluginId, value])
+
+    def set_ctrl_channel(self, pluginId, channel):
+        self.fParent.send(["set_ctrl_channel", pluginId, channel])
+
+    def set_parameter_value(self, pluginId, parameterId, value):
+        self.fParent.send(["set_parameter_value", pluginId, parameterId, value])
+
+    def set_parameter_midi_cc(self, pluginId, parameterId, cc):
+        self.fParent.send(["set_parameter_midi_cc", pluginId, parameterId, cc])
+
+    def set_parameter_midi_channel(self, pluginId, parameterId, channel):
+        self.fParent.send(["set_parameter_midi_channel", pluginId, parameterId, channel])
+
+    def set_program(self, pluginId, programId):
+        self.fParent.send(["set_program", pluginId, programId])
+
+    def set_midi_program(self, pluginId, midiProgramId):
+        self.fParent.send(["set_midi_program", pluginId, midiProgramId])
+
+    def set_custom_data(self, pluginId, type_, key, value):
+        self.fParent.send(["set_custom_data", pluginId, type_, key, value])
+
+    def set_chunk_data(self, pluginId, chunkData):
+        self.fParent.send(["set_chunk_data", pluginId, chunkData])
+
+    def prepare_for_save(self, pluginId):
+        self.fParent.send(["prepare_for_save", pluginId])
+
+    def send_midi_note(self, pluginId, channel, note, velocity):
+        self.fParent.send(["send_midi_note", pluginId, channel, note, velocity])
+
+    def show_gui(self, pluginId, yesNo):
+        self.fParent.send(["show_gui", pluginId, yesNo])
+
+    def get_last_error(self):
+        return self.fLastError
+
+    def get_buffer_size(self):
+        return self.fBufferSize
+
+    def get_sample_rate(self):
+        return self.fSampleRate
+
+# ------------------------------------------------------------------------------------------------------------
+# Init plugin
+
+def initPlugin():
+    Carla.host = PluginHost()
+
+# ------------------------------------------------------------------------------------------------------------
+# Main Window
+
+class CarlaMiniW(HostWindow, ExternalUI):
+    def __init__(self):
+        HostWindow.__init__(self, None)
+        ExternalUI.__init__(self)
+
+        if Carla.host is not None:
+            Carla.host.fParent     = None
+            Carla.host.fSampleRate = self.d_getSampleRate()
+
+        if False:
+            from carla_patchbay import CarlaPatchbayW
+            self.fContainer = CarlaPatchbayW(self)
+        else:
+            from carla_rack import CarlaRackW
+            self.fContainer = CarlaRackW(self)
+
+        self.setCentralWidget(self.fContainer)
+        self.setWindowTitle(self.fUiName)
+
+        self.fIdleTimer = self.startTimer(50)
+
+        self.showUiIfTesting()
+
+    # -------------------------------------------------------------------
+    # ExternalUI Callbacks
+
+    def d_uiShow(self):
+        self.show()
+
+    def d_uiHide(self):
+        self.hide()
+
+    def d_uiQuit(self):
+        self.close()
+        app.quit()
+
+    def d_uiTitleChanged(self, uiTitle):
+        self.setWindowTitle(uiTitle)
+
+    # -------------------------------------------------------------------
+    # Qt events
+
+    def timerEvent(self, event):
+        if event.timerId() == self.fIdleTimer:
+            if not self.idleExternalUI():
+                self.d_uiQuit()
+
+        QWidget.timerEvent(self, event)
+
+    def closeEvent(self, event):
+        self.closeExternalUI()
+        HostWindow.closeEvent(self, event)
+
+# ------------------------------------------------------------------------------------------------------------
+# Main
+
+if __name__ == '__main__':
+    # -------------------------------------------------------------
+    # Setup
+
+    Carla.isControl = False
+    Carla.isLocal   = False
+    Carla.isPlugin  = True
+
+    # -------------------------------------------------------------
+    # App initialization
+
+    app = QApplication(sys.argv)
+    app.setApplicationName("Carla")
+    app.setApplicationVersion(VERSION)
+    app.setOrganizationName("falkTX")
+    app.setWindowIcon(QIcon(":/scalable/carla.svg"))
+
+    # -------------------------------------------------------------
+    # Set-up custom signal handling
+
+    setUpSignals()
+
+    # -------------------------------------------------------------
+    # Read CLI args
+
+    argv = app.arguments()
+    argc = len(argv)
+
+    if argc > 1:
+        pass
+
+    # -------------------------------------------------------------
+    # Init plugin backend
+
+    initPlugin()
+
+    # -------------------------------------------------------------
+    # Create GUI
+
+    Carla.gui = CarlaMiniW()
+
+    # -------------------------------------------------------------
+    # App-Loop
+
+    sys.exit(app.exec_())

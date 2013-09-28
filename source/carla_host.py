@@ -192,12 +192,21 @@ class HostWindow(QMainWindow):
         # -------------------------------------------------------------
         # Set up GUI (engine stopped)
 
+        if Carla.isPlugin:
+            self.ui.act_file_new.setEnabled(False)
+            self.ui.act_file_open.setEnabled(False)
+            self.ui.act_engine_start.setEnabled(False)
+            self.ui.act_engine_stop.setEnabled(False)
+            self.ui.menu_Engine.setEnabled(False)
+        else:
+            self.ui.act_engine_start.setEnabled(True)
+
         self.ui.act_file_save.setEnabled(False)
         self.ui.act_file_save_as.setEnabled(False)
-        self.ui.act_engine_start.setEnabled(True)
         self.ui.act_engine_stop.setEnabled(False)
         self.ui.act_plugin_remove_all.setEnabled(False)
-        #self.ui.menu_Plugins.setEnabled(False)
+
+        self.ui.menu_PluginMacros.setEnabled(False)
         self.ui.menu_Canvas.setEnabled(False)
 
         self.setTransportMenuEnabled(False)
@@ -254,10 +263,10 @@ class HostWindow(QMainWindow):
         # -------------------------------------------------------------
         # Final setup
 
-        if NSM_URL:
+        if Carla.isPlugin:
+            QTimer.singleShot(0, self.slot_engineStart)
+        elif NSM_URL:
             Carla.host.nsm_ready()
-        #else:
-            #QTimer.singleShot(0, self.slot_engineStart)
 
     # -----------------------------------------------------------------
     # Called by containers
@@ -265,116 +274,6 @@ class HostWindow(QMainWindow):
     def openSettingsWindow(self, hasCanvas, hasCanvasGL):
         dialog = CarlaSettingsW(self, hasCanvas, hasCanvasGL)
         return dialog.exec_()
-
-    def loadSettings(self, doGeometry):
-        settings = QSettings()
-
-        if doGeometry:
-            self.restoreGeometry(settings.value("Geometry", ""))
-
-            showToolbar = settings.value("ShowToolbar", True, type=bool)
-            self.ui.act_settings_show_toolbar.setChecked(showToolbar)
-            self.ui.toolBar.setVisible(showToolbar)
-
-            #if settings.contains("SplitterState"):
-                #self.ui.splitter.restoreState(settings.value("SplitterState", ""))
-            #else:
-                #self.ui.splitter.setSizes([99999, 210])
-
-            #diskFolders = toList(settings.value("DiskFolders", [HOME]))
-
-            #self.ui.cb_disk.setItemData(0, HOME)
-
-            #for i in range(len(diskFolders)):
-                #if i == 0: continue
-                #folder = diskFolders[i]
-                #self.ui.cb_disk.addItem(os.path.basename(folder), folder)
-
-            if MACOS and not settings.value("Main/UseProTheme", True, type=bool):
-                self.setUnifiedTitleAndToolBarOnMac(True)
-
-        useCustomMiniCanvasPaint = bool(settings.value("Main/UseProTheme", True, type=bool) and
-                                        settings.value("Main/ProThemeColor", "Black", type=str) == "Black")
-
-        # ---------------------------------------------
-        # engine
-
-        self.setEngineSettings(settings)
-
-        # ---------------------------------------------
-        # plugin checks
-
-        if settings.value("Engine/DisableChecks", False, type=bool):
-            os.environ["CARLA_DISCOVERY_NO_PROCESSING_CHECKS"] = "true"
-
-        elif os.getenv("CARLA_DISCOVERY_NO_PROCESSING_CHECKS"):
-            os.environ.pop("CARLA_DISCOVERY_NO_PROCESSING_CHECKS")
-
-        # ---------------------------------------------
-        # plugin paths
-
-        LADSPA_PATH = toList(settings.value("Paths/LADSPA", Carla.DEFAULT_LADSPA_PATH))
-        DSSI_PATH   = toList(settings.value("Paths/DSSI",   Carla.DEFAULT_DSSI_PATH))
-        LV2_PATH    = toList(settings.value("Paths/LV2",    Carla.DEFAULT_LV2_PATH))
-        VST_PATH    = toList(settings.value("Paths/VST",    Carla.DEFAULT_VST_PATH))
-        AU_PATH     = toList(settings.value("Paths/AU",     Carla.DEFAULT_AU_PATH))
-        CSOUND_PATH = toList(settings.value("Paths/CSOUND", Carla.DEFAULT_CSOUND_PATH))
-        GIG_PATH    = toList(settings.value("Paths/GIG",    Carla.DEFAULT_GIG_PATH))
-        SF2_PATH    = toList(settings.value("Paths/SF2",    Carla.DEFAULT_SF2_PATH))
-        SFZ_PATH    = toList(settings.value("Paths/SFZ",    Carla.DEFAULT_SFZ_PATH))
-
-        os.environ["LADSPA_PATH"] = splitter.join(LADSPA_PATH)
-        os.environ["DSSI_PATH"]   = splitter.join(DSSI_PATH)
-        os.environ["LV2_PATH"]    = splitter.join(LV2_PATH)
-        os.environ["VST_PATH"]    = splitter.join(VST_PATH)
-        os.environ["AU_PATH"]     = splitter.join(AU_PATH)
-        os.environ["CSOUND_PATH"] = splitter.join(CSOUND_PATH)
-        os.environ["GIG_PATH"]    = splitter.join(GIG_PATH)
-        os.environ["SF2_PATH"]    = splitter.join(SF2_PATH)
-        os.environ["SFZ_PATH"]    = splitter.join(SFZ_PATH)
-
-        # ---------------------------------------------
-
-        self.fSavedSettings = {
-            "Main/DefaultProjectFolder":      settings.value("Main/DefaultProjectFolder", HOME, type=str),
-            "Main/RefreshInterval":           settings.value("Main/RefreshInterval",      50, type=int),
-            "Canvas/Theme":                   settings.value("Canvas/Theme",              CANVAS_DEFAULT_THEME_NAME, type=str),
-            "Canvas/AutoHideGroups":          settings.value("Canvas/AutoHideGroups",     False, type=bool),
-            "Canvas/UseBezierLines":          settings.value("Canvas/UseBezierLines",     True, type=bool),
-            "Canvas/EyeCandy":                settings.value("Canvas/EyeCandy",           CANVAS_EYECANDY_SMALL, type=int),
-            "Canvas/UseOpenGL":               settings.value("Canvas/UseOpenGL",          False, type=bool),
-            "Canvas/Antialiasing":            settings.value("Canvas/Antialiasing",       CANVAS_ANTIALIASING_SMALL, type=int),
-            "Canvas/HighQualityAntialiasing": settings.value("Canvas/HighQualityAntialiasing", False, type=bool),
-            "UseCustomMiniCanvasPaint":       useCustomMiniCanvasPaint
-        }
-
-        # ---------------------------------------------
-
-        if self.fIdleTimerFast != 0:
-            self.killTimer(self.fIdleTimerFast)
-            self.fIdleTimerFast = self.startTimer(self.fSavedSettings["Main/RefreshInterval"])
-
-        if self.fIdleTimerSlow != 0:
-            self.killTimer(self.fIdleTimerSlow)
-            self.fIdleTimerSlow = self.startTimer(self.fSavedSettings["Main/RefreshInterval"]*2)
-
-    def saveSettings(self):
-        settings = QSettings()
-
-        settings.setValue("Geometry", self.saveGeometry())
-        #settings.setValue("SplitterState", self.ui.splitter.saveState())
-        settings.setValue("ShowToolbar", self.ui.toolBar.isVisible())
-        #settings.setValue("HorizontalScrollBarValue", self.ui.graphicsView.horizontalScrollBar().value())
-        #settings.setValue("VerticalScrollBarValue", self.ui.graphicsView.verticalScrollBar().value())
-
-        #diskFolders = []
-
-        #for i in range(self.ui.cb_disk.count()):
-            #diskFolders.append(self.ui.cb_disk.itemData(i))
-
-        #settings.setValue("DiskFolders", diskFolders)
-
-        self.fContainer.saveSettings(settings)
 
     # -----------------------------------------------------------------
     # Internal stuff (files)
@@ -410,6 +309,9 @@ class HostWindow(QMainWindow):
     # Internal stuff (engine)
 
     def setEngineSettings(self, settings = None):
+        if Carla.isPlugin:
+            return "Plugin"
+
         if settings is None: settings = QSettings()
 
         forceStereo         = settings.value("Engine/ForceStereo",         CARLA_DEFAULT_FORCE_STEREO,          type=bool)
@@ -603,6 +505,118 @@ class HostWindow(QMainWindow):
         self.ui.menu_Transport.setEnabled(enabled)
 
     # -----------------------------------------------------------------
+    # Internal stuff (settings)
+
+    def loadSettings(self, doGeometry):
+        settings = QSettings()
+
+        if doGeometry:
+            self.restoreGeometry(settings.value("Geometry", ""))
+
+            showToolbar = settings.value("ShowToolbar", True, type=bool)
+            self.ui.act_settings_show_toolbar.setChecked(showToolbar)
+            self.ui.toolBar.setVisible(showToolbar)
+
+            #if settings.contains("SplitterState"):
+                #self.ui.splitter.restoreState(settings.value("SplitterState", ""))
+            #else:
+                #self.ui.splitter.setSizes([99999, 210])
+
+            #diskFolders = toList(settings.value("DiskFolders", [HOME]))
+
+            #self.ui.cb_disk.setItemData(0, HOME)
+
+            #for i in range(len(diskFolders)):
+                #if i == 0: continue
+                #folder = diskFolders[i]
+                #self.ui.cb_disk.addItem(os.path.basename(folder), folder)
+
+            if MACOS and not settings.value("Main/UseProTheme", True, type=bool):
+                self.setUnifiedTitleAndToolBarOnMac(True)
+
+        # ---------------------------------------------
+        # plugin checks
+
+        if settings.value("Engine/DisableChecks", False, type=bool):
+            os.environ["CARLA_DISCOVERY_NO_PROCESSING_CHECKS"] = "true"
+
+        elif os.getenv("CARLA_DISCOVERY_NO_PROCESSING_CHECKS"):
+            os.environ.pop("CARLA_DISCOVERY_NO_PROCESSING_CHECKS")
+
+        # ---------------------------------------------
+
+        if not Carla.isPlugin:
+            # engine
+            self.setEngineSettings(settings)
+
+            # plugin paths
+            LADSPA_PATH = toList(settings.value("Paths/LADSPA", Carla.DEFAULT_LADSPA_PATH))
+            DSSI_PATH   = toList(settings.value("Paths/DSSI",   Carla.DEFAULT_DSSI_PATH))
+            LV2_PATH    = toList(settings.value("Paths/LV2",    Carla.DEFAULT_LV2_PATH))
+            VST_PATH    = toList(settings.value("Paths/VST",    Carla.DEFAULT_VST_PATH))
+            AU_PATH     = toList(settings.value("Paths/AU",     Carla.DEFAULT_AU_PATH))
+            CSOUND_PATH = toList(settings.value("Paths/CSOUND", Carla.DEFAULT_CSOUND_PATH))
+            GIG_PATH    = toList(settings.value("Paths/GIG",    Carla.DEFAULT_GIG_PATH))
+            SF2_PATH    = toList(settings.value("Paths/SF2",    Carla.DEFAULT_SF2_PATH))
+            SFZ_PATH    = toList(settings.value("Paths/SFZ",    Carla.DEFAULT_SFZ_PATH))
+
+            os.environ["LADSPA_PATH"] = splitter.join(LADSPA_PATH)
+            os.environ["DSSI_PATH"]   = splitter.join(DSSI_PATH)
+            os.environ["LV2_PATH"]    = splitter.join(LV2_PATH)
+            os.environ["VST_PATH"]    = splitter.join(VST_PATH)
+            os.environ["AU_PATH"]     = splitter.join(AU_PATH)
+            os.environ["CSOUND_PATH"] = splitter.join(CSOUND_PATH)
+            os.environ["GIG_PATH"]    = splitter.join(GIG_PATH)
+            os.environ["SF2_PATH"]    = splitter.join(SF2_PATH)
+            os.environ["SFZ_PATH"]    = splitter.join(SFZ_PATH)
+
+        # ---------------------------------------------
+
+        useCustomMiniCanvasPaint = bool(settings.value("Main/UseProTheme", True, type=bool) and
+                                        settings.value("Main/ProThemeColor", "Black", type=str) == "Black")
+
+        self.fSavedSettings = {
+            "Main/DefaultProjectFolder":      settings.value("Main/DefaultProjectFolder", HOME, type=str),
+            "Main/RefreshInterval":           settings.value("Main/RefreshInterval",      50, type=int),
+            "Canvas/Theme":                   settings.value("Canvas/Theme",              CANVAS_DEFAULT_THEME_NAME, type=str),
+            "Canvas/AutoHideGroups":          settings.value("Canvas/AutoHideGroups",     False, type=bool),
+            "Canvas/UseBezierLines":          settings.value("Canvas/UseBezierLines",     True, type=bool),
+            "Canvas/EyeCandy":                settings.value("Canvas/EyeCandy",           CANVAS_EYECANDY_SMALL, type=int),
+            "Canvas/UseOpenGL":               settings.value("Canvas/UseOpenGL",          False, type=bool),
+            "Canvas/Antialiasing":            settings.value("Canvas/Antialiasing",       CANVAS_ANTIALIASING_SMALL, type=int),
+            "Canvas/HighQualityAntialiasing": settings.value("Canvas/HighQualityAntialiasing", False, type=bool),
+            "UseCustomMiniCanvasPaint":       useCustomMiniCanvasPaint
+        }
+
+        # ---------------------------------------------
+
+        if self.fIdleTimerFast != 0:
+            self.killTimer(self.fIdleTimerFast)
+            self.fIdleTimerFast = self.startTimer(self.fSavedSettings["Main/RefreshInterval"])
+
+        if self.fIdleTimerSlow != 0:
+            self.killTimer(self.fIdleTimerSlow)
+            self.fIdleTimerSlow = self.startTimer(self.fSavedSettings["Main/RefreshInterval"]*2)
+
+    def saveSettings(self):
+        settings = QSettings()
+
+        settings.setValue("Geometry", self.saveGeometry())
+        #settings.setValue("SplitterState", self.ui.splitter.saveState())
+        settings.setValue("ShowToolbar", self.ui.toolBar.isVisible())
+        #settings.setValue("HorizontalScrollBarValue", self.ui.graphicsView.horizontalScrollBar().value())
+        #settings.setValue("VerticalScrollBarValue", self.ui.graphicsView.verticalScrollBar().value())
+
+        #diskFolders = []
+
+        #for i in range(self.ui.cb_disk.count()):
+            #diskFolders.append(self.ui.cb_disk.itemData(i))
+
+        #settings.setValue("DiskFolders", diskFolders)
+
+        self.fContainer.saveSettings(settings)
+
+    # -----------------------------------------------------------------
     # Internal stuff (gui)
 
     def setProperWindowTitle(self):
@@ -680,42 +694,50 @@ class HostWindow(QMainWindow):
         if doStart: self.startEngine()
 
         check = Carla.host.is_engine_running()
-        self.ui.act_file_save.setEnabled(check)
-        self.ui.act_engine_start.setEnabled(not check)
-        self.ui.act_engine_stop.setEnabled(check)
+        self.ui.menu_PluginMacros.setEnabled(check)
         self.ui.menu_Canvas.setEnabled(check)
 
-        if self.fSessionManagerName != "Non Session Manager":
-            self.ui.act_file_open.setEnabled(check)
-            self.ui.act_file_save_as.setEnabled(check)
+        if not Carla.isPlugin:
+            self.ui.act_file_save.setEnabled(check)
+            self.ui.act_engine_start.setEnabled(not check)
+            self.ui.act_engine_stop.setEnabled(check)
+
+            if self.fSessionManagerName != "Non Session Manager":
+                self.ui.act_file_open.setEnabled(check)
+                self.ui.act_file_save_as.setEnabled(check)
+
+            self.setTransportMenuEnabled(check)
 
         if check:
             #self.fInfoText = "Engine running | SampleRate: %g | BufferSize: %i" % (self.fSampleRate, self.fBufferSize)
-            self.refreshTransport(True)
             self.fContainer.engineStarted()
 
-        self.setTransportMenuEnabled(check)
+            if not Carla.isPlugin:
+                self.refreshTransport(True)
 
     @pyqtSlot()
     def slot_engineStop(self, doStop = True):
         if doStop: self.stopEngine()
 
         check = Carla.host.is_engine_running()
-        self.ui.act_file_save.setEnabled(check)
-        self.ui.act_engine_start.setEnabled(not check)
-        self.ui.act_engine_stop.setEnabled(check)
+        self.ui.menu_PluginMacros.setEnabled(check)
         self.ui.menu_Canvas.setEnabled(check)
 
-        if self.fSessionManagerName != "Non Session Manager":
-            self.ui.act_file_open.setEnabled(check)
-            self.ui.act_file_save_as.setEnabled(check)
+        if not Carla.isPlugin:
+            self.ui.act_file_save.setEnabled(check)
+            self.ui.act_engine_start.setEnabled(not check)
+            self.ui.act_engine_stop.setEnabled(check)
+
+            if self.fSessionManagerName != "Non Session Manager":
+                self.ui.act_file_open.setEnabled(check)
+                self.ui.act_file_save_as.setEnabled(check)
+
+            self.setTransportMenuEnabled(check)
 
         if not check:
             self.fContainer.engineStopped()
             #self.fInfoText = ""
             #self.fInfoLabel.setText("Engine stopped")
-
-        self.setTransportMenuEnabled(check)
 
     # -----------------------------------------------------------------
 
@@ -884,9 +906,11 @@ class HostWindow(QMainWindow):
 
     def timerEvent(self, event):
         if event.timerId() == self.fIdleTimerFast:
-            Carla.host.engine_idle()
+            if not Carla.isPlugin:
+                Carla.host.engine_idle()
+                self.refreshTransport()
+
             self.fContainer.idleFast()
-            self.refreshTransport()
 
         elif event.timerId() == self.fIdleTimerSlow:
             self.fContainer.idleSlow()

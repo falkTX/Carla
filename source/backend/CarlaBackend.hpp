@@ -691,7 +691,7 @@ struct ParameterData {
     ParameterType type;
     int32_t  index;
     int32_t  rindex;
-    uint32_t hints;
+    unsigned int hints;
     uint8_t  midiChannel;
     int16_t  midiCC;
 

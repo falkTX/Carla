@@ -311,8 +311,10 @@ class CarlaObject(object):
         'gui',
         # bool, is controller
         'isControl',
-        # bool, is controller local
+        # bool, is running local
         'isLocal',
+        # bool, is plugin
+        'isPlugin',
         # current process mode
         'processMode',
         # current max parameters
@@ -340,6 +342,7 @@ Carla.host = None
 Carla.gui  = None
 Carla.isControl = False
 Carla.isLocal   = True
+Carla.isPlugin  = False
 Carla.processMode   = PROCESS_MODE_MULTIPLE_CLIENTS if LINUX else PROCESS_MODE_CONTINUOUS_RACK
 Carla.maxParameters = MAX_DEFAULT_PARAMETERS
 
