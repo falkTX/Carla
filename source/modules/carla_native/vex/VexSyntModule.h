@@ -77,30 +77,22 @@ public:
         }
     }
 
-#ifdef CARLA_EXPORT
-    void doProcess(float* const outPtrL, float* const outPtrR, const int numSamples)
-    {
-#else
-    void doProcess(AudioSampleBuffer& assbf, AudioSampleBuffer& obf, AudioSampleBuffer& ebf1, AudioSampleBuffer& ebf2, AudioSampleBuffer& ebf3)
+    void doProcess(AudioSampleBuffer& obf, AudioSampleBuffer& assbf, AudioSampleBuffer& ebf1, AudioSampleBuffer& ebf2, AudioSampleBuffer& ebf3)
     {
         const int numSamples = obf.getNumSamples();
         float* const outPtrL = assbf.getSampleData(0,0);
         float* const outPtrR = assbf.getSampleData(1,0);
-#endif
 
         if (part1)
         {
-#ifndef CARLA_EXPORT
             float right = parameters[86] * parameters[83];
             float left  = parameters[86] * (1.0f - parameters[83]);
-#endif
 
             for (int i = 0; i < kNumVoices; ++i)
             {
                 if (vo1[i]->getIsOn())
                 {
                     vo1[i]->doProcess(outPtrL, outPtrR, numSamples);
-#ifndef CARLA_EXPORT
                     obf.addFrom(0, 0,  assbf, 0, 0, numSamples, left);
                     obf.addFrom(1, 0,  assbf, 1, 0, numSamples, right);
                     ebf1.addFrom(0, 0, assbf, 0, 0, numSamples, parameters[22] * left);
@@ -109,24 +101,20 @@ public:
                     ebf2.addFrom(1, 0, assbf, 1, 0, numSamples, parameters[23] * right);
                     ebf3.addFrom(0, 0, assbf, 0, 0, numSamples, parameters[24] * left);
                     ebf3.addFrom(1, 0, assbf, 1, 0, numSamples, parameters[24] * right);
-#endif
                 }
             }
         }
 
         if (part2)
         {
-#ifndef CARLA_EXPORT
             float right = parameters[87] * parameters[84];
             float left  = parameters[87] * (1.0f - parameters[84]);
-#endif
 
             for (int i = 0; i < kNumVoices; ++i)
             {
                 if (vo2[i]->getIsOn())
                 {
                     vo2[i]->doProcess(outPtrL, outPtrR, numSamples);
-#ifndef CARLA_EXPORT
                     obf.addFrom(0, 0,  assbf, 0, 0, numSamples, left);
                     obf.addFrom(1, 0,  assbf, 1, 0, numSamples, right);
                     ebf1.addFrom(0, 0, assbf, 0, 0, numSamples, parameters[22 + 24] * left);
@@ -135,24 +123,20 @@ public:
                     ebf2.addFrom(1, 0, assbf, 1, 0, numSamples, parameters[23 + 24] * right);
                     ebf3.addFrom(0, 0, assbf, 0, 0, numSamples, parameters[24 + 24] * left);
                     ebf3.addFrom(1, 0, assbf, 1, 0, numSamples, parameters[24 + 24] * right);
-#endif
                 }
             }
         }
 
         if (part3)
         {
-#ifndef CARLA_EXPORT
             float right = parameters[88] * parameters[85];
             float left  = parameters[88] * (1.0f - parameters[85]);
-#endif
 
             for (int i = 0; i < kNumVoices; ++i)
             {
                 if (vo3[i]->getIsOn())
                 {
                     vo3[i]->doProcess(outPtrL, outPtrR, numSamples);
-#ifndef CARLA_EXPORT
                     obf.addFrom(0, 0,  assbf, 0, 0, numSamples, left);
                     obf.addFrom(1, 0,  assbf, 1, 0, numSamples, right);
                     ebf1.addFrom(0, 0, assbf, 0, 0, numSamples, parameters[22 + 48] * left);
@@ -161,7 +145,6 @@ public:
                     ebf2.addFrom(1, 0, assbf, 1, 0, numSamples, parameters[23 + 48] * right);
                     ebf3.addFrom(0, 0, assbf, 0, 0, numSamples, parameters[24 + 48] * left);
                     ebf3.addFrom(1, 0, assbf, 1, 0, numSamples, parameters[24 + 48] * right);
-#endif
                 }
             }
         }
@@ -169,7 +152,21 @@ public:
 
     void setSampleRate(const double s)
     {
+        if (sampleRate == s)
+            return;
+
         sampleRate = s;
+
+        for (int i = 0; i < kNumVoices; ++i)
+        {
+            delete vo1[i];
+            delete vo2[i];
+            delete vo3[i];
+
+            vo1[i] = new VexVoice(parameters,  0, wr1);
+            vo2[i] = new VexVoice(parameters, 24, wr2);
+            vo3[i] = new VexVoice(parameters, 48, wr3);
+        }
     }
 
     void updateParameterPtr(const float* const p)
@@ -342,8 +339,6 @@ public:
         case 1:
             wr1.setWaveLater(waveName);
             kill(1);
-            // REMOVE THIS
-            wr1.actuallySetWave();
             break;
         case 2:
             wr2.setWaveLater(waveName);

@@ -8,13 +8,9 @@ include ../Makefile.mk
 
 # --------------------------------------------------------------
 
-ifeq ($(HAVE_QT4),true)
-QT_UI_FLAGS = $(shell pkg-config --cflags QtGui)
-QT_UI_LIBS  = $(shell pkg-config --libs QtGui)
-else
-QT_UI_FLAGS = $(shell pkg-config --cflags Qt5Gui Qt5Widgets)
-QT_UI_LIBS  = $(shell pkg-config --libs Qt5Gui Qt5Widgets)
-endif
+# TODO: remove in favour of juce gui stuff
+QT5_UI_FLAGS = $(shell pkg-config --cflags Qt5Core Qt5Gui Qt5Widgets)
+QT5_UI_LIBS  = $(shell pkg-config --libs Qt5Core Qt5Gui Qt5Widgets)
 
 # --------------------------------------------------------------
 
@@ -22,14 +18,6 @@ BUILD_CXX_FLAGS += -DBUILD_BRIDGE
 BUILD_CXX_FLAGS += -I. -I../backend -I../includes -I../modules -I../modules/theme -I../utils
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo)
 LINK_FLAGS      += $(shell pkg-config --libs liblo)
-
-ifeq ($(HAVE_QT4),true)
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags QtCore)
-LINK_FLAGS      += $(shell pkg-config --libs QtCore)
-else
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags Qt5Core)
-LINK_FLAGS      += $(shell pkg-config --libs Qt5Core)
-endif
 
 # --------------------------------------------------------------
 # Plugin bridges
@@ -43,14 +31,6 @@ BUILD_PLUGIN_FLAGS += -DWANT_LADSPA -DWANT_DSSI -DWANT_LV2 -DWANT_VST
 ifeq ($(CARLA_VESTIGE_HEADER),true)
 BUILD_PLUGIN_FLAGS += -DVESTIGE_HEADER
 endif
-endif
-
-ifeq ($(HAVE_QT4),true)
-BUILD_PLUGIN_FLAGS += $(shell pkg-config --cflags QtGui QtXml)
-LINK_PLUGIN_FLAGS  += $(shell pkg-config --libs QtGui QtXml)
-else
-BUILD_PLUGIN_FLAGS += $(shell pkg-config --cflags Qt5Gui Qt5Widgets Qt5Xml)
-LINK_PLUGIN_FLAGS  += $(shell pkg-config --libs Qt5Gui Qt5Widgets Qt5Xml)
 endif
 
 # --------------------------------------------------------------
@@ -138,35 +118,35 @@ ifeq ($(CARLA_VESTIGE_HEADER),true)
 BUILD_UI_VST_FLAGS += -DVESTIGE_HEADER
 endif
 
-BUILD_UI_LV2_GTK2_FLAGS  = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_GTK2 -DBRIDGE_LV2_GTK2 $(shell pkg-config --cflags gtk+-2.0)
-LINK_UI_LV2_GTK2_FLAGS   = $(LINK_UI_FLAGS) $(shell pkg-config --libs gtk+-2.0)
+BUILD_UI_LV2_GTK2_FLAGS  = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_GTK2 -DBRIDGE_LV2_GTK2 $(shell pkg-config --cflags gtk+-2.0 Qt5Core)
+LINK_UI_LV2_GTK2_FLAGS   = $(LINK_UI_FLAGS) $(shell pkg-config --libs gtk+-2.0 Qt5Core)
 
-BUILD_UI_LV2_GTK3_FLAGS  = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_GTK3 -DBRIDGE_LV2_GTK3 $(shell pkg-config --cflags gtk+-3.0)
-LINK_UI_LV2_GTK3_FLAGS   = $(LINK_UI_FLAGS) $(shell pkg-config --libs gtk+-3.0)
+BUILD_UI_LV2_GTK3_FLAGS  = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_GTK3 -DBRIDGE_LV2_GTK3 $(shell pkg-config --cflags gtk+-3.0 Qt5Core)
+LINK_UI_LV2_GTK3_FLAGS   = $(LINK_UI_FLAGS) $(shell pkg-config --libs gtk+-3.0 Qt5Core)
 
-BUILD_UI_LV2_QT4_FLAGS   = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_QT4 -DBRIDGE_LV2_QT4 $(shell pkg-config --cflags QtGui)
-LINK_UI_LV2_QT4_FLAGS    = $(LINK_UI_FLAGS) $(shell pkg-config --libs QtGui)
+BUILD_UI_LV2_QT4_FLAGS   = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_QT4 -DBRIDGE_LV2_QT4 $(shell pkg-config --cflags QtCore QtGui)
+LINK_UI_LV2_QT4_FLAGS    = $(LINK_UI_FLAGS) $(shell pkg-config --libs QtCore QtGui)
 
-BUILD_UI_LV2_QT5_FLAGS   = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_QT5 -DBRIDGE_LV2_QT5 $(shell pkg-config --cflags Qt5Gui Qt5Widgets)
-LINK_UI_LV2_QT5_FLAGS    = $(LINK_UI_FLAGS) $(shell pkg-config --libs Qt5Gui Qt5Widgets)
+BUILD_UI_LV2_QT5_FLAGS   = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_QT5 -DBRIDGE_LV2_QT5 $(shell pkg-config --cflags Qt5Core Qt5Gui Qt5Widgets)
+LINK_UI_LV2_QT5_FLAGS    = $(LINK_UI_FLAGS) $(shell pkg-config --libs Qt5Core Qt5Gui Qt5Widgets)
 
-BUILD_UI_LV2_COCOA_FLAGS = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_COCOA -DBRIDGE_LV2_COCOA $(QT_UI_FLAGS)
-LINK_UI_LV2_COCOA_FLAGS  = $(LINK_UI_FLAGS) $(QT_UI_LIBS)
+BUILD_UI_LV2_COCOA_FLAGS = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_COCOA -DBRIDGE_LV2_COCOA $(QT5_UI_FLAGS)
+LINK_UI_LV2_COCOA_FLAGS  = $(LINK_UI_FLAGS) $(QT5_UI_LIBS)
 
-BUILD_UI_LV2_WIN32_FLAGS = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_HWND -DBRIDGE_LV2_WIN32 $(QT_UI_FLAGS)
-LINK_UI_LV2_WIN32_FLAGS  = $(LINK_FLAGS) $(QT_UI_LIBS) $(EXTRA_LIBS) -mwindows -lwinspool -lole32 -luuid -limm32 -lshell32 -lws2_32 -static
+BUILD_UI_LV2_WIN32_FLAGS = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_HWND -DBRIDGE_LV2_WIN32 $(QT5_UI_FLAGS)
+LINK_UI_LV2_WIN32_FLAGS  = $(LINK_FLAGS) $(QT5_UI_LIBS) $(EXTRA_LIBS) -mwindows -lwinspool -lole32 -luuid -limm32 -lshell32 -lws2_32 -static
 
-BUILD_UI_LV2_X11_FLAGS   = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_X11 -DBRIDGE_LV2_X11 $(QT_UI_FLAGS)
-LINK_UI_LV2_X11_FLAGS    = $(LINK_UI_FLAGS) $(QT_UI_LIBS)
+BUILD_UI_LV2_X11_FLAGS   = $(BUILD_UI_LV2_FLAGS) -DBRIDGE_X11 -DBRIDGE_LV2_X11 $(QT5_UI_FLAGS)
+LINK_UI_LV2_X11_FLAGS    = $(LINK_UI_FLAGS) $(QT5_UI_LIBS)
 
-BUILD_UI_VST_MAC_FLAGS   = $(BUILD_UI_VST_FLAGS) -DBRIDGE_MAC -DBRIDGE_VST_MAC $(QT_UI_FLAGS)
-LINK_UI_VST_MAC_FLAGS    = $(LINK_UI_FLAGS) $(QT_UI_LIBS)
+BUILD_UI_VST_MAC_FLAGS   = $(BUILD_UI_VST_FLAGS) -DBRIDGE_MAC -DBRIDGE_VST_MAC $(QT5_UI_FLAGS)
+LINK_UI_VST_MAC_FLAGS    = $(LINK_UI_FLAGS) $(QT5_UI_LIBS)
 
-BUILD_UI_VST_HWND_FLAGS  = $(BUILD_UI_VST_FLAGS) -DBRIDGE_HWND -DBRIDGE_VST_HWND $(QT_UI_FLAGS)
-LINK_UI_VST_HWND_FLAGS   = $(LINK_FLAGS) $(QT_UI_LIBS) $(EXTRA_LIBS) -mwindows -lwinspool -lole32 -luuid -limm32 -lshell32 -lws2_32 -static
+BUILD_UI_VST_HWND_FLAGS  = $(BUILD_UI_VST_FLAGS) -DBRIDGE_HWND -DBRIDGE_VST_HWND $(QT5_UI_FLAGS)
+LINK_UI_VST_HWND_FLAGS   = $(LINK_FLAGS) $(QT5_UI_LIBS) $(EXTRA_LIBS) -mwindows -lwinspool -lole32 -luuid -limm32 -lshell32 -lws2_32 -static
 
-BUILD_UI_VST_X11_FLAGS   = $(BUILD_UI_VST_FLAGS) -DBRIDGE_X11 -DBRIDGE_VST_X11 $(QT_UI_FLAGS)
-LINK_UI_VST_X11_FLAGS    = $(LINK_UI_FLAGS) $(QT_UI_LIBS)
+BUILD_UI_VST_X11_FLAGS   = $(BUILD_UI_VST_FLAGS) -DBRIDGE_X11 -DBRIDGE_VST_X11 $(QT5_UI_FLAGS)
+LINK_UI_VST_X11_FLAGS    = $(LINK_UI_FLAGS) $(QT5_UI_LIBS)
 
 # --------------------------------------------------------------
 
@@ -372,12 +352,6 @@ carla-bridge-vst-x11: $(OBJS_UI_VST_X11) $(OBJS_UI_VST_LIBS) ../modules/theme.a
 	$(CXX) $< $(BUILD_UI_VST_X11_FLAGS) -c -o $@
 
 # --------------------------------------------------------------
-# plugin common
-
-FILES = \
-	../backend/plugin/moc_CarlaPluginGui.cpp
-
-# --------------------------------------------------------------
 # native
 
 OBJS_NATIVE  = CarlaBridgePlugin__native.o \
@@ -394,7 +368,6 @@ OBJS_NATIVE += \
 # carla-plugin
 OBJS_NATIVE += \
 	../backend/plugin/CarlaPlugin__native.o \
-	../backend/plugin/CarlaPluginGui__native.o \
 	../backend/plugin/CarlaPluginThread__native.o \
 	../backend/plugin/NativePlugin__native.o \
 	../backend/plugin/LadspaPlugin__native.o \
@@ -415,6 +388,8 @@ OBJS_NATIVE += \
 	../modules/dgl.a \
 	../modules/juce_audio_basics.a \
 	../modules/juce_core.a \
+	../modules/juce_data_structures.a \
+	../modules/juce_events.a \
 	../modules/rtmempool.a
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
@@ -445,7 +420,6 @@ OBJS_POSIX32 += \
 # carla-plugin
 OBJS_POSIX32 += \
 	../backend/plugin/CarlaPlugin__posix32.o \
-	../backend/plugin/CarlaPluginGui__posix32.o \
 	../backend/plugin/CarlaPluginThread__posix32.o \
 	../backend/plugin/NativePlugin__posix32.o \
 	../backend/plugin/LadspaPlugin__posix32.o \
@@ -488,7 +462,6 @@ OBJS_POSIX64 += \
 # carla-plugin
 OBJS_POSIX64 += \
 	../backend/plugin/CarlaPlugin__posix64.o \
-	../backend/plugin/CarlaPluginGui__posix64.o \
 	../backend/plugin/CarlaPluginThread__posix64.o \
 	../backend/plugin/NativePlugin__posix64.o \
 	../backend/plugin/LadspaPlugin__posix64.o \
@@ -531,7 +504,6 @@ OBJS_WIN32 += \
 # carla-plugin
 OBJS_WIN32 += \
 	../backend/plugin/CarlaPlugin__win32.o \
-	../backend/plugin/CarlaPluginGui__win32.o \
 	../backend/plugin/CarlaPluginThread__win32.o \
 	../backend/plugin/NativePlugin__win32.o \
 	../backend/plugin/LadspaPlugin__win32.o \
@@ -574,7 +546,6 @@ OBJS_WIN64 += \
 # carla-plugin
 OBJS_WIN64 += \
 	../backend/plugin/CarlaPlugin__win64.o \
-	../backend/plugin/CarlaPluginGui__win64.o \
 	../backend/plugin/CarlaPluginThread__win64.o \
 	../backend/plugin/NativePlugin__win64.o \
 	../backend/plugin/LadspaPlugin__win64.o \
@@ -599,11 +570,6 @@ carla-bridge-win64.exe: $(FILES) $(OBJS_WIN64) ../modules/jackbridge-win64.dll
 
 %__win64.o: %.cpp
 	$(CXX) $< $(WIN_BUILD_FLAGS) $(WIN_64BIT_FLAGS) -c -o $@
-
-# --------------------------------------------------------------
-
-../backend/plugin/moc_%.cpp: ../backend/plugin/%.hpp
-	$(MOC) $< -DMOC_PARSING -o $@
 
 # --------------------------------------------------------------
 

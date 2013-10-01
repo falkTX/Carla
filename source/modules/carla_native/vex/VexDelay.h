@@ -50,13 +50,15 @@ class VexDelay
 public:
     VexDelay(const float* const p)
         : parameters(p),
-          sampleRate(44100),
-          bufferSize(sampleRate*2),
+          sampleRate(0.0f),
+          bufferSize(0),
           iRead(0),
           iWrite(0),
-          buffer(2, bufferSize)
+          buffer(2, 0)
     {
         buffer.clear();
+
+        setSampleRate(44100.0f);
     }
 
     void updateParameterPtr(const float* const p)
@@ -88,13 +90,8 @@ public:
     {
         bpm = jlimit(10.0, 500.0, bpm);
 
-#ifdef CARLA_EXPORT
-        const int   delay    = jmin(int(parameters[0]) * int(((60.0 / bpm) * sampleRate) / 4.0), 44100);
-        const float feedback = parameters[1]/100.0f;
-#else
-        const int   delay    = jmin(int(parameters[73] * 8.0) * int(((60.0 / bpm) * sampleRate) / 4.0), 44100);
+        const int   delay    = jmin(int(parameters[73] * 8.0f) * int(((60.0 / bpm) * sampleRate) / 4.0), 44100);
         const float feedback = parameters[74];
-#endif
 
         float* const bufferL = buffer.getSampleData(0, 0);
         float* const bufferR = buffer.getSampleData(1, 0);

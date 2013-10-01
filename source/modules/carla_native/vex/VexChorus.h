@@ -54,15 +54,16 @@ public:
           lastlfo1(0.0f),
           lastlfo2(0.0f),
           parameters(p),
-          sampleRate(44100.0f),
-          cycle(44100 / 32),
-          iRead(cycle * 0.5f),
+          sampleRate(0.0f),
+          cycle(0),
+          iRead(0),
           iWrite(0),
-          buffer(2, cycle)
+          buffer(2, 0)
     {
         lfoS[0] = 0.5f;
         lfoS[1] = 0.0f;
-        buffer.clear();
+
+        setSampleRate(44100.0f);
     }
 
     void updateParameterPtr(const float* const p)
@@ -92,13 +93,9 @@ public:
 
     void processBlock(float* const outBufferL, float* const outBufferR, const int numSamples)
     {
-#ifdef CARLA_EXPORT
-        const float depth = parameters[0] * 0.2f;
-        const float speed = parameters[1] * parameters[1];
-#else
-        const float depth = parameters[77] * 0.2f;
         const float speed = parameters[76] * parameters[76];
-#endif
+        const float depth = parameters[77] * 0.2f + 0.01f;
+
         const int   delay = int(cycle * 0.5f);
         const float lfoC  = 2.0f * sinf(float_Pi * (speed * 5.0f) / sampleRate);
 

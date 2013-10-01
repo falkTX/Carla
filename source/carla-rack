@@ -72,6 +72,11 @@ if __name__ == '__main__':
     # -------------------------------------------------------------
     # Init host backend
 
+    Carla.isControl   = False
+    Carla.isLocal     = True
+    Carla.isPlugin    = False
+    Carla.processMode = PROCESS_MODE_CONTINUOUS_RACK
+
     initHost(appName, libPrefix)
 
     # -------------------------------------------------------------

@@ -29,11 +29,6 @@ extern "C" {
 }
 
 // -----------------------------------------------------
-// Our LV2 World class object
-
-Lv2WorldClass gLv2World;
-
-// -----------------------------------------------------
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -1024,7 +1019,9 @@ public:
 
         if (index >= 0 && index < static_cast<int32_t>(fRdfDescriptor->PresetCount))
         {
-            if (const LilvState* state = gLv2World.getState(fRdfDescriptor->Presets[index].URI, (const LV2_URID_Map*)fFeatures[kFeatureIdUridMap]->data))
+            Lv2WorldClass& lv2World(Lv2WorldClass::getInstance());
+
+            if (const LilvState* state = lv2World.getState(fRdfDescriptor->Presets[index].URI, (const LV2_URID_Map*)fFeatures[kFeatureIdUridMap]->data))
             {
                 const ScopedSingleProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
 
@@ -2243,7 +2240,9 @@ public:
             else
             {
                 // load default state
-                if (const LilvState* state = gLv2World.getState(fDescriptor->URI, (const LV2_URID_Map*)fFeatures[kFeatureIdUridMap]->data))
+                Lv2WorldClass& lv2World(Lv2WorldClass::getInstance());
+
+                if (const LilvState* state = lv2World.getState(fDescriptor->URI, (const LV2_URID_Map*)fFeatures[kFeatureIdUridMap]->data))
                 {
                     lilv_state_restore(state, fExt.state, fHandle, carla_lilv_set_port_value, this, 0, fFeatures);
 
@@ -4150,7 +4149,8 @@ public:
         // ---------------------------------------------------------------
         // get plugin from lv2_rdf (lilv)
 
-        gLv2World.init();
+        Lv2WorldClass& lv2World(Lv2WorldClass::getInstance());
+        lv2World.init();
 
         fRdfDescriptor = lv2_rdf_new(uri, true);
 
@@ -4474,11 +4474,12 @@ public:
         int eQt4, eQt5, eCocoa, eWindows, eX11, eGtk2, eGtk3, iCocoa, iWindows, iX11, iQt4, iQt5, iExt, iFinal;
         eQt4 = eQt5 = eCocoa = eWindows = eX11 = eGtk2 = eGtk3 = iQt4 = iQt5 = iCocoa = iWindows = iX11 = iExt = iFinal = -1;
 
-#ifdef BUILD_BRIDGE
-        const bool preferUiBridges(pData->engine->getOptions().preferUiBridges);
-#else
-        const bool preferUiBridges(pData->engine->getOptions().preferUiBridges && (fHints & PLUGIN_IS_BRIDGE) == 0);
-#endif
+        const bool preferUiBridges(true);
+//#ifdef BUILD_BRIDGE
+//        const bool preferUiBridges(pData->engine->getOptions().preferUiBridges);
+//#else
+//        const bool preferUiBridges(pData->engine->getOptions().preferUiBridges && (fHints & PLUGIN_IS_BRIDGE) == 0);
+//#endif
 
         for (uint32_t i=0; i < fRdfDescriptor->UICount; ++i)
         {

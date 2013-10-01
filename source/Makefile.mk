@@ -74,6 +74,7 @@ HAVE_GTK3         = $(shell pkg-config --exists gtk+-3.0 && echo true)
 HAVE_PULSEAUDIO   = $(shell pkg-config --exists libpulse-simple && echo true)
 HAVE_QT4          = $(shell pkg-config --exists QtCore && echo true)
 HAVE_QT5          = $(shell pkg-config --exists Qt5Core && echo true)
+HAVE_X11          = $(shell pkg-config --exists x11 && echo true)
 
 HAVE_AF_DEPS      = $(shell pkg-config --exists sndfile && echo true)
 HAVE_MF_DEPS      = $(shell pkg-config --exists smf && echo true)

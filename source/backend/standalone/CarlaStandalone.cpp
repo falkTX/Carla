@@ -337,6 +337,7 @@ bool carla_engine_init(const char* driverName, const char* clientName)
         gStandalone.engine->setCallback(gStandalone.callback, nullptr);
 
 #ifndef BUILD_BRIDGE
+    gStandalone.engine->setOption(CB::OPTION_PROCESS_MODE,               static_cast<int>(gStandalone.options.processMode),      nullptr);
     gStandalone.engine->setOption(CB::OPTION_TRANSPORT_MODE,             static_cast<int>(gStandalone.options.transportMode),    nullptr);
 #endif
     gStandalone.engine->setOption(CB::OPTION_FORCE_STEREO,               gStandalone.options.forceStereo         ? 1 : 0,        nullptr);

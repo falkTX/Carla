@@ -61,6 +61,8 @@
 #include "lilv/lilvmm.hpp"
 #include "sratom/sratom.h"
 
+#include "juce_core.h"
+
 // -----------------------------------------------------------------------
 // Define namespaces and missing prefixes
 

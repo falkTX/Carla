@@ -69,15 +69,10 @@ public:
 
     void processBlock(float* const outBufferL, float* const outBufferR, const int numSamples)
     {
-#ifdef CARLA_EXPORT
-        model.setroomsize(parameters[0]);
-        model.setdamp(parameters[1]);
-        model.setwidth(parameters[2]);
-#else
         model.setroomsize(parameters[79]);
-        model.setdamp(parameters[81]);
         model.setwidth(parameters[80]);
-#endif
+        model.setdamp(parameters[81]);
+
         model.processreplace(outBufferL, outBufferR, outBufferL, outBufferR, numSamples, 1);
     }
 

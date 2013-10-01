@@ -322,7 +322,6 @@ class HostWindow(QMainWindow):
         uisAlwaysOnTop      = settings.value("Engine/OscUiTimeout",        CARLA_DEFAULT_UIS_ALWAYS_ON_TOP,     type=bool)
         uiBridgesTimeout    = settings.value("Engine/OscUiTimeout",        CARLA_DEFAULT_UI_BRIDGES_TIMEOUT,    type=int)
 
-        Carla.processMode   = settings.value("Engine/ProcessMode",         CARLA_DEFAULT_PROCESS_MODE,          type=int)
         Carla.maxParameters = settings.value("Engine/MaxParameters",       CARLA_DEFAULT_MAX_PARAMETERS,        type=int)
 
         audioDriver         = settings.value("Engine/AudioDriver",         CARLA_DEFAULT_AUDIO_DRIVER,          type=str)
@@ -344,7 +343,7 @@ class HostWindow(QMainWindow):
 
         if Carla.processMode == PROCESS_MODE_CONTINUOUS_RACK:
             forceStereo = True
-        elif Carla.processMode == PROCESS_MODE_MULTIPLE_CLIENTS: # and LADISH_APP_NAME:
+        elif Carla.processMode == PROCESS_MODE_MULTIPLE_CLIENTS and LADISH_APP_NAME:
             print("LADISH detected but using multiple clients (not allowed), forcing single client now")
             Carla.processMode = PROCESS_MODE_SINGLE_CLIENT
 

@@ -234,7 +234,6 @@ protected:
 
         const TimeInfo* const timeInfo(getTimeInfo());
 
-        int    timeFrame   = 0;
         bool   timePlaying = false;
         double ppqPos      = 0.0;
         double barStartPos = 0.0;
@@ -242,7 +241,6 @@ protected:
 
         if (timeInfo != nullptr)
         {
-            timeFrame   = timeInfo->frame;
             timePlaying = timeInfo->playing;
 
             if (timeInfo->bbt.valid)
@@ -310,8 +308,8 @@ class VexChorusPlugin : public PluginClass
 {
 public:
     enum Params {
-        kParamDepth = 0,
-        kParamRate,
+        kParamRate = 0,
+        kParamDepth,
         kParamCount
     };
 
@@ -319,8 +317,10 @@ public:
         : PluginClass(host),
           fChorus(fParameters)
     {
-        fParameters[0] = 0.6f;
-        fParameters[1] = 0.3f;
+        std::memset(fParameters, 0, sizeof(float)*92);
+
+        fParameters[76] = 0.3f;
+        fParameters[77] = 0.6f;
 
         fChorus.setSampleRate(getSampleRate());
     }
@@ -353,15 +353,15 @@ protected:
 
         switch (index)
         {
-        case kParamDepth:
-            paramInfo.name = "Depth";
-            paramInfo.ranges.def = 0.6f;
-            paramInfo.ranges.min = 0.0f;
-            paramInfo.ranges.max = 1.0f;
-            break;
         case kParamRate:
             paramInfo.name = "Rate";
             paramInfo.ranges.def = 0.3f;
+            paramInfo.ranges.min = 0.0f;
+            paramInfo.ranges.max = 1.0f;
+            break;
+        case kParamDepth:
+            paramInfo.name = "Depth";
+            paramInfo.ranges.def = 0.6f;
             paramInfo.ranges.min = 0.0f;
             paramInfo.ranges.max = 1.0f;
             break;
@@ -374,7 +374,15 @@ protected:
 
     float getParameterValue(const uint32_t index) const override
     {
-        return (index < kParamCount) ? fParameters[index] : 0.0f;
+        switch (index)
+        {
+        case kParamRate:
+            return fParameters[76];
+        case kParamDepth:
+            return fParameters[77];
+        default:
+            return 0.0f;
+        }
     }
 
     // -------------------------------------------------------------------
@@ -382,8 +390,17 @@ protected:
 
     void setParameterValue(const uint32_t index, const float value) override
     {
-        if (index < kParamCount)
-            fParameters[index] = value;
+        switch (index)
+        {
+        case kParamRate:
+            fParameters[76] = value;
+            break;
+        case kParamDepth:
+            fParameters[77] = value;
+            break;
+        default:
+            break;
+        }
     }
 
     // -------------------------------------------------------------------
@@ -409,7 +426,7 @@ protected:
 
 private:
     VexChorus fChorus;
-    float fParameters[2];
+    float fParameters[92];
 
     PluginClassEND(VexChorusPlugin)
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(VexChorusPlugin)
@@ -430,8 +447,10 @@ public:
         : PluginClass(host),
           fDelay(fParameters)
     {
-        fParameters[0] = 4.0f;
-        fParameters[1] = 40.0f;
+        std::memset(fParameters, 0, sizeof(float)*92);
+
+        fParameters[73] = 0.5f * 8.0f;
+        fParameters[74] = 0.4f * 100.0f;
 
         fDelay.setSampleRate(getSampleRate());
     }
@@ -487,7 +506,15 @@ protected:
 
     float getParameterValue(const uint32_t index) const override
     {
-        return (index < kParamCount) ? fParameters[index] : 0.0f;
+        switch (index)
+        {
+        case kParamTime:
+            return fParameters[73] * 8.0f;
+        case kParamFeedback:
+            return fParameters[74] * 100.0f;
+        default:
+            return 0.0f;
+        }
     }
 
     // -------------------------------------------------------------------
@@ -495,8 +522,17 @@ protected:
 
     void setParameterValue(const uint32_t index, const float value) override
     {
-        if (index < kParamCount)
-            fParameters[index] = value;
+        switch (index)
+        {
+        case kParamTime:
+            fParameters[73] = value/8.0f;
+            break;
+        case kParamFeedback:
+            fParameters[74] = value/100.0f;
+            break;
+        default:
+            break;
+        }
     }
 
     // -------------------------------------------------------------------
@@ -525,7 +561,7 @@ protected:
 
 private:
     VexDelay fDelay;
-    float fParameters[2];
+    float fParameters[92];
 
     PluginClassEND(VexDelayPlugin)
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(VexDelayPlugin)
@@ -547,9 +583,12 @@ public:
         : PluginClass(host),
           fReverb(fParameters)
     {
-        fParameters[0] = 0.6f;
-        fParameters[1] = 0.7f;
-        fParameters[2] = 0.6f;
+        std::memset(fParameters, 0, sizeof(float)*92);
+
+        // FIXME?
+        fParameters[79] = 0.6f;
+        fParameters[80] = 0.6f;
+        fParameters[81] = 0.7f;
     }
 
 protected:
@@ -607,7 +646,17 @@ protected:
 
     float getParameterValue(const uint32_t index) const override
     {
-        return (index < kParamCount) ? fParameters[index] : 0.0f;
+        switch (index)
+        {
+        case kParamSize:
+            return fParameters[79];
+        case kParamWidth:
+            return fParameters[80];
+        case kParamDamp:
+            return fParameters[81];
+        default:
+            return 0.0f;
+        }
     }
 
     // -------------------------------------------------------------------
@@ -615,8 +664,20 @@ protected:
 
     void setParameterValue(const uint32_t index, const float value) override
     {
-        if (index < kParamCount)
-            fParameters[index] = value;
+        switch (index)
+        {
+        case kParamSize:
+            fParameters[79] = value;
+            break;
+        case kParamWidth:
+            fParameters[80] = value;
+            break;
+        case kParamDamp:
+            fParameters[81] = value;
+            break;
+        default:
+            break;
+        }
     }
 
     // -------------------------------------------------------------------
@@ -634,7 +695,7 @@ protected:
 
 private:
     VexReverb fReverb;
-    float fParameters[3];
+    float fParameters[92];
 
     PluginClassEND(VexReverbPlugin)
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(VexReverbPlugin)
@@ -645,13 +706,23 @@ private:
 class VexSynthPlugin : public PluginClass
 {
 public:
-    static const unsigned int kParamCount = 1;
+    static const unsigned int kParamCount = 92;
 
     VexSynthPlugin(const HostDescriptor* const host)
         : PluginClass(host),
+          obf(nullptr),
+          abf(nullptr),
+          dbf1(nullptr),
+          dbf2(nullptr),
+          dbf3(nullptr),
+          fChorus(fParameters),
+          fDelay(fParameters),
+          fReverb(fParameters),
           fSynth(fParameters)
     {
         std::memset(fParameters, 0, sizeof(float)*92);
+
+        fParameters[0] = 1.0f; // main volume
 
         for (int i = 0; i < 3; ++i)
         {
@@ -683,13 +754,44 @@ public:
             fParameters[offset + 24] = 0.5f;
         }
 
+        // ^1 - 72
+
+        fParameters[73] = 0.5f; // Delay Time
+        fParameters[74] = 0.4f; // Delay Feedback
+        fParameters[75] = 0.0f; // Delay Volume
+
         fParameters[76] = 0.3f; // Chorus Rate
         fParameters[77] = 0.6f; // Chorus Depth
+        fParameters[78] = 0.5f; // Chorus Volume
 
-        fParameters[89] = 1.0f;
+        fParameters[79] = 0.6f; // Reverb Size
+        fParameters[80] = 0.7f; // Reverb Width
+        fParameters[81] = 0.6f; // Reverb Damp
+        fParameters[82] = 0.0f; // Reverb Volume
 
-        fSynth.setSampleRate(getSampleRate());
-        fSynth.update(89);
+        fParameters[83] = 0.5f; // wave1 panning
+        fParameters[84] = 0.5f; // wave2 panning
+        fParameters[85] = 0.5f; // wave3 panning
+
+        fParameters[86] = 0.5f; // wave1 volume
+        fParameters[87] = 0.5f; // wave2 volume
+        fParameters[88] = 0.5f; // wave3 volume
+
+        fParameters[89] = 1.0f; // wave1 on/off
+        fParameters[90] = 1.0f; // wave2 on/off
+        fParameters[91] = 1.0f; // wave3 on/off
+
+        bufferSizeChanged(getBufferSize());
+        sampleRateChanged(getSampleRate());
+    }
+
+    ~VexSynthPlugin()
+    {
+        delete obf;
+        delete abf;
+        delete dbf1;
+        delete dbf2;
+        delete dbf3;
     }
 
 protected:
@@ -712,25 +814,168 @@ protected:
         paramInfo.ranges.def       = 0.0f;
         paramInfo.ranges.min       = 0.0f;
         paramInfo.ranges.max       = 1.0f;
-        paramInfo.ranges.step      = 1.0f;
-        paramInfo.ranges.stepSmall = 1.0f;
-        paramInfo.ranges.stepLarge = 1.0f;
+        paramInfo.ranges.step      = PARAMETER_RANGES_DEFAULT_STEP;
+        paramInfo.ranges.stepSmall = PARAMETER_RANGES_DEFAULT_STEP_SMALL;
+        paramInfo.ranges.stepLarge = PARAMETER_RANGES_DEFAULT_STEP_LARGE;
         paramInfo.scalePointCount  = 0;
         paramInfo.scalePoints      = nullptr;
+
+        if (index >= 1 && index <= 72)
+        {
+            uint32_t ri = index % 24;
+
+            switch (ri)
+            {
+            case 1:
+                paramInfo.name = "oct";
+                break;
+            case 2:
+                paramInfo.name = "cent";
+                break;
+            case 3:
+                paramInfo.name = "phaseOffset";
+                break;
+            case 4:
+                paramInfo.name = "phaseIncOffset";
+                break;
+            case 5:
+                paramInfo.name = "filter";
+                break;
+            case 6:
+                paramInfo.name = "filter";
+                break;
+            case 7:
+                paramInfo.name = "filter";
+                break;
+            case 8:
+                paramInfo.name = "filter";
+                break;
+            case 9:
+                paramInfo.name = "F ADSR";
+                break;
+            case 10:
+                paramInfo.name = "F ADSR";
+                break;
+            case 11:
+                paramInfo.name = "F ADSR";
+                break;
+            case 12:
+                paramInfo.name = "F ADSR";
+                break;
+            case 13:
+                paramInfo.name = "F velocity";
+                break;
+            case 14:
+                paramInfo.name = "A ADSR";
+                break;
+            case 15:
+                paramInfo.name = "A ADSR";
+                break;
+            case 16:
+                paramInfo.name = "A ADSR";
+                break;
+            case 17:
+                paramInfo.name = "A ADSR";
+                break;
+            case 18:
+                paramInfo.name = "A velocity";
+                break;
+            case 19:
+                paramInfo.name = "lfoC";
+                break;
+            case 20:
+                paramInfo.name = "lfoA";
+                break;
+            case 21:
+                paramInfo.name = "lfoF";
+                break;
+            case 22:
+                paramInfo.name = "fx vol D";
+                break;
+            case 23:
+                paramInfo.name = "fx vol C";
+                break;
+            case 24:
+            case 0:
+                paramInfo.name = "fx vol R";
+                break;
+            default:
+                paramInfo.name = "unknown2";
+                break;
+            }
+
+            paramInfo.hints = static_cast<ParameterHints>(hints);
+            return &paramInfo;
+        }
 
         switch (index)
         {
         case 0:
-            hints |= PARAMETER_IS_INTEGER;
-            paramInfo.name = "Wave";
-            paramInfo.ranges.def = 0.0f;
-            paramInfo.ranges.min = 0.0f;
-            paramInfo.ranges.max = WaveRenderer::getWaveTableSize();
+            paramInfo.name = "Main volume";
+            break;
+        case 73:
+            paramInfo.name = "Delay Time";
+            break;
+        case 74:
+            paramInfo.name = "Delay Feedback";
+            break;
+        case 75:
+            paramInfo.name = "Delay Volume";
+            break;
+        case 76:
+            paramInfo.name = "Chorus Rate";
+            break;
+        case 77:
+            paramInfo.name = "Chorus Depth";
+            break;
+        case 78:
+            paramInfo.name = "Chorus Volume";
+            break;
+        case 79:
+            paramInfo.name = "Reverb Size";
+            break;
+        case 80:
+            paramInfo.name = "Reverb Width";
+            break;
+        case 81:
+            paramInfo.name = "Reverb Damp";
+            break;
+        case 82:
+            paramInfo.name = "Reverb Volume";
+            break;
+        case 83:
+            paramInfo.name = "Wave1 Panning";
+            break;
+        case 84:
+            paramInfo.name = "Wave2 Panning";
+            break;
+        case 85:
+            paramInfo.name = "Wave3 Panning";
+            break;
+        case 86:
+            paramInfo.name = "Wave1 Volume";
+            break;
+        case 87:
+            paramInfo.name = "Wave2 Volume";
+            break;
+        case 88:
+            paramInfo.name = "Wave3 Volume";
+            break;
+        case 89:
+            paramInfo.name = "Wave1 on/off";
+            break;
+        case 90:
+            paramInfo.name = "Wave2 on/off";
+            break;
+        case 91:
+            paramInfo.name = "Wave3 on/off";
+            break;
+        default:
+            paramInfo.name = "unknown";
             break;
         }
 
         paramInfo.hints = static_cast<ParameterHints>(hints);
-
         return &paramInfo;
     }
 
@@ -747,9 +992,7 @@ protected:
         if (index < kParamCount)
         {
             fParameters[index] = value;
-            fSynth.setWaveLater(1, WaveRenderer::getWaveTableName(value));
-
-            //synth.update(index);
+            fSynth.update(index);
         }
     }
 
@@ -758,6 +1001,9 @@ protected:
 
     void process(float**, float** outBuffer, const uint32_t frames, const MidiEvent* const midiEvents, const uint32_t midiEventCount) override
     {
+        const TimeInfo* const timeInfo(getTimeInfo());
+        const double bpm((timeInfo != nullptr && timeInfo->bbt.valid) ? timeInfo->bbt.beatsPerMinute : 120.0);
+
         for (uint32_t i=0; i < midiEventCount; ++i)
         {
             const MidiEvent* const midiEvent(&midiEvents[i]);
@@ -783,23 +1029,78 @@ protected:
             }
         }
 
-        carla_zeroFloat(outBuffer[0], frames);
-        carla_zeroFloat(outBuffer[1], frames);
+        if (obf->getNumSamples() != frames)
+        {
+                obf->setSize(2,  frames, 0, 0, 1);
+                abf->setSize(2,  frames, 0, 0, 1);
+                dbf1->setSize(2, frames, 0, 0, 1);
+                dbf2->setSize(2, frames, 0, 0, 1);
+                dbf3->setSize(2, frames, 0, 0, 1);
+        }
 
-        fSynth.doProcess(outBuffer[0], outBuffer[1], frames);
+        obf ->clear();
+        dbf1->clear();
+        dbf2->clear();
+        dbf3->clear();
+
+        fSynth.doProcess(*obf, *abf, *dbf1, *dbf2, *dbf3);
+
+        if (fParameters[75] > 0.001f) fDelay.processBlock(dbf1, bpm);
+        if (fParameters[78] > 0.001f) fChorus.processBlock(dbf2);
+        if (fParameters[82] > 0.001f) fReverb.processBlock(dbf3);
+
+        AudioSampleBuffer output(outBuffer, 2, 0, frames);
+        output.clear();
+
+        obf->addFrom(0, 0, *dbf1, 0, 0, frames, fParameters[75]);
+        obf->addFrom(1, 0, *dbf1, 1, 0, frames, fParameters[75]);
+        obf->addFrom(0, 0, *dbf2, 0, 0, frames, fParameters[78]);
+        obf->addFrom(1, 0, *dbf2, 1, 0, frames, fParameters[78]);
+        obf->addFrom(0, 0, *dbf3, 0, 0, frames, fParameters[82]);
+        obf->addFrom(1, 0, *dbf3, 1, 0, frames, fParameters[82]);
+
+        output.addFrom(0, 0, *obf, 0, 0, frames, fParameters[0]);
+        output.addFrom(1, 0, *obf, 1, 0, frames, fParameters[0]);
     }
 
     // -------------------------------------------------------------------
     // Plugin dispatcher calls
 
+    void bufferSizeChanged(const uint32_t bufferSize) override
+    {
+        delete obf;
+        delete abf;
+        delete dbf1;
+        delete dbf2;
+        delete dbf3;
+
+        obf  = new AudioSampleBuffer(2, bufferSize);
+        abf  = new AudioSampleBuffer(2, bufferSize);
+        dbf1 = new AudioSampleBuffer(2, bufferSize);
+        dbf2 = new AudioSampleBuffer(2, bufferSize);
+        dbf3 = new AudioSampleBuffer(2, bufferSize);
+    }
+
     void sampleRateChanged(const double sampleRate) override
     {
+        fChorus.setSampleRate(sampleRate);
+        fDelay.setSampleRate(sampleRate);
         fSynth.setSampleRate(sampleRate);
     }
 
 private:
-    VexSyntModule fSynth;
     float fParameters[92];
+
+    AudioSampleBuffer* obf;
+    AudioSampleBuffer* abf;
+    AudioSampleBuffer* dbf1; // delay
+    AudioSampleBuffer* dbf2; // chorus
+    AudioSampleBuffer* dbf3; // reverb
+
+    VexChorus fChorus;
+    VexDelay fDelay;
+    VexReverb fReverb;
+    VexSyntModule fSynth;
 
     PluginClassEND(VexSynthPlugin)
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(VexSynthPlugin)
@@ -903,15 +1204,5 @@ void carla_register_native_plugin_vex()
     carla_register_native_plugin(&vexReverbDesc);
     carla_register_native_plugin(&vexSynthDesc);
 }
-
-// -----------------------------------------------------------------------
-
-#include "vex/freeverb/allpass.cpp"
-#include "vex/freeverb/comb.cpp"
-#include "vex/freeverb/revmodel.cpp"
-
-#include "vex/ResourceFile.cpp"
-#include "vex/VexVoice.cpp"
-#include "vex/VexWaveRenderer.cpp"
 
 // -----------------------------------------------------------------------

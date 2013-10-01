@@ -55,7 +55,8 @@ OBJS  = \
 
 # Simple plugins (C++)
 OBJS += \
-	vex.cpp.o
+	vex.cpp.o \
+	vex-src.cpp.o
 
 # AudioFile
 ifeq ($(HAVE_AF_DEPS),true)

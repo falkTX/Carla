@@ -1996,7 +1996,7 @@ void CarlaPlugin::uiNoteOff(const uint8_t channel, const uint8_t note)
 
 bool CarlaPlugin::canRunInRack() const noexcept
 {
-    return false; // TODO
+    return (pData->extraHints & PLUGIN_EXTRA_HINT_CAN_RUN_RACK) != 0;
 }
 
 CarlaEngine* CarlaPlugin::getEngine() const noexcept
