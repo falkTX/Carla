@@ -364,7 +364,7 @@ CARLA_EXPORT bool carla_patchbay_disconnect(int connectionId);
 /*!
  * Force the engine to resend all patchbay clients, ports and connections again.
  */
-CARLA_EXPORT void carla_patchbay_refresh();
+CARLA_EXPORT bool carla_patchbay_refresh();
 
 /*!
  * Start playback of the engine transport.
@@ -405,7 +405,7 @@ CARLA_EXPORT bool carla_remove_plugin(unsigned int pluginId);
 /*!
  * Remove all plugins.
  */
-CARLA_EXPORT void carla_remove_all_plugins();
+CARLA_EXPORT bool carla_remove_all_plugins();
 
 /*!
  * Rename plugin with id \a pluginId to \a newName. \n

@@ -81,6 +81,7 @@ class PluginHost(object):
 
     def patchbay_refresh(self):
         self.fParent.send(["patchbay_refresh"])
+        return True
 
     def add_plugin(self, btype, ptype, filename, name, label, extraStuff):
         self.fParent.send(["add_plugin", btype, ptype, filename, name, label])
@@ -92,6 +93,7 @@ class PluginHost(object):
 
     def remove_all_plugins(self):
         self.fParent.send(["remove_all_plugins"])
+        return True
 
     def rename_plugin(self, pluginId, newName):
         self.fParent.send(["rename_plugin", pluginId, newName])

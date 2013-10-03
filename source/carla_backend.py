@@ -534,7 +534,7 @@ class Host(object):
         self.lib.carla_patchbay_disconnect.restype = c_bool
 
         self.lib.carla_patchbay_refresh.argtypes = None
-        self.lib.carla_patchbay_refresh.restype = None
+        self.lib.carla_patchbay_refresh.restype = c_bool
 
         self.lib.carla_transport_play.argtypes = None
         self.lib.carla_transport_play.restype = None
@@ -558,7 +558,7 @@ class Host(object):
         self.lib.carla_remove_plugin.restype = c_bool
 
         self.lib.carla_remove_all_plugins.argtypes = None
-        self.lib.carla_remove_all_plugins.restype = None
+        self.lib.carla_remove_all_plugins.restype = c_bool
 
         self.lib.carla_rename_plugin.argtypes = [c_uint, c_char_p]
         self.lib.carla_rename_plugin.restype = c_char_p
@@ -793,7 +793,7 @@ class Host(object):
         return self.lib.carla_patchbay_disconnect(connectionId)
 
     def patchbay_refresh(self):
-        self.lib.carla_patchbay_refresh()
+        return self.lib.carla_patchbay_refresh()
 
     def transport_play(self):
         self.lib.carla_transport_play()
@@ -820,7 +820,7 @@ class Host(object):
         return self.lib.carla_remove_plugin(pluginId)
 
     def remove_all_plugins(self):
-        self.lib.carla_remove_all_plugins()
+        return self.lib.carla_remove_all_plugins()
 
     def rename_plugin(self, pluginId, newName):
         return self.lib.carla_rename_plugin(pluginId, newName.encode("utf-8"))
