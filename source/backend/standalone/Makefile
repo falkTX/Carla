@@ -76,7 +76,7 @@ LINK_FLAGS += $(shell pkg-config --libs ntk_images ntk)
 endif
 endif
 
-EXTRA_LIBS  = -ldl -lfreetype
+EXTRA_LIBS  = -ldl -lfreetype -lXext
 LINK_FLAGS += $(EXTRA_LIBS)
 
 ifneq ($(MACOS),true)
@@ -92,6 +92,8 @@ LIBS += ../../modules/juce_audio_basics.a
 LIBS += ../../modules/juce_core.a
 LIBS += ../../modules/juce_data_structures.a
 LIBS += ../../modules/juce_events.a
+LIBS += ../../modules/juce_graphics.a
+LIBS += ../../modules/juce_gui_basics.a
 LIBS += ../../modules/rtmempool.a
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)

@@ -17,7 +17,6 @@
 
 // TODO:
 // Check carla_stderr2("Engine is not running"); <= prepend func name and args
-// Check NSM args
 
 #include "CarlaHost.hpp"
 #include "CarlaEngine.hpp"
@@ -76,7 +75,7 @@ struct CarlaBackendStandalone {
     void idle()
     {
         if (MessageManager* const mgr = MessageManager::getInstanceWithoutCreating())
-            mgr->runDispatchLoopUntil(0);
+            mgr->runDispatchLoopUntil(5);
     }
 
     void close()
@@ -454,6 +453,7 @@ void carla_engine_idle()
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
 
+    gStandalone.idle();
     gStandalone.engine->idle();
 }
 

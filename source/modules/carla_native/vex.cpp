@@ -27,9 +27,66 @@ using namespace juce;
 #include "vex/VexReverb.h"
 #include "vex/VexSyntModule.h"
 
+#include "vex/PeggyViewComponent.h"
+
 // -----------------------------------------------------------------------
 
-class VexArpPlugin : public PluginClass
+class HelperWindow : public DocumentWindow
+{
+public:
+    HelperWindow()
+        : DocumentWindow("PlugWindow", Colour(0, 0, 0), DocumentWindow::closeButton, false),
+          fClosed(false)
+    {
+        setDropShadowEnabled(false);
+        setOpaque(true);
+        setResizable(false, false);
+        //setUsingNativeTitleBar(true);
+        setVisible(false);
+    }
+
+    void show(Component* const comp)
+    {
+        fClosed = false;
+
+        setContentNonOwned(comp, true);
+        centreWithSize(comp->getWidth(), comp->getHeight());
+
+        if (! isOnDesktop())
+            addToDesktop();
+
+        setVisible(true);
+    }
+
+    void hide()
+    {
+        setVisible(false);
+
+        if (isOnDesktop())
+            removeFromDesktop();
+
+        clearContentComponent();
+    }
+
+    bool wasClosedByUser() const
+    {
+        return fClosed;
+    }
+
+protected:
+    void closeButtonPressed() override
+    {
+        fClosed = true;
+    }
+
+private:
+    bool fClosed;
+};
+
+// -----------------------------------------------------------------------
+
+class VexArpPlugin : public PluginClass,
+                     public PeggyViewComponent::Callback
 {
 public:
     enum Params {
@@ -46,19 +103,6 @@ public:
         : PluginClass(host),
           fArp(&fSettings)
     {
-        for (int i=0; i < 8; ++i)
-            fSettings.grid[i*10] = true;
-
-        fSettings.grid[1] = true;
-        fSettings.grid[2] = true;
-        fSettings.grid[3] = true;
-
-        fSettings.grid[41] = true;
-        fSettings.grid[42] = true;
-        fSettings.grid[43] = true;
-        fSettings.grid[44] = true;
-        fSettings.grid[45] = true;
-
         fArp.setSampleRate(getSampleRate());
         fMidiInBuffer.ensureSize(512*4);
     }
@@ -286,6 +330,56 @@ protected:
     }
 
     // -------------------------------------------------------------------
+    // Plugin UI calls
+
+    void uiShow(const bool show) override
+    {
+        if (show)
+        {
+            if (fWindow == nullptr)
+            {
+                fWindow = new HelperWindow();
+                fWindow->setName(getUiName());
+            }
+
+            if (fView == nullptr)
+            {
+                fView = new PeggyViewComponent(1, fSettings, this);
+                fView->setSize(207, 280);
+            }
+
+            fWindow->show(fView);
+        }
+        else if (fWindow != nullptr)
+        {
+            fWindow->hide();
+
+            fView = nullptr;
+            fWindow = nullptr;
+        }
+    }
+
+    void uiIdle() override
+    {
+        if (fWindow == nullptr)
+            return;
+
+        if (fWindow->wasClosedByUser())
+        {
+            uiShow(false);
+            uiClosed();
+        }
+    }
+
+    void uiSetParameterValue(const uint32_t, const float) override
+    {
+        if (fView == nullptr)
+            return;
+
+        fView->update();
+    }
+
+    // -------------------------------------------------------------------
     // Plugin dispatcher calls
 
     void sampleRateChanged(const double sampleRate) override
@@ -293,10 +387,29 @@ protected:
         fArp.setSampleRate(sampleRate);
     }
 
+    void uiNameChanged(const char* const uiName) override
+    {
+        if (fWindow == nullptr)
+            return;
+
+        fWindow->setName(uiName);
+    }
+
+    // -------------------------------------------------------------------
+    // Peggy callback
+
+    void somethingChanged(const uint32_t id) override
+    {
+        uiParameterChanged(id, getParameterValue(id));
+    }
+
 private:
     VexArpSettings fSettings;
     VexArp fArp;
     MidiBuffer fMidiInBuffer;
+
+    ScopedPointer<PeggyViewComponent> fView;
+    ScopedPointer<HelperWindow> fWindow;
 
     PluginClassEND(VexArpPlugin)
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(VexArpPlugin)
@@ -1029,7 +1142,7 @@ protected:
             }
         }
 
-        if (obf->getNumSamples() != frames)
+        if (obf->getNumSamples() != (int)frames)
         {
                 obf->setSize(2,  frames, 0, 0, 1);
                 abf->setSize(2,  frames, 0, 0, 1);
@@ -1110,7 +1223,7 @@ private:
 
 static const PluginDescriptor vexArpDesc = {
     /* category  */ PLUGIN_CATEGORY_UTILITY,
-    /* hints     */ static_cast<PluginHints>(PLUGIN_USES_TIME),
+    /* hints     */ static_cast<PluginHints>(PLUGIN_HAS_GUI|PLUGIN_NEEDS_SINGLE_THREAD|PLUGIN_USES_TIME),
     /* supports  */ static_cast<PluginSupports>(PLUGIN_SUPPORTS_EVERYTHING),
     /* audioIns  */ 0,
     /* audioOuts */ 0,

@@ -380,7 +380,7 @@ class HostWindow(QMainWindow):
         #self.fFirstEngineInit = False
 
         # Peaks and TimeInfo
-        self.fIdleTimerFast = self.startTimer(self.fSavedSettings["Main/RefreshInterval"])
+        self.fIdleTimerFast = self.startTimer(30) #self.fSavedSettings["Main/RefreshInterval"])
         # LEDs and edit dialog parameters
         self.fIdleTimerSlow = self.startTimer(self.fSavedSettings["Main/RefreshInterval"]*2)
 
@@ -591,7 +591,7 @@ class HostWindow(QMainWindow):
 
         if self.fIdleTimerFast != 0:
             self.killTimer(self.fIdleTimerFast)
-            self.fIdleTimerFast = self.startTimer(self.fSavedSettings["Main/RefreshInterval"])
+            self.fIdleTimerFast = self.startTimer(30) #self.fSavedSettings["Main/RefreshInterval"])
 
         if self.fIdleTimerSlow != 0:
             self.killTimer(self.fIdleTimerSlow)
@@ -864,7 +864,7 @@ class HostWindow(QMainWindow):
         self.fSampleRate = Carla.host.get_sample_rate()
 
         if self.fIdleTimerFast == 0:
-            self.fIdleTimerFast = self.startTimer(self.fSavedSettings["Main/RefreshInterval"])
+            self.fIdleTimerFast = self.startTimer(30) #self.fSavedSettings["Main/RefreshInterval"])
         if self.fIdleTimerSlow == 0:
             self.fIdleTimerSlow = self.startTimer(self.fSavedSettings["Main/RefreshInterval"]*2)
 

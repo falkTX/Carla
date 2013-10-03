@@ -19,6 +19,9 @@ else
 OBJS         = juce_graphics.cpp.o
 OBJS_posix32 = juce_graphics.cpp.posix32.o
 OBJS_posix64 = juce_graphics.cpp.posix64.o
+ifneq ($(WIN32),true)
+BUILD_CXX_FLAGS += $(shell pkg-config --cflags freetype2)
+endif
 endif
 
 OBJS_win32 = juce_graphics.cpp.win32.o
