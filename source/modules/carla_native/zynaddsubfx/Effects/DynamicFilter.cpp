@@ -24,8 +24,9 @@
 #include "DynamicFilter.h"
 #include "../DSP/Filter.h"
 
-DynamicFilter::DynamicFilter(bool insertion_, float *efxoutl_, float *efxoutr_)
-    :Effect(insertion_, efxoutl_, efxoutr_, new FilterParams(0, 64, 64), 0),
+DynamicFilter::DynamicFilter(bool insertion_, float *efxoutl_, float *efxoutr_, unsigned int srate, int bufsize)
+    :Effect(insertion_, efxoutl_, efxoutr_, new FilterParams(0, 64, 64), 0, srate, bufsize),
+      lfo(srate, bufsize),
       Pvolume(110),
       Pdepth(0),
       Pampsns(90),
@@ -61,7 +62,7 @@ void DynamicFilter::out(const Stereo<float *> &smp)
     const float freq = filterpars->getfreq();
     const float q    = filterpars->getq();
 
-    for(int i = 0; i < synth->buffersize; ++i) {
+    for(int i = 0; i < buffersize; ++i) {
         efxoutl[i] = smp.l[i];
         efxoutr[i] = smp.r[i];
 
@@ -85,7 +86,7 @@ void DynamicFilter::out(const Stereo<float *> &smp)
     filterr->filterout(efxoutr);
 
     //panning
-    for(int i = 0; i < synth->buffersize; ++i) {
+    for(int i = 0; i < buffersize; ++i) {
         efxoutl[i] *= pangainL;
         efxoutr[i] *= pangainR;
     }
@@ -130,8 +131,8 @@ void DynamicFilter::reinitfilter(void)
 {
     delete filterl;
     delete filterr;
-    filterl = Filter::generate(filterpars);
-    filterr = Filter::generate(filterpars);
+    filterl = Filter::generate(filterpars, samplerate, buffersize);
+    filterr = Filter::generate(filterpars, samplerate, buffersize);
 }
 
 void DynamicFilter::setpreset(unsigned char npreset)

@@ -35,7 +35,7 @@ class AnalogFilter:public Filter
 {
     public:
         AnalogFilter(unsigned char Ftype, float Ffreq, float Fq,
-                     unsigned char Fstages);
+                     unsigned char Fstages, float srate, int bufsize);
         ~AnalogFilter();
         void filterout(float *smp);
         void setfreq(float frequency);
@@ -79,6 +79,11 @@ class AnalogFilter:public Filter
         bool abovenq,                 //if the frequency is above the nyquist
              oldabovenq;              //if the last time was above nyquist
                                       //(used to see if it needs interpolation)
+
+        float samplerate_f;
+        float halfsamplerate_f;
+        int   buffersize;
+        float buffersize_f;
 };
 
 

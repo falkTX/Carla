@@ -30,7 +30,7 @@
 class FormantFilter:public Filter
 {
     public:
-        FormantFilter(class FilterParams *pars);
+        FormantFilter(class FilterParams *pars, float srate, int bufsize);
         ~FormantFilter();
         void filterout(float *smp);
         void setfreq(float frequency);
@@ -61,6 +61,8 @@ class FormantFilter:public Filter
         float oldinput, slowinput;
         float Qfactor, formantslowness, oldQfactor;
         float vowelclearness, sequencestretch;
+
+        int buffersize;
 };
 
 #endif

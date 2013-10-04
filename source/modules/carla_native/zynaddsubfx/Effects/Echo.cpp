@@ -27,8 +27,8 @@
 
 #define MAX_DELAY 2
 
-Echo::Echo(bool insertion_, float *efxoutl_, float *efxoutr_)
-    :Effect(insertion_, efxoutl_, efxoutr_, NULL, 0),
+Echo::Echo(bool insertion_, float *efxoutl_, float *efxoutr_, unsigned int srate, int bufsize)
+    :Effect(insertion_, efxoutl_, efxoutr_, NULL, 0, srate, bufsize),
       Pvolume(50),
       Pdelay(60),
       Plrdelay(100),
@@ -37,8 +37,8 @@ Echo::Echo(bool insertion_, float *efxoutl_, float *efxoutr_)
       delayTime(1),
       lrdelay(0),
       avgDelay(0),
-      delay(new float[(int)(MAX_DELAY * synth->samplerate)],
-            new float[(int)(MAX_DELAY * synth->samplerate)]),
+      delay(new float[(int)(MAX_DELAY * srate)],
+            new float[(int)(MAX_DELAY * srate)]),
       old(0.0f),
       pos(0),
       delta(1),
@@ -57,8 +57,8 @@ Echo::~Echo()
 //Cleanup the effect
 void Echo::cleanup(void)
 {
-    memset(delay.l, 0, MAX_DELAY * synth->samplerate * sizeof(float));
-    memset(delay.r, 0, MAX_DELAY * synth->samplerate * sizeof(float));
+    memset(delay.l, 0, MAX_DELAY * samplerate * sizeof(float));
+    memset(delay.r, 0, MAX_DELAY * samplerate * sizeof(float));
     old = Stereo<float>(0.0f);
 }
 
@@ -77,14 +77,14 @@ void Echo::initdelays(void)
     //number of seconds to delay right chan
     float dr = avgDelay + lrdelay;
 
-    ndelta.l = max(1, (int) (dl * synth->samplerate));
-    ndelta.r = max(1, (int) (dr * synth->samplerate));
+    ndelta.l = max(1, (int) (dl * samplerate));
+    ndelta.r = max(1, (int) (dr * samplerate));
 }
 
 //Effect output
 void Echo::out(const Stereo<float *> &input)
 {
-    for(int i = 0; i < synth->buffersize; ++i) {
+    for(int i = 0; i < buffersize; ++i) {
         float ldl = delay.l[pos.l];
         float rdl = delay.r[pos.r];
         ldl = ldl * (1.0f - lrcross) + rdl * lrcross;
@@ -97,9 +97,9 @@ void Echo::out(const Stereo<float *> &input)
         rdl = input.r[i] * pangainR - rdl * fb;
 
         //LowPass Filter
-        old.l = delay.l[(pos.l + delta.l) % (MAX_DELAY * synth->samplerate)] =
+        old.l = delay.l[(pos.l + delta.l) % (MAX_DELAY * samplerate)] =
                     ldl * hidamp + old.l * (1.0f - hidamp);
-        old.r = delay.r[(pos.r + delta.r) % (MAX_DELAY * synth->samplerate)] =
+        old.r = delay.r[(pos.r + delta.r) % (MAX_DELAY * samplerate)] =
                     rdl * hidamp + old.r * (1.0f - hidamp);
 
         //increment
@@ -107,8 +107,8 @@ void Echo::out(const Stereo<float *> &input)
         ++pos.r; // += delta.r;
 
         //ensure that pos is still in bounds
-        pos.l %= MAX_DELAY * synth->samplerate;
-        pos.r %= MAX_DELAY * synth->samplerate;
+        pos.l %= MAX_DELAY * samplerate;
+        pos.r %= MAX_DELAY * samplerate;
 
         //adjust delay if needed
         delta.l = (15 * delta.l + ndelta.l) / 16;

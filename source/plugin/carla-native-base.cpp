@@ -35,7 +35,8 @@ void carla_register_native_plugin_midiTranspose();
 void carla_register_native_plugin_nekofilter();
 
 // Simple plugins (C++)
-void carla_register_native_plugin_vex();
+void carla_register_native_plugin_vex_fx();
+void carla_register_native_plugin_vex_synth();
 
 #ifdef WANT_AUDIOFILE
 // AudioFile
@@ -63,7 +64,8 @@ void carla_register_native_plugin_Notes();
 
 #ifdef WANT_ZYNADDSUBFX
 // ZynAddSubFX
-void carla_register_native_plugin_zynaddsubfx();
+void carla_register_native_plugin_zynaddsubfx_fx();
+void carla_register_native_plugin_zynaddsubfx_synth();
 #endif
 }
 
@@ -83,7 +85,8 @@ struct PluginListManager {
         carla_register_native_plugin_nekofilter();
 
         // Simple plugins (C++)
-        carla_register_native_plugin_vex();
+        carla_register_native_plugin_vex_fx();
+        carla_register_native_plugin_vex_synth();
 
 #ifdef WANT_AUDIOFILE
         // AudioFile
@@ -111,7 +114,8 @@ struct PluginListManager {
 
 #ifdef WANT_ZYNADDSUBFX
         // ZynAddSubFX
-        carla_register_native_plugin_zynaddsubfx();
+        carla_register_native_plugin_zynaddsubfx_fx();
+        carla_register_native_plugin_zynaddsubfx_synth();
 #endif
     }
 

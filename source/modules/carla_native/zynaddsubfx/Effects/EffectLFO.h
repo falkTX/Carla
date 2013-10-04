@@ -28,7 +28,7 @@
 class EffectLFO
 {
     public:
-        EffectLFO();
+        EffectLFO(float srate, float bufsize);
         ~EffectLFO();
         void effectlfoout(float *outl, float *outr);
         void updateparams(void);
@@ -45,6 +45,9 @@ class EffectLFO
         float lfointensity;
         float lfornd;
         char  lfotype;
+
+        float samplerate_f;
+        float buffersize_f;
 };
 
 #endif

@@ -55,7 +55,8 @@ OBJS  = \
 
 # Simple plugins (C++)
 OBJS += \
-	vex.cpp.o \
+	vex-fx.cpp.o \
+	vex-synth.cpp.o \
 	vex-src.cpp.o
 
 # AudioFile
@@ -92,7 +93,8 @@ OBJS += \
 ifeq ($(HAVE_ZYN_DEPS),true)
 # ZynAddSubFX
 OBJS += \
-	zynaddsubfx.cpp.o \
+	zynaddsubfx-fx.cpp.o \
+	zynaddsubfx-synth.cpp.o \
 	zynaddsubfx-src.cpp.o
 
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
@@ -199,13 +201,10 @@ midi-sequencer.cpp.o: midi-sequencer.cpp midi-base.hpp $(CXXDEPS)
 nekofilter.c.o: nekofilter.c nekofilter/*.c nekofilter/*.h $(CDEPS)
 	$(CC) $< $(BUILD_C_FLAGS) -c -o $@
 
-zynaddsubfx.cpp.o: zynaddsubfx.cpp $(CXXDEPS) $(ZYN_UI_FILES_H)
-	$(CXX) $< $(ZYN_CXX_FLAGS) -c -o $@
-
-zynaddsubfx-src.cpp.o: zynaddsubfx-src.cpp $(ZYN_UI_FILES_H)
-	$(CXX) $< $(ZYN_CXX_FLAGS) -c -o $@
-
 zynaddsubfx-ui.cpp.o: zynaddsubfx-ui.cpp $(ZYN_UI_FILES_H) $(ZYN_UI_FILES_CPP)
+	$(CXX) $< $(ZYN_CXX_FLAGS) -c -o $@
+
+zynaddsubfx-%.cpp.o: zynaddsubfx-%.cpp $(CXXDEPS) $(ZYN_UI_FILES_H)
 	$(CXX) $< $(ZYN_CXX_FLAGS) -c -o $@
 
 zynaddsubfx/UI/%.cpp: zynaddsubfx/UI/%.fl

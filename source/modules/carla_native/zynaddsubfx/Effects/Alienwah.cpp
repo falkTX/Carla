@@ -23,8 +23,9 @@
 #include <cmath>
 #include "Alienwah.h"
 
-Alienwah::Alienwah(bool insertion_, float *efxoutl_, float *efxoutr_)
-    :Effect(insertion_, efxoutl_, efxoutr_, NULL, 0),
+Alienwah::Alienwah(bool insertion_, float *efxoutl_, float *efxoutr_, unsigned int srate, int bufsize)
+    :Effect(insertion_, efxoutl_, efxoutr_, NULL, 0, srate, bufsize),
+      lfo(srate, bufsize),
       oldl(NULL),
       oldr(NULL)
 {
@@ -58,8 +59,8 @@ void Alienwah::out(const Stereo<float *> &smp)
     clfol = complex<float>(cosf(lfol + phase) * fb, sinf(lfol + phase) * fb); //rework
     clfor = complex<float>(cosf(lfor + phase) * fb, sinf(lfor + phase) * fb); //rework
 
-    for(int i = 0; i < synth->buffersize; ++i) {
-        float x  = ((float) i) / synth->buffersize_f;
+    for(int i = 0; i < buffersize; ++i) {
+        float x  = float(i) / float(buffersize);
         float x1 = 1.0f - x;
         //left
         complex<float> tmp = clfol * x + oldclfol * x1;

@@ -76,28 +76,28 @@ void EffectMgr::changeeffect(int _nefx)
     delete efx;
     switch(nefx) {
         case 1:
-            efx = new Reverb(insertion, efxoutl, efxoutr);
+            efx = new Reverb(insertion, efxoutl, efxoutr, synth->samplerate, synth->buffersize);
             break;
         case 2:
-            efx = new Echo(insertion, efxoutl, efxoutr);
+            efx = new Echo(insertion, efxoutl, efxoutr, synth->samplerate, synth->buffersize);
             break;
         case 3:
-            efx = new Chorus(insertion, efxoutl, efxoutr);
+            efx = new Chorus(insertion, efxoutl, efxoutr, synth->samplerate, synth->buffersize);
             break;
         case 4:
-            efx = new Phaser(insertion, efxoutl, efxoutr);
+            efx = new Phaser(insertion, efxoutl, efxoutr, synth->samplerate, synth->buffersize);
             break;
         case 5:
-            efx = new Alienwah(insertion, efxoutl, efxoutr);
+            efx = new Alienwah(insertion, efxoutl, efxoutr, synth->samplerate, synth->buffersize);
             break;
         case 6:
-            efx = new Distorsion(insertion, efxoutl, efxoutr);
+            efx = new Distorsion(insertion, efxoutl, efxoutr, synth->samplerate, synth->buffersize);
             break;
         case 7:
-            efx = new EQ(insertion, efxoutl, efxoutr);
+            efx = new EQ(insertion, efxoutl, efxoutr, synth->samplerate, synth->buffersize);
             break;
         case 8:
-            efx = new DynamicFilter(insertion, efxoutl, efxoutr);
+            efx = new DynamicFilter(insertion, efxoutl, efxoutr, synth->samplerate, synth->buffersize);
             break;
         //put more effect here
         default:

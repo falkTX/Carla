@@ -29,24 +29,29 @@
 #include "SVFilter.h"
 #include "../Params/FilterParams.h"
 
-Filter *Filter::generate(FilterParams *pars)
+Filter *Filter::generate(FilterParams *pars, float srate, int bufsize)
 {
+    if (srate == 0.0f)
+        srate = synth->samplerate_f;
+    if (bufsize == 0)
+        bufsize = synth->buffersize;
+
     unsigned char Ftype   = pars->Ptype;
     unsigned char Fstages = pars->Pstages;
 
     Filter *filter;
     switch(pars->Pcategory) {
         case 1:
-            filter = new FormantFilter(pars);
+            filter = new FormantFilter(pars, srate, bufsize);
             break;
         case 2:
-            filter = new SVFilter(Ftype, 1000.0f, pars->getq(), Fstages);
+            filter = new SVFilter(Ftype, 1000.0f, pars->getq(), Fstages, srate, bufsize);
             filter->outgain = dB2rap(pars->getgain());
             if(filter->outgain > 1.0f)
                 filter->outgain = sqrt(filter->outgain);
             break;
         default:
-            filter = new AnalogFilter(Ftype, 1000.0f, pars->getq(), Fstages);
+            filter = new AnalogFilter(Ftype, 1000.0f, pars->getq(), Fstages, srate, bufsize);
             if((Ftype >= 6) && (Ftype <= 8))
                 filter->setgain(pars->getgain());
             else

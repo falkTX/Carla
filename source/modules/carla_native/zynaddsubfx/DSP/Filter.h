@@ -29,7 +29,7 @@ class Filter
 {
     public:
         static float getrealfreq(float freqpitch);
-        static Filter *generate(class FilterParams * pars);
+        static Filter *generate(class FilterParams * pars, float srate = 0, int bufsize = 0);
 
         virtual ~Filter() {}
         virtual void filterout(float *smp)    = 0;

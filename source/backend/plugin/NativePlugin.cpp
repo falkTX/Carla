@@ -32,7 +32,8 @@ void carla_register_native_plugin_midiThrough();
 void carla_register_native_plugin_midiTranspose();
 void carla_register_native_plugin_nekofilter();
 void carla_register_native_plugin_sunvoxfile();
-void carla_register_native_plugin_vex();
+void carla_register_native_plugin_vex_fx();
+void carla_register_native_plugin_vex_synth();
 
 #ifndef BUILD_BRIDGE
 // Carla
@@ -65,7 +66,8 @@ void carla_register_native_plugin_Notes();
 
 #ifdef WANT_ZYNADDSUBFX
 // ZynAddSubFX
-void carla_register_native_plugin_zynaddsubfx();
+void carla_register_native_plugin_zynaddsubfx_fx();
+void carla_register_native_plugin_zynaddsubfx_synth();
 #endif
 }
 
@@ -80,7 +82,8 @@ void carla_register_all_plugins()
     carla_register_native_plugin_midiTranspose();
     carla_register_native_plugin_nekofilter();
     //carla_register_native_plugin_sunvoxfile(); // unfinished
-    carla_register_native_plugin_vex();
+    carla_register_native_plugin_vex_fx();
+    carla_register_native_plugin_vex_synth();
 
 #ifndef BUILD_BRIDGE
     // Carla
@@ -113,7 +116,8 @@ void carla_register_all_plugins()
 
 #ifdef WANT_ZYNADDSUBFX
     // ZynAddSubFX
-    carla_register_native_plugin_zynaddsubfx();
+    carla_register_native_plugin_zynaddsubfx_fx();
+    carla_register_native_plugin_zynaddsubfx_synth();
 #endif
 }
 

@@ -24,7 +24,6 @@
 #define EFFECT_H
 
 #include "../Misc/Util.h"
-#include "../globals.h"
 #include "../Params/FilterParams.h"
 #include "../Misc/Stereo.h"
 
@@ -43,7 +42,8 @@ class Effect
          * @param Ppreset_ chosen preset
          * @return Initialized Effect object*/
         Effect(bool insertion_, float *efxoutl_, float *efxoutr_,
-               FilterParams *filterpars_, unsigned char Ppreset_);
+               FilterParams *filterpars_, unsigned char Ppreset_,
+               unsigned int srate, int bufsize);
         virtual ~Effect() {}
         /**
          * Choose a preset
@@ -100,6 +100,10 @@ class Effect
         float pangainR;
         char  Plrcross; // L/R mix
         float lrcross;
+
+        // current setup
+        unsigned int samplerate;
+        int buffersize;
 };
 
 #endif

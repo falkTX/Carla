@@ -63,3 +63,22 @@
 #include "zynaddsubfx/Synth/Resonance.cpp"
 #include "zynaddsubfx/Synth/SUBnote.cpp"
 #include "zynaddsubfx/Synth/SynthNote.cpp"
+
+// Dummy variables and functions for linking purposes
+const char* instance_name = nullptr;
+SYNTH_T* synth = nullptr;
+class WavFile;
+namespace Nio {
+   bool start(void){return 1;}
+   void stop(void){}
+   bool setSource(std::string){return true;}
+   bool setSink(std::string){return true;}
+   std::set<std::string> getSources(void){return std::set<std::string>();}
+   std::set<std::string> getSinks(void){return std::set<std::string>();}
+   std::string getSource(void){return "";}
+   std::string getSink(void){return "";}
+   void waveNew(WavFile*){}
+   void waveStart(void){}
+   void waveStop(void){}
+   void waveEnd(void){}
+}

@@ -26,12 +26,15 @@
 #include <cmath>
 
 Effect::Effect(bool insertion_, float *efxoutl_, float *efxoutr_,
-               FilterParams *filterpars_, unsigned char Ppreset_)
+               FilterParams *filterpars_, unsigned char Ppreset_,
+               unsigned int srate, int bufsize)
     :Ppreset(Ppreset_),
       efxoutl(efxoutl_),
       efxoutr(efxoutr_),
       filterpars(filterpars_),
-      insertion(insertion_)
+      insertion(insertion_),
+      samplerate(srate),
+      buffersize(bufsize)
 {}
 
 void Effect::out(float *const smpsl, float *const smpsr)

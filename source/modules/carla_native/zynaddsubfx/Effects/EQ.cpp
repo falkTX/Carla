@@ -24,8 +24,8 @@
 #include "EQ.h"
 #include "../DSP/AnalogFilter.h"
 
-EQ::EQ(bool insertion_, float *efxoutl_, float *efxoutr_)
-    :Effect(insertion_, efxoutl_, efxoutr_, NULL, 0)
+EQ::EQ(bool insertion_, float *efxoutl_, float *efxoutr_, unsigned int srate, int bufsize)
+    :Effect(insertion_, efxoutl_, efxoutr_, NULL, 0, srate, bufsize)
 {
     for(int i = 0; i < MAX_EQ_BANDS; ++i) {
         filter[i].Ptype   = 0;
@@ -33,8 +33,8 @@ EQ::EQ(bool insertion_, float *efxoutl_, float *efxoutr_)
         filter[i].Pgain   = 64;
         filter[i].Pq      = 64;
         filter[i].Pstages = 0;
-        filter[i].l = new AnalogFilter(6, 1000.0f, 1.0f, 0);
-        filter[i].r = new AnalogFilter(6, 1000.0f, 1.0f, 0);
+        filter[i].l = new AnalogFilter(6, 1000.0f, 1.0f, 0, srate, bufsize);
+        filter[i].r = new AnalogFilter(6, 1000.0f, 1.0f, 0, srate, bufsize);
     }
     //default values
     Pvolume = 50;
@@ -56,7 +56,7 @@ void EQ::cleanup(void)
 //Effect output
 void EQ::out(const Stereo<float *> &smp)
 {
-    for(int i = 0; i < synth->buffersize; ++i) {
+    for(int i = 0; i < buffersize; ++i) {
         efxoutl[i] = smp.l[i] * volume;
         efxoutr[i] = smp.r[i] * volume;
     }

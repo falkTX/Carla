@@ -32,7 +32,7 @@ class SVFilter:public Filter
         SVFilter(unsigned char Ftype,
                  float Ffreq,
                  float Fq,
-                 unsigned char Fstages);
+                 unsigned char Fstages, float srate, int bufsize);
         ~SVFilter();
         void filterout(float *smp);
         void setfreq(float frequency);
@@ -64,6 +64,9 @@ class SVFilter:public Filter
         bool abovenq,   //if the frequency is above the nyquist
              oldabovenq;
         bool needsinterpolation, firsttime;
+
+        float samplerate_f;
+        int   buffersize;
 };
 
 #endif

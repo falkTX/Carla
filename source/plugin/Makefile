@@ -45,7 +45,7 @@ endif
 # --------------------------------------------------------------
 # Native
 
-DGL_LIBS = -lX11
+DGL_LIBS = -lX11 -lXext
 
 ifeq ($(HAVE_OPENGL),true)
 LINK_FLAGS += $(shell pkg-config --libs gl) $(DGL_LIBS)
@@ -76,6 +76,10 @@ LINK_FLAGS += $(EXTRA_LIBS)
 LIBS  = ../modules/carla_native.a
 LIBS += ../modules/juce_audio_basics.a
 LIBS += ../modules/juce_core.a
+LIBS += ../modules/juce_data_structures.a
+LIBS += ../modules/juce_events.a
+LIBS += ../modules/juce_graphics.a
+LIBS += ../modules/juce_gui_basics.a
 LIBS += ../modules/rtmempool.a
 
 # ifeq ($(CARLA_PLUGIN_SUPPORT),true)
@@ -143,7 +147,7 @@ carla-native-lv2-export.exe: carla-native-lv2-export.cpp.o $(LIBS)
 # --------------------------------------------------------------
 
 .FORCE:
-.PHONY: .FORCE
+.PHONY: .FORCE carla-native-lv2-export carla-native-lv2-export.exe
 
 ../modules/%.a: .FORCE
 	$(MAKE) -C ../modules $*

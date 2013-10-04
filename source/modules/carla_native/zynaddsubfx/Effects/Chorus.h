@@ -32,7 +32,7 @@
 class Chorus:public Effect
 {
     public:
-        Chorus(bool insertion_, float *efxoutl_, float *efxoutr_);
+        Chorus(bool insertion_, float *efxoutl_, float *efxoutr_, unsigned int srate, int bufsize);
         /**Destructor*/
         ~Chorus();
         void out(const Stereo<float *> &input);
