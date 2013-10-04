@@ -1732,26 +1732,20 @@ void CarlaEngine::processRack(float* inBuf[2], float* outBuf[2], const uint32_t 
         plugin->process(inBuf, outBuf, frames);
         plugin->unlock();
 
-#if 0
         // if plugin has no audio inputs, add previous buffers
-        if (plugin->audioInCount() == 0)
+        if (plugin->getAudioInCount() == 0)
         {
-            for (uint32_t j=0; j < frames; ++j)
-            {
-                outBuf[0][j] += inBuf[0][j];
-                outBuf[1][j] += inBuf[1][j];
-            }
+            carla_addFloat(outBuf[0], inBuf[0], frames);
+            carla_addFloat(outBuf[1], inBuf[1], frames);
         }
         // if plugin has no midi output, add previous events
-        if (plugin->midiOutCount() == 0)
+        if (plugin->getMidiOutCount() == 0)
         {
-            for (uint32_t j=0, k=0; j < frames; ++j)
-            {
-
-            }
-            std::memcpy(pData->rack.out, pData->rack.in, sizeof(EngineEvent)*RACK_EVENT_COUNT);
+            //for (uint32_t j=0, k=0; j < frames; ++j)
+            //{
+            //}
+            std::memcpy(pData->bufEvents.out, pData->bufEvents.in, sizeof(EngineEvent)*kEngineMaxInternalEventCount);
         }
-#endif
 
         // set peaks
         {

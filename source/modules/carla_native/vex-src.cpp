@@ -17,7 +17,7 @@
 
 #include "CarlaNative.hpp"
 
-#include "juce_core.h"
+#include "juce_gui_basics.h"
 
 using namespace juce;
 
@@ -30,5 +30,7 @@ using namespace juce;
 #include "vex/ResourceFile.cpp"
 #include "vex/VexVoice.cpp"
 #include "vex/VexWaveRenderer.cpp"
+
+#include "vex/lookandfeel/MyLookAndFeel.cpp"
 
 // -----------------------------------------------------------------------

@@ -336,7 +336,7 @@ class ParamSpinBox(QAbstractSpinBox):
             if self.fValue != None:
                 self._setScalePointValue(self.fValue)
 
-            self.fBox.currentIndexChanged.connect(self.slot_comboBoxIndexChanged)
+            self.fBox.currentIndexChanged['QString'].connect(self.slot_comboBoxIndexChanged)
 
     def stepBy(self, steps):
         if steps == 0 or self.fValue is None:
@@ -376,7 +376,7 @@ class ParamSpinBox(QAbstractSpinBox):
             return
 
         value          = float(boxText.split(" - ", 1)[0])
-        lastScaleValue = self.fScalePoints[-1]["value"]
+        lastScaleValue = self.fScalePoints[-1]['value']
 
         if value == lastScaleValue:
             value = self.fMaximum

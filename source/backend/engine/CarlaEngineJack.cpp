@@ -1183,6 +1183,8 @@ protected:
             processPlugin(plugin, nframes);
             plugin->unlock();
         }
+
+        return runPendingRtEvents();
 #else
         if (fOptions.processMode == PROCESS_MODE_SINGLE_CLIENT)
         {
@@ -1197,8 +1199,11 @@ protected:
                     plugin->unlock();
                 }
             }
+
+            return runPendingRtEvents();
         }
-        else if (fOptions.processMode == PROCESS_MODE_CONTINUOUS_RACK)
+
+        if (fOptions.processMode == PROCESS_MODE_CONTINUOUS_RACK)
         {
             // get buffers from jack
             float* const audioIn1  = (float*)jackbridge_port_get_buffer(fRackPorts[kRackPortAudioIn1], nframes);
@@ -1242,7 +1247,7 @@ protected:
                     engineEvent->time    = jackEvent.time;
                     engineEvent->channel = midiChannel;
 
-                    if (MIDI_IS_STATUS_CONTROL_CHANGE(midiStatus))
+                    if (midiStatus == MIDI_STATUS_CONTROL_CHANGE)
                     {
                         CARLA_ASSERT(jackEvent.size == 2 || jackEvent.size == 3);
 
@@ -1280,7 +1285,7 @@ protected:
                             engineEvent->ctrl.value = float(midiValue)/127.0f;
                         }
                     }
-                    else if (MIDI_IS_STATUS_PROGRAM_CHANGE(midiStatus))
+                    else if (midiStatus == MIDI_STATUS_PROGRAM_CHANGE)
                     {
                         CARLA_ASSERT(jackEvent.size == 2);
 
@@ -1389,6 +1394,8 @@ protected:
                         jackbridge_midi_event_write(eventOut, engineEvent->time, data, size);
                 }
             }
+
+            return runPendingRtEvents();
         }
 #endif // ! BUILD_BRIDGE
 

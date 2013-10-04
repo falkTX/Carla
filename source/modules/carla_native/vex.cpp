@@ -28,6 +28,10 @@ using namespace juce;
 #include "vex/VexSyntModule.h"
 
 #include "vex/PeggyViewComponent.h"
+#include "vex/lookandfeel/MyLookAndFeel.h"
+#include "vex/resources/Resources.h"
+
+#include "vex/resources/Resources.cpp"
 
 // -----------------------------------------------------------------------
 
@@ -35,22 +39,27 @@ class HelperWindow : public DocumentWindow
 {
 public:
     HelperWindow()
-        : DocumentWindow("PlugWindow", Colour(0, 0, 0), DocumentWindow::closeButton, false),
+        : DocumentWindow("PlugWindow", Colour(50, 50, 200), DocumentWindow::closeButton, false),
           fClosed(false)
     {
+        setVisible(false);
+        setAlwaysOnTop(true);
         setDropShadowEnabled(false);
         setOpaque(true);
-        setResizable(false, false);
-        //setUsingNativeTitleBar(true);
-        setVisible(false);
+        //setResizable(false, false);
+        //setUsingNativeTitleBar(false);
     }
 
     void show(Component* const comp)
     {
         fClosed = false;
 
-        setContentNonOwned(comp, true);
-        centreWithSize(comp->getWidth(), comp->getHeight());
+        const int width  = comp->getWidth();
+        const int height = comp->getHeight()+getTitleBarHeight();
+
+        centreWithSize(width, height);
+        setContentNonOwned(comp, false);
+        setSize(width, height);
 
         if (! isOnDesktop())
             addToDesktop();
@@ -81,6 +90,141 @@ protected:
 
 private:
     bool fClosed;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(HelperWindow)
+};
+
+// -----------------------------------------------------------------------
+
+class VexEditorComponent : public ComboBox::Listener,
+                           public Slider::Listener,
+                           public Button::Listener,
+                           public ChangeListener,
+                           public Component,
+                           public PeggyViewComponent::Callback
+{
+public:
+    VexEditorComponent()
+    {
+        internalCachedImage1 = ImageCache::getFromMemory(Resources::vex3_png, Resources::vex3_pngSize);
+
+        // Comboboxes, wave selection
+        addAndMakeVisible(comboBox1 = new ComboBox (String::empty));
+        comboBox1->setEditableText(false);
+        comboBox1->setJustificationType(Justification::centredLeft);
+        comboBox1->setTextWhenNothingSelected(String("silent"));
+        comboBox1->setTextWhenNoChoicesAvailable(String("silent"));
+        comboBox1->addListener(this);
+        comboBox1->setColour(ComboBox::backgroundColourId, Colours::black);
+        comboBox1->setColour(ComboBox::textColourId, Colours::lightgrey);
+        comboBox1->setColour(ComboBox::outlineColourId, Colours::grey);
+        comboBox1->setColour(ComboBox::buttonColourId, Colours::grey);
+        comboBox1->setWantsKeyboardFocus(false);
+        comboBox1->setLookAndFeel(&mlaf);
+
+        addAndMakeVisible (comboBox2 = new ComboBox (String::empty));
+        comboBox2->setEditableText (false);
+        comboBox2->setJustificationType (Justification::centredLeft);
+        comboBox2->setTextWhenNothingSelected (String("silent"));
+        comboBox2->setTextWhenNoChoicesAvailable (String("silent"));
+        comboBox2->addListener (this);
+        comboBox2->setColour(ComboBox::backgroundColourId, Colours::black);
+        comboBox2->setColour(ComboBox::textColourId, Colours::lightgrey);
+        comboBox2->setColour(ComboBox::outlineColourId, Colours::grey);
+        comboBox2->setColour(ComboBox::buttonColourId, Colours::grey);
+        comboBox2->setWantsKeyboardFocus(false);
+        comboBox2->setLookAndFeel(&mlaf);
+
+        addAndMakeVisible (comboBox3 = new ComboBox (String::empty));
+        comboBox3->setEditableText (false);
+        comboBox3->setJustificationType (Justification::centredLeft);
+        comboBox3->setTextWhenNothingSelected (String("silent"));
+        comboBox3->setTextWhenNoChoicesAvailable (String("silent"));
+        comboBox3->addListener (this);
+        comboBox3->setColour(ComboBox::backgroundColourId, Colours::black);
+        comboBox3->setColour(ComboBox::textColourId, Colours::lightgrey);
+        comboBox3->setColour(ComboBox::outlineColourId, Colours::grey);
+        comboBox3->setColour(ComboBox::buttonColourId, Colours::grey);
+        comboBox3->setWantsKeyboardFocus(false);
+        comboBox3->setLookAndFeel(&mlaf);
+
+        for (int i = 0, tableSize = WaveRenderer::getWaveTableSize(); i < tableSize; ++i)
+        {
+            String tableName(WaveRenderer::getWaveTableName(i));
+
+            comboBox1->addItem(tableName, i + 1);
+            comboBox2->addItem(tableName, i + 1);
+            comboBox3->addItem(tableName, i + 1);
+        }
+
+        addChildComponent(p1 = new PeggyViewComponent(1, _d, this));
+        p1->setLookAndFeel(&mlaf);
+        addChildComponent(p2 = new PeggyViewComponent(2, _d, this));
+        p2->setLookAndFeel(&mlaf);
+        addChildComponent(p3 = new PeggyViewComponent(3, _d, this));
+        p3->setLookAndFeel(&mlaf);
+
+        //ownerFilter->addChangeListener (this);
+        setSize(800,500);
+    }
+
+    ~VexEditorComponent()
+    {
+        removeAllChildren();
+    }
+
+protected:
+    void paint(Graphics& g) override
+    {
+        g.drawImage(internalCachedImage1,
+                    0, 0, 800, 500,
+                    0, 0, internalCachedImage1.getWidth(), internalCachedImage1.getHeight());
+    }
+
+    void resized() override
+    {
+        comboBox1->setBounds(13, 38, 173, 23);
+        comboBox2->setBounds(213, 38, 173, 23);
+        comboBox3->setBounds(413, 38, 173, 23);
+
+        p1->setBounds(10, 20, 207, 280);
+        p2->setBounds(210, 20, 207, 280);
+        p3->setBounds(410, 20, 207, 280);
+    }
+
+    void changeListenerCallback(ChangeBroadcaster* source) override
+    {
+    }
+
+    void comboBoxChanged(ComboBox* comboBoxThatHasChanged) override
+    {
+    }
+
+    void sliderValueChanged(Slider* sliderThatWasMoved) override
+    {
+    }
+
+    void buttonClicked(Button* buttonThatWasClicked) override
+    {
+    }
+
+    void somethingChanged(const uint32_t id) override
+    {
+    }
+
+private:
+    Image internalCachedImage1;
+    MyLookAndFeel mlaf;
+
+    ScopedPointer<ComboBox> comboBox1;
+    ScopedPointer<ComboBox> comboBox2;
+    ScopedPointer<ComboBox> comboBox3;
+
+    ScopedPointer<PeggyViewComponent> p1;
+    ScopedPointer<PeggyViewComponent> p2;
+    ScopedPointer<PeggyViewComponent> p3;
+
+    VexArpSettings _d;
 };
 
 // -----------------------------------------------------------------------
@@ -96,7 +240,8 @@ public:
         kParamSyncMode,
         kParamFailMode,
         kParamVelMode,
-        kParamCount
+        kParamLast,
+        kParamCount = kParamLast + VexArpSettings::kVelocitiesSize + VexArpSettings::kGridSize
     };
 
     VexArpPlugin(const HostDescriptor* const host)
@@ -120,118 +265,155 @@ protected:
     {
         static Parameter paramInfo;
         static ParameterScalePoint scalePoints[4];
+        static char bufName[24+1];
 
-        int hints = PARAMETER_IS_ENABLED|PARAMETER_IS_AUTOMABLE|PARAMETER_IS_INTEGER;
+        int hints = PARAMETER_IS_ENABLED|PARAMETER_IS_AUTOMABLE;
 
         paramInfo.name = nullptr;
         paramInfo.unit = nullptr;
         paramInfo.ranges.def       = 0.0f;
         paramInfo.ranges.min       = 0.0f;
         paramInfo.ranges.max       = 1.0f;
-        paramInfo.ranges.step      = 1.0f;
-        paramInfo.ranges.stepSmall = 1.0f;
-        paramInfo.ranges.stepLarge = 1.0f;
+        paramInfo.ranges.step      = PARAMETER_RANGES_DEFAULT_STEP;
+        paramInfo.ranges.stepSmall = PARAMETER_RANGES_DEFAULT_STEP_SMALL;
+        paramInfo.ranges.stepLarge = PARAMETER_RANGES_DEFAULT_STEP_LARGE;
         paramInfo.scalePointCount  = 0;
         paramInfo.scalePoints      = nullptr;
 
-        switch (index)
+        if (index < kParamLast)
         {
-        case kParamOnOff:
-            hints |= PARAMETER_IS_BOOLEAN;
-            paramInfo.name = "On/Off";
-            paramInfo.ranges.def = 0.0f;
-            paramInfo.ranges.min = 0.0f;
-            paramInfo.ranges.max = 1.0f;
-            break;
-        case kParamLength:
-            paramInfo.name = "Length";
-            paramInfo.ranges.def = 8.0f;
-            paramInfo.ranges.min = 1.0f;
-            paramInfo.ranges.max = 16.0f;
-            break;
-        case kParamTimeMode:
-            hints |= PARAMETER_USES_SCALEPOINTS;
-            paramInfo.name = "Time Signature";
-            paramInfo.ranges.def = 2.0f;
-            paramInfo.ranges.min = 1.0f;
-            paramInfo.ranges.max = 3.0f;
-            paramInfo.scalePointCount = 3;
-            paramInfo.scalePoints     = scalePoints;
-            scalePoints[0].label = "8";
-            scalePoints[1].label = "16";
-            scalePoints[2].label = "32";
-            scalePoints[0].value = 1.0f;
-            scalePoints[1].value = 2.0f;
-            scalePoints[2].value = 3.0f;
-            break;
-        case kParamSyncMode:
-            hints |= PARAMETER_USES_SCALEPOINTS;
-            paramInfo.name = "Sync Mode";
-            paramInfo.ranges.def = 1.0f;
-            paramInfo.ranges.min = 1.0f;
-            paramInfo.ranges.max = 2.0f;
-            paramInfo.scalePointCount = 2;
-            paramInfo.scalePoints     = scalePoints;
-            scalePoints[0].label = "Key Sync";
-            scalePoints[1].label = "Bar Sync";
-            scalePoints[0].value = 1.0f;
-            scalePoints[1].value = 2.0f;
-            break;
-        case kParamFailMode:
-            hints |= PARAMETER_USES_SCALEPOINTS;
-            paramInfo.name = "Fail Mode";
-            paramInfo.ranges.def = 1.0f;
-            paramInfo.ranges.min = 1.0f;
-            paramInfo.ranges.max = 3.0f;
-            paramInfo.scalePointCount = 3;
-            paramInfo.scalePoints     = scalePoints;
-            scalePoints[0].label = "Silent Step";
-            scalePoints[1].label = "Skip One";
-            scalePoints[2].label = "Skip Two";
-            scalePoints[0].value = 1.0f;
-            scalePoints[1].value = 2.0f;
-            scalePoints[2].value = 3.0f;
-            break;
-        case kParamVelMode:
-            hints |= PARAMETER_USES_SCALEPOINTS;
-            paramInfo.name = "Velocity Mode";
-            paramInfo.ranges.def = 1.0f;
-            paramInfo.ranges.min = 1.0f;
-            paramInfo.ranges.max = 3.0f;
-            paramInfo.scalePointCount = 3;
-            paramInfo.scalePoints     = scalePoints;
-            scalePoints[0].label = "Pattern Velocity";
-            scalePoints[1].label = "Input Velocity";
-            scalePoints[2].label = "Sum Velocities";
-            scalePoints[0].value = 1.0f;
-            scalePoints[1].value = 2.0f;
-            scalePoints[2].value = 3.0f;
-            break;
+            hints |= PARAMETER_IS_INTEGER;
+            paramInfo.ranges.step      = 1.0f;
+            paramInfo.ranges.stepSmall = 1.0f;
+            paramInfo.ranges.stepLarge = 1.0f;
+
+            switch (index)
+            {
+            case kParamOnOff:
+                hints |= PARAMETER_IS_BOOLEAN;
+                paramInfo.name = "On/Off";
+                paramInfo.ranges.def = 0.0f;
+                paramInfo.ranges.min = 0.0f;
+                paramInfo.ranges.max = 1.0f;
+                break;
+            case kParamLength:
+                paramInfo.name = "Length";
+                paramInfo.ranges.def = 8.0f;
+                paramInfo.ranges.min = 1.0f;
+                paramInfo.ranges.max = 16.0f;
+                break;
+            case kParamTimeMode:
+                hints |= PARAMETER_USES_SCALEPOINTS;
+                paramInfo.name = "Time Signature";
+                paramInfo.ranges.def = 2.0f;
+                paramInfo.ranges.min = 1.0f;
+                paramInfo.ranges.max = 3.0f;
+                paramInfo.scalePointCount = 3;
+                paramInfo.scalePoints     = scalePoints;
+                scalePoints[0].label = "1/8";
+                scalePoints[1].label = "1/16";
+                scalePoints[2].label = "1/32";
+                scalePoints[0].value = 1.0f;
+                scalePoints[1].value = 2.0f;
+                scalePoints[2].value = 3.0f;
+                break;
+            case kParamSyncMode:
+                hints |= PARAMETER_USES_SCALEPOINTS;
+                paramInfo.name = "Sync Mode";
+                paramInfo.ranges.def = 1.0f;
+                paramInfo.ranges.min = 1.0f;
+                paramInfo.ranges.max = 2.0f;
+                paramInfo.scalePointCount = 2;
+                paramInfo.scalePoints     = scalePoints;
+                scalePoints[0].label = "Key Sync";
+                scalePoints[1].label = "Bar Sync";
+                scalePoints[0].value = 1.0f;
+                scalePoints[1].value = 2.0f;
+                break;
+            case kParamFailMode:
+                hints |= PARAMETER_USES_SCALEPOINTS;
+                paramInfo.name = "Fail Mode";
+                paramInfo.ranges.def = 1.0f;
+                paramInfo.ranges.min = 1.0f;
+                paramInfo.ranges.max = 3.0f;
+                paramInfo.scalePointCount = 3;
+                paramInfo.scalePoints     = scalePoints;
+                scalePoints[0].label = "Silent Step";
+                scalePoints[1].label = "Skip One";
+                scalePoints[2].label = "Skip Two";
+                scalePoints[0].value = 1.0f;
+                scalePoints[1].value = 2.0f;
+                scalePoints[2].value = 3.0f;
+                break;
+            case kParamVelMode:
+                hints |= PARAMETER_USES_SCALEPOINTS;
+                paramInfo.name = "Velocity Mode";
+                paramInfo.ranges.def = 1.0f;
+                paramInfo.ranges.min = 1.0f;
+                paramInfo.ranges.max = 3.0f;
+                paramInfo.scalePointCount = 3;
+                paramInfo.scalePoints     = scalePoints;
+                scalePoints[0].label = "Pattern Velocity";
+                scalePoints[1].label = "Input Velocity";
+                scalePoints[2].label = "Sum Velocities";
+                scalePoints[0].value = 1.0f;
+                scalePoints[1].value = 2.0f;
+                scalePoints[2].value = 3.0f;
+                break;
+            }
+        }
+        else if (index < kParamLast + VexArpSettings::kVelocitiesSize)
+        {
+            carla_zeroChar(bufName, 24+1);
+            std::snprintf(bufName, 24, "Grid Velocity %i", index - kParamLast);
+            paramInfo.name = bufName;
+        }
+        else
+        {
+            carla_zeroChar(bufName, 24+1);
+            hints |= PARAMETER_IS_BOOLEAN|PARAMETER_IS_INTEGER;
+            paramInfo.ranges.step      = 1.0f;
+            paramInfo.ranges.stepSmall = 1.0f;
+            paramInfo.ranges.stepLarge = 1.0f;
+
+            carla_zeroChar(bufName, 24+1);
+            std::snprintf(bufName, 24, "Grid on/off %i", index - (kParamLast + VexArpSettings::kVelocitiesSize));
+            paramInfo.name = bufName;
         }
 
         paramInfo.hints = static_cast<ParameterHints>(hints);
-
         return &paramInfo;
     }
 
     float getParameterValue(const uint32_t index) const override
     {
-        switch (index)
+        if (index < kParamLast)
         {
-        case kParamOnOff:
-            return fSettings.on ? 1.0f : 0.0f;
-        case kParamLength:
-            return fSettings.length;
-        case kParamTimeMode:
-            return fSettings.timeMode;
-        case kParamSyncMode:
-            return fSettings.syncMode;
-        case kParamFailMode:
-            return fSettings.failMode;
-        case kParamVelMode:
-            return fSettings.velMode;
-        default:
-            return 0.0f;
+            switch (index)
+            {
+            case kParamOnOff:
+                return fSettings.on ? 1.0f : 0.0f;
+            case kParamLength:
+                return fSettings.length;
+            case kParamTimeMode:
+                return fSettings.timeMode;
+            case kParamSyncMode:
+                return fSettings.syncMode;
+            case kParamFailMode:
+                return fSettings.failMode;
+            case kParamVelMode:
+                return fSettings.velMode;
+            default:
+                return 0.0f;
+            }
+        }
+        else if (index < kParamLast + VexArpSettings::kVelocitiesSize)
+        {
+            return fSettings.velocities[index-kParamLast];
+        }
+        else
+        {
+            return fSettings.grid[index-(kParamLast+VexArpSettings::kVelocitiesSize)] ? 1.0f : 0.0f;
         }
     }
 
@@ -240,26 +422,37 @@ protected:
 
     void setParameterValue(const uint32_t index, const float value) override
     {
-        switch (index)
+        if (index < kParamLast)
         {
-        case kParamOnOff:
-            fSettings.on = (value >= 0.5f);
-            break;
-        case kParamLength:
-            fSettings.length = value;
-            break;
-        case kParamTimeMode:
-            fSettings.timeMode = value;
-            break;
-        case kParamSyncMode:
-            fSettings.syncMode = value;
-            break;
-        case kParamFailMode:
-            fSettings.failMode = value;
-            break;
-        case kParamVelMode:
-            fSettings.velMode = value;
-            break;
+            switch (index)
+            {
+            case kParamOnOff:
+                fSettings.on = (value >= 0.5f);
+                break;
+            case kParamLength:
+                fSettings.length = value;
+                break;
+            case kParamTimeMode:
+                fSettings.timeMode = value;
+                break;
+            case kParamSyncMode:
+                fSettings.syncMode = value;
+                break;
+            case kParamFailMode:
+                fSettings.failMode = value;
+                break;
+            case kParamVelMode:
+                fSettings.velMode = value;
+                break;
+            }
+        }
+        else if (index < kParamLast + VexArpSettings::kVelocitiesSize)
+        {
+            fSettings.velocities[index-kParamLast] = value;
+        }
+        else
+        {
+            fSettings.grid[index-(kParamLast+VexArpSettings::kVelocitiesSize)] = (value >= 0.5f);
         }
     }
 
@@ -345,7 +538,7 @@ protected:
             if (fView == nullptr)
             {
                 fView = new PeggyViewComponent(1, fSettings, this);
-                fView->setSize(207, 280);
+                fView->setSize(207, 320);
             }
 
             fWindow->show(fView);
@@ -1177,6 +1370,53 @@ protected:
     }
 
     // -------------------------------------------------------------------
+    // Plugin UI calls
+
+    void uiShow(const bool show) override
+    {
+        if (show)
+        {
+            if (fWindow == nullptr)
+            {
+                fWindow = new HelperWindow();
+                fWindow->setName(getUiName());
+            }
+
+            if (fView == nullptr)
+                fView = new VexEditorComponent();
+
+            fWindow->show(fView);
+        }
+        else if (fWindow != nullptr)
+        {
+            fWindow->hide();
+
+            fView = nullptr;
+            fWindow = nullptr;
+        }
+    }
+
+    void uiIdle() override
+    {
+        if (fWindow == nullptr)
+            return;
+
+        if (fWindow->wasClosedByUser())
+        {
+            uiShow(false);
+            uiClosed();
+        }
+    }
+
+    void uiSetParameterValue(const uint32_t, const float) override
+    {
+        if (fView == nullptr)
+            return;
+
+        //fView->update();
+    }
+
+    // -------------------------------------------------------------------
     // Plugin dispatcher calls
 
     void bufferSizeChanged(const uint32_t bufferSize) override
@@ -1201,6 +1441,14 @@ protected:
         fSynth.setSampleRate(sampleRate);
     }
 
+    void uiNameChanged(const char* const uiName) override
+    {
+        if (fWindow == nullptr)
+            return;
+
+        fWindow->setName(uiName);
+    }
+
 private:
     float fParameters[92];
 
@@ -1214,6 +1462,9 @@ private:
     VexDelay fDelay;
     VexReverb fReverb;
     VexSyntModule fSynth;
+
+    ScopedPointer<VexEditorComponent> fView;
+    ScopedPointer<HelperWindow> fWindow;
 
     PluginClassEND(VexSynthPlugin)
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(VexSynthPlugin)
@@ -1291,7 +1542,7 @@ static const PluginDescriptor vexReverbDesc = {
 
 static const PluginDescriptor vexSynthDesc = {
     /* category  */ PLUGIN_CATEGORY_SYNTH,
-    /* hints     */ static_cast<PluginHints>(0x0),
+    /* hints     */ static_cast<PluginHints>(PLUGIN_HAS_GUI|PLUGIN_NEEDS_SINGLE_THREAD|PLUGIN_USES_TIME),
     /* supports  */ static_cast<PluginSupports>(0x0),
     /* audioIns  */ 0,
     /* audioOuts */ 2,
