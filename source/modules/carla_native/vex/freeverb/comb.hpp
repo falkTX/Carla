@@ -26,8 +26,8 @@ private:
 	float	damp1;
 	float	damp2;
 	float	*buffer;
-	int		bufsize;
-	int		bufidx;
+	int	bufsize;
+	int	bufidx;
 };
 
 

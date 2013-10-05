@@ -199,7 +199,7 @@ void clearTmpBuffers(void)
     pool.clear();
 }
 
-float SYNTH_T::numRandom() const
+float SYNTH_T::numRandom()
 {
     return RND;
 }

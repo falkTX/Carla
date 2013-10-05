@@ -29,16 +29,15 @@
 #include "SVFilter.h"
 
 SVFilter::SVFilter(unsigned char Ftype, float Ffreq, float Fq,
-                   unsigned char Fstages, float srate, int bufsize)
-    :type(Ftype),
+                   unsigned char Fstages, unsigned int srate, int bufsize)
+    :Filter(srate, bufsize),
+      type(Ftype),
       stages(Fstages),
       freq(Ffreq),
       q(Fq),
       gain(1.0f),
       needsinterpolation(false),
-      firsttime(true),
-      samplerate_f(srate),
-      buffersize(bufsize)
+      firsttime(true)
 {
     if(stages >= MAX_FILTER_STAGES)
         stages = MAX_FILTER_STAGES;
@@ -162,13 +161,13 @@ void SVFilter::filterout(float *smp)
 
     if(needsinterpolation) {
         float *ismp = getTmpBuffer();
-        memcpy(ismp, smp, buffersize*sizeof(float));
+        memcpy(ismp, smp, bufferbytes);
 
         for(int i = 0; i < stages + 1; ++i)
             singlefilterout(ismp, st[i], ipar);
 
         for(int i = 0; i < buffersize; ++i) {
-            float x = i / (float)buffersize;
+            float x = (float)i / buffersize_f;
             smp[i] = ismp[i] * (1.0f - x) + smp[i] * x;
         }
         returnTmpBuffer(ismp);

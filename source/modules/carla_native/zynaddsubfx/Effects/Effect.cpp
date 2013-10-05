@@ -35,7 +35,9 @@ Effect::Effect(bool insertion_, float *efxoutl_, float *efxoutr_,
       insertion(insertion_),
       samplerate(srate),
       buffersize(bufsize)
-{}
+{
+    alias();
+}
 
 void Effect::out(float *const smpsl, float *const smpsr)
 {

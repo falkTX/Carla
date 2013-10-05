@@ -391,6 +391,16 @@ public:
         if (fUi != nullptr)
             fNextUiAction = 2;
     }
+
+    void uiChangeName(const char* const name)
+    {
+        if (fUi != nullptr)
+        {
+            Fl::lock();
+            fUi->masterwindow->label(name);
+            Fl::unlock();
+        }
+    }
 #endif
 
 protected:
@@ -495,7 +505,7 @@ protected:
         }
 
 #ifdef WANT_ZYNADDSUBFX_UI
-        if (threadShouldExit() && fUi != nullptr)
+        if (threadShouldExit() || fUi != nullptr)
         {
             Fl::lock();
             delete fUi;
@@ -544,13 +554,7 @@ public:
 
     ~ZynAddSubFxPlugin() override
     {
-        //ensure that everything has stopped
-        pthread_mutex_lock(&fMaster->mutex);
-        pthread_mutex_unlock(&fMaster->mutex);
-        fThread.stopThread(-1);
-
-        delete fMaster;
-        fMaster = nullptr;
+        deleteMaster();
     }
 
 protected:
@@ -590,8 +594,8 @@ protected:
 
     void setCustomData(const char* const key, const char* const value) override
     {
-        CARLA_ASSERT(key != nullptr);
-        CARLA_ASSERT(value != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(key != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(value != nullptr,);
 
         if (std::strcmp(key, "CarlaAlternateFile1") == 0) // xmz
             fMaster->loadXML(value);
@@ -702,37 +706,51 @@ protected:
         fMaster->applyparameters(true);
     }
 
-#if 0
     // -------------------------------------------------------------------
     // Plugin dispatcher
 
-    intptr_t pluginDispatcher(const PluginDispatcherOpcode opcode, const int32_t index, const intptr_t value, void* const ptr, const float) override
+    // TODO - save&load current state
+
+    void bufferSizeChanged(const uint32_t) final
     {
-        switch (opcode)
-        {
-        case PLUGIN_OPCODE_NULL:
-            break;
-        case PLUGIN_OPCODE_BUFFER_SIZE_CHANGED:
-            // TODO
-            break;
-        case PLUGIN_OPCODE_SAMPLE_RATE_CHANGED:
-            // TODO
-            break;
-        case PLUGIN_OPCODE_OFFLINE_CHANGED:
-            break;
-        case PLUGIN_OPCODE_UI_NAME_CHANGED:
+        deleteMaster();
+        sInstanceCount.maybeReinit(getHostHandle());
+        initMaster();
+    }
+
+    void sampleRateChanged(const double sampleRate) final
+    {
+        fSampleRate = sampleRate;
+        deleteMaster();
+        sInstanceCount.maybeReinit(getHostHandle());
+        initMaster();
+    }
+
+    void initMaster()
+    {
+        fMaster = new Master();
+        fThread.setMaster(fMaster);
+        fThread.startThread(3);
+
+        for (int i = 0; i < NUM_MIDI_PARTS; ++i)
+            fMaster->partonoff(i, 1);
+    }
+
+    void deleteMaster()
+    {
+        //ensure that everything has stopped
+        pthread_mutex_lock(&fMaster->mutex);
+        pthread_mutex_unlock(&fMaster->mutex);
+        fThread.stopThread(-1);
+
+        delete fMaster;
+        fMaster = nullptr;
+    }
+
 #ifdef WANT_ZYNADDSUBFX_UI
-            // TODO
-#endif
-            break;
-        }
-
-        return 0;
-
-        // unused
-        (void)index;
-        (void)value;
-        (void)ptr;
+    void uiNameChanged(const char* const uiName) override
+    {
+        fThread.uiChangeName(uiName);
     }
 #endif
 

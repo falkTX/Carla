@@ -102,7 +102,7 @@ void Distorsion::out(const Stereo<float *> &smp)
         applyfilters(efxoutl, efxoutr);
 
     if(!Pstereo)
-        memcpy(efxoutr, efxoutl, buffersize*sizeof(float));
+        memcpy(efxoutr, efxoutl, bufferbytes);
 
     float level = dB2rap(60.0f * Plevel / 127.0f - 40.0f);
     for(int i = 0; i < buffersize; ++i) {

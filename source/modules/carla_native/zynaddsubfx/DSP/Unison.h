@@ -30,7 +30,7 @@
 class Unison
 {
     public:
-        Unison(int update_period_samples_, float max_delay_sec_);
+        Unison(int update_period_samples_, float max_delay_sec_, float srate_f);
         ~Unison();
 
         void setSize(int new_size);
@@ -69,5 +69,8 @@ class Unison
         float *delay_buffer;
         float  unison_amplitude_samples;
         float  unison_bandwidth_cents;
+
+        // current setup
+        float samplerate_f;
 };
 #endif

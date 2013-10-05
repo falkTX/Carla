@@ -8,6 +8,18 @@
 
 revmodel::revmodel()
 {
+	gain      = 0.0f;
+	roomsize  = 0.0f;
+	roomsize1 = 0.0f;
+	damp      = 0.0f;
+	damp1     = 0.0f;
+	wet       = 0.0f;
+	wet1      = 0.0f;
+	wet2      = 0.0f;
+	dry       = 0.0f;
+	width     = 0.0f;
+	mode      = 0.0f;
+
 	// Tie the components to their buffers
 	combL[0].setbuffer(bufcombL1,combtuningL1);
 	combR[0].setbuffer(bufcombR1,combtuningR1);

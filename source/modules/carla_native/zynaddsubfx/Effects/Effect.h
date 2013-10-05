@@ -104,6 +104,20 @@ class Effect
         // current setup
         unsigned int samplerate;
         int buffersize;
+
+        // alias for above terms
+        float samplerate_f;
+        float halfsamplerate_f;
+        float buffersize_f;
+        int   bufferbytes;
+
+        inline void alias()
+        {
+            samplerate_f     = samplerate;
+            halfsamplerate_f = samplerate_f / 2.0f;
+            buffersize_f     = buffersize;
+            bufferbytes      = buffersize * sizeof(float);
+        }
 };
 
 #endif

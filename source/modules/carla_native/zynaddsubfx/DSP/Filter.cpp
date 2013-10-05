@@ -29,10 +29,18 @@
 #include "SVFilter.h"
 #include "../Params/FilterParams.h"
 
-Filter *Filter::generate(FilterParams *pars, float srate, int bufsize)
+Filter::Filter(unsigned int srate, int bufsize)
+    : outgain(1.0f),
+      samplerate(srate),
+      buffersize(bufsize)
 {
-    if (srate == 0.0f)
-        srate = synth->samplerate_f;
+    alias();
+}
+
+Filter *Filter::generate(FilterParams *pars, unsigned int srate, int bufsize)
+{
+    if (srate == 0)
+        srate = synth->samplerate;
     if (bufsize == 0)
         bufsize = synth->buffersize;
 

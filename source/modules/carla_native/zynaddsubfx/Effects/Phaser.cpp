@@ -72,16 +72,20 @@ void Phaser::analog_setup()
     Rmx       = Rmin / Rmax;
     Rconst    = 1.0f + Rmx; // Handle parallel resistor relationship
     C         = 0.00000005f; // 50 nF
-    CFs       = 2.0f * float(samplerate) * C;
-    invperiod = 1.0f / float(buffersize);
+    CFs       = 2.0f * samplerate_f * C;
+    invperiod = 1.0f / buffersize_f;
 }
 
 Phaser::~Phaser()
 {
+    if(old.l)
+        delete[] old.l;
     if(xn1.l)
         delete[] xn1.l;
     if(yn1.l)
         delete[] yn1.l;
+    if(old.r)
+        delete[] old.r;
     if(xn1.r)
         delete[] xn1.r;
     if(yn1.r)
@@ -203,7 +207,7 @@ void Phaser::normalPhase(const Stereo<float *> &input)
     gain.r = limit(gain.r, ZERO_, ONE_);
 
     for(int i = 0; i < buffersize; ++i) {
-        float x  = float(i) / float(buffersize);
+        float x  = (float)i / buffersize_f;
         float x1 = 1.0f - x;
         //TODO think about making panning an external feature
         Stereo<float> xn(input.l[i] * pangainL + fb.l,
@@ -299,10 +303,14 @@ void Phaser::setoffset(unsigned char Poffset)
 
 void Phaser::setstages(unsigned char Pstages)
 {
+    if(old.l)
+        delete[] old.l;
     if(xn1.l)
         delete[] xn1.l;
     if(yn1.l)
         delete[] yn1.l;
+    if(old.r)
+        delete[] old.r;
     if(xn1.r)
         delete[] xn1.r;
     if(yn1.r)

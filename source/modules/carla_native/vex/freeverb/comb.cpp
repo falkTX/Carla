@@ -8,8 +8,13 @@
 
 comb::comb()
 {
-	filterstore = 0;
-	bufidx = 0;
+	feedback    = 0.0f;
+	filterstore = 0.0f;
+	damp1   = 0.0f;
+	damp2   = 0.0f;
+	buffer  = 0;
+	bufsize = 0;
+	bufidx  = 0;
 }
 
 void comb::setbuffer(float *buf, int size)

@@ -29,7 +29,7 @@ using namespace std;
 Chorus::Chorus(bool insertion_, float *const efxoutl_, float *efxoutr_, unsigned int srate, int bufsize)
     :Effect(insertion_, efxoutl_, efxoutr_, NULL, 0, srate, bufsize),
       lfo(srate, bufsize),
-      maxdelay((int)(MAX_CHORUS_DELAY / 1000.0f * (float)srate)),
+      maxdelay((int)(MAX_CHORUS_DELAY / 1000.0f * samplerate_f)),
       delaySample(new float[maxdelay], new float[maxdelay])
 {
     dlk = 0;
@@ -52,7 +52,7 @@ Chorus::~Chorus()
 float Chorus::getdelay(float xlfo)
 {
     float result =
-        (Pflangemode) ? 0 : (delay + xlfo * depth) * (float)samplerate;
+        (Pflangemode) ? 0 : (delay + xlfo * depth) * samplerate_f;
 
     //check if delay is too big (caused by bad setdelay() and setdepth()
     if((result + 0.5f) >= maxdelay) {
@@ -88,7 +88,7 @@ void Chorus::out(const Stereo<float *> &input)
 
         //compute the delay in samples using linear interpolation between the lfo delays
         float mdel =
-            (dl1 * (buffersize - i) + dl2 * i) / (float)buffersize;
+            (dl1 * (buffersize - i) + dl2 * i) / buffersize_f;
         if(++dlk >= maxdelay)
             dlk = 0;
         float tmp = dlk - mdel + maxdelay * 2.0f; //where should I get the sample from
@@ -106,7 +106,7 @@ void Chorus::out(const Stereo<float *> &input)
         //Right channel
 
         //compute the delay in samples using linear interpolation between the lfo delays
-        mdel = (dr1 * (buffersize - i) + dr2 * i) / (float)buffersize;
+        mdel = (dr1 * (buffersize - i) + dr2 * i) / buffersize_f;
         if(++drk >= maxdelay)
             drk = 0;
         tmp = drk * 1.0f - mdel + maxdelay * 2.0f; //where should I get the sample from

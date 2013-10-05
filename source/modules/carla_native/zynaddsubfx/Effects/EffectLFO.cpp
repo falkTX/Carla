@@ -25,7 +25,7 @@
 
 #include <cmath>
 
-EffectLFO::EffectLFO(float srate, float bufsize)
+EffectLFO::EffectLFO(float srate_f, float bufsize_f)
     :Pfreq(40),
       Prandomness(0),
       PLFOtype(0),
@@ -37,8 +37,8 @@ EffectLFO::EffectLFO(float srate, float bufsize)
       ampr1(RND),
       ampr2(RND),
       lfornd(0.0f),
-      samplerate_f(srate),
-      buffersize_f(bufsize)
+      samplerate_f(srate_f),
+      buffersize_f(bufsize_f)
 {
     updateparams();
 }

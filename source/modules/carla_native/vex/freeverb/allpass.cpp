@@ -8,7 +8,10 @@
 
 allpass::allpass()
 {
-	bufidx = 0;
+	feedback = 0.0f;
+	bufidx   = 0;
+	buffer   = nullptr;
+	bufsize  = 0;
 }
 
 void allpass::setbuffer(float *buf, int size)

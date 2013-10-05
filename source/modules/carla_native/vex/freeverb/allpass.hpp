@@ -20,8 +20,8 @@ public:
 // private:
 	float	feedback;
 	float	*buffer;
-	int		bufsize;
-	int		bufidx;
+	int	bufsize;
+	int	bufidx;
 };
 
 

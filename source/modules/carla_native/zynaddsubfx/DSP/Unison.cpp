@@ -25,18 +25,19 @@
 
 #include "Unison.h"
 
-Unison::Unison(int update_period_samples_, float max_delay_sec_)
+Unison::Unison(int update_period_samples_, float max_delay_sec_, float srate_f)
     :unison_size(0),
       base_freq(1.0f),
       uv(NULL),
       update_period_samples(update_period_samples_),
       update_period_sample_k(0),
-      max_delay((int)(synth->samplerate_f * max_delay_sec_) + 1),
+      max_delay((int)(srate_f * max_delay_sec_) + 1),
       delay_k(0),
       first_time(false),
       delay_buffer(NULL),
       unison_amplitude_samples(0.0f),
-      unison_bandwidth_cents(10.0f)
+      unison_bandwidth_cents(10.0f),
+      samplerate_f(srate_f)
 {
     if(max_delay < 10)
         max_delay = 10;
@@ -87,15 +88,15 @@ void Unison::updateParameters(void)
 {
     if(!uv)
         return;
-    float increments_per_second = synth->samplerate_f
+    float increments_per_second = samplerate_f
                                   / (float) update_period_samples;
 //	printf("#%g, %g\n",increments_per_second,base_freq);
     for(int i = 0; i < unison_size; ++i) {
-        float base = powf(UNISON_FREQ_SPAN, synth->numRandom() * 2.0f - 1.0f);
+        float base = powf(UNISON_FREQ_SPAN, SYNTH_T::numRandom() * 2.0f - 1.0f);
         uv[i].relative_amplitude = base;
         float period = base / base_freq;
         float m      = 4.0f / (period * increments_per_second);
-        if(synth->numRandom() < 0.5f)
+        if(SYNTH_T::numRandom() < 0.5f)
             m = -m;
         uv[i].step = m;
 //		printf("%g %g\n",uv[i].relative_amplitude,period);
@@ -103,7 +104,7 @@ void Unison::updateParameters(void)
 
     float max_speed = powf(2.0f, unison_bandwidth_cents / 1200.0f);
     unison_amplitude_samples = 0.125f * (max_speed - 1.0f)
-                               * synth->samplerate_f / base_freq;
+                               * samplerate_f / base_freq;
 
     //If functions exceed this limit, they should have requested a bigguer delay
     //and thus are buggy

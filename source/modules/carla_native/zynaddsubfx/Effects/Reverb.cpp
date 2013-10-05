@@ -210,7 +210,7 @@ void Reverb::settime(unsigned char _Ptime)
 
     for(int i = 0; i < REV_COMBS * 2; ++i)
         combfb[i] =
-            -expf((float)comblen[i] / (float)samplerate * logf(0.001f) / t);
+            -expf((float)comblen[i] / samplerate_f * logf(0.001f) / t);
     //the feedback is negative because it removes the DC
 }
 
@@ -241,7 +241,7 @@ void Reverb::setidelay(unsigned char _Pidelay)
         delete [] idelay;
     idelay = NULL;
 
-    idelaylen = (int) ((float)samplerate * delay / 1000.0f);
+    idelaylen = (int) (samplerate_f * delay / 1000.0f);
     if(idelaylen > 1) {
         idelayk = 0;
         idelay  = new float[idelaylen];
@@ -315,7 +315,7 @@ void Reverb::settype(unsigned char _Ptype)
         Ptype = NUM_TYPES - 1;
 
     // adjust the combs according to the samplerate
-    float samplerate_adjust = (float)samplerate / 44100.0f;
+    float samplerate_adjust = samplerate_f / 44100.0f;
     float tmp;
     for(int i = 0; i < REV_COMBS * 2; ++i) {
         if(Ptype == 0)
@@ -360,7 +360,7 @@ void Reverb::settype(unsigned char _Ptype)
         //not been verified yet.
         //As this cannot be resized in a RT context, a good upper bound should
         //be found
-        bandwidth = new Unison(buffersize / 4 + 1, 2.0f);
+        bandwidth = new Unison(buffersize / 4 + 1, 2.0f, samplerate_f);
         bandwidth->setSize(50);
         bandwidth->setBaseFrequency(1.0f);
     }

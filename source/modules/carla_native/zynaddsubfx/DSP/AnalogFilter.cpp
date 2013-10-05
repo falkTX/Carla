@@ -32,18 +32,15 @@ AnalogFilter::AnalogFilter(unsigned char Ftype,
                            float Ffreq,
                            float Fq,
                            unsigned char Fstages,
-                           float srate, int bufsize)
-    :type(Ftype),
+                           unsigned int srate, int bufsize)
+    :Filter(srate, bufsize),
+      type(Ftype),
       stages(Fstages),
       freq(Ffreq),
       q(Fq),
       gain(1.0),
       abovenq(false),
-      oldabovenq(false),
-      samplerate_f(srate),
-      halfsamplerate_f(srate/2.0f),
-      buffersize(bufsize),
-      buffersize_f(bufsize)
+      oldabovenq(false)
 {
     for(int i = 0; i < 3; ++i)
         coeff.c[i] = coeff.d[i] = oldCoeff.c[i] = oldCoeff.d[i] = 0.0f;
@@ -364,7 +361,7 @@ void AnalogFilter::filterout(float *smp)
     if(needsinterpolation) {
         //Merge Filter at old coeff with new coeff
         float *ismp = getTmpBuffer();
-        memcpy(ismp, smp, buffersize*sizeof(float));
+        memcpy(ismp, smp, bufferbytes);
 
         for(int i = 0; i < stages + 1; ++i)
             singlefilterout(ismp, oldHistory[i], oldCoeff);

@@ -27,9 +27,9 @@
 #include "AnalogFilter.h"
 #include "../Params/FilterParams.h"
 
-FormantFilter::FormantFilter(FilterParams *pars, float srate, int bufsize)
+FormantFilter::FormantFilter(FilterParams *pars, unsigned int srate, int bufsize)
+    : Filter(srate, bufsize)
 {
-    buffersize = bufsize;
     numformants = pars->Pnumformants;
     for(int i = 0; i < numformants; ++i)
         formant[i] = new AnalogFilter(4 /*BPF*/, 1000.0f, 10.0f, pars->Pstages, srate, bufsize);
@@ -206,8 +206,8 @@ void FormantFilter::filterout(float *smp)
 {
     float *inbuffer = getTmpBuffer();
 
-    memcpy(inbuffer, smp, buffersize*sizeof(float));
-    memset(smp, 0, buffersize*sizeof(float));
+    memcpy(inbuffer, smp, bufferbytes);
+    memset(smp, 0, bufferbytes);
 
     for(int j = 0; j < numformants; ++j) {
         float *tmpbuf = getTmpBuffer();
