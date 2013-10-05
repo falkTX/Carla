@@ -658,10 +658,10 @@ struct CarlaPluginProtectedData {
 
         if (client != nullptr)
         {
-            CARLA_ASSERT(! client->isActive());
-
             if (client->isActive())
                 client->deactivate();
+            else
+                carla_assert("client->isActive()", __FILE__, __LINE__);
 
             clearBuffers();
 
@@ -673,27 +673,29 @@ struct CarlaPluginProtectedData {
         {
             CustomData& cData(*it);
 
-            CARLA_ASSERT(cData.type != nullptr);
-            CARLA_ASSERT(cData.key != nullptr);
-            CARLA_ASSERT(cData.value != nullptr);
-
             if (cData.type != nullptr)
             {
                 delete[] cData.type;
                 cData.type = nullptr;
             }
+            else
+                carla_assert("cData.type != nullptr", __FILE__, __LINE__);
 
             if (cData.key != nullptr)
             {
                 delete[] cData.key;
                 cData.key = nullptr;
             }
+            else
+                carla_assert("cData.key != nullptr", __FILE__, __LINE__);
 
             if (cData.value != nullptr)
             {
                 delete[] cData.value;
                 cData.value = nullptr;
             }
+            else
+                carla_assert("cData.value != nullptr", __FILE__, __LINE__);
         }
 
         prog.clear();
@@ -719,13 +721,10 @@ struct CarlaPluginProtectedData {
 
             for (uint32_t i=0; i < audioIn.count; ++i)
             {
-                CARLA_ASSERT(latencyBuffers[i] != nullptr);
+                CARLA_SAFE_ASSERT_CONTINUE(latencyBuffers[i] != nullptr);
 
-                if (latencyBuffers[i] != nullptr)
-                {
-                    delete[] latencyBuffers[i];
-                    latencyBuffers[i] = nullptr;
-                }
+                delete[] latencyBuffers[i];
+                latencyBuffers[i] = nullptr;
             }
 
             delete[] latencyBuffers;
@@ -751,13 +750,10 @@ struct CarlaPluginProtectedData {
 
             for (uint32_t i=0; i < audioIn.count; ++i)
             {
-                CARLA_ASSERT(latencyBuffers[i] != nullptr);
+                CARLA_SAFE_ASSERT_CONTINUE(latencyBuffers[i] != nullptr);
 
-                if (latencyBuffers[i] != nullptr)
-                {
-                    delete[] latencyBuffers[i];
-                    latencyBuffers[i] = nullptr;
-                }
+                delete[] latencyBuffers[i];
+                latencyBuffers[i] = nullptr;
             }
 
             delete[] latencyBuffers;

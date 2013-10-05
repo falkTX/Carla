@@ -41,17 +41,16 @@ struct ParamSymbol {
     uint32_t index;
     const char* symbol;
 
-    ParamSymbol(uint32_t index_, const char* symbol_)
-        : index(index_),
-          symbol(carla_strdup(symbol_)) {}
+    ParamSymbol(uint32_t i, const char* s)
+        : index(i),
+          symbol(carla_strdup(s)) {}
 
-    void free()
+    ~ParamSymbol()
     {
-        if (symbol != nullptr)
-        {
-            delete[] symbol;
-            symbol = nullptr;
-        }
+        CARLA_SAFE_ASSERT_RETURN(symbol != nullptr,)
+
+        delete[] symbol;
+        symbol = nullptr;
     }
 
 #ifdef CARLA_PROPER_CPP11_SUPPORT
@@ -108,6 +107,8 @@ const char* CarlaPluginProtectedData::libError(const char* const filename)
 
 // -------------------------------------------------------------------
 // Settings functions, defined in CarlaPluginInternal.hpp
+
+// FIXME - this doesn't work!!
 
 void CarlaPluginProtectedData::saveSetting(const unsigned int option, const bool yesNo)
 {
@@ -226,7 +227,7 @@ CarlaPlugin::CarlaPlugin(CarlaEngine* const engine, const unsigned int id)
       fIconName("plugin"),
       pData(new CarlaPluginProtectedData(engine, this))
 {
-    CARLA_ASSERT(engine != nullptr);
+    CARLA_SAFE_ASSERT_RETURN(engine != nullptr,);
     CARLA_ASSERT(id < engine->getMaxPluginNumber());
     CARLA_ASSERT(id == engine->getCurrentPluginCount());
     carla_debug("CarlaPlugin::CarlaPlugin(%p, %i)", engine, id);
@@ -776,7 +777,6 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
     for (NonRtList<ParamSymbol*>::Itenerator it = paramSymbols.begin(); it.valid(); it.next())
     {
         ParamSymbol* const paramSymbol(*it);
-        paramSymbol->free();
         delete paramSymbol;
     }
 
