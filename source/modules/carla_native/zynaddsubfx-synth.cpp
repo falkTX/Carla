@@ -24,6 +24,7 @@
 #include "CarlaString.hpp"
 #include "RtList.hpp"
 
+#include "zynaddsubfx/DSP/FFTwrapper.h"
 #include "zynaddsubfx/Misc/Master.h"
 #include "zynaddsubfx/Misc/Part.h"
 #include "zynaddsubfx/Misc/Util.h"
@@ -94,6 +95,8 @@ public:
         }
 
         fPrograms.clear();
+
+        FFT_cleanup();
     }
 
     void init()
