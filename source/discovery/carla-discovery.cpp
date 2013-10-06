@@ -65,7 +65,7 @@ void print_lib_error(const char* const filename)
 {
     const char* const error(lib_error(filename));
 
-    if (error != nullptr && strstr(error, "wrong ELF class") == nullptr && strstr(error, "Bad EXE format") == nullptr)
+    if (error != nullptr && std::strstr(error, "wrong ELF class") == nullptr && std::strstr(error, "Bad EXE format") == nullptr)
         DISCOVERY_OUT("error", error);
 }
 
@@ -700,6 +700,7 @@ void do_dssi_check(void*& libHandle, const char* const filename, const bool init
             DISCOVERY_OUT("warning", "Plugin '" << ldescriptor->Name << "' is not hard real-time capable");
         }
 
+        bool isSynth = false;
         int hints = 0;
         int audioIns = 0;
         int audioOuts = 0;
@@ -742,8 +743,8 @@ void do_dssi_check(void*& libHandle, const char* const filename, const bool init
         if (descriptor->run_synth || descriptor->run_multiple_synths)
             midiIns = midiTotal = 1;
 
-//         if (midiIns > 0 && audioIns == 0 && audioOuts > 0)
-//             hints |= PLUGIN_IS_SYNTH;
+        if (midiIns > 0 && audioIns == 0 && audioOuts > 0)
+            isSynth = true;
 
         if (const char* const ui = find_dssi_ui(filename, ldescriptor->Label))
         {
@@ -904,6 +905,10 @@ void do_dssi_check(void*& libHandle, const char* const filename, const bool init
         DISCOVERY_OUT("copyright", ldescriptor->Copyright);
         DISCOVERY_OUT("unique_id", ldescriptor->UniqueID);
         DISCOVERY_OUT("hints", hints);
+
+        if (isSynth)
+            DISCOVERY_OUT("category", PLUGIN_CATEGORY_SYNTH);
+
         DISCOVERY_OUT("audio.ins", audioIns);
         DISCOVERY_OUT("audio.outs", audioOuts);
         DISCOVERY_OUT("audio.total", audioTotal);
@@ -1474,7 +1479,7 @@ void do_fluidsynth_check(const char* const filename, const bool init)
     DISCOVERY_OUT("label", (const char*)label);
     DISCOVERY_OUT("maker", "");
     DISCOVERY_OUT("copyright", "");
-//     DISCOVERY_OUT("hints", PLUGIN_IS_SYNTH);
+    DISCOVERY_OUT("category", PLUGIN_CATEGORY_SYNTH);
     DISCOVERY_OUT("audio.outs", 2);
     DISCOVERY_OUT("audio.total", 2);
     DISCOVERY_OUT("midi.ins", 1);

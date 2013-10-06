@@ -689,7 +689,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
             break;
 
         case PLUGIN_DSSI:
-            plugin = CarlaPlugin::newDSSI(init, (const char*)extra);
+            plugin = CarlaPlugin::newDSSI(init);
             break;
 
         case PLUGIN_LV2:

@@ -31,7 +31,7 @@ UIC ?= uic
 
 # --------------------------------------------------------------
 
-BASE_FLAGS = -Wall -Wextra -fPIC -DPIC -pipe
+BASE_FLAGS = -Wall -Wextra -fPIC -DPIC -pipe -DREAL_BUILD
 BASE_OPTS  = -O3 -ffast-math -mtune=generic -msse -msse2 -mfpmath=sse -fdata-sections -ffunction-sections
 LINK_OPTS  = -Wl,--gc-sections
 

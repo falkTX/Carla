@@ -36,13 +36,13 @@ public:
           fHandle2(nullptr),
           fDescriptor(nullptr),
           fDssiDescriptor(nullptr),
+          fUsesCustomData(false),
+          fGuiFilename(nullptr),
           fAudioInBuffers(nullptr),
           fAudioOutBuffers(nullptr),
           fParamBuffers(nullptr)
     {
         carla_debug("DssiPlugin::DssiPlugin(%p, %i)", engine, id);
-
-        carla_zeroStruct<snd_seq_event_t>(fMidiEvents, kPluginMaxMidiEvents);
 
         pData->osc.thread.setMode(CarlaPluginThread::PLUGIN_THREAD_DSSI_GUI);
     }
@@ -56,7 +56,7 @@ public:
         {
             showGui(false);
 
-            pData->osc.thread.stopThread(pData->engine->getOptions().uiBridgesTimeout);
+            pData->osc.thread.stopThread(pData->engine->getOptions().uiBridgesTimeout * 2);
         }
 
         pData->singleMutex.lock();
@@ -74,9 +74,7 @@ public:
         if (fDescriptor != nullptr)
         {
             if (fName.isNotEmpty() && fDssiDescriptor != nullptr && fDssiDescriptor->run_synth == nullptr && fDssiDescriptor->run_multiple_synths != nullptr)
-            {
                 removeUniqueMultiSynth(fDescriptor->Label);
-            }
 
             if (fDescriptor->cleanup != nullptr)
             {
@@ -92,6 +90,12 @@ public:
             fDssiDescriptor = nullptr;
         }
 
+        if (fGuiFilename != nullptr)
+        {
+            delete[] fGuiFilename;
+            fGuiFilename = nullptr;
+        }
+
         clearBuffers();
     }
 
@@ -105,16 +109,17 @@ public:
 
     PluginCategory getCategory() const override
     {
-        // TODO
-        //if (fHints & PLUGIN_IS_SYNTH)
-        //   return PLUGIN_CATEGORY_SYNTH;
+        CARLA_SAFE_ASSERT_RETURN(fDssiDescriptor != nullptr, PLUGIN_CATEGORY_NONE);
+
+        if (pData->audioIn.count == 0 && pData->audioOut.count > 0 && (fDssiDescriptor->run_synth != nullptr || fDssiDescriptor->run_multiple_synths != nullptr))
+            return PLUGIN_CATEGORY_SYNTH;
 
         return getPluginCategoryFromName(fName);
     }
 
     long getUniqueId() const override
     {
-        CARLA_ASSERT(fDescriptor != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr, 0);
 
         return fDescriptor->UniqueID;
     }
@@ -129,16 +134,17 @@ public:
 
     int32_t getChunkData(void** const dataPtr) const override
     {
-        CARLA_ASSERT(fOptions & PLUGIN_OPTION_USE_CHUNKS);
-        CARLA_ASSERT(fDssiDescriptor != nullptr);
-        CARLA_ASSERT(fDssiDescriptor->get_custom_data != nullptr);
-        CARLA_ASSERT(fHandle != nullptr);
-        CARLA_ASSERT(fHandle2 == nullptr);
-        CARLA_ASSERT(dataPtr != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(fUsesCustomData, 0);
+        CARLA_SAFE_ASSERT_RETURN(fOptions & PLUGIN_OPTION_USE_CHUNKS, 0);
+        CARLA_SAFE_ASSERT_RETURN(fDssiDescriptor != nullptr, 0);
+        CARLA_SAFE_ASSERT_RETURN(fDssiDescriptor->get_custom_data != nullptr, 0);
+        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr, 0);
+        CARLA_SAFE_ASSERT_RETURN(fHandle2 == nullptr, 0);
+        CARLA_SAFE_ASSERT_RETURN(dataPtr != nullptr, 0);
 
         unsigned long dataSize = 0;
 
-        if (fDssiDescriptor->get_custom_data != nullptr && fDssiDescriptor->get_custom_data(fHandle, dataPtr, &dataSize) != 0)
+        if (fDssiDescriptor->get_custom_data(fHandle, dataPtr, &dataSize) != 0)
             return static_cast<int32_t>(dataSize);
 
         return 0;
@@ -149,28 +155,17 @@ public:
 
     unsigned int getAvailableOptions() const override
     {
-        CARLA_ASSERT(fDssiDescriptor != nullptr);
-
-        if (fDssiDescriptor == nullptr)
-            return 0x0;
-
-#ifdef __USE_GNU
+        const bool isAmSynth = fFilename.contains("amsynth", true);
         const bool isDssiVst = fFilename.contains("dssi-vst", true);
-#else
-        const bool isDssiVst = fFilename.contains("dssi-vst");
-#endif
 
         unsigned int options = 0x0;
 
         options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
-        if (isDssiVst)
+        if (! (isAmSynth || isDssiVst))
         {
-//             if (pData->engine->getOptions().useDssiVstChunks && fDssiDescriptor->get_custom_data != nullptr && fDssiDescriptor->set_custom_data != nullptr)
-//                 options |= PLUGIN_OPTION_USE_CHUNKS;
-        }
-        else
-        {
+            options |= PLUGIN_OPTION_FIXED_BUFFERS;
+
             if (pData->engine->getProccessMode() != PROCESS_MODE_CONTINUOUS_RACK)
             {
                 if (fOptions & PLUGIN_OPTION_FORCE_STEREO)
@@ -178,9 +173,10 @@ public:
                 else if (pData->audioIn.count <= 1 && pData->audioOut.count <= 1 && (pData->audioIn.count != 0 || pData->audioOut.count != 0))
                     options |= PLUGIN_OPTION_FORCE_STEREO;
             }
-
-            options |= PLUGIN_OPTION_FIXED_BUFFERS;
         }
+
+        if (fUsesCustomData)
+            options |= PLUGIN_OPTION_USE_CHUNKS;
 
         if (fDssiDescriptor->run_synth != nullptr || fDssiDescriptor->run_multiple_synths != nullptr)
         {
@@ -196,15 +192,15 @@ public:
 
     float getParameterValue(const uint32_t parameterId) const override
     {
-        CARLA_ASSERT(fParamBuffers != nullptr);
-        CARLA_ASSERT(parameterId < pData->param.count);
+        CARLA_SAFE_ASSERT_RETURN(fParamBuffers != nullptr, 0.0f);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, 0.0f);
 
         return fParamBuffers[parameterId];
     }
 
     void getLabel(char* const strBuf) const override
     {
-        CARLA_ASSERT(fDescriptor != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
 
         if (fDescriptor->Label != nullptr)
             std::strncpy(strBuf, fDescriptor->Label, STR_MAX);
@@ -214,7 +210,7 @@ public:
 
     void getMaker(char* const strBuf) const override
     {
-        CARLA_ASSERT(fDescriptor != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
 
         if (fDescriptor->Maker != nullptr)
             std::strncpy(strBuf, fDescriptor->Maker, STR_MAX);
@@ -224,7 +220,7 @@ public:
 
     void getCopyright(char* const strBuf) const override
     {
-        CARLA_ASSERT(fDescriptor != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
 
         if (fDescriptor->Copyright != nullptr)
             std::strncpy(strBuf, fDescriptor->Copyright, STR_MAX);
@@ -234,7 +230,7 @@ public:
 
     void getRealName(char* const strBuf) const override
     {
-        CARLA_ASSERT(fDescriptor != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
 
         if (fDescriptor->Name != nullptr)
             std::strncpy(strBuf, fDescriptor->Name, STR_MAX);
@@ -244,8 +240,8 @@ public:
 
     void getParameterName(const uint32_t parameterId, char* const strBuf) const override
     {
-        CARLA_ASSERT(fDescriptor != nullptr);
-        CARLA_ASSERT(parameterId < pData->param.count);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
 
         const int32_t rindex(pData->param.data[parameterId].rindex);
 
@@ -270,7 +266,8 @@ public:
 
     void setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) override
     {
-        CARLA_ASSERT(parameterId < pData->param.count);
+        CARLA_SAFE_ASSERT_RETURN(fParamBuffers != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
 
         const float fixedValue(pData->param.getFixedValue(parameterId, value));
         fParamBuffers[parameterId] = fixedValue;
@@ -280,30 +277,21 @@ public:
 
     void setCustomData(const char* const type, const char* const key, const char* const value, const bool sendGui) override
     {
-        CARLA_ASSERT(fDescriptor != nullptr);
-        CARLA_ASSERT(fHandle != nullptr);
-        CARLA_ASSERT(type != nullptr);
-        CARLA_ASSERT(key != nullptr);
-        CARLA_ASSERT(value != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(fDssiDescriptor != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(type != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(key != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(value != nullptr,);
         carla_debug("DssiPlugin::setCustomData(%s, %s, %s, %s)", type, key, value, bool2str(sendGui));
-
-        if (type == nullptr)
-            return carla_stderr2("DssiPlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is invalid", type, key, value, bool2str(sendGui));
 
         if (std::strcmp(type, CUSTOM_DATA_STRING) != 0)
             return carla_stderr2("DssiPlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is not string", type, key, value, bool2str(sendGui));
-
-        if (key == nullptr)
-            return carla_stderr2("DssiPlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - key is null", type, key, value, bool2str(sendGui));
-
-        if (value == nullptr)
-            return carla_stderr2("DssiPlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - value is null", type, key, value, bool2str(sendGui));
 
         if (fDssiDescriptor->configure != nullptr)
         {
             fDssiDescriptor->configure(fHandle, key, value);
 
-            if (fHandle2)
+            if (fHandle2 != nullptr)
                 fDssiDescriptor->configure(fHandle2, key, value);
         }
 
@@ -312,7 +300,7 @@ public:
 
         if (std::strcmp(key, "reloadprograms") == 0 || std::strcmp(key, "load") == 0 || std::strncmp(key, "patches", 7) == 0)
         {
-            const ScopedDisabler sd(this);
+            const ScopedSingleProcessLocker spl(this, true);
             reloadPrograms(false);
         }
 
@@ -321,15 +309,13 @@ public:
 
     void setChunkData(const char* const stringData) override
     {
-        CARLA_ASSERT(fOptions & PLUGIN_OPTION_USE_CHUNKS);
-        CARLA_ASSERT(fDssiDescriptor != nullptr);
-        CARLA_ASSERT(fDssiDescriptor->set_custom_data != nullptr);
-        CARLA_ASSERT(fHandle != nullptr);
-        CARLA_ASSERT(fHandle2 == nullptr);
-        CARLA_ASSERT(stringData != nullptr);
-
-        if (fDssiDescriptor->set_custom_data == nullptr)
-            return;
+        CARLA_SAFE_ASSERT_RETURN(fUsesCustomData,);
+        CARLA_SAFE_ASSERT_RETURN(fOptions & PLUGIN_OPTION_USE_CHUNKS,);
+        CARLA_SAFE_ASSERT_RETURN(fDssiDescriptor != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fDssiDescriptor->set_custom_data != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fHandle2 == nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(stringData != nullptr,);
 
         // TODO
 #if 0
@@ -347,16 +333,12 @@ public:
 
     void setMidiProgram(int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) override
     {
-        CARLA_ASSERT(fDssiDescriptor != nullptr);
-        CARLA_ASSERT(fHandle != nullptr);
-        CARLA_ASSERT(index >= -1 && index < static_cast<int32_t>(pData->midiprog.count));
+        CARLA_SAFE_ASSERT_RETURN(fDssiDescriptor != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fDssiDescriptor->select_program != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(index >= -1 && index < static_cast<int32_t>(pData->midiprog.count),);
 
-        if (index < -1)
-            index = -1;
-        else if (index > static_cast<int32_t>(pData->midiprog.count))
-            return;
-
-        if (index >= 0 && fDssiDescriptor != nullptr && fDssiDescriptor->select_program != nullptr)
+        if (index >= 0)
         {
             const uint32_t bank    = pData->midiprog.data[index].bank;
             const uint32_t program = pData->midiprog.data[index].program;
@@ -400,19 +382,10 @@ public:
     void reload() override
     {
         carla_debug("DssiPlugin::reload() - start");
-        CARLA_ASSERT(pData->engine != nullptr);
-        CARLA_ASSERT(fDescriptor != nullptr);
-        CARLA_ASSERT(fDssiDescriptor != nullptr);
-        CARLA_ASSERT(fHandle != nullptr);
-
-        if (pData->engine == nullptr)
-            return;
-        if (fDescriptor == nullptr)
-            return;
-        if (fDssiDescriptor == nullptr)
-            return;
-        if (fHandle == nullptr)
-            return;
+        CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fDssiDescriptor != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
 
         const ProcessMode processMode(pData->engine->getProccessMode());
 
@@ -767,12 +740,8 @@ public:
         if (LADSPA_IS_HARD_RT_CAPABLE(fDescriptor->Properties))
             fHints |= PLUGIN_IS_RTSAFE;
 
-        if (fGuiFilename.isNotEmpty())
+        if (fGuiFilename != nullptr)
             fHints |= PLUGIN_HAS_GUI;
-
-        // TODO
-        //if (mIns == 1 && aIns == 0 && aOuts > 0)
-        //    fHints |= PLUGIN_IS_SYNTH;
 
         if (aOuts > 0 && (aIns == aOuts || aIns == 1))
             fHints |= PLUGIN_CAN_DRYWET;
@@ -948,8 +917,8 @@ public:
 
     void activate() override
     {
-        CARLA_ASSERT(fDescriptor != nullptr);
-        CARLA_ASSERT(fHandle != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
 
         if (fDescriptor->activate != nullptr)
         {
@@ -962,8 +931,8 @@ public:
 
     void deactivate() override
     {
-        CARLA_ASSERT(fDescriptor != nullptr);
-        CARLA_ASSERT(fHandle != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
 
         if (fDescriptor->deactivate != nullptr)
         {
@@ -1427,25 +1396,16 @@ public:
 
     bool processSingle(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t timeOffset, const unsigned long midiEventCount)
     {
-        CARLA_ASSERT(frames > 0);
-
-        if (frames == 0)
-            return false;
+        CARLA_SAFE_ASSERT_RETURN(frames > 0, false);
 
         if (pData->audioIn.count > 0)
         {
-            CARLA_ASSERT(inBuffer != nullptr);
-            if (inBuffer == nullptr)
-                return false;
+            CARLA_SAFE_ASSERT_RETURN(inBuffer != nullptr, false);
         }
         if (pData->audioOut.count > 0)
         {
-            CARLA_ASSERT(outBuffer != nullptr);
-            if (outBuffer == nullptr)
-                return false;
+            CARLA_SAFE_ASSERT_RETURN(outBuffer != nullptr, false);
         }
-
-        uint32_t i, k;
 
         // --------------------------------------------------------------------------------------------------------
         // Try lock, silence otherwise
@@ -1456,9 +1416,9 @@ public:
         }
         else if (! pData->singleMutex.tryLock())
         {
-            for (i=0; i < pData->audioOut.count; ++i)
+            for (uint32_t i=0; i < pData->audioOut.count; ++i)
             {
-                for (k=0; k < frames; ++k)
+                for (uint32_t k=0; k < frames; ++k)
                     outBuffer[i][k+timeOffset] = 0.0f;
             }
 
@@ -1468,9 +1428,9 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Reset audio buffers
 
-        for (i=0; i < pData->audioIn.count; ++i)
+        for (uint32_t i=0; i < pData->audioIn.count; ++i)
             carla_copyFloat(fAudioInBuffers[i], inBuffer[i]+timeOffset, frames);
-        for (i=0; i < pData->audioOut.count; ++i)
+        for (uint32_t i=0; i < pData->audioOut.count; ++i)
             carla_zeroFloat(fAudioOutBuffers[i], frames);
 
         // --------------------------------------------------------------------------------------------------------
@@ -1510,12 +1470,12 @@ public:
             bool isPair;
             float bufValue, oldBufLeft[doBalance ? frames : 1];
 
-            for (i=0; i < pData->audioOut.count; ++i)
+            for (uint32_t i=0; i < pData->audioOut.count; ++i)
             {
                 // Dry/Wet
                 if (doDryWet)
                 {
-                    for (k=0; k < frames; ++k)
+                    for (uint32_t k=0; k < frames; ++k)
                     {
                         // TODO
                         //if (k < pData->latency && pData->latency < frames)
@@ -1542,7 +1502,7 @@ public:
                     float balRangeL = (pData->postProc.balanceLeft  + 1.0f)/2.0f;
                     float balRangeR = (pData->postProc.balanceRight + 1.0f)/2.0f;
 
-                    for (k=0; k < frames; ++k)
+                    for (uint32_t k=0; k < frames; ++k)
                     {
                         if (isPair)
                         {
@@ -1561,7 +1521,7 @@ public:
 
                 // Volume (and buffer copy)
                 {
-                    for (k=0; k < frames; ++k)
+                    for (uint32_t k=0; k < frames; ++k)
                         outBuffer[i][k+timeOffset] = fAudioOutBuffers[i][k] * pData->postProc.volume;
                 }
             }
@@ -1575,10 +1535,11 @@ public:
             }
 #endif
         } // End of Post-processing
-#else
-        for (i=0; i < pData->audioOut.count; ++i)
+
+#else // BUILD_BRIDGE
+        for (uint32_t i=0; i < pData->audioOut.count; ++i)
         {
-            for (k=0; k < frames; ++k)
+            for (uint32_t k=0; k < frames; ++k)
                 outBuffer[i][k+timeOffset] = fAudioOutBuffers[i][k];
         }
 #endif
@@ -1712,10 +1673,8 @@ public:
 
     void uiParameterChange(const uint32_t index, const float value) override
     {
-        CARLA_ASSERT(index < pData->param.count);
+        CARLA_SAFE_ASSERT_RETURN(index < pData->param.count,);
 
-        if (index >= pData->param.count)
-            return;
         if (pData->osc.data.target == nullptr)
             return;
 
@@ -1724,10 +1683,8 @@ public:
 
     void uiMidiProgramChange(const uint32_t index) override
     {
-        CARLA_ASSERT(index < pData->midiprog.count);
+        CARLA_SAFE_ASSERT_RETURN(index < pData->midiprog.count,);
 
-        if (index >= pData->midiprog.count)
-            return;
         if (pData->osc.data.target == nullptr)
             return;
 
@@ -1736,16 +1693,10 @@ public:
 
     void uiNoteOn(const uint8_t channel, const uint8_t note, const uint8_t velo) override
     {
-        CARLA_ASSERT(channel < MAX_MIDI_CHANNELS);
-        CARLA_ASSERT(note < MAX_MIDI_NOTE);
-        CARLA_ASSERT(velo > 0 && velo < MAX_MIDI_VALUE);
+        CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
+        CARLA_SAFE_ASSERT_RETURN(note < MAX_MIDI_NOTE,);
+        CARLA_SAFE_ASSERT_RETURN(velo > 0 && velo < MAX_MIDI_VALUE,);
 
-        if (channel >= MAX_MIDI_CHANNELS)
-            return;
-        if (note >= MAX_MIDI_NOTE)
-            return;
-        if (velo >= MAX_MIDI_VALUE)
-            return;
         if (pData->osc.data.target == nullptr)
             return;
 
@@ -1761,13 +1712,9 @@ public:
 
     void uiNoteOff(const uint8_t channel, const uint8_t note) override
     {
-        CARLA_ASSERT(channel < MAX_MIDI_CHANNELS);
-        CARLA_ASSERT(note < MAX_MIDI_NOTE);
+        CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
+        CARLA_SAFE_ASSERT_RETURN(note < MAX_MIDI_NOTE,);
 
-        if (channel >= MAX_MIDI_CHANNELS)
-            return;
-        if (note >= MAX_MIDI_NOTE)
-            return;
         if (pData->osc.data.target == nullptr)
             return;
 
@@ -1784,16 +1731,11 @@ public:
 
     const void* getExtraStuff() const noexcept override
     {
-        return fGuiFilename.isNotEmpty() ? (const char*)fGuiFilename : nullptr;
+        return fGuiFilename;
     }
 
-    bool init(const char* const filename, const char* const name, const char* const label, const char* const guiFilename)
+    bool init(const char* const filename, const char* const name, const char* const label)
     {
-        CARLA_ASSERT(pData->engine != nullptr);
-        CARLA_ASSERT(pData->client == nullptr);
-        CARLA_ASSERT(filename != nullptr);
-        CARLA_ASSERT(label != nullptr);
-
         // ---------------------------------------------------------------
         // first checks
 
@@ -1904,46 +1846,48 @@ public:
         }
 
         // ---------------------------------------------------------------
+        // check for custom data extension
+
+        if (fDssiDescriptor->configure != nullptr)
+        {
+            if (char* const error = fDssiDescriptor->configure(fHandle, DSSI_CUSTOMDATA_EXTENSION_KEY, ""))
+            {
+                if (std::strcmp(error, "true") == 0 && fDssiDescriptor->get_custom_data != nullptr && fDssiDescriptor->set_custom_data != nullptr)
+                    fUsesCustomData = true;
+
+                std::free(error);
+            }
+        }
+
+        // ---------------------------------------------------------------
         // gui stuff
 
-        if (guiFilename != nullptr)
+        if (const char* const guiFilename = find_dssi_ui(filename, fDescriptor->Label))
         {
+            pData->osc.thread.setOscData(guiFilename, fDescriptor->Label);
             fGuiFilename = guiFilename;
         }
-        else if (const char* const guiFilename2 = find_dssi_ui(filename, fDescriptor->Label))
-        {
-            fGuiFilename = guiFilename2;
-            delete[] guiFilename2;
-        }
-
-        if (fGuiFilename.isNotEmpty())
-            pData->osc.thread.setOscData((const char*)fGuiFilename, fDescriptor->Label);
 
         // ---------------------------------------------------------------
         // load plugin settings
 
         {
-#ifdef __USE_GNU
+            const bool isAmSynth = fFilename.contains("amsynth", true);
             const bool isDssiVst = fFilename.contains("dssi-vst", true);
-#else
-            const bool isDssiVst = fFilename.contains("dssi-vst");
-#endif
 
             // set default options
             fOptions = 0x0;
 
             fOptions |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
+            if (isAmSynth || isDssiVst)
+                fOptions |= PLUGIN_OPTION_FIXED_BUFFERS;
+
             if (pData->engine->getOptions().forceStereo)
                 fOptions |= PLUGIN_OPTION_FORCE_STEREO;
 
-            if (isDssiVst)
-            {
-                fOptions |= PLUGIN_OPTION_FIXED_BUFFERS;
-
-//                 if (pData->engine->getOptions().useDssiVstChunks && fDssiDescriptor->get_custom_data != nullptr && fDssiDescriptor->set_custom_data != nullptr)
-//                     fOptions |= PLUGIN_OPTION_USE_CHUNKS;
-            }
+            if (fUsesCustomData)
+                fOptions |= PLUGIN_OPTION_USE_CHUNKS;
 
             if (fDssiDescriptor->run_synth != nullptr || fDssiDescriptor->run_multiple_synths != nullptr)
             {
@@ -1953,7 +1897,7 @@ public:
                 fOptions |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
 
                 if (fDssiDescriptor->run_synth == nullptr)
-                    carla_stderr2("Plugin can ONLY use run_multiple_synths!");
+                    carla_stderr2("WARNING: Plugin can ONLY use run_multiple_synths!");
             }
 
             // load settings
@@ -1964,7 +1908,7 @@ public:
             fOptions = pData->loadSettings(fOptions, getAvailableOptions());
 
             // ignore settings, we need this anyway
-            if (isDssiVst)
+            if (isAmSynth || isDssiVst)
                 fOptions |= PLUGIN_OPTION_FIXED_BUFFERS;
         }
 
@@ -1977,7 +1921,8 @@ private:
     const LADSPA_Descriptor* fDescriptor;
     const DSSI_Descriptor*   fDssiDescriptor;
 
-    CarlaString fGuiFilename;
+    bool fUsesCustomData;
+    const char* fGuiFilename;
 
     float** fAudioInBuffers;
     float** fAudioOutBuffers;
@@ -1988,6 +1933,8 @@ private:
 
     static bool addUniqueMultiSynth(const char* const label)
     {
+        CARLA_SAFE_ASSERT_RETURN(label != nullptr, true);
+
         for (NonRtList<const char*>::Itenerator it = sMultiSynthList.begin(); it.valid(); it.next())
         {
             const char*& itLabel(*it);
@@ -2002,6 +1949,8 @@ private:
 
     static void removeUniqueMultiSynth(const char* const label)
     {
+        CARLA_SAFE_ASSERT_RETURN(label != nullptr,);
+
         for (NonRtList<const char*>::Itenerator it = sMultiSynthList.begin(); it.valid(); it.next())
         {
             const char*& itLabel(*it);
@@ -2028,14 +1977,14 @@ CARLA_BACKEND_END_NAMESPACE
 
 CARLA_BACKEND_START_NAMESPACE
 
-CarlaPlugin* CarlaPlugin::newDSSI(const Initializer& init, const char* const guiFilename)
+CarlaPlugin* CarlaPlugin::newDSSI(const Initializer& init)
 {
-    carla_debug("CarlaPlugin::newDSSI({%p, \"%s\", \"%s\", \"%s\"}, \"%s\")", init.engine, init.filename, init.name, init.label, guiFilename);
+    carla_debug("CarlaPlugin::newDSSI({%p, \"%s\", \"%s\", \"%s\"})", init.engine, init.filename, init.name, init.label);
 
 #ifdef WANT_DSSI
     DssiPlugin* const plugin(new DssiPlugin(init.engine, init.id));
 
-    if (! plugin->init(init.filename, init.name, init.label, guiFilename))
+    if (! plugin->init(init.filename, init.name, init.label))
     {
         delete plugin;
         return nullptr;

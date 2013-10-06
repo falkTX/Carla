@@ -18,6 +18,11 @@
 #ifndef CARLA_DEFINES_HPP_INCLUDED
 #define CARLA_DEFINES_HPP_INCLUDED
 
+// IDE Helper
+#ifndef REAL_BUILD
+# include "config.h"
+#endif
+
 // Check OS
 #if defined(WIN64) || defined(_WIN64) || defined(__WIN64__)
 # define CARLA_OS_WIN64

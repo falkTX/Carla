@@ -131,7 +131,7 @@ public:
 
     long getUniqueId() const override
     {
-        CARLA_ASSERT(fDescriptor != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr, 0);
 
         return fDescriptor->UniqueID;
     }
@@ -141,14 +141,14 @@ public:
 
     uint32_t getParameterScalePointCount(const uint32_t parameterId) const override
     {
-        CARLA_ASSERT(parameterId < pData->param.count);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, 0);
 
         const int32_t rindex(pData->param.data[parameterId].rindex);
 
         if (fRdfDescriptor != nullptr && rindex < static_cast<int32_t>(fRdfDescriptor->PortCount))
         {
-            const LADSPA_RDF_Port& port(fRdfDescriptor->Ports[rindex]);
-            return port.ScalePointCount;
+            const LADSPA_RDF_Port* const port(&fRdfDescriptor->Ports[rindex]);
+            return port->ScalePointCount;
         }
 
         return 0;
@@ -164,23 +164,21 @@ public:
 
     unsigned int getAvailableOptions() const override
     {
-#ifdef __USE_GNU
         const bool isDssiVst = fFilename.contains("dssi-vst", true);
-#else
-        const bool isDssiVst = fFilename.contains("dssi-vst");
-#endif
 
         unsigned int options = 0x0;
 
         if (! isDssiVst)
+        {
             options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
-        if (pData->engine->getProccessMode() != PROCESS_MODE_CONTINUOUS_RACK)
-        {
-            if (fOptions & PLUGIN_OPTION_FORCE_STEREO)
-                options |= PLUGIN_OPTION_FORCE_STEREO;
-            else if (pData->audioIn.count <= 1 && pData->audioOut.count <= 1 && (pData->audioIn.count != 0 || pData->audioOut.count != 0))
-                options |= PLUGIN_OPTION_FORCE_STEREO;
+            if (pData->engine->getProccessMode() != PROCESS_MODE_CONTINUOUS_RACK)
+            {
+                if (fOptions & PLUGIN_OPTION_FORCE_STEREO)
+                    options |= PLUGIN_OPTION_FORCE_STEREO;
+                else if (pData->audioIn.count <= 1 && pData->audioOut.count <= 1 && (pData->audioIn.count != 0 || pData->audioOut.count != 0))
+                    options |= PLUGIN_OPTION_FORCE_STEREO;
+            }
         }
 
         return options;
@@ -188,28 +186,28 @@ public:
 
     float getParameterValue(const uint32_t parameterId) const override
     {
-        CARLA_ASSERT(fParamBuffers != nullptr);
-        CARLA_ASSERT(parameterId < pData->param.count);
+        CARLA_SAFE_ASSERT_RETURN(fParamBuffers != nullptr, 0.0f);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, 0.0f);
 
         return fParamBuffers[parameterId];
     }
 
     float getParameterScalePointValue(const uint32_t parameterId, const uint32_t scalePointId) const override
     {
-        CARLA_ASSERT(fRdfDescriptor != nullptr);
-        CARLA_ASSERT(parameterId < pData->param.count);
-        CARLA_ASSERT(scalePointId < getParameterScalePointCount(parameterId));
+        CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr, 0.0f);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, 0.0f);
+        CARLA_SAFE_ASSERT_RETURN(scalePointId < getParameterScalePointCount(parameterId), 0.0f);
 
         const int32_t rindex(pData->param.data[parameterId].rindex);
 
-        if (fRdfDescriptor != nullptr && rindex < static_cast<int32_t>(fRdfDescriptor->PortCount))
+        if (rindex < static_cast<int32_t>(fRdfDescriptor->PortCount))
         {
-            const LADSPA_RDF_Port& port(fRdfDescriptor->Ports[rindex]);
+            const LADSPA_RDF_Port* const port(&fRdfDescriptor->Ports[rindex]);
 
-            if (scalePointId < port.ScalePointCount)
+            if (scalePointId < port->ScalePointCount)
             {
-                const LADSPA_RDF_ScalePoint& scalePoint(port.ScalePoints[scalePointId]);
-                return scalePoint.Value;
+                const LADSPA_RDF_ScalePoint* const scalePoint(&port->ScalePoints[scalePointId]);
+                return scalePoint->Value;
             }
         }
 
@@ -218,7 +216,7 @@ public:
 
     void getLabel(char* const strBuf) const override
     {
-        CARLA_ASSERT(fDescriptor != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
 
         if (fDescriptor->Label != nullptr)
             std::strncpy(strBuf, fDescriptor->Label, STR_MAX);
@@ -228,7 +226,7 @@ public:
 
     void getMaker(char* const strBuf) const override
     {
-        CARLA_ASSERT(fDescriptor != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
 
         if (fRdfDescriptor != nullptr && fRdfDescriptor->Creator != nullptr)
             std::strncpy(strBuf, fRdfDescriptor->Creator, STR_MAX);
@@ -240,7 +238,7 @@ public:
 
     void getCopyright(char* const strBuf) const override
     {
-        CARLA_ASSERT(fDescriptor != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
 
         if (fDescriptor->Copyright != nullptr)
             std::strncpy(strBuf, fDescriptor->Copyright, STR_MAX);
@@ -250,7 +248,7 @@ public:
 
     void getRealName(char* const strBuf) const override
     {
-        CARLA_ASSERT(fDescriptor != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
 
         if (fRdfDescriptor != nullptr && fRdfDescriptor->Title != nullptr)
             std::strncpy(strBuf, fRdfDescriptor->Title, STR_MAX);
@@ -262,8 +260,8 @@ public:
 
     void getParameterName(const uint32_t parameterId, char* const strBuf) const override
     {
-        CARLA_ASSERT(fDescriptor != nullptr);
-        CARLA_ASSERT(parameterId < pData->param.count);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
 
         const int32_t rindex(pData->param.data[parameterId].rindex);
 
@@ -275,17 +273,17 @@ public:
 
     void getParameterSymbol(const uint32_t parameterId, char* const strBuf) const override
     {
-        CARLA_ASSERT(parameterId < pData->param.count);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
 
         const int32_t rindex(pData->param.data[parameterId].rindex);
 
         if (fRdfDescriptor != nullptr && rindex < static_cast<int32_t>(fRdfDescriptor->PortCount))
         {
-            const LADSPA_RDF_Port& port = fRdfDescriptor->Ports[rindex];
+            const LADSPA_RDF_Port* const port(&fRdfDescriptor->Ports[rindex]);
 
-            if (LADSPA_PORT_HAS_LABEL(port.Hints) && port.Label != nullptr)
+            if (LADSPA_PORT_HAS_LABEL(port->Hints) && port->Label != nullptr)
             {
-                std::strncpy(strBuf, port.Label, STR_MAX);
+                std::strncpy(strBuf, port->Label, STR_MAX);
                 return;
             }
         }
@@ -295,17 +293,17 @@ public:
 
     void getParameterUnit(const uint32_t parameterId, char* const strBuf) const override
     {
-        CARLA_ASSERT(parameterId < pData->param.count);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
 
         const int32_t rindex(pData->param.data[parameterId].rindex);
 
         if (fRdfDescriptor != nullptr && rindex < static_cast<int32_t>(fRdfDescriptor->PortCount))
         {
-            const LADSPA_RDF_Port& port(fRdfDescriptor->Ports[rindex]);
+            const LADSPA_RDF_Port* const port(&fRdfDescriptor->Ports[rindex]);
 
-            if (LADSPA_PORT_HAS_UNIT(port.Hints))
+            if (LADSPA_PORT_HAS_UNIT(port->Hints))
             {
-                switch (port.Unit)
+                switch (port->Unit)
                 {
                 case LADSPA_UNIT_DB:
                     std::strncpy(strBuf, "dB", STR_MAX);
@@ -334,23 +332,23 @@ public:
 
     void getParameterScalePointLabel(const uint32_t parameterId, const uint32_t scalePointId, char* const strBuf) const override
     {
-        CARLA_ASSERT(fRdfDescriptor != nullptr);
-        CARLA_ASSERT(parameterId < pData->param.count);
-        CARLA_ASSERT(scalePointId < getParameterScalePointCount(parameterId));
+        CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
+        CARLA_SAFE_ASSERT_RETURN(scalePointId < getParameterScalePointCount(parameterId),);
 
         const int32_t rindex(pData->param.data[parameterId].rindex);
 
-        if (fRdfDescriptor != nullptr && rindex < static_cast<int32_t>(fRdfDescriptor->PortCount))
+        if (rindex < static_cast<int32_t>(fRdfDescriptor->PortCount))
         {
-            const LADSPA_RDF_Port& port(fRdfDescriptor->Ports[rindex]);
+            const LADSPA_RDF_Port* const port(&fRdfDescriptor->Ports[rindex]);
 
-            if (scalePointId < port.ScalePointCount)
+            if (scalePointId < port->ScalePointCount)
             {
-                const LADSPA_RDF_ScalePoint& scalePoint(port.ScalePoints[scalePointId]);
+                const LADSPA_RDF_ScalePoint* const scalePoint(&port->ScalePoints[scalePointId]);
 
-                if (scalePoint.Label != nullptr)
+                if (scalePoint->Label != nullptr)
                 {
-                    std::strncpy(strBuf, scalePoint.Label, STR_MAX);
+                    std::strncpy(strBuf, scalePoint->Label, STR_MAX);
                     return;
                 }
             }
@@ -374,7 +372,8 @@ public:
 
     void setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) override
     {
-        CARLA_ASSERT(parameterId < pData->param.count);
+        CARLA_SAFE_ASSERT_RETURN(fParamBuffers != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
 
         const float fixedValue(pData->param.getFixedValue(parameterId, value));
         fParamBuffers[parameterId] = fixedValue;
@@ -393,16 +392,9 @@ public:
     void reload() override
     {
         carla_debug("LadspaPlugin::reload() - start");
-        CARLA_ASSERT(pData->engine != nullptr);
-        CARLA_ASSERT(fDescriptor != nullptr);
-        CARLA_ASSERT(fHandle != nullptr);
-
-        if (pData->engine == nullptr)
-            return;
-        if (fDescriptor == nullptr)
-            return;
-        if (fHandle == nullptr)
-            return;
+        CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
 
         const ProcessMode processMode(pData->engine->getProccessMode());
 
@@ -825,8 +817,8 @@ public:
 
     void activate() override
     {
-        CARLA_ASSERT(fDescriptor != nullptr);
-        CARLA_ASSERT(fHandle != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
 
         if (fDescriptor->activate != nullptr)
         {
@@ -839,8 +831,8 @@ public:
 
     void deactivate() override
     {
-        CARLA_ASSERT(fDescriptor != nullptr);
-        CARLA_ASSERT(fHandle != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
 
         if (fDescriptor->deactivate != nullptr)
         {
@@ -1074,25 +1066,16 @@ public:
 
     bool processSingle(float** const inBuffer, float** const outBuffer, const uint32_t frames, const uint32_t timeOffset)
     {
-        CARLA_ASSERT(frames > 0);
-
-        if (frames == 0)
-            return false;
+        CARLA_SAFE_ASSERT_RETURN(frames > 0, false);
 
         if (pData->audioIn.count > 0)
         {
-            CARLA_ASSERT(inBuffer != nullptr);
-            if (inBuffer == nullptr)
-                return false;
+            CARLA_SAFE_ASSERT_RETURN(inBuffer != nullptr, false);
         }
         if (pData->audioOut.count > 0)
         {
-            CARLA_ASSERT(outBuffer != nullptr);
-            if (outBuffer == nullptr)
-                return false;
+            CARLA_SAFE_ASSERT_RETURN(outBuffer != nullptr, false);
         }
-
-        uint32_t i, k;
 
         // --------------------------------------------------------------------------------------------------------
         // Try lock, silence otherwise
@@ -1103,9 +1086,9 @@ public:
         }
         else if (! pData->singleMutex.tryLock())
         {
-            for (i=0; i < pData->audioOut.count; ++i)
+            for (uint32_t i=0; i < pData->audioOut.count; ++i)
             {
-                for (k=0; k < frames; ++k)
+                for (uint32_t k=0; k < frames; ++k)
                     outBuffer[i][k+timeOffset] = 0.0f;
             }
 
@@ -1115,9 +1098,9 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Reset audio buffers
 
-        for (i=0; i < pData->audioIn.count; ++i)
+        for (uint32_t i=0; i < pData->audioIn.count; ++i)
             carla_copyFloat(fAudioInBuffers[i], inBuffer[i]+timeOffset, frames);
-        for (i=0; i < pData->audioOut.count; ++i)
+        for (uint32_t i=0; i < pData->audioOut.count; ++i)
             carla_zeroFloat(fAudioOutBuffers[i], frames);
 
         // --------------------------------------------------------------------------------------------------------
@@ -1139,12 +1122,12 @@ public:
             bool isPair;
             float bufValue, oldBufLeft[doBalance ? frames : 1];
 
-            for (i=0; i < pData->audioOut.count; ++i)
+            for (uint32_t i=0; i < pData->audioOut.count; ++i)
             {
                 // Dry/Wet
                 if (doDryWet)
                 {
-                    for (k=0; k < frames; ++k)
+                    for (uint32_t k=0; k < frames; ++k)
                     {
                         // TODO
                         //if (k < pData->latency && pData->latency < frames)
@@ -1171,7 +1154,7 @@ public:
                     float balRangeL = (pData->postProc.balanceLeft  + 1.0f)/2.0f;
                     float balRangeR = (pData->postProc.balanceRight + 1.0f)/2.0f;
 
-                    for (k=0; k < frames; ++k)
+                    for (uint32_t k=0; k < frames; ++k)
                     {
                         if (isPair)
                         {
@@ -1190,7 +1173,7 @@ public:
 
                 // Volume (and buffer copy)
                 {
-                    for (k=0; k < frames; ++k)
+                    for (uint32_t k=0; k < frames; ++k)
                         outBuffer[i][k+timeOffset] = fAudioOutBuffers[i][k] * pData->postProc.volume;
                 }
             }
@@ -1204,10 +1187,11 @@ public:
             }
 #endif
         } // End of Post-processing
-#else
-        for (i=0; i < pData->audioOut.count; ++i)
+
+#else // BUILD_BRIDGE
+        for (uint32_t i=0; i < pData->audioOut.count; ++i)
         {
-            for (k=0; k < frames; ++k)
+            for (uint32_t k=0; k < frames; ++k)
                 outBuffer[i][k+timeOffset] = fAudioOutBuffers[i][k];
         }
 #endif
@@ -1345,11 +1329,6 @@ public:
 
     bool init(const char* const filename, const char* const name, const char* const label, const LADSPA_RDF_Descriptor* const rdfDescriptor)
     {
-        CARLA_ASSERT(pData->engine != nullptr);
-        CARLA_ASSERT(pData->client == nullptr);
-        CARLA_ASSERT(filename != nullptr);
-        CARLA_ASSERT(label != nullptr);
-
         // ---------------------------------------------------------------
         // first checks
 
@@ -1455,11 +1434,7 @@ public:
         // load plugin settings
 
         {
-#ifdef __USE_GNU
             const bool isDssiVst = fFilename.contains("dssi-vst", true);
-#else
-            const bool isDssiVst = fFilename.contains("dssi-vst");
-#endif
 
             // set default options
             fOptions = 0x0;
@@ -1479,8 +1454,7 @@ public:
             pData->idStr += label;
             fOptions = pData->loadSettings(fOptions, getAvailableOptions());
 
-            // ignore settings, we need this anyway
-            if (isDssiVst)
+            if (isDssiVst) // ignore settings, we need this anyway
                 fOptions |= PLUGIN_OPTION_FIXED_BUFFERS;
         }
 
