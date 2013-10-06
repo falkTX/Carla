@@ -20,6 +20,7 @@
 #ifdef WANT_DSSI
 
 #include "CarlaDssiUtils.hpp"
+#include "CarlaLibUtils.hpp"
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -945,15 +946,13 @@ public:
 
     void process(float** const inBuffer, float** const outBuffer, const uint32_t frames) override
     {
-        uint32_t i, k;
-
         // --------------------------------------------------------------------------------------------------------
         // Check if active
 
         if (! pData->active)
         {
             // disable any output sound
-            for (i=0; i < pData->audioOut.count; ++i)
+            for (uint32_t i=0; i < pData->audioOut.count; ++i)
                 carla_zeroFloat(outBuffer[i], frames);
 
             return;
@@ -968,43 +967,42 @@ public:
         {
             if (fOptions & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
             {
-                for (unsigned char j=0, l=MAX_MIDI_CHANNELS; j < MAX_MIDI_CHANNELS; ++j)
-                {
-                    carla_zeroStruct<snd_seq_event_t>(fMidiEvents[j]);
-                    carla_zeroStruct<snd_seq_event_t>(fMidiEvents[j+l]);
-
-                    fMidiEvents[j].type = SND_SEQ_EVENT_CONTROLLER;
-                    fMidiEvents[j].data.control.channel = j;
-                    fMidiEvents[j].data.control.param   = MIDI_CONTROL_ALL_NOTES_OFF;
-
-                    fMidiEvents[j+l].type = SND_SEQ_EVENT_CONTROLLER;
-                    fMidiEvents[j+l].data.control.channel = j;
-                    fMidiEvents[j+l].data.control.param   = MIDI_CONTROL_ALL_SOUND_OFF;
-                }
-
                 midiEventCount = MAX_MIDI_CHANNELS*2;
+                carla_zeroStruct<snd_seq_event_t>(fMidiEvents, midiEventCount);
+
+                for (unsigned char i=0, k=MAX_MIDI_CHANNELS; i < MAX_MIDI_CHANNELS; ++i)
+                {
+                    fMidiEvents[i].type = SND_SEQ_EVENT_CONTROLLER;
+                    fMidiEvents[i].data.control.channel = i;
+                    fMidiEvents[i].data.control.param   = MIDI_CONTROL_ALL_NOTES_OFF;
+
+                    fMidiEvents[k+i].type = SND_SEQ_EVENT_CONTROLLER;
+                    fMidiEvents[k+i].data.control.channel = i;
+                    fMidiEvents[k+i].data.control.param   = MIDI_CONTROL_ALL_SOUND_OFF;
+                }
             }
             else if (pData->ctrlChannel >= 0 && pData->ctrlChannel < MAX_MIDI_CHANNELS)
             {
-                for (unsigned char j=0; j < MAX_MIDI_NOTE; ++j)
-                {
-                    carla_zeroStruct<snd_seq_event_t>(fMidiEvents[j]);
-
-                    fMidiEvents[j].type = SND_SEQ_EVENT_NOTEOFF;
-                    fMidiEvents[j].data.note.channel = pData->ctrlChannel;
-                    fMidiEvents[j].data.note.note    = j;
-                }
-
                 midiEventCount = MAX_MIDI_NOTE;
+                carla_zeroStruct<snd_seq_event_t>(fMidiEvents, midiEventCount);
+
+                for (unsigned char i=0; i < MAX_MIDI_NOTE; ++i)
+                {
+                    fMidiEvents[i].type = SND_SEQ_EVENT_NOTEOFF;
+                    fMidiEvents[i].data.note.channel = pData->ctrlChannel;
+                    fMidiEvents[i].data.note.note    = i;
+                }
             }
 
             if (pData->latency > 0)
             {
-                for (i=0; i < pData->audioIn.count; ++i)
+                for (uint32_t i=0; i < pData->audioIn.count; ++i)
                     carla_zeroFloat(pData->latencyBuffers[i], pData->latency);
             }
 
             pData->needsReset = false;
+
+            CARLA_PROCESS_CONTINUE_CHECK;
         }
 
         // --------------------------------------------------------------------------------------------------------
@@ -1021,14 +1019,15 @@ public:
                 {
                     const ExternalMidiNote& note(pData->extNotes.data.getFirst(true));
 
-                    CARLA_ASSERT(note.channel >= 0 && note.channel < MAX_MIDI_CHANNELS);
+                    CARLA_SAFE_ASSERT_CONTINUE(note.channel >= 0 && note.channel < MAX_MIDI_CHANNELS);
 
-                    fMidiEvents[midiEventCount].type               = (note.velo > 0) ? SND_SEQ_EVENT_NOTEON : SND_SEQ_EVENT_NOTEOFF;
-                    fMidiEvents[midiEventCount].data.note.channel  = note.channel;
-                    fMidiEvents[midiEventCount].data.note.note     = note.note;
-                    fMidiEvents[midiEventCount].data.note.velocity = note.velo;
+                    snd_seq_event_t& midiEvent(fMidiEvents[midiEventCount++]);
+                    carla_zeroStruct<snd_seq_event_t>(midiEvent);
 
-                    midiEventCount += 1;
+                    midiEvent.type               = (note.velo > 0) ? SND_SEQ_EVENT_NOTEON : SND_SEQ_EVENT_NOTEOFF;
+                    midiEvent.data.note.channel  = note.channel;
+                    midiEvent.data.note.note     = note.note;
+                    midiEvent.data.note.velocity = note.velo;
                 }
 
                 pData->extNotes.mutex.unlock();
@@ -1038,10 +1037,10 @@ public:
             // ----------------------------------------------------------------------------------------------------
             // Event Input (System)
 
-            bool allNotesOffSent = false;
-            bool sampleAccurate  = (fOptions & PLUGIN_OPTION_FIXED_BUFFERS) == 0;
+            bool allNotesOffSent  = false;
+            bool isSampleAccurate = (fOptions & PLUGIN_OPTION_FIXED_BUFFERS) == 0;
 
-            uint32_t time, nEvents = pData->event.portIn->getEventCount();
+            uint32_t time, numEvents = pData->event.portIn->getEventCount();
             uint32_t startTime  = 0;
             uint32_t timeOffset = 0;
             uint32_t nextBankId = 0;
@@ -1049,18 +1048,20 @@ public:
             if (pData->midiprog.current >= 0 && pData->midiprog.count > 0)
                 nextBankId = pData->midiprog.data[pData->midiprog.current].bank;
 
-            for (i=0; i < nEvents; ++i)
+            for (uint32_t i=0; i < numEvents; ++i)
             {
                 const EngineEvent& event(pData->event.portIn->getEvent(i));
 
                 time = event.time;
+
+                CARLA_ASSERT_INT2(time < frames, time, frames);
 
                 if (time >= frames)
                     continue;
 
                 CARLA_ASSERT_INT2(time >= timeOffset, time, timeOffset);
 
-                if (time > timeOffset && sampleAccurate)
+                if (time > timeOffset && isSampleAccurate)
                 {
                     if (processSingle(inBuffer, outBuffer, time - timeOffset, timeOffset, midiEventCount))
                     {
@@ -1077,7 +1078,6 @@ public:
                         startTime += timeOffset;
                 }
 
-                // Control change
                 switch (event.type)
                 {
                 case kEngineEventTypeNull:
@@ -1085,7 +1085,7 @@ public:
 
                 case kEngineEventTypeControl:
                 {
-                    const EngineControlEvent& ctrlEvent = event.ctrl;
+                    const EngineControlEvent& ctrlEvent(event.ctrl);
 
                     switch (ctrlEvent.type)
                     {
@@ -1100,21 +1100,21 @@ public:
                         {
                             float value;
 
-                            if (MIDI_IS_CONTROL_BREATH_CONTROLLER(ctrlEvent.param) && (fHints & PLUGIN_CAN_DRYWET) > 0)
+                            if (MIDI_IS_CONTROL_BREATH_CONTROLLER(ctrlEvent.param) && (fHints & PLUGIN_CAN_DRYWET) != 0)
                             {
                                 value = ctrlEvent.value;
                                 setDryWet(value, false, false);
                                 pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_DRYWET, 0, value);
                             }
 
-                            if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (fHints & PLUGIN_CAN_VOLUME) > 0)
+                            if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (fHints & PLUGIN_CAN_VOLUME) != 0)
                             {
                                 value = ctrlEvent.value*127.0f/100.0f;
                                 setVolume(value, false, false);
                                 pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_VOLUME, 0, value);
                             }
 
-                            if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (fHints & PLUGIN_CAN_BALANCE) > 0)
+                            if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (fHints & PLUGIN_CAN_BALANCE) != 0)
                             {
                                 float left, right;
                                 value = ctrlEvent.value/0.5f - 1.0f;
@@ -1144,7 +1144,7 @@ public:
 #endif
 
                         // Control plugin parameters
-                        for (k=0; k < pData->param.count; ++k)
+                        for (uint32_t k=0; k < pData->param.count; ++k)
                         {
                             if (pData->param.data[k].midiChannel != event.channel)
                                 continue;
@@ -1178,16 +1178,15 @@ public:
                             if (midiEventCount >= kPluginMaxMidiEvents)
                                 continue;
 
-                            carla_zeroStruct<snd_seq_event_t>(fMidiEvents[midiEventCount]);
+                            snd_seq_event_t& midiEvent(fMidiEvents[midiEventCount++]);
+                            carla_zeroStruct<snd_seq_event_t>(midiEvent);
 
-                            fMidiEvents[midiEventCount].time.tick = sampleAccurate ? startTime : time;
+                            midiEvent.time.tick = isSampleAccurate ? startTime : time;
 
-                            fMidiEvents[midiEventCount].type = SND_SEQ_EVENT_CONTROLLER;
-                            fMidiEvents[midiEventCount].data.control.channel = event.channel;
-                            fMidiEvents[midiEventCount].data.control.param   = ctrlEvent.param;
-                            fMidiEvents[midiEventCount].data.control.value   = ctrlEvent.value*127.0f;
-
-                            midiEventCount += 1;
+                            midiEvent.type = SND_SEQ_EVENT_CONTROLLER;
+                            midiEvent.data.control.channel = event.channel;
+                            midiEvent.data.control.param   = ctrlEvent.param;
+                            midiEvent.data.control.value   = ctrlEvent.value*127.0f;
                         }
 
                         break;
@@ -1203,7 +1202,7 @@ public:
                         {
                             const uint32_t nextProgramId = ctrlEvent.param;
 
-                            for (k=0; k < pData->midiprog.count; ++k)
+                            for (uint32_t k=0; k < pData->midiprog.count; ++k)
                             {
                                 if (pData->midiprog.data[k].bank == nextBankId && pData->midiprog.data[k].program == nextProgramId)
                                 {
@@ -1221,15 +1220,14 @@ public:
                             if (midiEventCount >= kPluginMaxMidiEvents)
                                 continue;
 
-                            carla_zeroStruct<snd_seq_event_t>(fMidiEvents[midiEventCount]);
+                            snd_seq_event_t& midiEvent(fMidiEvents[midiEventCount++]);
+                            carla_zeroStruct<snd_seq_event_t>(midiEvent);
 
-                            fMidiEvents[midiEventCount].time.tick = sampleAccurate ? startTime : time;
+                            midiEvent.time.tick = isSampleAccurate ? startTime : time;
 
-                            fMidiEvents[midiEventCount].type = SND_SEQ_EVENT_CONTROLLER;
-                            fMidiEvents[midiEventCount].data.control.channel = event.channel;
-                            fMidiEvents[midiEventCount].data.control.param   = MIDI_CONTROL_ALL_SOUND_OFF;
-
-                            midiEventCount += 1;
+                            midiEvent.type = SND_SEQ_EVENT_CONTROLLER;
+                            midiEvent.data.control.channel = event.channel;
+                            midiEvent.data.control.param   = MIDI_CONTROL_ALL_SOUND_OFF;
                         }
                         break;
 
@@ -1245,13 +1243,14 @@ public:
                             if (midiEventCount >= kPluginMaxMidiEvents)
                                 continue;
 
-                            carla_zeroStruct<snd_seq_event_t>(fMidiEvents[midiEventCount]);
+                            snd_seq_event_t& midiEvent(fMidiEvents[midiEventCount++]);
+                            carla_zeroStruct<snd_seq_event_t>(midiEvent);
 
-                            fMidiEvents[midiEventCount].time.tick = sampleAccurate ? startTime : time;
+                            midiEvent.time.tick = isSampleAccurate ? startTime : time;
 
-                            fMidiEvents[midiEventCount].type = SND_SEQ_EVENT_CONTROLLER;
-                            fMidiEvents[midiEventCount].data.control.channel = event.channel;
-                            fMidiEvents[midiEventCount].data.control.param   = MIDI_CONTROL_ALL_NOTES_OFF;
+                            midiEvent.type = SND_SEQ_EVENT_CONTROLLER;
+                            midiEvent.data.control.channel = event.channel;
+                            midiEvent.data.control.param   = MIDI_CONTROL_ALL_NOTES_OFF;
 
                             midiEventCount += 1;
                         }
@@ -1266,83 +1265,105 @@ public:
                     if (midiEventCount >= kPluginMaxMidiEvents)
                         continue;
 
-                    const EngineMidiEvent& midiEvent(event.midi);
+                    const EngineMidiEvent& engineEvent(event.midi);
 
-                    uint8_t status  = MIDI_GET_STATUS_FROM_DATA(midiEvent.data);
+                    uint8_t status  = MIDI_GET_STATUS_FROM_DATA(engineEvent.data);
                     uint8_t channel = event.channel;
 
                     // Fix bad note-off (per DSSI spec)
-                    if (MIDI_IS_STATUS_NOTE_ON(status) && midiEvent.data[2] == 0)
+                    if (MIDI_IS_STATUS_NOTE_ON(status) && engineEvent.data[2] == 0)
                         status -= 0x10;
 
-                    carla_zeroStruct<snd_seq_event_t>(fMidiEvents[midiEventCount]);
+                    snd_seq_event_t& midiEvent(fMidiEvents[midiEventCount]);
+                    carla_zeroStruct<snd_seq_event_t>(midiEvent);
 
-                    fMidiEvents[midiEventCount].time.tick = sampleAccurate ? startTime : time;
+                    midiEvent.time.tick = isSampleAccurate ? startTime : time;
 
-                    if (MIDI_IS_STATUS_NOTE_OFF(status))
+                    switch (status)
                     {
-                        const uint8_t note = midiEvent.data[1];
+                    case MIDI_STATUS_NOTE_OFF:
+                    {
+                        const uint8_t note = engineEvent.data[1];
 
-                        fMidiEvents[midiEventCount].type = SND_SEQ_EVENT_NOTEOFF;
-                        fMidiEvents[midiEventCount].data.note.channel = channel;
-                        fMidiEvents[midiEventCount].data.note.note    = note;
+                        midiEvent.type = SND_SEQ_EVENT_NOTEOFF;
+                        midiEvent.data.note.channel = channel;
+                        midiEvent.data.note.note    = note;
 
                         pData->postponeRtEvent(kPluginPostRtEventNoteOff, channel, note, 0.0f);
+                        break;
                     }
-                    else if (MIDI_IS_STATUS_NOTE_ON(status))
+                    case MIDI_STATUS_NOTE_ON:
                     {
-                        const uint8_t note = midiEvent.data[1];
-                        const uint8_t velo = midiEvent.data[2];
+                        const uint8_t note = engineEvent.data[1];
+                        const uint8_t velo = engineEvent.data[2];
 
-                        fMidiEvents[midiEventCount].type = SND_SEQ_EVENT_NOTEON;
-                        fMidiEvents[midiEventCount].data.note.channel  = channel;
-                        fMidiEvents[midiEventCount].data.note.note     = note;
-                        fMidiEvents[midiEventCount].data.note.velocity = velo;
+                        midiEvent.type = SND_SEQ_EVENT_NOTEON;
+                        midiEvent.data.note.channel  = channel;
+                        midiEvent.data.note.note     = note;
+                        midiEvent.data.note.velocity = velo;
 
                         pData->postponeRtEvent(kPluginPostRtEventNoteOn, channel, note, velo);
+                        break;
                     }
-                    else if (MIDI_IS_STATUS_POLYPHONIC_AFTERTOUCH(status) && (fOptions & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH) != 0)
+                    case MIDI_STATUS_POLYPHONIC_AFTERTOUCH:
                     {
-                        const uint8_t note     = midiEvent.data[1];
-                        const uint8_t pressure = midiEvent.data[2];
+                        if (fOptions & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH)
+                        {
+                            const uint8_t note     = engineEvent.data[1];
+                            const uint8_t pressure = engineEvent.data[2];
 
-                        fMidiEvents[midiEventCount].type = SND_SEQ_EVENT_KEYPRESS;
-                        fMidiEvents[midiEventCount].data.note.channel  = channel;
-                        fMidiEvents[midiEventCount].data.note.note     = note;
-                        fMidiEvents[midiEventCount].data.note.velocity = pressure;
+                            midiEvent.type = SND_SEQ_EVENT_KEYPRESS;
+                            midiEvent.data.note.channel  = channel;
+                            midiEvent.data.note.note     = note;
+                            midiEvent.data.note.velocity = pressure;
+                        }
+                        break;
                     }
-                    else if (MIDI_IS_STATUS_CONTROL_CHANGE(status) && (fOptions & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0)
+                    case MIDI_STATUS_CONTROL_CHANGE:
                     {
-                        const uint8_t control = midiEvent.data[1];
-                        const uint8_t value   = midiEvent.data[2];
+                        if (fOptions & PLUGIN_OPTION_SEND_CONTROL_CHANGES)
+                        {
+                            const uint8_t control = engineEvent.data[1];
+                            const uint8_t value   = engineEvent.data[2];
 
-                        fMidiEvents[midiEventCount].type = SND_SEQ_EVENT_CONTROLLER;
-                        fMidiEvents[midiEventCount].data.control.channel = channel;
-                        fMidiEvents[midiEventCount].data.control.param   = control;
-                        fMidiEvents[midiEventCount].data.control.value   = value;
+                            midiEvent.type = SND_SEQ_EVENT_CONTROLLER;
+                            midiEvent.data.control.channel = channel;
+                            midiEvent.data.control.param   = control;
+                            midiEvent.data.control.value   = value;
+                        }
+                        break;
                     }
-                    else if (MIDI_IS_STATUS_CHANNEL_PRESSURE(status) && (fOptions & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE) != 0)
+                    case MIDI_STATUS_CHANNEL_PRESSURE:
                     {
-                        const uint8_t pressure = midiEvent.data[1];
+                        if (fOptions & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE)
+                        {
+                            const uint8_t pressure = engineEvent.data[1];
 
-                        fMidiEvents[midiEventCount].type = SND_SEQ_EVENT_CHANPRESS;
-                        fMidiEvents[midiEventCount].data.control.channel = channel;
-                        fMidiEvents[midiEventCount].data.control.value   = pressure;
+                            midiEvent.type = SND_SEQ_EVENT_CHANPRESS;
+                            midiEvent.data.control.channel = channel;
+                            midiEvent.data.control.value   = pressure;
+                        }
+                        break;
                     }
-                    else if (MIDI_IS_STATUS_PITCH_WHEEL_CONTROL(status) && (fOptions & PLUGIN_OPTION_SEND_PITCHBEND) != 0)
+                    case MIDI_STATUS_PITCH_WHEEL_CONTROL:
                     {
-                        const uint8_t lsb = midiEvent.data[1];
-                        const uint8_t msb = midiEvent.data[2];
+                        if (fOptions & PLUGIN_OPTION_SEND_PITCHBEND)
+                        {
+                            const uint8_t lsb = engineEvent.data[1];
+                            const uint8_t msb = engineEvent.data[2];
 
-                        fMidiEvents[midiEventCount].type = SND_SEQ_EVENT_PITCHBEND;
-                        fMidiEvents[midiEventCount].data.control.channel = channel;
-                        fMidiEvents[midiEventCount].data.control.value   = ((msb << 7) | lsb) - 8192;
+                            midiEvent.type = SND_SEQ_EVENT_PITCHBEND;
+                            midiEvent.data.control.channel = channel;
+                            midiEvent.data.control.value   = ((msb << 7) | lsb) - 8192;
+                        }
+                        break;
                     }
-                    else
+                    default:
                         continue;
+                        break;
+                    }
 
                     midiEventCount += 1;
-
                     break;
                 }
                 }
@@ -1375,18 +1396,16 @@ public:
             uint16_t param;
             float    value;
 
-            for (k=0; k < pData->param.count; ++k)
+            for (uint32_t k=0; k < pData->param.count; ++k)
             {
                 if (pData->param.data[k].type != PARAMETER_OUTPUT)
                     continue;
-
-                pData->param.ranges[k].fixValue(fParamBuffers[k]);
 
                 if (pData->param.data[k].midiCC > 0)
                 {
                     channel = pData->param.data[k].midiChannel;
                     param   = static_cast<uint16_t>(pData->param.data[k].midiCC);
-                    value   = pData->param.ranges[k].getNormalizedValue(fParamBuffers[k]);
+                    value   = pData->param.ranges[k].getNormalizedFixedValue(fParamBuffers[k]);
                     pData->event.portOut->writeControlEvent(0, channel, kEngineControlEventTypeParameter, param, value);
                 }
             }
@@ -1750,13 +1769,13 @@ public:
             return false;
         }
 
-        if (filename == nullptr)
+        if (filename == nullptr || filename[0] == '\0')
         {
             pData->engine->setLastError("null filename");
             return false;
         }
 
-        if (label == nullptr)
+        if (label == nullptr || label[0] == '\0')
         {
             pData->engine->setLastError("null label");
             return false;
@@ -1767,7 +1786,7 @@ public:
 
         if (! pData->libOpen(filename))
         {
-            pData->engine->setLastError(pData->libError(filename));
+            pData->engine->setLastError(lib_error(filename));
             return false;
         }
 
@@ -1822,6 +1841,9 @@ public:
             fName = pData->engine->getUniquePluginName(fDescriptor->Label);
 
         fFilename = filename;
+
+        CARLA_ASSERT(fName.isNotEmpty());
+        CARLA_ASSERT(fFilename.isNotEmpty());
 
         // ---------------------------------------------------------------
         // register client

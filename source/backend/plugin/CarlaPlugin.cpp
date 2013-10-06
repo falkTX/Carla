@@ -100,11 +100,6 @@ void* CarlaPluginProtectedData::uiLibSymbol(const char* const symbol)
     return lib_symbol(uiLib, symbol);
 }
 
-const char* CarlaPluginProtectedData::libError(const char* const filename)
-{
-    return lib_error(filename);
-}
-
 // -------------------------------------------------------------------
 // Settings functions, defined in CarlaPluginInternal.hpp
 

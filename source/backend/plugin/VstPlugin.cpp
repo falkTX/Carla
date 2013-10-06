@@ -20,10 +20,7 @@
 #ifdef WANT_VST
 
 #include "CarlaVstUtils.hpp"
-
-//#ifdef Q_WS_X11
-//# include <QtGui/QX11Info>
-//#endif
+#include "CarlaLibUtils.hpp"
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -2166,7 +2163,7 @@ public:
 
         if (! pData->libOpen(filename))
         {
-            pData->engine->setLastError(pData->libError(filename));
+            pData->engine->setLastError(lib_error(filename));
             return false;
         }
 

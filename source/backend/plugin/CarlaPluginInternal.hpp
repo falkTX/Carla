@@ -799,8 +799,6 @@ struct CarlaPluginProtectedData {
     bool  uiLibClose();
     void* uiLibSymbol(const char* const symbol);
 
-    const char* libError(const char* const filename);
-
     // -------------------------------------------------------------------
     // Settings functions, see CarlaPlugin.cpp
 

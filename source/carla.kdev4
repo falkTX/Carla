@@ -1,5 +1,5 @@
 [Project]
-Manager=KDevCustomMakeManager
+Manager=KDevGenericManager
 Name=Carla
 
 [Filters]

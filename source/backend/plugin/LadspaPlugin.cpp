@@ -20,6 +20,7 @@
 #ifdef WANT_LADSPA
 
 #include "CarlaLadspaUtils.hpp"
+#include "CarlaLibUtils.hpp"
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -845,15 +846,13 @@ public:
 
     void process(float** const inBuffer, float** const outBuffer, const uint32_t frames) override
     {
-        uint32_t i, k;
-
         // --------------------------------------------------------------------------------------------------------
         // Check if active
 
         if (! pData->active)
         {
             // disable any output sound
-            for (i=0; i < pData->audioOut.count; ++i)
+            for (uint32_t i=0; i < pData->audioOut.count; ++i)
                 carla_zeroFloat(outBuffer[i], frames);
 
             return;
@@ -866,7 +865,7 @@ public:
         {
             if (pData->latency > 0)
             {
-                for (i=0; i < pData->audioIn.count; ++i)
+                for (uint32_t i=0; i < pData->audioIn.count; ++i)
                     carla_zeroFloat(pData->latencyBuffers[i], pData->latency);
             }
 
@@ -881,12 +880,12 @@ public:
             // ----------------------------------------------------------------------------------------------------
             // Event Input (System)
 
-            bool sampleAccurate  = (fOptions & PLUGIN_OPTION_FIXED_BUFFERS) == 0;
+            bool isSampleAccurate  = (fOptions & PLUGIN_OPTION_FIXED_BUFFERS) == 0;
 
-            uint32_t time, nEvents = pData->event.portIn->getEventCount();
+            uint32_t time, numEvents = pData->event.portIn->getEventCount();
             uint32_t timeOffset = 0;
 
-            for (i=0; i < nEvents; ++i)
+            for (uint32_t i=0; i < numEvents; ++i)
             {
                 const EngineEvent& event(pData->event.portIn->getEvent(i));
 
@@ -897,7 +896,7 @@ public:
 
                 CARLA_ASSERT_INT2(time >= timeOffset, time, timeOffset);
 
-                if (time > timeOffset && sampleAccurate)
+                if (time > timeOffset && isSampleAccurate)
                 {
                     if (processSingle(inBuffer, outBuffer, time - timeOffset, timeOffset))
                         timeOffset = time;
@@ -970,7 +969,7 @@ public:
 #endif
 
                         // Control plugin parameters
-                        for (k=0; k < pData->param.count; ++k)
+                        for (uint32_t k=0; k < pData->param.count; ++k)
                         {
                             if (pData->param.data[k].midiChannel != event.channel)
                                 continue;
@@ -1045,7 +1044,7 @@ public:
             uint16_t param;
             float    value;
 
-            for (k=0; k < pData->param.count; ++k)
+            for (uint32_t k=0; k < pData->param.count; ++k)
             {
                 if (pData->param.data[k].type != PARAMETER_OUTPUT)
                     continue;
@@ -1343,13 +1342,13 @@ public:
             return false;
         }
 
-        if (filename == nullptr)
+        if (filename == nullptr || filename[0] == '\0')
         {
             pData->engine->setLastError("null filename");
             return false;
         }
 
-        if (label == nullptr)
+        if (label == nullptr || label[0] == '\0')
         {
             pData->engine->setLastError("null label");
             return false;
@@ -1360,7 +1359,7 @@ public:
 
         if (! pData->libOpen(filename))
         {
-            pData->engine->setLastError(pData->libError(filename));
+            pData->engine->setLastError(lib_error(filename));
             return false;
         }
 
@@ -1408,6 +1407,9 @@ public:
 
         fFilename = filename;
 
+        CARLA_ASSERT(fName.isNotEmpty());
+        CARLA_ASSERT(fFilename.isNotEmpty());
+
         // ---------------------------------------------------------------
         // register client
 
@@ -1454,7 +1456,8 @@ public:
             pData->idStr += label;
             fOptions = pData->loadSettings(fOptions, getAvailableOptions());
 
-            if (isDssiVst) // ignore settings, we need this anyway
+            // ignore settings, we need this anyway
+            if (isDssiVst)
                 fOptions |= PLUGIN_OPTION_FIXED_BUFFERS;
         }
 

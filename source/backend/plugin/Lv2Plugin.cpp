@@ -20,6 +20,7 @@
 #ifdef WANT_LV2
 
 #include "CarlaLv2Utils.hpp"
+#include "CarlaLibUtils.hpp"
 #include "Lv2AtomQueue.hpp"
 
 #include "../engine/CarlaEngineOsc.hpp"
@@ -4165,7 +4166,7 @@ public:
 
         if (! pData->libOpen(fRdfDescriptor->Binary))
         {
-            pData->engine->setLastError(pData->libError(fRdfDescriptor->Binary));
+            pData->engine->setLastError(lib_error(fRdfDescriptor->Binary));
             return false;
         }
 
@@ -4642,7 +4643,7 @@ public:
 
             if (! pData->uiLibOpen(fUi.rdfDescriptor->Binary))
             {
-                carla_stderr2("Could not load UI library, error was:\n%s", pData->libError(fUi.rdfDescriptor->Binary));
+                carla_stderr2("Could not load UI library, error was:\n%s", lib_error(fUi.rdfDescriptor->Binary));
                 fUi.rdfDescriptor = nullptr;
                 return true;
             }

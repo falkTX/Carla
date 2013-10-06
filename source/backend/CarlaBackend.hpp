@@ -760,6 +760,23 @@ struct ParameterRanges {
         return normValue;
     }
 
+    float getNormalizedFixedValue(const float& value) const noexcept
+    {
+        if (value <= min)
+            return 0.0f;
+        if (value >= max)
+            return 1.0f;
+
+        const float normValue((value - min) / (max - min));
+
+        if (normValue <= 0.0f)
+            return 0.0f;
+        if (normValue >= 1.0f)
+            return 1.0f;
+
+        return normValue;
+    }
+
     float getUnnormalizedValue(const float& value) const noexcept
     {
         return value * (max - min) + min;
