@@ -2272,7 +2272,7 @@ public:
 #if defined(Q_WS_X11)
             CarlaString uiBridgeBinary(engineOptions.bridge_vstX11);
 #elif defined(CARLA_OS_MAC)
-            CarlaString uiBridgeBinary(engineOptions.bridge_vstCocoa);
+            CarlaString uiBridgeBinary(engineOptions.bridge_vstMac);
 #elif defined(CARLA_OS_WIN)
             CarlaString uiBridgeBinary(engineOptions.bridge_vstHWND);
 #else

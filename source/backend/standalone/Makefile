@@ -17,6 +17,16 @@ LINK_FLAGS += $(shell pkg-config --libs liblo)
 LINK_FLAGS += -lpthread
 
 # --------------------------------------------------------------
+# Juce
+
+LINK_FLAGS += $(JUCE_AUDIO_BASICS_LIBS)
+LINK_FLAGS += $(JUCE_CORE_LIBS)
+LINK_FLAGS += $(JUCE_DATA_STRUCTURES_LIBS)
+LINK_FLAGS += $(JUCE_EVENTS_LIBS)
+LINK_FLAGS += $(JUCE_GRAPHICS_LIBS)
+LINK_FLAGS += $(JUCE_GUI_BASICS_LIBS)
+
+# --------------------------------------------------------------
 # Engine
 
 ifeq ($(HAVE_ALSA),true)
@@ -36,23 +46,13 @@ endif
 
 ifeq ($(HAVE_LINUXSAMPLER),true)
 LINK_FLAGS += $(shell pkg-config --libs linuxsampler)
+ifeq ($(WIN32),true)
+LINK_FLAGS += lrpcrt4
+endif
 endif
 
 # --------------------------------------------------------------
 # Native
-
-ifeq ($(WIN32),true)
-W32_LIBS  = -lcomdlg32 -ldsound -lgdi32 -limm32 -lole32 -luuid -lwinmm -lwinspool -lws2_32
-ifeq ($(HAVE_LINUXSAMPLER),true)
-W32_LIBS += -lrpcrt4
-endif
-else
-ifeq ($(MACOS),true)
-DGL_LIBS = -framework Cocoa
-else
-DGL_LIBS = -lX11
-endif
-endif
 
 ifeq ($(HAVE_AF_DEPS),true)
 LINK_FLAGS += $(shell pkg-config --libs sndfile)
@@ -66,7 +66,7 @@ LINK_FLAGS += $(shell pkg-config --libs smf)
 endif
 
 ifeq ($(HAVE_OPENGL),true)
-LINK_FLAGS += $(shell pkg-config --libs gl) $(DGL_LIBS)
+LINK_FLAGS += $(shell pkg-config --libs gl)
 endif
 
 ifeq ($(HAVE_ZYN_DEPS),true)
@@ -74,13 +74,6 @@ LINK_FLAGS += $(shell pkg-config --libs fftw3 mxml zlib)
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
 LINK_FLAGS += $(shell pkg-config --libs ntk_images ntk)
 endif
-endif
-
-EXTRA_LIBS  = -ldl -lfreetype -lXext
-LINK_FLAGS += $(EXTRA_LIBS)
-
-ifneq ($(MACOS),true)
-EXTRA_LIBS += -lrt
 endif
 
 # --------------------------------------------------------------

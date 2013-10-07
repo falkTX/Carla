@@ -24,13 +24,13 @@ ifeq ($(HAVE_PULSEAUDIO),true)
 BUILD_CXX_FLAGS += $(shell pkg-config --cflags libpulse-simple) -D__LINUX_PULSE__
 endif
 
-ifeq ($(MACOS),true)
-BUILD_CXX_FLAGS += -D__MACOSX_CORE__
-endif
+# ifeq ($(MACOS),true)
+# BUILD_CXX_FLAGS += -D__MACOSX_CORE__
+# endif
 
-ifeq ($(WIN32),true)
-BUILD_CXX_FLAGS += -D__WINDOWS_ASIO__ -D__WINDOWS_DS__ -D__WINDOWS_MM__
-endif
+# ifeq ($(WIN32),true)
+# BUILD_CXX_FLAGS += -D__WINDOWS_ASIO__ -D__WINDOWS_DS__ -D__WINDOWS_MM__
+# endif
 
 # --------------------------------------------------------------
 
@@ -50,14 +50,13 @@ OBJS += \
 	rtaudio-4.0.12/RtAudio.cpp.o \
 	rtmidi-2.0.1/RtMidi.cpp.o
 
-ifeq ($(WIN32),true)
-OBJS += \
-	rtaudio-4.0.12/include/asio.cpp.o \
-	rtaudio-4.0.12/include/asiodrivers.cpp.o \
-	rtaudio-4.0.12/include/asiolist.cpp.o \
-	rtaudio-4.0.12/include/iasiothiscallresolver.cpp.o
-endif
-
+# ifeq ($(WIN32),true)
+# OBJS += \
+# 	rtaudio-4.0.12/include/asio.cpp.o \
+# 	rtaudio-4.0.12/include/asiodrivers.cpp.o \
+# 	rtaudio-4.0.12/include/asiolist.cpp.o \
+# 	rtaudio-4.0.12/include/iasiothiscallresolver.cpp.o
+# endif
 
 TARGET  = ../libcarla_engine.a
 TARGETp = ../libcarla_engine_plugin.a

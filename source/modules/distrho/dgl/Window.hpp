@@ -55,9 +55,11 @@ public:
     bool isResizable() const noexcept;
     void setResizable(bool yesNo);
 
+#ifndef DGL_OS_MAC
     int getWidth() const noexcept;
     int getHeight() const noexcept;
     Size<int> getSize() const noexcept;
+#endif
     void setSize(unsigned int width, unsigned int height);
 
     void setTitle(const char* title);

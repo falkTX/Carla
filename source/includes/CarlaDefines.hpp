@@ -60,7 +60,7 @@
 #ifndef CARLA_PROPER_CPP11_SUPPORT
 # define override
 # define final
-# define noexcept
+# define noexcept throw()
 # define nullptr (0)
 #endif
 

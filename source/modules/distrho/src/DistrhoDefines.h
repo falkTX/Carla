@@ -96,7 +96,7 @@
 
 #ifndef PROPER_CPP11_SUPPORT
 # define override
-# define noexcept
+# define noexcept throw()
 # define nullptr (0)
 #endif
 

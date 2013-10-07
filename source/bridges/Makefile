@@ -56,15 +56,16 @@ WIN_LINK_FLAGS  = $(LINK_PLUGIN_FLAGS) $(EXTRA_LIBS) -mwindows -lwinspool -lole3
 # --------------------------------------------------------------
 # Plugin bridges (Native)
 
-ifeq ($(MACOS),true)
-DGL_LIBS = -framework Cocoa
-else
-DGL_LIBS = -lX11
-endif
-
 NATIVE_BUILD_FLAGS  = $(POSIX_BUILD_FLAGS)
 NATIVE_BUILD_FLAGS += -DWANT_NATIVE
 NATIVE_LINK_FLAGS   = $(POSIX_LINK_FLAGS)
+
+NATIVE_LINK_FLAGS += $(JUCE_AUDIO_BASICS_LIBS)
+NATIVE_LINK_FLAGS += $(JUCE_CORE_LIBS)
+NATIVE_LINK_FLAGS += $(JUCE_DATA_STRUCTURES_LIBS)
+NATIVE_LINK_FLAGS += $(JUCE_EVENTS_LIBS)
+NATIVE_LINK_FLAGS += $(JUCE_GRAPHICS_LIBS)
+NATIVE_LINK_FLAGS += $(JUCE_GUI_BASICS_LIBS)
 
 ifeq ($(HAVE_FLUIDSYNTH),true)
 NATIVE_BUILD_FLAGS += -DWANT_FLUIDSYNTH
@@ -94,14 +95,14 @@ endif
 
 ifeq ($(HAVE_OPENGL),true)
 NATIVE_BUILD_FLAGS += -DWANT_OPENGL
-NATIVE_LINK_FLAGS  += $(shell pkg-config --libs gl) $(DGL_LIBS)
+NATIVE_LINK_FLAGS  += $(shell pkg-config --libs gl)
 endif
 
 ifeq ($(HAVE_ZYN_DEPS),true)
 NATIVE_BUILD_FLAGS += -DWANT_ZYNADDSUBFX
 NATIVE_LINK_FLAGS  += $(shell pkg-config --libs fftw3 mxml zlib)
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
-NATIVE_LINK_FLAGS  += $(shell pkg-config --libs ntk ntk_images)
+NATIVE_LINK_FLAGS  += $(shell pkg-config --libs ntk_images ntk)
 endif
 endif
 
@@ -385,16 +386,22 @@ OBJS_NATIVE += \
 # libs
 OBJS_NATIVE += \
 	../modules/carla_native.a \
-	../modules/dgl.a \
 	../modules/juce_audio_basics.a \
 	../modules/juce_core.a \
 	../modules/juce_data_structures.a \
 	../modules/juce_events.a \
+	../modules/juce_graphics.a \
+	../modules/juce_gui_basics.a \
 	../modules/rtmempool.a
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
 OBJS_NATIVE += \
 	../modules/lilv.a
+endif
+
+ifeq ($(HAVE_OPENGL),true)
+OBJS_NATIVE += \
+	../modules/dgl.a
 endif
 
 carla-bridge-native: $(FILES) $(OBJS_NATIVE)

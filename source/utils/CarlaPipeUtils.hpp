@@ -30,6 +30,7 @@
 #include <clocale>
 
 #include <fcntl.h>
+#include <signal.h>
 #include <sys/wait.h>
 
 // -----------------------------------------------------------------------

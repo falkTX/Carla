@@ -21,8 +21,10 @@
 #include "CarlaDefines.hpp"
 
 #ifdef CARLA_PROPER_CPP11_SUPPORT
+# define SIZE_INT : int
 # include <cstdint>
 #else
+# define SIZE_INT
 # include <stdint.h>
 #endif
 
@@ -131,7 +133,7 @@ const unsigned int PATCHBAY_PORT_IS_PARAMETER = 0x200; //!< Patchbay port is of 
 /*!
  * The binary type of a plugin.
  */
-enum BinaryType : int {
+enum BinaryType SIZE_INT {
     BINARY_NONE    = 0, //!< Null binary type.
     BINARY_POSIX32 = 1, //!< POSIX 32bit.
     BINARY_POSIX64 = 2, //!< POSIX 64bit.
@@ -144,7 +146,7 @@ enum BinaryType : int {
  * All the available plugin types, provided by subclasses of CarlaPlugin.\n
  * Some plugin classes might provide more than 1 plugin type.
  */
-enum PluginType : int {
+enum PluginType SIZE_INT {
     PLUGIN_NONE     =  0, //!< Null plugin type.
     PLUGIN_INTERNAL =  1, //!< Internal plugin.
     PLUGIN_LADSPA   =  2, //!< LADSPA plugin.
@@ -162,7 +164,7 @@ enum PluginType : int {
  * Plugin category, describing the funtionality of a plugin.\n
  * When a plugin fails to tell its own category, one is atributted to it based on its name.
  */
-enum PluginCategory : int {
+enum PluginCategory SIZE_INT {
     PLUGIN_CATEGORY_NONE      = 0, //!< Null plugin category.
     PLUGIN_CATEGORY_SYNTH     = 1, //!< A synthesizer or generator.
     PLUGIN_CATEGORY_DELAY     = 2, //!< A delay or reverberator.
@@ -177,7 +179,7 @@ enum PluginCategory : int {
 /*!
  * Plugin parameter type.
  */
-enum ParameterType : int {
+enum ParameterType SIZE_INT {
     PARAMETER_UNKNOWN       = 0, //!< Null parameter type.
     PARAMETER_INPUT         = 1, //!< Input parameter.
     PARAMETER_OUTPUT        = 2, //!< Ouput parameter.
@@ -193,7 +195,7 @@ enum ParameterType : int {
  * Internal parameter indexes.\n
  * These are special parameters used internally, plugins do not know about their existence.
  */
-enum InternalParametersIndex : int {
+enum InternalParametersIndex SIZE_INT {
     PARAMETER_NULL          = -1, //!< Null parameter.
     PARAMETER_ACTIVE        = -2, //!< Active parameter, can only be 'true' or 'false'; default is 'false'.
     PARAMETER_DRYWET        = -3, //!< Dry/Wet parameter, range 0.0...1.0; default is 1.0.
@@ -208,7 +210,7 @@ enum InternalParametersIndex : int {
 /*!
  * The icon of a patchbay client/group.
  */
-enum PatchbayIconType : int {
+enum PatchbayIconType SIZE_INT {
     PATCHBAY_ICON_APPLICATION = 0, //!< Generic application icon.
     PATCHBAY_ICON_HARDWARE    = 1, //!< Hardware icon.
     PATCHBAY_ICON_CARLA       = 2, //!< Carla icon.
@@ -221,7 +223,7 @@ enum PatchbayIconType : int {
  * Options used in the CarlaEngine::setOption() calls.\n
  * All options except paths must be set before initiliazing or after closing the engine.
  */
-enum OptionsType : int {
+enum OptionsType SIZE_INT {
     /*!
      * Set the current process name.\n
      * This is a convenience option, as Python lacks this functionality.
@@ -414,7 +416,7 @@ enum OptionsType : int {
  * Opcodes sent from the engine callback to the GUI, as defined by CallbackFunc.
  * \see CarlaEngine::setCallback()
  */
-enum CallbackType : int {
+enum CallbackType SIZE_INT {
     /*!
      * Debug.\n
      * This opcode is undefined and used only for testing purposes.
@@ -660,7 +662,7 @@ enum CallbackType : int {
  * Engine process mode.
  * \see OPTION_PROCESS_MODE
  */
-enum ProcessMode : int {
+enum ProcessMode SIZE_INT {
     PROCESS_MODE_SINGLE_CLIENT    = 0, //!< Single client mode (dynamic input/outputs as needed by plugins).
     PROCESS_MODE_MULTIPLE_CLIENTS = 1, //!< Multiple client mode (1 master client + 1 client per plugin).
     PROCESS_MODE_CONTINUOUS_RACK  = 2, //!< Single client, 'rack' mode. Processes plugins in order of Id, with forced stereo.
@@ -671,7 +673,7 @@ enum ProcessMode : int {
 /*!
  * All the available transport modes
  */
-enum TransportMode : int {
+enum TransportMode SIZE_INT {
     TRANSPORT_MODE_INTERNAL = 0, //!< Internal transport mode.
     TRANSPORT_MODE_JACK     = 1, //!< Transport from JACK, only available if driver name is "JACK".
     TRANSPORT_MODE_PLUGIN   = 2, //!< Transport from host, used when Carla is a plugin.
@@ -824,5 +826,7 @@ class CarlaEngine;
 class CarlaPlugin;
 
 CARLA_BACKEND_END_NAMESPACE
+
+#undef SIZE_INT
 
 #endif // CARLA_BACKEND_HPP_INCLUDED

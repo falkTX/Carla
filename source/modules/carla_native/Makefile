@@ -217,6 +217,9 @@ midi-sequencer.cpp.o: midi-sequencer.cpp midi-base.hpp $(CXXDEPS)
 nekofilter.c.o: nekofilter.c nekofilter/*.c nekofilter/*.h $(CDEPS)
 	$(CC) $< $(BUILD_C_FLAGS) -c -o $@
 
+vex-%.cpp.o: vex-%.cpp
+	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+
 zynaddsubfx-ui.cpp.o: zynaddsubfx-ui.cpp $(ZYN_UI_FILES_H) $(ZYN_UI_FILES_CPP)
 	$(CXX) $< $(ZYN_CXX_FLAGS) -c -o $@
 
@@ -233,9 +236,6 @@ zynaddsubfx/UI/%.h: zynaddsubfx/UI/%.fl
 
 %.c.o: %.c
 	$(CC) $< $(BUILD_C_FLAGS) -c -o $@
-
-# %.cpp.o: %.cpp
-# 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 moc_%.cpp: %.hpp
 	$(MOC) $< -DMOC_PARSING -o $@

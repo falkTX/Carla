@@ -245,8 +245,10 @@ public:
 
         fVisible = yesNo;
 
+#ifndef DGL_OS_MAC
         if (yesNo && fFirstInit)
             setSize(fView->width, fView->height, true);
+#endif
 
 #if DGL_OS_WINDOWS
         if (yesNo)
@@ -299,11 +301,14 @@ public:
 
         fResizable = yesNo;
 
+#ifndef DGL_OS_MAC
         setSize(fView->width, fView->height, true);
+#endif
     }
 
     // -------------------------------------------------------------------
 
+#ifndef DGL_OS_MAC
     int getWidth() const noexcept
     {
         return fView->width;
@@ -318,6 +323,7 @@ public:
     {
         return Size<int>(fView->width, fView->height);
     }
+#endif
 
     void setSize(unsigned int width, unsigned int height, const bool forced = false)
     {
@@ -326,11 +332,13 @@ public:
         if (height == 0)
             height = 1;
 
+#ifndef DGL_OS_MAC
         fView->width  = width;
         fView->height = height;
 
         if (fView->width == (int)width && fView->height == (int)height && ! forced)
            return;
+#endif
 
 #if DGL_OS_WINDOWS
         int winFlags = WS_POPUPWINDOW | WS_CAPTION;
@@ -735,6 +743,7 @@ void Window::setResizable(bool yesNo)
     pData->setResizable(yesNo);
 }
 
+#ifndef DGL_OS_MAC
 int Window::getWidth() const noexcept
 {
     return pData->getWidth();
@@ -749,6 +758,7 @@ Size<int> Window::getSize() const noexcept
 {
     return pData->getSize();
 }
+#endif
 
 void Window::setSize(unsigned int width, unsigned int height)
 {

@@ -41,6 +41,21 @@ START_NAMESPACE_DISTRHO
 // -----------------------------------------------------------------------
 // Carla UI
 
+#ifdef DISTRHO_UI_OPENGL
+# if ! DISTRHO_PLUGIN_WANT_STATE
+static const setStateFunc  setStateCallback = nullptr;
+# endif
+# if ! DISTRHO_PLUGIN_IS_SYNTH
+static const sendNoteFunc  sendNoteCallback = nullptr;
+# endif
+#else
+static const editParamFunc editParameterCallback = nullptr;
+static const setParamFunc  setParameterCallback  = nullptr;
+static const setStateFunc  setStateCallback      = nullptr;
+static const sendNoteFunc  sendNoteCallback      = nullptr;
+static const uiResizeFunc  uiResizeCallback      = nullptr;
+#endif
+
 #ifdef DISTRHO_UI_EXTERNAL
 class UICarla : public CarlaPipeServer
 #else
@@ -271,8 +286,6 @@ private:
     {
         handlePtr->handleSetState(key, value);
     }
- #else
-    static constexpr setStateFunc setStateCallback = nullptr;
  #endif
 
  #if DISTRHO_PLUGIN_IS_SYNTH
@@ -280,8 +293,6 @@ private:
     {
         handlePtr->handleSendNote(onOff, channel, note, velocity);
     }
- #else
-    static constexpr sendNoteFunc sendNoteCallback = nullptr;
  #endif
 
     static void uiResizeCallback(void* ptr, unsigned int width, unsigned int height)
@@ -290,12 +301,6 @@ private:
     }
 
     #undef handlePtr
-#else
-    static constexpr editParamFunc editParameterCallback = nullptr;
-    static constexpr setParamFunc  setParameterCallback  = nullptr;
-    static constexpr setStateFunc  setStateCallback      = nullptr;
-    static constexpr sendNoteFunc  sendNoteCallback      = nullptr;
-    static constexpr uiResizeFunc  uiResizeCallback      = nullptr;
 #endif
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(UICarla)
