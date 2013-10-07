@@ -22,11 +22,11 @@
 try:
     from PyQt5.QtCore import pyqtSlot, QByteArray, QSettings
     from PyQt5.QtGui import QColor, QCursor, QFontMetrics, QPainter, QPainterPath
-    from PyQt5.QtWidgets import QDialog, QFrame, QInputDialog, QLineEdit, QMenu, QVBoxLayout, QWidget
+    from PyQt5.QtWidgets import QDialog, QDialogButtonBox, QFrame, QInputDialog, QLineEdit, QMenu, QVBoxLayout, QWidget
 except:
     from PyQt4.QtCore import pyqtSlot, QByteArray, QSettings
     from PyQt4.QtGui import QColor, QCursor, QFontMetrics, QPainter, QPainterPath
-    from PyQt4.QtGui import QDialog, QFrame, QInputDialog, QLineEdit, QMenu, QVBoxLayout, QWidget
+    from PyQt4.QtGui import QDialog, QDialogButtonBox, QFrame, QInputDialog, QLineEdit, QMenu, QVBoxLayout, QWidget
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -34,7 +34,7 @@ except:
 import ui_carla_settings
 import ui_carla_settings_driver
 
-from carla_shared import *
+from carla_style import *
 from patchcanvas_theme import *
 
 # ------------------------------------------------------------------------------------------------------------
@@ -227,21 +227,21 @@ class CarlaSettingsW(QDialog):
         # -------------------------------------------------------------
         # Set-up connections
 
-        #self.connect(self, SIGNAL("accepted()"), SLOT("slot_saveSettings()"))
-        #self.connect(self.ui.buttonBox.button(QDialogButtonBox.Reset), SIGNAL("clicked()"), SLOT("slot_resetSettings()"))
+        self.accepted.connect(self.slot_saveSettings)
+        self.ui.buttonBox.button(QDialogButtonBox.Reset).clicked.connect(self.slot_resetSettings)
 
-        #self.connect(self.ui.b_main_def_folder_open, SIGNAL("clicked()"), SLOT("slot_getAndSetProjectPath()"))
-        #self.connect(self.ui.cb_engine_audio_driver, SIGNAL("currentIndexChanged(int)"), SLOT("slot_engineAudioDriverChanged()"))
-        #self.connect(self.ui.tb_engine_driver_config, SIGNAL("clicked()"), SLOT("slot_showAudioDriverSettings()"))
-        #self.connect(self.ui.b_paths_add, SIGNAL("clicked()"), SLOT("slot_addPluginPath()"))
-        #self.connect(self.ui.b_paths_remove, SIGNAL("clicked()"), SLOT("slot_removePluginPath()"))
-        #self.connect(self.ui.b_paths_change, SIGNAL("clicked()"), SLOT("slot_changePluginPath()"))
-        #self.connect(self.ui.tw_paths, SIGNAL("currentChanged(int)"), SLOT("slot_pluginPathTabChanged(int)"))
-        #self.connect(self.ui.lw_ladspa, SIGNAL("currentRowChanged(int)"), SLOT("slot_pluginPathRowChanged(int)"))
-        #self.connect(self.ui.lw_dssi, SIGNAL("currentRowChanged(int)"), SLOT("slot_pluginPathRowChanged(int)"))
-        #self.connect(self.ui.lw_lv2, SIGNAL("currentRowChanged(int)"), SLOT("slot_pluginPathRowChanged(int)"))
-        #self.connect(self.ui.lw_vst, SIGNAL("currentRowChanged(int)"), SLOT("slot_pluginPathRowChanged(int)"))
-        #self.connect(self.ui.lw_sf2, SIGNAL("currentRowChanged(int)"), SLOT("slot_pluginPathRowChanged(int)"))
+        self.ui.b_main_def_folder_open.clicked.connect(self.slot_getAndSetProjectPath)
+        self.ui.cb_engine_audio_driver.currentIndexChanged.connect(self.slot_engineAudioDriverChanged)
+        self.ui.tb_engine_driver_config.clicked.connect(self.slot_showAudioDriverSettings)
+        self.ui.b_paths_add.clicked.connect(self.slot_addPluginPath)
+        self.ui.b_paths_remove.clicked.connect(self.slot_removePluginPath)
+        self.ui.b_paths_change.clicked.connect(self.slot_changePluginPath)
+        self.ui.tw_paths.currentChanged.connect(self.slot_pluginPathTabChanged)
+        self.ui.lw_ladspa.currentRowChanged.connect(self.slot_pluginPathRowChanged)
+        self.ui.lw_dssi.currentRowChanged.connect(self.slot_pluginPathRowChanged)
+        self.ui.lw_lv2.currentRowChanged.connect(self.slot_pluginPathRowChanged)
+        self.ui.lw_vst.currentRowChanged.connect(self.slot_pluginPathRowChanged)
+        self.ui.lw_sf2.currentRowChanged.connect(self.slot_pluginPathRowChanged)
 
         # -------------------------------------------------------------
         # Post-connect setup
@@ -660,16 +660,7 @@ class CarlaSettingsW(QDialog):
 # Main
 
 if __name__ == '__main__':
-    try:
-        from PyQt5.QtWidgets import QApplication
-    except:
-        from PyQt4.QtGui import QApplication
-
-    app = QApplication(sys.argv)
-    app.setApplicationName("Carla")
-    app.setApplicationVersion(VERSION)
-    app.setOrganizationName("falkTX")
-    app.setWindowIcon(QIcon(":/scalable/carla.svg"))
+    app = CarlaApplication()
 
     initHost("Settings", None, False)
 
