@@ -71,10 +71,20 @@ OBJS_win64 = \
 	src/Widget.cpp.win64.o \
 	src/Window.cpp.win64.o
 
+ifeq ($(LINUX),true)
+BASE_FLAGS   += $(shell pkg-config --cflags gl x11)
+LINK_FLAGS   += $(shell pkg-config --libs gl x11)
+endif
+
 ifeq ($(MACOS),true)
+LINK_FLAGS   += -framework OpenGL -framework Cocoa
 OBJS         += src/pugl/pugl_osx_extended.m.o
 OBJS_posix32 += src/pugl/pugl_osx_extended.m.posix32.o
 OBJS_posix64 += src/pugl/pugl_osx_extended.m.posix64.o
+endif
+
+ifeq ($(WIN32),true)
+LINK_FLAGS   += -lopengl32 -lgdi32
 endif
 
 # --------------------------------------------------------------
@@ -103,14 +113,14 @@ win64:   ../../dgl.win64.a
 ../../dgl.win64.a: $(OBJS_win64)
 	$(AR) rs $@ $^
 
-../../dgl.dll: $(OBJS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -lopengl32 -lgdi32 -o $@
+../../libdgl.dll: $(OBJS)
+	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
 
-../../dgl.dylib: $(OBJS)
-	$(CXX) $^ -dynamiclib $(LINK_FLAGS) -framework OpenGL -framework Cocoa -o $@
+../../libdgl.dylib: $(OBJS)
+	$(CXX) $^ -dynamiclib $(LINK_FLAGS) -o $@
 
-../../dgl.so: $(OBJS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -lGL -lX11 -o $@
+../../libdgl.so: $(OBJS)
+	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
 
 # --------------------------------------------------------------
 
@@ -135,7 +145,7 @@ win64:   ../../dgl.win64.a
 # --------------------------------------------------------------
 
 clean:
-	rm -f *.o src/*.o src/pugl/*.o ../../dgl.*
+	rm -f *.o src/*.o src/pugl/*.o ../../dgl*.a ../../libdgl.*
 
 debug:
 	$(MAKE) DEBUG=true

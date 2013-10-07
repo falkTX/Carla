@@ -315,7 +315,11 @@ ifeq ($(HAVE_QT4),true)
 else
 	@echo "Qt4:     $(ANS_NO)  $(mS)Qt4 missing$(mE)"
 endif
+ifeq ($(HAVE_QT5),true)
 	@echo "Qt5:     $(ANS_YES) (bridge)"
+else
+	@echo "Qt5:     $(ANS_NO)  $(mS)Qt5 missing$(mE)"
+endif
 	@echo "X11:     $(ANS_YES) (direct+bridge)"
 else
 	@echo "Gtk2:    $(ANS_NO)  $(mZ)Linux only$(mE)"
@@ -379,7 +383,7 @@ endif
 ifeq ($(HAVE_MF_DEPS),true)
 	@echo "MidiFile:   $(ANS_YES)"
 else
-	@echo "MidiFile:   $(ANS_NO)  $(mS)libsmf missing$(mE)"
+	@echo "MidiFile:   $(ANS_NO)  $(mS)LibSMF missing$(mE)"
 endif
 ifeq ($(HAVE_OPENGL),true)
 	@echo "DISTRHO:    $(ANS_YES)"
@@ -393,7 +397,7 @@ else
 	@echo "ZynAddSubFX:$(ANS_YES) (without UI) $(mS)NTK missing$(mE)"
 endif
 else
-	@echo "ZynAddSubFX:$(ANS_NO)  $(mS)fftw-3, mxml or zlib missing$(mE)"
+	@echo "ZynAddSubFX:$(ANS_NO)  $(mS)fftw3, mxml or zlib missing$(mE)"
 endif
 
 # --------------------------------------------------------------

@@ -131,14 +131,14 @@ jackbridge-wine64:
 
 # --------------------------------------------------------------
 
-libjuce_%.dll:
-	$(MAKE) -C juce_$* ../libjuce_$*.dll
+lib%.dll:
+	$(MAKE) -C $* ../lib$*.dll
 
-libjuce_%.dylib:
-	$(MAKE) -C juce_$* ../libjuce_$*.dylib
+lib%.dylib:
+	$(MAKE) -C $* ../lib$*.dylib
 
-libjuce_%.so:
-	$(MAKE) -C juce_$* ../libjuce_$*.so
+lib%.so:
+	$(MAKE) -C $* ../lib$*.so
 
 # --------------------------------------------------------------
 
@@ -163,6 +163,6 @@ clean:
 
 # --------------------------------------------------------------
 
-.PHONY: carla_native dgl juce_audio_basics juce_audio_devices juce_audio_formats juce_audio_processors juce_core juce_data_structures juce_events juce_graphics juce_gui_basics lilv rtmempool theme
+.PHONY: carla_native juce_audio_basics juce_audio_devices juce_audio_formats juce_audio_processors juce_core juce_data_structures juce_events juce_graphics juce_gui_basics lilv rtmempool theme
 
 # --------------------------------------------------------------

@@ -11,35 +11,51 @@ include ../../Makefile.mk
 BUILD_C_FLAGS   += -I. -I.. -I../../includes
 BUILD_CXX_FLAGS += -I. -I.. -I../../includes -I../../utils -I../distrho
 
+LINK_FLAGS      += ../juce_audio_basics.a $(JUCE_AUDIO_BASICS_LIBS)
+LINK_FLAGS      += ../juce_core.a $(JUCE_CORE_LIBS)
+LINK_FLAGS      += ../juce_data_structures.a $(JUCE_DATA_STRUCTURES_LIBS)
+LINK_FLAGS      += ../juce_events.a $(JUCE_EVENTS_LIBS)
+LINK_FLAGS      += ../juce_graphics.a $(JUCE_GRAPHICS_LIBS)
+LINK_FLAGS      += ../juce_gui_basics.a $(JUCE_GUI_BASICS_LIBS)
+
 # --------------------------------------------------------------
 
 ifeq ($(HAVE_OPENGL),true)
 GL_CXX_FLAGS   = $(BUILD_CXX_FLAGS)
 GL_CXX_FLAGS  += $(shell pkg-config --cflags gl)
+LINK_FLAGS    += ../dgl.a $(shell pkg-config --libs gl)
 endif
 
 ifeq ($(HAVE_AF_DEPS),true)
 AF_C_FLAGS     = $(BUILD_C_FLAGS)
 AF_C_FLAGS    += $(shell pkg-config --cflags sndfile)
+LINK_FLAGS    += $(shell pkg-config --libs sndfile)
 ifeq ($(HAVE_FFMPEG),true)
 AF_C_FLAGS    += -DHAVE_FFMPEG
 AF_C_FLAGS    += $(shell pkg-config --cflags libavcodec libavformat libavutil)
+LINK_FLAGS    += $(shell pkg-config --libs libavcodec libavformat libavutil)
 endif
 endif
 
 ifeq ($(HAVE_MF_DEPS),true)
 MF_CXX_FLAGS   = $(BUILD_CXX_FLAGS)
 MF_CXX_FLAGS  += $(shell pkg-config --cflags smf)
+LINK_FLAGS    += $(shell pkg-config --libs smf)
 endif
 
 ifeq ($(HAVE_ZYN_DEPS),true)
 ZYN_CXX_FLAGS  = $(BUILD_CXX_FLAGS)
 ZYN_CXX_FLAGS += $(shell pkg-config --cflags fftw3 mxml zlib)
+LINK_FLAGS    += $(shell pkg-config --libs fftw3 mxml zlib)
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
 ZYN_CXX_FLAGS += -DNTK_GUI -DWANT_ZYNADDSUBFX_UI
-ZYN_CXX_FLAGS += $(shell pkg-config --cflags ntk ntk_images)
+ZYN_CXX_FLAGS += $(shell pkg-config --cflags ntk_images ntk)
+LINK_FLAGS    += $(shell pkg-config --libs ntk_images ntk)
 endif
 endif
+
+# Implement carla_register_native_plugin
+LINK_FLAGS += -I.. _link.c
 
 # --------------------------------------------------------------
 
@@ -148,13 +164,13 @@ all: ../carla_native.a
 	rm -f $@
 	$(AR) rs $@ $^
 
-../carla_native.dll: $(OBJS)
+../libcarla_native.dll: $(OBJS)
 	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
 
-../carla_native.dylib: $(OBJS)
+../libcarla_native.dylib: $(OBJS)
 	$(CXX) $^ -dynamiclib $(LINK_FLAGS) -o $@
 
-../carla_native.so: $(OBJS)
+../libcarla_native.so: $(OBJS)
 	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
 
 # --------------------------------------------------------------
@@ -218,8 +234,8 @@ zynaddsubfx/UI/%.h: zynaddsubfx/UI/%.fl
 %.c.o: %.c
 	$(CC) $< $(BUILD_C_FLAGS) -c -o $@
 
-%.cpp.o: %.cpp
-	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+# %.cpp.o: %.cpp
+# 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 moc_%.cpp: %.hpp
 	$(MOC) $< -DMOC_PARSING -o $@
@@ -227,7 +243,7 @@ moc_%.cpp: %.hpp
 # --------------------------------------------------------------
 
 clean:
-	rm -f $(OBJS) ../carla_native*.a
+	rm -f $(OBJS) ../carla_native*.a ../libcarla_native.*
 	rm -f $(ZYN_UI_FILES_H) $(ZYN_UI_FILES_CPP)
 
 debug:

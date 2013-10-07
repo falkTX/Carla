@@ -8,7 +8,7 @@ include ../../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_C_FLAGS += -I. -I../../includes -pthread
+BUILD_C_FLAGS += -I. -I../../includes
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
 BUILD_C_FLAGS += -DWANT_LV2
@@ -48,13 +48,13 @@ win64:   ../rtmempool.win64.a
 ../rtmempool.win64.a: $(OBJS_win64)
 	$(AR) rs $@ $^
 
-../rtmempool.dll: $(OBJS)
+../librtmempool.dll: $(OBJS)
 	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
 
-../rtmempool.dylib: $(OBJS)
+../librtmempool.dylib: $(OBJS)
 	$(CXX) $^ -dynamiclib $(LINK_FLAGS) -o $@
 
-../rtmempool.so: $(OBJS)
+../librtmempool.so: $(OBJS)
 	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
 
 # --------------------------------------------------------------
@@ -77,7 +77,7 @@ win64:   ../rtmempool.win64.a
 # --------------------------------------------------------------
 
 clean:
-	rm -f *.o ../rtmempool*.a
+	rm -f *.o ../rtmempool*.a ../librtmempool.*
 
 debug:
 	$(MAKE) DEBUG=true

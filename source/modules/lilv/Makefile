@@ -22,6 +22,10 @@ OBJS_posix64 = serd.c.posix64.o sord.c.posix64.o sratom.c.posix64.o lilv.c.posix
 OBJS_win32   = serd.c.win32.o   sord.c.win32.o   sratom.c.win32.o   lilv.c.win32.o
 OBJS_win64   = serd.c.win64.o   sord.c.win64.o   sratom.c.win64.o   lilv.c.win64.o
 
+ifneq ($(WIN32),true)
+LINK_FLAGS += -ldl
+endif
+
 # --------------------------------------------------------------
 
 all: ../lilv.a
@@ -48,13 +52,13 @@ win64:   ../lilv.win64.a
 ../lilv.win64.a: $(OBJS_win64)
 	$(AR) rs $@ $^
 
-../lilv.dll: $(OBJS)
+../liblilv.dll: $(OBJS)
 	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
 
-../lilv.dylib: $(OBJS)
+../liblilv.dylib: $(OBJS)
 	$(CXX) $^ -dynamiclib $(LINK_FLAGS) -o $@
 
-../lilv.so: $(OBJS)
+../liblilv.so: $(OBJS)
 	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
 
 # --------------------------------------------------------------
@@ -102,7 +106,7 @@ lilv.c.%64.o: lilv.c
 # --------------------------------------------------------------
 
 clean:
-	rm -f *.o ../lilv*.a
+	rm -f *.o ../lilv*.a ../liblilv.*
 
 debug:
 	$(MAKE) DEBUG=true

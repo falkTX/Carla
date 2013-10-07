@@ -125,6 +125,7 @@ source/modules/carla_native/zynaddsubfx/UI/VirKeyboard.cpp
 source/modules/carla_native/zynaddsubfx/UI/VirKeyboard.h
 
 # Other
+source/includes/asio/
 source/includes/rewire/
 source/includes/vst/
 source/includes/vst3/
