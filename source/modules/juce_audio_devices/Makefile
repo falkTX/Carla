@@ -8,7 +8,12 @@ include ../../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += -I.
+BUILD_CXX_FLAGS += $(JUCE_AUDIO_DEVICES_FLAGS) -I.
+LINK_FLAGS      += $(JUCE_AUDIO_DEVICES_LIBS) -L.. -ljuce_events -ljuce_audio_formats -ljuce_audio_basics -ljuce_core
+
+ifeq ($(WIN32),true)
+BUILD_CXX_FLAGS += -I../../includes/asio
+endif
 
 ifeq ($(MACOS),true)
 BUILD_CXX_FLAGS += -objc++
@@ -50,13 +55,13 @@ win64:   ../juce_audio_devices.win64.a
 ../juce_audio_devices.win64.a: $(OBJS_win64)
 	$(AR) rs $@ $^
 
-../juce_audio_devices.dll: $(OBJS)
+../libjuce_audio_devices.dll: $(OBJS)
 	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
 
-../juce_audio_devices.dylib: $(OBJS)
+../libjuce_audio_devices.dylib: $(OBJS)
 	$(CXX) $^ -dynamiclib $(LINK_FLAGS) -o $@
 
-../juce_audio_devices.so: $(OBJS)
+../libjuce_audio_devices.so: $(OBJS)
 	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
 
 # --------------------------------------------------------------
@@ -82,7 +87,7 @@ win64:   ../juce_audio_devices.win64.a
 # --------------------------------------------------------------
 
 clean:
-	rm -f *.o ../juce_audio_devices*.a
+	rm -f *.o ../juce_audio_devices*.a ../libjuce_audio_devices.*
 
 debug:
 	$(MAKE) DEBUG=true

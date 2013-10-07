@@ -8,7 +8,8 @@ include ../../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += -I.
+BUILD_CXX_FLAGS += $(JUCE_AUDIO_FORMATS_FLAGS) -I.
+LINK_FLAGS      += $(JUCE_AUDIO_FORMATS_LIBS) -L.. -ljuce_audio_basics -ljuce_core
 
 ifeq ($(MACOS),true)
 BUILD_CXX_FLAGS += -objc++
@@ -50,13 +51,13 @@ win64:   ../juce_audio_formats.win64.a
 ../juce_audio_formats.win64.a: $(OBJS_win64)
 	$(AR) rs $@ $^
 
-../juce_audio_formats.dll: $(OBJS)
+../libjuce_audio_formats.dll: $(OBJS)
 	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
 
-../juce_audio_formats.dylib: $(OBJS)
+../libjuce_audio_formats.dylib: $(OBJS)
 	$(CXX) $^ -dynamiclib $(LINK_FLAGS) -o $@
 
-../juce_audio_formats.so: $(OBJS)
+../libjuce_audio_formats.so: $(OBJS)
 	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
 
 # --------------------------------------------------------------
@@ -82,7 +83,7 @@ win64:   ../juce_audio_formats.win64.a
 # --------------------------------------------------------------
 
 clean:
-	rm -f *.o ../juce_audio_formats*.a
+	rm -f *.o ../juce_audio_formats*.a ../libjuce_audio_formats.*
 
 debug:
 	$(MAKE) DEBUG=true

@@ -18,6 +18,8 @@
 #ifndef CARLA_STYLE_PLUGIN_HPP_INCLUDED
 #define CARLA_STYLE_PLUGIN_HPP_INCLUDED
 
+#include "CarlaDefines.hpp"
+
 #include <QtCore/Qt>
 
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))

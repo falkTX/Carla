@@ -8,7 +8,8 @@ include ../../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += -I.
+BUILD_CXX_FLAGS += $(JUCE_EVENTS_FLAGS) -I.
+LINK_FLAGS      += $(JUCE_EVENTS_LIBS) -L.. -ljuce_core
 
 ifeq ($(MACOS),true)
 BUILD_CXX_FLAGS += -objc++
@@ -50,13 +51,13 @@ win64:   ../juce_events.win64.a
 ../juce_events.win64.a: $(OBJS_win64)
 	$(AR) rs $@ $^
 
-../juce_events.dll: $(OBJS)
+../libjuce_events.dll: $(OBJS)
 	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
 
-../juce_events.dylib: $(OBJS)
+../libjuce_events.dylib: $(OBJS)
 	$(CXX) $^ -dynamiclib $(LINK_FLAGS) -o $@
 
-../juce_events.so: $(OBJS)
+../libjuce_events.so: $(OBJS)
 	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
 
 # --------------------------------------------------------------
@@ -82,7 +83,7 @@ win64:   ../juce_events.win64.a
 # --------------------------------------------------------------
 
 clean:
-	rm -f *.o ../juce_events*.a
+	rm -f *.o ../juce_events*.a ../libjuce_events.*
 
 debug:
 	$(MAKE) DEBUG=true

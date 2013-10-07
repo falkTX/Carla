@@ -28,9 +28,9 @@ WARN:
 	@echo "git checkout 1.0.x"
 
 # --------------------------------------------------------------
-# C++ code
+# C++ code (native)
 
-CXX: backend bridges discovery
+CXX: backend bridges discovery theme
 
 backend:
 	$(MAKE) -C source/backend
@@ -46,6 +46,9 @@ plugin:
 
 theme:
 	$(MAKE) -C source/modules/theme
+
+# --------------------------------------------------------------
+# C++ code (variants)
 
 posix32:
 	$(MAKE) -C source/bridges posix32
@@ -237,53 +240,38 @@ uninstall:
 ANS_NO=\033[31m NO \033[0m
 ANS_YES=\033[32m YES \033[0m
 mS=\033[33m[
+mZ=\033[30;1m[
 mE=]\033[0m
 
 features:
-ifeq ($(MACOS),true)
-# --- MacOS ---
-	@echo "\033[36m---> Engine drivers: (MacOS)\033[0m"
-	@echo "JACK:     $(ANS_YES)"
-ifeq ($(CARLA_RTAUDIO_SUPPORT),true)
-	@echo "CoreAudio:$(ANS_YES)"
-else
-	@echo "CoreAudio:$(ANS_NO) $(mS)RtAudio disabled$(mE)"
-endif
-# --- MacOS ---
-else
-# --- Win32 ---
-ifeq ($(WIN32),true)
-	@echo "\033[36m---> Engine drivers: (Windows)\033[0m"
+	@echo "\033[36m---> Engine drivers: \033[0m"
 	@echo "JACK:       $(ANS_YES)"
-ifeq ($(CARLA_RTAUDIO_SUPPORT),true)
+ifeq ($(LINUX),true)
+ifeq ($(HAVE_ALSA),true)
+	@echo "ALSA:       $(ANS_YES)"
+else
+	@echo "ALSA:       $(ANS_NO)  $(mS)Missing ALSA$(mE)"
+endif
+ifeq ($(HAVE_PULSEAUDIO),true)
+	@echo "PulseAudio: $(ANS_YES)"
+else
+	@echo "PulseAudio: $(ANS_NO)  $(mS)Missing PulseAudio$(mE)"
+endif
+else
+	@echo "ALSA:       $(ANS_NO)  $(mZ)Linux only$(mE)"
+	@echo "PulseAudio: $(ANS_NO)  $(mZ)Linux only$(mE)"
+endif
+ifeq ($(MACOS),true)
+	@echo "CoreAudio:  $(ANS_YES)"
+else
+	@echo "CoreAudio:  $(ANS_NO)  $(mZ)MacOS only$(mE)"
+endif
+ifeq ($(WIN32),true)
 	@echo "ASIO:       $(ANS_YES)"
 	@echo "DirectSound:$(ANS_YES)"
 else
-	@echo "ASIO:       $(ANS_NO) $(mS)RtAudio disabled$(mE)"
-	@echo "DirectSound:$(ANS_NO) $(mS)RtAudio disabled$(mE)"
-endif
-# --- Win32 ---
-else
-# --- Others ---
-	@echo "\033[36m---> Engine drivers: \033[0m"
-	@echo "JACK:      $(ANS_YES)"
-ifeq ($(CARLA_RTAUDIO_SUPPORT),true)
-ifeq ($(HAVE_ALSA),true)
-	@echo "ALSA:      $(ANS_YES)"
-else
-	@echo "ALSA:      $(ANS_NO) $(mS)Missing ALSA$(mE)"
-endif
-ifeq ($(HAVE_PULSEAUDIO),true)
-	@echo "PulseAudio:$(ANS_YES)"
-else
-	@echo "PulseAudio:$(ANS_NO) $(mS)Missing PulseAudio$(mE)"
-endif
-else
-	@echo "ALSA:      $(ANS_NO) $(mS)RtAudio disabled$(mE)"
-	@echo "PulseAudio:$(ANS_NO) $(mS)RtAudio disabled$(mE)"
-endif
-# --- Others ---
-endif
+	@echo "ASIO:       $(ANS_NO)  $(mZ)Windows only$(mE)"
+	@echo "DirectSound:$(ANS_NO)  $(mZ)Windows only$(mE)"
 endif
 	@echo ""
 
@@ -294,76 +282,87 @@ ifeq ($(CARLA_PLUGIN_SUPPORT),true)
 	@echo "DSSI:    $(ANS_YES)"
 	@echo "LV2:     $(ANS_YES)"
 	@echo "VST:     $(ANS_YES)"
+ifeq ($(MACOS),true)
+	@echo "AU:      $(ANS_YES)"
 else
-	@echo "LADSPA:  $(ANS_NO) $(mS)Plugins disabled$(mE)"
-	@echo "DSSI:    $(ANS_NO) $(mS)Plugins disabled$(mE)"
-	@echo "LV2:     $(ANS_NO) $(mS)Plugins disabled$(mE)"
-	@echo "VST:     $(ANS_NO) $(mS)Plugins disabled$(mE)"
+	@echo "AU:      $(ANS_NO)  $(mZ)MacOS only$(mE)"
+endif
+else
+	@echo "LADSPA:  $(ANS_NO)  $(mS)Plugins disabled$(mE)"
+	@echo "DSSI:    $(ANS_NO)  $(mS)Plugins disabled$(mE)"
+	@echo "LV2:     $(ANS_NO)  $(mS)Plugins disabled$(mE)"
+	@echo "VST:     $(ANS_NO)  $(mS)Plugins disabled$(mE)"
+	@echo "AU:      $(ANS_NO)  $(mS)Plugins disabled$(mE)"
 endif
 	@echo ""
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
 	@echo "\033[36m---> LV2 UI toolkit support: \033[0m"
-	@echo "ExternalUI:$(ANS_YES) (direct+bridge)"
-ifeq ($(MACOS),true)
-# --- MacOS ---
-	@echo "CocoaUI:   $(ANS_YES) (direct+bridge)"
-# --- MacOS ---
-else
-# --- Win32 ---
-ifeq ($(WIN32),true)
-# --- Win32 ---
-	@echo "WindowsUI: $(ANS_YES) (direct+bridge)"
-else
-# --- Others ---
+	@echo "External:$(ANS_YES) (direct+bridge)"
+ifeq ($(LINUX),true)
 ifeq ($(HAVE_GTK2),true)
-	@echo "GtkUI:     $(ANS_YES) (bridge)"
+	@echo "Gtk2:    $(ANS_YES) (bridge)"
 else
-	@echo "GtkUI:     $(ANS_NO) $(mS)Gtk2 missing$(mE)"
+	@echo "Gtk2:    $(ANS_NO)  $(mS)Gtk2 missing$(mE)"
 endif
 ifeq ($(HAVE_GTK3),true)
-	@echo "Gtk3UI:    $(ANS_YES) (bridge)"
+	@echo "Gtk3:    $(ANS_YES) (bridge)"
 else
-	@echo "Gtk3UI:    $(ANS_NO) $(mS)Gtk3 missing$(mE)"
+	@echo "Gtk3:    $(ANS_NO)  $(mS)Gtk3 missing$(mE)"
 endif
 ifeq ($(HAVE_QT4),true)
-	@echo "Qt4UI:     $(ANS_YES) (bridge)"
+	@echo "Qt4:     $(ANS_YES) (bridge)"
 else
-	@echo "Qt4UI:     $(ANS_NO) $(mS)Qt4 missing$(mE)"
+	@echo "Qt4:     $(ANS_NO)  $(mS)Qt4 missing$(mE)"
 endif
-ifeq ($(HAVE_QT5),true)
-	@echo "Qt5UI:     $(ANS_YES) (bridge)"
+	@echo "Qt5:     $(ANS_YES) (bridge)"
+	@echo "X11:     $(ANS_YES) (direct+bridge)"
 else
-	@echo "Qt5UI:     $(ANS_NO) $(mS)Qt5 missing$(mE)"
+	@echo "Gtk2:    $(ANS_NO)  $(mZ)Linux only$(mE)"
+	@echo "Gtk3:    $(ANS_NO)  $(mZ)Linux only$(mE)"
+	@echo "Qt4:     $(ANS_NO)  $(mZ)Linux only$(mE)"
+	@echo "Qt5:     $(ANS_NO)  $(mZ)Linux only$(mE)"
+	@echo "X11:     $(ANS_NO)  $(mZ)Linux only$(mE)"
 endif
-	@echo "X11UI:     $(ANS_YES) (direct+bridge)"
+ifeq ($(MACOS),true)
+	@echo "Cocoa:   $(ANS_YES) (direct+bridge)"
+else
+	@echo "Cocoa:   $(ANS_NO)  $(mZ)MacOS only$(mE)"
 endif
-# --- Others ---
+ifeq ($(WIN32),true)
+	@echo "Windows: $(ANS_YES) (direct+bridge)"
+else
+	@echo "Windows: $(ANS_NO)  $(mZ)Windows only$(mE)"
 endif
 	@echo ""
 endif
 
-	@echo "\033[36m---> Sample formats: \033[0m"
+	@echo "\033[36m---> File formats: \033[0m"
+ifeq ($(CARLA_CSOUND_SUPPORT),true)
+	@echo "CSD:$(ANS_YES)"
+else
+	@echo "CSD:$(ANS_NO)  $(mS)CSound disabled$(mE)"
+endif
 ifeq ($(CARLA_SAMPLERS_SUPPORT),true)
 ifeq ($(HAVE_LINUXSAMPLER),true)
 	@echo "GIG:$(ANS_YES)"
 else
-	@echo "GIG:$(ANS_NO) $(mS)LinuxSampler missing$(mE)"
+	@echo "GIG:$(ANS_NO)  $(mS)LinuxSampler missing$(mE)"
 endif
 ifeq ($(HAVE_FLUIDSYNTH),true)
 	@echo "SF2:$(ANS_YES)"
 else
-	@echo "SF2:$(ANS_NO) $(mS)FluidSynth missing$(mE)"
+	@echo "SF2:$(ANS_NO)  $(mS)FluidSynth missing$(mE)"
 endif
 ifeq ($(HAVE_LINUXSAMPLER),true)
 	@echo "SFZ:$(ANS_YES)"
 else
-	@echo "SFZ:$(ANS_NO) $(mS)LinuxSampler missing$(mE)"
+	@echo "SFZ:$(ANS_NO)  $(mS)LinuxSampler missing$(mE)"
 endif
 else
-	@echo "GIG:$(ANS_NO) $(mS)Samplers disabled$(mE)"
-	@echo "SF2:$(ANS_NO) $(mS)Samplers disabled$(mE)"
-	@echo "SFZ:$(ANS_NO) $(mS)Samplers disabled$(mE)"
+	@echo "GIG:$(ANS_NO)  $(mS)Samplers disabled$(mE)"
+	@echo "SF2:$(ANS_NO)  $(mS)Samplers disabled$(mE)"
+	@echo "SFZ:$(ANS_NO)  $(mS)Samplers disabled$(mE)"
 endif
 	@echo ""
 
@@ -375,21 +374,18 @@ else
 	@echo "AudioFile:  $(ANS_YES) (without ffmpeg) $(mS)ffmpeg/libav missing or too new$(mE)"
 endif
 else
-	@echo "AudioFile:  $(ANS_NO) $(mS)libsndfile missing$(mE)"
+	@echo "AudioFile:  $(ANS_NO)  $(mS)libsndfile missing$(mE)"
 endif
-
 ifeq ($(HAVE_MF_DEPS),true)
 	@echo "MidiFile:   $(ANS_YES)"
 else
-	@echo "MidiFile:   $(ANS_NO) $(mS)libsmf missing$(mE)"
+	@echo "MidiFile:   $(ANS_NO)  $(mS)libsmf missing$(mE)"
 endif
-
 ifeq ($(HAVE_OPENGL),true)
 	@echo "DISTRHO:    $(ANS_YES)"
 else
-	@echo "DISTRHO:    $(ANS_NO) $(mS)OpenGL missing$(mE)"
+	@echo "DISTRHO:    $(ANS_NO)  $(mS)OpenGL missing$(mE)"
 endif
-
 ifeq ($(HAVE_ZYN_DEPS),true)
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
 	@echo "ZynAddSubFX:$(ANS_YES) (with UI)"
@@ -397,7 +393,7 @@ else
 	@echo "ZynAddSubFX:$(ANS_YES) (without UI) $(mS)NTK missing$(mE)"
 endif
 else
-	@echo "ZynAddSubFX:$(ANS_NO) $(mS)fftw-3, mxml or zlib missing$(mE)"
+	@echo "ZynAddSubFX:$(ANS_NO)  $(mS)fftw-3, mxml or zlib missing$(mE)"
 endif
 
 # --------------------------------------------------------------

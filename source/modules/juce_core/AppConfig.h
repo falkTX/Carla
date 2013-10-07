@@ -9,6 +9,8 @@
 #ifndef CARLA_JUCE_CORE_APPCONFIG_H_INCLUDED
 #define CARLA_JUCE_CORE_APPCONFIG_H_INCLUDED
 
+#include "system/juce_TargetPlatform.h"
+
 //=============================================================================
 /** Config: JUCE_FORCE_DEBUG
 

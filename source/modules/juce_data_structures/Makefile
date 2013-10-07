@@ -8,7 +8,8 @@ include ../../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += -I.
+BUILD_CXX_FLAGS += $(JUCE_DATA_STRUCTURES_FLAGS) -I.
+LINK_FLAGS      += $(JUCE_DATA_STRUCTURES_LIBS) -L.. -ljuce_events -ljuce_core
 
 ifeq ($(MACOS),true)
 BUILD_CXX_FLAGS += -objc++
@@ -50,13 +51,13 @@ win64:   ../juce_data_structures.win64.a
 ../juce_data_structures.win64.a: $(OBJS_win64)
 	$(AR) rs $@ $^
 
-../juce_data_structures.dll: $(OBJS)
+../libjuce_data_structures.dll: $(OBJS)
 	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
 
-../juce_data_structures.dylib: $(OBJS)
+../libjuce_data_structures.dylib: $(OBJS)
 	$(CXX) $^ -dynamiclib $(LINK_FLAGS) -o $@
 
-../juce_data_structures.so: $(OBJS)
+../libjuce_data_structures.so: $(OBJS)
 	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
 
 # --------------------------------------------------------------
@@ -82,7 +83,7 @@ win64:   ../juce_data_structures.win64.a
 # --------------------------------------------------------------
 
 clean:
-	rm -f *.o ../juce_data_structures*.a
+	rm -f *.o ../juce_data_structures*.a ../libjuce_data_structures.*
 
 debug:
 	$(MAKE) DEBUG=true

@@ -22,7 +22,7 @@
     See the comments in the ASIOAudioIODevice class's header file for more
     info about this.
 */
-#if WINDOWS
+#if JUCE_WINDOWS
  #define JUCE_ASIO 1
 #else
  #define JUCE_ASIO 0
@@ -36,7 +36,7 @@
 /** Config: JUCE_DIRECTSOUND
     Enables DirectSound audio (MS Windows only).
 */
-#if WINDOWS
+#if JUCE_WINDOWS
  #define JUCE_DIRECTSOUND 1
 #else
  #define JUCE_DIRECTSOUND 0
@@ -45,7 +45,7 @@
 /** Config: JUCE_ALSA
     Enables ALSA audio devices (Linux only).
 */
-#if LINUX
+#if 0 //JUCE_LINUX
  #define JUCE_ALSA 1
  #define JUCE_ALSA_MIDI_INPUT_NAME  "Carla"
  #define JUCE_ALSA_MIDI_OUTPUT_NAME "Carla"
@@ -58,7 +58,7 @@
 /** Config: JUCE_JACK
     Enables JACK audio devices (Linux only).
 */
-#if LINUX
+#if 0 //JUCE_LINUX
  #define JUCE_JACK 1
  #define JUCE_JACK_CLIENT_NAME "Carla"
 #else

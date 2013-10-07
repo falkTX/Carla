@@ -4,6 +4,8 @@
 # Created by falkTX
 #
 
+# libx11-dev libxext-dev libxinerama-dev libfreetype6-dev libxcursor-dev
+
 # --------------------------------------------------------------
 # Modify to enable/disable specific features
 
@@ -30,6 +32,18 @@ RCC ?= rcc
 UIC ?= uic
 
 # --------------------------------------------------------------
+# Fallback to Linux if no other OS defined
+
+ifneq ($(HAIKU),true)
+ifneq ($(MACOS),true)
+ifneq ($(WIN32),true)
+LINUX=true
+endif
+endif
+endif
+
+# --------------------------------------------------------------
+# Common build and link flags
 
 BASE_FLAGS = -Wall -Wextra -fPIC -DPIC -pipe -DREAL_BUILD
 BASE_OPTS  = -O3 -ffast-math -mtune=generic -msse -msse2 -mfpmath=sse -fdata-sections -ffunction-sections
@@ -65,26 +79,98 @@ LINK_FLAGS      = $(32BIT_FLAGS) $(LDFLAGS)
 endif
 
 # --------------------------------------------------------------
+# Check for required libs
 
-HAVE_ALSA         = $(shell pkg-config --exists alsa && echo true)
+ifneq ($(shell pkg-config --exists liblo && echo true),true)
+$(error liblo missing, cannot continue)
+endif
+
+ifneq ($(shell pkg-config --exists Qt5Core Qt5Gui Qt5Widgets && echo true),true)
+$(error Qt5 missing, cannot continue)
+endif
+
+ifeq ($(LINUX),true)
+ifneq ($(shell pkg-config --exists x11 && echo true),true)
+$(error X11 missing, cannot continue)
+endif
+ifneq ($(shell pkg-config --exists xinerama && echo true),true)
+$(error Xinerama missing, cannot continue)
+endif
+ifneq ($(shell pkg-config --exists xext && echo true),true)
+$(error Xext missing, cannot continue)
+endif
+ifneq ($(shell pkg-config --exists xcursor && echo true),true)
+$(error Xcursor missing, cannot continue)
+endif
+ifneq ($(shell pkg-config --exists freetype2 && echo true),true)
+$(error FreeType2 missing, cannot continue)
+endif
+endif
+
+# --------------------------------------------------------------
+# Check for optional libs (required by backend or bridges)
+
 HAVE_FFMPEG       = $(shell pkg-config --exists libavcodec libavformat libavutil && pkg-config --max-version=1.9 libavcodec && echo true)
 HAVE_OPENGL       = $(shell pkg-config --exists gl && echo true)
+
+ifeq ($(LINUX),true)
+HAVE_ALSA         = $(shell pkg-config --exists alsa && echo true)
 HAVE_GTK2         = $(shell pkg-config --exists gtk+-2.0 && echo true)
 HAVE_GTK3         = $(shell pkg-config --exists gtk+-3.0 && echo true)
 HAVE_PULSEAUDIO   = $(shell pkg-config --exists libpulse-simple && echo true)
 HAVE_QT4          = $(shell pkg-config --exists QtCore && echo true)
-HAVE_QT5          = $(shell pkg-config --exists Qt5Core && echo true)
-HAVE_X11          = $(shell pkg-config --exists x11 && echo true)
-
-HAVE_AF_DEPS      = $(shell pkg-config --exists sndfile && echo true)
-HAVE_MF_DEPS      = $(shell pkg-config --exists smf && echo true)
-HAVE_ZYN_DEPS     = $(shell pkg-config --exists fftw3 mxml zlib && echo true)
-HAVE_ZYN_UI_DEPS  = $(shell pkg-config --exists ntk ntk_images && echo true)
+endif
 
 ifeq ($(CARLA_SAMPLERS_SUPPORT),true)
 HAVE_FLUIDSYNTH   = $(shell pkg-config --exists fluidsynth && echo true)
 HAVE_LINUXSAMPLER = $(shell pkg-config --exists linuxsampler && echo true)
 endif
+
+# --------------------------------------------------------------
+# Check for optional libs (required by internal plugins)
+
+HAVE_AF_DEPS       = $(shell pkg-config --exists sndfile && echo true)
+HAVE_MF_DEPS       = $(shell pkg-config --exists smf && echo true)
+HAVE_ZYN_DEPS      = $(shell pkg-config --exists fftw3 mxml zlib && echo true)
+HAVE_ZYN_UI_DEPS   = $(shell pkg-config --exists ntk ntk_images && echo true)
+
+# --------------------------------------------------------------
+# Set Juce flags
+
+ifeq ($(HAIKU),true)
+endif
+
+ifeq ($(LINUX),true)
+# JUCE_AUDIO_DEVICES_FLAGS = $(shell pkg-config --cflags alsa)
+# JUCE_AUDIO_DEVICES_LIBS  = $(shell pkg-config --libs alsa)
+JUCE_CORE_LIBS           = -lrt -ldl -lpthread
+JUCE_EVENTS_FLAGS        = $(shell pkg-config --cflags x11)
+JUCE_EVENTS_LIBS         = $(shell pkg-config --libs x11)
+JUCE_GRAPHICS_FLAGS      = $(shell pkg-config --cflags x11 xinerama xext freetype2)
+JUCE_GRAPHICS_LIBS       = $(shell pkg-config --libs x11 xinerama xext freetype2)
+JUCE_GUI_BASICS_FLAGS    = $(shell pkg-config --cflags x11 xinerama xext xcursor)
+JUCE_GUI_BASICS_LIBS     = $(shell pkg-config --libs x11 xinerama xext xcursor) -ldl
+endif
+
+ifeq ($(MACOS),true)
+JUCE_AUDIO_BASICS_LIBS  = -framework Accelerate
+JUCE_AUDIO_DEVICES_LIBS = -framework CoreAudio -framework CoreMIDI -framework DiscRecording
+JUCE_AUDIO_FORMATS_LIBS = -framework CoreAudio -framework CoreMIDI -framework QuartzCore -framework AudioToolbox
+JUCE_CORE_LIBS          = -framework Cocoa -framework IOKit
+JUCE_GRAPHICS_LIBS      = -framework Cocoa -framework QuartzCore
+JUCE_GUI_BASICS_LIBS    = -framework Cocoa -framework Carbon -framework QuartzCore
+endif
+
+ifeq ($(WIN32),true)
+JUCE_AUDIO_DEVICES_LIBS = -lwinmm -lole32
+JUCE_CORE_LIBS          = -luuid -lwsock32 -lwininet -lversion -lole32 -lws2_32 -loleaut32 -limm32 -lcomdlg32 -lshlwapi -lrpcrt4 -lwinmm
+JUCE_EVENTS_LIBS        = -lole32
+JUCE_GRAPHICS_LIBS      = -lgdi32
+JUCE_GUI_BASICS_LIBS    = -lgdi32 -limm32 -lcomdlg32 -lole32
+endif
+
+# --------------------------------------------------------------
+# Set Qt4 tools
 
 ifeq ($(HAVE_QT4),true)
 MOC_QT4 ?= $(shell pkg-config --variable=moc_location QtCore)

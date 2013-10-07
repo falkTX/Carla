@@ -131,6 +131,17 @@ jackbridge-wine64:
 
 # --------------------------------------------------------------
 
+libjuce_%.dll:
+	$(MAKE) -C juce_$* ../libjuce_$*.dll
+
+libjuce_%.dylib:
+	$(MAKE) -C juce_$* ../libjuce_$*.dylib
+
+libjuce_%.so:
+	$(MAKE) -C juce_$* ../libjuce_$*.so
+
+# --------------------------------------------------------------
+
 clean:
 	rm -f *.a *.def *.dll *.dylib *.so
 	$(MAKE) clean -C carla_native

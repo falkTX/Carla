@@ -8,7 +8,8 @@ include ../../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += -I.
+BUILD_CXX_FLAGS += $(JUCE_GRAPHICS_FLAGS) -I.
+LINK_FLAGS      += $(JUCE_GRAPHICS_LIBS) -L.. -ljuce_events -ljuce_core
 
 ifeq ($(MACOS),true)
 BUILD_CXX_FLAGS += -objc++
@@ -19,9 +20,6 @@ else
 OBJS         = juce_graphics.cpp.o
 OBJS_posix32 = juce_graphics.cpp.posix32.o
 OBJS_posix64 = juce_graphics.cpp.posix64.o
-ifneq ($(WIN32),true)
-BUILD_CXX_FLAGS += $(shell pkg-config --cflags freetype2)
-endif
 endif
 
 OBJS_win32 = juce_graphics.cpp.win32.o
@@ -53,13 +51,13 @@ win64:   ../juce_graphics.win64.a
 ../juce_graphics.win64.a: $(OBJS_win64)
 	$(AR) rs $@ $^
 
-../juce_graphics.dll: $(OBJS)
+../libjuce_graphics.dll: $(OBJS)
 	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
 
-../juce_graphics.dylib: $(OBJS)
+../libjuce_graphics.dylib: $(OBJS)
 	$(CXX) $^ -dynamiclib $(LINK_FLAGS) -o $@
 
-../juce_graphics.so: $(OBJS)
+../libjuce_graphics.so: $(OBJS)
 	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
 
 # --------------------------------------------------------------
@@ -85,7 +83,7 @@ win64:   ../juce_graphics.win64.a
 # --------------------------------------------------------------
 
 clean:
-	rm -f *.o ../juce_graphics*.a
+	rm -f *.o ../juce_graphics*.a ../libjuce_graphics.*
 
 debug:
 	$(MAKE) DEBUG=true
