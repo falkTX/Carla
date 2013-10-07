@@ -204,13 +204,13 @@ void FormantFilter::setfreq_and_q(float frequency, float q_)
 
 void FormantFilter::filterout(float *smp)
 {
-    float *inbuffer = getTmpBuffer();
+    float inbuffer[buffersize];
 
     memcpy(inbuffer, smp, bufferbytes);
     memset(smp, 0, bufferbytes);
 
     for(int j = 0; j < numformants; ++j) {
-        float *tmpbuf = getTmpBuffer();
+        float tmpbuf[buffersize];
         for(int i = 0; i < buffersize; ++i)
             tmpbuf[i] = inbuffer[i] * outgain;
         formant[j]->filterout(tmpbuf);
@@ -225,8 +225,6 @@ void FormantFilter::filterout(float *smp)
         else
             for(int i = 0; i < buffersize; ++i)
                 smp[i] += tmpbuf[i] * currentformants[j].amp;
-        returnTmpBuffer(tmpbuf);
         oldformantamp[j] = currentformants[j].amp;
     }
-    returnTmpBuffer(inbuffer);
 }

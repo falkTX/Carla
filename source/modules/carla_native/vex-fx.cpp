@@ -72,7 +72,7 @@ public:
         clearContentComponent();
     }
 
-    bool wasClosedByUser() const
+    bool wasClosedByUser() const noexcept
     {
         return fClosed;
     }
@@ -577,9 +577,9 @@ protected:
     void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const MidiEvent* const, const uint32_t) override
     {
         if (inBuffer[0] != outBuffer[0])
-            carla_copyFloat(outBuffer[0], inBuffer[0], frames);
+            FloatVectorOperations::copy(outBuffer[0], inBuffer[0], frames);
         if (inBuffer[1] != outBuffer[1])
-            carla_copyFloat(outBuffer[1], inBuffer[1], frames);
+            FloatVectorOperations::copy(outBuffer[1], inBuffer[1], frames);
 
         fChorus.processBlock(outBuffer[0], outBuffer[1], frames);
     }
@@ -617,8 +617,8 @@ public:
     {
         std::memset(fParameters, 0, sizeof(float)*92);
 
-        fParameters[73] = 0.5f * 8.0f;
-        fParameters[74] = 0.4f * 100.0f;
+        fParameters[73] = 0.5f;
+        fParameters[74] = 0.4f;
 
         fDelay.setSampleRate(getSampleRate());
     }
@@ -654,6 +654,7 @@ protected:
         case kParamTime:
             hints |= PARAMETER_IS_INTEGER;
             paramInfo.name = "Time";
+            paramInfo.unit = "steps";
             paramInfo.ranges.def = 4.0f;
             paramInfo.ranges.min = 0.0f;
             paramInfo.ranges.max = 8.0f;
@@ -709,9 +710,9 @@ protected:
     void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const MidiEvent* const, const uint32_t) override
     {
         if (inBuffer[0] != outBuffer[0])
-            carla_copyFloat(outBuffer[0], inBuffer[0], frames);
+            FloatVectorOperations::copy(outBuffer[0], inBuffer[0], frames);
         if (inBuffer[1] != outBuffer[1])
-            carla_copyFloat(outBuffer[1], inBuffer[1], frames);
+            FloatVectorOperations::copy(outBuffer[1], inBuffer[1], frames);
 
         const TimeInfo* const timeInfo(getTimeInfo());
         const double bpm((timeInfo != nullptr && timeInfo->bbt.valid) ? timeInfo->bbt.beatsPerMinute : 120.0);
@@ -753,10 +754,9 @@ public:
     {
         std::memset(fParameters, 0, sizeof(float)*92);
 
-        // FIXME?
         fParameters[79] = 0.6f;
-        fParameters[80] = 0.6f;
-        fParameters[81] = 0.7f;
+        fParameters[80] = 0.7f;
+        fParameters[81] = 0.6f;
     }
 
 protected:
@@ -854,9 +854,9 @@ protected:
     void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const MidiEvent* const, const uint32_t) override
     {
         for (uint32_t i=0; i< frames; ++i)
-            outBuffer[0][i] = inBuffer[0][i]/2.0f;
+            FloatVectorOperations::copyWithMultiply(outBuffer[0], inBuffer[0], 0.5f, frames);
         for (uint32_t i=0; i< frames; ++i)
-            outBuffer[1][i] = inBuffer[1][i]/2.0f;
+            FloatVectorOperations::copyWithMultiply(outBuffer[1], inBuffer[1], 0.5f, frames);
 
         fReverb.processBlock(outBuffer[0], outBuffer[1], frames);
     }

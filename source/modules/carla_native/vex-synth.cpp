@@ -246,7 +246,7 @@ public:
           fReverb(fParameters),
           fSynth(fParameters)
     {
-        std::memset(fParameters, 0, sizeof(float)*92);
+        std::memset(fParameters, 0, sizeof(float)*kParamCount);
 
         fParameters[0] = 1.0f; // main volume
 
@@ -309,6 +309,9 @@ public:
 
         bufferSizeChanged(getBufferSize());
         sampleRateChanged(getSampleRate());
+
+        for (int i = 0; i < kParamCount; ++i)
+            fSynth.update(i);
     }
 
     ~VexSynthPlugin()
@@ -670,7 +673,7 @@ protected:
     }
 
 private:
-    float fParameters[92];
+    float fParameters[kParamCount];
 
     AudioSampleBuffer* obf;
     AudioSampleBuffer* abf;
