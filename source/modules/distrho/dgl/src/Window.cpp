@@ -333,11 +333,11 @@ public:
             height = 1;
 
 #ifndef DGL_OS_MAC
-        fView->width  = width;
-        fView->height = height;
-
         if (fView->width == (int)width && fView->height == (int)height && ! forced)
            return;
+
+        fView->width  = width;
+        fView->height = height;
 #endif
 
 #if DGL_OS_WINDOWS

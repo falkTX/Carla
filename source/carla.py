@@ -79,10 +79,6 @@ class CarlaMainW(QMainWindow):
         self.fInfoLabel.setText("")
         self.fInfoText = ""
 
-        self.fDirModel = QFileSystemModel(self)
-        self.fDirModel.setNameFilters(cString(Carla.host.get_supported_file_types()).split(";"))
-        self.fDirModel.setRootPath(HOME)
-
         if not WINDOWS:
             self.fSyntaxLog = LogSyntaxHighlighter(self.ui.pte_log)
             self.fSyntaxLog.setDocument(self.ui.pte_log.document())
@@ -92,13 +88,6 @@ class CarlaMainW(QMainWindow):
                 self.ui.tabMain.removeTab(1)
         else:
             self.ui.tabMain.removeTab(2)
-
-        self.ui.fileTreeView.setModel(self.fDirModel)
-        self.ui.fileTreeView.setRootIndex(self.fDirModel.index(HOME))
-        self.ui.fileTreeView.setColumnHidden(1, True)
-        self.ui.fileTreeView.setColumnHidden(2, True)
-        self.ui.fileTreeView.setColumnHidden(3, True)
-        self.ui.fileTreeView.setHeaderHidden(True)
 
         self.ui.act_engine_start.setEnabled(False)
         self.ui.act_engine_stop.setEnabled(False)
@@ -188,52 +177,6 @@ class CarlaMainW(QMainWindow):
     @pyqtSlot()
     def slot_splitterMoved(self):
         self.updateInfoLabelSize()
-
-    @pyqtSlot(int)
-    def slot_diskFolderChanged(self, index):
-        if index < 0:
-            return
-        elif index == 0:
-            filename = HOME
-            self.ui.b_disk_remove.setEnabled(False)
-        else:
-            filename = self.ui.cb_disk.itemData(index)
-            self.ui.b_disk_remove.setEnabled(True)
-
-        self.fDirModel.setRootPath(filename)
-        self.ui.fileTreeView.setRootIndex(self.fDirModel.index(filename))
-
-    @pyqtSlot()
-    def slot_diskFolderAdd(self):
-        newPath = QFileDialog.getExistingDirectory(self, self.tr("New Folder"), "", QFileDialog.ShowDirsOnly)
-
-        if newPath:
-            if newPath[-1] == os.sep:
-                newPath = newPath[:-1]
-            self.ui.cb_disk.addItem(os.path.basename(newPath), newPath)
-            self.ui.cb_disk.setCurrentIndex(self.ui.cb_disk.count()-1)
-            self.ui.b_disk_remove.setEnabled(True)
-
-    @pyqtSlot()
-    def slot_diskFolderRemove(self):
-        index = self.ui.cb_disk.currentIndex()
-
-        if index <= 0:
-            return
-
-        self.ui.cb_disk.removeItem(index)
-
-        if self.ui.cb_disk.currentIndex() == 0:
-            self.ui.b_disk_remove.setEnabled(False)
-
-    @pyqtSlot(QModelIndex)
-    def slot_fileTreeDoubleClicked(self, modelIndex):
-        filename = self.fDirModel.filePath(modelIndex)
-
-        if not Carla.host.load_filename(filename):
-            CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"),
-                             self.tr("Failed to load file"),
-                             cString(Carla.host.get_last_error()), QMessageBox.Ok, QMessageBox.Ok)
 
     @pyqtSlot(float, float)
     def slot_miniCanvasMoved(self, xp, yp):

@@ -816,7 +816,7 @@ void CarlaPlugin::loadSaveState(const SaveState& saveState)
 
 bool CarlaPlugin::saveStateToFile(const char* const filename)
 {
-    CARLA_SAFE_ASSERT_RETURN(filename != nullptr, false);
+    CARLA_SAFE_ASSERT_RETURN(filename != nullptr && filename[0] != '\0', false);
     carla_debug("CarlaPlugin::saveStateToFile(\"%s\")", filename);
 
     File file(filename);
@@ -836,7 +836,7 @@ bool CarlaPlugin::saveStateToFile(const char* const filename)
 
 bool CarlaPlugin::loadStateFromFile(const char* const filename)
 {
-    CARLA_SAFE_ASSERT_RETURN(filename != nullptr, false);
+    CARLA_SAFE_ASSERT_RETURN(filename != nullptr && filename[0] != '\0', false);
     carla_debug("CarlaPlugin::loadStateFromFile(\"%s\")", filename);
 
     File file(filename);

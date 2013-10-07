@@ -1059,7 +1059,7 @@ const char* CarlaEngine::getUniquePluginName(const char* const name)
 
 bool CarlaEngine::loadFilename(const char* const filename)
 {
-    CARLA_ASSERT(filename != nullptr);
+    CARLA_ASSERT(filename != nullptr && filename[0] != '\0');
     carla_debug("CarlaEngine::loadFilename(\"%s\")", filename);
 
     using namespace juce;
@@ -1073,7 +1073,10 @@ bool CarlaEngine::loadFilename(const char* const filename)
     }
 
     CarlaString baseName(file.getFileNameWithoutExtension().toRawUTF8());
-    CarlaString extension(file.getFileExtension().toRawUTF8());
+    CarlaString extension(file.getFileExtension().toRawUTF8()+1);
+    extension.toLower();
+
+    carla_stdout("loadFilename with extension %s", (const char*)extension);
 
     // -------------------------------------------------------------------
 
@@ -1190,7 +1193,7 @@ bool charEndsWith(const char* const str, const char* const suffix)
 
 bool CarlaEngine::loadProject(const char* const filename)
 {
-    CARLA_ASSERT(filename != nullptr);
+    CARLA_ASSERT(filename != nullptr && filename[0] != '\0');
     carla_debug("CarlaEngine::loadProject(\"%s\")", filename);
 
     using namespace juce;
@@ -1260,7 +1263,7 @@ bool CarlaEngine::loadProject(const char* const filename)
 
 bool CarlaEngine::saveProject(const char* const filename)
 {
-    CARLA_ASSERT(filename != nullptr);
+    CARLA_ASSERT(filename != nullptr && filename[0] != '\0');
     carla_debug("CarlaEngine::saveProject(\"%s\")", filename);
 
     using namespace juce;
@@ -1694,10 +1697,19 @@ void setValueIfHigher(float& value, const float& compare)
         value = compare;
 }
 
-void CarlaEngine::processRack(float* inBuf[2], float* outBuf[2], const uint32_t frames)
+void CarlaEngine::processRack(float* inBufReal[2], float* outBuf[2], const uint32_t frames)
 {
     CARLA_ASSERT(pData->bufEvents.in != nullptr);
     CARLA_ASSERT(pData->bufEvents.out != nullptr);
+
+    // safe copy
+    float inBuf0[frames];
+    float inBuf1[frames];
+    float* inBuf[2] = { inBuf0, inBuf1 };
+
+    // initialize inputs
+    carla_copyFloat(inBuf0, inBufReal[0], frames);
+    carla_copyFloat(inBuf1, inBufReal[1], frames);
 
     // initialize outputs (zero)
     carla_zeroFloat(outBuf[0], frames);
@@ -1705,6 +1717,9 @@ void CarlaEngine::processRack(float* inBuf[2], float* outBuf[2], const uint32_t 
     carla_zeroMem(pData->bufEvents.out, sizeof(EngineEvent)*kEngineMaxInternalEventCount);
 
     bool processed = false;
+
+    uint32_t oldAudioInCount = 0;
+    uint32_t oldMidiOutCount = 0;
 
     // process plugins
     for (unsigned int i=0; i < pData->curPluginCount; ++i)
@@ -1716,9 +1731,10 @@ void CarlaEngine::processRack(float* inBuf[2], float* outBuf[2], const uint32_t 
 
         if (processed)
         {
+
             // initialize inputs (from previous outputs)
-            carla_copyFloat(inBuf[0], outBuf[0], frames);
-            carla_copyFloat(inBuf[1], outBuf[1], frames);
+            carla_copyFloat(inBuf0, outBuf[0], frames);
+            carla_copyFloat(inBuf1, outBuf[1], frames);
             std::memcpy(pData->bufEvents.in, pData->bufEvents.out, sizeof(EngineEvent)*kEngineMaxInternalEventCount);
 
             // initialize outputs (zero)
@@ -1727,25 +1743,34 @@ void CarlaEngine::processRack(float* inBuf[2], float* outBuf[2], const uint32_t 
             carla_zeroMem(pData->bufEvents.out, sizeof(EngineEvent)*kEngineMaxInternalEventCount);
         }
 
+        oldAudioInCount = plugin->getAudioInCount();
+        oldMidiOutCount = plugin->getMidiOutCount();
+
+            // if plugin has no audio inputs, add input buffer
+            //if (oldAudioInCount == 0)
+            {
+                carla_addFloat(outBuf[0], inBuf0, frames);
+                carla_addFloat(outBuf[1], inBuf1, frames);
+            }
+
+            // if plugin has no midi out, add previous events
+            if (oldMidiOutCount == 0 && pData->bufEvents.in[0].type != CarlaBackend::kEngineEventTypeNull)
+            {
+                if (pData->bufEvents.out[0].type != CarlaBackend::kEngineEventTypeNull)
+                {
+                    // TODO: carefully add to output, sorted events
+                }
+                else
+                {
+                    // nothing in output, can be replaced directly
+                    std::memcpy(pData->bufEvents.out, pData->bufEvents.in, sizeof(EngineEvent)*kEngineMaxInternalEventCount);
+                }
+            }
+
         // process
         plugin->initBuffers();
         plugin->process(inBuf, outBuf, frames);
         plugin->unlock();
-
-        // if plugin has no audio inputs, add previous buffers
-        if (plugin->getAudioInCount() == 0)
-        {
-            carla_addFloat(outBuf[0], inBuf[0], frames);
-            carla_addFloat(outBuf[1], inBuf[1], frames);
-        }
-        // if plugin has no midi output, add previous events
-        if (plugin->getMidiOutCount() == 0)
-        {
-            //for (uint32_t j=0, k=0; j < frames; ++j)
-            //{
-            //}
-            std::memcpy(pData->bufEvents.out, pData->bufEvents.in, sizeof(EngineEvent)*kEngineMaxInternalEventCount);
-        }
 
         // set peaks
         {
@@ -1756,8 +1781,8 @@ void CarlaEngine::processRack(float* inBuf[2], float* outBuf[2], const uint32_t 
 
             for (uint32_t k=0; k < frames; ++k)
             {
-                setValueIfHigher(inPeak1,  std::fabs(inBuf[0][k]));
-                setValueIfHigher(inPeak2,  std::fabs(inBuf[1][k]));
+                setValueIfHigher(inPeak1,  std::fabs(inBuf0[k]));
+                setValueIfHigher(inPeak2,  std::fabs(inBuf1[k]));
                 setValueIfHigher(outPeak1, std::fabs(outBuf[0][k]));
                 setValueIfHigher(outPeak2, std::fabs(outBuf[1][k]));
             }

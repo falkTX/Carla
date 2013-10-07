@@ -20,12 +20,12 @@
 # Imports (Global)
 
 try:
-    from PyQt5.QtCore import QTimer
+    from PyQt5.QtCore import QModelIndex, QTimer
     from PyQt5.QtGui import QPalette
-    from PyQt5.QtWidgets import QApplication, QMainWindow
+    from PyQt5.QtWidgets import QApplication, QFileSystemModel, QMainWindow
 except:
-    from PyQt4.QtCore import QTimer
-    from PyQt4.QtGui import QApplication, QMainWindow, QPalette
+    from PyQt4.QtCore import QModelIndex, QTimer
+    from PyQt4.QtGui import QApplication, QFileSystemModel, QMainWindow, QPalette
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -213,6 +213,20 @@ class HostWindow(QMainWindow):
 
         self.setTransportMenuEnabled(False)
 
+        # -------------------------------------------------------------
+        # Set up GUI (right panel)
+
+        self.fDirModel = QFileSystemModel(self)
+        self.fDirModel.setNameFilters(cString(Carla.host.get_supported_file_types()).split(";"))
+        self.fDirModel.setRootPath(HOME)
+
+        self.ui.fileTreeView.setModel(self.fDirModel)
+        self.ui.fileTreeView.setRootIndex(self.fDirModel.index(HOME))
+        self.ui.fileTreeView.setColumnHidden(1, True)
+        self.ui.fileTreeView.setColumnHidden(2, True)
+        self.ui.fileTreeView.setColumnHidden(3, True)
+        self.ui.fileTreeView.setHeaderHidden(True)
+
         self.setProperWindowTitle()
 
         # -------------------------------------------------------------
@@ -240,10 +254,10 @@ class HostWindow(QMainWindow):
 
         #self.ui.splitter.splitterMoved.connect(self.slot_splitterMoved)
 
-        #self.ui.cb_disk.currentIndexChanged.connect(self.slot_diskFolderChanged)
-        #self.ui.b_disk_add.clicked.connect(self.slot_diskFolderAdd)
-        #self.ui.b_disk_remove.clicked.connect(self.slot_diskFolderRemove)
-        #self.ui.fileTreeView.doubleClicked.connect(self.slot_fileTreeDoubleClicked)
+        self.ui.cb_disk.currentIndexChanged.connect(self.slot_diskFolderChanged)
+        self.ui.b_disk_add.clicked.connect(self.slot_diskFolderAdd)
+        self.ui.b_disk_remove.clicked.connect(self.slot_diskFolderRemove)
+        self.ui.fileTreeView.doubleClicked.connect(self.slot_fileTreeDoubleClicked)
 
         self.DebugCallback.connect(self.slot_handleDebugCallback)
         self.PluginAddedCallback.connect(self.slot_handlePluginAddedCallback)
@@ -276,6 +290,20 @@ class HostWindow(QMainWindow):
     def openSettingsWindow(self, hasCanvas, hasCanvasGL):
         dialog = CarlaSettingsW(self, hasCanvas, hasCanvasGL)
         return dialog.exec_()
+
+    def setupContainer(self, showMiniCanvas):
+        if showMiniCanvas:
+            CARLA_DEFAULT_CANVAS_WIDTH  = 3100
+            CARLA_DEFAULT_CANVAS_HEIGHT = 2400
+            self.ui.miniCanvasPreview.setRealParent(self)
+            #self.ui.miniCanvasPreview.setViewTheme(patchcanvas.canvas.theme.canvas_bg, patchcanvas.canvas.theme.rubberband_brush, patchcanvas.canvas.theme.rubberband_pen.color())
+            self.ui.miniCanvasPreview.init(self.fContainer.scene, CARLA_DEFAULT_CANVAS_WIDTH, CARLA_DEFAULT_CANVAS_HEIGHT, self.fSavedSettings["UseCustomMiniCanvasPaint"])
+        else:
+              self.ui.miniCanvasPreview.hide()
+
+        self.ui.mainwidget.hide()
+        self.ui.splitter.insertWidget(0, self.fContainer)
+        del self.ui.mainwidget
 
     # -----------------------------------------------------------------
     # Internal stuff (files)
@@ -521,16 +549,16 @@ class HostWindow(QMainWindow):
             #if settings.contains("SplitterState"):
                 #self.ui.splitter.restoreState(settings.value("SplitterState", ""))
             #else:
-                #self.ui.splitter.setSizes([99999, 210])
+            self.ui.splitter.setSizes([99999, 210])
 
-            #diskFolders = toList(settings.value("DiskFolders", [HOME]))
+            diskFolders = toList(settings.value("DiskFolders", [HOME]))
 
-            #self.ui.cb_disk.setItemData(0, HOME)
+            self.ui.cb_disk.setItemData(0, HOME)
 
-            #for i in range(len(diskFolders)):
-                #if i == 0: continue
-                #folder = diskFolders[i]
-                #self.ui.cb_disk.addItem(os.path.basename(folder), folder)
+            for i in range(len(diskFolders)):
+                if i == 0: continue
+                folder = diskFolders[i]
+                self.ui.cb_disk.addItem(os.path.basename(folder), folder)
 
             if MACOS and not settings.value("Main/UseProTheme", True, type=bool):
                 self.setUnifiedTitleAndToolBarOnMac(True)
@@ -601,17 +629,17 @@ class HostWindow(QMainWindow):
         settings = QSettings()
 
         settings.setValue("Geometry", self.saveGeometry())
-        #settings.setValue("SplitterState", self.ui.splitter.saveState())
+        settings.setValue("SplitterState", self.ui.splitter.saveState())
         settings.setValue("ShowToolbar", self.ui.toolBar.isVisible())
         #settings.setValue("HorizontalScrollBarValue", self.ui.graphicsView.horizontalScrollBar().value())
         #settings.setValue("VerticalScrollBarValue", self.ui.graphicsView.verticalScrollBar().value())
 
-        #diskFolders = []
+        diskFolders = []
 
-        #for i in range(self.ui.cb_disk.count()):
-            #diskFolders.append(self.ui.cb_disk.itemData(i))
+        for i in range(self.ui.cb_disk.count()):
+            diskFolders.append(self.ui.cb_disk.itemData(i))
 
-        #settings.setValue("DiskFolders", diskFolders)
+        settings.setValue("DiskFolders", diskFolders)
 
         self.fContainer.saveSettings(settings)
 
@@ -820,6 +848,54 @@ class HostWindow(QMainWindow):
     @pyqtSlot()
     def slot_aboutQt(self):
         QApplication.instance().aboutQt()
+
+    # -----------------------------------------------------------------
+
+    @pyqtSlot(int)
+    def slot_diskFolderChanged(self, index):
+        if index < 0:
+            return
+        elif index == 0:
+            filename = HOME
+            self.ui.b_disk_remove.setEnabled(False)
+        else:
+            filename = self.ui.cb_disk.itemData(index)
+            self.ui.b_disk_remove.setEnabled(True)
+
+        self.fDirModel.setRootPath(filename)
+        self.ui.fileTreeView.setRootIndex(self.fDirModel.index(filename))
+
+    @pyqtSlot()
+    def slot_diskFolderAdd(self):
+        newPath = QFileDialog.getExistingDirectory(self, self.tr("New Folder"), "", QFileDialog.ShowDirsOnly)
+
+        if newPath:
+            if newPath[-1] == os.sep:
+                newPath = newPath[:-1]
+            self.ui.cb_disk.addItem(os.path.basename(newPath), newPath)
+            self.ui.cb_disk.setCurrentIndex(self.ui.cb_disk.count()-1)
+            self.ui.b_disk_remove.setEnabled(True)
+
+    @pyqtSlot()
+    def slot_diskFolderRemove(self):
+        index = self.ui.cb_disk.currentIndex()
+
+        if index <= 0:
+            return
+
+        self.ui.cb_disk.removeItem(index)
+
+        if self.ui.cb_disk.currentIndex() == 0:
+            self.ui.b_disk_remove.setEnabled(False)
+
+    @pyqtSlot(QModelIndex)
+    def slot_fileTreeDoubleClicked(self, modelIndex):
+        filename = self.fDirModel.filePath(modelIndex)
+
+        if not Carla.host.load_filename(filename):
+            CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"),
+                             self.tr("Failed to load file"),
+                             cString(Carla.host.get_last_error()), QMessageBox.Ok, QMessageBox.Ok)
 
     # -----------------------------------------------------------------
 

@@ -30,7 +30,7 @@ class CarlaHostW(HostWindow):
         HostWindow.__init__(self, parent)
 
         self.fContainer = CarlaRackW(self)
-        self.setCentralWidget(self.fContainer)
+        self.setupContainer(False)
 
 # ------------------------------------------------------------------------------------------------------------
 # Main

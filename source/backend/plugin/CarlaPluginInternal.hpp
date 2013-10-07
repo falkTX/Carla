@@ -659,9 +659,11 @@ struct CarlaPluginProtectedData {
         if (client != nullptr)
         {
             if (client->isActive())
-                client->deactivate();
-            else
+            {
+                // must not happen
                 carla_assert("client->isActive()", __FILE__, __LINE__);
+                client->deactivate();
+            }
 
             clearBuffers();
 

@@ -99,7 +99,7 @@ class CanvasPreviewFrame(QFrame):
 
     def setViewScale(self, scale):
         self.fScale = scale
-        QTimer.singleShot(0, self.fRealParent, SLOT("slot_miniCanvasCheckAll()"))
+        #QTimer.singleShot(0, self.fRealParent, SLOT("slot_miniCanvasCheckAll()"))
 
     def setViewSize(self, width, height):
         self.fViewRect[iWidth]  = width  * self.fFakeWidth
@@ -139,7 +139,7 @@ class CanvasPreviewFrame(QFrame):
         self.fViewRect[iY] = y + self.fRenderSource.y()
         self.update()
 
-        self.emit(SIGNAL("miniCanvasMoved(double, double)"), x * self.fScale / self.fFakeWidth, y * self.fScale / self.fFakeHeight)
+        #self.emit(SIGNAL("miniCanvasMoved(double, double)"), x * self.fScale / self.fFakeWidth, y * self.fScale / self.fFakeHeight)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
@@ -178,7 +178,7 @@ class CanvasPreviewFrame(QFrame):
         else:
             painter.setBrush(self.fViewBg)
             painter.setPen(self.fViewBg)
-            painter.drawRoundRect(2, 2, self.width()-6, self.height()-6, 3, 3)
+            painter.drawRoundedRect(2, 2, self.width()-6, self.height()-6, 3, 3)
 
         self.fScene.render(painter, self.fRenderSource, self.fRenderTarget, Qt.KeepAspectRatio)
 
@@ -201,6 +201,6 @@ class CanvasPreviewFrame(QFrame):
 
     def resizeEvent(self, event):
         self.fRenderSource = self.getRenderSource()
-        if self.fRealParent:
-            QTimer.singleShot(0, self.fRealParent, SLOT("slot_miniCanvasCheckAll()"))
-        QFrame.resizeEvent(self, event)
+        #if self.fRealParent:
+            #QTimer.singleShot(0, self.fRealParent, SLOT("slot_miniCanvasCheckAll()"))
+        #QFrame.resizeEvent(self, event)
