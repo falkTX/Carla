@@ -301,6 +301,44 @@ else:
                                     os.path.join("/", "usr", "share", "sounds", "sfz")))
 
 # ------------------------------------------------------------------------------------------------------------
+# Carla Settings keys
+
+CARLA_KEY_MAIN_PROJECT_FOLDER   = "Main/ProjectFolder"   # str
+CARLA_KEY_MAIN_USE_PRO_THEME    = "Main/UseProTheme"     # bool
+CARLA_KEY_MAIN_PRO_THEME_COLOR  = "Main/ProThemeColor"   # str
+CARLA_KEY_MAIN_DISABLE_CHECKS   = "Main/DisableChecks"   # bool
+CARLA_KEY_MAIN_REFRESH_INTERVAL = "Main/RefreshInterval" # int
+
+CARLA_KEY_CANVAS_THEME            = "Canvas/Theme"           # str
+CARLA_KEY_CANVAS_SIZE             = "Canvas/Size"            # str "NxN"
+CARLA_KEY_CANVAS_USE_BEZIER_LINES = "Canvas/UseBezierLines"  # bool
+CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS = "Canvas/AutoHideGroups"  # bool
+CARLA_KEY_CANVAS_EYE_CANDY        = "Canvas/EyeCandy"        # enum
+CARLA_KEY_CANVAS_USE_OPENGL       = "Canvas/UseOpenGL"       # bool
+CARLA_KEY_CANVAS_ANTIALIASING     = "Canvas/Antialiasing"    # enum
+CARLA_KEY_CANVAS_HQ_ANTIALIASING  = "Canvas/HQAntialiasing"  # bool
+
+CARLA_KEY_ENGINE_ = "Engine/AudioDriver"         # str
+CARLA_KEY_ENGINE_ = "Engine/ProcessMode"         # enum
+CARLA_KEY_ENGINE_ = "Engine/MaxParameters"       # bool
+CARLA_KEY_ENGINE_ = "Engine/UIsAlwaysOnTop"      # bool
+CARLA_KEY_ENGINE_ = "Engine/PreferUiBridges"     # bool
+CARLA_KEY_ENGINE_ = "Engine/OscUiTimeout"        # int
+CARLA_KEY_ENGINE_ = "Engine/PreferPluginBridges" # bool
+CARLA_KEY_ENGINE_ = "Engine/ForceStereo"         # bool
+CARLA_KEY_ENGINE_DRIVER_PREFIX = "Engine/Driver-"
+
+CARLA_KEY_PATHS_LADSPA = "Paths/LADSPA"
+CARLA_KEY_PATHS_DSSI   = "Paths/DSSI"
+CARLA_KEY_PATHS_LV2    = "Paths/LV2"
+CARLA_KEY_PATHS_VST    = "Paths/VST"
+CARLA_KEY_PATHS_AU     = "Paths/AU"
+CARLA_KEY_PATHS_CSOUND = "Paths/CSOUND"
+CARLA_KEY_PATHS_GIG    = "Paths/GIG"
+CARLA_KEY_PATHS_SF2    = "Paths/SF2"
+CARLA_KEY_PATHS_SFZ    = "Paths/SFZ"
+
+# ------------------------------------------------------------------------------------------------------------
 # Global Carla object
 
 class CarlaObject(object):

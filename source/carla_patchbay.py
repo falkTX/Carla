@@ -65,17 +65,17 @@ class CarlaPatchbayW(QGraphicsView):
 
         self.scene = patchcanvas.PatchScene(self, self) # FIXME?
         self.setScene(self.scene)
-        self.setRenderHint(QPainter.Antialiasing, bool(parent.fSavedSettings["Canvas/Antialiasing"] == patchcanvas.ANTIALIASING_FULL))
-        if parent.fSavedSettings["Canvas/UseOpenGL"] and hasGL:
+        self.setRenderHint(QPainter.Antialiasing, bool(parent.fSavedSettings[CARLA_KEY_CANVAS_ANTIALIASING] == patchcanvas.ANTIALIASING_FULL))
+        if parent.fSavedSettings[CARLA_KEY_CANVAS_USE_OPENGL] and hasGL:
             self.setViewport(QGLWidget(self))
-            self.setRenderHint(QPainter.HighQualityAntialiasing, parent.fSavedSettings["Canvas/HighQualityAntialiasing"])
+            self.setRenderHint(QPainter.HighQualityAntialiasing, parent.fSavedSettings[CARLA_KEY_CANVAS_HQ_ANTIALIASING])
 
         pOptions = patchcanvas.options_t()
-        pOptions.theme_name       = parent.fSavedSettings["Canvas/Theme"]
-        pOptions.auto_hide_groups = parent.fSavedSettings["Canvas/AutoHideGroups"]
-        pOptions.use_bezier_lines = parent.fSavedSettings["Canvas/UseBezierLines"]
-        pOptions.antialiasing     = parent.fSavedSettings["Canvas/Antialiasing"]
-        pOptions.eyecandy         = parent.fSavedSettings["Canvas/EyeCandy"]
+        pOptions.theme_name       = parent.fSavedSettings[CARLA_KEY_CANVAS_THEME]
+        pOptions.auto_hide_groups = parent.fSavedSettings[CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS]
+        pOptions.use_bezier_lines = parent.fSavedSettings[CARLA_KEY_CANVAS_USE_BEZIER_LINES]
+        pOptions.antialiasing     = parent.fSavedSettings[CARLA_KEY_CANVAS_ANTIALIASING]
+        pOptions.eyecandy         = parent.fSavedSettings[CARLA_KEY_CANVAS_EYE_CANDY]
 
         pFeatures = patchcanvas.features_t()
         pFeatures.group_info   = False
@@ -88,15 +88,21 @@ class CarlaPatchbayW(QGraphicsView):
         patchcanvas.setFeatures(pFeatures)
         patchcanvas.init("Carla", self.scene, CanvasCallback, True)
 
-        #patchcanvas.setCanvasSize(0, 0, DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT)
-        #patchcanvas.setInitialPos(DEFAULT_CANVAS_WIDTH / 2, DEFAULT_CANVAS_HEIGHT / 2)
-        #self.setSceneRect(0, 0, DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT)
+        tryCanvasSize = parent.fSavedSettings[CARLA_KEY_CANVAS_SIZE].split("x")
+
+        if len(tryCanvasSize) == 2 and tryCanvasSize[0].isdigit() and tryCanvasSize[1].isdigit():
+            canvasWidth  = int(tryCanvasSize[0])
+            canvasHeight = int(tryCanvasSize[1])
+        else:
+            canvasWidth  = CARLA_DEFAULT_CANVAS_SIZE_WIDTH
+            canvasHeight = CARLA_DEFAULT_CANVAS_SIZE_HEIGHT
+
+        patchcanvas.setCanvasSize(0, 0, canvasWidth, canvasHeight)
+        patchcanvas.setInitialPos(canvasWidth / 2, canvasHeight / 2)
+        self.setSceneRect(0, 0, canvasWidth, canvasHeight)
 
         # -------------------------------------------------------------
         # Connect actions to functions
-
-        if parent is None:
-            return
 
         parent.ui.act_plugins_enable.triggered.connect(self.slot_pluginsEnable)
         parent.ui.act_plugins_disable.triggered.connect(self.slot_pluginsDisable)
@@ -334,7 +340,7 @@ class CarlaPatchbayW(QGraphicsView):
 
     @pyqtSlot()
     def slot_configureCarla(self):
-        if self.fParent is None or not self.fParent.openSettingsWindow(False, False):
+        if self.fParent is None or not self.fParent.openSettingsWindow(True, hasGL):
             return
 
         self.fParent.loadSettings(False)
@@ -442,7 +448,7 @@ class CarlaPatchbayW(QGraphicsView):
         if pitem is None:
             return
 
-        pitem.sendNoteOn(channel, note)
+        pitem.sendNoteOn(channel, note, False)
 
     @pyqtSlot(int, int, int)
     def slot_handleNoteOffCallback(self, pluginId, channel, note):
@@ -453,7 +459,7 @@ class CarlaPatchbayW(QGraphicsView):
         if pitem is None:
             return
 
-        pitem.sendNoteOff(channel, note)
+        pitem.sendNoteOff(channel, note, False)
 
     # -----------------------------------------------------------------
 

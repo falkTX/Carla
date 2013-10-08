@@ -925,11 +925,12 @@ class PluginEdit(QDialog):
         self.ui.cb_midi_programs.setCurrentIndex(index)
         self.ui.cb_midi_programs.blockSignals(False)
 
-    def sendNoteOn(self, channel, note):
+    # FIXME - return True/False instead of needsLedFeedback
+    def sendNoteOn(self, channel, note, needsLedFeedback):
         if self.fControlChannel == channel:
             self.ui.keyboard.sendNoteOn(note, False)
 
-        if len(self.fPlayingNotes) == 0 and self.fRealParent:
+        if needsLedFeedback and len(self.fPlayingNotes) == 0 and self.fRealParent is not None:
             self.fRealParent.ui.led_midi.setChecked(True)
 
         playItem = (channel, note)
@@ -937,11 +938,11 @@ class PluginEdit(QDialog):
         if playItem not in self.fPlayingNotes:
             self.fPlayingNotes.append(playItem)
 
-    def sendNoteOff(self, channel, note):
+    def sendNoteOff(self, channel, note, needsLedFeedback):
         if self.fControlChannel == channel:
             self.ui.keyboard.sendNoteOff(note, False)
 
-        if len(self.fPlayingNotes) == 1 and self.fRealParent:
+        if needsLedFeedback and len(self.fPlayingNotes) == 1 and self.fRealParent is not None:
             self.fRealParent.ui.led_midi.setChecked(False)
 
         playItem = (channel, note)

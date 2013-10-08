@@ -415,7 +415,7 @@ class CarlaRackW(QListWidget):
         if pitem is None:
             return
 
-        pitem.fWidget.sendNoteOn(channel, note)
+        pitem.fWidget.sendNoteOn(channel, note, True)
 
     @pyqtSlot(int, int, int)
     def slot_handleNoteOffCallback(self, pluginId, channel, note):
@@ -426,7 +426,7 @@ class CarlaRackW(QListWidget):
         if pitem is None:
             return
 
-        pitem.fWidget.sendNoteOff(channel, note)
+        pitem.fWidget.sendNoteOff(channel, note, True)
 
     # -----------------------------------------------------------------
 

@@ -442,6 +442,8 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon=ICON_APPLICATION):
         if options.eyecandy == EYECANDY_FULL and not options.auto_hide_groups:
             CanvasItemFX(group_sbox, True)
 
+        group_sbox.checkItemPos()
+
     else:
         group_box.setSplit(False)
 

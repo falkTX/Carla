@@ -42,7 +42,6 @@ from carla_widgets import *
 
 CANVAS_ANTIALIASING_SMALL = 1
 CANVAS_EYECANDY_SMALL     = 1
-CANVAS_DEFAULT_THEME_NAME = "Modern Dark"
 
 # ------------------------------------------------------------------------------------------------------------
 # Session Management support
@@ -601,18 +600,21 @@ class HostWindow(QMainWindow):
 
         # ---------------------------------------------
 
+        # TODO
+
         self.fSavedSettings = {
-            "Main/DefaultProjectFolder":      settings.value("Main/DefaultProjectFolder", HOME, type=str),
-            "Main/RefreshInterval":           settings.value("Main/RefreshInterval",      50, type=int),
-            "Canvas/Theme":                   settings.value("Canvas/Theme",              CANVAS_DEFAULT_THEME_NAME, type=str),
-            "Canvas/AutoHideGroups":          settings.value("Canvas/AutoHideGroups",     False, type=bool),
-            "Canvas/UseBezierLines":          settings.value("Canvas/UseBezierLines",     True, type=bool),
-            "Canvas/EyeCandy":                settings.value("Canvas/EyeCandy",           CANVAS_EYECANDY_SMALL, type=int),
-            "Canvas/UseOpenGL":               settings.value("Canvas/UseOpenGL",          False, type=bool),
-            "Canvas/Antialiasing":            settings.value("Canvas/Antialiasing",       CANVAS_ANTIALIASING_SMALL, type=int),
-            "Canvas/HighQualityAntialiasing": settings.value("Canvas/HighQualityAntialiasing", False, type=bool),
-            "UseCustomMiniCanvasPaint":      (settings.value("Main/UseProTheme", True, type=bool) and
-                                              settings.value("Main/ProThemeColor", "Black", type=str).lower() == "black")
+            "Main/DefaultProjectFolder":       settings.value("Main/DefaultProjectFolder",       HOME, type=str),
+            "Main/RefreshInterval":            settings.value("Main/RefreshInterval",            50, type=int),
+            CARLA_KEY_CANVAS_THEME:            settings.value(CARLA_KEY_CANVAS_THEME,            CARLA_DEFAULT_CANVAS_THEME,            type=str),
+            CARLA_KEY_CANVAS_SIZE:             settings.value(CARLA_KEY_CANVAS_SIZE,             CARLA_DEFAULT_CANVAS_SIZE,             type=str),
+            CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS: settings.value(CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS, CARLA_DEFAULT_CANVAS_AUTO_HIDE_GROUPS, type=bool),
+            CARLA_KEY_CANVAS_USE_BEZIER_LINES: settings.value(CARLA_KEY_CANVAS_USE_BEZIER_LINES, CARLA_DEFAULT_CANVAS_USE_BEZIER_LINES, type=bool),
+            CARLA_KEY_CANVAS_EYE_CANDY:        settings.value(CARLA_KEY_CANVAS_EYE_CANDY,        CARLA_DEFAULT_CANVAS_EYE_CANDY,        type=int),
+            CARLA_KEY_CANVAS_USE_OPENGL:       settings.value(CARLA_KEY_CANVAS_USE_OPENGL,       CARLA_DEFAULT_CANVAS_USE_OPENGL,       type=bool),
+            CARLA_KEY_CANVAS_ANTIALIASING:     settings.value(CARLA_KEY_CANVAS_ANTIALIASING,     CARLA_DEFAULT_CANVAS_ANTIALIASING,     type=int),
+            CARLA_KEY_CANVAS_HQ_ANTIALIASING:  settings.value(CARLA_KEY_CANVAS_HQ_ANTIALIASING,  CARLA_DEFAULT_CANVAS_HQ_ANTIALIASING,  type=bool),
+            "UseCustomMiniCanvasPaint":       (settings.value("Main/UseProTheme", True, type=bool) and
+                                               settings.value("Main/ProThemeColor", "Black", type=str).lower() == "black")
         }
 
         # ---------------------------------------------

@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>600</width>
+    <width>607</width>
     <height>465</height>
    </rect>
   </property>
@@ -180,7 +180,7 @@
         <number>0</number>
        </property>
        <property name="currentIndex">
-        <number>0</number>
+        <number>1</number>
        </property>
        <widget class="QWidget" name="page_main">
         <layout class="QVBoxLayout" name="verticalLayout_5">
@@ -190,7 +190,7 @@
          <item>
           <layout class="QHBoxLayout" name="horizontalLayout">
            <item>
-            <widget class="QLabel" name="label">
+            <widget class="QLabel" name="label_main">
              <property name="text">
               <string>&lt;b&gt;Main&lt;/b&gt;</string>
              </property>
@@ -236,17 +236,17 @@
             <item>
              <layout class="QHBoxLayout" name="horizontalLayout_2">
               <item>
-               <widget class="QLabel" name="label_3">
+               <widget class="QLabel" name="label_main_proj_folder_open">
                 <property name="text">
                  <string>Default project folder:</string>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QLineEdit" name="le_main_def_folder"/>
+               <widget class="QLineEdit" name="le_main_proj_folder"/>
               </item>
               <item>
-               <widget class="QPushButton" name="b_main_def_folder_open">
+               <widget class="QPushButton" name="b_main_proj_folder_open">
                 <property name="maximumSize">
                  <size>
                   <width>22</width>
@@ -268,20 +268,20 @@
           </widget>
          </item>
          <item>
-          <widget class="QGroupBox" name="group_theme">
+          <widget class="QGroupBox" name="group_main_theme">
            <property name="title">
             <string>Theme</string>
            </property>
            <layout class="QGridLayout" name="gridLayout_3">
             <item row="0" column="0" colspan="3">
-             <widget class="QCheckBox" name="ch_theme_pro">
+             <widget class="QCheckBox" name="ch_main_theme_pro">
               <property name="text">
                <string>Use Carla &quot;PRO&quot; theme (needs restart)</string>
               </property>
              </widget>
             </item>
             <item row="1" column="0">
-             <widget class="QLabel" name="label_2">
+             <widget class="QLabel" name="label_main_theme_color">
               <property name="enabled">
                <bool>false</bool>
               </property>
@@ -294,7 +294,7 @@
              </widget>
             </item>
             <item row="1" column="1">
-             <widget class="QComboBox" name="cb_theme_color">
+             <widget class="QComboBox" name="cb_main_theme_color">
               <property name="enabled">
                <bool>false</bool>
               </property>
@@ -330,13 +330,13 @@
           </widget>
          </item>
          <item>
-          <widget class="QGroupBox" name="groupBox_3">
+          <widget class="QGroupBox" name="group_main_misc">
            <property name="title">
             <string>Misc</string>
            </property>
            <layout class="QGridLayout" name="gridLayout_4">
             <item row="1" column="0">
-             <widget class="QLabel" name="label_8">
+             <widget class="QLabel" name="label_main_refresh_interval">
               <property name="text">
                <string>GUI Refresh interval:</string>
               </property>
@@ -346,7 +346,7 @@
              </widget>
             </item>
             <item row="1" column="1">
-             <widget class="QSpinBox" name="sb_gui_refresh">
+             <widget class="QSpinBox" name="sb_main_refresh_interval">
               <property name="suffix">
                <string> ms</string>
               </property>
@@ -378,7 +378,7 @@
              </spacer>
             </item>
             <item row="0" column="0" colspan="3">
-             <widget class="QCheckBox" name="ch_engine_disable_checks">
+             <widget class="QCheckBox" name="ch_main_disable_checks">
               <property name="toolTip">
                <string>Carla will run small processing checks when scanning the plugins (to make sure they won't crash).
 You can disable these checks to get a faster scanning time (at your own risk).</string>
@@ -452,7 +452,7 @@ You can disable these checks to get a faster scanning time (at your own risk).</
           </layout>
          </item>
          <item>
-          <widget class="QGroupBox" name="groupBox_4">
+          <widget class="QGroupBox" name="group_canvas_theme">
            <property name="title">
             <string>Theme</string>
            </property>
@@ -470,7 +470,7 @@ You can disable these checks to get a faster scanning time (at your own risk).</
               </property>
              </spacer>
             </item>
-            <item row="1" column="0" colspan="2">
+            <item row="2" column="0" colspan="2">
              <spacer name="horizontalSpacer_8">
               <property name="orientation">
                <enum>Qt::Horizontal</enum>
@@ -483,7 +483,7 @@ You can disable these checks to get a faster scanning time (at your own risk).</
               </property>
              </spacer>
             </item>
-            <item row="1" column="2" colspan="3">
+            <item row="2" column="2" colspan="3">
              <widget class="QCheckBox" name="cb_canvas_bezier_lines">
               <property name="text">
                <string>Bezier Lines</string>
@@ -494,7 +494,7 @@ You can disable these checks to get a faster scanning time (at your own risk).</
              <widget class="QComboBox" name="cb_canvas_theme"/>
             </item>
             <item row="0" column="1" colspan="2">
-             <widget class="QLabel" name="label_11">
+             <widget class="QLabel" name="label_canvas_theme">
               <property name="text">
                <string>Theme:</string>
               </property>
@@ -516,11 +516,76 @@ You can disable these checks to get a faster scanning time (at your own risk).</
               </property>
              </spacer>
             </item>
+            <item row="1" column="0">
+             <spacer name="horizontalSpacer_15">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item row="1" column="1" colspan="2">
+             <widget class="QLabel" name="label_canvas_size">
+              <property name="text">
+               <string>Size:</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="3">
+             <widget class="QComboBox" name="cb_canvas_size">
+              <item>
+               <property name="text">
+                <string>775x600</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>1550x1200</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>3100x2400</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>4650x3600</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>6200x4800</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+            <item row="1" column="4">
+             <spacer name="horizontalSpacer_16">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
            </layout>
           </widget>
          </item>
          <item>
-          <widget class="QGroupBox" name="groupBox_7">
+          <widget class="QGroupBox" name="group_canvas_options">
            <property name="title">
             <string>Options</string>
            </property>
@@ -553,7 +618,7 @@ You can disable these checks to get a faster scanning time (at your own risk).</
           </widget>
          </item>
          <item>
-          <widget class="QGroupBox" name="groupBox_5">
+          <widget class="QGroupBox" name="group_canvas_render">
            <property name="title">
             <string>Render Hints</string>
            </property>
@@ -632,7 +697,7 @@ You can disable these checks to get a faster scanning time (at your own risk).</
               <string notr="true"/>
              </property>
              <property name="pixmap">
-              <pixmap>:/48x48/exec.png</pixmap>
+              <pixmap resource="../resources.qrc">:/48x48/jack.png</pixmap>
              </property>
              <property name="alignment">
               <set>Qt::AlignHCenter|Qt::AlignTop</set>
@@ -1306,9 +1371,9 @@ This mode is not available for VST plugins.</string>
    </hints>
   </connection>
   <connection>
-   <sender>ch_theme_pro</sender>
+   <sender>ch_main_theme_pro</sender>
    <signal>toggled(bool)</signal>
-   <receiver>label_2</receiver>
+   <receiver>label_main_theme_color</receiver>
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
@@ -1322,9 +1387,9 @@ This mode is not available for VST plugins.</string>
    </hints>
   </connection>
   <connection>
-   <sender>ch_theme_pro</sender>
+   <sender>ch_main_theme_pro</sender>
    <signal>toggled(bool)</signal>
-   <receiver>cb_theme_color</receiver>
+   <receiver>cb_main_theme_color</receiver>
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
