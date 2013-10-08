@@ -83,6 +83,9 @@ class CarlaDummyW(object):
     def engineStopped(self):
         pass
 
+    def engineChanged(self):
+        pass
+
     # -----------------------------------------------------------------
 
     def idleFast(self):
@@ -172,6 +175,7 @@ class HostWindow(QMainWindow):
 
         self.fLastTransportFrame = 0
         self.fLastTransportState = False
+        self.fTextTransport = ""
 
         self.fSavedSettings = {}
 
@@ -250,8 +254,6 @@ class HostWindow(QMainWindow):
 
         self.ui.act_help_about.triggered.connect(self.slot_aboutCarla)
         self.ui.act_help_about_qt.triggered.connect(self.slot_aboutQt)
-
-        #self.ui.splitter.splitterMoved.connect(self.slot_splitterMoved)
 
         self.ui.cb_disk.currentIndexChanged.connect(self.slot_diskFolderChanged)
         self.ui.b_disk_add.clicked.connect(self.slot_diskFolderAdd)
@@ -520,9 +522,7 @@ class HostWindow(QMainWindow):
             mins = (time / 60) % 60
             hrs  = (time / 3600) % 60
 
-            #textTransport = "Transport %s, at %02i:%02i:%02i" % ("playing" if playing else "stopped", hrs, mins, secs)
-            #self.fInfoLabel.setText("%s | %s" % (self.fInfoText, textTransport))
-
+            self.fTextTransport = "Transport %s, at %02i:%02i:%02i" % ("playing" if playing else "stopped", hrs, mins, secs)
             self.fLastTransportFrame = frame
 
     def setTransportMenuEnabled(self, enabled):
@@ -738,11 +738,10 @@ class HostWindow(QMainWindow):
             self.setTransportMenuEnabled(check)
 
         if check:
-            #self.fInfoText = "Engine running | SampleRate: %g | BufferSize: %i" % (self.fSampleRate, self.fBufferSize)
-            self.fContainer.engineStarted()
-
             if not Carla.isPlugin:
                 self.refreshTransport(True)
+
+            self.fContainer.engineStarted()
 
     @pyqtSlot()
     def slot_engineStop(self, doStop = True):
@@ -764,9 +763,8 @@ class HostWindow(QMainWindow):
             self.setTransportMenuEnabled(check)
 
         if not check:
+            self.fTextTransport = ""
             self.fContainer.engineStopped()
-            #self.fInfoText = ""
-            #self.fInfoLabel.setText("Engine stopped")
 
     # -----------------------------------------------------------------
 
@@ -927,12 +925,12 @@ class HostWindow(QMainWindow):
     @pyqtSlot(int)
     def slot_handleBufferSizeChangedCallback(self, newBufferSize):
         self.fBufferSize = newBufferSize
-        #self.fInfoText   = "Engine running | SampleRate: %g | BufferSize: %i" % (self.fSampleRate, self.fBufferSize)
+        self.fContainer.engineChanged()
 
     @pyqtSlot(float)
     def slot_handleSampleRateChangedCallback(self, newSampleRate):
         self.fSampleRate = newSampleRate
-        #self.fInfoText   = "Engine running | SampleRate: %g | BufferSize: %i" % (self.fSampleRate, self.fBufferSize)
+        self.fContainer.engineChanged()
 
     # -----------------------------------------------------------------
 

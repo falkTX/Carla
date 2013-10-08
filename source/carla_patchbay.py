@@ -218,6 +218,9 @@ class CarlaPatchbayW(QGraphicsView):
     def engineStopped(self):
         patchcanvas.clear()
 
+    def engineChanged(self):
+        pass
+
     # -----------------------------------------------------------------
 
     def idleFast(self):

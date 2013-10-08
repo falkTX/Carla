@@ -198,6 +198,9 @@ class CarlaRackW(QListWidget):
     def engineStopped(self):
         pass
 
+    def engineChanged(self):
+        pass
+
     # -----------------------------------------------------------------
 
     def idleFast(self):

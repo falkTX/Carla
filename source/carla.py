@@ -75,10 +75,6 @@ class CarlaMainW(QMainWindow):
         # -------------------------------------------------------------
         # Set-up GUI stuff
 
-        self.fInfoLabel = QLabel(self)
-        self.fInfoLabel.setText("")
-        self.fInfoText = ""
-
         if not WINDOWS:
             self.fSyntaxLog = LogSyntaxHighlighter(self.ui.pte_log)
             self.fSyntaxLog.setDocument(self.ui.pte_log.document())
@@ -104,19 +100,6 @@ class CarlaMainW(QMainWindow):
         self.ui.miniCanvasPreview.setViewTheme(patchcanvas.canvas.theme.canvas_bg, patchcanvas.canvas.theme.rubberband_brush, patchcanvas.canvas.theme.rubberband_pen.color())
         self.ui.miniCanvasPreview.init(self.scene, DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT, self.fSavedSettings["UseCustomMiniCanvasPaint"])
         QTimer.singleShot(100, self, SLOT("slot_miniCanvasInit()"))
-
-    def updateInfoLabelPos(self):
-        tabBar = self.ui.tabMain.tabBar()
-        y = tabBar.mapFromParent(self.ui.centralwidget.pos()).y()+tabBar.height()/4
-
-        if not self.ui.toolBar.isVisible():
-            y -= self.ui.toolBar.height()
-
-        self.fInfoLabel.move(self.fInfoLabel.x(), y)
-
-    def updateInfoLabelSize(self):
-        tabBar = self.ui.tabMain.tabBar()
-        self.fInfoLabel.resize(self.ui.tabMain.width()-tabBar.width()-20, self.fInfoLabel.height())
 
     @pyqtSlot()
     def slot_fileExportLv2Preset(self):
@@ -170,14 +153,6 @@ class CarlaMainW(QMainWindow):
 """ % (manifestPath, os.path.basename(filenameTry), presetContents))
         manifestFd.close()
 
-    @pyqtSlot()
-    def slot_toolbarShown(self):
-        self.updateInfoLabelPos()
-
-    @pyqtSlot()
-    def slot_splitterMoved(self):
-        self.updateInfoLabelSize()
-
     @pyqtSlot(float, float)
     def slot_miniCanvasMoved(self, xp, yp):
         self.ui.graphicsView.horizontalScrollBar().setValue(xp * DEFAULT_CANVAS_WIDTH)
@@ -214,12 +189,6 @@ class CarlaMainW(QMainWindow):
         settings = QSettings()
         self.ui.graphicsView.horizontalScrollBar().setValue(settings.value("HorizontalScrollBarValue", DEFAULT_CANVAS_WIDTH / 3, type=int))
         self.ui.graphicsView.verticalScrollBar().setValue(settings.value("VerticalScrollBarValue", DEFAULT_CANVAS_HEIGHT * 3 / 8, type=int))
-
-        tabBar = self.ui.tabMain.tabBar()
-        x = tabBar.width()+20
-        y = tabBar.mapFromParent(self.ui.centralwidget.pos()).y()+tabBar.height()/4
-        self.fInfoLabel.move(x, y)
-        self.fInfoLabel.resize(self.ui.tabMain.width()-x, tabBar.height())
 
     @pyqtSlot()
     def slot_miniCanvasCheckAll(self):
@@ -300,7 +269,5 @@ class CarlaMainW(QMainWindow):
             self.ui.miniCanvasPreview.setViewSize(float(width) / DEFAULT_CANVAS_WIDTH, float(height) / DEFAULT_CANVAS_HEIGHT)
         else:
             QTimer.singleShot(0, self, SLOT("slot_miniCanvasCheckSize()"))
-
-        self.updateInfoLabelSize()
 
         QMainWindow.resizeEvent(self, event)
