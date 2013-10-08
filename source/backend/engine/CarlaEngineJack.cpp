@@ -1022,10 +1022,7 @@ public:
 
     void patchbayRefresh() override
     {
-        CARLA_ASSERT(fClient != nullptr);
-
-        if (fClient == nullptr)
-            return;
+        CARLA_SAFE_ASSERT_RETURN(fClient != nullptr,);
 
         fLastGroupId = 0;
         fLastPortId  = 0;
@@ -1874,13 +1871,8 @@ private:
                 const char*  const portName(jackbridge_port_short_name(jackPort));
                 const char*  const fullPortName(ports[i]);
 
-                CARLA_ASSERT(jackPort != nullptr);
-                CARLA_ASSERT(portName != nullptr);
-
-                if (jackPort == nullptr)
-                    continue;
-                if (portName == nullptr)
-                    continue;
+                CARLA_SAFE_ASSERT_CONTINUE(jackPort != nullptr);
+                CARLA_SAFE_ASSERT_CONTINUE(portName != nullptr);
 
                 const int jackPortFlags(jackbridge_port_flags(jackPort));
 
@@ -1952,21 +1944,27 @@ private:
                 callback(CALLBACK_PATCHBAY_PORT_ADDED, 0, groupId, portNameToId.portId, canvasPortFlags, portName);
             }
 
+#if 0
             jackbridge_free(ports);
         }
 
         // query connections, after all ports are in place
         if (const char** ports = jackbridge_get_ports(fClient, nullptr, nullptr, JackPortIsOutput))
         {
+#endif
             for (int i=0; ports[i] != nullptr; ++i)
             {
                 jack_port_t* const jackPort(jackbridge_port_by_name(fClient, ports[i]));
                 const char*  const fullPortName(ports[i]);
 
-                CARLA_ASSERT(jackPort != nullptr);
+                CARLA_SAFE_ASSERT_CONTINUE(jackPort != nullptr);
 
-                if (jackPort == nullptr)
+#if 1
+                const int jackPortFlags(jackbridge_port_flags(jackPort));
+
+                if (jackPortFlags & JackPortIsInput)
                     continue;
+#endif
 
                 const int thisPortId(getPortId(fullPortName));
 
@@ -1987,6 +1985,8 @@ private:
 
                     jackbridge_free(connections);
                 }
+                else
+                    carla_stderr("jack_port_get_connections failed for port %s", fullPortName);
             }
 
             jackbridge_free(ports);
