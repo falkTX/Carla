@@ -50,7 +50,7 @@ except:
 # Patchbay widget
 
 class CarlaPatchbayW(QGraphicsView):
-    def __init__(self, parent):
+    def __init__(self, parent, doSetup = True):
         QGraphicsView.__init__(self, parent)
 
         # -------------------------------------------------------------
@@ -86,7 +86,7 @@ class CarlaPatchbayW(QGraphicsView):
 
         patchcanvas.setOptions(pOptions)
         patchcanvas.setFeatures(pFeatures)
-        patchcanvas.init("Carla", self.scene, CanvasCallback, True)
+        patchcanvas.init("Carla", self.scene, CanvasCallback, False)
 
         tryCanvasSize = parent.fSavedSettings[CARLA_KEY_CANVAS_SIZE].split("x")
 
@@ -103,6 +103,8 @@ class CarlaPatchbayW(QGraphicsView):
 
         # -------------------------------------------------------------
         # Connect actions to functions
+
+        if not doSetup: return
 
         parent.ui.act_plugins_enable.triggered.connect(self.slot_pluginsEnable)
         parent.ui.act_plugins_disable.triggered.connect(self.slot_pluginsDisable)
@@ -124,6 +126,14 @@ class CarlaPatchbayW(QGraphicsView):
         parent.ui.act_canvas_save_image.triggered.connect(self.slot_canvasSaveImage)
 
         parent.ui.act_settings_configure.triggered.connect(self.slot_configureCarla)
+
+        #self.ui.miniCanvasPreview-miniCanvasMoved(double, double)"), SLOT("slot_miniCanvasMoved(double, double)"))
+
+        #self.ui.graphicsView.horizontalScrollBar()-valueChanged.connect(self.slot_horizontalScrollBarChanged)
+        #self.ui.graphicsView.verticalScrollBar()-valueChanged.connect(self.slot_verticalScrollBarChanged)
+
+        #self.scene-sceneGroupMoved(int, int, QPointF)"), SLOT("slot_canvasItemMoved(int, int, QPointF)"))
+        #self.scene-scaleChanged(double)"), SLOT("slot_canvasScaleChanged(double)"))
 
         parent.ParameterValueChangedCallback.connect(self.slot_handleParameterValueChangedCallback)
         parent.ParameterDefaultChangedCallback.connect(self.slot_handleParameterDefaultChangedCallback)
@@ -148,13 +158,6 @@ class CarlaPatchbayW(QGraphicsView):
         parent.PatchbayConnectionAddedCallback.connect(self.slot_handlePatchbayConnectionAddedCallback)
         parent.PatchbayConnectionRemovedCallback.connect(self.slot_handlePatchbayConnectionRemovedCallback)
         parent.PatchbayIconChangedCallback.connect(self.slot_handlePatchbayIconChangedCallback)
-        #self.ui.miniCanvasPreview-miniCanvasMoved(double, double)"), SLOT("slot_miniCanvasMoved(double, double)"))
-
-        #self.ui.graphicsView.horizontalScrollBar()-valueChanged.connect(self.slot_horizontalScrollBarChanged)
-        #self.ui.graphicsView.verticalScrollBar()-valueChanged.connect(self.slot_verticalScrollBarChanged)
-
-        #self.scene-sceneGroupMoved(int, int, QPointF)"), SLOT("slot_canvasItemMoved(int, int, QPointF)"))
-        #self.scene-scaleChanged(double)"), SLOT("slot_canvasScaleChanged(double)"))
 
     # -----------------------------------------------------------------
 

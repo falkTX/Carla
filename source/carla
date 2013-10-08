@@ -38,14 +38,59 @@ class CarlaMultiW(QTabWidget):
     def __init__(self, parent):
         QTabWidget.__init__(self, parent)
 
-        self.fRack     = CarlaRackW(parent)
-        self.fPatchbay = CarlaPatchbayW(parent)
+        self.fRack     = CarlaRackW(parent, False)
+        self.fPatchbay = CarlaPatchbayW(parent, False)
         self.fParent   = parent
 
         self.addTab(self.fRack, "Plugins")
         self.addTab(self.fPatchbay, "Patchbay")
 
         self.scene = self.fPatchbay.scene
+
+        parent.ui.act_plugins_enable.triggered.connect(self.fRack.slot_pluginsEnable)
+        parent.ui.act_plugins_disable.triggered.connect(self.fRack.slot_pluginsDisable)
+        parent.ui.act_plugins_volume100.triggered.connect(self.fRack.slot_pluginsVolume100)
+        parent.ui.act_plugins_mute.triggered.connect(self.fRack.slot_pluginsMute)
+        parent.ui.act_plugins_wet100.triggered.connect(self.fRack.slot_pluginsWet100)
+        parent.ui.act_plugins_bypass.triggered.connect(self.fRack.slot_pluginsBypass)
+        parent.ui.act_plugins_center.triggered.connect(self.fRack.slot_pluginsCenter)
+        parent.ui.act_plugins_panic.triggered.connect(self.fRack.slot_pluginsDisable)
+
+        parent.ui.act_canvas_arrange.setEnabled(False) # TODO, later
+        parent.ui.act_canvas_arrange.triggered.connect(self.fPatchbay.slot_canvasArrange)
+        parent.ui.act_canvas_refresh.triggered.connect(self.fPatchbay.slot_canvasRefresh)
+        parent.ui.act_canvas_zoom_fit.triggered.connect(self.fPatchbay.slot_canvasZoomFit)
+        parent.ui.act_canvas_zoom_in.triggered.connect(self.fPatchbay.slot_canvasZoomIn)
+        parent.ui.act_canvas_zoom_out.triggered.connect(self.fPatchbay.slot_canvasZoomOut)
+        parent.ui.act_canvas_zoom_100.triggered.connect(self.fPatchbay.slot_canvasZoomReset)
+        parent.ui.act_canvas_print.triggered.connect(self.fPatchbay.slot_canvasPrint)
+        parent.ui.act_canvas_save_image.triggered.connect(self.fPatchbay.slot_canvasSaveImage)
+
+        parent.ui.act_settings_configure.triggered.connect(self.fPatchbay.slot_configureCarla)
+
+        parent.ParameterValueChangedCallback.connect(self.fRack.slot_handleParameterValueChangedCallback)
+        parent.ParameterDefaultChangedCallback.connect(self.fRack.slot_handleParameterDefaultChangedCallback)
+        parent.ParameterMidiChannelChangedCallback.connect(self.fRack.slot_handleParameterMidiChannelChangedCallback)
+        parent.ParameterMidiCcChangedCallback.connect(self.fRack.slot_handleParameterMidiCcChangedCallback)
+        parent.ProgramChangedCallback.connect(self.fRack.slot_handleProgramChangedCallback)
+        parent.MidiProgramChangedCallback.connect(self.fRack.slot_handleMidiProgramChangedCallback)
+        parent.NoteOnCallback.connect(self.fRack.slot_handleNoteOnCallback)
+        parent.NoteOffCallback.connect(self.fRack.slot_handleNoteOffCallback)
+        parent.ShowGuiCallback.connect(self.fRack.slot_handleShowGuiCallback)
+        parent.UpdateCallback.connect(self.fRack.slot_handleUpdateCallback)
+        parent.ReloadInfoCallback.connect(self.fRack.slot_handleReloadInfoCallback)
+        parent.ReloadParametersCallback.connect(self.fRack.slot_handleReloadParametersCallback)
+        parent.ReloadProgramsCallback.connect(self.fRack.slot_handleReloadProgramsCallback)
+        parent.ReloadAllCallback.connect(self.fRack.slot_handleReloadAllCallback)
+        parent.PatchbayClientAddedCallback.connect(self.fPatchbay.slot_handlePatchbayClientAddedCallback)
+        parent.PatchbayClientRemovedCallback.connect(self.fPatchbay.slot_handlePatchbayClientRemovedCallback)
+        parent.PatchbayClientRenamedCallback.connect(self.fPatchbay.slot_handlePatchbayClientRenamedCallback)
+        parent.PatchbayPortAddedCallback.connect(self.fPatchbay.slot_handlePatchbayPortAddedCallback)
+        parent.PatchbayPortRemovedCallback.connect(self.fPatchbay.slot_handlePatchbayPortRemovedCallback)
+        parent.PatchbayPortRenamedCallback.connect(self.fPatchbay.slot_handlePatchbayPortRenamedCallback)
+        parent.PatchbayConnectionAddedCallback.connect(self.fPatchbay.slot_handlePatchbayConnectionAddedCallback)
+        parent.PatchbayConnectionRemovedCallback.connect(self.fPatchbay.slot_handlePatchbayConnectionRemovedCallback)
+        parent.PatchbayIconChangedCallback.connect(self.fPatchbay.slot_handlePatchbayIconChangedCallback)
 
     # -----------------------------------------------------------------
 
@@ -56,11 +101,9 @@ class CarlaMultiW(QTabWidget):
 
     def addPlugin(self, pluginId, isProjectLoading):
         self.fRack.addPlugin(pluginId, isProjectLoading)
-        self.fPatchbay.addPlugin(pluginId, isProjectLoading)
 
     def removePlugin(self, pluginId):
         self.fRack.removePlugin(pluginId)
-        self.fPatchbay.removePlugin(pluginId)
 
     def renamePlugin(self, pluginId, newName):
         self.fRack.renamePlugin(pluginId, newName)
@@ -68,17 +111,16 @@ class CarlaMultiW(QTabWidget):
 
     def removeAllPlugins(self):
         self.fRack.removeAllPlugins()
-        self.fPatchbay.removeAllPlugins()
 
     # -----------------------------------------------------------------
 
     def engineStarted(self):
-        self.fRack.engineStarted()
-        self.fPatchbay.engineStarted()
+        #self.fRack.engineStarted()
+        #self.fPatchbay.engineStarted()
         self.fParent.engineChanged()
 
     def engineStopped(self):
-        self.fRack.engineStopped()
+        #self.fRack.engineStopped()
         self.fPatchbay.engineStopped()
         self.fParent.engineStopped()
 
@@ -89,17 +131,16 @@ class CarlaMultiW(QTabWidget):
 
     def idleFast(self):
         self.fRack.idleFast()
-        self.fPatchbay.idleFast()
 
     def idleSlow(self):
         self.fRack.idleSlow()
-        self.fPatchbay.idleSlow()
 
     # -----------------------------------------------------------------
 
     def saveSettings(self, settings):
-        self.fRack.saveSettings(settings)
-        self.fPatchbay.saveSettings(settings)
+        pass
+        #self.fRack.saveSettings(settings)
+        #self.fPatchbay.saveSettings(settings)
 
 # ------------------------------------------------------------------------------------------------------------
 # Main Window
@@ -226,7 +267,6 @@ if __name__ == '__main__':
     Carla.isControl   = False
     Carla.isLocal     = True
     Carla.isPlugin    = False
-    Carla.processMode = PROCESS_MODE_CONTINUOUS_RACK
 
     initHost(appName, libPrefix)
 

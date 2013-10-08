@@ -60,7 +60,7 @@ class CarlaRackItem(QListWidgetItem):
 # Rack widget
 
 class CarlaRackW(QListWidget):
-    def __init__(self, parent):
+    def __init__(self, parent, doSetup = True):
         QListWidget.__init__(self, parent)
 
         # -------------------------------------------------------------
@@ -96,8 +96,7 @@ class CarlaRackW(QListWidget):
         # -------------------------------------------------------------
         # Connect actions to functions
 
-        if parent is None:
-            return
+        if not doSetup: return
 
         parent.ui.menu_Canvas.hide()
 
