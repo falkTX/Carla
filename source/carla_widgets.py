@@ -547,16 +547,61 @@ class PluginEdit(QDialog):
         else:
             self.ui.le_type.setText(self.tr("Unknown"))
 
-        self.ui.le_name.setText(pluginName)
-        self.ui.le_name.setToolTip(pluginName)
-        self.ui.le_label.setText(self.fPluginInfo['label'])
-        self.ui.le_label.setToolTip(self.fPluginInfo['label'])
-        self.ui.le_maker.setText(self.fPluginInfo['maker'])
-        self.ui.le_maker.setToolTip(self.fPluginInfo['maker'])
-        self.ui.le_copyright.setText(self.fPluginInfo['copyright'])
-        self.ui.le_copyright.setToolTip(self.fPluginInfo['copyright'])
-        self.ui.le_unique_id.setText(str(self.fPluginInfo['uniqueId']))
-        self.ui.le_unique_id.setToolTip(str(self.fPluginInfo['uniqueId']))
+        if pluginName:
+            self.ui.label_name.setEnabled(True)
+            self.ui.le_name.setEnabled(True)
+            self.ui.le_name.setText(pluginName)
+            self.ui.le_name.setToolTip(pluginName)
+        else:
+            self.ui.label_name.setEnabled(False)
+            self.ui.le_name.setEnabled(False)
+            self.ui.le_name.setText("")
+            self.ui.le_name.setToolTip("")
+
+        if self.fPluginInfo['label']:
+            self.ui.label_label.setEnabled(True)
+            self.ui.le_label.setEnabled(True)
+            self.ui.le_label.setText(self.fPluginInfo['label'])
+            self.ui.le_label.setToolTip(self.fPluginInfo['label'])
+        else:
+            self.ui.label_label.setEnabled(False)
+            self.ui.le_label.setEnabled(False)
+            self.ui.le_label.setText("")
+            self.ui.le_label.setToolTip("")
+
+        if self.fPluginInfo['maker']:
+            self.ui.label_maker.setEnabled(True)
+            self.ui.le_maker.setEnabled(True)
+            self.ui.le_maker.setText(self.fPluginInfo['maker'])
+            self.ui.le_maker.setToolTip(self.fPluginInfo['maker'])
+        else:
+            self.ui.label_maker.setEnabled(False)
+            self.ui.le_maker.setEnabled(False)
+            self.ui.le_maker.setText("")
+            self.ui.le_maker.setToolTip("")
+
+        if self.fPluginInfo['copyright']:
+            self.ui.label_copyright.setEnabled(True)
+            self.ui.le_copyright.setEnabled(True)
+            self.ui.le_copyright.setText(self.fPluginInfo['copyright'])
+            self.ui.le_copyright.setToolTip(self.fPluginInfo['copyright'])
+        else:
+            self.ui.label_copyright.setEnabled(False)
+            self.ui.le_copyright.setEnabled(False)
+            self.ui.le_copyright.setText("")
+            self.ui.le_copyright.setToolTip("")
+
+        if self.fPluginInfo['uniqueId'] != 0:
+            self.ui.label_unique_id.setEnabled(True)
+            self.ui.le_unique_id.setEnabled(True)
+            self.ui.le_unique_id.setText(str(self.fPluginInfo['uniqueId']))
+            self.ui.le_unique_id.setToolTip(str(self.fPluginInfo['uniqueId']))
+        else:
+            self.ui.label_unique_id.setEnabled(False)
+            self.ui.le_unique_id.setEnabled(False)
+            self.ui.le_unique_id.setText("")
+            self.ui.le_unique_id.setToolTip("")
+
         self.ui.label_plugin.setText("\n%s\n" % self.fPluginInfo['name'])
         self.setWindowTitle(self.fPluginInfo['name'])
 

@@ -1731,46 +1731,44 @@ void CarlaEngine::processRack(float* inBufReal[2], float* outBuf[2], const uint3
 
         if (processed)
         {
-
             // initialize inputs (from previous outputs)
             carla_copyFloat(inBuf0, outBuf[0], frames);
             carla_copyFloat(inBuf1, outBuf[1], frames);
-            std::memcpy(pData->bufEvents.in, pData->bufEvents.out, sizeof(EngineEvent)*kEngineMaxInternalEventCount);
 
             // initialize outputs (zero)
             carla_zeroFloat(outBuf[0], frames);
             carla_zeroFloat(outBuf[1], frames);
-            carla_zeroMem(pData->bufEvents.out, sizeof(EngineEvent)*kEngineMaxInternalEventCount);
-        }
-
-        oldAudioInCount = plugin->getAudioInCount();
-        oldMidiOutCount = plugin->getMidiOutCount();
-
-            // if plugin has no audio inputs, add input buffer
-            //if (oldAudioInCount == 0)
-            {
-                carla_addFloat(outBuf[0], inBuf0, frames);
-                carla_addFloat(outBuf[1], inBuf1, frames);
-            }
 
             // if plugin has no midi out, add previous events
             if (oldMidiOutCount == 0 && pData->bufEvents.in[0].type != CarlaBackend::kEngineEventTypeNull)
             {
                 if (pData->bufEvents.out[0].type != CarlaBackend::kEngineEventTypeNull)
                 {
-                    // TODO: carefully add to output, sorted events
+                    // TODO: carefully add to input, sorted events
                 }
-                else
-                {
-                    // nothing in output, can be replaced directly
-                    std::memcpy(pData->bufEvents.out, pData->bufEvents.in, sizeof(EngineEvent)*kEngineMaxInternalEventCount);
-                }
+                // else nothing needed
             }
+            else
+            {
+                // initialize input from previous output and zero output
+                std::memcpy(pData->bufEvents.in, pData->bufEvents.out, sizeof(EngineEvent)*kEngineMaxInternalEventCount);
+                std::memset(pData->bufEvents.out, 0, sizeof(EngineEvent)*kEngineMaxInternalEventCount);
+            }
+        }
 
+        oldAudioInCount = plugin->getAudioInCount();
+        oldMidiOutCount = plugin->getMidiOutCount();
         // process
         plugin->initBuffers();
         plugin->process(inBuf, outBuf, frames);
         plugin->unlock();
+
+        // if plugin has no audio inputs, add input buffer
+        if (oldAudioInCount == 0)
+        {
+            carla_addFloat(outBuf[0], inBuf0, frames);
+            carla_addFloat(outBuf[1], inBuf1, frames);
+        }
 
         // set peaks
         {

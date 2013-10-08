@@ -557,9 +557,6 @@ public:
 #ifdef BUILD_BRIDGE
           fHasQuit(false)
 #else
-# ifdef CARLA_PROPER_CPP11_SUPPORT
-          fRackPorts{nullptr},
-# endif
           fLastGroupId(0),
           fLastPortId(0),
           fLastConnectionId(0)
@@ -570,9 +567,7 @@ public:
 #ifdef BUILD_BRIDGE
         fOptions.processMode = PROCESS_MODE_MULTIPLE_CLIENTS;
 #else
-# ifndef CARLA_PROPER_CPP11_SUPPORT
         carla_fill<jack_port_t*>(fRackPorts, kRackPortCount, nullptr);
-# endif
 #endif
 
         // FIXME: Always enable JACK transport for now
@@ -724,6 +719,7 @@ public:
                 jackbridge_port_unregister(fClient, fRackPorts[kRackPortAudioOut2]);
                 jackbridge_port_unregister(fClient, fRackPorts[kRackPortEventIn]);
                 jackbridge_port_unregister(fClient, fRackPorts[kRackPortEventOut]);
+                carla_fill<jack_port_t*>(fRackPorts, kRackPortCount, nullptr);
             }
 
             if (jackbridge_client_close(fClient))

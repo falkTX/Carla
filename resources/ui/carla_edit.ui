@@ -30,7 +30,7 @@
        <item row="2" column="0">
         <widget class="QGroupBox" name="groupBox_3">
          <property name="title">
-          <string>Control?</string>
+          <string>Control</string>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_5">
           <item>
@@ -655,7 +655,7 @@ Plugin Name
              </widget>
             </item>
             <item row="2" column="0">
-             <widget class="QLabel" name="label_4">
+             <widget class="QLabel" name="label_label">
               <property name="text">
                <string>Label/URI:</string>
               </property>
@@ -665,7 +665,7 @@ Plugin Name
              </widget>
             </item>
             <item row="1" column="0">
-             <widget class="QLabel" name="label_3">
+             <widget class="QLabel" name="label_name">
               <property name="text">
                <string>Name:</string>
               </property>
@@ -755,7 +755,7 @@ Plugin Name
              </widget>
             </item>
             <item row="0" column="0">
-             <widget class="QLabel" name="label_5">
+             <widget class="QLabel" name="label_type">
               <property name="text">
                <string>Type:</string>
               </property>
@@ -765,7 +765,7 @@ Plugin Name
              </widget>
             </item>
             <item row="3" column="0">
-             <widget class="QLabel" name="label_6">
+             <widget class="QLabel" name="label_maker">
               <property name="text">
                <string>Maker:</string>
               </property>
@@ -775,7 +775,7 @@ Plugin Name
              </widget>
             </item>
             <item row="4" column="0">
-             <widget class="QLabel" name="label_7">
+             <widget class="QLabel" name="label_copyright">
               <property name="text">
                <string>Copyright:</string>
               </property>
@@ -785,7 +785,7 @@ Plugin Name
              </widget>
             </item>
             <item row="5" column="0">
-             <widget class="QLabel" name="label_8">
+             <widget class="QLabel" name="label_unique_id">
               <property name="text">
                <string>Unique ID:</string>
               </property>
@@ -887,7 +887,6 @@ Plugin Name
            <height>64</height>
           </size>
          </property>
-         <zorder>tabWidget</zorder>
         </widget>
        </item>
       </layout>
