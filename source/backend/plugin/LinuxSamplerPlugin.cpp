@@ -523,7 +523,7 @@ public:
         {
             // disable any output sound
             for (i=0; i < pData->audioOut.count; ++i)
-                carla_zeroFloat(outBuffer[i], frames);
+                FloatVectorOperations::clear(outBuffer[i], frames);
 
             return;
         }
@@ -891,7 +891,7 @@ public:
                 if (doBalance)
                 {
                     if (i % 2 == 0)
-                        carla_copyFloat(oldBufLeft, outBuffer[i], frames);
+                        FloatVectorOperations::copy(oldBufLeft, outBuffer[i], frames);
 
                     float balRangeL = (pData->postProc.balanceLeft  + 1.0f)/2.0f;
                     float balRangeR = (pData->postProc.balanceRight + 1.0f)/2.0f;

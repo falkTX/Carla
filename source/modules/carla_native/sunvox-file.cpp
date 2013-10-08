@@ -80,8 +80,8 @@ protected:
         }
         else
         {
-           carla_zeroFloat(outBuf[0], frames);
-           carla_zeroFloat(outBuf[1], frames);
+           FloatVectorOperations::clear(outBuf[0], frames);
+           FloatVectorOperations::clear(outBuf[1], frames);
         }
     }
 

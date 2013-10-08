@@ -20,8 +20,9 @@
 
 #include "CarlaMutex.hpp"
 
-#include "juce_core.h"
+#include "juce_audio_basics.h"
 
+using juce::FloatVectorOperations;
 using juce::Thread;
 
 extern "C" {
@@ -99,8 +100,8 @@ struct AudioFilePool {
         CARLA_ASSERT(size != 0);
 
         startFrame = 0;
-        carla_zeroFloat(buffer[0], size);
-        carla_zeroFloat(buffer[1], size);
+        FloatVectorOperations::clear(buffer[0], size);
+        FloatVectorOperations::clear(buffer[1], size);
     }
 };
 
@@ -225,8 +226,8 @@ public:
         //if (pool.startFrame != fPool.startFrame || pool.buffer[0] != fPool.buffer[0] || pool.buffer[1] != fPool.buffer[1])
         {
             pool.startFrame = fPool.startFrame;
-            carla_copyFloat(pool.buffer[0], fPool.buffer[0], fPool.size);
-            carla_copyFloat(pool.buffer[1], fPool.buffer[1], fPool.size);
+            FloatVectorOperations::copy(pool.buffer[0], fPool.buffer[0], fPool.size);
+            FloatVectorOperations::copy(pool.buffer[1], fPool.buffer[1], fPool.size);
         }
 
         fMutex.unlock();
@@ -276,7 +277,7 @@ public:
         const size_t tmpSize = fPool.size * fFileNfo.channels;
 
         float tmpData[tmpSize];
-        carla_zeroFloat(tmpData, tmpSize);
+        FloatVectorOperations::clear(tmpData, tmpSize);
 
         {
             carla_stderr("R: poll data - reading at %li:%02li", readFrame/44100/60, (readFrame/44100) % 60);
@@ -372,7 +373,7 @@ protected:
 private:
     AbstractAudioPlayer* const kPlayer;
 
-    mutable bool fNeedsRead;
+    volatile bool fNeedsRead;
 
     void*  fFilePtr;
     ADInfo fFileNfo;

@@ -29,7 +29,11 @@
 #include "CarlaMIDI.h"
 #include "RtList.hpp"
 
+#include "juce_audio_basics.h"
+
 #define CARLA_PROCESS_CONTINUE_CHECK if (! fEnabled) { pData->engine->callback(CALLBACK_DEBUG, fId, 0, 0, 0.0f, "Processing while plugin is disabled!!"); return; }
+
+using juce::FloatVectorOperations;
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -769,7 +773,7 @@ struct CarlaPluginProtectedData {
             for (uint32_t i=0; i < audioIn.count; ++i)
             {
                 latencyBuffers[i] = new float[latency];
-                carla_zeroFloat(latencyBuffers[i], latency);
+                FloatVectorOperations::clear(latencyBuffers[i], latency);
             }
         }
     }

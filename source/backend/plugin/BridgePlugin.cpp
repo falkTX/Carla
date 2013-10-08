@@ -753,7 +753,7 @@ public:
         {
             // disable any output sound
             for (i=0; i < pData->audioOut.count; ++i)
-                carla_zeroFloat(outBuffer[i], frames);
+                FloatVectorOperations::clear(outBuffer[i], frames);
 
             return;
         }
@@ -1058,7 +1058,7 @@ public:
         else if (! pData->singleMutex.tryLock())
         {
             for (i=0; i < pData->audioOut.count; ++i)
-                carla_zeroFloat(outBuffer[i], frames);
+                FloatVectorOperations::clear(outBuffer[i], frames);
 
             return false;
         }
@@ -1067,7 +1067,7 @@ public:
         // Reset audio buffers
 
         for (i=0; i < fInfo.aIns; ++i)
-            carla_copyFloat(fShmAudioPool.data + (i * frames), inBuffer[i], frames);
+            FloatVectorOperations::copy(fShmAudioPool.data + (i * frames), inBuffer[i], frames);
 
         // --------------------------------------------------------------------------------------------------------
         // Run plugin
@@ -1082,7 +1082,7 @@ public:
         }
 
         for (i=0; i < fInfo.aOuts; ++i)
-            carla_copyFloat(outBuffer[i], fShmAudioPool.data + ((i + fInfo.aIns) * frames), frames);
+            FloatVectorOperations::copy(outBuffer[i], fShmAudioPool.data + ((i + fInfo.aIns) * frames), frames);
 
         // --------------------------------------------------------------------------------------------------------
         // Post-processing (dry/wet, volume and balance)
@@ -1115,7 +1115,7 @@ public:
                     if (isPair)
                     {
                         CARLA_ASSERT(i+1 < pData->audioOut.count);
-                        carla_copyFloat(oldBufLeft, outBuffer[i], frames);
+                        FloatVectorOperations::copy(oldBufLeft, outBuffer[i], frames);
                     }
 
                     float balRangeL = (pData->postProc.balanceLeft  + 1.0f)/2.0f;

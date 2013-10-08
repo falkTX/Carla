@@ -51,7 +51,7 @@ public:
         carla_debug("FluidSynthPlugin::FluidSynthPlugin(%p, %i, %s)", engine, id,  bool2str(use16Outs));
 
 #ifndef CARLA_PROPER_CPP11_SUPPORT
-        carla_zeroFloat(fParamBuffers, FluidSynthParametersMax);
+        FloatVectorOperations::clear(fParamBuffers, FluidSynthParametersMax);
         carla_fill<int32_t>(fCurMidiProgs, MAX_MIDI_CHANNELS, 0);
 #endif
 
@@ -1012,7 +1012,7 @@ public:
         {
             // disable any output sound
             for (i=0; i < pData->audioOut.count; ++i)
-                carla_zeroFloat(outBuffer[i], frames);
+                FloatVectorOperations::clear(outBuffer[i], frames);
 
             return;
         }
@@ -1390,7 +1390,7 @@ public:
         if (kUses16Outs)
         {
             for (i=0; i < pData->audioOut.count; ++i)
-                carla_zeroFloat(fAudio16Buffers[i], frames);
+                FloatVectorOperations::clear(fAudio16Buffers[i], frames);
 
             fluid_synth_process(fSynth, frames, 0, nullptr, pData->audioOut.count, fAudio16Buffers);
         }
@@ -1414,7 +1414,7 @@ public:
                 if (doBalance)
                 {
                     if (i % 2 == 0)
-                        carla_copyFloat(oldBufLeft, outBuffer[i]+timeOffset, frames);
+                        FloatVectorOperations::copy(oldBufLeft, outBuffer[i]+timeOffset, frames);
 
                     float balRangeL = (pData->postProc.balanceLeft  + 1.0f)/2.0f;
                     float balRangeR = (pData->postProc.balanceRight + 1.0f)/2.0f;

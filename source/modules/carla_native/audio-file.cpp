@@ -127,8 +127,8 @@ protected:
         {
             //carla_stderr("P: no process");
             fLastFrame = timePos->frame;
-            carla_zeroFloat(out1, frames);
-            carla_zeroFloat(out2, frames);
+            FloatVectorOperations::clear(out1, frames);
+            FloatVectorOperations::clear(out2, frames);
             return;
         }
 
@@ -141,8 +141,8 @@ protected:
             if (timePos->frame == 0 && fLastFrame > 0)
                 fThread.setNeedsRead();
 
-            carla_zeroFloat(out1, frames);
-            carla_zeroFloat(out2, frames);
+            FloatVectorOperations::clear(out1, frames);
+            FloatVectorOperations::clear(out2, frames);
             return;
         }
 
@@ -157,8 +157,8 @@ protected:
             if (timePos->frame + frames < fPool.startFrame)
                 fThread.setNeedsRead();
 
-            carla_zeroFloat(out1, frames);
-            carla_zeroFloat(out2, frames);
+            FloatVectorOperations::clear(out1, frames);
+            FloatVectorOperations::clear(out2, frames);
             return;
         }
 

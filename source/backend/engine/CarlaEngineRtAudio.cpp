@@ -23,6 +23,10 @@
 #include "RtAudio.h"
 #include "RtMidi.h"
 
+#include "juce_audio_basics.h"
+
+using juce::FloatVectorOperations;
+
 CARLA_BACKEND_START_NAMESPACE
 
 #if 0
@@ -803,7 +807,7 @@ protected:
         if (pData->curPluginCount == 0 || fAudioCountOut == 0 || ! fAudioIsReady)
         {
             if (fAudioCountOut > 0 && fAudioIsReady)
-                carla_zeroFloat(outsPtr, nframes*fAudioCountOut);
+                FloatVectorOperations::clear(outsPtr, nframes*fAudioCountOut);
 
             return runPendingRtEvents();
         }
@@ -822,15 +826,15 @@ protected:
         else
         {
             for (unsigned int i=0; i < fAudioCountIn; ++i)
-                carla_copyFloat(fAudioBufIn[i], insPtr+(nframes*i), nframes);
+                FloatVectorOperations::copy(fAudioBufIn[i], insPtr+(nframes*i), nframes);
         }
 
         // initialize audio output
         for (unsigned int i=0; i < fAudioCountOut; ++i)
-            carla_zeroFloat(fAudioBufOut[i], nframes);
+            FloatVectorOperations::clear(fAudioBufOut[i], nframes);
 
-        carla_zeroFloat(fAudioBufRackOut[0], nframes);
-        carla_zeroFloat(fAudioBufRackOut[1], nframes);
+        FloatVectorOperations::clear(fAudioBufRackOut[0], nframes);
+        FloatVectorOperations::clear(fAudioBufRackOut[1], nframes);
 
         // initialize input events
         carla_zeroMem(pData->bufEvents.in, sizeof(EngineEvent)*kEngineMaxInternalEventCount);
@@ -930,7 +934,7 @@ protected:
         // connect input buffers
         if (fConnectedAudioIns[0].count() == 0)
         {
-            carla_zeroFloat(fAudioBufRackIn[0], nframes);
+            FloatVectorOperations::clear(fAudioBufRackIn[0], nframes);
         }
         else
         {
@@ -943,20 +947,20 @@ protected:
 
                 if (first)
                 {
-                    carla_copyFloat(fAudioBufRackIn[0], fAudioBufIn[port], nframes);
+                    FloatVectorOperations::copy(fAudioBufRackIn[0], fAudioBufIn[port], nframes);
                     first = false;
                 }
                 else
-                    carla_addFloat(fAudioBufRackIn[0], fAudioBufIn[port], nframes);
+                    FloatVectorOperations::add(fAudioBufRackIn[0], fAudioBufIn[port], nframes);
             }
 
             if (first)
-                carla_zeroFloat(fAudioBufRackIn[0], nframes);
+                FloatVectorOperations::clear(fAudioBufRackIn[0], nframes);
         }
 
         if (fConnectedAudioIns[1].count() == 0)
         {
-            carla_zeroFloat(fAudioBufRackIn[1], nframes);
+            FloatVectorOperations::clear(fAudioBufRackIn[1], nframes);
         }
         else
         {
@@ -969,15 +973,15 @@ protected:
 
                 if (first)
                 {
-                    carla_copyFloat(fAudioBufRackIn[1], fAudioBufIn[port], nframes);
+                    FloatVectorOperations::copy(fAudioBufRackIn[1], fAudioBufIn[port], nframes);
                     first = false;
                 }
                 else
-                    carla_addFloat(fAudioBufRackIn[1], fAudioBufIn[port], nframes);
+                    FloatVectorOperations::add(fAudioBufRackIn[1], fAudioBufIn[port], nframes);
             }
 
             if (first)
-                carla_zeroFloat(fAudioBufRackIn[1], nframes);
+                FloatVectorOperations::clear(fAudioBufRackIn[1], nframes);
         }
 
         // process
@@ -991,7 +995,7 @@ protected:
                 const uint& port(*it);
                 CARLA_ASSERT(port < fAudioCountOut);
 
-                carla_addFloat(fAudioBufOut[port], fAudioBufRackOut[0], nframes);
+                FloatVectorOperations::add(fAudioBufOut[port], fAudioBufRackOut[0], nframes);
             }
         }
 
@@ -1002,7 +1006,7 @@ protected:
                 const uint& port(*it);
                 CARLA_ASSERT(port < fAudioCountOut);
 
-                carla_addFloat(fAudioBufOut[port], fAudioBufRackOut[1], nframes);
+                FloatVectorOperations::add(fAudioBufOut[port], fAudioBufRackOut[1], nframes);
             }
         }
 
@@ -1022,7 +1026,7 @@ protected:
         else
         {
             for (unsigned int i=0; i < fAudioCountOut; ++i)
-                carla_copyFloat(outsPtr+(nframes*i), fAudioBufOut[i], nframes);
+                FloatVectorOperations::copy(outsPtr+(nframes*i), fAudioBufOut[i], nframes);
         }
 
         // output events

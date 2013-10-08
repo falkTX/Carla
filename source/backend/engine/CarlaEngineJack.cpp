@@ -19,8 +19,6 @@
 #include "CarlaBackendUtils.hpp"
 #include "CarlaMIDI.h"
 
-#include "juce_core.h"
-
 #ifdef JACKBRIDGE_EXPORT
 # include "jackbridge/JackBridge.hpp"
 #else
@@ -28,12 +26,11 @@
 # include "jackbridge/JackBridge2.cpp"
 #endif
 
-#include <cmath>
+#include "juce_audio_basics.h"
 
 #define URI_CANVAS_ICON "http://kxstudio.sf.net/ns/canvas/icon"
 
-using juce::String;
-using juce::StringArray;
+using juce::FloatVectorOperations;
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -87,7 +84,7 @@ public:
         fBuffer = (float*)jackbridge_port_get_buffer(fPort, bufferSize);
 
         if (! fIsInput)
-           carla_zeroFloat(fBuffer, bufferSize);
+           FloatVectorOperations::clear(fBuffer, bufferSize);
     }
 
 private:
@@ -140,11 +137,11 @@ public:
         if (fIsInput)
         {
             float* const jackBuffer((float*)jackbridge_port_get_buffer(fPort, bufferSize));
-            carla_copyFloat(fBuffer, jackBuffer, bufferSize);
+            FloatVectorOperations::copy(fBuffer, jackBuffer, bufferSize);
         }
         else
         {
-            carla_zeroFloat(fBuffer, bufferSize);
+            FloatVectorOperations::clear(fBuffer, bufferSize);
         }
     }
 
@@ -153,7 +150,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(! fIsInput,);
 
         float* const jackBuffer((float*)jackbridge_port_get_buffer(fPort, fEngine.getBufferSize()));
-        carla_copyFloat(jackBuffer+timeOffset, fBuffer, frames);
+        FloatVectorOperations::copy(jackBuffer+timeOffset, fBuffer, frames);
     }
 
 private:
@@ -938,7 +935,6 @@ public:
                     jackbridge_set_process_callback(jclient, carla_jack_process_callback_plugin, plugin);
                     jackbridge_set_latency_callback(jclient, carla_jack_latency_callback_plugin, plugin);
 
-                    // this is supposed to be constant...
                     client->fClient = jclient;
                 }
             }
@@ -1155,14 +1151,8 @@ protected:
                 float* const audioOut2 = (float*)jackbridge_port_get_buffer(fRackPorts[kRackPortAudioOut2], nframes);
                 void*  const eventOut  = jackbridge_port_get_buffer(fRackPorts[kRackPortEventOut], nframes);
 
-                CARLA_ASSERT(audioIn1 != nullptr);
-                CARLA_ASSERT(audioIn2 != nullptr);
-                CARLA_ASSERT(audioOut1 != nullptr);
-                CARLA_ASSERT(audioOut2 != nullptr);
-                CARLA_ASSERT(eventOut != nullptr);
-
-                carla_copyFloat(audioOut1, audioIn1, nframes);
-                carla_copyFloat(audioOut2, audioIn2, nframes);
+                FloatVectorOperations::copy(audioOut1, audioIn1, nframes);
+                FloatVectorOperations::copy(audioOut2, audioIn2, nframes);
                 jackbridge_midi_clear_buffer(eventOut);
             }
 #endif
@@ -1859,6 +1849,8 @@ private:
         CARLA_ASSERT(fLastPortId == 0);
         CARLA_ASSERT(fLastConnectionId == 0);
         CARLA_ASSERT(ourName != nullptr);
+
+        using namespace juce;
 
         // query initial jack ports
         StringArray parsedGroups;

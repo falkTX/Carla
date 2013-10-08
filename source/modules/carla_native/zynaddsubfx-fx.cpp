@@ -25,6 +25,10 @@
 #include "zynaddsubfx/Effects/Phaser.h"
 #include "zynaddsubfx/Effects/Reverb.h"
 
+#include "juce_audio_basics.h"
+
+using juce::FloatVectorOperations;
+
 // -----------------------------------------------------------------------
 
 class FxAbstractPlugin : public PluginClass
@@ -42,8 +46,8 @@ protected:
         const uint32_t bufferSize(getBufferSize());
         efxoutl = new float[bufferSize];
         efxoutr = new float[bufferSize];
-        carla_zeroFloat(efxoutl, bufferSize);
-        carla_zeroFloat(efxoutr, bufferSize);
+        FloatVectorOperations::clear(efxoutl, bufferSize);
+        FloatVectorOperations::clear(efxoutr, bufferSize);
     }
 
     ~FxAbstractPlugin() override
@@ -131,8 +135,8 @@ protected:
     {
         fEffect->out(Stereo<float*>(inBuffer[0], inBuffer[1]));
 
-        carla_copyFloat(outBuffer[0], efxoutl, frames);
-        carla_copyFloat(outBuffer[1], efxoutr, frames);
+        FloatVectorOperations::copy(outBuffer[0], efxoutl, frames);
+        FloatVectorOperations::copy(outBuffer[1], efxoutr, frames);
     }
 
     // -------------------------------------------------------------------
@@ -144,8 +148,8 @@ protected:
         delete[] efxoutr;
         efxoutl = new float[bufferSize];
         efxoutr = new float[bufferSize];
-        carla_zeroFloat(efxoutl, bufferSize);
-        carla_zeroFloat(efxoutr, bufferSize);
+        FloatVectorOperations::clear(efxoutl, bufferSize);
+        FloatVectorOperations::clear(efxoutr, bufferSize);
 
         doReinit(bufferSize, getSampleRate());
     }

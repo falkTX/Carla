@@ -1442,7 +1442,7 @@ public:
             pData->param.createNew(params+cvIns+cvOuts);
 
             fParamBuffers = new float[params+cvIns+cvOuts];
-            carla_zeroFloat(fParamBuffers, params+cvIns+cvOuts);
+            FloatVectorOperations::clear(fParamBuffers, params+cvIns+cvOuts);
         }
 
         if (evIns.count() > 0)
@@ -2338,7 +2338,7 @@ public:
         {
             // disable any output sound
             for (i=0; i < pData->audioOut.count; ++i)
-                carla_zeroFloat(outBuffer[i], frames);
+                FloatVectorOperations::clear(outBuffer[i], frames);
 
             return;
         }
@@ -2452,7 +2452,7 @@ public:
             //if (pData->latency > 0)
             {
                 //for (i=0; i < pData->audioIn.count; ++i)
-                //    carla_zeroFloat(pData->latencyBuffers[i], pData->latency);
+                //    FloatVectorOperations::clear(pData->latencyBuffers[i], pData->latency);
             }
 
             pData->needsReset = false;
@@ -3146,9 +3146,9 @@ public:
         // Reset audio buffers
 
         for (i=0; i < pData->audioIn.count; ++i)
-            carla_copyFloat(fAudioInBuffers[i], inBuffer[i]+timeOffset, frames);
+            FloatVectorOperations::copy(fAudioInBuffers[i], inBuffer[i]+timeOffset, frames);
         for (i=0; i < pData->audioOut.count; ++i)
-            carla_zeroFloat(fAudioOutBuffers[i], frames);
+            FloatVectorOperations::clear(fAudioOutBuffers[i], frames);
 
         // --------------------------------------------------------------------------------------------------------
         // Set CV input buffers
@@ -3230,7 +3230,7 @@ public:
                     if (isPair)
                     {
                         CARLA_ASSERT(i+1 < pData->audioOut.count);
-                        carla_copyFloat(oldBufLeft, fAudioOutBuffers[i], frames);
+                        FloatVectorOperations::copy(oldBufLeft, fAudioOutBuffers[i], frames);
                     }
 
                     float balRangeL = (pData->postProc.balanceLeft  + 1.0f)/2.0f;
@@ -3265,7 +3265,7 @@ public:
             if (pData->latency > 0 && pData->latency < frames)
             {
                 for (i=0; i < pData->audioIn.count; ++i)
-                    carla_copyFloat(pData->latencyBuffers[i], inBuffer[i] + (frames - pData->latency), pData->latency);
+                    FloatVectorOperations::copy(pData->latencyBuffers[i], inBuffer[i] + (frames - pData->latency), pData->latency);
             }
 # endif
         } // End of Post-processing

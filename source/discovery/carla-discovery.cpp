@@ -513,7 +513,7 @@ void do_ladspa_check(void*& libHandle, const char* const filename, const bool in
 
                 if (LADSPA_IS_PORT_AUDIO(portDescriptor))
                 {
-                    carla_zeroFloat(bufferAudio[iA], kBufferSize);
+                    FloatVectorOperations::clear(bufferAudio[iA], kBufferSize);
                     descriptor->connect_port(handle, j, bufferAudio[iA++]);
                 }
                 else if (LADSPA_IS_PORT_CONTROL(portDescriptor))
@@ -794,7 +794,7 @@ void do_dssi_check(void*& libHandle, const char* const filename, const bool init
 
                 if (LADSPA_IS_PORT_AUDIO(portDescriptor))
                 {
-                    carla_zeroFloat(bufferAudio[iA], kBufferSize);
+                    FloatVectorOperations::clear(bufferAudio[iA], kBufferSize);
                     ldescriptor->connect_port(handle, j, bufferAudio[iA++]);
                 }
                 else if (LADSPA_IS_PORT_CONTROL(portDescriptor))
@@ -1291,14 +1291,14 @@ void do_vst_check(void*& libHandle, const bool init)
             for (int j=0; j < audioIns; ++j)
             {
                 bufferAudioIn[j] = new float[kBufferSize];
-                carla_zeroFloat(bufferAudioIn[j], kBufferSize);
+                FloatVectorOperations::clear(bufferAudioIn[j], kBufferSize);
             }
 
             float* bufferAudioOut[audioOuts];
             for (int j=0; j < audioOuts; ++j)
             {
                 bufferAudioOut[j] = new float[kBufferSize];
-                carla_zeroFloat(bufferAudioOut[j], kBufferSize);
+                FloatVectorOperations::clear(bufferAudioOut[j], kBufferSize);
             }
 
             struct VstEventsFixed {

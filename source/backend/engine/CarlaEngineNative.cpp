@@ -447,8 +447,8 @@ protected:
     {
         if (pData->curPluginCount == 0)
         {
-            carla_zeroFloat(outBuffer[0], frames);
-            carla_zeroFloat(outBuffer[1], frames);
+            FloatVectorOperations::clear(outBuffer[0], frames);
+            FloatVectorOperations::clear(outBuffer[1], frames);
             return runPendingRtEvents();;
         }
 

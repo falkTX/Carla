@@ -20,7 +20,9 @@
 #include "CarlaStateUtils.hpp"
 #include "CarlaMIDI.h"
 
-#include <cmath>
+#include "juce_audio_basics.h"
+
+using juce::FloatVectorOperations;
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -90,7 +92,7 @@ void CarlaEngineCVPort::initBuffer()
 {
     CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr,);
 
-    carla_zeroFloat(fBuffer, fEngine.getBufferSize());
+    FloatVectorOperations::clear(fBuffer, fEngine.getBufferSize());
 }
 
 void CarlaEngineCVPort::writeBuffer(const uint32_t, const uint32_t)
@@ -1708,12 +1710,12 @@ void CarlaEngine::processRack(float* inBufReal[2], float* outBuf[2], const uint3
     float* inBuf[2] = { inBuf0, inBuf1 };
 
     // initialize inputs
-    carla_copyFloat(inBuf0, inBufReal[0], frames);
-    carla_copyFloat(inBuf1, inBufReal[1], frames);
+    FloatVectorOperations::copy(inBuf0, inBufReal[0], frames);
+    FloatVectorOperations::copy(inBuf1, inBufReal[1], frames);
 
     // initialize outputs (zero)
-    carla_zeroFloat(outBuf[0], frames);
-    carla_zeroFloat(outBuf[1], frames);
+    FloatVectorOperations::clear(outBuf[0], frames);
+    FloatVectorOperations::clear(outBuf[1], frames);
     carla_zeroMem(pData->bufEvents.out, sizeof(EngineEvent)*kEngineMaxInternalEventCount);
 
     bool processed = false;
@@ -1732,12 +1734,12 @@ void CarlaEngine::processRack(float* inBufReal[2], float* outBuf[2], const uint3
         if (processed)
         {
             // initialize inputs (from previous outputs)
-            carla_copyFloat(inBuf0, outBuf[0], frames);
-            carla_copyFloat(inBuf1, outBuf[1], frames);
+            FloatVectorOperations::copy(inBuf0, outBuf[0], frames);
+            FloatVectorOperations::copy(inBuf1, outBuf[1], frames);
 
             // initialize outputs (zero)
-            carla_zeroFloat(outBuf[0], frames);
-            carla_zeroFloat(outBuf[1], frames);
+            FloatVectorOperations::clear(outBuf[0], frames);
+            FloatVectorOperations::clear(outBuf[1], frames);
 
             // if plugin has no midi out, add previous events
             if (oldMidiOutCount == 0 && pData->bufEvents.in[0].type != CarlaBackend::kEngineEventTypeNull)
@@ -1766,8 +1768,8 @@ void CarlaEngine::processRack(float* inBufReal[2], float* outBuf[2], const uint3
         // if plugin has no audio inputs, add input buffer
         if (oldAudioInCount == 0)
         {
-            carla_addFloat(outBuf[0], inBuf0, frames);
-            carla_addFloat(outBuf[1], inBuf1, frames);
+            FloatVectorOperations::add(outBuf[0], inBuf0, frames);
+            FloatVectorOperations::add(outBuf[1], inBuf1, frames);
         }
 
         // set peaks
