@@ -448,7 +448,7 @@ class CarlaPatchbayW(QGraphicsView):
         if pitem is None:
             return
 
-        pitem.sendNoteOn(channel, note, False)
+        pitem.sendNoteOn(channel, note)
 
     @pyqtSlot(int, int, int)
     def slot_handleNoteOffCallback(self, pluginId, channel, note):
@@ -459,7 +459,7 @@ class CarlaPatchbayW(QGraphicsView):
         if pitem is None:
             return
 
-        pitem.sendNoteOff(channel, note, False)
+        pitem.sendNoteOff(channel, note)
 
     # -----------------------------------------------------------------
 

@@ -925,30 +925,27 @@ class PluginEdit(QDialog):
         self.ui.cb_midi_programs.setCurrentIndex(index)
         self.ui.cb_midi_programs.blockSignals(False)
 
-    # FIXME - return True/False instead of needsLedFeedback
-    def sendNoteOn(self, channel, note, needsLedFeedback):
+    def sendNoteOn(self, channel, note):
         if self.fControlChannel == channel:
             self.ui.keyboard.sendNoteOn(note, False)
-
-        if needsLedFeedback and len(self.fPlayingNotes) == 0 and self.fRealParent is not None:
-            self.fRealParent.ui.led_midi.setChecked(True)
 
         playItem = (channel, note)
 
         if playItem not in self.fPlayingNotes:
             self.fPlayingNotes.append(playItem)
 
-    def sendNoteOff(self, channel, note, needsLedFeedback):
+        return bool(len(self.fPlayingNotes) == 1)
+
+    def sendNoteOff(self, channel, note):
         if self.fControlChannel == channel:
             self.ui.keyboard.sendNoteOff(note, False)
-
-        if needsLedFeedback and len(self.fPlayingNotes) == 1 and self.fRealParent is not None:
-            self.fRealParent.ui.led_midi.setChecked(False)
 
         playItem = (channel, note)
 
         if playItem in self.fPlayingNotes:
             self.fPlayingNotes.remove(playItem)
+
+        return bool(len(self.fPlayingNotes) == 0)
 
     def setVisible(self, yesNo):
         if yesNo:
@@ -1568,10 +1565,12 @@ class PluginWidget(QFrame):
         self.ui.edit_dialog.setMidiProgram(index)
 
     def sendNoteOn(self, channel, note):
-        self.ui.edit_dialog.sendNoteOn(channel, note)
+        if self.ui.edit_dialog.sendNoteOn(channel, note):
+            self.ui.led_midi.setChecked(True)
 
     def sendNoteOff(self, channel, note):
-        self.ui.edit_dialog.sendNoteOff(channel, note)
+        if self.ui.edit_dialog.sendNoteOff(channel, note):
+            self.ui.led_midi.setChecked(False)
 
     def setId(self, idx):
         self.fPluginId = idx
