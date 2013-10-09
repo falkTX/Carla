@@ -359,7 +359,7 @@ private:
     LinuxSampler::Engine* fEngine;
 
     CARLA_PREVENT_HEAP_ALLOCATION
-    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LinuxSamplerScopedEngine)
+    CARLA_DECLARE_NON_COPY_CLASS(LinuxSamplerScopedEngine)
 };
 #endif
 

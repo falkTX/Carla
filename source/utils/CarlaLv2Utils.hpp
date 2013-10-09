@@ -406,7 +406,7 @@ private:
     bool fNeedsInit;
 
     CARLA_PREVENT_HEAP_ALLOCATION
-    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Lv2WorldClass)
+    CARLA_DECLARE_NON_COPY_CLASS(Lv2WorldClass)
 };
 
 // -----------------------------------------------------------------------

@@ -926,7 +926,7 @@ protected:
         CarlaPlugin* const fPlugin;
 
         CARLA_PREVENT_HEAP_ALLOCATION
-        CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ScopedDisabler)
+        CARLA_DECLARE_NON_COPY_CLASS(ScopedDisabler)
     };
 
     /*!
@@ -945,7 +945,7 @@ protected:
         const bool fBlock;
 
         CARLA_PREVENT_HEAP_ALLOCATION
-        CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ScopedSingleProcessLocker)
+        CARLA_DECLARE_NON_COPY_CLASS(ScopedSingleProcessLocker)
     };
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPlugin)

@@ -240,7 +240,7 @@ private:
     RingBuffer* fRingBuf;
 
     CARLA_PREVENT_HEAP_ALLOCATION
-    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(RingBufferControl)
+    CARLA_DECLARE_NON_COPY_CLASS(RingBufferControl)
 };
 
 // -----------------------------------------------------------------------
