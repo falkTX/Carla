@@ -44,11 +44,13 @@
 # undef TMP__cplusplus
 #endif
 
-#include "juce_core.h"
+#include "juce_audio_basics.h"
 
 #include <iostream>
 
 #define DISCOVERY_OUT(x, y) std::cout << "\ncarla-discovery::" << x << "::" << y << std::endl;
+
+using juce::FloatVectorOperations;
 
 CARLA_BACKEND_USE_NAMESPACE
 

@@ -48,11 +48,17 @@ WIN_32BIT_FLAGS   = $(32BIT_FLAGS)
 WIN_64BIT_FLAGS   = $(64BIT_FLAGS)
 WIN_LINK_FLAGS    = $(LINK_FLAGS) $(EXTRA_LIBS) -lole32 -lshlwapi -lversion -lwininet -lwinmm -lws2_32
 
-LIBS         = ../modules/juce_core.a
-LIBS_posix32 = ../modules/juce_core.posix32.a
-LIBS_posix64 = ../modules/juce_core.posix64.a
-LIBS_win32   = ../modules/juce_core.win32.a
-LIBS_win64   = ../modules/juce_core.win64.a
+LIBS          = ../modules/juce_audio_basics.a
+LIBS_posix32  = ../modules/juce_audio_basics.posix32.a
+LIBS_posix64  = ../modules/juce_audio_basics.posix64.a
+LIBS_win32    = ../modules/juce_audio_basics.win32.a
+LIBS_win64    = ../modules/juce_audio_basics.win64.a
+
+LIBS         += ../modules/juce_core.a
+LIBS_posix32 += ../modules/juce_core.posix32.a
+LIBS_posix64 += ../modules/juce_core.posix64.a
+LIBS_win32   += ../modules/juce_core.win32.a
+LIBS_win64   += ../modules/juce_core.win64.a
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
 LIBS         += ../modules/lilv.a
