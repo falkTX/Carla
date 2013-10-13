@@ -33,6 +33,39 @@ using namespace juce;
 #include "vex/resources/Resources.h"
 
 // -----------------------------------------------------------------------
+// Copied from juce_AudioProcessor.cpp
+
+// magic number to identify memory blocks that we've stored as XML
+const uint32 magicXmlNumber = 0x21324356;
+
+void copyXmlToBinary(const XmlElement& xml, juce::MemoryBlock& destData)
+{
+    const String xmlString(xml.createDocument(String::empty, true, false));
+    const size_t stringLength = xmlString.getNumBytesAsUTF8();
+
+    destData.setSize(stringLength + 9);
+
+    uint32* const d = static_cast<uint32*>(destData.getData());
+    d[0] = ByteOrder::swapIfBigEndian((const uint32) magicXmlNumber);
+    d[1] = ByteOrder::swapIfBigEndian((const uint32) stringLength);
+
+    xmlString.copyToUTF8((CharPointer_UTF8::CharType*) (d + 2), stringLength + 1);
+}
+
+XmlElement* getXmlFromBinary(const void* data, const int sizeInBytes)
+{
+    if (sizeInBytes > 8 && ByteOrder::littleEndianInt(data) == magicXmlNumber)
+    {
+        const int stringLength = (int) ByteOrder::littleEndianInt (addBytesToPointer (data, 4));
+
+        if (stringLength > 0)
+            return XmlDocument::parse (String::fromUTF8 (static_cast<const char*> (data) + 8, jmin ((sizeInBytes - 8), stringLength)));
+    }
+
+    return nullptr;
+}
+
+// -----------------------------------------------------------------------
 
 class HelperWindow2 : public DocumentWindow
 {
@@ -114,8 +147,9 @@ public:
         virtual void editorWaveChanged(const int part, const String& wave) = 0;
     };
 
-    VexEditorComponent(Callback* const callback, VexArpSettings& arpSet1)
-        : fCallback(callback)
+    VexEditorComponent(Callback* const callback, VexArpSettings& arpSet1, VexArpSettings& arpSet2, VexArpSettings& arpSet3)
+        : fCallback(callback),
+          fNeedsUpdate(false)
     {
         internalCachedImage1 = ImageCache::getFromMemory(Resources::vex3_png, Resources::vex3_pngSize);
 
@@ -269,9 +303,9 @@ public:
 
         addChildComponent(p1 = new PeggyViewComponent(1, arpSet1, this));
         p1->setLookAndFeel(&mlaf);
-        addChildComponent(p2 = new PeggyViewComponent(2, arpSet1, this));
+        addChildComponent(p2 = new PeggyViewComponent(2, arpSet2, this));
         p2->setLookAndFeel(&mlaf);
-        addChildComponent(p3 = new PeggyViewComponent(3, arpSet1, this));
+        addChildComponent(p3 = new PeggyViewComponent(3, arpSet3, this));
         p3->setLookAndFeel(&mlaf);
 
         setSize(800,500);
@@ -284,6 +318,11 @@ public:
     {
         stopTimer();
         removeAllChildren();
+    }
+
+    void setNeedsUpdate()
+    {
+        fNeedsUpdate = true;
     }
 
 protected:
@@ -417,7 +456,15 @@ protected:
 
     void timerCallback() override
     {
-        updateParametersFromFilter(false);
+        if (fNeedsUpdate)
+        {
+            updateParametersFromFilter(true);
+            fNeedsUpdate = false;
+        }
+        else
+        {
+            updateParametersFromFilter(false);
+        }
     }
 
     void comboBoxChanged(ComboBox* comboBoxThatHasChanged) override
@@ -503,6 +550,7 @@ private:
     static const int kSliderCount = 89;
 
     Callback* const fCallback;
+    volatile bool fNeedsUpdate;
 
     Image internalCachedImage1;
     MyLookAndFeel mlaf;
@@ -664,76 +712,100 @@ protected:
             {
             case 1:
                 paramInfo.name = "oct";
+                paramInfo.ranges.def = 0.5f;
                 break;
             case 2:
                 paramInfo.name = "cent";
+                paramInfo.ranges.def = 0.5f;
                 break;
             case 3:
                 paramInfo.name = "phaseOffset";
+                paramInfo.ranges.def = 0.5f;
                 break;
             case 4:
                 paramInfo.name = "phaseIncOffset";
+                paramInfo.ranges.def = 0.5f;
                 break;
             case 5:
                 paramInfo.name = "filter";
+                paramInfo.ranges.def = 0.9f;
                 break;
             case 6:
                 paramInfo.name = "filter";
+                paramInfo.ranges.def = 0.0f;
                 break;
             case 7:
                 paramInfo.name = "filter";
+                paramInfo.ranges.def = 1.0f;
                 break;
             case 8:
                 paramInfo.name = "filter";
+                paramInfo.ranges.def = 0.5f;
                 break;
             case 9:
                 paramInfo.name = "F ADSR";
+                paramInfo.ranges.def = 0.0f;
                 break;
             case 10:
                 paramInfo.name = "F ADSR";
+                paramInfo.ranges.def = 0.2f;
                 break;
             case 11:
                 paramInfo.name = "F ADSR";
+                paramInfo.ranges.def = 0.0f;
                 break;
             case 12:
                 paramInfo.name = "F ADSR";
+                paramInfo.ranges.def = 0.5f;
                 break;
             case 13:
                 paramInfo.name = "F velocity";
+                paramInfo.ranges.def = 0.5f;
                 break;
             case 14:
                 paramInfo.name = "A ADSR";
+                paramInfo.ranges.def = 0.0f;
                 break;
             case 15:
                 paramInfo.name = "A ADSR";
+                paramInfo.ranges.def = 0.3f;
                 break;
             case 16:
                 paramInfo.name = "A ADSR";
+                paramInfo.ranges.def = 0.7f;
                 break;
             case 17:
                 paramInfo.name = "A ADSR";
+                paramInfo.ranges.def = 0.1f;
                 break;
             case 18:
                 paramInfo.name = "A velocity";
+                paramInfo.ranges.def = 0.5f;
                 break;
             case 19:
                 paramInfo.name = "lfoC";
+                paramInfo.ranges.def = 0.5f;
                 break;
             case 20:
                 paramInfo.name = "lfoA";
+                paramInfo.ranges.def = 0.0f;
                 break;
             case 21:
                 paramInfo.name = "lfoF";
+                paramInfo.ranges.def = 0.0f;
                 break;
             case 22:
                 paramInfo.name = "fx vol D";
+                paramInfo.ranges.def = 0.5f;
                 break;
             case 23:
                 paramInfo.name = "fx vol C";
+                paramInfo.ranges.def = 0.5f;
                 break;
             case 24:
             case 0:
                 paramInfo.name = "fx vol R";
+                paramInfo.ranges.def = 0.5f;
                 break;
             default:
                 paramInfo.name = "unknown2";
@@ -748,63 +820,93 @@ protected:
         {
         case 0:
             paramInfo.name = "Main volume";
+            paramInfo.ranges.def = 1.0f;
             break;
         case 73:
+            hints |= PARAMETER_IS_INTEGER;
             paramInfo.name = "Delay Time";
+            paramInfo.unit = "steps";
+            paramInfo.ranges.def = 4.0f;
+            paramInfo.ranges.min = 0.0f;
+            paramInfo.ranges.max = 8.0f;
             break;
         case 74:
             paramInfo.name = "Delay Feedback";
+            paramInfo.unit = "%";
+            paramInfo.ranges.def = 40.0f;
+            paramInfo.ranges.min = 0.0f;
+            paramInfo.ranges.max = 100.0f;
             break;
         case 75:
             paramInfo.name = "Delay Volume";
+            paramInfo.ranges.def = 0.0f;
             break;
         case 76:
             paramInfo.name = "Chorus Rate";
+            paramInfo.ranges.def = 0.3f;
             break;
         case 77:
             paramInfo.name = "Chorus Depth";
+            paramInfo.ranges.def = 0.6f;
             break;
         case 78:
             paramInfo.name = "Chorus Volume";
+            paramInfo.ranges.def = 0.5f;
             break;
         case 79:
             paramInfo.name = "Reverb Size";
+            paramInfo.ranges.def = 0.6f;
             break;
         case 80:
             paramInfo.name = "Reverb Width";
+            paramInfo.ranges.def = 0.7f;
             break;
         case 81:
             paramInfo.name = "Reverb Damp";
+            paramInfo.ranges.def = 0.6f;
             break;
         case 82:
             paramInfo.name = "Reverb Volume";
+            paramInfo.ranges.def = 0.0f;
             break;
         case 83:
             paramInfo.name = "Wave1 Panning";
+            paramInfo.ranges.def = 0.5f;
             break;
         case 84:
             paramInfo.name = "Wave2 Panning";
+            paramInfo.ranges.def = 0.5f;
             break;
         case 85:
             paramInfo.name = "Wave3 Panning";
+            paramInfo.ranges.def = 0.5f;
             break;
         case 86:
             paramInfo.name = "Wave1 Volume";
+            paramInfo.ranges.def = 0.5f;
             break;
         case 87:
             paramInfo.name = "Wave2 Volume";
+            paramInfo.ranges.def = 0.5f;
             break;
         case 88:
             paramInfo.name = "Wave3 Volume";
+            paramInfo.ranges.def = 0.5f;
             break;
         case 89:
+            hints |= PARAMETER_IS_BOOLEAN;
             paramInfo.name = "Wave1 on/off";
+            paramInfo.ranges.def = 0.1f;
             break;
         case 90:
+            hints |= PARAMETER_IS_BOOLEAN;
             paramInfo.name = "Wave2 on/off";
+            paramInfo.ranges.def = 0.0f;
             break;
         case 91:
+            hints |= PARAMETER_IS_BOOLEAN;
             paramInfo.name = "Wave3 on/off";
+            paramInfo.ranges.def = 0.0f;
             break;
         default:
             paramInfo.name = "unknown";
@@ -817,7 +919,18 @@ protected:
 
     float getParameterValue(const uint32_t index) const override
     {
-        return (index < kParamCount) ? fParameters[index] : 0.0f;
+        if (index >= kParamCount)
+            return 0.0f;
+
+        switch (index)
+        {
+        case 73:
+            return fParameters[index] * 8.0f;
+        case 74:
+            return fParameters[index] * 100.0f;
+        default:
+            return fParameters[index];
+        }
     }
 
     // -------------------------------------------------------------------
@@ -825,12 +938,27 @@ protected:
 
     void setParameterValue(const uint32_t index, const float value) override
     {
-        if (index < kParamCount)
+        if (index >= kParamCount)
+            return;
+
+        float realValue;
+
+        switch (index)
         {
-            fParameters[index] = value;
-            fParamsChanged[index] = true;
-            fSynth.update(index);
+        case 73:
+            realValue = value/8.0f;
+            break;
+        case 74:
+            realValue = value/100.0f;
+            break;
+        default:
+            realValue = value;
+            break;
         }
+
+        fParameters[index] = realValue;
+        fParamsChanged[index] = true;
+        fSynth.update(index);
     }
 
     // -------------------------------------------------------------------
@@ -962,7 +1090,7 @@ protected:
             }
 
             if (fView == nullptr)
-                fView = new VexEditorComponent(this, fArpSet1);
+                fView = new VexEditorComponent(this, fArpSet1, fArpSet2, fArpSet3);
 
             fWindow->show(fView);
         }
@@ -990,6 +1118,66 @@ protected:
     void uiSetParameterValue(const uint32_t, const float) override
     {
         // unused
+    }
+
+    // -------------------------------------------------------------------
+    // Plugin state calls
+
+    char* getState() const override
+    {
+        MemoryBlock destData;
+        //destData.append(fParameters, sizeof(float) * kParamCount);
+        destData.append(&fArpSet1, sizeof(VexArpSettings));
+        destData.append(&fArpSet2, sizeof(VexArpSettings));
+        destData.append(&fArpSet3, sizeof(VexArpSettings));
+
+        XmlElement xmlState("VEX");
+
+        xmlState.setAttribute("Wave1", fSynth.getWaveName(1));
+        xmlState.setAttribute("Wave2", fSynth.getWaveName(2));
+        xmlState.setAttribute("Wave3", fSynth.getWaveName(3));
+
+        MemoryBlock tmp;
+        copyXmlToBinary(xmlState, tmp);
+
+        destData.append(tmp.getData(), tmp.getSize());
+
+        return strdup(destData.toBase64Encoding().toRawUTF8());
+    }
+
+    void setState(const char* const data64) override
+    {
+        static const int kParamDataSize = 0; //sizeof(float)*kParamCount
+        static const int xmlOffset      = kParamDataSize + sizeof(VexArpSettings) * 3;
+
+        MemoryBlock destData;
+        destData.fromBase64Encoding(data64);
+
+        const char* const data(&destData[0]);
+        const size_t  dataSize(destData.getSize());
+
+        if (XmlElement* const xmlState = getXmlFromBinary(data + xmlOffset, dataSize - xmlOffset))
+        {
+            if (xmlState->hasTagName("VEX"))
+            {
+                fSynth.setWaveLater(1, xmlState->getStringAttribute("Wave1"));
+                fSynth.setWaveLater(2, xmlState->getStringAttribute("Wave2"));
+                fSynth.setWaveLater(3, xmlState->getStringAttribute("Wave3"));
+
+                //std::memcpy(fParameters, data,                                               sizeof(float) * kParamCount);
+                std::memcpy(&fArpSet1,   data + (kParamDataSize + sizeof(VexArpSettings)*0), sizeof(VexArpSettings));
+                std::memcpy(&fArpSet2,   data + (kParamDataSize + sizeof(VexArpSettings)*1), sizeof(VexArpSettings));
+                std::memcpy(&fArpSet3,   data + (kParamDataSize + sizeof(VexArpSettings)*2), sizeof(VexArpSettings));
+
+                //for (unsigned int i = 0; i < kParamCount; ++i)
+                //    fSynth.update(i);
+
+                if (fView != nullptr)
+                    fView->setNeedsUpdate();
+            }
+
+            delete xmlState;
+        }
     }
 
     // -------------------------------------------------------------------
@@ -1061,7 +1249,7 @@ protected:
         fParameters[index] = value;
         fSynth.update(index);
 
-        uiParameterChanged(index, value);
+        uiParameterChanged(index, getParameterValue(index)); // some params have specific bounds
     }
 
     void editorWaveChanged(const int part, const String& wave) override
@@ -1069,14 +1257,6 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(part >= 1 && part <= 3,)
 
         fSynth.setWaveLater(part, wave);
-
-#if 0
-        char key[6] = "wave0";
-        key[4] += part;
-        key[6]  = '\0';
-
-        uiCustomDataChanged(key, wave.toRawUTF8());
-#endif
     }
 
 private:

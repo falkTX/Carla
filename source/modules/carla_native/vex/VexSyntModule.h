@@ -370,17 +370,17 @@ public:
     {
         if (index == 89)
         {
-            part1 = (parameters[89] > 0.9f);
+            part1 = (parameters[89] > 0.5f);
             return;
         }
         if (index == 90)
         {
-            part2 = (parameters[90] > 0.9f);
+            part2 = (parameters[90] > 0.5f);
             return;
         }
         if (index == 91)
         {
-            part3 = (parameters[91] > 0.9f);
+            part3 = (parameters[91] > 0.5f);
             return;
         }
 

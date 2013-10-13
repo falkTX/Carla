@@ -524,14 +524,10 @@ protected:
         case kParamRate:
             paramInfo.name = "Rate";
             paramInfo.ranges.def = 0.3f;
-            paramInfo.ranges.min = 0.0f;
-            paramInfo.ranges.max = 1.0f;
             break;
         case kParamDepth:
             paramInfo.name = "Depth";
             paramInfo.ranges.def = 0.6f;
-            paramInfo.ranges.min = 0.0f;
-            paramInfo.ranges.max = 1.0f;
             break;
         }
 
@@ -790,20 +786,14 @@ protected:
         case kParamSize:
             paramInfo.name = "Size";
             paramInfo.ranges.def = 0.6f;
-            paramInfo.ranges.min = 0.0f;
-            paramInfo.ranges.max = 1.0f;
             break;
         case kParamWidth:
             paramInfo.name = "Width";
             paramInfo.ranges.def = 0.7f;
-            paramInfo.ranges.min = 0.0f;
-            paramInfo.ranges.max = 1.0f;
             break;
         case kParamDamp:
             paramInfo.name = "Damp";
             paramInfo.ranges.def = 0.6f;
-            paramInfo.ranges.min = 0.0f;
-            paramInfo.ranges.max = 1.0f;
             break;
         }
 
