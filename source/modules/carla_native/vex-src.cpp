@@ -27,10 +27,11 @@ using namespace juce;
 #include "vex/freeverb/comb.cpp"
 #include "vex/freeverb/revmodel.cpp"
 
-#include "vex/ResourceFile.cpp"
 #include "vex/VexVoice.cpp"
 #include "vex/VexWaveRenderer.cpp"
 
 #include "vex/lookandfeel/MyLookAndFeel.cpp"
+
+#include "vex/resources/Resources.cpp"
 
 // -----------------------------------------------------------------------

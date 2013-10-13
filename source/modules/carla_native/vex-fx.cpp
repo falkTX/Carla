@@ -453,7 +453,7 @@ protected:
     // -------------------------------------------------------------------
     // Peggy callback
 
-    void somethingChanged(const uint32_t id) override
+    void arpParameterChanged(const uint32_t id) override
     {
         uiParameterChanged(id, getParameterValue(id));
     }

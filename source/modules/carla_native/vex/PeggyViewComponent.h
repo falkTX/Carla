@@ -51,7 +51,7 @@ public:
     {
     public:
         virtual ~Callback() {}
-        virtual void somethingChanged(const uint32_t id) = 0;
+        virtual void arpParameterChanged(const uint32_t id) = 0;
     };
 
     PeggyViewComponent(const int partID, VexArpSettings& arpSet, Callback* const callback)
@@ -175,13 +175,13 @@ public:
         {
             int i = boolGrid->getLastChanged();
             fArpSettings.grid[i] = boolGrid->getCellState(i);
-            fCallback->somethingChanged(6+VexArpSettings::kVelocitiesSize+i);
+            fCallback->arpParameterChanged(6+VexArpSettings::kVelocitiesSize+i);
         }
         else if (caller == sliderField)
         {
             int i = sliderField->getLastSlider();
             fArpSettings.velocities[i] = jlimit(0.0f, 1.0f, sliderField->getValue(i));
-            fCallback->somethingChanged(6+i);
+            fCallback->arpParameterChanged(6+i);
         }
     }
 
@@ -190,22 +190,22 @@ public:
         if (caller == timeMode)
         {
             fArpSettings.timeMode = timeMode->getSelectedId();
-            fCallback->somethingChanged(2);
+            fCallback->arpParameterChanged(2);
         }
         else if (caller == syncMode)
         {
             fArpSettings.syncMode = syncMode->getSelectedId();
-            fCallback->somethingChanged(3);
+            fCallback->arpParameterChanged(3);
         }
         else if (caller == failMode)
         {
             fArpSettings.failMode = failMode->getSelectedId();
-            fCallback->somethingChanged(4);
+            fCallback->arpParameterChanged(4);
         }
         else if (caller == velMode)
         {
             fArpSettings.velMode = velMode->getSelectedId();
-            fCallback->somethingChanged(5);
+            fCallback->arpParameterChanged(5);
         }
     }
 
@@ -214,13 +214,13 @@ public:
         boolGrid->setLength((int)length->getValue());
         sliderField->setLength((int)length->getValue());
         fArpSettings.length = (int)length->getValue();
-        fCallback->somethingChanged(1);
+        fCallback->arpParameterChanged(1);
     }
 
     void buttonClicked(Button* /*caller*/) override
     {
         fArpSettings.on = onOffBtn->getToggleState();
-        fCallback->somethingChanged(0);
+        fCallback->arpParameterChanged(0);
     }
 
     void update()

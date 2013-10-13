@@ -41,10 +41,10 @@
 
 #ifdef CARLA_EXPORT
  #include "juce_audio_basics.h"
- #include "ResourceFile.h"
+ #include "resources/Resources.h"
 #else
  #include "../StandardHeader.h"
- #include "../waverom/ResourceFile.h"
+ #include "resources/Resources.h"
 #endif
 
 struct OscSet {
@@ -77,6 +77,11 @@ public:
     {
         //M.setSize(0);
         daTable = nullptr;
+    }
+
+    const String& getCurrentWaveName() const
+    {
+        return sWave;
     }
 
     void setWaveLater(const String& waveName)

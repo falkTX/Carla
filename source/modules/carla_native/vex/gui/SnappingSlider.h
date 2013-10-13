@@ -27,14 +27,23 @@
 
    @author  rockhardbuns
    @tweaker Lucio Asnaghi
+   @tweaker falkTX
 
  ==============================================================================
 */
 
-#ifndef __JUCETICE_VEXSNAPPINGSLIDERCOMPONENT_HEADER__
-#define __JUCETICE_VEXSNAPPINGSLIDERCOMPONENT_HEADER__
+#ifndef DISTRHO_VEX_SNAPPINGSLIDERCOMPONENT_HEADER_INCLUDED
+#define DISTRHO_VEX_SNAPPINGSLIDERCOMPONENT_HEADER_INCLUDED
 
-#include "../StandardHeader.h"
+#ifndef CARLA_EXPORT
+ #define CARLA_EXPORT
+#endif
+
+#ifdef CARLA_EXPORT
+ #include "juce_gui_basics.h"
+#else
+ #include "../StandardHeader.h"
+#endif
 
 class SnappingSlider : public Slider
 {
@@ -63,5 +72,4 @@ private:
     float snapTarget, snapMargin;
 };
 
-#endif
-
+#endif // DISTRHO_VEX_SNAPPINGSLIDERCOMPONENT_HEADER_INCLUDED

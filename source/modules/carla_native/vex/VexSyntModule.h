@@ -332,6 +332,21 @@ public:
         }
     }
 
+    String getWaveName(const int part) const
+    {
+        switch (part)
+        {
+        case 1:
+            return wr1.getCurrentWaveName();
+        case 2:
+            return wr2.getCurrentWaveName();
+        case 3:
+            return wr3.getCurrentWaveName();
+        default:
+            return "";
+        }
+    }
+
     void setWaveLater(const int part, const String& waveName)
     {
         switch (part)
