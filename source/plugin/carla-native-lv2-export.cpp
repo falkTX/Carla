@@ -133,7 +133,7 @@ void writeManifestFile()
     // -------------------------------------------------------------------
     // UI
 
-    text += "<http://kxstudio.sf.net/carla#UI>\n";
+    text += "<http://kxstudio.sf.net/carla/ui>\n";
     text += "    a <" LV2_EXTERNAL_UI__Widget "> ;\n";
     text += "    ui:binary <carla-native" PLUGIN_EXT "> ;\n";
     text += "    lv2:extensionData <" LV2_PROGRAMS__UIInterface "> ;\n";
@@ -242,6 +242,8 @@ void writePluginFile(const PluginDescriptor* const pluginDesc)
         break;
     }
 
+    text += "\n";
+
     // -------------------------------------------------------------------
     // Features
 
@@ -290,7 +292,7 @@ void writePluginFile(const PluginDescriptor* const pluginDesc)
 
     if (pluginDesc->hints & PLUGIN_HAS_GUI)
     {
-        text += "    ui:ui <http://kxstudio.sf.net/carla#UI> ;\n";
+        text += "    ui:ui <http://kxstudio.sf.net/carla/ui> ;\n";
         text += "\n";
     }
 

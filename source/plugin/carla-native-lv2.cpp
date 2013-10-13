@@ -19,6 +19,7 @@
 #include "carla-native-base.cpp"
 
 #include "juce_audio_basics.h"
+#include "juce_gui_basics.h"
 
 #include "CarlaString.hpp"
 
@@ -35,7 +36,52 @@
 #include "lv2/lv2_external_ui.h"
 #include "lv2/lv2_programs.h"
 
-using juce::FloatVectorOperations;
+using namespace juce;
+
+// -----------------------------------------------------------------------
+// Juce Message Thread
+
+class JuceMessageThread : public Thread
+{
+public:
+    JuceMessageThread()
+      : Thread("JuceMessageThread"),
+        fInitialised(false)
+    {
+        startThread(7);
+
+        while (! fInitialised)
+            sleep(1);
+    }
+
+    ~JuceMessageThread()
+    {
+        signalThreadShouldExit();
+        JUCEApplication::quit();
+        waitForThreadToExit(5000);
+        clearSingletonInstance();
+    }
+
+    void run()
+    {
+        initialiseJuce_GUI();
+        fInitialised = true;
+
+        MessageManager::getInstance()->setCurrentThreadAsMessageThread();
+
+        while ((! threadShouldExit()) && MessageManager::getInstance()->runDispatchLoopUntil(250))
+        {}
+    }
+
+    juce_DeclareSingleton(JuceMessageThread, false);
+
+private:
+    bool fInitialised;
+};
+
+juce_ImplementSingleton(JuceMessageThread)
+
+static Array<void*> gActivePlugins;
 
 // -----------------------------------------------------------------------
 // LV2 descriptor functions
@@ -49,6 +95,7 @@ public:
         : fHandle(nullptr),
           fDescriptor(desc),
           fMidiEventCount(0),
+          fUiWasShown(false),
           fIsProcessing(false),
           fVolume(1.0f),
           fDryWet(1.0f),
@@ -142,6 +189,7 @@ public:
     ~NativePlugin()
     {
         CARLA_ASSERT(fHandle == nullptr);
+        CARLA_ASSERT(! fUiWasShown);
 
         if (fHost.resourceDir != nullptr)
         {
@@ -205,7 +253,27 @@ public:
     {
         if (fDescriptor->cleanup != nullptr)
             fDescriptor->cleanup(fHandle);
+
         fHandle = nullptr;
+
+        if (fUiWasShown)
+        {
+            CARLA_SAFE_ASSERT_RETURN(gActivePlugins.contains(this),);
+
+            gActivePlugins.removeFirstMatchingValue(this);
+
+            JUCE_AUTORELEASEPOOL
+
+            MessageManagerLock mmLock;
+
+            if (gActivePlugins.size() == 0)
+            {
+                JuceMessageThread::deleteInstance();
+                shutdownJuce_GUI();
+            }
+
+            fUiWasShown = false;
+        }
     }
 
     void lv2_run(const uint32_t frames)
@@ -573,7 +641,26 @@ protected:
     void handleUiShow()
     {
         if (fDescriptor->ui_show != nullptr)
-            fDescriptor->ui_show(fHandle, true);
+        {
+            if (fDescriptor->hints & PLUGIN_NEEDS_UI_JUCE)
+            {
+                JUCE_AUTORELEASEPOOL
+
+                if (gActivePlugins.size() == 0)
+                {
+                    initialiseJuce_GUI();
+                    JuceMessageThread::getInstance();
+                }
+
+                MessageManagerLock mmLock;
+                fDescriptor->ui_show(fHandle, true);
+
+                fUiWasShown = true;
+                gActivePlugins.add(this);
+            }
+            else
+                fDescriptor->ui_show(fHandle, true);
+        }
 
         fUI.isVisible = true;
     }
@@ -737,6 +824,7 @@ private:
     MidiEvent fMidiEvents[kMaxMidiEvents*2];
     TimeInfo  fTimeInfo;
 
+    bool  fUiWasShown;
     bool  fIsProcessing;
     float fVolume;
     float fDryWet;
@@ -1095,7 +1183,7 @@ static LV2_Handle lv2_instantiate(const LV2_Descriptor* lv2Descriptor, double sa
     if (std::strncmp(lv2Descriptor->URI, "http://kxstudio.sf.net/carla/plugins/", 37) == 0)
         pluginLabel = lv2Descriptor->URI+37;
     else if (std::strcmp(lv2Descriptor->URI, "http://kxstudio.sf.net/carla") == 0)
-        pluginLabel = lv2Descriptor->URI+23;
+        pluginLabel = "carla";
 
     if (pluginLabel == nullptr)
     {
@@ -1346,7 +1434,7 @@ const LV2UI_Descriptor* lv2ui_descriptor(uint32_t index)
     carla_debug("lv2ui_descriptor(%i)", index);
 
     static const LV2UI_Descriptor lv2UiDesc = {
-    /* URI            */ "http://kxstudio.sf.net/carla#UI",
+    /* URI            */ "http://kxstudio.sf.net/carla/ui",
     /* instantiate    */ lv2ui_instantiate,
     /* cleanup        */ lv2ui_cleanup,
     /* port_event     */ lv2ui_port_event,
