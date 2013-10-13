@@ -57,10 +57,11 @@ typedef enum {
     PLUGIN_HAS_GUI             = 1 << 2,
     PLUGIN_NEEDS_FIXED_BUFFERS = 1 << 3,
     PLUGIN_NEEDS_SINGLE_THREAD = 1 << 4,
-    PLUGIN_NEEDS_UI_OPEN_SAVE  = 1 << 5,
-    PLUGIN_USES_PANNING        = 1 << 6, // uses stereo balance if unset (default)
-    PLUGIN_USES_STATE          = 1 << 7,
-    PLUGIN_USES_TIME           = 1 << 8
+    PLUGIN_NEEDS_UI_JUCE       = 1 << 5,
+    PLUGIN_NEEDS_UI_OPEN_SAVE  = 1 << 6,
+    PLUGIN_USES_PANNING        = 1 << 7, // uses stereo balance if unset (default)
+    PLUGIN_USES_STATE          = 1 << 8,
+    PLUGIN_USES_TIME           = 1 << 9
 } PluginHints;
 
 typedef enum {

@@ -863,7 +863,7 @@ private:
 
 static const PluginDescriptor vexArpDesc = {
     /* category  */ PLUGIN_CATEGORY_UTILITY,
-    /* hints     */ static_cast<PluginHints>(PLUGIN_HAS_GUI|PLUGIN_NEEDS_SINGLE_THREAD|PLUGIN_USES_TIME),
+    /* hints     */ static_cast<PluginHints>(PLUGIN_HAS_GUI|PLUGIN_NEEDS_UI_JUCE|PLUGIN_USES_TIME),
     /* supports  */ static_cast<PluginSupports>(PLUGIN_SUPPORTS_EVERYTHING),
     /* audioIns  */ 0,
     /* audioOuts */ 0,

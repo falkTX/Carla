@@ -1115,11 +1115,6 @@ protected:
         }
     }
 
-    void uiSetParameterValue(const uint32_t, const float) override
-    {
-        // unused
-    }
-
     // -------------------------------------------------------------------
     // Plugin state calls
 
@@ -1290,7 +1285,7 @@ private:
 
 static const PluginDescriptor vexSynthDesc = {
     /* category  */ PLUGIN_CATEGORY_SYNTH,
-    /* hints     */ static_cast<PluginHints>(PLUGIN_HAS_GUI|PLUGIN_NEEDS_SINGLE_THREAD|PLUGIN_USES_STATE|PLUGIN_USES_TIME),
+    /* hints     */ static_cast<PluginHints>(PLUGIN_HAS_GUI|PLUGIN_NEEDS_UI_JUCE|PLUGIN_USES_STATE|PLUGIN_USES_TIME),
     /* supports  */ static_cast<PluginSupports>(0x0),
     /* audioIns  */ 0,
     /* audioOuts */ 2,
