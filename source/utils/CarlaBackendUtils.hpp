@@ -458,41 +458,38 @@ const char* getPluginTypeAsString(const PluginType type)
 }
 
 static inline
-PluginType getPluginTypeFromString(const char* const stype)
+PluginType getPluginTypeFromString(const char* const ctype)
 {
-    CARLA_ASSERT(stype != nullptr);
-    carla_debug("CarlaBackend::getPluginTypeFromString(\"%s\")", stype);
+    CARLA_SAFE_ASSERT_RETURN(ctype != nullptr && ctype[0] != '\0', PLUGIN_NONE);
+    carla_debug("CarlaBackend::getPluginTypeFromString(\"%s\")", ctype);
 
-    if (stype == nullptr)
-    {
-        carla_stderr("CarlaBackend::getPluginTypeFromString() - null string type");
-        return PLUGIN_NONE;
-    }
+    CarlaString stype(ctype);
+    stype.toLower();
 
-    if (std::strcmp(stype, "NONE") == 0)
+    if (stype.isEmpty() || stype == "none")
         return PLUGIN_NONE;
-    if (std::strcmp(stype, "INTERNAL") == 0 || std::strcmp(stype, "Internal") == 0)
+    if (stype == "internal")
         return PLUGIN_INTERNAL;
-    if (std::strcmp(stype, "LADSPA") == 0)
+    if (stype == "ladspa")
         return PLUGIN_LADSPA;
-    if (std::strcmp(stype, "DSSI") == 0)
+    if (stype == "dssi")
         return PLUGIN_DSSI;
-    if (std::strcmp(stype, "LV2") == 0)
+    if (stype == "lv2")
         return PLUGIN_LV2;
-    if (std::strcmp(stype, "VST") == 0)
+    if (stype == "vst")
         return PLUGIN_VST;
-    if (std::strcmp(stype, "AU") == 0)
+    if (stype == "au")
         return PLUGIN_AU;
-    if (std::strcmp(stype, "CSOUND") == 0)
+    if (stype == "csound")
         return PLUGIN_CSOUND;
-    if (std::strcmp(stype, "GIG") == 0)
+    if (stype == "gig")
         return PLUGIN_GIG;
-    if (std::strcmp(stype, "SF2") == 0)
+    if (stype == "sf2")
         return PLUGIN_SF2;
-    if (std::strcmp(stype, "SFZ") == 0)
+    if (stype == "sfz")
         return PLUGIN_SFZ;
 
-    carla_stderr("CarlaBackend::getPluginTypeFromString(\"%s\") - invalid string type", stype);
+    carla_stderr("CarlaBackend::getPluginTypeFromString(\"%s\") - invalid string type", ctype);
     return PLUGIN_NONE;
 }
 
@@ -501,14 +498,8 @@ PluginType getPluginTypeFromString(const char* const stype)
 static inline
 PluginCategory getPluginCategoryFromName(const char* const name)
 {
-    CARLA_ASSERT(name != nullptr);
+    CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0', PLUGIN_CATEGORY_NONE);
     carla_debug("CarlaBackend::getPluginCategoryFromName(\"%s\")", name);
-
-    if (name == nullptr)
-    {
-        carla_stderr("CarlaBackend::getPluginCategoryFromName() - null name");
-        return PLUGIN_CATEGORY_NONE;
-    }
 
     CarlaString sname(name);
 

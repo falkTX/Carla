@@ -29,11 +29,6 @@ class LibCounter
 public:
     LibCounter() {}
 
-    ~LibCounter()
-    {
-        CARLA_ASSERT(libs.isEmpty());
-    }
-
     void* open(const char* const filename)
     {
         CARLA_SAFE_ASSERT_RETURN(filename != nullptr, nullptr);

@@ -8,8 +8,9 @@ include ../../../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_C_FLAGS   += -I.
-BUILD_CXX_FLAGS += -I.
+BUILD_C_FLAGS   += $(DGL_FLAGS) -I.
+BUILD_CXX_FLAGS += $(DGL_FLAGS) -I.
+LINK_FLAGS      += $(DGL_LIBS)
 
 OBJS = \
 	src/App.cpp.o \
@@ -71,20 +72,10 @@ OBJS_win64 = \
 	src/Widget.cpp.win64.o \
 	src/Window.cpp.win64.o
 
-ifeq ($(LINUX),true)
-BASE_FLAGS   += $(shell pkg-config --cflags gl x11)
-LINK_FLAGS   += $(shell pkg-config --libs gl x11)
-endif
-
 ifeq ($(MACOS),true)
-LINK_FLAGS   += -framework OpenGL -framework Cocoa
 OBJS         += src/pugl/pugl_osx_extended.m.o
 OBJS_posix32 += src/pugl/pugl_osx_extended.m.posix32.o
 OBJS_posix64 += src/pugl/pugl_osx_extended.m.posix64.o
-endif
-
-ifeq ($(WIN32),true)
-LINK_FLAGS   += -lopengl32 -lgdi32
 endif
 
 # --------------------------------------------------------------

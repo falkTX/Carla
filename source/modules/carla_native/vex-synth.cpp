@@ -76,22 +76,17 @@ public:
     {
         setVisible(false);
         setAlwaysOnTop(true);
-        setDropShadowEnabled(false);
         setOpaque(true);
-        //setResizable(false, false);
-        //setUsingNativeTitleBar(false);
+        setResizable(false, false);
+        setUsingNativeTitleBar(true);
     }
 
     void show(Component* const comp)
     {
         fClosed = false;
 
-        const int width  = comp->getWidth();
-        const int height = comp->getHeight()+getTitleBarHeight();
-
-        centreWithSize(width, height);
-        setContentNonOwned(comp, false);
-        setSize(width, height);
+        centreWithSize(comp->getWidth(), comp->getHeight());
+        setContentNonOwned(comp, true);
 
         if (! isOnDesktop())
             addToDesktop();
@@ -121,7 +116,7 @@ protected:
     }
 
 private:
-    bool fClosed;
+    volatile bool fClosed;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(HelperWindow2)
 };
@@ -301,11 +296,11 @@ public:
         TB6->setClickingTogglesState(true);
         TB6->setToggleState(false, dontSendNotification);
 
-        addChildComponent(p1 = new PeggyViewComponent(1, arpSet1, this));
+        addChildComponent(p1 = new PeggyViewComponent(arpSet1, this));
         p1->setLookAndFeel(&mlaf);
-        addChildComponent(p2 = new PeggyViewComponent(2, arpSet2, this));
+        addChildComponent(p2 = new PeggyViewComponent(arpSet2, this));
         p2->setLookAndFeel(&mlaf);
-        addChildComponent(p3 = new PeggyViewComponent(3, arpSet3, this));
+        addChildComponent(p3 = new PeggyViewComponent(arpSet3, this));
         p3->setLookAndFeel(&mlaf);
 
         setSize(800,500);
@@ -1081,6 +1076,8 @@ protected:
 
     void uiShow(const bool show) override
     {
+        MessageManagerLock mmLock;
+
         if (show)
         {
             if (fWindow == nullptr)
@@ -1208,6 +1205,7 @@ protected:
         if (fWindow == nullptr)
             return;
 
+        MessageManagerLock mmLock;
         fWindow->setName(uiName);
     }
 

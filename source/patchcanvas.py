@@ -325,7 +325,7 @@ def init(appName, scene, callback, debug=False):
     canvas.size_rect = QRectF()
 
     if not canvas.qobject:  canvas.qobject = CanvasObject()
-    if not canvas.settings: canvas.settings = QSettings("Cadence", appName)
+    if not canvas.settings: canvas.settings = QSettings("falkTX", appName)
 
     if canvas.theme:
         del canvas.theme

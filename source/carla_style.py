@@ -35,7 +35,7 @@ from carla_shared import *
 # ------------------------------------------------------------------------------------------------------------
 
 class CarlaApplication(object):
-    def __init__(self, appName = "Carla"):
+    def __init__(self, appName = "Carla2"):
         object.__init__(self)
 
         if os.path.exists(os.path.join(CWD, "modules", "theme")):

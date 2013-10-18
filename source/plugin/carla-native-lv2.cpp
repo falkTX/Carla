@@ -652,7 +652,6 @@ protected:
                     JuceMessageThread::getInstance();
                 }
 
-                MessageManagerLock mmLock;
                 fDescriptor->ui_show(fHandle, true);
 
                 fUiWasShown = true;

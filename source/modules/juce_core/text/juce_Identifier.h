@@ -68,19 +68,25 @@ public:
     ~Identifier();
 
     /** Compares two identifiers. This is a very fast operation. */
-    inline bool operator== (const Identifier other) const noexcept      { return name == other.name; }
+    inline bool operator== (Identifier other) const noexcept            { return name == other.name; }
 
     /** Compares two identifiers. This is a very fast operation. */
-    inline bool operator!= (const Identifier other) const noexcept      { return name != other.name; }
+    inline bool operator!= (Identifier other) const noexcept            { return name != other.name; }
+
+    /** Compares the identifier with a string. */
+    inline bool operator== (StringRef other) const noexcept             { return name.compare (other.text) == 0; }
+
+    /** Compares the identifier with a string. */
+    inline bool operator!= (StringRef other) const noexcept             { return name.compare (other.text) != 0; }
 
     /** Returns this identifier as a string. */
     String toString() const                                             { return name; }
 
     /** Returns this identifier's raw string pointer. */
-    operator const String::CharPointerType() const noexcept             { return name; }
+    operator String::CharPointerType() const noexcept                   { return name; }
 
     /** Returns this identifier's raw string pointer. */
-    const String::CharPointerType getCharPointer() const noexcept       { return name; }
+    String::CharPointerType getCharPointer() const noexcept             { return name; }
 
     /** Returns this identifier as a StringRef. */
     operator StringRef() const noexcept                                 { return name; }

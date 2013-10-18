@@ -39,6 +39,7 @@
 
 #include "gui/BoolGridComponent.h"
 #include "gui/SliderFieldComponent.h"
+#include "lookandfeel/MyLookAndFeel.h"
 
 class PeggyViewComponent : public Component,
                            public ChangeListener,
@@ -54,10 +55,10 @@ public:
         virtual void arpParameterChanged(const uint32_t id) = 0;
     };
 
-    PeggyViewComponent(const int partID, VexArpSettings& arpSet, Callback* const callback)
-        : fPart(partID),
-          fArpSettings(arpSet),
-          fCallback(callback)
+    PeggyViewComponent(VexArpSettings& arpSet, Callback* const callback, const bool isStandalone = false)
+        : fArpSettings(arpSet),
+          fCallback(callback),
+          fIsStandalone(isStandalone)
     {
         addAndMakeVisible(boolGrid = new BoolGridComponent());
         boolGrid->addChangeListener(this);
@@ -134,6 +135,12 @@ public:
         onOffBtn->addListener(this);
         onOffBtn->setClickingTogglesState(true);
 
+        if (isStandalone)
+        {
+            static MyLookAndFeel mlaf;
+            setLookAndFeel(&mlaf);
+        }
+
         update();
     }
 
@@ -163,10 +170,17 @@ public:
         g.setGradientFill(ColourGradient(Colour(0xffffffff), 0.0f, 0.0f,
                           Colour(0xff888899), (float)getWidth(), (float)getHeight(), false));
 
-        g.fillRect(0,0,getWidth() - 5, getHeight() - 5);
+        if (fIsStandalone)
+        {
+            g.fillRect(0, 0, getWidth(), getHeight());
+        }
+        else
+        {
+            g.fillRect(0, 0, getWidth() - 5, getHeight() - 5);
 
-        g.setColour(Colours::black);
-        g.drawRect(0,0,getWidth() - 5, getHeight() - 5);
+            g.setColour(Colours::black);
+            g.drawRect(0, 0, getWidth() - 5, getHeight() - 5);
+        }
     }
 
     void changeListenerCallback(ChangeBroadcaster* caller) override
@@ -244,9 +258,9 @@ public:
     }
 
 private:
-    const int fPart;
     VexArpSettings& fArpSettings;
     Callback* const fCallback;
+    const bool fIsStandalone;
 
     ScopedPointer<BoolGridComponent> boolGrid;
     ScopedPointer<SliderFieldComponent> sliderField;

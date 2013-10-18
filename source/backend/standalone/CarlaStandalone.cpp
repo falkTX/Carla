@@ -41,7 +41,52 @@ using CB::CallbackFunc;
 using CB::EngineOptions;
 using CB::EngineTimeInfo;
 
-using juce::MessageManager;
+//using juce::MessageManager;
+
+using namespace juce;
+
+// -----------------------------------------------------------------------
+// Juce Message Thread
+
+class JuceMessageThread : public Thread
+{
+public:
+    JuceMessageThread()
+      : Thread("JuceMessageThread"),
+        fInitialised(false)
+    {
+        startThread(7);
+
+        while (! fInitialised)
+            sleep(1);
+    }
+
+    ~JuceMessageThread()
+    {
+        signalThreadShouldExit();
+        JUCEApplication::quit();
+        waitForThreadToExit(5000);
+        clearSingletonInstance();
+    }
+
+    void run()
+    {
+        initialiseJuce_GUI();
+        fInitialised = true;
+
+        MessageManager::getInstance()->setCurrentThreadAsMessageThread();
+
+        while ((! threadShouldExit()) && MessageManager::getInstance()->runDispatchLoopUntil(250))
+        {}
+    }
+
+    juce_DeclareSingleton(JuceMessageThread, false);
+
+private:
+    bool fInitialised;
+};
+
+juce_ImplementSingleton(JuceMessageThread)
 
 // -------------------------------------------------------------------------------------------------------------------
 // Single, standalone engine
@@ -61,14 +106,33 @@ struct CarlaBackendStandalone {
     ~CarlaBackendStandalone()
     {
         CARLA_ASSERT(engine == nullptr);
-        CARLA_ASSERT(MessageManager::getInstanceWithoutCreating() == nullptr);
+        //CARLA_ASSERT(MessageManager::getInstanceWithoutCreating() == nullptr);
     }
 
+#if 1
+    void init()
+    {
+        JUCE_AUTORELEASEPOOL
+
+        initialiseJuce_GUI();
+        JuceMessageThread::getInstance();
+    }
+
+    void idle() {}
+
+    void close()
+    {
+        JUCE_AUTORELEASEPOOL
+
+        JuceMessageThread::deleteInstance();
+        shutdownJuce_GUI();
+    }
+#else
     void init()
     {
         juce::initialiseJuce_GUI();
 
-        if (MessageManager* const mgr = MessageManager::getInstanceWithoutCreating())
+        if (MessageManager* const mgr = MessageManager::getInstance())
             mgr->setCurrentThreadAsMessageThread();
     }
 
@@ -85,6 +149,7 @@ struct CarlaBackendStandalone {
 
         juce::shutdownJuce_GUI();
     }
+#endif
 
     CARLA_DECLARE_NON_COPY_STRUCT(CarlaBackendStandalone)
 };
@@ -333,19 +398,6 @@ bool carla_engine_init(const char* driverName, const char* clientName)
         return false;
     }
 
-#if 0 //def DEBUG
-    static bool firstInit = true;
-
-    if (firstInit)
-    {
-        firstInit = false;
-
-        if (gStandalone.callback != nullptr)
-            gStandalone.callback(gStandalone.callbackPtr, CB::CALLBACK_DEBUG, 0, 0, 0, 0.0f,
-                                 "Debug builds don't use this, please check the console instead.");
-    }
-#endif
-
 #ifdef Q_OS_WIN
     carla_setenv("WINEASIO_CLIENT_NAME", clientName);
 #endif
@@ -421,6 +473,58 @@ bool carla_engine_init(const char* driverName, const char* clientName)
         return false;
     }
 }
+
+#ifdef BUILD_BRIDGE
+bool carla_engine_init_bridge(const char* audioBaseName, const char* controlBaseName, const char* clientName)
+{
+    CARLA_SAFE_ASSERT_RETURN(audioBaseName != nullptr && audioBaseName[0] != '\0', false);
+    CARLA_SAFE_ASSERT_RETURN(controlBaseName != nullptr && controlBaseName[0] != '\0', false);
+    CARLA_SAFE_ASSERT_RETURN(clientName != nullptr && clientName[0] != '\0', false);
+    carla_debug("carla_engine_init_bridge(\"%s\", %s, %s)", audioBaseName, controlBaseName, clientName);
+
+    if (gStandalone.engine != nullptr)
+    {
+        carla_stderr2("Engine is already running");
+        gStandalone.lastError = "Engine is already running";
+        return false;
+    }
+
+    gStandalone.engine = CarlaEngine::newBridge(audioBaseName, controlBaseName);
+
+    if (gStandalone.engine == nullptr)
+    {
+        carla_stderr2("The seleted audio driver is not available!");
+        gStandalone.lastError = "The seleted audio driver is not available!";
+        return false;
+    }
+
+    if (gStandalone.callback != nullptr)
+        gStandalone.engine->setCallback(gStandalone.callback, gStandalone.callbackPtr);
+
+    gStandalone.engine->setOption(CB::OPTION_PROCESS_MODE,          CB::PROCESS_MODE_BRIDGE,   nullptr);
+    gStandalone.engine->setOption(CB::OPTION_TRANSPORT_MODE,        CB::TRANSPORT_MODE_BRIDGE, nullptr);
+    gStandalone.engine->setOption(CB::OPTION_FORCE_STEREO,          false, nullptr);
+    gStandalone.engine->setOption(CB::OPTION_PREFER_PLUGIN_BRIDGES, false, nullptr);
+    gStandalone.engine->setOption(CB::OPTION_PREFER_UI_BRIDGES,     false, nullptr);
+    //gStandalone.engine->setOption(CB::OPTION_UIS_ALWAYS_ON_TOP,     gStandalone.options.uisAlwaysOnTop      ? 1 : 0,        nullptr);
+    //gStandalone.engine->setOption(CB::OPTION_MAX_PARAMETERS,        static_cast<int>(gStandalone.options.maxParameters),    nullptr);
+    //gStandalone.engine->setOption(CB::OPTION_UI_BRIDGES_TIMEOUT,    static_cast<int>(gStandalone.options.uiBridgesTimeout), nullptr);
+
+    if (gStandalone.engine->init(clientName))
+    {
+        gStandalone.lastError = "no error";
+        gStandalone.init();
+        return true;
+    }
+    else
+    {
+        gStandalone.lastError = gStandalone.engine->getLastError();
+        delete gStandalone.engine;
+        gStandalone.engine = nullptr;
+        return false;
+    }
+}
+#endif
 
 bool carla_engine_close()
 {
@@ -2119,54 +2223,5 @@ void carla_nsm_reply_save()
 CarlaEngine* carla_get_standalone_engine()
 {
     return gStandalone.engine;
-}
-
-bool carla_engine_init_bridge(const char* audioBaseName, const char* controlBaseName, const char* clientName)
-{
-    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine == nullptr, false);
-    CARLA_SAFE_ASSERT_RETURN(audioBaseName != nullptr && audioBaseName[0] != '\0', false);
-    CARLA_SAFE_ASSERT_RETURN(controlBaseName != nullptr && controlBaseName[0] != '\0', false);
-    CARLA_SAFE_ASSERT_RETURN(clientName != nullptr && clientName[0] != '\0', false);
-    carla_debug("carla_engine_init_bridge(\"%s\", \"%s\", \"%s\")", audioBaseName, controlBaseName, clientName);
-
-    gStandalone.engine = CarlaEngine::newBridge(audioBaseName, controlBaseName);
-
-    if (gStandalone.engine == nullptr)
-    {
-        carla_stderr2("The seleted audio driver is not available!");
-        gStandalone.lastError = "The seleted audio driver is not available!";
-        return false;
-    }
-
-    if (gStandalone.callback != nullptr)
-        gStandalone.engine->setCallback(gStandalone.callback, gStandalone.callbackPtr);
-
-    gStandalone.engine->setOption(CB::OPTION_PROCESS_MODE,          CB::PROCESS_MODE_BRIDGE,   nullptr);
-    gStandalone.engine->setOption(CB::OPTION_TRANSPORT_MODE,        CB::TRANSPORT_MODE_BRIDGE, nullptr);
-    gStandalone.engine->setOption(CB::OPTION_PREFER_PLUGIN_BRIDGES, false, nullptr);
-    gStandalone.engine->setOption(CB::OPTION_PREFER_UI_BRIDGES,     false, nullptr);
-
-    // TODO - read from environment
-#if 0
-    gStandalone.engine->setOption(CB::OPTION_FORCE_STEREO,          gStandalone.options.forceStereo ? 1 : 0,             nullptr);
-# ifdef WANT_DSSI
-    gStandalone.engine->setOption(CB::OPTION_USE_DSSI_VST_CHUNKS,   gStandalone.options.useDssiVstChunks ? 1 : 0,        nullptr);
-# endif
-    gStandalone.engine->setOption(CB::OPTION_MAX_PARAMETERS,        static_cast<int>(gStandalone.options.maxParameters),       nullptr);
-#endif
-
-    if (gStandalone.engine->init(clientName))
-    {
-        gStandalone.lastError = "no error";
-        gStandalone.init();
-        return true;
-    }
-    else
-    {
-        gStandalone.lastError = gStandalone.engine->getLastError();
-        delete gStandalone.engine;
-        gStandalone.engine = nullptr;
-        return false;
-    }
 }
 #endif

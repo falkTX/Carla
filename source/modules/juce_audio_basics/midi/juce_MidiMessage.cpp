@@ -777,22 +777,19 @@ MidiMessage MidiMessage::timeSignatureMetaEvent (const int numerator, const int 
         ++powerOfTwo;
     }
 
-    const uint8 d[] = { 0xff, 0x58, 0x04, (uint8) numerator,
-                        (uint8) powerOfTwo, 1, 96 };
-
+    const uint8 d[] = { 0xff, 0x58, 0x04, (uint8) numerator, (uint8) powerOfTwo, 1, 96 };
     return MidiMessage (d, 7, 0.0);
 }
 
 MidiMessage MidiMessage::midiChannelMetaEvent (const int channel) noexcept
 {
     const uint8 d[] = { 0xff, 0x20, 0x01, (uint8) jlimit (0, 0xff, channel - 1) };
-
     return MidiMessage (d, 4, 0.0);
 }
 
 bool MidiMessage::isKeySignatureMetaEvent() const noexcept
 {
-    return getMetaEventType() == 89;
+    return getMetaEventType() == 0x59;
 }
 
 int MidiMessage::getKeySignatureNumberOfSharpsOrFlats() const noexcept
@@ -803,6 +800,14 @@ int MidiMessage::getKeySignatureNumberOfSharpsOrFlats() const noexcept
 bool MidiMessage::isKeySignatureMajorKey() const noexcept
 {
     return getMetaEventData()[1] == 0;
+}
+
+MidiMessage MidiMessage::keySignatureMetaEvent (int numberOfSharpsOrFlats, bool isMinorKey)
+{
+    jassert (numberOfSharpsOrFlats >= -7 && numberOfSharpsOrFlats <= 7);
+
+    const uint8 d[] = { 0xff, 0x59, 0x02, (uint8) numberOfSharpsOrFlats, isMinorKey ? (uint8) 1 : (uint8) 0 };
+    return MidiMessage (d, 5, 0.0);
 }
 
 MidiMessage MidiMessage::endOfTrack() noexcept
@@ -958,9 +963,9 @@ double MidiMessage::getMidiNoteInHertz (int noteNumber, const double frequencyOf
     return frequencyOfA * pow (2.0, (noteNumber - 69) / 12.0);
 }
 
-String MidiMessage::getGMInstrumentName (const int n)
+const char* MidiMessage::getGMInstrumentName (const int n)
 {
-    const char* names[] =
+    static const char* names[] =
     {
         "Acoustic Grand Piano", "Bright Acoustic Piano", "Electric Grand Piano", "Honky-tonk Piano",
         "Electric Piano 1", "Electric Piano 2", "Harpsichord", "Clavinet", "Celesta", "Glockenspiel",
@@ -987,12 +992,12 @@ String MidiMessage::getGMInstrumentName (const int n)
         "Applause", "Gunshot"
     };
 
-    return isPositiveAndBelow (n, (int) 128) ? names[n] : (const char*) 0;
+    return isPositiveAndBelow (n, numElementsInArray (names)) ? names[n] : nullptr;
 }
 
-String MidiMessage::getGMInstrumentBankName (const int n)
+const char* MidiMessage::getGMInstrumentBankName (const int n)
 {
-    const char* names[] =
+    static const char* names[] =
     {
         "Piano", "Chromatic Percussion", "Organ", "Guitar",
         "Bass", "Strings", "Ensemble", "Brass",
@@ -1000,12 +1005,12 @@ String MidiMessage::getGMInstrumentBankName (const int n)
         "Synth Effects", "Ethnic", "Percussive", "Sound Effects"
     };
 
-    return isPositiveAndBelow (n, (int) 16) ? names[n] : (const char*) 0;
+    return isPositiveAndBelow (n, numElementsInArray (names)) ? names[n] : nullptr;
 }
 
-String MidiMessage::getRhythmInstrumentName (const int n)
+const char* MidiMessage::getRhythmInstrumentName (const int n)
 {
-    const char* names[] =
+    static const char* names[] =
     {
         "Acoustic Bass Drum", "Bass Drum 1", "Side Stick", "Acoustic Snare",
         "Hand Clap", "Electric Snare", "Low Floor Tom", "Closed Hi-Hat", "High Floor Tom",
@@ -1018,12 +1023,12 @@ String MidiMessage::getRhythmInstrumentName (const int n)
         "Mute Triangle", "Open Triangle"
     };
 
-    return (n >= 35 && n <= 81) ? names [n - 35] : (const char*) nullptr;
+    return (n >= 35 && n <= 81) ? names [n - 35] : nullptr;
 }
 
-String MidiMessage::getControllerName (const int n)
+const char* MidiMessage::getControllerName (const int n)
 {
-    const char* names[] =
+    static const char* names[] =
     {
         "Bank Select", "Modulation Wheel (coarse)", "Breath controller (coarse)",
         0, "Foot Pedal (coarse)", "Portamento Time (coarse)",
@@ -1049,5 +1054,5 @@ String MidiMessage::getControllerName (const int n)
         "Poly Operation"
     };
 
-    return isPositiveAndBelow (n, (int) 128) ? names[n] : (const char*) nullptr;
+    return isPositiveAndBelow (n, numElementsInArray (names)) ? names[n] : nullptr;
 }

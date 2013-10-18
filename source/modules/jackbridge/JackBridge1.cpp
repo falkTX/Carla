@@ -457,7 +457,10 @@ struct JackBridge {
     ~JackBridge()
     {
         if (lib != nullptr)
+        {
             lib_close(lib);
+            lib = nullptr;
+        }
     }
 };
 

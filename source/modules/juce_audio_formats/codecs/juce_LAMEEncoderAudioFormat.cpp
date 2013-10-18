@@ -147,12 +147,9 @@ private:
 };
 
 //==============================================================================
-static const char* const lameFormatName = "MP3 file";
-static const char* const lameExtensions[] = { ".mp3", nullptr };
-
 LAMEEncoderAudioFormat::LAMEEncoderAudioFormat (const File& lameApplication)
-   : AudioFormat (TRANS (lameFormatName), StringArray (lameExtensions)),
-     lameApp (lameApplication)
+    : AudioFormat ("MP3 file", ".mp3"),
+      lameApp (lameApplication)
 {
 }
 
@@ -183,11 +180,9 @@ bool LAMEEncoderAudioFormat::isCompressed()     { return true; }
 
 StringArray LAMEEncoderAudioFormat::getQualityOptions()
 {
-    const char* vbrOptions[] = { "VBR quality 0 (best)", "VBR quality 1", "VBR quality 2", "VBR quality 3",
-                                 "VBR quality 4 (normal)", "VBR quality 5", "VBR quality 6", "VBR quality 7", "VBR quality 8",
-                                 "VBR quality 9 (smallest)",
-                                 nullptr };
-
+    static const char* vbrOptions[] = { "VBR quality 0 (best)", "VBR quality 1", "VBR quality 2", "VBR quality 3",
+                                        "VBR quality 4 (normal)", "VBR quality 5", "VBR quality 6", "VBR quality 7",
+                                        "VBR quality 8", "VBR quality 9 (smallest)", nullptr };
     StringArray opts (vbrOptions);
 
     const int cbrRates[] = { 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320 };

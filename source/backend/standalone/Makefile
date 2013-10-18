@@ -13,6 +13,9 @@ BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo)
 # --------------------------------------------------------------
 # Common
 
+LIBS  = ../libcarla_engine.a
+LIBS += ../libcarla_plugin.a
+
 LINK_FLAGS += $(shell pkg-config --libs liblo)
 LINK_FLAGS += -lpthread
 
@@ -65,10 +68,6 @@ ifeq ($(HAVE_MF_DEPS),true)
 LINK_FLAGS += $(shell pkg-config --libs smf)
 endif
 
-ifeq ($(HAVE_OPENGL),true)
-LINK_FLAGS += $(shell pkg-config --libs gl)
-endif
-
 ifeq ($(HAVE_ZYN_DEPS),true)
 LINK_FLAGS += $(shell pkg-config --libs fftw3 mxml zlib)
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
@@ -76,10 +75,12 @@ LINK_FLAGS += $(shell pkg-config --libs ntk_images ntk)
 endif
 endif
 
+ifeq ($(HAVE_OPENGL),true)
+LINK_FLAGS += $(DGL_LIBS)
+endif
+
 # --------------------------------------------------------------
 
-LIBS  = ../libcarla_engine.a
-LIBS += ../libcarla_plugin.a
 LIBS += ../../modules/carla_native.a
 LIBS += ../../modules/juce_audio_basics.a
 LIBS += ../../modules/juce_core.a

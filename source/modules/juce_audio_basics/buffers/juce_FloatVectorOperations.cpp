@@ -251,6 +251,15 @@ void JUCE_CALLTYPE FloatVectorOperations::multiply (float* dest, float multiplie
    #endif
 }
 
+void FloatVectorOperations::negate (float* dest, const float* src, int num) noexcept
+{
+   #if JUCE_USE_VDSP_FRAMEWORK
+    vDSP_vneg ((float*) src, 1, dest, 1, (vDSP_Length) num);
+   #else
+    copyWithMultiply (dest, src, -1.0f, num);
+   #endif
+}
+
 void JUCE_CALLTYPE FloatVectorOperations::convertFixedToFloat (float* dest, const int* src, float multiplier, int num) noexcept
 {
    #if JUCE_USE_SSE_INTRINSICS
@@ -331,4 +340,13 @@ float JUCE_CALLTYPE FloatVectorOperations::findMaximum (const float* src, int nu
    #else
     return juce::findMaximum (src, num);
    #endif
+}
+
+void JUCE_CALLTYPE FloatVectorOperations::enableFlushToZeroMode (bool shouldEnable) noexcept
+{
+   #if JUCE_USE_SSE_INTRINSICS
+    if (FloatVectorHelpers::isSSE2Available())
+        _MM_SET_FLUSH_ZERO_MODE (shouldEnable ? _MM_FLUSH_ZERO_ON : _MM_FLUSH_ZERO_OFF);
+   #endif
+    (void) shouldEnable;
 }

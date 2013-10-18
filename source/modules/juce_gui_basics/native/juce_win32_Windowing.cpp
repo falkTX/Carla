@@ -181,7 +181,8 @@ static double getDPI()
 
 double Desktop::getDefaultMasterScale()
 {
-    return getDPI() / 96.0;
+    return JUCEApplicationBase::isStandaloneApp() ? getDPI() / 96.0
+                                                  : 1.0;
 }
 
 //==============================================================================
@@ -529,7 +530,8 @@ public:
         setTitle (component.getName());
 
         if ((windowStyleFlags & windowHasDropShadow) != 0
-             && Desktop::canUseSemiTransparentWindows())
+             && Desktop::canUseSemiTransparentWindows()
+             && ((! hasTitleBar()) || SystemStats::getOperatingSystemType() < SystemStats::WinVista))
         {
             shadower = component.getLookAndFeel().createDropShadowerForComponent (&component);
 
@@ -2077,22 +2079,27 @@ private:
                 && (styleFlags & (windowHasTitleBar | windowIsResizable)) == (windowHasTitleBar | windowIsResizable);
     }
 
+    Rectangle<int> getCurrentScaledBounds (float scale) const
+    {
+        return ScalingHelpers::unscaledScreenPosToScaled (scale, windowBorder.addedTo (ScalingHelpers::scaledScreenPosToUnscaled (scale, component.getBounds())));
+    }
+
     LRESULT handleSizeConstraining (RECT& r, const WPARAM wParam)
     {
         if (isConstrainedNativeWindow())
         {
             const float scale = getComponent().getDesktopScaleFactor();
-            Rectangle<int> pos (rectangleFromRECT (r) / scale);
-            const Rectangle<int> current (windowBorder.addedTo (component.getBounds()));
+            Rectangle<int> pos (ScalingHelpers::unscaledScreenPosToScaled (scale, rectangleFromRECT (r)));
+            const Rectangle<int> current (getCurrentScaledBounds (scale));
 
-            constrainer->checkBounds (pos, windowBorder.addedTo (component.getBounds()),
+            constrainer->checkBounds (pos, current,
                                       Desktop::getInstance().getDisplays().getTotalBounds (true),
                                       wParam == WMSZ_TOP    || wParam == WMSZ_TOPLEFT    || wParam == WMSZ_TOPRIGHT,
                                       wParam == WMSZ_LEFT   || wParam == WMSZ_TOPLEFT    || wParam == WMSZ_BOTTOMLEFT,
                                       wParam == WMSZ_BOTTOM || wParam == WMSZ_BOTTOMLEFT || wParam == WMSZ_BOTTOMRIGHT,
                                       wParam == WMSZ_RIGHT  || wParam == WMSZ_TOPRIGHT   || wParam == WMSZ_BOTTOMRIGHT);
 
-            pos *= scale;
+            pos = ScalingHelpers::scaledScreenPosToUnscaled (scale, pos);
             r.left   = pos.getX();
             r.top    = pos.getY();
             r.right  = pos.getRight();
@@ -2110,9 +2117,8 @@ private:
                  && ! Component::isMouseButtonDownAnywhere())
             {
                 const float scale = getComponent().getDesktopScaleFactor();
-                Rectangle<int> pos (wp.x, wp.y, wp.cx, wp.cy);
-                pos /= scale;
-                const Rectangle<int> current (windowBorder.addedTo (component.getBounds()));
+                Rectangle<int> pos (ScalingHelpers::unscaledScreenPosToScaled (scale, Rectangle<int> (wp.x, wp.y, wp.cx, wp.cy)));
+                const Rectangle<int> current (getCurrentScaledBounds (scale));
 
                 constrainer->checkBounds (pos, current,
                                           Desktop::getInstance().getDisplays().getTotalBounds (true),
@@ -2121,7 +2127,7 @@ private:
                                           pos.getY() == current.getY() && pos.getBottom() != current.getBottom(),
                                           pos.getX() == current.getX() && pos.getRight()  != current.getRight());
 
-                pos *= scale;
+                pos = ScalingHelpers::scaledScreenPosToUnscaled (scale, pos);
                 wp.x = pos.getX();
                 wp.y = pos.getY();
                 wp.cx = pos.getWidth();

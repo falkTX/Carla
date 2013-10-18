@@ -34,9 +34,9 @@
 /**
     A universally unique 128-bit identifier.
 
-    This class generates very random unique numbers based on the system time
-    and MAC addresses if any are available. It's extremely unlikely that two identical
-    UUIDs would ever be created by chance.
+    This class generates very random unique numbers. It's vanishingly unlikely
+    that two identical UUIDs would ever be created by chance. The values are
+    formatted to meet the RFC 4122 version 4 standard.
 
     The class includes methods for saving the ID as a string or as raw binary data.
 */
@@ -44,7 +44,7 @@ class JUCE_API  Uuid
 {
 public:
     //==============================================================================
-    /** Creates a new unique ID. */
+    /** Creates a new unique ID, compliant with RFC 4122 version 4. */
     Uuid();
 
     /** Destructor. */
@@ -75,6 +75,11 @@ public:
         @returns a 32 character hex string.
     */
     String toString() const;
+
+    /** Returns a stringified version of this UUID, separating it into sections with dashes.
+        @returns a string in the format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+    */
+    String toDashedString() const;
 
     /** Creates an ID from an encoded string version.
         @see toString
@@ -107,6 +112,7 @@ public:
 private:
     //==============================================================================
     uint8 uuid[16];
+    String getHexRegion (int, int) const;
 
     JUCE_LEAK_DETECTOR (Uuid)
 };

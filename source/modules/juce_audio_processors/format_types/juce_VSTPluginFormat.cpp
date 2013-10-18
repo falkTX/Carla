@@ -32,7 +32,7 @@
 #if JUCE_MAC
  static bool makeFSRefFromPath (FSRef* destFSRef, const String& path)
  {
-     return FSPathMakeRef (reinterpret_cast <const UInt8*> (path.toRawUTF8()), destFSRef, 0) == noErr;
+     return FSPathMakeRef (reinterpret_cast<const UInt8*> (path.toRawUTF8()), destFSRef, 0) == noErr;
  }
 #endif
 
@@ -378,7 +378,7 @@ public:
 
         JUCE_VST_LOG ("Attempting to load VST: " + file.getFullPathName());
 
-        ScopedPointer <ModuleHandle> m (new ModuleHandle (file));
+        ScopedPointer<ModuleHandle> m (new ModuleHandle (file));
 
         if (! m->open())
             m = nullptr;
@@ -389,10 +389,8 @@ public:
     }
 
     //==============================================================================
-    ModuleHandle (const File& file_)
-        : file (file_),
-          moduleMain (nullptr),
-          customMain (nullptr)
+    ModuleHandle (const File& f)
+        : file (f), moduleMain (nullptr), customMain (nullptr)
          #if JUCE_MAC
           #if JUCE_PPC
            , fragId (0)
@@ -403,10 +401,10 @@ public:
         getActiveModules().add (this);
 
        #if JUCE_WINDOWS || JUCE_LINUX
-        fullParentDirectoryPathName = file_.getParentDirectory().getFullPathName();
+        fullParentDirectoryPathName = f.getParentDirectory().getFullPathName();
        #elif JUCE_MAC
         FSRef ref;
-        makeFSRefFromPath (&ref, file_.getParentDirectory().getFullPathName());
+        makeFSRefFromPath (&ref, f.getParentDirectory().getFullPathName());
         FSGetCatalogInfo (&ref, kFSCatInfoNone, 0, 0, &parentDirFSSpec, 0);
        #endif
     }
@@ -828,7 +826,7 @@ public:
         desc.isInstrument = (effect != nullptr && (effect->flags & effFlagsIsSynth) != 0);
     }
 
-    void initialise()
+    void initialise (double initialSampleRate, int initialBlockSize)
     {
         if (initialised || effect == nullptr)
             return;
@@ -843,6 +841,9 @@ public:
 
         JUCE_VST_LOG ("Initialising VST: " + module->pluginName);
         initialised = true;
+
+        setPlayConfigDetails (effect->numInputs, effect->numOutputs,
+                              initialSampleRate, initialBlockSize);
 
         dispatch (effIdentify, 0, 0, 0, 0);
 
@@ -922,7 +923,7 @@ public:
         vstHostTime.samplePos = 0;
         vstHostTime.flags = kVstNanosValid | kVstAutomationWriting | kVstAutomationReading;
 
-        initialise();
+        initialise (rate, samplesPerBlockExpected);
 
         if (initialised)
         {
@@ -1185,7 +1186,9 @@ public:
     }
 
     //==============================================================================
-    int getNumPrograms() override          { return effect != nullptr ? effect->numPrograms : 0; }
+    int getNumPrograms() override          { return effect != nullptr ? jmax (0, effect->numPrograms) : 0; }
+
+    // NB: some plugs return negative numbers from this function.
     int getCurrentProgram() override       { return (int) dispatch (effGetProgram, 0, 0, 0, 0); }
 
     void setCurrentProgram (int newIndex) override
@@ -1196,18 +1199,17 @@ public:
 
     const String getProgramName (int index) override
     {
-        if (index == getCurrentProgram())
-            return getCurrentProgramName();
-
-        if (effect != nullptr)
+        if (index >= 0)
         {
-            char nm [256] = { 0 };
+            if (index == getCurrentProgram())
+                return getCurrentProgramName();
 
-            if (dispatch (effGetProgramNameIndexed,
-                          jlimit (0, getNumPrograms(), index),
-                          -1, nm, 0) != 0)
+            if (effect != nullptr)
             {
-                return String (CharPointer_UTF8 (nm)).trim();
+                char nm[264] = { 0 };
+
+                if (dispatch (effGetProgramNameIndexed, jlimit (0, getNumPrograms(), index), -1, nm, 0) != 0)
+                    return String (CharPointer_UTF8 (nm)).trim();
             }
         }
 
@@ -1216,7 +1218,7 @@ public:
 
     void changeProgramName (int index, const String& newName) override
     {
-        if (index == getCurrentProgram())
+        if (index >= 0 && index == getCurrentProgram())
         {
             if (getNumPrograms() > 0 && newName != getCurrentProgramName())
                 dispatch (effSetProgramName, 0, 0, (void*) newName.substring (0, 24).toRawUTF8(), 0.0f);
@@ -1717,7 +1719,7 @@ private:
 
             const int index = getCurrentProgram();
 
-            if (programNames[index].isEmpty())
+            if (index >= 0 && programNames[index].isEmpty())
             {
                 while (programNames.size() < index)
                     programNames.add (String::empty);
@@ -2571,10 +2573,10 @@ private:
     };
 
     friend class InnerWrapperComponent;
-    ScopedPointer <InnerWrapperComponent> innerWrapper;
+    ScopedPointer<InnerWrapperComponent> innerWrapper;
 
    #else
-    ScopedPointer <NSViewComponent> innerWrapper;
+    ScopedPointer<NSViewComponent> innerWrapper;
    #endif
 
     void resized() override
@@ -2611,16 +2613,20 @@ VSTPluginFormat::~VSTPluginFormat() {}
 
 static VSTPluginInstance* createAndUpdateDesc (VSTPluginFormat& format, PluginDescription& desc)
 {
-    if (VSTPluginInstance* instance = dynamic_cast <VSTPluginInstance*> (format.createInstanceFromDescription (desc)))
+    if (AudioPluginInstance* p = format.createInstanceFromDescription (desc, 44100.0, 512))
     {
-       #if JUCE_MAC
-        if (instance->module->resFileId != 0)
-            UseResFile (instance->module->resFileId);
-       #endif
+        if (VSTPluginInstance* instance = dynamic_cast<VSTPluginInstance*> (p))
+        {
+           #if JUCE_MAC
+            if (instance->module->resFileId != 0)
+                UseResFile (instance->module->resFileId);
+           #endif
 
-        instance->fillInPluginDescription (desc);
+            instance->fillInPluginDescription (desc);
+            return instance;
+        }
 
-        return instance;
+        jassertfalse;
     }
 
     return nullptr;
@@ -2667,6 +2673,7 @@ void VSTPluginFormat::findAllTypesForFile (OwnedArray <PluginDescription>& resul
             {
                 jassert (desc.uid == uid);
                 desc.name = shellEffectName;
+                desc.hasSharedContainer = true;
 
                 if (! arrayContainsPlugin (results, desc))
                     results.add (new PluginDescription (desc));
@@ -2675,9 +2682,10 @@ void VSTPluginFormat::findAllTypesForFile (OwnedArray <PluginDescription>& resul
     }
 }
 
-AudioPluginInstance* VSTPluginFormat::createInstanceFromDescription (const PluginDescription& desc)
+AudioPluginInstance* VSTPluginFormat::createInstanceFromDescription (const PluginDescription& desc,
+                                                                     double sampleRate, int blockSize)
 {
-    ScopedPointer <VSTPluginInstance> result;
+    ScopedPointer<VSTPluginInstance> result;
 
     if (fileMightContainThisPluginType (desc.fileOrIdentifier))
     {
@@ -2686,9 +2694,7 @@ AudioPluginInstance* VSTPluginFormat::createInstanceFromDescription (const Plugi
         const File previousWorkingDirectory (File::getCurrentWorkingDirectory());
         file.getParentDirectory().setAsCurrentWorkingDirectory();
 
-        const ModuleHandle::Ptr module (ModuleHandle::findOrCreateModule (file));
-
-        if (module != nullptr)
+        if (ModuleHandle::Ptr module = ModuleHandle::findOrCreateModule (file))
         {
             shellUIDToCreate = desc.uid;
 
@@ -2697,7 +2703,7 @@ AudioPluginInstance* VSTPluginFormat::createInstanceFromDescription (const Plugi
             if (result->effect != nullptr)
             {
                 result->effect->resvd2 = (VstIntPtr) (pointer_sized_int) (VSTPluginInstance*) result;
-                result->initialise();
+                result->initialise (sampleRate, blockSize);
             }
             else
             {

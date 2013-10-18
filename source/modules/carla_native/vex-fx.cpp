@@ -39,22 +39,17 @@ public:
     {
         setVisible(false);
         setAlwaysOnTop(true);
-        setDropShadowEnabled(false);
         setOpaque(true);
-        //setResizable(false, false);
-        //setUsingNativeTitleBar(false);
+        setResizable(false, false);
+        setUsingNativeTitleBar(true);
     }
 
     void show(Component* const comp)
     {
         fClosed = false;
 
-        const int width  = comp->getWidth();
-        const int height = comp->getHeight()+getTitleBarHeight();
-
-        centreWithSize(width, height);
-        setContentNonOwned(comp, false);
-        setSize(width, height);
+        centreWithSize(comp->getWidth(), comp->getHeight());
+        setContentNonOwned(comp, true);
 
         if (! isOnDesktop())
             addToDesktop();
@@ -389,6 +384,8 @@ protected:
 
     void uiShow(const bool show) override
     {
+        MessageManagerLock mmLock;
+
         if (show)
         {
             if (fWindow == nullptr)
@@ -399,8 +396,8 @@ protected:
 
             if (fView == nullptr)
             {
-                fView = new PeggyViewComponent(1, fSettings, this);
-                fView->setSize(207, 320);
+                fView = new PeggyViewComponent(fSettings, this, true);
+                fView->setSize(202, 275);
             }
 
             fWindow->show(fView);
@@ -431,6 +428,7 @@ protected:
         if (fView == nullptr)
             return;
 
+        MessageManagerLock mmLock;
         fView->update();
     }
 
@@ -447,6 +445,7 @@ protected:
         if (fWindow == nullptr)
             return;
 
+        MessageManagerLock mmLock;
         fWindow->setName(uiName);
     }
 

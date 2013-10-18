@@ -4,8 +4,6 @@
 # Created by falkTX
 #
 
-# libx11-dev libxext-dev libxinerama-dev libfreetype6-dev libxcursor-dev
-
 # --------------------------------------------------------------
 # Modify to enable/disable specific features
 
@@ -107,7 +105,6 @@ endif
 # Check for optional libs (required by backend or bridges)
 
 HAVE_FFMPEG       = $(shell pkg-config --exists libavcodec libavformat libavutil && pkg-config --max-version=1.9 libavcodec && echo true)
-HAVE_OPENGL       = $(shell pkg-config --exists gl && echo true)
 
 ifeq ($(LINUX),true)
 HAVE_ALSA         = $(shell pkg-config --exists alsa && echo true)
@@ -116,6 +113,9 @@ HAVE_GTK3         = $(shell pkg-config --exists gtk+-3.0 && echo true)
 HAVE_PULSEAUDIO   = $(shell pkg-config --exists libpulse-simple && echo true)
 HAVE_QT4          = $(shell pkg-config --exists QtCore QtGui && echo true)
 HAVE_QT5          = $(shell pkg-config --exists Qt5Core Qt5Gui Qt5Widgets && echo true)
+HAVE_OPENGL       = $(shell pkg-config --exists gl && echo true)
+else
+HAVE_OPENGL       = true
 endif
 
 ifeq ($(CARLA_SAMPLERS_SUPPORT),true)
@@ -138,8 +138,10 @@ ifeq ($(HAIKU),true)
 endif
 
 ifeq ($(LINUX),true)
-# JUCE_AUDIO_DEVICES_FLAGS = $(shell pkg-config --cflags alsa)
-# JUCE_AUDIO_DEVICES_LIBS  = $(shell pkg-config --libs alsa)
+ifeq ($(HAVE_OPENGL),true)
+DGL_FLAGS                = $(shell pkg-config --cflags gl x11)
+DGL_LIBS                 = $(shell pkg-config --libs gl x11)
+endif
 JUCE_CORE_LIBS           = -lrt -ldl -lpthread
 JUCE_EVENTS_FLAGS        = $(shell pkg-config --cflags x11)
 JUCE_EVENTS_LIBS         = $(shell pkg-config --libs x11)
@@ -150,6 +152,7 @@ JUCE_GUI_BASICS_LIBS     = $(shell pkg-config --libs x11 xinerama xext xcursor) 
 endif
 
 ifeq ($(MACOS),true)
+DGL_LIBS                = -framework OpenGL -framework Cocoa
 JUCE_AUDIO_BASICS_LIBS  = -framework Accelerate
 JUCE_AUDIO_DEVICES_LIBS = -framework CoreAudio -framework CoreMIDI -framework DiscRecording
 JUCE_AUDIO_FORMATS_LIBS = -framework CoreAudio -framework CoreMIDI -framework QuartzCore -framework AudioToolbox
@@ -159,6 +162,7 @@ JUCE_GUI_BASICS_LIBS    = -framework Cocoa -framework Carbon -framework QuartzCo
 endif
 
 ifeq ($(WIN32),true)
+DGL_LIBS                = -lopengl32 -lgdi32
 JUCE_AUDIO_DEVICES_LIBS = -lwinmm -lole32
 JUCE_CORE_LIBS          = -luuid -lwsock32 -lwininet -lversion -lole32 -lws2_32 -loleaut32 -limm32 -lcomdlg32 -lshlwapi -lrpcrt4 -lwinmm
 JUCE_EVENTS_LIBS        = -lole32

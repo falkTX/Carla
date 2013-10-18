@@ -126,10 +126,9 @@ void FileChooser::showPlatformDialog (Array<File>& results,
             args.add ("--filename=" + file.getFileName());
     }
 
-    args.add ("2>/dev/null");
-
     ChildProcess child;
-    if (child.start (args))
+
+    if (child.start (args, ChildProcess::wantStdOut))
     {
         const String result (child.readAllProcessOutput().trim());
 
@@ -142,8 +141,8 @@ void FileChooser::showPlatformDialog (Array<File>& results,
             else
                 tokens.add (result);
 
-            for (int i = 0; i < tokens.size(); i++)
-                results.add (File (tokens[i]));
+            for (int i = 0; i < tokens.size(); ++i)
+                results.add (File::getCurrentWorkingDirectory().getChildFile (tokens[i]));
         }
 
         child.waitForProcessToFinish (60 * 1000);

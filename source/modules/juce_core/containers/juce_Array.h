@@ -85,7 +85,7 @@ public:
 
    #if JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS
     Array (Array<ElementType, TypeOfCriticalSectionToUse>&& other) noexcept
-        : data (static_cast <ArrayAllocationBase<ElementType, TypeOfCriticalSectionToUse>&&> (other.data)),
+        : data (static_cast<ArrayAllocationBase<ElementType, TypeOfCriticalSectionToUse>&&> (other.data)),
           numUsed (other.numUsed)
     {
         other.numUsed = 0;
@@ -143,7 +143,7 @@ public:
     Array& operator= (Array&& other) noexcept
     {
         const ScopedLockType lock (getLock());
-        data = static_cast <ArrayAllocationBase<ElementType, TypeOfCriticalSectionToUse>&&> (other.data);
+        data = static_cast<ArrayAllocationBase<ElementType, TypeOfCriticalSectionToUse>&&> (other.data);
         numUsed = other.numUsed;
         other.numUsed = 0;
         return *this;
@@ -279,8 +279,14 @@ public:
     inline ElementType getFirst() const
     {
         const ScopedLockType lock (getLock());
-        return (numUsed > 0) ? data.elements [0]
-                             : ElementType();
+
+        if (numUsed > 0)
+        {
+            jassert (data.elements != nullptr);
+            return data.elements[0];
+        }
+
+        return ElementType();
     }
 
     /** Returns the last element in the array, or a default value if the array is empty.
@@ -290,8 +296,14 @@ public:
     inline ElementType getLast() const
     {
         const ScopedLockType lock (getLock());
-        return (numUsed > 0) ? data.elements [numUsed - 1]
-                             : ElementType();
+
+        if (numUsed > 0)
+        {
+            jassert (data.elements != nullptr);
+            return data.elements[numUsed - 1];
+        }
+
+        return ElementType();
     }
 
     /** Returns a pointer to the actual array data.
@@ -317,6 +329,11 @@ public:
     */
     inline ElementType* end() const noexcept
     {
+       #if JUCE_DEBUG
+        if (data.elements == nullptr || numUsed <= 0) // (to keep static analysers happy)
+            return data.elements;
+       #endif
+
         return data.elements + numUsed;
     }
 
@@ -366,12 +383,26 @@ public:
         @param newElement       the new object to add to the array
         @see set, insert, addIfNotAlreadyThere, addSorted, addUsingDefaultSort, addArray
     */
-    void add (ParameterType newElement)
+    void add (const ElementType& newElement)
     {
         const ScopedLockType lock (getLock());
         data.ensureAllocatedSize (numUsed + 1);
         new (data.elements + numUsed++) ElementType (newElement);
     }
+
+   #if JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS
+    /** Appends a new element at the end of the array.
+
+        @param newElement       the new object to add to the array
+        @see set, insert, addIfNotAlreadyThere, addSorted, addUsingDefaultSort, addArray
+    */
+    void add (ElementType&& newElement)
+    {
+        const ScopedLockType lock (getLock());
+        data.ensureAllocatedSize (numUsed + 1);
+        new (data.elements + numUsed++) ElementType (static_cast<ElementType&&> (newElement));
+    }
+   #endif
 
     /** Inserts a new element into the array at a given position.
 
@@ -519,6 +550,7 @@ public:
 
         if (isPositiveAndBelow (indexToChange, numUsed))
         {
+            jassert (data.elements != nullptr);
             data.elements [indexToChange] = newValue;
         }
         else if (indexToChange >= 0)

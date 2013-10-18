@@ -293,6 +293,13 @@ CARLA_EXPORT const CarlaNativePluginInfo* carla_get_internal_plugin_info(unsigne
  */
 CARLA_EXPORT bool carla_engine_init(const char* driverName, const char* clientName);
 
+#ifdef BUILD_BRIDGE
+/*!
+ * Initialize the engine in bridged mode.
+ */
+CARLA_EXPORT bool carla_engine_init_bridge(const char* audioBaseName, const char* controlBaseName, const char* clientName);
+#endif
+
 /*!
  * Close the running engine.\n
  * This function always closes the engine even if it returns false.\n
@@ -724,7 +731,6 @@ CARLA_EXPORT void carla_nsm_reply_save();
 #ifdef BUILD_BRIDGE
 using CarlaBackend::CarlaEngine;
 CARLA_EXPORT CarlaEngine* carla_get_standalone_engine();
-CARLA_EXPORT bool carla_engine_init_bridge(const char* audioBaseName, const char* controlBaseName, const char* clientName);
 #endif
 
 /**@}*/

@@ -73,7 +73,7 @@ public:
     //==============================================================================
     static CharPointerType createUninitialisedBytes (size_t numBytes)
     {
-        numBytes = (numBytes + 3) & ~3;
+        numBytes = (numBytes + 3) & ~(size_t) 3;
         StringHolder* const s = reinterpret_cast<StringHolder*> (new char [sizeof (StringHolder) - sizeof (CharType) + numBytes]);
         s->refCount.value = 0;
         s->allocatedNumBytes = numBytes;
@@ -1897,7 +1897,7 @@ struct StringEncodingConverter
             return CharPointerType_Dest (reinterpret_cast <const DestChar*> (&emptyChar));
 
         CharPointerType_Src text (source.getCharPointer());
-        const size_t extraBytesNeeded = CharPointerType_Dest::getBytesRequiredFor (text);
+        const size_t extraBytesNeeded = CharPointerType_Dest::getBytesRequiredFor (text) + sizeof (typename CharPointerType_Dest::CharType);
         const size_t endOffset = (text.sizeInBytes() + 3) & ~3u; // the new string must be word-aligned or many Windows
                                                                 // functions will fail to read it correctly!
         source.preallocateBytes (endOffset + extraBytesNeeded);
@@ -1993,9 +1993,14 @@ String String::fromUTF8 (const char* const buffer, int bufferSizeBytes)
 {
     if (buffer != nullptr)
     {
-        if (bufferSizeBytes < 0) return String (CharPointer_UTF8 (buffer));
-        if (bufferSizeBytes > 0) return String (CharPointer_UTF8 (buffer),
-                                                CharPointer_UTF8 (buffer + bufferSizeBytes));
+        if (bufferSizeBytes < 0)
+            return String (CharPointer_UTF8 (buffer));
+
+        if (bufferSizeBytes > 0)
+        {
+            jassert (CharPointer_UTF8::isValidString (buffer, bufferSizeBytes));
+            return String (CharPointer_UTF8 (buffer), CharPointer_UTF8 (buffer + bufferSizeBytes));
+        }
     }
 
     return String();

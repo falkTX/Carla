@@ -38,7 +38,7 @@ static volatile bool gCloseNow = false;
 static volatile bool gSaveNow  = false;
 
 #ifdef CARLA_OS_WIN
-BOOL WINAPI closeSignalHandler(DWORD dwCtrlType)
+BOOL WINAPI winSignalHandler(DWORD dwCtrlType)
 {
     if (dwCtrlType == CTRL_C_EVENT)
     {
@@ -62,7 +62,7 @@ static void saveSignalHandler(int)
 void initSignalHandler()
 {
 #ifdef CARLA_OS_WIN
-    SetConsoleCtrlHandler(closeSignalHandler, TRUE);
+    SetConsoleCtrlHandler(winSignalHandler, TRUE);
 #elif defined(CARLA_OS_LINUX) || defined(CARLA_OS_HAIKU)
     struct sigaction sint;
     struct sigaction sterm;
@@ -106,7 +106,7 @@ public:
           fEngine(nullptr),
           fPlugin(nullptr)
     {
-        CARLA_ASSERT(driverName != nullptr);
+        CARLA_ASSERT(driverName != nullptr && driverName[0] != '\0');
         carla_debug("CarlaPluginClient::CarlaPluginClient(%s, \"%s\", %s, %s)", bool2str(useBridge), driverName, audioBaseName, controlBaseName);
 
         carla_set_engine_callback(callback, this);
@@ -124,6 +124,8 @@ public:
             carla_engine_init_bridge(audioBaseName, controlBaseName, driverName);
         else
             carla_engine_init("JACK", driverName);
+
+        fEngine = carla_get_standalone_engine();
     }
 
     ~CarlaPluginClient() override
@@ -133,17 +135,20 @@ public:
         carla_engine_close();
     }
 
+    bool isOk() const noexcept
+    {
+        return (fEngine != nullptr);
+    }
+
     void oscInit(const char* const url)
     {
         CarlaBridgeClient::oscInit(url);
 
-        fEngine = carla_get_standalone_engine();
         fEngine->setOscBridgeData(&fOscData);
     }
 
     void ready(const bool doSaveLoad)
     {
-        fEngine = carla_get_standalone_engine();
         fPlugin = fEngine->getPlugin(0);
 
         if (doSaveLoad)
@@ -164,7 +169,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fEngine != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fPlugin != nullptr,);
 
-        fEngine->idle();
+        carla_engine_idle();
         CarlaBridgeClient::oscIdle();
 
         if (gSaveNow)
@@ -483,7 +488,7 @@ int main(int argc, char* argv[])
     // Setup args
 
     const bool useBridge = (argc == 7);
-    const bool useOsc    = std::strcmp(oscUrl, "null");
+    const bool useOsc    = (std::strcmp(oscUrl, "null") != 0 && std::strcmp(oscUrl, "(null)") != 0 && std::strcmp(oscUrl, "NULL") != 0);
 
     if (std::strcmp(name, "(none)") == 0)
         name = nullptr;
@@ -496,6 +501,7 @@ int main(int argc, char* argv[])
 
     if (useBridge)
     {
+        CARLA_SAFE_ASSERT_RETURN(std::strlen(argv[6]) == 6*2, 1);
         std::strncpy(bridgeBaseAudioName,   argv[6],   6);
         std::strncpy(bridgeBaseControlName, argv[6]+6, 6);
         bridgeBaseAudioName[6]   = '\0';
@@ -524,10 +530,7 @@ int main(int argc, char* argv[])
     CarlaString clientName((name != nullptr) ? name : label);
 
     if (clientName.isEmpty())
-    {
-        File file(filename);
-        clientName = file.getFileNameWithoutExtension().toRawUTF8();
-    }
+        clientName = File(filename).getFileNameWithoutExtension().toRawUTF8();
 
     // ---------------------------------------------------------------------
     // Set extraStuff
@@ -547,6 +550,12 @@ int main(int argc, char* argv[])
     // Init plugin client
 
     CarlaPluginClient client(useBridge, (const char*)clientName, bridgeBaseAudioName, bridgeBaseControlName);
+
+    if (! client.isOk())
+    {
+        carla_stderr("Failed to init engine, error was:\n%s", carla_get_last_error());
+        return 1;
+    }
 
     // ---------------------------------------------------------------------
     // Init OSC
@@ -585,6 +594,7 @@ int main(int argc, char* argv[])
         client.ready(!useOsc);
         client.exec();
 
+        carla_set_engine_about_to_close();
         carla_remove_plugin(0);
 
         ret = 0;

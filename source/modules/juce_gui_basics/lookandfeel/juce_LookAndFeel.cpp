@@ -24,10 +24,10 @@
 
 namespace LookAndFeelHelpers
 {
-    static Colour createBaseColour (const Colour& buttonColour,
-                                    const bool hasKeyboardFocus,
-                                    const bool isMouseOverButton,
-                                    const bool isButtonDown) noexcept
+    static Colour createBaseColour (Colour buttonColour,
+                                    bool hasKeyboardFocus,
+                                    bool isMouseOverButton,
+                                    bool isButtonDown) noexcept
     {
         const float sat = hasKeyboardFocus ? 1.3f : 0.9f;
         const Colour baseColour (buttonColour.withMultipliedSaturation (sat));
@@ -38,7 +38,7 @@ namespace LookAndFeelHelpers
         return baseColour;
     }
 
-    static TextLayout layoutTooltipText (const String& text, const Colour& colour) noexcept
+    static TextLayout layoutTooltipText (const String& text, Colour colour) noexcept
     {
         const float tooltipFontSize = 13.0f;
         const int maxToolTipWidth = 400;
@@ -221,35 +221,33 @@ LookAndFeel::~LookAndFeel()
 }
 
 //==============================================================================
-Colour LookAndFeel::findColour (const int colourId) const noexcept
+Colour LookAndFeel::findColour (int colourID) const noexcept
 {
-    const int index = colourIds.indexOf (colourId);
+    const ColourSetting c = { colourID, Colour() };
+    const int index = colours.indexOf (c);
 
     if (index >= 0)
-        return colours [index];
+        return colours.getReference (index).colour;
 
     jassertfalse;
     return Colours::black;
 }
 
-void LookAndFeel::setColour (const int colourId, const Colour& colour) noexcept
+void LookAndFeel::setColour (int colourID, Colour newColour) noexcept
 {
-    const int index = colourIds.indexOf (colourId);
+    const ColourSetting c = { colourID, newColour };
+    const int index = colours.indexOf (c);
 
     if (index >= 0)
-    {
-        colours.set (index, colour);
-    }
+        colours.getReference (index).colour = newColour;
     else
-    {
-        colourIds.add (colourId);
-        colours.add (colour);
-    }
+        colours.add (c);
 }
 
-bool LookAndFeel::isColourSpecified (const int colourId) const noexcept
+bool LookAndFeel::isColourSpecified (const int colourID) const noexcept
 {
-    return colourIds.contains (colourId);
+    const ColourSetting c = { colourID, Colour() };
+    return colours.contains (c);
 }
 
 //==============================================================================
@@ -1371,7 +1369,6 @@ void LookAndFeel::drawLinearSliderBackground (Graphics& g,
         indent.addRoundedRectangle (x - sliderRadius * 0.5f, iy,
                                     width + sliderRadius, ih,
                                     5.0f);
-        g.fillPath (indent);
     }
     else
     {
@@ -1384,8 +1381,9 @@ void LookAndFeel::drawLinearSliderBackground (Graphics& g,
         indent.addRoundedRectangle (ix, y - sliderRadius * 0.5f,
                                     iw, height + sliderRadius,
                                     5.0f);
-        g.fillPath (indent);
     }
+
+    g.fillPath (indent);
 
     g.setColour (Colour (0x4c000000));
     g.strokePath (indent, PathStrokeType (0.5f));
@@ -1848,8 +1846,7 @@ void LookAndFeel::drawDocumentWindowTitleBar (DocumentWindow& window,
 class LookAndFeel::GlassWindowButton   : public Button
 {
 public:
-    //==============================================================================
-    GlassWindowButton (const String& name, const Colour& col,
+    GlassWindowButton (const String& name, Colour col,
                        const Path& normalShape_,
                        const Path& toggledShape_) noexcept
         : Button (name),
@@ -1922,13 +1919,15 @@ Button* LookAndFeel::createDocumentWindowButton (int buttonType)
 
         return new GlassWindowButton ("close", Colour (0xffdd1100), shape, shape);
     }
-    else if (buttonType == DocumentWindow::minimiseButton)
+
+    if (buttonType == DocumentWindow::minimiseButton)
     {
         shape.addLineSegment (Line<float> (0.0f, 0.5f, 1.0f, 0.5f), crossThickness);
 
         return new GlassWindowButton ("minimise", Colour (0xffaa8811), shape, shape);
     }
-    else if (buttonType == DocumentWindow::maximiseButton)
+
+    if (buttonType == DocumentWindow::maximiseButton)
     {
         shape.addLineSegment (Line<float> (0.5f, 0.0f, 0.5f, 1.0f), crossThickness);
         shape.addLineSegment (Line<float> (0.0f, 0.5f, 1.0f, 0.5f), crossThickness);
@@ -2366,19 +2365,19 @@ void LookAndFeel::drawTableHeaderBackground (Graphics& g, TableHeaderComponent& 
 {
     g.fillAll (Colours::white);
 
-    const int w = header.getWidth();
-    const int h = header.getHeight();
+    Rectangle<int> area (header.getLocalBounds());
+    area.removeFromTop (area.getHeight() / 2);
 
-    g.setGradientFill (ColourGradient (Colour (0xffe8ebf9), 0.0f, h * 0.5f,
-                                       Colour (0xfff6f8f9), 0.0f, h - 1.0f,
+    g.setGradientFill (ColourGradient (Colour (0xffe8ebf9), 0.0f, (float) area.getY(),
+                                       Colour (0xfff6f8f9), 0.0f, (float) area.getBottom(),
                                        false));
-    g.fillRect (0, h / 2, w, h);
+    g.fillRect (area);
 
     g.setColour (Colour (0x33000000));
-    g.fillRect (0, h - 1, w, 1);
+    g.fillRect (area.removeFromBottom (1));
 
     for (int i = header.getNumColumns (true); --i >= 0;)
-        g.fillRect (header.getColumnPosition (i).getRight() - 1, 0, 1, h - 1);
+        g.fillRect (header.getColumnPosition (i).removeFromRight (1));
 }
 
 void LookAndFeel::drawTableHeaderColumn (Graphics& g, const String& columnName, int /*columnId*/,
@@ -2391,28 +2390,25 @@ void LookAndFeel::drawTableHeaderColumn (Graphics& g, const String& columnName, 
     else if (isMouseOver)
         g.fillAll (Colour (0x5599aadd));
 
-    int rightOfText = width - 4;
+    Rectangle<int> area (width, height);
+    area.reduce (4, 0);
 
     if ((columnFlags & (TableHeaderComponent::sortedForwards | TableHeaderComponent::sortedBackwards)) != 0)
     {
-        const float top = height * ((columnFlags & TableHeaderComponent::sortedForwards) != 0 ? 0.35f : (1.0f - 0.35f));
-        const float bottom = height - top;
-
-        const float w = height * 0.5f;
-        const float x = rightOfText - (w * 1.25f);
-        rightOfText = (int) x;
-
         Path sortArrow;
-        sortArrow.addTriangle (x, bottom, x + w * 0.5f, top, x + w, bottom);
+        sortArrow.addTriangle (0.0f, 0.0f,
+                               0.5f, (columnFlags & TableHeaderComponent::sortedForwards) != 0 ? -0.8f : 0.8f,
+                               1.0f, 0.0f);
 
         g.setColour (Colour (0x99000000));
-        g.fillPath (sortArrow);
+        g.fillPath (sortArrow, RectanglePlacement (RectanglePlacement::centred)
+                                 .getTransformToFit (sortArrow.getBounds(),
+                                                     area.removeFromRight (height / 2).reduced (2).toFloat()));
     }
 
     g.setColour (Colours::black);
     g.setFont (Font (height * 0.5f, Font::bold));
-    const int textX = 4;
-    g.drawFittedText (columnName, textX, 0, rightOfText - textX, height, Justification::centredLeft, 1);
+    g.drawFittedText (columnName, area, Justification::centredLeft, 1);
 }
 
 //==============================================================================

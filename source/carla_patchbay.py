@@ -86,7 +86,7 @@ class CarlaPatchbayW(QGraphicsView):
 
         patchcanvas.setOptions(pOptions)
         patchcanvas.setFeatures(pFeatures)
-        patchcanvas.init("Carla", self.scene, CanvasCallback, False)
+        patchcanvas.init("Carla2", self.scene, CanvasCallback, False)
 
         tryCanvasSize = parent.fSavedSettings[CARLA_KEY_CANVAS_SIZE].split("x")
 
@@ -368,7 +368,7 @@ class CarlaPatchbayW(QGraphicsView):
 
         patchcanvas.setOptions(pOptions)
         patchcanvas.setFeatures(pFeatures)
-        patchcanvas.init("Carla", self.scene, CanvasCallback, False)
+        patchcanvas.init("Carla2", self.scene, CanvasCallback, False)
 
         if Carla.host.is_engine_running():
             Carla.host.patchbay_refresh()
