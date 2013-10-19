@@ -38,7 +38,7 @@ public:
           fClosed(false)
     {
         setVisible(false);
-        setAlwaysOnTop(true);
+        //setAlwaysOnTop(true);
         setOpaque(true);
         setResizable(false, false);
         setUsingNativeTitleBar(true);
