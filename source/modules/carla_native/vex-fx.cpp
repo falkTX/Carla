@@ -103,7 +103,8 @@ public:
 
     VexArpPlugin(const HostDescriptor* const host)
         : PluginClass(host),
-          fArp(&fSettings)
+          fArp(&fSettings),
+          fNeedsUpdate(true)
     {
         fArp.setSampleRate(getSampleRate());
         fMidiInBuffer.ensureSize(512*4);
@@ -354,27 +355,28 @@ protected:
         for (uint32_t i=0; i < midiEventCount; ++i)
         {
             const MidiEvent* const midiEvent(&midiEvents[i]);
-            fMidiInBuffer.addEvent(MidiMessage(midiEvent->data, midiEvent->size), midiEvent->time);
+            fMidiInBuffer.addEvent(midiEvent->data, midiEvent->size, midiEvent->time);
         }
 
         const MidiBuffer& outMidiBuffer(fArp.processMidi(fMidiInBuffer, timePlaying, ppqPos, barStartPos, bpm, frames));
 
         MidiBuffer::Iterator outBufferIterator(outMidiBuffer);
-        MidiMessage midiMessage(0xf4);
+        const uint8_t* midiData;
+        int numBytes;
         int sampleNumber;
 
         MidiEvent tmpEvent;
         tmpEvent.port = 0;
 
-        while (outBufferIterator.getNextEvent(midiMessage, sampleNumber))
+        while (outBufferIterator.getNextEvent(midiData, numBytes, sampleNumber))
         {
-            tmpEvent.size = midiMessage.getRawDataSize();
-            tmpEvent.time = sampleNumber;
-
-            if (tmpEvent.size > 4)
+            if (numBytes <= 0 || numBytes > 4)
                 continue;
 
-            std::memcpy(tmpEvent.data, midiMessage.getRawData(), sizeof(uint8_t)*tmpEvent.size);
+            tmpEvent.size = numBytes;
+            tmpEvent.time = sampleNumber;
+
+            std::memcpy(tmpEvent.data, midiData, sizeof(uint8_t)*tmpEvent.size);
             writeMidiEvent(&tmpEvent);
         }
     }
@@ -416,6 +418,17 @@ protected:
         if (fWindow == nullptr)
             return;
 
+        if (fNeedsUpdate)
+        {
+            if (fView != nullptr)
+            {
+                MessageManagerLock mmLock;
+                fView->update();
+            }
+
+            fNeedsUpdate = false;
+        }
+
         if (fWindow->wasClosedByUser())
         {
             uiShow(false);
@@ -428,8 +441,7 @@ protected:
         if (fView == nullptr)
             return;
 
-        MessageManagerLock mmLock;
-        fView->update();
+        fNeedsUpdate = true;
     }
 
     // -------------------------------------------------------------------
@@ -461,6 +473,8 @@ private:
     VexArpSettings fSettings;
     VexArp fArp;
     MidiBuffer fMidiInBuffer;
+
+    volatile bool fNeedsUpdate;
 
     ScopedPointer<PeggyViewComponent> fView;
     ScopedPointer<HelperWindow> fWindow;
