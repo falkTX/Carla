@@ -26,6 +26,7 @@
 // Include fixes
 
 // Disable deprecated VST features (NOT)
+#define VST_2_4_EXTENSIONS 1
 #define VST_FORCE_DEPRECATED 0
 
 #if VESTIGE_HEADER
@@ -106,6 +107,7 @@
 #define kVstProcessPrecision32 0
 #define kVstTransportChanged 1
 #define kVstVersion 2400
+#define DECLARE_VST_DEPRECATED(idx) idx
 #define VSTCALLBACK
 struct ERect {
     int16_t top, left, bottom, right;

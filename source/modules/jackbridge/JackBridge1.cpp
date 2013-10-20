@@ -46,7 +46,7 @@ typedef int  (*jacksym_set_freewheel_callback)(jack_client_t*, JackFreewheelCall
 typedef int  (*jacksym_set_buffer_size_callback)(jack_client_t*, JackBufferSizeCallback, void*);
 typedef int  (*jacksym_set_sample_rate_callback)(jack_client_t*, JackSampleRateCallback, void*);
 typedef int  (*jacksym_set_client_registration_callback)(jack_client_t*, JackClientRegistrationCallback, void*);
-typedef int  (*jacksym_set_client_rename_callback)(jack_client_t*, JackClientRenameCallback, void*);
+//typedef int  (*jacksym_set_client_rename_callback)(jack_client_t*, JackClientRenameCallback, void*);
 typedef int  (*jacksym_set_port_registration_callback)(jack_client_t*, JackPortRegistrationCallback, void*);
 typedef int  (*jacksym_set_port_connect_callback)(jack_client_t*, JackPortConnectCallback, void*);
 typedef int  (*jacksym_set_port_rename_callback)(jack_client_t*, JackPortRenameCallback, void*);
@@ -517,6 +517,7 @@ jack_client_t* jackbridge_client_open(const char* client_name, jack_options_t op
     return nullptr;
 }
 
+#if 0
 const char* jackbridge_client_rename(jack_client_t* client, const char* new_name)
 {
 #if JACKBRIDGE_DUMMY
@@ -528,6 +529,7 @@ const char* jackbridge_client_rename(jack_client_t* client, const char* new_name
 #endif
     return nullptr;
 }
+#endif
 
 bool jackbridge_client_close(jack_client_t* client)
 {
@@ -715,6 +717,7 @@ bool jackbridge_set_client_registration_callback(jack_client_t* client, JackClie
     return false;
 }
 
+#if 0
 bool jackbridge_set_client_rename_callback(jack_client_t* client, JackClientRenameCallback rename_callback, void* arg)
 {
 #if JACKBRIDGE_DUMMY
@@ -726,6 +729,7 @@ bool jackbridge_set_client_rename_callback(jack_client_t* client, JackClientRena
 #endif
     return false;
 }
+#endif
 
 bool jackbridge_set_port_registration_callback(jack_client_t* client, JackPortRegistrationCallback registration_callback, void *arg)
 {

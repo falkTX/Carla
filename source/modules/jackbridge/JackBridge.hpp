@@ -240,7 +240,7 @@ typedef int  (*JackBufferSizeCallback)(jack_nframes_t nframes, void* arg);
 typedef int  (*JackSampleRateCallback)(jack_nframes_t nframes, void* arg);
 typedef void (*JackPortRegistrationCallback)(jack_port_id_t port, int register_, void* arg);
 typedef void (*JackClientRegistrationCallback)(const char* name, int register_, void* arg);
-typedef int  (*JackClientRenameCallback)(const char* old_name, const char* new_name, void* arg);
+//typedef int  (*JackClientRenameCallback)(const char* old_name, const char* new_name, void* arg);
 typedef void (*JackPortConnectCallback)(jack_port_id_t a, jack_port_id_t b, int connect, void* arg);
 typedef int  (*JackPortRenameCallback)(jack_port_id_t port, const char* old_name, const char* new_name, void* arg);
 typedef void (*JackFreewheelCallback)(int starting, void* arg);
@@ -257,7 +257,7 @@ CARLA_EXPORT void        jackbridge_get_version(int* major_ptr, int* minor_ptr, 
 CARLA_EXPORT const char* jackbridge_get_version_string();
 
 CARLA_EXPORT jack_client_t* jackbridge_client_open(const char* client_name, jack_options_t options, jack_status_t* status, ...);
-CARLA_EXPORT const char*    jackbridge_client_rename(jack_client_t* client, const char* new_name);
+//CARLA_EXPORT const char*    jackbridge_client_rename(jack_client_t* client, const char* new_name);
 CARLA_EXPORT bool           jackbridge_client_close(jack_client_t* client);
 
 CARLA_EXPORT int   jackbridge_client_name_size();
@@ -277,7 +277,7 @@ CARLA_EXPORT bool jackbridge_set_freewheel_callback(jack_client_t* client, JackF
 CARLA_EXPORT bool jackbridge_set_buffer_size_callback(jack_client_t* client, JackBufferSizeCallback bufsize_callback, void* arg);
 CARLA_EXPORT bool jackbridge_set_sample_rate_callback(jack_client_t* client, JackSampleRateCallback srate_callback, void* arg);
 CARLA_EXPORT bool jackbridge_set_client_registration_callback(jack_client_t* client, JackClientRegistrationCallback registration_callback, void* arg);
-CARLA_EXPORT bool jackbridge_set_client_rename_callback(jack_client_t* client, JackClientRenameCallback rename_callback, void* arg);
+//CARLA_EXPORT bool jackbridge_set_client_rename_callback(jack_client_t* client, JackClientRenameCallback rename_callback, void* arg);
 CARLA_EXPORT bool jackbridge_set_port_registration_callback(jack_client_t* client, JackPortRegistrationCallback registration_callback, void* arg);
 CARLA_EXPORT bool jackbridge_set_port_connect_callback(jack_client_t* client, JackPortConnectCallback connect_callback, void* arg);
 CARLA_EXPORT bool jackbridge_set_port_rename_callback(jack_client_t* client, JackPortRenameCallback rename_callback, void* arg);

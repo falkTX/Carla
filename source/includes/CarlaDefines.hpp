@@ -23,6 +23,10 @@
 # include "config.h"
 #endif
 
+// Set Version
+#define CARLA_VERSION_HEX    0x01090
+#define CARLA_VERSION_STRING "1.9.0"
+
 // Check OS
 #if defined(WIN64) || defined(_WIN64) || defined(__WIN64__)
 # define CARLA_OS_WIN64

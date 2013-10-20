@@ -58,7 +58,8 @@ const unsigned int MAX_DEFAULT_PARAMETERS = 200; //!< Maximum default number of 
  */
 const unsigned int PLUGIN_IS_BRIDGE   = 0x001; //!< Plugin is a bridge. This hint is required because "bridge" itself is not a plugin type.
 const unsigned int PLUGIN_IS_RTSAFE   = 0x002; //!< Plugin is hard real-time safe.
-const unsigned int PLUGIN_HAS_GUI     = 0x004; //!< Plugin has its own custom GUI.
+const unsigned int PLUGIN_IS_SYNTH    = 0x004; //!< Plugin is hard real-time safe.
+const unsigned int PLUGIN_HAS_GUI     = 0x008; //!< Plugin has its own custom GUI.
 const unsigned int PLUGIN_CAN_DRYWET  = 0x010; //!< Plugin can use internal Dry/Wet control.
 const unsigned int PLUGIN_CAN_VOLUME  = 0x020; //!< Plugin can use internal Volume control.
 const unsigned int PLUGIN_CAN_BALANCE = 0x040; //!< Plugin can use internal Left & Right Balance controls.

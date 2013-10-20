@@ -30,23 +30,20 @@ ifeq ($(HAVE_LINUXSAMPLER),true)
 NATIVE_FLAGS += $(shell pkg-config --cflags --libs linuxsampler) -DWANT_LINUXSAMPLER
 endif
 
+LINK_FLAGS += $(JUCE_AUDIO_BASICS_LIBS)
+LINK_FLAGS += $(JUCE_CORE_LIBS)
+
 # --------------------------------------------------------------
 
 POSIX_BUILD_FLAGS = $(BUILD_CXX_FLAGS)
 POSIX_32BIT_FLAGS = $(32BIT_FLAGS) -L/usr/lib32 -L/usr/lib/i386-linux-gnu
 POSIX_64BIT_FLAGS = $(64BIT_FLAGS) -L/usr/lib64 -L/usr/lib/x86_64-linux-gnu
-POSIX_LINK_FLAGS  = $(LINK_FLAGS) $(EXTRA_LIBS) -ldl -lpthread
-
-ifeq ($(MACOS),true)
-POSIX_LINK_FLAGS += -framework Cocoa -framework IOKit
-else
-POSIX_LINK_FLAGS += -lrt
-endif
+POSIX_LINK_FLAGS  = $(LINK_FLAGS) -ldl
 
 WIN_BUILD_FLAGS   = $(BUILD_CXX_FLAGS)
 WIN_32BIT_FLAGS   = $(32BIT_FLAGS)
 WIN_64BIT_FLAGS   = $(64BIT_FLAGS)
-WIN_LINK_FLAGS    = $(LINK_FLAGS) $(EXTRA_LIBS) -lole32 -lshlwapi -lversion -lwininet -lwinmm -lws2_32
+WIN_LINK_FLAGS    = $(LINK_FLAGS) -lkernel32
 
 LIBS          = ../modules/juce_audio_basics.a
 LIBS_posix32  = ../modules/juce_audio_basics.posix32.a
@@ -66,6 +63,7 @@ LIBS_posix32 += ../modules/lilv.posix32.a
 LIBS_posix64 += ../modules/lilv.posix64.a
 LIBS_win32   += ../modules/lilv.win32.a
 LIBS_win64   += ../modules/lilv.win64.a
+LINK_FLAGS   += $(LILV_LIBS)
 endif
 
 OBJS = carla-discovery.cpp
@@ -116,6 +114,9 @@ debug:
 .FORCE:
 .PHONY: .FORCE
 
+../modules/juce_audio_basics.%.a: .FORCE
+	$(MAKE) -C ../modules juce_audio_basics_$*
+
 ../modules/juce_core.%.a: .FORCE
 	$(MAKE) -C ../modules juce_core_$*
 
@@ -124,3 +125,5 @@ debug:
 
 ../modules/%.a: .FORCE
 	$(MAKE) -C ../modules $*
+
+# --------------------------------------------------------------

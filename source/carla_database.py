@@ -123,7 +123,6 @@ PyPluginInfo = {
     'API': PLUGIN_QUERY_API_VERSION,
     'build': BINARY_NONE,
     'type': PLUGIN_NONE,
-    'category': PLUGIN_CATEGORY_NONE,
     'hints': 0x0,
     'binary': "",
     'name': "",
@@ -143,8 +142,8 @@ PyPluginInfo = {
     'programs.total': 0
 }
 
-global discoveryProcess
-discoveryProcess = None
+global gDiscoveryProcess
+gDiscoveryProcess = None
 
 def runCarlaDiscovery(itype, stype, filename, tool, isWine=False):
     if not os.path.exists(tool):
@@ -163,21 +162,29 @@ def runCarlaDiscovery(itype, stype, filename, tool, isWine=False):
     command.append(stype)
     command.append(filename)
 
-    global discoveryProcess
-    discoveryProcess = Popen(command, stdout=PIPE)
-
-    try:
-        discoveryProcess.wait()
-        output = discoveryProcess.stdout.read().decode("utf-8", errors="ignore").split("\n")
-    except:
-        output = ()
+    global gDiscoveryProcess
+    gDiscoveryProcess = Popen(command, stdout=PIPE)
 
     pinfo = None
     plugins = []
     fakeLabel = os.path.basename(filename).rsplit(".", 1)[0]
 
-    for line in output:
-        line = line.strip()
+    #try:
+        #gDiscoveryProcess.wait()
+        #output = gDiscoveryProcess.stdout.read().decode("utf-8", errors="ignore").split("\n")
+    #except:
+        #output = ()
+
+    #for line in output:
+
+    while gDiscoveryProcess.poll() is None:
+        try:
+            line = gDiscoveryProcess.stdout.readline().decode("utf-8", errors="ignore").strip()
+        except:
+            break
+
+        #line = line.strip()
+
         if line == "carla-discovery::init::-----------":
             pinfo = deepcopy(PyPluginInfo)
             pinfo['type']   = itype
@@ -222,8 +229,6 @@ def runCarlaDiscovery(itype, stype, filename, tool, isWine=False):
                 if value.isdigit(): pinfo['uniqueId'] = int(value)
             elif prop == "hints":
                 if value.isdigit(): pinfo['hints'] = int(value)
-            elif prop == "category":
-                if value.isdigit(): pinfo['category'] = int(value)
             elif prop == "audio.ins":
                 if value.isdigit(): pinfo['audio.ins'] = int(value)
             elif prop == "audio.outs":
@@ -255,17 +260,17 @@ def runCarlaDiscovery(itype, stype, filename, tool, isWine=False):
                     continue
 
     # FIXME?
-    tmp = discoveryProcess
-    discoveryProcess = None
-    del discoveryProcess, tmp
+    tmp = gDiscoveryProcess
+    gDiscoveryProcess = None
+    del gDiscoveryProcess, tmp
 
     return plugins
 
 def killDiscovery():
-    global discoveryProcess
+    global gDiscoveryProcess
 
-    if discoveryProcess is not None:
-        discoveryProcess.kill()
+    if gDiscoveryProcess is not None:
+        gDiscoveryProcess.kill()
 
 def checkPluginInternal(desc):
     plugins = []
@@ -273,7 +278,6 @@ def checkPluginInternal(desc):
     pinfo = deepcopy(PyPluginInfo)
     pinfo['build']     = BINARY_NATIVE
     pinfo['type']      = PLUGIN_INTERNAL
-    pinfo['category']  = int(desc['category'])
     pinfo['hints']     = int(desc['hints'])
     pinfo['name']      = cString(desc['name'])
     pinfo['label']     = cString(desc['label'])
@@ -1304,8 +1308,7 @@ class PluginDatabaseW(QDialog):
             mIns   = plugin['midi.ins']
             mOuts  = plugin['midi.outs']
             ptype  = self.ui.tableWidget.item(i, 12).text()
-            #isSynth  = bool(plugin['hints'] & PLUGIN_IS_SYNTH)
-            isSynth  = bool(plugin['category'] == PLUGIN_CATEGORY_SYNTH)
+            isSynth  = bool(plugin['hints'] & PLUGIN_IS_SYNTH)
             isEffect = bool(aIns > 0 < aOuts and not isSynth)
             isMidi   = bool(aIns == 0 and aOuts == 0 and mIns > 0 < mOuts)
             isKit    = bool(ptype in ("GIG", "SF2", "SFZ"))
@@ -1408,7 +1411,7 @@ class PluginDatabaseW(QDialog):
         self.ui.tableWidget.setItem(index, 7, QTableWidgetItem(str(plugin['parameters.outs'])))
         self.ui.tableWidget.setItem(index, 8, QTableWidgetItem(str(plugin['programs.total'])))
         self.ui.tableWidget.setItem(index, 9, QTableWidgetItem(self.tr("Yes") if (plugin['hints'] & PLUGIN_HAS_GUI) else self.tr("No")))
-        self.ui.tableWidget.setItem(index, 10, QTableWidgetItem(self.tr("Yes") if (plugin['category'] == PLUGIN_CATEGORY_SYNTH) else self.tr("No")))
+        self.ui.tableWidget.setItem(index, 10, QTableWidgetItem(self.tr("Yes") if (plugin['hints'] & PLUGIN_IS_SYNTH) else self.tr("No")))
         self.ui.tableWidget.setItem(index, 11, QTableWidgetItem(bridgeText))
         self.ui.tableWidget.setItem(index, 12, QTableWidgetItem(ptype))
         self.ui.tableWidget.setItem(index, 13, QTableWidgetItem(str(plugin['binary'])))
@@ -1669,18 +1672,11 @@ class PluginDatabaseW(QDialog):
 # Main
 
 if __name__ == '__main__':
-    try:
-        from PyQt5.QtWidgets import QApplication
-    except:
-        from PyQt4.QtGui import QApplication
+    from carla_style import *
 
-    app = QApplication(sys.argv)
-    app.setApplicationName("Carla")
-    app.setApplicationVersion(VERSION)
-    app.setOrganizationName("falkTX")
-    app.setWindowIcon(QIcon(":/scalable/carla.svg"))
+    app = CarlaApplication()
 
-    initHost(False)
+    initHost("Settings", None, False)
 
     gui = PluginDatabaseW(None)
     gui.show()

@@ -464,9 +464,9 @@ def initHost(appName, libPrefix = None, failError = True):
     libname = "libcarla_"
 
     if Carla.isControl:
-        libname += "control"
+        libname += "control2"
     else:
-        libname += "standalone"
+        libname += "standalone2"
 
     if WINDOWS:
         libname += ".dll"
@@ -481,22 +481,26 @@ def initHost(appName, libPrefix = None, failError = True):
     else:
         if os.path.exists(os.path.join(CWD, "backend", libname)):
             libfilename = os.path.join(CWD, "backend", libname)
-        #else:
-            #CARLA_LIB_PATH = os.getenv("CARLA_LIB_PATH")
+        else:
+            CARLA_LIB_PATH_env = os.getenv("CARLA_LIB_PATH")
 
-            #if CARLA_LIB_PATH and os.path.exists(CARLA_LIB_PATH):
-                #CARLA_LIB_PATH = os.path.join(CARLA_LIB_PATH, "..")
-            #elif WINDOWS:
-                #CARLA_LIB_PATH = (os.path.join(PROGRAMFILES, "Carla"),)
-            #elif MACOS:
-                #CARLA_LIB_PATH = ("/opt/local/lib", "/usr/local/lib/", "/usr/lib")
-            #else:
-                #CARLA_LIB_PATH = ("/usr/local/lib/", "/usr/lib")
+            if CARLA_LIB_PATH_env and os.path.exists(CARLA_LIB_PATH_env):
+                CARLA_LIB_PATH = (CARLA_LIB_PATH_env,)
+            elif WINDOWS:
+                CARLA_LIB_PATH = (os.path.join(PROGRAMFILES, "Carla"),)
+            elif MACOS:
+                CARLA_LIB_PATH = ("/opt/local/lib", "/usr/local/lib/", "/usr/lib")
+            else:
+                CARLA_LIB_PATH = ("/usr/local/lib/", "/usr/lib")
 
-            #for path in CARLA_LIB_PATH:
-                #if os.path.exists(os.path.join(path, "carla", libname)):
-                    #libfilename = os.path.join(path, "carla", libname)
-                    #break
+            del CARLA_LIB_PATH_env
+
+            for path in CARLA_LIB_PATH:
+                if os.path.exists(os.path.join(path, "carla", libname)):
+                    libfilename = os.path.join(path, "carla", libname)
+                    break
+            else:
+                libfilename = ""
 
     # -------------------------------------------------------------
     # Search for Carla tools

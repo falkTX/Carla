@@ -20,6 +20,8 @@
 #include "CarlaString.hpp"
 #include "CarlaMIDI.h"
 
+#define VST_FORCE_DEPRECATED 0
+
 #ifdef WANT_LADSPA
 # include "CarlaLadspaUtils.hpp"
 #endif
@@ -50,6 +52,7 @@
 
 #define DISCOVERY_OUT(x, y) std::cout << "\ncarla-discovery::" << x << "::" << y << std::endl;
 
+using juce::File;
 using juce::FloatVectorOperations;
 
 CARLA_BACKEND_USE_NAMESPACE
@@ -75,14 +78,22 @@ void print_lib_error(const char* const filename)
 // --------------------------------------------------------------------------
 // VST stuff
 
+// Check if plugin is currently processing
+bool gVstIsProcessing = false;
+
 // Check if plugin needs idle
 bool gVstNeedsIdle = false;
 
 // Check if plugin wants midi
 bool gVstWantsMidi = false;
 
+// Check if plugin wants time
+bool gVstWantsTime = false;
+
 // Current uniqueId for VST shell plugins
 intptr_t gVstCurrentUniqueId = 0;
+
+// todo: add test, time requested without asking feature
 
 // Supported Carla features
 intptr_t vstHostCanDo(const char* const feature)
@@ -98,7 +109,10 @@ intptr_t vstHostCanDo(const char* const feature)
     if (std::strcmp(feature, "sendVstMidiEventFlagIsRealtime") == 0)
         return 1;
     if (std::strcmp(feature, "sendVstTimeInfo") == 0)
+    {
+        gVstWantsTime = true;
         return 1;
+    }
     if (std::strcmp(feature, "receiveVstEvents") == 0)
         return 1;
     if (std::strcmp(feature, "receiveVstMidiEvent") == 0)
@@ -110,7 +124,7 @@ intptr_t vstHostCanDo(const char* const feature)
     if (std::strcmp(feature, "acceptIOChanges") == 0)
         return 1;
     if (std::strcmp(feature, "sizeWindow") == 0)
-        return -1;
+        return 1;
     if (std::strcmp(feature, "offline") == 0)
         return -1;
     if (std::strcmp(feature, "openFileSelector") == 0)
@@ -123,6 +137,10 @@ intptr_t vstHostCanDo(const char* const feature)
         return -1; // FIXME
     if (std::strcmp(feature, "shellCategory") == 0)
         return -1; // FIXME
+
+    // non-official features found in some plugins:
+    // "asyncProcessing"
+    // "editFile"
 
     // unimplemented
     carla_stderr("vstHostCanDo(\"%s\") - unknown feature", feature);
@@ -147,17 +165,22 @@ intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t opcode
         break;
 
     case audioMasterCurrentId:
+        if (gVstCurrentUniqueId == 0) DISCOVERY_OUT("warning", "plugin asked for uniqueId, but it's currently 0");
+
         ret = gVstCurrentUniqueId;
         break;
 
-#if ! VST_FORCE_DEPRECATED
-    case audioMasterWantMidi:
+    case DECLARE_VST_DEPRECATED(audioMasterWantMidi):
+        if (gVstWantsMidi) DISCOVERY_OUT("warning", "plugin requested MIDI more than once");
+
         gVstWantsMidi = true;
         ret = 1;
         break;
-#endif
 
     case audioMasterGetTime:
+        if (! gVstIsProcessing) DISCOVERY_OUT("warning", "plugin requested timeInfo out of process");
+        if (! gVstWantsTime)    DISCOVERY_OUT("warning", "plugin requested timeInfo but didn't ask if host could do \"sendVstTimeInfo\"");
+
         static VstTimeInfo_R timeInfo;
         carla_zeroStruct<VstTimeInfo_R>(timeInfo);
         timeInfo.sampleRate = kSampleRate;
@@ -178,22 +201,21 @@ intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t opcode
 #endif
         break;
 
-#if ! VST_FORCE_DEPRECATED
-    case audioMasterTempoAt:
+    case DECLARE_VST_DEPRECATED(audioMasterTempoAt):
         ret = 120 * 10000;
         break;
 
-    case audioMasterGetNumAutomatableParameters:
+    case DECLARE_VST_DEPRECATED(audioMasterGetNumAutomatableParameters):
         ret = carla_min<intptr_t>(effect->numParams, MAX_DEFAULT_PARAMETERS, 0);
         break;
 
-    case audioMasterGetParameterQuantization:
+    case DECLARE_VST_DEPRECATED(audioMasterGetParameterQuantization):
         ret = 1; // full single float precision
         break;
-#endif
 
-    case audioMasterNeedIdle:
-        // Deprecated in VST SDK 2.4
+    case DECLARE_VST_DEPRECATED(audioMasterNeedIdle):
+        if (gVstNeedsIdle) DISCOVERY_OUT("warning", "plugin requested idle more than once");
+
         gVstNeedsIdle = true;
         ret = 1;
         break;
@@ -206,14 +228,12 @@ intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t opcode
         ret = kBufferSize;
         break;
 
-#if ! VST_FORCE_DEPRECATED
-    case audioMasterWillReplaceOrAccumulate:
+    case DECLARE_VST_DEPRECATED(audioMasterWillReplaceOrAccumulate):
         ret = 1; // replace
         break;
-#endif
 
     case audioMasterGetCurrentProcessLevel:
-        ret = kVstProcessLevelUser;
+        ret = gVstIsProcessing ? kVstProcessLevelRealtime : kVstProcessLevelUser;
         break;
 
     case audioMasterGetAutomationState:
@@ -221,28 +241,24 @@ intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t opcode
         break;
 
     case audioMasterGetVendorString:
-        if (ptr != nullptr)
-        {
-            std::strcpy((char*)ptr, "falkTX");
-            ret = 1;
-        }
+        CARLA_SAFE_ASSERT_BREAK(ptr != nullptr);
+        std::strcpy((char*)ptr, "falkTX");
+        ret = 1;
         break;
 
     case audioMasterGetProductString:
-        if (ptr != nullptr)
-        {
-            std::strcpy((char*)ptr, "Carla-Discovery");
-            ret = 1;
-        }
+        CARLA_SAFE_ASSERT_BREAK(ptr != nullptr);
+        std::strcpy((char*)ptr, "Carla-Discovery");
+        ret = 1;
         break;
 
     case audioMasterGetVendorVersion:
-        ret = 0x110; // 1.1.0
+        ret = CARLA_VERSION_HEX;
         break;
 
     case audioMasterCanDo:
-        if (ptr != nullptr)
-            ret = vstHostCanDo((const char*)ptr);
+        CARLA_SAFE_ASSERT_BREAK(ptr != nullptr);
+        ret = vstHostCanDo((const char*)ptr);
         break;
 
     case audioMasterGetLanguage:
@@ -327,7 +343,7 @@ public:
         }
     }
 
-    static void outputInfo(LinuxSampler::InstrumentManager::instrument_info_t* const info, const int programs, const char* const basename = nullptr)
+    static void outputInfo(const LinuxSampler::InstrumentManager::instrument_info_t* const info, const int programs, const char* const basename = nullptr)
     {
         DISCOVERY_OUT("init", "-----------");
 
@@ -338,13 +354,13 @@ public:
             DISCOVERY_OUT("maker", info->Artists);
             DISCOVERY_OUT("copyright", info->Artists);
         }
-        else if (basename != nullptr)
+        else if (basename != nullptr && basename[0] != '\0')
         {
             DISCOVERY_OUT("name", basename);
             DISCOVERY_OUT("label", basename);
         }
 
-        DISCOVERY_OUT("category", PLUGIN_CATEGORY_SYNTH);
+        DISCOVERY_OUT("hints", PLUGIN_IS_SYNTH);
         DISCOVERY_OUT("audio.outs", 2);
         DISCOVERY_OUT("audio.total", 2);
         DISCOVERY_OUT("midi.ins", 1);
@@ -378,7 +394,6 @@ void do_ladspa_check(void*& libHandle, const char* const filename, const bool in
         return;
     }
 
-    unsigned long i = 0;
     const LADSPA_Descriptor* descriptor;
 
     {
@@ -421,6 +436,8 @@ void do_ladspa_check(void*& libHandle, const char* const filename, const bool in
         }
     }
 
+    unsigned long i = 0;
+
     while ((descriptor = descFn(i++)) != nullptr)
     {
         if (descriptor->instantiate == nullptr)
@@ -443,7 +460,7 @@ void do_ladspa_check(void*& libHandle, const char* const filename, const bool in
             DISCOVERY_OUT("warning", "Plugin '" << descriptor->Name << "' is not hard real-time capable");
         }
 
-        int hints = 0;
+        int hints = 0x0;
         int audioIns = 0;
         int audioOuts = 0;
         int audioTotal = 0;
@@ -472,7 +489,7 @@ void do_ladspa_check(void*& libHandle, const char* const filename, const bool in
             {
                 if (LADSPA_IS_PORT_INPUT(portDescriptor))
                     parametersIns += 1;
-                else if (LADSPA_IS_PORT_OUTPUT(portDescriptor) && std::strcmp(descriptor->PortNames[j], "latency") && std::strcmp(descriptor->PortNames[j], "_latency"))
+                else if (LADSPA_IS_PORT_OUTPUT(portDescriptor) && std::strcmp(descriptor->PortNames[j], "latency") != 0 && std::strcmp(descriptor->PortNames[j], "_latency") != 0)
                     parametersOuts += 1;
 
                 parametersTotal += 1;
@@ -623,7 +640,6 @@ void do_dssi_check(void*& libHandle, const char* const filename, const bool init
         return;
     }
 
-    unsigned long i = 0;
     const DSSI_Descriptor* descriptor;
 
     {
@@ -668,6 +684,8 @@ void do_dssi_check(void*& libHandle, const char* const filename, const bool init
         }
     }
 
+    unsigned long i = 0;
+
     while ((descriptor = descFn(i++)) != nullptr)
     {
         const LADSPA_Descriptor* const ldescriptor(descriptor->LADSPA_Plugin);
@@ -702,8 +720,7 @@ void do_dssi_check(void*& libHandle, const char* const filename, const bool init
             DISCOVERY_OUT("warning", "Plugin '" << ldescriptor->Name << "' is not hard real-time capable");
         }
 
-        bool isSynth = false;
-        int hints = 0;
+        int hints = 0x0;
         int audioIns = 0;
         int audioOuts = 0;
         int audioTotal = 0;
@@ -735,18 +752,18 @@ void do_dssi_check(void*& libHandle, const char* const filename, const bool init
             {
                 if (LADSPA_IS_PORT_INPUT(portDescriptor))
                     parametersIns += 1;
-                else if (LADSPA_IS_PORT_OUTPUT(portDescriptor) && std::strcmp(ldescriptor->PortNames[j], "latency") && std::strcmp(ldescriptor->PortNames[j], "_latency"))
+                else if (LADSPA_IS_PORT_OUTPUT(portDescriptor) && std::strcmp(ldescriptor->PortNames[j], "latency") != 0 && std::strcmp(ldescriptor->PortNames[j], "_latency") != 0)
                     parametersOuts += 1;
 
                 parametersTotal += 1;
             }
         }
 
-        if (descriptor->run_synth || descriptor->run_multiple_synths)
+        if (descriptor->run_synth != nullptr || descriptor->run_multiple_synths != nullptr)
             midiIns = midiTotal = 1;
 
         if (midiIns > 0 && audioIns == 0 && audioOuts > 0)
-            isSynth = true;
+            hints |= PLUGIN_IS_SYNTH;
 
         if (const char* const ui = find_dssi_ui(filename, ldescriptor->Label))
         {
@@ -905,12 +922,8 @@ void do_dssi_check(void*& libHandle, const char* const filename, const bool init
         DISCOVERY_OUT("label", ldescriptor->Label);
         DISCOVERY_OUT("maker", ldescriptor->Maker);
         DISCOVERY_OUT("copyright", ldescriptor->Copyright);
-        DISCOVERY_OUT("unique_id", ldescriptor->UniqueID);
+        DISCOVERY_OUT("uniqueId", ldescriptor->UniqueID);
         DISCOVERY_OUT("hints", hints);
-
-        if (isSynth)
-            DISCOVERY_OUT("category", PLUGIN_CATEGORY_SYNTH);
-
         DISCOVERY_OUT("audio.ins", audioIns);
         DISCOVERY_OUT("audio.outs", audioOuts);
         DISCOVERY_OUT("audio.total", audioTotal);
@@ -1124,8 +1137,8 @@ void do_lv2_check(const char* const bundle, const bool init)
             }
         }
 
-//         if (rdfDescriptor->Type[1] & LV2_PLUGIN_INSTRUMENT)
-//             hints |= PLUGIN_IS_SYNTH;
+        if (rdfDescriptor->Type[1] & LV2_PLUGIN_INSTRUMENT)
+            hints |= PLUGIN_IS_SYNTH;
 
         if (rdfDescriptor->UICount > 0)
             hints |= PLUGIN_HAS_GUI;
@@ -1138,7 +1151,7 @@ void do_lv2_check(const char* const bundle, const bool init)
             DISCOVERY_OUT("maker", rdfDescriptor->Author);
         if (rdfDescriptor->License != nullptr)
             DISCOVERY_OUT("copyright", rdfDescriptor->License);
-        DISCOVERY_OUT("unique_id", rdfDescriptor->UniqueID);
+        DISCOVERY_OUT("uniqueId", rdfDescriptor->UniqueID);
         DISCOVERY_OUT("hints", hints);
         DISCOVERY_OUT("audio.ins", audioIns);
         DISCOVERY_OUT("audio.outs", audioOuts);
@@ -1189,54 +1202,64 @@ void do_vst_check(void*& libHandle, const bool init)
         return;
     }
 
-    char strBuf[STR_MAX+1] = { '\0' };
-    CarlaString cName;
-    CarlaString cProduct;
-    CarlaString cVendor;
-
-    effect->dispatcher(effect, effOpen, 0, 0, nullptr, 0.0f);
-
-#if 0 // FIXME
-    const intptr_t vstCategory = effect->dispatcher(effect, effGetPlugCategory, 0, 0, nullptr, 0.0f);
-
-    if (vstCategory == kPlugCategShell)
-    {
-        if ((gVstCurrentUniqueId = effect->dispatcher(effect, effShellGetNextPlugin, 0, 0, strBuf, 0.0f)) != 0)
-            cName = strBuf;
-    }
-    else
-#endif
-    {
-        gVstCurrentUniqueId = effect->uniqueID;
-
-        if (gVstCurrentUniqueId != 0 && effect->dispatcher(effect, effGetEffectName, 0, 0, strBuf, 0.0f) == 1)
-            cName = strBuf;
-    }
-
-    if (gVstCurrentUniqueId == 0)
+    if (effect->uniqueID == 0)
     {
         DISCOVERY_OUT("error", "Plugin doesn't have an Unique ID");
         effect->dispatcher(effect, effClose, 0, 0, nullptr, 0.0f);
         return;
     }
 
-    carla_fill<char>(strBuf, STR_MAX+1, '\0');
+    gVstCurrentUniqueId = effect->uniqueID;
+
+    effect->dispatcher(effect, DECLARE_VST_DEPRECATED(effIdentify), 0, 0, nullptr, 0.0f);
+    effect->dispatcher(effect, DECLARE_VST_DEPRECATED(effSetBlockSizeAndSampleRate), 0, kBufferSize, nullptr, kSampleRate);
+    effect->dispatcher(effect, effSetSampleRate, 0, 0, nullptr, kSampleRate);
+    effect->dispatcher(effect, effSetBlockSize, 0, kBufferSize, nullptr, 0.0f);
+    effect->dispatcher(effect, effSetProcessPrecision, 0, kVstProcessPrecision32, nullptr, 0.0f);
+
+    effect->dispatcher(effect, effOpen, 0, 0, nullptr, 0.0f);
+    effect->dispatcher(effect, effSetProgram, 0, 0, nullptr, 0.0f);
+
+    char strBuf[STR_MAX+1];
+    CarlaString cName;
+    CarlaString cProduct;
+    CarlaString cVendor;
+
+    const intptr_t vstCategory = effect->dispatcher(effect, effGetPlugCategory, 0, 0, nullptr, 0.0f);
+
+    //for (int32_t i = effect->numInputs;  --i >= 0;) effect->dispatcher(effect, DECLARE_VST_DEPRECATED(effConnectInput),  i, 1, 0, 0);
+    //for (int32_t i = effect->numOutputs; --i >= 0;) effect->dispatcher(effect, DECLARE_VST_DEPRECATED(effConnectOutput), i, 1, 0, 0);
+
+    carla_zeroChar(strBuf, STR_MAX+1);
 
     if (effect->dispatcher(effect, effGetVendorString, 0, 0, strBuf, 0.0f) == 1)
         cVendor = strBuf;
 
-    while (gVstCurrentUniqueId != 0)
+    carla_zeroChar(strBuf, STR_MAX+1);
+
+    if (vstCategory == kPlugCategShell)
     {
-        carla_fill<char>(strBuf, STR_MAX+1, '\0');
+        gVstCurrentUniqueId = effect->dispatcher(effect, effShellGetNextPlugin, 0, 0, strBuf, 0.0f);
+
+        CARLA_SAFE_ASSERT_RETURN(gVstCurrentUniqueId != 0,);
+        cName = strBuf;
+    }
+    else
+    {
+        if (effect->dispatcher(effect, effGetEffectName, 0, 0, strBuf, 0.0f) == 1)
+            cName = strBuf;
+    }
+
+    for (;;)
+    {
+        carla_zeroChar(strBuf, STR_MAX+1);
 
         if (effect->dispatcher(effect, effGetProductString, 0, 0, strBuf, 0.0f) == 1)
             cProduct = strBuf;
         else
             cProduct.clear();
 
-        gVstWantsMidi = false;
-
-        int hints = 0;
+        int hints = 0x0;
         int audioIns = effect->numInputs;
         int audioOuts = effect->numOutputs;
         int audioTotal = audioIns + audioOuts;
@@ -1250,8 +1273,8 @@ void do_vst_check(void*& libHandle, const bool init)
         if (effect->flags & effFlagsHasEditor)
             hints |= PLUGIN_HAS_GUI;
 
-//         if (effect->flags & effFlagsIsSynth)
-//             hints |= PLUGIN_IS_SYNTH;
+        if (effect->flags & effFlagsIsSynth)
+            hints |= PLUGIN_IS_SYNTH;
 
         if (vstPluginCanDo(effect, "receiveVstEvents") || vstPluginCanDo(effect, "receiveVstMidiEvent") || (effect->flags & effFlagsIsSynth) > 0)
             midiIns = 1;
@@ -1267,20 +1290,13 @@ void do_vst_check(void*& libHandle, const bool init)
         if (init)
         {
             if (gVstNeedsIdle)
-                effect->dispatcher(effect, effIdle, 0, 0, nullptr, 0.0f);
-
-#if ! VST_FORCE_DEPRECATED
-            effect->dispatcher(effect, effSetBlockSizeAndSampleRate, 0, kBufferSize, nullptr, kSampleRate);
-#endif
-            effect->dispatcher(effect, effSetBlockSize, 0, kBufferSize, nullptr, 0.0f);
-            effect->dispatcher(effect, effSetSampleRate, 0, 0, nullptr, kSampleRate);
-            effect->dispatcher(effect, effSetProcessPrecision, 0, kVstProcessPrecision32, nullptr, 0.0f);
+                effect->dispatcher(effect, DECLARE_VST_DEPRECATED(effIdle), 0, 0, nullptr, 0.0f);
 
             effect->dispatcher(effect, effMainsChanged, 0, 1, nullptr, 0.0f);
             effect->dispatcher(effect, effStartProcess, 0, 0, nullptr, 0.0f);
 
             if (gVstNeedsIdle)
-                effect->dispatcher(effect, effIdle, 0, 0, nullptr, 0.0f);
+                effect->dispatcher(effect, DECLARE_VST_DEPRECATED(effIdle), 0, 0, nullptr, 0.0f);
 
             // Plugin might call wantMidi() during resume
             if (midiIns == 0 && gVstWantsMidi)
@@ -1310,15 +1326,10 @@ void do_vst_check(void*& libHandle, const bool init)
 
                 VstEventsFixed()
                     : numEvents(0),
-#ifdef CARLA_PROPER_CPP11_SUPPORT
-                      reserved(0),
-                      data{0} {}
-#else
                       reserved(0)
                 {
                     data[0] = data[1] = nullptr;
                 }
-#endif
             } events;
 
             VstMidiEvent midiEvents[2];
@@ -1337,41 +1348,29 @@ void do_vst_check(void*& libHandle, const bool init)
             midiEvents[1].deltaFrames = kBufferSize/2;
 
             events.numEvents = 2;
-            events.reserved  = 0;
             events.data[0] = (VstEvent*)&midiEvents[0];
             events.data[1] = (VstEvent*)&midiEvents[1];
 
             // processing
-            {
-                if (midiIns > 0)
-                    effect->dispatcher(effect, effProcessEvents, 0, 0, &events, 0.0f);
+            gVstIsProcessing = true;
 
-#if ! VST_FORCE_DEPRECATED
-                if ((effect->flags & effFlagsCanReplacing) > 0 && effect->processReplacing != nullptr && effect->processReplacing != effect->process)
-                    effect->processReplacing(effect, bufferAudioIn, bufferAudioOut, kBufferSize);
-                else if (effect->process != nullptr)
-                    effect->process(effect, bufferAudioIn, bufferAudioOut, kBufferSize);
-                else
-                    DISCOVERY_OUT("error", "Plugin doesn't have a process function");
-#else
-                CARLA_ASSERT(effect->flags & effFlagsCanReplacing);
-                if (effect->flags & effFlagsCanReplacing)
-                {
-                    if (effect->processReplacing != nullptr)
-                        effect->processReplacing(effect, bufferAudioIn, bufferAudioOut, bufferSize);
-                    else
-                        DISCOVERY_OUT("error", "Plugin doesn't have a process function");
-                }
-                else
-                    DISCOVERY_OUT("error", "Plugin doesn't have can't do process replacing");
-#endif
-            }
+            if (midiIns > 0)
+                effect->dispatcher(effect, effProcessEvents, 0, 0, &events, 0.0f);
+
+            if ((effect->flags & effFlagsCanReplacing) > 0 && effect->processReplacing != nullptr && effect->processReplacing != effect->DECLARE_VST_DEPRECATED(process))
+                effect->processReplacing(effect, bufferAudioIn, bufferAudioOut, kBufferSize);
+            else if (effect->DECLARE_VST_DEPRECATED(process) != nullptr)
+                effect->DECLARE_VST_DEPRECATED(process)(effect, bufferAudioIn, bufferAudioOut, kBufferSize);
+            else
+                DISCOVERY_OUT("error", "Plugin doesn't have a process function");
+
+            gVstIsProcessing = false;
 
             effect->dispatcher(effect, effStopProcess, 0, 0, nullptr, 0.0f);
             effect->dispatcher(effect, effMainsChanged, 0, 0, nullptr, 0.0f);
 
             if (gVstNeedsIdle)
-                effect->dispatcher(effect, effIdle, 0, 0, nullptr, 0.0f);
+                effect->dispatcher(effect, DECLARE_VST_DEPRECATED(effIdle), 0, 0, nullptr, 0.0f);
 
             for (int j=0; j < audioIns; ++j)
                 delete[] bufferAudioIn[j];
@@ -1387,7 +1386,7 @@ void do_vst_check(void*& libHandle, const bool init)
         DISCOVERY_OUT("label", (const char*)cProduct);
         DISCOVERY_OUT("maker", (const char*)cVendor);
         DISCOVERY_OUT("copyright", (const char*)cVendor);
-        DISCOVERY_OUT("unique_id", gVstCurrentUniqueId);
+        DISCOVERY_OUT("uniqueId", gVstCurrentUniqueId);
         DISCOVERY_OUT("hints", hints);
         DISCOVERY_OUT("audio.ins", audioIns);
         DISCOVERY_OUT("audio.outs", audioOuts);
@@ -1401,23 +1400,27 @@ void do_vst_check(void*& libHandle, const bool init)
         DISCOVERY_OUT("build", BINARY_NATIVE);
         DISCOVERY_OUT("end", "------------");
 
-#if 0 // FIXME
-        if (vstCategory == kPlugCategShell)
-        {
-            carla_fill<char>(strBuf, STR_MAX+1, '\0');
+        if (vstCategory != kPlugCategShell)
+            break;
 
-            if ((gVstCurrentUniqueId = effect->dispatcher(effect, effShellGetNextPlugin, 0, 0, strBuf, 0.0f)) != 0)
-                cName = strBuf;
-        }
+        gVstWantsMidi = false;
+        gVstWantsTime = false;
+
+        carla_zeroChar(strBuf, STR_MAX+1);
+
+        gVstCurrentUniqueId = effect->dispatcher(effect, effShellGetNextPlugin, 0, 0, strBuf, 0.0f);
+
+        if (gVstCurrentUniqueId != 0)
+            cName = strBuf;
         else
-#endif
             break;
     }
 
     if (gVstNeedsIdle)
-        effect->dispatcher(effect, effIdle, 0, 0, nullptr, 0.0f);
+        effect->dispatcher(effect, DECLARE_VST_DEPRECATED(effIdle), 0, 0, nullptr, 0.0f);
 
     effect->dispatcher(effect, effClose, 0, 0, nullptr, 0.0f);
+
 #else
     DISCOVERY_OUT("error", "VST support not available");
     return;
@@ -1481,7 +1484,6 @@ void do_fluidsynth_check(const char* const filename, const bool init)
     DISCOVERY_OUT("label", (const char*)label);
     DISCOVERY_OUT("maker", "");
     DISCOVERY_OUT("copyright", "");
-    DISCOVERY_OUT("category", PLUGIN_CATEGORY_SYNTH);
     DISCOVERY_OUT("audio.outs", 2);
     DISCOVERY_OUT("audio.total", 2);
     DISCOVERY_OUT("midi.ins", 1);
@@ -1502,7 +1504,7 @@ void do_fluidsynth_check(const char* const filename, const bool init)
     DISCOVERY_OUT("name", (const char*)name);
     DISCOVERY_OUT("label", (const char*)label);
     DISCOVERY_OUT("copyright", "");
-//     DISCOVERY_OUT("hints", PLUGIN_IS_SYNTH);
+    DISCOVERY_OUT("hints", PLUGIN_IS_SYNTH);
     DISCOVERY_OUT("audio.outs", 32);
     DISCOVERY_OUT("audio.total", 32);
     DISCOVERY_OUT("midi.ins", 1);
@@ -1547,6 +1549,26 @@ void do_linuxsampler_check(const char* const filename, const char* const stype, 
     (void)init;
 #endif
 }
+
+// --------------------------------------------------------------------------
+
+class ScopedWorkingDirSet
+{
+public:
+    ScopedWorkingDirSet(const char* const filename)
+        : fPreviousWorkingDirectory(File::getCurrentWorkingDirectory())
+    {
+        File(filename).getParentDirectory().setAsCurrentWorkingDirectory();
+    }
+
+    ~ScopedWorkingDirSet()
+    {
+        fPreviousWorkingDirectory.setAsCurrentWorkingDirectory();
+    }
+
+private:
+    const File fPreviousWorkingDirectory;
+};
 
 // ------------------------------ main entry point ------------------------------
 
@@ -1614,17 +1636,20 @@ int main(int argc, char* argv[])
     const PluginType  type     = getPluginTypeFromString(stype);
 
     CarlaString filenameStr(filename);
+    filenameStr.toLower();
 
     if (filenameStr.contains("fluidsynth", true))
     {
         DISCOVERY_OUT("info", "skipping fluidsynth based plugin");
         return 0;
     }
-    if (filenameStr.contains("linuxsampler", true))
+    if (filenameStr.contains("linuxsampler", true) || filenameStr.endsWith("ls16.so"))
     {
         DISCOVERY_OUT("info", "skipping linuxsampler based plugin");
         return 0;
     }
+
+    const ScopedWorkingDirSet swds(filename);
 
     bool openLib = false;
     void* handle = nullptr;

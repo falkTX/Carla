@@ -17,7 +17,7 @@ CARLA_CSOUND_SUPPORT = true
 CARLA_SAMPLERS_SUPPORT = true
 
 # Use the free vestige header instead of the official VST SDK
-CARLA_VESTIGE_HEADER = true
+# CARLA_VESTIGE_HEADER = true
 
 # --------------------------------------------------------------
 # DO NOT MODIFY PAST THIS POINT!
@@ -142,6 +142,7 @@ ifeq ($(HAVE_OPENGL),true)
 DGL_FLAGS                = $(shell pkg-config --cflags gl x11)
 DGL_LIBS                 = $(shell pkg-config --libs gl x11)
 endif
+LILV_LIBS                = -lrt -ldl
 JUCE_CORE_LIBS           = -lrt -ldl -lpthread
 JUCE_EVENTS_FLAGS        = $(shell pkg-config --cflags x11)
 JUCE_EVENTS_LIBS         = $(shell pkg-config --libs x11)
@@ -153,6 +154,7 @@ endif
 
 ifeq ($(MACOS),true)
 DGL_LIBS                = -framework OpenGL -framework Cocoa
+LILV_LIBS               = -ldl
 JUCE_AUDIO_BASICS_LIBS  = -framework Accelerate
 JUCE_AUDIO_DEVICES_LIBS = -framework CoreAudio -framework CoreMIDI -framework DiscRecording
 JUCE_AUDIO_FORMATS_LIBS = -framework CoreAudio -framework CoreMIDI -framework QuartzCore -framework AudioToolbox
