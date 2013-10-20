@@ -1276,7 +1276,7 @@ void do_vst_check(void*& libHandle, const bool init)
         if (effect->flags & effFlagsIsSynth)
             hints |= PLUGIN_IS_SYNTH;
 
-        if (vstPluginCanDo(effect, "receiveVstEvents") || vstPluginCanDo(effect, "receiveVstMidiEvent") || (effect->flags & effFlagsIsSynth) > 0)
+        if (vstPluginCanDo(effect, "receiveVstEvents") || vstPluginCanDo(effect, "receiveVstMidiEvent") || (effect->flags & effFlagsIsSynth) != 0)
             midiIns = 1;
 
         if (vstPluginCanDo(effect, "sendVstEvents") || vstPluginCanDo(effect, "sendVstMidiEvent"))

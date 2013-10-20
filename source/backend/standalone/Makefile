@@ -17,7 +17,7 @@ LIBS  = ../libcarla_engine.a
 LIBS += ../libcarla_plugin.a
 
 LINK_FLAGS += $(shell pkg-config --libs liblo)
-LINK_FLAGS += -lpthread
+LINK_FLAGS += -lpthread -ljack
 
 # --------------------------------------------------------------
 # Juce
@@ -102,12 +102,12 @@ OBJS  = \
      CarlaStandalone.cpp.o
 
 ifeq ($(WIN32),true)
-TARGET = ../libcarla_standalone.dll
+TARGET = ../libcarla_standalone2.dll
 else
 ifeq ($(MACOS),true)
-TARGET = ../libcarla_standalone.dylib
+TARGET = ../libcarla_standalone2.dylib
 else
-TARGET = ../libcarla_standalone.so
+TARGET = ../libcarla_standalone2.so
 endif
 endif
 
@@ -126,13 +126,13 @@ debug:
 %.cpp.o: %.cpp ../CarlaBackend.hpp ../CarlaEngine.hpp ../CarlaPlugin.hpp ../CarlaHost.hpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
-../libcarla_standalone.dll: $(OBJS) $(LIBS)
+../libcarla_standalone2.dll: $(OBJS) $(LIBS)
 	$(CXX) $^ -shared $(LINK_FLAGS) $(W32_LIBS) -Wl,--output-def,$@.def -o $@
 
-../libcarla_standalone.dylib: $(OBJS) $(LIBS)
+../libcarla_standalone2.dylib: $(OBJS) $(LIBS)
 	$(CXX) $^ -dynamiclib $(LINK_FLAGS) -framework CoreAudio -framework CoreMIDI -framework CoreFoundation -o $@
 
-../libcarla_standalone.so: $(OBJS) $(LIBS)
+../libcarla_standalone2.so: $(OBJS) $(LIBS)
 	$(CXX) $^ $(LINK_FLAGS) -shared -o $@
 
 # --------------------------------------------------------------

@@ -907,11 +907,13 @@ public:
         {
             CarlaEngineJackClient* const client((CarlaEngineJackClient*)plugin->getEngineClient());
 
+#if 0
             if (bridge.client_rename_ptr != nullptr)
             {
                 name = bridge.client_rename_ptr(client->fClient, name);
             }
             else
+#endif
             {
                 // we should not be able to do this, jack really needs to allow client rename
                 needsReinit = true;
