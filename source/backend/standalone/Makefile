@@ -13,31 +13,25 @@ BUILD_CXX_FLAGS += $(shell pkg-config --cflags liblo)
 # --------------------------------------------------------------
 # Common
 
-LIBS  = ../libcarla_engine.a
-LIBS += ../libcarla_plugin.a
-
 LINK_FLAGS += $(shell pkg-config --libs liblo)
-LINK_FLAGS += -lpthread -ljack
 
-# --------------------------------------------------------------
-# Juce
-
+LINK_FLAGS += $(JACKBRIDGE_LIBS)
 LINK_FLAGS += $(JUCE_AUDIO_BASICS_LIBS)
 LINK_FLAGS += $(JUCE_CORE_LIBS)
 LINK_FLAGS += $(JUCE_DATA_STRUCTURES_LIBS)
 LINK_FLAGS += $(JUCE_EVENTS_LIBS)
 LINK_FLAGS += $(JUCE_GRAPHICS_LIBS)
 LINK_FLAGS += $(JUCE_GUI_BASICS_LIBS)
+LINK_FLAGS += $(RTAUDIO_LIBS)
+LINK_FLAGS += $(RTMIDI_LIBS)
+LINK_FLAGS += $(RTMEMPOOL_LIBS)
 
-# --------------------------------------------------------------
-# Engine
-
-ifeq ($(HAVE_ALSA),true)
-LINK_FLAGS += $(shell pkg-config --libs alsa)
+ifeq ($(HAVE_OPENGL),true)
+LINK_FLAGS += $(DGL_LIBS)
 endif
 
-ifeq ($(HAVE_PULSEAUDIO),true)
-LINK_FLAGS += $(shell pkg-config --libs libpulse-simple)
+ifeq ($(CARLA_PLUGIN_SUPPORT),true)
+LINK_FLAGS += $(LILV_LIBS)
 endif
 
 # --------------------------------------------------------------
@@ -75,31 +69,38 @@ LINK_FLAGS += $(shell pkg-config --libs ntk_images ntk)
 endif
 endif
 
-ifeq ($(HAVE_OPENGL),true)
-LINK_FLAGS += $(DGL_LIBS)
-endif
-
 # --------------------------------------------------------------
 
+LIBS  = ../libcarla_engine.a
+LIBS += ../libcarla_plugin.a
+
 LIBS += ../../modules/carla_native.a
+LIBS += ../../modules/jackbridge.a
 LIBS += ../../modules/juce_audio_basics.a
 LIBS += ../../modules/juce_core.a
 LIBS += ../../modules/juce_data_structures.a
 LIBS += ../../modules/juce_events.a
 LIBS += ../../modules/juce_graphics.a
 LIBS += ../../modules/juce_gui_basics.a
+LIBS += ../../modules/rtaudio.a
+LIBS += ../../modules/rtmidi.a
 LIBS += ../../modules/rtmempool.a
-
-ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-LIBS += ../../modules/lilv.a
-endif
 
 ifeq ($(HAVE_OPENGL),true)
 LIBS += ../../modules/dgl.a
 endif
 
+ifeq ($(CARLA_PLUGIN_SUPPORT),true)
+LIBS += ../../modules/lilv.a
+endif
+
+# --------------------------------------------------------------
+
 OBJS  = \
      CarlaStandalone.cpp.o
+
+HEADERS = \
+	../CarlaBackend.hpp ../CarlaEngine.hpp ../CarlaPlugin.hpp ../CarlaHost.hpp ../../modules/CarlaNative.h
 
 ifeq ($(WIN32),true)
 TARGET = ../libcarla_standalone2.dll
@@ -116,21 +117,21 @@ endif
 all: $(TARGET)
 
 clean:
-	rm -f $(OBJS) $(TARGET)
+	$(RM) $(OBJS) $(TARGET)
 
 debug:
 	$(MAKE) DEBUG=true
 
 # --------------------------------------------------------------
 
-%.cpp.o: %.cpp ../CarlaBackend.hpp ../CarlaEngine.hpp ../CarlaPlugin.hpp ../CarlaHost.hpp
+%.cpp.o: %.cpp $(HEADERS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 ../libcarla_standalone2.dll: $(OBJS) $(LIBS)
-	$(CXX) $^ -shared $(LINK_FLAGS) $(W32_LIBS) -Wl,--output-def,$@.def -o $@
+	$(CXX) $^ $(LINK_FLAGS) -shared -Wl,--output-def,$@.def -o $@
 
 ../libcarla_standalone2.dylib: $(OBJS) $(LIBS)
-	$(CXX) $^ -dynamiclib $(LINK_FLAGS) -framework CoreAudio -framework CoreMIDI -framework CoreFoundation -o $@
+	$(CXX) $^ $(LINK_FLAGS) -dynamiclib -o $@
 
 ../libcarla_standalone2.so: $(OBJS) $(LIBS)
 	$(CXX) $^ $(LINK_FLAGS) -shared -o $@
@@ -145,3 +146,5 @@ debug:
 
 ../../modules/%.a: .FORCE
 	$(MAKE) -C ../../modules $*
+
+# --------------------------------------------------------------

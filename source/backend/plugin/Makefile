@@ -33,23 +33,31 @@ OBJS = \
 	FluidSynthPlugin.cpp.o \
 	LinuxSamplerPlugin.cpp.o
 
+HEADERS = \
+	../CarlaBackend.hpp ../CarlaEngine.hpp ../CarlaPlugin.hpp \
+	CarlaPluginInternal.hpp CarlaPluginThread.hpp
+
 TARGET = ../libcarla_plugin.a
 
 # --------------------------------------------------------------
 
 all: $(TARGET)
 
+# --------------------------------------------------------------
+
+%.cpp.o: %.cpp $(HEADERS)
+	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+
+$(TARGET): $(OBJS)
+	$(RM) $@
+	$(AR) crs $@ $^
+
+# --------------------------------------------------------------
+
 clean:
-	rm -f $(OBJS) $(FILES) $(TARGET)
+	$(RM) $(OBJS) $(TARGET)
 
 debug:
 	$(MAKE) DEBUG=true
 
 # --------------------------------------------------------------
-
-%.cpp.o: %.cpp ../CarlaBackend.hpp ../CarlaEngine.hpp ../CarlaPlugin.hpp CarlaPluginInternal.hpp CarlaPluginThread.hpp
-	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
-
-$(TARGET): $(OBJS)
-	rm -f $@
-	$(AR) crs $@ $^

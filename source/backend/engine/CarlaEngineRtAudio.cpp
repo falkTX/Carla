@@ -20,8 +20,8 @@
 #include "CarlaMIDI.h"
 #include "RtList.hpp"
 
-#include "RtAudio.h"
-#include "RtMidi.h"
+#include "rtaudio/RtAudio.h"
+#include "rtmidi/RtMidi.h"
 
 #include "juce_audio_basics.h"
 

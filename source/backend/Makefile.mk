@@ -34,6 +34,10 @@ endif
 
 # --------------------------------------------------------------
 
+ifeq ($(HAVE_OPENGL),true)
+BUILD_CXX_FLAGS += -DWANT_OPENGL
+endif
+
 ifeq ($(HAVE_AF_DEPS),true)
 BUILD_CXX_FLAGS += -DWANT_AUDIOFILE
 ifeq ($(HAVE_FFMPEG),true)
@@ -43,10 +47,6 @@ endif
 
 ifeq ($(HAVE_MF_DEPS),true)
 BUILD_CXX_FLAGS += -DWANT_MIDIFILE
-endif
-
-ifeq ($(HAVE_OPENGL),true)
-BUILD_CXX_FLAGS += -DWANT_OPENGL
 endif
 
 ifeq ($(HAVE_ZYN_DEPS),true)
