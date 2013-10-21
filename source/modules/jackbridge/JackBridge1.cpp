@@ -157,7 +157,7 @@ struct JackBridge {
     jacksym_set_buffer_size_callback set_buffer_size_callback_ptr;
     jacksym_set_sample_rate_callback set_sample_rate_callback_ptr;
     jacksym_set_client_registration_callback set_client_registration_callback_ptr;
-    jacksym_set_client_rename_callback set_client_rename_callback_ptr;
+    //jacksym_set_client_rename_callback set_client_rename_callback_ptr;
     jacksym_set_port_registration_callback set_port_registration_callback_ptr;
     jacksym_set_port_connect_callback set_port_connect_callback_ptr;
     jacksym_set_port_rename_callback set_port_rename_callback_ptr;
@@ -259,7 +259,7 @@ struct JackBridge {
           set_buffer_size_callback_ptr(nullptr),
           set_sample_rate_callback_ptr(nullptr),
           set_client_registration_callback_ptr(nullptr),
-          set_client_rename_callback_ptr(nullptr),
+          //set_client_rename_callback_ptr(nullptr),
           set_port_registration_callback_ptr(nullptr),
           set_port_connect_callback_ptr(nullptr),
           set_port_rename_callback_ptr(nullptr),
@@ -371,7 +371,7 @@ struct JackBridge {
         LIB_SYMBOL(set_buffer_size_callback)
         LIB_SYMBOL(set_sample_rate_callback)
         LIB_SYMBOL(set_client_registration_callback)
-        LIB_SYMBOL(set_client_rename_callback)
+        //LIB_SYMBOL(set_client_rename_callback)
         LIB_SYMBOL(set_port_registration_callback)
         LIB_SYMBOL(set_port_connect_callback)
         LIB_SYMBOL(set_port_rename_callback)

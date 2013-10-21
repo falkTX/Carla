@@ -101,6 +101,11 @@ lilv_%:
 
 # --------------------------------------------------------------
 
+rtaudio:
+	$(MAKE) -C rtaudio
+
+# --------------------------------------------------------------
+
 rtmempool:
 	$(MAKE) -C rtmempool
 
@@ -116,6 +121,9 @@ theme_%:
 	$(MAKE) -C theme $*
 
 # --------------------------------------------------------------
+
+jackbridge:
+	$(MAKE) -C jackbridge
 
 jackbridge-win32:
 	$(MAKE) -C jackbridge win32
@@ -157,12 +165,15 @@ clean:
 	$(MAKE) clean -C juce_graphics
 	$(MAKE) clean -C juce_gui_basics
 	$(MAKE) clean -C lilv
+	$(MAKE) clean -C rtaudio
 	$(MAKE) clean -C rtmempool
 	$(MAKE) clean -C theme
 	$(MAKE) clean -C widgets
 
 # --------------------------------------------------------------
 
-.PHONY: carla_native juce_audio_basics juce_audio_devices juce_audio_formats juce_audio_processors juce_core juce_data_structures juce_events juce_graphics juce_gui_basics lilv rtmempool theme
+.PHONY: \
+	carla_native lilv rtaudio rtmidi rtmempool theme \
+	juce_audio_basics juce_audio_devices juce_audio_formats juce_audio_processors juce_core juce_data_structures juce_events juce_graphics juce_gui_basics
 
 # --------------------------------------------------------------

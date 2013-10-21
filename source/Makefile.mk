@@ -124,15 +124,22 @@ HAVE_LINUXSAMPLER = $(shell pkg-config --exists linuxsampler && echo true)
 endif
 
 # --------------------------------------------------------------
-# Check for optional libs (required by internal plugins)
+# Check for optional libs (needed by internal plugins)
 
-HAVE_AF_DEPS       = $(shell pkg-config --exists sndfile && echo true)
-HAVE_MF_DEPS       = $(shell pkg-config --exists smf && echo true)
-HAVE_ZYN_DEPS      = $(shell pkg-config --exists fftw3 mxml zlib && echo true)
-HAVE_ZYN_UI_DEPS   = $(shell pkg-config --exists ntk ntk_images && echo true)
+HAVE_AF_DEPS      = $(shell pkg-config --exists sndfile && echo true)
+HAVE_MF_DEPS      = $(shell pkg-config --exists smf && echo true)
+HAVE_ZYN_DEPS     = $(shell pkg-config --exists fftw3 mxml zlib && echo true)
+HAVE_ZYN_UI_DEPS  = $(shell pkg-config --exists ntk ntk_images && echo true)
 
 # --------------------------------------------------------------
-# Set Juce flags
+# Set libs stuff
+
+RTAUDIO_FLAGS  = -DHAVE_GETTIMEOFDAY -D__UNIX_JACK__
+
+ifeq ($(DEBUG),true)
+RTAUDIO_FLAGS += -D__RTAUDIO_DEBUG__
+RTMIDI_FLAGS  += -D__RTMIDI_DEBUG__
+endif
 
 ifeq ($(HAIKU),true)
 endif
@@ -142,34 +149,53 @@ ifeq ($(HAVE_OPENGL),true)
 DGL_FLAGS                = $(shell pkg-config --cflags gl x11)
 DGL_LIBS                 = $(shell pkg-config --libs gl x11)
 endif
-LILV_LIBS                = -lrt -ldl
-JUCE_CORE_LIBS           = -lrt -ldl -lpthread
+JACKBRIDGE_LIBS          = -ldl -lpthread -lrt
+JUCE_CORE_LIBS           = -ldl -lpthread -lrt
 JUCE_EVENTS_FLAGS        = $(shell pkg-config --cflags x11)
 JUCE_EVENTS_LIBS         = $(shell pkg-config --libs x11)
 JUCE_GRAPHICS_FLAGS      = $(shell pkg-config --cflags x11 xinerama xext freetype2)
 JUCE_GRAPHICS_LIBS       = $(shell pkg-config --libs x11 xinerama xext freetype2)
 JUCE_GUI_BASICS_FLAGS    = $(shell pkg-config --cflags x11 xinerama xext xcursor)
 JUCE_GUI_BASICS_LIBS     = $(shell pkg-config --libs x11 xinerama xext xcursor) -ldl
+LILV_LIBS                = -ldl -lrt
+ifeq ($(HAVE_ALSA),true)
+RTAUDIO_FLAGS           += $(shell pkg-config --cflags alsa) -D__LINUX_ALSA__
+RTAUDIO_LIBS            += $(shell pkg-config --libs alsa) -lpthread
+RTMIDI_FLAGS            += $(shell pkg-config --cflags alsa) -D__LINUX_ALSASEQ__
+RTMIDI_LIBS             += $(shell pkg-config --libs alsa)
+endif
+ifeq ($(HAVE_PULSEAUDIO),true)
+RTAUDIO_FLAGS += $(shell pkg-config --cflags libpulse-simple) -D__LINUX_PULSE__
+RTAUDIO_LIBS  += $(shell pkg-config --libs libpulse-simple)
+endif
 endif
 
 ifeq ($(MACOS),true)
 DGL_LIBS                = -framework OpenGL -framework Cocoa
-LILV_LIBS               = -ldl
+JACKBRIDGE_LIBS         = -ldl -lpthread
 JUCE_AUDIO_BASICS_LIBS  = -framework Accelerate
 JUCE_AUDIO_DEVICES_LIBS = -framework CoreAudio -framework CoreMIDI -framework DiscRecording
 JUCE_AUDIO_FORMATS_LIBS = -framework CoreAudio -framework CoreMIDI -framework QuartzCore -framework AudioToolbox
 JUCE_CORE_LIBS          = -framework Cocoa -framework IOKit
 JUCE_GRAPHICS_LIBS      = -framework Cocoa -framework QuartzCore
 JUCE_GUI_BASICS_LIBS    = -framework Cocoa -framework Carbon -framework QuartzCore
+LILV_LIBS               = -ldl
+RTAUDIO_FLAGS          += -D__MACOSX_CORE__
+RTAUDIO_LIBS           += -lpthread
+RTMIDI_FLAGS           += -D__MACOSX_CORE__
 endif
 
 ifeq ($(WIN32),true)
 DGL_LIBS                = -lopengl32 -lgdi32
+JACKBRIDGE_LIBS         = -lpthread
 JUCE_AUDIO_DEVICES_LIBS = -lwinmm -lole32
 JUCE_CORE_LIBS          = -luuid -lwsock32 -lwininet -lversion -lole32 -lws2_32 -loleaut32 -limm32 -lcomdlg32 -lshlwapi -lrpcrt4 -lwinmm
 JUCE_EVENTS_LIBS        = -lole32
 JUCE_GRAPHICS_LIBS      = -lgdi32
 JUCE_GUI_BASICS_LIBS    = -lgdi32 -limm32 -lcomdlg32 -lole32
+RTAUDIO_FLAGS          += -D__WINDOWS_ASIO__ -D__WINDOWS_DS__
+RTAUDIO_LIBS           += -lpthread
+RTMIDI_FLAGS           += -D__WINDOWS_MM__
 endif
 
 # --------------------------------------------------------------

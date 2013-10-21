@@ -46,11 +46,11 @@ bool jackbridge_sem_timedwait(void*, int)
 {
     return false;
 }
-#else
-
+#else //JACKBRIDGE_DUMMY
 #include <ctime>
-#include <semaphore.h>
 #include <sys/time.h>
+#include <sys/types.h>
+#include <semaphore.h>
 
 bool jackbridge_sem_init(void* sem)
 {
@@ -85,10 +85,9 @@ bool jackbridge_sem_timedwait(void* sem, int secs)
 #  endif
 
         timeout.tv_sec += secs;
-
         return (sem_timedwait((sem_t*)sem, &timeout) == 0);
 # endif
 }
-#endif
+#endif // JACKBRIDGE_DUMMY
 
 // -----------------------------------------------------------------------------

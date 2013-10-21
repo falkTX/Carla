@@ -50,14 +50,6 @@ OBJS += \
 	rtaudio-4.0.12/RtAudio.cpp.o \
 	rtmidi-2.0.1/RtMidi.cpp.o
 
-# ifeq ($(WIN32),true)
-# OBJS += \
-# 	rtaudio-4.0.12/include/asio.cpp.o \
-# 	rtaudio-4.0.12/include/asiodrivers.cpp.o \
-# 	rtaudio-4.0.12/include/asiolist.cpp.o \
-# 	rtaudio-4.0.12/include/iasiothiscallresolver.cpp.o
-# endif
-
 TARGET  = ../libcarla_engine.a
 TARGETp = ../libcarla_engine_plugin.a
 
