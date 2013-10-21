@@ -1,0 +1,17 @@
+{
+  "id":             "stk",
+  "name":           "STK Library",
+  "version":        "4.4.3",
+  "description":    "STK Library for audio sysnthesis and effects",
+  "website":        "https://ccrma.stanford.edu/software/stk",
+  "license":        "GPL/Commercial",
+
+  "dependencies":   [ { "id": "juce_core",   "version": "matching" } ],
+
+  "include":        "stk.h",
+
+  "compile":        [ { "file": "stk.cpp", "target": "! xcode" },
+                      { "file": "stk.mm",  "target": "xcode" } ],
+
+  "browse":         [ "stk/*" ]
+}
