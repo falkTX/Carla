@@ -19,8 +19,6 @@
 #include "CarlaBackendUtils.hpp"
 #include "CarlaMIDI.h"
 
-#define JACKBRIDGE_DIRECT 1
-
 #ifdef JACKBRIDGE_EXPORT
 # include "jackbridge/JackBridge.hpp"
 #else

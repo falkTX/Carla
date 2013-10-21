@@ -33,6 +33,13 @@ BUILD_PLUGIN_FLAGS += -DVESTIGE_HEADER
 endif
 endif
 
+LINK_PLUGIN_FLAGS  += $(JUCE_AUDIO_BASICS_LIBS)
+LINK_PLUGIN_FLAGS  += $(JUCE_CORE_LIBS)
+LINK_PLUGIN_FLAGS  += $(JUCE_DATA_STRUCTURES_LIBS)
+LINK_PLUGIN_FLAGS  += $(JUCE_EVENTS_LIBS)
+LINK_PLUGIN_FLAGS  += $(JUCE_GRAPHICS_LIBS)
+LINK_PLUGIN_FLAGS  += $(JUCE_GUI_BASICS_LIBS)
+
 # --------------------------------------------------------------
 # Plugin bridges (POSIX)
 
@@ -58,13 +65,6 @@ WIN_LINK_FLAGS  = $(LINK_PLUGIN_FLAGS) -L../modules
 
 NATIVE_BUILD_FLAGS  = $(POSIX_BUILD_FLAGS) -DWANT_NATIVE
 NATIVE_LINK_FLAGS   = $(POSIX_LINK_FLAGS)
-
-NATIVE_LINK_FLAGS  += $(JUCE_AUDIO_BASICS_LIBS)
-NATIVE_LINK_FLAGS  += $(JUCE_CORE_LIBS)
-NATIVE_LINK_FLAGS  += $(JUCE_DATA_STRUCTURES_LIBS)
-NATIVE_LINK_FLAGS  += $(JUCE_EVENTS_LIBS)
-NATIVE_LINK_FLAGS  += $(JUCE_GRAPHICS_LIBS)
-NATIVE_LINK_FLAGS  += $(JUCE_GUI_BASICS_LIBS)
 
 ifeq ($(HAVE_FLUIDSYNTH),true)
 NATIVE_BUILD_FLAGS += -DWANT_FLUIDSYNTH
@@ -526,6 +526,7 @@ OBJS_WIN32 += \
 
 # libs
 OBJS_WIN32 += \
+	../modules/juce_core.win32.a \
 	../modules/lilv.win32.a \
 	../modules/rtmempool.win32.a
 
@@ -581,6 +582,9 @@ carla-bridge-win64.exe: $(FILES) $(OBJS_WIN64) ../modules/jackbridge-win64.dll
 
 .FORCE:
 .PHONY: .FORCE
+
+../modules/juce_core.%.a: .FORCE
+	$(MAKE) -C ../modules juce_core_$*
 
 ../modules/lilv.%.a: .FORCE
 	$(MAKE) -C ../modules lilv_$*

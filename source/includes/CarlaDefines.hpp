@@ -215,4 +215,9 @@ private:                               \
 # define OS_SEP '/'
 #endif
 
+// Useful typedefs
+typedef unsigned long int ulong;
+typedef unsigned short int ushort;
+typedef unsigned int uint;
+
 #endif // CARLA_DEFINES_HPP_INCLUDED
