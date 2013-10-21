@@ -12,9 +12,6 @@ WINECXX ?= wineg++
 
 BUILD_CXX_FLAGS += $(JACKBRIDGE_FLAGS) -I. -I../../includes -I../../utils
 LINK_FLAGS      += $(JACKBRIDGE_LIBS)
-# linux: -ldl -lpthread -lrt
-# mac: -ldl -lpthread
-# win: -lpthread
 
 OBJS         = JackBridge1.cpp.o         JackBridge2.cpp.o
 OBJS_posix32 = JackBridge1.cpp.posix32.o JackBridge2.cpp.posix32.o
@@ -34,23 +31,23 @@ win64:   ../jackbridge.win64.a
 # --------------------------------------------------------------
 
 ../jackbridge.a: $(OBJS)
-	rm -f $@
+	$(RM) $@
 	$(AR) crs $@ $^
 
 ../jackbridge.posix32.a: $(OBJS_posix32)
-	rm -f $@
+	$(RM) $@
 	$(AR) crs $@ $^
 
 ../jackbridge.posix64.a: $(OBJS_posix64)
-	rm -f $@
+	$(RM) $@
 	$(AR) crs $@ $^
 
 ../jackbridge.win32.a: $(OBJS_win32)
-	rm -f $@
+	$(RM) $@
 	$(AR) crs $@ $^
 
 ../jackbridge.win64.a: $(OBJS_win64)
-	rm -f $@
+	$(RM) $@
 	$(AR) crs $@ $^
 
 ../libjackbridge.dll: $(OBJS)
@@ -82,7 +79,7 @@ win64:   ../jackbridge.win64.a
 # --------------------------------------------------------------
 
 clean:
-	rm -f *.o ../jackbridge*.a ../libjackbridge.*
+	$(RM) *.o ../jackbridge*.a ../libjackbridge.*
 
 debug:
 	$(MAKE) DEBUG=true

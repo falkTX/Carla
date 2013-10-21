@@ -82,8 +82,6 @@ OBJS_win64 = \
 
 # --------------------------------------------------------------
 
-
-
 ifeq ($(WIN32),true)
 CARLASTYLE = styles/carlastyle.dll
 else
@@ -105,27 +103,27 @@ win64:   ../theme.win64.a
 # --------------------------------------------------------------
 
 ../theme.a: $(FILES) $(OBJS)
-	rm -f $@
+	$(RM) $@
 	$(AR) crs $@ $(OBJS)
 
 ../theme.qt4.a: $(FILES_qt4) $(OBJS_qt4)
-	rm -f $@
+	$(RM) $@
 	$(AR) crs $@ $(OBJS_qt4)
 
 ../theme.posix32.a: $(FILES) $(OBJS_posix32)
-	rm -f $@
+	$(RM) $@
 	$(AR) crs $@ $(OBJS_posix32)
 
 ../theme.posix64.a: $(FILES) $(OBJS_posix64)
-	rm -f $@
+	$(RM) $@
 	$(AR) crs $@ $(OBJS_posix64)
 
 ../theme.win32.a: $(FILES) $(OBJS_win32)
-	rm -f $@
+	$(RM) $@
 	$(AR) crs $@ $(OBJS_win32)
 
 ../theme.win64.a: $(FILES) $(OBJS_win64)
-	rm -f $@
+	$(RM) $@
 	$(AR) crs $@ $(OBJS_win64)
 
 # --------------------------------------------------------------
@@ -174,7 +172,7 @@ resources.qt4.cpp: ../../../resources/resources-theme.qrc
 # --------------------------------------------------------------
 
 clean:
-	rm -f *.o ../theme*.a $(CARLASTYLE) $(FILES)
+	$(RM) *.o ../theme*.a $(CARLASTYLE) $(FILES)
 
 debug:
 	$(MAKE) DEBUG=true
@@ -182,3 +180,5 @@ debug:
 install: $(CARLASTYLE) styles/carlastyle.json
 	install -d $(QT_STYLES_DIR)
 	install -m 644 $^ $(QT_STYLES_DIR)
+
+# --------------------------------------------------------------

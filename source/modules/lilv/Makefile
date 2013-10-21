@@ -13,18 +13,14 @@ SORD_VERSION   = 0.12.0
 SRATOM_VERSION = 0.4.2
 LILV_VERSION   = 0.16.0
 
-BUILD_C_FLAGS += -w
-BUILD_C_FLAGS += -Iconfig -I../../includes
+BUILD_C_FLAGS += $(LILV_FLAGS) -Iconfig -I../../includes -w
+LINK_FLAGS    += $(LILV_LIBS)
 
 OBJS         = serd.c.o         sord.c.o         sratom.c.o         lilv.c.o
 OBJS_posix32 = serd.c.posix32.o sord.c.posix32.o sratom.c.posix32.o lilv.c.posix32.o
 OBJS_posix64 = serd.c.posix64.o sord.c.posix64.o sratom.c.posix64.o lilv.c.posix64.o
 OBJS_win32   = serd.c.win32.o   sord.c.win32.o   sratom.c.win32.o   lilv.c.win32.o
 OBJS_win64   = serd.c.win64.o   sord.c.win64.o   sratom.c.win64.o   lilv.c.win64.o
-
-ifneq ($(WIN32),true)
-LINK_FLAGS += -ldl
-endif
 
 # --------------------------------------------------------------
 
@@ -38,28 +34,33 @@ win64:   ../lilv.win64.a
 # --------------------------------------------------------------
 
 ../lilv.a: $(OBJS)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../lilv.posix32.a: $(OBJS_posix32)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../lilv.posix64.a: $(OBJS_posix64)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../lilv.win32.a: $(OBJS_win32)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../lilv.win64.a: $(OBJS_win64)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../liblilv.dll: $(OBJS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
+	$(CC) $^ -shared $(LINK_FLAGS) -o $@
 
 ../liblilv.dylib: $(OBJS)
-	$(CXX) $^ -dynamiclib $(LINK_FLAGS) -o $@
+	$(CC) $^ -dynamiclib $(LINK_FLAGS) -o $@
 
 ../liblilv.so: $(OBJS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
+	$(CC) $^ -shared $(LINK_FLAGS) -o $@
 
 # --------------------------------------------------------------
 
@@ -106,7 +107,9 @@ lilv.c.%64.o: lilv.c
 # --------------------------------------------------------------
 
 clean:
-	rm -f *.o ../lilv*.a ../liblilv.*
+	$(RM) *.o ../lilv*.a ../liblilv.*
 
 debug:
 	$(MAKE) DEBUG=true
+
+# --------------------------------------------------------------

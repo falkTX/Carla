@@ -90,19 +90,24 @@ win64:   ../../dgl.win64.a
 # --------------------------------------------------------------
 
 ../../dgl.a: $(OBJS)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../../dgl.posix32.a: $(OBJS_posix32)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../../dgl.posix64.a: $(OBJS_posix64)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../../dgl.win32.a: $(OBJS_win32)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../../dgl.win64.a: $(OBJS_win64)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../../libdgl.dll: $(OBJS)
 	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
@@ -136,7 +141,9 @@ win64:   ../../dgl.win64.a
 # --------------------------------------------------------------
 
 clean:
-	rm -f *.o src/*.o src/pugl/*.o ../../dgl*.a ../../libdgl.*
+	$(RM) src/*.o src/pugl/*.o ../../dgl*.a ../../libdgl.*
 
 debug:
 	$(MAKE) DEBUG=true
+
+# --------------------------------------------------------------

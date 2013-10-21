@@ -45,10 +45,6 @@ endif
 # --------------------------------------------------------------
 # Native
 
-ifeq ($(HAVE_OPENGL),true)
-LINK_FLAGS += $(shell pkg-config --libs gl)
-endif
-
 ifeq ($(HAVE_AF_DEPS),true)
 LINK_FLAGS += $(shell pkg-config --libs sndfile)
 ifeq ($(HAVE_FFMPEG),true)
@@ -63,12 +59,12 @@ endif
 ifeq ($(HAVE_ZYN_DEPS),true)
 LINK_FLAGS += $(shell pkg-config --libs fftw3 mxml zlib)
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
-LINK_FLAGS += $(shell pkg-config --libs ntk_images ntk) -lfreetype # FIXME
+LINK_FLAGS += $(shell pkg-config --libs ntk_images ntk)
 endif
 endif
 
 # --------------------------------------------------------------
-# Juce
+# Libs
 
 LINK_FLAGS += $(JUCE_AUDIO_BASICS_LIBS)
 LINK_FLAGS += $(JUCE_CORE_LIBS)
@@ -76,6 +72,15 @@ LINK_FLAGS += $(JUCE_DATA_STRUCTURES_LIBS)
 LINK_FLAGS += $(JUCE_EVENTS_LIBS)
 LINK_FLAGS += $(JUCE_GRAPHICS_LIBS)
 LINK_FLAGS += $(JUCE_GUI_BASICS_LIBS)
+LINK_FLAGS += $(RTMEMPOOL_LIBS)
+
+ifeq ($(HAVE_OPENGL),true)
+LINK_FLAGS += $(DGL_LIBS)
+endif
+
+ifeq ($(CARLA_PLUGIN_SUPPORT),true)
+LINK_FLAGS += $(LILV_LIBS)
+endif
 
 # --------------------------------------------------------------
 
@@ -88,24 +93,23 @@ LIBS += ../modules/juce_graphics.a
 LIBS += ../modules/juce_gui_basics.a
 LIBS += ../modules/rtmempool.a
 
-# ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-# LIBS += ../modules/lilv.a
-# endif
-
 ifeq ($(HAVE_OPENGL),true)
 LIBS += ../modules/dgl.a
 endif
 
+ifeq ($(CARLA_PLUGIN_SUPPORT),true)
+LIBS += ../modules/lilv.a
+endif
+
+# --------------------------------------------------------------
+
 ifeq ($(WIN32),true)
-TARGETS  = carla-native-lv2-export.exe
-TARGETS += carla-native.lv2/carla-native.dll
+TARGETS = carla-native-lv2-export.exe carla-native.lv2/carla-native.dll
 else
-TARGETS  = carla-native-lv2-export
 ifeq ($(MACOS),true)
-TARGETS += carla-native.lv2/carla-native.dylib
+TARGETS = carla-native-lv2-export carla-native.lv2/carla-native.dylib
 else
-LIBS    += -ldl -lpthread -lrt
-TARGETS += carla-native.lv2/carla-native.so
+TARGETS = carla-native-lv2-export carla-native.lv2/carla-native.so
 endif
 endif
 
@@ -114,8 +118,8 @@ endif
 all: $(TARGETS)
 
 clean:
-	rm -f $(TARGETS) *.o
-	rm -f carla-native.lv2/*.*
+	$(RM) $(TARGETS) *.o
+	$(RM) carla-native.lv2/*.*
 
 debug:
 	$(MAKE) DEBUG=true
@@ -133,15 +137,6 @@ carla-native-lv2-export.cpp.o: carla-native-lv2-export.cpp carla-native-base.cpp
 
 # --------------------------------------------------------------
 
-carla-native.lv2/carla-native.dll: carla-native-lv2.cpp.o $(LIBS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
-
-carla-native.lv2/carla-native.dylib: carla-native-lv2.cpp.o $(LIBS)
-	$(CXX) $^ -dynamiclib $(LINK_FLAGS) -o $@
-
-carla-native.lv2/carla-native.so: carla-native-lv2.cpp.o $(LIBS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
-
 carla-native-lv2-export: carla-native-lv2-export.cpp.o $(LIBS)
 	$(CXX) $^ $(LINK_FLAGS) -o $@
 	./carla-native-lv2-export
@@ -152,8 +147,21 @@ carla-native-lv2-export.exe: carla-native-lv2-export.cpp.o $(LIBS)
 
 # --------------------------------------------------------------
 
+carla-native.lv2/carla-native.dll: carla-native-lv2.cpp.o $(LIBS)
+	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
+
+carla-native.lv2/carla-native.dylib: carla-native-lv2.cpp.o $(LIBS)
+	$(CXX) $^ -dynamiclib $(LINK_FLAGS) -o $@
+
+carla-native.lv2/carla-native.so: carla-native-lv2.cpp.o $(LIBS)
+	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
+
+# --------------------------------------------------------------
+
 .FORCE:
 .PHONY: .FORCE
 
 ../modules/%.a: .FORCE
 	$(MAKE) -C ../modules $*
+
+# --------------------------------------------------------------

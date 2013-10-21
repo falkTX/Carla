@@ -37,19 +37,24 @@ win64:   ../juce_events.win64.a
 # --------------------------------------------------------------
 
 ../juce_events.a: $(OBJS)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../juce_events.posix32.a: $(OBJS_posix32)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../juce_events.posix64.a: $(OBJS_posix64)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../juce_events.win32.a: $(OBJS_win32)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../juce_events.win64.a: $(OBJS_win64)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../libjuce_events.dll: $(OBJS)
 	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
@@ -83,7 +88,9 @@ win64:   ../juce_events.win64.a
 # --------------------------------------------------------------
 
 clean:
-	rm -f *.o ../juce_events*.a ../libjuce_events.*
+	$(RM) *.o ../juce_events*.a ../libjuce_events.*
 
 debug:
 	$(MAKE) DEBUG=true
+
+# --------------------------------------------------------------

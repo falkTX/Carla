@@ -37,19 +37,24 @@ win64:   ../juce_core.win64.a
 # --------------------------------------------------------------
 
 ../juce_core.a: $(OBJS)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../juce_core.posix32.a: $(OBJS_posix32)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../juce_core.posix64.a: $(OBJS_posix64)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../juce_core.win32.a: $(OBJS_win32)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../juce_core.win64.a: $(OBJS_win64)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../libjuce_core.dll: $(OBJS)
 	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
@@ -83,7 +88,9 @@ win64:   ../juce_core.win64.a
 # --------------------------------------------------------------
 
 clean:
-	rm -f *.o ../juce_core*.a ../libjuce_core.*
+	$(RM) *.o ../juce_core*.a ../libjuce_core.*
 
 debug:
 	$(MAKE) DEBUG=true
+
+# --------------------------------------------------------------

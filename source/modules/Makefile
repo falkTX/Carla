@@ -104,6 +104,9 @@ lilv_%:
 rtaudio:
 	$(MAKE) -C rtaudio
 
+rtmidi:
+	$(MAKE) -C rtmidi
+
 # --------------------------------------------------------------
 
 rtmempool:
@@ -111,6 +114,14 @@ rtmempool:
 
 rtmempool_%:
 	$(MAKE) -C rtmempool $*
+
+# --------------------------------------------------------------
+
+stk:
+	$(MAKE) -C stk
+
+stk_%:
+	$(MAKE) -C stk $*
 
 # --------------------------------------------------------------
 
@@ -166,14 +177,15 @@ clean:
 	$(MAKE) clean -C juce_gui_basics
 	$(MAKE) clean -C lilv
 	$(MAKE) clean -C rtaudio
+	$(MAKE) clean -C rtmidi
 	$(MAKE) clean -C rtmempool
+	$(MAKE) clean -C stk
 	$(MAKE) clean -C theme
-	$(MAKE) clean -C widgets
 
 # --------------------------------------------------------------
 
 .PHONY: \
-	carla_native lilv rtaudio rtmidi rtmempool theme \
+	carla_native jackbridge lilv rtaudio rtmidi rtmempool stk theme \
 	juce_audio_basics juce_audio_devices juce_audio_formats juce_audio_processors juce_core juce_data_structures juce_events juce_graphics juce_gui_basics
 
 # --------------------------------------------------------------

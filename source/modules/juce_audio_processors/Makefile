@@ -9,7 +9,7 @@ include ../../Makefile.mk
 # --------------------------------------------------------------
 
 BUILD_CXX_FLAGS += $(JUCE_AUDIO_PROCESSORS_FLAGS) -I.
-LINK_FLAGS      += $(JUCE_AUDIO_PROCESSORS_LIBS)
+LINK_FLAGS      += $(JUCE_AUDIO_PROCESSORS_LIBS) -L.. -ljuce_audio_basics -ljuce_gui_basics -ljuce_graphics -ljuce_data_structures -ljuce_events -ljuce_core
 
 ifeq ($(MACOS),true)
 BUILD_CXX_FLAGS += -objc++
@@ -37,19 +37,24 @@ win64:   ../juce_audio_processors.win64.a
 # --------------------------------------------------------------
 
 ../juce_audio_processors.a: $(OBJS)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../juce_audio_processors.posix32.a: $(OBJS_posix32)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../juce_audio_processors.posix64.a: $(OBJS_posix64)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../juce_audio_processors.win32.a: $(OBJS_win32)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../juce_audio_processors.win64.a: $(OBJS_win64)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../libjuce_audio_processors.dll: $(OBJS)
 	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
@@ -83,7 +88,9 @@ win64:   ../juce_audio_processors.win64.a
 # --------------------------------------------------------------
 
 clean:
-	rm -f *.o ../juce_audio_processors*.a ../libjuce_audio_processors.*
+	$(RM) *.o ../juce_audio_processors*.a ../libjuce_audio_processors.*
 
 debug:
 	$(MAKE) DEBUG=true
+
+# --------------------------------------------------------------

@@ -41,19 +41,24 @@ win64:   ../juce_audio_devices.win64.a
 # --------------------------------------------------------------
 
 ../juce_audio_devices.a: $(OBJS)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../juce_audio_devices.posix32.a: $(OBJS_posix32)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../juce_audio_devices.posix64.a: $(OBJS_posix64)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../juce_audio_devices.win32.a: $(OBJS_win32)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../juce_audio_devices.win64.a: $(OBJS_win64)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../libjuce_audio_devices.dll: $(OBJS)
 	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
@@ -87,7 +92,9 @@ win64:   ../juce_audio_devices.win64.a
 # --------------------------------------------------------------
 
 clean:
-	rm -f *.o ../juce_audio_devices*.a ../libjuce_audio_devices.*
+	$(RM) *.o ../juce_audio_devices*.a ../libjuce_audio_devices.*
 
 debug:
 	$(MAKE) DEBUG=true
+
+# --------------------------------------------------------------

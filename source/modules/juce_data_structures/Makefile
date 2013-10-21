@@ -37,19 +37,24 @@ win64:   ../juce_data_structures.win64.a
 # --------------------------------------------------------------
 
 ../juce_data_structures.a: $(OBJS)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../juce_data_structures.posix32.a: $(OBJS_posix32)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../juce_data_structures.posix64.a: $(OBJS_posix64)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../juce_data_structures.win32.a: $(OBJS_win32)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../juce_data_structures.win64.a: $(OBJS_win64)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../libjuce_data_structures.dll: $(OBJS)
 	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
@@ -83,7 +88,9 @@ win64:   ../juce_data_structures.win64.a
 # --------------------------------------------------------------
 
 clean:
-	rm -f *.o ../juce_data_structures*.a ../libjuce_data_structures.*
+	$(RM) *.o ../juce_data_structures*.a ../libjuce_data_structures.*
 
 debug:
 	$(MAKE) DEBUG=true
+
+# --------------------------------------------------------------

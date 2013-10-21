@@ -8,13 +8,12 @@ include ../../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_C_FLAGS += -I. -I../../includes
+BUILD_C_FLAGS += $(RTMEMPOOL_FLAGS) -I. -I../../includes
+LINK_FLAGS    += $(RTMEMPOOL_LIBS)
 
 ifeq ($(CARLA_PLUGIN_SUPPORT),true)
 BUILD_C_FLAGS += -DWANT_LV2
 endif
-
-LINK_FLAGS    += -lpthread
 
 OBJS         = rtmempool.c.o
 OBJS_posix32 = rtmempool.c.posix32.o
@@ -34,28 +33,33 @@ win64:   ../rtmempool.win64.a
 # --------------------------------------------------------------
 
 ../rtmempool.a: $(OBJS)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../rtmempool.posix32.a: $(OBJS_posix32)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../rtmempool.posix64.a: $(OBJS_posix64)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../rtmempool.win32.a: $(OBJS_win32)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../rtmempool.win64.a: $(OBJS_win64)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../librtmempool.dll: $(OBJS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
+	$(CC) $^ -shared $(LINK_FLAGS) -o $@
 
 ../librtmempool.dylib: $(OBJS)
-	$(CXX) $^ -dynamiclib $(LINK_FLAGS) -o $@
+	$(CC) $^ -dynamiclib $(LINK_FLAGS) -o $@
 
 ../librtmempool.so: $(OBJS)
-	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
+	$(CC) $^ -shared $(LINK_FLAGS) -o $@
 
 # --------------------------------------------------------------
 
@@ -77,7 +81,9 @@ win64:   ../rtmempool.win64.a
 # --------------------------------------------------------------
 
 clean:
-	rm -f *.o ../rtmempool*.a ../librtmempool.*
+	$(RM) *.o ../rtmempool*.a ../librtmempool.*
 
 debug:
 	$(MAKE) DEBUG=true
+
+# --------------------------------------------------------------

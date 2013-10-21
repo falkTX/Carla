@@ -37,19 +37,24 @@ win64:   ../juce_audio_formats.win64.a
 # --------------------------------------------------------------
 
 ../juce_audio_formats.a: $(OBJS)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../juce_audio_formats.posix32.a: $(OBJS_posix32)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../juce_audio_formats.posix64.a: $(OBJS_posix64)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../juce_audio_formats.win32.a: $(OBJS_win32)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../juce_audio_formats.win64.a: $(OBJS_win64)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../libjuce_audio_formats.dll: $(OBJS)
 	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
@@ -83,7 +88,9 @@ win64:   ../juce_audio_formats.win64.a
 # --------------------------------------------------------------
 
 clean:
-	rm -f *.o ../juce_audio_formats*.a ../libjuce_audio_formats.*
+	$(RM) *.o ../juce_audio_formats*.a ../libjuce_audio_formats.*
 
 debug:
 	$(MAKE) DEBUG=true
+
+# --------------------------------------------------------------

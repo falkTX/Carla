@@ -1,5 +1,5 @@
 #!/usr/bin/make -f
-# Makefile for carla-native #
+# Makefile for carla_native #
 # ------------------------- #
 # Created by falkTX
 #
@@ -11,20 +11,18 @@ include ../../Makefile.mk
 BUILD_C_FLAGS   += -I. -I.. -I../../includes
 BUILD_CXX_FLAGS += -I. -I.. -I../../includes -I../../utils -I../distrho
 
-LINK_FLAGS      += ../juce_audio_basics.a $(JUCE_AUDIO_BASICS_LIBS)
-LINK_FLAGS      += ../juce_core.a $(JUCE_CORE_LIBS)
-LINK_FLAGS      += ../juce_data_structures.a $(JUCE_DATA_STRUCTURES_LIBS)
-LINK_FLAGS      += ../juce_events.a $(JUCE_EVENTS_LIBS)
-LINK_FLAGS      += ../juce_graphics.a $(JUCE_GRAPHICS_LIBS)
-LINK_FLAGS      += ../juce_gui_basics.a $(JUCE_GUI_BASICS_LIBS)
+LINK_FLAGS      += -L..
+ifeq ($(HAVE_OPENGL),true)
+LINK_FLAGS      += -ldgl $(DGL_LIBS)
+endif
+LINK_FLAGS      += -ljuce_audio_basics $(JUCE_AUDIO_BASICS_LIBS)
+LINK_FLAGS      += -ljuce_core $(JUCE_CORE_LIBS)
+LINK_FLAGS      += -ljuce_data_structures $(JUCE_DATA_STRUCTURES_LIBS)
+LINK_FLAGS      += -ljuce_events $(JUCE_EVENTS_LIBS)
+LINK_FLAGS      += -ljuce_graphics $(JUCE_GRAPHICS_LIBS)
+LINK_FLAGS      += -ljuce_gui_basics $(JUCE_GUI_BASICS_LIBS)
 
 # --------------------------------------------------------------
-
-ifeq ($(HAVE_OPENGL),true)
-GL_CXX_FLAGS   = $(BUILD_CXX_FLAGS)
-GL_CXX_FLAGS  += $(shell pkg-config --cflags gl)
-LINK_FLAGS    += ../dgl.a $(shell pkg-config --libs gl)
-endif
 
 ifeq ($(HAVE_AF_DEPS),true)
 AF_C_FLAGS     = $(BUILD_C_FLAGS)
@@ -161,8 +159,8 @@ all: ../carla_native.a
 # --------------------------------------------------------------
 
 ../carla_native.a: $(OBJS)
-	rm -f $@
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../libcarla_native.dll: $(OBJS)
 	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
@@ -178,6 +176,9 @@ all: ../carla_native.a
 CDEPS   = ../CarlaNative.h
 CXXDEPS = ../CarlaNative.h ../CarlaNative.hpp
 
+%.c.o: %.c
+	$(CC) $< $(BUILD_C_FLAGS) -c -o $@
+
 audio_decoder/%.c.o: audio_decoder/%.c
 	$(CC) $< $(AF_C_FLAGS) -c -o $@
 
@@ -185,19 +186,19 @@ audio-file.cpp.o: audio-file.cpp audio-base.hpp $(CXXDEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 distrho-3bandeq.cpp.o: distrho-3bandeq.cpp 3bandeq/*.cpp 3bandeq/*.h 3bandeq/*.hpp distrho/DistrhoPluginCarla.cpp $(CXXDEPS)
-	$(CXX) $< $(GL_CXX_FLAGS) -I3bandeq -DDISTRHO_NAMESPACE=DISTRHO_3BandEQ -c -o $@
+	$(CXX) $< $(BUILD_CXX_FLAGS) -I3bandeq -DDISTRHO_NAMESPACE=DISTRHO_3BandEQ -c -o $@
 
 distrho-3bandsplitter.cpp.o: distrho-3bandsplitter.cpp 3bandsplitter/*.cpp 3bandsplitter/*.h 3bandsplitter/*.hpp distrho/DistrhoPluginCarla.cpp $(CXXDEPS)
-	$(CXX) $< $(GL_CXX_FLAGS) -I3bandsplitter -DDISTRHO_NAMESPACE=DISTRHO_3BandSplitter -c -o $@
+	$(CXX) $< $(BUILD_CXX_FLAGS) -I3bandsplitter -DDISTRHO_NAMESPACE=DISTRHO_3BandSplitter -c -o $@
 
 distrho-nekobi.cpp.o: distrho-nekobi.cpp nekobi/*.cpp nekobi/*.h nekobi/*.hpp nekobi/nekobee-src/*.c nekobi/nekobee-src/*.h distrho/DistrhoPluginCarla.cpp $(CXXDEPS)
-	$(CXX) $< $(GL_CXX_FLAGS) -Inekobi -DDISTRHO_NAMESPACE=DISTRHO_Nekobi -c -o $@
+	$(CXX) $< $(BUILD_CXX_FLAGS) -Inekobi -DDISTRHO_NAMESPACE=DISTRHO_Nekobi -c -o $@
 
 distrho-pingpongpan.cpp.o: distrho-pingpongpan.cpp pingpongpan/*.cpp pingpongpan/*.h pingpongpan/*.hpp distrho/DistrhoPluginCarla.cpp $(CXXDEPS)
-	$(CXX) $< $(GL_CXX_FLAGS) -Ipingpongpan -DDISTRHO_NAMESPACE=DISTRHO_PingPongPan -c -o $@
+	$(CXX) $< $(BUILD_CXX_FLAGS) -Ipingpongpan -DDISTRHO_NAMESPACE=DISTRHO_PingPongPan -c -o $@
 
 distrho-stereoenhancer.cpp.o: distrho-stereoenhancer.cpp stereoenhancer/*.cpp stereoenhancer/*.h stereoenhancer/*.hpp distrho/DistrhoPluginCarla.cpp $(CXXDEPS)
-	$(CXX) $< $(GL_CXX_FLAGS) -Istereoenhancer -DDISTRHO_NAMESPACE=DISTRHO_StereoEnhancer -c -o $@
+	$(CXX) $< $(BUILD_CXX_FLAGS) -Istereoenhancer -DDISTRHO_NAMESPACE=DISTRHO_StereoEnhancer -c -o $@
 
 distrho-bigmeter.cpp.o: distrho-bigmeter.cpp bigmeter/*.cpp bigmeter/*.h bigmeter/*.hpp distrho/DistrhoPluginCarla.cpp $(CXXDEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -Ibigmeter -DDISTRHO_NAMESPACE=DISTRHO_BigMeter -c -o $@
@@ -220,10 +221,10 @@ nekofilter.c.o: nekofilter.c nekofilter/*.c nekofilter/*.h $(CDEPS)
 vex-%.cpp.o: vex-%.cpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
-zynaddsubfx-ui.cpp.o: zynaddsubfx-ui.cpp $(ZYN_UI_FILES_H) $(ZYN_UI_FILES_CPP)
+zynaddsubfx-%.cpp.o: zynaddsubfx-%.cpp $(CXXDEPS) $(ZYN_UI_FILES_H)
 	$(CXX) $< $(ZYN_CXX_FLAGS) -c -o $@
 
-zynaddsubfx-%.cpp.o: zynaddsubfx-%.cpp $(CXXDEPS) $(ZYN_UI_FILES_H)
+zynaddsubfx-ui.cpp.o: zynaddsubfx-ui.cpp $(ZYN_UI_FILES_H) $(ZYN_UI_FILES_CPP)
 	$(CXX) $< $(ZYN_CXX_FLAGS) -c -o $@
 
 zynaddsubfx/UI/%.cpp: zynaddsubfx/UI/%.fl
@@ -234,17 +235,11 @@ zynaddsubfx/UI/%.h: zynaddsubfx/UI/%.fl
 
 # --------------------------------------------------------------
 
-%.c.o: %.c
-	$(CC) $< $(BUILD_C_FLAGS) -c -o $@
-
-moc_%.cpp: %.hpp
-	$(MOC) $< -DMOC_PARSING -o $@
-
-# --------------------------------------------------------------
-
 clean:
-	rm -f $(OBJS) ../carla_native*.a ../libcarla_native.*
-	rm -f $(ZYN_UI_FILES_H) $(ZYN_UI_FILES_CPP)
+	$(RM) $(OBJS) ../carla_native*.a ../libcarla_native.*
+	$(RM) $(ZYN_UI_FILES_H) $(ZYN_UI_FILES_CPP)
 
 debug:
 	$(MAKE) DEBUG=true
+
+# --------------------------------------------------------------

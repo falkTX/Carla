@@ -23,6 +23,7 @@ CARLA_SAMPLERS_SUPPORT = true
 # DO NOT MODIFY PAST THIS POINT!
 
 AR  ?= ar
+RM  ?= rm -f
 CC  ?= gcc
 CXX ?= g++
 MOC ?= moc
@@ -141,8 +142,7 @@ RTAUDIO_FLAGS += -D__RTAUDIO_DEBUG__
 RTMIDI_FLAGS  += -D__RTMIDI_DEBUG__
 endif
 
-ifeq ($(HAIKU),true)
-endif
+RTMEMPOOL_LIBS = -lpthread
 
 ifeq ($(LINUX),true)
 ifeq ($(HAVE_OPENGL),true)
@@ -157,7 +157,7 @@ JUCE_GRAPHICS_FLAGS      = $(shell pkg-config --cflags x11 xinerama xext freetyp
 JUCE_GRAPHICS_LIBS       = $(shell pkg-config --libs x11 xinerama xext freetype2)
 JUCE_GUI_BASICS_FLAGS    = $(shell pkg-config --cflags x11 xinerama xext xcursor)
 JUCE_GUI_BASICS_LIBS     = $(shell pkg-config --libs x11 xinerama xext xcursor) -ldl
-LILV_LIBS                = -ldl -lrt
+LILV_LIBS                = -ldl -lm -lrt
 ifeq ($(HAVE_ALSA),true)
 RTAUDIO_FLAGS           += $(shell pkg-config --cflags alsa) -D__LINUX_ALSA__
 RTAUDIO_LIBS            += $(shell pkg-config --libs alsa) -lpthread
@@ -165,8 +165,8 @@ RTMIDI_FLAGS            += $(shell pkg-config --cflags alsa) -D__LINUX_ALSASEQ__
 RTMIDI_LIBS             += $(shell pkg-config --libs alsa)
 endif
 ifeq ($(HAVE_PULSEAUDIO),true)
-RTAUDIO_FLAGS += $(shell pkg-config --cflags libpulse-simple) -D__LINUX_PULSE__
-RTAUDIO_LIBS  += $(shell pkg-config --libs libpulse-simple)
+RTAUDIO_FLAGS           += $(shell pkg-config --cflags libpulse-simple) -D__LINUX_PULSE__
+RTAUDIO_LIBS            += $(shell pkg-config --libs libpulse-simple)
 endif
 endif
 
@@ -179,7 +179,7 @@ JUCE_AUDIO_FORMATS_LIBS = -framework CoreAudio -framework CoreMIDI -framework Qu
 JUCE_CORE_LIBS          = -framework Cocoa -framework IOKit
 JUCE_GRAPHICS_LIBS      = -framework Cocoa -framework QuartzCore
 JUCE_GUI_BASICS_LIBS    = -framework Cocoa -framework Carbon -framework QuartzCore
-LILV_LIBS               = -ldl
+LILV_LIBS               = -ldl -lm
 RTAUDIO_FLAGS          += -D__MACOSX_CORE__
 RTAUDIO_LIBS           += -lpthread
 RTMIDI_FLAGS           += -D__MACOSX_CORE__
@@ -193,6 +193,7 @@ JUCE_CORE_LIBS          = -luuid -lwsock32 -lwininet -lversion -lole32 -lws2_32 
 JUCE_EVENTS_LIBS        = -lole32
 JUCE_GRAPHICS_LIBS      = -lgdi32
 JUCE_GUI_BASICS_LIBS    = -lgdi32 -limm32 -lcomdlg32 -lole32
+LILV_LIBS               = -lm
 RTAUDIO_FLAGS          += -D__WINDOWS_ASIO__ -D__WINDOWS_DS__
 RTAUDIO_LIBS           += -lpthread
 RTMIDI_FLAGS           += -D__WINDOWS_MM__

@@ -37,19 +37,24 @@ win64:   ../juce_gui_basics.win64.a
 # --------------------------------------------------------------
 
 ../juce_gui_basics.a: $(OBJS)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../juce_gui_basics.posix32.a: $(OBJS_posix32)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../juce_gui_basics.posix64.a: $(OBJS_posix64)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../juce_gui_basics.win32.a: $(OBJS_win32)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../juce_gui_basics.win64.a: $(OBJS_win64)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../libjuce_gui_basics.dll: $(OBJS)
 	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
@@ -83,7 +88,9 @@ win64:   ../juce_gui_basics.win64.a
 # --------------------------------------------------------------
 
 clean:
-	rm -f *.o ../juce_gui_basics*.a ../libjuce_gui_basics.*
+	$(RM) *.o ../juce_gui_basics*.a ../libjuce_gui_basics.*
 
 debug:
 	$(MAKE) DEBUG=true
+
+# --------------------------------------------------------------

@@ -1,6 +1,6 @@
 #!/usr/bin/make -f
-# Makefile for rtaudio #
-# -------------------- #
+# Makefile for rtmidi #
+# ------------------- #
 # Created by falkTX
 #
 
@@ -8,36 +8,28 @@ include ../../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += $(RTAUDIO_FLAGS) -DHAVE_GETTIMEOFDAY -D__UNIX_JACK__ -I. -Iinclude -I.. -I../../includes
-LINK_FLAGS      += $(RTAUDIO_LIBS) -L.. -ljackbridge
+BUILD_CXX_FLAGS += $(RTMIDI_FLAGS) -I. -Iinclude -I.. -I../../includes
+LINK_FLAGS      += $(RTMIDI_LIBS)
 
-OBJS = RtAudio.cpp.o
-
-ifeq ($(WIN32),true)
-OBJS += \
-	include/asio.cpp.o \
-	include/asiodrivers.cpp.o \
-	include/asiolist.cpp.o \
-	include/iasiothiscallresolver.cpp.o
-endif
+OBJS = RtMidi.cpp.o
 
 # --------------------------------------------------------------
 
-all: ../rtaudio.a
+all: ../rtmidi.a
 
 # --------------------------------------------------------------
 
-../rtaudio.a: $(OBJS)
+../rtmidi.a: $(OBJS)
 	$(RM) $@
 	$(AR) crs $@ $^
 
-../librtaudio.dll: $(OBJS)
+../librtmidi.dll: $(OBJS)
 	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
 
-../librtaudio.dylib: $(OBJS)
+../librtmidi.dylib: $(OBJS)
 	$(CXX) $^ -dynamiclib $(LINK_FLAGS) -o $@
 
-../librtaudio.so: $(OBJS)
+../librtmidi.so: $(OBJS)
 	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
 
 # --------------------------------------------------------------
@@ -48,7 +40,7 @@ all: ../rtaudio.a
 # --------------------------------------------------------------
 
 clean:
-	$(RM) *.o ../rtaudio*.a ../librtaudio.*
+	$(RM) *.o ../rtmidi*.a ../librtmidi.*
 
 debug:
 	$(MAKE) DEBUG=true

@@ -37,19 +37,24 @@ win64:   ../juce_graphics.win64.a
 # --------------------------------------------------------------
 
 ../juce_graphics.a: $(OBJS)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../juce_graphics.posix32.a: $(OBJS_posix32)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../juce_graphics.posix64.a: $(OBJS_posix64)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../juce_graphics.win32.a: $(OBJS_win32)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../juce_graphics.win64.a: $(OBJS_win64)
-	$(AR) rs $@ $^
+	$(RM) $@
+	$(AR) crs $@ $^
 
 ../libjuce_graphics.dll: $(OBJS)
 	$(CXX) $^ -shared $(LINK_FLAGS) -o $@
@@ -83,7 +88,9 @@ win64:   ../juce_graphics.win64.a
 # --------------------------------------------------------------
 
 clean:
-	rm -f *.o ../juce_graphics*.a ../libjuce_graphics.*
+	$(RM) *.o ../juce_graphics*.a ../libjuce_graphics.*
 
 debug:
 	$(MAKE) DEBUG=true
+
+# --------------------------------------------------------------
