@@ -21,102 +21,12 @@
 #include "lv2/lv2.h"
 
 // -----------------------------------------------------------------------
-// Plugin register calls
-
-extern "C" {
-
-// Simple plugins (C)
-void carla_register_native_plugin_bypass();
-void carla_register_native_plugin_lfo();
-void carla_register_native_plugin_midiGain();
-void carla_register_native_plugin_midiSplit();
-void carla_register_native_plugin_midiThrough();
-void carla_register_native_plugin_midiTranspose();
-void carla_register_native_plugin_nekofilter();
-
-// Simple plugins (C++)
-void carla_register_native_plugin_vex_fx();
-void carla_register_native_plugin_vex_synth();
-
-#ifdef WANT_AUDIOFILE
-// AudioFile
-void carla_register_native_plugin_audiofile();
-#endif
-
-#ifdef WANT_MIDIFILE
-// MidiFile
-void carla_register_native_plugin_midifile();
-#endif
-
-#ifdef WANT_OPENGL
-// DISTRHO plugins (OpenGL)
-void carla_register_native_plugin_3BandEQ();
-void carla_register_native_plugin_3BandSplitter();
-void carla_register_native_plugin_Nekobi();
-void carla_register_native_plugin_PingPongPan();
-// void carla_register_native_plugin_StereoEnhancer();
-#endif
-
-// DISTRHO plugins (PyQt)
-void carla_register_native_plugin_BigMeter();
-void carla_register_native_plugin_BigMeterM();
-void carla_register_native_plugin_Notes();
-
-#ifdef WANT_ZYNADDSUBFX
-// ZynAddSubFX
-void carla_register_native_plugin_zynaddsubfx_fx();
-void carla_register_native_plugin_zynaddsubfx_synth();
-#endif
-}
-
-// -----------------------------------------------------------------------
 // Plugin List
 
 struct PluginListManager {
     PluginListManager()
     {
-        // Simple plugins (C)
-        carla_register_native_plugin_bypass();
-        carla_register_native_plugin_lfo();
-        carla_register_native_plugin_midiGain();
-        carla_register_native_plugin_midiSplit();
-        carla_register_native_plugin_midiThrough();
-        carla_register_native_plugin_midiTranspose();
-        carla_register_native_plugin_nekofilter();
-
-        // Simple plugins (C++)
-        carla_register_native_plugin_vex_fx();
-        carla_register_native_plugin_vex_synth();
-
-#ifdef WANT_AUDIOFILE
-        // AudioFile
-        carla_register_native_plugin_audiofile();
-#endif
-
-#ifdef WANT_MIDIFILE
-        // MidiFile
-        carla_register_native_plugin_midifile();
-#endif
-
-#ifdef WANT_OPENGL
-        // DISTRHO plugins (OpenGL)
-        carla_register_native_plugin_3BandEQ();
-        carla_register_native_plugin_3BandSplitter();
-        carla_register_native_plugin_Nekobi();
-        carla_register_native_plugin_PingPongPan();
-        //carla_register_native_plugin_StereoEnhancer(); // unfinished
-#endif
-
-        // DISTRHO plugins (PyQt)
-        carla_register_native_plugin_BigMeter();
-        carla_register_native_plugin_BigMeterM();
-        carla_register_native_plugin_Notes(); // unfinished
-
-#ifdef WANT_ZYNADDSUBFX
-        // ZynAddSubFX
-        carla_register_native_plugin_zynaddsubfx_fx();
-        carla_register_native_plugin_zynaddsubfx_synth();
-#endif
+        carla_register_all_plugins();
     }
 
     ~PluginListManager()
@@ -137,6 +47,8 @@ struct PluginListManager {
 };
 
 static PluginListManager sPluginDescsMgr;
+
+// -----------------------------------------------------------------------
 
 void carla_register_native_plugin(const PluginDescriptor* desc)
 {

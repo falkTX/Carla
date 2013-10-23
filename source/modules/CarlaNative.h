@@ -259,7 +259,11 @@ typedef struct _PluginDescriptor {
 // -----------------------------------------------------------------------
 // Register plugin
 
+// Implemented by host
 extern void carla_register_native_plugin(const PluginDescriptor* desc);
+
+// Called once on host init
+void carla_register_all_plugins();
 
 // -----------------------------------------------------------------------
 

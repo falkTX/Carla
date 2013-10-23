@@ -329,35 +329,30 @@ int32_t CarlaPlugin::getCurrentMidiProgram() const noexcept
 const ParameterData& CarlaPlugin::getParameterData(const uint32_t parameterId) const
 {
     CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, kParameterDataNull);
-
     return pData->param.data[parameterId];
 }
 
 const ParameterRanges& CarlaPlugin::getParameterRanges(const uint32_t parameterId) const
 {
     CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, kParameterRangesNull);
-
     return pData->param.ranges[parameterId];
 }
 
 bool CarlaPlugin::isParameterOutput(const uint32_t parameterId) const
 {
     CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, false);
-
     return (pData->param.data[parameterId].type == PARAMETER_OUTPUT);
 }
 
 const MidiProgramData& CarlaPlugin::getMidiProgramData(const uint32_t index) const
 {
     CARLA_SAFE_ASSERT_RETURN(index < pData->midiprog.count, kMidiProgramDataNull);
-
     return pData->midiprog.data[index];
 }
 
 const CustomData& CarlaPlugin::getCustomData(const uint32_t index) const
 {
     CARLA_SAFE_ASSERT_RETURN(index < pData->custom.count(), kCustomDataNull);
-
     return pData->custom.getAt(index);
 }
 
@@ -450,7 +445,6 @@ void CarlaPlugin::getProgramName(const uint32_t index, char* const strBuf) const
 {
     CARLA_SAFE_ASSERT_RETURN(index < pData->prog.count,);
     CARLA_SAFE_ASSERT_RETURN(pData->prog.names[index] != nullptr,);
-
     std::strncpy(strBuf, pData->prog.names[index], STR_MAX);
 }
 
@@ -458,7 +452,6 @@ void CarlaPlugin::getMidiProgramName(const uint32_t index, char* const strBuf) c
 {
     CARLA_SAFE_ASSERT_RETURN(index < pData->midiprog.count,);
     CARLA_SAFE_ASSERT_RETURN(pData->midiprog.data[index].name != nullptr,);
-
     std::strncpy(strBuf, pData->midiprog.data[index].name, STR_MAX);
 }
 
@@ -881,7 +874,7 @@ void CarlaPlugin::setId(const unsigned int newId) noexcept
 
 void CarlaPlugin::setName(const char* const newName)
 {
-    CARLA_ASSERT(newName != nullptr);
+    CARLA_ASSERT(newName != nullptr && newName[0] != '\0');
 
     fName = newName;
 }

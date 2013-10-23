@@ -24,10 +24,17 @@ LINK_FLAGS      += -ljuce_gui_basics $(JUCE_GUI_BASICS_LIBS)
 
 # --------------------------------------------------------------
 
+ALL_C_FLAGS    = $(BUILD_C_FLAGS)
+
+ifeq ($(HAVE_OPENGL),true)
+ALL_C_FLAGS   += -DWANT_OPENGL
+endif
+
 ifeq ($(HAVE_AF_DEPS),true)
 AF_C_FLAGS     = $(BUILD_C_FLAGS)
 AF_C_FLAGS    += $(shell pkg-config --cflags sndfile)
 LINK_FLAGS    += $(shell pkg-config --libs sndfile)
+ALL_C_FLAGS   += -DWANT_AUDIOFILE
 ifeq ($(HAVE_FFMPEG),true)
 AF_C_FLAGS    += -DHAVE_FFMPEG
 AF_C_FLAGS    += $(shell pkg-config --cflags libavcodec libavformat libavutil)
@@ -39,6 +46,7 @@ ifeq ($(HAVE_MF_DEPS),true)
 MF_CXX_FLAGS   = $(BUILD_CXX_FLAGS)
 MF_CXX_FLAGS  += $(shell pkg-config --cflags smf)
 LINK_FLAGS    += $(shell pkg-config --libs smf)
+ALL_C_FLAGS   += -DWANT_MIDIFILE
 endif
 
 ifeq ($(HAVE_ZYN_DEPS),true)
@@ -50,6 +58,7 @@ ZYN_CXX_FLAGS += -DNTK_GUI -DWANT_ZYNADDSUBFX_UI
 ZYN_CXX_FLAGS += $(shell pkg-config --cflags ntk_images ntk)
 LINK_FLAGS    += $(shell pkg-config --libs ntk_images ntk)
 endif
+ALL_C_FLAGS   += -DWANT_ZYNADDSUBFX
 endif
 
 # Implement carla_register_native_plugin
@@ -57,8 +66,10 @@ LINK_FLAGS += -I.. _link.c
 
 # --------------------------------------------------------------
 
+OBJS = _all.c.o
+
 # Simple plugins (C)
-OBJS  = \
+OBJS += \
 	bypass.c.o \
 	lfo.c.o \
 	midi-gain.c.o \
@@ -179,6 +190,9 @@ CXXDEPS = ../CarlaNative.h ../CarlaNative.hpp
 %.c.o: %.c
 	$(CC) $< $(BUILD_C_FLAGS) -c -o $@
 
+_all.c.o: _all.c $(CDEPS)
+	$(CC) $< $(ALL_C_FLAGS) -c -o $@
+
 audio_decoder/%.c.o: audio_decoder/%.c
 	$(CC) $< $(AF_C_FLAGS) -c -o $@
 
@@ -222,6 +236,9 @@ vex-%.cpp.o: vex-%.cpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 zynaddsubfx-%.cpp.o: zynaddsubfx-%.cpp $(CXXDEPS) $(ZYN_UI_FILES_H)
+	$(CXX) $< $(ZYN_CXX_FLAGS) -c -o $@
+
+zynaddsubfx-src.cpp.o: zynaddsubfx-src.cpp $(ZYN_UI_FILES_H)
 	$(CXX) $< $(ZYN_CXX_FLAGS) -c -o $@
 
 zynaddsubfx-ui.cpp.o: zynaddsubfx-ui.cpp $(ZYN_UI_FILES_H) $(ZYN_UI_FILES_CPP)

@@ -33,27 +33,3 @@ BUILD_CXX_FLAGS += -DWANT_LINUXSAMPLER
 endif
 
 # --------------------------------------------------------------
-
-ifeq ($(HAVE_OPENGL),true)
-BUILD_CXX_FLAGS += -DWANT_OPENGL
-endif
-
-ifeq ($(HAVE_AF_DEPS),true)
-BUILD_CXX_FLAGS += -DWANT_AUDIOFILE
-ifeq ($(HAVE_FFMPEG),true)
-BUILD_CXX_FLAGS += -DHAVE_FFMPEG
-endif
-endif
-
-ifeq ($(HAVE_MF_DEPS),true)
-BUILD_CXX_FLAGS += -DWANT_MIDIFILE
-endif
-
-ifeq ($(HAVE_ZYN_DEPS),true)
-BUILD_CXX_FLAGS += -DWANT_ZYNADDSUBFX
-ifeq ($(HAVE_ZYN_UI_DEPS),true)
-BUILD_CXX_FLAGS += -DWANT_ZYNADDSUBFX_UI
-endif
-endif
-
-# --------------------------------------------------------------

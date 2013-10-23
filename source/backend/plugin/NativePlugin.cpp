@@ -21,106 +21,6 @@
 
 #include "CarlaNative.h"
 
-extern "C" {
-
-// Simple plugins
-void carla_register_native_plugin_bypass();
-void carla_register_native_plugin_lfo();
-void carla_register_native_plugin_midiGain();
-void carla_register_native_plugin_midiSplit();
-void carla_register_native_plugin_midiThrough();
-void carla_register_native_plugin_midiTranspose();
-void carla_register_native_plugin_nekofilter();
-void carla_register_native_plugin_sunvoxfile();
-void carla_register_native_plugin_vex_fx();
-void carla_register_native_plugin_vex_synth();
-
-#ifndef BUILD_BRIDGE
-// Carla
-void carla_register_native_plugin_carla();
-#endif
-
-#ifdef WANT_AUDIOFILE
-// AudioFile
-void carla_register_native_plugin_audiofile();
-#endif
-
-#ifdef WANT_MIDIFILE
-// MidiFile
-void carla_register_native_plugin_midifile();
-#endif
-
-#ifdef WANT_OPENGL
-// DISTRHO plugins (OpenGL)
-void carla_register_native_plugin_3BandEQ();
-void carla_register_native_plugin_3BandSplitter();
-void carla_register_native_plugin_Nekobi();
-void carla_register_native_plugin_PingPongPan();
-//void carla_register_native_plugin_StereoEnhancer();
-#endif
-
-// DISTRHO plugins (PyQt)
-void carla_register_native_plugin_BigMeter();
-void carla_register_native_plugin_BigMeterM();
-void carla_register_native_plugin_Notes();
-
-#ifdef WANT_ZYNADDSUBFX
-// ZynAddSubFX
-void carla_register_native_plugin_zynaddsubfx_fx();
-void carla_register_native_plugin_zynaddsubfx_synth();
-#endif
-}
-
-void carla_register_all_plugins()
-{
-    // Simple plugins
-    carla_register_native_plugin_bypass();
-    carla_register_native_plugin_lfo();
-    carla_register_native_plugin_midiGain();
-    carla_register_native_plugin_midiSplit();
-    carla_register_native_plugin_midiThrough();
-    carla_register_native_plugin_midiTranspose();
-    carla_register_native_plugin_nekofilter();
-    //carla_register_native_plugin_sunvoxfile(); // unfinished
-    carla_register_native_plugin_vex_fx();
-    carla_register_native_plugin_vex_synth();
-
-#ifndef BUILD_BRIDGE
-    // Carla
-    //carla_register_native_plugin_carla(); // kinda unfinished
-#endif
-
-#ifdef WANT_AUDIOFILE
-    // AudioFile
-    carla_register_native_plugin_audiofile();
-#endif
-
-#ifdef WANT_MIDIFILE
-    // MidiFile
-    carla_register_native_plugin_midifile();
-#endif
-
-#ifdef WANT_OPENGL
-    // DISTRHO plugins (OpenGL)
-    carla_register_native_plugin_3BandEQ();
-    carla_register_native_plugin_3BandSplitter();
-    carla_register_native_plugin_Nekobi();
-    carla_register_native_plugin_PingPongPan();
-    //carla_register_native_plugin_StereoEnhancer(); // unfinished
-#endif
-
-    // DISTRHO plugins (PyQt)
-    carla_register_native_plugin_BigMeter();
-    carla_register_native_plugin_BigMeterM();
-    carla_register_native_plugin_Notes();
-
-#ifdef WANT_ZYNADDSUBFX
-    // ZynAddSubFX
-    carla_register_native_plugin_zynaddsubfx_fx();
-    carla_register_native_plugin_zynaddsubfx_synth();
-#endif
-}
-
 CARLA_BACKEND_START_NAMESPACE
 
 #if 0
@@ -215,19 +115,11 @@ public:
           fIsUiVisible(false),
           fAudioInBuffers(nullptr),
           fAudioOutBuffers(nullptr),
-#ifdef CARLA_PROPER_CPP11_SUPPORT
-          fMidiEventCount(0),
-          fCurMidiProgs{0}
-#else
           fMidiEventCount(0)
-#endif
     {
         carla_debug("NativePlugin::NativePlugin(%p, %i)", engine, id);
 
-#ifndef CARLA_PROPER_CPP11_SUPPORT
         carla_fill<int32_t>(fCurMidiProgs, MAX_MIDI_CHANNELS, 0);
-#endif
-
         carla_zeroStruct< ::MidiEvent>(fMidiEvents, kPluginMaxMidiEvents*2);
         carla_zeroStruct< ::TimeInfo>(fTimeInfo);
 
@@ -409,8 +301,8 @@ public:
 
         if (const Parameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId))
         {
-            const ParameterScalePoint& scalePoint(param->scalePoints[scalePointId]);
-            return scalePoint.value;
+            const ParameterScalePoint* scalePoint(&param->scalePoints[scalePointId]);
+            return scalePoint->value;
         }
 
         carla_assert("const Parameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId)", __FILE__, __LINE__);
@@ -460,84 +352,89 @@ public:
     void getParameterName(const uint32_t parameterId, char* const strBuf) const override
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
-        CARLA_ASSERT(fHandle != nullptr);
-        CARLA_ASSERT(parameterId < pData->param.count);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor->get_parameter_info != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
 
-        if (fDescriptor->get_parameter_info != nullptr && parameterId < pData->param.count)
+        if (const Parameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId))
         {
-            const Parameter* const param(fDescriptor->get_parameter_info(fHandle, parameterId));
-
-            if (param != nullptr && param->name != nullptr)
+            if (param->name != nullptr)
             {
                 std::strncpy(strBuf, param->name, STR_MAX);
                 return;
             }
+            carla_assert("param->name != nullptr", __FILE__, __LINE__);
+            return CarlaPlugin::getParameterName(parameterId, strBuf);
         }
 
+        carla_assert("const Parameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId)", __FILE__, __LINE__);
         CarlaPlugin::getParameterName(parameterId, strBuf);
     }
 
     void getParameterText(const uint32_t parameterId, char* const strBuf) const override
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
-        CARLA_ASSERT(fHandle != nullptr);
-        CARLA_ASSERT(parameterId < pData->param.count);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor->get_parameter_text != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor->get_parameter_value != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
 
-        if (fDescriptor->get_parameter_value != nullptr && fDescriptor->get_parameter_text != nullptr && parameterId < pData->param.count)
+        const float value(fDescriptor->get_parameter_value(fHandle, parameterId));
+
+        if (const char* const text = fDescriptor->get_parameter_text(fHandle, parameterId, value))
         {
-            const float value(fDescriptor->get_parameter_value(fHandle, parameterId));
-
-            if (const char* const text = fDescriptor->get_parameter_text(fHandle, parameterId, value))
-            {
-                std::strncpy(strBuf, text, STR_MAX);
-                return;
-            }
+            std::strncpy(strBuf, text, STR_MAX);
+            return;
         }
 
+        carla_assert("const char* const text = fDescriptor->get_parameter_text(fHandle, parameterId, value)", __FILE__, __LINE__);
         CarlaPlugin::getParameterText(parameterId, strBuf);
     }
 
     void getParameterUnit(const uint32_t parameterId, char* const strBuf) const override
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
-        CARLA_ASSERT(fHandle != nullptr);
-        CARLA_ASSERT(parameterId < pData->param.count);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor->get_parameter_info != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
 
-        if (fDescriptor->get_parameter_info != nullptr && parameterId < pData->param.count)
+        if (const Parameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId))
         {
-            const Parameter* const param(fDescriptor->get_parameter_info(fHandle, parameterId));
-
-            if (param != nullptr && param->unit != nullptr)
+            if (param->unit != nullptr)
             {
                 std::strncpy(strBuf, param->unit, STR_MAX);
                 return;
             }
+            carla_assert("param->unit != nullptr", __FILE__, __LINE__);
+            return CarlaPlugin::getParameterUnit(parameterId, strBuf);
         }
 
+        carla_assert("const Parameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId)", __FILE__, __LINE__);
         CarlaPlugin::getParameterUnit(parameterId, strBuf);
     }
 
     void getParameterScalePointLabel(const uint32_t parameterId, const uint32_t scalePointId, char* const strBuf) const override
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
-        CARLA_ASSERT(fHandle != nullptr);
-        CARLA_ASSERT(parameterId < pData->param.count);
-        CARLA_ASSERT(scalePointId < getParameterScalePointCount(parameterId));
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor->get_parameter_info != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
+        CARLA_SAFE_ASSERT_RETURN(scalePointId < getParameterScalePointCount(parameterId),);
 
-        if (fDescriptor->get_parameter_info != nullptr && parameterId < pData->param.count)
+        if (const Parameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId))
         {
-            if (const Parameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId))
-            {
-                const ParameterScalePoint& scalePoint(param->scalePoints[scalePointId]);
+            const ParameterScalePoint* scalePoint(&param->scalePoints[scalePointId]);
 
-                if (scalePoint.label != nullptr)
-                {
-                    std::strncpy(strBuf, scalePoint.label, STR_MAX);
-                    return;
-                }
+            if (scalePoint->label != nullptr)
+            {
+                std::strncpy(strBuf, scalePoint->label, STR_MAX);
+                return;
             }
+            carla_assert("scalePoint->label != nullptr", __FILE__, __LINE__);
+            return CarlaPlugin::getParameterScalePointLabel(parameterId, scalePointId, strBuf);
         }
 
+        carla_assert("const Parameter* const param = fDescriptor->get_parameter_info(fHandle, parameterId)", __FILE__, __LINE__);
         CarlaPlugin::getParameterScalePointLabel(parameterId, scalePointId, strBuf);
     }
 
@@ -609,18 +506,16 @@ public:
     void setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) override
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor->set_parameter_value != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
-        CARLA_ASSERT(parameterId < pData->param.count);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
 
         const float fixedValue(pData->param.getFixedValue(parameterId, value));
 
-        if (fDescriptor->set_parameter_value != nullptr && parameterId < pData->param.count)
-        {
-            fDescriptor->set_parameter_value(fHandle, parameterId, fixedValue);
+        fDescriptor->set_parameter_value(fHandle, parameterId, fixedValue);
 
-            if (fHandle2 != nullptr)
-                fDescriptor->set_parameter_value(fHandle2, parameterId, fixedValue);
-        }
+        if (fHandle2 != nullptr)
+            fDescriptor->set_parameter_value(fHandle2, parameterId, fixedValue);
 
         CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
     }
@@ -629,22 +524,13 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
-        CARLA_ASSERT(type != nullptr);
-        CARLA_ASSERT(key != nullptr);
-        CARLA_ASSERT(value != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(type != nullptr && type[0] != '\0',);
+        CARLA_SAFE_ASSERT_RETURN(key != nullptr && key[0] != '\0',);
+        CARLA_SAFE_ASSERT_RETURN(value != nullptr,);
         carla_debug("NativePlugin::setCustomData(%s, %s, %s, %s)", type, key, value, bool2str(sendGui));
-
-        if (type == nullptr)
-            return carla_stderr2("NativePlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is null", type, key, value, bool2str(sendGui));
 
         if (std::strcmp(type, CUSTOM_DATA_STRING) != 0 && std::strcmp(type, CUSTOM_DATA_CHUNK) != 0)
             return carla_stderr2("NativePlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is invalid", type, key, value, bool2str(sendGui));
-
-        if (key == nullptr)
-            return carla_stderr2("NativePlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - key is null", type, key, value, bool2str(sendGui));
-
-        if (value == nullptr)
-            return carla_stderr2("Nativelugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - value is null", type, key, value, bool2str(sendGui));
 
         if (std::strcmp(type, CUSTOM_DATA_CHUNK) == 0)
         {
