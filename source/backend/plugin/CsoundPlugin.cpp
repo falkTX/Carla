@@ -58,11 +58,17 @@ public:
 
     void reload() override
     {
+        CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr,);
+        carla_debug("CsoundPlugin::reload() - start");
+
+        bufferSizeChanged(pData->engine->getBufferSize());
+        reloadPrograms(true);
+
+        carla_debug("CsoundPlugin::reload() - end");
     }
 
     void process(float** const inBuffer, float** const outBuffer, const uint32_t frames) override
     {
-
     }
 
 private:

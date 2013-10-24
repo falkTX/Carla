@@ -599,11 +599,8 @@ public:
 
     void reload() override
     {
+        CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr,);
         carla_debug("BridgePlugin::reload() - start");
-        CARLA_ASSERT(pData->engine != nullptr);
-
-        if (pData->engine == nullptr)
-            return;
 
         const ProcessMode processMode(pData->engine->getProccessMode());
 

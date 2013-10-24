@@ -382,11 +382,11 @@ public:
 
     void reload() override
     {
-        carla_debug("DssiPlugin::reload() - start");
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fDssiDescriptor != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
+        carla_debug("DssiPlugin::reload() - start");
 
         const ProcessMode processMode(pData->engine->getProccessMode());
 

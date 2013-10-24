@@ -891,7 +891,7 @@ protected:
         case 89:
             hints |= PARAMETER_IS_BOOLEAN;
             paramInfo.name = "Wave1 on/off";
-            paramInfo.ranges.def = 0.1f;
+            paramInfo.ranges.def = 1.0f;
             break;
         case 90:
             hints |= PARAMETER_IS_BOOLEAN;

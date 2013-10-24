@@ -602,16 +602,10 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
-        CARLA_ASSERT(index >= -1 && index < static_cast<int32_t>(pData->midiprog.count));
+        CARLA_SAFE_ASSERT_RETURN(index >= -1 && index < static_cast<int32_t>(pData->midiprog.count),);
 
-        if (index < -1)
-            index = -1;
-        else if (index > static_cast<int32_t>(pData->midiprog.count))
-            return;
-
-        // TODO
-        //if ((fHints & PLUGIN_IS_SYNTH) != 0 && (pData->ctrlChannel < 0 || pData->ctrlChannel >= MAX_MIDI_CHANNELS))
-        //    return;
+        if ((fHints & PLUGIN_IS_SYNTH) != 0 && (pData->ctrlChannel < 0 || pData->ctrlChannel >= MAX_MIDI_CHANNELS))
+           return;
 
         if (index >= 0)
         {
@@ -691,10 +685,10 @@ public:
 
     void reload() override
     {
-        carla_debug("NativePlugin::reload() - start");
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
+        carla_debug("NativePlugin::reload() - start");
 
         const ProcessMode processMode(pData->engine->getProccessMode());
 

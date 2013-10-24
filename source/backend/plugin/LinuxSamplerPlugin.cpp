@@ -336,14 +336,9 @@ public:
 
     void reload() override
     {
+        CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fInstrument != nullptr,);
         carla_debug("LinuxSamplerPlugin::reload() - start");
-        CARLA_ASSERT(pData->engine != nullptr);
-        CARLA_ASSERT(fInstrument != nullptr);
-
-        if (pData->engine == nullptr)
-            return;
-        if (fInstrument == nullptr)
-            return;
 
         const ProcessMode processMode(pData->engine->getProccessMode());
 

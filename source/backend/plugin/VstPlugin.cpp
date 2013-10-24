@@ -494,14 +494,9 @@ public:
 
     void reload() override
     {
+        CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr,);
         carla_debug("VstPlugin::reload() - start");
-        CARLA_ASSERT(pData->engine != nullptr);
-        CARLA_ASSERT(fEffect != nullptr);
-
-        if (pData->engine == nullptr)
-            return;
-        if (fEffect == nullptr)
-            return;
 
         const ProcessMode processMode(pData->engine->getProccessMode());
 

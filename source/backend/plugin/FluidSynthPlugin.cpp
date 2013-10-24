@@ -510,14 +510,9 @@ public:
 
     void reload() override
     {
+        CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fSynth != nullptr,);
         carla_debug("FluidSynthPlugin::reload() - start");
-        CARLA_ASSERT(pData->engine != nullptr);
-        CARLA_ASSERT(fSynth != nullptr);
-
-        if (pData->engine == nullptr)
-            return;
-        if (fSynth == nullptr)
-            return;
 
         const ProcessMode processMode(pData->engine->getProccessMode());
 

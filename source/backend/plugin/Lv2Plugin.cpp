@@ -1283,20 +1283,11 @@ public:
 
     void reload() override
     {
+        CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr,);
         carla_debug("Lv2Plugin::reload() - start");
-        CARLA_ASSERT(pData->engine != nullptr);
-        CARLA_ASSERT(fHandle != nullptr);
-        CARLA_ASSERT(fDescriptor != nullptr);
-        CARLA_ASSERT(fRdfDescriptor != nullptr);
-
-        if (pData->engine == nullptr)
-            return;
-        if (fHandle == nullptr)
-            return;
-        if (fDescriptor == nullptr)
-            return;
-        if (fRdfDescriptor == nullptr)
-            return;
 
         const ProcessMode processMode(pData->engine->getProccessMode());
 
