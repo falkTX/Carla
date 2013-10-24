@@ -362,7 +362,11 @@ private slots:
     }
 };
 
-#include "CarlaBridgeToolkitQt.moc"
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+# include "CarlaBridgeToolkitQt.moc"
+#else
+# include "CarlaBridgeToolkitQt4.moc"
+#endif
 
 // -------------------------------------------------------------------------
 
@@ -371,6 +375,14 @@ CarlaBridgeToolkit* CarlaBridgeToolkit::createNew(CarlaBridgeClient* const clien
     return new CarlaBridgeToolkitQt(client, uiTitle);
 }
 
+// -------------------------------------------------------------------------
+
 CARLA_BRIDGE_END_NAMESPACE
 
-#include "resources.cpp"
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+# include "resources.cpp"
+#else
+# include "resources.qt4.cpp"
+#endif
+
+// -------------------------------------------------------------------------

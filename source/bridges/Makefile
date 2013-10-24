@@ -205,21 +205,30 @@ win64:   carla-bridge-win64.exe
 # --------------------------------------------------------------
 # UI common
 
-%__lv2.o: %.cpp
-	$(CXX) $< $(BUILD_UI_LV2_FLAGS) -c -o $@
-
-%__vst.o: %.cpp
-	$(CXX) $< $(BUILD_UI_VST_FLAGS) -c -o $@
-
-CarlaBridgeToolkitQt.moc: CarlaBridgeToolkitQt.cpp
-	$(MOC) $< -DMOC_PARSING -o $@
-
 OBJS_UI_LV2_LIBS = \
 	../modules/lilv.a \
 	../modules/juce_core.a
 
 OBJS_UI_VST_LIBS = \
 	../modules/juce_core.a
+
+%__lv2.o: %.cpp
+	$(CXX) $< $(BUILD_UI_LV2_FLAGS) -c -o $@
+
+%__vst.o: %.cpp
+	$(CXX) $< $(BUILD_UI_VST_FLAGS) -c -o $@
+
+resources.cpp: ../../resources/resources-theme.qrc
+	$(RCC) $< -o $@
+
+resources.qt4.cpp: ../../resources/resources-theme.qrc
+	$(RCC_QT4) $< -o $@
+
+CarlaBridgeToolkitQt.moc: CarlaBridgeToolkitQt.cpp
+	$(MOC) $< -DMOC_PARSING -o $@
+
+CarlaBridgeToolkitQt4.moc: CarlaBridgeToolkitQt.cpp
+	$(MOC_QT4) $< -DMOC_PARSING -o $@
 
 # --------------------------------------------------------------
 # ui_lv2-gtk2
@@ -257,7 +266,7 @@ OBJS_UI_LV2_QT4 = CarlaBridgeUI-LV2__lv2-qt4.o \
 carla-bridge-lv2-qt4: $(OBJS_UI_LV2_QT4) $(OBJS_UI_LV2_LIBS) ../modules/theme.a
 	$(CXX) $^ $(LINK_UI_LV2_QT4_FLAGS) -o $@
 
-%__lv2-qt4.o: %.cpp CarlaBridgeToolkitQt.moc
+%__lv2-qt4.o: %.cpp CarlaBridgeToolkitQt4.moc resources.qt4.cpp
 	$(CXX) $< $(BUILD_UI_LV2_QT4_FLAGS) -c -o $@
 
 # --------------------------------------------------------------
@@ -270,7 +279,7 @@ OBJS_UI_LV2_QT5 = CarlaBridgeUI-LV2__lv2-qt5.o \
 carla-bridge-lv2-qt5: $(OBJS_UI_LV2_QT5) $(OBJS_UI_LV2_LIBS) ../modules/theme.a
 	$(CXX) $^ $(LINK_UI_LV2_QT5_FLAGS) -o $@
 
-%__lv2-qt5.o: %.cpp CarlaBridgeToolkitQt.moc
+%__lv2-qt5.o: %.cpp CarlaBridgeToolkitQt.moc resources.cpp
 	$(CXX) $< $(BUILD_UI_LV2_QT5_FLAGS) -c -o $@
 
 # --------------------------------------------------------------
@@ -283,7 +292,7 @@ OBJS_UI_LV2_COCOA = CarlaBridgeUI-LV2__lv2-cocoa.o \
 carla-bridge-lv2-cocoa: $(OBJS_UI_LV2_COCOA) $(OBJS_UI_LV2_LIBS) ../modules/theme.a
 	$(CXX) $^ $(LINK_UI_LV2_COCOA_FLAGS) -o $@
 
-%__lv2-cocoa.o: %.cpp CarlaBridgeToolkitQt.moc
+%__lv2-cocoa.o: %.cpp CarlaBridgeToolkitQt.moc resources.cpp
 	$(CXX) $< $(BUILD_UI_LV2_COCOA_FLAGS) -c -o $@
 
 # --------------------------------------------------------------
@@ -296,7 +305,7 @@ OBJS_UI_LV2_WIN32 = CarlaBridgeUI-LV2__lv2-windows.o \
 carla-bridge-lv2-windows.exe: $(OBJS_UI_LV2_WIN32) $(OBJS_UI_LV2_LIBS) ../modules/theme.a
 	$(CXX) $^ $(LINK_UI_LV2_WIN32_FLAGS) -o $@
 
-%__lv2-windows.o: %.cpp CarlaBridgeToolkitQt.moc
+%__lv2-windows.o: %.cpp CarlaBridgeToolkitQt.moc resources.cpp
 	$(CXX) $< $(BUILD_UI_LV2_WIN32_FLAGS) -c -o $@
 
 # --------------------------------------------------------------
@@ -309,7 +318,7 @@ OBJS_UI_LV2_X11 = CarlaBridgeUI-LV2__lv2-x11.o \
 carla-bridge-lv2-x11: $(OBJS_UI_LV2_X11) $(OBJS_UI_LV2_LIBS) ../modules/theme.a
 	$(CXX) $^ $(LINK_UI_LV2_X11_FLAGS) -o $@
 
-%__lv2-x11.o: %.cpp CarlaBridgeToolkitQt.moc
+%__lv2-x11.o: %.cpp CarlaBridgeToolkitQt.moc resources.cpp
 	$(CXX) $< $(BUILD_UI_LV2_X11_FLAGS) -c -o $@
 
 # --------------------------------------------------------------
@@ -322,7 +331,7 @@ OBJS_UI_VST_MAC = CarlaBridgeUI-VST__vst-mac.o \
 carla-bridge-vst-mac: $(OBJS_UI_VST_MAC) $(OBJS_UI_VST_LIBS) ../modules/theme.a
 	$(CXX) $^ $(LINK_UI_VST_MAC_FLAGS) -o $@
 
-%__vst-mac.o: %.cpp CarlaBridgeToolkitQt.moc
+%__vst-mac.o: %.cpp CarlaBridgeToolkitQt.moc resources.cpp
 	$(CXX) $< $(BUILD_UI_VST_MAC_FLAGS) -c -o $@
 
 # --------------------------------------------------------------
@@ -335,7 +344,7 @@ OBJS_UI_VST_HWND = CarlaBridgeUI-VST__vst-hwnd.o \
 carla-bridge-vst-hwnd.exe: $(OBJS_UI_VST_HWND) $(OBJS_UI_VST_LIBS) ../modules/theme.a
 	$(CXX) $^ $(LINK_UI_VST_HWND_FLAGS) -o $@
 
-%__vst-hwnd.o: %.cpp CarlaBridgeToolkitQt.moc
+%__vst-hwnd.o: %.cpp CarlaBridgeToolkitQt.moc resources.cpp
 	$(CXX) $< $(BUILD_UI_VST_HWND_FLAGS) -c -o $@
 
 # --------------------------------------------------------------
@@ -348,7 +357,7 @@ OBJS_UI_VST_X11 = CarlaBridgeUI-VST__vst-x11.o \
 carla-bridge-vst-x11: $(OBJS_UI_VST_X11) $(OBJS_UI_VST_LIBS) ../modules/theme.a
 	$(CXX) $^ $(LINK_UI_VST_X11_FLAGS) -o $@
 
-%__vst-x11.o: %.cpp CarlaBridgeToolkitQt.moc
+%__vst-x11.o: %.cpp CarlaBridgeToolkitQt.moc resources.cpp
 	$(CXX) $< $(BUILD_UI_VST_X11_FLAGS) -c -o $@
 
 # --------------------------------------------------------------
@@ -393,14 +402,14 @@ OBJS_NATIVE += \
 	../modules/juce_gui_basics.a \
 	../modules/rtmempool.a
 
-ifeq ($(CARLA_PLUGIN_SUPPORT),true)
-OBJS_NATIVE += \
-	../modules/lilv.a
-endif
-
 ifeq ($(HAVE_OPENGL),true)
 OBJS_NATIVE += \
 	../modules/dgl.a
+endif
+
+ifeq ($(CARLA_PLUGIN_SUPPORT),true)
+OBJS_NATIVE += \
+	../modules/lilv.a
 endif
 
 carla-bridge-native: $(FILES) $(OBJS_NATIVE)
@@ -607,6 +616,7 @@ doxygen: carla_bridge.doxygen
 
 clean:
 	rm -f *.moc *.o *.dll *.dylib *.so *.exe
+	rm -f resources.cpp resources.qt4.cpp
 	rm -f $(OBJS_NATIVE)
 	rm -f $(OBJS_POSIX32)
 	rm -f $(OBJS_POSIX64)
