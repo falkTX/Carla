@@ -6,7 +6,7 @@ To install Carla, simply run as usual: <br/>
 
 You can run it without installing, by using instead: <br/>
 `$ make` <br/>
-`$ python3 source/carla.py`
+`$ python3 source/carla`
 
 Packagers can make use of the 'PREFIX' and 'DESTDIR' variable during install, like this: <br/>
 `$ make install PREFIX=/usr DESTDIR=./test-dir`
@@ -18,14 +18,14 @@ Packagers can make use of the 'PREFIX' and 'DESTDIR' variable during install, li
 The required build dependencies are: <i>(devel packages of these)</i>
 
  - liblo
- - Qt4
- - PyQt4 (python3 version)
+ - Qt5
+ - PyQt5 (python3 version)
 
 Optional for extended LV2 UIs support:
 
  - Gtk2
  - Gtk3
- - Qt5
+ - Qt4
 
 Optional for extra samplers support:
 
