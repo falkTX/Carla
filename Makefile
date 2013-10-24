@@ -19,18 +19,12 @@ PYRCC ?= pyrcc5
 
 # --------------------------------------------------------------
 
-all: WARN
-# CXX RES UI WIDGETS
-
-WARN:
-	@echo "This is the development branch of carla, DO NOT USE IT."
-	@echo "Please switch to the stable branch by using:"
-	@echo "git checkout 1.0.x"
+all: CXX RES UI WIDGETS
 
 # --------------------------------------------------------------
 # C++ code (native)
 
-CXX: backend bridges discovery theme
+CXX: backend bridges discovery plugin theme
 
 backend:
 	$(MAKE) -C source/backend
@@ -155,6 +149,7 @@ install:
 	install -d $(DESTDIR)$(PREFIX)/lib/carla/resources/
 	install -d $(DESTDIR)$(PREFIX)/lib/carla/resources/nekofilter/
 	install -d $(DESTDIR)$(PREFIX)/lib/carla/resources/zynaddsubfx/
+	install -d $(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/
 	install -d $(DESTDIR)$(PREFIX)/share/applications/
 	install -d $(DESTDIR)$(PREFIX)/share/carla/
 	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/16x16/apps/
@@ -168,6 +163,10 @@ install:
 	install -m 755 \
 		data/carla \
 		data/carla-control \
+		data/carla-database \
+		data/carla-patchbay \
+		data/carla-rack \
+		data/carla-settings \
 		data/carla-single \
 		$(DESTDIR)$(PREFIX)/bin/
 
@@ -197,26 +196,52 @@ install:
 	# Install mime package
 	install -m 644 data/carla.xml $(DESTDIR)$(PREFIX)/share/mime/packages/
 
+	# Install backend
+	install -m 644 \
+		source/backend/*.so \
+		$(DESTDIR)$(PREFIX)/lib/carla/
+
 	# Install binaries
 	install -m 755 \
-		source/backend/*.so \
 		source/bridges/carla-bridge-* \
 		source/discovery/carla-discovery-* \
 		$(DESTDIR)$(PREFIX)/lib/carla/
 
+	# Install plugin
+	install -m 644 \
+		source/plugin/carla-native.lv2/*.so \
+		source/plugin/carla-native.lv2/*.ttl \
+		$(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/
+
 	# Install python code
-	install -m 755 source/*.py $(DESTDIR)$(PREFIX)/share/carla/
+	install -m 644 source/*.py $(DESTDIR)$(PREFIX)/share/carla/
+
+	# Install python "binaries"
+	install -m 755 \
+		source/carla \
+		source/carla-patchbay \
+		source/carla-rack \
+		$(DESTDIR)$(PREFIX)/share/carla/
 
 	# Install resources
-	install -m 644 source/backend/resources/nekofilter-ui     $(DESTDIR)$(PREFIX)/lib/carla/resources/
-	install -m 644 source/backend/resources/nekofilter/*.png  $(DESTDIR)$(PREFIX)/lib/carla/resources/nekofilter/
-	install -m 644 source/backend/resources/zynaddsubfx/*.png $(DESTDIR)$(PREFIX)/lib/carla/resources/zynaddsubfx/
+	install -m 644 source/modules/carla_native/resources/*-ui              $(DESTDIR)$(PREFIX)/lib/carla/resources/
+	install -m 644 source/modules/carla_native/resources/*.py              $(DESTDIR)$(PREFIX)/lib/carla/resources/
+	install -m 644 source/modules/carla_native/resources/nekofilter/*.png  $(DESTDIR)$(PREFIX)/lib/carla/resources/nekofilter/
+	install -m 644 source/modules/carla_native/resources/zynaddsubfx/*.png $(DESTDIR)$(PREFIX)/lib/carla/resources/zynaddsubfx/
 
 	# Adjust PREFIX value in script files
 	sed -i "s/X-PREFIX-X/$(SED_PREFIX)/" \
 		$(DESTDIR)$(PREFIX)/bin/carla \
 		$(DESTDIR)$(PREFIX)/bin/carla-control \
+		$(DESTDIR)$(PREFIX)/bin/carla-database \
+		$(DESTDIR)$(PREFIX)/bin/carla-patchbay \
+		$(DESTDIR)$(PREFIX)/bin/carla-rack \
+		$(DESTDIR)$(PREFIX)/bin/carla-settings \
 		$(DESTDIR)$(PREFIX)/bin/carla-single
+
+	# Set plugin resources
+	cd $(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/ && \
+		$(LINK) $(PREFIX)/lib/carla/resources/
 
 # --------------------------------------------------------------
 

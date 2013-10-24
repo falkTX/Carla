@@ -8,4 +8,4 @@ fi
 
 INSTALL_PREFIX="X-PREFIX-X"
 export PATH="$INSTALL_PREFIX"/lib/carla:$PATH
-exec $PYTHON "$INSTALL_PREFIX"/share/carla/carla_control.py --with-appname="$0" --with-libprefix="$INSTALL_PREFIX" "$@"
+exec $PYTHON "$INSTALL_PREFIX"/share/carla/carla_database.py
