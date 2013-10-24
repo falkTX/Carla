@@ -185,16 +185,28 @@ all: ../carla_native.a
 # --------------------------------------------------------------
 
 CDEPS   = ../CarlaNative.h
-CXXDEPS = ../CarlaNative.h ../CarlaNative.hpp
-
-%.c.o: %.c
-	$(CC) $< $(BUILD_C_FLAGS) -c -o $@
 
 _all.c.o: _all.c $(CDEPS)
 	$(CC) $< $(ALL_C_FLAGS) -c -o $@
 
+bypass.c.o: bypass.c $(CDEPS)
+	$(CC) $< $(BUILD_C_FLAGS) -c -o $@
+
 audio_decoder/%.c.o: audio_decoder/%.c
 	$(CC) $< $(AF_C_FLAGS) -c -o $@
+
+lfo.c.o: lfo.c $(CDEPS)
+	$(CC) $< $(BUILD_C_FLAGS) -c -o $@
+
+midi-%.c.o: midi-%.c $(CDEPS)
+	$(CC) $< $(BUILD_C_FLAGS) -c -o $@
+
+nekofilter.c.o: nekofilter.c nekofilter/*.c nekofilter/*.h $(CDEPS)
+	$(CC) $< $(BUILD_C_FLAGS) -c -o $@
+
+# --------------------------------------------------------------
+
+CXXDEPS = ../CarlaNative.h ../CarlaNative.hpp
 
 audio-file.cpp.o: audio-file.cpp audio-base.hpp $(CXXDEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
@@ -228,9 +240,6 @@ midi-file.cpp.o: midi-file.cpp midi-base.hpp $(CXXDEPS)
 
 midi-sequencer.cpp.o: midi-sequencer.cpp midi-base.hpp $(CXXDEPS)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
-
-nekofilter.c.o: nekofilter.c nekofilter/*.c nekofilter/*.h $(CDEPS)
-	$(CC) $< $(BUILD_C_FLAGS) -c -o $@
 
 vex-%.cpp.o: vex-%.cpp
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
