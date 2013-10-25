@@ -324,13 +324,6 @@ class CarlaMiniW(HostWindow, ExternalUI):
 
 if __name__ == '__main__':
     # -------------------------------------------------------------
-    # Setup
-
-    Carla.isControl = False
-    Carla.isLocal   = False
-    Carla.isPlugin  = True
-
-    # -------------------------------------------------------------
     # App initialization
 
     app = CarlaApplication()
@@ -339,6 +332,13 @@ if __name__ == '__main__':
     # Set-up custom signal handling
 
     setUpSignals()
+
+    # -------------------------------------------------------------
+    # Setup
+
+    Carla.isControl = False
+    Carla.isLocal   = False
+    Carla.isPlugin  = True
 
     # -------------------------------------------------------------
     # Read CLI args
