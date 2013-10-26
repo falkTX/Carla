@@ -2465,7 +2465,7 @@ private:
             }
 
         case audioMasterGetVendorVersion:
-            return 0x110; // 1.1.0
+            return 0x120; // 1.2.0
 
         case audioMasterCanDo:
             CARLA_ASSERT(ptr != nullptr);
