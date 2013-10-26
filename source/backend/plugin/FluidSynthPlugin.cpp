@@ -21,7 +21,9 @@
 
 #include <fluidsynth.h>
 
-#define FLUIDSYNTH_VERSION_NEW_API (FLUIDSYNTH_VERSION_MAJOR >= 1 && FLUIDSYNTH_VERSION_MINOR >= 1 && FLUIDSYNTH_VERSION_MICRO >= 4)
+#if (FLUIDSYNTH_VERSION_MAJOR >= 1 && FLUIDSYNTH_VERSION_MINOR >= 1 && FLUIDSYNTH_VERSION_MICRO >= 4)
+# define FLUIDSYNTH_VERSION_NEW_API
+#endif
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -40,44 +42,38 @@ public:
           fSettings(nullptr),
           fSynth(nullptr),
           fSynthId(-1),
-#ifdef CARLA_PROPER_CPP11_SUPPORT
-          fAudio16Buffers(nullptr),
-          fParamBuffers{0.0f},
-          fCurMidiProgs{0}
-#else
           fAudio16Buffers(nullptr)
-#endif
     {
         carla_debug("FluidSynthPlugin::FluidSynthPlugin(%p, %i, %s)", engine, id,  bool2str(use16Outs));
 
-#ifndef CARLA_PROPER_CPP11_SUPPORT
         FloatVectorOperations::clear(fParamBuffers, FluidSynthParametersMax);
         carla_fill<int32_t>(fCurMidiProgs, MAX_MIDI_CHANNELS, 0);
-#endif
 
         // create settings
         fSettings = new_fluid_settings();
-        CARLA_ASSERT(fSettings != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(fSettings != nullptr,);
 
         // define settings
         fluid_settings_setint(fSettings, "synth.audio-channels", use16Outs ? 16 : 1);
         fluid_settings_setint(fSettings, "synth.audio-groups", use16Outs ? 16 : 1);
         fluid_settings_setnum(fSettings, "synth.sample-rate", pData->engine->getSampleRate());
-        fluid_settings_setint(fSettings, "synth.threadsafe-api ", 0);
+        //fluid_settings_setnum(fSettings, "synth.cpu-cores", 2);
+        fluid_settings_setint(fSettings, "synth.parallel-render", 1);
+        fluid_settings_setint(fSettings, "synth.threadsafe-api", 0);
 
         // create synth
         fSynth = new_fluid_synth(fSettings);
-        CARLA_ASSERT(fSynth != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(fSynth != nullptr,);
 
 #ifdef FLUIDSYNTH_VERSION_NEW_API
         fluid_synth_set_sample_rate(fSynth, pData->engine->getSampleRate());
 #endif
 
         // set default values
-        fluid_synth_set_reverb_on(fSynth, 0);
+        fluid_synth_set_reverb_on(fSynth, 1);
         fluid_synth_set_reverb(fSynth, FLUID_REVERB_DEFAULT_ROOMSIZE, FLUID_REVERB_DEFAULT_DAMP, FLUID_REVERB_DEFAULT_WIDTH, FLUID_REVERB_DEFAULT_LEVEL);
 
-        fluid_synth_set_chorus_on(fSynth, 0);
+        fluid_synth_set_chorus_on(fSynth, 1);
         fluid_synth_set_chorus(fSynth, FLUID_CHORUS_DEFAULT_N, FLUID_CHORUS_DEFAULT_LEVEL, FLUID_CHORUS_DEFAULT_SPEED, FLUID_CHORUS_DEFAULT_DEPTH, FLUID_CHORUS_DEFAULT_TYPE);
 
         fluid_synth_set_polyphony(fSynth, FLUID_DEFAULT_POLYPHONY);
@@ -103,8 +99,17 @@ public:
             pData->active = false;
         }
 
-        delete_fluid_synth(fSynth);
-        delete_fluid_settings(fSettings);
+        if (fSynth != nullptr)
+        {
+            delete_fluid_synth(fSynth);
+            fSynth = nullptr;
+        }
+
+        if (fSettings != nullptr)
+        {
+            delete_fluid_settings(fSettings);
+            fSettings = nullptr;
+        }
 
         clearBuffers();
     }
@@ -127,7 +132,7 @@ public:
 
     uint32_t getParameterScalePointCount(const uint32_t parameterId) const override
     {
-        CARLA_ASSERT(parameterId < pData->param.count);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
 
         switch (parameterId)
         {
@@ -163,15 +168,15 @@ public:
 
     float getParameterValue(const uint32_t parameterId) const override
     {
-        CARLA_ASSERT(parameterId < pData->param.count);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
 
         return fParamBuffers[parameterId];
     }
 
     float getParameterScalePointValue(const uint32_t parameterId, const uint32_t scalePointId) const override
     {
-        CARLA_ASSERT(parameterId < pData->param.count);
-        CARLA_ASSERT(scalePointId < getParameterScalePointCount(parameterId));
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
+        CARLA_SAFE_ASSERT_RETURN(scalePointId < getParameterScalePointCount(parameterId),);
 
         switch (parameterId)
         {
@@ -229,7 +234,7 @@ public:
 
     void getParameterName(const uint32_t parameterId, char* const strBuf) const override
     {
-        CARLA_ASSERT(parameterId < pData->param.count);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
 
         switch (parameterId)
         {
@@ -283,7 +288,7 @@ public:
 
     void getParameterUnit(const uint32_t parameterId, char* const strBuf) const override
     {
-        CARLA_ASSERT(parameterId < pData->param.count);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
 
         switch (parameterId)
         {
@@ -301,8 +306,8 @@ public:
 
     void getParameterScalePointLabel(const uint32_t parameterId, const uint32_t scalePointId, char* const strBuf) const override
     {
-        CARLA_ASSERT(parameterId < pData->param.count);
-        CARLA_ASSERT(scalePointId < getParameterScalePointCount(parameterId));
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
+        CARLA_SAFE_ASSERT_RETURN(scalePointId < getParameterScalePointCount(parameterId),);
 
         switch (parameterId)
         {
@@ -342,7 +347,7 @@ public:
 
     void prepareForSave() override
     {
-        CARLA_ASSERT(fSynth != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(fSynth != nullptr,);
 
         char strBuf[STR_MAX+1];
         std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i", fCurMidiProgs[0],  fCurMidiProgs[1],  fCurMidiProgs[2],  fCurMidiProgs[3],
@@ -369,7 +374,7 @@ public:
 
     void setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) override
     {
-        CARLA_ASSERT(parameterId < pData->param.count);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
 
         const float fixedValue(pData->param.getFixedValue(parameterId, value));
         fParamBuffers[parameterId] = fixedValue;
@@ -421,26 +426,17 @@ public:
 
     void setCustomData(const char* const type, const char* const key, const char* const value, const bool sendGui) override
     {
-        CARLA_ASSERT(fSynth != nullptr);
-        CARLA_ASSERT(type != nullptr);
-        CARLA_ASSERT(key != nullptr);
-        CARLA_ASSERT(value != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(fSynth != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(type != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(key != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(value != nullptr,);
         carla_debug("DssiPlugin::setCustomData(%s, %s, %s, %s)", type, key, value, bool2str(sendGui));
-
-        if (type == nullptr)
-            return carla_stderr2("DssiPlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is invalid", type, key, value, bool2str(sendGui));
 
         if (std::strcmp(type, CUSTOM_DATA_STRING) != 0)
             return carla_stderr2("DssiPlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is not string", type, key, value, bool2str(sendGui));
 
-        if (key == nullptr)
-            return carla_stderr2("DssiPlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - key is null", type, key, value, bool2str(sendGui));
-
         if (std::strcmp(key, "midiPrograms") != 0)
             return carla_stderr2("DssiPlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is not string", type, key, value, bool2str(sendGui));
-
-        if (value == nullptr)
-            return carla_stderr2("DssiPlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - value is null", type, key, value, bool2str(sendGui));
 
 //         QStringList midiProgramList(QString(value).split(":", QString::SkipEmptyParts));
 //
@@ -646,12 +642,12 @@ public:
         pData->param.data[j].index  = j;
         pData->param.data[j].rindex = j;
         pData->param.data[j].type   = PARAMETER_INPUT;
-        pData->param.data[j].hints  = PARAMETER_IS_ENABLED | PARAMETER_IS_AUTOMABLE | PARAMETER_IS_BOOLEAN;
+        pData->param.data[j].hints  = PARAMETER_IS_ENABLED /*| PARAMETER_IS_AUTOMABLE*/ | PARAMETER_IS_BOOLEAN;
         pData->param.data[j].midiChannel = 0;
         pData->param.data[j].midiCC = -1;
         pData->param.ranges[j].min = 0.0f;
         pData->param.ranges[j].max = 1.0f;
-        pData->param.ranges[j].def = 0.0f; // off
+        pData->param.ranges[j].def = 1.0f;
         pData->param.ranges[j].step = 1.0f;
         pData->param.ranges[j].stepSmall = 1.0f;
         pData->param.ranges[j].stepLarge = 1.0f;
@@ -662,7 +658,7 @@ public:
         pData->param.data[j].index  = j;
         pData->param.data[j].rindex = j;
         pData->param.data[j].type   = PARAMETER_INPUT;
-        pData->param.data[j].hints  = PARAMETER_IS_ENABLED | PARAMETER_IS_AUTOMABLE;
+        pData->param.data[j].hints  = PARAMETER_IS_ENABLED /*| PARAMETER_IS_AUTOMABLE*/;
         pData->param.data[j].midiChannel = 0;
         pData->param.data[j].midiCC = -1;
         pData->param.ranges[j].min = 0.0f;
@@ -678,7 +674,7 @@ public:
         pData->param.data[j].index  = j;
         pData->param.data[j].rindex = j;
         pData->param.data[j].type   = PARAMETER_INPUT;
-        pData->param.data[j].hints  = PARAMETER_IS_ENABLED | PARAMETER_IS_AUTOMABLE;
+        pData->param.data[j].hints  = PARAMETER_IS_ENABLED /*| PARAMETER_IS_AUTOMABLE*/;
         pData->param.data[j].midiChannel = 0;
         pData->param.data[j].midiCC = -1;
         pData->param.ranges[j].min = 0.0f;
@@ -694,7 +690,7 @@ public:
         pData->param.data[j].index  = j;
         pData->param.data[j].rindex = j;
         pData->param.data[j].type   = PARAMETER_INPUT;
-        pData->param.data[j].hints  = PARAMETER_IS_ENABLED | PARAMETER_IS_AUTOMABLE;
+        pData->param.data[j].hints  = PARAMETER_IS_ENABLED /*| PARAMETER_IS_AUTOMABLE*/;
         pData->param.data[j].midiChannel = 0;
         pData->param.data[j].midiCC = MIDI_CONTROL_REVERB_SEND_LEVEL;
         pData->param.ranges[j].min = 0.0f;
@@ -710,7 +706,7 @@ public:
         pData->param.data[j].index  = j;
         pData->param.data[j].rindex = j;
         pData->param.data[j].type   = PARAMETER_INPUT;
-        pData->param.data[j].hints  = PARAMETER_IS_ENABLED | PARAMETER_IS_AUTOMABLE;
+        pData->param.data[j].hints  = PARAMETER_IS_ENABLED /*| PARAMETER_IS_AUTOMABLE*/;
         pData->param.data[j].midiChannel = 0;
         pData->param.data[j].midiCC = -1;
         pData->param.ranges[j].min = 0.0f;
@@ -731,7 +727,7 @@ public:
         pData->param.data[j].midiCC = -1;
         pData->param.ranges[j].min = 0.0f;
         pData->param.ranges[j].max = 1.0f;
-        pData->param.ranges[j].def = 0.0f; // off
+        pData->param.ranges[j].def = 1.0f;
         pData->param.ranges[j].step = 1.0f;
         pData->param.ranges[j].stepSmall = 1.0f;
         pData->param.ranges[j].stepLarge = 1.0f;
@@ -794,7 +790,7 @@ public:
         pData->param.data[j].midiChannel = 0;
         pData->param.data[j].midiCC = -1;
         pData->param.ranges[j].min = 0.0f;
-        pData->param.ranges[j].max = 2048000.0 / pData->engine->getSampleRate();
+        pData->param.ranges[j].max = 2048.0 * 1000.0 / pData->engine->getSampleRate(); // FIXME?
         pData->param.ranges[j].def = FLUID_CHORUS_DEFAULT_DEPTH;
         pData->param.ranges[j].step = 0.01f;
         pData->param.ranges[j].stepSmall = 0.0001f;
@@ -869,7 +865,7 @@ public:
 
         // plugin hints
         fHints  = 0x0;
-        //fHints |= PLUGIN_IS_SYNTH;
+        fHints |= PLUGIN_IS_SYNTH;
         fHints |= PLUGIN_CAN_VOLUME;
         fHints |= PLUGIN_CAN_BALANCE;
 
@@ -1351,13 +1347,8 @@ public:
 
     bool processSingle(float** const outBuffer, const uint32_t frames, const uint32_t timeOffset)
     {
-        CARLA_ASSERT(outBuffer != nullptr);
-        CARLA_ASSERT(frames > 0);
-
-        if (outBuffer == nullptr)
-            return false;
-        if (frames == 0)
-            return false;
+        CARLA_SAFE_ASSERT_RETURN(outBuffer != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(frames > 0, false);
 
         uint32_t i, k;
 

@@ -20,9 +20,13 @@
 # Imports (Global)
 
 # TODO - SIGNAL, SLOT
-from PyQt5.QtCore import Qt, QRectF, QTimer
-from PyQt5.QtGui import QBrush, QColor, QCursor, QPainter, QPen
-from PyQt5.QtWidgets import QFrame
+try:
+  from PyQt4.QtCore import Qt, QRectF, QTimer
+  from PyQt4.QtGui import QBrush, QColor, QCursor, QFrame, QPainter, QPen
+except:
+  from PyQt5.QtCore import Qt, QRectF, QTimer
+  from PyQt5.QtGui import QBrush, QColor, QCursor, QPainter, QPen
+  from PyQt5.QtWidgets import QFrame
 
 # ------------------------------------------------------------------------------------------------------------
 # Static Variables
