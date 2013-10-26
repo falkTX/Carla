@@ -869,7 +869,7 @@ protected:
         CarlaPlugin* const kPlugin;
 
         CARLA_PREVENT_HEAP_ALLOCATION
-        CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ScopedDisabler)
+        CARLA_DECLARE_NON_COPYABLE(ScopedDisabler)
     };
 
     // Lock the plugin's own run/process call
@@ -886,7 +886,7 @@ protected:
         const bool kBlock;
 
         CARLA_PREVENT_HEAP_ALLOCATION
-        CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ScopedSingleProcessLocker)
+        CARLA_DECLARE_NON_COPYABLE(ScopedSingleProcessLocker)
     };
 
 private:
