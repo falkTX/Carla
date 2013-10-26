@@ -40,7 +40,12 @@
 #endif
 #ifdef WANT_LINUXSAMPLER
 # include <QtCore/QFileInfo>
+// fix broken headers
+# define TMP__cplusplus __cplusplus
+# undef __cplusplus
 # include "linuxsampler/EngineFactory.h"
+# define __cplusplus TMP__cplusplus
+# undef TMP__cplusplus
 #endif
 
 #include <iostream>
@@ -67,8 +72,9 @@ const double   kSampleRate = 44100.0;
 
 void print_lib_error(const char* const filename)
 {
-    const char* const error = lib_error(filename);
-    if (error && strstr(error, "wrong ELF class") == nullptr && strstr(error, "Bad EXE format") == nullptr)
+    const char* const error(lib_error(filename));
+
+    if (error != nullptr && std::strstr(error, "wrong ELF class") == nullptr && std::strstr(error, "Bad EXE format") == nullptr)
         DISCOVERY_OUT("error", error);
 }
 
@@ -111,7 +117,7 @@ intptr_t vstHostCanDo(const char* const feature)
     if (std::strcmp(feature, "acceptIOChanges") == 0)
         return 1;
     if (std::strcmp(feature, "sizeWindow") == 0)
-        return -1;
+        return 1;
     if (std::strcmp(feature, "offline") == 0)
         return -1;
     if (std::strcmp(feature, "openFileSelector") == 0)
@@ -133,7 +139,7 @@ intptr_t vstHostCanDo(const char* const feature)
 // Host-side callback
 intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t opcode, const int32_t index, const intptr_t value, void* const ptr, const float opt)
 {
-    carla_debug("vstHostCallback(%p, %s, %i, " P_INTPTR ", %p, %f)", effect, vstMasterOpcode2str(opcode), index, value, ptr, opt);
+    carla_debug("vstHostCallback(%p, %i:%s, %i, " P_INTPTR ", %p, %f)", effect, opcode, vstMasterOpcode2str(opcode), index, value, ptr, opt);
 
     intptr_t ret = 0;
 
@@ -185,7 +191,7 @@ intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t opcode
         break;
 
     case audioMasterGetNumAutomatableParameters:
-        ret = carla_min<int32_t>(effect->numParams, MAX_DEFAULT_PARAMETERS, 0);
+        ret = carla_min<intptr_t>(effect->numParams, MAX_DEFAULT_PARAMETERS, 0);
         break;
 
     case audioMasterGetParameterQuantization:
@@ -251,16 +257,11 @@ intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t opcode
         break;
 
     default:
-        carla_stdout("vstHostCallback(%p, %s, %i, " P_INTPTR ", %p, %f)", effect, vstMasterOpcode2str(opcode), index, value, ptr, opt);
+        carla_stdout("vstHostCallback(%p, %i:%s, %i, " P_INTPTR ", %p, %f)", effect, opcode, vstMasterOpcode2str(opcode), index, value, ptr, opt);
         break;
     }
 
     return ret;
-
-    // unused
-    (void)index;
-    (void)value;
-    (void)opt;
 }
 #endif
 
@@ -289,9 +290,9 @@ public:
         if (fEngine == nullptr)
             return;
 
-        fIns = fEngine->GetInstrumentManager();
+        InstrumentManager* const insMan(fEngine->GetInstrumentManager());
 
-        if (fIns == nullptr)
+        if (insMan == nullptr)
         {
             DISCOVERY_OUT("error", "Failed to get LinuxSampler instrument manager");
             return;
@@ -300,7 +301,7 @@ public:
         std::vector<InstrumentManager::instrument_id_t> ids;
 
         try {
-            ids = fIns->GetInstrumentFileContent(filename);
+            ids = insMan->GetInstrumentFileContent(filename);
         }
         catch (const InstrumentManagerException& e)
         {
@@ -314,7 +315,7 @@ public:
         InstrumentManager::instrument_info_t info;
 
         try {
-            info = fIns->GetInstrumentInfo(ids[0]);
+            info = insMan->GetInstrumentInfo(ids[0]);
         }
         catch (const InstrumentManagerException& e)
         {
@@ -328,7 +329,10 @@ public:
     ~LinuxSamplerScopedEngine()
     {
         if (fEngine != nullptr)
+        {
             LinuxSampler::EngineFactory::Destroy(fEngine);
+            fEngine = nullptr;
+        }
     }
 
     static void outputInfo(LinuxSampler::InstrumentManager::instrument_info_t* const info, const int programs, const char* const basename = nullptr)
@@ -363,8 +367,8 @@ public:
 
 private:
     LinuxSampler::Engine* fEngine;
-    LinuxSampler::InstrumentManager* fIns;
 
+    CARLA_PREVENT_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LinuxSamplerScopedEngine)
 };
 #endif
@@ -1528,6 +1532,20 @@ int main(int argc, char* argv[])
     const char* const stype    = argv[1];
     const char* const filename = argv[2];
     const PluginType  type     = getPluginTypeFromString(stype);
+
+    CarlaString filenameStr(filename);
+    filenameStr.toLower();
+
+    if (filenameStr.contains("fluidsynth", true))
+    {
+        DISCOVERY_OUT("info", "skipping fluidsynth based plugin");
+        return 0;
+    }
+    if (filenameStr.contains("linuxsampler", true) || filenameStr.endsWith("ls16.so"))
+    {
+        DISCOVERY_OUT("info", "skipping linuxsampler based plugin");
+        return 0;
+    }
 
     bool openLib = false;
     void* handle = nullptr;
