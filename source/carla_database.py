@@ -169,21 +169,11 @@ def runCarlaDiscovery(itype, stype, filename, tool, isWine=False):
     plugins = []
     fakeLabel = os.path.basename(filename).rsplit(".", 1)[0]
 
-    #try:
-        #gDiscoveryProcess.wait()
-        #output = gDiscoveryProcess.stdout.read().decode("utf-8", errors="ignore").split("\n")
-    #except:
-        #output = ()
-
-    #for line in output:
-
     while gDiscoveryProcess.poll() is None:
         try:
             line = gDiscoveryProcess.stdout.readline().decode("utf-8", errors="ignore").strip()
         except:
             break
-
-        #line = line.strip()
 
         if line == "carla-discovery::init::-----------":
             pinfo = deepcopy(PyPluginInfo)

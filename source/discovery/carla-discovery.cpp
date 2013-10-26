@@ -20,8 +20,6 @@
 #include "CarlaString.hpp"
 #include "CarlaMIDI.h"
 
-#define VST_FORCE_DEPRECATED 0
-
 #ifdef WANT_LADSPA
 # include "CarlaLadspaUtils.hpp"
 #endif
@@ -1484,6 +1482,7 @@ void do_fluidsynth_check(const char* const filename, const bool init)
     DISCOVERY_OUT("label", (const char*)label);
     DISCOVERY_OUT("maker", "");
     DISCOVERY_OUT("copyright", "");
+    DISCOVERY_OUT("hints", PLUGIN_IS_SYNTH);
     DISCOVERY_OUT("audio.outs", 2);
     DISCOVERY_OUT("audio.total", 2);
     DISCOVERY_OUT("midi.ins", 1);
