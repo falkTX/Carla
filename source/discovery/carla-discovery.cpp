@@ -273,8 +273,7 @@ class LinuxSamplerScopedEngine
 {
 public:
     LinuxSamplerScopedEngine(const char* const filename, const char* const stype)
-        : fEngine(nullptr),
-          fIns(nullptr)
+        : fEngine(nullptr)
     {
         using namespace LinuxSampler;
 
