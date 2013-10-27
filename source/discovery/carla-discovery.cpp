@@ -1636,6 +1636,9 @@ int main(int argc, char* argv[])
 
     const ScopedWorkingDirSet swds(filename);
 
+    CarlaString filenameStr(filename);
+    filenameStr.toLower();
+
     bool openLib = false;
     void* handle = nullptr;
 
@@ -1659,9 +1662,6 @@ int main(int argc, char* argv[])
             print_lib_error(filename);
             return 1;
         }
-
-        CarlaString filenameStr(filename);
-        filenameStr.toLower();
 
         if (filenameStr.contains("fluidsynth", true))
         {
