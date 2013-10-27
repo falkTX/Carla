@@ -662,6 +662,8 @@ PyPluginInfo = {
 }
 
 def runCarlaDiscovery(itype, stype, filename, tool, isWine=False):
+    fakeLabel = os.path.basename(filename).rsplit(".", 1)[0]
+    plugins = []
     command = []
 
     if LINUX or MACOS:
@@ -676,16 +678,16 @@ def runCarlaDiscovery(itype, stype, filename, tool, isWine=False):
 
     Ps = Popen(command, stdout=PIPE)
 
+    try:
+        Ps.wait()
+        output = Ps.stdout.read().decode("utf-8", errors="ignore").split("\n")
+    except:
+        output = ""
+
     pinfo = None
-    plugins = []
-    fakeLabel = os.path.basename(filename).rsplit(".", 1)[0]
 
-    while Ps.poll() is None:
-        try:
-            line = Ps.stdout.readline().decode("utf-8", errors="ignore").strip()
-        except:
-            break
-
+    for line in output:
+        line = line.strip()
         if line == "carla-discovery::init::-----------":
             pinfo = deepcopy(PyPluginInfo)
             pinfo['type'] = itype
