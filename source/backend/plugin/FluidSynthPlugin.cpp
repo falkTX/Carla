@@ -132,7 +132,7 @@ public:
 
     uint32_t getParameterScalePointCount(const uint32_t parameterId) const override
     {
-        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, 0);
 
         switch (parameterId)
         {
@@ -168,15 +168,15 @@ public:
 
     float getParameterValue(const uint32_t parameterId) const override
     {
-        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, 0.0f);
 
         return fParamBuffers[parameterId];
     }
 
     float getParameterScalePointValue(const uint32_t parameterId, const uint32_t scalePointId) const override
     {
-        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
-        CARLA_SAFE_ASSERT_RETURN(scalePointId < getParameterScalePointCount(parameterId),);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, 0.0f);
+        CARLA_SAFE_ASSERT_RETURN(scalePointId < getParameterScalePointCount(parameterId), 0.0f);
 
         switch (parameterId)
         {
