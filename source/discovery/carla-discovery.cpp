@@ -1634,20 +1634,6 @@ int main(int argc, char* argv[])
     const char* const filename = argv[2];
     const PluginType  type     = getPluginTypeFromString(stype);
 
-    CarlaString filenameStr(filename);
-    filenameStr.toLower();
-
-    if (filenameStr.contains("fluidsynth", true))
-    {
-        DISCOVERY_OUT("info", "skipping fluidsynth based plugin");
-        return 0;
-    }
-    if (filenameStr.contains("linuxsampler", true) || filenameStr.endsWith("ls16.so"))
-    {
-        DISCOVERY_OUT("info", "skipping linuxsampler based plugin");
-        return 0;
-    }
-
     const ScopedWorkingDirSet swds(filename);
 
     bool openLib = false;
@@ -1672,6 +1658,20 @@ int main(int argc, char* argv[])
         {
             print_lib_error(filename);
             return 1;
+        }
+
+        CarlaString filenameStr(filename);
+        filenameStr.toLower();
+
+        if (filenameStr.contains("fluidsynth", true))
+        {
+            DISCOVERY_OUT("info", "skipping fluidsynth based plugin");
+            return 0;
+        }
+        if (filenameStr.contains("linuxsampler", true) || filenameStr.endsWith("ls16.so"))
+        {
+            DISCOVERY_OUT("info", "skipping linuxsampler based plugin");
+            return 0;
         }
     }
 
