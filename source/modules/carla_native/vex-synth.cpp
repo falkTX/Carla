@@ -17,7 +17,7 @@
 
 #include "CarlaNative.hpp"
 
-#include "juce_gui_basics.h"
+#include "JucePluginWindow.hpp"
 
 using namespace juce;
 
@@ -64,62 +64,6 @@ XmlElement* getXmlFromBinary(const void* data, const int sizeInBytes)
 
     return nullptr;
 }
-
-// -----------------------------------------------------------------------
-
-class HelperWindow2 : public DocumentWindow
-{
-public:
-    HelperWindow2()
-        : DocumentWindow("PlugWindow", Colour(50, 50, 200), DocumentWindow::closeButton, false),
-          fClosed(false)
-    {
-        setVisible(false);
-        //setAlwaysOnTop(true);
-        setOpaque(true);
-        setResizable(false, false);
-        setUsingNativeTitleBar(true);
-    }
-
-    void show(Component* const comp)
-    {
-        fClosed = false;
-
-        centreWithSize(comp->getWidth(), comp->getHeight());
-        setContentNonOwned(comp, true);
-
-        if (! isOnDesktop())
-            addToDesktop();
-
-        setVisible(true);
-    }
-
-    void hide()
-    {
-        setVisible(false);
-
-        if (isOnDesktop())
-            removeFromDesktop();
-
-        clearContentComponent();
-    }
-
-    bool wasClosedByUser() const
-    {
-        return fClosed;
-    }
-
-protected:
-    void closeButtonPressed() override
-    {
-        fClosed = true;
-    }
-
-private:
-    volatile bool fClosed;
-
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(HelperWindow2)
-};
 
 // -----------------------------------------------------------------------
 
@@ -1082,7 +1026,7 @@ protected:
         {
             if (fWindow == nullptr)
             {
-                fWindow = new HelperWindow2();
+                fWindow = new JucePluginWindow();
                 fWindow->setName(getUiName());
             }
 
@@ -1271,7 +1215,7 @@ private:
     VexSyntModule fSynth;
 
     ScopedPointer<VexEditorComponent> fView;
-    ScopedPointer<HelperWindow2> fWindow;
+    ScopedPointer<JucePluginWindow> fWindow;
 
     MidiBuffer fMidiInBuffer;
 

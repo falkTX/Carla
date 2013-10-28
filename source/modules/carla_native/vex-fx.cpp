@@ -17,7 +17,7 @@
 
 #include "CarlaNative.hpp"
 
-#include "juce_gui_basics.h"
+#include "JucePluginWindow.hpp"
 
 using namespace juce;
 
@@ -27,62 +27,6 @@ using namespace juce;
 #include "vex/VexReverb.h"
 
 #include "vex/PeggyViewComponent.h"
-
-// -----------------------------------------------------------------------
-
-class HelperWindow : public DocumentWindow
-{
-public:
-    HelperWindow()
-        : DocumentWindow("PlugWindow", Colour(50, 50, 200), DocumentWindow::closeButton, false),
-          fClosed(false)
-    {
-        setVisible(false);
-        //setAlwaysOnTop(true);
-        setOpaque(true);
-        setResizable(false, false);
-        setUsingNativeTitleBar(true);
-    }
-
-    void show(Component* const comp)
-    {
-        fClosed = false;
-
-        centreWithSize(comp->getWidth(), comp->getHeight());
-        setContentNonOwned(comp, true);
-
-        if (! isOnDesktop())
-            addToDesktop();
-
-        setVisible(true);
-    }
-
-    void hide()
-    {
-        setVisible(false);
-
-        if (isOnDesktop())
-            removeFromDesktop();
-
-        clearContentComponent();
-    }
-
-    bool wasClosedByUser() const noexcept
-    {
-        return fClosed;
-    }
-
-protected:
-    void closeButtonPressed() override
-    {
-        fClosed = true;
-    }
-
-private:
-    bool fClosed;
-
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(HelperWindow)
-};
 
 // -----------------------------------------------------------------------
 
@@ -392,7 +336,7 @@ protected:
         {
             if (fWindow == nullptr)
             {
-                fWindow = new HelperWindow();
+                fWindow = new JucePluginWindow();
                 fWindow->setName(getUiName());
             }
 
@@ -477,7 +421,7 @@ private:
     volatile bool fNeedsUpdate;
 
     ScopedPointer<PeggyViewComponent> fView;
-    ScopedPointer<HelperWindow> fWindow;
+    ScopedPointer<JucePluginWindow> fWindow;
 
     PluginClassEND(VexArpPlugin)
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(VexArpPlugin)
