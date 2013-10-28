@@ -82,7 +82,6 @@ source/%_rc.py: resources/%.qrc resources/*/*.png resources/*/*.svg
 # UI code
 
 UIs = \
-	source/ui_carla.py \
 	source/ui_carla_control.py \
 	source/ui_carla_about.py \
 	source/ui_carla_database.py \

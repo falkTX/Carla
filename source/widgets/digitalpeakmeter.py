@@ -19,9 +19,13 @@
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from PyQt5.QtCore import qCritical, Qt, QTimer, QSize
-from PyQt5.QtGui import QColor, QLinearGradient, QPainter
-from PyQt5.QtWidgets import QWidget
+try:
+    from PyQt5.QtCore import qCritical, Qt, QTimer, QSize
+    from PyQt5.QtGui import QColor, QLinearGradient, QPainter
+    from PyQt5.QtWidgets import QWidget
+except:
+    from PyQt4.QtCore import qCritical, Qt, QTimer, QSize
+    from PyQt4.QtGui import QColor, QLinearGradient, QPainter, QWidget
 
 # ------------------------------------------------------------------------------------------------------------
 # Widget Class

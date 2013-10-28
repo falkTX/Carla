@@ -20,10 +20,16 @@
 # Imports (Global)
 
 from math import floor
-from PyQt5.QtCore import Qt, QPointF, QRectF, QTimer, QSize
-from PyQt5.QtGui import QColor, QConicalGradient, QFont, QFontMetrics
-from PyQt5.QtGui import QLinearGradient, QPainter, QPainterPath, QPen, QPixmap
-from PyQt5.QtWidgets import QDial
+
+try:
+    from PyQt5.QtCore import Qt, QPointF, QRectF, QTimer, QSize
+    from PyQt5.QtGui import QColor, QConicalGradient, QFont, QFontMetrics
+    from PyQt5.QtGui import QLinearGradient, QPainter, QPainterPath, QPen, QPixmap
+    from PyQt5.QtWidgets import QDial
+except:
+    from PyQt4.QtCore import Qt, QPointF, QRectF, QTimer, QSize
+    from PyQt4.QtGui import QColor, QConicalGradient, QFont, QFontMetrics
+    from PyQt4.QtGui import QDial, QLinearGradient, QPainter, QPainterPath, QPen, QPixmap
 
 # ------------------------------------------------------------------------------------------------------------
 # Widget Class

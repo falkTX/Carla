@@ -147,7 +147,7 @@ gDiscoveryProcess = None
 
 def runCarlaDiscovery(itype, stype, filename, tool, isWine=False):
     if not os.path.exists(tool):
-        qCritical("runCarlaDiscovery() - tool '%s' does not exist" % tool)
+        qWarning("runCarlaDiscovery() - tool '%s' does not exist" % tool)
         return
 
     command = []
@@ -1662,7 +1662,7 @@ class PluginDatabaseW(QDialog):
 # Main
 
 if __name__ == '__main__':
-    from carla_style import *
+    from carla_style import CarlaApplication
 
     app = CarlaApplication()
 
