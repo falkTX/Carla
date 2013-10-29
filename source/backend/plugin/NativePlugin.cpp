@@ -405,7 +405,6 @@ public:
                 std::strncpy(strBuf, param->unit, STR_MAX);
                 return;
             }
-            carla_assert("param->unit != nullptr", __FILE__, __LINE__);
             return CarlaPlugin::getParameterUnit(parameterId, strBuf);
         }
 

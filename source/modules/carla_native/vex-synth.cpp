@@ -16,6 +16,7 @@
  */
 
 #include "CarlaNative.hpp"
+#include "CarlaString.hpp"
 
 #include "JucePluginWindow.hpp"
 
@@ -93,7 +94,7 @@ public:
         internalCachedImage1 = ImageCache::getFromMemory(Resources::vex3_png, Resources::vex3_pngSize);
 
         // Comboboxes, wave selection
-        addAndMakeVisible(comboBox1 = new ComboBox (String::empty));
+        addAndMakeVisible(comboBox1 = new ComboBox("comboBox1"));
         comboBox1->setEditableText(false);
         comboBox1->setJustificationType(Justification::centredLeft);
         comboBox1->setTextWhenNothingSelected(String("silent"));
@@ -106,7 +107,7 @@ public:
         comboBox1->setWantsKeyboardFocus(false);
         comboBox1->setLookAndFeel(&mlaf);
 
-        addAndMakeVisible(comboBox2 = new ComboBox (String::empty));
+        addAndMakeVisible(comboBox2 = new ComboBox("comboBox2"));
         comboBox2->setEditableText(false);
         comboBox2->setJustificationType(Justification::centredLeft);
         comboBox2->setTextWhenNothingSelected(String("silent"));
@@ -119,7 +120,7 @@ public:
         comboBox2->setWantsKeyboardFocus(false);
         comboBox2->setLookAndFeel(&mlaf);
 
-        addAndMakeVisible(comboBox3 = new ComboBox(String::empty));
+        addAndMakeVisible(comboBox3 = new ComboBox("comboBox3"));
         comboBox3->setEditableText(false);
         comboBox3->setJustificationType(Justification::centredLeft);
         comboBox3->setTextWhenNothingSelected(String("silent"));
@@ -191,7 +192,7 @@ public:
         sliders[82]->setSnap(0.0f, 0.05f);
 
         //PART ON/OFF
-        addAndMakeVisible(TB1 = new TextButton ("new button"));
+        addAndMakeVisible(TB1 = new TextButton("TB1"));
         TB1->setButtonText(String::empty);
         TB1->addListener(this);
         TB1->setColour(TextButton::buttonColourId, Colours::darkred.withAlpha(0.5f));
@@ -199,7 +200,7 @@ public:
         TB1->setClickingTogglesState(true);
         TB1->setToggleState(false, dontSendNotification);
 
-        addAndMakeVisible(TB2 = new TextButton ("new button"));
+        addAndMakeVisible(TB2 = new TextButton("TB2"));
         TB2->setButtonText(String::empty);
         TB2->addListener(this);
         TB2->setColour(TextButton::buttonColourId, Colours::darkred.withAlpha(0.5f));
@@ -207,7 +208,7 @@ public:
         TB2->setClickingTogglesState(true);
         TB2->setToggleState(false, dontSendNotification);
 
-        addAndMakeVisible(TB3 = new TextButton ("new button"));
+        addAndMakeVisible(TB3 = new TextButton("TB3"));
         TB3->setButtonText(String::empty);
         TB3->addListener(this);
         TB3->setColour(TextButton::buttonColourId, Colours::darkred.withAlpha(0.5f));
@@ -216,7 +217,7 @@ public:
         TB3->setToggleState(false, dontSendNotification);
 
         //Peggy ON/OFF
-        addAndMakeVisible(TB4 = new TextButton ("new button"));
+        addAndMakeVisible(TB4 = new TextButton("TB4"));
         TB4->setButtonText(String::empty);
         TB4->addListener(this);
         TB4->setColour(TextButton::buttonColourId, Colours::darkblue.withAlpha(0.5f));
@@ -224,7 +225,7 @@ public:
         TB4->setClickingTogglesState(true);
         TB4->setToggleState(false, dontSendNotification);
 
-        addAndMakeVisible(TB5 = new TextButton ("new button"));
+        addAndMakeVisible(TB5 = new TextButton("TB5"));
         TB5->setButtonText(String::empty);
         TB5->addListener(this);
         TB5->setColour(TextButton::buttonColourId, Colours::darkblue.withAlpha(0.5f));
@@ -232,7 +233,7 @@ public:
         TB5->setClickingTogglesState(true);
         TB5->setToggleState(false, dontSendNotification);
 
-        addAndMakeVisible(TB6 = new TextButton ("new button"));
+        addAndMakeVisible(TB6 = new TextButton("TB6"));
         TB6->setButtonText(String::empty);
         TB6->addListener(this);
         TB6->setColour(TextButton::buttonColourId, Colours::darkblue.withAlpha(0.5f));
@@ -628,6 +629,7 @@ protected:
 
     const Parameter* getParameterInfo(const uint32_t index) const override
     {
+        static CarlaString tmpName;
         static Parameter paramInfo;
 
         int hints = PARAMETER_IS_ENABLED|PARAMETER_IS_AUTOMABLE;
@@ -650,107 +652,110 @@ protected:
             switch (ri)
             {
             case 1:
-                paramInfo.name = "oct";
+                tmpName = "Part0 Oct";
                 paramInfo.ranges.def = 0.5f;
                 break;
             case 2:
-                paramInfo.name = "cent";
+                tmpName = "Part0 Cent";
                 paramInfo.ranges.def = 0.5f;
                 break;
             case 3:
-                paramInfo.name = "phaseOffset";
+                tmpName = "Part0 Phase";
                 paramInfo.ranges.def = 0.5f;
                 break;
             case 4:
-                paramInfo.name = "phaseIncOffset";
+                tmpName = "Part0 Tune";
                 paramInfo.ranges.def = 0.5f;
                 break;
             case 5:
-                paramInfo.name = "filter";
+                tmpName = "Part0 Filter Cut";
                 paramInfo.ranges.def = 0.9f;
                 break;
             case 6:
-                paramInfo.name = "filter";
+                tmpName = "Part0 Filter Res";
                 paramInfo.ranges.def = 0.0f;
                 break;
             case 7:
-                paramInfo.name = "filter";
+                tmpName = "Part0 Filter HP/LP";
                 paramInfo.ranges.def = 1.0f;
                 break;
             case 8:
-                paramInfo.name = "filter";
+                tmpName = "Part0 Filter Env";
                 paramInfo.ranges.def = 0.5f;
                 break;
             case 9:
-                paramInfo.name = "F ADSR";
+                tmpName = "Part0 Filter Env Atk";
                 paramInfo.ranges.def = 0.0f;
                 break;
             case 10:
-                paramInfo.name = "F ADSR";
+                tmpName = "Part0 Filter Env Dec";
                 paramInfo.ranges.def = 0.2f;
                 break;
             case 11:
-                paramInfo.name = "F ADSR";
+                tmpName = "Part0 Filter Env Sus";
                 paramInfo.ranges.def = 0.0f;
                 break;
             case 12:
-                paramInfo.name = "F ADSR";
+                tmpName = "Part0 Filter Env Rel";
                 paramInfo.ranges.def = 0.5f;
                 break;
             case 13:
-                paramInfo.name = "F velocity";
+                tmpName = "Part0 Filter Env Vel";
                 paramInfo.ranges.def = 0.5f;
                 break;
             case 14:
-                paramInfo.name = "A ADSR";
+                tmpName = "Part0 Amp Env Atk";
                 paramInfo.ranges.def = 0.0f;
                 break;
             case 15:
-                paramInfo.name = "A ADSR";
+                tmpName = "Part0 Amp Env Dec";
                 paramInfo.ranges.def = 0.3f;
                 break;
             case 16:
-                paramInfo.name = "A ADSR";
+                tmpName = "Part0 Amp Env Sus";
                 paramInfo.ranges.def = 0.7f;
                 break;
             case 17:
-                paramInfo.name = "A ADSR";
+                tmpName = "Part0 Amp Env Rel";
                 paramInfo.ranges.def = 0.1f;
                 break;
             case 18:
-                paramInfo.name = "A velocity";
+                tmpName = "Part0 Amp Env Vel";
                 paramInfo.ranges.def = 0.5f;
                 break;
             case 19:
-                paramInfo.name = "lfoC";
+                tmpName = "Part0 LFO Rate";
                 paramInfo.ranges.def = 0.5f;
                 break;
             case 20:
-                paramInfo.name = "lfoA";
+                tmpName = "Part0 LFO Amp";
                 paramInfo.ranges.def = 0.0f;
                 break;
             case 21:
-                paramInfo.name = "lfoF";
+                tmpName = "Part0 LFO Flt";
                 paramInfo.ranges.def = 0.0f;
                 break;
             case 22:
-                paramInfo.name = "fx vol D";
+                tmpName = "Part0 Delay";
                 paramInfo.ranges.def = 0.5f;
                 break;
             case 23:
-                paramInfo.name = "fx vol C";
+                tmpName = "Part0 Chorus";
                 paramInfo.ranges.def = 0.5f;
                 break;
             case 24:
             case 0:
-                paramInfo.name = "fx vol R";
+                tmpName = "Part0 Reverb";
                 paramInfo.ranges.def = 0.5f;
                 break;
             default:
-                paramInfo.name = "unknown2";
+                tmpName = "Part0 Unknown";
                 break;
             }
 
+            tmpName[4] = '0' + ((index+24) / 24);
+
+            paramInfo.name  = (const char*)tmpName;
             paramInfo.hints = static_cast<ParameterHints>(hints);
             return &paramInfo;
         }
@@ -758,7 +763,7 @@ protected:
         switch (index)
         {
         case 0:
-            paramInfo.name = "Main volume";
+            paramInfo.name = "Master";
             paramInfo.ranges.def = 1.0f;
             break;
         case 73:
@@ -777,7 +782,7 @@ protected:
             paramInfo.ranges.max = 100.0f;
             break;
         case 75:
-            paramInfo.name = "Delay Volume";
+            paramInfo.name = "Delay Level";
             paramInfo.ranges.def = 0.0f;
             break;
         case 76:
@@ -789,7 +794,7 @@ protected:
             paramInfo.ranges.def = 0.6f;
             break;
         case 78:
-            paramInfo.name = "Chorus Volume";
+            paramInfo.name = "Chorus Level";
             paramInfo.ranges.def = 0.5f;
             break;
         case 79:
@@ -805,46 +810,46 @@ protected:
             paramInfo.ranges.def = 0.6f;
             break;
         case 82:
-            paramInfo.name = "Reverb Volume";
+            paramInfo.name = "Reverb Level";
             paramInfo.ranges.def = 0.0f;
             break;
         case 83:
-            paramInfo.name = "Wave1 Panning";
+            paramInfo.name = "Part1 Panning";
             paramInfo.ranges.def = 0.5f;
             break;
         case 84:
-            paramInfo.name = "Wave2 Panning";
+            paramInfo.name = "Part2 Panning";
             paramInfo.ranges.def = 0.5f;
             break;
         case 85:
-            paramInfo.name = "Wave3 Panning";
+            paramInfo.name = "Part3 Panning";
             paramInfo.ranges.def = 0.5f;
             break;
         case 86:
-            paramInfo.name = "Wave1 Volume";
+            paramInfo.name = "Part1 Volume";
             paramInfo.ranges.def = 0.5f;
             break;
         case 87:
-            paramInfo.name = "Wave2 Volume";
+            paramInfo.name = "Part2 Volume";
             paramInfo.ranges.def = 0.5f;
             break;
         case 88:
-            paramInfo.name = "Wave3 Volume";
+            paramInfo.name = "Part3 Volume";
             paramInfo.ranges.def = 0.5f;
             break;
         case 89:
             hints |= PARAMETER_IS_BOOLEAN;
-            paramInfo.name = "Wave1 on/off";
+            paramInfo.name = "Part1 on/off";
             paramInfo.ranges.def = 1.0f;
             break;
         case 90:
             hints |= PARAMETER_IS_BOOLEAN;
-            paramInfo.name = "Wave2 on/off";
+            paramInfo.name = "Part2 on/off";
             paramInfo.ranges.def = 0.0f;
             break;
         case 91:
             hints |= PARAMETER_IS_BOOLEAN;
-            paramInfo.name = "Wave3 on/off";
+            paramInfo.name = "Part3 on/off";
             paramInfo.ranges.def = 0.0f;
             break;
         default:

@@ -61,12 +61,15 @@ public:
         snapMargin = margin;
     }
 
-    double snapValue(const double attemptedValue, const bool userIsDragging)
+#if 0
+    // FIXME?
+    double snapValue(const double attemptedValue , const bool userIsDragging)
     {
         if (std::fabs(attemptedValue - snapTarget) < snapMargin)
             return snapTarget;
         return attemptedValue;
     }
+#endif
 
 private:
     float snapTarget, snapMargin;
