@@ -92,7 +92,7 @@ public:
         g.fillRect(sliderWidth*activeLength,0,getWidth(),getHeight());
 
         //bevel outline for the entire draw area
-        LookAndFeel::drawBevel(g, 0, 0, getWidth(), getHeight(), 1, Colours::black, Colours::white, 0);
+        LookAndFeel_V2::drawBevel(g, 0, 0, getWidth(), getHeight(), 1, Colours::black, Colours::white, 0);
      }
 
      void mouseDrag(const MouseEvent& e) override
