@@ -83,6 +83,20 @@ public:
     */
     void addSubItem (TreeViewItem* newItem, int insertPosition = -1);
 
+    /** Adds a sub-item with a sort-comparator, assuming that the existing items are already sorted.
+
+        @param comparator  the comparator object for sorting - see sortSubItems() for details about
+                        the methods this class must provide.
+        @param newItem  the object to add to the item's sub-item list. Once added, these can be
+                        found using getSubItem(). When the items are later removed with
+                        removeSubItem() (or when this item is deleted), they will be deleted.
+    */
+    template <class ElementComparator>
+    void addSubItemSorted (ElementComparator& comparator, TreeViewItem* newItem)
+    {
+        addSubItem (newItem, findInsertIndexInSortedArray (comparator, subItems.begin(), newItem, 0, subItems.size()));
+    }
+
     /** Removes one of the sub-items.
 
         @param index        the item to remove
@@ -178,7 +192,7 @@ public:
     bool areAllParentsOpen() const noexcept;
 
     /** Changes whether lines are drawn to connect any sub-items to this item.
-        By default, line-drawing is turned on.
+        By default, line-drawing is turned on according to LookAndFeel::areLinesDrawnForTreeView().
     */
     void setLinesDrawnForSubItems (bool shouldDrawLines) noexcept;
 
@@ -299,11 +313,14 @@ public:
 
     /** Draws the item's open/close button.
 
-        If you don't implement this method, the default behaviour is to
-        call LookAndFeel::drawTreeviewPlusMinusBox(), but you can override
-        it for custom effects.
+        If you don't implement this method, the default behaviour is to call
+        LookAndFeel::drawTreeviewPlusMinusBox(), but you can override it for custom
+        effects. You may want to override it and call the base-class implementation
+        with a different backgroundColour parameter, if your implementation has a
+        background colour other than the default (white).
     */
-    virtual void paintOpenCloseButton (Graphics&, int width, int height, bool isMouseOver);
+    virtual void paintOpenCloseButton (Graphics&, const Rectangle<float>& area,
+                                       Colour backgroundColour, bool isMouseOver);
 
     /** Draws the line that connects this item to the vertical line extending below its parent. */
     virtual void paintHorizontalConnectingLine (Graphics&, const Line<float>& line);
@@ -519,12 +536,13 @@ private:
     //==============================================================================
     TreeView* ownerView;
     TreeViewItem* parentItem;
-    OwnedArray <TreeViewItem> subItems;
+    OwnedArray<TreeViewItem> subItems;
     int y, itemHeight, totalHeight, itemWidth, totalWidth;
     int uid;
     bool selected           : 1;
     bool redrawNeeded       : 1;
     bool drawLinesInside    : 1;
+    bool drawLinesSet       : 1;
     bool drawsInLeftMargin  : 1;
     unsigned int openness   : 2;
 
@@ -549,6 +567,7 @@ private:
     XmlElement* getOpennessState (bool canReturnNull) const;
     bool removeSubItemFromList (int index, bool deleteItem);
     void removeAllSubItemsFromList();
+    bool areLinesDrawn() const;
 
    #if JUCE_CATCH_DEPRECATED_CODE_MISUSE
     // The parameters for these methods have changed - please update your code!
@@ -721,7 +740,7 @@ public:
     /** Returns the number of pixels by which each nested level of the tree is indented.
         @see setIndentSize
     */
-    int getIndentSize() const noexcept                              { return indentSize; }
+    int getIndentSize() noexcept;
 
     /** Changes the distance by which each nested level of the tree is indented.
         @see getIndentSize
@@ -779,9 +798,25 @@ public:
     */
     enum ColourIds
     {
-        backgroundColourId            = 0x1000500, /**< A background colour to fill the component with. */
-        linesColourId                 = 0x1000501, /**< The colour to draw the lines with.*/
-        dragAndDropIndicatorColourId  = 0x1000502  /**< The colour to use for the drag-and-drop target position indicator. */
+        backgroundColourId             = 0x1000500, /**< A background colour to fill the component with. */
+        linesColourId                  = 0x1000501, /**< The colour to draw the lines with.*/
+        dragAndDropIndicatorColourId   = 0x1000502, /**< The colour to use for the drag-and-drop target position indicator. */
+        selectedItemBackgroundColourId = 0x1000503  /**< The colour to use to fill the background of any selected items. */
+    };
+
+    //==============================================================================
+    /** This abstract base class is implemented by LookAndFeel classes to provide
+        treeview drawing functionality.
+    */
+    struct JUCE_API  LookAndFeelMethods
+    {
+        virtual ~LookAndFeelMethods() {}
+
+        virtual void drawTreeviewPlusMinusBox (Graphics&, const Rectangle<float>& area,
+                                               Colour backgroundColour, bool isItemOpen, bool isMouseOver) = 0;
+
+        virtual bool areLinesDrawnForTreeView (TreeView&) = 0;
+        virtual int getTreeViewIndentSize (TreeView&) = 0;
     };
 
     //==============================================================================
@@ -848,6 +883,11 @@ private:
     void moveOutOfSelectedItem();
     void moveIntoSelectedItem();
     void moveByPages (int numPages);
+
+   #if JUCE_CATCH_DEPRECATED_CODE_MISUSE
+    // this method has been deprecated - see the new version..
+    virtual int paintOpenCloseButton (Graphics&, int, int, bool) { return 0; }
+   #endif
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TreeView)
 };
