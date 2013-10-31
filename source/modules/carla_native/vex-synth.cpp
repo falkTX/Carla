@@ -511,8 +511,6 @@ private:
     ScopedPointer<PeggyViewComponent> p1;
     ScopedPointer<PeggyViewComponent> p2;
     ScopedPointer<PeggyViewComponent> p3;
-
-    VexArpSettings _d;
 };
 
 // -----------------------------------------------------------------------
@@ -525,11 +523,6 @@ public:
 
     VexSynthPlugin(const HostDescriptor* const host)
         : PluginClass(host),
-          obf(nullptr),
-          abf(nullptr),
-          dbf1(nullptr),
-          dbf2(nullptr),
-          dbf3(nullptr),
           fArp1(&fArpSet1),
           fArp2(&fArpSet2),
           fArp3(&fArpSet3),
@@ -611,11 +604,6 @@ public:
 
     ~VexSynthPlugin() override
     {
-        delete obf;
-        delete abf;
-        delete dbf1;
-        delete dbf2;
-        delete dbf3;
     }
 
 protected:
@@ -753,7 +741,7 @@ protected:
                 break;
             }
 
-            tmpName[4] = '0' + ((index+24) / 24);
+            tmpName[4] = '0' + ((index-1+24) / 24);
 
             paramInfo.name  = (const char*)tmpName;
             paramInfo.hints = static_cast<ParameterHints>(hints);
@@ -1126,12 +1114,6 @@ protected:
 
     void bufferSizeChanged(const uint32_t bufferSize) override
     {
-        delete obf;
-        delete abf;
-        delete dbf1;
-        delete dbf2;
-        delete dbf3;
-
         obf  = new AudioSampleBuffer(2, bufferSize);
         abf  = new AudioSampleBuffer(2, bufferSize);
         dbf1 = new AudioSampleBuffer(2, bufferSize);
@@ -1205,11 +1187,11 @@ private:
     float fParameters[kParamCount];
     bool  fParamsChanged[92];
 
-    AudioSampleBuffer* obf;
-    AudioSampleBuffer* abf;
-    AudioSampleBuffer* dbf1; // delay
-    AudioSampleBuffer* dbf2; // chorus
-    AudioSampleBuffer* dbf3; // reverb
+    ScopedPointer<AudioSampleBuffer> obf;
+    ScopedPointer<AudioSampleBuffer> abf;
+    ScopedPointer<AudioSampleBuffer> dbf1; // delay
+    ScopedPointer<AudioSampleBuffer> dbf2; // chorus
+    ScopedPointer<AudioSampleBuffer> dbf3; // reverb
 
     VexArpSettings fArpSet1, fArpSet2, fArpSet3;
     VexArp fArp1, fArp2, fArp3;
