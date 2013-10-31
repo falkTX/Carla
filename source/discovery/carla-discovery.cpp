@@ -36,12 +36,7 @@
 # include <fluidsynth.h>
 #endif
 #ifdef WANT_LINUXSAMPLER
-// fix broken headers
-# define TMP__cplusplus __cplusplus
-# undef __cplusplus
 # include "linuxsampler/EngineFactory.h"
-# define __cplusplus TMP__cplusplus
-# undef TMP__cplusplus
 #endif
 
 #include "juce_audio_basics.h"
