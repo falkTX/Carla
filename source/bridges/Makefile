@@ -46,7 +46,7 @@ LINK_PLUGIN_FLAGS  += $(JUCE_GUI_BASICS_LIBS)
 POSIX_BUILD_FLAGS = $(BUILD_PLUGIN_FLAGS)
 POSIX_32BIT_FLAGS = $(32BIT_FLAGS) -L/usr/lib32 -L/usr/lib/i386-linux-gnu
 POSIX_64BIT_FLAGS = $(64BIT_FLAGS) -L/usr/lib64 -L/usr/lib/x86_64-linux-gnu
-POSIX_LINK_FLAGS  = $(LINK_PLUGIN_FLAGS) -ldl -ljack
+POSIX_LINK_FLAGS  = $(LINK_PLUGIN_FLAGS) -ldl
 
 ifneq ($(MACOS),true)
 POSIX_LINK_FLAGS += -lrt
@@ -264,7 +264,7 @@ OBJS_UI_LV2_QT4 = CarlaBridgeUI-LV2__lv2-qt4.o \
 	CarlaBridgeClient__lv2.o CarlaBridgeOsc__lv2.o \
 	CarlaBridgeToolkit__lv2.o CarlaBridgeToolkitQt__lv2-qt4.o
 
-carla-bridge-lv2-qt4: $(OBJS_UI_LV2_QT4) $(OBJS_UI_LV2_LIBS) ../modules/theme.a
+carla-bridge-lv2-qt4: $(OBJS_UI_LV2_QT4) $(OBJS_UI_LV2_LIBS) ../modules/theme.qt4.a
 	$(CXX) $^ $(LINK_UI_LV2_QT4_FLAGS) -o $@
 
 %__lv2-qt4.o: %.cpp CarlaBridgeToolkitQt4.moc resources.qt4.cpp

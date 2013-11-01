@@ -131,6 +131,9 @@ theme:
 theme_%:
 	$(MAKE) -C theme $*
 
+theme.qt4:
+	$(MAKE) -C theme qt4
+
 # --------------------------------------------------------------
 
 jackbridge:

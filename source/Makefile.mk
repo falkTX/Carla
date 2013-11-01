@@ -17,7 +17,7 @@ CARLA_CSOUND_SUPPORT = true
 CARLA_SAMPLERS_SUPPORT = true
 
 # Use the free vestige header instead of the official VST SDK
-# CARLA_VESTIGE_HEADER = true
+CARLA_VESTIGE_HEADER = true
 
 # --------------------------------------------------------------
 # DO NOT MODIFY PAST THIS POINT!
