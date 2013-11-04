@@ -40,12 +40,7 @@
 #endif
 #ifdef WANT_LINUXSAMPLER
 # include <QtCore/QFileInfo>
-// fix broken headers
-# define TMP__cplusplus __cplusplus
-# undef __cplusplus
 # include "linuxsampler/EngineFactory.h"
-# define __cplusplus TMP__cplusplus
-# undef TMP__cplusplus
 #endif
 
 #include <iostream>
