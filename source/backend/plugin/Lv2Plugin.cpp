@@ -1197,9 +1197,9 @@ public:
                 }
 
                 CARLA_ASSERT(fUi.handle != nullptr);
-                CARLA_ASSERT(fUi.widget != nullptr);
+                CARLA_ASSERT(fUi.type == PLUGIN_UI_PARENT || fUi.widget != nullptr);
 
-                if (fUi.handle == nullptr || fUi.widget == nullptr)
+                if (fUi.handle == nullptr || (fUi.type != PLUGIN_UI_PARENT && fUi.widget == nullptr))
                 {
                     fUi.handle = nullptr;
                     fUi.widget = nullptr;
