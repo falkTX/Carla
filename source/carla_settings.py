@@ -50,7 +50,6 @@ CANVAS_EYECANDY_SMALL     = 1
 CARLA_DEFAULT_MAIN_PROJECT_FOLDER   = HOME
 CARLA_DEFAULT_MAIN_USE_PRO_THEME    = True
 CARLA_DEFAULT_MAIN_PRO_THEME_COLOR  = "Black"
-CARLA_DEFAULT_MAIN_DISABLE_CHECKS   = False
 CARLA_DEFAULT_MAIN_REFRESH_INTERVAL = 50
 
 # Canvas
@@ -72,6 +71,7 @@ CARLA_DEFAULT_PREFER_UI_BRIDGES     = True
 CARLA_DEFAULT_UIS_ALWAYS_ON_TOP     = True
 CARLA_DEFAULT_MAX_PARAMETERS        = MAX_DEFAULT_PARAMETERS
 CARLA_DEFAULT_UI_BRIDGES_TIMEOUT    = 4000
+
 CARLA_DEFAULT_AUDIO_NUM_PERIODS     = 2
 CARLA_DEFAULT_AUDIO_BUFFER_SIZE     = 512
 CARLA_DEFAULT_AUDIO_SAMPLE_RATE     = 44100
@@ -192,6 +192,17 @@ class CarlaSettingsW(QDialog):
     TAB_INDEX_PATHS  = 3
     TAB_INDEX_NONE   = 4
 
+    # Path indexes
+    PATH_INDEX_LADSPA = 0
+    PATH_INDEX_DSSI   = 1
+    PATH_INDEX_LV2    = 2
+    PATH_INDEX_VST    = 3
+    PATH_INDEX_AU     = 4
+    PATH_INDEX_CSOUND = 5
+    PATH_INDEX_GIG    = 6
+    PATH_INDEX_SF2    = 7
+    PATH_INDEX_SFZ    = 8
+
     # Single and Multiple client mode is only for JACK,
     # but we still want to match QComboBox index to defines,
     # so add +2 pos padding if driverName != "JACK".
@@ -205,15 +216,16 @@ class CarlaSettingsW(QDialog):
         # -------------------------------------------------------------
         # Set-up GUI
 
-        driverCount = Carla.host.get_engine_driver_count() if Carla.host is not None else 0
+        self.fChangingTabNow = False
 
-        for i in range(driverCount):
-            driverName = cString(Carla.host.get_engine_driver_name(i))
-            self.ui.cb_engine_audio_driver.addItem(driverName)
+        if Carla.host is not None:
+            for i in range(Carla.host.get_engine_driver_count()):
+                self.ui.cb_engine_audio_driver.addItem(cString(Carla.host.get_engine_driver_name(i)))
+        else:
+            self.ui.tb_engine_driver_config.setEnabled(False)
 
         for i in range(Theme.THEME_MAX):
-            thisThemeName = getThemeName(i)
-            self.ui.cb_canvas_theme.addItem(thisThemeName)
+            self.ui.cb_canvas_theme.addItem(getThemeName(i))
 
         # -------------------------------------------------------------
         # Load settings
@@ -230,6 +242,9 @@ class CarlaSettingsW(QDialog):
         if WINDOWS:
             self.ui.group_theme.setEnabled(False)
             self.ui.ch_theme_pro.setChecked(False)
+
+        if not MACOS:
+            self.ui.cb_paths.removeItem(self.ui.cb_paths.findText("AU"))
 
         if Carla.isPlugin:
             self.ui.lw_page.hideRow(self.TAB_INDEX_ENGINE)
@@ -249,22 +264,26 @@ class CarlaSettingsW(QDialog):
         self.ui.b_paths_add.clicked.connect(self.slot_addPluginPath)
         self.ui.b_paths_remove.clicked.connect(self.slot_removePluginPath)
         self.ui.b_paths_change.clicked.connect(self.slot_changePluginPath)
-        self.ui.tw_paths.currentChanged.connect(self.slot_pluginPathTabChanged)
+        self.ui.cb_paths.currentIndexChanged.connect(self.slot_pluginPathTabChanged)
         self.ui.lw_ladspa.currentRowChanged.connect(self.slot_pluginPathRowChanged)
         self.ui.lw_dssi.currentRowChanged.connect(self.slot_pluginPathRowChanged)
         self.ui.lw_lv2.currentRowChanged.connect(self.slot_pluginPathRowChanged)
         self.ui.lw_vst.currentRowChanged.connect(self.slot_pluginPathRowChanged)
+        self.ui.lw_au.currentRowChanged.connect(self.slot_pluginPathRowChanged)
+        self.ui.lw_csound.currentRowChanged.connect(self.slot_pluginPathRowChanged)
+        self.ui.lw_gig.currentRowChanged.connect(self.slot_pluginPathRowChanged)
         self.ui.lw_sf2.currentRowChanged.connect(self.slot_pluginPathRowChanged)
+        self.ui.lw_sfz.currentRowChanged.connect(self.slot_pluginPathRowChanged)
 
         # -------------------------------------------------------------
         # Post-connect setup
-
-        # TODO - add AU and csound, hide AU on non-mac
 
         self.ui.lw_ladspa.setCurrentRow(0)
         self.ui.lw_dssi.setCurrentRow(0)
         self.ui.lw_lv2.setCurrentRow(0)
         self.ui.lw_vst.setCurrentRow(0)
+        self.ui.lw_au.setCurrentRow(0)
+        self.ui.lw_csound.setCurrentRow(0)
         self.ui.lw_gig.setCurrentRow(0)
         self.ui.lw_sf2.setCurrentRow(0)
         self.ui.lw_sfz.setCurrentRow(0)
@@ -280,7 +299,6 @@ class CarlaSettingsW(QDialog):
         self.ui.le_main_proj_folder.setText(settings.value(CARLA_KEY_MAIN_PROJECT_FOLDER, CARLA_DEFAULT_MAIN_PROJECT_FOLDER, type=str))
         self.ui.ch_main_theme_pro.setChecked(settings.value(CARLA_KEY_MAIN_USE_PRO_THEME, CARLA_DEFAULT_MAIN_USE_PRO_THEME, type=bool))
         self.ui.cb_main_theme_color.setCurrentIndex(self.ui.cb_main_theme_color.findText(settings.value(CARLA_KEY_MAIN_PRO_THEME_COLOR, CARLA_DEFAULT_MAIN_PRO_THEME_COLOR, type=str)))
-        self.ui.ch_main_disable_checks.setChecked(settings.value(CARLA_KEY_MAIN_DISABLE_CHECKS, CARLA_DEFAULT_MAIN_DISABLE_CHECKS, type=bool))
         self.ui.sb_main_refresh_interval.setValue(settings.value(CARLA_KEY_MAIN_REFRESH_INTERVAL, CARLA_DEFAULT_MAIN_REFRESH_INTERVAL, type=int))
 
         # ---------------------------------------
@@ -298,7 +316,7 @@ class CarlaSettingsW(QDialog):
         # --------------------------------------------
         # Engine
 
-        audioDriver = settings.value("Engine/AudioDriver", CARLA_DEFAULT_AUDIO_DRIVER, type=str)
+        audioDriver = settings.value(CARLA_KEY_ENGINE_AUDIO_DRIVER, CARLA_DEFAULT_AUDIO_DRIVER, type=str)
 
         for i in range(self.ui.cb_engine_audio_driver.count()):
             if self.ui.cb_engine_audio_driver.itemText(i) == audioDriver:
@@ -308,60 +326,79 @@ class CarlaSettingsW(QDialog):
             self.ui.cb_engine_audio_driver.setCurrentIndex(-1)
 
         if audioDriver == "JACK":
-            processModeIndex = settings.value("Engine/ProcessMode", PROCESS_MODE_MULTIPLE_CLIENTS, type=int)
+            processModeIndex = settings.value(CARLA_KEY_ENGINE_PROCESS_MODE, PROCESS_MODE_MULTIPLE_CLIENTS, type=int)
             self.ui.cb_engine_process_mode_jack.setCurrentIndex(processModeIndex)
             self.ui.sw_engine_process_mode.setCurrentIndex(0)
         else:
-            processModeIndex  = settings.value("Engine/ProcessMode", PROCESS_MODE_CONTINUOUS_RACK, type=int)
+            processModeIndex  = settings.value(CARLA_KEY_ENGINE_PROCESS_MODE, PROCESS_MODE_CONTINUOUS_RACK, type=int)
             processModeIndex -= self.PROCESS_MODE_NON_JACK_PADDING
             self.ui.cb_engine_process_mode_other.setCurrentIndex(processModeIndex)
             self.ui.sw_engine_process_mode.setCurrentIndex(1)
 
-        self.ui.sb_engine_max_params.setValue(settings.value("Engine/MaxParameters", CARLA_DEFAULT_MAX_PARAMETERS, type=int))
-        self.ui.ch_engine_uis_always_on_top.setChecked(settings.value("Engine/UIsAlwaysOnTop", CARLA_DEFAULT_UIS_ALWAYS_ON_TOP, type=bool))
-        self.ui.ch_engine_prefer_ui_bridges.setChecked(settings.value("Engine/PreferUiBridges", CARLA_DEFAULT_PREFER_UI_BRIDGES, type=bool))
-        #self.ui.sb_engine_oscgui_timeout.setValue(settings.value("Engine/OscUiTimeout", CARLA_DEFAULT_OSC_UI_TIMEOUT, type=int))
-        self.ui.ch_engine_prefer_plugin_bridges.setChecked(settings.value("Engine/PreferPluginBridges", CARLA_DEFAULT_PREFER_PLUGIN_BRIDGES, type=bool))
-        self.ui.ch_engine_force_stereo.setChecked(settings.value("Engine/ForceStereo", CARLA_DEFAULT_FORCE_STEREO, type=bool))
+        self.ui.sb_engine_max_params.setValue(settings.value(CARLA_KEY_ENGINE_MAX_PARAMETERS, CARLA_DEFAULT_MAX_PARAMETERS, type=int))
+        self.ui.ch_engine_uis_always_on_top.setChecked(settings.value(CARLA_KEY_ENGINE_UIS_ALWAYS_ON_TOP, CARLA_DEFAULT_UIS_ALWAYS_ON_TOP, type=bool))
+        self.ui.ch_engine_prefer_ui_bridges.setChecked(settings.value(CARLA_KEY_ENGINE_PREFER_UI_BRIDGES, CARLA_DEFAULT_PREFER_UI_BRIDGES, type=bool))
+        self.ui.sb_engine_ui_bridges_timeout.setValue(settings.value(CARLA_KEY_ENGINE_UI_BRIDGES_TIMEOUT, CARLA_DEFAULT_UI_BRIDGES_TIMEOUT, type=int))
+        self.ui.ch_engine_force_stereo.setChecked(settings.value(CARLA_KEY_ENGINE_FORCE_STEREO, CARLA_DEFAULT_FORCE_STEREO, type=bool))
+        self.ui.ch_engine_prefer_plugin_bridges.setChecked(settings.value(CARLA_KEY_ENGINE_PREFER_PLUGIN_BRIDGES, CARLA_DEFAULT_PREFER_PLUGIN_BRIDGES, type=bool))
 
         # --------------------------------------------
         # Paths
 
-        ladspas = toList(settings.value("Paths/LADSPA", Carla.DEFAULT_LADSPA_PATH))
-        dssis = toList(settings.value("Paths/DSSI", Carla.DEFAULT_DSSI_PATH))
-        lv2s = toList(settings.value("Paths/LV2", Carla.DEFAULT_LV2_PATH))
-        vsts = toList(settings.value("Paths/VST", Carla.DEFAULT_VST_PATH))
-        gigs = toList(settings.value("Paths/GIG", Carla.DEFAULT_GIG_PATH))
-        sf2s = toList(settings.value("Paths/SF2", Carla.DEFAULT_SF2_PATH))
-        sfzs = toList(settings.value("Paths/SFZ", Carla.DEFAULT_SFZ_PATH))
+        ladspas = toList(settings.value(CARLA_KEY_PATHS_LADSPA, Carla.DEFAULT_LADSPA_PATH))
+        dssis   = toList(settings.value(CARLA_KEY_PATHS_DSSI,   Carla.DEFAULT_DSSI_PATH))
+        lv2s    = toList(settings.value(CARLA_KEY_PATHS_LV2,    Carla.DEFAULT_LV2_PATH))
+        vsts    = toList(settings.value(CARLA_KEY_PATHS_VST,    Carla.DEFAULT_VST_PATH))
+        aus     = toList(settings.value(CARLA_KEY_PATHS_AU,     Carla.DEFAULT_AU_PATH))
+        csds    = toList(settings.value(CARLA_KEY_PATHS_CSOUND, Carla.DEFAULT_CSOUND_PATH))
+        gigs    = toList(settings.value(CARLA_KEY_PATHS_GIG,    Carla.DEFAULT_GIG_PATH))
+        sf2s    = toList(settings.value(CARLA_KEY_PATHS_SF2,    Carla.DEFAULT_SF2_PATH))
+        sfzs    = toList(settings.value(CARLA_KEY_PATHS_SFZ,    Carla.DEFAULT_SFZ_PATH))
 
         ladspas.sort()
         dssis.sort()
         lv2s.sort()
         vsts.sort()
+        aus.sort()
+        csds.sort()
         gigs.sort()
         sf2s.sort()
         sfzs.sort()
 
         for ladspa in ladspas:
+            if not ladspa: continue
             self.ui.lw_ladspa.addItem(ladspa)
 
         for dssi in dssis:
+            if not dssi: continue
             self.ui.lw_dssi.addItem(dssi)
 
         for lv2 in lv2s:
+            if not lv2: continue
             self.ui.lw_lv2.addItem(lv2)
 
         for vst in vsts:
+            if not vst: continue
             self.ui.lw_vst.addItem(vst)
 
+        for au in aus:
+            if not au: continue
+            self.ui.lw_au.addItem(au)
+
+        for csd in csds:
+            if not csd: continue
+            self.ui.lw_csound.addItem(csd)
+
         for gig in gigs:
+            if not gig: continue
             self.ui.lw_gig.addItem(gig)
 
         for sf2 in sf2s:
+            if not sf2: continue
             self.ui.lw_sf2.addItem(sf2)
 
         for sfz in sfzs:
+            if not sfz: continue
             self.ui.lw_sfz.addItem(sfz)
 
     @pyqtSlot()
@@ -373,7 +410,6 @@ class CarlaSettingsW(QDialog):
         settings.setValue(CARLA_KEY_MAIN_PROJECT_FOLDER,   self.ui.le_main_proj_folder.text())
         settings.setValue(CARLA_KEY_MAIN_USE_PRO_THEME,    self.ui.ch_main_theme_pro.isChecked())
         settings.setValue(CARLA_KEY_MAIN_PRO_THEME_COLOR,  self.ui.cb_main_theme_color.currentText())
-        settings.setValue(CARLA_KEY_MAIN_DISABLE_CHECKS,   self.ui.ch_main_disable_checks.isChecked())
         settings.setValue(CARLA_KEY_MAIN_REFRESH_INTERVAL, self.ui.sb_main_refresh_interval.value())
 
         # ---------------------------------------
@@ -392,30 +428,31 @@ class CarlaSettingsW(QDialog):
         audioDriver = self.ui.cb_engine_audio_driver.currentText()
 
         if audioDriver:
-            settings.setValue("Engine/AudioDriver", audioDriver)
+            settings.setValue(CARLA_KEY_ENGINE_AUDIO_DRIVER, audioDriver)
 
             if audioDriver == "JACK":
-                settings.setValue("Engine/ProcessMode", self.ui.cb_engine_process_mode_jack.currentIndex())
+                settings.setValue(CARLA_KEY_ENGINE_PROCESS_MODE, self.ui.cb_engine_process_mode_jack.currentIndex())
             else:
-                settings.setValue("Engine/ProcessMode", self.ui.cb_engine_process_mode_other.currentIndex()+self.PROCESS_MODE_NON_JACK_PADDING)
+                settings.setValue(CARLA_KEY_ENGINE_PROCESS_MODE, self.ui.cb_engine_process_mode_other.currentIndex()+self.PROCESS_MODE_NON_JACK_PADDING)
 
-        settings.setValue("Engine/MaxParameters", self.ui.sb_engine_max_params.value())
-        settings.setValue("Engine/UIsAlwaysOnTop", self.ui.ch_engine_uis_always_on_top.isChecked())
-        settings.setValue("Engine/PreferUiBridges", self.ui.ch_engine_prefer_ui_bridges.isChecked())
-        #settings.setValue("Engine/OscUiTimeout", self.ui.sb_engine_oscgui_timeout.value())
-        settings.setValue("Engine/UseDssiVstChunks", self.ui.ch_engine_dssi_chunks.isChecked())
-        settings.setValue("Engine/PreferPluginBridges", self.ui.ch_engine_prefer_plugin_bridges.isChecked())
-        settings.setValue("Engine/ForceStereo", self.ui.ch_engine_force_stereo.isChecked())
+        settings.setValue(CARLA_KEY_ENGINE_MAX_PARAMETERS, self.ui.sb_engine_max_params.value())
+        settings.setValue(CARLA_KEY_ENGINE_UIS_ALWAYS_ON_TOP, self.ui.ch_engine_uis_always_on_top.isChecked())
+        settings.setValue(CARLA_KEY_ENGINE_PREFER_UI_BRIDGES, self.ui.ch_engine_prefer_ui_bridges.isChecked())
+        settings.setValue(CARLA_KEY_ENGINE_UI_BRIDGES_TIMEOUT, self.ui.sb_engine_ui_bridges_timeout.value())
+        settings.setValue(CARLA_KEY_ENGINE_FORCE_STEREO, self.ui.ch_engine_force_stereo.isChecked())
+        settings.setValue(CARLA_KEY_ENGINE_PREFER_PLUGIN_BRIDGES, self.ui.ch_engine_prefer_plugin_bridges.isChecked())
 
         # --------------------------------------------
 
         ladspas = []
-        dssis = []
-        lv2s = []
-        vsts = []
-        gigs = []
-        sf2s = []
-        sfzs = []
+        dssis   = []
+        lv2s    = []
+        vsts    = []
+        aus     = []
+        csds    = []
+        gigs    = []
+        sf2s    = []
+        sfzs    = []
 
         for i in range(self.ui.lw_ladspa.count()):
             ladspas.append(self.ui.lw_ladspa.item(i).text())
@@ -429,6 +466,12 @@ class CarlaSettingsW(QDialog):
         for i in range(self.ui.lw_vst.count()):
             vsts.append(self.ui.lw_vst.item(i).text())
 
+        for i in range(self.ui.lw_au.count()):
+            aus.append(self.ui.lw_au.item(i).text())
+
+        for i in range(self.ui.lw_csound.count()):
+            csds.append(self.ui.lw_csound.item(i).text())
+
         for i in range(self.ui.lw_gig.count()):
             gigs.append(self.ui.lw_gig.item(i).text())
 
@@ -438,13 +481,15 @@ class CarlaSettingsW(QDialog):
         for i in range(self.ui.lw_sfz.count()):
             sfzs.append(self.ui.lw_sfz.item(i).text())
 
-        settings.setValue("Paths/LADSPA", ladspas)
-        settings.setValue("Paths/DSSI", dssis)
-        settings.setValue("Paths/LV2", lv2s)
-        settings.setValue("Paths/VST", vsts)
-        settings.setValue("Paths/GIG", gigs)
-        settings.setValue("Paths/SF2", sf2s)
-        settings.setValue("Paths/SFZ", sfzs)
+        settings.setValue(CARLA_KEY_PATHS_LADSPA, ladspas)
+        settings.setValue(CARLA_KEY_PATHS_DSSI,   dssis)
+        settings.setValue(CARLA_KEY_PATHS_LV2,    lv2s)
+        settings.setValue(CARLA_KEY_PATHS_VST,    vsts)
+        settings.setValue(CARLA_KEY_PATHS_AU,     aus)
+        settings.setValue(CARLA_KEY_PATHS_VST,    csds)
+        settings.setValue(CARLA_KEY_PATHS_GIG,    gigs)
+        settings.setValue(CARLA_KEY_PATHS_SF2,    sf2s)
+        settings.setValue(CARLA_KEY_PATHS_SFZ,    sfzs)
 
     @pyqtSlot()
     def slot_resetSettings(self):
@@ -452,7 +497,6 @@ class CarlaSettingsW(QDialog):
             self.ui.le_main_proj_folder.setText(CARLA_DEFAULT_MAIN_PROJECT_FOLDER)
             self.ui.ch_theme_pro.setChecked(CARLA_DEFAULT_MAIN_USE_PRO_THEME)
             self.ui.cb_theme_color.setCurrentIndex(self.ui.cb_theme_color.findText(CARLA_DEFAULT_MAIN_PRO_THEME_COLOR))
-            self.ui.ch_engine_disable_checks.setChecked(CARLA_DEFAULT_MAIN_DISABLE_CHECKS)
             self.ui.sb_gui_refresh.setValue(CARLA_DEFAULT_MAIN_REFRESH_INTERVAL)
 
         elif self.ui.lw_page.currentRow() == self.TAB_INDEX_CANVAS:
@@ -470,73 +514,100 @@ class CarlaSettingsW(QDialog):
             self.ui.sb_engine_max_params.setValue(CARLA_DEFAULT_MAX_PARAMETERS)
             self.ui.ch_engine_uis_always_on_top.setChecked(CARLA_DEFAULT_UIS_ALWAYS_ON_TOP)
             self.ui.ch_engine_prefer_ui_bridges.setChecked(CARLA_DEFAULT_PREFER_UI_BRIDGES)
-            #self.ui.sb_engine_oscgui_timeout.setValue(CARLA_DEFAULT_OSC_UI_TIMEOUT)
-            self.ui.ch_engine_prefer_plugin_bridges.setChecked(CARLA_DEFAULT_PREFER_PLUGIN_BRIDGES)
+            self.ui.sb_engine_ui_bridges_timeout.setValue(CARLA_DEFAULT_UI_BRIDGES_TIMEOUT)
             self.ui.ch_engine_force_stereo.setChecked(CARLA_DEFAULT_FORCE_STEREO)
+            self.ui.ch_engine_prefer_plugin_bridges.setChecked(CARLA_DEFAULT_PREFER_PLUGIN_BRIDGES)
 
             if self.ui.cb_engine_audio_driver.currentText() == "JACK":
                 self.ui.cb_engine_process_mode_jack.setCurrentIndex(PROCESS_MODE_MULTIPLE_CLIENTS)
-                self.ui.sw_engine_process_mode.setCurrentIndex(0)
+                self.ui.sw_engine_process_mode.setCurrentIndex(0) # show all modes
             else:
                 self.ui.cb_engine_process_mode_other.setCurrentIndex(PROCESS_MODE_CONTINUOUS_RACK-self.PROCESS_MODE_NON_JACK_PADDING)
-                self.ui.sw_engine_process_mode.setCurrentIndex(1)
+                self.ui.sw_engine_process_mode.setCurrentIndex(1) # hide single+multi client modes
 
         elif self.ui.lw_page.currentRow() == self.TAB_INDEX_PATHS:
-            if self.ui.tw_paths.currentIndex() == 0:
+            curIndex = self.ui.tw_paths.currentIndex()
+
+            if curIndex == self.PATH_INDEX_LADSPA:
                 paths = DEFAULT_LADSPA_PATH.split(splitter)
                 paths.sort()
                 self.ui.lw_ladspa.clear()
 
-                for ladspa in paths:
-                    self.ui.lw_ladspa.addItem(ladspa)
+                for path in paths:
+                    if not path: continue
+                    self.ui.lw_ladspa.addItem(path)
 
-            elif self.ui.tw_paths.currentIndex() == 1:
+            elif curIndex == self.PATH_INDEX_DSSI:
                 paths = DEFAULT_DSSI_PATH.split(splitter)
                 paths.sort()
                 self.ui.lw_dssi.clear()
 
-                for dssi in paths:
-                    self.ui.lw_dssi.addItem(dssi)
+                for path in paths:
+                    if not path: continue
+                    self.ui.lw_dssi.addItem(path)
 
-            elif self.ui.tw_paths.currentIndex() == 2:
+            elif curIndex == self.PATH_INDEX_LV2:
                 paths = DEFAULT_LV2_PATH.split(splitter)
                 paths.sort()
                 self.ui.lw_lv2.clear()
 
-                for lv2 in paths:
-                    self.ui.lw_lv2.addItem(lv2)
+                for path in paths:
+                    if not path: continue
+                    self.ui.lw_lv2.addItem(path)
 
-            elif self.ui.tw_paths.currentIndex() == 3:
+            elif curIndex == self.PATH_INDEX_VST:
                 paths = DEFAULT_VST_PATH.split(splitter)
                 paths.sort()
                 self.ui.lw_vst.clear()
 
-                for vst in paths:
-                    self.ui.lw_vst.addItem(vst)
+                for path in paths:
+                    if not path: continue
+                    self.ui.lw_vst.addItem(path)
 
-            elif self.ui.tw_paths.currentIndex() == 4:
+            elif curIndex == self.PATH_INDEX_AU:
+                paths = DEFAULT_AU_PATH.split(splitter)
+                paths.sort()
+                self.ui.lw_au.clear()
+
+                for path in paths:
+                    if not path: continue
+                    self.ui.lw_au.addItem(path)
+
+            elif curIndex == self.PATH_INDEX_CSOUND:
+                paths = DEFAULT_CSOUND_PATH.split(splitter)
+                paths.sort()
+                self.ui.lw_csound.clear()
+
+                for path in paths:
+                    if not path: continue
+                    self.ui.lw_csound.addItem(path)
+
+            elif curIndex == self.PATH_INDEX_GIG:
                 paths = DEFAULT_GIG_PATH.split(splitter)
                 paths.sort()
                 self.ui.lw_gig.clear()
 
-                for gig in paths:
-                    self.ui.lw_gig.addItem(gig)
+                for path in paths:
+                    if not path: continue
+                    self.ui.lw_gig.addItem(path)
 
-            elif self.ui.tw_paths.currentIndex() == 5:
+            elif curIndex == self.PATH_INDEX_SF2:
                 paths = DEFAULT_SF2_PATH.split(splitter)
                 paths.sort()
                 self.ui.lw_sf2.clear()
 
-                for sf2 in paths:
-                    self.ui.lw_sf2.addItem(sf2)
+                for path in paths:
+                    if not path: continue
+                    self.ui.lw_sf2.addItem(path)
 
-            elif self.ui.tw_paths.currentIndex() == 6:
+            elif curIndex == self.PATH_INDEX_SFZ:
                 paths = DEFAULT_SFZ_PATH.split(splitter)
                 paths.sort()
                 self.ui.lw_sfz.clear()
 
-                for sfz in paths:
-                    self.ui.lw_sfz.addItem(sfz)
+                for path in paths:
+                    if not path: continue
+                    self.ui.lw_sfz.addItem(path)
 
     @pyqtSlot()
     def slot_getAndSetProjectPath(self):
@@ -546,8 +617,10 @@ class CarlaSettingsW(QDialog):
     def slot_engineAudioDriverChanged(self):
         if self.ui.cb_engine_audio_driver.currentText() == "JACK":
             self.ui.sw_engine_process_mode.setCurrentIndex(0)
+            self.ui.tb_engine_driver_config.setEnabled(False)
         else:
             self.ui.sw_engine_process_mode.setCurrentIndex(1)
+            self.ui.tb_engine_driver_config.setEnabled(True)
 
     @pyqtSlot()
     def slot_showAudioDriverSettings(self):
@@ -558,91 +631,125 @@ class CarlaSettingsW(QDialog):
     @pyqtSlot()
     def slot_addPluginPath(self):
         newPath = QFileDialog.getExistingDirectory(self, self.tr("Add Path"), "", QFileDialog.ShowDirsOnly)
-        if newPath:
-            if self.ui.tw_paths.currentIndex() == 0:
-                self.ui.lw_ladspa.addItem(newPath)
-            elif self.ui.tw_paths.currentIndex() == 1:
-                self.ui.lw_dssi.addItem(newPath)
-            elif self.ui.tw_paths.currentIndex() == 2:
-                self.ui.lw_lv2.addItem(newPath)
-            elif self.ui.tw_paths.currentIndex() == 3:
-                self.ui.lw_vst.addItem(newPath)
-            elif self.ui.tw_paths.currentIndex() == 4:
-                self.ui.lw_gig.addItem(newPath)
-            elif self.ui.tw_paths.currentIndex() == 5:
-                self.ui.lw_sf2.addItem(newPath)
-            elif self.ui.tw_paths.currentIndex() == 6:
-                self.ui.lw_sfz.addItem(newPath)
+
+        if not newPath:
+            return
+
+        curIndex = self.ui.tw_paths.currentIndex()
+
+        if curIndex == self.PATH_INDEX_LADSPA:
+            self.ui.lw_ladspa.addItem(newPath)
+        elif curIndex == self.PATH_INDEX_DSSI:
+            self.ui.lw_dssi.addItem(newPath)
+        elif curIndex == self.PATH_INDEX_LV2:
+            self.ui.lw_lv2.addItem(newPath)
+        elif curIndex == self.PATH_INDEX_VST:
+            self.ui.lw_vst.addItem(newPath)
+        elif curIndex == self.PATH_INDEX_AU:
+            self.ui.lw_au.addItem(newPath)
+        elif curIndex == self.PATH_INDEX_CSOUND:
+            self.ui.lw_csound.addItem(newPath)
+        elif curIndex == self.PATH_INDEX_GIG:
+            self.ui.lw_gig.addItem(newPath)
+        elif curIndex == self.PATH_INDEX_SF2:
+            self.ui.lw_sf2.addItem(newPath)
+        elif curIndex == self.PATH_INDEX_SFZ:
+            self.ui.lw_sfz.addItem(newPath)
 
     @pyqtSlot()
     def slot_removePluginPath(self):
-        if self.ui.tw_paths.currentIndex() == 0:
+        curIndex = self.ui.tw_paths.currentIndex()
+
+        if curIndex == self.PATH_INDEX_LADSPA:
             self.ui.lw_ladspa.takeItem(self.ui.lw_ladspa.currentRow())
-        elif self.ui.tw_paths.currentIndex() == 1:
+        elif curIndex == self.PATH_INDEX_DSSI:
             self.ui.lw_dssi.takeItem(self.ui.lw_dssi.currentRow())
-        elif self.ui.tw_paths.currentIndex() == 2:
+        elif curIndex == self.PATH_INDEX_LV2:
             self.ui.lw_lv2.takeItem(self.ui.lw_lv2.currentRow())
-        elif self.ui.tw_paths.currentIndex() == 3:
+        elif curIndex == self.PATH_INDEX_VST:
             self.ui.lw_vst.takeItem(self.ui.lw_vst.currentRow())
-        elif self.ui.tw_paths.currentIndex() == 4:
+        elif curIndex == self.PATH_INDEX_AU:
+            self.ui.lw_au.takeItem(self.ui.lw_au.currentRow())
+        elif curIndex == self.PATH_INDEX_CSOUND:
+            self.ui.lw_csound.takeItem(self.ui.lw_csound.currentRow())
+        elif curIndex == self.PATH_INDEX_GIG:
             self.ui.lw_gig.takeItem(self.ui.lw_gig.currentRow())
-        elif self.ui.tw_paths.currentIndex() == 5:
+        elif curIndex == self.PATH_INDEX_SF2:
             self.ui.lw_sf2.takeItem(self.ui.lw_sf2.currentRow())
-        elif self.ui.tw_paths.currentIndex() == 6:
+        elif curIndex == self.PATH_INDEX_SFZ:
             self.ui.lw_sfz.takeItem(self.ui.lw_sfz.currentRow())
 
     @pyqtSlot()
     def slot_changePluginPath(self):
-        if self.ui.tw_paths.currentIndex() == 0:
+        curIndex = self.ui.tw_paths.currentIndex()
+
+        if curIndex == self.PATH_INDEX_LADSPA:
             currentPath = self.ui.lw_ladspa.currentItem().text()
-        elif self.ui.tw_paths.currentIndex() == 1:
+        elif curIndex == self.PATH_INDEX_DSSI:
             currentPath = self.ui.lw_dssi.currentItem().text()
-        elif self.ui.tw_paths.currentIndex() == 2:
+        elif curIndex == self.PATH_INDEX_LV2:
             currentPath = self.ui.lw_lv2.currentItem().text()
-        elif self.ui.tw_paths.currentIndex() == 3:
+        elif curIndex == self.PATH_INDEX_VST:
             currentPath = self.ui.lw_vst.currentItem().text()
-        elif self.ui.tw_paths.currentIndex() == 4:
+        elif curIndex == self.PATH_INDEX_AU:
+            currentPath = self.ui.lw_au.currentItem().text()
+        elif curIndex == self.PATH_INDEX_CSOUND:
+            currentPath = self.ui.lw_csound.currentItem().text()
+        elif curIndex == self.PATH_INDEX_GIG:
             currentPath = self.ui.lw_gig.currentItem().text()
-        elif self.ui.tw_paths.currentIndex() == 5:
+        elif curIndex == self.PATH_INDEX_SF2:
             currentPath = self.ui.lw_sf2.currentItem().text()
-        elif self.ui.tw_paths.currentIndex() == 6:
+        elif curIndex == self.PATH_INDEX_SFZ:
             currentPath = self.ui.lw_sfz.currentItem().text()
         else:
             currentPath = ""
 
         newPath = QFileDialog.getExistingDirectory(self, self.tr("Add Path"), currentPath, QFileDialog.ShowDirsOnly)
 
-        if newPath:
-            if self.ui.tw_paths.currentIndex() == 0:
-                self.ui.lw_ladspa.currentItem().setText(newPath)
-            elif self.ui.tw_paths.currentIndex() == 1:
-                self.ui.lw_dssi.currentItem().setText(newPath)
-            elif self.ui.tw_paths.currentIndex() == 2:
-                self.ui.lw_lv2.currentItem().setText(newPath)
-            elif self.ui.tw_paths.currentIndex() == 3:
-                self.ui.lw_vst.currentItem().setText(newPath)
-            elif self.ui.tw_paths.currentIndex() == 4:
-                self.ui.lw_gig.currentItem().setText(newPath)
-            elif self.ui.tw_paths.currentIndex() == 5:
-                self.ui.lw_sf2.currentItem().setText(newPath)
-            elif self.ui.tw_paths.currentIndex() == 6:
-                self.ui.lw_sfz.currentItem().setText(newPath)
+        if not newPath:
+            return
+
+        if curIndex == self.PATH_INDEX_LADSPA:
+            self.ui.lw_ladspa.currentItem().setText(newPath)
+        elif curIndex == self.PATH_INDEX_DSSI:
+            self.ui.lw_dssi.currentItem().setText(newPath)
+        elif curIndex == self.PATH_INDEX_LV2:
+            self.ui.lw_lv2.currentItem().setText(newPath)
+        elif curIndex == self.PATH_INDEX_VST:
+            self.ui.lw_vst.currentItem().setText(newPath)
+        elif curIndex == self.PATH_INDEX_AU:
+            self.ui.lw_au.currentItem().setText(newPath)
+        elif curIndex == self.PATH_INDEX_CSOUND:
+            self.ui.lw_csound.currentItem().setText(newPath)
+        elif curIndex == self.PATH_INDEX_GIG:
+            self.ui.lw_gig.currentItem().setText(newPath)
+        elif curIndex == self.PATH_INDEX_SF2:
+            self.ui.lw_sf2.currentItem().setText(newPath)
+        elif curIndex == self.PATH_INDEX_SFZ:
+            self.ui.lw_sfz.currentItem().setText(newPath)
 
     @pyqtSlot(int)
     def slot_pluginPathTabChanged(self, index):
-        if index == 0:
+        if index >= self.PATH_INDEX_AU and not MACOS:
+            self.ui.tw_paths.setCurrentIndex(index+1)
+
+        if index == self.PATH_INDEX_LADSPA:
             row = self.ui.lw_ladspa.currentRow()
-        elif index == 1:
+        elif index == self.PATH_INDEX_DSSI:
             row = self.ui.lw_dssi.currentRow()
-        elif index == 2:
+        elif index == self.PATH_INDEX_LV2:
             row = self.ui.lw_lv2.currentRow()
-        elif index == 3:
+        elif index == self.PATH_INDEX_VST:
             row = self.ui.lw_vst.currentRow()
-        elif index == 4:
+        elif index == self.PATH_INDEX_AU:
+            row = self.ui.lw_au.currentRow()
+        elif index == self.PATH_INDEX_CSOUND:
+            row = self.ui.lw_csound.currentRow()
+        elif index == self.PATH_INDEX_GIG:
             row = self.ui.lw_gig.currentRow()
-        elif index == 5:
+        elif index == self.PATH_INDEX_SF2:
             row = self.ui.lw_sf2.currentRow()
-        elif index == 6:
+        elif index == self.PATH_INDEX_SFZ:
             row = self.ui.lw_sfz.currentRow()
         else:
             row = -1

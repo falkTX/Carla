@@ -335,7 +335,7 @@
             <string>Misc</string>
            </property>
            <layout class="QGridLayout" name="gridLayout_4">
-            <item row="1" column="0">
+            <item row="0" column="0">
              <widget class="QLabel" name="label_main_refresh_interval">
               <property name="text">
                <string>GUI Refresh interval:</string>
@@ -345,7 +345,7 @@
               </property>
              </widget>
             </item>
-            <item row="1" column="1">
+            <item row="0" column="1">
              <widget class="QSpinBox" name="sb_main_refresh_interval">
               <property name="suffix">
                <string> ms</string>
@@ -361,7 +361,7 @@
               </property>
              </widget>
             </item>
-            <item row="1" column="2">
+            <item row="0" column="2">
              <spacer name="horizontalSpacer_12">
               <property name="orientation">
                <enum>Qt::Horizontal</enum>
@@ -376,17 +376,6 @@
                </size>
               </property>
              </spacer>
-            </item>
-            <item row="0" column="0" colspan="3">
-             <widget class="QCheckBox" name="ch_main_disable_checks">
-              <property name="toolTip">
-               <string>Carla will run small processing checks when scanning the plugins (to make sure they won't crash).
-You can disable these checks to get a faster scanning time (at your own risk).</string>
-              </property>
-              <property name="text">
-               <string>Disable processing checks while scanning</string>
-              </property>
-             </widget>
             </item>
            </layout>
           </widget>
@@ -873,7 +862,7 @@ You can disable these checks to get a faster scanning time (at your own risk).</
                <string>How much time to wait for OSC GUIs to ping back the host</string>
               </property>
               <property name="text">
-               <string>OSC UI Timeout:</string>
+               <string>UI Bridge Timeout:</string>
               </property>
               <property name="alignment">
                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -881,7 +870,7 @@ You can disable these checks to get a faster scanning time (at your own risk).</
              </widget>
             </item>
             <item row="4" column="1">
-             <widget class="QSpinBox" name="sb_engine_oscgui_timeout">
+             <widget class="QSpinBox" name="sb_engine_ui_bridges_timeout">
               <property name="toolTip">
                <string>How much time to wait for OSC GUIs to ping back the host</string>
               </property>
@@ -936,9 +925,13 @@ You can disable these checks to get a faster scanning time (at your own risk).</
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_17">
             <item>
-             <widget class="QCheckBox" name="ch_engine_dssi_chunks">
+             <widget class="QCheckBox" name="ch_engine_force_stereo">
+              <property name="toolTip">
+               <string>Force mono plugins as stereo by running 2 instances at the same time.
+This mode is not available for VST plugins.</string>
+              </property>
               <property name="text">
-               <string>Enable chunk data for dssi-vst</string>
+               <string>Force mono plugins as stereo (EXPERIMENTAL)</string>
               </property>
              </widget>
             </item>
@@ -949,17 +942,6 @@ You can disable these checks to get a faster scanning time (at your own risk).</
               </property>
               <property name="text">
                <string>Run plugins in bridge mode when possible (EXPERIMENTAL)</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QCheckBox" name="ch_engine_force_stereo">
-              <property name="toolTip">
-               <string>Force mono plugins as stereo by running 2 instances at the same time.
-This mode is not available for VST plugins.</string>
-              </property>
-              <property name="text">
-               <string>Force mono plugins as stereo (EXPERIMENTAL)</string>
               </property>
              </widget>
             </item>
@@ -1051,11 +1033,11 @@ This mode is not available for VST plugins.</string>
         </layout>
        </widget>
        <widget class="QWidget" name="page_paths">
-        <layout class="QGridLayout" name="gridLayout">
+        <layout class="QVBoxLayout" name="verticalLayout_19">
          <property name="margin">
           <number>2</number>
          </property>
-         <item row="0" column="0" colspan="2">
+         <item>
           <layout class="QHBoxLayout" name="horizontalLayout_6">
            <item>
             <widget class="QLabel" name="label_18">
@@ -1095,188 +1077,269 @@ This mode is not available for VST plugins.</string>
            </item>
           </layout>
          </item>
-         <item row="1" column="0">
-          <widget class="QTabWidget" name="tw_paths">
-           <property name="currentIndex">
-            <number>0</number>
-           </property>
-           <widget class="QWidget" name="ladspa">
-            <attribute name="title">
-             <string>LADSPA</string>
-            </attribute>
-            <layout class="QVBoxLayout" name="verticalLayout_11">
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_9">
+           <item>
+            <widget class="QComboBox" name="cb_paths">
+             <property name="minimumSize">
+              <size>
+               <width>120</width>
+               <height>0</height>
+              </size>
+             </property>
              <item>
-              <widget class="QListWidget" name="lw_ladspa"/>
+              <property name="text">
+               <string>LADSPA</string>
+              </property>
              </item>
-            </layout>
-           </widget>
-           <widget class="QWidget" name="dssi">
-            <attribute name="title">
-             <string>DSSI</string>
-            </attribute>
-            <layout class="QVBoxLayout" name="verticalLayout_12">
              <item>
-              <widget class="QListWidget" name="lw_dssi"/>
+              <property name="text">
+               <string>DSSI</string>
+              </property>
              </item>
-            </layout>
-           </widget>
-           <widget class="QWidget" name="lv2">
-            <attribute name="title">
-             <string>LV2</string>
-            </attribute>
-            <layout class="QGridLayout" name="gridLayout_6">
-             <item row="0" column="0" colspan="2">
-              <widget class="QListWidget" name="lw_lv2"/>
+             <item>
+              <property name="text">
+               <string>LV2</string>
+              </property>
              </item>
-             <item row="1" column="0">
-              <widget class="QLabel" name="label_4">
-               <property name="maximumSize">
+             <item>
+              <property name="text">
+               <string>VST</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>AU</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>CSound</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>GIG</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>SF2</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>SFZ</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer_17">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>20</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_11">
+           <item>
+            <widget class="QStackedWidget" name="tw_paths">
+             <property name="currentIndex">
+              <number>0</number>
+             </property>
+             <widget class="QWidget" name="tw_paths_ladspa" native="true">
+              <layout class="QVBoxLayout" name="verticalLayout_11">
+               <property name="spacing">
+                <number>0</number>
+               </property>
+               <property name="margin">
+                <number>0</number>
+               </property>
+               <item>
+                <widget class="QListWidget" name="lw_ladspa"/>
+               </item>
+              </layout>
+             </widget>
+             <widget class="QWidget" name="tw_paths_dssi" native="true">
+              <layout class="QVBoxLayout" name="verticalLayout_12">
+               <property name="spacing">
+                <number>0</number>
+               </property>
+               <property name="margin">
+                <number>0</number>
+               </property>
+               <item>
+                <widget class="QListWidget" name="lw_dssi"/>
+               </item>
+              </layout>
+             </widget>
+             <widget class="QWidget" name="tw_paths_lv2" native="true">
+              <layout class="QVBoxLayout" name="verticalLayout_6">
+               <property name="spacing">
+                <number>0</number>
+               </property>
+               <property name="margin">
+                <number>0</number>
+               </property>
+               <item>
+                <widget class="QListWidget" name="lw_lv2"/>
+               </item>
+              </layout>
+             </widget>
+             <widget class="QWidget" name="tw_paths_vst" native="true">
+              <layout class="QVBoxLayout" name="verticalLayout_13">
+               <property name="spacing">
+                <number>0</number>
+               </property>
+               <property name="margin">
+                <number>0</number>
+               </property>
+               <item>
+                <widget class="QListWidget" name="lw_vst"/>
+               </item>
+              </layout>
+             </widget>
+             <widget class="QWidget" name="tw_paths_au">
+              <layout class="QVBoxLayout" name="verticalLayout_10">
+               <property name="spacing">
+                <number>0</number>
+               </property>
+               <property name="margin">
+                <number>0</number>
+               </property>
+               <item>
+                <widget class="QListWidget" name="lw_au"/>
+               </item>
+              </layout>
+             </widget>
+             <widget class="QWidget" name="tw_paths_csound">
+              <layout class="QVBoxLayout" name="verticalLayout_16">
+               <property name="spacing">
+                <number>0</number>
+               </property>
+               <property name="margin">
+                <number>0</number>
+               </property>
+               <item>
+                <widget class="QListWidget" name="lw_csound"/>
+               </item>
+              </layout>
+             </widget>
+             <widget class="QWidget" name="tw_paths_gig" native="true">
+              <layout class="QVBoxLayout" name="verticalLayout_15">
+               <property name="spacing">
+                <number>0</number>
+               </property>
+               <property name="margin">
+                <number>0</number>
+               </property>
+               <item>
+                <widget class="QListWidget" name="lw_gig"/>
+               </item>
+              </layout>
+             </widget>
+             <widget class="QWidget" name="tw_paths_sf2" native="true">
+              <layout class="QVBoxLayout" name="verticalLayout_4">
+               <property name="spacing">
+                <number>0</number>
+               </property>
+               <property name="margin">
+                <number>0</number>
+               </property>
+               <item>
+                <widget class="QListWidget" name="lw_sf2"/>
+               </item>
+              </layout>
+             </widget>
+             <widget class="QWidget" name="tw_paths_sfz" native="true">
+              <layout class="QVBoxLayout" name="verticalLayout_14">
+               <property name="spacing">
+                <number>0</number>
+               </property>
+               <property name="margin">
+                <number>0</number>
+               </property>
+               <item>
+                <widget class="QListWidget" name="lw_sfz"/>
+               </item>
+              </layout>
+             </widget>
+            </widget>
+           </item>
+           <item>
+            <layout class="QVBoxLayout" name="verticalLayout">
+             <item>
+              <widget class="QPushButton" name="b_paths_add">
+               <property name="text">
+                <string>Add...</string>
+               </property>
+               <property name="icon">
+                <iconset resource="../resources.qrc">
+                 <normaloff>:/16x16/list-add.png</normaloff>:/16x16/list-add.png</iconset>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="b_paths_remove">
+               <property name="text">
+                <string>Remove</string>
+               </property>
+               <property name="icon">
+                <iconset resource="../resources.qrc">
+                 <normaloff>:/16x16/list-remove.png</normaloff>:/16x16/list-remove.png</iconset>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="verticalSpacer_2">
+               <property name="orientation">
+                <enum>Qt::Vertical</enum>
+               </property>
+               <property name="sizeType">
+                <enum>QSizePolicy::Fixed</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
                 <size>
-                 <width>22</width>
-                 <height>22</height>
+                 <width>20</width>
+                 <height>20</height>
                 </size>
                </property>
+              </spacer>
+             </item>
+             <item>
+              <widget class="QPushButton" name="b_paths_change">
                <property name="text">
-                <string/>
+                <string>Change...</string>
                </property>
-               <property name="pixmap">
-                <pixmap resource="../resources.qrc">:/16x16/dialog-information.png</pixmap>
-               </property>
-               <property name="alignment">
-                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+               <property name="icon">
+                <iconset resource="../resources.qrc">
+                 <normaloff>:/16x16/edit-rename.png</normaloff>:/16x16/edit-rename.png</iconset>
                </property>
               </widget>
              </item>
-             <item row="1" column="1">
-              <widget class="QLabel" name="label_5">
-               <property name="text">
-                <string>Restart Carla to be able to load new found plugins</string>
+             <item>
+              <spacer name="verticalSpacer_7">
+               <property name="orientation">
+                <enum>Qt::Vertical</enum>
                </property>
-              </widget>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>20</width>
+                 <height>40</height>
+                </size>
+               </property>
+              </spacer>
              </item>
             </layout>
-           </widget>
-           <widget class="QWidget" name="vst">
-            <attribute name="title">
-             <string>VST</string>
-            </attribute>
-            <layout class="QVBoxLayout" name="verticalLayout_13">
-             <item>
-              <widget class="QListWidget" name="lw_vst"/>
-             </item>
-            </layout>
-           </widget>
-           <widget class="QWidget" name="gig">
-            <attribute name="title">
-             <string>GIG</string>
-            </attribute>
-            <layout class="QVBoxLayout" name="verticalLayout_15">
-             <item>
-              <widget class="QListWidget" name="lw_gig"/>
-             </item>
-            </layout>
-           </widget>
-           <widget class="QWidget" name="tab_sf2">
-            <attribute name="title">
-             <string>SF2</string>
-            </attribute>
-            <layout class="QVBoxLayout" name="verticalLayout_4">
-             <item>
-              <widget class="QListWidget" name="lw_sf2"/>
-             </item>
-            </layout>
-           </widget>
-           <widget class="QWidget" name="tab_sfz">
-            <attribute name="title">
-             <string>SFZ</string>
-            </attribute>
-            <layout class="QVBoxLayout" name="verticalLayout_14">
-             <item>
-              <widget class="QListWidget" name="lw_sfz"/>
-             </item>
-            </layout>
-           </widget>
-          </widget>
-         </item>
-         <item row="1" column="1">
-          <layout class="QVBoxLayout" name="verticalLayout">
-           <item>
-            <spacer name="verticalSpacer_8">
-             <property name="orientation">
-              <enum>Qt::Vertical</enum>
-             </property>
-             <property name="sizeType">
-              <enum>QSizePolicy::Fixed</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>20</width>
-               <height>20</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-           <item>
-            <widget class="QPushButton" name="b_paths_add">
-             <property name="text">
-              <string>Add...</string>
-             </property>
-             <property name="icon">
-              <iconset resource="../resources.qrc">
-               <normaloff>:/16x16/list-add.png</normaloff>:/16x16/list-add.png</iconset>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="b_paths_remove">
-             <property name="text">
-              <string>Remove</string>
-             </property>
-             <property name="icon">
-              <iconset resource="../resources.qrc">
-               <normaloff>:/16x16/list-remove.png</normaloff>:/16x16/list-remove.png</iconset>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <spacer name="verticalSpacer_2">
-             <property name="orientation">
-              <enum>Qt::Vertical</enum>
-             </property>
-             <property name="sizeType">
-              <enum>QSizePolicy::Fixed</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>20</width>
-               <height>20</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-           <item>
-            <widget class="QPushButton" name="b_paths_change">
-             <property name="text">
-              <string>Change...</string>
-             </property>
-             <property name="icon">
-              <iconset resource="../resources.qrc">
-               <normaloff>:/16x16/edit-rename.png</normaloff>:/16x16/edit-rename.png</iconset>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <spacer name="verticalSpacer_7">
-             <property name="orientation">
-              <enum>Qt::Vertical</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>20</width>
-               <height>40</height>
-              </size>
-             </property>
-            </spacer>
            </item>
           </layout>
          </item>
@@ -1399,6 +1462,22 @@ This mode is not available for VST plugins.</string>
     <hint type="destinationlabel">
      <x>314</x>
      <y>167</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>cb_paths</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>tw_paths</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>323</x>
+     <y>82</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>323</x>
+     <y>244</y>
     </hint>
    </hints>
   </connection>

@@ -306,7 +306,6 @@ else:
 CARLA_KEY_MAIN_PROJECT_FOLDER   = "Main/ProjectFolder"   # str
 CARLA_KEY_MAIN_USE_PRO_THEME    = "Main/UseProTheme"     # bool
 CARLA_KEY_MAIN_PRO_THEME_COLOR  = "Main/ProThemeColor"   # str
-CARLA_KEY_MAIN_DISABLE_CHECKS   = "Main/DisableChecks"   # bool
 CARLA_KEY_MAIN_REFRESH_INTERVAL = "Main/RefreshInterval" # int
 
 CARLA_KEY_CANVAS_THEME            = "Canvas/Theme"           # str
@@ -318,15 +317,15 @@ CARLA_KEY_CANVAS_USE_OPENGL       = "Canvas/UseOpenGL"       # bool
 CARLA_KEY_CANVAS_ANTIALIASING     = "Canvas/Antialiasing"    # enum
 CARLA_KEY_CANVAS_HQ_ANTIALIASING  = "Canvas/HQAntialiasing"  # bool
 
-CARLA_KEY_ENGINE_ = "Engine/AudioDriver"         # str
-CARLA_KEY_ENGINE_ = "Engine/ProcessMode"         # enum
-CARLA_KEY_ENGINE_ = "Engine/MaxParameters"       # bool
-CARLA_KEY_ENGINE_ = "Engine/UIsAlwaysOnTop"      # bool
-CARLA_KEY_ENGINE_ = "Engine/PreferUiBridges"     # bool
-CARLA_KEY_ENGINE_ = "Engine/OscUiTimeout"        # int
-CARLA_KEY_ENGINE_ = "Engine/PreferPluginBridges" # bool
-CARLA_KEY_ENGINE_ = "Engine/ForceStereo"         # bool
-CARLA_KEY_ENGINE_DRIVER_PREFIX = "Engine/Driver-"
+CARLA_KEY_ENGINE_DRIVER_PREFIX         = "Engine/Driver-"
+CARLA_KEY_ENGINE_AUDIO_DRIVER          = "Engine/AudioDriver"         # str
+CARLA_KEY_ENGINE_PROCESS_MODE          = "Engine/ProcessMode"         # enum
+CARLA_KEY_ENGINE_FORCE_STEREO          = "Engine/ForceStereo"         # bool
+CARLA_KEY_ENGINE_PREFER_PLUGIN_BRIDGES = "Engine/PreferPluginBridges" # bool
+CARLA_KEY_ENGINE_PREFER_UI_BRIDGES     = "Engine/PreferUiBridges"     # bool
+CARLA_KEY_ENGINE_UIS_ALWAYS_ON_TOP     = "Engine/UIsAlwaysOnTop"      # bool
+CARLA_KEY_ENGINE_MAX_PARAMETERS        = "Engine/MaxParameters"       # int
+CARLA_KEY_ENGINE_UI_BRIDGES_TIMEOUT    = "Engine/UiBridgesTimeout"    # int
 
 CARLA_KEY_PATHS_LADSPA = "Paths/LADSPA"
 CARLA_KEY_PATHS_DSSI   = "Paths/DSSI"
