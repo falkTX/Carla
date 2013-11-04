@@ -216,8 +216,6 @@ class CarlaSettingsW(QDialog):
         # -------------------------------------------------------------
         # Set-up GUI
 
-        self.fChangingTabNow = False
-
         if Carla.host is not None:
             for i in range(Carla.host.get_engine_driver_count()):
                 self.ui.cb_engine_audio_driver.addItem(cString(Carla.host.get_engine_driver_name(i)))
