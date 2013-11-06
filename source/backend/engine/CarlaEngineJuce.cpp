@@ -117,7 +117,7 @@ private:
 
 // -----------------------------------------
 
-CarlaEngine* CarlaEngine::newJuce()
+CarlaEngine* CarlaEngine::newJuce(const AudioApi /*api*/)
 {
     return new CarlaEngineJuce();
 }
@@ -127,12 +127,12 @@ size_t CarlaEngine::getJuceApiCount()
     return 0;
 }
 
-const char* CarlaEngine::getJuceApiName(const unsigned int index)
+const char* CarlaEngine::getJuceApiName(const unsigned int /*index*/)
 {
     return nullptr;
 }
 
-const char** CarlaEngine::getJuceApiDeviceNames(const unsigned int index)
+const char** CarlaEngine::getJuceApiDeviceNames(const unsigned int /*index*/)
 {
 #if 0
     juce::ScopedPointer<juce::AudioIODeviceType> deviceType;

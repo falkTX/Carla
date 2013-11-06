@@ -465,10 +465,8 @@ public:
         CarlaEngineClient::deactivate();
     }
 
-    bool isOk() const override
+    bool isOk() const noexcept override
     {
-        carla_debug("CarlaEngineJackClient::isOk()");
-
         if (fUseClient)
             return (fClient != nullptr);
 
@@ -476,12 +474,15 @@ public:
     }
 
 #if 0
-    void setLatency(const uint32_t samples) override
+    void setLatency(const uint32_t samples) noexcept override
     {
         CarlaEngineClient::setLatency(samples);
 
         if (fUseClient && fClient != nullptr)
+        {
+            // try etc
             jackbridge_recompute_total_latencies(fClient);
+        }
     }
 #endif
 
@@ -592,7 +593,16 @@ public:
     unsigned int getMaxClientNameSize() const noexcept override
     {
         if (fOptions.processMode == PROCESS_MODE_SINGLE_CLIENT || fOptions.processMode == PROCESS_MODE_MULTIPLE_CLIENTS)
-            return static_cast<unsigned int>(jackbridge_client_name_size());
+        {
+            unsigned int ret = 0;
+
+            try {
+              ret = static_cast<unsigned int>(jackbridge_client_name_size());
+            }
+            catch (...) {}
+
+            return ret;
+        }
 
         return CarlaEngine::getMaxClientNameSize();
     }
@@ -600,7 +610,16 @@ public:
     unsigned int getMaxPortNameSize() const noexcept override
     {
         if (fOptions.processMode == PROCESS_MODE_SINGLE_CLIENT || fOptions.processMode == PROCESS_MODE_MULTIPLE_CLIENTS)
-            return static_cast<unsigned int>(jackbridge_port_name_size());
+        {
+            unsigned int ret = 0;
+
+            try {
+              ret = static_cast<unsigned int>(jackbridge_port_name_size());
+            }
+            catch (...) {}
+
+            return ret;
+        }
 
         return CarlaEngine::getMaxPortNameSize();
     }

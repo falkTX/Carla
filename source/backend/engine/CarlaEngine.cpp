@@ -65,10 +65,6 @@ CarlaEngineAudioPort::~CarlaEngineAudioPort()
     carla_debug("CarlaEngineAudioPort::~CarlaEngineAudioPort()");
 }
 
-void CarlaEngineAudioPort::initBuffer()
-{
-}
-
 // -----------------------------------------------------------------------
 // Carla Engine CV port
 
@@ -195,13 +191,15 @@ void CarlaEngineEventPort::writeControlEvent(const uint32_t time, const uint8_t 
         if (fBuffer[i].type != kEngineEventTypeNull)
             continue;
 
-        fBuffer[i].type    = kEngineEventTypeControl;
-        fBuffer[i].time    = time;
-        fBuffer[i].channel = channel;
+        EngineEvent& event(fBuffer[i]);
 
-        fBuffer[i].ctrl.type  = type;
-        fBuffer[i].ctrl.param = param;
-        fBuffer[i].ctrl.value = fixedValue;
+        event.type    = kEngineEventTypeControl;
+        event.time    = time;
+        event.channel = channel;
+
+        event.ctrl.type  = type;
+        event.ctrl.param = param;
+        event.ctrl.value = fixedValue;
 
         return;
     }
@@ -223,17 +221,19 @@ void CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t cha
         if (fBuffer[i].type != kEngineEventTypeNull)
             continue;
 
-        fBuffer[i].type    = kEngineEventTypeMidi;
-        fBuffer[i].time    = time;
-        fBuffer[i].channel = channel;
+        EngineEvent& event(fBuffer[i]);
 
-        fBuffer[i].midi.port = port;
-        fBuffer[i].midi.size = size;
+        event.type    = kEngineEventTypeMidi;
+        event.time    = time;
+        event.channel = channel;
 
-        fBuffer[i].midi.data[0] = MIDI_GET_CHANNEL_FROM_DATA(data);
+        event.midi.port = port;
+        event.midi.size = size;
+
+        event.midi.data[0] = MIDI_GET_CHANNEL_FROM_DATA(data);
 
         for (uint8_t j=1; j < size; ++j)
-            fBuffer[i].midi.data[j] = data[j];
+            event.midi.data[j] = data[j];
 
         return;
     }
@@ -274,33 +274,30 @@ void CarlaEngineClient::deactivate()
     fActive = false;
 }
 
-bool CarlaEngineClient::isActive() const
+bool CarlaEngineClient::isActive() const noexcept
 {
-    carla_debug("CarlaEngineClient::isActive()");
-
     return fActive;
 }
 
-bool CarlaEngineClient::isOk() const
+bool CarlaEngineClient::isOk() const noexcept
 {
-    carla_debug("CarlaEngineClient::isOk()");
-
     return true;
 }
 
-uint32_t CarlaEngineClient::getLatency() const
+uint32_t CarlaEngineClient::getLatency() const noexcept
 {
     return fLatency;
 }
 
-void CarlaEngineClient::setLatency(const uint32_t samples)
+void CarlaEngineClient::setLatency(const uint32_t samples) noexcept
 {
     fLatency = samples;
 }
 
 CarlaEnginePort* CarlaEngineClient::addPort(const EnginePortType portType, const char* const name, const bool isInput)
 {
-    carla_debug("CarlaEngineClient::addPort(%s, \"%s\", %s)", EnginePortType2Str(portType), name, bool2str(isInput));
+    CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0', nullptr);
+    carla_debug("CarlaEngineClient::addPort(%i:%s, \"%s\", %s)", portType, EnginePortType2Str(portType), name, bool2str(isInput));
 
     switch (portType)
     {
@@ -339,7 +336,7 @@ CarlaEngine::~CarlaEngine()
 }
 
 // -----------------------------------------------------------------------
-// Static values and calls
+// Static calls
 
 unsigned int CarlaEngine::getDriverCount()
 {
@@ -384,9 +381,7 @@ const char** CarlaEngine::getDriverDeviceNames(const unsigned int index)
 
     if (index == 0)
     {
-        //static const char* const strOff = "Auto-connect OFF";
-        //static const char* const strOn  = "Auto-connect ON";
-        static const char* ret[3] = { "Auto-connect OFF", "Auto-connect ON", nullptr };
+        static const char* ret[3] = { "Auto-Connect OFF", "Auto-Connect ON", nullptr };
         return ret;
     }
 
@@ -408,39 +403,33 @@ const char** CarlaEngine::getDriverDeviceNames(const unsigned int index)
 
 CarlaEngine* CarlaEngine::newDriverByName(const char* const driverName)
 {
+    CARLA_SAFE_ASSERT_RETURN(driverName != nullptr && driverName[0] != '\0', nullptr);
     carla_debug("CarlaEngine::newDriverByName(\"%s\")", driverName);
 
     if (std::strcmp(driverName, "JACK") == 0)
         return newJack();
 
-#ifdef __LINUX_ALSA__
-    if (std::strcmp(driverName, "ALSA") == 0)
-        return newRtAudio(RTAUDIO_LINUX_ALSA);
-#endif
-#ifdef __LINUX_PULSE__
-    if (std::strcmp(driverName, "PulseAudio") == 0)
-        return newRtAudio(RTAUDIO_LINUX_PULSE);
-#endif
-#ifdef __LINUX_OSS__
-    if (std::strcmp(driverName, "OSS") == 0)
-        return newRtAudio(RTAUDIO_LINUX_OSS);
-#endif
-#ifdef __UNIX_JACK__
+    // common
     if (std::strncmp(driverName, "JACK ", 5) == 0)
-        return newRtAudio(RTAUDIO_UNIX_JACK);
-#endif
-#ifdef __MACOSX_CORE__
+        return newRtAudio(AUDIO_API_JACK);
+
+    // linux
+    if (std::strcmp(driverName, "ALSA") == 0)
+        return newRtAudio(AUDIO_API_ALSA);
+    if (std::strcmp(driverName, "OSS") == 0)
+        return newRtAudio(AUDIO_API_OSS);
+    if (std::strcmp(driverName, "PulseAudio") == 0)
+        return newRtAudio(AUDIO_API_PULSE);
+
+    // macos
     if (std::strcmp(driverName, "CoreAudio") == 0)
-        return newRtAudio(RTAUDIO_MACOSX_CORE);
-#endif
-#ifdef __WINDOWS_ASIO__
+        return newRtAudio(AUDIO_API_CORE);
+
+    // windows
     if (std::strcmp(driverName, "ASIO") == 0)
-        return newRtAudio(RTAUDIO_WINDOWS_ASIO);
-#endif
-#ifdef __WINDOWS_DS__
+        return newRtAudio(AUDIO_API_ASIO);
     if (std::strcmp(driverName, "DirectSound") == 0)
-        return newRtAudio(RTAUDIO_WINDOWS_DS);
-#endif
+        return newRtAudio(AUDIO_API_DS);
 
     carla_stderr("CarlaEngine::newDriverByName(\"%s\") - invalid driver name", driverName);
     return nullptr;
@@ -449,12 +438,12 @@ CarlaEngine* CarlaEngine::newDriverByName(const char* const driverName)
 // -----------------------------------------------------------------------
 // Maximum values
 
-unsigned int CarlaEngine::getMaxClientNameSize() const
+unsigned int CarlaEngine::getMaxClientNameSize() const noexcept
 {
     return STR_MAX/2;
 }
 
-unsigned int CarlaEngine::getMaxPortNameSize() const
+unsigned int CarlaEngine::getMaxPortNameSize() const noexcept
 {
     return STR_MAX;
 }
@@ -474,6 +463,7 @@ unsigned int CarlaEngine::getMaxPluginNumber() const noexcept
 
 bool CarlaEngine::init(const char* const clientName)
 {
+    CARLA_SAFE_ASSERT_RETURN(clientName != nullptr && clientName[0] != '\0', false);
     CARLA_ASSERT(fName.isEmpty());
     CARLA_ASSERT(pData->oscData == nullptr);
     CARLA_ASSERT(pData->plugins == nullptr);

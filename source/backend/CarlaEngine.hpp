@@ -367,7 +367,7 @@ struct EngineTimeInfo {
  */
 class CarlaEnginePort
 {
-public:
+protected:
     /*!
      * The constructor.\n
      * Param \a isInput defines wherever this is an input port or not (output otherwise).\n
@@ -375,6 +375,7 @@ public:
      */
     CarlaEnginePort(const CarlaEngine& engine, const bool isInput);
 
+public:
     /*!
      * The destructor.
      */
@@ -435,7 +436,9 @@ public:
     /*!
      * Initialize the port's internal buffer.
      */
-    virtual void initBuffer() override;
+    virtual void initBuffer() override
+    {
+    }
 
     /*!
      * Direct access to the port's audio buffer.
@@ -552,7 +555,7 @@ public:
     virtual const EngineEvent& getEvent(const uint32_t index);
 
     /*!
-     * TODO.
+     * Get the event at \a index, faster unchecked version.
      */
     virtual const EngineEvent& getEventUnchecked(const uint32_t index);
 
@@ -606,8 +609,8 @@ protected:
 
 /*!
  * Carla Engine client.\n
- * Each plugin requires one client from the engine (created via CarlaEngine::addPort()).\n
- * \note This is a virtual class, each engine type provides its own funtionality.
+ * Each plugin requires one client from the engine (created via CarlaEngine::addClient()).\n
+ * \note This is a virtual class, some engine types provide custom funtionality.
  */
 class CarlaEngineClient
 {
@@ -639,24 +642,24 @@ public:
     /*!
      * Check if the client is activated.
      */
-    virtual bool isActive() const;
+    virtual bool isActive() const noexcept;
 
     /*!
      * Check if the client is ok.\n
      * Plugins will refuse to instantiate if this returns false.
      * \note This is always true in rack and patchbay processing modes.
      */
-    virtual bool isOk() const;
+    virtual bool isOk() const noexcept;
 
     /*!
      * Get the current latency, in samples.
      */
-    virtual uint32_t getLatency() const;
+    virtual uint32_t getLatency() const noexcept;
 
     /*!
      * Change the client's latency.
      */
-    virtual void setLatency(const uint32_t samples);
+    virtual void setLatency(const uint32_t samples) noexcept;
 
     /*!
      * Add a new port of type \a portType.
@@ -735,12 +738,12 @@ public:
     /*!
      * Maximum client name size.
      */
-    virtual unsigned int getMaxClientNameSize() const;
+    virtual unsigned int getMaxClientNameSize() const noexcept;
 
     /*!
      * Maximum port name size.
      */
-    virtual unsigned int getMaxPortNameSize() const;
+    virtual unsigned int getMaxPortNameSize() const noexcept;
 
     /*!
      * Current number of plugins loaded.
@@ -1175,23 +1178,27 @@ private:
     static CarlaEngine* newJack();
 
 #ifndef BUILD_BRIDGE
-    static CarlaEngine* newJuce();
+    enum AudioApi {
+        AUDIO_API_NULL  = 0,
+        // common
+        AUDIO_API_JACK  = 1,
+        // linux
+        AUDIO_API_ALSA  = 2,
+        AUDIO_API_OSS   = 3,
+        AUDIO_API_PULSE = 4,
+        // macos
+        AUDIO_API_CORE  = 5,
+        // windows
+        AUDIO_API_ASIO  = 6,
+        AUDIO_API_DS    = 7
+    };
+
+    static CarlaEngine* newJuce(const AudioApi api);
     static size_t       getJuceApiCount();
     static const char*  getJuceApiName(const unsigned int index);
     static const char** getJuceApiDeviceNames(const unsigned int index);
 
-    enum RtAudioApi {
-        RTAUDIO_DUMMY        = 0,
-        RTAUDIO_LINUX_ALSA   = 1,
-        RTAUDIO_LINUX_PULSE  = 2,
-        RTAUDIO_LINUX_OSS    = 3,
-        RTAUDIO_UNIX_JACK    = 4,
-        RTAUDIO_MACOSX_CORE  = 5,
-        RTAUDIO_WINDOWS_ASIO = 6,
-        RTAUDIO_WINDOWS_DS   = 7
-    };
-
-    static CarlaEngine* newRtAudio(const RtAudioApi api);
+    static CarlaEngine* newRtAudio(const AudioApi api);
     static size_t       getRtAudioApiCount();
     static const char*  getRtAudioApiName(const unsigned int index);
     static const char** getRtAudioApiDeviceNames(const unsigned int index);

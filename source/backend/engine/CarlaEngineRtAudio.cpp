@@ -1328,34 +1328,34 @@ private:
 
 // -----------------------------------------
 
-CarlaEngine* CarlaEngine::newRtAudio(RtAudioApi api)
+CarlaEngine* CarlaEngine::newRtAudio(AudioApi api)
 {
     RtAudio::Api rtApi(RtAudio::UNSPECIFIED);
 
     switch (api)
     {
-    case RTAUDIO_DUMMY:
+    case AUDIO_API_NULL:
         rtApi = RtAudio::RTAUDIO_DUMMY;
         break;
-    case RTAUDIO_LINUX_ALSA:
-        rtApi = RtAudio::LINUX_ALSA;
-        break;
-    case RTAUDIO_LINUX_PULSE:
-        rtApi = RtAudio::LINUX_PULSE;
-        break;
-    case RTAUDIO_LINUX_OSS:
-        rtApi = RtAudio::LINUX_OSS;
-        break;
-    case RTAUDIO_UNIX_JACK:
+    case AUDIO_API_JACK:
         rtApi = RtAudio::UNIX_JACK;
         break;
-    case RTAUDIO_MACOSX_CORE:
+    case AUDIO_API_ALSA:
+        rtApi = RtAudio::LINUX_ALSA;
+        break;
+    case AUDIO_API_OSS:
+        rtApi = RtAudio::LINUX_OSS;
+        break;
+    case AUDIO_API_PULSE:
+        rtApi = RtAudio::LINUX_PULSE;
+        break;
+    case AUDIO_API_CORE:
         rtApi = RtAudio::MACOSX_CORE;
         break;
-    case RTAUDIO_WINDOWS_ASIO:
+    case AUDIO_API_ASIO:
         rtApi = RtAudio::WINDOWS_ASIO;
         break;
-    case RTAUDIO_WINDOWS_DS:
+    case AUDIO_API_DS:
         rtApi = RtAudio::WINDOWS_DS;
         break;
     }
