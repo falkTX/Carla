@@ -863,7 +863,7 @@ public:
      * Get a unique plugin name within the engine.\n
      * Returned variable must NOT be free'd.
      */
-    const char* getUniquePluginName(const char* const name);
+    const char* getUniquePluginName(const char* const name) const;
 
     // -------------------------------------------------------------------
     // Project management

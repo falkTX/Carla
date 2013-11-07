@@ -191,14 +191,14 @@ template<typename T>
 static inline
 const T& carla_min(const T& v1, const T& v2, const T& min) noexcept
 {
-    return ((v1 < min || v2 < min) ? min : (v1 < v2 ? v1 : v2));
+    return ((v1 <= min || v2 <= min) ? min : (v1 < v2 ? v1 : v2));
 }
 
 template<typename T>
 static inline
 const T& carla_max(const T& v1, const T& v2, const T& max) noexcept
 {
-    return ((v1 > max || v2 > max) ? max : (v1 > v2 ? v1 : v2));
+    return ((v1 >= max || v2 >= max) ? max : (v1 > v2 ? v1 : v2));
 }
 
 template<typename T>
