@@ -1475,12 +1475,14 @@ protected:
 
                 if (jackPortFlags & JackPortIsPhysical)
                 {
-                    callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, groupId, 0, 0.0f, "hardware");
+                    callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, groupId, 0, 0.0f, groupName);
+                    // hardware
                 }
                 else
                 {
-                    callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, groupId, 0, 0.0f, "application");
+                    callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, groupId, 0, 0.0f, groupName);
                     fGroupIconsChanged.append(groupId);
+                    // "application"
                 }
             }
 
@@ -1871,7 +1873,8 @@ private:
             GroupNameToId groupNameToId(fLastGroupId++, ourName);
             fUsedGroupNames.append(groupNameToId);
 
-            callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, groupNameToId.id, 0, 0.0f, "carla");
+            callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, groupNameToId.id, 0, 0.0f, ourName);
+            // carla
         }
 
         if (const char** ports = jackbridge_get_ports(fClient, nullptr, nullptr, 0))
@@ -1912,15 +1915,16 @@ private:
 
                     if (jackPortFlags & JackPortIsPhysical)
                     {
-                        callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, groupId, 0, 0.0f, "hardware");
+                        // "hardware"
                     }
                     else if (jackbridge_custom_get_data(fClient, groupName, URI_CANVAS_ICON, &data, &dataSize) && data != nullptr && dataSize != 0)
                     {
-                        const char* const icon((const char*)data);
-                        CARLA_ASSERT(std::strlen(icon)+1 == dataSize);
-
-                        callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, groupId, 0, 0.0f, icon);
+                        //const char* const icon((const char*)data);
+                        //CARLA_ASSERT(std::strlen(icon)+1 == dataSize);
+                        // icon
                     }
+
+                    callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, groupId, 0, 0.0f, groupName);
                 }
 
                 bool portIsInput = (jackPortFlags & JackPortIsInput);

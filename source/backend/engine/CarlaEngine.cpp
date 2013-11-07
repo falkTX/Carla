@@ -815,9 +815,12 @@ bool CarlaEngine::removePlugin(const unsigned int id)
 bool CarlaEngine::removeAllPlugins()
 {
     CARLA_SAFE_ASSERT_RETURN_ERR(pData->plugins != nullptr, "Invalid engine internal data (err #18)");
-    CARLA_SAFE_ASSERT_RETURN_ERR(pData->curPluginCount != 0, "Invalid engine internal data (err #19)");
+    CARLA_SAFE_ASSERT_RETURN_ERR(pData->nextPluginId == pData->maxPluginNumber, "Invalid engine internal data (err #19)");
     CARLA_SAFE_ASSERT_RETURN_ERR(pData->nextAction.opcode == kEnginePostActionNull, "Invalid engine internal data (err #20)");
     carla_debug("CarlaEngine::removeAllPlugins()");
+
+    if (pData->curPluginCount == 0)
+        return true;
 
     pData->thread.stopThread(500);
 

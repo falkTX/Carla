@@ -533,21 +533,8 @@ class CarlaPatchbayW(QGraphicsView):
     # -----------------------------------------------------------------
 
     @pyqtSlot(int, int, str)
-    def slot_handlePatchbayClientAddedCallback(self, clientId, clientIcon, clientName):
-        pcSplit = patchcanvas.SPLIT_UNDEF
-        pcIcon  = patchcanvas.ICON_APPLICATION
-
-        if clientIcon == PATCHBAY_ICON_HARDWARE:
-            pcSplit = patchcanvas.SPLIT_YES
-            pcIcon = patchcanvas.ICON_HARDWARE
-        elif clientIcon == PATCHBAY_ICON_DISTRHO:
-            pcIcon = patchcanvas.ICON_DISTRHO
-        elif clientIcon == PATCHBAY_ICON_FILE:
-            pcIcon = patchcanvas.ICON_FILE
-        elif clientIcon == PATCHBAY_ICON_PLUGIN:
-            pcIcon = patchcanvas.ICON_PLUGIN
-
-        patchcanvas.addGroup(clientId, clientName, pcSplit, pcIcon)
+    def slot_handlePatchbayClientAddedCallback(self, clientId, clientName):
+        patchcanvas.addGroup(clientId, clientName)
         #QTimer.singleShot(0, self.ui.miniCanvasPreview, SLOT("update()"))
 
     @pyqtSlot(int, str)
