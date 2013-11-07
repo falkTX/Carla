@@ -1013,10 +1013,8 @@ public:
 
     /*!
      * Set last error.
-     *
-     * \note Will always return false for convenience
      */
-    bool setLastError(const char* const error);
+    void setLastError(const char* const error);
 
     // -------------------------------------------------------------------
     // Misc

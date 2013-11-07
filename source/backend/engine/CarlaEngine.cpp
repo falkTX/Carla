@@ -1408,10 +1408,9 @@ const char* CarlaEngine::getLastError() const noexcept
     return (const char*)pData->lastError;
 }
 
-bool CarlaEngine::setLastError(const char* const error)
+void CarlaEngine::setLastError(const char* const error)
 {
     pData->lastError = error;
-    return false;
 }
 
 void CarlaEngine::setAboutToClose()
