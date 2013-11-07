@@ -310,16 +310,16 @@ public:
         return fRetEvent;
     }
 
-    void writeControlEvent(const uint32_t time, const uint8_t channel, const EngineControlEventType type, const uint16_t param, const float value) override
+    bool writeControlEvent(const uint32_t time, const uint8_t channel, const EngineControlEventType type, const uint16_t param, const float value) override
     {
         if (fPort == nullptr)
             return CarlaEngineEventPort::writeControlEvent(time, channel, type, param, value);
 
-        CARLA_SAFE_ASSERT_RETURN(! fIsInput,);
-        CARLA_SAFE_ASSERT_RETURN(fJackBuffer != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(type != kEngineControlEventTypeNull,);
-        CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
-        CARLA_SAFE_ASSERT_RETURN(param < 0x5F,);
+        CARLA_SAFE_ASSERT_RETURN(! fIsInput, false);
+        CARLA_SAFE_ASSERT_RETURN(fJackBuffer != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(type != kEngineControlEventTypeNull, false);
+        CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS, false);
+        CARLA_SAFE_ASSERT_RETURN(param < 0x5F, false);
         CARLA_SAFE_ASSERT(value >= 0.0f && value <= 1.0f);
 
         if (type == kEngineControlEventTypeParameter)
@@ -367,20 +367,22 @@ public:
             break;
         }
 
-        if (size > 0)
-            jackbridge_midi_event_write(fJackBuffer, time, data, size);
+        if (size == 0)
+            return false;
+
+        return jackbridge_midi_event_write(fJackBuffer, time, data, size);
     }
 
-    void writeMidiEvent(const uint32_t time, const uint8_t channel, const uint8_t port, const uint8_t* const data, const uint8_t size) override
+    bool writeMidiEvent(const uint32_t time, const uint8_t channel, const uint8_t port, const uint8_t* const data, const uint8_t size) override
     {
         if (fPort == nullptr)
             return CarlaEngineEventPort::writeMidiEvent(time, channel, port, data, size);
 
-        CARLA_SAFE_ASSERT_RETURN(! fIsInput,);
-        CARLA_SAFE_ASSERT_RETURN(fJackBuffer != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
-        CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(size > 0,);
+        CARLA_SAFE_ASSERT_RETURN(! fIsInput, false);
+        CARLA_SAFE_ASSERT_RETURN(fJackBuffer != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS, false);
+        CARLA_SAFE_ASSERT_RETURN(data != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(size > 0, false);
 
         jack_midi_data_t jdata[size];
         std::memset(jdata, 0, sizeof(jack_midi_data_t)*size);
@@ -391,7 +393,7 @@ public:
         for (uint8_t i=1; i < size; ++i)
             jdata[i] = data[i];
 
-        jackbridge_midi_event_write(fJackBuffer, time, jdata, size);
+        return jackbridge_midi_event_write(fJackBuffer, time, jdata, size);
     }
 
 private:
@@ -796,24 +798,7 @@ public:
                 const char* const icon((const char*)data);
                 CARLA_ASSERT(std::strlen(icon)+1 == dataSize);
 
-                PatchbayIconType groupIcon;
-
-                if (std::strcmp(icon, "app") == 0 || std::strcmp(icon, "application") == 0)
-                    groupIcon = PATCHBAY_ICON_APPLICATION;
-                else if (std::strcmp(icon, "hardware") == 0)
-                    groupIcon = PATCHBAY_ICON_HARDWARE;
-                else if (std::strcmp(icon, "carla") == 0)
-                    groupIcon = PATCHBAY_ICON_CARLA;
-                else if (std::strcmp(icon, "distrho") == 0)
-                    groupIcon = PATCHBAY_ICON_DISTRHO;
-                else if (std::strcmp(icon, "file") == 0)
-                    groupIcon = PATCHBAY_ICON_FILE;
-                else if (std::strcmp(icon, "plugin") == 0)
-                    groupIcon = PATCHBAY_ICON_PLUGIN;
-                else
-                    groupIcon = PATCHBAY_ICON_APPLICATION;
-
-                callback(CALLBACK_PATCHBAY_ICON_CHANGED, 0, groupId, groupIcon, 0.0f, groupName);
+                callback(CALLBACK_PATCHBAY_ICON_CHANGED, 0, groupId, 0, 0.0f, icon);
 
                 jackbridge_free(data);
             }
@@ -840,6 +825,11 @@ public:
     EngineType getType() const noexcept override
     {
         return kEngineTypeJack;
+    }
+
+    const char* getCurrentDriverName() const noexcept override
+    {
+        return "JACK";
     }
 
     CarlaEngineClient* addClient(CarlaPlugin* const plugin) override
@@ -1485,11 +1475,11 @@ protected:
 
                 if (jackPortFlags & JackPortIsPhysical)
                 {
-                    callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, groupId, PATCHBAY_ICON_HARDWARE, 0.0f, groupName);
+                    callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, groupId, 0, 0.0f, "hardware");
                 }
                 else
                 {
-                    callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, groupId, PATCHBAY_ICON_APPLICATION, 0.0f, groupName);
+                    callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, groupId, 0, 0.0f, "application");
                     fGroupIconsChanged.append(groupId);
                 }
             }
@@ -1881,7 +1871,7 @@ private:
             GroupNameToId groupNameToId(fLastGroupId++, ourName);
             fUsedGroupNames.append(groupNameToId);
 
-            callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, groupNameToId.id, PATCHBAY_ICON_CARLA, 0.0f, ourName);
+            callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, groupNameToId.id, 0, 0.0f, "carla");
         }
 
         if (const char** ports = jackbridge_get_ports(fClient, nullptr, nullptr, 0))
@@ -1917,35 +1907,20 @@ private:
                     GroupNameToId groupNameToId(groupId, groupName);
                     fUsedGroupNames.append(groupNameToId);
 
-                    PatchbayIconType groupIcon = PATCHBAY_ICON_APPLICATION;
-
                     void*  data = nullptr;
                     size_t dataSize = 0;
 
                     if (jackPortFlags & JackPortIsPhysical)
                     {
-                        groupIcon = PATCHBAY_ICON_HARDWARE;
+                        callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, groupId, 0, 0.0f, "hardware");
                     }
                     else if (jackbridge_custom_get_data(fClient, groupName, URI_CANVAS_ICON, &data, &dataSize) && data != nullptr && dataSize != 0)
                     {
                         const char* const icon((const char*)data);
                         CARLA_ASSERT(std::strlen(icon)+1 == dataSize);
 
-                        if (std::strcmp(icon, "app") == 0 || std::strcmp(icon, "application") == 0)
-                            groupIcon = PATCHBAY_ICON_APPLICATION;
-                        else if (std::strcmp(icon, "hardware") == 0)
-                            groupIcon = PATCHBAY_ICON_HARDWARE;
-                        else if (std::strcmp(icon, "carla") == 0)
-                            groupIcon = PATCHBAY_ICON_CARLA;
-                        else if (std::strcmp(icon, "distrho") == 0)
-                            groupIcon = PATCHBAY_ICON_DISTRHO;
-                        else if (std::strcmp(icon, "file") == 0)
-                            groupIcon = PATCHBAY_ICON_FILE;
-                        else if (std::strcmp(icon, "plugin") == 0)
-                            groupIcon = PATCHBAY_ICON_PLUGIN;
+                        callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, groupId, 0, 0.0f, icon);
                     }
-
-                    callback(CALLBACK_PATCHBAY_CLIENT_ADDED, 0, groupId, groupIcon, 0.0f, groupName);
                 }
 
                 bool portIsInput = (jackPortFlags & JackPortIsInput);

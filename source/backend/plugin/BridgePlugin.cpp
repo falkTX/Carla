@@ -1581,7 +1581,7 @@ public:
 
             QString chunkFileStr(chunkFileChar);
 
-#ifndef Q_OS_WIN
+#ifndef CARLA_OS_WIN
             // Using Wine, fix temp dir
             if (m_binary == BINARY_WIN32 || m_binary == BINARY_WIN64)
             {

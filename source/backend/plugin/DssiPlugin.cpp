@@ -1405,7 +1405,7 @@ public:
                 {
                     channel = pData->param.data[k].midiChannel;
                     param   = static_cast<uint16_t>(pData->param.data[k].midiCC);
-                    value   = pData->param.ranges[k].getNormalizedFixedValue(fParamBuffers[k]);
+                    value   = pData->param.ranges[k].getFixedAndNormalizedValue(fParamBuffers[k]);
                     pData->event.portOut->writeControlEvent(0, channel, kEngineControlEventTypeParameter, param, value);
                 }
             }

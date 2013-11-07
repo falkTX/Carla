@@ -84,6 +84,11 @@ public:
         return kEngineTypeJuce;
     }
 
+    const char* getCurrentDriverName() const noexcept override
+    {
+        return nullptr;
+    }
+
     // -------------------------------------------------------------------
 
 protected:

@@ -564,14 +564,14 @@ public:
      * Arguments are the same as in the EngineControlEvent struct.
      * \note You must only call this for output ports.
      */
-    virtual void writeControlEvent(const uint32_t time, const uint8_t channel, const EngineControlEventType type, const uint16_t param, const float value = 0.0f);
+    virtual bool writeControlEvent(const uint32_t time, const uint8_t channel, const EngineControlEventType type, const uint16_t param, const float value = 0.0f);
 
     /*!
      * Write a control event into the buffer, overloaded call.
      */
-    void writeControlEvent(const uint32_t time, const uint8_t channel, const EngineControlEvent& ctrl)
+    bool writeControlEvent(const uint32_t time, const uint8_t channel, const EngineControlEvent& ctrl)
     {
-        writeControlEvent(time, channel, ctrl.type, ctrl.param, ctrl.value);
+        return writeControlEvent(time, channel, ctrl.type, ctrl.param, ctrl.value);
     }
 
     /*!
@@ -579,22 +579,22 @@ public:
      * Arguments are the same as in the EngineMidiEvent struct.
      * \note You must only call this for output ports.
      */
-    virtual void writeMidiEvent(const uint32_t time, const uint8_t channel, const uint8_t port, const uint8_t* const data, const uint8_t size);
+    virtual bool writeMidiEvent(const uint32_t time, const uint8_t channel, const uint8_t port, const uint8_t* const data, const uint8_t size);
 
     /*!
      * Write a MIDI event into the buffer, overloaded call.
      */
-    void writeMidiEvent(const uint32_t time, const uint8_t* const data, const uint8_t size)
+    bool writeMidiEvent(const uint32_t time, const uint8_t* const data, const uint8_t size)
     {
-        writeMidiEvent(time, MIDI_GET_CHANNEL_FROM_DATA(data), 0, data, size);
+        return writeMidiEvent(time, MIDI_GET_CHANNEL_FROM_DATA(data), 0, data, size);
     }
 
     /*!
      * Write a MIDI event into the buffer, overloaded call.
      */
-    void writeMidiEvent(const uint32_t time, const uint8_t channel, const EngineMidiEvent& midi)
+    bool writeMidiEvent(const uint32_t time, const uint8_t channel, const EngineMidiEvent& midi)
     {
-        writeMidiEvent(time, channel, midi.port, midi.data, midi.size);
+        return writeMidiEvent(time, channel, midi.port, midi.data, midi.size);
     }
 
 #ifndef DOXYGEN
@@ -790,6 +790,11 @@ public:
     virtual EngineType getType() const noexcept = 0;
 
     /*!
+     * Get the currently used driver name.
+     */
+    virtual const char* getCurrentDriverName() const noexcept = 0;
+
+    /*!
      * Add new engine client.
      * \note This function must only be called within a plugin class.
      */
@@ -819,7 +824,7 @@ public:
     /*!
      * Remove all plugins.
      */
-    void removeAllPlugins();
+    bool removeAllPlugins();
 
     /*!
      * Rename plugin with id \a id to \a newName.\n
@@ -847,7 +852,7 @@ public:
     /*!
      * Get plugin with id \a id.
      */
-    CarlaPlugin* getPlugin(const unsigned int id) const;
+    CarlaPlugin* getPlugin(const unsigned int id);
 
     /*!
      * Get plugin with id \a id, faster unchecked version.
@@ -1008,8 +1013,10 @@ public:
 
     /*!
      * Set last error.
+     *
+     * \note Will always return false for convenience
      */
-    void setLastError(const char* const error);
+    bool setLastError(const char* const error);
 
     // -------------------------------------------------------------------
     // Misc

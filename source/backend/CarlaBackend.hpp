@@ -209,18 +209,6 @@ enum InternalParametersIndex SIZE_INT {
 };
 
 /*!
- * The icon of a patchbay client/group.
- */
-enum PatchbayIconType SIZE_INT {
-    PATCHBAY_ICON_APPLICATION = 0, //!< Generic application icon.
-    PATCHBAY_ICON_HARDWARE    = 1, //!< Hardware icon.
-    PATCHBAY_ICON_CARLA       = 2, //!< Carla icon.
-    PATCHBAY_ICON_DISTRHO     = 3, //!< DISTRHO icon.
-    PATCHBAY_ICON_FILE        = 4, //!< File icon.
-    PATCHBAY_ICON_PLUGIN      = 5  //!< Plugin icon.
-};
-
-/*!
  * Options used in the CarlaEngine::setOption() calls.\n
  * All options except paths must be set before initiliazing or after closing the engine.
  */
@@ -595,18 +583,19 @@ enum CallbackType SIZE_INT {
     /*!
      * Canvas client icon changed.
      * \param value1   Client Id
-     * \param value2   New client icon
-     * \param valueStr Client name
+     * \param valueStr New icon name
      */
     CALLBACK_PATCHBAY_ICON_CHANGED = 26,
 
     /*!
      * Engine buffer-size changed.
+     * \param value1 New buffer size
      */
     CALLBACK_BUFFER_SIZE_CHANGED = 27,
 
     /*!
      * Engine sample-rate changed.
+     * \param value3 New sample rate
      */
     CALLBACK_SAMPLE_RATE_CHANGED = 28,
 
@@ -763,7 +752,7 @@ struct ParameterRanges {
         return normValue;
     }
 
-    float getNormalizedFixedValue(const float& value) const noexcept
+    float getFixedAndNormalizedValue(const float& value) const noexcept
     {
         if (value <= min)
             return 0.0f;

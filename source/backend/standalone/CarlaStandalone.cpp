@@ -398,7 +398,7 @@ bool carla_engine_init(const char* driverName, const char* clientName)
         return false;
     }
 
-#ifdef Q_OS_WIN
+#ifdef CARLA_OS_WIN
     carla_setenv("WINEASIO_CLIENT_NAME", clientName);
 #endif
 

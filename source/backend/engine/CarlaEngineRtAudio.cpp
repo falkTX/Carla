@@ -378,6 +378,43 @@ public:
         return kEngineTypeRtAudio;
     }
 
+    const char* getCurrentDriverName() const noexcept override
+    {
+        const RtAudio::Api api(fAudio.getCurrentApi());
+
+        switch (api)
+        {
+        case RtAudio::UNSPECIFIED:
+            return "Unspecified";
+        case RtAudio::LINUX_ALSA:
+            return "ALSA";
+        case RtAudio::LINUX_PULSE:
+            return "PulseAudio";
+        case RtAudio::LINUX_OSS:
+            return "OSS";
+        case RtAudio::UNIX_JACK:
+#if defined(CARLA_OS_WIN)
+        return "JACK with WinMM";
+#elif defined(CARLA_OS_MAC)
+        return "JACK with CoreMidi";
+#elif defined(CARLA_OS_LINUX)
+        return "JACK with ALSA-MIDI";
+#else
+        return "JACK (RtAudio)";
+#endif
+        case RtAudio::MACOSX_CORE:
+            return "CoreAudio";
+        case RtAudio::WINDOWS_ASIO:
+            return "ASIO";
+        case RtAudio::WINDOWS_DS:
+            return "DirectSound";
+        case RtAudio::RTAUDIO_DUMMY:
+            return "Dummy";
+        }
+
+        return nullptr;
+    }
+
     // -------------------------------------------------------------------
     // Patchbay
 

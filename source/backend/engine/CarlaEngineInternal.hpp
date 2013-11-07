@@ -140,8 +140,6 @@ struct EnginePluginData {
         insPeak[0] = insPeak[1] = 0.0f;
         outsPeak[0] = outsPeak[1] = 0.0f;
     }
-
-    CARLA_DECLARE_NON_COPY_STRUCT(EnginePluginData)
 };
 
 // -----------------------------------------------------------------------
