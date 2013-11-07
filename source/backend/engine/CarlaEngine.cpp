@@ -1601,7 +1601,23 @@ void CarlaEngine::setOscBridgeData(const CarlaOscData* const oscData) noexcept
 #endif
 
 // -----------------------------------------------------------------------
-// protected calls
+// Helper functions
+
+EngineEvent* CarlaEngine::getInternalEventBuffer(const bool isInput) const noexcept
+{
+    return isInput ? pData->bufEvents.in : pData->bufEvents.out;
+}
+
+void CarlaEngine::registerEnginePlugin(const unsigned int id, CarlaPlugin* const plugin)
+{
+    CARLA_SAFE_ASSERT_RETURN(id == pData->curPluginCount,);
+    carla_debug("CarlaEngine::registerEnginePlugin(%i, %p)", id, plugin);
+
+    pData->plugins[id].plugin = plugin;
+}
+
+// -----------------------------------------------------------------------
+// Internal stuff
 
 void CarlaEngine::bufferSizeChanged(const uint32_t newBufferSize)
 {
@@ -1668,19 +1684,6 @@ void CarlaEngine::setPluginPeaks(const unsigned int pluginId, float const inPeak
     pluginData.insPeak[1]  = inPeaks[1];
     pluginData.outsPeak[0] = outPeaks[0];
     pluginData.outsPeak[1] = outPeaks[1];
-}
-
-EngineEvent* CarlaEngine::getInternalEventBuffer(const bool isInput) const noexcept
-{
-    return isInput ? pData->bufEvents.in : pData->bufEvents.out;
-}
-
-void CarlaEngine::registerEnginePlugin(const unsigned int id, CarlaPlugin* const plugin)
-{
-    CARLA_SAFE_ASSERT_RETURN(id == pData->curPluginCount,);
-    carla_debug("CarlaEngine::registerEnginePlugin(%i, %p)", id, plugin);
-
-    pData->plugins[id].plugin = plugin;
 }
 
 #ifndef BUILD_BRIDGE
@@ -1798,7 +1801,7 @@ void CarlaEngine::processPatchbay(float** inBuf, float** outBuf, const uint32_t 
 #endif
 
 // -----------------------------------------------------------------------
-// Carla Engine OSC stuff
+// Bridge/Controller OSC stuff
 
 #ifndef BUILD_BRIDGE
 void CarlaEngine::oscSend_control_add_plugin_start(const int32_t pluginId, const char* const pluginName)
@@ -1955,12 +1958,7 @@ void CarlaEngine::oscSend_control_set_parameter_value(const int32_t pluginId, co
 {
     CARLA_SAFE_ASSERT_RETURN(pData->oscData != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(pluginId >= 0 && pluginId < static_cast<int32_t>(pData->maxPluginNumber),);
-#if DEBUG
-    if (index < 0)
-        carla_debug("CarlaEngine::oscSend_control_set_parameter_value(%i, %s, %f)", pluginId, InternalParametersIndex2Str((InternalParametersIndex)index), value);
-    else
-        carla_debug("CarlaEngine::oscSend_control_set_parameter_value(%i, %i, %f)", pluginId, index, value);
-#endif
+    carla_debug("CarlaEngine::oscSend_control_set_parameter_value(%i, %i:%s, %f)", pluginId, index, (index < 0) ? InternalParametersIndex2Str(static_cast<InternalParametersIndex>(index)) : "(none)", value);
 
     if (pData->oscData->target != nullptr)
     {
