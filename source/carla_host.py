@@ -130,7 +130,7 @@ class HostWindow(QMainWindow):
     PatchbayPortRenamedCallback = pyqtSignal(int, int, str)
     PatchbayConnectionAddedCallback = pyqtSignal(int, int, int)
     PatchbayConnectionRemovedCallback = pyqtSignal(int)
-    PatchbayIconChangedCallback = pyqtSignal(int, int)
+    PatchbayIconChangedCallback = pyqtSignal(int, str)
     BufferSizeChangedCallback = pyqtSignal(int)
     SampleRateChangedCallback = pyqtSignal(float)
     ProcessModeChangedCallback = pyqtSignal(int)
@@ -1071,7 +1071,7 @@ def EngineCallback(ptr, action, pluginId, value1, value2, value3, valueStr):
     elif action == CALLBACK_PATCHBAY_CONNECTION_REMOVED:
         Carla.gui.PatchbayConnectionRemovedCallback.emit(value1)
     elif action == CALLBACK_PATCHBAY_ICON_CHANGED:
-        Carla.gui.PatchbayIconChangedCallback.emit(value1, value2)
+        Carla.gui.PatchbayIconChangedCallback.emit(value1, cString(valueStr))
     elif action == CALLBACK_BUFFER_SIZE_CHANGED:
         Carla.gui.BufferSizeChangedCallback.emit(value1)
     elif action == CALLBACK_SAMPLE_RATE_CHANGED:

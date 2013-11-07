@@ -19,12 +19,7 @@
 #include "CarlaBackendUtils.hpp"
 #include "CarlaMIDI.h"
 
-#ifdef JACKBRIDGE_EXPORT
-# include "jackbridge/JackBridge.hpp"
-#else
-# include "jackbridge/JackBridge1.cpp"
-# include "jackbridge/JackBridge2.cpp"
-#endif
+#include "jackbridge/JackBridge.hpp"
 
 #include "juce_audio_basics.h"
 
@@ -840,10 +835,7 @@ public:
 #ifdef BUILD_BRIDGE
         client = fClient = jackbridge_client_open(plugin->getName(), JackNullOption, nullptr);
 
-        CARLA_ASSERT(client != nullptr);
-
-        if (client == nullptr)
-            return nullptr;
+        CARLA_SAFE_ASSERT_RETURN(client != nullptr, nullptr);
 
         fBufferSize = jackbridge_get_buffer_size(client);
         fSampleRate = jackbridge_get_sample_rate(client);
@@ -865,10 +857,7 @@ public:
         {
             client = jackbridge_client_open(plugin->getName(), JackNullOption, nullptr);
 
-            CARLA_ASSERT(client != nullptr);
-
-            if (client == nullptr)
-                return nullptr;
+            CARLA_SAFE_ASSERT_RETURN(client != nullptr, nullptr);
 
             jackbridge_custom_publish_data(client, URI_CANVAS_ICON, iconName, std::strlen(iconName)+1);
 

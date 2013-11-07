@@ -1239,7 +1239,7 @@ public:
     void oscSend_control_remove_plugin(const int32_t pluginId);
     void oscSend_control_set_plugin_data(const int32_t pluginId, const int32_t type, const int32_t category, const int32_t hints, const char* const realName, const char* const label, const char* const maker, const char* const copyright, const int64_t uniqueId);
     void oscSend_control_set_plugin_ports(const int32_t pluginId, const int32_t audioIns, const int32_t audioOuts, const int32_t midiIns, const int32_t midiOuts, const int32_t cIns, const int32_t cOuts, const int32_t cTotals);
-    void oscSend_control_set_parameter_data(const int32_t pluginId, const int32_t index, const int32_t type, const int32_t hints, const char* const name, const char* const label, const float current);
+    void oscSend_control_set_parameter_data(const int32_t pluginId, const int32_t index, const int32_t type, const int32_t hints, const char* const name, const char* const unit, const float current);
     void oscSend_control_set_parameter_ranges(const int32_t pluginId, const int32_t index, const float min, const float max, const float def, const float step, const float stepSmall, const float stepLarge);
     void oscSend_control_set_parameter_midi_cc(const int32_t pluginId, const int32_t index, const int32_t cc);
     void oscSend_control_set_parameter_midi_channel(const int32_t pluginId, const int32_t index, const int32_t channel);
