@@ -2843,20 +2843,22 @@ class PluginRefreshW(QDialog):
         self.ui.ch_posix32.setVisible(False)
         self.ui.ch_posix64.setChecked(False)
         self.ui.ch_posix64.setVisible(False)
-        self.ui.ch_win32.setChecked(False)
-        self.ui.ch_win32.setVisible(False)
         self.ui.ch_win64.setChecked(False)
         self.ui.ch_win64.setVisible(False)
 
         self.ui.ico_posix32.setVisible(False)
         self.ui.ico_posix64.setVisible(False)
-        self.ui.ico_win32.setVisible(False)
         self.ui.ico_win64.setVisible(False)
 
         self.ui.label_posix32.setVisible(False)
         self.ui.label_posix64.setVisible(False)
-        self.ui.label_win32.setVisible(False)
         self.ui.label_win64.setVisible(False)
+
+        if not os.path.exists("/usr/lib/dssi/dssi-vst.so"):
+            self.ui.ico_win32.setVisible(False)
+            self.ui.ch_win32.setChecked(False)
+            self.ui.ch_win32.setVisible(False)
+            self.ui.label_win32.setVisible(False)
 
     @pyqtSlot()
     def slot_start(self):

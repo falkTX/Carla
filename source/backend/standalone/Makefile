@@ -85,7 +85,7 @@ endif
 ifeq ($(HAVE_ZYN_DEPS),true)
 LINK_FLAGS += $(shell pkg-config --libs fftw3 mxml zlib)
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
-LINK_FLAGS += $(shell pkg-config --libs ntk ntk_images)
+LINK_FLAGS += $(shell pkg-config --libs ntk_images ntk)
 endif
 endif
 

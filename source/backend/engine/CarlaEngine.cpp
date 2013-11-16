@@ -803,7 +803,9 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
         else if (btype == BINARY_WIN32)
         {
             // fallback to dssi-vst
-            CarlaString label2("filename");
+            QFileInfo fileInfo(filename);
+
+            CarlaString label2(fileInfo.fileName().toUtf8().constData());
             label2.replace(' ', '*');
 
             CarlaPlugin::Initializer init2 = {
@@ -814,7 +816,13 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
                 (const char*)label2
             };
 
+            char* const oldVstPath(getenv("VST_PATH"));
+            carla_setenv("VST_PATH", fileInfo.absoluteDir().absolutePath().toUtf8().constData());
+
             plugin = CarlaPlugin::newDSSI(init2, "/usr/lib/dssi/dssi-vst/dssi-vst_gui");
+
+            if (oldVstPath != nullptr)
+                carla_setenv("VST_PATH", oldVstPath);
         }
 # endif
         else
