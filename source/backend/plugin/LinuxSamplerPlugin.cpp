@@ -764,57 +764,23 @@ public:
 
                     uint8_t status  = MIDI_GET_STATUS_FROM_DATA(midiEvent.data);
                     uint8_t channel = event.channel;
+                    uint32_t mtime  = sampleAccurate ? startTime : time;
 
-                    // Fix bad note-off (per DSSI spec)
-                    if (MIDI_IS_STATUS_NOTE_ON(status) && midiEvent.data[2] == 0)
-                        status -= 0x10;
+                    if (MIDI_IS_STATUS_AFTERTOUCH(status) && (fOptions & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE) == 0)
+                        continue;
+                    if (MIDI_IS_STATUS_CONTROL_CHANGE(status) && (fOptions & PLUGIN_OPTION_SEND_CONTROL_CHANGES) == 0)
+                        continue;
+                    if (MIDI_IS_STATUS_POLYPHONIC_AFTERTOUCH(status) && (fOptions & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH) == 0)
+                        continue;
+                    if (MIDI_IS_STATUS_PITCH_WHEEL_CONTROL(status) && (fOptions & PLUGIN_OPTION_SEND_PITCHBEND) == 0)
+                        continue;
 
-                    int32_t fragmentPos = sampleAccurate ? startTime : time;
+                    fMidiInputPort->DispatchRaw((uint8_t*)midiEvent.data, mtime);
 
-                    if (MIDI_IS_STATUS_NOTE_OFF(status))
-                    {
-                        const uint8_t note = midiEvent.data[1];
-
-                        fMidiInputPort->DispatchNoteOff(note, 0, channel, fragmentPos);
-
-                        postponeRtEvent(kPluginPostRtEventNoteOff, channel, note, 0.0f);
-                    }
-                    else if (MIDI_IS_STATUS_NOTE_ON(status))
-                    {
-                        const uint8_t note = midiEvent.data[1];
-                        const uint8_t velo = midiEvent.data[2];
-
-                        fMidiInputPort->DispatchNoteOn(note, velo, channel, fragmentPos);
-
-                        postponeRtEvent(kPluginPostRtEventNoteOn, channel, note, velo);
-                    }
-                    else if (MIDI_IS_STATUS_POLYPHONIC_AFTERTOUCH(status) && (fOptions & PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH) != 0)
-                    {
-                        //const uint8_t note     = midiEvent.data[1];
-                        //const uint8_t pressure = midiEvent.data[2];
-
-                        // unsupported
-                    }
-                    else if (MIDI_IS_STATUS_CONTROL_CHANGE(status) && (fOptions & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0)
-                    {
-                        const uint8_t control = midiEvent.data[1];
-                        const uint8_t value   = midiEvent.data[2];
-
-                        fMidiInputPort->DispatchControlChange(control, value, channel, fragmentPos);
-                    }
-                    else if (MIDI_IS_STATUS_AFTERTOUCH(status) && (fOptions & PLUGIN_OPTION_SEND_CHANNEL_PRESSURE) != 0)
-                    {
-                        //const uint8_t pressure = midiEvent.data[1];
-
-                        // unsupported
-                    }
-                    else if (MIDI_IS_STATUS_PITCH_WHEEL_CONTROL(status) && (fOptions & PLUGIN_OPTION_SEND_PITCHBEND) != 0)
-                    {
-                        const uint8_t lsb = midiEvent.data[1];
-                        const uint8_t msb = midiEvent.data[2];
-
-                        fMidiInputPort->DispatchPitchbend(((msb << 7) | lsb) - 8192, channel, fragmentPos);
-                    }
+                    if (status == MIDI_STATUS_NOTE_ON)
+                        postponeRtEvent(kPluginPostRtEventNoteOn, channel, midiEvent.data[1], midiEvent.data[2]);
+                    else if (status == MIDI_STATUS_NOTE_OFF)
+                        postponeRtEvent(kPluginPostRtEventNoteOff, channel, midiEvent.data[1], 0.0f);
 
                     break;
                 }
