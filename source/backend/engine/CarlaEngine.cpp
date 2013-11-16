@@ -793,9 +793,35 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
         bridgeBinary = (const char*)fOptions.bridge_native;
 # endif
 
-    if (bridgeBinary != nullptr && (btype != BINARY_NATIVE || fOptions.preferPluginBridges))
+    if (btype != BINARY_NATIVE || (fOptions.preferPluginBridges && bridgeBinary != nullptr))
     {
-        plugin = CarlaPlugin::newBridge(init, btype, ptype, bridgeBinary);
+        if (bridgeBinary != nullptr)
+        {
+            plugin = CarlaPlugin::newBridge(init, btype, ptype, bridgeBinary);
+        }
+# ifdef CARLA_OS_LINUX
+        else if (btype == BINARY_WIN32)
+        {
+            // fallback to dssi-vst
+            CarlaString label2("filename");
+            label2.replace(' ', '*');
+
+            CarlaPlugin::Initializer init2 = {
+                this,
+                id,
+                "/usr/lib/dssi/dssi-vst.so",
+                name,
+                (const char*)label2
+            };
+
+            plugin = CarlaPlugin::newDSSI(init2, "/usr/lib/dssi/dssi-vst/dssi-vst_gui");
+        }
+# endif
+        else
+        {
+            setLastError("This Carla build cannot handle this binary");
+            return false;
+        }
     }
     else
 #endif // BUILD_BRIDGE
