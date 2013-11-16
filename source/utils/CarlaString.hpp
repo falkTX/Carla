@@ -139,36 +139,30 @@ public:
         return (bufferLen != 0);
     }
 
-#ifdef __USE_GNU
     bool contains(const char* const strBuf, const bool ignoreCase = false) const
     {
         if (strBuf == nullptr)
             return false;
 
         if (ignoreCase)
+        {
+#ifdef __USE_GNU
             return (strcasestr(buffer, strBuf) != nullptr);
-        else
-            return (std::strstr(buffer, strBuf) != nullptr);
+#else
+            CarlaString tmp1(buffer), tmp2(strBuf);
+            tmp1.toLower();
+            tmp2.toLower();
+            return (std::strstr((const char*)tmp1, (const char*)tmp2) != nullptr);
+#endif
+        }
+
+        return (std::strstr(buffer, strBuf) != nullptr);
     }
 
     bool contains(const CarlaString& str, const bool ignoreCase = false) const
     {
         return contains(str.buffer, ignoreCase);
     }
-#else
-    bool contains(const char* const strBuf) const
-    {
-        if (strBuf == nullptr)
-            return false;
-
-        return (std::strstr(buffer, strBuf) != nullptr);
-    }
-
-    bool contains(const CarlaString& str) const
-    {
-        return contains(str.buffer);
-    }
-#endif
 
     bool isDigit(const size_t pos) const
     {
