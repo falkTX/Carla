@@ -381,6 +381,7 @@ public:
     {
         if (yesNo)
         {
+            kData->osc.data.free();
             kData->osc.thread.start();
         }
         else

@@ -40,12 +40,7 @@
 #endif
 #ifdef WANT_LINUXSAMPLER
 # include <QtCore/QFileInfo>
-// fix broken headers
-# define TMP__cplusplus __cplusplus
-# undef __cplusplus
 # include "linuxsampler/EngineFactory.h"
-# define __cplusplus TMP__cplusplus
-# undef TMP__cplusplus
 #endif
 
 #include <iostream>
@@ -244,7 +239,7 @@ intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t opcode
         break;
 
     case audioMasterGetVendorVersion:
-        ret = 0x120; // 1.2.0
+        ret = 0x121; // 1.2.1
         break;
 
     case audioMasterCanDo:
