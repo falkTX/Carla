@@ -84,7 +84,7 @@ def charStringList(charPtrPtr):
 def structToDict(struct):
     return dict((attr, getattr(struct, attr)) for attr, value in struct._fields_)
 
-# ------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------------------
 # Backend defines
 
 MAX_DEFAULT_PLUGINS    = 99

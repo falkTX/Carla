@@ -172,6 +172,7 @@ private:                                         \
 # define CARLA_DECLARE_NON_COPY_STRUCT(StructName)
 #endif
 
+// Define CARLA_PREVENT_HEAP_ALLOCATION
 #ifdef CARLA_PROPER_CPP11_SUPPORT
 # define CARLA_PREVENT_HEAP_ALLOCATION \
 private:                               \
