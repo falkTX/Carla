@@ -17,11 +17,14 @@
 
 #include "CarlaUtils.hpp"
 
+#include <cassert>
+#include <cstdlib>
+
 struct MyStruct {
     char pad[100];
     int i;
     double d;
-    intptr_t ptr;
+    void* ptr;
 };
 
 int main()
@@ -39,11 +42,11 @@ int main()
 
     // carla_setenv
     carla_setenv("THIS", "THAT");
-    assert(std::strcmp(getenv("THIS"), "THAT") == 0);
+    assert(std::strcmp(std::getenv("THIS"), "THAT") == 0);
 
     // carla_strdup
-    const char* const str1 = carla_strdup("string1");
-    const char* const strF = carla_strdup_free(strdup("stringFree"));
+    const char* const str1(carla_strdup("string1"));
+    const char* const strF(carla_strdup_free(strdup("stringFree")));
     delete[] str1;
     delete[] strF;
 
@@ -91,49 +94,69 @@ int main()
         TestStruct a, b, c;
     }
 
-    // math functions
-    carla_min<int32_t>(0, -5, 8);
-    carla_fixValue<float>(0.0f, 1.0f, 1.1f);
-
+    // math/memory functions
     {
-        int v1 = 6;
-        int v2 = 8;
-        const int v3 = 9;
-        assert(v1 == 6 && v2 == 8 && v3 == 9);
-        carla_copy<int>(&v1, &v2, 1);
-        assert(v1 == 8 && v2 == 8 && v3 == 9);
-        carla_copy<int>(&v2, &v3, 1);
-        assert(v1 == 8 && v2 == 9 && v3 == 9);
+        carla_min<int32_t>(0, -5, 8);
+        carla_max<int32_t>(0, -5, 8);
+        carla_fixValue<float>(0.0f, 1.0f, 1.1f);
+
+        float fl[5];
+        carla_fill(fl, 5, 1.11f);
+        assert(fl[0] == 1.11f);
+        assert(fl[1] == 1.11f);
+        assert(fl[2] == 1.11f);
+        assert(fl[3] == 1.11f);
+        assert(fl[4] == 1.11f);
+
+        carla_add(fl, fl, 5);
+        assert(fl[0] == 1.11f*2);
+        assert(fl[1] == 1.11f*2);
+        assert(fl[2] == 1.11f*2);
+        assert(fl[3] == 1.11f*2);
+        assert(fl[4] == 1.11f*2);
+
+        carla_add(fl, fl, 4);
+        assert(fl[0] == 1.11f*4);
+        assert(fl[1] == 1.11f*4);
+        assert(fl[2] == 1.11f*4);
+        assert(fl[3] == 1.11f*4);
+        assert(fl[4] == 1.11f*2);
+
+        carla_add(fl, fl, 3);
+        assert(fl[0] == 1.11f*8);
+        assert(fl[1] == 1.11f*8);
+        assert(fl[2] == 1.11f*8);
+        assert(fl[3] == 1.11f*4);
+        assert(fl[4] == 1.11f*2);
+
+        carla_add(fl, fl, 2);
+        assert(fl[0] == 1.11f*16);
+        assert(fl[1] == 1.11f*16);
+        assert(fl[2] == 1.11f*8);
+        assert(fl[3] == 1.11f*4);
+        assert(fl[4] == 1.11f*2);
+
+        carla_add(fl, fl, 1);
+        assert(fl[0] == 1.11f*32);
+        assert(fl[1] == 1.11f*16);
+        assert(fl[2] == 1.11f*8);
+        assert(fl[3] == 1.11f*4);
+        assert(fl[4] == 1.11f*2);
+
+        char ch[500];
+        carla_zeroChar(ch, 500);
     }
 
     {
-        float data1[500];
-        float data2[500];
-        float data0[500];
-        float data3[500];
-        carla_zeroFloat(data0, 500);
-        carla_fill<float>(data1, 500, 6.41f);
-        carla_copy<float>(data2, data1, 500);
-        carla_copyFloat(data3, data2, 500);
-
-        carla_zeroMem(data2, sizeof(float)*500);
-
-        for (int i=0; i < 500; ++i)
-        {
-            assert(data0[i] == 0.0f);
-            assert(data1[i] == 6.41f);
-            assert(data2[i] == 0.0f);
-            assert(data3[i] == 6.41f);
-        }
-    }
-
-    {
-        MyStruct a, b, c, d;
-        carla_zeroStruct<MyStruct>(a);
+        MyStruct a, b, c[2], d[2];
+        carla_zeroMem(&a, sizeof(MyStruct));
         carla_zeroStruct<MyStruct>(b);
-        carla_zeroStruct<MyStruct>(c);
-        carla_zeroStruct<MyStruct>(d);
+        carla_zeroStruct<MyStruct>(c, 2);
+        carla_copyStruct<MyStruct>(b, a);
+        carla_copyStruct<MyStruct>(d, c, 2);
     }
 
     return 0;
 }
+
+#include "../utils/Utils.cpp"
