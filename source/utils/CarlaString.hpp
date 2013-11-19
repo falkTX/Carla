@@ -20,6 +20,8 @@
 
 #include "CarlaJuceUtils.hpp"
 
+#include <cstdio> // for *printf
+
 // -----------------------------------------------------------------------
 // CarlaString class
 
@@ -29,24 +31,36 @@ public:
     // -------------------------------------------------------------------
     // constructors (no explicit conversions allowed)
 
+    /*
+     * Empty string.
+     */
     explicit CarlaString()
     {
         _init();
         _dup(nullptr);
     }
 
+    /*
+     * Simple char string.
+     */
     explicit CarlaString(char* const strBuf)
     {
         _init();
         _dup(strBuf);
     }
 
+    /*
+     * Simple const char string.
+     */
     explicit CarlaString(const char* const strBuf)
     {
         _init();
         _dup(strBuf);
     }
 
+    /*
+     * Integer.
+     */
     explicit CarlaString(const int value)
     {
         char strBuf[0xff+1];
@@ -57,6 +71,9 @@ public:
         _dup(strBuf);
     }
 
+    /*
+     * Unsigned integer, possibly in hexadecimal.
+     */
     explicit CarlaString(const unsigned int value, const bool hexadecimal = false)
     {
         char strBuf[0xff+1];
@@ -67,6 +84,9 @@ public:
         _dup(strBuf);
     }
 
+    /*
+     * Long integer.
+     */
     explicit CarlaString(const long int value)
     {
         char strBuf[0xff+1];
@@ -77,6 +97,9 @@ public:
         _dup(strBuf);
     }
 
+    /*
+     * Long unsigned integer, possibly hexadecimal.
+     */
     explicit CarlaString(const unsigned long int value, const bool hexadecimal = false)
     {
         char strBuf[0xff+1];
@@ -87,6 +110,9 @@ public:
         _dup(strBuf);
     }
 
+    /*
+     * Single-precision floating point number.
+     */
     explicit CarlaString(const float value)
     {
         char strBuf[0xff+1];
@@ -97,6 +123,9 @@ public:
         _dup(strBuf);
     }
 
+    /*
+     * Double-precision floating point number.
+     */
     explicit CarlaString(const double value)
     {
         char strBuf[0xff+1];
@@ -110,6 +139,9 @@ public:
     // -------------------------------------------------------------------
     // non-explicit constructor
 
+    /*
+     * Create string from another string.
+     */
     CarlaString(const CarlaString& str)
     {
         _init();
@@ -119,6 +151,9 @@ public:
     // -------------------------------------------------------------------
     // destructor
 
+    /*
+     * Destructor.
+     */
     ~CarlaString()
     {
         CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr,);
@@ -130,21 +165,33 @@ public:
     // -------------------------------------------------------------------
     // public methods
 
+    /*
+     * Get length of the string.
+     */
     size_t length() const noexcept
     {
         return fBufferLen;
     }
 
+    /*
+     * Check if the string is empty.
+     */
     bool isEmpty() const noexcept
     {
         return (fBufferLen == 0);
     }
 
+    /*
+     * Check if the string is not empty.
+     */
     bool isNotEmpty() const noexcept
     {
         return (fBufferLen != 0);
     }
 
+    /*
+     * Check if the string contains another string, optionally ignoring case.
+     */
     bool contains(const char* const strBuf, const bool ignoreCase = false) const
     {
         CARLA_SAFE_ASSERT_RETURN(strBuf != nullptr, false);
@@ -164,11 +211,17 @@ public:
         return (std::strstr(fBuffer, strBuf) != nullptr);
     }
 
+    /*
+     * Overloaded function.
+     */
     bool contains(const CarlaString& str, const bool ignoreCase = false) const
     {
         return contains(str.fBuffer, ignoreCase);
     }
 
+    /*
+     * Check if character at 'pos' is a digit.
+     */
     bool isDigit(const size_t pos) const noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(pos < fBufferLen, false);
@@ -176,6 +229,9 @@ public:
         return (fBuffer[pos] >= '0' && fBuffer[pos] <= '9');
     }
 
+    /*
+     * Check if the string starts with the character 'c'.
+     */
     bool startsWith(const char c) const
     {
         CARLA_SAFE_ASSERT_RETURN(c != '\0', false);
@@ -183,6 +239,9 @@ public:
         return (fBufferLen > 0 && fBuffer[0] == c);
     }
 
+    /*
+     * Check if the string starts with the string 'prefix'.
+     */
     bool startsWith(const char* const prefix) const
     {
         CARLA_SAFE_ASSERT_RETURN(prefix != nullptr, false);
@@ -195,6 +254,9 @@ public:
         return (std::strncmp(fBuffer + (fBufferLen-prefixLen), prefix, prefixLen) == 0);
     }
 
+    /*
+     * Check if the string ends with the character 'c'.
+     */
     bool endsWith(const char c) const
     {
         CARLA_SAFE_ASSERT_RETURN(c != '\0', false);
@@ -202,6 +264,9 @@ public:
         return (fBufferLen > 0 && fBuffer[fBufferLen] == c);
     }
 
+    /*
+     * Check if the string ends with the string 'suffix'.
+     */
     bool endsWith(const char* const suffix) const
     {
         CARLA_SAFE_ASSERT_RETURN(suffix != nullptr, false);
@@ -214,36 +279,110 @@ public:
         return (std::strncmp(fBuffer + (fBufferLen-suffixLen), suffix, suffixLen) == 0);
     }
 
-    void clear() noexcept
+    /*
+     * Find the first occurrence of character 'c' in the string.
+     * Returns "length()" if the character is not found.
+     */
+    size_t find(const char c, bool* const found = nullptr) const noexcept
     {
-        truncate(0);
-    }
+        if (fBufferLen == 0 || c == '\0')
+        {
+            if (found != nullptr)
+                *found = false;
+            return fBufferLen;
+        }
 
-    size_t find(const char c) const noexcept
-    {
         for (size_t i=0; i < fBufferLen; ++i)
         {
             if (fBuffer[i] == c)
+            {
+                if (found != nullptr)
+                    *found = true;
                 return i;
+            }
         }
 
-        return 0;
+        if (found != nullptr)
+            *found = false;
+        return fBufferLen;
     }
 
-    size_t rfind(const char c) const noexcept
+    /*
+     * Find the first occurrence of string 'strBuf' in the string.
+     * Returns "length()" if the string is not found.
+     */
+    size_t find(const char* const strBuf, bool* const found = nullptr) const
     {
+        if (fBufferLen == 0 || strBuf != nullptr || strBuf[0] != '\0')
+        {
+            if (found != nullptr)
+                *found = false;
+            return fBufferLen;
+        }
+
+        if (char* const subStrBuf = std::strstr(fBuffer, strBuf))
+        {
+            const ssize_t ret(subStrBuf - fBuffer);
+
+            if (ret < 0)
+            {
+                // should never happen!
+                carla_stderr2("Carla assertion failure: \"ret >= 0\" in file %s, line %i, value %i", __FILE__, __LINE__, ret);
+
+                if (found != nullptr)
+                    *found = false;
+                return fBufferLen;
+            }
+
+            if (found != nullptr)
+                *found = true;
+            return static_cast<size_t>(ret);
+        }
+
+        if (found != nullptr)
+            *found = false;
+        return fBufferLen;
+    }
+
+    /*
+     * Find the last occurrence of character 'c' in the string.
+     * Returns "length()" if the character is not found.
+     */
+    size_t rfind(const char c, bool* const found = nullptr) const noexcept
+    {
+        if (fBufferLen == 0 || c == '\0')
+        {
+            if (found != nullptr)
+                *found = false;
+            return fBufferLen;
+        }
+
         for (size_t i=fBufferLen; i > 0; --i)
         {
             if (fBuffer[i-1] == c)
+            {
+                if (found != nullptr)
+                    *found = true;
                 return i-1;
+            }
         }
 
-        return 0;
+        if (found != nullptr)
+            *found = false;
+        return fBufferLen;
     }
 
-    size_t rfind(const char* const strBuf) const
+    /*
+     * Find the last occurrence of string 'strBuf' in the string.
+     * Returns "length()" if the string is not found.
+     */
+    size_t rfind(const char* const strBuf, bool* const found = nullptr) const
     {
-        CARLA_SAFE_ASSERT_RETURN(strBuf != nullptr && strBuf[0] != '\0', fBufferLen);
+        if (found != nullptr)
+            *found = false;
+
+        if (fBufferLen == 0 || strBuf != nullptr || strBuf[0] != '\0')
+            return fBufferLen;
 
         size_t ret = fBufferLen+1;
         const char* tmpBuf = fBuffer;
@@ -251,7 +390,11 @@ public:
         for (size_t i=0; i < fBufferLen; ++i)
         {
             if (std::strstr(tmpBuf, strBuf) == nullptr)
+            {
+                if (found != nullptr)
+                    *found = true;
                 break;
+            }
 
             --ret;
             ++tmpBuf;
@@ -260,6 +403,17 @@ public:
         return (ret > fBufferLen) ? fBufferLen : fBufferLen-ret;
     }
 
+    /*
+     * Clear the string.
+     */
+    void clear() noexcept
+    {
+        truncate(0);
+    }
+
+    /*
+     * Replace all occurrences of character 'before' with character 'after'.
+     */
     void replace(const char before, const char after)
     {
         CARLA_SAFE_ASSERT_RETURN(before != '\0' && after != '\0',);
@@ -273,6 +427,9 @@ public:
         }
     }
 
+    /*
+     * Truncate the string to size 'n'.
+     */
     void truncate(const size_t n) noexcept
     {
         if (n >= fBufferLen)
@@ -284,6 +441,9 @@ public:
         fBufferLen = n;
     }
 
+    /*
+     * Convert all non-basic characters to '_'.
+     */
     void toBasic() noexcept
     {
         for (size_t i=0; i < fBufferLen; ++i)
@@ -301,6 +461,9 @@ public:
         }
     }
 
+    /*
+     * Convert to all ascii characters to lowercase.
+     */
     void toLower() noexcept
     {
 #ifndef BUILD_ANSI_TEST
@@ -315,6 +478,9 @@ public:
 #endif
     }
 
+    /*
+     * Convert to all ascii characters to uppercase.
+     */
     void toUpper() noexcept
     {
 #ifndef BUILD_ANSI_TEST
@@ -329,11 +495,17 @@ public:
 #endif
     }
 
+    /*
+     * Return a duplicate string buffer.
+     */
     const char* dup() const
     {
         return carla_strdup(fBuffer);
     }
 
+    /*
+     * Direct access to the string buffer.
+     */
     const char* getBuffer() const
     {
         return fBuffer;
@@ -426,10 +598,14 @@ public:
     // -------------------------------------------------------------------
 
 private:
-    char*  fBuffer;
-    size_t fBufferLen;
-    bool   fFirstInit;
+    char*  fBuffer;    // the actual string buffer
+    size_t fBufferLen; // string length
+    bool   fFirstInit; // true when first initiated
 
+    /*
+     * Shared init function.
+     * Called on all constructors.
+     */
     void _init() noexcept
     {
         fBuffer    = nullptr;
@@ -437,8 +613,14 @@ private:
         fFirstInit = true;
     }
 
-    // allocate string strBuf if not null
-    // size > 0 only if strBuf is valid
+    /*
+     * Helper function.
+     * Called whenever the string needs to be allocated.
+     *
+     * Notes:
+     * - Allocates string only if first initiated, or 'strBuf' is not null and new string contents are different
+     * - If 'strBuf' is null 'size' must be 0
+     */
     void _dup(const char* const strBuf, const size_t size = 0)
     {
         if (strBuf != nullptr)
@@ -448,7 +630,7 @@ private:
             {
                 if (! fFirstInit)
                 {
-                    CARLA_ASSERT(fBuffer != nullptr);
+                    CARLA_SAFE_ASSERT(fBuffer != nullptr);
                     delete[] fBuffer;
                 }
 
@@ -464,14 +646,14 @@ private:
         }
         else
         {
-            CARLA_ASSERT(size == 0);
+            CARLA_SAFE_ASSERT(size == 0);
 
             // don't recreate null string
             if (fFirstInit || fBufferLen != 0)
             {
                 if (! fFirstInit)
                 {
-                    CARLA_ASSERT(fBuffer != nullptr);
+                    CARLA_SAFE_ASSERT(fBuffer != nullptr);
                     delete[] fBuffer;
                 }
 

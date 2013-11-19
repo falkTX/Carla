@@ -74,6 +74,7 @@ void carla_stderr2(const char* const fmt, ...);
 /*
  * Print a safe assertion error message.
  */
+inline
 void carla_safe_assert(const char* const assertion, const char* const file, const int line)
 {
     carla_stderr2("Carla assertion failure: \"%s\" in file %s, line %i", assertion, file, line);
@@ -82,6 +83,7 @@ void carla_safe_assert(const char* const assertion, const char* const file, cons
 /*
  * Print a safe assertion error message, with 1 extra integer value.
  */
+inline
 void carla_safe_assert_int(const char* const assertion, const char* const file, const int line, const int value)
 {
     carla_stderr2("Carla assertion failure: \"%s\" in file %s, line %i, value %i", assertion, file, line, value);
@@ -90,6 +92,7 @@ void carla_safe_assert_int(const char* const assertion, const char* const file, 
 /*
  * Print a safe assertion error message, with 2 extra integer values.
  */
+inline
 void carla_safe_assert_int2(const char* const assertion, const char* const file, const int line, const int v1, const int v2)
 {
     carla_stderr2("Carla assertion failure: \"%s\" in file %s, line %i, v1 %i, v2 %i", assertion, file, line, v1, v2);

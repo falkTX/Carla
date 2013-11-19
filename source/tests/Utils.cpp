@@ -16,6 +16,10 @@
  */
 
 #include "CarlaUtils.hpp"
+#include "CarlaLibUtils.hpp"
+#include "CarlaJuceUtils.hpp"
+
+#include "CarlaString.hpp"
 
 #include <cassert>
 #include <cstdlib>
@@ -27,6 +31,20 @@ struct MyStruct {
     void* ptr;
 };
 
+class MyLeakCheckedClass
+{
+public:
+    MyLeakCheckedClass() {}
+    ~MyLeakCheckedClass() {}
+private:
+    char pad[100];
+    int i;
+    double d;
+    void* ptr;
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MyLeakCheckedClass)
+};
+
 int main()
 {
     // misc functions
@@ -34,7 +52,11 @@ int main()
     bool2str(true);
     pass();
 
-    // string print functions, handled in Print
+    // string print functions
+    carla_debug("DEBUG");
+    carla_stdout("STDOUT");
+    carla_stderr("STDERR");
+    carla_stderr2("STDERR2");
 
     // carla_*sleep
     carla_sleep(1);
@@ -154,6 +176,17 @@ int main()
         carla_zeroStruct<MyStruct>(c, 2);
         carla_copyStruct<MyStruct>(b, a);
         carla_copyStruct<MyStruct>(d, c, 2);
+    }
+
+    // Leak check
+    {
+        MyLeakCheckedClass a;
+        MyLeakCheckedClass* const b(new MyLeakCheckedClass);
+        delete b;
+    }
+
+    // String
+    {
     }
 
     return 0;
