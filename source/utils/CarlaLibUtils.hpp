@@ -24,25 +24,25 @@
 // library related calls
 
 /*
- * Open 'filename' library (must not be NULL).
- * May return NULL, in which case "lib_error" has the error.
+ * Open 'filename' library (must not be null).
+ * May return null, in which case "lib_error" has the error.
  */
 void* lib_open(const char* const filename);
 
 /*
- * Close a previously opened library (must not be NULL).
+ * Close a previously opened library (must not be null).
  * If false is returned,"lib_error" has the error.
  */
 bool lib_close(void* const lib);
 
 /*
- * Get a library symbol (must not be NULL).
- * May return NULL if the symbol is not found.
+ * Get a library symbol (must not be null).
+ * May return null if the symbol is not found.
  */
 void* lib_symbol(void* const lib, const char* const symbol);
 
 /*
- * Return the last operation error ('filename' must not be NULL).
+ * Return the last operation error ('filename' must not be null).
  */
 const char* lib_error(const char* const filename);
 

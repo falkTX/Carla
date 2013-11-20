@@ -41,6 +41,19 @@ public:
     }
 
     /*
+     * Simple character.
+     */
+    explicit CarlaString(const char c)
+    {
+        char ch[2];
+        ch[0] = c;
+        ch[1] = '\0';
+
+        _init();
+        _dup(ch);
+    }
+
+    /*
      * Simple char string.
      */
     explicit CarlaString(char* const strBuf)
@@ -618,7 +631,7 @@ private:
      * Called whenever the string needs to be allocated.
      *
      * Notes:
-     * - Allocates string only if first initiated, or 'strBuf' is not null and new string contents are different
+     * - Allocates string only if first initiated, or if 'strBuf' is not null and new string contents are different
      * - If 'strBuf' is null 'size' must be 0
      */
     void _dup(const char* const strBuf, const size_t size = 0)

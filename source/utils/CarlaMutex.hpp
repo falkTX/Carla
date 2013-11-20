@@ -28,54 +28,81 @@
 class CarlaMutex
 {
 public:
-    CarlaMutex()
+    /*
+     * Constructor.
+     */
+    CarlaMutex() noexcept
         : fTryLockWasCalled(false)
     {
-        pthread_mutex_init(&fMutex, nullptr);
+        pthread_mutexattr_t atts;
+        pthread_mutexattr_init(&atts);
+        pthread_mutexattr_settype(&atts, PTHREAD_MUTEX_RECURSIVE);
+
+        pthread_mutex_init(&fMutex, &atts);
+        pthread_mutexattr_destroy (&atts);
     }
 
-    ~CarlaMutex()
+    /*
+     * Destructor.
+     */
+    ~CarlaMutex() noexcept
     {
         pthread_mutex_destroy(&fMutex);
     }
 
-    void lock()
-    {
-        pthread_mutex_lock(&fMutex);
-    }
-
-    bool tryLock()
-    {
-        fTryLockWasCalled = true;
-
-        return (pthread_mutex_trylock(&fMutex) == 0);
-    }
-
-    void unlock(/*const bool resetTryLock*/)
-    {
-        //if (resetTryLock)
-        //    fTryLockWasCalled = false;
-
-        pthread_mutex_unlock(&fMutex);
-    }
-
-    bool wasTryLockCalled()
+    /*
+     * Check if "tryLock()" was called before.
+     */
+    bool wasTryLockCalled() const noexcept
     {
         const bool ret(fTryLockWasCalled);
         fTryLockWasCalled = false;
         return ret;
     }
 
+    /*
+     * Lock the mutex.
+     */
+    void lock() const noexcept
+    {
+        pthread_mutex_lock(&fMutex);
+    }
+
+    /*
+     * Try to lock the mutex.
+     * Returns true if successful.
+     */
+    bool tryLock() const noexcept
+    {
+        fTryLockWasCalled = true;
+
+        return (pthread_mutex_trylock(&fMutex) == 0);
+    }
+
+    /*
+     * Unlock the mutex, optionally resetting the tryLock check.
+     */
+    void unlock(const bool resetTryLock = false) const noexcept
+    {
+        if (resetTryLock)
+            fTryLockWasCalled = false;
+
+        pthread_mutex_unlock(&fMutex);
+    }
+
+    /*
+     * Helper class to lock&unlock a mutex during a function scope.
+     */
     class ScopedLocker
     {
     public:
-        ScopedLocker(CarlaMutex& mutex)
+        ScopedLocker(CarlaMutex& mutex) noexcept
             : fMutex(mutex)
         {
             fMutex.lock();
         }
 
-        ~ScopedLocker()
+        ~ScopedLocker() noexcept
         {
             fMutex.unlock();
         }
@@ -87,9 +114,33 @@ public:
         CARLA_DECLARE_NON_COPY_CLASS(ScopedLocker)
     };
 
+    /*
+     * Helper class to unlock&lock a mutex during a function scope.
+     */
+    class ScopedUnlocker
+    {
+    public:
+        ScopedUnlocker(CarlaMutex& mutex) noexcept
+            : fMutex(mutex)
+        {
+            fMutex.unlock();
+        }
+
+        ~ScopedUnlocker() noexcept
+        {
+            fMutex.lock();
+        }
+
+    private:
+        CarlaMutex& fMutex;
+
+        CARLA_PREVENT_HEAP_ALLOCATION
+        CARLA_DECLARE_NON_COPY_CLASS(ScopedUnlocker)
+    };
+
 private:
-    pthread_mutex_t fMutex;
-    volatile bool   fTryLockWasCalled;
+    mutable pthread_mutex_t fMutex;            // The mutex
+    mutable volatile bool   fTryLockWasCalled; // true if "tryLock()" was called at least once
 
     CARLA_PREVENT_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPY_CLASS(CarlaMutex)

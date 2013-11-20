@@ -19,7 +19,9 @@
 #include "CarlaLibUtils.hpp"
 #include "CarlaJuceUtils.hpp"
 
+#include "CarlaMutex.hpp"
 #include "CarlaString.hpp"
+#include "CarlaThread.hpp"
 
 #include <cassert>
 #include <cstdlib>
@@ -43,6 +45,41 @@ private:
     void* ptr;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MyLeakCheckedClass)
+};
+
+class MyThread : public CarlaThread
+{
+public:
+    MyThread(CarlaMutex* const m)
+        : CarlaThread("myThread"),
+          fMu(m)
+    {
+    }
+
+protected:
+    void run() override
+    {
+        carla_stderr("Thread started");
+
+        carla_stderr("Thread lock");
+        fMu->lock();
+
+        carla_stderr("Thread sleeping");
+        carla_sleep(3);
+
+        carla_stderr("Thread unlock");
+        fMu->unlock();
+
+        carla_stderr("Thread sleep-waiting for stop");
+
+        while (! shouldExit())
+            carla_sleep(1);
+
+        carla_stderr("Thread finished");
+    }
+
+private:
+    CarlaMutex* const fMu;
 };
 
 int main()
@@ -185,8 +222,44 @@ int main()
         delete b;
     }
 
+    // Mutex
+    {
+        CarlaMutex m;
+        assert(! m.wasTryLockCalled());
+
+        assert(m.tryLock());
+        assert(m.wasTryLockCalled());
+        assert(! m.wasTryLockCalled()); // once
+
+        m.unlock();
+        m.lock();
+        assert(! m.wasTryLockCalled());
+
+        { CarlaMutex::ScopedUnlocker su(m); }
+        assert(! m.wasTryLockCalled());
+
+        m.unlock();
+
+        { CarlaMutex::ScopedLocker sl(m); }
+    }
+
     // String
     {
+        CarlaString a, b(2), c("haha"), d((uint)0x999, true), e(0.7f), f(0.9), g('u');
+        assert(g == "u");
+    }
+
+    // Thread
+    {
+        CarlaMutex m;
+        MyThread t(&m);
+        carla_stdout("Thread init started");
+        t.start();
+        carla_stdout("Thread init finished, lock waiting...");
+        m.lock();
+        carla_stdout("Thread lock wait done");
+        m.unlock();
+        t.stop(-1);
     }
 
     return 0;

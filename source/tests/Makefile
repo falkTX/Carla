@@ -48,7 +48,7 @@ RtList: RtList.cpp ../utils/RtList.hpp ../modules/rtmempool.a
 # 	valgrind ./RtList
 
 Utils: Utils.cpp
-	$(CXX) $^ $(BUILD_CXX_FLAGS) $(ANSI_CXX_FLAGS) -std=c++11 -Wzero-as-null-pointer-constant $(LINK_FLAGS) -ldl -o $@
+	$(CXX) $^ $(BUILD_CXX_FLAGS) $(ANSI_CXX_FLAGS) -std=c++11 -Wzero-as-null-pointer-constant $(LINK_FLAGS) -ldl -lpthread -o $@
 # 	valgrind ./Utils
 
 # --------------------------------------------------------------
