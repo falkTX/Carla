@@ -18,7 +18,7 @@
 #ifndef CARLA_OSC_UTILS_HPP_INCLUDED
 #define CARLA_OSC_UTILS_HPP_INCLUDED
 
-#include "CarlaJuceUtils.hpp"
+#include "CarlaUtils.hpp"
 
 #include <lo/lo.h>
 

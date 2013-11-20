@@ -82,6 +82,9 @@ private:
     } fRetAtom;
 
     friend class Lv2AtomQueue;
+
+    CARLA_PREVENT_HEAP_ALLOCATION
+    CARLA_DECLARE_NON_COPY_CLASS(Lv2AtomRingBufferControl)
 };
 
 // -----------------------------------------------------------------------
@@ -93,7 +96,7 @@ public:
     {
     }
 
-    void copyDataFrom(Lv2AtomQueue& queue)
+    void copyDataFromQueue(Lv2AtomQueue& queue)
     {
         // lock queue
         const CarlaMutex::ScopedLocker qsl(queue.fMutex);
@@ -104,21 +107,21 @@ public:
             carla_copyStruct<RingBuffer>(fRingBufferCtrl.fBuffer, queue.fRingBufferCtrl.fBuffer);
         }
 
-        // reset queque
-        fRingBufferCtrl.clear();
+        // reset queque - FIXME? no queue.?
+        queue.fRingBufferCtrl.clear();
     }
 
-    void lock()
+    void lock() const noexcept
     {
         fMutex.lock();
     }
 
-    bool tryLock()
+    bool tryLock() const noexcept
     {
         return fMutex.tryLock();
     }
 
-    void unlock()
+    void unlock() const noexcept
     {
         fMutex.unlock();
     }
@@ -127,6 +130,8 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(atom != nullptr && atom->size > 0, false);
 
+        const CarlaMutex::ScopedLocker sl(fMutex);
+
         return fRingBufferCtrl.writeAtom(atom, static_cast<int32_t>(portIndex));
     }
 
@@ -134,7 +139,9 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(atom != nullptr && portIndex != nullptr, false);
 
-        if (! fRingBufferCtrl.dataAvailable())
+        const CarlaMutex::ScopedLocker sl(fMutex);
+
+        if (! fRingBufferCtrl.isDataAvailable())
             return false;
 
         if (const LV2_Atom* retAtom = fRingBufferCtrl.readAtom(portIndex))

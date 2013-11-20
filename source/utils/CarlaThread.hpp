@@ -84,7 +84,7 @@ public:
 
         fShouldExit = false;
 
-        if (pthread_create(const_cast<pthread_t*>(&fHandle), nullptr, _threadEntryPoint, this) == 0)
+        if (pthread_create(const_cast<pthread_t*>(&fHandle), nullptr, _entryPoint, this) == 0)
         {
 #if (__GLIBC__ * 1000 + __GLIBC_MINOR__) >= 2012
             if (fName.isNotEmpty())
@@ -154,10 +154,10 @@ public:
     }
 
 private:
-    CarlaMutex         fLock;       // Thread lock
-    const CarlaString  fName;       // Thread name
-    volatile pthread_t fHandle;     // Handle for this thread
-    volatile bool      fShouldExit; // ...
+    const CarlaString   fName;       // Thread name
+    volatile CarlaMutex fLock;       // Thread lock
+    volatile pthread_t  fHandle;     // Handle for this thread
+    volatile bool       fShouldExit; // true if thread should exit
 
     void _init() noexcept
     {
@@ -169,17 +169,8 @@ private:
 #endif
     }
 
-    static void* _threadEntryPoint(void* userData)
+    void _runEntryPoint()
     {
-        static_cast<CarlaThread*>(userData)->threadEntryPoint();
-        return nullptr;
-    }
-
-    void threadEntryPoint()
-    {
-        //if (fName.isNotEmpty())
-        //    setCurrentThreadName(threadName);
-
         // tell dad we're ready
         fLock.unlock();
 
@@ -187,6 +178,12 @@ private:
 
         // done
         _init();
+    }
+
+    static void* _entryPoint(void* userData)
+    {
+        static_cast<CarlaThread*>(userData)->_runEntryPoint();
+        return nullptr;
     }
 
     CARLA_PREVENT_HEAP_ALLOCATION

@@ -20,7 +20,7 @@
 
 #include "CarlaLibUtils.hpp"
 #include "CarlaMutex.hpp"
-#include "RtList.hpp"
+#include "List.hpp"
 
 // -----------------------------------------------------------------------
 
@@ -33,9 +33,9 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(filename != nullptr, nullptr);
 
-        const CarlaMutex::ScopedLocker sl(mutex);
+        const CarlaMutex::ScopedLocker sl(fMutex);
 
-        for (NonRtList<Lib>::Itenerator it = libs.begin(); it.valid(); it.next())
+        for (List<Lib>::Itenerator it = fLibs.begin(); it.valid(); it.next())
         {
             Lib& lib(*it);
             CARLA_ASSERT(lib.count > 0);
@@ -58,7 +58,7 @@ public:
         lib.filename = carla_strdup(filename);
         lib.count    = 1;
 
-        libs.append(lib);
+        fLibs.append(lib);
 
         return libPtr;
     }
@@ -67,9 +67,9 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(libPtr != nullptr, false);
 
-        const CarlaMutex::ScopedLocker sl(mutex);
+        const CarlaMutex::ScopedLocker sl(fMutex);
 
-        for (NonRtList<Lib>::Itenerator it = libs.begin(); it.valid(); it.next())
+        for (List<Lib>::Itenerator it = fLibs.begin(); it.valid(); it.next())
         {
             Lib& lib(*it);
             CARLA_ASSERT(lib.count > 0);
@@ -89,7 +89,7 @@ public:
                 lib_close(lib.lib);
                 lib.lib = nullptr;
 
-                libs.remove(it);
+                fLibs.remove(it);
             }
 
             return true;
@@ -106,8 +106,8 @@ private:
         int count;
     };
 
-    CarlaMutex mutex;
-    NonRtList<Lib> libs;
+    List<Lib>  fLibs;
+    CarlaMutex fMutex;
 };
 
 // -----------------------------------------------------------------------

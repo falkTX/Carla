@@ -24,10 +24,10 @@
 
 namespace juce {
 
-class JucePluginWindow : public DocumentWindow
+class PluginWindow : public DocumentWindow
 {
 public:
-    JucePluginWindow()
+    PluginWindow()
         : DocumentWindow("PluginWindow", Colour(50, 50, 200), DocumentWindow::closeButton, false),
           fClosed(false)
     {
@@ -75,12 +75,12 @@ protected:
 private:
     volatile bool fClosed;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(JucePluginWindow)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PluginWindow)
 };
 
 } // namespace juce
 
-using juce::JucePluginWindow;
+typedef juce::PluginWindow JucePluginWindow;
 
 // -----------------------------------------------------------------------
 

@@ -24,8 +24,8 @@
 #endif
 
 // Set Version
-#define CARLA_VERSION_HEX    0x01090
-#define CARLA_VERSION_STRING "1.9.0"
+#define CARLA_VERSION_HEX    0x01091
+#define CARLA_VERSION_STRING "1.9.1"
 
 // Check OS
 #if defined(WIN64) || defined(_WIN64) || defined(__WIN64__)
@@ -66,6 +66,17 @@
 # define final
 # define noexcept throw()
 # define nullptr (0)
+#endif
+
+// Common includes
+#ifdef CARLA_OS_WIN
+# include <winsock2.h>
+# include <windows.h>
+#else
+# include <unistd.h>
+# ifndef __cdecl
+#  define __cdecl
+# endif
 #endif
 
 // Define various string format types

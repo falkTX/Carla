@@ -20,6 +20,10 @@
 
 #include "CarlaUtils.hpp"
 
+#ifndef CARLA_OS_WIN
+# include <dlfcn.h>
+#endif
+
 // -----------------------------------------------------------------------
 // library related calls
 
@@ -27,24 +31,75 @@
  * Open 'filename' library (must not be null).
  * May return null, in which case "lib_error" has the error.
  */
-void* lib_open(const char* const filename);
+static inline
+void* lib_open(const char* const filename)
+{
+    CARLA_SAFE_ASSERT_RETURN(filename != nullptr, nullptr);
+
+#ifdef CARLA_OS_WIN
+    return (void*)LoadLibraryA(filename);
+#else
+    return dlopen(filename, RTLD_NOW|RTLD_LOCAL);
+#endif
+}
 
 /*
  * Close a previously opened library (must not be null).
  * If false is returned,"lib_error" has the error.
  */
-bool lib_close(void* const lib);
+static inline
+bool lib_close(void* const lib)
+{
+    CARLA_SAFE_ASSERT_RETURN(lib != nullptr, false);
+
+#ifdef CARLA_OS_WIN
+    return FreeLibrary((HMODULE)lib);
+#else
+    return (dlclose(lib) == 0);
+#endif
+}
 
 /*
  * Get a library symbol (must not be null).
  * May return null if the symbol is not found.
  */
-void* lib_symbol(void* const lib, const char* const symbol);
+static inline
+void* lib_symbol(void* const lib, const char* const symbol)
+{
+    CARLA_SAFE_ASSERT_RETURN(lib != nullptr, nullptr);
+    CARLA_SAFE_ASSERT_RETURN(symbol != nullptr, nullptr);
+
+#ifdef CARLA_OS_WIN
+    return (void*)GetProcAddress((HMODULE)lib, symbol);
+#else
+    return dlsym(lib, symbol);
+#endif
+}
 
 /*
  * Return the last operation error ('filename' must not be null).
  */
-const char* lib_error(const char* const filename);
+static inline
+const char* lib_error(const char* const filename)
+{
+    CARLA_SAFE_ASSERT_RETURN(filename != nullptr, nullptr);
+
+#ifdef CARLA_OS_WIN
+    static char libError[2048+1];
+    carla_zeroChar(libError, 2048+1);
+
+    LPVOID winErrorString;
+    DWORD  winErrorCode = GetLastError();
+    FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER|FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, winErrorCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&winErrorString, 0, nullptr);
+
+    std::snprintf(libError, 2048, "%s: error code %li: %s", filename, winErrorCode, (const char*)winErrorString);
+    LocalFree(winErrorString);
+
+    return libError;
+#else
+    return dlerror();
+#endif
+}
 
 // -----------------------------------------------------------------------
 

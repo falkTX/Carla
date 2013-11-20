@@ -20,7 +20,7 @@
 
 #include "CarlaBackendUtils.hpp"
 #include "CarlaMIDI.h"
-#include "RtList.hpp"
+#include "List.hpp"
 
 #include "juce_core.h"
 
@@ -93,11 +93,11 @@ struct StateCustomData {
     CARLA_DECLARE_NON_COPY_STRUCT(StateCustomData)
 };
 
-typedef NonRtList<StateParameter*> StateParameterList;
-typedef NonRtList<StateCustomData*> StateCustomDataList;
+typedef List<StateParameter*> StateParameterList;
+typedef List<StateCustomData*> StateCustomDataList;
 
-typedef NonRtList<StateParameter*>::Itenerator StateParameterItenerator;
-typedef NonRtList<StateCustomData*>::Itenerator StateCustomDataItenerator;
+typedef List<StateParameter*>::Itenerator StateParameterItenerator;
+typedef List<StateCustomData*>::Itenerator StateCustomDataItenerator;
 
 struct SaveState {
     const char* type;

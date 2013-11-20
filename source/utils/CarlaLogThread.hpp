@@ -20,8 +20,7 @@
 
 #include "CarlaBackend.hpp"
 #include "CarlaString.hpp"
-
-#include "juce_core.h"
+#include "CarlaThread.hpp"
 
 #include <fcntl.h>
 
@@ -30,11 +29,11 @@ using CarlaBackend::CallbackFunc;
 // -----------------------------------------------------------------------
 // Log thread
 
-class CarlaLogThread : public juce::Thread
+class CarlaLogThread : public CarlaThread
 {
 public:
     CarlaLogThread()
-        : Thread("CarlaLogThread"),
+        : CarlaThread("CarlaLogThread"),
           fCallback(nullptr),
           fCallbackPtr(nullptr)
     {
@@ -50,7 +49,7 @@ public:
 
         fcntl(fPipe[0], F_SETFL, O_NONBLOCK);
 
-        startThread(2);
+        start(2);
     }
 
     ~CarlaLogThread()
@@ -58,7 +57,7 @@ public:
         fCallback    = nullptr;
         fCallbackPtr = nullptr;
 
-        stopThread(5000);
+        stop(5000);
 
         fflush(stdout);
         fflush(stderr);
@@ -78,7 +77,7 @@ public:
 protected:
     void run()
     {
-        while (! threadShouldExit())
+        while (! shouldExit())
         {
             size_t r, lastRead;
             ssize_t r2; // to avoid sign/unsign conversions
@@ -142,7 +141,8 @@ private:
     void*        fCallbackPtr;
     CarlaString  fOldBuffer;
 
-    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaLogThread)
+    CARLA_PREVENT_HEAP_ALLOCATION
+    CARLA_DECLARE_NON_COPY_CLASS(CarlaLogThread)
 };
 
 // -----------------------------------------------------------------------

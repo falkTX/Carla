@@ -18,9 +18,7 @@
 #ifndef CARLA_STRING_HPP_INCLUDED
 #define CARLA_STRING_HPP_INCLUDED
 
-#include "CarlaJuceUtils.hpp"
-
-#include <cstdio> // for *printf
+#include "CarlaUtils.hpp"
 
 // -----------------------------------------------------------------------
 // CarlaString class
@@ -680,7 +678,6 @@ private:
     }
 
     CARLA_PREVENT_HEAP_ALLOCATION
-    CARLA_LEAK_DETECTOR(CarlaString)
 };
 
 // -----------------------------------------------------------------------

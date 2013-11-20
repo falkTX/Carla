@@ -20,8 +20,6 @@
 
 #include "CarlaUtils.hpp"
 
-#include <cstring>
-
 // -----------------------------------------------------------------------
 // Include fixes
 

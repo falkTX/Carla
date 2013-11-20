@@ -19,7 +19,7 @@
 #ifndef CARLA_RING_BUFFER_HPP_INCLUDED
 #define CARLA_RING_BUFFER_HPP_INCLUDED
 
-#include "CarlaJuceUtils.hpp"
+#include "CarlaUtils.hpp"
 
 #ifndef RING_BUFFER_SIZE
 # define RING_BUFFER_SIZE 2048
@@ -42,10 +42,10 @@ class RingBufferControl
 {
 public:
     RingBufferControl(RingBuffer* const ringBuf)
-        : fRingBuf(nullptr)
+        : fRingBuf(ringBuf)
     {
         if (ringBuf != nullptr)
-            setRingBuffer(ringBuf, true);
+            clear();
     }
 
     void clear()
@@ -89,7 +89,7 @@ public:
         }
     }
 
-    bool dataAvailable() const
+    bool isDataAvailable() const
     {
         CARLA_SAFE_ASSERT_RETURN(fRingBuf != nullptr, false);
 
