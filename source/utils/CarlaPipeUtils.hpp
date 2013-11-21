@@ -66,7 +66,7 @@ public:
 
         //----------------------------------------------------------------
 
-        const char* argv[6];
+        const char* argv[5];
 
         //----------------------------------------------------------------
         // argv[0] => filename
@@ -110,11 +110,6 @@ public:
         argv[4] = uiPipeSend; // writting end
 
         //----------------------------------------------------------------
-        // argv[5] => NULL
-
-        argv[5] = nullptr;
-
-        //----------------------------------------------------------------
         // fork
 
         int ret = -1;
@@ -147,9 +142,9 @@ public:
 
         for (int i=0; ;)
         {
-            ret = read(fPipeRecv, &ch, 1);
+            ssize_t ret2 = read(fPipeRecv, &ch, 1);
 
-            switch (ret)
+            switch (ret2)
             {
             case -1:
                 if (errno == EAGAIN)
@@ -176,7 +171,7 @@ public:
                 break;
 
             default:
-                carla_stderr("read() returned %d", ret);
+                carla_stderr("read() returned %d", ret2);
                 break;
             }
 
@@ -267,7 +262,7 @@ public:
 
         if (char* const msg = readline())
         {
-            value = atoi(msg);
+            value = std::atoi(msg);
             std::free(msg);
             return true;
         }
@@ -282,7 +277,7 @@ public:
 
         if (char* const msg = readline())
         {
-            bool ret = (sscanf(msg, "%f", &value) == 1);
+            bool ret = (std::sscanf(msg, "%f", &value) == 1);
             std::free(msg);
             return ret;
         }
@@ -416,18 +411,18 @@ private:
         return nullptr;
     }
 
-    static bool fork_exec(const char* const argv[6], int* const retp)
+    static bool fork_exec(const char* const argv[5], int* const retp)
     {
         pid_t ret = *retp = vfork();
 
         switch (ret)
         {
         case 0: /* child process */
-            execvp(argv[0], (char* const*)argv);
-            carla_stderr2("exec of UI failed: %s", strerror(errno));
+            execlp(argv[0], argv[0], argv[1], argv[2], argv[3], argv[4], nullptr);
+            carla_stderr2("exec of UI failed: %s", std::strerror(errno));
             return false;
-        case -1:
-            carla_stderr2("fork() failed to create new process for plugin UI");
+        case -1: /* error */
+            carla_stderr2("vfork() failed: %s", std::strerror(errno));
             return false;
         }
 
@@ -447,7 +442,7 @@ private:
 
         for (i = 0; i < WAIT_ZOMBIE_TIMEOUT / WAIT_STEP; ++i)
         {
-            ret = waitpid(pid, NULL, WNOHANG);
+            ret = waitpid(pid, nullptr, WNOHANG);
 
             if (ret != 0)
             {
