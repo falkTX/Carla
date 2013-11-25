@@ -112,8 +112,13 @@ const unsigned int PARAMETER_USES_CUSTOM_TEXT = 0x400; //!< Parameter uses custo
  * \see CustomData
  * @{
  */
-const char* const CUSTOM_DATA_CHUNK  = "http://kxstudio.sf.net/ns/carla/chunk";  //!< Carla chunk URI.
-const char* const CUSTOM_DATA_STRING = "http://kxstudio.sf.net/ns/carla/string"; //!< Carla string URI.
+const char* const CUSTOM_DATA_TYPE_CHUNK     = "http://kxstudio.sf.net/ns/carla/chunk";   //!< Chunk type URI.
+const char* const CUSTOM_DATA_TYPE_STRING    = "http://kxstudio.sf.net/ns/carla/string";  //!< String type URI.
+const char* const CUSTOM_DATA_KEY_UI_X       = "http://kxstudio.sf.net/carla/ui#x";       //!< UI X URI.
+const char* const CUSTOM_DATA_KEY_UI_Y       = "http://kxstudio.sf.net/carla/ui#y";       //!< UI Y URI.
+const char* const CUSTOM_DATA_KEY_UI_WIDTH   = "http://kxstudio.sf.net/carla/ui#width";   //!< UI width URI.
+const char* const CUSTOM_DATA_KEY_UI_HEIGHT  = "http://kxstudio.sf.net/carla/ui#height";  //!< UI height URI.
+const char* const CUSTOM_DATA_KEY_UI_VISIBLE = "http://kxstudio.sf.net/carla/ui#visible"; //!< UI visible URI.
 /**@}*/
 
 /*!
@@ -402,73 +407,79 @@ enum OptionsType SIZE_INT {
 };
 
 /*!
- * Opcodes sent from the engine callback to the GUI, as defined by CallbackFunc.
+ * Opcodes sent from the engine callback to the GUI, as defined by EngineCallbackFunc.
  * \see CarlaEngine::setCallback()
  */
-enum CallbackType SIZE_INT {
+enum EngineCallbackType SIZE_INT {
     /*!
      * Debug.\n
      * This opcode is undefined and used only for testing purposes.
      */
-    CALLBACK_DEBUG = 0,
+    ENGINE_CALLBACK_DEBUG = 0,
 
     /*!
      * A plugin has been added.
      * \param valueStr Plugin name
      */
-    CALLBACK_PLUGIN_ADDED = 1,
+    ENGINE_CALLBACK_PLUGIN_ADDED = 1,
 
     /*!
      * A plugin has been removed.
      */
-    CALLBACK_PLUGIN_REMOVED = 2,
+    ENGINE_CALLBACK_PLUGIN_REMOVED = 2,
 
     /*!
      * A plugin has been renamed.
      * \param valueStr New plugin name
      */
-    CALLBACK_PLUGIN_RENAMED = 3,
+    ENGINE_CALLBACK_PLUGIN_RENAMED = 3,
+
+    /*!
+     * A plugin has been disabled.
+     * \param valueStr Error details
+     */
+    ENGINE_CALLBACK_PLUGIN_DISABLED = 4,
 
     /*!
      * A parameter value has been changed.
      * \param value1 Parameter index
      * \param value3 Parameter value
      */
-    CALLBACK_PARAMETER_VALUE_CHANGED = 4,
+    ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED = 5,
 
     /*!
      * A parameter default has changed.
      * \param value1 Parameter index
      * \param value3 New default value
      */
-    CALLBACK_PARAMETER_DEFAULT_CHANGED = 5,
+    ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED = 6,
 
     /*!
      * A parameter's MIDI channel has been changed.
      * \param value1 Parameter index
      * \param value2 MIDI channel
      */
-    CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED = 6,
+    ENGINE_CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED = 7,
 
     /*!
      * A parameter's MIDI CC has been changed.
      * \param value1 Parameter index
      * \param value2 MIDI CC
      */
-    CALLBACK_PARAMETER_MIDI_CC_CHANGED = 7,
+    ENGINE_CALLBACK_PARAMETER_MIDI_CC_CHANGED = 8,
 
     /*!
      * The current program has has been changed.
      * \param value1 Program index
      */
-    CALLBACK_PROGRAM_CHANGED = 8,
+    ENGINE_CALLBACK_PROGRAM_CHANGED = 9,
 
     /*!
      * The current MIDI program has been changed.
      * \param value1 MIDI bank
      * \param value2 MIDI program
      */
-    CALLBACK_MIDI_PROGRAM_CHANGED = 9,
+    ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED = 10,
 
     /*!
      * The plugin's custom UI state has changed.
@@ -477,7 +488,7 @@ enum CallbackType SIZE_INT {
      *                1: UI has been shown\n
      *               -1: UI has crashed and should not be shown again
      */
-    CALLBACK_UI_STATE_CHANGED = 10,
+    ENGINE_CALLBACK_UI_STATE_CHANGED = 11,
 
     /*!
      * A note has been pressed.
@@ -485,59 +496,59 @@ enum CallbackType SIZE_INT {
      * \param value2 Note
      * \param value3 Velocity
      */
-    CALLBACK_NOTE_ON = 11,
+    ENGINE_CALLBACK_NOTE_ON = 12,
 
     /*!
      * A note has been released.
      * \param value1 Channel
      * \param value2 Note
      */
-    CALLBACK_NOTE_OFF = 12,
+    ENGINE_CALLBACK_NOTE_OFF = 13,
 
     /*!
      * The plugin needs update.
      */
-    CALLBACK_UPDATE = 13,
+    ENGINE_CALLBACK_UPDATE = 14,
 
     /*!
      * The plugin's data/information has changed.
      */
-    CALLBACK_RELOAD_INFO = 14,
+    ENGINE_CALLBACK_RELOAD_INFO = 15,
 
     /*!
      * The plugin's parameters have changed.
      */
-    CALLBACK_RELOAD_PARAMETERS = 15,
+    ENGINE_CALLBACK_RELOAD_PARAMETERS = 16,
 
     /*!
      * The plugin's programs have changed.
      */
-    CALLBACK_RELOAD_PROGRAMS = 16,
+    ENGINE_CALLBACK_RELOAD_PROGRAMS = 17,
 
     /*!
      * The plugin's state has changed.
      */
-    CALLBACK_RELOAD_ALL = 17,
+    ENGINE_CALLBACK_RELOAD_ALL = 18,
 
     /*!
      * Canvas client added.
      * \param pluginId Client Id
      * \param valueStr Client name
      */
-    CALLBACK_PATCHBAY_CLIENT_ADDED = 18,
+    ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED = 19,
 
     /*!
      * Canvas client removed.
      * \param pluginId Client Id
      */
-    CALLBACK_PATCHBAY_CLIENT_REMOVED = 19,
+    ENGINE_CALLBACK_PATCHBAY_CLIENT_REMOVED = 20,
 
     /*!
      * Canvas client renamed.
      * \param pluginId Client Id
      * \param valueStr New client name
      */
-    CALLBACK_PATCHBAY_CLIENT_RENAMED = 20,
+    ENGINE_CALLBACK_PATCHBAY_CLIENT_RENAMED = 21,
 
     /*!
      * Canvas port added.
@@ -546,14 +557,14 @@ enum CallbackType SIZE_INT {
      * \param value2   Port flags
      * \param valueStr Port name
      */
-    CALLBACK_PATCHBAY_PORT_ADDED = 21,
+    ENGINE_CALLBACK_PATCHBAY_PORT_ADDED = 22,
 
     /*!
      * Canvas port removed.
      * \param pluginId Client Id
      * \param value1   Port Id
      */
-    CALLBACK_PATCHBAY_PORT_REMOVED = 22,
+    ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED = 23,
 
     /*!
      * Canvas port renamed.
@@ -561,88 +572,109 @@ enum CallbackType SIZE_INT {
      * \param value1   Port Id
      * \param valueStr New port name
      */
-    CALLBACK_PATCHBAY_PORT_RENAMED = 23,
+    ENGINE_CALLBACK_PATCHBAY_PORT_RENAMED = 24,
 
     /*!
      * Canvas port connection added.
      * \param value1 Output port Id
      * \param value2 Input port Id
      */
-    CALLBACK_PATCHBAY_CONNECTION_ADDED = 24,
+    ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED = 25,
 
     /*!
      * Canvas port connection removed.
      * \param value1 Output port Id
      * \param value2 Input port Id
      */
-    CALLBACK_PATCHBAY_CONNECTION_REMOVED = 25,
+    ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED = 26,
 
     /*!
      * Canvas client icon changed.
      * \param pluginId Client Id
      * \param valueStr New icon name
      */
-    CALLBACK_PATCHBAY_ICON_CHANGED = 26,
+    ENGINE_CALLBACK_PATCHBAY_ICON_CHANGED = 27,
 
     /*!
      * Engine buffer-size changed.
      * \param value1 New buffer size
      */
-    CALLBACK_BUFFER_SIZE_CHANGED = 27,
+    ENGINE_CALLBACK_BUFFER_SIZE_CHANGED = 28,
 
     /*!
      * Engine sample-rate changed.
      * \param value3 New sample rate
      */
-    CALLBACK_SAMPLE_RATE_CHANGED = 28,
+    ENGINE_CALLBACK_SAMPLE_RATE_CHANGED = 29,
 
     /*!
      * Engine process mode changed.
      * \param value1 New process mode
      * \see ProcessMode
      */
-    CALLBACK_PROCESS_MODE_CHANGED = 29,
+    ENGINE_CALLBACK_PROCESS_MODE_CHANGED = 30,
 
     /*!
      * Engine started.
      * \param valuestr Engine driver
      */
-    CALLBACK_ENGINE_STARTED = 30,
+    ENGINE_CALLBACK_ENGINE_STARTED = 31,
 
     /*!
      * Engine stopped.
      */
-    CALLBACK_ENGINE_STOPPED = 31,
+    ENGINE_CALLBACK_ENGINE_STOPPED = 32,
 
     /*!
      * Non-Session-Manager Announce message.
      */
-    CALLBACK_NSM_ANNOUNCE = 32,
+    ENGINE_CALLBACK_NSM_ANNOUNCE = 33,
 
     /*!
      * Non-Session-Manager Open message.
      */
-    CALLBACK_NSM_OPEN = 33,
+    ENGINE_CALLBACK_NSM_OPEN = 34,
 
     /*!
      * Non-Session-Manager Save message.
      */
-    CALLBACK_NSM_SAVE = 34,
+    ENGINE_CALLBACK_NSM_SAVE = 35,
 
     /*!
      * Show \a valueStr as info to user.
      */
-    CALLBACK_INFO = 35,
+    ENGINE_CALLBACK_INFO = 36,
 
     /*!
      * Show \a valueStr as an error to user.
      */
-    CALLBACK_ERROR = 36,
+    ENGINE_CALLBACK_ERROR = 37,
 
     /*!
      * The engine has crashed or malfunctioned and will no longer work.
      */
-    CALLBACK_QUIT = 37
+    ENGINE_CALLBACK_QUIT = 38
+};
+
+/*!
+ * Opcodes sent from the backend to the frontend, asking for file related tasks.
+ */
+enum FileCallbackType SIZE_INT {
+    /*!
+     * Debug.\n
+     * This opcode is undefined and used only for testing purposes.
+     */
+    FILE_CALLBACK_DEBUG = 0,
+
+    /*!
+     * Open file or folder.
+     */
+    FILE_CALLBACK_OPEN = 1,
+
+    /*!
+     * Save file or folder.
+     */
+    FILE_CALLBACK_SAVE = 2
 };
 
 /*!
@@ -668,10 +700,16 @@ enum TransportMode SIZE_INT {
 };
 
 /*!
- * Callback function the engine will use when something interesting happens.
- * \see CallbackType
+ * Engine callback function.
+ * \see EngineCallbackType
  */
-typedef void (*CallbackFunc)(void* ptr, CallbackType action, unsigned int pluginId, int value1, int value2, float value3, const char* valueStr);
+typedef void (*EngineCallbackFunc)(void* ptr, EngineCallbackType action, unsigned int pluginId, int value1, int value2, float value3, const char* valueStr);
+
+/*!
+ * File callback function.
+ * \see FileCallbackType
+ */
+typedef const char* (*FileCallbackFunc)(void* ptr, FileCallbackType action, bool isDir, const char* title, const char* filter);
 
 /*!
  * Parameter data.
