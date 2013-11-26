@@ -64,8 +64,8 @@ const unsigned int PLUGIN_CAN_DRYWET  = 0x010; //!< Plugin can use internal Dry/
 const unsigned int PLUGIN_CAN_VOLUME  = 0x020; //!< Plugin can use internal Volume control.
 const unsigned int PLUGIN_CAN_BALANCE = 0x040; //!< Plugin can use internal Left & Right Balance controls.
 const unsigned int PLUGIN_CAN_PANNING = 0x080; //!< Plugin can use internal Panning control.
-const unsigned int PLUGIN_NEEDS_SINGLE_THREAD = 0x100; //!< Plugin needs a single thread for all UI events.
-const unsigned int PLUGIN_NEEDS_FIXED_BUFFERS = 0x200; //!< Plugin needs constant/fixed-size audio buffers.
+const unsigned int PLUGIN_NEEDS_FIXED_BUFFERS = 0x100; //!< Plugin needs constant/fixed-size audio buffers.
+const unsigned int PLUGIN_NEEDS_SINGLE_THREAD = 0x200; //!< Plugin needs a single thread for all UI events.
 /**@}*/
 
 /*!
@@ -96,12 +96,12 @@ const unsigned int PLUGIN_OPTION_SEND_ALL_SOUND_OFF    = 0x100; //!< Send MIDI a
 const unsigned int PARAMETER_IS_BOOLEAN       = 0x001; //!< Parameter values are boolean (always at minimum or maximum values).
 const unsigned int PARAMETER_IS_INTEGER       = 0x002; //!< Parameter values are integer.
 const unsigned int PARAMETER_IS_LOGARITHMIC   = 0x004; //!< Parameter values are logarithmic.
-const unsigned int PARAMETER_IS_ENABLED       = 0x008; //!< Parameter is enabled (can be viewed, changed and stored).
-const unsigned int PARAMETER_IS_AUTOMABLE     = 0x010; //!< Parameter is automable (realtime safe).
-const unsigned int PARAMETER_IS_READ_ONLY     = 0x020; //!< Parameter is read-only.
-const unsigned int PARAMETER_USES_SAMPLERATE  = 0x040; //!< Parameter needs sample rate to work (value and ranges are multiplied by SR on usage, divided by SR on save).
-const unsigned int PARAMETER_USES_SCALEPOINTS = 0x080; //!< Parameter uses scalepoints to define internal values in a meaningful way.
-const unsigned int PARAMETER_USES_CUSTOM_TEXT = 0x100; //!< Parameter uses custom text for displaying its value.\see CarlaPlugin::getParameterText()
+const unsigned int PARAMETER_IS_ENABLED       = 0x010; //!< Parameter is enabled (can be viewed, changed and stored).
+const unsigned int PARAMETER_IS_AUTOMABLE     = 0x020; //!< Parameter is automable (realtime safe).
+const unsigned int PARAMETER_IS_READ_ONLY     = 0x040; //!< Parameter is read-only.
+const unsigned int PARAMETER_USES_SAMPLERATE  = 0x100; //!< Parameter needs sample rate to work (value and ranges are multiplied by SR on usage, divided by SR on save).
+const unsigned int PARAMETER_USES_SCALEPOINTS = 0x200; //!< Parameter uses scalepoints to define internal values in a meaningful way.
+const unsigned int PARAMETER_USES_CUSTOM_TEXT = 0x400; //!< Parameter uses custom text for displaying its value.\see CarlaPlugin::getParameterText()
 /**@}*/
 
 /*!
@@ -112,8 +112,13 @@ const unsigned int PARAMETER_USES_CUSTOM_TEXT = 0x100; //!< Parameter uses custo
  * \see CustomData
  * @{
  */
-const char* const CUSTOM_DATA_CHUNK  = "http://kxstudio.sf.net/ns/carla/chunk";  //!< Carla chunk URI.
-const char* const CUSTOM_DATA_STRING = "http://kxstudio.sf.net/ns/carla/string"; //!< Carla string URI.
+const char* const CUSTOM_DATA_TYPE_CHUNK     = "http://kxstudio.sf.net/ns/carla/chunk";   //!< Chunk type URI.
+const char* const CUSTOM_DATA_TYPE_STRING    = "http://kxstudio.sf.net/ns/carla/string";  //!< String type URI.
+const char* const CUSTOM_DATA_KEY_UI_X       = "http://kxstudio.sf.net/carla/ui#x";       //!< UI X URI.
+const char* const CUSTOM_DATA_KEY_UI_Y       = "http://kxstudio.sf.net/carla/ui#y";       //!< UI Y URI.
+const char* const CUSTOM_DATA_KEY_UI_WIDTH   = "http://kxstudio.sf.net/carla/ui#width";   //!< UI width URI.
+const char* const CUSTOM_DATA_KEY_UI_HEIGHT  = "http://kxstudio.sf.net/carla/ui#height";  //!< UI height URI.
+const char* const CUSTOM_DATA_KEY_UI_VISIBLE = "http://kxstudio.sf.net/carla/ui#visible"; //!< UI visible URI.
 /**@}*/
 
 /*!
@@ -122,13 +127,11 @@ const char* const CUSTOM_DATA_STRING = "http://kxstudio.sf.net/ns/carla/string";
  * Various patchbay port hints.
  * @{
  */
-const unsigned int PATCHBAY_PORT_IS_INPUT     = 0x001; //!< Patchbay port is input.
-const unsigned int PATCHBAY_PORT_IS_OUTPUT    = 0x002; //!< Patchbay port is output.
-const unsigned int PATCHBAY_PORT_IS_AUDIO     = 0x010; //!< Patchbay port is of Audio type.
-const unsigned int PATCHBAY_PORT_IS_CV        = 0x020; //!< Patchbay port is of CV type.
-const unsigned int PATCHBAY_PORT_IS_MIDI      = 0x040; //!< Patchbay port is of MIDI type.
-const unsigned int PATCHBAY_PORT_IS_OSC       = 0x100; //!< Patchbay port is of OSC type.
-const unsigned int PATCHBAY_PORT_IS_PARAMETER = 0x200; //!< Patchbay port is of Parameter type.
+const unsigned int PATCHBAY_PORT_IS_INPUT     = 0x01; //!< Patchbay port is input.
+const unsigned int PATCHBAY_PORT_IS_OUTPUT    = 0x02; //!< Patchbay port is output.
+const unsigned int PATCHBAY_PORT_IS_AUDIO     = 0x10; //!< Patchbay port is of Audio type.
+const unsigned int PATCHBAY_PORT_IS_CV        = 0x20; //!< Patchbay port is of CV type.
+const unsigned int PATCHBAY_PORT_IS_MIDI      = 0x40; //!< Patchbay port is of MIDI type.
 /**@}*/
 
 /*!
@@ -166,30 +169,26 @@ enum PluginType SIZE_INT {
  * When a plugin fails to tell its own category, one is atributted to it based on its name.
  */
 enum PluginCategory SIZE_INT {
-    PLUGIN_CATEGORY_NONE      = 0, //!< Null plugin category.
-    PLUGIN_CATEGORY_SYNTH     = 1, //!< A synthesizer or generator.
-    PLUGIN_CATEGORY_DELAY     = 2, //!< A delay or reverberator.
-    PLUGIN_CATEGORY_EQ        = 3, //!< An equalizer.
-    PLUGIN_CATEGORY_FILTER    = 4, //!< A filter.
-    PLUGIN_CATEGORY_DYNAMICS  = 5, //!< A 'dynamic' plugin (amplifier, compressor, gate, etc).
-    PLUGIN_CATEGORY_MODULATOR = 6, //!< A 'modulator' plugin (chorus, flanger, phaser, etc).
-    PLUGIN_CATEGORY_UTILITY   = 7, //!< An 'utility' plugin (analyzer, converter, mixer, etc).
-    PLUGIN_CATEGORY_OTHER     = 8  //!< Misc plugin (used to check if the plugin has a category).
+    PLUGIN_CATEGORY_NONE       = 0, //!< Null plugin category.
+    PLUGIN_CATEGORY_SYNTH      = 1, //!< A synthesizer or generator.
+    PLUGIN_CATEGORY_DELAY      = 2, //!< A delay or reverberator.
+    PLUGIN_CATEGORY_EQ         = 3, //!< An equalizer.
+    PLUGIN_CATEGORY_FILTER     = 4, //!< A filter.
+    PLUGIN_CATEGORY_DISTORTION = 5, //!< A distortion plugin.
+    PLUGIN_CATEGORY_DYNAMICS   = 6, //!< A 'dynamic' plugin (amplifier, compressor, gate, etc).
+    PLUGIN_CATEGORY_MODULATOR  = 7, //!< A 'modulator' plugin (chorus, flanger, phaser, etc).
+    PLUGIN_CATEGORY_UTILITY    = 8, //!< An 'utility' plugin (analyzer, converter, mixer, etc).
+    PLUGIN_CATEGORY_OTHER      = 9  //!< Misc plugin (used to check if the plugin has a category).
 };
 
 /*!
  * Plugin parameter type.
  */
 enum ParameterType SIZE_INT {
-    PARAMETER_UNKNOWN       = 0, //!< Null parameter type.
-    PARAMETER_INPUT         = 1, //!< Input parameter.
-    PARAMETER_OUTPUT        = 2, //!< Ouput parameter.
-    PARAMETER_LATENCY       = 3, //!< Special latency parameter, used in LADSPA, DSSI and LV2 plugins.
-    PARAMETER_SAMPLE_RATE   = 4, //!< Special sample-rate parameter, used in LADSPA, DSSI and LV2 plugins.
-#ifdef WANT_LV2
-    PARAMETER_LV2_FREEWHEEL = 5, //!< Special LV2 Plugin parameter used to report freewheel (offline) mode.
-    PARAMETER_LV2_TIME      = 6  //!< Special LV2 Plugin parameter used to report time information.
-#endif
+    PARAMETER_UNKNOWN = 0, //!< Null parameter type.
+    PARAMETER_INPUT   = 1, //!< Input parameter.
+    PARAMETER_OUTPUT  = 2, //!< Ouput parameter.
+    PARAMETER_SPECIAL = 3  //!< Special parameter, used to report info in LADSPA, DSSI or LV2 plugins.
 };
 
 /*!
@@ -350,34 +349,40 @@ enum OptionsType SIZE_INT {
     OPTION_PATH_BRIDGE_LV2_GTK3 = 21,
 
     /*!
+     * Set path to the LV2 Ntk UI bridge executable.\n
+     * Default unset.
+     */
+    OPTION_PATH_BRIDGE_LV2_NTK = 22,
+
+    /*!
      * Set path to the LV2 Qt4 UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_QT4 = 22,
+    OPTION_PATH_BRIDGE_LV2_QT4 = 23,
 
     /*!
      * Set path to the LV2 Qt5 UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_QT5 = 23,
+    OPTION_PATH_BRIDGE_LV2_QT5 = 24,
 
     /*!
      * Set path to the LV2 Cocoa UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_COCOA = 24,
+    OPTION_PATH_BRIDGE_LV2_COCOA = 25,
 
     /*!
      * Set path to the LV2 Windows UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_WINDOWS = 25,
+    OPTION_PATH_BRIDGE_LV2_WINDOWS = 26,
 
     /*!
      * Set path to the LV2 X11 UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_X11 = 26,
+    OPTION_PATH_BRIDGE_LV2_X11 = 27,
 #endif
 
 #ifdef WANT_VST
@@ -385,90 +390,105 @@ enum OptionsType SIZE_INT {
      * Set path to the VST Mac UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_VST_MAC = 27,
+    OPTION_PATH_BRIDGE_VST_MAC = 28,
 
     /*!
      * Set path to the VST HWND UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_VST_HWND = 28,
+    OPTION_PATH_BRIDGE_VST_HWND = 29,
 
     /*!
      * Set path to the VST X11 UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_VST_X11 = 29
+    OPTION_PATH_BRIDGE_VST_X11 = 30
 #endif
 };
 
 /*!
- * Opcodes sent from the engine callback to the GUI, as defined by CallbackFunc.
+ * Opcodes sent from the engine callback to the GUI, as defined by EngineCallbackFunc.
  * \see CarlaEngine::setCallback()
  */
-enum CallbackType SIZE_INT {
+enum EngineCallbackType SIZE_INT {
     /*!
      * Debug.\n
      * This opcode is undefined and used only for testing purposes.
      */
-    CALLBACK_DEBUG = 0,
+    ENGINE_CALLBACK_DEBUG = 0,
 
     /*!
      * A plugin has been added.
      * \param valueStr Plugin name
      */
-    CALLBACK_PLUGIN_ADDED = 1,
+    ENGINE_CALLBACK_PLUGIN_ADDED = 1,
 
     /*!
      * A plugin has been removed.
      */
-    CALLBACK_PLUGIN_REMOVED = 2,
+    ENGINE_CALLBACK_PLUGIN_REMOVED = 2,
 
     /*!
      * A plugin has been renamed.
      * \param valueStr New plugin name
      */
-    CALLBACK_PLUGIN_RENAMED = 3,
+    ENGINE_CALLBACK_PLUGIN_RENAMED = 3,
+
+    /*!
+     * A plugin has been disabled.
+     * \param valueStr Error details
+     */
+    ENGINE_CALLBACK_PLUGIN_DISABLED = 4,
 
     /*!
      * A parameter value has been changed.
      * \param value1 Parameter index
      * \param value3 Parameter value
      */
-    CALLBACK_PARAMETER_VALUE_CHANGED = 4,
+    ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED = 5,
 
     /*!
      * A parameter default has changed.
      * \param value1 Parameter index
      * \param value3 New default value
      */
-    CALLBACK_PARAMETER_DEFAULT_CHANGED = 5,
+    ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED = 6,
 
     /*!
      * A parameter's MIDI channel has been changed.
      * \param value1 Parameter index
      * \param value2 MIDI channel
      */
-    CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED = 6,
+    ENGINE_CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED = 7,
 
     /*!
      * A parameter's MIDI CC has been changed.
      * \param value1 Parameter index
      * \param value2 MIDI CC
      */
-    CALLBACK_PARAMETER_MIDI_CC_CHANGED = 7,
+    ENGINE_CALLBACK_PARAMETER_MIDI_CC_CHANGED = 8,
 
     /*!
      * The current program has has been changed.
      * \param value1 Program index
      */
-    CALLBACK_PROGRAM_CHANGED = 8,
+    ENGINE_CALLBACK_PROGRAM_CHANGED = 9,
 
     /*!
      * The current MIDI program has been changed.
      * \param value1 MIDI bank
      * \param value2 MIDI program
      */
-    CALLBACK_MIDI_PROGRAM_CHANGED = 9,
+    ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED = 10,
+
+    /*!
+     * The plugin's custom UI state has changed.
+     * \param value1 State, as follows:\n
+     *                0: UI has been closed or hidden\n
+     *                1: UI has been shown\n
+     *               -1: UI has crashed and should not be shown again
+     */
+    ENGINE_CALLBACK_UI_STATE_CHANGED = 11,
 
     /*!
      * A note has been pressed.
@@ -476,176 +496,185 @@ enum CallbackType SIZE_INT {
      * \param value2 Note
      * \param value3 Velocity
      */
-    CALLBACK_NOTE_ON = 10,
+    ENGINE_CALLBACK_NOTE_ON = 12,
 
     /*!
      * A note has been released.
      * \param value1 Channel
      * \param value2 Note
      */
-    CALLBACK_NOTE_OFF = 11,
-
-    /*!
-     * The plugin's custom GUI state has changed.
-     * \param value1 State, as follows:\n
-     *                0: GUI has been closed or hidden\n
-     *                1: GUI has been shown\n
-     *               -1: GUI has crashed and should not be shown again
-     */
-    CALLBACK_SHOW_GUI = 12,
+    ENGINE_CALLBACK_NOTE_OFF = 13,
 
     /*!
      * The plugin needs update.
      */
-    CALLBACK_UPDATE = 13,
+    ENGINE_CALLBACK_UPDATE = 14,
 
     /*!
      * The plugin's data/information has changed.
      */
-    CALLBACK_RELOAD_INFO = 14,
+    ENGINE_CALLBACK_RELOAD_INFO = 15,
 
     /*!
      * The plugin's parameters have changed.
      */
-    CALLBACK_RELOAD_PARAMETERS = 15,
+    ENGINE_CALLBACK_RELOAD_PARAMETERS = 16,
 
     /*!
      * The plugin's programs have changed.
      */
-    CALLBACK_RELOAD_PROGRAMS = 16,
+    ENGINE_CALLBACK_RELOAD_PROGRAMS = 17,
 
     /*!
      * The plugin's state has changed.
      */
-    CALLBACK_RELOAD_ALL = 17,
+    ENGINE_CALLBACK_RELOAD_ALL = 18,
 
     /*!
      * Canvas client added.
-     * \param value1   Client Id
-     * \param value2   Client icon
+     * \param pluginId Client Id
      * \param valueStr Client name
      */
-    CALLBACK_PATCHBAY_CLIENT_ADDED = 18,
+    ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED = 19,
 
     /*!
      * Canvas client removed.
-     * \param value1   Client Id
-     * \param valueStr Client name
+     * \param pluginId Client Id
      */
-    CALLBACK_PATCHBAY_CLIENT_REMOVED = 19,
+    ENGINE_CALLBACK_PATCHBAY_CLIENT_REMOVED = 20,
 
     /*!
      * Canvas client renamed.
-     * \param value1   Client Id
+     * \param pluginId Client Id
      * \param valueStr New client name
      */
-    CALLBACK_PATCHBAY_CLIENT_RENAMED = 20,
+    ENGINE_CALLBACK_PATCHBAY_CLIENT_RENAMED = 21,
 
     /*!
      * Canvas port added.
-     * \param value1   Client Id
-     * \param value2   Port Id
-     * \param value3   Port flags
+     * \param pluginId Client Id
+     * \param value1   Port Id
+     * \param value2   Port flags
      * \param valueStr Port name
      */
-    CALLBACK_PATCHBAY_PORT_ADDED = 21,
+    ENGINE_CALLBACK_PATCHBAY_PORT_ADDED = 22,
 
     /*!
      * Canvas port removed.
-     * \param value1   Client Id
-     * \param value2   Port Id
-     * \param valueStr Port name
+     * \param pluginId Client Id
+     * \param value1   Port Id
      */
-    CALLBACK_PATCHBAY_PORT_REMOVED = 22,
+    ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED = 23,
 
     /*!
      * Canvas port renamed.
-     * \param value1   Client Id
-     * \param value2   Port Id
+     * \param pluginId Client Id
+     * \param value1   Port Id
      * \param valueStr New port name
      */
-    CALLBACK_PATCHBAY_PORT_RENAMED = 23,
+    ENGINE_CALLBACK_PATCHBAY_PORT_RENAMED = 24,
 
     /*!
      * Canvas port connection added.
      * \param value1 Output port Id
      * \param value2 Input port Id
      */
-    CALLBACK_PATCHBAY_CONNECTION_ADDED = 24,
+    ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED = 25,
 
     /*!
      * Canvas port connection removed.
      * \param value1 Output port Id
      * \param value2 Input port Id
      */
-    CALLBACK_PATCHBAY_CONNECTION_REMOVED = 25,
+    ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED = 26,
 
     /*!
      * Canvas client icon changed.
-     * \param value1   Client Id
+     * \param pluginId Client Id
      * \param valueStr New icon name
      */
-    CALLBACK_PATCHBAY_ICON_CHANGED = 26,
+    ENGINE_CALLBACK_PATCHBAY_ICON_CHANGED = 27,
 
     /*!
      * Engine buffer-size changed.
      * \param value1 New buffer size
      */
-    CALLBACK_BUFFER_SIZE_CHANGED = 27,
+    ENGINE_CALLBACK_BUFFER_SIZE_CHANGED = 28,
 
     /*!
      * Engine sample-rate changed.
      * \param value3 New sample rate
      */
-    CALLBACK_SAMPLE_RATE_CHANGED = 28,
+    ENGINE_CALLBACK_SAMPLE_RATE_CHANGED = 29,
 
     /*!
      * Engine process mode changed.
      * \param value1 New process mode
      * \see ProcessMode
      */
-    CALLBACK_PROCESS_MODE_CHANGED = 29,
+    ENGINE_CALLBACK_PROCESS_MODE_CHANGED = 30,
 
     /*!
      * Engine started.
      * \param valuestr Engine driver
      */
-    CALLBACK_ENGINE_STARTED = 30,
+    ENGINE_CALLBACK_ENGINE_STARTED = 31,
 
     /*!
      * Engine stopped.
      */
-    CALLBACK_ENGINE_STOPPED = 31,
+    ENGINE_CALLBACK_ENGINE_STOPPED = 32,
 
     /*!
      * Non-Session-Manager Announce message.
      */
-    CALLBACK_NSM_ANNOUNCE = 32,
+    ENGINE_CALLBACK_NSM_ANNOUNCE = 33,
 
     /*!
      * Non-Session-Manager Open message.
      */
-    CALLBACK_NSM_OPEN = 33,
+    ENGINE_CALLBACK_NSM_OPEN = 34,
 
     /*!
      * Non-Session-Manager Save message.
      */
-    CALLBACK_NSM_SAVE = 34,
-
-    /*!
-     * An error occurred, show \a valueStr as an error to user.
-     */
-    CALLBACK_ERROR = 35,
+    ENGINE_CALLBACK_NSM_SAVE = 35,
 
     /*!
      * Show \a valueStr as info to user.
      */
-    CALLBACK_INFO = 36,
+    ENGINE_CALLBACK_INFO = 36,
+
+    /*!
+     * Show \a valueStr as an error to user.
+     */
+    ENGINE_CALLBACK_ERROR = 37,
 
     /*!
      * The engine has crashed or malfunctioned and will no longer work.
      */
-    CALLBACK_QUIT = 37
+    ENGINE_CALLBACK_QUIT = 38
+};
+
+/*!
+ * Opcodes sent from the backend to the frontend, asking for file related tasks.
+ */
+enum FileCallbackType SIZE_INT {
+    /*!
+     * Debug.\n
+     * This opcode is undefined and used only for testing purposes.
+     */
+    FILE_CALLBACK_DEBUG = 0,
+
+    /*!
+     * Open file or folder.
+     */
+    FILE_CALLBACK_OPEN = 1,
+
+    /*!
+     * Save file or folder.
+     */
+    FILE_CALLBACK_SAVE = 2
 };
 
 /*!
@@ -671,10 +700,16 @@ enum TransportMode SIZE_INT {
 };
 
 /*!
- * Callback function the engine will use when something interesting happens.
- * \see CallbackType
+ * Engine callback function.
+ * \see EngineCallbackType
  */
-typedef void (*CallbackFunc)(void* ptr, CallbackType action, unsigned int pluginId, int value1, int value2, float value3, const char* valueStr);
+typedef void (*EngineCallbackFunc)(void* ptr, EngineCallbackType action, unsigned int pluginId, int value1, int value2, float value3, const char* valueStr);
+
+/*!
+ * File callback function.
+ * \see FileCallbackType
+ */
+typedef const char* (*FileCallbackFunc)(void* ptr, FileCallbackType action, bool isDir, const char* title, const char* filter);
 
 /*!
  * Parameter data.

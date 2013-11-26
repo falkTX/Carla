@@ -68,8 +68,8 @@ struct CarlaPluginInfo {
     const char* maker;
     const char* copyright;
     const char* iconName;
+    int patchbayClientId;
     long uniqueId;
-    uint32_t latency;
 
 #ifndef DOXYGEN
     CarlaPluginInfo()
@@ -84,8 +84,8 @@ struct CarlaPluginInfo {
           maker(nullptr),
           copyright(nullptr),
           iconName(nullptr),
-          uniqueId(0),
-          latency(0) {}
+          patchbayClientId(0),
+          uniqueId(0) {}
 
     ~CarlaPluginInfo()
     {
@@ -243,6 +243,21 @@ struct CarlaTransportInfo {
           bar(0),
           beat(0),
           bpm(0.0) {}
+#endif
+};
+
+/*!
+ * Engine driver information.
+ * \see carla_get_engine_driver_info()
+ */
+struct CarlaEngineDriverInfo {
+    const char* name;
+    unsigned int hints;
+
+#ifndef DOXYGEN
+    CarlaEngineDriverInfo()
+        : name(nullptr),
+          hints(0x0) {}
 #endif
 };
 
