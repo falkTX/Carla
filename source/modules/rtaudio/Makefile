@@ -8,7 +8,7 @@ include ../../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += $(RTAUDIO_FLAGS) -DHAVE_GETTIMEOFDAY -D__UNIX_JACK__ -I. -Iinclude -I.. -I../../includes
+BUILD_CXX_FLAGS += $(RTAUDIO_FLAGS) -I. -Iinclude -I.. -I../../includes
 LINK_FLAGS      += $(RTAUDIO_LIBS) -L.. -ljackbridge
 
 OBJS = RtAudio.cpp.o

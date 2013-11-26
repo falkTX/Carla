@@ -644,32 +644,32 @@ class MidiOutWinKS: public MidiOutApi
 class MidiInDummy: public MidiInApi
 {
  public:
- MidiInDummy( const std::string clientName, unsigned int queueSizeLimit ) : MidiInApi( queueSizeLimit ) { errorString_ = "MidiInDummy: This class provides no functionality."; RtMidi::error( RtError::WARNING, errorString_ ); };
+ MidiInDummy( const std::string, unsigned int queueSizeLimit ) : MidiInApi( queueSizeLimit ) { errorString_ = "MidiInDummy: This class provides no functionality."; RtMidi::error( RtError::WARNING, errorString_ ); };
   RtMidi::Api getCurrentApi( void ) { return RtMidi::RTMIDI_DUMMY; };
-  void openPort( unsigned int portNumber, const std::string portName ) {};
-  void openVirtualPort( const std::string portName ) {};
+  void openPort( unsigned int, const std::string ) {};
+  void openVirtualPort( const std::string ) {};
   void closePort( void ) {};
   unsigned int getPortCount( void ) { return 0; };
-  std::string getPortName( unsigned int portNumber ) { return ""; };
+  std::string getPortName( unsigned int ) { return ""; };
 
  protected:
-  void initialize( const std::string& clientName ) {};
+  void initialize( const std::string& ) {};
 };
 
 class MidiOutDummy: public MidiOutApi
 {
  public:
-  MidiOutDummy( const std::string clientName ) { errorString_ = "MidiOutDummy: This class provides no functionality."; RtMidi::error( RtError::WARNING, errorString_ ); };
+  MidiOutDummy( const std::string ) { errorString_ = "MidiOutDummy: This class provides no functionality."; RtMidi::error( RtError::WARNING, errorString_ ); };
   RtMidi::Api getCurrentApi( void ) { return RtMidi::RTMIDI_DUMMY; };
-  void openPort( unsigned int portNumber, const std::string portName ) {};
-  void openVirtualPort( const std::string portName ) {};
+  void openPort( unsigned int, const std::string ) {};
+  void openVirtualPort( const std::string ) {};
   void closePort( void ) {};
   unsigned int getPortCount( void ) { return 0; };
-  std::string getPortName( unsigned int portNumber ) { return ""; };
-  void sendMessage( std::vector<unsigned char> *message ) {};
+  std::string getPortName( unsigned int ) { return ""; };
+  void sendMessage( std::vector<unsigned char>* ) {};
 
  protected:
-  void initialize( const std::string& clientName ) {};
+  void initialize( const std::string& ) {};
 };
 
 #endif
