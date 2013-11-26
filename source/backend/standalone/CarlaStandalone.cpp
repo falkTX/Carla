@@ -26,7 +26,9 @@
 #include "CarlaOscUtils.hpp"
 #include "CarlaNative.h"
 
-#include "juce_gui_basics.h"
+#ifdef USE_JUCE
+# include "juce_gui_basics.h"
+#endif
 
 //#include "CarlaLogThread.hpp"
 //#if ! (defined(DEBUG) || defined(WANT_LOGS) || defined(BUILD_ANSI_TEST))
@@ -37,12 +39,11 @@ namespace CB = CarlaBackend;
 
 using CB::CarlaEngine;
 using CB::CarlaPlugin;
-using CB::CallbackFunc;
+using CB::EngineCallbackFunc;
 using CB::EngineOptions;
 using CB::EngineTimeInfo;
 
-//using juce::MessageManager;
-
+#ifdef USE_JUCE
 using namespace juce;
 
 // -----------------------------------------------------------------------
@@ -87,13 +88,15 @@ private:
 };
 
 juce_ImplementSingleton(JuceMessageThread)
+#endif
 
 // -------------------------------------------------------------------------------------------------------------------
 // Single, standalone engine
 
 struct CarlaBackendStandalone {
-    CallbackFunc  callback;
-    void*         callbackPtr;
+    EngineCallbackFunc callback;
+    void*              callbackPtr;
+
     CarlaEngine*  engine;
     CarlaString   lastError;
     EngineOptions options;
@@ -106,50 +109,32 @@ struct CarlaBackendStandalone {
     ~CarlaBackendStandalone()
     {
         CARLA_ASSERT(engine == nullptr);
-        //CARLA_ASSERT(MessageManager::getInstanceWithoutCreating() == nullptr);
+#ifdef USE_JUCE
+        CARLA_ASSERT(MessageManager::getInstanceWithoutCreating() == nullptr);
+#endif
     }
 
-#if 1
     void init()
     {
+#ifdef USE_JUCE
         JUCE_AUTORELEASEPOOL
 
         initialiseJuce_GUI();
         JuceMessageThread::getInstance();
+#endif
     }
 
     void idle() {}
 
     void close()
     {
+#ifdef USE_JUCE
         JUCE_AUTORELEASEPOOL
 
         JuceMessageThread::deleteInstance();
         shutdownJuce_GUI();
-    }
-#else
-    void init()
-    {
-        juce::initialiseJuce_GUI();
-
-        if (MessageManager* const mgr = MessageManager::getInstance())
-            mgr->setCurrentThreadAsMessageThread();
-    }
-
-    void idle()
-    {
-        if (MessageManager* const mgr = MessageManager::getInstanceWithoutCreating())
-            mgr->runDispatchLoopUntil(5);
-    }
-
-    void close()
-    {
-        if (MessageManager* const mgr = MessageManager::getInstanceWithoutCreating())
-            mgr->stopDispatchLoop();
-
-        juce::shutdownJuce_GUI();
-    }
 #endif
+    }
 
     CARLA_DECLARE_NON_COPY_STRUCT(CarlaBackendStandalone)
 };
@@ -597,7 +582,9 @@ void carla_set_engine_option(CarlaOptionsType option, int value, const char* val
     {
     case CB::OPTION_PROCESS_NAME:
         CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr && valueStr[0] != '\0',);
+#ifdef USE_JUCE
         juce::Thread::setCurrentThreadName(valueStr);
+#endif
         break;
 
     case CB::OPTION_PROCESS_MODE:

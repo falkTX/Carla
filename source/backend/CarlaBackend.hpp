@@ -47,7 +47,18 @@ CARLA_BACKEND_START_NAMESPACE
 const unsigned int MAX_DEFAULT_PLUGINS    = 99;  //!< Maximum default number of loadable plugins.
 const unsigned int MAX_RACK_PLUGINS       = 16;  //!< Maximum number of loadable plugins in rack mode.
 const unsigned int MAX_PATCHBAY_PLUGINS   = 255; //!< Maximum number of loadable plugins in patchbay mode.
-const unsigned int MAX_DEFAULT_PARAMETERS = 200; //!< Maximum default number of parameters allowed.\see OPTION_MAX_PARAMETERS
+const unsigned int MAX_DEFAULT_PARAMETERS = 200; //!< Maximum default number of parameters allowed.\see ENGINE_OPTION_MAX_PARAMETERS
+
+/*!
+ * @defgroup EngineDriverHints Engine Driver Hints
+ *
+ * Various engine driver hints.
+ * @{
+ */
+const unsigned int ENGINE_DRIVER_HAS_CONTROL_PANEL    = 0x1; //!< Engine driver has custom control-panel.
+const unsigned int ENGINE_DRIVER_VARIABLE_BUFFER_SIZE = 0x2; //!< Engine driver can change buffer-size on the fly.
+const unsigned int ENGINE_DRIVER_VARIABLE_SAMPLE_RATE = 0x4; //!< Engine driver can change sample-rate on the fly.
+/**@}*/
 
 /*!
  * @defgroup PluginHints Plugin Hints
@@ -105,20 +116,29 @@ const unsigned int PARAMETER_USES_CUSTOM_TEXT = 0x400; //!< Parameter uses custo
 /**@}*/
 
 /*!
- * @defgroup CustomDataTypes Custom Data types
+ * @defgroup CustomDataTypes Custom Data Types
  *
  * The type defines how the \param value in the CustomData struct is stored.\n
  * Types are valid URIs. Any non-string or non-simple type (not integral) is saved in a base64 encoded format.
  * \see CustomData
  * @{
  */
-const char* const CUSTOM_DATA_TYPE_CHUNK     = "http://kxstudio.sf.net/ns/carla/chunk";   //!< Chunk type URI.
-const char* const CUSTOM_DATA_TYPE_STRING    = "http://kxstudio.sf.net/ns/carla/string";  //!< String type URI.
-const char* const CUSTOM_DATA_KEY_UI_X       = "http://kxstudio.sf.net/carla/ui#x";       //!< UI X URI.
-const char* const CUSTOM_DATA_KEY_UI_Y       = "http://kxstudio.sf.net/carla/ui#y";       //!< UI Y URI.
-const char* const CUSTOM_DATA_KEY_UI_WIDTH   = "http://kxstudio.sf.net/carla/ui#width";   //!< UI width URI.
-const char* const CUSTOM_DATA_KEY_UI_HEIGHT  = "http://kxstudio.sf.net/carla/ui#height";  //!< UI height URI.
-const char* const CUSTOM_DATA_KEY_UI_VISIBLE = "http://kxstudio.sf.net/carla/ui#visible"; //!< UI visible URI.
+const char* const CUSTOM_DATA_TYPE_CHUNK  = "http://kxstudio.sf.net/ns/carla/chunk";  //!< Chunk type URI.
+const char* const CUSTOM_DATA_TYPE_STRING = "http://kxstudio.sf.net/ns/carla/string"; //!< String type URI.
+/**@}*/
+
+/*!
+ * @defgroup CustomDataKeys Custom Data Keys
+ *
+ * \see CustomData
+ * @{
+ */
+const char* const CUSTOM_DATA_KEY_OPTIONS    = "CarlaOptions";    //!< Options URI.
+const char* const CUSTOM_DATA_KEY_UI_X       = "CarlaUI:X";       //!< UI X URI.
+const char* const CUSTOM_DATA_KEY_UI_Y       = "CarlaUI:Y";       //!< UI Y URI.
+const char* const CUSTOM_DATA_KEY_UI_WIDTH   = "CarlaUI:Width";   //!< UI width URI.
+const char* const CUSTOM_DATA_KEY_UI_HEIGHT  = "CarlaUI:Height";  //!< UI height URI.
+const char* const CUSTOM_DATA_KEY_UI_VISIBLE = "CarlaUI:Visible"; //!< UI visible URI.
 /**@}*/
 
 /*!
@@ -208,86 +228,108 @@ enum InternalParametersIndex SIZE_INT {
 };
 
 /*!
+ * Engine process mode.
+ * \see ENGINE_OPTION_PROCESS_MODE
+ */
+enum ProcessMode SIZE_INT {
+    PROCESS_MODE_SINGLE_CLIENT    = 0, //!< Single client mode (dynamic input/outputs as needed by plugins).
+    PROCESS_MODE_MULTIPLE_CLIENTS = 1, //!< Multiple client mode (1 master client + 1 client per plugin).
+    PROCESS_MODE_CONTINUOUS_RACK  = 2, //!< Single client, 'rack' mode. Processes plugins in order of Id, with forced stereo.
+    PROCESS_MODE_PATCHBAY         = 3, //!< Single client, 'patchbay' mode.
+    PROCESS_MODE_BRIDGE           = 4  //!< Special mode, used in plugin-bridges only.
+};
+
+/*!
+ * All the available transport modes
+ */
+enum TransportMode SIZE_INT {
+    TRANSPORT_MODE_INTERNAL = 0, //!< Internal transport mode.
+    TRANSPORT_MODE_JACK     = 1, //!< Transport from JACK, only available if driver name is "JACK".
+    TRANSPORT_MODE_PLUGIN   = 2, //!< Transport from host, used when Carla is a plugin.
+    TRANSPORT_MODE_BRIDGE   = 3  //!< Special mode, used in plugin-bridges only.
+};
+
+/*!
  * Options used in the CarlaEngine::setOption() calls.\n
  * All options except paths must be set before initiliazing or after closing the engine.
  */
-enum OptionsType SIZE_INT {
+enum EngineOptionsType SIZE_INT {
     /*!
      * Set the current process name.\n
      * This is a convenience option, as Python lacks this functionality.
      */
-    OPTION_PROCESS_NAME = 0,
+    ENGINE_OPTION_PROCESS_NAME = 0,
 
     /*!
      * Set the engine processing mode.\n
      * Default is PROCESS_MODE_MULTIPLE_CLIENTS on Linux and PROCESS_MODE_CONTINUOUS_RACK for all other OSes.
      * \see ProcessMode
      */
-    OPTION_PROCESS_MODE = 1,
+    ENGINE_OPTION_PROCESS_MODE = 1,
 
     /*!
      * Set the engine transport mode.\n
      * Default is TRANSPORT_MODE_INTERNAL.
      * \see TransportMode
      */
-    OPTION_TRANSPORT_MODE = 2,
+    ENGINE_OPTION_TRANSPORT_MODE = 2,
 
     /*!
      * Force mono plugins as stereo, by running 2 instances at the same time.
      * \note Not supported by all plugins.
      * \see PLUGIN_OPTION_FORCE_STEREO
      */
-    OPTION_FORCE_STEREO = 3,
+    ENGINE_OPTION_FORCE_STEREO = 3,
 
     /*!
      * Use plugin bridges whenever possible.\n
      * Default is no, EXPERIMENTAL.
      */
-    OPTION_PREFER_PLUGIN_BRIDGES = 4,
+    ENGINE_OPTION_PREFER_PLUGIN_BRIDGES = 4,
 
     /*!
      * Use UI bridges whenever possible, otherwise UIs will be handled in the main thread.\n
      * Default is yes.
      */
-    OPTION_PREFER_UI_BRIDGES = 5,
+    ENGINE_OPTION_PREFER_UI_BRIDGES = 5,
 
     /*!
      * Make plugin UIs always-on-top.\n
      * Default is yes.
      */
-    OPTION_UIS_ALWAYS_ON_TOP = 6,
+    ENGINE_OPTION_UIS_ALWAYS_ON_TOP = 6,
 
     /*!
      * Maximum number of parameters allowed.\n
      * Default is MAX_DEFAULT_PARAMETERS.
      */
-    OPTION_MAX_PARAMETERS = 7,
+    ENGINE_OPTION_MAX_PARAMETERS = 7,
 
     /*!
      * Timeout value in ms for how much to wait for UI-Bridges to respond.\n
      * Default is 4000 (4 secs).
      */
-    OPTION_UI_BRIDGES_TIMEOUT = 8,
+    ENGINE_OPTION_UI_BRIDGES_TIMEOUT = 8,
 
     /*!
      * Audio number of periods.
      */
-    OPTION_AUDIO_NUM_PERIODS = 9,
+    ENGINE_OPTION_AUDIO_NUM_PERIODS = 9,
 
     /*!
      * Audio buffer size.
      */
-    OPTION_AUDIO_BUFFER_SIZE = 10,
+    ENGINE_OPTION_AUDIO_BUFFER_SIZE = 10,
 
     /*!
      * Audio sample rate.
      */
-    OPTION_AUDIO_SAMPLE_RATE = 11,
+    ENGINE_OPTION_AUDIO_SAMPLE_RATE = 11,
 
     /*!
      * Audio device.
      */
-    OPTION_AUDIO_DEVICE = 12,
+    ENGINE_OPTION_AUDIO_DEVICE = 12,
 
     /*!
      * Set path to the resource files.\n
@@ -295,38 +337,38 @@ enum OptionsType SIZE_INT {
      *
      * \note Must be set for some internal plugins to work!
      */
-    OPTION_PATH_RESOURCES = 13,
+    ENGINE_OPTION_PATH_RESOURCES = 13,
 
 #ifndef BUILD_BRIDGE
     /*!
      * Set path to the native plugin bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_NATIVE = 14,
+    ENGINE_OPTION_PATH_BRIDGE_NATIVE = 14,
 
     /*!
      * Set path to the POSIX 32bit plugin bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_POSIX32 = 15,
+    ENGINE_OPTION_PATH_BRIDGE_POSIX32 = 15,
 
     /*!
      * Set path to the POSIX 64bit plugin bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_POSIX64 = 16,
+    ENGINE_OPTION_PATH_BRIDGE_POSIX64 = 16,
 
     /*!
      * Set path to the Windows 32bit plugin bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_WIN32 = 17,
+    ENGINE_OPTION_PATH_BRIDGE_WIN32 = 17,
 
     /*!
      * Set path to the Windows 64bit plugin bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_WIN64 = 18,
+    ENGINE_OPTION_PATH_BRIDGE_WIN64 = 18,
 #endif
 
 #ifdef WANT_LV2
@@ -334,55 +376,55 @@ enum OptionsType SIZE_INT {
      * Set path to the LV2 External UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_EXTERNAL = 19,
+    ENGINE_OPTION_PATH_BRIDGE_LV2_EXTERNAL = 19,
 
     /*!
      * Set path to the LV2 Gtk2 UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_GTK2 = 20,
+    ENGINE_OPTION_PATH_BRIDGE_LV2_GTK2 = 20,
 
     /*!
      * Set path to the LV2 Gtk3 UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_GTK3 = 21,
+    ENGINE_OPTION_PATH_BRIDGE_LV2_GTK3 = 21,
 
     /*!
      * Set path to the LV2 Ntk UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_NTK = 22,
+    ENGINE_OPTION_PATH_BRIDGE_LV2_NTK = 22,
 
     /*!
      * Set path to the LV2 Qt4 UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_QT4 = 23,
+    ENGINE_OPTION_PATH_BRIDGE_LV2_QT4 = 23,
 
     /*!
      * Set path to the LV2 Qt5 UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_QT5 = 24,
+    ENGINE_OPTION_PATH_BRIDGE_LV2_QT5 = 24,
 
     /*!
      * Set path to the LV2 Cocoa UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_COCOA = 25,
+    ENGINE_OPTION_PATH_BRIDGE_LV2_COCOA = 25,
 
     /*!
      * Set path to the LV2 Windows UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_WINDOWS = 26,
+    ENGINE_OPTION_PATH_BRIDGE_LV2_WINDOWS = 26,
 
     /*!
      * Set path to the LV2 X11 UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_LV2_X11 = 27,
+    ENGINE_OPTION_PATH_BRIDGE_LV2_X11 = 27,
 #endif
 
 #ifdef WANT_VST
@@ -390,19 +432,19 @@ enum OptionsType SIZE_INT {
      * Set path to the VST Mac UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_VST_MAC = 28,
+    ENGINE_OPTION_PATH_BRIDGE_VST_MAC = 28,
 
     /*!
      * Set path to the VST HWND UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_VST_HWND = 29,
+    ENGINE_OPTION_PATH_BRIDGE_VST_HWND = 29,
 
     /*!
      * Set path to the VST X11 UI bridge executable.\n
      * Default unset.
      */
-    OPTION_PATH_BRIDGE_VST_X11 = 30
+    ENGINE_OPTION_PATH_BRIDGE_VST_X11 = 30
 #endif
 };
 
@@ -678,28 +720,6 @@ enum FileCallbackType SIZE_INT {
 };
 
 /*!
- * Engine process mode.
- * \see OPTION_PROCESS_MODE
- */
-enum ProcessMode SIZE_INT {
-    PROCESS_MODE_SINGLE_CLIENT    = 0, //!< Single client mode (dynamic input/outputs as needed by plugins).
-    PROCESS_MODE_MULTIPLE_CLIENTS = 1, //!< Multiple client mode (1 master client + 1 client per plugin).
-    PROCESS_MODE_CONTINUOUS_RACK  = 2, //!< Single client, 'rack' mode. Processes plugins in order of Id, with forced stereo.
-    PROCESS_MODE_PATCHBAY         = 3, //!< Single client, 'patchbay' mode.
-    PROCESS_MODE_BRIDGE           = 4  //!< Special mode, used in plugin-bridges only.
-};
-
-/*!
- * All the available transport modes
- */
-enum TransportMode SIZE_INT {
-    TRANSPORT_MODE_INTERNAL = 0, //!< Internal transport mode.
-    TRANSPORT_MODE_JACK     = 1, //!< Transport from JACK, only available if driver name is "JACK".
-    TRANSPORT_MODE_PLUGIN   = 2, //!< Transport from host, used when Carla is a plugin.
-    TRANSPORT_MODE_BRIDGE   = 3  //!< Special mode, used in plugin-bridges only.
-};
-
-/*!
  * Engine callback function.
  * \see EngineCallbackType
  */
@@ -709,7 +729,7 @@ typedef void (*EngineCallbackFunc)(void* ptr, EngineCallbackType action, unsigne
  * File callback function.
  * \see FileCallbackType
  */
-typedef const char* (*FileCallbackFunc)(void* ptr, FileCallbackType action, bool isDir, const char* title, const char* filter);
+typedef char* (*FileCallbackFunc)(void* ptr, FileCallbackType action, bool isDir, const char* title, const char* filter);
 
 /*!
  * Parameter data.

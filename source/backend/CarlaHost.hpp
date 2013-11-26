@@ -242,6 +242,7 @@ struct CarlaTransportInfo {
           frame(0),
           bar(0),
           beat(0),
+          tick(0),
           bpm(0.0) {}
 #endif
 };
@@ -282,9 +283,9 @@ CARLA_EXPORT const char* carla_get_supported_file_types();
 CARLA_EXPORT unsigned int carla_get_engine_driver_count();
 
 /*!
- * Get the engine driver name \a index.
+ * Get the engine driver info for \a index.
  */
-CARLA_EXPORT const char* carla_get_engine_driver_name(unsigned int index);
+CARLA_EXPORT const CarlaEngineDriverInfo* carla_get_engine_driver_info(unsigned int index);
 
 /*!
  * Get the device names of the engine driver at \a index (for use in non-JACK drivers).\n

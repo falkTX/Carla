@@ -92,6 +92,11 @@ MAX_RACK_PLUGINS       = 16
 MAX_PATCHBAY_PLUGINS   = 255
 MAX_DEFAULT_PARAMETERS = 200
 
+# Engine Driver Hints
+ENGINE_DRIVER_HAS_CONTROL_PANEL    = 0x1
+ENGINE_DRIVER_VARIABLE_BUFFER_SIZE = 0x2
+ENGINE_DRIVER_VARIABLE_SAMPLE_RATE = 0x4
+
 # Plugin Hints
 PLUGIN_IS_BRIDGE   = 0x001
 PLUGIN_IS_RTSAFE   = 0x002
@@ -126,21 +131,24 @@ PARAMETER_USES_SAMPLERATE  = 0x100
 PARAMETER_USES_SCALEPOINTS = 0x200
 PARAMETER_USES_CUSTOM_TEXT = 0x400
 
-# Custom Data types
+# Custom Data Types
 CUSTOM_DATA_TYPE_CHUNK     = "http://kxstudio.sf.net/ns/carla/chunk"
 CUSTOM_DATA_TYPE_STRING    = "http://kxstudio.sf.net/ns/carla/string"
-CUSTOM_DATA_KEY_UI_X       = "http://kxstudio.sf.net/carla/ui#x"
-CUSTOM_DATA_KEY_UI_Y       = "http://kxstudio.sf.net/carla/ui#y"
-CUSTOM_DATA_KEY_UI_WIDTH   = "http://kxstudio.sf.net/carla/ui#width"
-CUSTOM_DATA_KEY_UI_HEIGHT  = "http://kxstudio.sf.net/carla/ui#height"
-CUSTOM_DATA_KEY_UI_VISIBLE = "http://kxstudio.sf.net/carla/ui#visible"
+
+# Custom Data Keys
+CUSTOM_DATA_KEY_OPTIONS    = "CarlaOptions"
+CUSTOM_DATA_KEY_UI_X       = "CarlaUI:X"
+CUSTOM_DATA_KEY_UI_Y       = "CarlaUI:Y"
+CUSTOM_DATA_KEY_UI_WIDTH   = "CarlaUI:Width"
+CUSTOM_DATA_KEY_UI_HEIGHT  = "CarlaUI:Height"
+CUSTOM_DATA_KEY_UI_VISIBLE = "CarlaUI:Visible"
 
 # Patchbay Port Hints
-PATCHBAY_PORT_IS_INPUT     = 0x01
-PATCHBAY_PORT_IS_OUTPUT    = 0x02
-PATCHBAY_PORT_IS_AUDIO     = 0x10
-PATCHBAY_PORT_IS_CV        = 0x20
-PATCHBAY_PORT_IS_MIDI      = 0x40
+PATCHBAY_PORT_IS_INPUT  = 0x01
+PATCHBAY_PORT_IS_OUTPUT = 0x02
+PATCHBAY_PORT_IS_AUDIO  = 0x10
+PATCHBAY_PORT_IS_CV     = 0x20
+PATCHBAY_PORT_IS_MIDI   = 0x40
 
 # Binary Type
 BINARY_NONE    = 0
@@ -192,40 +200,53 @@ PARAMETER_PANNING       = -7
 PARAMETER_CTRL_CHANNEL  = -8
 PARAMETER_MAX           = -9
 
-# Options Type
-OPTION_PROCESS_NAME             = 0
-OPTION_PROCESS_MODE             = 1
-OPTION_TRANSPORT_MODE           = 2
-OPTION_FORCE_STEREO             = 3
-OPTION_PREFER_PLUGIN_BRIDGES    = 4
-OPTION_PREFER_UI_BRIDGES        = 5
-OPTION_UIS_ALWAYS_ON_TOP        = 6
-OPTION_MAX_PARAMETERS           = 7
-OPTION_UI_BRIDGES_TIMEOUT       = 8
-OPTION_AUDIO_NUM_PERIODS        = 9
-OPTION_AUDIO_BUFFER_SIZE        = 10
-OPTION_AUDIO_SAMPLE_RATE        = 11
-OPTION_AUDIO_DEVICE             = 12
-OPTION_PATH_RESOURCES           = 13
-OPTION_PATH_BRIDGE_NATIVE       = 14
-OPTION_PATH_BRIDGE_POSIX32      = 15
-OPTION_PATH_BRIDGE_POSIX64      = 16
-OPTION_PATH_BRIDGE_WIN32        = 17
-OPTION_PATH_BRIDGE_WIN64        = 18
-OPTION_PATH_BRIDGE_LV2_EXTERNAL = 19
-OPTION_PATH_BRIDGE_LV2_GTK2     = 20
-OPTION_PATH_BRIDGE_LV2_GTK3     = 21
-OPTION_PATH_BRIDGE_LV2_NTK      = 22
-OPTION_PATH_BRIDGE_LV2_QT4      = 23
-OPTION_PATH_BRIDGE_LV2_QT5      = 24
-OPTION_PATH_BRIDGE_LV2_COCOA    = 25
-OPTION_PATH_BRIDGE_LV2_WINDOWS  = 26
-OPTION_PATH_BRIDGE_LV2_X11      = 27
-OPTION_PATH_BRIDGE_VST_MAC      = 28
-OPTION_PATH_BRIDGE_VST_HWND     = 29
-OPTION_PATH_BRIDGE_VST_X11      = 30
+# Process Mode
+PROCESS_MODE_SINGLE_CLIENT    = 0
+PROCESS_MODE_MULTIPLE_CLIENTS = 1
+PROCESS_MODE_CONTINUOUS_RACK  = 2
+PROCESS_MODE_PATCHBAY         = 3
+PROCESS_MODE_BRIDGE           = 4
 
-# EngineCallback Type
+# Transport Mode
+TRANSPORT_MODE_INTERNAL = 0
+TRANSPORT_MODE_JACK     = 1
+TRANSPORT_MODE_PLUGIN   = 2
+TRANSPORT_MODE_BRIDGE   = 3
+
+# Engine Options Type
+ENGINE_OPTION_PROCESS_NAME             = 0
+ENGINE_OPTION_PROCESS_MODE             = 1
+ENGINE_OPTION_TRANSPORT_MODE           = 2
+ENGINE_OPTION_FORCE_STEREO             = 3
+ENGINE_OPTION_PREFER_PLUGIN_BRIDGES    = 4
+ENGINE_OPTION_PREFER_UI_BRIDGES        = 5
+ENGINE_OPTION_UIS_ALWAYS_ON_TOP        = 6
+ENGINE_OPTION_MAX_PARAMETERS           = 7
+ENGINE_OPTION_UI_BRIDGES_TIMEOUT       = 8
+ENGINE_OPTION_AUDIO_NUM_PERIODS        = 9
+ENGINE_OPTION_AUDIO_BUFFER_SIZE        = 10
+ENGINE_OPTION_AUDIO_SAMPLE_RATE        = 11
+ENGINE_OPTION_AUDIO_DEVICE             = 12
+ENGINE_OPTION_PATH_RESOURCES           = 13
+ENGINE_OPTION_PATH_BRIDGE_NATIVE       = 14
+ENGINE_OPTION_PATH_BRIDGE_POSIX32      = 15
+ENGINE_OPTION_PATH_BRIDGE_POSIX64      = 16
+ENGINE_OPTION_PATH_BRIDGE_WIN32        = 17
+ENGINE_OPTION_PATH_BRIDGE_WIN64        = 18
+ENGINE_OPTION_PATH_BRIDGE_LV2_EXTERNAL = 19
+ENGINE_OPTION_PATH_BRIDGE_LV2_GTK2     = 20
+ENGINE_OPTION_PATH_BRIDGE_LV2_GTK3     = 21
+ENGINE_OPTION_PATH_BRIDGE_LV2_NTK      = 22
+ENGINE_OPTION_PATH_BRIDGE_LV2_QT4      = 23
+ENGINE_OPTION_PATH_BRIDGE_LV2_QT5      = 24
+ENGINE_OPTION_PATH_BRIDGE_LV2_COCOA    = 25
+ENGINE_OPTION_PATH_BRIDGE_LV2_WINDOWS  = 26
+ENGINE_OPTION_PATH_BRIDGE_LV2_X11      = 27
+ENGINE_OPTION_PATH_BRIDGE_VST_MAC      = 28
+ENGINE_OPTION_PATH_BRIDGE_VST_HWND     = 29
+ENGINE_OPTION_PATH_BRIDGE_VST_X11      = 30
+
+# Engine Callback Type
 ENGINE_CALLBACK_DEBUG           = 0
 ENGINE_CALLBACK_PLUGIN_ADDED    = 1
 ENGINE_CALLBACK_PLUGIN_REMOVED  = 2
@@ -266,23 +287,10 @@ ENGINE_CALLBACK_INFO  = 36
 ENGINE_CALLBACK_ERROR = 37
 ENGINE_CALLBACK_QUIT  = 38
 
-# FileCallback Type
+# File Callback Type
 FILE_CALLBACK_DEBUG = 0
 FILE_CALLBACK_OPEN  = 1
 FILE_CALLBACK_SAVE  = 2
-
-# Process Mode
-PROCESS_MODE_SINGLE_CLIENT    = 0
-PROCESS_MODE_MULTIPLE_CLIENTS = 1
-PROCESS_MODE_CONTINUOUS_RACK  = 2
-PROCESS_MODE_PATCHBAY         = 3
-PROCESS_MODE_BRIDGE           = 4
-
-# Transport Mode
-TRANSPORT_MODE_INTERNAL = 0
-TRANSPORT_MODE_JACK     = 1
-TRANSPORT_MODE_PLUGIN   = 2
-TRANSPORT_MODE_BRIDGE   = 3
 
 # Set BINARY_NATIVE
 if HAIKU or LINUX or MACOS:
@@ -402,12 +410,18 @@ class CarlaTransportInfo(Structure):
         ("bpm", c_double)
     ]
 
+class CarlaEngineDriverInfo(Structure):
+    _fields_ = [
+        ("name", c_char_p),
+        ("hints", c_uint)
+    ]
+
 # ------------------------------------------------------------------------------------------------------------
 # Python object dicts compatible with ctypes struct
 
 PyParameterData = {
     'type': PARAMETER_NULL,
-    'index': 0,
+    'index': PARAMETER_NULL,
     'rindex': -1,
     'hints': 0x0,
     'midiChannel': 0,
@@ -418,9 +432,9 @@ PyParameterRanges = {
     'def': 0.0,
     'min': 0.0,
     'max': 1.0,
-    'step': 0.0,
-    'stepSmall': 0.0,
-    'stepLarge': 0.0
+    'step': 0.01,
+    'stepSmall': 0.0001,
+    'stepLarge': 0.1
 }
 
 PyMidiProgramData = {
@@ -447,8 +461,8 @@ PyCarlaPluginInfo = {
     'maker': None,
     'copyright': None,
     'iconName': None,
-    'uniqueId': 0,
-    'latency': 0
+    'patchbayClientId': 0,
+    'uniqueId': 0
 }
 
 PyCarlaPortCountInfo = {
@@ -469,6 +483,20 @@ PyCarlaScalePointInfo = {
     'label': None
 }
 
+PyCarlaTransportInfo = {
+    "playing": False,
+    "frame": 0,
+    "bar": 0,
+    "beat": 0,
+    "tick": 0,
+    "bpm": 0.0
+}
+
+PyCarlaEngineDriverInfo = {
+    "name": None,
+    "hints": 0x0
+}
+
 # ------------------------------------------------------------------------------------------------------------
 # Host Python object (Control/Standalone)
 
@@ -487,8 +515,8 @@ class Host(object):
         self.lib.carla_get_engine_driver_count.argtypes = None
         self.lib.carla_get_engine_driver_count.restype = c_uint
 
-        self.lib.carla_get_engine_driver_name.argtypes = [c_uint]
-        self.lib.carla_get_engine_driver_name.restype = c_char_p
+        self.lib.carla_get_engine_driver_info.argtypes = [c_uint]
+        self.lib.carla_get_engine_driver_info.restype = POINTER(CarlaEngineDriverInfo)
 
         self.lib.carla_get_engine_driver_device_names.argtypes = [c_uint]
         self.lib.carla_get_engine_driver_device_names.restype = POINTER(c_char_p)
@@ -745,8 +773,8 @@ class Host(object):
     def get_engine_driver_count(self):
         return self.lib.carla_get_engine_driver_count()
 
-    def get_engine_driver_name(self, index):
-        return self.lib.carla_get_engine_driver_name(index)
+    def get_engine_driver_info(self, index):
+        return structToDict(self.lib.carla_get_engine_driver_info(index))
 
     def get_engine_driver_device_names(self, index):
         return charStringList(self.lib.carla_get_engine_driver_device_names(index))
